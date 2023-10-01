@@ -28,17 +28,17 @@ static pr_vec4_t float_globals_init[] = {
 
 static pr_vec4_t float_globals_expect[] = {
 	{3, 4, 5, 12},
-	{63, 63, -33, 56},
+	{63, 16, -33, 56},
 	{1, 2, 3, 8},
 	{4, 5, 6, 8},
 
-	{32, 32, 32, 7},
+	{32, 0,  0, 7},
 	{-3, 6, -3, 7},
 	{1, 2, 3, 4},
 	{5, 6, 7, 8},
 
 	{2, 3, 4, 0},
-	{70, 70, 70, 70},
+	{70, 0, 0, 0},
 	{24, 48, 48, -6},
 	{36, 102, 120, 7},
 
@@ -54,6 +54,7 @@ static pr_vec4_t float_globals_expect[] = {
 
 static dstatement_t float_vector_statements[] = {
 	{ OP(0, 0, 0, OP_CDOT_F), 0, 2, 4 },
+	{ OP(0, 0, 0, OP_WEDGE_F_2), 0, 2, 5 },
 	{ OP(0, 0, 0, OP_CMUL_F), 0, 2, 6 },
 	{ OP(0, 0, 0, OP_VDOT_F), 8, 12, 16 },
 	{ OP(0, 0, 0, OP_CROSS_F), 8, 12, 20 },
@@ -63,10 +64,10 @@ static dstatement_t float_vector_statements[] = {
 	{ OP(0, 0, 0, OP_VQMUL_F), 32, 24, 48 },
 
 	{ OP(0, 0, 0, OP_QMUL_F), 24, 32, 52 },
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 24, 0x07e4, 60 },
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 24, 0x07e4, 60 },
 	{ OP(0, 0, 0, OP_QMUL_F), 52, 60, 52 },
 
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 24, 0x07e4, 64 },
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 24, 0x07e4, 64 },
 	{ OP(0, 0, 0, OP_QMUL_F), 64, 32, 56 },
 	{ OP(0, 0, 0, OP_QMUL_F), 56, 24, 56 },
 
@@ -102,17 +103,17 @@ static pr_dvec4_t double_globals_init[] = {
 
 static pr_dvec4_t double_globals_expect[] = {
 	{3, 4, 5, 12},
-	{63, 63, -33, 56},
+	{63, 16, -33, 56},
 	{1, 2, 3, 8},
 	{4, 5, 6, 8},
 
-	{32, 32, 32, 7},
+	{32, 0,  0, 7},
 	{-3, 6, -3, 7},
 	{1, 2, 3, 4},
 	{5, 6, 7, 8},
 
 	{2, 3, 4, 0},
-	{70, 70, 70, 70},
+	{70, 0, 0, 0},
 	{24, 48, 48, -6},
 	{36, 102, 120, 7},
 
@@ -128,6 +129,7 @@ static pr_dvec4_t double_globals_expect[] = {
 
 static dstatement_t double_vector_statements[] = {
 	{ OP(0, 0, 0, OP_CDOT_D), 0, 4, 8 },
+	{ OP(0, 0, 0, OP_WEDGE_D_2), 0, 4, 10 },
 	{ OP(0, 0, 0, OP_CMUL_D), 0, 4, 12 },
 	{ OP(0, 0, 0, OP_VDOT_D), 16, 24, 32 },
 	{ OP(0, 0, 0, OP_CROSS_D), 16, 24, 40 },
@@ -137,10 +139,10 @@ static dstatement_t double_vector_statements[] = {
 	{ OP(0, 0, 0, OP_VQMUL_D), 64, 48, 96 },
 
 	{ OP(0, 0, 0, OP_QMUL_D), 48, 64, 104 },
-	{ OP(0, 0, 0, OP_SWIZZLE_D), 48, 0x07e4, 120 },
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4), 48, 0x07e4, 120 },
 	{ OP(0, 0, 0, OP_QMUL_D), 104, 120, 104 },
 
-	{ OP(0, 0, 0, OP_SWIZZLE_D), 48, 0x07e4, 128 },
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4), 48, 0x07e4, 128 },
 	{ OP(0, 0, 0, OP_QMUL_D), 128, 64, 112 },
 	{ OP(0, 0, 0, OP_QMUL_D), 112, 48, 112 },
 

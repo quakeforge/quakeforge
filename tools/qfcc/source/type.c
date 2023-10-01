@@ -47,6 +47,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -77,6 +78,11 @@
 type_t      type_invalid = {
 	.type = ev_invalid,
 	.name = "invalid",
+};
+
+type_t      type_auto = {
+	.type = ev_invalid,
+	.name = "auto",
 };
 
 #define VEC_TYPE(type_name, base_type) \
@@ -164,7 +170,7 @@ int type_cast_map[ev_type_count] = {
 ALLOC_STATE (type_t, types);
 
 etype_t
-low_level_type (type_t *type)
+low_level_type (const type_t *type)
 {
 	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
@@ -307,6 +313,7 @@ copy_chain (type_t *type, type_t *append)
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
+			case ty_algebra:
 				internal_error (0, "copy object type %d", type->meta);
 		}
 	}
@@ -365,6 +372,7 @@ append_type (type_t *type, type_t *new)
 			case ty_class:
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
+			case ty_algebra:
 				internal_error (0, "append to object type");
 		}
 	}
@@ -435,6 +443,8 @@ types_same (type_t *a, type_t *b)
 		case ty_handle:
 			// names have gone through save_string
 			return a->name == b->name;
+		case ty_algebra:
+			return a->t.algebra == b->t.algebra;
 	}
 	internal_error (0, "we be broke");
 }
@@ -527,8 +537,8 @@ find_type (type_t *type)
 	type_t     *check;
 	int         i, count;
 
-	if (!type)
-		return 0;
+	if (!type || type == &type_auto)
+		return type;
 
 	if (type->freeable) {
 		switch (type->meta) {
@@ -562,8 +572,11 @@ find_type (type_t *type)
 				break;
 			case ty_alias:
 				type->t.alias.aux_type = find_type (type->t.alias.aux_type);
+				type->t.alias.full_type = find_type (type->t.alias.full_type);
 				break;
 			case ty_handle:
+				break;
+			case ty_algebra:
 				break;
 		}
 	}
@@ -590,7 +603,7 @@ find_type (type_t *type)
 			}
 		}
 	}
-	check->freeable = 0;
+	check->freeable = false;
 
 	chain_type (check);
 
@@ -617,7 +630,7 @@ field_type (type_t *aux)
 }
 
 type_t *
-pointer_type (type_t *aux)
+pointer_type (const type_t *aux)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -630,7 +643,7 @@ pointer_type (type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	if (aux) {
-		new = find_type (append_type (new, aux));
+		new = find_type (append_type (new, (type_t *) aux));
 	}
 	return new;
 }
@@ -648,7 +661,7 @@ vector_type (const type_t *ele_type, int width)
 	for (type_t **vtype = vec_types; *vtype; vtype++) {
 		if ((*vtype)->type == ele_type->type
 			&& (*vtype)->width == width) {
-			if (options.code.progsversion <= PROG_VERSION) {
+			if (options.code.progsversion < PROG_VERSION) {
 				if (*vtype == &type_vec3) {
 					return &type_vector;
 				}
@@ -665,6 +678,9 @@ vector_type (const type_t *ele_type, int width)
 type_t *
 base_type (const type_t *vec_type)
 {
+	if (is_algebra (vec_type)) {
+		return algebra_base_type (vec_type);
+	}
 	if (!is_math (vec_type)) {
 		return 0;
 	}
@@ -687,6 +703,22 @@ int_type (const type_t *base)
 		base = &type_int;
 	} else if (type_size (base) == 2) {
 		base = &type_long;
+	}
+	return vector_type (base, width);
+}
+
+type_t *
+uint_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_uint;
+	} else if (type_size (base) == 2) {
+		base = &type_ulong;
 	}
 	return vector_type (base, width);
 }
@@ -749,8 +781,9 @@ based_array_type (type_t *aux, int base, int top)
 	new->t.array.type = aux;
 	new->t.array.base = base;
 	new->t.array.size = top - base + 1;
-	if (aux)
+	if (aux) {
 		new = find_type (new);
+	}
 	return new;
 }
 
@@ -812,6 +845,9 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_algebra:
+			algebra_print_type_str (str, type);
+			return;
 		case ty_handle:
 			dasprintf (str, " handle %s", type->name);
 			return;
@@ -1004,12 +1040,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_algebra:
+			algebra_encode_type (encoding, type);
+			return;
 		case ty_handle:
 			dasprintf (encoding, "{%s$}", type->name);
 			return;
 		case ty_alias:
 			dasprintf (encoding, "{%s>", type->name ? type->name : "");
-			encode_type (encoding, type->t.alias.aux_type);
+			encode_type (encoding, type->t.alias.full_type);
 			dasprintf (encoding, "}");
 			return;
 		case ty_class:
@@ -1201,6 +1240,9 @@ is_math (const type_t *type)
 	if (is_vector (type) || is_quaternion (type)) {
 		return 1;
 	}
+	if (is_algebra (type)) {
+		return 1;
+	}
 	return is_scalar (type) || is_nonscalar (type);
 }
 
@@ -1278,6 +1320,9 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 0;
 	}
 	if (!is_ptr (dst) || !is_ptr (src)) {
+		if (is_algebra (dst) || is_algebra (src)) {
+			return algebra_type_assignable (dst, src);
+		}
 		if (is_scalar (dst) && is_scalar (src)) {
 			return 1;
 		}
@@ -1377,6 +1422,8 @@ type_size (const type_t *type)
 			}
 		case ty_alias:
 			return type_size (type->t.alias.aux_type);
+		case ty_algebra:
+			return algebra_type_size (type);
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
 }
@@ -1407,8 +1454,17 @@ type_width (const type_t *type)
 			return 1;
 		case ty_alias:
 			return type_width (type->t.alias.aux_type);
+		case ty_algebra:
+			return algebra_type_width (type);
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
+}
+
+int
+type_aligned_size (const type_t *type)
+{
+	int         size = type_size (type);
+	return RUP (size, type->alignment);
 }
 
 static void

@@ -52,22 +52,6 @@
 typedef uint8_t byte;
 #endif
 
-#if __STDC_VERSION__ < 202000
-#define auto __auto_type
-#ifndef _DEF_BOOL_
-# define _DEF_BOOL_
-// KJB Undefined true and false defined in SciTech's DEBUG.H header
-# ifdef __cplusplus
-#  define __bool_true_false_are_defined
-# endif
-# ifndef __bool_true_false_are_defined
-#  undef true
-#  undef false
-typedef	enum	{false, true} bool;
-# endif
-#endif
-#endif
-
 // From mathlib...
 typedef float	vec_t;		///< The basic vector component type
 typedef vec_t	vec3_t[3];	///< A 3D vector (used for Euler angles and motion vectors)

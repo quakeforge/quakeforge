@@ -778,20 +778,10 @@ IN_Binding_Activate (void)
 	IE_Set_Focus (in_binding_handler);
 }
 
-void
-IN_Binding_Init (void)
+static void
+IN_Binding_Shutdown (void *data)
 {
-	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
-	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);
-
-	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
-		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
-	}
-}
-
-void
-IN_Binding_Shutdown ()
-{
+	Sys_MaskPrintf (SYS_input, "IN_Binding_Shutdown\n");
 	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
 		clear_connection (db);
 	}
@@ -800,6 +790,18 @@ IN_Binding_Shutdown ()
 	}
 	free (devbindings._map);
 	DARRAY_CLEAR (&known_devices);
+}
+
+void
+IN_Binding_Init (void)
+{
+	Sys_RegisterShutdown (IN_Binding_Shutdown, 0);
+	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
+	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);
+
+	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
+		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
+	}
 }
 
 void

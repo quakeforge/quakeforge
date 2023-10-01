@@ -198,11 +198,9 @@ parse_int32_t (const plfield_t *field, const plitem_t *item,
 				void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
-	// use size_t (and cexpr_size_t) for val so references to array sizes
-	// can be used
-	size_t      val = 0;
+	int         val = 0;
 	parsectx_t *pctx = context;
-	exprval_t   result = { &cexpr_size_t, &val };
+	exprval_t   result = { &cexpr_int, &val };
 	exprctx_t   ectx = *pctx->ectx;
 	ectx.result = &result;
 	ectx.item = item;
@@ -338,7 +336,7 @@ parse_labeledsingle (const plfield_t *field, const plitem_t *item,
 		return 0;
 	}
 
-	plfield_t   f = { field->name, 0, single->type, single->parser, 0 };
+	plfield_t   f = { key, 0, single->type, single->parser, 0 };
 	void       *value = vkparse_alloc (context, single->stride);
 	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {
@@ -1098,9 +1096,9 @@ static cvar_t vulkan_frame_count_cvar = {
 	.name = "vulkan_frame_count",
 	.description =
 		"Number of frames to render in the background. More frames can "
-		"increase performance, but at the cost of latency. The default of 3 is"
+		"increase performance, but at the cost of latency. The default of 2 is"
 		" recommended.",
-	.default_value = "3",
+	.default_value = "2",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
 };
@@ -1201,6 +1199,10 @@ static exprsym_t builtin_plist_syms[] = {
 	{ .name = "main_def",
 	  .value = (void *)
 #include "libs/video/renderer/vulkan/rp_main_def.plc"
+		},
+	{ .name = "main_fwd",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_main_fwd.plc"
 		},
 	{ .name = "smp_quake",
 	  .value = (void *)

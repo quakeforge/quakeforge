@@ -57,21 +57,21 @@
 #include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
-	expr_t     *low;
-	expr_t     *high;
-	expr_t    **labels;
-	expr_t     *_label;
+	const expr_t *low;
+	const expr_t *high;
+	const expr_t **labels;
+	const expr_t *_label;
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static __attribute__((pure)) ex_value_t *
-get_value (expr_t *e)
+static ex_value_t * __attribute__((pure))
+get_value (const expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->e.symbol->s.value;
+		return e->symbol->s.value;
 	if (e->type != ex_value)
 		internal_error (e, "bogus case label");
-	return e->e.value;
+	return e->value;
 }
 
 static __attribute__((pure)) uintptr_t
@@ -91,8 +91,8 @@ compare (const void *_cla, const void *_clb, void *unused)
 {
 	case_label_t *cla = (case_label_t *) _cla;
 	case_label_t *clb = (case_label_t *) _clb;
-	expr_t     *v1 = cla->value;
-	expr_t     *v2 = clb->value;
+	const expr_t *v1 = cla->value;
+	const expr_t *v2 = clb->value;
 	ex_value_t *val1, *val2;
 
 	if (v1 == v2)
@@ -108,15 +108,15 @@ compare (const void *_cla, const void *_clb, void *unused)
 	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
 }
 
-struct expr_s *
-case_label_expr (switch_block_t *switch_block, expr_t *value)
+const expr_t *
+case_label_expr (switch_block_t *switch_block, const expr_t *value)
 {
 	case_label_t *cl = malloc (sizeof (case_label_t));
 
 	SYS_CHECKMEM (cl);
 
 	if (value)
-		convert_name (value);
+		value = convert_name (value);
 	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);
@@ -197,7 +197,7 @@ label_compare (const void *_a, const void *_b)
 }
 
 static case_node_t *
-new_case_node (expr_t *low, expr_t *high)
+new_case_node (const expr_t *low, const expr_t *high)
 {
 	case_node_t *node = malloc (sizeof (case_node_t));
 
@@ -214,7 +214,7 @@ new_case_node (expr_t *low, expr_t *high)
 		if (!is_int_val (low))
 			internal_error (low, "switch");
 		size = expr_int (high) - expr_int (low) + 1;
-		node->labels = calloc (size, sizeof (expr_t *));
+		node->labels = calloc (size, sizeof (const expr_t *));
 	}
 	node->left = node->right = 0;
 	return node;
@@ -285,13 +285,13 @@ build_case_tree (case_label_t **labels, int count, int range)
 }
 
 static void
-build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
-			  expr_t *temp, expr_t *default_label)
+build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
+			  const expr_t *temp, const expr_t *default_label)
 {
-	expr_t     *test;
-	expr_t     *branch;
-	expr_t     *high_label = default_label;
-	expr_t     *low_label = default_label;
+	const expr_t *test;
+	const expr_t *branch;
+	const expr_t *high_label = default_label;
+	const expr_t *low_label = default_label;
 
 	if (!tree) {
 		branch = goto_expr (default_label);
@@ -333,16 +333,16 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		int         low = expr_int (tree->low);
 		int         high = expr_int (tree->high);
 		symbol_t   *table_sym;
-		expr_t     *table_expr;
+		const expr_t *table_expr;
 		expr_t     *table_init;
 		const char *table_name = new_label_name ();
 		int         i;
-		expr_t     *range = binary_expr ('-', tree->high, tree->low);
-		expr_t     *label;
+		const expr_t *range = binary_expr ('-', tree->high, tree->low);
+		const expr_t *label;
 
 		table_init = new_compound_init ();
 		for (i = 0; i <= high - low; i++) {
-			tree->labels[i]->e.label.used++;
+			((expr_t *) tree->labels[i])->label.used++;
 			label = address_expr (tree->labels[i], 0);
 			append_element (table_init, new_element (label, 0));
 		}
@@ -393,27 +393,27 @@ check_enum_switch (switch_block_t *switch_block)
 	}
 }
 
-struct expr_s *
-switch_expr (switch_block_t *switch_block, expr_t *break_label,
-			 expr_t *statements)
+const expr_t *
+switch_expr (switch_block_t *switch_block, const expr_t *break_label,
+			 const expr_t *statements)
 {
 	if (switch_block->test->type == ex_error) {
 		return switch_block->test;
 	}
 
+	int         saved_line = pr.source_line;
+	pr_string_t saved_file = pr.source_file;
+	pr.source_line = switch_block->test->line;
+	pr.source_file = switch_block->test->file;
+
 	case_label_t **labels, **l;
 	case_label_t _default_label;
 	case_label_t *default_label = &_default_label;
-	expr_t     *sw = new_block_expr ();
+	expr_t     *sw = new_block_expr (0);
 	type_t     *type = get_type (switch_block->test);
-	expr_t     *sw_val = new_temp_def_expr (type);
-	expr_t     *default_expr;
+	const expr_t *sw_val = new_temp_def_expr (type);
+	const expr_t *default_expr;
 	int         num_labels = 0;
-	int         saved_line = pr.source_line;
-	pr_string_t saved_file = pr.source_file;
-
-	pr.source_line = sw_val->line = switch_block->test->line;
-	pr.source_file = sw_val->file = switch_block->test->file;
 
 	default_label->value = 0;
 	default_label = Hash_DelElement (switch_block->labels, default_label);
@@ -434,16 +434,16 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
-			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			expr_t     *test = branch_expr (NE, test_expr (cmp),
-											(*l)->label);
+			const expr_t *cmp = binary_expr (EQ, sw_val, (*l)->value);
+			const expr_t *test = branch_expr (NE, test_expr (cmp),
+											  (*l)->label);
 
 			append_expr (sw, test);
 		}
 		default_expr = goto_expr (default_label->label);
 		append_expr (sw, default_expr);
 	} else {
-		expr_t     *temp;
+		const expr_t *temp;
 		int         op;
 		case_node_t *case_tree;
 

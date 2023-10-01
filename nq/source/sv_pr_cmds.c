@@ -263,12 +263,7 @@ PF_setmodel (progs_t *pr, void *data)
 	mod = sv.models[i];
 
 	if (mod) {
-		// FIXME disabled for now as setting clipmins/maxs is currently
-		// too messy
-		//if (mod->type == mod_brush)
-		//	SetMinMaxSize (pr, e, mod->clipmins, mod->clipmaxs, true);
-		//else
-			SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
+		SetMinMaxSize (pr, e, mod->mins, mod->maxs, true);
 	} else {
 		SetMinMaxSize (pr, e, vec3_origin, vec3_origin, true);
 	}
@@ -584,11 +579,11 @@ PF_newcheckclient (progs_t *pr, unsigned check)
 	vec4f_t     org;
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	org[3] = 1;
-	leaf = Mod_PointInLeaf (org, sv.worldmodel);
+	leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
 	if (!checkpvs) {
 		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
-	set_assign (checkpvs, Mod_LeafPVS (leaf, sv.worldmodel));
+	Mod_LeafPVS_set (leaf, &sv.worldmodel->brush, 0xff, checkpvs);
 
 	return i;
 }
@@ -633,7 +628,7 @@ PF_checkclient (progs_t *pr, void *data)
 	vec4f_t     view;
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	view[3] = 1;
-	leaf = Mod_PointInLeaf (view, sv.worldmodel);
+	leaf = Mod_PointInLeaf (view, &sv.worldmodel->brush);
 	l = (leaf - sv.worldmodel->brush.leafs) - 1;
 	if (!set_is_member (checkpvs, l)) {
 		c_notvis++;
@@ -1582,7 +1577,7 @@ static builtin_t builtins[] = {
 };
 
 void
-SV_PR_Cmds_Init ()
+SV_PR_Cmds_Init (void)
 {
 	Cvar_Register (&sv_aim_cvar, 0, 0);
 

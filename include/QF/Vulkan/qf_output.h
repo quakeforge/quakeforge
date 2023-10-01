@@ -33,6 +33,7 @@
 #include "QF/darray.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/render.h"
 
 typedef struct outputframe_s {
 	VkImageView input;
@@ -47,6 +48,7 @@ typedef struct outputctx_s {
 	VkSampler    sampler;
 	VkImageView  input;
 	VkFramebuffer *framebuffers;	// one per swapchain image
+	qfv_attachmentinfo_t swapchain_info;
 } outputctx_t;
 
 struct vulkan_ctx_s;

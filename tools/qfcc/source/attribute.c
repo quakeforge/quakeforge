@@ -40,16 +40,23 @@
 
 ALLOC_STATE (attribute_t, attributes);
 
-attribute_t *new_attribute(const char *name, expr_t *value)
+attribute_t *new_attribute(const char *name, const expr_t *params)
 {
-	if (value && value->type != ex_value) {
-		error (value, "not a literal constant");
-		return 0;
+	if (params && params->type != ex_list) {
+		internal_error (params, "attribute params not a list");
+	}
+	if (params) {
+		for (auto p = params->list.head; p; p = p->next) {
+			if (p->expr->type != ex_value) {
+				error (p->expr, "not a literal constant");
+				return 0;
+			}
+		}
 	}
 
 	attribute_t *attr;
 	ALLOC (16384, attribute_t, attributes, attr);
 	attr->name = save_string (name);
-	attr->value = value ? value->e.value : 0;
+	attr->params = params;
 	return attr;
 }

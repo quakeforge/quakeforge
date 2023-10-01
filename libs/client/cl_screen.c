@@ -99,13 +99,59 @@ static view_t loading_view;
 static view_t ram_view;
 static view_t turtle_view;
 static view_t pause_view;
+static view_t crosshair_view;
+static view_t cshift_view;
+static view_t centerprint_view;
 
 static viewstate_t *_vs;//FIXME ick
 
 canvas_system_t cl_canvas_sys;
 
+static ecs_system_t cl_view_system;
+
+static view_t
+clscr_view (int x, int y, int w, int h, grav_t gravity)
+{
+	auto view = View_New (cl_view_system, cl_screen_view);
+	View_SetPos (view, x, y);
+	View_SetLen (view, w, h);
+	View_SetGravity (view, gravity);
+	View_SetVisible (view, 0);
+	return view;
+}
+
 static void
-SCR_CShift (void)
+clscr_set_pic (view_t view, qpic_t *pic)
+{
+	Ent_SetComponent (view.id, canvas_pic, view.reg, &pic);
+}
+
+static void
+clscr_set_cachepic (view_t view, const char *name)
+{
+	Ent_SetComponent (view.id, canvas_cachepic, view.reg, &name);
+}
+
+static void
+clscr_set_canvas_func (view_t view, canvas_func_f func)
+{
+	Ent_SetComponent (view.id, canvas_func, view.reg, &func);
+}
+
+static void
+cl_draw_crosshair (view_pos_t abs, view_pos_t len)
+{
+	r_funcs->Draw_Crosshair ();
+}
+
+static void
+cl_draw_centerprint (view_pos_t abs, view_pos_t len)
+{
+	Sbar_DrawCenterPrint ();
+}
+
+static void
+SCR_CShift (view_pos_t abs, view_pos_t len)
 {
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
@@ -113,7 +159,7 @@ SCR_CShift (void)
 	if (_vs->active && cl_world.scene->worldmodel) {
 		vec4f_t     origin;
 		origin = Transform_GetWorldPosition (_vs->camera_transform);
-		leaf = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
+		leaf = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (_vs, contents);
@@ -140,17 +186,13 @@ scr_draw_views (void)
 	double msg_time = _vs->realtime - _vs->last_servermessage;
 	View_SetVisible (net_view, (!_vs->demoplayback && msg_time >= 0.3));
 	View_SetVisible (loading_view, _vs->loading);
+	View_SetVisible (crosshair_view, !_vs->intermission);
 	// FIXME cvar callbacks
 	View_SetVisible (timegraph_view, r_timegraph);
 	View_SetVisible (zgraph_view, r_zgraph);
 
-	if (!_vs->intermission) {
-		r_funcs->Draw_Crosshair ();//FIXME canvas_func
-	}
 	Con_DrawConsole ();
 	Canvas_Draw (cl_canvas_sys);
-	SCR_CShift ();//FIXME canvas_func
-	Sbar_DrawCenterPrint ();//FIXME canvas_func
 }
 
 static SCR_Func scr_funcs[] = {
@@ -167,10 +209,9 @@ cl_set_size (void)
 {
 	int        xlen = cl_xlen / cl_scale;
 	int        ylen = cl_ylen / cl_scale;
-	printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
-	//View_SetLen (cl_screen_view, xlen, ylen);
-	//View_UpdateHierarchy (cl_screen_view);
-	Canvas_SetLen (cl_canvas_sys, (view_pos_t) { xlen, ylen });
+	//printf ("cl_set_size: %d %d %d\n", cl_scale, xlen, ylen);
+	Canvas_SetLen (cl_canvas_sys, cl_canvas, (view_pos_t) { xlen, ylen });
+	Canvas_SetLen (cl_canvas_sys, hud_canvas, (view_pos_t) { xlen, ylen });
 }
 
 static void
@@ -188,11 +229,58 @@ cl_vidsize_listener (void *data, const viddef_t *vdef)
 	cl_set_size ();
 }
 
+static void
+cl_create_views (void)
+{
+	qpic_t     *pic;
+	const char *name;
+	auto vid = r_data->vid;
+
+	pic = r_funcs->Draw_PicFromWad ("ram");
+	ram_view = clscr_view (32, 0, pic->width, pic->height, grav_northwest);
+	clscr_set_pic (ram_view, pic);
+
+	pic = r_funcs->Draw_PicFromWad ("turtle");
+	turtle_view = clscr_view (32, 0, pic->width, pic->height, grav_northwest);
+	clscr_set_pic (turtle_view, pic);
+
+	pic = r_funcs->Draw_PicFromWad ("net");
+	net_view = clscr_view (64, 0, pic->width, pic->height, grav_northwest);
+	clscr_set_pic (net_view, pic);
+
+	timegraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
+	clscr_set_canvas_func (timegraph_view, R_TimeGraph);
+	View_SetVisible (timegraph_view, r_timegraph);
+
+	zgraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
+	clscr_set_canvas_func (zgraph_view, R_ZGraph);
+	View_SetVisible (zgraph_view, r_zgraph);
+
+	name = "gfx/loading.lmp";
+	pic = r_funcs->Draw_CachePic (name, 1);
+	loading_view = clscr_view (0, -24, pic->width, pic->height, grav_center);
+	clscr_set_cachepic (loading_view, name);
+
+	name = "gfx/pause.lmp";
+	pic = r_funcs->Draw_CachePic (name, 1);
+	pause_view = clscr_view (0, -24, pic->width, pic->height, grav_center);
+	clscr_set_cachepic (pause_view, name);
+
+	crosshair_view = clscr_view (0, 0, vid->width, vid->height, grav_northwest);
+	clscr_set_canvas_func (crosshair_view, cl_draw_crosshair);
+
+	cshift_view = clscr_view (0, 0, vid->width, vid->height, grav_northwest);
+	clscr_set_canvas_func (cshift_view, SCR_CShift);
+	View_SetVisible (cshift_view, 1);
+
+	centerprint_view = clscr_view (0, 0, vid->width, vid->height,
+								   grav_northwest);
+	clscr_set_canvas_func (centerprint_view, cl_draw_centerprint);
+}
+
 void
 CL_Init_Screen (void)
 {
-	qpic_t     *pic;
-
 	__auto_type reg = ECS_NewRegistry ();
 	Canvas_InitSys (&cl_canvas_sys, reg);
 	if (con_module) {
@@ -207,7 +295,7 @@ CL_Init_Screen (void)
 	cl_xlen = viddef.width;
 	cl_ylen = viddef.height;
 
-	ecs_system_t vsys = {
+	cl_view_system = (ecs_system_t) {
 		.reg = reg,
 		.base = cl_canvas_sys.view_base,
 	};
@@ -222,68 +310,11 @@ CL_Init_Screen (void)
 	View_SetGravity (cl_screen_view, grav_northwest);
 	View_SetVisible (cl_screen_view, 1);
 
-	pic = r_funcs->Draw_PicFromWad ("ram");
-	ram_view = View_New (vsys, cl_screen_view);
-	View_SetPos (ram_view, 32, 0);
-	View_SetLen (ram_view, pic->width, pic->height);
-	View_SetGravity (ram_view, grav_northwest);
-	Ent_SetComponent (ram_view.id, canvas_pic, ram_view.reg, &pic);
-	View_SetVisible (ram_view, 0);
-
-	pic = r_funcs->Draw_PicFromWad ("turtle");
-	turtle_view = View_New (vsys, cl_screen_view);
-	View_SetPos (turtle_view, 32, 0);
-	View_SetLen (turtle_view, pic->width, pic->height);
-	View_SetGravity (turtle_view, grav_northwest);
-	Ent_SetComponent (turtle_view.id, canvas_pic, turtle_view.reg, &pic);
-	View_SetVisible (turtle_view, 0);
-
 	Cvar_Register (&scr_showpause_cvar, 0, 0);
 	Cvar_Register (&scr_showram_cvar, 0, 0);
 	Cvar_Register (&scr_showturtle_cvar, 0, 0);
 
-	pic = r_funcs->Draw_PicFromWad ("net");
-	net_view = View_New (vsys, cl_screen_view);
-	View_SetPos (net_view, 64, 0);
-	View_SetLen (net_view, pic->width, pic->height);
-	View_SetGravity (net_view, grav_northwest);
-	Ent_SetComponent (net_view.id, canvas_pic, net_view.reg, &pic);
-	View_SetVisible (net_view, 0);
-
-	timegraph_view = View_New (vsys, cl_screen_view);
-	View_SetPos (timegraph_view, 0, 0);
-	View_SetLen (timegraph_view, r_data->vid->width, 100);
-	View_SetGravity (timegraph_view, grav_southwest);
-	void       *rtg = R_TimeGraph;
-	Ent_SetComponent (timegraph_view.id, canvas_func, timegraph_view.reg, &rtg);
-	View_SetVisible (timegraph_view, r_timegraph);
-
-	zgraph_view = View_New (vsys, cl_screen_view);
-	View_SetPos (zgraph_view, 0, 0);
-	View_SetLen (zgraph_view, r_data->vid->width, 100);
-	View_SetGravity (zgraph_view, grav_southwest);
-	void       *rzg = R_ZGraph;
-	Ent_SetComponent (zgraph_view.id, canvas_func, zgraph_view.reg, &rzg);
-	View_SetVisible (zgraph_view, r_zgraph);
-
-	const char *name = "gfx/loading.lmp";
-	pic = r_funcs->Draw_CachePic (name, 1);
-	loading_view = View_New (vsys, cl_screen_view);
-	View_SetPos (loading_view, 0, -24);
-	View_SetLen (loading_view, pic->width, pic->height);
-	View_SetGravity (loading_view, grav_center);
-	Ent_SetComponent (loading_view.id, canvas_cachepic,
-					  loading_view.reg, &name);
-	View_SetVisible (loading_view, 0);
-
-	name = "gfx/pause.lmp";
-	pic = r_funcs->Draw_CachePic (name, 1);
-	pause_view = View_New (vsys, cl_screen_view);
-	View_SetPos (pause_view, 0, -24);
-	View_SetLen (pause_view, pic->width, pic->height);
-	View_SetGravity (pause_view, grav_center);
-	Ent_SetComponent (pause_view.id, canvas_cachepic, pause_view.reg, &name);
-	View_SetVisible (pause_view, 0);
+	cl_create_views ();
 
 	cvar_t     *con_scale = Cvar_FindVar ("con_scale");
 	Cvar_AddListener (con_scale, cl_scale_listener, 0);

@@ -11,10 +11,13 @@ console_common_sources= \
 	libs/console/console.c \
 	libs/console/list.c \
 	libs/console/filelist.c
+
 client_sources= \
 	libs/console/bi_inputline.c \
+	libs/console/cl_debug.c \
 	libs/console/client.c \
 	libs/console/menu.c
+
 server_sources= \
 	libs/console/server.c
 

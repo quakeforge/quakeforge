@@ -10,12 +10,25 @@
 #include "QF/mathlib.h"
 #include "QF/ecs.h"
 
+#define DFL "\e[39;49m"
+#define BLK "\e[30;40m"
+#define RED "\e[31;40m"
+#define GRN "\e[32;40m"
+#define ONG "\e[33;40m"
+#define BLU "\e[34;40m"
+#define MAG "\e[35;40m"
+#define CYN "\e[36;40m"
+#define WHT "\e[37;40m"
+
 enum test_components {
 	test_subpool,
 	test_obj,
+	test_name,
 
 	test_num_components
 };
+
+#define prent(e) (Ent_Generation (e) >> ENT_IDBITS), (Ent_Index (e))
 
 static uint32_t
 obj_rangeid (ecs_registry_t *reg, uint32_t ent, uint32_t comp)
@@ -34,7 +47,18 @@ static const component_t test_components[] = {
 		.name = "obj",
 		.rangeid = obj_rangeid,
 	},
+	[test_name] = {
+		.size = sizeof (const char *),
+		.name = "name",
+	},
 };
+
+static void
+set_ent_name (uint32_t ent, uint32_t base, ecs_registry_t *reg,
+			  const char *name)
+{
+	Ent_SetComponent (ent, base + test_name, reg, &name);
+}
 
 static void
 dump_sp_ids (ecs_registry_t *reg, uint32_t comp)
@@ -44,7 +68,8 @@ dump_sp_ids (ecs_registry_t *reg, uint32_t comp)
 	uint32_t   *id = pool->data;
 
 	for (uint32_t i = 0; i < pool->count; i++) {
-		printf ("ent[%d]: %d, %d\n", i, ent[i], id[i]);
+		const char **n = Ent_GetComponent (ent[i], test_name, reg);
+		printf ("ent[%d]: %2d, %2d %s\n", i, ent[i], id[i], *n);
 	}
 }
 
@@ -53,13 +78,43 @@ check_subpool_ranges (ecs_subpool_t *subpool, uint32_t *expect)
 {
 	uint32_t    count = subpool->num_ranges - subpool->available;
 	uint32_t   *range = subpool->ranges;
+	int         ret = 0;
 
 	while (count--) {
 		uint32_t   *r = range++;
 		uint32_t    e = *expect++;
-		printf ("%d: %d %d\n", (int)(r - subpool->ranges), *r, e);
+		printf ("%2d: %2d %2d\n", (int)(r - subpool->ranges), *r, e);
 		if (*r != e++) {
-			return 1;
+			ret = 1;
+		}
+	}
+	return ret;
+}
+
+static int
+check_subpool_sorted (ecs_subpool_t *subpool)
+{
+	uint32_t   *sorted = subpool->sorted;
+	uint32_t   *ranges = subpool->ranges;
+	uint32_t    count = subpool->num_ranges - subpool->available;
+
+	for (uint32_t i = 0; i < count; i++) {
+		printf ("sorted[%d]: %d %d\n", i, sorted[i], ranges[sorted[i]]);
+	}
+	for (uint32_t i = 0; i < count; i++) {
+		for (uint32_t j = i + 1; j < count; j++) {
+			if (sorted[j] == sorted[i]) {
+				printf ("subpool sorted duplicated\n");
+				return 1;
+			}
+			if (sorted[j] >= count) {
+				printf ("subpool sorted out of bounds\n");
+				return 1;
+			}
+			if (ranges[sorted[j]] > ranges[count - 1]) {
+				printf ("subpool sorted bogus\n");
+				return 1;
+			}
 		}
 	}
 	return 0;
@@ -73,7 +128,8 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect)
 	int         fail = 0;
 
 	for (uint32_t i = 0; i < pool->count; i++) {
-		printf ("val[%d]: %d %d\n", i, val[i], expect[i]);
+		const char **n = Ent_GetComponent (pool->dense[i], test_name, reg);
+		printf ("val[%d]: %2d %2d %s\n", i, val[i], expect[i], *n);
 		if (val[i] != expect[i]) {
 			fail = 1;
 		}
@@ -93,7 +149,7 @@ main (void)
 	uint32_t    sp2 = ECS_NewSubpoolRange (reg, base + test_obj);
 	uint32_t    sp3 = ECS_NewSubpoolRange (reg, base + test_obj);
 
-	printf ("%d %d %d\n", sp1, sp2, sp3);
+	printf ("%d.%d %d.%d %d.%d\n", prent (sp1), prent (sp2), prent (sp3));
 	if (reg->subpools[base + test_subpool].num_ranges != 0
 		|| reg->subpools[base + test_subpool].available != 0) {
 		printf ("subpool not 0 count: %d %d\n",
@@ -133,6 +189,15 @@ main (void)
 	Ent_SetComponent (entf, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (entg, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (enth, base + test_subpool, reg, &sp1);
+
+	set_ent_name (enta, base, reg, MAG"a"DFL);
+	set_ent_name (entb, base, reg, MAG"b"DFL);
+	set_ent_name (entc, base, reg, ONG"c"DFL);
+	set_ent_name (entd, base, reg, CYN"d"DFL);
+	set_ent_name (ente, base, reg, CYN"e"DFL);
+	set_ent_name (entf, base, reg, ONG"f"DFL);
+	set_ent_name (entg, base, reg, ONG"g"DFL);
+	set_ent_name (enth, base, reg, MAG"h"DFL);
 
 	dump_sp_ids (reg, base + test_subpool);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
@@ -233,7 +298,7 @@ main (void)
 	}
 
 	sp2 = ECS_NewSubpoolRange (reg, base + test_obj);
-	printf ("sp2: %d\n", sp2);
+	printf ("sp2: %d.%d\n", prent (sp2));
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 2, 4, 4 })) {
 		printf ("oops\n");
@@ -252,6 +317,26 @@ main (void)
 	}
 	if (check_obj_comps (reg, base + test_obj,
 						 (uint32_t[]) { 0, 7, 9, 8, 10, 11, 12 })) {
+		printf ("oops\n");
+		return 1;
+	}
+
+	if (check_subpool_sorted (&reg->subpools[base + test_obj])) {
+		printf ("oops\n");
+		return 1;
+	}
+	ECS_MoveSubpoolLast (reg, base + test_obj, sp3);
+	if (check_subpool_sorted (&reg->subpools[base + test_obj])) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 5, 7})) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 0, 7, 10, 11, 12, 9, 8 })) {
 		printf ("oops\n");
 		return 1;
 	}

@@ -86,7 +86,7 @@ typedef struct def_s {
 	struct def_s   *alias;		///< real def which this def aliases
 	//@}
 	struct reloc_s *relocs;		///< for relocations
-	struct expr_s  *initializer;///< initialer expression
+	const struct expr_s *initializer;///< initialer expression
 	struct daglabel_s *daglabel;///< daglabel for this def
 	struct flowvar_s *flowvar;	///< flowvar for this def
 
@@ -165,6 +165,9 @@ def_t *new_def (const char *name, struct type_s *type,
 	\todo Make aliasing to the same type a no-op?
 */
 def_t *alias_def (def_t *def, struct type_s *type, int offset);
+//FIXME this probably shouldn't exist (it's for swizzles, so doing proper
+//multi-width swizzles will remove the need for it)
+def_t *cover_alias_def (def_t *def, struct type_s *type, int offset);
 
 /** Free a def.
 
@@ -251,17 +254,8 @@ void init_vector_components (struct symbol_s *vector_sym, int is_field,
 	\param symtab   The symbol table into which the def will be placed.
 */
 void initialize_def (struct symbol_s *sym,
-					 struct expr_s *init, struct defspace_s *space,
+					 const struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage, struct symtab_s *symtab);
-
-/** Determine if two defs overlap.
-
-	\param d1		The first def to check. May be an alias def.
-	\param d2		The second def to check. May be an alias def.
-	\return			1 if the defs overlap, 2 if \a d1 fully overlaps \a d2,
-					otherwise 0.
-*/
-int def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
 
 /** Convenience function for obtaining a def's actual offset.
 
@@ -314,6 +308,11 @@ int def_size (def_t *def) __attribute__((pure));
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);
+
+int def_visit_overlaps (def_t *def, int offset, int size, int overlap,
+						def_t *skip,
+						int (*visit) (def_t *, void *), void *data);
+
 ///@}
 
 #endif//__def_h

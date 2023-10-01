@@ -270,6 +270,7 @@ typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
 	const struct mod_brush_s *brush;///< data for current model
 	struct bspctx_s *bsp_context;	///< owning bsp context
+	struct entqueue_s *entqueue;	///< entities to render this pass
 	/** \name GPU data
 	 *
 	 * The indices to be drawn and the entity ids associated with each draw
@@ -324,6 +325,14 @@ typedef enum {
 	QFV_bspNumPasses
 } QFV_BspQueue;
 
+typedef enum {
+	QFV_bspMain,
+	QFV_bspShadow,
+	QFV_bspDebug,
+
+	QFV_bspNumStages
+} QFV_BspPass;
+
 typedef struct bspframe_s {
 	uint32_t   *index_data;		// pointer into mega-buffer for this frame (c)
 	uint32_t    index_offset;	// offset of index_data within mega-buffer (c)
@@ -331,7 +340,6 @@ typedef struct bspframe_s {
 	uint32_t   *entid_data;
 	uint32_t    entid_offset;
 	uint32_t    entid_count;
-	qfv_cmdbufferset_t cmdSet;
 } bspframe_t;
 
 typedef struct bspframeset_s
@@ -364,10 +372,11 @@ typedef struct bspctx_s {
 	VkDescriptorSet skybox_descriptor;
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
+	bsp_pass_t  shadow_pass;
+	bsp_pass_t  debug_pass;
 
 	VkSampler    sampler;
 
-	VkDeviceMemory texture_memory;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
@@ -388,6 +397,7 @@ void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
+bsp_pass_t *Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind);
 ///@}
 
 #endif//__QF_Vulkan_qf_bsp_h

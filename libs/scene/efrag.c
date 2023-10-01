@@ -130,11 +130,28 @@ R_ClearEfragChain (efrag_t *ef)
 	}
 }
 
+efrag_t **
+R_LinkEfrag (mleaf_t *leaf, entity_t ent, uint32_t queue, efrag_t **lastlink)
+{
+	efrag_t    *ef = new_efrag ();	// ensures ef->entnext is 0
+
+	// add the link to the chain of links on the entity
+	ef->entity = ent;
+	ef->queue_num = queue;
+	*lastlink = ef;
+
+	// add the link too the chain of links on the leaf
+	ef->leaf = leaf;
+	ef->leafnext = leaf->efrags;
+	leaf->efrags = ef;
+
+	return &ef->entnext;
+}
+
 static void
 R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 					 visibility_t *visibility, vec3_t emins, vec3_t emaxs)
 {
-	efrag_t    *ef;
 	plane_t    *splitplane;
 	mleaf_t    *leaf;
 	int         sides;
@@ -159,18 +176,7 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t ent, uint32_t queue,
 
 			leaf = brush->leafs + ~node_id;
 
-			ef = new_efrag ();	// ensures ef->entnext is 0
-
-			// add the link to the chain of links on the entity
-			ef->entity = ent;
-			ef->queue_num = queue;
-			*lastlink = ef;
-			lastlink = &ef->entnext;
-
-			// add the link too the chain of links on the leaf
-			ef->leaf = leaf;
-			ef->leafnext = leaf->efrags;
-			leaf->efrags = ef;
+			lastlink = R_LinkEfrag (leaf, ent, queue, lastlink);
 
 			node_id = *--node_ptr;
 		} else {

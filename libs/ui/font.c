@@ -32,6 +32,8 @@
 #endif
 #include <math.h>
 
+#include <fontconfig/fontconfig.h>
+
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/math/bitop.h"
@@ -143,4 +145,26 @@ Font_Load (QFile *font_file, int size)
 	font->fontid = r_funcs->Draw_AddFont (font);
 
 	return font;
+}
+
+char *
+Font_SystemFont (const char *font_pattern)
+{
+	auto config = FcInitLoadConfigAndFonts ();
+	auto pattern = FcNameParse ((const FcChar8 *) font_pattern);
+	FcConfigSubstitute (config, pattern, FcMatchPattern);
+	FcDefaultSubstitute (pattern);
+
+	FcResult result;
+	auto font = FcFontMatch (config, pattern, &result);
+	char *filename = 0;
+	if (font) {
+		FcChar8 *str;
+		if (FcPatternGetString (font, FC_FILE, 0, &str) == FcResultMatch) {
+			filename = strdup ((char *) str);
+		}
+		FcPatternDestroy (font);
+	}
+	FcPatternDestroy (pattern);
+	return filename;
 }

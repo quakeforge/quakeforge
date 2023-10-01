@@ -57,6 +57,7 @@ extern int		x_height;
 extern int		x_shmeventtype;
 extern Time		x_time;
 extern Time		x_mouse_time;
+extern Cursor   x_nullcursor;
 extern bool     oktodraw;
 extern bool     x_have_focus;
 

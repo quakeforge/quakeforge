@@ -438,22 +438,22 @@ Cam_Track (usercmd_t *cmd)
 	}
 
 	frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
-	if (autocam && cls.demoplayback2 && 0) {
-		if (ideal_track != spec_track && realtime - last_lock > 1
-			&& frame->playerstate[ideal_track].messagenum == cl.parsecount)
-			Cam_Lock (ideal_track);
+	// if (autocam && cls.demoplayback2) {
+	// 	if (ideal_track != spec_track && realtime - last_lock > 1
+	// 		&& frame->playerstate[ideal_track].messagenum == cl.parsecount)
+	// 		Cam_Lock (ideal_track);
 
-		if (frame->playerstate[spec_track].messagenum != cl.parsecount) {
-			int         i;
+	// 	if (frame->playerstate[spec_track].messagenum != cl.parsecount) {
+	// 		int         i;
 
-			for (i = 0; i < MAX_CLIENTS; i++) {
-				if (frame->playerstate[i].messagenum == cl.parsecount)
-					break;
-			}
-			if (i < MAX_CLIENTS)
-				Cam_Lock (i);
-		}
-	}
+	// 		for (i = 0; i < MAX_CLIENTS; i++) {
+	// 			if (frame->playerstate[i].messagenum == cl.parsecount)
+	// 				break;
+	// 		}
+	// 		if (i < MAX_CLIENTS)
+	// 			Cam_Lock (i);
+	// 	}
+	// }
 
 	player = frame->playerstate + spec_track;
 	self = frame->playerstate + cl.playernum;

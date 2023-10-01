@@ -513,9 +513,8 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 	forward is local X and right is local Y (left handed), or forward is local
 	Y and right is local X (right handed).
 
-	NOTE: these matrices have forward, left and up vectors horizontal rather
-	than vertical and are thus the inverse of the matrices to produce the
-	actual rotation.
+	NOTE: the matrices in this coment are transposed so the vector names
+	can be written naturally.
 
 	pitch =
 		cp 0 -sp
@@ -532,6 +531,8 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 		0  cr sr
 		0 -sr cr
 
+	// NOTE: as these matrices are transposed, this is the reverse of the
+	// actual operation
 	final = roll * (pitch * yaw)
 	final =
 		[forward]

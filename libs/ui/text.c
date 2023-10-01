@@ -38,6 +38,7 @@
 
 #include "QF/ui/font.h"
 #include "QF/ui/passage.h"
+#include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -73,6 +74,10 @@ const component_t text_components[text_comp_count] = {
 	[text_glyphs] = {
 		.size = sizeof (glyphref_t),
 		.name = "glyphs",
+	},
+	[text_color] = {
+		.size = sizeof (uint32_t),
+		.name = "color",
 	},
 	[text_script] = {
 		.size = sizeof (script_component_t),
@@ -110,10 +115,78 @@ static view_resize_f text_flow_funcs[] = {
 	[text_up_left]      = view_flow_up_left,
 };
 
-view_t
-Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
+static void
+layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
+			   const hb_glyph_info_t *glyphInfo,
+			   const hb_glyph_position_t *glyphPos)
 {
-	ecs_registry_t *reg = passage->reg;
+	int         x = 0, y = 0;
+	for (unsigned k = 0; k < glpyhCount; k++) {
+		uint32_t    glyphid = glyphInfo[k].codepoint;
+		vec2i_t     bearing = font->glyph_bearings[glyphid];
+
+		int         xp = glyphPos[k].x_offset / 64;
+		int         yp = glyphPos[k].y_offset / 64;
+		int         xa = glyphPos[k].x_advance / 64;
+		int         ya = glyphPos[k].y_advance / 64;
+		xp += bearing[0];
+		yp += bearing[1];
+		int         xm = xp + font->glyph_rects[glyphid].width;
+		int         ym = yp - font->glyph_rects[glyphid].height;
+
+		if (xm - xp == 0) {
+			xm = xa;
+		}
+		if (ym - yp == 0) {
+			ym = ya;
+		}
+		node->mins[0] = min (node->mins[0], xp + x);
+		node->mins[1] = min (node->mins[1], ym + y);
+		node->maxs[0] = max (node->maxs[0], xm + x);
+		node->maxs[1] = max (node->maxs[1], yp + y);
+
+		node->glyphs[k] = (glyphobj_t) {
+			.glyphid = glyphid,
+			.x = x + xp,
+			.y = y - yp,
+			.fontid = font->fontid,
+		};
+		x += xa;
+		y += ya;
+	}
+}
+
+static void
+configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
+					uint32_t glyphref_base, uint32_t c_glyphs)
+{
+	glyphref_t  glyph_ref = {
+		.start = glyphref_base,
+		.count = node->count,
+	};
+	for (uint32_t k = 0; k < node->count; k++) {
+		glyphobj_t *go = node->glyphs + k;
+		glyphs[glyphref_base + k] = (glyphobj_t) {
+			.glyphid = go->glyphid,
+			.x = go->x + node->mins[0],
+			.y = go->y + node->maxs[1],
+			.fontid = go->fontid,
+		};
+	}
+	Ent_SetComponent (textview.id, c_glyphs, textview.reg, &glyph_ref);
+	View_SetPos (textview, node->mins[0], -node->mins[1]);
+	View_SetLen (textview, node->maxs[0] - node->mins[0],
+						   node->maxs[1] - node->mins[1]);
+}
+
+view_t
+Text_PassageView (text_system_t textsys, font_t *font, passage_t *passage)
+{
+	auto reg = textsys.reg;
+	uint32_t c_script = textsys.text_base + text_script;
+	uint32_t c_features = textsys.text_base + text_features;
+	uint32_t c_glyphs = textsys.text_base + text_glyphs;
+	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
 	hierarchy_t *h = passage->hierarchy;
 	psg_text_t *text_objects = h->components[passage_type_text_obj];
 	glyphnode_t *glyph_nodes = 0;
@@ -142,15 +215,14 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 		hb_language_t para_language = psg_language;
 		featureset_t *para_features = psg_features;;
 
-		if (Ent_HasComponent (para_ent, text_script, reg)) {
-			script_component_t *s = Ent_GetComponent (para_ent, text_script,
-													  reg);
+		if (Ent_HasComponent (para_ent, c_script, reg)) {
+			script_component_t *s = Ent_GetComponent (para_ent, c_script, reg);
 			para_script = s->script;
 			para_language = s->language;
 			para_direction = s->direction;
 		}
-		if (Ent_HasComponent (para_ent, text_features, reg)) {
-			para_features = Ent_GetComponent (para_ent, text_features, reg);
+		if (Ent_HasComponent (para_ent, c_features, reg)) {
+			para_features = Ent_GetComponent (para_ent, c_features, reg);
 		}
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++) {
 			uint32_t    textind = h->childIndex[paragraph] + j;
@@ -164,15 +236,15 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 			hb_language_t txt_language = para_language;
 			featureset_t *txt_features = para_features;;
 
-			if (Ent_HasComponent (text_ent, text_script, reg)) {
-				script_component_t *s = Ent_GetComponent (text_ent, text_script,
+			if (Ent_HasComponent (text_ent, c_script, reg)) {
+				script_component_t *s = Ent_GetComponent (text_ent, c_script,
 														  reg);
 				txt_script = s->script;
 				txt_language = s->language;
 				txt_direction = s->direction;
 			}
-			if (Ent_HasComponent (text_ent, text_features, reg)) {
-				txt_features = Ent_GetComponent (text_ent, text_features, reg);
+			if (Ent_HasComponent (text_ent, c_features, reg)) {
+				txt_features = Ent_GetComponent (text_ent, c_features, reg);
 			}
 
 			hb_buffer_reset (buffer);
@@ -183,8 +255,8 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 			hb_shape (fnt, buffer, txt_features->a, txt_features->size);
 
 			unsigned    c;
-			__auto_type glyphInfo = hb_buffer_get_glyph_infos (buffer, &c);
-			__auto_type glyphPos = hb_buffer_get_glyph_positions (buffer, &c);
+			auto glyphInfo = hb_buffer_get_glyph_infos (buffer, &c);
+			auto glyphPos = hb_buffer_get_glyph_positions (buffer, &c);
 
 			*head = alloca (sizeof (glyphnode_t));
 			**head = (glyphnode_t) {
@@ -195,45 +267,12 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 				.maxs = { INT32_MIN, INT32_MIN },
 			};
 			glyph_count += c;
-
-			int         x = 0, y = 0;
-			for (unsigned k = 0; k < c; k++) {
-				uint32_t    glyphid = glyphInfo[k].codepoint;
-				vec2i_t     bearing = font->glyph_bearings[glyphid];
-
-				int         xp = glyphPos[k].x_offset / 64;
-				int         yp = glyphPos[k].y_offset / 64;
-				int         xa = glyphPos[k].x_advance / 64;
-				int         ya = glyphPos[k].y_advance / 64;
-				xp += bearing[0];
-				yp += bearing[1];
-				int         xm = xp + font->glyph_rects[glyphid].width;
-				int         ym = yp - font->glyph_rects[glyphid].height;
-
-				if (xm - xp == 0) {
-					xm = xa;
-				}
-				if (ym - yp == 0) {
-					ym = ya;
-				}
-				(*head)->mins[0] = min ((*head)->mins[0], xp + x);
-				(*head)->mins[1] = min ((*head)->mins[1], ym + y);
-				(*head)->maxs[0] = max ((*head)->maxs[0], xm + x);
-				(*head)->maxs[1] = max ((*head)->maxs[1], yp + y);
-
-				(*head)->glyphs[k] = (glyphobj_t) {
-					.glyphid = glyphid,
-					.x = x + xp,
-					.y = y - yp,
-					.fontid = font->fontid,
-				};
-				x += xa;
-				y += ya;
-			}
+			layout_glyphs (*head, font, c, glyphInfo, glyphPos);
 
 			head = &(*head)->next;
 		}
 	}
+	ecs_system_t viewsys = { reg, textsys.view_base };
 	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, nullview);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
@@ -249,33 +288,18 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 			uint32_t    to = h->childIndex[paragraph] + j;
 			view_t      textview = View_AddToEntity (h->ent[to], viewsys,
 													 paraview);
-			glyphref_t  glyph_ref = {
-				.start = passage_ref.count,
-				.count = g->count,
-			};
-			for (uint32_t k = 0; k < g->count; k++) {
-				glyphobj_t *go = g->glyphs + k;
-				glyphs[passage_ref.count + k] = (glyphobj_t) {
-					.glyphid = go->glyphid,
-					.x = go->x + g->mins[0],
-					.y = go->y + g->maxs[1],
-					.fontid = go->fontid,
-				};
-			}
-			Ent_SetComponent (textview.id, text_glyphs, reg, &glyph_ref);
-			View_SetPos (textview, g->mins[0], -g->mins[1]);
-			View_SetLen (textview, g->maxs[0] - g->mins[0],
-								   g->maxs[1] - g->mins[1]);
+			configure_textview (textview, glyphs, g, passage_ref.count,
+								c_glyphs);
 			View_SetGravity (textview, grav_flow);
 			passage_ref.count += g->count;
 		}
 		pararef.count = passage_ref.count - pararef.start;
-		Ent_SetComponent (paraview.id, text_glyphs, reg, &pararef);
+		Ent_SetComponent (paraview.id, c_glyphs, reg, &pararef);
 
 		uint32_t    para_ent = h->ent[paragraph];
 		text_dir_e para_direction = psg_direction;
-		if (Ent_HasComponent (para_ent, text_script, reg)) {
-			script_component_t *s = Ent_GetComponent (para_ent, text_script,
+		if (Ent_HasComponent (para_ent, c_script, reg)) {
+			script_component_t *s = Ent_GetComponent (para_ent, c_script,
 													  reg);
 			para_direction = s->direction;
 		}
@@ -284,39 +308,104 @@ Text_View (ecs_system_t viewsys, font_t *font, passage_t *passage)
 		View_SetGravity (paraview, grav_northwest);
 		View_Control (paraview)->flow_size = 1;
 	}
-	Ent_SetComponent (passage_view.id, text_glyphs, reg, &passage_ref);
+	Ent_SetComponent (passage_view.id, c_glyphs, reg, &passage_ref);
 	glyphset_t glyphset = {
 		.glyphs = glyphs,
 		.count = glyph_count,
 	};
-	Ent_SetComponent (passage_view.id, text_passage_glyphs, reg, &glyphset);
+	Ent_SetComponent (passage_view.id, c_passage_glyphs, reg, &glyphset);
 	hb_buffer_destroy (buffer);
 	hb_font_destroy (fnt);
 	return passage_view;
 }
 
+view_t
+Text_StringView (text_system_t textsys, view_t parent,
+				 font_t *font, const char *str, uint32_t len,
+				 script_component_t *sc, featureset_t *fs,
+				 text_shaper_t *shaper)
+{
+	auto reg = textsys.reg;
+	uint32_t c_glyphs = textsys.text_base + text_glyphs;
+	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
+	glyphnode_t *glyph_nodes = 0;
+	glyphnode_t **head = &glyph_nodes;
+
+
+	script_component_t script = {
+		.script = sc ? sc->script : HB_SCRIPT_LATIN,
+		.direction = sc ? sc->direction : text_right_down,
+		.language = sc ? sc->language : hb_language_from_string ("en", 2),
+	};
+	featureset_t text_features = DARRAY_STATIC_INIT (0);
+	shaping_t   shaping = {
+		.script = &script,
+		.features = fs ? fs : &text_features,
+		.font = font,
+	};
+
+	uint32_t    glyph_count = 0;
+
+	auto shaped_glyphs = Shaper_ShapeText (shaper, &shaping, str, len);
+	unsigned    c = shaped_glyphs.count;
+	auto glyphInfo = shaped_glyphs.glyphInfo;
+	auto glyphPos = shaped_glyphs.glyphPos;
+
+	*head = alloca (sizeof (glyphnode_t));
+	**head = (glyphnode_t) {
+		.ent = nullent,
+		.count = c,
+		.glyphs = alloca (c * sizeof (glyphobj_t)),
+		.mins = { 0, 0 },
+		.maxs = { INT32_MIN, INT32_MIN },
+	};
+	glyph_count += c;
+	layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+
+	head = &(*head)->next;
+
+	ecs_system_t viewsys = { reg, textsys.view_base };
+	view_t      stringview = View_New (viewsys, parent);
+	glyphref_t  passage_ref = {};
+	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
+	glyphnode_t *g = glyph_nodes;
+
+	configure_textview (stringview, glyphs, g, passage_ref.count, c_glyphs);
+	passage_ref.count += g->count;
+
+	glyphset_t glyphset = {
+		.glyphs = glyphs,
+		.count = glyph_count,
+	};
+	Ent_SetComponent (stringview.id, c_passage_glyphs, reg, &glyphset);
+	return stringview;
+}
+
 void
-Text_SetScript (ecs_system_t textsys, uint32_t textid, const char *lang, hb_script_t script,
-				text_dir_e dir)
+Text_SetScript (text_system_t textsys, uint32_t textid, const char *lang,
+				hb_script_t script, text_dir_e dir)
 {
 	script_component_t scr = {
 		.language = hb_language_from_string (lang, strlen (lang)),
 		.script = script,
 		.direction = dir,
 	};
-	Ent_SetComponent (textid, textsys.base + text_script, textsys.reg, &scr);
+	Ent_SetComponent (textid, textsys.text_base + text_script, textsys.reg,
+					  &scr);
 }
 
 void
-Text_SetFont (ecs_system_t textsys, uint32_t textid, font_t *font)
+Text_SetFont (text_system_t textsys, uint32_t textid, font_t *font)
 {
-	Ent_SetComponent (textid, textsys.base + text_font, textsys.reg, &font);
+	Ent_SetComponent (textid, textsys.text_base + text_font, textsys.reg,
+					  &font);
 }
 
 void
-Text_SetFeatures (ecs_system_t textsys, uint32_t textid, featureset_t *features)
+Text_SetFeatures (text_system_t textsys, uint32_t textid,
+				  featureset_t *features)
 {
-	uint32_t    features_comp = textsys.base + text_features;
+	uint32_t    features_comp = textsys.text_base + text_features;
 	if (Ent_HasComponent (textid, features_comp, textsys.reg)) {
 		Ent_RemoveComponent (textid, features_comp, textsys.reg);
 	}
@@ -326,9 +415,9 @@ Text_SetFeatures (ecs_system_t textsys, uint32_t textid, featureset_t *features)
 }
 
 void
-Text_AddFeature (ecs_system_t textsys, uint32_t textid, hb_feature_t feature)
+Text_AddFeature (text_system_t textsys, uint32_t textid, hb_feature_t feature)
 {
-	uint32_t    features_comp = textsys.base + text_features;
+	uint32_t    features_comp = textsys.text_base + text_features;
 	if (!Ent_HasComponent (textid, features_comp, textsys.reg)) {
 		Ent_SetComponent (textid, features_comp, textsys.reg, 0);
 	}

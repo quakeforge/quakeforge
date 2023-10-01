@@ -130,7 +130,6 @@ void IMT_BindButton (imt_t *imt, int button, const char *binding);
 bool IMT_ProcessAxis (int axis, int value);
 bool IMT_ProcessButton (int button, int state);
 void IMT_Init (void);
-void IMT_Shutdown (void);
 struct plitem_s;
 void IMT_SaveConfig (struct plitem_s *config);
 void IMT_SaveAxisConfig (struct plitem_s *axes, int axis_ind, int dev_axis);

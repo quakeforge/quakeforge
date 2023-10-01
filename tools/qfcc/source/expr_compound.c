@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
@@ -56,7 +57,7 @@ ALLOC_STATE (element_t, elements);
 ALLOC_STATE (designator_t, designators);
 
 designator_t *
-new_designator (expr_t *field, expr_t *index)
+new_designator (const expr_t *field, const expr_t *index)
 {
 	if ((!field && !index) || (field && index)) {
 		internal_error (0, "exactly one of field or index is required");
@@ -72,7 +73,7 @@ new_designator (expr_t *field, expr_t *index)
 }
 
 element_t *
-new_element (expr_t *expr, designator_t *designator)
+new_element (const expr_t *expr, designator_t *designator)
 {
 	element_t  *element;
 	ALLOC (256, element_t, elements, element);
@@ -95,8 +96,8 @@ new_compound_init (void)
 {
 	expr_t     *c = new_expr ();
 	c->type = ex_compound;
-	c->e.compound.head = 0;
-	c->e.compound.tail = &c->e.compound.head;
+	c->compound.head = 0;
+	c->compound.tail = &c->compound.head;
 	return c;
 }
 
@@ -108,7 +109,7 @@ designator_field (const designator_t *des, const type_t *type)
 		return 0;
 	}
 	symtab_t   *symtab = type->t.symtab;
-	symbol_t   *sym = des->field->e.symbol;
+	symbol_t   *sym = des->field->symbol;
 	symbol_t   *field = symtab_lookup (symtab, sym->name);;
 	if (!field) {
 		const char *name = type->name;
@@ -197,21 +198,37 @@ skip_field (symbol_t *field)
 
 void
 build_element_chain (element_chain_t *element_chain, const type_t *type,
-					 expr_t *eles, int base_offset)
+					 const expr_t *eles, int base_offset)
 {
-	element_t  *ele = eles->e.compound.head;
+	element_t  *ele = eles->compound.head;
 
 	type = unalias_type (type);
 
 	initstate_t state = {};
-	if (is_struct (type) || is_union (type)
-		|| (is_nonscalar (type) && type->t.symtab)) {
+	if (is_algebra (type)) {
+		for (auto e = ele; e; e = e->next) {
+			if (!e->designator) {
+				error (eles, "block initializer of multi-vector type requires "
+					   "designators for all initializer elements");
+				return;
+			}
+		}
+		auto t = algebra_struct_type (type);
+		if (!t) {
+			error (eles, "block initializer on simple multi-vector type");
+			return;
+		}
+		type = t;
+	} else if (is_struct (type) || is_union (type)
+			   || (is_nonscalar (type) && type->t.symtab)) {
 		state.field = type->t.symtab->symbols;
-		while (skip_field (state.field)) {
+		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;
 		}
-		state.type = state.field->type;
-		state.offset = state.field->s.offset;
+		if (state.field) {
+			state.type = state.field->type;
+			state.offset = state.field->s.offset;
+		}
 	} else if (is_array (type)) {
 		state.type = type->t.array.type;
 	} else {
@@ -282,12 +299,12 @@ append_element (expr_t *compound, element_t *element)
 	if (element->next) {
 		internal_error (compound, "append_element: element loop detected");
 	}
-	append_init_element (&compound->e.compound, element);
+	append_init_element (&compound->compound, element);
 	return compound;
 }
 
 void
-assign_elements (expr_t *local_expr, expr_t *init,
+assign_elements (expr_t *local_expr, const expr_t *init,
 				 element_chain_t *element_chain)
 {
 	element_t  *element;
@@ -297,12 +314,12 @@ assign_elements (expr_t *local_expr, expr_t *init,
 	for (element = element_chain->head; element; element = element->next) {
 		int         offset = element->offset;
 		type_t     *type = element->type;
-		expr_t     *alias = new_offset_alias_expr (type, init, offset);
+		const expr_t *alias = new_offset_alias_expr (type, init, offset);
 
-		expr_t     *c;
+		const expr_t *c;
 
 		if (type_size (type) == 0)
-			internal_error (init, "wtf");
+			internal_error (init, "wtw");
 		if (element->expr) {
 			c = constant_expr (element->expr);
 		} else {
@@ -319,9 +336,9 @@ assign_elements (expr_t *local_expr, expr_t *init,
 	for (set_iter_t *in = set_first (initialized); in; in = set_next (in)) {
 		unsigned    end = in->element;
 		if (end > start) {
-			expr_t     *dst = new_offset_alias_expr (&type_int, init, start);
-			expr_t     *zero = new_int_expr (0);
-			expr_t     *count = new_int_expr (end - start);
+			auto dst = new_offset_alias_expr (&type_int, init, start);
+			auto zero = new_int_expr (0);
+			auto count = new_int_expr (end - start);
 			append_expr (local_expr, new_memset_expr (dst, zero, count));
 		}
 		// skip over all the initialized locations
@@ -330,22 +347,28 @@ assign_elements (expr_t *local_expr, expr_t *init,
 			start = in->element;
 		}
 	}
+	if (start < (unsigned) type_size (init_type)) {
+		auto dst = new_offset_alias_expr (&type_int, init, start);
+		auto zero = new_int_expr (0);
+		auto count = new_int_expr (type_size (init_type) - start);
+		append_expr (local_expr, new_memset_expr (dst, zero, count));
+	}
 	set_delete (initialized);
 }
 
 expr_t *
-initialized_temp_expr (const type_t *type, expr_t *compound)
+initialized_temp_expr (const type_t *type, const expr_t *compound)
 {
 	type = unalias_type (type);
 	element_chain_t element_chain;
 	expr_t     *temp = new_temp_def_expr (type);
-	expr_t     *block = new_block_expr ();
+	expr_t     *block = new_block_expr (0);
 
 	element_chain.head = 0;
 	element_chain.tail = &element_chain.head;
 	build_element_chain (&element_chain, type, compound, 0);
 	assign_elements (block, temp, &element_chain);
-	block->e.block.result = temp;
+	block->block.result = temp;
 	free_element_chain (&element_chain);
 	return block;
 }

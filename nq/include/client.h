@@ -202,6 +202,7 @@ extern int cl_color;
 
 extern int cl_shownet;
 extern int cl_nolerp;
+extern int cl_player_shadows;
 
 extern char *cl_name;
 extern int cl_writecfg;

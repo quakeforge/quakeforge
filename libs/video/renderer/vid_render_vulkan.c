@@ -48,11 +48,11 @@
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
-#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_planes.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
@@ -64,11 +64,12 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/mouse_pick.h"
 #include "QF/Vulkan/projection.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/swapchain.h"
-#include "QF/ui/view.h"
+#include "QF/ui/imui.h"
 
 #include "QF/scene/entity.h"
 #include "QF/scene/scene.h"
@@ -98,6 +99,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 
 	QFV_Capture_Init (vulkan_ctx);
+	QFV_MousePick_Init (vulkan_ctx);
 	Vulkan_Output_Init (vulkan_ctx);
 
 	Vulkan_Matrix_Init (vulkan_ctx);
@@ -106,6 +108,7 @@ vulkan_R_Init (void)
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_IQM_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
+	Vulkan_Planes_Init (vulkan_ctx);
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
@@ -128,6 +131,7 @@ vulkan_R_Init (void)
 	Vulkan_Compose_Setup (vulkan_ctx);
 	Vulkan_Draw_Setup (vulkan_ctx);
 	Vulkan_Particles_Setup (vulkan_ctx);
+	Vulkan_Planes_Setup (vulkan_ctx);
 	Vulkan_Translucent_Setup (vulkan_ctx);
 	Vulkan_Lighting_Setup (vulkan_ctx);
 
@@ -143,7 +147,6 @@ vulkan_R_ClearState (void)
 	//FIXME clear scene correctly
 	r_refdef.worldmodel = 0;
 	EntQueue_Clear (r_ent_queue);
-	R_ClearDlights ();
 	R_ClearParticles ();
 	Vulkan_LoadLights (0, vulkan_ctx);
 }
@@ -340,7 +343,7 @@ vulkan_set_2d (int scaled)
 }
 
 static void
-vulkan_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
+vulkan_UpdateScreen (SCR_Func *scr_funcs)
 {
 	vulkan_set_2d (1);//FIXME
 	Vulkan_SetScrFuncs (scr_funcs, vulkan_ctx);
@@ -356,7 +359,9 @@ vulkan_set_fov (float x, float y)
 	__auto_type mctx = vulkan_ctx->matrix_context;
 	__auto_type mat = &mctx->matrices;
 
-	QFV_PerspectiveTan (mat->Projection3d, x, y);
+	mctx->fov_x = x;
+	mctx->fov_y = y;
+	QFV_PerspectiveTan (mat->Projection3d, x, y, r_nearclip);
 
 	mctx->dirty = mctx->frames.size;
 }
@@ -365,6 +370,17 @@ static void
 vulkan_capture_screen (capfunc_t callback, void *data)
 {
 	QFV_Capture_Screen (vulkan_ctx, callback, data);
+}
+
+static void
+vulkan_debug_ui (struct imui_ctx_s *imui_ctx)
+{
+	QFV_Render_UI (vulkan_ctx, imui_ctx);
+#define IMUI_context imui_ctx
+	UI_ExtendPanel ("Renderer##menu") {
+		QFV_Render_Menu (vulkan_ctx, imui_ctx);
+	}
+#undef IMUI_context
 }
 
 static void
@@ -539,6 +555,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Sprite_Shutdown (vulkan_ctx);
+	Vulkan_Planes_Shutdown (vulkan_ctx);
 	Vulkan_Particles_Shutdown (vulkan_ctx);
 	Vulkan_IQM_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
@@ -546,6 +563,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Scene_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
+	QFV_MousePick_Shutdown (vulkan_ctx);
 	QFV_Capture_Shutdown (vulkan_ctx);
 	Vulkan_Output_Shutdown (vulkan_ctx);
 
@@ -602,6 +620,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.set_fov              = vulkan_set_fov,
 
 	.capture_screen = vulkan_capture_screen,
+
+	.debug_ui = vulkan_debug_ui,
 
 	.model_funcs = &model_funcs
 };

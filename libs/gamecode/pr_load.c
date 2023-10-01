@@ -269,7 +269,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->statements.offset);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->globals.offset);
-	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
+	pr->stack = (pr_type_t *) (heap + pr->zone_size);
 	pr->stack_bottom = pr->stack - pr->pr_globals;
 	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;

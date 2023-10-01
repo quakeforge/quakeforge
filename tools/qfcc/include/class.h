@@ -148,7 +148,7 @@ void class_finish_ivar_scope (class_type_t *class_type,
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
 struct method_s *class_message_response (struct type_s *clstype, int class_msg,
-										 struct expr_s *sel);
+										 const struct expr_s *sel);
 struct symbol_s *class_pointer_symbol (class_t *class_type);
 category_t *get_category (struct symbol_s *class_name,
 						  const char *category_name, int create);

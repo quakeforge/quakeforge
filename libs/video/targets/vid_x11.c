@@ -104,6 +104,12 @@ X11_VID_SetPalette (byte *palette, byte *colormap)
 	vid_internal.set_palette (vid_internal.ctx, viddef.palette);
 }
 
+static void
+X11_VID_SetCursor (bool visible)
+{
+	XDefineCursor (x_disp, x_win, visible ? None : x_nullcursor);
+}
+
 /*
 	Set up color translation tables and the window.  Takes a 256-color 8-bit
 	palette.  Palette data will go away after the call, so copy it if you'll
@@ -158,6 +164,7 @@ vid_system_t vid_system = {
 	.init_cvars = X11_VID_Init_Cvars,
 	.update_fullscreen = X11_UpdateFullscreen,
 	.set_palette = X11_VID_SetPalette,
+	.set_cursor = X11_VID_SetCursor,
 };
 
 #if 0

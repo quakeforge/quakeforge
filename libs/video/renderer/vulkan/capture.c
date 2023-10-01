@@ -29,6 +29,8 @@
 #endif
 
 #include "QF/cexpr.h"
+#include "QF/va.h"
+
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
@@ -36,6 +38,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "QF/plugin/vid_render.h"
@@ -66,13 +69,14 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto sc = ctx->swapchain;
 	auto scImage = sc->images->a[ctx->swapImageIndex];
+	auto buffer = frame->buffer->buffer.buffer;
 
 	VkBufferMemoryBarrier start_buffer_barriers[] = {
 		{
 			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = 0,
 			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-			.buffer = frame->buffer,
+			.buffer = buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
@@ -93,7 +97,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
 			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
 			.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-			.buffer = frame->buffer,
+			.buffer = buffer,
 			.offset = 0,
 			.size = VK_WHOLE_SIZE,
 		},
@@ -127,7 +131,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkCmdCopyImageToBuffer (cmd, scImage,
 								   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-								   frame->buffer, 1, &copy);
+								   buffer, 1, &copy);
 
 	dfunc->vkCmdPipelineBarrier (cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -140,7 +144,7 @@ capture_initiate (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	frame->initiated = true;
 	auto time = Sys_LongTime ();
-	printf ("capture_initiate: %zd.%03zd.%0zd\n",
+	printf ("capture_initiate: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 }
 
@@ -164,7 +168,7 @@ capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 	auto time = Sys_LongTime ();
-	printf ("capture_finalize: %zd.%03zd.%0zd\n",
+	printf ("capture_finalize: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 
 	auto device = ctx->device;
@@ -172,7 +176,7 @@ capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-		.memory = cap->memory,
+		.memory = cap->resources->memory,
 		.offset = frame->data - cap->data,
 		.size = cap->imgsize,
 	};
@@ -233,7 +237,6 @@ QFV_Capture_Init (vulkan_ctx_t *ctx)
 
 	auto device = ctx->device;
 	auto ifunc = device->physDev->instance->funcs;
-	auto dfunc = device->funcs;
 
 	ctx->capture_context = calloc (1, sizeof (qfv_capturectx_t));
 	auto cap = ctx->capture_context;
@@ -248,7 +251,6 @@ QFV_Capture_Init (vulkan_ctx_t *ctx)
 		return;
 	}
 
-	cap->device = device;
 	cap->extent = swapchain->extent;
 
 	auto rctx = ctx->render_context;
@@ -257,44 +259,62 @@ QFV_Capture_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&cap->frames, frames);
 	cap->frames.grow = 0;
 
-	//FIXME assumes the swapchain is 32bpp
-	cap->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
-
+	cap->resources = calloc (1, sizeof (qfv_resource_t)
+							 + sizeof (qfv_resobj_t[frames]));
+	auto buffers = (qfv_resobj_t *) &cap->resources[1];
+	cap->resources[0] = (qfv_resource_t) {
+		.name = "capture",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		.num_objects = frames,
+		.objects = buffers,
+	};
 	for (size_t i = 0; i < frames; i++) {
+		buffers[i] = (qfv_resobj_t) {
+			.name = va (ctx->va_ctx, "capture:%zd", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 		auto frame = &cap->frames.a[i];
 		*frame = (qfv_capture_frame_t) {
-			.buffer = QFV_CreateBuffer (device, cap->imgsize,
-										VK_BUFFER_USAGE_TRANSFER_DST_BIT),
+			.buffer = &buffers[i],
 		};
 	}
-	VkMemoryRequirements req;
-	dfunc->vkGetBufferMemoryRequirements (device->dev,
-										  cap->frames.a[0].buffer,
-										  &req);
-	cap->imgsize = QFV_NextOffset (cap->imgsize, &req);
-	cap->memsize = frames * cap->imgsize;
-	cap->memory = QFV_AllocBufferMemory (device,
-										 cap->frames.a[0].buffer,
-										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										 cap->memsize, 0);
-	dfunc->vkMapMemory (device->dev, cap->memory, 0, cap->memsize, 0,
-						(void **) &cap->data);
 
-	for (size_t i = 0; i < frames; i++) {
-		auto frame = &cap->frames.a[i];
-		frame->data = cap->data + i * cap->imgsize;
-		QFV_BindBufferMemory (device, frame->buffer, cap->memory,
-							  i * cap->imgsize);
-	}
 	qfvPopDebug (ctx);
 }
 
-int shut_up_gcc = 1;
 void
 QFV_Capture_Renew (vulkan_ctx_t *ctx)
 {
-	if (shut_up_gcc) {
-		Sys_Error ("QFV_Capture_Renew not implemented");
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto swapchain = ctx->swapchain;
+	auto cap = ctx->capture_context;
+
+	if (!cap->resources) {
+		return;
+	}
+	if (cap->resources->memory) {
+		dfunc->vkUnmapMemory (device->dev, cap->resources->memory);
+		QFV_DestroyResource (device, cap->resources);
+	}
+
+	cap->extent = swapchain->extent;
+	//FIXME assumes the swapchain is 32bpp
+	cap->imgsize = swapchain->extent.width * swapchain->extent.height * 4;
+	for (uint32_t i = 0; i < cap->resources->num_objects; i++) {
+		auto obj = &cap->resources->objects[i];
+		obj->buffer.size = cap->imgsize;
+	}
+	QFV_CreateResource (device, cap->resources);
+	dfunc->vkMapMemory (device->dev, cap->resources->memory, 0,
+						cap->resources->size, 0, (void **) &cap->data);
+	for (size_t i = 0; i < cap->frames.size; i++) {
+		auto frame = &cap->frames.a[i];
+		frame->data = cap->data + i * cap->imgsize;
 	}
 }
 
@@ -305,13 +325,12 @@ QFV_Capture_Shutdown (vulkan_ctx_t *ctx)
 	auto dfunc = device->funcs;
 	auto cap = ctx->capture_context;
 
-	for (size_t i = 0; i < cap->frames.size; i++) {
-		auto frame = &cap->frames.a[i];
-		dfunc->vkDestroyBuffer (device->dev, frame->buffer, 0);
+	if (cap->resources->memory) {
+		dfunc->vkUnmapMemory (device->dev, cap->resources->memory);
+		QFV_DestroyResource (device, cap->resources);
 	}
-	dfunc->vkUnmapMemory (device->dev, cap->memory);
-	dfunc->vkFreeMemory (device->dev, cap->memory, 0);
-	DARRAY_CLEAR (&cap->frames);
+	free (cap->resources);
+	free (cap->frames.a);
 	free (cap);
 }
 
@@ -319,15 +338,18 @@ void
 QFV_Capture_Screen (vulkan_ctx_t *ctx, capfunc_t callback, void *data)
 {
 	auto cap = ctx->capture_context;
-	if (!cap->data) {
+	if (!cap->resources) {
 		Sys_Printf ("Capture not supported\n");
 		callback (0, data);
 		return;
+	}
+	if (!cap->resources->memory) {
+		QFV_Capture_Renew (ctx);
 	}
 	auto frame = &cap->frames.a[ctx->curFrame];
 	frame->callback = callback;
 	frame->callback_data = data;
 	auto time = Sys_LongTime ();
-	printf ("capture_request: %zd.%03zd.%0zd\n",
+	printf ("capture_request: %"PRIu64".%03"PRIu64".%0"PRIu64"\n",
 			time / 1000000, (time / 1000) % 1000, time % 1000);
 }

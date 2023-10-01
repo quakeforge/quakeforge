@@ -14,7 +14,7 @@ struct tex_s;
 typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
 
 typedef struct qfv_capture_frame_s {
-	VkBuffer    buffer;
+	struct qfv_resobj_s *buffer;
 	byte       *data;
 
 	bool        initiated;
@@ -27,12 +27,10 @@ typedef struct qfv_capture_frame_set_s
 
 typedef struct qfv_capturectx_s {
 	qfv_capture_frame_set_t frames;
-	struct qfv_device_s *device;
 	VkExtent2D  extent;
 	size_t      imgsize;
-	size_t      memsize;
 	byte       *data;
-	VkDeviceMemory memory;
+	struct qfv_resource_s *resources;
 } qfv_capturectx_t;
 
 struct vulkan_ctx_s;

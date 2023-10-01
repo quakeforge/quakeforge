@@ -65,6 +65,7 @@ typedef struct player_state_s {
 	int         oldbuttons;
 	int         oldonground;
 
+	bool        muzzle_flash;
 } player_state_t;
 
 typedef struct {

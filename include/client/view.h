@@ -101,7 +101,9 @@ typedef struct viewstate_s {
 #define VF_GIB 2
 
 struct msg_s;
+struct scene_s;
 
+void V_NewScene (viewstate_t *vs, struct scene_s *scene);
 void V_Init (viewstate_t *vs);
 void V_Init_Cvars (void);
 void V_RenderView (viewstate_t *vs);

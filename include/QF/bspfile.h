@@ -112,7 +112,7 @@ typedef struct lump_s {
 	\ingroup formats_bsp
 */
 ///@{
-/** Holdes version and lump offset information.
+/** Holds version and lump offset information.
 
 	Always at offset 0 of the BSP file.
 */
@@ -186,7 +186,7 @@ typedef struct dmiptexlump_s {
 	The beginning of the name of the texture specifies some of the texture's
 	properties:
 		- sky       The texture is used for the dual-layer skies. Expected
-		            to be 256x128. Sky face get special treatment by the
+		            to be 256x128. Sky faces get special treatment by the
 					renderer.
 		- *         "Water" face. Texture-warped by the renderer. Usually
 		            unlit (ie, always full-bright).
@@ -195,6 +195,7 @@ typedef struct dmiptexlump_s {
 					the texture belongs and the texture's position in that
 					sequence.  The rest of the name specifies the group name.
 					\ref bsp_texture_animation
+		- {         Tranclucent surface (community extension).
 
 	The texture may be rectangular, but the size must be a multiple of 16
 	pixels in both directions.
@@ -239,7 +240,7 @@ typedef struct dplane_s {
 
 /** \defgroup bsp_plane_definition Plane definitions
 	\ingroup bsp_planes
-	Planes are always canonical in that thier normals always point along
+	Planes are always canonical in that their normals always point along
 	a positive axis for axial planes ((1, 0, 0), (0, 1, 0), or (0, 0, 1)),
 	or the largest component is positive.
 */
@@ -276,8 +277,8 @@ typedef struct dplane_s {
 
 	The node's plane divides the space into a front side and a back side,
 	where a point is in front of the plane if its dot product with the plane
-	normal is positive or 0, and ond behind (in back of) the plane if the
-	dot product is negative.
+	normal is positive or 0, and behind (in back of) the plane if the dot
+	product is negative.
 */
 typedef struct dnode_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	uint32_t    planenum;		///< Index of plane defining this node
@@ -328,7 +329,7 @@ typedef struct texinfo_s {
 	/// For each index, the first three elements are the X, Y, Z components
 	/// of the basis vector, and the fourth component is the offset. Can be
 	/// viewed as a 2 row x 4 column matrix (\a M) that is multiplied by
-	/// a homogeneos vector (\a v) for a face vertex to determine that
+	/// a homogeneous vector (\a v) for a face vertex to determine that
 	/// vertex's UV coordinates (ie, \a M \a v)
 	float       vecs[2][4];
 	/// Index of the miptex block in the texture data lump
@@ -350,7 +351,7 @@ typedef struct texinfo_s {
 /** \defgroup bsp_edges BSP edges lump
 	\ingroup formats_bsp
 
-	\note Edge 0 is never used as negative edge indices are indicate
+	\note Edge 0 is never used as negative edge indices indicate
 	counterclockwise use of the edge in a face.
 */
 ///@{

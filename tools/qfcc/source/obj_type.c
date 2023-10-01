@@ -42,6 +42,7 @@
 
 #include "compat.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -290,20 +291,45 @@ qfo_encode_handle (type_t *type, defspace_t *space)
 	return def;
 }
 
+static def_t *
+qfo_encode_algebra (type_t *type, defspace_t *space)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *algebra_type_def = 0;
+
+	if (type->type != ev_invalid) {
+		auto m = (multivector_t *) type->t.algebra;
+		algebra_type_def = qfo_encode_type (m->algebra->type, space);
+	}
+
+	def = qfo_new_encoding (type, sizeof (enc->algebra), space);
+	enc = D_POINTER (qfot_type_t, def);
+	enc->algebra = (qfot_algebra_t) {
+		.type = type->type,
+		.width = type->width,
+	};
+	if (algebra_type_def) {
+		ENC_DEF (enc->algebra.algebra, algebra_type_def);
+	}
+	return def;
+}
+
 def_t *
 qfo_encode_type (type_t *type, defspace_t *space)
 {
 	reloc_t    *relocs = 0;
 
 	static encode_f funcs[] = {
-		qfo_encode_basic,	// ty_basic
-		qfo_encode_struct,	// ty_struct
-		qfo_encode_struct,	// ty_union
-		qfo_encode_struct,	// ty_enum
-		qfo_encode_array,	// ty_array
-		qfo_encode_class,	// ty_class
-		qfo_encode_alias,	// ty_alias
-		qfo_encode_handle,	// ty_handle
+		[ty_basic]   = qfo_encode_basic,
+		[ty_struct]  = qfo_encode_struct,
+		[ty_union]   = qfo_encode_struct,
+		[ty_enum]    = qfo_encode_struct,
+		[ty_array]   = qfo_encode_array,
+		[ty_class]   = qfo_encode_class,
+		[ty_alias]   = qfo_encode_alias,
+		[ty_handle]  = qfo_encode_handle,
+		[ty_algebra] = qfo_encode_algebra,
 	};
 
 	if (type->type_def && type->type_def->external) {

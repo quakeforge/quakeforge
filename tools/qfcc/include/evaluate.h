@@ -1,9 +1,12 @@
 /*
-	qf_main.h
+	evaluate.h
 
-	Vulkan main stuff from the renderer.
+	constant evaluation
 
-	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2022/11/16
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -25,13 +28,21 @@
 
 */
 
-#ifndef __QF_Vulkan_qf_main_h
-#define __QF_Vulkan_qf_main_h
+#ifndef __evaluate_h
+#define __evaluate_h
 
-struct vulkan_ctx_s;
-struct entqueue_s;
-struct scene_s;
+/** \defgroup qfcc_evaluate Constant evaluation.
+	\ingroup qfcc_expr
+*/
+///@{
 
-void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+struct type_s;
+struct ex_value_s;
+struct ex_value_s *convert_value (struct ex_value_s *value,
+								  struct type_s *type);
+const struct expr_s *evaluate_constexpr (const struct expr_s *e);
+void setup_value_progs (void);
 
-#endif//__QF_Vulkan_qf_main_h
+///@}
+
+#endif//__evaluate_h

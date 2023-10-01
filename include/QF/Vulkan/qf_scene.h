@@ -64,6 +64,7 @@ typedef struct scenectx_s {
 	struct qfv_resource_s *entities;
 	scnframeset_t frames;
 	int         max_entities;
+	struct scene_s *scene;
 } scenectx_t;
 
 struct vulkan_ctx_s;
@@ -76,5 +77,7 @@ int Vulkan_Scene_MaxEntities (struct vulkan_ctx_s *ctx) __attribute__((pure));
 VkDescriptorSet Vulkan_Scene_Descriptors (struct vulkan_ctx_s *ctx) __attribute__((pure));
 int Vulkan_Scene_AddEntity (struct vulkan_ctx_s *ctx, struct entity_s entity);
 void Vulkan_Scene_Flush (struct vulkan_ctx_s *ctx);
+
+void Vulkan_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_scene_h

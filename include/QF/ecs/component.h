@@ -42,6 +42,7 @@
 */
 ///@{
 
+struct imui_ctx_s;
 struct ecs_registry_s;
 typedef struct component_s {
 	size_t      size;
@@ -51,6 +52,9 @@ typedef struct component_s {
 	uint32_t  (*rangeid) (struct ecs_registry_s *reg, uint32_t ent,
 						  uint32_t comp);
 	const char *name;
+	void      (*ui) (void *comp, struct imui_ctx_s *imui_ctx,
+					 struct ecs_registry_s *reg, uint32_t ent,
+					 void *data);
 } component_t;
 
 #define COMPINLINE GNU89INLINE inline
@@ -60,6 +64,9 @@ COMPINLINE void Component_ResizeArray (const component_t *component,
 COMPINLINE void *Component_MoveElements (const component_t *component,
 										 void *array, uint32_t dstIndex,
 										 uint32_t srcIndex, uint32_t count);
+COMPINLINE void Component_RotateElements (const component_t *component,
+										  void *array, uint32_t dstIndex,
+										  uint32_t srcIndex, uint32_t count);
 COMPINLINE void Component_SwapElements (const component_t *component,
 										void *a, void *b);
 COMPINLINE void *Component_CopyElements (const component_t *component,
@@ -96,6 +103,49 @@ Component_MoveElements (const component_t *component,
 	__auto_type dst = (byte *) array + dstIndex * component->size;
 	__auto_type src = (byte *) array + srcIndex * component->size;
 	return memmove (dst, src, count * component->size);
+}
+
+COMPINLINE void
+Component_RotateElements (const component_t *component,
+						  void *array, uint32_t dstIndex, uint32_t srcIndex,
+						  uint32_t count)
+{
+	if (dstIndex == srcIndex) {
+		puts ("a");
+		return;
+	}
+	auto dst = (byte *) array + dstIndex * component->size;
+	auto src = (byte *) array + srcIndex * component->size;
+	size_t countSize = count * component->size;
+	if (dstIndex < srcIndex) {
+		uint32_t bcount = srcIndex - dstIndex;
+		size_t bcountSize = bcount * component->size;
+		if (count < bcount) {
+			byte tmp[countSize];
+			memcpy (tmp, src, countSize);
+			memmove (dst + countSize, dst, bcountSize);
+			memcpy (dst, tmp, countSize);
+		} else {
+			byte tmp[bcountSize];
+			memcpy (tmp, dst, bcountSize);
+			memmove (dst, src, countSize);
+			memcpy (dst + countSize, tmp, bcountSize);
+		}
+	} else if (dstIndex < srcIndex + count) {
+		uint32_t bcount = dstIndex - srcIndex;
+		size_t bcountSize = bcount * component->size;
+		byte tmp[bcountSize];
+		memcpy (tmp, src + countSize, bcountSize);
+		memmove (dst, src, countSize);
+		memcpy (src, tmp, bcountSize);
+	} else {
+		uint32_t bcount = dstIndex - srcIndex;
+		size_t bcountSize = bcount * component->size;
+		byte tmp[countSize];
+		memcpy (tmp, src, countSize);
+		memmove (src, src + countSize, bcountSize);
+		memcpy (dst, tmp, countSize);
+	}
 }
 
 COMPINLINE void

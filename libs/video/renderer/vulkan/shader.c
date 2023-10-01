@@ -55,6 +55,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/sprite.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
@@ -87,7 +89,27 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/debug.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/entid.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_entid.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_flat.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_splat.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_splat.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_cascade.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_cube.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_none.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_plane.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
 static
@@ -105,6 +127,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/iqm_fwd.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/output.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
@@ -112,6 +136,8 @@ static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/gridplane.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
 static
@@ -134,6 +160,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
 	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
 	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
+	{ "sprite.frag", sprite_frag, sizeof (sprite_frag) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
@@ -150,7 +177,19 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
-	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
+	{ "debug.frag", debug_frag, sizeof (debug_frag) },
+	{ "entid.frag", entid_frag, sizeof (entid_frag) },
+	{ "light_entid.vert", light_entid_vert, sizeof (light_entid_vert) },
+	{ "light_flat.vert", light_flat_vert, sizeof (light_flat_vert) },
+	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
+	{ "light_splat.frag", light_splat_frag, sizeof (light_splat_frag) },
+	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
+	{ "lighting_cascade.frag", lighting_cascade_frag,
+		sizeof (lighting_cascade_frag) },
+	{ "lighting_cube.frag", lighting_cube_frag, sizeof (lighting_cube_frag) },
+	{ "lighting_none.frag", lighting_none_frag, sizeof (lighting_none_frag) },
+	{ "lighting_plane.frag", lighting_plane_frag,
+		sizeof (lighting_plane_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
@@ -159,10 +198,12 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
 	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
+	{ "iqm_fwd.frag", iqm_fwd_frag, sizeof (iqm_fwd_frag) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },
+	{ "gridplane.frag", gridplane_frag, sizeof (gridplane_frag) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
 	{ "fisheye.frag", fisheye_frag, sizeof (fisheye_frag) },
 	{ "waterwarp.frag", waterwarp_frag, sizeof (waterwarp_frag) },

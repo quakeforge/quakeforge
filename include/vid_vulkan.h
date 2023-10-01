@@ -10,6 +10,8 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
+#define VA_CTX_COUNT 64
+
 typedef struct qfv_renderpassset_s
 	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
 
@@ -38,6 +40,7 @@ typedef struct vulkan_ctx_s {
 	struct scriptctx_s *script_context;
 	struct qfv_renderctx_s *render_context;
 	struct qfv_capturectx_s *capture_context;
+	struct qfv_mousepickctx_s *mousepick_context;
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct translucentctx_s *translucent_context;
@@ -47,6 +50,7 @@ typedef struct vulkan_ctx_s {
 	struct scenectx_s *scene_context;
 	struct palettectx_s *palette_context;
 	struct particlectx_s *particle_context;
+	struct planesctx_s *planes_context;
 	struct spritectx_s *sprite_context;
 	struct drawctx_s *draw_context;
 	struct lightingctx_s *lighting_context;

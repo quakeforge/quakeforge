@@ -39,7 +39,7 @@ typedef struct console_funcs_s {
 	void (*process_input) (void);
 	void (*draw_console) (void);
 	void (*new_map) (void);
-	void (*set_state) (con_state_t state);
+	void (*set_state) (con_state_t state, bool hide_mouse);
 } console_funcs_t;
 
 typedef struct console_data_s {

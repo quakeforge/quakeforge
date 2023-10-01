@@ -37,75 +37,115 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/render.h"
 #include "QF/simd/types.h"
 
 typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
-#define MaxLights   768
+#define MaxLights   2048
 
-#define ST_NONE     0	// no shadows
-#define ST_PLANE    1	// single plane shadow map (small spotlight)
-#define ST_CASCADE  2	// cascaded shadow maps
-#define ST_CUBE     3	// cubemap (omni, large spotlight)
+enum {
+	ST_NONE,		// no shadows
+	ST_PLANE,		// single plane shadow map (small spotlight)
+	ST_CASCADE,		// cascaded shadow maps
+	ST_CUBE,		// cubemap (omni, large spotlight)
 
-typedef struct qfv_light_buffer_s {
-	light_t     lights[MaxLights] __attribute__((aligned(16)));
-	int         lightCount;
-	//mat4f_t     shadowMat[MaxLights];
-	//vec4f_t     shadowCascade[MaxLights];
-} qfv_light_buffer_t;
+	ST_COUNT
+};
+
+enum {
+	lighting_main,
+	lighting_shadow,
+	lighting_debug,
+};
+
+typedef struct qfv_light_render_s {
+	// mat_id (13) map_id (5) layer (11) type (2)
+	uint32_t    id_data;
+	// light style (6)
+	uint32_t    style;
+} qfv_light_render_t;
 
 #define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_ATTACH_INFOS 5
+#define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
+typedef struct qfv_framebufferset_s
+	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
+
+typedef struct light_queue_s {
+	uint16_t    start;
+	uint16_t    count;
+} light_queue_t;
+
 typedef struct lightingframe_s {
+	VkDescriptorSet shadowmat_set;
+	VkDescriptorSet lights_set;
+	VkDescriptorSet attach_set;
+
+	VkBuffer    shadowmat_buffer;
 	VkBuffer    light_buffer;
-	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
-	VkDescriptorImageInfo attachInfo[LIGHTING_ATTACH_INFOS];
-	VkDescriptorImageInfo shadowInfo[LIGHTING_SHADOW_INFOS];
-	union {
-		VkWriteDescriptorSet descriptors[LIGHTING_DESCRIPTORS];
-		struct {
-			VkWriteDescriptorSet bufferWrite[LIGHTING_BUFFER_INFOS];
-			VkWriteDescriptorSet attachWrite[LIGHTING_ATTACH_INFOS];
-			VkWriteDescriptorSet shadowWrite;
-		};
-	};
+	VkBuffer    render_buffer;
+	VkBuffer    style_buffer;
+	VkBuffer    id_buffer;
+	VkBuffer    entid_buffer;
+	light_queue_t light_queue[4];
+
+	qfv_imageviewset_t views;
+	qfv_framebufferset_t framebuffers;
 } lightingframe_t;
 
 typedef struct lightingframeset_s
     DARRAY_TYPE (lightingframe_t) lightingframeset_t;
 
-typedef struct light_renderer_s {
-	VkRenderPass renderPass;	// shared
-	VkFramebuffer framebuffer;
-	VkImage     image;			// shared
-	VkImageView view;
-	uint32_t    size;
-	uint32_t    layer;
-	uint32_t    numLayers;
-	int         mode;
-} light_renderer_t;
+typedef struct light_control_s {
+	uint8_t     renderpass_index;
+	uint8_t     map_index;
+	uint16_t    size;
+	uint16_t    layer;
+	uint8_t     numLayers;
+	uint8_t     mode;
+	uint16_t    light_id;
+	uint16_t    matrix_id;
+} light_control_t;
 
-typedef struct light_renderer_set_s
-    DARRAY_TYPE (light_renderer_t) light_renderer_set_t;
+typedef struct light_control_set_s
+	DARRAY_TYPE (light_control_t) light_control_set_t;
+
 
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
-	VkPipeline   pipeline;
 	VkSampler    sampler;
-	VkDeviceMemory light_memory;
 	struct qfv_resource_s *shadow_resources;
+	struct qfv_resource_s *light_resources;
+
 	qfv_lightmatset_t light_mats;
-	qfv_imageset_t light_images;
-	light_renderer_set_t light_renderers;
+	VkImage *map_images;
+	VkImageView *map_views;
+	bool    *map_cube;
+	int      num_maps;
+	VkImage  default_map;
+	VkImageView default_view_cube;
+	VkImageView default_view_2d;
 
-	VkRenderPass renderpass_6;
-	VkRenderPass renderpass_4;
-	VkRenderPass renderpass_1;
+	light_control_set_t light_control;
 
+	qfv_attachmentinfo_t shadow_info;
+
+	VkSampler shadow_sampler;
+	VkDescriptorSet shadow_cube_set;
+	VkDescriptorSet shadow_2d_set;
+
+	VkBuffer splat_verts;
+	VkBuffer splat_inds;
+
+	vec4f_t world_mins;
+	vec4f_t world_maxs;
+
+	uint32_t dynamic_base;
+	uint32_t dynamic_matrix_base;
+	uint32_t dynamic_count;
 	struct lightingdata_s *ldata;
 	struct scene_s *scene;
 } lightingctx_t;
@@ -116,5 +156,7 @@ void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Setup (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
+VkDescriptorSet Vulkan_Lighting_Descriptors (struct vulkan_ctx_s *ctx,
+											 int frame) __attribute__((pure));
 
 #endif//__QF_Vulkan_qf_lighting_h

@@ -91,7 +91,9 @@
 #include "QF/gib.h"
 
 #include "QF/plugin/console.h"
+#include "QF/scene/light.h"
 #include "QF/scene/transform.h"
+#include "QF/ui/font.h"//FIXME
 
 #include "buildnum.h"
 #include "compat.h"
@@ -623,9 +625,7 @@ CL_ClearState (void)
 	if (cl.serverinfo)
 		Info_Destroy (cl.serverinfo);
 	__auto_type players = cl.players;
-	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
-	cl.viewstate.camera_transform = cam;
 	cl.players = players;
 	SCR_SetFullscreen (0);
 
@@ -650,7 +650,7 @@ CL_ClearState (void)
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (0, host_hunklevel);
 
-	CL_ClearEnts ();
+	CL_World_Clear ();
 	CL_ClearTEnts ();
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
@@ -1406,7 +1406,8 @@ CL_SetState (cactive_t state)
 		}
 		Sbar_SetActive (state == ca_active);
 	}
-	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen,
+				  state == ca_active && !cls.demoplayback);
 	if (state != old_state && state == ca_active) {
 		CL_Input_Activate (!cls.demoplayback);
 	}
@@ -1459,6 +1460,7 @@ CL_Init (void)
 	Mod_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
+	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Load ("client");
@@ -1488,6 +1490,8 @@ CL_Init (void)
 	CL_World_Init ();
 	CL_ClearState ();
 	Pmove_Init ();
+
+	VID_SendSize ();
 
 	SL_Init ();
 
@@ -1962,11 +1966,11 @@ Host_Frame (float time)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
+		l = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
-		R_DecayLights (host_frametime);
+		Light_DecayLights (cl_world.scene->lights, host_frametime, realtime);
 	} else
 		S_Update (nulltransform, 0);
 
@@ -2048,6 +2052,7 @@ Host_Init (void)
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
+	sys_quake_encoding = true;
 	Sys_Init ();
 	GIB_Init (true);
 	GIB_Key_Init ();

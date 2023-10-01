@@ -82,6 +82,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/sizebuf.c \
 	libs/util/string.c \
 	libs/util/sys.c \
+	libs/util/sys_mem.c \
 	libs/util/va.c \
 	libs/util/ver_check.c \
 	libs/util/wad.c \

@@ -131,6 +131,14 @@
 @extern @overload double sin (double x);
 
 /**
+	Returns the sine and cosine of \a x.
+
+	The return value is [sin, cos].
+*/
+@extern @overload vec2 sincos (float x);
+@extern @overload dvec2 sincos (double x);
+
+/**
 	Returns the cosine of \a x.
 */
 @extern @overload float cos (float x);
@@ -182,6 +190,14 @@
 */
 @extern @overload float sinh (float x);
 @extern @overload double sinh (double x);
+
+/**
+	Returns the hyperbolic sine and cosine of \a x.
+
+	The return value is [sinh, cosh].
+*/
+@extern @overload vec2 sincosh (float x);
+@extern @overload dvec2 sincosh (double x);
 
 /**
 	Returns the hyperbolic cosine of \a x

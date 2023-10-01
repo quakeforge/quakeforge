@@ -79,6 +79,8 @@ typedef struct type_s {
 		ty_array_t  array;
 		struct symtab_s *symtab;
 		struct class_s *class;
+		struct algebra_s *algebra;
+		struct multivector_s *multivec;
 		ty_alias_t  alias;
 	} t;
 	struct type_s *next;
@@ -120,6 +122,7 @@ typedef struct specifier_s {
 #define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
 #include "tools/qfcc/include/vec_types.h"
 
+extern	type_t	type_auto;
 extern	type_t	type_invalid;
 extern	type_t	type_floatfield;
 
@@ -141,7 +144,7 @@ extern struct symtab_s *quaternion_struct;
 
 struct dstring_s;
 
-etype_t low_level_type (type_t *type) __attribute__((pure));
+etype_t low_level_type (const type_t *type) __attribute__((pure));
 type_t *new_type (void);
 void free_type (type_t *type);
 void chain_type (type_t *type);
@@ -162,7 +165,7 @@ specifier_t default_type (specifier_t spec, struct symbol_s *sym);
 type_t *find_type (type_t *new);
 void new_typedef (const char *name, type_t *type);
 type_t *field_type (type_t *aux);
-type_t *pointer_type (type_t *aux);
+type_t *pointer_type (const type_t *aux);
 type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 type_t *base_type (const type_t *vec_type) __attribute__((pure));
 
@@ -179,6 +182,7 @@ type_t *base_type (const type_t *vec_type) __attribute__((pure));
 					null if no such match can be made.
 */
 type_t *int_type (const type_t *base) __attribute__((pure));
+type_t *uint_type (const type_t *base) __attribute__((pure));
 
 /** Return a floating point type of same size as the provided type.
 
@@ -227,6 +231,7 @@ int type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
+int type_aligned_size (const type_t *type) __attribute__((pure));
 
 void init_types (void);
 void chain_initial_types (void);

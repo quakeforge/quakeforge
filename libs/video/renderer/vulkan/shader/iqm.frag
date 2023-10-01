@@ -1,9 +1,9 @@
 #version 450
 
-layout (set = 1, binding = 0) uniform sampler2D Skin;
+layout (set = 2, binding = 0) uniform sampler2D Skin;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 68)
+	layout (offset = 72)
 	uint        colorA;
 	uint        colorB;
 	vec4        base_color;
@@ -44,5 +44,5 @@ main (void)
 	frag_color = c;
 	frag_emission = vec4(0,0,0,1);//e;
 	frag_normal = vec4(normal,1);//vec4(tbn * n, 1);
-	frag_position = position;
+	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

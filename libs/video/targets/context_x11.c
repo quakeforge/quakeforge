@@ -78,7 +78,6 @@ bool		oktodraw = false;
 int 		x_shmeventtype;
 
 static int	x_disp_ref_count = 0;
-static Cursor   nullcursor = None;
 
 Display 	*x_disp = NULL;
 int 		x_screen;
@@ -91,6 +90,7 @@ Window		x_win;
 Colormap	x_cmap;
 Time 		x_time;
 Time		x_mouse_time;
+Cursor      x_nullcursor = None;
 
 bool        x_have_focus = false;
 
@@ -177,18 +177,7 @@ configure_notify (XEvent *event)
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
 					c->width, c->height, c->border_width, c->above,
 					c->override_redirect);
-	IE_event_t  ie_event = {
-		.type = ie_app_window,
-		.when = Sys_LongTime (),
-		.app_window = {
-			.xpos = c->x,
-			.ypos = c->y,
-			.xlen = c->width,
-			.ylen = c->height,
-		},
-	};
-	IE_Send_Event (&ie_event);
-	VID_SetWindowSize (c->width, c->height);
+	VID_SetWindow (c->x, c->y, c->width, c->height);
 }
 
 bool
@@ -315,9 +304,9 @@ X11_CloseDisplay (void)
 
 		X11_RestoreGamma ();
 
-		if (nullcursor != None) {
-			XFreeCursor (x_disp, nullcursor);
-			nullcursor = None;
+		if (x_nullcursor != None) {
+			XFreeCursor (x_disp, x_nullcursor);
+			x_nullcursor = None;
 		}
 
 		XCloseDisplay (x_disp);
@@ -338,7 +327,7 @@ X11_CreateNullCursor (void)
 	GC			gc;
 	XColor		dummycolour = { };
 
-	if (nullcursor != None)
+	if (x_nullcursor != None)
 		return;
 
 	cursormask = XCreatePixmap (x_disp, x_root, 1, 1, 1);
@@ -351,11 +340,10 @@ X11_CreateNullCursor (void)
 	dummycolour.pixel = 0;
 	dummycolour.red = 0;
 	dummycolour.flags = 04;
-	nullcursor = XCreatePixmapCursor (x_disp, cursormask, cursormask,
+	x_nullcursor = XCreatePixmapCursor (x_disp, cursormask, cursormask,
 									  &dummycolour, &dummycolour, 0, 0);
 	XFreePixmap (x_disp, cursormask);
 	XFreeGC (x_disp, gc);
-	XDefineCursor (x_disp, x_win, nullcursor);
 }
 
 #ifdef HAVE_VIDMODE

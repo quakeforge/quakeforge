@@ -45,8 +45,6 @@ typedef enum {
 
 struct entity_s;
 
-void R_PushDlights (const vec3_t entorigin);
-void R_MaxDlightsCheck (int max_dlights);
 void R_Particles_Init_Cvars (void);
 void R_Particle_New (const char *type, int texnum, const vec3_t org,
 					 float scale, const vec3_t vel, float die, int color,

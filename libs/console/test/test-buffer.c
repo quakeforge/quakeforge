@@ -141,13 +141,12 @@ static int
 test_3 (void)
 {
 	int         ret = 1;
-	static char text[] = R"(01 don't forget this line
-02 and some more lines here
-03  adsf
-04 adfa
-06 hi there
-06 don't forget there's line 07
-)";
+	static char text[] = "01 don't forget this line\n\
+02 and some more lines here\n\
+03  adsf\n\
+04 adfa\n\
+06 hi there\n\
+06 don't forget there's line 07\n";
 	static uint32_t lengths[] = { 26, 28, 9, 8, 12, 32, 0 };
 	static uint32_t lengths2[] = { 1, 5, 2 };
 

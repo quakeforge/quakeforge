@@ -102,6 +102,7 @@ static const struct option long_options[] = {
 	{"modules", no_argument, 0, 'M'},
 	{"numeric", no_argument, 0, 'n'},
 	{"path", required_argument, 0, 'P'},
+	{"quake", no_argument, 0, 'Q'},
 	{"relocs", no_argument, 0, 'r'},
 	{"strings", no_argument, 0, 's'},
 	{"types", no_argument, 0, 't'},
@@ -119,6 +120,7 @@ static const char *short_options =
 	"M"		// modules
 	"n"		// numeric
 	"P:"	// path
+	"Q"		// quake
 	"r"		// relocs
 	"s"		// strings
 	"t"		// types
@@ -150,6 +152,7 @@ usage (int status)
 "    -M, --modules       Dump Objective-QuakeC data.\n"
 "    -n, --numeric       Sort globals by address.\n"
 "    -P, --path DIR      Source path.\n"
+"    -Q, --quake         Expect quake encoding instead of utf-8.\n"
 "    -r, --relocs        Dump reloc information.\n"
 "    -s, --strings       Dump static strings.\n"
 "    -t, --types         Dump type encodings.\n"
@@ -284,6 +287,7 @@ load_progs (const char *name)
 		pr.progs_name = name;
 		pr.max_edicts = 1;
 		pr.zone_size = 0;
+		pr.stack_size = 64*1024;
 		PR_LoadProgsFile (&pr, file, size);
 		Qclose (file);
 
@@ -294,10 +298,26 @@ load_progs (const char *name)
 		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
+	pr_uint_t   max_locals = 0;
 	for (i = 0; i < pr.progs->functions.count; i++) {
 		// don't bother with builtins
-		if (pr.pr_functions[i].first_statement > 0)
+		if (pr.pr_functions[i].first_statement > 0) {
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);
+			if (pr.pr_functions[i].locals > max_locals) {
+				max_locals = pr.pr_functions[i].locals;
+			}
+		}
+	}
+	if (pr.stack && pr.globals.stack) {
+		printf ("stack: %x %x %x %d\n", (pr_uint_t)(pr.stack - pr.pr_globals),
+				*pr.globals.stack, pr.stack_bottom, pr.stack_size);
+		*pr.globals.stack -= max_locals;
+		pr.pr_depth = 1;
+		pr.pr_stack[0] = (prstack_t) {
+			.stack_ptr = *pr.globals.stack,
+			.return_ptr = pr.pr_return_buffer,
+		};
+		*pr.globals.stack -= max_locals;
 	}
 	return 1;
 }
@@ -353,6 +373,9 @@ main (int argc, char **argv)
 				break;
 			case 'P':
 				source_path = strdup (optarg);
+				break;
+			case 'Q':
+				sys_quake_encoding = true;
 				break;
 			case 'r':
 				func = &operations[7];

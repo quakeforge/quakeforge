@@ -445,6 +445,7 @@ static const char *ty_meta_names[] = {
 	"ty_class",
 	"ty_alias",
 	"ty_handle",
+	"ty_algebra",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 const int vector_types =  (1 << ev_float)
@@ -453,6 +454,14 @@ const int vector_types =  (1 << ev_float)
 						| (1 << ev_double)
 						| (1 << ev_long)
 						| (1 << ev_ulong);
+
+static const char *
+get_ev_type_name (etype_t type)
+{
+	return ((unsigned) type >= ev_type_count)
+		  ? "invalid type"
+		  : pr_type_name[type];
+}
 
 static void
 dump_qfo_types (qfo_t *qfo, int base_address)
@@ -489,9 +498,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 		}
 		switch ((ty_meta_e) type->meta) {
 			case ty_basic:
-				printf (" %-10s", ((unsigned) type->type >= ev_type_count)
-								  ? "invalid type"
-								  : pr_type_name[type->type]);
+				printf (" %-10s", get_ev_type_name (type->type));
 				if (type->type == ev_func) {
 					printf (" %4x %d", type->func.return_type,
 							count = type->func.num_params);
@@ -535,6 +542,10 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			case ty_handle:
 				printf (" %-5x\n", type->handle.tag);
 				break;
+			case ty_algebra:
+				printf (" %s[%d] %5x %d\n",
+						get_ev_type_name (type->type), type->algebra.width,
+						type->algebra.algebra, type->algebra.element);
 		}
 	}
 }

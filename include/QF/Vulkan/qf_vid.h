@@ -64,7 +64,7 @@ enum {
 	QFV_attachEmission,
 	QFV_attachNormal,
 	QFV_attachPosition,
-	QFV_attachOpaque,
+	QFV_attachLight,
 	QFV_attachSwapchain,
 };
 

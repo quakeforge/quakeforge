@@ -164,6 +164,7 @@ bool        stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
+VISIBLE bool sys_quake_encoding;
 VISIBLE const char sys_char_map[256] = {
       0, '#', '#', '#', '#', '.', '#', '#',
 	'#',   9,  10, '#', ' ',  13, '.', '.',
@@ -199,9 +200,6 @@ VISIBLE const char sys_char_map[256] = {
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
 	'x', 'y', 'z', '{', '|', '}', '~', '<'
 };
-
-#define MAXPRINTMSG 4096
-
 
 #ifndef USE_INTEL_ASM
 void
@@ -319,9 +317,13 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 		fputs ("Fatal Error: ", stream);
 	}
 
-	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) sys_print_msg->str; *p; p++)
-		putc (sys_char_map[*p], stream);
+	if (sys_quake_encoding) {
+		/* translate to ASCII instead of printing [xx]  --KB */
+		for (p = (unsigned char *) sys_print_msg->str; *p; p++)
+			putc (sys_char_map[*p], stream);
+	} else {
+		fputs (sys_print_msg->str, stream);
+	}
 
 	if (stream == stderr) {
 		fputs ("\n", stream);
@@ -1252,8 +1254,10 @@ Sys_Shutdown (void)
 	}
 	if (sys_print_msg) {
 		dstring_delete (sys_print_msg);
+		sys_print_msg = 0;
 	}
 	if (sys_debuglog_data) {
 		dstring_delete (sys_debuglog_data);
+		sys_debuglog_data = 0;
 	}
 }

@@ -75,7 +75,7 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 	QFile       *input;
 	char        name[256], tex[256];
 	float       start, exitpattern;
-	int         count, iLevel, magic, i;
+	int         count, magic, i;
 	tf_triangle	tri;
 	triangle_t	*ptri;
 
@@ -90,8 +90,6 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 		fprintf (stderr,"reader: could not open file '%s'\n", filename);
 		exit (0);
 	}
-
-	iLevel = 0;
 
 	Qread(input, &magic, sizeof(int));
 	if (BigLong (magic) != MAGIC) {
@@ -123,7 +121,6 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 //				fprintf(stdout,"OBJECT START: %s\n",name);
 				Qread (input, &count, sizeof (int));
 				count = BigLong (count);
-				++iLevel;
 				if (count != 0) {
 //					indent();
 //					fprintf (stdout, "NUMBER OF TRIANGLES: %d\n", count);
@@ -145,7 +142,6 @@ LoadTriangleList (char *filename, triangle_t **pptri, int *numtriangles)
 				/* safe and to provide a little extra information for */
 				/* those who do not wish to write a recursive reader. */
 				/* Mia culpa. */
-				iLevel--;
 				i = -1;
 				do {
 					i++;

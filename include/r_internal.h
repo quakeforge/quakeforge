@@ -50,8 +50,19 @@ void R_RunParticles (float dT);
 struct scene_s;
 void R_NewScene (struct scene_s *scene);
 
+typedef struct visstate_s {
+	const struct mleaf_s *viewleaf;
+	int         *node_visframes;
+	int         *leaf_visframes;
+	int         *face_visframes;
+	int          visframecount;
+	const struct mod_brush_s *brush;
+} visstate_t;
+
+extern visstate_t r_visstate;//FIXME
+
 // LordHavoc: relative bmodel lighting
-void R_PushDlights (const vec3_t entorigin);
+void R_PushDlights (const vec3_t entorigin, const visstate_t *visstate);
 void R_DrawWaterSurfaces (void);
 
 void *D_SurfaceCacheAddress (void) __attribute__((pure));
@@ -65,10 +76,7 @@ void R_LoadSkys (const char *);
 
 void R_ClearEfrags (void);
 
-void R_FindNearLights (vec4f_t pos, int count, dlight_t **lights);
-dlight_t *R_AllocDlight (int key);
-void R_DecayLights (double frametime);
-void R_ClearDlights (void);
+int R_FindNearLights (vec4f_t pos, int count, dlight_t **lights);
 
 int R_InitGraphTextures (int base);
 
@@ -77,11 +85,9 @@ struct animation_s;
 struct transform_s;
 void R_DrawAliasModel (struct entity_s *e);
 
-void R_MarkLeaves (struct mleaf_s *viewleaf, int *node_visframes,
-				   int *leaf_visframes, int *face_visframes);
-extern int *r_node_visframes;
-extern int *r_leaf_visframes;
-extern int *r_face_visframes;
+struct set_s;
+void R_MarkLeavesPVS (visstate_t *state, const struct set_s *pvs);
+void R_MarkLeaves (visstate_t *state, const struct mleaf_s *viewleaf);
 
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);

@@ -49,6 +49,7 @@ typedef enum {
 	ty_class,
 	ty_alias,
 	ty_handle,
+	ty_algebra,
 } ty_meta_e;
 
 typedef struct qfot_alias_s {
@@ -105,6 +106,13 @@ typedef struct qfot_array_s {
 	pr_int_t    size;				///< number of elements in array
 } qfot_array_t;
 
+typedef struct qfot_algebra_s {
+	etype_t     type;				///< always ev_float or ev_double
+	pr_int_t    width;				///< components in multivector
+	pr_ptr_t    algebra;			///< algebra descriptor
+	pr_int_t    element;			///< element within algebra
+} qfot_algebra_t;
+
 /**	QFO type encoding.
 
 	\note As this holds a union of all type representations, and those
@@ -126,6 +134,7 @@ typedef struct qfot_type_s {
 		pr_string_t class;			///< ty_class
 		qfot_alias_t alias;			///< ty_alias
 		qfot_handle_t handle;		///< ty_handle
+		qfot_algebra_t algebra;		///< ty_algebra
 	};
 } qfot_type_t;
 

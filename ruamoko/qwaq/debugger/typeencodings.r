@@ -56,6 +56,10 @@ static void type_free (void *t, void *unused)
 		case ty_handle:
 			str_free (type.handle.tag);
 			break;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+			}
+			break;
 	}
 	obj_free (t);
 }
@@ -187,6 +191,13 @@ static void type_free (void *t, void *unused)
 				goto error;
 			}
 			goto hash_type;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+				// full algebra
+			} else {
+				goto hash_type;
+			}
+			break;
 	}
 	goto error;
 hash_type:
@@ -206,8 +217,10 @@ error:
 
 	switch (type.meta) {
 		case ty_handle:
-		case ty_basic:
 			size = pr_type_size[type.type];
+			break;
+		case ty_basic:
+			size = pr_type_size[type.type] * type.basic.width;
 			break;
 		case ty_array:
 			aux_type = type.array.type;
@@ -239,6 +252,13 @@ error:
 		case ty_alias:
 			aux_type = type.alias.aux_type;
 			size = [TypeEncodings typeSize:aux_type];
+			break;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+				// full algebra
+			} else {
+				size = pr_type_size[type.type] * type.basic.width;
+			}
 			break;
 	}
 	return size;

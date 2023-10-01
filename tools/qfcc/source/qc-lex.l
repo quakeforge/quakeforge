@@ -81,8 +81,8 @@ FILE *yyget_in (void) __attribute__((pure));
 FILE *yyget_out (void) __attribute__((pure));
 
 static int keyword_or_id (const char *token);
-static expr_t *parse_float_vector (const char *token, int width);
-static expr_t *parse_int_vector (const char *token, int width);
+static const expr_t *parse_float_vector (const char *token, int width);
+static const expr_t *parse_int_vector (const char *token, int width);
 
 extern QC_YYSTYPE qc_yylval;
 
@@ -115,6 +115,7 @@ STRING		\"(\\.|[^"\\])*\"
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 					grab_write = GRAB_WRITE;
+					qc_yylval.pointer = 0;	// ensure pointer vals are null
 
 "/*"				{ BEGIN (COMMENT); }
 <COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
@@ -148,7 +149,7 @@ STRING		\"(\\.|[^"\\])*\"
 								qc_yylval.expr = new_long_expr (i);
 							} else {
 								qc_yylval.expr = new_int_expr (i);
-								qc_yylval.expr->implicit = 1;
+								((expr_t *) qc_yylval.expr)->implicit = 1;
 							}
 						}
 						return VALUE;
@@ -159,8 +160,7 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d);
-							qc_yylval.expr->implicit = 1;
+							qc_yylval.expr = new_double_expr (d, true);
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);
@@ -177,7 +177,7 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d);
+							qc_yylval.expr = new_double_expr (d, false);
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);
@@ -264,12 +264,20 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
-						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
 					}
 
+"·"					{ return DOT; }
+"⋀"					{ return WEDGE; }
+"•"					{ return DOT; }
+"∧"					{ return WEDGE; }
+"∨"					{ return REGRESSIVE; }
+"†"					{ return REVERSE; }
+"∗"					{ return STAR; }
+"×"					{ return CROSS; }
+"⋆"					{ return DUAL; }
+
 "%%"				{
-						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return MOD;
 					}
 
@@ -314,8 +322,8 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{ID}		{ pragma_add_arg (yytext); }
-<PRAGMA>@{ID}		{ pragma_add_arg (yytext); }
+<PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
+<PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
 						if (YY_START == PRAGMA) {
@@ -408,6 +416,7 @@ static keyword_t at_keywords[] = {
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
 	{"not",			NOT		},
+	{"auto",		TYPE_SPEC, .spec = { .type = &type_auto } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
@@ -427,9 +436,13 @@ static keyword_t qf_keywords[] = {
 	{"@param",		TYPE_SPEC, .spec = { .type = &type_param } 		},
 	{"@return",     AT_RETURN,		},
 
+	{"@hadamard",	HADAMARD,	},
 	{"@cross",		CROSS,		},
 	{"@dot",		DOT,		},
-	{"@hadamard",	HADAMARD,		},
+	{"@wedge",		WEDGE,		},
+	{"@regressive",	REGRESSIVE,	},
+	{"@geometric",	GEOMETRIC,	},
+	{"@algebra",	ALGEBRA,	},
 };
 
 // These keywors are always available. Other than the @ keywords, they
@@ -572,7 +585,7 @@ keyword_or_id (const char *token)
 	return NAME;
 }
 
-static expr_t *
+static const expr_t *
 parse_int_vector (const char *token, int width)
 {
 	char        t1 = 0, t2 = 0;
@@ -608,7 +621,7 @@ parse_int_vector (const char *token, int width)
 			t1 = 'f';
 		}
 	}
-	expr_t     *expr = 0;
+	const expr_t *expr = 0;
 	switch (t1) {
 		case 'u':
 			if (t2 == 'l') {
@@ -690,11 +703,11 @@ parse_int_vector (const char *token, int width)
 			expr = new_value_expr (new_type_value (type, data));
 			break;
 	}
-	expr->implicit = !t1;
+	((expr_t *) expr)->implicit = !t1;
 	return expr;
 }
 
-static expr_t *
+static const expr_t *
 parse_float_vector (const char *token, int width)
 {
 	char        t = 0;
@@ -716,7 +729,7 @@ parse_float_vector (const char *token, int width)
 		case 3:
 			sscanf (token, "' %lf %lf %lf '%c",
 					&double_data.d[0], &double_data.d[1],
-					&double_data.d[1], &t);
+					&double_data.d[2], &t);
 			type = (t == 'f' || t == 'F') ? &type_vec3 : &type_dvec3;
 			break;
 		case 2:
@@ -748,7 +761,7 @@ parse_float_vector (const char *token, int width)
 		type = &type_double;
 	}
 	type = vector_type (type, width);
-	expr_t     *expr = new_value_expr (new_type_value (type, data));
+	auto expr = (expr_t *) new_value_expr (new_type_value (type, data));
 	expr->implicit = !t;
 	return expr;
 }

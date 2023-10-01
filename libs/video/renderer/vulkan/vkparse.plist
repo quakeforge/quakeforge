@@ -12,6 +12,7 @@ search = (
 	VkPipelineColorBlendStateCreateInfo,
 	VkPipelineDynamicStateCreateInfo,
 	VkDescriptorSetLayoutBinding,
+	VkClearColorValue,
 	VkClearValue,
 	VkPhysicalDeviceLimits,
 	VkRenderPassMultiviewCreateInfo,
@@ -173,12 +174,23 @@ parse = {
 		//flags = auto; reserved for future use (Bits enum does not exist)
 		patchControlPoints = auto;
 	};
-	VkClearColorValue = skip;
-	VkClearValue = {
-		color = {
-			type = (custom, QFString, parse_RGBA);
-			fields = (color);
+	VkClearColorValue = {
+		.type = (QFString, QFDictionary);
+		.string = {
+			.parse = {
+				type = (custom, QFString, parse_RGBA);
+				fields = (float32);
+			};
 		};
+		.dictionary = {
+			.parse = auto;
+		};
+		float32 = auto;
+		int32 = auto;
+		uint32 = auto;
+	};
+	VkClearValue = {
+		color = auto;
 		depthStencil = auto;
 	};
 	VkRenderPassMultiviewCreateInfo = {
@@ -473,6 +485,28 @@ parse = {
 			size = num_bindings;
 			values = bindings;
 		};
+	};
+	qfv_imageinfo_s = {
+		.name = qfv_imageinfo_t;
+		flags = auto;
+		imageType = auto;
+		format = auto;
+		extent = auto;
+		mipLevels = auto;
+		arrayLayers = auto;
+		samples = auto;
+		tiling = auto;
+		usage = auto;
+		initialLayout = auto;
+	};
+	qfv_imageviewinfo_s = {
+		.name = qfv_imageviewinfo_t;
+		flags = auto;
+		image = auto;
+		viewType = auto;
+		format = auto;
+		components = auto;
+		subresourceRange = auto;
 	};
 	qfv_bufferviewinfo_s = {
 		.name = qfv_bufferviewinfo_t;

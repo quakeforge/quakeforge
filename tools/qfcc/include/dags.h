@@ -50,7 +50,7 @@ typedef struct daglabel_s {
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
-	struct expr_s *expr;		///< expression associated with this label
+	const struct expr_s *expr;	///< expression associated with this label
 } daglabel_t;
 
 typedef struct dagnode_s {
@@ -77,6 +77,7 @@ typedef struct dagnode_s {
 	struct dagnode_s *children[3];
 	struct type_s *types[3];	///< desired type of each operand (to alias)
 	struct set_s *edges;		///< includes nodes pointed to by \a children
+	int         offset;			///< for alias nodes
 	//@}
 	struct set_s *identifiers;	///< set of identifiers attached to this node
 	struct set_s *reachable;	///< set of nodes reachable via edges (not

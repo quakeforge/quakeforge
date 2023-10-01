@@ -13,11 +13,11 @@ layout (set = 1, binding = 0) buffer Entities {
 };
 
 layout (location = 0) in vec4 vertex;
-layout (location = 2) in uint entid;
+layout (location = 2) in uint entind;
 
 void
 main (void)
 {
-	vec3        vert = vertex * entities[entid].transform;
+	vec3        vert = vertex * entities[entind].transform;
 	gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
 }

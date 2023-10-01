@@ -77,9 +77,11 @@ enum {
 	text_passage_glyphs,
 	// glyphs for a single text object
 	text_glyphs,
+	// tint color for glyphs
+	text_color,
 	// text_script, text_font and text_features on the passage root object set
 	// the defaults for all text objects in the passage. The settings can be
-	// overridden at the paragraph level or individiual text object level by
+	// overridden at the paragraph level or individual text object level by
 	// adding the appropriate component to that text object.
 	// script settings for the text object
 	text_script,
@@ -104,16 +106,28 @@ extern hb_feature_t CligOn;
 
 struct font_s;
 struct passage_s;
+struct text_shaper_s;
 
-struct view_s Text_View (ecs_system_t viewsys,
-						 struct font_s *font, struct passage_s *passage);
-void Text_SetScript (ecs_system_t textsys, uint32_t textid,
+typedef struct text_system_s {
+	ecs_registry_t *reg;
+	uint32_t    view_base;
+	uint32_t    text_base;
+} text_system_t;
+
+struct view_s Text_PassageView (text_system_t textsys,
+								struct font_s *font, struct passage_s *passage);
+struct view_s Text_StringView (text_system_t textsys, struct view_s parent,
+							   struct font_s *font,
+							   const char *str, uint32_t len,
+							   script_component_t *sc, featureset_t *fs,
+							   struct text_shaper_s *shaper);
+void Text_SetScript (text_system_t textsys, uint32_t textid,
 					 const char *lang, hb_script_t script, text_dir_e dir);
-void Text_SetFont (ecs_system_t textsys, uint32_t textid,
+void Text_SetFont (text_system_t textsys, uint32_t textid,
 				   struct font_s *font);
-void Text_SetFeatures (ecs_system_t textsys, uint32_t textid,
+void Text_SetFeatures (text_system_t textsys, uint32_t textid,
 					   featureset_t *features);
-void Text_AddFeature (ecs_system_t textsys, uint32_t textid,
+void Text_AddFeature (text_system_t textsys, uint32_t textid,
 					  hb_feature_t feature);
 
 #endif//__QF_ui_text_h

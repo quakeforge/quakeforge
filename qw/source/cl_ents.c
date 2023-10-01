@@ -42,6 +42,7 @@
 #include "QF/sys.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 
 #include "compat.h"
 
@@ -72,10 +73,7 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (Entity_Valid (cl_flag_ents[i])) {
-			Scene_DestroyEntity (cl_world.scene, cl_flag_ents[i]);
-			cl_flag_ents[i] = nullentity;
-		}
+		cl_flag_ents[i] = nullentity;
 	}
 
 	for (i = 0; i < 512; i++) {
@@ -197,7 +195,7 @@ CL_LinkPacketEntities (void)
 												   ent.reg);
 
 		// spawn light flashes, even ones coming from invisible objects
-		CL_NewDlight (i, new->origin, new->effects, new->glow_size,
+		CL_NewDlight (ent, new->origin, new->effects, new->glow_size,
 					  new->glow_color, cl.time);
 
 		if (forcelink)
@@ -265,7 +263,7 @@ CL_LinkPacketEntities (void)
 				CL_TransformEntity (ent, new->scale / 16, new->angles,
 									new->origin);
 				animation->pose1 = animation->pose2 = -1;
-			} else if (!(renderer->model->flags & EF_ROTATE)) {
+			} else if (!(renderer->model->effects & ME_ROTATE)) {
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
 				// interpolate the origin and angles
@@ -288,7 +286,7 @@ CL_LinkPacketEntities (void)
 		}
 
 		// rotate binary objects locally
-		if (renderer->model->flags & EF_ROTATE) {
+		if (renderer->model->effects & ME_ROTATE) {
 			vec3_t      angles;
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
@@ -300,8 +298,8 @@ CL_LinkPacketEntities (void)
 		vec4f_t org = Transform_GetWorldPosition (transform);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256))
 			old->origin = org;
-		if (renderer->model->flags & ~EF_ROTATE) {
-			CL_ModelEffects (ent, -new->number, new->glow_color, cl.time);
+		if (renderer->model->effects & ~ME_ROTATE) {
+			CL_ModelEffects (ent, new->glow_color, cl.time);
 		}
 	}
 }
@@ -388,6 +386,21 @@ CL_RemoveFlagModels (int key)
 	Transform_SetParent (transform, nulltransform);
 }
 
+static void
+muzzle_flash (entity_t ent, player_state_t *state, bool is_player)
+{
+	vec3_t		f, r, u;
+	vec4f_t     position = { 0, 0, 0, 1}, fv = {};
+	if (is_player)
+		AngleVectors (cl.viewstate.player_angles, f, r, u);
+	else
+		AngleVectors (state->viewangles, f, r, u);
+
+	VectorCopy (f, fv);
+	VectorCopy (state->pls.es.origin, position);
+	CL_MuzzleFlash (ent, position, fv, 0, cl.time);
+}
+
 /*
 	CL_LinkPlayers
 
@@ -444,16 +457,19 @@ CL_LinkPlayers (void)
 			clientplayer = false;
 		}
 		if (player->chat && player->chat->value[0] != '0') {
-			dlight_t   *dl = R_AllocDlight (j + 1);
-			VectorCopy (org, dl->origin);
-			dl->radius = 100;
-			dl->die = cl.time + 0.1;
-			QuatSet (0.0, 1.0, 0.0, 1.0, dl->color);
+			Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+				.origin = org,
+				.color = {0.0, 1.0, 0.0, 1.0},
+				.radius = 100,
+				.die = cl.time + 0.1,
+			});
+			Light_LinkLight (cl_world.scene->lights, ent.id);
 		} else {
-			CL_NewDlight (j + 1, org, state->pls.es.effects,
+			CL_NewDlight (ent, org, state->pls.es.effects,
 						  state->pls.es.glow_size, state->pls.es.glow_color,
 						  cl.time);
 		}
+		muzzle_flash (ent, state, j == cl.playernum);
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))

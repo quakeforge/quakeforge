@@ -7,6 +7,7 @@ bin_PROGRAMS +=	@QFCC_TARGETS@
 bin_SCRIPTS += tools/qfcc/source/qfpreqcc
 
 qfcc_SOURCES = \
+	tools/qfcc/source/algebra.c \
 	tools/qfcc/source/attribute.c \
 	tools/qfcc/source/class.c \
 	tools/qfcc/source/codespace.c \
@@ -25,13 +26,17 @@ qfcc_SOURCES = \
 	tools/qfcc/source/dot_type.c \
 	tools/qfcc/source/emit.c \
 	tools/qfcc/source/expr.c \
+	tools/qfcc/source/expr_algebra.c \
 	tools/qfcc/source/expr_assign.c \
 	tools/qfcc/source/expr_binary.c \
 	tools/qfcc/source/expr_bool.c \
 	tools/qfcc/source/expr_cast.c \
 	tools/qfcc/source/expr_compound.c \
+	tools/qfcc/source/expr_dag.c \
 	tools/qfcc/source/expr_obj.c \
+	tools/qfcc/source/expr_optimize.c \
 	tools/qfcc/source/expr_vector.c \
+	tools/qfcc/source/evaluate.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
 	tools/qfcc/source/grab.c \

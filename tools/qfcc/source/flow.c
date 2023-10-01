@@ -572,7 +572,11 @@ clear_operand_chain (operand_t *op)
 static void
 add_var_addrs (set_t *set, flowvar_t *var)
 {
-	for (int i = 0; i < var->op->size; i++) {
+	int size = var->op->size;
+	if (size < var->minsize) {
+		size = var->minsize;
+	}
+	for (int i = 0; i < size; i++) {
 		set_add (set, var->flowaddr + i);
 	}
 }
@@ -832,6 +836,46 @@ flow_add_op_var (set_t *set, operand_t *op, int ol)
 		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
 	} else if (op->op_type == op_def) {
 		def_visit_all (op->def, ol, flow_def_add_aliases, set);
+	}
+}
+
+static void
+flow_set_minsize (operand_t *op, int size)
+{
+	flowvar_t  *var;
+	if (!(var = flow_get_var (op)))
+		return;
+	if (var->minsize < size) {
+		var->minsize = size;
+	}
+}
+
+static void
+flow_add_op_var_size (set_t *set, operand_t *op, int size, int ol)
+{
+	flowvar_t  *var;
+
+	if (!set)
+		return;
+	if (!(var = flow_get_var (op)))
+		return;
+	set_add (set, var->number);
+
+	if (op->op_type == op_temp) {
+		//bug (0, "temp op");
+		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
+	} else if (op->op_type == op_def) {
+		def_t      *def = op->def;
+		def_t      *skip = def->alias ? def : 0;
+		int         offset = def->alias ? def->offset : 0;
+		if (def->alias) {
+			def = def->alias;
+		}
+		if (size == -1) {
+			size = type_size (def->type) - offset;
+		}
+		def_visit_overlaps (def, offset, size, ol, skip,
+							flow_def_add_aliases, set);
 	}
 }
 
@@ -1494,6 +1538,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[FLOW_OPERANDS])
 {
 	int         i, calln = -1;
+	int         size;
 	operand_t  *src_op = 0;
 	operand_t  *res_op = 0;
 	operand_t  *aux_op1 = 0;
@@ -1525,6 +1570,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 
 	switch (s->type) {
 		case st_none:
+		case st_alias:
 			internal_error (s->expr, "not a statement");
 		case st_address:
 			if (s->opb) {
@@ -1565,19 +1611,37 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
 			aux_op1 = s->opb;
+			if (s->type != st_ptrassign && s->opb->op_type == op_value) {
+				if (is_short (s->opb->type)) {
+					size = s->opb->value->v.short_val;
+				} else if (is_int (s->opb->type)) {
+					size = s->opb->value->v.int_val;
+				} else {
+					print_type (s->opb->type);
+					internal_error (s->expr, "unexpected type for memset/move");
+				}
+				if (s->type == st_move) {
+					flow_set_minsize (s->opa, size);
+				}
+				if (s->type == st_move || s->type == st_memset) {
+					flow_set_minsize (s->opc, size);
+				}
+			} else {
+				size = -1;
+			}
 			if (!strcmp (s->opcode, "move")
 				|| !strcmp (s->opcode, "memset")) {
-				flow_add_op_var (def, s->opc, 6);
+				flow_add_op_var_size (def, s->opc, size, 2);
 				src_op = s->opa;
 				res_op = s->opc;
 			} else if (!strcmp (s->opcode, "movep")) {
-				flow_add_op_var (use, s->opc, 6);
+				flow_add_op_var_size (use, s->opc, size, 2);
 				aux_op3 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "memsetp")) {
-				flow_add_op_var (use, s->opc, 6);
+				flow_add_op_var_size (use, s->opc, size, 2);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;

@@ -502,7 +502,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		idef->file = -1;					// mark def as copied
 		idef->line = num_work_defrefs;		// so def can be found
-		// In the first passs, process_type_def sets the type meta to -1 and
+		// In the first pass, process_type_def sets the type meta to -1 and
 		// class to the offset of the copied type, but the null type encodiing
 		// is not modified. Other defs are processed in the second pass.
 		type = QFOTYPE(idef->type);
@@ -1293,6 +1293,19 @@ check_defs (void)
 	free (undef_defs);
 }
 
+static void
+sort_defs (qfo_mspace_t *space)
+{
+	qfo_def_t  *defs = space->defs;
+	for (pr_uint_t i = 1; i < space->num_defs; i++) {
+		qfo_def_t   d = defs[i];
+		for (pr_uint_t j = i; j-- > 0 && d.offset < defs[j].offset; ) {
+			defs[j + 1] = defs[j];
+			defs[j] = d;
+		}
+	}
+}
+
 static qfo_t *
 build_qfo (void)
 {
@@ -1305,6 +1318,9 @@ build_qfo (void)
 	qfo = qfo_new ();
 	qfo->spaces = calloc (work->num_spaces, sizeof (qfo_mspace_t));
 	qfo->num_spaces = work->num_spaces;
+	for (i = qfo_near_data_space; i <= qfo_entity_space; i++) {
+		sort_defs (&qfo->spaces[i]);
+	}
 	for (i = 0; i < work->num_spaces; i++) {
 		qfo->spaces[i].type = work->spaces[i].type;
 		qfo->spaces[i].id = work->spaces[i].id;

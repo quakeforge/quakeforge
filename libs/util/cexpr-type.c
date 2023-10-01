@@ -70,12 +70,19 @@ BINOP(bool, and, bool, &)
 BINOP(bool, or, bool, |)
 BINOP(bool, xor, bool, ^)
 
+static void
+bool_cast_int (const exprval_t *val1, const exprval_t *src, exprval_t *result,
+			   exprctx_t *ctx)
+{
+	*(bool *) result->value = !!*(int *) src->value;
+}
+
 UNOP(bool, not, bool, !)
 
 static const char *
 bool_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return val->value ? "true" : "false";
+	return *(bool *) val->value ? "true" : "false";
 }
 
 binop_t bool_binops[] = {
@@ -83,6 +90,7 @@ binop_t bool_binops[] = {
 	{ '|', &cexpr_bool, &cexpr_bool, bool_or },
 	{ '^', &cexpr_bool, &cexpr_bool, bool_xor },
 	{ '=', &cexpr_plitem, &cexpr_bool, cexpr_cast_plitem },
+	{ '=', &cexpr_int, &cexpr_bool, bool_cast_int },
 	{}
 };
 

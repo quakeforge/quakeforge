@@ -101,6 +101,72 @@ static dstatement_t float_extend_statements[] = {
 	{ OP(0, 0, 3, OP_EXTEND), 24, 035, 20 },
 };
 
+static pr_vec4_t reverse_float_extend_expect[] = {
+	{ 0,  5,  _,  _ },
+	{ 0,  0,  4,  _ },
+	{ 0,  0,  0,  3 },
+	{ 0,  5,  4,  _ },
+	{ 0,  0,  3,  2 },
+	{ 0,  5,  4,  3 },
+	{ 2,  3,  4,  5 },
+	{ _,  _,  1,  4 },
+	{ _,  1,  1,  3 },
+	{ 1,  1,  1,  2 },
+	{ _,  1,  5,  4 },
+	{ 1,  1,  3,  2 },
+	{ 1,  4,  3,  2 },
+	{ _,  _,  _,  _ },
+	{ 5,  5,  _,  _ },
+	{ 4,  4,  4,  _ },
+	{ 3,  3,  3,  3 },
+	{ 0,  5,  4,  _ },
+	{ 3,  2,  3,  2 },
+	{ 0,  5,  4,  3 },
+	{ _,  _,  _,  _ },
+	{ _,  _, -1,  4 },
+	{ _, -1, -1,  3 },
+	{-1, -1, -1,  2 },
+	{ _, -1,  5,  4 },
+	{-1, -1,  3,  2 },
+	{-1,  4,  3,  2 },
+	{ _,  _,  _,  _ },
+};
+
+static dstatement_t reverse_float_extend_statements[] = {
+	{ OP(0, 0, 0, OP_WITH), 0,  0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 0, 28, 1 },
+	{ OP(0, 0, 0, OP_WITH), 0, 56, 2 },
+	{ OP(0, 0, 0, OP_WITH), 0, 84, 3 },
+
+	{ OP(0, 0, 0, OP_EXTEND), 27, 0100,  0 },
+	{ OP(0, 0, 0, OP_EXTEND), 26, 0101,  4 },
+	{ OP(0, 0, 0, OP_EXTEND), 25, 0102,  8 },
+	{ OP(0, 0, 0, OP_EXTEND), 26, 0103, 12 },
+	{ OP(0, 0, 0, OP_EXTEND), 24, 0104, 16 },
+	{ OP(0, 0, 0, OP_EXTEND), 25, 0105, 20 },
+
+	{ OP(0, 0, 1, OP_EXTEND), 26, 0110,  2 },
+	{ OP(0, 0, 1, OP_EXTEND), 25, 0111,  5 },
+	{ OP(0, 0, 1, OP_EXTEND), 24, 0112,  8 },
+	{ OP(0, 0, 1, OP_EXTEND), 26, 0113, 13 },
+	{ OP(0, 0, 1, OP_EXTEND), 24, 0114, 16 },
+	{ OP(0, 0, 1, OP_EXTEND), 24, 0115, 20 },
+
+	{ OP(0, 0, 2, OP_EXTEND), 27, 0120,  0 },
+	{ OP(0, 0, 2, OP_EXTEND), 26, 0121,  4 },
+	{ OP(0, 0, 2, OP_EXTEND), 25, 0122,  8 },
+	{ OP(0, 0, 2, OP_EXTEND), 26, 0123, 12 },
+	{ OP(0, 0, 2, OP_EXTEND), 24, 0124, 16 },
+	{ OP(0, 0, 2, OP_EXTEND), 25, 0125, 20 },
+
+	{ OP(0, 0, 3, OP_EXTEND), 26, 0130,  2 },
+	{ OP(0, 0, 3, OP_EXTEND), 25, 0131,  5 },
+	{ OP(0, 0, 3, OP_EXTEND), 24, 0132,  8 },
+	{ OP(0, 0, 3, OP_EXTEND), 26, 0133, 13 },
+	{ OP(0, 0, 3, OP_EXTEND), 24, 0134, 16 },
+	{ OP(0, 0, 3, OP_EXTEND), 24, 0135, 20 },
+};
+
 #undef _
 #define _ -1.1885959257070704e+148	// 0xdeadbeefdeadbeef
 
@@ -201,6 +267,72 @@ static dstatement_t double_extend_statements[] = {
 	{ OP(0, 0, 3, OP_EXTEND), 48, 075, 40 },
 };
 
+static pr_dvec4_t reverse_double_extend_expect[] = {
+	{ 0,  5,  _,  _ },
+	{ 0,  0,  4,  _ },
+	{ 0,  0,  0,  3 },
+	{ 0,  5,  4,  _ },
+	{ 0,  0,  3,  2 },
+	{ 0,  5,  4,  3 },
+	{ 2,  3,  4,  5 },
+	{ _,  _,  1,  4 },
+	{ _,  1,  1,  3 },
+	{ 1,  1,  1,  2 },
+	{ _,  1,  5,  4 },
+	{ 1,  1,  3,  2 },
+	{ 1,  4,  3,  2 },
+	{ _,  _,  _,  _ },
+	{ 5,  5,  _,  _ },
+	{ 4,  4,  4,  _ },
+	{ 3,  3,  3,  3 },
+	{ 0,  5,  4,  _ },
+	{ 3,  2,  3,  2 },
+	{ 0,  5,  4,  3 },
+	{ _,  _,  _,  _ },
+	{ _,  _, -1,  4 },
+	{ _, -1, -1,  3 },
+	{-1, -1, -1,  2 },
+	{ _, -1,  5,  4 },
+	{-1, -1,  3,  2 },
+	{-1,  4,  3,  2 },
+	{ _,  _,  _,  _ },
+};
+
+static dstatement_t reverse_double_extend_statements[] = {
+	{ OP(0, 0, 0, OP_WITH), 0,   0, 0 },
+	{ OP(0, 0, 0, OP_WITH), 0,  56, 1 },
+	{ OP(0, 0, 0, OP_WITH), 0, 112, 2 },
+	{ OP(0, 0, 0, OP_WITH), 0, 168, 3 },
+
+	{ OP(0, 0, 0, OP_EXTEND), 54, 0140,  0 },
+	{ OP(0, 0, 0, OP_EXTEND), 52, 0141,  8 },
+	{ OP(0, 0, 0, OP_EXTEND), 50, 0142, 16 },
+	{ OP(0, 0, 0, OP_EXTEND), 52, 0143, 24 },
+	{ OP(0, 0, 0, OP_EXTEND), 48, 0144, 32 },
+	{ OP(0, 0, 0, OP_EXTEND), 50, 0145, 40 },
+
+	{ OP(0, 0, 1, OP_EXTEND), 52, 0150,  4 },
+	{ OP(0, 0, 1, OP_EXTEND), 50, 0151, 10 },
+	{ OP(0, 0, 1, OP_EXTEND), 48, 0152, 16 },
+	{ OP(0, 0, 1, OP_EXTEND), 52, 0153, 26 },
+	{ OP(0, 0, 1, OP_EXTEND), 48, 0154, 32 },
+	{ OP(0, 0, 1, OP_EXTEND), 48, 0155, 40 },
+
+	{ OP(0, 0, 2, OP_EXTEND), 54, 0160,  0 },
+	{ OP(0, 0, 2, OP_EXTEND), 52, 0161,  8 },
+	{ OP(0, 0, 2, OP_EXTEND), 50, 0162, 16 },
+	{ OP(0, 0, 2, OP_EXTEND), 52, 0163, 24 },
+	{ OP(0, 0, 2, OP_EXTEND), 48, 0164, 32 },
+	{ OP(0, 0, 2, OP_EXTEND), 50, 0165, 40 },
+
+	{ OP(0, 0, 3, OP_EXTEND), 52, 0170,  4 },
+	{ OP(0, 0, 3, OP_EXTEND), 50, 0171, 10 },
+	{ OP(0, 0, 3, OP_EXTEND), 48, 0172, 16 },
+	{ OP(0, 0, 3, OP_EXTEND), 52, 0173, 26 },
+	{ OP(0, 0, 3, OP_EXTEND), 48, 0174, 32 },
+	{ OP(0, 0, 3, OP_EXTEND), 48, 0175, 40 },
+};
+
 test_t tests[] = {
 	{
 		.desc = "float extend",
@@ -211,12 +343,30 @@ test_t tests[] = {
 		.expect_globals = (pr_int_t *) float_extend_expect,
 	},
 	{
+		.desc = "reverse float extend",
+		.num_globals = num_globals(float_extend_init,
+								   reverse_float_extend_expect),
+		.num_statements = num_statements (reverse_float_extend_statements),
+		.statements = reverse_float_extend_statements,
+		.init_globals = (pr_int_t *) float_extend_init,
+		.expect_globals = (pr_int_t *) reverse_float_extend_expect,
+	},
+	{
 		.desc = "double extend",
-		.num_globals = num_globals(double_extend_init,double_extend_expect),
+		.num_globals = num_globals(double_extend_init, double_extend_expect),
 		.num_statements = num_statements (double_extend_statements),
 		.statements = double_extend_statements,
 		.init_globals = (pr_int_t *) double_extend_init,
 		.expect_globals = (pr_int_t *) double_extend_expect,
+	},
+	{
+		.desc = "reverse double extend",
+		.num_globals = num_globals(double_extend_init,
+								   reverse_double_extend_expect),
+		.num_statements = num_statements (reverse_double_extend_statements),
+		.statements = reverse_double_extend_statements,
+		.init_globals = (pr_int_t *) double_extend_init,
+		.expect_globals = (pr_int_t *) reverse_double_extend_expect,
 	},
 };
 

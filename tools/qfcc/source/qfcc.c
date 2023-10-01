@@ -91,8 +91,6 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-options_t   options;
-
 const char *sourcedir;
 const char *progs_src;
 

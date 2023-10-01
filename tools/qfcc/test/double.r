@@ -6,7 +6,7 @@ union {
 	int    i[2];
 } type_pun;
 
-int
+long
 test_format ()
 {
 	int         fail = 0;
@@ -17,10 +17,10 @@ test_format ()
 	return fail;
 }
 
-int
+long
 test_constant ()
 {
-	int         fail = 0;
+	long        fail = 0;
 	double      a, b, c, d, e;
 	a = 1;
 	b = 2.0;
@@ -40,10 +40,10 @@ double greater_equal = 3;
 double less_equal = 5;
 double greater = 5;
 
-int
+long
 test_copare ()
 {
-	int fail = 0;
+	long fail = 0;
 
 	fail |= !(less < greater);
 	fail |= (less > greater);
@@ -75,10 +75,10 @@ test_copare ()
 	return fail;
 }
 
-int
+long
 test_ops ()
 {
-	int         fail = 0;
+	long        fail = 0;
 	double      a = 6.25, b = 2.375;
 	double      c;
 
@@ -98,7 +98,7 @@ test_ops ()
 int
 main ()
 {
-	int         fail = 0;
+	long        fail = 0;
 	fail |= test_format ();
 	fail |= test_constant ();
 	fail |= test_ops ();

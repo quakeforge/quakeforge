@@ -124,12 +124,12 @@ IE_Get_Focus (void)
 static void
 in_event_shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "in_event_shutdown\n");
 	DARRAY_CLEAR (&ie_handlers);
 }
 
-static void __attribute__((constructor))
-in_event_init (void)
+void
+IN_Event_Init (void)
 {
-	//FIXME see in_evdev
 	Sys_RegisterShutdown (in_event_shutdown, 0);
 }

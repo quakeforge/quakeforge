@@ -131,6 +131,8 @@ void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
 ECSINLINE ecs_range_t ECS_GetSubpoolRange (ecs_registry_t *registry,
 										   uint32_t component, uint32_t id);
+void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
+						  uint32_t id);
 
 #undef ECSINLINE
 #ifndef IMPLEMENT_ECS_Funcs

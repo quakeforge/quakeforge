@@ -936,20 +936,10 @@ static imtcmd_t imt_commands[] = {
 	{},
 };
 
-void
-IMT_Init (void)
+static void
+IMT_Shutdown (void *data)
 {
-	binding_mem = new_memsuper ();
-	recipe_tab = Hash_NewTable (61, 0, recipe_free, 0, 0);
-	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
-	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
-		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
-	}
-}
-
-void
-IMT_Shutdown (void)
-{
+	Sys_MaskPrintf (SYS_input, "IMT_Shutdown\n");
 	imt_drop_all_f ();
 	Hash_DelTable (recipe_tab);
 
@@ -958,6 +948,18 @@ IMT_Shutdown (void)
 	DARRAY_CLEAR (&axis_blocks);
 	DARRAY_CLEAR (&button_blocks);
 	DARRAY_CLEAR (&in_contexts);
+}
+
+void
+IMT_Init (void)
+{
+	Sys_RegisterShutdown (IMT_Shutdown, 0);
+	binding_mem = new_memsuper ();
+	recipe_tab = Hash_NewTable (61, 0, recipe_free, 0, 0);
+	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
+	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
+		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
+	}
 }
 
 void

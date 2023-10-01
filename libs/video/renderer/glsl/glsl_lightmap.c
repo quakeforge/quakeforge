@@ -66,7 +66,6 @@ void (*glsl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
 static void
 R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
-	unsigned    lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
@@ -84,16 +83,19 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		if (!(surf->dlightbits[i / 32] & (1 << (i % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
-		rad = r_dlights[lnum].radius;
+		VectorSubtract (dlight->origin, entorigin, lightorigin);
+		rad = dlight->radius;
 		dist = DotProduct (lightorigin, surf->plane->normal)
 				- surf->plane->dist;
 		rad -= fabs (dist);
-		minlight = r_dlights[lnum].minlight;
+		minlight = dlight->minlight;
 		if (rad < minlight)
 			continue;
 		minlight = rad - minlight;

@@ -251,6 +251,8 @@ static void
 CL_NewMap (const char *mapname)
 {
 	CL_World_NewMap (mapname, 0);
+	V_NewScene (&cl.viewstate, cl_world.scene);
+
 	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
 
 	Con_NewMap ();

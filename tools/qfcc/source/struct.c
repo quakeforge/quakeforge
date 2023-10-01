@@ -175,8 +175,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 			symtab->size += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
-			if (size > symtab->size)
-				symtab->size = size;
+			if (size > symtab->size) {
+				symtab->size = RUP (size, s->type->alignment);
+			}
 		}
 		if (s->type->alignment > alignment) {
 			alignment = s->type->alignment;
@@ -262,7 +263,7 @@ finish_enum (symbol_t *sym)
 }
 
 void
-add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
+add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 {
 	type_t     *enum_type = enm->type;
 	symtab_t   *enum_tab = enum_type->t.symtab;
@@ -278,7 +279,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	if (enum_tab->symbols)
 		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.int_val + 1;
 	if (val) {
-		convert_name (val);
+		val = convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
 		else if (!is_int_val (val))

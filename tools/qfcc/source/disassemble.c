@@ -79,7 +79,13 @@ disassemble_progs (progs_t *pr)
 
 			Sys_Printf ("%s:\n", PR_GetString (pr, desc->name));
 			pr->pr_xfunction = &func;
+
+			if (pr->pr_depth) {
+				//FIXME assumes 1 is frame
+				//FIXME update when making locals have -ve addresses
+				pr->pr_bases[1] = pr->pr_stack[0].stack_ptr - func.params_start;
+			}
 		}
-		PR_PrintStatement (pr, &pr->pr_statements[i], 2 | (verbosity > 1));
+		PR_PrintStatement (pr, &pr->pr_statements[i], 2 | (verbosity > 0));
 	}
 }

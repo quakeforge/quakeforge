@@ -54,6 +54,8 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
+#include "cl_console.h"
+
 typedef struct menu_pic_s {
 	struct menu_pic_s *next;
 	int         x, y;
@@ -378,7 +380,7 @@ bi_Menu_SelectMenu (progs_t *pr, void *data)
 	if (name && *name)
 		menu = Hash_Find (menu_hash, name);
 	if (menu) {
-		Con_SetState (con_menu);
+		Con_SetState (con_menu, true);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -387,7 +389,7 @@ bi_Menu_SelectMenu (progs_t *pr, void *data)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
-		Con_SetState (con_inactive);
+		Con_SetState (con_inactive, true);
 	}
 }
 
@@ -472,7 +474,7 @@ bi_Menu_Leave (progs_t *pr, void *data)
 		}
 		menu = menu->parent;
 		if (!menu) {
-			Con_SetState (con_inactive);
+			Con_SetState (con_inactive, true);
 		}
 	}
 }
@@ -851,14 +853,14 @@ void
 Menu_Enter ()
 {
 	if (!top_menu) {
-		Con_SetState (con_active);
+		Con_SetState (con_active, true);
 		return;
 	}
 	if (!menu) {
 		menu = Hash_Find (menu_hash, top_menu);
 	}
 	if (menu) {
-		Con_SetState (con_menu);
+		Con_SetState (con_menu, true);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -878,7 +880,7 @@ Menu_Leave ()
 		}
 		menu = menu->parent;
 		if (!menu) {
-			Con_SetState (con_inactive);
+			Con_SetState (con_inactive, true);
 		}
 	}
 }

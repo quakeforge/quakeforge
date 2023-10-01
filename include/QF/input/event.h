@@ -48,6 +48,7 @@ typedef enum {
 	ies_capslock = 2,
 	ies_control = 4,
 	ies_alt = 8,
+	ies_numlock = 16,
 } IE_shift;
 
 typedef enum {
@@ -121,6 +122,7 @@ typedef struct IE_event_s {
 
 typedef int ie_handler_t (const IE_event_t *, void *data);
 
+void IN_Event_Init (void);
 int IE_Send_Event (const IE_event_t *event);
 int IE_Add_Handler (ie_handler_t *event_handler, void *data);
 void IE_Remove_Handler (int handle);

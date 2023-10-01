@@ -39,6 +39,7 @@ renderer_libs= \
 	libs/util/libQFutil.la
 
 renderer_libadd= \
+	$(FONTCONFIG_LIBS) \
 	$(FREETYPE_LIBS) \
 	$(HARFBUZZ_LIBS)
 
@@ -199,6 +200,8 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 
 rp_main_def_src = libs/video/renderer/vulkan/rp_main_def.plist
 rp_main_def_gen = libs/video/renderer/vulkan/rp_main_def.plc
+rp_main_fwd_src = libs/video/renderer/vulkan/rp_main_fwd.plist
+rp_main_fwd_gen = libs/video/renderer/vulkan/rp_main_fwd.plc
 smp_quake_src = libs/video/renderer/vulkan/smp_quake.plist
 smp_quake_gen = libs/video/renderer/vulkan/smp_quake.plc
 
@@ -225,11 +228,13 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/dsmanager.c \
 	libs/video/renderer/vulkan/image.c \
 	libs/video/renderer/vulkan/instance.c \
+	libs/video/renderer/vulkan/mouse_pick.c \
 	libs/video/renderer/vulkan/memory.c \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/projection.c \
 	libs/video/renderer/vulkan/render.c \
 	libs/video/renderer/vulkan/render_load.c \
+	libs/video/renderer/vulkan/render_ui.c \
 	libs/video/renderer/vulkan/resource.c \
 	libs/video/renderer/vulkan/scrap.c \
 	libs/video/renderer/vulkan/shader.c \
@@ -244,11 +249,11 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
-	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
 	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
+	libs/video/renderer/vulkan/vulkan_planes.c \
 	libs/video/renderer/vulkan/vulkan_scene.c \
 	libs/video/renderer/vulkan/vulkan_sprite.c \
 	libs/video/renderer/vulkan/vulkan_texture.c \
@@ -259,6 +264,7 @@ libs/video/renderer/vulkan/vkparse.lo: \
 	libs/video/renderer/vulkan/vkparse.c \
 	$(vkparse_src) \
 	$(rp_main_def_gen) \
+	$(rp_main_fwd_gen) \
 	$(smp_quake_gen)
 
 libs/video/renderer/vulkan/shader.lo: \
@@ -293,6 +299,8 @@ particleg_src = $(vkshaderpath)/particle.geom
 particleg_c = $(vkshaderpath)/particle.geom.spvc
 particlef_src = $(vkshaderpath)/particle.frag
 particlef_c = $(vkshaderpath)/particle.frag.spvc
+spritef_src = $(vkshaderpath)/sprite.frag
+spritef_c = $(vkshaderpath)/sprite.frag.spvc
 sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
 sprite_gbufv_c = $(vkshaderpath)/sprite_gbuf.vert.spvc
 sprite_gbuff_src = $(vkshaderpath)/sprite_gbuf.frag
@@ -326,10 +334,33 @@ bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
 bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
-lightingf_src = $(vkshaderpath)/lighting.frag
-lightingf_c = $(vkshaderpath)/lighting.frag.spvc
+debug_src = $(vkshaderpath)/debug.frag
+debug_c = $(vkshaderpath)/debug.frag.spvc
+entid_src = $(vkshaderpath)/entid.frag
+entid_c = $(vkshaderpath)/entid.frag.spvc
+light_entid_src = $(vkshaderpath)/light_entid.vert
+light_entid_c = $(vkshaderpath)/light_entid.vert.spvc
+light_flat_src = $(vkshaderpath)/light_flat.vert
+light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
+light_splatv_src = $(vkshaderpath)/light_splat.vert
+light_splatv_c = $(vkshaderpath)/light_splat.vert.spvc
+light_splatf_src = $(vkshaderpath)/light_splat.frag
+light_splatf_c = $(vkshaderpath)/light_splat.frag.spvc
+light_debug_src = $(vkshaderpath)/light_debug.frag
+light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
+lighting_cascadef_src = $(vkshaderpath)/lighting_cascade.frag
+lighting_cascadef_c = $(vkshaderpath)/lighting_cascade.frag.spvc
+lighting_cubef_src = $(vkshaderpath)/lighting_cube.frag
+lighting_cubef_c = $(vkshaderpath)/lighting_cube.frag.spvc
+lighting_main = $(vkshaderpath)/lighting_main.finc
+lighting_nonef_src = $(vkshaderpath)/lighting_none.frag
+lighting_nonef_c = $(vkshaderpath)/lighting_none.frag.spvc
+lighting_planef_src = $(vkshaderpath)/lighting_plane.frag
+lighting_planef_c = $(vkshaderpath)/lighting_plane.frag.spvc
+lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+infplane = $(vkshaderpath)/infplane.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -349,6 +380,8 @@ iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
 iqmf_src = $(vkshaderpath)/iqm.frag
 iqmf_c = $(vkshaderpath)/iqm.frag.spvc
+iqm_fwd_src = $(vkshaderpath)/iqm_fwd.frag
+iqm_fwd_c = $(vkshaderpath)/iqm_fwd.frag.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -357,6 +390,8 @@ fstriangle_src = $(vkshaderpath)/fstriangle.vert
 fstriangle_c = $(vkshaderpath)/fstriangle.vert.spvc
 fstrianglest_src = $(vkshaderpath)/fstrianglest.vert
 fstrianglest_c = $(vkshaderpath)/fstrianglest.vert.spvc
+gridplane_src = $(vkshaderpath)/gridplane.frag
+gridplane_c = $(vkshaderpath)/gridplane.frag.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 fisheye_src = $(vkshaderpath)/fisheye.frag
@@ -374,6 +409,8 @@ $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src) $(matrices_h)
 $(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
+
+$(spritef_c): $(spritef_src)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
@@ -407,7 +444,27 @@ $(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
 
 $(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
 
-$(lightingf_c): $(lightingf_src)
+$(debug_c): $(debug_src) $(lighting_h)
+
+$(entid_c): $(entid_src)
+
+$(light_entid_c): $(light_entid_src) $(lighting_h)
+
+$(light_flat_c): $(light_flat_src) $(lighting_h)
+
+$(light_splatv_c): $(light_splatv_src) $(lighting_h)
+
+$(light_splatf_c): $(light_splatf_src) $(lighting_h)
+
+$(light_debug_c): $(light_debug_src) $(lighting_h)
+
+$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main)
+
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main)
+
+$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main)
+
+$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
@@ -425,6 +482,8 @@ $(iqmv_c): $(iqmv_src) $(matrices_h)
 
 $(iqmf_c): $(iqmf_src)
 
+$(iqm_fwd_c): $(iqm_fwd_src)
+
 $(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
@@ -432,6 +491,8 @@ $(passthrough_c): $(passthrough_src)
 $(fstriangle_c): $(fstriangle_src)
 
 $(fstrianglest_c): $(fstrianglest_src)
+
+$(gridplane_c): $(infplane) $(gridplane_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
@@ -448,6 +509,7 @@ vkshader_c = \
 	$(particlev_c) \
 	$(particleg_c) \
 	$(particlef_c) \
+	$(spritef_c) \
 	$(sprite_gbufv_c) \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \
@@ -464,7 +526,17 @@ vkshader_c = \
 	$(bsp_shadow_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
-	$(lightingf_c) \
+	$(debug_c) \
+	$(entid_c) \
+	$(light_entid_c) \
+	$(light_flat_c) \
+	$(light_splatv_c) \
+	$(light_splatf_c) \
+	$(light_debug_c) \
+	$(lighting_cascadef_c) \
+	$(lighting_cubef_c) \
+	$(lighting_nonef_c) \
+	$(lighting_planef_c) \
 	$(composef_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
@@ -473,10 +545,12 @@ vkshader_c = \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
 	$(iqmf_c) \
+	$(iqm_fwd_c) \
 	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
 	$(fstrianglest_c) \
+	$(gridplane_c) \
 	$(pushcolor_c) \
 	$(shadow_c) \
 	$(fisheye_c) \
@@ -515,7 +589,9 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkparse.plist \
 	libs/video/renderer/vulkan/vkparse.h \
 	$(rp_main_def_src) \
+	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
+	$(infplane) \
 	$(oit_blend) \
 	$(oit_store) \
 	$(oit_h) \
@@ -529,6 +605,7 @@ EXTRA_DIST += \
 	$(particlev_src) \
 	$(particleg_src) \
 	$(particlef_src) \
+	$(spritef_src) \
 	$(sprite_gbufv_src) \
 	$(sprite_gbuff_src) \
 	$(sprite_depthv_src) \
@@ -545,7 +622,18 @@ EXTRA_DIST += \
 	$(bsp_shadow_src) \
 	$(bsp_skyf_src) \
 	$(bsp_turbf_src) \
-	$(lightingf_src) \
+	$(debug_src) \
+	$(entid_src) \
+	$(light_entid_src) \
+	$(light_flat_src) \
+	$(light_splatv_src) \
+	$(light_splatf_src) \
+	$(light_debug_src) \
+	$(lighting_cascadef_src) \
+	$(lighting_cubef_src) \
+	$(lighting_nonef_src) \
+	$(lighting_planef_src) \
+	$(lighting_h) \
 	$(composef_src) \
 	$(aliasv_src) \
 	$(aliasf_src) \
@@ -554,10 +642,12 @@ EXTRA_DIST += \
 	$(alias_shadow_src) \
 	$(iqmv_src) \
 	$(iqmf_src) \
+	$(iqm_fwd_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
 	$(fstrianglest_src) \
+	$(gridplane_src) \
 	$(pushcolor_src) \
 	$(fisheye_src) \
 	$(waterwarp_src)

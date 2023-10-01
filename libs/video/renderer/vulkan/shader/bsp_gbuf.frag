@@ -43,5 +43,5 @@ main (void)
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
 	frag_normal = vec4 (normal, 0);
-	frag_position = position;
+	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

@@ -66,13 +66,13 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
-expr_t *
-test_expr (expr_t *e)
+const expr_t *
+test_expr (const expr_t *e)
 {
-	static float zero[4] = {0, 0, 0, 0};
-	expr_t     *new = 0;
+	const expr_t *new = 0;
 	type_t     *type;
 
+	e = convert_name (e);
 	if (e->type == ex_error)
 		return e;
 
@@ -96,11 +96,19 @@ test_expr (expr_t *e)
 			break;
 		case ev_long:
 		case ev_ulong:
+			if (type->width > 1) {
+				e = new_horizontal_expr ('|', e, &type_long);
+			}
+			e = new_alias_expr (&type_ivec2, e);
+			return new_horizontal_expr ('|', e, &type_int);
 		case ev_ushort:
-			internal_error (e, "long not implemented");
+			internal_error (e, "ushort not implemented");
 		case ev_uint:
 		case ev_int:
 		case ev_short:
+			if (type->width > 1) {
+				e = new_horizontal_expr ('|', e, &type_int);
+			}
 			if (!is_int(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
@@ -120,13 +128,15 @@ test_expr (expr_t *e)
 				}
 				return e;
 			}
-			new = new_float_expr (0);
-			break;
+			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
+			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			return test_expr (new);
 		case ev_double:
-			new = new_double_expr (0);
-			break;
+			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
+			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			return test_expr (new);
 		case ev_vector:
-			new = new_vector_expr (zero);
+			new = new_zero_expr (&type_vector);
 			break;
 		case ev_entity:
 			return new_alias_expr (type_default, e);
@@ -137,7 +147,7 @@ test_expr (expr_t *e)
 		case ev_ptr:
 			return new_alias_expr (type_default, e);
 		case ev_quaternion:
-			new = new_quaternion_expr (zero);
+			new = new_zero_expr (&type_quaternion);
 			break;
 		case ev_invalid:
 			if (is_enum (type)) {
@@ -146,16 +156,14 @@ test_expr (expr_t *e)
 			}
 			return test_error (e, get_type (e));
 	}
-	new->line = e->line;
-	new->file = e->file;
+	new = expr_file_line ((expr_t *) new, e);
 	new = binary_expr (NE, e, new);
-	new->line = e->line;
-	new->file = e->file;
+	new = expr_file_line ((expr_t *) new, e);
 	return new;
 }
 
 void
-backpatch (ex_list_t *list, expr_t *label)
+backpatch (ex_boollist_t *list, const expr_t *label)
 {
 	int         i;
 	expr_t     *e;
@@ -167,46 +175,46 @@ backpatch (ex_list_t *list, expr_t *label)
 
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
-		if (e->type == ex_branch && e->e.branch.type < pr_branch_call) {
-			e->e.branch.target = label;
+		if (e->type == ex_branch && e->branch.type < pr_branch_call) {
+			e->branch.target = label;
 		} else {
 			internal_error (e, 0);
 		}
-		label->e.label.used++;
+		((expr_t *)label)->label.used++;
 	}
 }
 
-static ex_list_t *
-merge (ex_list_t *l1, ex_list_t *l2)
+static ex_boollist_t *
+merge (ex_boollist_t *l1, ex_boollist_t *l2)
 {
-	ex_list_t  *m;
+	ex_boollist_t  *m;
 
 	if (!l1 && !l2)
-		internal_error (0, 0);
+		return 0;
 	if (!l2)
 		return l1;
 	if (!l1)
 		return l2;
-	m = malloc ((size_t)&((ex_list_t *)0)->e[l1->size + l2->size]);
+	m = malloc (field_offset (ex_boollist_t, e[l1->size + l2->size]));
 	m->size = l1->size + l2->size;
 	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
 	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (expr_t *));
 	return m;
 }
 
-static ex_list_t *
-make_list (expr_t *e)
+static ex_boollist_t *
+make_list (const expr_t *e)
 {
-	ex_list_t  *m;
+	ex_boollist_t  *m;
 
-	m = malloc ((size_t)&((ex_list_t *) 0)->e[1]);
+	m = malloc (field_offset (ex_boollist_t, e[1]));
 	m->size = 1;
-	m->e[0] = e;
+	m->e[0] = (expr_t *) e;
 	return m;
 }
 
-expr_t *
-bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
+const expr_t *
+bool_expr (int op, const expr_t *label, const expr_t *e1, const expr_t *e2)
 {
 	expr_t     *block;
 
@@ -221,83 +229,75 @@ bool_expr (int op, expr_t *label, expr_t *e1, expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
-	block = new_block_expr ();
+	block = new_block_expr (0);
 	append_expr (block, e1);
 	append_expr (block, label);
 	append_expr (block, e2);
 
 	switch (op) {
 		case OR:
-			backpatch (e1->e.boolean.false_list, label);
-			return new_bool_expr (merge (e1->e.boolean.true_list,
-										 e2->e.boolean.true_list),
-								  e2->e.boolean.false_list, block);
+			backpatch (e1->boolean.false_list, label);
+			return new_bool_expr (merge (e1->boolean.true_list,
+										 e2->boolean.true_list),
+								  e2->boolean.false_list, block);
 			break;
 		case AND:
-			backpatch (e1->e.boolean.true_list, label);
-			return new_bool_expr (e2->e.boolean.true_list,
-								  merge (e1->e.boolean.false_list,
-										 e2->e.boolean.false_list), block);
+			backpatch (e1->boolean.true_list, label);
+			return new_bool_expr (e2->boolean.true_list,
+								  merge (e1->boolean.false_list,
+										 e2->boolean.false_list), block);
 			break;
 	}
 	internal_error (e1, 0);
 }
 
 static int __attribute__((pure))
-has_block_expr (expr_t *e)
+has_block_expr (const expr_t *e)
 {
 	while (e->type == ex_alias) {
-		e = e->e.alias.expr;
+		e = e->alias.expr;
 	}
 	return e->type == ex_block;
 }
 
-expr_t *
-convert_bool (expr_t *e, int block)
+const expr_t *
+convert_bool (const expr_t *e, int block)
 {
-	expr_t     *b;
-
 	if (e->type == ex_assign) {
-		expr_t     *tst;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		tst = e->e.assign.src;
-		if (has_block_expr (tst) && has_block_expr (e->e.assign.dst)) {
+		auto tst = e->assign.src;
+		if (has_block_expr (tst) && has_block_expr (e->assign.dst)) {
 			tst = new_temp_def_expr (get_type (tst));
-			e = new_assign_expr (e->e.assign.dst,
-								 assign_expr (tst, e->e.assign.src));
+			e = new_assign_expr (e->assign.dst,
+								 assign_expr (tst, e->assign.src));
 		} else if (has_block_expr (tst)) {
-			tst = e->e.assign.dst;
+			tst = e->assign.dst;
 		}
-		b = convert_bool (tst, 1);
+		auto b = convert_bool (tst, 1);
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the boolean's block
-		e->next = b->e.boolean.e->e.block.head;
-		b->e.boolean.e->e.block.head = e;
-		if (b->e.boolean.e->e.block.tail == &b->e.boolean.e->e.block.head) {
-			// shouldn't happen, but just in case
-			b->e.boolean.e->e.block.tail = &e->next;
-		}
+		prepend_expr ((expr_t *) b->boolean.e, e);	//FIXME cast
 		return b;
 	}
 
-	if (e->type == ex_uexpr && e->e.expr.op == '!'
-		&& !is_string(get_type (e->e.expr.e1))) {
-		e = convert_bool (e->e.expr.e1, 0);
+	if (e->type == ex_uexpr && e->expr.op == '!'
+		&& !is_string(get_type (e->expr.e1))) {
+		e = convert_bool (e->expr.e1, 0);
 		if (e->type == ex_error)
-			return e;
+			return (expr_t *) e;
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {
 		e = test_expr (e);
 		if (e->type == ex_error)
-			return e;
+			return (expr_t *) e;
 		if (is_constant (e)) {
 			int         val;
 
-			b = goto_expr (0);
+			auto b = goto_expr (0);
 			if (is_int_val (e)) {
 				val = expr_int (e);
 			} else {
@@ -308,17 +308,17 @@ convert_bool (expr_t *e, int block)
 			else
 				e = new_bool_expr (0, make_list (b), b);
 		} else {
-			b = new_block_expr ();
+			auto b = new_block_expr (0);
 			append_expr (b, branch_expr (NE, e, 0));
 			append_expr (b, goto_expr (0));
-			e = new_bool_expr (make_list (b->e.block.head),
-							   make_list (b->e.block.head->next), b);
+			e = new_bool_expr (make_list (b->block.head->expr),
+							   make_list (b->block.head->next->expr), b);
 		}
 	}
-	if (block && e->e.boolean.e->type != ex_block) {
-		expr_t     *block = new_block_expr ();
-		append_expr (block, e->e.boolean.e);
-		e->e.boolean.e = block;
+	if (block && e->boolean.e->type != ex_block) {
+		expr_t     *block = new_block_expr (0);
+		append_expr (block, e->boolean.e);
+		((expr_t *) e)->boolean.e = block;
 	}
-	return e;
+	return edag_add_expr (e);
 }

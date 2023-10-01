@@ -12,6 +12,8 @@ static string meta_views[] = {
 	"ArrayView",
 	"ClassView",
 	"AliasView",	// shouldn't happen, but...
+	"HandleView",
+	"AlgebraView",
 };
 
 @implementation DefView

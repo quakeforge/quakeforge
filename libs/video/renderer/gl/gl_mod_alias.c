@@ -408,14 +408,16 @@ gl_R_DrawAliasModel (entity_t e)
 	int         gl_light, texture;
 	int         fb_texture = 0, used_lights = 0;
 	bool        is_fullbright = false;
-	unsigned    lnum;
 	aliashdr_t *paliashdr;
-	dlight_t   *l;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
 	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
+
+	if (renderer->onlyshadows) {
+		return;
+	}
 
 	radius = model->radius;
 	transform_t transform = Entity_Transform (e);
@@ -459,44 +461,45 @@ gl_R_DrawAliasModel (entity_t e)
 		}
 
 		if (gl_vector_light) {
-			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
-				if (l->die >= vr_data.realtime) {
-					VectorSubtract (l->origin, origin, dist);
-					if ((d = DotProduct (dist, dist)) >	// Out of range
-						((l->radius + radius) * (l->radius + radius))) {
-						continue;
-					}
-
-
-					if (used_lights >= gl_max_lights) {
-						// For solid lighting, multiply by 0.5 since it's cos
-						// 60 and 60 is a good guesstimate at the average
-						// incident angle. Seems to match vector lighting
-						// best, too.
-						VectorMultAdd (emission,
-							0.5 / ((d * 0.01 / l->radius) + 0.5),
-							l->color, emission);
-						continue;
-					}
-
-					VectorCopy (l->origin, position);
-
-					VectorCopy (l->color, color);
-					color[3] = 1.0;
-
-					gl_light = GL_LIGHT0 + used_lights;
-					qfglEnable (gl_light);
-					qfglLightfv (gl_light, GL_POSITION, position);
-					qfglLightfv (gl_light, GL_AMBIENT, color);
-					qfglLightfv (gl_light, GL_DIFFUSE, color);
-					qfglLightfv (gl_light, GL_SPECULAR, color);
-					// 0.01 is used here because it just seemed to match
-					// the bmodel lighting best. it's over r instead of r*r
-					// so that larger-radiused lights will be brighter
-					qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION,
-								0.01 / (l->radius));
-					used_lights++;
+			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_data = (dlight_t *) dlight_pool->data;
+			for (uint32_t i = 0; i < dlight_pool->count; i++) {
+				auto l = &dlight_data[i];
+				VectorSubtract (l->origin, origin, dist);
+				if ((d = DotProduct (dist, dist)) >	// Out of range
+					((l->radius + radius) * (l->radius + radius))) {
+					continue;
 				}
+
+
+				if (used_lights >= gl_max_lights) {
+					// For solid lighting, multiply by 0.5 since it's cos
+					// 60 and 60 is a good guesstimate at the average
+					// incident angle. Seems to match vector lighting
+					// best, too.
+					VectorMultAdd (emission,
+						0.5 / ((d * 0.01 / l->radius) + 0.5),
+						l->color, emission);
+					continue;
+				}
+
+				VectorCopy (l->origin, position);
+
+				VectorCopy (l->color, color);
+				color[3] = 1.0;
+
+				gl_light = GL_LIGHT0 + used_lights;
+				qfglEnable (gl_light);
+				qfglLightfv (gl_light, GL_POSITION, position);
+				qfglLightfv (gl_light, GL_AMBIENT, color);
+				qfglLightfv (gl_light, GL_DIFFUSE, color);
+				qfglLightfv (gl_light, GL_SPECULAR, color);
+				// 0.01 is used here because it just seemed to match
+				// the bmodel lighting best. it's over r instead of r*r
+				// so that larger-radiused lights will be brighter
+				qfglLightf (gl_light, GL_QUADRATIC_ATTENUATION,
+							0.01 / (l->radius));
+				used_lights++;
 			}
 
 			VectorAdd (ambientcolor, emission, emission);
@@ -510,22 +513,23 @@ gl_R_DrawAliasModel (entity_t e)
 		} else {
 			VectorCopy (ambientcolor, emission);
 
-			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
-				if (l->die >= vr_data.realtime) {
-					VectorSubtract (l->origin, origin, dist);
+			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_data = (dlight_t *) dlight_pool->data;
+			for (uint32_t i = 0; i < dlight_pool->count; i++) {
+				auto l = &dlight_data[i];
+				VectorSubtract (l->origin, origin, dist);
 
-					if ((d = DotProduct (dist, dist)) > (l->radius + radius) *
-						(l->radius + radius)) {
-							continue;
-					}
-
-					// For solid lighting, multiply by 0.5 since it's cos 60
-					// and 60 is a good guesstimate at the average incident
-					// angle. Seems to match vector lighting best, too.
-					VectorMultAdd (emission,
-						(0.5 / ((d * 0.01 / l->radius) + 0.5)),
-						l->color, emission);
+				if ((d = DotProduct (dist, dist)) > (l->radius + radius) *
+					(l->radius + radius)) {
+						continue;
 				}
+
+				// For solid lighting, multiply by 0.5 since it's cos 60
+				// and 60 is a good guesstimate at the average incident
+				// angle. Seems to match vector lighting best, too.
+				VectorMultAdd (emission,
+					(0.5 / ((d * 0.01 / l->radius) + 0.5)),
+					l->color, emission);
 			}
 
 			d = max (emission[0], max (emission[1], emission[2]));

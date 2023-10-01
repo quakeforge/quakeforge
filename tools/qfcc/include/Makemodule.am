@@ -1,4 +1,5 @@
 EXTRA_DIST += \
+	tools/qfcc/include/algebra.h \
 	tools/qfcc/include/attribute.h \
 	tools/qfcc/include/class.h \
 	tools/qfcc/include/codespace.h \
@@ -12,6 +13,7 @@ EXTRA_DIST += \
 	tools/qfcc/include/emit.h \
 	tools/qfcc/include/expr.h \
 	tools/qfcc/include/expr_names.h \
+	tools/qfcc/include/evaluate.h \
 	tools/qfcc/include/flow.h \
 	tools/qfcc/include/function.h \
 	tools/qfcc/include/grab.h \

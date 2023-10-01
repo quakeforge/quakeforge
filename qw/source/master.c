@@ -62,6 +62,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -69,6 +70,11 @@
 #include <stdarg.h>
 
 #include "qw/protocol.h"
+
+#ifdef _WIN32
+typedef uint32_t in_addr_t;
+typedef uint16_t in_port_t;
+#endif
 
 #ifdef HAVE_IN_PKTINFO
 # ifndef SOL_IP		// BSD-based stacks don't define this.

@@ -76,13 +76,11 @@ static void
 R_AddDynamicLights (uint32_t render_id)
 {
 	msurface_t *surf;
-	unsigned int lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
 	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	int         s, t;
-	int         i;
 	int         smax, tmax;
 	mtexinfo_t *tex;
 
@@ -97,21 +95,25 @@ R_AddDynamicLights (uint32_t render_id)
 		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t k = 0; k < dlight_pool->count; k++) {
+		auto dlight = &dlight_data[k];
+		//FIXME
+		if (!(surf->dlightbits[k / 32] & (1 << (k % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
-		rad = r_dlights[lnum].radius;
+		VectorSubtract (dlight->origin, entorigin, lightorigin);
+		rad = dlight->radius;
 		dist = DotProduct (lightorigin, surf->plane->normal) -
 			surf->plane->dist;
 		rad -= fabs (dist);
-		minlight = r_dlights[lnum].minlight;
+		minlight = dlight->minlight;
 		if (rad < minlight)
 			continue;
 		minlight = rad - minlight;
 
-		for (i = 0; i < 3; i++)
+		for (int i = 0; i < 3; i++)
 			impact[i] = lightorigin[i] - surf->plane->normal[i] * dist;
 
 		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3];

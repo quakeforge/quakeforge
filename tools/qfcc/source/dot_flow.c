@@ -409,31 +409,31 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 }
 
 void
-dump_dot_flow (void *g, const char *filename)
+dump_dot_flow (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[0], (flowgraph_t *) g, filename);
 }
 
 void
-dump_dot_flow_dags (void *g, const char *filename)
+dump_dot_flow_dags (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[1], (flowgraph_t *) g, filename);
 }
 
 void
-dump_dot_flow_live (void *g, const char *filename)
+dump_dot_flow_live (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[2], (flowgraph_t *) g, filename);
 }
 
 void
-dump_dot_flow_reaching (void *g, const char *filename)
+dump_dot_flow_reaching (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[3], (flowgraph_t *) g, filename);
 }
 
 void
-dump_dot_flow_statements (void *g, const char *filename)
+dump_dot_flow_statements (const void *g, const char *filename)
 {
 	print_flowgraph (&flow_dot_methods[4], (flowgraph_t *) g, filename);
 }

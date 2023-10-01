@@ -91,11 +91,38 @@ properties = {
 		clearValue = { color = "[0, 0, 0, 1]"; };
 	};
 
+	no_cull = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = none;
+		frontFace = counter_clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
+	debug_poly_lines = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = line;
+		cullMode = none;
+		frontFace = clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
 	cw_cull_back = {
 		depthClampEnable = false;
 		rasterizerDiscardEnable = false;
 		polygonMode = fill;
 		cullMode = back;
+		frontFace = clockwise;
+		depthBiasEnable = false;
+		lineWidth = 1;
+	};
+	cw_cull_front = {
+		depthClampEnable = false;
+		rasterizerDiscardEnable = false;
+		polygonMode = fill;
+		cullMode = front;
 		frontFace = clockwise;
 		depthBiasEnable = false;
 		lineWidth = 1;
@@ -112,21 +139,28 @@ properties = {
 	depth_test_and_write = {
 		depthTestEnable = true;
 		depthWriteEnable = true;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
 	depth_test_only = {
 		depthTestEnable = true;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
+		depthBoundsTestEnable = false;
+		stencilTestEnable = false;
+	};
+	depth_test_only_reverse = {
+		depthTestEnable = true;
+		depthWriteEnable = false;
+		depthCompareOp = greater;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
 	depth_disable = {
 		depthTestEnable = false;
 		depthWriteEnable = false;
-		depthCompareOp = less_or_equal;
+		depthCompareOp = greater_or_equal;
 		depthBoundsTestEnable = false;
 		stencilTestEnable = false;
 	};
@@ -147,6 +181,16 @@ properties = {
 		colorBlendOp = add;
 		srcAlphaBlendFactor = one;
 		dstAlphaBlendFactor = one_minus_src_alpha;
+		alphaBlendOp = add;
+		colorWriteMask = r|g|b|a;
+	};
+	additive_blend = {
+		blendEnable = true;
+		srcColorBlendFactor = one;
+		dstColorBlendFactor = one;
+		colorBlendOp = add;
+		srcAlphaBlendFactor = zero;
+		dstAlphaBlendFactor = one;
 		alphaBlendOp = add;
 		colorWriteMask = r|g|b|a;
 	};
@@ -197,10 +241,20 @@ properties = {
 
 	brush = {
 		shader = {
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/bsp_shadow.vert;
+			};
 			depth_vertex = {
 				stage = vertex;
 				name = main;
 				module = $builtin/bsp_depth.vert;
+			};
+			debug_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/debug.frag;
 			};
 			gbuf_vertex = {
 				stage = vertex;
@@ -284,9 +338,22 @@ properties = {
 				};
 			};
 		};
+		shadow_layout = {
+			descriptorSets = (shadowmat_set, entity_set);
+			pushConstants = {
+				vertex = {
+					MatrixBase = uint;
+				};
+			};
+		};
 	};
 	alias = {
 		shader = {
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/alias_shadow.vert;
+			};
 			depth_vertex = {
 				stage = vertex;
 				name = main;
@@ -329,6 +396,12 @@ properties = {
 				fragment = { colors = uint; base_color = vec4; fog = vec4; };
 			};
 		};
+		shadow_layout = {
+			descriptorSets = (shadowmat_set);
+			pushConstants = {
+				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
+			};
+		};
 	};
 	iqm = {
 		shader = {
@@ -336,7 +409,18 @@ properties = {
 				mapEntries = (
 					// IQMDepthOnly
 					{ size = 4; offset = 0; constantID = 0; },
+					{ size = 4; offset = 4; constantID = 1; },
 				);
+			};
+			shadow_vertex = {
+				stage = vertex;
+				name = main;
+				module = $builtin/iqm.vert;
+				specializationInfo = {
+					@inherit = $iqm.shader.specialization;
+					// IQMDepthOnly, IQMShadow
+					data = "array(1, 1)";
+				};
 			};
 			depth_vertex = {
 				stage = vertex;
@@ -344,8 +428,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(1)";
+					// IQMDepthOnly, IQMShadow
+					data = "array(1, 0)";
 				};
 			};
 			gbuf_vertex = {
@@ -354,8 +438,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(0)";
+					// IQMDepthOnly, IQMShadow
+					data = "array(0, 0)";
 				};
 			};
 			gbuf_fragment = {
@@ -386,13 +470,10 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                            skin
-			descriptorSets = (matrix_set, texture_set, bone_set);
+			//                                           skin
+			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
 			pushConstants = {
-				vertex   = {
-					Model = mat4;
-					blend = float;
-				};
+				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
 				fragment = {
 					colorA = uint;
 					colorB = uint;
@@ -517,17 +598,109 @@ properties = {
 			};
 		};
 	};
-	lighting = {
+	gridplane = {
 		shader = {
 			fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/lighting.frag;
+				module = $builtin/gridplane.frag;
 			};
 		};
 		layout = {
-			descriptorSets = (lighting_attach, lighting_lights,
-							  lighting_shadow);
+			descriptorSets = (matrix_set, planes_set);
+		};
+	};
+	general = {
+		shader = {
+			fragment_entid = {
+				stage = fragment;
+				name = main;
+				module = $builtin/entid.frag;
+			};
+		};
+	};
+	lighting = {
+		shader = {
+			vertex_splat = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_splat.vert;
+			};
+			vertex_entid = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_entid.vert;
+			};
+			vertex_flat = {
+				stage = vertex;
+				name = main;
+				module = $builtin/light_flat.vert;
+			};
+			fragment_splat = {
+				stage = fragment;
+				name = main;
+				module = $builtin/light_splat.frag;
+			};
+			fragment_none = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting_none.frag;
+			};
+			fragment_plane = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting_plane.frag;
+			};
+			fragment_cascade = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting_cascade.frag;
+			};
+			fragment_cube = {
+				stage = fragment;
+				name = main;
+				module = $builtin/lighting_cube.frag;
+			};
+			debug_fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/light_debug.frag;
+			};
+		};
+		vertexInput_splat = {
+			bindings = (
+				{ binding = 0; stride = "4"; inputRate = instance; },
+				{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+				{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
+			);
+		};
+		vertexInput_flat = {
+			bindings = (
+				{ binding = 0; stride = "4"; inputRate = instance; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+			);
+		};
+		inputAssembly = {
+			topology = triangle_fan;
+			primitiveRestartEnable = true;
+		};
+		splat_layout = {
+			descriptorSets = (matrix_set, lighting_lights);
+		};
+		layout = {
+			descriptorSets = (shadowmat_set, lighting_lights,
+							  lighting_attach, lighting_shadow);
+			pushConstants = {
+				fragment = {
+					CascadeDepths = vec4;
+					queue = uint;
+				};
+			};
 		};
 	};
 	compose = {
@@ -665,6 +838,16 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	shadowmat_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+		);
+	};
 	quad_data_set = {
 		bindings = (
 			{
@@ -735,6 +918,16 @@ descriptorSetLayouts = {
 			},
 		);
 	};
+	planes_set = {
+		bindings = (
+			{
+				binding = 0;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+		);
+	};
 	sprite_set = {
 		bindings = (
 			{
@@ -777,21 +970,39 @@ descriptorSetLayouts = {
 				descriptorCount = 1;
 				stageFlags = fragment;
 			},
-			{
-				binding = 4;
-				descriptorType = input_attachment;
-				descriptorCount = 1;
-				stageFlags = fragment;
-			},
 		);
 	};
 	lighting_lights = {
 		bindings = (
 			{
 				binding = 0;
-				descriptorType = uniform_buffer;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = fragment;
+			},
+			{
+				binding = 3;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 4;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
 			},
 		);
 	};
@@ -809,6 +1020,18 @@ descriptorSetLayouts = {
 		bindings = (
 			{
 				binding = 0;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 2;
 				descriptorType = input_attachment;
 				descriptorCount = 1;
 				stageFlags = fragment;
@@ -892,7 +1115,7 @@ images = {
 		@inherit = $image_base;
 		format = r32g32b32a32_sfloat;
 	};
-	opaque = {
+	light = {
 		@inherit = $image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -901,6 +1124,12 @@ images = {
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
+	entid = {
+		@inherit = $image_base;
+		usage = color_attachment|transfer_src;
+		format = r32_uint;
+	};
+
 	cube_depth = {
 		@inherit = $cube_image_base;
 		format = x8_d24_unorm_pack32;
@@ -922,7 +1151,7 @@ images = {
 		@inherit = $cube_image_base;
 		format = r32g32b32a32_sfloat;
 	};
-	cube_opaque = {
+	cube_light = {
 		@inherit = $cube_image_base;
 		format = r16g16b16a16_sfloat;
 	};
@@ -931,6 +1160,11 @@ images = {
 		flags = cube_compatible;
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
+	};
+	cube_entid = {
+		@inherit = $cube_image_base;
+		usage = color_attachment|transfer_src;
+		format = r32_uint;
 	};
 };
 imageviews = {
@@ -962,15 +1196,19 @@ imageviews = {
 		image = position;
 		format = $images.position.format;
 	};
-	opaque = {
+	light = {
 		@inherit = $view_base;
-		image = opaque;
-		format = $images.opaque.format;
+		image = light;
+		format = $images.light.format;
 	};
 	output = {
 		@inherit = $view_base;
 		image = output;
 		format = $render_output.format;
+	};
+	entid = {
+		@inherit = $view_base;
+		image = entid;
 	};
 	cube_depth = {
 		@inherit = $cube_view_base;
@@ -1000,16 +1238,20 @@ imageviews = {
 		image = cube_position;
 		format = $images.cube_position.format;
 	};
-	cube_opaque = {
+	cube_light = {
 		@inherit = $cube_view_base;
-		image = cube_opaque;
-		format = $images.cube_opaque.format;
+		image = cube_light;
+		format = $images.cube_light.format;
 	};
 	cube_output = {
 		@inherit = $cube_view_base;
 		viewType = cube;
 		image = cube_output;
 		format = $render_output.format;
+	};
+	cube_entid = {
+		@inherit = $cube_view_base;
+		image = cube_entid;
 	};
 };
 output = {
@@ -1030,7 +1272,7 @@ renderpasses = {
 					format = $images.depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = depth;
 				};
 				color = {
@@ -1055,10 +1297,22 @@ renderpasses = {
 					format = $images.position.format;
 					view = position;
 				};
-				opaque = {
+				light = {
 					@inherit = $attachment_base;
-					format = $images.opaque.format;
-					view = opaque;
+					format = $images.light.format;
+					loadOp = clear;
+					view = light;
+				};
+				entid = {
+					@inherit = $attachment_base;
+					format = $images.entid.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = transfer_src_optimal;
+					clearValue = {
+						color = { int32 = ( -1, -1, -1, -1); };
+					};
+					view = entid;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -1115,7 +1369,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (0); },
+							  params = (main, 0); },
 						);
 
 						stages = (
@@ -1219,9 +1473,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, translucent, 2); },
+							  params = (main, translucent, 1); },
 							{ func = bsp_draw_queue;
-							  params = (main, turbulent, 2); },
+							  params = (main, turbulent, 1); },
 						);
 
 						stages = (
@@ -1288,8 +1542,6 @@ renderpasses = {
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, solid, 1); },
-							{ func = bsp_draw_queue;
-							  params = (main, sky, 1); },
 						);
 
 						stages = (
@@ -1305,7 +1557,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (1); },
+							  params = (main, 1); },
 						);
 
 						stages = (
@@ -1354,32 +1606,85 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						depth = shader_read_only_optimal;
 						color = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
 						normal = shader_read_only_optimal;
 						position = shader_read_only_optimal;
 					};
 					color = {
-						opaque = {
+						light = {
 							layout = color_attachment_optimal;
-							blend = $blend_disable;
+							blend = $additive_blend;
 						};
 					};
-					preserve = (output);
+					preserve = (depth, output);
 				};
 				pipelines = {
-					lights = {
+					lights_none = {
 						@inherit = $compose_base;
 
 						color = $color.lights;
 						tasks = (
-							{ func = lights_draw; },
+							{ func = lighting_bind_descriptors;
+							  params = (main, none); },
+							{ func = lighting_draw_lights;
+							  params = (main, none); },
 						);
 
 						stages = (
 							$fstriangle.shader.vertex,
-							$lighting.shader.fragment,
+							$lighting.shader.fragment_none,
+						);
+						layout = $lighting.layout;
+					};
+					lights_plane = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (main, plane); },
+							{ func = lighting_draw_lights;
+							  params = (main, plane); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_plane,
+						);
+						layout = $lighting.layout;
+					};
+					lights_cascade = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (main, cascade); },
+							{ func = lighting_draw_lights;
+							  params = (main, cascade); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_cascade,
+						);
+						layout = $lighting.layout;
+					};
+					lights_cube = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (main, cube); },
+							{ func = lighting_draw_lights;
+							  params = (main, cube); },
+						);
+
+						stages = (
+							$fstriangle.shader.vertex,
+							$lighting.shader.fragment_cube,
 						);
 						layout = $lighting.layout;
 					};
@@ -1392,12 +1697,17 @@ renderpasses = {
 				};
 				attachments = {
 					input = {
-						opaque = shader_read_only_optimal;
+						color = shader_read_only_optimal;
+						light = shader_read_only_optimal;
+						emission = shader_read_only_optimal;
 					};
 					color = {
-						output = color_attachment_optimal;
+						output = {
+							layout = color_attachment_optimal;
+							blend = $additive_blend;
+						};
 					};
-					preserve = (depth, color, emission, normal, position);
+					preserve = (depth, normal, position);
 				};
 				pipelines = {
 					compose = {
@@ -1414,6 +1724,118 @@ renderpasses = {
 						);
 						layout = $compose.layout;
 					};
+					debug_bsp = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_visit_world;
+							  params = (debug); },
+							{ func = bsp_draw_queue;
+							  params = (debug, solid, 0); },
+							{ func = bsp_draw_queue;
+							  params = (debug, sky, 0); },
+							{ func = bsp_draw_queue;
+							  params = (debug, translucent, 0); },
+							{ func = bsp_draw_queue;
+							  params = (debug, turbulent, 0); },
+						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+							$brush.shader.debug_fragment,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
+					debug_lights = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (debug, none); },
+							{ func = lighting_draw_splats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_splat,
+							$lighting.shader.debug_fragment,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_layout;
+						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
+					debug_planes = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.lights;
+						tasks = (
+							{ func = debug_planes_draw; },
+						);
+
+						stages = (
+							$fstriangle.shader.vertexst,
+							$gridplane.shader.fragment,
+						);
+						layout = $gridplane.layout;
+						depthStencil = $depth_disable;
+					};
+				};
+			};
+			entid = {
+				color = "[ 1,  0,  0, 1]";
+				dependencies = {
+					depth = $depth_dependency;
+				};
+				attachments = {
+					color = {
+						entid = {
+							layout = color_attachment_optimal;
+							blend = $blend_disable;
+						};
+					};
+					preserve = (depth, normal, position, output);
+				};
+				pipelines = {
+					entid_lights = {
+						@inherit = $compose_base;
+						disabled = false;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (debug, none); },
+							{ func = lighting_draw_splats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_entid,
+							$general.shader.fragment_entid,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_layout;
+						rasterization = $debug_poly_lines;
+						depthStencil = $depth_disable;
+					};
 				};
 			};
 		};
@@ -1422,7 +1844,7 @@ renderpasses = {
 	deferred_cube = {
 		@inherit = $renderpasses.deferred;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
+			viewMasks   = (0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu, 0x3fu);
 		});
 		framebuffer = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1434,7 +1856,7 @@ renderpasses = {
 					format = $images.cube_depth.format;
 					loadOp = clear;
 					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 1; stencil = 0; }; };
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = cube_depth;
 				};
 				color = {
@@ -1459,10 +1881,21 @@ renderpasses = {
 					format = $images.cube_position.format;
 					view = cube_position;
 				};
-				opaque = {
+				light = {
 					@inherit = $attachment_base;
-					format = $images.cube_opaque.format;
-					view = cube_opaque;
+					format = $images.cube_light.format;
+					view = cube_light;
+				};
+				entid = {
+					@inherit = $attachment_base;
+					format = $images.cube_entid.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = transfer_src_optimal;
+					clearValue = {
+						color = { int32 = ( -1, -1, -1, -1); };
+					};
+					view = cube_entid;
 				};
 				output = {
 					@inherit = $attachment_base;
@@ -1576,6 +2009,111 @@ renderpasses = {
 			};
 		};
 	};
+	shadow = {
+		color = "[0.2, 0.2, 0.2, 1]";
+		framebuffer = {
+			layers = 1;
+			attachments = {
+				shadow = $shadow;
+			};
+		};
+		subpasses = {
+			shadow = {
+				color = "[ 0.5,  0.5,  0.5, 1]";
+				attachments = {
+					depth = {
+						shadow = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_front;
+				};
+				pipelines = {
+					bsp:shadow = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (shadow, solid, 0); },
+						);
+
+						stages = (
+							$brush.shader.shadow_vertex,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.shadow_layout;
+					};
+					alias:shadow = {
+						color = $color.alias;
+						tasks = (
+							{ func = alias_draw;
+							  params = (shadow, 0); },
+						);
+
+						stages = (
+							$alias.shader.shadow_vertex,
+						);
+						vertexInput = {
+							// depth/shadow pass doesn't use UVs
+							bindings = (
+								"$alias.vertexInput.bindings[0]",
+								"$alias.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$alias.vertexInput.attributes[0]",
+								"$alias.vertexInput.attributes[1]",
+								"$alias.vertexInput.attributes[2]",
+								"$alias.vertexInput.attributes[3]",
+							);
+						};
+						inputAssembly = $alias.inputAssembly;
+						layout = $alias.shadow_layout;
+					};
+					iqm:shadow = {
+						color = $color.iqm;
+						tasks = (
+							{ func = iqm_draw;
+							  params = (0); },
+						);
+
+						stages = (
+							$iqm.shader.shadow_vertex,
+						);
+						vertexInput = $iqm.vertexInput;
+						inputAssembly = $iqm.inputAssembly;
+						layout = $iqm.layout;
+					};
+				};
+			};
+		};
+		output = shadow;
+	};
+	cascade_shadow = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x0fu);
+		});
+		output = cascade_shadow;
+	};
+	cube_shadow = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fu);
+		});
+		output = cube_shadow;
+	};
 };
 steps = {
 	wait_on_fence = {
@@ -1583,6 +2121,7 @@ steps = {
 			tasks = (
 				{ func = wait_on_fence; },
 				{ func = capture_finalize; },
+				{ func = mousepick_finalize; },
 				{ func = update_matrices; },
 				{ func = draw_scr_funcs; },
 			);
@@ -1617,26 +2156,35 @@ steps = {
 			};
 		};
 	};
-	shadow = {
-		dependencies = (wait_on_fence);
-		//currently empty
-	};
 	world = {
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
+				{ func = bsp_reset_queues; },
 				{ func = bsp_visit_world;
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },
+				{ func = lighting_update_lights; },
 			);
 		};
 	};
-	translucent = {
-		dependencies = (wait_on_fence);
+	shadow = {
+		dependencies = (world);
 		process = {
 			tasks = (
-				{ func = clear_translucent; },
+				{ func = lighting_setup_shadow; },
+				{ func = bsp_visit_world;
+				  params = (shadow); },
+				{ func = lighting_draw_shadow_maps;
+				  params = ("\"shadow\""); },
 			);
+		};
+		render = {
+			renderpasses = {
+				shadow = $renderpasses.shadow;
+				cascade_shadow = $renderpasses.cascade_shadow;
+				cube_shadow = $renderpasses.cube_shadow;
+			};
 		};
 	};
 	setup_main = {
@@ -1647,12 +2195,16 @@ steps = {
 				  params = ("\"main\""); },
 				{ func = update_framebuffer;
 				  params = ("\"main\""); },
+				{ func = clear_translucent;
+				  params = ("\"main\""); },
 				{ func = particle_wait_physics; },
+				{ func = lighting_update_descriptors;
+				  params = ("\"main\""); },
 			);
 		};
 	};
 	main = {
-		dependencies = (setup_main, particles, shadow, world, translucent);
+		dependencies = (setup_main, particles, shadow, world);
 		render = {
 			renderpasses = {
 				deferred = $renderpasses.deferred;
@@ -1687,6 +2239,14 @@ steps = {
 		process = {
 			tasks = (
 				{ func = capture_initiate; },
+			);
+		};
+	};
+	mouse_pick = {
+		dependencies = (main);
+		process = {
+			tasks = (
+				{ func = mousepick_initiate; },
 			);
 		};
 	};

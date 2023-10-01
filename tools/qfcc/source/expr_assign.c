@@ -46,6 +46,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -64,18 +65,18 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static expr_t *
-check_assign_logic_precedence (expr_t *dst, expr_t *src)
+static const expr_t *
+check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 {
-	if (src->type == ex_expr && !src->paren && is_logic (src->e.expr.op)) {
+	if (src->type == ex_expr && !src->paren && is_logic (src->expr.op)) {
 		// traditional QuakeC gives = higher precedence than && and ||
-		expr_t     *assignment;
 		notice (src, "precedence of `=' and `%s' inverted for "
-					 "traditional code", get_op_string (src->e.expr.op));
+					 "traditional code", get_op_string (src->expr.op));
 		// change {a = (b logic c)} to {(a = b) logic c}
-		assignment = assign_expr (dst, src->e.expr.e1);
-		assignment->paren = 1;	// protect assignment from binary_expr
-		return binary_expr (src->e.expr.op, assignment, src->e.expr.e2);
+		auto assignment = assign_expr (dst, src->expr.e1);
+		// protect assignment from binary_expr
+		((expr_t *) assignment)->paren = 1;
+		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
 	return 0;
 }
@@ -85,9 +86,9 @@ is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
 		case ex_def:
-			return !expr->e.def->constant;
+			return !expr->def->constant;
 		case ex_symbol:
-			switch (expr->e.symbol->sy_type) {
+			switch (expr->symbol->sy_type) {
 				case sy_name:
 					break;
 				case sy_var:
@@ -109,18 +110,18 @@ is_lvalue (const expr_t *expr)
 		case ex_temp:
 			return 1;
 		case ex_expr:
-			if (expr->e.expr.op == '.') {
+			if (expr->expr.op == '.') {
 				return 1;
 			}
 			break;
 		case ex_alias:
-			return is_lvalue (expr->e.alias.expr);
+			return is_lvalue (expr->alias.expr);
 		case ex_address:
 			return 0;
 		case ex_assign:
 			return 0;
 		case ex_uexpr:
-			if (expr->e.expr.op == '.') {
+			if (expr->expr.op == '.') {
 				return 1;
 			}
 			break;
@@ -144,6 +145,8 @@ is_lvalue (const expr_t *expr)
 		case ex_horizontal:
 		case ex_swizzle:
 		case ex_extend:
+		case ex_multivec:
+		case ex_list:
 			break;
 		case ex_count:
 			internal_error (expr, "invalid expression");
@@ -151,8 +154,8 @@ is_lvalue (const expr_t *expr)
 	return 0;
 }
 
-static expr_t *
-check_valid_lvalue (expr_t *expr)
+static const expr_t *
+check_valid_lvalue (const expr_t *expr)
 {
 	if (!is_lvalue (expr)) {
 		if (options.traditional) {
@@ -164,17 +167,23 @@ check_valid_lvalue (expr_t *expr)
 	return 0;
 }
 
-static expr_t *
-check_types_compatible (expr_t *dst, expr_t *src)
+static const expr_t *
+check_types_compatible (const expr_t *dst, const expr_t *src)
 {
 	type_t     *dst_type = get_type (dst);
 	type_t     *src_type = get_type (src);
 
 	if (dst_type == src_type) {
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
 		return 0;
 	}
 
 	if (type_assignable (dst_type, src_type)) {
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
 		debug (dst, "casting %s to %s", src_type->name, dst_type->name);
 		if (!src->implicit && !type_promotes (dst_type, src_type)) {
 			if (is_double (src_type)) {
@@ -183,7 +192,7 @@ check_types_compatible (expr_t *dst, expr_t *src)
 			}
 		}
 		// the types are different but cast-compatible
-		expr_t     *new = cast_expr (dst_type, src);
+		auto new = cast_expr (dst_type, src);
 		// the cast was a no-op, so the types are compatible at the
 		// low level (very true for default type <-> enum)
 		if (new != src) {
@@ -213,18 +222,18 @@ check_types_compatible (expr_t *dst, expr_t *src)
 }
 
 static void
-copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
+copy_qv_elements (expr_t *block, const expr_t *dst, const expr_t *src)
 {
-	expr_t     *dx, *sx;
-	expr_t     *dy, *sy;
-	expr_t     *dz, *sz;
-	expr_t     *dw, *sw;
-	expr_t     *ds, *ss;
-	expr_t     *dv, *sv;
+	const expr_t *dx, *sx;
+	const expr_t *dy, *sy;
+	const expr_t *dz, *sz;
+	const expr_t *dw, *sw;
+	const expr_t *ds, *ss;
+	const expr_t *dv, *sv;
 
-	if (is_vector (src->e.vector.type)) {
+	if (is_vector (src->vector.type)) {
 		// guaranteed to have three elements
-		sx = src->e.vector.list;
+		sx = src->vector.list;
 		sy = sx->next;
 		sz = sy->next;
 		dx = field_expr (dst, new_name_expr ("x"));
@@ -235,9 +244,9 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 		append_expr (block, assign_expr (dz, sz));
 	} else {
 		// guaranteed to have two or four elements
-		if (src->e.vector.list->next->next) {
+		if (src->vector.list->next->next) {
 			// four vals: x, y, z, w
-			sx = src->e.vector.list;
+			sx = src->vector.list;
 			sy = sx->next;
 			sz = sy->next;
 			sw = sz->next;
@@ -251,7 +260,7 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 			append_expr (block, assign_expr (dw, sw));
 		} else {
 			// v, s
-			sv = src->e.vector.list;
+			sv = src->vector.list;
 			ss = sv->next;
 			dv = field_expr (dst, new_name_expr ("v"));
 			ds = field_expr (dst, new_name_expr ("s"));
@@ -262,51 +271,52 @@ copy_qv_elements (expr_t *block, expr_t *dst, expr_t *src)
 }
 
 static int
-copy_elements (expr_t *block, expr_t *dst, expr_t *src, int base)
+copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
 {
 	int         index = 0;
-	for (expr_t *e = src->e.vector.list; e; e = e->next) {
+	for (const expr_t *e = src->vector.list; e; e = e->next) {
 		if (e->type == ex_vector) {
 			index += copy_elements (block, dst, e, index + base);
 		} else {
-			expr_t     *dst_ele = array_expr (dst, new_int_expr (index + base));
+			auto type = get_type (e);
+			auto dst_ele = new_offset_alias_expr (type, dst, index + base);
 			append_expr (block, assign_expr (dst_ele, e));
-			index += type_width (get_type (e));
+			index += type_width (type);
 		}
 	}
 	return index;
 }
 
-static expr_t *
-assign_vector_expr (expr_t *dst, expr_t *src)
+static const expr_t *
+assign_vector_expr (const expr_t *dst, const expr_t *src)
 {
 	if (src->type == ex_vector && dst->type != ex_vector) {
-		expr_t     *block = new_block_expr ();
+		expr_t     *block = new_block_expr (0);
 
-		if (options.code.progsversion <= PROG_VERSION) {
+		if (options.code.progsversion < PROG_VERSION) {
 			copy_qv_elements (block, dst, src);
 		} else {
 			copy_elements (block, dst, src, 0);
 		}
-		block->e.block.result = dst;
+		block->block.result = dst;
 		return block;
 	}
 	return 0;
 }
 
-static __attribute__((pure)) int
-is_memset (expr_t *e)
+static int __attribute__((pure))
+is_memset (const expr_t *e)
 {
 	return e->type == ex_memset;
 }
 
-expr_t *
-assign_expr (expr_t *dst, expr_t *src)
+const expr_t *
+assign_expr (const expr_t *dst, const expr_t *src)
 {
-	expr_t     *expr;
+	const expr_t *expr;
 	type_t     *dst_type, *src_type;
 
-	convert_name (dst);
+	dst = convert_name (dst);
 	if (dst->type == ex_error) {
 		return dst;
 	}
@@ -319,7 +329,7 @@ assign_expr (expr_t *dst, expr_t *src)
 	}
 
 	if (src && !is_memset (src)) {
-		convert_name (src);
+		src = convert_name (src);
 		if (src->type == ex_error) {
 			return src;
 		}
@@ -371,7 +381,7 @@ assign_expr (expr_t *dst, expr_t *src)
 			return expr;
 		}
 	} else {
-		convert_nil (src, dst_type);
+		src = convert_nil (src, dst_type);
 	}
 
 	expr = new_assign_expr (dst, src);

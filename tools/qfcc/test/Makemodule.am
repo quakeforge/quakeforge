@@ -9,9 +9,11 @@ fail_bins=
 
 test_progs_dat=\
 	tools/qfcc/test/address-cast.dat \
+	tools/qfcc/test/algtypes.dat \
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
 	tools/qfcc/test/arraylife2.dat \
+	tools/qfcc/test/arraytypedef.dat \
 	tools/qfcc/test/assignchain.dat \
 	tools/qfcc/test/anonstruct.dat \
 	tools/qfcc/test/chewed-alias.dat \
@@ -42,10 +44,14 @@ test_progs_dat=\
 	tools/qfcc/test/nilparamret.dat \
 	tools/qfcc/test/overload.dat \
 	tools/qfcc/test/paramret.dat \
+	tools/qfcc/test/pga2d.dat \
+	tools/qfcc/test/pga3d.dat \
 	tools/qfcc/test/postop.dat \
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
 	tools/qfcc/test/ptrstructcast.dat \
+	tools/qfcc/test/motor-point.dat \
+	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/return-postop.dat \
@@ -69,6 +75,8 @@ test_progs_dat=\
 	tools/qfcc/test/vecexpr.dat \
 	tools/qfcc/test/vecconst.dat \
 	tools/qfcc/test/vecinit.dat \
+	tools/qfcc/test/vecops.dat \
+	tools/qfcc/test/vga3d.dat \
 	tools/qfcc/test/voidfor.dat \
 	tools/qfcc/test/while.dat \
 	tools/qfcc/test/zerolinker.dat
@@ -76,6 +84,7 @@ test_progs_dat=\
 fail_progs_dat=
 
 test_build_passes=\
+	tools/qfcc/test/motor.r \
 	tools/qfcc/test/typeredef1.r \
 	tools/qfcc/test/typeredef2.r
 
@@ -139,6 +148,16 @@ tools/qfcc/test/address-cast.run: $(qfcc_test_run_deps)
 include $(address_cast_dep) # am--include-marker
 r_depfiles_remade += $(address_cast_dep)
 
+tools_qfcc_test_algtypes_dat_SOURCES=tools/qfcc/test/algtypes.r
+algtypes_obj=$(tools_qfcc_test_algtypes_dat_SOURCES:.r=.o)
+algtypes_dep=$(call qcautodep,$(tools_qfcc_test_algtypes_dat_SOURCES))
+tools/qfcc/test/algtypes.dat$(EXEEXT): $(algtypes_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(algtypes_obj)
+tools/qfcc/test/algtypes.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(algtypes_dep) # am--include-marker
+r_depfiles_remade += $(algtypes_dep)
+
 tools_qfcc_test_alignment_dat_SOURCES=tools/qfcc/test/alignment.r
 alignment_obj=$(tools_qfcc_test_alignment_dat_SOURCES:.r=.o)
 alignment_dep=$(call qcautodep,$(tools_qfcc_test_alignment_dat_SOURCES))
@@ -178,6 +197,16 @@ tools/qfcc/test/arraylife2.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(arraylife2_dep) # am--include-marker
 r_depfiles_remade += $(arraylife2_dep)
+
+tools_qfcc_test_arraytypedef_dat_SOURCES=tools/qfcc/test/arraytypedef.r
+arraytypedef_obj=$(tools_qfcc_test_arraytypedef_dat_SOURCES:.r=.o)
+arraytypedef_dep=$(call qcautodep,$(tools_qfcc_test_arraytypedef_dat_SOURCES))
+tools/qfcc/test/arraytypedef.dat$(EXEEXT): $(arraytypedef_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(arraytypedef_obj)
+tools/qfcc/test/arraytypedef.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(arraytypedef_dep) # am--include-marker
+r_depfiles_remade += $(arraytypedef_dep)
 
 tools_qfcc_test_assignchain_dat_SOURCES=tools/qfcc/test/assignchain.r
 assignchain_obj=$(tools_qfcc_test_assignchain_dat_SOURCES:.r=.o)
@@ -334,11 +363,14 @@ tools/qfcc/test/double-int-compare.run$(EXEEXT): tools/qfcc/test/double-int-comp
 tools/qfcc/test/double-float-compare.run$(EXEEXT): tools/qfcc/test/double-float-compare.r $(qfcc_fail_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
+tools/qfcc/test/motor.run$(EXEEXT): tools/qfcc/test/motor.r $(qfcc_comp_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
+
 tools/qfcc/test/typeredef1.run$(EXEEXT): tools/qfcc/test/typeredef1.r $(qfcc_comp_run_deps)
-	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools/qfcc/test/typeredef2.run$(EXEEXT): tools/qfcc/test/typeredef2.r $(qfcc_comp_run_deps)
-	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) $<
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools_qfcc_test_enum_dat_SOURCES=tools/qfcc/test/enum.r
 enum_obj=$(tools_qfcc_test_enum_dat_SOURCES:.r=.o)
@@ -520,6 +552,26 @@ tools/qfcc/test/paramret.run: $(qfcc_test_run_deps)
 include $(paramret_dep) # am--include-marker
 r_depfiles_remade += $(paramret_dep)
 
+tools_qfcc_test_pga2d_dat_SOURCES=tools/qfcc/test/pga2d.r
+pga2d_obj=$(tools_qfcc_test_pga2d_dat_SOURCES:.r=.o)
+pga2d_dep=$(call qcautodep,$(tools_qfcc_test_pga2d_dat_SOURCES))
+tools/qfcc/test/pga2d.dat$(EXEEXT): $(pga2d_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(pga2d_obj)
+tools/qfcc/test/pga2d.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(pga2d_dep) # am--include-marker
+r_depfiles_remade += $(pga2d_dep)
+
+tools_qfcc_test_pga3d_dat_SOURCES=tools/qfcc/test/pga3d.r
+pga3d_obj=$(tools_qfcc_test_pga3d_dat_SOURCES:.r=.o)
+pga3d_dep=$(call qcautodep,$(tools_qfcc_test_pga3d_dat_SOURCES))
+tools/qfcc/test/pga3d.dat$(EXEEXT): $(pga3d_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(pga3d_obj)
+tools/qfcc/test/pga3d.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(pga3d_dep) # am--include-marker
+r_depfiles_remade += $(pga3d_dep)
+
 tools_qfcc_test_postop_dat_SOURCES=tools/qfcc/test/postop.r
 postop_obj=$(tools_qfcc_test_postop_dat_SOURCES:.r=.o)
 postop_dep=$(call qcautodep,$(tools_qfcc_test_postop_dat_SOURCES))
@@ -559,6 +611,26 @@ tools/qfcc/test/ptrstructcast.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ptrstructcast_dep) # am--include-marker
 r_depfiles_remade += $(ptrstructcast_dep)
+
+tools_qfcc_test_motor_point_dat_SOURCES=tools/qfcc/test/motor-point.r
+motor_point_obj=$(tools_qfcc_test_motor_point_dat_SOURCES:.r=.o)
+motor_point_dep=$(call qcautodep,$(tools_qfcc_test_motor_point_dat_SOURCES))
+tools/qfcc/test/motor-point.dat$(EXEEXT): $(motor_point_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(motor_point_obj)
+tools/qfcc/test/motor-point.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(motor_point_dep) # am--include-marker
+r_depfiles_remade += $(motor_point_dep)
+
+tools_qfcc_test_motor_xform_dat_SOURCES=tools/qfcc/test/motor-xform.r
+motor_xform_obj=$(tools_qfcc_test_motor_xform_dat_SOURCES:.r=.o)
+motor_xform_dep=$(call qcautodep,$(tools_qfcc_test_motor_xform_dat_SOURCES))
+tools/qfcc/test/motor-xform.dat$(EXEEXT): $(motor_xform_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(motor_xform_obj)
+tools/qfcc/test/motor-xform.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(motor_xform_dep) # am--include-marker
+r_depfiles_remade += $(motor_xform_dep)
 
 tools_qfcc_test_quaternion_dat_SOURCES=tools/qfcc/test/quaternion.r
 quaternion_obj=$(tools_qfcc_test_quaternion_dat_SOURCES:.r=.o)
@@ -789,6 +861,26 @@ tools/qfcc/test/vecinit.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(vecinit_dep) # am--include-marker
 r_depfiles_remade += $(vecinit_dep)
+
+tools_qfcc_test_vecops_dat_SOURCES=tools/qfcc/test/vecops.r
+vecops_obj=$(tools_qfcc_test_vecops_dat_SOURCES:.r=.o)
+vecops_dep=$(call qcautodep,$(tools_qfcc_test_vecops_dat_SOURCES))
+tools/qfcc/test/vecops.dat$(EXEEXT): $(vecops_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(vecops_obj)
+tools/qfcc/test/vecops.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(vecops_dep) # am--include-marker
+r_depfiles_remade += $(vecops_dep)
+
+tools_qfcc_test_vga3d_dat_SOURCES=tools/qfcc/test/vga3d.r
+vga3d_obj=$(tools_qfcc_test_vga3d_dat_SOURCES:.r=.o)
+vga3d_dep=$(call qcautodep,$(tools_qfcc_test_vga3d_dat_SOURCES))
+tools/qfcc/test/vga3d.dat$(EXEEXT): $(vga3d_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(vga3d_obj)
+tools/qfcc/test/vga3d.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(vga3d_dep) # am--include-marker
+r_depfiles_remade += $(vga3d_dep)
 
 tools_qfcc_test_voidfor_dat_SOURCES=tools/qfcc/test/voidfor.r
 voidfor_obj=$(tools_qfcc_test_voidfor_dat_SOURCES:.r=.o)

@@ -153,15 +153,6 @@ static cvar_t r_dlight_lightmap_cvar = {
 	.flags = CVAR_ARCHIVE,
 	.value = { .type = &cexpr_int, .value = &r_dlight_lightmap },
 };
-int r_dlight_max;
-static cvar_t r_dlight_max_cvar = {
-	.name = "r_dlight_max",
-	.description =
-		"Number of dynamic lights.",
-	.default_value = "32",
-	.flags = CVAR_ARCHIVE,
-	.value = { .type = &cexpr_int, .value = &r_dlight_max },
-};
 int r_drawentities;
 static cvar_t r_drawentities_cvar = {
 	.name = "r_drawentities",
@@ -568,12 +559,6 @@ viewsize_f (void *data, const cvar_t *cvar)
 		r_data->viewsize_callback (scr_viewsize);
 }
 
-static void
-r_dlight_max_f (void *data, const cvar_t *cvar)
-{
-	R_MaxDlightsCheck (r_dlight_max);
-}
-
 void
 R_Init_Cvars (void)
 {
@@ -590,7 +575,6 @@ R_Init_Cvars (void)
 	Cvar_Register (&r_aliastransbase_cvar, 0, 0);
 	Cvar_Register (&r_clearcolor_cvar, 0, 0);
 	Cvar_Register (&r_dlight_lightmap_cvar, 0, 0);
-	Cvar_Register (&r_dlight_max_cvar, r_dlight_max_f, 0);
 	Cvar_Register (&r_drawentities_cvar, 0, 0);
 	Cvar_Register (&r_drawexplosions_cvar, 0, 0);
 	Cvar_Register (&r_drawviewmodel_cvar, 0, 0);

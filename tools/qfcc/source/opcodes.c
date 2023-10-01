@@ -510,9 +510,8 @@ opcode_init (void)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		v6p_opcode_init ();
-	} else {
-		rua_opcode_init ();
 	}
+	rua_opcode_init ();
 }
 
 void
@@ -527,7 +526,7 @@ opcode_print_statement (pr_uint_t addr, dstatement_t *st)
 	} else {
 		mnemonic = pr_opcodes[st_op].mnemonic;
 	}
-	printf ("%04x (%03x)%-8s %d:%04x %d:%04x %d:%04x\n",
+	printf ("%04x (%03x)%-8s %d:%04hx %d:%04hx %d:%04hx\n",
 			addr, st_op & 0x1ff, mnemonic,
 			(st->op & OP_A_BASE) >> OP_A_SHIFT, st->a,
 			(st->op & OP_B_BASE) >> OP_B_SHIFT, st->b,

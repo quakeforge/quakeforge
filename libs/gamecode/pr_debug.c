@@ -260,6 +260,8 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 		case ty_alias:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_size (pr, aux_type);
+		case ty_algebra:
+			return 1;	//FIXME wip
 	}
 	return 0;
 }
@@ -1053,6 +1055,12 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_algebra:
+			if (type->type == ev_invalid) {
+				dstring_appendstr (data->dstr, "<?""?>");
+				break;
+			}
+			// fall through
 		case ty_handle:
 		case ty_basic:
 			switch (type->type) {
@@ -1174,6 +1182,65 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 	return dstr->str;
 }
 
+static const char *
+extend_string (pr_debug_data_t *data, pr_uint_t ext)
+{
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	static const char *extend_range[] = {
+		"1>2", "1>3", "1>4",
+		"2>3", "2>4", "3>4",
+		"res1", "res2",
+	};
+	static const char *extend_string[] = {
+		"0", "1", "c", "-1",
+	};
+	return va (res->va, "[%s%s:%s]%d",
+			   extend_range[ext & 7],
+			   ext & 0100 ? ":r" : "",
+			   extend_string[(ext >> 3) & 2],
+			   32 << ((ext >> 5) & 1));
+}
+
+static const char *
+hop_string (pr_debug_data_t *data, pr_uint_t hop)
+{
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	static const char *hop_string[] = {
+		"and", "or", "xor", "add",
+		"nad", "nor", "xnor", "add",
+	};
+	static const char *type_string[2][8] = {
+		{"I", "I", "I", "I", "I", "I", "I", "F"},
+		{"L", "L", "L", "L", "L", "L", "L", "D"},
+	};
+	return va (res->va, "%s.%s{%d}",
+			   hop_string[hop & 7],
+			   type_string[(hop >> 5) & 1][hop & 7],
+			   ((hop >> 3) & 3) + 1);
+}
+
+static const char *
+swizzle_string (pr_debug_data_t *data, pr_uint_t swiz)
+{
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	static char swizzle_components[] = "xyzw";
+	const char *swizzle = "";
+
+	for (int i = 0; i < 4; i++) {
+		if (swiz & (0x1000 << i)) {
+			swizzle = va (res->va, "%s0", swizzle);
+		} else {
+			swizzle = va (res->va, "%s%s%c", swizzle,
+						  swiz & (0x100 << i) ? "-" : "",
+						  swizzle_components[(swiz >> 2 * i) & 3]);
+		}
+	}
+	return swizzle;
+}
+
 const char *
 PR_Debug_ValueString (progs_t *pr, pr_ptr_t offset, qfot_type_t *type,
 					  dstring_t *dstr)
@@ -1187,7 +1254,18 @@ static void
 pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
-	dasprintf (data->dstr, "<void>");
+	dstring_t  *dstr = data->dstr;
+
+	if (!type->basic.width) {
+		dasprintf (dstr, "<void>");
+		return;
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
+	}
 }
 
 static void
@@ -1238,12 +1316,23 @@ pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	if (data->pr->progs->version == PROG_ID_VERSION
-		&& ISDENORM (PR_PTR (int, value))
-		&& PR_PTR (uint, value) != 0x80000000) {
-		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
-	} else {
-		dasprintf (dstr, "%.9g", PR_PTR (float, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		if (data->pr->progs->version == PROG_ID_VERSION
+			&& ISDENORM (PR_PTR (int, value))
+			&& PR_PTR (uint, value) != 0x80000000) {
+			dasprintf (dstr, "<%08x>", PR_PTR (int, value));
+		} else {
+			dasprintf (dstr, "%.9g", PR_PTR (float, value));
+		}
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
 	}
 }
 
@@ -1344,7 +1433,18 @@ pr_debug_int_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%d", PR_PTR (int, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%d", PR_PTR (int, value));
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1353,7 +1453,18 @@ pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "$%08x", PR_PTR (uint, value));
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value++) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "$%08x", PR_PTR (uint, value));
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1371,7 +1482,18 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%.17g", *(double *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%.17g", *(double *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1380,7 +1502,18 @@ pr_debug_long_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1389,7 +1522,18 @@ pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%" PRIu64, *(uint64_t *)value);
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "[");
+	}
+	for (int i = 0; i < type->basic.width; i++, value += 2) {
+		if (i) {
+			dstring_appendstr (dstr, ", ");
+		}
+		dasprintf (dstr, "%" PRIx64, *(uint64_t *)value);
+	}
+	if (type->basic.width > 1) {
+		dstring_appendstr (dstr, "]");
+	}
 }
 
 static void
@@ -1514,15 +1658,24 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 }
 
 static const char *
-print_raw_op (progs_t *pr, pr_ushort_t op, pr_ushort_t base_ind,
+print_raw_op (progs_t *pr, pr_short_t op, pr_ushort_t base_ind,
 			  etype_t op_type, int op_width)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	const char *width = va (res->va, "%d", op_width);
-	return va (res->va, "%d:%04x<%08x>%s:%-8s",
+	return va (res->va, "%d:%04hx<%08x>%s:%-8s",
 				base_ind, op, op + pr->pr_bases[base_ind],
 				op_width > 0 ? width : op_width < 0 ? "X" : "?",
 				pr_type_name[op_type]);
+}
+
+static pr_uint_t
+get_opval (progs_t *pr, pr_short_t op)
+{
+	if (pr->progs->version < PROG_VERSION) {
+		return (pr_ushort_t) op;
+	}
+	return op;
 }
 
 VISIBLE void
@@ -1591,7 +1744,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	if (pr_debug > 2) {
 		if (pr->progs->version < PROG_VERSION) {
 			dasprintf (res->line,
-						"%03x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+						"%03x %04hx(%8s) %04hx(%8s) %04hx(%8s)\t",
 						s->op,
 						s->a, pr_type_name[op_type[0]],
 						s->b, pr_type_name[op_type[1]],
@@ -1624,7 +1777,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				pr_uint_t   shift = 0;
 				pr_uint_t   opreg;
 				pr_uint_t   opval;
-				qfot_type_t *optype = &res->void_type;
+				qfot_type_t basic_type = {};
+				qfot_type_t *optype = &basic_type;
 				pr_func_t   func;
 
 				if (mode == 'P') {
@@ -1647,18 +1801,21 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				switch (opchar) {
 					case 'a':
 						opreg = PR_BASE_IND (s->op, A);
-						opval = s->a;
-						optype = res->type_encodings[op_type[0]];
+						opval = get_opval (pr, s->a);
+						basic_type = *res->type_encodings[op_type[0]];
+						basic_type.basic.width = op_width[0];
 						break;
 					case 'b':
 						opreg = PR_BASE_IND (s->op, B);
-						opval = s->b;
-						optype = res->type_encodings[op_type[1]];
+						opval = get_opval (pr, s->b);
+						basic_type = *res->type_encodings[op_type[1]];
+						basic_type.basic.width = op_width[1];
 						break;
 					case 'c':
 						opreg = PR_BASE_IND (s->op, C);
-						opval = s->c;
-						optype = res->type_encodings[op_type[2]];
+						opval = get_opval (pr, s->c);
+						basic_type = *res->type_encodings[op_type[2]];
+						basic_type.basic.width = op_width[2];
 						break;
 					case 'o':
 						opreg = 0;
@@ -1719,6 +1876,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 's':
 						str = dsprintf (res->dva, "%d", (short) opval);
 						break;
+					case 'H':
+						str = hop_string (&data, opval);
+						break;
+					case 'S':
+						str = swizzle_string (&data, opval);
+						break;
+					case 'X':
+						str = extend_string (&data, opval);
+						break;
 					case 'O':
 						str = dsprintf (res->dva, "%04x",
 										addr + (short) opval);
@@ -1729,8 +1895,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'E':
 						{
 							edict_t    *ed = 0;
-							opval = G_ENTITY (pr, s->a);
-							param_ind = G_FIELD (pr, s->b);
+							opval = G_ENTITY (pr, (pr_ushort_t) s->a);
+							param_ind = G_FIELD (pr, (pr_ushort_t) s->b);
 							if (param_ind < pr->progs->entityfields
 								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {
@@ -1744,7 +1910,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							str = global_string (&data, opval, optype,
 												 contents & 1);
 							str = dsprintf (res->dva, "$%x $%x %s",
-											s->a, s->b, str);
+											(pr_ushort_t) s->a,
+											(pr_ushort_t) s->b, str);
 						}
 						break;
 					case 'M':
@@ -1761,7 +1928,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 								case 2:
 									ptr = s->a + PR_BASE (pr, s, A);
 									ptr = G_POINTER (pr, ptr);
-									offs = (short) s->b;
+									offs = s->b;
 									break;
 								case 3:
 									ptr = s->a + PR_BASE (pr, s, A);

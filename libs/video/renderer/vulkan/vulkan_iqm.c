@@ -40,6 +40,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_iqm.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
@@ -56,6 +57,7 @@
 typedef struct {
 	mat4f_t     mat;
 	float       blend;
+	uint32_t    matrix_base;
 	byte        colorA[4];
 	byte        colorB[4];
 	vec4f_t     base_color;
@@ -96,14 +98,14 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			};
 			dfunc->vkCmdBindDescriptorSets (cmd,
 											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											layout, 1, 2, sets, 0, 0);
+											layout, 2, 2, sets, 0, 0);
 		} else {
 			VkDescriptorSet sets[] = {
 				mesh->bones_descriptors[ctx->curFrame],
 			};
 			dfunc->vkCmdBindDescriptorSets (cmd,
 											VK_PIPELINE_BIND_POINT_GRAPHICS,
-											layout, 2, 1, sets, 0, 0);
+											layout, 3, 1, sets, 0, 0);
 		}
 		dfunc->vkCmdDrawIndexed (cmd, 3 * iqm->meshes[i].num_triangles, 1,
 								 3 * iqm->meshes[i].first_triangle, 0, 0);
@@ -195,12 +197,18 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	auto iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
 	auto skins = mesh->skins;
-	iqm_push_constants_t constants = {};
 	iqmframe_t *frame;
+	uint16_t   *matrix_base = taskctx->data;
 
 	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
 											   ent.reg);
-	constants.blend = R_IQMGetLerpedFrames (animation, iqm);
+	iqm_push_constants_t constants = {
+		.blend = R_IQMGetLerpedFrames (animation, iqm),
+		.matrix_base = matrix_base ? *matrix_base : 0,
+		.colorA = { VEC4_EXP (skins[0].colora) },
+		.colorB = { VEC4_EXP (skins[0].colorb) },
+		.base_color = { VEC4_EXP (renderer->colormod) },
+	};
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  constants.blend, 0);
 
@@ -236,6 +244,9 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, blend),
 			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, matrix_base),
+			sizeof (uint32_t), &constants.matrix_base },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			field_offset (iqm_push_constants_t, colorA),
 			sizeof (constants.colorA), constants.colorA },
@@ -250,14 +261,9 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 			sizeof (constants.fog), &constants.fog },
 	};
 
-	QuatCopy (renderer->colormod, constants.base_color);
-	QuatCopy (skins[0].colora, constants.colorA);
-	QuatCopy (skins[0].colorb, constants.colorB);
-	QuatZero (constants.fog);
-
 	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
 				   pass ? skins : 0,
-				   pass ? 6 : 2, push_constants,
+				   pass ? 7 : 3, push_constants,
 				   iqm, taskctx, ent);
 }
 
@@ -275,9 +281,10 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Lighting_Descriptors (ctx, ctx->curFrame),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, sets, 0, 0);
+									layout, 0, 2, sets, 0, 0);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) {

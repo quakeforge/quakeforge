@@ -86,7 +86,7 @@ new_this_expr (void)
 	return new_symbol_expr (sym);
 }
 
-expr_t *
+const expr_t *
 selector_expr (keywordarg_t *selector)
 {
 	dstring_t  *sel_id = dstring_newstr ();
@@ -117,13 +117,13 @@ selector_expr (keywordarg_t *selector)
 
 	expr_t     *sel = new_expr ();
 	sel->type = ex_selector;
-	sel->e.selector.sel_ref = sel_ref;
-	sel->e.selector.sel = get_selector (sel_ref);
+	sel->selector.sel_ref = sel_ref;
+	sel->selector.sel = get_selector (sel_ref);
 	dstring_delete (sel_id);
 	return sel;
 }
 
-expr_t *
+const expr_t *
 protocol_expr (const char *protocol_name)
 {
 	protocol_t *protocol = get_protocol (protocol_name, 0);
@@ -136,12 +136,11 @@ protocol_expr (const char *protocol_name)
 	return new_pointer_expr (0, proto_class->type, protocol_def (protocol));
 }
 
-expr_t *
+const expr_t *
 super_expr (class_type_t *class_type)
 {
 	symbol_t   *sym;
 	expr_t     *super;
-	expr_t     *e;
 	expr_t     *super_block;
 	class_t    *class;
 
@@ -161,8 +160,9 @@ super_expr (class_type_t *class_type)
 	}
 	super = new_symbol_expr (sym);
 
-	super_block = new_block_expr ();
+	super_block = new_block_expr (0);
 
+	const expr_t *e;
 	e = assign_expr (field_expr (super, new_name_expr ("self")),
 								 new_name_expr ("self"));
 	append_expr (super_block, e);
@@ -173,31 +173,30 @@ super_expr (class_type_t *class_type)
 	append_expr (super_block, e);
 
 	e = address_expr (super, 0);
-	super_block->e.block.result = e;
+	super_block->block.result = e;
 	return super_block;
 }
 
-expr_t *
-message_expr (expr_t *receiver, keywordarg_t *message)
+const expr_t *
+message_expr (const expr_t *receiver, keywordarg_t *message)
 {
-	expr_t     *args = 0, **a = &args;
-	expr_t     *selector = selector_expr (message);
-	expr_t     *call;
+	const expr_t *selector = selector_expr (message);
+	const expr_t *call;
 	keywordarg_t *m;
 	int         super = 0, class_msg = 0;
 	type_t     *rec_type = 0;
 	type_t     *return_type;
 	type_t     *method_type = &type_IMP;
 	method_t   *method;
-	expr_t     *send_msg;
+	const expr_t *send_msg;
 
 	if (receiver->type == ex_nil) {
 		rec_type = &type_id;
-		convert_nil (receiver, rec_type);
+		receiver = convert_nil (receiver, rec_type);
 	} else if (receiver->type == ex_symbol) {
-		if (strcmp (receiver->e.symbol->name, "self") == 0) {
+		if (strcmp (receiver->symbol->name, "self") == 0) {
 			rec_type = get_type (receiver);
-		} else if (strcmp (receiver->e.symbol->name, "super") == 0) {
+		} else if (strcmp (receiver->symbol->name, "super") == 0) {
 			super = 1;
 
 			receiver = super_expr (current_class);
@@ -206,9 +205,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 				return receiver;
 			receiver = cast_expr (&type_id, receiver);	//FIXME better way?
 			rec_type = extract_class (current_class)->type;
-		} else if (receiver->e.symbol->sy_type == sy_class) {
+		} else if (receiver->symbol->sy_type == sy_class) {
 			class_t    *class;
-			rec_type = receiver->e.symbol->type;
+			rec_type = receiver->symbol->type;
 			class = rec_type->t.class;
 			class_msg = 1;
 			receiver = new_symbol_expr (class_pointer_symbol (class));
@@ -226,20 +225,18 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (method)
 		return_type = method->type->t.func.type;
 
+	expr_t     *args = expr_file_line (new_list_expr (0), receiver);
 	for (m = message; m; m = m->next) {
-		*a = m->expr;
-		while ((*a)) {
-			expr_file_line (selector, *a);
-			a = &(*a)->next;
+		if (m->expr && m->expr->list.head) {
+			expr_append_list (args, &m->expr->list);
 		}
 	}
-	*a = selector;
-	a = &(*a)->next;
-	*a = receiver;
+	expr_append_expr (args, selector);
+	expr_append_expr (args, receiver);
 
 	send_msg = expr_file_line (send_message (super), receiver);
 	if (method) {
-		expr_t      *err;
+		const expr_t *err;
 		if ((err = method_check_params (method, args)))
 			return err;
 		method_type = method->type;
@@ -252,6 +249,6 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (!is_function_call (call)) {
 		internal_error (call, "unexpected call expression type");
 	}
-	call->e.block.result->e.branch.ret_type = return_type;
+	((expr_t *) call->block.result)->branch.ret_type = return_type;
 	return call;
 }

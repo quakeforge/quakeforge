@@ -115,7 +115,7 @@ samplers = {
 		compareOp = greater_or_equal;
 		minLod = 0;
 		maxLod = 1000;
-		borderColor = float_transparent_black;
+		borderColor = float_opaque_white;
 		unnormalizedCoordinates = false;
 	};
 	linear = {

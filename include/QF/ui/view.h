@@ -83,6 +83,12 @@ typedef struct viewcont_s {
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
 	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
+	unsigned semantic_x:3;		///< layout size control (IMUI_SizeKind)
+	unsigned semantic_y:3;		///< layout size control (IMUI_SizeKind)
+	unsigned free_x:1;			///< don't set position automatically
+	unsigned free_y:1;			///< don't set position automatically
+	unsigned vertical:1;		///< true: layout is vertical, else horizontal
+	unsigned active:1;			///< can respond to the mouse
 } viewcont_t;
 
 enum {
@@ -160,7 +166,7 @@ VIEWINLINE view_pos_t View_GetAbs (view_t view);
 VIEWINLINE view_pos_t View_GetRel (view_t view);
 VIEWINLINE void View_SetLen (view_t view, int x, int y);
 VIEWINLINE view_pos_t View_GetLen (view_t view);
-VIEWINLINE viewcont_t* View_Control (view_t view);
+VIEWINLINE viewcont_t *View_Control (view_t view);
 VIEWINLINE void View_SetGravity (view_t view, grav_t grav);
 VIEWINLINE grav_t View_GetGravity (view_t view);
 VIEWINLINE void View_SetVisible (view_t view, int visible);

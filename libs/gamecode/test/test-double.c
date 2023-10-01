@@ -117,9 +117,9 @@ static pr_dvec4_t double_cossin_expect[] = {
 static dstatement_t double_cossin_statements[] = {
 	{ OP(0, 0, 0, OP_STORE_A_2), 42,   0,    8 },	// init xn -> [?, x]
 	{ OP(0, 0, 0, OP_STORE_A_2), 40,   0,   16 },	// init xn -> [1, x]
-	{ OP(0, 0, 0, OP_SWIZZLE_D),  8,0xc000, 32 },	// init x2 -> [x, x, 0, 0]
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4),  8,0xc000, 32 },	// init x2 -> [x, x, 0, 0]
 	{ OP(0, 0, 0, OP_MUL_D_2),   32,  32,   32 },	// x2 -> [x*x, x*x, 0, 0]
-	{ OP(0, 0, 0, OP_SWIZZLE_D), 32,0xc3e4, 32 },	// init x2 -> -x2
+	{ OP(0, 0, 0, OP_SWIZZLE_D_4), 32,0xc3e4, 32 },	// init x2 -> -x2
 	{ OP(0, 0, 0, OP_SUB_D_4),    0,   0,    0 },	// init acc (output) to 0
 // loop:
 	{ OP(0, 0, 0, OP_ADD_D_2),    0,  40,    0 },	// acc += xn

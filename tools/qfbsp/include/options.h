@@ -48,6 +48,7 @@ typedef struct {
 	bool        extract_textures;
 	bool        extract_entities;
 	bool        extract_hull;
+	bool        extract_model;
 	bool        smart_leak;
 	bool        usehulls;
 	bool        watervis;

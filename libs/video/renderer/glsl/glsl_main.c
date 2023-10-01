@@ -213,9 +213,6 @@ glsl_R_NewScene (scene_t *scene)
 
 	r_refdef.worldmodel = scene->worldmodel;
 
-	// Force a vis update
-	R_MarkLeaves (0, 0, 0, 0);
-
 	R_ClearParticles ();
 	glsl_R_RegisterTextures (scene->models, scene->num_models);
 	glsl_R_BuildLightmaps (scene->models, scene->num_models);
@@ -226,6 +223,5 @@ void
 glsl_R_ClearState (void)
 {
 	r_refdef.worldmodel = 0;
-	R_ClearDlights ();
 	R_ClearParticles ();
 }

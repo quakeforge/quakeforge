@@ -120,8 +120,6 @@ extern	plane_t	screenedge[4];
 
 extern	vec4f_t r_entorigin;
 
-extern	int		r_visframecount;
-
 //=============================================================================
 
 extern int	vstartscan;
@@ -310,7 +308,7 @@ void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+void R_RecursiveMarkLights (const mod_brush_t *brush, vec4f_t lightorigin,
 							struct dlight_s *light, int bit, int node_id);
 
 void R_LoadSkys (const char *);

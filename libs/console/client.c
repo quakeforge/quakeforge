@@ -46,6 +46,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -61,6 +62,7 @@
 #include "QF/ui/inputline.h"
 #include "QF/ui/view.h"
 
+#include "cl_console.h"
 #include "compat.h"
 
 static con_buffer_t *con;
@@ -155,8 +157,11 @@ static uint32_t canvas_base;
 static uint32_t view_base;
 
 static con_state_t con_state;
+static bool con_hide_mouse;	// external requested state
+static bool con_show_mouse;	// local (overrides con_hide_mouse)
+static bool con_force_mouse_visible;// internal (overrides all for show)
 static int  con_event_id;
-static int  con_saved_focos;
+static int  con_saved_focus;
 
 static bool con_debuglog;
 static bool chat_team;
@@ -332,16 +337,37 @@ ClearNotify (void)
 }
 
 static void
-C_SetState (con_state_t state)
+con_update_mouse (void)
+{
+	bool show_cursor = (con_force_mouse_visible
+						|| con_show_mouse
+						|| !con_hide_mouse);
+	VID_SetCursor (show_cursor);
+	IN_UpdateGrab (show_cursor ? 0 : in_grab);
+}
+
+void
+Con_Show_Mouse (bool visible)
+{
+	con_show_mouse = visible;
+	con_update_mouse ();
+}
+
+static void
+C_SetState (con_state_t state, bool hide_mouse)
 {
 	con_state_t old_state = con_state;
 	con_state = state;
+	con_hide_mouse = hide_mouse;
 	if (con_state == con_inactive) {
-		IE_Set_Focus (con_saved_focos);
+		IE_Set_Focus (con_saved_focus);
+		con_force_mouse_visible = false;
 	} else if (old_state == con_inactive) {
-		con_saved_focos = IE_Get_Focus ();
+		con_saved_focus = IE_Get_Focus ();
 		IE_Set_Focus (con_event_id);
+		con_force_mouse_visible = true;
 	}
+	con_update_mouse ();
 
 	if (state == con_message) {
 		say_line.prompt = "say:";
@@ -369,10 +395,10 @@ ToggleConsole_f (void)
 		case con_message:
 			return;
 		case con_inactive:
-			C_SetState (con_active);
+			C_SetState (con_active, con_hide_mouse);
 			break;
 		case con_active:
-			C_SetState (con_inactive);
+			C_SetState (con_inactive, con_hide_mouse);
 			break;
 		case con_fullscreen:
 			break;
@@ -413,7 +439,7 @@ static void
 con_end_message (inputline_t *line)
 {
 	Con_ClearTyping (line, 1);
-	C_SetState (con_inactive);
+	C_SetState (con_inactive, con_hide_mouse);
 }
 
 static void
@@ -545,14 +571,14 @@ draw_input_line (inputline_t *il, draw_charbuffer_t *buffer)
 	char       *src = il->lines[il->edit_line] + il->scroll + 1;
 	size_t      i;
 
-	*dst++ = il->scroll ? '<' | 0x80 : il->lines[il->edit_line][0];
+	*dst++ = il->scroll ? (char) ('<' | 0x80) : il->lines[il->edit_line][0];
 	for (i = 0; i < il->width - 2 && *src; i++) {
 		*dst++ = *src++;
 	}
 	while (i++ < il->width - 2) {
 		*dst++ = ' ';
 	}
-	*dst++ = *src ? '>' | 0x80 : ' ';
+	*dst++ = *src ? (char) ('<' | 0x80) : ' ';
 }
 
 static void
@@ -765,6 +791,9 @@ setup_console (void)
 static void
 C_DrawConsole (void)
 {
+	if (con_debug) {
+		Con_Debug_Draw ();
+	}
 	setup_console ();
 	view_pos_t  screen_len = View_GetLen (screen_view);
 
@@ -839,8 +868,8 @@ con_set_size (void)
 	int         xlen = win_xlen / con_scale;
 	int         ylen = win_ylen / con_scale;
 	if (xlen > 0 && ylen > 0) {
-		View_SetLen (screen_view, xlen, ylen);
-		View_UpdateHierarchy (screen_view);
+		Canvas_SetLen (*con_data.canvas_sys, screen_canvas,
+					   (view_pos_t) { xlen, ylen });
 	}
 }
 
@@ -979,7 +1008,7 @@ MessageMode_f (void)
 	if (con_state != con_inactive)
 		return;
 	chat_team = false;
-	C_SetState (con_message);
+	C_SetState (con_message, con_hide_mouse);
 }
 
 static void
@@ -988,7 +1017,7 @@ MessageMode2_f (void)
 	if (con_state != con_inactive)
 		return;
 	chat_team = true;
-	C_SetState (con_message);
+	C_SetState (con_message, con_hide_mouse);
 }
 
 static void
@@ -1032,6 +1061,7 @@ C_InitCvars (void)
 	Cvar_Register (&con_size_cvar, 0, 0);
 	Cvar_Register (&con_speed_cvar, 0, 0);
 	Cvar_Register (&cl_conmode_cvar, 0, 0);
+	Con_Debug_InitCvars ();
 }
 
 static void
@@ -1053,6 +1083,8 @@ C_Init (void)
 	// The console will get resized, so assume initial size is 320x200
 	ecs_system_t sys = { con_data.canvas_sys->reg, view_base };
 	screen_canvas = Canvas_New (*con_data.canvas_sys);
+	Con_Debug_Init ();
+
 	screen_view   = Canvas_GetRootView (*con_data.canvas_sys, screen_canvas);
 	console_view  = View_New (sys, screen_view);
 	buffer_view   = View_New (sys, console_view);
@@ -1111,6 +1143,8 @@ C_Init (void)
 		con_setfitpic (console_view, conback);
 	}
 
+	con_linewidth = 320 / 8;
+
 	cmd_line.prompt = "";
 	cmd_line.input_line = Con_CreateInputLine (32, MAXCMDLINE, ']');
 	cmd_line.input_line->complete = Con_BasicCompleteCommandLine;
@@ -1136,7 +1170,6 @@ C_Init (void)
 
 	con_setinput (say_view, &say_line);
 	con_setinput (command_view, &cmd_line);
-
 
 	view_pos_t  len;
 
@@ -1193,6 +1226,8 @@ C_Init (void)
 static void
 C_shutdown (void)
 {
+	Con_Debug_Shutdown ();
+
 	r_funcs->Draw_DestroyPic (conback);
 	IE_Remove_Handler (con_event_id);
 	Menu_Shutdown ();

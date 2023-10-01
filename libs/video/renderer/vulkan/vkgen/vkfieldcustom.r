@@ -31,14 +31,18 @@
 	[super dealloc];
 }
 
+static void
+write_parse_data (CustomField *self, string indent)
+{
+}
+
 -writeParseData
 {
 	fprintf (output_file, "static size_t parse_%s_%s_offsets[] = {\n",
 			 struct_name, field_name);
 	for (int i = 0, count = [fields count]; i < count; i++) {
 		string field = [[fields getObjectAtIndex:i] string];
-		fprintf (output_file, "\tfield_offset (%s, %s),\n",
-				 struct_name, field);
+		fprintf (output_file, "\tfield_offset (%s, %s),\n", struct_name, field);
 	}
 	fprintf (output_file, "};\n");
 
@@ -49,6 +53,20 @@
 			 struct_name, field_name);
 	fprintf (output_file, "\t%d,\n", [fields count]);
 	fprintf (output_file, "};\n");
+	return self;
+}
+
+-writeParse
+{
+	fprintf (output_file, "\t\tplfield_t   %s_field = {\n", field_name);
+	fprintf (output_file, "\t\t\t.name = \"%s\",\n", field_name);
+	fprintf (output_file, "\t\t\t.type = %s,\n", pltype);
+	fprintf (output_file, "\t\t\t.data = &parse_%s_%s_data,\n",
+			 struct_name, field_name);
+	fprintf (output_file, "\t\t};\n");
+	fprintf (output_file, "\t\tif (!parse_custom (&parse_field, item, data, messages, context)) {\n");
+	fprintf (output_file, "\t\t\treturn 0;\n");
+	fprintf (output_file, "\t\t}\n");
 	return self;
 }
 

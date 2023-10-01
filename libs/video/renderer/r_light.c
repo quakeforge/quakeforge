@@ -46,55 +46,52 @@
 #include "compat.h"
 #include "r_internal.h"
 
-dlight_t    *r_dlights;
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
 static int r_dlightframecount;
 
-void
+int
 R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 {
 	float      *scores = alloca (count * sizeof (float));
 	float       score;
-	dlight_t   *dl;
-	unsigned    i;
-	int         num = 0, j;
+	int         num = 0;
 	vec3_t      d;
 
-	dl = r_dlights;
-	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < r_data->realtime || !dl->radius)
-			continue;
-		VectorSubtract (dl->origin, pos, d);
-		score = DotProduct (d, d) / dl->radius;
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		VectorSubtract (dlight->origin, pos, d);
+		score = DotProduct (d, d) / dlight->radius;
 		if (!num) {
 			scores[0] = score;
-			lights[0] = dl;
+			lights[0] = dlight;
 			num = 1;
 		} else if (score <= scores[0]) {
 			memmove (&lights[1], &lights[0],
 					 (count - 1) * sizeof (dlight_t *));
 			memmove (&scores[1], &scores[0], (count - 1) * sizeof (float));
 			scores[0] = score;
-			lights[0] = dl;
+			lights[0] = dlight;
 			if (num < count)
 				num++;
 		} else if (score > scores[num - 1]) {
 			if (num < count) {
 				scores[num] = score;
-				lights[num] = dl;
+				lights[num] = dlight;
 				num++;
 			}
 		} else {
-			for (j = num - 1; j > 0; j--) {
+			for (int j = num - 1; j > 0; j--) {
 				if (score > scores[j - 1]) {
 					memmove (&lights[j + 1], &lights[j],
 							 (count - j) * sizeof (dlight_t *));
 					memmove (&scores[j + 1], &scores[j],
 							 (count - j) * sizeof (float));
 					scores[j] = score;
-					lights[j] = dl;
+					lights[j] = dlight;
 					if (num < count)
 						num++;
 					break;
@@ -102,24 +99,9 @@ R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 			}
 		}
 	}
-	for (j = num; j < count; j++)
+	for (int j = num; j < count; j++)
 		lights[j] = 0;
-}
-
-void
-R_MaxDlightsCheck (int max_dlights)
-{
-	r_maxdlights = bound (0, max_dlights, MAX_DLIGHTS);
-
-	if (r_dlights)
-		free (r_dlights);
-
-	r_dlights = 0;
-
-	if (r_maxdlights)
-		r_dlights = (dlight_t *) calloc (r_maxdlights, sizeof (dlight_t));
-
-	R_ClearDlights();
+	return num;
 }
 
 void
@@ -208,7 +190,7 @@ mark_surfaces (msurface_t *surf, vec4f_t lightorigin, dlight_t *light,
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (mod_brush_t *brush, vec4f_t lightorigin,
+R_RecursiveMarkLights (const mod_brush_t *brush, vec4f_t lightorigin,
 					   dlight_t *light, int lightnum, int node_id)
 {
 	unsigned    i;
@@ -261,10 +243,13 @@ loc0:
 
 static void
 R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
-			  model_t *model)
+			  const visstate_t *visstate)
 {
-	mod_brush_t *brush = &model->brush;
-	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
+	const auto leaf_visframes = visstate->leaf_visframes;
+	const auto face_visframes = visstate->face_visframes;
+	const auto visframecount = visstate->visframecount;
+	const auto brush = visstate->brush;
+	const auto pvsleaf = Mod_PointInLeaf (lightorigin, brush);
 
 	if (!pvsleaf->compressed_vis) {
 		int         node_id = brush->hulls[0].firstclipnode;
@@ -294,7 +279,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
-				if (r_leaf_visframes[leafnum + 1] != r_visframecount)
+				if (leaf_visframes[leafnum + 1] != visframecount)
 					continue;
 				if (leaf->mins[0] > maxs[0] || leaf->maxs[0] < mins[0]
 					|| leaf->mins[1] > maxs[1] || leaf->maxs[1] < mins[1]
@@ -304,7 +289,7 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 				for (m = 0; m < leaf->nummarksurfaces; m++) {
 					msurface_t *surf = *msurf++;
 					int         surf_id = surf - brush->surfaces;
-					if (r_face_visframes[surf_id] != r_visframecount)
+					if (face_visframes[surf_id] != visframecount)
 						continue;
 					mark_surfaces (surf, lightorigin, light, lightnum);
 				}
@@ -314,25 +299,21 @@ R_MarkLights (vec4f_t lightorigin, dlight_t *light, int lightnum,
 }
 
 void
-R_PushDlights (const vec3_t entorigin)
+R_PushDlights (const vec3_t entorigin, const visstate_t *visstate)
 {
-	unsigned int i;
-	dlight_t   *l;
-
 	r_dlightframecount = r_framecount;
 
 	if (!r_dlight_lightmap)
 		return;
 
-	l = r_dlights;
-
-	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < r_data->realtime || !l->radius)
-			continue;
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
 		vec4f_t     lightorigin;
-		VectorSubtract (l->origin, entorigin, lightorigin);
+		VectorSubtract (dlight->origin, entorigin, lightorigin);
 		lightorigin[3] = 1;
-		R_MarkLights (lightorigin, l, i, r_refdef.worldmodel);
+		R_MarkLights (lightorigin, dlight, i, visstate);
 	}
 }
 
@@ -491,67 +472,4 @@ R_LightPoint (mod_brush_t *brush, vec4f_t p)
 		r = 0;
 
 	return r;
-}
-
-dlight_t *
-R_AllocDlight (int key)
-{
-	unsigned int i;
-	dlight_t   *dl;
-
-	if (!r_maxdlights) {
-		return NULL;
-	}
-
-	// first look for an exact key match
-	if (key) {
-		dl = r_dlights;
-		for (i = 0; i < r_maxdlights; i++, dl++) {
-			if (dl->key == key) {
-				memset (dl, 0, sizeof (*dl));
-				dl->key = key;
-				dl->color[0] = dl->color[1] = dl->color[2] = 1;
-				return dl;
-			}
-		}
-	}
-	// then look for anything else
-	dl = r_dlights;
-	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < r_data->realtime) {
-			memset (dl, 0, sizeof (*dl));
-			dl->key = key;
-			dl->color[0] = dl->color[1] = dl->color[2] = 1;
-			return dl;
-		}
-	}
-
-	dl = &r_dlights[0];
-	memset (dl, 0, sizeof (*dl));
-	dl->key = key;
-	return dl;
-}
-
-void
-R_DecayLights (double frametime)
-{
-	unsigned int i;
-	dlight_t   *dl;
-
-	dl = r_dlights;
-	for (i = 0; i < r_maxdlights; i++, dl++) {
-		if (dl->die < r_data->realtime || !dl->radius)
-			continue;
-
-		dl->radius -= frametime * dl->decay;
-		if (dl->radius < 0)
-			dl->radius = 0;
-	}
-}
-
-void
-R_ClearDlights (void)
-{
-	if (r_maxdlights)
-		memset (r_dlights, 0, r_maxdlights * sizeof (dlight_t));
 }

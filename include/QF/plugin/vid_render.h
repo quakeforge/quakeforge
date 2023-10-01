@@ -83,13 +83,13 @@ typedef struct vid_model_funcs_s {
 struct tex_s;
 struct font_s;
 struct draw_charbuffer_s;
+struct imui_ctx_s;
 
 typedef void (*capfunc_t) (struct tex_s *screencap, void *data);
 
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
-	void (*UpdateScreen) (struct transform_s camera, double realtime,
-						  SCR_Func *scr_funcs);
+	void (*UpdateScreen) (SCR_Func *scr_funcs);
 	void (*Draw_CharBuffer) (int x, int y, struct draw_charbuffer_s *buffer);
 	void (*Draw_SetScale) (int scale);
 	void (*Draw_Character) (int x, int y, unsigned ch);
@@ -117,7 +117,6 @@ typedef struct vid_render_funcs_s {
 	int (*Draw_AddFont) (struct font_s *font);
 	void (*Draw_Glyph) (int x, int y, int fontid, int glyphid, int c);
 
-
 	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
 	void (*R_ClearState) (void);
@@ -142,6 +141,8 @@ typedef struct vid_render_funcs_s {
 	void (*set_fov) (float x, float y);
 
 	void (*capture_screen) (capfunc_t callback, void *data);
+
+	void (*debug_ui) (struct imui_ctx_s *imui_ctx);
 
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;

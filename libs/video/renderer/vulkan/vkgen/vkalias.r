@@ -80,6 +80,9 @@
 	if (name == "bool") {
 		return "cexpr_bool";
 	}
+	if (name == "int32_t") {
+		return "cexpr_int";
+	}
 	if (name == "uint32_t") {
 		return "cexpr_uint";
 	}
@@ -108,6 +111,7 @@
 		case "VkBool32":
 			id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 			return [enumObj parseType];
+		case "int32_t":
 		case "uint32_t":
 		case "size_t":
 		case "vec4f_t":
@@ -135,6 +139,8 @@
 			return [enumObj parseFunc];
 		case "bool":
 			return "parse_enum";
+		case "int32_t":
+			return "parse_int32_t";
 		case "uint32_t":
 			return "parse_uint32_t";
 	}
@@ -157,6 +163,7 @@
 		case "VkBool32":
 			id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 			return [enumObj parseData];
+		case "int32_t":
 		case "uint32_t":
 			return "0";
 		case "bool":

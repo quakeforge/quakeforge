@@ -96,6 +96,7 @@ void print_type (qfot_type_t *type)
 			print_type (type.alias.aux_type);
 			break;
 		case ty_handle:
+		case ty_algebra:
 			//printf (" %s\n", type.handle.tag);
 			break;
 	}

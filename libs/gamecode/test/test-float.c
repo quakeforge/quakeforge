@@ -117,9 +117,9 @@ static pr_vec4_t float_cossin_expect[] = {
 static dstatement_t float_cossin_statements[] = {
 	{ OP(0, 0, 0, OP_STORE_A_1), 21, 0, 4 },	// init xn -> [?, x]
 	{ OP(0, 0, 0, OP_STORE_A_1), 20, 0, 8 },	// init xn -> [1, x]
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 4, 0xc000, 16 },// init x2 -> [x, x, 0, 0]
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 4, 0xc000, 16 },// init x2 -> [x, x, 0, 0]
 	{ OP(0, 0, 0, OP_MUL_F_2),  16, 16, 16 },	// x2 -> [x*x, x*x, 0, 0]
-	{ OP(0, 0, 0, OP_SWIZZLE_F), 16, 0xc3e4, 16 },// init x2 -> -x2
+	{ OP(0, 0, 0, OP_SWIZZLE_F_4), 16, 0xc3e4, 16 },// init x2 -> -x2
 	{ OP(0, 0, 0, OP_SUB_F_4), 0, 0, 0 },		// init acc (output) to 0
 // loop:
 	{ OP(0, 0, 0, OP_ADD_F_2), 0, 20, 0 },		// acc += xn

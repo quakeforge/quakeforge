@@ -235,6 +235,8 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 				bytes += va->size;
 				color = (byte *) (buffer + va->offset);
 				break;
+			case IQM_CUSTOM:
+				break;
 		}
 	}
 	iqm->vertexarrays = calloc (iqm->num_arrays + 1, sizeof (iqmvertexarray));
@@ -533,8 +535,10 @@ Mod_FreeIQM (iqm_t *iqm)
 	free (iqm->baseframe);
 	free (iqm->inverse_baseframe);
 	free (iqm->anims);
-	free (iqm->frames[0]);
-	free (iqm->frames);
+	if (iqm->frames) {
+		free (iqm->frames[0]);
+		free (iqm->frames);
+	}
 	free (iqm);
 }
 

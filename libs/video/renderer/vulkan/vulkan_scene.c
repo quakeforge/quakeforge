@@ -39,6 +39,8 @@
 
 #include "QF/scene/entity.h"
 
+#include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
@@ -83,6 +85,14 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 			set_add (sframe->pooled_entities, ent_id);
 			render_id = sframe->entity_pool.size++;
 			entdata = sframe->entity_pool.a + render_id;
+		}
+	} else {
+		if (!Entity_Valid (entity)) {
+			return 0;	//FIXME see below
+		} else {
+			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+													 entity.reg);
+			return renderer->render_id;
 		}
 	}
 	if (Entity_Valid (entity)) {
@@ -254,4 +264,24 @@ Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 	free (sctx->frames.a);
 	free (sctx);
 	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
+{
+	auto sctx = ctx->scene_context;
+	sctx->scene = scene;
+
+	for (int i = 0; i < 256; i++) {
+		d_lightstylevalue[i] = 264;		// normal light value
+	}
+
+	r_refdef.worldmodel = scene->worldmodel;
+	EntQueue_Clear (r_ent_queue);
+
+	R_ClearParticles ();
+	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
+	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
+	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
+	Vulkan_LoadLights (scene, ctx);
 }

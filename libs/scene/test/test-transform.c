@@ -482,7 +482,7 @@ test_frames (void)
 int
 main (void)
 {
-	scene_t    *scene = Scene_NewScene ();
+	scene_t    *scene = Scene_NewScene (NULL);
 	reg = scene->reg;
 
 	if (test_single_transform ()) { return 1; }

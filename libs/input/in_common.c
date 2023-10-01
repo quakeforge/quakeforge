@@ -530,17 +530,13 @@ IN_LoadConfig (plitem_t *config)
 static void
 IN_shutdown (void *data)
 {
-	//JOY_Shutdown ();
-
-	Sys_MaskPrintf (SYS_vid, "IN_Shutdown\n");
+	Sys_MaskPrintf (SYS_input, "IN_shutdown\n");
 	for (size_t i = in_drivers.size; i-- > 0; ) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		if (rd->driver.shutdown) {
 			rd->driver.shutdown (rd->data);
 		}
 	}
-	IN_Binding_Shutdown ();
-	IMT_Shutdown ();
 
 	DARRAY_CLEAR (&in_drivers);
 	DARRAY_CLEAR (&in_devices);
@@ -550,6 +546,9 @@ void
 IN_Init (void)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
+	IN_Event_Init ();
+	IN_ButtonInit ();
+	IN_AxisInit ();
 	IMT_Init ();
 	IN_Binding_Init ();
 

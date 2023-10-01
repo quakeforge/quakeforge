@@ -27,5 +27,5 @@ main (void)
 		xdef++;
 	}
 	printf ("int32_ptr: %s\n", xdef.type.encoding);
-	return xdef.type.encoding != "{>^i}";
+	return xdef.type.encoding != "{>^{int32_t>i}}";
 }

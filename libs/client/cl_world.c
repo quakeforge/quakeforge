@@ -43,16 +43,12 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 #include "QF/plist.h"
-#include "QF/progs.h"
-#include "QF/msg.h"
 
-#include "QF/scene/entity.h"
 #include "QF/scene/light.h"
-#include "QF/scene/scene.h"
-#include "QF/simd/vec4f.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
 
+#include "client/effects.h"
 #include "client/entities.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
@@ -64,7 +60,13 @@ worldscene_t cl_world = {
 void
 CL_World_Init (void)
 {
-	cl_world.scene = Scene_NewScene ();
+	scene_system_t extra_systems[] = {
+		{	.system = &effect_system,
+			.components = effect_components,
+			.component_count = effect_comp_count },
+		{}
+	};
+	cl_world.scene = Scene_NewScene (extra_systems);
 	cl_world.scene->lights = Light_CreateLightingData (cl_world.scene);
 }
 
@@ -119,6 +121,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 
 	// copy it to the current state
 	renderer->model = cl_world.models.a[es.modelindex];
+	renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	animation->frame = es.frame;
 	renderer->skinnum = es.skinnum;
 
@@ -232,4 +235,11 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 	cl_world.scene->num_models = cl_world.models.size;
 	SCR_NewScene (cl_world.scene);
 	map_cfg (mapname, 1);
+}
+
+void
+CL_World_Clear (void)
+{
+	Scene_FreeAllEntities (cl_world.scene);
+	CL_ClearTEnts ();
 }

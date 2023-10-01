@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/darray.h"
 #include "QF/msg.h"
 #include "QF/progs.h"	// for PR_RESMAP
 #include "QF/quakefs.h"
@@ -47,6 +48,7 @@
 #include "QF/plugin/vid_render.h"	//FIXME
 									//
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 
 #include "client/effects.h"
@@ -325,15 +327,55 @@ CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 	}
 }
 
+typedef struct tempent_s DARRAY_TYPE (entity_t) tempent_t;
+static tempent_t light_entities = DARRAY_STATIC_INIT (32);
+
+static void
+free_stale_entities (void)
+{
+	size_t i, j;
+	for (i = 0, j = 0; i < light_entities.size; i++) {
+		auto ent = light_entities.a[i];
+		if (Ent_HasComponent (ent.id, scene_dynlight, ent.reg)) {
+			if (j != i) {
+				light_entities.a[j] = ent;
+			}
+			j++;
+		} else {
+			ECS_DelEntity (ent.reg, ent.id);
+		}
+	}
+	light_entities.size = j;
+}
+
+static void
+spawn_light (vec4f_t position, vec4f_t color, float radius, float die,
+			 float decay)
+{
+	entity_t    ent = {
+		.reg = cl_world.scene->reg,
+		.id = ECS_NewEntity (cl_world.scene->reg),
+	};
+	DARRAY_APPEND (&light_entities, ent);
+
+	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+		.origin = position,
+		.color = color,
+		.radius = radius,
+		.die = die,
+		.decay = decay,
+	});
+	Light_LinkLight (cl_world.scene->lights, ent.id);
+}
+
 static void
 parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			TE_Effect type)
 {
-	dlight_t   *dl;
 	tent_obj_t *to;
 	explosion_t *ex;
 	int         colorStart, colorLength;
-	quat_t      color;
+	vec4f_t     color;
 	vec4f_t     position = {0, 0, 0, 1};
 	int         count;
 	const char *name;
@@ -369,23 +411,16 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, scene_renderer, cl_world.scene->reg);
 			renderer->model = cl_spr_explod;
 			Transform_SetLocalPosition (transform, position);
+			color = (vec4f_t) {0.86, 0.31, 0.24, 0.7};
 			goto TE_Explosion_no_sprite;
 		case TE_Explosion:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
+			color = (vec4f_t) {1.0, 0.5, 0.25, 0.7};
 TE_Explosion_no_sprite:
 			// particles
 			clp_funcs->ParticleExplosion (position);
 
-			// light
-			dl = R_AllocDlight (0);
-			if (dl) {
-				VectorCopy (position, dl->origin);
-				dl->radius = 350;
-				dl->die = time + 0.5;
-				dl->decay = 300;
-				QuatSet (0.86, 0.31, 0.24, 0.7, dl->color);
-				//FIXME? nq: QuatSet (1.0, 0.5, 0.25, 0.7, dl->color);
-			}
+			spawn_light (position, color, 250, time + 0.5, 300);
 
 			// sound
 			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
@@ -396,32 +431,20 @@ TE_Explosion_no_sprite:
 			colorLength = MSG_ReadByte (net_message);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 			clp_funcs->ParticleExplosion2 (position, colorStart, colorLength);
-			dl = R_AllocDlight (0);
-			if (!dl)
-				break;
-			VectorCopy (position, dl->origin);
-			dl->radius = 350;
-			dl->die = time + 0.5;
-			dl->decay = 300;
+
 			colorStart = (colorStart + (rand () % colorLength)) * 3;
-			VectorScale (&r_data->vid->palette[colorStart], 1.0 / 255.0,
-						 dl->color);
-			dl->color[3] = 0.7;
+			VectorScale (&r_data->vid->palette[colorStart], 1.0 / 255.0, color);
+			color[3] = 0.7;
+			spawn_light (position, color, 350, time + 0.5, 300);
 			break;
 		case TE_Explosion3:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
-			MSG_ReadCoordV (net_message, color);		// OUCH!
+			MSG_ReadCoordV (net_message, (vec_t*)&color);	//FIXME OUCH!
 			color[3] = 0.7;
 			clp_funcs->ParticleExplosion (position);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
-			dl = R_AllocDlight (0);
-			if (dl) {
-				VectorCopy (position, dl->origin);
-				dl->radius = 350;
-				dl->die = time + 0.5;
-				dl->decay = 300;
-				QuatCopy (color, dl->color);
-			}
+
+			spawn_light (position, color, 350, time + 0.5, 300);
 			break;
 		case TE_Gunshot1:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
@@ -457,15 +480,8 @@ TE_Explosion_no_sprite:
 		case TE_LightningBlood:
 			MSG_ReadCoordV (net_message, (vec_t*)&position);//FIXME
 
-			// light
-			dl = R_AllocDlight (0);
-			if (dl) {
-				VectorCopy (position, dl->origin);
-				dl->radius = 150;
-				dl->die = time + 0.1;
-				dl->decay = 200;
-				QuatSet (0.25, 0.40, 0.65, 1, dl->color);
-			}
+			color = (vec4f_t) {0.25, 0.40, 0.65, 1};
+			spawn_light (position, color, 150, time + 0.1, 200);
 
 			clp_funcs->LightningBloodEffect (position);
 			break;
@@ -650,6 +666,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 void
 CL_UpdateTEnts (double time, TEntContext_t *ctx)
 {
+	free_stale_entities ();
 	CL_UpdateBeams (time, ctx);
 	CL_UpdateExplosions (time, ctx);
 }
@@ -731,4 +748,49 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 
 	*tail = cl_projectiles;
 	cl_projectiles = head;
+}
+
+#define c_muzzleflash (effect_system.base + effect_muzzleflash)
+
+static bool
+has_muzzleflash (entity_t ent)
+{
+	return Ent_HasComponent (ent.id, c_muzzleflash, ent.reg);
+}
+
+static uint32_t
+get_muzzleflash (entity_t ent)
+{
+	return *(uint32_t *) Ent_GetComponent (ent.id, c_muzzleflash, ent.reg);
+}
+
+static void
+set_muzzleflash (entity_t ent, uint32_t light)
+{
+	Ent_SetComponent (ent.id, c_muzzleflash, ent.reg, &light);
+}
+
+void
+CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
+				double time)
+{
+	// spawn a new entity so the light doesn't mess with the owner
+	uint32_t light = nullent;
+	if (has_muzzleflash (ent)) {
+		light = get_muzzleflash (ent);
+	}
+	if (!ECS_EntValid (light, ent.reg)) {
+		light = ECS_NewEntity (ent.reg);
+		set_muzzleflash (ent, light);
+	}
+	DARRAY_APPEND (&light_entities, ((entity_t) {.reg = ent.reg, .id = light}));
+
+	Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
+		.origin = position + 18 * fv + zoffset * (vec4f_t) {0, 0, 1, 0},
+		.color = { 0.2, 0.1, 0.05, 0.7 },
+		.radius = 200 + (rand () & 31),
+		.die = time + 0.1,
+		.minlight = 32,
+	});
+	Light_LinkLight (cl_world.scene->lights, light);
 }

@@ -60,6 +60,8 @@
 #include "r_internal.h"
 #include "vid_gl.h"
 
+static struct DARRAY_TYPE (mat4f_t) ent_transforms = DARRAY_STATIC_INIT (16);
+
 static instsurf_t  *waterchain = NULL;
 static instsurf_t **waterchain_tail = &waterchain;
 static instsurf_t  *sky_chain;
@@ -509,7 +511,7 @@ gl_R_DrawBrushModel (entity_t e)
 	glbspctx_t  bspctx = {
 		brush,
 		Ent_GetComponent (e.id, scene_animation, e.reg),
-		renderer->full_transform,
+		ent_transforms.a[ent_transforms.size++],
 		renderer->colormod,
 	};
 
@@ -550,22 +552,21 @@ gl_R_DrawBrushModel (entity_t e)
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		for (unsigned k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < vr_data.realtime)
-				 || (!r_dlights[k].radius))
-				continue;
-
+		auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+		auto dlight_data = (dlight_t *) dlight_pool->data;
+		for (uint32_t i = 0; i < dlight_pool->count; i++) {
+			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
-			VectorSubtract (r_dlights[k].origin, worldMatrix[3], lightorigin);
+			VectorSubtract (dlight->origin, worldMatrix[3], lightorigin);
 			lightorigin[3] = 1;
-			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+			R_RecursiveMarkLights (brush, lightorigin, dlight, i,
 								   brush->hulls[0].firstclipnode);
 		}
 	}
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
-	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&renderer->full_transform[0]);
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, (vec_t*)&bspctx.transform[0]);
 	qfglPopMatrix ();
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
@@ -617,7 +618,7 @@ visit_node (glbspctx_t *bctx, mnode_t *node, int side)
 		int         surf_id = node->firstsurface;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_face_visframes[surf_id] != r_visframecount)
+			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -634,7 +635,7 @@ test_node (glbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_node_visframes[node_id] != r_visframecount)
+	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))
@@ -721,8 +722,12 @@ gl_R_DrawWorld (void)
 	gl_R_DrawSkyChain (sky_chain);
 
 	if (r_drawentities) {
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) { \
-			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i]; \
+		size_t count = r_ent_queue->ent_queues[mod_brush].size;
+		// ensure pointer stability of the matrix array during this frame
+		DARRAY_RESIZE (&ent_transforms, count);
+		ent_transforms.size = 0;
+		for (size_t i = 0; i < count; i++) {
+			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
 			gl_R_DrawBrushModel (ent);
 		}
 	}

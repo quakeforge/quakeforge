@@ -33,6 +33,7 @@
 
 #define IMPLEMENT_CANVAS_Funcs
 #include "QF/ui/canvas.h"
+#include "QF/ui/imui.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -66,6 +67,8 @@ canvas_rangeid(subpic)
 canvas_rangeid(cachepic)
 canvas_rangeid(fill)
 canvas_rangeid(charbuff)
+canvas_rangeid(passage_glyphs)
+canvas_rangeid(glyphs)
 canvas_rangeid(func)
 canvas_rangeid(lateupdate)
 canvas_rangeid(outline)
@@ -74,6 +77,11 @@ canvas_rangeid(outline)
 static void
 canvas_canvas_destroy (void *_canvas)
 {
+	canvas_t *canvas = _canvas;
+	auto reg = canvas->reg;
+	for (uint32_t i = 0; i < canvas_canvas; i++) {
+		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
+	}
 }
 
 const component_t canvas_components[canvas_comp_count] = {
@@ -121,6 +129,16 @@ const component_t canvas_components[canvas_comp_count] = {
 		.size = sizeof (draw_charbuffer_t *),
 		.name = "charbuffer",
 		.rangeid = canvas_charbuff_rangeid,
+	},
+	[canvas_passage_glyphs] = {
+		.size = sizeof (glyphset_t),
+		.name = "passage glyphs (copy)",
+		.rangeid = canvas_passage_glyphs_rangeid,
+	},
+	[canvas_glyphs] = {
+		.size = sizeof (glyphset_t),
+		.name = "glyphs (copy)",
+		.rangeid = canvas_glyphs_rangeid,
 	},
 	[canvas_func] = {
 		.size = sizeof (canvas_func_f),
@@ -330,6 +348,95 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 	}
 }
 
+static void
+draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
+				 uint32_t color)
+{
+	uint32_t    count = gref->count;
+	glyphobj_t *glyph = glyphset->glyphs + gref->start;
+
+	while (count-- > 0) {
+		glyphobj_t *g = glyph++;
+		r_funcs->Draw_Glyph (abs->x + g->x, abs->y + g->y,
+							 g->fontid, g->glyphid, color);
+	}
+}
+
+static void
+draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
+{
+	int x = abs[ind].x;
+	int y = abs[ind].y;
+	int w = len[ind].x;
+	int h = len[ind].y;
+	r_funcs->Draw_Line (x, y, x + w, y, c);
+	r_funcs->Draw_Line (x, y + h, x + w, y + h, c);
+	r_funcs->Draw_Line (x, y, x, y + h, c);
+	r_funcs->Draw_Line (x + w, y, x + w, y + h, c);
+}
+
+static void
+draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
+{
+	auto        reg = canvas_sys->reg;
+	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
+	uint32_t    color = canvas_sys->text_base + text_color;
+	uint32_t    vhref = canvas_sys->view_base + view_href;
+	uint32_t    count = range.end - range.start;
+	uint32_t   *ent = pool->dense + range.start;
+	auto        glyphset = (glyphset_t *) pool->data + range.start;
+
+	while (count-- > 0) {
+		view_t      view = { .id = *ent++, .reg = reg, .comp = vhref};
+		glyphset_t *gs = glyphset++;
+		if (View_GetVisible (view)) {
+			view_pos_t  abs = View_GetAbs (view);
+			glyphref_t *gref = Ent_GetComponent (view.id, glyphs, reg);
+			uint32_t   *c = Ent_SafeGetComponent (view.id, color, reg);
+			draw_glyph_refs (&abs, gs, gref, c ? *c : 254);
+		}
+	}
+}
+
+static void
+draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
+					 ecs_range_t range)
+{
+	auto        reg = canvas_sys->reg;
+	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
+	uint32_t    color = canvas_sys->text_base + text_color;
+	uint32_t    vhref = canvas_sys->view_base + view_href;
+	uint32_t    count = range.end - range.start;
+	uint32_t   *ent = pool->dense + range.start;
+	auto        glyphset = (glyphset_t *) pool->data + range.start;
+
+	while (count-- > 0) {
+		view_t      psg_view = { .id = *ent++, .reg = reg, .comp = vhref};
+		// first child is always a paragraph view, and all views after the
+		// first paragraph's first child are all text views
+		view_t      para_view = View_GetChild (psg_view, 0);
+		view_t      text_view = View_GetChild (para_view, 0);
+		hierref_t  *href = View_GetRef (text_view);
+		glyphset_t *gs = glyphset++;
+		hierarchy_t *h = href->hierarchy;
+		view_pos_t *abs = h->components[view_abs];
+		view_pos_t *len = h->components[view_len];
+
+		for (uint32_t i = href->index; i < h->num_objects; i++) {
+			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, reg);
+			uint32_t   *c = Ent_SafeGetComponent (h->ent[i], color, reg);
+			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254);
+
+			if (0) draw_box (abs, len, i, 253);
+		}
+		if (0) {
+			for (uint32_t i = 1; i < href->index; i++) {
+				draw_box (abs, len, i, 251);
+			}
+		}
+	}
+}
+
 void
 Canvas_Draw (canvas_system_t canvas_sys)
 {
@@ -343,13 +450,16 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		[canvas_cachepic]   = draw_cachepic_views,
 		[canvas_fill]       = draw_fill_views,
 		[canvas_charbuff]   = draw_charbuff_views,
+		[canvas_passage_glyphs] = draw_passage_glyphs,
+		[canvas_glyphs]     = draw_glyphs,
 		[canvas_func]       = draw_func_views,
 		[canvas_lateupdate] = draw_update,
 		[canvas_outline]    = draw_outline_views,
 	};
 
+	auto        reg = canvas_sys.reg;
 	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *canvas_pool = &canvas_sys.reg->comp_pools[comp];
+	ecs_pool_t *canvas_pool = &reg->comp_pools[comp];
 	uint32_t    count = canvas_pool->count;
 	//uint32_t   *entities = canvas_pool->dense;
 	__auto_type canvases = (canvas_t *) canvas_pool->data;
@@ -358,19 +468,25 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		canvas_t   *canvas = canvases++;
 		//uint32_t    ent = *entities++;
 
+		if (!canvas->visible) {
+			continue;
+		}
+
 		for (int i = 0; i < canvas_comp_count; i++) {
-			uint32_t    c = canvas_sys.base + i;
-			uint32_t    rid = canvas->range[i];
-			ecs_range_t range = ECS_GetSubpoolRange (canvas_sys.reg, c, rid);
 			if (draw_func[i]) {
-				ecs_pool_t *pool = &canvas_sys.reg->comp_pools[c];
-				draw_func[i] (&canvas_sys, pool, range);
+				uint32_t    c = canvas_sys.base + i;
+				uint32_t    rid = canvas->range[i];
+				ecs_range_t range = ECS_GetSubpoolRange (reg, c, rid);
+				if (range.end - range.start) {
+					ecs_pool_t *pool = &reg->comp_pools[c];
+					draw_func[i] (&canvas_sys, pool, range);
+				}
 			}
 		}
 	}
 	{
-		ecs_pool_t *pool = &canvas_sys.reg->comp_pools[canvas_updateonce];
-		ecs_subpool_t *subpool = &canvas_sys.reg->subpools[canvas_updateonce];
+		ecs_pool_t *pool = &reg->comp_pools[canvas_updateonce];
+		ecs_subpool_t *subpool = &reg->subpools[canvas_updateonce];
 		pool->count = 0;
 		uint32_t    rcount = subpool->num_ranges - subpool->available;
 		memset (subpool->ranges, 0, rcount * sizeof (*subpool->ranges));
@@ -388,14 +504,20 @@ Canvas_InitSys (canvas_system_t *canvas_sys, ecs_registry_t *reg)
 											 view_comp_count),
 		.text_base = ECS_RegisterComponents (reg, text_components,
 											 text_comp_count),
+		.imui_base = ECS_RegisterComponents (reg, imui_components,
+											 imui_comp_count),
 	};
 }
 
 void
 Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 {
-	canvas_t    canvas = { };
-	for (uint32_t i = 0; i < canvas_comp_count; i++) {
+	canvas_t    canvas = {
+		.reg = canvas_sys.reg,
+		.base = canvas_sys.base,
+		.visible = true
+	};
+	for (uint32_t i = 0; i < canvas_canvas; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
 	}
@@ -445,17 +567,39 @@ Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 }
 
 void
-Canvas_SetLen (canvas_system_t canvas_sys, view_pos_t len)
+Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len)
 {
-	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *canvas_pool = &canvas_sys.reg->comp_pools[comp];
-	uint32_t    count = canvas_pool->count;
-	uint32_t   *entities = canvas_pool->dense;
+	view_t      view = Canvas_GetRootView (canvas_sys, ent);
+	View_SetLen (view, len.x, len.y);
+	View_UpdateHierarchy (view);
+}
 
-	while (count-- > 0) {
-		uint32_t    ent = *entities++;
-		view_t      view = Canvas_GetRootView (canvas_sys, ent);
-		View_SetLen (view, len.x, len.y);
-		View_UpdateHierarchy (view);
+static int
+canvas_draw_cmp (const void *_a, const void *_b, void *arg)
+{
+	uint32_t    enta = *(const uint32_t *)_a;
+	uint32_t    entb = *(const uint32_t *)_b;
+	canvas_system_t *canvas_sys = arg;
+	auto reg = canvas_sys->reg;
+	uint32_t c_canvas = canvas_sys->base + canvas_canvas;
+	auto canvasa = (canvas_t *) Ent_GetComponent (enta, c_canvas, reg);
+	auto canvasb = (canvas_t *) Ent_GetComponent (entb, c_canvas, reg);
+	int diff = canvasa->draw_group - canvasb->draw_group;
+	if (!diff) {
+		diff = canvasa->draw_order - canvasb->draw_order;
 	}
+	if (!diff) {
+		// order possibly undefined, but at least stable so long as the entity
+		// ids are stable
+		diff = enta - entb;
+	}
+	return diff;
+}
+
+void
+Canvas_DrawSort (canvas_system_t canvas_sys)
+{
+	auto reg = canvas_sys.reg;
+	uint32_t c_canvas = canvas_sys.base + canvas_canvas;
+	ECS_SortComponentPool (reg, c_canvas, canvas_draw_cmp, &canvas_sys);
 }

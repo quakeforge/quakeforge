@@ -2,10 +2,8 @@ void printf (string fmt, ...) = #0;
 
 #if __RUAMOKO__ > 1
 #define dot @dot
-#define X .y
 #else
 #define dot *
-#define X
 #endif
 
 void forcelive (float z)
@@ -20,7 +18,7 @@ float foo (vector _v, float _z)
 	_z = 0;
 	forcelive (_z);
 	forcelive (z);
-	return (v dot *(vector*)(&v.y))X;
+	return v dot *(vector*)(&v.y);
 }
 
 int
@@ -30,5 +28,5 @@ main (int argc, string *argv)
 	vector w = [2, 3, 4];
 	float f;
 	printf ("%v %g %g %g\n", v, v dot v, v dot w, f=foo (v, 4));
-	return f != (v dot w)X;
+	return f != v dot w;
 }

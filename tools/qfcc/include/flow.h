@@ -49,6 +49,7 @@ typedef struct flowvar_s {
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
 	int         flowaddr;		///< psuedo address for local and temp vars
+	int         minsize;		///< minimum size (via memset/move)
 } flowvar_t;
 
 typedef struct udchain_s {
@@ -117,11 +118,11 @@ void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 
 void flow_data_flow (struct function_s *func);
 
-void dump_dot_flow (void *g, const char *filename);
-void dump_dot_flow_dags (void *g, const char *filename);
-void dump_dot_flow_live (void *g, const char *filename);
-void dump_dot_flow_reaching (void *g, const char *filename);
-void dump_dot_flow_statements (void *g, const char *filename);
+void dump_dot_flow (const void *g, const char *filename);
+void dump_dot_flow_dags (const void *g, const char *filename);
+void dump_dot_flow_live (const void *g, const char *filename);
+void dump_dot_flow_reaching (const void *g, const char *filename);
+void dump_dot_flow_statements (const void *g, const char *filename);
 
 ///@}
 

@@ -3,6 +3,8 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
+0 0111 00ts swizzle2
+0 0111 01t0 wedge2
 0 1ccc ttss compare
 0 0000 00nn
 0 0000 0000 noop
@@ -155,11 +157,12 @@ compare_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_int",
+    "types": "{cmp_types[tt]}, {cmp_types[tt]}, {res_types[tt & 2]}",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type": type_tt,
         "cmp_types": etype_tt,
+        "res_types": etype_tt,
     },
 }
 compare2_formats = {
@@ -212,7 +215,7 @@ extend_formats = {
     "opcode": "OP_EXTEND",
     "mnemonic": "extend",
     "opname": "extend",
-    "format": "%Ga %Hb %gc",
+    "format": "%Ga%Xb, %gc",
     "widths": "-1, 0, -1",
     "types": "ev_void, ev_short, ev_void",
 }
@@ -220,7 +223,7 @@ hops_formats = {
     "opcode": "OP_HOPS",
     "mnemonic": "hops",
     "opname": "hops",
-    "format": "%Ga %Hb %gc",
+    "format": "%Hb %Ga, %gc",
     "widths": "-1, 0, 1",
     "types": "ev_void, ev_short, ev_void",
 }
@@ -508,15 +511,39 @@ string_formats = {
     },
 }
 swizzle_formats = {
-    "opcode": "OP_SWIZZLE_{swiz_type[t]}",
+    "opcode": "OP_SWIZZLE_{swiz_type[t]}_4",
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
-    "format": "%Ga %sb %gc",
+    "format": "%Ga.%Sb %gc",
     "widths": "4, 0, 4",
-    "types": "{swizzle_types[t]}",
+    "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
-        "swizzle_types": float_t,
+        "swizzle_types": unsigned_t,
+    },
+}
+swizzle2_formats = {
+    "opcode": "OP_SWIZZLE_{swiz_type[t]}_{s+2}",
+    "mnemonic": "swizzle.{swiz_type[t]}",
+    "opname": "swizzle",
+    "format": "%Ga.%Sb %gc",
+    "widths": "{s+2}, 0, {s+2}",
+    "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
+    "args": {
+        "swiz_type": ['F', 'D'],
+        "swizzle_types": unsigned_t,
+    },
+}
+wedge2_formats = {
+    "opcode": "OP_WEDGE_{wedge_type[t]}_2",
+    "mnemonic": "wedge.{wedge_type[t]}",
+    "opname": "wedge",
+    "format": "%Ga, %Gb, %gc",
+    "widths": "2, 2, 1",
+    "types": "{wedge_types[t]}",
+    "args": {
+        "wedge_type": ['F', 'D'],
+        "wedge_types": float_t,
     },
 }
 return_formats = {
@@ -551,9 +578,9 @@ vecops_formats = {
         "vop_type": ['F', 'D'],
         "vec_widths": [
             "3, 3, 3",
-            "2, 2, 2",
-            "3, 3, 3",
-            "4, 4, 4",
+            "2, 2, 1",
+            "3, 3, 1",
+            "4, 4, 1",
             "2, 2, 2",
             "4, 3, 3",
             "3, 4, 3",
@@ -614,10 +641,12 @@ group_map = {
     "store64":  store64_formats,
     "string":   string_formats,
     "swizzle":  swizzle_formats,
+    "swizzle2": swizzle2_formats,
     "return":   return_formats,
     "udivops":  udivops_formats,
     "vecops":   vecops_formats,
     "vecops2":  vecops2_formats,
+    "wedge2":   wedge2_formats,
     "with":     with_formats,
 }
 

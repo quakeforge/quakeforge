@@ -39,7 +39,10 @@
 #include "QF/sys.h"
 #include "QF/model.h"
 
+#include "QF/plugin/vid_render.h"
+
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
@@ -71,6 +74,22 @@ destroy_visibility (void *_visibility)
 	if (visibility->efrag) {
 		R_ClearEfragChain (visibility->efrag);
 	}
+}
+
+static void
+destroy_renderer (void *_renderer)
+{
+	renderer_t *renderer = _renderer;
+	if (renderer->skin) {
+		mod_funcs->Skin_Free (renderer->skin);
+	}
+}
+
+static void
+destroy_efrags (void *_efrags)
+{
+	efrag_t **efrags = _efrags;
+	R_ClearEfragChain (*efrags);
 }
 
 static void
@@ -115,6 +134,7 @@ static const component_t scene_components[scene_comp_count] = {
 	[scene_renderer] = {
 		.size = sizeof (renderer_t),
 		.create = 0,//create_renderer,
+		.destroy = destroy_renderer,
 		.name = "renderer",
 	},
 	[scene_active] = {
@@ -131,6 +151,35 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (colormap_t),
 		.create = create_colormap,
 		.name = "colormap",
+	},
+
+	[scene_dynlight] = {
+		.size = sizeof (dlight_t),
+		.name = "dyn_light",
+//		.ui = Light_dyn_light_ui,
+	},
+
+	[scene_light] = {
+		.size = sizeof (light_t),
+		.name = "light",
+//		.ui = Light_light_ui,
+	},
+	[scene_efrags] = {
+		.size = sizeof (efrag_t *),
+		.destroy = destroy_efrags,
+		.name = "efrags",
+	},
+	[scene_lightstyle] = {
+		.size = sizeof (uint32_t),
+		.name = "lightstyle",
+	},
+	[scene_lightleaf] = {
+		.size = sizeof (uint32_t),
+		.name = "lightleaf",
+	},
+	[scene_lightid] = {
+		.size = sizeof (uint32_t),
+		.name = "lightid",
 	},
 
 	[scene_sw_matrix] = {
@@ -206,12 +255,19 @@ static model_t empty_world = {
 };
 
 scene_t *
-Scene_NewScene (void)
+Scene_NewScene (scene_system_t *extra_systems)
 {
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
 	scene->reg = ECS_NewRegistry ();
 	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	for (auto extra = extra_systems; extra && extra->system; extra++) {
+		uint32_t base = ECS_RegisterComponents (scene->reg,
+												extra->components,
+												extra->component_count);
+		extra->system->reg = scene->reg;
+		extra->system->base = base;
+	}
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;
@@ -255,4 +311,12 @@ Scene_DestroyEntity (scene_t *scene, entity_t ent)
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
+	auto reg = scene->reg;
+	for (uint32_t i = 0; i < reg->num_entities; i++) {
+		uint32_t    ent = reg->entities[i];
+		uint32_t    ind = Ent_Index (ent);
+		if (ind == i) {
+			ECS_DelEntity (reg, ent);
+		}
+	}
 }

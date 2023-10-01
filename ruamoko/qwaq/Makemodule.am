@@ -30,6 +30,7 @@ r_depfiles_remade += $(ruamoko_qwaq_libui_a_dep)
 
 qwaq_app_dat_src= \
 	ruamoko/qwaq/qwaq-app.r	\
+	ruamoko/qwaq/debugger/views/algebraview.r	\
 	ruamoko/qwaq/debugger/views/arrayview.r	\
 	ruamoko/qwaq/debugger/views/basicview.r	\
 	ruamoko/qwaq/debugger/views/defview.r	\
@@ -38,6 +39,7 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/views/fieldview.r	\
 	ruamoko/qwaq/debugger/views/floatview.r	\
 	ruamoko/qwaq/debugger/views/funcview.r	\
+	ruamoko/qwaq/debugger/views/handleview.r\
 	ruamoko/qwaq/debugger/views/indexview.r	\
 	ruamoko/qwaq/debugger/views/intview.r	\
 	ruamoko/qwaq/debugger/views/nameview.r	\
@@ -168,6 +170,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
 	ruamoko/qwaq/debugger/typeencodings.h \
+	ruamoko/qwaq/debugger/views/algebraview.h \
 	ruamoko/qwaq/debugger/views/arrayview.h \
 	ruamoko/qwaq/debugger/views/basicview.h \
 	ruamoko/qwaq/debugger/views/defview.h \
@@ -176,6 +179,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/fieldview.h \
 	ruamoko/qwaq/debugger/views/floatview.h \
 	ruamoko/qwaq/debugger/views/funcview.h \
+	ruamoko/qwaq/debugger/views/handleview.h \
 	ruamoko/qwaq/debugger/views/indexview.h \
 	ruamoko/qwaq/debugger/views/intview.h \
 	ruamoko/qwaq/debugger/views/nameview.h \

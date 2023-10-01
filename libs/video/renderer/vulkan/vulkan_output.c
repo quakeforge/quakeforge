@@ -106,7 +106,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			rp->beginInfo.framebuffer = 0;
 			//FIXME come up with a better mechanism
 			ctx->swapImageIndex = i;
-			QFV_CreateFramebuffer (ctx, rp);
+			QFV_CreateFramebuffer (ctx, rp, sc->extent);
 			octx->framebuffers[i] = rp->beginInfo.framebuffer;
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER,
 								 octx->framebuffers[i],
@@ -122,6 +122,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 				pl->scissor.extent = sc->extent;
 			}
 		}
+		rctx->size_time = Sys_LongTime ();
 	}
 	ctx->swapImageIndex = imageIndex;
 	rp->beginInfo.framebuffer = octx->framebuffers[imageIndex];
@@ -315,7 +316,23 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
+	octx->swapchain_info = (qfv_attachmentinfo_t) {
+		.name = "$swapchain",
+		.format = ctx->swapchain->format,
+		.samples = 1,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	};
+
 	QFV_Render_AddTasks (ctx, output_task_syms);
+	qfv_attachmentinfo_t *attachments[] = {
+		&octx->swapchain_info,
+	};
+	QFV_Render_AddAttachments (ctx, 1, attachments);
 }
 
 void

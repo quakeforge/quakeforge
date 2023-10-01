@@ -50,6 +50,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_scene.h"
@@ -80,14 +81,7 @@ typedef struct bsp_push_constants_s {
 	float       time;
 	float       alpha;
 	float       turb_scale;
-} bsp_push_constants_t;
-
-static const char *bsp_pass_names[] = {
-	"depth",
-	"g-buffer",
-	"sky",
-	"turb",
-};
+} bsp_frag_constants_t;
 
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
@@ -131,17 +125,99 @@ register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 }
 
 static void
+init_visstate (bspctx_t *bctx)
+{
+	mod_brush_t *brush = &r_refdef.worldmodel->brush;
+	int     count = brush->numnodes + brush->modleafs
+					+ brush->numsurfaces;
+	int         size = count * sizeof (int);
+	int        *shadow_node_frames = Hunk_AllocName (0, size, "visframes");
+	int        *shadow_leaf_frames = shadow_node_frames + brush->numnodes;
+	int        *shadow_face_frames = shadow_leaf_frames + brush->modleafs;
+	int        *debug_node_frames = Hunk_AllocName (0, size, "visframes");
+	int        *debug_leaf_frames = debug_node_frames + brush->numnodes;
+	int        *debug_face_frames = debug_leaf_frames + brush->modleafs;
+	bctx->shadow_pass.vis_frame = 0;
+	bctx->shadow_pass.face_frames = shadow_face_frames;
+	bctx->shadow_pass.leaf_frames = shadow_leaf_frames;
+	bctx->shadow_pass.node_frames = shadow_node_frames;
+
+	bctx->debug_pass.vis_frame = 0;
+	bctx->debug_pass.face_frames = debug_face_frames;
+	bctx->debug_pass.leaf_frames = debug_leaf_frames;
+	bctx->debug_pass.node_frames = debug_node_frames;
+
+	bctx->main_pass.face_frames = r_visstate.face_visframes;
+	bctx->main_pass.leaf_frames = r_visstate.leaf_visframes;
+	bctx->main_pass.node_frames = r_visstate.node_visframes;
+}
+
+static void
+clear_pass_face_queues (bsp_pass_t *pass, const bspctx_t *bctx)
+{
+	if (pass->face_queue) {
+		for (size_t i = 0; i < bctx->registered_textures.size; i++) {
+			DARRAY_CLEAR (&pass->face_queue[i]);
+		}
+		free (pass->face_queue);
+		pass->face_queue = 0;
+	}
+}
+
+static void
+shutdown_pass_draw_queues (bsp_pass_t *pass)
+{
+	for (int i = 0; i < pass->num_queues; i++) {
+		DARRAY_CLEAR (&pass->draw_queues[i]);
+	}
+	free (pass->draw_queues);
+}
+
+static void
+shutdown_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
+{
+	for (int i = 0; i < bctx->num_models; i++) {
+		DARRAY_CLEAR (&pass->instances[i].entities);
+	}
+	free (pass->instances);
+}
+
+static void
+setup_pass_instances (bsp_pass_t *pass, const bspctx_t *bctx)
+{
+	pass->instances = malloc (sizeof (bsp_instance_t[bctx->num_models]));
+	for (int i = 0; i < bctx->num_models; i++) {
+		DARRAY_INIT (&pass->instances[i].entities, 16);
+	}
+}
+
+static void
+setup_pass_draw_queues (bsp_pass_t *pass)
+{
+	pass->num_queues = 4;//solid, sky, water, transparent
+	pass->draw_queues = malloc (sizeof (bsp_drawset_t[pass->num_queues]));
+	for (int i = 0; i < pass->num_queues; i++) {
+		DARRAY_INIT (&pass->draw_queues[i], 64);
+	}
+}
+
+static void
+setup_pass_face_queues (bsp_pass_t *pass, int num_tex, bspctx_t *bctx)
+{
+	pass->face_queue = malloc (sizeof (bsp_instfaceset_t[num_tex]));
+	for (int i = 0; i < num_tex; i++) {
+		pass->face_queue[i] = (bsp_instfaceset_t) DARRAY_STATIC_INIT (128);
+	}
+}
+
+static void
 clear_textures (vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	if (bctx->main_pass.face_queue) {
-		for (size_t i = 0; i < bctx->registered_textures.size; i++) {
-			DARRAY_CLEAR (&bctx->main_pass.face_queue[i]);
-		}
-		free (bctx->main_pass.face_queue);
-		bctx->main_pass.face_queue = 0;
-	}
+	clear_pass_face_queues (&bctx->main_pass, bctx);
+	clear_pass_face_queues (&bctx->shadow_pass, bctx);
+	clear_pass_face_queues (&bctx->debug_pass, bctx);
 
 	bctx->registered_textures.size = 0;
 }
@@ -246,11 +322,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 
 	// create face queue arrays
-	bctx->main_pass.face_queue = malloc (num_tex * sizeof (bsp_instfaceset_t));
-	for (int i = 0; i < num_tex; i++) {
-		bctx->main_pass.face_queue[i]
-			= (bsp_instfaceset_t) DARRAY_STATIC_INIT (128);
-	}
+	setup_pass_face_queues (&bctx->main_pass, num_tex, bctx);
+	setup_pass_face_queues (&bctx->shadow_pass, num_tex, bctx);
+	setup_pass_face_queues (&bctx->debug_pass, num_tex, bctx);
 }
 
 typedef struct {
@@ -355,6 +429,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
+	init_visstate (bctx);
 	if (!num_models) {
 		return;
 	}
@@ -365,10 +440,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		face_sets[i] = (facerefset_t) DARRAY_STATIC_INIT (1024);
 	}
 
-	for (int i = 0; i < bctx->num_models; i++) {
-		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
-	}
-	free (bctx->main_pass.instances);
+	shutdown_pass_instances (&bctx->main_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
+	shutdown_pass_instances (&bctx->debug_pass, bctx);
 	bctx->num_models = 0;
 
 	// run through all surfaces, chaining them to their textures, thus
@@ -408,11 +482,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 		face_base += brush->numsurfaces;
 	}
-	bctx->main_pass.instances = malloc (bctx->num_models
-										* sizeof (bsp_instance_t));
-	for (int i = 0; i < bctx->num_models; i++) {
-		DARRAY_INIT (&bctx->main_pass.instances[i].entities, 16);
-	}
+	setup_pass_instances (&bctx->main_pass, bctx);
+	setup_pass_instances (&bctx->shadow_pass, bctx);
+	setup_pass_instances (&bctx->debug_pass, bctx);
 	// All vertices from all brush models go into one giant vbo.
 	uint32_t    vertex_count = 0;
 	uint32_t    index_count = 0;
@@ -431,6 +503,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			poly_count++;
 		}
 	}
+	index_count *= 3;
 
 	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
@@ -604,12 +677,13 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 }
 
 static inline void
-visit_leaf (mleaf_t *leaf)
+visit_leaf (bsp_pass_t *pass, mleaf_t *leaf)
 {
 	// since this leaf will be rendered, any entities in the leaf also need
 	// to be rendered (the bsp tree doubles as an entity cull structure)
-	if (leaf->efrags)
-		R_StoreEfrags (leaf->efrags);
+	for (auto efrag = leaf->efrags; efrag; efrag = efrag->leafnext) {
+		EntQueue_AddEntity (pass->entqueue, efrag->entity, efrag->queue_num);
+	}
 }
 
 // 1 = back side, 0 = front side
@@ -623,7 +697,7 @@ get_side (const bsp_pass_t *pass, const mnode_t *node)
 }
 
 static inline void
-visit_node (bsp_pass_t *pass, const mnode_t *node, int side)
+visit_node_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 {
 	bspctx_t   *bctx = pass->bsp_context;
 	int         c;
@@ -652,6 +726,27 @@ visit_node (bsp_pass_t *pass, const mnode_t *node, int side)
 	}
 }
 
+static inline void
+visit_node_no_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
+{
+	bspctx_t   *bctx = pass->bsp_context;
+	int         c;
+
+	// chain any visible surfaces on the node that face the camera.
+	// not all nodes have any surfaces to draw (purely a split plane)
+	if ((c = node->numsurfaces)) {
+		const bsp_face_t *face = bctx->faces + node->firstsurface;
+		const int  *frame = pass->face_frames + node->firstsurface;
+		int         vis_frame = pass->vis_frame;
+		for (; c; c--, face++, frame++) {
+			if (*frame != vis_frame)
+				continue;
+
+			chain_surface (face, pass, bctx);
+		}
+	}
+}
+
 static inline int
 test_node (const bsp_pass_t *pass, int node_id)
 {
@@ -663,7 +758,8 @@ test_node (const bsp_pass_t *pass, int node_id)
 }
 
 static void
-R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
+R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx,
+				   void (*visit_node) (bsp_pass_t *, const mnode_t *, int))
 {
 	const mod_brush_t *brush = pass->brush;
 	typedef struct {
@@ -700,7 +796,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 			if (front < 0) {
 				mleaf_t    *leaf = brush->leafs + ~front;
 				if (leaf->contents != CONTENTS_SOLID) {
-					visit_leaf (leaf);
+					visit_leaf (pass, leaf);
 				}
 			}
 			visit_node (pass, node, side);
@@ -709,7 +805,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		if (node_id < 0) {
 			mleaf_t    *leaf = brush->leafs + ~node_id;
 			if (leaf->contents != CONTENTS_SOLID) {
-				visit_leaf (leaf);
+				visit_leaf (pass, leaf);
 			}
 		}
 		if (node_ptr != node_stack) {
@@ -737,25 +833,42 @@ bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 }
 
 static void
-push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
+push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 				qfv_device_t *device, VkCommandBuffer cmd)
 {
+	//XXX glsl_Fog_GetColor (fog);
+	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
+	bsp_frag_constants_t constants = {
+		.time = vr_data.realtime,
+		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
+		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
+	};
+
 	qfv_push_constants_t push_constants[] = {
-		//{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, fog),
-			sizeof (constants->fog), &constants->fog },
+			field_offset (bsp_frag_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, time),
-			sizeof (constants->time), &constants->time },
+			field_offset (bsp_frag_constants_t, time),
+			sizeof (constants.time), &constants.time },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, alpha),
-			sizeof (constants->alpha), &constants->alpha },
+			field_offset (bsp_frag_constants_t, alpha),
+			sizeof (constants.alpha), &constants.alpha },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_push_constants_t, turb_scale),
-			sizeof (constants->turb_scale), &constants->turb_scale },
+			field_offset (bsp_frag_constants_t, turb_scale),
+			sizeof (constants.turb_scale), &constants.turb_scale },
 	};
 	QFV_PushConstants (device, cmd, layout, 4, push_constants);
+}
+
+static void
+push_shadowconst (uint32_t matrix_base, VkPipelineLayout layout,
+				  qfv_device_t *device, VkCommandBuffer cmd)
+{
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (uint32_t), &matrix_base },
+	};
+	QFV_PushConstants (device, cmd, layout, 1, push_constants);
 }
 
 static void
@@ -777,6 +890,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 static void
 queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
+	uint32_t base = bframe->index_count;
 	pass->indices = bframe->index_data + bframe->index_count;
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		auto queue = &pass->face_queue[i];
@@ -821,7 +935,7 @@ queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 					.tex_id = i,
 					.inst_id = is.inst_id,
 					.instance_count = instance->entities.size,
-					.first_index = pass->index_count,
+					.first_index = pass->index_count + base,
 					.first_instance = instance->first_instance,
 				}));
 				dq_size = pass->draw_queues[dq].size;
@@ -853,16 +967,6 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 		dfunc->vkCmdDrawIndexed (cmd, d.index_count, d.instance_count,
 								 d.first_index, 0, d.first_instance);
 	}
-}
-
-static int
-ent_model_cmp (const void *_a, const void *_b)
-{
-	const entity_t *a = _a;
-	const entity_t *b = _b;
-	renderer_t *ra = Ent_GetComponent (a->id, scene_renderer, a->reg);
-	renderer_t *rb = Ent_GetComponent (b->id, scene_renderer, b->reg);
-	return ra->model->render_id - rb->model->render_id;
 }
 
 static void
@@ -1071,6 +1175,20 @@ create_notexture (vulkan_ctx_t *ctx)
 }
 
 static void
+bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto bctx = ctx->bsp_context;
+	auto bframe = &bctx->frames.a[ctx->curFrame];
+
+	bframe->index_count = 0;
+	bframe->entid_count = 0;
+
+	Vulkan_Scene_Flush (ctx);
+}
+
+static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -1080,21 +1198,23 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bctx = ctx->bsp_context;
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
+	uint16_t *matrix_base = taskctx->data;
 
 	if (!bctx->vertex_buffer) {
 		return;
 	}
 
 	// params are in reverse order
-	auto stage = *(int *) params[2]->value;
+	auto pass_ind = *(QFV_BspPass *) params[2]->value;
 	auto queue = *(QFV_BspQueue *) params[1]->value;
-	auto pass = *(int *) params[0]->value;
+	auto textured = *(int *) params[0]->value;
 
-	if (stage) {
-		Sys_Error ("bps stages not implemented");
-	}
-	auto mpass = &bctx->main_pass;
-	if (!mpass->draw_queues[queue].size) {
+	auto pass = (bsp_pass_t *[]) {
+		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspShadow] = &bctx->shadow_pass,
+		[QFV_bspDebug] = &bctx->debug_pass,
+	} [pass_ind];
+	if (!pass->draw_queues[queue].size) {
 		return;
 	}
 
@@ -1105,29 +1225,35 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
-	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Scene_Descriptors (ctx),
-		Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 3, sets, 0, 0);
+	if (matrix_base) {
+		VkDescriptorSet sets[] = {
+			Vulkan_Lighting_Descriptors (ctx, ctx->curFrame),
+			Vulkan_Scene_Descriptors (ctx),
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 2, sets, 0, 0);
+	} else {
+		VkDescriptorSet sets[] = {
+			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+			Vulkan_Scene_Descriptors (ctx),
+			Vulkan_Translucent_Descriptors (ctx, ctx->curFrame),
+		};
+		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+										layout, 0, 3, sets, 0, 0);
+	}
 
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
-	bsp_push_constants_t frag_constants = {
-		.time = vr_data.realtime,
-		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
-		.turb_scale = queue == QFV_bspTurb ? 1 : 0,
-	};
-	push_fragconst (&frag_constants, layout, device, cmd);
+	if (matrix_base) {
+		push_shadowconst (*matrix_base, layout, device, cmd);
+	} else {
+		push_fragconst (queue, layout, device, cmd);
+	}
 	if (queue == QFV_bspSky) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
 	}
 
-	mpass->textures = pass ? &bctx->registered_textures : 0;
-	draw_queue (mpass, queue, layout, device, cmd);
+	pass->textures = textured ? &bctx->registered_textures : 0;
+	draw_queue (pass, queue, layout, device, cmd);
 }
 
 static void
@@ -1135,17 +1261,25 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto stage = *(int *) params[0]->value;
-
-	if (stage) {
-		Sys_Error ("bps stages not implemented");
-	}
-
-	EntQueue_Clear (r_ent_queue);
-	Vulkan_Scene_Flush (ctx);
-
 	auto bctx = ctx->bsp_context;
-	clear_queues (bctx, &bctx->main_pass);	// do this first for water and skys
+	auto pass_ind = *(QFV_BspPass *) params[0]->value;
+
+	auto pass = (bsp_pass_t *[]) {
+		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspShadow] = &bctx->shadow_pass,
+		[QFV_bspDebug] = &bctx->debug_pass,
+	} [pass_ind];
+
+	if (pass_ind == QFV_bspMain) {
+		pass->entqueue = r_ent_queue;
+		pass->position = r_refdef.frame.position;
+		pass->vis_frame = r_visstate.visframecount;
+	}
+	pass->brush = &r_refdef.worldmodel->brush;
+
+	EntQueue_Clear (pass->entqueue);
+
+	clear_queues (bctx, pass);	// do this first for water and skys
 
 	if (!r_refdef.worldmodel) {
 		return;
@@ -1153,66 +1287,66 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto bframe = &bctx->frames.a[ctx->curFrame];
 
-	bctx->main_pass.bsp_context = bctx;
-	bctx->main_pass.position = r_refdef.frame.position;
-	bctx->main_pass.vis_frame = r_visframecount;
-	bctx->main_pass.face_frames = r_face_visframes;
-	bctx->main_pass.leaf_frames = r_leaf_visframes;
-	bctx->main_pass.node_frames = r_node_visframes;
-	bctx->main_pass.entid_data = bframe->entid_data;
-	bctx->main_pass.entid_count = 0;
+	pass->entid_data = bframe->entid_data;
+	pass->entid_count = bframe->entid_count;
 
 	bctx->anim_index = r_data->realtime * 5;
-
-	bframe->index_count = 0;
 
 	entity_t    worldent = nullentity;
 
 	int         world_id = Vulkan_Scene_AddEntity (ctx, worldent);
 
-	bctx->main_pass.ent_frame = 0;	// world is always frame 0
-	bctx->main_pass.inst_id = world_id;
-	bctx->main_pass.brush = &r_refdef.worldmodel->brush;
-	if (bctx->main_pass.instances) {
-		DARRAY_APPEND (&bctx->main_pass.instances[world_id].entities, world_id);
+	pass->ent_frame = 0;	// world is always frame 0
+	pass->inst_id = world_id;
+	if (pass->instances) {
+		DARRAY_APPEND (&pass->instances[world_id].entities, world_id);
 	}
-	R_VisitWorldNodes (&bctx->main_pass, ctx);
+	R_VisitWorldNodes (pass, ctx, (typeof(visit_node_bfcull)*[]) {
+		[QFV_bspMain] = visit_node_bfcull,
+		[QFV_bspShadow] = visit_node_no_bfcull,
+		[QFV_bspDebug] = visit_node_no_bfcull,
+	}[pass_ind]);
 
 	if (r_drawentities) {
-		heapsort (r_ent_queue->ent_queues[mod_brush].a,
-				  r_ent_queue->ent_queues[mod_brush].size,
-				  sizeof (entity_t), ent_model_cmp);
-		for (size_t i = 0; i < r_ent_queue->ent_queues[mod_brush].size; i++) {
-			entity_t    ent = r_ent_queue->ent_queues[mod_brush].a[i];
-			if (!R_DrawBrushModel (ent, &bctx->main_pass, ctx)) {
+		auto queue = pass->entqueue;
+		for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
+			entity_t    ent = queue->ent_queues[mod_brush].a[i];
+			if (!R_DrawBrushModel (ent, pass, ctx)) {
 				Sys_Printf ("Too many entities!\n");
 				break;
 			}
 		}
 	}
-	bframe->entid_count = bctx->main_pass.entid_count;
 
-	queue_faces (&bctx->main_pass, bctx, bframe);
+	queue_faces (pass, bctx, bframe);
+
+	bframe->entid_count = pass->entid_count;
 
 	bsp_flush (ctx);
 }
 
-static exprenum_t bsp_stage_enum;
-static exprtype_t bsp_stage_type = {
-	.name = "bsp_stage",
+static exprenum_t bsp_pass_enum;
+static exprtype_t bsp_pass_type = {
+	.name = "bsp_pass",
 	.size = sizeof (int),
 	.get_string = cexpr_enum_get_string,
-	.data = &bsp_stage_enum,
+	.data = &bsp_pass_enum,
 };
-static int bsp_stage_values[] = { 0, };
-static exprsym_t bsp_stage_symbols[] = {
-	{"main", &bsp_stage_type, bsp_stage_values + 0},
+static int bsp_pass_values[] = {
+	QFV_bspMain,
+	QFV_bspShadow,
+	QFV_bspDebug,
+};
+static exprsym_t bsp_pass_symbols[] = {
+	{"main", &bsp_pass_type, bsp_pass_values + 0},
+	{"shadow", &bsp_pass_type, bsp_pass_values + 1},
+	{"debug", &bsp_pass_type, bsp_pass_values + 2},
 	{}
 };
-static exprtab_t bsp_stage_symtab = { .symbols = bsp_stage_symbols };
-static exprenum_t bsp_stage_enum = {
-	&bsp_stage_type,
-	&bsp_stage_symtab,
+static exprtab_t bsp_pass_symtab = { .symbols = bsp_pass_symbols };
+static exprenum_t bsp_pass_enum = {
+	&bsp_pass_type,
+	&bsp_pass_symtab,
 };
 
 static exprenum_t bsp_queue_enum;
@@ -1242,15 +1376,19 @@ static exprenum_t bsp_queue_enum = {
 };
 
 static exprtype_t *bsp_visit_world_params[] = {
-	&bsp_stage_type,
+	&bsp_pass_type,
 };
 
 static exprtype_t *bsp_draw_queue_params[] = {
 	&cexpr_int,
 	&bsp_queue_type,
-	&bsp_stage_type,
+	&bsp_pass_type,
 };
 
+static exprfunc_t bsp_reset_queues_func[] = {
+	{ .func = bsp_reset_queues },
+	{}
+};
 static exprfunc_t bsp_visit_world_func[] = {
 	{ 0, 1, bsp_visit_world_params, bsp_visit_world },
 	{}
@@ -1260,6 +1398,7 @@ static exprfunc_t bsp_draw_queue_func[] = {
 	{}
 };
 static exprsym_t bsp_task_syms[] = {
+	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
 	{}
@@ -1272,6 +1411,12 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
+
+	bctx->main_pass.bsp_context = bctx;
+	bctx->shadow_pass.bsp_context = bctx;
+	bctx->shadow_pass.entqueue = EntQueue_New (mod_num_types);
+	bctx->debug_pass.bsp_context = bctx;
+	bctx->debug_pass.entqueue = EntQueue_New (mod_num_types);
 }
 
 void
@@ -1297,12 +1442,9 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
-	bctx->main_pass.num_queues = 4;//solid, sky, water, transparent
-	bctx->main_pass.draw_queues = malloc (bctx->main_pass.num_queues
-										  * sizeof (bsp_drawset_t));
-	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
-		DARRAY_INIT (&bctx->main_pass.draw_queues[i], 64);
-	}
+	setup_pass_draw_queues (&bctx->main_pass);
+	setup_pass_draw_queues (&bctx->shadow_pass);
+	setup_pass_draw_queues (&bctx->debug_pass);
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -1336,18 +1478,7 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		auto bframe = &bctx->frames.a[i];
 
-		DARRAY_INIT (&bframe->cmdSet, QFV_bspNumPasses);
-		DARRAY_RESIZE (&bframe->cmdSet, QFV_bspNumPasses);
-		bframe->cmdSet.grow = 0;
 
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &bframe->cmdSet);
-
-		for (int j = 0; j < QFV_bspNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 bframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
-									 bsp_pass_names[j]));
-		}
 		bframe->entid_data = entid_data + i * entid_count;
 		bframe->entid_offset = i * entid_size;
 	}
@@ -1371,24 +1502,19 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
-	for (size_t i = 0; i < bctx->frames.size; i++) {
-		auto bframe = &bctx->frames.a[i];
-		free (bframe->cmdSet.a);
-	}
+	shutdown_pass_draw_queues (&bctx->main_pass);
+	shutdown_pass_draw_queues (&bctx->shadow_pass);
+	shutdown_pass_draw_queues (&bctx->debug_pass);
 
 	DARRAY_CLEAR (&bctx->registered_textures);
-	for (int i = 0; i < bctx->main_pass.num_queues; i++) {
-		DARRAY_CLEAR (&bctx->main_pass.draw_queues[i]);
-	}
 
 	free (bctx->faces);
 	free (bctx->models);
 
-	free (bctx->main_pass.draw_queues);
-	for (int i = 0; i < bctx->num_models; i++) {
-		DARRAY_CLEAR (&bctx->main_pass.instances[i].entities);
-	}
-	free (bctx->main_pass.instances);
+	shutdown_pass_instances (&bctx->main_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
+	shutdown_pass_instances (&bctx->debug_pass, bctx);
+
 	DARRAY_CLEAR (&bctx->frames);
 
 	QFV_DestroyStagingBuffer (bctx->light_stage);
@@ -1490,4 +1616,24 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 											  bctx->sampler);
 		Sys_MaskPrintf (SYS_vulkan, "Skybox %s loaded\n", sky);
 	}
+}
+
+bsp_pass_t *
+Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind)
+{
+	auto bctx = ctx->bsp_context;
+	if (!r_refdef.worldmodel) {
+		return 0;
+	}
+	auto pass = (bsp_pass_t *[]) {
+		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspShadow] = &bctx->shadow_pass,
+		[QFV_bspDebug] = &bctx->debug_pass,
+	}[pass_ind];
+	auto bframe = &bctx->frames.a[ctx->curFrame];
+	pass->entid_data = bframe->entid_data;
+	pass->entid_count = bframe->entid_count;
+	pass->brush = &r_refdef.worldmodel->brush;
+
+	return pass;
 }

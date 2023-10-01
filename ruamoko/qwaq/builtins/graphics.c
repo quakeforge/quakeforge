@@ -139,12 +139,6 @@ bi_setpalette (progs_t *pr, void *_res)
 	VID_SetPalette (palette, colormap);
 }
 
-static void
-bi_shutdown (progs_t *pr, void *_res)
-{
-	Sys_Shutdown ();
-}
-
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -152,7 +146,6 @@ static builtin_t builtins[] = {
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(setpalette, -1, 2, p(ptr), p(ptr)),
-	bi(shutdown,   -1, 0),
 	{0}
 };
 
@@ -161,7 +154,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 {
 	// FIXME rethink event handling for qwaq
 	if (ie_event->type == ie_key && ie_event->key.code == QFK_ESCAPE) {
-		Con_SetState (con_active);
+		Con_SetState (con_active, false);
 		return 1;
 	}
 	return IN_Binding_HandleEvent (ie_event);
@@ -170,6 +163,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 static void
 BI_shutdown (void *data)
 {
+	printf ("BI_shutdown\n");
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
 }
@@ -338,7 +332,8 @@ generate_colormap (void)
 static void
 vidsize_listener (void *data, const viddef_t *vdef)
 {
-	Canvas_SetLen (canvas_sys, (view_pos_t) { vdef->width, vdef->height });
+	Canvas_SetLen (canvas_sys, canvas,
+				   (view_pos_t) { vdef->width, vdef->height });
 }
 
 void
@@ -401,7 +396,7 @@ BI_Graphics_Init (progs_t *pr)
 
 	//Key_SetKeyDest (key_game);
 	Con_Init ();
-	vidsize_listener (0, &viddef); //FIXME this probably shouldn't be needed
+	VID_SendSize ();
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();

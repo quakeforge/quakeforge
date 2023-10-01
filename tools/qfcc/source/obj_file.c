@@ -326,6 +326,10 @@ qfo_from_progs (pr_info_t *pr)
 	qfo_reloc_t *reloc;
 	reloc_t    *r;
 
+	defspace_sort_defs (pr->near_data);
+	defspace_sort_defs (pr->far_data);
+	defspace_sort_defs (pr->entity_data);
+
 	qfo = calloc (1, sizeof (qfo_t));
 	qfo->num_spaces = qfo_num_spaces; // certain spaces are always present
 	qfo_count_stuff (qfo, pr);
@@ -699,6 +703,7 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 		case ty_alias:	//XXX
 		case ty_basic:
 		case ty_handle:	//XXX
+		case ty_algebra:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return type_def->type;
@@ -750,6 +755,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 			return type_def->array.size
 					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
+		case ty_algebra:
 			return 0;	// FIXME
 	}
 	return 0;
@@ -799,6 +805,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 		case ty_array:
 			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:
+		case ty_algebra:
 			return 0;	// FIXME
 	}
 	return 0;

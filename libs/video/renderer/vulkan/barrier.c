@@ -57,6 +57,19 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
+	[qfv_LT_Undefined_to_ShaderReadOnly] = {
+		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+			0,
+			VK_ACCESS_SHADER_READ_BIT,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		},
+	},
 	[qfv_LT_TransferDst_to_TransferSrc] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,

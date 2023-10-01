@@ -240,7 +240,6 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 
 	// call the apropriate loader
 	mod->needload = false;
-	mod->hasfullbrights = false;
 
 	switch (LittleLong (*buf)) {
 		case IQM_SMAGIC:

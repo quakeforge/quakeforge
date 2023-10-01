@@ -31,7 +31,7 @@ typedef struct iqmmesh_s {
     uint32_t    first_triangle, num_triangles;
 } iqmmesh;
 
-enum {
+typedef enum : uint32_t {
     IQM_POSITION     = 0,
     IQM_TEXCOORD     = 1,
     IQM_NORMAL       = 2,
@@ -40,9 +40,9 @@ enum {
     IQM_BLENDWEIGHTS = 5,
     IQM_COLOR        = 6,
     IQM_CUSTOM       = 0x10
-};
+} iqmverttype;
 
-enum {
+typedef enum : uint32_t {
     IQM_BYTE   = 0,
     IQM_UBYTE  = 1,
     IQM_SHORT  = 2,
@@ -52,7 +52,7 @@ enum {
     IQM_HALF   = 6,
     IQM_FLOAT  = 7,
     IQM_DOUBLE = 8
-};
+} iqmformat;
 
 typedef struct iqmtriangle_s {
     uint32_t    vertex[3];
@@ -84,21 +84,21 @@ typedef struct iqmpose_s {
     float       channelscale[10];
 } iqmpose;
 
+typedef enum : uint32_t {
+    IQM_LOOP = 1<<0
+} iqmanimflags;
+
 typedef struct iqmanim_s {
     uint32_t    name;
     uint32_t    first_frame, num_frames;
     float       framerate;
-    uint32_t    flags;
+    iqmanimflags flags;
 } iqmanim;
 
-enum {
-    IQM_LOOP = 1<<0
-};
-
 typedef struct iqmvertexarray_s {
-    uint32_t    type;
+    iqmverttype type;
     uint32_t    flags;
-    uint32_t    format;
+    iqmformat   format;
     uint32_t    size;
     uint32_t    offset;
 } iqmvertexarray;

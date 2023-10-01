@@ -10,6 +10,7 @@ typedef struct vid_system_s {
 	void      (*set_palette) (byte *palette, byte *colormap);
 	void      (*init_cvars) (void);
 	void      (*update_fullscreen) (int fullscreen);
+	void      (*set_cursor) (bool visible);
 } vid_system_t;
 
 extern vid_system_t vid_system;
@@ -37,7 +38,7 @@ extern int vid_system_gamma;
 extern float vid_gamma;
 
 void VID_GetWindowSize (int def_w, int def_h);
-void VID_SetWindowSize (int width, int height);
+void VID_SetWindow (int x, int y, int width, int height);
 
 void VID_InitGamma (const byte *);
 bool VID_SetGamma (double);

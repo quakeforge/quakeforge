@@ -63,9 +63,13 @@ static void
 button_free (void *b, void *data)
 {
 	regbutton_t *rb = b;
+
+	Cmd_RemoveCommand (rb->release_cmd);
+	Cmd_RemoveCommand (rb->press_cmd);
 	if (rb->button->listeners) {
 		DARRAY_CLEAR (rb->button->listeners);
 		free (rb->button->listeners);
+		rb->button->listeners = 0;
 	}
 	free (rb);
 }
@@ -197,6 +201,19 @@ IN_RegisterButton (in_button_t *button)
 	return 1;
 }
 
+VISIBLE int
+IN_UnregisterButton (in_button_t *button)
+{
+	const char *name = button->name;
+	regbutton_t *regbutton = Hash_Find (button_tab, name);
+	if (!regbutton) {
+		return 0;
+	}
+
+	Hash_Free (button_tab, Hash_Del (button_tab, name));
+	return 1;
+}
+
 in_button_t *
 IN_FindButton (const char *name)
 {
@@ -243,11 +260,12 @@ IN_ButtonClearStates (void)
 static void
 in_button_shutdown (void *data)
 {
+	Sys_MaskPrintf (SYS_input, "in_button_shutdown\n");
 	Hash_DelTable (button_tab);
 }
 
-static void __attribute__((constructor))
-in_button_init (void)
+void
+IN_ButtonInit (void)
 {
 	button_tab = Hash_NewTable (127, button_get_key, button_free, 0, 0);
 	Sys_RegisterShutdown (in_button_shutdown, 0);

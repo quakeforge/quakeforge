@@ -44,6 +44,7 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
@@ -98,7 +99,8 @@ int yylex (void);
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
-	struct expr_s	*expr;
+	const struct expr_s	*expr;
+	struct expr_s *mut_expr;
 	struct element_s *element;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
@@ -141,9 +143,9 @@ int yylex (void);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD SCALE
-%left           CROSS DOT HADAMARD
-%right	<op>	SIZEOF UNARY INCOP
+%left			'*' '/' '%' MOD SCALE GEOMETRIC
+%left           HADAMARD CROSS DOT WEDGE REGRESSIVE
+%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -152,7 +154,7 @@ int yylex (void);
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
 %token				RETURN AT_RETURN ELLIPSIS
-%token				NIL GOTO SWITCH CASE DEFAULT ENUM
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT HANDLE
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
@@ -179,7 +181,7 @@ int yylex (void);
 
 %type	<symbol>	tag
 %type	<spec>		struct_specifier struct_list
-%type	<spec>		enum_specifier
+%type	<spec>		enum_specifier algebra_specifier
 %type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
 %type	<size>		array_decl
@@ -193,19 +195,24 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		var_initializer local_def
 
-%type	<expr>		opt_init_semi opt_expr comma_expr expr
-%type	<expr>		compound_init element_list
+%type	<mut_expr>	opt_init_semi opt_expr comma_expr
+%type   <expr>		expr
+%type	<expr>		compound_init
+%type   <mut_expr>	element_list expr_list
 %type	<designator> designator designator_spec
 %type	<element>	element
-%type	<expr>		ose optional_state_expr texpr vector_expr
-%type	<expr>		statement statements compound_statement
+%type	<expr>		method_optional_state_expr optional_state_expr
+%type	<expr>		texpr vector_expr
+%type	<expr>		statement
+%type	<mut_expr>	statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr expr_list
-%type	<expr>		opt_arg_list arg_list arg_expr
+%type	<expr>		unary_expr ident_expr cast_expr
+%type	<mut_expr>	opt_arg_list arg_list
+%type   <expr>		arg_expr
 %type	<switch_block> switch_block
 %type	<symbol>	identifier label
 
-%type	<expr>		identifier_list
+%type	<mut_expr>	identifier_list
 %type	<symbol>	protocol_name_list selector reserved_word
 %type	<param>		optional_param_list unaryselector keyworddecl
 %type	<param>		keywordselector
@@ -225,8 +232,8 @@ int yylex (void);
 %{
 
 static switch_block_t *switch_block;
-static expr_t *break_label;
-static expr_t *continue_label;
+static const expr_t *break_label;
+static const expr_t *continue_label;
 
 static specifier_t
 make_spec (type_t *type, storage_class_t storage, int is_typedef,
@@ -643,7 +650,7 @@ qc_nocode_func
 		{
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
-			expr_t     *expr = $4;
+			const expr_t *expr = $4;
 			sym = qc_function_symbol (spec, sym);
 			build_builtin_function (sym, expr, 0, spec.storage);
 		}
@@ -893,6 +900,11 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
+	| algebra_specifier %prec LOW
+	| algebra_specifier '.' attribute
+		{
+			$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+		}
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should. This is not a problem
@@ -905,9 +917,18 @@ typespec_reserved
 		}
 	;
 
-
 typespec_nonreserved
-	: TYPE_NAME
+	: TYPE_NAME %prec LOW
+	| TYPE_NAME '.' attribute
+		{
+			if (!is_algebra ($1.type)) {
+				error (0, "%s does not have any subtypes",
+					   get_type_string ($1.type));
+				$$ = $1;
+			} else {
+				$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+			}
+		}
 	| OBJECT_NAME protocolrefs
 		{
 			if ($2) {
@@ -957,7 +978,7 @@ save_storage
 	;
 
 function_body
-	: ose
+	: method_optional_state_expr
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
 			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
@@ -1013,11 +1034,24 @@ attribute_list
 	;
 
 attribute
-	: NAME						{ $$ = new_attribute ($1->name, 0); }
+	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0); }
 	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
 	;
 
 tag : NAME ;
+
+algebra_specifier
+	: ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+		{
+			auto spec = make_spec (algebra_type ($3.type, $5), 0, 0, 0);
+			$$ = spec;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto spec = make_spec (algebra_type ($3.type, 0), 0, 0, 0);
+			$$ = spec;
+		}
+	;
 
 enum_specifier
 	: ENUM tag optional_enum_list
@@ -1341,12 +1375,12 @@ array_decl
 	;
 
 decl
-	: declspecs_ts local_expr initdecls ';'
+	: declspecs_ts local_expr initdecls seq_semi
 		{
 			$$ = local_expr;
 			local_expr = 0;
 		}
-	| declspecs_nots local_expr notype_initdecls ';'
+	| declspecs_nots local_expr notype_initdecls seq_semi
 		{
 			$$ = local_expr;
 			local_expr = 0;
@@ -1367,7 +1401,7 @@ local_expr
 	: /* emtpy */
 		{
 			$<spec>$ = $<spec>0;
-			local_expr = new_block_expr ();
+			local_expr = new_block_expr (0);
 		}
 	;
 
@@ -1387,7 +1421,7 @@ compound_init
 	| '{' '}'									{ $$ = 0; }
 	;
 
-ose
+method_optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
 	| SHR vector_expr					{ $$ = build_state_expr ($2); }
 	;
@@ -1458,18 +1492,31 @@ pop_scope
 		}
 	;
 
+flush_dag
+	: /* empty */
+		{
+			if (!no_flush_dag) {
+				edag_flush ();
+			}
+		}
+	;
+
+seq_semi
+	: ';' flush_dag
+	;
+
 compound_statement
-	: '{' push_scope statements '}' pop_scope { $$ = $3; }
+	: '{' push_scope flush_dag statements '}' pop_scope flush_dag { $$ = $4; }
 	;
 
 statements
 	: /*empty*/
 		{
-			$$ = new_block_expr ();
+			$$ = new_block_expr (0);
 		}
-	| statements statement
+	| statements flush_dag statement
 		{
-			$$ = append_expr ($1, $2);
+			$$ = append_expr ($1, $3);
 		}
 	;
 
@@ -1514,7 +1561,7 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label '(' expr switch_block ')' compound_statement
+	| SWITCH break_label '(' comma_expr switch_block ')' compound_statement
 		{
 			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $5;
@@ -1522,31 +1569,31 @@ statement
 		}
 	| GOTO NAME
 		{
-			expr_t     *label = named_label_expr ($2);
+			const expr_t *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
-	| IF not '(' texpr ')' statement %prec IFX
+	| IF not '(' texpr ')' flush_dag statement %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, $6, 0, 0);
+			$$ = build_if_statement ($2, $4, $7, 0, 0);
 		}
-	| IF not '(' texpr ')' statement else statement
+	| IF not '(' texpr ')' flush_dag statement else statement
 		{
-			$$ = build_if_statement ($2, $4, $6, $7, $8);
+			$$ = build_if_statement ($2, $4, $7, $8, $9);
 		}
 	| FOR push_scope break_label continue_label
-			'(' opt_init_semi opt_expr ';' opt_expr ')' statement pop_scope
+			'(' opt_init_semi opt_expr seq_semi opt_expr ')' flush_dag statement pop_scope
 		{
 			if ($6) {
-				$6 = build_block_expr ($6);
+				$6 = build_block_expr ($6, false);
 			}
-			$$ = build_for_statement ($6, $7, $9, $11,
+			$$ = build_for_statement ($6, $7, $9, $12,
 									  break_label, continue_label);
 			break_label = $3;
 			continue_label = $4;
 		}
-	| WHILE break_label continue_label not '(' texpr ')' statement
+	| WHILE break_label continue_label not '(' texpr ')' flush_dag statement
 		{
-			$$ = build_while_statement ($4, $6, $8, break_label,
+			$$ = build_while_statement ($4, $6, $9, break_label,
 										continue_label);
 			break_label = $2;
 			continue_label = $3;
@@ -1557,6 +1604,36 @@ statement
 										   break_label, continue_label);
 			break_label = $2;
 			continue_label = $3;
+		}
+	| ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+		{
+			auto algebra = algebra_type ($3.type, $5);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $9;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto algebra = algebra_type ($3.type, 0);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $6;
+		}
+	| ALGEBRA '(' TYPE_NAME ')'
+		{
+			auto algebra = $3.type;
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = current_symtab->parent;
+			$$ = $6;
 		}
 	| comma_expr ';'
 		{
@@ -1570,7 +1647,7 @@ not
 	;
 
 else
-	: ELSE
+	: ELSE flush_dag
 		{
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
@@ -1614,8 +1691,8 @@ switch_block
 	;
 
 opt_init_semi
-	: comma_expr ';'
-	| decl /* contains ; */
+	: comma_expr seq_semi
+	| decl /* contains ; */		{ $$ = (expr_t *) $1; }
 	| ';'
 		{
 			$$ = 0;
@@ -1636,13 +1713,15 @@ unary_expr
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
+	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
 	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
 	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
+	| unary_expr REVERSE			{ $$ = unary_expr (REVERSE, $1); }
+	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (DUAL, $2); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
@@ -1665,13 +1744,10 @@ ident_expr
 	;
 
 vector_expr
-	: '[' expr ',' expr_list ']'
+	: '[' expr ',' { no_flush_dag = true; } expr_list ']'
 		{
-			expr_t     *t = $4;
-			while (t->next)
-				t = t->next;
-			t->next = $2;
-			$$ = $4;
+			$$ = expr_prepend_expr ($5, $2);
+			no_flush_dag = false;
 		}
 	;
 
@@ -1688,9 +1764,9 @@ expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
-	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
-	| expr OR bool_label expr	{ $$ = bool_expr (OR,  $3, $1, $4); }
+	| expr '?' flush_dag expr ':' expr 	{ $$ = conditional_expr ($1, $4, $6); }
+	| expr AND flush_dag bool_label expr{ $$ = bool_expr (AND, $4, $1, $5); }
+	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (OR,  $4, $1, $5); }
 	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
@@ -1708,9 +1784,12 @@ expr
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
+	| expr GEOMETRIC expr		{ $$ = binary_expr (GEOMETRIC, $1, $3); }
+	| expr HADAMARD expr		{ $$ = binary_expr (HADAMARD, $1, $3); }
 	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
 	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
-	| expr HADAMARD expr		{ $$ = binary_expr (HADAMARD, $1, $3); }
+	| expr WEDGE expr			{ $$ = binary_expr (WEDGE, $1, $3); }
+	| expr REGRESSIVE expr		{ $$ = binary_expr (REGRESSIVE, $1, $3); }
 	;
 
 texpr
@@ -1720,22 +1799,17 @@ texpr
 comma_expr
 	: expr_list
 		{
-			if ($1->next) {
-				expr_t     *res = $1;
-				$1 = build_block_expr ($1);
-				$1->e.block.result = res;
+			if ($1->list.head->next) {
+				$$ = build_block_expr ($1, true);
+			} else {
+				$$ = (expr_t *) $1->list.head->expr;
 			}
-			$$ = $1;
 		}
 	;
 
 expr_list
-	: expr
-	| expr_list ',' expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: expr							{ $$ = new_list_expr ($1); }
+	| expr_list ',' flush_dag expr	{ $$ = expr_append_expr ($1, $4); }
 	;
 
 opt_arg_list
@@ -1744,12 +1818,8 @@ opt_arg_list
 	;
 
 arg_list
-	: arg_expr
-	| arg_list ',' arg_expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: arg_expr					{ $$ = new_list_expr ($1); }
+	| arg_list ',' arg_expr		{ $$ = expr_prepend_expr ($1, $3); }
 	;
 
 arg_expr
@@ -1796,7 +1866,7 @@ obj_def
 identifier_list
 	: identifier
 		{
-			$$ = append_expr (new_block_expr (), new_symbol_expr ($1));
+			$$ = append_expr (new_block_expr (0), new_symbol_expr ($1));
 		}
 	| identifier_list ',' identifier
 		{
@@ -1807,11 +1877,11 @@ identifier_list
 classdecl
 	: CLASS identifier_list ';'
 		{
-			expr_t     *e;
-			for (e = $2->e.block.head; e; e = e->next) {
-				get_class (e->e.symbol, 1);
-				if (!e->e.symbol->table)
-					symtab_addsymbol (current_symtab, e->e.symbol);
+			for (auto li = $2->block.head; li; li = li->next) {
+				auto e = li->expr;
+				get_class (e->symbol, 1);
+				if (!e->symbol->table)
+					symtab_addsymbol (current_symtab, e->symbol);
 			}
 		}
 	;
@@ -2153,7 +2223,7 @@ notype_ivar_declarator
 	;
 
 methoddef
-	: ci methoddecl ose
+	: ci methoddecl method_optional_state_expr
 		{
 			method_t   *method = $2;
 

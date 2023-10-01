@@ -267,6 +267,7 @@ CL_NewMap (const char *mapname)
 		skyname = Info_ValueForKey (cl.serverinfo, "sky");
 	}
 	CL_World_NewMap (mapname, skyname);
+	V_NewScene (&cl.viewstate, cl_world.scene);
 	cl.chasestate.worldmodel = cl_world.scene->worldmodel;
 
 	Team_NewMap ();
@@ -1183,12 +1184,8 @@ CL_SetStat (int stat, int value)
 static void
 CL_ParseMuzzleFlash (void)
 {
-	//FIXME this should just enable the effect on the relevant entity and
-	//then automatic entity updates take care of the rest
 	int			i;
 	player_state_t *pl;
-	vec3_t		f, r, u;
-	vec4f_t     position = { 0, 0, 0, 1}, fv = {};
 
 	i = MSG_ReadShort (net_message);
 
@@ -1196,15 +1193,7 @@ CL_ParseMuzzleFlash (void)
 		return;
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
-
-	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewstate.player_angles, f, r, u);
-	else
-		AngleVectors (pl->viewangles, f, r, u);
-
-	VectorCopy (f, fv);
-	VectorCopy (pl->pls.es.origin, position);
-	CL_MuzzleFlash (position, fv, 0, i, cl.time);
+	pl->muzzle_flash = true;
 }
 
 #define SHOWNET(x) \

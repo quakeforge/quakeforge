@@ -60,9 +60,11 @@
 int         scr_copytop;
 byte       *draw_chars;			// 8*8 graphic characters FIXME location
 bool        r_cache_thrash;		// set if surface cache is thrashing
-int        *r_node_visframes;	//FIXME per renderer
-int        *r_leaf_visframes;	//FIXME per renderer
-int        *r_face_visframes;	//FIXME per renderer
+bool        r_lock_viewleaf;	// prevent vis updates (for debug camera)
+bool        r_override_camera;
+transform_t r_camera;
+
+visstate_t r_visstate;		//FIXME per renderer
 
 bool        scr_skipupdate;
 static bool scr_initialized;// ready to draw
@@ -192,6 +194,22 @@ render_scene (void)
 }
 
 static void
+swizzle_camera (refdef_t *refdef)
+{
+	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
+	// camera forward vector (camera Y) points along the world +X axis and the
+	// camera right vector (camera X) points along the world -Y axis. This
+	// should not be necessary here but is due to AngleVectors (and thus
+	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
+	// as right). Fixing this would take an audit of the usage of both, but is
+	// probably worthwhile in the long run.
+	refdef->frame.mat[0] = -refdef->camera[1];
+	refdef->frame.mat[1] =  refdef->camera[0];
+	refdef->frame.mat[2] =  refdef->camera[2];
+	refdef->frame.mat[3] =  refdef->camera[3];
+}
+
+static void
 render_side (int side)
 {
 	mat4f_t     camera;
@@ -204,13 +222,8 @@ render_side (int side)
 	mat4ftranspose (rotinv, box_rotations[side]);
 	mmulf (r_refdef.camera_inverse, rotinv, camera_inverse);
 
-	//FIXME see fixme in r_screen.c
-	r_refdef.frame.mat[0] = -r_refdef.camera[1];
-	r_refdef.frame.mat[1] =  r_refdef.camera[0];
-	r_refdef.frame.mat[2] =  r_refdef.camera[2];
-	r_refdef.frame.mat[3] =  r_refdef.camera[3];
-
 	refdef_t   *refdef = r_data->refdef;
+	swizzle_camera (refdef);//FIXME see comment in swizzle_camera
 	R_SetFrustum (refdef->frustum, &refdef->frame, 90, 90);
 
 	r_funcs->bind_framebuffer (&fisheye_cube_map[side]);
@@ -221,8 +234,7 @@ render_side (int side)
 }
 
 void
-SCR_UpdateScreen_legacy (transform_t camera, double realtime,
-						 SCR_Func *scr_funcs)
+SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 {
 	if (scr_fisheye && !fisheye_cube_map) {
 		fisheye_cube_map = r_funcs->create_cube_map (r_data->vid->height);
@@ -283,6 +295,10 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		r_time1 = Sys_DoubleTime ();
 	}
 
+	if (__builtin_expect (r_override_camera, 0)) {
+		camera = r_camera;
+	}
+
 	refdef_t   *refdef = r_data->refdef;
 	if (Transform_Valid (camera)) {
 		Transform_GetWorldMatrix (camera, refdef->camera);
@@ -292,17 +308,8 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 		mat4fidentity (refdef->camera_inverse);
 	}
 
-	// FIXME pre-rotate the camera 90 degrees about the z axis such that the
-	// camera forward vector (camera Y) points along the world +X axis and the
-	// camera right vector (camera X) points along the world -Y axis. This
-	// should not be necessary here but is due to AngleVectors (and thus
-	// AngleQuat for compatibility) treating X as forward and Y as left (or -Y
-	// as right). Fixing this would take an audit of the usage of both, but is
-	// probably worthwhile in the long run.
-	refdef->frame.mat[0] = -refdef->camera[1];
-	refdef->frame.mat[1] =  refdef->camera[0];
-	refdef->frame.mat[2] =  refdef->camera[2];
-	refdef->frame.mat[3] =  refdef->camera[3];
+	swizzle_camera (refdef);//FIXME see comment in swizzle_camera
+
 	R_SetFrustum (refdef->frustum, &refdef->frame, fov_x, fov_y);
 
 	r_data->realtime = realtime;
@@ -313,20 +320,22 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	}
 
 	R_AnimateLight ();
-	if (scr_scene && scr_scene->worldmodel) {
+	if (!r_lock_viewleaf && scr_scene && scr_scene->worldmodel) {
 		scr_scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		scr_scene->viewleaf = Mod_PointInLeaf (position, scr_scene->worldmodel);
+		auto brush = &scr_scene->worldmodel->brush;
+		scr_scene->viewleaf = Mod_PointInLeaf (position, brush);
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
 			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		R_MarkLeaves (scr_scene->viewleaf, r_node_visframes, r_leaf_visframes,
-					  r_face_visframes);
+		R_MarkLeaves (&r_visstate, scr_scene->viewleaf);
 	}
 	r_framecount++;
-	R_PushDlights (vec3_origin);
-	r_funcs->UpdateScreen (camera, realtime, scr_funcs);
+	if (scr_scene) {
+		R_PushDlights (vec3_origin, &r_visstate);
+	}
+	r_funcs->UpdateScreen (scr_funcs);
 }
 
 static void
@@ -484,22 +493,27 @@ SCR_Shutdown (void)
 void
 SCR_NewScene (scene_t *scene)
 {
-	if (scr_scene) {
-		ECS_RemoveEntities (scr_scene->reg, scene_visibility);
-		R_ClearEfrags ();
-	}
 	scr_scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &scr_scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
 		int         size = count * sizeof (int);
-		r_node_visframes = Hunk_AllocName (0, size, "visframes");
-		r_leaf_visframes = r_node_visframes + brush->numnodes;
-		r_face_visframes = r_leaf_visframes + brush->modleafs;
+		int        *node_visframes = Hunk_AllocName (0, size, "visframes");
+		int        *leaf_visframes = node_visframes + brush->numnodes;
+		int        *face_visframes = leaf_visframes + brush->modleafs;
+		r_visstate = (visstate_t) {
+			.brush = brush,
+			.node_visframes = node_visframes,
+			.leaf_visframes = leaf_visframes,
+			.face_visframes = face_visframes,
+		};
+		r_refdef.registry = scene->reg;
 		r_funcs->set_fov (tan_fov_x, tan_fov_y);
 		r_funcs->R_NewScene (scene);
 	} else {
+		r_visstate = (visstate_t) {};
 		r_funcs->R_ClearState ();
+		r_refdef.registry = 0;
 	}
 }

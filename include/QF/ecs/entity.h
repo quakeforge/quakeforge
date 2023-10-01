@@ -48,11 +48,13 @@ ENTINLINE uint32_t Ent_Generation (uint32_t id);
 ENTINLINE uint32_t Ent_NextGen (uint32_t id);
 
 ENTINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
-								 ecs_registry_t *reg);
+								ecs_registry_t *reg);
 ENTINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
-								   ecs_registry_t *reg);
+								  ecs_registry_t *reg);
+ENTINLINE void *Ent_SafeGetComponent (uint32_t ent, uint32_t comp,
+									  ecs_registry_t *reg);
 ENTINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
-								   ecs_registry_t *registry, const void *data);
+								  ecs_registry_t *registry, const void *data);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ECS_ENTITY_Funcs
@@ -97,6 +99,18 @@ Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 ENTINLINE void *
 Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 {
+	const component_t *component = &reg->components.a[comp];
+	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
+	byte       *data = reg->comp_pools[comp].data;
+	return data + ind * component->size;
+}
+
+ENTINLINE void *
+Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	if (!ECS_EntValid (ent, reg) || !Ent_HasComponent (ent, comp, reg)) {
+		return 0;
+	}
 	const component_t *component = &reg->components.a[comp];
 	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
 	byte       *data = reg->comp_pools[comp].data;

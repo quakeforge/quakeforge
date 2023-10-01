@@ -134,6 +134,12 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 }
 
+static size_t
+align (size_t x, size_t a)
+{
+	return (x + a - 1) & ~(a - 1);
+}
+
 static void
 release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 {
@@ -146,7 +152,7 @@ release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 		stage->space_end = 0;
 		stage->end = stage->size;
 	}
-	stage->space_end += length;
+	stage->space_end += align (length, 16);
 }
 
 static void *
@@ -235,6 +241,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	}
 	packet = RB_ACQUIRE (stage->packets, 1);
 
+	stage->space_start = align (stage->space_start, 16);
 	packet->offset = stage->space_start;
 	packet->length = 0;
 
@@ -308,6 +315,42 @@ QFV_PacketCopyBuffer (qfv_packet_t *packet,
 	bb.barrier.size = packet->length;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
+}
+
+void
+QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
+						 uint32_t count, qfv_scatter_t *scatter,
+						 const qfv_bufferbarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	VkBufferCopy copy_regions[count];
+	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+
+		copy_regions[i] = (VkBufferCopy) {
+			.srcOffset = packet->offset + scatter[i].srcOffset,
+			.dstOffset = scatter[i].dstOffset,
+			.size = scatter[i].length,
+		};
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
+	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
+							count, copy_regions);
+	bb = *dstBarrier;
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
 }
 
 void

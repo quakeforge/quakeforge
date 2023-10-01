@@ -52,7 +52,9 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
+#include "QF/ui/font.h"//FIXME
 
 #include "compat.h"
 
@@ -120,6 +122,15 @@ static cvar_t cl_nolerp_cvar = {
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &cl_nolerp },
+};
+int cl_player_shadows;
+static cvar_t cl_player_shadows_cvar = {
+	.name = "cl_player_shadows",
+	.description =
+		"Show player shadows instead of weapon shadows",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_player_shadows },
 };
 
 static int r_ambient;
@@ -227,13 +238,11 @@ CL_ClearMemory (void)
 			Info_Destroy (cl.players[i].userinfo);
 	}
 	// wipe the entire cl structure
-	__auto_type cam = cl.viewstate.camera_transform;
 	memset (&cl, 0, sizeof (cl));
 	Sbar_Intermission (cl.intermission = 0, cl.time);
-	cl.viewstate.camera_transform = cam;
 	cl.viewstate.demoplayback = cls.demoplayback;
 
-	CL_ClearTEnts ();
+	CL_World_Clear ();
 	CL_ClearEnts ();
 
 	SCR_NewScene (0);
@@ -257,6 +266,7 @@ CL_InitCvars (void)
 	Cvar_Register (&cl_writecfg_cvar, 0, 0);
 	Cvar_Register (&cl_shownet_cvar, 0, 0);
 	Cvar_Register (&cl_nolerp_cvar, 0, 0);
+	Cvar_Register (&cl_player_shadows_cvar, 0, 0);
 
 	//FIXME not hooked up (don't do anything), but should not work in
 	//multi-player
@@ -281,6 +291,11 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
+	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id,
+											  scene_renderer,
+											  cl_world.scene->reg);
+	renderer->depthhack = 1;
+	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
 
 	CL_TEnts_Precache ();
@@ -591,7 +606,8 @@ CL_SetState (cactive_t state)
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
-	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen,
+				  state == ca_active && !cls.demoplayback);
 	if (state != old_state && state == ca_active) {
 		CL_Input_Activate (host_in_game = !cls.demoplayback);
 	}
@@ -655,11 +671,11 @@ CL_Frame (void)
 		vec4f_t     origin;
 
 		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
-		l = Mod_PointInLeaf (origin, cl_world.scene->worldmodel);
+		l = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
 		if (l)
 			asl = l->ambient_sound_level;
 		S_Update (cl.viewstate.camera_transform, asl);
-		R_DecayLights (host_frametime);
+		Light_DecayLights (cl_world.scene->lights, host_frametime, cl.time);
 	} else
 		S_Update (nulltransform, 0);
 
@@ -706,6 +722,7 @@ CL_Init (cbuf_t *cbuf)
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
+	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
 	Con_Load ("client");
@@ -721,6 +738,8 @@ CL_Init (cbuf_t *cbuf)
 	CL_TEnts_Init ();
 	CL_World_Init ();
 	CL_ClearState ();
+
+	VID_SendSize ();
 
 	V_Init (&cl.viewstate);
 

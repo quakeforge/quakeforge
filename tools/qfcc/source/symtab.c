@@ -66,7 +66,7 @@ static const char * const sy_type_names[] = {
 const char *
 symtype_str (sy_type_e type)
 {
-	if (type > sy_class)
+	if (type > sy_convert)
 		return "<invalid sy_type>";
 	return sy_type_names[type];
 }
@@ -119,8 +119,13 @@ symtab_lookup (symtab_t *symtab, const char *name)
 {
 	symbol_t   *symbol;
 	do {
-		if ((symbol = Hash_Find (symtab->tab, name)))
+		if ((symbol = Hash_Find (symtab->tab, name))) {
 			return symbol;
+		}
+		if (symtab->procsymbol
+			&& (symbol = symtab->procsymbol (name, symtab))) {
+			return symbol;
+		}
 		symtab = symtab->parent;
 	} while (symtab);
 	return 0;
@@ -246,7 +251,7 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 }
 
 symbol_t *
-declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
+declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 {
 	symbol_t   *s = spec.sym;
 	defspace_t *space = symtab->space;
@@ -265,9 +270,9 @@ declare_symbol (specifier_t spec, expr_t *init, symtab_t *symtab)
 		space = pr.near_data;
 	}
 
+	s->type = append_type (spec.sym->type, spec.type);
 	//FIXME is_function is bad (this whole implementation of handling
 	//function prototypes is bad)
-	s->type = append_type (spec.sym->type, spec.type);
 	if (spec.is_function && is_func (s->type)) {
 		set_func_type_attrs (s->type, spec);
 	}

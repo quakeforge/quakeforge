@@ -346,35 +346,51 @@ func_compare (const void *a, const void *b)
 	return 0;
 }
 
-expr_t *
-find_function (expr_t *fexpr, expr_t *params)
+static const expr_t *
+set_func_symbol (const expr_t *fexpr, overloaded_function_t *f)
 {
-	expr_t     *e;
+	auto sym = symtab_lookup (current_symtab, f->full_name);
+	if (!sym) {
+		internal_error (fexpr, "overloaded function %s not found",
+						f->full_name);
+	}
+	auto nf = new_expr ();
+	*nf = *fexpr;
+	nf->symbol = sym;
+	return nf;
+}
+
+const expr_t *
+find_function (const expr_t *fexpr, const expr_t *params)
+{
 	int         i, j, func_count, parm_count, reported = 0;
 	overloaded_function_t *f, dummy, *best = 0;
-	type_t      type;
+	type_t      type = {};
 	void      **funcs, *dummy_p = &dummy;
 
 	if (fexpr->type != ex_symbol)
 		return fexpr;
 
-	memset (&type, 0, sizeof (type));
 	type.type = ev_func;
+	type.t.func.num_params = params ? list_count (&params->list) : 0;
+	const expr_t *args[type.t.func.num_params];
+	if (params) {
+		list_scatter_rev (&params->list, args);
+	}
 
-	for (e = params; e; e = e->next) {
-		if (e->type == ex_error)
+	for (int i = 0; i < type.t.func.num_params; i++) {
+		auto e = args[i];
+		if (e->type == ex_error) {
 			return e;
-		type.t.func.num_params++;
+		}
 	}
-	i = type.t.func.num_params * sizeof (type_t);
-	type.t.func.param_types = alloca(i);
-	memset (type.t.func.param_types, 0, i);
-	for (i = 0, e = params; e; i++, e = e->next) {
-		type.t.func.param_types[type.t.func.num_params - 1 - i] = get_type (e);
-		if (e->type == ex_error)
-			return e;
+	type_t *arg_types[type.t.func.num_params];
+	type.t.func.param_types = arg_types;
+	for (int i = 0; i < type.t.func.num_params; i++) {
+		auto e = args[i];
+		type.t.func.param_types[i] = get_type (e);
 	}
-	funcs = Hash_FindList (function_map, fexpr->e.symbol->name);
+	funcs = Hash_FindList (function_map, fexpr->symbol->name);
 	if (!funcs)
 		return fexpr;
 	for (func_count = 0; funcs[func_count]; func_count++)
@@ -390,17 +406,14 @@ find_function (expr_t *fexpr, expr_t *params)
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va (0, "%s|%s", fexpr->e.symbol->name,
+	dummy.full_name = save_string (va (0, "%s|%s", fexpr->symbol->name,
 									   encode_params (&type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
 		f = (overloaded_function_t *) *(void **) dummy_p;
 		if (f->overloaded) {
-			fexpr->e.symbol = symtab_lookup (current_symtab, f->full_name);
-			if (!fexpr->e.symbol)
-				internal_error (fexpr, "overloaded function %s not found",
-								best->full_name);
+			fexpr = set_func_symbol (fexpr, f);
 		}
 		free (funcs);
 		return fexpr;
@@ -445,11 +458,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 	if (best) {
 		if (best->overloaded) {
-			fexpr->e.symbol = symtab_lookup (current_symtab,
-											 best->full_name);
-			if (!fexpr->e.symbol)
-				internal_error (fexpr, "overloaded function %s not found",
-								best->full_name);
+			fexpr = set_func_symbol (fexpr, best);
 		}
 		free (funcs);
 		return fexpr;
@@ -741,7 +750,8 @@ merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
 }
 
 function_t *
-build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
+build_code_function (symbol_t *fsym, const expr_t *state_expr,
+					 expr_t *statements)
 {
 	if (fsym->sy_type != sy_func)	// probably in error recovery
 		return 0;
@@ -757,7 +767,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		 * optimizer gets.
 		 */
 		expr_t     *e;
-		expr_t     *entry = new_block_expr ();
+		expr_t     *entry = new_block_expr (0);
 		entry->file = func->def->file;
 		entry->line = func->def->line;
 
@@ -790,6 +800,8 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		}
 	}
 	emit_function (func, statements);
+	defspace_sort_defs (func->parameters->space);
+	defspace_sort_defs (func->locals->space);
 	if (options.code.progsversion < PROG_VERSION) {
 		// stitch parameter and locals data together with parameters coming
 		// first
@@ -819,7 +831,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 															   STACK_ALIGN);
 
 		dstatement_t *st = &pr.code->code[func->code];
-		if (st->op == OP_ADJSTK) {
+		if (pr.code->size > func->code && st->op == OP_ADJSTK) {
 			if (func->params_start) {
 				st->b = -func->params_start;
 			} else {
@@ -838,7 +850,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
+build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 						storage_class_t storage)
 {
 	int         bi;

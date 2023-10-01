@@ -84,7 +84,7 @@ R_RenderDlight (dlight_t *light)
 
 	qfglBegin (GL_TRIANGLE_FAN);
 
-	qfglColor4fv (light->color);
+	qfglColor4fv ((vec_t*)&light->color);
 
 	VectorNormalize (v);
 
@@ -109,9 +109,6 @@ R_RenderDlight (dlight_t *light)
 void
 gl_R_RenderDlights (void)
 {
-	unsigned int i;
-	dlight_t   *l;
-
 	if (!gl_dlight_polyblend)
 		return;
 
@@ -120,11 +117,11 @@ gl_R_RenderDlights (void)
 	qfglBlendFunc (GL_ONE, GL_ONE);
 	qfglShadeModel (GL_SMOOTH);
 
-	l = r_dlights;
-	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < vr_data.realtime || !l->radius)
-			continue;
-		R_RenderDlight (l);
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		R_RenderDlight (dlight);
 	}
 
 	if (!gl_dlight_smooth)

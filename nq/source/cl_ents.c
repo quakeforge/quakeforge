@@ -72,15 +72,7 @@ CL_ClearEnts (void)
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		if (Entity_Valid (cl_entities[i])) {
-			entity_t    ent = cl_entities[i];
-			renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-			if (renderer && renderer->skin) {
-				mod_funcs->Skin_Free (renderer->skin);
-			}
-			Scene_DestroyEntity (cl_world.scene, cl_entities[i]);
-			cl_entities[i] = nullentity;
-		}
+		cl_entities[i] = nullentity;
 	}
 
 	// clear other arrays
@@ -158,6 +150,7 @@ set_entity_model (int ent_ind, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
+		renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	}
 	// Changing the model can change the visibility of the entity and even
 	// the model type
@@ -175,7 +168,7 @@ CL_RelinkEntities (void)
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f;
 	int         i, j;
-	int         model_flags;
+	int         model_effects;
 
 	// determine partial update time
 	frac = CL_LerpPoint ();
@@ -261,9 +254,9 @@ CL_RelinkEntities (void)
 		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
 		renderer->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
-		model_flags = 0;
+		model_effects = 0;
 		if (renderer->model) {
-			model_flags = renderer->model->flags;
+			model_effects = renderer->model->effects;
 		}
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
@@ -272,7 +265,7 @@ CL_RelinkEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
-			if (i != cl.viewentity || chase_active) {
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
 				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
 			*old_origin = new->origin;
@@ -291,7 +284,7 @@ CL_RelinkEntities (void)
 				// interpolate the origin and angles
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
-				if (!(model_flags & EF_ROTATE)) {
+				if (!(model_effects & ME_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
@@ -303,22 +296,24 @@ CL_RelinkEntities (void)
 				}
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
-			if (i != cl.viewentity || chase_active) {
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
 				vec4f_t     org = Transform_GetWorldPosition (transform);
 				if (!VectorCompare (org, *old_origin)) {//FIXME
 					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
 		}
+		renderer->onlyshadows = (cl_player_shadows && i == cl.viewentity
+								 && !chase_active);
 
 		// rotate binary objects locally
-		if (model_flags & EF_ROTATE) {
+		if (model_effects & ME_ROTATE) {
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
 			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
-		CL_EntityEffects (i, ent, new, cl.time);
+		CL_EntityEffects (ent, new, cl.time);
 		vec4f_t org = Transform_GetWorldPosition (transform);
 		int effects = new->effects;
 		if (cl.maxclients == 1 && effects) {
@@ -333,13 +328,13 @@ CL_RelinkEntities (void)
 			effects |= (it & IT_INVULNERABILITY)
 				>> (BITOP_LOG2(IT_INVULNERABILITY) - BITOP_LOG2 (EF_RED));
 		}
-		CL_NewDlight (i, org, effects, new->glow_size,
+		CL_NewDlight (ent, org, effects, new->glow_size,
 					  new->glow_color, cl.time);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
 			old->origin = org;
 		}
-		if (model_flags & ~EF_ROTATE)
-			CL_ModelEffects (ent, i, new->glow_color, cl.time);
+		if (model_effects & ~ME_ROTATE)
+			CL_ModelEffects (ent, new->glow_color, cl.time);
 
 		SET_REMOVE (&cl_forcelink, i);
 	}

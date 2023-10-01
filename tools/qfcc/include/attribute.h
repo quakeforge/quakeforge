@@ -34,10 +34,10 @@
 typedef struct attribute_s {
 	struct attribute_s *next;
 	const char *name;
-	struct ex_value_s *value;
+	const struct expr_s *params;
 } attribute_t;
 
 struct expr_s;
-attribute_t *new_attribute(const char *name, struct expr_s *value);
+attribute_t *new_attribute(const char *name, const struct expr_s *params);
 
 #endif//attribute_h

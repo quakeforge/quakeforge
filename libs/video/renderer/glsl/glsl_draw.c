@@ -80,7 +80,21 @@ typedef struct glslfont_s {
 typedef struct glfontset_s
     DARRAY_TYPE (glslfont_t) glslfontset_t;
 
+typedef struct glslbatch_s {
+	int         shader;
+	GLenum      mode;
+	GLuint      texid;
+	uint32_t    start;
+	uint32_t    count;
+} glslbatch_t;
+
+typedef struct glbatchset_s
+    DARRAY_TYPE (glslbatch_t) glslbatchset_t;
+
 static glslfontset_t glsl_fonts = DARRAY_STATIC_INIT (16);
+
+static glslbatchset_t glsl_batches = DARRAY_STATIC_INIT (16);
+static dstring_t *glsl_queue;
 
 static const char *twod_vert_effects[] =
 {
@@ -132,10 +146,8 @@ static struct {
 };
 
 static scrap_t *draw_scrap;		// hold all 2d images
+static GLuint scrap_texid;
 static byte white_block[8 * 8];
-static dstring_t *draw_queue;
-static dstring_t *glyph_queue;
-static dstring_t *line_queue;
 static qpic_t *conchars;
 static int  conback_texture;
 static qpic_t *crosshair_pic;
@@ -225,6 +237,25 @@ pic_data (const char *name, int w, int h, const byte *data)
 }
 
 static void
+queue_verts (int shader, GLenum mode, GLuint texid, uint32_t count)
+{
+	auto batch = &glsl_batches.a[glsl_batches.size - 1];
+	if (!glsl_batches.size
+		|| batch->shader != shader
+		|| batch->mode != mode
+		|| batch->texid != texid) {
+		DARRAY_APPEND (&glsl_batches, ((glslbatch_t) {
+			.shader = shader,
+			.mode = mode,
+			.texid = texid,
+			.start = glsl_queue->size,
+		}));
+		batch = &glsl_batches.a[glsl_batches.size - 1];
+	}
+	batch->count += count;
+}
+
+static void
 make_quad (qpic_t *pic, float x, float y, int w, int h,
 		   int srcx, int srcy, int srcw, int srch, drawvert_t verts[6],
 		   float *color)
@@ -287,10 +318,11 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	void       *v;
 	int         size = sizeof (verts);
 
+	queue_verts (quake_2d.program, GL_TRIANGLES, scrap_texid, 6);
 	make_quad (pic, x, y, w, h, srcx, srcy, srcw, srch, verts, color);
-	draw_queue->size += size;
-	dstring_adjust (draw_queue);
-	v = draw_queue->str + draw_queue->size - size;
+	glsl_queue->size += size;
+	dstring_adjust (glsl_queue);
+	v = glsl_queue->str + glsl_queue->size - size;
 	memcpy (v, verts, size);
 }
 
@@ -418,9 +450,7 @@ glsl_Draw_Init (void)
 	//loading
 	//crosshaircolor->callback (crosshaircolor);
 
-	draw_queue = dstring_new ();
-	line_queue = dstring_new ();
-	glyph_queue = dstring_new ();
+	glsl_queue = dstring_new ();
 
 	vert_shader = GLSL_BuildShader (twod_vert_effects);
 	frag_shader = GLSL_BuildShader (twod_frag_effects);
@@ -452,6 +482,7 @@ glsl_Draw_Init (void)
 	GLSL_FreeShader (frag_shader);
 
 	draw_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 0);
+	scrap_texid = GLSL_ScrapTexture (draw_scrap);
 
 	draw_chars = W_GetLumpName ("conchars");
 	if (draw_chars) {
@@ -502,14 +533,13 @@ glsl_Draw_Shutdown (void)
 	}
 	pic_free (white_pic);
 
-	dstring_delete (draw_queue);
-	dstring_delete (line_queue);
-	dstring_delete (glyph_queue);
+	dstring_delete (glsl_queue);
 
 	Hash_DelTable (pic_cache);
 
 	GLSL_DestroyScrap (draw_scrap);
 	DARRAY_CLEAR (&glsl_fonts);
+	DARRAY_CLEAR (&glsl_batches);
 }
 
 static inline void
@@ -524,29 +554,87 @@ queue_character (int x, int y, byte chr)
 }
 
 static void
+bind_quake_2d (GLuint texid)
+{
+	qfeglUseProgram (quake_2d.program);
+	qfeglEnableVertexAttribArray (quake_2d.vertex.location);
+	qfeglEnableVertexAttribArray (quake_2d.color.location);
+
+	qfeglUniformMatrix4fv (quake_2d.matrix.location, 1, false, proj_matrix);
+
+	qfeglUniform1i (quake_2d.palette.location, 1);
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
+
+	qfeglUniform1i (quake_2d.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, texid);
+
+	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+static void
+bind_alpha_2d (GLuint texid)
+{
+	qfeglUseProgram (alpha_2d.program);
+	qfeglEnableVertexAttribArray (alpha_2d.vertex.location);
+	qfeglEnableVertexAttribArray (alpha_2d.color.location);
+
+	qfeglUniformMatrix4fv (alpha_2d.matrix.location, 1, false, proj_matrix);
+
+	qfeglBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	qfeglActiveTexture (GL_TEXTURE0 + 1);
+	qfeglDisable (GL_TEXTURE_2D);
+
+	qfeglUniform1i (alpha_2d.texture.location, 0);
+	qfeglActiveTexture (GL_TEXTURE0 + 0);
+	qfeglEnable (GL_TEXTURE_2D);
+	qfeglBindTexture (GL_TEXTURE_2D, texid);
+}
+
+static void
 flush_2d (void)
 {
 	GLSL_ScrapFlush (draw_scrap);
 
-	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
-	if (draw_queue->size) {
-		qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
-								 0, 32, draw_queue->str);
-		qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
-								 0, 32, draw_queue->str + 16);
+	int shader = -1;
+	GLuint texid = 0;
+	GLuint vertex_location = 0;
+	GLuint color_location = 0;
 
-		qfeglDrawArrays (GL_TRIANGLES, 0, draw_queue->size / 32);
-	}
-	if (line_queue->size) {
-		qfeglVertexAttribPointer (quake_2d.vertex.location, 4, GL_FLOAT,
-								 0, 32, line_queue->str);
-		qfeglVertexAttribPointer (quake_2d.color.location, 4, GL_FLOAT,
-								 0, 32, line_queue->str + 16);
+	for (size_t i = 0; i < glsl_batches.size; i++) {
+		auto batch = &glsl_batches.a[i];
+		if (shader != batch->shader) {
+			if (batch->shader == quake_2d.program) {
+				bind_quake_2d (batch->texid);
+				vertex_location = quake_2d.vertex.location;
+				color_location = quake_2d.color.location;
+			} else {
+				bind_alpha_2d (batch->texid);
+				vertex_location = alpha_2d.vertex.location;
+				color_location = alpha_2d.color.location;
+			}
+			shader = batch->shader;
+			texid = batch->texid;
+		} else if (texid != batch->texid) {
+			qfeglBindTexture (GL_TEXTURE_2D, batch->texid);
+			texid = batch->texid;
+		}
 
-		qfeglDrawArrays (GL_LINES, 0, line_queue->size / 32);
+		auto vdata = glsl_queue->str + batch->start;
+		auto cdata = glsl_queue->str + batch->start + 16;
+		qfeglVertexAttribPointer (vertex_location, 4, GL_FLOAT, 0, 32, vdata);
+		qfeglVertexAttribPointer (color_location, 4, GL_FLOAT, 0, 32, cdata);
+
+		qfeglDrawArrays (batch->mode, 0, batch->count);
 	}
-	draw_queue->size = 0;
-	line_queue->size = 0;
+	glsl_queue->size = 0;
+	DARRAY_RESIZE (&glsl_batches, 0);
+
+	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void
@@ -815,9 +903,10 @@ glsl_Draw_Line (int x0, int y0, int x1, int y1, int c)
 	void       *v;
 	int         size = sizeof (verts);
 
-	line_queue->size += size;
-	dstring_adjust (line_queue);
-	v = line_queue->str + line_queue->size - size;
+	queue_verts (quake_2d.program, GL_LINES, scrap_texid, 2);
+	glsl_queue->size += size;
+	dstring_adjust (glsl_queue);
+	v = glsl_queue->str + glsl_queue->size - size;
 	memcpy (v, verts, size);
 }
 
@@ -884,22 +973,6 @@ set_2d (int width, int height)
 	qfeglDisable (GL_CULL_FACE);
 
 	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
-
-	qfeglUseProgram (quake_2d.program);
-	qfeglEnableVertexAttribArray (quake_2d.vertex.location);
-	qfeglEnableVertexAttribArray (quake_2d.color.location);
-
-	qfeglUniformMatrix4fv (quake_2d.matrix.location, 1, false, proj_matrix);
-
-	qfeglUniform1i (quake_2d.palette.location, 1);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfeglUniform1i (quake_2d.texture.location, 0);
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, GLSL_ScrapTexture (draw_scrap));
 }
 
 void
@@ -930,14 +1003,14 @@ GLSL_End2D (void)
 void
 GLSL_DrawReset (void)
 {
-	draw_queue->size = 0;
-	line_queue->size = 0;
+	glsl_queue->size = 0;
+	DARRAY_RESIZE (&glsl_batches, 0);
 }
 
 void
 GLSL_FlushText (void)
 {
-	if (draw_queue->size || line_queue->size)
+	if (glsl_batches.size)
 		flush_2d ();
 }
 
@@ -995,7 +1068,9 @@ glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 	font_t     *rfont = font->font;
 	vrect_t    *rect = &rfont->glyph_rects[glyphid];
 
-	dstring_t  *batch = glyph_queue;
+	queue_verts (alpha_2d.program, GL_TRIANGLES, font->texid, 6);
+
+	dstring_t  *batch = glsl_queue;
 	int         size = 6 * sizeof (drawvert_t);
 	batch->size += size;
 	dstring_adjust (batch);
@@ -1035,22 +1110,4 @@ glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 	QuatCopy (color, verts[3].color);
 	QuatCopy (color, verts[4].color);
 	QuatCopy (color, verts[5].color);
-
-	qfeglUseProgram (alpha_2d.program);
-	qfeglEnableVertexAttribArray (alpha_2d.vertex.location);
-	qfeglEnableVertexAttribArray (alpha_2d.color.location);
-	qfeglUniformMatrix4fv (alpha_2d.matrix.location, 1, false, proj_matrix);
-	qfeglBindTexture (GL_TEXTURE_2D, font->texid);
-	qfeglBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	if (glyph_queue->size) {
-		qfeglVertexAttribPointer (alpha_2d.vertex.location, 4, GL_FLOAT,
-								 0, 32, glyph_queue->str);
-		qfeglVertexAttribPointer (alpha_2d.color.location, 4, GL_FLOAT,
-								 0, 32, glyph_queue->str + 16);
-
-		qfeglDrawArrays (GL_TRIANGLES, 0, glyph_queue->size / 32);
-	}
-	glyph_queue->size = 0;
-	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	qfeglUseProgram (quake_2d.program);
 }

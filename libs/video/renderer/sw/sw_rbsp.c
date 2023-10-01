@@ -232,13 +232,15 @@ R_RecursiveClipBPoly (uint32_t render_id, bedge_t *pedges, mnode_t *pnode,
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (child_id < 0) {
 				mleaf_t    *leaf = r_refdef.worldmodel->brush.leafs + ~child_id;
-				if (r_leaf_visframes[~child_id] == r_visframecount
+				if (r_visstate.leaf_visframes[~child_id]
+						== r_visstate.visframecount
 					&& leaf->contents != CONTENTS_SOLID) {
 					r_currentbkey = leaf->key;
 					R_RenderBmodelFace (render_id, psideedges[i], psurf);
 				}
 			} else {
-				if (r_node_visframes[child_id] == r_visframecount) {
+				if (r_visstate.node_visframes[child_id]
+						== r_visstate.visframecount) {
 					R_RecursiveClipBPoly (render_id, psideedges[i], pn, psurf);
 				}
 			}
@@ -383,7 +385,7 @@ visit_node (swbspctx_t *bctx, mnode_t *node, int side, int clipflags)
 		int         surf_id = node->firstsurface;
 		surf = brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_face_visframes[surf_id] != r_visframecount)
+			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -418,7 +420,7 @@ test_node (swbspctx_t *bctx, int node_id, int *clipflags)
 
 	if (node_id < 0)
 		return 0;
-	if (r_node_visframes[node_id] != r_visframecount)
+	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
 		return 0;
 	// cull the clipping planes if not trivial accept
 	// FIXME: the compiler is doing a lousy job of optimizing here; it could be

@@ -96,7 +96,7 @@ extern const char * const pr_type_name[ev_type_count];
 #define	RESERVED_OFS	28
 
 
-typedef enum {
+typedef enum : pr_ushort_t {
 	OP_DONE_v6p,
 	OP_MUL_F_v6p,
 	OP_MUL_V_v6p,
@@ -432,7 +432,7 @@ typedef enum {
 } pr_opcode_v6p_e;
 #define OP_BREAK 0x8000
 
-typedef enum {
+typedef enum : pr_ushort_t {
 #ifndef IN_DOXYGEN
 #include "QF/progs/pr_opcode.hinc"
 #endif
@@ -489,8 +489,8 @@ extern const opcode_t pr_opcodes[512];
 const opcode_t *PR_Opcode (pr_ushort_t opcode) __attribute__((const));
 
 typedef struct dstatement_s {
-	pr_opcode_e op:16;			// will be pr_opcode_v6p_e for older progs
-	pr_ushort_t a,b,c;
+	pr_opcode_e op;			// will be pr_opcode_v6p_e for older progs
+	pr_short_t  a,b,c;
 } GCC_STRUCT dstatement_t;
 
 typedef struct ddef_s {
@@ -563,7 +563,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
 #define	PROG_V6P_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,010)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,011)
 
 typedef struct pr_chunk_s {
 	pr_uint_t   offset;

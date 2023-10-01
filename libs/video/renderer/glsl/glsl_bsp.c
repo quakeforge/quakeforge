@@ -239,7 +239,7 @@ static struct {
 typedef struct glslbspctx_s {
 	mod_brush_t *brush;
 	animation_t *animation;
-	vec4f_t    *transform;
+	const vec4f_t *transform;
 	float      *color;
 } glslbspctx_t;
 
@@ -651,7 +651,6 @@ static void
 R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
-	unsigned    k;
 	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
@@ -663,14 +662,11 @@ R_DrawBrushModel (entity_t e)
 	glslbspctx_t bctx = {
 		brush,
 		Ent_GetComponent (e.id, scene_animation, e.reg),
-		renderer->full_transform,
+		Transform_GetWorldMatrixPtr (Entity_Transform (e)),
 		renderer->colormod,
 	};
 
-	mat4f_t mat;
-	transform_t transform = Entity_Transform (e);
-	Transform_GetWorldMatrix (transform, mat);
-	memcpy (renderer->full_transform, mat, sizeof (mat));//FIXME
+	auto mat = bctx.transform;
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
@@ -695,16 +691,15 @@ R_DrawBrushModel (entity_t e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
+	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		for (k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < vr_data.realtime)
-				|| (!r_dlights[k].radius))
-				continue;
-
+		for (uint32_t i = 0; i < dlight_pool->count; i++) {
+			auto dlight = &dlight_data[i];
 			vec4f_t     lightorigin;
-			VectorSubtract (r_dlights[k].origin, mat[3], lightorigin);
+			VectorSubtract (dlight->origin, mat[3], lightorigin);
 			lightorigin[3] = 1;
-			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+			R_RecursiveMarkLights (brush, lightorigin, dlight, i,
 								   brush->hulls[0].firstclipnode);
 		}
 	}
@@ -758,7 +753,7 @@ visit_node (glslbspctx_t *bctx, mnode_t *node, int side)
 		int         surf_id = node->firstsurface;
 		surf = bctx->brush->surfaces + surf_id;
 		for (; c; c--, surf++, surf_id++) {
-			if (r_face_visframes[surf_id] != r_visframecount)
+			if (r_visstate.face_visframes[surf_id] != r_visstate.visframecount)
 				continue;
 
 			// side is either 0 or SURF_PLANEBACK
@@ -777,7 +772,7 @@ test_node (glslbspctx_t *bctx, int node_id)
 {
 	if (node_id < 0)
 		return 0;
-	if (r_node_visframes[node_id] != r_visframecount)
+	if (r_visstate.node_visframes[node_id] != r_visstate.visframecount)
 		return 0;
 	mnode_t    *node = bctx->brush->nodes + node_id;
 	if (R_CullBox (r_refdef.frustum, node->minmaxs, node->minmaxs + 3))

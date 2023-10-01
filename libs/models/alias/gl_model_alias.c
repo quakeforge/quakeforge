@@ -98,7 +98,6 @@ gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
 	Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
-	alias_ctx->mod->hasfullbrights = fb_texnum;
 	dstring_delete (name);
 	// alpha param was true for non group skins
 }
