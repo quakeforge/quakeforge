@@ -33,6 +33,10 @@
 
 #include "QF/progs/pr_comp.h"
 
+typedef struct type_s type_t;
+typedef struct expr_s expr_t;
+typedef struct algebra_s algebra_t;
+
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc
 */
@@ -58,9 +62,9 @@ typedef struct ex_expr_s {
 	bool    commutative;		///< e1 and e2 can be swapped
 	bool    anticommute;		///< e1 and e2 can be swapped with negation
 	bool    associative;		///< a op (b op c) == (a op b) op c
-	const struct type_s *type;	///< the type of the result of this expression
-	const struct expr_s *e1;	///< left side of binary, sole of unary
-	const struct expr_s *e2;	///< right side of binary, null for unary
+	const type_t *type;			///< the type of the result of this expression
+	const expr_t *e1;			///< left side of binary, sole of unary
+	const expr_t *e2;			///< right side of binary, null for unary
 } ex_expr_t;
 
 typedef struct ex_label_s {
@@ -79,15 +83,15 @@ typedef struct {
 
 typedef struct designator_s {
 	struct designator_s *next;
-	const struct expr_s *field;
-	const struct expr_s *index;
+	const expr_t *field;
+	const expr_t *index;
 } designator_t;
 
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
-	struct type_s *type;
-	const struct expr_s *expr;	///< initializer expression
+	type_t     *type;
+	const expr_t *expr;			///< initializer expression
 	designator_t *designator;	///< for labeled initializers
 } element_t;
 
@@ -98,7 +102,7 @@ typedef struct element_chain_s {
 
 typedef struct ex_listitem_s {
 	struct ex_listitem_s *next;
-	const struct expr_s *expr;
+	const expr_t *expr;
 } ex_listitem_t;
 
 typedef struct ex_list_s {
@@ -111,26 +115,26 @@ typedef union {
 	struct {
 		ex_listitem_t *head;
 		ex_listitem_t **tail;
-		const struct expr_s *result;///< the result of this block if non-void
+		const expr_t *result;	///< the result of this block if non-void
 		int         is_call;	///< this block exprssion forms a function call
 		void       *return_addr;///< who allocated this
 	};
 } ex_block_t;
 
 typedef struct {
-	struct operand_s *op;	///< The operand for the temporary variable, if
-							///< allocated
-	struct type_s *type;	///< The type of the temporary variable.
+	struct operand_s *op;		///< The operand for the temporary variable, if
+								///< allocated
+	type_t     *type;			///< The type of the temporary variable.
 } ex_temp_t;
 
 typedef struct {
-	struct type_s *type;		///< Type of vector (vector/quaternion)
-	const struct expr_s *list;	///< Linked list of element expressions.
+	type_t     *type;			///< Type of vector (vector/quaternion)
+	const expr_t *list;			///< Linked list of element expressions.
 } ex_vector_t;
 
 typedef struct {
-	const struct expr_s *sel_ref;	///< Reference to selector in selector table
-	struct selector_s *sel;			///< selector
+	const expr_t *sel_ref;		///< Reference to selector in selector table
+	struct selector_s *sel;		///< selector
 } ex_selector_t;
 
 /**	Pointer constant expression.
@@ -139,31 +143,31 @@ typedef struct {
 */
 typedef struct ex_pointer_s {
 	int         val;
-	struct type_s *type;
+	type_t     *type;
 	struct def_s *def;
 	struct operand_s *tempop;
 } ex_pointer_t;
 
 typedef struct ex_func_s {
 	int         val;
-	struct type_s *type;
+	type_t     *type;
 } ex_func_t;
 
 typedef struct {
 	int         size;
-	struct expr_s *e[1];
+	expr_t     *e[1];
 } ex_boollist_t;
 
 typedef struct {
 	ex_boollist_t *true_list;
 	ex_boollist_t *false_list;
-	const struct expr_s *e;
+	const expr_t *e;
 } ex_bool_t;
 
 typedef struct ex_memset_s {
-	const struct expr_s *dst;
-	const struct expr_s *val;
-	const struct expr_s *count;
+	const expr_t *dst;
+	const expr_t *val;
+	const expr_t *count;
 } ex_memset_t;
 
 /**	State expression used for think function state-machines.
@@ -201,15 +205,15 @@ typedef struct ex_memset_s {
 	<code>state.f framenum, nextthink, timestep</code> (QF, optional).
 */
 typedef struct {
-	const struct expr_s *frame;	///< the frame to which to change in this state
-	const struct expr_s *think;	///< think function for the next state
-	const struct expr_s *step;	///< time step until the next state
+	const expr_t *frame;		///< the frame to which to change in this state
+	const expr_t *think;		///< think function for the next state
+	const expr_t *step;			///< time step until the next state
 } ex_state_t;
 
 typedef struct ex_value_s {
 	struct ex_value_s *next;
 	struct daglabel_s *daglabel;///< dag label for this value
-	struct type_s *type;
+	type_t     *type;
 	etype_t     lltype;
 	union {
 		const char *string_val;			///< string constant
@@ -232,33 +236,33 @@ typedef struct ex_value_s {
 } ex_value_t;
 
 typedef struct {
-	struct type_s *type;				///< type to view the expression
-	const struct expr_s *expr;			///< the expression to alias
-	const struct expr_s *offset;		///< offset for alias
+	type_t     *type;			///< type to view the expression
+	const expr_t *expr;			///< the expression to alias
+	const expr_t *offset;		///< offset for alias
 } ex_alias_t;
 
 typedef struct {
-	struct type_s *type;				///< pointer type
-	const struct expr_s *lvalue;		///< the lvalue being addressed
-	const struct expr_s *offset;		///< offset from the address
+	type_t     *type;			///< pointer type
+	const expr_t *lvalue;		///< the lvalue being addressed
+	const expr_t *offset;		///< offset from the address
 } ex_address_t;
 
 typedef struct {
-	const struct expr_s *dst;			///< destination of assignment
-	const struct expr_s *src;			///< source of assignment
+	const expr_t *dst;			///< destination of assignment
+	const expr_t *src;			///< source of assignment
 } ex_assign_t;
 
 typedef struct {
-	pr_branch_e type;				///< type of branch
-	const struct expr_s *target;	///< destination of branch
-	const struct expr_s *index;		///< index for indirect branches
-	const struct expr_s *test;		///< test expression (null for jump/call)
-	const struct expr_s *args;		///< only for call
-	struct type_s *ret_type;		///< void for non-call
+	pr_branch_e type;			///< type of branch
+	const expr_t *target;		///< destination of branch
+	const expr_t *index;		///< index for indirect branches
+	const expr_t *test;			///< test expression (null for jump/call)
+	const expr_t *args;			///< only for call
+	type_t     *ret_type;		///< void for non-call
 } ex_branch_t;
 
 typedef struct {
-	const struct expr_s *ret_val;
+	const expr_t *ret_val;
 	int         at_return;		///< return void_return call through void
 } ex_return_t;
 
@@ -270,43 +274,43 @@ typedef struct {
 typedef struct {
 	short       mode;
 	short       reg;			///< base register to load
-	const struct expr_s *with;	///< value to load
+	const expr_t *with;			///< value to load
 } ex_with_t;
 
 typedef struct {
 	int         op;				///< operation to perform
-	const struct expr_s *vec;	///< vector expression on which to operate
-	struct type_s *type;		///< result type
+	const expr_t *vec;			///< vector expression on which to operate
+	type_t     *type;			///< result type
 } ex_horizontal_t;
 
 //NOTE always operates on vec4 or dvec4, so needs a suitable destination and
 //care must be taken when working with smaller source operands (check aligmnet
 //and adjust swizzle operation as needed)
 typedef struct {
-	const struct expr_s *src;	///< source expression
+	const expr_t *src;			///< source expression
 	unsigned    source[4];		///< src component indices
 	unsigned    neg;			///< bitmask of dst components to negate
 	unsigned    zero;			///< bitmask of dst components to 0
-	struct type_s *type;		///< result type
+	type_t     *type;			///< result type
 } ex_swizzle_t;
 
 typedef struct {
-	const struct expr_s *src;	///< source expression
+	const expr_t *src;			///< source expression
 	int         extend;			///< extend mode 0: 0, 1: 1, 2: copy/0 3:-1
 	bool        reverse;		///< reverse resultant vector
-	struct type_s *type;		///< result type;
+	type_t     *type;			///< result type;
 } ex_extend_t;
 
 typedef struct {
-	struct type_s *type;		///< overall type of multivector
-	struct algebra_s *algebra;	///< owning algebra
+	type_t     *type;			///< overall type of multivector
+	algebra_t  *algebra;		///< owning algebra
 	ex_list_t   components;		///< multivector components
 } ex_multivec_t;
 
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
-	struct expr_s *next;		///< the next expression in a block expression
+	expr_t *next;
 	expr_type   type;			///< the type of the result of this expression
 	int         line;			///< source line that generated this expression
 	pr_string_t file;			///< source file that generated this expression
@@ -337,7 +341,7 @@ typedef struct expr_s {
 		ex_return_t retrn;				///< return expr params
 		ex_adjstk_t adjstk;				///< stack adjust param
 		ex_with_t   with;				///< with expr param
-		struct type_s *nil;				///< type for nil if known
+		type_t     *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation
@@ -359,8 +363,8 @@ extern const char *expr_names[];
 expr_t *type_mismatch (const expr_t *e1, const expr_t *e2, int op);
 
 expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
-							  struct type_s *t1, struct type_s *t2);
-expr_t *test_error (const expr_t *e, struct type_s *t);
+						type_t *t1, type_t *t2);
+expr_t *test_error (const expr_t *e, type_t *t);
 
 extern expr_t *local_expr;
 
@@ -370,7 +374,7 @@ extern expr_t *local_expr;
 	\return         Pointer to the type description, or null if the expression
 					type (expr_t::type) is inappropriate.
 */
-struct type_s *get_type (const expr_t *e);
+type_t *get_type (const expr_t *e);
 
 /**	Get the basic type code of the expression result.
 
@@ -490,12 +494,10 @@ designator_t *new_designator (const expr_t *field, const expr_t *index);
 element_t *new_element (const expr_t *expr, designator_t *designator);
 expr_t *new_compound_init (void);
 expr_t *append_element (expr_t *compound, element_t *element);
-expr_t *initialized_temp_expr (const struct type_s *type,
-							   const expr_t *compound);
+expr_t *initialized_temp_expr (const type_t *type, const expr_t *compound);
 void assign_elements (expr_t *local_expr, const expr_t *ptr,
 					  element_chain_t *element_chain);
-void build_element_chain (element_chain_t *element_chain,
-						  const struct type_s *type,
+void build_element_chain (element_chain_t *element_chain, const type_t *type,
 						  const expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
 
@@ -536,12 +538,11 @@ expr_t *new_unary_expr (int op, const expr_t *e1);
 	\return			The new unary expression node (::ex_expr_t) if \a e1
 					is not an error expression, otherwise \a e1.
 */
-expr_t *new_horizontal_expr (int op, const expr_t *vec, struct type_s *type);
+expr_t *new_horizontal_expr (int op, const expr_t *vec, type_t *type);
 
 expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 
-expr_t *new_extend_expr (const expr_t *src, struct type_s *type, int ext,
-						 bool rev);
+expr_t *new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 
@@ -563,7 +564,7 @@ expr_t *new_symbol_expr (struct symbol_s *symbol);
 	\param type		The type of the temporary variable.
 	\return			The new temporary variable expression node (ex_temp_t).
 */
-expr_t *new_temp_def_expr (const struct type_s *type);
+expr_t *new_temp_def_expr (const type_t *type);
 
 /**	Create a new nil expression node.
 
@@ -595,7 +596,7 @@ const expr_t *new_value_expr (ex_value_t *value);
 	\param type		The type to use for the zero.
 	\return			The new value expression.
 */
-const expr_t *new_zero_expr (struct type_s *type);
+const expr_t *new_zero_expr (type_t *type);
 
 /**	Create a new symbol expression node from a name.
 
@@ -659,9 +660,8 @@ const expr_t *new_entity_expr (int entity_val);
 	\return			The new field constant expression node
 					(expr_t::e::field_val).
 */
-const expr_t *new_field_expr (int field_val, struct type_s *type,
-							  struct def_s *def);
-struct symbol_s *get_struct_field (const struct type_s *t1, const expr_t *e1,
+const expr_t *new_field_expr (int field_val, type_t *type, struct def_s *def);
+struct symbol_s *get_struct_field (const type_t *t1, const expr_t *e1,
 								   const expr_t *e2);
 
 /** Create a new function constant expression node.
@@ -671,7 +671,7 @@ struct symbol_s *get_struct_field (const struct type_s *t1, const expr_t *e1,
 	\return			The new function constant expression node
 					(expr_t::e::func_val).
 */
-const expr_t *new_func_expr (int func_val, struct type_s *type);
+const expr_t *new_func_expr (int func_val, type_t *type);
 
 /** Create a new pointer constant expression node.
 
@@ -681,8 +681,7 @@ const expr_t *new_func_expr (int func_val, struct type_s *type);
 	\return			The new pointer constant expression node
 					(expr_t::e::pointer_val).
 */
-const expr_t *new_pointer_expr (int val, struct type_s *type,
-								struct def_s *def);
+const expr_t *new_pointer_expr (int val, type_t *type, struct def_s *def);
 
 /** Create a new quaternion constant expression node.
 
@@ -813,13 +812,13 @@ expr_t *new_this_expr (void);
 	\param type		The type of the reference to the return slot.
 	\return			A new expression referencing the return slot.
 */
-const expr_t *new_ret_expr (struct type_s *type);
+const expr_t *new_ret_expr (type_t *type);
 
-const expr_t *new_alias_expr (struct type_s *type, const expr_t *expr);
-const expr_t *new_offset_alias_expr (struct type_s *type, const expr_t *expr,
+const expr_t *new_alias_expr (type_t *type, const expr_t *expr);
+const expr_t *new_offset_alias_expr (type_t *type, const expr_t *expr,
 								     int offset);
 
-expr_t *new_address_expr (const struct type_s *lvtype, const expr_t *lvalue,
+expr_t *new_address_expr (const type_t *lvtype, const expr_t *lvalue,
 						  const expr_t *offset);
 expr_t *new_assign_expr (const expr_t *dst, const expr_t *src);
 expr_t *new_return_expr (const expr_t *ret_val);
@@ -833,7 +832,7 @@ expr_t *new_with_expr (int mode, int reg, const expr_t *val);
 	\param num		The index of the parameter (0-7).
 	\return			A new expression referencing the parameter slot.
 */
-const expr_t *new_param_expr (struct type_s *type, int num);
+const expr_t *new_param_expr (type_t *type, int num);
 
 expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 						 const expr_t *count);
@@ -853,12 +852,12 @@ expr_t *prepend_expr (expr_t *block, const expr_t *e);
 void print_expr (const expr_t *e);
 void dump_dot_expr (const void *e, const char *filename);
 
-const expr_t *convert_nil (const expr_t *e, const struct type_s *t) __attribute__((warn_unused_result));
+const expr_t *convert_nil (const expr_t *e, const type_t *t) __attribute__((warn_unused_result));
 
 const expr_t *test_expr (const expr_t *e);
 void backpatch (ex_boollist_t *list, const expr_t *label);
 const expr_t *convert_bool (const expr_t *e, int block) __attribute__((warn_unused_result));
-const expr_t *convert_from_bool (const expr_t *e, struct type_s *type) __attribute__((warn_unused_result));
+const expr_t *convert_from_bool (const expr_t *e, type_t *type) __attribute__((warn_unused_result));
 const expr_t *bool_expr (int op, const expr_t *label, const expr_t *e1,
 					     const expr_t *e2);
 const expr_t *binary_expr (int op, const expr_t *e1, const expr_t *e2);
@@ -866,8 +865,7 @@ const expr_t *field_expr (const expr_t *e1, const expr_t *e2);
 const expr_t *asx_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *unary_expr (int op, const expr_t *e);
 void vararg_integer (const expr_t *e);
-const expr_t *build_function_call (const expr_t *fexpr,
-								   const struct type_s *ftype,
+const expr_t *build_function_call (const expr_t *fexpr, const type_t *ftype,
 								   const expr_t *params);
 const expr_t *function_expr (const expr_t *e1, const expr_t *e2);
 struct function_s;
@@ -875,7 +873,7 @@ const expr_t *branch_expr (int op, const expr_t *test, const expr_t *label);
 const expr_t *goto_expr (const expr_t *label);
 const expr_t *jump_table_expr (const expr_t *table, const expr_t *index);
 const expr_t *call_expr (const expr_t *func, const expr_t *args,
-						 struct type_s *ret_type);
+						 type_t *ret_type);
 const expr_t *return_expr (struct function_s *f, const expr_t *e);
 const expr_t *at_return_expr (struct function_s *f, const expr_t *e);
 const expr_t *conditional_expr (const expr_t *cond, const expr_t *e1,
@@ -884,7 +882,7 @@ const expr_t *incop_expr (int op, const expr_t *e, int postop);
 const expr_t *array_expr (const expr_t *array, const expr_t *index);
 const expr_t *deref_pointer_expr (const expr_t *pointer);
 const expr_t *offset_pointer_expr (const expr_t *pointer, const expr_t *offset);
-const expr_t *address_expr (const expr_t *e1, struct type_s *t);
+const expr_t *address_expr (const expr_t *e1, type_t *t);
 const expr_t *build_if_statement (int not, const expr_t *test, const expr_t *s1,
 								  const expr_t *els, const expr_t *s2);
 const expr_t *build_while_statement (int not, const expr_t *test,
@@ -903,9 +901,8 @@ const expr_t *build_state_expr (const expr_t *e);
 const expr_t *think_expr (struct symbol_s *think_sym);
 int is_lvalue (const expr_t *expr) __attribute__((pure));
 const expr_t *assign_expr (const expr_t *dst, const expr_t *src);
-const expr_t *cast_expr (struct type_s *t, const expr_t *e);
-const expr_t *cast_error (const expr_t *e, struct type_s *t1,
-						  struct type_s *t2);
+const expr_t *cast_expr (type_t *t, const expr_t *e);
+const expr_t *cast_error (const expr_t *e, type_t *t1, type_t *t2);
 
 const char *get_op_string (int op) __attribute__((const));
 
@@ -913,11 +910,11 @@ struct keywordarg_s;
 struct class_type_s;
 const expr_t *selector_expr (struct keywordarg_s *selector);
 const expr_t *protocol_expr (const char *protocol);
-const expr_t *encode_expr (struct type_s *type);
+const expr_t *encode_expr (type_t *type);
 const expr_t *super_expr (struct class_type_s *class_type);
 const expr_t *message_expr (const expr_t *receiver,
 							struct keywordarg_s *message);
-const expr_t *sizeof_expr (const expr_t *expr, struct type_s *type);
+const expr_t *sizeof_expr (const expr_t *expr, type_t *type);
 
 const expr_t *fold_constants (const expr_t *e);
 
@@ -930,19 +927,19 @@ bool is_sum (const expr_t *expr) __attribute__((pure));
 bool is_neg (const expr_t *expr) __attribute__((pure));
 
 const expr_t *neg_expr (const expr_t *e);
-const expr_t *ext_expr (const expr_t *src, struct type_s *type, int extend,
+const expr_t *ext_expr (const expr_t *src, type_t *type, int extend,
 						bool reverse);
-const expr_t *scale_expr (struct type_s *type, const expr_t *a, const expr_t *b);
+const expr_t *scale_expr (type_t *type, const expr_t *a, const expr_t *b);
 
 const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 
-const expr_t *typed_binary_expr (struct type_s *type, int op,
+const expr_t *typed_binary_expr (type_t *type, int op,
 								 const expr_t *e1, const expr_t *e2);
 
 int count_terms (const expr_t *expr) __attribute__((pure));
 void scatter_terms (const expr_t *sum,
 					const expr_t **adds, const expr_t **subs);
-const expr_t *gather_terms (struct type_s *type,
+const expr_t *gather_terms (type_t *type,
 							const expr_t **adds, const expr_t **subs);
 
 ///@}

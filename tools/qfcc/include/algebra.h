@@ -31,6 +31,9 @@
 #include "QF/set.h"
 #include "QF/progs/pr_comp.h"
 
+typedef struct type_s type_t;
+typedef struct expr_s expr_t;
+
 typedef struct basis_blade_s {
 	pr_uint_t   mask;				///< bit-mask of basis vectors
 	int         scale;				///< 1, 0, or -1
@@ -62,12 +65,12 @@ typedef struct metric_s {
 } metric_t;
 
 typedef struct algebra_s {
-	struct type_s *type;		///< underlying type (float or double)
-	struct type_s *algebra_type;///< type for algebra
+	type_t     *type;			///< underlying type (float or double)
+	type_t     *algebra_type;	///< type for algebra
 	metric_t    metric;
 	basis_layout_t layout;
 	basis_group_t *groups;
-	struct type_s **mvec_types;
+	type_t **mvec_types;
 	struct symbol_s *mvec_sym;
 	int         num_components;	///< number of componets (2^d)
 	int         dimension;		///< number of dimensions (plus + minus + zero)
@@ -83,53 +86,43 @@ typedef struct multivector_s {
 	struct symbol_s *mvec_sym;	///< null if single group
 } multivector_t;
 
-struct expr_s;
 struct attribute_s;
-bool is_algebra (const struct type_s *type) __attribute__((pure));
-struct type_s *algebra_type (struct type_s *type, const struct expr_s *params);
-struct type_s *algebra_subtype (struct type_s *type, struct attribute_s *attr);
-struct type_s *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
+bool is_algebra (const type_t *type) __attribute__((pure));
+type_t *algebra_type (type_t *type, const expr_t *params);
+type_t *algebra_subtype (type_t *type, struct attribute_s *attr);
+type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 int algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b) __attribute__((pure));
 struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
-struct symtab_s *algebra_scope (struct type_s *type, struct symtab_s *curscope);
-void algebra_print_type_str (struct dstring_s *str, const struct type_s *type);
-void algebra_encode_type (struct dstring_s *encoding,
-						  const struct type_s *type);
-int algebra_type_size (const struct type_s *type) __attribute__((pure));
-int algebra_type_width (const struct type_s *type) __attribute__((pure));
+struct symtab_s *algebra_scope (type_t *type, struct symtab_s *curscope);
+void algebra_print_type_str (struct dstring_s *str, const type_t *type);
+void algebra_encode_type (struct dstring_s *encoding, const type_t *type);
+int algebra_type_size (const type_t *type) __attribute__((pure));
+int algebra_type_width (const type_t *type) __attribute__((pure));
 
 int metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b) __attribute__((pure));
 
-algebra_t *algebra_get (const struct type_s *type) __attribute__((pure));
-int algebra_type_assignable (const struct type_s *dst,
-							 const struct type_s *src) __attribute__((pure));
-struct type_s *algebra_base_type (const struct type_s *type) __attribute__((pure));
-struct type_s *algebra_struct_type (const struct type_s *type) __attribute__((pure));
-bool is_mono_grade (const struct type_s *type) __attribute__((pure));
-int algebra_get_grade (const struct type_s *type) __attribute__((pure));
+algebra_t *algebra_get (const type_t *type) __attribute__((pure));
+int algebra_type_assignable (const type_t *dst, const type_t *src) __attribute__((pure));
+type_t *algebra_base_type (const type_t *type) __attribute__((pure));
+type_t *algebra_struct_type (const type_t *type) __attribute__((pure));
+bool is_mono_grade (const type_t *type) __attribute__((pure));
+int algebra_get_grade (const type_t *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 
-pr_uint_t get_group_mask (const struct type_s *type, algebra_t *algebra) __attribute__((pure));
+pr_uint_t get_group_mask (const type_t *type, algebra_t *algebra) __attribute__((pure));
 
-const struct expr_s *algebra_binary_expr (int op, const struct expr_s *e1,
-										  const struct expr_s *e2);
-const struct expr_s *algebra_negate (const struct expr_s *e);
-const struct expr_s *algebra_dual (const struct expr_s *e);
-const struct expr_s *algebra_reverse (const struct expr_s *e);
-const struct expr_s *algebra_cast_expr (struct type_s *dstType,
-										const struct expr_s *e);
-const struct expr_s *algebra_assign_expr (const struct expr_s *dst,
-										  const struct expr_s *src);
-const struct expr_s *algebra_field_expr (const struct expr_s *mvec,
-										 const struct expr_s *field_name);
-const struct expr_s *algebra_optimize (const struct expr_s *e);
+const expr_t *algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2);
+const expr_t *algebra_negate (const expr_t *e);
+const expr_t *algebra_dual (const expr_t *e);
+const expr_t *algebra_reverse (const expr_t *e);
+const expr_t *algebra_cast_expr (type_t *dstType, const expr_t *e);
+const expr_t *algebra_assign_expr (const expr_t *dst, const expr_t *src);
+const expr_t *algebra_field_expr (const expr_t *mvec, const expr_t *field_name);
+const expr_t *algebra_optimize (const expr_t *e);
 
-const struct expr_s *mvec_expr (const struct expr_s *expr, algebra_t *algebra);
-void mvec_scatter (const struct expr_s **components, const struct expr_s *mvec,
+const expr_t *mvec_expr (const expr_t *expr, algebra_t *algebra);
+void mvec_scatter (const expr_t **components, const expr_t *mvec,
 				   algebra_t *algebra);
-const struct expr_s *mvec_gather (const struct expr_s **components,
-								  algebra_t *algebra);
-
-
+const expr_t *mvec_gather (const expr_t **components, algebra_t *algebra);
 
 #endif//__algebra_h
