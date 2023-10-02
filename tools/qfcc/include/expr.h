@@ -129,7 +129,7 @@ typedef struct {
 
 typedef struct {
 	type_t     *type;			///< Type of vector (vector/quaternion)
-	const expr_t *list;			///< Linked list of element expressions.
+	ex_list_t   list;			///< Linked list of element expressions.
 } ex_vector_t;
 
 typedef struct {
@@ -310,7 +310,7 @@ typedef struct {
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
-	expr_t *next;
+	expr_t     *next;
 	expr_type   type;			///< the type of the result of this expression
 	int         line;			///< source line that generated this expression
 	pr_string_t file;			///< source file that generated this expression

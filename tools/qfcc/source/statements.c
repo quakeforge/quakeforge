@@ -1926,7 +1926,8 @@ static int
 statement_copy_elements (sblock_t **sblock, const expr_t *dst, const expr_t *src, int base)
 {
 	int         index = 0;
-	for (const expr_t *e = src->vector.list; e; e = e->next) {
+	for (auto li = src->vector.list.head; li; li = li->next) {
+		auto e = li->expr;
 		if (e->type == ex_vector) {
 			index += statement_copy_elements (sblock, dst, e, index + base);
 		} else {
@@ -2073,15 +2074,12 @@ build_bool_block (expr_t *block, expr_t *e)
 			build_bool_block (block, (expr_t *) e->boolean.e);
 			return;
 		case ex_label:
-			e->next = 0;
 			append_expr (block, e);
 			return;
 		case ex_assign:
-			e->next = 0;
 			append_expr (block, e);
 			return;
 		case ex_branch:
-			e->next = 0;
 			append_expr (block, e);
 			return;
 		case ex_expr:
@@ -2089,7 +2087,6 @@ build_bool_block (expr_t *block, expr_t *e)
 				build_bool_block (block, (expr_t *) e->expr.e1);
 				build_bool_block (block, (expr_t *) e->expr.e2);
 			} else {
-				e->next = 0;
 				append_expr (block, e);
 			}
 			return;

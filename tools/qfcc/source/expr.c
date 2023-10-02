@@ -1384,9 +1384,6 @@ append_expr (expr_t *block, const expr_t *e)
 	if (!e || e->type == ex_error)
 		return block;
 
-	if (e->next)
-		internal_error (e, "append_expr: expr loop detected");
-
 	auto li = new_listitem (e);
 	*block->block.tail = li;
 	block->block.tail = &li->next;
@@ -1402,9 +1399,6 @@ prepend_expr (expr_t *block, const expr_t *e)
 
 	if (!e || e->type == ex_error)
 		return block;
-
-	if (e->next)
-		internal_error (e, "append_expr: expr loop detected");
 
 	auto li = new_listitem (e);
 	li->next = block->block.head;
@@ -1591,7 +1585,6 @@ convert_from_bool (const expr_t *e, type_t *type)
 	}
 	auto cond = new_expr ();
 	*cond = *e;
-	cond->next = 0;
 
 	return conditional_expr (cond, one, zero);
 }

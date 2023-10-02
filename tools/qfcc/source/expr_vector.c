@@ -132,14 +132,9 @@ new_vector_list (const expr_t *expr_list)
 		return vec;
 	}
 
-	for (int i = 0; i < count; i++) {
-		//FIXME this should use ex_list
-		((expr_t *) elements[i])->next = (expr_t *) elements[i + 1];
-	}
-
 	expr_t     *vec = new_expr ();
 	vec->type = ex_vector;
 	vec->vector.type = vector_type (ele_type, width);
-	vec->vector.list = elements[0];
+	list_gather (&vec->vector.list, elements, count);
 	return vec;
 }

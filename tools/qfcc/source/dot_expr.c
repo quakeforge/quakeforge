@@ -178,8 +178,6 @@ print_bool (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 				   i);
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
 	dasprintf (dstr, "%*s>];\n", indent, "");
-	if (e->next)
-		next = e->next;
 	_print_expr (dstr, e->boolean.e, level, id, next);
 	for (i = 0; i < tl_count; i++)
 		dasprintf (dstr, "%*se_%p:t%d -> e_%p;\n", indent, "", e, i,
@@ -195,8 +193,6 @@ print_label (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 {
 	int         indent = level * 2 + 2;
 
-	if (e->next)
-		next = e->next;
 	if (next)
 		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, next);
@@ -209,8 +205,6 @@ print_labelref (dstring_t *dstr, const expr_t *e, int level, int id, const expr_
 {
 	int         indent = level * 2 + 2;
 
-	if (e->next)
-		next = e->next;
 	if (next)
 		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, next);
@@ -227,7 +221,7 @@ print_block (dstring_t *dstr, const expr_t *e, int level, int id,
 	const expr_t *exprs[num_exprs + 1];
 
 	list_scatter (&e->block.list, exprs);
-	exprs[num_exprs] = 0;
+	exprs[num_exprs] = next;
 
 	int colspan = num_exprs ? num_exprs : 1;
 
@@ -397,9 +391,6 @@ print_conditional (dstring_t *dstr, const expr_t *e, int level, int id, const ex
 			   e->branch.test);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
 			   e->branch.target);
-	if (e->next) {
-		next = e->next;
-	}
 	if (next) {
 		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
 				   "style=dashed];\n", indent, "", e, next);
@@ -520,7 +511,8 @@ print_vector (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 {
 	int         indent = level * 2 + 2;
 
-	for (const expr_t *ele = e->vector.list; ele; ele = ele->next) {
+	for (auto li = e->vector.list.head; li; li = li->next) {
+		auto ele = li->expr;
 		_print_expr (dstr, ele, level, id, next);
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, ele);
 	}
