@@ -360,11 +360,11 @@ extern const char *expr_names[];
 	\param op		The opcode of the expression.
 	\return			\a e1 with its type set to ex_error.
 */
-expr_t *type_mismatch (const expr_t *e1, const expr_t *e2, int op);
+const expr_t *type_mismatch (const expr_t *e1, const expr_t *e2, int op);
 
-expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
-						type_t *t1, type_t *t2);
-expr_t *test_error (const expr_t *e, type_t *t);
+const expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
+							  struct type_s *t1, struct type_s *t2);
+const expr_t *test_error (const expr_t *e, struct type_s *t);
 
 extern expr_t *local_expr;
 
@@ -540,7 +540,7 @@ expr_t *new_unary_expr (int op, const expr_t *e1);
 */
 expr_t *new_horizontal_expr (int op, const expr_t *vec, type_t *type);
 
-expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
+const expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 
 expr_t *new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev);
 

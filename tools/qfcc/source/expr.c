@@ -214,7 +214,7 @@ extract_type (const expr_t *e)
 	return ev_type_count;
 }
 
-expr_t *
+const expr_t *
 type_mismatch (const expr_t *e1, const expr_t *e2, int op)
 {
 	if (options.verbosity >= 2) {
@@ -226,7 +226,7 @@ type_mismatch (const expr_t *e1, const expr_t *e2, int op)
 				  get_type_string (get_type (e2)));
 }
 
-expr_t *
+const expr_t *
 param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 {
 	return error (e, "type mismatch for parameter %d of %s: "
@@ -234,7 +234,7 @@ param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *
 				  get_type_string (t2));
 }
 
-expr_t *
+const expr_t *
 test_error (const expr_t *e, type_t *t)
 {
 	dstring_t  *s = dstring_newstr ();
@@ -591,7 +591,7 @@ new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 	return e;
 }
 
-expr_t *
+const expr_t *
 new_swizzle_expr (const expr_t *src, const char *swizzle)
 {
 	src = convert_name (src);
@@ -2076,7 +2076,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 {
 	int         param_count = 0;
 	expr_t     *call;
-	expr_t     *err = 0;
+	const expr_t *err = 0;
 
 	int arg_count = params ? list_count (&params->list) :0;
 	const expr_t *arguments[arg_count];
