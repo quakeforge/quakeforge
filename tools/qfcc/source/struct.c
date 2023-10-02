@@ -128,11 +128,15 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 symbol_t *
 find_handle (symbol_t *tag, type_t *type)
 {
-	symbol_t   *sym = find_tag (ty_handle, tag, type);
+	if (type != &type_int && type != &type_long) {
+		error (0, "@handle type must be int or long");
+		type = &type_int;
+	}
+	symbol_t   *sym = find_tag (ty_handle, tag, 0);
 	if (sym->type->type == ev_invalid) {
-		sym->type->type = ev_func;
+		sym->type->type = type->type;
 		sym->type->width = 1;
-		sym->type->alignment = 1;
+		sym->type->alignment = type->alignment;
 	}
 	return sym;
 }

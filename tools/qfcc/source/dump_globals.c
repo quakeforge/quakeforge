@@ -546,6 +546,8 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				printf (" %s[%d] %5x %d\n",
 						get_ev_type_name (type->type), type->algebra.width,
 						type->algebra.algebra, type->algebra.element);
+			case ty_meta_count:
+				break;
 		}
 	}
 }
