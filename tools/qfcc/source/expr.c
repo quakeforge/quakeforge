@@ -217,6 +217,10 @@ extract_type (const expr_t *e)
 expr_t *
 type_mismatch (const expr_t *e1, const expr_t *e2, int op)
 {
+	if (options.verbosity >= 2) {
+		print_expr (e1);
+		print_expr (e2);
+	}
 	return error (e1, "type mismatch: %s %s %s",
 				  get_type_string (get_type (e1)), get_op_string (op),
 				  get_type_string (get_type (e2)));
