@@ -519,6 +519,9 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 						sizeof (imm1->i.pointer));
 	} else if (tab == &value_imm_defs) {
 		size_t      size = type_size (imm1->def->type) * sizeof (pr_type_t);
+		if (imm1->def->type->alignment != imm2->def->type->alignment) {
+			return 0;
+		}
 		return !memcmp (&imm1->i, &imm2->i, size);
 	} else {
 		internal_error (0, "invalid immediate hash table");
