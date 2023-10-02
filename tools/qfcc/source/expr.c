@@ -2484,7 +2484,20 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	backpatch (c->boolean.true_list, tlabel);
 	backpatch (c->boolean.false_list, flabel);
 
-	block->block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
+	if (!type_same (type1, type2)) {
+		if (!type_assignable (type1, type2)
+			&& !type_assignable (type2, type1)) {
+			type1 = 0;
+		}
+		if (!type_assignable (type1, type2)) {
+			type1 = type2;
+		}
+		if (type_promotes (type2, type1)) {
+			type1 = type2;
+		}
+	}
+
+	block->block.result = type1 ? new_temp_def_expr (type1) : 0;
 	append_expr (block, c);
 	append_expr ((expr_t *) c->boolean.e, flabel);//FIXME cast
 	if (block->block.result)
