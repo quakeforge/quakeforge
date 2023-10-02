@@ -109,6 +109,7 @@ static struct DARRAY_TYPE(t *) n##_blocks = DARRAY_STATIC_INIT(8)
 #define ALLOC_STATE(t,n) \
 static t *n##_freelist;
 
+#define ALLOC_FREE_BLOCKS(n)
 #define FREE(n, p)			do { free (p); } while (0)
 #endif
 
