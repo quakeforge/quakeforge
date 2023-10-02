@@ -1398,6 +1398,9 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (expr_type->anticommute) {
 		ne->expr.anticommute = expr_type->anticommute ();
 	}
+	if (expr_type->associative) {
+		ne->expr.associative = expr_type->associative ();
+	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			ne->expr.type = &type_float;
