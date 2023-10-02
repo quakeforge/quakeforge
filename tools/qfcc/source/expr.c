@@ -1493,6 +1493,9 @@ field_expr (const expr_t *e1, const expr_t *e2)
 
 			const expr_t *offset = new_short_expr (field->s.offset);
 			e1 = offset_pointer_expr (e1, offset);
+			if (e1->type == ex_error) {
+				return e1;
+			}
 			e1 = cast_expr (pointer_type (field->type), e1);
 			return unary_expr ('.', e1);
 		} else if (is_class (t1->t.fldptr.type)) {
@@ -1507,6 +1510,9 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			const expr_t *offset = new_short_expr (ivar->s.offset);
 			e1 = offset_pointer_expr (e1, offset);
 			e1 = cast_expr (pointer_type (ivar->type), e1);
+			if (e1->type == ex_error) {
+				return e1;
+			}
 			return unary_expr ('.', e1);
 		}
 	} else if (is_algebra (t1)) {
@@ -2663,6 +2669,9 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 		return ptr;
 	} else {
 		ptr = cast_expr (&type_int, pointer);
+	}
+	if (ptr->type == ex_error) {
+		return ptr;
 	}
 	ptr = binary_expr ('+', ptr, offset);
 	return cast_expr (ptr_type, ptr);
