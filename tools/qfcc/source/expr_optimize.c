@@ -550,8 +550,10 @@ optimize_core (const expr_t *expr)
 		optimize_extends (adds);
 		optimize_extends (subs);
 
-		optimize_adds (adds);
-		optimize_adds (subs);
+		if (expr->expr.commutative) {
+			optimize_adds (adds);
+			optimize_adds (subs);
+		}
 
 		optimize_cross_products (adds, subs);
 		optimize_scale_products (adds, subs);
