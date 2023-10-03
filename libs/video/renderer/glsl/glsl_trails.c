@@ -81,8 +81,15 @@ static const char *particle_trail_frag_effects[] =
 	0
 };
 
+static const char *particle_trail_debug_frag_effects[] =
+{
+	"QuakeForge.Fragment.barycentric",
+	0
+};
+
 static struct {
 	int         program;
+	int         debug_program;
 	shaderparam_t proj;
 	shaderparam_t view;
 	shaderparam_t viewport;
@@ -95,7 +102,7 @@ static struct {
 	shaderparam_t colora;
 	shaderparam_t colorb;
 } trail = {
-	0,
+	0, 0,
 	{"projection_mat", 1},
 	{"view_mat", 1},
 	{"viewport", 1},
@@ -199,15 +206,21 @@ glsl_R_ShutdownParticles (void)
 void
 glsl_R_InitParticles (void)
 {
-	shader_t   *vert_shader, *frag_shader;
+	shader_t   *vert_shader, *frag_shader, *debug_shader;
 	int         vert;
 	int         frag;
+	int         debug;
 
 	vert_shader = GLSL_BuildShader (particle_trail_vert_effects);
 	frag_shader = GLSL_BuildShader (particle_trail_frag_effects);
+	debug_shader = GLSL_BuildShader (particle_trail_debug_frag_effects);
 	vert = GLSL_CompileShader ("trail.vert", vert_shader, GL_VERTEX_SHADER);
 	frag = GLSL_CompileShader ("trail.frag", frag_shader, GL_FRAGMENT_SHADER);
+	debug = GLSL_CompileShader ("trail.frag.debug", debug_shader,
+								GL_FRAGMENT_SHADER);
 	trail.program = GLSL_LinkProgram ("trail", vert, frag);
+	trail.debug_program = GLSL_LinkProgram ("trail.debug", vert, debug);
+
 	GLSL_ResolveShaderParam (trail.program, &trail.proj);
 	GLSL_ResolveShaderParam (trail.program, &trail.view);
 	GLSL_ResolveShaderParam (trail.program, &trail.viewport);
@@ -254,7 +267,7 @@ new_trail_point (vec4f_t origin, float pscale, float percent)
 		.p.vel = {},
 		.p.live = 2.0 - percent * 2.0,
 	//	.p.ramp = ramp,XXX
-	//	.p.physics = R_ParticlePhysics ("pt_float"),XXX
+	//	.p.physics = R_ParticlePhysics ("pt_float"),XXX pt_static for debug
 	};
 
 	return point;
@@ -310,7 +323,7 @@ set_vertex (trailvtx_t *v, const point_t *point, float w, const vec3_t bary,
 {
 	VectorCopy (point->p.pos, v->vertex);
 	VectorCopy (bary, v->bary);
-	v->vertex[3] = w * point->p.scale;
+	v->vertex[3] = w * point->p.scale;// just w for debug
 	v->texoff = off;
 	VectorCopy (point->p.color, v->colora);
 	v->colora[3] = point->p.alpha * 1.2;

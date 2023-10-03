@@ -728,18 +728,23 @@ main (void)
 	//gl_FragColor = texture2D (smoke, texcoord) * vec4 (1.0, 1.0, 1.0, 0.7);
 	vec3 tex3 = vec3 (texcoord, 0.5);
 	float n = abs(snoise(tex3));
-	float a = sqrt(1.0 - texcoord.y * texcoord.y);
 	n += 0.5 * abs(snoise(tex3 * 2.0));
 	n += 0.25 * abs(snoise(tex3 * 4.0));
 	n += 0.125 * abs(snoise(tex3 * 8.0));
 	vec4 c = colora + colorb * n;
+#if 1
+	float a = sqrt(1.0 - texcoord.y * texcoord.y);
 	c.a *= a;
+#else
+	c.a *= 1.0 - exp (-2.0 * (1.0 - sqrt(texcoord.y * texcoord.y)));
+#endif
 	gl_FragColor = c;
 }
 
 -- Fragment.barycentric
 
 varying vec3 vbarycentric;
+varying vec2 texcoord;
 
 float
 edgeFactor (void)
@@ -752,7 +757,10 @@ edgeFactor (void)
 void
 main (void)
 {
-	gl_FragColor = vec4 (vec3 (edgeFactor ()), 0.5);
+	//gl_FragColor = vec4 (vec3 (edgeFactor ()), 0.5);
+	vec4 c = vec4 (vec3 (edgeFactor ()), 0.5);
+	c.a *= 1.0 - exp (-4.0 * (1.0 - texcoord.y * texcoord.y));
+	gl_FragColor = c;
 }
 -- version.130
 #version 130
