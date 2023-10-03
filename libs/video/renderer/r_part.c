@@ -135,6 +135,7 @@ R_RunParticles (float dT)
 		p->pos += dT * p->vel;
 		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
 		p->ramp += dT * parm->ramp;
+		p->scale += dT * parm->scale_rate;
 		p->live -= dT;
 		if (ramp) {
 			p->icolor = ramp[(int)p->ramp];
