@@ -216,6 +216,8 @@ static void
 CL_Shutdown (void *data)
 {
 	CL_WriteConfiguration ();
+
+	Mod_ClearAll ();
 }
 
 void

@@ -1440,6 +1440,8 @@ CL_Shutdown (void *data)
 	dstring_delete (cls.downloadname);
 	dstring_delete (cls.downloadurl);
 	free (cl.players);
+
+	Mod_ClearAll ();
 }
 
 void
