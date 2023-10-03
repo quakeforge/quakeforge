@@ -161,6 +161,7 @@ mod_unload_model (size_t ind)
 	//with alias models
 	if (!mod->needload && mod->clear) {
 		mod->clear (mod, mod->data);
+		mod->clear = 0;
 	}
 	if (mod->type != mod_alias) {
 		mod->needload = true;
