@@ -14,11 +14,11 @@ typedef struct light_s {
 } light_t;
 
 //FIXME need a handle type
-typedef struct { long handle; } scene_t;
-typedef struct { long handle; } entity_t;
-typedef struct { long handle; } transform_t;
-typedef struct { long handle; } lightingdata_t;
-typedef struct { int handle; } model_t;
+typedef @handle(long) scene_h scene_t;
+typedef @handle(long) entity_h entity_t;
+typedef @handle(long) transform_h transform_t;
+typedef @handle(long) lightingdata_h lightingdata_t;
+typedef @handle(int) model_h model_t;
 
 scene_t Scene_NewScene (void);
 void Scene_DeleteScene (scene_t scene);

@@ -50,6 +50,8 @@ typedef enum {
 	ty_alias,
 	ty_handle,
 	ty_algebra,
+
+	ty_meta_count
 } ty_meta_e;
 
 typedef struct qfot_alias_s {

@@ -704,7 +704,7 @@ const expr_t *
 method_check_params (method_t *method, const expr_t *args)
 {
 	int         i, param_count;
-	expr_t     *err = 0;
+	const expr_t *err = 0;
 	type_t     *mtype = method->type;
 
 	if (mtype->t.func.num_params == -1)
@@ -725,7 +725,7 @@ method_check_params (method_t *method, const expr_t *args)
 	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
 		const expr_t *e = arg_list[i];
-		type_t     *arg_type = mtype->t.func.param_types[i];
+		type_t     *arg_type = i < param_count ? mtype->t.func.param_types[i] : 0;
 		type_t     *t;
 
 		if (e->type == ex_compound) {

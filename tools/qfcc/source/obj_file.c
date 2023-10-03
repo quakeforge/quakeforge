@@ -717,6 +717,8 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 		case ty_array:
 		case ty_class:
 			return ev_invalid;
+		case ty_meta_count:
+			break;
 	}
 	return ev_invalid;
 }
@@ -757,6 +759,8 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 		case ty_class:
 		case ty_algebra:
 			return 0;	// FIXME
+		case ty_meta_count:
+			break;
 	}
 	return 0;
 }
@@ -807,6 +811,8 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 		case ty_class:
 		case ty_algebra:
 			return 0;	// FIXME
+		case ty_meta_count:
+			break;
 	}
 	return 0;
 }

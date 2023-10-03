@@ -55,8 +55,8 @@ void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int s
 __attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
 __attribute__((noreturn)) void _internal_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {abort();}
-__attribute__((const)) expr_t *_warning (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {return 0;}
-__attribute__((const)) expr_t *_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {return 0;}
+__attribute__((const)) const expr_t *_warning (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {return 0;}
+__attribute__((const)) const expr_t *_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {return 0;}
 __attribute__((const)) symbol_t *make_structure (const char *name, int su, struct_def_t *defs, type_t *type) {return 0;}
 __attribute__((const)) symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol) {return 0;}
 __attribute__((const)) symbol_t *new_symbol_type (const char *name, type_t *type) {return 0;}

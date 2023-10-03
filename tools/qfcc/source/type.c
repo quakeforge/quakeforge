@@ -314,6 +314,7 @@ copy_chain (type_t *type, type_t *append)
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
 			case ty_algebra:
+			case ty_meta_count:
 				internal_error (0, "copy object type %d", type->meta);
 		}
 	}
@@ -373,6 +374,7 @@ append_type (type_t *type, type_t *new)
 			case ty_alias:	//XXX is this correct?
 			case ty_handle:
 			case ty_algebra:
+			case ty_meta_count:
 				internal_error (0, "append to object type");
 		}
 	}
@@ -445,6 +447,8 @@ types_same (type_t *a, type_t *b)
 			return a->name == b->name;
 		case ty_algebra:
 			return a->t.algebra == b->t.algebra;
+		case ty_meta_count:
+			break;
 	}
 	internal_error (0, "we be broke");
 }
@@ -577,6 +581,8 @@ find_type (type_t *type)
 			case ty_handle:
 				break;
 			case ty_algebra:
+				break;
+			case ty_meta_count:
 				break;
 		}
 	}
@@ -845,6 +851,8 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_meta_count:
+			break;
 		case ty_algebra:
 			algebra_print_type_str (str, type);
 			return;
@@ -1040,6 +1048,8 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_meta_count:
+			break;
 		case ty_algebra:
 			algebra_encode_type (encoding, type);
 			return;
@@ -1424,6 +1434,8 @@ type_size (const type_t *type)
 			return type_size (type->t.alias.aux_type);
 		case ty_algebra:
 			return algebra_type_size (type);
+		case ty_meta_count:
+			break;
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
 }
@@ -1456,6 +1468,8 @@ type_width (const type_t *type)
 			return type_width (type->t.alias.aux_type);
 		case ty_algebra:
 			return algebra_type_width (type);
+		case ty_meta_count:
+			break;
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
 }

@@ -829,6 +829,40 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 	[ev_ulong] = ulong_x,
 };
 
+static expr_type_t int_handle[] = {
+	{EQ,	&type_int},
+	{NE,	&type_int},
+
+	{0, 0}
+};
+
+static expr_type_t long_handle[] = {
+	{EQ,	&type_int},
+	{NE,	&type_int},
+
+	{0, 0}
+};
+
+static expr_type_t *int_handle_x[ev_type_count] = {
+	[ev_int] = int_handle,
+};
+
+static expr_type_t *long_handle_x[ev_type_count] = {
+	[ev_long] = long_handle,
+};
+
+static expr_type_t **binary_expr_handle[ev_type_count] = {
+	[ev_int] = int_handle_x,
+	[ev_long] = long_handle_x,
+};
+
+static expr_type_t ***binary_expr_meta[ty_meta_count] = {
+	[ty_basic] = binary_expr_types,
+	[ty_enum] = binary_expr_types,
+	[ty_alias] = binary_expr_types,
+	[ty_handle] = binary_expr_handle,
+};
+
 // supported operators for scalar-vector expressions
 static int scalar_vec_ops[] = { '*', '/', '%', MOD, 0 };
 static const expr_t *
@@ -1284,9 +1318,19 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	et1 = low_level_type (t1);
 	et2 = low_level_type (t2);
 
-	if (et1 >= ev_type_count || !binary_expr_types[et1])
+	if (t1->meta >= ty_meta_count || !binary_expr_meta[t1->meta]) {
 		return invalid_binary_expr(op, e1, e2);
-	if (et2 >= ev_type_count || !binary_expr_types[et1][et2])
+	}
+	if (t2->meta >= ty_meta_count || !binary_expr_meta[t2->meta]) {
+		return invalid_binary_expr(op, e1, e2);
+	}
+	if (binary_expr_meta[t1->meta] != binary_expr_meta[t2->meta]) {
+		return invalid_binary_expr(op, e1, e2);
+	}
+	auto expr_meta = binary_expr_meta[t1->meta];
+	if (et1 >= ev_type_count || !expr_meta[et1])
+		return invalid_binary_expr(op, e1, e2);
+	if (et2 >= ev_type_count || !expr_meta[et1][et2])
 		return invalid_binary_expr(op, e1, e2);
 
 	if ((t1->width > 1 || t2->width > 1)) {
@@ -1372,7 +1416,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		}
 	}
 
-	expr_type = binary_expr_types[et1][et2];
+	expr_type = expr_meta[et1][et2];
 	while (expr_type->op && expr_type->op != op)
 		expr_type++;
 	if (!expr_type->op)
@@ -1397,6 +1441,9 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 	if (expr_type->anticommute) {
 		ne->expr.anticommute = expr_type->anticommute ();
+	}
+	if (expr_type->associative) {
+		ne->expr.associative = expr_type->associative ();
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion == PROG_ID_VERSION) {

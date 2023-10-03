@@ -170,6 +170,9 @@ super_expr (class_type_t *class_type)
 	e = new_symbol_expr (class_pointer_symbol (class));
 	e = assign_expr (field_expr (super, new_name_expr ("class")),
 					 field_expr (e, new_name_expr ("super_class")));
+	if (e->type == ex_error) {
+		return e;
+	}
 	append_expr (super_block, e);
 
 	e = address_expr (super, 0);

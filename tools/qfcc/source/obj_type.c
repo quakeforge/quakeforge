@@ -334,7 +334,6 @@ qfo_encode_type (type_t *type, defspace_t *space)
 
 	if (type->type_def && type->type_def->external) {
 		relocs = type->type_def->relocs;
-		free_def (type->type_def);
 		type->type_def = 0;
 	}
 	if (type->type_def)

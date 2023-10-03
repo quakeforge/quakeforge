@@ -262,6 +262,8 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			return pr_debug_type_size (pr, aux_type);
 		case ty_algebra:
 			return 1;	//FIXME wip
+		case ty_meta_count:
+			break;
 	}
 	return 0;
 }
@@ -1093,6 +1095,8 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 		case ty_alias://XXX
 			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
 			value_string (data, type, value);
+			break;
+		case ty_meta_count:
 			break;
 	}
 }

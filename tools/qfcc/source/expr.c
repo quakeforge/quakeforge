@@ -214,15 +214,19 @@ extract_type (const expr_t *e)
 	return ev_type_count;
 }
 
-expr_t *
+const expr_t *
 type_mismatch (const expr_t *e1, const expr_t *e2, int op)
 {
+	if (options.verbosity >= 2) {
+		print_expr (e1);
+		print_expr (e2);
+	}
 	return error (e1, "type mismatch: %s %s %s",
 				  get_type_string (get_type (e1)), get_op_string (op),
 				  get_type_string (get_type (e2)));
 }
 
-expr_t *
+const expr_t *
 param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
 {
 	return error (e, "type mismatch for parameter %d of %s: "
@@ -230,7 +234,7 @@ param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *
 				  get_type_string (t2));
 }
 
-expr_t *
+const expr_t *
 test_error (const expr_t *e, type_t *t)
 {
 	dstring_t  *s = dstring_newstr ();
@@ -587,7 +591,7 @@ new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 	return e;
 }
 
-expr_t *
+const expr_t *
 new_swizzle_expr (const expr_t *src, const char *swizzle)
 {
 	src = convert_name (src);
@@ -1380,9 +1384,6 @@ append_expr (expr_t *block, const expr_t *e)
 	if (!e || e->type == ex_error)
 		return block;
 
-	if (e->next)
-		internal_error (e, "append_expr: expr loop detected");
-
 	auto li = new_listitem (e);
 	*block->block.tail = li;
 	block->block.tail = &li->next;
@@ -1398,9 +1399,6 @@ prepend_expr (expr_t *block, const expr_t *e)
 
 	if (!e || e->type == ex_error)
 		return block;
-
-	if (e->next)
-		internal_error (e, "append_expr: expr loop detected");
 
 	auto li = new_listitem (e);
 	li->next = block->block.head;
@@ -1489,6 +1487,9 @@ field_expr (const expr_t *e1, const expr_t *e2)
 
 			const expr_t *offset = new_short_expr (field->s.offset);
 			e1 = offset_pointer_expr (e1, offset);
+			if (e1->type == ex_error) {
+				return e1;
+			}
 			e1 = cast_expr (pointer_type (field->type), e1);
 			return unary_expr ('.', e1);
 		} else if (is_class (t1->t.fldptr.type)) {
@@ -1503,6 +1504,9 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			const expr_t *offset = new_short_expr (ivar->s.offset);
 			e1 = offset_pointer_expr (e1, offset);
 			e1 = cast_expr (pointer_type (ivar->type), e1);
+			if (e1->type == ex_error) {
+				return e1;
+			}
 			return unary_expr ('.', e1);
 		}
 	} else if (is_algebra (t1)) {
@@ -1581,7 +1585,6 @@ convert_from_bool (const expr_t *e, type_t *type)
 	}
 	auto cond = new_expr ();
 	*cond = *e;
-	cond->next = 0;
 
 	return conditional_expr (cond, one, zero);
 }
@@ -2072,7 +2075,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 {
 	int         param_count = 0;
 	expr_t     *call;
-	expr_t     *err = 0;
+	const expr_t *err = 0;
 
 	int arg_count = params ? list_count (&params->list) :0;
 	const expr_t *arguments[arg_count];
@@ -2484,7 +2487,20 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	backpatch (c->boolean.true_list, tlabel);
 	backpatch (c->boolean.false_list, flabel);
 
-	block->block.result = (type1 == type2) ? new_temp_def_expr (type1) : 0;
+	if (!type_same (type1, type2)) {
+		if (!type_assignable (type1, type2)
+			&& !type_assignable (type2, type1)) {
+			type1 = 0;
+		}
+		if (!type_assignable (type1, type2)) {
+			type1 = type2;
+		}
+		if (type_promotes (type2, type1)) {
+			type1 = type2;
+		}
+	}
+
+	block->block.result = type1 ? new_temp_def_expr (type1) : 0;
 	append_expr (block, c);
 	append_expr ((expr_t *) c->boolean.e, flabel);//FIXME cast
 	if (block->block.result)
@@ -2646,6 +2662,9 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 		return ptr;
 	} else {
 		ptr = cast_expr (&type_int, pointer);
+	}
+	if (ptr->type == ex_error) {
+		return ptr;
 	}
 	ptr = binary_expr ('+', ptr, offset);
 	return cast_expr (ptr_type, ptr);

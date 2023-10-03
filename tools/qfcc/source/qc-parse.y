@@ -156,7 +156,8 @@ int yylex (void);
 %token				RETURN AT_RETURN ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token	<op>		STRUCT HANDLE
+%token	<op>		STRUCT
+%token				HANDLE
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
@@ -164,6 +165,7 @@ int yylex (void);
 
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
+%type	<spec>		handle
 %type	<spec>		declspecs declspecs_nosc declspecs_nots
 %type	<spec>		declspecs_ts
 %type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
@@ -1122,9 +1124,10 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
-	| HANDLE tag
+	| handle tag
 		{
-			symbol_t   *sym = find_handle ($2, 0);
+			specifier_t spec = default_type ($1, 0);
+			symbol_t   *sym = find_handle ($2, spec.type);
 			sym->type = find_type (sym->type);
 			$$ = make_spec (sym->type, 0, 0, 0);
 			if (!sym->table) {
@@ -1135,6 +1138,11 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
+	;
+
+handle
+	: HANDLE					{ $$ = make_spec (&type_int, 0, 0, 0); }
+	| HANDLE '(' TYPE_SPEC ')'	{ $$ = $3; }
 	;
 
 struct_list
