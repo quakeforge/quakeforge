@@ -114,8 +114,8 @@ R_Trail_Create (psystem_t *system, int num_points, vec4f_t start)
 		auto p = trail_point_buffer + pointset.base + i;
 		*p = (trailpnt_t) {
 			.pos = start,
-			.colora = { 0xc0, 0xc0, 0xc0, 0xa0 },
-			.colorb = { 0x40, 0x40, 0x40, 0x40 },
+			.colora = { 0xc0, 0xa0, 0x60, 0x80 },
+			.colorb = { 0x30, 0x30, 0x20, 0x00 },
 			.trailid = trail,
 			.live = 10,
 		};
@@ -144,7 +144,8 @@ R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos)
 	points[0].pos = points[2].pos + dist;
 	points[1].pos = points[3].pos + dist;
 
-	if (dotf (dist, dist)[0] > 128) {
+	float len = sqrt (dotf (dist, dist)[0]);
+	if (len > 16) {
 		for (uint32_t i = 4; i < p->count; i += 2) {
 			vec4f_t t1 = points[i + 0].pos;
 			vec4f_t t2 = points[i + 1].pos;
@@ -152,6 +153,22 @@ R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos)
 			points[i + 1].pos = prev2;
 			prev1 = t1;
 			prev2 = t2;
+
+			points[i + 0].pathoffset = len;
+			points[i + 1].pathoffset = len;
+			if (i < p->count - 2) {
+				dist = points[i + 2].pos - points[i + 0].pos;
+				len = sqrt (dotf (dist, dist)[0]);
+			}
+		}
+	} else {
+		for (uint32_t i = 4; i < p->count; i += 2) {
+			points[i + 0].pathoffset = len;
+			points[i + 1].pathoffset = len;
+			if (i < p->count - 2) {
+				dist = points[i + 2].pos - points[i + 0].pos;
+				len = sqrt (dotf (dist, dist)[0]);
+			}
 		}
 	}
 }
