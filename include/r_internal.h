@@ -42,10 +42,11 @@ void R_ViewChanged (void);			// must set r_refdef first
 								// called whenever r_refdef or vid change
 
 extern struct psystem_s r_psystem;
+extern struct psystem_s r_tsystem;
 struct psystem_s *gl_ParticleSystem (void);
 struct psystem_s *glsl_ParticleSystem (void);
+struct psystem_s *glsl_TrailSystem (void);
 struct psystem_s *sw_ParticleSystem (void);
-void R_RunParticles (float dT);
 
 struct scene_s;
 void R_NewScene (struct scene_s *scene);

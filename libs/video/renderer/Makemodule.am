@@ -58,9 +58,10 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
 	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_progs.c \
 	libs/video/renderer/r_scrap.c \
 	libs/video/renderer/r_screen.c \
-	libs/video/renderer/r_progs.c
+	libs/video/renderer/r_trails.c
 
 video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \

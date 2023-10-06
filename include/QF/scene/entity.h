@@ -75,7 +75,7 @@ typedef struct visibility_s {
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
 	struct skin_s *skin;
-	struct trail_s *trail;	// FIXME should be own component
+	struct trail_s *trail;
 	unsigned    fullbright:1;
 	unsigned    noshadows:1;
 	unsigned    onlyshadows:1;

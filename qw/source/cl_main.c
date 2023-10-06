@@ -98,6 +98,7 @@
 #include "buildnum.h"
 #include "compat.h"
 
+#include "client/effects.h"
 #include "client/particles.h"
 #include "client/sbar.h"
 #include "client/screen.h"
@@ -1488,6 +1489,7 @@ CL_Init (void)
 	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
 	CL_Particles_Init ();
+	CL_Effects_Init ();
 	CL_TEnts_Init ();
 	CL_World_Init ();
 	CL_ClearState ();

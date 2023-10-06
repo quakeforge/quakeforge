@@ -614,4 +614,5 @@ R_Init_Cvars (void)
 	r_data->scr_viewsize = &scr_viewsize;
 
 	R_Particles_Init_Cvars ();
+	R_Trails_Init_Cvars ();
 }

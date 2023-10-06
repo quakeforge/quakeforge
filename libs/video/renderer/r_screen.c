@@ -190,6 +190,9 @@ render_scene (void)
 	EntQueue_Clear (r_ent_queue);
 	r_funcs->render_view ();
 	r_funcs->draw_particles (&r_psystem);
+	if (r_funcs->draw_trails) {
+		r_funcs->draw_trails (&r_tsystem);
+	}
 	r_funcs->draw_transparent ();
 }
 

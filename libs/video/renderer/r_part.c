@@ -29,7 +29,6 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 

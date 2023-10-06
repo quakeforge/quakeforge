@@ -45,16 +45,13 @@ typedef enum {
 
 struct entity_s;
 
-void R_Particles_Init_Cvars (void);
-void R_Particle_New (const char *type, int texnum, const vec3_t org,
-					 float scale, const vec3_t vel, float die, int color,
-					 float alpha, float ramp);
-void R_Particle_NewRandom (const char *type, int texnum, const vec3_t org,
-						   int org_fuzz, float scale, int vel_fuzz, float die,
-						   int color, float alpha, float ramp);
-void R_InitBubble (void);
+void R_Trails_Init (void);
+void R_Trails_Init_Cvars (void);
+void R_ClearTrails (void);
+void R_RunTrails (float dT);
 
-void R_InitParticles (void);
+void R_RunParticles (float dT);
+void R_Particles_Init_Cvars (void);
 void R_ClearParticles (void);
 void R_InitSprites (void);
 
