@@ -69,7 +69,6 @@ static void
 effect_free (void *e, void *unused)
 {
 	glsl_effect_t *effect = e;
-	puts (effect->name);
 	free ((char *) effect->name);
 	Segtext_delete (effect->text);
 }
