@@ -109,7 +109,7 @@ FRAMEID		{ID}(\.{ID})*
 PRAGMAID	{ID}(-{ID})*
 STRING		\"(\\.|[^"\\])*\"
 
-%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT PRAGMA
+%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
 
 %%
 					grab_frame = GRAB_FRAME;
@@ -123,7 +123,9 @@ STRING		\"(\\.|[^"\\])*\"
 <COMMENT>\r*\n		{ pr.source_line++; }
 <COMMENT>.			/* nothing to do */
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
-"//".*				/* nothing to do */
+"//"				{ BEGIN (LCOMMENT); }	/* exited by <*>\r\n rule */
+<LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
+<LCOMMENT>[\\]*		/* consume \ */
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
@@ -325,6 +327,7 @@ STRING		\"(\\.|[^"\\])*\"
 <PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
 <PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
+<*>\\\r*\n			{ pr.source_line++; }	/* line continuation */
 <*>\r*\n			{
 						if (YY_START == PRAGMA) {
 							pragma_process ();
