@@ -1,4 +1,3 @@
-%{
 /*
 	qc-parse.y
 
@@ -28,6 +27,10 @@
 		Boston, MA  02111-1307, USA
 
 */
+%define api.prefix {qc_yy}
+%define api.pure
+%locations
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -65,16 +68,19 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-#define YYDEBUG 1
-#define YYERROR_VERBOSE 1
-#undef YYERROR_VERBOSE
+#define QC_YYDEBUG 1
+#define QC_YYERROR_VERBOSE 1
+#undef QC_YYERROR_VERBOSE
+
+#include "tools/qfcc/source/qc-parse.h"
 
 extern char *qc_yytext;
 
 static void
+//yyerror (YYLTYPE *yylloc, const char *s)
 yyerror (const char *s)
 {
-#ifdef YYERROR_VERBOSE
+#ifdef QC_YYERROR_VERBOSE
 	error (0, "%s %s\n", qc_yytext, s);
 #else
 	error (0, "%s before %s", s, qc_yytext);
@@ -89,7 +95,7 @@ parse_error (void)
 
 #define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
 
-int yylex (void);
+int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %}
 

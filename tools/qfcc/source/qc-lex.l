@@ -1,4 +1,3 @@
-%{
 /*
 	qc-lex.l
 
@@ -28,6 +27,12 @@
 		Boston, MA  02111-1307, USA
 
 */
+%option bison-locations
+%option prefix="qc_yy"
+%option noyywrap
+%option debug
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -68,23 +73,39 @@
 # define YY_FLEX_REALLOC_HACK
 #endif
 
+#define YY_NO_INPUT
 #define YY_NO_UNPUT
-#define YY_DECL int yylex YY_PROTO(( void ))
-YY_DECL;
+
+#define YYSTYPE QC_YYSTYPE
+#define YYLTYPE QC_YYLTYPE
 
 int yyget_lineno (void) __attribute__((pure));
 int yyget_leng (void) __attribute__((pure));
-int yywrap (void) __attribute__((const));
 char *yyget_text (void) __attribute__((pure));
 int yyget_debug (void) __attribute__((pure));
 FILE *yyget_in (void) __attribute__((pure));
 FILE *yyget_out (void) __attribute__((pure));
 
-static int keyword_or_id (const char *token);
+static int keyword_or_id (YYSTYPE *yylval, const char *token);
 static const expr_t *parse_float_vector (const char *token, int width);
 static const expr_t *parse_int_vector (const char *token, int width);
 
-extern QC_YYSTYPE qc_yylval;
+static void
+update_yylloc (YYLTYPE *yylloc)
+{
+	yylloc->first_line = yylloc->last_line;
+	yylloc->first_column = yylloc->last_column;
+	for(int i = 0; yytext[i] != '\0'; i++) {
+		if(yytext[i] == '\n') {
+			yylloc->last_line++;
+			yylloc->last_column = 1;
+		} else {
+			yylloc->last_column++;
+		}
+	}
+}
+
+#define YY_USER_ACTION update_yylloc (yylloc);
 
 %}
 
@@ -112,10 +133,11 @@ STRING		\"(\\.|[^"\\])*\"
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
 
 %%
+					yy_flex_debug = 0;
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 					grab_write = GRAB_WRITE;
-					qc_yylval.pointer = 0;	// ensure pointer vals are null
+					yylval->pointer = 0;	// ensure pointer vals are null
 
 "/*"				{ BEGIN (COMMENT); }
 <COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
@@ -142,16 +164,16 @@ STRING		\"(\\.|[^"\\])*\"
 							i = strtol (yytext, 0, 0);
 						if (tolower (*c) == 'u') {
 							if (tolower (c[1]) == 'l') {
-								qc_yylval.expr = new_ulong_expr (i);
+								yylval->expr = new_ulong_expr (i);
 							} else {
-								qc_yylval.expr = new_uint_expr (i);
+								yylval->expr = new_uint_expr (i);
 							}
 						} else {
 							if (tolower (c[1]) == 'l') {
-								qc_yylval.expr = new_long_expr (i);
+								yylval->expr = new_long_expr (i);
 							} else {
-								qc_yylval.expr = new_int_expr (i);
-								((expr_t *) qc_yylval.expr)->implicit = 1;
+								yylval->expr = new_int_expr (i);
+								((expr_t *) yylval->expr)->implicit = 1;
 							}
 						}
 						return VALUE;
@@ -162,16 +184,16 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d, true);
+							yylval->expr = new_double_expr (d, true);
 						} else {
 							float       f = strtof (yytext, 0);
-							qc_yylval.expr = new_float_expr (f);
+							yylval->expr = new_float_expr (f);
 						}
 						return VALUE;
 					}
 {FLOATf}			{
 						float       f = strtof (yytext, 0);
-						qc_yylval.expr = new_float_expr (f);
+						yylval->expr = new_float_expr (f);
 						return VALUE;
 					}
 {FLOATd}			{
@@ -179,21 +201,21 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d, false);
+							yylval->expr = new_double_expr (d, false);
 						} else {
 							float       f = strtof (yytext, 0);
-							qc_yylval.expr = new_float_expr (f);
+							yylval->expr = new_float_expr (f);
 							warning (0, "truncating double constant to float");
 						}
 						return VALUE;
 					}
 
 {ID}				{
-						int         tok = keyword_or_id(yytext);
+						int         tok = keyword_or_id(yylval, yytext);
 						return tok;
 					}
 @{ID}				{
-						int         tok = keyword_or_id(yytext);
+						int         tok = keyword_or_id(yylval, yytext);
 						if (tok == '@')
 							REJECT;
 						return tok;
@@ -201,38 +223,38 @@ STRING		\"(\\.|[^"\\])*\"
 
 {STRING}			{
 						const char *s = make_string (yytext, 0);
-						qc_yylval.expr = new_string_expr (s);
+						yylval->expr = new_string_expr (s);
 						return STRING;
 					}
 @					return '@';
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 2);
+						yylval->expr = parse_int_vector (yytext, 2);
 						return VALUE;
 					}
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 3);
+						yylval->expr = parse_int_vector (yytext, 3);
 						return VALUE;
 					}
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 4);
+						yylval->expr = parse_int_vector (yytext, 4);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 2);
+						yylval->expr = parse_float_vector (yytext, 2);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 3);
+						yylval->expr = parse_float_vector (yytext, 3);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 4);
+						yylval->expr = parse_float_vector (yytext, 4);
 						return VALUE;
 					}
 
@@ -241,27 +263,27 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						qc_yylval.expr = new_int_expr (*str);
+						yylval->expr = new_int_expr (*str);
 						return VALUE;
 					}
 
 [+\-*/&|^%]=		{
-						qc_yylval.op = yytext[0];
+						yylval->op = yytext[0];
 						return ASX;
 					}
 
 "%%="				{
-						qc_yylval.op = MOD;
+						yylval->op = MOD;
 						return ASX;
 					}
 
 "<<="				{
-						qc_yylval.op = SHL;
+						yylval->op = SHL;
 						return ASX;
 					}
 
 ">>="				{
-						qc_yylval.op = SHR;
+						yylval->op = SHR;
 						return ASX;
 					}
 
@@ -298,19 +320,19 @@ STRING		\"(\\.|[^"\\])*\"
 ">"					return GT;
 
 "++"				{
-						qc_yylval.op = '+';
+						yylval->op = '+';
 						return INCOP;
 					}
 
 "--"				{
-						qc_yylval.op = '-';
+						yylval->op = '-';
 						return INCOP;
 					}
 
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qc_yylval.expr = new_int_expr (ret);
+							yylval->expr = new_int_expr (ret);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -341,12 +363,6 @@ STRING		\"(\\.|[^"\\])*\"
 <*>.				error (0, "all your typo are belong to us");
 
 %%
-
-int
-yywrap (void)
-{
-	return 1;
-}
 
 typedef struct {
 	const char *name;
@@ -475,28 +491,28 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-process_keyword (keyword_t *keyword, const char *token)
+process_keyword (YYSTYPE *yylval, keyword_t *keyword, const char *token)
 {
 	if (keyword->value == STRUCT) {
-		qc_yylval.op = token[0];
+		yylval->op = token[0];
 	} else if (keyword->value == OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
-		qc_yylval.symbol = sym;
+		yylval->symbol = sym;
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
 		if (sym->sy_type == sy_name) {
 			// this is the global id (object)
-			qc_yylval.spec = (specifier_t) {
+			yylval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
 			return OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
-			qc_yylval.spec = (specifier_t) {
+			yylval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
@@ -505,13 +521,13 @@ process_keyword (keyword_t *keyword, const char *token)
 		// id has been redelcared as a variable (hopefully)
 		return NAME;
 	} else {
-		qc_yylval.spec = keyword->spec;
+		yylval->spec = keyword->spec;
 	}
 	return keyword->value;
 }
 
 static int
-keyword_or_id (const char *token)
+keyword_or_id (YYSTYPE *yylval, const char *token)
 {
 	static hashtab_t *keyword_tab;
 	static hashtab_t *qf_keyword_tab;
@@ -568,16 +584,16 @@ keyword_or_id (const char *token)
 	if (!keyword)
 		keyword = Hash_Find (keyword_tab, token);
 	if (keyword && keyword->value)
-		return process_keyword (keyword, token);
+		return process_keyword (yylval, keyword, token);
 	if (token[0] == '@') {
 		return '@';
 	}
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	qc_yylval.symbol = sym;
+	yylval->symbol = sym;
 	if (sym->sy_type == sy_type) {
-		qc_yylval.spec = (specifier_t) {
+		yylval->spec = (specifier_t) {
 			.type = sym->type,
 			.sym = sym,
 		};
@@ -768,12 +784,3 @@ parse_float_vector (const char *token, int width)
 	expr->implicit = !t;
 	return expr;
 }
-
-#ifdef YY_FLEX_REALLOC_HACK
-static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
-#else
-#ifdef yyunput
-static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
-#endif
-static __attribute__ ((used)) int (*input_hack)(void) = input;
-#endif
