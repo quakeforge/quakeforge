@@ -28,6 +28,8 @@
 
 */
 %option bison-locations
+%option bison-bridge
+%option reentrant
 %option prefix="qc_yy"
 %option noyywrap
 %option debug
@@ -79,33 +81,37 @@
 #define YYSTYPE QC_YYSTYPE
 #define YYLTYPE QC_YYLTYPE
 
-int yyget_lineno (void) __attribute__((pure));
-int yyget_leng (void) __attribute__((pure));
-char *yyget_text (void) __attribute__((pure));
-int yyget_debug (void) __attribute__((pure));
-FILE *yyget_in (void) __attribute__((pure));
-FILE *yyget_out (void) __attribute__((pure));
+void *qc_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
+int yyget_lineno (yyscan_t yyscanner) __attribute__((pure));
+int yyget_column (yyscan_t yyscanner) __attribute__((pure));
+YYSTYPE *yyget_lval (yyscan_t yyscanner) __attribute__((pure));
+YYLTYPE *yyget_lloc (yyscan_t yyscanner) __attribute__((pure));
+int yyget_leng (yyscan_t yyscanner) __attribute__((pure));
+char *yyget_text (yyscan_t yyscanner) __attribute__((pure));
+int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
-static int keyword_or_id (YYSTYPE *yylval, const char *token);
+static int keyword_or_id (YYSTYPE *lval, const char *token);
 static const expr_t *parse_float_vector (const char *token, int width);
 static const expr_t *parse_int_vector (const char *token, int width);
 
 static void
-update_yylloc (YYLTYPE *yylloc)
+update_yylloc (YYLTYPE *lloc, const char *text)
 {
-	yylloc->first_line = yylloc->last_line;
-	yylloc->first_column = yylloc->last_column;
-	for(int i = 0; yytext[i] != '\0'; i++) {
-		if(yytext[i] == '\n') {
-			yylloc->last_line++;
-			yylloc->last_column = 1;
+	lloc->first_line = lloc->last_line;
+	lloc->first_column = lloc->last_column;
+	for(int i = 0; text[i] != '\0'; i++) {
+		if(text[i] == '\n') {
+			lloc->last_line++;
+			lloc->last_column = 1;
 		} else {
-			yylloc->last_column++;
+			lloc->last_column++;
 		}
 	}
 }
 
-#define YY_USER_ACTION update_yylloc (yylloc);
+#define YY_USER_ACTION update_yylloc (yylloc, yytext);
 
 %}
 
@@ -491,28 +497,28 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-process_keyword (YYSTYPE *yylval, keyword_t *keyword, const char *token)
+process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 {
 	if (keyword->value == STRUCT) {
-		yylval->op = token[0];
+		lval->op = token[0];
 	} else if (keyword->value == OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
-		yylval->symbol = sym;
+		lval->symbol = sym;
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
 		if (sym->sy_type == sy_name) {
 			// this is the global id (object)
-			yylval->spec = (specifier_t) {
+			lval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
 			return OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
-			yylval->spec = (specifier_t) {
+			lval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
@@ -521,13 +527,13 @@ process_keyword (YYSTYPE *yylval, keyword_t *keyword, const char *token)
 		// id has been redelcared as a variable (hopefully)
 		return NAME;
 	} else {
-		yylval->spec = keyword->spec;
+		lval->spec = keyword->spec;
 	}
 	return keyword->value;
 }
 
 static int
-keyword_or_id (YYSTYPE *yylval, const char *token)
+keyword_or_id (YYSTYPE *lval, const char *token)
 {
 	static hashtab_t *keyword_tab;
 	static hashtab_t *qf_keyword_tab;
@@ -584,16 +590,16 @@ keyword_or_id (YYSTYPE *yylval, const char *token)
 	if (!keyword)
 		keyword = Hash_Find (keyword_tab, token);
 	if (keyword && keyword->value)
-		return process_keyword (yylval, keyword, token);
+		return process_keyword (lval, keyword, token);
 	if (token[0] == '@') {
 		return '@';
 	}
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	yylval->symbol = sym;
+	lval->symbol = sym;
 	if (sym->sy_type == sy_type) {
-		yylval->spec = (specifier_t) {
+		lval->spec = (specifier_t) {
 			.type = sym->type,
 			.sym = sym,
 		};
@@ -783,4 +789,25 @@ parse_float_vector (const char *token, int width)
 	auto expr = (expr_t *) new_value_expr (new_type_value (type, data));
 	expr->implicit = !t;
 	return expr;
+}
+
+int
+qc_yyparse (FILE *in)
+{
+	int         status;
+	yyscan_t    scanner;
+	qc_yypstate *ps = qc_yypstate_new ();
+
+	yylex_init_extra (0, &scanner);
+	yyset_in (in, scanner);
+	YYLTYPE lloc = { 1, 1, 1, 1 };
+	do {
+		YYSTYPE lval;
+		int token = yylex (&lval, &lloc, scanner);
+		status = qc_yypush_parse (ps, token, &lval, &lloc, scanner);
+	} while (status == YYPUSH_MORE);
+
+	yylex_destroy (scanner);
+	qc_yypstate_delete (ps);
+	return status;
 }

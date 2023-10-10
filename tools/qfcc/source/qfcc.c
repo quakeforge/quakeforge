@@ -375,24 +375,22 @@ static int
 compile_to_obj (const char *file, const char *obj, lang_t lang)
 {
 	int         err;
-	FILE      **yyin;
-	int       (*yyparse) (void);
+	FILE       *yyin;
+	int       (*yyparse) (FILE *in);
 
 	switch (lang) {
 		case lang_ruamoko:
-			yyin = &qc_yyin;
 			yyparse = qc_yyparse;
 			break;
 		case lang_pascal:
-			yyin = &qp_yyin;
 			yyparse = qp_yyparse;
 			break;
 		default:
 			internal_error (0, "unknown language enum");
 	}
 
-	*yyin = preprocess_file (file, 0);
-	if (options.preprocess_only || !*yyin)
+	yyin = preprocess_file (file, 0);
+	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
 
 	InitData ();
@@ -400,8 +398,8 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	begin_compilation ();
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	err = yyparse (yyin) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
@@ -653,18 +651,18 @@ static int
 compile_file (const char *filename)
 {
 	int         err;
-	FILE      **yyin = &qc_yyin;
-	int       (*yyparse) (void) = qc_yyparse;
+	FILE       *yyin;
+	int       (*yyparse) (FILE *in) = qc_yyparse;
 
-	*yyin = preprocess_file (filename, 0);
-	if (options.preprocess_only || !*yyin)
+	yyin = preprocess_file (filename, 0);
+	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
 
 	add_source_file (filename);
 	pr.source_line = 1;
 	clear_frame_macros ();
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	err = yyparse (yyin) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");

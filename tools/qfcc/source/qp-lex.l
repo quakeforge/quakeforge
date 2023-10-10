@@ -1,4 +1,3 @@
-%{
 /*
 	qp-lex.l
 
@@ -28,6 +27,14 @@
 		Boston, MA  02111-1307, USA
 
 */
+%option bison-locations
+%option bison-bridge
+%option reentrant
+%option prefix="qp_yy"
+%option noyywrap
+%option debug
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -53,20 +60,43 @@
 # define YY_FLEX_REALLOC_HACK
 #endif
 
+#define YY_NO_INPUT
 #define YY_NO_UNPUT
-#define YY_DECL int yylex YY_PROTO(( void ))
-YY_DECL;
 
-int yyget_lineno (void) __attribute__((pure));
-int yyget_leng (void) __attribute__((pure));
-int yywrap (void) __attribute__((const));
-char *yyget_text (void) __attribute__((pure));
-int yyget_debug (void) __attribute__((pure));
-FILE *yyget_in (void) __attribute__((pure));
-FILE *yyget_out (void) __attribute__((pure));
 
-static int keyword_or_id (const char *token);
+#define YYSTYPE QP_YYSTYPE
+#define YYLTYPE QP_YYLTYPE
+
+void *qp_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
+int yyget_lineno (yyscan_t yyscanner) __attribute__((pure));
+int yyget_column (yyscan_t yyscanner) __attribute__((pure));
+YYSTYPE *yyget_lval (yyscan_t yyscanner) __attribute__((pure));
+YYLTYPE *yyget_lloc (yyscan_t yyscanner) __attribute__((pure));
+int yyget_leng (yyscan_t yyscanner) __attribute__((pure));
+char *yyget_text (yyscan_t yyscanner) __attribute__((pure));
+int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
+
+static int keyword_or_id (YYSTYPE *lval, const char *token);
 static int convert_relop (const char *relop) __attribute__((pure));
+
+static void
+update_yylloc (YYLTYPE *lloc, const char *text)
+{
+	lloc->first_line = lloc->last_line;
+	lloc->first_column = lloc->last_column;
+	for(int i = 0; text[i] != '\0'; i++) {
+		if(text[i] == '\n') {
+			lloc->last_line++;
+			lloc->last_column = 1;
+		} else {
+			lloc->last_column++;
+		}
+	}
+}
+
+#define YY_USER_ACTION update_yylloc (yylloc, yytext);
 
 %}
 
@@ -113,21 +143,21 @@ FRAMEID		{ID}(\.{ID})*
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						qp_yylval.expr = new_int_expr (i);
+						yylval->expr = new_int_expr (i);
 						return VALUE;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
-						qp_yylval.expr = new_float_expr (f);
+						yylval->expr = new_float_expr (f);
 						return VALUE;
 					}
 
-{ID}				return keyword_or_id (yytext);
+{ID}				return keyword_or_id (yylval, yytext);
 
 \"(\\.|[^"\\])*\"	{
 						const char *s = make_string (yytext, 0);
-						qp_yylval.expr = new_string_expr (s);
+						yylval->expr = new_string_expr (s);
 						return VALUE;
 					}
 
@@ -135,7 +165,7 @@ FRAMEID		{ID}(\.{ID})*
 						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
-						qp_yylval.expr = new_vector_expr (v);
+						yylval->expr = new_vector_expr (v);
 						return VALUE;
 					}
 
@@ -143,20 +173,20 @@ FRAMEID		{ID}(\.{ID})*
 						quat_t      q;
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
-						qp_yylval.expr = new_quaternion_expr (q);
+						yylval->expr = new_quaternion_expr (q);
 						return VALUE;
 					}
 
 {RELOP}				{
-						qp_yylval.op = convert_relop (yytext);
+						yylval->op = convert_relop (yytext);
 						return RELOP;
 					}
 {ADDOP}				{
-						qp_yylval.op = yytext[0];
+						yylval->op = yytext[0];
 						return ADDOP;
 					}
 {MULOP}				{
-						qp_yylval.op = yytext[0];
+						yylval->op = yytext[0];
 						return MULOP;
 					}
 
@@ -170,7 +200,7 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qp_yylval.expr = new_int_expr (ret);
+							yylval->expr = new_int_expr (ret);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -190,12 +220,6 @@ FRAMEID		{ID}(\.{ID})*
 <*>.				error (0, "all your typo are belong to us");
 
 %%
-
-int
-yywrap (void)
-{
-	return 1;
-}
 
 typedef struct {
 	const char *name;
@@ -240,7 +264,7 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-keyword_or_id (const char *token)
+keyword_or_id (YYSTYPE *lval, const char *token)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
@@ -255,9 +279,9 @@ keyword_or_id (const char *token)
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
-			qp_yylval.op = token[0];
+			lval->op = token[0];
 		} else {
-			qp_yylval.type = keyword->type;
+			lval->type = keyword->type;
 		}
 		return keyword->value;
 	}
@@ -265,10 +289,10 @@ keyword_or_id (const char *token)
 	if (!sym)
 		sym = new_symbol (token);
 	if (sym->sy_type == sy_type) {
-		qp_yylval.type = sym->type;
+		lval->type = sym->type;
 		return TYPE_NAME;
 	}
-	qp_yylval.symbol = sym;
+	lval->symbol = sym;
 	return ID;
 }
 
@@ -300,12 +324,23 @@ convert_relop (const char *relop)
 	internal_error (0, "bad relop %s", relop);
 }
 
-#ifdef YY_FLEX_REALLOC_HACK
-static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
-#else
-#ifdef yyunput
-static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
-#endif
-static __attribute__ ((used)) int (*input_hack)(void) = input;
-#endif
+int
+qp_yyparse (FILE *in)
+{
+	int         status;
+	yyscan_t    scanner;
+	qp_yypstate *ps = qp_yypstate_new ();
 
+	yylex_init_extra (0, &scanner);
+	yyset_in (in, scanner);
+	YYLTYPE lloc = { 1, 1, 1, 1 };
+	do {
+		YYSTYPE lval;
+		int token = yylex (&lval, &lloc, scanner);
+		status = qp_yypush_parse (ps, token, &lval, &lloc, scanner);
+	} while (status == YYPUSH_MORE);
+
+	yylex_destroy (scanner);
+	qp_yypstate_delete (ps);
+	return status;
+}

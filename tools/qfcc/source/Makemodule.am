@@ -93,9 +93,9 @@ tools/qfcc/source/qc-parse.c: tools/qfcc/source/qc-parse.y
 tools/qfcc/source/qc-lex.c: tools/qfcc/source/qc-lex.l
 	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 tools/qfcc/source/qp-parse.c: tools/qfcc/source/qp-parse.y
-	$(AM_V_YACC)$(YACCCOMPILE) -Dapi.prefix={qp_yy} $< -o $@
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qp-lex.c: tools/qfcc/source/qp-lex.l
-	$(AM_V_LEX)$(LEXCOMPILE) -Pqp_yy -o$@ $<
+	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 
 EXTRA_DIST += \
 	tools/qfcc/source/qfpreqcc

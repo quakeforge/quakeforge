@@ -1,4 +1,3 @@
-%{
 /*
 	qp-parse.y
 
@@ -28,6 +27,13 @@
 		Boston, MA  02111-1307, USA
 
 */
+%define api.prefix {qp_yy}
+%define api.pure full
+%define api.push-pull push
+%locations
+%parse-param {void *scanner}
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -55,10 +61,13 @@
 #define YYERROR_VERBOSE 1
 #undef YYERROR_VERBOSE
 
-extern char *qp_yytext;
+#include "tools/qfcc/source/qp-parse.h"
+
+#define qp_yytext qp_yyget_text (scanner)
+char *qp_yyget_text (void *scanner);
 
 static void
-yyerror (const char *s)
+yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 {
 #ifdef YYERROR_VERBOSE
 	error (0, "%s %s\n", qp_yytext, s);
@@ -68,12 +77,12 @@ yyerror (const char *s)
 }
 
 static void
-parse_error (void)
+parse_error (void *scanner)
 {
 	error (0, "parse error before %s", qp_yytext);
 }
 
-#define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
 
 int yylex (void);
 

@@ -117,10 +117,8 @@ extern	pr_info_t	pr;
 
 const char *file_basename (const char *filename, int keepdot) __attribute__((pure));
 
-extern FILE *qc_yyin;
-extern FILE *qp_yyin;
-int qc_yyparse (void);
-int qp_yyparse (void);
+int qc_yyparse (FILE *in);
+int qp_yyparse (FILE *in);
 extern int qc_yydebug;
 extern int qp_yydebug;
 
