@@ -17,7 +17,7 @@
 #define QFV_duQueueBeginLabel(device, queue, name...)
 #define QFV_duQueueEndLabel(device, queue)
 #define QFV_duQueueInsertLabel(device, queue, name...)
-#define QFV_duSetObjectName(device, type, handle, name)
+#define QFV_duSetObjectName(device, type, handle, name) ((void)device, (void)type, (void)handle)
 #define QFV_duSetObjectTag(device, type, handle, name, size, tag)
 #define QFV_duSubmitMessage(inst, severity, types, data)
 #else
