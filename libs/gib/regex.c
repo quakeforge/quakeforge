@@ -4619,8 +4619,7 @@ re_compile_pattern (
 static struct re_pattern_buffer re_comp_buf;
 
 const char *
-re_comp (s)
-    const char *s;
+re_comp (const char *s)
 {
   reg_errcode_t ret;
 
@@ -4657,8 +4656,7 @@ re_comp (s)
 
 
 int
-re_exec (s)
-    const char *s;
+re_exec (const char *s)
 {
   const int len = strlen (s);
   return

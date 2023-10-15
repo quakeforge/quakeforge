@@ -548,12 +548,6 @@ PF_charcount (progs_t *pr, void *data)
 	R_FLOAT (pr) = count;
 }
 
-#if (INT_MAX == 2147483647) && (INT_MIN == -2147483648)
-# define INT_WIDTH 11
-#else /* I hope... */
-# define INT_WIDTH 20
-#endif
-
 /*
 	string () gametype
 */
