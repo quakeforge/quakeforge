@@ -2760,8 +2760,8 @@ static void
 zero_components (expr_t *block, const expr_t *dst, int memset_base, int memset_size)
 {
 	auto base = alias_expr (&type_int, dst, memset_base);
-	auto zero = new_int_expr (0);
-	auto size = new_int_expr (memset_size);
+	auto zero = new_int_expr (0, false);
+	auto size = new_int_expr (memset_size, false);
 	append_expr (block, new_memset_expr (base, zero, size));
 }
 

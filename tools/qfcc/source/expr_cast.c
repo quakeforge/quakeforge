@@ -133,10 +133,10 @@ cast_expr (type_t *dstType, const expr_t *e)
 		return address_expr (e, dstType->t.fldptr.type);
 	}
 	if (is_short (srcType)) {
-		e = new_int_expr (expr_short (e));
+		e = new_int_expr (expr_short (e), false);
 		srcType = &type_int;
 	} else if (is_ushort (srcType)) {
-		e = new_int_expr (expr_ushort (e));
+		e = new_int_expr (expr_ushort (e), false);
 		srcType = &type_int;
 	}
 	expr_t *c = 0;

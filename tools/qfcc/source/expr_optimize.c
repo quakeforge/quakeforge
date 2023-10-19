@@ -529,7 +529,8 @@ optimize_adds (const expr_t **expr_list)
 		}
 		if (same++) {
 			auto type = get_type (*scan);
-			auto mult = cast_expr (base_type (type), new_int_expr (same));
+			auto mult = cast_expr (base_type (type),
+								   new_int_expr (same, false));
 			mult = edag_add_expr (mult);
 			*scan = scale_expr (type, *scan, mult);
 		}

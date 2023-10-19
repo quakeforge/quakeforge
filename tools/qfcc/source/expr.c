@@ -89,7 +89,7 @@ convert_name (const expr_t *e)
 	}
 	if (!strcmp (sym->name, "__LINE__")
 		&& current_func) {
-		return  new_int_expr (e->line);
+		return new_int_expr (e->line, false);
 	}
 	if (!strcmp (sym->name, "__INFINITY__")
 		&& current_func) {
@@ -802,9 +802,11 @@ new_quaternion_expr (const float *quaternion_val)
 }
 
 const expr_t *
-new_int_expr (int int_val)
+new_int_expr (int int_val, bool implicit)
 {
-	return new_value_expr (new_int_val (int_val));
+	auto i = (expr_t *) new_value_expr (new_int_val (int_val));
+	i->implicit = implicit;
+	return i;
 }
 
 const expr_t *
@@ -1281,7 +1283,7 @@ new_offset_alias_expr (type_t *type, const expr_t *expr, int offset)
 	alias->type = ex_alias;
 	alias->alias.type = type;
 	alias->alias.expr = edag_add_expr (expr);
-	alias->alias.offset = edag_add_expr (new_int_expr (offset));
+	alias->alias.offset = edag_add_expr (new_int_expr (offset, false));
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return edag_add_expr (alias);
@@ -1572,8 +1574,8 @@ convert_from_bool (const expr_t *e, type_t *type)
 		one = new_float_expr (1);
 		zero = new_float_expr (0);
 	} else if (is_int (type)) {
-		one = new_int_expr (1);
-		zero = new_int_expr (0);
+		one = new_int_expr (1, false);
+		zero = new_int_expr (0, false);
 	} else if (is_enum (type) && enum_as_bool (type, &enum_zero, &enum_one)) {
 		zero = enum_zero;
 		one = enum_one;
@@ -1764,7 +1766,7 @@ unary_expr (int op, const expr_t *e)
 					case ev_ushort:
 						internal_error (e, "long not implemented");
 					case ev_int:
-						return new_int_expr (-expr_int (e));
+						return new_int_expr (-expr_int (e), false);
 					case ev_uint:
 						return new_uint_expr (-expr_uint (e));
 					case ev_short:
@@ -1864,21 +1866,23 @@ unary_expr (int op, const expr_t *e)
 						internal_error (e, 0);
 					case ev_string:
 						s = expr_string (e);
-						return new_int_expr (!s || !s[0]);
+						return new_int_expr (!s || !s[0], false);
 					case ev_double:
-						return new_int_expr (!expr_double (e));
+						return new_int_expr (!expr_double (e), false);
 					case ev_float:
-						return new_int_expr (!expr_float (e));
+						return new_int_expr (!expr_float (e), false);
 					case ev_vector:
-						return new_int_expr (!VectorIsZero (expr_vector (e)));
+						return new_int_expr (!VectorIsZero (expr_vector (e)),
+											 false);
 					case ev_quaternion:
-						return new_int_expr (!QuatIsZero (expr_quaternion (e)));
+						return new_int_expr (!QuatIsZero (expr_quaternion (e)),
+											 false);
 					case ev_long:
 					case ev_ulong:
 					case ev_ushort:
 						internal_error (e, "long not implemented");
 					case ev_int:
-						return new_int_expr (!expr_int (e));
+						return new_int_expr (!expr_int (e), e->implicit);
 					case ev_uint:
 						return new_uint_expr (!expr_uint (e));
 					case ev_short:
@@ -1967,7 +1971,7 @@ unary_expr (int op, const expr_t *e)
 					case ev_ushort:
 						internal_error (e, "long not implemented");
 					case ev_int:
-						return new_int_expr (~expr_int (e));
+						return new_int_expr (~expr_int (e), e->implicit);
 					case ev_uint:
 						return new_uint_expr (~expr_uint (e));
 					case ev_short:
@@ -1975,7 +1979,7 @@ unary_expr (int op, const expr_t *e)
 					case ev_invalid:
 						t = get_type (e);
 						if (t->meta == ty_enum) {
-							return new_int_expr (~expr_int (e));
+							return new_int_expr (~expr_int (e), false);
 						}
 						break;
 					case ev_type_count:
@@ -2022,7 +2026,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_extend:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
-						const expr_t *n1 = new_int_expr (-1);
+						const expr_t *n1 = new_int_expr (-1, false);
 						return binary_expr ('-', n1, e);
 					} else {
 						expr_t     *n = new_unary_expr (op, e);
@@ -2449,7 +2453,7 @@ at_return_expr (function_t *f, const expr_t *e)
 	}
 	if (is_nil (e)) {
 		// int or pointer 0 seems reasonable
-		return new_return_expr (new_int_expr (0));
+		return new_return_expr (new_int_expr (0, false));
 	} else if (!is_function_call (e)) {
 		return error (e, "@return value not a function");
 	}
@@ -2523,7 +2527,7 @@ incop_expr (int op, const expr_t *e, int postop)
 	if (e->type == ex_error)
 		return e;
 
-	auto one = new_int_expr (1);		// int constants get auto-cast to float
+	auto one = new_int_expr (1, false);	// int constants get auto-cast to float
 	if (postop) {
 		expr_t     *t1, *t2;
 		type_t     *type = get_type (e);
@@ -2586,10 +2590,10 @@ array_expr (const expr_t *array, const expr_t *index)
 	}
 	if (is_array (array_type)) {
 		ele_type = array_type->t.array.type;
-		base = new_int_expr (array_type->t.array.base);
+		base = new_int_expr (array_type->t.array.base, false);
 	} else if (is_ptr (array_type)) {
 		ele_type = array_type->t.fldptr.type;
-		base = new_int_expr (0);
+		base = new_int_expr (0, false);
 	} else {
 		ele_type = ev_types[array_type->type];
 		if (array->type == ex_uexpr && array->expr.op == '.') {
@@ -2597,9 +2601,9 @@ array_expr (const expr_t *array, const expr_t *index)
 			vec = cast_expr (pointer_type (ele_type), vec);
 			return unary_expr ('.', vec);
 		}
-		base = new_int_expr (0);
+		base = new_int_expr (0, false);
 	}
-	auto scale = new_int_expr (type_size (ele_type));
+	auto scale = new_int_expr (type_size (ele_type), false);
 	auto offset = binary_expr ('*', base, scale);
 	index = binary_expr ('*', index, scale);
 	index = binary_expr ('-', index, offset);
@@ -3022,7 +3026,7 @@ sizeof_expr (const expr_t *expr, struct type_s *type)
 	if (!type)
 		type = get_type (expr);
 	if (type) {
-		expr = new_int_expr (type_aligned_size (type));
+		expr = new_int_expr (type_aligned_size (type), false);
 	}
 	return expr;
 }

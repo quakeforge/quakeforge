@@ -72,7 +72,7 @@ cmp_result_expr (int result)
 	if (is_float (type_default)) {
 		return new_float_expr (result);
 	} else {
-		return new_int_expr(result);
+		return new_int_expr (result, false);
 	}
 }
 
@@ -750,36 +750,36 @@ do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	const expr_t *new = 0;
 	switch (op) {
 		case '+':
-			new = new_int_expr (val1 + val2);
+			new = new_int_expr (val1 + val2, false);
 			break;
 		case '-':
-			new = new_int_expr (val1 - val2);
+			new = new_int_expr (val1 - val2, false);
 			break;
 		case '*':
-			new = new_int_expr (val1 * val2);
+			new = new_int_expr (val1 * val2, false);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
 				warning (e2, "%d / %d == %d", val1, val2, val1 / val2);
-			new = new_int_expr (val1 / val2);
+			new = new_int_expr (val1 / val2, false);
 			break;
 		case '&':
-			new = new_int_expr (val1 & val2);
+			new = new_int_expr (val1 & val2, false);
 			break;
 		case '|':
-			new = new_int_expr (val1 | val2);
+			new = new_int_expr (val1 | val2, false);
 			break;
 		case '^':
-			new = new_int_expr (val1 ^ val2);
+			new = new_int_expr (val1 ^ val2, false);
 			break;
 		case '%':
-			new = new_int_expr (val1 % val2);
+			new = new_int_expr (val1 % val2, false);
 			break;
 		case SHL:
-			new = new_int_expr (val1 << val2);
+			new = new_int_expr (val1 << val2, false);
 			break;
 		case SHR:
-			new = new_int_expr (val1 >> val2);
+			new = new_int_expr (val1 >> val2, false);
 			break;
 		case AND:
 			new = cmp_result_expr (val1 && val2);
@@ -1320,7 +1320,7 @@ uop_float (int op, const expr_t *e, const expr_t *e1)
 			return new_float_expr (~(int) expr_float (e1));
 		case 'C':
 			if (is_int(type)) {
-				return new_int_expr (expr_float (e1));
+				return new_int_expr (expr_float (e1), false);
 			} else {
 				return new_double_expr (expr_float (e1), false);
 			}
@@ -1464,11 +1464,11 @@ uop_int (int op, const expr_t *e, const expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_int_expr (-expr_int (e1));
+			return new_int_expr (-expr_int (e1), false);
 		case '!':
 			return cmp_result_expr (!expr_int (e1));
 		case '~':
-			return new_int_expr (~expr_int (e1));
+			return new_int_expr (~expr_int (e1), false);
 		case 'C':
 			return new_float_expr (expr_int (e1));
 	}
@@ -1545,7 +1545,7 @@ uop_double (int op, const expr_t *e, const expr_t *e1)
 			return cmp_result_expr (!expr_double (e1));
 		case 'C':
 			if (is_int(type)) {
-				return new_int_expr (expr_double (e1));
+				return new_int_expr (expr_double (e1), false);
 			} else {
 				return new_float_expr (expr_double (e1));
 			}

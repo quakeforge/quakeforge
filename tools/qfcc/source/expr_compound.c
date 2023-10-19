@@ -337,8 +337,8 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 		unsigned    end = in->element;
 		if (end > start) {
 			auto dst = new_offset_alias_expr (&type_int, init, start);
-			auto zero = new_int_expr (0);
-			auto count = new_int_expr (end - start);
+			auto zero = new_int_expr (0, false);
+			auto count = new_int_expr (end - start, false);
 			append_expr (local_expr, new_memset_expr (dst, zero, count));
 		}
 		// skip over all the initialized locations
@@ -349,8 +349,8 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 	}
 	if (start < (unsigned) type_size (init_type)) {
 		auto dst = new_offset_alias_expr (&type_int, init, start);
-		auto zero = new_int_expr (0);
-		auto count = new_int_expr (type_size (init_type) - start);
+		auto zero = new_int_expr (0, false);
+		auto count = new_int_expr (type_size (init_type) - start, false);
 		append_expr (local_expr, new_memset_expr (dst, zero, count));
 	}
 	set_delete (initialized);

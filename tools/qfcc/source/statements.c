@@ -851,7 +851,7 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
 		// can be any size
-		src_expr = new_int_expr (0);
+		src_expr = new_int_expr (0, false);
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		opcode_set = opcode_sets[1];
 		if (op) {
@@ -928,8 +928,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		//count_expr = expr_file_line (new_short_expr (count), e);
 		count_expr = new_short_expr (count);
 	} else {
-		//count_expr = expr_file_line (new_int_expr (count), e);
-		count_expr = new_int_expr (count);
+		//count_expr = expr_file_line (new_int_expr (count, false), e);
+		count_expr = new_int_expr (count, false);
 	}
 	sblock = statement_subexpr (sblock, count_expr, &size);
 
@@ -1983,9 +1983,9 @@ expr_nil (sblock_t *sblock, const expr_t *e, operand_t **op)
 	if (nil_size < 0x10000) {
 		size_expr = new_short_expr (nil_size);
 	} else {
-		size_expr = new_int_expr (nil_size);
+		size_expr = new_int_expr (nil_size, false);
 	}
-	sblock = statement_subexpr (sblock, new_int_expr(0), &zero);
+	sblock = statement_subexpr (sblock, new_int_expr(0, false), &zero);
 	sblock = statement_subexpr (sblock, size_expr, &size);
 
 	s = new_statement (st_memset, "memset", e);

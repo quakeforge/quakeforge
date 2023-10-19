@@ -916,7 +916,7 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 		}
 		e1 = cast_expr (&type_int, e1);
 		e2 = cast_expr (&type_int, e2);
-		psize = new_int_expr (type_size (t1->t.fldptr.type));
+		psize = new_int_expr (type_size (t1->t.fldptr.type), false);
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
 	} else if (is_ptr (t1)) {
 		offset = cast_expr (&type_int, e2);
@@ -928,7 +928,7 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 		ptype = t2;
 	}
 	// op is known to be + or -
-	psize = new_int_expr (type_size (ptype->t.fldptr.type));
+	psize = new_int_expr (type_size (ptype->t.fldptr.type), false);
 	offset = unary_expr (op, binary_expr ('*', offset, psize));
 	return offset_pointer_expr (ptr, offset);
 }

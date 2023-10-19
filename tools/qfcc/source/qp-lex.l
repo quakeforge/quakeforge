@@ -143,7 +143,7 @@ FRAMEID		{ID}(\.{ID})*
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						yylval->expr = new_int_expr (i);
+						yylval->expr = new_int_expr (i, false);
 						return VALUE;
 					}
 
@@ -200,7 +200,7 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval->expr = new_int_expr (ret);
+							yylval->expr = new_int_expr (ret, false);
 							return VALUE;
 						} else {
 							BEGIN (-ret);

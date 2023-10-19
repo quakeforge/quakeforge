@@ -698,7 +698,7 @@ const float *expr_quaternion (const expr_t *e) __attribute__((pure));
 	\return			The new int constant expression node
 					(expr_t::e::int_val).
 */
-const expr_t *new_int_expr (int int_val);
+const expr_t *new_int_expr (int int_val, bool implicit);
 int expr_int (const expr_t *e) __attribute__((pure));
 
 /** Create a new int constant expression node.

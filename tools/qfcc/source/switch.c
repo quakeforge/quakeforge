@@ -137,11 +137,11 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
-			value = new_int_expr (expr_int (value));
+			value = new_int_expr (expr_int (value), false);
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
-			value = new_int_expr (expr_float (value));
+			value = new_int_expr (expr_float (value), false);
 		} else if (is_float (type) && is_integral (val_type)) {
 			debug (value, "integeral label used in float switch");
 			value = new_float_expr (expr_int (value));
@@ -384,7 +384,7 @@ check_enum_switch (switch_block_t *switch_block)
 
 	for (enum_val = type->t.symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_int_expr (enum_val->s.value->v.int_val);
+		cl.value = new_int_expr (enum_val->s.value->v.int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",

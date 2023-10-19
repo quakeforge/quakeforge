@@ -178,8 +178,7 @@ STRING		\"(\\.|[^"\\])*\"
 							if (tolower (c[1]) == 'l') {
 								yylval->expr = new_long_expr (i);
 							} else {
-								yylval->expr = new_int_expr (i);
-								((expr_t *) yylval->expr)->implicit = 1;
+								yylval->expr = new_int_expr (i, true);
 							}
 						}
 						return VALUE;
@@ -269,7 +268,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						yylval->expr = new_int_expr (*str);
+						yylval->expr = new_int_expr (*str, false);
 						return VALUE;
 					}
 
@@ -338,7 +337,7 @@ STRING		\"(\\.|[^"\\])*\"
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval->expr = new_int_expr (ret);
+							yylval->expr = new_int_expr (ret, false);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
