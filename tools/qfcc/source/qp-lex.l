@@ -60,8 +60,10 @@
 # define YY_FLEX_REALLOC_HACK
 #endif
 
-#define YY_NO_INPUT
-#define YY_NO_UNPUT
+#define YY_NO_INPUT	// debian flex
+#define YY_NO_UNPUT	// debian flex
+#define YY_NO_YYINPUT
+#define YY_NO_YYUNPUT
 
 
 #define YYSTYPE QP_YYSTYPE

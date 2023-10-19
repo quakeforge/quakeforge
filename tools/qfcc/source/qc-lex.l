@@ -75,8 +75,10 @@
 # define YY_FLEX_REALLOC_HACK
 #endif
 
-#define YY_NO_INPUT
-#define YY_NO_UNPUT
+#define YY_NO_INPUT	// debian flex
+#define YY_NO_UNPUT	// debian flex
+#define YY_NO_YYINPUT
+#define YY_NO_YYUNPUT
 
 #define YYSTYPE QC_YYSTYPE
 #define YYLTYPE QC_YYLTYPE
@@ -139,7 +141,7 @@ STRING		\"(\\.|[^"\\])*\"
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
 
 %%
-					yy_flex_debug = 0;
+					yyset_debug (0, yyscanner);
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 					grab_write = GRAB_WRITE;
