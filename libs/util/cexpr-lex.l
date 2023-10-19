@@ -55,8 +55,10 @@
 #include "QF/cexpr.h"
 #include "libs/util/cexpr-parse.h"
 
-#define YY_NO_INPUT
-#define YY_NO_UNPUT
+#define YY_NO_INPUT	// debian flex
+#define YY_NO_UNPUT	// debian flex
+#define YY_NO_YYINPUT
+#define YY_NO_YYUNPUT
 
 #define YYSTYPE CEXPR_YYSTYPE
 #define YY_EXTRA_TYPE exprctx_t *

@@ -68,7 +68,10 @@
 # define YY_FLEX_REALLOC_HACK
 #endif
 
-#define YY_NO_UNPUT
+#define YY_NO_INPUT	// debian flex
+#define YY_NO_UNPUT	// debian flex
+#define YY_NO_YYINPUT
+#define YY_NO_YYUNPUT
 #define YY_DECL int yylex YY_PROTO(( void ))
 YY_DECL;
 
@@ -767,12 +770,3 @@ parse_float_vector (const char *token, int width)
 	expr->implicit = !t;
 	return expr;
 }
-
-#ifdef YY_FLEX_REALLOC_HACK
-static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
-#else
-#ifdef yyunput
-static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
-#endif
-static __attribute__ ((used)) int (*input_hack)(void) = input;
-#endif
