@@ -101,10 +101,15 @@ FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int keyword_or_id (YYSTYPE *lval, const char *token);
-static const expr_t *parse_float_vector (const char *token, int width);
-static const expr_t *parse_int_vector (const char *token, int width);
 static void user_action (rua_tok_t *tok, rua_loc_t *loc,
 						 const char *text, size_t textlen);
+
+enum {
+	rua_eof = 1,
+	rua_error,
+	rua_number,
+	rua_vector,
+};
 
 #define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng);
 
@@ -113,16 +118,10 @@ static void user_action (rua_tok_t *tok, rua_loc_t *loc,
 s			[ \t]
 m			[\-+]
 D			[0-9]
-B			[01]
-X			[0-9a-fA-F]
-ID			[a-zA-Z_][a-zA-Z_0-9]*
-FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
-FLOATf		{FLOAT}[fF]
-FLOATd		{FLOAT}[dD]
-FCOMP		{m}?{FLOAT}
+IDs			[a-zA-Z_]
+IDc			[a-zA-Z_0-9]
+ID			{IDs}{IDc}*
 FD			[fFdD]
-INT			({D}+|0[xX]{X}+|0[bB]{B})
-ICOMP		{m}?{INT}
 UL			([uU]?([lL][lL]?)?)
 ULFD		({UL}|{FD})
 RANGE		\.\.
@@ -131,7 +130,10 @@ FRAMEID		{ID}(\.{ID})*
 PRAGMAID	{ID}(-{ID})*
 STRING		\"(\\.|[^"\\])*\"
 
+pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
+
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
+%x      VECTOR
 
 %%
 					auto extra = qc_yyget_extra (yyscanner);
@@ -157,61 +159,6 @@ STRING		\"(\\.|[^"\\])*\"
 
 ^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
-{INT}+{UL}?			{
-						const char *c = yytext + yyleng - 1;
-						pr_long_t   i;
-
-						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
-							i = strtol (yytext + 2, 0, 2);
-						else
-							i = strtol (yytext, 0, 0);
-						if (tolower (*c) == 'u') {
-							if (tolower (c[1]) == 'l') {
-								yylval->value.expr = new_ulong_expr (i);
-							} else {
-								yylval->value.expr = new_uint_expr (i);
-							}
-						} else {
-							if (tolower (c[1]) == 'l') {
-								yylval->value.expr = new_long_expr (i, false);
-							} else {
-								yylval->value.expr = new_int_expr (i, true);
-							}
-						}
-						return VALUE;
-					}
-
-{FLOAT}				{
-						// advanced code defaults to double, but traditional
-						// and extended code defaults to float
-						if (options.traditional < 1) {
-							double      d = strtod (yytext, 0);
-							yylval->value.expr = new_double_expr (d, true);
-						} else {
-							float       f = strtof (yytext, 0);
-							yylval->value.expr = new_float_expr (f);
-						}
-						return VALUE;
-					}
-{FLOATf}			{
-						float       f = strtof (yytext, 0);
-						yylval->value.expr = new_float_expr (f);
-						return VALUE;
-					}
-{FLOATd}			{
-						// advanced code defaults to double, but traditional
-						// and extended code defaults to float
-						if (options.traditional < 1) {
-							double      d = strtod (yytext, 0);
-							yylval->value.expr = new_double_expr (d, false);
-						} else {
-							float       f = strtof (yytext, 0);
-							yylval->value.expr = new_float_expr (f);
-							warning (0, "truncating double constant to float");
-						}
-						return VALUE;
-					}
-
 {ID}				{
 						int         tok = keyword_or_id(yylval, yytext);
 						return tok;
@@ -230,35 +177,11 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 @					return '@';
 
-'{s}*{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->value.expr = parse_int_vector (yytext, 2);
-						return VALUE;
-					}
-
-'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->value.expr = parse_int_vector (yytext, 3);
-						return VALUE;
-					}
-
-'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->value.expr = parse_int_vector (yytext, 4);
-						return VALUE;
-					}
-
-'{s}*{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->value.expr = parse_float_vector (yytext, 2);
-						return VALUE;
-					}
-
-'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->value.expr = parse_float_vector (yytext, 3);
-						return VALUE;
-					}
-
-'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->value.expr = parse_float_vector (yytext, 4);
-						return VALUE;
-					}
+{pp_number}			{ return -rua_number; }
+'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}? { return -rua_vector; }
+<VECTOR>{pp_number}		{ return -rua_number; }
+<VECTOR>{m}				{ return yytext[0]; }
+<VECTOR>'				{ return -rua_eof; }
 
 '(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
 						const char *str = make_string (yytext, 0);
@@ -606,182 +529,353 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 	return NAME;
 }
 
-static const expr_t *
-parse_int_vector (const char *token, int width)
+enum {
+	suff_error = -1,
+	suff_implicit,
+	suff_unsigned,
+	suff_long,
+	suff_unsigned_long,
+	suff_float,
+	suff_double,
+	suff_long_double,
+};
+
+static int
+parse_suffix (const char *suffix, bool fp)
 {
-	char        t1 = 0, t2 = 0;
-	type_t     *type = 0;
+	int  expl = suff_implicit;
+	bool unsign = false;
 
-	union {
-		pr_long_t   l[4];
-		pr_type_t   t[PR_SIZEOF (dvec4)];
-	}           long_data = {};
-	pr_type_t  *data = __builtin_choose_expr (
-		sizeof (pr_long_t) == sizeof (int64_t), long_data.t, (void) 0);
-
-	switch (width) {
-		case 4:
-			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1],
-					&long_data.l[2], &long_data.l[3], &t1, &t2);
-			break;
-		case 3:
-			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1],
-					&long_data.l[2], &t1, &t2);
-			break;
-		case 2:
-			sscanf (token, "' %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1], &t1, &t2);
-			break;
+	if (!*suffix) {
+		return 0;
 	}
-	t1 = tolower (t1);
-	t2 = tolower (t2);
-	if (options.code.progsversion < PROG_VERSION) {
-		if (!t1) {
-			t1 = 'f';
+	if (fp) {
+		if (*suffix == 'f' || *suffix == 'F') {
+			expl = suff_float;
+			suffix++;
+		} else if (*suffix == 'd' || *suffix == 'D') {
+			// treat as explicit double unless it's a proper C decimal
+			// suffix, in which case the decimal part will be ignored
+			// (non-standard, but no decimal supprt)
+			expl = suff_double;
+			suffix++;
+			if (*suffix == 'f' || *suffix == 'F'
+				|| *suffix == 'd' || *suffix == 'D'
+				|| *suffix == 'l' || *suffix == 'L') {
+				warning (0, "decimal fp treated as binary fp");
+				expl = suff_double;
+				suffix++;
+			}
+		} else if (*suffix == 'l' || *suffix == 'L') {
+			expl = suff_long_double;
+			suffix++;
+		}
+	} else {
+		if (*suffix == 'f' || *suffix == 'F') {
+			expl = suff_float;
+			suffix++;
+		} else if (*suffix == 'd' || *suffix == 'D') {
+			expl = suff_double;
+			suffix++;
+		} else {
+			if (*suffix == 'u' || *suffix == 'U') {
+				unsign = true;
+				expl = suff_unsigned;
+				suffix++;
+			}
+			if (*suffix == 'l' || *suffix == 'L') {
+				expl = unsign ? suff_unsigned_long : suff_long;
+				suffix++;
+				if (*suffix == 'l' || *suffix == 'L') {
+					suffix++;
+				}
+				if (!unsign && (*suffix == 'u' || *suffix == 'U')) {
+					expl = suff_unsigned_long;
+					suffix++;
+				}
+			}
 		}
 	}
-	const expr_t *expr = 0;
-	switch (t1) {
-		case 'u':
-			if (t2 == 'l') {
-				type = &type_ulong;
-				type = vector_type (type, width);
-				expr = new_value_expr (new_type_value (type, data), !t1);
-			} else {
-				type = &type_uint;
-				union {
-					pr_uint_t   u[4];
-					pr_type_t   t[PR_SIZEOF (ivec4)];
-				}           uint_data = {
-					.u = {
-						long_data.l[0],
-						long_data.l[1],
-						long_data.l[2],
-						long_data.l[3],
-					}
-				};
-				data = uint_data.t;
-				type = vector_type (type, width);
-				expr = new_value_expr (new_type_value (type, data), !t1);
-			}
-			break;
-		case 'l':
-			type = &type_long;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data), !t1);
-			break;
-		case 'f':
-			type = &type_float;
-			union {
-				pr_float_t  f[4];
-				pr_type_t   t[PR_SIZEOF (vec4)];
-			}           float_data = {
-				.f = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = float_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data), !t1);
-			break;
-		case 'd':
-			type = &type_double;
-			union {
-				pr_double_t d[4];
-				pr_type_t   t[PR_SIZEOF (dvec4)];
-			}           double_data = {
-				.d = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = double_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data), !t1);
-			break;
-		case 0:
-			type = &type_int;
-			union {
-				pr_int_t    i[4];
-				pr_type_t   t[PR_SIZEOF (ivec4)];
-			}           int_data = {
-				.i = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = int_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data), !t1);
-			break;
+
+	if (*suffix) {
+		return suff_error;
 	}
-	return expr;
+
+	return expl;
 }
 
-static const expr_t *
-parse_float_vector (const char *token, int width)
+static int
+parse_number (rua_tok_t *tok, yyscan_t scanner)
 {
-	char        t = 0;
-	type_t     *type = 0;
-
-	union {
-		pr_double_t d[4];
-		pr_type_t   t[PR_SIZEOF (dvec4)];
-	}           double_data = {};
-	pr_type_t  *data = __builtin_choose_expr (
-		sizeof (pr_double_t) == sizeof (double), double_data.t, (void) 0);
-
-	switch (width) {
-		case 4:
-			sscanf (token, "' %lf %lf %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1],
-					&double_data.d[2], &double_data.d[3], &t);
-			break;
-		case 3:
-			sscanf (token, "' %lf %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1],
-					&double_data.d[2], &t);
-			type = (t == 'f' || t == 'F') ? &type_vec3 : &type_dvec3;
-			break;
-		case 2:
-			sscanf (token, "' %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1], &t);
-			type = (t == 'f' || t == 'F') ? &type_vec2 : &type_dvec2;
-			break;
-	}
-	if (options.code.progsversion < PROG_VERSION) {
-		if (!t) {
-			t = 'f';
+	bool binary = false;
+	const char *type = "integer";
+	bool hex = false;
+	bool fp = false;
+	char buf[tok->textlen + 1], *dst = buf;
+	const char *src = tok->text;
+	if ((*dst = *src++) == '0') {
+		switch ((*++dst = *src++)) {
+			case 'b': case 'B':
+				binary = true;
+				type = "binary";
+				break;
+			case 'x': case 'X':
+				hex = true;
+				type = "hexadecimal";
+				break;
+			case '.':
+				fp = true;
+				break;
+			case '1' ... '9':
+				type = "octal";	// unless fp becomes true
+				break;
+			case '\'': case '_':
+				if (*src == 'b' || *src == 'B' || *src == 'x' || *src == 'X') {
+					error (0, "digit separator outside digit sequence");
+					return -rua_error;
+				}
+				break;
 		}
 	}
-	if (t == 'f' || t == 'F') {
-		volatile union {
-			pr_float_t  f[4];
-			pr_type_t   t[PR_SIZEOF (vec4)];
-		}           float_data = {
-			.f = {
-				double_data.d[0],
-				double_data.d[1],
-				double_data.d[2],
-				double_data.d[3],
+	if (*dst) {
+		dst += (*dst != '\'' && *dst != '_');
+		while ((*dst = *src++)) {
+			if (hex && (*dst == 'p' || *dst == 'P')) {
+				fp = true;
 			}
-		};
-		data = (pr_type_t *) float_data.t;
-		type = &type_float;
+			if (!hex && (*dst == 'e' || *dst == 'E')) {
+				fp = true;
+			}
+			if (*dst == '.') {
+				fp = true;
+			}
+			// strip out digit separators (' is standard C, _ is a rust
+			// thing, but it does look a bit nicerer than ', so why not).
+			dst += (*dst != '\'' && *dst != '_');
+		}
+	}
+	// use long long to avoid bit-size issues on windows
+	long long   lvalue = 0;
+	double      fvalue = 0;
+	char       *endptr = 0;
+	if (binary) {
+		// to get here, 0b (or 0B) was seen, so buf is guaranted to start with
+		// that
+		lvalue = strtoll (buf + 2, &endptr, 2);
 	} else {
+		if (fp) {
+			fvalue = strtod (buf, &endptr);
+		} else {
+			lvalue = strtoll (buf, &endptr, 0);
+		}
+	}
+
+	int expl = parse_suffix (endptr, fp);
+	if (expl < 0) {
+		error (0, "invalid suffix \"%s\" on %s constant", endptr,
+			   fp ? "floating" : type);
+		return -rua_error;
+	}
+
+	if (fp) {
+		if (expl == suff_float) {
+			tok->value.expr = new_float_expr (fvalue);
+		} else {
+			if (expl == suff_long_double) {
+				warning (0, "long double treated as double");
+				expl = suff_double;
+			}
+			tok->value.expr = new_double_expr (fvalue, expl == suff_implicit);
+		}
+	} else {
+		if (expl == suff_unsigned) {
+			tok->value.expr = new_uint_expr (lvalue);
+		} else if (expl == suff_long || expl == suff_implicit) {
+			tok->value.expr = new_long_expr (lvalue, expl == suff_implicit);
+		} else if (expl == suff_unsigned_long) {
+			tok->value.expr = new_ulong_expr (lvalue);
+		} else if (expl == suff_float) {
+			tok->value.expr = new_float_expr (lvalue);
+		} else if (expl == suff_double) {
+			tok->value.expr = new_double_expr (lvalue, false);
+		} else {
+			internal_error (0, "invalid suffix enum: %d", expl);
+		}
+	}
+	return VALUE;
+}
+
+typedef struct {
+	yyscan_t    scanner;
+	yybuffer    buffer;
+} buffer_raii_t;
+
+static void
+qc_restore_buffer (buffer_raii_t *raii)
+{
+	yy_switch_to_buffer (raii->buffer, raii->scanner);
+}
+
+static void
+qc_delete_buffer (buffer_raii_t *raii)
+{
+	yy_delete_buffer (raii->buffer, raii->scanner);
+}
+
+static int
+parse_vector (rua_tok_t *tok, yyscan_t scanner)
+{
+	const char *end = tok->text + tok->textlen;
+	while (end > tok->text && *--end != '\'') continue;
+
+	const char *start = tok->text + 1;
+	auto yyg = (struct yyguts_t *)scanner;
+	auto __attribute__((cleanup (qc_restore_buffer)))
+		saved_buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = YY_CURRENT_BUFFER,
+		};
+	auto __attribute__((cleanup (qc_delete_buffer)))
+		buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = yy_scan_bytes (start, end - start, scanner),
+		};
+
+	int         token;
+	rua_tok_t   vtok = { .location = tok->location, };
+	vtok.location.first_column++;
+	const expr_t *components[4+1] = {};	// currently, max of 4
+	bool        negate[4] = {};
+	int         width = 0;
+
+	auto extra = qc_yyget_extra (scanner);
+	extra->start_state = VECTOR;
+	do {
+		token = yylex (&vtok, &vtok.location, scanner);
+		if (-token == rua_number) {
+			token = parse_number (&vtok, scanner);
+		}
+		if (token == VALUE) {
+			if (width < 4) {
+				components[width] = vtok.value.expr;
+			}
+			width++;
+		} else if (token == '-') {
+			if (width < 4) {
+				negate[width] = true;
+			}
+		}
+	} while (token && token != -rua_eof);
+	extra->start_state = INITIAL;
+
+	if (width > 4) {
+		error (0, "too many components in vector literal");
+		width = 4;
+		return -rua_error;
+	}
+	bool fp = false;
+	for (int i = 0; i < width; i++) {
+		if (!components[i]->implicit) {
+			error (0, "explict numeric constant in vector literal."
+				   " Suggest suffix after closing '.");
+			return -rua_error;
+		}
+		fp |= is_double (get_type (components[i]));
+	}
+
+	// end points at the final ' and thus any suffix is after that
+	int expl = parse_suffix (++end, fp);
+	if (expl < 0) {
+		error (0, "invalid suffix \"%s\" on %s vector constant", end,
+			   fp ? "floating" : "integer");
+		return -rua_error;
+	}
+	union {
+		pr_float_t f[4];
+		pr_int_t   i[4];
+		pr_double_t d[4];
+		pr_long_t  l[4];
+		pr_type_t  t[PR_SIZEOF (lvec4)];
+	} data;
+	type_t *type = 0;
+	if (expl == suff_long_double) {
+		warning (0, "long double treated as double");
+		expl = suff_double;
+	}
+	if (expl == suff_float) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			if (is_double (get_type (c))) {
+				data.f[i] = expr_double (c);
+			} else {
+				data.f[i] = expr_long (c);
+			}
+			if (negate[i]) {
+				data.f[i] = -data.f[i];
+			}
+		}
+		type = &type_float;
+	} else if (expl == suff_double) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			if (is_double (get_type (c))) {
+				data.d[i] = expr_double (c);
+			} else {
+				data.d[i] = expr_long (c);
+			}
+			if (negate[i]) {
+				data.d[i] = -data.d[i];
+			}
+		}
 		type = &type_double;
+	} else if (expl == suff_implicit) {
+		if (fp) {
+			for (int i = 0; i < width; i++) {
+				auto c = components[i];
+				if (is_double (get_type (c))) {
+					data.f[i] = expr_double (c);
+				} else {
+					data.f[i] = expr_long (c);
+				}
+				if (negate[i]) {
+					data.f[i] = -data.f[i];
+				}
+			}
+			type = &type_float;
+		} else {
+			for (int i = 0; i < width; i++) {
+				auto c = components[i];
+				data.i[i] = expr_long (c);
+				if (negate[i]) {
+					data.i[i] = -data.i[i];
+				}
+			}
+			type = &type_int;
+		}
+	} else if (expl == suff_unsigned) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			data.i[i] = fp ? expr_double (c) : expr_long (c);
+			if (negate[i]) {
+				data.i[i] = -data.i[i];
+			}
+		}
+		type = &type_uint;
+	} else if (expl == suff_long || expl == suff_unsigned_long) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			data.l[i] = expr_long (c);
+			if (negate[i]) {
+				data.l[i] = -data.l[i];
+			}
+		}
+		type = expl == suff_unsigned_long ? &type_ulong : &type_long;
 	}
 	type = vector_type (type, width);
-	return new_value_expr (new_type_value (type, data), !t);
+	tok->value.expr = new_value_expr (new_type_value (type, data.t),
+									  expl == suff_implicit);
+
+	return VALUE;
 }
 
 static void
@@ -807,6 +901,35 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen)
 	}
 }
 
+static int
+qc_process (qc_yypstate *ps, int token, rua_tok_t *tok, yyscan_t scanner)
+{
+	auto value = &tok->value;
+	auto loc = &tok->location;
+
+	switch (-token) {
+		case rua_number:
+			token = parse_number (tok, scanner);
+			if (token == VALUE && value->expr->implicit) {
+				if (is_long (get_type (value->expr))) {
+					pr_long_t v = expr_long (value->expr);
+					if (v < INT32_MIN || v > INT32_MAX) {
+						warning (0, "integer value truncated");
+					}
+					value->expr = new_int_expr (v, true);
+				}
+			}
+			break;
+		case rua_vector:
+			token = parse_vector (tok, scanner);
+			break;
+	}
+	if (token >= 0) {
+		return qc_yypush_parse (ps, token, value, loc, scanner);
+	}
+	return YYPUSH_MORE;
+}
+
 int
 qc_yyparse (FILE *in)
 {
@@ -820,7 +943,7 @@ qc_yyparse (FILE *in)
 	yyset_in (in, scanner);
 	do {
 		int token = yylex (&tok, &tok.location, scanner);
-		status = qc_yypush_parse (ps, token, &tok.value, &tok.location, scanner);
+		status = qc_process (ps, token, &tok, scanner);
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (scanner);
