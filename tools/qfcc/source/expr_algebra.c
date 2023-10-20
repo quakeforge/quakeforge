@@ -2723,7 +2723,7 @@ algebra_reverse (const expr_t *e)
 				set_sign (&ones[j * type_size (algebra->type)], sign, ct);
 			}
 			if (neg) {
-				auto rev = new_value_expr (new_type_value (ct, ones));
+				auto rev = new_value_expr (new_type_value (ct, ones), false);
 				rev = edag_add_expr (rev);
 				r[i] = typed_binary_expr (ct, HADAMARD, r[i], rev);
 				r[i] = edag_add_expr (rev);

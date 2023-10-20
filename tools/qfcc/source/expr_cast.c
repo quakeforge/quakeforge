@@ -79,7 +79,7 @@ cast_math (type_t *dstType, type_t *srcType, const expr_t *expr)
 
 	do_conversion (dst_value, dstType, src_value, srcType, expr);
 
-	return new_value_expr (new_type_value (dstType, dst_value));
+	return new_value_expr (new_type_value (dstType, dst_value), false);
 }
 
 const expr_t *

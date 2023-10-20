@@ -276,6 +276,6 @@ evaluate_constexpr (const expr_t *e)
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_foldconst);
 	auto val = new_type_value (e->expr.type, value_pr.pr_return_buffer);
-	e = new_value_expr (val);
+	e = new_value_expr (val, false);
 	return e;
 }

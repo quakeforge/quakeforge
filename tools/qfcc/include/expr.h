@@ -585,9 +585,10 @@ expr_t *new_args_expr (void);
 /** Create a new value expression node.
 
 	\param value	The value to put in the expression node.
+	\param implicit	The value is implicitly typed
 	\return			The new value expression.
 */
-const expr_t *new_value_expr (ex_value_t *value);
+const expr_t *new_value_expr (ex_value_t *value, bool implicit);
 
 /** Create a new typed zero value expression node.
 
@@ -710,7 +711,8 @@ int expr_int (const expr_t *e) __attribute__((pure));
 const expr_t *new_uint_expr (unsigned uint_val);
 unsigned expr_uint (const expr_t *e) __attribute__((pure));
 
-const expr_t *new_long_expr (pr_long_t long_val);
+const expr_t *new_long_expr (pr_long_t long_val, bool implicit);
+pr_long_t expr_long (const expr_t *e) __attribute__((pure));
 const expr_t *new_ulong_expr (pr_ulong_t ulong_val);
 
 /** Create a new short constant expression node.

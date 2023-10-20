@@ -127,9 +127,7 @@ new_vector_list (const expr_t *expr_list)
 			offs += type_size (src_type);
 		}
 
-		auto vec = (expr_t *) new_value_expr (new_type_value (vec_type, value));
-		vec->implicit = all_implicit;
-		return vec;
+		return new_value_expr (new_type_value (vec_type, value), all_implicit);
 	}
 
 	expr_t     *vec = new_expr ();

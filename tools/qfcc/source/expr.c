@@ -716,11 +716,12 @@ new_args_expr (void)
 }
 
 const expr_t *
-new_value_expr (ex_value_t *value)
+new_value_expr (ex_value_t *value, bool implicit)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
 	e->value = value;
+	e->implicit = implicit;
 	return e;
 }
 
@@ -728,7 +729,7 @@ const expr_t *
 new_zero_expr (type_t *type)
 {
 	pr_type_t zero[type_size (type)] = {};
-	return new_value_expr (new_type_value (type, zero));
+	return new_value_expr (new_type_value (type, zero), false);
 }
 
 const expr_t *
@@ -748,89 +749,97 @@ new_name_expr (const char *name)
 const expr_t *
 new_string_expr (const char *string_val)
 {
-	return new_value_expr (new_string_val (string_val));
+	return new_value_expr (new_string_val (string_val), false);
 }
 
 const expr_t *
 new_double_expr (double double_val, bool implicit)
 {
-	auto d = (expr_t *) new_value_expr (new_double_val (double_val));
-	d->implicit = implicit;
-	return d;
+	return new_value_expr (new_double_val (double_val), implicit);
 }
 
 const expr_t *
 new_float_expr (float float_val)
 {
-	return new_value_expr (new_float_val (float_val));
+	return new_value_expr (new_float_val (float_val), false);
 }
 
 const expr_t *
 new_vector_expr (const float *vector_val)
 {
-	return new_value_expr (new_vector_val (vector_val));
+	return new_value_expr (new_vector_val (vector_val), false);
 }
 
 const expr_t *
 new_entity_expr (int entity_val)
 {
-	return new_value_expr (new_entity_val (entity_val));
+	return new_value_expr (new_entity_val (entity_val), false);
 }
 
 const expr_t *
 new_field_expr (int field_val, type_t *type, def_t *def)
 {
-	return new_value_expr (new_field_val (field_val, type, def));
+	return new_value_expr (new_field_val (field_val, type, def), false);
 }
 
 const expr_t *
 new_func_expr (int func_val, type_t *type)
 {
-	return new_value_expr (new_func_val (func_val, type));
+	return new_value_expr (new_func_val (func_val, type), false);
 }
 
 const expr_t *
 new_pointer_expr (int val, type_t *type, def_t *def)
 {
-	return new_value_expr (new_pointer_val (val, type, def, 0));
+	return new_value_expr (new_pointer_val (val, type, def, 0), false);
 }
 
 const expr_t *
 new_quaternion_expr (const float *quaternion_val)
 {
-	return new_value_expr (new_quaternion_val (quaternion_val));
+	return new_value_expr (new_quaternion_val (quaternion_val), false);
 }
 
 const expr_t *
 new_int_expr (int int_val, bool implicit)
 {
-	auto i = (expr_t *) new_value_expr (new_int_val (int_val));
-	i->implicit = implicit;
-	return i;
+	return new_value_expr (new_int_val (int_val), implicit);
 }
 
 const expr_t *
 new_uint_expr (unsigned uint_val)
 {
-	return new_value_expr (new_uint_val (uint_val));
+	return new_value_expr (new_uint_val (uint_val), false);
 }
 
 const expr_t *
-new_long_expr (pr_long_t long_val)
+new_long_expr (pr_long_t long_val, bool implicit)
 {
-	return new_value_expr (new_long_val (long_val));
+	return new_value_expr (new_long_val (long_val), implicit);
+}
+
+pr_long_t
+expr_long (const expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 0;
+	}
+	if (e->type == ex_value && e->value->lltype == ev_long) {
+		return e->value->v.long_val;
+	}
+	internal_error (e, "not a long constant");
 }
 
 const expr_t *
 new_ulong_expr (pr_ulong_t ulong_val)
 {
-	return new_value_expr (new_ulong_val (ulong_val));
+	return new_value_expr (new_ulong_val (ulong_val), false);
 }
 
 const expr_t *
 new_short_expr (short short_val)
 {
-	return new_value_expr (new_short_val (short_val));
+	return new_value_expr (new_short_val (short_val), false);
 }
 
 int
@@ -891,7 +900,7 @@ constant_expr (const expr_t *e)
 	} else {
 		return e;
 	}
-	auto new = new_value_expr (value);
+	auto new = new_value_expr (value, false);
 	return expr_file_line ((expr_t *) new, e);//FIXME cast
 }
 
@@ -1541,7 +1550,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 				internal_error (e2, "unexpected field exression");
 			}
 			auto fv = new_field_val (e2->value->v.pointer.val + field->s.offset, field->type, e2->value->v.pointer.def);
-			e2 = expr_file_line ((expr_t *) new_value_expr (fv), e2);
+			e2 = expr_file_line ((expr_t *) new_value_expr (fv, false), e2);
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
@@ -2700,7 +2709,7 @@ address_expr (const expr_t *e1, type_t *t)
 				}
 				if (is_array (type)) {
 					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return new_value_expr (ptrval);
+					return new_value_expr (ptrval, false);
 				} else {
 					return new_pointer_expr (0, t, def);
 				}
@@ -2719,7 +2728,7 @@ address_expr (const expr_t *e1, type_t *t)
 
 				if (is_array (type)) {
 					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return new_value_expr (ptrval);
+					return new_value_expr (ptrval, false);
 				} else {
 					return new_pointer_expr (0, t, def);
 				}
