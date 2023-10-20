@@ -134,128 +134,96 @@ s_string	\"(\\.|[^"\\])*\"
 c_string	'(\\.|[^'\\])*'
 
 pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
+pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
 %x      VECTOR
 
 %%
-					auto extra = qc_yyget_extra (yyscanner);
-					BEGIN (extra->start_state);
-					yyset_debug (0, yyscanner);
-					grab_frame = GRAB_FRAME;
-					grab_other = GRAB_OTHER;
-					grab_write = GRAB_WRITE;
-					yylval->pointer = 0;	// ensure pointer vals are null
+						auto extra = qc_yyget_extra (yyscanner);
+						BEGIN (extra->start_state);
+						yyset_debug (0, yyscanner);
+						grab_frame = GRAB_FRAME;
+						grab_other = GRAB_OTHER;
+						grab_write = GRAB_WRITE;
+						yylval->pointer = 0;	// ensure pointer vals are null
 
-"/*"				{ BEGIN (COMMENT); }
-<COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
-<COMMENT>"*/"		{ BEGIN (INITIAL); }
-<COMMENT>\r*\n		{ pr.source_line++; }
-<COMMENT>.			/* nothing to do */
-<COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
-"//"				{ BEGIN (LCOMMENT); }	/* exited by <*>\r\n rule */
+"/*"					{ BEGIN (COMMENT); }
+<COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
+<COMMENT>"*/"			{ BEGIN (INITIAL); }
+<COMMENT>\r*\n			{ pr.source_line++; }
+<COMMENT>.				/* nothing to do */
+<COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
+"//"					{ BEGIN (LCOMMENT); }	/* exited by <*>\r\n rule */
 <LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
-<LCOMMENT>[\\]*		/* consume \ */
+<LCOMMENT>[\\]*			/* consume \ */
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
 ^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
-{ID}				{
-						int         tok = keyword_or_id(yylval, yytext);
-						return tok;
-					}
-@{ID}				{
-						int         tok = keyword_or_id(yylval, yytext);
-						if (tok == '@')
-							REJECT;
-						return tok;
-					}
+{ID}					{ return keyword_or_id(yylval, yytext); }
+@{ID}					{ return keyword_or_id(yylval, yytext); }
+@						{ return '@'; }
 
-@					return '@';
-
-{pp_number}			{ return -rua_number; }
-'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}? { return -rua_vector; }
+{pp_number}				{ return -rua_number; }
+{pp_vnumber}			{ return -rua_vector; }
 <VECTOR>{pp_number}		{ return -rua_number; }
 <VECTOR>{m}				{ return yytext[0]; }
 <VECTOR>'				{ return -rua_eof; }
 
 {s_string}				{ return -rua_string; };
 {c_string}				{ return -rua_char; }
-[+\-*/&|^%]=		{
-						yylval->value.op = yytext[0];
-						return ASX;
-					}
 
-"%%="				{
-						yylval->value.op = MOD;
-						return ASX;
-					}
+[+\-*/&|^%]=			{ yylval->value.op = yytext[0]; return ASX; }
 
-"<<="				{
-						yylval->value.op = SHL;
-						return ASX;
-					}
+"%%="					{ yylval->value.op = MOD; return ASX; }
+"<<="					{ yylval->value.op = SHL; return ASX; }
+">>="					{ yylval->value.op = SHR; return ASX; }
 
-">>="				{
-						yylval->value.op = SHR;
-						return ASX;
-					}
+[!(){}.*/&|^~+\-=\[\];,#%?:] { return yytext[0]; }
 
-[!(){}.*/&|^~+\-=\[\];,#%?:] {
-						return yytext[0];
-					}
+"·"						{ return DOT; }
+"⋀"						{ return WEDGE; }
+"•"						{ return DOT; }
+"∧"						{ return WEDGE; }
+"∨"						{ return REGRESSIVE; }
+"†"						{ return REVERSE; }
+"∗"						{ return STAR; }
+"×"						{ return CROSS; }
+"⋆"						{ return DUAL; }
 
-"·"					{ return DOT; }
-"⋀"					{ return WEDGE; }
-"•"					{ return DOT; }
-"∧"					{ return WEDGE; }
-"∨"					{ return REGRESSIVE; }
-"†"					{ return REVERSE; }
-"∗"					{ return STAR; }
-"×"					{ return CROSS; }
-"⋆"					{ return DUAL; }
+"%%"					{ return MOD; }
 
-"%%"				{
-						return MOD;
-					}
+{ELLIPSIS}				{ return ELLIPSIS; }
 
-{ELLIPSIS}			return ELLIPSIS;
+"<<"					{ return SHL; }
+">>"					{ return SHR; }
 
-"<<"				return SHL;
-">>"				return SHR;
+"&&"					{ return AND; }
+"||"					{ return OR; }
+"=="					{ return EQ; }
+"!="					{ return NE; }
+"<="					{ return LE; }
+">="					{ return GE; }
+"<"						{ return LT; }
+">"						{ return GT; }
 
-"&&"				return AND;
-"||"				return OR;
-"=="				return EQ;
-"!="				return NE;
-"<="				return LE;
-">="				return GE;
-"<"					return LT;
-">"					return GT;
+"++"					{ yylval->value.op = '+'; return INCOP; }
+"--"					{ yylval->value.op = '-'; return INCOP; }
 
-"++"				{
-						yylval->value.op = '+';
-						return INCOP;
-					}
-
-"--"				{
-						yylval->value.op = '-';
-						return INCOP;
-					}
-
-"$"{s}*{FRAMEID}	{
-						int ret = do_grab (yytext);
-						if (ret >= 0) {
-							yylval->value.expr = new_int_expr (ret, false);
-							return VALUE;
-						} else {
-							BEGIN (-ret);
+"$"{s}*{FRAMEID}		{
+							int ret = do_grab (yytext);
+							if (ret >= 0) {
+								yylval->value.expr = new_int_expr (ret, false);
+								return VALUE;
+							} else {
+								BEGIN (-ret);
+							}
 						}
-					}
 
-<GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
+<GRAB_FRAME>{FRAMEID}	{ add_frame_macro (yytext); }
 <GRAB_OTHER>[^\r\n]*	/* skip */
 <GRAB_WRITE>{s_string}	{
 							const char *s = make_string (yytext, 0);
@@ -265,18 +233,18 @@ pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 <PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
 <PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
-<*>\\\r*\n			{ pr.source_line++; }	/* line continuation */
-<*>\r*\n			{
-						if (YY_START == PRAGMA) {
-							pragma_process ();
+<*>\\\r*\n				{ pr.source_line++; }	/* line continuation */
+<*>\r*\n				{
+							if (YY_START == PRAGMA) {
+								pragma_process ();
+							}
+							pr.source_line++;
+							BEGIN (INITIAL);
 						}
-						pr.source_line++;
-						BEGIN (INITIAL);
-					}
 
-<*>{s}*				/* skip */
+<*>{s}*					/* skip */
 
-<*>.				error (0, "all your typo are belong to us");
+<*>.					error (0, "all your typo are belong to us");
 
 %%
 
