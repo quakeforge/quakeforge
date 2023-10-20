@@ -50,6 +50,10 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#define QC_YYDEBUG 1
+#define QC_YYERROR_VERBOSE 1
+#undef QC_YYERROR_VERBOSE
+
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
@@ -63,6 +67,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
@@ -70,10 +75,6 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#define QC_YYDEBUG 1
-#define QC_YYERROR_VERBOSE 1
-#undef QC_YYERROR_VERBOSE
 
 #include "tools/qfcc/source/qc-parse.h"
 
@@ -101,6 +102,10 @@ parse_error (void *scanner)
 int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %}
+
+%code requires { #include "tools/qfcc/include/type.h" }
+
+%define api.location.type {struct rua_loc_s}
 
 %union {
 	int			op;

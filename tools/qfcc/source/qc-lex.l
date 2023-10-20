@@ -34,7 +34,7 @@
 %option noyywrap
 %option debug
 
-%{
+%top{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -60,15 +60,16 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/pragma.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
+}
 
-#include "tools/qfcc/source/qc-parse.h"
-
+%{
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
 #else
@@ -80,10 +81,15 @@
 #define YY_NO_YYINPUT
 #define YY_NO_YYUNPUT
 
-#define YYSTYPE QC_YYSTYPE
-#define YYLTYPE QC_YYLTYPE
+#define YYSTYPE rua_tok_t
+#define YYLTYPE rua_loc_t
 
-void *qc_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
+typedef struct rua_extra_s {
+		int         start_state;
+	} rua_extra_t;
+#define YY_EXTRA_TYPE rua_extra_t *
+
+rua_extra_t *qc_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
 int yyget_lineno (yyscan_t yyscanner) __attribute__((pure));
 int yyget_column (yyscan_t yyscanner) __attribute__((pure));
 YYSTYPE *yyget_lval (yyscan_t yyscanner) __attribute__((pure));
@@ -97,23 +103,10 @@ FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 static int keyword_or_id (YYSTYPE *lval, const char *token);
 static const expr_t *parse_float_vector (const char *token, int width);
 static const expr_t *parse_int_vector (const char *token, int width);
+static void user_action (rua_tok_t *tok, rua_loc_t *loc,
+						 const char *text, size_t textlen);
 
-static void
-update_yylloc (YYLTYPE *lloc, const char *text)
-{
-	lloc->first_line = lloc->last_line;
-	lloc->first_column = lloc->last_column;
-	for(int i = 0; text[i] != '\0'; i++) {
-		if(text[i] == '\n') {
-			lloc->last_line++;
-			lloc->last_column = 1;
-		} else {
-			lloc->last_column++;
-		}
-	}
-}
-
-#define YY_USER_ACTION update_yylloc (yylloc, yytext);
+#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng);
 
 %}
 
@@ -141,6 +134,8 @@ STRING		\"(\\.|[^"\\])*\"
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
 
 %%
+					auto extra = qc_yyget_extra (yyscanner);
+					BEGIN (extra->start_state);
 					yyset_debug (0, yyscanner);
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
@@ -172,15 +167,15 @@ STRING		\"(\\.|[^"\\])*\"
 							i = strtol (yytext, 0, 0);
 						if (tolower (*c) == 'u') {
 							if (tolower (c[1]) == 'l') {
-								yylval->expr = new_ulong_expr (i);
+								yylval->value.expr = new_ulong_expr (i);
 							} else {
-								yylval->expr = new_uint_expr (i);
+								yylval->value.expr = new_uint_expr (i);
 							}
 						} else {
 							if (tolower (c[1]) == 'l') {
-								yylval->expr = new_long_expr (i);
+								yylval->value.expr = new_long_expr (i);
 							} else {
-								yylval->expr = new_int_expr (i, true);
+								yylval->value.expr = new_int_expr (i, true);
 							}
 						}
 						return VALUE;
@@ -191,16 +186,16 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							yylval->expr = new_double_expr (d, true);
+							yylval->value.expr = new_double_expr (d, true);
 						} else {
 							float       f = strtof (yytext, 0);
-							yylval->expr = new_float_expr (f);
+							yylval->value.expr = new_float_expr (f);
 						}
 						return VALUE;
 					}
 {FLOATf}			{
 						float       f = strtof (yytext, 0);
-						yylval->expr = new_float_expr (f);
+						yylval->value.expr = new_float_expr (f);
 						return VALUE;
 					}
 {FLOATd}			{
@@ -208,10 +203,10 @@ STRING		\"(\\.|[^"\\])*\"
 						// and extended code defaults to float
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
-							yylval->expr = new_double_expr (d, false);
+							yylval->value.expr = new_double_expr (d, false);
 						} else {
 							float       f = strtof (yytext, 0);
-							yylval->expr = new_float_expr (f);
+							yylval->value.expr = new_float_expr (f);
 							warning (0, "truncating double constant to float");
 						}
 						return VALUE;
@@ -230,38 +225,38 @@ STRING		\"(\\.|[^"\\])*\"
 
 {STRING}			{
 						const char *s = make_string (yytext, 0);
-						yylval->expr = new_string_expr (s);
+						yylval->value.expr = new_string_expr (s);
 						return STRING;
 					}
 @					return '@';
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->expr = parse_int_vector (yytext, 2);
+						yylval->value.expr = parse_int_vector (yytext, 2);
 						return VALUE;
 					}
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->expr = parse_int_vector (yytext, 3);
+						yylval->value.expr = parse_int_vector (yytext, 3);
 						return VALUE;
 					}
 
 '{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						yylval->expr = parse_int_vector (yytext, 4);
+						yylval->value.expr = parse_int_vector (yytext, 4);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->expr = parse_float_vector (yytext, 2);
+						yylval->value.expr = parse_float_vector (yytext, 2);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->expr = parse_float_vector (yytext, 3);
+						yylval->value.expr = parse_float_vector (yytext, 3);
 						return VALUE;
 					}
 
 '{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						yylval->expr = parse_float_vector (yytext, 4);
+						yylval->value.expr = parse_float_vector (yytext, 4);
 						return VALUE;
 					}
 
@@ -270,27 +265,27 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						yylval->expr = new_int_expr (*str, false);
+						yylval->value.expr = new_int_expr (*str, false);
 						return VALUE;
 					}
 
 [+\-*/&|^%]=		{
-						yylval->op = yytext[0];
+						yylval->value.op = yytext[0];
 						return ASX;
 					}
 
 "%%="				{
-						yylval->op = MOD;
+						yylval->value.op = MOD;
 						return ASX;
 					}
 
 "<<="				{
-						yylval->op = SHL;
+						yylval->value.op = SHL;
 						return ASX;
 					}
 
 ">>="				{
-						yylval->op = SHR;
+						yylval->value.op = SHR;
 						return ASX;
 					}
 
@@ -327,19 +322,19 @@ STRING		\"(\\.|[^"\\])*\"
 ">"					return GT;
 
 "++"				{
-						yylval->op = '+';
+						yylval->value.op = '+';
 						return INCOP;
 					}
 
 "--"				{
-						yylval->op = '-';
+						yylval->value.op = '-';
 						return INCOP;
 					}
 
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							yylval->expr = new_int_expr (ret, false);
+							yylval->value.expr = new_int_expr (ret, false);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -501,25 +496,25 @@ static int
 process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 {
 	if (keyword->value == STRUCT) {
-		lval->op = token[0];
+		lval->value.op = token[0];
 	} else if (keyword->value == OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
-		lval->symbol = sym;
+		lval->value.symbol = sym;
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
 		if (sym->sy_type == sy_name) {
 			// this is the global id (object)
-			lval->spec = (specifier_t) {
+			lval->value.spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
 			return OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
-			lval->spec = (specifier_t) {
+			lval->value.spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
@@ -528,7 +523,7 @@ process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 		// id has been redelcared as a variable (hopefully)
 		return NAME;
 	} else {
-		lval->spec = keyword->spec;
+		lval->value.spec = keyword->spec;
 	}
 	return keyword->value;
 }
@@ -598,9 +593,9 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	lval->symbol = sym;
+	lval->value.symbol = sym;
 	if (sym->sy_type == sy_type) {
-		lval->spec = (specifier_t) {
+		lval->value.spec = (specifier_t) {
 			.type = sym->type,
 			.sym = sym,
 		};
@@ -792,20 +787,43 @@ parse_float_vector (const char *token, int width)
 	return expr;
 }
 
+static void
+user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen)
+{
+	if (textlen < sizeof (tok->text)) {
+		strncpy (tok->str_text, text, textlen);
+		tok->str_text[textlen] = 0;
+		tok->text = tok->str_text;
+	} else {
+		tok->text = save_string (text);
+	}
+	tok->textlen = textlen;
+	loc->first_line = loc->last_line;
+	loc->first_column = loc->last_column;
+	for(int i = 0; text[i] != '\0'; i++) {
+		if(text[i] == '\n') {
+			loc->last_line++;
+			loc->last_column = 1;
+		} else {
+			loc->last_column++;
+		}
+	}
+}
+
 int
 qc_yyparse (FILE *in)
 {
 	int         status;
 	yyscan_t    scanner;
 	qc_yypstate *ps = qc_yypstate_new ();
+	rua_tok_t   tok = { .location = { 1, 1, 1, 1, pr.source_file }, };
+	rua_extra_t extra = {};
 
-	yylex_init_extra (0, &scanner);
+	yylex_init_extra (&extra, &scanner);
 	yyset_in (in, scanner);
-	YYLTYPE lloc = { 1, 1, 1, 1 };
 	do {
-		YYSTYPE lval;
-		int token = yylex (&lval, &lloc, scanner);
-		status = qc_yypush_parse (ps, token, &lval, &lloc, scanner);
+		int token = yylex (&tok, &tok.location, scanner);
+		status = qc_yypush_parse (ps, token, &tok.value, &tok.location, scanner);
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (scanner);
