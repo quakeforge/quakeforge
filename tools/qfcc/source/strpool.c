@@ -160,7 +160,7 @@ save_cwd (void)
 }
 
 const char *
-make_string (char *token, char **end)
+make_string (const char *token, char **end)
 {
 	char        s[7];	// utf8 needs 6 + nul
 	sizebuf_t   utf8str = {
@@ -417,7 +417,7 @@ make_string (char *token, char **end)
 	} while (1);
 
 	if (end)
-		*end = token;
+		*end = (char *) token;
 
 	return save_string (str->str);
 }

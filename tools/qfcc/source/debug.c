@@ -97,9 +97,9 @@ add_source_file (const char *file)
 }
 
 void
-line_info (char *text)
+line_info (const char *text)
 {
-	char *p;
+	const char *p;
 	char *s;
 	const char *str;
 	int line;

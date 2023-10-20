@@ -109,6 +109,8 @@ enum {
 	rua_error,
 	rua_number,
 	rua_vector,
+	rua_string,
+	rua_char,
 };
 
 #define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng);
@@ -128,7 +130,8 @@ RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
 PRAGMAID	{ID}(-{ID})*
-STRING		\"(\\.|[^"\\])*\"
+s_string	\"(\\.|[^"\\])*\"
+c_string	'(\\.|[^'\\])*'
 
 pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 
@@ -170,11 +173,6 @@ pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 						return tok;
 					}
 
-{STRING}			{
-						const char *s = make_string (yytext, 0);
-						yylval->value.expr = new_string_expr (s);
-						return STRING;
-					}
 @					return '@';
 
 {pp_number}			{ return -rua_number; }
@@ -183,15 +181,8 @@ pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 <VECTOR>{m}				{ return yytext[0]; }
 <VECTOR>'				{ return -rua_eof; }
 
-'(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
-						const char *str = make_string (yytext, 0);
-
-						if (str[1])
-							warning (0, "multibyte char constant");
-						yylval->value.expr = new_int_expr (*str, false);
-						return VALUE;
-					}
-
+{s_string}				{ return -rua_string; };
+{c_string}				{ return -rua_char; }
 [+\-*/&|^%]=		{
 						yylval->value.op = yytext[0];
 						return ASX;
@@ -266,7 +257,7 @@ pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 
 <GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
 <GRAB_OTHER>[^\r\n]*	/* skip */
-<GRAB_WRITE>{STRING}	{
+<GRAB_WRITE>{s_string}	{
 							const char *s = make_string (yytext, 0);
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
@@ -878,6 +869,22 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	return VALUE;
 }
 
+static int
+parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
+{
+	const char *str = make_string (tok->text, 0);
+	if (type == rua_char) {
+		if (str[1]) {
+			warning (0, "multibyte char constant");
+		}
+		tok->value.expr = new_int_expr (*str, false);
+		return VALUE;
+	} else {
+		tok->value.expr = new_string_expr (str);
+		return STRING;
+	}
+}
+
 static void
 user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen)
 {
@@ -922,6 +929,10 @@ qc_process (qc_yypstate *ps, int token, rua_tok_t *tok, yyscan_t scanner)
 			break;
 		case rua_vector:
 			token = parse_vector (tok, scanner);
+			break;
+		case rua_string:
+		case rua_char:
+			token = parse_string (tok, -token, scanner);
 			break;
 	}
 	if (token >= 0) {
