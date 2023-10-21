@@ -103,7 +103,8 @@ FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int keyword_or_id (YYSTYPE *lval, const char *token);
 static void user_action (rua_tok_t *tok, rua_loc_t *loc,
-						 const char *text, size_t textlen);
+						 const char *text, size_t textlen, yyscan_t scanner);
+static void next_line (rua_loc_t *loc);
 
 enum {
 	rua_eof = 1,
@@ -114,7 +115,7 @@ enum {
 	rua_char,
 };
 
-#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng);
+#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng, yyscanner);
 
 %}
 
@@ -149,11 +150,13 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 "/*"					{ yy_push_state (COMMENT, yyscanner); }
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
-<COMMENT>"*/"			{ yy_pop_state (yyscanner); }
-<COMMENT>\r*\n			{ pr.source_line++; }
-<COMMENT>.				/* nothing to do */
+<COMMENT>\*+"/"			{ yy_pop_state (yyscanner); }
+<COMMENT>\n				{ next_line (yylloc); }
+<COMMENT>[^*/\n]*		/* munch on anything but possible end of comment */
+<COMMENT>\/+[^*\n]*		/* handle /s not followed by * */
+<COMMENT>\*+[^/\n]*		/* handle *s not followed by * */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
-"//"					{ yy_push_state (LCOMMENT, yyscanner); }	/* exited by <*>\r\n rule */
+"//"					{ yy_push_state (LCOMMENT, yyscanner); }/* cf <*>\r\n */
 <LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
 <LCOMMENT>[\\]*			/* consume \ */
 
@@ -232,18 +235,18 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
 <PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
-<*>\\\r*\n				{ pr.source_line++; }	/* line continuation */
+<*>\\\r*\n				{ next_line (yylloc); }	/* line continuation */
 <*>\r*\n				{
 							if (YY_START == PRAGMA) {
 								pragma_process ();
 							}
-							pr.source_line++;
+							next_line (yylloc);
 							if (yyg->yy_start_stack_ptr) {
 								yy_pop_state (yyscanner);
 							}
 						}
 
-<*>{s}*					/* skip */
+<*>{s}+					/* skip */
 
 <*>.					error (0, "all your typo are belong to us");
 
@@ -854,26 +857,34 @@ parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
 }
 
 static void
-user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen)
+next_line (rua_loc_t *loc)
 {
-	if (textlen < sizeof (tok->text)) {
-		strncpy (tok->str_text, text, textlen);
-		tok->str_text[textlen] = 0;
-		tok->text = tok->str_text;
-	} else {
-		tok->text = save_string (text);
-	}
-	tok->textlen = textlen;
 	loc->first_line = loc->last_line;
 	loc->first_column = loc->last_column;
-	for(int i = 0; text[i] != '\0'; i++) {
-		if(text[i] == '\n') {
-			loc->last_line++;
-			loc->last_column = 1;
+	loc->last_column = 1;
+	loc->last_line++;
+	pr.source_line++;
+}
+
+static void
+user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
+			 yyscan_t scanner)
+{
+	int         state = yy_top_state (scanner);
+	if (state != COMMENT) {
+		if (textlen < sizeof (tok->text)) {
+			strncpy (tok->str_text, text, textlen);
+			tok->str_text[textlen] = 0;
+			tok->text = tok->str_text;
 		} else {
-			loc->last_column++;
+			tok->text = save_string (text);
 		}
+		tok->textlen = textlen;
 	}
+	loc->first_line = loc->last_line;
+	loc->first_column = loc->last_column;
+	// \n handling rules will take care of the column and line
+	loc->last_column += textlen;
 }
 
 static int
@@ -928,5 +939,4 @@ qc_yyparse (FILE *in)
 	yylex_destroy (scanner);
 	qc_yypstate_delete (ps);
 	return status;
-	(void) yy_top_state;	// FIXME silence unused warning
 }
