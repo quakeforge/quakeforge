@@ -33,6 +33,7 @@
 %option prefix="qc_yy"
 %option noyywrap
 %option debug
+%option stack
 
 %top{
 #ifdef HAVE_CONFIG_H
@@ -140,28 +141,26 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 %x      VECTOR
 
 %%
-						auto extra = qc_yyget_extra (yyscanner);
-						BEGIN (extra->start_state);
 						yyset_debug (0, yyscanner);
 						grab_frame = GRAB_FRAME;
 						grab_other = GRAB_OTHER;
 						grab_write = GRAB_WRITE;
 						yylval->pointer = 0;	// ensure pointer vals are null
 
-"/*"					{ BEGIN (COMMENT); }
+"/*"					{ yy_push_state (COMMENT, yyscanner); }
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
-<COMMENT>"*/"			{ BEGIN (INITIAL); }
+<COMMENT>"*/"			{ yy_pop_state (yyscanner); }
 <COMMENT>\r*\n			{ pr.source_line++; }
 <COMMENT>.				/* nothing to do */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
-"//"					{ BEGIN (LCOMMENT); }	/* exited by <*>\r\n rule */
+"//"					{ yy_push_state (LCOMMENT, yyscanner); }	/* exited by <*>\r\n rule */
 <LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
 <LCOMMENT>[\\]*			/* consume \ */
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
-^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
+^{s}*#{s}*pragma{s}+	{ yy_push_state (PRAGMA, yyscanner); }
 
 {ID}					{ return keyword_or_id(yylval, yytext); }
 @{ID}					{ return keyword_or_id(yylval, yytext); }
@@ -219,7 +218,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 								yylval->value.expr = new_int_expr (ret, false);
 								return VALUE;
 							} else {
-								BEGIN (-ret);
+								yy_push_state (-ret, yyscanner);
 							}
 						}
 
@@ -239,7 +238,9 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 								pragma_process ();
 							}
 							pr.source_line++;
-							BEGIN (INITIAL);
+							if (yyg->yy_start_stack_ptr) {
+								yy_pop_state (yyscanner);
+							}
 						}
 
 <*>{s}*					/* skip */
@@ -707,8 +708,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	bool        negate[4] = {};
 	int         width = 0;
 
-	auto extra = qc_yyget_extra (scanner);
-	extra->start_state = VECTOR;
+	yy_push_state (VECTOR, scanner);
 	do {
 		token = yylex (&vtok, &vtok.location, scanner);
 		if (-token == rua_number) {
@@ -725,7 +725,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 			}
 		}
 	} while (token && token != -rua_eof);
-	extra->start_state = INITIAL;
+	yy_pop_state (scanner);
 
 	if (width > 4) {
 		error (0, "too many components in vector literal");
@@ -928,4 +928,5 @@ qc_yyparse (FILE *in)
 	yylex_destroy (scanner);
 	qc_yypstate_delete (ps);
 	return status;
+	(void) yy_top_state;	// FIXME silence unused warning
 }
