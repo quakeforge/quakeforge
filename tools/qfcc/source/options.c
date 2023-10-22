@@ -862,6 +862,7 @@ DecodeArgs (int argc, char **argv)
 	}
 
 	if (options.verbosity >= 3) {
+		pre_yydebug = 1;
 		qc_yydebug = 1;
 		qp_yydebug = 1;
 	}

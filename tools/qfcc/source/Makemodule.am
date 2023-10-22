@@ -48,6 +48,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/opcodes.c \
 	tools/qfcc/source/options.c \
 	tools/qfcc/source/pragma.c \
+	tools/qfcc/source/pre-parse.y \
 	tools/qfcc/source/qc-lex.l \
 	tools/qfcc/source/qc-parse.y \
 	tools/qfcc/source/qfcc.c \
@@ -88,6 +89,8 @@ BUILT_SOURCES += \
 	tools/qfcc/source/qp-parse.h \
 	tools/qfcc/source/qp-lex.c
 
+tools/qfcc/source/pre-parse.c: tools/qfcc/source/pre-parse.y
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qc-parse.c: tools/qfcc/source/qc-parse.y
 	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qc-lex.c: tools/qfcc/source/qc-lex.l

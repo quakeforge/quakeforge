@@ -36,6 +36,9 @@ typedef struct rua_loc_s {
 	int         file;
 } rua_loc_t;
 
+typedef struct rua_macro_s {
+} rua_macro_t;
+
 typedef struct rua_tok_s {
 	rua_loc_t   location;
 	int         textlen;
@@ -44,9 +47,25 @@ typedef struct rua_tok_s {
 		struct {
 			void       *pointer;	// mirrors pointer in QC_YYSTYPE
 			char        str_text[8];// if len < 8 and spec not used
+			int         token;		// when recording macros
 		};
 		QC_YYSTYPE      value;
+		struct dstring_s *dstr;
+		rua_macro_t    *macro;
 	};
 } rua_tok_t;
+
+rua_macro_t *rua_start_macro (void *scanner);
+rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
+							   void *scanner);
+void rua_macro_finish (rua_macro_t *macro, void *scanner);
+void rua_start_text (void *scanner);
+void rua_start_expr (void *scanner);
+void rua_end_directive (void *scanner);
+void rua_if (bool pass, void *scanner);
+void rua_else (bool pass, const char *tok, void *scanner);
+void rua_endif (void *scanner);
+
+#include "tools/qfcc/source/pre-parse.h"
 
 #endif//__rua_lang_h

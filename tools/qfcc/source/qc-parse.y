@@ -163,8 +163,10 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			HYPERUNARY
 %left			'.' '(' '['
 
+%token	<expr>		VALUE STRING TOKEN
+// end of tokens common between qc and qp
+
 %token	<symbol>	CLASS_NAME NAME
-%token	<expr>		VALUE STRING
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
 %token				RETURN AT_RETURN ELLIPSIS

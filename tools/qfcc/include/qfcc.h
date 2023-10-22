@@ -119,6 +119,7 @@ const char *file_basename (const char *filename, int keepdot) __attribute__((pur
 
 int qc_yyparse (FILE *in);
 int qp_yyparse (FILE *in);
+extern int pre_yydebug;
 extern int qc_yydebug;
 extern int qp_yydebug;
 

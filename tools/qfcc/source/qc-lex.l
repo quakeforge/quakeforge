@@ -85,8 +85,22 @@
 #define YYSTYPE rua_tok_t
 #define YYLTYPE rua_loc_t
 
+typedef struct {
+	bool        saw_true;
+	bool        saw_else;
+	bool        own_state;
+	bool        enabled;
+} rua_cond_t;
+
+typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
+
 typedef struct rua_extra_s {
 		int         start_state;
+		bool        preprocessor;
+		bool        recording;
+		qc_yypstate *qc_state;
+		pre_yypstate *pre_state;
+		rua_cond_stack_t cond_stack;
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
 
@@ -101,21 +115,25 @@ int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
+static int directive (const char *token, yyscan_t scanner);
 static int keyword_or_id (YYSTYPE *lval, const char *token);
 static void user_action (rua_tok_t *tok, rua_loc_t *loc,
-						 const char *text, size_t textlen, yyscan_t scanner);
+						 const char *text, size_t textlen, int state);
+static void undo_loc (rua_loc_t *loc);
 static void next_line (rua_loc_t *loc);
 
-enum {
+typedef enum {
 	rua_eof = 1,
 	rua_error,
 	rua_number,
 	rua_vector,
 	rua_string,
 	rua_char,
-};
 
-#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng, yyscanner);
+	rua_num_term,
+} rua_term;
+
+#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng, yystart());
 
 %}
 
@@ -134,21 +152,26 @@ FRAMEID		{ID}(\.{ID})*
 PRAGMAID	{ID}(-{ID})*
 s_string	\"(\\.|[^"\\])*\"
 c_string	'(\\.|[^'\\])*'
+h_string    <[^>]*>
+q_string    \"[^\"]*\"
 
 pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
 pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
-%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT LCOMMENT PRAGMA
+%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE
+%x		COMMENT LCOMMENT
+%x		BOL DIRECTIVE TEXT MACRO SUPPRESS SUPPRESSC PRAGMA
 %x      VECTOR
+%s		PREPROC PREEXPR
 
 %%
+						auto extra = qc_yyget_extra (yyscanner);
 						yyset_debug (0, yyscanner);
 						grab_frame = GRAB_FRAME;
 						grab_other = GRAB_OTHER;
 						grab_write = GRAB_WRITE;
 						yylval->pointer = 0;	// ensure pointer vals are null
 
-"/*"					{ yy_push_state (COMMENT, yyscanner); }
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
 <COMMENT>\*+"/"			{ yy_pop_state (yyscanner); }
 <COMMENT>\n				{ next_line (yylloc); }
@@ -156,9 +179,49 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <COMMENT>\/+[^*\n]*		/* handle /s not followed by * */
 <COMMENT>\*+[^/\n]*		/* handle *s not followed by * */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
-"//"					{ yy_push_state (LCOMMENT, yyscanner); }/* cf <*>\r\n */
+<*>"/*"					{ yy_push_state (COMMENT, yyscanner); }
+<*>"//"					{ yy_push_state (LCOMMENT, yyscanner); }/* cf <*>\r\n */
 <LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
 <LCOMMENT>[\\]*			/* consume \ */
+
+<*>^#{s}*				{
+							yy_push_state (DIRECTIVE, yyscanner);
+							extra->preprocessor = true;
+						}
+<*>^{s}*				{ yy_push_state (BOL, yyscanner); }
+<BOL>#{s}*				{ BEGIN (DIRECTIVE); extra->preprocessor = true; }
+<BOL>.					{
+							yy_pop_state (yyscanner);
+							undo_loc (yylloc);
+							yyless (0);
+						}
+
+<DIRECTIVE>{ID}			{ {
+							int tok = directive (yytext, yyscanner);
+							if (tok >= 0) {
+								return tok;
+							}
+						} }
+<PREPROC,MACRO>{ID}		{ return PRE_ID; }
+<PREPROC>{ID}\(			{ return PRE_IDp; }
+
+<DIRECTIVE>\r*\n		|
+<PREEXPR>\r*\n			|
+<MACRO,TEXT>\r*\n		|
+<PREPROC>\r*\n			{ next_line (yylloc); return PRE_EOD; }
+
+<SUPPRESS>^[^#\n \t]+	{ BEGIN (SUPPRESSC); }
+<SUPPRESSC>.*			/* nom nom */
+<SUPPRESSC>\n			{ next_line (yylloc); BEGIN (SUPPRESS); }
+<SUPPRESS>\n			{ next_line (yylloc); }
+<SUPPRESS><<EOF>>		{ error (0, "unterminated #if"); return 0; }
+
+<TEXT>[^\\\r\n]*		{ return PRE_TEXT; }
+<TEXT>[\\]*				{ return PRE_TEXT; }
+<MACRO>##				{ return PRE_CONCAT; }
+<MACRO>#				{ return '#'; }
+<PREEXPR>{h_string}		{ return PRE_HSTRING; }
+<PREEXPR>{q_string}		{ return PRE_QSTRING; }
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
@@ -248,15 +311,96 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 <*>{s}+					/* skip */
 
-<*>.					error (0, "all your typo are belong to us");
+<*>.					{
+							error (0, "all your typo are belong to us:%d %d-%d",
+								   yystart(),
+								   yylloc->first_column, yylloc->last_column);
+						}
 
 %%
+
+#define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
 
 typedef struct {
 	const char *name;
 	int         value;
 	specifier_t spec;
 } keyword_t;
+
+typedef struct {
+	const char *name;
+	int         value;
+} directive_t;
+
+// preprocessor directives in ruamoko and quakec
+static directive_t rua_directives[] = {
+	{"include",  PRE_INCLUDE},
+	{"embed",    PRE_EMBED},
+	{"define",   PRE_DEFINE},
+	{"undef",    PRE_UNDEF},
+	{"error",    PRE_ERROR},
+	{"warning",  PRE_WARNING},
+	{"pragma",   PRE_PRAGMA},
+	{"line",     PRE_LINE},
+};
+
+static directive_t cond_directives[] = {
+	{"if",       PRE_IF},
+	{"ifdef",    PRE_IFDEF},
+	{"ifndef",   PRE_IFNDEF},
+	{"else",     PRE_ELSE},
+	{"elif",     PRE_ELIF},
+	{"elifdef",  PRE_ELIFDEF},
+	{"elifndef", PRE_ELIFNDEF},
+	{"endif",    PRE_ENDIF},
+};
+
+static const char *
+directive_get_key (const void *dir, void *unused)
+{
+	return ((directive_t*)dir)->name;
+}
+
+static int
+directive (const char *token, yyscan_t scanner)
+{
+	static hashtab_t *rua_directive_tab;
+	static hashtab_t *cond_directive_tab;
+
+	yy_pop_state (scanner); // pop DIRECTIVE off the stack
+	yy_push_state (PREPROC, scanner);
+
+	if (!rua_directive_tab) {
+		rua_directive_tab = Hash_NewTable (253, directive_get_key, 0, 0, 0);
+		cond_directive_tab = Hash_NewTable (253, directive_get_key, 0, 0, 0);
+
+		for (size_t i = 0; i < ARRCOUNT(rua_directives); i++) {
+			Hash_Add (rua_directive_tab, &rua_directives[i]);
+		}
+		for (size_t i = 0; i < ARRCOUNT(cond_directives); i++) {
+			Hash_Add (cond_directive_tab, &cond_directives[i]);
+		}
+	}
+	directive_t *directive = Hash_Find (cond_directive_tab, token);
+	if (!directive && yy_top_state (scanner) != SUPPRESS) {
+		directive = Hash_Find (rua_directive_tab, token);
+		if (!directive) {
+			error (0, "invalid directive `%s`", token);
+			yy_pop_state (scanner);
+			yy_push_state (LCOMMENT, scanner);
+		}
+	}
+	if (!directive) {
+		if (yy_top_state (scanner) == SUPPRESS) {
+			yy_pop_state (scanner);// suppressed non-conditional directive
+			yy_push_state (LCOMMENT, scanner);
+		}
+		return -1;
+	}
+	//auto lex = qc_yyget_extra (scanner);
+	//lex->current_lang = &lex->pre_lang;
+	return directive->value;
+}
 
 // These keywords are part of the Ruamoko language and require the QuakeForge
 // Ruamoko VM.
@@ -435,17 +579,15 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 		rua_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
-		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
-
-		for (i = 0; i < NUMKEYS(keywords); i++)
+		for (i = 0; i < ARRCOUNT(keywords); i++)
 			Hash_Add (keyword_tab, &keywords[i]);
-		for (i = 0; i < NUMKEYS(qf_keywords); i++)
+		for (i = 0; i < ARRCOUNT(qf_keywords); i++)
 			Hash_Add (qf_keyword_tab, &qf_keywords[i]);
-		for (i = 0; i < NUMKEYS(at_keywords); i++)
+		for (i = 0; i < ARRCOUNT(at_keywords); i++)
 			Hash_Add (at_keyword_tab, &at_keywords[i]);
-		for (i = 0; i < NUMKEYS(obj_keywords); i++)
+		for (i = 0; i < ARRCOUNT(obj_keywords); i++)
 			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
-		for (i = 0; i < NUMKEYS(rua_keywords); i++)
+		for (i = 0; i < ARRCOUNT(rua_keywords); i++)
 			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
 	}
 	if (options.traditional < 1) {
@@ -867,11 +1009,18 @@ next_line (rua_loc_t *loc)
 }
 
 static void
-user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
-			 yyscan_t scanner)
+undo_loc (rua_loc_t *loc)
 {
-	int         state = yy_top_state (scanner);
-	if (state != COMMENT) {
+	// the next call to update_yylloc will sort out first_line and first_column
+	loc->last_line = loc->first_line;
+	loc->last_column = loc->first_column;
+}
+
+static void
+user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
+			 int state)
+{
+	if (state != COMMENT && state != SUPPRESS) {
 		if (textlen < sizeof (tok->text)) {
 			strncpy (tok->str_text, text, textlen);
 			tok->str_text[textlen] = 0;
@@ -885,37 +1034,62 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 	loc->first_column = loc->last_column;
 	// \n handling rules will take care of the column and line
 	loc->last_column += textlen;
+#if 0
+	printf ("start: %2d [%3d %3d] [%3d %3d] '%s'\n", state,
+			loc->first_line, loc->first_column,
+			loc->last_line, loc->last_column,
+			quote_string (text));
+#endif
 }
 
 static int
-qc_process (qc_yypstate *ps, int token, rua_tok_t *tok, yyscan_t scanner)
+qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 {
 	auto value = &tok->value;
 	auto loc = &tok->location;
 
-	switch (-token) {
-		case rua_number:
-			token = parse_number (tok, scanner);
-			if (token == VALUE && value->expr->implicit) {
-				if (is_long (get_type (value->expr))) {
-					pr_long_t v = expr_long (value->expr);
-					if (v < INT32_MIN || v > INT32_MAX) {
-						warning (0, "integer value truncated");
+	if (token < 0) {
+		rua_term    term = -token;
+		switch (term) {
+			case rua_eof:
+			case rua_error:
+			case rua_num_term:
+				break;
+			case rua_number:
+				token = parse_number (tok, scanner);
+				if (!extra->preprocessor
+					&& token == VALUE && value->expr->implicit) {
+					if (is_long (get_type (value->expr))) {
+						pr_long_t v = expr_long (value->expr);
+						if (v < INT32_MIN || v > INT32_MAX) {
+							warning (0, "integer value truncated");
+						}
+						value->expr = new_int_expr (v, true);
 					}
-					value->expr = new_int_expr (v, true);
 				}
-			}
-			break;
-		case rua_vector:
-			token = parse_vector (tok, scanner);
-			break;
-		case rua_string:
-		case rua_char:
-			token = parse_string (tok, -token, scanner);
-			break;
+				break;
+			case rua_vector:
+				token = parse_vector (tok, scanner);
+				break;
+			case rua_string:
+			case rua_char:
+				token = parse_string (tok, -token, scanner);
+				break;
+		}
 	}
 	if (token >= 0) {
-		return qc_yypush_parse (ps, token, value, loc, scanner);
+		//printf ("%d %d %s\n", token, extra->preprocessor, tok->text);
+		if (extra->preprocessor) {
+			auto state = extra->pre_state;
+			if (extra->recording && token != PRE_EOD) {
+				tok->token = token;
+				token = PRE_TOKEN;
+			}
+			return pre_yypush_parse (state, token, tok, loc, scanner);
+		} else {
+			auto state = extra->qc_state;
+			return qc_yypush_parse (state, token, value, loc, scanner);
+		}
 	}
 	return YYPUSH_MORE;
 }
@@ -925,18 +1099,147 @@ qc_yyparse (FILE *in)
 {
 	int         status;
 	yyscan_t    scanner;
-	qc_yypstate *ps = qc_yypstate_new ();
 	rua_tok_t   tok = { .location = { 1, 1, 1, 1, pr.source_file }, };
-	rua_extra_t extra = {};
+	rua_extra_t extra = {
+		.qc_state = qc_yypstate_new (),
+		.pre_state = pre_yypstate_new (),
+		.cond_stack = DARRAY_STATIC_INIT (8),
+	};
 
 	yylex_init_extra (&extra, &scanner);
 	yyset_in (in, scanner);
 	do {
 		int token = yylex (&tok, &tok.location, scanner);
-		status = qc_process (ps, token, &tok, scanner);
+		status = qc_process (&extra, token, &tok, scanner);
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (scanner);
-	qc_yypstate_delete (ps);
+	qc_yypstate_delete (extra.qc_state);
+	pre_yypstate_delete (extra.pre_state);
+	free (extra.cond_stack.a);
 	return status;
+}
+
+rua_macro_t *
+rua_start_macro (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = true;
+
+	yy_pop_state (scanner);
+	yy_push_state (MACRO, scanner);
+	return 0;
+}
+
+rua_macro_t *
+rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
+{
+	return macro;
+}
+
+void
+rua_macro_finish (rua_macro_t *macro, void *scanner)
+{
+}
+
+void
+rua_start_text (void *scanner)
+{
+	yy_pop_state (scanner);
+	yy_push_state (TEXT, scanner);
+}
+
+void
+rua_start_expr (void *scanner)
+{
+	yy_pop_state (scanner);
+	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_end_directive (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->preprocessor = false;
+	extra->recording = false;
+	yy_pop_state (scanner);
+}
+
+static void
+dump_state_stack (void *scanner)
+{
+	auto yyg = (struct yyguts_t *)scanner;
+	for (int i = 0; i < yyg->yy_start_stack_ptr; i++) {
+		printf ("%d ", yyg->yy_start_stack[i]);
+	}
+	printf (": %d\n", yystart ());
+}
+
+void
+rua_if (bool pass, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	rua_cond_t  cond = {
+		.saw_true = pass,
+		.saw_else = false,
+		.own_state = true,
+		.enabled = pass,
+	};
+	if (extra->cond_stack.size) {
+		auto c = extra->cond_stack.a[extra->cond_stack.size - 1];
+		cond.own_state = c.own_state & c.enabled;
+	}
+	DARRAY_APPEND (&extra->cond_stack, cond);
+	yy_pop_state (scanner);	// remove DIRECTIVE/PREEXPR state
+	if (cond.own_state && !cond.enabled) {
+		yy_push_state (SUPPRESS, scanner);
+	}
+	// put PREEXPR on the stack for EOD to pop
+	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_else (bool pass, const char *tok, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	if (!extra->cond_stack.size) {
+		error (0, "#else without #if");
+		return;
+	}
+	yy_pop_state (scanner);	// remove DIRECTIVE state
+	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
+	if (cond->saw_else) {
+		error (0, "#%s after #else", tok);
+		return;
+	}
+	if (cond->own_state && !cond->enabled) {
+		yy_pop_state (scanner);
+	}
+	pass &= !cond->saw_true;
+	cond->enabled = pass;
+	cond->saw_true |= pass;
+	cond->saw_else = strcmp (tok, "else") == 0;
+	if (cond->own_state && !cond->enabled) {
+		yy_push_state (SUPPRESS, scanner);
+	}
+	// put PREEXPR on the stack for EOD to pop
+	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_endif (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	if (!extra->cond_stack.size) {
+		error (0, "#endif without #if");
+		return;
+	}
+	if (0) dump_state_stack (scanner);
+	yy_pop_state (scanner);	// remove DIRECTIVE state
+	auto cond = DARRAY_REMOVE (&extra->cond_stack);
+	if (cond.own_state && !cond.enabled) {
+		yy_pop_state (scanner);
+	}
+	// put PREEXPR on the stack for EOD to pop
+	yy_push_state (PREEXPR, scanner);
 }
