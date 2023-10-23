@@ -61,6 +61,7 @@ static const char * const sy_type_names[] = {
 	"sy_func",
 	"sy_class",
 	"sy_convert",
+	"sy_macro",
 };
 
 const char *

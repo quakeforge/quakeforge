@@ -105,6 +105,8 @@ is_lvalue (const expr_t *expr)
 					break;
 				case sy_convert:
 					break;
+				case sy_macro:
+					break;
 			}
 			break;
 		case ex_temp:

@@ -116,7 +116,7 @@ parse_error (void *scanner)
 %left           '.' '(' '['
 
 %token <value.expr> VALUE STRING
-%token <location> TOKEN
+%token          TOKEN
 // end of tokens comment between qc and preprocessor
 
 %token			QSTRING HSTRING
@@ -130,9 +130,9 @@ parse_error (void *scanner)
 %token          DEFINED EOD
 %token          CONCAT
 
-%type <macro>   body body_text
+%type <macro>   params body
 %type <dstr>    text text_text
-%type <value.expr>  unary_expr expr id
+%type <value.expr>  unary_expr expr id defined defined_id
 
 %{
 #define BEXPR(a,op,b) new_long_expr (expr_long (a) op expr_long (b), false)
@@ -151,20 +151,29 @@ directive_list
 directive
 	: INCLUDE expand string extra_warn
 	| EMBED expand string extra_ignore
-	| DEFINE ID body
-	| DEFINE IDp params ')' body { rua_macro_finish ($body, scanner); }
+	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, scanner); }
+	  body					{ rua_macro_finish ($body, scanner); }
+	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, scanner); }
+	  params ')'	<macro> { $$ = $3; }
+	  body					{ rua_macro_finish ($body, scanner); }
 	| UNDEF ID extra_warn
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
 	| PRAGMA expand pragma_params { pragma_process (); }
 	| LINE expand expr QSTRING extra_warn
 	| IF expand expr		{ rua_if (expr_long ($3), scanner); }
-	| IFDEF ID extra_warn
-	| IFNDEF ID extra_warn
+	| IFDEF ID extra_warn	{ rua_if (rua_defined ($2, scanner), scanner); }
+	| IFNDEF ID extra_warn	{ rua_if (!rua_defined ($2, scanner), scanner); }
 	| ELSE extra_warn		{ rua_else (true, "else", scanner); }
 	| ELIF expand expr		{ rua_else (expr_long ($3), "elif", scanner); }
 	| ELIFDEF ID extra_warn
+		{
+			rua_else (rua_defined ($2, scanner), "elifdef", scanner);
+		}
 	| ELIFNDEF ID extra_warn
+		{
+			rua_else (!rua_defined ($2, scanner), "elifndef", scanner);
+		}
 	| ENDIF extra_warn		{ rua_endif (scanner); }
 	;
 
@@ -184,13 +193,11 @@ text_text
 	| text_text TEXT			{ dstring_appendstr ($1, $2); $$ = $1; }
 	;
 
-body: <macro>{ $$ = rua_start_macro (scanner); } body_text
-	  { $body = $body_text; }
+body: /* empty */		{ $$ = $<macro>0; }
+	| body body_token	{ $$ = rua_macro_append ($1, yyvsp, scanner); }
 	;
-body_text
-	: TOKEN				{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
-	| body_text TOKEN	{ $$ = rua_macro_append ($1, yyvsp, scanner); }
-	;
+
+body_token : TOKEN | ',' | '(' | ')' ;
 
 expand
 	: { rua_start_expr (scanner); }
@@ -207,8 +214,8 @@ string
 	;
 
 params
-	: ID
-	| params ',' ID
+	: TOKEN				{ $$ = rua_macro_param ($<macro>0, yyvsp, scanner); }
+	| params ',' TOKEN	{ $$ = rua_macro_param ($1, yyvsp, scanner); }
 	;
 
 args: arg
@@ -219,8 +226,18 @@ arg : /* empty */
 	| expr
 	;
 
-id  : ID {$$ = 0; }
-	| IDp args ')' {$$ = 0; }
+id  : ID			{ $$ = 0; }
+	| IDp args ')'	{ $$ = 0; }
+	;
+
+defined
+	: defined_id			{ $$ = $1; }
+	| '(' defined_id ')'	{ $$ = $2; }
+	;
+
+//the token's text is quite ephemeral when short (the usual case)
+defined_id
+	: ID { $$ = new_long_expr (rua_defined ($1, scanner), false); }
 	;
 
 unary_expr
@@ -247,7 +264,7 @@ unary_expr
 			$$ = new_long_expr (1, false);
 		}
 	| '(' expr ')'		{ $$ = $2; }
-	| DEFINED { $$ = new_long_expr (0, false); /*FIXME*/ }
+	| DEFINED defined	{ $$ = $2; }
 	| '+' unary_expr	{ $$ = $2; }
 	| '-' unary_expr	{ $$ = UEXPR (-, $2); }
 	| '~' unary_expr	{ $$ = UEXPR (~, $2); }

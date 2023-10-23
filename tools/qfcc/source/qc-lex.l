@@ -101,6 +101,7 @@ typedef struct rua_extra_s {
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		rua_cond_stack_t cond_stack;
+		symtab_t   *macro_tab;
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
 
@@ -160,9 +161,9 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE
 %x		COMMENT LCOMMENT
-%x		BOL DIRECTIVE TEXT MACRO SUPPRESS SUPPRESSC PRAGMA
+%x		BOL DIRECTIVE TEXT SUPPRESS SUPPRESSC PRAGMA
 %x      VECTOR
-%s		PREPROC PREEXPR
+%s		PREPROC PREEXPR MACRO
 
 %%
 						auto extra = qc_yyget_extra (yyscanner);
@@ -222,6 +223,8 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <MACRO>#				{ return '#'; }
 <PREEXPR>{h_string}		{ return PRE_HSTRING; }
 <PREEXPR>{q_string}		{ return PRE_QSTRING; }
+<PREEXPR>defined		{ return PRE_DEFINED; }
+<PREEXPR>{ID}			{ return PRE_ID; }
 
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
@@ -1081,9 +1084,11 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		//printf ("%d %d %s\n", token, extra->preprocessor, tok->text);
 		if (extra->preprocessor) {
 			auto state = extra->pre_state;
-			if (extra->recording && token != PRE_EOD) {
+			if (extra->recording) {
 				tok->token = token;
-				token = PRE_TOKEN;
+				if (token != PRE_EOD && token != ',' && token != ')') {
+					token = PRE_TOKEN;
+				}
 			}
 			return pre_yypush_parse (state, token, tok, loc, scanner);
 		} else {
@@ -1104,6 +1109,7 @@ qc_yyparse (FILE *in)
 		.qc_state = qc_yypstate_new (),
 		.pre_state = pre_yypstate_new (),
 		.cond_stack = DARRAY_STATIC_INIT (8),
+		.macro_tab = new_symtab (0, stab_global),
 	};
 
 	yylex_init_extra (&extra, &scanner);
@@ -1121,25 +1127,100 @@ qc_yyparse (FILE *in)
 }
 
 rua_macro_t *
-rua_start_macro (void *scanner)
+rua_start_macro (const char *name, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = true;
 
+	int len = strlen (name);
+	if (name[len - 1] == '(') {
+		name = save_substring (name, len - 1);
+	} else {
+		name = save_string (name);
+	}
+
 	yy_pop_state (scanner);
 	yy_push_state (MACRO, scanner);
-	return 0;
+
+	rua_macro_t *macro = malloc (sizeof (*macro));
+	*macro = (rua_macro_t) {
+		.name = name,
+		.params = new_symtab (0, stab_param),
+		.tail = &macro->tokens,
+	};
+	return macro;
 }
 
 rua_macro_t *
 rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 {
+	rua_expr_t *expr = malloc (sizeof (*expr));
+	*expr = (rua_expr_t) {
+		.location = token->location,
+		.textlen = token->textlen,
+		.token = token->token,
+		.text = save_string (token->text),
+	};
+	*macro->tail = expr;
+	macro->tail = &expr->next;
+	return macro;
+}
+
+rua_macro_t *
+rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
+{
+	if (token->token != PRE_ID) {
+		error (0, "expected parameter name, found \"%s\"", token->text);
+		return macro;
+	}
+	if (symtab_lookup (macro->params, token->text)) {
+		error (0, "duplicate macro parameter \"%s\"", token->text);
+		return macro;
+	}
+	auto sym = new_symbol (token->text);
+	symtab_addsymbol (macro->params, sym);
 	return macro;
 }
 
 void
 rua_macro_finish (rua_macro_t *macro, void *scanner)
 {
+	if (macro->tokens) {
+		if (macro->tokens->token == PRE_CONCAT
+			|| ((rua_expr_t *) macro->tail)->token == PRE_CONCAT) {
+			error (0, "'##' cannot appear at either end of a macro expansion");
+			return;
+		}
+		for (auto t = macro->tokens; t; t = t->next) {
+			if (t->token == '#'
+				&& (!t->next
+					|| t->next->token != PRE_ID
+					|| !symtab_lookup (macro->params, t->next->text))) {
+				error (0, "'#' is not followed by a macro parameter");
+				return;
+			}
+		}
+	}
+
+	auto extra = qc_yyget_extra (scanner);
+	auto macro_tab = extra->macro_tab;
+	auto sym = symtab_lookup (macro_tab, macro->name);
+	if (sym) {
+		auto o = sym->s.macro->tokens;
+		auto n = macro->tokens;
+		while (o && n && o->text == n->text) {
+			o = o->next;
+			n = n->next;
+		}
+		if (o || n) {
+			error (0, "\"%s\" redefined", macro->name);
+		}
+		return;
+	}
+	sym = new_symbol (macro->name);
+	sym->sy_type = sy_macro;
+	sym->s.macro = macro;
+	symtab_addsymbol (macro_tab, sym);
 }
 
 void
@@ -1242,4 +1323,12 @@ rua_endif (void *scanner)
 	}
 	// put PREEXPR on the stack for EOD to pop
 	yy_push_state (PREEXPR, scanner);
+}
+
+bool
+rua_defined (const char *name, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	auto macro_tab = extra->macro_tab;
+	return symtab_lookup (macro_tab, name);
 }

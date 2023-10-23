@@ -151,6 +151,15 @@ save_string (const char *str)
 }
 
 const char *
+save_substring (const char *str, int len)
+{
+	char        substr[len + 1];
+	strncpy (substr, str, len);
+	substr[len] = 0;
+	return save_string (substr);
+}
+
+const char *
 save_cwd (void)
 {
 	char       *cwd = getcwd (0, 0);

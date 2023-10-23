@@ -57,6 +57,7 @@ typedef enum {
 	sy_func,					///< symbol refers to a function
 	sy_class,					///< symbol refers to a class
 	sy_convert,					///< symbol refers to a conversion function
+	sy_macro,					///< symbol refers to a macro definition
 } sy_type_e;
 
 typedef struct symconv_s {
@@ -80,6 +81,7 @@ typedef struct symbol_s {
 		const struct expr_s *expr;	///< sy_expr
 		struct function_s *func;	///< sy_func
 		symconv_t   convert;		///< sy_convert
+		struct rua_macro_s *macro;	///< sy_macro
 	} s;
 } symbol_t;
 
