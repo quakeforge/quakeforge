@@ -130,6 +130,7 @@ typedef enum {
 	rua_vector,
 	rua_string,
 	rua_char,
+	rua_space,
 
 	rua_num_term,
 } rua_term;
@@ -174,7 +175,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 						yylval->pointer = 0;	// ensure pointer vals are null
 
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
-<COMMENT>\*+"/"			{ yy_pop_state (yyscanner); }
+<COMMENT>\*+"/"			{ yy_pop_state (yyscanner); return -rua_space; }
 <COMMENT>\n				{ next_line (yylloc); }
 <COMMENT>[^*/\n]*		/* munch on anything but possible end of comment */
 <COMMENT>\/+[^*\n]*		/* handle /s not followed by * */
@@ -189,7 +190,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
 						}
-<*>^{s}*				{ yy_push_state (BOL, yyscanner); }
+<*>^{s}*				{ yy_push_state (BOL, yyscanner); return -rua_space; }
 <BOL>#{s}*				{ BEGIN (DIRECTIVE); extra->preprocessor = true; }
 <BOL>.					{
 							yy_pop_state (yyscanner);
@@ -211,10 +212,12 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <MACRO,TEXT>\r*\n		|
 <PREPROC>\r*\n			{ next_line (yylloc); return PRE_EOD; }
 
-<SUPPRESS>^[^#\n \t]+	{ BEGIN (SUPPRESSC); }
-<SUPPRESSC>.*			/* nom nom */
+<SUPPRESS>^[^#/\n \t]+	{ BEGIN (SUPPRESSC); }
+<SUPPRESSC>[^/\n]*		/* nom nom */
+<SUPPRESSC>\/[^/\n]*	/* nom nom */
 <SUPPRESSC>\n			{ next_line (yylloc); BEGIN (SUPPRESS); }
 <SUPPRESS>\n			{ next_line (yylloc); }
+<SUPPRESS>\/[^/\n]*		/* nom nom */
 <SUPPRESS><<EOF>>		{ error (0, "unterminated #if"); return 0; }
 
 <TEXT>[^\\\r\n]*		{ return PRE_TEXT; }
@@ -312,7 +315,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							}
 						}
 
-<*>{s}+					/* skip */
+<*>{s}+					{ return -rua_space; }
 
 <*>.					{
 							error (0, "all your typo are belong to us:%d %d-%d",
@@ -528,6 +531,9 @@ keyword_get_key (const void *kw, void *unused)
 static int
 process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 {
+	if (lval->text == lval->str_text) {
+		lval->text = save_string (lval->str_text);
+	}
 	if (keyword->value == STRUCT) {
 		lval->value.op = token[0];
 	} else if (keyword->value == OBJECT_NAME) {
@@ -1004,6 +1010,9 @@ parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
 static void
 next_line (rua_loc_t *loc)
 {
+	if (options.preprocess_only) {
+		puts ("");
+	}
 	loc->first_line = loc->last_line;
 	loc->first_column = loc->last_column;
 	loc->last_column = 1;
@@ -1023,16 +1032,23 @@ static void
 user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 			 int state)
 {
-	if (state != COMMENT && state != SUPPRESS) {
-		if (textlen < sizeof (tok->text)) {
-			strncpy (tok->str_text, text, textlen);
-			tok->str_text[textlen] = 0;
-			tok->text = tok->str_text;
-		} else {
-			tok->text = save_string (text);
-		}
-		tok->textlen = textlen;
+	if (state == COMMENT || state == LCOMMENT || isspace (*text)) {
+		tok->str_text[0] = ' ';
+		tok->str_text[1] = 0;
+		tok->text = tok->str_text;
+		textlen = 1;
+	} else if (state == SUPPRESS) {
+		tok->str_text[0] = 0;
+		tok->text = tok->str_text;
+		textlen = 0;
+	} else if (textlen < sizeof (tok->text)) {
+		strncpy (tok->str_text, text, textlen);
+		tok->str_text[textlen] = 0;
+		tok->text = tok->str_text;
+	} else {
+		tok->text = save_string (text);
 	}
+	tok->textlen = textlen;
 	loc->first_line = loc->last_line;
 	loc->first_column = loc->last_column;
 	// \n handling rules will take care of the column and line
@@ -1078,6 +1094,11 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			case rua_char:
 				token = parse_string (tok, -token, scanner);
 				break;
+			case rua_space:
+				if (options.preprocess_only) {
+					printf (" ");
+				}
+				break;
 		}
 	}
 	if (token >= 0) {
@@ -1092,6 +1113,10 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			}
 			return pre_yypush_parse (state, token, tok, loc, scanner);
 		} else {
+			if (options.preprocess_only) {
+				printf ("%s", tok->text);
+				return token ? YYPUSH_MORE : 0;
+			}
 			auto state = extra->qc_state;
 			return qc_yypush_parse (state, token, value, loc, scanner);
 		}

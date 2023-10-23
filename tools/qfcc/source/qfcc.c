@@ -390,8 +390,12 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	}
 
 	yyin = preprocess_file (file, 0);
-	if (options.preprocess_only || !yyin)
+	if (options.preprocess_only || !yyin) {
+		if (yyin) {
+			return yyparse (yyin);
+		}
 		return !options.preprocess_only;
+	}
 
 	InitData ();
 	chain_initial_types ();
