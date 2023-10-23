@@ -156,7 +156,7 @@ directive
 	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, scanner); }
 	  params ')'	<macro> { $$ = $3; }
 	  body					{ rua_macro_finish ($body, scanner); }
-	| UNDEF ID extra_warn
+	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
 	| PRAGMA expand pragma_params { pragma_process (); }

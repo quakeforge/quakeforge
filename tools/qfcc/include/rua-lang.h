@@ -82,6 +82,7 @@ void rua_if (bool pass, void *scanner);
 void rua_else (bool pass, const char *tok, void *scanner);
 void rua_endif (void *scanner);
 bool rua_defined (const char *sym, void *scanner);
+void rua_undefine (const char *sym, void *scanner);
 
 #include "tools/qfcc/source/pre-parse.h"
 

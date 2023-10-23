@@ -1332,3 +1332,14 @@ rua_defined (const char *name, void *scanner)
 	auto macro_tab = extra->macro_tab;
 	return symtab_lookup (macro_tab, name);
 }
+
+void
+rua_undefine (const char *name, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	auto macro_tab = extra->macro_tab;
+	auto sym = symtab_lookup (macro_tab, name);
+	if (sym) {
+		symtab_removesymbol (macro_tab, sym);
+	}
+}
