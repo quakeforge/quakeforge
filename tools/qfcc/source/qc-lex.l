@@ -108,6 +108,7 @@ typedef struct rua_extra_s {
 		rua_cond_stack_t cond_stack;
 		rua_expr_stack_t expr_stack;
 		rua_macro_list_t arg_list;
+		dstring_t  *dstr;
 		symtab_t   *macro_tab;
 		yyscan_t    subscanner;
 	} rua_extra_t;
@@ -1110,13 +1111,18 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 	int         base = extra->expr_stack.size;
 	DARRAY_OPEN_AT (&extra->expr_stack, base, num_tokens);
 	int         index = num_tokens;
+	int         argid = 0;
 	for (auto t = macro->tokens; t; t = t->next) {
 		auto e = t;
 		if (t->token == PRE_ID) {
 			auto sym = symtab_lookup (macro->params, t->text);
-			int  param = sym->s.offset;
-			for (e = extra->arg_list.a[param]->tokens; e; e = e->next) {
-				extra->expr_stack.a[base + --index] = *e;
+			if (sym) {
+				int  param = sym->s.offset;
+				argid++;
+				for (e = extra->arg_list.a[param]->tokens; e; e = e->next) {
+					extra->expr_stack.a[base + --index] = *e;
+					extra->expr_stack.a[base + index].id = argid;
+				}
 			}
 		}
 		if (e) {
@@ -1131,13 +1137,20 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 		auto e = &extra->expr_stack.a[base + index];
 		if (e->token == '#') {
 			e->token = -rua_string;
-			auto p = e - 1;
-			auto str = quote_string (p->text);
-			e->text = save_string (va (0, "\"%s\"", str));
+			dstring_clear (extra->dstr);
+			dstring_appendstr (extra->dstr, "\"");
+			int  id = e[-1].id;
+			auto p = e;
+			while (p - extra->expr_stack.a > base && (--p)->id == id) {
+				auto str = quote_string (p->text);
+				dstring_appendstr (extra->dstr, str);
 
-			extra->expr_stack.a[base + --index] = (rua_expr_t) {
-				.token = -rua_ignore,
-			};
+				extra->expr_stack.a[base + --index] = (rua_expr_t) {
+					.token = -rua_ignore,
+				};
+			}
+			dstring_appendstr (extra->dstr, "\"");
+			e->text = save_string (extra->dstr->str);
 		} else if (e->token == PRE_CONCAT) {
 			auto p1 = e + 1;
 			auto p2 = e - 1;
@@ -1389,6 +1402,7 @@ qc_yyparse (FILE *in)
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.expr_stack = DARRAY_STATIC_INIT (32),
 		.arg_list = DARRAY_STATIC_INIT (8),
+		.dstr = dstring_new (),
 		.macro_tab = new_symtab (0, stab_global),
 	};
 
@@ -1420,6 +1434,7 @@ qc_yyparse (FILE *in)
 	free (extra.cond_stack.a);
 	free (extra.expr_stack.a);
 	free (extra.arg_list.a);
+	dstring_delete (extra.dstr);
 	return status;
 }
 
@@ -1456,6 +1471,7 @@ rua_end_params (rua_macro_t *macro, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->params = false;
+	//macro->params->parent = extra->macro_tab;
 	return macro;
 }
 

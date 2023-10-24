@@ -43,7 +43,7 @@ typedef struct rua_expr_s {
 	rua_loc_t   location;
 	int         textlen;
 	int         token;
-	int         param;			// 1-based param index (0 if not a param)
+	int         id;			// arg expansion id (1...)
 	const char *text;
 } rua_expr_t;
 
