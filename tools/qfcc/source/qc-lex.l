@@ -125,7 +125,9 @@ static void next_line (rua_loc_t *loc);
 
 typedef enum {
 	rua_eof = 1,
+	rua_ignore,
 	rua_error,
+	rua_id,
 	rua_number,
 	rua_vector,
 	rua_string,
@@ -234,8 +236,8 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 ^{s}*#{s}*pragma{s}+	{ yy_push_state (PRAGMA, yyscanner); }
 
-{ID}					{ return keyword_or_id(yylval, yytext); }
-@{ID}					{ return keyword_or_id(yylval, yytext); }
+{ID}					|
+@{ID}					{ return -rua_id; }
 @						{ return '@'; }
 
 {pp_number}				{ return -rua_number; }
@@ -1062,22 +1064,63 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 }
 
 static int
-qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
+preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
+{
+	if (token < 0) {
+		rua_term    term = -token;
+		switch (term) {
+			case rua_id:
+			case rua_ignore:
+			case rua_num_term:
+				internal_error (0, "unexpected rua token: %d", term);
+			case rua_eof:
+			case rua_error:
+				break;
+			case rua_number:
+				token = parse_number (tok, scanner);
+				break;
+			case rua_vector:
+				token = parse_vector (tok, scanner);
+				break;
+			case rua_string:
+			case rua_char:
+				break;
+			case rua_space:
+				if (!extra->recording) {
+					token = -rua_ignore;
+				}
+				break;
+		}
+	}
+	if (extra->recording) {
+		tok->token = token;
+		if (token != PRE_EOD && token != ',' && token != ')') {
+			token = PRE_TOKEN;
+		}
+	}
+	return token;
+}
+
+static int
+qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 {
 	auto value = &tok->value;
-	auto loc = &tok->location;
 
 	if (token < 0) {
 		rua_term    term = -token;
 		switch (term) {
+			case rua_ignore:
+			case rua_num_term:
+				internal_error (0, "unexpected rua token: %d", term);
 			case rua_eof:
 			case rua_error:
-			case rua_num_term:
+				break;
+			case rua_id:
+				token = keyword_or_id (tok, tok->text);
 				break;
 			case rua_number:
 				token = parse_number (tok, scanner);
-				if (!extra->preprocessor
-					&& token == VALUE && value->expr->implicit) {
+				if (token == VALUE && value->expr->implicit) {
 					if (is_long (get_type (value->expr))) {
 						pr_long_t v = expr_long (value->expr);
 						if (v < INT32_MIN || v > INT32_MAX) {
@@ -1101,23 +1144,30 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 				break;
 		}
 	}
-	if (token >= 0) {
-		//printf ("%d %d %s\n", token, extra->preprocessor, tok->text);
-		if (extra->preprocessor) {
-			auto state = extra->pre_state;
-			if (extra->recording) {
-				tok->token = token;
-				if (token != PRE_EOD && token != ',' && token != ')') {
-					token = PRE_TOKEN;
-				}
-			}
-			return pre_yypush_parse (state, token, tok, loc, scanner);
-		} else {
-			if (options.preprocess_only) {
-				printf ("%s", tok->text);
-				return token ? YYPUSH_MORE : 0;
-			}
+	return token;
+}
+
+static int
+qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
+{
+	auto loc = &tok->location;
+
+	if (extra->preprocessor) {
+		auto state = extra->pre_state;
+		token = preproc_token (extra, token, tok, scanner);
+		if (-token == rua_ignore) {
+			return YYPUSH_MORE;
+		}
+		return pre_yypush_parse (state, token, tok, loc, scanner);
+	} else {
+		if (options.preprocess_only) {
+			printf ("%s", tok->text);
+			return token ? YYPUSH_MORE : 0;
+		}
+		token = qc_token (extra, token, tok, scanner);
+		if (token >= 0) {
 			auto state = extra->qc_state;
+			auto value = &tok->value;
 			return qc_yypush_parse (state, token, value, loc, scanner);
 		}
 	}
