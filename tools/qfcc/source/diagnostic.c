@@ -63,7 +63,7 @@ report_function (const expr_t *e)
 					 GETSTR (srcline->source_file), srcline->source_line);
 	}
 	last_file = file;
-	if (current_func != last_func) {
+	if (!options.preprocess_only && current_func != last_func) {
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", GETSTR (file),
 					 current_func->name);
