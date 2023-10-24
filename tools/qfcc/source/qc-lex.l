@@ -1100,7 +1100,7 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 {
 	int         num_tokens = macro->num_tokens;
 	for (auto t = macro->tokens; t; t = t->next) {
-		if (t->token == PRE_ID) {
+		if (t->token == -rua_id) {
 			auto sym = symtab_lookup (macro->params, t->text);
 			if (sym) {
 				num_tokens += extra->arg_list.a[sym->s.offset]->num_tokens - 1;
@@ -1114,7 +1114,7 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 	int         argid = 0;
 	for (auto t = macro->tokens; t; t = t->next) {
 		auto e = t;
-		if (t->token == PRE_ID) {
+		if (t->token == -rua_id) {
 			auto sym = symtab_lookup (macro->params, t->text);
 			if (sym) {
 				int  param = sym->s.offset;
@@ -1211,6 +1211,9 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 		}
 	}
 	if (-token != rua_ignore && extra->recording) {
+		if (token == PRE_ID) {
+			token = -rua_id;
+		}
 		tok->token = token;
 		if (token != PRE_EOD && token != ',' && token != '(' && token != ')') {
 			token = PRE_TOKEN;
@@ -1320,7 +1323,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 
 	if (extra->expand || !extra->preprocessor) {
 		symbol_t   *sym = 0;
-		if (token == PRE_ID || token == -rua_id) {
+		if (token == -rua_id) {
 			sym = symtab_lookup (extra->macro_tab, tok->text);
 		}
 		if (sym) {
@@ -1509,7 +1512,7 @@ rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 		// ignore spaces
 		return macro;
 	}
-	if (token->token != PRE_ID) {
+	if (token->token != -rua_id) {
 		error (0, "expected parameter name, found \"%s\"", token->text);
 		return macro;
 	}
@@ -1546,7 +1549,7 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 		for (auto t = macro->tokens; t; t = t->next) {
 			if (t->token == '#'
 				&& (!t->next
-					|| t->next->token != PRE_ID
+					|| t->next->token != -rua_id
 					|| !symtab_lookup (macro->params, t->next->text))) {
 				error (0, "'#' is not followed by a macro parameter");
 				return;
