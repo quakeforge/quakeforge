@@ -127,7 +127,7 @@ static int keyword_or_id (YYSTYPE *lval, const char *token);
 static void user_action (rua_tok_t *tok, rua_loc_t *loc,
 						 const char *text, size_t textlen, int state);
 static void undo_loc (rua_loc_t *loc);
-static void next_line (rua_loc_t *loc);
+static void next_line (rua_loc_t *loc, yyscan_t scanner);
 
 typedef enum {
 	rua_eof = 1,
@@ -172,7 +172,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 %x		COMMENT LCOMMENT
 %x		BOL DIRECTIVE TEXT SUPPRESS SUPPRESSC PRAGMA
 %x      VECTOR
-%s		PREPROC PREEXPR MACRO
+%s		PREPROC PREEXPR MACRO ARGS
 
 %%
 						auto extra = qc_yyget_extra (yyscanner);
@@ -184,7 +184,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
 <COMMENT>\*+"/"			{ yy_pop_state (yyscanner); return -rua_space; }
-<COMMENT>\n				{ next_line (yylloc); }
+<COMMENT>\n				{ next_line (yylloc, yyscanner); }
 <COMMENT>[^*/\n]*		/* munch on anything but possible end of comment */
 <COMMENT>\/+[^*\n]*		/* handle /s not followed by * */
 <COMMENT>\*+[^/\n]*		/* handle *s not followed by * */
@@ -194,12 +194,15 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
 <LCOMMENT>[\\]*			/* consume \ */
 
-<*>^#{s}*				{
+<ARGS>^#				{	return '#'; }
+<*>^#					{
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
 						}
+<ARGS><<EOF>>			{ return 0; }
+<ARGS>^{s}*				{ return -rua_space; }
 <*>^{s}*				{ yy_push_state (BOL, yyscanner); return -rua_space; }
-<BOL>#{s}*				{ BEGIN (DIRECTIVE); extra->preprocessor = true; }
+<BOL>#					{ BEGIN (DIRECTIVE); extra->preprocessor = true; }
 <BOL>.					{
 							yy_pop_state (yyscanner);
 							undo_loc (yylloc);
@@ -218,13 +221,13 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <DIRECTIVE>\r*\n		|
 <PREEXPR>\r*\n			|
 <MACRO,TEXT>\r*\n		|
-<PREPROC>\r*\n			{ next_line (yylloc); return PRE_EOD; }
+<PREPROC>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
 <SUPPRESS>^[^#/\n \t]+	{ BEGIN (SUPPRESSC); }
 <SUPPRESSC>[^/\n]*		/* nom nom */
 <SUPPRESSC>\/[^/\n]*	/* nom nom */
-<SUPPRESSC>\n			{ next_line (yylloc); BEGIN (SUPPRESS); }
-<SUPPRESS>\n			{ next_line (yylloc); }
+<SUPPRESSC>\n			{ next_line (yylloc, yyscanner); BEGIN (SUPPRESS); }
+<SUPPRESS>\n			{ next_line (yylloc, yyscanner); }
 <SUPPRESS>\/[^/\n]*		/* nom nom */
 <SUPPRESS><<EOF>>		{ error (0, "unterminated #if"); return 0; }
 
@@ -242,8 +245,10 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 ^{s}*#{s}*pragma{s}+	{ yy_push_state (PRAGMA, yyscanner); }
 
-{ID}					|
-@{ID}					{ return -rua_id; }
+<INITIAL,ARGS>{
+	{ID}				|
+	@{ID}				{ return -rua_id; }
+}
 @						{ return '@'; }
 
 {pp_number}				{ return -rua_number; }
@@ -312,12 +317,13 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
 <PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
 
-<*>\\\r*\n				{ next_line (yylloc); }	/* line continuation */
+<*>\\\r*\n				{ next_line (yylloc, yyscanner); }/*line continuation*/
+<ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <*>\r*\n				{
 							if (YY_START == PRAGMA) {
 								pragma_process ();
 							}
-							next_line (yylloc);
+							next_line (yylloc, yyscanner);
 							if (yyg->yy_start_stack_ptr) {
 								yy_pop_state (yyscanner);
 							}
@@ -1016,9 +1022,10 @@ parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
 }
 
 static void
-next_line (rua_loc_t *loc)
+next_line (rua_loc_t *loc, yyscan_t scanner)
 {
-	if (options.preprocess_only) {
+	auto extra = qc_yyget_extra (scanner);
+	if (!extra->recording && options.preprocess_only) {
 		puts ("");
 	}
 	loc->first_line = loc->last_line;
@@ -1069,6 +1076,17 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 #endif
 }
 
+static rua_expr_t
+token_expr (int token, const rua_tok_t *tok)
+{
+	return (rua_expr_t) {
+		.location = tok->location,
+		.textlen = tok->textlen,
+		.token = token,
+		.text = save_string (tok->text),
+	};
+}
+
 static void
 expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 {
@@ -1109,12 +1127,7 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 					.text = " ",
 				};
 			} else {
-				*e = (rua_expr_t) {
-					.location = tok.location,
-					.textlen = tok.textlen,
-					.token = token,
-					.text = save_string (tok.text),
-				};
+				*e = token_expr (token, &tok);
 				*p2 = *p1 = (rua_expr_t) {
 					.token = -rua_ignore,
 				};
@@ -1127,15 +1140,18 @@ expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 static int
 preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 {
+	if (!token) {
+		return token;
+	}
 	if (token < 0) {
 		rua_term    term = -token;
 		switch (term) {
-			case rua_id:
 			case rua_ignore:
 			case rua_num_term:
 				internal_error (0, "unexpected rua token: %d", term);
 			case rua_eof:
 			case rua_error:
+			case rua_id:
 				break;
 			case rua_number:
 				if (!extra->recording) {
@@ -1157,7 +1173,7 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 	}
 	if (-token != rua_ignore && extra->recording) {
 		tok->token = token;
-		if (token != PRE_EOD && token != ',' && token != ')') {
+		if (token != PRE_EOD && token != ',' && token != '(' && token != ')') {
 			token = PRE_TOKEN;
 		}
 	}
@@ -1210,6 +1226,46 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 	return token;
 }
 
+static void
+rua_start_args (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = true;
+	yy_push_state (ARGS, scanner);
+}
+
+static void
+rua_end_args (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = false;
+	yy_pop_state (scanner);
+}
+
+static bool
+parse_args (rua_extra_t *extra, rua_loc_t *location, yyscan_t scanner)
+{
+	int status;
+	rua_start_args (scanner);
+	auto state = pre_yypstate_new ();
+	int token = PRE_ARGS;
+	rua_tok_t   tok = { .location = *location, };
+	do {
+		if (token != PRE_ARGS) {
+			token = yylex (&tok, &tok.location, scanner);
+			token = preproc_token (extra, token, &tok, scanner);
+		}
+		if (!token) {
+			break;
+		}
+		status = pre_yypush_parse (state, token, &tok, &tok.location, scanner);
+		token = -1;
+	} while (status == YYPUSH_MORE);
+	pre_yypstate_delete (state);
+	rua_end_args (scanner);
+	return token != 0;
+}
+
 static int
 qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 {
@@ -1225,8 +1281,37 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			sym = symtab_lookup (extra->macro_tab, tok->text);
 		}
 		if (sym) {
-			expand_macro (extra, sym->s.macro);
-			return YYPUSH_MORE;
+			if (sym->s.macro->params) {
+				rua_tok_t   ttok = { .location = tok->location, };
+				int         ttoken;
+				bool        saw_space = false;
+				do {
+					ttoken = yylex (&ttok, &ttok.location, scanner);
+					saw_space |= ttoken == -rua_space;
+				} while (ttoken == -rua_space);
+				if (ttoken != '(') {
+					DARRAY_APPEND (&extra->expr_stack,
+								   token_expr (ttoken, &ttok));
+					if (saw_space) {
+						DARRAY_APPEND (&extra->expr_stack, ((rua_expr_t) {
+							.token = -rua_space,
+							.text = " ",
+						}));
+					}
+					sym = 0;
+				} else {
+					if (!parse_args (extra, &ttok.location, scanner)) {
+						error (0, "unterminated argument list invoking"
+							   " macro \"%s\"", tok->text);
+						sym = 0;
+						return -1;
+					}
+				}
+			}
+			if (sym) {
+				expand_macro (extra, sym->s.macro);
+				return YYPUSH_MORE;
+			}
 		}
 	}
 	if (extra->preprocessor) {
@@ -1350,12 +1435,7 @@ rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 		expr = malloc (sizeof (*expr));
 		macro->num_tokens++;
 	}
-	*expr = (rua_expr_t) {
-		.location = token->location,
-		.textlen = token->textlen,
-		.token = token->token,
-		.text = save_string (token->text),
-	};
+	*expr = token_expr (token->token, token);
 	*macro->tail = expr;
 	macro->tail = &expr->next;
 	return macro;

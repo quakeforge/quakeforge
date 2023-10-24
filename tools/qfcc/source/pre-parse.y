@@ -128,7 +128,7 @@ parse_error (void *scanner)
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
-%token          CONCAT
+%token          CONCAT ARGS
 
 %type <macro>   params body
 %type <dstr>    text text_text
@@ -141,7 +141,10 @@ parse_error (void *scanner)
 
 %%
 
-start : directive_list
+start
+	: directive_list
+	| ARGS args ')' { YYACCEPT; }
+	;
 
 directive_list
 	: /*empty*/
@@ -218,12 +221,17 @@ params
 	| params ',' TOKEN	{ $$ = rua_macro_param ($1, yyvsp, scanner); }
 	;
 
-args: arg
-	| args ',' arg
+args: arg_list
+	| args ',' arg_list
 	;
 
-arg : /* empty */
-	| expr
+arg_list
+	: /* emtpy */
+	| arg_list arg
+	;
+
+arg : '(' args ')'
+	| TOKEN
 	;
 
 id  : ID			{ $$ = 0; }
