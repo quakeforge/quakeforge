@@ -180,7 +180,7 @@ set_vector_mult (pragma_arg_t *args)
 	}
 	const char *op = args->arg;
 	if (!strcmp (op, "@dot")) {
-		options.math.vector_mult = DOT;
+		options.math.vector_mult = QC_DOT;
 	} else {
 		warning (0, "unknown vector_mult arg: %s", op);
 	}

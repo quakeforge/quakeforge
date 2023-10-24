@@ -1612,8 +1612,8 @@ convert_nil (const expr_t *e, const type_t *t)
 int
 is_compare (int op)
 {
-	if (op == EQ || op == NE || op == LE || op == GE || op == LT || op == GT
-		|| op == '>' || op == '<')
+	if (op == QC_EQ || op == QC_NE || op == QC_LE || op == QC_GE
+		|| op == QC_LT || op == QC_GT || op == '>' || op == '<')
 		return 1;
 	return 0;
 }
@@ -1629,7 +1629,7 @@ is_math_op (int op)
 int
 is_logic (int op)
 {
-	if (op == OR || op == AND)
+	if (op == QC_OR || op == QC_AND)
 		return 1;
 	return 0;
 }
@@ -1937,7 +1937,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_swizzle:
 				case ex_extend:
 					if (options.code.progsversion == PROG_VERSION) {
-						return binary_expr (EQ, e, new_nil_expr ());
+						return binary_expr (QC_EQ, e, new_nil_expr ());
 					} else {
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -2066,9 +2066,9 @@ bitnot_expr:
 			if (!is_math (get_type (e)))
 				return error (e, "invalid type for unary +");
 			return e;
-		case REVERSE:
+		case QC_REVERSE:
 			return algebra_reverse (e);
-		case DUAL:
+		case QC_DUAL:
 			return algebra_dual (e);
 	}
 	internal_error (e, 0);
@@ -2311,7 +2311,7 @@ branch_expr (int op, const expr_t *test, const expr_t *label)
 		pr_branch_le,
 		pr_branch_ge,
 	};
-	if (op < EQ || op > LE) {
+	if (op < QC_EQ || op > QC_LE) {
 		internal_error (label, "invalid op: %d", op);
 	}
 	if (label && label->type != ex_label) {
@@ -2322,7 +2322,7 @@ branch_expr (int op, const expr_t *test, const expr_t *label)
 	}
 	expr_t     *branch = new_expr ();
 	branch->type = ex_branch;
-	branch->branch.type = branch_type[op - EQ];
+	branch->branch.type = branch_type[op - QC_EQ];
 	branch->branch.target = label;
 	branch->branch.test = test;
 	return branch;

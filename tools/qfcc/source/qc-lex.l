@@ -255,48 +255,48 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 {s_string}				{ return -rua_string; };
 {c_string}				{ return -rua_char; }
 
-[+\-*/&|^%]=			{ yylval->value.op = yytext[0]; return ASX; }
+[+\-*/&|^%]=			{ yylval->value.op = yytext[0]; return QC_ASX; }
 
-"%%="					{ yylval->value.op = MOD; return ASX; }
-"<<="					{ yylval->value.op = SHL; return ASX; }
-">>="					{ yylval->value.op = SHR; return ASX; }
+"%%="					{ yylval->value.op = QC_MOD; return QC_ASX; }
+"<<="					{ yylval->value.op = QC_SHL; return QC_ASX; }
+">>="					{ yylval->value.op = QC_SHR; return QC_ASX; }
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] { return yytext[0]; }
 
-"·"						{ return DOT; }
-"⋀"						{ return WEDGE; }
-"•"						{ return DOT; }
-"∧"						{ return WEDGE; }
-"∨"						{ return REGRESSIVE; }
-"†"						{ return REVERSE; }
-"∗"						{ return STAR; }
-"×"						{ return CROSS; }
-"⋆"						{ return DUAL; }
+"·"						{ return QC_DOT; }
+"⋀"						{ return QC_WEDGE; }
+"•"						{ return QC_DOT; }
+"∧"						{ return QC_WEDGE; }
+"∨"						{ return QC_REGRESSIVE; }
+"†"						{ return QC_REVERSE; }
+"∗"						{ return QC_STAR; }
+"×"						{ return QC_CROSS; }
+"⋆"						{ return QC_DUAL; }
 
-"%%"					{ return MOD; }
+"%%"					{ return QC_MOD; }
 
-{ELLIPSIS}				{ return ELLIPSIS; }
+{ELLIPSIS}				{ return QC_ELLIPSIS; }
 
-"<<"					{ return SHL; }
-">>"					{ return SHR; }
+"<<"					{ return QC_SHL; }
+">>"					{ return QC_SHR; }
 
-"&&"					{ return AND; }
-"||"					{ return OR; }
-"=="					{ return EQ; }
-"!="					{ return NE; }
-"<="					{ return LE; }
-">="					{ return GE; }
-"<"						{ return LT; }
-">"						{ return GT; }
+"&&"					{ return QC_AND; }
+"||"					{ return QC_OR; }
+"=="					{ return QC_EQ; }
+"!="					{ return QC_NE; }
+"<="					{ return QC_LE; }
+">="					{ return QC_GE; }
+"<"						{ return QC_LT; }
+">"						{ return QC_GT; }
 
-"++"					{ yylval->value.op = '+'; return INCOP; }
-"--"					{ yylval->value.op = '-'; return INCOP; }
+"++"					{ yylval->value.op = '+'; return QC_INCOP; }
+"--"					{ yylval->value.op = '-'; return QC_INCOP; }
 
 "$"{s}*{FRAMEID}		{
 							int ret = do_grab (yytext);
 							if (ret >= 0) {
 								yylval->value.expr = new_int_expr (ret, false);
-								return VALUE;
+								return QC_VALUE;
 							} else {
 								yy_push_state (-ret, yyscanner);
 							}
@@ -420,7 +420,7 @@ directive (const char *token, yyscan_t scanner)
 // Ruamoko VM.
 static keyword_t rua_keywords[] = {
 #define VEC_TYPE(type_name, base_type) \
-	{ #type_name, TYPE_SPEC, .spec = { .type = &type_##type_name } },
+	{ #type_name, QC_TYPE_SPEC, .spec = { .type = &type_##type_name } },
 #include "tools/qfcc/include/vec_types.h"
 };
 
@@ -430,27 +430,27 @@ static keyword_t rua_keywords[] = {
 // If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
 // then they will be unavailable as keywords.
 static keyword_t obj_keywords[] = {
-	{"id",				OBJECT_NAME, .spec = { .type = &type_id } 		},
-	{"Class",			TYPE_SPEC, .spec = { .type = &type_Class } 		},
-	{"Method",			TYPE_SPEC, .spec = { .type = &type_method } 	},
-	{"Super",			TYPE_SPEC, .spec = { .type = &type_super } 		},
-	{"SEL",				TYPE_SPEC, .spec = { .type = &type_SEL } 		},
-	{"IMP",				TYPE_SPEC, .spec = { .type = &type_IMP } 		},
+	{"id",				QC_OBJECT_NAME, .spec = { .type = &type_id } 		},
+	{"Class",			QC_TYPE_SPEC, .spec = { .type = &type_Class } 		},
+	{"Method",			QC_TYPE_SPEC, .spec = { .type = &type_method } 	},
+	{"Super",			QC_TYPE_SPEC, .spec = { .type = &type_super } 		},
+	{"SEL",				QC_TYPE_SPEC, .spec = { .type = &type_SEL } 		},
+	{"IMP",				QC_TYPE_SPEC, .spec = { .type = &type_IMP } 		},
 
-	{"@class",			CLASS					},
-	{"@defs",			DEFS					},
-	{"@encode",			ENCODE					},
-	{"@end",			END						},
-	{"@implementation",	IMPLEMENTATION			},
-	{"@interface",		INTERFACE				},
-	{"@private",		PRIVATE					},
-	{"@protected",		PROTECTED				},
-	{"@protocol",		PROTOCOL				},
-	{"@public",			PUBLIC					},
-	{"@reference",		REFERENCE				},
-	{"@selector",		SELECTOR				},
-	{"@self",			SELF					},
-	{"@this",			THIS					},
+	{"@class",			QC_CLASS					},
+	{"@defs",			QC_DEFS					},
+	{"@encode",			QC_ENCODE					},
+	{"@end",			QC_END						},
+	{"@implementation",	QC_IMPLEMENTATION			},
+	{"@interface",		QC_INTERFACE				},
+	{"@private",		QC_PRIVATE					},
+	{"@protected",		QC_PROTECTED				},
+	{"@protocol",		QC_PROTOCOL				},
+	{"@public",			QC_PUBLIC					},
+	{"@reference",		QC_REFERENCE				},
+	{"@selector",		QC_SELECTOR				},
+	{"@self",			QC_SELF					},
+	{"@this",			QC_THIS					},
 
 	// This is a hack to trigger the initialization of the class
 	// sytem if it is seen before any other Objective-QC symbol. Otherwise,
@@ -465,69 +465,69 @@ static keyword_t obj_keywords[] = {
 // for traditional code that might use these words as identifiers, but still
 // make the language features available to traditional code.
 static keyword_t at_keywords[] = {
-	{"for",			FOR		},
-	{"goto",		GOTO	},
-	{"break",		BREAK	},
-	{"continue",	CONTINUE},
-	{"switch",		SWITCH	},
-	{"case",		CASE	},
-	{"default",		DEFAULT	},
-	{"nil",			NIL		},
-	{"struct",		STRUCT	},
-	{"union",		STRUCT	},
-	{"enum",		ENUM	},
-	{"typedef",		TYPEDEF	},
-	{"extern",		EXTERN	},
-	{"static",		STATIC	},
-	{"sizeof",		SIZEOF	},
-	{"not",			NOT		},
-	{"auto",		TYPE_SPEC, .spec = { .type = &type_auto } },
+	{"for",			QC_FOR		},
+	{"goto",		QC_GOTO	},
+	{"break",		QC_BREAK	},
+	{"continue",	QC_CONTINUE},
+	{"switch",		QC_SWITCH	},
+	{"case",		QC_CASE	},
+	{"default",		QC_DEFAULT	},
+	{"nil",			QC_NIL		},
+	{"struct",		QC_STRUCT	},
+	{"union",		QC_STRUCT	},
+	{"enum",		QC_ENUM	},
+	{"typedef",		QC_TYPEDEF	},
+	{"extern",		QC_EXTERN	},
+	{"static",		QC_STATIC	},
+	{"sizeof",		QC_SIZEOF	},
+	{"not",			QC_NOT		},
+	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
 // be supported (sanely) by v6 progs.
 static keyword_t qf_keywords[] = {
-	{"quaternion",	TYPE_SPEC, .spec = { .type = &type_quaternion } },
-	{"double",		TYPE_SPEC, .spec = { .type = &type_double } },
-	{"int",			TYPE_SPEC, .spec = { .type = &type_int } 	},
-	{"unsigned",	TYPE_SPEC, .spec = { .is_unsigned = 1 } },
-	{"signed",		TYPE_SPEC, .spec = { .is_signed = 1 } },
-	{"long",		TYPE_SPEC, .spec = { .is_long = 1 } },
-	{"short",		TYPE_SPEC, .spec = { .is_short = 1 } },
+	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
+	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
+	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
+	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = 1 } },
+	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = 1 } },
+	{"long",		QC_TYPE_SPEC, .spec = { .is_long = 1 } },
+	{"short",		QC_TYPE_SPEC, .spec = { .is_short = 1 } },
 
-	{"@function",	TYPE_SPEC, .spec = { .type = &type_func } 	},
-	{"@args",		ARGS,					},
-	{"@va_list",	TYPE_SPEC, .spec = { .type = &type_va_list } 	},
-	{"@param",		TYPE_SPEC, .spec = { .type = &type_param } 		},
-	{"@return",     AT_RETURN,		},
+	{"@function",	QC_TYPE_SPEC, .spec = { .type = &type_func } 	},
+	{"@args",		QC_ARGS,				},
+	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
+	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
+	{"@return",     QC_AT_RETURN,		},
 
-	{"@hadamard",	HADAMARD,	},
-	{"@cross",		CROSS,		},
-	{"@dot",		DOT,		},
-	{"@wedge",		WEDGE,		},
-	{"@regressive",	REGRESSIVE,	},
-	{"@geometric",	GEOMETRIC,	},
-	{"@algebra",	ALGEBRA,	},
+	{"@hadamard",	QC_HADAMARD,	},
+	{"@cross",		QC_CROSS,		},
+	{"@dot",		QC_DOT,		},
+	{"@wedge",		QC_WEDGE,		},
+	{"@regressive",	QC_REGRESSIVE,	},
+	{"@geometric",	QC_GEOMETRIC,	},
+	{"@algebra",	QC_ALGEBRA,	},
 };
 
 // These keywors are always available. Other than the @ keywords, they
 // form traditional QuakeC.
 static keyword_t keywords[] = {
-	{"void",		TYPE_SPEC, .spec = { .type = &type_void } 	},
-	{"float",		TYPE_SPEC, .spec = { .type = &type_float } 	},
-	{"string",		TYPE_SPEC, .spec = { .type = &type_string } },
-	{"vector",		TYPE_SPEC, .spec = { .type = &type_vector } },
-	{"entity",		TYPE_SPEC, .spec = { .type = &type_entity } },
-	{"local",		LOCAL,					},
-	{"return",		RETURN,					},
-	{"while",		WHILE,					},
-	{"do",			DO,						},
-	{"if",			IF,						},
-	{"else",		ELSE,					},
-	{"@system",		SYSTEM,					},
-	{"@overload",	OVERLOAD,				},
-	{"@attribute",  ATTRIBUTE,				},
-	{"@handle",     HANDLE,					},
+	{"void",		QC_TYPE_SPEC, .spec = { .type = &type_void } 	},
+	{"float",		QC_TYPE_SPEC, .spec = { .type = &type_float } 	},
+	{"string",		QC_TYPE_SPEC, .spec = { .type = &type_string } },
+	{"vector",		QC_TYPE_SPEC, .spec = { .type = &type_vector } },
+	{"entity",		QC_TYPE_SPEC, .spec = { .type = &type_entity } },
+	{"local",		QC_LOCAL,					},
+	{"return",		QC_RETURN,					},
+	{"while",		QC_WHILE,					},
+	{"do",			QC_DO,						},
+	{"if",			QC_IF,						},
+	{"else",		QC_ELSE,					},
+	{"@system",		QC_SYSTEM,					},
+	{"@overload",	QC_OVERLOAD,				},
+	{"@attribute",  QC_ATTRIBUTE,				},
+	{"@handle",     QC_HANDLE,					},
 };
 
 static const char *
@@ -542,9 +542,9 @@ process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 	if (lval->text == lval->str_text) {
 		lval->text = save_string (lval->str_text);
 	}
-	if (keyword->value == STRUCT) {
+	if (keyword->value == QC_STRUCT) {
 		lval->value.op = token[0];
-	} else if (keyword->value == OBJECT_NAME) {
+	} else if (keyword->value == QC_OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
@@ -558,17 +558,17 @@ process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 				.type = sym->type,
 				.sym = sym,
 			};
-			return OBJECT_NAME;
+			return QC_OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
 			lval->value.spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
-			return TYPE_NAME;
+			return QC_TYPE_NAME;
 		}
 		// id has been redelcared as a variable (hopefully)
-		return NAME;
+		return QC_NAME;
 	} else {
 		lval->value.spec = keyword->spec;
 	}
@@ -644,11 +644,11 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 			.type = sym->type,
 			.sym = sym,
 		};
-		return TYPE_NAME;
+		return QC_TYPE_NAME;
 	}
 	if (sym->sy_type == sy_class)
-		return CLASS_NAME;
-	return NAME;
+		return QC_CLASS_NAME;
+	return QC_NAME;
 }
 
 enum {
@@ -824,7 +824,7 @@ parse_number (rua_tok_t *tok, yyscan_t scanner)
 			internal_error (0, "invalid suffix enum: %d", expl);
 		}
 	}
-	return VALUE;
+	return QC_VALUE;
 }
 
 typedef struct {
@@ -876,7 +876,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 		if (-token == rua_number) {
 			token = parse_number (&vtok, scanner);
 		}
-		if (token == VALUE) {
+		if (token == QC_VALUE) {
 			if (width < 4) {
 				components[width] = vtok.value.expr;
 			}
@@ -996,7 +996,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	tok->value.expr = new_value_expr (new_type_value (type, data.t),
 									  expl == suff_implicit);
 
-	return VALUE;
+	return QC_VALUE;
 }
 
 static int
@@ -1008,10 +1008,10 @@ parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
 			warning (0, "multibyte char constant");
 		}
 		tok->value.expr = new_int_expr (*str, false);
-		return VALUE;
+		return QC_VALUE;
 	} else {
 		tok->value.expr = new_string_expr (str);
-		return STRING;
+		return QC_STRING;
 	}
 }
 
@@ -1181,7 +1181,7 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				break;
 			case rua_number:
 				token = parse_number (tok, scanner);
-				if (token == VALUE && value->expr->implicit) {
+				if (token == QC_VALUE && value->expr->implicit) {
 					if (is_long (get_type (value->expr))) {
 						pr_long_t v = expr_long (value->expr);
 						if (v < INT32_MIN || v > INT32_MAX) {

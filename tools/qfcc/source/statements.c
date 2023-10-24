@@ -575,33 +575,33 @@ static const char *
 convert_op (int op)
 {
 	switch (op) {
-		case OR:	return "or";
-		case AND:	return "and";
-		case EQ:	return "eq";
-		case NE:	return "ne";
-		case LE:	return "le";
-		case GE:	return "ge";
-		case LT:	return "lt";
-		case GT:	return "gt";
-		case '+':	return "add";
-		case '-':	return "sub";
-		case '*':	return "mul";
-		case '/':	return "div";
-		case '%':	return "rem";
-		case MOD:	return "mod";
-		case '&':	return "bitand";
-		case '|':	return "bitor";
-		case '^':	return "bitxor";
-		case '~':	return "bitnot";
-		case '!':	return "not";
-		case SHL:	return "shl";
-		case SHR:	return "shr";
-		case '.':	return "load";
-		case CROSS:	return "cross";
-		case WEDGE:	return "wedge";
-		case DOT:	return "dot";
-		case HADAMARD:	return "mul";
-		case SCALE:	return "scale";
+		case QC_OR:			return "or";
+		case QC_AND:		return "and";
+		case QC_EQ:			return "eq";
+		case QC_NE:			return "ne";
+		case QC_LE:			return "le";
+		case QC_GE:			return "ge";
+		case QC_LT:			return "lt";
+		case QC_GT:			return "gt";
+		case '+':			return "add";
+		case '-':			return "sub";
+		case '*':			return "mul";
+		case '/':			return "div";
+		case '%':			return "rem";
+		case QC_MOD:		return "mod";
+		case '&':			return "bitand";
+		case '|':			return "bitor";
+		case '^':			return "bitxor";
+		case '~':			return "bitnot";
+		case '!':			return "not";
+		case QC_SHL:		return "shl";
+		case QC_SHR:		return "shr";
+		case '.':			return "load";
+		case QC_CROSS:		return "cross";
+		case QC_WEDGE:		return "wedge";
+		case QC_DOT:		return "dot";
+		case QC_HADAMARD:	return "mul";
+		case QC_SCALE:		return "scale";
 		default:
 			return 0;
 	}
@@ -1796,13 +1796,13 @@ expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 				hop = 7;
 			}
 			break;
-		case NAND:
+		case QC_NAND:
 			hop = 4;
 			break;
-		case NOR:
+		case QC_NOR:
 			hop = 5;
 			break;
-		case XNOR:
+		case QC_XNOR:
 			hop = 6;
 			break;
 		default:
@@ -2083,7 +2083,7 @@ build_bool_block (expr_t *block, expr_t *e)
 			append_expr (block, e);
 			return;
 		case ex_expr:
-			if (e->expr.op == OR || e->expr.op == AND) {
+			if (e->expr.op == QC_OR || e->expr.op == QC_AND) {
 				build_bool_block (block, (expr_t *) e->expr.e1);
 				build_bool_block (block, (expr_t *) e->expr.e2);
 			} else {

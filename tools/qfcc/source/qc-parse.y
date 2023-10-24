@@ -30,6 +30,7 @@
 %define api.prefix {qc_yy}
 %define api.pure full
 %define api.push-pull push
+%define api.token.prefix {QC_}
 %locations
 %parse-param {void *scanner}
 
@@ -1744,8 +1745,8 @@ unary_expr
 	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| unary_expr REVERSE			{ $$ = unary_expr (REVERSE, $1); }
-	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (DUAL, $2); }
+	| unary_expr REVERSE			{ $$ = unary_expr (QC_REVERSE, $1); }
+	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (QC_DUAL, $2); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
@@ -1789,16 +1790,16 @@ expr
 	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' flush_dag expr ':' expr 	{ $$ = conditional_expr ($1, $4, $6); }
-	| expr AND flush_dag bool_label expr{ $$ = bool_expr (AND, $4, $1, $5); }
-	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (OR,  $4, $1, $5); }
-	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
-	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
-	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
-	| expr GE expr				{ $$ = binary_expr (GE,  $1, $3); }
-	| expr LT expr				{ $$ = binary_expr (LT,  $1, $3); }
-	| expr GT expr				{ $$ = binary_expr (GT,  $1, $3); }
-	| expr SHL expr				{ $$ = binary_expr (SHL, $1, $3); }
-	| expr SHR expr				{ $$ = binary_expr (SHR, $1, $3); }
+	| expr AND flush_dag bool_label expr{ $$ = bool_expr (QC_AND, $4, $1, $5); }
+	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (QC_OR,  $4, $1, $5); }
+	| expr EQ expr				{ $$ = binary_expr (QC_EQ,  $1, $3); }
+	| expr NE expr				{ $$ = binary_expr (QC_NE,  $1, $3); }
+	| expr LE expr				{ $$ = binary_expr (QC_LE,  $1, $3); }
+	| expr GE expr				{ $$ = binary_expr (QC_GE,  $1, $3); }
+	| expr LT expr				{ $$ = binary_expr (QC_LT,  $1, $3); }
+	| expr GT expr				{ $$ = binary_expr (QC_GT,  $1, $3); }
+	| expr SHL expr				{ $$ = binary_expr (QC_SHL, $1, $3); }
+	| expr SHR expr				{ $$ = binary_expr (QC_SHR, $1, $3); }
 	| expr '+' expr				{ $$ = binary_expr ('+', $1, $3); }
 	| expr '-' expr				{ $$ = binary_expr ('-', $1, $3); }
 	| expr '*' expr				{ $$ = binary_expr ('*', $1, $3); }
@@ -1807,13 +1808,13 @@ expr
 	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
-	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
-	| expr GEOMETRIC expr		{ $$ = binary_expr (GEOMETRIC, $1, $3); }
-	| expr HADAMARD expr		{ $$ = binary_expr (HADAMARD, $1, $3); }
-	| expr CROSS expr			{ $$ = binary_expr (CROSS, $1, $3); }
-	| expr DOT expr				{ $$ = binary_expr (DOT, $1, $3); }
-	| expr WEDGE expr			{ $$ = binary_expr (WEDGE, $1, $3); }
-	| expr REGRESSIVE expr		{ $$ = binary_expr (REGRESSIVE, $1, $3); }
+	| expr MOD expr				{ $$ = binary_expr (QC_MOD, $1, $3); }
+	| expr GEOMETRIC expr		{ $$ = binary_expr (QC_GEOMETRIC, $1, $3); }
+	| expr HADAMARD expr		{ $$ = binary_expr (QC_HADAMARD, $1, $3); }
+	| expr CROSS expr			{ $$ = binary_expr (QC_CROSS, $1, $3); }
+	| expr DOT expr				{ $$ = binary_expr (QC_DOT, $1, $3); }
+	| expr WEDGE expr			{ $$ = binary_expr (QC_WEDGE, $1, $3); }
+	| expr REGRESSIVE expr		{ $$ = binary_expr (QC_REGRESSIVE, $1, $3); }
 	;
 
 texpr

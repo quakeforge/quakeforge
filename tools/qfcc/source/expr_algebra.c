@@ -92,13 +92,13 @@ anti_com (const expr_t *e)
 static bool __attribute__((const))
 op_commute (int op)
 {
-	return (op == '+' || op == '*' || op == HADAMARD || op == DOT);
+	return (op == '+' || op == '*' || op == QC_HADAMARD || op == QC_DOT);
 }
 
 static bool __attribute__((const))
 op_anti_com (int op)
 {
-	return (op == '-' || op == CROSS || op == WEDGE);
+	return (op == '-' || op == QC_CROSS || op == QC_WEDGE);
 }
 
 const expr_t *
@@ -406,7 +406,7 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 bool
 is_scale (const expr_t *expr)
 {
-	return expr && expr->type == ex_expr && expr->expr.op == SCALE;
+	return expr && expr->type == ex_expr && expr->expr.op == QC_SCALE;
 }
 
 const expr_t *
@@ -429,7 +429,7 @@ bool
 is_mult (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr
-			&& (expr->expr.op == '*' || expr->expr.op == HADAMARD));
+			&& (expr->expr.op == '*' || expr->expr.op == QC_HADAMARD));
 }
 
 int
@@ -471,7 +471,7 @@ count_factors (const expr_t *expr)
 bool __attribute__((pure))
 is_cross (const expr_t *expr)
 {
-	return (expr && expr->type == ex_expr && (expr->expr.op == CROSS));
+	return (expr && expr->type == ex_expr && (expr->expr.op == QC_CROSS));
 }
 
 static void
@@ -889,7 +889,7 @@ do_scale (type_t *type, const expr_t *a, const expr_t *b)
 	if (prod) {
 		b = prod;
 	}
-	return typed_binary_expr (type, SCALE, a, b);
+	return typed_binary_expr (type, QC_SCALE, a, b);
 }
 
 const expr_t *
@@ -947,7 +947,7 @@ do_dot (type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto dot = typed_binary_expr (type, DOT, a, b);
+	auto dot = typed_binary_expr (type, QC_DOT, a, b);
 	dot = apply_scale (type, dot, prod);
 	return dot;
 }
@@ -981,7 +981,7 @@ do_cross (type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto cross = typed_binary_expr (type, CROSS, a, b);
+	auto cross = typed_binary_expr (type, QC_CROSS, a, b);
 	cross = apply_scale (type, cross, prod);
 	return cross;
 }
@@ -1015,7 +1015,7 @@ do_wedge (type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto wedge = typed_binary_expr (type, WEDGE, a, b);
+	auto wedge = typed_binary_expr (type, QC_WEDGE, a, b);
 	wedge = apply_scale (type, wedge, prod);
 	return wedge;
 }
@@ -2603,13 +2603,13 @@ const expr_t *
 algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	switch (op) {
-		case DOT:
+		case QC_DOT:
 			return inner_product (e1, e2);
-		case WEDGE:
+		case QC_WEDGE:
 			return outer_product (e1, e2);
-		case REGRESSIVE:
+		case QC_REGRESSIVE:
 			return regressive_product (e1, e2);
-		case CROSS:
+		case QC_CROSS:
 			return commutator_product (e1, e2);
 		case '+':
 		case '-':
@@ -2617,7 +2617,7 @@ algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		case '/':
 			return multivector_divide (e1, e2);
 		case '*':
-		case GEOMETRIC:
+		case QC_GEOMETRIC:
 			return geometric_product (e1, e2);
 	}
 	return error (e1, "invalid operator");
@@ -2725,7 +2725,7 @@ algebra_reverse (const expr_t *e)
 			if (neg) {
 				auto rev = new_value_expr (new_type_value (ct, ones), false);
 				rev = edag_add_expr (rev);
-				r[i] = typed_binary_expr (ct, HADAMARD, r[i], rev);
+				r[i] = typed_binary_expr (ct, QC_HADAMARD, r[i], rev);
 				r[i] = edag_add_expr (rev);
 			}
 		}

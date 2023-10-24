@@ -807,7 +807,7 @@ DecodeArgs (int argc, char **argv)
 			options.code.vector_components = true;
 		}
 		if (options.math.vector_mult == 0) {
-			options.math.vector_mult = DOT;
+			options.math.vector_mult = QC_DOT;
 		}
 	}
 	if (!options.code.progsversion)
@@ -830,7 +830,8 @@ DecodeArgs (int argc, char **argv)
 			options.code.vector_components = false;
 		}
 		if (!options_user_set.math.vector_mult == 0) {
-			options.math.vector_mult = options.advanced == 1 ? DOT : HADAMARD;
+			options.math.vector_mult = options.advanced == 1 ? QC_DOT
+															 : QC_HADAMARD;
 		}
 	} else {
 		options.code.promote_float = false;

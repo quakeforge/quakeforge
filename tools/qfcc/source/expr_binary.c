@@ -98,12 +98,12 @@ static bool fp_ass_mul (void)
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{QC_EQ,	&type_int},
+	{QC_NE,	&type_int},
+	{QC_LE,	&type_int},
+	{QC_GE,	&type_int},
+	{QC_LT,	&type_int},
+	{QC_GT,	&type_int},
 	{0, 0}
 };
 
@@ -122,17 +122,17 @@ static expr_type_t float_float[] = {
 	{'^',	&type_float,
 		.commutative = always, .associative = always},
 	{'%',	&type_float},
-	{MOD,	&type_float},
-	{SHL,	&type_float},
-	{SHR,	&type_float},
-	{AND,	&type_int},
-	{OR,	&type_int},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{QC_MOD,	&type_float},
+	{QC_SHL,	&type_float},
+	{QC_SHR,	&type_float},
+	{QC_AND,	&type_int},
+	{QC_OR,		&type_int},
+	{QC_EQ,		&type_int},
+	{QC_NE,		&type_int},
+	{QC_LE,		&type_int},
+	{QC_GE,		&type_int},
+	{QC_LT,		&type_int},
+	{QC_GT,		&type_int},
 	{0, 0}
 };
 
@@ -161,15 +161,15 @@ static expr_type_t float_int[] = {
 	{'^',	&type_float, 0, &type_float,
 		.commutative = always, .associative = always},
 	{'%',	&type_float, 0, &type_float},
-	{MOD,	&type_float, 0, &type_float},
-	{SHL,	&type_float, 0, &type_float},
-	{SHR,	&type_float, 0, &type_float},
-	{EQ,	&type_int, 0, &type_float},
-	{NE,	&type_int, 0, &type_float},
-	{LE,	&type_int, 0, &type_float},
-	{GE,	&type_int, 0, &type_float},
-	{LT,	&type_int, 0, &type_float},
-	{GT,	&type_int, 0, &type_float},
+	{QC_MOD,	&type_float, 0, &type_float},
+	{QC_SHL,	&type_float, 0, &type_float},
+	{QC_SHR,	&type_float, 0, &type_float},
+	{QC_EQ,		&type_int, 0, &type_float},
+	{QC_NE,		&type_int, 0, &type_float},
+	{QC_LE,		&type_int, 0, &type_float},
+	{QC_GE,		&type_int, 0, &type_float},
+	{QC_LT,		&type_int, 0, &type_float},
+	{QC_GT,		&type_int, 0, &type_float},
 	{0, 0}
 };
 #define float_uint float_int
@@ -184,13 +184,13 @@ static expr_type_t float_double[] = {
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
-	{MOD,	&type_double, &type_double, 0},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
+	{QC_MOD,	&type_double, &type_double, 0},
+	{QC_EQ,		.process = double_compare},
+	{QC_NE,		.process = double_compare},
+	{QC_LE,		.process = double_compare},
+	{QC_GE,		.process = double_compare},
+	{QC_LT,		.process = double_compare},
+	{QC_GT,		.process = double_compare},
 	{0, 0}
 };
 
@@ -205,15 +205,15 @@ static expr_type_t vector_vector[] = {
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_vector,
 		.anticommute = fp_com_add},
-	{DOT,	.process = vector_dot,
+	{QC_DOT,	.process = vector_dot,
 		.commutative = fp_com_dot},
-	{CROSS,	&type_vector,
+	{QC_CROSS,	&type_vector,
 		.anticommute = fp_com_add},
-	{HADAMARD,	&type_vector,
+	{QC_HADAMARD,	&type_vector,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'*',	.process = vector_multiply},
-	{EQ,	.process = vector_compare},
-	{NE,	.process = vector_compare},
+	{QC_EQ,	.process = vector_compare},
+	{QC_NE,	.process = vector_compare},
 	{0, 0}
 };
 
@@ -228,31 +228,31 @@ static expr_type_t vector_double[] = {
 };
 
 static expr_type_t entity_entity[] = {
-	{EQ,	&type_int, 0, 0, entity_compare},
-	{NE,	&type_int, 0, 0, entity_compare},
+	{QC_EQ,	&type_int, 0, 0, entity_compare},
+	{QC_NE,	&type_int, 0, 0, entity_compare},
 	{0, 0}
 };
 
 static expr_type_t field_field[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{QC_EQ,	&type_int},
+	{QC_NE,	&type_int},
 	{0, 0}
 };
 
 static expr_type_t func_func[] = {
-	{EQ,	.process = func_compare},
-	{NE,	.process = func_compare},
+	{QC_EQ,	.process = func_compare},
+	{QC_NE,	.process = func_compare},
 	{0, 0}
 };
 
 static expr_type_t pointer_pointer[] = {
 	{'-',	.process = pointer_arithmetic},
-	{EQ,	.process = pointer_compare},
-	{NE,	.process = pointer_compare},
-	{LE,	.process = pointer_compare},
-	{GE,	.process = pointer_compare},
-	{LT,	.process = pointer_compare},
-	{GT,	.process = pointer_compare},
+	{QC_EQ,	.process = pointer_compare},
+	{QC_NE,	.process = pointer_compare},
+	{QC_LE,	.process = pointer_compare},
+	{QC_GE,	.process = pointer_compare},
+	{QC_LT,	.process = pointer_compare},
+	{QC_GT,	.process = pointer_compare},
 	{0, 0}
 };
 
@@ -281,8 +281,8 @@ static expr_type_t quat_quat[] = {
 	{'-',	&type_quaternion,
 		.anticommute = fp_com_add},
 	{'*',	&type_quaternion, .associative = always},
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{QC_EQ,	&type_int},
+	{QC_NE,	&type_int},
 	{0, 0}
 };
 
@@ -315,15 +315,15 @@ static expr_type_t int_float[] = {
 	{'^',	&type_float, &type_float, 0,
 		.commutative = always, .associative = always},
 	{'%',	&type_float, &type_float, 0},
-	{MOD,	&type_float, &type_float, 0},
-	{SHL,	&type_int, 0, &type_int},	//FIXME?
-	{SHR,	&type_int, 0, &type_int},	//FIXME?
-	{EQ,	&type_int, &type_float, 0},
-	{NE,	&type_int, &type_float, 0},
-	{LE,	&type_int, &type_float, 0},
-	{GE,	&type_int, &type_float, 0},
-	{LT,	&type_int, &type_float, 0},
-	{GT,	&type_int, &type_float, 0},
+	{QC_MOD,	&type_float, &type_float, 0},
+	{QC_SHL,	&type_int, 0, &type_int},	//FIXME?
+	{QC_SHR,	&type_int, 0, &type_int},	//FIXME?
+	{QC_EQ,		&type_int, &type_float, 0},
+	{QC_NE,		&type_int, &type_float, 0},
+	{QC_LE,		&type_int, &type_float, 0},
+	{QC_GE,		&type_int, &type_float, 0},
+	{QC_LT,		&type_int, &type_float, 0},
+	{QC_GT,		&type_int, &type_float, 0},
 	{0, 0}
 };
 
@@ -357,17 +357,17 @@ static expr_type_t int_int[] = {
 	{'^',	&type_int,
 		.commutative = always, .associative = always},
 	{'%',	&type_int},
-	{MOD,	&type_int},
-	{SHL,	&type_int},
-	{SHR,	&type_int},
-	{AND,	&type_int},
-	{OR,	&type_int},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{QC_MOD,	&type_int},
+	{QC_SHL,	&type_int},
+	{QC_SHR,	&type_int},
+	{QC_AND,	&type_int},
+	{QC_OR,		&type_int},
+	{QC_EQ,		&type_int},
+	{QC_NE,		&type_int},
+	{QC_LE,		&type_int},
+	{QC_GE,		&type_int},
+	{QC_LT,		&type_int},
+	{QC_GT,		&type_int},
 	{0, 0}
 };
 
@@ -386,15 +386,15 @@ static expr_type_t int_uint[] = {
 	{'^',	&type_int, 0, &type_int,
 		.commutative = always, .associative = always},
 	{'%',	&type_int, 0, &type_int},
-	{MOD,	&type_int, 0, &type_int},
-	{SHL,	&type_int, 0, &type_int},
-	{SHR,	&type_int, 0, &type_int},
-	{EQ,	&type_int, 0, &type_int},
-	{NE,	&type_int, 0, &type_int},
-	{LE,	&type_int, 0, &type_int},
-	{GE,	&type_int, 0, &type_int},
-	{LT,	&type_int, 0, &type_int},
-	{GT,	&type_int, 0, &type_int},
+	{QC_MOD,	&type_int, 0, &type_int},
+	{QC_SHL,	&type_int, 0, &type_int},
+	{QC_SHR,	&type_int, 0, &type_int},
+	{QC_EQ,		&type_int, 0, &type_int},
+	{QC_NE,		&type_int, 0, &type_int},
+	{QC_LE,		&type_int, 0, &type_int},
+	{QC_GE,		&type_int, 0, &type_int},
+	{QC_LT,		&type_int, 0, &type_int},
+	{QC_GT,		&type_int, 0, &type_int},
 	{0, 0}
 };
 
@@ -413,15 +413,15 @@ static expr_type_t int_short[] = {
 	{'^',	&type_int, 0, &type_int,
 		.commutative = always, .associative = always},
 	{'%',	&type_int, 0, &type_int},
-	{MOD,	&type_int, 0, &type_int},
-	{SHL,	&type_int, 0, &type_int},
-	{SHR,	&type_int, 0, &type_int},
-	{EQ,	&type_int, 0, &type_int},
-	{NE,	&type_int, 0, &type_int},
-	{LE,	&type_int, 0, &type_int},
-	{GE,	&type_int, 0, &type_int},
-	{LT,	&type_int, 0, &type_int},
-	{GT,	&type_int, 0, &type_int},
+	{QC_MOD,	&type_int, 0, &type_int},
+	{QC_SHL,	&type_int, 0, &type_int},
+	{QC_SHR,	&type_int, 0, &type_int},
+	{QC_EQ,		&type_int, 0, &type_int},
+	{QC_NE,		&type_int, 0, &type_int},
+	{QC_LE,		&type_int, 0, &type_int},
+	{QC_GE,		&type_int, 0, &type_int},
+	{QC_LT,		&type_int, 0, &type_int},
+	{QC_GT,		&type_int, 0, &type_int},
 	{0, 0}
 };
 
@@ -434,13 +434,13 @@ static expr_type_t int_double[] = {
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
-	{MOD,	&type_double, &type_double, 0},
-	{EQ,	&type_long, &type_double, 0},
-	{NE,	&type_long, &type_double, 0},
-	{LE,	&type_long, &type_double, 0},
-	{GE,	&type_long, &type_double, 0},
-	{LT,	&type_long, &type_double, 0},
-	{GT,	&type_long, &type_double, 0},
+	{QC_MOD,	&type_double, &type_double, 0},
+	{QC_EQ,		&type_long, &type_double, 0},
+	{QC_NE,		&type_long, &type_double, 0},
+	{QC_LE,		&type_long, &type_double, 0},
+	{QC_GE,		&type_long, &type_double, 0},
+	{QC_LT,		&type_long, &type_double, 0},
+	{QC_GT,		&type_long, &type_double, 0},
 	{0, 0}
 };
 
@@ -464,15 +464,15 @@ static expr_type_t uint_int[] = {
 	{'^',	&type_int, &type_int, &type_int,
 		.commutative = always, .associative = always},
 	{'%',	&type_int, &type_int, &type_int },
-	{MOD,	&type_int, &type_int, &type_int },
-	{SHL,	&type_uint, &type_int, &type_int },
-	{SHR,	&type_uint, 0,        &type_int },
-	{EQ,	&type_int, &type_int, &type_int },
-	{NE,	&type_int, &type_int, &type_int },
-	{LE,	&type_int, &type_int, &type_int },
-	{GE,	&type_int, &type_int, &type_int },
-	{LT,	&type_int, &type_int, &type_int },
-	{GT,	&type_int, &type_int, &type_int },
+	{QC_MOD,	&type_int, &type_int, &type_int },
+	{QC_SHL,	&type_uint, &type_int, &type_int },
+	{QC_SHR,	&type_uint, 0,        &type_int },
+	{QC_EQ,		&type_int, &type_int, &type_int },
+	{QC_NE,		&type_int, &type_int, &type_int },
+	{QC_LE,		&type_int, &type_int, &type_int },
+	{QC_GE,		&type_int, &type_int, &type_int },
+	{QC_LT,		&type_int, &type_int, &type_int },
+	{QC_GT,		&type_int, &type_int, &type_int },
 	{0, 0}
 };
 
@@ -491,15 +491,15 @@ static expr_type_t uint_uint[] = {
 	{'^',	&type_uint,
 		.commutative = always, .associative = always},
 	{'%',	&type_uint},
-	{MOD,	&type_uint},
-	{SHL,	&type_uint},
-	{SHR,	&type_uint},
-	{EQ,	&type_int, &type_int, &type_int},
-	{NE,	&type_int, &type_int, &type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{QC_MOD,	&type_uint},
+	{QC_SHL,	&type_uint},
+	{QC_SHR,	&type_uint},
+	{QC_EQ,		&type_int, &type_int, &type_int},
+	{QC_NE,		&type_int, &type_int, &type_int},
+	{QC_LE,		&type_int},
+	{QC_GE,		&type_int},
+	{QC_LT,		&type_int},
+	{QC_GT,		&type_int},
 	{0, 0}
 };
 #define uint_short uint_int
@@ -525,15 +525,15 @@ static expr_type_t short_int[] = {
 	{'^',	&type_int, &type_int, 0,
 		.commutative = always, .associative = always},
 	{'%',	&type_int, &type_int, 0},
-	{MOD,	&type_int, &type_int, 0},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int, &type_int, 0},
-	{NE,	&type_int, &type_int, 0},
-	{LE,	&type_int, &type_int, 0},
-	{GE,	&type_int, &type_int, 0},
-	{LT,	&type_int, &type_int, 0},
-	{GT,	&type_int, &type_int, 0},
+	{QC_MOD,	&type_int, &type_int, 0},
+	{QC_SHL,	&type_short},
+	{QC_SHR,	&type_short},
+	{QC_EQ,		&type_int, &type_int, 0},
+	{QC_NE,		&type_int, &type_int, 0},
+	{QC_LE,		&type_int, &type_int, 0},
+	{QC_GE,		&type_int, &type_int, 0},
+	{QC_LT,		&type_int, &type_int, 0},
+	{QC_GT,		&type_int, &type_int, 0},
 	{0, 0}
 };
 
@@ -552,15 +552,15 @@ static expr_type_t short_uint[] = {
 	{'^',	&type_uint, &type_uint, 0,
 		.commutative = always},
 	{'%',	&type_uint, &type_uint, 0},
-	{MOD,	&type_uint, &type_uint, 0},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int, &type_uint, 0},
-	{NE,	&type_int, &type_uint, 0},
-	{LE,	&type_int, &type_uint, 0},
-	{GE,	&type_int, &type_uint, 0},
-	{LT,	&type_int, &type_uint, 0},
-	{GT,	&type_int, &type_uint, 0},
+	{QC_MOD,	&type_uint, &type_uint, 0},
+	{QC_SHL,	&type_short},
+	{QC_SHR,	&type_short},
+	{QC_EQ,		&type_int, &type_uint, 0},
+	{QC_NE,		&type_int, &type_uint, 0},
+	{QC_LE,		&type_int, &type_uint, 0},
+	{QC_GE,		&type_int, &type_uint, 0},
+	{QC_LT,		&type_int, &type_uint, 0},
+	{QC_GT,		&type_int, &type_uint, 0},
 	{0, 0}
 };
 
@@ -573,15 +573,15 @@ static expr_type_t short_short[] = {
 	{'|',	&type_short},
 	{'^',	&type_short},
 	{'%',	&type_short},
-	{MOD,	&type_short},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
+	{QC_MOD,	&type_short},
+	{QC_SHL,	&type_short},
+	{QC_SHR,	&type_short},
+	{QC_EQ,		&type_int},
+	{QC_NE,		&type_int},
+	{QC_LE,		&type_int},
+	{QC_GE,		&type_int},
+	{QC_LT,		&type_int},
+	{QC_GT,		&type_int},
 	{0, 0}
 };
 #define short_double int_double
@@ -595,13 +595,13 @@ static expr_type_t double_float[] = {
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
-	{MOD,	&type_double, 0, &type_double},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
+	{QC_MOD,	&type_double, 0, &type_double},
+	{QC_EQ,		.process = double_compare},
+	{QC_NE,		.process = double_compare},
+	{QC_LE,		.process = double_compare},
+	{QC_GE,		.process = double_compare},
+	{QC_LT,		.process = double_compare},
+	{QC_GT,		.process = double_compare},
 	{0, 0}
 };
 
@@ -624,13 +624,13 @@ static expr_type_t double_int[] = {
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
 	{'%',	&type_double, 0, &type_double},
-	{MOD,	&type_double, 0, &type_double},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
+	{QC_MOD,	&type_double, 0, &type_double},
+	{QC_EQ,		.process = double_compare},
+	{QC_NE,		.process = double_compare},
+	{QC_LE,		.process = double_compare},
+	{QC_GE,		.process = double_compare},
+	{QC_LT,		.process = double_compare},
+	{QC_GT,		.process = double_compare},
 	{0, 0}
 };
 #define double_uint double_int
@@ -645,13 +645,13 @@ static expr_type_t double_double[] = {
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double},
 	{'%',	&type_double},
-	{MOD,	&type_double},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
+	{QC_MOD,	&type_double},
+	{QC_EQ,		&type_long},
+	{QC_NE,		&type_long},
+	{QC_LE,		&type_long},
+	{QC_GE,		&type_long},
+	{QC_LT,		&type_long},
+	{QC_GT,		&type_long},
 	{0, 0}
 };
 
@@ -670,15 +670,15 @@ static expr_type_t long_long[] = {
 	{'^',	&type_long,
 		.commutative = always},
 	{'%',	&type_long},
-	{MOD,	&type_long},
-	{SHL,	&type_long},
-	{SHR,	&type_long},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
+	{QC_MOD,	&type_long},
+	{QC_SHL,	&type_long},
+	{QC_SHR,	&type_long},
+	{QC_EQ,		&type_long},
+	{QC_NE,		&type_long},
+	{QC_LE,		&type_long},
+	{QC_GE,		&type_long},
+	{QC_LT,		&type_long},
+	{QC_GT,		&type_long},
 	{0, 0}
 };
 
@@ -697,15 +697,15 @@ static expr_type_t ulong_ulong[] = {
 	{'^',	&type_ulong,
 		.commutative = always},
 	{'%',	&type_ulong},
-	{MOD,	&type_ulong},
-	{SHL,	&type_ulong},
-	{SHR,	&type_ulong},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
+	{QC_MOD,	&type_ulong},
+	{QC_SHL,	&type_ulong},
+	{QC_SHR,	&type_ulong},
+	{QC_EQ,		&type_long},
+	{QC_NE,		&type_long},
+	{QC_LE,		&type_long},
+	{QC_GE,		&type_long},
+	{QC_LT,		&type_long},
+	{QC_GT,		&type_long},
 	{0, 0}
 };
 
@@ -830,15 +830,15 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 };
 
 static expr_type_t int_handle[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{QC_EQ,	&type_int},
+	{QC_NE,	&type_int},
 
 	{0, 0}
 };
 
 static expr_type_t long_handle[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{QC_EQ,	&type_int},
+	{QC_NE,	&type_int},
 
 	{0, 0}
 };
@@ -864,7 +864,7 @@ static expr_type_t ***binary_expr_meta[ty_meta_count] = {
 };
 
 // supported operators for scalar-vector expressions
-static int scalar_vec_ops[] = { '*', '/', '%', MOD, 0 };
+static int scalar_vec_ops[] = { '*', '/', '%', QC_MOD, 0 };
 static const expr_t *
 convert_scalar (const expr_t *scalar, int op, const expr_t *vec)
 {
@@ -992,7 +992,7 @@ vector_compare (int op, const expr_t *e1, const expr_t *e2)
 		}
 		return e;
 	}
-	int         hop = op == EQ ? '&' : '|';
+	int         hop = op == QC_EQ ? '&' : '|';
 	e1 = new_alias_expr (&type_vec3, e1);
 	e2 = new_alias_expr (&type_vec3, e2);
 	expr_t     *e = new_binary_expr (op, e1, e2);
@@ -1003,7 +1003,7 @@ vector_compare (int op, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 vector_dot (int op, const expr_t *e1, const expr_t *e2)
 {
-	expr_t     *e = new_binary_expr (DOT, e1, e2);
+	expr_t     *e = new_binary_expr (QC_DOT, e1, e2);
 	e->expr.type = &type_float;
 	return e;
 }
@@ -1011,7 +1011,7 @@ vector_dot (int op, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 vector_multiply (int op, const expr_t *e1, const expr_t *e2)
 {
-	if (options.math.vector_mult == DOT) {
+	if (options.math.vector_mult == QC_DOT) {
 		// vector * vector is dot product in v6 progs (ick)
 		return vector_dot (op, e1, e2);
 	}
@@ -1032,7 +1032,7 @@ vector_scale (int op, const expr_t *e1, const expr_t *e2)
 		e1 = e2;
 		e2 = t;
 	}
-	expr_t     *e = new_binary_expr (SCALE, e1, e2);
+	expr_t     *e = new_binary_expr (QC_SCALE, e1, e2);
 	e->expr.type = get_type (e1);
 	return e;
 }
@@ -1137,7 +1137,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (e1->type == ex_uexpr && e1->expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
-			if (op != AND && op != OR && op != '=') {
+			if (op != QC_AND && op != QC_OR && op != '=') {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
 				set_paren (e1->expr.e1);
@@ -1155,7 +1155,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e2->expr.op) || is_compare (e2->expr.op)))
 				|| (op == '='
-					&&(e2->expr.op == OR || e2->expr.op == AND))) {
+					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
@@ -1163,8 +1163,8 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 				set_paren (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
-			if (((op == EQ || op == NE) && is_compare (e2->expr.op))
-				|| (op == OR && e2->expr.op == AND)
+			if (((op == QC_EQ || op == QC_NE) && is_compare (e2->expr.op))
+				|| (op == QC_OR && e2->expr.op == QC_AND)
 				|| (op == '|' && e2->expr.op == '&')) {
 				notice (e1, "precedence of `%s' raised to `%s' for "
 							"traditional code", get_op_string (op),
@@ -1177,7 +1177,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e1->expr.op) || is_compare (e1->expr.op)))
 				|| (op == '='
-					&&(e2->expr.op == OR || e2->expr.op == AND))) {
+					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e1->expr.op));
@@ -1288,7 +1288,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		return algebra_binary_expr (op, e1, e2);
 	}
 
-	if (op == EQ || op == NE) {
+	if (op == QC_EQ || op == QC_NE) {
 		if (e1->type == ex_nil) {
 			t1 = t2;
 			e1 = convert_nil (e1, t1);
@@ -1389,7 +1389,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 			t2 = get_type (e2);
 		}
 		if (scalar_op && op == '*') {
-			op = HADAMARD;
+			op = QC_HADAMARD;
 		}
 		if (type_width (t1) != type_width (t2)) {
 			// vec op vec of different widths
@@ -1405,7 +1405,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 			if (is_compare (op)) {
 				t1 = int_type (t1);
 			}
-			if (op == DOT) {
+			if (op == QC_DOT) {
 				if (!is_real (t1)) {
 					return invalid_binary_expr (op, e1, e2);
 				}

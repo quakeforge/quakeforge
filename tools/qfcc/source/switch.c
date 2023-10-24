@@ -312,12 +312,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr (EQ, new_alias_expr (&type_int, temp),
+		branch = branch_expr (QC_EQ, new_alias_expr (&type_int, temp),
 							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (GT, new_alias_expr (&type_int, temp),
+			branch = branch_expr (QC_GT, new_alias_expr (&type_int, temp),
 								  high_label);
 			append_expr (sw, branch);
 
@@ -354,12 +354,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {
-			branch = branch_expr (LT, temp, low_label);
+			branch = branch_expr (QC_LT, temp, low_label);
 			append_expr (sw, branch);
 		}
-		test = binary_expr (GT, cast_expr (&type_uint, temp),
+		test = binary_expr (QC_GT, cast_expr (&type_uint, temp),
 							cast_expr (&type_uint, range));
-		branch = branch_expr (NE, test, high_label);
+		branch = branch_expr (QC_NE, test, high_label);
 		append_expr (sw, branch);
 		branch = jump_table_expr (table_expr, temp);
 		append_expr (sw, branch);
@@ -434,8 +434,8 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
-			const expr_t *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			const expr_t *test = branch_expr (NE, test_expr (cmp),
+			const expr_t *cmp = binary_expr (QC_EQ, sw_val, (*l)->value);
+			const expr_t *test = branch_expr (QC_NE, test_expr (cmp),
 											  (*l)->label);
 
 			append_expr (sw, test);
@@ -454,7 +454,7 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		case_tree = build_case_tree (labels, num_labels, is_integral (type));
 		op = '-';
 		if (type->type == ev_string)
-			op = NE;
+			op = QC_NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
 	pr.source_line = saved_line;

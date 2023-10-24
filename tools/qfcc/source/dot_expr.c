@@ -69,37 +69,37 @@ const char *
 get_op_string (int op)
 {
 	switch (op) {
-		case OR:	return "||";
-		case AND:	return "&&";
-		case EQ:	return "==";
-		case NE:	return "!=";
-		case LE:	return "<=";
-		case GE:	return ">=";
-		case LT:	return "<";
-		case GT:	return ">";
-		case '=':	return "=";
-		case '+':	return "+";
-		case '-':	return "-";
-		case '*':	return "*";
-		case '/':	return "/";
-		case '%':	return "%";
-		case MOD:	return "%%";
-		case '&':	return "&";
-		case '|':	return "|";
-		case '^':	return "^";
-		case '~':	return "~";
-		case '!':	return "!";
-		case SHL:	return "<<";
-		case SHR:	return ">>";
-		case '.':	return ".";
-		case 'C':	return "<cast>";
-		case HADAMARD:	return "@hadamard";
-		case CROSS:	return "@cross";
-		case DOT:	return "@dot";
-		case WEDGE:	return "@wedge";
-		case REGRESSIVE:return "@regressive";
-		case GEOMETRIC:return "@geometric";
-		case SCALE:	return "@scale";
+		case QC_OR:			return "||";
+		case QC_AND:		return "&&";
+		case QC_EQ:			return "==";
+		case QC_NE:			return "!=";
+		case QC_LE:			return "<=";
+		case QC_GE:			return ">=";
+		case QC_LT:			return "<";
+		case QC_GT:			return ">";
+		case '=':			return "=";
+		case '+':			return "+";
+		case '-':			return "-";
+		case '*':			return "*";
+		case '/':			return "/";
+		case '%':			return "%";
+		case QC_MOD:		return "%%";
+		case '&':			return "&";
+		case '|':			return "|";
+		case '^':			return "^";
+		case '~':			return "~";
+		case '!':			return "!";
+		case QC_SHL:		return "<<";
+		case QC_SHR:		return ">>";
+		case '.':			return ".";
+		case 'C':			return "<cast>";
+		case QC_HADAMARD:	return "@hadamard";
+		case QC_CROSS:		return "@cross";
+		case QC_DOT:		return "@dot";
+		case QC_WEDGE:		return "@wedge";
+		case QC_REGRESSIVE:	return "@regressive";
+		case QC_GEOMETRIC:	return "@geometric";
+		case QC_SCALE:		return "@scale";
 		default:
 			return "unknown";
 	}

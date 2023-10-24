@@ -101,7 +101,7 @@ remult_scale (const expr_t *expr, const expr_t *remove)
 	auto mult = remult (expr->expr.e2, remove);
 	auto scalee = expr->expr.e1;
 	auto type = get_type (expr);
-	auto new = typed_binary_expr (type, SCALE, scalee, mult);
+	auto new = typed_binary_expr (type, QC_SCALE, scalee, mult);
 	return edag_add_expr (new);
 }
 
@@ -205,9 +205,9 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	col = optimize_core (col);
 	const expr_t *cross;
 	if (right) {
-		cross = typed_binary_expr (type, CROSS, col, com);
+		cross = typed_binary_expr (type, QC_CROSS, col, com);
 	} else {
-		cross = typed_binary_expr (type, CROSS, com, col);
+		cross = typed_binary_expr (type, QC_CROSS, com, col);
 	}
 	cross = edag_add_expr (cross);
 	return cross;
@@ -316,7 +316,7 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	auto col = gather_terms (type, com_adds, com_subs);
 	col = optimize_core (col);
 
-	scale = typed_binary_expr (type, SCALE, col, common);
+	scale = typed_binary_expr (type, QC_SCALE, col, common);
 	scale = edag_add_expr (scale);
 	return scale;
 }

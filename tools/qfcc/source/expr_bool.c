@@ -129,11 +129,11 @@ test_expr (const expr_t *e)
 				return e;
 			}
 			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
-			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			new = expr_file_line ((expr_t *) binary_expr (QC_NE, e, new), e);
 			return test_expr (new);
 		case ev_double:
 			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
-			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			new = expr_file_line ((expr_t *) binary_expr (QC_NE, e, new), e);
 			return test_expr (new);
 		case ev_vector:
 			new = new_zero_expr (&type_vector);
@@ -157,7 +157,7 @@ test_expr (const expr_t *e)
 			return test_error (e, get_type (e));
 	}
 	new = expr_file_line ((expr_t *) new, e);
-	new = binary_expr (NE, e, new);
+	new = binary_expr (QC_NE, e, new);
 	new = expr_file_line ((expr_t *) new, e);
 	return new;
 }
@@ -235,13 +235,13 @@ bool_expr (int op, const expr_t *label, const expr_t *e1, const expr_t *e2)
 	append_expr (block, e2);
 
 	switch (op) {
-		case OR:
+		case QC_OR:
 			backpatch (e1->boolean.false_list, label);
 			return new_bool_expr (merge (e1->boolean.true_list,
 										 e2->boolean.true_list),
 								  e2->boolean.false_list, block);
 			break;
-		case AND:
+		case QC_AND:
 			backpatch (e1->boolean.true_list, label);
 			return new_bool_expr (e2->boolean.true_list,
 								  merge (e1->boolean.false_list,
@@ -309,7 +309,7 @@ convert_bool (const expr_t *e, int block)
 				e = new_bool_expr (0, make_list (b), b);
 		} else {
 			auto b = new_block_expr (0);
-			append_expr (b, branch_expr (NE, e, 0));
+			append_expr (b, branch_expr (QC_NE, e, 0));
 			append_expr (b, goto_expr (0));
 			e = new_bool_expr (make_list (b->block.head->expr),
 							   make_list (b->block.head->next->expr), b);
