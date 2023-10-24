@@ -1047,6 +1047,11 @@ static void
 user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 			 int state)
 {
+	if (state == TEXT) {
+		while (isspace (*text)) {
+			text++;
+		}
+	}
 	if (state == COMMENT || state == LCOMMENT || isspace (*text)) {
 		tok->str_text[0] = ' ';
 		tok->str_text[1] = 0;
