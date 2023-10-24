@@ -1460,7 +1460,7 @@ rua_start_macro (const char *name, bool params, void *scanner)
 	rua_macro_t *macro = malloc (sizeof (*macro));
 	*macro = (rua_macro_t) {
 		.name = name,
-		.params = new_symtab (0, stab_param),
+		.params = params ? new_symtab (0, stab_param) : 0,
 		.tail = &macro->tokens,
 	};
 	return macro;
