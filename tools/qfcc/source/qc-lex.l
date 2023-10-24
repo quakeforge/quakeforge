@@ -1138,7 +1138,9 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 			case rua_error:
 				break;
 			case rua_number:
-				token = parse_number (tok, scanner);
+				if (!extra->recording) {
+					token = parse_number (tok, scanner);
+				}
 				break;
 			case rua_vector:
 				token = parse_vector (tok, scanner);
