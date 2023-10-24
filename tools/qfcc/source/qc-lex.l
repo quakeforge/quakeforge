@@ -52,6 +52,7 @@
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
@@ -93,16 +94,20 @@ typedef struct {
 } rua_cond_t;
 
 typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
+typedef struct DARRAY_TYPE (rua_expr_t) rua_expr_stack_t;
 
 typedef struct rua_extra_s {
 		int         start_state;
 		bool        preprocessor;
 		bool        recording;
 		bool        params;
+		bool        expand;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		rua_cond_stack_t cond_stack;
+		rua_expr_stack_t expr_stack;
 		symtab_t   *macro_tab;
+		yyscan_t    subscanner;
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
 
@@ -1064,6 +1069,61 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 #endif
 }
 
+static void
+expand_macro (rua_extra_t *extra, rua_macro_t *macro)
+{
+	int         num_tokens = macro->num_tokens;
+
+	int         base = extra->expr_stack.size;
+	DARRAY_OPEN_AT (&extra->expr_stack, base, num_tokens);
+	int         index = num_tokens;
+	for (auto t = macro->tokens; t; t = t->next) {
+		extra->expr_stack.a[base + --index] = *t;
+	}
+	if (index) {
+		internal_error (0, "taniwha can't count: %d", index);
+	}
+	for (index = num_tokens; index-- > 0;) {
+		auto e = &extra->expr_stack.a[base + index];
+		if (e->token == '#') {
+			e->token = -rua_string;
+			auto p = e - 1;
+			auto str = quote_string (p->text);
+			e->text = save_string (va (0, "\"%s\"", str));
+
+			extra->expr_stack.a[base + --index] = (rua_expr_t) {
+				.token = -rua_ignore,
+			};
+		} else if (e->token == PRE_CONCAT) {
+			auto p1 = e + 1;
+			auto p2 = e - 1;
+			auto str = va (0, "%s%s", p1->text, p2->text);
+			yy_scan_string (str, extra->subscanner);
+			rua_tok_t   tok = { .location = e->location, };
+			int token = yylex (&tok, &tok.location, extra->subscanner);
+			if (token && yylex (&tok, &tok.location, extra->subscanner)) {
+				error (0, "pasting \"%s\" and \"%s\" does not give a valid"
+					   " preprocessing token", p1->text, p2->text);
+				*e = (rua_expr_t) {
+					.token = -rua_space,
+					.text = " ",
+				};
+			} else {
+				*e = (rua_expr_t) {
+					.location = tok.location,
+					.textlen = tok.textlen,
+					.token = token,
+					.text = save_string (tok.text),
+				};
+				*p2 = *p1 = (rua_expr_t) {
+					.token = -rua_ignore,
+				};
+				index--;
+			}
+		}
+	}
+}
+
 static int
 preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 {
@@ -1153,6 +1213,20 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 {
 	auto loc = &tok->location;
 
+	if (-token == rua_ignore) {
+		return YYPUSH_MORE;
+	}
+
+	if (extra->expand || !extra->preprocessor) {
+		symbol_t   *sym = 0;
+		if (token == PRE_ID || token == -rua_id) {
+			sym = symtab_lookup (extra->macro_tab, tok->text);
+		}
+		if (sym) {
+			expand_macro (extra, sym->s.macro);
+			return YYPUSH_MORE;
+		}
+	}
 	if (extra->preprocessor) {
 		auto state = extra->pre_state;
 		token = preproc_token (extra, token, tok, scanner);
@@ -1185,20 +1259,37 @@ qc_yyparse (FILE *in)
 		.qc_state = qc_yypstate_new (),
 		.pre_state = pre_yypstate_new (),
 		.cond_stack = DARRAY_STATIC_INIT (8),
+		.expr_stack = DARRAY_STATIC_INIT (32),
 		.macro_tab = new_symtab (0, stab_global),
 	};
 
 	yylex_init_extra (&extra, &scanner);
+	yylex_init (&extra.subscanner);
 	yyset_in (in, scanner);
 	do {
 		int token = yylex (&tok, &tok.location, scanner);
-		status = qc_process (&extra, token, &tok, scanner);
+		while (true) {
+			status = qc_process (&extra, token, &tok, scanner);
+			if (status != YYPUSH_MORE || !extra.expr_stack.size) {
+				break;
+			}
+			auto expr = DARRAY_REMOVE (&extra.expr_stack);
+			token = expr.token;
+			tok = (rua_tok_t) {
+				.location = expr.location,
+				.textlen = expr.textlen,
+				.text = expr.text,	// macro token strings use save_string
+				.token = token,
+			};
+		}
 	} while (status == YYPUSH_MORE);
 
+	yylex_destroy (extra.subscanner);
 	yylex_destroy (scanner);
 	qc_yypstate_delete (extra.qc_state);
 	pre_yypstate_delete (extra.pre_state);
 	free (extra.cond_stack.a);
+	free (extra.expr_stack.a);
 	return status;
 }
 
@@ -1255,6 +1346,7 @@ rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 		|| !macro->tokens
 		|| expr->token != -rua_space) {
 		expr = malloc (sizeof (*expr));
+		macro->num_tokens++;
 	}
 	*expr = (rua_expr_t) {
 		.location = token->location,
@@ -1299,6 +1391,7 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 			free (t->next);
 			t->next = 0;
 			macro->tail = &t->next;
+			macro->num_tokens--;
 		}
 		if (macro->tokens->token == PRE_CONCAT
 			|| ((rua_expr_t *) macro->tail)->token == PRE_CONCAT) {
@@ -1347,8 +1440,25 @@ rua_start_text (void *scanner)
 void
 rua_start_expr (void *scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
+	extra->expand = true;
+
 	yy_pop_state (scanner);
 	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_expand_on (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->expand = true;
+}
+
+void
+rua_expand_off (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->expand = false;
 }
 
 void
@@ -1357,6 +1467,7 @@ rua_end_directive (void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	extra->preprocessor = false;
 	extra->recording = false;
+	extra->expand = false;
 	yy_pop_state (scanner);
 }
 

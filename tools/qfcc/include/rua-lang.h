@@ -43,6 +43,7 @@ typedef struct rua_expr_s {
 	rua_loc_t   location;
 	int         textlen;
 	int         token;
+	int         param;			// 1-based param index (0 if not a param)
 	const char *text;
 } rua_expr_t;
 
@@ -51,6 +52,7 @@ typedef struct rua_macro_s {
 	symtab_t   *params;
 	rua_expr_t *tokens;
 	rua_expr_t **tail;
+	int         num_tokens;
 } rua_macro_t;
 
 typedef struct rua_tok_s {
@@ -78,6 +80,8 @@ rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
 void rua_macro_finish (rua_macro_t *macro, void *scanner);
 void rua_start_text (void *scanner);
 void rua_start_expr (void *scanner);
+void rua_expand_on (void *scanner);
+void rua_expand_off (void *scanner);
 void rua_end_directive (void *scanner);
 void rua_if (bool pass, void *scanner);
 void rua_else (bool pass, const char *tok, void *scanner);

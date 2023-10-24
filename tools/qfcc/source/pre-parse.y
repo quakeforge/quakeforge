@@ -264,7 +264,8 @@ unary_expr
 			$$ = new_long_expr (1, false);
 		}
 	| '(' expr ')'		{ $$ = $2; }
-	| DEFINED defined	{ $$ = $2; }
+	| DEFINED			{ rua_expand_off (scanner); }
+	  defined			{ rua_expand_on (scanner); $$ = $3; }
 	| '+' unary_expr	{ $$ = $2; }
 	| '-' unary_expr	{ $$ = UEXPR (-, $2); }
 	| '~' unary_expr	{ $$ = UEXPR (~, $2); }
