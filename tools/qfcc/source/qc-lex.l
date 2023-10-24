@@ -95,6 +95,7 @@ typedef struct {
 
 typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
 typedef struct DARRAY_TYPE (rua_expr_t) rua_expr_stack_t;
+typedef struct DARRAY_TYPE (rua_macro_t *) rua_macro_list_t;
 
 typedef struct rua_extra_s {
 		int         start_state;
@@ -106,6 +107,7 @@ typedef struct rua_extra_s {
 		pre_yypstate *pre_state;
 		rua_cond_stack_t cond_stack;
 		rua_expr_stack_t expr_stack;
+		rua_macro_list_t arg_list;
 		symtab_t   *macro_tab;
 		yyscan_t    subscanner;
 	} rua_extra_t;
@@ -1096,16 +1098,35 @@ static void
 expand_macro (rua_extra_t *extra, rua_macro_t *macro)
 {
 	int         num_tokens = macro->num_tokens;
+	for (auto t = macro->tokens; t; t = t->next) {
+		if (t->token == PRE_ID) {
+			auto sym = symtab_lookup (macro->params, t->text);
+			if (sym) {
+				num_tokens += extra->arg_list.a[sym->s.offset]->num_tokens - 1;
+			}
+		}
+	}
 
 	int         base = extra->expr_stack.size;
 	DARRAY_OPEN_AT (&extra->expr_stack, base, num_tokens);
 	int         index = num_tokens;
 	for (auto t = macro->tokens; t; t = t->next) {
-		extra->expr_stack.a[base + --index] = *t;
+		auto e = t;
+		if (t->token == PRE_ID) {
+			auto sym = symtab_lookup (macro->params, t->text);
+			int  param = sym->s.offset;
+			for (e = extra->arg_list.a[param]->tokens; e; e = e->next) {
+				extra->expr_stack.a[base + --index] = *e;
+			}
+		}
+		if (e) {
+			extra->expr_stack.a[base + --index] = *e;
+		}
 	}
 	if (index) {
 		internal_error (0, "taniwha can't count: %d", index);
 	}
+
 	for (index = num_tokens; index-- > 0;) {
 		auto e = &extra->expr_stack.a[base + index];
 		if (e->token == '#') {
@@ -1255,6 +1276,10 @@ parse_args (rua_extra_t *extra, rua_loc_t *location, yyscan_t scanner)
 	auto state = pre_yypstate_new ();
 	int token = PRE_ARGS;
 	rua_tok_t   tok = { .location = *location, };
+	for (auto i = extra->arg_list.size; i-- > 0; ) {
+		free (extra->arg_list.a[i]);
+	}
+	extra->arg_list.size = 0;
 	do {
 		if (token != PRE_ARGS) {
 			token = yylex (&tok, &tok.location, scanner);
@@ -1286,7 +1311,8 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			sym = symtab_lookup (extra->macro_tab, tok->text);
 		}
 		if (sym) {
-			if (sym->s.macro->params) {
+			auto macro = sym->s.macro;
+			if (macro->params) {
 				rua_tok_t   ttok = { .location = tok->location, };
 				int         ttoken;
 				bool        saw_space = false;
@@ -1311,10 +1337,20 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 						sym = 0;
 						return -1;
 					}
+					int num_args = extra->arg_list.size;
+					if (num_args == 1 && !extra->arg_list.a[0]->num_tokens) {
+						num_args = 0;
+					}
+					if (num_args != macro->num_params) {
+						error (0, "macro \"%s\" passed %d arguments,"
+							   " but takes just %d",
+							   macro->name, num_args, macro->num_params);
+						sym = 0;
+					}
 				}
 			}
 			if (sym) {
-				expand_macro (extra, sym->s.macro);
+				expand_macro (extra, macro);
 				return YYPUSH_MORE;
 			}
 		}
@@ -1352,6 +1388,7 @@ qc_yyparse (FILE *in)
 		.pre_state = pre_yypstate_new (),
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.expr_stack = DARRAY_STATIC_INIT (32),
+		.arg_list = DARRAY_STATIC_INIT (8),
 		.macro_tab = new_symtab (0, stab_global),
 	};
 
@@ -1382,6 +1419,7 @@ qc_yyparse (FILE *in)
 	pre_yypstate_delete (extra.pre_state);
 	free (extra.cond_stack.a);
 	free (extra.expr_stack.a);
+	free (extra.arg_list.a);
 	return status;
 }
 
@@ -1392,11 +1430,13 @@ rua_start_macro (const char *name, bool params, void *scanner)
 	extra->params = params;
 	extra->recording = true;
 
-	int len = strlen (name);
-	if (name[len - 1] == '(') {
-		name = save_substring (name, len - 1);
-	} else {
-		name = save_string (name);
+	if (name) {
+		int len = strlen (name);
+		if (name[len - 1] == '(') {
+			name = save_substring (name, len - 1);
+		} else {
+			name = save_string (name);
+		}
 	}
 
 	yy_pop_state (scanner);
@@ -1462,6 +1502,8 @@ rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 		return macro;
 	}
 	auto sym = new_symbol (token->text);
+	sym->sy_type = sy_var;
+	sym->s.offset = macro->num_params++;
 	symtab_addsymbol (macro->params, sym);
 	return macro;
 }
@@ -1515,6 +1557,14 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 	sym->sy_type = sy_macro;
 	sym->s.macro = macro;
 	symtab_addsymbol (macro_tab, sym);
+}
+
+rua_macro_t *
+rua_macro_arg (rua_macro_t *arg, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	DARRAY_APPEND (&extra->arg_list, arg);
+	return arg;
 }
 
 void

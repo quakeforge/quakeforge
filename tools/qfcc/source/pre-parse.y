@@ -130,7 +130,7 @@ parse_error (void *scanner)
 %token          DEFINED EOD
 %token          CONCAT ARGS
 
-%type <macro>   params body
+%type <macro>   params body arg arg_list
 %type <dstr>    text text_text
 %type <value.expr>  unary_expr expr id defined defined_id
 
@@ -143,7 +143,12 @@ parse_error (void *scanner)
 
 start
 	: directive_list
-	| ARGS args ')' { YYACCEPT; }
+	| ARGS
+		<macro>{
+			auto arg = rua_start_macro (0, false, scanner);
+			$$ = rua_macro_arg (arg, scanner);
+		}
+	  args ')' { YYACCEPT; }
 	;
 
 directive_list
@@ -222,16 +227,23 @@ params
 	;
 
 args: arg_list
-	| args ',' arg_list
+	| args ','
+		<macro>{
+			auto arg = rua_start_macro (0, false, scanner);
+			$$ = rua_macro_arg (arg, scanner);
+		}
+	  arg_list
 	;
 
 arg_list
-	: /* emtpy */
-	| arg_list arg
+	: /* emtpy */	{ $$ = $<macro>0; }
+	| arg_list arg	{ $$ = $2; }
 	;
 
-arg : '(' args ')'
-	| TOKEN
+arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	  args	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	  ')'			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	| TOKEN			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
 	;
 
 id  : ID			{ $$ = 0; }

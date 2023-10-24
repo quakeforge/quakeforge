@@ -53,6 +53,7 @@ typedef struct rua_macro_s {
 	rua_expr_t *tokens;
 	rua_expr_t **tail;
 	int         num_tokens;
+	int         num_params;
 } rua_macro_t;
 
 typedef struct rua_tok_s {
@@ -78,6 +79,7 @@ rua_macro_t *rua_end_params (rua_macro_t *macro, void *scanner);
 rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
 							   void *scanner);
 void rua_macro_finish (rua_macro_t *macro, void *scanner);
+rua_macro_t *rua_macro_arg (rua_macro_t *arg, void *scanner);
 void rua_start_text (void *scanner);
 void rua_start_expr (void *scanner);
 void rua_expand_on (void *scanner);
