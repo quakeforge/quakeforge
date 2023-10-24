@@ -98,6 +98,7 @@ typedef struct rua_extra_s {
 		int         start_state;
 		bool        preprocessor;
 		bool        recording;
+		bool        params;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		rua_cond_stack_t cond_stack;
@@ -1086,13 +1087,13 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 			case rua_char:
 				break;
 			case rua_space:
-				if (!extra->recording) {
+				if (!extra->recording || extra->params) {
 					token = -rua_ignore;
 				}
 				break;
 		}
 	}
-	if (extra->recording) {
+	if (-token != rua_ignore && extra->recording) {
 		tok->token = token;
 		if (token != PRE_EOD && token != ',' && token != ')') {
 			token = PRE_TOKEN;
@@ -1202,9 +1203,10 @@ qc_yyparse (FILE *in)
 }
 
 rua_macro_t *
-rua_start_macro (const char *name, void *scanner)
+rua_start_macro (const char *name, bool params, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
+	extra->params = params;
 	extra->recording = true;
 
 	int len = strlen (name);
@@ -1227,9 +1229,33 @@ rua_start_macro (const char *name, void *scanner)
 }
 
 rua_macro_t *
+rua_end_params (rua_macro_t *macro, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->params = false;
+	return macro;
+}
+
+rua_macro_t *
 rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 {
-	rua_expr_t *expr = malloc (sizeof (*expr));
+	if (token->token == -rua_space) {
+		if (!macro->tokens) {
+			// ignore leading space
+			return macro;
+		}
+		auto t = (rua_expr_t *) macro->tail;
+		if (t->token == '#' || t->token == PRE_CONCAT) {
+			// ignore space after '#' and '##'
+			return macro;
+		}
+	}
+	rua_expr_t *expr = (rua_expr_t *) macro->tail;
+	if (token->token != PRE_CONCAT
+		|| !macro->tokens
+		|| expr->token != -rua_space) {
+		expr = malloc (sizeof (*expr));
+	}
 	*expr = (rua_expr_t) {
 		.location = token->location,
 		.textlen = token->textlen,
@@ -1244,6 +1270,10 @@ rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 rua_macro_t *
 rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 {
+	if (token->token == -rua_space) {
+		// ignore spaces
+		return macro;
+	}
 	if (token->token != PRE_ID) {
 		error (0, "expected parameter name, found \"%s\"", token->text);
 		return macro;
@@ -1261,6 +1291,15 @@ void
 rua_macro_finish (rua_macro_t *macro, void *scanner)
 {
 	if (macro->tokens) {
+		while (((rua_expr_t *) macro->tail)->token == -rua_space) {
+			// space is never added as the first token, so it's guaranteed
+			// there is always at least two tokens
+			rua_expr_t *t;
+			for (t = macro->tokens; t->next->next; t = t->next) continue;
+			free (t->next);
+			t->next = 0;
+			macro->tail = &t->next;
+		}
 		if (macro->tokens->token == PRE_CONCAT
 			|| ((rua_expr_t *) macro->tail)->token == PRE_CONCAT) {
 			error (0, "'##' cannot appear at either end of a macro expansion");

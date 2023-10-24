@@ -151,10 +151,10 @@ directive_list
 directive
 	: INCLUDE expand string extra_warn
 	| EMBED expand string extra_ignore
-	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, scanner); }
+	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
-	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, scanner); }
-	  params ')'	<macro> { $$ = $3; }
+	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, scanner); }
+	  params ')'	<macro> { $$ = rua_end_params ($3, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
 	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }

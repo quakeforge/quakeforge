@@ -69,9 +69,10 @@ typedef struct rua_tok_s {
 	};
 } rua_tok_t;
 
-rua_macro_t *rua_start_macro (const char *name, void *scanner);
+rua_macro_t *rua_start_macro (const char *name, bool params, void *scanner);
 rua_macro_t *rua_macro_param (rua_macro_t *macro, rua_tok_t *token,
 							  void *scanner);
+rua_macro_t *rua_end_params (rua_macro_t *macro, void *scanner);
 rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
 							   void *scanner);
 void rua_macro_finish (rua_macro_t *macro, void *scanner);
