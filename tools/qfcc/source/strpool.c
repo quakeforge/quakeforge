@@ -195,6 +195,9 @@ make_string (const char *token, char **end)
 	unicount = 0;
 
 	quote = *token++;
+	if (quote == '<') {
+		quote = '>';		// #include <file>
+	}
 	do {
 		c = *token++;
 		if (!c)

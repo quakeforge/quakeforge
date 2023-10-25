@@ -34,9 +34,15 @@
 struct dstring_s;
 
 void parse_cpp_name (void);
-void add_cpp_sysinc (const char *arg);
 void add_cpp_undef (const char *arg);
 void add_cpp_def (const char *arg);
+
+int cpp_include (const char *opt, const char *arg);
+void cpp_define (const char *arg);
+void cpp_undefine (const char *arg);
+const char *cpp_find_file (const char *name, int quote, bool *is_system);
+void cpp_set_quote_file (const char *path);
+
 void intermediate_file (struct dstring_s *ifile, const char *filename,
 						const char *ext, int local);
 FILE *preprocess_file (const char *filename, const char *ext);

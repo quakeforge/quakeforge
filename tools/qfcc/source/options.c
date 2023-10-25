@@ -140,6 +140,7 @@ static const char *short_options =
 	"F"		// generate files.dat
 	"g"		// debug
 	"h"		// help
+	"i::"	// set includes
 	"I:"	// set includes
 	"L:"	// lib path
 	"l:"	// lib file
@@ -607,8 +608,9 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_undef ("-undef");
 	add_cpp_undef ("-nostdinc");
 	add_cpp_undef ("-fno-extended-identifiers");
-	add_cpp_def ("-D__QFCC__=1");
-	add_cpp_def ("-D__QUAKEC__=1");
+
+	cpp_define ("__QFCC__");
+	cpp_define ("__QUAKEC__");
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -740,7 +742,7 @@ DecodeArgs (int argc, char **argv)
 				options.save_temps = true;
 				break;
 			case 'D':					// defines for cpp
-				add_cpp_def (nva ("%s%s", "-D", optarg));
+				cpp_define (optarg);
 				break;
 			case 'E':					// defines for cpp
 				saw_E = 1;
@@ -751,11 +753,21 @@ DecodeArgs (int argc, char **argv)
 				add_cpp_def (nva ("%s", "-include"));
 				add_cpp_def (nva ("%s", optarg));
 				break;
+			case 'i':					// includes
+				{
+					int o = cpp_include (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
+				}
+				break;
 			case 'I':					// includes
-				add_cpp_def (nva ("%s%s", "-I", optarg));
+				cpp_include ("I", optarg);
 				break;
 			case 'U':					// undefines
-				add_cpp_def (nva ("%s%s", "-U", optarg));
+				cpp_undefine (optarg);
 				break;
 			case 'M':
 				options.preprocess_only = 1;
@@ -857,8 +869,6 @@ DecodeArgs (int argc, char **argv)
 
 	// add the default paths
 	if (!options.no_default_paths) {
-		add_cpp_sysinc ("-isystem");
-		add_cpp_sysinc (QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 

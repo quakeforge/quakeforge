@@ -43,6 +43,7 @@
 #include "QF/alloc.h"
 #include "QF/progs/pr_comp.h"
 
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -81,6 +82,8 @@ pop_source_file (void)
 		return;
 	}
 	tmp = pr.srcline_stack;
+	pr.source_file = tmp->source_file;
+	pr.source_line = tmp->source_line;
 	pr.srcline_stack = tmp->next;
 	FREE (srclines, tmp);
 }
@@ -97,6 +100,26 @@ add_source_file (const char *file)
 }
 
 void
+set_line_file (int line, const char *file, int flags)
+{
+	switch (flags & 3) {
+		case 1:
+			push_source_file ();
+			break;
+		case 2:
+			pop_source_file ();
+			file = GETSTR (pr.source_file);
+			line = pr.source_line;
+			break;
+	}
+	pr.source_line = line;
+	if (file) {
+		add_source_file (file);
+		cpp_set_quote_file (file);
+	}
+}
+
+void
 line_info (const expr_t *line_expr, const char *file, const expr_t *flags_expr)
 {
 	int line = expr_long (line_expr);
@@ -109,18 +132,7 @@ line_info (const expr_t *line_expr, const char *file, const expr_t *flags_expr)
 		}
 		file = make_string (file, 0);
 	}
-	switch (flags & 3) {
-		case 1:
-			push_source_file ();
-			break;
-		case 2:
-			pop_source_file ();
-			break;
-	}
-	pr.source_line = line;
-	if (file) {
-		add_source_file (file);
-	}
+	set_line_file (line, file, flags);
 }
 
 pr_lineno_t *

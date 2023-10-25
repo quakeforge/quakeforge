@@ -55,6 +55,7 @@
 #include <QF/va.h>
 
 #include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
@@ -96,6 +97,7 @@ typedef struct {
 typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
 typedef struct DARRAY_TYPE (rua_expr_t) rua_expr_stack_t;
 typedef struct DARRAY_TYPE (rua_macro_t *) rua_macro_list_t;
+typedef struct DARRAY_TYPE (YY_BUFFER_STATE) rua_include_stack_t;
 
 typedef struct rua_extra_s {
 		int         start_state;
@@ -108,6 +110,7 @@ typedef struct rua_extra_s {
 		rua_cond_stack_t cond_stack;
 		rua_expr_stack_t expr_stack;
 		rua_macro_list_t arg_list;
+		rua_include_stack_t include_stack;
 		dstring_t  *dstr;
 		symtab_t   *macro_tab;
 		yyscan_t    subscanner;
@@ -1403,6 +1406,7 @@ qc_yyparse (FILE *in)
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.expr_stack = DARRAY_STATIC_INIT (32),
 		.arg_list = DARRAY_STATIC_INIT (8),
+		.include_stack = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_new (),
 		.macro_tab = new_symtab (0, stab_global),
 	};
@@ -1412,6 +1416,14 @@ qc_yyparse (FILE *in)
 	yyset_in (in, scanner);
 	do {
 		int token = yylex (&tok, &tok.location, scanner);
+		if (!token && extra.include_stack.size) {
+			struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
+			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
+			auto buffer = DARRAY_REMOVE (&extra.include_stack);
+			set_line_file (-1, 0, 2);
+			yy_switch_to_buffer (buffer, scanner);
+			continue;
+		}
 		while (true) {
 			status = qc_process (&extra, token, &tok, scanner);
 			if (status != YYPUSH_MORE || !extra.expr_stack.size) {
@@ -1435,6 +1447,7 @@ qc_yyparse (FILE *in)
 	free (extra.cond_stack.a);
 	free (extra.expr_stack.a);
 	free (extra.arg_list.a);
+	free (extra.include_stack.a);
 	dstring_delete (extra.dstr);
 	return status;
 }
@@ -1731,4 +1744,31 @@ rua_undefine (const char *name, void *scanner)
 	if (sym) {
 		symtab_removesymbol (macro_tab, sym);
 	}
+}
+
+void
+rua_include_file (const char *name, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
+	int quote = *name;
+	name = make_string (name, 0);
+	bool is_system;
+	auto found = cpp_find_file (name, quote, &is_system);
+	if (!found || !(yyin = fopen (found, "rb"))) {
+		error (0, "fatal error: %s: %s", name, strerror (errno));
+		exit (1);
+	}
+	set_line_file (1, found, 1);
+	DARRAY_APPEND (&extra->include_stack, YY_CURRENT_BUFFER);
+	yy_switch_to_buffer (yy_create_buffer (yyin, YY_BUF_SIZE, scanner), scanner);
+}
+
+void
+rua_embed_file (const char *name, void *scanner)
+{
+	if (scanner) {
+		internal_error (0, "not implemented");
+	}
+	printf ("eh?\n");
 }

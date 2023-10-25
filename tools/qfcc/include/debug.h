@@ -35,6 +35,7 @@
 
 typedef struct expr_s expr_t;
 
+void set_line_file (int line, const char *file, int flags);
 void line_info (const expr_t *line_expr, const char *text,
 				const expr_t *flags_epxr);
 pr_lineno_t *new_lineno (void);

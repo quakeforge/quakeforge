@@ -173,38 +173,53 @@ start
 
 directive_list
 	: /*empty*/
-	| directive EOD { rua_end_directive (scanner); } directive_list
+	| directive directive_list
 	;
 
+eod : EOD { rua_end_directive (scanner); } ;
+
 directive
-	: INCLUDE expand string extra_warn
-	| EMBED expand string extra_ignore
+	: INCLUDE expand string extra_warn eod { rua_include_file ($3, scanner); }
+	| EMBED expand string extra_ignore eod { rua_embed_file ($3, scanner); }
 	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
+	  eod
 	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, scanner); }
 	  params ')'	<macro> { $$ = rua_end_params ($3, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
+	  eod
 	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
+	  eod
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
+	  eod
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
+	  eod
 	| PRAGMA expand { rua_start_pragma (scanner); }
 	  pragma_params { pragma_process (); }
+	  eod
 	| LINE expand expr extra_warn					{ line_info ($3, 0, 0); }
+	  eod
 	| LINE expand expr string line_expr extra_warn	{ line_info ($3, $4, $5); }
+	  eod
 	| IF expand expr		{ rua_if (expr_long ($3), scanner); }
+	  eod
 	| IFDEF ID extra_warn	{ rua_if (rua_defined ($2, scanner), scanner); }
+	  eod
 	| IFNDEF ID extra_warn	{ rua_if (!rua_defined ($2, scanner), scanner); }
+	  eod
 	| ELSE extra_warn		{ rua_else (true, "else", scanner); }
+	  eod
 	| ELIF expand expr		{ rua_else (expr_long ($3), "elif", scanner); }
+	  eod
 	| ELIFDEF ID extra_warn
-		{
-			rua_else (rua_defined ($2, scanner), "elifdef", scanner);
-		}
+		{ rua_else (rua_defined ($2, scanner), "elifdef", scanner); }
+	  eod
 	| ELIFNDEF ID extra_warn
-		{
-			rua_else (!rua_defined ($2, scanner), "elifndef", scanner);
-		}
-	| ENDIF extra_warn		{ rua_endif (scanner); }
+		{ rua_else (!rua_defined ($2, scanner), "elifndef", scanner); }
+	  eod
+	| ENDIF extra_warn
+		{ rua_endif (scanner); }
+	  eod
 	;
 
 extra_warn
