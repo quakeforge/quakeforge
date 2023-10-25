@@ -97,27 +97,19 @@ add_source_file (const char *file)
 }
 
 void
-line_info (const char *text)
+line_info (const expr_t *line_expr, const char *file, const expr_t *flags_expr)
 {
-	const char *p;
-	char *s;
-	const char *str;
-	int line;
-	int flags;
+	int line = expr_long (line_expr);
+	int flags = flags_expr ? expr_long (flags_expr) : 0;
 
-	p = text;
-	line = strtol (p, &s, 10);
-	p = s;
-	while (isspace ((unsigned char)*p))
-		p++;
-	if (!*p)
-		error (0, "Unexpected end of file");
-	str = make_string (p, &s);		// grab the filename
-	p = s;
-	while (isspace ((unsigned char) *p))
-		p++;
-	flags = strtol (p, &s, 10);
-	switch (flags) {
+	if (file) {
+		if (*file != '"') {
+			error (0, "\"%s\" is not a valid filename", file);
+			return;
+		}
+		file = make_string (file, 0);
+	}
+	switch (flags & 3) {
 		case 1:
 			push_source_file ();
 			break;
@@ -125,10 +117,10 @@ line_info (const char *text)
 			pop_source_file ();
 			break;
 	}
-	while (*p && *p != '\n')	// ignore rest
-		p++;
-	pr.source_line = line - 1;
-	add_source_file (str);
+	pr.source_line = line;
+	if (file) {
+		add_source_file (file);
+	}
 }
 
 pr_lineno_t *

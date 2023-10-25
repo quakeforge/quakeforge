@@ -33,7 +33,10 @@
 
 #include "QF/progs/pr_debug.h"
 
-void line_info (const char *text);
+typedef struct expr_s expr_t;
+
+void line_info (const expr_t *line_expr, const char *text,
+				const expr_t *flags_epxr);
 pr_lineno_t *new_lineno (void);
 void add_source_file (const char *file);
 void debug_finish_module (const char *modname);

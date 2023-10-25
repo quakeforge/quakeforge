@@ -135,8 +135,8 @@ FRAMEID		{ID}(\.{ID})*
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do, with people like you */
 
-^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$		{ line_info (yytext + 1); }
-^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ line_info (yytext + 1); }
+^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$		{ /*line_info (yytext + 1);FIXME*/ }
+^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ /*line_info (yytext + 1);FIXME*/ }
 
 {INTEGER}			{
 						int         i;

@@ -43,6 +43,7 @@
 
 #include "QF/dstring.h"
 
+#include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/pragma.h"
@@ -119,7 +120,7 @@ parse_error (void *scanner)
 %token          TOKEN
 // end of tokens comment between qc and preprocessor
 
-%token			QSTRING HSTRING
+%token <text>   QSTRING HSTRING
 
 %token          INCLUDE EMBED
 %token          DEFINE UNDEF
@@ -130,13 +131,32 @@ parse_error (void *scanner)
 %token          DEFINED EOD
 %token          CONCAT ARGS
 
+%type <text>    string
 %type <macro>   params body arg arg_list
 %type <dstr>    text text_text
-%type <value.expr>  unary_expr expr id defined defined_id
+%type <value.expr>  unary_expr expr id defined defined_id line_expr
 
 %{
 #define BEXPR(a,op,b) new_long_expr (expr_long (a) op expr_long (b), false)
 #define UEXPR(op,a)   new_long_expr (op expr_long (a), false)
+
+static const expr_t *
+get_long (const expr_t *expr, const char *text, int defl)
+{
+	auto type = expr ? get_type (expr) : 0;
+	if (!type || !is_long (type)) {
+		if (type && is_double (type)) {
+			error (0, "floating constant in preprocessor expression");
+			expr = new_long_expr (expr_double (expr), false);
+		} else {
+			error (0, "token \"%s\" is not valid in preprocessor"
+				   " expressions", text);
+			expr= new_long_expr (defl, false);
+		}
+	}
+	return expr;
+}
+
 %}
 
 %%
@@ -169,7 +189,8 @@ directive
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
 	| PRAGMA expand { rua_start_pragma (scanner); }
 	  pragma_params { pragma_process (); }
-	| LINE expand expr QSTRING extra_warn
+	| LINE expand expr extra_warn					{ line_info ($3, 0, 0); }
+	| LINE expand expr string line_expr extra_warn	{ line_info ($3, $4, $5); }
 	| IF expand expr		{ rua_if (expr_long ($3), scanner); }
 	| IFDEF ID extra_warn	{ rua_if (rua_defined ($2, scanner), scanner); }
 	| IFNDEF ID extra_warn	{ rua_if (!rua_defined ($2, scanner), scanner); }
@@ -218,8 +239,8 @@ pragma_params
 	;
 
 string
-	: HSTRING
-	| QSTRING
+	: HSTRING			{ $$ = save_string ($1); }
+	| QSTRING			{ $$ = save_string ($1); }
 	;
 
 params
@@ -263,27 +284,8 @@ defined_id
 
 unary_expr
 	: id
-	| VALUE
-		{
-			auto type = get_type ($1);
-			if (!is_long (type)) {
-				if (is_double (type)) {
-					error (0, "floating constant in preprocessor expression");
-					$1 = new_long_expr (expr_double ($1), false);
-				} else {
-					error (0, "token \"%s\" is not valid in preprocessor"
-						   " expressions", $<text>1);
-					$1 = new_long_expr (1, false);
-				}
-			}
-			$$ = $1;
-		}
-	| QSTRING
-		{
-			error (0, "token \"%s\" is not valid in preprocessor"
-				   " expressions", $<text>1);
-			$$ = new_long_expr (1, false);
-		}
+	| VALUE				{ $$ = get_long ($1, $<text>1, 1); }
+	| QSTRING			{ $$ = get_long (0, $<text>1, 1); }
 	| '(' expr ')'		{ $$ = $2; }
 	| DEFINED			{ rua_expand_off (scanner); }
 	  defined			{ rua_expand_on (scanner); $$ = $3; }
@@ -313,6 +315,20 @@ expr
 	| expr '|' expr		{ $$ = BEXPR ($1, | , $3); }
 	| expr '^' expr		{ $$ = BEXPR ($1, ^ , $3); }
 	| expr '%' expr		{ $$ = BEXPR ($1, % , $3); }
+	;
+
+line_expr
+	:	/* empty */		{ $$ = new_long_expr (0, false); }
+	| line_expr VALUE
+		{
+			pr_long_t   flags = expr_long ($1);
+			pr_long_t   bit = expr_long (get_long ($2, $<text>2, 0)) - 1;
+			if (bit >= 0) {
+				flags |= 1 << bit;
+				$1 = new_long_expr (flags, false);
+			}
+			$$ = $1;
+		}
 	;
 
 %%

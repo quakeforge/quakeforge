@@ -198,6 +198,11 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <LCOMMENT>[\\]*			/* consume \ */
 
 <ARGS>^#				{	return '#'; }
+^#{s}+/{D}				{
+							yy_push_state (PREPROC, yyscanner);
+							extra->preprocessor = true;
+							return PRE_LINE;
+						}
 <*>^#					{
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
@@ -242,9 +247,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREEXPR>{q_string}		{ return PRE_QSTRING; }
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
-
-^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
-^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
 <INITIAL,ARGS>{
 	{ID}				|
