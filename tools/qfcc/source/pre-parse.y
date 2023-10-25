@@ -167,7 +167,8 @@ directive
 	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
-	| PRAGMA expand pragma_params { pragma_process (); }
+	| PRAGMA expand { rua_start_pragma (scanner); }
+	  pragma_params { pragma_process (); }
 	| LINE expand expr QSTRING extra_warn
 	| IF expand expr		{ rua_if (expr_long ($3), scanner); }
 	| IFDEF ID extra_warn	{ rua_if (rua_defined ($2, scanner), scanner); }
@@ -212,8 +213,8 @@ expand
 	;
 
 pragma_params
-	: ID						{ pragma_add_arg (pre_yytext); }
-	| pragma_params ID			{ pragma_add_arg (pre_yytext); }
+	: ID						{ pragma_add_arg ($1); }
+	| pragma_params ID			{ pragma_add_arg ($2); }
 	;
 
 string

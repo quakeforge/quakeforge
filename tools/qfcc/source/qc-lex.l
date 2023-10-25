@@ -246,8 +246,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 ^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
 ^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
 
-^{s}*#{s}*pragma{s}+	{ yy_push_state (PRAGMA, yyscanner); }
-
 <INITIAL,ARGS>{
 	{ID}				|
 	@{ID}				{ return -rua_id; }
@@ -317,15 +315,13 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
-<PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
+<PRAGMA>{PRAGMAID}		|
+<PRAGMA>@{PRAGMAID}		{ return PRE_ID; }
+<PRAGMA>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
 <*>\\\r*\n				{ next_line (yylloc, yyscanner); }/*line continuation*/
 <ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <*>\r*\n				{
-							if (YY_START == PRAGMA) {
-								pragma_process ();
-							}
 							next_line (yylloc, yyscanner);
 							if (yyg->yy_start_stack_ptr) {
 								yy_pop_state (yyscanner);
@@ -1584,6 +1580,16 @@ rua_macro_arg (rua_macro_t *arg, void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	DARRAY_APPEND (&extra->arg_list, arg);
 	return arg;
+}
+
+void
+rua_start_pragma (void *scanner)
+{
+	if (options.preprocess_only) {
+		printf ("#pragma");
+	}
+	yy_pop_state (scanner);
+	yy_push_state (PRAGMA, scanner);
 }
 
 void

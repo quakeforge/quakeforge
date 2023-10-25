@@ -205,6 +205,9 @@ set_math (pragma_arg_t *args)
 void
 pragma_process ()
 {
+	if (options.preprocess_only) {
+		return;
+	}
 	if (!pragma_args) {
 		warning (0, "empty pragma");
 		return;
@@ -239,6 +242,10 @@ pragma_process ()
 void
 pragma_add_arg (const char *id)
 {
+	if (options.preprocess_only) {
+		printf (" %s", id);
+		return;
+	}
 	pragma_arg_t *arg;
 	ALLOC (16, pragma_arg_t, pragma_args, arg);
 	arg->arg = save_string (id);
