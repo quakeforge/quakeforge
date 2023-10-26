@@ -135,6 +135,7 @@ typedef struct {
 	bool        compile;			// serparate compilation mode
 	bool        partial_link;		// partial linking
 	bool        preprocess_only;	// run only cpp, don't compile
+	bool        dependencies;		// generate dependency rules
 	bool        gzip;				// compress qfo files when writing
 	const char *output_file;
 	const char *debug_file;

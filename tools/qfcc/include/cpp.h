@@ -50,4 +50,6 @@ FILE *preprocess_file (const char *filename, const char *ext);
 extern const char *cpp_name;
 extern struct dstring_s *tempname;
 
+void cpp_write_dependencies (const char *sourcefile);
+
 #endif//__cpp_h

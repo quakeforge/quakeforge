@@ -91,6 +91,12 @@ static cpp_arg_t *cpp_sysinc_list, **cpp_sysinc_tail = &cpp_sysinc_list;
 static const char **cpp_argv;
 static int  cpp_argc = 0;
 
+static const char *cpp_dep_file = 0;
+static const char *cpp_dep_target = 0;
+static bool cpp_dep_generate = false;
+static bool cpp_dep_phony = false;
+static bool cpp_dep_quote = false;
+
 const char *cpp_name = CPP_NAME;
 dstring_t  *tempname;
 
@@ -143,14 +149,18 @@ add_cpp_def (const char *arg)
 static int
 cpp_depend_ (const char *opt, const char *arg)
 {
+	options.preprocess_only = true;
+	options.dependencies = true;
+
 	add_cpp_def ("-M");
-	options.preprocess_only = 1;
 	return 0;
 }
 
 static int
 cpp_depend_D (const char *opt, const char *arg)
 {
+	options.dependencies = true;
+
 	add_cpp_def ("-MD");
 	return 0;
 }
@@ -158,6 +168,8 @@ cpp_depend_D (const char *opt, const char *arg)
 static int
 cpp_depend_F (const char *opt, const char *arg)
 {
+	cpp_dep_file = save_string (arg);
+
 	add_cpp_def ("-MF");
 	add_cpp_def (arg);
 	return 1;
@@ -166,6 +178,8 @@ cpp_depend_F (const char *opt, const char *arg)
 static int
 cpp_depend_G (const char *opt, const char *arg)
 {
+	cpp_dep_generate = true;
+
 	add_cpp_def ("-MG");
 	return 0;
 }
@@ -173,14 +187,18 @@ cpp_depend_G (const char *opt, const char *arg)
 static int
 cpp_depend_M (const char *opt, const char *arg)
 {
+	options.preprocess_only = true;
+	options.dependencies = true;
+
 	add_cpp_def ("-MM");
-	options.preprocess_only = 1;
 	return 0;
 }
 
 static int
 cpp_depend_MD (const char *opt, const char *arg)
 {
+	options.dependencies = true;
+
 	add_cpp_def ("-MMD");
 	return 0;
 }
@@ -188,6 +206,8 @@ cpp_depend_MD (const char *opt, const char *arg)
 static int
 cpp_depend_P (const char *opt, const char *arg)
 {
+	cpp_dep_phony = true;
+
 	add_cpp_def ("-MP");
 	return 0;
 }
@@ -195,6 +215,9 @@ cpp_depend_P (const char *opt, const char *arg)
 static int
 cpp_depend_Q (const char *opt, const char *arg)
 {
+	cpp_dep_quote = true;
+	cpp_dep_target = save_string (arg);
+
 	add_cpp_def ("-MQ");
 	add_cpp_def (arg);
 	return 1;
@@ -203,6 +226,8 @@ cpp_depend_Q (const char *opt, const char *arg)
 static int
 cpp_depend_T (const char *opt, const char *arg)
 {
+	cpp_dep_target = save_string (arg);
+
 	add_cpp_def ("-MT");
 	add_cpp_def (arg);
 	return 1;
@@ -683,4 +708,52 @@ cpp_set_quote_file (const char *path)
 		return;
 	}
 	cpp_quote_start = save_substring (path, e - path);
+}
+
+void
+cpp_write_dependencies (const char *sourcefile)
+{
+	if (!options.dependencies) {
+		return;
+	}
+	if (!cpp_dep_target) {
+		const char *src = strrchr (sourcefile, '/');
+		if (!src) {
+			src = sourcefile - 1;
+		}
+		src++;
+		const char *dot = strrchr (sourcefile, '.');
+		if (!dot) {
+			dot = sourcefile + strlen (sourcefile);
+		}
+		const char *tgt = va (0, "%.*s.qfo", (int) (dot - src), src);
+		cpp_dep_target = save_string (tgt);
+		cpp_dep_quote = 1;//FIXME implement
+	}
+	FILE *out = stdout;
+	if (cpp_dep_file) {
+		out = fopen (cpp_dep_file, "wt");
+		if (!out) {
+			fprintf (stderr, "%s: %s\n", cpp_dep_file, strerror (errno));
+			exit (1);
+		}
+	}
+	fprintf (out, "%s: %s", cpp_dep_target, sourcefile);
+	for (size_t i = 0; i < pr.comp_files.size; i++) {
+		const char *cf = pr.comp_files.a[i];
+		if (!strcmp (cf, sourcefile)) {
+			continue;
+		}
+		fprintf (out, " \\\n %s", cf);
+	}
+	if (cpp_dep_phony) {
+		for (size_t i = 0; i < pr.comp_files.size; i++) {
+			const char *cf = pr.comp_files.a[i];
+			if (!strcmp (cf, sourcefile)) {
+				continue;
+			}
+			fprintf (out, "\n%s:", cf);
+		}
+	}
+	fprintf (out, "\n");
 }

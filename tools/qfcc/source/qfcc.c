@@ -559,6 +559,9 @@ separate_compile (void)
 			temp_files[i++] = save_string (output_file->str);
 			err = compile_to_obj (*file, output_file->str, lang) || err;
 
+			if (!err) {
+				cpp_write_dependencies (*file);
+			}
 			*file = save_string (output_file->str);
 		} else {
 			if (options.compile)
@@ -826,6 +829,7 @@ progs_src_compile (void)
 				return 1;
 	}
 	qfo_delete (qfo);
+	cpp_write_dependencies (progs_src);
 
 	return 0;
 }
