@@ -770,16 +770,16 @@ DecodeArgs (int argc, char **argv)
 				cpp_undefine (optarg);
 				break;
 			case 'M':
-				options.preprocess_only = 1;
-				if (optarg) {
-					add_cpp_def (nva ("-M%s", optarg));
-					if (strchr (optarg, 'D'))
+				{
+					if (optarg && strchr (optarg, 'D')) {
 						saw_MD = 1;
-					if (strchr ("FQT", optarg[0]))
-						add_cpp_def (argv[optind++]);
-				} else {
-					options.preprocess_only = 1;
-					add_cpp_def (nva ("-M"));
+					}
+					int o = cpp_depend (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
 				}
 				break;
 			case OPT_NO_DEFAULT_PATHS:

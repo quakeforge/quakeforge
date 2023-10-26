@@ -37,6 +37,7 @@ void parse_cpp_name (void);
 void add_cpp_undef (const char *arg);
 void add_cpp_def (const char *arg);
 
+int cpp_depend (const char *opt, const char *arg);
 int cpp_include (const char *opt, const char *arg);
 void cpp_define (const char *arg);
 void cpp_undefine (const char *arg);

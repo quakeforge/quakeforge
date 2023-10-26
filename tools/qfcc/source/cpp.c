@@ -141,6 +141,102 @@ add_cpp_def (const char *arg)
 }
 
 static int
+cpp_depend_ (const char *opt, const char *arg)
+{
+	add_cpp_def ("-M");
+	options.preprocess_only = 1;
+	return 0;
+}
+
+static int
+cpp_depend_D (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MD");
+	return 0;
+}
+
+static int
+cpp_depend_F (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MF");
+	add_cpp_def (arg);
+	return 1;
+}
+
+static int
+cpp_depend_G (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MG");
+	return 0;
+}
+
+static int
+cpp_depend_M (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MM");
+	options.preprocess_only = 1;
+	return 0;
+}
+
+static int
+cpp_depend_MD (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MMD");
+	return 0;
+}
+
+static int
+cpp_depend_P (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MP");
+	return 0;
+}
+
+static int
+cpp_depend_Q (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MQ");
+	add_cpp_def (arg);
+	return 1;
+}
+
+static int
+cpp_depend_T (const char *opt, const char *arg)
+{
+	add_cpp_def ("-MT");
+	add_cpp_def (arg);
+	return 1;
+}
+
+#define CPP_DEPEND(name) {#name, cpp_depend_##name}
+int
+cpp_depend (const char *opt, const char *arg)
+{
+	static cpp_func_t depend_funcs[] = {
+		CPP_DEPEND (),
+		CPP_DEPEND (D),
+		CPP_DEPEND (F),
+		CPP_DEPEND (G),
+		CPP_DEPEND (M),
+		CPP_DEPEND (MD),
+		CPP_DEPEND (P),
+		CPP_DEPEND (Q),
+		CPP_DEPEND (T),
+		{}
+	};
+	if (!opt) {
+		opt = "";
+	}
+	for (int i = 0; depend_funcs[i].name; i++) {
+		if (!strcmp (opt, depend_funcs[i].name)) {
+			return depend_funcs[i].func (opt, arg);
+		}
+	}
+	return -1;
+}
+#undef CPP_DEPEND
+
+static int
 cpp_include_I (const char *opt, const char *arg)
 {
 	if (!arg) {
