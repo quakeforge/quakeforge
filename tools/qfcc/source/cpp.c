@@ -51,6 +51,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/sys.h"
@@ -567,6 +568,9 @@ cpp_find_file (const char *name, int quote, bool *is_system)
 			return path;
 		}
 	}
+	if (!errno) {
+		errno = ENOENT;
+	}
 	return 0;
 }
 
@@ -574,12 +578,12 @@ void
 cpp_set_quote_file (const char *path)
 {
 	if (!path) {
-		cpp_quote_start = pr.comp_dir;
+		cpp_quote_start = "";
 		return;
 	}
 	const char *e = strrchr (path, '/');
 	if (!e) {
-		cpp_quote_start = pr.comp_dir;
+		cpp_quote_start = "";
 		return;
 	}
 	cpp_quote_start = save_substring (path, e - path);
