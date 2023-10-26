@@ -92,6 +92,7 @@ typedef struct {
 	bool        saw_else;
 	bool        own_state;
 	bool        enabled;
+	int         line;
 } rua_cond_t;
 
 typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
@@ -105,6 +106,7 @@ typedef struct rua_extra_s {
 		bool        recording;
 		bool        params;
 		bool        expand;
+		bool        suppressed;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		rua_cond_stack_t cond_stack;
@@ -130,10 +132,14 @@ FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int directive (const char *token, yyscan_t scanner);
 static int keyword_or_id (YYSTYPE *lval, const char *token);
-static void user_action (rua_tok_t *tok, rua_loc_t *loc,
-						 const char *text, size_t textlen, int state);
+static void update_loc (rua_loc_t *loc, size_t textlen);
+static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
+					   int state);
 static void undo_loc (rua_loc_t *loc);
 static void next_line (rua_loc_t *loc, yyscan_t scanner);
+static void dump_state_stack (void *scanner);
+static void dump_token (rua_tok_t *tok, rua_loc_t *loc, int state);
+static void dump_debug (int act, const char *text, int state);
 
 typedef enum {
 	rua_eof = 1,
@@ -149,7 +155,12 @@ typedef enum {
 	rua_num_term,
 } rua_term;
 
-#define YY_USER_ACTION user_action (yylval, yylloc, yytext, yyleng, yystart());
+#define YY_USER_ACTION \
+	update_loc (yylloc, yyleng); \
+	save_text (yylval, yytext, yyleng, yystart()); \
+	if (0) { dump_debug (yy_act, yytext, yystart()); } \
+	if (0) { dump_token (yylval, yylloc, yystart ()); } \
+	if (0) { dump_state_stack(yyscanner); }
 
 %}
 
@@ -179,6 +190,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 %x		BOL DIRECTIVE TEXT SUPPRESS SUPPRESSC PRAGMA
 %x      VECTOR
 %s		PREPROC PREEXPR MACRO ARGS
+%x		CONT
 
 %%
 						auto extra = qc_yyget_extra (yyscanner);
@@ -188,16 +200,27 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 						grab_write = GRAB_WRITE;
 						yylval->pointer = 0;	// ensure pointer vals are null
 
-<COMMENT>"/*"			{ warning (0, "nested /* in comment"); }
+<COMMENT>"/*"			{ warning (0, "nested /* in comment"); yymore();}
 <COMMENT>\*+"/"			{ yy_pop_state (yyscanner); return -rua_space; }
-<COMMENT>\n				{ next_line (yylloc, yyscanner); }
-<COMMENT>[^*/\n]*		/* munch on anything but possible end of comment */
-<COMMENT>\/+[^*\n]*		/* handle /s not followed by * */
-<COMMENT>\*+[^/\n]*		/* handle *s not followed by * */
+<COMMENT>\r*\n			{ next_line (yylloc, yyscanner); yymore();}
+<COMMENT>[^*/\n]*		{ yymore(); }/* munch on anything but possible end of comment */
+<COMMENT>\/+[^*\n]*		{ yymore(); }/* handle /s not followed by * */
+<COMMENT>\*+[^/\n]*		{ yymore(); }/* handle *s not followed by * */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
-<*>"/*"					{ yy_push_state (COMMENT, yyscanner); }
-<*>"//"					{ yy_push_state (LCOMMENT, yyscanner); }/* cf <*>\r\n */
-<LCOMMENT>[^\\\r\n]*	/* consume all but \ and EOL (see line continuation) */
+<*>"/*"					{ yy_push_state (COMMENT, yyscanner); yymore(); }
+<*>"//"					{/* cf <*>\r\n */
+							yymore();
+							int state = yystart ();
+							if (state == PREEXPR || state == PREPROC
+								|| state == DIRECTIVE) {
+								BEGIN (LCOMMENT);
+								yy_push_state (state, yyscanner);
+								return PRE_EOD;
+							} else {
+								yy_push_state (LCOMMENT, yyscanner);
+							}
+						}
+<LCOMMENT>[^\\\r\n]+	/* consume all but \ and EOL (see line continuation) */
 <LCOMMENT>[\\]*			/* consume \ */
 
 <ARGS>^#				{	return '#'; }
@@ -206,6 +229,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							extra->preprocessor = true;
 							return PRE_LINE;
 						}
+<CONT>^.				{ yyless (yyleng - 1); yy_pop_state (yyscanner); }
 <*>^#					{
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
@@ -234,13 +258,19 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <MACRO,TEXT>\r*\n		|
 <PREPROC>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
-<SUPPRESS>^[^#/\n \t]+	{ BEGIN (SUPPRESSC); }
+<SUPPRESS>^[^#/\n \t]+	{ BEGIN (SUPPRESSC); extra->suppressed = true; }
 <SUPPRESSC>[^/\n]*		/* nom nom */
 <SUPPRESSC>\/[^/\n]*	/* nom nom */
 <SUPPRESSC>\n			{ next_line (yylloc, yyscanner); BEGIN (SUPPRESS); }
 <SUPPRESS>\n			{ next_line (yylloc, yyscanner); }
-<SUPPRESS>\/[^/\n]*		/* nom nom */
-<SUPPRESS><<EOF>>		{ error (0, "unterminated #if"); return 0; }
+<SUPPRESS>[^#\n][^/\n]+	/* nom nom */
+<SUPPRESS><<EOF>>		{
+							int ind = extra->cond_stack.size - 1;
+							auto cond = &extra->cond_stack.a[ind];
+							error (0, "unterminated #if started on %d",
+								   cond->line);
+							return 0;
+						}
 
 <TEXT>[^\\\r\n]*		{ return PRE_TEXT; }
 <TEXT>[\\]*				{ return PRE_TEXT; }
@@ -324,7 +354,17 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PRAGMA>@{PRAGMAID}		{ return PRE_ID; }
 <PRAGMA>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
-<*>\\\r*\n				{ next_line (yylloc, yyscanner); }/*line continuation*/
+<*>\\\r*\n				{
+							/* line continuation */
+							next_line (yylloc, yyscanner);
+							yymore();
+							yy_push_state (CONT, yyscanner);
+						}
+<CONT><<EOF>>			{
+							warning (0, "\\ at end of file");
+							yy_pop_state (yyscanner);
+							return 0;
+						}
 <ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <*>\r*\n				{
 							next_line (yylloc, yyscanner);
@@ -1029,14 +1069,15 @@ static void
 next_line (rua_loc_t *loc, yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	if (!extra->recording && options.preprocess_only) {
-		puts ("");
-	}
 	loc->first_line = loc->last_line;
 	loc->first_column = loc->last_column;
 	loc->last_column = 1;
 	loc->last_line++;
 	pr.source_line++;
+	//printf ("\n%3d:", pr.source_line);
+	if (!extra->recording && options.preprocess_only) {
+		puts ("");
+	}
 }
 
 static void
@@ -1048,10 +1089,18 @@ undo_loc (rua_loc_t *loc)
 }
 
 static void
-user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
-			 int state)
+update_loc (rua_loc_t *loc, size_t textlen)
 {
-	if (state == TEXT) {
+	loc->first_line = loc->last_line;
+	loc->first_column = loc->last_column;
+	// \n handling rules will take care of the column and line
+	loc->last_column += textlen;
+}
+
+static void
+save_text (rua_tok_t *tok, const char *text, size_t textlen, int state)
+{
+	/*if (state == TEXT) {
 		while (isspace (*text)) {
 			text++;
 		}
@@ -1065,7 +1114,7 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 		tok->str_text[0] = 0;
 		tok->text = tok->str_text;
 		textlen = 0;
-	} else if (textlen < sizeof (tok->text)) {
+	} else */if (textlen < sizeof (tok->text)) {
 		strncpy (tok->str_text, text, textlen);
 		tok->str_text[textlen] = 0;
 		tok->text = tok->str_text;
@@ -1073,16 +1122,6 @@ user_action (rua_tok_t *tok, rua_loc_t *loc, const char *text, size_t textlen,
 		tok->text = save_string (text);
 	}
 	tok->textlen = textlen;
-	loc->first_line = loc->last_line;
-	loc->first_column = loc->last_column;
-	// \n handling rules will take care of the column and line
-	loc->last_column += textlen;
-#if 0
-	printf ("start: %2d [%3d %3d] [%3d %3d] '%s'\n", state,
-			loc->first_line, loc->first_column,
-			loc->last_line, loc->last_column,
-			quote_string (text));
-#endif
 }
 
 static rua_expr_t
@@ -1419,6 +1458,7 @@ qc_yyparse (FILE *in)
 		if (!token && extra.include_stack.size) {
 			struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
+			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
 			auto buffer = DARRAY_REMOVE (&extra.include_stack);
 			set_line_file (-1, 0, 2);
 			yy_switch_to_buffer (buffer, scanner);
@@ -1649,6 +1689,23 @@ rua_end_directive (void *scanner)
 }
 
 static void
+dump_debug (int act, const char *text, int start)
+{
+	if (act == 0) {
+		printf("--scanner backing up\n" );
+	} else if (act < YY_NUM_RULES) {
+		printf("--accepting rule at line %ld\n",
+			(long)yy_rule_linenum[act]);
+	} else if (act == YY_NUM_RULES) {
+		printf("--accepting default rule\n");
+	} else if (act == YY_NUM_RULES + 1 ) {
+		printf("--(end of buffer or a NUL)\n");
+	} else {
+		printf("--EOF (start condition %d)\n", start);
+	}
+}
+
+static void
 dump_state_stack (void *scanner)
 {
 	auto yyg = (struct yyguts_t *)scanner;
@@ -1656,6 +1713,15 @@ dump_state_stack (void *scanner)
 		printf ("%d ", yyg->yy_start_stack[i]);
 	}
 	printf (": %d\n", yystart ());
+}
+
+static void
+dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
+{
+	printf ("start: %2d [%3d %3d] [%3d %3d] '%s'\n", state,
+			loc->first_line, loc->first_column,
+			loc->last_line, loc->last_column,
+			quote_string (tok->text));
 }
 
 void
@@ -1667,6 +1733,7 @@ rua_if (bool pass, void *scanner)
 		.saw_else = false,
 		.own_state = true,
 		.enabled = pass,
+		.line = pr.source_line,
 	};
 	if (extra->cond_stack.size) {
 		auto c = extra->cond_stack.a[extra->cond_stack.size - 1];
@@ -1675,8 +1742,10 @@ rua_if (bool pass, void *scanner)
 	DARRAY_APPEND (&extra->cond_stack, cond);
 	yy_pop_state (scanner);	// remove DIRECTIVE/PREEXPR state
 	if (cond.own_state && !cond.enabled) {
+		extra->suppressed = true;
 		yy_push_state (SUPPRESS, scanner);
 	}
+	//printf ("#if on %d\n", cond.line);
 	// put PREEXPR on the stack for EOD to pop
 	yy_push_state (PREEXPR, scanner);
 }
@@ -1696,13 +1765,17 @@ rua_else (bool pass, const char *tok, void *scanner)
 		return;
 	}
 	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = false;
 		yy_pop_state (scanner);
 	}
 	pass &= !cond->saw_true;
 	cond->enabled = pass;
 	cond->saw_true |= pass;
 	cond->saw_else = strcmp (tok, "else") == 0;
+	//printf ("#else on %d for %d\n", pr.source_line, cond->line);
+	cond->line = pr.source_line;
 	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = true;
 		yy_push_state (SUPPRESS, scanner);
 	}
 	// put PREEXPR on the stack for EOD to pop
@@ -1720,7 +1793,9 @@ rua_endif (void *scanner)
 	if (0) dump_state_stack (scanner);
 	yy_pop_state (scanner);	// remove DIRECTIVE state
 	auto cond = DARRAY_REMOVE (&extra->cond_stack);
+	//printf ("#endif on %d for %d\n", pr.source_line, cond.line);
 	if (cond.own_state && !cond.enabled) {
+		extra->suppressed = false;
 		yy_pop_state (scanner);
 	}
 	// put PREEXPR on the stack for EOD to pop
@@ -1739,6 +1814,9 @@ void
 rua_undefine (const char *name, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return;
+	}
 	auto macro_tab = extra->macro_tab;
 	auto sym = symtab_lookup (macro_tab, name);
 	if (sym) {
@@ -1750,6 +1828,9 @@ void
 rua_include_file (const char *name, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return;
+	}
 	struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
 	int quote = *name;
 	name = make_string (name, 0);
@@ -1759,6 +1840,7 @@ rua_include_file (const char *name, void *scanner)
 		error (0, "fatal error: %s: %s", name, strerror (errno));
 		exit (1);
 	}
+	//printf ("*** push include %s\n", name);
 	set_line_file (1, found, 1);
 	DARRAY_APPEND (&extra->include_stack, YY_CURRENT_BUFFER);
 	yy_switch_to_buffer (yy_create_buffer (yyin, YY_BUF_SIZE, scanner), scanner);
@@ -1767,8 +1849,9 @@ rua_include_file (const char *name, void *scanner)
 void
 rua_embed_file (const char *name, void *scanner)
 {
-	if (scanner) {
-		internal_error (0, "not implemented");
+	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return;
 	}
-	printf ("eh?\n");
+	internal_error (0, "not implemented");
 }
