@@ -287,8 +287,8 @@ arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
 	| TOKEN			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
 	;
 
-id  : ID			{ $$ = 0; }
-	| IDp args ')'	{ $$ = 0; }
+id  : ID			{ $$ = new_long_expr (0, false); }
+	| IDp args ')'	{ $$ = new_long_expr (0, false); }
 	;
 
 defined
