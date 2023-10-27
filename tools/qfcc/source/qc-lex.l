@@ -1496,8 +1496,11 @@ rua_macro_t *
 rua_start_macro (const char *name, bool params, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	extra->params = params;
 	extra->recording = true;
+	if (extra->suppressed) {
+		return 0;
+	}
+	extra->params = params;
 
 	if (name) {
 		int len = strlen (name);
@@ -1524,6 +1527,9 @@ rua_macro_t *
 rua_end_params (rua_macro_t *macro, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return 0;
+	}
 	extra->params = false;
 	//macro->params->parent = extra->macro_tab;
 	return macro;
@@ -1532,6 +1538,10 @@ rua_end_params (rua_macro_t *macro, void *scanner)
 rua_macro_t *
 rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return 0;
+	}
 	if (token->token == -rua_space) {
 		if (!macro->tokens) {
 			// ignore leading space
@@ -1559,6 +1569,10 @@ rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 rua_macro_t *
 rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return 0;
+	}
 	if (token->token == -rua_space) {
 		// ignore spaces
 		return macro;
@@ -1581,6 +1595,10 @@ rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 void
 rua_macro_finish (rua_macro_t *macro, void *scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
+	if (extra->suppressed) {
+		return;
+	}
 	if (macro->tokens) {
 		while (((rua_expr_t *) macro->tail)->token == -rua_space) {
 			// space is never added as the first token, so it's guaranteed
@@ -1608,7 +1626,6 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 		}
 	}
 
-	auto extra = qc_yyget_extra (scanner);
 	auto macro_tab = extra->macro_tab;
 	auto sym = symtab_lookup (macro_tab, macro->name);
 	if (sym) {
