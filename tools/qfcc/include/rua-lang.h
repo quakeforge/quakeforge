@@ -83,6 +83,7 @@ rua_macro_t *rua_macro_arg (rua_macro_t *arg, void *scanner);
 void rua_start_pragma (void *scanner);
 void rua_start_text (void *scanner);
 void rua_start_expr (void *scanner);
+void rua_start_include (void *scanner);
 void rua_expand_on (void *scanner);
 void rua_expand_off (void *scanner);
 void rua_end_directive (void *scanner);

@@ -179,8 +179,8 @@ directive_list
 eod : EOD { rua_end_directive (scanner); } ;
 
 directive
-	: INCLUDE expand string extra_warn eod { rua_include_file ($3, scanner); }
-	| EMBED expand string extra_ignore eod { rua_embed_file ($3, scanner); }
+	: INCLUDE incexp string extra_warn eod { rua_include_file ($3, scanner); }
+	| EMBED incexp string extra_ignore eod { rua_embed_file ($3, scanner); }
 	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
@@ -243,6 +243,10 @@ body: /* empty */		{ $$ = $<macro>0; }
 	;
 
 body_token : TOKEN | ',' | '(' | ')' ;
+
+incexp
+	: { rua_start_include (scanner); }
+	;
 
 expand
 	: { rua_start_expr (scanner); }

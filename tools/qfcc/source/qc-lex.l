@@ -276,8 +276,8 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <TEXT>[\\]*				{ return PRE_TEXT; }
 <MACRO>##				{ return PRE_CONCAT; }
 <MACRO>#				{ return '#'; }
-<PREEXPR>{h_string}		{ return PRE_HSTRING; }
-<PREEXPR>{q_string}		{ return PRE_QSTRING; }
+<PREPROC>{h_string}		{ return PRE_HSTRING; }
+<PREPROC>{q_string}		{ return PRE_QSTRING; }
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
 
@@ -1652,6 +1652,16 @@ rua_start_text (void *scanner)
 {
 	yy_pop_state (scanner);
 	yy_push_state (TEXT, scanner);
+}
+
+void
+rua_start_include (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->expand = true;
+
+	yy_pop_state (scanner);
+	yy_push_state (PREPROC, scanner);
 }
 
 void
