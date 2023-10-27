@@ -125,7 +125,7 @@ parse_error (void *scanner)
 %token          INCLUDE EMBED
 %token          DEFINE UNDEF
 %token <text>   TEXT ID IDp
-%token          ERROR WARNING
+%token          ERROR WARNING NOTICE
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
@@ -193,6 +193,8 @@ directive
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
+	  eod
+	| NOTICE text { notice (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| PRAGMA expand { rua_start_pragma (scanner); }
 	  pragma_params { pragma_process (); }
