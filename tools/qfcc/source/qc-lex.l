@@ -1363,7 +1363,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 
 	if (extra->expand || !extra->preprocessor) {
 		symbol_t   *sym = 0;
-		if (token == -rua_id) {
+		if (token == -rua_id || (extra->preprocessor && token == PRE_ID)) {
 			sym = symtab_lookup (extra->macro_tab, tok->text);
 		}
 		if (sym) {
