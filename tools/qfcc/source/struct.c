@@ -82,7 +82,7 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
 		if (sym->table == current_symtab && sym->type->meta != meta)
-			error (0, "%s defined as wrong kind of tag", tag->name);
+			error (0, "%s defined as wrong kind of tag", tag_name);
 		if (sym->type->meta == meta)
 			return sym;
 	}
