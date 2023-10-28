@@ -87,6 +87,7 @@ void rua_start_include (void *scanner);
 void rua_expand_on (void *scanner);
 void rua_expand_off (void *scanner);
 void rua_end_directive (void *scanner);
+void rua_start_if (bool expand, void *scanner);
 void rua_if (bool pass, void *scanner);
 void rua_else (bool pass, const char *tok, void *scanner);
 void rua_endif (void *scanner);

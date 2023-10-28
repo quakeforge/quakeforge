@@ -135,7 +135,6 @@ static int keyword_or_id (YYSTYPE *lval, const char *token);
 static void update_loc (rua_loc_t *loc, size_t textlen);
 static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
 					   int state);
-static void undo_loc (rua_loc_t *loc);
 static void next_line (rua_loc_t *loc, yyscan_t scanner);
 static void dump_state_stack (void *scanner);
 static void dump_token (rua_tok_t *tok, rua_loc_t *loc, int state);
@@ -187,9 +186,10 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 %x		GRAB_FRAME GRAB_OTHER GRAB_WRITE
 %x		COMMENT LCOMMENT
-%x		BOL DIRECTIVE TEXT SUPPRESS SUPPRESSC PRAGMA
-%x      VECTOR
-%s		PREPROC PREEXPR MACRO ARGS
+%x		DIRECTIVE TEXT
+%x		PRAGMA VECTOR
+%s		PREPROC PREEXPR
+%s		MACRO ARGS
 %x		CONT
 
 %%
@@ -212,7 +212,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							yymore();
 							int state = yystart ();
 							if (state == PREEXPR || state == PREPROC
-								|| state == DIRECTIVE) {
+								|| state == DIRECTIVE || state == MACRO) {
 								BEGIN (LCOMMENT);
 								yy_push_state (state, yyscanner);
 								return PRE_EOD;
@@ -230,19 +230,12 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							return PRE_LINE;
 						}
 <CONT>^.				{ yyless (yyleng - 1); yy_pop_state (yyscanner); }
-<*>^#					{
+<*>^{s}*#{s}*			{
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
 						}
 <ARGS><<EOF>>			{ return 0; }
 <ARGS>^{s}*				{ return -rua_space; }
-<*>^{s}*				{ yy_push_state (BOL, yyscanner); return -rua_space; }
-<BOL>#					{ BEGIN (DIRECTIVE); extra->preprocessor = true; }
-<BOL>.					{
-							yy_pop_state (yyscanner);
-							undo_loc (yylloc);
-							yyless (0);
-						}
 
 <DIRECTIVE>{ID}			{ {
 							int tok = directive (yytext, yyscanner);
@@ -257,20 +250,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREEXPR>\r*\n			|
 <MACRO,TEXT>\r*\n		|
 <PREPROC>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
-
-<SUPPRESS>^[^#/\n \t]+	{ BEGIN (SUPPRESSC); extra->suppressed = true; }
-<SUPPRESSC>[^/\n]*		/* nom nom */
-<SUPPRESSC>\/[^/\n]*	/* nom nom */
-<SUPPRESSC>\n			{ next_line (yylloc, yyscanner); BEGIN (SUPPRESS); }
-<SUPPRESS>\n			{ next_line (yylloc, yyscanner); }
-<SUPPRESS>[^#\n][^/\n]+	/* nom nom */
-<SUPPRESS><<EOF>>		{
-							int ind = extra->cond_stack.size - 1;
-							auto cond = &extra->cond_stack.a[ind];
-							error (0, "unterminated #if started on %d",
-								   cond->line);
-							return 0;
-						}
 
 <TEXT>[^\\\r\n]*		{ return PRE_TEXT; }
 <TEXT>[\\]*				{ return PRE_TEXT; }
@@ -357,8 +336,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <*>\\\r*\n				{
 							/* line continuation */
 							next_line (yylloc, yyscanner);
-							yymore();
-							yy_push_state (CONT, yyscanner);
 						}
 <CONT><<EOF>>			{
 							warning (0, "\\ at end of file");
@@ -370,6 +347,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							next_line (yylloc, yyscanner);
 							if (yyg->yy_start_stack_ptr) {
 								yy_pop_state (yyscanner);
+								extra->preprocessor = false;
 							}
 						}
 
@@ -404,6 +382,7 @@ static directive_t rua_directives[] = {
 	{"undef",    PRE_UNDEF},
 	{"error",    PRE_ERROR},
 	{"warning",  PRE_WARNING},
+	{"notice",   PRE_NOTICE},
 	{"pragma",   PRE_PRAGMA},
 	{"line",     PRE_LINE},
 };
@@ -445,17 +424,19 @@ directive (const char *token, yyscan_t scanner)
 			Hash_Add (cond_directive_tab, &cond_directives[i]);
 		}
 	}
+	auto extra = qc_yyget_extra (scanner);
 	directive_t *directive = Hash_Find (cond_directive_tab, token);
-	if (!directive && yy_top_state (scanner) != SUPPRESS) {
+	if (!directive && !extra->suppressed) {
 		directive = Hash_Find (rua_directive_tab, token);
 		if (!directive) {
 			error (0, "invalid directive `%s`", token);
 			yy_pop_state (scanner);
 			yy_push_state (LCOMMENT, scanner);
+			extra->preprocessor = false;
 		}
 	}
 	if (!directive) {
-		if (yy_top_state (scanner) == SUPPRESS) {
+		if (extra->suppressed) {
 			yy_pop_state (scanner);// suppressed non-conditional directive
 			yy_push_state (LCOMMENT, scanner);
 		}
@@ -728,7 +709,7 @@ parse_suffix (const char *suffix, bool fp)
 		} else if (*suffix == 'd' || *suffix == 'D') {
 			// treat as explicit double unless it's a proper C decimal
 			// suffix, in which case the decimal part will be ignored
-			// (non-standard, but no decimal supprt)
+			// (non-standard, but no decimal support)
 			expl = suff_double;
 			suffix++;
 			if (*suffix == 'f' || *suffix == 'F'
@@ -1081,14 +1062,6 @@ next_line (rua_loc_t *loc, yyscan_t scanner)
 }
 
 static void
-undo_loc (rua_loc_t *loc)
-{
-	// the next call to update_yylloc will sort out first_line and first_column
-	loc->last_line = loc->first_line;
-	loc->last_column = loc->first_column;
-}
-
-static void
 update_loc (rua_loc_t *loc, size_t textlen)
 {
 	loc->first_line = loc->last_line;
@@ -1110,10 +1083,6 @@ save_text (rua_tok_t *tok, const char *text, size_t textlen, int state)
 		tok->str_text[1] = 0;
 		tok->text = tok->str_text;
 		textlen = 1;
-	} else if (state == SUPPRESS) {
-		tok->str_text[0] = 0;
-		tok->text = tok->str_text;
-		textlen = 0;
 	} else */if (textlen < sizeof (tok->text)) {
 		strncpy (tok->str_text, text, textlen);
 		tok->str_text[textlen] = 0;
@@ -1361,7 +1330,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		return YYPUSH_MORE;
 	}
 
-	if (extra->expand || !extra->preprocessor) {
+	if (extra->expand || (!extra->preprocessor && !extra->suppressed)) {
 		symbol_t   *sym = 0;
 		if (token == -rua_id || (extra->preprocessor && token == PRE_ID)) {
 			sym = symtab_lookup (extra->macro_tab, tok->text);
@@ -1419,15 +1388,17 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		}
 		return pre_yypush_parse (state, token, tok, loc, scanner);
 	} else {
-		if (options.preprocess_only) {
-			printf ("%s", tok->text);
-			return token ? YYPUSH_MORE : 0;
-		}
-		token = qc_token (extra, token, tok, scanner);
-		if (token >= 0) {
-			auto state = extra->qc_state;
-			auto value = &tok->value;
-			return qc_yypush_parse (state, token, value, loc, scanner);
+		if (!extra->suppressed) {
+			if (options.preprocess_only) {
+				printf ("%s", tok->text);
+				return token ? YYPUSH_MORE : 0;
+			}
+			token = qc_token (extra, token, tok, scanner);
+			if (token >= 0) {
+				auto state = extra->qc_state;
+				auto value = &tok->value;
+				return qc_yypush_parse (state, token, value, loc, scanner);
+			}
 		}
 	}
 	return YYPUSH_MORE;
@@ -1496,10 +1467,10 @@ rua_macro_t *
 rua_start_macro (const char *name, bool params, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	extra->recording = true;
 	if (extra->suppressed) {
 		return 0;
 	}
+	extra->recording = true;
 	extra->params = params;
 
 	if (name) {
@@ -1685,7 +1656,7 @@ void
 rua_start_expr (void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	extra->expand = true;
+	extra->expand = !extra->suppressed;
 
 	yy_pop_state (scanner);
 	yy_push_state (PREEXPR, scanner);
@@ -1695,7 +1666,7 @@ void
 rua_expand_on (void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	extra->expand = true;
+	extra->expand = !extra->suppressed;
 }
 
 void
@@ -1735,11 +1706,18 @@ dump_debug (int act, const char *text, int start)
 static void
 dump_state_stack (void *scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
 	auto yyg = (struct yyguts_t *)scanner;
 	for (int i = 0; i < yyg->yy_start_stack_ptr; i++) {
 		printf ("%d ", yyg->yy_start_stack[i]);
 	}
-	printf (": %d\n", yystart ());
+	printf (": %d s:%s p:%s r:%s e:%s a:%s %s:%d\n", yystart (),
+			extra ? extra->suppressed ? "true" : "false" : "n/a",
+			extra ? extra->preprocessor ? "true" : "false" : "n/a",
+			extra ? extra->recording ? "true" : "false" : "n/a",
+			extra ? extra->expand ? "true" : "false" : "n/a",
+			extra ? extra->params ? "true" : "false" : "n/a",
+			GETSTR(pr.source_file), pr.source_line);
 }
 
 static void
@@ -1752,14 +1730,14 @@ dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
 }
 
 void
-rua_if (bool pass, void *scanner)
+rua_start_if (bool expand, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	rua_cond_t  cond = {
-		.saw_true = pass,
+		.saw_true = false,
 		.saw_else = false,
 		.own_state = true,
-		.enabled = pass,
+		.enabled = false,
 		.line = pr.source_line,
 	};
 	if (extra->cond_stack.size) {
@@ -1767,14 +1745,30 @@ rua_if (bool pass, void *scanner)
 		cond.own_state = c.own_state & c.enabled;
 	}
 	DARRAY_APPEND (&extra->cond_stack, cond);
-	yy_pop_state (scanner);	// remove DIRECTIVE/PREEXPR state
-	if (cond.own_state && !cond.enabled) {
-		extra->suppressed = true;
-		yy_push_state (SUPPRESS, scanner);
-	}
-	//printf ("#if on %d\n", cond.line);
-	// put PREEXPR on the stack for EOD to pop
+	extra->expand = expand && !extra->suppressed;
+
+	yy_pop_state (scanner);
 	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_if (bool pass, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	if (!extra->cond_stack.size) {
+		internal_error (0, "#if without start_if");
+		return;
+	}
+	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
+	cond->saw_true = cond->enabled = pass;
+	//yy_pop_state (scanner);	// remove DIRECTIVE/PREEXPR state
+	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = true;
+	}
+	//printf ("#if on %s:%d %d\n", GETSTR(pr.source_file),
+	//		cond->line, extra->suppressed);
+	// put PREEXPR on the stack for EOD to pop
+	//yy_push_state (PREEXPR, scanner);
 }
 
 void
@@ -1785,7 +1779,7 @@ rua_else (bool pass, const char *tok, void *scanner)
 		error (0, "#else without #if");
 		return;
 	}
-	yy_pop_state (scanner);	// remove DIRECTIVE state
+	//yy_pop_state (scanner);	// remove DIRECTIVE state
 	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
 	if (cond->saw_else) {
 		error (0, "#%s after #else", tok);
@@ -1793,20 +1787,20 @@ rua_else (bool pass, const char *tok, void *scanner)
 	}
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = false;
-		yy_pop_state (scanner);
+		//yy_pop_state (scanner);
 	}
 	pass &= !cond->saw_true;
 	cond->enabled = pass;
 	cond->saw_true |= pass;
 	cond->saw_else = strcmp (tok, "else") == 0;
-	//printf ("#else on %d for %d\n", pr.source_line, cond->line);
+	//printf ("#else on %s:%d for %d %d\n", GETSTR(pr.source_file),
+	//		pr.source_line, cond->line, extra->suppressed);
 	cond->line = pr.source_line;
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = true;
-		yy_push_state (SUPPRESS, scanner);
 	}
 	// put PREEXPR on the stack for EOD to pop
-	yy_push_state (PREEXPR, scanner);
+	//yy_push_state (PREEXPR, scanner);
 }
 
 void
@@ -1817,16 +1811,16 @@ rua_endif (void *scanner)
 		error (0, "#endif without #if");
 		return;
 	}
-	if (0) dump_state_stack (scanner);
-	yy_pop_state (scanner);	// remove DIRECTIVE state
+	//yy_pop_state (scanner);	// remove DIRECTIVE state
 	auto cond = DARRAY_REMOVE (&extra->cond_stack);
-	//printf ("#endif on %d for %d\n", pr.source_line, cond.line);
+	//printf ("#endif on %s:%d for %d %d\n", GETSTR(pr.source_file),
+	//		pr.source_line, cond.line, extra->suppressed);
 	if (cond.own_state && !cond.enabled) {
 		extra->suppressed = false;
-		yy_pop_state (scanner);
+		//yy_pop_state (scanner);
 	}
 	// put PREEXPR on the stack for EOD to pop
-	yy_push_state (PREEXPR, scanner);
+	//yy_push_state (PREEXPR, scanner);
 }
 
 bool
@@ -1881,4 +1875,5 @@ rua_embed_file (const char *name, void *scanner)
 		return;
 	}
 	internal_error (0, "not implemented");
+	(void)yy_top_state;
 }

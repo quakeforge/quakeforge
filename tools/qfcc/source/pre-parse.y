@@ -132,11 +132,13 @@ parse_error (void *scanner)
 %token          CONCAT ARGS
 
 %type <text>    string
-%type <macro>   params body arg arg_list
+%type <macro>   params body arg arg_list arg_clist
 %type <dstr>    text text_text
 %type <value.expr>  unary_expr expr id defined defined_id line_expr
 
 %{
+#define TEXPR(c,t,f) new_long_expr (expr_long (c) ? expr_long (t) \
+												  : expr_long (f), false)
 #define BEXPR(a,op,b) new_long_expr (expr_long (a) op expr_long (b), false)
 #define UEXPR(op,a)   new_long_expr (op expr_long (a), false)
 
@@ -173,14 +175,14 @@ start
 
 directive_list
 	: /*empty*/
-	| directive directive_list
+	| directive_list directive
 	;
 
 eod : EOD { rua_end_directive (scanner); } ;
 
 directive
-	: INCLUDE incexp string extra_warn eod { rua_include_file ($3, scanner); }
-	| EMBED incexp string extra_ignore eod { rua_embed_file ($3, scanner); }
+	: INCLUDE incexp string extra_warn { rua_include_file ($3, scanner); }
+	| EMBED incexp string extra_ignore { rua_embed_file ($3, scanner); }
 	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
@@ -189,7 +191,6 @@ directive
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
 	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
-	  eod
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
@@ -200,44 +201,44 @@ directive
 	  pragma_params { pragma_process (); }
 	  eod
 	| LINE expand expr extra_warn					{ line_info ($3, 0, 0); }
-	  eod
 	| LINE expand expr string line_expr extra_warn	{ line_info ($3, $4, $5); }
+	| IF					{ rua_start_if (true, scanner); }
+	  expr					{ rua_if (expr_long ($3), scanner); }
 	  eod
-	| IF expand expr		{ rua_if (expr_long ($3), scanner); }
-	  eod
-	| IFDEF ID extra_warn	{ rua_if (rua_defined ($2, scanner), scanner); }
-	  eod
-	| IFNDEF ID extra_warn	{ rua_if (!rua_defined ($2, scanner), scanner); }
-	  eod
-	| ELSE extra_warn		{ rua_else (true, "else", scanner); }
-	  eod
+	| IFDEF					{ rua_start_if (false, scanner); }
+	  ID					{ rua_if (rua_defined ($3, scanner), scanner); }
+	  extra_warn
+	| IFNDEF				{ rua_start_if (false, scanner); }
+	  ID					{ rua_if (!rua_defined ($3, scanner), scanner); }
+	  extra_warn
+	| ELSE					{ rua_else (true, "else", scanner); }
+	  extra_warn
 	| ELIF expand expr		{ rua_else (expr_long ($3), "elif", scanner); }
 	  eod
-	| ELIFDEF ID extra_warn
+	| ELIFDEF ID
 		{ rua_else (rua_defined ($2, scanner), "elifdef", scanner); }
-	  eod
-	| ELIFNDEF ID extra_warn
+	  extra_warn
+	| ELIFNDEF ID
 		{ rua_else (!rua_defined ($2, scanner), "elifndef", scanner); }
-	  eod
-	| ENDIF extra_warn
-		{ rua_endif (scanner); }
-	  eod
+	  extra_warn
+	| ENDIF					{ rua_endif (scanner); }
+	  extra_warn
 	;
 
 extra_warn
-	: {}
+	: {} eod
 	;
 
 extra_ignore
-	: {}
+	: {} eod
 	;
 
 text: { rua_start_text (scanner); $<dstr>$ = dstring_new (); } text_text
 	  { $text = $text_text; }
 	;
 text_text
-	: TEXT				{ dstring_appendstr ($<dstr>0, $1); $$ = $<dstr>0; }
-	| text_text TEXT			{ dstring_appendstr ($1, $2); $$ = $1; }
+	: /* empty */		{ dstring_clearstr ($<dstr>0); $$ = $<dstr>0; }
+	| text_text TEXT	{ dstring_appendstr ($1, $2); $$ = $1; }
 	;
 
 body: /* empty */		{ $$ = $<macro>0; }
@@ -284,13 +285,21 @@ arg_list
 	;
 
 arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
-	  args	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
-	  ')'			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	  arg_clist	<macro>	{ $$ = $<macro>2; }
+	  ')'			{ $$ = rua_macro_append ($<macro>4, yyvsp, scanner); }
 	| TOKEN			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	| VALUE			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	| ID			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
 	;
 
-id  : ID			{ $$ = new_long_expr (0, false); }
-	| IDp args ')'	{ $$ = new_long_expr (0, false); }
+arg_clist
+	: /* emtpy */	{ $$ = $<macro>0; }
+	| arg_clist arg	{ $$ = $2; }
+	| arg_clist ','	{ $$ = rua_macro_append ($1, yyvsp, scanner); }
+	;
+
+id  : ID					{ $$ = new_long_expr (0, false); }
+	| ID '(' args ')'		{ $$ = new_long_expr (0, false); }
 	;
 
 defined
@@ -318,6 +327,7 @@ unary_expr
 
 expr
     : unary_expr		{ $$ = $1; }
+	| expr '?' expr ':' expr { $$ = TEXPR ($1, $3, $5); }
 	| expr AND expr		{ $$ = BEXPR ($1, &&, $3); }
 	| expr OR expr		{ $$ = BEXPR ($1, ||, $3); }
 	| expr EQ expr		{ $$ = BEXPR ($1, ==, $3); }
