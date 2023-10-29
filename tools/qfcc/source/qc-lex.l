@@ -109,12 +109,14 @@ typedef struct rua_extra_s {
 		bool        suppressed;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
+		pre_yypstate *args_state;
 		rua_cond_stack_t cond_stack;
 		rua_expr_stack_t expr_stack;
 		rua_macro_list_t arg_list;
 		rua_include_stack_t include_stack;
 		dstring_t  *dstr;
 		symtab_t   *macro_tab;
+		rua_macro_t *pending_macro;	// function-type waiting for args
 		yyscan_t    subscanner;
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
@@ -1283,6 +1285,7 @@ rua_start_args (void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = true;
+	extra->arg_list.size = 0;
 	yy_push_state (ARGS, scanner);
 }
 
@@ -1294,32 +1297,16 @@ rua_end_args (void *scanner)
 	yy_pop_state (scanner);
 }
 
-static bool
-parse_args (rua_extra_t *extra, rua_loc_t *location, yyscan_t scanner)
+static void
+dump_expr_stack (rua_extra_t *extra)
 {
-	int status;
-	rua_start_args (scanner);
-	auto state = pre_yypstate_new ();
-	int token = PRE_ARGS;
-	rua_tok_t   tok = { .location = *location, };
-	for (auto i = extra->arg_list.size; i-- > 0; ) {
-		free (extra->arg_list.a[i]);
+	puts ("xxx");
+	for (auto i = extra->expr_stack.size; i-- > 0; ) {
+		if (-extra->expr_stack.a[i].token != rua_ignore) {
+			printf ("%s", extra->expr_stack.a[i].text);
+		}
 	}
-	extra->arg_list.size = 0;
-	do {
-		if (token != PRE_ARGS) {
-			token = yylex (&tok, &tok.location, scanner);
-			token = preproc_token (extra, token, &tok, scanner);
-		}
-		if (!token) {
-			break;
-		}
-		status = pre_yypush_parse (state, token, &tok, &tok.location, scanner);
-		token = -1;
-	} while (status == YYPUSH_MORE);
-	pre_yypstate_delete (state);
-	rua_end_args (scanner);
-	return token != 0;
+	puts ("");
 }
 
 static int
@@ -1331,55 +1318,67 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		return YYPUSH_MORE;
 	}
 
-	if (extra->expand || (!extra->preprocessor && !extra->suppressed)) {
+	rua_macro_t *macro = 0;
+	if (extra->pending_macro) {
+		if (extra->recording) {
+			token = preproc_token (extra, token, tok, scanner);
+			int status = pre_yypush_parse (extra->args_state, token,
+										   tok, &tok->location, scanner);
+			if (status == YYPUSH_MORE) {
+				return YYPUSH_MORE;
+			}
+			rua_end_args (scanner);
+			macro = extra->pending_macro;
+			extra->pending_macro = 0;
+			if (status != 0) {
+				error (0, "unterminated argument list invoking macro \"%s\"",
+					   macro->name);
+				return -1;
+			}
+			int num_args = extra->arg_list.size;
+			if (num_args == 1 && !extra->arg_list.a[0]->num_tokens) {
+				num_args = 0;
+			}
+			if (num_args != macro->num_params) {
+				error (0, "macro \"%s\" passed %d arguments, but takes just %d",
+					   macro->name, num_args, macro->num_params);
+				return YYPUSH_MORE;
+			}
+		} else if (token == -rua_space) {
+			return YYPUSH_MORE;
+		} else if (token == '(') {
+			rua_start_args (scanner);
+			token = PRE_ARGS;
+			int status = pre_yypush_parse (extra->args_state, token,
+										   tok, &tok->location, scanner);
+			if (status != YYPUSH_MORE) {
+				internal_error (0, "can't start parsing macro args");
+			}
+			return YYPUSH_MORE;
+		} else {
+			DARRAY_APPEND (&extra->expr_stack, token_expr (token, tok));
+			int ind = extra->expr_stack.size - 1;
+			extra->expr_stack.a[ind].id = -1;
+			return YYPUSH_MORE;
+		}
+	} else if (extra->expand || (!extra->preprocessor && !extra->suppressed)) {
 		symbol_t   *sym = 0;
 		if (token == -rua_id || (extra->preprocessor && token == PRE_ID)) {
 			sym = symtab_lookup (extra->macro_tab, tok->text);
 		}
 		if (sym) {
-			auto macro = sym->s.macro;
-			if (macro->params) {
-				rua_tok_t   ttok = { .location = tok->location, };
-				int         ttoken;
-				bool        saw_space = false;
-				do {
-					ttoken = yylex (&ttok, &ttok.location, scanner);
-					saw_space |= ttoken == -rua_space;
-				} while (ttoken == -rua_space);
-				if (ttoken != '(') {
-					DARRAY_APPEND (&extra->expr_stack,
-								   token_expr (ttoken, &ttok));
-					if (saw_space) {
-						DARRAY_APPEND (&extra->expr_stack, ((rua_expr_t) {
-							.token = -rua_space,
-							.text = " ",
-						}));
-					}
-					sym = 0;
-				} else {
-					if (!parse_args (extra, &ttok.location, scanner)) {
-						error (0, "unterminated argument list invoking"
-							   " macro \"%s\"", tok->text);
-						sym = 0;
-						return -1;
-					}
-					int num_args = extra->arg_list.size;
-					if (num_args == 1 && !extra->arg_list.a[0]->num_tokens) {
-						num_args = 0;
-					}
-					if (num_args != macro->num_params) {
-						error (0, "macro \"%s\" passed %d arguments,"
-							   " but takes just %d",
-							   macro->name, num_args, macro->num_params);
-						sym = 0;
-					}
-				}
-			}
-			if (sym) {
-				expand_macro (extra, macro);
+			if (sym->s.macro->params) {
+				extra->pending_macro = sym->s.macro;
 				return YYPUSH_MORE;
+			} else {
+				macro = sym->s.macro;
 			}
 		}
+	}
+	if (macro) {
+		expand_macro (extra, macro);
+		if (0) dump_expr_stack (extra);
+		return YYPUSH_MORE;
 	}
 	if (extra->preprocessor) {
 		auto state = extra->pre_state;
@@ -1414,6 +1413,7 @@ qc_yyparse (FILE *in)
 	rua_extra_t extra = {
 		.qc_state = qc_yypstate_new (),
 		.pre_state = pre_yypstate_new (),
+		.args_state = pre_yypstate_new (),
 		.cond_stack = DARRAY_STATIC_INIT (8),
 		.expr_stack = DARRAY_STATIC_INIT (32),
 		.arg_list = DARRAY_STATIC_INIT (8),
@@ -1456,6 +1456,7 @@ qc_yyparse (FILE *in)
 	yylex_destroy (scanner);
 	qc_yypstate_delete (extra.qc_state);
 	pre_yypstate_delete (extra.pre_state);
+	pre_yypstate_delete (extra.args_state);
 	free (extra.cond_stack.a);
 	free (extra.expr_stack.a);
 	free (extra.arg_list.a);
