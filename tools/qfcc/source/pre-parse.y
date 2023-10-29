@@ -190,7 +190,8 @@ directive
 	  params ')'	<macro> { $$ = rua_end_params ($3, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
-	| UNDEF ID extra_warn	{ rua_undefine ($2, scanner); }
+	| UNDEF ID				{ rua_undefine ($2, scanner); }
+	  extra_warn
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
