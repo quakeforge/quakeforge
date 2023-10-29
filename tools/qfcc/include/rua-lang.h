@@ -95,6 +95,7 @@ bool rua_defined (const char *sym, void *scanner);
 void rua_undefine (const char *sym, void *scanner);
 void rua_include_file (const char *name, void *scanner);
 void rua_embed_file (const char *name, void *scanner);
+int rua_parse_define (const char *def);
 
 #include "tools/qfcc/source/pre-parse.h"
 

@@ -49,6 +49,7 @@ void intermediate_file (struct dstring_s *ifile, const char *filename,
 FILE *preprocess_file (const char *filename, const char *ext);
 extern const char *cpp_name;
 extern struct dstring_s *tempname;
+extern struct symtab_s *cpp_macros;
 
 void cpp_write_dependencies (const char *sourcefile);
 

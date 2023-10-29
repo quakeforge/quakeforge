@@ -62,7 +62,9 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
 
 typedef struct cpp_arg_s {
 	struct cpp_arg_s *next;
@@ -97,6 +99,7 @@ static bool cpp_dep_generate = false;
 static bool cpp_dep_phony = false;
 static bool cpp_dep_quote = false;
 
+symtab_t   *cpp_macros;
 const char *cpp_name = CPP_NAME;
 dstring_t  *tempname;
 
@@ -382,25 +385,38 @@ cpp_include (const char *opt, const char *arg)
 
 void cpp_define (const char *arg)
 {
-#if 0
 	if (!cpp_macros) {
-		cpp_macros = new_symtab (stab_global);
+		cpp_macros = new_symtab (0, stab_global);
 	}
-#endif
+	size_t len = strlen (arg);
+	if (len > 0x10000) {
+		error (0, "command line define too long: %zd", len);
+		return;
+	}
+	char argstr[len + 4];
+	strcpy (argstr, arg);
+	argstr[len] = '\n';
+	argstr[len + 1] = 0;
+	char *eq = strchr (argstr, '=');
+	if (eq) {
+		*eq = ' ';
+	} else {
+		strcpy (argstr + len, " 1\n");
+	}
+	rua_parse_define (argstr);
+
 	arg = va (0, "-D%s", arg);
 	CPP_ADD (def, arg);
 }
 
 void cpp_undefine (const char *arg)
 {
-#if 0
 	if (cpp_macros) {
 		auto sym = symtab_lookup (cpp_macros, arg);
 		if (sym) {
 			symtab_removesymbol (cpp_macros, sym);
 		}
 	}
-#endif
 	arg = va (0, "-D%s", arg);
 	CPP_ADD (undef, arg);
 }
