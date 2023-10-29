@@ -713,7 +713,7 @@ cpp_set_quote_file (const char *path)
 void
 cpp_write_dependencies (const char *sourcefile)
 {
-	if (!options.dependencies) {
+	if (!options.dependencies || cpp_name) {
 		return;
 	}
 	if (!cpp_dep_target) {
