@@ -257,6 +257,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <MACRO>#				{ return '#'; }
 <PREPROC>{h_string}		{ return PRE_HSTRING; }
 <PREPROC>{q_string}		{ return PRE_QSTRING; }
+<PREEXPR>{q_string}		{ return PRE_QSTRING; }
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
 
