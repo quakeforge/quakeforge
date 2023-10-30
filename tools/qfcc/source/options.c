@@ -795,8 +795,10 @@ DecodeArgs (int argc, char **argv)
 		fprintf (stderr, "%s: cannot use -E and -MD together\n", this_program);
 		exit (1);
 	}
-	if (saw_MD)
+	if (saw_MD) {
 		options.preprocess_only = 0;
+	}
+	options.preprocess_ouput = saw_E;
 	if (!source_files && !options.advanced) {
 		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
@@ -869,6 +871,7 @@ DecodeArgs (int argc, char **argv)
 
 	// add the default paths
 	if (!options.no_default_paths) {
+		cpp_include ("system", QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 

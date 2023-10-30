@@ -328,8 +328,9 @@ cpp_include_system (const char *opt, const char *arg)
 		return -1;
 	}
 	CPP_ADD (system, arg);
-	add_cpp_def (save_string ("-isystem"));
-	add_cpp_def (save_string (arg));
+
+	add_cpp_sysinc ("-isystem");
+	add_cpp_sysinc (arg);
 	return 1;
 }
 
@@ -407,6 +408,7 @@ void cpp_define (const char *arg)
 
 	arg = va (0, "-D%s", arg);
 	CPP_ADD (def, arg);
+	cpp_argc++;
 }
 
 void cpp_undefine (const char *arg)
@@ -433,7 +435,7 @@ parse_cpp_name (void)
 	for (n = strdup (cpp_name); *n; n = e) {
 		for (; *n && *n == ' '; n++) continue;
 		for (e = n; *e && *e != ' '; e++) continue;
-		*e++ = 0;
+		if (*e) *e++ = 0;
 		add_cpp_arg (n);
 	}
 }
@@ -522,9 +524,6 @@ intermediate_file (dstring_t *ifile, const char *filename, const char *ext,
 static FILE *
 run_cpp (const char *filename, const char *ext)
 {
-	add_cpp_sysinc ("-isystem");
-	add_cpp_sysinc (QFCC_INCLUDE_PATH);
-
 #ifndef _WIN32
 	pid_t       pid;
 	int         tempfd = 0;

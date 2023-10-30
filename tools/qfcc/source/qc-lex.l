@@ -1057,7 +1057,7 @@ next_line (rua_loc_t *loc, yyscan_t scanner)
 	loc->last_line++;
 	pr.source_line++;
 	//printf ("\n%3d:", pr.source_line);
-	if (!extra->recording && options.preprocess_only) {
+	if (!extra->recording && options.preprocess_ouput) {
 		puts ("");
 	}
 }
@@ -1270,7 +1270,7 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				token = parse_string (tok, -token, scanner);
 				break;
 			case rua_space:
-				if (options.preprocess_only) {
+				if (options.preprocess_ouput) {
 					printf (" ");
 				}
 				break;
@@ -1401,7 +1401,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		return pre_yypush_parse (state, token, tok, loc, scanner);
 	} else {
 		if (!extra->suppressed) {
-			if (options.preprocess_only) {
+			if (options.preprocess_ouput) {
 				printf ("%s", tok->text);
 				return token ? YYPUSH_MORE : 0;
 			}
@@ -1659,7 +1659,7 @@ rua_macro_arg (rua_tok_t *token, void *scanner)
 void
 rua_start_pragma (void *scanner)
 {
-	if (options.preprocess_only) {
+	if (options.preprocess_ouput) {
 		printf ("#pragma");
 	}
 	yy_pop_state (scanner);
