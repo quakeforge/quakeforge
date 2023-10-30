@@ -152,6 +152,7 @@ typedef enum {
 	rua_string,
 	rua_char,
 	rua_space,
+	rua_ellipsis,
 
 	rua_num_term,
 } rua_term;
@@ -248,6 +249,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREPROC,MACRO>{ID}		{ return PRE_ID; }
 <PREPROC>{ID}\(			{ return PRE_IDp; }
 
+<ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <DIRECTIVE>\r*\n		|
 <PREEXPR>\r*\n			|
 <MACRO,TEXT>\r*\n		|
@@ -298,7 +300,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 "%%"					{ return QC_MOD; }
 
-{ELLIPSIS}				{ return QC_ELLIPSIS; }
+{ELLIPSIS}				{ return -rua_ellipsis; }
 
 "<<"					{ return QC_SHL; }
 ">>"					{ return QC_SHR; }
@@ -345,7 +347,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							yy_pop_state (yyscanner);
 							return 0;
 						}
-<ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <*>\r*\n				{
 							next_line (yylloc, yyscanner);
 							if (yyg->yy_start_stack_ptr) {
@@ -1203,6 +1204,7 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 			case rua_eof:
 			case rua_error:
 			case rua_id:
+			case rua_ellipsis:
 				break;
 			case rua_number:
 				if (!extra->recording) {
@@ -1275,6 +1277,9 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 					printf (" ");
 				}
 				break;
+			case rua_ellipsis:
+				token = QC_ELLIPSIS;
+				break;
 		}
 	}
 	return token;
@@ -1339,10 +1344,20 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			if (num_args == 1 && !extra->arg_list.a[0]->num_tokens) {
 				num_args = 0;
 			}
-			if (num_args != macro->num_params) {
-				error (0, "macro \"%s\" passed %d arguments, but takes just %d",
-					   macro->name, num_args, macro->num_params);
-				return YYPUSH_MORE;
+			if (macro->num_params >= 0) {
+				if (num_args != macro->num_params) {
+					error (0, "macro \"%s\" passed %d arguments, but takes"
+						   " just %d", macro->name, num_args,
+						   macro->num_params);
+					return YYPUSH_MORE;
+				}
+			} else {
+				if (num_args < ~macro->num_params) {
+					error (0, "macro \"%s\" requires %d arguments, but only"
+						   " %d given", macro->name, ~macro->num_params,
+						   num_args);
+					return YYPUSH_MORE;
+				}
 			}
 		} else if (token == -rua_space) {
 			return YYPUSH_MORE;
@@ -1550,11 +1565,14 @@ rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 		// ignore spaces
 		return macro;
 	}
-	if (token->token != -rua_id) {
+	if (token->token != -rua_id && token->token != -rua_ellipsis) {
 		error (0, "expected parameter name, found \"%s\"", token->text);
 		return macro;
 	}
-	if (symtab_lookup (macro->params, token->text)) {
+	if (macro->num_params < 0) {
+		error (0, "... must be the last parameter");
+		return macro;
+	} else if (symtab_lookup (macro->params, token->text)) {
 		error (0, "duplicate macro parameter \"%s\"", token->text);
 		return macro;
 	}
@@ -1562,6 +1580,9 @@ rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 	sym->sy_type = sy_var;
 	sym->s.offset = macro->num_params++;
 	symtab_addsymbol (macro->params, sym);
+	if (token->token == -rua_ellipsis) {
+		macro->num_params = -macro->num_params;
+	}
 	return macro;
 }
 
@@ -1620,10 +1641,21 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 }
 
 rua_macro_t *
-rua_macro_arg (rua_macro_t *arg, void *scanner)
+rua_macro_arg (rua_tok_t *token, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	DARRAY_APPEND (&extra->arg_list, arg);
+	rua_macro_t *arg;
+	if (extra->pending_macro->num_params < 0
+		&& (int) extra->arg_list.size == -extra->pending_macro->num_params) {
+		arg = extra->arg_list.a[extra->arg_list.size - 1];
+		rua_macro_append (arg, token, scanner);
+	} else {
+		arg = malloc (sizeof (*arg));
+		*arg = (rua_macro_t) {
+			.tail = &arg->tokens,
+		};
+		DARRAY_APPEND (&extra->arg_list, arg);
+	}
 	return arg;
 }
 

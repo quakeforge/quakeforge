@@ -79,7 +79,7 @@ rua_macro_t *rua_end_params (rua_macro_t *macro, void *scanner);
 rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
 							   void *scanner);
 void rua_macro_finish (rua_macro_t *macro, void *scanner);
-rua_macro_t *rua_macro_arg (rua_macro_t *arg, void *scanner);
+rua_macro_t *rua_macro_arg (rua_tok_t *token, void *scanner);
 void rua_start_pragma (void *scanner);
 void rua_start_text (void *scanner);
 void rua_start_expr (void *scanner);

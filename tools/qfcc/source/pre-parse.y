@@ -167,8 +167,7 @@ start
 	: directive_list
 	| ARGS
 		<macro>{
-			auto arg = rua_start_macro (0, false, scanner);
-			$$ = rua_macro_arg (arg, scanner);
+			$$ = rua_macro_arg (yyvsp, scanner);
 		}
 	  args ')' { YYACCEPT; }
 	;
@@ -274,8 +273,7 @@ params
 args: arg_list
 	| args ','
 		<macro>{
-			auto arg = rua_start_macro (0, false, scanner);
-			$$ = rua_macro_arg (arg, scanner);
+			$$ = rua_macro_arg (yyvsp, scanner);
 		}
 	  arg_list
 	;
