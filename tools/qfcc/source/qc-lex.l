@@ -1233,6 +1233,24 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 	return token;
 }
 
+static const expr_t *
+convert_long (const expr_t *value)
+{
+	pr_long_t v = expr_long (value);
+	if (is_int (type_default)) {
+		if (v < INT32_MIN || v > UINT32_MAX) {
+			warning (0, "integer value truncated");
+		}
+		return new_int_expr (v, true);
+	} else {
+		float f = v;
+		if (f != v) {
+			warning (0, "cannot represent value");
+		}
+		return new_float_expr (f);
+	}
+}
+
 static int
 qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 {
@@ -1254,11 +1272,7 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				token = parse_number (tok, scanner);
 				if (token == QC_VALUE && value->expr->implicit) {
 					if (is_long (get_type (value->expr))) {
-						pr_long_t v = expr_long (value->expr);
-						if (v < INT32_MIN || v > INT32_MAX) {
-							warning (0, "integer value truncated");
-						}
-						value->expr = new_int_expr (v, true);
+						value->expr = convert_long (value->expr);
 					}
 				}
 				break;
