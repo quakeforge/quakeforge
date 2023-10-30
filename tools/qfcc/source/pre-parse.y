@@ -132,7 +132,7 @@ parse_error (void *scanner)
 %token          CONCAT ARGS
 
 %type <text>    string
-%type <macro>   params body arg arg_list arg_clist
+%type <macro>   params opt_params body arg arg_list arg_clist
 %type <dstr>    text text_text
 %type <value.expr>  unary_expr expr id defined defined_id line_expr
 
@@ -186,7 +186,7 @@ directive
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
 	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, scanner); }
-	  params ')'	<macro> { $$ = rua_end_params ($3, scanner); }
+	  opt_params ')' <macro>{ $$ = rua_end_params ($3, scanner); }
 	  body					{ rua_macro_finish ($body, scanner); }
 	  eod
 	| UNDEF ID				{ rua_undefine ($2, scanner); }
@@ -263,6 +263,11 @@ pragma_params
 string
 	: HSTRING			{ $$ = save_string ($1); }
 	| QSTRING			{ $$ = save_string ($1); }
+	;
+
+opt_params
+	: /*empty*/			{ $$ = $<macro>0; }
+	| params
 	;
 
 params
