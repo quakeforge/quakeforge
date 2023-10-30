@@ -207,7 +207,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <COMMENT>\r*\n			{ next_line (yylloc, yyscanner); yymore();}
 <COMMENT>[^*/\n]*		{ yymore(); }/* munch on anything but possible end of comment */
 <COMMENT>\/+[^*\n]*		{ yymore(); }/* handle /s not followed by * */
-<COMMENT>\*+[^/\n]*		{ yymore(); }/* handle *s not followed by * */
+<COMMENT>\*+/[^/]		{ yymore(); }/* handle *s not followed by / */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
 <*>"/*"					{ yy_push_state (COMMENT, yyscanner); yymore(); }
 <*>"//"					{/* cf <*>\r\n */
