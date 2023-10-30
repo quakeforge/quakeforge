@@ -82,6 +82,8 @@ qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 BUILT_SOURCES += \
+	tools/qfcc/source/pre-parse.c \
+	tools/qfcc/source/pre-parse.h \
 	tools/qfcc/source/qc-parse.c \
 	tools/qfcc/source/qc-parse.h \
 	tools/qfcc/source/qc-lex.c \
