@@ -798,7 +798,7 @@ DecodeArgs (int argc, char **argv)
 	if (saw_MD) {
 		options.preprocess_only = 0;
 	}
-	options.preprocess_ouput = saw_E;
+	options.preprocess_output = saw_E;
 	if (!source_files && !options.advanced) {
 		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
