@@ -169,6 +169,8 @@ int type_cast_map[ev_type_count] = {
 
 ALLOC_STATE (type_t, types);
 
+static hashtab_t *type_tab;
+
 etype_t
 low_level_type (const type_t *type)
 {
@@ -209,6 +211,7 @@ chain_type (type_t *type)
 		type->encoding = type_get_encoding (type);
 	if (!type->type_def)
 		type->type_def = qfo_encode_type (type, pr.type_data);
+	Hash_Add (type_tab, type);
 }
 
 type_t *
@@ -388,71 +391,6 @@ append_type (type_t *type, type_t *new)
 	return type;
 }
 
-static __attribute__((pure)) int
-types_same (type_t *a, type_t *b)
-{
-	int         i, count;
-
-	if (a->type != b->type || a->meta != b->meta)
-		return 0;
-	switch (a->meta) {
-		case ty_basic:
-			switch (a->type) {
-				case ev_field:
-				case ev_ptr:
-					if (a->t.fldptr.type != b->t.fldptr.type)
-						return 0;
-				case ev_func:
-					if (a->t.func.type != b->t.func.type
-						|| a->t.func.num_params != b->t.func.num_params
-						|| a->t.func.attribute_bits != b->t.func.attribute_bits)
-						return 0;
-					count = a->t.func.num_params;
-					if (count < 0)
-						count = ~count;	// param count is one's complement
-					for (i = 0; i < count; i++)
-						if (a->t.func.param_types[i]
-							!= b->t.func.param_types[i])
-							return 0;
-					return 1;
-				default:		// other types don't have aux data
-					return a->width == b->width;
-			}
-			break;
-		case ty_struct:
-		case ty_union:
-		case ty_enum:
-			if (strcmp (a->name, b->name))
-				return 0;
-			if (a->meta == ty_struct)
-				return compare_protocols (a->protos, b->protos);
-			return 1;
-		case ty_array:
-			if (a->t.array.type != b->t.array.type
-				|| a->t.array.base != b->t.array.base
-				|| a->t.array.size != b->t.array.size)
-				return 0;
-			return 1;
-		case ty_class:
-			if (a->t.class != b->t.class)
-				return 0;
-			return compare_protocols (a->protos, b->protos);
-		case ty_alias:
-			// names have gone through save_string
-			return (a->name == b->name
-					&& a->t.alias.aux_type == b->t.alias.aux_type
-					&& a->t.alias.full_type == b->t.alias.full_type);
-		case ty_handle:
-			// names have gone through save_string
-			return a->name == b->name;
-		case ty_algebra:
-			return a->t.algebra == b->t.algebra;
-		case ty_meta_count:
-			break;
-	}
-	internal_error (0, "we be broke");
-}
-
 void
 set_func_type_attrs (type_t *func, specifier_t spec)
 {
@@ -544,6 +482,10 @@ find_type (type_t *type)
 	if (!type || type == &type_auto)
 		return type;
 
+	if (!type->encoding) {
+		type->encoding = type_get_encoding (type);
+	}
+
 	if (type->freeable) {
 		switch (type->meta) {
 			case ty_basic:
@@ -587,9 +529,9 @@ find_type (type_t *type)
 		}
 	}
 
-	for (check = pr.types; check; check = check->next) {
-		if (types_same (check, type))
-			return check;
+	check = Hash_Find (type_tab, type->encoding);
+	if (check) {
+		return check;
 	}
 
 	// allocate a new one
@@ -1530,6 +1472,7 @@ chain_structural_types (void)
 void
 chain_initial_types (void)
 {
+	Hash_FlushTable (type_tab);
 	chain_basic_types ();
 	chain_structural_types ();
 }
@@ -1559,6 +1502,13 @@ build_vector_struct (type_t *type)
 	make_structure (va (0, "@%s", type->name), 's', fields, type);
 	type->type = etype;
 	type->meta = meta;
+}
+
+static const char *
+type_get_key (const void *_t, void *data)
+{
+	const type_t *t = _t;
+	return t->encoding;
 }
 
 void
@@ -1614,6 +1564,8 @@ init_types (void)
 		{"list",  0},				// type will be filled in at runtime
 		{0, 0}
 	};
+
+	type_tab = Hash_NewTable (1021, type_get_key, 0, 0, 0);
 
 	chain_basic_types ();
 
