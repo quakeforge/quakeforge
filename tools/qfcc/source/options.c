@@ -827,8 +827,8 @@ DecodeArgs (int argc, char **argv)
 	if (!options.traditional) {
 		// avanced=2 requires the Ruamoko ISA
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
-		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
-		add_cpp_def (save_string (ruamoko));
+		const char *ruamoko = va (0, "__RUAMOKO__=%d", options.advanced);
+		cpp_define (ruamoko);
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
 		}
@@ -850,7 +850,7 @@ DecodeArgs (int argc, char **argv)
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = false;
-		add_cpp_def ("-D__VERSION6__=1");
+		cpp_define ("__VERSION6__=1");
 		if (!options_user_set.code.crc) {
 			options.code.crc = true;
 		}
