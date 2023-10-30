@@ -246,7 +246,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 								return tok;
 							}
 						} }
-<PREPROC,MACRO>{ID}		{ return PRE_ID; }
+<PREPROC>{ID}			{ return PRE_ID; }
 <PREPROC>{ID}\(			{ return PRE_IDp; }
 
 <ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
@@ -265,7 +265,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
 
-<INITIAL,ARGS>{
+<INITIAL,ARGS,MACRO>{
 	{ID}				|
 	@{ID}				{ return -rua_id; }
 }
