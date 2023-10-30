@@ -849,6 +849,7 @@ DecodeArgs (int argc, char **argv)
 		}
 	} else {
 		options.code.promote_float = false;
+		options.math.vector_mult = QC_DOT;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = false;

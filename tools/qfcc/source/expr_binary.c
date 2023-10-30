@@ -1369,6 +1369,13 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 				t2 = pt2;
 			}
 		}
+		// type_width returns 3/4 for vector/quaternion, but their internal
+		// width is only 1
+		if (type_width (t1) != t1->width || type_width (t2) != t2->width) {
+			et1 = low_level_type (t1);
+			et2 = low_level_type (t2);
+			goto vector_or_quaternion;
+		}
 		int         scalar_op = 0;
 		if (type_width (t1) == 1) {
 			// scalar op vec
@@ -1415,6 +1422,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 			return edag_add_expr (ne);
 		}
 	}
+vector_or_quaternion:
 
 	expr_type = expr_meta[et1][et2];
 	while (expr_type->op && expr_type->op != op)
