@@ -211,20 +211,21 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <COMMENT>\*+/[^/]		{ yymore(); }/* handle *s not followed by / */
 <COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
 <*>"/*"					{ yy_push_state (COMMENT, yyscanner); yymore(); }
-<*>"//"					{/* cf <*>\r\n */
+<*>"//"					{
 							yymore();
+							yy_push_state (LCOMMENT, yyscanner);
+						}
+<LCOMMENT>[^\\\r\n]+	/* consume all but \ and EOL (see line continuation) */
+<LCOMMENT>[\\]+/[^\r\n]	/* consume \ */
+<LCOMMENT>\r*\n			{
+							next_line (yylloc, yyscanner);
+							yy_pop_state (yyscanner);
 							int state = yystart ();
 							if (state == PREEXPR || state == PREPROC
 								|| state == DIRECTIVE || state == MACRO) {
-								BEGIN (LCOMMENT);
-								yy_push_state (state, yyscanner);
 								return PRE_EOD;
-							} else {
-								yy_push_state (LCOMMENT, yyscanner);
 							}
 						}
-<LCOMMENT>[^\\\r\n]+	/* consume all but \ and EOL (see line continuation) */
-<LCOMMENT>[\\]*			/* consume \ */
 
 <ARGS>^#				{	return '#'; }
 ^#{s}+/{D}				{
@@ -434,16 +435,12 @@ directive (const char *token, yyscan_t scanner)
 		directive = Hash_Find (rua_directive_tab, token);
 		if (!directive) {
 			error (0, "invalid directive `%s`", token);
-			yy_pop_state (scanner);
-			yy_push_state (LCOMMENT, scanner);
-			extra->preprocessor = false;
 		}
 	}
 	if (!directive) {
-		if (extra->suppressed) {
-			yy_pop_state (scanner);// suppressed non-conditional directive
-			yy_push_state (LCOMMENT, scanner);
-		}
+		yy_pop_state (scanner);// suppressed non-conditional directive
+		yy_push_state (LCOMMENT, scanner);
+		extra->preprocessor = false;
 		return -1;
 	}
 	//auto lex = qc_yyget_extra (scanner);
