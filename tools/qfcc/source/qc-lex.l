@@ -153,6 +153,8 @@ typedef enum {
 	rua_char,
 	rua_space,
 	rua_ellipsis,
+	rua_asx,
+	rua_incop,
 
 	rua_num_term,
 } rua_term;
@@ -281,11 +283,10 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 {s_string}				{ return -rua_string; };
 {c_string}				{ return -rua_char; }
 
-[+\-*/&|^%]=			{ yylval->value.op = yytext[0]; return QC_ASX; }
-
-"%%="					{ yylval->value.op = QC_MOD; return QC_ASX; }
-"<<="					{ yylval->value.op = QC_SHL; return QC_ASX; }
-">>="					{ yylval->value.op = QC_SHR; return QC_ASX; }
+[+\-*/&|^%]=			{ return -rua_asx; }
+"%%="					{ return -rua_asx; }
+"<<="					{ return -rua_asx; }
+">>="					{ return -rua_asx; }
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] { return yytext[0]; }
 
@@ -315,8 +316,8 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 "<"						{ return QC_LT; }
 ">"						{ return QC_GT; }
 
-"++"					{ yylval->value.op = '+'; return QC_INCOP; }
-"--"					{ yylval->value.op = '-'; return QC_INCOP; }
+"++"					{ return -rua_incop; }
+"--"					{ return -rua_incop; }
 
 "$"{s}*{FRAMEID}		{
 							int ret = do_grab (yytext);
@@ -1201,6 +1202,8 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 			case rua_error:
 			case rua_id:
 			case rua_ellipsis:
+			case rua_asx:
+			case rua_incop:
 				break;
 			case rua_number:
 				if (!extra->recording) {
@@ -1208,7 +1211,9 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				}
 				break;
 			case rua_vector:
-				token = parse_vector (tok, scanner);
+				if (!extra->recording) {
+					token = parse_vector (tok, scanner);
+				}
 				break;
 			case rua_string:
 			case rua_char:
@@ -1289,6 +1294,20 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				break;
 			case rua_ellipsis:
 				token = QC_ELLIPSIS;
+				break;
+			case rua_asx:
+				token = QC_ASX;
+				tok->value.op = tok->text[0];
+				switch (tok->text[1]) {
+					case '=':	break;
+					case '%':   tok->value.op = QC_MOD;	break;
+					case '<':   tok->value.op = QC_SHL;	break;
+					case '>':   tok->value.op = QC_SHR;	break;
+				}
+				break;
+			case rua_incop:
+				token = QC_INCOP;
+				tok->value.op = tok->text[0];
 				break;
 		}
 	}
