@@ -96,9 +96,15 @@ typedef struct {
 } rua_cond_t;
 
 typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
+
+typedef struct {
+	YY_BUFFER_STATE buffer;
+	rua_cond_stack_t cond_stack;
+} rua_incl_t;
+
 typedef struct DARRAY_TYPE (rua_expr_t) rua_expr_stack_t;
 typedef struct DARRAY_TYPE (rua_macro_t *) rua_macro_list_t;
-typedef struct DARRAY_TYPE (YY_BUFFER_STATE) rua_include_stack_t;
+typedef struct DARRAY_TYPE (rua_incl_t) rua_include_stack_t;
 
 typedef struct rua_extra_s {
 		int         start_state;
@@ -1473,13 +1479,20 @@ qc_yyparse (FILE *in)
 	yyset_in (in, scanner);
 	do {
 		int token = yylex (&tok, &tok.location, scanner);
+		if (!token && extra.cond_stack.size) {
+			int ind = extra.cond_stack.size - 1;
+			auto cond = extra.cond_stack.a[ind];
+			error (0, "end of file in conditional started on %d", cond.line);
+		}
 		if (!token && extra.include_stack.size) {
+			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
+			auto incl = DARRAY_REMOVE (&extra.include_stack);
 			struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
-			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
-			auto buffer = DARRAY_REMOVE (&extra.include_stack);
 			set_line_file (-1, 0, 2);
-			yy_switch_to_buffer (buffer, scanner);
+			yy_switch_to_buffer (incl.buffer, scanner);
+			DARRAY_CLEAR (&extra.cond_stack);
+			extra.cond_stack = incl.cond_stack;
 			continue;
 		}
 		while (true) {
@@ -1928,7 +1941,11 @@ rua_include_file (const char *name, void *scanner)
 	}
 	//printf ("*** push include %s\n", name);
 	set_line_file (1, found, 1);
-	DARRAY_APPEND (&extra->include_stack, YY_CURRENT_BUFFER);
+	DARRAY_APPEND (&extra->include_stack, ((rua_incl_t) {
+		.buffer = YY_CURRENT_BUFFER,
+		.cond_stack = extra->cond_stack,
+	}));
+	extra->cond_stack = (rua_cond_stack_t) DARRAY_STATIC_INIT (8);
 	yy_switch_to_buffer (yy_create_buffer (yyin, YY_BUF_SIZE, scanner), scanner);
 }
 
