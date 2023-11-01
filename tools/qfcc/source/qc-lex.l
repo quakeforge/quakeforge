@@ -1426,6 +1426,9 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		}
 	}
 	if (macro) {
+		if (macro->update) {
+			macro->update (macro, scanner);
+		}
 		expand_macro (extra, macro);
 		if (0) dump_expr_stack (extra);
 		return YYPUSH_MORE;
@@ -2007,4 +2010,54 @@ rua_parse_define (const char *def)
 	free (extra.expr_stack.a);
 	dstring_delete (extra.dstr);
 	return status;
+}
+
+void
+rua_macro_file (rua_macro_t *macro, void *scanner)
+{
+	int         file = pr.source_file;
+	if (macro->tokens && macro->tokens->location.file == file) {
+		return;
+	}
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+	macro->num_tokens = 0;
+
+	rua_expr_t *expr = malloc (sizeof (*expr));
+	macro->num_tokens++;
+	const char *file_str = save_string (va (0, "\"%s\"",
+											quote_string (GETSTR (file))));
+	*expr = (rua_expr_t) {
+		.location = { .file = file },
+		.textlen = strlen (file_str),
+		.token = -rua_string,
+		.text = file_str,
+	};
+	*macro->tail = expr;
+	macro->tail = &expr->next;
+}
+
+void
+rua_macro_line (rua_macro_t *macro, void *scanner)
+{
+	int         line = pr.source_line;
+
+	if (macro->tokens && macro->tokens->location.first_line == line) {
+		return;
+	}
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+	macro->num_tokens = 0;
+
+	rua_expr_t *expr = malloc (sizeof (*expr));
+	macro->num_tokens++;
+	const char *line_str = save_string (va (0, "%d", line));
+	*expr = (rua_expr_t) {
+		.location = { .first_line = line },
+		.textlen = strlen (line_str),
+		.token = -rua_number,
+		.text = line_str,
+	};
+	*macro->tail = expr;
+	macro->tail = &expr->next;
 }

@@ -47,6 +47,9 @@ typedef struct rua_expr_s {
 	const char *text;
 } rua_expr_t;
 
+typedef struct rua_macro_s rua_macro_t;
+typedef void (*rua_macro_f) (rua_macro_t *macro, void *scanner);
+
 typedef struct rua_macro_s {
 	const char *name;
 	symtab_t   *params;
@@ -54,6 +57,7 @@ typedef struct rua_macro_s {
 	rua_expr_t **tail;
 	int         num_tokens;
 	int         num_params;
+	rua_macro_f update;
 } rua_macro_t;
 
 typedef struct rua_tok_s {
@@ -96,6 +100,9 @@ void rua_undefine (const char *sym, void *scanner);
 void rua_include_file (const char *name, void *scanner);
 void rua_embed_file (const char *name, void *scanner);
 int rua_parse_define (const char *def);
+
+void rua_macro_file (rua_macro_t *macro, void *scanner);
+void rua_macro_line (rua_macro_t *macro, void *scanner);
 
 #include "tools/qfcc/source/pre-parse.h"
 

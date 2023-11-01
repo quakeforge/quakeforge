@@ -384,10 +384,31 @@ cpp_include (const char *opt, const char *arg)
 }
 #undef CPP_INCLUDE
 
+static void
+make_magic_macro (symtab_t *tab, const char *name, rua_macro_f update)
+{
+	rua_macro_t *macro = malloc (sizeof (*macro));
+	*macro = (rua_macro_t) {
+		.name = save_string (name),
+		.tail = &macro->tokens,
+		.update = update,
+	};
+	auto sym = symtab_lookup (tab, macro->name);
+	if (sym) {
+		internal_error (0, "\"%s\" redefined", macro->name);
+	}
+	sym = new_symbol (macro->name);
+	sym->sy_type = sy_macro;
+	sym->s.macro = macro;
+	symtab_addsymbol (tab, sym);
+}
+
 void cpp_define (const char *arg)
 {
 	if (!cpp_macros) {
 		cpp_macros = new_symtab (0, stab_global);
+		make_magic_macro (cpp_macros, "__FILE__", rua_macro_file);
+		make_magic_macro (cpp_macros, "__LINE__", rua_macro_line);
 	}
 	size_t len = strlen (arg);
 	if (len > 0x10000) {
