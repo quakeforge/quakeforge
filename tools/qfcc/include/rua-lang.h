@@ -51,13 +51,18 @@ typedef struct rua_macro_s rua_macro_t;
 typedef void (*rua_macro_f) (rua_macro_t *macro, void *scanner);
 
 typedef struct rua_macro_s {
+	rua_macro_t *next;
 	const char *name;
 	symtab_t   *params;
 	rua_expr_t *tokens;
 	rua_expr_t **tail;
 	int         num_tokens;
 	int         num_params;
+	rua_expr_t *cursor;
 	rua_macro_f update;
+
+	int         num_args;
+	rua_macro_t **args;
 } rua_macro_t;
 
 typedef struct rua_tok_s {
