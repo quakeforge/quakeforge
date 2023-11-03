@@ -213,13 +213,14 @@ directive
 	  extra_warn
 	| ELSE					{ rua_else (true, "else", scanner); }
 	  extra_warn
-	| ELIF expand expr		{ rua_else (expr_long ($3), "elif", scanner); }
+	| ELIF					{ rua_start_else (true, scanner); }
+	  expr					{ rua_else (expr_long ($3), "elif", scanner); }
 	  eod
-	| ELIFDEF ID
-		{ rua_else (rua_defined ($2, scanner), "elifdef", scanner); }
+	| ELIFDEF				{ rua_start_else (false, scanner); }
+	  ID		{ rua_else (rua_defined ($3, scanner), "elifdef", scanner); }
 	  extra_warn
-	| ELIFNDEF ID
-		{ rua_else (!rua_defined ($2, scanner), "elifndef", scanner); }
+	| ELIFNDEF				{ rua_start_else (false, scanner); }
+	  ID		{ rua_else (!rua_defined ($3, scanner), "elifndef", scanner); }
 	  extra_warn
 	| ENDIF					{ rua_endif (scanner); }
 	  extra_warn

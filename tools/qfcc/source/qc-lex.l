@@ -1826,7 +1826,17 @@ rua_start_if (bool expand, void *scanner)
 		cond.own_state = c.own_state & c.enabled;
 	}
 	DARRAY_APPEND (&extra->cond_stack, cond);
-	extra->expand = expand && !extra->suppressed;
+	extra->expand = expand;
+
+	yy_pop_state (scanner);
+	yy_push_state (PREEXPR, scanner);
+}
+
+void
+rua_start_else (bool expand, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->expand = expand;
 
 	yy_pop_state (scanner);
 	yy_push_state (PREEXPR, scanner);
