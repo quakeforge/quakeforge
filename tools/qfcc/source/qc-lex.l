@@ -1109,6 +1109,17 @@ token_expr (int token, const rua_tok_t *tok)
 	};
 }
 
+static rua_tok_t
+expr_token (const rua_expr_t *e)
+{
+	return (rua_tok_t) {
+		.location = e->location,
+		.textlen = e->textlen,
+		.text = e->text,	// macro token strings use save_string
+		.token = e->token,
+	};
+}
+
 static bool
 join_tokens (rua_expr_t *out, const rua_expr_t *p1, const rua_expr_t *p2,
 			 rua_extra_t *extra)
@@ -1272,12 +1283,8 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 }
 
 static void
-rua_start_args (void *scanner)
+rua_reset_args (rua_macro_t *macro)
 {
-	auto extra = qc_yyget_extra (scanner);
-	extra->recording = true;
-
-	auto macro = extra->pending_macro;
 	macro->num_args = 0;
 
 	int  num_params = macro->num_params;
@@ -1296,6 +1303,15 @@ rua_start_args (void *scanner)
 			.tail = &arg->tokens,
 		};
 	}
+}
+
+static void
+rua_start_args (void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = true;
+
+	rua_reset_args (extra->pending_macro);
 	yy_push_state (ARGS, scanner);
 }
 
@@ -1305,6 +1321,18 @@ rua_end_args (void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = false;
 	yy_pop_state (scanner);
+}
+
+static void __attribute__((used))
+dump_macro (rua_macro_t *macro)
+{
+	printf ("\n%s: ", macro->name);
+	for (auto t = macro->tokens; t; t = t->next) {
+		printf ("%s", t->text);
+	}
+	for (int i = 0; i < macro->num_args; i++) {
+		dump_macro (macro->args[i]);
+	}
 }
 
 static int
@@ -1433,6 +1461,96 @@ next_macro_token (rua_extra_t *extra)
 	return e;
 }
 
+static int
+next_token (rua_tok_t *tok, yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	int token;
+rescan:
+	while (extra->macro && !extra->macro->cursor) {
+		auto macro = extra->macro;
+		extra->macro = macro->next;
+		macro->next = 0;
+	}
+	if (extra->macro && extra->macro->cursor) {
+		symbol_t   *sym;
+		auto macro = extra->macro;
+		auto e = next_macro_token (extra);
+		token = e.token;
+		if (token == '#') {
+			sym = symtab_lookup (macro->params, e.next->text);
+			auto arg = macro->args[sym->s.offset];
+			stringize_arg (&e, arg, extra);
+			next_macro_token (extra);	// consume arg
+		} else if (token == -rua_id && macro->params
+				   && (sym = symtab_lookup (macro->params, e.text))
+				   && !macro->args[sym->s.offset]->next) {
+			auto arg = macro->args[sym->s.offset];
+			arg->cursor = arg->tokens;
+			arg->next = extra->macro;
+			extra->macro = arg;
+			goto rescan;
+		} else if (token == -rua_id && !macro->name /* in arg */
+				   && (sym = symtab_lookup (extra->macro_tab, e.text))
+				   && !sym->s.macro->next) {
+			auto m = sym->s.macro;
+			if (m->update) {
+				m->update (m, scanner);
+			}
+			m->cursor = m->tokens;
+			if (!m->params) {
+				m->next = extra->macro;
+				extra->macro = m;
+				goto rescan;
+			}
+
+			m->next = extra->pending_macro;
+			extra->pending_macro = m;
+			auto t = macro->cursor;
+			for (; t && t->token == -rua_space; t = t->next) continue;
+			// to be in an arg, a function-like macro must either have
+			// both open and close parans, or none
+			if (t && t->token == '(') {
+				rua_reset_args (m);
+				int paren = 1;
+				auto tk = expr_token (t);
+				auto a = rua_macro_arg (&tk, scanner);
+				for (t = t->next; t; t = t->next) {
+					if (t->token == '(') {
+						paren++;
+					} else if (t->token == ')') {
+						if (!(--paren)) {
+							t = t->next;
+							break;
+						}
+					}
+					tk = expr_token (t);
+					if (t->token == ',' && paren == 1) {
+						a = rua_macro_arg (&tk, scanner);
+					} else {
+						rua_macro_append (a, &tk, scanner);
+					}
+				}
+			}
+			macro->cursor = t;
+			extra->pending_macro = m->next;
+			m->next = extra->macro;
+			extra->macro = m;
+			goto rescan;
+		} else if (e.next && e.next->token == PRE_CONCAT) {
+			next_macro_token (extra);	// consume ##
+			rua_expr_t  t = next_macro_token (extra);
+			if (!join_tokens (&e, &e, &t, extra)) {
+			}
+		}
+		*tok = expr_token (&e);
+		token = tok->token;
+	} else {
+		token = yylex (tok, &tok->location, scanner);
+	}
+	return token;
+}
+
 int
 qc_yyparse (FILE *in)
 {
@@ -1454,43 +1572,7 @@ qc_yyparse (FILE *in)
 	int         status;
 	rua_tok_t   tok = { .location = { 1, 1, 1, 1, pr.source_file }, };
 	do {
-		int token;
-		if (extra.macro) {
-			symbol_t   *sym;
-rescan:
-			auto macro = extra.macro;
-			auto e = next_macro_token (&extra);
-			token = e.token;
-			if (token == '#') {
-				sym = symtab_lookup (macro->params, e.next->text);
-				auto arg = macro->args[sym->s.offset];
-				stringize_arg (&e, arg, &extra);
-				next_macro_token (&extra);	// consume arg
-			} else if (token == -rua_id && macro->params
-					   && (sym = symtab_lookup (macro->params, e.text))) {
-				auto arg = macro->args[sym->s.offset];
-			//printf ("%3d '%s'\n", token, quote_string (e.text));
-				if (!arg->next && arg->tokens) {
-					arg->cursor = arg->tokens;
-					arg->next = extra.macro;
-					extra.macro = arg;
-					goto rescan;
-				}
-			} else if (e.next && e.next->token == PRE_CONCAT) {
-				next_macro_token (&extra);	// consume ##
-				rua_expr_t  t = next_macro_token (&extra);
-				if (!join_tokens (&e, &e, &t, &extra)) {
-				}
-			}
-			tok = (rua_tok_t) {
-				.location = e.location,
-				.textlen = e.textlen,
-				.text = e.text,	// macro token strings use save_string
-				.token = token,
-			};
-		} else {
-			token = yylex (&tok, &tok.location, scanner);
-		}
+		int token = next_token (&tok, scanner);
 		if (!token && extra.cond_stack.size) {
 			int ind = extra.cond_stack.size - 1;
 			auto cond = extra.cond_stack.a[ind];
@@ -2006,12 +2088,7 @@ rua_parse_define (const char *def)
 				extra.macro = extra.macro->next;
 			}
 			token = expr.token;
-			tok = (rua_tok_t) {
-				.location = expr.location,
-				.textlen = expr.textlen,
-				.text = expr.text,	// macro token strings use save_string
-				.token = token,
-			};
+			tok = expr_token (&expr);
 		}
 	} while (status == YYPUSH_MORE);
 
