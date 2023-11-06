@@ -1124,13 +1124,18 @@ static bool
 join_tokens (rua_expr_t *out, const rua_expr_t *p1, const rua_expr_t *p2,
 			 rua_extra_t *extra)
 {
-	auto str = va (0, "%s%s", p1->text, p2->text);
+	auto str = va (0, "%s%s", p1 ? p1->text : "", p2 ? p2->text : "");
 	yy_scan_string (str, extra->subscanner);
-	rua_tok_t   tok = { .location = p1->location, };
+	rua_tok_t   tok = {};
+	if (p1) {
+		tok.location = p1->location;
+	}
 	int token = yylex (&tok, &tok.location, extra->subscanner);
 	if (token && yylex (&tok, &tok.location, extra->subscanner)) {
 		error (0, "pasting \"%s\" and \"%s\" does not give a valid"
 			   " preprocessing token", p1->text, p2->text);
+		out->token = -rua_space;
+		out->text = " ";
 		return false;
 	}
 	*out = token_expr (token, &tok);
@@ -1461,6 +1466,62 @@ next_macro_token (rua_extra_t *extra)
 	return e;
 }
 
+static rua_expr_t *
+get_arg_token (bool last, rua_expr_t *arg, const rua_macro_t *macro)
+{
+	symbol_t   *sym;
+
+	if (arg->token == -rua_id && macro->params
+	    && (sym = symtab_lookup (macro->params, arg->text))
+	    && !macro->args[sym->s.offset]->next) {
+		auto a = macro->args[sym->s.offset];
+		if (last) {
+			if (a->tokens) {
+				return (rua_expr_t *) a->tail;
+			}
+			return 0;
+		} else {
+			return a->tokens;
+		}
+	}
+	return arg;
+}
+
+static void
+copy_token (rua_macro_t *dst, const rua_expr_t *t)
+{
+	rua_expr_t *e = malloc (sizeof (*e));
+	*e = *t;
+	e->next = 0;
+	*dst->tail = e;
+	dst->tail = &e->next;
+}
+
+static void
+copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
+				const rua_expr_t *arg, const rua_macro_t *macro)
+{
+	symbol_t   *sym;
+
+	if (arg->token == -rua_id && macro->params
+	    && (sym = symtab_lookup (macro->params, arg->text))
+	    && !macro->args[sym->s.offset]->next) {
+		auto a = macro->args[sym->s.offset];
+		if (!a->tokens) {
+			return;
+		}
+		for (auto t = skip_first ? a->tokens->next : a->tokens;
+			 t; t = t->next) {
+			if (skip_last && !t->next) {
+				break;
+			}
+			copy_token (dst, t);
+		}
+	} else if (!skip_first && !skip_last) {
+		copy_token (dst, arg);
+	}
+}
+
 static int
 next_token (rua_tok_t *tok, yyscan_t scanner)
 {
@@ -1482,6 +1543,34 @@ rescan:
 			auto arg = macro->args[sym->s.offset];
 			stringize_arg (&e, arg, extra);
 			next_macro_token (extra);	// consume arg
+		} else if (e.next && e.next->token == PRE_CONCAT) {
+			rua_macro_t *m = malloc (sizeof (*m));
+			*m = (rua_macro_t) {
+				.tail = &m->tokens,
+			};
+
+			bool sf = false;
+			bool sl;
+			do {
+				auto p = get_arg_token (true, &e, macro);
+				auto n = get_arg_token (false, e.next->next, macro);
+				rua_expr_t  cat;
+				if (!(sl = join_tokens (&cat, p, n, extra))) {
+					cat.location = e.next->location;
+					cat.token = -rua_space;
+					cat.text = " ";
+				}
+				copy_arg_token (m, sf, sl, &e, macro);
+				copy_token (m, &cat);
+				next_macro_token (extra);	// consume ##
+				e = next_macro_token (extra);
+				sf = sl;
+			} while (e.next && e.next->token == PRE_CONCAT);
+			copy_arg_token (m, sl, false, &e, macro);
+			m->cursor = m->tokens;
+			m->next = extra->macro;
+			extra->macro = m;
+			goto rescan;
 		} else if (token == -rua_id && macro->params
 				   && (sym = symtab_lookup (macro->params, e.text))
 				   && !macro->args[sym->s.offset]->next) {
@@ -1537,11 +1626,6 @@ rescan:
 			m->next = extra->macro;
 			extra->macro = m;
 			goto rescan;
-		} else if (e.next && e.next->token == PRE_CONCAT) {
-			next_macro_token (extra);	// consume ##
-			rua_expr_t  t = next_macro_token (extra);
-			if (!join_tokens (&e, &e, &t, extra)) {
-			}
 		}
 		*tok = expr_token (&e);
 		token = tok->token;
