@@ -1620,7 +1620,7 @@ class_finish_module (void)
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
 	module->size = type_size (&type_module);
 	EMIT_STRING (module_sym->s.def->space, module->name,
-				 GETSTR (pr.source_file));
+				 GETSTR (pr.loc.file));
 	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
 
 	exec_class_sym = symtab_lookup (pr.symtab, "__obj_exec_class");

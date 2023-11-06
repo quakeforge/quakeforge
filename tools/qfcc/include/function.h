@@ -56,8 +56,7 @@ typedef struct overloaded_function_s {
 									///< encoding
 	const struct type_s *type;		///< type of this function
 	int         overloaded;			///< is this function overloaded
-	pr_string_t file;				///< source file of the function
-	int         line;				///< source line of this function
+	rua_loc_t   loc;				///< source location of the function
 } overloaded_function_t;
 
 /** Internal representation of a function.

@@ -28,14 +28,15 @@
 #ifndef __rua_lang_h
 #define __rua_lang_h
 
-#include "tools/qfcc/source/qc-parse.h"
-
 typedef struct rua_loc_s {
-	int         first_line, first_column;
+	int         line, column;
 	int         last_line, last_column;
 	int         file;
 } rua_loc_t;
 
+#include "tools/qfcc/source/qc-parse.h"
+
+typedef struct expr_s expr_t;
 typedef struct symtab_s symtab_t;
 
 typedef struct rua_expr_s {
@@ -106,6 +107,8 @@ void rua_undefine (const char *sym, void *scanner);
 void rua_include_file (const char *name, void *scanner);
 void rua_embed_file (const char *name, void *scanner);
 int rua_parse_define (const char *def);
+void rua_line_info (const expr_t *line_expr, const char *text,
+					const expr_t *flags_epxr, void *scanner);
 
 void rua_macro_file (rua_macro_t *macro, void *scanner);
 void rua_macro_line (rua_macro_t *macro, void *scanner);

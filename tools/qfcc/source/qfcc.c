@@ -152,7 +152,12 @@ InitData (void)
 	}
 
 	memset (&pr, 0, sizeof (pr));
-	pr.source_line = 1;
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
 	pr.error_count = 0;
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
@@ -668,8 +673,13 @@ compile_file (const char *filename)
 	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
 
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
 	add_source_file (filename);
-	pr.source_line = 1;
 	clear_frame_macros ();
 	err = yyparse (yyin) || pr.error_count;
 	fclose (yyin);

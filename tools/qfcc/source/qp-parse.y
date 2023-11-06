@@ -84,9 +84,14 @@ parse_error (void *scanner)
 
 #define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
 
+#define first_line line
+#define first_column column
+
 int yylex (void);
 
 %}
+
+%define api.location.type {struct rua_loc_s}
 
 %union {
 	int			op;

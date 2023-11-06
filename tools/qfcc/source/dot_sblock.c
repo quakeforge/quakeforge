@@ -60,7 +60,8 @@ static void
 flow_statement (dstring_t *dstr, statement_t *s)
 {
 	dasprintf (dstr, "        <tr>");
-	dasprintf (dstr, "<td>%d:%d</td>", s->number, s->expr ? s->expr->line : -1);
+	dasprintf (dstr, "<td>%d:%d</td>", s->number,
+			   s->expr ? s->expr->loc.line : -1);
 	dasprintf (dstr, "<td>%s</td>", html_string(quote_string (s->opcode)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opa)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opb)));

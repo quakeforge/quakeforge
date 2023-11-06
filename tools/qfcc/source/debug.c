@@ -66,8 +66,7 @@ push_source_file (void)
 {
 	srcline_t  *srcline;
 	ALLOC (16, srcline_t, srclines, srcline);
-	srcline->source_file = pr.source_file;
-	srcline->source_line = pr.source_line;
+	srcline->loc = pr.loc;
 	srcline->next = pr.srcline_stack;
 	pr.srcline_stack = srcline;
 }
@@ -82,8 +81,7 @@ pop_source_file (void)
 		return;
 	}
 	tmp = pr.srcline_stack;
-	pr.source_file = tmp->source_file;
-	pr.source_line = tmp->source_line;
+	pr.loc = tmp->loc;
 	pr.srcline_stack = tmp->next;
 	FREE (srclines, tmp);
 }
@@ -92,7 +90,7 @@ pop_source_file (void)
 void
 add_source_file (const char *file)
 {
-	pr.source_file = ReuseString (file);
+	pr.loc.file = ReuseString (file);
 	if (!strpool_findstr (pr.comp_file_set, file)) {
 		strpool_addstr (pr.comp_file_set, file);
 		DARRAY_APPEND (&pr.comp_files, save_string (file));
@@ -108,31 +106,20 @@ set_line_file (int line, const char *file, int flags)
 			break;
 		case 2:
 			pop_source_file ();
-			file = GETSTR (pr.source_file);
-			line = pr.source_line;
+			file = GETSTR (pr.loc.file);
+			line = pr.loc.line;
 			break;
 	}
-	pr.source_line = line;
+	pr.loc = (rua_loc_t) {
+		.line = line,
+		.column = 1,
+		.last_line = line,
+		.last_column = 1,
+	};
 	if (file) {
 		add_source_file (file);
 		cpp_set_quote_file (file);
 	}
-}
-
-void
-line_info (const expr_t *line_expr, const char *file, const expr_t *flags_expr)
-{
-	int line = expr_long (line_expr);
-	int flags = flags_expr ? expr_long (flags_expr) : 0;
-
-	if (file) {
-		if (*file != '"') {
-			error (0, "\"%s\" is not a valid filename", file);
-			return;
-		}
-		file = make_string (file, 0);
-	}
-	set_line_file (line, file, flags);
 }
 
 pr_lineno_t *

@@ -89,7 +89,7 @@ convert_name (const expr_t *e)
 	}
 	if (!strcmp (sym->name, "__LINE__")
 		&& current_func) {
-		return new_int_expr (e->line, false);
+		return new_int_expr (e->loc.line, false);
 	}
 	if (!strcmp (sym->name, "__INFINITY__")
 		&& current_func) {
@@ -97,7 +97,7 @@ convert_name (const expr_t *e)
 	}
 	if (!strcmp (sym->name, "__FILE__")
 		&& current_func) {
-		return new_string_expr (GETSTR (e->file));
+		return new_string_expr (GETSTR (e->loc.file));
 	}
 	if (!sym->table) {
 		error (e, "%s undefined", sym->name);
@@ -253,8 +253,7 @@ new_expr (void)
 
 	ALLOC (16384, expr_t, exprs, e);
 
-	e->line = pr.source_line;
-	e->file = pr.source_file;
+	e->loc = pr.loc;
 	return e;
 }
 
@@ -396,8 +395,7 @@ list_gather (ex_list_t *list, const expr_t **exprs, int count)
 expr_t *
 expr_file_line (expr_t *dst, const expr_t *src)
 {
-	dst->file = src->file;
-	dst->line = src->line;
+	dst->loc = src->loc;
 	return dst;
 }
 
@@ -1267,8 +1265,7 @@ new_alias_expr (type_t *type, const expr_t *expr)
 	alias->type = ex_alias;
 	alias->alias.type = type;
 	alias->alias.expr = expr;
-	alias->file = expr->file;
-	alias->line = expr->line;
+	alias->loc = expr->loc;
 	return edag_add_expr (alias);
 }
 
@@ -1293,8 +1290,7 @@ new_offset_alias_expr (type_t *type, const expr_t *expr, int offset)
 	alias->alias.type = type;
 	alias->alias.expr = edag_add_expr (expr);
 	alias->alias.offset = edag_add_expr (new_int_expr (offset, false));
-	alias->file = expr->file;
-	alias->line = expr->line;
+	alias->loc = expr->loc;
 	return edag_add_expr (alias);
 }
 
@@ -2770,8 +2766,6 @@ address_expr (const expr_t *e1, type_t *t)
 const expr_t *
 build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t *els, const expr_t *s2)
 {
-	int         line = pr.source_line;
-	pr_string_t file = pr.source_file;
 	expr_t     *if_expr;
 	expr_t     *tl = new_label_expr ();
 	expr_t     *fl = new_label_expr ();
@@ -2784,8 +2778,9 @@ build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t 
 		warning (test,
 				 "suggest braces around empty body in an ‘if’ statement");
 	}
-	pr.source_line = test->line;
-	pr.source_file = test->file;
+
+	auto saved_loc = pr.loc;
+	pr.loc = test->loc;
 
 	if_expr = new_block_expr (0);
 
@@ -2804,8 +2799,7 @@ build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t 
 	append_expr (if_expr, s1);
 
 	if (els) {
-		pr.source_line = els->line;
-		pr.source_file = els->file;
+		pr.loc = els->loc;
 	}
 
 	if (s2) {
@@ -2819,8 +2813,7 @@ build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t 
 		append_expr (if_expr, fl);
 	}
 
-	pr.source_line = line;
-	pr.source_file = file;
+	pr.loc = saved_loc;
 
 	return if_expr;
 }
@@ -2829,14 +2822,12 @@ const expr_t *
 build_while_statement (int not, const expr_t *test, const expr_t *statement,
 					   const expr_t *break_label, const expr_t *continue_label)
 {
-	int         line = pr.source_line;
-	pr_string_t file = pr.source_file;
 	const expr_t *l1 = new_label_expr ();
 	const expr_t *l2 = break_label;
 	expr_t     *while_expr;
 
-	pr.source_line = test->line;
-	pr.source_file = test->file;
+	auto saved_loc = pr.loc;
+	pr.loc = test->loc;
 
 	while_expr = new_block_expr (0);
 
@@ -2858,8 +2849,7 @@ build_while_statement (int not, const expr_t *test, const expr_t *statement,
 		append_expr (while_expr, test);
 	}
 
-	pr.source_line = line;
-	pr.source_file = file;
+	pr.loc = saved_loc;
 
 	return while_expr;
 }
@@ -2870,8 +2860,7 @@ build_do_while_statement (const expr_t *statement, int not, const expr_t *test,
 						  const expr_t *continue_label)
 {
 	expr_t *l1 = new_label_expr ();
-	int         line = pr.source_line;
-	pr_string_t file = pr.source_file;
+	auto        saved_loc = pr.loc;
 	expr_t     *do_while_expr;
 
 	if (!statement) {
@@ -2879,8 +2868,7 @@ build_do_while_statement (const expr_t *statement, int not, const expr_t *test,
 				 "suggest braces around empty body in a ‘do’ statement");
 	}
 
-	pr.source_line = test->line;
-	pr.source_file = test->file;
+	pr.loc = test->loc;
 
 	do_while_expr = new_block_expr (0);
 
@@ -2901,8 +2889,7 @@ build_do_while_statement (const expr_t *statement, int not, const expr_t *test,
 		append_expr (do_while_expr, test);
 	}
 
-	pr.source_line = line;
-	pr.source_file = file;
+	pr.loc = saved_loc;
 
 	return do_while_expr;
 }
@@ -2916,8 +2903,7 @@ build_for_statement (const expr_t *init, const expr_t *test, const expr_t *next,
 	const expr_t *fl = break_label;
 	expr_t     *l1 = 0;
 	const expr_t *t;
-	int         line = pr.source_line;
-	pr_string_t file = pr.source_file;
+	auto        saved_loc = pr.loc;
 	expr_t     *for_expr;
 
 	if (next)
@@ -2928,8 +2914,7 @@ build_for_statement (const expr_t *init, const expr_t *test, const expr_t *next,
 		t = init;
 	else
 		t = continue_label;
-	pr.source_line = t->line;
-	pr.source_file = t->file;
+	pr.loc = t->loc;
 
 	for_expr = new_block_expr (0);
 
@@ -2956,8 +2941,7 @@ build_for_statement (const expr_t *init, const expr_t *test, const expr_t *next,
 		append_expr (for_expr, fl);
 	}
 
-	pr.source_line = line;
-	pr.source_file = file;
+	pr.loc = saved_loc;
 
 	return for_expr;
 }

@@ -39,6 +39,7 @@
 #include "QF/simd/types.h"
 
 #include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/diagnostic.h"

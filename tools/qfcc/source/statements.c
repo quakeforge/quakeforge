@@ -1729,13 +1729,11 @@ expr_negate (sblock_t *sblock, const expr_t *e, operand_t **op)
 	expr_t     *zero;
 
 	zero = new_nil_expr ();
-	zero->file = e->file;
-	zero->line = e->line;
+	zero->loc = e->loc;
 	zero = (expr_t *) convert_nil (zero, e->expr.type);
 	neg = new_binary_expr ('-', zero, e->expr.e1);
 	neg->expr.type = e->expr.type;
-	neg->file = e->file;
-	neg->line = e->line;
+	neg->loc = e->loc;
 	return statement_subexpr (sblock, neg, op);
 }
 
@@ -1947,17 +1945,14 @@ expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const expr_t *tmp;
 	type_t     *vec_type = get_type (e);
-	int         file = pr.source_file;
-	int         line = pr.source_line;
 
-	pr.source_file = e->file;
-	pr.source_line = e->line;
+	auto loc = pr.loc;
+	pr.loc = e->loc;
 
 	tmp = new_temp_def_expr (vec_type);
 	statement_copy_elements (&sblock, tmp, e, 0);
 
-	pr.source_file = file;
-	pr.source_line = line;
+	pr.loc = loc;
 	sblock = statement_subexpr (sblock, tmp, op);
 	return sblock;
 }

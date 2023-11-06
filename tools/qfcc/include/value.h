@@ -71,6 +71,7 @@ struct ex_value_s *offset_alias_value (struct ex_value_s *value,
 									   struct type_s *type, int offset);
 struct ex_value_s *alias_value (struct ex_value_s *value, struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
+struct defspace_s;
 struct def_s *emit_value_core (struct ex_value_s *value, struct def_s *def,
 							   struct defspace_s *defspace);
 

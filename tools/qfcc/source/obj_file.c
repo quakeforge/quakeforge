@@ -144,8 +144,8 @@ qfo_encode_defs (qfo_t *qfo, def_t *defs, qfo_def_t **qfo_defs,
 		q->num_relocs = qfo_encode_relocs (d->relocs, qfo_relocs,
 										   q - qfo->defs);
 		q->flags = qfo_def_flags (d);
-		q->file = d->file;
-		q->line = d->line;
+		q->file = d->loc.file;
+		q->line = d->loc.line;
 	}
 	return count;
 }
@@ -301,7 +301,7 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 		q->name = f->s_name;
 		q->type = f->def->type->type_def->offset;
 		q->file = f->s_file;
-		q->line = f->def->line;
+		q->line = f->def->loc.line;
 		q->code = f->code;
 		if (f->builtin)		// FIXME redundant
 			q->code = -f->builtin;

@@ -43,16 +43,16 @@
 
 #include "QF/dstring.h"
 
+#define PRE_YYDEBUG 1
+#define PRE_YYERROR_VERBOSE 1
+#undef PRE_YYERROR_VERBOSE
+
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/pragma.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
-
-#define YYDEBUG 1
-#define YYERROR_VERBOSE 1
-#undef YYERROR_VERBOSE
 
 #include "tools/qfcc/source/pre-parse.h"
 
@@ -64,7 +64,7 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 {
 	const char *text = quote_string (pre_yytext);
 #ifdef YYERROR_VERBOSE
-	error (0, "%d:%s before '%s'\n", yylloc->first_column, s, text);
+	error (0, "%d:%s before '%s'\n", yylloc->column, s, text);
 #else
 	error (0, "%s before '%s'", s, text);
 #endif
@@ -79,6 +79,9 @@ parse_error (void *scanner)
 
 #define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
 #endif
+
+#define first_line line
+#define first_column column
 %}
 
 %code requires {
@@ -200,8 +203,10 @@ directive
 	| PRAGMA expand { rua_start_pragma (scanner); }
 	  pragma_params { pragma_process (); }
 	  eod
-	| LINE expand expr extra_warn					{ line_info ($3, 0, 0); }
-	| LINE expand expr string line_expr extra_warn	{ line_info ($3, $4, $5); }
+	| LINE expand expr extra_warn
+		{ rua_line_info ($3, 0, 0, scanner); }
+	| LINE expand expr string line_expr extra_warn
+		{ rua_line_info ($3, $4, $5, scanner); }
 	| IF					{ rua_start_if (true, scanner); }
 	  expr					{ rua_if (expr_long ($3), scanner); }
 	  eod

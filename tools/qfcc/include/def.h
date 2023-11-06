@@ -34,6 +34,9 @@
 #include "QF/progs/pr_comp.h"
 #include "QF/progs/pr_debug.h"
 
+#include "rua-lang.h"
+#include "specifier.h"
+
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
 */
@@ -101,26 +104,13 @@ typedef struct def_s {
 	unsigned    system:1;		///< system def
 	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
 
-	pr_string_t file;			///< declaring/defining source file
-	int         line;			///< declaring/defining source line
+	rua_loc_t   loc;			///< declaring/defining source location
 
 	int         qfo_def;		///< index to def in qfo defs
 
 	void       *return_addr;	///< who allocated this
 	void       *free_addr;		///< who freed this
 } def_t;
-
-/** Specify the storage class of a def.
-*/
-typedef enum storage_class_e {
-	sc_global,					///< def is globally visible across units
-	sc_system,					///< def may be redefined once
-	sc_extern,					///< def is externally allocated
-	sc_static,					///< def is private to the current unit
-	sc_param,					///< def is an incoming function parameter
-	sc_local,					///< def is local to the current function
-	sc_argument,				///< def is a function argument
-} storage_class_t;
 
 /** Create a new def.
 

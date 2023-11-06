@@ -73,11 +73,11 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	if (tag) {
 		tag_name = va (0, "tag %s", tag->name);
 	} else {
-		const char *path = GETSTR (pr.source_file);
+		const char *path = GETSTR (pr.loc.file);
 		const char *file = strrchr (path, '/');
 		if (!file++)
 			file = path;
-		tag_name = va (0, "tag .%s.%d", file, pr.source_line);
+		tag_name = va (0, "tag .%s.%d", file, pr.loc.line);
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {

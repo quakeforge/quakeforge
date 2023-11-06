@@ -115,7 +115,7 @@ print_error (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"(error)\\n%d\"];\n", indent, "", e,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -152,7 +152,7 @@ print_bool (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 			   "cellspacing=\"0\">\n",
 			   indent + 2, "");
 	dasprintf (dstr, "%*s<tr><td colspan=\"2\">&lt;boolean&gt;(%d)</td></tr>\n",
-			   indent + 4, "", e->line);
+			   indent + 4, "", e->loc.line);
 	dasprintf (dstr, "%*s<tr><td>true</td><td>false</td></tr>\n",
 			   indent + 4, "");
 	if (boolean->true_list)
@@ -197,7 +197,7 @@ print_label (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, next);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   e->label.name, e->line);
+			   e->label.name, e->loc.line);
 }
 
 static void
@@ -209,7 +209,7 @@ print_labelref (dstring_t *dstr, const expr_t *e, int level, int id, const expr_
 		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,style=dashed];\n",
 				   indent, "", e, next);
 	dasprintf (dstr, "%*se_%p [label=\"&%s\\n%d\"];\n", indent, "", e,
-			   e->label.name, e->line);
+			   e->label.name, e->loc.line);
 }
 
 static void
@@ -229,7 +229,7 @@ print_block (dstring_t *dstr, const expr_t *e, int level, int id,
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 			   "cellspacing=\"0\">\n", indent + 2, "");
 	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">&lt;block&gt;(%d)%s</td>"
-			   "</tr>\n", indent + 4, "", colspan, e->line,
+			   "</tr>\n", indent + 4, "", colspan, e->loc.line,
 			   e->block.is_call ? "c" : "");
 	if (e->block.result)
 		dasprintf (dstr, "%*s<tr><td colspan=\"%d\" port=\"result\">=</td>"
@@ -238,7 +238,7 @@ print_block (dstring_t *dstr, const expr_t *e, int level, int id,
 		dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
 		for (int i = 0; i < num_exprs; i++) {
 			dasprintf (dstr, "%*s<td>%d</td>\n", indent + 8, "",
-					   exprs[i]->line);
+					   exprs[i]->loc.line);
 		}
 		dasprintf (dstr, "%*s</tr>\n", indent + 4, "");
 		dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
@@ -280,12 +280,12 @@ print_list (dstring_t *dstr, const expr_t *e, int level, int id,
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 			   "cellspacing=\"0\">\n", indent + 2, "");
 	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">&lt;list&gt;(%d)</td>"
-			   "</tr>\n", indent + 4, "", colspan, e->line);
+			   "</tr>\n", indent + 4, "", colspan, e->loc.line);
 	if (num_exprs) {
 		dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
 		for (int i = 0; i < num_exprs; i++) {
 			dasprintf (dstr, "%*s<td>%d</td>\n", indent + 8, "",
-					   exprs[i]->line);
+					   exprs[i]->loc.line);
 		}
 		dasprintf (dstr, "%*s</tr>\n", indent + 4, "");
 		dasprintf (dstr, "%*s<tr>\n", indent + 4, "");
@@ -317,7 +317,7 @@ print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
 			   e->expr.e2);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->expr.op), e->line);
+			   get_op_string (e->expr.op), e->loc.line);
 }
 
 static void
@@ -337,7 +337,7 @@ print_alias (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 	dstring_t  *typestr = dstring_newstr();
 	print_type_str (typestr, e->alias.type);
 	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
-			   "<alias>", typestr->str, e->line);
+			   "<alias>", typestr->str, e->loc.line);
 	dstring_delete (typestr);
 }
 
@@ -358,7 +358,7 @@ print_address (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 	dstring_t  *typestr = dstring_newstr();
 	print_type_str (typestr, e->address.type);
 	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
-			   "&", typestr->str, e->line);
+			   "&", typestr->str, e->loc.line);
 	dstring_delete (typestr);
 }
 
@@ -375,7 +375,7 @@ print_assign (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 			   e->assign.src);
 
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   "=", e->line);
+			   "=", e->loc.line);
 }
 
 static void
@@ -396,7 +396,7 @@ print_conditional (dstring_t *dstr, const expr_t *e, int level, int id, const ex
 				   "style=dashed];\n", indent, "", e, next);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   condition [e->branch.type], e->line);
+			   condition [e->branch.type], e->loc.line);
 }
 
 static void
@@ -406,7 +406,7 @@ print_jump (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 
 	_print_expr (dstr, e->branch.target, level, id, next);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   "jump", e->line);
+			   "jump", e->loc.line);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 			   e->branch.target);
 }
@@ -465,7 +465,7 @@ print_return (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 				   e->retrn.ret_val);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   "return", e->line);
+			   "return", e->loc.line);
 }
 
 static void
@@ -476,7 +476,7 @@ print_uexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 	_print_expr (dstr, e->expr.e1, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->expr.e1);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->expr.op), e->line);
+			   get_op_string (e->expr.op), e->loc.line);
 }
 
 static void
@@ -485,7 +485,7 @@ print_def (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *ne
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"d %s\\n%d\"];\n", indent, "", e,
-			   e->def->name, e->line);
+			   e->def->name, e->loc.line);
 }
 
 static void
@@ -494,7 +494,7 @@ print_symbol (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   e->symbol->name, e->line);
+			   e->symbol->name, e->loc.line);
 }
 
 static void
@@ -503,7 +503,7 @@ print_temp (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"tmp_%p\\n%d\"];\n", indent, "", e, e,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -517,7 +517,7 @@ print_vector (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, ele);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"vector %d\"];\n", indent, "", e,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -535,7 +535,7 @@ print_nil (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *ne
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"nil\\n%d\"];\n", indent, "", e,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -549,7 +549,7 @@ print_value (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *
 		label = quote_string (html_string (label));
 	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e, label,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -581,7 +581,7 @@ print_adjstk (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"adjstk %d:%d\\n%d\"];\n", indent, "", e,
-			   e->adjstk.mode, e->adjstk.offset, e->line);
+			   e->adjstk.mode, e->adjstk.offset, e->loc.line);
 }
 
 static void
@@ -593,7 +593,7 @@ print_with (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 	_print_expr (dstr, with, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, with);
 	dasprintf (dstr, "%*se_%p [label=\"with %d:%d\\n%d\"];\n", indent, "", e,
-			   e->with.mode, e->with.reg, e->line);
+			   e->with.mode, e->with.reg, e->loc.line);
 }
 
 static void
@@ -602,7 +602,7 @@ print_args (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 	int         indent = level * 2 + 2;
 
 	dasprintf (dstr, "%*se_%p [label=\"...\\n%d\"];\n", indent, "", e,
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -613,7 +613,7 @@ print_horizontal (dstring_t *dstr, const expr_t *e, int level, int id, const exp
 	_print_expr (dstr, e->hop.vec, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->hop.vec);
 	dasprintf (dstr, "%*se_%p [label=\"hop %s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->hop.op), e->line);
+			   get_op_string (e->hop.op), e->loc.line);
 }
 
 static void
@@ -637,7 +637,7 @@ print_swizzle (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 	_print_expr (dstr, swiz.src, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, swiz.src);
 	dasprintf (dstr, "%*se_%p [label=\"swizzle %s\\n%d\"];\n", indent, "", e,
-			   swizzle, e->line);
+			   swizzle, e->loc.line);
 }
 
 static void
@@ -657,7 +657,7 @@ print_extend (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 			   type_width (get_type (extend.src)), type_width (extend.type),
 			   extend.reverse ? ":r" : "",
 			   ((const char *[]){"0", "1", "c", "-1", "?"})[ext],
-			   e->line);
+			   e->loc.line);
 }
 
 static void
@@ -682,7 +682,7 @@ print_multivec (dstring_t *dstr, const expr_t *e, int level, int id,
 	dasprintf (dstr, "%*s<table border=\"0\" cellborder=\"1\" "
 			   "cellspacing=\"0\">\n", indent + 2, "");
 	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">&lt;multivec&gt;(%d)</td>"
-			   "</tr>\n", indent + 4, "", colspan, e->line);
+			   "</tr>\n", indent + 4, "", colspan, e->loc.line);
 	dstring_t  *typestr = dstring_newstr();
 	print_type_str (typestr, e->multivec.type);
 	dasprintf (dstr, "%*s<tr><td colspan=\"%d\">%s</td></tr>\n",
@@ -754,7 +754,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 			type = expr_names[e->type];
 		}
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type: %s)\\n%d\"];\n",
-				   indent, "", e, type, e->line);
+				   indent, "", e, type, e->loc.line);
 		return;
 	}
 	print_funcs[e->type] (dstr, e, level, id, next);

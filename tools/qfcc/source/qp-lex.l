@@ -82,23 +82,10 @@ FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int keyword_or_id (YYSTYPE *lval, const char *token);
 static int convert_relop (const char *relop) __attribute__((pure));
+static void update_loc (rua_loc_t *loc, size_t textlen);
+static void next_line (rua_loc_t *loc, yyscan_t scanner);
 
-static void
-update_yylloc (YYLTYPE *lloc, const char *text)
-{
-	lloc->first_line = lloc->last_line;
-	lloc->first_column = lloc->last_column;
-	for(int i = 0; text[i] != '\0'; i++) {
-		if(text[i] == '\n') {
-			lloc->last_line++;
-			lloc->last_column = 1;
-		} else {
-			lloc->last_column++;
-		}
-	}
-}
-
-#define YY_USER_ACTION update_yylloc (yylloc, yytext);
+#define YY_USER_ACTION update_loc (yylloc, yyleng);
 
 %}
 
@@ -130,7 +117,7 @@ FRAMEID		{ID}(\.{ID})*
 "(*"					{ BEGIN (COMMENT); }
 <COMMENT>"(*"		{ warning (0, "nested (* in comment"); }
 <COMMENT>"*)"		{ BEGIN (INITIAL); }
-<COMMENT>\r*\n		{ pr.source_line++; }
+<COMMENT>\r*\n		{ next_line (yylloc, yyscanner); }
 <COMMENT>.			/* nothing to do, with people like you */
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do, with people like you */
@@ -213,7 +200,7 @@ FRAMEID		{ID}(\.{ID})*
 <GRAB_OTHER>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
-						pr.source_line++;
+						next_line (yylloc, yyscanner);
 						BEGIN (INITIAL);
 					}
 
@@ -345,4 +332,22 @@ qp_yyparse (FILE *in)
 	yylex_destroy (scanner);
 	qp_yypstate_delete (ps);
 	return status;
+}
+
+static void
+update_loc (rua_loc_t *loc, size_t textlen)
+{
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	// \n handling rules will take care of the column and line
+	loc->last_column += textlen;
+}
+
+static void
+next_line (rua_loc_t *loc, yyscan_t scanner)
+{
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	loc->last_column = 1;
+	loc->last_line++;
 }

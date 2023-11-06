@@ -100,6 +100,7 @@ typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
 typedef struct {
 	YY_BUFFER_STATE buffer;
 	rua_cond_stack_t cond_stack;
+	rua_loc_t   location;
 } rua_incl_t;
 
 typedef struct DARRAY_TYPE (rua_macro_t *) rua_macro_list_t;
@@ -122,6 +123,7 @@ typedef struct rua_extra_s {
 		rua_macro_t *pending_macro;	// function-type waiting for args
 		rua_macro_t *macro;			// macro being expanded
 		yyscan_t    subscanner;
+		rua_loc_t   location;
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
 
@@ -366,7 +368,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <*>.					{
 							error (0, "all your typo are belong to us:%d %d-%d",
 								   yystart(),
-								   yylloc->first_column, yylloc->last_column);
+								   yylloc->column, yylloc->last_column);
 						}
 
 %%
@@ -902,7 +904,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 
 	int         token;
 	rua_tok_t   vtok = { .location = tok->location, };
-	vtok.location.first_column++;
+	vtok.location.column++;
 	const expr_t *components[4+1] = {};	// currently, max of 4
 	bool        negate[4] = {};
 	int         width = 0;
@@ -1056,11 +1058,10 @@ static void
 next_line (rua_loc_t *loc, yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	loc->first_line = loc->last_line;
-	loc->first_column = loc->last_column;
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
 	loc->last_column = 1;
 	loc->last_line++;
-	pr.source_line++;
 	if (!extra->recording && options.preprocess_output) {
 		puts ("");
 	}
@@ -1069,8 +1070,8 @@ next_line (rua_loc_t *loc, yyscan_t scanner)
 static void
 update_loc (rua_loc_t *loc, size_t textlen)
 {
-	loc->first_line = loc->last_line;
-	loc->first_column = loc->last_column;
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
 	// \n handling rules will take care of the column and line
 	loc->last_column += textlen;
 }
@@ -1348,6 +1349,8 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 	if (-token == rua_ignore) {
 		return YYPUSH_MORE;
 	}
+
+	pr.loc = *loc;
 
 	rua_macro_t *macro = 0;
 	if (extra->pending_macro) {
@@ -1630,7 +1633,8 @@ rescan:
 		*tok = expr_token (&e);
 		token = tok->token;
 	} else {
-		token = yylex (tok, &tok->location, scanner);
+		token = yylex (tok, &extra->location, scanner);
+		tok->location = extra->location;
 	}
 	return token;
 }
@@ -1646,15 +1650,16 @@ qc_yyparse (FILE *in)
 		.include_stack = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_new (),
 		.macro_tab = cpp_macros ? cpp_macros : new_symtab (0, stab_global),
+		.location = { 1, 1, 1, 1, pr.loc.file },
 	};
-	yyscan_t    scanner;
 
+	yyscan_t    scanner;
 	yylex_init_extra (&extra, &scanner);
 	yylex_init (&extra.subscanner);
 	yyset_in (in, scanner);
 
 	int         status;
-	rua_tok_t   tok = { .location = { 1, 1, 1, 1, pr.source_file }, };
+	rua_tok_t   tok = {};
 	do {
 		int token = next_token (&tok, scanner);
 		if (!token && extra.cond_stack.size) {
@@ -1665,6 +1670,7 @@ qc_yyparse (FILE *in)
 		if (!token && extra.include_stack.size) {
 			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
 			auto incl = DARRAY_REMOVE (&extra.include_stack);
+			extra.location = incl.location;
 			struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
 			set_line_file (-1, 0, 2);
@@ -1961,14 +1967,14 @@ dump_state_stack (void *scanner)
 			extra ? extra->recording ? "true" : "false" : "n/a",
 			extra ? extra->expand ? "true" : "false" : "n/a",
 			extra ? extra->params ? "true" : "false" : "n/a",
-			pr.strings ? GETSTR(pr.source_file) : "", pr.source_line);
+			pr.strings ? GETSTR(pr.loc.file) : "", pr.loc.line);
 }
 
 static void
 dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
 {
 	printf ("start: %2d [%3d %3d] [%3d %3d] '%s'\n", state,
-			loc->first_line, loc->first_column,
+			loc->line, loc->column,
 			loc->last_line, loc->last_column,
 			quote_string (tok->text));
 }
@@ -1982,7 +1988,7 @@ rua_start_if (bool expand, void *scanner)
 		.saw_else = false,
 		.own_state = true,
 		.enabled = false,
-		.line = pr.source_line,
+		.line = pr.loc.line,
 	};
 	if (extra->cond_stack.size) {
 		auto c = extra->cond_stack.a[extra->cond_stack.size - 1];
@@ -2019,7 +2025,7 @@ rua_if (bool pass, void *scanner)
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = true;
 	}
-	//printf ("#if on %s:%d %d\n", GETSTR(pr.source_file),
+	//printf ("#if on %s:%d %d\n", GETSTR(pr.loc.file),
 	//		cond->line, extra->suppressed);
 	// put PREEXPR on the stack for EOD to pop
 	//yy_push_state (PREEXPR, scanner);
@@ -2047,9 +2053,9 @@ rua_else (bool pass, const char *tok, void *scanner)
 	cond->enabled = pass;
 	cond->saw_true |= pass;
 	cond->saw_else = strcmp (tok, "else") == 0;
-	//printf ("#else on %s:%d for %d %d\n", GETSTR(pr.source_file),
-	//		pr.source_line, cond->line, extra->suppressed);
-	cond->line = pr.source_line;
+	//printf ("#else on %s:%d for %d %d\n", GETSTR(pr.loc.file),
+	//		pr.loc.line, cond->line, extra->suppressed);
+	cond->line = pr.loc.line;
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = true;
 	}
@@ -2067,8 +2073,8 @@ rua_endif (void *scanner)
 	}
 	//yy_pop_state (scanner);	// remove DIRECTIVE state
 	auto cond = DARRAY_REMOVE (&extra->cond_stack);
-	//printf ("#endif on %s:%d for %d %d\n", GETSTR(pr.source_file),
-	//		pr.source_line, cond.line, extra->suppressed);
+	//printf ("#endif on %s:%d for %d %d\n", GETSTR(pr.loc.file),
+	//		pr.loc.line, cond.line, extra->suppressed);
 	if (cond.own_state && !cond.enabled) {
 		extra->suppressed = false;
 		//yy_pop_state (scanner);
@@ -2120,9 +2126,18 @@ rua_include_file (const char *name, void *scanner)
 	DARRAY_APPEND (&extra->include_stack, ((rua_incl_t) {
 		.buffer = YY_CURRENT_BUFFER,
 		.cond_stack = extra->cond_stack,
+		.location = extra->location,
 	}));
 	extra->cond_stack = (rua_cond_stack_t) DARRAY_STATIC_INIT (8);
-	yy_switch_to_buffer (yy_create_buffer (yyin, YY_BUF_SIZE, scanner), scanner);
+	auto buffer = yy_create_buffer (yyin, YY_BUF_SIZE, scanner);
+	yy_switch_to_buffer (buffer, scanner);
+	extra->location = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+		.file = ReuseString (found),
+	};
 }
 
 void
@@ -2183,9 +2198,30 @@ rua_parse_define (const char *def)
 }
 
 void
+rua_line_info (const expr_t *line_expr, const char *file,
+			   const expr_t *flags_expr, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+
+	int line = expr_long (line_expr);
+	int flags = flags_expr ? expr_long (flags_expr) : 0;
+
+	if (file) {
+		if (*file != '"') {
+			error (0, "\"%s\" is not a valid filename", file);
+			return;
+		}
+		file = make_string (file, 0);
+	}
+	set_line_file (line, file, flags);
+	extra->location = pr.loc;
+}
+
+void
 rua_macro_file (rua_macro_t *macro, void *scanner)
 {
-	int         file = pr.source_file;
+	auto extra = qc_yyget_extra (scanner);
+	int         file = extra->location.file;
 	if (macro->tokens && macro->tokens->location.file == file) {
 		return;
 	}
@@ -2198,7 +2234,7 @@ rua_macro_file (rua_macro_t *macro, void *scanner)
 	const char *file_str = save_string (va (0, "\"%s\"",
 											quote_string (GETSTR (file))));
 	*expr = (rua_expr_t) {
-		.location = { .file = file },
+		.location = extra->location,
 		.textlen = strlen (file_str),
 		.token = -rua_string,
 		.text = file_str,
@@ -2210,9 +2246,10 @@ rua_macro_file (rua_macro_t *macro, void *scanner)
 void
 rua_macro_line (rua_macro_t *macro, void *scanner)
 {
-	int         line = pr.source_line;
+	auto extra = qc_yyget_extra (scanner);
+	int         line = extra->location.line;
 
-	if (macro->tokens && macro->tokens->location.first_line == line) {
+	if (macro->tokens && macro->tokens->location.line == line) {
 		return;
 	}
 	macro->tokens = 0;
@@ -2223,7 +2260,7 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 	macro->num_tokens++;
 	const char *line_str = save_string (va (0, "%d", line));
 	*expr = (rua_expr_t) {
-		.location = { .first_line = line },
+		.location = extra->location,
 		.textlen = strlen (line_str),
 		.token = -rua_number,
 		.text = line_str,

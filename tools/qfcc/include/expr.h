@@ -33,6 +33,8 @@
 
 #include "QF/progs/pr_comp.h"
 
+#include "rua-lang.h"
+
 typedef struct type_s type_t;
 typedef struct expr_s expr_t;
 typedef struct algebra_s algebra_t;
@@ -311,9 +313,8 @@ typedef struct {
 
 typedef struct expr_s {
 	expr_t     *next;
+	rua_loc_t   loc;			///< source location of expression
 	expr_type   type;			///< the type of the result of this expression
-	int         line;			///< source line that generated this expression
-	pr_string_t file;			///< source file that generated this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    paren:1;		///< the expression is enclosed in ()
 	unsigned    rvalue:1;		///< the expression is on the right side of =

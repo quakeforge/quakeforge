@@ -274,12 +274,12 @@ get_function (const char *name, const type_t *type, int overload, int create)
 	func = Hash_Find (function_map, name);
 	if (func) {
 		if (!overload && !func->overloaded) {
-			expr_t     *e = new_expr ();
-			e->line = func->line;
-			e->file = func->file;
+			expr_t      e = {
+				.loc = func->loc,
+			};
 			warning (0, "creating overloaded function %s without @overload",
 					 full_name);
-			warning (e, "(previous function is %s)", func->full_name);
+			warning (&e, "(previous function is %s)", func->full_name);
 		}
 		overload = 1;
 	}
@@ -289,8 +289,7 @@ get_function (const char *name, const type_t *type, int overload, int create)
 	func->full_name = full_name;
 	func->type = type;
 	func->overloaded = overload;
-	func->file = pr.source_file;
-	func->line = pr.source_line;
+	func->loc = pr.loc;
 
 	Hash_Add (overloaded_functions, func);
 	Hash_Add (function_map, func);
@@ -631,7 +630,7 @@ new_function (const char *name, const char *nice_name)
 
 	ALLOC (1024, function_t, functions, f);
 	f->s_name = ReuseString (name);
-	f->s_file = pr.source_file;
+	f->s_file = pr.loc.file;
 	if (!(f->name = nice_name))
 		f->name = name;
 	return f;
@@ -699,12 +698,11 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		add_function (sym->s.func);
 		reloc_def_func (sym->s.func, sym->s.func->def);
 
-		sym->s.func->def->file = pr.source_file;
-		sym->s.func->def->line = pr.source_line;
+		sym->s.func->def->loc = pr.loc;
 	}
 	sym->s.func->code = pr.code->size;
 
-	sym->s.func->s_file = pr.source_file;
+	sym->s.func->s_file = pr.loc.file;
 	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
 		sym->s.func->line_info = lineno - pr.linenos;
@@ -768,17 +766,14 @@ build_code_function (symbol_t *fsym, const expr_t *state_expr,
 		 */
 		expr_t     *e;
 		expr_t     *entry = new_block_expr (0);
-		entry->file = func->def->file;
-		entry->line = func->def->line;
+		entry->loc = func->def->loc;
 
 		e = new_adjstk_expr (0, 0);
-		e->file = func->def->file;
-		e->line = func->def->line;
+		e->loc = entry->loc;
 		append_expr (entry, e);
 
 		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
-		e->file = func->def->file;
-		e->line = func->def->line;
+		e->loc = entry->loc;
 		append_expr (entry, e);
 
 		append_expr (entry, statements);
@@ -905,7 +900,7 @@ emit_function (function_t *f, expr_t *e)
 	if (pr.error_count)
 		return;
 	f->code = pr.code->size;
-	lineno_base = f->def->line;
+	lineno_base = f->def->loc.line;
 	f->sblock = make_statements (e);
 	if (options.code.optimize) {
 		flow_data_flow (f);

@@ -131,8 +131,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	def->name = name ? save_string (name) : 0;
 	def->type = type;
 
-	def->file = pr.source_file;
-	def->line = pr.source_line;
+	def->loc = pr.loc;
 
 	set_storage_bits (def, storage);
 
@@ -196,8 +195,7 @@ cover_alias_def (def_t *def, type_t *type, int offset)
 	alias->offset_reloc = 1;
 	alias->type = type;
 	alias->alias = def;
-	alias->line = pr.source_line;
-	alias->file = pr.source_file;
+	alias->loc = pr.loc;
 	alias->next = def->alias_defs;
 	alias->reg = def->reg;
 	def->alias_defs = alias;
@@ -208,9 +206,9 @@ def_t *
 alias_def (def_t *def, type_t *type, int offset)
 {
 	if (def->alias) {
-		expr_t      e;
-		e.file = def->file;
-		e.line = def->line;
+		expr_t      e = {
+			.loc = def->loc,
+		};
 		internal_error (&e, "aliasing an alias def");
 	}
 	if (type_size (type) > type_size (def->type))
@@ -246,8 +244,7 @@ temp_def (type_t *type)
 	}
 	temp->return_addr = __builtin_return_address (0);
 	temp->type = type;
-	temp->file = pr.source_file;
-	temp->line = pr.source_line;
+	temp->loc = pr.loc;
 	set_storage_bits (temp, sc_local);
 	temp->space = space;
 	temp->reg = current_func->temp_reg;

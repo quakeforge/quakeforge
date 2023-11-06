@@ -401,10 +401,8 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		return switch_block->test;
 	}
 
-	int         saved_line = pr.source_line;
-	pr_string_t saved_file = pr.source_file;
-	pr.source_line = switch_block->test->line;
-	pr.source_file = switch_block->test->file;
+	auto        saved_loc = pr.loc;
+	pr.loc = switch_block->test->loc;
 
 	case_label_t **labels, **l;
 	case_label_t _default_label;
@@ -457,8 +455,7 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 			op = QC_NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
-	pr.source_line = saved_line;
-	pr.source_file = saved_file;
+	pr.loc = saved_loc;
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;

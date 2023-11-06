@@ -33,7 +33,7 @@
 
 #include "QF/progs/pr_type.h"
 
-#include "def.h"
+#include "specifier.h"
 
 typedef struct ty_func_s {
 	struct type_s *type;
@@ -91,30 +91,6 @@ typedef struct type_s {
 	const char *encoding;	///< Objective-QC encoding
 	struct def_s *type_def;	///< offset of qfo encodoing
 } type_t;
-
-typedef struct specifier_s {
-	type_t     *type;
-	struct param_s *params;
-	struct symbol_s *sym;
-	storage_class_t storage;
-	union {
-		struct {
-			unsigned    multi_type:1;
-			unsigned    multi_store:1;
-			unsigned    is_signed:1;
-			unsigned    is_unsigned:1;
-			unsigned    is_short:1;
-			unsigned    is_long:1;
-			unsigned    is_typedef:1;
-			unsigned    is_overload:1;
-			unsigned    is_function:1;//FIXME do proper void(*)() -> ev_func
-			unsigned    nosave:1;
-			unsigned    no_va_list:1;
-			unsigned    void_return:1;
-		};
-		unsigned    spec_bits;
-	};
-} specifier_t;
 
 #define EV_TYPE(type) extern type_t type_##type;
 #include "QF/progs/pr_type_names.h"

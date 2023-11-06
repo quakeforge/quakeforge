@@ -28,6 +28,7 @@ EXTRA_DIST += \
 	tools/qfcc/include/qfcc.h \
 	tools/qfcc/include/qfprogs.h \
 	tools/qfcc/include/reloc.h \
+	tools/qfcc/include/specifier.h \
 	tools/qfcc/include/shared.h \
 	tools/qfcc/include/statements.h \
 	tools/qfcc/include/strpool.h \
