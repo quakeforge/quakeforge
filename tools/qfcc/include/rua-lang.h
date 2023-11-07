@@ -112,6 +112,8 @@ void rua_line_info (const expr_t *line_expr, const char *text,
 
 void rua_macro_file (rua_macro_t *macro, void *scanner);
 void rua_macro_line (rua_macro_t *macro, void *scanner);
+void rua_macro_va_opt (rua_macro_t *macro, void *scanner);
+void rua_macro_va_args (rua_macro_t *macro, void *scanner);
 
 #include "tools/qfcc/source/pre-parse.h"
 

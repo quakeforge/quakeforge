@@ -1127,7 +1127,7 @@ join_tokens (rua_expr_t *out, const rua_expr_t *p1, const rua_expr_t *p2,
 {
 	auto str = va (0, "%s%s", p1 ? p1->text : "", p2 ? p2->text : "");
 	yy_scan_string (str, extra->subscanner);
-	rua_tok_t   tok = {};
+	rua_tok_t   tok = { .text = str, };
 	if (p1) {
 		tok.location = p1->location;
 	}
@@ -1364,7 +1364,8 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			rua_end_args (scanner);
 
 			macro = extra->pending_macro;
-			extra->pending_macro = 0;
+			extra->pending_macro = macro->next;
+			macro->next = 0;
 			if (status != 0) {
 				error (0, "unterminated argument list invoking macro \"%s\"",
 					   macro->name);
@@ -1461,11 +1462,7 @@ static rua_expr_t
 next_macro_token (rua_extra_t *extra)
 {
 	auto e = *extra->macro->cursor;
-	if (!(extra->macro->cursor = e.next)) {
-		auto macro = extra->macro;
-		extra->macro = extra->macro->next;
-		macro->next = 0;
-	}
+	extra->macro->cursor = e.next;
 	return e;
 }
 
@@ -1525,6 +1522,42 @@ copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 	}
 }
 
+static void
+collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	m->next = extra->pending_macro;
+	extra->pending_macro = m;
+	auto t = macro->cursor;
+	for (; t && t->token == -rua_space; t = t->next) continue;
+	// to be in an arg, a function-like macro must either have
+	// both open and close parans, or none
+	if (t && t->token == '(') {
+		rua_reset_args (m);
+		int paren = 1;
+		auto tk = expr_token (t);
+		auto a = rua_macro_arg (&tk, scanner);
+		for (t = t->next; t; t = t->next) {
+			if (t->token == '(') {
+				paren++;
+			} else if (t->token == ')') {
+				if (!(--paren)) {
+					t = t->next;
+					break;
+				}
+			}
+			tk = expr_token (t);
+			if (t->token == ',' && paren == 1) {
+				a = rua_macro_arg (&tk, scanner);
+			} else {
+				rua_macro_append (a, &tk, scanner);
+			}
+		}
+	}
+	macro->cursor = t;
+	extra->pending_macro = m->next;
+}
+
 static int
 next_token (rua_tok_t *tok, yyscan_t scanner)
 {
@@ -1542,10 +1575,20 @@ rescan:
 		auto e = next_macro_token (extra);
 		token = e.token;
 		if (token == '#') {
-			sym = symtab_lookup (macro->params, e.next->text);
-			auto arg = macro->args[sym->s.offset];
+			auto n = e.next;
+			rua_macro_t *arg;
+			macro->cursor = macro->cursor->next;	// consume arg
+			if (strcmp (n->text, "__VA_OPT__") == 0) {
+				sym = symtab_lookup (extra->macro_tab, n->text);
+				auto m = sym->s.macro;
+				collect_args (m, macro, scanner);
+				m->next = 0;
+				arg = m->args[0];
+			} else {
+				sym = symtab_lookup (macro->params, n->text);
+				arg = macro->args[sym->s.offset];
+			}
 			stringize_arg (&e, arg, extra);
-			next_macro_token (extra);	// consume arg
 		} else if (e.next && e.next->token == PRE_CONCAT) {
 			rua_macro_t *m = malloc (sizeof (*m));
 			*m = (rua_macro_t) {
@@ -1564,7 +1607,9 @@ rescan:
 					cat.text = " ";
 				}
 				copy_arg_token (m, sf, sl, &e, macro);
-				copy_token (m, &cat);
+				if (cat.token) {
+					copy_token (m, &cat);
+				}
 				next_macro_token (extra);	// consume ##
 				e = next_macro_token (extra);
 				sf = sl;
@@ -1596,36 +1641,7 @@ rescan:
 				goto rescan;
 			}
 
-			m->next = extra->pending_macro;
-			extra->pending_macro = m;
-			auto t = macro->cursor;
-			for (; t && t->token == -rua_space; t = t->next) continue;
-			// to be in an arg, a function-like macro must either have
-			// both open and close parans, or none
-			if (t && t->token == '(') {
-				rua_reset_args (m);
-				int paren = 1;
-				auto tk = expr_token (t);
-				auto a = rua_macro_arg (&tk, scanner);
-				for (t = t->next; t; t = t->next) {
-					if (t->token == '(') {
-						paren++;
-					} else if (t->token == ')') {
-						if (!(--paren)) {
-							t = t->next;
-							break;
-						}
-					}
-					tk = expr_token (t);
-					if (t->token == ',' && paren == 1) {
-						a = rua_macro_arg (&tk, scanner);
-					} else {
-						rua_macro_append (a, &tk, scanner);
-					}
-				}
-			}
-			macro->cursor = t;
-			extra->pending_macro = m->next;
+			collect_args (m, macro, scanner);
 			m->next = extra->macro;
 			extra->macro = m;
 			goto rescan;
@@ -1636,6 +1652,7 @@ rescan:
 		token = yylex (tok, &extra->location, scanner);
 		tok->location = extra->location;
 	}
+	tok->token = token;
 	return token;
 }
 
@@ -1826,9 +1843,48 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 			if (t->token == '#'
 				&& (!t->next
 					|| t->next->token != -rua_id
-					|| !symtab_lookup (macro->params, t->next->text))) {
+					|| (!symtab_lookup (macro->params, t->next->text)
+						&& strcmp (t->next->text, "__VA_OPT__") != 0))) {
 				error (0, "'#' is not followed by a macro parameter");
 				return;
+			}
+			if (t->token == -rua_id && strcmp (t->text, "__VA_OPT__") == 0) {
+				auto u = t->next;
+				for (; u && u->token == -rua_space; u = u->next) continue;
+				if (!u) {
+unterminated_va_opt:
+					error (0, "unterminated __VA_OPT__");
+					return;
+				} else if (u->token != '(') {
+					error (0, "__VA_OPT__ must be followed by an open "
+						   "parenthesis");
+					return;
+				}
+				if (u->next && u->next->token == PRE_CONCAT) {
+hashhash_error:
+					error (0, "'##' cannot appear at either end of __VA_OPT__");
+					return;
+				}
+				int paren = 1;
+				for (u = u->next; u; u = u->next) {
+					if (u->token == '(') {
+						paren++;
+					} else if (u->token == ')') {
+						if (!(--paren)) {
+							break;
+						}
+					} else if (u->token == -rua_id
+							   && strcmp (u->text, "__VA_OPT__") == 0) {
+						error (0, "__VA_OPT__ may not appear in a __VA_OPT__");
+						return;
+					} else if (u->token == PRE_CONCAT && paren == 1
+							   && u->next && u->next->token == ')') {
+						goto hashhash_error;
+					}
+				}
+				if (!u) {
+					goto unterminated_va_opt;
+				}
 			}
 		}
 	}
@@ -1973,10 +2029,10 @@ dump_state_stack (void *scanner)
 static void
 dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
 {
-	printf ("start: %2d [%3d %3d] [%3d %3d] '%s'\n", state,
+	printf ("start: %2d [%3d %3d] [%3d %3d] %d '%s'\n", state,
 			loc->line, loc->column,
 			loc->last_line, loc->last_column,
-			quote_string (tok->text));
+			tok->token, quote_string (tok->text));
 }
 
 void
@@ -2267,4 +2323,47 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 	};
 	*macro->tail = expr;
 	macro->tail = &expr->next;
+}
+
+void
+rua_macro_va_opt (rua_macro_t *macro, void *scanner)
+{
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+
+	auto extra = qc_yyget_extra (scanner);
+	auto cur = extra->macro;
+	if (!cur || !cur->params || cur->num_params >= 0) {
+		warning (0, "__VA_OPT__ can appear only in the expansion of a "
+				 "variadic macro");
+		return;
+	}
+	auto arg = cur->args[~cur->num_params];
+	if (arg->tokens) {
+		macro->tokens = macro->args[0]->tokens;
+		macro->tail = macro->args[0]->tail;
+	}
+}
+
+void
+rua_macro_va_args (rua_macro_t *macro, void *scanner)
+{
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+
+	auto extra = qc_yyget_extra (scanner);
+	auto cur = extra->macro;
+	if (cur && strcmp (cur->name, "__VA_OPT__") == 0) {
+		cur = cur->next;
+	}
+	if (!cur || !cur->params || cur->num_params >= 0) {
+		warning (0, "__VA_ARGS__ can appear only in the expansion of a "
+				 "variadic macro");
+		return;
+	}
+	auto arg = cur->args[~cur->num_params];
+	if (arg->tokens) {
+		macro->tokens = arg->tokens;
+		macro->tail = arg->tail;
+	}
 }
