@@ -28,25 +28,26 @@
 #ifndef __rua_lang_h
 #define __rua_lang_h
 
+#include "QF/dstring.h"
+
 typedef struct rua_loc_s {
 	int         line, column;
 	int         last_line, last_column;
 	int         file;
 } rua_loc_t;
 
-#include "tools/qfcc/source/qc-parse.h"
-
 typedef struct expr_s expr_t;
 typedef struct symtab_s symtab_t;
 
-typedef struct rua_expr_s {
-	struct rua_expr_s *next;
+typedef struct rua_tok_s {
+	struct rua_tok_s *next;
 	rua_loc_t   location;
 	int         textlen;
 	int         token;
-	int         id;			// arg expansion id (1...)
 	const char *text;
-} rua_expr_t;
+} rua_tok_t;
+
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct rua_macro_s rua_macro_t;
 typedef void (*rua_macro_f) (rua_macro_t *macro, void *scanner);
@@ -55,41 +56,34 @@ typedef struct rua_macro_s {
 	rua_macro_t *next;
 	const char *name;
 	symtab_t   *params;
-	rua_expr_t *tokens;
-	rua_expr_t **tail;
+	rua_tok_t  *tokens;
+	rua_tok_t **tail;
 	int         num_tokens;
 	int         num_params;
-	rua_expr_t *cursor;
+	rua_tok_t  *cursor;
 	rua_macro_f update;
 
 	int         num_args;
 	rua_macro_t **args;
 } rua_macro_t;
 
-typedef struct rua_tok_s {
-	rua_loc_t   location;
-	int         textlen;
-	const char *text;
+typedef struct rua_val_s {
+	rua_tok_t   t;
 	union {
-		struct {
-			void       *pointer;	// mirrors pointer in QC_YYSTYPE
-			char        str_text[8];// if len < 8 and spec not used
-			int         token;		// when recording macros
-		};
-		QC_YYSTYPE      value;
-		struct dstring_s *dstr;
-		rua_macro_t    *macro;
+		const expr_t *expr;
+		dstring_t  *dstr;
+		rua_macro_t *macro;
 	};
-} rua_tok_t;
+} rua_val_t;
 
 rua_macro_t *rua_start_macro (const char *name, bool params, void *scanner);
-rua_macro_t *rua_macro_param (rua_macro_t *macro, rua_tok_t *token,
+rua_macro_t *rua_macro_param (rua_macro_t *macro, const rua_tok_t *token,
 							  void *scanner);
 rua_macro_t *rua_end_params (rua_macro_t *macro, void *scanner);
-rua_macro_t *rua_macro_append (rua_macro_t *macro, rua_tok_t *token,
+rua_macro_t *rua_macro_append (rua_macro_t *macro, const rua_tok_t *token,
 							   void *scanner);
 void rua_macro_finish (rua_macro_t *macro, void *scanner);
-rua_macro_t *rua_macro_arg (rua_tok_t *token, void *scanner);
+rua_macro_t *rua_macro_arg (const rua_tok_t *token, void *scanner);
 void rua_start_pragma (void *scanner);
 void rua_start_text (void *scanner);
 void rua_start_expr (void *scanner);

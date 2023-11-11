@@ -87,7 +87,7 @@ parse_error (void *scanner)
 %code requires {
 #include "tools/qfcc/include/rua-lang.h"
 }
-%define api.value.type {rua_tok_t}
+%define api.value.type {rua_val_t}
 %define api.location.type {rua_loc_t}
 
 %left LOW
@@ -115,29 +115,30 @@ parse_error (void *scanner)
 %left           '+' '-'
 %left           '*' '/' '%' MOD SCALE GEOMETRIC
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
-%right  <op>    SIZEOF UNARY INCOP REVERSE STAR DUAL
+%right          SIZEOF UNARY INCOP REVERSE STAR DUAL
 %left           HYPERUNARY
 %left           '.' '(' '['
 
-%token <value.expr> VALUE STRING
-%token          TOKEN
+%token <expr>   VALUE STRING
+%token <t>      TOKEN
 // end of tokens comment between qc and preprocessor
 
-%token <text>   QSTRING HSTRING
+%token <t.text> QSTRING HSTRING
 
 %token          INCLUDE EMBED
 %token          DEFINE UNDEF
-%token <text>   TEXT ID IDp
+%token <t.text> TEXT ID IDp
 %token          ERROR WARNING NOTICE
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
 %token          CONCAT ARGS
 
-%type <text>    string
+%type <t.text>  string
 %type <macro>   params opt_params body arg arg_list arg_clist
 %type <dstr>    text text_text
-%type <value.expr>  unary_expr expr id defined defined_id line_expr
+%type <expr>    unary_expr expr id defined defined_id line_expr
+%type <t>		body_token
 
 %{
 #define TEXPR(c,t,f) new_long_expr (expr_long (c) ? expr_long (t) \
@@ -170,7 +171,7 @@ start
 	: directive_list
 	| ARGS
 		<macro>{
-			$$ = rua_macro_arg (yyvsp, scanner);
+			$$ = rua_macro_arg (&$<t>1, scanner);
 		}
 	  args ')' { YYACCEPT; }
 	;
@@ -248,10 +249,15 @@ text_text
 	;
 
 body: /* empty */		{ $$ = $<macro>0; }
-	| body body_token	{ $$ = rua_macro_append ($1, yyvsp, scanner); }
+	| body body_token	{ $$ = rua_macro_append ($1, &$2, scanner); }
 	;
 
-body_token : TOKEN | ',' | '(' | ')' ;
+body_token
+	: TOKEN
+	| ','				{ $$ = $<t>1; }
+	| '('				{ $$ = $<t>1; }
+	| ')'				{ $$ = $<t>1; }
+	;
 
 incexp
 	: { rua_start_include (scanner); }
@@ -277,14 +283,14 @@ opt_params
 	;
 
 params
-	: TOKEN				{ $$ = rua_macro_param ($<macro>0, yyvsp, scanner); }
-	| params ',' TOKEN	{ $$ = rua_macro_param ($1, yyvsp, scanner); }
+	: TOKEN				{ $$ = rua_macro_param ($<macro>0, &$1, scanner); }
+	| params ',' TOKEN	{ $$ = rua_macro_param ($1, &$3, scanner); }
 	;
 
 args: arg_list
 	| args ','
 		<macro>{
-			$$ = rua_macro_arg (yyvsp, scanner);
+			$$ = rua_macro_arg (&$<t>2, scanner);
 		}
 	  arg_list
 	;
@@ -294,18 +300,18 @@ arg_list
 	| arg_list arg	{ $$ = $2; }
 	;
 
-arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
 	  arg_clist	<macro>	{ $$ = $<macro>2; }
-	  ')'			{ $$ = rua_macro_append ($<macro>4, yyvsp, scanner); }
-	| TOKEN			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
-	| VALUE			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
-	| ID			{ $$ = rua_macro_append ($<macro>0, yyvsp, scanner); }
+	  ')'			{ $$ = rua_macro_append ($<macro>4, &$<t>5, scanner); }
+	| TOKEN			{ $$ = rua_macro_append ($<macro>0, &$1, scanner); }
+	| VALUE			{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
+	| ID			{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
 	;
 
 arg_clist
 	: /* emtpy */	{ $$ = $<macro>0; }
 	| arg_clist arg	{ $$ = $2; }
-	| arg_clist ','	{ $$ = rua_macro_append ($1, yyvsp, scanner); }
+	| arg_clist ','	{ $$ = rua_macro_append ($1, &$<t>2, scanner); }
 	;
 
 id  : ID					{ $$ = new_long_expr (0, false); }
@@ -324,8 +330,8 @@ defined_id
 
 unary_expr
 	: id
-	| VALUE				{ $$ = get_long ($1, $<text>1, 1); }
-	| QSTRING			{ $$ = get_long (0, $<text>1, 1); }
+	| VALUE				{ $$ = get_long ($1, $<t.text>1, 1); }
+	| QSTRING			{ $$ = get_long (0, $<t.text>1, 1); }
 	| '(' expr ')'		{ $$ = $2; }
 	| DEFINED			{ rua_expand_off (scanner); }
 	  defined			{ rua_expand_on (scanner); $$ = $3; }
@@ -363,7 +369,7 @@ line_expr
 	| line_expr VALUE
 		{
 			pr_long_t   flags = expr_long ($1);
-			pr_long_t   bit = expr_long (get_long ($2, $<text>2, 0)) - 1;
+			pr_long_t   bit = expr_long (get_long ($2, $<t.text>2, 0)) - 1;
 			if (bit >= 0) {
 				flags |= 1 << bit;
 				$1 = new_long_expr (flags, false);

@@ -124,6 +124,7 @@ typedef struct rua_extra_s {
 		rua_macro_t *macro;			// macro being expanded
 		yyscan_t    subscanner;
 		rua_loc_t   location;
+		char        str_text[8];	// EPHEMERAL! for short token strings
 	} rua_extra_t;
 #define YY_EXTRA_TYPE rua_extra_t *
 
@@ -139,10 +140,10 @@ FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int directive (const char *token, yyscan_t scanner);
-static int keyword_or_id (YYSTYPE *lval, const char *token);
+static int keyword_or_id (QC_YYSTYPE *lval, const char *token);
 static void update_loc (rua_loc_t *loc, size_t textlen);
 static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
-					   int state);
+					   int state, rua_extra_t *extra);
 static void next_line (rua_loc_t *loc, yyscan_t scanner);
 static void dump_state_stack (void *scanner);
 static void dump_token (rua_tok_t *tok, rua_loc_t *loc, int state);
@@ -161,13 +162,14 @@ typedef enum {
 	rua_ellipsis,
 	rua_asx,
 	rua_incop,
+	rua_grab,
 
 	rua_num_term,
 } rua_term;
 
 #define YY_USER_ACTION \
 	update_loc (yylloc, yyleng); \
-	save_text (yylval, yytext, yyleng, yystart()); \
+	save_text (yylval, yytext, yyleng, yystart(), extra); \
 	if (0) { dump_debug (yy_act, yytext, yystart()); } \
 	if (0) { dump_token (yylval, yylloc, yystart ()); } \
 	if (0) { dump_state_stack(yyscanner); }
@@ -209,7 +211,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 						grab_frame = GRAB_FRAME;
 						grab_other = GRAB_OTHER;
 						grab_write = GRAB_WRITE;
-						yylval->pointer = 0;	// ensure pointer vals are null
 
 <COMMENT>"/*"			{ warning (0, "nested /* in comment"); yymore();}
 <COMMENT>\*+"/"			{ yy_pop_state (yyscanner); return -rua_space; }
@@ -325,15 +326,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 "++"					{ return -rua_incop; }
 "--"					{ return -rua_incop; }
 
-"$"{s}*{FRAMEID}		{
-							int ret = do_grab (yytext);
-							if (ret >= 0) {
-								yylval->value.expr = new_int_expr (ret, false);
-								return QC_VALUE;
-							} else {
-								yy_push_state (-ret, yyscanner);
-							}
-						}
+"$"{s}*{FRAMEID}		{ return -rua_grab; }
 
 <GRAB_FRAME>{FRAMEID}	{ add_frame_macro (yytext); }
 <GRAB_OTHER>[^\r\n]*	/* skip */
@@ -576,31 +569,28 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
+process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
 {
-	if (lval->text == lval->str_text) {
-		lval->text = save_string (lval->str_text);
-	}
 	if (keyword->value == QC_STRUCT) {
-		lval->value.op = token[0];
+		lval->op = token[0];
 	} else if (keyword->value == QC_OBJECT_NAME) {
 		symbol_t   *sym;
 
 		sym = symtab_lookup (current_symtab, token);
-		lval->value.symbol = sym;
+		lval->symbol = sym;
 		// the global id symbol is always just a name so attempts to redefine
 		// it globally can be caught and treated as an error, but it needs to
 		// be redefinable when in an enclosing scope.
 		if (sym->sy_type == sy_name) {
 			// this is the global id (object)
-			lval->value.spec = (specifier_t) {
+			lval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
 			return QC_OBJECT_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
-			lval->value.spec = (specifier_t) {
+			lval->spec = (specifier_t) {
 				.type = sym->type,
 				.sym = sym,
 			};
@@ -609,13 +599,13 @@ process_keyword (YYSTYPE *lval, keyword_t *keyword, const char *token)
 		// id has been redelcared as a variable (hopefully)
 		return QC_NAME;
 	} else {
-		lval->value.spec = keyword->spec;
+		lval->spec = keyword->spec;
 	}
 	return keyword->value;
 }
 
 static int
-keyword_or_id (YYSTYPE *lval, const char *token)
+keyword_or_id (QC_YYSTYPE *lval, const char *token)
 {
 	static hashtab_t *keyword_tab;
 	static hashtab_t *qf_keyword_tab;
@@ -677,9 +667,9 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 	sym = symtab_lookup (current_symtab, token);
 	if (!sym)
 		sym = new_symbol (token);
-	lval->value.symbol = sym;
+	lval->symbol = sym;
 	if (sym->sy_type == sy_type) {
-		lval->value.spec = (specifier_t) {
+		lval->spec = (specifier_t) {
 			.type = sym->type,
 			.sym = sym,
 		};
@@ -765,8 +755,8 @@ parse_suffix (const char *suffix, bool fp)
 	return expl;
 }
 
-static int
-parse_number (rua_tok_t *tok, yyscan_t scanner)
+static const expr_t *
+parse_number (const rua_tok_t *tok, yyscan_t scanner)
 {
 	bool binary = false;
 	const char *type = "integer";
@@ -793,7 +783,7 @@ parse_number (rua_tok_t *tok, yyscan_t scanner)
 			case '\'': case '_':
 				if (*src == 'b' || *src == 'B' || *src == 'x' || *src == 'X') {
 					error (0, "digit separator outside digit sequence");
-					return -rua_error;
+					return 0;
 				}
 				break;
 		}
@@ -835,35 +825,34 @@ parse_number (rua_tok_t *tok, yyscan_t scanner)
 	if (expl < 0) {
 		error (0, "invalid suffix \"%s\" on %s constant", endptr,
 			   fp ? "floating" : type);
-		return -rua_error;
+		return 0;
 	}
 
 	if (fp) {
 		if (expl == suff_float) {
-			tok->value.expr = new_float_expr (fvalue);
+			return new_float_expr (fvalue);
 		} else {
 			if (expl == suff_long_double) {
 				warning (0, "long double treated as double");
 				expl = suff_double;
 			}
-			tok->value.expr = new_double_expr (fvalue, expl == suff_implicit);
+			return new_double_expr (fvalue, expl == suff_implicit);
 		}
 	} else {
 		if (expl == suff_unsigned) {
-			tok->value.expr = new_uint_expr (lvalue);
+			return new_uint_expr (lvalue);
 		} else if (expl == suff_long || expl == suff_implicit) {
-			tok->value.expr = new_long_expr (lvalue, expl == suff_implicit);
+			return new_long_expr (lvalue, expl == suff_implicit);
 		} else if (expl == suff_unsigned_long) {
-			tok->value.expr = new_ulong_expr (lvalue);
+			return new_ulong_expr (lvalue);
 		} else if (expl == suff_float) {
-			tok->value.expr = new_float_expr (lvalue);
+			return new_float_expr (lvalue);
 		} else if (expl == suff_double) {
-			tok->value.expr = new_double_expr (lvalue, false);
+			return new_double_expr (lvalue, false);
 		} else {
 			internal_error (0, "invalid suffix enum: %d", expl);
 		}
 	}
-	return QC_VALUE;
 }
 
 typedef struct {
@@ -883,8 +872,8 @@ qc_delete_buffer (buffer_raii_t *raii)
 	yy_delete_buffer (raii->buffer, raii->scanner);
 }
 
-static int
-parse_vector (rua_tok_t *tok, yyscan_t scanner)
+static const expr_t *
+parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 {
 	const char *end = tok->text + tok->textlen;
 	while (end > tok->text && *--end != '\'') continue;
@@ -913,13 +902,13 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	do {
 		token = yylex (&vtok, &vtok.location, scanner);
 		if (-token == rua_number) {
-			token = parse_number (&vtok, scanner);
-		}
-		if (token == QC_VALUE) {
-			if (width < 4) {
-				components[width] = vtok.value.expr;
+			auto expr = parse_number (&vtok, scanner);
+			if (expr) {
+				if (width < 4) {
+					components[width] = expr;
+				}
+				width++;
 			}
-			width++;
 		} else if (token == '-') {
 			if (width < 4) {
 				negate[width] = true;
@@ -931,14 +920,14 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	if (width > 4) {
 		error (0, "too many components in vector literal");
 		width = 4;
-		return -rua_error;
+		return 0;
 	}
 	bool fp = false;
 	for (int i = 0; i < width; i++) {
 		if (!components[i]->implicit) {
 			error (0, "explict numeric constant in vector literal."
 				   " Suggest suffix after closing '.");
-			return -rua_error;
+			return 0;
 		}
 		fp |= is_double (get_type (components[i]));
 	}
@@ -948,7 +937,7 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 	if (expl < 0) {
 		error (0, "invalid suffix \"%s\" on %s vector constant", end,
 			   fp ? "floating" : "integer");
-		return -rua_error;
+		return 0;
 	}
 	union {
 		pr_float_t f[4];
@@ -1032,24 +1021,23 @@ parse_vector (rua_tok_t *tok, yyscan_t scanner)
 		type = expl == suff_unsigned_long ? &type_ulong : &type_long;
 	}
 	type = vector_type (type, width);
-	tok->value.expr = new_value_expr (new_type_value (type, data.t),
-									  expl == suff_implicit);
-
-	return QC_VALUE;
+	return new_value_expr (new_type_value (type, data.t),
+						   expl == suff_implicit);
 }
 
 static int
-parse_string (rua_tok_t *tok, int type, yyscan_t scanner)
+parse_string (QC_YYSTYPE *lval, const rua_tok_t *tok, int type,
+			  yyscan_t scanner)
 {
 	const char *str = make_string (tok->text, 0);
 	if (type == rua_char) {
 		if (str[1]) {
 			warning (0, "multibyte char constant");
 		}
-		tok->value.expr = new_int_expr (*str, false);
+		lval->expr = new_int_expr (*str, false);
 		return QC_VALUE;
 	} else {
-		tok->value.expr = new_string_expr (str);
+		lval->expr = new_string_expr (str);
 		return QC_STRING;
 	}
 }
@@ -1077,7 +1065,8 @@ update_loc (rua_loc_t *loc, size_t textlen)
 }
 
 static void
-save_text (rua_tok_t *tok, const char *text, size_t textlen, int state)
+save_text (rua_tok_t *tok, const char *text, size_t textlen, int state,
+		   rua_extra_t *extra)
 {
 	/*if (state == TEXT) {
 		while (isspace (*text)) {
@@ -1089,40 +1078,18 @@ save_text (rua_tok_t *tok, const char *text, size_t textlen, int state)
 		tok->str_text[1] = 0;
 		tok->text = tok->str_text;
 		textlen = 1;
-	} else */if (textlen < sizeof (tok->text)) {
-		strncpy (tok->str_text, text, textlen);
-		tok->str_text[textlen] = 0;
-		tok->text = tok->str_text;
+	} else */if (extra && textlen < sizeof (extra->str_text)) {
+		strncpy (extra->str_text, text, textlen);
+		extra->str_text[textlen] = 0;
+		tok->text = extra->str_text;
 	} else {
 		tok->text = save_string (text);
 	}
 	tok->textlen = textlen;
 }
 
-static rua_expr_t
-token_expr (int token, const rua_tok_t *tok)
-{
-	return (rua_expr_t) {
-		.location = tok->location,
-		.textlen = tok->textlen,
-		.token = token,
-		.text = save_string (tok->text),
-	};
-}
-
-static rua_tok_t
-expr_token (const rua_expr_t *e)
-{
-	return (rua_tok_t) {
-		.location = e->location,
-		.textlen = e->textlen,
-		.text = e->text,	// macro token strings use save_string
-		.token = e->token,
-	};
-}
-
 static bool
-join_tokens (rua_expr_t *out, const rua_expr_t *p1, const rua_expr_t *p2,
+join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 			 rua_extra_t *extra)
 {
 	auto str = va (0, "%s%s", p1 ? p1->text : "", p2 ? p2->text : "");
@@ -1139,12 +1106,13 @@ join_tokens (rua_expr_t *out, const rua_expr_t *p1, const rua_expr_t *p2,
 		out->text = " ";
 		return false;
 	}
-	*out = token_expr (token, &tok);
+	tok.token = token;
+	*out = tok;
 	return true;
 }
 
 static bool
-stringize_arg (rua_expr_t *out, rua_macro_t *arg, rua_extra_t *extra)
+stringize_arg (rua_tok_t *out, rua_macro_t *arg, rua_extra_t *extra)
 {
 	dstring_copystr (extra->dstr, "\"");
 	for (auto e = arg->tokens; e; e = e->next) {
@@ -1152,7 +1120,7 @@ stringize_arg (rua_expr_t *out, rua_macro_t *arg, rua_extra_t *extra)
 		dstring_appendstr (extra->dstr, str);
 	}
 	dstring_appendstr (extra->dstr, "\"");
-	*out = (rua_expr_t) {
+	*out = (rua_tok_t) {
 		.textlen = extra->dstr->size - 1,
 		.token = -rua_string,
 		.text = save_string (extra->dstr->str),
@@ -1161,8 +1129,10 @@ stringize_arg (rua_expr_t *out, rua_macro_t *arg, rua_extra_t *extra)
 }
 
 static int
-preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
+preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
+			   yyscan_t *scanner)
 {
+	int         token = tok->token;
 	if (!token) {
 		return token;
 	}
@@ -1171,6 +1141,7 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 		switch (term) {
 			case rua_ignore:
 			case rua_num_term:
+			case rua_grab:
 				internal_error (0, "unexpected rua token: %d", term);
 			case rua_eof:
 			case rua_error:
@@ -1181,12 +1152,18 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				break;
 			case rua_number:
 				if (!extra->recording) {
-					token = parse_number (tok, scanner);
+					token = -rua_error;
+					if ((lval->expr = parse_number (tok, scanner))) {
+						token = PRE_VALUE;
+					}
 				}
 				break;
 			case rua_vector:
 				if (!extra->recording) {
-					token = parse_vector (tok, scanner);
+					token = -rua_error;
+					if (!(lval->expr = parse_vector (tok, scanner))) {
+						token = PRE_VALUE;
+					}
 				}
 				break;
 			case rua_string:
@@ -1203,7 +1180,7 @@ preproc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 		if (token == PRE_ID) {
 			token = -rua_id;
 		}
-		tok->token = token;
+		lval->t.token = token;
 		if (token != PRE_EOD && token != ',' && token != '(' && token != ')') {
 			token = PRE_TOKEN;
 		}
@@ -1230,9 +1207,10 @@ convert_long (const expr_t *value)
 }
 
 static int
-qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
+qc_token (rua_extra_t *extra, QC_YYSTYPE *lval, const rua_tok_t *tok,
+		  yyscan_t *scanner)
 {
-	auto value = &tok->value;
+	int         token = tok->token;
 
 	if (token < 0) {
 		rua_term    term = -token;
@@ -1244,22 +1222,40 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 			case rua_error:
 				break;
 			case rua_id:
-				token = keyword_or_id (tok, tok->text);
+				token = keyword_or_id (lval, tok->text);
+				break;
+			case rua_grab:
+				{
+					int ret = do_grab (tok->text);
+					if (ret >= 0) {
+						lval->expr = new_int_expr (ret, false);
+						token = QC_VALUE;
+					} else {
+						yy_push_state (-ret, scanner);
+					}
+				}
 				break;
 			case rua_number:
-				token = parse_number (tok, scanner);
-				if (token == QC_VALUE && value->expr->implicit) {
-					if (is_long (get_type (value->expr))) {
-						value->expr = convert_long (value->expr);
+				token = -rua_error;
+				lval->expr = parse_number (tok, scanner);
+				if (lval->expr) {
+					token = QC_VALUE;
+					if (lval->expr->implicit) {
+						if (is_long (get_type (lval->expr))) {
+							lval->expr = convert_long (lval->expr);
+						}
 					}
 				}
 				break;
 			case rua_vector:
-				token = parse_vector (tok, scanner);
+				token = -rua_error;
+				if ((lval->expr = parse_vector (tok, scanner))) {
+					token = QC_VALUE;
+				}
 				break;
 			case rua_string:
 			case rua_char:
-				token = parse_string (tok, -token, scanner);
+				token = parse_string (lval, tok, -token, scanner);
 				break;
 			case rua_space:
 				if (options.preprocess_output) {
@@ -1271,17 +1267,17 @@ qc_token (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t *scanner)
 				break;
 			case rua_asx:
 				token = QC_ASX;
-				tok->value.op = tok->text[0];
+				lval->op = tok->text[0];
 				switch (tok->text[1]) {
 					case '=':	break;
-					case '%':   tok->value.op = QC_MOD;	break;
-					case '<':   tok->value.op = QC_SHL;	break;
-					case '>':   tok->value.op = QC_SHR;	break;
+					case '%':   lval->op = QC_MOD;	break;
+					case '<':   lval->op = QC_SHL;	break;
+					case '>':   lval->op = QC_SHR;	break;
 				}
 				break;
 			case rua_incop:
 				token = QC_INCOP;
-				tok->value.op = tok->text[0];
+				lval->op = tok->text[0];
 				break;
 		}
 	}
@@ -1354,10 +1350,12 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 
 	rua_macro_t *macro = 0;
 	if (extra->pending_macro) {
+		PRE_YYSTYPE lval = { .t = *tok };
+
 		if (extra->recording) {
-			token = preproc_token (extra, token, tok, scanner);
+			token = preproc_token (extra, &lval, tok, scanner);
 			int status = pre_yypush_parse (extra->args_state, token,
-										   tok, &tok->location, scanner);
+										   &lval, &tok->location, scanner);
 			if (status == YYPUSH_MORE) {
 				return YYPUSH_MORE;
 			}
@@ -1397,7 +1395,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			rua_start_args (scanner);
 			token = PRE_ARGS;
 			int status = pre_yypush_parse (extra->args_state, token,
-										   tok, &tok->location, scanner);
+										   &lval, &tok->location, scanner);
 			if (status != YYPUSH_MORE) {
 				internal_error (0, "can't start parsing macro args");
 			}
@@ -1434,11 +1432,13 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 	}
 	if (extra->preprocessor) {
 		auto state = extra->pre_state;
-		token = preproc_token (extra, token, tok, scanner);
+		PRE_YYSTYPE lval = { .t = *tok };
+
+		token = preproc_token (extra, &lval, tok, scanner);
 		if (-token == rua_ignore) {
 			return YYPUSH_MORE;
 		}
-		return pre_yypush_parse (state, token, tok, loc, scanner);
+		return pre_yypush_parse (state, token, &lval, loc, scanner);
 	} else {
 		if (!extra->suppressed) {
 			if (options.preprocess_only) {
@@ -1447,18 +1447,18 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 				}
 				return token ? YYPUSH_MORE : 0;
 			}
-			token = qc_token (extra, token, tok, scanner);
+			QC_YYSTYPE  lval = {};
+			token = qc_token (extra, &lval, tok, scanner);
 			if (token >= 0) {
 				auto state = extra->qc_state;
-				auto value = &tok->value;
-				return qc_yypush_parse (state, token, value, loc, scanner);
+				return qc_yypush_parse (state, token, &lval, loc, scanner);
 			}
 		}
 	}
 	return YYPUSH_MORE;
 }
 
-static rua_expr_t
+static rua_tok_t
 next_macro_token (rua_extra_t *extra)
 {
 	auto e = *extra->macro->cursor;
@@ -1466,8 +1466,8 @@ next_macro_token (rua_extra_t *extra)
 	return e;
 }
 
-static rua_expr_t *
-get_arg_token (bool last, rua_expr_t *arg, const rua_macro_t *macro)
+static rua_tok_t *
+get_arg_token (bool last, rua_tok_t *arg, const rua_macro_t *macro)
 {
 	symbol_t   *sym;
 
@@ -1477,7 +1477,7 @@ get_arg_token (bool last, rua_expr_t *arg, const rua_macro_t *macro)
 		auto a = macro->args[sym->s.offset];
 		if (last) {
 			if (a->tokens) {
-				return (rua_expr_t *) a->tail;
+				return (rua_tok_t *) a->tail;
 			}
 			return 0;
 		} else {
@@ -1488,9 +1488,9 @@ get_arg_token (bool last, rua_expr_t *arg, const rua_macro_t *macro)
 }
 
 static void
-copy_token (rua_macro_t *dst, const rua_expr_t *t)
+copy_token (rua_macro_t *dst, const rua_tok_t *t)
 {
-	rua_expr_t *e = malloc (sizeof (*e));
+	rua_tok_t *e = malloc (sizeof (*e));
 	*e = *t;
 	e->next = 0;
 	*dst->tail = e;
@@ -1499,7 +1499,7 @@ copy_token (rua_macro_t *dst, const rua_expr_t *t)
 
 static void
 copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
-				const rua_expr_t *arg, const rua_macro_t *macro)
+				const rua_tok_t *arg, const rua_macro_t *macro)
 {
 	symbol_t   *sym;
 
@@ -1535,8 +1535,7 @@ collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
 	if (t && t->token == '(') {
 		rua_reset_args (m);
 		int paren = 1;
-		auto tk = expr_token (t);
-		auto a = rua_macro_arg (&tk, scanner);
+		auto a = rua_macro_arg (t, scanner);
 		for (t = t->next; t; t = t->next) {
 			if (t->token == '(') {
 				paren++;
@@ -1546,11 +1545,10 @@ collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
 					break;
 				}
 			}
-			tk = expr_token (t);
 			if (t->token == ',' && paren == 1) {
-				a = rua_macro_arg (&tk, scanner);
+				a = rua_macro_arg (t, scanner);
 			} else {
-				rua_macro_append (a, &tk, scanner);
+				rua_macro_append (a, t, scanner);
 			}
 		}
 	}
@@ -1600,7 +1598,7 @@ rescan:
 			do {
 				auto p = get_arg_token (true, &e, macro);
 				auto n = get_arg_token (false, e.next->next, macro);
-				rua_expr_t  cat;
+				rua_tok_t   cat;
 				if (!(sl = join_tokens (&cat, p, n, extra))) {
 					cat.location = e.next->location;
 					cat.token = -rua_space;
@@ -1646,14 +1644,15 @@ rescan:
 			extra->macro = m;
 			goto rescan;
 		}
-		*tok = expr_token (&e);
-		token = tok->token;
+		*tok = e;
 	} else {
-		token = yylex (tok, &extra->location, scanner);
+		tok->token = yylex (tok, &extra->location, scanner);
 		tok->location = extra->location;
+		if (extra->recording && tok->text == extra->str_text) {
+			tok->text = save_string (tok->text);
+		}
 	}
-	tok->token = token;
-	return token;
+	return tok->token;
 }
 
 int
@@ -1754,7 +1753,7 @@ rua_end_params (rua_macro_t *macro, void *scanner)
 }
 
 rua_macro_t *
-rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
+rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	if (extra->suppressed || !macro) {
@@ -1765,27 +1764,27 @@ rua_macro_append (rua_macro_t *macro, rua_tok_t *token, void *scanner)
 			// ignore leading space
 			return macro;
 		}
-		auto t = (rua_expr_t *) macro->tail;
+		auto t = (rua_tok_t *) macro->tail;
 		if (t->token == '#' || t->token == PRE_CONCAT) {
 			// ignore space after '#' and '##'
 			return macro;
 		}
 	}
-	rua_expr_t *expr = (rua_expr_t *) macro->tail;
+	auto expr = (rua_tok_t *) macro->tail;
 	if (token->token != PRE_CONCAT
 		|| !macro->tokens
 		|| expr->token != -rua_space) {
 		expr = malloc (sizeof (*expr));
 		macro->num_tokens++;
 	}
-	*expr = token_expr (token->token, token);
+	*expr = *token;
 	*macro->tail = expr;
 	macro->tail = &expr->next;
 	return macro;
 }
 
 rua_macro_t *
-rua_macro_param (rua_macro_t *macro, rua_tok_t *token, void *scanner)
+rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	if (extra->suppressed) {
@@ -1824,10 +1823,10 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 		return;
 	}
 	if (macro->tokens) {
-		while (((rua_expr_t *) macro->tail)->token == -rua_space) {
+		while (((rua_tok_t *) macro->tail)->token == -rua_space) {
 			// space is never added as the first token, so it's guaranteed
 			// there is always at least two tokens
-			rua_expr_t *t;
+			rua_tok_t  *t;
 			for (t = macro->tokens; t->next->next; t = t->next) continue;
 			free (t->next);
 			t->next = 0;
@@ -1835,7 +1834,7 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 			macro->num_tokens--;
 		}
 		if (macro->tokens->token == PRE_CONCAT
-			|| ((rua_expr_t *) macro->tail)->token == PRE_CONCAT) {
+			|| ((rua_tok_t *) macro->tail)->token == PRE_CONCAT) {
 			error (0, "'##' cannot appear at either end of a macro expansion");
 			return;
 		}
@@ -1910,7 +1909,7 @@ hashhash_error:
 }
 
 rua_macro_t *
-rua_macro_arg (rua_tok_t *token, void *scanner)
+rua_macro_arg (const rua_tok_t *token, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	auto macro = extra->pending_macro;
@@ -2212,7 +2211,7 @@ rua_parse_define (const char *def)
 {
 	int         status;
 	yyscan_t    scanner;
-	rua_tok_t   tok = { .location = { 1, 1, 1, 1 }, };
+	rua_tok_t   tok = { .location = { 1, 1, 1, 1 }, .token = -1, };
 	rua_extra_t extra = {
 		.preprocessor = true,
 		.pre_state = pre_yypstate_new (),
@@ -2224,26 +2223,23 @@ rua_parse_define (const char *def)
 
 	yy_push_state (PREPROC, scanner);
 
-	int token = -1;
 	do {
-		if (token == -1) {
-			token = PRE_DEFINE;
+		if (tok.token == -1) {
+			tok.token = PRE_DEFINE;
 		} else {
-			token = yylex (&tok, &tok.location, scanner);
+			tok.token = yylex (&tok, &tok.location, scanner);
 			status = 0;
 		}
-		while (token) {
-			status = qc_process (&extra, token, &tok, scanner);
+		while (tok.token) {
+			status = qc_process (&extra, tok.token, &tok, scanner);
 			if (status != YYPUSH_MORE || !extra.macro) {
 				break;
 			}
-			auto expr = *extra.macro->cursor;
+			tok = *extra.macro->cursor;
 			extra.macro->cursor = extra.macro->cursor->next;
 			if (!extra.macro->cursor) {
 				extra.macro = extra.macro->next;
 			}
-			token = expr.token;
-			tok = expr_token (&expr);
 		}
 	} while (status == YYPUSH_MORE);
 
@@ -2285,11 +2281,11 @@ rua_macro_file (rua_macro_t *macro, void *scanner)
 	macro->tail = &macro->tokens;
 	macro->num_tokens = 0;
 
-	rua_expr_t *expr = malloc (sizeof (*expr));
+	rua_tok_t *expr = malloc (sizeof (*expr));
 	macro->num_tokens++;
 	const char *file_str = save_string (va (0, "\"%s\"",
 											quote_string (GETSTR (file))));
-	*expr = (rua_expr_t) {
+	*expr = (rua_tok_t) {
 		.location = extra->location,
 		.textlen = strlen (file_str),
 		.token = -rua_string,
@@ -2312,10 +2308,10 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 	macro->tail = &macro->tokens;
 	macro->num_tokens = 0;
 
-	rua_expr_t *expr = malloc (sizeof (*expr));
+	rua_tok_t *expr = malloc (sizeof (*expr));
 	macro->num_tokens++;
 	const char *line_str = save_string (va (0, "%d", line));
-	*expr = (rua_expr_t) {
+	*expr = (rua_tok_t) {
 		.location = extra->location,
 		.textlen = strlen (line_str),
 		.token = -rua_number,
