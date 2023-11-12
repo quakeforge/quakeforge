@@ -1687,7 +1687,7 @@ qc_yyparse (FILE *in)
 			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
 			auto incl = DARRAY_REMOVE (&extra.include_stack);
 			extra.location = incl.location;
-			struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
+			struct yyguts_t *yyg = (struct yyguts_t*) scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
 			set_line_file (-1, 0, 2);
 			yy_switch_to_buffer (incl.buffer, scanner);
@@ -1778,6 +1778,7 @@ rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 		macro->num_tokens++;
 	}
 	*expr = *token;
+	expr->next = 0;
 	*macro->tail = expr;
 	macro->tail = &expr->next;
 	return macro;
@@ -2228,6 +2229,9 @@ rua_parse_define (const char *def)
 			tok.token = PRE_DEFINE;
 		} else {
 			tok.token = yylex (&tok, &tok.location, scanner);
+			if (tok.text == extra.str_text) {
+				tok.text = save_string (tok.text);
+			}
 			status = 0;
 		}
 		while (tok.token) {
