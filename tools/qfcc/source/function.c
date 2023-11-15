@@ -250,11 +250,6 @@ get_function (const char *name, const type_t *type, int overload, int create)
 	const char *full_name;
 	overloaded_function_t *func;
 
-	if (!overloaded_functions) {
-		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
-		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
-	}
-
 	name = save_string (name);
 
 	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
@@ -929,8 +924,11 @@ function_parms (function_t *f, byte *parm_size)
 void
 clear_functions (void)
 {
-	if (overloaded_functions)
+	if (overloaded_functions) {
 		Hash_FlushTable (overloaded_functions);
-	if (function_map)
 		Hash_FlushTable (function_map);
+	} else {
+		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
+		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
+	}
 }
