@@ -1617,6 +1617,16 @@ rescan:
 			m->next = extra->macro;
 			extra->macro = m;
 			goto rescan;
+		} else if (token == -rua_id && macro->num_params < 0
+				   && strcmp (e.text, "__VA_OPT__") == 0) {
+			sym = symtab_lookup (extra->macro_tab, e.text);
+			auto m = sym->s.macro;
+			collect_args (m, macro, scanner);
+			m->update (m, scanner);
+			m->cursor = m->tokens;
+			m->next = extra->macro;
+			extra->macro = m;
+			goto rescan;
 		} else if (token == -rua_id && macro->params
 				   && (sym = symtab_lookup (macro->params, e.text))
 				   && !macro->args[sym->s.offset]->next) {
@@ -1752,6 +1762,22 @@ rua_end_params (rua_macro_t *macro, void *scanner)
 	return macro;
 }
 
+static void
+append_token (rua_macro_t *macro, const rua_tok_t *token)
+{
+	auto t = (rua_tok_t *) macro->tail;
+	if (token->token != PRE_CONCAT
+		|| !macro->tokens
+		|| t->token != -rua_space) {
+		t = malloc (sizeof (*t));
+		macro->num_tokens++;
+	}
+	*t = *token;
+	t->next = 0;
+	*macro->tail = t;
+	macro->tail = &t->next;
+}
+
 rua_macro_t *
 rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 {
@@ -1770,17 +1796,7 @@ rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 			return macro;
 		}
 	}
-	auto expr = (rua_tok_t *) macro->tail;
-	if (token->token != PRE_CONCAT
-		|| !macro->tokens
-		|| expr->token != -rua_space) {
-		expr = malloc (sizeof (*expr));
-		macro->num_tokens++;
-	}
-	*expr = *token;
-	expr->next = 0;
-	*macro->tail = expr;
-	macro->tail = &expr->next;
+	append_token (macro, token);
 	return macro;
 }
 
@@ -2338,10 +2354,19 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 				 "variadic macro");
 		return;
 	}
-	auto arg = cur->args[~cur->num_params];
-	if (arg->tokens) {
-		macro->tokens = macro->args[0]->tokens;
-		macro->tail = macro->args[0]->tail;
+	if (!cur->args[~cur->num_params]->tokens) {
+		return;
+	}
+	for (auto t = macro->args[0]->tokens; t; t = t->next) {
+		symbol_t   *sym;
+		if (t->token == -rua_id
+			&& (sym = symtab_lookup (cur->params, t->text))) {
+			for (auto a = cur->args[sym->s.offset]->tokens; a; a = a->next) {
+				append_token (macro, a);
+			}
+		} else {
+			append_token (macro, t);
+		}
 	}
 }
 
