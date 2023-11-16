@@ -2247,7 +2247,7 @@ compile_range (const char **p_ptr, const char *pend, char *translate, reg_syntax
    exactly that if always used MAX_FAILURE_SPACE each time we failed.
    This is a variable only so users of regex can assign to it; we never
    change it ourselves.  */
-int re_max_failures = 2000;
+static int re_max_failures = 2000;
 
 typedef const unsigned char *fail_stack_elt_t;
 
