@@ -158,6 +158,7 @@ AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
+	QF_CC_OPTION(-flto=auto)
 	if test "x$GCC" = xyes; then
 		saved_cflags="$CFLAGS"
 		dnl CFLAGS=""
