@@ -68,11 +68,17 @@ The following is the list of relevant package names in debian.
 \li libxext-dev
 \li libxxf86dga-dev
 \li libxxf86vm-dev
+\li libxi-dev
+\li libxfixes-dev
 
 \li libvulkan-dev
 \li vulkan-tools
 \li vulkan-validationlayers
 \li glslang-tools
+
+\li libfreetype-dev
+\li libfontconfig-dev
+\li libharfbuzz-dev
 
 \section building-and-installing Build and Install Procedure
 Basic process to build and install QuakeForge:
