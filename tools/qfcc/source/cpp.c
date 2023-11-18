@@ -411,12 +411,6 @@ void cpp_define (const char *arg)
 		make_magic_macro (cpp_macros, "__FILE__", rua_macro_file);
 		make_magic_macro (cpp_macros, "__LINE__", rua_macro_line);
 		make_magic_macro (cpp_macros, "__VA_ARGS__", rua_macro_va_args);
-
-		auto m = make_magic_macro (cpp_macros, "__VA_OPT__", rua_macro_va_opt);
-		m->params = new_symtab (0, stab_param);
-		m->num_params = -1;
-		m->args = calloc (1, sizeof (rua_macro_t *));
-		m->args[0] = malloc (sizeof (rua_macro_t));
 	}
 	size_t len = strlen (arg);
 	if (len > 0x10000) {

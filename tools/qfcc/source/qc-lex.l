@@ -1610,7 +1610,7 @@ rescan:
 			extra->macro = m;
 			goto rescan;
 		} else if (token == -rua_va_opt) {
-			if (!macro->args[~macro->num_params]
+			if (!macro->params || !macro->args[~macro->num_params]
 				|| !macro->args[~macro->num_params]->tokens) {
 				goto rescan;
 			}
@@ -2440,9 +2440,6 @@ rua_macro_va_args (rua_macro_t *macro, void *scanner)
 
 	auto extra = qc_yyget_extra (scanner);
 	auto cur = extra->macro;
-	if (cur && strcmp (cur->name, "__VA_OPT__") == 0) {
-		cur = cur->next;
-	}
 	if (!cur || !cur->params || cur->num_params >= 0) {
 		warning (0, "__VA_ARGS__ can appear only in the expansion of a "
 				 "variadic macro");
