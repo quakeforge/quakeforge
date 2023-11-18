@@ -164,6 +164,30 @@ fi
 TOPSRC=`readlink -f ${srcdir}`
 AC_SUBST(TOPSRC)
 
+QF_REQUIRES([
+[libasound2-dev, HAVE_ALSA],
+[libjack-jackd2-dev, HAVE_JACK],
+[libsamplerate0-dev, HAVE_SAMPLERATE],
+[libflac-dev, HAVE_FLAC],
+[libogg-dev, HAVE_OGG],
+[libvorbis-dev, HAVE_VORBIS],
+[libpng-dev, HAVE_PNG],
+[zlib1g-dev, HAVE_ZLIB],
+[libcurl4-openssl-dev, HAVE_LIBCURL],
+[libncurses5-dev, HAVE_NCURSES],
+[libxext-dev, HAVE_X],
+[libxxf86dga-dev, HAVE_DGA],
+[libxxf86vm-dev, HAVE_VIDMODE],
+[libxi-dev, HAVE_XI2],
+[libxfixes-dev, HAVE_XFIXES],
+[libvulkan-dev, HAVE_VULKAN],
+[glslang-tools, HAVE_GLSLANG],
+[libfontconfig-dev, HAVE_FONTCONFIG],
+[libfreetype-dev, HAVE_FREETYPE],
+[libharfbuzz-dev, HAVE_HARFBUZZ],
+])
+dnl[vulkan-validationlayers, HAVE_],
+
 dnl Output files
 m4_include(config.d/rpm.m4)
 AC_CONFIG_FILES(m4_include(config.d/ac_config_files.m4))

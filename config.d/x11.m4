@@ -24,6 +24,7 @@ if test "x$HAVE_VIDMODE" != xno; then
 		dnl Make sure the library works
 		[AC_CHECK_LIB(Xxf86vm, XF86VidModeSwitchToMode,
 			AC_DEFINE(HAVE_VIDMODE, 1, [Define if you have the XFree86 VIDMODE extension])
+			HAVE_VIDMODE=yes
 			VIDMODE_LIBS="-lXxf86vm",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)],
@@ -45,6 +46,7 @@ if test "x$HAVE_XI2" != xno; then
 		dnl Make sure the library works
 		[AC_CHECK_LIB(Xi, XIQueryVersion,
 			AC_DEFINE(HAVE_XI2, 1, [Define if you have the Xorg XInput2 extension])
+			HAVE_XI2=yes
 			XI2_LIBS="-lXi",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)],,
@@ -63,8 +65,9 @@ if test "x$HAVE_XFIXES" != xno; then
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
 	AC_CHECK_HEADER(X11/extensions/Xfixes.h,
 		dnl Make sure the library works
-		[AC_CHECK_LIB(Xi, XIQueryVersion,
+		[AC_CHECK_LIB(Xfixes, XFixesQueryVersion,
 			AC_DEFINE(HAVE_XFIXES, 1, [Define if you have the Xorg Xfixes extension])
+			HAVE_XFIXES=yes
 			XFIXES_LIBS="-lXfixes",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)],,
@@ -85,6 +88,7 @@ if test "x$HAVE_DGA" != xno; then
 		dnl Make sure the library works
 		[AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
 			AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
+			HAVE_DGA=yes
 			DGA_LIBS="-lXxf86dga",,
 			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 		)],
@@ -93,6 +97,7 @@ if test "x$HAVE_DGA" != xno; then
 			[AC_CHECK_LIB(Xxf86dga, XF86DGAQueryVersion,
 				AC_DEFINE(HAVE_DGA, 1, [Define if you have the XFree86 DGA extension])
 				AC_DEFINE(DGA_OLD_HEADERS, 1, [Define if DGA uses old headers])
+				HAVE_DGA=yes
 				DGA_LIBS="-lXxf86dga",,
 				[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
 			)],

@@ -26,12 +26,6 @@ if test "x$enable_samplerate" != "xno"; then
 	fi
 fi
 AC_SUBST(SAMPLERATE_LIBS)
-dnl AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
-if test "x$HAVE_SAMPLERATE" = "xno"; then
-	AC_MSG_WARN([libsamplerate is required but was not found.]
-				[Sound will be disabled.])
-	enable_sound=no
-fi
 
 if test "x$enable_sound" != "xno"; then
 	AC_CHECK_LIB(mme, waveOutOpen, HAVE_LIBMME=yes)
