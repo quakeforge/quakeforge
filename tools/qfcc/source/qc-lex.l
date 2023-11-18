@@ -163,6 +163,7 @@ typedef enum {
 	rua_asx,
 	rua_incop,
 	rua_grab,
+	rua_va_opt,
 
 	rua_num_term,
 } rua_term;
@@ -1142,6 +1143,7 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 			case rua_ignore:
 			case rua_num_term:
 			case rua_grab:
+			case rua_va_opt:
 				internal_error (0, "unexpected rua token: %d", term);
 			case rua_eof:
 			case rua_error:
@@ -1217,6 +1219,7 @@ qc_token (rua_extra_t *extra, QC_YYSTYPE *lval, const rua_tok_t *tok,
 		switch (term) {
 			case rua_ignore:
 			case rua_num_term:
+			case rua_va_opt:
 				internal_error (0, "unexpected rua token: %d", term);
 			case rua_eof:
 			case rua_error:
@@ -1442,7 +1445,7 @@ copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 	}
 }
 
-static void
+static void __attribute__((used))
 collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
@@ -1505,7 +1508,7 @@ append_token (rua_macro_t *macro, const rua_tok_t *token)
 }
 
 static void
-expand_macro (rua_extra_t *extra, rua_macro_t *macro)
+queue_macro (rua_extra_t *extra, rua_macro_t *macro)
 {
 	macro->next = extra->macro;
 	extra->macro = macro;
@@ -1596,7 +1599,7 @@ rescan:
 			extra->pending_macro = pending_macro->next;
 			if (check_macro (pending_macro)) {
 				expand_args (pending_macro);
-				expand_macro (extra, pending_macro);
+				queue_macro (extra, pending_macro);
 			}
 			goto rescan;
 		} else if (token == -rua_space) {
@@ -1615,7 +1618,7 @@ rescan:
 		} else {
 			append_token (pending_macro, &e);
 			extra->pending_macro = pending_macro->next;
-			expand_macro (extra, pending_macro);
+			queue_macro (extra, pending_macro);
 			// get the token that looked like a macro
 			e = next_macro_token (extra->macro);
 			*tok = e;
@@ -1629,12 +1632,12 @@ rescan:
 			auto n = e.next;
 			rua_macro_t *arg;
 			macro->cursor = macro->cursor->next;	// consume arg
-			if (strcmp (n->text, "__VA_OPT__") == 0) {
-				sym = symtab_lookup (extra->macro_tab, n->text);
+			if (n->token == -rua_va_opt) {
+				sym = symtab_lookup (macro->params, n->text);
 				auto m = sym->s.macro;
-				collect_args (m, macro, scanner);
+				expand_args (m);
 				m->next = 0;
-				arg = m->args[0];
+				arg = m;
 			} else {
 				sym = symtab_lookup (macro->params, n->text);
 				arg = macro->args[sym->s.offset];
@@ -1670,13 +1673,19 @@ rescan:
 			m->next = extra->macro;
 			extra->macro = m;
 			goto rescan;
-		} else if (token == -rua_id && macro->num_params < 0
-				   && strcmp (e.text, "__VA_OPT__") == 0) {
-			sym = symtab_lookup (extra->macro_tab, e.text);
+		} else if (token == -rua_va_opt) {
+			if (!macro->args[~macro->num_params]
+				|| !macro->args[~macro->num_params]->tokens) {
+				goto rescan;
+			}
+			sym = symtab_lookup (macro->params, e.text);
 			auto m = sym->s.macro;
-			collect_args (m, macro, scanner);
-			m->update (m, scanner);
-			expand_macro (extra, m);
+			m->params = macro->params;
+			m->args = macro->args;
+			//collect_args (m, macro, scanner);
+			//m->update (m, scanner);
+			expand_args (m);
+			queue_macro (extra, m);
 			goto rescan;
 		}
 		*tok = e;
@@ -1704,7 +1713,7 @@ rescan:
 			append_token (pending_macro, &e);
 		} else {
 			// object-type macro, just expand
-			expand_macro (extra, macro);
+			queue_macro (extra, macro);
 		}
 		goto rescan;
 	}
@@ -1856,6 +1865,37 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 	return macro;
 }
 
+static rua_tok_t
+build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
+{
+	const char *va_opt_name = va (0, "__va_opt__.%d", va_opt_ind);
+	rua_tok_t   va_opt_tok = {
+		.next = u->next,
+		.location = t->location,
+		.textlen = strlen (va_opt_name),
+		.token = -rua_va_opt,
+		.text = save_string (va_opt_name),
+	};
+	va_opt_tok.location.last_line = u->location.last_line;
+	va_opt_tok.location.last_column = u->location.last_column;
+
+	while (t->token != '(') {
+		t = t->next;
+	}
+	auto e = u;
+	for (u = t; u->next != e; u = u->next) continue;
+	auto va_opt = alloc_macro (0, false);
+	va_opt->function_tokens = t->next;
+	va_opt->tail = &va_opt->tokens;
+	u->next = 0;
+
+	auto sym = new_symbol (va_opt_name);
+	sym->sy_type = sy_macro;
+	sym->s.macro = va_opt;
+	symtab_addsymbol (macro->params, sym);
+	return va_opt_tok;
+}
+
 void
 rua_macro_finish (rua_macro_t *macro, void *scanner)
 {
@@ -1879,6 +1919,7 @@ rua_macro_finish (rua_macro_t *macro, void *scanner)
 			error (0, "'##' cannot appear at either end of a macro expansion");
 			return;
 		}
+		int va_opt_ind = -1;
 		for (auto t = macro->tokens; t; t = t->next) {
 			if (t->token == '#'
 				&& (!t->next
@@ -1911,6 +1952,7 @@ hashhash_error:
 						paren++;
 					} else if (u->token == ')') {
 						if (!(--paren)) {
+							*t = build_va_opt (macro, t, u, ++va_opt_ind);
 							break;
 						}
 					} else if (u->token == -rua_id
