@@ -58,7 +58,6 @@ typedef struct rua_macro_s {
 	symtab_t   *params;
 	rua_tok_t  *tokens;
 	rua_tok_t **tail;
-	rua_tok_t  *function_tokens;	// prior to argument expansion
 	int         num_tokens;
 	int         num_params;
 	rua_tok_t  *cursor;

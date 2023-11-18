@@ -1515,30 +1515,6 @@ queue_macro (rua_extra_t *extra, rua_macro_t *macro)
 	macro->cursor = macro->tokens;
 }
 
-static void
-expand_args (rua_macro_t *macro)
-{
-	macro->tokens = 0;
-	macro->tail = &macro->tokens;
-	for (auto t = macro->function_tokens; t; t = t->next) {
-		symbol_t   *sym;
-		if (t->token == '#') {
-			append_token (macro, t);
-			append_token (macro, t->next);
-			t = t->next;
-		} else if (t->token == -rua_id && macro->params
-				   && (sym = symtab_lookup (macro->params, t->text))
-				   && !macro->args[sym->s.offset]->next) {
-			auto arg = macro->args[sym->s.offset];
-			for (auto a = arg->tokens; a; a = a->next) {
-				append_token (macro, a);
-			}
-		} else {
-			append_token (macro, t);
-		}
-	}
-}
-
 static bool
 check_macro (rua_macro_t *macro)
 {
@@ -1585,46 +1561,6 @@ rescan:
 		e = *tok;
 	}
 	int token = e.token;
-	if (extra->pending_macro) {
-		PRE_YYSTYPE lval = { .t = e };
-		auto pending_macro = extra->pending_macro;
-		if (extra->recording) {
-			token = preproc_token (extra, &lval, &e, scanner);
-			int s = pre_yypush_parse (extra->args_state, token, &lval,
-									  &e.location, scanner);
-			if (s == YYPUSH_MORE) {
-				goto rescan;
-			}
-			rua_end_args (scanner);
-			extra->pending_macro = pending_macro->next;
-			if (check_macro (pending_macro)) {
-				expand_args (pending_macro);
-				queue_macro (extra, pending_macro);
-			}
-			goto rescan;
-		} else if (token == -rua_space) {
-			append_token (pending_macro, &e);
-			goto rescan;
-		} else if (token == '(') {
-			extra->pending_macro = (rua_macro_t *) pending_macro->args;
-			pending_macro->args = 0;
-			rua_start_args (scanner);
-			int s = pre_yypush_parse (extra->args_state, PRE_ARGS, &lval,
-									  &e.location, scanner);
-			if (s != YYPUSH_MORE) {
-				internal_error (0, "can't start parsing macro args");
-			}
-			goto rescan;
-		} else {
-			append_token (pending_macro, &e);
-			extra->pending_macro = pending_macro->next;
-			queue_macro (extra, pending_macro);
-			// get the token that looked like a macro
-			e = next_macro_token (extra->macro);
-			*tok = e;
-			return e.token;
-		}
-	}
 	if (extra->macro) {
 		symbol_t   *sym;
 		auto macro = extra->macro;
@@ -1635,8 +1571,7 @@ rescan:
 			if (n->token == -rua_va_opt) {
 				sym = symtab_lookup (macro->params, n->text);
 				auto m = sym->s.macro;
-				expand_args (m);
-				m->next = 0;
+				m->update (m, scanner);
 				arg = m;
 			} else {
 				sym = symtab_lookup (macro->params, n->text);
@@ -1680,15 +1615,56 @@ rescan:
 			}
 			sym = symtab_lookup (macro->params, e.text);
 			auto m = sym->s.macro;
-			m->params = macro->params;
-			m->args = macro->args;
-			//collect_args (m, macro, scanner);
-			//m->update (m, scanner);
-			expand_args (m);
+			m->update (m, scanner);
 			queue_macro (extra, m);
+			goto rescan;
+		} else if (token == -rua_id && macro->params
+				   && (sym = symtab_lookup (macro->params, e.text))
+				   && !macro->args[sym->s.offset]->next) {
+			auto arg = macro->args[sym->s.offset];
+			queue_macro (extra, arg);
 			goto rescan;
 		}
 		*tok = e;
+	}
+	if (extra->pending_macro) {
+		PRE_YYSTYPE lval = { .t = e };
+		auto pending_macro = extra->pending_macro;
+		if (extra->recording) {
+			token = preproc_token (extra, &lval, &e, scanner);
+			int s = pre_yypush_parse (extra->args_state, token, &lval,
+									  &e.location, scanner);
+			if (s == YYPUSH_MORE) {
+				goto rescan;
+			}
+			rua_end_args (scanner);
+			extra->pending_macro = pending_macro->next;
+			if (check_macro (pending_macro)) {
+				queue_macro (extra, pending_macro);
+			}
+			goto rescan;
+		} else if (token == -rua_space) {
+			append_token (pending_macro, &e);
+			goto rescan;
+		} else if (token == '(') {
+			extra->pending_macro = (rua_macro_t *) pending_macro->args;
+			pending_macro->args = 0;
+			rua_start_args (scanner);
+			int s = pre_yypush_parse (extra->args_state, PRE_ARGS, &lval,
+									  &e.location, scanner);
+			if (s != YYPUSH_MORE) {
+				internal_error (0, "can't start parsing macro args");
+			}
+			goto rescan;
+		} else {
+			append_token (pending_macro, &e);
+			extra->pending_macro = pending_macro->next;
+			queue_macro (extra, pending_macro);
+			// get the token that looked like a macro
+			e = next_macro_token (extra->macro);
+			*tok = e;
+			return e.token;
+		}
 	}
 	symbol_t   *sym;
 	if (extra->preprocessor && extra->expand && token == PRE_ID) {
@@ -1884,10 +1860,18 @@ build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 	}
 	auto e = u;
 	for (u = t; u->next != e; u = u->next) continue;
-	auto va_opt = alloc_macro (0, false);
-	va_opt->function_tokens = t->next;
-	va_opt->tail = &va_opt->tokens;
 	u->next = 0;
+	auto va_opt = alloc_macro (0, false);
+	*va_opt = (rua_macro_t) {
+		.tail = &va_opt->tokens,
+		.update = rua_macro_va_opt,
+		.args = malloc (sizeof (rua_macro_t *)),
+	};
+	va_opt->args[0] = alloc_macro (0, false);
+	*va_opt->args[0] = (rua_macro_t) {
+		.tokens = t->next,
+		.tail = &u->next,
+	};
 
 	auto sym = new_symbol (va_opt_name);
 	sym->sy_type = sy_macro;
@@ -1969,12 +1953,6 @@ hashhash_error:
 				}
 			}
 		}
-	}
-
-	if (macro->params) {
-		macro->function_tokens = macro->tokens;
-		macro->tokens = 0;
-		macro->tail = &macro->tokens;
 	}
 
 	auto macro_tab = extra->macro_tab;
