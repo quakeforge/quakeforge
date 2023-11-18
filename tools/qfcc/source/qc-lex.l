@@ -113,6 +113,7 @@ typedef struct rua_extra_s {
 		bool        params;
 		bool        expand;
 		bool        suppressed;
+		bool        no_lex;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		pre_yypstate *args_state;
@@ -1548,10 +1549,10 @@ rescan:
 		extra->macro = macro->next;
 		macro->next = 0;
 	}
-	rua_tok_t e;
+	rua_tok_t e = {};
 	if (extra->macro) {
 		e = next_macro_token (extra->macro);
-	} else {
+	} else if (!extra->no_lex) {
 		tok->token = yylex (tok, &extra->location, scanner);
 		tok->location = extra->location;
 		if ((extra->pending_macro || extra->recording)
@@ -2407,17 +2408,28 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 	if (!cur->args[~cur->num_params]->tokens) {
 		return;
 	}
-	for (auto t = macro->args[0]->tokens; t; t = t->next) {
-		symbol_t   *sym;
-		if (t->token == -rua_id
-			&& (sym = symtab_lookup (cur->params, t->text))) {
-			for (auto a = cur->args[sym->s.offset]->tokens; a; a = a->next) {
-				append_token (macro, a);
-			}
-		} else {
-			append_token (macro, t);
+	auto arg = macro->args[0];
+	arg->params = cur->params;
+	arg->num_params = cur->num_params;
+	arg->num_args = cur->num_args;
+	arg->args = cur->args;
+
+	rua_extra_t va_extra = *extra;
+	va_extra.macro = 0;
+	va_extra.no_lex = true;
+	queue_macro (&va_extra, arg);
+	qc_yyset_extra (&va_extra, scanner);
+
+	while (true) {
+		rua_tok_t   e;
+		if (next_token (&e, scanner)) {
+			append_token (macro, &e);
+			continue;
 		}
+		break;
 	}
+
+	qc_yyset_extra (extra, scanner);
 }
 
 void

@@ -47,6 +47,7 @@ test_progs_dat=\
 	tools/qfcc/test/pga2d.dat \
 	tools/qfcc/test/pga3d.dat \
 	tools/qfcc/test/postop.dat \
+	tools/qfcc/test/preproc-1.dat \
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
 	tools/qfcc/test/ptrstructcast.dat \
@@ -581,6 +582,16 @@ tools/qfcc/test/postop.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(postop_dep) # am--include-marker
 r_depfiles_remade += $(postop_dep)
+
+tools_qfcc_test_preproc_1_dat_SOURCES=tools/qfcc/test/preproc-1.r
+preproc_1_obj=$(tools_qfcc_test_preproc_1_dat_SOURCES:.r=.o)
+preproc_1_dep=$(call qcautodep,$(tools_qfcc_test_preproc_1_dat_SOURCES))
+tools/qfcc/test/preproc-1.dat$(EXEEXT): $(preproc_1_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(preproc_1_obj)
+tools/qfcc/test/preproc-1.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(preproc_1_dep) # am--include-marker
+r_depfiles_remade += $(preproc_1_dep)
 
 tools_qfcc_test_ptraliasenc_dat_SOURCES=tools/qfcc/test/ptraliasenc.r
 ptraliasenc_obj=$(tools_qfcc_test_ptraliasenc_dat_SOURCES:.r=.o)
