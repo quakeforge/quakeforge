@@ -19,10 +19,9 @@ EXTRA_DIST += \
 	debian/quakeforge-oss.install \
 	debian/quakeforge-oss.postinst \
 	debian/quakeforge-oss.prerm \
-	debian/quakeforge-sdl.install \
 	debian/quakeforge-servers.install \
 	debian/quakeforge-stub.postinst \
-	debian/quakeforge-sw32.install \
+	debian/quakeforge-vulkan.install \
 	debian/quakeforge-sw.install \
 	debian/quakeforge-utils.install \
 	debian/quakeforge-x11.install

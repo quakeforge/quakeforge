@@ -5,26 +5,24 @@
 #export DH_VERBOSE=1
 
 # This is the debhelper compatibility version to use.
-export DH_COMPAT=7
+export DH_COMPAT=13
 
 PACKAGE 	:= quakeforge
 QFCC		:= qfcc
 common		:= $(PACKAGE)-common
 stub		:= $(PACKAGE)-stub
 maptools	:= $(PACKAGE)-maptools
-dev		:= $(PACKAGE)-dev
+dev			:= $(PACKAGE)-dev
 
 alsa		:= $(PACKAGE)-alsa
 gllib		:= $(PACKAGE)-gl
 glsllib		:= $(PACKAGE)-glsl
-jack		:= $(PACKAGE)-jack
-oss		:= $(PACKAGE)-oss
-sdl		:= $(PACKAGE)-sdl
-servers		:= $(PACKAGE)-servers
 swlib		:= $(PACKAGE)-sw
-sw32lib		:= $(PACKAGE)-sw32
+vulkanlib	:= $(PACKAGE)-vulkan
+jack		:= $(PACKAGE)-jack
+servers		:= $(PACKAGE)-servers
 utils		:= $(PACKAGE)-utils
-x11		:= $(PACKAGE)-x11
+x11			:= $(PACKAGE)-x11
 
 build	:= $(shell pwd)/debian/tmp
 tmp	:= debian/tmp
@@ -41,6 +39,7 @@ configure-stamp:
 	# Add here commands to configure the package.
 	./bootstrap
 	./configure --prefix=/usr $(RETARGET) --bindir=/usr/games \
+			--enable-silent-rules \
 		    --without-fbdev \
 		    --with-ipv6 \
 		    --disable-Werror \
@@ -49,7 +48,7 @@ configure-stamp:
 		    --infodir=/usr/share/info \
 		    --with-sharepath=/usr/share/games/quake \
 		    --with-plugin-path=/usr/lib/quakeforge/plugins \
-		    --with-clients=sdl,x11 \
+		    --with-clients=x11 \
 		    --with-servers=master,nq,qw
 
 	touch $@
@@ -57,13 +56,13 @@ configure-stamp:
 build: configure-stamp changelog-stamp build-stamp
 build-stamp:
 	dh_testdir
-	$(MAKE) $(QFSMP)
+	$(MAKE) -j8
 	touch $@
 
 changelog-stamp:
 	dh_testdir
 	# Add here commands to build the changelog
-	if test -d .git; then $(MAKE) changelog; fi
+	if test -d .git; then $(MAKE) changelog; else touch ChangeLog; fi
 	touch $@
 
 clean:
@@ -142,20 +141,15 @@ install: build
 	install -d -m755 debian/$(swlib)/usr/share/doc
 	ln -s $(common) debian/$(swlib)/usr/share/doc/$(swlib)
 
-	# quakeforge-libs-sw32
-	dh_install -p$(sw32lib) --sourcedir=$(tmp)
-	install -d -m755 debian/$(sw32lib)/usr/share/doc
-	ln -s $(common) debian/$(sw32lib)/usr/share/doc/$(sw32lib)
+	# quakeforge-libs-vulkan
+	dh_install -p$(vulkanlib) --sourcedir=$(tmp)
+	install -d -m755 debian/$(vulkanlib)/usr/share/doc
+	ln -s $(common) debian/$(vulkanlib)/usr/share/doc/$(vulkanlib)
 
 	# quakeforge-servers
 	dh_install -p$(servers) --sourcedir=$(tmp)
 	install -d -m755 debian/$(servers)/usr/share/doc
 	ln -s $(common) debian/$(servers)/usr/share/doc/$(servers)
-
-	# quakeforge-sdl
-	dh_install -p$(sdl) --sourcedir=$(tmp)
-	install -d -m755 debian/$(sdl)/usr/share/doc
-	ln -s $(common) debian/$(sdl)/usr/share/doc/$(sdl)
 
 	# quakeforge-x11
 	dh_install -p$(x11) --sourcedir=$(tmp)
@@ -166,11 +160,6 @@ install: build
 	dh_install -p$(alsa) --sourcedir=$(tmp)
 	install -d -m755 debian/$(alsa)/usr/share/doc
 	ln -s $(common) debian/$(alsa)/usr/share/doc/$(alsa)
-
-	# quakeforge-oss
-	dh_install -p$(oss) --sourcedir=$(tmp)
-	install -d -m755 debian/$(oss)/usr/share/doc
-	ln -s $(common) debian/$(oss)/usr/share/doc/$(oss)
 
 	# quakeforge-jack
 	dh_install -p$(jack) --sourcedir=$(tmp)
@@ -215,7 +204,6 @@ binary-arch: build install
 	dh_installman -p$(QFCC)
 	dh_installman -p$(maptools)
 	dh_installman -p$(utils)
-	dh_undocumented
 	dh_strip -Xshare/qfcc
 	dh_link
 	dh_compress
