@@ -114,6 +114,7 @@ typedef struct rua_extra_s {
 		bool        expand;
 		bool        suppressed;
 		bool        no_lex;
+		bool        did_space;
 		qc_yypstate *qc_state;
 		pre_yypstate *pre_state;
 		pre_yypstate *args_state;
@@ -1327,6 +1328,19 @@ rua_end_args (void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = false;
 	yy_pop_state (scanner);
+
+	auto macro = extra->pending_macro;
+	if (macro->num_params < 0) {
+		auto arg = macro->args[~macro->num_params];
+		auto t = arg->tokens;
+		while (t && (t->token == -rua_space || t->token == -rua_ignore)) {
+			t = t->next;
+		}
+		if (!t) {
+			arg->tokens = 0;
+			arg->tail = &arg->tokens;
+		}
+	}
 }
 
 static void __attribute__((used))
@@ -1367,7 +1381,10 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		if (!extra->suppressed) {
 			if (options.preprocess_only) {
 				if (options.preprocess_output) {
-					printf ("%s", tok->text);
+					if (token != -rua_space || !extra->did_space) {
+						printf ("%s", tok->text);
+					}
+					extra->did_space = token == -rua_space;
 				}
 				return token ? YYPUSH_MORE : 0;
 			}
@@ -1495,6 +1512,22 @@ alloc_macro (const char *name, bool params)
 static void
 append_token (rua_macro_t *macro, const rua_tok_t *token)
 {
+	if (token->token == -rua_space) {
+		if (!macro->tokens) {
+			// ignore leading space
+			return;
+		}
+		auto t = (rua_tok_t *) macro->tail;
+		if (t->token == '#' || t->token == PRE_CONCAT) {
+			// ignore space after '#' and '##'
+			return;
+		}
+		if (t->token == -rua_space) {
+			// ignore space after space
+			return;
+		}
+	}
+
 	auto t = (rua_tok_t *) macro->tail;
 	if (token->token != PRE_CONCAT
 		|| !macro->tokens
@@ -1676,6 +1709,9 @@ rescan:
 		&& (sym = symtab_lookup (extra->macro_tab, e.text))
 		&& !sym->s.macro->next) {
 		auto macro = sym->s.macro;
+		if (macro->update) {
+			macro->update (macro, scanner);
+		}
 		if (macro->params) {
 			// function-type macro, need to check for ( so set up a temporary
 			// macro to hold the tokens before the first non-space token
@@ -1794,17 +1830,6 @@ rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	if (extra->suppressed || !macro) {
 		return 0;
-	}
-	if (token->token == -rua_space) {
-		if (!macro->tokens) {
-			// ignore leading space
-			return macro;
-		}
-		auto t = (rua_tok_t *) macro->tail;
-		if (t->token == '#' || t->token == PRE_CONCAT) {
-			// ignore space after '#' and '##'
-			return macro;
-		}
 	}
 	append_token (macro, token);
 	return macro;
@@ -2392,28 +2417,10 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 	macro->tail = &expr->next;
 }
 
-void
-rua_macro_va_opt (rua_macro_t *macro, void *scanner)
+static void
+expand_va_macro (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
 {
-	macro->tokens = 0;
-	macro->tail = &macro->tokens;
-
 	auto extra = qc_yyget_extra (scanner);
-	auto cur = extra->macro;
-	if (!cur || !cur->params || cur->num_params >= 0) {
-		warning (0, "__VA_OPT__ can appear only in the expansion of a "
-				 "variadic macro");
-		return;
-	}
-	if (!cur->args[~cur->num_params]->tokens) {
-		return;
-	}
-	auto arg = macro->args[0];
-	arg->params = cur->params;
-	arg->num_params = cur->num_params;
-	arg->num_args = cur->num_args;
-	arg->args = cur->args;
-
 	rua_extra_t va_extra = *extra;
 	va_extra.macro = 0;
 	va_extra.no_lex = true;
@@ -2430,6 +2437,67 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 	}
 
 	qc_yyset_extra (extra, scanner);
+}
+
+static bool
+macro_empty (rua_macro_t *macro, rua_extra_t *extra)
+{
+	for (auto t = macro->tokens; t; t = t->next) {
+		if (t->token != -rua_id) {
+			return false;
+		}
+		symbol_t   *sym;
+		if (macro->params
+			&& (sym = symtab_lookup (macro->params, t->text))
+			&& !macro->args[sym->s.offset]->next) {
+			auto arg = macro->args[sym->s.offset];
+			arg->next = macro;
+			bool empty = macro_empty (arg, extra);
+			arg->next = 0;
+			if (!empty) {
+				return false;
+			}
+		}
+		if ((sym = symtab_lookup (extra->macro_tab, t->text))
+			&& !sym->s.macro->next) {
+			auto m = sym->s.macro;
+			if (m->params) {
+				//FIXME handle args
+			}
+			m->next = macro;
+			bool empty = macro_empty (m, extra);
+			m->next = 0;
+			if (!empty) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void
+rua_macro_va_opt (rua_macro_t *macro, void *scanner)
+{
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+
+	auto extra = qc_yyget_extra (scanner);
+	auto cur = extra->macro;
+	if (!cur || !cur->params || cur->num_params >= 0) {
+		warning (0, "__VA_OPT__ can appear only in the expansion of a "
+				 "variadic macro");
+		return;
+	}
+	if (macro_empty (cur->args[~cur->num_params], extra)) {
+		return;
+	}
+	auto arg = macro->args[0];
+	arg->params = cur->params;
+	arg->num_params = cur->num_params;
+	arg->num_args = cur->num_args;
+	arg->args = cur->args;
+
+	expand_va_macro (macro, arg, scanner);
 }
 
 void
