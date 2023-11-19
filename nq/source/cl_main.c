@@ -328,6 +328,9 @@ CL_StopCshifts (void)
 void
 CL_Disconnect (void)
 {
+	if (net_is_dedicated) {
+		return;
+	}
 	// stop sounds (especially looping!)
 	S_StopAllSounds ();
 
