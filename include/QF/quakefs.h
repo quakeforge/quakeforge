@@ -252,6 +252,10 @@ QFile *QFS_FOpenFile (const char *filename);
 					data. Use 0.
 	\return			Pointer to the file's data, or NULL on error.
 	\todo remove \a usehunk
+
+	\note The file is closed on return as any error is either file not found
+	(\a file is null) or there was a memory allocation error (bigger
+	problems).
 */
 byte *QFS_LoadFile (QFile *file, int usehunk);
 
