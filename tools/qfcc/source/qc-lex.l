@@ -1095,12 +1095,25 @@ static bool
 join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 			 rua_extra_t *extra)
 {
-	auto str = va (0, "%s%s", p1 ? p1->text : "", p2 ? p2->text : "");
+	if (!p1 || p1->token == -rua_space || p1->token == -rua_ignore) {
+		if (!p2 || p2->token == -rua_space || p2->token == -rua_ignore) {
+			*out = (rua_tok_t) {
+				.token = -rua_ignore,
+				.text = "",
+			};
+		} else {
+			*out = *p2;
+		}
+		return true;
+	}
+	if (!p2 || p2->token == -rua_space || p1->token == -rua_ignore) {
+		// p1 cannot be null, space or ignore here
+		*out = *p1;
+		return true;
+	}
+	auto str = va (0, "%s%s", p1->text, p2->text);
 	yy_scan_string (str, extra->subscanner);
 	rua_tok_t   tok = { .text = str, };
-	if (p1) {
-		tok.location = p1->location;
-	}
 	int token = yylex (&tok, &tok.location, extra->subscanner);
 	if (token && yylex (&tok, &tok.location, extra->subscanner)) {
 		error (0, "pasting \"%s\" and \"%s\" does not give a valid"
@@ -1407,11 +1420,25 @@ next_macro_token (rua_macro_t *macro)
 	return e;
 }
 
-static rua_tok_t *
-get_arg_token (bool last, rua_tok_t *arg, const rua_macro_t *macro)
+static const rua_tok_t *
+get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
+			   void *scanner)
 {
 	symbol_t   *sym;
 
+	if (arg->token == -rua_va_opt) {
+		sym = symtab_lookup (macro->params, arg->text);
+		auto m = sym->s.macro;
+		m->update (m, scanner);
+		if (last) {
+			if (m->tokens) {
+				return (rua_tok_t *) m->tail;
+			}
+			return 0;
+		} else {
+			return m->tokens;
+		}
+	}
 	if (arg->token == -rua_id && macro->params
 	    && (sym = symtab_lookup (macro->params, arg->text))
 	    && !macro->args[sym->s.offset]->next) {
@@ -1439,25 +1466,35 @@ copy_token (rua_macro_t *dst, const rua_tok_t *t)
 }
 
 static void
+do_arg_copy (rua_macro_t *dst, const rua_macro_t *a,
+			 bool skip_first, bool skip_last)
+{
+	if (!a->tokens) {
+		return;
+	}
+	for (auto t = skip_first ? a->tokens->next : a->tokens;
+		 t; t = t->next) {
+		if (skip_last && !t->next) {
+			break;
+		}
+		copy_token (dst, t);
+	}
+}
+
+static void
 copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 				const rua_tok_t *arg, const rua_macro_t *macro)
 {
 	symbol_t   *sym;
 
-	if (arg->token == -rua_id && macro->params
+	if (arg->token == -rua_va_opt) {
+		sym = symtab_lookup (macro->params, arg->text);
+		// __VA_OPT__'s macro was updated by get_arg_token
+		do_arg_copy (dst, sym->s.macro, skip_first, skip_last);
+	} else if (arg->token == -rua_id && macro->params
 	    && (sym = symtab_lookup (macro->params, arg->text))
 	    && !macro->args[sym->s.offset]->next) {
-		auto a = macro->args[sym->s.offset];
-		if (!a->tokens) {
-			return;
-		}
-		for (auto t = skip_first ? a->tokens->next : a->tokens;
-			 t; t = t->next) {
-			if (skip_last && !t->next) {
-				break;
-			}
-			copy_token (dst, t);
-		}
+		do_arg_copy (dst, macro->args[sym->s.offset], skip_first, skip_last);
 	} else if (!skip_first && !skip_last) {
 		copy_token (dst, arg);
 	}
@@ -1621,8 +1658,8 @@ rescan:
 			bool sf = false;
 			bool sl;
 			do {
-				auto p = get_arg_token (true, &e, macro);
-				auto n = get_arg_token (false, e.next->next, macro);
+				auto p = get_arg_token (true, &e, macro, scanner);
+				auto n = get_arg_token (false, e.next->next, macro, scanner);
 				rua_tok_t   cat;
 				if (!(sl = join_tokens (&cat, p, n, extra))) {
 					cat.location = e.next->location;
@@ -2430,7 +2467,10 @@ expand_va_macro (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
 	while (true) {
 		rua_tok_t   e;
 		if (next_token (&e, scanner)) {
-			append_token (macro, &e);
+			if (macro->tokens
+				|| (e.token != -rua_space && e.token != -rua_ignore)) {
+				append_token (macro, &e);
+			}
 			continue;
 		}
 		break;
@@ -2462,7 +2502,11 @@ macro_empty (rua_macro_t *macro, rua_extra_t *extra)
 			&& !sym->s.macro->next) {
 			auto m = sym->s.macro;
 			if (m->params) {
-				//FIXME handle args
+				macro->cursor = t;
+				collect_args (m, macro, extra);
+				if (t == macro->cursor) {
+					return false;
+				}
 			}
 			m->next = macro;
 			bool empty = macro_empty (m, extra);
