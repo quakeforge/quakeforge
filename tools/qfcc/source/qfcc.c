@@ -552,23 +552,31 @@ separate_compile (void)
 
 	for (file = source_files, i = 0; *file; file++) {
 		ext = QFS_FileExtension (*file);
-		dstring_copysubstr (output_file, *file, ext - *file);
 		dstring_copystr (extension, ext);
 
 		if (options.compile && options.output_file) {
 			dstring_clearstr (output_file);
-			dstring_appendstr (output_file, options.output_file);
+			dstring_copystr (output_file, options.output_file);
 		} else {
+			const char *base = strrchr (*file, '/');
+			base = base ? base + 1 : *file;
+			if (options.output_path) {
+				dstring_copystr (output_file, options.output_path);
+				dstring_appendsubstr (output_file, base, ext - base);
+			} else {
+				dstring_copysubstr (output_file, base, ext - base);
+			}
 			dstring_appendstr (output_file, ".qfo");
 		}
+		// need *file for checking -lfoo
 		if ((lang = file_language (*file, extension->str)) != lang_object) {
-			if (options.verbosity >= 2)
+			if (options.verbosity >= 1)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
 			err = compile_to_obj (*file, output_file->str, lang) || err;
 
 			if (!err) {
-				cpp_write_dependencies (*file);
+				cpp_write_dependencies (*file, output_file->str);
 			}
 			*file = save_string (output_file->str);
 		} else {
@@ -600,9 +608,14 @@ separate_compile (void)
 			}
 		}
 		err = finish_link ();
-		if (!options.save_temps)
-			for (file = temp_files; *file; file++)
+		if (!options.save_temps) {
+			for (file = temp_files; *file; file++) {
+				if (options.verbosity >= 1) {
+					printf ("unlink %s\n", *file);
+				}
 				unlink (*file);
+			}
+		}
 	}
 	free (temp_files);
 	return err;
@@ -842,7 +855,7 @@ progs_src_compile (void)
 				return 1;
 	}
 	qfo_delete (qfo);
-	cpp_write_dependencies (progs_src);
+	cpp_write_dependencies (progs_src, options.output_file);
 
 	return 0;
 }

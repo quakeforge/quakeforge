@@ -51,6 +51,6 @@ extern const char *cpp_name;
 extern struct dstring_s *tempname;
 extern struct symtab_s *cpp_macros;
 
-void cpp_write_dependencies (const char *sourcefile);
+void cpp_write_dependencies (const char *sourcefile, const char *outputfile);
 
 #endif//__cpp_h

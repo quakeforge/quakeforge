@@ -749,22 +749,22 @@ cpp_set_quote_file (const char *path)
 }
 
 void
-cpp_write_dependencies (const char *sourcefile)
+cpp_write_dependencies (const char *sourcefile, const char *outputfile)
 {
 	if (!options.dependencies || cpp_name) {
 		return;
 	}
 	if (!cpp_dep_target) {
-		const char *src = strrchr (sourcefile, '/');
-		if (!src) {
-			src = sourcefile - 1;
+		const char *out = strrchr (outputfile, '/');
+		if (!out) {
+			out = outputfile - 1;
 		}
-		src++;
-		const char *dot = strrchr (sourcefile, '.');
+		out++;
+		const char *dot = strrchr (outputfile, '.');
 		if (!dot) {
-			dot = sourcefile + strlen (sourcefile);
+			dot = outputfile + strlen (outputfile);
 		}
-		const char *tgt = va (0, "%.*s.qfo", (int) (dot - src), src);
+		const char *tgt = va (0, "%.*s.qfo", (int) (dot - out), out);
 		cpp_dep_target = save_string (tgt);
 		cpp_dep_quote = 1;//FIXME implement
 	}

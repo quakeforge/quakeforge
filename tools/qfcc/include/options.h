@@ -138,6 +138,7 @@ typedef struct {
 	bool        preprocess_output;	// emit preprocessor output
 	bool        dependencies;		// generate dependency rules
 	bool        gzip;				// compress qfo files when writing
+	const char *output_path;
 	const char *output_file;
 	const char *debug_file;
 } options_t;

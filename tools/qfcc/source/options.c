@@ -627,7 +627,15 @@ DecodeArgs (int argc, char **argv)
 							 this_program);
 					exit (1);
 				} else {
-					options.output_file = save_string (NORMALIZE (optarg));
+					const char *file = save_string (NORMALIZE (optarg));
+					options.output_file = file;
+					const char *dir = strrchr (file, '/');
+					if (dir) {
+						dir += 1; // keep / from path
+						options.output_path = save_substring (file, dir - file);
+					} else {
+						options.output_path = "";
+					}
 				}
 				break;
 			case 'l':					// lib file
