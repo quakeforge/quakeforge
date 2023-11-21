@@ -1500,7 +1500,7 @@ copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 	}
 }
 
-static void __attribute__((used))
+static void
 collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
@@ -1694,6 +1694,17 @@ rescan:
 				   && !macro->args[sym->s.offset]->next) {
 			auto arg = macro->args[sym->s.offset];
 			queue_macro (extra, arg);
+			goto rescan;
+		} else if (token == -rua_id && !macro->name // in an arg
+				   && (sym = symtab_lookup (extra->macro_tab, e.text))
+				   && !sym->s.macro->next
+				   && !sym->s.macro->params) {
+			// force object-type macros in macro arguments to be expanded
+			auto m = sym->s.macro;
+			if (m->update) {
+				m->update (m, scanner);
+			}
+			queue_macro (extra, m);
 			goto rescan;
 		}
 		*tok = e;
@@ -2455,14 +2466,14 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 }
 
 static void
-expand_va_macro (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
+expand_arg (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-	rua_extra_t va_extra = *extra;
-	va_extra.macro = 0;
-	va_extra.no_lex = true;
-	queue_macro (&va_extra, arg);
-	qc_yyset_extra (&va_extra, scanner);
+	rua_extra_t arg_extra = *extra;
+	arg_extra.macro = 0;
+	arg_extra.no_lex = true;
+	queue_macro (&arg_extra, arg);
+	qc_yyset_extra (&arg_extra, scanner);
 
 	while (true) {
 		rua_tok_t   e;
@@ -2541,7 +2552,7 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 	arg->num_args = cur->num_args;
 	arg->args = cur->args;
 
-	expand_va_macro (macro, arg, scanner);
+	expand_arg (macro, arg, scanner);
 }
 
 void
