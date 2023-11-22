@@ -147,7 +147,7 @@ static void update_loc (rua_loc_t *loc, size_t textlen);
 static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
 					   int state, rua_extra_t *extra);
 static void next_line (rua_loc_t *loc, yyscan_t scanner);
-static void dump_state_stack (void *scanner);
+static void dump_state_stack (yyscan_t scanner);
 static void dump_token (rua_tok_t *tok, rua_loc_t *loc, int state);
 static void dump_debug (int act, const char *text, int state);
 
@@ -1146,7 +1146,7 @@ stringize_arg (rua_tok_t *out, rua_macro_t *arg, rua_extra_t *extra)
 
 static int
 preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
-			   yyscan_t *scanner)
+			   yyscan_t scanner)
 {
 	int         token = tok->token;
 	if (!token) {
@@ -1225,7 +1225,7 @@ convert_long (const expr_t *value)
 
 static int
 qc_token (rua_extra_t *extra, QC_YYSTYPE *lval, const rua_tok_t *tok,
-		  yyscan_t *scanner)
+		  yyscan_t scanner)
 {
 	int         token = tok->token;
 
@@ -1326,7 +1326,7 @@ rua_reset_args (rua_macro_t *macro)
 }
 
 static void
-rua_start_args (void *scanner)
+rua_start_args (yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = true;
@@ -1336,7 +1336,7 @@ rua_start_args (void *scanner)
 }
 
 static void
-rua_end_args (void *scanner)
+rua_end_args (yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = false;
@@ -1422,7 +1422,7 @@ next_macro_token (rua_macro_t *macro)
 
 static const rua_tok_t *
 get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
-			   void *scanner)
+			   yyscan_t scanner)
 {
 	symbol_t   *sym;
 
@@ -1501,7 +1501,7 @@ copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 }
 
 static void
-collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
+collect_args (rua_macro_t *m, rua_macro_t *macro, yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	m->next = extra->pending_macro;
@@ -1529,8 +1529,8 @@ collect_args (rua_macro_t *m, rua_macro_t *macro, void *scanner)
 				rua_macro_append (a, t, scanner);
 			}
 		}
+		macro->cursor = t;
 	}
-	macro->cursor = t;
 	extra->pending_macro = m->next;
 }
 
@@ -2150,7 +2150,7 @@ dump_debug (int act, const char *text, int start)
 }
 
 static void
-dump_state_stack (void *scanner)
+dump_state_stack (yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	auto yyg = (struct yyguts_t *)scanner;
@@ -2466,7 +2466,7 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 }
 
 static void
-expand_arg (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
+expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	rua_extra_t arg_extra = *extra;
@@ -2491,8 +2491,10 @@ expand_arg (rua_macro_t *macro, rua_macro_t *arg, void *scanner)
 }
 
 static bool
-macro_empty (rua_macro_t *macro, rua_extra_t *extra)
+macro_empty (rua_macro_t *macro, yyscan_t scanner)
 {
+	auto extra = qc_yyget_extra (scanner);
+
 	for (auto t = macro->tokens; t; t = t->next) {
 		if (t->token != -rua_id) {
 			return false;
@@ -2503,7 +2505,7 @@ macro_empty (rua_macro_t *macro, rua_extra_t *extra)
 			&& !macro->args[sym->s.offset]->next) {
 			auto arg = macro->args[sym->s.offset];
 			arg->next = macro;
-			bool empty = macro_empty (arg, extra);
+			bool empty = macro_empty (arg, scanner);
 			arg->next = 0;
 			if (!empty) {
 				return false;
@@ -2514,13 +2516,13 @@ macro_empty (rua_macro_t *macro, rua_extra_t *extra)
 			auto m = sym->s.macro;
 			if (m->params) {
 				macro->cursor = t;
-				collect_args (m, macro, extra);
+				collect_args (m, macro, scanner);
 				if (t == macro->cursor) {
 					return false;
 				}
 			}
 			m->next = macro;
-			bool empty = macro_empty (m, extra);
+			bool empty = macro_empty (m, scanner);
 			m->next = 0;
 			if (!empty) {
 				return false;
@@ -2543,7 +2545,7 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 				 "variadic macro");
 		return;
 	}
-	if (macro_empty (cur->args[~cur->num_params], extra)) {
+	if (macro_empty (cur->args[~cur->num_params], scanner)) {
 		return;
 	}
 	auto arg = macro->args[0];
