@@ -100,7 +100,7 @@ static bool cpp_dep_phony = false;
 static bool cpp_dep_quote = false;
 
 symtab_t   *cpp_macros;
-const char *cpp_name = CPP_NAME;
+const char *cpp_name = 0;//CPP_NAME;
 dstring_t  *tempname;
 
 static const char **
