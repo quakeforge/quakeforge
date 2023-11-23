@@ -36,6 +36,7 @@
 enum {
 	effect_light,		// light entity id
 	effect_muzzleflash,	// light entity id
+	effect_trail,		// trail id
 
 	effect_comp_count,
 };
@@ -54,5 +55,6 @@ void CL_EntityEffects (struct entity_s ent, struct entity_state_s *state,
 					   double time);
 void CL_MuzzleFlash (struct entity_s ent, vec4f_t position, vec4f_t fv,
 					 float zoffset, double time);
+void CL_Effects_Init (void);
 
 #endif//__client_effects_h

@@ -59,6 +59,7 @@
 #include "compat.h"
 
 #include "client/chase.h"
+#include "client/effects.h"
 #include "client/particles.h"
 #include "client/sbar.h"
 #include "client/screen.h"
@@ -740,6 +741,7 @@ CL_Init (cbuf_t *cbuf)
 
 	CL_Init_Input (cbuf);
 	CL_Particles_Init ();
+	CL_Effects_Init ();
 	CL_TEnts_Init ();
 	CL_World_Init ();
 	CL_ClearState ();

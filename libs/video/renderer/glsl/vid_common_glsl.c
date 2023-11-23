@@ -57,6 +57,11 @@
 
 static const char quakeforge_effect[] =
 #include "libs/video/renderer/glsl/quakeforge.slc"
+"--\n"	// ensure the last block of the previous file doesn't merge with
+		// the first block of the next file
+// Include Stefan Gustavson's noise functions in the QuakeForge shader
+// effect "file".
+#include "libs/video/renderer/glsl/sgustavson.slc"
 ;
 
 int					glsl_palette;

@@ -41,10 +41,8 @@ typedef enum {
 	part_tex_smoke,
 } ptextype_t;
 
-typedef struct particle_s particle_t;
-
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-struct particle_s {
+typedef struct particle_s {
 	vec4f_t     pos;
 	vec4f_t     vel;
 
@@ -61,7 +59,24 @@ struct particle_s {
 	float		ramp;
 	float		scale;
 	float		live;
-};
+} particle_t;
+
+static_assert (sizeof (particle_t) == 4 * sizeof(vec4f_t),
+			   "particle_t wrong size");
+
+typedef struct trailpnt_s {
+	vec4f_t     pos;
+	vec4f_t     vel;
+	vec3_t      bary;
+	float       pathoffset;
+	byte        colora[4];
+	byte        colorb[4];
+	uint32_t    trailid;
+	float       live;
+} trailpnt_t;
+
+static_assert (sizeof (trailpnt_t) == 4 * sizeof(vec4f_t),
+			   "trailprt_t wrong size");
 
 typedef struct partparm_s {
 	vec4f_t     drag;	// drag[3] is grav scale
@@ -70,6 +85,9 @@ typedef struct partparm_s {
 	float       scale_rate;
 	float       alpha_rate;
 } partparm_t;
+
+static_assert (sizeof (partparm_t) == 2 * sizeof(vec4f_t),
+			   "partparm_t wrong size");
 
 typedef struct psystem_s {
 	vec4f_t     gravity;
@@ -185,5 +203,10 @@ void Fog_SetupFrame (void);
 void Fog_StartAdditive (void);
 void Fog_StopAdditive (void);
 void Fog_Init (void);
+
+bool R_Trail_Valid (psystem_t *system, uint32_t trailid) __attribute__((pure));
+uint32_t R_Trail_Create (psystem_t *system, int num_points, vec4f_t start);
+void R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos);
+void R_Trail_Destroy (psystem_t *system, uint32_t trailid);
 
 #endif//__QF_render_h

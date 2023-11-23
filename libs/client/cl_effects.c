@@ -53,6 +53,15 @@
 
 ecs_system_t effect_system;
 
+static psystem_t *cl_tsystem;
+
+static void
+cl_destroy_trail (void *comp)
+{
+	auto trail = *(uint32_t *) comp;
+	R_Trail_Destroy (cl_tsystem, trail);
+}
+
 const component_t effect_components[effect_comp_count] = {
 	[effect_light] = {
 		.size = sizeof (uint32_t),
@@ -62,9 +71,15 @@ const component_t effect_components[effect_comp_count] = {
 		.size = sizeof (uint32_t),
 		.name = "muzzle flash",
 	},
+	[effect_trail] = {
+		.size = sizeof (uint32_t),
+		.name = "effect trail",
+		.destroy = cl_destroy_trail,
+	},
 };
 
 #define c_light (effect_system.base + effect_light)
+#define c_trail (effect_system.base + effect_trail)
 
 static bool
 has_light (entity_t ent)
@@ -96,6 +111,27 @@ attach_light_ent (entity_t ent)
 		set_light (ent, light);
 	}
 	return light;
+}
+
+static bool
+has_trail (entity_t ent)
+{
+	return Ent_HasComponent (ent.id, c_trail, ent.reg);
+}
+
+static uint32_t
+get_trail (entity_t ent)
+{
+	if (!has_trail (ent)) {
+		return nullent;
+	}
+	return *(uint32_t *) Ent_GetComponent (ent.id, c_trail, ent.reg);
+}
+
+static void
+set_trail (entity_t ent, uint32_t trail)
+{
+	Ent_SetComponent (ent.id, c_trail, ent.reg, &trail);
 }
 
 void
@@ -181,6 +217,14 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 		});
 		Light_LinkLight (cl_world.scene->lights, light);
 		clp_funcs->RocketTrail (*old_origin, ent_origin);
+		if (cl_tsystem) {
+			uint32_t trail = get_trail (ent);
+			if (R_Trail_Valid (cl_tsystem, trail)) {
+				R_Trail_Update (cl_tsystem, trail, ent_origin);
+			} else {
+				set_trail (ent, R_Trail_Create (cl_tsystem, 30, ent_origin));
+			}
+		}
 		renderer->noshadows = 1;
 	} else if (model->effects & ME_GRENADE)
 		clp_funcs->GrenadeTrail (*old_origin, ent_origin);
@@ -208,5 +252,13 @@ CL_EntityEffects (entity_t ent, entity_state_t *state, double time)
 	if (state->effects & EF_MUZZLEFLASH) {
 		vec4f_t     fv = Transform_Forward (transform);
 		CL_MuzzleFlash (ent, position, fv, 16, time);
+	}
+}
+
+void
+CL_Effects_Init (void)
+{
+	if (r_funcs->TrailSystem) {
+		cl_tsystem = r_funcs->TrailSystem ();
 	}
 }

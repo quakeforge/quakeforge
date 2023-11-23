@@ -39,6 +39,7 @@ struct plitem_s;
 struct cvar_s;
 struct scene_s;
 struct skin_s;
+struct particle_s;
 
 struct mod_alias_ctx_s;
 struct mod_sprite_ctx_s;
@@ -117,6 +118,7 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_Glyph) (int x, int y, int fontid, int glyphid, int c);
 
 	struct psystem_s *(*ParticleSystem) (void);
+	struct psystem_s *(*TrailSystem) (void);
 	void (*R_Init) (void);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
@@ -126,6 +128,7 @@ typedef struct vid_render_funcs_s {
 	void (*begin_frame) (void);
 	void (*render_view) (void);
 	void (*draw_particles) (struct psystem_s *psystem);
+	void (*draw_trails) (struct psystem_s *psystem);
 	void (*draw_transparent) (void);
 	void (*post_process) (struct framebuffer_s *src);
 	void (*set_2d) (int scaled);

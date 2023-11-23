@@ -58,9 +58,10 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
 	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_progs.c \
 	libs/video/renderer/r_scrap.c \
 	libs/video/renderer/r_screen.c \
-	libs/video/renderer/r_progs.c
+	libs/video/renderer/r_trails.c
 
 video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
@@ -97,12 +98,18 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/vid_common_gl.c \
 	libs/video/renderer/gl/vtxarray.c
 
-shader_src= libs/video/renderer/glsl/quakeforge.glsl
-shader_gen= libs/video/renderer/glsl/quakeforge.slc
+glslshaderpath = libs/video/renderer/glsl
+
+shader_src = \
+	$(glslshaderpath)/quakeforge.glsl \
+	$(glslshaderpath)/sgustavson.glsl
+shader_gen = \
+	$(glslshaderpath)/quakeforge.slc \
+	$(glslshaderpath)/sgustavson.slc
 
 SUFFIXES += .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
-	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
@@ -129,6 +136,7 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
 	libs/video/renderer/glsl/glsl_textures.c \
+	libs/video/renderer/glsl/glsl_trails.c \
 	libs/video/renderer/glsl/glsl_warp.c \
 	libs/video/renderer/glsl/qfglsl.c \
 	libs/video/renderer/glsl/quakeforge.glsl \

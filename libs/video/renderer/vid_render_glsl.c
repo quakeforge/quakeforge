@@ -477,6 +477,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.Draw_Glyph             = glsl_Draw_Glyph,
 
 	.ParticleSystem   = glsl_ParticleSystem,
+	.TrailSystem      = glsl_TrailSystem,
 	.R_Init           = glsl_R_Init,
 	.R_ClearState     = glsl_R_ClearState,
 	.R_LoadSkys       = glsl_R_LoadSkys,
@@ -485,6 +486,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.begin_frame      = glsl_begin_frame,
 	.render_view      = glsl_render_view,
 	.draw_particles   = glsl_R_DrawParticles,
+	.draw_trails      = glsl_R_DrawTrails,
 	.draw_transparent = glsl_draw_transparent,
 	.post_process     = glsl_post_process,
 	.set_2d           = glsl_set_2d,

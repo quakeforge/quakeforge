@@ -37,6 +37,7 @@
 
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/image.h"
@@ -178,7 +179,9 @@ glsl_R_InitParticles (void)
 	float       v[2] = {0, 0};
 	byte        data[64][64][2];
 	tex_t      *tex;
-
+#if 0
+	R_LoadParticles ();
+#endif
 	Cvar_AddListener (Cvar_FindVar ("r_particles"), glsl_particles_f, 0);
 	Cvar_AddListener (Cvar_FindVar ("r_particles_max"), glsl_particles_f, 0);
 
