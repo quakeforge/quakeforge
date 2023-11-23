@@ -143,8 +143,21 @@ parse_error (void *scanner)
 %{
 #define TEXPR(c,t,f) new_long_expr (expr_long (c) ? expr_long (t) \
 												  : expr_long (f), false)
+#if 0
+#define BEXPR(a,op,b) \
+	({\
+		printf ("\n%ld %s %ld\n", expr_long(a), #op, expr_long(b));\
+		new_long_expr (expr_long (a) op expr_long (b), false);\
+	})
+#define UEXPR(op,a)\
+	({\
+		printf ("\n%s %ld\n", #op, expr_long(a));\
+		new_long_expr (op expr_long (a), false);\
+	})
+#else
 #define BEXPR(a,op,b) new_long_expr (expr_long (a) op expr_long (b), false)
 #define UEXPR(op,a)   new_long_expr (op expr_long (a), false)
+#endif
 
 static const expr_t *
 get_long (const expr_t *expr, const char *text, int defl)
