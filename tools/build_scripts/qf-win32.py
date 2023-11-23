@@ -6,11 +6,11 @@ version = ""
 prefix = "qf-win32"
 dir = prefix
 
-if len (sys.argv) >= 2:
+if len(sys.argv) >= 2:
 	version = "-" + sys.argv[1]
-if len (sys.argv) >= 3:
+if len(sys.argv) >= 3:
 	prefix = sys.argv[2]
-if len (sys.argv) >= 4:
+if len(sys.argv) >= 4:
 	dir = sys.argv[3]
 
 if dir and dir[-1] != '/':
@@ -26,21 +26,11 @@ server = [
 	dir + "bin/qtv.exe",
 ]
 
-#client_wgl = [
-#	dir,
-#	dir + "bin",
-#	dir + "bin/nq-wgl.exe",
-#	dir + "bin/qw-client-wgl.exe",
-#	dir + "QF",
-#	dir + "QF/menu.dat.gz",
-#	dir + "QF/menu.plist",
-#]
-
-client_sdl = [
+client_win = [
 	dir,
 	dir + "bin",
-	dir + "bin/nq-sdl.exe",
-	dir + "bin/qw-client-sdl.exe",
+	dir + "bin/nq-win.exe",
+	dir + "bin/qw-client-win.exe",
 	dir + "QF",
 	dir + "QF/menu.dat.gz",
 	dir + "QF/menu.plist",
@@ -85,8 +75,7 @@ devel_r = [
 
 packages = [
 	(prefix + "-" + "server", server),
-	#(prefix + "-" + "client-wgl", client_wgl),
-	(prefix + "-" + "client-sdl", client_sdl),
+	(prefix + "-" + "client-win", client_win),
 	(prefix + "-" + "tools", tools),
 	(prefix + "-" + "devel", devel),
 	(prefix + "-" + "devel", devel_r, "-r"),
@@ -96,8 +85,8 @@ packages = [
 
 for p in packages:
 	opt = ""
-	if len (p) >= 3:
+	if len(p) >= 3:
 		opt = p[2] + " "
-	cmd = "zip -9 " + opt + p[0] + version + ".zip " + " ".join (p[1])
-	print cmd
-	system (cmd)
+	cmd = "zip -9 " + opt + p[0] + version + ".zip " + " ".join(p[1])
+	print(cmd)
+	system(cmd)
