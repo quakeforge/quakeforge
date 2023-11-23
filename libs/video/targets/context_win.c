@@ -876,7 +876,6 @@ Win_CreateWindow (int width, int height)
 		SetForegroundWindow (win_mainwindow);
 	}
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
-	IN_ClearStates ();
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
 
