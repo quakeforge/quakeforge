@@ -139,8 +139,8 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_trails.c \
 	libs/video/renderer/glsl/glsl_warp.c \
 	libs/video/renderer/glsl/qfglsl.c \
-	libs/video/renderer/glsl/quakeforge.glsl \
-	libs/video/renderer/glsl/vid_common_glsl.c
+	libs/video/renderer/glsl/vid_common_glsl.c \
+	$(shader_src)
 
 video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
@@ -633,6 +633,7 @@ EXTRA_DIST += \
 	$(light_debug_src) \
 	$(lighting_cascadef_src) \
 	$(lighting_cubef_src) \
+	$(lighting_main) \
 	$(lighting_nonef_src) \
 	$(lighting_planef_src) \
 	$(lighting_h) \
