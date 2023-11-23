@@ -1723,6 +1723,29 @@ rescan:
 			}
 			queue_macro (extra, m);
 			goto rescan;
+#if 0	// causes preproc-1.r to fail (see XXX below)
+		} else if (token == -rua_id && !macro->name // in an arg
+				   && (sym = symtab_lookup (extra->macro_tab, e.text))
+				   && !sym->s.macro->next
+				   && sym->s.macro->params) {
+			// force function-type macros in macro arguments to be expanded
+			auto m = sym->s.macro;
+			auto c = macro->cursor;
+			// XXX breakage for preproc-1.r: collect_args assumes the macro
+			// is complete, but in the case of preproc-1.r, it is not. In fact,
+			// with the final ) removed from the F macro, tokens are consumed
+			// to the end of the file. Thus, nt x = F(LPAREN(), 0, <:-);
+			// expands to int x = 42 ); instead of int x = 42;
+			// However, this block is needed for the H5C(H5A()) test
+			collect_args (m, macro, scanner);
+			if (macro->cursor != c) {
+				if (m->update) {
+					m->update (m, scanner);
+				}
+				queue_macro (extra, m);
+				goto rescan;
+			}
+#endif
 		}
 		*tok = e;
 	}
