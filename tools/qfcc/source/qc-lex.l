@@ -1632,6 +1632,23 @@ rescan:
 		e = *tok;
 	}
 	int token = e.token;
+	if (extra->pending_macro && !extra->recording) {
+		if (token != -rua_space && token != '(') {
+			auto pending_macro = extra->pending_macro;
+			append_token (pending_macro, &e);
+			extra->pending_macro = pending_macro->next;
+			if (extra->macro) {
+				auto macro = extra->macro;
+				pending_macro->params = macro->params;
+				pending_macro->args = macro->args;
+			}
+			queue_macro (extra, pending_macro);
+			// get the token that looked like a macro
+			e = next_macro_token (extra->macro);
+			*tok = e;
+			return e.token;
+		}
+	}
 	if (extra->macro) {
 		symbol_t   *sym;
 		auto macro = extra->macro;
@@ -1738,14 +1755,6 @@ rescan:
 				internal_error (0, "can't start parsing macro args");
 			}
 			goto rescan;
-		} else {
-			append_token (pending_macro, &e);
-			extra->pending_macro = pending_macro->next;
-			queue_macro (extra, pending_macro);
-			// get the token that looked like a macro
-			e = next_macro_token (extra->macro);
-			*tok = e;
-			return e.token;
 		}
 	}
 	symbol_t   *sym;
