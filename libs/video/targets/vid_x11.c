@@ -69,18 +69,6 @@ static vid_internal_t vid_internal;
 
 int 		VID_options_items = 1;
 
-void
-D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
-{
-// direct drawing of the "accessing disk" icon isn't supported
-}
-
-void
-D_EndDirectRect (int x, int y, int width, int height)
-{
-// direct drawing of the "accessing disk" icon isn't supported
-}
-
 static void
 X11_VID_Shutdown (void)
 {
