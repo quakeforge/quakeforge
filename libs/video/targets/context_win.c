@@ -218,6 +218,8 @@ static cvar_t vid_window_y_cvar = {
 static DWORD WindowStyle, ExWindowStyle;
 
 int  win_center_x, win_center_y;
+int  win_pos_x, win_pos_y;
+int  win_len_x, win_len_y;
 RECT win_rect;
 
 DEVMODE     win_gdevmode;
@@ -359,14 +361,15 @@ VID_CheckWindowXY (void)
 #endif
 
 static void
-Win_UpdateWindowStatus (int window_x, int window_y)
+Win_UpdateWindowStatus ()
 {
-	win_rect.left = window_x;
-	win_rect.top = window_y;
-	win_rect.right = window_x + viddef.width;
-	win_rect.bottom = window_y + viddef.height;
+	win_rect.left = win_pos_x;
+	win_rect.top = win_pos_y;
+	win_rect.right = win_pos_x + win_len_x;
+	win_rect.bottom = win_pos_y + win_len_y;
 	win_center_x = (win_rect.left + win_rect.right) / 2;
 	win_center_y = (win_rect.top + win_rect.bottom) / 2;
+	VID_SetWindow (win_pos_x, win_pos_y, win_len_x, win_len_y);
 	IN_UpdateClipCursor ();
 }
 
@@ -802,7 +805,7 @@ VID_SetMode (int modenum, const byte *palette)
 		IN_HideMouse ();
 	}
 
-	Win_UpdateWindowStatus (0, 0);		// FIXME right numbers?
+	Win_UpdateWindowStatus ();
 //FIXME CDAudio_Resume ();
 
 	if (!stat) {
@@ -876,15 +879,20 @@ notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static long
 notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	Win_UpdateWindowStatus ((int) LOWORD (lParam), (int) HIWORD (lParam));
+	win_pos_x = LOWORD (lParam);
+	win_pos_y = HIWORD (lParam);
+	Sys_MaskPrintf (SYS_vid, "notify_move: %d %d\n", win_pos_x, win_pos_y);
+	Win_UpdateWindowStatus ();
 	return 1;
 }
 
 static long
 notify_size (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	Sys_Printf ("notify_size: %p %d %016llx %016llx\n",
-				hWnd, uMsg, wParam, lParam);
+	win_len_x = LOWORD (lParam);
+	win_len_y = HIWORD (lParam);
+	Sys_MaskPrintf (SYS_vid, "notify_size: %d %d\n", win_pos_x, win_pos_y);
+	Win_UpdateWindowStatus ();
 	return 1;
 }
 
@@ -900,10 +908,10 @@ Win_CreateWindow (int width, int height)
 
 
 	RECT rect = {
-		.top = 0,
-		.left = 0,
-		.right = width,
-		.bottom = height,
+		.top = win_pos_x = 0,
+		.left = win_pos_y = 0,
+		.right = win_len_x = width,
+		.bottom = win_len_y = height,
 	};
 	AdjustWindowRectEx (&rect, WindowStyle, FALSE, 0);
 	// sound initialization has to go here, preceded by a windowed mode set,
@@ -926,7 +934,7 @@ Win_CreateWindow (int width, int height)
 	// done
 	vid_mode_set = true;
 //FIXME if (firsttime) S_Init ();
-	Win_UpdateWindowStatus (0, 0);		// FIXME right numbers?
+	Win_UpdateWindowStatus ();
 
 	HDC         hdc = GetDC (NULL);
 	if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE) {

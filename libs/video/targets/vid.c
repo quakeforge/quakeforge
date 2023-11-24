@@ -176,7 +176,7 @@ VID_SetWindow (int x, int y, int width, int height)
 		Sys_Error ("VID_SetWindow: invalid size: %d, %d", width, height);
 	}
 	if (x != viddef.x || y !=viddef.y
-		||width != (int) viddef.width || height != (int) viddef.height) {
+		|| width != (int) viddef.width || height != (int) viddef.height) {
 		viddef.x = x;
 		viddef.y = y;
 		viddef.width = width;
