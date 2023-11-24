@@ -44,8 +44,10 @@ extern int vid_ddraw;
 extern int      win_center_x, win_center_y;
 extern RECT     win_rect;
 
-LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void Win_Activate (BOOL fActive, BOOL minimize);
+
+bool Win_AddEvent (UINT event, LONG (*event_handler)(HWND, UINT, WPARAM, LPARAM));
+bool Win_RemoveEvent (UINT event);
 
 void Win_UnloadAllDrivers (void);
 void Win_OpenDisplay (void);
@@ -53,7 +55,6 @@ void Win_CloseDisplay (void);
 void Win_SetVidMode (int width, int height);
 void Win_CreateWindow (int width, int height);
 void Win_Init_Cvars (void);
-void Win_UpdateWindowStatus (int x, int y);
 void Win_SetCaption (const char *text);
 bool Win_SetGamma (double gamma);
 

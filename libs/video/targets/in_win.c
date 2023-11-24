@@ -60,7 +60,7 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPUNKNOWN punkOuter);
 
 // mouse local variables
-static unsigned uiWheelMessage;
+unsigned uiWheelMessage = ~0u;
 static unsigned  mouse_buttons;
 static POINT current_pos;
 static bool mouseinitialized;
@@ -69,6 +69,7 @@ static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
 static bool mouseparmsvalid, mouseactivatetoggle;
 static bool mouseshowtoggle = 1;
 static bool dinput_acquired;
+static bool in_win_initialized;
 static unsigned int mstate_di;
 
 // misc locals
@@ -696,6 +697,7 @@ in_win_init (void *data)
 	//Key_KeydestCallback (win_keydest_callback, 0);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of the C&P buffer to the console");
+	in_win_initialized = true;
 }
 
 static const char *
@@ -1057,121 +1059,137 @@ Win_Activate (BOOL active, BOOL minimize)
 	}
 }
 
-/* main window procedure */
-LONG WINAPI
-MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static void
+in_win_send_focus_event (int gain)
 {
-	LONG        lRet = 1;
-	int         fActive, fMinimized, temp;
+	IE_event_t  event = {
+		.type = gain ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
+}
 
-	if (uMsg == uiWheelMessage)
-		uMsg = WM_MOUSEWHEEL;
+static LONG
+event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	in_win_send_focus_event (1);
+	return 1;
+}
 
-	switch (uMsg) {
-		case WM_SETFOCUS:
-			//Key_FocusEvent (1);
-			break;
-		case WM_KILLFOCUS:
-			if (modestate == MS_FULLDIB)
-				ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
-			//Key_FocusEvent (0);
-			break;
-		case WM_CREATE:
-			break;
-
-		case WM_MOVE:
-			Win_UpdateWindowStatus ((int) LOWORD (lParam),
-									(int) HIWORD (lParam));
-			break;
-
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-			event_key (lParam, 1);
-			break;
-
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-			event_key (lParam, 0);
-			break;
-
-		case WM_SYSCHAR:
-			// keep Alt-Space from happening
-			break;
-
-		// this is complicated because Win32 seems to pack multiple mouse
-		// events into one update sometimes, so we always check all states and
-		// look for events
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
-		case WM_MOUSEMOVE:
-			temp = 0;
-
-			if (wParam & MK_LBUTTON)
-				temp |= 1;
-			if (wParam & MK_RBUTTON)
-				temp |= 2;
-			if (wParam & MK_MBUTTON)
-				temp |= 4;
-			event_button (temp);
-
-			break;
-
-		// JACK: This is the mouse wheel with the Intellimouse
-		// It's delta is either positive or neg, and we generate the proper
-		// Event.
-		case WM_MOUSEWHEEL:
-			temp = win_mouse.buttons & ~((1 << 3) | (1 << 4));;
-			if ((short) HIWORD (wParam) > 0) {
-				event_button (temp | (1 << 3));
-			} else {
-				event_button (temp | (1 << 4));
-			}
-			event_button (temp);
-			break;
-
-		case WM_SIZE:
-			break;
-
-		case WM_CLOSE:
-			if (MessageBox
-				(win_mainwindow,
-				 "Are you sure you want to quit?", "Confirm Exit",
-				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-				Sys_Quit ();
-			}
-			break;
-
-		case WM_ACTIVATE:
-			fActive = LOWORD (wParam);
-			fMinimized = (BOOL) HIWORD (wParam);
-			Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
-			// fix leftover Alt from any Alt-Tab or the like that switched us
-			// away
-			IN_ClearStates ();
-			break;
-
-		case WM_DESTROY:
-			if (win_mainwindow)
-				DestroyWindow (win_mainwindow);
-			PostQuitMessage (0);
-			break;
-
-		case MM_MCINOTIFY:
-			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-			break;
-
-		default:
-			/* pass all unhandled messages to DefWindowProc */
-			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-			break;
+static LONG
+event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (modestate == MS_FULLDIB) {
+		ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
 	}
+	in_win_send_focus_event (0);
+	return 1;
+}
 
-	/* return 1 if handled message, 0 if not */
-	return lRet;
+static LONG
+event_keyup (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	event_key (lParam, 0);
+	return 1;
+}
+
+static LONG
+event_keydown (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	event_key (lParam, 1);
+	return 1;
+}
+
+static LONG
+event_syschar (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// absorb Alt-Space
+	return 1;
+}
+
+static LONG
+event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// this is complicated because Win32 seems to pack multiple mouse
+	// events into one update sometimes, so we always check all states and
+	// look for events
+	unsigned    temp = 0;
+
+	if (wParam & MK_LBUTTON)
+		temp |= 1;
+	if (wParam & MK_RBUTTON)
+		temp |= 2;
+	if (wParam & MK_MBUTTON)
+		temp |= 4;
+	event_button (temp);
+	return 1;
+}
+
+static LONG
+event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// JACK: This is the mouse wheel with the Intellimouse
+	// It's delta is either positive or neg, and we generate the proper
+	// Event.
+	unsigned    temp = win_mouse.buttons & ~((1 << 3) | (1 << 4));;
+	if ((short) HIWORD (wParam) > 0) {
+		event_button (temp | (1 << 3));
+	} else {
+		event_button (temp | (1 << 4));
+	}
+	event_button (temp);
+	return 1;
+}
+
+static LONG
+event_close (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (MessageBox (win_mainwindow,
+					"Are you sure you want to quit?", "Confirm Exit",
+					MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
+		Sys_Quit ();
+	}
+	return 1;
+}
+
+static long
+event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         fActive = LOWORD (wParam);
+	int         fMinimized = (BOOL) HIWORD (wParam);
+	Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
+	// fix leftover Alt from any Alt-Tab or the like that switched us away
+	if (in_win_initialized) {
+		IN_ClearStates ();
+	}
+	return 1;
+}
+
+void
+IN_Win_Preinit (void)
+{
+	Win_AddEvent (WM_SETFOCUS, event_focusin);
+	Win_AddEvent (WM_SETFOCUS, event_focusout);
+
+	Win_AddEvent (WM_KEYDOWN, event_keydown);
+	Win_AddEvent (WM_SYSKEYDOWN, event_keydown);
+	Win_AddEvent (WM_KEYUP, event_keyup);
+	Win_AddEvent (WM_SYSKEYUP, event_keyup);
+	Win_AddEvent (WM_SYSCHAR, event_syschar);
+
+	Win_AddEvent (WM_LBUTTONDOWN, event_mouse);
+	Win_AddEvent (WM_LBUTTONUP, event_mouse);
+	Win_AddEvent (WM_RBUTTONDOWN, event_mouse);
+	Win_AddEvent (WM_RBUTTONUP, event_mouse);
+	Win_AddEvent (WM_MBUTTONDOWN, event_mouse);
+	Win_AddEvent (WM_MBUTTONUP, event_mouse);
+	Win_AddEvent (WM_MOUSEMOVE, event_mouse);
+
+	Win_AddEvent (WM_MOUSEWHEEL, event_mousewheel);
+
+	Win_AddEvent (WM_CLOSE, event_close);
+
+	Win_AddEvent (WM_ACTIVATE, event_activate);
 }
 
 static in_driver_t in_win_driver = {

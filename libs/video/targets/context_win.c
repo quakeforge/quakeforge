@@ -41,6 +41,7 @@
 
 #include "context_win.h"
 #include "r_shared.h"
+#include "in_win.h"
 #include "vid_internal.h"
 #include "vid_sw.h"
 
@@ -55,6 +56,8 @@ sw_ctx_t   *win_sw_context;
 #define MODE_SETTABLE_WINDOW	2
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
+
+#define WINDOW_CLASS PACKAGE_NAME "WindowClass"
 
 int vid_ddraw;
 static cvar_t vid_ddraw_cvar = {
@@ -284,6 +287,47 @@ static vmode_t badmode = {
 	.modedesc = "Bad mode",
 };
 
+static LONG (*event_handlers[WM_USER])(HWND, UINT, WPARAM, LPARAM);
+
+bool
+Win_AddEvent (UINT event, LONG (*event_handler)(HWND, UINT, WPARAM, LPARAM))
+{
+	if (event >= WM_USER) {
+		Sys_MaskPrintf (SYS_vid, "event: %d, WM_USER: %d\n", event, WM_USER);
+		return false;
+	}
+
+	if (event_handlers[event]) {
+		return false;
+	}
+
+	event_handlers[event] = event_handler;
+	return true;
+}
+
+bool
+Win_RemoveEvent (UINT event)
+{
+	if (event >= WM_USER) {
+		Sys_MaskPrintf (SYS_vid, "event: %d, WM_USER: %d\n", event, WM_USER);
+		return false;
+	}
+	event_handlers[event] = 0;
+	return true;
+}
+
+static LONG WINAPI
+Win_EventHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == uiWheelMessage) {
+		uMsg = WM_MOUSEWHEEL;
+	}
+	if (uMsg < WM_USER && event_handlers[uMsg]) {
+		return event_handlers[uMsg] (hWnd, uMsg, wParam, lParam);
+	}
+	return DefWindowProc (hWnd, uMsg, wParam, lParam);
+}
+
 static int  VID_SetMode (int modenum, const byte *palette);
 
 static void __attribute__ ((used))
@@ -314,7 +358,7 @@ VID_CheckWindowXY (void)
 }
 #endif
 
-void
+static void
 Win_UpdateWindowStatus (int window_x, int window_y)
 {
 	win_rect.left = window_x;
@@ -345,7 +389,7 @@ VID_InitModes (HINSTANCE hInstance)
 
 	/* Register the frame class */
 	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = (WNDPROC) MainWndProc;
+	wc.lpfnWndProc = (WNDPROC) Win_EventHandler;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
@@ -353,7 +397,7 @@ VID_InitModes (HINSTANCE hInstance)
 	wc.hCursor = LoadCursor (NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
 	wc.lpszMenuName = 0;
-	wc.lpszClassName = "WinQuake";
+	wc.lpszClassName = WINDOW_CLASS;
 
 	if (!RegisterClass (&wc))
 		Sys_Error ("Couldn't register window class");
@@ -448,6 +492,8 @@ VID_GetDisplayModes (void)
 void
 Win_OpenDisplay (void)
 {
+	global_hInstance = GetModuleHandle (0);
+
 	VID_InitModes (global_hInstance);
 	VID_GetDisplayModes ();
 
@@ -458,11 +504,6 @@ Win_OpenDisplay (void)
 		startwindowed = 1;
 		vid_default = windowed_default;
 	}
-
-#ifdef SPLASH_SCREEN
-    if (hwnd_dialog)
-        DestroyWindow (hwnd_dialog);
-#endif
 }
 
 void
@@ -816,10 +857,48 @@ VID_SetMode (int modenum, const byte *palette)
 	return true;
 }
 
+static long
+notify_create (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return 1;
+}
+
+static long
+notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (win_mainwindow) {
+		DestroyWindow (win_mainwindow);
+	}
+	PostQuitMessage (0);
+	return 1;
+}
+
+static long
+notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	Win_UpdateWindowStatus ((int) LOWORD (lParam), (int) HIWORD (lParam));
+	return 1;
+}
+
+static long
+notify_size (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	Sys_Printf ("notify_size: %p %d %016llx %016llx\n",
+				hWnd, uMsg, wParam, lParam);
+	return 1;
+}
 
 void
 Win_CreateWindow (int width, int height)
 {
+	IN_Win_Preinit ();
+
+	Win_AddEvent (WM_CREATE, notify_create);
+	Win_AddEvent (WM_DESTROY, notify_destroy);
+	Win_AddEvent (WM_MOVE, notify_move);
+	Win_AddEvent (WM_SIZE, notify_size);
+
+
 	RECT rect = {
 		.top = 0,
 		.left = 0,
@@ -832,10 +911,10 @@ Win_CreateWindow (int width, int height)
 	// fullscreen so the "hardware already in use" dialog is visible if it
 	// gets displayed
 	// keep the window minimized until we're ready for the first real mode set
-	win_mainwindow = CreateWindowEx (ExWindowStyle,
-								   "WinQuake",
-								   "WinQuake",
-								   WindowStyle,
+	win_mainwindow = CreateWindowExA (ExWindowStyle,
+								   WINDOW_CLASS,
+								   PACKAGE_STRING,
+								   WS_OVERLAPPEDWINDOW,
 								   0, 0,
 								   rect.right - rect.left,
 								   rect.bottom - rect.top,
@@ -1111,7 +1190,7 @@ void
 Win_SetCaption (const char *text)
 {
 	if (win_mainwindow) {
-		SetWindowText (win_mainwindow, text);
+		SetWindowTextA (win_mainwindow, text);
 	}
 }
 
