@@ -47,6 +47,8 @@
 
 HWND        win_mainwindow;
 HDC         win_maindc;
+HCURSOR     win_arrow;
+bool        win_cursor_visible;
 int         win_palettized;
 int         win_minimized;
 int         win_canalttab = 0;
@@ -382,22 +384,19 @@ VID_CheckAdequateMem (int width, int height)
 static void
 VID_InitModes (HINSTANCE hInstance)
 {
-	WNDCLASS    wc;
+	WNDCLASS    wc = {
+		.style = CS_OWNDC,
+		.lpfnWndProc = (WNDPROC) Win_EventHandler,
+		.hInstance = hInstance,
+		.lpszClassName = WINDOW_CLASS,
+	};
 	HDC         hdc;
+
+	win_arrow = LoadCursor (NULL, IDC_ARROW);
 
 //FIXME hIcon = LoadIcon (hInstance, MAKEINTRESOURCE (IDI_ICON2));
 
 	/* Register the frame class */
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = (WNDPROC) Win_EventHandler;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = hInstance;
-	wc.hIcon = 0;
-	wc.hCursor = LoadCursor (NULL, IDC_ARROW);
-	wc.hbrBackground = NULL;
-	wc.lpszMenuName = 0;
-	wc.lpszClassName = WINDOW_CLASS;
 
 	if (!RegisterClass (&wc))
 		Sys_Error ("Couldn't register window class");
@@ -777,16 +776,13 @@ VID_SetMode (int modenum, const byte *palette)
 		if (_windowed_mouse) {
 			stat = VID_SetWindowedMode (modenum);
 			IN_ActivateMouse ();
-			IN_HideMouse ();
 		} else {
 			IN_DeactivateMouse ();
-			IN_ShowMouse ();
 			stat = VID_SetWindowedMode (modenum);
 		}
 	} else {
 		stat = VID_SetFullDIBMode (modenum);
 		IN_ActivateMouse ();
-		IN_HideMouse ();
 	}
 
 	Win_UpdateWindowStatus ();
@@ -954,30 +950,6 @@ Win_CreateWindow (int width, int height)
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
 
 	viddef.recalc_refdef = 1;
-}
-
-
-
-//==========================================================================
-
-
-/*
-================
-VID_HandlePause
-================
-*/
-static void __attribute__ ((used))
-VID_HandlePause (bool pause)
-{
-	if ((modestate == MS_WINDOWED) && _windowed_mouse) {
-		if (pause) {
-			IN_DeactivateMouse ();
-			IN_ShowMouse ();
-		} else {
-			IN_ActivateMouse ();
-			IN_HideMouse ();
-		}
-	}
 }
 
 

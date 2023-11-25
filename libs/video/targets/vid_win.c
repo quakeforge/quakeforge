@@ -60,6 +60,14 @@ Win_VID_SetPalette (byte *palette, byte *colormap)
 }
 
 static void
+Win_VID_SetCursor (bool visible)
+{
+	Sys_Printf ("Win_VID_SetCursor: %d\n", visible);
+	win_cursor_visible = visible;
+	SetCursor (visible ? win_arrow : 0);
+}
+
+static void
 Win_VID_Init (byte *palette, byte *colormap)
 {
 	Sys_RegisterShutdown (Win_VID_shutdown, 0);
@@ -104,6 +112,7 @@ vid_system_t vid_system = {
 	.init = Win_VID_Init,
 	.set_palette = Win_VID_SetPalette,
 	.init_cvars = Win_VID_Init_Cvars,
+	.set_cursor = Win_VID_SetCursor,
 };
 
 void

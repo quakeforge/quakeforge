@@ -67,7 +67,6 @@ static bool mouseinitialized;
 static bool restore_spi;
 static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
 static bool mouseparmsvalid, mouseactivatetoggle;
-static bool mouseshowtoggle = 1;
 static bool dinput_acquired;
 static bool in_win_initialized;
 static unsigned int mstate_di;
@@ -275,24 +274,6 @@ IN_UpdateClipCursor (void)
 }
 
 void
-IN_ShowMouse (void)
-{
-	if (!mouseshowtoggle) {
-		ShowCursor (TRUE);
-		mouseshowtoggle = 1;
-	}
-}
-
-void
-IN_HideMouse (void)
-{
-	if (mouseshowtoggle) {
-		ShowCursor (FALSE);
-		mouseshowtoggle = 0;
-	}
-}
-
-void
 IN_ActivateMouse (void)
 {
 	mouseactivatetoggle = true;
@@ -496,20 +477,6 @@ in_paste_buffer_f (void)
 		CloseClipboard ();
 	}
 }
-#if 0
-static void
-win_keydest_callback (keydest_t key_dest, void *data)
-{
-	win_in_game = key_dest == key_game;
-	if (win_in_game) {
-		IN_ActivateMouse ();
-		IN_HideMouse ();
-	} else {
-		IN_DeactivateMouse ();
-		IN_ShowMouse ();
-	}
-}
-#endif
 
 static void
 win_add_device (win_device_t *dev)
@@ -610,7 +577,6 @@ in_win_shutdown (void *data)
 {
 
 	IN_DeactivateMouse ();
-	IN_ShowMouse ();
 
 	if (g_pMouse) {
 		IDirectInputDevice_Release (g_pMouse);
@@ -894,13 +860,11 @@ Win_Activate (BOOL active, BOOL minimize)
 	if (active) {
 		if (modestate == MS_FULLDIB) {
 			IN_ActivateMouse ();
-			IN_HideMouse ();
 			if (win_canalttab && vid_wassuspended) {
 				vid_wassuspended = false;
 
 				if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
 					DISP_CHANGE_SUCCESSFUL) {
-					IN_ShowMouse ();
 					Sys_Error ("Couldn't set fullscreen DIB mode\n"
 							   "(try upgrading your video drivers)\n (%lx)",
 							   GetLastError());
@@ -915,19 +879,16 @@ Win_Activate (BOOL active, BOOL minimize)
 		else if ((modestate == MS_WINDOWED) && in_grab
 				 && win_in_game) {
 			IN_ActivateMouse ();
-			IN_HideMouse ();
 		}
 	} else {
 		if (modestate == MS_FULLDIB) {
 			IN_DeactivateMouse ();
-			IN_ShowMouse ();
 			if (win_canalttab) {
 				ChangeDisplaySettings (NULL, 0);
 				vid_wassuspended = true;
 			}
 		} else if ((modestate == MS_WINDOWED) && in_grab) {
 			IN_DeactivateMouse ();
-			IN_ShowMouse ();
 		}
 	}
 }
@@ -1050,6 +1011,10 @@ event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		win_mouse.x = x;
 		win_mouse.y = y;
+
+		if (!win_cursor_visible) {
+			SetCursor (0);
+		}
 	}
 
 	win_mouse_axes[0].value = x - win_mouse.x;

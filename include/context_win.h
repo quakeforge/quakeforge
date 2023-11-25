@@ -35,6 +35,8 @@
 
 extern HWND     win_mainwindow;
 extern HDC      win_maindc;
+extern HCURSOR  win_arrow;
+extern bool     win_cursor_visible;
 extern int      win_palettized;
 extern int      win_canalttab;
 extern DEVMODE  win_gdevmode;
@@ -69,8 +71,6 @@ struct vulkan_ctx_s *Win_Vulkan_Context (struct vid_internal_s *);
 void Win_Vulkan_Init_Cvars (void);
 
 void IN_UpdateClipCursor (void);
-void IN_ShowMouse (void);
-void IN_HideMouse (void);
 void IN_ActivateMouse (void);
 void IN_DeactivateMouse (void);
 
