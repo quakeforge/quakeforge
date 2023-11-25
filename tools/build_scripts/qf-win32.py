@@ -32,7 +32,7 @@ client_win = [
 	dir + "bin/nq-win.exe",
 	dir + "bin/qw-client-win.exe",
 	dir + "QF",
-	dir + "QF/menu.dat.gz",
+	dir + "QF/menu.dat",
 	dir + "QF/menu.plist",
 ]
 

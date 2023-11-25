@@ -124,10 +124,11 @@ if test $do_win32 -eq 1; then
 		prefix=${qf_win64_dir} \
 		exec_prefix=${qf_win64_dir} \
 		pkgdatadir=${qf_win64_dir}/QF \
-		sharepath=${qf_win64_dir}/QF \
+		sharepath=${qf_win64_dir} \
 		man1dir=${qf_win64_dir} \
 		install
-	mkdir -p ${qf_win32_dir}/pkgconfig ${qf_win64_dir}/pkgconfig
+	#mkdir -p ${qf_win32_dir}/pkgconfig
+	mkdir -p ${qf_win64_dir}/pkgconfig
 	#mv ${qf_win32_dir}/lib/pkgconfig/*.pc ${qf_win32_dir}/pkgconfig
 	mv ${qf_win64_dir}/lib/pkgconfig/*.pc ${qf_win64_dir}/pkgconfig
 	eval `grep MINGW= ../tools/cross/mingw/cross-configure.sh`
