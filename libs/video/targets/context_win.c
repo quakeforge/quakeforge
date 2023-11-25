@@ -321,9 +321,6 @@ Win_RemoveEvent (UINT event)
 static LONG WINAPI
 Win_EventHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (uMsg == uiWheelMessage) {
-		uMsg = WM_MOUSEWHEEL;
-	}
 	if (uMsg < WM_USER && event_handlers[uMsg]) {
 		return event_handlers[uMsg] (hWnd, uMsg, wParam, lParam);
 	}

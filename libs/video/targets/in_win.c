@@ -100,6 +100,7 @@ static int in_mouse_avail;
 static int win_driver_handle = -1;
 static in_buttoninfo_t win_key_buttons[512];
 static int win_key_scancode;
+static bool win_mouse_enter = true;
 static in_axisinfo_t win_mouse_axes[2];
 static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
 static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -525,8 +526,6 @@ win_add_device (win_device_t *dev)
 static void
 in_win_init (void *data)
 {
-	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
-
 	win_add_device (&win_keyboard_device);
 	win_add_device (&win_mouse_device);
 
@@ -944,6 +943,13 @@ in_win_send_focus_event (int gain)
 }
 
 static LONG
+event_leave (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	win_mouse_enter = true;
+	return 0;
+}
+
+static LONG
 event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	in_win_send_focus_event (1);
@@ -1030,8 +1036,21 @@ event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	// this is complicated because Win32 seems to pack multiple mouse
 	// events into one update sometimes, so we always check all states and
 	// look for events
-	int         x = (int) LOWORD (lParam);
-	int         y = (int) HIWORD (lParam);
+	int         x = (short) LOWORD (lParam);
+	int         y = (short) HIWORD (lParam);
+
+	if (win_mouse_enter) {
+		win_mouse_enter = false;
+		TRACKMOUSEEVENT track = {
+			.cbSize = sizeof (track),
+			.dwFlags = TME_LEAVE,
+			.hwndTrack = win_mainwindow,
+		};
+		TrackMouseEvent (&track);
+
+		win_mouse.x = x;
+		win_mouse.y = y;
+	}
 
 	win_mouse_axes[0].value = x - win_mouse.x;
 	win_mouse_axes[1].value = y - win_mouse.y;
@@ -1085,6 +1104,8 @@ event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void
 IN_Win_Preinit (void)
 {
+	Win_AddEvent (WM_MOUSELEAVE, event_leave);
+
 	Win_AddEvent (WM_SETFOCUS, event_focusin);
 	Win_AddEvent (WM_SETFOCUS, event_focusout);
 
