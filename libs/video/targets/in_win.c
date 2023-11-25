@@ -99,6 +99,7 @@ static int in_mouse_avail;
 
 static int win_driver_handle = -1;
 static in_buttoninfo_t win_key_buttons[512];
+static int win_key_scancode;
 static in_axisinfo_t win_mouse_axes[2];
 static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
 static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -115,7 +116,7 @@ static const char *win_mouse_button_names[] = {
 
 #define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
-static unsigned short scantokey[128] = {
+static unsigned short scantokey[512] = {
 //  0               1               2               3
 //  4               5               6               7
 //  8               9               A               B
@@ -146,6 +147,16 @@ static unsigned short scantokey[128] = {
 	0,              0,              0,              0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+[0x130] =
+	0,				0,				0,				0,
+	0,				0,				0,				QFK_PRINT,
+[0x140] =
+	0,				0,				0,				0,
+	0,				0,				0,				QFK_HOME,
+	QFK_UP,			QFK_PAGEUP,		0,				QFK_LEFT,
+	0,				QFK_RIGHT,		0,				QFK_END,
+[0x150] =
+	QFK_DOWN,		QFK_PAGEDOWN,	QFK_INSERT,		QFK_DELETE,
 };
 
 static win_device_t win_keyboard_device = {
@@ -678,6 +689,8 @@ event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	bool        pressed = !(HIWORD(lParam) & KF_UP);
 	int         scancode = HIWORD (lParam) & (KF_EXTENDED | 0xff);
 	unsigned    vkey = (UINT) wParam;
+	bool        translated = lParam & (1 << 29);
+
 	if (!scancode) {
 		scancode = MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 	}
@@ -692,13 +705,20 @@ event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	} else {
 		win_key.shift &= ~mask;
 	}
-	win_key.code = scancode < 128 ? scantokey[scancode] : 0;
-	//FIXME windows key codes and x11 key code's don't match, so binding
-	//configs are not cross-platform (is this actually a problem?)
+	win_key.code = scantokey[scancode];
+	Sys_MaskPrintf (SYS_input, "key: %3x %3d\n", scancode, win_key.code);
+	win_key.unicode = 0;
 	win_key_buttons[scancode].state = pressed;
-	in_win_send_button_event (win_keyboard_device.devid,
-							  &win_key_buttons[scancode],
-							  win_keyboard_device.event_data);
+	win_key_scancode = scancode;
+	if (!pressed || !translated) {
+		// always handle releases, but not translated presses (handled by
+		// event_char())
+		if (!(pressed && in_win_send_key_event ())) {
+			in_win_send_button_event (win_keyboard_device.devid,
+									  &win_key_buttons[scancode],
+									  win_keyboard_device.event_data);
+		}
+	}
 	return 0;
 }
 
@@ -706,7 +726,12 @@ static LONG
 event_char (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	win_key.unicode = wParam;
-	in_win_send_key_event ();
+	if (!in_win_send_key_event ()) {
+		// WM_CHAR events occur only for presses
+		in_win_send_button_event (win_keyboard_device.devid,
+								  &win_key_buttons[win_key_scancode],
+								  win_keyboard_device.event_data);
+	}
 	return 0;
 }
 
@@ -718,7 +743,7 @@ in_win_clear_states (void *data)
 static void
 in_win_process_events (void *data)
 {
-	MSG         msg;
+	MSG         msg, cmsg;
 	int         mx, my;
 //  HDC hdc;
 	DIDEVICEOBJECTDATA od;
@@ -730,6 +755,11 @@ in_win_process_events (void *data)
 		if (!GetMessage (&msg, NULL, 0, 0))
 			Sys_Quit ();
 		TranslateMessage (&msg);
+		if (msg.message == WM_KEYDOWN
+			&& PeekMessage (&cmsg, NULL, 0, 0, PM_NOREMOVE)
+			&& (cmsg.message == WM_CHAR || cmsg.message == WM_SYSCHAR)) {
+			msg.lParam |= 1u << 29;
+		}
 		DispatchMessage (&msg);
 	}
 
