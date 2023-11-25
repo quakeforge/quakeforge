@@ -40,9 +40,9 @@
 static vid_internal_t vid_internal;
 
 static void
-VID_shutdown (void *data)
+Win_VID_shutdown (void *data)
 {
-	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "Win_VID_shutdown\n");
 	Win_CloseDisplay ();
 }
 
@@ -62,7 +62,7 @@ Win_VID_SetPalette (byte *palette, byte *colormap)
 static void
 Win_VID_Init (byte *palette, byte *colormap)
 {
-	Sys_RegisterShutdown (VID_shutdown, 0);
+	Sys_RegisterShutdown (Win_VID_shutdown, 0);
 
 	vid_internal.gl_context = Win_GL_Context;
 	vid_internal.sw_context = Win_SW_Context;

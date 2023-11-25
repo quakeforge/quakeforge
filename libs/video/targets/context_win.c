@@ -522,10 +522,6 @@ Win_CloseDisplay (void)
 		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0, (LPARAM) 0);
 		Win_Activate (false, false);
 
-//FIXME?        if (hwnd_dialog) DestroyWindow (hwnd_dialog);
-		if (win_mainwindow)
-			DestroyWindow (win_mainwindow);
-
 		vid_testingmode = 0;
 		viddef.initialized = false;
 	}
@@ -871,6 +867,7 @@ notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (win_mainwindow) {
 		DestroyWindow (win_mainwindow);
+		win_mainwindow = 0;
 	}
 	PostQuitMessage (0);
 	return 1;
