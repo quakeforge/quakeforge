@@ -537,16 +537,7 @@ Win_SetVidMode (int width, int height)
 	force_mode_set = false;
 	vid_realmode = vid_modenum;
 }
-#if 0
-static void
-VID_DestroyWindow (void)
-{
-	if (modestate == MS_FULLDIB)
-		ChangeDisplaySettings (NULL, CDS_FULLSCREEN);
 
-	Win_UnloadAllDrivers ();
-}
-#endif
 static void
 VID_CheckModedescFixup (int mode)
 {
@@ -876,8 +867,8 @@ notify_destroy (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static long
 notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	win_pos_x = LOWORD (lParam);
-	win_pos_y = HIWORD (lParam);
+	win_pos_x = (short) LOWORD (lParam);
+	win_pos_y = (short) HIWORD (lParam);
 	Sys_MaskPrintf (SYS_vid, "notify_move: %d %d\n", win_pos_x, win_pos_y);
 	Win_UpdateWindowStatus ();
 	return 1;
@@ -886,8 +877,8 @@ notify_move (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static long
 notify_size (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	win_len_x = LOWORD (lParam);
-	win_len_y = HIWORD (lParam);
+	win_len_x = (short) LOWORD (lParam);
+	win_len_y = (short) HIWORD (lParam);
 	Sys_MaskPrintf (SYS_vid, "notify_size: %d %d\n", win_pos_x, win_pos_y);
 	Win_UpdateWindowStatus ();
 	return 1;
@@ -910,6 +901,8 @@ Win_CreateWindow (int width, int height)
 		.right = win_len_x = width,
 		.bottom = win_len_y = height,
 	};
+	WindowStyle = WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_SYSMENU | WS_SIZEBOX |
+		WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 	AdjustWindowRectEx (&rect, WindowStyle, FALSE, 0);
 	// sound initialization has to go here, preceded by a windowed mode set,
 	// so there's a window for DirectSound to work with but we're not yet
@@ -919,7 +912,7 @@ Win_CreateWindow (int width, int height)
 	win_mainwindow = CreateWindowExA (ExWindowStyle,
 								   WINDOW_CLASS,
 								   PACKAGE_STRING,
-								   WS_OVERLAPPEDWINDOW,
+								   WindowStyle,
 								   0, 0,
 								   rect.right - rect.left,
 								   rect.bottom - rect.top,
