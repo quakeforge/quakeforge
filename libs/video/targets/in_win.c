@@ -61,7 +61,7 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 
 // mouse local variables
 unsigned uiWheelMessage = ~0u;
-static unsigned  mouse_buttons;
+//static unsigned  mouse_buttons;
 static POINT current_pos;
 static bool mouseinitialized;
 static bool restore_spi;
@@ -76,7 +76,7 @@ static unsigned int mstate_di;
 static LPDIRECTINPUT g_pdi;
 static LPDIRECTINPUTDEVICE g_pMouse;
 
-static HINSTANCE hInstDI;
+//static HINSTANCE hInstDI;
 
 static bool dinput;
 
@@ -227,7 +227,7 @@ typedef struct MYDATA {
 	BYTE        bButtonC;				// Another button goes here
 	BYTE        bButtonD;				// Another button goes here
 } MYDATA;
-
+#if 0
 static DIOBJECTDATAFORMAT rgodf[] = {
 	{&GUID_XAxis, FIELD_OFFSET (MYDATA, lX), DIDFT_AXIS | DIDFT_ANYINSTANCE,
 	 0,},
@@ -253,7 +253,7 @@ static DIDATAFORMAT df = {
 	NUM_OBJECTS,						// number of objects
 	rgodf,								// and here they are
 };
-
+#endif
 void
 IN_UpdateClipCursor (void)
 {
@@ -334,7 +334,7 @@ IN_DeactivateMouse (void)
 		in_mouse_avail = false;
 	}
 }
-
+#if 0
 static bool
 IN_InitDInput (void)
 {
@@ -459,7 +459,7 @@ IN_StartupMouse (void)
 		IN_ActivateMouse ();
 	return 0;
 }
-
+#endif
 static void
 in_paste_buffer_f (void)
 {
@@ -517,10 +517,7 @@ in_win_init (void *data)
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
 	win_add_device (&win_keyboard_device);
-
-	if (IN_StartupMouse ()) {
-		win_add_device (&win_mouse_device);
-	}
+	win_add_device (&win_mouse_device);
 
 	//Key_KeydestCallback (win_keydest_callback, 0);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
@@ -629,7 +626,7 @@ in_win_get_device_event_data (void *device, void *data)
 	win_device_t *dev = device;
 	return dev->event_data;
 }
-
+#if 0
 static void
 event_motion (int dmx, int dmy, int mx, int my)
 {
@@ -674,7 +671,7 @@ event_button (unsigned buttons)
 		}
 	}
 }
-
+#endif
 static LONG
 event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -794,7 +791,7 @@ in_win_process_events (void *data)
 			}
 		}
 
-		event_button (mstate_di);
+		//event_button (mstate_di);
 	} else {
 		GetCursorPos (&current_pos);
 		mx = current_pos.x - win_center_x;
@@ -804,7 +801,7 @@ in_win_process_events (void *data)
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
 		//FIXME abs pos
-		event_motion (mx, my, 0, 0);
+//		event_motion (mx, my, 0, 0);
 		SetCursorPos (win_center_x, win_center_y);
 	}
 }
@@ -940,38 +937,95 @@ event_syschar (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+static void
+event_button (bool press, int but, int x, int y)
+{
+	win_mouse_buttons[but].state = press;
+
+	win_mouse.shift = win_key.shift;
+	win_mouse.x = x;
+	win_mouse.y = y;
+	if (press) {
+		win_mouse.buttons |= 1 << but;
+	} else {
+		win_mouse.buttons &= ~(1 << but);
+	}
+	if (!in_win_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_win_send_button_event (win_mouse_device.devid,
+								  &win_mouse_buttons[but],
+								  win_mouse_device.event_data);
+	}
+}
+
+static LONG
+event_button_left (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_LBUTTONUP, 0, x, y);
+	return 0;
+}
+
+static LONG
+event_button_right (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_RBUTTONUP, 2, x, y);
+	return 0;
+}
+
+static LONG
+event_button_mid (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_MBUTTONUP, 1, x, y);
+	return 0;
+}
+
+static LONG
+event_button_X (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	int         but = HIWORD (wParam) + 7;
+	event_button (uMsg != WM_XBUTTONUP, but, x, y);
+	return 0;
+}
+
 static LONG
 event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// this is complicated because Win32 seems to pack multiple mouse
 	// events into one update sometimes, so we always check all states and
 	// look for events
-	unsigned    temp = 0;
+	int         x = (int) LOWORD (lParam);
+	int         y = (int) HIWORD (lParam);
 
-	if (wParam & MK_LBUTTON)
-		temp |= 1;
-	if (wParam & MK_RBUTTON)
-		temp |= 2;
-	if (wParam & MK_MBUTTON)
-		temp |= 4;
-	event_button (temp);
-	return 1;
+	win_mouse_axes[0].value = x - win_mouse.x;
+	win_mouse_axes[1].value = y - win_mouse.y;
+	win_mouse.shift = win_key.shift;
+	win_mouse.x = x;
+	win_mouse.y = y;
+	if (!in_win_send_mouse_event (ie_mousemove)) {
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[0]);
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[1]);
+	}
+	return 0;
 }
 
 static LONG
 event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// JACK: This is the mouse wheel with the Intellimouse
-	// It's delta is either positive or neg, and we generate the proper
-	// Event.
-	unsigned    temp = win_mouse.buttons & ~((1 << 3) | (1 << 4));;
-	if ((short) HIWORD (wParam) > 0) {
-		event_button (temp | (1 << 3));
-	} else {
-		event_button (temp | (1 << 4));
-	}
-	event_button (temp);
-	return 1;
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	short       w = HIWORD (wParam);
+	int         button = w < 0 ? 5 : 4;
+	// FIXME should (also) treat as an axis
+	event_button (true, button, x, y);
+	event_button (false, button, x, y);
+	return 0;
 }
 
 static LONG
@@ -1011,12 +1065,14 @@ IN_Win_Preinit (void)
 	Win_AddEvent (WM_CHAR, event_char);
 	Win_AddEvent (WM_SYSCHAR, event_syschar);
 
-	Win_AddEvent (WM_LBUTTONDOWN, event_mouse);
-	Win_AddEvent (WM_LBUTTONUP, event_mouse);
-	Win_AddEvent (WM_RBUTTONDOWN, event_mouse);
-	Win_AddEvent (WM_RBUTTONUP, event_mouse);
-	Win_AddEvent (WM_MBUTTONDOWN, event_mouse);
-	Win_AddEvent (WM_MBUTTONUP, event_mouse);
+	Win_AddEvent (WM_LBUTTONDOWN, event_button_left);
+	Win_AddEvent (WM_LBUTTONUP, event_button_left);
+	Win_AddEvent (WM_RBUTTONDOWN, event_button_right);
+	Win_AddEvent (WM_RBUTTONUP, event_button_right);
+	Win_AddEvent (WM_MBUTTONDOWN, event_button_mid);
+	Win_AddEvent (WM_MBUTTONUP, event_button_mid);
+	Win_AddEvent (WM_XBUTTONDOWN, event_button_X);
+	Win_AddEvent (WM_XBUTTONUP, event_button_X);
 	Win_AddEvent (WM_MOUSEMOVE, event_mouse);
 
 	Win_AddEvent (WM_MOUSEWHEEL, event_mousewheel);
