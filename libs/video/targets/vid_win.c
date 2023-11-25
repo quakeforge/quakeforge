@@ -62,7 +62,6 @@ Win_VID_SetPalette (byte *palette, byte *colormap)
 static void
 Win_VID_SetCursor (bool visible)
 {
-	Sys_Printf ("Win_VID_SetCursor: %d\n", visible);
 	win_cursor_visible = visible;
 	SetCursor (visible ? win_arrow : 0);
 }
