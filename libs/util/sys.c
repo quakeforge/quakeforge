@@ -1033,7 +1033,7 @@ signal_handler (int sig)
 }
 
 static void
-hook_signlas (void)
+hook_signals (void)
 {
 	// catch signals
 	signal (SIGINT,  signal_handler);
@@ -1095,7 +1095,7 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 }
 
 static void
-hook_signlas (void)
+hook_signals (void)
 {
 	// catch signals
 	struct sigaction action = {};
@@ -1119,7 +1119,7 @@ hook_signlas (void)
 VISIBLE void
 Sys_Init (void)
 {
-	hook_signlas ();
+	hook_signals ();
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
