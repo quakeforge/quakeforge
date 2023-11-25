@@ -98,7 +98,7 @@ static int in_mouse_avail;
 #define WIN_MOUSE_BUTTONS 32
 
 static int win_driver_handle = -1;
-static in_buttoninfo_t win_key_buttons[256];
+static in_buttoninfo_t win_key_buttons[512];
 static in_axisinfo_t win_mouse_axes[2];
 static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
 static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -147,178 +147,6 @@ static unsigned short scantokey[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-
-static unsigned short shift_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '!',            '@',		// 0
-	'#',            '$',            '%',            '^',		// 0
-	'&',            '*',            '(',            ')',		// 0
-	'_',            '+',            QFK_BACKSPACE,  QFK_TAB,	// 0
-	'Q',            'W',            'E',            'R',		// 1
-	'T',            'Y',            'U',            'I',		// 1
-	'O',            'P',            '{',            '}',		// 1
-	QFK_RETURN,     QFK_LCTRL,      'A',            'S',		// 1
-	'D',            'F',            'G',            'H',		// 2
-	'J',            'K',            'L',            ':',		// 2
-	'"',            '~',            QFK_LSHIFT,     '|',		// 2
-	'Z',            'X',            'C',            'V',		// 2
-	'B',            'N',            'M',            '<',		// 3
-	'>',            '?',            QFK_RSHIFT,     QFK_KP_MULTIPLY,// 3
-	QFK_LALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,		// 3
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,		// 3
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,		// 4
-	QFK_F10,        QFK_PAUSE,      QFK_SCROLLOCK,  QFK_KP7,	// 4
-	QFK_KP8,        QFK_KP9,        QFK_KP_MINUS,   QFK_KP4,	// 4
-	QFK_KP5,        QFK_KP6,        QFK_KP_PLUS,    QFK_KP1,	// 4
-	QFK_KP2,        QFK_KP3,        QFK_KP0,        QFK_KP_PERIOD,//5
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,			// 5
-	0,              0,              0,              0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 6
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 7
-};
-
-static unsigned short ext_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '1',            '2',
-	'3',            '4',            '5',            '6',// 0
-	'7',            '8',            '9',            '0',
-	'-',            '=',            QFK_BACKSPACE,  QFK_TAB,
-	'q',            'w',            'e',            'r',
-	't',            'y',            'u',            'i',					// 1
-	'o',            'p',            '[',            ']',
-	QFK_KP_ENTER,     QFK_RCTRL,      'a',            's',
-	'd',            'f',            'g',            'h',
-	'j',            'k',            'l',            ';',					// 2
-	'\'',            '`',            QFK_LSHIFT,    '\\',
-	'z',            'x',            'c',            'v',
-	'b',            'n',            'm',            ',',
-	'.',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',	// 3
-	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
-	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
-	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
-	'5',            QFK_RIGHT,      '+',            QFK_END,
-	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,
-	0,              0,              0,              0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
-
-static unsigned short shift_ext_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '!',            '@',
-	'#',            '$',            '%',            '^',
-	'&',            '*',            '(',            ')',
-	'_',            '+',            QFK_BACKSPACE,  QFK_ESCAPE,	// 0
-	'Q',            'W',            'E',            'R',
-	'T',            'Y',            'U',            'I',
-	'O',            'P',            '{',            '}',
-	QFK_KP_ENTER,   QFK_RCTRL,      'A',            'S',	// 1
-	'D',            'F',            'G',            'H',
-	'J',            'K',            'L',            ':',
-	'"',            '~',            QFK_LSHIFT,     '|',
-	'Z',            'X',            'C',            'V',	// 2
-	'B',            'N',            'M',            '<',
-	'>',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',
-	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
-	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
-	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
-	'5',            QFK_RIGHT,      '+',            QFK_END,
-	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,
-	0,              0,              0,              0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
-
-#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
-
-/*
-	MapKey
-
-	Map from windows to quake keynums
-*/
-static void
-MapKey (unsigned int keycode, int press, int *k, int *u)
-{
-	int         extended;
-	int         scan;
-	int         key;
-	int         uc;
-	unsigned long mask = ~1L;
-	static unsigned long shifts;
-
-	extended = (keycode >> 24) & 1;
-	scan = (keycode >> 16) & 255;
-
-	if (scan > 127) {
-		*u = *k = 0;
-		return;
-	}
-
-	if (extended)
-		key = ext_scantokey[scan];
-	else
-		key = scantokey[scan];
-
-	if (shifts & 0x03) {
-		if (extended)
-			uc = shift_ext_scantokey[scan];
-		else
-			uc = shift_scantokey[scan];
-	} else {
-		if (extended)
-			uc = ext_scantokey[scan];
-		else
-			uc = scantokey[scan];
-	}
-
-	if (uc > 255)
-		uc = 0;
-
-	switch (key) {
-		case QFK_RSHIFT:
-			shifts &= mask;
-			shifts |= press;
-			break;
-		case QFK_LSHIFT:
-			shifts &= ROTL(mask, 1);
-			shifts |= ROTL(press, 1);
-			break;
-		case QFK_RCTRL:
-			shifts &= ROTL(mask, 2);
-			shifts |= ROTL(press, 2);
-			break;
-		case QFK_LCTRL:
-			shifts &= ROTL(mask, 3);
-			shifts |= ROTL(press, 3);
-			break;
-		default:
-			break;
-	}
-
-	Sys_MaskPrintf (SYS_vid, "%08x %d %02x %02lx %04x %c\n",
-					keycode, press, scan, shifts,
-					key, uc > 32 && uc < 127 ? uc : '#');
-	*k = key;
-	*u = uc;
-}
 
 static win_device_t win_keyboard_device = {
 	"core:keyboard",
@@ -629,7 +457,7 @@ IN_StartupMouse (void)
 	// set the mouse state appropriately
 	if (mouseactivatetoggle)
 		IN_ActivateMouse ();
-	return 1;
+	return 0;
 }
 
 static void
@@ -847,23 +675,42 @@ event_button (unsigned buttons)
 	}
 }
 
-static void
-event_key (LPARAM keydata, int pressed)
+static LONG
+event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	int         extended = (keydata >> 24) & 1;
-	// This assumes windows key codes are really only 7 bits (should be, since
-	// they seem to be regular scan codes)
-	int         scan = (keydata >> 16) & 0x7f;
-	int         key = (extended << 7) | scan;
-	MapKey (keydata, pressed, &win_key.code, &win_key.unicode);
+	bool        pressed = !(HIWORD(lParam) & KF_UP);
+	int         scancode = HIWORD (lParam) & (KF_EXTENDED | 0xff);
+	unsigned    vkey = (UINT) wParam;
+	if (!scancode) {
+		scancode = MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
+	}
+	unsigned    mask = 0;
+	switch (vkey) {
+		case VK_SHIFT: mask = ies_shift; break;
+		case VK_CONTROL: mask = ies_control; break;
+		case VK_MENU: mask = ies_alt; break;
+	}
+	if (pressed) {
+		win_key.shift |= mask;
+	} else {
+		win_key.shift &= ~mask;
+	}
+	win_key.code = scancode < 128 ? scantokey[scancode] : 0;
 	//FIXME windows key codes and x11 key code's don't match, so binding
 	//configs are not cross-platform (is this actually a problem?)
-	win_key_buttons[key].state = pressed;
-	if (!pressed || !in_win_send_key_event ()) {
-		in_win_send_button_event (win_keyboard_device.devid,
-								  &win_key_buttons[key],
-								  win_keyboard_device.event_data);
-	}
+	win_key_buttons[scancode].state = pressed;
+	in_win_send_button_event (win_keyboard_device.devid,
+							  &win_key_buttons[scancode],
+							  win_keyboard_device.event_data);
+	return 0;
+}
+
+static LONG
+event_char (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	win_key.unicode = wParam;
+	in_win_send_key_event ();
+	return 0;
 }
 
 static void
@@ -1073,7 +920,7 @@ static LONG
 event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	in_win_send_focus_event (1);
-	return 1;
+	return 0;
 }
 
 static LONG
@@ -1083,28 +930,14 @@ event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
 	}
 	in_win_send_focus_event (0);
-	return 1;
-}
-
-static LONG
-event_keyup (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	event_key (lParam, 0);
-	return 1;
-}
-
-static LONG
-event_keydown (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	event_key (lParam, 1);
-	return 1;
+	return 0;
 }
 
 static LONG
 event_syschar (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// absorb Alt-Space
-	return 1;
+	return 0;
 }
 
 static LONG
@@ -1149,7 +982,7 @@ event_close (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
 		Sys_Quit ();
 	}
-	return 1;
+	return 0;
 }
 
 static long
@@ -1162,7 +995,7 @@ event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	if (in_win_initialized) {
 		IN_ClearStates ();
 	}
-	return 1;
+	return 0;
 }
 
 void
@@ -1171,10 +1004,11 @@ IN_Win_Preinit (void)
 	Win_AddEvent (WM_SETFOCUS, event_focusin);
 	Win_AddEvent (WM_SETFOCUS, event_focusout);
 
-	Win_AddEvent (WM_KEYDOWN, event_keydown);
-	Win_AddEvent (WM_SYSKEYDOWN, event_keydown);
-	Win_AddEvent (WM_KEYUP, event_keyup);
-	Win_AddEvent (WM_SYSKEYUP, event_keyup);
+	Win_AddEvent (WM_KEYDOWN, event_key);
+	Win_AddEvent (WM_SYSKEYDOWN, event_key);
+	Win_AddEvent (WM_KEYUP, event_key);
+	Win_AddEvent (WM_SYSKEYUP, event_key);
+	Win_AddEvent (WM_CHAR, event_char);
 	Win_AddEvent (WM_SYSCHAR, event_syschar);
 
 	Win_AddEvent (WM_LBUTTONDOWN, event_mouse);
