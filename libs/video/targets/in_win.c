@@ -51,6 +51,7 @@
 #include "compat.h"
 #include "context_win.h"
 #include "in_win.h"
+#include "vid_internal.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -79,9 +80,6 @@ static LPDIRECTINPUTDEVICE g_pMouse;
 
 static bool dinput;
 
-static bool vid_wassuspended = false;
-static bool win_in_game = false;
-
 typedef struct win_device_s {
 	const char *name;
 	int         num_axes;
@@ -100,6 +98,8 @@ static int win_driver_handle = -1;
 static in_buttoninfo_t win_key_buttons[512];
 static int win_key_scancode;
 static bool win_mouse_enter = true;
+static bool win_input_grabbed;
+static bool win_warped_mouse;
 static in_axisinfo_t win_mouse_axes[2];
 static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
 static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -229,42 +229,6 @@ in_win_send_button_event (int devid, in_buttoninfo_t *button, void *event_data)
 	IE_Send_Event (&event);
 }
 
-typedef struct MYDATA {
-	LONG        lX;						// X axis goes here
-	LONG        lY;						// Y axis goes here
-	LONG        lZ;						// Z axis goes here
-	BYTE        bButtonA;				// One button goes here
-	BYTE        bButtonB;				// Another button goes here
-	BYTE        bButtonC;				// Another button goes here
-	BYTE        bButtonD;				// Another button goes here
-} MYDATA;
-#if 0
-static DIOBJECTDATAFORMAT rgodf[] = {
-	{&GUID_XAxis, FIELD_OFFSET (MYDATA, lX), DIDFT_AXIS | DIDFT_ANYINSTANCE,
-	 0,},
-	{&GUID_YAxis, FIELD_OFFSET (MYDATA, lY), DIDFT_AXIS | DIDFT_ANYINSTANCE,
-	 0,},
-	{&GUID_ZAxis, FIELD_OFFSET (MYDATA, lZ),
-	 0x80000000 | DIDFT_AXIS | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonA), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonB), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonC),
-	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonD),
-	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-};
-
-#define NUM_OBJECTS (sizeof(rgodf) / sizeof(rgodf[0]))
-
-static DIDATAFORMAT df = {
-	sizeof (DIDATAFORMAT),				// this structure
-	sizeof (DIOBJECTDATAFORMAT),		// size of object data format
-	DIDF_RELAXIS,						// absolute axis coordinates
-	sizeof (MYDATA),					// device data size
-	NUM_OBJECTS,						// number of objects
-	rgodf,								// and here they are
-};
-#endif
 void
 IN_UpdateClipCursor (void)
 {
@@ -327,132 +291,7 @@ IN_DeactivateMouse (void)
 		in_mouse_avail = false;
 	}
 }
-#if 0
-static bool
-IN_InitDInput (void)
-{
-	HRESULT     hr;
-	DIPROPDWORD dipdw = {
-		{
-			sizeof (DIPROPDWORD),			// diph.dwSize
-			sizeof (DIPROPHEADER),			// diph.dwHeaderSize
-			0,								// diph.dwObj
-			DIPH_DEVICE,					// diph.dwHow
-		},
-		DINPUT_BUFFERSIZE,				// dwData
-	};
 
-	if (!hInstDI) {
-		hInstDI = LoadLibrary ("dinput.dll");
-
-		if (hInstDI == NULL) {
-			Sys_Printf ("Couldn't load dinput.dll\n");
-			return false;
-		}
-	}
-
-	if (!pDirectInputCreate) {
-		pDirectInputCreate =
-			(void *) GetProcAddress (hInstDI, "DirectInputCreateA");
-
-		if (!pDirectInputCreate) {
-			Sys_Printf ("Couldn't get DI proc addr\n");
-			return false;
-		}
-	}
-	// register with DirectInput and get an IDirectInput to play with.
-	hr = iDirectInputCreate (global_hInstance, DIRECTINPUT_VERSION, &g_pdi,
-							 NULL);
-
-	if (FAILED (hr))
-		return false;
-	// obtain an interface to the system mouse device.
-	hr = IDirectInput_CreateDevice (g_pdi, &GUID_SysMouse, &g_pMouse, NULL);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't open DI mouse device\n");
-		return false;
-	}
-	// set the data format to "mouse format".
-	hr = IDirectInputDevice_SetDataFormat (g_pMouse, &df);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI mouse format\n");
-		return false;
-	}
-	// set the cooperativity level.
-	hr = IDirectInputDevice_SetCooperativeLevel (g_pMouse, win_mainwindow,
-												 DISCL_EXCLUSIVE |
-												 DISCL_FOREGROUND);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI coop level\n");
-		return false;
-	}
-
-	// set the buffer size to DINPUT_BUFFERSIZE elements.
-	// the buffer size is a DWORD property associated with the device
-	hr = IDirectInputDevice_SetProperty (g_pMouse, DIPROP_BUFFERSIZE,
-										 &dipdw.diph);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI buffersize\n");
-		return false;
-	}
-
-	return true;
-}
-
-static int
-IN_StartupMouse (void)
-{
-//  HDC         hdc;
-
-	if (COM_CheckParm ("-nomouse"))
-		return 0;
-
-	mouseinitialized = true;
-
-	if (COM_CheckParm ("-dinput")) {
-		dinput = IN_InitDInput ();
-
-		if (dinput) {
-			Sys_Printf ("DirectInput initialized\n");
-		} else {
-			Sys_Printf ("DirectInput not initialized\n");
-		}
-	}
-
-	if (!dinput) {
-		mouseparmsvalid = SystemParametersInfo (SPI_GETMOUSE, 0,
-												originalmouseparms, 0);
-
-		if (mouseparmsvalid) {
-			if (COM_CheckParm ("-noforcemspd"))
-				newmouseparms[2] = originalmouseparms[2];
-
-			if (COM_CheckParm ("-noforcemaccel")) {
-				newmouseparms[0] = originalmouseparms[0];
-				newmouseparms[1] = originalmouseparms[1];
-			}
-
-			if (COM_CheckParm ("-noforcemparms")) {
-				newmouseparms[0] = originalmouseparms[0];
-				newmouseparms[1] = originalmouseparms[1];
-				newmouseparms[2] = originalmouseparms[2];
-			}
-		}
-	}
-
-	mouse_buttons = WIN_MOUSE_BUTTONS;
-
-	// if a fullscreen video mode was set before the mouse was initialized,
-	// set the mouse state appropriately
-	if (mouseactivatetoggle)
-		IN_ActivateMouse ();
-	return 0;
-}
-#endif
 static void
 in_paste_buffer_f (void)
 {
@@ -602,52 +441,7 @@ in_win_get_device_event_data (void *device, void *data)
 	win_device_t *dev = device;
 	return dev->event_data;
 }
-#if 0
-static void
-event_motion (int dmx, int dmy, int mx, int my)
-{
-	win_mouse_axes[0].value = dmx;
-	win_mouse_axes[1].value = dmy;
 
-	win_mouse.shift = win_key.shift;
-	win_mouse.x = mx;
-	win_mouse.x = my;
-	if (!in_win_send_mouse_event (ie_mousemove)) {
-		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[0]);
-		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[1]);
-	}
-}
-
-static void
-event_button (unsigned buttons)
-{
-	unsigned    mask = win_mouse.buttons ^ buttons;
-
-	if (!mask) {
-		// no change
-		return;
-	}
-
-	// FIXME this won't be right if multiple buttons change state
-	int press = buttons & mask;
-
-	for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
-		win_mouse_buttons[i].state = buttons & (1 << i);
-	}
-
-	win_mouse.buttons = buttons;
-	if (!in_win_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
-		for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
-			if (!(mask & (1 << i))) {
-				continue;
-			}
-			in_win_send_button_event (win_mouse_device.devid,
-									  &win_mouse_buttons[i],
-									  win_mouse_device.event_data);
-		}
-	}
-}
-#endif
 static LONG
 event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -703,6 +497,22 @@ event_char (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static void
 in_win_clear_states (void *data)
 {
+}
+
+static void
+in_win_grab_input (void *data, int grab)
+{
+	if (!win_mainwindow) {
+		return;
+	}
+
+	if ((win_input_grabbed = grab)) {
+		SetCapture (win_mainwindow);
+		ClipCursor (&win_rect);
+	} else {
+		ClipCursor (NULL);
+		ReleaseCapture ();
+	}
 }
 
 static void
@@ -836,63 +646,6 @@ in_win_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	MAIN WINDOW
 */
 
-/*
-  fActive - True if app is activating
-  If the application is activating, then swap the system into SYSPAL_NOSTATIC
-  mode so that our palettes will display correctly.
-*/
-void
-Win_Activate (BOOL active, BOOL minimize)
-{
-	static BOOL sound_active;
-
-	win_minimized = minimize;
-
-	// enable/disable sound on focus gain/loss
-	if (!active && sound_active) {
-		S_BlockSound ();
-		sound_active = false;
-	} else if (active && !sound_active) {
-		S_UnblockSound ();
-		sound_active = true;
-	}
-
-	if (active) {
-		if (modestate == MS_FULLDIB) {
-			IN_ActivateMouse ();
-			if (win_canalttab && vid_wassuspended) {
-				vid_wassuspended = false;
-
-				if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
-					DISP_CHANGE_SUCCESSFUL) {
-					Sys_Error ("Couldn't set fullscreen DIB mode\n"
-							   "(try upgrading your video drivers)\n (%lx)",
-							   GetLastError());
-				}
-				ShowWindow (win_mainwindow, SW_SHOWNORMAL);
-
-				// Fix for alt-tab bug in NVidia drivers
-				MoveWindow(win_mainwindow, 0, 0, win_gdevmode.dmPelsWidth,
-						   win_gdevmode.dmPelsHeight, false);
-			}
-		}
-		else if ((modestate == MS_WINDOWED) && in_grab
-				 && win_in_game) {
-			IN_ActivateMouse ();
-		}
-	} else {
-		if (modestate == MS_FULLDIB) {
-			IN_DeactivateMouse ();
-			if (win_canalttab) {
-				ChangeDisplaySettings (NULL, 0);
-				vid_wassuspended = true;
-			}
-		} else if ((modestate == MS_WINDOWED) && in_grab) {
-			IN_DeactivateMouse ();
-		}
-	}
-}
-
 static void
 in_win_send_focus_event (int gain)
 {
@@ -1017,8 +770,26 @@ event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 	}
 
-	win_mouse_axes[0].value = x - win_mouse.x;
-	win_mouse_axes[1].value = y - win_mouse.y;
+	if (win_input_grabbed) {
+		if (!win_warped_mouse) {
+			int         center_x = viddef.width / 2;
+			int         center_y = viddef.height / 2;
+			unsigned    dist_x = abs (center_x - x);
+			unsigned    dist_y = abs (center_y - y);
+
+			win_mouse_axes[0].value = x - win_mouse.x;
+			win_mouse_axes[1].value = y - win_mouse.y;
+			if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
+				SetCursorPos (win_center_x, win_center_y);
+				win_warped_mouse = true;
+			}
+		} else {
+			win_warped_mouse = false;
+		}
+	} else {
+		win_mouse_axes[0].value = x - win_mouse.x;
+		win_mouse_axes[1].value = y - win_mouse.y;
+	}
 	win_mouse.shift = win_key.shift;
 	win_mouse.x = x;
 	win_mouse.y = y;
@@ -1045,10 +816,6 @@ event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static long
 event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	int         fActive = LOWORD (wParam);
-	int         fMinimized = (BOOL) HIWORD (wParam);
-
-	Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
 	// fix leftover Alt from any Alt-Tab or the like that switched us away
 	if (in_win_initialized) {
 		IN_ClearStates ();
@@ -1093,7 +860,7 @@ static in_driver_t in_win_driver = {
 	.get_device_event_data = in_win_get_device_event_data,
 	.process_events = in_win_process_events,
 	.clear_states = in_win_clear_states,
-	//.grab_input = in_win_grab_input,
+	.grab_input = in_win_grab_input,
 
 	.axis_info = in_win_axis_info,
 	.button_info = in_win_button_info,

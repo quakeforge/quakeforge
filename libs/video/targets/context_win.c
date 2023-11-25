@@ -516,7 +516,6 @@ Win_CloseDisplay (void)
 		PostMessage (HWND_BROADCAST, WM_PALETTECHANGED, (WPARAM) win_mainwindow,
 					 (LPARAM) 0);
 		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0, (LPARAM) 0);
-		Win_Activate (false, false);
 
 		vid_testingmode = 0;
 		viddef.initialized = false;
