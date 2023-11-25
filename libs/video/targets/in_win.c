@@ -1077,22 +1077,12 @@ event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-static LONG
-event_close (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (MessageBox (win_mainwindow,
-					"Are you sure you want to quit?", "Confirm Exit",
-					MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-		Sys_Quit ();
-	}
-	return 0;
-}
-
 static long
 event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int         fActive = LOWORD (wParam);
 	int         fMinimized = (BOOL) HIWORD (wParam);
+
 	Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
 	// fix leftover Alt from any Alt-Tab or the like that switched us away
 	if (in_win_initialized) {
@@ -1127,8 +1117,6 @@ IN_Win_Preinit (void)
 	Win_AddEvent (WM_MOUSEMOVE, event_mouse);
 
 	Win_AddEvent (WM_MOUSEWHEEL, event_mousewheel);
-
-	Win_AddEvent (WM_CLOSE, event_close);
 
 	Win_AddEvent (WM_ACTIVATE, event_activate);
 }
