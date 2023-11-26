@@ -84,7 +84,6 @@ Win_VID_Init (byte *palette, byte *colormap)
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();
 	vid_internal.choose_visual (win_sw_context);
-	Win_SetVidMode (viddef.width, viddef.height);
 	Win_CreateWindow (viddef.width, viddef.height);
 	vid_internal.create_context (win_sw_context);
 
@@ -111,6 +110,7 @@ vid_system_t vid_system = {
 	.init = Win_VID_Init,
 	.set_palette = Win_VID_SetPalette,
 	.init_cvars = Win_VID_Init_Cvars,
+	.update_fullscreen = Win_UpdateFullscreen,
 	.set_cursor = Win_VID_SetCursor,
 };
 

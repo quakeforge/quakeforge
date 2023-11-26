@@ -51,6 +51,7 @@ void Win_Activate (BOOL fActive, BOOL minimize);
 
 bool Win_AddEvent (UINT event, LONG (*event_handler)(HWND, UINT, WPARAM, LPARAM));
 bool Win_RemoveEvent (UINT event);
+void Win_UpdateFullscreen (int fullscreen);
 
 void Win_UnloadAllDrivers (void);
 void Win_OpenDisplay (void);
