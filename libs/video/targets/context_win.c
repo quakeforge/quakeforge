@@ -50,8 +50,9 @@ HDC         win_maindc;
 HCURSOR     win_arrow;
 bool        win_cursor_visible;
 int         win_palettized;
-int         win_minimized;
-int         win_canalttab = 0;
+bool        win_minimized;
+bool        win_focused;
+bool        win_canalttab;
 sw_ctx_t   *win_sw_context;
 
 #define MODE_WINDOWED			0

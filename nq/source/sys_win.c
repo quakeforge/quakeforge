@@ -39,6 +39,8 @@
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
+#include "context_win.h"
+
 bool        isDedicated = false;
 
 #define MINIMUM_WIN_MEMORY		0x0880000
@@ -49,11 +51,26 @@ bool        isDedicated = false;
 #define PAUSE_SLEEP		50				// sleep time on pause or minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-bool        ActiveApp, Minimized;
-bool        WinNT;
+static int cl_pause_sleep;
+static cvar_t cl_pause_sleep_cvar = {
+	.name = "cl_pause_sleep",
+	.description =
+		"Control whether the client will sleep when paused",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_pause_sleep },
+};
 
-static double pfreq;
-static int  lowshift;
+static int cl_unfocus_sleep;
+static cvar_t cl_unfocus_sleep_cvar = {
+	.name = "cl_unfocus_sleep",
+	.description =
+		"Control whether the client will sleep when unfocused",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_unfocus_sleep },
+};
+
 HANDLE      hinput, houtput;
 
 static HANDLE tevent;
@@ -64,28 +81,12 @@ static void
 startup (void)
 {
 	LARGE_INTEGER PerformanceFreq;
-	unsigned int lowpart, highpart;
 	OSVERSIONINFO vinfo;
 
 	Sys_MaskFPUExceptions ();
 
 	if (!QueryPerformanceFrequency (&PerformanceFreq))
 		Sys_Error ("No hardware timer available");
-
-	// get 32 out of the 64 time bits such that we have around
-	// 1 microsecond resolution
-	lowpart = (unsigned int) PerformanceFreq.LowPart;
-	highpart = (unsigned int) PerformanceFreq.HighPart;
-	lowshift = 0;
-
-	while (highpart || (lowpart > 2000000.0)) {
-		lowshift++;
-		lowpart >>= 1;
-		lowpart |= (highpart & 1) << 31;
-		highpart >>= 1;
-	}
-
-	pfreq = 1.0 / (double) lowpart;
 
 	vinfo.dwOSVersionInfoSize = sizeof (vinfo);
 
@@ -96,11 +97,6 @@ startup (void)
 		(vinfo.dwPlatformId == VER_PLATFORM_WIN32s)) {
 		Sys_Error ("WinQuake requires at least Win95 or NT 4.0");
 	}
-
-	if (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
-		WinNT = true;
-	else
-		WinNT = false;
 }
 
 static void
@@ -211,15 +207,19 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	Host_Init ();
 
+	Cvar_Register (&cl_pause_sleep_cvar, 0, 0);
+	Cvar_Register (&cl_unfocus_sleep_cvar, 0, 0);
+
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
 		if (!isDedicated) {
 			// yield the CPU for a little while when paused, minimized, or
 			// not the focus
-			if ((cl.paused && !ActiveApp) || Minimized) {
+			if (cl_pause_sleep
+				&& ((cl.paused && !win_focused) || win_minimized)) {
 				SleepUntilInput (PAUSE_SLEEP);
 				scr_skipupdate = 1;		// no point in bothering to draw
-			} else if (!ActiveApp) {
+			} else if (cl_unfocus_sleep && !win_focused) {
 				SleepUntilInput (NOT_FOCUS_SLEEP);
 			}
 		}

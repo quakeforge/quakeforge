@@ -666,6 +666,7 @@ event_leave (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static LONG
 event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	win_focused = true;
 	in_win_send_focus_event (1);
 	return 0;
 }
@@ -673,9 +674,7 @@ event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static LONG
 event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (modestate == MS_FULLDIB) {
-		ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
-	}
+	win_focused = false;
 	in_win_send_focus_event (0);
 	return 0;
 }
@@ -829,7 +828,7 @@ IN_Win_Preinit (void)
 	Win_AddEvent (WM_MOUSELEAVE, event_leave);
 
 	Win_AddEvent (WM_SETFOCUS, event_focusin);
-	Win_AddEvent (WM_SETFOCUS, event_focusout);
+	Win_AddEvent (WM_KILLFOCUS, event_focusout);
 
 	Win_AddEvent (WM_KEYDOWN, event_key);
 	Win_AddEvent (WM_SYSKEYDOWN, event_key);
