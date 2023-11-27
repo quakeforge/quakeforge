@@ -80,12 +80,8 @@ esac
 
 m4_include(config.d/compression.m4)
 
-m4_include(config.d/mgl.m4)
-m4_include(config.d/fbdev.m4)
-m4_include(config.d/svga.m4)
 m4_include(config.d/vulkan.m4)
 m4_include(config.d/x11.m4)
-m4_include(config.d/sdl.m4)
 
 m4_include(config.d/curses.m4)
 m4_include(config.d/freetype.m4)

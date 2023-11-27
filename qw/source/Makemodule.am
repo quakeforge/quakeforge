@@ -109,48 +109,6 @@ qw_source_libqw_client_a_SOURCES= \
 		qw/source/cl_parse.c qw/source/cl_pred.c qw/source/cl_rss.c qw/source/cl_skin.c qw/source/cl_slist.c \
 		qw/source/teamplay.c
 
-# Software-rendering clients
-
-# ... Linux FBDev
-qw_client_fbdev_libs= \
-			$(qw_client_libs) \
-			$(qw_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFfbdev.la \
-			$(qw_client_LIBS)
-qw_client_fbdev_SOURCES= qw/source/cl_sys_unix.c
-qw_client_fbdev_LDADD= $(qw_client_fbdev_libs) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_fbdev_LDFLAGS= $(common_ldflags)
-qw_client_fbdev_DEPENDENCIES= $(qw_client_fbdev_libs)
-
-# ... Simple DirectMedia Layer, version 1.2 and higher
-qw_client_sdl_libs= \
-			qw/source/libqw_sdl.a \
-			$(qw_client_libs) \
-			$(qw_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFsdl.la \
-			$(qw_client_LIBS)
-qw_client_sdl_SOURCES=qw/source/sdl_link.c
-qw_client_sdl_LDADD= qw/source/libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_sdl_LDFLAGS=  $(common_ldflags)
-qw_client_sdl_DEPENDENCIES= qw/source/libqw_sdl.a $(qw_client_sdl_libs)
-
-# ... Linux SVGAlib
-qw_client_svga_libs= \
-			$(qw_client_libs) \
-			$(qw_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFsvga.la \
-			$(qw_client_LIBS)
-qw_client_svga_SOURCES= qw/source/cl_sys_unix.c
-qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_svga_LDFLAGS=  $(common_ldflags)
-qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
-
 # ... X11
 qw_client_x11_libs= \
 			$(qw_client_libs) \
@@ -167,7 +125,7 @@ qw_client_x11_LDADD= $(qw_client_x11_libs) \
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
-# ... SGI/Microsoft WGL (Windows OpenGL)
+# ... mxe/mingw (Windows)
 qw_client_win_libs= \
 			$(qw_client_libs) \
 			$(qw_cl_plugin_LIBS) \

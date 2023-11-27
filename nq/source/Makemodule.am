@@ -83,48 +83,6 @@ nq_client_libs= nq/source/libnq_server.a nq/source/libnq_client.a nq/source/libn
 			libs/client/libQFclient.la
 server_libs = nq/source/libnq_server.a nq/source/libnq_common.a
 
-# Software-rendering targets
-
-# ... Linux FBDev
-nq_fbdev_libs=  \
-			$(nq_client_libs) \
-			$(nq_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFfbdev.la \
-			$(nq_client_LIBS)
-nq_fbdev_SOURCES=	nq/source/sys_unix.c
-nq_fbdev_LDADD= $(nq_fbdev_libs) $(NET_LIBS)
-nq_fbdev_LDFLAGS=	$(common_ldflags)
-nq_fbdev_DEPENDENCIES=	$(nq_fbdev_libs)
-
-# ... SDL, version 1.2 and higher
-nq_sdl_libs=  \
-			nq/source/libnq_sdl.a \
-			$(nq_client_libs) \
-			$(nq_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFsdl.la \
-			$(nq_client_LIBS)
-nq_sdl_SOURCES=nq/source/sdl_link.c
-nq_sdl_LDADD=		$(nq_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
-nq_sdl_LDFLAGS= 	$(common_ldflags)
-nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
-
-# ... Linux SVGAlib
-nq_svga_libs=  \
-			$(nq_client_libs) \
-			$(nq_cl_plugin_LIBS) \
-			libs/video/renderer/libQFrenderer.la \
-			libs/models/libQFmodels.la \
-			libs/video/targets/libQFsvga.la \
-			$(nq_client_LIBS)
-nq_svga_SOURCES=	nq/source/sys_unix.c
-nq_svga_LDADD=		$(nq_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
-nq_svga_LDFLAGS=	$(common_ldflags)
-nq_svga_DEPENDENCIES=	$(nq_svga_libs)
-
 # ... X11
 nq_x11_libs=  \
 			$(nq_client_libs) \
@@ -140,9 +98,7 @@ nq_x11_LDADD=		$(nq_x11_libs) \
 nq_x11_LDFLAGS= 	$(common_ldflags)
 nq_x11_DEPENDENCIES=	$(nq_x11_libs)
 
-# OpenGL-using targets
-
-# ... SGI/Microsoft WGL (Windows OpenGL)
+# ... mxe/mingw (Windows)
 nq_win_libs=  \
 			$(nq_client_libs) \
 			$(nq_cl_plugin_LIBS) \
