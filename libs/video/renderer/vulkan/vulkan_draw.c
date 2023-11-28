@@ -524,6 +524,7 @@ static uint32_t
 create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 			 VkBuffer buffer, vulkan_ctx_t *ctx)
 {
+	qfZoneNamed (zone, true);
 	__auto_type pd = (picdata_t *) pic->data;
 
 	float sl = 0, sr = 1, st = 0, sb = 1;
@@ -566,6 +567,7 @@ make_static_quad (int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 static int
 make_dyn_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	qfZoneNamed (zone, true);
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
@@ -916,6 +918,7 @@ draw_lines (qfv_taskctx_t *taskctx)
 static void
 flush_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	flush_draw_scrap (ctx);
@@ -924,6 +927,7 @@ flush_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -959,6 +963,7 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -990,6 +995,7 @@ line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto dctx = ctx->draw_context;
@@ -1425,6 +1431,7 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 					int srcx, int srcy, int width, int height,
 					vulkan_ctx_t *ctx)
 {
+	qfZoneNamed (zone, true);
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 

@@ -114,6 +114,7 @@ bi_newscene (progs_t *pr, void *_res)
 static void
 bi_refresh (progs_t *pr, void *_res)
 {
+	qfFrameMark;
 	con_realtime = Sys_DoubleTime () - basetime;
 	con_frametime = con_realtime - old_conrealtime;
 	old_conrealtime = con_realtime;

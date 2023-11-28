@@ -718,6 +718,7 @@ CL_SetStat (int stat, int value)
 void
 CL_ParseServerMessage (void)
 {
+	qfZoneNamedN (psm_zone, "CL_ParseServerMessage", true);
 	int         cmd = 0, i, j;
 	const char *str;
 	static dstring_t *stuffbuf;

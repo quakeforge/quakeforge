@@ -65,6 +65,7 @@
 static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -135,6 +136,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -165,6 +167,7 @@ static void
 output_select_pipeline (const exprval_t **params, exprval_t *result,
 						exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto output = QFV_GetStep (params[0], ctx->render_context->job);
@@ -192,6 +195,7 @@ static void
 output_select_renderpass (const exprval_t **params, exprval_t *result,
 						  exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto main = QFV_GetStep (params[0], ctx->render_context->job);
@@ -234,6 +238,7 @@ output_draw (qfv_taskctx_t *taskctx,
 static void
 output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	output_draw (taskctx, 0, 0);
 }
@@ -241,6 +246,7 @@ output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	float time = vr_data.realtime;
 	qfv_push_constants_t push_constants[] = {
@@ -252,6 +258,7 @@ output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *e
 static void
 output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	float width = r_refdef.vrect.width;
 	float height = r_refdef.vrect.height;

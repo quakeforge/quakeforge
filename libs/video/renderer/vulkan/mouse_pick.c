@@ -46,6 +46,7 @@ static void
 mousepick_initiate (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 
@@ -86,6 +87,7 @@ static void
 mousepick_finalize (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 

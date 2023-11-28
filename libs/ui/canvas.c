@@ -167,6 +167,7 @@ typedef void (*canvas_sysfunc_f) (canvas_system_t *canvas_sys,
 static void
 draw_update (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -180,6 +181,7 @@ static void
 draw_tile_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -197,6 +199,7 @@ static void
 draw_pic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -215,6 +218,7 @@ static void
 draw_fitpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				   ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -234,6 +238,7 @@ static void
 draw_subpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				   ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -253,6 +258,7 @@ static void
 draw_cachepic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -272,6 +278,7 @@ static void
 draw_fill_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -291,6 +298,7 @@ static void
 draw_charbuff_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -309,6 +317,7 @@ static void
 draw_func_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -328,6 +337,7 @@ static void
 draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -378,6 +388,7 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 static void
 draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
 	uint32_t    color = canvas_sys->text_base + text_color;
@@ -402,6 +413,7 @@ static void
 draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
 	uint32_t    color = canvas_sys->text_base + text_color;
@@ -440,6 +452,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 void
 Canvas_Draw (canvas_system_t canvas_sys)
 {
+	qfZoneNamed (zone, true);
 	static canvas_sysfunc_f draw_func[canvas_comp_count] = {
 		[canvas_update]     = draw_update,
 		[canvas_updateonce] = draw_update,

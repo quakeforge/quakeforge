@@ -129,6 +129,7 @@ Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
 static void
 update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;

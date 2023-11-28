@@ -678,6 +678,7 @@ Host_FilterTime (float time)
 static void
 _Host_Frame (float time)
 {
+	qfZoneNamedN (hfzone, "_Host_Frame", true);
 	static int  first = 1;
 	float       sleeptime;
 

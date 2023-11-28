@@ -152,6 +152,9 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 static void
 run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 {
+	qfZoneNamed (zone, true);
+	qfZoneName (zone, rp->label.name, rp->label.name_len);
+	qfZoneColor (zone, rp->label.color32);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
@@ -223,6 +226,9 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 static void
 run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 {
+	qfZoneNamed (zone, true);
+	qfZoneName (zone, step->label.name, step->label.name_len);
+	qfZoneColor (zone, step->label.color32);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
@@ -251,6 +257,9 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 static void
 run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 {
+	qfZoneNamed (zone, true);
+	qfZoneName (zone, proc->label.name, proc->label.name_len);
+	qfZoneColor (zone, proc->label.color32);
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
 	};
@@ -261,6 +270,7 @@ void
 QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 				   uint32_t width, uint32_t height, void *data)
 {
+	qfZoneNamed (zone, true);
 	qfv_output_t output = {
 		.extent = {
 			.width = width,
@@ -274,6 +284,7 @@ QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
+	qfZoneNamed (zone, true);
 	auto rctx = ctx->render_context;
 	auto job = rctx->job;
 	int64_t start = Sys_LongTime ();
@@ -426,6 +437,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 static void
 wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -445,6 +457,7 @@ static void
 update_framebuffer (const exprval_t **params, exprval_t *result,
 					exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto job = ctx->render_context->job;

@@ -25,8 +25,9 @@ NOCONV_DIST= \
 	$(distdir)/include/win32/resources/icon1XP.ico
 
 BUILT_SOURCES = $(top_srcdir)/.version
-#AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
+AM_CFLAGS= $(TRACY_CFLAGS) -funwind-tables -include qftracy.h
+AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
+AM_CPPFLAGS= -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
 common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
@@ -59,6 +60,12 @@ DISTCLEANFILES =
 YFLAGS = -v -d -Wno-yacc -Werror
 PTHREAD_LDFLAGS=@PTHREAD_LDFLAGS@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+
+if HAVE_TRACY
+tracy_src=tracy/public/TracyClient.cpp
+else
+tracy_src=
+endif
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined

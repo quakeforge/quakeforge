@@ -227,6 +227,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 qfv_packet_t *
 QFV_PacketAcquire (qfv_stagebuf_t *stage)
 {
+	qfZoneNamed (zone, true);
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -234,8 +235,10 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	if (!RB_SPACE_AVAILABLE (stage->packets)) {
 		// need to wait for a packet to become available
 		packet = RB_PEEK_DATA (stage->packets, 0);
+		qfMessageL ("waiting on fence");
 		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
 								~0ull);
+		qfMessageL ("got fence");
 		release_space (stage, packet->offset, packet->length);
 		RB_RELEASE (stage->packets, 1);
 	}

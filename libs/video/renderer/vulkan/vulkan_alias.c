@@ -258,6 +258,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 static void
 alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto pass = *(int *) params[0]->value;
 	auto stage = *(int *) params[1]->value;

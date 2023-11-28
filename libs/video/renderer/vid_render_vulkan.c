@@ -345,6 +345,7 @@ vulkan_set_2d (int scaled)
 static void
 vulkan_UpdateScreen (SCR_Func *scr_funcs)
 {
+	qfZoneNamed (zone, true);
 	vulkan_set_2d (1);//FIXME
 	Vulkan_SetScrFuncs (scr_funcs, vulkan_ctx);
 	QFV_RunRenderJob (vulkan_ctx);

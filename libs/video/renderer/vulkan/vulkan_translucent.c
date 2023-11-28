@@ -131,6 +131,7 @@ trans_create_buffers (vulkan_ctx_t *ctx)
 static void
 clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;

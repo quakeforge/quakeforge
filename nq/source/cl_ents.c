@@ -164,6 +164,7 @@ set_entity_model (int ent_ind, int modelindex)
 void
 CL_RelinkEntities (void)
 {
+	qfZoneNamedN (re_zzone, "CL_RelinkEntities", true);
 	entity_t    ent;
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f;

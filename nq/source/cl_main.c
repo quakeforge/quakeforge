@@ -506,6 +506,7 @@ CL_PrintEntities_f (void)
 int
 CL_ReadFromServer (void)
 {
+	qfZoneNamedN (rfzzone, "CL_ReadFromServer", true);
 	int         ret;
 	TEntContext_t tentCtx = {
 		cl.viewstate.player_origin,
@@ -635,6 +636,7 @@ write_capture (tex_t *tex, void *data)
 void
 CL_PreFrame (void)
 {
+	qfZoneNamedN (pfzone, "CL_PreFrame", true);
 	IN_ProcessEvents ();
 
 	GIB_Thread_Execute ();
@@ -647,6 +649,7 @@ CL_PreFrame (void)
 void
 CL_Frame (void)
 {
+	qfZoneNamedN (fzone, "CL_Frame", true);
 	static double time1 = 0, time2 = 0, time3 = 0;
 	int         pass1, pass2, pass3;
 

@@ -163,6 +163,7 @@ create_buffers (vulkan_ctx_t *ctx)
 static void
 particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -198,6 +199,7 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -332,6 +334,7 @@ wait_on_event (VkBuffer states, VkBuffer params, VkBuffer system,
 static void
 particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -373,6 +376,7 @@ static void
 particle_wait_physics (const exprval_t **params, exprval_t *result,
 					   exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;

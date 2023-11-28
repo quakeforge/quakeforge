@@ -90,6 +90,7 @@ make_plane (vec4f_t s, vec4f_t t, vec4f_t scolor, vec4f_t tcolor)
 static void
 debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;

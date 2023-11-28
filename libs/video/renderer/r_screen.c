@@ -288,6 +288,7 @@ SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 void
 SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
+	qfZoneNamed (zone, true);
 	R_RunParticles (r_data->frametime);
 
 	if (scr_skipupdate || !scr_initialized) {

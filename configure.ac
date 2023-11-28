@@ -140,6 +140,7 @@ m4_include(config.d/paths.m4)
 
 m4_include(config.d/build_control.m4)
 m4_include(config.d/qfcc.m4)
+m4_include(config.d/tracy.m4)
 
 AC_ARG_ENABLE(static-doc,
 	AS_HELP_STRING([--enable-static-doc],

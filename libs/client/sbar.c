@@ -1754,6 +1754,7 @@ Sbar_DrawCenterPrint (void)
 void
 Sbar_Update (double time)
 {
+	qfZoneNamedN (sbu_zone, "Sbar_Update", true);
 	fps_count++;
 	sbar_time = time;
 	if (!sbar_active) {

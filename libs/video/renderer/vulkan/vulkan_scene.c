@@ -145,6 +145,7 @@ static void
 scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	entity_t    ent = vr_data.view_model;
 	if (!Entity_Valid (ent)) {
 		return;

@@ -91,7 +91,7 @@ nq_x11_libs=  \
 			libs/models/libQFmodels.la \
 			libs/video/targets/libQFx11.la \
 			$(nq_client_LIBS)
-nq_x11_SOURCES= 	nq/source/sys_unix.c
+nq_x11_SOURCES= 	nq/source/sys_unix.c $(tracy_src)
 nq_x11_LDADD=		$(nq_x11_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(X_LIBS) \
 			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(DL_LIBS)
@@ -106,7 +106,7 @@ nq_win_libs=  \
 			libs/models/libQFmodels.la \
 			libs/video/targets/libQFwin.la \
 			$(nq_client_LIBS)
-nq_win_SOURCES= 	nq/source/sys_win.c
+nq_win_SOURCES= 	nq/source/sys_win.c $(tracy_src)
 nq_win_LDADD=		$(nq_win_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
 nq_win_LDFLAGS= 	$(common_ldflags)
 nq_win_DEPENDENCIES=	$(nq_win_libs)
@@ -120,6 +120,6 @@ endif
 EXTRA_DIST += nq/source/sys_wind.c nq/source/sys_unixd.c nq/source/sv_ded.c
 
 nq_server_LDFLAGS=	$(common_ldflags)
-nq_server_SOURCES=	$(ded_sources)
-nq_server_LDADD=	$(server_libs) $(nq_server_LIBS)
+nq_server_SOURCES=	$(ded_sources) $(tracy_src)
+nq_server_LDADD=	$(server_libs) $(nq_server_LIBS) $(UNWIND_LIBS)
 nq_server_DEPENDENCIES=	$(server_libs) $(nq_server_LIB_DEPS)

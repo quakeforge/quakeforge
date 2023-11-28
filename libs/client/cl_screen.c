@@ -169,6 +169,7 @@ SCR_CShift (view_pos_t abs, view_pos_t len)
 static void
 scr_draw_views (void)
 {
+	qfZoneNamed (zone, true);
 	if (scr_showturtle) {
 		static int  count;
 		if (r_data->frametime < 0.1) {
@@ -325,6 +326,7 @@ CL_Init_Screen (void)
 void
 CL_UpdateScreen (viewstate_t *vs)
 {
+	qfZoneNamedN (us_zone, "CL_UpdateScreen", true);
 	_vs = vs;
 
 	//FIXME not every time

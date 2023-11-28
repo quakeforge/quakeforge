@@ -666,6 +666,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 void
 CL_UpdateTEnts (double time, TEntContext_t *ctx)
 {
+	qfZoneNamedN (ut_zone, "CL_UpdateTEnts", true);
 	free_stale_entities ();
 	CL_UpdateBeams (time, ctx);
 	CL_UpdateExplosions (time, ctx);

@@ -632,6 +632,7 @@ V_DropCShift (cshift_t *cs, double time, float droprate)
 void
 V_PrepBlend (viewstate_t *vs)
 {
+	qfZoneNamed (zone, true);
 	int         i, j;
 
 	if (cl_cshift_powerup
@@ -931,6 +932,7 @@ DropPunchAngle (viewstate_t *vs)
 void
 V_RenderView (viewstate_t *vs)
 {
+	qfZoneNamed (zone, true);
 	if (!vs->active) {
 		if (Transform_Valid (vs->camera_transform)) {
 			vec4f_t     base = { 0, 0, 0, 1 };

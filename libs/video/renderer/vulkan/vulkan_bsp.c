@@ -1177,6 +1177,7 @@ create_notexture (vulkan_ctx_t *ctx)
 static void
 bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
@@ -1191,6 +1192,7 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -1259,6 +1261,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;

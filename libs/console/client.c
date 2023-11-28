@@ -791,6 +791,7 @@ setup_console (void)
 static void
 C_DrawConsole (void)
 {
+	qfZoneNamed (zone, true);
 	if (con_debug) {
 		Con_Debug_Draw ();
 	}
