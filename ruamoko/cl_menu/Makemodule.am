@@ -40,7 +40,7 @@ ruamoko_cl_menu_menu_dat_SOURCES=$(ruamoko_menu_src)
 ruamoko_menu_obj=$(ruamoko_cl_menu_menu_dat_SOURCES:.r=.o)
 ruamoko_menu_dep=$(call qcautodep,$(ruamoko_cl_menu_menu_dat_SOURCES))
 ruamoko/cl_menu/menu_dat$(EXEEXT): ruamoko/cl_menu/menu.dat
-	cp $^ $@
+	@cp $^ $@
 ruamoko/cl_menu/menu.dat: $(ruamoko_menu_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a ruamoko/gui/libgui.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_menu_obj) -Lruamoko/gui -lgui -lcsqc -lr
 include $(ruamoko_menu_dep) # am--include-marker
