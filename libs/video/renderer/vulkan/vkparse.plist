@@ -334,11 +334,12 @@ parse = {
 	};
 	qfv_pipelineinfo_s = {
 		.name = qfv_pipelineinfo_t;
-		color = auto;
-		name = {
-			type = string;
-			string = name;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
 		};
+		color = auto;
 		disabled = auto;
 		tasks = {
 			type = (array, qfv_taskinfo_t);
@@ -397,9 +398,10 @@ parse = {
 	};
 	qfv_subpassinfo_s = {
 		.name = qfv_subpassinfo_t;
-		name = {
-			type = string;
-			string = name;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
 		};
 		color = auto;
 		dependencies = {
@@ -517,7 +519,11 @@ parse = {
 	};
 	qfv_computeinfo_s = {
 		.name = qfv_computeinfo_t;
-		color = auto;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+		};
 		pipelines = {
 			type = (labeledarray, qfv_pipelineinfo_t, name);
 			size = num_pipelines;
@@ -526,6 +532,11 @@ parse = {
 	};
 	qfv_renderinfo_s = {
 		.name = qfv_renderinfo_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+		};
 		color = auto;
 		renderpasses = {
 			type = (labeledarray, qfv_renderpassinfo_t, name);
@@ -535,6 +546,11 @@ parse = {
 	};
 	qfv_processinfo_s = {
 		.name = qfv_processinfo_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+		};
 		color = auto;
 		tasks = {
 			type = (array, qfv_taskinfo_t);
@@ -544,6 +560,11 @@ parse = {
 	};
 	qfv_stepinfo_s = {
 		.name = qfv_stepinfo_t;
+		.type = (QFDictionary);
+		.dictionary = {
+			.parse = auto;
+			name = $name;
+		};
 		color = auto;
 		dependencies = {
 			type = (array, qfv_reference_t);

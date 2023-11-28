@@ -2117,6 +2117,7 @@ renderpasses = {
 };
 steps = {
 	wait_on_fence = {
+		color = "[0.6, 0.8, 0.0]";
 		process = {
 			tasks = (
 				{ func = wait_on_fence; },
@@ -2128,6 +2129,7 @@ steps = {
 		};
 	};
 	particles = {
+		color = "[0.6, 0.8, 0.9]";
 		dependencies = (wait_on_fence);
 		compute = {
 			pipelines = {
@@ -2157,6 +2159,7 @@ steps = {
 		};
 	};
 	world = {
+		color = "[0.3, 0.4, 0.0]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2169,6 +2172,7 @@ steps = {
 		};
 	};
 	shadow = {
+		color = "[0.3, 0.3, 0.3]";
 		dependencies = (world);
 		process = {
 			tasks = (
@@ -2188,6 +2192,7 @@ steps = {
 		};
 	};
 	setup_main = {
+		color = "[0.3, 0.8, 0.3]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2204,6 +2209,7 @@ steps = {
 		};
 	};
 	main = {
+		color = "[0.3, 0.8, 0.0]";
 		dependencies = (setup_main, particles, shadow, world);
 		render = {
 			renderpasses = {
@@ -2213,6 +2219,7 @@ steps = {
 		};
 	};
 	preoutput = {
+		color = "[0.8, 0.8, 0.0]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2227,6 +2234,7 @@ steps = {
 		};
 	};
 	output = {
+		color = "[0.4, 0.8, 0.4]";
 		dependencies = (main, preoutput);
 		render = {
 			renderpasses = {
@@ -2235,6 +2243,7 @@ steps = {
 		};
 	};
 	capture = {
+		color = "[0.0, 0.8, 0.4]";
 		dependencies = (output);
 		process = {
 			tasks = (
@@ -2243,6 +2252,7 @@ steps = {
 		};
 	};
 	mouse_pick = {
+		color = "[0.0, 0.0, 0.8]";
 		dependencies = (main);
 		process = {
 			tasks = (

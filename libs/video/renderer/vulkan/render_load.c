@@ -794,16 +794,33 @@ typedef struct {
 	VkImageView *attachment_views;
 } jobptr_t;
 
+static uint32_t convert_color (vec4f_t color)
+{
+	uint32_t    r = ((int) (color[0] * 255)) & 255;
+	uint32_t    g = ((int) (color[1] * 255)) & 255;
+	uint32_t    b = ((int) (color[2] * 255)) & 255;
+	return (r << 16) | (g << 8) | b;
+}
+
+static qfv_label_t
+make_label (const char *name, vec4f_t color)
+{
+	qfv_label_t label = {
+		.color = color,
+		.color32 = convert_color (color),
+		.name_len = name ? strlen (name) : 0,
+		.name = name ? name : "",
+	};
+	return label;
+}
+
 static void
 init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 			   jobptr_t *jp, objstate_t *s, int is_compute)
 {
 	__auto_type li = find_layout (&plinfo->layout, s);
 	*pl = (qfv_pipeline_t) {
-		.label = {
-			.name = plinfo->name,
-			.color = plinfo->color,
-		},
+		.label = make_label (plinfo->name, plinfo->color),
 		.disabled = plinfo->disabled,
 		.bindPoint = is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE
 								: VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -831,10 +848,7 @@ init_subpass (qfv_subpass_t *sp, qfv_subpassinfo_t *isp,
 {
 	uint32_t    np = s->inds.num_graph_pipelines + s->inds.num_comp_pipelines;
 	*sp = (qfv_subpass_t) {
-		.label = {
-			.name = isp->name,
-			.color = isp->color,
-		},
+		.label = make_label (isp->name, isp->color),
 		.inherit = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
 		},
@@ -859,8 +873,7 @@ init_renderpass (qfv_renderpass_t *rp, qfv_renderpassinfo_t *rpinfo,
 {
 	*rp = (qfv_renderpass_t) {
 		.vulkan_ctx = s->ctx,
-		.label.name = rpinfo->name,
-		.label.color = rpinfo->color,
+		.label = make_label (rpinfo->name, rpinfo->color),
 		.beginInfo = (VkRenderPassBeginInfo) {
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = s->ptr.rp[s->inds.num_renderpasses],
@@ -892,8 +905,7 @@ init_render (qfv_render_t *rend, qfv_renderinfo_t *rinfo,
 			 jobptr_t *jp, objstate_t *s)
 {
 	*rend = (qfv_render_t) {
-		.label.color = rinfo->color,
-		.label.name = rinfo->name,
+		.label = make_label (rinfo->name, rinfo->color),
 		.num_renderpasses = rinfo->num_renderpasses,
 		.renderpasses = &jp->renderpasses[s->inds.num_renderpasses],
 	};
@@ -911,8 +923,7 @@ init_compute (qfv_compute_t *comp, qfv_computeinfo_t *cinfo,
 {
 	uint32_t    np = s->inds.num_graph_pipelines + s->inds.num_comp_pipelines;
 	*comp = (qfv_compute_t) {
-		.label.color = cinfo->color,
-		.label.name = cinfo->name,
+		.label = make_label (cinfo->name, cinfo->color),
 		.pipelines = &jp->pipelines[np],
 		.pipeline_count = cinfo->num_pipelines,
 	};
@@ -927,8 +938,7 @@ init_process (qfv_process_t *proc, qfv_processinfo_t *pinfo,
 			  jobptr_t *jp, objstate_t *s)
 {
 	*proc = (qfv_process_t) {
-		.label.color = pinfo->color,
-		.label.name = pinfo->name,
+		.label = make_label (pinfo->name, pinfo->color),
 		.tasks = &jp->tasks[s->inds.num_tasks],
 		.task_count = pinfo->num_tasks,
 	};
@@ -945,8 +955,7 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 	__auto_type sinfo = &s->jinfo->steps[ind];
 
 	*step = (qfv_step_t) {
-		.label.name = sinfo->name,
-		.label.color = sinfo->color,
+		.label = make_label (sinfo->name, sinfo->color),
 	};
 	if (sinfo->render) {
 		step->render = &jp->renders[s->inds.num_render++];
@@ -959,6 +968,7 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 	if (sinfo->process) {
 		step->process = &jp->processes[s->inds.num_process++];
 		init_process (step->process, sinfo->process, jp, s);
+		step->process->label = step->label;
 	}
 }
 

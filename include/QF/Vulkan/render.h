@@ -313,6 +313,8 @@ typedef struct qfv_time_s {
 
 typedef struct qfv_label_s {
 	vec4f_t     color;
+	uint32_t    color32;
+	uint32_t    name_len;
 	const char *name;
 } qfv_label_t;
 
