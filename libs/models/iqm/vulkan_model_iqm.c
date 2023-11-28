@@ -199,7 +199,7 @@ vulkan_iqm_load_textures (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		if (!(tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
-			tex_t       null_tex = {
+			static tex_t       null_tex = {
 				.width = 2,
 				.height = 2,
 				.format = tex_rgba,
