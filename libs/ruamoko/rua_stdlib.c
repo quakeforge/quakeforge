@@ -31,7 +31,9 @@
 # include "config.h"
 #endif
 
-#define _GNU_SOURCE	// for qsort_r
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #ifdef HAVE_STRING_H
 # include <string.h>

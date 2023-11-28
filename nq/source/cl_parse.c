@@ -787,7 +787,7 @@ CL_ParseServerMessage (void)
 
 			case svc_version:
 				i = MSG_ReadLong (net_message);
-				if (i != PROTOCOL_NETQUAKE && i!= PROTOCOL_FITZQUAKE)
+				if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE)
 					Host_Error ("CL_ParseServerMessage: Server is protocol %i "
 								"instead of %i or %i\n", i, PROTOCOL_NETQUAKE,
 								PROTOCOL_FITZQUAKE);
