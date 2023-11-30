@@ -6,10 +6,14 @@ AC_ARG_ENABLE(tracy,
 )
 HAVE_TRACY=no
 if test "x$enable_tracy" = "xyes"; then
+	AC_MSG_CHECKING([for tracy/public])
 	tracy_dir=${srcdir}/tracy/public
 	if test -d ${tracy_dir}; then
 		TRACY_CFLAGS="-I ${tracy_dir} -DHAVE_TRACY"
 		HAVE_TRACY=yes
+		AC_MSG_RESULT(yes)
+	else
+		AC_MSG_RESULT(no)
 	fi
 fi
 AC_SUBST(TRACY_CFLAGS)

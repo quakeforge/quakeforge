@@ -9,7 +9,7 @@
 #define TRACY_ENABLE
 #include "tracy/TracyC.h"
 
-inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
+static inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 {
 	TracyCZoneEnd (**ctxptr);
 }
@@ -21,7 +21,9 @@ inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 #define qfZoneNamed(varname, active) \
 	TracyCZone (varname, active) \
 	__attribute__((cleanup(__qfZoneEnd))) \
-	TracyCZoneCtx *qfConcat(__qfZone, __COUNTER__) = &varname
+	TracyCZoneCtx *qfConcat(__qfScoped##varname, __COUNTER__) = &varname
+#define qfZoneScoped(active) \
+	qfZoneNamed (__qfZone, active)
 
 #define qfZoneEnd(varname) TracyCZoneEnd (varname)
 
@@ -40,6 +42,7 @@ inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 
 #define qfFrameMark
 #define qfZoneNamed(varname, active)
+#define qfZoneScoped(active)
 #define qfZoneEnd(varname)
 #define qfZoneName(ctx, name, size)
 #define qfZoneColor(ctx, color)
