@@ -58,7 +58,6 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <setjmp.h>
 
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
@@ -2078,8 +2077,7 @@ SV_OutOfBandPrint (netadr_t adr, const char *format, ...)
 static void
 SV_ReadPackets (void)
 {
-	//NOTE star volatile, not volatile star
-	client_t   *volatile cl;			// * volatile for longjmp
+	client_t   *cl;
 	int         i;
 	int         qport;
 	double      until;

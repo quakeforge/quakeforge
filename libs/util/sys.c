@@ -73,6 +73,7 @@
 #include <sys/time.h>
 #endif
 #include <sys/types.h>
+#include <unwind.h>
 
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
@@ -85,6 +86,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
@@ -1260,4 +1262,171 @@ Sys_Shutdown (void)
 		dstring_delete (sys_debuglog_data);
 		sys_debuglog_data = 0;
 	}
+}
+
+#ifndef _WIN32
+#define DW_EH_PE_absptr         0x00
+#define DW_EH_PE_omit           0xff
+
+#define DW_EH_PE_uleb128        0x01
+#define DW_EH_PE_udata2         0x02
+#define DW_EH_PE_udata4         0x03
+#define DW_EH_PE_udata8         0x04
+#define DW_EH_PE_sleb128        0x09
+#define DW_EH_PE_sdata2         0x0A
+#define DW_EH_PE_sdata4         0x0B
+#define DW_EH_PE_sdata8         0x0C
+#define DW_EH_PE_signed         0x08
+
+#define DW_EH_PE_pcrel          0x10
+#define DW_EH_PE_textrel        0x20
+#define DW_EH_PE_datarel        0x30
+#define DW_EH_PE_funcrel        0x40
+#define DW_EH_PE_aligned        0x50
+
+
+typedef struct {
+	uintptr_t   start;
+	uintptr_t   lpstart;
+	uintptr_t   ttype_base;
+	const byte *ttype;
+	const byte *action_table;
+	byte        ttype_encoding;
+	byte        cs_encoding;
+} lsd_header_t;
+
+static uintptr_t
+read_value (byte enc, qmsg_t *msg)
+{
+	if (enc == DW_EH_PE_aligned) {
+		Sys_Error ("unexpected DW_EH_PE_aligned\n");
+	}
+	uintptr_t res = 0;
+	switch (enc & 0x0f) {
+		case DW_EH_PE_uleb128:
+			res = MSG_ReadUleb128 (msg);
+			break;
+		case DW_EH_PE_sleb128:
+			res = MSG_ReadSleb128 (msg);
+			break;
+		default:
+			Sys_Error ("unexpected dwarf encoding: %d\n", enc);
+			break;
+	}
+	if (res && enc & 0xf0) {
+		Sys_Error ("unexpected dwarf encoding: %d\n", enc);
+	}
+	return res;
+}
+
+static lsd_header_t
+read_lsd_header (qmsg_t *msg, uintptr_t start)
+{
+	lsd_header_t hdr;
+	uintptr_t   tmp;
+	byte        enc = MSG_ReadByte (msg);
+	hdr.start = start;
+	if (enc == DW_EH_PE_omit) {
+		hdr.lpstart = start;
+	} else {
+		hdr.lpstart = read_value (enc, msg);
+	}
+	hdr.ttype_encoding = MSG_ReadByte (msg);
+	if (hdr.ttype_encoding == DW_EH_PE_omit) {
+		hdr.ttype = 0;
+	} else {
+		tmp = MSG_ReadUleb128 (msg);
+		hdr.ttype = msg->message->data + msg->readcount + tmp;
+	}
+	hdr.cs_encoding = MSG_ReadByte (msg);;
+	tmp = MSG_ReadUleb128 (msg);
+	hdr.action_table = msg->message->data + msg->readcount + tmp;
+	return hdr;
+}
+
+#endif
+
+static _Unwind_Reason_Code
+sys_stop (int version, _Unwind_Action actions,
+		  _Unwind_Exception_Class excls,
+		  struct _Unwind_Exception *exobj,
+		  struct _Unwind_Context *context, void *_jmpbuf)
+{
+	if (version != 1) {
+		Sys_Error ("unknown unwind version");
+	}
+	intptr_t   *jmpbuf = _jmpbuf;
+#ifdef _WIN32
+	if (!context) {
+		// if we get here, then attempting to delete the exception contextuuu
+		// can fail
+		__builtin_longjmp (jmpbuf, 1);
+	}
+	uintptr_t   target_cfa = jmpbuf[2];
+	uintptr_t   cfa = _Unwind_GetCFA (context);
+	if (target_cfa < cfa) {
+		// we've gone past the target frame (there were no intervening
+		// cleanup points) so just jump out to avoid cleaning up something
+		// we shouldn't touch
+		__builtin_longjmp (jmpbuf, 1);
+	}
+	// These are not meant to be read, let alone written, but this is
+	// the only way to communicate the target frame/ip to RtlUnwindEx
+	exobj->private_[1] = target_cfa;
+	exobj->private_[2] = jmpbuf[1];	// target ip
+	return _URC_NO_REASON;
+#else
+	if ((actions & _UA_END_OF_STACK)) {
+		Sys_Error ("Sys_longjmp called outside a Sys_setjmp context");
+	}
+	uintptr_t   target_cfa = jmpbuf[2];
+	uintptr_t   cfa = _Unwind_GetCFA (context);
+	int         no_dec_ip;
+	uintptr_t   ip = _Unwind_GetIPInfo (context, &no_dec_ip);
+	if (!ip) {
+		Sys_Error ("null ip\n");
+	}
+	if (cfa != target_cfa) {
+		return _URC_NO_REASON;
+	}
+	ip -= !no_dec_ip;
+	byte       *lsd = _Unwind_GetLanguageSpecificData (context);
+	if (lsd) {
+		sizebuf_t   message = { .data = lsd, .cursize = -1 };
+		qmsg_t      msg = { .message = &message };
+		auto        region_start = _Unwind_GetRegionStart (context);
+		lsd_header_t hdr = read_lsd_header (&msg, region_start);
+		message.cursize = hdr.action_table - message.data;
+		bool match = false;
+		bool cleanup = false;
+		while (!match && msg.readcount < message.cursize) {
+			auto cs_start = read_value (hdr.cs_encoding, &msg);
+			auto cs_len = read_value (hdr.cs_encoding, &msg);
+			auto cs_lp = read_value (hdr.cs_encoding, &msg);
+			/*auto cs_action =*/ read_value (hdr.cs_encoding, &msg);
+			cs_start += hdr.start;
+			match = ip >= cs_start && ip < cs_start + cs_len;
+			cleanup = cs_lp;
+		}
+		if (!match) {
+			Sys_Error ("could not find ip in call site list");
+		}
+		if (cleanup) {
+			// the call site has cleanup associated with it, so return to
+			// let the unwind system deal with the cleanup (we'll get called
+			// again with the same cfa)
+			return _URC_NO_REASON;
+		}
+	}
+	_Unwind_DeleteException (exobj);
+	__builtin_longjmp (jmpbuf, 1);
+#endif
+}
+
+void
+Sys_longjmp (sys_jmpbuf jmpbuf)
+{
+	static struct _Unwind_Exception sys_exception;
+	auto res = _Unwind_ForcedUnwind (&sys_exception, sys_stop, jmpbuf);
+	Sys_Error ("_Unwind_ForcedUnwind returned %d", res);
 }

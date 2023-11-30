@@ -86,7 +86,7 @@ size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
-jmp_buf		host_abortserver;
+static sys_jmpbuf host_abortserver;
 
 float host_mem_size;
 static cvar_t host_mem_size_cvar = {
@@ -286,7 +286,7 @@ Host_EndGame (const char *message, ...)
 	else
 		CL_Disconnect ();
 
-	longjmp (host_abortserver, 1);
+	Sys_longjmp (host_abortserver);
 }
 
 /*
@@ -328,7 +328,7 @@ Host_Error (const char *error, ...)
 
 	inerror = false;
 
-	longjmp (host_abortserver, 1);
+	Sys_longjmp (host_abortserver);
 }
 
 static void
@@ -678,14 +678,14 @@ Host_FilterTime (float time)
 static void
 _Host_Frame (float time)
 {
-	qfZoneScoped (true);
 	static int  first = 1;
 	float       sleeptime;
 
-	if (setjmp (host_abortserver))
+	if (Sys_setjmp (host_abortserver))
 		return;							// something bad happened, or the
 										// server disconnected
 
+	qfZoneScoped (true);
 	rand ();							// keep the random time dependent
 
 	if (cls.demo_capture)

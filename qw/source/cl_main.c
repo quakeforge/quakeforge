@@ -56,7 +56,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <setjmp.h>
 
 #include "qfalloca.h"
 
@@ -451,7 +450,7 @@ static cvar_t host_speeds_cvar = {
 
 int         fps_count;
 
-jmp_buf     host_abort;
+static sys_jmpbuf host_abort;
 
 char       *server_version = NULL;		// version of server we connected to
 
@@ -1684,7 +1683,7 @@ Host_EndGame (const char *message, ...)
 
 	CL_Disconnect ();
 
-	longjmp (host_abort, 1);
+	Sys_longjmp (host_abort);
 }
 
 /*
@@ -1716,7 +1715,7 @@ Host_Error (const char *error, ...)
 	inerror = false;
 
 	if (host_initialized) {
-		longjmp (host_abort, 1);
+		Sys_longjmp (host_abort);
 	} else {
 		Sys_Error ("Host_Error: %s", str->str);
 	}
@@ -1866,7 +1865,7 @@ Host_Frame (float time)
 	float			sleeptime;
 	int				pass1, pass2, pass3;
 
-	if (setjmp (host_abort))
+	if (Sys_setjmp (host_abort))
 		// something bad happened, or the server disconnected
 		return;
 

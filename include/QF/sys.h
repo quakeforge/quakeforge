@@ -202,6 +202,10 @@ char *Sys_ExpandSquiggle (const char *path);
 int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
 					const char *suffix, int mindigits);
 
+typedef intptr_t sys_jmpbuf[5];
+#define Sys_setjmp(jmpbuf) __builtin_setjmp(jmpbuf)
+void Sys_longjmp (sys_jmpbuf jmpbuf) __attribute__((noreturn));
+
 ///@}
 
 #endif//__QF_sys_h

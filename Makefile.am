@@ -25,7 +25,7 @@ NOCONV_DIST= \
 	$(distdir)/include/win32/resources/icon1XP.ico
 
 BUILT_SOURCES = $(top_srcdir)/.version
-AM_CFLAGS= $(TRACY_CFLAGS) -funwind-tables -include qftracy.h
+AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
 AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
 AM_CPPFLAGS= -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
