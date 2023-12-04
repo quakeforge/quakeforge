@@ -497,6 +497,7 @@ SCR_Shutdown (void)
 void
 SCR_NewScene (scene_t *scene)
 {
+	qfZoneScoped (true);
 	scr_scene = scene;
 	if (scene) {
 		mod_brush_t *brush = &scr_scene->worldmodel->brush;

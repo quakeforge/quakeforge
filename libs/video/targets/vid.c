@@ -296,6 +296,7 @@ VID_InitGamma (const byte *pal)
 void
 VID_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	if (vi->flush_caches) {
 		vi->flush_caches (vi->ctx);
 	}

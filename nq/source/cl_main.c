@@ -224,6 +224,7 @@ CL_Shutdown (void *data)
 void
 CL_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	VID_ClearMemory ();
 	SCR_SetFullscreen (0);
 
@@ -280,6 +281,7 @@ CL_InitCvars (void)
 void
 CL_ClearState (void)
 {
+	qfZoneScoped (true);
 	CL_ClearMemory ();
 	if (!sv.active)
 		Host_ClearMemory ();

@@ -154,20 +154,29 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			.multiview = 1,
 			.multiviewGeometryShader = 1,
 		};
-		VkPhysicalDeviceFeatures features = {
-			.imageCubeArray = 1,
-			.independentBlend = 1,
-			.geometryShader = 1,
-			.multiViewport = 1,
-			.fragmentStoresAndAtomics = 1,
-			.fillModeNonSolid = 1,
+		VkPhysicalDeviceVulkan12Features features12 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+			.pNext = &multiview_features,
+			.hostQueryReset = 1,
+		};
+		VkPhysicalDeviceFeatures2 features = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+			.pNext = &features12,
+			.features = {
+				.imageCubeArray = 1,
+				.independentBlend = 1,
+				.geometryShader = 1,
+				.multiViewport = 1,
+				.fragmentStoresAndAtomics = 1,
+				.fillModeNonSolid = 1,
+			},
 		};
 		VkDeviceCreateInfo dCreateInfo = {
-			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &multiview_features, 0,
+			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &features, 0,
 			1, &qCreateInfo,
 			nlay, lay,
 			next, ext,
-			&features
+			0
 		};
 		qfv_device_t *device = calloc (1, sizeof (qfv_device_t)
 										  + sizeof (qfv_devfuncs_t));
@@ -203,6 +212,7 @@ QFV_DestroyDevice (qfv_device_t *device)
 int
 QFV_DeviceWaitIdle (qfv_device_t *device)
 {
+	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkDeviceWaitIdle (device->dev) == VK_SUCCESS;
 }

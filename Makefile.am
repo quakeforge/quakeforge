@@ -63,8 +63,10 @@ PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 
 if HAVE_TRACY
 tracy_src=tracy/public/TracyClient.cpp
+tracyvk_src=tracy/public/client/TracyVkProfiler.cpp
 else
 tracy_src=
+tracyvk_src=
 endif
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \

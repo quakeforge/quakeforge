@@ -31,7 +31,7 @@ js_libs = libs/util/libQFutil.la
 
 libs_video_targets_libvid_common_la_SOURCES = \
 	libs/video/targets/vid.c
-libs_video_targets_libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
+libs_video_targets_libvid_common_la_CFLAGS=	$(AM_CFLAGS) @PREFER_NON_PIC@
 libs_video_targets_libvid_common_la_LDFLAGS=	@STATIC@
 
 libs_video_targets_libvid_x11_la_SOURCES = \
@@ -39,7 +39,7 @@ libs_video_targets_libvid_x11_la_SOURCES = \
 	libs/video/targets/context_x11.c \
 	libs/video/targets/dga_check.c \
 	$(x11_src)
-libs_video_targets_libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_x11_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
 libs_video_targets_libvid_x11_la_LDFLAGS=		@STATIC@
 EXTRA_libs_video_targets_libvid_x11_la_SOURCES= $(x11_vulkan_src)
 
@@ -47,7 +47,7 @@ libs_video_targets_libvid_win_la_SOURCES = \
 	libs/video/targets/in_win.c \
 	libs/video/targets/context_win.c \
 	$(win_src)
-libs_video_targets_libvid_win_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_win_la_CFLAGS=		$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
 libs_video_targets_libvid_win_la_LDFLAGS=		@STATIC@
 EXTRA_libs_video_targets_libvid_win_la_SOURCES= $(win_vulkan_src)
 

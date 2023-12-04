@@ -146,6 +146,7 @@ CL_EntityNum (int num)
 static void
 CL_ParseStartSoundPacket (void)
 {
+	qfZoneScoped (true);
 	float       attenuation;
 	int         channel, ent, field_mask, sound_num, volume;
 
@@ -250,6 +251,7 @@ CL_KeepaliveMessage (void)
 static void
 CL_NewMap (const char *mapname)
 {
+	qfZoneScoped (true);
 	CL_World_NewMap (mapname, 0);
 	V_NewScene (&cl.viewstate, cl_world.scene);
 
@@ -264,6 +266,7 @@ CL_NewMap (const char *mapname)
 static void
 CL_ParseServerInfo (void)
 {
+	qfZoneScoped (true);
 	char        model_precache[MAX_MODELS][MAX_QPATH];
 	char        sound_precache[MAX_SOUNDS][MAX_QPATH];
 	const char *str;
@@ -540,6 +543,7 @@ CL_ParseUpdate (int bits)
 static void
 CL_ParseClientdata (void)
 {
+	qfZoneScoped (true);
 	int         i, j;
 	int         bits;
 
@@ -687,6 +691,7 @@ CL_ParseClientdata (void)
 static void
 CL_ParseStaticSound (int version)
 {
+	qfZoneScoped (true);
 	int         sound_num;
 	float       vol, atten;
 	vec4f_t     org = { 0, 0, 0, 1 };
@@ -718,7 +723,7 @@ CL_SetStat (int stat, int value)
 void
 CL_ParseServerMessage (void)
 {
-	qfZoneNamedN (psm_zone, "CL_ParseServerMessage", true);
+	qfZoneScoped (true);
 	int         cmd = 0, i, j;
 	const char *str;
 	static dstring_t *stuffbuf;

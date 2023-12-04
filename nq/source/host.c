@@ -609,6 +609,7 @@ Host_ShutdownServer (bool crash)
 void
 Host_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	Mod_ClearAll ();
 	if (host_hunklevel)

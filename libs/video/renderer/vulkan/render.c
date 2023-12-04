@@ -47,6 +47,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
@@ -141,9 +142,13 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkBeginCommandBuffer (taskctx->cmd, &sp->beginInfo);
 
-	for (uint32_t i = 0; i < sp->pipeline_count; i++) {
-		__auto_type pipeline = &sp->pipelines[i];
-		run_pipeline (pipeline, taskctx);
+	{
+		qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "subpass");
+
+		for (uint32_t i = 0; i < sp->pipeline_count; i++) {
+			__auto_type pipeline = &sp->pipelines[i];
+			run_pipeline (pipeline, taskctx);
+		}
 	}
 
 	dfunc->vkEndCommandBuffer (taskctx->cmd);
@@ -158,6 +163,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	__auto_type job = rctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
@@ -167,30 +173,34 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
-						 {VEC4_EXP (rp->label.color)});
-	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
-	for (uint32_t i = 0; i < rp->subpass_count; i++) {
-		__auto_type sp = &rp->subpasses[i];
-		QFV_duCmdBeginLabel (device, cmd, sp->label.name,
-							 {VEC4_EXP (sp->label.color)});
-		qfv_taskctx_t taskctx = {
-			.ctx = ctx,
-			.renderpass = rp,
-			.cmd = QFV_GetCmdBuffer (ctx, true),
-			.data = data,
-		};
-		run_subpass (sp, &taskctx);
-		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
-		QFV_duCmdEndLabel (device, cmd);
-		//FIXME comment is a bit off as exactly one buffer is always submitted
-		//
-		//Regardless of whether any commands were submitted for this
-		//subpass, must step through each and every subpass, otherwise
-		//the attachments won't be transitioned correctly.
-		//However, only if not the last (or only) subpass.
-		if (i < rp->subpass_count - 1) {
-			dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
+	{
+		qftVkScopedZone (frame->qftVkCtx, cmd, "renderpass");
+		QFV_duCmdBeginLabel (device, cmd, rp->label.name,
+							 {VEC4_EXP (rp->label.color)});
+		dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
+		for (uint32_t i = 0; i < rp->subpass_count; i++) {
+			__auto_type sp = &rp->subpasses[i];
+			QFV_duCmdBeginLabel (device, cmd, sp->label.name,
+								 {VEC4_EXP (sp->label.color)});
+			qfv_taskctx_t taskctx = {
+				.ctx = ctx,
+				.frame = frame,
+				.renderpass = rp,
+				.cmd = QFV_GetCmdBuffer (ctx, true),
+				.data = data,
+			};
+			run_subpass (sp, &taskctx);
+			dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
+			QFV_duCmdEndLabel (device, cmd);
+			//FIXME comment is a bit off as exactly one buffer is always submitted
+			//
+			//Regardless of whether any commands were submitted for this
+			//subpass, must step through each and every subpass, otherwise
+			//the attachments won't be transitioned correctly.
+			//However, only if not the last (or only) subpass.
+			if (i < rp->subpass_count - 1) {
+				dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
+			}
 		}
 	}
 	dfunc->vkCmdEndRenderPass (cmd);
@@ -208,10 +218,14 @@ run_compute_pipeline (qfv_pipeline_t *pipeline, VkCommandBuffer cmd,
 	}
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+	qftVkScopedZone (frame->qftVkCtx, cmd, "compute");
 	dfunc->vkCmdBindPipeline (cmd, pipeline->bindPoint, pipeline->pipeline);
 
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
+		.frame = frame,
 		.pipeline = pipeline,
 		.cmd = cmd,
 	};
@@ -257,13 +271,38 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 static void
 run_process (qfv_process_t *proc, vulkan_ctx_t *ctx)
 {
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
 	qfZoneNamed (zone, true);
 	qfZoneName (zone, proc->label.name, proc->label.name_len);
 	qfZoneColor (zone, proc->label.color32);
 	qfv_taskctx_t taskctx = {
 		.ctx = ctx,
+		.frame = frame,
 	};
 	run_tasks (proc->task_count, proc->tasks, &taskctx);
+}
+
+static void
+run_collect (vulkan_ctx_t *ctx)
+{
+#ifdef TRACY_ENABLE
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 va (ctx->va_ctx, "cmd:render:%s", "tracy"));
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+	qftCVkCollect (frame->qftVkCtx, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
+#endif
 }
 
 void
@@ -309,6 +348,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		update_time (&step->time, step_start, Sys_LongTime ());
 	}
 
+	qfMessageL ("submit");
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto queue = &device->queue;
@@ -324,6 +364,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
 
+	qfMessageL ("present");
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
 		1, &frame->renderDoneSemaphore,
@@ -332,6 +373,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 
+	qfMessageL ("update_time");
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
@@ -451,6 +493,7 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_CmdPoolManager_Reset (&frame->cmdpool);
 	auto job = ctx->render_context->job;
 	DARRAY_RESIZE (&job->commands, 0);
+	run_collect (ctx);
 }
 
 static void
@@ -530,6 +573,14 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
 								 va (ctx->va_ctx, "render pool:%zd", i));
+#ifdef TRACY_ENABLE
+		auto instance = ctx->instance->instance;
+		auto physdev = ctx->device->physDev->dev;
+		auto gipa = ctx->vkGetInstanceProcAddr;
+		auto gdpa = ctx->instance->funcs->vkGetDeviceProcAddr;
+		frame->qftVkCtx = qftCVkContextHostCalibrated (instance, physdev,
+													   device->dev, gipa, gdpa);
+#endif
 	}
 }
 

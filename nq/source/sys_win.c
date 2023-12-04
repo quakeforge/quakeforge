@@ -217,6 +217,7 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
+		qfFrameMark;
 		if (!isDedicated) {
 			// yield the CPU for a little while when paused, minimized, or
 			// not the focus

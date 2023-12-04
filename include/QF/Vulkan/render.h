@@ -419,6 +419,9 @@ typedef struct qfv_renderframe_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	qfv_cmdpoolmgr_t cmdpool;
+#ifdef TRACY_ENABLE
+	qftVkCtx_t *qftVkCtx;
+#endif
 } qfv_renderframe_t;
 
 typedef struct qfv_renderframeset_s
@@ -440,6 +443,7 @@ typedef struct qfv_renderctx_s {
 
 typedef struct qfv_taskctx_s {
 	struct vulkan_ctx_s *ctx;
+	qfv_renderframe_t *frame;
 	qfv_pipeline_t *pipeline;
 	qfv_renderpass_t *renderpass;
 	VkCommandBuffer cmd;

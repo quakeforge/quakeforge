@@ -7,12 +7,15 @@
 
 // enable tracy
 #define TRACY_ENABLE
+#define TRACY_VK_USE_SYMBOL_TABLE
 #include "tracy/TracyC.h"
 
 static inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 {
 	TracyCZoneEnd (**ctxptr);
 }
+
+#define qftVkCtx_t struct ___tracy_vkctx
 
 #define qfConcatInternal(a,b) a##b
 #define qfConcat(a,b) qfConcatInternal(a, b)
@@ -49,5 +52,7 @@ static inline void __qfZoneEnd (TracyCZoneCtx **ctxptr)
 #define qfZoneValue(ctx, value)
 #define qfZoneNamedN(varname, name, active)
 #define qfMessageL(msg)
+
+#define qftVkCtx_t void
 
 #endif

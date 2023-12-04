@@ -69,6 +69,7 @@ set_t       cl_forcelink = SET_STATIC_INIT (MAX_EDICTS, alloc_forcelink);
 void
 CL_ClearEnts (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {

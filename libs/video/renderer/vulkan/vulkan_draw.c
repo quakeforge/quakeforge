@@ -939,6 +939,7 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		return;
 	}
 
+	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "slice_draw");
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;

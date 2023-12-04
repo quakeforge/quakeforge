@@ -73,6 +73,7 @@ CL_World_Init (void)
 void
 CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 {
+	qfZoneScoped (true);
 	int         bits = 0;
 
 	if (version == 2)
@@ -107,6 +108,7 @@ CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 void
 CL_ParseStatic (qmsg_t *msg, int version)
 {
+	qfZoneScoped (true);
 	entity_t	    ent;
 	entity_state_t	es;
 
@@ -240,6 +242,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 void
 CL_World_Clear (void)
 {
+	qfZoneScoped (true);
 	Scene_FreeAllEntities (cl_world.scene);
 	CL_ClearTEnts ();
 }

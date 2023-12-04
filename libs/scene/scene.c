@@ -305,6 +305,7 @@ Scene_CreateEntity (scene_t *scene)
 void
 Scene_DestroyEntity (scene_t *scene, entity_t ent)
 {
+	qfZoneScoped (true);
 	ECS_DelEntity (scene->reg, ent.id);
 }
 

@@ -143,6 +143,7 @@ vulkan_R_Init (void)
 static void
 vulkan_R_ClearState (void)
 {
+	qfZoneScoped (true);
 	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	//FIXME clear scene correctly
 	r_refdef.worldmodel = 0;
@@ -160,6 +161,7 @@ vulkan_R_LoadSkys (const char *skyname)
 static void
 vulkan_R_NewScene (scene_t *scene)
 {
+	qfZoneScoped (true);
 	Vulkan_NewScene (scene, vulkan_ctx);
 }
 

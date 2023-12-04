@@ -1313,6 +1313,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 static void
 clear_shadows (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	lightingctx_t *lctx = ctx->lighting_context;
 
@@ -2040,6 +2041,7 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	lightingctx_t *lctx = ctx->lighting_context;
 
 	lctx->scene = scene;

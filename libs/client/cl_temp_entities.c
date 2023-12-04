@@ -113,6 +113,7 @@ static vec4f_t beam_rolls[360];
 void
 CL_TEnts_Precache (void)
 {
+	qfZoneScoped (true);
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
@@ -558,6 +559,7 @@ static const TE_Effect nqEffects[256] = {
 void
 CL_ParseTEnt_nq (qmsg_t *net_message, double time, TEntContext_t *ctx)
 {
+	qfZoneScoped (true);
 	byte        type = MSG_ReadByte (net_message);
 	parse_tent (net_message, time, ctx, nqEffects[type]);
 }
@@ -680,6 +682,7 @@ CL_UpdateTEnts (double time, TEntContext_t *ctx)
 void
 CL_ParseParticleEffect (qmsg_t *net_message)
 {
+	qfZoneScoped (true);
 	int         i, count, color;
 	vec4f_t     org = {0, 0, 0, 1}, dir = {};
 

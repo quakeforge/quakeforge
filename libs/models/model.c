@@ -174,6 +174,7 @@ mod_unload_model (size_t ind)
 VISIBLE void
 Mod_ClearAll (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < mod_numknown; i++) {
@@ -338,6 +339,7 @@ Mod_ForName (const char *name, bool crash)
 VISIBLE void
 Mod_TouchModel (const char *name)
 {
+	qfZoneScoped (true);
 	model_t    *mod;
 
 	mod = Mod_FindName (name);

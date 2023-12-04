@@ -221,6 +221,7 @@ output_draw (qfv_taskctx_t *taskctx,
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "flat");
 	VkDescriptorSet set[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		oframe->set,

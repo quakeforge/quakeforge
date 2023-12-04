@@ -470,6 +470,7 @@ V_DriftPitch (viewstate_t *vs)
 void
 V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 {
+	qfZoneScoped (true);
 	float       count, side;
 	int         armor, blood;
 	vec4f_t     origin = vs->player_origin;

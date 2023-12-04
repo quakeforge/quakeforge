@@ -71,7 +71,7 @@ qw_server_LIBS= \
 		libs/util/libQFutil.la
 
 qw_server_deps=qw/source/libqw_server.a qw/source/libqw_common.a $(qw_server_LIBS)
-qw_server_SOURCES=		$(syssv_SRC)
+qw_server_SOURCES=		$(syssv_SRC) $(tracy_src)
 qw_server_LDADD=		$(qw_server_deps) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
 qw_server_LDFLAGS=		$(common_ldflags)
 qw_server_DEPENDENCIES=	$(qw_server_deps)
@@ -117,7 +117,7 @@ qw_client_x11_libs= \
 			libs/models/libQFmodels.la \
 			libs/video/targets/libQFx11.la \
 			$(qw_client_LIBS)
-qw_client_x11_SOURCES=	qw/source/cl_sys_unix.c $(tracy_src)
+qw_client_x11_SOURCES=	qw/source/cl_sys_unix.c $(tracy_src) $(tracyvk_src)
 qw_client_x11_LDADD= $(qw_client_x11_libs) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(X_LIBS) \
 			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS) \
@@ -133,7 +133,7 @@ qw_client_win_libs= \
 			libs/models/libQFmodels.la \
 			libs/video/targets/libQFwin.la \
 			$(qw_client_LIBS)
-qw_client_win_SOURCES=	qw/source/cl_sys_win.c $(tracy_src)
+qw_client_win_SOURCES=	qw/source/cl_sys_win.c $(tracy_src) $(tracyvk_src)
 qw_client_win_LDADD= $(qw_client_win_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
 qw_client_win_LDFLAGS=  $(common_ldflags)
 qw_client_win_DEPENDENCIES= $(qw_client_win_libs)

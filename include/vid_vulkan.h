@@ -10,6 +10,43 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
+#ifdef HAVE_TRACY
+#include "tracy/TracyCVulkan.h"
+
+#define qftCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr) TracyCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextDestroy(ctx) TracyCVkDestroy( ctx )
+#define qftCVkContextName(ctx, name, size) TracyCVkContextName(ctx, name, size)
+#define qftCVkCollect(ctx, cmdbuf) TracyCVkCollect (ctx, cmdbuf)
+
+static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
+{
+	TracyCVkZoneEnd (**zone);
+}
+
+#define qftVkZone(ctx, cmdbuf, name) TracyCVkZone (ctx, cmdbuf, name)
+#define qftVkScopedZone(ctx, cmdbuf, name) \
+	qftVkZone (ctx, cmdbuf, name) \
+	__attribute__((cleanup(__qftVkZoneEnd))) \
+	___tracy_vkctx_scope **qfConcat(__qfScoped##varname, __COUNTER__) = &___tracy_gpu_zone
+#define qftVkZoneC(ctx, cmdbuf, name, color) TracyCVkZone (ctx, cmdbuf, name, color)
+#define qftVkZoneEnd(varname) TracyCVkZoneEnd (varname)
+
+#else
+
+#define qftVkContext(instance, physdev, device, queue, cmdbuf, instanceProcAddr, deviceProcAddr)
+#define qftVkContextCalibrated(instance, physdev, device, queue, cmdbuf, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextDestroy(ctx)
+#define qftCVkContextName(ctx, name, size)
+#define qftCVkContextCollect(ctx, cmdbuf)
+
+#define qftVkZone(ctx, cmdbuf, name)
+#define qftVkScopedZone(ctx, cmdbuf, name)
+#define qftVkZoneC(ctx, cmdbuf, name, color)
+#define qftVkZoneEnd(varname)
+
+#endif
+
 #define VA_CTX_COUNT 64
 
 typedef struct qfv_renderpassset_s
