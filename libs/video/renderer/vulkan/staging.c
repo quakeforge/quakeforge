@@ -236,10 +236,19 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	if (!RB_SPACE_AVAILABLE (stage->packets)) {
 		// need to wait for a packet to become available
 		packet = RB_PEEK_DATA (stage->packets, 0);
+		auto start = Sys_LongTime ();
 		qfMessageL ("waiting on fence");
 		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
 								~0ull);
 		qfMessageL ("got fence");
+		auto end = Sys_LongTime ();
+		if (end - start > 500) {
+			dstring_t  *str = dstring_newstr ();
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
+						(int) (end - start), stage, str->str);
+			dstring_delete (str);
+		}
 		release_space (stage, packet->offset, packet->length);
 		RB_RELEASE (stage->packets, 1);
 	}
@@ -248,6 +257,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	stage->space_start = align (stage->space_start, 16);
 	packet->offset = stage->space_start;
 	packet->length = 0;
+	packet->owner = __builtin_return_address (0);
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
 	dfunc->vkResetCommandBuffer (packet->cmd, 0);

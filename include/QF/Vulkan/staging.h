@@ -9,6 +9,7 @@ typedef struct qfv_packet_s {
 	VkFence     fence;
 	size_t      offset;
 	size_t      length;
+	void       *owner;
 } qfv_packet_t;
 
 typedef struct qfv_stagebuf_s {
