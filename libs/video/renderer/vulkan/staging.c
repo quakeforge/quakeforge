@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/backtrace.h"
 #include "QF/dstring.h"
 
 #include "QF/Vulkan/barrier.h"

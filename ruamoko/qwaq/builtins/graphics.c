@@ -40,6 +40,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include <errno.h>
 #include <string.h>
 
+#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/draw.h"
 #include "QF/image.h"
@@ -343,6 +344,7 @@ BI_Graphics_Init (progs_t *pr)
 	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
 
 	PR_RegisterBuiltins (pr, builtins, 0);
+	BT_Init (this_program);
 
 	QFS_Init (thread->hunk, "nq");
 	PI_Init ();
