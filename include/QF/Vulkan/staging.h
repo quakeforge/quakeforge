@@ -17,7 +17,7 @@ typedef struct qfv_stagebuf_s {
 	VkCommandPool cmdPool;
 	VkBuffer    buffer;
 	VkDeviceMemory memory;
-	RING_BUFFER(qfv_packet_t, 4) packets;	///< packets for controlling access
+	RING_BUFFER(qfv_packet_t, 32) packets;	///< packets for controlling access
 	size_t      atom_mask;	///< for flush size rounding
 	size_t      size;		///< actual size of the buffer
 	size_t      end;		///< effective end of the buffer due to early wrap

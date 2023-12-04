@@ -273,6 +273,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 void *
 QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 {
+	qfZoneNamed (zone, true);
 	void       *data = acquire_space (packet, size);
 	if (data) {
 		packet->length += size;
@@ -283,6 +284,7 @@ QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 void
 QFV_PacketSubmit (qfv_packet_t *packet)
 {
+	qfZoneNamed (zone, true);
 	qfv_stagebuf_t *stage = packet->stage;
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
