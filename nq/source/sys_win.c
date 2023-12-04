@@ -116,8 +116,8 @@ SleepUntilInput (int time)
 
 HINSTANCE   global_hInstance;
 int         global_nCmdShow;
+static char argv_0[65536];
 const char *argv[MAX_NUM_ARGVS];
-static const char *empty_string = "";
 HWND        hwnd_dialog;
 
 static void
@@ -172,7 +172,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	GlobalMemoryStatus (&lpBuffer);
 
 	argc = 1;
-	argv[0] = empty_string;
+	argv[0] = argv_0;
+	GetModuleFileNameA (0, argv_0, sizeof(argv_0));
 
 	while (*lpCmdLine && (argc < MAX_NUM_ARGVS)) {
 		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
