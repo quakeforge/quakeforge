@@ -32,6 +32,7 @@
 # include <unistd.h>
 #endif
 
+#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/dstring.h"
 #include "QF/cmd.h"
@@ -905,6 +906,7 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 void
 Host_Init (void)
 {
+	BT_Init (com_argv[0]);
 	sys_quake_encoding = true;
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
