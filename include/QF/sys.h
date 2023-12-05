@@ -206,6 +206,8 @@ typedef intptr_t sys_jmpbuf[5];
 #define Sys_setjmp(jmpbuf) __builtin_setjmp(jmpbuf)
 void Sys_longjmp (sys_jmpbuf jmpbuf) __attribute__((noreturn));
 
+extern sys_jmpbuf sys_exit_jmpbuf;
+
 ///@}
 
 #endif//__QF_sys_h

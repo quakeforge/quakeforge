@@ -540,11 +540,16 @@ Sys_Init_Cvars (void)
 	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
+static sys_jmpbuf sys_exit_cmpbuf;
+sys_jmpbuf sys_exit_jmpbuf;
 VISIBLE void
 Sys_Quit (void)
 {
 	Sys_Shutdown ();
 
+	if (memcmp (sys_exit_cmpbuf, sys_exit_jmpbuf, sizeof (sys_exit_cmpbuf))) {
+		Sys_longjmp (sys_exit_jmpbuf);
+	}
 	exit (0);
 }
 

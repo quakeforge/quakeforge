@@ -127,6 +127,10 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (hPrevInstance)
 		return 0;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	startup ();
 
 	global_hInstance = hInstance;

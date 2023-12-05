@@ -70,6 +70,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	startup ();
 
 	memset (&host_parms, 0, sizeof (host_parms));
