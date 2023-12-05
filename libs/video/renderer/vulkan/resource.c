@@ -170,6 +170,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 		if ((req.memoryTypeBits & (1 << type))
 			&& ((memprops->memoryTypes[type].propertyFlags & properties)
 				                == properties)) {
+			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti: %d\n",
+							resource->name, type);
 			VkMemoryAllocateInfo allocate_info = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 				.allocationSize = size,
