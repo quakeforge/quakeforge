@@ -310,7 +310,8 @@ create_buffers (vulkan_ctx_t *ctx)
 	dctx->draw_resource[1] = (qfv_resource_t) {
 		.name = "draw",
 		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+						   | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 		.num_objects = (2 * frames) + (frames) + (frames),
 		.objects = dctx->dvertex_objects,
 	};
