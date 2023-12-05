@@ -473,13 +473,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
-	vec4f_t *styles = QFV_PacketExtend (packet, sizeof (vec4f_t[NumStyles]));
-	for (int i = 0; i < NumStyles; i++) {
-		styles[i] = (vec4f_t) { 1, 1, 1, d_lightstylevalue[i] / 65536.0};
-	}
-	QFV_PacketCopyBuffer (packet, lframe->style_buffer, 0, bb);
-	QFV_PacketSubmit (packet);
+	size_t      packet_size = 0;
 
 	uint32_t light_ids[ST_COUNT][MaxLights];
 	uint32_t entids[ST_COUNT][MaxLights];
@@ -513,30 +507,82 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		queue[mode].count++;
 	}
 
+	packet_size += sizeof (vec4f_t[NumStyles]);
 	if (queue[ST_CASCADE].count) {
-		packet = QFV_PacketAcquire (ctx->staging);
 		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
-		mat4f_t *mats = QFV_PacketExtend (packet, sizeof (mat4f_t[mat_count]));
+		packet_size += sizeof (mat4f_t[mat_count]);
+	}
+	if (ndlight) {
+		packet_size += sizeof (mat4f_t[ndlight * 6]);
+		packet_size += sizeof (light_t[ndlight]);
+		packet_size += sizeof (qfv_light_render_t[ndlight]);
+	}
+	if (light_count) {
+		// light ids
+		packet_size += sizeof (uint32_t[light_count]);
+		// ent ids
+		packet_size += sizeof (uint32_t[light_count]);
+	}
+
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	byte *packet_start = QFV_PacketExtend (packet, packet_size);
+	byte *packet_data = packet_start;
+
+	qfv_scatter_t style_scatter = {
+		.srcOffset = 0,
+		.dstOffset = 0,
+		.length = sizeof (vec4f_t[NumStyles]),
+	};
+	auto styles = (vec4f_t *) packet_data;
+	packet_data += style_scatter.length;
+	for (int i = 0; i < NumStyles; i++) {
+		styles[i] = (vec4f_t) { 1, 1, 1, d_lightstylevalue[i] / 65536.0};
+	}
+	QFV_PacketScatterBuffer (packet, lframe->style_buffer,
+							 1, &style_scatter, bb);
+
+	if (queue[ST_CASCADE].count) {
+		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
+		auto mats = (mat4f_t *) packet_data;
+		auto base = packet_data - packet_start;
+		packet_data += sizeof (mat4f_t[mat_count]);
 		qfv_scatter_t scatter[queue[ST_CASCADE].count];
 		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
 			auto r = &lctx->light_control.a[light_ids[ST_CASCADE][i]];
 			auto light = get_light (entids[ST_CASCADE][i], lctx->scene->reg);
 			cascade_mats (&mats[i * num_cascade], light->position, ctx);
 			scatter[i] = (qfv_scatter_t) {
-				.srcOffset = sizeof (mat4f_t[i * num_cascade]),
+				.srcOffset = base + sizeof (mat4f_t[i * num_cascade]),
 				.dstOffset = sizeof (mat4f_t[r->matrix_id]),
 				.length = sizeof (mat4f_t[num_cascade]),
 			};
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
 								 queue[ST_CASCADE].count, scatter, bb);
-		QFV_PacketSubmit (packet);
 	}
 
 	if (ndlight) {
 		light_count += ndlight;
-		packet = QFV_PacketAcquire (ctx->staging);
-		light_t *lights = QFV_PacketExtend (packet, sizeof (light_t[ndlight]));
+
+		auto mats = (mat4f_t *) packet_data;
+		qfv_scatter_t mat_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = sizeof (mat4f_t[lctx->dynamic_matrix_base]),
+			.length = sizeof (mat4f_t[ndlight * 6]),
+		};
+		for (int i = 0; i < ndlight; i++) {
+			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
+		}
+		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
+								 1, &mat_scatter, bb);
+
+		auto lights = (light_t *) packet_data;
+		qfv_scatter_t light_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = sizeof (light_t[lctx->dynamic_base]),
+			.length = sizeof (light_t[ndlight]),
+		};
+		packet_data += light_scatter.length;
 		for (int i = 0; i < ndlight; i++) {
 			uint32_t id = lctx->dynamic_base + i;
 			set_lightid (dynamic_light_entities[i], lctx->scene->reg, id);
@@ -555,13 +601,16 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			// full sphere, normal light (not ambient)
 			lights[i].direction = (vec4f_t) { 0, 0, 1, 1 };
 		}
-		VkDeviceSize dlight_offset = sizeof (light_t[lctx->dynamic_base]);
-		QFV_PacketCopyBuffer (packet, lframe->light_buffer, dlight_offset, bb);
-		QFV_PacketSubmit (packet);
+		QFV_PacketScatterBuffer (packet, lframe->light_buffer,
+								 1, &light_scatter, bb);
 
-		packet = QFV_PacketAcquire (ctx->staging);
-		uint32_t r_size = sizeof (qfv_light_render_t[ndlight]);
-		qfv_light_render_t *render = QFV_PacketExtend (packet, r_size);
+		auto render = (qfv_light_render_t *) packet_data;
+		qfv_scatter_t render_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = sizeof (qfv_light_render_t[lctx->dynamic_base]),
+			.length = sizeof (qfv_light_render_t[ndlight]),
+		};
+		packet_data += render_scatter.length;
 		for (int i = 0; i < ndlight; i++) {
 			auto r = &lctx->light_control.a[lctx->dynamic_base + i];
 			render[i] = (qfv_light_render_t) {
@@ -570,19 +619,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			};
 			render[i].id_data |= 0x80000000;	// no style
 		}
-		dlight_offset = sizeof (qfv_light_render_t[lctx->dynamic_base]);
-		QFV_PacketCopyBuffer (packet, lframe->render_buffer, dlight_offset, bb);
-		QFV_PacketSubmit (packet);
-
-		packet = QFV_PacketAcquire (ctx->staging);
-		uint32_t msize = sizeof (mat4f_t[ndlight * 6]);
-		mat4f_t *mats = QFV_PacketExtend (packet, msize);
-		for (int i = 0; i < ndlight; i++) {
-			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
-		}
-		VkDeviceSize mat_offset = sizeof (mat4f_t[lctx->dynamic_matrix_base]);
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, mat_offset, bb);
-		QFV_PacketSubmit (packet);
+		QFV_PacketScatterBuffer (packet, lframe->render_buffer,
+								 1, &render_scatter, bb);
 	}
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 8,
@@ -594,28 +632,37 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		for (int i = 1; i < ST_COUNT; i++) {
 			queue[i].start = queue[i - 1].start + queue[i - 1].count;
 		}
-		packet = QFV_PacketAcquire (ctx->staging);
-		uint32_t *lids = QFV_PacketExtend (packet,
-										   sizeof (uint32_t[light_count]));
+		auto lids = (uint32_t *) packet_data;
+		qfv_scatter_t lid_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = 0,
+			.length = sizeof (uint32_t[light_count]),
+		};
+		packet_data += lid_scatter.length;
 		for (int i = 0; i < ST_COUNT; i++) {
 			memcpy (lids + queue[i].start, light_ids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
-		QFV_PacketCopyBuffer (packet, lframe->id_buffer, 0,
+		QFV_PacketScatterBuffer (packet, lframe->id_buffer,
+								 1, &lid_scatter,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-		QFV_PacketSubmit (packet);
 
-		packet = QFV_PacketAcquire (ctx->staging);
-		uint32_t *eids = QFV_PacketExtend (packet,
-										   sizeof (uint32_t[light_count]));
+		auto eids = (uint32_t *) packet_data;
+		qfv_scatter_t eid_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = 0,
+			.length = sizeof (uint32_t[light_count]),
+		};
+		packet_data += eid_scatter.length;
 		for (int i = 0; i < ST_COUNT; i++) {
 			memcpy (eids + queue[i].start, entids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
-		QFV_PacketCopyBuffer (packet, lframe->entid_buffer, 0,
+		QFV_PacketScatterBuffer (packet, lframe->entid_buffer,
+								 1, &eid_scatter,
 						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
-		QFV_PacketSubmit (packet);
 	}
+	QFV_PacketSubmit (packet);
 }
 
 static void
@@ -1039,7 +1086,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 									+ sizeof (qfv_resobj_t)
 									// default shadow map and views
 									+ 3 * sizeof (qfv_resobj_t)
-									// light entids
+									// light matrices
 									+ sizeof (qfv_resobj_t[frames])
 									// light ids
 									+ sizeof (qfv_resobj_t[frames])
@@ -1049,7 +1096,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 									+ sizeof (qfv_resobj_t[frames])
 									// light styles
 									+ sizeof (qfv_resobj_t[frames])
-									// light matrices
+									// light entids
 									+ sizeof (qfv_resobj_t[frames]));
 	lctx->light_resources[0] = (qfv_resource_t) {
 		.name = "lights",
@@ -1063,12 +1110,12 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	auto default_map = &splat_inds[1];
 	auto default_view_cube = &default_map[1];
 	auto default_view_2d = &default_view_cube[1];
-	auto light_entids = &default_view_2d[1];
-	auto light_ids = &light_entids[frames];
+	auto light_mats = &default_view_2d[1];
+	auto light_ids = &light_mats[frames];
 	auto light_data = &light_ids[frames];
 	auto light_render = &light_data[frames];
 	auto light_styles = &light_render[frames];
-	auto light_mats = &light_styles[frames];
+	auto light_entids = &light_styles[frames];
 	splat_verts[0] = (qfv_resobj_t) {
 		.name = "splat:vertices",
 		.type = qfv_res_buffer,
