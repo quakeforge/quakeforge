@@ -557,11 +557,11 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 }
 
 static uint32_t
-make_static_quad (int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
+make_static_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 
-	return create_quad (0, 0, w, h, pic, &dctx->svertex_index,
+	return create_quad (x, y, w, h, pic, &dctx->svertex_index,
 						dctx->svertex_objects[0].buffer.buffer, ctx);
 }
 
@@ -589,7 +589,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	pic->height = h;
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
-	pd->vert_index = make_static_quad (w, h, pic, ctx);
+	pd->vert_index = make_static_quad (0, 0, w, h, pic, ctx);
 	pd->slice_index = ~0;
 	pd->descid = CORE_DESC;
 
@@ -735,7 +735,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	pic->height = p->height;
 	__auto_type pd = (picdata_t *) pic->data;
 	pd->subpic = 0;
-	pd->vert_index = make_static_quad (p->width, p->height, pic, ctx);
+	pd->vert_index = make_static_quad (0, 0, p->width, p->height, pic, ctx);
 	pd->slice_index = ~0;
 	pd->descid = fontid;
 
@@ -807,13 +807,11 @@ load_conchars (vulkan_ctx_t *ctx)
 		free (charspic);
 	}
 	dctx->conchar_inds = malloc (256 * sizeof (int));
-	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
 	for (int i = 0; i < 256; i++) {
 		int         cx = i % 16;
 		int         cy = i / 16;
-		dctx->conchar_inds[i] = create_quad (cx * 8, cy * 8, 8, 8,
-											 dctx->conchars,
-											 &dctx->svertex_index, buffer, ctx);
+		dctx->conchar_inds[i] = make_static_quad (cx * 8, cy * 8, 8, 8,
+												  dctx->conchars, ctx);
 	}
 }
 
@@ -827,17 +825,13 @@ load_crosshairs (vulkan_ctx_t *ctx)
 	free (hairpic);
 
 	dctx->crosshair_inds = malloc (4 * sizeof (int));
-	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
 #define W CROSSHAIR_WIDTH
 #define H CROSSHAIR_HEIGHT
-	dctx->crosshair_inds[0] = create_quad (0, 0, W, H, dctx->crosshair,
-										   &dctx->svertex_index, buffer, ctx);
-	dctx->crosshair_inds[1] = create_quad (W, 0, W, H, dctx->crosshair,
-										   &dctx->svertex_index, buffer, ctx);
-	dctx->crosshair_inds[2] = create_quad (0, H, W, H, dctx->crosshair,
-										   &dctx->svertex_index, buffer, ctx);
-	dctx->crosshair_inds[3] = create_quad (W, H, W, H, dctx->crosshair,
-										   &dctx->svertex_index, buffer, ctx);
+	auto chpic = dctx->crosshair;
+	dctx->crosshair_inds[0] = make_static_quad (0, 0, W, H, chpic, ctx);
+	dctx->crosshair_inds[1] = make_static_quad (W, 0, W, H, chpic, ctx);
+	dctx->crosshair_inds[2] = make_static_quad (0, H, W, H, chpic, ctx);
+	dctx->crosshair_inds[3] = make_static_quad (W, H, W, H, chpic, ctx);
 #undef W
 #undef H
 }
