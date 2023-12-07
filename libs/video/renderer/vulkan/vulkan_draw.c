@@ -108,13 +108,13 @@ typedef struct {
 typedef struct linequeue_s {
 	linevert_t *verts;
 	int         count;
-	int         size;
+	int         max_count;
 } linequeue_t;
 
 typedef struct quadqueue_s {
 	quadinst_t *quads;
 	int         count;
-	int         size;
+	int         max_count;
 } quadqueue_t;
 
 typedef struct cachepic_s {
@@ -407,12 +407,12 @@ create_buffers (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&frame->quad_batch, 16);
 		frame->quad_insts = (quadqueue_t) {
 			.quads = (quadinst_t *) ((byte *)data + frame->instance_offset),
-			.size = MAX_INSTANCES,
+			.max_count = MAX_INSTANCES,
 		};
 
 		frame->line_verts = (linequeue_t) {
 			.verts = (linevert_t *) ((byte *)data + frame->line_offset),
-			.size = MAX_INSTANCES,
+			.max_count = MAX_INSTANCES,
 		};
 	}
 
@@ -1136,7 +1136,7 @@ draw_slice (float x, float y, float ox, float oy, int descid, uint32_t vertid,
 			const byte *color, drawframe_t *frame)
 {
 	__auto_type queue = &frame->quad_insts;
-	if (queue->count >= queue->size) {
+	if (queue->count >= queue->max_count) {
 		return;
 	}
 
@@ -1157,7 +1157,7 @@ draw_quad (float x, float y, int descid, uint32_t vertid, const byte *color,
 		   drawframe_t *frame)
 {
 	__auto_type queue = &frame->quad_insts;
-	if (queue->count >= queue->size) {
+	if (queue->count >= queue->max_count) {
 		return;
 	}
 
@@ -1508,7 +1508,7 @@ Vulkan_Draw_Line (int x0, int y0, int x1, int y1, int c, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 	linequeue_t *queue = &frame->line_verts;
 
-	if (queue->count >= queue->size) {
+	if (queue->count >= queue->max_count) {
 		return;
 	}
 
@@ -1705,7 +1705,7 @@ Vulkan_Draw_Glyph (int x, int y, int fontid, int glyph, int c,
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	quadqueue_t *queue = &frame->quad_insts;
-	if (queue->count >= queue->size) {
+	if (queue->count >= queue->max_count) {
 		return;
 	}
 
