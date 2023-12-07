@@ -111,6 +111,14 @@ typedef struct linequeue_s {
 	int         max_count;
 } linequeue_t;
 
+typedef struct vertqueue_s {
+	VkBuffer    buffer;
+	VkDeviceSize base;
+	quadvert_t *verts;
+	int         count;
+	int         max_count;
+} vertqueue_t;
+
 typedef struct quadqueue_s {
 	quadinst_t *quads;
 	int         count;
@@ -121,6 +129,21 @@ typedef struct cachepic_s {
 	char       *name;
 	qpic_t     *pic;
 } cachepic_t;
+
+#define QUEUED_QUADS (64)
+#define MAX_QUADS (32768)
+#define VERTS_PER_QUAD (4)
+#define BYTES_PER_QUAD (VERTS_PER_QUAD * sizeof (quadvert_t))
+#define VERTS_PER_SLICE (16)
+#define BYTES_PER_SLICE (VERTS_PER_SLICE * sizeof (quadvert_t))
+#define INDS_PER_QUAD (4)
+#define INDS_PER_SLICE (26)
+
+#define MAX_INSTANCES (1024*1024)
+
+#define MAX_LINES (32768)
+#define VERTS_PER_LINE (2)
+#define BYTES_PER_LINE (VERTS_PER_LINE * sizeof (linevert_t))
 
 // core pic atlas + static verts
 #define CORE_DESC 0
@@ -139,7 +162,6 @@ typedef struct drawframe_s {
 	size_t      dvert_offset;
 	size_t      line_offset;
 	VkBuffer    instance_buffer;
-	VkBuffer    dvert_buffer;
 	VkBuffer    line_buffer;
 	VkBufferView dvert_view;
 
@@ -149,6 +171,9 @@ typedef struct drawframe_s {
 	quadqueue_t quad_insts;
 	linequeue_t line_verts;
 	descpool_t  dyn_descs;
+
+	vertqueue_t dyn_vert_queue;
+	quadvert_t  dyn_quad_verts[QUEUED_QUADS * VERTS_PER_QUAD];
 } drawframe_t;
 
 typedef struct drawframeset_s
@@ -195,27 +220,16 @@ typedef struct drawctx_s {
 	qfv_resobj_t *instance_objects;
 	qfv_resobj_t *dvertex_objects;
 	qfv_resobj_t *lvertex_objects;
-	uint32_t    svertex_index;
-	uint32_t    svertex_max;
 	VkDescriptorSet core_quad_set;
 	drawframeset_t frames;
 	drawfontset_t fonts;
 	SCR_Func *scr_funcs;
+
+	uint32_t    svertex_index;
+	uint32_t    svertex_max;
+	vertqueue_t slice_vert_queue;
+	quadvert_t  slice_verts[QUEUED_QUADS * VERTS_PER_SLICE];
 } drawctx_t;
-
-#define MAX_QUADS (32768)
-#define VERTS_PER_QUAD (4)
-#define BYTES_PER_QUAD (VERTS_PER_QUAD * sizeof (quadvert_t))
-#define VERTS_PER_SLICE (16)
-#define BYTES_PER_SLICE (VERTS_PER_SLICE * sizeof (quadvert_t))
-#define INDS_PER_QUAD (4)
-#define INDS_PER_SLICE (26)
-
-#define MAX_INSTANCES (1024*1024)
-
-#define MAX_LINES (32768)
-#define VERTS_PER_LINE (2)
-#define BYTES_PER_LINE (VERTS_PER_LINE * sizeof (linevert_t))
 
 static int
 get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
@@ -296,9 +310,6 @@ create_buffers (vulkan_ctx_t *ctx)
 	dctx->dvertex_objects = &dctx->svertex_objects[2];
 	dctx->lvertex_objects = &dctx->dvertex_objects[2 * frames];
 	dctx->instance_objects = &dctx->lvertex_objects[frames];
-
-	dctx->svertex_index = 0;
-	dctx->svertex_max = MAX_QUADS * VERTS_PER_QUAD;
 
 	dctx->draw_resource[0] = (qfv_resource_t) {
 		.name = "draw",
@@ -392,17 +403,30 @@ create_buffers (vulkan_ctx_t *ctx)
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
 	dfunc->vkMapMemory (device->dev, memory, 0, VK_WHOLE_SIZE, 0, &data);
 
+	dctx->svertex_index = 0;
+	dctx->svertex_max = MAX_QUADS * VERTS_PER_QUAD;
+	dctx->slice_vert_queue = (vertqueue_t) {
+		.buffer = dctx->svertex_objects[0].buffer.buffer,
+		.verts = dctx->slice_verts,
+		.max_count = QUEUED_QUADS * VERTS_PER_SLICE,
+	};
+
 	for (size_t f = 0; f < frames; f++) {
 		drawframe_t *frame = &dctx->frames.a[f];
 		frame->instance_buffer = dctx->instance_objects[f].buffer.buffer;
 		frame->instance_offset = dctx->instance_objects[f].buffer.offset;
-		frame->dvert_buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer;
 		frame->dvert_view = dctx->dvertex_objects[f * 2 + 1].buffer_view.view;
 		frame->line_buffer = dctx->lvertex_objects[f].buffer.buffer;
 		frame->line_offset = dctx->lvertex_objects[f].buffer.offset;
 
 		frame->dvertex_index = 0;
 		frame->dvertex_max = MAX_QUADS * VERTS_PER_QUAD;
+
+		frame->dyn_vert_queue = (vertqueue_t) {
+			.buffer = dctx->dvertex_objects[f * 2 + 0].buffer.buffer,
+			.verts = frame->dyn_quad_verts,
+			.max_count = QUEUED_QUADS * VERTS_PER_QUAD,
+		};
 
 		DARRAY_INIT (&frame->quad_batch, 16);
 		frame->quad_insts = (quadqueue_t) {
@@ -465,11 +489,35 @@ cachepic_getkey (const void *_cp, void *unused)
 	return ((cachepic_t *) _cp)->name;
 }
 
-static uint32_t
-create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
-			  uint32_t *vertex_index, VkBuffer buffer, vulkan_ctx_t *ctx)
+static void
+flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 {
-	__auto_type pd = (picdata_t *) pic->data;
+	if (!queue->count) {
+		return;
+	}
+
+	uint32_t    size = queue->count * sizeof (queue->verts[0]);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	quadvert_t *verts = QFV_PacketExtend (packet, size);
+	memcpy (verts, queue->verts, size);
+	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base,
+						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_PacketSubmit (packet);
+	queue->base += size;
+	queue->count = 0;
+}
+
+static uint32_t
+create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic, vertqueue_t *queue,
+			  vulkan_ctx_t *ctx)
+{
+	qfZoneNamed (zone, true);
+
+	if (queue->count + VERTS_PER_SLICE > queue->max_count) {
+		flush_vertqueue (queue, ctx);
+	}
+
+	auto  pd = (picdata_t *) pic->data;
 
 	int         x = rect[0];
 	int         y = rect[1];
@@ -496,38 +544,38 @@ create_slice (vec4i_t rect, vec4i_t border, qpic_t *pic,
 	};
 
 	vec4f_t     size = { 1, 1, sx, sy };
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_SLICE);
+
+	int         ind = queue->count;
+	queue->count += VERTS_PER_SLICE;
+	quadvert_t *verts = queue->verts + ind;
+
 	for (int i = 0; i < VERTS_PER_SLICE; i++) {
 		vec4f_t     v = ((vec4f_t) {0, 0, x, y} + p[i]) * size;
 		verts[i] = (quadvert_t) { {v[0], v[1]}, {v[2], v[3]} };
 	}
 
-	int         ind = *vertex_index;
-	*vertex_index += VERTS_PER_SLICE;
-	QFV_PacketCopyBuffer (packet, buffer, ind * sizeof (quadvert_t),
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
-	QFV_PacketSubmit (packet);
-
-	return ind;
+	return ind + (queue->base / sizeof (quadvert_t));
 }
 
 static uint32_t
 make_static_slice (vec4i_t rect, vec4i_t border, qpic_t *pic, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
-	VkBuffer    buffer = dctx->svertex_objects[0].buffer.buffer;
 
-	return create_slice (rect, border, pic, &dctx->svertex_index, buffer, ctx);
+	return create_slice (rect, border, pic, &dctx->slice_vert_queue, ctx);
 }
 
 static uint32_t
-create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
-			 VkBuffer buffer, vulkan_ctx_t *ctx)
+create_quad (int x, int y, int w, int h, qpic_t *pic, vertqueue_t *queue,
+			 vulkan_ctx_t *ctx)
 {
 	qfZoneNamed (zone, true);
-	__auto_type pd = (picdata_t *) pic->data;
 
+	if (queue->count + VERTS_PER_QUAD > queue->max_count) {
+		flush_vertqueue (queue, ctx);
+	}
+
+	auto pd = (picdata_t *) pic->data;
 	float sl = 0, sr = 1, st = 0, sb = 1;
 
 	if (pd->subpic) {
@@ -540,20 +588,15 @@ create_quad (int x, int y, int w, int h, qpic_t *pic, uint32_t *vertex_index,
 		sb = (y + h) * size;
 	}
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	quadvert_t *verts = QFV_PacketExtend (packet, BYTES_PER_QUAD);
+	int         ind = queue->count;
+	queue->count += VERTS_PER_QUAD;
+	quadvert_t *verts = queue->verts + ind;
 	verts[0] = (quadvert_t) { {0, 0}, {sl, st} };
 	verts[1] = (quadvert_t) { {0, h}, {sl, sb} };
 	verts[2] = (quadvert_t) { {w, 0}, {sr, st} };
 	verts[3] = (quadvert_t) { {w, h}, {sr, sb} };
 
-	int         ind = *vertex_index;
-	*vertex_index += VERTS_PER_QUAD;
-	QFV_PacketCopyBuffer (packet, buffer, ind * sizeof (quadvert_t),
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
-	QFV_PacketSubmit (packet);
-
-	return ind;
+	return ind + (queue->base / sizeof (quadvert_t));
 }
 
 static uint32_t
@@ -561,8 +604,7 @@ make_static_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 
-	return create_quad (x, y, w, h, pic, &dctx->svertex_index,
-						dctx->svertex_objects[0].buffer.buffer, ctx);
+	return create_quad (x, y, w, h, pic, &dctx->slice_vert_queue, ctx);
 }
 
 static int
@@ -572,8 +614,7 @@ make_dyn_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	return create_quad (x, y, w, h, pic, &frame->dvertex_index,
-						frame->dvert_buffer, ctx);
+	return create_quad (x, y, w, h, pic, &frame->dyn_vert_queue, ctx);
 }
 
 static qpic_t *
@@ -995,6 +1036,7 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto dctx = ctx->draw_context;
+
 	auto scr_funcs = dctx->scr_funcs;
 	if (!scr_funcs) {
 		return;
@@ -1004,6 +1046,11 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		scr_funcs++;
 	}
 	dctx->scr_funcs = 0;
+
+	flush_vertqueue (&dctx->slice_vert_queue, ctx);
+	auto frame = &dctx->frames.a[ctx->curFrame];
+	flush_vertqueue (&frame->dyn_vert_queue, ctx);
+	frame->dyn_vert_queue.base = 0;
 }
 
 static exprfunc_t flush_draw_func[] = {
