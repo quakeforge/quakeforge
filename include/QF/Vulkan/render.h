@@ -419,9 +419,7 @@ typedef struct qfv_renderframe_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	qfv_cmdpoolmgr_t cmdpool;
-#ifdef TRACY_ENABLE
 	qftVkCtx_t *qftVkCtx;
-#endif
 } qfv_renderframe_t;
 
 typedef struct qfv_renderframeset_s

@@ -23,12 +23,19 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 	TracyCVkZoneEnd (**zone);
 }
 
+#define __qftVkScoped(varname) \
+	__attribute__((cleanup(__qftVkZoneEnd))) \
+	___tracy_vkctx_scope **qfConcat(__qfScoped##varname, __COUNTER__) \
+		= &varname;
 #define qftVkZone(ctx, cmdbuf, name) TracyCVkZone (ctx, cmdbuf, name)
 #define qftVkScopedZone(ctx, cmdbuf, name) \
 	qftVkZone (ctx, cmdbuf, name) \
-	__attribute__((cleanup(__qftVkZoneEnd))) \
-	___tracy_vkctx_scope **qfConcat(__qfScoped##varname, __COUNTER__) = &___tracy_gpu_zone
-#define qftVkZoneC(ctx, cmdbuf, name, color) TracyCVkZone (ctx, cmdbuf, name, color)
+	__qftVkScoped (___tracy_gpu_zone)
+#define qftVkZoneC(ctx, cmdbuf, name, color) \
+	TracyCVkZoneC (ctx, cmdbuf, name, color)
+#define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
+	qftVkZoneC (ctx, cmdbuf, name, color) \
+	__qftVkScoped (___tracy_gpu_zone)
 #define qftVkZoneEnd(varname) TracyCVkZoneEnd (varname)
 
 #else
@@ -40,9 +47,13 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 #define qftCVkContextName(ctx, name, size)
 #define qftCVkContextCollect(ctx, cmdbuf)
 
-#define qftVkZone(ctx, cmdbuf, name)
-#define qftVkScopedZone(ctx, cmdbuf, name)
-#define qftVkZoneC(ctx, cmdbuf, name, color)
+#define qftVkZone(ctx, cmdbuf, name) \
+	do { (void)(ctx); (void) (cmdbuf); } while (0)
+#define qftVkScopedZone(ctx, cmdbuf, name) qftVkZone (ctx, cmdbuf, name)
+#define qftVkZoneC(ctx, cmdbuf, name, color) \
+	do { (void)(ctx); (void)(cmdbuf); (void)(name); (void)(color);} while (0)
+#define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
+	qftVkZoneC (ctx, cmdbuf, name, color)
 #define qftVkZoneEnd(varname)
 
 #endif
