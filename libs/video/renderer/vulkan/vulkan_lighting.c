@@ -473,8 +473,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 
-	size_t      packet_size = 0;
-
 	uint32_t light_ids[ST_COUNT][MaxLights];
 	uint32_t entids[ST_COUNT][MaxLights];
 
@@ -507,6 +505,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		queue[mode].count++;
 	}
 
+	size_t      packet_size = 0;
 	packet_size += sizeof (vec4f_t[NumStyles]);
 	if (queue[ST_CASCADE].count) {
 		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
@@ -1570,11 +1569,16 @@ light_compare (const void *_li2, const void *_li1, void *_lights)
 	int         s2 = abs ((int) l2->color[3]);
 
 	if (s1 == s2) {
+		// same size
 		if (l1->position[3] == l2->position[3]) {
+			// same "type" (point/spot vs directional)
+			// sort by spot size (1 for point/directional)
 			return (l2->direction[3] > -0.5) - (l1->direction[3] > -0.5);
 		}
+		// sort by "type" (point/spot vs directional)
 		return l2->position[3] - l1->position[3];
 	}
+	// sort by size
 	return s1 - s2;
 }
 
@@ -1731,6 +1735,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	for (int i = 0; i < numLights; i++) {
 		lightMap[i] = i;
 	}
+	// sort lights by size, type, spot-size
 	heapsort_r (lightMap, numLights, sizeof (int), light_compare, lights);
 
 	DARRAY_RESIZE (&lctx->light_control, numLights + dynlight_max);
