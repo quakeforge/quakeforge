@@ -1615,7 +1615,7 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 		if (lr->mode != type) {
 			continue;
 		}
-		int light_size = getsize (&mctx->lights[li]) + shadow_quanta - 1;
+		int light_size = getsize (&mctx->lights[li]);
 		light_size = ((light_size + shadow_quanta - 1) / shadow_quanta)
 					 * shadow_quanta;
 		if (size != light_size || numLayers + layers > mctx->maxLayers) {
@@ -1854,6 +1854,13 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 					totalLayers, lctx->num_maps,
 					lctx->shadow_resources ? lctx->shadow_resources->size
 										   : (VkDeviceSize) 0);
+	if (developer & SYS_lighting) {
+		auto images = lctx->shadow_resources->objects;
+		for (int i = 0; i < lctx->num_maps; i++) {
+			printf ("map id:%d width:%d layers:%d\n", i,
+					images[i].image.extent.width, images[i].image.num_layers);
+		}
+	}
 }
 
 static void
