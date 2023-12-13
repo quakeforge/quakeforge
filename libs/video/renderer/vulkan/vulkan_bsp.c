@@ -504,7 +504,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 	index_count *= 3;
 
-	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
 	size_t frames = bctx->frames.size;
 	size_t index_buffer_size = index_count * frames * sizeof (uint32_t);
@@ -975,7 +975,7 @@ bsp_flush (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
 	size_t      index_offset = bframe->index_offset;
 	size_t      index_size = bframe->index_count * sizeof (uint32_t);
@@ -1456,7 +1456,7 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 
 	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
 	size_t      entid_size = entid_count * sizeof (uint32_t);
-	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t atom_mask = atom - 1;
 	entid_size = (entid_size + atom_mask) & ~atom_mask;
 	bctx->entid_buffer

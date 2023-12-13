@@ -149,19 +149,19 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
-		VkPhysicalDeviceMultiviewFeatures multiview_features = {
-			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+		VkPhysicalDeviceVulkan12Features features12 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+			.hostQueryReset = 1,
+		};
+		VkPhysicalDeviceVulkan11Features features11 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+			.pNext = &features12,
 			.multiview = 1,
 			.multiviewGeometryShader = 1,
 		};
-		VkPhysicalDeviceVulkan12Features features12 = {
-			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-			.pNext = &multiview_features,
-			.hostQueryReset = 1,
-		};
 		VkPhysicalDeviceFeatures2 features = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-			.pNext = &features12,
+			.pNext = &features11,
 			.features = {
 				.imageCubeArray = 1,
 				.independentBlend = 1,

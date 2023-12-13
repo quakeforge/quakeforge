@@ -209,7 +209,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 
 	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
 
-	__auto_type limits = &device->physDev->properties->limits;
+	__auto_type limits = &device->physDev->p.properties.limits;
 	VkMemoryRequirements req = {
 		.alignment = limits->minStorageBufferOffsetAlignment
 	};

@@ -1719,7 +1719,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 
 	qfv_device_t *device = ctx->device;
 	qfv_physdev_t *physDev = device->physDev;
-	int         maxLayers = physDev->properties->limits.maxImageArrayLayers;
+	int         maxLayers = physDev->p.properties.limits.maxImageArrayLayers;
 	if (maxLayers > 2048) {
 		maxLayers = 2048;
 	}

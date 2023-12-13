@@ -975,7 +975,7 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "slice_draw");
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
 #define a(x) (((x) + atom_mask) & ~atom_mask)
 	VkMappedMemoryRange ranges[] = {
@@ -1012,7 +1012,7 @@ line_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
-	size_t      atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t      atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
 #define a(x) (((x) + atom_mask) & ~atom_mask)
 	VkMappedMemoryRange ranges[] = {

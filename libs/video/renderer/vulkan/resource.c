@@ -92,7 +92,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physdev = device->physDev;
-	size_t      atom = physdev->properties->limits.nonCoherentAtomSize;
+	size_t      atom = physdev->p.properties.limits.nonCoherentAtomSize;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
 	VkMemoryRequirements req;
 	VkDeviceSize size = 0;

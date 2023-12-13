@@ -1038,7 +1038,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
-			&ctx->device->physDev->properties->limits },
+			&ctx->device->physDev->p.properties.limits },
 		{QFV_PROPERTIES, &cexpr_plitem, &parsectx.properties},
 		{}
 	};
@@ -1442,7 +1442,7 @@ QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
-			&ctx->device->physDev->properties->limits },
+			&ctx->device->physDev->p.properties.limits },
 		{}
 	};
 	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
@@ -1489,7 +1489,7 @@ QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 
 	exprsym_t   var_syms[] = {
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
-			&ctx->device->physDev->properties->limits },
+			&ctx->device->physDev->p.properties.limits },
 		{}
 	};
 	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
