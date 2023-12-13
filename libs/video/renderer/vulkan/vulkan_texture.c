@@ -42,7 +42,6 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"

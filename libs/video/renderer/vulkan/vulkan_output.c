@@ -49,7 +49,6 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"

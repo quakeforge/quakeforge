@@ -30,7 +30,6 @@
 
 #include "QF/dstring.h"
 
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/pipeline.h"
 
@@ -74,61 +73,4 @@ QFV_MergePipelineCaches (qfv_device_t *device,
 
 	dfunc->vkMergePipelineCaches (dev, targetCache,
 								  sourceCaches->size, sourceCaches->a);
-}
-
-VkPipelineLayout
-QFV_CreatePipelineLayout (qfv_device_t *device,
-						  qfv_descriptorsetlayoutset_t *layouts,
-                          qfv_pushconstantrangeset_t *pushConstants)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	VkPipelineLayoutCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, 0, 0,
-		layouts->size, layouts->a,
-		pushConstants->size, pushConstants->a,
-	};
-
-	VkPipelineLayout layout;
-	dfunc->vkCreatePipelineLayout (dev, &createInfo, 0, &layout);
-	return layout;
-}
-
-qfv_pipelineset_t *
-QFV_CreateGraphicsPipelines (qfv_device_t *device,
-							 VkPipelineCache cache,
-							 qfv_graphicspipelinecreateinfoset_t *gpciSet)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type pipelines = QFV_AllocPipelineSet (gpciSet->size, malloc);
-	dfunc->vkCreateGraphicsPipelines (dev, cache, gpciSet->size, gpciSet->a, 0,
-									  pipelines->a);
-
-	return pipelines;
-}
-
-qfv_pipelineset_t *
-QFV_CreateComputePipelines (qfv_device_t *device,
-							VkPipelineCache cache,
-							qfv_computepipelinecreateinfoset_t *cpciSet)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type pipelines = QFV_AllocPipelineSet (cpciSet->size, malloc);
-	dfunc->vkCreateComputePipelines (dev, cache, cpciSet->size, cpciSet->a, 0,
-									 pipelines->a);
-	return pipelines;
-}
-
-void
-QFV_DestroyPipeline (qfv_device_t *device, VkPipeline pipeline)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyPipeline (dev, pipeline, 0);
 }
