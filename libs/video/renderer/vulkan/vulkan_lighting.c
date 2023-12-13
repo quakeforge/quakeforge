@@ -335,12 +335,13 @@ make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
 		 uint32_t type)
 {
 	if (type == ST_CUBE) {
+		// on the GPU, layer is the cube layer, and one cube layer is 6
+		// flat image layers
 		layer /= 6;
 	}
-	return ((matrix_index & 0x1fff) << 0)
-		 | ((map_index & 0x1f) << 13)
-		 | ((layer & 0x7ff) << 18)
-		 | ((type & 3) << 29);
+	return ((matrix_index & 0x3fff) << 0)
+		 | ((map_index & 0x1f) << 14)
+		 | ((layer & 0x7ff) << 19);
 }
 
 static void

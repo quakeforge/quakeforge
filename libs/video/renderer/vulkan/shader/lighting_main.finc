@@ -48,9 +48,9 @@ main (void)
 		float       I = (1 - a.w * r.y) / dot (a, r);
 
 		uint        id_data = renderer[id].id_data;
-		uint        mat_id = bitfieldExtract (id_data, 0, 13);
-		uint        map_id = bitfieldExtract (id_data, 13, 5);
-		uint        layer = bitfieldExtract (id_data, 18, 11);
+		uint        mat_id = bitfieldExtract (id_data, 0, 14);
+		uint        map_id = bitfieldExtract (id_data, 14, 5);
+		uint        layer = bitfieldExtract (id_data, 19, 11);
 
 		I *= shadow (map_id, layer, mat_id, p, l.position.xyz);
 

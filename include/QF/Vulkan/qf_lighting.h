@@ -60,7 +60,7 @@ enum {
 };
 
 typedef struct qfv_light_render_s {
-	// mat_id (0,13) map_id (13,5) layer (18,11) type (29,2)
+	// mat_id (0,14) map_id (14,5) layer (19,11) nostyle (31,1)
 	uint32_t    id_data;
 	// light style (6)
 	uint32_t    style;
