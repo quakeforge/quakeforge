@@ -1616,6 +1616,7 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 			continue;
 		}
 		int light_size = getsize (&mctx->lights[li]);
+		light_size = min (light_size, 1024);
 		light_size = ((light_size + shadow_quanta - 1) / shadow_quanta)
 					 * shadow_quanta;
 		if (size != light_size || numLayers + layers > mctx->maxLayers) {
