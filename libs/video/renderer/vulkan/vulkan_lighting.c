@@ -1090,6 +1090,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 									+ 3 * sizeof (qfv_resobj_t)
 									// light matrices
 									+ sizeof (qfv_resobj_t[frames])
+									// light matrix ids
+									+ sizeof (qfv_resobj_t[frames])
 									// light ids
 									+ sizeof (qfv_resobj_t[frames])
 									// light data
@@ -1104,7 +1106,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		.name = "lights",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2 + 3 + 6 * frames,
+		.num_objects = 2 + 3 + 7 * frames,
 		.objects = (qfv_resobj_t *) &lctx->light_resources[1],
 	};
 	auto splat_verts = lctx->light_resources->objects;
@@ -1113,7 +1115,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	auto default_view_cube = &default_map[1];
 	auto default_view_2d = &default_view_cube[1];
 	auto light_mats = &default_view_2d[1];
-	auto light_ids = &light_mats[frames];
+	auto light_mat_ids = &light_mats[frames];
+	auto light_ids = &light_mat_ids[frames];
 	auto light_data = &light_ids[frames];
 	auto light_render = &light_data[frames];
 	auto light_styles = &light_render[frames];
@@ -1237,6 +1240,16 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			},
 		};
+		light_mat_ids[i] = (qfv_resobj_t) {
+			.name = va (ctx->va_ctx, "matrix ids:%zd", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				// never need more than 6 matrices per light
+				.size = sizeof (uint32_t[MaxLights * 6]),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 	}
 
 	QFV_CreateResource (device, lctx->light_resources);
@@ -1266,6 +1279,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			.lights_set = QFV_DSManager_AllocSet (lights_mgr),
 			.attach_set = QFV_DSManager_AllocSet (attach_mgr),
 			.shadowmat_buffer = light_mats[i].buffer.buffer,
+			.shadowmat_id_buffer = light_mat_ids[i].buffer.buffer,
 			.light_buffer = light_data[i].buffer.buffer,
 			.render_buffer = light_render[i].buffer.buffer,
 			.style_buffer = light_styles[i].buffer.buffer,
@@ -1289,6 +1303,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		VkDescriptorBufferInfo bufferInfo[] = {
 			{	.buffer = lframe->shadowmat_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
+			{	.buffer = lframe->shadowmat_id_buffer,
+				.offset = 0, .range = VK_WHOLE_SIZE, },
 			{	.buffer = lframe->id_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
 			{	.buffer = lframe->light_buffer,
@@ -1307,39 +1323,45 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.pBufferInfo = &bufferInfo[0], },
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = lframe->shadowmat_set,
+				.dstBinding = 1,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[1], },
 
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = lframe->lights_set,
 				.dstBinding = 0,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[1], },
+				.pBufferInfo = &bufferInfo[2], },
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = lframe->lights_set,
 				.dstBinding = 1,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[2], },
+				.pBufferInfo = &bufferInfo[3], },
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = lframe->lights_set,
 				.dstBinding = 2,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[3], },
+				.pBufferInfo = &bufferInfo[4], },
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = lframe->lights_set,
 				.dstBinding = 3,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[4], },
+				.pBufferInfo = &bufferInfo[5], },
 			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = lframe->lights_set,
 				.dstBinding = 4,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[5], },
+				.pBufferInfo = &bufferInfo[6], },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 6, bufferWrite, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 7, bufferWrite, 0, 0);
 	}
 
 	make_default_map (64, lctx->default_map, ctx);
@@ -1499,6 +1521,19 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
 		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, bb);
+	}
+	QFV_PacketSubmit (packet);
+
+	// FIXME temporary until batched shadow rendering is implemented
+	packet = QFV_PacketAcquire (ctx->staging);
+	size_t id_size = sizeof (uint32_t[MaxLights * 6]);
+	uint32_t *id_data = QFV_PacketExtend (packet, id_size);
+	for (int i = 0; i < MaxLights * 6; i++) {
+		id_data[i] = i;
+	}
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		auto lframe = &lctx->frames.a[i];
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, bb);
 	}
 	QFV_PacketSubmit (packet);
 }
@@ -1839,10 +1874,10 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 
 		switch (lr->numLayers) {
 			case 6:
-				lr->renderpass_index = 2;
+				lr->renderpass_index = 6 - 1;
 				break;
 			case num_cascade:
-				lr->renderpass_index = 1;
+				lr->renderpass_index = num_cascade - 1;
 				break;
 			case 1:
 				lr->renderpass_index = 0;

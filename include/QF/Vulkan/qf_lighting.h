@@ -85,6 +85,7 @@ typedef struct lightingframe_s {
 	VkDescriptorSet attach_set;
 
 	VkBuffer    shadowmat_buffer;
+	VkBuffer    shadowmat_id_buffer;
 	VkBuffer    light_buffer;
 	VkBuffer    render_buffer;
 	VkBuffer    style_buffer;

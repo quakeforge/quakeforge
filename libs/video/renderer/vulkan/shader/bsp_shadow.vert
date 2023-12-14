@@ -6,6 +6,10 @@ layout (set = 0, binding = 0) buffer ShadowView {
 	mat4x4      shadowView[];
 };
 
+layout (set = 0, binding = 1) buffer ShadowId {
+	uint        shadowId[];
+};
+
 layout (push_constant) uniform PushConstants {
 	uint MatrixBase;
 };
@@ -25,5 +29,6 @@ void
 main (void)
 {
 	vec4        pos = vec4 (vertex * entities[entid].transform, 1);
-	gl_Position = shadowView[MatrixBase + gl_ViewIndex] * pos;
+	uint matid = shadowId[MatrixBase + gl_ViewIndex];
+	gl_Position = shadowView[matid] * pos;
 }

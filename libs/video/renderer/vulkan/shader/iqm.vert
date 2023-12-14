@@ -13,6 +13,10 @@ layout (set = 1, binding = 0) buffer ShadowView {
 	mat4x4      shadowView[];
 };
 
+layout (set = 1, binding = 1) buffer ShadowId {
+	uint        shadowId[];
+};
+
 layout (set = 3, binding = 0) buffer Bones {
 	// NOTE these are transposed, so v * m
 	mat3x4      bones[];
@@ -49,7 +53,8 @@ main (void)
 	m += mat3x4(1,0,0,0,0,1,0,0,0,0,1,0) * (1 - dot(vweights, vec4(1,1,1,1)));
 	vec4        pos = Model * vec4 (vec4(vposition, 1) * m, 1);
 	if (IQMShadow) {
-		gl_Position = shadowView[MatrixBase + gl_ViewIndex] * pos;
+		uint matid = shadowId[MatrixBase + gl_ViewIndex];
+		gl_Position = shadowView[matid] * pos;
 	} else {
 		gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 	}
