@@ -723,6 +723,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			.dstOffset = sizeof (mat4f_t[lctx->dynamic_matrix_base]),
 			.length = sizeof (mat4f_t[ndlight * 6]),
 		};
+		packet_data += mat_scatter.length;
 		for (int i = 0; i < ndlight; i++) {
 			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
 		}
