@@ -208,7 +208,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
 		appName, appVersion,
 		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_2,
+		VK_API_VERSION_1_3,
 	};
 	VkInstanceCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,
@@ -289,6 +289,10 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		};
 		dev->v12Properties = (VkPhysicalDeviceVulkan12Properties) {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
+			.pNext = &dev->v13Properties,
+		};
+		dev->v13Properties = (VkPhysicalDeviceVulkan13Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES,
 		};
 		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->p);
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
