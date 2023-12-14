@@ -936,13 +936,26 @@ static exprsym_t lighting_task_syms[] = {
 	{}
 };
 
+static int
+round_light_size (int size)
+{
+	size = ((size + shadow_quanta - 1) / shadow_quanta) * shadow_quanta;
+	return min (size, 1024);
+}
+
+static void
+dynlight_size_listener (void *data, const cvar_t *cvar)
+{
+	dynlight_size = round_light_size (dynlight_size);
+}
+
 void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
-	Cvar_Register (&dynlight_size_cvar, 0, 0);
+	Cvar_Register (&dynlight_size_cvar, dynlight_size_listener, 0);
 
 	QFV_Render_AddTasks (ctx, lighting_task_syms);
 
@@ -1654,9 +1667,7 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 			continue;
 		}
 		int light_size = getsize (&mctx->lights[li]);
-		light_size = min (light_size, 1024);
-		light_size = ((light_size + shadow_quanta - 1) / shadow_quanta)
-					 * shadow_quanta;
+		light_size = round_light_size (light_size);
 		if (size != light_size || numLayers + layers > mctx->maxLayers) {
 			if (numLayers) {
 				mctx->maps[mctx->numMaps++] = (mapdesc_t) {
