@@ -2028,7 +2028,7 @@ renderpasses = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
 				attachments = {
 					depth = {
-						shadow = depth_stencil_attachment_optimal;
+						shadow = transfer_src_optimal;
 					};
 				};
 

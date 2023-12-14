@@ -224,32 +224,8 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	pass->vis_frame = visstate.visframecount;
 }
 
-static VkImageView
-create_view (vulkan_ctx_t *ctx, light_control_t *renderer)
-{
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto lctx = ctx->lighting_context;
-
-	VkImageViewCreateInfo cInfo = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.image = lctx->map_images[renderer->map_index],
-		.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-		.format = VK_FORMAT_X8_D24_UNORM_PACK32,
-		.subresourceRange = {
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-			.levelCount = 1,
-			.baseArrayLayer = renderer->layer,
-			.layerCount = renderer->numLayers,
-		},
-	};
-	VkImageView view;
-	dfunc->vkCreateImageView (device->dev, &cInfo, 0, &view);
-	return view;
-}
-
 static VkFramebuffer
-create_framebuffer (vulkan_ctx_t *ctx, light_control_t *renderer,
+create_framebuffer (vulkan_ctx_t *ctx, int size,
 					VkImageView view, VkRenderPass renderpass)
 {
 	auto device = ctx->device;
@@ -262,28 +238,112 @@ create_framebuffer (vulkan_ctx_t *ctx, light_control_t *renderer,
 			.renderPass = renderpass,
 			.attachmentCount = 1,
 			.pAttachments = &view,
-			.width = renderer->size,
-			.height = renderer->size,
+			.width = size,
+			.height = size,
 			.layers = 1,
 		}, 0, &framebuffer);
 	return framebuffer;
 }
 
 static void
-clear_frame_buffers_views (vulkan_ctx_t *ctx, lightingframe_t *lframe)
+copy_maps (uint32_t start, uint32_t count, int stage_id,
+		   lightingframe_t *lframe, lightingctx_t *lctx, vulkan_ctx_t *ctx,
+		   qfv_taskctx_t *taskctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	for (size_t i = 0; i < lframe->framebuffers.size; i++) {
-		auto framebuffer = lframe->framebuffers.a[i];
-		dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
+
+	int num_regions = 0;
+	int num_copies = 0;
+	uint32_t last = ~0u;
+	for (uint32_t j = 0; j < count; j++) {
+		auto tgt = lframe->stage_targets[start + j];
+		// if the map id is different or if the layers aren't sequential
+		if (tgt != last + 0x20) {
+			num_regions++;
+			if ((tgt & 0x1f) != (last & 0x1f)) {
+				num_copies++;
+			}
+		}
+		last = tgt;
 	}
-	lframe->framebuffers.size = 0;
-	for (size_t i = 0; i < lframe->views.size; i++) {
-		auto view = lframe->views.a[i];
-		dfunc->vkDestroyImageView (device->dev, view, 0);
+
+	auto ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = 0;
+
+	VkImageMemoryBarrier barriers[num_regions];
+	VkImageCopy2 regions[num_regions];
+	VkCopyImageInfo2 copies[num_copies];
+	num_regions = 0;
+	num_copies = 0;
+	last = ~0u;
+	for (uint32_t j = 0; j < count; j++) {
+		auto tgt = lframe->stage_targets[start + j];
+		int ind = num_regions - 1;
+		// if the map id is different or if the layers aren't sequential
+		if (tgt != last + 0x20) {
+			int cpind = num_copies - 1;
+			if ((tgt & 0x1f) != (last & 0x1f)) {
+				cpind = num_copies++;
+				copies[cpind] = (VkCopyImageInfo2) {
+					.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2,
+					.srcImage = lctx->stage_images[stage_id],
+					.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					.dstImage = lctx->map_images[tgt & 0x1f],
+					.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					.pRegions = &regions[num_regions],
+				};
+			}
+			copies[cpind].regionCount++;
+
+			ind = num_regions++;
+
+			barriers[ind] = ib.barrier;
+			barriers[ind].subresourceRange.baseArrayLayer = tgt >> 5;
+			barriers[ind].image = lctx->map_images[tgt & 0x1f];
+
+			regions[ind] = (VkImageCopy2) {
+				.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2,
+				.srcSubresource = {
+					.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+					.baseArrayLayer = j,
+				},
+				.dstSubresource = {
+					.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+					.baseArrayLayer = tgt >> 5,
+				},
+				.extent = {
+					.width = (stage_id + 1) * shadow_quanta,
+					.height = (stage_id + 1) * shadow_quanta,
+					.depth = 1,
+				},
+			};
+		}
+		barriers[ind].subresourceRange.layerCount++;
+		regions[ind].srcSubresource.layerCount++;
+		regions[ind].dstSubresource.layerCount++;
+		last = tgt;
 	}
-	lframe->views.size = 0;
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	});
+	{
+		qftVkScopedZoneC (taskctx->frame->qftVkCtx, cmd, "copy stage",
+						  0xa0c060);
+		for (int i = 0; i < num_copies; i++) {
+			dfunc->vkCmdCopyImage2 (cmd, &copies[i]);
+		}
+		dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+									 0, 0, 0, 0, 0, num_regions, barriers);
+	}
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
 }
 
 static void
@@ -302,34 +362,29 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
-	clear_frame_buffers_views (ctx, lframe);
-
-	auto entqueue = r_ent_queue;   //FIXME fetch from scene
-	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
-		uint32_t    id = get_lightid (ent);
-		if (id >= lctx->light_control.size) {
-			continue;
-		}
-		auto r = &lctx->light_control.a[id];
-		if (!r->numLayers) {
-			continue;
-		}
-		if (!has_dynlight (ent)) {
-			auto ls = get_lightstyle (ent);
-			if (!d_lightstylevalue[ls]) {
-				continue;
+	uint32_t id_base = 0;
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		auto queue = &lframe->stage_queue[i];
+		int  count;
+		for (int remaining = queue->count; remaining > 0; remaining -= count) {
+			count = min (remaining, max_views);
+			int  rpind = count - 1;
+			auto renderpass = &render->renderpasses[rpind];
+			auto fbuffer = lctx->stage_framebuffers[rpind][i];
+			uint32_t size = (i + 1) * shadow_quanta;
+			auto bi = &renderpass->beginInfo;
+			if (!fbuffer) {
+				auto view = lctx->stage_views[i];
+				fbuffer = create_framebuffer (ctx, size, view, bi->renderPass);
+				lctx->stage_framebuffers[rpind][i] = fbuffer;
 			}
+			bi->framebuffer = fbuffer;
+			QFV_RunRenderPass (ctx, renderpass, size, size, &id_base);
+			bi->framebuffer = 0;
+
+			copy_maps (id_base, count, i, lframe, lctx, ctx, taskctx);
+			id_base += count;
 		}
-		auto renderpass = &render->renderpasses[r->renderpass_index];
-		auto view = create_view (ctx, r);
-		auto bi = &renderpass->beginInfo;
-		auto fbuffer = create_framebuffer (ctx, r, view, bi->renderPass);
-		bi->framebuffer = fbuffer;
-		QFV_RunRenderPass (ctx, renderpass, r->size, r->size, &r->matrix_id);
-		DARRAY_APPEND (&lframe->views, view);
-		DARRAY_APPEND (&lframe->framebuffers, fbuffer);
-		bi->framebuffer = 0;
 	}
 }
 
@@ -458,6 +513,81 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 	}
 }
 
+static uint16_t
+make_target (uint16_t map_index, uint16_t layer)
+{
+	return (map_index & 0x1f) | ((layer & 0x7ff) << 5);
+}
+
+static void
+enqueue_map (uint32_t *ids, lightingframe_t *lframe, light_control_t *r)
+{
+	auto q = &lframe->stage_queue[r->stage_index];
+	auto tgt = lframe->stage_targets;
+	for (uint32_t i = 0; i < r->numLayers; i++) {
+		ids[q->start + q->count + i] = r->matrix_id + i;
+		tgt[q->start + q->count + i] = make_target (r->map_index, r->layer + i);
+	}
+	q->count += r->numLayers;
+}
+
+static void
+transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+
+	int num_barriers = 0;
+	uint32_t last = ~0u;
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		auto q = lframe->stage_queue[i];
+		for (uint32_t j = 0; j < q.count; j++) {
+			auto tgt = lframe->stage_targets[q.start + j];
+			// if the map id is different or if the layers aren't sequential
+			if (tgt != last + 0x20) {
+				num_barriers++;
+			}
+			last = tgt;
+		}
+	}
+
+	auto ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
+	ib.barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = 0;
+
+	VkImageMemoryBarrier barriers[num_barriers];
+	num_barriers = 0;
+	last = ~0u;
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		auto q = lframe->stage_queue[i];
+		for (uint32_t j = 0; j < q.count; j++) {
+			auto tgt = lframe->stage_targets[q.start + j];
+			int ind = num_barriers - 1;
+			// if the map id is different or if the layers aren't sequential
+			if (tgt != last + 0x20) {
+				barriers[num_barriers++] = ib.barrier;
+				ind = num_barriers - 1;
+				barriers[ind].subresourceRange.baseArrayLayer = tgt >> 5;
+				barriers[ind].image = lctx->map_images[tgt & 0x1f];
+			}
+			barriers[ind].subresourceRange.layerCount++;
+			last = tgt;
+		}
+	}
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	});
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0, num_barriers, barriers);
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
+}
+
 static void
 lighting_update_lights (const exprval_t **params, exprval_t *result,
 						exprctx_t *ectx)
@@ -485,13 +615,21 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	uint32_t dynamic_light_entities[MaxLights];
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
+	int matrix_id_count = 0;
+
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		lframe->stage_queue[i].count = 0;
+	}
 
 	auto entqueue = r_ent_queue;   //FIXME fetch from scene
 	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {
+			auto r = &lctx->light_control.a[lctx->dynamic_base + ndlight];
 			dynamic_light_entities[ndlight] = ent.id;
 			dynamic_lights[ndlight] = get_dynlight (ent);
+			lframe->stage_queue[r->stage_index].count += r->numLayers;
+			matrix_id_count += r->numLayers;
 			ndlight++;
 			continue;
 		}
@@ -502,11 +640,23 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 		light_count++;
 		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
-		int mode =  lctx->light_control.a[get_lightid (ent)].mode;
+		auto r = &lctx->light_control.a[id];
+		matrix_id_count += r->numLayers;
+		lframe->stage_queue[r->stage_index].count += r->numLayers;
+
+		int mode =  r->mode;
 		light_ids[mode][queue[mode].count] = id;
 		entids[mode][queue[mode].count] = ent.id;
 		queue[mode].count++;
 	}
+
+	lframe->stage_queue[0].start = 0;
+	for (int i = 1; i < LIGHTING_STAGES; i++) {
+		auto q = &lframe->stage_queue[i];
+		q[0].start = q[-1].start + q[-1].count;
+		q[-1].count = 0;
+	}
+	lframe->stage_queue[LIGHTING_STAGES - 1].count = 0;
 
 	size_t      packet_size = 0;
 	packet_size += sizeof (vec4f_t[NumStyles]);
@@ -525,6 +675,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		// ent ids
 		packet_size += sizeof (uint32_t[light_count]);
 	}
+	packet_size += sizeof (uint32_t[matrix_id_count]);
 
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
@@ -660,11 +811,41 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			memcpy (eids + queue[i].start, entids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
-		QFV_PacketScatterBuffer (packet, lframe->entid_buffer,
-								 1, &eid_scatter,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+		auto ir_barrier = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
+								 ir_barrier);
 	}
+
+	auto matrix_ids = (uint32_t *) packet_data;
+	qfv_scatter_t matrix_id_scater = {
+		.srcOffset = packet_data - packet_start,
+		.dstOffset = 0,
+		.length = sizeof (uint32_t[matrix_id_count]),
+	};
+	packet_data += matrix_id_scater.length;
+	ndlight = 0;
+	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
+		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
+		if (has_dynlight (ent)) {
+			auto r = &lctx->light_control.a[lctx->dynamic_base + ndlight++];
+			enqueue_map (matrix_ids, lframe, r);
+			continue;
+		}
+		auto ls = get_lightstyle (ent);
+		if (!d_lightstylevalue[ls]) {
+			continue;
+		}
+
+		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
+		auto r = &lctx->light_control.a[id];
+		enqueue_map (matrix_ids, lframe, r);
+	}
+	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer, 1,
+							 &matrix_id_scater, bb);
+
 	QFV_PacketSubmit (packet);
+
+	transition_shadow_targets (lframe, ctx);
 }
 
 static void
@@ -968,7 +1149,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
 	};
 	qfv_attachmentinfo_t *attachments[] = {
 		&lctx->shadow_info,
@@ -1310,9 +1491,6 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 							 lframe->shadowmat_set,
 							 va (ctx->va_ctx, "lighting:shadowmat_set:%zd", i));
 
-		lframe->views = (qfv_imageviewset_t) DARRAY_STATIC_INIT (16);
-		lframe->framebuffers = (qfv_framebufferset_t) DARRAY_STATIC_INIT (16);
-
 		VkDescriptorBufferInfo bufferInfo[] = {
 			{	.buffer = lframe->shadowmat_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
@@ -1376,6 +1554,13 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 7, bufferWrite, 0, 0);
 	}
+	size_t target_count = MaxLights * 6;
+	size_t target_size = frames * sizeof (uint16_t[target_count]);
+	lctx->frames.a[0].stage_targets = malloc (target_size);
+	for (size_t i = 1; i < frames; i++) {
+		auto lframe = &lctx->frames.a[i];
+		lframe[0].stage_targets = lframe[-1].stage_targets + target_count;
+	}
 
 	make_default_map (64, lctx->default_map, ctx);
 
@@ -1399,12 +1584,25 @@ clear_shadows (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
+	auto dfunc = device->funcs;
 	lightingctx_t *lctx = ctx->lighting_context;
 
 	if (lctx->shadow_resources) {
 		QFV_DestroyResource (device, lctx->shadow_resources);
 		free (lctx->shadow_resources);
 		lctx->shadow_resources = 0;
+	}
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		for (int j = 0; j < 32; j++) {
+			auto framebuffer = lctx->stage_framebuffers[j][i];
+			if (framebuffer) {
+				dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
+			}
+			lctx->stage_framebuffers[j][i] = 0;
+		}
+		// images and views freed via shadow_resources
+		lctx->stage_images[i] = 0;
+		lctx->stage_views[i] = 0;
 	}
 	free (lctx->map_images);
 	free (lctx->map_views);
@@ -1427,13 +1625,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	QFV_DestroyResource (device, lctx->light_resources);
 	free (lctx->light_resources);
 
-	for (size_t i = 0; i < lctx->frames.size; i++) {
-		auto lframe = &lctx->frames.a[i];
-		clear_frame_buffers_views (ctx, lframe);
-		DARRAY_CLEAR (&lframe->views);
-		DARRAY_CLEAR (&lframe->framebuffers);
-	}
-
+	free (lctx->frames.a[0].stage_targets);
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_control);
 	free (lctx->map_images);
@@ -1722,7 +1914,7 @@ allocate_dynlight_map (mapctx_t *mctx)
 		auto lr = &mctx->control[li];
 
 		*lr = (light_control_t) {
-			.renderpass_index = 2,
+			.stage_index = (size / shadow_quanta) - 1,
 			.map_index = mctx->numMaps,
 			.size = size,
 			.layer = numLayers,
@@ -1817,23 +2009,39 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	totalLayers += allocate_dynlight_map (&mctx);
 
 	lctx->num_maps = mctx.numMaps;
+	int stage_layers[LIGHTING_STAGES] = {};
 	if (mctx.numMaps) {
+		for (int i = 0; i < mctx.numMaps; i++) {
+			int ind = (maps[i].size / shadow_quanta) - 1;
+			stage_layers[ind] += maps[i].layers;
+		}
+		int stage_maps = 0;
+		for (int i = 0; i < LIGHTING_STAGES; i++) {
+			stage_layers[i] = min (stage_layers[i], max_views);
+			if (stage_layers[i]) {
+				stage_maps++;
+			}
+		}
 		qfv_resource_t *shad = calloc (1, sizeof (qfv_resource_t)
 									   + sizeof (qfv_resobj_t[mctx.numMaps])
-									   + sizeof (qfv_resobj_t[mctx.numMaps]));
+									   + sizeof (qfv_resobj_t[mctx.numMaps])
+									   + sizeof (qfv_resobj_t[stage_maps])
+									   + sizeof (qfv_resobj_t[stage_maps]));
 		lctx->shadow_resources = shad;
 		*shad = (qfv_resource_t) {
 			.name = "shadow",
 			.va_ctx = ctx->va_ctx,
 			.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			.num_objects = 2 * mctx.numMaps,
+			.num_objects = 2 * (mctx.numMaps + stage_maps),
 			.objects = (qfv_resobj_t *) &shad[1],
 		};
 		lctx->map_images = malloc (sizeof (VkImage[mctx.numMaps]));
 		lctx->map_views = malloc (sizeof (VkImageView[mctx.numMaps]));
 		lctx->map_cube = malloc (sizeof (bool[mctx.numMaps]));
 		auto images = shad->objects;
-		auto views = &images[mctx.numMaps];
+		auto stage_images = &images[mctx.numMaps];
+		auto views = &stage_images[stage_maps];
+		auto stage_views = &views[mctx.numMaps];
 		for (int i = 0; i < mctx.numMaps; i++) {
 			int         cube = maps[i].cube;
 			lctx->map_cube[i] = cube;
@@ -1849,6 +2057,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 					.num_layers = maps[i].layers,
 					.samples = VK_SAMPLE_COUNT_1_BIT,
 					.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+							| VK_IMAGE_USAGE_TRANSFER_DST_BIT
 							| VK_IMAGE_USAGE_SAMPLED_BIT,
 				},
 			};
@@ -1868,10 +2077,53 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				},
 			};
 		}
+		for (int i = 0, ind = 0; i < LIGHTING_STAGES; i++) {
+			if (!stage_layers[i]) {
+				continue;
+			}
+			int size = (i + 1) * shadow_quanta;
+			stage_images[ind] = (qfv_resobj_t) {
+				.name = va (ctx->va_ctx, "stage_map:image:%02d:%d", ind, size),
+				.type = qfv_res_image,
+				.image = {
+					.type = VK_IMAGE_TYPE_2D,
+					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.extent = { size, size, 1 },
+					.num_mipmaps = 1,
+					.num_layers = stage_layers[i],
+					.samples = VK_SAMPLE_COUNT_1_BIT,
+					.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+							| VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+				},
+			};
+			stage_views[ind] = (qfv_resobj_t) {
+				.name = va (ctx->va_ctx, "stage_map:view:%02d:%d", ind, size),
+				.type = qfv_res_image_view,
+				.image_view = {
+					.image = mctx.numMaps + ind,
+					.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.subresourceRange = {
+						.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+						.levelCount = VK_REMAINING_MIP_LEVELS,
+						.layerCount = VK_REMAINING_ARRAY_LAYERS,
+					},
+				},
+			};
+			ind++;
+		}
 		QFV_CreateResource (device, shad);
 		for (int i = 0; i < mctx.numMaps; i++) {
 			lctx->map_images[i] = images[i].image.image;
 			lctx->map_views[i] = views[i].image_view.view;
+		}
+		for (int i = 0, ind = 0; i < LIGHTING_STAGES; i++) {
+			if (!stage_layers[i]) {
+				continue;
+			}
+			lctx->stage_images[i] = stage_images[ind].image.image;
+			lctx->stage_views[i] = stage_views[ind].image_view.view;
+			ind++;
 		}
 	}
 
@@ -1883,19 +2135,9 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			continue;
 		}
 
-		switch (lr->numLayers) {
-			case 6:
-				lr->renderpass_index = 6 - 1;
-				break;
-			case num_cascade:
-				lr->renderpass_index = num_cascade - 1;
-				break;
-			case 1:
-				lr->renderpass_index = 0;
-				break;
-			default:
-				Sys_Error ("build_shadow_maps: invalid light layer count: %u",
-						   lr->numLayers);
+		lr->stage_index = -1;
+		if (lr->numLayers) {
+			lr->stage_index = (lr->size / shadow_quanta) - 1;
 		}
 		lr->map_index = imageMap[li];
 	}
@@ -1907,8 +2149,13 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	if (developer & SYS_lighting) {
 		auto images = lctx->shadow_resources->objects;
 		for (int i = 0; i < lctx->num_maps; i++) {
-			printf ("map id:%d width:%d layers:%d\n", i,
-					images[i].image.extent.width, images[i].image.num_layers);
+			Sys_Printf ("map id:%d width:%d layers:%d\n", i,
+						images[i].image.extent.width,
+						images[i].image.num_layers);
+		}
+		for (int i = 0; i < LIGHTING_STAGES; i++) {
+			Sys_Printf ("stage:%d width:%d layers:%d\n", i,
+						(i + 1) * shadow_quanta, stage_layers[i]);
 		}
 	}
 }
