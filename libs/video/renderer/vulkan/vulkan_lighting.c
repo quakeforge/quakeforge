@@ -78,7 +78,7 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
-#define shadow_quanta 32
+#define shadow_quanta 128
 #define lnearclip 4
 #define num_cascade 4
 
@@ -108,7 +108,7 @@ static cvar_t dynlight_size_cvar = {
 	.description =
 		"Effective radius of dynamic light shadow maps. Needs map reload to "
 		"take effect",
-	.default_value = "250",
+	.default_value = "256",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &dynlight_size },
 };
