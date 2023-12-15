@@ -154,17 +154,62 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 	dfunc->vkEndCommandBuffer (taskctx->cmd);
 }
 
+void
+QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
+					  qfv_renderpass_t *rp, void *data)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+
+	qfZoneNamed (zone, true);
+	qftVkScopedZone (frame->qftVkCtx, cmd, "renderpass");
+
+	QFV_duCmdBeginLabel (device, cmd, rp->label.name,
+						 {VEC4_EXP (rp->label.color)});
+	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
+	for (uint32_t i = 0; i < rp->subpass_count; i++) {
+		__auto_type sp = &rp->subpasses[i];
+		QFV_duCmdBeginLabel (device, cmd, sp->label.name,
+							 {VEC4_EXP (sp->label.color)});
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+			.frame = frame,
+			.renderpass = rp,
+			.cmd = QFV_GetCmdBuffer (ctx, true),
+			.data = data,
+		};
+		run_subpass (sp, &taskctx);
+		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
+		QFV_duCmdEndLabel (device, cmd);
+		//FIXME comment is a bit off as exactly one buffer is always
+		//submitted
+		//
+		//Regardless of whether any commands were submitted for this
+		//subpass, must step through each and every subpass, otherwise
+		//the attachments won't be transitioned correctly.
+		//However, only if not the last (or only) subpass.
+		if (i < rp->subpass_count - 1) {
+			dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
+		}
+	}
+
+	dfunc->vkCmdEndRenderPass (cmd);
+	QFV_CmdEndLabel (device, cmd);
+}
+
 static void
 run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 {
 	qfZoneNamed (zone, true);
 	qfZoneName (zone, rp->label.name, rp->label.name_len);
 	qfZoneColor (zone, rp->label.color32);
+
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type rctx = ctx->render_context;
-	auto frame = &rctx->frames.a[ctx->curFrame];
-	__auto_type job = rctx->job;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
@@ -173,38 +218,9 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-	{
-		qftVkScopedZone (frame->qftVkCtx, cmd, "renderpass");
-		QFV_duCmdBeginLabel (device, cmd, rp->label.name,
-							 {VEC4_EXP (rp->label.color)});
-		dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
-		for (uint32_t i = 0; i < rp->subpass_count; i++) {
-			__auto_type sp = &rp->subpasses[i];
-			QFV_duCmdBeginLabel (device, cmd, sp->label.name,
-								 {VEC4_EXP (sp->label.color)});
-			qfv_taskctx_t taskctx = {
-				.ctx = ctx,
-				.frame = frame,
-				.renderpass = rp,
-				.cmd = QFV_GetCmdBuffer (ctx, true),
-				.data = data,
-			};
-			run_subpass (sp, &taskctx);
-			dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
-			QFV_duCmdEndLabel (device, cmd);
-			//FIXME comment is a bit off as exactly one buffer is always submitted
-			//
-			//Regardless of whether any commands were submitted for this
-			//subpass, must step through each and every subpass, otherwise
-			//the attachments won't be transitioned correctly.
-			//However, only if not the last (or only) subpass.
-			if (i < rp->subpass_count - 1) {
-				dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
-			}
-		}
-	}
-	dfunc->vkCmdEndRenderPass (cmd);
-	QFV_CmdEndLabel (device, cmd);
+
+	QFV_RunRenderPassCmd (cmd, ctx, rp, data);
+
 	dfunc->vkEndCommandBuffer (cmd);
 	DARRAY_APPEND (&job->commands, cmd);
 }

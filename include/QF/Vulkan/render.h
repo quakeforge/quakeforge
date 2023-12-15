@@ -451,6 +451,9 @@ typedef struct qfv_taskctx_s {
 VkCommandBuffer QFV_GetCmdBuffer (struct vulkan_ctx_s *ctx, bool secondary);
 void QFV_AppendCmdBuffer (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd);
 
+void QFV_RunRenderPassCmd (VkCommandBuffer cmd, struct vulkan_ctx_s *ctx,
+						   qfv_renderpass_t *renderpass,
+						   void *data);
 void QFV_RunRenderPass (struct vulkan_ctx_s *ctx, qfv_renderpass_t *renderpass,
 						uint32_t width, uint32_t height, void *data);
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
