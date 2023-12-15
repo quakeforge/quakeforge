@@ -230,7 +230,7 @@ find_imageinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 		//job->image_views[i].image_view.external_image = image;
 		//job->image_views[i].image_view.image = -1;
 	} else {
-		for (uint32_t i = 0; i <= jobinfo->num_images; i++) {
+		for (uint32_t i = 0; i < jobinfo->num_images; i++) {
 			auto img = &jobinfo->images[i];
 			if (strcmp (ref->name, img->name) == 0) {
 				return img;
@@ -244,7 +244,7 @@ find_imageinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 static qfv_imageviewinfo_t * __attribute__((pure))
 find_imageviewinfo (qfv_jobinfo_t *jobinfo, const qfv_reference_t *ref)
 {
-	for (uint32_t i = 0; i <= jobinfo->num_imageviews; i++) {
+	for (uint32_t i = 0; i < jobinfo->num_imageviews; i++) {
 		auto imgview = &jobinfo->imageviews[i];
 		if (strcmp (ref->name, imgview->name) == 0) {
 			return imgview;
@@ -388,7 +388,7 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 	if (strcmp (d->name, "$external") == 0) {
 		return VK_SUBPASS_EXTERNAL;
 	}
-	for (uint32_t i = 0; i <= spind; i++) {
+	for (uint32_t i = 0; i < spind; i++) {
 		__auto_type s = &subpasses[i];
 		if (strcmp (d->name, s->name) == 0) {
 			return i;
