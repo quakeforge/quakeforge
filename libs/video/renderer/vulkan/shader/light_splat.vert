@@ -33,7 +33,10 @@ void
 main (void)
 {
 	LightData l = lights[light_index];
-	float sz = l.attenuation.w > 0 ? 1 / l.attenuation.w : sqrt(abs(l.color.w));
+	float sz = l.attenuation.w > 0 ? 1 / l.attenuation.w
+			 : l.attenuation.x > 0 ? sqrt(abs(l.color.w/l.attenuation.x))
+			 : l.attenuation.y > 0 ? abs(l.color.w/l.attenuation.y)
+			 : sqrt(abs(l.color.w));
 	float c = l.direction.w;
 	float sxy = sz * (c < 0 ? (sqrt (1 - c*c) / -c) : 1);
 	vec3 scale = vec3 (sxy, sxy, sz);

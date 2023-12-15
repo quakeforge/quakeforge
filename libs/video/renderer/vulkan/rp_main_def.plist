@@ -1100,6 +1100,11 @@ descriptorSetLayouts = {
 	};
 };
 images = {
+	occlusion_depth = {
+		@inherit = $image_base;
+		format = x8_d24_unorm_pack32;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
 	depth = {
 		@inherit = $image_base;
 		format = x8_d24_unorm_pack32;
@@ -1136,6 +1141,11 @@ images = {
 		format = r32_uint;
 	};
 
+	occlusion_cube_depth = {
+		@inherit = $cube_image_base;
+		format = x8_d24_unorm_pack32;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
 	cube_depth = {
 		@inherit = $cube_image_base;
 		format = x8_d24_unorm_pack32;
@@ -1174,6 +1184,14 @@ images = {
 	};
 };
 imageviews = {
+	occlusion_depth = {
+		@inherit = $view_base;
+		image = occlusion_depth;
+		format = $images.occlusion_depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
+	};
 	depth = {
 		@inherit = $view_base;
 		image = depth;
@@ -1215,6 +1233,14 @@ imageviews = {
 	entid = {
 		@inherit = $view_base;
 		image = entid;
+	};
+	occlusion_cube_depth = {
+		@inherit = $cube_view_base;
+		image = occlusion_cube_depth;
+		format = $images.occlusion_cube_depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
 	};
 	cube_depth = {
 		@inherit = $cube_view_base;
@@ -1266,6 +1292,127 @@ output = {
 	finalLayout = shader_read_only_optimal;
 };
 renderpasses = {
+	occlusion = {
+		color = "[0.8, 0.6, 0, 1]";
+		framebuffer = {
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $attachment_base;
+					format = $images.depth.format;
+					loadOp = clear;
+					finalLayout = depth_stencil_attachment_optimal;
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
+					view = occlusion_depth;
+				};
+			};
+		};
+		subpasses = {
+			depth = {
+				color = "[ 0.5,  0.5,  0.5, 1]";
+				attachments = {
+					depth = {
+						depth = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					bsp:depth = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 0); },
+						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+				};
+			};
+			lightcull = {
+				color = "[ 0.7,  0.5,  0, 1]";
+				dependencies = {
+					depth = $depth_dependency;
+				};
+				attachments = {
+					depth = {
+						depth = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					cull_lights = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (debug, none); },
+							{ func = lighting_draw_hulls; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_splat,
+							$lighting.shader.debug_fragment,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_layout;
+						rasterization = $cw_cull_back;
+						depthStencil = $depth_test_only;
+					};
+				};
+			};
+		};
+	};
+	occlusion_cube = {
+		@inherit = $renderpasses.occlusion;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fu, 0x3fu);
+		});
+		framebuffer = {
+			width = "min($render_output.extent.width,$render_output.extent.height)";
+			height = "min($render_output.extent.width,$render_output.extent.height)";
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $attachment_base;
+					format = $images.cube_depth.format;
+					loadOp = clear;
+					finalLayout = depth_stencil_attachment_optimal;
+					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
+					view = occlusion_cube_depth;
+				};
+			};
+		};
+	};
 	deferred = {
 		color = "[0, 1, 0, 1]";
 		framebuffer = {
@@ -2377,12 +2524,30 @@ steps = {
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },
 				{ func = lighting_update_lights; },
+				{ func = update_framebuffer;
+				  params = ("\"light_cull\""); },
 			);
+		};
+	};
+	light_cull = {
+		color = "[0.8, 0.6, 0, 1]";
+		dependencies = (world);
+		process = {
+			tasks = (
+				{ func = lighting_cull_lights;
+				  params = ("\"light_cull\""); },
+			);
+		};
+		render = {
+			renderpasses = {
+				occlusion = $renderpasses.occlusion;
+				occlusion_cube = $renderpasses.occlusion_cube;
+			};
 		};
 	};
 	shadow = {
 		color = "[0.3, 0.3, 0.3]";
-		dependencies = (world);
+		dependencies = (light_cull);
 		process = {
 			tasks = (
 				{ func = lighting_setup_shadow; },

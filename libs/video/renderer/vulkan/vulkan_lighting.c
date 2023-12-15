@@ -985,6 +985,106 @@ lighting_draw_splats (const exprval_t **params, exprval_t *result,
 }
 
 static void
+lighting_cull_lights (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+	auto queue = lframe->light_queue;
+	uint32_t count = queue[ST_CUBE].count + queue[ST_PLANE].count;
+	if (!count) {
+		return;
+	}
+
+	auto light_cull = QFV_GetStep (params[0], ctx->render_context->job);
+	auto render = light_cull->render;
+
+	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	});
+	{
+		qftVkScopedZoneC (taskctx->frame->qftVkCtx, cmd, "reset", 0xc0a000);
+		dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights);
+	}
+	auto renderpass = &render->renderpasses[0];
+	QFV_RunRenderPassCmd (cmd, ctx, renderpass, 0);
+	dfunc->vkEndCommandBuffer (cmd);
+
+	qfMessageL ("submit");
+	auto dev_queue = &device->queue;
+	VkSubmitInfo submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &cmd,
+	};
+	dfunc->vkResetFences (device->dev, 1, &lframe->fence);
+	dfunc->vkQueueSubmit (dev_queue->queue, 1, &submitInfo, lframe->fence);
+	dfunc->vkWaitForFences (device->dev, 1, &lframe->fence, VK_TRUE, 200000000);
+
+	uint32_t    frag_counts[count];
+	VkDeviceSize size = sizeof (frag_counts);
+	dfunc->vkGetQueryPoolResults (device->dev, lframe->query, 0, count,
+								  size, frag_counts, sizeof (uint32_t),
+								  VK_QUERY_RESULT_WAIT_BIT);
+	uint32_t c = 0;
+	for (uint32_t i = 0; i < count; i++) {
+		c += frag_counts[i] != 0;
+	}
+	if (1) printf ("%d/%d visible\n", c, count);
+}
+
+static void
+draw_hull (uint32_t indexCount, uint32_t firstIndex, int32_t vertOffset,
+		   uint32_t hull, uint32_t id, VkCommandBuffer cmd, VkQueryPool query,
+		   qfv_devfuncs_t *dfunc, qftVkCtx_t *vk)
+{
+	qfZoneNamed (zone, true);
+	qftVkScopedZoneC (vk, cmd, "draw_hull", 0xc0a000);
+	dfunc->vkCmdBeginQuery (cmd, query, id, 0);
+	dfunc->vkCmdDrawIndexed (cmd, indexCount, 1, firstIndex, vertOffset, hull);
+	dfunc->vkCmdEndQuery (cmd, query, id);
+}
+
+static void
+lighting_draw_hulls (const exprval_t **params, exprval_t *result,
+					 exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	auto cmd = taskctx->cmd;
+
+	auto lframe = &lctx->frames.a[ctx->curFrame];
+	uint32_t id = 0;
+	if (lframe->light_queue[ST_CUBE].count) {
+		auto q = lframe->light_queue[ST_CUBE];
+		for (uint32_t i = 0; i < q.count; i++) {
+			uint32_t hull = q.start + i;
+			draw_hull (num_ico_inds, 0, 0, hull, id++,
+					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
+		}
+	}
+	if (lframe->light_queue[ST_PLANE].count) {
+		auto q = lframe->light_queue[ST_PLANE];
+		for (uint32_t i = 0; i < q.count; i++) {
+			uint32_t hull = q.start + i;
+			draw_hull (num_cone_inds, num_ico_inds, 12, hull, id++,
+					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
+		}
+	}
+}
+
+static void
 lighting_draw_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
@@ -1090,6 +1190,15 @@ static exprfunc_t lighting_draw_splats_func[] = {
 	{ .func = lighting_draw_splats },
 	{}
 };
+static exprfunc_t lighting_cull_lights_func[] = {
+	{ .func = lighting_cull_lights, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
+static exprfunc_t lighting_draw_hulls_func[] = {
+	{ .func = lighting_draw_hulls },
+	{}
+};
 static exprfunc_t lighting_draw_lights_func[] = {
 	{ .func = lighting_draw_lights, .num_params = 2,
 		.param_types = shadow_type_param },
@@ -1111,6 +1220,8 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
+	{ "lighting_cull_lights", &cexpr_function, lighting_cull_lights_func },
+	{ "lighting_draw_hulls", &cexpr_function, lighting_draw_hulls_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
 	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
@@ -1554,6 +1665,13 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 				.pBufferInfo = &bufferInfo[6], },
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 7, bufferWrite, 0, 0);
+
+		dfunc->vkCreateQueryPool (device->dev, &(VkQueryPoolCreateInfo) {
+			.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+			.queryType = VK_QUERY_TYPE_OCCLUSION,
+			.queryCount = MaxLights,
+		}, 0, &lframe->query);
+		lframe->fence = QFV_CreateFence (device, 1);
 	}
 	size_t target_count = MaxLights * 6;
 	size_t target_size = frames * sizeof (uint16_t[target_count]);
@@ -1618,14 +1736,20 @@ clear_shadows (vulkan_ctx_t *ctx)
 void
 Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	lightingctx_t *lctx = ctx->lighting_context;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
 
 	clear_shadows (ctx);
 
 	QFV_DestroyResource (device, lctx->light_resources);
 	free (lctx->light_resources);
 
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		auto lframe = &lctx->frames.a[i];
+		dfunc->vkDestroyQueryPool (device->dev, lframe->query, 0);
+		dfunc->vkDestroyFence (device->dev, lframe->fence, 0);
+	}
 	free (lctx->frames.a[0].stage_targets);
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_control);

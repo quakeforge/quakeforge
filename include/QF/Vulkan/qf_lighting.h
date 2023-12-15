@@ -85,6 +85,9 @@ typedef struct lightingframe_s {
 	VkDescriptorSet lights_set;
 	VkDescriptorSet attach_set;
 
+	VkQueryPool query;
+	VkFence     fence;
+
 	VkBuffer    shadowmat_buffer;
 	VkBuffer    shadowmat_id_buffer;
 	VkBuffer    light_buffer;
