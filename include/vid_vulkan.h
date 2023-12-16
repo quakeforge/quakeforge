@@ -45,7 +45,7 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 #define qftCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr)
 #define qftCVkContextDestroy(ctx)
 #define qftCVkContextName(ctx, name, size)
-#define qftCVkContextCollect(ctx, cmdbuf)
+#define qftCVkCollect(ctx, cmdbuf)
 
 #define qftVkZone(ctx, cmdbuf, name) \
 	do { (void)(ctx); (void) (cmdbuf); } while (0)

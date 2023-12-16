@@ -1374,7 +1374,7 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (debug, none); },
+							  params = (hull, none); },
 							{ func = lighting_draw_hulls; },
 						);
 
@@ -1921,7 +1921,7 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (debug, none); },
+							  params = (hull, none); },
 							{ func = lighting_draw_splats; },
 						);
 
@@ -1975,7 +1975,7 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (debug, none); },
+							  params = (hull, none); },
 							{ func = lighting_draw_splats; },
 						);
 

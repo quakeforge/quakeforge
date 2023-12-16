@@ -56,7 +56,7 @@ enum {
 enum {
 	lighting_main,
 	lighting_shadow,
-	lighting_debug,
+	lighting_hull,
 };
 
 typedef struct qfv_light_render_s {
@@ -100,6 +100,8 @@ typedef struct lightingframe_s {
 	light_queue_t stage_queue[LIGHTING_STAGES];
 	// map_id (0,5) first layer (5,11)
 	uint16_t   *stage_targets;
+
+	qftVkCtx_t *qftVkCtx;
 } lightingframe_t;
 
 typedef struct lightingframeset_s

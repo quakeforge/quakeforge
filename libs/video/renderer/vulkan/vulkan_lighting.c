@@ -927,7 +927,7 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 	auto shadow_type = *(int *) params[0]->value;
 	auto stage = *(int *) params[1]->value;
 
-	if (stage == lighting_debug) {
+	if (stage == lighting_hull) {
 		VkDescriptorSet sets[] = {
 			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 			lframe->lights_set,
@@ -1009,12 +1009,13 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	});
-	{
-		qftVkScopedZoneC (taskctx->frame->qftVkCtx, cmd, "reset", 0xc0a000);
-		dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights);
-	}
+	qftCVkCollect (lframe->qftVkCtx, cmd);
+	dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights);
+	auto qftVkCtx = taskctx->frame->qftVkCtx;
+	taskctx->frame->qftVkCtx = lframe->qftVkCtx;
 	auto renderpass = &render->renderpasses[0];
 	QFV_RunRenderPassCmd (cmd, ctx, renderpass, 0);
+	taskctx->frame->qftVkCtx = qftVkCtx;
 	dfunc->vkEndCommandBuffer (cmd);
 
 	qfMessageL ("submit");
@@ -1128,12 +1129,12 @@ static exprtype_t lighting_stage_type = {
 static int lighting_stage_values[] = {
 	lighting_main,
 	lighting_shadow,
-	lighting_debug,
+	lighting_hull,
 };
 static exprsym_t lighting_stage_symbols[] = {
 	{"main", &lighting_stage_type, lighting_stage_values + 0},
 	{"shadow", &lighting_stage_type, lighting_stage_values + 1},
-	{"debug", &lighting_stage_type, lighting_stage_values + 2},
+	{"hull", &lighting_stage_type, lighting_stage_values + 2},
 	{}
 };
 static exprtab_t lighting_stage_symtab = { .symbols = lighting_stage_symbols };
@@ -1672,6 +1673,15 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			.queryCount = MaxLights,
 		}, 0, &lframe->query);
 		lframe->fence = QFV_CreateFence (device, 1);
+#ifdef TRACY_ENABLE
+		auto instance = ctx->instance->instance;
+		auto physdev = ctx->device->physDev->dev;
+		auto gipa = ctx->vkGetInstanceProcAddr;
+		auto gdpa = ctx->instance->funcs->vkGetDeviceProcAddr;
+		lframe->qftVkCtx = qftCVkContextHostCalibrated (instance, physdev,
+														device->dev,
+														gipa, gdpa);
+#endif
 	}
 	size_t target_count = MaxLights * 6;
 	size_t target_size = frames * sizeof (uint16_t[target_count]);
