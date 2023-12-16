@@ -670,11 +670,13 @@ properties = {
 		vertexInput_splat = {
 			bindings = (
 				{ binding = 0; stride = "4"; inputRate = instance; },
-				{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
+				{ binding = 1; stride = "4"; inputRate = instance; },
+				{ binding = 2; stride = "3 * 4"; inputRate = vertex; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
-				{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
+				{ location = 1; binding = 1; format = r32_sfloat; offset = 0; },
+				{ location = 2; binding = 2; format = r32g32b32_sfloat; offset = 0;  },
 			);
 		};
 		vertexInput_flat = {

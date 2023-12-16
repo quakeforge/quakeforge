@@ -9,7 +9,8 @@ layout (set = 0, binding = 0) uniform
 #include "lighting.h"
 
 layout (location = 0) in uint light_index;
-layout (location = 1) in vec3 splat_vert;
+layout (location = 1) in float light_radius;
+layout (location = 2) in vec3 splat_vert;
 layout (location = 0) out uint light_index_out;
 
 vec4	// assumes a and b are unit vectors
@@ -33,10 +34,7 @@ void
 main (void)
 {
 	LightData l = lights[light_index];
-	float sz = l.attenuation.w > 0 ? 1 / l.attenuation.w
-			 : l.attenuation.x > 0 ? sqrt(abs(l.color.w/l.attenuation.x))
-			 : l.attenuation.y > 0 ? abs(l.color.w/l.attenuation.y)
-			 : sqrt(abs(l.color.w));
+	float sz = light_radius;
 	float c = l.direction.w;
 	float sxy = sz * (c < 0 ? (sqrt (1 - c*c) / -c) : 1);
 	vec3 scale = vec3 (sxy, sxy, sz);
