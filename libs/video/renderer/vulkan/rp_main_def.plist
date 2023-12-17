@@ -2523,8 +2523,6 @@ steps = {
 				  params = (main); },
 				{ func = scene_draw_viewmodel; },
 				{ func = lighting_update_lights; },
-				{ func = update_framebuffer;
-				  params = ("\"light_cull\""); },
 			);
 		};
 	};
@@ -2533,6 +2531,10 @@ steps = {
 		dependencies = (world);
 		process = {
 			tasks = (
+				{ func = lighting_cull_select_renderpass;
+				  params = ("\"light_cull\""); },
+				{ func = update_framebuffer;
+				  params = ("\"light_cull\""); },
 				{ func = lighting_cull_lights;
 				  params = ("\"light_cull\""); },
 			);

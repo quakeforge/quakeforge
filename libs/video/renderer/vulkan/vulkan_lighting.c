@@ -1116,6 +1116,23 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 }
 
 static void
+lighting_cull_select_renderpass (const exprval_t **params, exprval_t *result,
+								 exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	auto light_cull = QFV_GetStep (params[0], ctx->render_context->job);
+	auto render = light_cull->render;
+
+	if (scr_fisheye) {
+		render->active = &render->renderpasses[1];
+	} else {
+		render->active = &render->renderpasses[0];
+	}
+}
+
+static void
 lighting_cull_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
@@ -1131,6 +1148,9 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	if (!count) {
 		return;
 	}
+	if (scr_fisheye) {
+		count *= 6;
+	}
 
 	auto light_cull = QFV_GetStep (params[0], ctx->render_context->job);
 	auto render = light_cull->render;
@@ -1141,11 +1161,10 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	});
 	qftCVkCollect (lframe->qftVkCtx, cmd);
-	dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights);
+	dfunc->vkCmdResetQueryPool (cmd, lframe->query, 0, MaxLights * 6);
 	auto qftVkCtx = taskctx->frame->qftVkCtx;
 	taskctx->frame->qftVkCtx = lframe->qftVkCtx;
-	auto renderpass = &render->renderpasses[0];
-	QFV_RunRenderPassCmd (cmd, ctx, renderpass, 0);
+	QFV_RunRenderPassCmd (cmd, ctx, render->active, 0);
 	taskctx->frame->qftVkCtx = qftVkCtx;
 	dfunc->vkEndCommandBuffer (cmd);
 
@@ -1165,6 +1184,17 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	dfunc->vkGetQueryPoolResults (device->dev, lframe->query, 0, count,
 								  size, frag_counts, sizeof (uint32_t),
 								  VK_QUERY_RESULT_WAIT_BIT);
+	if (scr_fisheye) {
+		uint32_t *p = frag_counts;
+		for (uint32_t i = 0; i < count; i += 6) {
+			uint32_t sum = 0;
+			for (int j = 0; j < 6; j++) {
+				// care only about non-zero, not actual count
+				sum |= frag_counts[i + j];
+			}
+			*p++ = sum;
+		}
+	}
 	uint32_t c = 0;
 	uint32_t ci = 0;
 	vec4f_t  cam = r_refdef.camera[3];
@@ -1235,19 +1265,20 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 	uint32_t id = 0;
+	uint32_t id_step = scr_fisheye ? 6 : 1;
 	if (lframe->light_queue[ST_CUBE].count) {
 		auto q = lframe->light_queue[ST_CUBE];
-		for (uint32_t i = 0; i < q.count; i++) {
+		for (uint32_t i = 0; i < q.count; i++, id += id_step) {
 			uint32_t hull = q.start + i;
-			draw_hull (num_ico_inds, 0, 0, hull, id++,
+			draw_hull (num_ico_inds, 0, 0, hull, id,
 					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
 		}
 	}
 	if (lframe->light_queue[ST_PLANE].count) {
 		auto q = lframe->light_queue[ST_PLANE];
-		for (uint32_t i = 0; i < q.count; i++) {
+		for (uint32_t i = 0; i < q.count; i++, id += id_step) {
 			uint32_t hull = q.start + i;
-			draw_hull (num_cone_inds, num_ico_inds, 12, hull, id++,
+			draw_hull (num_cone_inds, num_ico_inds, 12, hull, id,
 					   cmd, lframe->query, dfunc, taskctx->frame->qftVkCtx);
 		}
 	}
@@ -1359,6 +1390,11 @@ static exprfunc_t lighting_draw_splats_func[] = {
 	{ .func = lighting_draw_splats },
 	{}
 };
+static exprfunc_t lighting_cull_select_renderpass_func[] = {
+	{ .func = lighting_cull_select_renderpass, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
 static exprfunc_t lighting_cull_lights_func[] = {
 	{ .func = lighting_cull_lights, .num_params = 1,
 		.param_types = stepref_param },
@@ -1389,6 +1425,8 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_bind_descriptors", &cexpr_function,
 		lighting_bind_descriptors_func },
 	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
+	{ "lighting_cull_select_renderpass", &cexpr_function,
+		lighting_cull_select_renderpass_func },
 	{ "lighting_cull_lights", &cexpr_function, lighting_cull_lights_func },
 	{ "lighting_draw_hulls", &cexpr_function, lighting_draw_hulls_func },
 	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
@@ -1851,7 +1889,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		dfunc->vkCreateQueryPool (device->dev, &(VkQueryPoolCreateInfo) {
 			.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
 			.queryType = VK_QUERY_TYPE_OCCLUSION,
-			.queryCount = MaxLights,
+			.queryCount = MaxLights * 6,	// 6 for cube maps
 		}, 0, &lframe->query);
 		lframe->fence = QFV_CreateFence (device, 1);
 #ifdef TRACY_ENABLE
