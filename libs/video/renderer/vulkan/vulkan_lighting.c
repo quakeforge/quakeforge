@@ -638,21 +638,13 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	uint32_t dynamic_light_entities[MaxLights];
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
-	int matrix_id_count = 0;
-
-	for (int i = 0; i < LIGHTING_STAGES; i++) {
-		lframe->stage_queue[i].count = 0;
-	}
 
 	auto entqueue = r_ent_queue;   //FIXME fetch from scene
 	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {
-			auto r = &lctx->light_control.a[lctx->dynamic_base + ndlight];
 			dynamic_light_entities[ndlight] = ent.id;
 			dynamic_lights[ndlight] = get_dynlight (ent);
-			lframe->stage_queue[r->stage_index].count += r->numLayers;
-			matrix_id_count += r->numLayers;
 			ndlight++;
 			continue;
 		}
@@ -664,8 +656,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		light_count++;
 		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
 		auto r = &lctx->light_control.a[id];
-		matrix_id_count += r->numLayers;
-		lframe->stage_queue[r->stage_index].count += r->numLayers;
 
 		int mode =  r->mode;
 		auto light = get_light (ent.id, ent.reg);
@@ -675,14 +665,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		light_positions[mode][ind] = light->position;
 		entids[mode][ind] = ent.id;
 	}
-
-	lframe->stage_queue[0].start = 0;
-	for (int i = 1; i < LIGHTING_STAGES; i++) {
-		auto q = &lframe->stage_queue[i];
-		q[0].start = q[-1].start + q[-1].count;
-		q[-1].count = 0;
-	}
-	lframe->stage_queue[LIGHTING_STAGES - 1].count = 0;
 
 	size_t      packet_size = 0;
 	packet_size += sizeof (vec4f_t[NumStyles]);
@@ -703,7 +685,6 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		// ent ids
 		packet_size += sizeof (uint32_t[light_count]);
 	}
-	packet_size += sizeof (uint32_t[matrix_id_count]);
 
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
@@ -877,36 +858,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 	}
 
-	auto matrix_ids = (uint32_t *) packet_data;
-	qfv_scatter_t matrix_id_scater = {
-		.srcOffset = packet_data - packet_start,
-		.dstOffset = 0,
-		.length = sizeof (uint32_t[matrix_id_count]),
-	};
-	packet_data += matrix_id_scater.length;
-	ndlight = 0;
-	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
-		if (has_dynlight (ent)) {
-			auto r = &lctx->light_control.a[lctx->dynamic_base + ndlight++];
-			enqueue_map (matrix_ids, lframe, r);
-			continue;
-		}
-		auto ls = get_lightstyle (ent);
-		if (!d_lightstylevalue[ls]) {
-			continue;
-		}
-
-		uint32_t id = lctx->light_control.a[get_lightid (ent)].light_id;
-		auto r = &lctx->light_control.a[id];
-		enqueue_map (matrix_ids, lframe, r);
-	}
-	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer, 1,
-							 &matrix_id_scater, bb);
-
 	QFV_PacketSubmit (packet);
-
-	transition_shadow_targets (lframe, ctx);
 }
 
 static void
@@ -1051,6 +1003,7 @@ static void
 lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 {
 	uint32_t    count = 0;
+	auto lctx = ctx->lighting_context;
 
 	for (int i = 0; i < ST_COUNT; i++) {
 		auto q = &lframe->light_queue[i];
@@ -1080,9 +1033,31 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	for (int i = 0; i < ST_COUNT; i++) {
 		lframe->light_queue[i] = queue[i];
 	}
+
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		lframe->stage_queue[i].count = 0;
+	}
+	int matrix_id_count = 0;
+	for (uint32_t i = 0; i < light_count; i++) {
+		auto r = &lctx->light_control.a[light_ids[i]];
+		if (r->light_id != light_ids[i]) {
+			Sys_Error ("%d != %d", r->light_id, light_ids[i]);
+		}
+		lframe->stage_queue[r->stage_index].count += r->numLayers;
+		matrix_id_count += r->numLayers;
+	}
+	lframe->stage_queue[0].start = 0;
+	for (int i = 1; i < LIGHTING_STAGES; i++) {
+		auto q = &lframe->stage_queue[i];
+		q[0].start = q[-1].start + q[-1].count;
+		q[-1].count = 0;
+	}
+	lframe->stage_queue[LIGHTING_STAGES - 1].count = 0;
+
 	size_t packet_size = 0;
 	packet_size += sizeof (uint32_t[light_count]);
 	packet_size += sizeof (float[light_count]);
+	packet_size += sizeof (uint32_t[matrix_id_count]);
 
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	auto packet = QFV_PacketAcquire (ctx->staging);
@@ -1105,13 +1080,30 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	auto radius_data = (uint32_t *) packet_data;
 	packet_data += radius_scatter.length;
 
+	qfv_scatter_t matrix_id_scater = {
+		.srcOffset = packet_data - packet_start,
+		.dstOffset = 0,
+		.length = sizeof (uint32_t[matrix_id_count]),
+	};
+	auto matrix_ids = (uint32_t *) packet_data;
+	packet_data += matrix_id_scater.length;
+
 	memcpy (id_data, light_ids, packet_size);
 	memcpy (radius_data, light_radii, packet_size);
+	for (uint32_t i = 0; i < light_count; i++) {
+		auto r = &lctx->light_control.a[light_ids[i]];
+		enqueue_map (matrix_ids, lframe, r);
+	}
 
 	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter, bb);
 	QFV_PacketScatterBuffer (packet, lframe->radius_buffer,
 							 1, &radius_scatter, bb);
+	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
+							 1, &matrix_id_scater, bb);
+
 	QFV_PacketSubmit (packet);
+	transition_shadow_targets (lframe, ctx);
+
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 16,
 							va (ctx->va_ctx, "%3d", light_count),
@@ -1219,7 +1211,7 @@ draw_hull (uint32_t indexCount, uint32_t firstIndex, int32_t vertOffset,
 		   qfv_devfuncs_t *dfunc, qftVkCtx_t *vk)
 {
 	qfZoneNamed (zone, true);
-	qftVkScopedZoneC (vk, cmd, "draw_hull", 0xc0a000);
+//	qftVkScopedZoneC (vk, cmd, "draw_hull", 0xc0a000);
 	dfunc->vkCmdBeginQuery (cmd, query, id, 0);
 	dfunc->vkCmdDrawIndexed (cmd, indexCount, 1, firstIndex, vertOffset, hull);
 	dfunc->vkCmdEndQuery (cmd, query, id);
