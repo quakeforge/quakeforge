@@ -62,8 +62,8 @@ PTHREAD_LDFLAGS=@PTHREAD_LDFLAGS@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 
 if HAVE_TRACY
-tracy_src=tracy/public/TracyClient.cpp
-tracyvk_src=tracy/public/client/TracyVkProfiler.cpp
+tracy_src=tools/tracy/qftracy.cc
+tracyvk_src=tools/tracy/qftracyvk.cc
 else
 tracy_src=
 tracyvk_src=
