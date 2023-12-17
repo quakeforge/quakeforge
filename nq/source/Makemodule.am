@@ -31,7 +31,7 @@
 #
 bin_PROGRAMS +=	@NQ_TARGETS@
 
-EXTRA_PROGRAMS += nq-fbdev nq-sdl nq-svga nq-win nq-x11 nq-server
+EXTRA_PROGRAMS += nq-win nq-x11 nq-server
 
 noinst_LIBRARIES += @nq_libs@
 EXTRA_LIBRARIES += nq/source/libnq_client.a nq/source/libnq_common.a nq/source/libnq_sdl.a nq/source/libnq_server.a

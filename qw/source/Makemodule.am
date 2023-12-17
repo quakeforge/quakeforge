@@ -30,8 +30,7 @@
 bin_PROGRAMS += @QW_TARGETS@
 
 EXTRA_PROGRAMS += \
-	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-win qw-client-x11 \
-	qw-server qw-master
+	qw-client-win qw-client-x11 qw-server qw-master
 
 noinst_LIBRARIES += @qw_libs@
 EXTRA_LIBRARIES += qw/source/libqw_client.a qw/source/libqw_common.a qw/source/libqw_sdl.a qw/source/libqw_server.a

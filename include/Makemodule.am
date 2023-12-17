@@ -58,6 +58,7 @@ EXTRA_DIST += \
 	include/pstdint.h \
 	include/qfalloca.h \
 	include/qfselect.h \
+	include/qftracy.h \
 	include/qstring.h \
 	include/quakeasm.h \
 	include/quicksort.h \
