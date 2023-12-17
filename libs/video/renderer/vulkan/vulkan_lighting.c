@@ -2712,6 +2712,33 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 	}
 }
 
+static void
+scene_lightstyle_ui (void *comp, imui_ctx_t *imui_ctx,
+					 ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	auto style = *(uint32_t *) comp;
+
+	UI_Horizontal {
+		UI_Labelf ("%5u", style);
+
+		UI_FlexibleSpace ();
+		auto val = d_lightstylevalue[style];
+		UI_Labelf ("%3f", val / 65536.0);
+	}
+}
+
+static void
+scene_lightid_ui (void *comp, imui_ctx_t *imui_ctx,
+				  ecs_registry_t *reg, uint32_t ent, void *data)
+{
+	auto id = *(uint32_t *) comp;
+
+	UI_Horizontal {
+		UI_Labelf ("%5u", id);
+		UI_FlexibleSpace ();
+	}
+}
+
 void
 Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 {
@@ -2728,7 +2755,9 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 		reg->components.a[scene_dynlight].ui = light_dyn_light_ui;
 		reg->components.a[scene_light].ui = light_light_ui;
 		reg->components.a[scene_efrags].ui = scene_efrags_ui;
+		reg->components.a[scene_lightstyle].ui = scene_lightstyle_ui;
 		reg->components.a[scene_lightleaf].ui = scene_lightleaf_ui;
+		reg->components.a[scene_lightid].ui = scene_lightid_ui;
 
 		auto light_pool = &reg->comp_pools[scene_light];
 		if (light_pool->count) {
