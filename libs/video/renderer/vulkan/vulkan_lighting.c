@@ -618,6 +618,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 	uint32_t light_ids[ST_COUNT][MaxLights];
 	float    light_radii[ST_COUNT][MaxLights];
+	vec4f_t  light_positions[ST_COUNT][MaxLights];
 	uint32_t entids[ST_COUNT][MaxLights];
 
 	uint32_t light_count = 0;
@@ -657,10 +658,11 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 		int mode =  r->mode;
 		auto light = get_light (ent.id, ent.reg);
-		light_ids[mode][queue[mode].count] = id;
-		light_radii[mode][queue[mode].count] = light_radius (light);
-		entids[mode][queue[mode].count] = ent.id;
-		queue[mode].count++;
+		uint32_t ind = queue[mode].count++;
+		light_ids[mode][ind] = id;
+		light_radii[mode][ind] = light_radius (light);
+		light_positions[mode][ind] = light->position;
+		entids[mode][ind] = ent.id;
 	}
 
 	lframe->stage_queue[0].start = 0;
@@ -767,10 +769,11 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			};
 			uint32_t id = lctx->dynamic_base + i;
 			set_lightid (dynamic_light_entities[i], lctx->scene->reg, id);
-			light_ids[ST_CUBE][queue[ST_CUBE].count] = id;
-			light_radii[ST_CUBE][queue[ST_CUBE].count] = light_radius (&light);
-			entids[ST_CUBE][queue[ST_CUBE].count] = dynamic_light_entities[i];
-			queue[ST_CUBE].count++;
+			uint32_t ind = queue[ST_CUBE].count++;
+			light_ids[ST_CUBE][ind] = id;
+			light_radii[ST_CUBE][ind] = light_radius (&light);
+			light_positions[ST_CUBE][ind] = light.position;
+			entids[ST_CUBE][ind] = dynamic_light_entities[i];
 
 			lights[i] = light;
 		}
@@ -850,6 +853,19 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		auto ir_barrier = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
 								 ir_barrier);
+
+		for (int i = 0; i < ST_COUNT; i++) {
+			auto q = queue[i];
+			auto idr = &lframe->id_radius[q.start];
+			auto pos = &lframe->positions[q.start];
+			for (uint32_t j = 0; j < q.count; j++) {
+				idr[j] = (light_idrad_t) {
+					.id = light_ids[i][j],
+					.radius = light_radii[i][j],
+				};
+				pos[j] = light_positions[i][j];
+			}
+		}
 	}
 
 	auto matrix_ids = (uint32_t *) packet_data;
@@ -1021,6 +1037,78 @@ lighting_draw_splats (const exprval_t **params, exprval_t *result,
 }
 
 static void
+lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
+{
+	uint32_t    count = 0;
+
+	for (int i = 0; i < ST_COUNT; i++) {
+		auto q = &lframe->light_queue[i];
+		count += q->count;
+	}
+	uint32_t light_ids[count];
+	float light_radii[count];
+	uint32_t light_count = 0;
+	light_queue_t queue[ST_COUNT] = {};
+	for (int i = 0; i < ST_COUNT; i++) {
+		auto q = &lframe->light_queue[i];
+		for (uint32_t j = 0; j < q[0].count; j++) {
+			uint32_t    id = lframe->id_radius[q[0].start + j].id;
+			float       radius = lframe->id_radius[q[0].start + j].radius;
+			if (id != ~0u) {
+				light_ids[queue[i].start + queue[i].count] = id;
+				light_radii[queue[i].start + queue[i].count] = radius;
+				queue[i].count++;
+			}
+		}
+		if (i < ST_COUNT - 1) {
+			queue[i + 1].start = queue[i].start + queue[i].count;
+		} else {
+			light_count = queue[i].start + queue[i].count;
+		}
+	}
+	for (int i = 0; i < ST_COUNT; i++) {
+		lframe->light_queue[i] = queue[i];
+	}
+	size_t packet_size = 0;
+	packet_size += sizeof (uint32_t[light_count]);
+	packet_size += sizeof (float[light_count]);
+
+	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	byte *packet_start = QFV_PacketExtend (packet, packet_size);
+	byte *packet_data = packet_start;
+
+	qfv_scatter_t id_scatter = {
+		.srcOffset = packet_data - packet_start,
+		.dstOffset = 0,
+		.length = sizeof (uint32_t[light_count]),
+	};
+	auto id_data = (uint32_t *) packet_data;
+	packet_data += id_scatter.length;
+
+	qfv_scatter_t radius_scatter = {
+		.srcOffset = packet_data - packet_start,
+		.dstOffset = 0,
+		.length = sizeof (uint32_t[light_count]),
+	};
+	auto radius_data = (uint32_t *) packet_data;
+	packet_data += radius_scatter.length;
+
+	memcpy (id_data, light_ids, packet_size);
+	memcpy (radius_data, light_radii, packet_size);
+
+	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter, bb);
+	QFV_PacketScatterBuffer (packet, lframe->radius_buffer,
+							 1, &radius_scatter, bb);
+	QFV_PacketSubmit (packet);
+	if (developer & SYS_lighting) {
+		Vulkan_Draw_String (vid.width - 32, 16,
+							va (ctx->va_ctx, "%3d", light_count),
+							ctx);
+	}
+}
+
+static void
 lighting_cull_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
@@ -1071,10 +1159,47 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 								  size, frag_counts, sizeof (uint32_t),
 								  VK_QUERY_RESULT_WAIT_BIT);
 	uint32_t c = 0;
-	for (uint32_t i = 0; i < count; i++) {
-		c += frag_counts[i] != 0;
+	uint32_t ci = 0;
+	vec4f_t  cam = r_refdef.camera[3];
+	uint32_t id = 0;
+	if (lframe->light_queue[ST_CUBE].count) {
+		auto q = lframe->light_queue[ST_CUBE];
+		for (uint32_t i = 0; i < q.count; i++) {
+			uint32_t fc = frag_counts[id++];
+			c += fc != 0;
+			if (!fc) {
+				uint32_t hull = q.start + i;
+				vec4f_t  dist = cam - lframe->positions[hull];
+				dist[3] = 0;
+				float    rad = lframe->id_radius[hull].radius;
+				constexpr float s = 1.5835921350012616f;
+				bool     inside = dotf(dist, dist)[0] < rad * rad * s;
+				ci += inside;
+				if (!inside) {
+					lframe->id_radius[hull].id = ~0u;
+				}
+			}
+		}
 	}
-	if (1) printf ("%d/%d visible\n", c, count);
+	if (lframe->light_queue[ST_PLANE].count) {
+		auto q = lframe->light_queue[ST_PLANE];
+		for (uint32_t i = 0; i < q.count; i++) {
+			uint32_t fc = frag_counts[id++];
+			c += fc != 0;
+			if (!fc) {
+				uint32_t hull = q.start + i;
+				vec4f_t  dist = cam - lframe->positions[hull];
+				dist[3] = 0;
+				float    rad = lframe->id_radius[hull].radius;
+				bool     inside = dotf(dist, dist)[0] < rad * rad;
+				ci += inside;
+				if (!inside) {
+					lframe->id_radius[hull].id = ~0u;
+				}
+			}
+		}
+	}
+	lighting_rewrite_ids (lframe, ctx);
 }
 
 static void
@@ -1734,10 +1859,16 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	}
 	size_t target_count = MaxLights * 6;
 	size_t target_size = frames * sizeof (uint16_t[target_count]);
+	size_t idr_size = frames * sizeof (light_idrad_t[MaxLights]);
+	size_t position_size = frames * sizeof (vec4f_t[MaxLights]);
 	lctx->frames.a[0].stage_targets = malloc (target_size);
+	lctx->frames.a[0].id_radius = malloc (idr_size);
+	lctx->frames.a[0].positions = malloc (position_size);
 	for (size_t i = 1; i < frames; i++) {
 		auto lframe = &lctx->frames.a[i];
 		lframe[0].stage_targets = lframe[-1].stage_targets + target_count;
+		lframe[0].id_radius = lframe[-1].id_radius + MaxLights;
+		lframe[0].positions = lframe[-1].positions + MaxLights;
 	}
 
 	make_default_map (64, lctx->default_map, ctx);

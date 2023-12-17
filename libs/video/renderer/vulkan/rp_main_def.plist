@@ -1366,7 +1366,7 @@ renderpasses = {
 
 				base_pipeline = {
 					@inherit = $pipeline_base;
-					depthStencil = $depth_test_and_write;
+					depthStencil = $depth_test_only;
 					rasterization = $cw_cull_back;
 				};
 				pipelines = {
@@ -1387,7 +1387,7 @@ renderpasses = {
 						vertexInput = $lighting.vertexInput_splat;
 						inputAssembly = $lighting.inputAssembly;
 						layout = $lighting.splat_layout;
-						rasterization = $cw_cull_back;
+						rasterization = $counter_cw_cull_back;
 						depthStencil = $depth_test_only;
 					};
 				};

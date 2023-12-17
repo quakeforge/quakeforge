@@ -80,6 +80,11 @@ typedef struct light_queue_s {
 	uint16_t    count;
 } light_queue_t;
 
+typedef struct light_idrad_s {
+	uint32_t    id;
+	float       radius;
+} light_idrad_t;
+
 typedef struct lightingframe_s {
 	VkDescriptorSet shadowmat_set;
 	VkDescriptorSet lights_set;
@@ -97,6 +102,9 @@ typedef struct lightingframe_s {
 	VkBuffer    radius_buffer;
 	VkBuffer    entid_buffer;
 	light_queue_t light_queue[4];
+
+	light_idrad_t *id_radius;
+	vec4f_t    *positions;
 
 	light_queue_t stage_queue[LIGHTING_STAGES];
 	// map_id (0,5) first layer (5,11)
