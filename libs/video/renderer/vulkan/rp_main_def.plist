@@ -666,6 +666,11 @@ properties = {
 				name = main;
 				module = $builtin/light_debug.frag;
 			};
+			debug_oit = {
+				stage = fragment;
+				name = main;
+				module = $builtin/light_oit.frag;
+			};
 		};
 		vertexInput_splat = {
 			bindings = (
@@ -693,6 +698,9 @@ properties = {
 		};
 		splat_layout = {
 			descriptorSets = (matrix_set, lighting_lights);
+		};
+		splat_oit_layout = {
+			descriptorSets = (matrix_set, lighting_lights, oit_set);
 		};
 		layout = {
 			descriptorSets = (shadowmat_set, lighting_lights,
@@ -1655,6 +1663,27 @@ renderpasses = {
 						vertexInput = $particle.vertexInput;
 						inputAssembly = $particle.inputAssembly;
 						layout = $particle.layout.draw;
+					};
+					debug_lights = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (hull, plane); },
+							{ func = lighting_draw_splats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_splat,
+							$lighting.shader.debug_oit,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_oit_layout;
+						rasterization = $counter_cw_cull_back;
+						depthStencil = $depth_test_only;
 					};
 				};
 			};

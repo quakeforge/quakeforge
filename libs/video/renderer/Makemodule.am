@@ -349,6 +349,8 @@ light_splatf_src = $(vkshaderpath)/light_splat.frag
 light_splatf_c = $(vkshaderpath)/light_splat.frag.spvc
 light_debug_src = $(vkshaderpath)/light_debug.frag
 light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
+light_oit_src = $(vkshaderpath)/light_oit.frag
+light_oit_c = $(vkshaderpath)/light_oit.frag.spvc
 lighting_cascadef_src = $(vkshaderpath)/lighting_cascade.frag
 lighting_cascadef_c = $(vkshaderpath)/lighting_cascade.frag.spvc
 lighting_cubef_src = $(vkshaderpath)/lighting_cube.frag
@@ -459,6 +461,8 @@ $(light_splatf_c): $(light_splatf_src) $(lighting_h)
 
 $(light_debug_c): $(light_debug_src) $(lighting_h)
 
+$(light_oit_c): $(light_oit_src) $(lighting_h)
+
 $(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main)
 
 $(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main)
@@ -534,6 +538,7 @@ vkshader_c = \
 	$(light_splatv_c) \
 	$(light_splatf_c) \
 	$(light_debug_c) \
+	$(light_oit_c) \
 	$(lighting_cascadef_c) \
 	$(lighting_cubef_c) \
 	$(lighting_nonef_c) \
@@ -630,6 +635,7 @@ EXTRA_DIST += \
 	$(light_splatv_src) \
 	$(light_splatf_src) \
 	$(light_debug_src) \
+	$(light_oit_src) \
 	$(lighting_cascadef_src) \
 	$(lighting_cubef_src) \
 	$(lighting_main) \

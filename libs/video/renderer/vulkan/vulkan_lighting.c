@@ -60,6 +60,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
@@ -979,12 +980,14 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 	auto stage = *(int *) params[1]->value;
 
 	if (stage == lighting_hull) {
+		bool planes = shadow_type == ST_PLANE;
 		VkDescriptorSet sets[] = {
 			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 			lframe->lights_set,
+			planes ? Vulkan_Translucent_Descriptors (ctx, ctx->curFrame) : 0,
 		};
 		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 2, sets, 0, 0);
+										layout, 0, 2 + planes, sets, 0, 0);
 
 		VkBuffer buffers[] = {
 			lframe->id_buffer,

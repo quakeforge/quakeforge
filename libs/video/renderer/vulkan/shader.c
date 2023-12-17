@@ -103,6 +103,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/light_oit.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/lighting_cascade.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/lighting_cube.frag.spvc"
@@ -184,6 +186,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
 	{ "light_splat.frag", light_splat_frag, sizeof (light_splat_frag) },
 	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
+	{ "light_oit.frag", light_oit_frag, sizeof (light_oit_frag) },
 	{ "lighting_cascade.frag", lighting_cascade_frag,
 		sizeof (lighting_cascade_frag) },
 	{ "lighting_cube.frag", lighting_cube_frag, sizeof (lighting_cube_frag) },
