@@ -1059,6 +1059,10 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	packet_size += sizeof (float[light_count]);
 	packet_size += sizeof (uint32_t[matrix_id_count]);
 
+	if (!packet_size) {
+		return;
+	}
+
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
