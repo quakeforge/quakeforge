@@ -196,7 +196,7 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 	}
 
 	dfunc->vkCmdEndRenderPass (cmd);
-	QFV_CmdEndLabel (device, cmd);
+	QFV_duCmdEndLabel (device, cmd);
 }
 
 static void
