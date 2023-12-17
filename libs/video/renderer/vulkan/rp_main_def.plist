@@ -2282,224 +2282,192 @@ renderpasses = {
 				};
 			};
 		};
-		output = shadow;
 	};
 	shadow2 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x03u);
 		});
-		output = cascade_shadow;
 	};
 	shadow3 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x07u);
 		});
-		output = cascade_shadow;
 	};
-	cascade_shadow = {
+	shadow4 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x0fu);
 		});
-		output = cascade_shadow;
 	};
 	shadow5 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1fu);
 		});
-		output = cascade_shadow;
 	};
-	cube_shadow = {
+	shadow6 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu);
 		});
-		output = cube_shadow;
 	};
 	shadow7 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7fu);
 		});
-		output = cascade_shadow;
 	};
 	shadow8 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow9 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1ffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow10 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3ffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow11 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7ffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow12 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xfffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow13 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1fffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow14 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow15 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7fffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow16 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow17 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1ffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow18 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3ffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow19 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7ffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow20 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xfffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow21 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1fffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow22 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow23 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7fffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow24 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow25 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1ffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow26 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3ffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow27 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7ffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow28 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xfffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow29 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x1fffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow30 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow31 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x7fffffffu);
 		});
-		output = cascade_shadow;
 	};
 	shadow32 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0xffffffffu);
 		});
-		output = cascade_shadow;
 	};
 };
 steps = {
@@ -2593,9 +2561,9 @@ steps = {
 				shadow = $renderpasses.shadow;
 				shadow2 = $renderpasses.shadow2;
 				shadow3 = $renderpasses.shadow3;
-				cascade_shadow = $renderpasses.cascade_shadow;
+				shadow4 = $renderpasses.shadow4;
 				shadow5 = $renderpasses.shadow5;
-				cube_shadow = $renderpasses.cube_shadow;
+				shadow6 = $renderpasses.shadow6;
 				shadow7 = $renderpasses.shadow7;
 				shadow8 = $renderpasses.shadow8;
 				shadow9 = $renderpasses.shadow9;
