@@ -389,10 +389,19 @@ lighting_draw_shadow_maps (const exprval_t **params, exprval_t *result,
 	}
 }
 
+typedef enum : uint32_t {
+	style_enable,
+	style_disable = 0x80000000,
+} style_e;
+
 static uint32_t
-make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
-		 uint32_t type)
+make_id (const light_control_t *cont, style_e style)
 {
+	uint32_t matrix_index = cont->matrix_id;
+	uint32_t map_index = cont->map_index;
+	uint32_t layer = cont->layer;
+	uint32_t type = cont->mode;
+
 	if (type == ST_CUBE) {
 		// on the GPU, layer is the cube layer, and one cube layer is 6
 		// flat image layers
@@ -400,7 +409,8 @@ make_id (uint32_t matrix_index, uint32_t map_index, uint32_t layer,
 	}
 	return ((matrix_index & 0x3fff) << 0)
 		 | ((map_index & 0x1f) << 14)
-		 | ((layer & 0x7ff) << 19);
+		 | ((layer & 0x7ff) << 19)
+		 | style;
 }
 
 static void
@@ -791,10 +801,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		for (int i = 0; i < ndlight; i++) {
 			auto r = &lctx->light_control.a[lctx->dynamic_base + i];
 			render[i] = (qfv_light_render_t) {
-				.id_data = make_id(r->matrix_id, r->map_index, r->layer,
-								   r->mode),
+				.id_data = make_id(r, style_disable),
 			};
-			render[i].id_data |= 0x80000000;	// no style
 		}
 		QFV_PacketScatterBuffer (packet, lframe->render_buffer,
 								 1, &render_scatter, bb);
@@ -2090,7 +2098,7 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		}
 		auto        r = &lctx->light_control.a[id];
 		render[i] = (qfv_light_render_t) {
-			.id_data = make_id(r->matrix_id, r->map_index, r->layer, r->mode),
+			.id_data = make_id(r, style_enable),
 			.style = get_lightstyle (ent),
 		};
 	}
