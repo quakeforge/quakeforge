@@ -641,10 +641,12 @@ CL_PreFrame (void)
 	qfZoneNamedN (pfzone, "CL_PreFrame", true);
 	IN_ProcessEvents ();
 
+	qfMessageL ("scripts");
 	GIB_Thread_Execute ();
 	cmd_source = src_command;
 	Cbuf_Execute_Stack (host_cbuf);
 
+	qfMessageL ("send");
 	CL_SendCmd ();
 }
 

@@ -1238,6 +1238,7 @@ SV_SpawnServer (const char *server)
 void
 SV_Frame (void)
 {
+	qfZoneScoped (true);
 	if (net_is_dedicated) {
 		Con_ProcessInput ();
 
