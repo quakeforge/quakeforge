@@ -1472,7 +1472,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	lctx->shadow_info = (qfv_attachmentinfo_t) {
 		.name = "$shadow",
-		.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+		.format = VK_FORMAT_D32_SFLOAT,
 		.samples = 1,
 		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -1594,7 +1594,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
 
 	Vulkan_Script_SetOutput (ctx,
-			&(qfv_output_t) { .format = VK_FORMAT_X8_D24_UNORM_PACK32 });
+			&(qfv_output_t) { .format = VK_FORMAT_D32_SFLOAT });
 
 	DARRAY_INIT (&lctx->light_mats, 16);
 	DARRAY_INIT (&lctx->light_control, 16);
@@ -1672,7 +1672,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		.image = {
 			.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
 			.type = VK_IMAGE_TYPE_2D,
-			.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+			.format = VK_FORMAT_D32_SFLOAT,
 			.extent = { 64, 64, 1 },
 			.num_mipmaps = 1,
 			.num_layers = 6,
@@ -1687,7 +1687,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		.image_view = {
 			.image = default_map - lctx->light_resources->objects,
 			.type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY,
-			.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+			.format = VK_FORMAT_D32_SFLOAT,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
 				.levelCount = VK_REMAINING_MIP_LEVELS,
@@ -1701,7 +1701,7 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 		.image_view = {
 			.image = default_map - lctx->light_resources->objects,
 			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-			.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+			.format = VK_FORMAT_D32_SFLOAT,
 			.subresourceRange = {
 				.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
 				.levelCount = VK_REMAINING_MIP_LEVELS,
@@ -2422,7 +2422,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				.image = {
 					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
 					.type = VK_IMAGE_TYPE_2D,
-					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.format = VK_FORMAT_D32_SFLOAT,
 					.extent = { maps[i].size, maps[i].size, 1 },
 					.num_mipmaps = 1,
 					.num_layers = maps[i].layers,
@@ -2439,7 +2439,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 					.image = i,
 					.type = cube ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
 								 : VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.format = VK_FORMAT_D32_SFLOAT,
 					.subresourceRange = {
 						.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
 						.levelCount = VK_REMAINING_MIP_LEVELS,
@@ -2458,7 +2458,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				.type = qfv_res_image,
 				.image = {
 					.type = VK_IMAGE_TYPE_2D,
-					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.format = VK_FORMAT_D32_SFLOAT,
 					.extent = { size, size, 1 },
 					.num_mipmaps = 1,
 					.num_layers = stage_layers[i],
@@ -2473,7 +2473,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				.image_view = {
 					.image = mctx.numMaps + ind,
 					.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-					.format = VK_FORMAT_X8_D24_UNORM_PACK32,
+					.format = VK_FORMAT_D32_SFLOAT,
 					.subresourceRange = {
 						.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
 						.levelCount = VK_REMAINING_MIP_LEVELS,

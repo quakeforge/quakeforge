@@ -1112,12 +1112,12 @@ descriptorSetLayouts = {
 images = {
 	occlusion_depth = {
 		@inherit = $image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	depth = {
 		@inherit = $image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	color = {
@@ -1153,12 +1153,12 @@ images = {
 
 	occlusion_cube_depth = {
 		@inherit = $cube_image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_depth = {
 		@inherit = $cube_image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_color = {
