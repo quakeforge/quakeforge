@@ -83,6 +83,7 @@ typedef struct light_queue_s {
 typedef struct light_idrad_s {
 	uint32_t    id;
 	float       radius;
+	uint32_t    leafnum;
 } light_idrad_t;
 
 typedef struct lightingframe_s {

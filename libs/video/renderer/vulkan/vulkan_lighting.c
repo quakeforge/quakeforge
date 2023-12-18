@@ -167,6 +167,7 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto lctx = ctx->lighting_context;
+	auto lframe = &lctx->frames.a[ctx->curFrame];
 
 	if (!lctx->ldata) {
 		return;
@@ -185,18 +186,13 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
 
-	auto entqueue = r_ent_queue;   //FIXME fetch from scene
-	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
-		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
-		if (!has_dynlight (ent)) {
-			auto ls = get_lightstyle (ent);
-			if (!d_lightstylevalue[ls]) {
-				continue;
+	for (int i = 0; i < ST_COUNT; i++) {
+		auto q = lframe->light_queue[i];
+		for (uint32_t j = 0; j < q.count; j++) {
+			uint32_t leafnum = lframe->id_radius[q.start + j].leafnum;
+			if (leafnum != ~0u) {
+				set_add (&leafs, leafnum);
 			}
-		}
-		auto leafnum = get_lightleaf (ent);
-		if (leafnum != ~0u) {
-			set_add (&leafs, leafnum);
 		}
 	}
 
@@ -629,6 +625,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 
 	uint32_t light_ids[ST_COUNT][MaxLights];
 	float    light_radii[ST_COUNT][MaxLights];
+	uint32_t light_leafs[ST_COUNT][MaxLights];
 	vec4f_t  light_positions[ST_COUNT][MaxLights];
 	uint32_t entids[ST_COUNT][MaxLights];
 
@@ -636,6 +633,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	auto queue = lframe->light_queue;
 
 	uint32_t dynamic_light_entities[MaxLights];
+	uint32_t dynamic_light_leafs[MaxLights];
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
 
@@ -644,6 +642,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {
 			dynamic_light_entities[ndlight] = ent.id;
+			dynamic_light_leafs[ndlight] = get_lightleaf (ent);
 			dynamic_lights[ndlight] = get_dynlight (ent);
 			ndlight++;
 			continue;
@@ -662,6 +661,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		uint32_t ind = queue[mode].count++;
 		light_ids[mode][ind] = id;
 		light_radii[mode][ind] = light_radius (light);
+		light_leafs[mode][ind] = get_lightleaf (ent);
 		light_positions[mode][ind] = light->position;
 		entids[mode][ind] = ent.id;
 	}
@@ -764,6 +764,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			uint32_t ind = queue[ST_CUBE].count++;
 			light_ids[ST_CUBE][ind] = id;
 			light_radii[ST_CUBE][ind] = light_radius (&light);
+			light_leafs[ST_CUBE][ind] = dynamic_light_leafs[i];
 			light_positions[ST_CUBE][ind] = light.position;
 			entids[ST_CUBE][ind] = dynamic_light_entities[i];
 
@@ -852,6 +853,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 				idr[j] = (light_idrad_t) {
 					.id = light_ids[i][j],
 					.radius = light_radii[i][j],
+					.leafnum = light_leafs[i][j],
 				};
 				pos[j] = light_positions[i][j];
 			}
@@ -1011,6 +1013,7 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	}
 	uint32_t light_ids[count];
 	float light_radii[count];
+	uint32_t light_leafs[count];
 	uint32_t light_count = 0;
 	light_queue_t queue[ST_COUNT] = {};
 	for (int i = 0; i < ST_COUNT; i++) {
@@ -1018,9 +1021,11 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		for (uint32_t j = 0; j < q[0].count; j++) {
 			uint32_t    id = lframe->id_radius[q[0].start + j].id;
 			float       radius = lframe->id_radius[q[0].start + j].radius;
+			uint32_t    leaf = lframe->id_radius[q[0].start + j].leafnum;
 			if (id != ~0u) {
 				light_ids[queue[i].start + queue[i].count] = id;
 				light_radii[queue[i].start + queue[i].count] = radius;
+				light_leafs[queue[i].start + queue[i].count] = leaf;
 				queue[i].count++;
 			}
 		}
@@ -1045,6 +1050,12 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		}
 		lframe->stage_queue[r->stage_index].count += r->numLayers;
 		matrix_id_count += r->numLayers;
+
+		lframe->id_radius[i] = (light_idrad_t) {
+			.id = light_ids[i],
+			.radius = light_radii[i],
+			.leafnum = light_leafs[i],
+		};
 	}
 	lframe->stage_queue[0].start = 0;
 	for (int i = 1; i < LIGHTING_STAGES; i++) {
