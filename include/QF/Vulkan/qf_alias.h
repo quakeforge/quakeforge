@@ -56,7 +56,7 @@ typedef struct qfv_alias_mesh_s {
 	VkBuffer    vertex_buffer;
 	VkBuffer    uv_buffer;
 	VkBuffer    index_buffer;
-	VkDeviceMemory memory;
+	struct qfv_resource_s *resources;
 } qfv_alias_mesh_t;
 
 typedef struct qfv_alias_skin_s {
