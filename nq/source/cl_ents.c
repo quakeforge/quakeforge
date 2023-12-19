@@ -205,10 +205,13 @@ CL_RelinkEntities (void)
 		// if the object wasn't included in the last packet, or the model
 		// has been removed, remove the entity
 		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
-			if (Entity_Valid (ent)) {
-				Scene_DestroyEntity (cl_world.scene, ent);
+			// don't delete the player entity
+			if (i != cl.viewentity) {
+				if (Entity_Valid (ent)) {
+					Scene_DestroyEntity (cl_world.scene, ent);
+				}
+				continue;
 			}
-			continue;
 		}
 
 		if (!Entity_Valid (ent)) {
