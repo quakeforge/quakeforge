@@ -18,7 +18,7 @@ from_to_rotation (vec3 a, vec3 b)
 {
 	float d = dot (a + b, a + b);
 	float qc = sqrt (d);
-	vec3  qv = d > 1e-6 ? cross (a, b) / qc : vec3 (1, 0, 0);
+	vec3  qv = d > 1e-6 ? cross (a, b) / qc : vec3 (0, 0, 1);
 	return vec4 (qv, qc * 0.5);
 }
 

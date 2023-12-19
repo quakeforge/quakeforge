@@ -845,6 +845,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
 								 ir_barrier);
 
+		memset (lframe->id_radius, -1, MaxLights * sizeof (light_idrad_t));
 		for (int i = 0; i < ST_COUNT; i++) {
 			auto q = queue[i];
 			auto idr = &lframe->id_radius[q.start];
@@ -2045,10 +2046,11 @@ create_light_matrices (lightingctx_t *lctx)
 				break;
 			case ST_CASCADE:
 			case ST_PLANE:
-				//FIXME will fail for -ref_direction
 				dir = light->direction;
 				dir[3] = 0;
-				mat4fquat (view, qrotf (dir, ref_direction));
+				vec4f_t q = dir[0] == -1 ? (vec4f_t) { 0, 0, 1, 0 }
+										 : qrotf (dir, ref_direction);
+				mat4fquat (view, q);
 				break;
 		}
 		vec4f_t pos = -light->position;
@@ -2100,13 +2102,10 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	QFV_PacketSubmit (packet);
 
-	// FIXME temporary until batched shadow rendering is implemented
 	packet = QFV_PacketAcquire (ctx->staging);
 	size_t id_size = sizeof (uint32_t[MaxLights * 6]);
 	uint32_t *id_data = QFV_PacketExtend (packet, id_size);
-	for (int i = 0; i < MaxLights * 6; i++) {
-		id_data[i] = i;
-	}
+	memset (id_data, -1, id_size);
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
 		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, bb);
