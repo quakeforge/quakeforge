@@ -18,9 +18,7 @@
 
 - (int) indexLocal: (Symbol *) sym
 {
-    local int index;
-
-    for (index = 0; index < [names count]; index++) {
+    for (unsigned index = 0; index < [names count]; index++) {
             if (sym == [names objectAtIndex: index]) {
                     return index;
             }

@@ -10,7 +10,7 @@
 static int
 center (unsigned v, int len)
 {
-	return v > len / 2 ? v / 2 : 0;
+	return v > (unsigned) (len / 2) ? v / 2 : 0;
 }
 
 static void
@@ -245,7 +245,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollLeft:(unsigned) count
 {
-	if (base.x > count) {
+	if ((unsigned) base.x > count) {
 		base.x -= count;
 	} else {
 		base.x = 0;
@@ -257,7 +257,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollRight:(unsigned) count
 {
-	if (1024 - base.x > count) {
+	if ((unsigned) (1024 - base.x) > count) {
 		base.x += count;
 	} else {
 		base.x = 1024;
@@ -269,9 +269,9 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollTo:(unsigned)target
 {
-	if (target > base.y) {
+	if (target > (unsigned) base.y) {
 		base_index = [buffer nextLine:base_index :target - base.y];
-	} else if (target < base.y) {
+	} else if (target < (unsigned) base.y) {
 		base_index = [buffer prevLine:base_index :base.y - target];
 	}
 	base.y = target;
@@ -285,7 +285,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	[self recenter:0];
 	unsigned count = cursor.y;
 
-	if (count > ylen) {
+	if (count > (unsigned) ylen) {
 		count = ylen;
 	}
 	if (count) {
@@ -305,7 +305,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	[self recenter:0];
 	unsigned count = line_count - cursor.y;
 
-	if (count > ylen) {
+	if (count > (unsigned) ylen) {
 		count = ylen;
 	}
 	if (count) {
@@ -389,7 +389,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 -charDown
 {
 	[self recenter:0];
-	if (cursor.y >= line_count) {
+	if ((unsigned) cursor.y >= line_count) {
 		return self;
 	}
 	cursor.y++;
@@ -547,7 +547,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 -moveEOS
 {
 	unsigned count = line_count - base.y;
-	if (count > ylen - 1) {
+	if (count > (unsigned) (ylen - 1)) {
 		count = ylen - 1;
 	}
 	line_index = [buffer nextLine:base_index :count];
@@ -603,9 +603,9 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -gotoLine:(unsigned) line
 {
-	if (line > cursor.y) {
+	if (line > (unsigned) cursor.y) {
 		line_index = [buffer nextLine:line_index :line - cursor.y];
-	} else if (line < cursor.y) {
+	} else if (line < (unsigned) cursor.y) {
 		line_index = [buffer prevLine:line_index :cursor.y - line];
 	}
 	cursor.y = line;

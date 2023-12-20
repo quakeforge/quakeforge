@@ -79,7 +79,7 @@ free_defs (LocalsData *self)
 	num_user_defs = 0;
 	if (aux_func) {
 		defs = qdb_get_local_defs (target, fnum);
-		for (int i = 0; i < aux_func.num_locals; i++) {
+		for (unsigned i = 0; i < aux_func.num_locals; i++) {
 			string def_name = qdb_get_string (target, defs[i].name);
 			if (str_mid (def_name, 0, 1) != ".") {
 				num_user_defs++;
@@ -88,7 +88,7 @@ free_defs (LocalsData *self)
 		def_views = obj_malloc (num_user_defs);
 		def_rows = obj_malloc (num_user_defs + 1);
 		def_rows[0] = 0;
-		for (int i = 0, j = 0; i < aux_func.num_locals; i++) {
+		for (unsigned i = 0, j = 0; i < aux_func.num_locals; i++) {
 			string def_name = qdb_get_string (target, defs[i].name);
 			if (str_mid (def_name, 0, 1) == ".") {
 				continue;

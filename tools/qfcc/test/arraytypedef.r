@@ -41,7 +41,7 @@ find_xdef (string varname)
 	//FIXME need a simple way to get at a def's meta-data
 	xdefs_t    *xdefs = PR_FindGlobal (".xdefs");
 	xdef_t     *xdef = xdefs.xdefs;
-	while (xdef - xdefs.xdefs < xdefs.num_xdefs && xdef.addr != varaddr) {
+	while (xdef - xdefs.xdefs < (int) xdefs.num_xdefs && xdef.addr != varaddr) {
 		xdef++;
 	}
 	if (xdef.addr != varaddr) {

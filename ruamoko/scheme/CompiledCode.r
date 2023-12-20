@@ -41,7 +41,7 @@
     
 - (void) compile
 {
-    local int index;
+    local unsigned index;
     local Instruction *inst;
     literals = [Frame newWithSize: [constants count] link: nil];
     code = obj_malloc (@sizeof(instruction_t) * [instructions count]);

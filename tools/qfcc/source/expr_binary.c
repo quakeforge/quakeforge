@@ -60,6 +60,7 @@ static const expr_t *inverse_multiply (int op, const expr_t *e1,
 									   const expr_t *e2);
 static const expr_t *double_compare (int op, const expr_t *e1,
 									 const expr_t *e2);
+static const expr_t *uint_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_dot (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_multiply (int op, const expr_t *e1, const expr_t *e2);
@@ -391,10 +392,10 @@ static expr_type_t int_uint[] = {
 	{SHR,	&type_int, 0, &type_int},
 	{EQ,	&type_int, 0, &type_int},
 	{NE,	&type_int, 0, &type_int},
-	{LE,	&type_int, 0, &type_int},
-	{GE,	&type_int, 0, &type_int},
-	{LT,	&type_int, 0, &type_int},
-	{GT,	&type_int, 0, &type_int},
+	{LE,	.process = uint_compare},
+	{GE,	.process = uint_compare},
+	{LT,	.process = uint_compare},
+	{GT,	.process = uint_compare},
 	{0, 0}
 };
 
@@ -469,10 +470,10 @@ static expr_type_t uint_int[] = {
 	{SHR,	&type_uint, 0,        &type_int },
 	{EQ,	&type_int, &type_int, &type_int },
 	{NE,	&type_int, &type_int, &type_int },
-	{LE,	&type_int, &type_int, &type_int },
-	{GE,	&type_int, &type_int, &type_int },
-	{LT,	&type_int, &type_int, &type_int },
-	{GT,	&type_int, &type_int, &type_int },
+	{LE,	.process = uint_compare},
+	{GE,	.process = uint_compare},
+	{LT,	.process = uint_compare},
+	{GT,	.process = uint_compare},
 	{0, 0}
 };
 
@@ -1069,6 +1070,34 @@ double_compare (int op, const expr_t *e1, const expr_t *e2)
 	}
 	e = new_binary_expr (op, e1, e2);
 	e->expr.type = &type_long;
+	return e;
+}
+
+static const expr_t *
+uint_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	expr_t     *e;
+
+	if (is_constant (e1) && e1->implicit && is_int (t1)) {
+		t1 = &type_uint;
+		e1 = cast_expr (t1, e1);
+	}
+	if (is_constant (e2) && e2->implicit && is_int (t2)) {
+		t2 = &type_uint;
+		e2 = cast_expr (t2, e2);
+	}
+	if (t1 != t2) {
+		warning (e1, "comparison between signed and unsigned");
+		if (is_int (t1)) {
+			e1 = cast_expr (&type_uint, e2);
+		} else {
+			e2 = cast_expr (&type_uint, e2);
+		}
+	}
+	e = new_binary_expr (op, e1, e2);
+	e->expr.type = &type_int;
 	return e;
 }
 
