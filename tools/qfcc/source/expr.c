@@ -2524,6 +2524,9 @@ incop_expr (int op, const expr_t *e, int postop)
 		return e;
 
 	auto one = new_int_expr (1);		// int constants get auto-cast to float
+	if (is_scalar (get_type (e))) {
+		one = cast_expr (get_type (e), one);
+	}
 	if (postop) {
 		expr_t     *t1, *t2;
 		type_t     *type = get_type (e);
