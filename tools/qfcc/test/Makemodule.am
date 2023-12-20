@@ -70,6 +70,7 @@ test_progs_dat=\
 	tools/qfcc/test/twice-called.dat \
 	tools/qfcc/test/typedef.dat \
 	tools/qfcc/test/typelinker.dat \
+	tools/qfcc/test/upostop.dat \
 	tools/qfcc/test/unaryminus.dat \
 	tools/qfcc/test/vecaddr.dat \
 	tools/qfcc/test/vecexpr.dat \
@@ -811,6 +812,16 @@ tools/qfcc/test/typelinker.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(typelinker_dep) # am--include-marker
 r_depfiles_remade += $(typelinker_dep)
+
+tools_qfcc_test_upostop_dat_SOURCES=tools/qfcc/test/upostop.r
+upostop_obj=$(tools_qfcc_test_upostop_dat_SOURCES:.r=.o)
+upostop_dep=$(call qcautodep,$(tools_qfcc_test_upostop_dat_SOURCES))
+tools/qfcc/test/upostop.dat$(EXEEXT): $(upostop_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(upostop_obj)
+tools/qfcc/test/upostop.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(upostop_dep) # am--include-marker
+r_depfiles_remade += $(upostop_dep)
 
 tools_qfcc_test_unaryminus_dat_SOURCES=tools/qfcc/test/unaryminus.r
 unaryminus_obj=$(tools_qfcc_test_unaryminus_dat_SOURCES:.r=.o)

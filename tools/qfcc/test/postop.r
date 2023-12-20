@@ -10,10 +10,21 @@ int array_index (void)
 	return i == 3 && !(array[0] | array[1] | array[2]);
 }
 
+int iter_check (int count)
+{
+	int i = count;
+	int iters = 0;
+	while (i-- > 0) {
+		iters++;
+	}
+	return iters == count;
+}
+
 int
 main ()
 {
 	int         ret = 0;
 	ret |= !array_index ();
+	ret |= !iter_check (1);
 	return ret;
 }
