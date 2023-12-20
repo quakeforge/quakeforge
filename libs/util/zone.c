@@ -55,7 +55,7 @@ static void Cache_Profile_r (memhunk_t *hunk);
 static bool Cache_FreeLRU (memhunk_t *hunk);
 
 #define	ZONEID			0x1d4a11
-#define	HUNK_SENTINAL	0x1df001ed
+#define	HUNK_SENTINEL	0x1df001ed
 
 #define MINFRAGMENT	64
 #define HUNK_ALIGN 64
@@ -162,7 +162,7 @@ z_merge_blocks (memzone_t *zone, memblock_t *a, memblock_t *b)
 }
 
 static void
-z_set_sentinal (memblock_t *block)
+z_set_sentinel (memblock_t *block)
 {
 	*(int *) ((byte *) block + block->block_size - 4) = ZONEID;
 }
@@ -361,7 +361,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	zone->used += base->block_size;
 
 	// marker for memory trash testing
-	z_set_sentinal (base);
+	z_set_sentinel (base);
 
 	if (developer & SYS_zone) {
 		Z_CheckHeap (zone);
@@ -402,14 +402,14 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 			}
 		}
 		block->size = size;
-		z_set_sentinal (block);
+		z_set_sentinel (block);
 	} else {
 		auto other = block->next;
 		if (!other->tag && block->block_size + other->block_size >= new_size) {
 			z_split_block (other, new_size - block->block_size);
 			z_merge_blocks (zone, block, other);
 			block->size = size;
-			z_set_sentinal (block);
+			z_set_sentinel (block);
 		} else {
 			ptr = Z_TagMalloc (zone, size, 1);
 		}
@@ -593,8 +593,8 @@ struct cache_system_s {
 } __attribute__((aligned (64)));
 
 typedef struct {
-	int         sentinal1;
-	int         sentinal2;
+	int         sentinel1;
+	int         sentinel2;
 	size_t      size;		// including sizeof(hunkblk_t), -1 = not allocated
 	char        name[16];
 } __attribute__((aligned (64))) hunkblk_t;
@@ -627,7 +627,7 @@ static int
 hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 {
 	const char *msg = 0;
-	if (h->sentinal1 != HUNK_SENTINAL || h->sentinal2 != HUNK_SENTINAL) {
+	if (h->sentinel1 != HUNK_SENTINEL || h->sentinel2 != HUNK_SENTINEL) {
 		msg = "Hunk_Check: trashed sentinel";
 	}
 	if (!msg && (h->size < sizeof (hunkblk_t)
@@ -671,7 +671,7 @@ hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 /*
 	Hunk_Check
 
-	Run consistancy and sentinal trahing checks
+	Run consistancy and sentinel trahing checks
 */
 VISIBLE void
 Hunk_Check (memhunk_t *hunk)
@@ -820,8 +820,8 @@ Hunk_RawAlloc (memhunk_t *hunk, size_t size)
 	Cache_FreeLow (hunk, hunk->low_used);
 
 	h->size = size;
-	h->sentinal1 = HUNK_SENTINAL;
-	h->sentinal2 = HUNK_SENTINAL;
+	h->sentinel1 = HUNK_SENTINEL;
+	h->sentinel2 = HUNK_SENTINEL;
 	h->name[0] = 0;
 
 	return (void *) (h + 1);
@@ -907,8 +907,8 @@ Hunk_HighAlloc (memhunk_t *hunk, size_t size)
 	Cache_FreeHigh (hunk, hunk->high_used);
 
 	h = (void *) (hunk->base + hunk->size - hunk->high_used);
-	h->sentinal1 = HUNK_SENTINAL;
-	h->sentinal2 = HUNK_SENTINAL;
+	h->sentinel1 = HUNK_SENTINEL;
+	h->sentinel2 = HUNK_SENTINEL;
 	h->size = size;
 	h->name[0] = 0;
 	return h + 1;
