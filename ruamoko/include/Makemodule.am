@@ -57,6 +57,3 @@ ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
 
 ruamoko_include_HEADERS = $(ruamoko_include)
 ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)
-
-EXTRA_DIST += \
-	ruamoko/include/key.h

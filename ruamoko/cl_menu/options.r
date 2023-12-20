@@ -32,7 +32,6 @@
 #include "string.h"
 #include "draw.h"
 #include "cvar.h"
-#include "key.h"
 #include "controls_o.h"
 #include "options_util.h"
 #include "qfs.h"

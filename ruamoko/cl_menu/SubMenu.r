@@ -1,5 +1,4 @@
-#include "key.h"
-
+#include <QF/keys.h>
 #include "menu.h"
 #include "SubMenu.h"
 

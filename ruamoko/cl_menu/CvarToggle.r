@@ -1,3 +1,4 @@
+#include <QF/keys.h>
 #include "cvar.h"
 
 #include "CvarToggle.h"
