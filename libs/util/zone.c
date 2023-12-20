@@ -108,6 +108,31 @@ z_offset (memzone_t *zone, memblock_t *block)
 	return offset / zone->ele_size + zone->offset;
 }
 
+static memblock_t *
+_z_ptr_block (memzone_t *zone, void *ptr, const char *func)
+{
+	auto block = (memblock_t *) ptr - 1;
+	if (((byte *) block < (byte *) zone)
+		|| (((byte *) block) >= (byte *) zone + zone->size)) {
+		if (zone->error) {
+			zone->error (zone->data, "%s: pointer outside of zone: %x", func,
+						 z_offset (zone, block));
+		}
+		Sys_Error ("%s: pointer outside of zone: %x", func,
+				   z_offset (zone, block));
+	}
+	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
+		if (zone->error) {
+			zone->error (zone->data, "%s: zone without ZONEID: %p (%x)",
+						 func, ptr, z_offset (zone, block));
+		}
+		Sys_Error ("%s: zone without ZONEID: %p (%x)",
+				   func, ptr, z_offset (zone, block));
+	}
+	return block;
+}
+#define z_ptr_block(zone, ptr) _z_ptr_block (zone, ptr, __FUNCTION__)
+
 static void
 z_error (memzone_t *zone, const char *msg)
 {
@@ -161,26 +186,7 @@ Z_Free (memzone_t *zone, void *ptr)
 		Sys_Error ("Z_Free: NULL pointer");
 	}
 
-	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (((byte *) block < (byte *) zone)
-		|| (((byte *) block) >= (byte *) zone + zone->size)) {
-		if (zone->error) {
-			zone->error (zone->data,
-						 "Z_Free: freed a pointer outside of the zone: %x",
-						 z_offset (zone, block));
-		}
-		Sys_Error ("Z_Free: freed a pointer outside of the zone: %x",
-				   z_offset (zone, block));
-	}
-	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		Sys_Printf ("bad pointer %x", z_offset (zone, block));
-		Z_Print (zone);
-		fflush (stdout);
-		if (zone->error) {
-			zone->error (zone->data, "bad pointer %x", z_offset (zone, block));
-		}
-		Sys_Error ("Z_Free: freed a pointer without ZONEID");
-	}
+	block = z_ptr_block (zone, ptr);
 	if (block->tag == 0) {
 		if (zone->error) {
 			zone->error (zone->data, "Z_Free: freed a freed pointer");
@@ -321,16 +327,7 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 	if (developer & SYS_zone)
 		Z_CheckHeap (zone);	// DEBUG
 
-	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		if (zone->error) {
-			zone->error (zone->data,
-						 "Z_Realloc: realloced a pointer without ZONEID: "
-						 "%p (%x)", ptr, z_offset (zone, block));
-		}
-		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID: %p (%x)",
-				   ptr, z_offset (zone, block));
-	}
+	block = z_ptr_block (zone, ptr);
 	if (block->tag == 0) {
 		if (zone->error) {
 			zone->error (zone->data, "Z_Realloc: realloced a freed pointer");
@@ -455,7 +452,7 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 VISIBLE int
 Z_IncRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	if (!++block->retain) {
 		z_error (zone, "inc retain count wrapped to 0");
 	}
@@ -465,7 +462,7 @@ Z_IncRetainCount (memzone_t *zone, void *ptr)
 VISIBLE int
 Z_DecRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	if (--block->retain == -1) {
 		z_error (zone, "dec retain count wrapped past 0");
 	}
@@ -475,14 +472,14 @@ Z_DecRetainCount (memzone_t *zone, void *ptr)
 VISIBLE int
 Z_GetRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	return block->retain;
 }
 
 VISIBLE int
 Z_GetTag (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	return block->tag;
 }
 
@@ -492,7 +489,7 @@ Z_SetTag (memzone_t *zone, void *ptr, int tag)
 	if (!tag) {
 		z_error (zone, "Attept to set tag to 0");
 	}
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	block->tag = tag;
 }
 VISIBLE void
