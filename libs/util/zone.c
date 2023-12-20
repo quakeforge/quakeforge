@@ -88,7 +88,7 @@ struct memzone_s {
 	size_t      used;		// ammount used, including header
 	size_t      offset;
 	size_t      ele_size;
-	void        (*error) (void *, const char *);
+	zone_err_f  error;
 	void       *data;
 	memblock_t *rover;
 	memblock_t  blocklist;	// start / end cap for linked list
@@ -111,8 +111,9 @@ z_offset (memzone_t *zone, memblock_t *block)
 static void
 z_error (memzone_t *zone, const char *msg)
 {
-	if (zone->error)
-		zone->error (zone->data, msg);
+	if (zone->error) {
+		zone->error (zone->data, "%s", msg);
+	}
 	Sys_Error ("%s", msg);
 }
 
@@ -154,42 +155,45 @@ Z_Free (memzone_t *zone, void *ptr)
 	memblock_t	*block, *other;
 
 	if (!ptr) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Free: NULL pointer");
+		}
 		Sys_Error ("Z_Free: NULL pointer");
 	}
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (((byte *) block < (byte *) zone)
 		|| (((byte *) block) >= (byte *) zone + zone->size)) {
-		const char *msg;
-		msg = nva ("Z_Free: freed a pointer outside of the zone: %x",
+		if (zone->error) {
+			zone->error (zone->data,
+						 "Z_Free: freed a pointer outside of the zone: %x",
+						 z_offset (zone, block));
+		}
+		Sys_Error ("Z_Free: freed a pointer outside of the zone: %x",
 				   z_offset (zone, block));
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
 	}
 	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		const char *msg;
-		msg = nva ("bad pointer %x", z_offset (zone, block));
-		Sys_Printf ("%s\n", msg);
+		Sys_Printf ("bad pointer %x", z_offset (zone, block));
 		Z_Print (zone);
 		fflush (stdout);
-		if (zone->error)
-			zone->error (zone->data, msg);
+		if (zone->error) {
+			zone->error (zone->data, "bad pointer %x", z_offset (zone, block));
+		}
 		Sys_Error ("Z_Free: freed a pointer without ZONEID");
 	}
 	if (block->tag == 0) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Free: freed a freed pointer");
+		}
 		Sys_Error ("Z_Free: freed a freed pointer");
 	}
 	if (block->retain) {
-		const char *msg = nva ("Z_Free: freed a retained pointer: %d",
+		if (zone->error) {
+			zone->error (zone->data, "Z_Free: freed a retained pointer: %d",
 							   block->retain);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		}
+		Sys_Error ("Z_Free: freed a retained pointer: %d", block->retain);
+	}
 	}
 
 	block->tag = 0;		// mark as free
@@ -225,11 +229,11 @@ Z_Malloc (memzone_t *zone, size_t size)
 
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf) {
-		const char *msg;
-		msg = nva ("Z_Malloc: failed on allocation of %zd bytes", size);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		if (zone->error) {
+			zone->error (zone->data,
+						 "Z_Malloc: failed on allocation of %zd bytes", size);
+		}
+		Sys_Error ("Z_Malloc: failed on allocation of %zd bytes", size);
 	}
 	memset (buf, 0, size);
 
@@ -247,8 +251,9 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 		Z_CheckHeap (zone);	// DEBUG
 
 	if (!tag) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_TagMalloc: tried to use a 0 tag");
+		}
 		Sys_Error ("Z_TagMalloc: tried to use a 0 tag");
 	}
 
@@ -318,14 +323,18 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 
 	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
 	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data,
-						 "Z_Realloc: realloced a pointer without ZONEID");
-		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
+						 "Z_Realloc: realloced a pointer without ZONEID: "
+						 "%p (%x)", ptr, z_offset (zone, block));
+		}
+		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID: %p (%x)",
+				   ptr, z_offset (zone, block));
 	}
 	if (block->tag == 0) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Realloc: realloced a freed pointer");
+		}
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
 	}
 
@@ -337,11 +346,11 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 	Z_Free (zone, ptr);
 	ptr = Z_TagMalloc (zone, size, 1);
 	if (!ptr) {
-		const char *msg;
-		msg = nva ("Z_Realloc: failed on allocation of %zd bytes", size);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		if (zone->error) {
+			zone->error (zone->data,
+						 "Z_Realloc: failed on allocation of %zd bytes", size);
+		}
+		Sys_Error ("Z_Realloc: failed on allocation of %zd bytes", size);
 	}
 
 	if (ptr != old_ptr)
@@ -414,7 +423,7 @@ Z_CheckHeap (memzone_t *zone)
 }
 
 VISIBLE void
-Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
+Z_SetError (memzone_t *zone, zone_err_f err, void *data)
 {
 	zone->error = err;
 	zone->data = data;

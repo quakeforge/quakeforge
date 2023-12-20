@@ -38,6 +38,7 @@
 #include <stdarg.h>
 
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
@@ -45,12 +46,17 @@
 
 #include "compat.h"
 
-static void
-pr_zone_error (void *_pr, const char *msg)
+static void __attribute__((format(PRINTF,2,3)))
+pr_zone_error (void *_pr, const char *fmt, ...)
 {
 	progs_t    *pr = (progs_t *) _pr;
+	va_list     args;
+	dstring_t  *msg = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (msg, fmt, args);
 	Z_Print (pr->zone);
-	PR_RunError (pr, "%s", msg);
+	PR_RunError (pr, "%s", msg->str);
 }
 
 void

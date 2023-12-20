@@ -67,10 +67,15 @@ SND_Memory_Init_Cvars (void)
 	Cvar_Register (&snd_mem_size_cvar, 0, 0);
 }
 
-static void
-snd_zone_error (void *data, const char *msg)
+static void __attribute__((format(PRINTF,2,3)))
+snd_zone_error (void *data, const char *fmt, ...)
 {
-	Sys_Error ("Sound: %s", msg);
+	va_list     args;
+	dstring_t  *msg = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (msg, fmt, args);
+	Sys_Error ("Sound: %s", msg->str);
 }
 
 static void
