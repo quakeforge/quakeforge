@@ -140,6 +140,7 @@ z_split_block (memblock_t *block, size_t size)
 		.prev = block,
 		.id = ZONEID,
 	};
+	split->next->prev = split;
 	block->next = split;
 	block->block_size = size;
 	return split;
@@ -158,6 +159,12 @@ z_merge_blocks (memzone_t *zone, memblock_t *a, memblock_t *b)
 		zone->rover = a;
 	}
 	return a;
+}
+
+static void
+z_set_sentinal (memblock_t *block)
+{
+	*(int *) ((byte *) block + block->block_size - 4) = ZONEID;
 }
 
 static void
@@ -241,6 +248,10 @@ Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
 
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
+
 	if (!ptr) {
 		if (zone->error) {
 			zone->error (zone->data, "Z_Free: NULL pointer");
@@ -279,6 +290,9 @@ Z_Free (memzone_t *zone, void *ptr)
 		// merge the next free block onto the end
 		z_merge_blocks (zone, block, other);
 	}
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
 }
 
 VISIBLE void *
@@ -306,7 +320,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	memblock_t *start, *rover, *base;
 
 	if (developer & SYS_zone) {
-		Z_CheckHeap (zone);	// DEBUG
+		Z_CheckHeap (zone);
 	}
 
 	if (!tag) {
@@ -347,7 +361,11 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	zone->used += base->block_size;
 
 	// marker for memory trash testing
-	*(int *) ((byte *) base + base->block_size - 4) = ZONEID;
+	z_set_sentinal (base);
+
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
 
 	return (void *) (base + 1);
 }
@@ -358,8 +376,9 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 	if (!ptr)
 		return Z_Malloc (zone, size);
 
-	if (developer & SYS_zone)
-		Z_CheckHeap (zone);	// DEBUG
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
 
 	auto block = z_ptr_block (zone, ptr);
 	if (block->tag == 0) {
@@ -383,12 +402,14 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 			}
 		}
 		block->size = size;
+		z_set_sentinal (block);
 	} else {
 		auto other = block->next;
 		if (!other->tag && block->block_size + other->block_size >= new_size) {
 			z_split_block (other, new_size - block->block_size);
 			z_merge_blocks (zone, block, other);
 			block->size = size;
+			z_set_sentinal (block);
 		} else {
 			ptr = Z_TagMalloc (zone, size, 1);
 		}
@@ -399,6 +420,9 @@ Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 						 "Z_Realloc: failed on allocation of %zd bytes", size);
 		}
 		Sys_Error ("Z_Realloc: failed on allocation of %zd bytes", size);
+	}
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
 	}
 
 	if (ptr != old_ptr) {
