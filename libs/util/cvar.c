@@ -127,6 +127,14 @@ cvar_destroy (cvar_t *var)
 	Hash_Free (user_cvar_hash, Hash_Del (user_cvar_hash, var->name));
 }
 
+static void
+cvar_invoke (cvar_t *var)
+{
+	if (var->listeners) {
+		LISTENER_INVOKE (var->listeners, var);
+	}
+}
+
 VISIBLE cvar_t *
 Cvar_FindVar (const char *var_name)
 {
@@ -148,7 +156,7 @@ Cvar_FindAlias (const char *alias_name)
 	return 0;
 }
 
-cvar_t *
+VISIBLE cvar_t *
 Cvar_MakeAlias (const char *name, cvar_t *cvar)
 {
 	cvar_alias_t *alias;
@@ -179,7 +187,7 @@ Cvar_MakeAlias (const char *name, cvar_t *cvar)
 	return cvar;
 }
 
-cvar_t *
+VISIBLE cvar_t *
 Cvar_RemoveAlias (const char *name)
 {
 	cvar_alias_t *alias;
@@ -394,8 +402,8 @@ cvar_setvar (cvar_t *var, const char *value)
 		delete_memsuper (context.memsuper);
 	}
 
-	if (changed && var->listeners) {
-		LISTENER_INVOKE (var->listeners, var);
+	if (changed) {
+		cvar_invoke (var);
 	}
 	return changed;
 }
@@ -554,25 +562,25 @@ set_cvar (const char *cmd, int orflags)
 }
 
 static void
-Cvar_Set_f (void)
+cvar_set_f (void)
 {
 	set_cvar ("set", CVAR_NONE);
 }
 
 static void
-Cvar_Setrom_f (void)
+cvar_setrom_f (void)
 {
 	set_cvar ("setrom", CVAR_ROM);
 }
 
 static void
-Cvar_Seta_f (void)
+cvar_seta_f (void)
 {
 	set_cvar ("seta", CVAR_ARCHIVE);
 }
 
 static void
-Cvar_Inc_f (void)
+cvar_inc_f (void)
 {
 	cvar_t     *var;
 	float       inc = 1;
@@ -609,8 +617,25 @@ Cvar_Inc_f (void)
 	}
 }
 
+void
+Cvar_Toggle (cvar_t *var)
+{
+	if ((var->flags & CVAR_ROM)
+		|| (var->value.type != &cexpr_int && var->value.type != &cexpr_bool)) {
+		Sys_Printf ("Variable \"%s\" cannot be toggled\n", Cmd_Argv (1));
+		return;
+	}
+
+	if (var->value.type == &cexpr_int) {
+		*(int *) var->value.value = !*(int *) var->value.value;
+	} else {
+		*(bool *) var->value.value = !*(bool *) var->value.value;
+	}
+	cvar_invoke (var);
+}
+
 static void
-Cvar_Toggle_f (void)
+cvar_toggle_f (void)
 {
 	cvar_t     *var;
 
@@ -626,16 +651,11 @@ Cvar_Toggle_f (void)
 		Sys_Printf ("Unknown variable \"%s\"\n", Cmd_Argv (1));
 		return;
 	}
-	if ((var->flags & CVAR_ROM) || var->value.type != &cexpr_int) {
-		Sys_Printf ("Variable \"%s\" cannot be toggled\n", Cmd_Argv (1));
-		return;
-	}
-
-	*(int *) var->value.value = !*(int *) var->value.value;
+	Cvar_Toggle (var);
 }
 
 static void
-Cvar_Cycle_f (void)
+cvar_cycle_f (void)
 {
 	int         i;
 	const char *name;
@@ -677,14 +697,14 @@ Cvar_Cycle_f (void)
 		Cvar_SetVar (var, Cmd_Argv (i + 1));	// matched earlier in list
 }
 
-static void
+VISIBLE void
 Cvar_Reset (cvar_t *var)
 {
 	Cvar_SetVar (var, var->default_value);
 }
 
 static void
-Cvar_Reset_f (void)
+cvar_reset_f (void)
 {
 	cvar_t     *var;
 	const char *name;
@@ -716,7 +736,7 @@ cvar_reset_var (void *ele, void *data)
 }
 
 static void
-Cvar_ResetAll_f (void)
+cvar_resetall_f (void)
 {
 	Hash_ForEach (cvar_hash, cvar_reset_var, 0);
 }
@@ -730,7 +750,7 @@ cvar_cmp (const void *_a, const void *_b)
 }
 
 static void
-Cvar_CvarList_f (void)
+cvar_cvarList_f (void)
 {
 	int         showhelp = 0;
 	if (Cmd_Argc () > 1) {
@@ -841,21 +861,21 @@ Cvar_Init (void)
 {
 	Cvar_Register (&developer_cvar, 0, 0);
 
-	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "
+	Cmd_AddCommand ("set", cvar_set_f, "Set the selected variable, useful on "
 					"the command line (+set variablename setting)");
-	Cmd_AddCommand ("setrom", Cvar_Setrom_f, "Set the selected variable and "
+	Cmd_AddCommand ("setrom", cvar_setrom_f, "Set the selected variable and "
 					"make it read-only, useful on the command line. "
 					"(+setrom variablename setting)");
-	Cmd_AddCommand ("seta", Cvar_Seta_f, "Set the selected variable, and make "
+	Cmd_AddCommand ("seta", cvar_seta_f, "Set the selected variable, and make "
 					"it archived, useful on the command line (+seta "
 					"variablename setting)");
-	Cmd_AddCommand ("toggle", Cvar_Toggle_f, "Toggle a cvar on or off");
-	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f, "List all cvars");
-	Cmd_AddCommand ("cycle", Cvar_Cycle_f,
+	Cmd_AddCommand ("toggle", cvar_toggle_f, "Toggle a cvar on or off");
+	Cmd_AddCommand ("cvarlist", cvar_cvarList_f, "List all cvars");
+	Cmd_AddCommand ("cycle", cvar_cycle_f,
 					"Cycle a cvar through a list of values");
-	Cmd_AddCommand ("inc", Cvar_Inc_f, "Increment a cvar");
-	Cmd_AddCommand ("reset", Cvar_Reset_f, "Reset a cvar");
-	Cmd_AddCommand ("resetall", Cvar_ResetAll_f, "Reset all cvars");
+	Cmd_AddCommand ("inc", cvar_inc_f, "Increment a cvar");
+	Cmd_AddCommand ("reset", cvar_reset_f, "Reset a cvar");
+	Cmd_AddCommand ("resetall", cvar_resetall_f, "Reset all cvars");
 }
 
 VISIBLE void
@@ -885,9 +905,7 @@ Cvar_Register (cvar_t *var, cvar_listener_t listener, void *data)
 
 	Hash_Add (cvar_hash, var);
 
-	if (var->listeners) {
-		LISTENER_INVOKE (var->listeners, var);
-	}
+	cvar_invoke (var);
 }
 
 /*
