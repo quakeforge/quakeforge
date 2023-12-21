@@ -282,10 +282,10 @@
 				);
 				rect = "[70, 110, 224, 8]";
 				range = {
-					Class = CvarRange;
+					Class = CvarIntRange;
 					Messages = (
 						(initWithCvar:min:max:step:,
-							"\"viewsize\"", 30.0, 120.0, 10.0)
+							"\"viewsize\"", 30, 120, 10)
 					);
 				};
 			}
