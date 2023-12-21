@@ -481,6 +481,11 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 			int *percent = Ent_GetComponent (ent[i], c_percent_x, reg);
 			int x = (len[parent[i]].x * *percent) / 100;
 			len[i].x = x;
+		} else if (cont[i].semantic_x == imui_size_pixels
+				   && Ent_HasComponent (ent[i], c_percent_x, reg)) {
+			int *pixels = Ent_GetComponent (ent[i], c_percent_x, reg);
+			len[i].x = *pixels;
+			down_depend[i].x = false;
 		}
 		if (down_depend
 			&& (cont[i].semantic_y == imui_size_fitchildren
@@ -493,6 +498,11 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 			int *percent = Ent_GetComponent (ent[i], c_percent_y, reg);
 			int y = (len[parent[i]].y * *percent) / 100;
 			len[i].y = y;
+		} else if (cont[i].semantic_y == imui_size_pixels
+				   && Ent_HasComponent (ent[i], c_percent_y, reg)) {
+			int *pixels = Ent_GetComponent (ent[i], c_percent_y, reg);
+			len[i].y = *pixels;
+			down_depend[i].y = false;
 		}
 	}
 }
@@ -792,7 +802,8 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
-	if (size == imui_size_percent || size == imui_size_expand) {
+	if (size == imui_size_percent || size == imui_size_expand
+		|| size == imui_size_pixels) {
 		*(int *) Ent_AddComponent(id, c_percent_x, ctx->csys.reg) = value;
 	}
 }
@@ -803,7 +814,8 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
-	if (size == imui_size_percent || size == imui_size_expand) {
+	if (size == imui_size_percent || size == imui_size_expand
+		|| size == imui_size_pixels) {
 		*(int *) Ent_AddComponent(id, c_percent_y, ctx->csys.reg) = value;
 	}
 }
