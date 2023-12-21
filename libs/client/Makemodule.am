@@ -26,8 +26,7 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_world.c \
 		libs/client/hud.c \
 		libs/client/locs.c \
-		libs/client/old_keys.c \
-		libs/client/sbar.c
+		libs/client/old_keys.c
 
 default_input_src = libs/client/default_input.plist
 default_input_gen = libs/client/default_input.plc

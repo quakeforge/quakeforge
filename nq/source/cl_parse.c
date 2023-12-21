@@ -57,7 +57,7 @@
 #include "QF/scene/entity.h"
 
 #include "client/particles.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
 

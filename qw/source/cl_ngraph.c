@@ -50,7 +50,7 @@
 
 #include "qw/include/cl_parse.h"
 #include "qw/include/client.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 
 int cl_netgraph;
 static cvar_t cl_netgraph_cvar = {

@@ -61,7 +61,7 @@
 #include "client/chase.h"
 #include "client/effects.h"
 #include "client/particles.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 #include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/world.h"

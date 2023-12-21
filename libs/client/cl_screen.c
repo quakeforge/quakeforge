@@ -55,7 +55,6 @@
 #include "r_local.h"	//FIXME for r_cache_thrash
 
 #include "client/hud.h"
-#include "client/sbar.h"
 #include "client/screen.h"
 #include "client/view.h"
 #include "client/world.h"
