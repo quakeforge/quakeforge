@@ -37,6 +37,7 @@
 	rect.size.height = 4;	// history lines (stupid interface:P)
 	ilb = [[InputLineBox alloc] initWithBounds:rect promptCharacter:' '];
 	[ilb setEnter: self message:@selector(enter:)];
+	[ilb setWidth: rect.size.width];
 
 	[self addView:title];
 	[self addView:ilb];
