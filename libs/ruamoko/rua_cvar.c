@@ -243,8 +243,8 @@ bi_Cvar_Toggle (progs_t *pr, void *_res)
 	var = Cvar_FindVar (varname);
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var && var->value.type == &cexpr_int) {
-		*(int *) var->value.value = !*(int *) var->value.value;
+	if (var) {
+		Cvar_Toggle (var);
 	}
 }
 
