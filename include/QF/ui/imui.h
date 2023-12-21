@@ -143,6 +143,10 @@ int IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical);
 void IMUI_EndMenu (imui_ctx_t *ctx);
 bool IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse);
 
+void IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window);
+
 int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
 

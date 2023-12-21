@@ -89,6 +89,7 @@ typedef struct imui_state_s {
 	imui_window_t *menu;
 	int16_t		draw_order;	// for window canvases
 	uint32_t    frame_count;
+	uint32_t    old_entity;
 	uint32_t    entity;
 	uint32_t    content;
 } imui_state_t;
@@ -138,13 +139,14 @@ struct imui_ctx_s {
 };
 
 static imui_state_t *
-imui_state_new (imui_ctx_t *ctx)
+imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
 	imui_state_t *state = PR_RESNEW (ctx->state_map);
 	*state = (imui_state_t) {
 		.next = ctx->states,
 		.prev = &ctx->states,
-		.entity = nullent,
+		.old_entity = nullent,
+		.entity = entity,
 	};
 	if (ctx->states) {
 		ctx->states->prev = &state->next;
@@ -178,7 +180,7 @@ imui_find_state (imui_ctx_t *ctx, const char *label)
 }
 
 static imui_state_t *
-imui_get_state (imui_ctx_t *ctx, const char *label)
+imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 {
 	int         key_offset = 0;
 	uint32_t    label_len = ~0u;
@@ -192,11 +194,13 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	}
 	auto state = imui_find_state (ctx, label);
 	if (state) {
+		state->old_entity = state->entity;
+		state->entity = entity;
 		state->frame_count = ctx->frame_count;
 		ctx->current_state = state;
 		return state;
 	}
-	state = imui_state_new (ctx);
+	state = imui_state_new (ctx, entity);
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
@@ -923,16 +927,16 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 }
 
 static int
-update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
+update_hot_active (imui_ctx_t *ctx, imui_state_t *state)
 {
 	int mode = 0;
-	if (old_entity != nullent) {
-		if (ctx->hot == old_entity) {
-			ctx->hot = new_entity;
+	if (state->old_entity != nullent) {
+		if (ctx->hot == state->old_entity) {
+			ctx->hot = state->entity;
 			mode = 1;
 		}
-		if (ctx->active == old_entity) {
-			ctx->active = new_entity;
+		if (ctx->active == state->old_entity) {
+			ctx->active = state->entity;
 			mode = 2;
 		}
 	}
@@ -967,12 +971,11 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 void
 IMUI_Label (imui_ctx_t *ctx, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-
 	set_control (ctx, view, true);
+
+	auto state = imui_get_state (ctx, label, view.id);
+
 	set_fill (ctx, view, ctx->style.background.normal);
 	add_text (ctx, view, state, 0);
 }
@@ -990,14 +993,12 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 bool
 IMUI_Button (imui_ctx_t *ctx, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
+
 	set_fill (ctx, view, ctx->style.foreground.color[mode]);
 	add_text (ctx, view, state, mode);
 
@@ -1007,16 +1008,13 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 bool
 IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
 
 	set_fill (ctx, view, ctx->style.background.color[mode]);
 
@@ -1047,16 +1045,13 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 void
 IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
 
 	set_fill (ctx, view, ctx->style.background.color[mode]);
 
@@ -1151,17 +1146,16 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	if (!panel->is_open) {
 		return 1;
 	}
-	auto state = imui_get_state (ctx, panel->name);
-	uint32_t old_entity = state->entity;
-
-	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
-
 	auto canvas = Canvas_New (ctx->csys);
 	int draw_group = imui_draw_group + panel->group_offset;
 	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
-	state->entity = panel_view.id;
-	panel->mode = update_hot_active (ctx, old_entity, state->entity);
+
+	auto state = imui_get_state (ctx, panel->name, panel_view.id);
+	panel->mode = update_hot_active (ctx, state);
+
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+
 	auto ref = View_GetRef (panel_view);
 	Hierarchy_SetTreeMode (ref->hierarchy, true);
 
@@ -1303,6 +1297,48 @@ IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 	return res;
 }
 
+void
+IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
+{
+	auto state = ctx->windows.a[ctx->windows.size - 1];
+	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
+
+	auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar", window->name),
+									title_bar.id);
+	int tb_mode = update_hot_active (ctx, tb_state);
+
+	auto delta = check_drag_delta (ctx, tb_state->entity);
+	if (ctx->active == tb_state->entity) {
+		state->draw_order = imui_ontop;
+		window->xpos += delta.x;
+		window->ypos += delta.y;
+	}
+
+	set_control (ctx, title_bar, true);
+	set_expand_x (ctx, title_bar, 100);
+	set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
+
+	auto title = add_text (ctx, title_bar, state, window->mode);
+	View_Control (title)->gravity = grav_center;
+}
+
+void
+IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
+{
+	char cbutton = window->is_collapsed ? '>' : 'v';
+	if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
+		window->is_collapsed = !window->is_collapsed;
+	}
+}
+
+void
+IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
+{
+	if (UI_Button (va (0, "X##close_%s", window->name))) {
+		window->is_open = false;
+	}
+}
+
 int
 IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
@@ -1310,37 +1346,11 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		return 1;
 	}
 	IMUI_StartPanel (ctx, window);
-	auto state = ctx->windows.a[ctx->windows.size - 1];
 
 	UI_Horizontal {
-		char cbutton = window->is_collapsed ? '>' : 'v';
-		if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
-			window->is_collapsed = !window->is_collapsed;
-		}
-
-		auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar",
-												 window->name));
-		uint32_t tb_old_entity = tb_state->entity;
-		auto title_bar = View_New (ctx->vsys, ctx->current_parent);
-		tb_state->entity = title_bar.id;
-		int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
-		auto delta = check_drag_delta (ctx, tb_state->entity);
-		if (ctx->active == tb_state->entity) {
-			state->draw_order = imui_ontop;
-			window->xpos += delta.x;
-			window->ypos += delta.y;
-		}
-
-		set_control (ctx, title_bar, true);
-		set_expand_x (ctx, title_bar, 100);
-		set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
-
-		auto title = add_text (ctx, title_bar, state, window->mode);
-		View_Control (title)->gravity = grav_center;
-
-		if (UI_Button (va (0, "X##close_%s", window->name))) {
-			window->is_open = false;
-		}
+		IMUI_CollapseButton (ctx, window);
+		IMUI_TitleBar (ctx, window);
+		IMUI_CloseButton (ctx, window);
 	}
 	return 0;
 }
