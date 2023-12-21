@@ -208,26 +208,30 @@ bi_InputLine_SetCursor (progs_t *pr, void *_res)
 }
 
 static void
-bi_InputLine_SetEnter (progs_t *pr, void *_res)
+bi_InputLine_SetEnter_f (progs_t *pr, void *_res)
 {
 	il_resources_t *res = _res;
 	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
 									  "InputLine_SetEnter");
 
+	line->enter = P_FUNCTION (pr, 1);	// function
+	line->data[0] = P_POINTER (pr, 2);	// data
 	line->data[1] = 0;
+	line->method = 0;
+}
+
+static void
+bi_InputLine_SetEnter_s (progs_t *pr, void *_res)
+{
+	il_resources_t *res = _res;
+	il_data_t  *line = get_inputline (pr, res, P_INT (pr, 0),
+									  "InputLine_SetEnter");
 
 	//FIXME look up implementation here?
-	if (pr->pr_argc == 4) {
-		line->enter = P_FUNCTION (pr, 1);	// implementation
-		line->data[0] = P_POINTER (pr, 2);	// object
-		line->data[1] = P_POINTER (pr, 3);	// selector
-		line->method = 1;
-	} else {
-		line->enter = P_FUNCTION (pr, 1);	// function
-		line->data[0] = P_POINTER (pr, 2);	// data
-		line->data[1] = 0;
-		line->method = 0;
-	}
+	line->enter = P_FUNCTION (pr, 1);	// implementation
+	line->data[0] = P_POINTER (pr, 2);	// object
+	line->data[1] = P_POINTER (pr, 3);	// selector
+	line->method = 1;
 }
 
 static void
@@ -331,9 +335,9 @@ static builtin_t builtins[] = {
 	bi(InputLine_SetPos,           3, p(ptr), p(int), p(int)),
 	bi(InputLine_SetCursor,        2, p(ptr), p(int)),
 	{"InputLine_SetEnter|^{tag _inputline_t=}(v*^v)^v",
-		bi_InputLine_SetEnter, -1, 3, {p(ptr), p(func), p(ptr)}},
+		bi_InputLine_SetEnter_f, -1, 3, {p(ptr), p(func), p(ptr)}},
 	{"InputLine_SetEnter|^{tag _inputline_t=}(@@:.)@:",
-		bi_InputLine_SetEnter, -1, 4, {p(ptr), p(func), p(ptr), p(ptr)}},
+		bi_InputLine_SetEnter_s, -1, 4, {p(ptr), p(func), p(ptr), p(ptr)}},
 	bi(InputLine_SetWidth,         2, p(ptr), p(int)),
 	bi(InputLine_SetText,          2, p(ptr), p(string)),
 	bi(InputLine_GetText,          1, p(ptr)),

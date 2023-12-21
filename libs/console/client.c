@@ -556,6 +556,14 @@ DrawInputLine (int x, int y, inputline_t *il)
 	}
 	if (strlen (s) >= il->width)
 		r_funcs->Draw_Character (x + ((il->width - 1) * 8), y, '>' | 0x80);
+
+	if (il->cursor) {
+		float       t = *con_data.realtime * con_cursorspeed;
+		int         ch = 10 + ((int) (t) & 1);
+
+		int         cx = (il->linepos - il->scroll) * 8;
+		r_funcs->Draw_Character (x + cx, y, ch);
+	}
 }
 
 void
