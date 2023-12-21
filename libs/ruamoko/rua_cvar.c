@@ -217,7 +217,7 @@ bi_Cvar_GetFloat (progs_t *pr, void *_res)
 		var = Cvar_FindAlias (varname);
 	if (!var || var->value.type != &cexpr_float)
 		return;
-	R_INT (pr) = *(float *) var->value.value;
+	R_FLOAT (pr) = *(float *) var->value.value;
 }
 
 static void
