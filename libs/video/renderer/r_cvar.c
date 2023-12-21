@@ -526,16 +526,17 @@ r_nearclip_f (void *data, const cvar_t *cvar)
 static void
 scr_fov_f (void *data, const cvar_t *cvar)
 {
-	// bound field of view
-	scr_fov = bound (0, scr_fov, 170);
-	SCR_SetFOV (scr_fov);
+	if (!scr_fisheye) {
+		// bound field of view
+		scr_fov = bound (0, scr_fov, 170);
+		SCR_SetFOV (scr_fov);
+	}
 }
 
 static void
 scr_fisheye_f (void *data, const cvar_t *cvar)
 {
-	if (scr_fisheye)
-		Cvar_Set ("fov", "90");
+	SCR_SetFOV (scr_fisheye ? 90 : scr_fov);
 }
 
 static void
