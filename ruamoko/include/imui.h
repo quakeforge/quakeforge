@@ -38,6 +38,7 @@ imui_window_t *IMUI_NewWindow (string name);
 void IMUI_DeleteWindow (imui_window_t *window);
 int IMUI_Window_IsOpen (imui_window_t *window);
 int IMUI_Window_IsCollapsed (imui_window_t *window);
+void IMUI_Window_SetSize (imui_window_t *window, int xlen, int ylen);
 
 imui_ctx_t IMUI_NewContext (string font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t ctx);

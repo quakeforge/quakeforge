@@ -118,6 +118,7 @@ bi(IMUI_NewWindow)
 	*window = (imui_window_t) {
 		.name = name,
 		.is_open = true,
+		.auto_fit = true,
 	};
 	RETURN_POINTER (pr, window);
 }
@@ -138,6 +139,14 @@ bi(IMUI_Window_IsCollapsed)
 {
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	R_INT (pr) = window->is_collapsed;
+}
+
+bi(IMUI_Window_SetSize)
+{
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->auto_fit = false;
+	window->xlen = P_INT (pr, 1);
+	window->ylen = P_INT (pr, 2);
 }
 
 bi(IMUI_NewContext)
@@ -411,6 +420,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_DeleteWindow,           1, p(ptr)),
 	bi(IMUI_Window_IsOpen,          1, p(ptr)),
 	bi(IMUI_Window_IsCollapsed,     1, p(ptr)),
+	bi(IMUI_Window_SetSize    ,     3, p(ptr), p(int), p(int)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),

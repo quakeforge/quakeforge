@@ -7,6 +7,7 @@ imui_ctx_t IMUI_NewContext (string font, float fontsize) = #0;
 void IMUI_DestroyContext (imui_ctx_t ctx) = #0;
 int IMUI_Window_IsOpen (imui_window_t *window) = #0;
 int IMUI_Window_IsCollapsed (imui_window_t *window) = #0;
+void IMUI_Window_SetSize (imui_window_t *window, int xlen, int ylen) = #0;
 
 void IMUI_SetVisible (imui_ctx_t ctx, int visible) = #0;
 void IMUI_SetSize (imui_ctx_t ctx, int xlen, int ylen) = #0;

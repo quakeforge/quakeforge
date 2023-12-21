@@ -313,6 +313,7 @@ color_window (void)
 		.xpos = 75,
 		.ypos = 75,
 		.is_open = false,
+		.auto_fit = true,
 	};
 	static int style_selection;
 	static int style_mode;
@@ -484,14 +485,17 @@ static imui_window_t system_info_window = {
 	.name = "System Info##window",
 	.xpos = 50,
 	.ypos = 50,
+	.auto_fit = true,
 };
 
 static imui_window_t cam_window = {
 	.name = "Debug Camera",
+	.auto_fit = true,
 };
 
 static imui_window_t inp_window = {
 	.name = "Debug Input",
+	.auto_fit = true,
 };
 
 static imui_window_t debug_menu = {
@@ -499,6 +503,7 @@ static imui_window_t debug_menu = {
 	.group_offset = 0,
 	.is_open = true,
 	.no_collapse = true,
+	.auto_fit = true,
 };
 
 static imui_window_t renderer_menu = {
@@ -506,6 +511,7 @@ static imui_window_t renderer_menu = {
 	.group_offset = 1,
 	.reference_gravity = grav_northwest,
 	.anchor_gravity = grav_southwest,
+	.auto_fit = true,
 };
 
 static void

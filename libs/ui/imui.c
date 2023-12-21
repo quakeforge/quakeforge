@@ -1177,25 +1177,37 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		state->draw_order = ++ctx->draw_order;
 	}
 
+	auto semantic = panel->auto_fit ? imui_size_fitchildren : imui_size_pixels;
+
 	ctx->current_parent = panel_view;
 	*View_Control (panel_view) = (viewcont_t) {
 		.gravity = gravity,
 		.visible = 1,
-		.semantic_x = imui_size_fitchildren,
-		.semantic_y = imui_size_fitchildren,
+		.semantic_x = semantic,
+		.semantic_y = semantic,
 		.free_x = 1,
 		.free_y = 1,
 		.vertical = true,
 		.active = 1,
 	};
 	View_SetPos (panel_view, panel->xpos, panel->ypos);
-	View_SetLen (panel_view, panel->xlen, panel->ylen);
+	if (panel->auto_fit) {
+		View_SetLen (panel_view, 0, 0);
+	} else {
+		View_SetLen (panel_view, panel->xlen, panel->ylen);
+	}
 
 	auto bg = ctx->style.background.normal;
 	UI_Vertical {
+		if (!panel->auto_fit) {
+			IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+		}
 		ctx->style.background.normal = 0;//FIXME style
 		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 		UI_Horizontal {
+			if (!panel->auto_fit) {
+				IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+			}
 			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
 			UI_Vertical {
 				IMUI_Layout_SetXSize (ctx, imui_size_expand, 100);

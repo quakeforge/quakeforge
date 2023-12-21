@@ -85,12 +85,13 @@ typedef struct imui_window_s {
 	int         mode;
 	bool        is_open;
 	bool        is_collapsed;
+	bool        no_collapse;
+	bool        auto_fit;
 
 	const char *reference;
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
 	struct imui_window_s *parent;	// for submenus
-	bool        no_collapse;
 } imui_window_t;
 
 typedef struct imui_io_s {
