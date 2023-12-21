@@ -2,6 +2,7 @@ ruamoko_include = \
 	ruamoko/include/crudefile.h \
 	ruamoko/include/debug.h \
 	ruamoko/include/entities.h \
+	ruamoko/include/imui.h \
 	ruamoko/include/infokey.h \
 	ruamoko/include/input.h \
 	ruamoko/include/math.h \

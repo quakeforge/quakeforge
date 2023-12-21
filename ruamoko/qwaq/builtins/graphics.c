@@ -86,6 +86,8 @@ quit_f (void)
 
 static progs_t *bi_rprogs;
 static pr_func_t qc2d;
+static pr_func_t qcevent;
+static pr_ptr_t  qcevent_data;
 static int event_handler_id;
 static canvas_system_t canvas_sys;
 static view_t screen_view;
@@ -141,6 +143,13 @@ bi_setpalette (progs_t *pr, void *_res)
 	VID_SetPalette (palette, colormap);
 }
 
+static void
+bi_setevents (progs_t *pr, void *_res)
+{
+	qcevent = P_FUNCTION (pr, 0);
+	qcevent_data = P_POINTER (pr, 1);
+}
+
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -148,16 +157,27 @@ static builtin_t builtins[] = {
 	bi(refresh,    -1, 0),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(setpalette, -1, 2, p(ptr), p(ptr)),
+	bi(setevents,  -1, 2, p(func), p(ptr)),
 	{0}
 };
 
 static int
 event_handler (const IE_event_t *ie_event, void *_pr)
 {
-	// FIXME rethink event handling for qwaq
-	if (ie_event->type == ie_key && ie_event->key.code == QFK_ESCAPE) {
-		Con_SetState (con_active, false);
-		return 1;
+	if (qcevent) {
+		progs_t    *pr = _pr;
+		int num_params = sizeof (IE_event_t) / sizeof (pr_type_t);
+		num_params = (num_params + 3) / 4 + 2;
+
+		PR_PushFrame (pr);
+		PR_SetupParams (pr, num_params, 2);
+		auto event = &P_PACKED (pr, IE_event_t, 2);
+		P_POINTER (pr, 0) = PR_SetPointer (pr, event);
+		P_POINTER (pr, 1) = qcevent_data;
+		*event = *ie_event;
+		PR_ExecuteProgram (pr, qcevent);
+		PR_PopFrame (pr);
+		return R_INT (pr);
 	}
 	return IN_Binding_HandleEvent (ie_event);
 }

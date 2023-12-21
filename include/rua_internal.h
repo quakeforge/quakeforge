@@ -61,6 +61,7 @@ QFile *QFile_GetFile (struct progs_s *pr, int handle);
 struct plitem_s *Plist_GetItem (struct progs_s *pr, int handle);
 
 void RUA_GUI_Init (struct progs_s *pr, int secure);
+void RUA_IMUI_Init (struct progs_s *pr, int secure);
 void RUA_Input_Init (struct progs_s *pr, int secure);
 void RUA_Mersenne_Init (struct progs_s *pr, int secure);
 void RUA_Model_Init (struct progs_s *pr, int secure);

@@ -35,6 +35,7 @@
 
 static void (*init_funcs[])(progs_t *, int) = {
 	RUA_GUI_Init,
+	RUA_IMUI_Init,
 	RUA_Input_Init,
 	RUA_Mersenne_Init,
 	RUA_Model_Init,
