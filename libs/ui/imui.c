@@ -1084,10 +1084,10 @@ IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 {
 }
 
-void
-IMUI_Spacer (imui_ctx_t *ctx,
-			 imui_size_t xsize, int xvalue,
-			 imui_size_t ysize, int yvalue)
+static view_t
+sized_view (imui_ctx_t *ctx,
+			imui_size_t xsize, int xvalue,
+			imui_size_t ysize, int yvalue, bool active)
 {
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	View_SetLen (ctx->current_parent, 0, 0);
@@ -1100,7 +1100,7 @@ IMUI_Spacer (imui_ctx_t *ctx,
 	if (ysize == imui_size_pixels) {
 		ylen = yvalue;
 	}
-	set_control (ctx, view, false);
+	set_control (ctx, view, active);
 	View_SetLen (view, xlen, ylen);
 	View_Control (view)->semantic_x = xsize;
 	View_Control (view)->semantic_y = ysize;
@@ -1111,7 +1111,15 @@ IMUI_Spacer (imui_ctx_t *ctx,
 	if (ysize == imui_size_percent || ysize == imui_size_expand) {
 		*(int*) Ent_AddComponent (view.id, c_percent_y, reg) = yvalue;
 	}
+	return view;
+}
 
+void
+IMUI_Spacer (imui_ctx_t *ctx,
+			 imui_size_t xsize, int xvalue,
+			 imui_size_t ysize, int yvalue)
+{
+	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, false);
 	set_fill (ctx, view, ctx->style.background.normal);
 }
 
@@ -1139,6 +1147,104 @@ create_reference_anchor (imui_ctx_t *ctx, uint32_t ent, imui_window_t *panel)
 	};
 	Ent_SetComponent (ent, c_reference, ctx->vsys.reg, &reference);
 }
+
+view_pos_t
+IMUI_Dragable (imui_ctx_t *ctx,
+			   imui_size_t xsize, int xvalue,
+			   imui_size_t ysize, int yvalue,
+			   const char *name)
+{
+	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, true);
+
+	auto state = imui_get_state (ctx, name, view.id);
+	int mode = update_hot_active (ctx, state);
+	auto delta = check_drag_delta (ctx, state->entity);
+
+	set_fill (ctx, view, ctx->style.foreground.color[mode]);
+	return delta;
+}
+
+static void
+drag_window_tl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+	int y = max (window->ylen - delta.y, 20);
+
+	window->xpos += window->xlen - x;
+	window->ypos += window->ylen - y;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_tc (view_pos_t delta, imui_window_t *window)
+{
+	int y = max (window->ylen - delta.y, 20);
+
+	window->ypos += window->ylen - y;
+	window->ylen = y;
+}
+
+static void
+drag_window_tr (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+	int y = max (window->ylen - delta.y, 20);
+
+	window->ypos += window->ylen - y;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_cl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+
+	window->xpos += window->xlen - x;
+	window->xlen = x;
+}
+
+static void
+drag_window_cr (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+
+	window->xlen = x;
+}
+
+static void
+drag_window_bl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+	int y = max (window->ylen + delta.y, 20);
+
+	window->xpos += window->xlen - x;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_bc (view_pos_t delta, imui_window_t *window)
+{
+	int y = max (window->ylen + delta.y, 20);
+
+	window->ylen = y;
+}
+
+static void
+drag_window_br (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+	int y = max (window->ylen + delta.y, 20);
+
+	window->xlen = x;
+	window->ylen = y;
+}
+
+#define drag(c,e,sx,xv,sy,yv,n,p) \
+	drag_window_##c (IMUI_Dragable (ctx, sx, xv, sy, yv, \
+									va (0, "%s##drag_" #c #e, n)), p);
 
 int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
@@ -1193,23 +1299,63 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 
 	auto bg = ctx->style.background.normal;
 	UI_Vertical {
+		ctx->style.background.normal = 0;
 		if (!panel->auto_fit) {
 			IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+			UI_Horizontal {
+				drag (tl,t, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (tc, , imui_size_expand, 100,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (tr,t, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+			}
+		} else {
+			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 		}
-		ctx->style.background.normal = 0;//FIXME style
-		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 		UI_Horizontal {
 			if (!panel->auto_fit) {
 				IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+				UI_Vertical {
+					drag (tl,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+					drag (cl, , imui_size_pixels, 4,
+								imui_size_expand, 100, panel->name, panel);
+					drag (bl,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+				}
+			} else {
+				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
 			}
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
 			UI_Vertical {
 				IMUI_Layout_SetXSize (ctx, imui_size_expand, 100);
 				panel_view = ctx->current_parent;
 			}
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			if (!panel->auto_fit) {
+				UI_Vertical {
+					drag (tr,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+					drag (cr, , imui_size_pixels, 4,
+								imui_size_expand, 100, panel->name, panel);
+					drag (br,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+				}
+			} else {
+				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			}
 		}
-		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		if (!panel->auto_fit) {
+			UI_Horizontal {
+				drag (bl,b, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (bc, , imui_size_expand, 100,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (br,b, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+			}
+		} else {
+			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		}
 	}
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;

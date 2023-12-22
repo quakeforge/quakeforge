@@ -134,7 +134,10 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 void IMUI_Spacer (imui_ctx_t *ctx,
 				  imui_size_t xsize, int xvalue,
 				  imui_size_t ysize, int yvalue);
-
+view_pos_t IMUI_Dragable (imui_ctx_t *ctx,
+						  imui_size_t xsize, int xvalue,
+						  imui_size_t ysize, int yvalue,
+						  const char *name);
 int IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
 int IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name);
 void IMUI_EndPanel (imui_ctx_t *ctx);
