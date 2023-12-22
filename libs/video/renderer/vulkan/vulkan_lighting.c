@@ -1903,6 +1903,8 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 			.queryType = VK_QUERY_TYPE_OCCLUSION,
 			.queryCount = MaxLights * 6,	// 6 for cube maps
 		}, 0, &lframe->query);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_QUERY_POOL, lframe->query,
+							 va (ctx->va_ctx, "light_cull:%zd", i));
 		lframe->fence = QFV_CreateFence (device, 1);
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
@@ -1996,6 +1998,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 		auto lframe = &lctx->frames.a[i];
 		dfunc->vkDestroyQueryPool (device->dev, lframe->query, 0);
 		dfunc->vkDestroyFence (device->dev, lframe->fence, 0);
+		qftCVkContextDestroy (lframe->qftVkCtx);
 	}
 	free (lctx->frames.a[0].stage_targets);
 	DARRAY_CLEAR (&lctx->light_mats);

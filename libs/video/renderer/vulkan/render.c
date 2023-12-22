@@ -649,6 +649,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
 		QFV_CmdPoolManager_Shutdown (&frame->cmdpool);
+		qftCVkContextDestroy (frame->qftVkCtx);
 	}
 	DARRAY_CLEAR (&rctx->frames);
 
