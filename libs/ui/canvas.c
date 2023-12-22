@@ -474,16 +474,20 @@ Canvas_Draw (canvas_system_t canvas_sys)
 	uint32_t    comp = canvas_sys.base + canvas_canvas;
 	ecs_pool_t *canvas_pool = &reg->comp_pools[comp];
 	uint32_t    count = canvas_pool->count;
-	//uint32_t   *entities = canvas_pool->dense;
+	uint32_t   *entities = canvas_pool->dense;
 	__auto_type canvases = (canvas_t *) canvas_pool->data;
 
 	while (count-- > 0) {
 		canvas_t   *canvas = canvases++;
-		//uint32_t    ent = *entities++;
+		uint32_t    ent = *entities++;
 
 		if (!canvas->visible) {
 			continue;
 		}
+		view_t      canvas_view = Canvas_GetRootView (canvas_sys, ent);
+		view_pos_t  pos = View_GetAbs (canvas_view);
+		view_pos_t  len = View_GetLen (canvas_view);
+		r_funcs->Draw_SetClip (pos.x, pos.y, len.x, len.y);
 
 		for (int i = 0; i < canvas_comp_count; i++) {
 			if (draw_func[i]) {
@@ -497,6 +501,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 			}
 		}
 	}
+	r_funcs->Draw_ResetClip ();
 	{
 		ecs_pool_t *pool = &reg->comp_pools[canvas_updateonce];
 		ecs_subpool_t *subpool = &reg->subpools[canvas_updateonce];
