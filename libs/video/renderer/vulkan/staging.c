@@ -115,8 +115,8 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 								 cmdBuf->size, cmdBuf->a);
 
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
-	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	dfunc->vkDestroyBuffer (device->dev, stage->buffer, 0);
+	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	free (stage);
 }
 

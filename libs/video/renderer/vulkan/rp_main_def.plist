@@ -1390,7 +1390,6 @@ renderpasses = {
 
 						stages = (
 							$lighting.shader.vertex_splat,
-							$lighting.shader.debug_fragment,
 						);
 						vertexInput = $lighting.vertexInput_splat;
 						inputAssembly = $lighting.inputAssembly;

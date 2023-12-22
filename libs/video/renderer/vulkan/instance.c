@@ -205,16 +205,26 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 					const char **layers, const char **extensions)
 {
 	VkApplicationInfo appInfo = {
-		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
-		appName, appVersion,
-		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_3,
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName = appName,
+		.applicationVersion = appVersion,
+		.pEngineName = PACKAGE_STRING,
+		.engineVersion = 0x000702ff, //FIXME version
+		.apiVersion = VK_API_VERSION_1_3,
+	};
+	VkValidationFeatureEnableEXT valfeat_enable[] = {
+//		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+	};
+#define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
+	VkValidationFeaturesEXT validation_features= {
+		.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+		.enabledValidationFeatureCount = valfeat_count,
+		.pEnabledValidationFeatures = valfeat_enable,
 	};
 	VkInstanceCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,
-		&appInfo,
-		0, 0,
-		0, 0,
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pNext = &validation_features,
+		.pApplicationInfo = &appInfo,
 	};
 	VkResult    res;
 	VkInstance  instance;
