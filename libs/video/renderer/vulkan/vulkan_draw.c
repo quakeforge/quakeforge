@@ -87,6 +87,15 @@ typedef struct descbatch_s {
 typedef struct descbatchset_s
 	DARRAY_TYPE (descbatch_t) descbatchset_t;
 
+typedef struct drawclip_s {
+	uint32_t    start;
+	uint32_t    count;	// number of batches in quad_batch
+	VkRect2D    clip;
+} drawclip_t;
+
+typedef struct drawclipset_s
+	DARRAY_TYPE (drawclip_t) drawclipset_t;
+
 typedef struct {
 	float       xy[2];
 	byte        color[4];
@@ -167,6 +176,7 @@ typedef struct drawframe_s {
 	uint32_t    dvertex_index;
 	uint32_t    dvertex_max;
 	descbatchset_t quad_batch;
+	drawclipset_t clip_range;
 	quadqueue_t quad_insts;
 	linequeue_t line_verts;
 	descpool_t  dyn_descs;
@@ -428,6 +438,7 @@ create_buffers (vulkan_ctx_t *ctx)
 		};
 
 		DARRAY_INIT (&frame->quad_batch, 16);
+		DARRAY_INIT (&frame->clip_range, 16);
 		frame->quad_insts = (quadqueue_t) {
 			.quads = (quadinst_t *) ((byte *)data + frame->instance_offset),
 			.max_count = MAX_INSTANCES,
@@ -908,22 +919,32 @@ draw_quads (qfv_taskctx_t *taskctx)
 	dfunc->vkCmdBindIndexBuffer (cmd, ind_buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	uint32_t    inst_start = 0;
-	for (size_t i = 0; i < dframe->quad_batch.size; i++) {
-		int         fontid = dframe->quad_batch.a[i].descid;
-		uint32_t    inst_count = dframe->quad_batch.a[i].count;
-		uint32_t    ind_count = inst_count >> 24;
-		inst_count &= 0xffffff;
-		VkDescriptorSet set[2] = {
-			Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-			fontid < 0 ? dframe->dyn_descs.sets[~fontid]
-					   : dctx->fonts.a[fontid].set,
-		};
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 2, set, 0, 0);
+	for (size_t i = 0; i < dframe->clip_range.size; i++) {
+		auto cr = &dframe->clip_range.a[i];
+		dfunc->vkCmdSetScissor (cmd, 0, 1, &cr->clip);
+		for (uint32_t j = 0; j < cr->count; j++) {
+			int         fontid = dframe->quad_batch.a[cr->start + j].descid;
+			uint32_t    inst_count = dframe->quad_batch.a[cr->start + j].count;
+			uint32_t    ind_count = inst_count >> 24;
+			inst_count &= 0xffffff;
+			VkDescriptorSet set[2] = {
+				Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+				fontid < 0 ? dframe->dyn_descs.sets[~fontid]
+						   : dctx->fonts.a[fontid].set,
+			};
+			dfunc->vkCmdBindDescriptorSets (cmd,
+											VK_PIPELINE_BIND_POINT_GRAPHICS,
+											layout, 0, 2, set, 0, 0);
 
-		dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0, inst_start);
-		inst_start += inst_count;
+			dfunc->vkCmdDrawIndexed (cmd, ind_count, inst_count, 0, 0,
+									 inst_start);
+			inst_start += inst_count;
+		}
 	}
+	VkRect2D scissor = {
+		.extent = { .width = vid.width, .height = vid.height },
+	};
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
 	DARRAY_RESIZE (&dframe->quad_batch, 0);
 }
 
@@ -972,6 +993,9 @@ slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (!dframe->quad_insts.count) {
 		return;
 	}
+
+	auto cr = &dframe->clip_range.a[dframe->clip_range.size - 1];
+	cr->count = dframe->quad_batch.size - cr->start;
 
 	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "slice_draw");
 	VkDeviceMemory memory = dctx->draw_resource[1].memory;
@@ -1035,6 +1059,13 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	DARRAY_RESIZE (&dframe->clip_range, 0);
+	DARRAY_APPEND (&dframe->clip_range, ((drawclip_t) {
+		.clip.offset = { .x = 0, .y = 0 },
+		.clip.extent = { .width = vid.width, .height = vid.height },
+	}));
 
 	auto scr_funcs = dctx->scr_funcs;
 	if (!scr_funcs) {
@@ -1047,9 +1078,8 @@ draw_scr_funcs (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dctx->scr_funcs = 0;
 
 	flush_vertqueue (&dctx->slice_vert_queue, ctx);
-	auto frame = &dctx->frames.a[ctx->curFrame];
-	flush_vertqueue (&frame->dyn_vert_queue, ctx);
-	frame->dyn_vert_queue.base = 0;
+	flush_vertqueue (&dframe->dyn_vert_queue, ctx);
+	dframe->dyn_vert_queue.base = 0;
 }
 
 static exprfunc_t flush_draw_func[] = {
@@ -1757,6 +1787,38 @@ Vulkan_Draw_Glyph (int x, int y, int fontid, int glyph, int c,
 
 	byte        color[4] = { VectorExpand (vid.palette + c * 3), 255 };
 	draw_quad (x, y, fontid, glyph * 4, color, frame);
+}
+
+void
+Vulkan_Draw_SetClip (int x, int y, int w, int h, vulkan_ctx_t *ctx)
+{
+	auto dctx = ctx->draw_context;
+	auto dframe = &dctx->frames.a[ctx->curFrame];
+
+	if (x < 0) {
+		w += x;
+		x = 0;
+	}
+	if (y < 0) {
+		h += y;
+		y = 0;
+	}
+	auto cr = &dframe->clip_range.a[dframe->clip_range.size - 1];
+	if (x != cr->clip.offset.x || y != cr->clip.offset.y
+		|| (uint32_t) w != cr->clip.extent.width
+		|| (uint32_t) h != cr->clip.extent.height) {
+		cr->count = dframe->quad_batch.size - cr->start;
+		DARRAY_APPEND (&dframe->clip_range, ((drawclip_t) {
+			.start = dframe->quad_batch.size,
+			.clip.offset = { .x = x, .y = y },
+			.clip.extent = { .width = w, .height = h },
+		}));
+	}
+}
+
+void
+Vulkan_Draw_ResetClip (vulkan_ctx_t *ctx)
+{
 }
 
 void

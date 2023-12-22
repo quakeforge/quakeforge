@@ -475,6 +475,8 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.Draw_SubPic            = glsl_Draw_SubPic,
 	.Draw_AddFont           = glsl_Draw_AddFont,
 	.Draw_Glyph             = glsl_Draw_Glyph,
+	.Draw_SetClip           = glsl_Draw_SetClip,
+	.Draw_ResetClip         = glsl_Draw_ResetClip,
 
 	.ParticleSystem   = glsl_ParticleSystem,
 	.TrailSystem      = glsl_TrailSystem,

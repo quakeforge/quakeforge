@@ -529,6 +529,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	.Draw_SubPic            = gl_Draw_SubPic,
 	.Draw_AddFont           = gl_Draw_AddFont,
 	.Draw_Glyph             = gl_Draw_Glyph,
+	.Draw_SetClip           = gl_Draw_SetClip,
+	.Draw_ResetClip         = gl_Draw_ResetClip,
 
 	.ParticleSystem   = gl_ParticleSystem,
 	.R_Init           = gl_R_Init,

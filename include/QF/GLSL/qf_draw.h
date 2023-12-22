@@ -62,6 +62,8 @@ void glsl_Draw_SubPic(int x, int y, struct qpic_s *pic,
 					  int srcx, int srcy, int width, int height);
 int glsl_Draw_AddFont (struct font_s *font);
 void glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c);
+void glsl_Draw_SetClip (int x, int y, int w, int h);
+void glsl_Draw_ResetClip (void);
 
 void GLSL_Set2D (void);
 void GLSL_Set2DScaled (void);

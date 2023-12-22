@@ -82,6 +82,8 @@ void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
 						struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_SetClip (int x, int y, int w, int h, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_ResetClip (struct vulkan_ctx_s *ctx);
 
 void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 					   struct vulkan_ctx_s *ctx);

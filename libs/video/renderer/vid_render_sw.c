@@ -485,6 +485,8 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	.Draw_SubPic            = Draw_SubPic,
 	.Draw_AddFont           = Draw_AddFont,
 	.Draw_Glyph             = Draw_Glyph,
+	.Draw_SetClip           = Draw_SetClip,
+	.Draw_ResetClip         = Draw_ResetClip,
 
 	.ParticleSystem   = sw_ParticleSystem,
 	.R_Init           = sw_R_Init,

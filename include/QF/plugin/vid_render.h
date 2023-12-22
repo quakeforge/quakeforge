@@ -116,6 +116,8 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 	int (*Draw_AddFont) (struct font_s *font);
 	void (*Draw_Glyph) (int x, int y, int fontid, int glyphid, int c);
+	void (*Draw_SetClip) (int x, int y, int w, int h);
+	void (*Draw_ResetClip) (void);
 
 	struct psystem_s *(*ParticleSystem) (void);
 	struct psystem_s *(*TrailSystem) (void);

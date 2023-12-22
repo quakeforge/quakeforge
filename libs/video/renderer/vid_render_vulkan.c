@@ -328,6 +328,18 @@ vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 }
 
 static void
+vulkan_Draw_SetClip (int x, int y, int w, int h)
+{
+	Vulkan_Draw_SetClip (x, y, w, h, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_ResetClip (void)
+{
+	Vulkan_Draw_ResetClip (vulkan_ctx);
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 	//FIXME this should not be done every frame
@@ -612,6 +624,8 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.Draw_SubPic            = vulkan_Draw_SubPic,
 	.Draw_AddFont           = vulkan_Draw_AddFont,
 	.Draw_Glyph             = vulkan_Draw_Glyph,
+	.Draw_SetClip           = vulkan_Draw_SetClip,
+	.Draw_ResetClip         = vulkan_Draw_ResetClip,
 
 	.ParticleSystem   = vulkan_ParticleSystem,
 	.R_Init           = vulkan_R_Init,
