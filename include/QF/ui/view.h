@@ -83,12 +83,13 @@ typedef struct viewcont_s {
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
 	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
-	unsigned semantic_x:3;		///< layout size control (IMUI_SizeKind)
-	unsigned semantic_y:3;		///< layout size control (IMUI_SizeKind)
+	unsigned semantic_x:3;		///< layout size control (imui_size_t)
+	unsigned semantic_y:3;		///< layout size control (imui_size_t)
 	unsigned free_x:1;			///< don't set position automatically
 	unsigned free_y:1;			///< don't set position automatically
 	unsigned vertical:1;		///< true: layout is vertical, else horizontal
 	unsigned active:1;			///< can respond to the mouse
+	unsigned is_link:1;			///< has non-root reference component
 } viewcont_t;
 
 enum {
