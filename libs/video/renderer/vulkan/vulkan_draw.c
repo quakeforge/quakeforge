@@ -1803,6 +1803,10 @@ Vulkan_Draw_SetClip (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 		h += y;
 		y = 0;
 	}
+	x *= ctx->twod_scale;
+	y *= ctx->twod_scale;
+	w *= ctx->twod_scale;
+	h *= ctx->twod_scale;
 	auto cr = &dframe->clip_range.a[dframe->clip_range.size - 1];
 	if (x != cr->clip.offset.x || y != cr->clip.offset.y
 		|| (uint32_t) w != cr->clip.extent.width
