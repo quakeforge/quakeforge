@@ -61,9 +61,10 @@
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
 
-#define imui_draw_group ((1 << 14) - 1)
-#define imui_ontop ((1 << 15) - 1)
-#define imui_onbottom (-(1 << 15) + 1)
+#define imui_draw_group ((1 << 30) - 1)
+#define imui_draw_order(x) ((x) << 16)
+#define imui_ontop imui_draw_order((1 << 15) - 1)
+#define imui_onbottom imui_draw_order(-(1 << 15) + 1)
 
 const component_t imui_components[imui_comp_count] = {
 	[imui_percent_x] = {
@@ -87,7 +88,8 @@ typedef struct imui_state_s {
 	uint32_t    label_len;
 	int         key_offset;
 	imui_window_t *menu;
-	int16_t		draw_order;	// for window canvases
+	int32_t		draw_order;	// for window canvases
+	int32_t     draw_group;
 	uint32_t    frame_count;
 	uint32_t    old_entity;
 	uint32_t    entity;
@@ -117,7 +119,7 @@ struct imui_ctx_s {
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
-	int16_t     draw_order;
+	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
 
@@ -137,6 +139,14 @@ struct imui_ctx_s {
 	imui_style_t style;
 	struct DARRAY_TYPE(imui_style_t) style_stack;
 };
+
+static int32_t
+imui_next_window (imui_ctx_t *ctx)
+{
+	ctx->draw_order &= ~(imui_draw_order (1) - 1);
+	ctx->draw_order += imui_draw_order (1);
+	return ctx->draw_order;
+}
 
 static imui_state_t *
 imui_state_new (imui_ctx_t *ctx, uint32_t entity)
@@ -364,7 +374,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
 		View_Delete (window);
 	}
-	ctx->draw_order = ctx->windows.size;
+	ctx->draw_order = imui_draw_order (ctx->windows.size);
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
@@ -729,7 +739,7 @@ sort_windows (imui_ctx_t *ctx)
 			  imui_window_cmp);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = ctx->windows.a[i];
-		window->draw_order = i + 1;
+		window->draw_order = imui_draw_order (i + 1);
 		*Canvas_DrawOrder (ctx->csys, window->entity) = window->draw_order;
 	}
 }
@@ -1258,6 +1268,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 
 	auto state = imui_get_state (ctx, panel->name, panel_view.id);
+	state->draw_group = draw_group;
 	panel->mode = update_hot_active (ctx, state);
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
@@ -1274,7 +1285,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	DARRAY_APPEND (&ctx->windows, state);
 
 	if (!state->draw_order) {
-		state->draw_order = ++ctx->draw_order;
+		state->draw_order = imui_next_window (ctx);
 	}
 
 	auto semantic = panel->auto_fit ? imui_size_fitchildren : imui_size_pixels;
