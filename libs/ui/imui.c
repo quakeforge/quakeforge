@@ -75,6 +75,8 @@ typedef struct imui_state_s {
 	imui_window_t *menu;
 	int32_t		draw_order;	// for window canvases
 	int32_t     draw_group;
+	uint32_t    first_link;
+	uint32_t    num_links;
 	uint32_t    frame_count;
 	uint32_t    old_entity;
 	uint32_t    entity;
@@ -104,6 +106,7 @@ struct imui_ctx_s {
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
+	struct DARRAY_TYPE(imui_state_t *) links;
 	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
@@ -251,6 +254,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
+		.links = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -304,6 +308,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 
 	DARRAY_CLEAR (&ctx->parent_stack);
 	DARRAY_CLEAR (&ctx->windows);
+	DARRAY_CLEAR (&ctx->links);
 	DARRAY_CLEAR (&ctx->style_stack);
 	dstring_delete (ctx->dstr);
 
@@ -488,6 +493,16 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
 	}
 	printf (DFL"\n");
 
+	if (c.is_link) {
+		printf (GRN"%2d: %*slink"DFL"\n", ind, level * 3, "");
+		auto reg = ctx->csys.reg;
+		uint32_t    ent = h->ent[ind];
+		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
+		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+		auto href = View_GetRef (sub_view);
+		dump_tree (href->hierarchy, 0, level + 1, ctx);
+		printf (RED"%2d: %*slink"DFL"\n", ind, level * 3, "");
+	}
 	if (h->childIndex[ind] > ind) {
 		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
 			if (h->childIndex[ind] + i >= h->num_objects) {
@@ -503,7 +518,6 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
 
 typedef struct {
 	bool        x, y;
-	uint32_t    ent;			// cached reference
 	uint32_t    num_views;		// number of views in sub-hierarchy
 } downdep_t;
 
@@ -520,6 +534,9 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 
 	down_depend[0].num_views = h->num_objects;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (i > 0) {
+			down_depend[i].num_views = 0;
+		}
 		if (cont[i].semantic_x == imui_size_fitchildren
 			|| cont[i].semantic_x == imui_size_expand) {
 			down_depend[i].x = true;
@@ -554,7 +571,6 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 			auto href = View_GetRef (sub_view);
 			// control logic was propagated from the linked hierarcy, so
 			// propagate down_depend to the linked hierarcy.
-			down_depend[i].num_views = 0;
 			side_depend[0] = down_depend[i];
 			calc_upwards_dependent (ctx, href->hierarchy, side_depend);
 			down_depend[0].num_views += side_depend[0].num_views;
@@ -694,6 +710,8 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 				}
 			}
 		}
+	}
+	for (uint32_t i = 0; i < h->num_objects; i++) {
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
@@ -830,25 +848,6 @@ imui_window_cmp (const void *a, const void *b)
 }
 
 static void
-set_draw_order (imui_ctx_t *ctx, uint32_t entity, int32_t base)
-{
-	*Canvas_DrawOrder (ctx->csys, entity) = base;
-
-	auto reg = ctx->csys.reg;
-	auto view = View_FromEntity (ctx->vsys, entity);
-	auto h = View_GetRef (view)->hierarchy;
-	viewcont_t *cont = h->components[view_control];
-	uint32_t   *ent = h->ent;
-
-	for (uint32_t i = 0; i < h->num_objects; i++) {
-		if (cont[i].is_link) {
-			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
-			set_draw_order (ctx, sub->ref_id, base);
-		}
-	}
-}
-
-static void
 sort_windows (imui_ctx_t *ctx)
 {
 	heapsort (ctx->windows.a, ctx->windows.size, sizeof (imui_state_t *),
@@ -856,7 +855,12 @@ sort_windows (imui_ctx_t *ctx)
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = ctx->windows.a[i];
 		window->draw_order = imui_draw_order (i + 1);
-		set_draw_order (ctx, window->entity, window->draw_order);
+		*Canvas_DrawOrder (ctx->csys, window->entity) = window->draw_order;
+		for (uint32_t j = 0; j < window->num_links; j++) {
+			auto link = ctx->links.a[window->first_link + j];
+			link->draw_order = window->draw_order + j + 1;
+			*Canvas_DrawOrder (ctx->csys, link->entity) = link->draw_order;
+		}
 	}
 }
 
@@ -1398,6 +1402,8 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		gravity = panel->reference_gravity;
 	}
 
+	state->first_link = ctx->links.size;
+	state->num_links = 0;
 	DARRAY_APPEND (&ctx->windows, state);
 
 	if (!state->draw_order) {
@@ -1638,7 +1644,15 @@ int
 IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 {
 	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
-	set_control (ctx, anchor_view, true);
+	*View_Control (anchor_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_expand,
+		.active = 0,
+	};
+	*(int*) Ent_AddComponent (anchor_view.id, c_percent_x, ctx->csys.reg) = 100;
+	*(int*) Ent_AddComponent (anchor_view.id, c_percent_y, ctx->csys.reg) = 100;
 
 	auto panel = ctx->windows.a[ctx->windows.size - 1];
 
@@ -1648,6 +1662,9 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 
 	auto state = imui_get_state (ctx, name, scroll_box.id);
 	update_hot_active (ctx, state);
+
+	DARRAY_APPEND (&ctx->links, state);
+	panel->num_links++;
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
@@ -1673,8 +1690,8 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 	*View_Control (scroll_box) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
-		.semantic_x = imui_size_expand,
-		.semantic_y = imui_size_expand,
+		.semantic_x = imui_size_pixels,
+		.semantic_y = imui_size_pixels,
 		.free_x = 1,
 		.free_y = 1,
 		.vertical = true,
