@@ -411,6 +411,21 @@ bi (IMUI_EndWindow)
 	IMUI_EndWindow (bi_ctx->imui_ctx);
 }
 
+bi (IMUI_StartScrollBox)
+{
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	const char *name = P_GSTRING (pr, 1);
+	R_INT (pr) = IMUI_StartScrollBox (bi_ctx->imui_ctx, name);
+}
+
+bi (IMUI_EndScrollBox)
+{
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_EndScrollBox (bi_ctx->imui_ctx);
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -426,7 +441,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_DestroyContext,     2, p(int)),
 	bi(IMUI_SetVisible,         2, p(int), p(int)),
 	bi(IMUI_SetSize,            3, p(int), p(int), p(int)),
-	bi(IMUI_ProcessEvent,       3, p(int), p(ptr)),
+	bi(IMUI_ProcessEvent,       2, p(int), p(ptr)),
 	bi(IMUI_BeginFrame,         1, p(int)),
 	bi(IMUI_Draw,               1, p(int)),
 	bi(IMUI_PushLayout,         2, p(int), p(int)),
@@ -445,14 +460,16 @@ static builtin_t builtins[] = {
 	bi(IMUI_Slider,             5, p(int), p(ptr), p(float), p(float), p(string)),
 	bi(IMUI_Spacer,             5, p(int), p(int), p(int), p(int), p(int)),
 	bi(IMUI_FlexibleSpace,      1, p(int)),
-	bi(IMUI_StartPanel,         3, p(int), p(ptr)),
+	bi(IMUI_StartPanel,         2, p(int), p(ptr)),
 	bi(IMUI_ExtendPanel,        3, p(int), p(string)),
 	bi(IMUI_EndPanel,           1, p(int)),
 	bi(IMUI_StartMenu,          3, p(int), p(ptr), p(int)),
 	bi(IMUI_EndMenu,            1, p(int)),
 	bi(IMUI_MenuItem,           3, p(int), p(string), p(int)),
-	bi(IMUI_StartWindow,        3, p(int), p(ptr)),
+	bi(IMUI_StartWindow,        2, p(int), p(ptr)),
 	bi(IMUI_EndWindow,          1, p(int)),
+	bi(IMUI_StartScrollBox,     1, p(int)),
+	bi(IMUI_EndScrollBox,       1, p(int)),
 
 	{0}
 };

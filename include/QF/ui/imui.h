@@ -71,8 +71,13 @@ typedef struct imui_style_s {
 	imui_color_t text;
 } imui_style_t;
 
+// on a root view, this points to a pseudo-parent
+// on a non-root view, this points to a pseudo-child (layout info is taken from
+// the reference to set the non-root view's size, then that is propagated back
+// to the reference)
 typedef struct imui_reference_s {
 	uint32_t    ref_id;
+	struct imui_ctx_s *ctx;		// owns entity if not null
 } imui_reference_t;
 
 typedef struct imui_window_s {
@@ -153,6 +158,9 @@ void IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window);
 int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
 
+int IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name);
+void IMUI_EndScrollBox (imui_ctx_t *ctx);
+
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = (begin); !_i_; _i_++, (end))
 
@@ -205,6 +213,10 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \
 					IMUI_EndWindow (IMUI_context))
+
+#define UI_ScrollBox(name) \
+	IMUI_DeferLoop (IMUI_StartScrollBox (IMUI_context, name), \
+					IMUI_EndScrollBox (IMUI_context))
 
 #define UI_Style(style) \
 	IMUI_DeferLoop (IMUI_PushStyle (IMUI_context, style), \

@@ -46,3 +46,6 @@ int IMUI_MenuItem (imui_ctx_t ctx, string label, int collapse) = #0;
 
 int IMUI_StartWindow (imui_ctx_t ctx, imui_window_t *window) = #0;
 void IMUI_EndWindow (imui_ctx_t ctx) = #0;
+
+int IMUI_StartScrollBox (imui_ctx_t ctx, string name) = #0;
+void IMUI_EndScrollBox (imui_ctx_t ctx) = #0;
