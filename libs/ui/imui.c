@@ -133,7 +133,16 @@ imui_reference_destroy (void *_ref)
 {
 	imui_reference_t *ref = _ref;
 	if (ref->ctx) {
+#if 1
+		//FIXME there's something wrong such that deleting the entity directly
+		//instead of via a view results in corrupted href componets and an
+		//href component leak
+		auto ctx = ref->ctx;
+		auto view = View_FromEntity (ctx->vsys, ref->ref_id);
+		View_Delete (view);
+#else
 		ECS_DelEntity (ref->ctx->csys.reg, ref->ref_id);
+#endif
 	}
 }
 
