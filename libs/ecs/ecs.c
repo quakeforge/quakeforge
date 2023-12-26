@@ -50,10 +50,11 @@ ECS_DelRegistry (ecs_registry_t *registry)
 		return;
 	}
 	registry->locked = 1;
-	for (uint32_t i = 0; i < registry->components.size; i++) {
+	for (uint32_t i = registry->components.size; i-- > 0 ;) {
 		__auto_type comp = &registry->components.a[i];
 		__auto_type pool = &registry->comp_pools[i];
 		Component_DestroyElements (comp, pool->data, 0, pool->count);
+		pool->count = 0;
 	}
 	free (registry->entities);
 	for (uint32_t i = 0; i < registry->components.size; i++) {
