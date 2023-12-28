@@ -394,7 +394,7 @@ BI_Graphics_Init (progs_t *pr)
 	IE_Set_Focus (event_handler_id);
 
 	Con_Load ("client");
-	__auto_type reg = ECS_NewRegistry ();
+	__auto_type reg = ECS_NewRegistry ("qwaq gr");
 	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
 		__auto_type cd = con_module->data->console;

@@ -78,6 +78,7 @@ typedef struct ecs_subpool_s {
 } ecs_subpool_t;
 
 typedef struct ecs_registry_s {
+	const char *name;
 	ecs_pool_t *comp_pools;
 	uint32_t   *entities;
 	ecs_subpool_t *subpools;
@@ -104,7 +105,7 @@ typedef struct ecs_system_s {
 
 #define ECSINLINE GNU89INLINE inline
 
-ecs_registry_t *ECS_NewRegistry (void);
+ecs_registry_t *ECS_NewRegistry (const char *name);
 void ECS_DelRegistry (ecs_registry_t *registry);
 uint32_t ECS_RegisterComponents (ecs_registry_t *registry,
 								 const component_t *components,

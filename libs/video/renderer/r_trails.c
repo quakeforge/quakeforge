@@ -217,7 +217,7 @@ R_Trails_Init (void)
 {
 	Sys_Printf ("R_Trails_Init\n");
 	Sys_RegisterShutdown (trails_shutdown, 0);
-	auto reg = ECS_NewRegistry ();
+	auto reg = ECS_NewRegistry ("r_trails");
 	trails_system.reg = reg;
 	trails_system.base = ECS_RegisterComponents (reg, trails_components,
 												 trails_comp_count);

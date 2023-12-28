@@ -475,7 +475,7 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	PR_Resources_Register (pr, "Draw", res, bi_gui_clear, bi_gui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 
-	res->reg = ECS_NewRegistry ();
+	res->reg = ECS_NewRegistry ("rua gui");
 	Canvas_InitSys (&res->csys, res->reg);
 	res->tsys = (text_system_t) {
 		.reg = res->reg,

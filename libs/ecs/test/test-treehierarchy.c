@@ -610,7 +610,7 @@ puts("Hierarchy_SetTreeMode");
 int
 main (void)
 {
-	test_reg = ECS_NewRegistry ();
+	test_reg = ECS_NewRegistry ("tree");
 	ECS_RegisterComponents (test_reg, test_components, test_num_components);
 	ECS_CreateComponentPools (test_reg);
 

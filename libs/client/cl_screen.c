@@ -281,7 +281,7 @@ cl_create_views (void)
 void
 CL_Init_Screen (void)
 {
-	__auto_type reg = ECS_NewRegistry ();
+	__auto_type reg = ECS_NewRegistry ("cl screen");
 	Canvas_InitSys (&cl_canvas_sys, reg);
 	if (con_module) {
 		__auto_type cd = con_module->data->console;

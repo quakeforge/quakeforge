@@ -104,7 +104,7 @@ check_ent_components (const uint32_t *ents, uint32_t count, uint32_t comp,
 int
 main (void)
 {
-	ecs_registry_t *reg = ECS_NewRegistry ();
+	ecs_registry_t *reg = ECS_NewRegistry ("components");
 	ECS_RegisterComponents (reg, test_components, test_num_components);
 	ECS_CreateComponentPools (reg);
 

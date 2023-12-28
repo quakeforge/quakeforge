@@ -280,7 +280,7 @@ main (void)
 {
 	int         ret = 0;
 
-	test_sys.reg = ECS_NewRegistry ();
+	test_sys.reg = ECS_NewRegistry ("flow");
 	test_sys.base = ECS_RegisterComponents (test_sys.reg, test_components,
 											test_comp_count);
 	ECS_CreateComponentPools (test_sys.reg);

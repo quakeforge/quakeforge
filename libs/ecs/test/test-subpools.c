@@ -140,7 +140,7 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect)
 int
 main (void)
 {
-	ecs_registry_t *reg = ECS_NewRegistry ();
+	ecs_registry_t *reg = ECS_NewRegistry ("subpool");
 	uint32_t base = ECS_RegisterComponents (reg, test_components,
 											test_num_components);
 	ECS_CreateComponentPools (reg);

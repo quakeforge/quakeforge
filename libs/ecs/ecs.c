@@ -35,9 +35,10 @@
 #include "QF/ecs.h"
 
 VISIBLE ecs_registry_t *
-ECS_NewRegistry (void)
+ECS_NewRegistry (const char *name)
 {
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
+	reg->name = name;
 	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
 	reg->next = Ent_Index (nullent);
 	return reg;

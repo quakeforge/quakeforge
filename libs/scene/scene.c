@@ -259,7 +259,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 {
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
-	scene->reg = ECS_NewRegistry ();
+	scene->reg = ECS_NewRegistry ("scene");
 	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
 	for (auto extra = extra_systems; extra && extra->system; extra++) {
 		uint32_t base = ECS_RegisterComponents (scene->reg,

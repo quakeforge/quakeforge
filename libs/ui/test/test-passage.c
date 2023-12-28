@@ -51,7 +51,7 @@ main (void)
 {
 	int         ret = 0;
 	ecs_system_t psg_sys = {
-		.reg = ECS_NewRegistry (),
+		.reg = ECS_NewRegistry ("passage"),
 		.base = ECS_RegisterComponents (psg_sys.reg, passage_components,
 										passage_comp_count),
 	};

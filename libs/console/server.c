@@ -678,7 +678,7 @@ init (void)
 
 	nonl ();
 
-	server_reg = ECS_NewRegistry ();
+	server_reg = ECS_NewRegistry ("sv con");
 	server_base = ECS_RegisterComponents (server_reg, server_components,
 										  server_comp_count);
 	view_base = ECS_RegisterComponents (server_reg, view_components,
