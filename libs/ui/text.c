@@ -180,7 +180,8 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 }
 
 view_t
-Text_PassageView (text_system_t textsys, font_t *font, passage_t *passage)
+Text_PassageView (text_system_t textsys, view_t parent,
+				  font_t *font, passage_t *passage)
 {
 	auto reg = textsys.reg;
 	uint32_t c_script = textsys.text_base + text_script;
@@ -273,7 +274,7 @@ Text_PassageView (text_system_t textsys, font_t *font, passage_t *passage)
 		}
 	}
 	ecs_system_t viewsys = { reg, textsys.view_base };
-	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, nullview);
+	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, parent);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
