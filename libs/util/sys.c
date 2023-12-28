@@ -589,7 +589,6 @@ VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
-	va_list     tmp_args;
 	static int  in_sys_error = 0;
 
 	if (in_sys_error) {
@@ -603,7 +602,6 @@ Sys_Error (const char *error, ...)
 	in_sys_error = 1;
 
 	va_start (args, error);
-	va_copy (tmp_args, args);
 	sys_err_printf_function (error, args);
 	va_end (args);
 
@@ -616,8 +614,9 @@ Sys_Error (const char *error, ...)
 	if (sys_err_printf_function != Sys_ErrPrintf) {
 		// print the message again using the default error printer to increase
 		// the chances of the error being seen.
-		va_copy (args, tmp_args);
+		va_start (args, error);
 		Sys_ErrPrintf (error, args);
+		va_end (args);
 	}
 
 	exit (1);
