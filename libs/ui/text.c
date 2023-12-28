@@ -313,6 +313,14 @@ Text_PassageView (text_system_t textsys, font_t *font, passage_t *passage)
 		.glyphs = glyphs,
 		.count = glyph_count,
 	};
+	if (Ent_HasComponent (passage_view.id, c_passage_glyphs, reg)) {
+		// free the glyphs directly to avoid unnecessary motion in the
+		// component pool (more for order preservation than it being overly
+		// expensive);
+		glyphset_t *gs = Ent_GetComponent (passage_view.id, c_passage_glyphs,
+										   reg);
+		free (gs->glyphs);
+	}
 	Ent_SetComponent (passage_view.id, c_passage_glyphs, reg, &glyphset);
 	hb_buffer_destroy (buffer);
 	hb_font_destroy (fnt);
