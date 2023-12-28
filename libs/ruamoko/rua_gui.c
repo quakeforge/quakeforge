@@ -41,6 +41,7 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 
+#include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/passage.h"
 #include "QF/ui/text.h"
@@ -70,9 +71,10 @@ typedef struct {
 	rua_font_t *fonts;
 
 	ecs_registry_t *reg;
-	uint32_t    text_base;
-	uint32_t    view_base;
-	uint32_t    passage_base;
+	canvas_system_t csys;
+	text_system_t   tsys;
+	ecs_system_t    vsys;
+	ecs_system_t    psys;
 } gui_resources_t;
 
 static rua_passage_t *
@@ -249,8 +251,7 @@ bi (Font_Free)
 bi (Passage_New)
 {
 	gui_resources_t *res = _res;
-	ecs_system_t passage_sys = { .reg = res->reg, .base = res->passage_base };
-	passage_t  *passage = Passage_New (passage_sys);
+	passage_t  *passage = Passage_New (res->psys);
 	R_INT (pr) = alloc_passage (res, passage);
 }
 
@@ -297,12 +298,7 @@ bi (Text_PassageView)
 	gui_resources_t *res = _res;
 	rua_font_t *font = get_font (res, P_INT (pr, 0));
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 1));
-	text_system_t textsys = {
-		.reg = res->reg,
-		.view_base = res->view_base,
-		.text_base = res->text_base,
-	};
-	view_t      view = Text_PassageView (textsys, font->font, psg->passage);
+	view_t      view = Text_PassageView (res->tsys, font->font, psg->passage);
 	R_INT (pr) = view.id;//FIXME
 }
 
@@ -313,8 +309,7 @@ bi (Text_SetScript)
 	const char *lang = P_GSTRING (pr, 1);
 	int         script = P_INT (pr, 1);
 	int         dir = P_INT (pr, 1);
-	text_system_t textsys = { .reg = res->reg, .text_base = res->text_base };
-	Text_SetScript (textsys, textent, lang, script, dir);
+	Text_SetScript (res->tsys, textent, lang, script, dir);
 }
 
 static void
@@ -346,9 +341,9 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 bi (Text_Draw)
 {
 	gui_resources_t *res = _res;
-	uint32_t    passage_glyphs = res->text_base + text_passage_glyphs;
-	uint32_t    glyphs = res->text_base + text_glyphs;
-	uint32_t    vhref = res->view_base + view_href;
+	uint32_t    passage_glyphs = res->tsys.text_base + text_passage_glyphs;
+	uint32_t    glyphs = res->tsys.text_base + text_glyphs;
+	uint32_t    vhref = res->tsys.view_base + view_href;
 	ecs_pool_t *pool = &res->reg->comp_pools[passage_glyphs];
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
@@ -384,8 +379,7 @@ bi (View_Delete)
 {
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_Delete (view);
 }
 
@@ -393,8 +387,7 @@ bi (View_ChildCount)
 {
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	R_UINT (pr) = View_ChildCount (view);
 }
 
@@ -403,8 +396,7 @@ bi (View_GetChild)
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	uint32_t    index = P_UINT (pr, 1);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	R_UINT (pr) = View_GetChild (view, index).id;
 }
 
@@ -414,8 +406,7 @@ bi (View_SetPos)
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_SetPos (view, x, y);
 }
 
@@ -425,8 +416,7 @@ bi (View_SetLen)
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_SetLen (view, x, y);
 }
 
@@ -434,8 +424,7 @@ bi (View_GetLen)
 {
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	view_pos_t  l = View_GetLen (view);
 	R_var (pr, ivec2) = (pr_ivec2_t) { l.x, l.y };
 }
@@ -444,8 +433,7 @@ bi (View_UpdateHierarchy)
 {
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_UpdateHierarchy (view);
 }
 
@@ -488,11 +476,35 @@ RUA_GUI_Init (progs_t *pr, int secure)
 	PR_RegisterBuiltins (pr, builtins, res);
 
 	res->reg = ECS_NewRegistry ();
-	res->text_base = ECS_RegisterComponents (res->reg, text_components,
-											 text_comp_count);
-	res->view_base = ECS_RegisterComponents (res->reg, view_components,
-											 view_comp_count);
-	res->passage_base = ECS_RegisterComponents (res->reg, passage_components,
-												passage_comp_count);
+	Canvas_InitSys (&res->csys, res->reg);
+	res->tsys = (text_system_t) {
+		.reg = res->reg,
+		.view_base = res->csys.view_base,
+		.text_base = res->csys.text_base,
+	};
+	res->vsys = (ecs_system_t) {
+		.reg = res->reg,
+		.base = res->csys.view_base,
+	};
+	res->psys = (ecs_system_t) {
+		.reg = res->reg,
+		.base = ECS_RegisterComponents (res->reg, passage_components,
+										passage_comp_count),
+	};
 	ECS_CreateComponentPools (res->reg);
+}
+
+canvas_system_t
+RUA_GUI_GetCanvasSystem (progs_t *pr)
+{
+	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	return res->csys;
+}
+
+passage_t *
+RUA_GUI_GetPassage (progs_t *pr, int handle)
+{
+	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	auto psg = get_passage (res, handle);
+	return psg->passage;
 }

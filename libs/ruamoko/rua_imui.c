@@ -48,9 +48,7 @@ typedef struct bi_imui_ctx_s {
 
 typedef struct {
 	progs_t    *pr;
-	ecs_registry_t *reg;
 	canvas_system_t canvas_sys;
-	uint32_t    passage_base;
 
 	PR_RESMAP (bi_imui_ctx_t) imui_ctx_map;
 	bi_imui_ctx_t *imui_ctxs;
@@ -483,10 +481,6 @@ RUA_IMUI_Init (progs_t *pr, int secure)
 	PR_Resources_Register (pr, "IMUI", res, bi_imui_clear, bi_imui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 
-	res->reg = ECS_NewRegistry ();
-	Canvas_InitSys (&res->canvas_sys, res->reg);
-	res->passage_base = ECS_RegisterComponents (res->reg, passage_components,
-												passage_comp_count);
-	ECS_CreateComponentPools (res->reg);
+	res->canvas_sys = RUA_GUI_GetCanvasSystem (pr);
 	res->dstr = dstring_new ();
 }
