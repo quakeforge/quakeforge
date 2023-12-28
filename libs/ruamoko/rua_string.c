@@ -52,6 +52,10 @@
 
 #include "rua_internal.h"
 
+typedef struct str_resources_s {
+	dstring_t  *printbuf;
+} str_resources_t;
+
 static void
 bi_strlen (progs_t *pr, void *data)
 {
@@ -85,33 +89,30 @@ RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
 }
 
 static void
-bi_sprintf (progs_t *pr, void *data)
+bi_sprintf (progs_t *pr, void *_res)
 {
-	dstring_t  *dstr;
-
-	dstr = dstring_newstr ();
-	RUA_Sprintf (pr, dstr, "sprintf", 0);
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	str_resources_t *res = _res;
+	dstring_clearstr (res->printbuf);
+	RUA_Sprintf (pr, res->printbuf, "sprintf", 0);
+	RETURN_STRING (pr, res->printbuf->str);
 }
 
 static void
-bi_vsprintf (progs_t *pr, void *data)
+bi_vsprintf (progs_t *pr, void *_res)
 {
+	str_resources_t *res = _res;
 	const char *fmt = P_GSTRING (pr, 0);
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
-	dstring_t  *dstr;
 
 	for (int i = 0; i < args->count; i++) {
 		list[i] = list_start + i * pr->pr_param_size;
 	}
 
-	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "bi_vsprintf", fmt, args->count, list);
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	dstring_clearstr (res->printbuf);
+	PR_Sprintf (pr, res->printbuf, "bi_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, res->printbuf->str);
 }
 
 static void
@@ -400,8 +401,26 @@ static builtin_t builtins[] = {
 	{0}
 };
 
+static void
+rua_string_clear (progs_t *pr, void *_res)
+{
+}
+
+static void
+rua_string_destroy (progs_t *pr, void *_res)
+{
+	str_resources_t *res = _res;
+	dstring_delete (res->printbuf);
+	free (res);
+}
+
 void
 RUA_String_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins, 0);
+	str_resources_t *res = malloc (sizeof (str_resources_t));
+	res->printbuf = dstring_newstr ();
+
+	PR_Resources_Register (pr, "string", res, rua_string_clear,
+						   rua_string_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 }
