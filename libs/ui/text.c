@@ -274,7 +274,8 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		}
 	}
 	ecs_system_t viewsys = { reg, textsys.view_base };
-	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, parent);
+	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, parent,
+												 false);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
@@ -283,12 +284,12 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	for (uint32_t i = 0; i < h->childCount[0]; i++) {
 		uint32_t    paragraph = h->childIndex[0] + i;
 		view_t      paraview = View_AddToEntity (h->ent[paragraph], viewsys,
-												 passage_view);
+												 passage_view, false);
 		glyphref_t  pararef = { .start = passage_ref.count };
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++, g = g->next) {
 			uint32_t    to = h->childIndex[paragraph] + j;
 			view_t      textview = View_AddToEntity (h->ent[to], viewsys,
-													 paraview);
+													 paraview, false);
 			configure_textview (textview, glyphs, g, passage_ref.count,
 								c_glyphs);
 			View_SetGravity (textview, grav_flow);

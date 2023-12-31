@@ -556,7 +556,7 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 						   canvas_sys.reg)) {
 		View_AddToEntity (ent, (ecs_system_t) { canvas_sys.reg,
 												canvas_sys.view_base },
-						  nullview);
+						  nullview, true);
 	}
 }
 

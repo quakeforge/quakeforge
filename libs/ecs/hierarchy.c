@@ -40,6 +40,7 @@
 #include "QF/ecs.h"
 
 static component_t ent_component = { .size = sizeof (uint32_t) };
+static component_t own_component = { .size = sizeof (uint8_t) };
 static component_t childCount_component = { .size = sizeof (uint32_t) };
 static component_t childIndex_component = { .size = sizeof (uint32_t) };
 static component_t parentIndex_component = { .size = sizeof (uint32_t) };
@@ -78,6 +79,20 @@ hierarchy_InvalidateReferences (hierarchy_t *hierarchy, uint32_t start,
 }
 
 static void
+hierarchy_remove_reference (hierarchy_t *hierarchy, uint32_t index)
+{
+	uint32_t    ent = hierarchy->ent[index];
+	uint32_t    href = hierarchy->href_comp;
+	auto        reg = hierarchy->reg;
+	if (ECS_EntValid (ent, reg) && Ent_HasComponent (ent, href, reg)) {
+		hierref_t  *ref = Ent_GetComponent (ent, href, reg);
+		ref->id = nullent;
+		ref->index = nullindex;
+		Ent_RemoveComponent (ent, href, reg);
+	}
+}
+
+static void
 hierarchy_UpdateChildIndices (hierarchy_t *hierarchy, uint32_t start,
 							  int offset)
 {
@@ -105,6 +120,8 @@ Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count)
 
 		Component_ResizeArray (&ent_component,
 							   (void **) &hierarchy->ent, new_max);
+		Component_ResizeArray (&own_component,
+							   (void **) &hierarchy->own, new_max);
 		Component_ResizeArray (&childCount_component,
 							   (void **) &hierarchy->childCount, new_max);
 		Component_ResizeArray (&childIndex_component,
@@ -139,6 +156,8 @@ hierarchy_open (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	}
 	Component_MoveElements (&ent_component,
 							hierarchy->ent, dstIndex, index, count);
+	Component_MoveElements (&own_component,
+							hierarchy->own, dstIndex, index, count);
 	Component_MoveElements (&childCount_component,
 							hierarchy->childCount, dstIndex, index, count);
 	Component_MoveElements (&childIndex_component,
@@ -169,6 +188,8 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 	count = hierarchy->num_objects - index;
 	Component_MoveElements (&ent_component,
 							hierarchy->ent, index, srcIndex, count);
+	Component_MoveElements (&own_component,
+							hierarchy->own, index, srcIndex, count);
 	Component_MoveElements (&childCount_component,
 							hierarchy->childCount, index, srcIndex, count);
 	Component_MoveElements (&childIndex_component,
@@ -197,10 +218,14 @@ hierarchy_move (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 	Component_CopyElements (&ent_component,
 							dst->ent, dstIndex,
 							src->ent, srcIndex, count);
+	Component_CopyElements (&own_component,
+							dst->own, dstIndex,
+							src->own, srcIndex, count);
 	// Actually move (as in C++ move semantics) source hierarchy object
 	// references so that their indices do not get updated when the objects
 	// are removed from the source hierarchy
 	memset (&src->ent[srcIndex], nullent, count * sizeof(dst->ent[0]));
+	memset (&src->own[srcIndex], false, count * sizeof(dst->own[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
 		if (dst->ent[dstIndex + i] != nullent) {
@@ -223,7 +248,8 @@ static void
 hierarchy_init (hierarchy_t *dst, uint32_t index,
 				uint32_t parentIndex, uint32_t childIndex, uint32_t count)
 {
-	memset (&dst->ent[index], nullent, count * sizeof(uint32_t));
+	memset (&dst->ent[index], nullent, count * sizeof(dst->ent[0]));
+	memset (&dst->own[index], false, count * sizeof(dst->own[0]));
 
 	for (uint32_t i = 0; i < count; i++) {
 		dst->parentIndex[index + i] = parentIndex;
@@ -428,7 +454,11 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index,
 	if (delEntities) {
 		hierarchy_InvalidateReferences (hierarchy, childIndex, childCount);
 		for (uint32_t i = 0; i < childCount; i++) {
-			ECS_DelEntity (hierarchy->reg, hierarchy->ent[childIndex + i]);
+			if (hierarchy->own[childIndex + i]) {
+				ECS_DelEntity (hierarchy->reg, hierarchy->ent[childIndex + i]);
+			} else {
+				hierarchy_remove_reference (hierarchy, childIndex + i);
+			}
 		}
 	}
 	hierarchy_close (hierarchy, childIndex, childCount);
@@ -455,7 +485,11 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 	hierarchy_remove_children (hierarchy, index, delEntities);
 	if (delEntities) {
 		hierarchy_InvalidateReferences (hierarchy, index, 1);
-		ECS_DelEntity (hierarchy->reg, hierarchy->ent[index]);
+		if (hierarchy->own[index]) {
+			ECS_DelEntity (hierarchy->reg, hierarchy->ent[index]);
+		} else {
+			hierarchy_remove_reference (hierarchy, index);
+		}
 	}
 	hierarchy_close (hierarchy, index, 1);
 
@@ -477,11 +511,8 @@ Hierarchy_Create (hierarchy_t *hierarchy)
 static void
 hierarchy_destroy (hierarchy_t *hierarchy)
 {
-	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
-	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
-		ECS_DelEntity (hierarchy->reg, hierarchy->ent[i]);
-	}
 	free (hierarchy->ent);
+	free (hierarchy->own);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
 	free (hierarchy->parentIndex);
@@ -544,6 +575,7 @@ copy_one_node (hierarchy_t *dst, const hierarchy_t *src,
 	dst->childIndex[dstIndex] = childIndex;
 	dst->childCount[dstIndex] = childCount;
 	dst->ent[dstIndex] = src->ent[srcIndex];
+	dst->own[dstIndex] = src->own[srcIndex];
 	if (dst->type) {
 		for (uint32_t i = 0; i < dst->type->num_components; i++) {
 			Component_CopyElements (&dst->type->components[i],
@@ -645,6 +677,7 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 	}
 
 	swap_pointers (&tmp.ent, &src->ent);
+	swap_pointers (&tmp.own, &src->own);
 	swap_pointers (&tmp.childCount, &src->childCount);
 	swap_pointers (&tmp.childIndex, &src->childIndex);
 	swap_pointers (&tmp.parentIndex, &src->parentIndex);
@@ -678,6 +711,7 @@ Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 			.index = i,
 		};
 		Ent_SetComponent (dst->ent[i], href_comp, dstReg, &ref);
+		dst->own[i] = true;
 	}
 
 	Component_CopyElements (&childCount_component,

@@ -140,7 +140,8 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
 VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
 view_t View_New (ecs_system_t viewsys, view_t parent);
-view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent);
+view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent,
+						 bool own);
 VIEWINLINE void View_Delete (view_t view);
 void View_SetParent (view_t view, view_t parent);
 void View_UpdateHierarchy (view_t view);

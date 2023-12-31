@@ -407,7 +407,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 
 	// delete and recreate the root view (but not the root entity)
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
-	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
+	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview, true);
 	set_hierarchy_tree_mode (ctx, View_GetRef (ctx->root_view), true);
 	View_SetLen (ctx->root_view, root_size.x, root_size.y);
 

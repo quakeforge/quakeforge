@@ -54,6 +54,7 @@ typedef struct hierarchy_s {
 	uint32_t    num_objects;
 	uint32_t    max_objects;
 	uint32_t   *ent;
+	uint8_t    *own;
 	uint32_t   *childCount;
 	uint32_t   *childIndex;
 	uint32_t   *parentIndex;

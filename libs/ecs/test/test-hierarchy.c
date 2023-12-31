@@ -157,7 +157,7 @@ dump_hierarchy (hierref_t href)
 {
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, test_reg);
 	ecs_registry_t *reg = h->reg;
-	puts ("in: ri pa ci cc en name");
+	puts ("in: ri pa ci cc en ow name");
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		uint32_t    rind = nullent;
 		static char fake_name[] = ONG "null" DFL;
@@ -170,12 +170,13 @@ dump_hierarchy (hierref_t href)
 				name = Ent_GetComponent (h->ent[i], t_name, reg);
 			}
 		}
-		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %s%s"DFL"\n", i,
+		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %2d %s%s"DFL"\n", i,
 				ref_index_color (i, rind), rind,
 				parent_index_color (h, i), h->parentIndex[i],
 				child_index_color (h, i), h->childIndex[i],
 				child_count_color (h, i), h->childCount[i],
 				entity_color (h, i), h->ent[i],
+				h->own[i],
 				highlight_color (h, i), *name);
 	}
 	puts ("");
@@ -191,7 +192,7 @@ dump_tree (hierref_t href, int level)
 		return;
 	}
 	if (!level) {
-		puts ("in: pa ci cc en|name");
+		puts ("in: pa ci cc en ow|name");
 	}
 	static char fake_name[] = ONG "null" DFL;
 	static char *fake_nameptr = fake_name;
@@ -201,11 +202,12 @@ dump_tree (hierref_t href, int level)
 		&& Ent_HasComponent (h->ent[ind], t_name, reg)) {
 		name = Ent_GetComponent (h->ent[ind], t_name, reg);;
 	}
-	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL"|%*s%s%s"DFL"\n", ind,
+	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL" %2d|%*s%s%s"DFL"\n", ind,
 			parent_index_color (h, ind), h->parentIndex[ind],
 			child_index_color (h, ind), h->childIndex[ind],
 			child_count_color (h, ind), h->childCount[ind],
 			entity_color (h, ind), h->ent[ind],
+			h->own[ind],
 			level * 3, "", highlight_color (h, ind), *name);
 
 	if (h->childIndex[ind] > ind) {
@@ -274,6 +276,7 @@ create_ent (uint32_t parent, const char *name)
 	}
 	hierarchy_t *h = Ent_GetComponent (ref->id, ecs_hierarchy, test_reg);
 	h->ent[ref->index] = ent;
+	h->own[ref->index] = true;
 	return ent;
 }
 

@@ -144,7 +144,7 @@ static const hierarchy_type_t view_type = {
 };
 
 view_t
-View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent)
+View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent, bool own)
 {
 	uint32_t    href_comp = viewsys.base + view_href;
 	hierref_t  *ref = Ent_AddComponent (ent, href_comp, viewsys.reg);
@@ -158,6 +158,7 @@ View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent)
 	}
 	hierarchy_t *h = Ent_GetComponent (ref->id, ecs_hierarchy, viewsys.reg);
 	h->ent[ref->index] = ent;
+	h->own[ref->index] = own;
 	return (view_t) { .reg = viewsys.reg, .id = ent, .comp = href_comp };
 }
 
@@ -165,7 +166,7 @@ view_t
 View_New (ecs_system_t viewsys, view_t parent)
 {
 	uint32_t    view = ECS_NewEntity (viewsys.reg);
-	return View_AddToEntity (view, viewsys, parent);
+	return View_AddToEntity (view, viewsys, parent, true);
 }
 
 void

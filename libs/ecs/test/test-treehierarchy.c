@@ -415,6 +415,7 @@ create_ent (uint32_t parent, const char *name)
 static void
 set_tree_mode (hierref_t href, bool tree_mode)
 {
+	printf ("set_tree_mode: %s\n", tree_mode ? "true" : "false");
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, test_reg);
 	Hierarchy_SetTreeMode (h, tree_mode);
 }
@@ -608,8 +609,9 @@ test_build_hierarchy2 (void)
 	if (!check_next_last_indices (*ref)) { return 1; }
 	if (!check_for_loops (*ref)) { return 1; }
 
+ECS_PrintEntity (test_reg, root);
 	set_tree_mode (*ref, false);
-puts("set_tree_mode");
+ECS_PrintEntity (test_reg, root);
 	dump_hierarchy (*ref);
 	dump_tree (*ref, 0);
 
