@@ -330,6 +330,15 @@ bi (IMUI_Labelf)
 	IMUI_Label (bi_ctx->imui_ctx, res->dstr->str);
 }
 
+bi (IMUI_Passage)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto passage = RUA_GUI_GetPassage (pr, P_INT (pr, 2));
+	IMUI_Passage (bi_ctx->imui_ctx, P_GSTRING (pr, 1), passage);
+}
+
 bi (IMUI_Button)
 {
 	qfZoneScoped (true);
@@ -498,6 +507,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_Style_Fetch,        2, p(int), p(ptr)),
 	bi(IMUI_Label,              2, p(int), p(string)),
 	bi(IMUI_Labelf,             -3, p(int), p(string)),
+	bi(IMUI_Passage,            3, p(int), p(string), p(int)),
 	bi(IMUI_Button,             2, p(int), p(string)),
 	bi(IMUI_Checkbox,           3, p(int), p(ptr), p(string)),
 	bi(IMUI_Radio,              4, p(int), p(ptr), p(int), p(string)),

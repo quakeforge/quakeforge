@@ -36,6 +36,7 @@
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
 struct IE_event_s;
+struct passage_s;
 
 enum {
 	imui_percent_x,	///< int
@@ -131,6 +132,8 @@ void IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style);
 
 void IMUI_Label (imui_ctx_t *ctx, const char *label);
 void IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)__attribute__((format(PRINTF,2,3)));
+void IMUI_Passage (imui_ctx_t *ctx, const char *name,
+				   struct passage_s *passage);
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
 void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
@@ -171,6 +174,9 @@ void IMUI_EndScrollBox (imui_ctx_t *ctx);
 
 #define UI_Labelf(fmt...) \
 	IMUI_Labelf(IMUI_context, fmt)
+
+#define UI_Passage(name, psg) \
+	IMUI_Passage(IMUI_context, name, psg)
 
 #define UI_Button(label) \
 	IMUI_Button(IMUI_context, label)

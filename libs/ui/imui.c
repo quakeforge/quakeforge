@@ -56,8 +56,9 @@
 #define c_percent_x (ctx->csys.imui_base + imui_percent_x)
 #define c_percent_y (ctx->csys.imui_base + imui_percent_y)
 #define c_reference (ctx->csys.imui_base + imui_reference)
+#define t_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
+#define c_passage_glyphs (ctx->csys.base + canvas_passage_glyphs)
 #define c_glyphs (ctx->csys.base + canvas_glyphs)
-#define c_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
 
@@ -304,9 +305,28 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 	return ctx;
 }
 
+static void
+clear_items (imui_ctx_t *ctx)
+{
+	uint32_t    root_ent = ctx->root_view.id;
+
+	// delete the root view (but not the root entity)
+	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
+
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		View_Delete (window);
+	}
+	DARRAY_RESIZE (&ctx->parent_stack, 0);
+	DARRAY_RESIZE (&ctx->windows, 0);
+	DARRAY_RESIZE (&ctx->links, 0);
+	DARRAY_RESIZE (&ctx->style_stack, 0);
+}
+
 void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
+	clear_items (ctx);
 	for (auto s = ctx->states; s; s = s->next) {
 		free (s->label);
 	}
@@ -415,8 +435,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	uint32_t    root_ent = ctx->root_view.id;
 	auto root_size = View_GetLen (ctx->root_view);
 
-	// delete and recreate the root view (but not the root entity)
-	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
+	clear_items (ctx);
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview, true);
 	set_hierarchy_tree_mode (ctx, View_GetRef (ctx->root_view), true);
 	View_SetLen (ctx->root_view, root_size.x, root_size.y);
@@ -424,15 +443,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
-	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		View_Delete (window);
-	}
 	ctx->draw_order = imui_draw_order (ctx->windows.size);
-	DARRAY_RESIZE (&ctx->parent_stack, 0);
-	DARRAY_RESIZE (&ctx->windows, 0);
-	DARRAY_RESIZE (&ctx->links, 0);
-	DARRAY_RESIZE (&ctx->style_stack, 0);
 	ctx->current_menu = 0;
 }
 
@@ -493,11 +504,15 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 	auto reg = ctx->csys.reg;
 	uint32_t ind = href.index;
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	view_pos_t *abs = h->components[view_abs];
 	view_pos_t *len = h->components[view_len];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
-	printf ("%2d: %*s[%s%d %s%d"DFL"] %c %s%d %s%d"DFL, ind,
+	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] %c %s%d %s%d"DFL,
+			ind, e,
 			level * 3, "",
+			view_color (h, ind, ctx, false), abs[ind].x,
+			view_color (h, ind, ctx, true),  abs[ind].y,
 			view_color (h, ind, ctx, false), len[ind].x,
 			view_color (h, ind, ctx, true),  len[ind].y,
 			c.vertical ? 'v' : 'h',
@@ -516,14 +531,14 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 	printf (DFL"\n");
 
 	if (c.is_link) {
-		printf (GRN"%2d: %*slink"DFL"\n", ind, level * 3, "");
+		printf (GRN"%3d: %*slink"DFL"\n", ind, 8 + level * 3, "");
 		auto reg = ctx->csys.reg;
 		uint32_t    ent = h->ent[ind];
 		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
 		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
 		auto href = View_GetRef (sub_view);
 		dump_tree (href, level + 1, ctx);
-		printf (RED"%2d: %*slink"DFL"\n", ind, level * 3, "");
+		printf (RED"%3d: %*slink"DFL"\n", ind, 8 + level * 3, "");
 	}
 	if (h->childIndex[ind] > ind) {
 		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
@@ -1068,7 +1083,7 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
-					  Ent_GetComponent (text.id, c_passage_glyphs, reg));
+					  Ent_GetComponent (text.id, t_passage_glyphs, reg));
 
 	len = View_GetLen (text);
 	View_SetLen (view, len.x, len.y);
@@ -1141,6 +1156,63 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 	dvsprintf (ctx->dstr, fmt, args);
 	va_end (args);
 	IMUI_Label (ctx, ctx->dstr->str);
+}
+
+void
+IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
+{
+	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
+	*View_Control (anchor_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_expand,
+		.vertical = true,
+		.active = 1,
+	};
+	auto reg = ctx->csys.reg;
+	*(int*) Ent_AddComponent (anchor_view.id, c_percent_x, reg) = 100;
+	*(int*) Ent_AddComponent (anchor_view.id, c_percent_y, reg) = 100;
+
+	auto state = imui_get_state (ctx, name, anchor_view.id);
+	update_hot_active (ctx, state);
+
+	set_fill (ctx, anchor_view, ctx->style.background.normal);
+
+	auto psg_view = Text_PassageView (ctx->tsys, nullview,
+									  ctx->font, passage);
+	Canvas_SetReference (ctx->csys, psg_view.id,
+						 Canvas_Entity (ctx->csys,
+										View_GetRoot (anchor_view).id));
+	if (Ent_HasComponent (psg_view.id, c_passage_glyphs, reg)) {
+		// FIXME this shouldn't be necessary and is a sign of bigger problems
+		Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
+	}
+	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
+					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
+	*View_Control (psg_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_expand,
+		.free_x = 1,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+	*(int*) Ent_AddComponent (psg_view.id, c_percent_x, ctx->csys.reg) = 100;
+	*(int*) Ent_AddComponent (psg_view.id, c_percent_y, ctx->csys.reg) = 100;
+
+	View_Control (anchor_view)->is_link = 1;
+	imui_reference_t link = {
+		.ref_id = psg_view.id,
+	};
+	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
+
+	imui_reference_t anchor = {
+		.ref_id = anchor_view.id,
+	};
+	Ent_SetComponent (psg_view.id, c_reference, psg_view.reg, &anchor);
 }
 
 bool

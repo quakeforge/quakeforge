@@ -61,6 +61,7 @@ void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style);
 
 void IMUI_Label (imui_ctx_t ctx, string label);
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...);
+void IMUI_Passage (imui_ctx_t ctx, string name, int passage);
 int IMUI_Button (imui_ctx_t ctx, string label);
 int IMUI_Checkbox (imui_ctx_t ctx, int *flag, string label);
 void IMUI_Radio (imui_ctx_t ctx, int *curvalue, int value, string label);
@@ -95,6 +96,9 @@ void IMUI_EndScrollBox (imui_ctx_t ctx);
 
 #define UI_Labelf(fmt...) \
 	IMUI_Labelf(IMUI_context, fmt)
+
+#define UI_Passage(name, psg) \
+	IMUI_Passage(IMUI_context, name, psg)
 
 #define UI_Button(label) \
 	IMUI_Button(IMUI_context, label)

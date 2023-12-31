@@ -27,6 +27,7 @@ void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style) = #0;
 
 void IMUI_Label (imui_ctx_t ctx, string label) = #0;
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...) = #0;
+void IMUI_Passage (imui_ctx_t ctx, string name, int passage) = #0;
 int IMUI_Button (imui_ctx_t ctx, string label) = #0;
 int IMUI_Checkbox (imui_ctx_t ctx, int *flag, string label) = #0;
 void IMUI_Radio (imui_ctx_t ctx, int *curvalue, int value, string label) = #0;
