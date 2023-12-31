@@ -157,6 +157,7 @@ void view_flow_up_left (view_t view, view_pos_t len);
 VIEWINLINE hierref_t *View_GetRef (view_t view);
 VIEWINLINE int View_Valid (view_t view);
 
+VIEWINLINE view_t View_GetRoot (view_t view);
 VIEWINLINE view_t View_GetParent (view_t view);
 VIEWINLINE uint32_t View_ChildCount (view_t view);
 VIEWINLINE view_t View_GetChild (view_t view, uint32_t index);
@@ -217,6 +218,19 @@ View_Delete (view_t view)
 	if (!ref.hierarchy->num_objects) {
 		Hierarchy_Delete (ref.hierarchy);
 	}
+}
+
+VIEWINLINE
+view_t
+View_GetRoot (view_t view)
+{
+	__auto_type ref = View_GetRef (view);
+	hierarchy_t *h = ref->hierarchy;
+	return (view_t) {
+		.reg = view.reg,
+		.id = h->ent[0],
+		.comp = view.comp,
+	};
 }
 
 VIEWINLINE
