@@ -241,3 +241,33 @@ ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
 	}
 	pool->count = 0;
 }
+
+VISIBLE void
+ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
+{
+	bool valid = ECS_EntValid (ent, registry);
+	printf ("%08x %s\n", ent,
+			valid ? "valid"
+			      : ent < registry->num_entities ? "deleted"
+				  : ent == nullent ? "null"
+				  : "invalid");
+	if (!valid) {
+		return;
+	}
+	for (size_t i = 0; i < registry->components.size; i++) {
+		if (!Ent_HasComponent (ent, i, registry)) {
+			continue;
+		}
+		printf ("%3zd %s\n", i, registry->components.a[i].name);
+	}
+}
+
+VISIBLE void
+ECS_PrintRegistry (ecs_registry_t *registry)
+{
+	printf ("%s\n", registry->name);
+	for (size_t i = 0; i < registry->components.size; i++) {
+		printf ("%3zd %7d %s\n", i, registry->comp_pools[i].count,
+				registry->components.a[i].name);
+	}
+}

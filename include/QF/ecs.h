@@ -126,6 +126,8 @@ void ECS_SortComponentPoolRange (ecs_registry_t *registry, uint32_t component,
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
+void ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent);
+void ECS_PrintRegistry (ecs_registry_t *registry);
 
 uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
 void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
