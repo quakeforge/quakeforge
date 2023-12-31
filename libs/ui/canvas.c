@@ -42,13 +42,15 @@
 static uint32_t
 _canvas_rangeid (ecs_registry_t *reg, uint32_t ent, uint32_t comp, uint32_t c)
 {
-	comp += canvas_canvas - c;
+	uint32_t    rcomp = comp - c + canvas_canvasref;
+	uint32_t    ccomp = comp - c + canvas_canvas;
 	// view components come immediately after canvas components
-	uint32_t    vcomp = view_href + comp + canvas_comp_count - canvas_canvas;
+	uint32_t    vcomp = view_href + canvas_comp_count + comp - c;
 	hierref_t  *href = Ent_GetComponent (ent, vcomp, reg);
-	// the root entity of the hierarchy has the canvas component
+	// the root entity of the hierarchy has the canvasref or canvas component
 	uint32_t    cent = href->hierarchy->ent[0];
-	canvas_t   *canvas = Ent_GetComponent (cent, comp, reg);
+	cent = *(uint32_t *) Ent_GetComponent (cent, rcomp, reg);
+	canvas_t   *canvas = Ent_GetComponent (cent, ccomp, reg);
 	return canvas->range[c];
 }
 
@@ -79,7 +81,7 @@ canvas_canvas_destroy (void *_canvas)
 {
 	canvas_t *canvas = _canvas;
 	auto reg = canvas->reg;
-	for (uint32_t i = 0; i < canvas_canvas; i++) {
+	for (uint32_t i = 0; i < canvas_subpool_count; i++) {
 		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
 	}
 }
@@ -155,12 +157,20 @@ const component_t canvas_components[canvas_comp_count] = {
 		.name = "outline",
 		.rangeid = canvas_outline_rangeid,
 	},
+
+	[canvas_canvasref] = {
+		.size = sizeof (uint32_t),
+		.name = "canvasref",
+	},
 	[canvas_canvas] = {
 		.size = sizeof (canvas_t),
 		.name = "canvas",
 		.destroy = canvas_canvas_destroy,
 	},
 };
+
+#define c_canvasref (canvas_sys.base + canvas_canvasref)
+#define c_canvas (canvas_sys.base + canvas_canvas)
 
 typedef void (*canvas_sysfunc_f) (canvas_system_t *canvas_sys,
 								  ecs_pool_t *pool, ecs_range_t range);
@@ -471,8 +481,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 	};
 
 	auto        reg = canvas_sys.reg;
-	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *canvas_pool = &reg->comp_pools[comp];
+	ecs_pool_t *canvas_pool = &reg->comp_pools[c_canvas];
 	uint32_t    count = canvas_pool->count;
 	uint32_t   *entities = canvas_pool->dense;
 	__auto_type canvases = (canvas_t *) canvas_pool->data;
@@ -535,15 +544,19 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 		.base = canvas_sys.base,
 		.visible = true
 	};
-	for (uint32_t i = 0; i < canvas_canvas; i++) {
+	for (uint32_t i = 0; i < canvas_subpool_count; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
 	}
-	Ent_SetComponent (ent, canvas_sys.base + canvas_canvas, canvas_sys.reg,
-					  &canvas);
-	View_AddToEntity (ent,
-					  (ecs_system_t) { canvas_sys.reg, canvas_sys.view_base },
-					  nullview);
+	// add a self reference to keep _canvas_rangeid and Canvas_Entity simple
+	Ent_SetComponent (ent, c_canvasref, canvas_sys.reg, &ent);
+	Ent_SetComponent (ent, c_canvas, canvas_sys.reg, &canvas);
+	if (!Ent_HasComponent (ent, canvas_sys.view_base + view_href,
+						   canvas_sys.reg)) {
+		View_AddToEntity (ent, (ecs_system_t) { canvas_sys.reg,
+												canvas_sys.view_base },
+						  nullview);
+	}
 }
 
 uint32_t
@@ -575,8 +588,7 @@ void
 Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 						  uint32_t component)
 {
-	canvas_t   *canvas = Ent_GetComponent (ent, canvas_sys.base + canvas_canvas,
-										   canvas_sys.reg);
+	canvas_t   *canvas = Ent_GetComponent (ent, c_canvas, canvas_sys.reg);
 	uint32_t    rid = canvas->range[component];
 	uint32_t    c = component + canvas_sys.base;
 	ecs_range_t range = ECS_GetSubpoolRange (canvas_sys.reg, c, rid);
@@ -597,9 +609,8 @@ canvas_draw_cmp (const void *_a, const void *_b, void *arg)
 {
 	uint32_t    enta = *(const uint32_t *)_a;
 	uint32_t    entb = *(const uint32_t *)_b;
-	canvas_system_t *canvas_sys = arg;
-	auto reg = canvas_sys->reg;
-	uint32_t c_canvas = canvas_sys->base + canvas_canvas;
+	auto canvas_sys = *(canvas_system_t *)arg;
+	auto reg = canvas_sys.reg;
 	auto canvasa = (canvas_t *) Ent_GetComponent (enta, c_canvas, reg);
 	auto canvasb = (canvas_t *) Ent_GetComponent (entb, c_canvas, reg);
 	int diff = canvasa->draw_group - canvasb->draw_group;
@@ -618,6 +629,5 @@ void
 Canvas_DrawSort (canvas_system_t canvas_sys)
 {
 	auto reg = canvas_sys.reg;
-	uint32_t c_canvas = canvas_sys.base + canvas_canvas;
 	ECS_SortComponentPool (reg, c_canvas, canvas_draw_cmp, &canvas_sys);
 }

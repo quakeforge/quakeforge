@@ -52,9 +52,11 @@ enum {
 
 	// last so deleting an entity removes the grouped components first
 	// also, does not have a subpool
-	canvas_canvas,
+	canvas_canvasref,	// reference to entity with canvas
+	canvas_canvas,		// actual canvas object
 
-	canvas_comp_count
+	canvas_comp_count,
+	canvas_subpool_count = canvas_canvasref
 };
 
 typedef struct canvas_s {
@@ -99,6 +101,9 @@ void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 void Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
+CANVASINLINE uint32_t Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent);
+CANVASINLINE void Canvas_SetReference (canvas_system_t canvas_sys,
+									   uint32_t ent, uint32_t ref);
 CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);
 CANVASINLINE int32_t *Canvas_DrawGroup (canvas_system_t canvas_sys,
 										uint32_t ent);
@@ -120,6 +125,23 @@ Canvas_GetRootView (canvas_system_t canvas_sys, uint32_t ent)
 	ecs_system_t viewsys = { canvas_sys.reg, canvas_sys.view_base };
 	return View_FromEntity (viewsys, ent);
 }
+
+CANVASINLINE
+uint32_t
+Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent)
+{
+	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
+	return *(uint32_t *) Ent_GetComponent (ent, rcomp, canvas_sys.reg);
+}
+
+CANVASINLINE
+void
+Canvas_SetReference (canvas_system_t canvas_sys, uint32_t ent, uint32_t ref)
+{
+	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
+	Ent_SetComponent (ent, rcomp, canvas_sys.reg, &ref);
+}
+
 
 CANVASINLINE
 bool *
