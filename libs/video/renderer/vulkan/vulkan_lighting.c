@@ -118,45 +118,45 @@ static cvar_t dynlight_size_cvar = {
 };
 
 static const light_t *
-get_light (uint32_t ent, ecs_registry_t *reg)
+get_light (entity_t ent)
 {
-	return Ent_GetComponent (ent, scene_light, reg);
+	return Ent_GetComponent (ent.id, ent.base + scene_light, ent.reg);
 }
 
 static const dlight_t *
 get_dynlight (entity_t ent)
 {
-	return Ent_GetComponent (ent.id, scene_dynlight, ent.reg);
+	return Ent_GetComponent (ent.id, ent.base + scene_dynlight, ent.reg);
 }
 
 static bool
 has_dynlight (entity_t ent)
 {
-	return Ent_HasComponent (ent.id, scene_dynlight, ent.reg);
+	return Ent_HasComponent (ent.id, ent.base + scene_dynlight, ent.reg);
 }
 
 static uint32_t
 get_lightstyle (entity_t ent)
 {
-	return *(uint32_t *) Ent_GetComponent (ent.id, scene_lightstyle, ent.reg);
+	return *(uint32_t *) Ent_GetComponent (ent.id, ent.base + scene_lightstyle, ent.reg);
 }
 
 static uint32_t
 get_lightleaf (entity_t ent)
 {
-	return *(uint32_t *) Ent_GetComponent (ent.id, scene_lightleaf, ent.reg);
+	return *(uint32_t *) Ent_GetComponent (ent.id, ent.base + scene_lightleaf, ent.reg);
 }
 
 static uint32_t
 get_lightid (entity_t ent)
 {
-	return *(uint32_t *) Ent_GetComponent (ent.id, scene_lightid, ent.reg);
+	return *(uint32_t *) Ent_GetComponent (ent.id, ent.base + scene_lightid, ent.reg);
 }
 
 static void
-set_lightid (uint32_t ent, ecs_registry_t *reg, uint32_t id)
+set_lightid (entity_t ent, uint32_t id)
 {
-	Ent_SetComponent (ent, scene_lightid, reg, &id);
+	Ent_SetComponent (ent.id, ent.base + scene_lightid, ent.reg, &id);
 }
 
 static void
@@ -627,12 +627,12 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	float    light_radii[ST_COUNT][MaxLights];
 	uint32_t light_leafs[ST_COUNT][MaxLights];
 	vec4f_t  light_positions[ST_COUNT][MaxLights];
-	uint32_t entids[ST_COUNT][MaxLights];
+	entity_t entids[ST_COUNT][MaxLights];
 
 	uint32_t light_count = 0;
 	auto queue = lframe->light_queue;
 
-	uint32_t dynamic_light_entities[MaxLights];
+	entity_t dynamic_light_entities[MaxLights];
 	uint32_t dynamic_light_leafs[MaxLights];
 	const dlight_t *dynamic_lights[MaxLights];
 	int ndlight = 0;
@@ -641,7 +641,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	for (size_t i = 0; i < entqueue->ent_queues[mod_light].size; i++) {
 		entity_t    ent = entqueue->ent_queues[mod_light].a[i];
 		if (has_dynlight (ent)) {
-			dynamic_light_entities[ndlight] = ent.id;
+			dynamic_light_entities[ndlight] = ent;
 			dynamic_light_leafs[ndlight] = get_lightleaf (ent);
 			dynamic_lights[ndlight] = get_dynlight (ent);
 			ndlight++;
@@ -657,13 +657,13 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		auto r = &lctx->light_control.a[id];
 
 		int mode =  r->mode;
-		auto light = get_light (ent.id, ent.reg);
+		auto light = get_light (ent);
 		uint32_t ind = queue[mode].count++;
 		light_ids[mode][ind] = id;
 		light_radii[mode][ind] = light_radius (light);
 		light_leafs[mode][ind] = get_lightleaf (ent);
 		light_positions[mode][ind] = light->position;
-		entids[mode][ind] = ent.id;
+		entids[mode][ind] = ent;
 	}
 
 	size_t      packet_size = 0;
@@ -711,7 +711,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		qfv_scatter_t scatter[queue[ST_CASCADE].count];
 		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
 			auto r = &lctx->light_control.a[light_ids[ST_CASCADE][i]];
-			auto light = get_light (entids[ST_CASCADE][i], lctx->scene->reg);
+			auto light = get_light (entids[ST_CASCADE][i]);
 			cascade_mats (&mats[i * num_cascade], light->position, ctx);
 			scatter[i] = (qfv_scatter_t) {
 				.srcOffset = base + sizeof (mat4f_t[i * num_cascade]),
@@ -760,7 +760,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 				.attenuation = { 0, 0, 1, 1/dynamic_lights[i]->radius },
 			};
 			uint32_t id = lctx->dynamic_base + i;
-			set_lightid (dynamic_light_entities[i], lctx->scene->reg, id);
+			set_lightid (dynamic_light_entities[i], id);
 			uint32_t ind = queue[ST_CUBE].count++;
 			light_ids[ST_CUBE][ind] = id;
 			light_radii[ST_CUBE][ind] = light_radius (&light);
@@ -2014,11 +2014,12 @@ static void
 create_light_matrices (lightingctx_t *lctx)
 {
 	auto reg = lctx->scene->reg;
-	auto light_pool = &reg->comp_pools[scene_light];
+	auto light_pool = &reg->comp_pools[lctx->scene->base + scene_light];
 	auto light_data = (light_t *) light_pool->data;
 	uint16_t mat_count = 0;
 	for (uint32_t i = 0; i < light_pool->count; i++) {
-		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
+		entity_t    ent = { .reg = reg, .id = light_pool->dense[i],
+							.base = lctx->scene->base };
 		uint32_t    id = get_lightid (ent);
 		auto        r = &lctx->light_control.a[id];
 		r->matrix_id = mat_count;
@@ -2032,7 +2033,8 @@ create_light_matrices (lightingctx_t *lctx)
 	}
 	for (uint32_t i = 0; i < light_pool->count; i++) {
 		light_t    *light = &light_data[i];
-		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
+		entity_t    ent = { .reg = reg, .id = light_pool->dense[i],
+							.base = lctx->scene->base };
 		uint32_t    id = get_lightid (ent);
 		auto        r = &lctx->light_control.a[id];
 		auto        lm = &lctx->light_mats.a[r->matrix_id];
@@ -2120,7 +2122,7 @@ static void
 upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 {
 	auto reg = lctx->scene->reg;
-	auto light_pool = &reg->comp_pools[scene_light];
+	auto light_pool = &reg->comp_pools[lctx->scene->base + scene_light];
 	auto lights = (light_t *) light_pool->data;
 	uint32_t count = light_pool->count;
 
@@ -2138,7 +2140,8 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	uint32_t r_size = sizeof (qfv_light_render_t[count]);
 	qfv_light_render_t *render = QFV_PacketExtend (packet, r_size);
 	for (uint32_t i = 0; i < count; i++) {
-		entity_t    ent = { .reg = reg, .id = light_pool->dense[i] };
+		entity_t    ent = { .reg = reg, .id = light_pool->dense[i],
+							.base = lctx->scene->base };
 		uint32_t    id = get_lightid (ent);
 		if (id >= lctx->light_control.size) {
 			continue;
@@ -2339,7 +2342,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 		maxLayers = 2048;
 	}
 	auto reg = lctx->scene->reg;
-	auto light_pool = &reg->comp_pools[scene_light];
+	auto light_pool = &reg->comp_pools[lctx->scene->base + scene_light];
 	auto lights = (light_t *) light_pool->data;
 	int         numLights = light_pool->count;
 	int         totalLayers = 0;
@@ -2361,7 +2364,9 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			.mode = light_shadow_type (&lights[li]),
 			.light_id = li,
 		};
-		set_lightid (light_pool->dense[li], reg, li);
+		entity_t    ent = { .reg = reg, .id = light_pool->dense[li],
+							.base = lctx->scene->base };
+		set_lightid (ent, li);
 		// assume all lights have no shadows
 		imageMap[li] = -1;
 	}
@@ -2807,14 +2812,14 @@ Vulkan_LoadLights (scene_t *scene, vulkan_ctx_t *ctx)
 	lctx->ldata = 0;
 	if (lctx->scene) {
 		auto reg = lctx->scene->reg;
-		reg->components.a[scene_dynlight].ui = light_dyn_light_ui;
-		reg->components.a[scene_light].ui = light_light_ui;
-		reg->components.a[scene_efrags].ui = scene_efrags_ui;
-		reg->components.a[scene_lightstyle].ui = scene_lightstyle_ui;
-		reg->components.a[scene_lightleaf].ui = scene_lightleaf_ui;
-		reg->components.a[scene_lightid].ui = scene_lightid_ui;
+		reg->components.a[lctx->scene->base + scene_dynlight].ui = light_dyn_light_ui;
+		reg->components.a[lctx->scene->base + scene_light].ui = light_light_ui;
+		reg->components.a[lctx->scene->base + scene_efrags].ui = scene_efrags_ui;
+		reg->components.a[lctx->scene->base + scene_lightstyle].ui = scene_lightstyle_ui;
+		reg->components.a[lctx->scene->base + scene_lightleaf].ui = scene_lightleaf_ui;
+		reg->components.a[lctx->scene->base + scene_lightid].ui = scene_lightid_ui;
 
-		auto light_pool = &reg->comp_pools[scene_light];
+		auto light_pool = &reg->comp_pools[lctx->scene->base + scene_light];
 		if (light_pool->count) {
 			lctx->dynamic_base = light_pool->count;
 			lctx->dynamic_count = 0;

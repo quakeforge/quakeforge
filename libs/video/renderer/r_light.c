@@ -46,6 +46,8 @@
 #include "compat.h"
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
@@ -59,7 +61,7 @@ R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 	int         num = 0;
 	vec3_t      d;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];
@@ -306,7 +308,7 @@ R_PushDlights (const vec3_t entorigin, const visstate_t *visstate)
 	if (!r_dlight_lightmap)
 		return;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];

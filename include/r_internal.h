@@ -21,7 +21,7 @@ extern vid_render_funcs_t *vid_render_funcs;
 #define vr_funcs vid_render_funcs
 
 extern	refdef_t	r_refdef;
-#define SW_COMP(comp, id) ((void *)((byte *)r_refdef.registry->comp_pools[comp].data + (id) * r_refdef.registry->components.a[comp].size))
+#define SW_COMP(comp, id) ((void *)((byte *)r_refdef.registry->comp_pools[r_refdef.scene->base + comp].data + (id) * r_refdef.registry->components.a[r_refdef.scene->base + comp].size))
 extern int r_viewsize;
 
 void R_LineGraph (int x, int y, int *h_vals, int count, int height);

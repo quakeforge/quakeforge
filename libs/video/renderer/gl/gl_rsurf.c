@@ -60,6 +60,8 @@
 #include "r_internal.h"
 #include "vid_gl.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 static struct DARRAY_TYPE (mat4f_t) ent_transforms = DARRAY_STATIC_INIT (16);
 
 static instsurf_t  *waterchain = NULL;
@@ -505,12 +507,12 @@ gl_R_DrawBrushModel (entity_t e)
 	bool        rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	glbspctx_t  bspctx = {
 		brush,
-		Ent_GetComponent (e.id, scene_animation, e.reg),
+		Ent_GetComponent (e.id, e.base + scene_animation, e.reg),
 		ent_transforms.a[ent_transforms.size++],
 		renderer->colormod,
 	};
@@ -552,7 +554,7 @@ gl_R_DrawBrushModel (entity_t e)
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+		auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 		auto dlight_data = (dlight_t *) dlight_pool->data;
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
 			auto dlight = &dlight_data[i];

@@ -59,33 +59,33 @@ main (void)
 
 	passage_t  *passage = Passage_New (psg_sys);
 	Passage_ParseText (passage, test_text);
-	if (passage->hierarchy->childCount[0] != 3) {
+	hierarchy_t *h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy,
+									   passage->reg);
+	if (h->childCount[0] != 3) {
 		ret = 1;
-		printf ("incorrect number of paragraphs: %d\n",
-				passage->hierarchy->childCount[0]);
+		printf ("incorrect number of paragraphs: %d\n", h->childCount[0]);
 	}
-	if (passage->hierarchy->num_objects != 144) {
+	if (h->num_objects != 144) {
 		ret = 1;
-		printf ("incorrect number of text objects: %d\n",
-				passage->hierarchy->num_objects);
+		printf ("incorrect number of text objects: %d\n", h->num_objects);
 	}
-	if (passage->hierarchy->childCount[1] != 49) {
+	if (h->childCount[1] != 49) {
 		ret = 1;
 		printf ("incorrect number of text objects in first paragraph: %d\n",
-				passage->hierarchy->childCount[1]);
+				h->childCount[1]);
 	}
-	if (passage->hierarchy->childCount[2] != 90) {
+	if (h->childCount[2] != 90) {
 		ret = 1;
 		printf ("incorrect number of text objects in second paragraph: %d\n",
-				passage->hierarchy->childCount[2]);
+				h->childCount[2]);
 	}
-	if (passage->hierarchy->childCount[3] != 1) {
+	if (h->childCount[3] != 1) {
 		ret = 1;
 		printf ("incorrect number of text objects in third paragraph: %d\n",
-				passage->hierarchy->childCount[3]);
+				h->childCount[3]);
 	}
-	uint32_t   *childIndex = passage->hierarchy->childIndex;
-	psg_text_t *text_objs = passage->hierarchy->components[0];
+	uint32_t   *childIndex = h->childIndex;
+	psg_text_t *text_objs = h->components[0];
 	psg_text_t *to = &text_objs[childIndex[2] + 0];
 	if (to->size != 2 && (passage->text[to->text] != ' '
 						  && passage->text[to->text + 1] != ' ')) {
@@ -97,8 +97,8 @@ main (void)
 	//	ret = 1;
 	//	printf ("second paragram indent suppressed\n");
 	//}
-	for (uint32_t i = 0; i < passage->hierarchy->childCount[0]; i++) {
-		for (uint32_t j = 0; j < passage->hierarchy->childCount[1 + i]; j++) {
+	for (uint32_t i = 0; i < h->childCount[0]; i++) {
+		for (uint32_t j = 0; j < h->childCount[1 + i]; j++) {
 			psg_text_t *to = &text_objs[childIndex[1 + i] + j];
 			unsigned    is_space = Passage_IsSpace (passage->text + to->text);
 			if (i == 1 && j == 0) {

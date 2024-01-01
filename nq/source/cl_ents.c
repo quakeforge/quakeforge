@@ -140,8 +140,8 @@ static void
 set_entity_model (int ent_ind, int modelindex)
 {
 	entity_t    ent = cl_entities[ent_ind];
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -219,9 +219,9 @@ CL_RelinkEntities (void)
 			SET_ADD (&cl_forcelink, i);
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, ent.reg);
+		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			*old = *new;
@@ -248,7 +248,7 @@ CL_RelinkEntities (void)
 					.top = cl.players[i - 1].topcolor,
 					.bottom = cl.players[i - 1].bottomcolor,
 				};
-				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
+				Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
 				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 															  i);
 				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,

@@ -260,7 +260,8 @@ Scene_NewScene (scene_system_t *extra_systems)
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
 	scene->reg = ECS_NewRegistry ("scene");
-	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	scene->base = ECS_RegisterComponents (scene->reg, scene_components,
+										  scene_comp_count);
 	for (auto extra = extra_systems; extra && extra->system; extra++) {
 		uint32_t base = ECS_RegisterComponents (scene->reg,
 												extra->components,
@@ -288,18 +289,19 @@ Scene_CreateEntity (scene_t *scene)
 {
 	// Transform_New creates an entity and adds a scene_href component to the
 	// entity
-	transform_t trans = Transform_New (scene->reg, nulltransform);
+	ecs_system_t ssys = { .reg = scene->reg, .base = scene->base };
+	transform_t trans = Transform_New (ssys, nulltransform);
 	uint32_t    id = trans.id;
 
-	Ent_SetComponent (id, scene_animation, scene->reg, 0);
-	Ent_SetComponent (id, scene_renderer, scene->reg, 0);
-	Ent_SetComponent (id, scene_active, scene->reg, 0);
-	Ent_SetComponent (id, scene_old_origin, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_animation, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_renderer, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_active, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_old_origin, scene->reg, 0);
 
-	renderer_t *renderer = Ent_GetComponent (id, scene_renderer, scene->reg);
+	renderer_t *renderer = Ent_GetComponent (id, scene->base + scene_renderer, scene->reg);
 	QuatSet (1, 1, 1, 1, renderer->colormod);
 
-	return (entity_t) { .reg = scene->reg, .id = id };
+	return (entity_t) { .reg = scene->reg, .id = id, .base = scene->base };
 }
 
 void

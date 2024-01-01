@@ -188,7 +188,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	uint32_t c_features = textsys.text_base + text_features;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
 	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
-	hierarchy_t *h = passage->hierarchy;
+	hierarchy_t *h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 	psg_text_t *text_objects = h->components[passage_type_text_obj];
 	glyphnode_t *glyph_nodes = 0;
 	glyphnode_t **head = &glyph_nodes;

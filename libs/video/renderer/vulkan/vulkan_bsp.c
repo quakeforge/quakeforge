@@ -649,7 +649,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	bspctx_t   *bctx = ctx->bsp_context;
 
@@ -657,7 +657,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;

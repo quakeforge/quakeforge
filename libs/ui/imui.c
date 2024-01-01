@@ -381,19 +381,19 @@ IMUI_GetIO (imui_ctx_t *ctx)
 }
 
 static void
-set_hierarchy_tree_mode (imui_ctx_t *ctx, hierarchy_t *h, bool tree)
+set_hierarchy_tree_mode (imui_ctx_t *ctx, hierref_t ref, bool tree)
 {
+	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
 	Hierarchy_SetTreeMode (h, tree);
 
-	auto reg = ctx->csys.reg;
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *ent = h->ent;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
-			auto href = View_GetRef (sub_view);
-			set_hierarchy_tree_mode (ctx, href->hierarchy, tree);
+			set_hierarchy_tree_mode (ctx, View_GetRef (sub_view), tree);
 		}
 	}
 }
@@ -408,8 +408,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	// delete and recreate the root view (but not the root entity)
 	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
-	auto ref = View_GetRef (ctx->root_view);
-	set_hierarchy_tree_mode (ctx, ref->hierarchy, true);
+	set_hierarchy_tree_mode (ctx, View_GetRef (ctx->root_view), true);
 	View_SetLen (ctx->root_view, root_size.x, root_size.y);
 
 	ctx->frame_start = Sys_LongTime ();
@@ -478,8 +477,11 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 }
 
 static void __attribute__((used))
-dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
+dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 {
+	auto reg = ctx->csys.reg;
+	uint32_t ind = href.index;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	view_pos_t *len = h->components[view_len];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
@@ -509,7 +511,7 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
 		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
 		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
 		auto href = View_GetRef (sub_view);
-		dump_tree (href->hierarchy, 0, level + 1, ctx);
+		dump_tree (href, level + 1, ctx);
 		printf (RED"%2d: %*slink"DFL"\n", ind, level * 3, "");
 	}
 	if (h->childIndex[ind] > ind) {
@@ -517,7 +519,8 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
 			if (h->childIndex[ind] + i >= h->num_objects) {
 				break;
 			}
-			dump_tree (h, h->childIndex[ind] + i, level + 1, ctx);
+			hierref_t cref = { .id = href.id, .index = h->childIndex[ind] + i };
+			dump_tree (cref, level + 1, ctx);
 		}
 	}
 	if (!level) {
@@ -531,10 +534,11 @@ typedef struct {
 } downdep_t;
 
 static void
-calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
+calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
 						downdep_t *down_depend)
 {
 	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -581,7 +585,7 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 			// control logic was propagated from the linked hierarcy, so
 			// propagate down_depend to the linked hierarcy.
 			side_depend[0] = down_depend[i];
-			calc_upwards_dependent (ctx, href->hierarchy, side_depend);
+			calc_upwards_dependent (ctx, href, side_depend);
 			down_depend[0].num_views += side_depend[0].num_views;
 			side_depend += side_depend[0].num_views;
 		}
@@ -589,9 +593,10 @@ calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
 }
 
 static void
-calc_downwards_dependent (imui_ctx_t *ctx, hierarchy_t *h)
+calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 {
 	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -599,8 +604,7 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierarchy_t *h)
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
-			auto href = View_GetRef (sub_view);
-			calc_downwards_dependent (ctx, href->hierarchy);
+			calc_downwards_dependent (ctx, View_GetRef (sub_view));
 			len[i] = View_GetLen (sub_view);
 		}
 		view_pos_t  clen = len[i];
@@ -639,9 +643,10 @@ calc_downwards_dependent (imui_ctx_t *ctx, hierarchy_t *h)
 }
 
 static void
-calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
+calc_expansions (imui_ctx_t *ctx, hierref_t href)
 {
 	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -724,20 +729,20 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
-			auto href = View_GetRef (sub_view);
 			View_SetLen (sub_view, len[i].x, len[i].y);
-			calc_expansions (ctx, href->hierarchy);
+			calc_expansions (ctx, View_GetRef (sub_view));
 		}
 	}
 }
 
 static uint32_t __attribute__((pure))
-count_views (imui_ctx_t *ctx, hierarchy_t *h)
+count_views (imui_ctx_t *ctx, hierref_t href)
 {
+	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t    count = h->num_objects;
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *ent = h->ent;
-	auto        reg = h->reg;
 
 	// the root object is never a link (if it has a reference component, it's
 	// to the pseudo-parent of the hierarchy)
@@ -745,8 +750,7 @@ count_views (imui_ctx_t *ctx, hierarchy_t *h)
 		if (cont[i].is_link) {
 			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
-			auto href = View_GetRef (sub_view);
-			count += count_views (ctx, href->hierarchy);
+			count += count_views (ctx, View_GetRef (sub_view));
 		}
 	}
 	return count;
@@ -755,8 +759,9 @@ count_views (imui_ctx_t *ctx, hierarchy_t *h)
 static void
 position_views (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (root_view);
-	auto h = ref->hierarchy;
+	auto reg = ctx->vsys.reg;
+	auto href = View_GetRef (root_view);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
 	uint32_t   *ent = h->ent;
 	view_pos_t *pos = h->components[view_pos];
@@ -766,7 +771,6 @@ position_views (imui_ctx_t *ctx, view_t root_view)
 
 	if (Ent_HasComponent (root_view.id, c_reference, ctx->vsys.reg)) {
 		auto ent = root_view.id;
-		auto reg = ctx->vsys.reg;
 		imui_reference_t *reference = Ent_GetComponent (ent, c_reference, reg);
 		auto anchor = View_FromEntity (ctx->vsys, reference->ref_id);
 		pos[0] = View_GetAbs (anchor);
@@ -807,16 +811,15 @@ position_views (imui_ctx_t *ctx, view_t root_view)
 static void
 layout_objects (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (root_view);
-	auto h = ref->hierarchy;
+	auto href = View_GetRef (root_view);
 
-	downdep_t   down_depend[count_views (ctx, h)];
+	downdep_t   down_depend[count_views (ctx, href)];
 
 	// the root view size is always explicit
 	down_depend[0] = (downdep_t) { };
-	calc_upwards_dependent (ctx, h, down_depend);
-	calc_downwards_dependent (ctx, h);
-	calc_expansions (ctx, h);
+	calc_upwards_dependent (ctx, href, down_depend);
+	calc_downwards_dependent (ctx, href);
+	calc_expansions (ctx, href);
 	//dump_tree (h, 0, 0, ctx);
 	// resolve conflicts
 	//fflush (stdout);
@@ -827,8 +830,9 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 static void
 check_inside (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (root_view);
-	auto h = ref->hierarchy;
+	auto reg = ctx->vsys.reg;
+	auto href = View_GetRef (root_view);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
 	uint32_t   *entity = h->ent;
 	view_pos_t *abs = h->components[view_abs];
@@ -880,12 +884,11 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->mouse_pressed = 0;
 	ctx->mouse_released = 0;
 	sort_windows (ctx);
-	auto ref = View_GetRef (ctx->root_view);
-	set_hierarchy_tree_mode (ctx, ref->hierarchy, false);
+	auto href = View_GetRef (ctx->root_view);
+	set_hierarchy_tree_mode (ctx, href, false);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		auto ref = View_GetRef (window);
-		set_hierarchy_tree_mode (ctx, ref->hierarchy, false);
+		set_hierarchy_tree_mode (ctx, View_GetRef (window), false);
 	}
 	Canvas_DrawSort (ctx->csys);
 
@@ -1402,8 +1405,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
-	auto ref = View_GetRef (panel_view);
-	Hierarchy_SetTreeMode (ref->hierarchy, true);
+	set_hierarchy_tree_mode (ctx, View_GetRef (panel_view), true);
 
 	grav_t      gravity = grav_northwest;
 	if (panel->reference) {
@@ -1677,8 +1679,7 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
-	auto ref = View_GetRef (scroll_box);
-	Hierarchy_SetTreeMode (ref->hierarchy, true);
+	set_hierarchy_tree_mode (ctx, View_GetRef (scroll_box), true);
 
 	View_Control (anchor_view)->is_link = 1;
 	imui_reference_t link = {

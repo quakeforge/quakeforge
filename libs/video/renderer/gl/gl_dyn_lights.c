@@ -46,6 +46,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 float       gl_bubble_sintable[33], gl_bubble_costable[33];
 
 
@@ -117,7 +119,7 @@ gl_R_RenderDlights (void)
 	qfglBlendFunc (GL_ONE, GL_ONE);
 	qfglShadeModel (GL_SMOOTH);
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];

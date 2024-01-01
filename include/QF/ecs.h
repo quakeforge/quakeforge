@@ -36,7 +36,6 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
-#include "QF/progs.h"//FIXME for PR_RESMAP
 
 #include "QF/ecs/component.h"
 #include "QF/ecs/hierarchy.h"
@@ -77,6 +76,14 @@ typedef struct ecs_subpool_s {
 	uint32_t    max_ranges;
 } ecs_subpool_t;
 
+/// components that are available in every registry
+enum {
+	ecs_name,				///< const char *
+	ecs_hierarchy,			///< hierarchy_t
+
+	ecs_comp_count
+};
+
 typedef struct ecs_registry_s {
 	const char *name;
 	ecs_pool_t *comp_pools;
@@ -87,7 +94,6 @@ typedef struct ecs_registry_s {
 	uint32_t    num_entities;
 	uint32_t    max_entities;
 	componentset_t components;
-	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 	int         locked;
 } ecs_registry_t;
 

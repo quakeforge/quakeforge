@@ -89,13 +89,15 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		if (!Entity_Valid (entity)) {
 			return 0;	//FIXME see below
 		} else {
-			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+			renderer_t *renderer = Ent_GetComponent (entity.id,
+													 entity.base + scene_renderer,
 													 entity.reg);
 			return renderer->render_id;
 		}
 	}
 	if (Entity_Valid (entity)) {
-		renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+		renderer_t *renderer = Ent_GetComponent (entity.id,
+												 entity.base + scene_renderer,
 												 entity.reg);
 		renderer->render_id = render_id;
 	}
@@ -105,7 +107,8 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		vec4f_t     color;
 		if (Entity_Valid (entity)) { //FIXME give world entity an entity :P
 			transform_t transform = Entity_Transform (entity);
-			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
+			renderer_t *renderer = Ent_GetComponent (entity.id,
+													 entity.base + scene_renderer,
 													 entity.reg);
 			mat4ftranspose (f, Transform_GetWorldMatrixPtr (transform));
 			entdata->xform[0] = f[0];
@@ -149,7 +152,7 @@ scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 	if (!Entity_Valid (ent)) {
 		return;
 	}
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities

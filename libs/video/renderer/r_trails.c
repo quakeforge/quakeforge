@@ -108,7 +108,8 @@ R_Trail_Create (psystem_t *system, int num_points, vec4f_t start)
 		.base = block_ind * 64,
 		.count = num_points,
 	};
-	Ent_SetComponent (trail, trails_pointset, trails_system.reg, &pointset);
+	Ent_SetComponent (trail, trails_system.base + trails_pointset,
+					  trails_system.reg, &pointset);
 	for (uint32_t i = 0; i < pointset.count; i++) {
 		static float bary[] = {0, 0, 1, 0, 0, 1, 0, 0};
 		auto p = trail_point_buffer + pointset.base + i;
@@ -128,7 +129,8 @@ R_Trail_Create (psystem_t *system, int num_points, vec4f_t start)
 void
 R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos)
 {
-	pointset_t *p = Ent_GetComponent (trailid, trails_pointset,
+	pointset_t *p = Ent_GetComponent (trailid,
+									  trails_system.base + trails_pointset,
 									  trails_system.reg);
 
 	trailpnt_t *points = trail_point_buffer + p->base;

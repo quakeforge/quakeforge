@@ -46,9 +46,10 @@ _canvas_rangeid (ecs_registry_t *reg, uint32_t ent, uint32_t comp, uint32_t c)
 	uint32_t    ccomp = comp - c + canvas_canvas;
 	// view components come immediately after canvas components
 	uint32_t    vcomp = view_href + canvas_comp_count + comp - c;
-	hierref_t  *href = Ent_GetComponent (ent, vcomp, reg);
+	auto href = *(hierref_t *) Ent_GetComponent (ent, vcomp, reg);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	// the root entity of the hierarchy has the canvasref or canvas component
-	uint32_t    cent = href->hierarchy->ent[0];
+	uint32_t    cent = h->ent[0];
 	cent = *(uint32_t *) Ent_GetComponent (cent, rcomp, reg);
 	canvas_t   *canvas = Ent_GetComponent (cent, ccomp, reg);
 	return canvas->range[c];
@@ -438,13 +439,13 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);
 		view_t      text_view = View_GetChild (para_view, 0);
-		hierref_t  *href = View_GetRef (text_view);
+		hierref_t   href = View_GetRef (text_view);
 		glyphset_t *gs = glyphset++;
-		hierarchy_t *h = href->hierarchy;
+		hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 		view_pos_t *abs = h->components[view_abs];
 		view_pos_t *len = h->components[view_len];
 
-		for (uint32_t i = href->index; i < h->num_objects; i++) {
+		for (uint32_t i = href.index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, reg);
 			uint32_t   *c = Ent_SafeGetComponent (h->ent[i], color, reg);
 			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254);
@@ -452,7 +453,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 			if (0) draw_box (abs, len, i, 253);
 		}
 		if (0) {
-			for (uint32_t i = 1; i < href->index; i++) {
+			for (uint32_t i = 1; i < href.index; i++) {
 				draw_box (abs, len, i, 251);
 			}
 		}
@@ -512,8 +513,9 @@ Canvas_Draw (canvas_system_t canvas_sys)
 	}
 	r_funcs->Draw_ResetClip ();
 	{
-		ecs_pool_t *pool = &reg->comp_pools[canvas_updateonce];
-		ecs_subpool_t *subpool = &reg->subpools[canvas_updateonce];
+		uint32_t    comp = canvas_sys.base + canvas_updateonce;
+		ecs_pool_t *pool = &reg->comp_pools[comp];
+		ecs_subpool_t *subpool = &reg->subpools[comp];
 		pool->count = 0;
 		uint32_t    rcount = subpool->num_ranges - subpool->available;
 		memset (subpool->ranges, 0, rcount * sizeof (*subpool->ranges));
@@ -575,12 +577,12 @@ canvas_href_cmp (const void *_a, const void *_b, void *arg)
 	canvas_system_t *canvas_sys = arg;
 	ecs_registry_t *reg = canvas_sys->reg;
 	uint32_t    href = canvas_sys->view_base + view_href;
-	hierref_t  *ref_a = Ent_GetComponent (enta, href, reg);
-	hierref_t  *ref_b = Ent_GetComponent (entb, href, reg);
-	if (ref_a->hierarchy == ref_b->hierarchy) {
-		return ref_a->index - ref_b->index;
+	auto ref_a = *(hierref_t *) Ent_GetComponent (enta, href, reg);
+	auto ref_b = *(hierref_t *) Ent_GetComponent (entb, href, reg);
+	if (ref_a.id == ref_b.id) {
+		return ref_a.index - ref_b.index;
 	}
-	ptrdiff_t  diff = ref_a->hierarchy - ref_b->hierarchy;
+	int32_t     diff = ref_a.id - ref_b.id;
 	return diff > 0 ? 1 : diff < 0 ? -1 : 0;
 }
 

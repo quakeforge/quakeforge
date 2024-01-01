@@ -159,10 +159,10 @@ CL_TEnts_Init (void)
 void
 CL_Init_Entity (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
-	byte       *active = Ent_GetComponent (ent.id, scene_active, cl_world.scene->reg);
-	vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	byte       *active = Ent_GetComponent (ent.id, ent.base + scene_active, ent.reg);
+	vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 	memset (animation, 0, sizeof (*animation));
 	memset (renderer, 0, sizeof (*renderer));
 	*active = 1;
@@ -270,7 +270,7 @@ beam_setup (beam_t *b, bool settransform, double time, TEntContext_t *ctx)
 		vec4f_t     position = org + d * dist;
 		d += 1.0;
 		transform_t transform = Entity_Transform (tent->ent);
-		renderer_t *renderer = Ent_GetComponent (tent->ent.id, scene_renderer, cl_world.scene->reg);
+		renderer_t *renderer = Ent_GetComponent (tent->ent.id, tent->ent.base + scene_renderer, tent->ent.reg);
 		renderer->model = b->model;
 		if (settransform) {
 			seed = seed * BEAM_SEED_PRIME;
@@ -337,7 +337,7 @@ free_stale_entities (void)
 	size_t i, j;
 	for (i = 0, j = 0; i < light_entities.size; i++) {
 		auto ent = light_entities.a[i];
-		if (Ent_HasComponent (ent.id, scene_dynlight, ent.reg)) {
+		if (Ent_HasComponent (ent.id, ent.base + scene_dynlight, ent.reg)) {
 			if (j != i) {
 				light_entities.a[j] = ent;
 			}
@@ -356,10 +356,11 @@ spawn_light (vec4f_t position, vec4f_t color, float radius, float die,
 	entity_t    ent = {
 		.reg = cl_world.scene->reg,
 		.id = ECS_NewEntity (cl_world.scene->reg),
+		.base = cl_world.scene->base,
 	};
 	DARRAY_APPEND (&light_entities, ent);
 
-	Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+	Ent_SetComponent (ent.id, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 		.origin = position,
 		.color = color,
 		.radius = radius,
@@ -409,7 +410,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			}
 			transform_t transform = Entity_Transform (ex->tent->ent);
-			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, scene_renderer, cl_world.scene->reg);
+			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, ex->tent->ent.base + scene_renderer, ex->tent->ent.reg);
 			renderer->model = cl_spr_explod;
 			Transform_SetLocalPosition (transform, position);
 			color = (vec4f_t) {0.86, 0.31, 0.24, 0.7};
@@ -648,8 +649,8 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		ex = &(*to)->to.ex;
 		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 		if (f >= renderer->model->numframes) {
 			tent_obj_t *_to;
 			free_temp_entities (ex->tent);
@@ -736,7 +737,7 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 		tail = &tent->next;
 
 		pr = tent->ent;
-		renderer_t *renderer = Ent_GetComponent (pr.id, scene_renderer, cl_world.scene->reg);
+		renderer_t *renderer = Ent_GetComponent (pr.id, pr.base + scene_renderer, pr.reg);
 		renderer->model = cl_spike;
 		renderer->skin = 0;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
@@ -787,9 +788,13 @@ CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
 		light = ECS_NewEntity (ent.reg);
 		set_muzzleflash (ent, light);
 	}
-	DARRAY_APPEND (&light_entities, ((entity_t) {.reg = ent.reg, .id = light}));
+	DARRAY_APPEND (&light_entities, ((entity_t) {
+		.reg = ent.reg,
+		.id = light,
+		.base = ent.base,
+	}));
 
-	Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
+	Ent_SetComponent (light, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 		.origin = position + 18 * fv + zoffset * (vec4f_t) {0, 0, 1, 0},
 		.color = { 0.2, 0.1, 0.05, 0.7 },
 		.radius = 200 + (rand () & 31),

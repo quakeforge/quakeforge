@@ -43,6 +43,7 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 #include "QF/plist.h"
+#include "QF/progs.h"
 
 #include "QF/scene/light.h"
 
@@ -118,8 +119,8 @@ CL_ParseStatic (qmsg_t *msg, int version)
 	CL_ParseBaseline (msg, &es, version);
 	DARRAY_APPEND (&cl_static_entities, es);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 
 	// copy it to the current state
 	renderer->model = cl_world.models.a[es.modelindex];

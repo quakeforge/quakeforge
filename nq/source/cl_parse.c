@@ -678,7 +678,7 @@ CL_ParseClientdata (void)
 	if (bits & SU_WEAPONFRAME2)
 		cl.stats[STAT_WEAPONFRAME] |= MSG_ReadByte (net_message) << 8;
 
-	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id, scene_renderer, cl_world.scene->reg);
+	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id, cl_world.scene->base + scene_renderer, cl_world.scene->reg);
 	if (bits & SU_WEAPONALPHA) {
 		byte alpha = MSG_ReadByte (net_message);
 		float a = ENTALPHA_DECODE (alpha);
@@ -913,7 +913,7 @@ CL_ParseServerMessage (void)
 								"MAX_SCOREBOARD");
 				} else {
 					entity_t    ent = CL_GetEntity (i + 1);
-					renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+					renderer_t  *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 					byte        col = MSG_ReadByte (net_message);
 					byte        top = col >> 4;
 					byte        bot = col & 0xf;

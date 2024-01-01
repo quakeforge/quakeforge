@@ -107,7 +107,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 		// ambient light
 		Mod_LeafPVS_set (model->brush.leafs, &model->brush, 0xff, pvs);
 	}
-	Ent_SetComponent (ent.id, scene_lightleaf, ent.reg, &leafnum);
+	Ent_SetComponent (ent.id, ent.base + scene_lightleaf, ent.reg, &leafnum);
 
 	efrag_t *efrags = 0;
 	efrag_t **lastlink = &efrags;
@@ -117,10 +117,10 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 			lastlink = R_LinkEfrag (leaf, ent, mod_light, lastlink);
 		}
 	}
-	if (Ent_HasComponent (ent.id, scene_efrags, ent.reg)) {
-		Ent_RemoveComponent (ent.id, scene_efrags, ent.reg);
+	if (Ent_HasComponent (ent.id, ent.base + scene_efrags, ent.reg)) {
+		Ent_RemoveComponent (ent.id, ent.base + scene_efrags, ent.reg);
 	}
-	Ent_SetComponent (ent.id, scene_efrags, ent.reg, &efrags);
+	Ent_SetComponent (ent.id, ent.base + scene_efrags, ent.reg, &efrags);
 }
 
 void
@@ -131,10 +131,11 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
 	entity_t    ent = {
 		.reg = scene->reg,
 		.id = ECS_NewEntity (scene->reg),
+		.base = scene->base,
 	};
 
-	Ent_SetComponent (ent.id, scene_light, ent.reg, light);
-	Ent_SetComponent (ent.id, scene_lightstyle, ent.reg, &style);
+	Ent_SetComponent (ent.id, ent.base + scene_light, ent.reg, light);
+	Ent_SetComponent (ent.id, ent.base + scene_lightstyle, ent.reg, &style);
 
 	link_light (ldata, light, ent);
 }
@@ -147,8 +148,9 @@ Light_LinkLight (lightingdata_t *ldata, uint32_t entid)
 	entity_t    ent = {
 		.reg = scene->reg,
 		.id = entid,
+		.base = scene->base,
 	};
-	dlight_t *dlight = Ent_GetComponent (ent.id, scene_dynlight, ent.reg);
+	dlight_t *dlight = Ent_GetComponent (ent.id, ent.base + scene_dynlight, ent.reg);
 	if (!dlight) {
 		Sys_Error ("no dlight on entity to link");
 	}
@@ -189,8 +191,9 @@ Light_EnableSun (lightingdata_t *ldata)
 void
 Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 {
-	auto reg = ldata->scene->reg;
-	auto dlight_pool = &reg->comp_pools[scene_dynlight];
+	auto scene = ldata->scene;
+	auto reg = scene->reg;
+	auto dlight_pool = &reg->comp_pools[scene->base + scene_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
@@ -198,11 +201,11 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 		dlight->radius -= frametime * dlight->decay;
 		if (dlight->radius <= 0 || dlight->die < realtime) {
 			uint32_t ent = dlight_pool->dense[i];
-			Ent_RemoveComponent (ent, scene_dynlight, reg);
-			if (!Ent_HasComponent (ent, scene_efrags, reg)) {
+			Ent_RemoveComponent (ent, scene->base + scene_dynlight, reg);
+			if (!Ent_HasComponent (ent, scene->base + scene_efrags, reg)) {
 				Sys_Error ("dlight with no efrags");
 			}
-			Ent_RemoveComponent (ent, scene_efrags, reg);
+			Ent_RemoveComponent (ent, scene->base + scene_efrags, reg);
 			i--;
 		}
 	}

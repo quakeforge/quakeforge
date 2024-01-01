@@ -63,7 +63,7 @@ typedef struct passage_s {
 
 	struct ecs_registry_s *reg;	///< Owning ECS registry
 	uint32_t    comp_base;		///< Passage base component
-	struct hierarchy_s *hierarchy;	///< hierarchy of text objects
+	uint32_t    hierarchy;		///< hierarchy of text objects
 } passage_t;
 
 void Passage_ParseText (passage_t *passage, const char *text);

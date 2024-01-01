@@ -48,6 +48,7 @@
 typedef struct entity_s {
 	ecs_registry_t *reg;
 	uint32_t    id;
+	uint32_t    base;
 } entity_t;
 
 #define nullentity ((entity_t) { .id = nullent })
@@ -149,7 +150,11 @@ Entity_Transform (entity_t ent)
 {
 	// The transform hierarchy reference is a component on the entity thus
 	// the entity id is the transform id.
-	return (transform_t) { .reg = ent.reg, .id = ent.id, .comp = scene_href };
+	return (transform_t) {
+		.reg = ent.reg,
+		.id = ent.id,
+		.comp = ent.base + scene_href,
+	};
 }
 
 struct mod_brush_s;

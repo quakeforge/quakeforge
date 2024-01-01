@@ -58,7 +58,7 @@ void (*gl_R_DrawSpriteModel) (struct entity_s ent);
 static void
 R_DrawSpriteModel_f (entity_t e)
 {
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
 	msprite_t		*sprite = renderer->model->cache.data;
 	float			 modelalpha, color[4];
 	vec4f_t          cameravec = {};
@@ -71,7 +71,7 @@ R_DrawSpriteModel_f (entity_t e)
 	cameravec = r_refdef.frame.position - origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
 	frame = R_GetSpriteFrame (sprite, animation);
 
 	if (!R_BillboardFrame (transform, sprite->type, cameravec,
@@ -118,7 +118,7 @@ R_DrawSpriteModel_f (entity_t e)
 static void
 R_DrawSpriteModel_VA_f (entity_t e)
 {
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
 	msprite_t		*psprite = renderer->model->cache.data;
 	unsigned char	 modelalpha, color[4];
 	vec4f_t          up = {}, right = {};
@@ -131,7 +131,7 @@ R_DrawSpriteModel_VA_f (entity_t e)
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
 	frame = R_GetSpriteFrame (psprite, animation);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR

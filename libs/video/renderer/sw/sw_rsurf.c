@@ -35,6 +35,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
@@ -95,7 +97,7 @@ R_AddDynamicLights (uint32_t render_id)
 		entorigin = transform[3];
 	}
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t k = 0; k < dlight_pool->count; k++) {
 		auto dlight = &dlight_data[k];

@@ -35,7 +35,6 @@
 #include <stdlib.h>
 
 #include "QF/qtypes.h"
-#include "QF/progs.h"//FIXME for PR_RESMAP
 
 /** \defgroup ecs_component Entity Component System components
 	\ingroup utils

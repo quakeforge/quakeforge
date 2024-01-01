@@ -121,6 +121,7 @@ rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 		pr_int_t     entity_id = id >> 32;
 		ent.id = entity_id;
 		ent.reg = scene->scene->reg;
+		ent.base = scene->scene->base;
 	}
 
 	if (!Entity_Valid (ent)) {
@@ -138,7 +139,11 @@ rua__transform_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	if (scene) {
-		entity_t    transform_id = { .reg = scene->scene->reg, .id = id >> 32 };
+		entity_t    transform_id = {
+			.reg = scene->scene->reg,
+			.id = id >> 32,
+			.base = scene->scene->base,
+		};
 		transform = Entity_Transform (transform_id);
 	}
 
@@ -300,7 +305,7 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }

@@ -122,19 +122,19 @@ clscr_view (int x, int y, int w, int h, grav_t gravity)
 static void
 clscr_set_pic (view_t view, qpic_t *pic)
 {
-	Ent_SetComponent (view.id, canvas_pic, view.reg, &pic);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_pic, view.reg, &pic);
 }
 
 static void
 clscr_set_cachepic (view_t view, const char *name)
 {
-	Ent_SetComponent (view.id, canvas_cachepic, view.reg, &name);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_cachepic, view.reg, &name);
 }
 
 static void
 clscr_set_canvas_func (view_t view, canvas_func_f func)
 {
-	Ent_SetComponent (view.id, canvas_func, view.reg, &func);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_func, view.reg, &func);
 }
 
 static void

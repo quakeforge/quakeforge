@@ -187,7 +187,7 @@ CL_NewDlight (entity_t ent, vec4f_t org, int effects, byte glow_size,
 	}
 
 	uint32_t light = attach_light_ent (ent);
-	Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
+	Ent_SetComponent (light, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 		.origin = org,
 		.color = color,
 		.radius = radius,
@@ -200,15 +200,15 @@ void
 CL_ModelEffects (entity_t ent, int glow_color, double time)
 {
 	transform_t transform = Entity_Transform (ent);
-	renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
+	renderer_t  *renderer = Ent_GetComponent (ent.id, + ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
-	vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, cl_world.scene->reg);
+	vec4f_t    *old_origin = Ent_GetComponent (ent.id, + ent.base + scene_old_origin, ent.reg);
 	vec4f_t     ent_origin = Transform_GetWorldPosition (transform);
 
 	// add automatic particle trails
 	if (model->effects & ME_ROCKET) {
 		uint32_t light = attach_light_ent (ent);
-		Ent_SetComponent (light, scene_dynlight, ent.reg, &(dlight_t) {
+		Ent_SetComponent (light, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 			.origin = ent_origin,
 			//FIXME VectorCopy (r_firecolor, dl->color);
 			.color = { 0.9, 0.7, 0.0, 0.7 },

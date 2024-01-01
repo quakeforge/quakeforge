@@ -88,7 +88,7 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 void
 gl_R_DrawIQMModel (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
@@ -96,7 +96,7 @@ gl_R_DrawIQMModel (entity_t ent)
 	iqmframe_t *frame;
 	int         i;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,

@@ -59,6 +59,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 typedef struct {
 	GLushort    count;
 	GLushort    indices[1];
@@ -651,7 +653,7 @@ static void
 R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	plane_t    *plane;
@@ -661,7 +663,7 @@ R_DrawBrushModel (entity_t e)
 	vec4f_t     org;
 	glslbspctx_t bctx = {
 		brush,
-		Ent_GetComponent (e.id, scene_animation, e.reg),
+		Ent_GetComponent (e.id, e.base + scene_animation, e.reg),
 		Transform_GetWorldMatrixPtr (Entity_Transform (e)),
 		renderer->colormod,
 	};
@@ -691,7 +693,7 @@ R_DrawBrushModel (entity_t e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {

@@ -243,10 +243,10 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 void
 R_DrawSprite (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	msprite_t  *sprite = renderer->model->cache.data;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, animation);
 

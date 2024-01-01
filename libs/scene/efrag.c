@@ -213,18 +213,18 @@ R_AddEfrags (mod_brush_t *brush, entity_t ent)
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 	transform_t transform = Entity_Transform (ent);
-	renderer_t *rend = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *rend = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 
 	if (!rend->model) {
-		Ent_RemoveComponent (ent.id, scene_visibility, ent.reg);
+		Ent_RemoveComponent (ent.id, ent.base + scene_visibility, ent.reg);
 		return;
 	}
 	visibility_t *vis;
-	if (Ent_HasComponent (ent.id, scene_visibility, ent.reg)) {
-		vis = Ent_GetComponent (ent.id, scene_visibility, ent.reg);
+	if (Ent_HasComponent (ent.id, ent.base + scene_visibility, ent.reg)) {
+		vis = Ent_GetComponent (ent.id, ent.base + scene_visibility, ent.reg);
 		R_ClearEfragChain (vis->efrag);
 	} else {
-		vis = Ent_AddComponent (ent.id, scene_visibility, ent.reg);
+		vis = Ent_AddComponent (ent.id, ent.base + scene_visibility, ent.reg);
 	}
 	vis->efrag = 0;
 

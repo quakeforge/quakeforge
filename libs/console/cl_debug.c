@@ -387,8 +387,9 @@ color_window (void)
 static transform_t
 create_debug_camera (void)
 {
-	debug_camera_pivot = Transform_New (debug_scene->reg, nulltransform);
-	debug_camera = Transform_New (debug_scene->reg, debug_camera_pivot);
+	ecs_system_t ssys = { .reg = debug_scene->reg, .base = debug_scene->base };
+	debug_camera_pivot = Transform_New (ssys, nulltransform);
+	debug_camera = Transform_New (ssys, debug_camera_pivot);
 	return debug_camera;
 }
 

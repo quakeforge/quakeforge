@@ -11,7 +11,7 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-ecs_registry_t *reg;
+ecs_system_t ssys;
 
 // NOTE: these are the columns of the matrix! (not that it matters for a
 // symmetrical matrix, but...)
@@ -44,16 +44,16 @@ mat4_equal (const mat4f_t a, const mat4f_t b)
 static int
 check_hierarchy_size (transform_t t, uint32_t size)
 {
-	hierarchy_t *h = Transform_GetRef (t)->hierarchy;
+	auto href = Transform_GetRef (t);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, t.reg);
 	if (h->num_objects != size) {
 		printf ("hierarchy does not have exactly %u transform\n", size);
 		return 0;
 	}
 	char      **name = h->components[transform_type_name];
-	ecs_registry_t *reg = h->reg;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (h->ent[i], scene_href, reg);
-		if (ref->hierarchy != h) {
+		auto ref = *(hierref_t *) Ent_GetComponent (h->ent[i], ssys.base + scene_href, ssys.reg);
+		if (ref.id != href.id) {
 			printf ("transform %d (%s) does not point to hierarchy\n",
 					i, name[i]);
 		}
@@ -65,13 +65,13 @@ static int
 check_indices (transform_t transform, uint32_t index, uint32_t parentIndex,
 			   uint32_t childIndex, uint32_t childCount)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto href = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, ssys.reg);
 	char      **name = h->components[transform_type_name];
-	if (ref->index != index) {
+	if (href.index != index) {
 		printf ("%s/%s index incorrect: expect %u got %u\n",
-				name[ref->index], name[index],
-				index, ref->index);
+				name[href.index], name[index],
+				index, href.index);
 		return 0;
 	}
 	if (h->parentIndex[index] != parentIndex) {
@@ -95,21 +95,19 @@ check_indices (transform_t transform, uint32_t index, uint32_t parentIndex,
 static int
 test_single_transform (void)
 {
-	transform_t transform = Transform_New (reg, (transform_t) {});
-	hierarchy_t *h;
+	transform_t transform = Transform_New (ssys, (transform_t) {});
 
 	if (!transform.reg || transform.id == nullent) {
 		printf ("Transform_New returned null\n");
 		return 1;
 	}
-	if (!Transform_GetRef (transform)) {
-		printf ("Transform_GetRef returned null\n");
+	auto href = Transform_GetRef (transform);
+	if (!ECS_EntValid (href.id, ssys.reg)) {
+		printf ("New transform has invalid hierarchy reference\n");
 		return 1;
 	}
-	if (!(h = Transform_GetRef (transform)->hierarchy)) {
-		printf ("New transform has no hierarchy\n");
-		return 1;
-	}
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, ssys.reg);
+
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -134,7 +132,7 @@ test_single_transform (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (h);
+	Hierarchy_Delete (href.id, ssys.reg);
 
 	return 0;
 }
@@ -142,11 +140,10 @@ test_single_transform (void)
 static int
 test_parent_child_init (void)
 {
-	transform_t parent = Transform_New (reg, (transform_t) {});
-	transform_t child = Transform_New (reg, parent);
+	transform_t parent = Transform_New (ssys, (transform_t) {});
+	transform_t child = Transform_New (ssys, parent);
 
-	if (Transform_GetRef (parent)->hierarchy
-		!= Transform_GetRef (child)->hierarchy) {
+	if (Transform_GetRef (parent).id != Transform_GetRef (child).id) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
@@ -156,7 +153,8 @@ test_parent_child_init (void)
 	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
-	hierarchy_t *h = Transform_GetRef (parent)->hierarchy;
+	auto pref = Transform_GetRef (parent);
+	hierarchy_t *h = Ent_GetComponent (pref.id, ecs_hierarchy, ssys.reg);
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -192,7 +190,7 @@ test_parent_child_init (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (Transform_GetRef (parent)->hierarchy);
+	Hierarchy_Delete (Transform_GetRef (parent).id, ssys.reg);
 
 	return 0;
 }
@@ -200,8 +198,8 @@ test_parent_child_init (void)
 static int
 test_parent_child_setparent (void)
 {
-	transform_t parent = Transform_New (reg, (transform_t) {});
-	transform_t child = Transform_New (reg, (transform_t) {});
+	transform_t parent = Transform_New (ssys, (transform_t) {});
+	transform_t child = Transform_New (ssys, (transform_t) {});
 
 	Transform_SetName (parent, "parent");
 	Transform_SetName (child, "child");
@@ -209,8 +207,7 @@ test_parent_child_setparent (void)
 	if (!check_indices (parent, 0, nullent, 1, 0)) { return 1; }
 	if (!check_indices (child,  0, nullent, 1, 0)) { return 1; }
 
-	if (Transform_GetRef (parent)->hierarchy
-		== Transform_GetRef (child)->hierarchy) {
+	if (Transform_GetRef (parent).id == Transform_GetRef (child).id) {
 		printf ("parent and child transforms have same hierarchy before"
 				" set paret\n");
 		return 1;
@@ -218,8 +215,7 @@ test_parent_child_setparent (void)
 
 	Transform_SetParent (child, parent);
 
-	if (Transform_GetRef (parent)->hierarchy
-		!= Transform_GetRef (child)->hierarchy) {
+	if (Transform_GetRef (parent).id != Transform_GetRef (child).id) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
@@ -229,7 +225,8 @@ test_parent_child_setparent (void)
 	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
-	hierarchy_t *h = Transform_GetRef (parent)->hierarchy;
+	auto pref = Transform_GetRef (parent);
+	hierarchy_t *h = Ent_GetComponent (pref.id, ecs_hierarchy, ssys.reg);
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -265,7 +262,7 @@ test_parent_child_setparent (void)
 	}
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (Transform_GetRef (parent)->hierarchy);
+	Hierarchy_Delete (Transform_GetRef (parent).id, ssys.reg);
 
 	return 0;
 }
@@ -288,11 +285,11 @@ check_vector (transform_t transform,
 static int
 test_frames (void)
 {
-	transform_t root = Transform_NewNamed (reg, (transform_t) {}, "root");
-	transform_t A = Transform_NewNamed (reg, root, "A");
-	transform_t B = Transform_NewNamed (reg, root, "B");
-	transform_t A1 = Transform_NewNamed (reg, A, "A1");
-	transform_t B1 = Transform_NewNamed (reg, B, "B1");
+	transform_t root = Transform_NewNamed (ssys, (transform_t) {}, "root");
+	transform_t A = Transform_NewNamed (ssys, root, "A");
+	transform_t B = Transform_NewNamed (ssys, root, "B");
+	transform_t A1 = Transform_NewNamed (ssys, A, "A1");
+	transform_t B1 = Transform_NewNamed (ssys, B, "B1");
 
 	Transform_SetLocalPosition (root, (vec4f_t) { 0, 0, 1, 1 });
 	Transform_SetLocalPosition (A, (vec4f_t) { 1, 0, 0, 1 });
@@ -304,7 +301,8 @@ test_frames (void)
 	Transform_SetLocalPosition (B1, (vec4f_t) { 0, 1, 0, 1 });
 	Transform_SetLocalRotation (B1, (vec4f_t) { -0.5, 0.5, -0.5, 0.5 });
 
-	hierarchy_t *h = Transform_GetRef (root)->hierarchy;
+	auto rref = Transform_GetRef (root);
+	hierarchy_t *h = Ent_GetComponent (rref.id, ecs_hierarchy, ssys.reg);
 	mat4f_t    *localMatrix = h->components[transform_type_localMatrix];
 	mat4f_t    *localInverse = h->components[transform_type_localInverse];
 	mat4f_t    *worldMatrix = h->components[transform_type_worldMatrix];
@@ -483,7 +481,8 @@ int
 main (void)
 {
 	scene_t    *scene = Scene_NewScene (NULL);
-	reg = scene->reg;
+	ssys.reg = scene->reg;
+	ssys.base = scene->base;
 
 	if (test_single_transform ()) { return 1; }
 	if (test_parent_child_init ()) { return 1; }

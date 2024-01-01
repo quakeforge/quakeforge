@@ -54,6 +54,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 static const char *alias_vert_effects[] =
 {
 	"QuakeForge.Vertex.mdl",
@@ -161,12 +163,12 @@ calc_lighting (entity_t ent, float *ambient, float *shadelight,
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
 	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	*ambient = max (light, max (renderer->model->min_light,
 								renderer->min_light) * 128);
 	*shadelight = *ambient;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];
@@ -241,7 +243,7 @@ glsl_R_DrawAlias (entity_t ent)
 
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	if (renderer->onlyshadows) {
 		return;
 	}
@@ -267,7 +269,7 @@ glsl_R_DrawAlias (entity_t ent)
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	colormap = glsl_colormap;
 	if (renderer->skin && renderer->skin->auxtex)

@@ -178,6 +178,7 @@ typedef struct {
 	int			ambientlight;
 	int			drawflat;
 
+	struct scene_s *scene;
 	struct ecs_registry_s *registry;
 	struct model_s *worldmodel;
 } refdef_t;

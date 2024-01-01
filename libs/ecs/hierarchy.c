@@ -71,8 +71,8 @@ hierarchy_InvalidateReferences (hierarchy_t *hierarchy, uint32_t start,
 	for (size_t i = start; count-- > 0; i++) {
 		if (ECS_EntValid (hierarchy->ent[i], reg)) {
 			hierref_t  *ref = Ent_GetComponent (hierarchy->ent[i], href, reg);
-			ref->hierarchy = 0;
-			ref->index = -1;
+			ref->id = nullent;
+			ref->index = nullindex;
 		}
 	}
 }
@@ -189,7 +189,7 @@ hierarchy_close (hierarchy_t *hierarchy, uint32_t index, uint32_t count)
 }
 
 static void
-hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
+hierarchy_move (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 				uint32_t dstIndex, uint32_t srcIndex, uint32_t count)
 {
 	ecs_registry_t *reg = dst->reg;
@@ -206,7 +206,7 @@ hierarchy_move (hierarchy_t *dst, const hierarchy_t *src,
 		if (dst->ent[dstIndex + i] != nullent) {
 			uint32_t    ent = dst->ent[dstIndex + i];
 			hierref_t  *ref = Ent_GetComponent (ent, href, reg);
-			ref->hierarchy = dst;
+			ref->id = dstid;
 			ref->index = dstIndex + i;
 		}
 	}
@@ -240,7 +240,7 @@ hierarchy_init (hierarchy_t *dst, uint32_t index,
 }
 
 static uint32_t
-hierarchy_insert_flat (hierarchy_t *dst, const hierarchy_t *src,
+hierarchy_insert_flat (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 					   uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
 {
 	uint32_t    insertIndex;	// where the objects will be inserted
@@ -277,7 +277,7 @@ hierarchy_insert_flat (hierarchy_t *dst, const hierarchy_t *src,
 		*srcRoot += count;
 	}
 	if (src) {
-		hierarchy_move (dst, src, insertIndex, *srcRoot, count);
+		hierarchy_move (dst, dstid, src, insertIndex, *srcRoot, count);
 	} else {
 		hierarchy_init (dst, insertIndex, dstParent, childIndex, count);
 	}
@@ -292,7 +292,7 @@ hierarchy_insert_flat (hierarchy_t *dst, const hierarchy_t *src,
 }
 
 static uint32_t
-hierarchy_insert_tree (hierarchy_t *dst, const hierarchy_t *src,
+hierarchy_insert_tree (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 					   uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
 {
 	uint32_t    insertIndex;
@@ -328,7 +328,7 @@ hierarchy_insert_tree (hierarchy_t *dst, const hierarchy_t *src,
 		dst->nextIndex[insertIndex] = nullindex;
 
 		if (src) {
-			hierarchy_move (dst, src, insertIndex, *srcRoot, count);
+			hierarchy_move (dst, dstid, src, insertIndex, *srcRoot, count);
 		} else {
 			hierarchy_init (dst, insertIndex, dstParent, nullindex, count);
 		}
@@ -337,18 +337,21 @@ hierarchy_insert_tree (hierarchy_t *dst, const hierarchy_t *src,
 }
 
 static uint32_t
-hierarchy_insert (hierarchy_t *dst, const hierarchy_t *src,
+hierarchy_insert (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 				  uint32_t dstParent, uint32_t *srcRoot, uint32_t count)
 {
 	if (dst->tree_mode) {
-		return hierarchy_insert_tree (dst, src, dstParent, srcRoot, count);
+		return hierarchy_insert_tree (dst, dstid, src, dstParent, srcRoot,
+									  count);
 	} else {
-		return hierarchy_insert_flat (dst, src, dstParent, srcRoot, count);
+		return hierarchy_insert_flat (dst, dstid, src, dstParent, srcRoot,
+									  count);
 	}
 }
 
 static void
-hierarchy_insert_children (hierarchy_t *dst, const hierarchy_t *src,
+hierarchy_insert_children (hierarchy_t *dst, uint32_t dstid,
+						   const hierarchy_t *src,
 						   uint32_t dstParent, uint32_t *srcRoot)
 {
 	uint32_t    insertIndex;
@@ -356,19 +359,21 @@ hierarchy_insert_children (hierarchy_t *dst, const hierarchy_t *src,
 	uint32_t    childCount = src->childCount[*srcRoot];
 
 	if (childCount) {
-		insertIndex = hierarchy_insert (dst, src, dstParent,
+		insertIndex = hierarchy_insert (dst, dstid, src, dstParent,
 										&childIndex, childCount);
 		if (dst == src && insertIndex <= *srcRoot) {
 			*srcRoot += childCount;
 		}
 		for (uint32_t i = 0; i < childCount; i++, childIndex++) {
-			hierarchy_insert_children (dst, src, insertIndex + i, &childIndex);
+			hierarchy_insert_children (dst, dstid, src, insertIndex + i,
+									   &childIndex);
 		}
 	}
 }
 
-static uint32_t
-hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
+static hierref_t
+hierarchy_insertHierarchy (hierarchy_t *dst, uint32_t dstid,
+						   const hierarchy_t *src,
 						   uint32_t dstParent, uint32_t *srcRoot)
 {
 	uint32_t    insertIndex;
@@ -379,7 +384,7 @@ hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 		}
 		hierarchy_open (dst, 0, 1);
 		if (src) {
-			hierarchy_move (dst, src, 0, *srcRoot, 1);
+			hierarchy_move (dst, dstid, src, 0, *srcRoot, 1);
 		}
 		dst->parentIndex[0] = nullindex;
 		dst->childIndex[0] = 1;
@@ -389,20 +394,25 @@ hierarchy_insertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
 		if (!dst->num_objects) {
 			Sys_Error ("attempt to insert non-root in empty hierarchy");
 		}
-		insertIndex = hierarchy_insert (dst, src, dstParent, srcRoot, 1);
+		insertIndex = hierarchy_insert (dst, dstid, src, dstParent, srcRoot, 1);
 	}
 	// if src is null, then inserting a new object which has no children
 	if (src) {
-		hierarchy_insert_children (dst, src, insertIndex, srcRoot);
+		hierarchy_insert_children (dst, dstid, src, insertIndex, srcRoot);
 	}
-	return insertIndex;
+	return (hierref_t) { .id = dstid, .index = insertIndex };
 }
 
-uint32_t
-Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
-						   uint32_t dstParent, uint32_t srcRoot)
+hierref_t
+Hierarchy_InsertHierarchy (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 {
-	return hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);
+	hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
+	hierarchy_t *src = 0;
+	if (ECS_EntValid (sref.id, reg)) {
+		src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
+	}
+	return hierarchy_insertHierarchy (dst, dref.id, src,
+									  dref.index, &sref.index);
 }
 
 static void
@@ -456,31 +466,16 @@ Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 	}
 }
 
-hierarchy_t *
-Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
-			   const hierarchy_type_t *type, int createRoot)
+void
+Hierarchy_Create (hierarchy_t *hierarchy)
 {
-	hierarchy_t *hierarchy = PR_RESNEW (reg->hierarchies);
-	hierarchy->reg = reg;
-	hierarchy->href_comp = href_comp;
-
-	hierarchy->components = 0;
-	hierarchy->type = type;
-	if (type) {
-		hierarchy->components = calloc (hierarchy->type->num_components,
-										sizeof (void *));
+	if (hierarchy) {
+		Sys_Error ("Hierarchy_Create");
 	}
-
-	if (createRoot) {
-		hierarchy_open (hierarchy, 0, 1);
-		hierarchy_init (hierarchy, 0, nullindex, 1, 1);
-	}
-
-	return hierarchy;
 }
 
-static void
-hierarchy_delete (hierarchy_t *hierarchy)
+void
+Hierarchy_Destroy (hierarchy_t *hierarchy)
 {
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
@@ -494,16 +489,35 @@ hierarchy_delete (hierarchy_t *hierarchy)
 		}
 		free (hierarchy->components);
 	}
+}
 
-	ecs_registry_t *reg = hierarchy->reg;
-	PR_RESFREE (reg->hierarchies, hierarchy);
+uint32_t
+Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
+			   const hierarchy_type_t *type, bool createRoot)
+{
+	hierarchy_t hierarchy = {
+		.reg = reg,
+		.href_comp = href_comp,
+		.type = type,
+		.components = type ? calloc (type->num_components, sizeof (void *)) : 0,
+	};
+
+	if (createRoot) {
+		hierarchy_open (&hierarchy, 0, 1);
+		hierarchy_init (&hierarchy, 0, nullindex, 1, 1);
+	}
+	uint32_t hent = ECS_NewEntity (reg);
+	Ent_SetComponent (hent, ecs_hierarchy, reg, &hierarchy);
+
+	return hent;
 }
 
 void
-Hierarchy_Delete (hierarchy_t *hierarchy)
+Hierarchy_Delete (uint32_t hierarchy, ecs_registry_t *reg)
 {
-	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
-	hierarchy_delete (hierarchy);
+	hierarchy_t *h = Ent_GetComponent (hierarchy, ecs_hierarchy, reg);
+	hierarchy_InvalidateReferences (h, 0, h->num_objects);
+	ECS_DelEntity (reg, hierarchy);
 }
 
 static uint32_t
@@ -588,59 +602,68 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 	}
 
 	auto src = hierarchy;
-	auto tmp = Hierarchy_New (src->reg, src->href_comp, src->type, 0);
-	Hierarchy_Reserve (tmp, src->num_objects);
-	tmp->num_objects = src->num_objects;
+	hierarchy_t tmp = {
+		.reg = src->reg,
+		.href_comp = src->href_comp,
+		.type = src->type,
+		.components = src->type
+					? calloc (src->type->num_components, sizeof (void *)) : 0,
+	};
+	Hierarchy_Reserve (&tmp, src->num_objects);
+	tmp.num_objects = src->num_objects;
 
 	// treat parentIndex as a queue for breadth-first traversal
-	tmp->parentIndex[0] = 0;	// start at root of src
+	tmp.parentIndex[0] = 0;	// start at root of src
 	uint32_t    queueIndex = 1;
 	for (uint32_t i = 0; i < src->num_objects; i++) {
-		copy_tree_nodes (tmp, src, i, &queueIndex);
+		copy_tree_nodes (&tmp, src, i, &queueIndex);
 	}
-	tmp->parentIndex[0] = nullindex;
+	tmp.parentIndex[0] = nullindex;
 	for (uint32_t i = 0; i < src->num_objects; i++) {
-		for (uint32_t j = 0; j < tmp->childCount[i]; j++) {
-			tmp->parentIndex[tmp->childIndex[i] + j] = i;
+		for (uint32_t j = 0; j < tmp.childCount[i]; j++) {
+			tmp.parentIndex[tmp.childIndex[i] + j] = i;
 		}
 	}
 	auto href_comp = src->href_comp;
 	for (uint32_t i = 0; i < src->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (tmp->ent[i], href_comp, tmp->reg);
+		hierref_t  *ref = Ent_GetComponent (tmp.ent[i], href_comp, src->reg);
 		ref->index = i;
 	}
 
-	swap_pointers (&tmp->ent, &src->ent);
-	swap_pointers (&tmp->childCount, &src->childCount);
-	swap_pointers (&tmp->childIndex, &src->childIndex);
-	swap_pointers (&tmp->parentIndex, &src->parentIndex);
-	swap_pointers (&tmp->nextIndex, &src->nextIndex);
-	swap_pointers (&tmp->lastIndex, &src->lastIndex);
+	swap_pointers (&tmp.ent, &src->ent);
+	swap_pointers (&tmp.childCount, &src->childCount);
+	swap_pointers (&tmp.childIndex, &src->childIndex);
+	swap_pointers (&tmp.parentIndex, &src->parentIndex);
+	swap_pointers (&tmp.nextIndex, &src->nextIndex);
+	swap_pointers (&tmp.lastIndex, &src->lastIndex);
 	if (src->type) {
 		for (uint32_t i = 0; i < src->type->num_components; i++) {
-			swap_pointers (&tmp->components[i], &src->components[i]);
+			swap_pointers (&tmp.components[i], &src->components[i]);
 		}
 	}
-	hierarchy_delete (tmp);
+	Hierarchy_Destroy (&tmp);
 }
 
-hierarchy_t *
+uint32_t
 Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 				const hierarchy_t *src)
 {
 	if (src->tree_mode) {
 		Sys_Error ("Hierarchy_Copy tree mode not implemented");
 	}
-	hierarchy_t *dst = Hierarchy_New (dstReg, href_comp, src->type, 0);
+	uint32_t    copy = Hierarchy_New (dstReg, href_comp, src->type, 0);
+	hierarchy_t *dst = Ent_GetComponent (copy, ecs_hierarchy, dstReg);
 	size_t      count = src->num_objects;
 
 	Hierarchy_Reserve (dst, count);
 
 	for (size_t i = 0; i < count; i++) {
 		dst->ent[i] = ECS_NewEntity (dstReg);
-		hierref_t  *ref = Ent_AddComponent (dst->ent[i], href_comp, dstReg);
-		ref->hierarchy = dst;
-		ref->index = i;
+		hierref_t   ref = {
+			.id = copy,
+			.index = i,
+		};
+		Ent_SetComponent (dst->ent[i], href_comp, dstReg, &ref);
 	}
 
 	Component_CopyElements (&childCount_component,
@@ -660,34 +683,35 @@ Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 									src->components[i], 0, count);
 		}
 	}
-	return dst;
+	return copy;
 }
 
 hierref_t
-Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
-					 hierarchy_t *src, uint32_t srcRoot)
+Hierarchy_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 {
+	hierarchy_t *src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
 	if (src->tree_mode) {
 		Sys_Error ("Hierarchy_SetParent tree mode not implemented");
 	}
 	hierref_t   r = {};
-	if (dst && dstParent != nullindex) {
+	if (ECS_EntValid (dref.id, reg)) {
+		hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
 		if (dst->type != src->type) {
 			Sys_Error ("Can't set parent in hierarchy of different type");
 		}
 	} else {
-		if (!srcRoot) {
-			r.hierarchy = src;
-			r.index = 0;
-			return r;
+		if (!sref.index) {
+			return sref;
 		}
-		dst = Hierarchy_New (src->reg, src->href_comp, src->type, 0);
+		dref.id = Hierarchy_New (src->reg, src->href_comp, src->type, 0);
+		dref.index = nullindex;
 	}
-	r.hierarchy = dst;
-	r.index = hierarchy_insertHierarchy (dst, src, dstParent, &srcRoot);
-	Hierarchy_RemoveHierarchy (src, srcRoot, 0);
+	hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
+	dref = hierarchy_insertHierarchy (dst, dref.id, src,
+									  dref.index, &sref.index);
+	Hierarchy_RemoveHierarchy (src, sref.index, 0);
 	if (!src->num_objects) {
-		Hierarchy_Delete (src);
+		Hierarchy_Delete (sref.id, reg);
 	}
 	return r;
 }
@@ -695,6 +719,7 @@ Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
 void
 Hierref_DestroyComponent (void *href)
 {
+#if 0
 	hierref_t   ref = *(hierref_t *) href;
 	if (ref.hierarchy) {
 		ref.hierarchy->ent[ref.index] = -1;
@@ -703,4 +728,5 @@ Hierref_DestroyComponent (void *href)
 			Hierarchy_Delete (ref.hierarchy);
 		}
 	}
+#endif
 }

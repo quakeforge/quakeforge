@@ -34,6 +34,38 @@
 #define IMPLEMENT_ECS_Funcs
 #include "QF/ecs.h"
 
+static void
+ecs_name_destroy (void *name)
+{
+	free (name);
+}
+
+static void
+ecs_hierarchy_create (void *hierarchy)
+{
+	Hierarchy_Create (hierarchy);
+}
+
+static void
+ecs_hierarchy_destroy (void *hierarchy)
+{
+	Hierarchy_Destroy (hierarchy);
+}
+
+static const component_t ecs_components[ecs_comp_count] = {
+	[ecs_name] = {
+		.size = sizeof (char *),
+		.name = "name",
+		.destroy = ecs_name_destroy,
+	},
+	[ecs_hierarchy] = {
+		.size = sizeof (hierarchy_t),
+		.name = "hierarchy",
+		.create = ecs_hierarchy_create,
+		.destroy = ecs_hierarchy_destroy,
+	},
+};
+
 VISIBLE ecs_registry_t *
 ECS_NewRegistry (const char *name)
 {
@@ -41,6 +73,7 @@ ECS_NewRegistry (const char *name)
 	reg->name = name;
 	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
 	reg->next = Ent_Index (nullent);
+	ECS_RegisterComponents (reg, ecs_components, ecs_comp_count);
 	return reg;
 }
 
@@ -70,7 +103,6 @@ ECS_DelRegistry (ecs_registry_t *registry)
 	DARRAY_CLEAR (&registry->components);
 	free (registry->subpools);
 	free (registry->comp_pools);
-	PR_RESDELMAP (registry->hierarchies);
 	free (registry);
 }
 
@@ -265,9 +297,18 @@ ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
 VISIBLE void
 ECS_PrintRegistry (ecs_registry_t *registry)
 {
-	printf ("%s\n", registry->name);
+	printf ("%s %d\n", registry->name, registry->num_entities);
 	for (size_t i = 0; i < registry->components.size; i++) {
 		printf ("%3zd %7d %s\n", i, registry->comp_pools[i].count,
 				registry->components.a[i].name);
+		auto subpool = &registry->subpools[i];
+		if (subpool->num_ranges) {
+			printf ("   ");
+			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
+				uint32_t range = subpool->ranges[j];
+				printf (" %d", range);
+			}
+			printf ("\n");
+		}
 	}
 }

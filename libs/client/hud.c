@@ -282,25 +282,25 @@ sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
 static inline void
 sbar_setcomponent (view_t view, uint32_t comp, const void *data)
 {
-	Ent_SetComponent (view.id, comp, view.reg, data);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + comp, view.reg, data);
 }
 
 static inline int
 sbar_hascomponent (view_t view, uint32_t comp)
 {
-	return Ent_HasComponent (view.id, comp, view.reg);
+	return Ent_HasComponent (view.id, cl_canvas_sys.base + comp, view.reg);
 }
 
 static inline void *
 sbar_getcomponent (view_t view, uint32_t comp)
 {
-	return Ent_GetComponent (view.id, comp, view.reg);
+	return Ent_GetComponent (view.id, cl_canvas_sys.base + comp, view.reg);
 }
 
 static inline void
 sbar_remcomponent (view_t view, uint32_t comp)
 {
-	Ent_RemoveComponent (view.id, comp, view.reg);
+	Ent_RemoveComponent (view.id, cl_canvas_sys.base + comp, view.reg);
 }
 
 static inline void
@@ -1669,7 +1669,7 @@ draw_fps (view_t view)
 
 /* CENTER PRINTING */
 static dstring_t center_string = {&dstring_default_mem};
-static passage_t center_passage;
+static passage_t center_passage = { .hierarchy = nullent };
 static float centertime_start;				// for slow victory printing
 static float centertime_off;
 static int   center_lines;
@@ -1698,7 +1698,9 @@ Sbar_CenterPrint (const char *str)
 	Passage_ParseText (&center_passage, center_string.str);
 	// Standard centerprint strings are pre-flowed so each line in the message
 	// is a paragraph in the passage.
-	center_lines = center_passage.hierarchy->childCount[0];
+	hierarchy_t *h = Ent_GetComponent (center_passage.hierarchy, ecs_hierarchy,
+									   center_passage.reg);
+	center_lines = h->childCount[0];
 }
 
 static void
@@ -1714,7 +1716,8 @@ Sbar_DrawCenterString (view_t view, unsigned remaining)
 	else
 		y = abs.y + 48;
 
-	__auto_type h = center_passage.hierarchy;
+	hierarchy_t *h = Ent_GetComponent (center_passage.hierarchy, ecs_hierarchy,
+									   center_passage.reg);
 	psg_text_t *line = h->components[passage_type_text_obj];
 	int         line_count = center_lines;
 	while (line_count-- > 0 && remaining > 0) {
@@ -2281,7 +2284,8 @@ hud_time_f (void *data, const cvar_t *cvar)
 static void
 hud_add_outlines (view_t view, byte color)
 {
-	Ent_SetComponent (view.id, canvas_outline, view.reg, &color);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_outline, view.reg,
+					  &color);
 	uint32_t    count = View_ChildCount (view);
 	for (uint32_t i = 0; i < count; i++) {
 		hud_add_outlines (View_GetChild (view, i), color);
@@ -2291,7 +2295,7 @@ hud_add_outlines (view_t view, byte color)
 static void
 hud_remove_outlines (view_t view)
 {
-	Ent_RemoveComponent (view.id, canvas_outline, view.reg);
+	Ent_RemoveComponent (view.id, cl_canvas_sys.base + canvas_outline, view.reg);
 	uint32_t    count = View_ChildCount (view);
 	for (uint32_t i = 0; i < count; i++) {
 		hud_remove_outlines (View_GetChild (view, i));

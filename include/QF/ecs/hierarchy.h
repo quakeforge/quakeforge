@@ -46,8 +46,8 @@ typedef struct hierarchy_type_s {
 } hierarchy_type_t;
 
 typedef struct hierref_s {
-	struct hierarchy_s *hierarchy;
-	uint32_t    index;	///< index in hierarchy
+	uint32_t    id;				///< entity holding hierarchy object
+	uint32_t    index;			///< index in hierarchy
 } hierref_t;
 
 typedef struct hierarchy_s {
@@ -67,22 +67,27 @@ typedef struct hierarchy_s {
 } hierarchy_t;
 
 #define nullindex (~0u)
+#define nullhref (hierref_t) { .id = nullent, .index = nullindex }
 
-hierarchy_t *Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
-							const hierarchy_type_t *type, int createRoot);
+void Hierarchy_Create (hierarchy_t *hierarchy);
+void Hierarchy_Destroy (hierarchy_t *hierarchy);
+
+uint32_t Hierarchy_New (struct ecs_registry_s *reg, uint32_t href_comp,
+						const hierarchy_type_t *type, bool createRoot);
+void Hierarchy_Delete (uint32_t hierarchy, struct ecs_registry_s *reg);
+
 void Hierarchy_Reserve (hierarchy_t *hierarchy, uint32_t count);
-hierarchy_t *Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
-							 const hierarchy_t *src);
-void Hierarchy_Delete (hierarchy_t *hierarchy);
+uint32_t Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
+						 const hierarchy_t *src);
 void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 
-uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
-									uint32_t dstParent, uint32_t srcRoot);
+hierref_t Hierarchy_InsertHierarchy (hierref_t dref, hierref_t sref,
+									 struct ecs_registry_s *reg);
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 								int delEntities);
 
-hierref_t Hierarchy_SetParent (hierarchy_t *dst, uint32_t dstParent,
-							   hierarchy_t *src, uint32_t srcIndex);
+hierref_t Hierarchy_SetParent (hierref_t dref, hierref_t sref,
+							   struct ecs_registry_s *reg);
 void Hierref_DestroyComponent (void *href);
 
 ///@}

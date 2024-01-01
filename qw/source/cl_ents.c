@@ -138,9 +138,9 @@ is_gib (entity_state_t *s1)
 static void
 set_entity_model (entity_t ent, int modelindex)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
 											 cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   cl_world.scene->reg);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
@@ -187,11 +187,11 @@ CL_LinkPacketEntities (void)
 			forcelink = true;
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
 												 ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 												   ent.reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin,
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin,
 												   ent.reg);
 
 		// spawn light flashes, even ones coming from invisible objects
@@ -220,7 +220,7 @@ CL_LinkPacketEntities (void)
 					.top = player->topcolor,
 					.bottom = player->bottomcolor,
 				};
-				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
+				Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
 				renderer->skin
 					= mod_funcs->Skin_SetSkin (renderer->skin, new->colormap,
 											   player->skinname->value);
@@ -229,7 +229,7 @@ CL_LinkPacketEntities (void)
 			} else {
 				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
 															  0);
-				Ent_RemoveComponent (ent.id, scene_colormap, ent.reg);
+				Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
 			}
 		}
 
@@ -313,13 +313,13 @@ CL_UpdateFlagModels (entity_t ent, int key)
 	};
 	float       f;
 	entity_t    fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 
 	if (!*active) {
 		return;
 	}
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   cl_world.scene->reg);
 
 	f = 14.0;
@@ -348,7 +348,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	entity_t    fent;
 
 	fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 
 	if (cl_flagindex == -1) {
@@ -365,7 +365,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	}
 	CL_UpdateFlagModels (ent, key);
 
-	renderer_t *renderer = Ent_GetComponent (fent.id, scene_renderer,
+	renderer_t *renderer = Ent_GetComponent (fent.id, fent.base + scene_renderer,
 											 cl_world.scene->reg);
 	renderer->model = cl_world.models.a[cl_flagindex];
 	renderer->skinnum = team;
@@ -379,7 +379,7 @@ CL_RemoveFlagModels (int key)
 	entity_t    fent;
 
 	fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 	transform_t transform = Entity_Transform (fent);
 	*active = 0;
@@ -442,9 +442,9 @@ CL_LinkPlayers (void)
 		if (!Entity_Valid (ent)) {
 			ent = CL_GetEntity (j + 1);
 		}
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
+		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
 												 cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 												   cl_world.scene->reg);
 
 		// spawn light flashes, even ones coming from invisible objects
@@ -457,7 +457,7 @@ CL_LinkPlayers (void)
 			clientplayer = false;
 		}
 		if (player->chat && player->chat->value[0] != '0') {
-			Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+			Ent_SetComponent (ent.id, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 				.origin = org,
 				.color = {0.0, 1.0, 0.0, 1.0},
 				.radius = 100,
@@ -488,7 +488,7 @@ CL_LinkPlayers (void)
 			.top = player->topcolor,
 			.bottom = player->bottomcolor,
 		};
-		Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
+		Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
@@ -547,7 +547,7 @@ CL_LinkPlayers (void)
 		int     flag_state = state->pls.es.effects & (EF_FLAG1 | EF_FLAG2);
 		if (Entity_Valid (player->flag_ent) && !flag_state) {
 			CL_RemoveFlagModels (j);
-			player->flag_ent = (entity_t) nullentity;
+			player->flag_ent = nullentity;
 		} else if (!Entity_Valid (player->flag_ent) && flag_state) {
 			if (flag_state & EF_FLAG1)
 				player->flag_ent = CL_AddFlagModels (ent, 0, j);

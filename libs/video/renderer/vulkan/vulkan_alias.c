@@ -70,19 +70,19 @@ typedef struct {
 static renderer_t *
 alias_get_renderer (entity_t ent)
 {
-	return Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	return Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 }
 
 static animation_t *
 alias_get_animation (entity_t ent)
 {
-	return Ent_GetComponent (ent.id, scene_animation, ent.reg);
+	return Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 }
 
 static colormap_t *
 alias_get_colormap (entity_t ent)
 {
-	return Ent_GetComponent (ent.id, scene_colormap, ent.reg);
+	return Ent_GetComponent (ent.id, ent.base + scene_colormap, ent.reg);
 }
 
 static void
@@ -206,7 +206,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 	byte colors[4];
 	QuatCopy (renderer->colormod, base_color);
 	QuatCopy (skin->colors, colors);
-	if (Ent_HasComponent (ent.id, scene_colormap, ent.reg)) {
+	if (Ent_HasComponent (ent.id, ent.base + scene_colormap, ent.reg)) {
 		auto colormap = alias_get_colormap (ent);
 		colors[0] = colormap->top * 16 + 8;
 		colors[1] = colormap->bottom * 16 + 8;

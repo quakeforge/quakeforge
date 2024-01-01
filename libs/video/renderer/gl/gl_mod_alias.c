@@ -55,6 +55,8 @@
 #include "r_internal.h"
 #include "vid_gl.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 typedef struct {
 	vec3_t      normal;
 	vec3_t      vert;
@@ -272,7 +274,7 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *paliashdr,
 static inline vert_order_t *
 GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
 	float         blend = R_AliasGetLerpedFrames (animation, paliashdr);
 	int           count, i;
 	trivertx16_t *verts;
@@ -337,7 +339,7 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
 static inline vert_order_t *
 GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
+	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
 	float       blend = R_AliasGetLerpedFrames (animation, paliashdr);
 	int         count, i;
 	trivertx_t *verts;
@@ -412,7 +414,7 @@ gl_R_DrawAliasModel (entity_t e)
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
 	model_t    *model = renderer->model;
 
 	if (renderer->onlyshadows) {
@@ -461,7 +463,7 @@ gl_R_DrawAliasModel (entity_t e)
 		}
 
 		if (gl_vector_light) {
-			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 			auto dlight_data = (dlight_t *) dlight_pool->data;
 			for (uint32_t i = 0; i < dlight_pool->count; i++) {
 				auto l = &dlight_data[i];
@@ -513,7 +515,7 @@ gl_R_DrawAliasModel (entity_t e)
 		} else {
 			VectorCopy (ambientcolor, emission);
 
-			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 			auto dlight_data = (dlight_t *) dlight_pool->data;
 			for (uint32_t i = 0; i < dlight_pool->count; i++) {
 				auto l = &dlight_data[i];
@@ -564,7 +566,7 @@ gl_R_DrawAliasModel (entity_t e)
 		}
 	} else {
 		maliasskindesc_t *skindesc;
-		animation_t *animation = Ent_GetComponent (e.id, scene_animation,
+		animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation,
 												   e.reg);
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, paliashdr);
 		texture = skindesc->texnum;

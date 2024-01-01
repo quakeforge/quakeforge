@@ -18,6 +18,11 @@ enum test_components {
 	test_num_components
 };
 
+static uint32_t comp_base;
+#define t_position (comp_base + test_position)
+#define t_scale (comp_base + test_scale)
+#define t_rotation (comp_base + test_rotation)
+
 static void
 create_position (void *data)
 {
@@ -105,28 +110,29 @@ int
 main (void)
 {
 	ecs_registry_t *reg = ECS_NewRegistry ("components");
-	ECS_RegisterComponents (reg, test_components, test_num_components);
+	comp_base = ECS_RegisterComponents (reg, test_components,
+										test_num_components);
 	ECS_CreateComponentPools (reg);
 
 	uint32_t    enta = ECS_NewEntity (reg);
 	uint32_t    entb = ECS_NewEntity (reg);
 	uint32_t    entc = ECS_NewEntity (reg);
-	Ent_AddComponent (enta, test_position, reg);
-	Ent_AddComponent (entb, test_position, reg);
-	Ent_AddComponent (entc, test_position, reg);
-	Ent_AddComponent (enta, test_rotation, reg);
-	Ent_AddComponent (entb, test_rotation, reg);
-	Ent_AddComponent (enta, test_scale, reg);
+	Ent_AddComponent (enta, t_position, reg);
+	Ent_AddComponent (entb, t_position, reg);
+	Ent_AddComponent (entc, t_position, reg);
+	Ent_AddComponent (enta, t_rotation, reg);
+	Ent_AddComponent (entb, t_rotation, reg);
+	Ent_AddComponent (enta, t_scale, reg);
 
 	if (!check_ent_components ((uint32_t[]){enta, entb, entc}, 3,
-							   test_position, reg)) {
+							   t_position, reg)) {
 		return 1;
 	}
 	if (!check_ent_components ((uint32_t[]){enta, entb}, 2,
-							   test_rotation, reg)) {
+							   t_rotation, reg)) {
 		return 1;
 	}
-	if (!check_ent_components ((uint32_t[]){enta}, 1, test_scale, reg)) {
+	if (!check_ent_components ((uint32_t[]){enta}, 1, t_scale, reg)) {
 		return 1;
 	}
 

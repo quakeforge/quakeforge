@@ -290,7 +290,7 @@ R_IQMSetUpTransform (entity_t ent, int trivial_accept)
 void
 R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -302,7 +302,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
@@ -314,7 +314,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
 												 ent.reg);
 	R_IQMSetUpTransform (ent, visibility->trivial_accept);
 

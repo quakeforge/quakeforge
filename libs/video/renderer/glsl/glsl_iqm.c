@@ -204,7 +204,7 @@ set_arrays (iqm_t *iqm)
 void
 glsl_R_DrawIQM (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	static quat_t color = { 1, 1, 1, 1};
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
@@ -231,7 +231,7 @@ glsl_R_DrawIQM (entity_t ent)
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
+	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
