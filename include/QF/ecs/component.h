@@ -46,7 +46,7 @@ struct ecs_registry_s;
 typedef struct component_s {
 	size_t      size;
 	void      (*create) (void *);
-	void      (*destroy) (void *);
+	void      (*destroy) (void *, struct ecs_registry_s *reg);
 	// comp is the registry component id (base + system component id)
 	uint32_t  (*rangeid) (struct ecs_registry_s *reg, uint32_t ent,
 						  uint32_t comp);
@@ -78,7 +78,8 @@ COMPINLINE void *Component_CreateElements (const component_t *component,
 										   uint32_t index, uint32_t count);
 COMPINLINE void Component_DestroyElements (const component_t *component,
 										   void *array,
-										   uint32_t index, uint32_t count);
+										   uint32_t index, uint32_t count,
+										   struct ecs_registry_s *reg);
 
 #undef COMPINLINE
 #ifndef IMPLEMENT_ECS_COMPONENT_Funcs
@@ -186,12 +187,13 @@ Component_CreateElements (const component_t *component, void *array,
 
 COMPINLINE void
 Component_DestroyElements (const component_t *component, void *array,
-						   uint32_t index, uint32_t count)
+						   uint32_t index, uint32_t count,
+						   struct ecs_registry_s *reg)
 {
 	if (component->destroy) {
 		for (uint32_t i = index; count-- > 0; i++) {
 			__auto_type dst = (byte *) array + i * component->size;
-			component->destroy (dst);
+			component->destroy (dst, reg);
 		}
 	}
 }

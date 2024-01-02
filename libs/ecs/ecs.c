@@ -35,7 +35,7 @@
 #include "QF/ecs.h"
 
 static void
-ecs_name_destroy (void *name)
+ecs_name_destroy (void *name, ecs_registry_t *reg)
 {
 	free (name);
 }
@@ -47,7 +47,7 @@ ecs_hierarchy_create (void *hierarchy)
 }
 
 static void
-ecs_hierarchy_destroy (void *hierarchy)
+ecs_hierarchy_destroy (void *hierarchy, ecs_registry_t *reg)
 {
 	Hierarchy_Destroy (hierarchy);
 }
@@ -87,7 +87,7 @@ ECS_DelRegistry (ecs_registry_t *registry)
 	for (uint32_t i = registry->components.size; i-- > 0 ;) {
 		__auto_type comp = &registry->components.a[i];
 		__auto_type pool = &registry->comp_pools[i];
-		Component_DestroyElements (comp, pool->data, 0, pool->count);
+		Component_DestroyElements (comp, pool->data, 0, pool->count, registry);
 		pool->count = 0;
 	}
 	free (registry->entities);
@@ -268,7 +268,7 @@ ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
 	if (destroy) {
 		byte       *data = registry->comp_pools[component].data;
 		for (uint32_t i = 0; i < pool->count; i++) {
-			destroy (data + i * comp->size);
+			destroy (data + i * comp->size, registry);
 		}
 	}
 	pool->count = 0;

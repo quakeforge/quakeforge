@@ -129,7 +129,7 @@ struct imui_ctx_s {
 };
 
 static void
-imui_reference_destroy (void *_ref)
+imui_reference_destroy (void *_ref, ecs_registry_t *reg)
 {
 	imui_reference_t *ref = _ref;
 	if (ref->ctx) {

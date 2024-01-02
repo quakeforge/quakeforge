@@ -68,7 +68,7 @@ create_colormap (void *_colormap)
 }
 
 static void
-destroy_visibility (void *_visibility)
+destroy_visibility (void *_visibility, ecs_registry_t *reg)
 {
 	visibility_t *visibility = _visibility;
 	if (visibility->efrag) {
@@ -77,7 +77,7 @@ destroy_visibility (void *_visibility)
 }
 
 static void
-destroy_renderer (void *_renderer)
+destroy_renderer (void *_renderer, ecs_registry_t *reg)
 {
 	renderer_t *renderer = _renderer;
 	if (renderer->skin) {
@@ -86,7 +86,7 @@ destroy_renderer (void *_renderer)
 }
 
 static void
-destroy_efrags (void *_efrags)
+destroy_efrags (void *_efrags, ecs_registry_t *reg)
 {
 	efrag_t **efrags = _efrags;
 	R_ClearEfragChain (*efrags);

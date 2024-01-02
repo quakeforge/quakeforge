@@ -56,7 +56,7 @@ enum trails_components {
 };
 
 static void
-destroy_pointset (void *comp)
+pointset_destroy (void *comp, ecs_registry_t *reg)
 {
 	pointset_t *pointset = comp;
 	int base = pointset->base / 64;
@@ -71,7 +71,7 @@ static const component_t trails_components[trails_comp_count] = {
 		.size = sizeof (pointset_t),
 		.create = 0,
 		.name = "pointset",
-		.destroy = destroy_pointset,
+		.destroy = pointset_destroy,
 	},
 };
 

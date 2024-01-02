@@ -120,7 +120,7 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		// being double-removed due to deletion of the component resulting
 		// in the entity being deleted (happens with hierarchies)
 		pool->dense[ind] = -1;
-		Component_DestroyElements (c, pool->data, ind, 1);
+		Component_DestroyElements (c, pool->data, ind, 1, registry);
 		uint32_t    range_count = subpool->num_ranges - subpool->available;
 		// if ind >= the last range, then it is outside the subpools
 		if (range_count && ind < subpool->ranges[range_count - 1]) {

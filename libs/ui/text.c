@@ -45,7 +45,7 @@
 #include "compat.h"
 
 static void
-text_passage_glyphs_destroy (void *_glyphset)
+text_passage_glyphs_destroy (void *_glyphset, ecs_registry_t *reg)
 {
 	glyphset_t *glyphset = _glyphset;
 	free (glyphset->glyphs);
@@ -59,7 +59,7 @@ text_features_create (void *_features)
 }
 
 static void
-text_features_destroy (void *_features)
+text_features_destroy (void *_features, ecs_registry_t *reg)
 {
 	featureset_t *features = _features;
 	DARRAY_CLEAR (features);

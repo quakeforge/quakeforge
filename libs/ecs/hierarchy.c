@@ -474,8 +474,8 @@ Hierarchy_Create (hierarchy_t *hierarchy)
 	}
 }
 
-void
-Hierarchy_Destroy (hierarchy_t *hierarchy)
+static void
+hierarchy_destroy (hierarchy_t *hierarchy)
 {
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
@@ -489,6 +489,16 @@ Hierarchy_Destroy (hierarchy_t *hierarchy)
 		}
 		free (hierarchy->components);
 	}
+}
+
+void
+Hierarchy_Destroy (hierarchy_t *hierarchy)
+{
+	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
+	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
+		ECS_DelEntity (hierarchy->reg, hierarchy->ent[i]);
+	}
+	hierarchy_destroy (hierarchy);
 }
 
 uint32_t
@@ -641,7 +651,7 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 			swap_pointers (&tmp.components[i], &src->components[i]);
 		}
 	}
-	Hierarchy_Destroy (&tmp);
+	hierarchy_destroy (&tmp);
 }
 
 uint32_t
@@ -693,7 +703,6 @@ Hierarchy_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 	if (src->tree_mode) {
 		Sys_Error ("Hierarchy_SetParent tree mode not implemented");
 	}
-	hierref_t   r = {};
 	if (ECS_EntValid (dref.id, reg)) {
 		hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
 		if (dst->type != src->type) {
@@ -713,20 +722,19 @@ Hierarchy_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 	if (!src->num_objects) {
 		Hierarchy_Delete (sref.id, reg);
 	}
-	return r;
+	return dref;
 }
 
 void
-Hierref_DestroyComponent (void *href)
+Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
 {
-#if 0
 	hierref_t   ref = *(hierref_t *) href;
-	if (ref.hierarchy) {
-		ref.hierarchy->ent[ref.index] = -1;
-		Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
-		if (!ref.hierarchy->num_objects) {
-			Hierarchy_Delete (ref.hierarchy);
+	if (ECS_EntValid (ref.id, reg)) {
+		hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
+		h->ent[ref.index] = -1;
+		Hierarchy_RemoveHierarchy (h, ref.index, 1);
+		if (!h->num_objects) {
+			Hierarchy_Delete (ref.id, reg);
 		}
 	}
-#endif
 }

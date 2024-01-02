@@ -88,7 +88,7 @@ void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 
 hierref_t Hierarchy_SetParent (hierref_t dref, hierref_t sref,
 							   struct ecs_registry_s *reg);
-void Hierref_DestroyComponent (void *href);
+void Hierref_DestroyComponent (void *href, struct ecs_registry_s *reg);
 
 ///@}
 

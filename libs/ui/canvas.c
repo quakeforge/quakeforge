@@ -78,10 +78,9 @@ canvas_rangeid(outline)
 #undef canvas_rangeid
 
 static void
-canvas_canvas_destroy (void *_canvas)
+canvas_canvas_destroy (void *_canvas, ecs_registry_t *reg)
 {
 	canvas_t *canvas = _canvas;
-	auto reg = canvas->reg;
 	for (uint32_t i = 0; i < canvas_subpool_count; i++) {
 		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
 	}
