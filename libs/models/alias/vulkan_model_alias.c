@@ -93,6 +93,7 @@ vulkan_alias_clear (model_t *m, void *data)
 	}
 	mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
 	QFV_DestroyResource (device, mesh->resources);
+	free (mesh->resources);
 
 	__auto_type skins = (maliasskindesc_t *) ((byte *) hdr + hdr->skindesc);
 	for (int i = 0; i < hdr->mdl.numskins; i++) {
