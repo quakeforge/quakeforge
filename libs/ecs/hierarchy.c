@@ -477,6 +477,10 @@ Hierarchy_Create (hierarchy_t *hierarchy)
 static void
 hierarchy_destroy (hierarchy_t *hierarchy)
 {
+	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
+	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
+		ECS_DelEntity (hierarchy->reg, hierarchy->ent[i]);
+	}
 	free (hierarchy->ent);
 	free (hierarchy->childCount);
 	free (hierarchy->childIndex);
