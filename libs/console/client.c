@@ -677,6 +677,8 @@ resize_console_text (view_t view, view_pos_t len)
 	int			width = len.x / 8;
 	int         height = len.y / 8;
 
+	width = max (width, 1);
+	height = max (height, 1);
 	if (console_buffer->width != width || console_buffer->height != height) {
 		con_linewidth = width;
 		Draw_DestroyBuffer (console_buffer);
