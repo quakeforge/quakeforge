@@ -10,6 +10,7 @@ test_console_libs= \
 	libs/util/libQFutil.la
 
 libs_console_test_test_buffer_SOURCES= \
-	libs/console/test/test-buffer.c
+	libs/console/test/test-buffer.c \
+	$(tracy_src)
 libs_console_test_test_buffer_LDADD=		$(test_console_libs)
 libs_console_test_test_buffer_DEPENDENCIES=$(test_console_libs)

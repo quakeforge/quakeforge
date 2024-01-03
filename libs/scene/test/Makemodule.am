@@ -11,7 +11,8 @@ libs_scene_test_libs= \
 	libs/util/libQFutil.la
 
 libs_scene_test_test_transform_SOURCES= 		\
-	libs/scene/test/test-transform.c
+	libs/scene/test/test-transform.c			\
+	$(tracy_src)
 libs_scene_test_test_transform_LDADD=			\
 	$(libs_scene_test_libs)
 libs_scene_test_test_transform_DEPENDENCIES=	\

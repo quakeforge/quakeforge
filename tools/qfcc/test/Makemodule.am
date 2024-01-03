@@ -128,11 +128,16 @@ check_PROGRAMS += \
 
 qfcc-tests: tools/qfcc/test/test-harness $(test_progs_dat) $(test_bins)
 
-tools_qfcc_test_test_defspace_SOURCES=		tools/qfcc/test/test-defspace.c $(test_defspace_src)
+tools_qfcc_test_test_defspace_SOURCES=		\
+	tools/qfcc/test/test-defspace.c \
+	$(test_defspace_src) \
+	$(tracy_src)
 tools_qfcc_test_test_defspace_LDADD=		$(QFCC_LIBS)
 tools_qfcc_test_test_defspace_DEPENDENCIES=	$(QFCC_DEPS)
 
-tools_qfcc_test_test_harness_SOURCES=		tools/qfcc/test/test-bi.c tools/qfcc/test/test-harness.c
+tools_qfcc_test_test_harness_SOURCES=		\
+	tools/qfcc/test/test-bi.c tools/qfcc/test/test-harness.c \
+	$(tracy_src)
 tools_qfcc_test_test_harness_LDADD=			$(QFCC_TEST_LIBS)
 tools_qfcc_test_test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 

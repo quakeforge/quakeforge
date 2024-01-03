@@ -19,18 +19,21 @@ test_libs= \
 
 libs_models_test_testclip_SOURCES= \
 	libs/models/test/testclip.c \
-	libs/models/test/hulls.c
+	libs/models/test/hulls.c \
+	$(tracy_src)
 libs_models_test_testclip_LDADD=			$(test_libs)
 libs_models_test_testclip_DEPENDENCIES=		$(test_libs)
 
 libs_models_test_testcontents_SOURCES= \
 	libs/models/test/testcontents.c \
-	libs/models/test/hulls.c
+	libs/models/test/hulls.c \
+	$(tracy_src)
 libs_models_test_testcontents_LDADD=		$(test_libs)
 libs_models_test_testcontents_DEPENDENCIES=	$(test_libs)
 
 libs_models_test_testportals_SOURCES= \
 	libs/models/test/testportals.c \
-	libs/models/test/hulls.c
+	libs/models/test/hulls.c \
+	$(tracy_src)
 libs_models_test_testportals_LDADD=			$(test_libs)
 libs_models_test_testportals_DEPENDENCIES=	$(test_libs)

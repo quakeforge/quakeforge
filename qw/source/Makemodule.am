@@ -76,7 +76,7 @@ qw_server_LDFLAGS=		$(common_ldflags)
 qw_server_DEPENDENCIES=	$(qw_server_deps)
 
 qw_master_deps=libs/util/libQFutil.la
-qw_master_SOURCES=		qw/source/master.c
+qw_master_SOURCES=		qw/source/master.c $(tracy_src)
 qw_master_LDADD=		$(qw_master_deps) $(NET_LIBS)
 qw_master_DEPENDENCIES=	$(qw_master_deps)
 qw_master_LDFLAGS=		$(common_ldflags)

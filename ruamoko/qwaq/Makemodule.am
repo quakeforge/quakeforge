@@ -77,7 +77,8 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/editbuffer.c \
 	ruamoko/qwaq/builtins/qwaq-curses.c \
 	ruamoko/qwaq/builtins/term-input.c \
-	ruamoko/qwaq/builtins/threading.c
+	ruamoko/qwaq/builtins/threading.c \
+	$(tracy_src)
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
@@ -88,7 +89,8 @@ qwaq_cmd_libs=
 
 ruamoko_qwaq_qwaq_cmd_SOURCES= \
 	ruamoko/qwaq/builtins/main.c \
-	ruamoko/qwaq/builtins/qwaq-cmd.c
+	ruamoko/qwaq/builtins/qwaq-cmd.c \
+	$(tracy_src)
 
 ruamoko_qwaq_qwaq_cmd_LDADD= $(qwaq_cmd_libs) $(QWAQ_LIBS) \
 				$(PTHREAD_LDFLAGS) $(DL_LIBS)

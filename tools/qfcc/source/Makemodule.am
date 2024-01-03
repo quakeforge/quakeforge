@@ -61,7 +61,8 @@ qfcc_SOURCES = \
 	tools/qfcc/source/switch.c \
 	tools/qfcc/source/symtab.c \
 	tools/qfcc/source/type.c \
-	tools/qfcc/source/value.c
+	tools/qfcc/source/value.c \
+	$(tracy_src)
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
@@ -76,7 +77,8 @@ qfprogs_SOURCES= \
 	tools/qfcc/source/qfprogs.c \
 	tools/qfcc/source/strpool.c \
 	tools/qfcc/source/stub.c \
-	tools/qfcc/source/type.c
+	tools/qfcc/source/type.c \
+	$(tracy_src)
 qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
