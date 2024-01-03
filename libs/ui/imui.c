@@ -324,6 +324,15 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	Hash_DelTable (ctx->tab);
 	Hash_DelContext (ctx->hashctx);
 	Shaper_Delete (ctx->shaper);
+
+	auto reg = ctx->csys.reg;
+	auto pool = &reg->comp_pools[c_reference];
+	for (uint32_t i = 0; i < pool->count; i++) {
+		auto ref = &((imui_reference_t *)pool->data)[i];
+		if (ref->ctx == ctx) {
+			ref->ctx = 0;
+		}
+	}
 	free (ctx);
 }
 
@@ -421,6 +430,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->draw_order = imui_draw_order (ctx->windows.size);
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
+	DARRAY_RESIZE (&ctx->links, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
 	ctx->current_menu = 0;
 }
