@@ -51,6 +51,7 @@ typedef struct {
 static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 {
+	qfZoneScoped (true);
 	int         len;
 
 	len = (count + sizeof (pr_type_t) - 1) / sizeof (pr_type_t);
@@ -62,6 +63,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 static void
 bi_QFS_Open (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	const char *path = P_GSTRING (pr, 0);
 	const char *mode = P_GSTRING (pr, 1);
@@ -77,6 +79,7 @@ bi_QFS_Open (progs_t *pr, void *data)
 static void
 bi_QFS_WOpen (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	const char *path = P_GSTRING (pr, 0);
 	int         zip = P_INT (pr, 1);
@@ -92,6 +95,7 @@ bi_QFS_WOpen (progs_t *pr, void *data)
 static void
 bi_QFS_Rename (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *old = P_GSTRING (pr, 0);
 	const char *new = P_GSTRING (pr, 1);
 
@@ -101,6 +105,7 @@ bi_QFS_Rename (progs_t *pr, void *data)
 static void
 bi_QFS_LoadFile (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *filename = P_GSTRING (pr, 0);
 	QFile      *file;
 	int         size;
@@ -126,6 +131,7 @@ bi_QFS_LoadFile (progs_t *pr, void *data)
 static void
 bi_QFS_OpenFile (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	QFile      *file;
 	const char *filename = P_GSTRING (pr, 0);
 
@@ -141,6 +147,7 @@ bi_QFS_OpenFile (progs_t *pr, void *data)
 static void
 bi_QFS_WriteFile (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *filename = P_GSTRING (pr, 0);
 	pr_type_t  *buf = P_GPOINTER (pr, 1);
 	int         count = P_INT (pr, 2);
@@ -153,6 +160,7 @@ bi_QFS_WriteFile (progs_t *pr, void *data)
 static void
 bi_QFS_Filelist (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	filelist_t *filelist = QFS_FilelistNew ();
 	qfslist_t  *list;
 	pr_string_t *strings;
@@ -173,6 +181,7 @@ bi_QFS_Filelist (progs_t *pr, void *data)
 static void
 bi_QFS_FilelistFree (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	qfslist_t  *list = &P_STRUCT (pr, qfslist_t, 0);
 	pr_string_t *strings = &G_STRUCT (pr, pr_string_t, list->list);
 	int         i;
@@ -185,6 +194,7 @@ bi_QFS_FilelistFree (progs_t *pr, void *data)
 static void
 bi_QFS_GetDirectory (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	RETURN_STRING (pr, qfs_gamedir->dir.def);
 }
 
@@ -206,5 +216,6 @@ static builtin_t builtins[] = {
 void
 RUA_QFS_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

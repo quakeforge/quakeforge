@@ -64,36 +64,42 @@ typedef struct {
 static bi_hashtab_t *
 table_new (hash_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->table_map);
 }
 
 static void
 table_free (hash_resources_t *res, bi_hashtab_t *table)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->table_map, table);
 }
 
 static void
 table_reset (hash_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->table_map);
 }
 
 static inline bi_hashtab_t *
 table_get (hash_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->table_map, index);
 }
 
 static inline int __attribute__((pure))
 table_index (hash_resources_t *res, bi_hashtab_t *table)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->table_map, table);
 }
 
 static const char *
 bi_get_key (const void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
@@ -109,6 +115,7 @@ bi_get_key (const void *key, void *_ht)
 static uintptr_t
 bi_get_hash (const void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
@@ -124,6 +131,7 @@ bi_get_hash (const void *key, void *_ht)
 static int
 bi_compare (const void *key1, const void *key2, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
@@ -140,6 +148,7 @@ bi_compare (const void *key1, const void *key2, void *_ht)
 static void
 bi_free (void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
 	PR_PushFrame (ht->pr);
 	PR_RESET_PARAMS (ht->pr);
@@ -153,6 +162,7 @@ bi_free (void *key, void *_ht)
 static void
 bi_Hash_NewTable (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	int         tsize = P_INT (pr, 0);
 	const char *(*gk)(const void*,void*);
@@ -180,6 +190,7 @@ bi_Hash_NewTable (progs_t *pr, void *_res)
 static bi_hashtab_t * __attribute__((pure))
 get_table (progs_t *pr, hash_resources_t *res, const char *name, int index)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = table_get (res, index);
 
 	if (!ht)
@@ -190,6 +201,7 @@ get_table (progs_t *pr, hash_resources_t *res, const char *name, int index)
 static void
 bi_Hash_SetHashCompare (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	uintptr_t   (*gh)(const void*,void*);
@@ -205,6 +217,7 @@ bi_Hash_SetHashCompare (progs_t *pr, void *_res)
 static void
 bi_Hash_DelTable (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -218,6 +231,7 @@ bi_Hash_DelTable (progs_t *pr, void *_res)
 static void
 bi_Hash_FlushTable (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -227,6 +241,7 @@ bi_Hash_FlushTable (progs_t *pr, void *_res)
 static void
 bi_Hash_Add (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -236,6 +251,7 @@ bi_Hash_Add (progs_t *pr, void *_res)
 static void
 bi_Hash_AddElement (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -245,6 +261,7 @@ bi_Hash_AddElement (progs_t *pr, void *_res)
 static void
 bi_Hash_Find (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -254,6 +271,7 @@ bi_Hash_Find (progs_t *pr, void *_res)
 static void
 bi_Hash_FindElement (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -264,6 +282,7 @@ bi_Hash_FindElement (progs_t *pr, void *_res)
 static void
 bi_Hash_FindList (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
@@ -284,6 +303,7 @@ bi_Hash_FindList (progs_t *pr, void *_res)
 static void
 bi_Hash_FindElementList (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
@@ -304,6 +324,7 @@ bi_Hash_FindElementList (progs_t *pr, void *_res)
 static void
 bi_Hash_Del (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -313,6 +334,7 @@ bi_Hash_Del (progs_t *pr, void *_res)
 static void
 bi_Hash_DelElement (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -323,6 +345,7 @@ bi_Hash_DelElement (progs_t *pr, void *_res)
 static void
 bi_Hash_Free (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -332,18 +355,21 @@ bi_Hash_Free (progs_t *pr, void *_res)
 static void
 bi_Hash_String (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = Hash_String (P_GSTRING (pr, 0));
 }
 
 static void
 bi_Hash_Buffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
 }
 
 static void
 bi_Hash_GetList (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
@@ -364,6 +390,7 @@ bi_Hash_GetList (progs_t *pr, void *_res)
 static void
 bi_Hash_Stats (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
@@ -373,6 +400,7 @@ bi_Hash_Stats (progs_t *pr, void *_res)
 static void
 bi_hash_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	hash_resources_t *res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht;
 
@@ -385,6 +413,7 @@ bi_hash_clear (progs_t *pr, void *_res)
 static void
 bi_hash_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	hash_resources_t *res = _res;
 
 	PR_RESDELMAP (res->table_map);
@@ -418,6 +447,7 @@ static builtin_t builtins[] = {
 void
 RUA_Hash_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	hash_resources_t *res = calloc (1, sizeof (hash_resources_t));
 	res->tabs = 0;
 

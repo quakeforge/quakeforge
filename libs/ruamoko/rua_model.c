@@ -56,24 +56,28 @@ typedef struct {
 static rua_model_t *
 rua_model_handle_new (rua_model_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->model_map);
 }
 
 static void
 rua_model_handle_free (rua_model_resources_t *res, rua_model_t *handle)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->model_map, handle);
 }
 
 static void
 rua_model_handle_reset (rua_model_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->model_map);
 }
 
 static inline rua_model_t * __attribute__((pure))
 rua__model_handle_get (rua_model_resources_t *res, int index, const char *name)
 {
+	qfZoneScoped (true);
 	rua_model_t *handle = 0;
 
 	handle = PR_RESGET(res->model_map, index);
@@ -88,12 +92,14 @@ rua__model_handle_get (rua_model_resources_t *res, int index, const char *name)
 static inline int __attribute__((pure))
 rua_model_handle_index (rua_model_resources_t *res, rua_model_t *handle)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->model_map, handle);
 }
 
 static void
 bi_rua_model_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_model_resources_t *res = (rua_model_resources_t *) _res;
 	rua_model_t    *handle;
 
@@ -106,6 +112,7 @@ bi_rua_model_clear (progs_t *pr, void *_res)
 static void
 bi_rua_model_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_model_resources_t *res = _res;
 	PR_RESDELMAP (res->model_map);
 	free (res);
@@ -114,6 +121,7 @@ bi_rua_model_destroy (progs_t *pr, void *_res)
 static int
 alloc_handle (rua_model_resources_t *res, model_t *model)
 {
+	qfZoneScoped (true);
 	rua_model_t    *handle = rua_model_handle_new (res);
 
 	if (!handle)
@@ -131,6 +139,7 @@ alloc_handle (rua_model_resources_t *res, model_t *model)
 static void
 bi_Model_Load (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (rua_model_resources_t *) _res;
 	const char *path = P_GSTRING (pr, 0);
 	model_t    *model;
@@ -145,6 +154,7 @@ bi_Model_Load (progs_t *pr, void *_res)
 model_t *
 Model_GetModel (progs_t *pr, int handle)
 {
+	qfZoneScoped (true);
 	if (!handle) {
 		return 0;
 	}
@@ -157,6 +167,7 @@ Model_GetModel (progs_t *pr, int handle)
 static void
 bi_Model_Unload (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (rua_model_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	rua_model_t    *h = rua_model_handle_get (res, handle);
@@ -182,6 +193,7 @@ static builtin_t builtins[] = {
 void
 RUA_Model_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	rua_model_resources_t *res = calloc (sizeof (rua_model_resources_t), 1);
 	res->pr = pr;
 

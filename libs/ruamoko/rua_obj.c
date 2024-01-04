@@ -150,6 +150,7 @@ typedef struct probj_resources_s {
 static dtable_t *
 dtable_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	dtable_t   *dtable = PR_RESNEW (probj->dtables);
 	dtable->next = probj->dtable_list;
 	dtable->prev = &probj->dtable_list;
@@ -163,6 +164,7 @@ dtable_new (probj_t *probj)
 static void
 dtable_reset (probj_t *probj)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (probj->dtables);
 	probj->dtable_list = 0;
 }
@@ -170,18 +172,21 @@ dtable_reset (probj_t *probj)
 static inline dtable_t *
 dtable_get (probj_t *probj, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (probj->dtables, index);
 }
 
 static inline int __attribute__((pure))
 dtable_index (probj_t *probj, dtable_t *dtable)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (probj->dtables, dtable);
 }
 
 static always_inline dtable_t * __attribute__((pure))
 get_dtable (probj_t *probj, const char *name, int index)
 {
+	qfZoneScoped (true);
 	dtable_t   *dtable = dtable_get (probj, index);
 
 	if (!dtable) {
@@ -193,6 +198,7 @@ get_dtable (probj_t *probj, const char *name, int index)
 static obj_list *
 obj_list_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	int         i;
 	obj_list   *l;
 
@@ -213,6 +219,7 @@ obj_list_new (probj_t *probj)
 static void
 obj_list_free (probj_t *probj, obj_list *l)
 {
+	qfZoneScoped (true);
 	obj_list   *e;
 
 	if (!l)
@@ -227,6 +234,7 @@ obj_list_free (probj_t *probj, obj_list *l)
 static inline obj_list *
 list_cons (probj_t *probj, void *data, obj_list *next)
 {
+	qfZoneScoped (true);
 	obj_list   *l = obj_list_new (probj);
 	l->data = data;
 	l->next = next;
@@ -236,6 +244,7 @@ list_cons (probj_t *probj, void *data, obj_list *next)
 static inline void
 list_remove (probj_t *probj, obj_list **list)
 {
+	qfZoneScoped (true);
 	if ((*list)->next) {
 		obj_list   *l = *list;
 		*list = (*list)->next;
@@ -250,6 +259,7 @@ list_remove (probj_t *probj, obj_list **list)
 static class_tree *
 class_tree_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	int         i;
 	class_tree *t;
 
@@ -271,6 +281,7 @@ static int
 class_is_subclass_of_class (probj_t *probj, pr_class_t *class,
 							pr_class_t *superclass)
 {
+	qfZoneScoped (true);
 	while (class) {
 		if (class == superclass)
 			return 1;
@@ -286,6 +297,7 @@ static class_tree *
 create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 										  pr_class_t *upper)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	const char *super_class = PR_GetString (pr, bottom->super_class);
 	pr_class_t *superclass;
@@ -311,6 +323,7 @@ create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 static class_tree *
 _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list   *subclasses;
 	class_tree *new_tree;
@@ -356,6 +369,7 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 static void
 obj_tree_insert_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	obj_list   *list_node;
 	class_tree *tree;
 
@@ -379,6 +393,7 @@ obj_tree_insert_class (probj_t *probj, pr_class_t *class)
 static void
 obj_create_classes_tree (probj_t *probj, pr_module_t *module)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	int         i;
@@ -392,6 +407,7 @@ obj_create_classes_tree (probj_t *probj, pr_module_t *module)
 static void
 obj_destroy_class_tree_node (probj_t *probj, class_tree *tree, int level)
 {
+	qfZoneScoped (true);
 	tree->subclasses = (obj_list *) probj->class_tree_free_list;
 	probj->class_tree_free_list = tree;
 }
@@ -400,6 +416,7 @@ static void
 obj_preorder_traverse (probj_t *probj, class_tree *tree, int level,
 					   void (*func) (probj_t *, class_tree *, int))
 {
+	qfZoneScoped (true);
 	obj_list   *node;
 
 	func (probj, tree, level);
@@ -411,6 +428,7 @@ static void
 obj_postorder_traverse (probj_t *probj, class_tree *tree, int level,
 						void (*func) (probj_t *, class_tree *, int))
 {
+	qfZoneScoped (true);
 	obj_list   *node;
 
 	for (node = tree->subclasses; node; node = node->next)
@@ -421,6 +439,7 @@ obj_postorder_traverse (probj_t *probj, class_tree *tree, int level,
 static const char *
 selector_get_key (const void *s, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, probj->selector_names[(intptr_t) s]);
 }
@@ -428,6 +447,7 @@ selector_get_key (const void *s, void *_probj)
 static const char *
 class_get_key (const void *c, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, ((pr_class_t *)c)->name);
 }
@@ -435,6 +455,7 @@ class_get_key (const void *c, void *_probj)
 static const char *
 protocol_get_key (const void *p, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, ((pr_protocol_t *)p)->protocol_name);
 }
@@ -442,18 +463,21 @@ protocol_get_key (const void *p, void *_probj)
 static uintptr_t
 load_methods_get_hash (const void *m, void *_probj)
 {
+	qfZoneScoped (true);
 	return (uintptr_t) m;
 }
 
 static int
 load_methods_compare (const void *m1, const void *m2, void *_probj)
 {
+	qfZoneScoped (true);
 	return m1 == m2;
 }
 
 static inline int
 sel_eq (pr_sel_t *s1, pr_sel_t *s2)
 {
+	qfZoneScoped (true);
 	if (!s1 || !s2)
 		return s1 == s2;
 	return s1->sel_id == s2->sel_id;
@@ -462,6 +486,7 @@ sel_eq (pr_sel_t *s1, pr_sel_t *s2)
 static int
 object_is_instance (probj_t *probj, pr_id_t *object)
 {
+	qfZoneScoped (true);
 	progs_t *pr = probj->pr;
 	pr_class_t *class;
 
@@ -475,6 +500,7 @@ object_is_instance (probj_t *probj, pr_id_t *object)
 static pr_string_t
 object_get_class_name (probj_t *probj, pr_id_t *object)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 
@@ -497,6 +523,7 @@ object_get_class_name (probj_t *probj, pr_id_t *object)
 static void
 finish_class (probj_t *probj, pr_class_t *class, pr_ptr_t object_ptr)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 	pr_class_t *val;
@@ -526,6 +553,7 @@ finish_class (probj_t *probj, pr_class_t *class, pr_ptr_t object_ptr)
 static int
 add_sel_name (probj_t *probj, const char *name)
 {
+	qfZoneScoped (true);
 	int         ind = ++probj->selector_index;
 	int         size, i;
 
@@ -552,6 +580,7 @@ static pr_sel_t *
 sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 						 pr_sel_t *sel)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	intptr_t	index;
 	int			is_new = 0;
@@ -620,6 +649,7 @@ done:
 static pr_sel_t *
 sel_register_name (probj_t *probj, const char *name)
 {
+	qfZoneScoped (true);
 	return sel_register_typed_name (probj, name, "", 0);
 }
 
@@ -627,6 +657,7 @@ static void
 obj_register_selectors_from_description_list (probj_t *probj,
 		pr_method_description_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -646,6 +677,7 @@ static void
 obj_register_selectors_from_list (probj_t *probj,
 								  pr_method_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -661,6 +693,7 @@ obj_register_selectors_from_list (probj_t *probj,
 static void
 obj_register_selectors_from_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list = &G_STRUCT (pr, pr_method_list_t,
 											   class->methods);
@@ -677,6 +710,7 @@ static void
 obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
 				   pr_protocol_t *proto)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 
 	if (!proto->class_pointer) {
@@ -702,6 +736,7 @@ obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
 static void
 obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *proto_class;
 	pr_protocol_t *proto;
@@ -726,6 +761,7 @@ static void
 class_add_method_list (probj_t *probj, pr_class_t *class,
 					   pr_method_list_t *list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -747,6 +783,7 @@ static void
 obj_class_add_protocols (probj_t *probj, pr_class_t *class,
 						 pr_protocol_list_t *protos)
 {
+	qfZoneScoped (true);
 	if (!protos)
 		return;
 
@@ -757,6 +794,7 @@ obj_class_add_protocols (probj_t *probj, pr_class_t *class,
 static void
 finish_category (probj_t *probj, pr_category_t *category, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list;
 	pr_protocol_list_t *protocol_list;
@@ -784,6 +822,7 @@ static void
 obj_send_message_in_list (probj_t *probj, pr_method_list_t *method_list,
 						  pr_class_t *class, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -812,6 +851,7 @@ obj_send_message_in_list (probj_t *probj, pr_method_list_t *method_list,
 static void
 send_load (probj_t *probj, class_tree *tree, int level)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_sel_t   *load_sel = sel_register_name (probj, "load");
 	pr_class_t *class = tree->class;
@@ -825,6 +865,7 @@ send_load (probj_t *probj, class_tree *tree, int level)
 static void
 obj_send_load (probj_t *probj)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list   *m;
 
@@ -865,6 +906,7 @@ obj_send_load (probj_t *probj)
 static pr_method_t *
 obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *c = class;
 	pr_method_list_t *method_list;
@@ -919,6 +961,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 static void
 obj_send_initialize (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list;
 	pr_method_t *method;
@@ -962,6 +1005,7 @@ static void
 obj_install_methods_in_dtable (probj_t *probj, pr_class_t *class,
 							   pr_method_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	dtable_t   *dtable;
 
@@ -987,6 +1031,7 @@ obj_install_methods_in_dtable (probj_t *probj, pr_class_t *class,
 static void
 obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *super = &G_STRUCT (pr, pr_class_t, class->super_class);
 	dtable_t   *dtable;
@@ -1018,6 +1063,7 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 static inline dtable_t *
 obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	if (!class->dtable) {
 		obj_install_dispatch_table_for_class (probj, class);
 	}
@@ -1027,6 +1073,7 @@ obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
 static pr_func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
+	qfZoneScoped (true);
 	pr_func_t  imp = 0;
 
 	if (class->dtable) {
@@ -1049,6 +1096,7 @@ get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 static int
 obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	dtable_t   *dtable;
@@ -1066,6 +1114,7 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 static pr_func_t
 obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	if (!receiver)
@@ -1085,6 +1134,7 @@ obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 static pr_func_t
 obj_msg_lookup_super (probj_t *probj, pr_super_t *super, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 
@@ -1099,6 +1149,7 @@ static void
 obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int count,
 			pr_type_t **args)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	const char *name = "nil";
 	if (object) {
@@ -1113,6 +1164,7 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 static void
 dump_ivars (probj_t *probj, pr_ptr_t _ivars)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_ivar_list_t *ivars;
 	int         i;
@@ -1131,6 +1183,7 @@ dump_ivars (probj_t *probj, pr_ptr_t _ivars)
 static void
 obj_init_statics (probj_t *probj)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list  **cell = &probj->uninitialized_statics;
 	pr_ptr_t   *ptr;
@@ -1176,6 +1229,7 @@ obj_init_statics (probj_t *probj)
 static void
 rua___obj_exec_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
@@ -1324,6 +1378,7 @@ rua___obj_exec_class (progs_t *pr, void *data)
 static void
 rua___obj_forward (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1412,6 +1467,7 @@ rua___obj_forward (progs_t *pr, void *data)
 static void
 rua___obj_responds_to (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1422,6 +1478,7 @@ rua___obj_responds_to (progs_t *pr, void *data)
 static void
 rua_obj_error (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -1447,6 +1504,7 @@ rua_obj_error (progs_t *pr, void *data)
 static void
 rua_obj_verror (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -1464,6 +1522,7 @@ rua_obj_verror (progs_t *pr, void *data)
 static void
 rua_obj_set_error_handler (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//pr_func_t   func = P_INT (pr, 0);
 	//arglist
@@ -1474,6 +1533,7 @@ rua_obj_set_error_handler (progs_t *pr, void *data)
 static const char *
 rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 {
+	qfZoneScoped (true);
 	if (!at_param) {
 		return "nil";
 	}
@@ -1499,6 +1559,7 @@ rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 static void
 rua_obj_msg_lookup (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1509,6 +1570,7 @@ rua_obj_msg_lookup (progs_t *pr, void *data)
 static void
 rua_obj_msg_lookup_super (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1519,6 +1581,7 @@ rua_obj_msg_lookup_super (progs_t *pr, void *data)
 static void
 rua_obj_msg_sendv (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_ptr_t    obj = P_POINTER (pr, 0);
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
@@ -1563,6 +1626,7 @@ rua_obj_msg_sendv (progs_t *pr, void *data)
 static void
 rua_obj_increment_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = ++RETAIN_COUNT (obj);
 }
@@ -1570,6 +1634,7 @@ rua_obj_increment_retaincount (progs_t *pr, void *data)
 static void
 rua_obj_decrement_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = --RETAIN_COUNT (obj);
 }
@@ -1577,6 +1642,7 @@ rua_obj_decrement_retaincount (progs_t *pr, void *data)
 static void
 rua_obj_get_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
 	R_INT (pr) = RETAIN_COUNT (obj);
 }
@@ -1584,6 +1650,7 @@ rua_obj_get_retaincount (progs_t *pr, void *data)
 static void
 rua_obj_malloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1593,6 +1660,7 @@ rua_obj_malloc (progs_t *pr, void *data)
 static void
 rua_obj_atomic_malloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1602,6 +1670,7 @@ rua_obj_atomic_malloc (progs_t *pr, void *data)
 static void
 rua_obj_valloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1611,6 +1680,7 @@ rua_obj_valloc (progs_t *pr, void *data)
 static void
 rua_obj_realloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
 
@@ -1621,6 +1691,7 @@ rua_obj_realloc (progs_t *pr, void *data)
 static void
 rua_obj_calloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1631,6 +1702,7 @@ rua_obj_calloc (progs_t *pr, void *data)
 static void
 rua_obj_free (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 
 	PR_Zone_Free (pr, mem);
@@ -1639,6 +1711,7 @@ rua_obj_free (progs_t *pr, void *data)
 static void
 rua_obj_get_uninstalled_dtable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -1647,6 +1720,7 @@ rua_obj_get_uninstalled_dtable (progs_t *pr, void *data)
 static void
 rua_obj_msgSend (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1673,6 +1747,7 @@ rua_obj_msgSend (progs_t *pr, void *data)
 static void
 rua_obj_msgSend_super (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1695,6 +1770,7 @@ rua_obj_msgSend_super (progs_t *pr, void *data)
 static void
 rua_obj_get_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -1708,6 +1784,7 @@ rua_obj_get_class (progs_t *pr, void *data)
 static void
 rua_obj_lookup_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -1719,6 +1796,7 @@ rua_obj_lookup_class (progs_t *pr, void *data)
 static void
 rua_obj_next_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -1729,6 +1807,7 @@ rua_obj_next_class (progs_t *pr, void *data)
 static void
 rua_sel_get_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
@@ -1741,6 +1820,7 @@ rua_sel_get_name (progs_t *pr, void *data)
 static void
 rua_sel_get_type (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
 	R_INT (pr) = sel->sel_types;
@@ -1749,6 +1829,7 @@ rua_sel_get_type (progs_t *pr, void *data)
 static void
 rua_sel_get_uid (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 
@@ -1758,6 +1839,7 @@ rua_sel_get_uid (progs_t *pr, void *data)
 static void
 rua_sel_register_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 
@@ -1767,6 +1849,7 @@ rua_sel_register_name (progs_t *pr, void *data)
 static void
 rua_sel_is_mapped (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	// FIXME might correspond to a string
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
@@ -1778,6 +1861,7 @@ rua_sel_is_mapped (progs_t *pr, void *data)
 static void
 rua_class_get_class_method (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1790,6 +1874,7 @@ rua_class_get_class_method (progs_t *pr, void *data)
 static void
 rua_class_get_instance_method (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1802,6 +1887,7 @@ rua_class_get_instance_method (progs_t *pr, void *data)
 static void
 rua_class_pose_as (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
 	pr_ptr_t   *subclass;
@@ -1835,6 +1921,7 @@ rua_class_pose_as (progs_t *pr, void *data)
 static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	int         size = class->instance_size * sizeof (pr_type_t);
 	pr_type_t  *mem;
 	pr_id_t    *id = 0;
@@ -1851,6 +1938,7 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 static void
 rua_class_create_instance (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
 
@@ -1860,6 +1948,7 @@ rua_class_create_instance (progs_t *pr, void *data)
 static void
 rua_class_get_class_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
 										: PR_SetString (pr, "Nil");
@@ -1868,6 +1957,7 @@ rua_class_get_class_name (progs_t *pr, void *data)
 static void
 rua_class_get_instance_size (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
 }
@@ -1875,6 +1965,7 @@ rua_class_get_instance_size (progs_t *pr, void *data)
 static void
 rua_class_get_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
 }
@@ -1882,6 +1973,7 @@ rua_class_get_meta_class (progs_t *pr, void *data)
 static void
 rua_class_get_super_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
 }
@@ -1889,6 +1981,7 @@ rua_class_get_super_class (progs_t *pr, void *data)
 static void
 rua_class_get_version (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->version : -1;
 }
@@ -1896,6 +1989,7 @@ rua_class_get_version (progs_t *pr, void *data)
 static void
 rua_class_is_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class);
 }
@@ -1903,6 +1997,7 @@ rua_class_is_class (progs_t *pr, void *data)
 static void
 rua_class_is_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISMETA (class);
 }
@@ -1910,6 +2005,7 @@ rua_class_is_meta_class (progs_t *pr, void *data)
 static void
 rua_class_set_version (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	if (PR_CLS_ISCLASS (class))
 		class->version = P_INT (pr, 1);
@@ -1918,6 +2014,7 @@ rua_class_set_version (progs_t *pr, void *data)
 static void
 rua_class_get_gc_object_type (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
 }
@@ -1925,6 +2022,7 @@ rua_class_get_gc_object_type (progs_t *pr, void *data)
 static void
 rua_class_ivar_set_gcinvisible (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	//const char *ivarname = P_GSTRING (pr, 1);
@@ -1938,6 +2036,7 @@ rua_class_ivar_set_gcinvisible (progs_t *pr, void *data)
 static void
 rua_method_get_imp (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
 	R_INT (pr) = method ? method->method_imp : 0;
@@ -1946,6 +2045,7 @@ rua_method_get_imp (progs_t *pr, void *data)
 static void
 rua_get_imp (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1958,6 +2058,7 @@ rua_get_imp (progs_t *pr, void *data)
 static void
 rua_object_dispose (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_type_t  *mem = (pr_type_t *) object;
 	PR_Zone_Free (pr, mem);
@@ -1966,6 +2067,7 @@ rua_object_dispose (progs_t *pr, void *data)
 static void
 rua_object_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 	pr_id_t    *id;
@@ -1982,6 +2084,7 @@ rua_object_copy (progs_t *pr, void *data)
 static void
 rua_object_get_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -2002,6 +2105,7 @@ rua_object_get_class (progs_t *pr, void *data)
 static void
 rua_object_get_super_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -2022,6 +2126,7 @@ rua_object_get_super_class (progs_t *pr, void *data)
 static void
 rua_object_get_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -2042,6 +2147,7 @@ rua_object_get_meta_class (progs_t *pr, void *data)
 static void
 rua_object_get_class_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -2051,6 +2157,7 @@ rua_object_get_class_name (progs_t *pr, void *data)
 static void
 rua_object_is_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
 	if (object) {
@@ -2063,6 +2170,7 @@ rua_object_is_class (progs_t *pr, void *data)
 static void
 rua_object_is_instance (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -2072,6 +2180,7 @@ rua_object_is_instance (progs_t *pr, void *data)
 static void
 rua_object_is_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
 	if (object) {
@@ -2086,12 +2195,14 @@ rua_object_is_meta_class (progs_t *pr, void *data)
 static void
 rua__i_Object__hash (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
 rua__i_Object_error_error_ (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	const char *fmt = P_GSTRING (pr, 2);
@@ -2120,6 +2231,7 @@ static int
 obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 								 pr_protocol_t *protocol)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 
 	pr_protocol_list_t *proto_list;
@@ -2156,6 +2268,7 @@ obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 static void
 rua__c_Object__conformsToProtocol_ (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	// class points to _OBJ_CLASS_foo, and class->class_pointer points to
 	// _OBJ_METACLASS_foo
@@ -2203,6 +2316,7 @@ conforms:
 static void
 rua_PR_FindGlobal (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	pr_def_t   *def;
 
@@ -2290,6 +2404,7 @@ static builtin_t obj_methods [] = {
 static int
 rua_init_finish (progs_t *pr)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t **class_list, **class;
 
@@ -2314,6 +2429,7 @@ rua_init_finish (progs_t *pr)
 static int
 rua_obj_init_runtime (progs_t *pr)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_def_t   *def;
 	dfunction_t *obj_forward;
@@ -2333,6 +2449,7 @@ rua_obj_init_runtime (progs_t *pr)
 static void
 rua_obj_cleanup (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	unsigned    i;
 
 	__auto_type probj = (probj_t *) data;
@@ -2367,6 +2484,7 @@ rua_obj_cleanup (progs_t *pr, void *data)
 static void
 rua_obj_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = _res;
 
 	dstring_delete (probj->msg);
@@ -2397,6 +2515,7 @@ rua_obj_destroy (progs_t *pr, void *_res)
 void
 RUA_Obj_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = calloc (1, sizeof (*probj));
 
 	probj->pr = pr;
@@ -2424,6 +2543,7 @@ RUA_Obj_Init (progs_t *pr, int secure)
 pr_func_t
 RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);
 	pr_sel_t   *_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
@@ -2445,6 +2565,7 @@ RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 int
 RUA_obj_increment_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	rua_obj_increment_retaincount (pr, data);
 	return R_INT (pr);
 }
@@ -2452,6 +2573,7 @@ RUA_obj_increment_retaincount (progs_t *pr, void *data)
 int
 RUA_obj_decrement_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	rua_obj_decrement_retaincount (pr, data);
 	return R_INT (pr);
 }

@@ -55,6 +55,7 @@ static void (*init_funcs[])(progs_t *, int) = {
 VISIBLE void
 RUA_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)

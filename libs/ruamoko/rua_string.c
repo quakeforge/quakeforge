@@ -59,6 +59,7 @@ typedef struct str_resources_s {
 static void
 bi_strlen (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char	*s;
 
 	s = P_GSTRING (pr, 0);
@@ -68,6 +69,7 @@ bi_strlen (progs_t *pr, void *data)
 void
 RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
 {
+	qfZoneScoped (true);
 	const char *fmt = P_GSTRING (pr, fmt_arg);
 	int         count = pr->pr_argc - (fmt_arg + 1);
 	pr_type_t **args = pr->pr_params + (fmt_arg + 1);
@@ -91,6 +93,7 @@ RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
 static void
 bi_sprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	str_resources_t *res = _res;
 	dstring_clearstr (res->printbuf);
 	RUA_Sprintf (pr, res->printbuf, "sprintf", 0);
@@ -100,6 +103,7 @@ bi_sprintf (progs_t *pr, void *_res)
 static void
 bi_vsprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	str_resources_t *res = _res;
 	const char *fmt = P_GSTRING (pr, 0);
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
@@ -118,24 +122,28 @@ bi_vsprintf (progs_t *pr, void *_res)
 static void
 bi_str_new (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_STRING (pr) = PR_NewMutableString (pr);
 }
 
 static void
 bi_str_unmutable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	RETURN_STRING (pr, P_GSTRING (pr, 0));
 }
 
 static void
 bi_str_free (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
 
 static void
 bi_str_hold (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_string_t str = P_STRING (pr, 0);
 	PR_HoldString (pr, str);
 	R_STRING (pr) = str;
@@ -144,18 +152,21 @@ bi_str_hold (progs_t *pr, void *data)
 static void
 bi_str_valid (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = PR_StringValid (pr, P_STRING (pr, 0));
 }
 
 static void
 bi_str_mutable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = PR_StringMutable (pr, P_STRING (pr, 0));
 }
 
 static void
 bi_str_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
 
@@ -166,6 +177,7 @@ bi_str_copy (progs_t *pr, void *data)
 static void
 bi_str_cat (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
 
@@ -176,6 +188,7 @@ bi_str_cat (progs_t *pr, void *data)
 static void
 bi_str_clear (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *str = P_DSTRING (pr, 0);
 
 	dstring_clearstr (str);
@@ -185,6 +198,7 @@ bi_str_clear (progs_t *pr, void *data)
 static void
 str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 {
+	qfZoneScoped (true);
 	char       *temp;
 
 	R_STRING (pr) = 0;
@@ -209,6 +223,7 @@ str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 static void
 bi_str_mid_2 (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	int         pos = P_INT (pr, 1);
 	int         size = strlen (str);
@@ -219,6 +234,7 @@ bi_str_mid_2 (progs_t *pr, void *data)
 static void
 bi_str_mid_3 (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	int         pos = P_INT (pr, 1);
 	int         end = P_INT (pr, 2);
@@ -230,6 +246,7 @@ bi_str_mid_3 (progs_t *pr, void *data)
 static void
 bi_str_str (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *haystack = P_GSTRING (pr, 0);
 	const char *needle = P_GSTRING (pr, 1);
 	char       *res = strstr (haystack, needle);
@@ -243,6 +260,7 @@ bi_str_str (progs_t *pr, void *data)
 static void
 bi_str_char (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	int         ind = P_INT (pr, 1);
 
@@ -255,6 +273,7 @@ bi_str_char (progs_t *pr, void *data)
 static void
 bi_str_quote (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	// can have up to 4 chars per char (a -> \x61)
 	char       *quote = alloca (strlen (str) * 4 + 1);
@@ -294,6 +313,7 @@ bi_str_quote (progs_t *pr, void *data)
 static void
 bi_str_lower (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	char       *lower = alloca (strlen (str) + 1);
 	char       *l = lower;
@@ -310,6 +330,7 @@ bi_str_lower (progs_t *pr, void *data)
 static void
 bi_str_upper (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	char       *upper = alloca (strlen (str) + 1);
 	char       *l = upper;
@@ -326,6 +347,7 @@ bi_str_upper (progs_t *pr, void *data)
 static void
 bi_strtod (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	pr_type_t  *end = P_GPOINTER (pr, 1);
 	char       *end_ptr;
@@ -338,6 +360,7 @@ bi_strtod (progs_t *pr, void *data)
 static void
 bi_strtof (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	pr_type_t  *end = P_GPOINTER (pr, 1);
 	char       *end_ptr;
@@ -350,6 +373,7 @@ bi_strtof (progs_t *pr, void *data)
 static void
 bi_strtol (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	pr_type_t  *end = P_GPOINTER (pr, 1);
 	char       *end_ptr;
@@ -362,6 +386,7 @@ bi_strtol (progs_t *pr, void *data)
 static void
 bi_strtoul (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	pr_type_t  *end = P_GPOINTER (pr, 1);
 	char       *end_ptr;
@@ -404,11 +429,13 @@ static builtin_t builtins[] = {
 static void
 rua_string_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 rua_string_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	str_resources_t *res = _res;
 	dstring_delete (res->printbuf);
 	free (res);
@@ -417,6 +444,7 @@ rua_string_destroy (progs_t *pr, void *_res)
 void
 RUA_String_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	str_resources_t *res = malloc (sizeof (str_resources_t));
 	res->printbuf = dstring_newstr ();
 

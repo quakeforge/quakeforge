@@ -58,36 +58,42 @@ typedef struct {
 static bi_imui_ctx_t *
 imui_ctx_new (imui_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->imui_ctx_map);
 }
 
 static void
 imui_ctx_free (imui_resources_t *res, bi_imui_ctx_t *imui_ctx)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->imui_ctx_map, imui_ctx);
 }
 
 static void
 imui_ctx_reset (imui_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->imui_ctx_map);
 }
 
 static inline bi_imui_ctx_t *
 imui_ctx_get (imui_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->imui_ctx_map, index);
 }
 
 static inline int __attribute__((pure))
 imui_ctx_index (imui_resources_t *res, bi_imui_ctx_t *imui_ctx)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->imui_ctx_map, imui_ctx);
 }
 
 static void
 bi_imui_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	imui_resources_t *res = _res;
 
 	for (auto bi_ctx = res->imui_ctxs; bi_ctx; bi_ctx = bi_ctx->next) {
@@ -100,6 +106,7 @@ bi_imui_clear (progs_t *pr, void *_res)
 static void
 bi_imui_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	imui_resources_t *res = _res;
 	PR_RESDELMAP (res->imui_ctx_map);
 	dstring_delete (res->dstr);
@@ -110,6 +117,7 @@ bi_imui_destroy (progs_t *pr, void *_res)
 
 bi(IMUI_NewWindow)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 
 	imui_window_t *window = PR_Zone_Malloc (pr, sizeof (imui_window_t));
@@ -123,24 +131,28 @@ bi(IMUI_NewWindow)
 
 bi(IMUI_DeleteWindow)
 {
+	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	PR_Zone_Free (pr, window);
 }
 
 bi(IMUI_Window_IsOpen)
 {
+	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	R_INT (pr) = window->is_open;
 }
 
 bi(IMUI_Window_IsCollapsed)
 {
+	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	R_INT (pr) = window->is_collapsed;
 }
 
 bi(IMUI_Window_SetSize)
 {
+	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	window->auto_fit = false;
 	window->xlen = P_INT (pr, 1);
@@ -149,6 +161,7 @@ bi(IMUI_Window_SetSize)
 
 bi(IMUI_NewContext)
 {
+	qfZoneScoped (true);
 	imui_resources_t *res = _res;
 	const char *font = P_GSTRING (pr, 0);
 	float       font_size = P_FLOAT (pr, 1);
@@ -169,6 +182,7 @@ bi(IMUI_NewContext)
 static bi_imui_ctx_t *__attribute__((pure))
 _get_imui_ctx (imui_resources_t *res, const char *name, int index)
 {
+	qfZoneScoped (true);
 	auto bi_ctx = imui_ctx_get (res, index);
 
 	if (!bi_ctx) {
@@ -181,6 +195,7 @@ _get_imui_ctx (imui_resources_t *res, const char *name, int index)
 
 bi(IMUI_DestroyContext)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_DestroyContext (bi_ctx->imui_ctx);
@@ -193,6 +208,7 @@ bi(IMUI_DestroyContext)
 
 bi (IMUI_SetVisible)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_SetVisible (bi_ctx->imui_ctx, P_INT (pr, 1));
@@ -200,6 +216,7 @@ bi (IMUI_SetVisible)
 
 bi (IMUI_SetSize)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_SetSize (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2));
@@ -207,6 +224,7 @@ bi (IMUI_SetSize)
 
 bi (IMUI_ProcessEvent)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 1);
@@ -215,6 +233,7 @@ bi (IMUI_ProcessEvent)
 
 bi (IMUI_BeginFrame)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_BeginFrame (bi_ctx->imui_ctx);
@@ -222,6 +241,7 @@ bi (IMUI_BeginFrame)
 
 bi (IMUI_Draw)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Draw (bi_ctx->imui_ctx);
@@ -230,6 +250,7 @@ bi (IMUI_Draw)
 
 bi (IMUI_PushLayout)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_PushLayout (bi_ctx->imui_ctx, P_INT (pr, 1));
@@ -237,6 +258,7 @@ bi (IMUI_PushLayout)
 
 bi (IMUI_PopLayout)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_PopLayout (bi_ctx->imui_ctx);
@@ -244,6 +266,7 @@ bi (IMUI_PopLayout)
 
 bi (IMUI_Layout_SetXSize)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Layout_SetXSize (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2));
@@ -251,6 +274,7 @@ bi (IMUI_Layout_SetXSize)
 
 bi (IMUI_Layout_SetYSize)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Layout_SetYSize (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2));
@@ -258,6 +282,7 @@ bi (IMUI_Layout_SetYSize)
 
 bi (IMUI_PushStyle)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_PushStyle (bi_ctx->imui_ctx,
@@ -266,6 +291,7 @@ bi (IMUI_PushStyle)
 
 bi (IMUI_PopStyle)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_PopStyle (bi_ctx->imui_ctx);
@@ -273,6 +299,7 @@ bi (IMUI_PopStyle)
 
 bi (IMUI_Style_Update)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Style_Update (bi_ctx->imui_ctx, (imui_style_t *) P_GPOINTER (pr, 1));
@@ -280,6 +307,7 @@ bi (IMUI_Style_Update)
 
 bi (IMUI_Style_Fetch)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Style_Fetch (bi_ctx->imui_ctx, (imui_style_t *) P_GPOINTER (pr, 1));
@@ -287,6 +315,7 @@ bi (IMUI_Style_Fetch)
 
 bi (IMUI_Label)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Label (bi_ctx->imui_ctx, P_GSTRING (pr, 1));
@@ -294,6 +323,7 @@ bi (IMUI_Label)
 
 bi (IMUI_Labelf)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	RUA_Sprintf (pr, res->dstr, "IMUI_Labelf", 1);
@@ -302,6 +332,7 @@ bi (IMUI_Labelf)
 
 bi (IMUI_Button)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Button (bi_ctx->imui_ctx, P_GSTRING (pr, 1));
@@ -309,6 +340,7 @@ bi (IMUI_Button)
 
 bi (IMUI_Checkbox)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	bool flag = *(bool *) P_GPOINTER (pr, 1);
@@ -318,6 +350,7 @@ bi (IMUI_Checkbox)
 
 bi (IMUI_Radio)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Radio (bi_ctx->imui_ctx, (int *) P_GPOINTER (pr, 1), P_INT (pr, 2),
@@ -326,6 +359,7 @@ bi (IMUI_Radio)
 
 bi (IMUI_Slider)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Slider (bi_ctx->imui_ctx, (float *) P_GPOINTER (pr, 1),
@@ -334,6 +368,7 @@ bi (IMUI_Slider)
 
 bi (IMUI_Spacer)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_Spacer (bi_ctx->imui_ctx, P_INT (pr, 1), P_INT (pr, 2),
@@ -342,6 +377,7 @@ bi (IMUI_Spacer)
 
 bi (IMUI_FlexibleSpace)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	//IMUI_FlexibleSpace (bi_ctx->imui_ctx);
@@ -350,6 +386,7 @@ bi (IMUI_FlexibleSpace)
 
 bi (IMUI_StartPanel)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_StartPanel (bi_ctx->imui_ctx,
@@ -358,6 +395,7 @@ bi (IMUI_StartPanel)
 
 bi (IMUI_ExtendPanel)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_ExtendPanel (bi_ctx->imui_ctx, P_GSTRING (pr, 1));
@@ -365,6 +403,7 @@ bi (IMUI_ExtendPanel)
 
 bi (IMUI_EndPanel)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_EndPanel (bi_ctx->imui_ctx);
@@ -372,6 +411,7 @@ bi (IMUI_EndPanel)
 
 bi (IMUI_StartMenu)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_StartMenu (bi_ctx->imui_ctx,
@@ -381,6 +421,7 @@ bi (IMUI_StartMenu)
 
 bi (IMUI_EndMenu)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_EndMenu (bi_ctx->imui_ctx);
@@ -388,6 +429,7 @@ bi (IMUI_EndMenu)
 
 bi (IMUI_MenuItem)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	R_INT (pr) = IMUI_MenuItem (bi_ctx->imui_ctx, P_GSTRING (pr, 1),
@@ -396,6 +438,7 @@ bi (IMUI_MenuItem)
 
 bi (IMUI_StartWindow)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
@@ -404,6 +447,7 @@ bi (IMUI_StartWindow)
 
 bi (IMUI_EndWindow)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_EndWindow (bi_ctx->imui_ctx);
@@ -411,6 +455,7 @@ bi (IMUI_EndWindow)
 
 bi (IMUI_StartScrollBox)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	const char *name = P_GSTRING (pr, 1);
@@ -419,6 +464,7 @@ bi (IMUI_StartScrollBox)
 
 bi (IMUI_EndScrollBox)
 {
+	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	IMUI_EndScrollBox (bi_ctx->imui_ctx);
@@ -475,6 +521,7 @@ static builtin_t builtins[] = {
 void
 RUA_IMUI_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	imui_resources_t *res = calloc (1, sizeof (imui_resources_t));
 	res->pr = pr;
 

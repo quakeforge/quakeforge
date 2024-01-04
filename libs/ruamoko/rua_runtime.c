@@ -52,6 +52,7 @@
 static void
 bi_va_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	__auto_type src_args = (pr_va_list_t *) &P_POINTER (pr, 0);
 	__auto_type src_list = &G_STRUCT (pr, pr_type_t, src_args->list);
 	size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
@@ -80,5 +81,6 @@ static builtin_t builtins[] = {
 void
 RUA_Runtime_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

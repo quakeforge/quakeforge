@@ -58,12 +58,14 @@ typedef struct {
 static msgbuf_t *
 msgbuf_new (msgbuf_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->msgbuf_map);
 }
 
 static void
 msgbuf_free (progs_t *pr, msgbuf_resources_t *res, msgbuf_t *msgbuf)
 {
+	qfZoneScoped (true);
 	PR_Zone_Free (pr, msgbuf->sizebuf.data);
 	PR_RESFREE (res->msgbuf_map, msgbuf);
 }
@@ -71,24 +73,28 @@ msgbuf_free (progs_t *pr, msgbuf_resources_t *res, msgbuf_t *msgbuf)
 static void
 msgbuf_reset (msgbuf_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->msgbuf_map);
 }
 
 static inline msgbuf_t *
 msgbuf_get (msgbuf_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->msgbuf_map, index);
 }
 
 static inline int __attribute__((pure))
 msgbuf_index (msgbuf_resources_t *res, msgbuf_t *msgbuf)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->msgbuf_map, msgbuf);
 }
 
 static void
 bi_msgbuf_clear (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = (msgbuf_resources_t *) data;
 
 	msgbuf_reset (res);
@@ -97,12 +103,14 @@ bi_msgbuf_clear (progs_t *pr, void *data)
 static void
 bi_msgbuf_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
 static int
 alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 {
+	qfZoneScoped (true);
 	msgbuf_t   *msgbuf = msgbuf_new (res);
 
 	if (!msgbuf)
@@ -119,6 +127,7 @@ alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 static msgbuf_t * __attribute__((pure))
 get_msgbuf (progs_t *pr, msgbuf_resources_t *res, const char *name, int msgbuf)
 {
+	qfZoneScoped (true);
 	msgbuf_t   *mb = msgbuf_get (res, msgbuf);
 
 	if (!mb)
@@ -129,6 +138,7 @@ get_msgbuf (progs_t *pr, msgbuf_resources_t *res, const char *name, int msgbuf)
 static void
 bi_MsgBuf_New (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = PR_Resources_Find (pr, "MsgBuf");
 	int         size = P_INT (pr, 0);
 	byte       *buf;
@@ -140,6 +150,7 @@ bi_MsgBuf_New (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_Delete (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = PR_Resources_Find (pr, "MsgBuf");
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	msgbuf_free (pr, res, mb);
@@ -148,6 +159,7 @@ bi_MsgBuf_Delete (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_FromFile (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	QFile      *file = QFile_GetFile (pr, P_INT (pr, 1));
@@ -162,6 +174,7 @@ bi_MsgBuf_FromFile (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_MaxSize (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = mb->sizebuf.maxsize;
@@ -170,6 +183,7 @@ bi_MsgBuf_MaxSize (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_CurSize (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = mb->sizebuf.cursize;
@@ -178,6 +192,7 @@ bi_MsgBuf_CurSize (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadCount (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = mb->msg.readcount;
@@ -186,6 +201,7 @@ bi_MsgBuf_ReadCount (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_DataPtr (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	byte       *ptr = mb->sizebuf.data + mb->msg.readcount;
@@ -195,6 +211,7 @@ bi_MsgBuf_DataPtr (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_Clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	SZ_Clear (&mb->sizebuf);
@@ -203,6 +220,7 @@ bi_MsgBuf_Clear (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteByte (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteByte (&mb->sizebuf, P_INT (pr, 1));
@@ -211,6 +229,7 @@ bi_MsgBuf_WriteByte (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteShort (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteShort (&mb->sizebuf, P_INT (pr, 1));
@@ -219,6 +238,7 @@ bi_MsgBuf_WriteShort (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteLong (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteLong (&mb->sizebuf, P_INT (pr, 1));
@@ -227,6 +247,7 @@ bi_MsgBuf_WriteLong (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteFloat (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteFloat (&mb->sizebuf, P_FLOAT (pr, 1));
@@ -235,6 +256,7 @@ bi_MsgBuf_WriteFloat (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteString (&mb->sizebuf, P_GSTRING (pr, 1));
@@ -243,6 +265,7 @@ bi_MsgBuf_WriteString (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteBytes (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteBytes (&mb->sizebuf, P_INT (pr, 1));
@@ -251,6 +274,7 @@ bi_MsgBuf_WriteBytes (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteCoord (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteCoord (&mb->sizebuf, P_FLOAT (pr, 1));
@@ -259,6 +283,7 @@ bi_MsgBuf_WriteCoord (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteCoordV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteCoordV (&mb->sizebuf, P_VECTOR (pr, 1));
@@ -267,6 +292,7 @@ bi_MsgBuf_WriteCoordV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteCoordAngleV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteCoordAngleV (&mb->sizebuf,
@@ -276,6 +302,7 @@ bi_MsgBuf_WriteCoordAngleV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteAngle (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteAngle (&mb->sizebuf, P_FLOAT (pr, 1));
@@ -284,6 +311,7 @@ bi_MsgBuf_WriteAngle (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteAngleV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteAngleV (&mb->sizebuf, P_VECTOR (pr, 1));
@@ -292,6 +320,7 @@ bi_MsgBuf_WriteAngleV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteAngle16 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteAngle16 (&mb->sizebuf, P_FLOAT (pr, 1));
@@ -300,6 +329,7 @@ bi_MsgBuf_WriteAngle16 (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteAngle16V (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteAngle16V (&mb->sizebuf, P_VECTOR (pr, 1));
@@ -308,6 +338,7 @@ bi_MsgBuf_WriteAngle16V (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_WriteUTF8 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_WriteUTF8 (&mb->sizebuf, P_INT (pr, 1));
@@ -316,6 +347,7 @@ bi_MsgBuf_WriteUTF8 (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_BeginReading (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_BeginReading (&mb->msg);
@@ -324,6 +356,7 @@ bi_MsgBuf_BeginReading (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadByte (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = MSG_ReadByte (&mb->msg);
@@ -332,6 +365,7 @@ bi_MsgBuf_ReadByte (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadShort (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = MSG_ReadShort (&mb->msg);
@@ -340,6 +374,7 @@ bi_MsgBuf_ReadShort (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadLong (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = MSG_ReadLong (&mb->msg);
@@ -348,6 +383,7 @@ bi_MsgBuf_ReadLong (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadFloat (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = MSG_ReadFloat (&mb->msg);
@@ -356,6 +392,7 @@ bi_MsgBuf_ReadFloat (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	const char *str;
@@ -367,6 +404,7 @@ bi_MsgBuf_ReadString (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadBytes (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_ReadBytes (&mb->msg);
@@ -375,6 +413,7 @@ bi_MsgBuf_ReadBytes (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadCoord (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = MSG_ReadCoord (&mb->msg);
@@ -383,6 +422,7 @@ bi_MsgBuf_ReadCoord (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadCoordV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_ReadCoordV (&mb->msg, R_VECTOR (pr));
@@ -391,6 +431,7 @@ bi_MsgBuf_ReadCoordV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadCoordAngleV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_ReadCoordAngleV (&mb->msg, P_VECTOR (pr, 1), P_VECTOR (pr, 2));
@@ -399,6 +440,7 @@ bi_MsgBuf_ReadCoordAngleV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadAngle (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = MSG_ReadAngle (&mb->msg);
@@ -407,6 +449,7 @@ bi_MsgBuf_ReadAngle (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadAngleV (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_ReadAngleV (&mb->msg, R_VECTOR (pr));
@@ -415,6 +458,7 @@ bi_MsgBuf_ReadAngleV (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadAngle16 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = MSG_ReadAngle16 (&mb->msg);
@@ -423,6 +467,7 @@ bi_MsgBuf_ReadAngle16 (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadAngle16V (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	MSG_ReadAngle16V (&mb->msg, R_VECTOR (pr));
@@ -431,6 +476,7 @@ bi_MsgBuf_ReadAngle16V (progs_t *pr, void *_res)
 static void
 bi_MsgBuf_ReadUTF8 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = _res;
 	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = MSG_ReadUTF8 (&mb->msg);
@@ -485,6 +531,7 @@ static builtin_t builtins[] = {
 void
 RUA_MsgBuf_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	msgbuf_resources_t *res = calloc (sizeof (msgbuf_resources_t), 1);
 
 	PR_Resources_Register (pr, "MsgBuf", res, bi_msgbuf_clear,

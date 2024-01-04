@@ -64,12 +64,14 @@ static int bi_cmds_refs;
 static const char *
 bi_cmd_get_key (const void *c, void *unused)
 {
+	qfZoneScoped (true);
 	return ((bi_cmd_t *)c)->name;
 }
 
 static void
 bi_cmd_free (void *_c, void *unused)
 {
+	qfZoneScoped (true);
 	bi_cmd_t   *c = (bi_cmd_t *) _c;
 
 	free (c->name);
@@ -79,6 +81,7 @@ bi_cmd_free (void *_c, void *unused)
 static void
 bi_cmd_f (void)
 {
+	qfZoneScoped (true);
 	bi_cmd_t   *cmd = Hash_Find (bi_cmds, Cmd_Argv (0));
 
 	if (!cmd)
@@ -89,6 +92,7 @@ bi_cmd_f (void)
 static void
 bi_Cmd_AddCommand (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (cmd_resources_t *) _res;
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
 	char       *name = strdup (P_GSTRING (pr, 0));
@@ -114,6 +118,7 @@ bi_Cmd_AddCommand (progs_t *pr, void *_res)
 static void
 bi_cmd_clear (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	cmd_resources_t *res = (cmd_resources_t *)data;
 	bi_cmd_t   *cmd;
 
@@ -128,6 +133,7 @@ bi_cmd_clear (progs_t *pr, void *data)
 static void
 bi_cmd_destroy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	if (!--bi_cmds_refs) {
 		Hash_DelTable (bi_cmds);
 		Hash_DelContext (bi_cmd_hashctx);
@@ -138,18 +144,21 @@ bi_cmd_destroy (progs_t *pr, void *data)
 static void
 bi_Cmd_Argc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = Cmd_Argc ();
 }
 
 static void
 bi_Cmd_Argv (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	RETURN_STRING (pr, Cmd_Argv (P_INT (pr, 0)));
 }
 
 static void
 bi_Cmd_Args (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	RETURN_STRING (pr, Cmd_Args (P_INT (pr, 0)));
 }
 
@@ -170,6 +179,7 @@ static builtin_t builtins[] = {
 void
 RUA_Cmd_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	cmd_resources_t *res = calloc (1, sizeof (cmd_resources_t));
 
 	res->cmds = 0;

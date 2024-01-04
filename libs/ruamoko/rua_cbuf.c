@@ -45,6 +45,7 @@ typedef struct {
 static cbuf_t * __attribute__((pure))
 _get_cbuf (progs_t *pr, cbuf_resources_t *res, int arg, const char *func)
 {
+	qfZoneScoped (true);
 	cbuf_t     *cbuf = 0;
 
 	if (arg == 0) {
@@ -64,6 +65,7 @@ _get_cbuf (progs_t *pr, cbuf_resources_t *res, int arg, const char *func)
 
 bi(Cbuf_AddText)
 {
+	qfZoneScoped (true);
 	cbuf_t     *cbuf = get_cbuf (pr, data, P_INT (pr, 0));
 	const char *text = P_GSTRING (pr, 1);
 	Cbuf_AddText (cbuf, text);
@@ -71,6 +73,7 @@ bi(Cbuf_AddText)
 
 bi(Cbuf_InsertText)
 {
+	qfZoneScoped (true);
 	cbuf_t     *cbuf = get_cbuf (pr, data, P_INT (pr, 0));
 	const char *text = P_GSTRING (pr, 1);
 	Cbuf_InsertText (cbuf, text);
@@ -78,12 +81,14 @@ bi(Cbuf_InsertText)
 
 bi(Cbuf_Execute)
 {
+	qfZoneScoped (true);
 	cbuf_t     *cbuf = get_cbuf (pr, data, P_INT (pr, 0));
 	Cbuf_Execute (cbuf);
 }
 
 bi(Cbuf_Execute_Sets)
 {
+	qfZoneScoped (true);
 	cbuf_t     *cbuf = get_cbuf (pr, data, P_INT (pr, 0));
 	Cbuf_Execute_Sets (cbuf);
 }
@@ -91,11 +96,13 @@ bi(Cbuf_Execute_Sets)
 static void
 bi_cbuf_clear (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 }
 
 static void
 bi_cbuf_destroy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	free (data);
 }
 
@@ -114,6 +121,7 @@ static builtin_t builtins[] = {
 void
 RUA_Cbuf_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
 	res->pr = pr;
 	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear, bi_cbuf_destroy);
@@ -123,6 +131,7 @@ RUA_Cbuf_Init (progs_t *pr, int secure)
 VISIBLE void
 RUA_Cbuf_SetCbuf (progs_t *pr, cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	cbuf_resources_t *res = PR_Resources_Find (pr, "Cbuf");
 	res->default_cbuf = cbuf;
 }

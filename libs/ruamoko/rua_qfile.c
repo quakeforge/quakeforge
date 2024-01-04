@@ -57,36 +57,42 @@ typedef struct {
 static qfile_t *
 handle_new (qfile_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->handle_map);
 }
 
 static void
 handle_free (qfile_resources_t *res, qfile_t *handle)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->handle_map, handle);
 }
 
 static void
 handle_reset (qfile_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->handle_map);
 }
 
 static inline qfile_t *
 handle_get (qfile_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->handle_map, index);
 }
 
 static inline int __attribute__((pure))
 handle_index (qfile_resources_t *res, qfile_t *handle)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->handle_map, handle);
 }
 
 static void
 bi_qfile_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qfile_resources_t *res = (qfile_resources_t *) _res;
 	qfile_t    *handle;
 
@@ -99,6 +105,7 @@ bi_qfile_clear (progs_t *pr, void *_res)
 static void
 bi_qfile_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	qfile_resources_t *res = _res;
 
 	PR_RESDELMAP (res->handle_map);
@@ -110,6 +117,7 @@ bi_qfile_destroy (progs_t *pr, void *_res)
 static int
 alloc_handle (qfile_resources_t *res, QFile *file)
 {
+	qfZoneScoped (true);
 	qfile_t    *handle = handle_new (res);
 
 	if (!handle)
@@ -127,6 +135,7 @@ alloc_handle (qfile_resources_t *res, QFile *file)
 int
 QFile_AllocHandle (progs_t *pr, QFile *file)
 {
+	qfZoneScoped (true);
 	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 
 	return alloc_handle (res, file);
@@ -135,12 +144,14 @@ QFile_AllocHandle (progs_t *pr, QFile *file)
 static void
 secured (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	PR_RunError (pr, "Secured function called");
 }
 
 static void
 bi_Qrename (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *old = P_GSTRING (pr, 0);
 	const char *new = P_GSTRING (pr, 1);
 
@@ -150,6 +161,7 @@ bi_Qrename (progs_t *pr, void *_res)
 static void
 bi_Qremove (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *path = P_GSTRING (pr, 0);
 
 	R_INT (pr) = Qremove (path);
@@ -158,6 +170,7 @@ bi_Qremove (progs_t *pr, void *_res)
 static void
 bi_Qopen (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	const char *path = P_GSTRING (pr, 0);
 	const char *mode = P_GSTRING (pr, 1);
@@ -173,6 +186,7 @@ bi_Qopen (progs_t *pr, void *_res)
 static qfile_t * __attribute__((pure))
 get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	qfile_t    *h = handle_get (res, handle);
 
 	if (!h)
@@ -183,6 +197,7 @@ get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 QFile *
 QFile_GetFile (progs_t *pr, int handle)
 {
+	qfZoneScoped (true);
 	qfile_resources_t *res = PR_Resources_Find (pr, "QFile");
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 
@@ -192,6 +207,7 @@ QFile_GetFile (progs_t *pr, int handle)
 static void
 bi_Qclose (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = handle_get (res, handle);
@@ -208,6 +224,7 @@ bi_Qclose (progs_t *pr, void *_res)
 static void
 bi_Qgetline (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -223,6 +240,7 @@ bi_Qgetline (progs_t *pr, void *_res)
 static void
 bi_Qreadstring (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	int         len = P_INT (pr, 1);
@@ -241,6 +259,7 @@ bi_Qreadstring (progs_t *pr, void *_res)
 static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 {
+	qfZoneScoped (true);
 	int         len;
 
 	len = (count + sizeof (pr_type_t) - 1) / sizeof (pr_type_t);
@@ -251,6 +270,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 static void
 bi_Qread (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -264,6 +284,7 @@ bi_Qread (progs_t *pr, void *_res)
 static void
 bi_Qwrite (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -277,6 +298,7 @@ bi_Qwrite (progs_t *pr, void *_res)
 static void
 bi_Qputs (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -288,6 +310,7 @@ bi_Qputs (progs_t *pr, void *_res)
 static void
 bi_Qgets (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -301,6 +324,7 @@ bi_Qgets (progs_t *pr, void *_res)
 static void
 bi_Qgetc (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -311,6 +335,7 @@ bi_Qgetc (progs_t *pr, void *_res)
 static void
 bi_Qputc (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -322,6 +347,7 @@ bi_Qputc (progs_t *pr, void *_res)
 static void
 bi_Qseek (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -334,6 +360,7 @@ bi_Qseek (progs_t *pr, void *_res)
 static void
 bi_Qtell (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -344,6 +371,7 @@ bi_Qtell (progs_t *pr, void *_res)
 static void
 bi_Qflush (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -354,6 +382,7 @@ bi_Qflush (progs_t *pr, void *_res)
 static void
 bi_Qeof (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -364,6 +393,7 @@ bi_Qeof (progs_t *pr, void *_res)
 static void
 bi_Qfilesize (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
@@ -411,6 +441,7 @@ static builtin_t builtins[] = {
 void
 RUA_QFile_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
 	res->buffer = dstring_new ();
 

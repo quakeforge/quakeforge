@@ -53,36 +53,42 @@ typedef struct {
 static mtstate_t *
 state_new (mtwist_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->state_map);
 }
 
 static void
 state_free (mtwist_resources_t *res, mtstate_t *state)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->state_map, state);
 }
 
 static void
 state_reset (mtwist_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->state_map);
 }
 
 static inline mtstate_t *
 state_get (mtwist_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->state_map, index);
 }
 
 static inline int __attribute__((pure))
 state_index (mtwist_resources_t *res, mtstate_t *state)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->state_map, state);
 }
 
 static void
 bi_mtwist_new (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = (mtwist_resources_t *) _res;
 	mtstate_t  *mt = state_new (res);
 	mtwist_seed (mt, P_INT (pr, 0));
@@ -92,6 +98,7 @@ bi_mtwist_new (progs_t *pr, void *_res)
 static mtstate_t * __attribute__((pure))
 get_state (progs_t *pr, mtwist_resources_t *res, const char *name, int index)
 {
+	qfZoneScoped (true);
 	mtstate_t *mt = state_get (res, index);
 
 	if (!mt)
@@ -103,6 +110,7 @@ get_state (progs_t *pr, mtwist_resources_t *res, const char *name, int index)
 static void
 bi_mtwist_delete (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = _res;
 	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	state_free (res, mt);
@@ -111,6 +119,7 @@ bi_mtwist_delete (progs_t *pr, void *_res)
 static void
 bi_mtwist_seed (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = _res;
 	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	mtwist_seed (mt, P_INT (pr, 1));
@@ -119,6 +128,7 @@ bi_mtwist_seed (progs_t *pr, void *_res)
 static void
 bi_mtwist_rand (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = _res;
 	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_INT (pr) = mtwist_rand (mt);
@@ -127,6 +137,7 @@ bi_mtwist_rand (progs_t *pr, void *_res)
 static void
 bi_mtwist_rand_0_1 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = _res;
 	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = mtwist_rand_0_1 (mt);
@@ -135,6 +146,7 @@ bi_mtwist_rand_0_1 (progs_t *pr, void *_res)
 static void
 bi_mtwist_rand_m1_1 (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = _res;
 	mtstate_t  *mt = get_state (pr, res, __FUNCTION__, P_INT (pr, 0));
 	R_FLOAT (pr) = mtwist_rand_m1_1 (mt);
@@ -143,6 +155,7 @@ bi_mtwist_rand_m1_1 (progs_t *pr, void *_res)
 static void
 bi_mtwist_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = (mtwist_resources_t *) _res;
 	state_reset (res);
 }
@@ -150,6 +163,7 @@ bi_mtwist_clear (progs_t *pr, void *_res)
 static void
 bi_mtwist_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
@@ -168,6 +182,7 @@ static builtin_t builtins[] = {
 void
 RUA_Mersenne_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	mtwist_resources_t *res = calloc (1, sizeof (mtwist_resources_t));
 
 	PR_Resources_Register (pr, "Mersenne Twister", res, bi_mtwist_clear,
