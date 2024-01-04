@@ -155,6 +155,10 @@ static void
 font_free (gui_resources_t *res, rua_font_t *font)
 {
 	qfZoneScoped (true);
+	if (font->next) {
+		font->next->prev = font->prev;
+	}
+	*font->prev = font->next;
 	PR_RESFREE (res->font_map, font);
 }
 
@@ -221,7 +225,7 @@ bi_gui_clear (progs_t *pr, void *_res)
 
 	rua_font_t *font;
 	for (font = res->fonts; font; font = font->next) {
-		//FIXME can't unload fonts
+		Font_Free (font->font);
 	}
 	res->fonts = 0;
 	font_reset (res);
