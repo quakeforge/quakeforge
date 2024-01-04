@@ -92,6 +92,7 @@ Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg)
 VISIBLE cbuf_t *
 Cbuf_New (cbuf_interpreter_t *interp)
 {
+	qfZoneScoped (true);
 	cbuf_t		*cbuf = calloc (1, sizeof (cbuf_t));
 
 	cbuf->args = Cbuf_ArgsNew ();
@@ -115,6 +116,7 @@ Cbuf_Delete (cbuf_t *cbuf)
 VISIBLE void
 Cbuf_DeleteStack (cbuf_t *stack)
 {
+	qfZoneScoped (true);
 	cbuf_t		*next;
 
 	for (; stack; stack = next) {
@@ -175,6 +177,7 @@ Cbuf_AddText (cbuf_t *cbuf, const char *text)
 VISIBLE void
 Cbuf_InsertText (cbuf_t *cbuf, const char *text)
 {
+	qfZoneScoped (true);
 	if (cbuf->state == CBUF_STATE_JUNK)
 		cbuf->state = CBUF_STATE_NORMAL;
 	cbuf->interpreter->insert (cbuf, text);

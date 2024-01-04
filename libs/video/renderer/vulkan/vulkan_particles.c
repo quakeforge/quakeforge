@@ -427,6 +427,7 @@ static exprsym_t particles_task_syms[] = {
 void
 Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, particles_task_syms);
 
 	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
@@ -437,6 +438,7 @@ Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Particles_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "particles init");
 
 	auto device = ctx->device;

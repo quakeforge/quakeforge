@@ -233,6 +233,7 @@ IMT_GetButtonBlock (int num_buttons)
 int
 IMT_CreateContext (const char *name)
 {
+	qfZoneScoped (true);
 	in_context_t *ctx = DARRAY_OPEN_AT (&in_contexts, in_contexts.size, 1);
 	memset (ctx, 0, sizeof (*ctx));
 	ctx->imt_tail = &ctx->imts;

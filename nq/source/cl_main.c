@@ -34,6 +34,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/image.h"
@@ -189,6 +190,7 @@ CL_WriteConfiguration (void)
 int
 CL_ReadConfiguration (const char *cfg_name)
 {
+	qfZoneScoped (true);
 	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
 	if (!cfg_file) {
 		return 0;
@@ -219,6 +221,7 @@ CL_Shutdown (void *data)
 	CL_WriteConfiguration ();
 
 	Mod_ClearAll ();
+	dstring_delete (cl_stuffbuff);
 }
 
 void
@@ -255,6 +258,7 @@ CL_ClearMemory (void)
 void
 CL_InitCvars (void)
 {
+	qfZoneScoped (true);
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
@@ -717,6 +721,7 @@ Force_CenterView_f (void)
 void
 CL_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	byte       *basepal, *colormap;
 
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
@@ -738,7 +743,6 @@ CL_Init (cbuf_t *cbuf)
 	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Load ("client");
 	CL_Init_Screen ();
 	Con_Init ();
 
@@ -769,6 +773,7 @@ CL_Init (cbuf_t *cbuf)
 
 	Sys_RegisterShutdown (CL_Shutdown, 0);
 
+	cl_stuffbuff = dstring_newstr ();
 	SZ_Alloc (&cls.message, 1024);
 	CL_SetState (ca_disconnected);
 }

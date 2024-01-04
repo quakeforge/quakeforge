@@ -248,17 +248,19 @@ skin_free (void *_sb, void *unused)
 	free (sb);
 }
 
-void
-Skin_Init (void)
+static void
+skin_shutdown (void *data)
 {
-	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
-	m_funcs->Skin_InitTranslations ();
+	Hash_DelTable (skin_cache);
 }
 
 void
-Skin_Shutdown (void)
+Skin_Init (void)
 {
-	Hash_DelTable (skin_cache);
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (skin_shutdown, 0);
+	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
+	m_funcs->Skin_InitTranslations ();
 }
 
 VISIBLE int

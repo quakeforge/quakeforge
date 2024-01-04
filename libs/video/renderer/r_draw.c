@@ -38,6 +38,7 @@
 VISIBLE draw_charbuffer_t *
 Draw_CreateBuffer (int width, int height)
 {
+	qfZoneScoped (true);
 	size_t      size = width * height;
 	draw_charbuffer_t *buffer = malloc (sizeof (draw_charbuffer_t) + size);
 	buffer->width = width;

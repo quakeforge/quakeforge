@@ -110,6 +110,7 @@ static exprsym_t compose_task_syms[] = {
 void
 Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, compose_task_syms);
 
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
@@ -119,6 +120,7 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "compose init");
 
 	auto device = ctx->device;

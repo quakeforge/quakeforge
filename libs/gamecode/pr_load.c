@@ -147,6 +147,7 @@ align_size (int size, int align)
 VISIBLE void
 PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 {
+	qfZoneScoped (true);
 	size_t      i;
 	int         mem_size;
 	int         offset_tweak;
@@ -466,6 +467,7 @@ run_load_funcs (progs_t *pr, int (**load_funcs)(progs_t *))
 VISIBLE int
 PR_RunLoadFuncs (progs_t *pr)
 {
+	qfZoneScoped (true);
 	int         i;
 
 	memset (&pr->globals, 0, sizeof (pr->globals));

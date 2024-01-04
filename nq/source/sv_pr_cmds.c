@@ -1579,6 +1579,7 @@ static builtin_t builtins[] = {
 void
 SV_PR_Cmds_Init (void)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&sv_aim_cvar, 0, 0);
 
 	RUA_Init (&sv_pr_state, 1);

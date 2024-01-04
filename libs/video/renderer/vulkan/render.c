@@ -560,6 +560,7 @@ static exprsym_t render_task_syms[] = {
 void
 QFV_Render_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_renderctx_t *rctx = calloc (1, sizeof (*rctx));
 	ctx->render_context = rctx;
 	rctx->size_time = -1000*1000*1000;
@@ -597,6 +598,21 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		frame->qftVkCtx = qftCVkContextHostCalibrated (instance, physdev,
 													   device->dev, gipa, gdpa);
 #endif
+	}
+}
+
+static void
+tf_free_syms (void *_sym, void *data)
+{
+	exprsym_t  *sym = _sym;
+	for (exprfunc_t *f = sym->value; f->func; f++) {
+		for (int i = 0; i < f->num_params; i++) {
+			exprenum_t *e = f->param_types[i]->data;
+			if (e && e->symtab->tab) {
+				Hash_DelTable (e->symtab->tab);
+				e->symtab->tab = 0;
+			}
+		}
 	}
 }
 
@@ -662,6 +678,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		delete_memsuper (jinfo->memsuper);
 	}
 	if (rctx->task_functions.tab) {
+		Hash_ForEach (rctx->task_functions.tab, tf_free_syms, 0);
 		Hash_DelTable (rctx->task_functions.tab);
 	}
 	DARRAY_CLEAR (&rctx->external_attachments);
@@ -683,6 +700,7 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 void
 QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 {
+	qfZoneScoped (true);
 	__auto_type rctx = ctx->render_context;
 	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
 	for (exprsym_t *sym = task_syms; sym->name; sym++) {
@@ -760,6 +778,7 @@ QFV_GetStep (const exprval_t *param, qfv_job_t *job)
 qfv_dsmanager_t *
 QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 {
+	qfZoneScoped (true);
 	auto job = ctx->render_context->job;
 	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 		auto ds = job->dsmanager[i];
@@ -802,6 +821,7 @@ create_sampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler)
 VkSampler
 QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	auto si = ctx->render_context->samplerinfo;
 	if (!si) {
 		return 0;

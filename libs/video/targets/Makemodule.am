@@ -65,7 +65,7 @@ libs_video_targets_libQFwin_la_DEPENDENCIES=	$(win_libs)
 # X11 software rendering
 #
 x11_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_x11.la
-libs_video_targets_libQFx11_la_CFLAGS=			@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libQFx11_la_CFLAGS=			$(AM_CFLAGS) @PREFER_NON_PIC@ $(X_CFLAGS)
 libs_video_targets_libQFx11_la_SOURCES=		libs/video/targets/vid_x11.c
 libs_video_targets_libQFx11_la_LDFLAGS=		@STATIC@
 libs_video_targets_libQFx11_la_LIBADD=			$(x11_libs)

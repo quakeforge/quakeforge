@@ -188,6 +188,7 @@ WINS_GetLocalAddress (void)
 int
 WINS_Init (void)
 {
+	qfZoneScoped (true);
 	int         i;
 	char        buff[MAXHOSTNAMELEN];
 	char       *p;

@@ -1464,6 +1464,7 @@ dynlight_size_listener (void *data, const cvar_t *cvar)
 void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
@@ -1491,6 +1492,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 static void
 make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
@@ -1586,6 +1588,7 @@ write_inds (qfv_packet_t *packet)
 void
 Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "lighting init");
 
 	auto device = ctx->device;
@@ -2001,6 +2004,8 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 		qftCVkContextDestroy (lframe->qftVkCtx);
 	}
 	free (lctx->frames.a[0].stage_targets);
+	free (lctx->frames.a[0].id_radius);
+	free (lctx->frames.a[0].positions);
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_control);
 	free (lctx->map_images);

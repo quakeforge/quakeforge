@@ -50,6 +50,7 @@
 float
 R_IQMGetLerpedFrames (animation_t *animation, iqm_t *iqm)
 {
+	qfZoneScoped (true);
 	int         frame = animation->frame;
 	float       time, fullinterval;
 	iqmanim    *anim;
@@ -73,6 +74,7 @@ iqmframe_t *
 R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 				  int extra)
 {
+	qfZoneScoped (true);
 	iqmframe_t *frame;
 	int         i;
 

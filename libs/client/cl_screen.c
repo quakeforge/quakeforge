@@ -278,9 +278,20 @@ cl_create_views (void)
 	clscr_set_canvas_func (centerprint_view, cl_draw_centerprint);
 }
 
+static void
+CL_Shutdown_Screen (void *data)
+{
+	ECS_DelRegistry (cl_canvas_sys.reg);
+	cl_canvas_sys.reg = 0;
+}
+
 void
 CL_Init_Screen (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (CL_Shutdown_Screen, 0);
+	Con_Load ("client");
+
 	__auto_type reg = ECS_NewRegistry ("cl screen");
 	Canvas_InitSys (&cl_canvas_sys, reg);
 	if (con_module) {

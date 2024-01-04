@@ -707,6 +707,7 @@ GIB_Classes_Build_Scripted (const char *name, const char *parentname,
 void
 GIB_Classes_Init (void)
 {
+	qfZoneScoped (true);
 	GIB_Class_Create (&Object_class);
 	GIB_Class_Create (&Thread_class);
 	GIB_Class_Create (&ObjectHash_class);

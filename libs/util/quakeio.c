@@ -577,6 +577,7 @@ Qeof (QFile *file)
 	Qgetline
 
 	Dynamic length version of Qgets. Do NOT free the buffer.
+	FIXME memory leak (on shutdown)
 */
 VISIBLE const char *
 Qgetline (QFile *file)

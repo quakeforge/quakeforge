@@ -65,6 +65,7 @@ Vulkan_Palette_Update (vulkan_ctx_t *ctx, const byte *palette)
 void
 Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "palette init");
 
 	palettectx_t *pctx = calloc (1, sizeof (palettectx_t));

@@ -280,6 +280,7 @@ static imui_style_t current_style;
 void
 Con_Debug_Init (void)
 {
+	qfZoneScoped (true);
 	for (int i = 0; deb_in_axes[i]; i++) {
 		IN_RegisterAxis (deb_in_axes[i]);
 	}
@@ -300,9 +301,11 @@ Con_Debug_Init (void)
 void
 Con_Debug_Shutdown (void)
 {
+	qfZoneScoped (true);
 	IE_Remove_Handler (debug_event_id);
 
 	Scene_DeleteScene (debug_scene);
+	IMUI_DestroyContext (debug_imui);
 }
 
 static void
@@ -698,6 +701,7 @@ system_info (void)
 void
 Con_Debug_Draw (void)
 {
+	qfZoneScoped (true);
 	if (debug_enable_time && Sys_LongTime () - debug_enable_time > 1000) {
 		debug_saved_focus = IE_Get_Focus ();
 		IE_Set_Focus (debug_event_id);

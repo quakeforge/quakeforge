@@ -56,6 +56,7 @@
 static qfv_output_t
 get_output (vulkan_ctx_t *ctx, plitem_t *item)
 {
+	qfZoneScoped (true);
 	qfv_output_t output = {};
 	Vulkan_ConfigOutput (ctx, &output);
 
@@ -74,6 +75,7 @@ get_output (vulkan_ctx_t *ctx, plitem_t *item)
 void
 QFV_LoadRenderInfo (vulkan_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto item = Vulkan_GetConfig (ctx, name);
 	auto output = get_output (ctx, item);
@@ -87,6 +89,7 @@ QFV_LoadRenderInfo (vulkan_ctx_t *ctx, const char *name)
 void
 QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
 	auto item = Vulkan_GetConfig (ctx, name);
 	rctx->samplerinfo = QFV_ParseSamplerInfo (ctx, item, rctx);
@@ -1119,8 +1122,17 @@ create_step_process_objects (uint32_t index, const qfv_stepinfo_t *step,
 }
 
 static void
+del_objstate (void *_state)
+{
+	objstate_t *state = _state;
+	Hash_DelTable (state->symtab->tab);
+	free (state->symtab);
+}
+
+static void
 create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 {
+	qfZoneScoped (true);
 	__auto_type rctx = ctx->render_context;
 	__auto_type jinfo = rctx->jobinfo;
 
@@ -1146,7 +1158,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	uint32_t    pl_counts[counts->num_renderpasses];
 
 	exprctx_t   ectx = { .hashctx = &ctx->script_context->hashctx };
-	objstate_t  s = {
+	__attribute__((cleanup (del_objstate))) objstate_t  s = {
 		.ptr = {
 			.rpCreate  = rpCreate,
 			.attach    = attach,
@@ -1229,6 +1241,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 void
 QFV_BuildRender (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	__auto_type rctx = ctx->render_context;
 
 	objcount_t  counts = {};

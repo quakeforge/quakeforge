@@ -44,6 +44,7 @@ qsocket_t  *loop_server = NULL;
 __attribute__((pure)) int
 Loop_Init (void)
 {
+	qfZoneScoped (true);
 	if (net_is_dedicated)
 		return -1;
 	return 0;

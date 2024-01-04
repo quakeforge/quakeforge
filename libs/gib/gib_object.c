@@ -60,12 +60,18 @@ GIB_Class_Get_Key (const void *ele, void *ptr)
 	return ((gib_class_t *) ele)->name;
 }
 
+static void GIB_Object_Finish_Destroy (int argc, const char **argv, void *data);
 static void
 GIB_Class_Free (void *ele, void *ptr)
 {
-	gib_class_t *b;
+	qfZoneScoped (true);
+	gib_class_t *b = ele;
 
-	b = (gib_class_t *) ele;
+	const char *dispose = "dispose";
+	GIB_Object_Finish_Destroy (1, &dispose, b->classobj);
+	Hash_DelTable (b->class_methods);
+	Hash_DelTable (b->methods);
+	llist_delete (b->children);
 	free ((void *)b->name);
 	free (b);
 }
@@ -79,7 +85,11 @@ GIB_Method_Get_Key (const void *ele, void *ptr)
 static void
 GIB_Method_Free (void *ele, void *ptr)
 {
-	// FIXME: Do something here
+	gib_method_t *m = ele;
+	if (m->own) {
+		free ((void *) m->name);
+	}
+	free (m);
 }
 
 static const char *
@@ -125,6 +135,7 @@ static hashtab_t *
 GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 		gib_methodtab_t *methods)
 {
+	qfZoneScoped (true);
 	gib_methodtab_t *m;
 	gib_method_t *method;
 	hashtab_t *new = Hash_NewTable (1024, GIB_Method_Get_Key,
@@ -137,6 +148,7 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 		method->func = m->func;
 		method->data = m->data;
 		method->class = class;
+		method->own = true;
 		Hash_Add (new, method);
 	}
 
@@ -144,8 +156,12 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 		void **list, **l;
 
 		for (l = list = Hash_GetList (inherited); *l; l++)
-			if (!Hash_Find (new, GIB_Method_Get_Key (*l, NULL)))
-				Hash_Add (new, *l);
+			if (!Hash_Find (new, GIB_Method_Get_Key (*l, NULL))) {
+				method = malloc (sizeof (gib_method_t));
+				*method = *(gib_method_t *) *l;
+				method->own = false;
+				Hash_Add (new, method);
+			}
 		free (list);
 	}
 
@@ -155,6 +171,7 @@ GIB_Method_Build_Hash (gib_class_t *class, hashtab_t *inherited,
 void
 GIB_Class_Create (gib_classdesc_t *desc)
 {
+	qfZoneScoped (true);
 	static const char *init = "init";
 	gib_class_t *parent = NULL, *class = calloc (1, sizeof (gib_class_t));
 
@@ -195,6 +212,7 @@ GIB_Class_Create (gib_classdesc_t *desc)
 gib_object_t *
 GIB_Object_Create (const char *classname, bool classobj)
 {
+	qfZoneScoped (true);
 	gib_class_t *temp, *class = Hash_Find (gib_classes, classname);
 	gib_object_t *obj;
 	int i;
@@ -204,7 +222,7 @@ GIB_Object_Create (const char *classname, bool classobj)
 
 	obj = calloc (1, sizeof (gib_object_t));
 	obj->class = class;
-	obj->data = malloc (sizeof (void *) * (class->depth+1));
+	obj->data = calloc (sizeof (void *), (class->depth+1));
 	obj->methods = classobj ? class->class_methods : class->methods;
 	obj->handle = classobj ? 0 : GIB_Handle_New (obj);
 	obj->handstr = strdup (va (0, "%lu", obj->handle));
@@ -234,7 +252,7 @@ GIB_Object_Finish_Destroy (int argc, const char **argv, void *data)
 	gib_class_t *temp;
 
 	for (temp = obj->class, i = obj->class->depth; temp; temp = temp->parent, i--)
-		if (temp->destruct)
+		if (temp->destruct && obj->data[i])
 			temp->destruct (obj->data[i]);
 	free (obj->data);
 	GIB_Handle_Free (obj->handle);
@@ -392,9 +410,20 @@ GIB_Object_Signal_Emit (gib_object_t *sender, int argc, const char **argv)
 	*argv = old;
 }
 
+static void
+gib_object_shutdown (void *data)
+{
+	if (gib_classes) {
+		Hash_DelTable (gib_classes);
+		gib_classes = 0;
+	}
+}
+
 void
 GIB_Object_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_object_shutdown, 0);
 	gib_classes = Hash_NewTable (1024, GIB_Class_Get_Key,
 								 GIB_Class_Free, 0, 0);
 

@@ -86,6 +86,7 @@ SV_Protocol_f (void)
 void
 SV_Init (void)
 {
+	qfZoneScoped (true);
 	int         i;
 
 	SV_Progs_Init ();

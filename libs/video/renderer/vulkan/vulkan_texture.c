@@ -509,6 +509,7 @@ static tex_t default_magenta_tex = {
 void
 Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
 	ctx->texture_context = tctx;
 }
@@ -516,6 +517,7 @@ Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Texture_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "texture init");
 
 	auto tctx = ctx->texture_context;
@@ -548,6 +550,7 @@ Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
 	Vulkan_UnloadTex (ctx, ctx->default_white);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
+	free (ctx->texture_context);
 }
 
 static VkDescriptorImageInfo base_image_info = {

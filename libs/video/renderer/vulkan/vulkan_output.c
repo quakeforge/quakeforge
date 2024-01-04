@@ -320,6 +320,7 @@ static exprsym_t output_task_syms[] = {
 void
 Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
 	ctx->output_context = octx;
 
@@ -345,6 +346,7 @@ Vulkan_Output_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Output_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "output init");
 
 	auto octx = ctx->output_context;

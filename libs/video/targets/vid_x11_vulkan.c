@@ -124,6 +124,7 @@ unload_vulkan_library (vulkan_ctx_t *ctx)
 static void
 x11_vulkan_init_presentation (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->presentation = calloc (1, sizeof (vulkan_presentation_t));
 	vulkan_presentation_t *pres = ctx->presentation;
 	qfv_instance_t *instance = ctx->instance;
@@ -153,6 +154,7 @@ x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 									 VkPhysicalDevice physicalDevice,
 									 uint32_t queueFamilyIndex)
 {
+	qfZoneScoped (true);
 	if (!ctx->presentation) {
 		x11_vulkan_init_presentation (ctx);
 	}
@@ -173,6 +175,7 @@ x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 static void
 x11_vulkan_choose_visual (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	set_iter_t *first = set_first (pres->usable_visuals);
 	if (first) {
@@ -185,6 +188,7 @@ x11_vulkan_choose_visual (vulkan_ctx_t *ctx)
 static void
 x11_vulkan_create_window (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	pres->window = x_win;
 }
@@ -192,6 +196,7 @@ x11_vulkan_create_window (vulkan_ctx_t *ctx)
 static VkSurfaceKHR
 x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	VkInstance inst = ctx->instance->instance;
 	VkSurfaceKHR surface;
@@ -212,19 +217,33 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 	return surface;
 }
 
+static void
+delete_vulkan_context (vulkan_ctx_t *ctx)
+{
+	if (ctx->presentation) {
+		set_delete (ctx->presentation->usable_visuals);
+		free (ctx->presentation);
+	}
+	va_destroy_context (ctx->va_ctx);
+	free (ctx);
+}
+
 vulkan_ctx_t *
 X11_Vulkan_Context (vid_internal_t *vi)
 {
-	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
-	ctx->load_vulkan = load_vulkan_library;
-	ctx->unload_vulkan = unload_vulkan_library;
-	ctx->get_presentation_support = x11_vulkan_get_presentation_support;
-	ctx->choose_visual = x11_vulkan_choose_visual;
-	ctx->create_window = x11_vulkan_create_window;
-	ctx->create_surface = x11_vulkan_create_surface;
-	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (VA_CTX_COUNT);
-	ctx->twod_scale = 1;
+	vulkan_ctx_t *ctx = malloc (sizeof (vulkan_ctx_t));
+	*ctx = (vulkan_ctx_t) {
+		.delete = delete_vulkan_context,
+		.load_vulkan = load_vulkan_library,
+		.unload_vulkan = unload_vulkan_library,
+		.get_presentation_support = x11_vulkan_get_presentation_support,
+		.choose_visual = x11_vulkan_choose_visual,
+		.create_window = x11_vulkan_create_window,
+		.create_surface = x11_vulkan_create_surface,
+		.required_extensions = required_extensions,
+		.va_ctx = va_create_context (VA_CTX_COUNT),
+		.twod_scale = 1,
+	};
 
 	vi->ctx = ctx;
 	return ctx;

@@ -195,8 +195,6 @@ glsl_R_Init (void)
 void
 glsl_R_Shutdown (void)
 {
-	Skin_Shutdown();
-
 	glsl_R_ShutdownParticles ();
 	glsl_Lightmap_Shutdown ();
 	glsl_R_ShutdownBsp ();

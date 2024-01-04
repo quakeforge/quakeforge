@@ -54,6 +54,7 @@ static int
 find_queue_family (qfv_instance_t *instance, VkPhysicalDevice dev,
 				   uint32_t flags)
 {
+	qfZoneScoped (true);
 	qfv_instfuncs_t *funcs = instance->funcs;
 	uint32_t    numFamilies;
 	VkQueueFamilyProperties *queueFamilies;
@@ -115,6 +116,7 @@ device_extension_enabled (qfv_device_t *device, const char *ext)
 qfv_device_t *
 QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 {
+	qfZoneScoped (true);
 	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
 	uint32_t next = count_strings (extensions) + 1; // ensure terminated
 	const char **lay = alloca (nlay * sizeof (const char *));
@@ -204,6 +206,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 void
 QFV_DestroyDevice (qfv_device_t *device)
 {
+	qfZoneScoped (true);
 	device->funcs->vkDestroyDevice (device->dev, 0);
 	del_strset (device->enabled_extensions);
 	free (device);

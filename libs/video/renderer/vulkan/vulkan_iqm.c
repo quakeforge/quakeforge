@@ -308,6 +308,7 @@ static exprsym_t iqm_task_syms[] = {
 void
 Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "iqm init");
 	QFV_Render_AddTasks (ctx, iqm_task_syms);
 
@@ -326,6 +327,7 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_IQM_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto ictx = ctx->iqm_context;
 	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
 }

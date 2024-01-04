@@ -140,6 +140,7 @@ CL_SendMove (usercmd_t *cmd)
 void
 CL_Init_Input (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	CL_Input_Init (cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");

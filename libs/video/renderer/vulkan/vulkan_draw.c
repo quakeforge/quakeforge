@@ -473,6 +473,7 @@ pic_free (drawctx_t *dctx, qpic_t *pic)
 static cachepic_t *
 new_cachepic (drawctx_t *dctx, const char *name, qpic_t *pic)
 {
+	qfZoneScoped (true);
 	cachepic_t *cp;
 	size_t      size = strlen (name) + 1;
 
@@ -685,6 +686,7 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 static qpic_t *
 load_lmp (const char *path, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qpic_t     *p;
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
 		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
@@ -797,6 +799,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 qpic_t *
 Vulkan_Draw_CachePic (const char *path, bool alpha, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	cachepic_t *cpic;
 	drawctx_t  *dctx = ctx->draw_context;
 
@@ -824,23 +827,36 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	QFV_DestroyResource (device, &dctx->draw_resource[0]);
 	QFV_DestroyResource (device, &dctx->draw_resource[1]);
+	free (dctx->draw_resource);
 	for (size_t i = 0; i < dctx->fonts.size; i++) {
 		if (dctx->fonts.a[i].resource) {
 			QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);
 			free (dctx->fonts.a[i].resource);
 		}
 	}
+	DARRAY_CLEAR (&dctx->fonts);
+
+	for (size_t i = 0; i < dctx->frames.size; i++) {
+		auto dframe = &dctx->frames.a[i];
+		DARRAY_CLEAR (&dframe->quad_batch);
+		DARRAY_CLEAR (&dframe->clip_range);
+	}
+	free (dctx->frames.a);
 
 	Hash_DelTable (dctx->pic_cache);
 	delete_memsuper (dctx->pic_memsuper);
 	delete_memsuper (dctx->string_memsuper);
 	QFV_DestroyScrap (dctx->scrap);
 	QFV_DestroyStagingBuffer (dctx->stage);
+	free (dctx->conchar_inds);
+	free (dctx->crosshair_inds);
+	free (dctx);
 }
 
 static void
 load_conchars (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	drawctx_t  *dctx = ctx->draw_context;
 
 	draw_chars = W_GetLumpName ("conchars");
@@ -869,6 +885,7 @@ load_conchars (vulkan_ctx_t *ctx)
 static void
 load_crosshairs (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	drawctx_t  *dctx = ctx->draw_context;
 	qpic_t     *hairpic = Draw_CrosshairPic ();
 	dctx->crosshair = pic_data ("crosshair", hairpic->width,
@@ -890,6 +907,7 @@ load_crosshairs (vulkan_ctx_t *ctx)
 static void
 load_white_pic (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	drawctx_t  *dctx = ctx->draw_context;
 	byte        white_block = 0xfe;
 
@@ -1109,6 +1127,7 @@ static exprsym_t draw_task_syms[] = {
 void
 Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, draw_task_syms);
 
 	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
@@ -1118,6 +1137,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "draw init");
 
 	auto device = ctx->device;

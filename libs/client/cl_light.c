@@ -277,6 +277,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 void
 CL_LoadLights (plitem_t *entities, scene_t *scene)
 {
+	qfZoneScoped (true);
 	lightingdata_t *ldata = scene->lights;
 	model_t    *model = scene->worldmodel;
 

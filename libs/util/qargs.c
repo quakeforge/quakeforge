@@ -171,6 +171,7 @@ COM_AddParm (const char *parm)
 void
 COM_ParseConfig (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	// execute +set as early as possible
 	Cmd_StuffCmds (cbuf);
 	Cbuf_Execute_Sets (cbuf);

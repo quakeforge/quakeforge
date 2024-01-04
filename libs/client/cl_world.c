@@ -58,9 +58,28 @@ worldscene_t cl_world = {
 	.models = DARRAY_STATIC_INIT (32),
 };
 
+static void
+CL_World_Shutdown (void *data)
+{
+	qfZoneScoped (true);
+	if (cl_world.edicts) {
+		PL_Release (cl_world.edicts);
+	}
+	if (cl_world.scene) {
+		if (cl_world.scene->lights) {
+			Light_DestroyLightingData (cl_world.scene->lights);
+		}
+		Scene_DeleteScene (cl_world.scene);
+	}
+	free (cl_world.models.a);
+	free (cl_static_entities.a);
+}
+
 void
 CL_World_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (CL_World_Shutdown, 0);
 	scene_system_t extra_systems[] = {
 		{	.system = &effect_system,
 			.components = effect_components,
@@ -136,6 +155,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 static void
 map_cfg (const char *mapname, int all)
 {
+	qfZoneScoped (true);
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	cbuf_t     *cbuf = Cbuf_New (&id_interp);
 	QFile      *f;
@@ -216,6 +236,7 @@ CL_LoadSky (const char *name)
 void
 CL_World_NewMap (const char *mapname, const char *skyname)
 {
+	qfZoneScoped (true);
 	model_t    *worldmodel = cl_world.models.a[1];
 	cl_world.scene->worldmodel = worldmodel;
 

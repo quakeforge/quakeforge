@@ -85,6 +85,7 @@ typedef struct bsp_push_constants_s {
 static void
 add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	vulktex_t  *tex = tx->render;
@@ -99,6 +100,7 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 static inline void
 chain_surface (const bsp_face_t *face, bsp_pass_t *pass, const bspctx_t *bctx)
 {
+	qfZoneScoped (true);
 	int         ent_frame = pass->ent_frame;
 	// if the texture has no alt animations, anim_alt holds the sama data
 	// as anim_main
@@ -113,6 +115,7 @@ chain_surface (const bsp_face_t *face, bsp_pass_t *pass, const bspctx_t *bctx)
 static void
 register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	texture_t  *tex;
 
 	for (unsigned i = 0; i < brush->numtextures; i++) {
@@ -126,6 +129,7 @@ register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 static void
 init_visstate (bspctx_t *bctx)
 {
+	qfZoneScoped (true);
 	mod_brush_t *brush = &r_refdef.worldmodel->brush;
 	int     count = brush->numnodes + brush->modleafs
 					+ brush->numsurfaces;
@@ -166,6 +170,7 @@ clear_pass_face_queues (bsp_pass_t *pass, const bspctx_t *bctx)
 static void
 shutdown_pass_draw_queues (bsp_pass_t *pass)
 {
+	EntQueue_Delete (pass->entqueue);
 	for (int i = 0; i < pass->num_queues; i++) {
 		DARRAY_CLEAR (&pass->draw_queues[i]);
 	}
@@ -203,6 +208,7 @@ setup_pass_draw_queues (bsp_pass_t *pass)
 static void
 setup_pass_face_queues (bsp_pass_t *pass, int num_tex, bspctx_t *bctx)
 {
+	qfZoneScoped (true);
 	pass->face_queue = malloc (sizeof (bsp_instfaceset_t[num_tex]));
 	for (int i = 0; i < num_tex; i++) {
 		pass->face_queue[i] = (bsp_instfaceset_t) DARRAY_STATIC_INIT (128);
@@ -212,6 +218,7 @@ setup_pass_face_queues (bsp_pass_t *pass, int num_tex, bspctx_t *bctx)
 static void
 clear_textures (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	clear_pass_face_queues (&bctx->main_pass, bctx);
@@ -224,6 +231,7 @@ clear_textures (vulkan_ctx_t *ctx)
 void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	clear_textures (ctx);
 	add_texture (r_notexture_mip, ctx);
 	{
@@ -424,6 +432,7 @@ build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -649,6 +658,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	model_t    *model = renderer->model;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -678,6 +688,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 static inline void
 visit_leaf (bsp_pass_t *pass, mleaf_t *leaf)
 {
+	qfZoneScoped (true);
 	// since this leaf will be rendered, any entities in the leaf also need
 	// to be rendered (the bsp tree doubles as an entity cull structure)
 	for (auto efrag = leaf->efrags; efrag; efrag = efrag->leafnext) {
@@ -698,6 +709,7 @@ get_side (const bsp_pass_t *pass, const mnode_t *node)
 static inline void
 visit_node_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = pass->bsp_context;
 	int         c;
 
@@ -728,6 +740,7 @@ visit_node_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 static inline void
 visit_node_no_bfcull (bsp_pass_t *pass, const mnode_t *node, int side)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = pass->bsp_context;
 	int         c;
 
@@ -760,6 +773,7 @@ static void
 R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx,
 				   void (*visit_node) (bsp_pass_t *, const mnode_t *, int))
 {
+	qfZoneScoped (true);
 	const mod_brush_t *brush = pass->brush;
 	typedef struct {
 		int         node_id;
@@ -873,6 +887,7 @@ push_shadowconst (uint32_t matrix_base, VkPipelineLayout layout,
 static void
 clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 {
+	qfZoneScoped (true);
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_RESIZE (&pass->face_queue[i], 0);
 	}
@@ -889,6 +904,7 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 static void
 queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
+	qfZoneScoped (true);
 	uint32_t base = bframe->index_count;
 	pass->indices = bframe->index_data + bframe->index_count;
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
@@ -971,6 +987,7 @@ draw_queue (bsp_pass_t *pass, QFV_BspQueue queue, VkPipelineLayout layout,
 static void
 bsp_flush (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1004,6 +1021,7 @@ bsp_flush (vulkan_ctx_t *ctx)
 static void
 create_default_skys (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1111,6 +1129,7 @@ create_default_skys (vulkan_ctx_t *ctx)
 static void
 create_notexture (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	const char *missing = "Missing";
 	byte        data[2][64 * 64 * 4];	// 2 * 64x64 rgba (8x8 chars)
 	tex_t       tex[2] = {
@@ -1176,7 +1195,7 @@ create_notexture (vulkan_ctx_t *ctx)
 static void
 bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
@@ -1191,7 +1210,7 @@ bsp_reset_queues (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -1260,7 +1279,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfZoneNamed (zone, true);
+	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto bctx = ctx->bsp_context;
@@ -1409,6 +1428,7 @@ static exprsym_t bsp_task_syms[] = {
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, bsp_task_syms);
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
@@ -1424,6 +1444,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "bsp init");
 
 	auto device = ctx->device;
@@ -1504,20 +1525,23 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
+	bctx->main_pass.entqueue = 0;	// owned by r_ent_queue
 	shutdown_pass_draw_queues (&bctx->main_pass);
 	shutdown_pass_draw_queues (&bctx->shadow_pass);
 	shutdown_pass_draw_queues (&bctx->debug_pass);
 
+	clear_textures (ctx);
 	DARRAY_CLEAR (&bctx->registered_textures);
 
 	free (bctx->faces);
+	free (bctx->poly_indices);
 	free (bctx->models);
 
 	shutdown_pass_instances (&bctx->main_pass, bctx);
 	shutdown_pass_instances (&bctx->shadow_pass, bctx);
 	shutdown_pass_instances (&bctx->debug_pass, bctx);
 
-	DARRAY_CLEAR (&bctx->frames);
+	free (bctx->frames.a);
 
 	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);
@@ -1546,6 +1570,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
 	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
 	free (bctx->default_skybox);
+	free (bctx);
 }
 
 void

@@ -37,6 +37,12 @@ Light_CreateLightingData (scene_t *scene)
 void
 Light_DestroyLightingData (lightingdata_t *ldata)
 {
+	if (ldata->sun_pvs) {
+		set_delete (ldata->sun_pvs);
+	}
+	if (ldata->pvs) {
+		set_delete (ldata->pvs);
+	}
 	free (ldata);
 }
 

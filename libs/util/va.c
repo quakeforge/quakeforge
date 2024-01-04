@@ -68,6 +68,13 @@ va_create_context (int buffers)
 VISIBLE void
 va_destroy_context (va_ctx_t *ctx)
 {
+	if (!ctx) {
+		ctx = default_va_ctx;
+		default_va_ctx = 0;
+		if (!ctx) {
+			return;
+		}
+	}
 	for (int i = 0; i < ctx->num_strings; i++) {
 		dstring_delete (ctx->strings[i]);
 	}

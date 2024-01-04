@@ -80,6 +80,7 @@ IE_Send_Event (const IE_event_t *event)
 int
 IE_Add_Handler (ie_handler_t *event_handler, void *data)
 {
+	qfZoneScoped (true);
 	size_t      handle;
 	ie_reghandler_t reg = { event_handler, data };
 

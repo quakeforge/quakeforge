@@ -160,6 +160,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 static void
 SockadrToNetadr (AF_address_t *s, netadr_t *a)
 {
+	qfZoneScoped (true);
 	memcpy (&a->ip, &s->s4.sin_addr, ADDR_SIZE);
 	a->port = s->s4.sin_port;
 	a->family = s->s4.sin_family;
@@ -181,6 +182,7 @@ uint32_t *last_iface;
 static int
 get_iface_list (int sock)
 {
+	qfZoneScoped (true);
 #ifdef HAVE_GETIFADDRS
 	struct ifaddrs *ifa_head;
 	struct ifaddrs *ifa;
@@ -227,6 +229,7 @@ no_ifaddrs:
 int
 UDP_Init (void)
 {
+	qfZoneScoped (true);
 	struct hostent *local = 0;
 	char        buff[MAXHOSTNAMELEN];
 	netadr_t    addr;
@@ -286,9 +289,11 @@ UDP_Init (void)
 void
 UDP_Shutdown (void)
 {
+	qfZoneScoped (true);
 	UDP_Listen (false);
 
 	UDP_CloseSocket (net_controlsocket);
+	free (ifaces);
 }
 
 void
@@ -312,6 +317,7 @@ UDP_Listen (bool state)
 int
 UDP_OpenSocket (int port)
 {
+	qfZoneScoped (true);
 	int         newsocket;
 	struct sockaddr_in address;
 #ifdef _WIN32
@@ -606,20 +612,16 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 const char *
 UDP_AddrToString (netadr_t *addr)
 {
-	static dstring_t *buffer;
-
-	if (!buffer)
-		buffer = dstring_new ();
-
-	dsprintf (buffer, "%d.%d.%d.%d:%d", addr->ip[0],
-			  addr->ip[1], addr->ip[2], addr->ip[3],
-			  ntohs (addr->port));
-	return buffer->str;
+	//FIXME this is used very badly (strcpy)
+	return va (0, "%d.%d.%d.%d:%d", addr->ip[0],
+			   addr->ip[1], addr->ip[2], addr->ip[3],
+			   ntohs (addr->port));
 }
 
 int
 UDP_GetSocketAddr (int socket, netadr_t *na)
 {
+	qfZoneScoped (true);
 	unsigned int a;
 	socklen_t    addrlen = sizeof (AF_address_t);
 	AF_address_t addr;

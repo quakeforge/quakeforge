@@ -245,6 +245,7 @@ CL_ModelEffects (entity_t ent, int glow_color, double time)
 void
 CL_EntityEffects (entity_t ent, entity_state_t *state, double time)
 {
+	qfZoneScoped (true);
 	transform_t transform = Entity_Transform (ent);
 	vec4f_t     position = Transform_GetWorldPosition (transform);
 	if (state->effects & EF_BRIGHTFIELD)
@@ -258,6 +259,7 @@ CL_EntityEffects (entity_t ent, entity_state_t *state, double time)
 void
 CL_Effects_Init (void)
 {
+	qfZoneScoped (true);
 	if (r_funcs->TrailSystem) {
 		cl_tsystem = r_funcs->TrailSystem ();
 	}

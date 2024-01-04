@@ -60,6 +60,7 @@ static const char * const debugExtensions[] = {
 static void
 get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	uint32_t    i;
 	VkLayerProperties *layers;
 	VkExtensionProperties *extensions;
@@ -158,6 +159,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 static void
 setup_debug_callback (qfv_instance_t *instance)
 {
+	qfZoneScoped (true);
 	VkDebugUtilsMessengerEXT debug_handle;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -204,6 +206,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 					const char *appName, uint32_t appVersion,
 					const char **layers, const char **extensions)
 {
+	qfZoneScoped (true);
 	VkApplicationInfo appInfo = {
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName = appName,
@@ -324,6 +327,11 @@ QFV_DestroyInstance (qfv_instance_t *instance)
 	del_strset (instance->enabled_extensions);
 	free (instance->devices);
 	free (instance);
+
+	free (instanceLayerProperties);
+	free (instanceLayers);
+	free (instanceExtensionProperties);
+	free (instanceExtensions);
 }
 
 VkSampleCountFlagBits

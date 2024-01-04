@@ -967,6 +967,7 @@ V_NewScene (viewstate_t *viewstate, scene_t *scene)
 void
 V_Init (viewstate_t *viewstate)
 {
+	qfZoneScoped (true);
 	Cmd_AddDataCommand ("bf", V_BonusFlash_f, viewstate,
 						"Background flash, used when you pick up an item");
 	Cmd_AddDataCommand ("centerview", V_StartPitchDrift_f, viewstate,

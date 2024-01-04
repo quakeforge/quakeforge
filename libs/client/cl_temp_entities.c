@@ -110,6 +110,9 @@ static model_t *cl_spike;
 
 static vec4f_t beam_rolls[360];
 
+typedef struct tempent_s DARRAY_TYPE (entity_t) tempent_t;
+static tempent_t light_entities = DARRAY_STATIC_INIT (32);
+
 void
 CL_TEnts_Precache (void)
 {
@@ -146,9 +149,17 @@ cl_tents_precache (int phase, void *data)
 	CL_TEnts_Precache ();
 }
 
+static void
+cl_tents_shutdown (void *data)
+{
+	free (light_entities.a);
+}
+
 void
 CL_TEnts_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (cl_tents_shutdown, 0);
 	QFS_GamedirCallback (cl_tents_precache, 0);
 	for (int i = 0; i < 360; i++) {
 		float       ang = i * M_PI / 360;
@@ -159,6 +170,7 @@ CL_TEnts_Init (void)
 void
 CL_Init_Entity (entity_t ent)
 {
+	qfZoneScoped (true);
 	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 	byte       *active = Ent_GetComponent (ent.id, ent.base + scene_active, ent.reg);
@@ -327,9 +339,6 @@ CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 		beam_setup (b, true, time, ctx);
 	}
 }
-
-typedef struct tempent_s DARRAY_TYPE (entity_t) tempent_t;
-static tempent_t light_entities = DARRAY_STATIC_INIT (32);
 
 static void
 free_stale_entities (void)
@@ -779,6 +788,7 @@ void
 CL_MuzzleFlash (entity_t ent, vec4f_t position, vec4f_t fv, float zoffset,
 				double time)
 {
+	qfZoneScoped (true);
 	// spawn a new entity so the light doesn't mess with the owner
 	uint32_t light = nullent;
 	if (has_muzzleflash (ent)) {

@@ -272,6 +272,7 @@ X11_RestoreScreenSaver (void)
 void
 X11_OpenDisplay (void)
 {
+	qfZoneScoped (true);
 	if (!x_disp) {
 		x_disp = XOpenDisplay (NULL);
 		if (!x_disp) {
@@ -322,6 +323,7 @@ X11_CloseDisplay (void)
 void
 X11_CreateNullCursor (void)
 {
+	qfZoneScoped (true);
 	Pixmap		cursormask;
 	XGCValues	xgc = { };
 	GC			gc;
@@ -372,6 +374,7 @@ X11_GetGamma (void)
 void
 X11_SetVidMode (int width, int height)
 {
+	qfZoneScoped (true);
 	const char *str = getenv ("MESA_GLX_FX");
 
 	if (vidmode_active)
@@ -504,6 +507,7 @@ X11_Init_Cvars (void)
 void
 X11_CreateWindow (int width, int height)
 {
+	qfZoneScoped (true);
 	char		   *resname;
 	unsigned long	mask;
 	XSetWindowAttributes	attr;

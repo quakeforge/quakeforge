@@ -191,8 +191,16 @@ skip_value(string name)
 
 -(void) writeSymtabInit
 {
+	fprintf (output_file, "\tqfMessageL (\"%s_symtab\");\n", [self name]);
 	fprintf (output_file, "\tcexpr_init_symtab (&%s_symtab, context);\n",
 			 [self name]);
+}
+
+-(void) writeSymtabShutdown
+{
+	fprintf (output_file, "\tHash_DelTable (%s_symtab.tab);\n",
+			 [self name]);
+	fprintf (output_file, "\t%s_symtab.tab = 0;\n", [self name]);
 }
 
 -(void) writeSymtabEntry

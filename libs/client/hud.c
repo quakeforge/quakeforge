@@ -261,6 +261,8 @@ static draw_charbuffer_t *pl_buff;
 
 static draw_charbuffer_t *spec_buff[4];//0,1 no track, 2 lost track, 3 tracking
 
+static draw_charbuffer_t *miniammo[4];
+
 static draw_charbuffer_t *solo_monsters;
 static draw_charbuffer_t *solo_secrets;
 static draw_charbuffer_t *solo_time;
@@ -271,6 +273,7 @@ static ecs_system_t sbar_viewsys;
 static view_t
 sbar_view (int x, int y, int w, int h, grav_t gravity, view_t parent)
 {
+	qfZoneScoped (true);
 	view_t      view = View_New (sbar_viewsys, parent);
 	View_SetPos (view, x, y);
 	View_SetLen (view, w, h);
@@ -2137,6 +2140,7 @@ hud_swap_f (void *data, const cvar_t *cvar)
 static void
 set_hud_sbar (void)
 {
+	qfZoneScoped (true);
 	view_t      v;
 
 	if (hud_sbar) {
@@ -2349,6 +2353,7 @@ create_views (view_def_t *view_defs, view_t parent)
 static void
 init_sbar_views (void)
 {
+	qfZoneScoped (true);
 	create_views (sbar_defs, nullview);
 	view_pos_t  slen = View_GetLen (hud_canvas_view);
 	view_pos_t  hlen = View_GetLen (hud_view);
@@ -2357,9 +2362,9 @@ init_sbar_views (void)
 
 	for (int i = 0; i < 4; i++) {
 		view_t      v = View_GetChild (sbar_miniammo, i);
-		draw_charbuffer_t *buffer = Draw_CreateBuffer (3, 1);
-		Draw_ClearBuffer (buffer);
-		sbar_setcomponent (v, canvas_charbuff, &buffer);
+		miniammo[i] = Draw_CreateBuffer (3, 1);
+		Draw_ClearBuffer (miniammo[i]);
+		sbar_setcomponent (v, canvas_charbuff, &miniammo[i]);
 	}
 
 	if (r_data->vid->width > 320) {
@@ -2397,6 +2402,7 @@ init_sbar_views (void)
 static void
 init_views (void)
 {
+	qfZoneScoped (true);
 	hud_stuff_view = sbar_view (0, 48, 152, 16, grav_southwest, hud_canvas_view);
 	hud_time_view = sbar_view (8, 0, 64, 8, grav_northwest, hud_stuff_view);
 	hud_fps_view = sbar_view (80, 0, 80, 8, grav_northwest, hud_stuff_view);
@@ -2449,6 +2455,7 @@ Sbar_GIB_Print_Center_f (void)
 static void
 load_pics (void)
 {
+	qfZoneScoped (true);
 	for (int i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
 		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va (0, "anum_%i", i));
@@ -2702,9 +2709,48 @@ HUD_CreateCanvas (canvas_system_t canvas_sys)
 	View_SetVisible (hud_canvas_view, 1);
 }
 
+static void
+sbar_shutdown (void *data)
+{
+	Draw_DestroyBuffer (time_buff);
+	Draw_DestroyBuffer (fps_buff);
+	Draw_DestroyBuffer (ping_buff);
+	Draw_DestroyBuffer (pl_buff);
+
+	for (int i = 0; i < MAX_PLAYERS; i++) {
+		Draw_DestroyBuffer (sb_fph[i]);
+		Draw_DestroyBuffer (sb_time[i]);
+		Draw_DestroyBuffer (sb_frags[i]);
+		Draw_DestroyBuffer (sb_ping[i]);
+		Draw_DestroyBuffer (sb_pl[i]);
+		Draw_DestroyBuffer (sb_uid[i]);
+		Draw_DestroyBuffer (sb_name[i]);
+
+		Draw_DestroyBuffer (sb_team[i]);
+		Draw_DestroyBuffer (sb_team_stats[i]);
+		Draw_DestroyBuffer (sb_team_frags[i]);
+		Draw_DestroyBuffer (sb_team_players[i]);
+	}
+	Draw_DestroyBuffer (sb_spectator);
+
+	for (int i = 0; i < 4; i++) {
+		Draw_DestroyBuffer (spec_buff[i]);
+		Draw_DestroyBuffer (miniammo[i]);
+	}
+
+	Draw_DestroyBuffer (solo_monsters);
+	Draw_DestroyBuffer (solo_secrets);
+	Draw_DestroyBuffer (solo_time);
+	Draw_DestroyBuffer (solo_name);
+
+	free (center_string.str);
+}
+
 void
 Sbar_Init (int *stats, float *item_gettime)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (sbar_shutdown, 0);
 	sbar_stats = stats;
 	sbar_item_gettime = item_gettime;
 

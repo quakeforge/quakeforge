@@ -106,6 +106,7 @@ static const char *device_extensions[] = {
 void
 Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	Sys_MaskPrintf (SYS_vulkan, "Vulkan_Init_Common\n");
 
 	Cvar_Register (&vulkan_frame_width_cvar, 0, 0);
@@ -116,7 +117,6 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 	Vulkan_Script_Init (ctx);
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0,
 										instance_extensions);//FIXME version
-	DARRAY_INIT (&ctx->renderPasses, 4);
 }
 
 void
@@ -141,6 +141,7 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->device = QFV_CreateDevice (ctx, device_extensions);
 
 	//FIXME msaa and deferred rendering...
@@ -156,6 +157,7 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateStagingBuffers (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	// FIXME configurable?
 	ctx->staging = QFV_CreateStagingBuffer (ctx->device, "vulkan_ctx",
 											32*1024*1024, ctx->cmdpool);
@@ -164,6 +166,7 @@ Vulkan_CreateStagingBuffers (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	VkSwapchainKHR old_swapchain = 0;
 	if (ctx->swapchain) {
 		//FIXME this shouldn't be here
@@ -184,6 +187,7 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 void
 Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	uint32_t    entgen = Ent_Generation (ent.id);
 	uint32_t    entind = Ent_Index (ent.id);

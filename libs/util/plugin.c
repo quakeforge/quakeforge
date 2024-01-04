@@ -259,6 +259,7 @@ PI_Shutdown (void *data)
 VISIBLE void
 PI_Init (void)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (PI_Shutdown, 0);
 
 	PI_InitCvars ();
@@ -420,6 +421,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 VISIBLE void
 PI_RegisterPlugins (plugin_list_t *plugins)
 {
+	qfZoneScoped (true);
 	while (plugins->name)
 		Hash_Add (registered_plugins, plugins++);
 }

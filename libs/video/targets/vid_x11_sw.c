@@ -466,6 +466,7 @@ x11_sw32_update (sw_ctx_t *ctx, vrect_t *rects)
 static void
 x11_choose_visual (sw_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	int         pnum, i;
 	XVisualInfo template;
 	int         num_visuals;

@@ -99,6 +99,7 @@ add_entity (uint32_t hent, uint32_t parent, ecs_registry_t *reg)
 										  (hierref_t) { nullent, nullindex },
 										  reg);
 	h->ent[ref.index] = ECS_NewEntity (reg);
+	h->own[ref.index] = true;
 	Ent_SetComponent (h->ent[ref.index], h->href_comp, reg, &ref);
 }
 

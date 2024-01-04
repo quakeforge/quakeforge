@@ -41,6 +41,7 @@
 #include "QF/gib.h"
 #include "QF/idparse.h"
 #include "QF/qargs.h"
+#include "QF/va.h"
 
 #include "QF/plugin/console.h"
 
@@ -265,11 +266,8 @@ static cvar_t cl_usleep_cvar = {
 void
 Host_EndGame (const char *message, ...)
 {
-	static dstring_t *str;
+	dstring_t  *str = dstring_new ();
 	va_list     argptr;
-
-	if (!str)
-		str = dstring_new ();
 
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
@@ -281,6 +279,8 @@ Host_EndGame (const char *message, ...)
 
 	if (net_is_dedicated)
 		Sys_Error ("Host_EndGame: %s", str->str);	// dedicated servers exit
+
+	dstring_delete (str);
 
 	if (cls.demonum != -1)
 		CL_NextDemo ();
@@ -378,6 +378,7 @@ Host_FindMaxClients (void)
 static void
 Host_InitLocal (void)
 {
+	qfZoneScoped (true);
 	Host_InitCommands ();
 
 	Cvar_Register (&host_framerate_cvar, 0, 0);
@@ -628,6 +629,7 @@ Host_SpawnServer (void)
 void
 Host_OnServerSpawn (void (*onSpawn) (void))
 {
+	qfZoneScoped (true);
 	LISTENER_ADD (&host_server_spawn,
 				  (void(*)(void *, const void*)) onSpawn, 0);
 }
@@ -780,6 +782,7 @@ Host_Frame (float time)
 static void
 Host_InitVCR (quakeparms_t *parms)
 {
+	qfZoneScoped (true);
 	char       *p;
 	int         i, len, n;
 
@@ -843,6 +846,7 @@ Host_InitVCR (quakeparms_t *parms)
 static memhunk_t *
 Host_Init_Memory (void)
 {
+	qfZoneScoped (true);
 	int         mem_parm = COM_CheckParm ("-mem");
 	size_t      mem_size;
 	void       *mem_base;
@@ -881,6 +885,7 @@ Host_Init_Memory (void)
 static void
 Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 {
+	qfZoneScoped (true);
 	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
 	// commands. If it doesn't exist, then this is the first time quakeforge
 	// has been used in this installation, thus any existing legacy config
@@ -907,6 +912,7 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 void
 Host_Init (void)
 {
+	qfZoneScoped (true);
 	BT_Init (com_argv[0]);
 	sys_quake_encoding = true;
 	Sys_RegisterShutdown (Host_Shutdown, 0);
@@ -986,4 +992,7 @@ Host_Shutdown (void *data)
 		return;
 	}
 	isdown = true;
+	Cbuf_Delete (host_cbuf);
+	DARRAY_CLEAR (&host_server_spawn);
+	va_destroy_context (0);
 }

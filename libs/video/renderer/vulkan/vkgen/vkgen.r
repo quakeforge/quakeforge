@@ -254,6 +254,7 @@ main(int argc, string *argv)
 	fprintf (output_file, "static void\n");
 	fprintf (output_file, "vkgen_init_symtabs (exprctx_t *context)\n");
 	fprintf (output_file, "{\n");
+	fprintf (output_file, "\tqfZoneScoped (true);\n");
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
@@ -265,6 +266,22 @@ main(int argc, string *argv)
 		arp_end ();
 	}
 	fprintf (output_file, "}\n");
+
+	fprintf (output_file, "static void\n");
+	fprintf (output_file, "vkgen_shutdown_symtabs (exprctx_t *context)\n");
+	fprintf (output_file, "{\n");
+	fprintf (output_file, "\tqfZoneScoped (true);\n");
+	for (int i = [output_types count]; i-- > 0; ) {
+		id obj = [output_types objectAtIndex:i];
+		if ([obj name] == "VkStructureType") {
+			continue;
+		}
+		arp_start ();
+		[obj writeSymtabShutdown];
+		arp_end ();
+	}
+	fprintf (output_file, "}\n");
+
 	Qclose (output_file);
 	Qclose (header_file);
 	Hash_DelTable (available_types);

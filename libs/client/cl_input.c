@@ -490,6 +490,7 @@ cl_unbind_f (void)
 static void
 CL_Legacy_Init (void)
 {
+	qfZoneScoped (true);
 	OK_Init ();
 	Cmd_AddCommand ("bind", cl_bind_f, "compatibility wrapper for in_bind");
 	Cmd_AddCommand ("unbind", cl_unbind_f, "compatibility wrapper for in_bind");
@@ -605,6 +606,7 @@ cl_event_handler (const IE_event_t *ie_event, void *unused)
 void
 CL_Input_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	cl_event_id = IE_Add_Handler (cl_event_handler, 0);
 
 	for (int i = 0; cl_in_axes[i]; i++) {

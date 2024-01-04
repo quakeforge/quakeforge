@@ -90,6 +90,7 @@ Game_CheckRegistered (void)
 void
 Game_Init (memhunk_t *hunk)
 {
+	qfZoneScoped (true);
 	int         i;
 	const char *game = "nq";
 

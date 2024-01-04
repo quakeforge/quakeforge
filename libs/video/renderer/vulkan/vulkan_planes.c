@@ -143,6 +143,7 @@ static exprsym_t debug_planes_task_syms[] = {
 void
 Vulkan_Planes_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "debug planes init");
 	QFV_Render_AddTasks (ctx, debug_planes_task_syms);
 
@@ -155,6 +156,7 @@ Vulkan_Planes_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Planes_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto pctx = ctx->planes_context;
@@ -247,6 +249,7 @@ Vulkan_Planes_Shutdown (vulkan_ctx_t *ctx)
 	auto pctx = ctx->planes_context;
 
 	QFV_DestroyResource (device, pctx->resources);
+	free (pctx->resources);
 
 	free (pctx->frames.a);
 	free (pctx);

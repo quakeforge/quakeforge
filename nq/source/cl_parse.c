@@ -68,6 +68,8 @@
 #include "nq/include/server.h"
 #include "nq/include/game.h"
 
+dstring_t *cl_stuffbuff;
+
 const char *svc_strings[] = {
 	"svc_bad",
 	"svc_nop",
@@ -135,6 +137,7 @@ const char *svc_strings[] = {
 static entity_state_t *
 CL_EntityNum (int num)
 {
+	qfZoneScoped (true);
 	if (num < 0 || num >= MAX_EDICTS)
 		Host_Error ("CL_EntityNum: %i is an invalid number", num);
 	if (num >= cl.num_entities)
@@ -197,6 +200,7 @@ CL_ParseStartSoundPacket (void)
 static void
 CL_KeepaliveMessage (void)
 {
+	qfZoneScoped (true);
 	byte        olddata[8192];
 	float       time;
 	static float lastmsg;
@@ -398,6 +402,7 @@ int         bitcounts[16];
 static void
 CL_ParseUpdate (int bits)
 {
+	qfZoneScoped (true);
 	entity_state_t *baseline;
 	entity_state_t *state;
 	int         modnum, num, i;
@@ -710,6 +715,7 @@ CL_ParseStaticSound (int version)
 static void
 CL_SetStat (int stat, int value)
 {
+	qfZoneScoped (true);
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 	cl.stats[stat] = value;
@@ -726,7 +732,6 @@ CL_ParseServerMessage (void)
 	qfZoneScoped (true);
 	int         cmd = 0, i, j;
 	const char *str;
-	static dstring_t *stuffbuf;
 	signon_t    so;
 
 	cl.viewstate.last_servermessage = cl.time;
@@ -779,6 +784,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_disconnect:
+				qfMessageL ("svc_disconnect");
 				if (cls.state == ca_connected)
 					Host_EndGame ("Server disconnected\n"
 								  "Server version may not be compatible");
@@ -786,12 +792,14 @@ CL_ParseServerMessage (void)
 					Host_EndGame ("Server disconnected\n");
 
 			case svc_updatestat:
+				qfMessageL ("svc_updatestat");
 				i = MSG_ReadByte (net_message);
 				j = MSG_ReadLong (net_message);
 				CL_SetStat (i, j);
 				break;
 
 			case svc_version:
+				qfMessageL ("svc_version");
 				i = MSG_ReadLong (net_message);
 				if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE)
 					Host_Error ("CL_ParseServerMessage: Server is protocol %i "
@@ -801,61 +809,67 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_setview:
+				qfMessageL ("svc_setview");
 				cl.viewentity = MSG_ReadShort (net_message);
 				break;
 
 			case svc_sound:
+				qfMessageL ("svc_sound");
 				CL_ParseStartSoundPacket ();
 				break;
 
 			case svc_time:
+				qfMessageL ("svc_time");
 				cl.mtime[1] = cl.mtime[0];
 				cl.mtime[0] = MSG_ReadFloat (net_message);
 				cl.frameIndex = !cl.frameIndex;
 				break;
 
 			case svc_print:
+				qfMessageL ("svc_print");
 				Sys_Printf ("%s", MSG_ReadString (net_message));
 				break;
 
 			case svc_stufftext:
+				qfMessageL ("svc_stufftext");
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
-					if (stuffbuf && stuffbuf->str[0]) {
+					if (cl_stuffbuff && cl_stuffbuff->str[0]) {
 						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
-										stuffbuf->str, str);
-						Cbuf_AddText (host_cbuf, stuffbuf->str);
-						dstring_clearstr (stuffbuf);
+										cl_stuffbuff->str, str);
+						Cbuf_AddText (host_cbuf, cl_stuffbuff->str);
+						dstring_clearstr (cl_stuffbuff);
 					} else {
 						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (host_cbuf, str);
 				} else {
 					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
-					if (!stuffbuf)
-						stuffbuf = dstring_newstr ();
-					dstring_appendstr (stuffbuf, str);
+					dstring_appendstr (cl_stuffbuff, str);
 				}
 				break;
 
 			case svc_setangle:
 			{
+				qfMessageL ("svc_setangle");
 				vec_t      *dest = cl.viewstate.player_angles;
 
 				MSG_ReadAngleV (net_message, dest);
 				break;
 			}
 			case svc_serverinfo:
+				qfMessageL ("svc_serverinfo");
 				// make sure any stuffed commands are done
-				if (stuffbuf && stuffbuf->str[0]) {
-					Cbuf_AddText (host_cbuf, stuffbuf->str);
-					dstring_clearstr (stuffbuf);
+				if (cl_stuffbuff && cl_stuffbuff->str[0]) {
+					Cbuf_AddText (host_cbuf, cl_stuffbuff->str);
+					dstring_clearstr (cl_stuffbuff);
 				}
 				Cbuf_Execute_Stack (host_cbuf);
 				CL_ParseServerInfo ();
 				break;
 
 			case svc_lightstyle:
+				qfMessageL ("svc_lightstyle");
 				i = MSG_ReadByte (net_message);
 				if (i >= MAX_LIGHTSTYLES)
 					Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
@@ -879,6 +893,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatename:
+				qfMessageL ("svc_updatename");
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatename > "
@@ -889,6 +904,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_updatefrags:
+				qfMessageL ("svc_updatefrags");
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients)
 					Host_Error ("CL_ParseServerMessage: svc_updatefrags > "
@@ -898,15 +914,18 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_clientdata:
+				qfMessageL ("svc_clientdata");
 				CL_ParseClientdata ();
 				break;
 
 			case svc_stopsound:
+				qfMessageL ("svc_stopsound");
 				i = MSG_ReadShort (net_message);
 				S_StopSound (i >> 3, i & 7);
 				break;
 
 			case svc_updatecolors:
+				qfMessageL ("svc_updatecolors");
 				i = MSG_ReadByte (net_message);
 				if (i >= cl.maxclients) {
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
@@ -929,32 +948,38 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_particle:
+				qfMessageL ("svc_particle");
 				CL_ParseParticleEffect (net_message);
 				break;
 
 			case svc_damage:
+				qfMessageL ("svc_damage");
 				V_ParseDamage (net_message, &cl.viewstate);
 				// put sbar face into pain frame
 				Sbar_Damage (cl.time);
 				break;
 
 			case svc_spawnstatic:
+				qfMessageL ("svc_spawnstatic");
 				CL_ParseStatic (net_message, 1);
 				break;
 
 			//   svc_spawnbinary
 
 			case svc_spawnbaseline:
+				qfMessageL ("svc_spawnbaseline");
 				i = MSG_ReadShort (net_message);
 				// must use CL_EntityNum () to force cl.num_entities up
 				CL_ParseBaseline (net_message, CL_EntityNum (i), 1);
 				break;
 
 			case svc_temp_entity:
+				qfMessageL ("svc_temp_entity");
 				CL_ParseTEnt_nq (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:
+				qfMessageL ("svc_setpause");
 				r_data->paused = cl.paused = MSG_ReadByte (net_message);
 				if (cl.paused)
 					CDAudio_Pause ();
@@ -963,6 +988,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_signonnum:
+				qfMessageL ("svc_signonnum");
 				so = MSG_ReadByte (net_message);
 				if (so <= cls.signon || so >= so_active)
 					Host_Error ("Received signon %i when at %i", so,
@@ -972,30 +998,36 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_centerprint:
+				qfMessageL ("svc_centerprint");
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
 				break;
 
 			case svc_killedmonster:
+				qfMessageL ("svc_killedmonster");
 				cl.stats[STAT_MONSTERS]++;
 				Sbar_UpdateStats (STAT_MONSTERS);
 				break;
 
 			case svc_foundsecret:
+				qfMessageL ("svc_foundsecret");
 				cl.stats[STAT_SECRETS]++;
 				Sbar_UpdateStats (STAT_SECRETS);
 				break;
 
 			case svc_spawnstaticsound:
+				qfMessageL ("svc_spawnstaticsound");
 				CL_ParseStaticSound (1);
 				break;
 
 			case svc_intermission:
+				qfMessageL ("svc_intermission");
 				Sbar_Intermission (cl.intermission = 1, cl.time);
 				SCR_SetFullscreen (1);
 				break;
 
 			case svc_finale:
+				qfMessageL ("svc_finale");
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
 				Sbar_Intermission (cl.intermission = 2, cl.time);
@@ -1003,6 +1035,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_cdtrack:
+				qfMessageL ("svc_cdtrack");
 				cl.cdtrack = MSG_ReadByte (net_message);
 				MSG_ReadByte (net_message);	// looptrack (not used)
 				if ((cls.demoplayback || cls.demorecording)
@@ -1013,10 +1046,12 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_sellscreen:
+				qfMessageL ("svc_sellscreen");
 				Cmd_ExecuteString ("help", src_command);
 				break;
 
 			case svc_cutscene:
+				qfMessageL ("svc_cutscene");
 				str = MSG_ReadString (net_message);
 				Sbar_CenterPrint (str);
 				Sbar_Intermission (cl.intermission = 3, cl.time);
@@ -1046,12 +1081,15 @@ CL_ParseServerMessage (void)
 
 			// PROTOCOL_FITZQUAKE (these overlap with the above listed qw svcs)
 			case svc_skybox:
+				qfMessageL ("svc_skybox");
 				r_funcs->R_LoadSkys (MSG_ReadString(net_message));
 				break;
 			case svc_bf:
+				qfMessageL ("svc_bf");
 				Cmd_ExecuteString ("bf", src_command);
 				break;
 			case svc_fog:
+				qfMessageL ("svc_fog");
 				{
 					float density, red, green, blue, time;
 					density = MSG_ReadByte (net_message) / 255.0;
@@ -1064,14 +1102,17 @@ CL_ParseServerMessage (void)
 				}
 				break;
 			case svc_spawnbaseline2:
+				qfMessageL ("svc_spawnbaseline2");
 				i = MSG_ReadShort (net_message);
 				// must use CL_EntityNum() to force cl.num_entities up
 				CL_ParseBaseline (net_message, CL_EntityNum(i), 2);
 				break;
 			case svc_spawnstatic2:
+				qfMessageL ("svc_spawnstatic2");
 				CL_ParseStatic (net_message, 2);
 				break;
 			case svc_spawnstaticsound2:
+				qfMessageL ("svc_spawnstaticsound2");
 				CL_ParseStaticSound (2);
 				break;
 		}

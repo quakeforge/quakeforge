@@ -521,6 +521,7 @@ NET_Stats_f (void)
 int
 Datagram_Init (void)
 {
+	qfZoneScoped (true);
 	int         i;
 	int         csock;
 

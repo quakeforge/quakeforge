@@ -1287,6 +1287,7 @@ particles_style_f (void *data, const cvar_t *cvar)
 void
 CL_Particles_Init (void)
 {
+	qfZoneScoped (true);
 	mtwist_seed (&mt, 0xdeadbeef);
 	cl_psystem = r_funcs->ParticleSystem ();
 	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);

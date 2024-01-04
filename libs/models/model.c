@@ -103,6 +103,7 @@ static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 static void
 mod_shutdown (void *data)
 {
+	qfZoneScoped (true);
 	Mod_ClearAll ();
 	for (size_t i = 0; i < mod_blocks.size; i++) {
 		free (mod_blocks.a[i]);
@@ -114,6 +115,7 @@ mod_shutdown (void *data)
 VISIBLE void
 Mod_Init (void)
 {
+	qfZoneScoped (true);
 	byte   *dest;
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
@@ -146,6 +148,7 @@ Mod_Init (void)
 VISIBLE void
 Mod_Init_Cvars (void)
 {
+	qfZoneScoped (true);
 	Cvar_Register (&gl_subdivide_size_cvar, 0, 0);
 	Cvar_Register (&gl_mesh_cache_cvar, 0, 0);
 	Cvar_Register (&gl_alias_render_tri_cvar, 0, 0);
@@ -155,6 +158,7 @@ Mod_Init_Cvars (void)
 static void
 mod_unload_model (size_t ind)
 {
+	qfZoneScoped (true);
 	model_t    *mod = mod_known.a[ind];
 
 	//FIXME this seems to be correct but need to double check the behavior
@@ -186,6 +190,7 @@ Mod_ClearAll (void)
 model_t *
 Mod_FindName (const char *name)
 {
+	qfZoneScoped (true);
 	size_t      i;
 	model_t   **mod;
 
@@ -219,6 +224,7 @@ Mod_FindName (const char *name)
 static model_t *
 Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 {
+	qfZoneScoped (true);
 	uint32_t   *buf;
 
 	// load the file
@@ -296,6 +302,7 @@ Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 static model_t *
 Mod_LoadModel (model_t *mod, bool crash)
 {
+	qfZoneScoped (true);
 	if (!mod->needload) {
 		if (mod->type == mod_alias && !mod->aliashdr) {
 			if (Cache_Check (&mod->cache))
@@ -314,6 +321,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 static void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
+	qfZoneScoped (true);
 	if (((model_t *)object)->type != mod_alias)
 		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
 	// FIXME: do we want crash set to true?
@@ -328,6 +336,7 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 VISIBLE model_t *
 Mod_ForName (const char *name, bool crash)
 {
+	qfZoneScoped (true);
 	model_t    *mod;
 
 	mod = Mod_FindName (name);
@@ -353,6 +362,7 @@ Mod_TouchModel (const char *name)
 VISIBLE void
 Mod_UnloadModel (model_t *model)
 {
+	qfZoneScoped (true);
 	for (size_t i = 0; i < mod_numknown; i++) {
 		if (mod_known.a[i] == model) {
 			mod_unload_model (i);
@@ -363,6 +373,7 @@ Mod_UnloadModel (model_t *model)
 VISIBLE void
 Mod_Print (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 	model_t	  **mod;
 
@@ -375,6 +386,7 @@ Mod_Print (void)
 float
 RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
 {
+	qfZoneScoped (true);
 	int		i;
 	vec3_t	corner;
 

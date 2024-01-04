@@ -516,6 +516,7 @@ Cmd_Help_f (void)
 static void
 Cmd_Exec_f (void)
 {
+	qfZoneScoped (true);
 	char       *f;
 	size_t      mark;
 
@@ -574,6 +575,7 @@ Cmd_Sleep_f (void)
 VISIBLE void
 Cmd_StuffCmds (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	int         i, j;
 	dstring_t  *build;
 

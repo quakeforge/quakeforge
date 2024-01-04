@@ -174,6 +174,7 @@ static exprsym_t scene_task_syms[] = {
 void
 Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, scene_task_syms);
 
 	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
@@ -186,6 +187,7 @@ Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "scene init");
 
 	auto device = ctx->device;
@@ -263,7 +265,6 @@ Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 
 	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
 	QFV_DestroyResource (device, sctx->entities);
-
 	free (sctx->frames.a);
 	free (sctx);
 	qfvPopDebug (ctx);
@@ -272,6 +273,7 @@ Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 void
 Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto sctx = ctx->scene_context;
 	sctx->scene = scene;
 

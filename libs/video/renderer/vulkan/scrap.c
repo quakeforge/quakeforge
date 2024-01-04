@@ -64,6 +64,7 @@ scrap_t *
 QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 				 QFFormat format, qfv_stagebuf_t *stage)
 {
+	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp = 0;
 	VkFormat    fmt = VK_FORMAT_UNDEFINED;

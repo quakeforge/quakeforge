@@ -39,6 +39,7 @@
 #include "QF/va.h"
 #include "QF/hash.h"
 #include "QF/cvar.h"
+#include "QF/sys.h"
 
 #include "gib_parse.h"
 #include "gib_vars.h"
@@ -310,9 +311,18 @@ GIB_Var_Hash_New (void)
 	return Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 }
 
+static void
+gib_var_shutdown (void *data)
+{
+	Hash_DelTable (gib_domains);
+	Hash_DelTable (gib_globals);
+}
+
 void
 GIB_Var_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_var_shutdown, 0);
 	gib_globals = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 	gib_domains = Hash_NewTable (1024, GIB_Domain_Get_Key,
 								 GIB_Domain_Free, 0, 0);

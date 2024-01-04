@@ -233,6 +233,7 @@ static exprsym_t capture_task_syms[] = {
 void
 QFV_Capture_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, capture_task_syms);
 
 	qfvPushDebug (ctx, "capture init");

@@ -60,10 +60,8 @@ static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
 
 #define VA_CTX_COUNT 64
 
-typedef struct qfv_renderpassset_s
-	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
-
 typedef struct vulkan_ctx_s {
+	void        (*delete) (struct vulkan_ctx_s *ctx);
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
 	void        (*unload_vulkan) (struct vulkan_ctx_s *ctx);
 
@@ -108,8 +106,6 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
-	qfv_renderpassset_t renderPasses;
-
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

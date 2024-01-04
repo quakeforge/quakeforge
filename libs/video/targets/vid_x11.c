@@ -82,6 +82,7 @@ X11_VID_Shutdown (void)
 static void
 X11_VID_SetPalette (byte *palette, byte *colormap)
 {
+	qfZoneScoped (true);
 	viddef.colormap8 = colormap;
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 	if (vid_internal.set_colormap) {
@@ -106,6 +107,7 @@ X11_VID_SetCursor (bool visible)
 static void
 X11_VID_Init (byte *palette, byte *colormap)
 {
+	qfZoneScoped (true);
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
 #ifdef HAVE_VULKAN

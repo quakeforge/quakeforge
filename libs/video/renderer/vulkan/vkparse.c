@@ -1172,6 +1172,7 @@ vulkan_frame_count_f (void *data, const cvar_t *cvar)
 void
 Vulkan_Init_Cvars (void)
 {
+	qfZoneScoped (true);
 	int         num_syms = 0;
 	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
 		 sym->name; sym++, num_syms++) {
@@ -1216,6 +1217,7 @@ static exprtab_t builtin_configs = { .symbols = builtin_plist_syms };
 static void
 build_configs (scriptctx_t *sctx)
 {
+	qfZoneScoped (true);
 	int         num_plists = 0;
 	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
 		num_plists++;
@@ -1246,11 +1248,13 @@ delete_configs (void)
 		num_plists++;
 	}
 	free (builtin_plists);
+	Hash_DelTable (builtin_configs.tab);
 }
 
 plitem_t *
 Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
 {
+	qfZoneScoped (true);
 	scriptctx_t *sctx = ctx->script_context;
 	if (!builtin_configs.tab) {
 		build_configs (sctx);
@@ -1283,6 +1287,7 @@ Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
 
 void Vulkan_Script_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	scriptctx_t *sctx = calloc (1, sizeof (scriptctx_t));
 	sctx->vctx = ctx;
 	ctx->script_context = sctx;
@@ -1295,7 +1300,6 @@ void Vulkan_Script_Init (vulkan_ctx_t *ctx)
 	//create a symtabs shutdown (for thread safety), but this works for now.
 	ectx.hashctx = 0;//&sctx->hashctx;
 	vkgen_init_symtabs (&ectx);
-	cexpr_init_symtab (&qfv_output_t_symtab, &ectx);
 	cexpr_init_symtab (&qfv_renderframeset_t_symtab, &ectx);
 	cexpr_init_symtab (&data_array_symtab, &ectx);
 
@@ -1328,8 +1332,22 @@ void Vulkan_Script_Shutdown (vulkan_ctx_t *ctx)
 	clear_table (&sctx->shaderModules);
 	clear_table (&sctx->descriptorPools);
 	clear_table (&sctx->samplers);
+	clear_table (&sctx->images);
+	clear_table (&sctx->imageViews);
+	clear_table (&sctx->renderpasses);
 
 	delete_configs ();
+
+	exprctx_t   ectx = {};
+	vkgen_shutdown_symtabs (&ectx);
+
+	Hash_DelTable (qfv_renderframeset_t_symtab.tab);
+	Hash_DelTable (data_array_symtab.tab);
+
+	free (validation_symtab.symbols);
+
+	Hash_DelTable (enum_symtab);
+	Hash_DelTable (parser_table);
 
 	Hash_DelContext (sctx->hashctx);
 
@@ -1347,6 +1365,7 @@ QFV_CreateSymtab (plitem_t *dict, const char *properties,
 				  const char **extra_items, exprsym_t *extra_syms,
 				  exprctx_t *ectx)
 {
+	qfZoneScoped (true);
 	plitem_t   *props = PL_ObjectForKey (dict, properties);
 	int         num_keys = PL_D_NumKeys (props);
 	int         num_extra = 0;
@@ -1412,6 +1431,7 @@ QFV_DestroySymtab (exprtab_t *tab)
 struct qfv_jobinfo_s *
 QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
 {
+	qfZoneScoped (true);
 	memsuper_t *memsuper = new_memsuper ();
 	qfv_jobinfo_t *ji = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
 	*ji = (qfv_jobinfo_t) { .memsuper = memsuper };

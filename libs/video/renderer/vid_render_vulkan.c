@@ -161,7 +161,6 @@ vulkan_R_LoadSkys (const char *skyname)
 static void
 vulkan_R_NewScene (scene_t *scene)
 {
-	qfZoneScoped (true);
 	Vulkan_NewScene (scene, vulkan_ctx);
 }
 
@@ -478,6 +477,7 @@ set_palette (void *data, const byte *palette)
 static void
 vulkan_vid_render_choose_visual (void *data)
 {
+	qfZoneScoped (true);
 	Vulkan_CreateDevice (vulkan_ctx);
 	if (!vulkan_ctx->device) {
 		Sys_Error ("Unable to create Vulkan device.%s",
@@ -497,6 +497,7 @@ vulkan_vid_render_choose_visual (void *data)
 static void
 vulkan_vid_render_create_context (void *data)
 {
+	qfZoneScoped (true);
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
 	Sys_MaskPrintf (SYS_vulkan, "vk create context: surface:%#zx\n",
@@ -534,6 +535,7 @@ static vid_model_funcs_t model_funcs = {
 static void
 vulkan_vid_render_init (void)
 {
+	qfZoneScoped (true);
 	if (!vr_data.vid->vid_internal->vulkan_context) {
 		Sys_Error ("Sorry, Vulkan not supported by this program.");
 	}
@@ -591,6 +593,9 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
 	Vulkan_Shutdown_Common (vulkan_ctx);
+
+	vulkan_ctx->delete (vulkan_ctx);
+	vulkan_ctx = 0;
 }
 
 vid_render_funcs_t vulkan_vid_render_funcs = {

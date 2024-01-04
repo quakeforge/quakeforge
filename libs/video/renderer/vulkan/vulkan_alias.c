@@ -333,6 +333,7 @@ static exprsym_t alias_task_syms[] = {
 void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "alias init");
 	QFV_Render_AddTasks (ctx, alias_task_syms);
 
@@ -345,6 +346,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Alias_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto actx = ctx->alias_context;
 	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
 }

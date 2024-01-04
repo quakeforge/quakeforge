@@ -101,6 +101,7 @@ CD_f (void)
 VISIBLE int
 CDAudio_Init (void)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (CDAudio_shutdown, 0);
 
 	PI_RegisterPlugins (cd_plugin_list);

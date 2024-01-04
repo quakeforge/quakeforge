@@ -625,6 +625,7 @@ Sys_Error (const char *error, ...)
 VISIBLE void
 Sys_RegisterShutdown (void (*func) (void *), void *data)
 {
+	qfZoneScoped (true);
 	shutdown_list_t *p;
 	if (!func)
 		return;
@@ -1125,6 +1126,7 @@ hook_signals (void)
 VISIBLE void
 Sys_Init (void)
 {
+	qfZoneScoped (true);
 	hook_signals ();
 
 	Cvar_Init_Hash ();

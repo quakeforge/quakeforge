@@ -206,6 +206,7 @@ static exprsym_t translucent_task_syms[] = {
 void
 Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, translucent_task_syms);
 
 	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
@@ -309,6 +310,7 @@ trans_create_resources (vulkan_ctx_t *ctx)
 void
 Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "translucent init");
 
 	auto tctx = ctx->translucent_context;

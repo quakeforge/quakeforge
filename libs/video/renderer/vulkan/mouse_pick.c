@@ -157,6 +157,7 @@ static exprsym_t mousepick_task_syms[] = {
 void
 QFV_MousePick_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, mousepick_task_syms);
 
 	qfvPushDebug (ctx, "mouse pick init");

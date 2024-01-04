@@ -106,7 +106,6 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer,
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
 
 void Skin_Init (void);
-void Skin_Shutdown (void);
 void Skin_Free (skin_t *skin);
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
 skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);

@@ -182,6 +182,7 @@ static exprsym_t matrix_task_syms[] = {
 void
 Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, matrix_task_syms);
 
 	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
@@ -191,6 +192,7 @@ Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Matrix_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "matrix init");
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -268,12 +270,16 @@ Vulkan_Matrix_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Matrix_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "matrix shutdown");
 	auto device = ctx->device;
 	auto mctx = ctx->matrix_context;
 
 	QFV_DestroyStagingBuffer (mctx->stage);
 	QFV_DestroyResource (device, mctx->resource);
+	free (mctx->resource);
+	free (mctx->frames.a);
+	free (mctx);
 
 	qfvPopDebug (ctx);
 }

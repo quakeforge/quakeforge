@@ -12,6 +12,7 @@
 -(void) writeForward;
 -(void) writeTable;
 -(void) writeSymtabInit;
+-(void) writeSymtabShutdown;
 -(void) writeSymtabEntry;
 @end
 

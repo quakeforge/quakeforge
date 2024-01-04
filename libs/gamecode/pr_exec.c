@@ -2932,6 +2932,7 @@ exit_program:;
 VISIBLE void
 PR_ExecuteProgram (progs_t *pr, pr_func_t fnum)
 {
+	qfZoneScoped (true);
 	Sys_PushSignalHook (signal_hook, pr);
 	Sys_PushErrorHandler (error_handler, pr);
 

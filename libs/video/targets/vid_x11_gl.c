@@ -168,6 +168,7 @@ QFGL_ProcAddress (const char *name, bool crit)
 static void
 glx_choose_visual (gl_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	int         attrib[] = {
 		GLX_X_RENDERABLE,     True,
 		GLX_DRAWABLE_TYPE,    GLX_WINDOW_BIT,

@@ -252,6 +252,7 @@ imui_state_getkey (const void *obj, void *data)
 imui_ctx_t *
 IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 {
+	qfZoneScoped (true);
 	imui_ctx_t *ctx = malloc (sizeof (imui_ctx_t));
 	uint32_t canvas = Canvas_New (canvas_sys);
 	*ctx = (imui_ctx_t) {

@@ -1465,7 +1465,6 @@ CL_Init (void)
 	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Load ("client");
 	CL_Init_Screen ();
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;

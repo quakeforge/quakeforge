@@ -214,6 +214,7 @@ static exprsym_t sprite_task_syms[] = {
 void
 Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "sprite init");
 	QFV_Render_AddTasks (ctx, sprite_task_syms);
 
@@ -226,6 +227,7 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 void
 Vulkan_Sprite_Setup (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto sctx = ctx->sprite_context;
 	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
 }
