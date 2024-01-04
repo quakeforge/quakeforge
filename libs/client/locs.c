@@ -41,6 +41,7 @@
 
 #include <limits.h>
 
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/qtypes.h"
@@ -144,6 +145,7 @@ locs_load (const char *filename)
 	const char *line;
 	vec4f_t     loc = { 0, 0, 0, 1 };
 	QFile      *file;
+	dstring_t  *buffer = dstring_new ();
 
 	tmp = va (0, "maps/%s", filename);
 	file = QFS_FOpenFile (tmp);
@@ -151,7 +153,7 @@ locs_load (const char *filename)
 		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;
 	}
-	while ((line = Qgetline (file))) {
+	while ((line = Qgetline (file, buffer))) {
 		if (line[0] == '#')
 			continue;
 
@@ -178,6 +180,7 @@ locs_load (const char *filename)
 		locs_add (loc, t1);
 	}
 	Qclose (file);
+	dstring_delete (buffer);
 }
 
 void

@@ -1350,38 +1350,39 @@ LoadPortals (char *name)
 		}
 	}
 
-	line = Qgetline (f);
+	dstring_t  *buffer = dstring_new ();
+	line = Qgetline (f, buffer);
 
 	if (line && (!strcmp (line, PORTALFILE "\n")
 				 || !strcmp (line, PORTALFILE "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		numrealleafs = portalclusters;
 	} else if (line && (!strcmp (line, PORTALFILE_AM "\n")
 						|| !strcmp (line, PORTALFILE_AM "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
 	} else if (line && (!strcmp (line, PORTALFILE2 "\n")
 						|| !strcmp (line, PORTALFILE2 "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
@@ -1422,7 +1423,7 @@ LoadPortals (char *name)
 	clusternums = calloc (numportals, sizeof (clusterpair_t));
 	winding_t **windings = malloc (numportals * sizeof (winding_t *));
 	for (unsigned i = 0; i < numportals; i++) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line)
 			Sys_Error ("LoadPortals: reading portal %u", i);
 
@@ -1494,7 +1495,7 @@ LoadPortals (char *name)
 	leafcluster = calloc (numrealleafs, sizeof (uint32_t));
 	if (read_leafs) {
 		for (unsigned i = 0; i < numrealleafs; i++) {
-			line = Qgetline (f);
+			line = Qgetline (f, buffer);
 			if (sscanf (line, "%i\n", &leafcluster[i]) != 1)
 				Sys_Error ("LoadPortals: parse error in leaf->cluster "
 						   "mappings");
@@ -1503,6 +1504,7 @@ LoadPortals (char *name)
 		for (unsigned i = 0; i < numrealleafs; i++)
 			leafcluster[i] = i;
 	}
+	dstring_delete (buffer);
 	Qclose (f);
 }
 

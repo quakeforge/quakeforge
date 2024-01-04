@@ -51,6 +51,7 @@ typedef struct qfile_s {
 typedef struct {
 	PR_RESMAP (qfile_t) handle_map;
 	qfile_t    *handles;
+	dstring_t  *buffer;
 } qfile_resources_t;
 
 static qfile_t *
@@ -101,6 +102,7 @@ bi_qfile_destroy (progs_t *pr, void *_res)
 	qfile_resources_t *res = _res;
 
 	PR_RESDELMAP (res->handle_map);
+	dstring_delete (res->buffer);
 
 	free (res);
 }
@@ -211,7 +213,7 @@ bi_Qgetline (progs_t *pr, void *_res)
 	qfile_t    *h = get_handle (pr, res, __FUNCTION__, handle);
 	const char *s;
 
-	s = Qgetline (h->file);
+	s = Qgetline (h->file, res->buffer);
 	if (s)
 		RETURN_STRING (pr, s);
 	else
@@ -410,6 +412,7 @@ void
 RUA_QFile_Init (progs_t *pr, int secure)
 {
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
+	res->buffer = dstring_new ();
 
 	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear, bi_qfile_destroy);
 	if (secure) {

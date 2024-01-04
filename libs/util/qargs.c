@@ -44,6 +44,7 @@
 #include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/idparse.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -202,8 +203,9 @@ COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
 	int ret = 0;
 	QFile *f;
 
+	dstring_t  *buffer = dstring_new ();
 	f = QFS_FOpenFile ("quake.rc");
-	while (f && (l = Qgetline (f))) {
+	while (f && (l = Qgetline (f, buffer))) {
 		if ((p = strstr (l, cmd))) {
 			if (p == l) {
 				if (cbuf) {
@@ -215,6 +217,7 @@ COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
 		}
 	}
 	Qclose (f);
+	dstring_delete (buffer);
 	return ret;
 }
 
