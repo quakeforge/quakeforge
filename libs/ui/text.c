@@ -274,8 +274,13 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		}
 	}
 	ecs_system_t viewsys = { reg, textsys.view_base };
+	if (Ent_HasComponent (h->ent[0], viewsys.base + view_href, viewsys.reg)) {
+		Ent_RemoveComponent (h->ent[0], viewsys.base + view_href, viewsys.reg);
+		h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
+	}
 	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, parent,
 												 false);
+	h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
@@ -285,11 +290,13 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		uint32_t    paragraph = h->childIndex[0] + i;
 		view_t      paraview = View_AddToEntity (h->ent[paragraph], viewsys,
 												 passage_view, false);
+		h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 		glyphref_t  pararef = { .start = passage_ref.count };
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++, g = g->next) {
 			uint32_t    to = h->childIndex[paragraph] + j;
 			view_t      textview = View_AddToEntity (h->ent[to], viewsys,
 													 paraview, false);
+			h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 			configure_textview (textview, glyphs, g, passage_ref.count,
 								c_glyphs);
 			View_SetGravity (textview, grav_flow);

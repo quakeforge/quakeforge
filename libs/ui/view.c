@@ -147,18 +147,18 @@ view_t
 View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent, bool own)
 {
 	uint32_t    href_comp = viewsys.base + view_href;
-	hierref_t  *ref = Ent_AddComponent (ent, href_comp, viewsys.reg);
+	hierref_t   ref = {};
 
 	if (parent.reg && parent.id != nullent) {
 		hierref_t   pref = View_GetRef (parent);
-		*ref = Hierarchy_InsertHierarchy (pref, nullhref, viewsys.reg);
+		ref = Hierarchy_InsertHierarchy (pref, nullhref, viewsys.reg);
 	} else {
-		ref->id = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
-		ref->index = 0;
+		ref.id = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
 	}
-	hierarchy_t *h = Ent_GetComponent (ref->id, ecs_hierarchy, viewsys.reg);
-	h->ent[ref->index] = ent;
-	h->own[ref->index] = own;
+	Ent_SetComponent (ent, href_comp, viewsys.reg, &ref);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, viewsys.reg);
+	h->ent[ref.index] = ent;
+	h->own[ref.index] = own;
 	return (view_t) { .reg = viewsys.reg, .id = ent, .comp = href_comp };
 }
 
