@@ -1213,14 +1213,10 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));
-	if (Ent_HasComponent (psg_view.id, c_passage_glyphs, reg)) {
-		// FIXME this shouldn't be necessary and is a sign of bigger problems
-		Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
-	}
-	if (Ent_HasComponent (psg_view.id, c_updateonce, reg)) {
-		// FIXME this shouldn't be necessary and is a sign of bigger problems
-		Ent_RemoveComponent (psg_view.id, c_updateonce, reg);
-	}
+	// FIXME this shouldn't be necessary and is a sign of bigger problems
+	Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
+	// FIXME this shouldn't be necessary and is a sign of bigger problems
+	Ent_RemoveComponent (psg_view.id, c_updateonce, reg);
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
 	void *update = passage_update;

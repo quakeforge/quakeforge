@@ -116,11 +116,14 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	uint32_t    ind = pool->sparse[id];
 	component_t *c = &registry->components.a[comp];
 	if (ind < pool->count && pool->dense[ind] == ent) {
-		// invalidate the entity for this component to prevent the component
-		// being double-removed due to deletion of the component resulting
-		// in the entity being deleted (happens with hierarchies)
-		pool->dense[ind] = -1;
-		Component_DestroyElements (c, pool->data, ind, 1, registry);
+		// copy the component out of the pool so that it can be overwritten
+		// now, thus removing it from the pool, before actually destroying
+		// the component so that any recursive removals of the same component
+		// don't mess up the indices, and also don't try to remove the
+		// component from the same entity
+		byte        tmp_comp[c->size];
+		Component_CopyElements (c, tmp_comp, 0, pool->data, ind, 1);
+
 		uint32_t    range_count = subpool->num_ranges - subpool->available;
 		// if ind >= the last range, then it is outside the subpools
 		if (range_count && ind < subpool->ranges[range_count - 1]) {
@@ -144,5 +147,9 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		}
 		pool->count--;
 		pool->sparse[id] = nullent;
+
+		// the component has been fully removed from the pool so it is now
+		// safe to destroy it
+		Component_DestroyElements (c, tmp_comp, 0, 1, registry);
 	}
 }
