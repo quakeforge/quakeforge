@@ -177,6 +177,8 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 	View_SetPos (textview, node->mins[0], -node->mins[1]);
 	View_SetLen (textview, node->maxs[0] - node->mins[0],
 						   node->maxs[1] - node->mins[1]);
+	View_Control (textview)->free_x = 1;
+	View_Control (textview)->free_y = 1;
 }
 
 view_t
