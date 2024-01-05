@@ -44,6 +44,7 @@
 #include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/passage.h"
+#include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -70,6 +71,7 @@ typedef struct {
 	PR_RESMAP (rua_font_t) font_map;
 	rua_font_t *fonts;
 
+	text_shaper_t  *shaper;
 	ecs_registry_t *reg;
 	canvas_system_t csys;
 	text_system_t   tsys;
@@ -236,6 +238,7 @@ bi_gui_destroy (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	gui_resources_t *res = _res;
+	Shaper_Delete (res->shaper);
 	ECS_DelRegistry (res->reg);
 	PR_RESDELMAP (res->passage_map);
 	PR_RESDELMAP (res->font_map);
@@ -331,7 +334,8 @@ bi (Text_PassageView)
 	rua_font_t *font = get_font (res, P_INT (pr, 1));
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 2));
 	view_t      view = Text_PassageView (res->tsys, parent,
-										 font->font, psg->passage);
+										 font->font, psg->passage,
+										 res->shaper);
 	R_INT (pr) = view.id;//FIXME
 }
 
@@ -410,6 +414,7 @@ bi (Text_Draw)
 			}
 		}
 	}
+	Shaper_FlushUnused (res->shaper);
 }
 
 bi (View_Delete)
@@ -537,6 +542,7 @@ RUA_GUI_Init (progs_t *pr, int secure)
 										passage_comp_count),
 	};
 	ECS_CreateComponentPools (res->reg);
+	res->shaper = Shaper_New ();
 }
 
 canvas_system_t

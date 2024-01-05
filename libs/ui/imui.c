@@ -1209,7 +1209,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	set_fill (ctx, anchor_view, ctx->style.background.normal);
 
 	auto psg_view = Text_PassageView (ctx->tsys, nullview,
-									  ctx->font, passage);
+									  ctx->font, passage, ctx->shaper);
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));

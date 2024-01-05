@@ -181,29 +181,47 @@ configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
 	View_Control (textview)->free_y = 1;
 }
 
-view_t
-Text_PassageView (text_system_t textsys, view_t parent,
-				  font_t *font, passage_t *passage)
+static void
+set_shaping (shaping_t *shaping, uint32_t ent, text_system_t textsys)
 {
 	auto reg = textsys.reg;
 	uint32_t c_script = textsys.text_base + text_script;
 	uint32_t c_features = textsys.text_base + text_features;
+
+	if (Ent_HasComponent (ent, c_script, reg)) {
+		shaping->script = Ent_GetComponent (ent, c_script, reg);
+	}
+	if (Ent_HasComponent (ent, c_features, reg)) {
+		shaping->features = Ent_GetComponent(ent, c_features, reg);
+	}
+}
+
+view_t
+Text_PassageView (text_system_t textsys, view_t parent,
+				  font_t *font, passage_t *passage, text_shaper_t *shaper)
+{
+	auto reg = textsys.reg;
+	uint32_t c_script = textsys.text_base + text_script;
 	uint32_t c_glyphs = textsys.text_base + text_glyphs;
 	uint32_t c_passage_glyphs = textsys.text_base + text_passage_glyphs;
-	hierarchy_t *h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
+	uint32_t psg_ent = passage->hierarchy;
+	hierarchy_t *h = Ent_GetComponent (psg_ent, ecs_hierarchy, reg);
 	psg_text_t *text_objects = h->components[passage_type_text_obj];
 	glyphnode_t *glyph_nodes = 0;
 	glyphnode_t **head = &glyph_nodes;
 
-	hb_font_t  *fnt = hb_ft_font_create (font->face, 0);
-	hb_buffer_t *buffer = hb_buffer_create ();
-	hb_buffer_allocation_successful (buffer);
-
-	hb_script_t psg_script = HB_SCRIPT_LATIN;
-	text_dir_e psg_direction = text_right_down;
-	hb_language_t psg_language = hb_language_from_string ("en", 2);
-	featureset_t passage_features = DARRAY_STATIC_INIT (0);
-	featureset_t *psg_features = &passage_features;
+	script_component_t psg_script = {
+		.script = HB_SCRIPT_LATIN,
+		.direction = text_right_down,
+		.language = hb_language_from_string ("en", 2),
+	};
+	featureset_t psg_features = DARRAY_STATIC_INIT (0);
+	shaping_t   psg_shaping = {
+		.script = &psg_script,
+		.features = &psg_features,
+		.font = font,
+	};
+	set_shaping (&psg_shaping, psg_ent, textsys);
 
 	uint32_t    glyph_count = 0;
 
@@ -213,20 +231,9 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		uint32_t    paragraph = h->childIndex[0] + i;
 		uint32_t    para_ent = h->ent[paragraph];
 
-		hb_script_t para_script = psg_script;
-		text_dir_e para_direction = psg_direction;
-		hb_language_t para_language = psg_language;
-		featureset_t *para_features = psg_features;;
+		shaping_t   para_shaping = psg_shaping;
+		set_shaping (&para_shaping, para_ent, textsys);
 
-		if (Ent_HasComponent (para_ent, c_script, reg)) {
-			script_component_t *s = Ent_GetComponent (para_ent, c_script, reg);
-			para_script = s->script;
-			para_language = s->language;
-			para_direction = s->direction;
-		}
-		if (Ent_HasComponent (para_ent, c_features, reg)) {
-			para_features = Ent_GetComponent (para_ent, c_features, reg);
-		}
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++) {
 			uint32_t    textind = h->childIndex[paragraph] + j;
 			uint32_t    text_ent = h->ent[textind];
@@ -234,32 +241,14 @@ Text_PassageView (text_system_t textsys, view_t parent,
 			const char *str = passage->text + textobj->text;
 			uint32_t    len = textobj->size;
 
-			hb_script_t txt_script = para_script;
-			text_dir_e txt_direction = para_direction;
-			hb_language_t txt_language = para_language;
-			featureset_t *txt_features = para_features;;
+			shaping_t   txt_shaping = para_shaping;
+			set_shaping (&txt_shaping, text_ent, textsys);
 
-			if (Ent_HasComponent (text_ent, c_script, reg)) {
-				script_component_t *s = Ent_GetComponent (text_ent, c_script,
-														  reg);
-				txt_script = s->script;
-				txt_language = s->language;
-				txt_direction = s->direction;
-			}
-			if (Ent_HasComponent (text_ent, c_features, reg)) {
-				txt_features = Ent_GetComponent (text_ent, c_features, reg);
-			}
-
-			hb_buffer_reset (buffer);
-			hb_buffer_set_direction (buffer, txt_direction | HB_DIRECTION_LTR);
-			hb_buffer_set_script (buffer, txt_script);
-			hb_buffer_set_language (buffer, txt_language);
-			hb_buffer_add_utf8 (buffer, str, len, 0, len);
-			hb_shape (fnt, buffer, txt_features->a, txt_features->size);
-
-			unsigned    c;
-			auto glyphInfo = hb_buffer_get_glyph_infos (buffer, &c);
-			auto glyphPos = hb_buffer_get_glyph_positions (buffer, &c);
+			auto shaped_glyphs = Shaper_ShapeText (shaper, &txt_shaping,
+												   str, len);
+			unsigned    c = shaped_glyphs.count;
+			auto glyphInfo = shaped_glyphs.glyphInfo;
+			auto glyphPos = shaped_glyphs.glyphPos;
 
 			*head = alloca (sizeof (glyphnode_t));
 			**head = (glyphnode_t) {
@@ -287,7 +276,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
 	// paragraph flow
-	int         psg_vertical = !!(psg_direction & 2);
+	int         psg_vertical = !!(psg_script.direction & 2);
 	for (uint32_t i = 0; i < h->childCount[0]; i++) {
 		uint32_t    paragraph = h->childIndex[0] + i;
 		view_t      paraview = View_AddToEntity (h->ent[paragraph], viewsys,
@@ -308,7 +297,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		Ent_SetComponent (paraview.id, c_glyphs, reg, &pararef);
 
 		uint32_t    para_ent = h->ent[paragraph];
-		text_dir_e para_direction = psg_direction;
+		text_dir_e para_direction = psg_script.direction;
 		if (Ent_HasComponent (para_ent, c_script, reg)) {
 			script_component_t *s = Ent_GetComponent (para_ent, c_script,
 													  reg);
@@ -333,8 +322,6 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		free (gs->glyphs);
 	}
 	Ent_SetComponent (passage_view.id, c_passage_glyphs, reg, &glyphset);
-	hb_buffer_destroy (buffer);
-	hb_font_destroy (fnt);
 	return passage_view;
 }
 
