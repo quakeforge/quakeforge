@@ -825,7 +825,7 @@ properties = {
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32_sfloat;  offset = 0; },
-				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 8; },
 			);
 		};
 		inputAssembly = {
