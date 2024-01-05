@@ -61,6 +61,7 @@
 #define c_glyphs (ctx->csys.base + canvas_glyphs)
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
+#define c_updateonce  (ctx->csys.base + canvas_updateonce)
 
 #define imui_draw_group ((1 << 30) - 1)
 #define imui_draw_order(x) ((x) << 16)
@@ -1158,6 +1159,34 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 	IMUI_Label (ctx, ctx->dstr->str);
 }
 
+static void
+passage_update (view_t psgview)
+{
+	auto reg = psgview.reg;
+	auto href = View_GetRef (psgview);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+
+	view_pos_t *abs = h->components[view_abs];
+	view_pos_t *rel = h->components[view_rel];
+	view_pos_t *len = h->components[view_len];
+	uint32_t   *parentIndex = h->parentIndex;
+	uint32_t   *childIndex = h->childIndex;
+	uint32_t   *childCount = h->childCount;
+	// all paragraph views are children of the root view
+	int         y = 0;
+	for (uint32_t i = 0; i < childCount[0]; i++) {
+		uint32_t ind = childIndex[0] + i;
+		// x is already correct
+		rel[ind].y = y;
+		y += len[ind].y + 10;	//FIXME style
+	}
+	for (uint32_t i = 1; i < h->num_objects; i++) {
+		uint32_t par = parentIndex[i];
+		// x is already correct
+		abs[i].y = rel[i].y + abs[par].y;
+	}
+}
+
 void
 IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 {
@@ -1188,8 +1217,14 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 		// FIXME this shouldn't be necessary and is a sign of bigger problems
 		Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
 	}
+	if (Ent_HasComponent (psg_view.id, c_updateonce, reg)) {
+		// FIXME this shouldn't be necessary and is a sign of bigger problems
+		Ent_RemoveComponent (psg_view.id, c_updateonce, reg);
+	}
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
+	void *update = passage_update;
+	Ent_SetComponent (psg_view.id, c_updateonce, reg, &update);
 	*View_Control (psg_view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
