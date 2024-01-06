@@ -83,6 +83,9 @@ typedef struct imui_state_s {
 	uint32_t    old_entity;
 	uint32_t    entity;
 	uint32_t    content;
+	view_pos_t  pos;
+	view_pos_t  len;
+	bool        auto_fit;
 } imui_state_t;
 
 struct imui_ctx_s {
@@ -117,6 +120,8 @@ struct imui_ctx_s {
 
 	uint32_t    hot;
 	uint32_t    active;
+	view_pos_t  hot_position;
+	view_pos_t  active_position;
 	view_pos_t  mouse_active;
 	uint32_t    mouse_pressed;
 	uint32_t    mouse_released;
@@ -861,7 +866,7 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 	auto href = View_GetRef (root_view);
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
-	uint32_t   *entity = h->ent;
+	uint32_t   *ent = h->ent;
 	view_pos_t *abs = h->components[view_abs];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -871,9 +876,13 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 		if (cont[i].active
 			&& mp.x >= abs[i].x && mp.y >= abs[i].y
 			&& mp.x < abs[i].x + len[i].x && mp.y < abs[i].y + len[i].y) {
-			if (ctx->active == entity[i] || ctx->active == nullent) {
-				ctx->hot = entity[i];
+			if (ctx->active == ent[i] || ctx->active == nullent) {
+				ctx->hot = ent[i];
+				ctx->hot_position = abs[i];
 			}
+		}
+		if (ent[i] == ctx->active) {
+			ctx->active_position = abs[i];
 		}
 	}
 	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
@@ -914,7 +923,14 @@ IMUI_Draw (imui_ctx_t *ctx)
 	auto href = View_GetRef (ctx->root_view);
 	set_hierarchy_tree_mode (ctx, href, false);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		auto win = ctx->windows.a[i];
+		auto window = View_FromEntity (ctx->vsys, win->entity);
+		View_SetPos (window, win->pos.x, win->pos.y);
+		if (win->auto_fit) {
+			View_SetLen (window, 0, 0);
+		} else {
+			View_SetLen (window, win->len.x, win->len.y);
+		}
 		set_hierarchy_tree_mode (ctx, View_GetRef (window), false);
 	}
 	Canvas_DrawSort (ctx->csys);
@@ -1044,15 +1060,15 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 {
 	view_pos_t  delta = {};
 	if (ctx->active == entity) {
-		delta.x = ctx->mouse_position.x - ctx->mouse_active.x;
-		delta.y = ctx->mouse_position.y - ctx->mouse_active.y;
-		ctx->mouse_active = ctx->mouse_position;
+		auto active = ctx->active_position;
+		auto anchor = VP_add (active, ctx->mouse_active);
+		delta = VP_sub (ctx->mouse_position, anchor);
 		if (ctx->mouse_released & 1) {
 			ctx->active = nullent;
 		}
 	} else if (ctx->hot == entity) {
 		if (ctx->mouse_pressed & 1) {
-			ctx->mouse_active = ctx->mouse_position;
+			ctx->mouse_active = VP_sub (ctx->mouse_position, ctx->hot_position);
 			ctx->active = entity;
 		}
 	}
@@ -1548,12 +1564,6 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		.vertical = true,
 		.active = 1,
 	};
-	View_SetPos (panel_view, panel->xpos, panel->ypos);
-	if (panel->auto_fit) {
-		View_SetLen (panel_view, 0, 0);
-	} else {
-		View_SetLen (panel_view, panel->xlen, panel->ylen);
-	}
 
 	auto bg = ctx->style.background.normal;
 	UI_Vertical {
@@ -1615,6 +1625,15 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
 		}
 	}
+	state->pos = (view_pos_t) {
+		.x = panel->xpos,
+		.y = panel->ypos,
+	};
+	state->len = (view_pos_t) {
+		.x = panel->xlen,
+		.y = panel->ylen,
+	};
+	state->auto_fit = panel->auto_fit;
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;
 	state->content = panel_view.id;
@@ -1750,12 +1769,17 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 		return 1;
 	}
 	IMUI_StartPanel (ctx, window);
+	auto state = ctx->windows.a[ctx->windows.size - 1];
 
 	UI_Horizontal {
 		IMUI_CollapseButton (ctx, window);
 		IMUI_TitleBar (ctx, window);
 		IMUI_CloseButton (ctx, window);
 	}
+	state->pos = (view_pos_t) {
+		.x = window->xpos,
+		.y = window->ypos,
+	};
 	return 0;
 }
 
