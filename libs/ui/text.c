@@ -104,7 +104,7 @@ typedef struct glyphnode_s {
 	int         maxs[2];
 } glyphnode_t;
 
-static view_resize_f text_flow_funcs[] = {
+static view_resize_f para_flow_funcs[] = {
 	[text_right_down]   = view_flow_right_down,
 	[text_left_down]    = view_flow_left_down,
 	[text_down_right]   = view_flow_down_right,
@@ -113,6 +113,35 @@ static view_resize_f text_flow_funcs[] = {
 	[text_left_up]      = view_flow_left_up,
 	[text_down_left]    = view_flow_down_left,
 	[text_up_left]      = view_flow_up_left,
+};
+
+static void
+text_flow_vertical (view_t view, view_pos_t len)
+{
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	view_pos_t *vlen = h->components[view_len];
+	vlen[ref.index].y = 0;
+}
+
+static void
+text_flow_horizontal (view_t view, view_pos_t len)
+{
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	view_pos_t *vlen = h->components[view_len];
+	vlen[ref.index].x = 0;
+}
+
+static view_resize_f text_flow_funcs[] = {
+	[text_right_down]   = text_flow_vertical,
+	[text_left_down]    = text_flow_vertical,
+	[text_down_right]   = text_flow_horizontal,
+	[text_up_right]     = text_flow_horizontal,
+	[text_right_up]     = text_flow_vertical,
+	[text_left_up]      = text_flow_vertical,
+	[text_down_left]    = text_flow_horizontal,
+	[text_up_left]      = text_flow_horizontal,
 };
 
 static void
@@ -271,6 +300,7 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	}
 	view_t      passage_view = View_AddToEntity (h->ent[0], viewsys, parent,
 												 false);
+	View_SetOnResize (passage_view, text_flow_funcs[psg_script.direction]);
 	h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 	glyphref_t  passage_ref = {};
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
@@ -281,6 +311,8 @@ Text_PassageView (text_system_t textsys, view_t parent,
 		uint32_t    paragraph = h->childIndex[0] + i;
 		view_t      paraview = View_AddToEntity (h->ent[paragraph], viewsys,
 												 passage_view, false);
+		View_Control (paraview)->free_x = 1;
+		View_Control (paraview)->free_y = 1;
 		h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 		glyphref_t  pararef = { .start = passage_ref.count };
 		for (uint32_t j = 0; j < h->childCount[paragraph]; j++, g = g->next) {
@@ -303,10 +335,11 @@ Text_PassageView (text_system_t textsys, view_t parent,
 													  reg);
 			para_direction = s->direction;
 		}
-		View_SetOnResize (paraview, text_flow_funcs[para_direction]);
+		View_SetOnResize (paraview, para_flow_funcs[para_direction]);
 		View_SetResize (paraview, !psg_vertical, psg_vertical);
 		View_SetGravity (paraview, grav_northwest);
 		View_Control (paraview)->flow_size = 1;
+		View_Control (paraview)->flow_parent = 1;
 	}
 	Ent_SetComponent (passage_view.id, c_glyphs, reg, &passage_ref);
 	glyphset_t glyphset = {

@@ -83,6 +83,7 @@ typedef struct viewcont_s {
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
 	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
+	unsigned flow_parent:1;		///< If true, parent's size is adjusted to flow.
 	unsigned semantic_x:3;		///< layout size control (imui_size_t)
 	unsigned semantic_y:3;		///< layout size control (imui_size_t)
 	unsigned free_x:1;			///< don't set position automatically

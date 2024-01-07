@@ -1220,34 +1220,6 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 	IMUI_Label (ctx, ctx->dstr->str);
 }
 
-static void
-passage_update (view_t psgview, void *data)
-{
-	auto reg = psgview.reg;
-	auto href = View_GetRef (psgview);
-	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
-
-	view_pos_t *abs = h->components[view_abs];
-	view_pos_t *rel = h->components[view_rel];
-	view_pos_t *len = h->components[view_len];
-	uint32_t   *parentIndex = h->parentIndex;
-	uint32_t   *childIndex = h->childIndex;
-	uint32_t   *childCount = h->childCount;
-	// all paragraph views are children of the root view
-	int         y = 0;
-	for (uint32_t i = 0; i < childCount[0]; i++) {
-		uint32_t ind = childIndex[0] + i;
-		// x is already correct
-		rel[ind].y = y;
-		y += len[ind].y + 10;	//FIXME style
-	}
-	for (uint32_t i = 1; i < h->num_objects; i++) {
-		uint32_t par = parentIndex[i];
-		// x is already correct
-		abs[i].y = rel[i].y + abs[par].y;
-	}
-}
-
 void
 IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 {
@@ -1266,7 +1238,8 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	Ent_SetComponent (anchor_view.id, c_fraction_y, reg,
 					  &(imui_frac_t) { 100, 100 });
 
-	auto state = imui_get_state (ctx, name, anchor_view.id);
+	auto state = imui_get_state (ctx, va (0, "%s#passage_anchor", name),
+								 anchor_view.id);
 	update_hot_active (ctx, state);
 
 	set_fill (ctx, anchor_view, ctx->style.background.normal);
@@ -1278,26 +1251,16 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 										View_GetRoot (anchor_view).id));
 	// FIXME this shouldn't be necessary and is a sign of bigger problems
 	Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
-	// FIXME this shouldn't be necessary and is a sign of bigger problems
-	Ent_RemoveComponent (psg_view.id, c_updateonce, reg);
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
-	Ent_SetComponent (psg_view.id, c_updateonce, reg,
-					  &(canvas_update_t) { .update = passage_update });
 	*View_Control (psg_view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,
-		.semantic_x = imui_size_expand,
-		.semantic_y = imui_size_expand,
 		.free_x = 1,
 		.free_y = 1,
 		.vertical = true,
 		.active = 1,
 	};
-	Ent_SetComponent (psg_view.id, c_fraction_x, ctx->csys.reg,
-					  &(imui_frac_t) { 100, 100 });
-	Ent_SetComponent (psg_view.id, c_fraction_y, ctx->csys.reg,
-					  &(imui_frac_t) { 100, 100 });
 
 	View_Control (anchor_view)->is_link = 1;
 	imui_reference_t link = {

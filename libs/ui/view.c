@@ -429,6 +429,22 @@ flow_up (view_t view, void (*set_rows) (view_t, flowline_t *))
 }
 
 static void
+flow_view_vertical (view_pos_t *pos, view_pos_t *len,
+					uint32_t vind, uint32_t pind)
+{
+	pos[vind].y = len[pind].y;
+	len[pind].y += len[vind].y;
+}
+
+static void
+flow_view_horizontal (view_pos_t *pos, view_pos_t *len,
+					  uint32_t vind, uint32_t pind)
+{
+	pos[vind].x = len[pind].x;
+	len[pind].x += len[vind].x;
+}
+
+static void
 flow_view_height (view_pos_t *len, flowline_t *flowlines)
 {
 	len->y = 0;
@@ -459,6 +475,9 @@ set_rows_down (view_t view, flowline_t *flowlines)
 
 	if (cont[vind].flow_size) {
 		flow_view_height (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_vertical (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = 0;
@@ -487,6 +506,9 @@ set_rows_up (view_t view, flowline_t *flowlines)
 
 	if (cont[vind].flow_size) {
 		flow_view_height (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_vertical (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = len[vind].y;
@@ -515,6 +537,9 @@ set_columns_right (view_t view, flowline_t *flowlines)
 
 	if (cont[vind].flow_size) {
 		flow_view_width (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_horizontal (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = 0;
@@ -543,6 +568,9 @@ set_columns_left (view_t view, flowline_t *flowlines)
 
 	if (cont[vind].flow_size) {
 		flow_view_width (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_horizontal (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = len[vind].x;
