@@ -134,23 +134,24 @@ clscr_set_cachepic (view_t view, const char *name)
 static void
 clscr_set_canvas_func (view_t view, canvas_func_f func)
 {
-	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_func, view.reg, &func);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_func, view.reg,
+					  &(canvas_func_t) { .func = func });
 }
 
 static void
-cl_draw_crosshair (view_pos_t abs, view_pos_t len)
+cl_draw_crosshair (view_pos_t abs, view_pos_t len, void *data)
 {
 	r_funcs->Draw_Crosshair ();
 }
 
 static void
-cl_draw_centerprint (view_pos_t abs, view_pos_t len)
+cl_draw_centerprint (view_pos_t abs, view_pos_t len, void *data)
 {
 	Sbar_DrawCenterPrint ();
 }
 
 static void
-SCR_CShift (view_pos_t abs, view_pos_t len)
+SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 {
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
@@ -230,6 +231,18 @@ cl_vidsize_listener (void *data, const viddef_t *vdef)
 }
 
 static void
+cl_timegraph (view_pos_t abs, view_pos_t len, void *data)
+{
+	R_TimeGraph (abs, len);
+}
+
+static void
+cl_zgraph (view_pos_t abs, view_pos_t len, void *data)
+{
+	R_ZGraph (abs, len);
+}
+
+static void
 cl_create_views (void)
 {
 	qpic_t     *pic;
@@ -249,11 +262,11 @@ cl_create_views (void)
 	clscr_set_pic (net_view, pic);
 
 	timegraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
-	clscr_set_canvas_func (timegraph_view, R_TimeGraph);
+	clscr_set_canvas_func (timegraph_view, cl_timegraph);
 	View_SetVisible (timegraph_view, r_timegraph);
 
 	zgraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
-	clscr_set_canvas_func (zgraph_view, R_ZGraph);
+	clscr_set_canvas_func (zgraph_view, cl_zgraph);
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	name = "gfx/loading.lmp";

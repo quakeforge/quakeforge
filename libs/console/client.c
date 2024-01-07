@@ -254,7 +254,8 @@ con_setcomponent (view_t view, uint32_t comp, void *data)
 static void
 con_setfunc (view_t view, uint32_t comp, canvas_update_f func)
 {
-	con_setcomponent (view, canvas_base + comp, &func);
+	con_setcomponent (view, canvas_base + comp,
+					  &(canvas_update_t) { .update = func });
 }
 
 static void
@@ -712,7 +713,7 @@ draw_con_scrollback (void)
 }
 
 static void
-draw_cursor (view_t view)
+draw_cursor (view_t view, void *data)
 {
 	float       t = *con_data.realtime * con_cursorspeed;
 	int         ch = 10 + ((int) (t) & 1);

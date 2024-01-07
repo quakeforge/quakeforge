@@ -1176,7 +1176,7 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 }
 
 static void
-passage_update (view_t psgview)
+passage_update (view_t psgview, void *data)
 {
 	auto reg = psgview.reg;
 	auto href = View_GetRef (psgview);
@@ -1235,8 +1235,8 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	Ent_RemoveComponent (psg_view.id, c_updateonce, reg);
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
-	void *update = passage_update;
-	Ent_SetComponent (psg_view.id, c_updateonce, reg, &update);
+	Ent_SetComponent (psg_view.id, c_updateonce, reg,
+					  &(canvas_update_t) { .update = passage_update });
 	*View_Control (psg_view) = (viewcont_t) {
 		.gravity = grav_northwest,
 		.visible = 1,

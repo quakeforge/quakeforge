@@ -309,7 +309,8 @@ sbar_remcomponent (view_t view, uint32_t comp)
 static inline void
 set_update (view_t view, canvas_update_f func)
 {
-	sbar_setcomponent (view, canvas_updateonce, &func);
+	sbar_setcomponent (view, canvas_updateonce,
+					   &(canvas_update_t) { .update = func });
 }
 
 #define STAT_MINUS		10			// num frame for '-' stats digit
@@ -585,7 +586,7 @@ draw_smallnum (view_t view, int n, int packed, int colored)
 }
 
 static void
-draw_miniammo (view_t view)
+draw_miniammo (view_t view, void *data)
 {
 	int         i, count;
 
@@ -598,7 +599,7 @@ draw_miniammo (view_t view)
 }
 
 static void
-draw_ammo (view_t view)
+draw_ammo (view_t view, void *data)
 {
 	qpic_t     *pic = 0;
 	if (sb_game) {
@@ -662,7 +663,7 @@ calc_flashon (float time, int mask, int base)
 }
 
 static void
-draw_weapons (view_t view)
+draw_weapons (view_t view, void *data)
 {
 	int         flashon, i;
 	static byte view_map[2][12] = {
@@ -705,7 +706,7 @@ draw_weapons (view_t view)
 }
 
 static void
-draw_items (view_t view)
+draw_items (view_t view, void *data)
 {
 	static byte ind_map[2][8] = {
 		{ 17, 18, 19, 20, 21, 22, 25, 26 },	// id/hipnotic
@@ -727,7 +728,7 @@ draw_items (view_t view)
 }
 
 static void
-draw_sigils (view_t view)
+draw_sigils (view_t view, void *data)
 {
 	for (int i = 0; i < 4; i++) {
 		view_t      sigil = View_GetChild (view, i);
@@ -934,7 +935,8 @@ set_frags_bar (view_t view, byte top, byte bottom, draw_charbuffer_t *buff,
 	sbar_setcomponent (View_GetChild (view, 1), canvas_fill, &bottom);
 	sbar_setcomponent (View_GetChild (view, 2), canvas_charbuff, &buff);
 	if (func) {
-		sbar_setcomponent (View_GetChild (view, 3), canvas_func, &func);
+		sbar_setcomponent (View_GetChild (view, 3), canvas_func,
+						   &(canvas_func_t) { .func = func });
 	} else {
 		sbar_remcomponent (View_GetChild (view, 3), canvas_func);
 	}
@@ -958,14 +960,14 @@ set_minifrags_bar (view_t view, byte top, byte bottom, draw_charbuffer_t *buff,
 }
 
 static void
-frags_marker (view_pos_t pos, view_pos_t len)
+frags_marker (view_pos_t pos, view_pos_t len, void *data)
 {
 	r_funcs->Draw_Character (pos.x, pos.y, 16);
 	r_funcs->Draw_Character (pos.x + len.x - 8, pos.y, 17);
 }
 
 static void
-draw_frags (view_t view)
+draw_frags (view_t view, void *data)
 {
 	if (sbar_maxplayers == 1) {
 		return;
@@ -993,7 +995,7 @@ draw_frags (view_t view)
 }
 
 static void
-draw_minifrags (view_t view)
+draw_minifrags (view_t view, void *data)
 {
 	if (sbar_maxplayers == 1) {
 		return;
@@ -1052,14 +1054,15 @@ set_miniteam_bar (view_t view, draw_charbuffer_t *team,
 	sbar_setcomponent (View_GetChild (view, 0), canvas_charbuff, &team);
 	sbar_setcomponent (View_GetChild (view, 1), canvas_charbuff, &frags);
 	if (func) {
-		sbar_setcomponent (View_GetChild (view, 2), canvas_func, &func);
+		sbar_setcomponent (View_GetChild (view, 2), canvas_func,
+						   &(canvas_func_t) { .func = func });
 	} else {
 		sbar_remcomponent (View_GetChild (view, 2), canvas_func);
 	}
 }
 
 static void
-draw_miniteam (view_t view)
+draw_miniteam (view_t view, void *data)
 {
 	if (!sbar_teamplay) {
 		return;
@@ -1091,7 +1094,7 @@ draw_miniteam (view_t view)
 }
 
 static void
-draw_face (view_t view)
+draw_face (view_t view, void *data)
 {
 	qpic_t     *face;
 
@@ -1132,7 +1135,7 @@ draw_face (view_t view)
 }
 
 static void
-draw_spectator (view_t view)
+draw_spectator (view_t view, void *data)
 {
 	view_t      tracking = View_GetChild (view, 0);
 	view_t      back = View_GetChild (view, 1);
@@ -1162,7 +1165,7 @@ draw_spectator (view_t view)
 }
 
 static void
-hide_spectator (view_t view)
+hide_spectator (view_t view, void *data)
 {
 	for (int i = 0; i < 4; i++) {
 		sbar_remcomponent (View_GetChild (view, i), canvas_charbuff);
@@ -1171,7 +1174,7 @@ hide_spectator (view_t view)
 }
 
 static void
-draw_armor (view_t view)
+draw_armor (view_t view, void *data)
 {
 	view_t      armor = View_GetChild (view, 0);
 	view_t      num[3] = {
@@ -1195,7 +1198,7 @@ draw_armor (view_t view)
 }
 
 static void
-draw_health (view_t view)
+draw_health (view_t view, void *data)
 {
 	view_t      num[3] = {
 		View_GetChild (view, 0),
@@ -1206,7 +1209,7 @@ draw_health (view_t view)
 }
 
 static void
-draw_rogue_ctf_face (view_t view)
+draw_rogue_ctf_face (view_t view, void *data)
 {
 	__auto_type p = &sbar_players[sbar_viewplayer];
 	byte        top = Sbar_ColorForMap (p->topcolor);
@@ -1457,7 +1460,7 @@ dmo_line_type (void)
 }
 
 static void
-draw_deathmatch (view_t view)
+draw_deathmatch (view_t view, void *data)
 {
 	Sbar_SortFrags (0);
 	Sbar_SortTeams ();
@@ -1507,7 +1510,7 @@ draw_status (void )
 
 
 	if (sbar_gametype) {
-		draw_deathmatch (deathmatch_view);
+		draw_deathmatch (deathmatch_view, nullptr);
 	} else {
 		if (sbar_spectator) {
 			if (sbar_autotrack < 0) {
@@ -1624,7 +1627,7 @@ Sbar_LogFrags (double completed_time)
 }
 
 static void
-draw_time (view_t *view)
+draw_time (view_t view, void *data)
 {
 	struct tm  *local = 0;
 	time_t      utc = 0;
@@ -1652,7 +1655,7 @@ draw_time (view_t *view)
 }
 
 static void
-draw_fps (view_t view)
+draw_fps (view_t view, void *data)
 {
 	static char   st[80];
 	double        t;
@@ -1736,20 +1739,20 @@ Sbar_DrawCenterString (view_t view, unsigned remaining)
 }
 
 static void
-clear_views (view_t view)
+clear_views (view_t view, void *data)
 {
 	sbar_remcomponent (view, canvas_cachepic);
 	sbar_remcomponent (view, canvas_pic);
 
 	for (uint32_t i = 0; i < View_ChildCount (view); i++) {
-		clear_views (View_GetChild (view, i));
+		clear_views (View_GetChild (view, i), nullptr);
 	}
 }
 
 static void
-draw_intermission (view_t view)
+draw_intermission (view_t view, void *data)
 {
-	clear_views (view);
+	clear_views (view, nullptr);
 	const char *n;
 	n = "gfx/complete.lmp";
 	sbar_setcomponent (View_GetChild (view, 0), canvas_cachepic, &n);
@@ -1798,9 +1801,9 @@ draw_intermission (view_t view)
 }
 
 static void
-draw_finale (view_t view)
+draw_finale (view_t view, void *data)
 {
-	clear_views (view);
+	clear_views (view, nullptr);
 
 	r_data->scr_copyeverything = 1;
 
@@ -1809,9 +1812,9 @@ draw_finale (view_t view)
 }
 
 static void
-draw_cutscene (view_t view)
+draw_cutscene (view_t view, void *data)
 {
-	clear_views (view);
+	clear_views (view, nullptr);
 }
 
 void
@@ -1872,9 +1875,9 @@ Sbar_Update (double time)
 	if (sb_updates < r_data->vid->numpages) {
 		//FIXME find a better way to support animations
 		sb_updates++;
-		draw_weapons (sbar_weapons);
-		draw_items (sbar_items);
-		draw_face (sbar_face);
+		draw_weapons (sbar_weapons, nullptr);
+		draw_items (sbar_items, nullptr);
+		draw_face (sbar_face, nullptr);
 	}
 }
 
@@ -2243,8 +2246,8 @@ static void
 hud_fps_f (void *data, const cvar_t *cvar)
 {
 	if (hud_fps) {
-		void       *f = draw_fps;
-		sbar_setcomponent (hud_fps_view, canvas_update, &f);
+		sbar_setcomponent (hud_fps_view, canvas_update,
+						   &(canvas_update_t) { .update = draw_fps });
 		sbar_setcomponent (hud_fps_view, canvas_charbuff, &fps_buff);
 	} else {
 		sbar_remcomponent (hud_fps_view, canvas_update);
@@ -2276,8 +2279,8 @@ static void
 hud_time_f (void *data, const cvar_t *cvar)
 {
 	if (hud_time) {
-		void       *f = draw_time;
-		sbar_setcomponent (hud_time_view, canvas_update, &f);
+		sbar_setcomponent (hud_time_view, canvas_update,
+						   &(canvas_update_t) { .update = draw_time });
 		sbar_setcomponent (hud_time_view, canvas_charbuff, &time_buff);
 	} else {
 		sbar_remcomponent (hud_time_view, canvas_update);

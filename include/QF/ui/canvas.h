@@ -81,8 +81,19 @@ typedef struct canvas_system_s {
 struct view_s;
 struct view_pos_s;
 
-typedef void (*canvas_update_f) (struct view_s);
-typedef void (*canvas_func_f) (struct view_pos_s, struct view_pos_s);
+typedef void (*canvas_update_f) (struct view_s, void *data);
+typedef void (*canvas_func_f) (struct view_pos_s, struct view_pos_s,
+							   void *data);
+
+typedef struct canvas_update_s {
+	canvas_update_f update;
+	void       *data;
+} canvas_update_t;
+
+typedef struct canvas_func_s {
+	canvas_func_f func;
+	void       *data;
+} canvas_func_t;
 
 typedef struct canvas_subpic_s {
 	struct qpic_s *pic;

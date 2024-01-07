@@ -88,12 +88,12 @@ canvas_canvas_destroy (void *_canvas, ecs_registry_t *reg)
 
 const component_t canvas_components[canvas_comp_count] = {
 	[canvas_update] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "update",
 		.rangeid = canvas_update_rangeid,
 	},
 	[canvas_updateonce] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "updateonce",
 		.rangeid = canvas_updateonce_rangeid,
 	},
@@ -143,12 +143,12 @@ const component_t canvas_components[canvas_comp_count] = {
 		.rangeid = canvas_glyphs_rangeid,
 	},
 	[canvas_func] = {
-		.size = sizeof (canvas_func_f),
+		.size = sizeof (canvas_func_t),
 		.name = "func",
 		.rangeid = canvas_func_rangeid,
 	},
 	[canvas_lateupdate] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "lateupdate",
 		.rangeid = canvas_lateupdate_rangeid,
 	},
@@ -181,9 +181,10 @@ draw_update (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
-	__auto_type func = (canvas_update_f *) pool->data + range.start;
+	auto func = (canvas_update_t *) pool->data + range.start;
 	while (count-- > 0) {
-		(*func++) (View_FromEntity (viewsys, *ent++));
+		func->update (View_FromEntity (viewsys, *ent++), func->data);
+		func++;
 	}
 }
 
@@ -331,13 +332,13 @@ draw_func_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
-	__auto_type func = (canvas_func_f *) pool->data + range.start;
+	auto func = (canvas_func_t *) pool->data + range.start;
 	while (count-- > 0) {
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
-			(*func) (pos, len);
+			func->func (pos, len, func->data);
 		}
 		func++;
 	}
