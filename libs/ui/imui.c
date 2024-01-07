@@ -238,6 +238,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 		state->entity = entity;
 		state->frame_count = ctx->frame_count;
 		ctx->current_state = state;
+		Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
 		return state;
 	}
 	state = imui_state_new (ctx, entity);
@@ -247,6 +248,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
 	ctx->current_state = state;
+	Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
 	return state;
 }
 
@@ -513,9 +515,11 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	view_pos_t *abs = h->components[view_abs];
 	view_pos_t *len = h->components[view_len];
+	view_resize_f *resize = h->components[view_onresize];
+	view_move_f *move = h->components[view_onmove];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
-	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] %c %s%d %s%d"DFL,
+	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] %c%s%s %s%d %s%d"DFL,
 			ind, e,
 			level * 3, "",
 			view_color (h, ind, ctx, false), abs[ind].x,
@@ -523,16 +527,26 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 			view_color (h, ind, ctx, false), len[ind].x,
 			view_color (h, ind, ctx, true),  len[ind].y,
 			c.vertical ? 'v' : 'h',
+			resize[ind] ? "R" : "",
+			move[ind] ? "M" : "",
 			view_color (h, ind, ctx, false), c.semantic_x,
 			view_color (h, ind, ctx, true),  c.semantic_y);
-	for (uint32_t j = 0; j < h->reg->components.size; j++) {
-		if (Ent_HasComponent (e, j, h->reg)) {
-			printf (", %s", h->reg->components.a[j].name);
+	for (uint32_t j = 0; j < reg->components.size; j++) {
+		if (Ent_HasComponent (e, j, reg)) {
+			printf (", %s", reg->components.a[j].name);
 			if (j == c_fraction_x || j == c_fraction_y) {
-				auto val = *(imui_frac_t *) Ent_GetComponent (e, j, h->reg);
+				auto val = *(imui_frac_t *) Ent_GetComponent (e, j, reg);
 				printf ("(%s%d/%d"DFL")",
 						view_color (h, ind, ctx, j == c_fraction_y),
 						val.num, val.den);
+			}
+			if (j == ecs_name) {
+				auto name = *(const char **) Ent_GetComponent (e, j, reg);
+				printf ("(%s)", name);
+			}
+			if (j == c_reference) {
+				auto ref = *(imui_reference_t *) Ent_GetComponent (e, j, reg);
+				printf ("(%08x)", ref.ref_id);
 			}
 		}
 	}
