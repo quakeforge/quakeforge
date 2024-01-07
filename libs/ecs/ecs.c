@@ -35,12 +35,6 @@
 #include "QF/ecs.h"
 
 static void
-ecs_name_destroy (void *name, ecs_registry_t *reg)
-{
-	free (name);
-}
-
-static void
 ecs_hierarchy_create (void *hierarchy)
 {
 	Hierarchy_Create (hierarchy);
@@ -56,7 +50,6 @@ static const component_t ecs_components[ecs_comp_count] = {
 	[ecs_name] = {
 		.size = sizeof (char *),
 		.name = "name",
-		.destroy = ecs_name_destroy,
 	},
 	[ecs_hierarchy] = {
 		.size = sizeof (hierarchy_t),
