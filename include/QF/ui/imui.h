@@ -39,8 +39,8 @@ struct IE_event_s;
 struct passage_s;
 
 enum {
-	imui_percent_x,	///< int
-	imui_percent_y,	///< int
+	imui_fraction_x,///< imui_frac_t
+	imui_fraction_y,///< imui_frac_t
 	imui_reference,	///< imui_reference_t
 
 	imui_comp_count
@@ -52,7 +52,7 @@ typedef enum {
 	imui_size_none,
 	imui_size_pixels,
 	imui_size_fittext,
-	imui_size_percent,
+	imui_size_fraction,
 	imui_size_fitchildren,
 	imui_size_expand,
 } imui_size_t;
@@ -80,6 +80,11 @@ typedef struct imui_reference_s {
 	uint32_t    ref_id;
 	struct imui_ctx_s *ctx;		// owns entity if not null
 } imui_reference_t;
+
+typedef struct imui_frac_s {
+	int         num;
+	int         den;
+} imui_frac_t;
 
 typedef struct imui_window_s {
 	const char *name;
