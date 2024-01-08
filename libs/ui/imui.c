@@ -803,6 +803,15 @@ calc_expansions (imui_ctx_t *ctx, hierref_t href)
 			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
 			View_SetLen (sub_view, len[i].x, len[i].y);
 			calc_expansions (ctx, View_GetRef (sub_view));
+			if (sub->update) {
+				View_UpdateHierarchy (sub_view);
+				if (cont[i].semantic_x == imui_size_fitchildren) {
+					len[i].x = View_GetLen (sub_view).x;
+				}
+				if (cont[i].semantic_y == imui_size_fitchildren) {
+					len[i].y = View_GetLen (sub_view).y;
+				}
+			}
 		}
 	}
 }
@@ -1228,14 +1237,12 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 		.gravity = grav_northwest,
 		.visible = 1,
 		.semantic_x = imui_size_expand,
-		.semantic_y = imui_size_expand,
+		.semantic_y = imui_size_fitchildren,
 		.vertical = true,
 		.active = 1,
 	};
 	auto reg = ctx->csys.reg;
 	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
-					  &(imui_frac_t) { 100, 100 });
-	Ent_SetComponent (anchor_view.id, c_fraction_y, reg,
 					  &(imui_frac_t) { 100, 100 });
 
 	auto state = imui_get_state (ctx, va (0, "%s#passage_anchor", name),
@@ -1265,6 +1272,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	View_Control (anchor_view)->is_link = 1;
 	imui_reference_t link = {
 		.ref_id = psg_view.id,
+		.update = true,
 	};
 	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
 

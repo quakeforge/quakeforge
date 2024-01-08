@@ -78,6 +78,7 @@ typedef struct imui_style_s {
 // to the reference)
 typedef struct imui_reference_s {
 	uint32_t    ref_id;
+	bool        update;
 	struct imui_ctx_s *ctx;		// owns entity if not null
 } imui_reference_t;
 
