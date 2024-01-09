@@ -601,6 +601,10 @@ main (void)
 	m += bonemats[int (vbones.y)] * vweights.y;
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
+	m += mat4(1,0,0,0,
+			  0,1,0,0,
+			  0,0,1,0,
+			  0,0,0,1) * (1 - dot(vweights, vec4(1,1,1,1)));
 #if 0
 	q0 = m[0];
 	qe = m[1];
