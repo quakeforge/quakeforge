@@ -135,7 +135,10 @@ typedef struct iqm_s {
 	byte       *vertices;
 	int         stride;
 	int         num_elements;
-	uint16_t   *elements;
+	union {
+		uint16_t   *elements16;
+		uint32_t   *elements32;
+	};
 	int         num_arrays;
 	iqmvertexarray *vertexarrays;
 	int         num_joints;

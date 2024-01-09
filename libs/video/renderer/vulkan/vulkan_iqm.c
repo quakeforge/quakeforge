@@ -86,8 +86,9 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
-								 VK_INDEX_TYPE_UINT16);
+	VkIndexType indexType = iqm->num_verts > 0xfff0 ? VK_INDEX_TYPE_UINT32
+													: VK_INDEX_TYPE_UINT16;
+	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0, indexType);
 	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	for (int i = 0; i < iqm->num_meshes; i++) {
 		if (skins) {

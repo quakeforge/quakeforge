@@ -145,7 +145,7 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 
 		iqm_setup_skin (sw, i);
 
-		tris = iqm->elements + mesh->first_triangle;
+		tris = iqm->elements16 + mesh->first_triangle;
 		r_affinetridesc.ptriangles = (mtriangle_t *) tris;
 		r_affinetridesc.numtriangles = mesh->num_triangles;
 		D_PolysetDraw ();
@@ -187,7 +187,7 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 
 		iqm_setup_skin (sw, i);
 
-		mtri = (mtriangle_t *) iqm->elements + mesh->first_triangle;
+		mtri = (mtriangle_t *) iqm->elements16 + mesh->first_triangle;
 		r_affinetridesc.numtriangles = 1;
 		for (j = 0; j < mesh->num_triangles; j++, mtri++) {
 			pfv[0] = &pfinalverts[mtri->vertindex[0]];

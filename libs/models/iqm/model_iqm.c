@@ -344,9 +344,15 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 	if (!(tris = get_triangles (hdr, buffer)))
 		return false;
 	iqm->num_elements = hdr->num_triangles * 3;
-	iqm->elements = malloc (hdr->num_triangles * 3 * sizeof (uint16_t));
-	for (i = 0; i < hdr->num_triangles; i++)
-		VectorCopy (tris[i].vertex, iqm->elements + i * 3);
+	if (iqm->num_verts > 0xfff0) {
+		iqm->elements32 = malloc (hdr->num_triangles * 3 * sizeof (uint32_t));
+		for (i = 0; i < hdr->num_triangles; i++)
+			VectorCopy (tris[i].vertex, iqm->elements32 + i * 3);
+	} else {
+		iqm->elements16 = malloc (hdr->num_triangles * 3 * sizeof (uint16_t));
+		for (i = 0; i < hdr->num_triangles; i++)
+			VectorCopy (tris[i].vertex, iqm->elements16 + i * 3);
+	}
 	if (!(meshes = get_meshes (hdr, buffer)))
 		return false;
 	iqm->num_meshes = hdr->num_meshes;
@@ -528,8 +534,8 @@ Mod_FreeIQM (iqm_t *iqm)
 	if (iqm->vertices)
 		free (iqm->vertices);
 	free (iqm->vertexarrays);
-	if (iqm->elements)
-		free (iqm->elements);
+	if (iqm->elements16)
+		free (iqm->elements16);
 	free (iqm->meshes);
 	free (iqm->joints);
 	free (iqm->baseframe);

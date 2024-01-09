@@ -269,9 +269,16 @@ glsl_R_DrawIQM (entity_t ent)
 		qfeglBindTexture (GL_TEXTURE_2D, glsl->textures[i]);
 		qfeglActiveTexture (GL_TEXTURE0 + 1);
 		qfeglBindTexture (GL_TEXTURE_2D, glsl->normmaps[i]);
-		qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
-						   GL_UNSIGNED_SHORT,
-						   iqm->elements + 3 * iqm->meshes[i].first_triangle);
+		int firstElement = 3 * iqm->meshes[i].first_triangle;
+		if (iqm->num_verts > 0xfff0) {
+			qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
+							   GL_UNSIGNED_INT,
+							   iqm->elements32 + firstElement);
+		} else {
+			qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
+							   GL_UNSIGNED_SHORT,
+							   iqm->elements16 + firstElement);
+		}
 	}
 }
 

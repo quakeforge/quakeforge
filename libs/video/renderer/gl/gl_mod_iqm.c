@@ -65,7 +65,7 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 	for (i = 0; i < mesh->num_triangles; i++) {
 		int     vind = (mesh->first_triangle + i) * 3;
 		for (j = 0; j < 3; j++) {
-			vert = iqm->vertices + iqm->elements[vind + j] * iqm->stride;
+			vert = iqm->vertices + iqm->elements16[vind + j] * iqm->stride;
 			if (gl->texcoord)
 				qfglTexCoord2fv ((float *) (vert + gl->texcoord->offset));
 			if (gl->color)

@@ -225,6 +225,9 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 	size_t      geom_size = iqm->num_verts * sizeof (iqmgvert_t);
 	size_t      rend_size = iqm->num_verts * sizeof (iqmrvert_t);
 	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
+	if (iqm->num_verts > 0xfff0) {
+		elem_size = iqm->num_elements * sizeof (uint32_t);
+	}
 	size_t      buff_size = geom_size + rend_size + elem_size + 1024;
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
 													 va (ctx->va_ctx, "iqm:%s",
@@ -282,7 +285,7 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 			data += size;
 		}
 	}
-	memcpy (elements, iqm->elements, elem_size);
+	memcpy (elements, iqm->elements16, elem_size);
 
 	qfv_bufferbarrier_t bb[] = {
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
@@ -417,11 +420,15 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		},
 	};
+	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
+	if (iqm->num_verts > 0xfff0) {
+		elem_size = iqm->num_elements * sizeof (uint32_t);
+	}
 	mesh->mesh->objects[2] = (qfv_resobj_t) {
 		.name = "index",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = iqm->num_elements * sizeof (uint16_t),
+			.size = elem_size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		},
