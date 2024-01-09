@@ -113,6 +113,7 @@ struct imui_ctx_s {
 	struct DARRAY_TYPE(view_t) parent_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	struct DARRAY_TYPE(imui_state_t *) links;
+	struct DARRAY_TYPE(imui_state_t *) scrollers;
 	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
@@ -275,6 +276,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.parent_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
 		.links = DARRAY_STATIC_INIT (8),
+		.scrollers = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -329,6 +331,7 @@ clear_items (imui_ctx_t *ctx)
 	DARRAY_RESIZE (&ctx->parent_stack, 0);
 	DARRAY_RESIZE (&ctx->windows, 0);
 	DARRAY_RESIZE (&ctx->links, 0);
+	DARRAY_RESIZE (&ctx->scrollers, 0);
 	DARRAY_RESIZE (&ctx->style_stack, 0);
 }
 
@@ -348,6 +351,7 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 	DARRAY_CLEAR (&ctx->parent_stack);
 	DARRAY_CLEAR (&ctx->windows);
 	DARRAY_CLEAR (&ctx->links);
+	DARRAY_CLEAR (&ctx->scrollers);
 	DARRAY_CLEAR (&ctx->style_stack);
 	dstring_delete (ctx->dstr);
 
@@ -587,9 +591,12 @@ fraction (uint32_t ent, int len, uint32_t fcomp, ecs_registry_t *reg)
 	auto f = *(imui_frac_t *) Ent_GetComponent (ent, fcomp, reg);
 	int val = len;
 	if (f.den > 0) {
-		val = (len * f.num + f.den - 1) / f.den;
+		val = (len * f.num) / f.den;
 		if (val > len) {
 			val = len;
+		}
+		if (val < 1) {
+			val = 1;
 		}
 	}
 	return val;
@@ -906,6 +913,7 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 	//fflush (stdout);
 
 	position_views (ctx, root_view);
+	//dump_tree (href, 0, ctx);
 }
 
 static void
@@ -995,6 +1003,12 @@ IMUI_Draw (imui_ctx_t *ctx)
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
 		check_inside (ctx, window);
+	}
+
+	for (uint32_t i = 0; i < ctx->scrollers.size; i++) {
+		auto scroller = ctx->scrollers.a[i];
+		auto view = View_FromEntity (ctx->vsys, scroller->entity);
+		scroller->len = View_GetLen (view);
 	}
 
 	ctx->frame_end = Sys_LongTime ();
@@ -1238,6 +1252,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 		.visible = 1,
 		.semantic_x = imui_size_expand,
 		.semantic_y = imui_size_fitchildren,
+		.free_y = 1,
 		.vertical = true,
 		.active = 1,
 	};
@@ -1245,9 +1260,16 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
 					  &(imui_frac_t) { 100, 100 });
 
-	auto state = imui_get_state (ctx, va (0, "%s#passage_anchor", name),
+	uint32_t    parent = ctx->current_parent.id;
+	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
+		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
+	}
+	auto state = imui_get_state (ctx, va (0, "%s#content", name),
 								 anchor_view.id);
+	DARRAY_APPEND (&ctx->scrollers, state);
 	update_hot_active (ctx, state);
+
+	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
 
 	set_fill (ctx, anchor_view, ctx->style.background.normal);
 
@@ -1839,6 +1861,8 @@ IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
 	DARRAY_APPEND (&ctx->links, state);
 	panel->num_links++;
 
+	DARRAY_APPEND (&ctx->scrollers, state);
+
 	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
 
 	set_hierarchy_tree_mode (ctx, View_GetRef (scroll_box), true);
@@ -1877,4 +1901,83 @@ void
 IMUI_EndScrollBox (imui_ctx_t *ctx)
 {
 	IMUI_PopLayout (ctx);
+}
+
+void
+IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
+{
+	auto pcont = View_Control (ctx->current_parent);
+	// if the current layout is vertical, then the scroll bar will be placed
+	// under the previous item (or above the next) and thus should be
+	// horizontal, but if the layout is horizontal, then the scroll bar will
+	// be paced to the side of the next/previous item and thus should be
+	// vertical
+	bool vertical = !pcont->vertical;
+
+	IMUI_PushLayout (ctx, vertical);
+	auto sb_view = ctx->current_parent;
+	if (vertical) {
+		IMUI_Layout_SetXSize (ctx, imui_size_pixels, 12);
+	} else {
+		IMUI_Layout_SetYSize (ctx, imui_size_pixels, 12);
+	}
+	View_Control (sb_view)->active = true;
+
+	auto tt_view = View_New (ctx->vsys, sb_view);
+	*View_Control (tt_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = vertical ? imui_size_expand : imui_size_fraction,
+		.semantic_y = vertical ? imui_size_fraction : imui_size_expand,
+		.free_x = !vertical,
+		.free_y = vertical,
+		.active = true,
+	};
+	IMUI_PopLayout (ctx);
+	auto sb_state = imui_get_state (ctx, va (0, "scrollbar#%s", name),
+									sb_view.id);
+	auto tt_state = imui_get_state (ctx, va (0, "thumbtab#%s", name),
+									tt_view.id);
+	int sb_mode = update_hot_active (ctx, sb_state);
+	int tt_mode = update_hot_active (ctx, tt_state);
+	set_fill (ctx, sb_view, ctx->style.background.color[sb_mode]);
+	set_fill (ctx, tt_view, ctx->style.foreground.color[tt_mode]);
+	auto scroller = imui_find_state (ctx, name);
+	if (scroller) {
+		auto slen = scroller->len;
+		tt_state->fraction.num = vertical ? slen.y : slen.x;
+		auto content = imui_find_state (ctx, va (0, "%s#content", name));
+		if (content) {
+			auto delta = check_drag_delta (ctx, tt_state->entity);
+			auto clen = content->len;
+			if (vertical) {
+				content->pos.y += delta.y;
+				int max = clen.y - slen.y;
+				content->pos.y = bound (0, content->pos.y, max);
+			} else {
+				content->pos.x += delta.x;
+				int max = clen.x - slen.x;
+				content->pos.x = bound (0, content->pos.x, max);
+			}
+			auto cpos = content->pos;
+			tt_state->fraction.den = vertical ? clen.y : clen.x;
+			tt_state->pos = (view_pos_t) {0, 0};
+			if (vertical) {
+				if (clen.y) {
+					tt_state->pos.y = cpos.y * slen.y / clen.y;
+				}
+			} else {
+				if (clen.x) {
+					tt_state->pos.x = cpos.x * slen.x / clen.x;
+				}
+			}
+		}
+	}
+	View_SetPos (tt_view, tt_state->pos.x, tt_state->pos.y);
+	imui_frac_t efrac = { 100, 100 };
+	imui_frac_t tfrac = tt_state->fraction;
+	Ent_SetComponent (tt_view.id, c_fraction_x, ctx->csys.reg,
+					  vertical ? &efrac : &tfrac);
+	Ent_SetComponent (tt_view.id, c_fraction_y, ctx->csys.reg,
+					  vertical ? &tfrac : &efrac);
 }

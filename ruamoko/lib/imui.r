@@ -50,3 +50,5 @@ void IMUI_EndWindow (imui_ctx_t ctx) = #0;
 
 int IMUI_StartScrollBox (imui_ctx_t ctx, string name) = #0;
 void IMUI_EndScrollBox (imui_ctx_t ctx) = #0;
+
+void IMUI_ScrollBar (imui_ctx_t ctx, string name) = #0;

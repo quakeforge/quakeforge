@@ -479,6 +479,15 @@ bi (IMUI_EndScrollBox)
 	IMUI_EndScrollBox (bi_ctx->imui_ctx);
 }
 
+bi (IMUI_ScrollBar)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	const char *name = P_GSTRING (pr, 1);
+	IMUI_ScrollBar (bi_ctx->imui_ctx, name);
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -522,8 +531,9 @@ static builtin_t builtins[] = {
 	bi(IMUI_MenuItem,           3, p(int), p(string), p(int)),
 	bi(IMUI_StartWindow,        2, p(int), p(ptr)),
 	bi(IMUI_EndWindow,          1, p(int)),
-	bi(IMUI_StartScrollBox,     1, p(int)),
+	bi(IMUI_StartScrollBox,     2, p(int), p(string)),
 	bi(IMUI_EndScrollBox,       1, p(int)),
+	bi(IMUI_ScrollBar,          2, p(int), p(string)),
 
 	{0}
 };
