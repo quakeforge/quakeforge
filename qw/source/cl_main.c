@@ -236,6 +236,15 @@ static cvar_t cl_shownet_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &cl_shownet },
 };
+int cl_player_shadows;
+static cvar_t cl_player_shadows_cvar = {
+	.name = "cl_player_shadows",
+	.description =
+		"Show player shadows instead of weapon shadows",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_player_shadows },
+};
 int cl_autoexec;
 static cvar_t cl_autoexec_cvar = {
 	.name = "cl_autoexec",
@@ -655,6 +664,11 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
+	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id,
+											  cl_world.scene->base + scene_renderer,
+											  cl_world.scene->reg);
+	renderer->depthhack = 1;
+	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
 
 	CL_TEnts_Precache ();
@@ -1640,6 +1654,7 @@ CL_Init_Cvars (void)
 	Cvar_Register (&cl_writecfg_cvar, 0, 0);
 	Cvar_Register (&cl_draw_locs_cvar, 0, 0);
 	Cvar_Register (&cl_shownet_cvar, 0, 0);
+	Cvar_Register (&cl_player_shadows_cvar, 0, 0);
 	Cvar_Register (&cl_maxfps_cvar, 0, 0);
 	Cvar_Register (&cl_timeout_cvar, 0, 0);
 	Cvar_Register (&host_speeds_cvar, 0, 0);

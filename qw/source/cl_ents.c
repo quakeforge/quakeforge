@@ -151,6 +151,7 @@ set_entity_model (entity_t ent, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
+		renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	}
 	animation->nolerp = 1; // don't try to lerp when the model has changed
 }
@@ -486,6 +487,9 @@ CL_LinkPlayers (void)
 			&& state->pls.es.modelindex == cl_playerindex
 			&& is_dead_body (&state->pls.es))
 			continue;
+
+		renderer->onlyshadows = (cl_player_shadows && j == cl.playernum
+								 && !chase_active);
 
 		colormap_t  colormap = {
 			.top = player->topcolor,
