@@ -399,6 +399,7 @@ muzzle_flash (entity_t ent, player_state_t *state, bool is_player)
 	VectorCopy (f, fv);
 	VectorCopy (state->pls.es.origin, position);
 	CL_MuzzleFlash (ent, position, fv, 0, cl.time);
+	state->muzzle_flash = false;
 }
 
 /*
@@ -469,7 +470,9 @@ CL_LinkPlayers (void)
 						  state->pls.es.glow_size, state->pls.es.glow_color,
 						  cl.time);
 		}
-		muzzle_flash (ent, state, j == cl.playernum);
+		if (state->muzzle_flash) {
+			muzzle_flash (ent, state, j == cl.playernum);
+		}
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))
