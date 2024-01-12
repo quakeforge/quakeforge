@@ -873,8 +873,9 @@ V_CalcRefdef (viewstate_t *vs)
 	renderer->skin = 0;
 
 	// set up the refresh position
+	rotation = Transform_GetWorldRotation (vs->camera_transform);
 	Transform_SetWorldRotation (vs->camera_transform,
-								qmulf (vs->punchangle, rotation));
+								qmulf (rotation, vs->punchangle));
 
 	// smooth out stair step ups
 	if ((vs->onground != -1) && (gun_origin[2] - oldz > 0)) {
@@ -907,8 +908,9 @@ DropPunchAngle (viewstate_t *vs)
 	float       ps = magnitude3f (punch)[0];
 	if (ps < 1e-3) {
 		// < 0.2 degree rotation, not worth worrying about
-		//ensure the quaternion is normalized
+		//ensure the quaternion is identity
 		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+		vs->decay_punchangle = 0;
 		return;
 	}
 	float       pc = punch[3];
@@ -918,9 +920,11 @@ DropPunchAngle (viewstate_t *vs)
 	float       c = pc * dc + ps * ds;
 	if (s <= 0 || c >= 1) {
 		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+		vs->decay_punchangle = 0;
 	} else {
 		punch *= s / ps;
 		punch[3] = c;
+		vs->punchangle = punch;
 	}
 }
 

@@ -1491,6 +1491,7 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
+				cl.viewstate.decay_punchangle = 1;
 				cl.viewstate.punchangle = (vec4f_t) {
 					// -2 degrees pitch
 					0, -0.0174524064, 0, 0.999847695
@@ -1498,6 +1499,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_bigkick:
+				cl.viewstate.decay_punchangle = 1;
 				cl.viewstate.punchangle = (vec4f_t) {
 					// -4 degrees pitch
 					0, -0.0348994967, 0, 0.999390827
