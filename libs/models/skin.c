@@ -127,7 +127,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 		else
 			dest[BOTTOM_RANGE + i] = bottom + 15 - i;
 	}
-	m_funcs->Skin_ProcessTranslation (cmap, translations[cmap - 1]);
+	m_funcs->skin_processtranslation (cmap, translations[cmap - 1]);
 }
 
 skin_t *
@@ -142,7 +142,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 	}
 	if (cmap)
 		skin->colormap = translations[cmap - 1];
-	m_funcs->Skin_SetupSkin (skin, cmap);
+	m_funcs->skin_setupskin (skin, cmap);
 	return skin;
 }
 
@@ -228,7 +228,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 		skin = new_skin ();
 	skin->texels = tex;
 	skin->name = name;
-	m_funcs->Skin_SetupSkin (skin, cmap);
+	m_funcs->skin_setupskin (skin, cmap);
 	return skin;
 }
 
@@ -260,7 +260,7 @@ Skin_Init (void)
 	qfZoneScoped (true);
 	Sys_RegisterShutdown (skin_shutdown, 0);
 	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
-	m_funcs->Skin_InitTranslations ();
+	m_funcs->skin_inittranslations ();
 }
 
 VISIBLE int

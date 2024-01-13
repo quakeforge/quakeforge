@@ -38,7 +38,7 @@
 struct plitem_s;
 struct cvar_s;
 struct scene_s;
-struct skin_s;
+typedef struct skin_s skin_t;
 struct particle_s;
 
 struct mod_alias_ctx_s;
@@ -70,14 +70,9 @@ typedef struct vid_model_funcs_s {
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
-	void (*Skin_Free) (struct skin_s *skin);
-	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
-	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
-									const char *skinname);
-	void (*Skin_SetupSkin) (struct skin_s *skin, int cmap);
-	void (*Skin_SetTranslation) (int cmap, int top, int bottom);
-	void (*Skin_ProcessTranslation) (int cmap, const byte *translation);
-	void (*Skin_InitTranslations) (void);
+	void (*skin_setupskin) (skin_t *skin, int cmap);
+	void (*skin_processtranslation) (int cmap, const byte *translation);
+	void (*skin_inittranslations) (void);
 } vid_model_funcs_t;
 
 struct tex_s;

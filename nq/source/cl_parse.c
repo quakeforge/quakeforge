@@ -938,11 +938,10 @@ CL_ParseServerMessage (void)
 					byte        bot = col & 0xf;
 					if (top != cl.players[i].topcolor
 						|| bot != cl.players[i].bottomcolor)
-						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
+						Skin_SetTranslation (i + 1, top, bot);
 					cl.players[i].topcolor = top;
 					cl.players[i].bottomcolor = bot;
-					renderer->skin
-						= mod_funcs->Skin_SetColormap (renderer->skin, i + 1);
+					renderer->skin = Skin_SetColormap (renderer->skin, i + 1);
 					Sbar_UpdateInfo (i);
 				}
 				break;

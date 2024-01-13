@@ -91,13 +91,9 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 1,
 	.Mod_SpriteLoadFrames           = sw_Mod_SpriteLoadFrames,
 
-	.Skin_Free               = Skin_Free,
-	.Skin_SetColormap        = Skin_SetColormap,
-	.Skin_SetSkin            = Skin_SetSkin,
-	.Skin_SetupSkin          = sw_Skin_SetupSkin,
-	.Skin_SetTranslation     = Skin_SetTranslation,
-	.Skin_ProcessTranslation = sw_Skin_ProcessTranslation,
-	.Skin_InitTranslations   = sw_Skin_InitTranslations,
+	.skin_setupskin          = sw_Skin_SetupSkin,
+	.skin_processtranslation = sw_Skin_ProcessTranslation,
+	.skin_inittranslations   = sw_Skin_InitTranslations,
 };
 
 static void

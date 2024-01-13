@@ -59,4 +59,9 @@ typedef struct skin_s {
 	int         auxtex;
 } skin_t;
 
+void Skin_Free (skin_t *skin);
+skin_t *Skin_SetColormap (skin_t *skin, int cmap);
+skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
+void Skin_SetTranslation (int cmap, int top, int bottom);
+
 #endif//__QF_skin_h

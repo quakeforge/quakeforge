@@ -158,7 +158,7 @@ set_entity_model (int ent_ind, int modelindex)
 	SET_ADD (&cl_forcelink, ent_ind);
 	animation->nolerp = 1; // don't try to lerp when the model has changed
 	if (ent_ind <= cl.maxclients) {
-		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, ent_ind);
+		renderer->skin = Skin_SetColormap (renderer->skin, ent_ind);
 	}
 }
 
@@ -236,8 +236,7 @@ CL_RelinkEntities (void)
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
 			|| new->colormap != old->colormap) {
 			old->colormap = new->colormap;
-			renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-														  new->colormap);
+			renderer->skin = Skin_SetColormap (renderer->skin, new->colormap);
 		}
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
 			|| new->skinnum != old->skinnum) {
@@ -249,10 +248,9 @@ CL_RelinkEntities (void)
 					.bottom = cl.players[i - 1].bottomcolor,
 				};
 				Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  i);
-				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,
-												cl.players[i - 1].bottomcolor);
+				renderer->skin = Skin_SetColormap (renderer->skin, i);
+				Skin_SetTranslation (i, cl.players[i - 1].topcolor,
+									 cl.players[i - 1].bottomcolor);
 			}
 		}
 

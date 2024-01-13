@@ -324,7 +324,7 @@ Model_NextDownload (void)
 		if (strequal (cl.model_name[i], "progs/player.mdl")
 			&& cl_world.models.a[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			//XXX mod_funcs->Skin_Player_Model (cl_world.models.a[i]);
+			//XXX Skin_Player_Model (cl_world.models.a[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
 			&& cl_world.models.a[i]->type == mod_alias)
@@ -1021,11 +1021,11 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	const char *spec = Info_ValueForKey (player->userinfo, "*spectator");
 	player->spectator = spec && *spec;
 
-	mod_funcs->Skin_SetTranslation (slot + 1, player->topcolor,
+	Skin_SetTranslation (slot + 1, player->topcolor,
 									player->bottomcolor);
-	player->skin = mod_funcs->Skin_SetSkin (player->skin, slot + 1,
+	player->skin = Skin_SetSkin (player->skin, slot + 1,
 											player->skinname->value);
-	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
+	player->skin = Skin_SetColormap (player->skin, slot + 1);
 
 	Sbar_UpdateInfo (slot);
 }

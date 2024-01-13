@@ -222,14 +222,12 @@ CL_LinkPacketEntities (void)
 					.bottom = player->bottomcolor,
 				};
 				Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
-				renderer->skin
-					= mod_funcs->Skin_SetSkin (renderer->skin, new->colormap,
+				renderer->skin = Skin_SetSkin (renderer->skin, new->colormap,
 											   player->skinname->value);
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  new->colormap);
+				renderer->skin = Skin_SetColormap (renderer->skin,
+												   new->colormap);
 			} else {
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  0);
+				renderer->skin = Skin_SetColormap (renderer->skin, 0);
 				Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
 			}
 		}

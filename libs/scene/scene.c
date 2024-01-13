@@ -36,8 +36,9 @@
 #endif
 
 #include "QF/mathlib.h"
-#include "QF/sys.h"
 #include "QF/model.h"
+#include "QF/skin.h"
+#include "QF/sys.h"
 
 #include "QF/plugin/vid_render.h"
 
@@ -81,7 +82,7 @@ destroy_renderer (void *_renderer, ecs_registry_t *reg)
 {
 	renderer_t *renderer = _renderer;
 	if (renderer->skin) {
-		mod_funcs->Skin_Free (renderer->skin);
+		Skin_Free (renderer->skin);
 	}
 }
 
