@@ -996,42 +996,30 @@ CL_ParseClientdata (void)
 static void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	char       skin[MAX_SKIN_LENGTH] = { 0 };
-	const char *s;
-
-	s = Info_ValueForKey (player->userinfo, "skin");
-
-	if (strlen(s) < sizeof skin) {
-		QFS_StripExtension (s, skin);
-		if (!strequal (s, skin))
-			Info_SetValueForKey (player->userinfo, "skin", skin, 1);
-	} else {
-		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
-	}
-
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
-		if (player->userid)
-			Info_SetValueForKey (player->userinfo, "name",
-								 va (0, "user-%i [exploit]",
-									 player->userid), 1);
-		else
-			Info_SetValueForKey (player->userinfo, "name", "", 1);
+		const char *name = "";
+		if (player->userid) {
+			name = va (0, "user-%i [exploit]", player->userid);
+		}
+		Info_SetValueForKey (player->userinfo, "name", name, 1);
 	}
-	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
-	player->bottomcolor =
-		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));
+	const char *tc = Info_ValueForKey (player->userinfo, "topcolor");
+	const char *bc = Info_ValueForKey (player->userinfo, "bottomcolor");
+	player->topcolor = tc ? atoi (tc) : TOP_COLOR;
+	player->bottomcolor = bc ? atoi (bc) : BOTTOM_COLOR;
 
-	while (!(player->team = Info_Key (player->userinfo, "team")))
-			Info_SetValueForKey (player->userinfo, "team", "", 1);
-	while (!(player->skinname = Info_Key (player->userinfo, "skin")))
-			Info_SetValueForKey (player->userinfo, "skin", "", 1);
-	while (!(player->chat = Info_Key (player->userinfo, "chat")))
-			Info_SetValueForKey (player->userinfo, "chat", "0", 1);
+	while (!(player->team = Info_Key (player->userinfo, "team"))) {
+		Info_SetValueForKey (player->userinfo, "team", "", 1);
+	}
+	while (!(player->skinname = Info_Key (player->userinfo, "skin"))) {
+		Info_SetValueForKey (player->userinfo, "skin", "", 1);
+	}
+	while (!(player->chat = Info_Key (player->userinfo, "chat"))) {
+		Info_SetValueForKey (player->userinfo, "chat", "0", 1);
+	}
 
-	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
-		player->spectator = true;
-	else
-		player->spectator = false;
+	const char *spec = Info_ValueForKey (player->userinfo, "*spectator");
+	player->spectator = spec && *spec;
 
 	mod_funcs->Skin_SetTranslation (slot + 1, player->topcolor,
 									player->bottomcolor);

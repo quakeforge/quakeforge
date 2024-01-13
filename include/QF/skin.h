@@ -35,8 +35,10 @@
 #define MAX_CACHED_SKINS 128
 #define MAX_SKIN_LENGTH	32
 
-#define	TOP_RANGE		16			// soldier uniform colors
-#define	BOTTOM_RANGE	96
+#define TOP_COLOR       1			// soldier uniform colors
+#define BOTTOM_COLOR    6
+#define TOP_RANGE       (TOP_COLOR * 16)
+#define BOTTOM_RANGE    (BOTTOM_COLOR * 16)
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200

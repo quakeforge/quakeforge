@@ -310,8 +310,8 @@ CL_ParseServerInfo (void)
 	for (i = 0; i < cl.maxclients; i++) {
 		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
 		cl.players[i].name = Info_Key (cl.players[i].userinfo, "name");
-		cl.players[i].topcolor = 0;
-		cl.players[i].bottomcolor = 0;
+		cl.players[i].topcolor = TOP_COLOR;
+		cl.players[i].bottomcolor = BOTTOM_COLOR;
 	}
 	Sbar_SetPlayers (cl.players, cl.maxclients);
 	Sbar_SetTeamplay (teamplay);//FIXME updates?
