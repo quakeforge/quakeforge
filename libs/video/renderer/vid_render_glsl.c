@@ -83,8 +83,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = glsl_Mod_SpriteLoadFrames,
 
 	.skin_setupskin          = glsl_Skin_SetupSkin,
-	.skin_processtranslation = glsl_Skin_ProcessTranslation,
-	.skin_inittranslations   = glsl_Skin_InitTranslations,
+	.skin_destroy            = glsl_Skin_Destroy,
 };
 
 static void

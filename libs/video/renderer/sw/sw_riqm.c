@@ -48,6 +48,7 @@
 #include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 
 #ifdef PIC
@@ -322,8 +323,11 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 	r_affinetridesc.drawtype = (visibility->trivial_accept == 3) &&
 			r_recursiveaffinetriangles;
 
-	//if (!acolormap)
-		acolormap = r_colormap;
+	acolormap = r_colormap;
+	auto cmap = Entity_GetColormap (ent);
+	if (cmap) {
+		acolormap = sw_Skin_Colormap (cmap);
+	}
 
 	//FIXME depth hack
 	if (ent.id != vr_data.view_model.id)

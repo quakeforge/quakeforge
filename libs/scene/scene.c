@@ -80,10 +80,6 @@ destroy_visibility (void *_visibility, ecs_registry_t *reg)
 static void
 destroy_renderer (void *_renderer, ecs_registry_t *reg)
 {
-	renderer_t *renderer = _renderer;
-	if (renderer->skin) {
-		Skin_Free (renderer->skin);
-	}
 }
 
 static void

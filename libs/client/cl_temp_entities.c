@@ -180,7 +180,6 @@ CL_Init_Entity (entity_t ent)
 	*active = 1;
 	*old_origin = (vec4f_t) {0, 0, 0, 1};
 
-	renderer->skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, renderer->colormod);
 	animation->pose1 = animation->pose2 = -1;
 }
@@ -748,7 +747,6 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 		pr = tent->ent;
 		renderer_t *renderer = Ent_GetComponent (pr.id, pr.base + scene_renderer, pr.reg);
 		renderer->model = cl_spike;
-		renderer->skin = 0;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		position[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
 		position[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;

@@ -52,6 +52,7 @@
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_gl.h"
 
@@ -407,7 +408,7 @@ gl_R_DrawAliasModel (entity_t e)
 				color[4] = {0.0, 0.0, 0.0, 1.0},
 				dark[4] = {0.0, 0.0, 0.0, 1.0},
 				emission[4] = {0.0, 0.0, 0.0, 1.0};
-	int         gl_light, texture;
+	int         gl_light, texture = 0;
 	int         fb_texture = 0, used_lights = 0;
 	bool        is_fullbright = false;
 	aliashdr_t *paliashdr;
@@ -557,14 +558,17 @@ gl_R_DrawAliasModel (entity_t e)
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	if (renderer->skin && renderer->skin->texnum && !gl_nocolors) {
-		skin_t *skin = renderer->skin;
+	if (renderer->skin && !gl_nocolors) {
+		skin_t *skin = Skin_Get (renderer->skin);
 
-		texture = skin->texnum;
-		if (gl_fb_models) {
-			fb_texture = skin->auxtex;
+		if (skin) {
+			texture = skin->id;
+			if (gl_fb_models) {
+				fb_texture = skin->fb;
+			}
 		}
-	} else {
+	}
+	if (!texture) {
 		maliasskindesc_t *skindesc;
 		animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation,
 												   e.reg);

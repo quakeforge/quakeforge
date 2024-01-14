@@ -39,6 +39,7 @@
 #include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
@@ -555,17 +556,15 @@ R_AliasSetupSkin (entity_t ent)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = r_colormap;
 	if (renderer->skin) {
-		tex_t      *base;
+		auto skin = Skin_Get (renderer->skin);
 
-		base = renderer->skin->texels;
-		if (base) {
-			r_affinetridesc.pskin = base->data;
-			r_affinetridesc.skinwidth = base->width;
-			r_affinetridesc.skinheight = base->height;
+		if (skin) {
+			tex_t      *tex = skin->tex;
+			r_affinetridesc.pskin = tex->data;
+			r_affinetridesc.skinwidth = tex->width;
+			r_affinetridesc.skinheight = tex->height;
 		}
-		acolormap = renderer->skin->colormap;
 	}
 }
 
@@ -657,8 +656,11 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
-	if (!acolormap)
-		acolormap = r_colormap;
+	acolormap = r_colormap;
+	auto cmap = Entity_GetColormap (ent);
+	if (cmap) {
+		acolormap = sw_Skin_Colormap (cmap);
+	}
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...

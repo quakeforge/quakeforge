@@ -870,7 +870,6 @@ V_CalcRefdef (viewstate_t *vs)
 	}
 	renderer->model = model;
 	animation->frame = vs->weaponframe;
-	renderer->skin = 0;
 
 	// set up the refresh position
 	rotation = Transform_GetWorldRotation (vs->camera_transform);

@@ -79,12 +79,6 @@ alias_get_animation (entity_t ent)
 	return Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
 }
 
-static colormap_t *
-alias_get_colormap (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, ent.base + scene_colormap, ent.reg);
-}
-
 static void
 alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
@@ -206,8 +200,8 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 	byte colors[4];
 	QuatCopy (renderer->colormod, base_color);
 	QuatCopy (skin->colors, colors);
-	if (Ent_HasComponent (ent.id, ent.base + scene_colormap, ent.reg)) {
-		auto colormap = alias_get_colormap (ent);
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
 		colors[0] = colormap->top * 16 + 8;
 		colors[1] = colormap->bottom * 16 + 8;
 	}

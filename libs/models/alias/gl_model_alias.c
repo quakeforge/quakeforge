@@ -70,11 +70,6 @@ gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
 	dstring_t  *name = dstring_new ();
 
 	Mod_FloodFillSkin (texels, header->mdl.skinwidth, header->mdl.skinheight);
-	// save 8 bit texels for the player model to remap
-	// FIXME remove model restriction
-	if (strequal (alias_ctx->mod->path, "progs/player.mdl"))
-		gl_Skin_SetPlayerSkin (header->mdl.skinwidth, header->mdl.skinheight,
-							   texels);
 
 	QFS_StripExtension (alias_ctx->mod->path, modname);
 

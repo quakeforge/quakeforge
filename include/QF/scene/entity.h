@@ -75,7 +75,7 @@ typedef struct visibility_s {
 
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
-	struct skin_s *skin;
+	uint32_t    skin;
 	struct trail_s *trail;
 	unsigned    fullbright:1;
 	unsigned    noshadows:1;
@@ -117,6 +117,9 @@ ENTINLINE void EntQueue_AddEntity (entqueue_t *queue, entity_t ent,
 void EntQueue_Clear (entqueue_t *queue);
 ENTINLINE int Entity_Valid (entity_t ent);
 ENTINLINE transform_t Entity_Transform (entity_t ent);
+ENTINLINE colormap_t *Entity_GetColormap (entity_t ent);
+ENTINLINE void Entity_SetColormap (entity_t ent, colormap_t *colormap);
+ENTINLINE void Entity_RemoveColormap (entity_t ent);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -155,6 +158,30 @@ Entity_Transform (entity_t ent)
 		.id = ent.id,
 		.comp = ent.base + scene_href,
 	};
+}
+
+ENTINLINE
+colormap_t *
+Entity_GetColormap (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_colormap, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_colormap, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetColormap (entity_t ent, colormap_t *colormap)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, colormap);
+}
+
+ENTINLINE
+void
+Entity_RemoveColormap (entity_t ent)
+{
+	return Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
 }
 
 struct mod_brush_s;

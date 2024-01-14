@@ -38,11 +38,11 @@
 struct plitem_s;
 struct cvar_s;
 struct scene_s;
-typedef struct skin_s skin_t;
 struct particle_s;
 
 struct mod_alias_ctx_s;
 struct mod_sprite_ctx_s;
+typedef struct skin_s skin_t;
 struct entqueue_s;
 struct framebuffer_s;
 struct vrect_s;
@@ -71,8 +71,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
 	void (*skin_setupskin) (skin_t *skin, int cmap);
-	void (*skin_processtranslation) (int cmap, const byte *translation);
-	void (*skin_inittranslations) (void);
+	void (*skin_destroy) (skin_t *skin);
 } vid_model_funcs_t;
 
 struct tex_s;

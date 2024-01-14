@@ -1021,11 +1021,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	const char *spec = Info_ValueForKey (player->userinfo, "*spectator");
 	player->spectator = spec && *spec;
 
-	Skin_SetTranslation (slot + 1, player->topcolor,
-									player->bottomcolor);
-	player->skin = Skin_SetSkin (player->skin, slot + 1,
-											player->skinname->value);
-	player->skin = Skin_SetColormap (player->skin, slot + 1);
+	player->skin = Skin_SetSkin (player->skinname->value, slot + 1);
 
 	Sbar_UpdateInfo (slot);
 }

@@ -172,8 +172,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = gl_Mod_SpriteLoadFrames,
 
 	.skin_setupskin          = gl_Skin_SetupSkin,
-	.skin_processtranslation = gl_Skin_ProcessTranslation,
-	.skin_inittranslations   = gl_Skin_InitTranslations,
+	.skin_destroy            = gl_Skin_Destroy,
 };
 
 static void

@@ -50,18 +50,20 @@
 #define PLAYER_WIDTH 296
 #define PLAYER_HEIGHT 194
 
-typedef struct skin_s {
-	const char *name;
-	bool		valid;		// the skin was found
-	struct tex_s *texels;
-	byte       *colormap;
-	int         texnum;
-	int         auxtex;
-} skin_t;
+typedef struct ecs_registry_s ecs_registry_t;
 
-void Skin_Free (skin_t *skin);
-skin_t *Skin_SetColormap (skin_t *skin, int cmap);
-skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
+enum {
+	skin_name,
+	skin_skin,
+	skin_colors,
+
+	skin_comp_count
+};
+
+#define nullskin (0u)
+
+void Skin_Init (void);
+uint32_t Skin_SetSkin (const char *skinname, int cmap);
 void Skin_SetTranslation (int cmap, int top, int bottom);
 
 #endif//__QF_skin_h

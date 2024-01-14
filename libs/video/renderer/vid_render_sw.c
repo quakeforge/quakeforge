@@ -92,8 +92,7 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = sw_Mod_SpriteLoadFrames,
 
 	.skin_setupskin          = sw_Skin_SetupSkin,
-	.skin_processtranslation = sw_Skin_ProcessTranslation,
-	.skin_inittranslations   = sw_Skin_InitTranslations,
+	.skin_destroy            = sw_Skin_Destroy,
 };
 
 static void

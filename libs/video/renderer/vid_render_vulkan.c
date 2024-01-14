@@ -457,16 +457,6 @@ vulkan_Skin_SetupSkin (struct skin_s *skin, int cmap)
 }
 
 static void
-vulkan_Skin_ProcessTranslation (int cmap, const byte *translation)
-{
-}
-
-static void
-vulkan_Skin_InitTranslations (void)
-{
-}
-
-static void
 set_palette (void *data, const byte *palette)
 {
 	if (vulkan_ctx->palette_context) {
@@ -524,8 +514,6 @@ static vid_model_funcs_t model_funcs = {
 	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
 
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
-	.skin_processtranslation = vulkan_Skin_ProcessTranslation,
-	.skin_inittranslations   = vulkan_Skin_InitTranslations,
 };
 
 static void

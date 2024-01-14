@@ -931,17 +931,11 @@ CL_ParseServerMessage (void)
 					Host_Error ("CL_ParseServerMessage: svc_updatecolors > "
 								"MAX_SCOREBOARD");
 				} else {
-					entity_t    ent = CL_GetEntity (i + 1);
-					renderer_t  *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
 					byte        col = MSG_ReadByte (net_message);
 					byte        top = col >> 4;
 					byte        bot = col & 0xf;
-					if (top != cl.players[i].topcolor
-						|| bot != cl.players[i].bottomcolor)
-						Skin_SetTranslation (i + 1, top, bot);
 					cl.players[i].topcolor = top;
 					cl.players[i].bottomcolor = bot;
-					renderer->skin = Skin_SetColormap (renderer->skin, i + 1);
 					Sbar_UpdateInfo (i);
 				}
 				break;

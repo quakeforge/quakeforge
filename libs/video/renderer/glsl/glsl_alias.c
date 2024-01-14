@@ -52,6 +52,7 @@
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
 
 #define s_dynlight (r_refdef.scene->base + scene_dynlight)
@@ -235,8 +236,6 @@ glsl_R_DrawAlias (entity_t ent)
 	float       blend;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
-	int         skin_tex;
-	int         colormap;
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 	mat4f_t     worldMatrix;
@@ -271,13 +270,19 @@ glsl_R_DrawAlias (entity_t ent)
 
 	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
 											   ent.reg);
-	colormap = glsl_colormap;
-	if (renderer->skin && renderer->skin->auxtex)
-		colormap = renderer->skin->auxtex;
-	if (renderer->skin && renderer->skin->texnum) {
-		skin_t     *skin = renderer->skin;
-		skin_tex = skin->texnum;
-	} else {
+	GLuint cmap_tex = glsl_colormap;
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
+		cmap_tex = glsl_Skin_Colormap (colormap);
+	}
+	GLuint skin_tex = 0;
+	if (renderer->skin) {
+		skin_t     *skin = Skin_Get (renderer->skin);
+		if (skin) {
+			skin_tex = skin->id;
+		}
+	}
+	if (!skin_tex) {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin_tex = skindesc->texnum;
@@ -291,7 +296,7 @@ glsl_R_DrawAlias (entity_t ent)
 	skin_size[1] = hdr->mdl.skinheight;
 
 	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglBindTexture (GL_TEXTURE_2D, colormap);
+	qfeglBindTexture (GL_TEXTURE_2D, cmap_tex);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 

@@ -217,18 +217,14 @@ CL_LinkPacketEntities (void)
 				&& cl.players[new->colormap - 1].name->value[0]
 				&& new->modelindex == cl_playerindex) {
 				player_info_t *player = &cl.players[new->colormap - 1];
-				colormap_t  colormap = {
+				Entity_SetColormap (ent, &(colormap_t) {
 					.top = player->topcolor,
 					.bottom = player->bottomcolor,
-				};
-				Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
-				renderer->skin = Skin_SetSkin (renderer->skin, new->colormap,
-											   player->skinname->value);
-				renderer->skin = Skin_SetColormap (renderer->skin,
-												   new->colormap);
+				});
+				renderer->skin = Skin_SetSkin (player->skinname->value,
+											   new->colormap);
 			} else {
-				renderer->skin = Skin_SetColormap (renderer->skin, 0);
-				Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
+				Entity_RemoveColormap (ent);
 			}
 		}
 
@@ -489,11 +485,10 @@ CL_LinkPlayers (void)
 		renderer->onlyshadows = (cl_player_shadows && j == cl.playernum
 								 && !chase_active);
 
-		colormap_t  colormap = {
+		Entity_SetColormap (ent, &(colormap_t) {
 			.top = player->topcolor,
 			.bottom = player->bottomcolor,
-		};
-		Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, &colormap);
+		});
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
