@@ -1056,7 +1056,7 @@ output = {
 	finalLayout = shader_read_only_optimal;
 };
 renderpasses = {
-	deferred = {
+	forward = {
 		color = "[0, 1, 0, 1]";
 		framebuffer = {
 			width = $render_output.extent.width;
@@ -1082,107 +1082,8 @@ renderpasses = {
 			};
 		};
 		subpasses = {
-			depth = {
-				color = "[ 0.5,  0.5,  0.5, 1]";
-				attachments = {
-					depth = {
-						depth = depth_stencil_attachment_optimal;
-					};
-					preserve = (color);
-				};
-
-				base_pipeline = {
-					@inherit = $pipeline_base;
-					depthStencil = $depth_test_and_write;
-					rasterization = $cw_cull_back;
-				};
-				pipelines = {
-					bsp:depth = {
-						color = $color.bsp;
-						tasks = (
-							{ func = bsp_draw_queue;
-							  params = (main, solid, 0); },
-							{ func = bsp_draw_queue;
-							  params = (main, sky, 0); },
-						);
-
-						stages = (
-							$brush.shader.depth_vertex,
-						);
-						vertexInput = {
-							bindings = (
-								"$brush.vertexInput.bindings[0]",
-								"$brush.vertexInput.bindings[1]",
-							);
-							attributes = (
-								"$brush.vertexInput.attributes[0]",
-								"$brush.vertexInput.attributes[2]",
-							);
-						};
-						inputAssembly = $brush.inputAssembly;
-						layout = $brush.layout;
-					};
-					alias:depth = {
-						color = $color.alias;
-						tasks = (
-							{ func = alias_draw;
-							  params = (main, 0); },
-						);
-
-						stages = (
-							$alias.shader.depth_vertex,
-						);
-						vertexInput = {
-							// depth pass doesn't use UVs
-							bindings = (
-								"$alias.vertexInput.bindings[0]",
-								"$alias.vertexInput.bindings[1]",
-							);
-							attributes = (
-								"$alias.vertexInput.attributes[0]",
-								"$alias.vertexInput.attributes[1]",
-								"$alias.vertexInput.attributes[2]",
-								"$alias.vertexInput.attributes[3]",
-							);
-						};
-						inputAssembly = $alias.inputAssembly;
-						layout = $alias.layout;
-					};
-					iqm:depth = {
-						color = $color.iqm;
-						tasks = (
-							{ func = iqm_draw;
-							  params = (0); },
-						);
-
-						stages = (
-							$iqm.shader.depth_vertex,
-						);
-						vertexInput = $iqm.vertexInput;
-						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
-					};
-					sprite:depth = {
-						color = $color.sprite;
-						tasks = (
-							{ func = sprite_draw; },
-						);
-
-						stages = (
-							$sprite.shader.depth_vertex,
-							$sprite.shader.depth_fragment,
-						);
-						vertexInput = $sprite.vertexInput;
-						inputAssembly = $sprite.inputAssembly;
-						layout = $sprite.layout;
-					};
-				};
-			};
 			color = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
-				dependencies = {
-					depth = $depth_dependency;
-				};
 				attachments = {
 					color = {
 						color = {
@@ -1191,15 +1092,17 @@ renderpasses = {
 						};
 					};
 					depth = {
-						depth = depth_stencil_read_only_optimal;
+						depth = depth_stencil_attachment_optimal;
 					};
 				};
+
 				base_pipeline = {
 					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
 					rasterization = $cw_cull_back;
 				};
 				pipelines = {
-					bsp:color = {
+					bsp = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
@@ -1217,7 +1120,7 @@ renderpasses = {
 						inputAssembly = $brush.inputAssembly;
 						layout = $brush.layout;
 					};
-					alias:color = {
+					alias = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
@@ -1232,7 +1135,7 @@ renderpasses = {
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
 					};
-					iqm:color = {
+					iqm = {
 						color = $color.iqm;
 						tasks = (
 							{ func = iqm_draw;
@@ -1247,7 +1150,7 @@ renderpasses = {
 						inputAssembly = $iqm.inputAssembly;
 						layout = $iqm.layout;
 					};
-					sprite:color = {
+					sprite:depth = {
 						color = $color.sprite;
 						tasks = (
 							{ func = sprite_draw; },
@@ -1266,10 +1169,10 @@ renderpasses = {
 		};
 		output = color;
 	};
-	deferred_cube = {
-		@inherit = $renderpasses.deferred;
+	forward_cube = {
+		@inherit = $renderpasses.forward;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu, 0x3fu);
+			viewMasks   = (0x3fu);
 		});
 		framebuffer = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1465,8 +1368,8 @@ steps = {
 		dependencies = (setup_main, particles, world, translucent);
 		render = {
 			renderpasses = {
-				deferred = $renderpasses.deferred;
-				deferred_cube = $renderpasses.deferred_cube;
+				forward = $renderpasses.forward;
+				forward_cube = $renderpasses.forward_cube;
 			};
 		};
 	};
