@@ -41,6 +41,7 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
+#include "QF/fbsearch.h"
 #include "QF/image.h"
 #include "QF/model.h"
 #include "QF/skin.h"
@@ -54,11 +55,18 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-// FIXME colormap (top/bottom colors)
-//static byte skin_cmap[MAX_TRANSLATIONS][256];
+typedef struct {
+	const tex_t *tex;
+	glskin_t    skin;
+} skinpair_t;
+
+#define MAX_GLSKINS 64
+
+static skinpair_t skin_table[256][MAX_GLSKINS];
+static int skin_counts[256];
 
 static void
-build_skin_8 (tex_t *tex, int texnum, byte *translate,
+build_skin_8 (const tex_t *tex, int texnum, byte *translate,
 			  unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
@@ -84,7 +92,7 @@ build_skin_8 (tex_t *tex, int texnum, byte *translate,
 }
 
 static void
-build_skin_32 (tex_t *tex, int texnum, byte *translate,
+build_skin_32 (const tex_t *tex, int texnum, byte *translate,
 			   unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
@@ -124,12 +132,40 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 						   gl_aniso);
 }
 
-void
-gl_Skin_SetupSkin (skin_t *skin, int cmap)
+static int
+skinpair_cmp (const void *_tex, const void *_skinpair)
 {
-	//skin->tex = Skin_DupTex (skin->tex);
-	tex_t      *tex = skin->tex;
-	skin->tex = nullptr;	// tex memory is only temporarily allocated
+	const tex_t *tex = _tex;
+	const skinpair_t *skinpair = _skinpair;
+	intptr_t diff = (intptr_t) tex - (intptr_t) skinpair->tex;
+	return diff < 0 ? -1 : diff > 0 ? 1 : 0;
+}
+
+glskin_t
+gl_Skin_Get (const skin_t *skin, const colormap_t *colormap)
+{
+	if (!skin || !colormap) {
+		return (glskin_t) {};
+	}
+
+	byte top = colormap->top & 0x0f;
+	byte bot = colormap->bottom & 0x0f;
+	int  ind = top | (bot << 4);
+	skinpair_t *sp = fbsearch (skin->tex, skin_table[ind], skin_counts[ind],
+							   sizeof (skinpair_t), skinpair_cmp);
+	if (sp && sp->tex == skin->tex) {
+		return sp->skin;
+	}
+	if (skin_counts[ind] == MAX_GLSKINS) {
+		return (glskin_t) {};
+	}
+	sp = sp ? sp + 1 : skin_table[ind];
+	int insert = sp - skin_table[ind];
+	memmove (&skin_table[ind][insert + 1], &skin_table[ind][insert],
+			 sizeof (skinpair_t[skin_counts[ind] - insert]));
+	skin_counts[ind]++;
+
+	sp->tex = skin->tex;
 
 	auto build_skin = vid.is8bit ? build_skin_8 : build_skin_32;
 
@@ -141,24 +177,43 @@ gl_Skin_SetupSkin (skin_t *skin, int cmap)
 	swidth = max (swidth, 1);
 	sheight = max (sheight, 1);
 
-	int        size = tex->width * tex->height;
+	byte palette[256];
+	Skin_SetPalette (palette, top, bot);
+	qfglGenTextures (1, &sp->skin.id);
+	build_skin_32 (sp->tex, sp->skin.id, palette, swidth, sheight, false);
+
+	int        size = sp->tex->width * sp->tex->height;
 	byte       fbskin[size];
-	qfglGenTextures (1, &skin->id);
-	// FIXME colormap (top/bottom colors)
-	build_skin_32 (tex, skin->id, vid.colormap8, swidth, sheight, false);
-	if (Mod_CalcFullbright (fbskin, tex->data, size)) {
-		tex_t       fb_tex = *tex;
+	if (Mod_CalcFullbright (fbskin, skin->tex->data, size)) {
+		tex_t       fb_tex = *sp->tex;
 		fb_tex.data = fbskin;
-		qfglGenTextures (1, &skin->fb);
-		build_skin (&fb_tex, skin->fb, vid.colormap8, swidth, sheight, true);
+		qfglGenTextures (1, &sp->skin.fb);
+		build_skin (&fb_tex, sp->skin.fb, palette, swidth, sheight, true);
 	}
+	return sp->skin;
+}
+
+void
+gl_Skin_SetupSkin (skin_t *skin, int cmap)
+{
+	skin->tex = Skin_DupTex (skin->tex);
 }
 
 void
 gl_Skin_Destroy (skin_t *skin)
 {
-	qfglDeleteTextures (1, &skin->id);
-	if (skin->fb) {
-		qfglDeleteTextures (1, &skin->fb);
+	for (int i = 0; i < 256; i++) {
+		for (int j = skin_counts[i]; j-- > 0; ) {
+			auto sp = &skin_table[i][j];
+			if (sp->tex == skin->tex) {
+				qfglDeleteTextures (1, &sp->skin.id);
+				if (sp->skin.fb) {
+					qfglDeleteTextures (1, &sp->skin.fb);
+				}
+				skin_counts[i]--;
+				memmove (&skin_table[i][j], &skin_table[i][j + 1],
+						 sizeof (skinpair_t[skin_counts[i] - j]));
+			}
+		}
 	}
 }

@@ -558,14 +558,14 @@ gl_R_DrawAliasModel (entity_t e)
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	if (renderer->skin && !gl_nocolors) {
-		skin_t *skin = Skin_Get (renderer->skin);
+	if (!gl_nocolors) {
+		skin_t *skin = renderer->skin ? Skin_Get (renderer->skin) : nullptr;
+		auto colormap = Entity_GetColormap (e);
+		auto glskin = gl_Skin_Get (skin, colormap);
 
-		if (skin) {
-			texture = skin->id;
-			if (gl_fb_models) {
-				fb_texture = skin->fb;
-			}
+		if (glskin.id) {
+			texture = glskin.id;
+			fb_texture = glskin.fb;
 		}
 	}
 	if (!texture) {
@@ -574,9 +574,10 @@ gl_R_DrawAliasModel (entity_t e)
 												   e.reg);
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, paliashdr);
 		texture = skindesc->texnum;
-		if (gl_fb_models && !is_fullbright) {
-			fb_texture = skindesc->fb_texnum;
-		}
+		fb_texture = skindesc->fb_texnum;
+	}
+	if (!gl_fb_models || is_fullbright) {
+		fb_texture = 0;
 	}
 
 	if (paliashdr->mdl.ident == HEADER_MDL16) {

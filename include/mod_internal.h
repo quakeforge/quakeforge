@@ -122,8 +122,12 @@ tex_t *Skin_DupTex (const tex_t *tex);
 typedef struct skin_s {
 	tex_t      *tex;
 	uint32_t    id;
-	uint32_t    fb;
 } skin_t;
+
+typedef struct glskin_s {
+	uint32_t    id;
+	uint32_t    fb;
+} glskin_t;
 
 skin_t *Skin_Get (uint32_t skin) __attribute__((pure));
 
@@ -137,5 +141,6 @@ uint32_t glsl_Skin_Colormap (const colormap_t *colormap);
 
 void gl_Skin_SetupSkin (skin_t *skin, int cmap);
 void gl_Skin_Destroy (skin_t *skin);
+glskin_t gl_Skin_Get (const skin_t *skin, const colormap_t *colormap);
 
 #endif// __mod_internal_h
