@@ -142,18 +142,15 @@ skinpair_cmp (const void *_tex, const void *_skinpair)
 }
 
 glskin_t
-gl_Skin_Get (const skin_t *skin, const colormap_t *colormap)
+gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
+			 const byte *texel_base)
 {
-	if (!skin || !colormap) {
-		return (glskin_t) {};
-	}
-
-	byte top = colormap->top & 0x0f;
-	byte bot = colormap->bottom & 0x0f;
+	byte top = colormap ? colormap->top & 0x0f : TOP_COLOR;
+	byte bot = colormap ? colormap->bottom & 0x0f : BOTTOM_COLOR;
 	int  ind = top | (bot << 4);
-	skinpair_t *sp = fbsearch (skin->tex, skin_table[ind], skin_counts[ind],
+	skinpair_t *sp = fbsearch (tex, skin_table[ind], skin_counts[ind],
 							   sizeof (skinpair_t), skinpair_cmp);
-	if (sp && sp->tex == skin->tex) {
+	if (sp && sp->tex == tex) {
 		return sp->skin;
 	}
 	if (skin_counts[ind] == MAX_GLSKINS) {
@@ -165,7 +162,7 @@ gl_Skin_Get (const skin_t *skin, const colormap_t *colormap)
 			 sizeof (skinpair_t[skin_counts[ind] - insert]));
 	skin_counts[ind]++;
 
-	sp->tex = skin->tex;
+	sp->tex = tex;
 
 	auto build_skin = vid.is8bit ? build_skin_8 : build_skin_32;
 
@@ -177,15 +174,22 @@ gl_Skin_Get (const skin_t *skin, const colormap_t *colormap)
 	swidth = max (swidth, 1);
 	sheight = max (sheight, 1);
 
+	tex_t wtex = *tex;
+	if (wtex.relative) {
+		wtex.relative = 0;
+		// discarding const :(
+		wtex.data = (byte *) (texel_base + (uintptr_t) wtex.data);
+	}
+
 	byte palette[256];
 	Skin_SetPalette (palette, top, bot);
 	qfglGenTextures (1, &sp->skin.id);
-	build_skin_32 (sp->tex, sp->skin.id, palette, swidth, sheight, false);
+	build_skin_32 (&wtex, sp->skin.id, palette, swidth, sheight, false);
 
-	int        size = sp->tex->width * sp->tex->height;
+	int        size = wtex.width * wtex.height;
 	byte       fbskin[size];
-	if (Mod_CalcFullbright (fbskin, skin->tex->data, size)) {
-		tex_t       fb_tex = *sp->tex;
+	if (Mod_CalcFullbright (fbskin, wtex.data, size)) {
+		tex_t       fb_tex = wtex;
 		fb_tex.data = fbskin;
 		qfglGenTextures (1, &sp->skin.fb);
 		build_skin (&fb_tex, sp->skin.fb, palette, swidth, sheight, true);

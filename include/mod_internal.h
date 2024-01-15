@@ -141,6 +141,7 @@ uint32_t glsl_Skin_Colormap (const colormap_t *colormap);
 
 void gl_Skin_SetupSkin (skin_t *skin, int cmap);
 void gl_Skin_Destroy (skin_t *skin);
-glskin_t gl_Skin_Get (const skin_t *skin, const colormap_t *colormap);
+glskin_t gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
+					  const byte *texel_base);
 
 #endif// __mod_internal_h

@@ -49,6 +49,7 @@
 #include "QF/GL/qf_textures.h"
 
 #include "mod_internal.h"
+#include "r_internal.h"
 
 #include "compat.h"
 
@@ -60,60 +61,31 @@ gl_alias_clear (model_t *m, void *data)
 	Cache_Free (&m->cache);
 }
 
-static void
-gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
-				 int snum, int gnum, maliasskindesc_t *skindesc)
-{
-	aliashdr_t *header = alias_ctx->header;
-	char	modname[MAX_QPATH + 4];
-	int		fb_texnum = 0, texnum = 0;
-	dstring_t  *name = dstring_new ();
-
-	Mod_FloodFillSkin (texels, header->mdl.skinwidth, header->mdl.skinheight);
-
-	QFS_StripExtension (alias_ctx->mod->path, modname);
-
-	if (!alias_ctx->mod->fullbright) {
-		if (gnum != -1) {
-			dsprintf (name, "fb_%s_%i_%i", modname, snum, gnum);
-		} else {
-			dsprintf (name, "fb_%s_%i", modname, snum);
-		}
-		fb_texnum = Mod_Fullbright (texels, header->mdl.skinwidth,
-									header->mdl.skinheight, name->str);
-		Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, fb_texnum);
-	}
-	if (gnum != -1) {
-		dsprintf (name, "%s_%i_%i", modname, snum, gnum);
-	} else {
-		dsprintf (name, "%s_%i", modname, snum);
-	}
-	texnum = GL_LoadTexture (name->str, header->mdl.skinwidth,
-							 header->mdl.skinheight, texels, true, false, 1);
-	Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, texnum);
-	skindesc->texnum = texnum;
-	skindesc->fb_texnum = fb_texnum;
-	dstring_delete (name);
-	// alpha param was true for non group skins
-}
-
 void
 gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
 	aliashdr_t *header = alias_ctx->header;
 	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
 	int         num_skins = alias_ctx->skins.size;
+	tex_t      *tex_block = Hunk_AllocName (0, sizeof (tex_t[num_skins]),
+											alias_ctx->mod->name);
 	byte       *texel_block = Hunk_AllocName (0, skinsize * num_skins,
 											  alias_ctx->mod->name);
 
 	for (int i = 0; i < num_skins; i++) {
-		__auto_type skin = alias_ctx->skins.a + i;
-		byte      *texels = texel_block + i * skinsize;
+		auto skin = alias_ctx->skins.a + i;
+		byte *texels = texel_block + i * skinsize;
 
-		skin->skindesc->skin = texels - (byte *) header;
+		skin->skindesc->skin = (byte *)&tex_block[i] - (byte *) header;
+		tex_block[i] = (tex_t) {
+			.width = header->mdl.skinwidth,
+			.height = header->mdl.skinheight,
+			.format = tex_palette,
+			.relative = 1,
+			.palette = vid.palette,
+			.data = (byte *) (texels - (byte *) header),
+		};
 		memcpy (texels, skin->texels, skinsize);
-		gl_Mod_LoadSkin (alias_ctx, texels, skin->skin_num, skin->group_num,
-						 skin->skindesc);
 	}
 }
 

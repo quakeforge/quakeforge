@@ -123,6 +123,9 @@ Skin_SetColormap (byte *dest, int top, int bottom)
 VISIBLE void
 Skin_SetPalette (byte *dest, int top, int bottom)
 {
+	top = bound (0, top, 13) * 16;
+	bottom = bound (0, bottom, 13) * 16;
+
 	for (int i = 0; i < 256; i++) {
 		dest[i] = i;
 	}
