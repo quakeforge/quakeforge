@@ -198,7 +198,7 @@ gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 }
 
 void
-gl_Skin_SetupSkin (skin_t *skin, int cmap)
+gl_Skin_SetupSkin (skin_t *skin)
 {
 	skin->tex = Skin_DupTex (skin->tex);
 }

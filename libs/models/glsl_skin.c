@@ -88,7 +88,7 @@ glsl_Skin_Colormap (const colormap_t *colormap)
 }
 
 void
-glsl_Skin_SetupSkin (skin_t *skin, int cmap)
+glsl_Skin_SetupSkin (skin_t *skin)
 {
 	tex_t      *tex = skin->tex;
 	skin->tex = nullptr;	// tex memory is only temporarily allocated

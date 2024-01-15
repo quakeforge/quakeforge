@@ -129,17 +129,19 @@ typedef struct glskin_s {
 	uint32_t    fb;
 } glskin_t;
 
+void Skin_Init (void);
+uint32_t Skin_Set (const char *skinname);
 skin_t *Skin_Get (uint32_t skin) __attribute__((pure));
 
-void sw_Skin_SetupSkin (skin_t *skin, int cmap);
+void sw_Skin_SetupSkin (skin_t *skin);
 void sw_Skin_Destroy (skin_t *skin);
 const byte *sw_Skin_Colormap (const colormap_t *colormap);
 
-void glsl_Skin_SetupSkin (skin_t *skin, int cmap);
+void glsl_Skin_SetupSkin (skin_t *skin);
 void glsl_Skin_Destroy (skin_t *skin);
 uint32_t glsl_Skin_Colormap (const colormap_t *colormap);
 
-void gl_Skin_SetupSkin (skin_t *skin, int cmap);
+void gl_Skin_SetupSkin (skin_t *skin);
 void gl_Skin_Destroy (skin_t *skin);
 glskin_t gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 					  const byte *texel_base);

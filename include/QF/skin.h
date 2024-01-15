@@ -62,8 +62,4 @@ enum {
 
 #define nullskin (0u)
 
-void Skin_Init (void);
-uint32_t Skin_SetSkin (const char *skinname, int cmap);
-void Skin_SetTranslation (int cmap, int top, int bottom);
-
 #endif//__QF_skin_h

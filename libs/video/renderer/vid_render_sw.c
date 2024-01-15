@@ -91,6 +91,7 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 1,
 	.Mod_SpriteLoadFrames           = sw_Mod_SpriteLoadFrames,
 
+	.skin_set                = Skin_Set,
 	.skin_setupskin          = sw_Skin_SetupSkin,
 	.skin_destroy            = sw_Skin_Destroy,
 };

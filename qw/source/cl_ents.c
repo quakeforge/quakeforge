@@ -221,8 +221,7 @@ CL_LinkPacketEntities (void)
 					.top = player->topcolor,
 					.bottom = player->bottomcolor,
 				});
-				renderer->skin = Skin_SetSkin (player->skinname->value,
-											   new->colormap);
+				renderer->skin = mod_funcs->skin_set (player->skinname->value);
 			} else {
 				Entity_RemoveColormap (ent);
 			}

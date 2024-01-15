@@ -82,6 +82,7 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = glsl_Mod_SpriteLoadFrames,
 
+	.skin_set                = Skin_Set,
 	.skin_setupskin          = glsl_Skin_SetupSkin,
 	.skin_destroy            = glsl_Skin_Destroy,
 };

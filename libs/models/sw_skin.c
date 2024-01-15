@@ -52,7 +52,7 @@ sw_Skin_Colormap (const colormap_t *colormap)
 }
 
 void
-sw_Skin_SetupSkin (skin_t *skin, int cmap)
+sw_Skin_SetupSkin (skin_t *skin)
 {
 	skin->tex = Skin_DupTex (skin->tex);
 }

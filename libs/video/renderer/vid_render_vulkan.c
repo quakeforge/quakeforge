@@ -452,7 +452,7 @@ vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 }
 
 static void
-vulkan_Skin_SetupSkin (struct skin_s *skin, int cmap)
+vulkan_Skin_SetupSkin (struct skin_s *skin)
 {
 }
 
@@ -513,6 +513,7 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
 
+	.skin_set                = Skin_Set,
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
 };
 

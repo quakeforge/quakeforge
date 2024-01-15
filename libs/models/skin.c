@@ -150,7 +150,7 @@ freestr (char **strptr)
 }
 
 VISIBLE uint32_t
-Skin_SetSkin (const char *skinname, int cmap)
+Skin_Set (const char *skinname)
 {
 	if (!skinname || !*skinname) {
 		return nullskin;
@@ -188,7 +188,7 @@ Skin_SetSkin (const char *skinname, int cmap)
 	skin_t      skin = {
 		.tex = tex,
 	};
-	m_funcs->skin_setupskin (&skin, cmap);
+	m_funcs->skin_setupskin (&skin);
 	Ent_SetComponent (skinent, skinsys.base + skin_skin, skinsys.reg, &skin);
 
 	return skinent;
