@@ -371,7 +371,7 @@ properties = {
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
 					// IQMDepthOnly
-					data = "array(1)";
+					data = "array(1, 0)";
 				};
 			};
 			gbuf_vertex = {
@@ -381,7 +381,7 @@ properties = {
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
 					// IQMDepthOnly
-					data = "array(0)";
+					data = "array(0, 0)";
 				};
 			};
 			gbuf_fragment = {
@@ -418,6 +418,7 @@ properties = {
 				vertex   = {
 					Model = mat4;
 					blend = float;
+					MatrixBase = uint;
 				};
 				fragment = {
 					colorA = uint;
@@ -741,6 +742,12 @@ descriptorSetLayouts = {
 				descriptorCount = 1;
 				stageFlags = vertex|fragment;
 			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
 		);
 	};
 	quad_data_set = {
@@ -877,9 +884,33 @@ descriptorSetLayouts = {
 		bindings = (
 			{
 				binding = 0;
-				descriptorType = uniform_buffer;
+				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 2;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 3;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 4;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
 			},
 		);
 	};
@@ -973,7 +1004,7 @@ descriptorSetLayouts = {
 images = {
 	depth = {
 		@inherit = $image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	color = {
@@ -983,7 +1014,7 @@ images = {
 	};
 	cube_depth = {
 		@inherit = $cube_image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_color = {
@@ -1095,7 +1126,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (0); },
+							  params = (main, 0); },
 						);
 
 						stages = (
@@ -1190,7 +1221,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (1); },
+							  params = (main, 1); },
 						);
 
 						stages = (
