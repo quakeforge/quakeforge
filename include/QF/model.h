@@ -316,7 +316,7 @@ typedef struct {
 	char				name[16];
 } maliasframedesc_t;
 
-typedef struct {
+typedef struct maliasskindesc_s {
 	aliasskintype_t type;
 	int     skin;
 	int     texnum;

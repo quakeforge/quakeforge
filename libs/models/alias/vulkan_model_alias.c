@@ -46,6 +46,7 @@
 #include "QF/modelgen.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_alias.h"
+#include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -64,17 +65,10 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
 };
 
-static void
-skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
+static qfv_alias_skin_t *
+find_skin (int skin_offset, aliashdr_t *hdr)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_alias_skin_t *skin = (qfv_alias_skin_t *) ((byte *) hdr + skin_offset);
-
-	Vulkan_AliasRemoveSkin (ctx, skin);
-	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
-	dfunc->vkDestroyImage (device->dev, skin->image, 0);
-	dfunc->vkFreeMemory (device->dev, skin->memory, 0);
+	return (qfv_alias_skin_t *) ((byte *) hdr + skin_offset);
 }
 
 static void
@@ -101,35 +95,37 @@ vulkan_alias_clear (model_t *m, void *data)
 			__auto_type group = (maliasskingroup_t *)
 								((byte *) hdr + skins[i].skin);
 			for (int j = 0; j < group->numskins; j++) {
-				skin_clear (group->skindescs[j].skin, hdr, ctx);
+				auto skin = find_skin (group->skindescs[j].skin, hdr);
+				Vulkan_Skin_Clear (skin, ctx);
 			}
 		} else {
-			skin_clear (skins[i].skin, hdr, ctx);
+			auto skin = find_skin (skins[i].skin, hdr);
+			Vulkan_Skin_Clear (skin, ctx);
 		}
 	}
 }
 
 #define SKIN_LAYERS 3
 
-static void *
+qfv_alias_skin_t *
 Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 					 int snum, int gnum, bool group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
-	qfvPushDebug (ctx, va (ctx->va_ctx, "alias.load_skin: %s", alias_ctx->mod->name));
+	const char *mod_name = alias_ctx->mod->name;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "alias.load_skin: %s", mod_name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *header = alias_ctx->header;
+	int         w = header->mdl.skinwidth;
+	int         h = header->mdl.skinheight;
 	qfv_alias_skin_t *skin;
 	byte       *tskin;
-	int         w, h;
 
 	skin = Hunk_Alloc (0, sizeof (qfv_alias_skin_t));
 	QuatSet (TOP_RANGE + 7, BOTTOM_RANGE + 7, 0, 0, skin->colors);
 	skindesc->skin = (byte *) skin - (byte *) header;
-	//FIXME move all skins into arrays(?)
-	w = header->mdl.skinwidth;
-	h = header->mdl.skinheight;
+
 	tskin = malloc (2 * skinsize);
 	memcpy (tskin, skinpix, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
@@ -144,13 +140,13 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skin->image,
 						 va (ctx->va_ctx, "image:%s:%d:%d",
-							 alias_ctx->mod->name, snum, gnum));
+							 mod_name, snum, gnum));
 	skin->memory = QFV_AllocImageMemory (device, skin->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, skin->memory,
 						 va (ctx->va_ctx, "memory:%s:%d:%d",
-							 alias_ctx->mod->name, snum, gnum));
+							 mod_name, snum, gnum));
 	QFV_BindImageMemory (device, skin->image, skin->memory, 0);
 	skin->view = QFV_CreateImageView (device, skin->image,
 									  VK_IMAGE_VIEW_TYPE_2D_ARRAY,
@@ -158,7 +154,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 									  VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, skin->view,
 						 va (ctx->va_ctx, "iview:%s:%d:%d",
-							 alias_ctx->mod->name, snum, gnum));
+							 mod_name, snum, gnum));
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "alias stage",
 													 SKIN_LAYERS * skinsize * 4,
@@ -220,7 +216,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	Vulkan_AliasAddSkin (ctx, skin);
 
 	qfvPopDebug (ctx);
-	return skinpix + skinsize;
+	return skin;
 }
 
 void

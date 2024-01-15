@@ -49,6 +49,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
@@ -454,6 +455,13 @@ vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 static void
 vulkan_Skin_SetupSkin (struct skin_s *skin)
 {
+	Vulkan_Skin_SetupSkin (skin, vulkan_ctx);
+}
+
+static void
+vulkan_Skin_Destroy (struct skin_s *skin)
+{
+	Vulkan_Skin_Destroy (skin, vulkan_ctx);
 }
 
 static void
@@ -515,6 +523,7 @@ static vid_model_funcs_t model_funcs = {
 
 	.skin_set                = Skin_Set,
 	.skin_setupskin          = vulkan_Skin_SetupSkin,
+	.skin_destroy            = vulkan_Skin_Destroy,
 };
 
 static void

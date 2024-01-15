@@ -50,6 +50,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
@@ -177,7 +178,6 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 {
 	auto model = renderer->model;
 	aliashdr_t *hdr;
-	qfv_alias_skin_t *skin;
 	uint16_t *matrix_base = taskctx->data;
 
 	if (!(hdr = model->aliashdr)) {
@@ -189,9 +189,14 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 
 	transform_t transform = Entity_Transform (ent);
 
-	if (0/*XXX ent->skin && ent->skin->tex*/) {
-		//skin = ent->skin->tex;
-	} else {
+	qfv_alias_skin_t *skin = nullptr;
+	if (renderer->skin) {
+		skin_t     *tskin = Skin_Get (renderer->skin);
+		if (tskin) {
+			skin = (qfv_alias_skin_t *) tskin->tex;
+		}
+	}
+	if (!skin) {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
