@@ -245,6 +245,7 @@ Vulkan_Planes_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Planes_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto pctx = ctx->planes_context;
 

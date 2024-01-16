@@ -337,6 +337,7 @@ Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Translucent_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	translucentctx_t *tctx = ctx->translucent_context;
 

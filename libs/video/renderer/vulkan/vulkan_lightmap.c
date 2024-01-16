@@ -135,6 +135,7 @@ void
 Vulkan_BuildLightMap (transform_t transform, mod_brush_t *brush,
 					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         smax, tmax, size;
 	unsigned    scale;

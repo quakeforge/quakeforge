@@ -91,6 +91,7 @@ Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 void
 Vulkan_Palette_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "palette shutdown");
 
 	__auto_type pctx = ctx->palette_context;

@@ -353,6 +353,7 @@ Vulkan_Alias_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Alias_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	//qfv_device_t *device = ctx->device;
 	//qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;

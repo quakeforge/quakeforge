@@ -122,6 +122,7 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}

@@ -154,6 +154,7 @@ Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Compose_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	composectx_t *cctx = ctx->compose_context;
 
 	free (cctx->frames.a);

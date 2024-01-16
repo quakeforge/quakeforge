@@ -476,6 +476,7 @@ Vulkan_Particles_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	particlectx_t *pctx = ctx->particle_context;

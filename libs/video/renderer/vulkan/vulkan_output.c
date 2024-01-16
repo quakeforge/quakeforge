@@ -373,6 +373,7 @@ Vulkan_Output_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	outputctx_t *octx = ctx->output_context;

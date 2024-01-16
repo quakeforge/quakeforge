@@ -254,6 +254,7 @@ Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "scene shutdown");
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;

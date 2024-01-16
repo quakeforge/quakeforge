@@ -546,6 +546,7 @@ Vulkan_Texture_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	Vulkan_UnloadTex (ctx, ctx->default_black);
 	Vulkan_UnloadTex (ctx, ctx->default_white);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta);

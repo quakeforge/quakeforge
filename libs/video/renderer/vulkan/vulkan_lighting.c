@@ -1988,6 +1988,7 @@ clear_shadows (vulkan_ctx_t *ctx)
 void
 Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;

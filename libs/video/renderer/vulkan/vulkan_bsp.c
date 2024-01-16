@@ -1529,6 +1529,7 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;

@@ -235,6 +235,7 @@ Vulkan_Sprite_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	spritectx_t *sctx = ctx->sprite_context;
 
 	free (sctx);

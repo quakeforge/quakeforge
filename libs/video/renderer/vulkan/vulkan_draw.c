@@ -822,6 +822,7 @@ Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dctx = ctx->draw_context;
 

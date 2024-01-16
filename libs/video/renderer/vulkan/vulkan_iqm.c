@@ -336,6 +336,7 @@ Vulkan_IQM_Setup (vulkan_ctx_t *ctx)
 void
 Vulkan_IQM_Shutdown (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	iqmctx_t   *ictx = ctx->iqm_context;
 
 	free (ictx->frames.a);

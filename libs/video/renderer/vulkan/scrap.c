@@ -284,6 +284,7 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 void
 QFV_ScrapFlush (scrap_t *scrap)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
