@@ -340,6 +340,12 @@ vulkan_Draw_ResetClip (void)
 }
 
 static void
+vulkan_Draw_Flush (void)
+{
+	Vulkan_Draw_Flush (vulkan_ctx);
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 	//FIXME this should not be done every frame
@@ -625,6 +631,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.Draw_Glyph             = vulkan_Draw_Glyph,
 	.Draw_SetClip           = vulkan_Draw_SetClip,
 	.Draw_ResetClip         = vulkan_Draw_ResetClip,
+	.Draw_Flush             = vulkan_Draw_Flush,
 
 	.ParticleSystem   = vulkan_ParticleSystem,
 	.R_Init           = vulkan_R_Init,

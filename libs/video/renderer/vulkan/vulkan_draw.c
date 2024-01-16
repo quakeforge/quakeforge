@@ -1867,3 +1867,9 @@ Vulkan_SetScrFuncs (SCR_Func *scr_funcs, vulkan_ctx_t *ctx)
 	auto dctx = ctx->draw_context;
 	dctx->scr_funcs = scr_funcs;
 }
+
+void
+Vulkan_Draw_Flush (vulkan_ctx_t *ctx)
+{
+	flush_draw_scrap (ctx);
+}

@@ -156,3 +156,11 @@ Draw_MaxScale (void)
 {
 	return r_funcs->Draw_SetScale ? 20 : 1;
 }
+
+void
+Draw_Flush (void)
+{
+	if (r_funcs->Draw_Flush) {
+		r_funcs->Draw_Flush ();
+	}
+}

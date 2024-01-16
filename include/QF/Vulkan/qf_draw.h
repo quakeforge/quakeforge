@@ -88,5 +88,7 @@ void Vulkan_Draw_ResetClip (struct vulkan_ctx_s *ctx);
 void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 					   struct vulkan_ctx_s *ctx);
 void Vulkan_SetScrFuncs (SCR_Func *scr_funcs, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Flush (struct vulkan_ctx_s *ctx);
+
 
 #endif//__QF_Vulkan_qf_draw_h

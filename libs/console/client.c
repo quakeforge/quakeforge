@@ -1233,6 +1233,8 @@ C_Init (void)
 					"file");
 
 	con_initialized = true;
+
+	Draw_Flush ();
 }
 
 static void
