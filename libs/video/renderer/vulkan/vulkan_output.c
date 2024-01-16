@@ -378,10 +378,12 @@ Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	outputctx_t *octx = ctx->output_context;
 
-	for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
-		dfunc->vkDestroyFramebuffer (device->dev, octx->framebuffers[i], 0);
+	if (octx->framebuffers) {
+		for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
+			dfunc->vkDestroyFramebuffer (device->dev, octx->framebuffers[i], 0);
+		}
+		free (octx->framebuffers);
 	}
-	free (octx->framebuffers);
 	auto step = QFV_FindStep ("output", ctx->render_context->job);
 	auto render = step->render;
 	auto rp = &render->renderpasses[0];
