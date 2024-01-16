@@ -192,7 +192,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
 	auto iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
@@ -200,8 +200,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	iqmframe_t *frame;
 	uint16_t   *matrix_base = taskctx->data;
 
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	iqm_push_constants_t constants = {
 		.blend = R_IQMGetLerpedFrames (animation, iqm),
 		.matrix_base = matrix_base ? *matrix_base : 0,

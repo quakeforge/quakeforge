@@ -324,7 +324,7 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }

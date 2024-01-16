@@ -683,7 +683,7 @@ CL_ParseClientdata (void)
 	if (bits & SU_WEAPONFRAME2)
 		cl.stats[STAT_WEAPONFRAME] |= MSG_ReadByte (net_message) << 8;
 
-	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id, cl_world.scene->base + scene_renderer, cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
 	if (bits & SU_WEAPONALPHA) {
 		byte alpha = MSG_ReadByte (net_message);
 		float a = ENTALPHA_DECODE (alpha);

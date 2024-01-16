@@ -664,9 +664,7 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
-	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id,
-											  cl_world.scene->base + scene_renderer,
-											  cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
 	renderer->depthhack = 1;
 	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;

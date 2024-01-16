@@ -138,8 +138,8 @@ CL_ParseStatic (qmsg_t *msg, int version)
 	CL_ParseBaseline (msg, &es, version);
 	DARRAY_APPEND (&cl_static_entities, es);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 
 	// copy it to the current state
 	renderer->model = cl_world.models.a[es.modelindex];

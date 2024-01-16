@@ -119,7 +119,7 @@ R_DrawViewModel (void)
 	if (!Entity_Valid (ent)) {
 		return;
 	}
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities

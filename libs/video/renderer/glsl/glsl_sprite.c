@@ -131,8 +131,7 @@ static void
 R_GetSpriteFrames (entity_t ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	int         framenum = animation->frame;
 	int         pose;
 	int         i, numframes;
@@ -209,7 +208,7 @@ make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t sright, vec4f_t sup, f
 void
 glsl_R_DrawSprite (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	msprite_t  *sprite = (msprite_t *) renderer->model->cache.data;
 	mspriteframe_t *frame1, *frame2;
 	float       blend;

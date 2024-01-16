@@ -300,9 +300,7 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
-	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id,
-											  cl_world.scene->base + scene_renderer,
-											  cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
 	renderer->depthhack = 1;
 	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
@@ -489,8 +487,8 @@ CL_PrintEntities_f (void)
 	for (i = 0; i < cl.num_entities; i++) {
 		entity_t    ent = cl_entities[i];
 		transform_t transform = Entity_Transform (ent);
-		renderer_t  *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		Sys_Printf ("%3i:", i);
 		if (!Entity_Valid (ent) || !renderer->model) {
 			Sys_Printf ("EMPTY\n");

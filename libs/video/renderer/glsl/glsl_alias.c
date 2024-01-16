@@ -164,7 +164,7 @@ calc_lighting (entity_t ent, float *ambient, float *shadelight,
 
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
 	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	*ambient = max (light, max (renderer->model->min_light,
 								renderer->min_light) * 128);
 	*shadelight = *ambient;
@@ -242,7 +242,7 @@ glsl_R_DrawAlias (entity_t ent)
 
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (renderer->onlyshadows) {
 		return;
 	}
@@ -268,8 +268,7 @@ glsl_R_DrawAlias (entity_t ent)
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	GLuint cmap_tex = glsl_colormap;
 	auto colormap = Entity_GetColormap (ent);
 	if (colormap) {

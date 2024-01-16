@@ -150,7 +150,7 @@ Vulkan_Sprite_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 static void
 sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
 	msprite_t *sprite = model->cache.data;
 
@@ -162,8 +162,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 			64, sizeof (frame), &frame },
 	};
 
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
 	transform_t transform = Entity_Transform (ent);

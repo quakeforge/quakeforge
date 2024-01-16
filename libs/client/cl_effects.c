@@ -200,7 +200,7 @@ void
 CL_ModelEffects (entity_t ent, int glow_color, double time)
 {
 	transform_t transform = Entity_Transform (ent);
-	renderer_t  *renderer = Ent_GetComponent (ent.id, + ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	vec4f_t    *old_origin = Ent_GetComponent (ent.id, + ent.base + scene_old_origin, ent.reg);
 	vec4f_t     ent_origin = Transform_GetWorldPosition (transform);

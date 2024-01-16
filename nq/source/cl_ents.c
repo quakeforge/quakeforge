@@ -140,8 +140,8 @@ static void
 set_entity_model (int ent_ind, int modelindex)
 {
 	entity_t    ent = cl_entities[ent_ind];
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -216,8 +216,8 @@ CL_RelinkEntities (void)
 			SET_ADD (&cl_forcelink, i);
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {

@@ -507,12 +507,12 @@ gl_R_DrawBrushModel (entity_t e)
 	bool        rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
-	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
+	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	glbspctx_t  bspctx = {
 		brush,
-		Ent_GetComponent (e.id, e.base + scene_animation, e.reg),
+		Entity_GetAnimation (e),
 		ent_transforms.a[ent_transforms.size++],
 		renderer->colormod,
 	};

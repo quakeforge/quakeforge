@@ -213,7 +213,7 @@ R_AddEfrags (mod_brush_t *brush, entity_t ent)
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 	transform_t transform = Entity_Transform (ent);
-	renderer_t *rend = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto rend = Entity_GetRenderer (ent);
 
 	if (!rend->model) {
 		Ent_RemoveComponent (ent.id, ent.base + scene_visibility, ent.reg);

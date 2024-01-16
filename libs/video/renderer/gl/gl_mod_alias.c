@@ -275,7 +275,7 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *ahdr,
 static inline vert_order_t *
 GL_GetAliasFrameVerts16 (aliashdr_t *ahdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
+	auto animation = Entity_GetAnimation (e);
 	float         blend = R_AliasGetLerpedFrames (animation, ahdr);
 	int           count, i;
 	trivertx16_t *verts;
@@ -339,7 +339,7 @@ GL_GetAliasFrameVerts16 (aliashdr_t *ahdr, entity_t e)
 static inline vert_order_t *
 GL_GetAliasFrameVerts (aliashdr_t *ahdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation, e.reg);
+	auto animation = Entity_GetAnimation (e);
 	float       blend = R_AliasGetLerpedFrames (animation, ahdr);
 	int         count, i;
 	trivertx_t *verts;
@@ -410,8 +410,7 @@ gl_get_skin (entity_t e, renderer_t *renderer, aliashdr_t *ahdr)
 		}
 	}
 	maliasskindesc_t *skindesc;
-	animation_t *animation = Ent_GetComponent (e.id, e.base + scene_animation,
-											   e.reg);
+	auto animation = Entity_GetAnimation (e);
 	skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, ahdr);
 	if (!skindesc->texnum) {
 		auto tex = (tex_t *) ((byte *) ahdr + skindesc->skin);
@@ -435,7 +434,7 @@ gl_R_DrawAliasModel (entity_t e)
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
-	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
+	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
 
 	if (renderer->onlyshadows) {

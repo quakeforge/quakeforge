@@ -162,9 +162,9 @@ SW_AddEntity (entity_t ent)
 	transform_t transform = Entity_Transform (ent);
 	Ent_SetComponent (ent.id, ent.base + scene_sw_matrix, reg,
 					  Transform_GetWorldMatrixPtr (transform));
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, reg);
+	auto animation = Entity_GetAnimation (ent);
 	Ent_SetComponent (ent.id, ent.base + scene_sw_frame, reg, &animation->frame);
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, reg);
+	auto renderer = Entity_GetRenderer (ent);
 	mod_brush_t *brush = &renderer->model->brush;
 	Ent_SetComponent (ent.id, ent.base + scene_sw_brush, reg, &brush);
 
@@ -275,7 +275,7 @@ setup_lighting (entity_t ent, alight_t *lighting)
 	float       add;
 	float       lightvec[3] = { -1, 0, 0 };
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	// 128 instead of 255 due to clamping below
@@ -380,9 +380,7 @@ R_DrawViewModel (void)
 		return;
 	}
 
-	renderer_t *renderer = Ent_GetComponent (viewent.id,
-											 viewent.base + scene_renderer,
-											 viewent.reg);
+	auto renderer = Entity_GetRenderer (viewent);
 	if (!renderer->model)
 		return;
 
@@ -502,8 +500,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 		vec4f_t    *transform = Ent_GetComponent (ent.id, ent.base + scene_sw_matrix,
 												  ent.reg);
 		VectorCopy (transform[3], origin);
-		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
-												 ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
 		model_t    *model = renderer->model;
 
 		// see if the bounding box lets us trivially reject, also

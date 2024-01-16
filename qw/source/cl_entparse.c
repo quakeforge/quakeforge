@@ -485,8 +485,7 @@ CL_ParsePlayerinfo (void)
 		entity_t    ent;
 
 		ent = CL_GetEntity (num + 1);
-		renderer_t  *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
-												  cl_world.scene->reg);
+		auto renderer = Entity_GetRenderer (ent);
 		bits = MSG_ReadByte (net_message);
 		if (bits & PF_ALPHA) {
 			val = MSG_ReadByte (net_message);

@@ -68,18 +68,6 @@ typedef struct {
 	uint32_t    matrix_base;
 } shadow_push_constants_t;
 
-static renderer_t *
-alias_get_renderer (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-}
-
-static animation_t *
-alias_get_animation (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
-}
-
 static void
 alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
@@ -184,7 +172,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 		hdr = Cache_Get (&model->cache);
 	}
 
-	auto animation = alias_get_animation (ent);
+	auto animation = Entity_GetAnimation (ent);
 	float blend = R_AliasGetLerpedFrames (animation, hdr);
 
 	transform_t transform = Entity_Transform (ent);
@@ -279,7 +267,7 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_alias].a[i];
-		auto renderer = alias_get_renderer (ent);
+		auto renderer = Entity_GetRenderer (ent);
 		if ((stage == alias_shadow && renderer->noshadows)
 			|| (stage == alias_main && renderer->onlyshadows)) {
 			continue;

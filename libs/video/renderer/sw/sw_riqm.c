@@ -291,7 +291,7 @@ R_IQMSetUpTransform (entity_t ent, int trivial_accept)
 void
 R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -303,8 +303,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, size, sw->blend_palette,

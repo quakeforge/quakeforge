@@ -653,7 +653,7 @@ static void
 R_DrawBrushModel (entity_t e)
 {
 	float       dot, radius;
-	renderer_t *renderer = Ent_GetComponent (e.id, e.base + scene_renderer, e.reg);
+	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	plane_t    *plane;
@@ -663,7 +663,7 @@ R_DrawBrushModel (entity_t e)
 	vec4f_t     org;
 	glslbspctx_t bctx = {
 		brush,
-		Ent_GetComponent (e.id, e.base + scene_animation, e.reg),
+		Entity_GetAnimation (e),
 		Transform_GetWorldMatrixPtr (Entity_Transform (e)),
 		renderer->colormod,
 	};

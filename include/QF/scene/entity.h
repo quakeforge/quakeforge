@@ -120,6 +120,10 @@ ENTINLINE transform_t Entity_Transform (entity_t ent);
 ENTINLINE colormap_t *Entity_GetColormap (entity_t ent);
 ENTINLINE void Entity_SetColormap (entity_t ent, colormap_t *colormap);
 ENTINLINE void Entity_RemoveColormap (entity_t ent);
+ENTINLINE animation_t *Entity_GetAnimation (entity_t ent);
+ENTINLINE void Entity_SetAnimation (entity_t ent, animation_t *animation);
+ENTINLINE renderer_t *Entity_GetRenderer (entity_t ent);
+ENTINLINE void Entity_SetRenderer (entity_t ent, renderer_t *renderer);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -182,6 +186,40 @@ void
 Entity_RemoveColormap (entity_t ent)
 {
 	return Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
+}
+
+ENTINLINE
+animation_t *
+Entity_GetAnimation (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_animation, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetAnimation (entity_t ent, animation_t *animation)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_animation, ent.reg, animation);
+}
+
+ENTINLINE
+renderer_t *
+Entity_GetRenderer (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_renderer, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetRenderer (entity_t ent, renderer_t *renderer)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_renderer, ent.reg, renderer);
 }
 
 struct mod_brush_s;

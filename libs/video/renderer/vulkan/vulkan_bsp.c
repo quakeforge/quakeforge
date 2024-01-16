@@ -660,7 +660,7 @@ static int
 R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	bspctx_t   *bctx = ctx->bsp_context;
 
@@ -668,8 +668,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
 	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;

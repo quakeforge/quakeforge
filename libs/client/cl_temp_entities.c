@@ -171,8 +171,8 @@ void
 CL_Init_Entity (entity_t ent)
 {
 	qfZoneScoped (true);
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 	byte       *active = Ent_GetComponent (ent.id, ent.base + scene_active, ent.reg);
 	vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 	memset (animation, 0, sizeof (*animation));
@@ -281,7 +281,7 @@ beam_setup (beam_t *b, bool settransform, double time, TEntContext_t *ctx)
 		vec4f_t     position = org + d * dist;
 		d += 1.0;
 		transform_t transform = Entity_Transform (tent->ent);
-		renderer_t *renderer = Ent_GetComponent (tent->ent.id, tent->ent.base + scene_renderer, tent->ent.reg);
+		auto renderer = Entity_GetRenderer (tent->ent);
 		renderer->model = b->model;
 		if (settransform) {
 			seed = seed * BEAM_SEED_PRIME;
@@ -418,7 +418,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			}
 			transform_t transform = Entity_Transform (ex->tent->ent);
-			renderer_t *renderer = Ent_GetComponent (ex->tent->ent.id, ex->tent->ent.base + scene_renderer, ex->tent->ent.reg);
+			auto renderer = Entity_GetRenderer (ex->tent->ent);
 			renderer->model = cl_spr_explod;
 			Transform_SetLocalPosition (transform, position);
 			color = (vec4f_t) {0.86, 0.31, 0.24, 0.7};
@@ -657,8 +657,8 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 		ex = &(*to)->to.ex;
 		ent = ex->tent->ent;
 		f = 10 * (time - ex->start);
-		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		if (f >= renderer->model->numframes) {
 			tent_obj_t *_to;
 			free_temp_entities (ex->tent);
@@ -745,7 +745,7 @@ CL_ParseProjectiles (qmsg_t *net_message, bool nail2, TEntContext_t *ctx)
 		tail = &tent->next;
 
 		pr = tent->ent;
-		renderer_t *renderer = Ent_GetComponent (pr.id, pr.base + scene_renderer, pr.reg);
+		auto renderer = Entity_GetRenderer (pr);
 		renderer->model = cl_spike;
 		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		position[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;

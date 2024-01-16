@@ -138,10 +138,8 @@ is_gib (entity_state_t *s1)
 static void
 set_entity_model (entity_t ent, int modelindex)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
-											 cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -188,10 +186,8 @@ CL_LinkPacketEntities (void)
 			forcelink = true;
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
-												 ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-												   ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin,
 												   ent.reg);
 
@@ -313,8 +309,7 @@ CL_UpdateFlagModels (entity_t ent, int key)
 	if (!*active) {
 		return;
 	}
-	animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-											   cl_world.scene->reg);
+	auto animation = Entity_GetAnimation (ent);
 
 	f = 14.0;
 	if (animation->frame >= 29 && animation->frame <= 40) {
@@ -359,8 +354,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	}
 	CL_UpdateFlagModels (ent, key);
 
-	renderer_t *renderer = Ent_GetComponent (fent.id, fent.base + scene_renderer,
-											 cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (fent);
 	renderer->model = cl_world.models.a[cl_flagindex];
 	renderer->skinnum = team;
 
@@ -437,10 +431,8 @@ CL_LinkPlayers (void)
 		if (!Entity_Valid (ent)) {
 			ent = CL_GetEntity (j + 1);
 		}
-		renderer_t *renderer = Ent_GetComponent (ent.id, ent.base + scene_renderer,
-												 cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, ent.base + scene_animation,
-												   cl_world.scene->reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
