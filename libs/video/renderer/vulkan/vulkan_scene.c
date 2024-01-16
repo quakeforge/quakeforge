@@ -41,6 +41,7 @@
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lighting.h"
+#include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -286,7 +287,7 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 
 	R_ClearParticles ();
 	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
-	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
+	Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
 	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
-	Vulkan_LoadLights (scene, ctx);
+	//Vulkan_LoadLights (scene, ctx);
 }

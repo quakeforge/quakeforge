@@ -355,6 +355,7 @@ typedef struct bspctx_s {
 
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
+	VkDescriptorSet lightmap_descriptor;
 
 	int         num_models;			///< number of loaded brush models
 	bsp_model_t *models;			///< all loaded brush models

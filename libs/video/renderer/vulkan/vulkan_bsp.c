@@ -74,6 +74,7 @@
 
 #define TEX_SET 3
 #define SKYBOX_SET 4
+#define LIGHTMAP_SET 4
 
 typedef struct bsp_push_constants_s {
 	quat_t      fog;
@@ -1270,6 +1271,9 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (queue == QFV_bspSky) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
+	} else {
+		vulktex_t lightmap = { .descriptor = bctx->lightmap_descriptor };
+		bind_texture (&lightmap, LIGHTMAP_SET, layout, dfunc, cmd);
 	}
 
 	pass->textures = textured ? &bctx->registered_textures : 0;
@@ -1506,6 +1510,10 @@ Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
 		bframe->entid_offset = i * entid_size;
 	}
 
+	bctx->lightmap_descriptor
+		= Vulkan_CreateCombinedImageSampler (ctx,
+											 Vulkan_LightmapImageView (ctx),
+											 bctx->sampler);
 	bctx->skybox_descriptor
 		= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
 										  bctx->sampler);

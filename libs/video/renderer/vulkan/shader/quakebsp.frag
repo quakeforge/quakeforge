@@ -1,6 +1,7 @@
 #version 450
 
 layout (set = 3, binding = 0) uniform sampler2DArray Texture;
+layout (set = 4, binding = 0) uniform sampler2D Lightmap;
 
 layout (push_constant) uniform PushConstants {
 	vec4        fog;
@@ -35,6 +36,7 @@ main (void)
 
 	vec4        c = texture (Texture, t_st) * color;
 	vec4        e = texture (Texture, e_st);
+	vec4        l = texture (Lightmap, l_st);
 
-	frag_color = c;//fogBlend (c);
+	frag_color = c * l + e;//fogBlend (c);
 }

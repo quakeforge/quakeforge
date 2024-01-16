@@ -45,7 +45,6 @@
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
-#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/scrap.h"
 
 #include "QF/scene/entity.h"
@@ -57,9 +56,10 @@
 #define LUXEL_SIZE 4
 
 static inline void
-add_dynamic_lights (const transform_t *transform, msurface_t *surf,
+add_dynamic_lights (transform_t transform, msurface_t *surf,
 				    float *block)
 {
+#if 0
 	unsigned    lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
@@ -128,10 +128,11 @@ add_dynamic_lights (const transform_t *transform, msurface_t *surf,
 			}
 		}
 	}
+#endif
 }
 
 void
-Vulkan_BuildLightMap (const transform_t *transform, mod_brush_t *brush,
+Vulkan_BuildLightMap (transform_t transform, mod_brush_t *brush,
 					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -215,6 +216,40 @@ vulkan_create_surf_lightmap (msurface_t *surf, vulkan_ctx_t *ctx)
 	}
 }
 
+static void
+vulkan_build_lightmap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
+{
+	int         smax = (surf->extents[0] >> 4) + 1;
+	int         tmax = (surf->extents[1] >> 4) + 1;
+	int         size = smax * tmax;
+
+	vec4f_t    *blocklights = QFV_SubpicBatch (surf->lightpic, ctx->staging);
+	if (!brush->lightdata) {
+		for (int i = 0; i < size; i++) {
+			blocklights[i] = (vec4f_t) {1, 1, 1, 1};
+		}
+		return;
+	}
+
+	memset (blocklights, 0, sizeof (vec4f_t[size]));
+	if (surf->samples) {
+		byte       *lightmap = surf->samples;
+		for (int map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255;
+			 map++) {
+			surf->cached_light[map] = d_lightstylevalue[surf->styles[map]];
+			float scale = surf->cached_light[map] / 65536.0;
+			auto bl = blocklights;
+			for (int i = 0; i < size; i++) {
+				vec4f_t val = { VectorExpand (lightmap), 0 };
+				val *= scale;
+				val[3] = 1;
+				lightmap += 3;
+				*bl++ = val;
+			}
+		}
+	}
+}
+
 /*
   GL_BuildLightmaps
 
@@ -224,25 +259,22 @@ void
 Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
-	int         i, j;
-	model_t    *m;
-	mod_brush_t *brush;
 
 	QFV_ScrapClear (bctx->light_scrap);
 
 	r_framecount = 1;					// no dlightcache
 
-	for (j = 1; j < num_models; j++) {
-		m = models[j];
+	for (int j = 1; j < num_models; j++) {
+		auto m = models[j];
 		if (!m)
 			break;
 		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		auto brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;     // paranoia
 			if (surf->flags & SURF_DRAWTURB) {
@@ -252,11 +284,13 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				continue;
 			}
 			vulkan_create_surf_lightmap (surf, ctx);
+			vulkan_build_lightmap (brush, surf, ctx);
 		}
 	}
+	QFV_ScrapFlush (bctx->light_scrap);
 
-	for (j = 1; j < num_models; j++) {
-		m = models[j];
+	for (int j = 1; j < num_models; j++) {
+		auto m = models[j];
 		if (!m) {
 			break;
 		}
@@ -264,12 +298,12 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		auto brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic) {
-				Vulkan_BuildLightMap (0, brush, surf, ctx);
+				Vulkan_BuildLightMap (nulltransform, brush, surf, ctx);
 			}
 		}
 	}

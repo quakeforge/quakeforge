@@ -223,22 +223,17 @@ properties = {
 
 	brush = {
 		shader = {
-			depth_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/bsp_depth.vert;
-			};
-			gbuf_vertex = {
+			vertex = {
 				stage = vertex;
 				name = main;
 				module = $builtin/bsp_gbuf.vert;
 			};
-			gbuf_geometry = {
+			geometry = {
 				stage = geometry;
 				name = main;
 				module = $builtin/bsp_gbuf.geom;
 			};
-			gbuf_fragment = {
+			fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/quakebsp.frag;
@@ -299,7 +294,7 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (matrix_set, entity_set, oit_set,
-			//				  surface      skybox
+			//				  surface      skybox/lightmap
 							  texture_set, texture_set);
 			pushConstants = {
 				fragment = {
@@ -313,17 +308,12 @@ properties = {
 	};
 	alias = {
 		shader = {
-			depth_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/alias_depth.vert;
-			};
-			gbuf_vertex = {
+			vertex = {
 				stage = vertex;
 				name = main;
 				module = $builtin/alias.vert;
 			};
-			gbuf_fragment = {
+			fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/alias.frag;
@@ -364,17 +354,7 @@ properties = {
 					{ size = 4; offset = 0; constantID = 0; },
 				);
 			};
-			depth_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/iqm.vert;
-				specializationInfo = {
-					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(1, 0)";
-				};
-			};
-			gbuf_vertex = {
+			vertex = {
 				stage = vertex;
 				name = main;
 				module = $builtin/iqm.vert;
@@ -384,7 +364,7 @@ properties = {
 					data = "array(0, 0)";
 				};
 			};
-			gbuf_fragment = {
+			fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/iqm_fwd.frag;
@@ -431,22 +411,17 @@ properties = {
 	};
 	sprite = {
 		shader = {
-			depth_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/sprite_depth.vert;
-			};
 			depth_fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/sprite_depth.frag;
 			};
-			gbuf_vertex = {
+			vertex = {
 				stage = vertex;
 				name = main;
 				module = $builtin/sprite_gbuf.vert;
 			};
-			gbuf_fragment = {
+			fragment = {
 				stage = fragment;
 				name = main;
 				module = $builtin/sprite.frag;
@@ -1112,9 +1087,9 @@ renderpasses = {
 						);
 
 						stages = (
-							$brush.shader.gbuf_vertex,
-							$brush.shader.gbuf_geometry,
-							$brush.shader.gbuf_fragment,
+							$brush.shader.vertex,
+							$brush.shader.geometry,
+							$brush.shader.fragment,
 						);
 						vertexInput = $brush.vertexInput;
 						inputAssembly = $brush.inputAssembly;
@@ -1128,8 +1103,8 @@ renderpasses = {
 						);
 
 						stages = (
-							$alias.shader.gbuf_vertex,
-							$alias.shader.gbuf_fragment,
+							$alias.shader.vertex,
+							$alias.shader.fragment,
 						);
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
@@ -1143,8 +1118,8 @@ renderpasses = {
 						);
 
 						stages = (
-							$iqm.shader.gbuf_vertex,
-							$iqm.shader.gbuf_fragment,
+							$iqm.shader.vertex,
+							$iqm.shader.fragment,
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;
@@ -1157,8 +1132,8 @@ renderpasses = {
 						);
 
 						stages = (
-							$sprite.shader.gbuf_vertex,
-							$sprite.shader.gbuf_fragment,
+							$sprite.shader.vertex,
+							$sprite.shader.fragment,
 						);
 						vertexInput = $sprite.vertexInput;
 						inputAssembly = $sprite.inputAssembly;
