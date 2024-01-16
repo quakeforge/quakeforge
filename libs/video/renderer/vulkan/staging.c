@@ -105,6 +105,17 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	for (int i = 0; i < count; i++) {
 		fences->a[i] = stage->packets.buffer[i].fence;
 		cmdBuf->a[i] = stage->packets.buffer[i].cmd;
+#if 0
+		auto stat = dfunc->vkGetFenceStatus (device->dev, fences->a[i]);
+		if (stat != VK_SUCCESS) {
+			dstring_t  *str = dstring_newstr ();
+			auto packet = &stage->packets.buffer[i];
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_DestroyStagingBuffer: %d live packet in %p:%s\n",
+						stat, stage, str->str);
+			dstring_delete (str);
+		}
+#endif
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
 							5000000000ull);
@@ -304,6 +315,20 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 	};
 	// The fence was reset when the packet was acquired
 	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, packet->fence);
+}
+
+VkResult
+QFV_PacketWait (qfv_packet_t *packet)
+{
+	auto stage = packet->stage;
+	auto device = stage->device;
+	auto dfunc = device->funcs;
+	VkResult res = dfunc->vkWaitForFences (device->dev, 1, &packet->fence,
+										   VK_TRUE, ~0ull);
+	if (res != VK_SUCCESS) {
+		printf ("QFV_PacketWait: %d\n", res);
+	}
+	return res;
 }
 
 void
