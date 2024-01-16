@@ -288,7 +288,6 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			vulkan_build_lightmap (brush, surf, ctx);
 		}
 	}
-	QFV_ScrapFlush (bctx->light_scrap);
 
 	for (int j = 1; j < num_models; j++) {
 		auto m = models[j];
@@ -308,6 +307,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			}
 		}
 	}
+	QFV_ScrapFlush (bctx->light_scrap);
 }
 
 VkImageView
