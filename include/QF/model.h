@@ -111,10 +111,10 @@ typedef struct {
 } medge_t;
 
 typedef struct {
-	float		vecs[2][4];
-	float		mipadjust;
-	texture_t	*texture;
-	int			flags;
+	vec4f_t     vecs[2];
+	float       mipadjust;
+	int         flags;
+	texture_t  *texture;
 } mtexinfo_t;
 
 #define	VERTEXSIZE	7

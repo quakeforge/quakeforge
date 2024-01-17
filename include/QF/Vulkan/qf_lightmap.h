@@ -44,7 +44,7 @@ typedef struct subpic_s subpic_t;
 
 void Vulkan_lightmap_init (struct vulkan_ctx_s *ctx);
 void Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx);
-void Vulkan_BuildLightMap (transform_t transform, const mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx);
+void Vulkan_BuildLightMap (const vec4f_t *transform, const mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx);
 VkImageView Vulkan_LightmapImageView (struct vulkan_ctx_s *ctx) __attribute__((pure));
 void Vulkan_FlushLightmaps (struct vulkan_ctx_s *ctx);
 

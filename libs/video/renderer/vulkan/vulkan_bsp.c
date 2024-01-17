@@ -679,6 +679,8 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 	}
 
 	auto animation = Entity_GetAnimation (ent);
+	pass->transform = Transform_GetWorldMatrixPtr (Entity_Transform (ent));
+	pass->brush = &model->brush;
 	pass->ent_frame = animation->frame & 1;
 	pass->inst_id = model->render_id;
 	pass->inst_id |= renderer->colormod[3] < 1 ? INST_ALPHA : 0;
@@ -690,6 +692,7 @@ R_DrawBrushModel (entity_t ent, bsp_pass_t *pass, vulkan_ctx_t *ctx)
 			chain_surface (face, pass, bctx);
 		}
 	}
+	pass->transform = nullptr;
 	DARRAY_APPEND (&pass->instances[model->render_id].entities,
 				   renderer->render_id);
 	return 1;
@@ -923,7 +926,7 @@ update_lightmap (bsp_pass_t *pass, const bspctx_t *bctx, instface_t is)
 	}
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
-		Vulkan_BuildLightMap (nulltransform, pass->brush, surf,
+		Vulkan_BuildLightMap (pass->transform, pass->brush, surf,
 							  bctx->vulkan_ctx);
 	}
 }

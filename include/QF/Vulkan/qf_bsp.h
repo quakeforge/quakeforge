@@ -268,6 +268,7 @@ typedef struct bsp_instance_s {
 
 typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
+	const vec4f_t *transform;		///< transform for current model
 	const struct mod_brush_s *brush;///< data for current model
 	struct bspctx_s *bsp_context;	///< owning bsp context
 	struct entqueue_s *entqueue;	///< entities to render this pass
