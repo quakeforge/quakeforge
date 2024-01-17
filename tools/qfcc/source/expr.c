@@ -51,6 +51,7 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/idstuff.h"
@@ -1284,7 +1285,7 @@ new_offset_alias_expr (type_t *type, const expr_t *expr, int offset)
 	alias->alias.offset = edag_add_expr (new_int_expr (offset));
 	alias->file = expr->file;
 	alias->line = expr->line;
-	return edag_add_expr (alias);
+	return edag_add_expr (evaluate_constexpr (alias));
 }
 
 expr_t *
