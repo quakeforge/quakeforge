@@ -132,7 +132,7 @@ add_dynamic_lights (transform_t transform, msurface_t *surf,
 }
 
 void
-Vulkan_BuildLightMap (transform_t transform, mod_brush_t *brush,
+Vulkan_BuildLightMap (transform_t transform, const mod_brush_t *brush,
 					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
@@ -184,22 +184,6 @@ Vulkan_BuildLightMap (transform_t transform, mod_brush_t *brush,
 	if (surf->dlightframe == r_framecount) {
 		add_dynamic_lights (transform, surf, block);
 	}
-}
-
-void
-Vulkan_CalcLightmaps (vulkan_ctx_t *ctx)
-{
-/*	int         i;
-
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		if (!gl_lightmap_polys[i])
-			continue;
-		if (gl_lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
-			GL_UploadLightmap (i);
-			gl_lightmap_modified[i] = false;
-		}
-	}*/
 }
 
 static void

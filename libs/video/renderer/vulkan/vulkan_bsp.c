@@ -357,8 +357,10 @@ typedef struct bspvert_s {
 } bspvert_t;
 
 typedef struct {
+	bspctx_t   *bctx;
 	bsp_face_t *faces;
 	uint32_t   *indices;
+	msurface_t **surfaces;
 	bspvert_t  *vertices;
 	uint32_t    index_base;
 	uint32_t    vertex_base;
@@ -369,16 +371,20 @@ static void
 build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 {
 	msurface_t *surf = faceref->face;
-	mod_brush_t *brush = &faceref->model->brush;;
+	mod_brush_t *brush = &faceref->model->brush;
 
-	int         facenum = surf - brush->surfaces;
-	bsp_face_t *face = &build->faces[facenum + faceref->model_face_base];
+	int         facenum = (surf - brush->surfaces) + faceref->model_face_base;
+	bsp_face_t *face = &build->faces[facenum];
+	build->surfaces[facenum] = surf;
 	// create a triangle fan
 	int         numverts = surf->numedges;
-	face->first_index = build->index_base;
-	face->index_count = numverts + 1;	// +1 for primitive restart
-	face->tex_id = build->tex_id;
-	face->flags = surf->flags;
+	*face = (bsp_face_t) {
+		.first_index = build->index_base,
+		.index_count = numverts + 1,	// +1 for primitive restart
+		.tex_id = build->tex_id,
+		.flags = surf->flags,
+	};
+
 	build->index_base += face->index_count;
 	for (int i = 0; i < numverts; i++) {
 		build->indices[face->first_index + i] = build->vertex_base + i;
@@ -536,10 +542,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	//     "end of primitive" (~0u)
 	free (bctx->faces);
 	free (bctx->poly_indices);
+	free (bctx->surfaces);
 	free (bctx->models);
+	bctx->num_faces = face_base;
 	bctx->models = malloc (bctx->num_models * sizeof (bsp_model_t));
 	bctx->faces = malloc (face_base * sizeof (bsp_face_t));
 	bctx->poly_indices = malloc (index_count * sizeof (uint32_t));
+	bctx->surfaces = calloc (face_base, sizeof (msurface_t *));
 
 	face_base = 0;
 	for (int i = 0; i < num_models; i++) {
@@ -557,7 +566,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			m->first_face = face_base + models[i]->brush.firstmodelsurface;
 			m->face_count = models[i]->brush.nummodelsurfaces;
 		}
-		face_base += num_faces;;
+		face_base += num_faces;
 	}
 
 	// All usable surfaces have been chained to the (base) texture they use.
@@ -565,8 +574,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	// For animated textures, if a surface is on one texture of the group, it
 	// will effectively be on all (just one at a time).
 	buildctx_t  build = {
+		.bctx = bctx,
 		.faces = bctx->faces,
 		.indices = bctx->poly_indices,
+		.surfaces = bctx->surfaces,
 		.vertices = vertices,
 		.index_base = 0,
 		.vertex_base = 0,
@@ -653,7 +664,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_CLEAR (&face_sets[i]);
 	}
-
 }
 
 static int
@@ -790,7 +800,7 @@ R_VisitWorldNodes (bsp_pass_t *pass, vulkan_ctx_t *ctx,
 	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
-	while (1) {
+	while (true) {
 		while (test_node (pass, node_id)) {
 			mnode_t    *node = brush->nodes + node_id;
 			side = get_side (pass, node);
@@ -902,6 +912,23 @@ clear_queues (bspctx_t *bctx, bsp_pass_t *pass)
 }
 
 static void
+update_lightmap (bsp_pass_t *pass, const bspctx_t *bctx, instface_t is)
+{
+	qfZoneScoped (true);
+	auto surf = bctx->surfaces[is.face];
+	for (int i = 0; i < MAXLIGHTMAPS && surf->styles[i] != 255; i++) {
+		if (d_lightstylevalue[surf->styles[i]] != surf->cached_light[i]) {
+			goto dynamic;
+		}
+	}
+	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
+dynamic:
+		Vulkan_BuildLightMap (nulltransform, pass->brush, surf,
+							  bctx->vulkan_ctx);
+	}
+}
+
+static void
 queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 {
 	qfZoneScoped (true);
@@ -929,15 +956,15 @@ queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 				pass->entid_count += count;
 			}
 
-			int         dq = 0;
+			int         dq = QFV_bspSolid;
 			if (f.flags & SURF_DRAWSKY) {
-				dq = 1;
+				dq = QFV_bspSky;
 			}
 			if (f.flags & SURF_DRAWALPHA) {
-				dq = 2;
+				dq = QFV_bspTrans;
 			}
 			if (f.flags & SURF_DRAWTURB) {
-				dq = 3;
+				dq = QFV_bspTurb;
 			}
 
 			size_t      dq_size = pass->draw_queues[dq].size;
@@ -962,6 +989,10 @@ queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 					f.index_count * sizeof (uint32_t));
 			draw->index_count += f.index_count;
 			pass->index_count += f.index_count;
+
+			if (dq == QFV_bspSolid) {
+				update_lightmap (pass, bctx, is);
+			}
 		}
 	}
 	bframe->index_count += pass->index_count;
@@ -1016,6 +1047,7 @@ bsp_flush (vulkan_ctx_t *ctx)
 		},
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
+	QFV_ScrapFlush (bctx->light_scrap);
 }
 
 static void
@@ -1436,6 +1468,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
+	bctx->vulkan_ctx = ctx;
 
 	bctx->main_pass.bsp_context = bctx;
 	bctx->shadow_pass.bsp_context = bctx;
@@ -1543,6 +1576,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 
 	free (bctx->faces);
 	free (bctx->poly_indices);
+	free (bctx->surfaces);
 	free (bctx->models);
 
 	shutdown_pass_instances (&bctx->main_pass, bctx);

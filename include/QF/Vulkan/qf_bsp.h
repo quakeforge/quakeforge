@@ -350,6 +350,7 @@ typedef struct bspframeset_s
  * This holds all the state and resources needed for rendering brush models.
  */
 typedef struct bspctx_s {
+	struct vulkan_ctx_s *vulkan_ctx;
 
 	vulktex_t    notexture;			///< replacement for invalid textures
 
@@ -358,8 +359,10 @@ typedef struct bspctx_s {
 	VkDescriptorSet lightmap_descriptor;
 
 	int         num_models;			///< number of loaded brush models
+	uint32_t    num_faces;
 	bsp_model_t *models;			///< all loaded brush models
 	bsp_face_t *faces;				///< all faces from all loaded brush models
+	msurface_t **surfaces;			///< all faces from all loaded brush models
 	uint32_t   *poly_indices;	///< face indices from all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models

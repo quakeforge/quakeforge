@@ -241,6 +241,7 @@ QFV_SubpicDelete (subpic_t *subpic)
 void *
 QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 {
+	qfZoneScoped (true);
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
 	vrect_t    *batch;

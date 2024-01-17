@@ -34,16 +34,17 @@
 
 #include "QF/Vulkan/qf_vid.h"
 
-struct vulkan_ctx_s;
-struct model_s;
-struct mod_brush_s;
-struct msurface_s;
-struct transform_s;
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+typedef struct bspctx_s bspctx_t;
+typedef struct model_s model_t;
+typedef struct mod_brush_s mod_brush_t;
+typedef struct msurface_s msurface_t;
+typedef struct transform_s transform_t;
+typedef struct subpic_s subpic_t;
 
 void Vulkan_lightmap_init (struct vulkan_ctx_s *ctx);
-void Vulkan_BuildLightmaps (struct model_s **models, int num_models, struct vulkan_ctx_s *ctx);
-void Vulkan_CalcLightmaps (struct vulkan_ctx_s *ctx);
-void Vulkan_BuildLightMap (struct transform_s transform, struct mod_brush_s *brush, struct msurface_s *surf, struct vulkan_ctx_s *ctx);
+void Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx);
+void Vulkan_BuildLightMap (transform_t transform, const mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx);
 VkImageView Vulkan_LightmapImageView (struct vulkan_ctx_s *ctx) __attribute__((pure));
 void Vulkan_FlushLightmaps (struct vulkan_ctx_s *ctx);
 
