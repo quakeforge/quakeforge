@@ -417,10 +417,12 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 								   dstImage,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy_region);
-	ib = *dstBarrier;
-	ib.barrier.image = dstImage;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	if (dstBarrier) {
+		ib = *dstBarrier;
+		ib.barrier.image = dstImage;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+									 0, 0, 0, 0, 0, 1, &ib.barrier);
+	}
 }
