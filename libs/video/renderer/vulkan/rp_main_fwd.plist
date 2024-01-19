@@ -52,6 +52,7 @@ properties = {
 	};
 	cube_image_base = {
 		@inherit = $image_base;
+		flags = cube_compatible;
 		extent = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
 			height = "min($render_output.extent.width,$render_output.extent.height)";
@@ -579,7 +580,7 @@ properties = {
 			fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/compose.frag;
+				module = $builtin/compose_fwd.frag;
 			};
 		};
 		layout = {
@@ -984,6 +985,10 @@ images = {
 	};
 	color = {
 		@inherit = $image_base;
+		format = r8g8b8a8_unorm;
+	};
+	output = {
+		@inherit = $image_base;
 		usage = color_attachment|input_attachment|sampled;
 		format = $render_output.format;
 	};
@@ -993,6 +998,10 @@ images = {
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_color = {
+		@inherit = $cube_image_base;
+		format = $render_output.format;
+	};
+	cube_output = {
 		@inherit = $cube_image_base;
 		flags = cube_compatible;
 		usage = color_attachment|input_attachment|sampled;
@@ -1012,6 +1021,11 @@ imageviews = {
 		image = color;
 		format = $images.color.format;
 	};
+	output = {
+		@inherit = $view_base;
+		image = output;
+		format = $render_output.format;
+	};
 	cube_depth = {
 		@inherit = $cube_view_base;
 		image = cube_depth;
@@ -1021,9 +1035,13 @@ imageviews = {
 	};
 	cube_color = {
 		@inherit = $cube_view_base;
-		viewType = cube;
 		image = cube_color;
 	};
+	cube_output = {
+		@inherit = $cube_view_base;
+		viewType = cube;
+		image = cube_output;
+	}
 };
 output = {
 	view = $output;
@@ -1054,10 +1072,18 @@ renderpasses = {
 					finalLayout = $render_output.finalLayout;
 					view = color;
 				};
+				output = {
+					@inherit = $attachment_base;
+					format = $render_output.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = $render_output.finalLayout;
+					view = output;
+				};
 			};
 		};
 		subpasses = {
-			color = {
+			solid = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				attachments = {
 					color = {
@@ -1082,8 +1108,6 @@ renderpasses = {
 						tasks = (
 							{ func = bsp_draw_queue;
 							  params = (main, solid, 1); },
-							{ func = bsp_draw_queue;
-							  params = (main, sky, 1); },
 						);
 
 						stages = (
@@ -1141,13 +1165,127 @@ renderpasses = {
 					};
 				};
 			};
+			translucent = {
+				color = "[ 0.25, 0.25, 0.6, 1]";
+				dependencies = {
+					solid = $depth_dependency;
+				};
+				attachments = {
+					depth = {
+						depth = depth_stencil_read_only_optimal;
+					};
+					preserve = (color);
+				};
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					bsp:skybox = {
+						color = $color.bsp;
+						tasks = (
+							// FIXME sky should not use OIT
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 1); },
+						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.skybox_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+					bsp:skysheet = {
+						color = $color.bsp;
+						tasks = (
+							// FIXME sky should not use OIT
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 1); },
+						);
+
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.skysheet_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+					bsp:trans = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, translucent, 1); },
+							{ func = bsp_draw_queue;
+							  params = (main, turbulent, 1); },
+						);
+						stages = (
+							$brush.shader.quake_vertex,
+							$brush.shader.turb_fragment,
+						);
+						vertexInput = $brush.vertexInput;
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+					particles:trans = {
+						color = $color.particles;
+						tasks = (
+							{ func = particles_draw; },
+						);
+						stages = (
+							$particle.shader.vertex,
+							$particle.shader.geometry,
+							$particle.shader.fragment,
+						);
+						vertexInput = $particle.vertexInput;
+						inputAssembly = $particle.inputAssembly;
+						layout = $particle.layout.draw;
+					};
+				};
+			};
+			compose = {
+				color = "[ 0.7,  0.3,  0.3, 1]";
+				dependencies = {
+					solid = $color_dependency;
+					translucent = $color_dependency;//FIXME is this right? no op
+				};
+				attachments = {
+					input = {
+						color = shader_read_only_optimal;
+					};
+					color = {
+						output = {
+							layout = color_attachment_optimal;
+							blend = $additive_blend;
+						};
+					};
+					preserve = (depth);
+				};
+				pipelines = {
+					compose = {
+						@inherit = $compose_base;
+
+						color = $color.compose;
+						tasks = (
+							{ func = compose_draw; },
+						);
+						stages = (
+							$fstriangle.shader.vertex,
+							$compose.shader.fragment,
+						);
+						layout = $compose.layout;
+					};
+				};
+			};
 		};
-		output = color;
+		output = output;
 	};
 	forward_cube = {
 		@inherit = $renderpasses.forward;
 		@next = (VkRenderPassMultiviewCreateInfo, {
-			viewMasks   = (0x3fu);
+			viewMasks   = (0x3fu, 0x3fu, 0x3fu);
 		});
 		framebuffer = {
 			width = "min($render_output.extent.width,$render_output.extent.height)";
@@ -1169,6 +1307,14 @@ renderpasses = {
 					storeOp = store;
 					finalLayout = $render_output.finalLayout;
 					view = cube_color;
+				};
+				output = {
+					@inherit = $attachment_base;
+					format = $images.cube_color.format;
+					loadOp = clear;
+					storeOp = store;
+					finalLayout = $render_output.finalLayout;
+					view = cube_output;
 				};
 			};
 		};
@@ -1334,6 +1480,8 @@ steps = {
 				{ func = output_select_renderpass;
 				  params = ("\"main\""); },
 				{ func = update_framebuffer;
+				  params = ("\"main\""); },
+				{ func = clear_translucent;
 				  params = ("\"main\""); },
 				{ func = particle_wait_physics; },
 			);

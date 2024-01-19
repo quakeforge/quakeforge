@@ -85,8 +85,10 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
 	cframe->imageInfo[1].imageView = fb->views[QFV_attachLight];
 	cframe->imageInfo[2].imageView = fb->views[QFV_attachEmission];
-	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+	dfunc->vkUpdateDescriptorSets (device->dev, 1,
 								   cframe->descriptors, 0, 0);
+	//dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+	//							   cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,

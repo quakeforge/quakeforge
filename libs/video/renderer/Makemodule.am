@@ -364,6 +364,8 @@ lighting_planef_c = $(vkshaderpath)/lighting_plane.frag.spvc
 lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+compose_fwdf_src = $(vkshaderpath)/compose_fwd.frag
+compose_fwdf_c = $(vkshaderpath)/compose_fwd.frag.spvc
 infplane = $(vkshaderpath)/infplane.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
@@ -474,6 +476,8 @@ $(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
+$(compose_fwdf_c): $(compose_fwdf_src) $(oit_blend) $(oit_h)
+
 $(aliasv_c): $(aliasv_src) $(matrices_h)
 
 $(alias_depth_c): $(alias_depth_src) $(matrices_h)
@@ -545,6 +549,7 @@ vkshader_c = \
 	$(lighting_nonef_c) \
 	$(lighting_planef_c) \
 	$(composef_c) \
+	$(compose_fwdf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \
@@ -644,6 +649,7 @@ EXTRA_DIST += \
 	$(lighting_planef_src) \
 	$(lighting_h) \
 	$(composef_src) \
+	$(compose_fwdf_src) \
 	$(aliasv_src) \
 	$(aliasf_src) \
 	$(alias_depth_src) \
