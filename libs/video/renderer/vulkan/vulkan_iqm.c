@@ -58,8 +58,7 @@ typedef struct {
 	mat4f_t     mat;
 	float       blend;
 	uint32_t    matrix_base;
-	byte        colorA[4];
-	byte        colorB[4];
+	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
 } iqm_push_constants_t;
@@ -201,12 +200,18 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	iqmframe_t *frame;
 	uint16_t   *matrix_base = taskctx->data;
 
+	byte colors[4] = {};
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
+		colors[0] = colormap->top * 16 + 8;
+		colors[1] = colormap->bottom * 16 + 8;
+	}
+
 	auto animation = Entity_GetAnimation (ent);
 	iqm_push_constants_t constants = {
 		.blend = R_IQMGetLerpedFrames (animation, iqm),
 		.matrix_base = matrix_base ? *matrix_base : 0,
-		.colorA = { VEC4_EXP (skins[0].colora) },
-		.colorB = { VEC4_EXP (skins[0].colorb) },
+		.colors = { VEC4_EXP (colors) },
 		.base_color = { VEC4_EXP (renderer->colormod) },
 	};
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
@@ -244,15 +249,14 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, blend),
 			sizeof (float), &constants.blend },
+#if 0
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			field_offset (iqm_push_constants_t, matrix_base),
 			sizeof (uint32_t), &constants.matrix_base },
+#endif
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorA),
-			sizeof (constants.colorA), constants.colorA },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorB),
-			sizeof (constants.colorB), constants.colorB },
+			field_offset (iqm_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			field_offset (iqm_push_constants_t, base_color),
 			sizeof (constants.base_color), &constants.base_color },
@@ -263,7 +267,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 
 	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
 				   pass ? skins : 0,
-				   pass ? 7 : 3, push_constants,
+				   pass ? 5 : 3, push_constants,
 				   iqm, taskctx, ent);
 }
 

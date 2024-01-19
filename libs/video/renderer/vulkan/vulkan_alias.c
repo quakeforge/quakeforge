@@ -190,7 +190,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
 	vec4f_t base_color;
-	byte colors[4];
+	byte colors[4] = {};
 	QuatCopy (renderer->colormod, base_color);
 	QuatCopy (skin->colors, colors);
 	auto colormap = Entity_GetColormap (ent);
