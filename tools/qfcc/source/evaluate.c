@@ -240,6 +240,10 @@ evaluate_constexpr (const expr_t *e)
 		if (!is_constant (e->alias.expr)) {
 			return e;
 		}
+	} else if (e->type == ex_extend) {
+		if (!is_constant (e->extend.src)) {
+			return e;
+		}
 	} else {
 		return e;
 	}

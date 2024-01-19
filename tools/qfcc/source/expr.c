@@ -660,7 +660,7 @@ new_swizzle_expr (const expr_t *src, const char *swizzle)
 	return expr;
 }
 
-expr_t *
+const expr_t *
 new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev)
 {
 	expr_t     *expr = new_expr ();
@@ -669,7 +669,7 @@ new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev)
 	expr->extend.extend = ext;
 	expr->extend.reverse = rev;
 	expr->extend.type = type;
-	return expr;
+	return evaluate_constexpr (expr);
 }
 
 expr_t *

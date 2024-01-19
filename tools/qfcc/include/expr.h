@@ -542,7 +542,7 @@ expr_t *new_horizontal_expr (int op, const expr_t *vec, type_t *type);
 
 const expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 
-expr_t *new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev);
+const expr_t *new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 
