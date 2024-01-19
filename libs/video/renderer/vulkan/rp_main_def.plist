@@ -409,17 +409,16 @@ properties = {
 				mapEntries = (
 					// IQMDepthOnly
 					{ size = 4; offset = 0; constantID = 0; },
-					{ size = 4; offset = 4; constantID = 1; },
 				);
 			};
 			shadow_vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/iqm.vert;
+				module = $builtin/iqm_shadow.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(1, 1)";
+					// IQMDepthOnly
+					data = "array(1)";
 				};
 			};
 			depth_vertex = {
@@ -428,8 +427,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(1, 0)";
+					// IQMDepthOnly
+					data = "array(1)";
 				};
 			};
 			gbuf_vertex = {
@@ -438,8 +437,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(0, 0)";
+					// IQMDepthOnly
+					data = "array(0)";
 				};
 			};
 			gbuf_fragment = {
@@ -473,13 +472,15 @@ properties = {
 			//                                           skin
 			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
 			pushConstants = {
+				vertex   = { Model = mat4; blend = float; };
+				fragment = { colors = uint; base_color = vec4; fog = vec4; };
+			};
+		};
+		shadow_layout = {
+			//                                           skin
+			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
+			pushConstants = {
 				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
-				fragment = {
-					colorA = uint;
-					colorB = uint;
-					base_color = vec4;
-					fog = vec4;
-				};
 			};
 		};
 	};

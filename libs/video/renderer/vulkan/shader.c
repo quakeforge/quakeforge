@@ -121,7 +121,7 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/alias_depth.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/alias_gbuf.frag.spvc"
 static
@@ -132,6 +132,8 @@ static
 #include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/iqm_fwd.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/iqm_shadow.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/output.frag.spvc"
 static
@@ -199,12 +201,13 @@ static shaderdata_t builtin_shaders[] = {
 	{ "compose_fwd.frag", compose_fwd_frag, sizeof (compose_fwd_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
-	{ "alias.frag", alias_frag, sizeof (alias_frag) },
+	{ "qskin_fwd.frag", qskin_fwd_frag, sizeof (qskin_fwd_frag) },
 	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
 	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
 	{ "iqm_fwd.frag", iqm_fwd_frag, sizeof (iqm_fwd_frag) },
+	{ "iqm_shadow.vert", iqm_shadow_vert, sizeof (iqm_shadow_vert) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },

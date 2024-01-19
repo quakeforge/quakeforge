@@ -314,11 +314,6 @@ properties = {
 				name = main;
 				module = $builtin/alias.vert;
 			};
-			fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/alias.frag;
-			};
 		};
 		vertexInput = {
 			bindings = (
@@ -347,6 +342,15 @@ properties = {
 			};
 		};
 	};
+	qskin = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/qskin_fwd.frag;
+			};
+		};
+	};
 	iqm = {
 		shader = {
 			specialization = {
@@ -362,13 +366,8 @@ properties = {
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
 					// IQMDepthOnly
-					data = "array(0, 0)";
+					data = "array(0)";
 				};
-			};
-			fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/iqm_fwd.frag;
 			};
 		};
 		vertexInput = {
@@ -393,20 +392,11 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                                           skin
-			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
+			//                            palette      skin
+			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
 			pushConstants = {
-				vertex   = {
-					Model = mat4;
-					blend = float;
-					MatrixBase = uint;
-				};
-				fragment = {
-					colorA = uint;
-					colorB = uint;
-					base_color = vec4;
-					fog = vec4;
-				};
+				vertex   = { Model = mat4; blend = float; };
+				fragment = { colors = uint; base_color = vec4; fog = vec4; };
 			};
 		};
 	};
@@ -722,7 +712,7 @@ descriptorSetLayouts = {
 				binding = 1;
 				descriptorType = storage_buffer;
 				descriptorCount = 1;
-				stageFlags = vertex|fragment;
+				stageFlags = vertex;
 			},
 		);
 	};
@@ -1128,7 +1118,7 @@ renderpasses = {
 
 						stages = (
 							$alias.shader.vertex,
-							$alias.shader.fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
@@ -1143,7 +1133,7 @@ renderpasses = {
 
 						stages = (
 							$iqm.shader.vertex,
-							$iqm.shader.fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;

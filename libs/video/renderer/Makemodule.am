@@ -374,8 +374,8 @@ matrices_h = $(vkshaderpath)/matrices.h
 entity_h = $(vkshaderpath)/entity.h
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
-aliasf_src = $(vkshaderpath)/alias.frag
-aliasf_c = $(vkshaderpath)/alias.frag.spvc
+qskin_fwdf_src = $(vkshaderpath)/qskin_fwd.frag
+qskin_fwdf_c = $(vkshaderpath)/qskin_fwd.frag.spvc
 alias_depth_src = $(vkshaderpath)/alias_depth.vert
 alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
 alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
@@ -388,6 +388,8 @@ iqmf_src = $(vkshaderpath)/iqm.frag
 iqmf_c = $(vkshaderpath)/iqm.frag.spvc
 iqm_fwd_src = $(vkshaderpath)/iqm_fwd.frag
 iqm_fwd_c = $(vkshaderpath)/iqm_fwd.frag.spvc
+iqm_shadow_src = $(vkshaderpath)/iqm_shadow.vert
+iqm_shadow_c = $(vkshaderpath)/iqm_shadow.vert.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -482,7 +484,7 @@ $(aliasv_c): $(aliasv_src) $(matrices_h)
 
 $(alias_depth_c): $(alias_depth_src) $(matrices_h)
 
-$(aliasf_c): $(aliasf_src)
+$(qskin_fwdf_c): $(qskin_fwdf_src)
 
 $(alias_gbuf_c): $(alias_gbuf_src)
 
@@ -493,6 +495,8 @@ $(iqmv_c): $(iqmv_src) $(matrices_h)
 $(iqmf_c): $(iqmf_src)
 
 $(iqm_fwd_c): $(iqm_fwd_src)
+
+$(iqm_shadow_c): $(iqm_shadow_src)
 
 $(output_c): $(output_src) $(matrices_h)
 
@@ -552,12 +556,13 @@ vkshader_c = \
 	$(compose_fwdf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
-	$(aliasf_c) \
+	$(qskin_fwdf_c) \
 	$(alias_gbuf_c) \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
 	$(iqmf_c) \
 	$(iqm_fwd_c) \
+	$(iqm_shadow_c) \
 	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
@@ -651,13 +656,15 @@ EXTRA_DIST += \
 	$(composef_src) \
 	$(compose_fwdf_src) \
 	$(aliasv_src) \
-	$(aliasf_src) \
+	$(qskin_fwdf_src) \
 	$(alias_depth_src) \
 	$(alias_gbuf_src) \
 	$(alias_shadow_src) \
 	$(iqmv_src) \
 	$(iqmf_src) \
 	$(iqm_fwd_src) \
+	$(iqm_shadow_src) \
+	$(iqm_shadow_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \

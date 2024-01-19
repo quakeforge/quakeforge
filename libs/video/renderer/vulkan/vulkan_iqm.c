@@ -42,6 +42,7 @@
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
@@ -278,10 +279,11 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
-
+	bool shadow = !!taskctx->data;
 	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Lighting_Descriptors (ctx, ctx->curFrame),
+		shadow ? Vulkan_Lighting_Descriptors (ctx, ctx->curFrame)
+			   : Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Palette_Descriptor (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, sets, 0, 0);
