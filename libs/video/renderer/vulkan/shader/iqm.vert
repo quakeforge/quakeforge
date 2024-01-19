@@ -29,9 +29,9 @@ layout (location = 6) in vec4 vcolor;
 layout (location = 0) out vec2 texcoord;
 layout (location = 1) out vec4 position;
 layout (location = 2) out vec3 normal;
-layout (location = 3) out vec3 tangent;
-layout (location = 4) out vec3 bitangent;
-layout (location = 5) out vec4 color;
+//layout (location = 3) out vec3 tangent;
+//layout (location = 4) out vec3 bitangent;
+//layout (location = 5) out vec4 color;
 
 void
 main (void)
@@ -45,15 +45,15 @@ main (void)
 	gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 
 	if (!IQMDepthOnly) {
+		texcoord = vtexcoord;
 		position = pos;
 		mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz),
 							  cross(m[2].xyz, m[0].xyz),
 							  cross(m[0].xyz, m[1].xyz));
 		normal = normalize (mat3 (Model) * vnormal * adjTrans);
-		tangent = mat3 (Model) * vtangent.xyz * adjTrans;
-		tangent = normalize (tangent - dot (tangent, normal) * normal);
-		bitangent = cross (normal, tangent) * vtangent.w;
-		texcoord = vtexcoord;
-		color = vcolor;
+		//tangent = mat3 (Model) * vtangent.xyz * adjTrans;
+		//tangent = normalize (tangent - dot (tangent, normal) * normal);
+		//bitangent = cross (normal, tangent) * vtangent.w;
+		//color = vcolor;
 	}
 }

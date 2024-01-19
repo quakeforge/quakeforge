@@ -364,11 +364,6 @@ properties = {
 				name = main;
 				module = $builtin/alias.vert;
 			};
-			gbuf_fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/alias_gbuf.frag;
-			};
 		};
 		vertexInput = {
 			bindings = (
@@ -399,7 +394,16 @@ properties = {
 		shadow_layout = {
 			descriptorSets = (shadowmat_set);
 			pushConstants = {
-				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
+				vertex = { Model = mat4; blend = float; MatrixBase = uint; };
+			};
+		};
+	};
+	qskin = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/qskin_gbuf.frag;
 			};
 		};
 	};
@@ -441,11 +445,6 @@ properties = {
 					data = "array(0)";
 				};
 			};
-			gbuf_fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/iqm.frag;
-			};
 		};
 		vertexInput = {
 			bindings = (
@@ -469,16 +468,16 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                                           skin
-			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
+			//                            palette      skin
+			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; };
 				fragment = { colors = uint; base_color = vec4; fog = vec4; };
 			};
 		};
 		shadow_layout = {
-			//                                           skin
-			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
+			//                               palette(n/u) skin(n/u)
+			descriptorSets = (shadowmat_set, texture_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
 			};
@@ -1746,7 +1745,7 @@ renderpasses = {
 
 						stages = (
 							$alias.shader.gbuf_vertex,
-							$alias.shader.gbuf_fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
@@ -1761,7 +1760,7 @@ renderpasses = {
 
 						stages = (
 							$iqm.shader.gbuf_vertex,
-							$iqm.shader.gbuf_fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;
@@ -2277,7 +2276,7 @@ renderpasses = {
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
+						layout = $iqm.shadow_layout;
 					};
 				};
 			};

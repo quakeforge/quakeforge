@@ -30,8 +30,8 @@ main (void)
 	//vec3        n;
 	int         i;
 	vec3        normal = normalize (fnormal);
-	vec3        tangent = normalize (ftangent);
-	vec3        bitangent = normalize (fbitangent);
+	//vec3        tangent = normalize (ftangent);
+	//vec3        bitangent = normalize (fbitangent);
 	//mat3        tbn = mat3 (tangent, bitangent, normal);
 
 	c = texture (Skin, texcoord);// * color;

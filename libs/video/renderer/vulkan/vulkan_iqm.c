@@ -187,7 +187,7 @@ Vulkan_IQMRemoveSkin (vulkan_ctx_t *ctx, qfv_iqm_skin_t *skin)
 }
 
 static void
-iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
+iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass, bool shadow)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -242,33 +242,45 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
 
 	transform_t transform = Entity_Transform (ent);
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, mat),
-			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-#if 0
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, matrix_base),
-			sizeof (uint32_t), &constants.matrix_base },
-#endif
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colors),
-			sizeof (constants.colors), constants.colors },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, base_color),
-			sizeof (constants.base_color), &constants.base_color },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-	};
+	if (shadow) {
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_VERTEX_BIT,
+				field_offset (iqm_push_constants_t, mat),
+				sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
+			{ VK_SHADER_STAGE_VERTEX_BIT,
+				field_offset (iqm_push_constants_t, blend),
+				sizeof (float), &constants.blend },
+			{ VK_SHADER_STAGE_VERTEX_BIT,
+				field_offset (iqm_push_constants_t, matrix_base),
+				sizeof (uint32_t), &constants.matrix_base },
+		};
 
-	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
-				   pass ? skins : 0,
-				   pass ? 5 : 3, push_constants,
-				   iqm, taskctx, ent);
+		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
+					   nullptr, 3, push_constants, iqm, taskctx, ent);
+	} else {
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_VERTEX_BIT,
+				field_offset (iqm_push_constants_t, mat),
+				sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
+			{ VK_SHADER_STAGE_VERTEX_BIT,
+				field_offset (iqm_push_constants_t, blend),
+				sizeof (float), &constants.blend },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT,
+				field_offset (iqm_push_constants_t, colors),
+				sizeof (constants.colors), constants.colors },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT,
+				field_offset (iqm_push_constants_t, base_color),
+				sizeof (constants.base_color), &constants.base_color },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT,
+				field_offset (iqm_push_constants_t, fog),
+				sizeof (constants.fog), &constants.fog },
+		};
+
+		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
+					   pass ? skins : nullptr,
+					   pass ? 5 : 2, push_constants,
+					   iqm, taskctx, ent);
+	}
 }
 
 static void
@@ -295,7 +307,7 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_iqm].a[i];
-		iqm_draw_ent (taskctx, ent, pass);
+		iqm_draw_ent (taskctx, ent, pass, shadow);
 	}
 }
 
