@@ -2560,7 +2560,8 @@ commutator_product (const expr_t *e1, const expr_t *e2)
 {
 	auto ab = geometric_product (e1, e2);
 	auto ba = geometric_product (e2, e1);
-	return multivector_sum ('-', ab, ba);
+	return algebra_binary_expr ('/', multivector_sum ('-', ab, ba),
+								new_int_expr (2));
 }
 
 static const expr_t *
