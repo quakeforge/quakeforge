@@ -1381,7 +1381,10 @@ draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+	int         s = 2 * ctx->twod_scale;
 
+	x -= CROSSHAIR_WIDTH / s + 1;
+	y -= CROSSHAIR_HEIGHT / s + 1;
 	byte       *color = &vid.palette32[bound (0, crosshaircolor, 255) * 4];
 	draw_quad (x, y, CORE_DESC, dctx->crosshair_inds[ch - 1], color, frame);
 }
