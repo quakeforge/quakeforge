@@ -155,7 +155,7 @@ fogBlend (vec4 color)
 	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
 	vec4        fog_color = vec4 (fog.rgb, 1.0);
 
-	fog_factor = exp (-az * az);
+	fog_factor = exp (-az);
 	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
 }
 
