@@ -44,26 +44,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 //==============================================================================
 
-static float fog_density;
-static float fog_red;
-static float fog_green;
-static float fog_blue;
-
-static float old_density;
-static float old_red;
-static float old_green;
-static float old_blue;
+static vec4f_t fog;
+static vec4f_t old_fog;
 
 static float fade_time; //duration of fade
 static float fade_done; //time when fade will be done
 
-/*
-	Fog_Update
-
-	update internal variables
-*/
-void
-Fog_Update (float density, float red, float green, float blue, float time)
+static void
+fog_update (vec4f_t newfog, float time)
 {
 	//save previous settings for fade
 	if (time > 0) {
@@ -72,24 +60,20 @@ Fog_Update (float density, float red, float green, float blue, float time)
 			float       f;
 
 			f = (fade_done - r_data->realtime) / fade_time;
-			old_density = f * old_density + (1.0 - f) * fog_density;
-			old_red = f * old_red + (1.0 - f) * fog_red;
-			old_green = f * old_green + (1.0 - f) * fog_green;
-			old_blue = f * old_blue + (1.0 - f) * fog_blue;
+			old_fog = f * old_fog + (1 - f) * fog;
 		} else {
-			old_density = fog_density;
-			old_red = fog_red;
-			old_green = fog_green;
-			old_blue = fog_blue;
+			old_fog = fog;
 		}
 	}
 
-	fog_density = density;
-	fog_red = red;
-	fog_green = green;
-	fog_blue = blue;
+	fog = newfog;
 	fade_time = time;
 	fade_done = r_data->realtime + time;
+}
+void
+Fog_Update (float density, float red, float green, float blue, float time)
+{
+	fog_update ((vec4f_t) { red, green, blue, density }, time);
 }
 
 /*
@@ -100,11 +84,8 @@ Fog_Update (float density, float red, float green, float blue, float time)
 static void
 Fog_FogCommand_f (void)
 {
-	float       density = fog_density;
-	float       red = fog_red;
-	float       green = fog_green;
-	float       blue = fog_blue;
-	float       time = 0.0;
+	vec4f_t newfog = fog;
+	float   time = 0;
 
 	switch (Cmd_Argc ()) {
 		default:
@@ -114,42 +95,42 @@ Fog_FogCommand_f (void)
 			Sys_Printf ("   fog <red> <green> <blue>\n");
 			Sys_Printf ("   fog <density> <red> <green> <blue>\n");
 			Sys_Printf ("current values:\n");
-			Sys_Printf ("   \"density\" is \"%f\"\n", fog_density);
-			Sys_Printf ("   \"red\" is \"%f\"\n", fog_red);
-			Sys_Printf ("   \"green\" is \"%f\"\n", fog_green);
-			Sys_Printf ("   \"blue\" is \"%f\"\n", fog_blue);
+			Sys_Printf ("   \"density\" is \"%f\"\n", fog[3]);
+			Sys_Printf ("   \"red\" is \"%f\"\n", fog[0]);
+			Sys_Printf ("   \"green\" is \"%f\"\n", fog[1]);
+			Sys_Printf ("   \"blue\" is \"%f\"\n", fog[2]);
 			return;
 		case 2:
-			density = atof (Cmd_Argv(1));
+			newfog[3] = atof (Cmd_Argv(1));
 			break;
 		case 3: //TEST
-			density = atof (Cmd_Argv(1));
+			newfog[3] = atof (Cmd_Argv(1));
 			time = atof (Cmd_Argv(2));
 			break;
 		case 4:
-			red = atof (Cmd_Argv(1));
-			green = atof (Cmd_Argv(2));
-			blue = atof (Cmd_Argv(3));
+			newfog[0] = atof (Cmd_Argv(1));
+			newfog[1] = atof (Cmd_Argv(2));
+			newfog[2] = atof (Cmd_Argv(3));
 			break;
 		case 5:
-			density = atof (Cmd_Argv(1));
-			red = atof (Cmd_Argv(2));
-			green = atof (Cmd_Argv(3));
-			blue = atof (Cmd_Argv(4));
+			newfog[3] = atof (Cmd_Argv(1));
+			newfog[0] = atof (Cmd_Argv(2));
+			newfog[1] = atof (Cmd_Argv(3));
+			newfog[2] = atof (Cmd_Argv(4));
 			break;
 		case 6: //TEST
-			density = atof (Cmd_Argv(1));
-			red = atof (Cmd_Argv(2));
-			green = atof (Cmd_Argv(3));
-			blue = atof (Cmd_Argv(4));
+			newfog[3] = atof (Cmd_Argv(1));
+			newfog[0] = atof (Cmd_Argv(2));
+			newfog[1] = atof (Cmd_Argv(3));
+			newfog[2] = atof (Cmd_Argv(4));
 			time = atof (Cmd_Argv(5));
 			break;
 	}
-	density = max (0.0, density);
-	red = bound (0.0, red, 1.0);
-	green = bound (0.0, green, 1.0);
-	blue = bound (0.0, blue, 1.0);
-	Fog_Update (density, red, green, blue, time);
+	newfog[3] = max (0, newfog[3]);
+	newfog[0] = bound (0, newfog[0], 1);
+	newfog[1] = bound (0, newfog[1], 1);
+	newfog[2] = bound (0, newfog[2], 1);
+	fog_update (newfog, time);
 }
 
 /*
@@ -160,22 +141,38 @@ Fog_FogCommand_f (void)
 void
 Fog_ParseWorldspawn (plitem_t *worldspawn)
 {
-	plitem_t   *fog;
+	plitem_t   *fog_item;
 	const char *value;
 
 	//initially no fog
-	fog_density = 0.0;
-	old_density = 0.0;
-	fade_time = 0.0;
-	fade_done = 0.0;
+	fog[3] = 0;
+	old_fog[3] = 0;
 
 	if (!worldspawn)
 		return; // error
-	if ((fog = PL_ObjectForKey (worldspawn, "fog"))
-		&& (value = PL_String (fog))) {
-		sscanf (value, "%f %f %f %f", &fog_density,
-				&fog_red, &fog_green, &fog_blue);
+	if ((fog_item = PL_ObjectForKey (worldspawn, "fog"))
+		&& (value = PL_String (fog_item))) {
+		sscanf (value, "%f %f %f %f", &fog[3], &fog[0], &fog[1], &fog[2]);
 	}
+}
+
+vec4f_t
+Fog_Get (void)
+{
+	vec4f_t fc = fog;
+
+	if (fade_done > r_data->realtime) {
+		float f = (fade_done - r_data->realtime) / fade_time;
+		fc = f * old_fog + (1 - f) * fog;
+	}
+
+	//find closest 24-bit RGB value, so solid-colored sky can match the fog
+	//perfectly
+	vec4f_t t = vfloor4f (fc * 255 + 0.5) / 255;
+	// magic scaling factor for fog density, I don't know why 64 (maybe half
+	// of a 128 pixel block?)
+	t[3] = fc[3] / 64;
+	return t;
 }
 
 /*
@@ -191,15 +188,12 @@ Fog_GetColor (quat_t fogcolor)
 
 	if (fade_done > r_data->realtime) {
 		f = (fade_done - r_data->realtime) / fade_time;
-		fogcolor[0] = f * old_red + (1.0 - f) * fog_red;
-		fogcolor[1] = f * old_green + (1.0 - f) * fog_green;
-		fogcolor[2] = f * old_blue + (1.0 - f) * fog_blue;
-		fogcolor[3] = 1.0;
+		vec4f_t fc = f * old_fog + (1 - f) * fog;
+		VectorCopy (fc, fogcolor);
+		fogcolor[3] = 1;
 	} else {
-		fogcolor[0] = fog_red;
-		fogcolor[1] = fog_green;
-		fogcolor[2] = fog_blue;
-		fogcolor[3] = 1.0;
+		VectorCopy (fog, fogcolor);
+		fogcolor[3] = 1;
 	}
 
 	//find closest 24-bit RGB value, so solid-colored sky can match the fog
@@ -220,9 +214,9 @@ Fog_GetDensity (void)
 
 	if (fade_done > r_data->realtime) {
 		f = (fade_done - r_data->realtime) / fade_time;
-		return f * old_density + (1.0 - f) * fog_density;
+		return f * old_fog[3] + (1 - f) * fog[3];
 	} else {
-		return fog_density;
+		return fog[3];
 	}
 }
 
@@ -239,8 +233,5 @@ Fog_Init (void)
 	//Cvar_RegisterVariable (&r_vfog, NULL);
 
 	//set up global fog
-	fog_density = 0.0;
-	fog_red = 0.3;
-	fog_green = 0.3;
-	fog_blue = 0.3;
+	fog = (vec4f_t) {0.3, 0.3, 0.3, 0.3};
 }

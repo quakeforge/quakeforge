@@ -198,6 +198,7 @@ void Fog_Update (float density, float red, float green, float blue,
 struct plitem_s;
 void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
 
+vec4f_t Fog_Get (void) __attribute__((pure));
 void Fog_GetColor (quat_t fogcolor);
 float Fog_GetDensity (void) __attribute__((pure));
 void Fog_SetupFrame (void);
