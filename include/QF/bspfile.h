@@ -489,7 +489,7 @@ typedef struct dleaf_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	valid. { must be the first non-whitespace character in the string. } must
 	be the last non-whitespace character in the string if there is a {.
 
-	The contents of a block consist of a series of key-value strinng pairs.
+	The contents of a block consist of a series of key-value string pairs.
 	Unless the string contains spaces or punctuaiont (one of "{}()':") double
 	quote (") around the string are optional. Keys and values are separated
 	by whitespace (optional if quotes are used) but must be on the same line,
@@ -591,11 +591,11 @@ typedef struct dleaf_s { //BSP2 version (bsp 29 version is in bspfile.c)
 	order within the textures block: the engine searches for them and sorts
 	them.
 
-	Single-frame sequences are useful for simple static texture switchinng
+	Single-frame sequences are useful for simple static texture switching
 	based on game state (entity frame: 0 for main, non-zero for alternate).
 	Multi-frame sequences are played back at five frames per second.
 
-	For example, the folowing sets up an animitation with a 4-frame main
+	For example, the following sets up an animation with a 4-frame main
 	sequence and a 2-frame alternate sequence. Perhaps a roaring fire in
 	the main sequence and glowing coals in the alternate.
 
