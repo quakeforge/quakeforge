@@ -570,6 +570,7 @@ properties = {
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
 					vertex = { Model = mat4; };
+					fragment = { fog = vec4; };
 				};
 			};
 			physics = {
@@ -1898,7 +1899,8 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = compose_draw; },
+							{ func = compose_draw;
+							  params = (0); },
 						);
 
 						stages = (

@@ -931,7 +931,8 @@ dynamic:
 }
 
 static void
-queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
+queue_faces (bsp_pass_t *pass, QFV_BspPass pass_ind,
+			 const bspctx_t *bctx, bspframe_t *bframe)
 {
 	qfZoneScoped (true);
 	uint32_t base = bframe->index_count;
@@ -992,7 +993,7 @@ queue_faces (bsp_pass_t *pass, const bspctx_t *bctx, bspframe_t *bframe)
 			draw->index_count += f.index_count;
 			pass->index_count += f.index_count;
 
-			if (dq == QFV_bspSolid) {
+			if (pass_ind == QFV_bspLightmap && dq == QFV_bspSolid) {
 				update_lightmap (pass, bctx, is);
 			}
 		}
@@ -1265,6 +1266,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto pass = (bsp_pass_t *[]) {
 		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspLightmap] = &bctx->main_pass,
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
 	} [pass_ind];
@@ -1304,7 +1306,7 @@ bsp_draw_queue (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (queue == QFV_bspSky) {
 		vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 		bind_texture (&skybox, SKYBOX_SET, layout, dfunc, cmd);
-	} else {
+	} else if (pass_ind == QFV_bspLightmap) {
 		vulktex_t lightmap = { .descriptor = bctx->lightmap_descriptor };
 		bind_texture (&lightmap, LIGHTMAP_SET, layout, dfunc, cmd);
 	}
@@ -1324,11 +1326,12 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	auto pass = (bsp_pass_t *[]) {
 		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspLightmap] = &bctx->main_pass,
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
 	} [pass_ind];
 
-	if (pass_ind == QFV_bspMain) {
+	if (pass_ind == QFV_bspMain || pass_ind == QFV_bspLightmap) {
 		pass->entqueue = r_ent_queue;
 		pass->position = r_refdef.frame.position;
 		pass->vis_frame = r_visstate.visframecount;
@@ -1361,6 +1364,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 	R_VisitWorldNodes (pass, ctx, (typeof(visit_node_bfcull)*[]) {
 		[QFV_bspMain] = visit_node_bfcull,
+		[QFV_bspLightmap] = visit_node_bfcull,
 		[QFV_bspShadow] = visit_node_no_bfcull,
 		[QFV_bspDebug] = visit_node_no_bfcull,
 	}[pass_ind]);
@@ -1376,7 +1380,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		}
 	}
 
-	queue_faces (pass, bctx, bframe);
+	queue_faces (pass, pass_ind, bctx, bframe);
 
 	bframe->entid_count = pass->entid_count;
 
@@ -1392,13 +1396,15 @@ static exprtype_t bsp_pass_type = {
 };
 static int bsp_pass_values[] = {
 	QFV_bspMain,
+	QFV_bspLightmap,
 	QFV_bspShadow,
 	QFV_bspDebug,
 };
 static exprsym_t bsp_pass_symbols[] = {
 	{"main", &bsp_pass_type, bsp_pass_values + 0},
-	{"shadow", &bsp_pass_type, bsp_pass_values + 1},
-	{"debug", &bsp_pass_type, bsp_pass_values + 2},
+	{"lightmap", &bsp_pass_type, bsp_pass_values + 1},
+	{"shadow", &bsp_pass_type, bsp_pass_values + 2},
+	{"debug", &bsp_pass_type, bsp_pass_values + 3},
 	{}
 };
 static exprtab_t bsp_pass_symtab = { .symbols = bsp_pass_symbols };
@@ -1698,6 +1704,7 @@ Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind)
 	}
 	auto pass = (bsp_pass_t *[]) {
 		[QFV_bspMain] = &bctx->main_pass,
+		[QFV_bspLightmap] = &bctx->main_pass,
 		[QFV_bspShadow] = &bctx->shadow_pass,
 		[QFV_bspDebug] = &bctx->debug_pass,
 	}[pass_ind];

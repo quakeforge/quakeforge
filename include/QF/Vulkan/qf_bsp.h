@@ -328,6 +328,7 @@ typedef enum {
 
 typedef enum {
 	QFV_bspMain,
+	QFV_bspLightmap,	// same as main, but using lightmaps
 	QFV_bspShadow,
 	QFV_bspDebug,
 

@@ -72,6 +72,8 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
+	int  color_only = *(int *) params[0]->value;
+
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -87,8 +89,10 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	cframe->imageInfo[2].imageView = fb->views[QFV_attachEmission];
 	dfunc->vkUpdateDescriptorSets (device->dev, 1,
 								   cframe->descriptors, 0, 0);
-	//dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
-	//							   cframe->descriptors, 0, 0);
+	if (!color_only) {
+		dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+									   cframe->descriptors, 0, 0);
+	}
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
@@ -100,8 +104,12 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static exprtype_t *compose_draw_params[] = {
+	&cexpr_int,
+};
 static exprfunc_t compose_draw_func[] = {
-	{ .func = compose_draw },
+	{ .func = compose_draw, .num_params = 1,
+		.param_types = compose_draw_params },
 	{}
 };
 static exprsym_t compose_task_syms[] = {

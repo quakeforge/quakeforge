@@ -1112,7 +1112,7 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, solid, 1); },
+							  params = (lightmap, solid, 1); },
 						);
 
 						stages = (
@@ -1191,7 +1191,7 @@ renderpasses = {
 						tasks = (
 							// FIXME sky should not use OIT
 							{ func = bsp_draw_queue;
-							  params = (main, sky, 1); },
+							  params = (lightmap, sky, 1); },
 						);
 
 						stages = (
@@ -1207,7 +1207,7 @@ renderpasses = {
 						tasks = (
 							// FIXME sky should not use OIT
 							{ func = bsp_draw_queue;
-							  params = (main, sky, 1); },
+							  params = (lightmap, sky, 1); },
 						);
 
 						stages = (
@@ -1222,9 +1222,9 @@ renderpasses = {
 						color = $color.bsp;
 						tasks = (
 							{ func = bsp_draw_queue;
-							  params = (main, translucent, 1); },
+							  params = (lightmap, translucent, 1); },
 							{ func = bsp_draw_queue;
-							  params = (main, turbulent, 1); },
+							  params = (lightmap, turbulent, 1); },
 						);
 						stages = (
 							$brush.shader.quake_vertex,
@@ -1274,7 +1274,8 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = compose_draw; },
+							{ func = compose_draw;
+							  params = (1); },
 						);
 						stages = (
 							$fstriangle.shader.vertex,
