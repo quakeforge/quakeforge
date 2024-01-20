@@ -182,10 +182,12 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	mat4f_t     mat;
 	mat4fidentity (mat);
+	vec4f_t     fog = Fog_Get ();
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat4f_t), &mat },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof (fog), &fog },
 	};
-	QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	QFV_PushConstants (device, cmd, layout, 2, push_constants);
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer    buffers[] = {
 		pframe->states,

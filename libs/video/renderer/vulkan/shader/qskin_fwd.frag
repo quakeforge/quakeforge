@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+
+#include "fog.finc"
 
 layout (set = 1, binding = 0) uniform sampler2D Palette;
 layout (set = 2, binding = 0) uniform sampler2DArray Skin;
@@ -35,5 +38,5 @@ main (void)
 	light -= d * shadelight;
 	light = max (light, 0.0) / 255;
 
-	frag_color = light * c + e;//fogBlend (c);
+	frag_color = FogBlend (light * c + e, fog);
 }

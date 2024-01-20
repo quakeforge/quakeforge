@@ -156,10 +156,14 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 
 	mat4f_t     mat = {};
 	uint32_t    frame;
+	vec4f_t     fog = Fog_Get ();
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
 		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 72, sizeof (fog), &fog },
 	};
 
 	auto animation = Entity_GetAnimation (ent);

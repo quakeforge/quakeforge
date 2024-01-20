@@ -496,6 +496,7 @@ properties = {
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
 					vertex = { Model = mat4; };
+					fragment = { fog = vec4; };
 				};
 			};
 			physics = {

@@ -122,6 +122,7 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 		.blend = blend,
 		.colors = { VEC4_EXP (colors) },
 		.base_color = base_color,
+		.fog = Fog_Get (),
 	};
 
 	qfv_push_constants_t push_constants[] = {
@@ -161,6 +162,7 @@ push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
 		.shadelight = lighting->shadelight,
 		.lightvec = { VectorExpand (lighting->lightvec) },
 		.base_color = base_color,
+		.fog = Fog_Get (),
 	};
 
 	qfv_push_constants_t push_constants[] = {

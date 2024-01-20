@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+
+#include "fog.finc"
 
 layout (set = 1, binding = 1) uniform sampler2DArray Texture;
 
@@ -27,5 +30,5 @@ main (void)
 	if (pix.a < 0.5) {
 		discard;
 	}
-	frag_color = pix;
+	frag_color = FogBlend (pix, fog);
 }

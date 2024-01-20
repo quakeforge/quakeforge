@@ -1,0 +1,11 @@
+vec4
+FogBlend (vec4 color, vec4 fog)
+{
+	float       az = fog.a * 1 / gl_FragCoord.w;
+	//float       az = fog.a * (4 - gl_FragCoord.w);
+	vec4        fog_color = vec4 (fog.rgb, 1.0);
+
+	float fog_factor = exp (-az * az);
+	//return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
+	return mix (fog_color, color, fog_factor);
+}

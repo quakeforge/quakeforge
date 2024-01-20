@@ -77,7 +77,7 @@
 #define LIGHTMAP_SET 4
 
 typedef struct bsp_push_constants_s {
-	quat_t      fog;
+	vec4f_t     fog;
 	float       time;
 	float       alpha;
 	float       turb_scale;
@@ -862,9 +862,8 @@ static void
 push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 				qfv_device_t *device, VkCommandBuffer cmd)
 {
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
 	bsp_frag_constants_t constants = {
+		.fog = Fog_Get (),
 		.time = vr_data.realtime,
 		.alpha = queue == QFV_bspTurb ? r_wateralpha : 1,
 		.turb_scale = queue == QFV_bspTurb ? 1 : 0,

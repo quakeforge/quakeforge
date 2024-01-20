@@ -367,6 +367,7 @@ composef_c = $(vkshaderpath)/compose.frag.spvc
 compose_fwdf_src = $(vkshaderpath)/compose_fwd.frag
 compose_fwdf_c = $(vkshaderpath)/compose_fwd.frag.spvc
 infplane = $(vkshaderpath)/infplane.finc
+fog_h = $(vkshaderpath)/fog.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -416,9 +417,9 @@ $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src) $(matrices_h)
-$(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
+$(particlef_c): $(particlef_src) $(oit_store) $(oit_h) $(fog_h)
 
-$(spritef_c): $(spritef_src)
+$(spritef_c): $(spritef_src) $(fog_h)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
@@ -436,7 +437,7 @@ $(twodf_c): $(twodf_src)
 
 $(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
-$(quakebspf_c): $(quakebspf_src)
+$(quakebspf_c): $(quakebspf_src) $(fog_h)
 
 $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
@@ -448,9 +449,9 @@ $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_shadow_c): $(bsp_shadow_src) $(entity_h)
 
-$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
+$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h) $(fog_h)
 
-$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
+$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h) $(fog_h)
 
 $(debug_c): $(debug_src) $(lighting_h)
 
@@ -484,7 +485,7 @@ $(aliasv_c): $(aliasv_src) $(matrices_h)
 
 $(alias_depth_c): $(alias_depth_src) $(matrices_h)
 
-$(qskin_fwdf_c): $(qskin_fwdf_src)
+$(qskin_fwdf_c): $(qskin_fwdf_src) $(fog_h)
 
 $(qskin_gbuf_c): $(qskin_gbuf_src)
 
