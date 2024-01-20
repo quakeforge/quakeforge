@@ -6,6 +6,9 @@ layout (set = 2, binding = 0) uniform sampler2DArray Skin;
 layout (push_constant) uniform PushConstants {
 	layout (offset = 68)
 	uint        colors;
+	float       ambient;
+	float       shadelight;
+	vec4        lightvec;
 	vec4        base_color;
 	vec4        fog;
 };
@@ -26,5 +29,11 @@ main (void)
 	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
 	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
 
-	frag_color = c + e;//fogBlend (c);
+	float       light = ambient;
+	float       d = dot (normal, lightvec.xyz);
+	d = min (d, 0.0);
+	light -= d * shadelight;
+	light = max (light, 0.0) / 255;
+
+	frag_color = light * c + e;//fogBlend (c);
 }

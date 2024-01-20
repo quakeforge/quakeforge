@@ -57,16 +57,31 @@
 typedef struct {
 	mat4f_t     mat;
 	float       blend;
-	uint32_t    matrix_base;
 	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
 } iqm_push_constants_t;
 
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	byte        colors[4];
+	float       ambient;
+	float       shadelight;
+	vec4f_t     lightvec;
+	vec4f_t     base_color;
+	vec4f_t     fog;
+} fwd_push_constants_t;
+
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	uint32_t    matrix_base;
+} shadow_push_constants_t;
+
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
-			   uint32_t numPC, qfv_push_constants_t *constants,
 			   iqm_t *iqm, qfv_taskctx_t *taskctx, entity_t ent)
 {
 	auto ctx = taskctx->ctx;
@@ -89,7 +104,6 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	VkIndexType indexType = iqm->num_verts > 0xfff0 ? VK_INDEX_TYPE_UINT32
 													: VK_INDEX_TYPE_UINT16;
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0, indexType);
-	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	for (int i = 0; i < iqm->num_meshes; i++) {
 		if (skins) {
 			VkDescriptorSet sets[] = {
@@ -187,7 +201,118 @@ Vulkan_IQMRemoveSkin (vulkan_ctx_t *ctx, qfv_iqm_skin_t *skin)
 }
 
 static void
-iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass, bool shadow)
+push_iqm_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	iqm_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.base_color = base_color,
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, pass ? 5 : 2, push_constants);
+}
+
+static void
+push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, const alight_t *lighting,
+					int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	fwd_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.ambient = lighting->ambientlight,
+		.shadelight = lighting->shadelight,
+		.lightvec = { VectorExpand (lighting->lightvec) },
+		.base_color = base_color,
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, ambient),
+			sizeof (constants.ambient), &constants.ambient },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, shadelight),
+			sizeof (constants.shadelight), &constants.shadelight },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, lightvec),
+			sizeof (constants.lightvec), &constants.lightvec },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, 8, push_constants);
+}
+
+static void
+push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
+					   qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	shadow_push_constants_t constants = {
+		.blend = blend,
+		.matrix_base = *matrix_base,
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, matrix_base),
+			sizeof (uint32_t), &constants.matrix_base },
+	};
+	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+}
+
+static void
+iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass, bool shadow)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -200,6 +325,9 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass, bool shadow)
 	iqmframe_t *frame;
 	uint16_t   *matrix_base = taskctx->data;
 
+	vec4f_t base_color;
+	QuatCopy (renderer->colormod, base_color);
+
 	byte colors[4] = {};
 	auto colormap = Entity_GetColormap (ent);
 	if (colormap) {
@@ -208,14 +336,9 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass, bool shadow)
 	}
 
 	auto animation = Entity_GetAnimation (ent);
-	iqm_push_constants_t constants = {
-		.blend = R_IQMGetLerpedFrames (animation, iqm),
-		.matrix_base = matrix_base ? *matrix_base : 0,
-		.colors = { VEC4_EXP (colors) },
-		.base_color = { VEC4_EXP (renderer->colormod) },
-	};
+	float blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
-							  constants.blend, 0);
+							  blend, 0);
 
 	vec4f_t    *bone_data;
 	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
@@ -243,43 +366,23 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass, bool shadow)
 
 	transform_t transform = Entity_Transform (ent);
 	if (shadow) {
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_VERTEX_BIT,
-				field_offset (iqm_push_constants_t, mat),
-				sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
-			{ VK_SHADER_STAGE_VERTEX_BIT,
-				field_offset (iqm_push_constants_t, blend),
-				sizeof (float), &constants.blend },
-			{ VK_SHADER_STAGE_VERTEX_BIT,
-				field_offset (iqm_push_constants_t, matrix_base),
-				sizeof (uint32_t), &constants.matrix_base },
-		};
-
+		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
+							   blend, matrix_base, taskctx);
 		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
-					   nullptr, 3, push_constants, iqm, taskctx, ent);
+					   nullptr, iqm, taskctx, ent);
 	} else {
-		qfv_push_constants_t push_constants[] = {
-			{ VK_SHADER_STAGE_VERTEX_BIT,
-				field_offset (iqm_push_constants_t, mat),
-				sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
-			{ VK_SHADER_STAGE_VERTEX_BIT,
-				field_offset (iqm_push_constants_t, blend),
-				sizeof (float), &constants.blend },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT,
-				field_offset (iqm_push_constants_t, colors),
-				sizeof (constants.colors), constants.colors },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT,
-				field_offset (iqm_push_constants_t, base_color),
-				sizeof (constants.base_color), &constants.base_color },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT,
-				field_offset (iqm_push_constants_t, fog),
-				sizeof (constants.fog), &constants.fog },
-		};
-
+		if (pass > 1) {
+			alight_t    lighting;
+			R_Setup_Lighting (ent, &lighting);
+			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, &lighting,
+								pass, taskctx);
+		} else {
+			push_iqm_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, pass, taskctx);
+		}
 		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
-					   pass ? skins : nullptr,
-					   pass ? 5 : 2, push_constants,
-					   iqm, taskctx, ent);
+					   pass ? skins : nullptr, iqm, taskctx, ent);
 	}
 }
 

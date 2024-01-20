@@ -338,7 +338,14 @@ properties = {
 			descriptorSets = (matrix_set, texture_set, texture_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; };
-				fragment = { colors = uint; base_color = vec4; fog = vec4; };
+				fragment = {
+					colors = uint;
+					ambient = float;
+					shadelight = float;
+					lightvec = vec4;
+					base_color = vec4;
+					fog = vec4;
+				};
 			};
 		};
 	};
@@ -396,7 +403,14 @@ properties = {
 			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; };
-				fragment = { colors = uint; base_color = vec4; fog = vec4; };
+				fragment = {
+					colors = uint;
+					ambient = float;
+					shadelight = float;
+					lightvec = vec4;
+					base_color = vec4;
+					fog = vec4;
+				};
 			};
 		};
 	};
@@ -1113,7 +1127,7 @@ renderpasses = {
 						color = $color.alias;
 						tasks = (
 							{ func = alias_draw;
-							  params = (main, 1); },
+							  params = (main, 2); },
 						);
 
 						stages = (
@@ -1128,7 +1142,7 @@ renderpasses = {
 						color = $color.iqm;
 						tasks = (
 							{ func = iqm_draw;
-							  params = (1); },
+							  params = (2); },
 						);
 
 						stages = (

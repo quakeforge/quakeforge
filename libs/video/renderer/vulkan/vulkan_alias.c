@@ -52,6 +52,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "r_local.h"
 #include "vid_vulkan.h"
 
 typedef struct {
@@ -61,6 +62,17 @@ typedef struct {
 	vec4f_t     base_color;
 	vec4f_t     fog;
 } alias_push_constants_t;
+
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	byte        colors[4];
+	float       ambient;
+	float       shadelight;
+	vec4f_t     lightvec;
+	vec4f_t     base_color;
+	vec4f_t     fog;
+} fwd_push_constants_t;
 
 typedef struct {
 	mat4f_t     mat;
@@ -133,6 +145,54 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 }
 
 static void
+push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, const alight_t *lighting,
+					int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	fwd_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.ambient = lighting->ambientlight,
+		.shadelight = lighting->shadelight,
+		.lightvec = { VectorExpand (lighting->lightvec) },
+		.base_color = base_color,
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, ambient),
+			sizeof (constants.ambient), &constants.ambient },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, shadelight),
+			sizeof (constants.shadelight), &constants.shadelight },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, lightvec),
+			sizeof (constants.lightvec), &constants.lightvec },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, 8, push_constants);
+}
+
+static void
 push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 					   qfv_taskctx_t *taskctx)
 {
@@ -161,7 +221,7 @@ push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 }
 
 static void
-alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
+alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
 	auto model = renderer->model;
@@ -190,8 +250,9 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
 	vec4f_t base_color;
-	byte colors[4] = {};
 	QuatCopy (renderer->colormod, base_color);
+
+	byte colors[4] = {};
 	QuatCopy (skin->colors, colors);
 	auto colormap = Entity_GetColormap (ent);
 	if (colormap) {
@@ -235,8 +296,16 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
 							   blend, matrix_base, taskctx);
 	} else {
-		push_alias_constants (Transform_GetWorldMatrixPtr (transform),
-							  blend, colors, base_color, pass, taskctx);
+		if (pass > 1) {
+			alight_t    lighting;
+			R_Setup_Lighting (ent, &lighting);
+			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, &lighting,
+								pass, taskctx);
+		} else {
+			push_alias_constants (Transform_GetWorldMatrixPtr (transform),
+								  blend, colors, base_color, pass, taskctx);
+		}
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 	QFV_CmdEndLabel (device, cmd);
