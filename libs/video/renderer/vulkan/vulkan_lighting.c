@@ -1330,6 +1330,18 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static void
+lighting_load_lights (const exprval_t **params, exprval_t *result,
+					  exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto scene = (scene_t *) taskctx->data;
+
+	Vulkan_LoadLights (scene, ctx);
+}
+
 static exprenum_t lighting_stage_enum;
 static exprtype_t lighting_stage_type = {
 	.name = "lighting_stage",
@@ -1430,6 +1442,11 @@ static exprfunc_t lighting_draw_shadow_maps_func[] = {
 		.param_types = stepref_param },
 	{}
 };
+
+static exprfunc_t lighting_load_lights_func[] = {
+	{ .func = lighting_load_lights },
+	{}
+};
 static exprsym_t lighting_task_syms[] = {
 	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
 	{ "lighting_update_descriptors", &cexpr_function,
@@ -1445,6 +1462,8 @@ static exprsym_t lighting_task_syms[] = {
 	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
 	{ "lighting_draw_shadow_maps", &cexpr_function,
 		lighting_draw_shadow_maps_func },
+
+	{ "lighting_load_lights", &cexpr_function, lighting_load_lights_func },
 	{}
 };
 

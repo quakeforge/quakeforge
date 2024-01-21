@@ -281,8 +281,6 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	EntQueue_Clear (r_ent_queue);
 
 	R_ClearParticles ();
-	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
-	Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
-	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
-	//Vulkan_LoadLights (scene, ctx);
+
+	QFV_Render_NewScene (scene, ctx);
 }

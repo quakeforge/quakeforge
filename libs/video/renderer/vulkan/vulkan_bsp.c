@@ -1387,6 +1387,42 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	bsp_flush (ctx);
 }
 
+static void
+bsp_build_lightmaps (const exprval_t **params, exprval_t *result,
+					 exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto scene = (scene_t *) taskctx->data;
+
+	Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
+}
+
+static void
+bsp_build_display_lists (const exprval_t **params, exprval_t *result,
+						 exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto scene = (scene_t *) taskctx->data;
+
+	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
+}
+
+static void
+bsp_register_textures (const exprval_t **params, exprval_t *result,
+					   exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto scene = (scene_t *) taskctx->data;
+
+	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
+}
+
 static exprenum_t bsp_pass_enum;
 static exprtype_t bsp_pass_type = {
 	.name = "bsp_pass",
@@ -1461,10 +1497,28 @@ static exprfunc_t bsp_draw_queue_func[] = {
 	{ 0, 3, bsp_draw_queue_params, bsp_draw_queue },
 	{}
 };
+
+static exprfunc_t bsp_build_lightmaps_func[] = {
+	{ .func = bsp_build_lightmaps },
+	{}
+};
+static exprfunc_t bsp_build_display_lists_func[] = {
+	{ .func = bsp_build_display_lists },
+	{}
+};
+static exprfunc_t bsp_register_textures_func[] = {
+	{ .func = bsp_register_textures },
+	{}
+};
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
 	{ "bsp_draw_queue", &cexpr_function, bsp_draw_queue_func },
+
+	{ "bsp_build_lightmaps", &cexpr_function, bsp_build_lightmaps_func },
+	{ "bsp_build_display_lists", &cexpr_function,
+		bsp_build_display_lists_func },
+	{ "bsp_register_textures", &cexpr_function, bsp_register_textures_func },
 	{}
 };
 

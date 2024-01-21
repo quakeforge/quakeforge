@@ -1533,3 +1533,8 @@ steps = {
 		};
 	};
 };
+newscene_tasks = (
+	{ func = bsp_register_textures; },
+	{ func = bsp_build_lightmaps; },
+	{ func = bsp_build_display_lists; },
+);

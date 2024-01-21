@@ -223,6 +223,7 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 	for (uint32_t i = 0; i < jobinfo->num_steps; i++) {
 		count_step_stuff (&jobinfo->steps[i], counts);
 	}
+	counts->num_tasks += jobinfo->newscene_num_tasks;
 }
 
 static qfv_imageinfo_t * __attribute__((pure))
@@ -818,6 +819,19 @@ make_label (const char *name, vec4f_t color)
 }
 
 static void
+init_tasks (uint32_t *task_count, qfv_taskinfo_t **tasks,
+			uint32_t num_tasks, qfv_taskinfo_t *intasks,
+			jobptr_t *jp, objstate_t *s)
+{
+	*task_count = num_tasks;
+	*tasks = &jp->tasks[s->inds.num_tasks];
+	for (uint32_t i = 0; i < num_tasks; i++) {
+		(*tasks)[i] = intasks[i];
+	}
+	s->inds.num_tasks += num_tasks;
+}
+
+static void
 init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 			   jobptr_t *jp, objstate_t *s, int is_compute)
 {
@@ -830,18 +844,14 @@ init_pipeline (qfv_pipeline_t *pl, qfv_pipelineinfo_t *plinfo,
 		.pipeline = is_compute ? s->ptr.cpl[s->inds.num_comp_pipelines]
 							   : s->ptr.gpl[s->inds.num_graph_pipelines],
 		.layout = li->layout,
-		.task_count = plinfo->num_tasks,
-		.tasks = &jp->tasks[s->inds.num_tasks],
 		.num_indices = li->num_sets,
 		.ds_indices = &jp->ds_indices[s->inds.num_ds_indices],
 	};
-	s->inds.num_tasks += plinfo->num_tasks;
+	init_tasks (&pl->task_count, &pl->tasks, plinfo->num_tasks, plinfo->tasks,
+			    jp, s);
 	s->inds.num_ds_indices += li->num_sets;
 	for (uint32_t i = 0; i < pl->num_indices; i++) {
 		pl->ds_indices[i] = find_ds_index (&li->sets[i], s);
-	}
-	for (uint32_t i = 0; i < pl->task_count; i++) {
-		pl->tasks[i] = plinfo->tasks[i];
 	}
 }
 
@@ -942,13 +952,9 @@ init_process (qfv_process_t *proc, qfv_processinfo_t *pinfo,
 {
 	*proc = (qfv_process_t) {
 		.label = make_label (pinfo->name, pinfo->color),
-		.tasks = &jp->tasks[s->inds.num_tasks],
-		.task_count = pinfo->num_tasks,
 	};
-	s->inds.num_tasks += pinfo->num_tasks;
-	for (uint32_t i = 0; i < proc->task_count; i++) {
-		proc->tasks[i] = pinfo->tasks[i];
-	}
+	init_tasks (&proc->task_count, &proc->tasks, pinfo->num_tasks, pinfo->tasks,
+			    jp, s);
 }
 
 static void
@@ -1066,6 +1072,10 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		auto layoutInfo = &jobinfo->dslayouts[i];
 		job->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
 	}
+
+	init_tasks (&job->newscene_task_count, &job->newscene_tasks,
+			    jobinfo->newscene_num_tasks, jobinfo->newscene_tasks,
+				&jp, &s);
 }
 
 static void

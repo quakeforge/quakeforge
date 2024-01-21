@@ -273,6 +273,9 @@ typedef struct qfv_jobinfo_s {
 
 	uint32_t    num_dslayouts;
 	qfv_descriptorsetlayoutinfo_t *dslayouts;
+
+	uint32_t    newscene_num_tasks;
+	qfv_taskinfo_t *newscene_tasks;
 } qfv_jobinfo_t;
 
 typedef struct qfv_samplercreateinfo_s {
@@ -400,6 +403,9 @@ typedef struct qfv_step_s {
 typedef struct qfv_job_s {
 	qfv_label_t label;
 
+	uint32_t    newscene_task_count;
+	qfv_taskinfo_t *newscene_tasks;
+
 	uint32_t    num_renderpasses;
 	uint32_t    num_pipelines;
 	uint32_t    num_layouts;
@@ -479,6 +485,9 @@ VkSampler QFV_Render_Sampler (struct vulkan_ctx_s *ctx, const char *name);
 qfv_step_t *QFV_GetStep (const exprval_t *param, qfv_job_t *job);
 qfv_step_t *QFV_FindStep (const char *step, qfv_job_t *job) __attribute__((pure));
 struct qfv_resobj_s *QFV_FindResource (const char *name, qfv_renderpass_t *rp) __attribute__((pure));
+
+struct scene_s;
+void QFV_Render_NewScene (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 
 struct imui_ctx_s;
 void QFV_Render_UI (struct vulkan_ctx_s *ctx, struct imui_ctx_s *imui_ctx);

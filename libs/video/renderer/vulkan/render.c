@@ -838,3 +838,19 @@ QFV_Render_Sampler (vulkan_ctx_t *ctx, const char *name)
 	printf ("sampler %s not found\n", name);
 	return 0;
 }
+
+void
+QFV_Render_NewScene (struct scene_s *scene, vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+	auto job = rctx->job;
+
+	qfv_taskctx_t taskctx = {
+		.ctx = ctx,
+		.frame = frame,
+		.data = scene,
+	};
+
+	run_tasks (job->newscene_task_count, job->newscene_tasks, &taskctx);
+}
