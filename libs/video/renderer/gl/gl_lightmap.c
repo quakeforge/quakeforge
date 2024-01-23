@@ -432,7 +432,6 @@ R_BuildLightMap_4 (const vec4f_t *transform, mod_brush_t *brush,
 void
 gl_R_BlendLightmaps (void)
 {
-	float      *v;
 	instsurf_t *sc;
 	glpoly_t   *p;
 
@@ -447,10 +446,10 @@ gl_R_BlendLightmaps (void)
 		}
 		for (p = sc->surface->polys; p; p = p->next) {
 			qfglBegin (GL_POLYGON);
-			v = p->verts[0];
-			for (int j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-				qfglTexCoord2fv (&v[5]);
-				qfglVertex3fv (v);
+			auto v = p->verts;
+			for (int j = 0; j < p->numverts; j++, v++) {
+				qfglTexCoord2fv (v->lm_uv);
+				qfglVertex3fv (v->pos);
 			}
 			qfglEnd ();
 		}

@@ -55,29 +55,27 @@ void
 GL_EmitWaterPolys (msurface_t *surf)
 {
 	float		os, ot, s, t, timetemp;
-	float      *v;
-	int         i;
-	glpoly_t   *p;
 
 	timetemp = vr_data.realtime * TURBSCALE;
 
-	for (p = surf->polys; p; p = p->next) {
+	for (auto p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
-		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
-			os = turbsin[(int) (v[3] * TURBFRAC + timetemp) & 255];
-			ot = turbsin[(int) (v[4] * TURBFRAC + timetemp) & 255];
-			s = (v[3] + ot) * (1.0 / 64.0);
-			t = (v[4] + os) * (1.0 / 64.0);
+		auto v = p->verts;
+		for (int i = 0; i < p->numverts; i++, v++) {
+			os = turbsin[(int) (v->tex_uv[0] * TURBFRAC + timetemp) & 255];
+			ot = turbsin[(int) (v->tex_uv[1] * TURBFRAC + timetemp) & 255];
+			s = (v->tex_uv[0] + ot) * (1.0 / 64.0);
+			t = (v->tex_uv[1] + os) * (1.0 / 64.0);
 			qfglTexCoord2f (s, t);
 
 			if (r_waterripple != 0) {
 				vec3_t		nv;
 
-				VectorCopy (v, nv);
+				VectorCopy (v->pos, nv);
 				nv[2] += r_waterripple * os * ot * (1.0 / 64.0);
 				qfglVertex3fv (nv);
 			} else
-				qfglVertex3fv (v);
+				qfglVertex3fv (v->pos);
 		}
 		qfglEnd ();
 	}
