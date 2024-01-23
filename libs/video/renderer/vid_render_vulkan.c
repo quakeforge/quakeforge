@@ -116,7 +116,7 @@ vulkan_R_Init (void)
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
-	QFV_LoadRenderInfo (vulkan_ctx, "main_fwd");
+	QFV_LoadRenderInfo (vulkan_ctx, "main_def");
 	QFV_LoadSamplerInfo (vulkan_ctx, "smp_quake");
 	QFV_BuildRender (vulkan_ctx);
 
