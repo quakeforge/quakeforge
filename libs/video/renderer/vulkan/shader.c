@@ -129,10 +129,6 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/iqm.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/iqm.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/iqm_fwd.frag.spvc"
-static
 #include "libs/video/renderer/vulkan/shader/iqm_shadow.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/output.frag.spvc"
@@ -205,8 +201,6 @@ static shaderdata_t builtin_shaders[] = {
 	{ "qskin_gbuf.frag", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
 	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "iqm.vert", iqm_vert, sizeof (iqm_vert) },
-	{ "iqm.frag", iqm_frag, sizeof (iqm_frag) },
-	{ "iqm_fwd.frag", iqm_fwd_frag, sizeof (iqm_fwd_frag) },
 	{ "iqm_shadow.vert", iqm_shadow_vert, sizeof (iqm_shadow_vert) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
