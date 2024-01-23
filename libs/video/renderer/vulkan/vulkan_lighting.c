@@ -1296,6 +1296,12 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 	}
 }
 
+typedef struct {
+	vec4f_t     fog;
+	vec4f_t     CascadeDepths;
+	uint32_t    queue;
+} light_push_constants_t;
+
 static void
 lighting_draw_lights (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
@@ -1317,15 +1323,27 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
+	vec4f_t fog = Fog_Get ();
+	// convert scatter to transmission (FIXME ignoring absorbtion)
+	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
+	fog[3] = -fog[3];
+
 	//FIXME dup of z_range (sort of)
 	vec4f_t depths = {
 		r_nearclip / 32, r_nearclip / 256, r_nearclip / 1024, 0,
 	};
 	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (depths), &depths },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(depths), sizeof(queue), &queue },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (light_push_constants_t, fog),
+			sizeof (fog), &fog },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (light_push_constants_t, CascadeDepths),
+			sizeof (depths), &depths },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (light_push_constants_t, queue),
+			sizeof (queue), &queue },
 	};
-	QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	QFV_PushConstants (device, cmd, layout, 3, push_constants);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }

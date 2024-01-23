@@ -469,13 +469,13 @@ $(light_debug_c): $(light_debug_src) $(lighting_h)
 
 $(light_oit_c): $(light_oit_src) $(lighting_h)
 
-$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main)
+$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main)
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main)
+$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main)
+$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 

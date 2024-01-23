@@ -708,6 +708,7 @@ properties = {
 							  lighting_attach, lighting_shadow);
 			pushConstants = {
 				fragment = {
+					fog = vec4;
 					CascadeDepths = vec4;
 					queue = uint;
 				};
@@ -724,6 +725,12 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (compose_attach, oit_set);
+			pushConstants = {
+				fragment = {
+					fog = vec4;
+					camera = vec4;
+				};
+			};
 		};
 	};
 	output = {
@@ -1049,6 +1056,12 @@ descriptorSetLayouts = {
 			},
 			{
 				binding = 2;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 3;
 				descriptorType = input_attachment;
 				descriptorCount = 1;
 				stageFlags = fragment;
@@ -1884,6 +1897,7 @@ renderpasses = {
 						color = shader_read_only_optimal;
 						light = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
+						position = shader_read_only_optimal;
 					};
 					color = {
 						output = {
@@ -1891,7 +1905,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth, normal, position);
+					preserve = (depth, normal);
 				};
 				pipelines = {
 					compose = {

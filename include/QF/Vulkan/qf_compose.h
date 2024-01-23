@@ -36,7 +36,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
-#define COMPOSE_IMAGE_INFOS 3
+#define COMPOSE_IMAGE_INFOS 4
 
 typedef struct composeframe_s {
 	VkDescriptorImageInfo imageInfo[COMPOSE_IMAGE_INFOS];

@@ -7,3 +7,21 @@ FogBlend (vec4 color, vec4 fog)
 	float fog_factor = exp (-az);
 	return mix (fog_color, color, fog_factor);
 }
+
+vec4
+FogBlend (vec4 color, vec4 fog, float dist)
+{
+	float       az = fog.a * dist;
+	vec4        fog_color = vec4 (fog.rgb, 1.0);
+
+	float fog_factor = exp (-az);
+	return mix (fog_color, color, fog_factor);
+}
+
+vec4
+FogTransmit (vec4 color, vec4 fog, float dist)
+{
+	float       az = fog.a * dist;
+	vec3        fog_color = exp (-az * fog.rgb);
+	return vec4 (color.rgb * fog_color, color.a);
+}

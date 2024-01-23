@@ -21,6 +21,8 @@ diffuse (vec3 incoming, vec3 normal)
 	return clamp (lightdot, 0, 1);
 }
 
+#include "fog.finc"
+
 void
 main (void)
 {
@@ -60,6 +62,9 @@ main (void)
 		vec4 col = l.color;
 		if (bitfieldExtract(id_data, 31, 1) == 0) {
 			col *= style[renderer[id].style];
+		}
+		if (fog.w > 0) {
+			col = FogTransmit (col, fog, r[1]);
 		}
 		light += I * col.w * col.xyz;
 	}

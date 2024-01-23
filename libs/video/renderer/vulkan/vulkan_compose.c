@@ -87,11 +87,21 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
 	cframe->imageInfo[1].imageView = fb->views[QFV_attachLight];
 	cframe->imageInfo[2].imageView = fb->views[QFV_attachEmission];
-	dfunc->vkUpdateDescriptorSets (device->dev, 1,
-								   cframe->descriptors, 0, 0);
-	if (!color_only) {
+	cframe->imageInfo[3].imageView = fb->views[QFV_attachPosition];
+	if (color_only) {
+		dfunc->vkUpdateDescriptorSets (device->dev, 1,
+									   cframe->descriptors, 0, 0);
+	} else {
 		dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
 									   cframe->descriptors, 0, 0);
+
+		vec4f_t fog = Fog_Get ();
+		vec4f_t cam = r_refdef.camera[3];
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (fog), &fog },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(fog), sizeof (cam), &cam },
+		};
+		QFV_PushConstants (device, cmd, layout, 2, push_constants);
 	}
 
 	VkDescriptorSet sets[] = {
