@@ -311,11 +311,14 @@ QFV_ScrapFlush (scrap_t *scrap)
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 
-	size_t      offset = packet->offset, size;
+	auto sb = imageBarriers[qfv_LT_TransferDst_to_TransferDst];
+	sb.barrier.image = scrap->image;
+
+	size_t      offset = packet->offset;
 	vrect_t    *batch = scrap->batch;
 	while (scrap->batch_count) {
 		for (i = 0; i < scrap->batch_count && i < 128; i++) {
-			size = batch->width * batch->height * scrap->bpp;
+			size_t      size = batch->width * batch->height * scrap->bpp;
 
 			copy->a[i].bufferOffset = offset;
 			copy->a[i].imageOffset.x = batch->x;
@@ -330,6 +333,12 @@ QFV_ScrapFlush (scrap_t *scrap)
 									   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									   i, copy->a);
 		scrap->batch_count -= i;
+		if (scrap->batch_count) {
+			dfunc->vkCmdPipelineBarrier (packet->cmd,
+										 sb.srcStages, sb.dstStages,
+										 0, 0, 0, 0, 0,
+										 1, &sb.barrier);
+		}
 	}
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];

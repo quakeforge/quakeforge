@@ -217,6 +217,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	};
 	VkValidationFeatureEnableEXT valfeat_enable[] = {
 //		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
 	};
 #define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
 	VkValidationFeaturesEXT validation_features= {

@@ -70,6 +70,19 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
+	[qfv_LT_TransferDst_to_TransferDst] = {
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+		},
+	},
 	[qfv_LT_TransferDst_to_TransferSrc] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,

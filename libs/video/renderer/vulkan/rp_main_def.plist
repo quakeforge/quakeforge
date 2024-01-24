@@ -27,11 +27,11 @@ properties = {
 	};
 	depth_dependency = {
 		src = {
-			stage = late_fragment_tests;
+			stage = early_fragment_tests|late_fragment_tests;
 			access = depth_stencil_attachment_write;
 		};
 		dst = {
-			stage = fragment_shader|early_fragment_tests;
+			stage = fragment_shader|early_fragment_tests|late_fragment_tests;
 			access = input_attachment_read|depth_stencil_attachment_read;
 		};
 		flags = by_region;
@@ -83,12 +83,18 @@ properties = {
 	attachment_base = {
 		samples = 1;
 		loadOp = dont_care;
-		storeOp = dont_care;
+		storeOp = none_ext;
 		stencilLoadOp = dont_care;
-		stencilStoreOp = dont_care;
+		stencilStoreOp = none_ext;
 		initialLayout = undefined;
-		finalLayout = color_attachment_optimal;
+		finalLayout = shader_read_only_optimal;
 		clearValue = { color = "[0, 0, 0, 1]"; };
+	};
+	depth_base = {
+		@inherit = $attachment_base;
+		loadOp = clear;
+		finalLayout = depth_stencil_read_only_optimal;
+		clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 	};
 
 	no_cull = {
@@ -1324,11 +1330,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = occlusion_depth;
 				};
 			};
@@ -1426,11 +1429,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.cube_depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = occlusion_cube_depth;
 				};
 			};
@@ -1444,11 +1444,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = depth;
 				};
 				color = {
@@ -1704,6 +1701,7 @@ renderpasses = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				dependencies = {
 					depth = $depth_dependency;
+					translucent = $depth_dependency;//FIXME why?
 				};
 				attachments = {
 					color = {
@@ -2051,11 +2049,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.cube_depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = cube_depth;
 				};
 				color = {

@@ -97,6 +97,7 @@ static const char *instance_extensions[] = {
 
 static const char *device_extensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
 #ifdef TRACY_ENABLE
 	VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #endif

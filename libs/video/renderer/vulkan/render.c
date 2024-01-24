@@ -191,6 +191,8 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 		//the attachments won't be transitioned correctly.
 		//However, only if not the last (or only) subpass.
 		if (i < rp->subpass_count - 1) {
+			//auto np = &rp->subpasses[i + 1];
+			//printf ("%s -> %s\n", sp->label.name, np->label.name);
 			dfunc->vkCmdNextSubpass (cmd, rp->subpassContents);
 		}
 	}
