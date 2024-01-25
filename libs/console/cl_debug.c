@@ -494,11 +494,15 @@ static imui_window_t system_info_window = {
 
 static imui_window_t cam_window = {
 	.name = "Debug Camera",
+	.xpos = 50,
+	.ypos = 50,
 	.auto_fit = true,
 };
 
 static imui_window_t inp_window = {
 	.name = "Debug Input",
+	.xpos = 50,
+	.ypos = 50,
 	.auto_fit = true,
 };
 
