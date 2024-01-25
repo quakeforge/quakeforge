@@ -451,6 +451,7 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	uint32_t    root_ent = ctx->root_view.id;
 	auto root_size = View_GetLen (ctx->root_view);
 
+	ctx->draw_order = imui_draw_order (ctx->windows.size);
 	clear_items (ctx);
 	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview, true);
 	set_hierarchy_tree_mode (ctx, View_GetRef (ctx->root_view), true);
@@ -459,7 +460,6 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
-	ctx->draw_order = imui_draw_order (ctx->windows.size);
 	ctx->current_menu = 0;
 }
 
