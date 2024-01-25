@@ -121,7 +121,7 @@ add_dynamic_lights (const vec4f_t *transform, msurface_t *surf, vec4f_t *block)
 				} else {
 					d = td + (sd >> 1);
 				}
-				float l = dlight->radius - d;
+				float l = rad - d;
 				if (l > minlight) {
 					block[t * smax + s] += l * color;
 				}
