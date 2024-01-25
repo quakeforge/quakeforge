@@ -160,7 +160,7 @@ vulkan_build_lightmap (const mod_brush_t *brush, msurface_t *surf,
 				vec4f_t val = { VectorExpand (lightmap), 0 };
 				val *= scale;
 				lightmap += 3;
-				*bl++ = val;
+				*bl++ += val;
 			}
 		}
 	}
