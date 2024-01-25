@@ -66,7 +66,7 @@ vec4f_t     r_entorigin;		// the currently rendering entity in world
 // screen size info
 refdef_t    r_refdef;
 
-int         d_lightstylevalue[256];     // 8.8 fraction of base light value
+int16_t     d_lightstylevalue[256];     // 8.8 fraction of base light value
 
 byte        color_white[4] = { 255, 255, 255, 0 };	// alpha will be explicitly set
 byte        color_black[4] = { 0, 0, 0, 0 };		// alpha will be explicitly set

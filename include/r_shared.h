@@ -127,7 +127,7 @@ extern	float	xscale, yscale;
 extern	float	xscaleinv, yscaleinv;
 extern	float	xscaleshrink, yscaleshrink;
 
-extern	int d_lightstylevalue[256]; // 8.8 frac of base light value
+extern int16_t d_lightstylevalue[256]; // 8.8 frac of base light value
 
 extern void TransformVector (const vec3_t in, vec3_t out);
 extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
