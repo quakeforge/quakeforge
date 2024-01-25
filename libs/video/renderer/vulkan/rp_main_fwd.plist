@@ -1471,7 +1471,7 @@ steps = {
 			tasks = (
 				{ func = bsp_reset_queues; },
 				{ func = bsp_visit_world;
-				  params = (main); },
+				  params = (lightmap); },
 				{ func = scene_draw_viewmodel; },
 				//{ func = lighting_update_lights; },
 			);
