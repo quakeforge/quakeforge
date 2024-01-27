@@ -80,7 +80,6 @@ static void
 R_DrawCulledPolys (void)
 {
 	surf_t     *s;
-	msurface_t *pface;
 
 	if (r_worldpolysbacktofront) {
 		for (s = surface_p - 1; s > &surfaces[1]; s--) {
@@ -88,8 +87,8 @@ R_DrawCulledPolys (void)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
-				pface = (msurface_t *) s->data;
-				R_RenderPoly (s->render_id, pface, 15);
+				auto face = (msurface_t *) s->data;
+				R_RenderPoly (s->render_id, face, 15);
 			}
 		}
 	} else {
@@ -98,8 +97,8 @@ R_DrawCulledPolys (void)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
-				pface = (msurface_t *) s->data;
-				R_RenderPoly (s->render_id, pface, 15);
+				auto face = (msurface_t *) s->data;
+				R_RenderPoly (s->render_id, face, 15);
 			}
 		}
 	}
