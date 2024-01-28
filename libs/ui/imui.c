@@ -41,6 +41,7 @@
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/input/event.h"
@@ -476,16 +477,6 @@ prune_objects (imui_ctx_t *ctx)
 		}
 	}
 }
-
-#define DFL "\e[39;49m"
-#define BLK "\e[30;40m"
-#define RED "\e[31;40m"
-#define GRN "\e[32;40m"
-#define ONG "\e[33;40m"
-#define BLU "\e[34;40m"
-#define MAG "\e[35;40m"
-#define CYN "\e[36;40m"
-#define WHT "\e[37;40m"
 
 static const char *
 view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)

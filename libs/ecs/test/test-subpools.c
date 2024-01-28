@@ -10,16 +10,6 @@
 #include "QF/mathlib.h"
 #include "QF/ecs.h"
 
-#define DFL "\e[39;49m"
-#define BLK "\e[30;40m"
-#define RED "\e[31;40m"
-#define GRN "\e[32;40m"
-#define ONG "\e[33;40m"
-#define BLU "\e[34;40m"
-#define MAG "\e[35;40m"
-#define CYN "\e[36;40m"
-#define WHT "\e[37;40m"
-
 enum test_components {
 	test_subpool,
 	test_obj,
