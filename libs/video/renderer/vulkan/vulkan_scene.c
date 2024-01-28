@@ -157,37 +157,38 @@ scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
 }
 
-static exprfunc_t scene_draw_viewmodel_func[] = {
-	{ .func = scene_draw_viewmodel },
-	{}
-};
-static exprsym_t scene_task_syms[] = {
-	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
-	{}
-};
-
-void
-Vulkan_Scene_Init (vulkan_ctx_t *ctx)
+static void
+scene_shutdown (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	QFV_Render_AddTasks (ctx, scene_task_syms);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "scene shutdown");
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	scenectx_t *sctx = ctx->scene_context;
 
-	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
-							   + sizeof (qfv_resource_t)
-							   + sizeof (qfv_resobj_t));
-	ctx->scene_context = sctx;
-	sctx->max_entities = qfv_max_entities;
+	for (size_t i = 0; i < sctx->frames.size; i++) {
+		__auto_type sframe = &sctx->frames.a[i];
+		set_delete (sframe->pooled_entities);
+	}
+
+	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
+	QFV_DestroyResource (device, sctx->entities);
+	free (sctx->frames.a);
+	free (sctx);
+	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
+static void
+scene_startup (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "scene init");
-
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-
 	auto sctx = ctx->scene_context;
 
 	auto rctx = ctx->render_context;
@@ -245,25 +246,44 @@ Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
+static void
+scene_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "scene init");
+
+	QFV_Render_AddShutdown (ctx, scene_shutdown);
+	QFV_Render_AddStartup (ctx, scene_startup);
+
+	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
+							   + sizeof (qfv_resource_t)
+							   + sizeof (qfv_resobj_t));
+	ctx->scene_context = sctx;
+	sctx->max_entities = qfv_max_entities;
+}
+
+static exprfunc_t scene_draw_viewmodel_func[] = {
+	{ .func = scene_draw_viewmodel },
+	{}
+};
+
+static exprfunc_t scene_init_func[] = {
+	{ .func = scene_init },
+	{}
+};
+
+static exprsym_t scene_task_syms[] = {
+	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
+	{ "scene_init", &cexpr_function, scene_init_func },
+	{}
+};
+
 void
-Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
+Vulkan_Scene_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "scene shutdown");
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	scenectx_t *sctx = ctx->scene_context;
-
-	for (size_t i = 0; i < sctx->frames.size; i++) {
-		__auto_type sframe = &sctx->frames.a[i];
-		set_delete (sframe->pooled_entities);
-	}
-
-	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
-	QFV_DestroyResource (device, sctx->entities);
-	free (sctx->frames.a);
-	free (sctx);
-	qfvPopDebug (ctx);
+	QFV_Render_AddTasks (ctx, scene_task_syms);
 }
 
 void

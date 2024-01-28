@@ -1423,6 +1423,171 @@ bsp_register_textures (const exprval_t **params, exprval_t *result,
 	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
 }
 
+static void
+bsp_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "bsp shutdown");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto bctx = ctx->bsp_context;
+
+	bctx->main_pass.entqueue = 0;	// owned by r_ent_queue
+	shutdown_pass_draw_queues (&bctx->main_pass);
+	shutdown_pass_draw_queues (&bctx->shadow_pass);
+	shutdown_pass_draw_queues (&bctx->debug_pass);
+
+	clear_textures (ctx);
+	DARRAY_CLEAR (&bctx->registered_textures);
+
+	free (bctx->faces);
+	free (bctx->poly_indices);
+	free (bctx->surfaces);
+	free (bctx->models);
+
+	shutdown_pass_instances (&bctx->main_pass, bctx);
+	shutdown_pass_instances (&bctx->shadow_pass, bctx);
+	shutdown_pass_instances (&bctx->debug_pass, bctx);
+
+	free (bctx->frames.a);
+
+	QFV_DestroyStagingBuffer (bctx->light_stage);
+	QFV_DestroyScrap (bctx->light_scrap);
+	if (bctx->vertex_buffer) {
+		dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
+		dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
+	}
+	if (bctx->index_buffer) {
+		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
+		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
+	}
+	dfunc->vkDestroyBuffer (device->dev, bctx->entid_buffer, 0);
+	dfunc->vkFreeMemory (device->dev, bctx->entid_memory, 0);
+
+	if (bctx->skybox_tex) {
+		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
+	}
+	if (bctx->notexture.tex) {
+		Vulkan_UnloadTex (ctx, bctx->notexture.tex);
+	}
+
+	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
+	dfunc->vkDestroyImage (device->dev, bctx->default_skysheet->image, 0);
+
+	dfunc->vkDestroyImageView (device->dev, bctx->default_skybox->view, 0);
+	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
+	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
+	free (bctx->default_skybox);
+	free (bctx);
+	qfvPopDebug (ctx);
+}
+
+static void
+bsp_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "bsp startup");
+	auto bctx = ctx->bsp_context;
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	bctx->main_pass.bsp_context = bctx;
+	bctx->shadow_pass.bsp_context = bctx;
+	bctx->shadow_pass.entqueue = EntQueue_New (mod_num_types);
+	bctx->debug_pass.bsp_context = bctx;
+	bctx->debug_pass.entqueue = EntQueue_New (mod_num_types);
+
+	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
+
+	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
+										 tex_frgba, ctx->staging);
+	size_t      size = QFV_ScrapSize (bctx->light_scrap);
+	bctx->light_stage = QFV_CreateStagingBuffer (device, "lightmap", size,
+												 ctx->cmdpool);
+
+	create_default_skys (ctx);
+	create_notexture (ctx);
+
+	DARRAY_INIT (&bctx->registered_textures, 64);
+
+	setup_pass_draw_queues (&bctx->main_pass);
+	setup_pass_draw_queues (&bctx->shadow_pass);
+	setup_pass_draw_queues (&bctx->debug_pass);
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&bctx->frames, frames);
+	DARRAY_RESIZE (&bctx->frames, frames);
+	bctx->frames.grow = 0;
+
+	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
+	size_t      entid_size = entid_count * sizeof (uint32_t);
+	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
+	size_t atom_mask = atom - 1;
+	entid_size = (entid_size + atom_mask) & ~atom_mask;
+	bctx->entid_buffer
+		= QFV_CreateBuffer (device, frames * entid_size,
+							VK_BUFFER_USAGE_TRANSFER_DST_BIT
+							| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->entid_buffer,
+						 "buffer:bsp:entid");
+	bctx->entid_memory
+		= QFV_AllocBufferMemory (device, bctx->entid_buffer,
+								 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+								 frames * entid_size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 bctx->entid_memory, "memory:bsp:entid");
+	QFV_BindBufferMemory (device,
+						  bctx->entid_buffer, bctx->entid_memory, 0);
+	uint32_t   *entid_data;
+	dfunc->vkMapMemory (device->dev, bctx->entid_memory, 0,
+						frames * entid_size, 0, (void **) &entid_data);
+
+	for (size_t i = 0; i < frames; i++) {
+		auto bframe = &bctx->frames.a[i];
+
+
+		bframe->entid_data = entid_data + i * entid_count;
+		bframe->entid_offset = i * entid_size;
+	}
+
+	bctx->lightmap_descriptor
+		= Vulkan_CreateCombinedImageSampler (ctx,
+											 Vulkan_LightmapImageView (ctx),
+											 bctx->sampler);
+	bctx->skybox_descriptor
+		= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
+										  bctx->sampler);
+	bctx->notexture.descriptor
+		= Vulkan_CreateTextureDescriptor (ctx, bctx->notexture.tex,
+										  bctx->sampler);
+
+	r_notexture_mip->render = &bctx->notexture;
+
+	qfvPopDebug (ctx);
+}
+
+static void
+bsp_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	QFV_Render_AddShutdown (ctx, bsp_shutdown);
+	QFV_Render_AddStartup (ctx, bsp_startup);
+
+	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
+	ctx->bsp_context = bctx;
+	bctx->vulkan_ctx = ctx;
+}
+
 static exprenum_t bsp_pass_enum;
 static exprtype_t bsp_pass_type = {
 	.name = "bsp_pass",
@@ -1510,6 +1675,12 @@ static exprfunc_t bsp_register_textures_func[] = {
 	{ .func = bsp_register_textures },
 	{}
 };
+
+static exprfunc_t bsp_init_func[] = {
+	{ .func = bsp_init },
+	{}
+};
+
 static exprsym_t bsp_task_syms[] = {
 	{ "bsp_reset_queues", &cexpr_function, bsp_reset_queues_func },
 	{ "bsp_visit_world", &cexpr_function, bsp_visit_world_func },
@@ -1519,6 +1690,7 @@ static exprsym_t bsp_task_syms[] = {
 	{ "bsp_build_display_lists", &cexpr_function,
 		bsp_build_display_lists_func },
 	{ "bsp_register_textures", &cexpr_function, bsp_register_textures_func },
+	{ "bsp_init", &cexpr_function, bsp_init_func },
 	{}
 };
 
@@ -1527,154 +1699,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, bsp_task_syms);
-
-	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
-	ctx->bsp_context = bctx;
-	bctx->vulkan_ctx = ctx;
-
-	bctx->main_pass.bsp_context = bctx;
-	bctx->shadow_pass.bsp_context = bctx;
-	bctx->shadow_pass.entqueue = EntQueue_New (mod_num_types);
-	bctx->debug_pass.bsp_context = bctx;
-	bctx->debug_pass.entqueue = EntQueue_New (mod_num_types);
-}
-
-void
-Vulkan_Bsp_Setup (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	qfvPushDebug (ctx, "bsp init");
-
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-
-	auto bctx = ctx->bsp_context;
-
-	bctx->sampler = QFV_Render_Sampler (ctx, "quakebsp_sampler");
-
-	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
-										 tex_frgba, ctx->staging);
-	size_t      size = QFV_ScrapSize (bctx->light_scrap);
-	bctx->light_stage = QFV_CreateStagingBuffer (device, "lightmap", size,
-												 ctx->cmdpool);
-
-	create_default_skys (ctx);
-	create_notexture (ctx);
-
-	DARRAY_INIT (&bctx->registered_textures, 64);
-
-	setup_pass_draw_queues (&bctx->main_pass);
-	setup_pass_draw_queues (&bctx->shadow_pass);
-	setup_pass_draw_queues (&bctx->debug_pass);
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&bctx->frames, frames);
-	DARRAY_RESIZE (&bctx->frames, frames);
-	bctx->frames.grow = 0;
-
-	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
-	size_t      entid_size = entid_count * sizeof (uint32_t);
-	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
-	size_t atom_mask = atom - 1;
-	entid_size = (entid_size + atom_mask) & ~atom_mask;
-	bctx->entid_buffer
-		= QFV_CreateBuffer (device, frames * entid_size,
-							VK_BUFFER_USAGE_TRANSFER_DST_BIT
-							| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->entid_buffer,
-						 "buffer:bsp:entid");
-	bctx->entid_memory
-		= QFV_AllocBufferMemory (device, bctx->entid_buffer,
-								 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-								 frames * entid_size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 bctx->entid_memory, "memory:bsp:entid");
-	QFV_BindBufferMemory (device,
-						  bctx->entid_buffer, bctx->entid_memory, 0);
-	uint32_t   *entid_data;
-	dfunc->vkMapMemory (device->dev, bctx->entid_memory, 0,
-						frames * entid_size, 0, (void **) &entid_data);
-
-	for (size_t i = 0; i < frames; i++) {
-		auto bframe = &bctx->frames.a[i];
-
-
-		bframe->entid_data = entid_data + i * entid_count;
-		bframe->entid_offset = i * entid_size;
-	}
-
-	bctx->lightmap_descriptor
-		= Vulkan_CreateCombinedImageSampler (ctx,
-											 Vulkan_LightmapImageView (ctx),
-											 bctx->sampler);
-	bctx->skybox_descriptor
-		= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
-										  bctx->sampler);
-	bctx->notexture.descriptor
-		= Vulkan_CreateTextureDescriptor (ctx, bctx->notexture.tex,
-										  bctx->sampler);
-
-	r_notexture_mip->render = &bctx->notexture;
-
-	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
-{
-	qfZoneScoped (true);
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	bspctx_t   *bctx = ctx->bsp_context;
-
-	bctx->main_pass.entqueue = 0;	// owned by r_ent_queue
-	shutdown_pass_draw_queues (&bctx->main_pass);
-	shutdown_pass_draw_queues (&bctx->shadow_pass);
-	shutdown_pass_draw_queues (&bctx->debug_pass);
-
-	clear_textures (ctx);
-	DARRAY_CLEAR (&bctx->registered_textures);
-
-	free (bctx->faces);
-	free (bctx->poly_indices);
-	free (bctx->surfaces);
-	free (bctx->models);
-
-	shutdown_pass_instances (&bctx->main_pass, bctx);
-	shutdown_pass_instances (&bctx->shadow_pass, bctx);
-	shutdown_pass_instances (&bctx->debug_pass, bctx);
-
-	free (bctx->frames.a);
-
-	QFV_DestroyStagingBuffer (bctx->light_stage);
-	QFV_DestroyScrap (bctx->light_scrap);
-	if (bctx->vertex_buffer) {
-		dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
-		dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
-	}
-	if (bctx->index_buffer) {
-		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
-		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
-	}
-	dfunc->vkDestroyBuffer (device->dev, bctx->entid_buffer, 0);
-	dfunc->vkFreeMemory (device->dev, bctx->entid_memory, 0);
-
-	if (bctx->skybox_tex) {
-		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
-	}
-	if (bctx->notexture.tex) {
-		Vulkan_UnloadTex (ctx, bctx->notexture.tex);
-	}
-
-	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
-	dfunc->vkDestroyImage (device->dev, bctx->default_skysheet->image, 0);
-
-	dfunc->vkDestroyImageView (device->dev, bctx->default_skybox->view, 0);
-	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
-	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
-	free (bctx->default_skybox);
-	free (bctx);
 }
 
 void

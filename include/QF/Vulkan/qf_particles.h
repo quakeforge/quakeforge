@@ -58,7 +58,5 @@ struct vulkan_ctx_s;
 
 struct psystem_s *Vulkan_ParticleSystem (struct vulkan_ctx_s *ctx);
 void Vulkan_Particles_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Particles_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Particles_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_particles_h

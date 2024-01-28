@@ -205,12 +205,52 @@ sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 }
 
+static void
+sprite_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	free (sctx);
+}
+
+static void
+sprite_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto sctx = ctx->sprite_context;
+	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
+}
+
+static void
+sprite_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	QFV_Render_AddShutdown (ctx, sprite_shutdown);
+	QFV_Render_AddStartup (ctx, sprite_startup);
+	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
+	ctx->sprite_context = sctx;
+}
+
 static exprfunc_t sprite_draw_func[] = {
 	{ .func = sprite_draw },
 	{}
 };
+
+static exprfunc_t sprite_init_func[] = {
+	{ .func = sprite_init },
+	{}
+};
+
 static exprsym_t sprite_task_syms[] = {
 	{ "sprite_draw", &cexpr_function, sprite_draw_func },
+	{ "sprite_init", &cexpr_function, sprite_init_func },
 	{}
 };
 
@@ -221,25 +261,5 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	qfvPushDebug (ctx, "sprite init");
 	QFV_Render_AddTasks (ctx, sprite_task_syms);
 
-	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
-	ctx->sprite_context = sctx;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Sprite_Setup (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	auto sctx = ctx->sprite_context;
-	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
-}
-
-void
-Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	spritectx_t *sctx = ctx->sprite_context;
-
-	free (sctx);
 }

@@ -274,8 +274,10 @@ typedef struct qfv_jobinfo_s {
 	uint32_t    num_dslayouts;
 	qfv_descriptorsetlayoutinfo_t *dslayouts;
 
-	uint32_t    newscene_num_tasks;
 	qfv_taskinfo_t *newscene_tasks;
+	uint32_t    newscene_num_tasks;
+	uint32_t    init_num_tasks;
+	qfv_taskinfo_t *init_tasks;
 } qfv_jobinfo_t;
 
 typedef struct qfv_samplercreateinfo_s {
@@ -400,11 +402,12 @@ typedef struct qfv_step_s {
 	qfv_time_t time;
 } qfv_step_t;
 
+typedef void (*qfv_initfunc_f) (exprctx_t *ectx);
+typedef struct qfv_initfuncset_s
+	DARRAY_TYPE (qfv_initfunc_f) qfv_initfuncset_t;
+
 typedef struct qfv_job_s {
 	qfv_label_t label;
-
-	uint32_t    newscene_task_count;
-	qfv_taskinfo_t *newscene_tasks;
 
 	uint32_t    num_renderpasses;
 	uint32_t    num_pipelines;
@@ -418,6 +421,14 @@ typedef struct qfv_job_s {
 	uint32_t    num_dsmanagers;
 	struct qfv_dsmanager_s **dsmanager;
 	qfv_time_t time;
+
+	qfv_taskinfo_t *newscene_tasks;
+	qfv_taskinfo_t *init_tasks;
+	uint32_t    newscene_task_count;
+	uint32_t    init_task_count;
+	qfv_initfuncset_t startup_funcs;
+	qfv_initfuncset_t shutdown_funcs;
+	qfv_initfuncset_t clearstate_funcs;
 } qfv_job_t;
 
 typedef struct qfv_renderframe_s {
@@ -467,8 +478,14 @@ void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
+void QFV_Render_Run_Init (struct vulkan_ctx_s *ctx);
+void QFV_Render_Run_Startup (struct vulkan_ctx_s *ctx);
+void QFV_Render_Run_ClearState (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
 void QFV_Render_AddTasks (struct vulkan_ctx_s *ctx, exprsym_t *task_sys);
+void QFV_Render_AddStartup (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
+void QFV_Render_AddShutdown (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
+void QFV_Render_AddClearState (struct vulkan_ctx_s *ctx, qfv_initfunc_f func);
 void QFV_Render_AddAttachments (struct vulkan_ctx_s *ctx,
 								uint32_t num_attachments,
 		                        qfv_attachmentinfo_t **attachments);

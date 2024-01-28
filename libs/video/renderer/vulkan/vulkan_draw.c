@@ -819,9 +819,11 @@ Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 	Hash_Free (dctx->pic_cache, Hash_Del (dctx->pic_cache, path));
 }
 
-void
-Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
+static void
+draw_shutdown (exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dctx = ctx->draw_context;
@@ -917,6 +919,101 @@ load_white_pic (vulkan_ctx_t *ctx)
 	pd->slice_index = make_static_slice ((vec4i_t) {0, 0, 1, 1},
 										 (vec4i_t) {0, 0, 0, 0},
 										 dctx->white_pic, ctx);
+}
+
+static void
+draw_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto dctx = ctx->draw_context;
+	qfvPushDebug (ctx, "draw startup");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	dctx->pic_sampler = QFV_Render_Sampler (ctx, "quakepic");
+	dctx->glyph_sampler = QFV_Render_Sampler (ctx, "glyph");
+
+	dctx->dsmanager = QFV_Render_DSManager (ctx, "quad_data_set");
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&dctx->frames, frames);
+	DARRAY_RESIZE (&dctx->frames, frames);
+	dctx->frames.grow = 0;
+	memset (dctx->frames.a, 0, dctx->frames.size * sizeof (drawframe_t));
+
+	DARRAY_INIT (&dctx->fonts, 16);
+	DARRAY_RESIZE (&dctx->fonts, 16);
+	dctx->fonts.size = 0;
+
+	dctx->pic_memsuper = new_memsuper ();
+	dctx->string_memsuper = new_memsuper ();
+	dctx->pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free,
+									 dctx, 0);
+
+	create_buffers (ctx);
+	dctx->stage = QFV_CreateStagingBuffer (device, "draw", 4 * 1024 * 1024,
+										   ctx->cmdpool);
+	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
+								   dctx->stage);
+
+	load_conchars (ctx);
+	load_crosshairs (ctx);
+	load_white_pic (ctx);
+
+	dctx->backtile_pic = Vulkan_Draw_PicFromWad ("backtile", ctx);
+	if (!dctx->backtile_pic) {
+		dctx->backtile_pic = dctx->white_pic;
+	}
+
+	flush_draw_scrap (ctx);
+
+	// core set + dynamic sets
+
+	VkDescriptorImageInfo imageInfo = {
+		dctx->pic_sampler,
+		QFV_ScrapImageView (dctx->scrap),
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	};
+
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type frame = &dctx->frames.a[i];
+		frame->dyn_descs = (descpool_t) { .dctx = dctx };
+	}
+	dctx->core_quad_set = QFV_DSManager_AllocSet (dctx->dsmanager);
+
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  dctx->core_quad_set, 0, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo, 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  dctx->core_quad_set, 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+
+	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_quad_set });
+
+	qfvPopDebug (ctx);
+}
+
+static void
+draw_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	QFV_Render_AddShutdown (ctx, draw_shutdown);
+	QFV_Render_AddStartup (ctx, draw_startup);
+
+	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
+	ctx->draw_context = dctx;
 }
 
 static void
@@ -1117,11 +1214,18 @@ static exprfunc_t draw_scr_funcs_func[] = {
 	{ .func = draw_scr_funcs },
 	{}
 };
+
+static exprfunc_t draw_init_func[] = {
+	{ .func = draw_init },
+	{}
+};
+
 static exprsym_t draw_task_syms[] = {
 	{ "flush_draw", &cexpr_function, flush_draw_func },
 	{ "slice_draw", &cexpr_function, slice_draw_func },
 	{ "line_draw", &cexpr_function, line_draw_func },
 	{ "draw_scr_funcs", &cexpr_function, draw_scr_funcs_func },
+	{ "draw_init", &cexpr_function, draw_init_func },
 	{}
 };
 
@@ -1130,88 +1234,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, draw_task_syms);
-
-	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
-	ctx->draw_context = dctx;
-}
-
-void
-Vulkan_Draw_Setup (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	qfvPushDebug (ctx, "draw init");
-
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto dctx = ctx->draw_context;
-
-	dctx->pic_sampler = QFV_Render_Sampler (ctx, "quakepic");
-	dctx->glyph_sampler = QFV_Render_Sampler (ctx, "glyph");
-
-	dctx->dsmanager = QFV_Render_DSManager (ctx, "quad_data_set");
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&dctx->frames, frames);
-	DARRAY_RESIZE (&dctx->frames, frames);
-	dctx->frames.grow = 0;
-	memset (dctx->frames.a, 0, dctx->frames.size * sizeof (drawframe_t));
-
-	DARRAY_INIT (&dctx->fonts, 16);
-	DARRAY_RESIZE (&dctx->fonts, 16);
-	dctx->fonts.size = 0;
-
-	dctx->pic_memsuper = new_memsuper ();
-	dctx->string_memsuper = new_memsuper ();
-	dctx->pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free,
-									 dctx, 0);
-
-	create_buffers (ctx);
-	dctx->stage = QFV_CreateStagingBuffer (device, "draw", 4 * 1024 * 1024,
-										   ctx->cmdpool);
-	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
-								   dctx->stage);
-
-	load_conchars (ctx);
-	load_crosshairs (ctx);
-	load_white_pic (ctx);
-
-	dctx->backtile_pic = Vulkan_Draw_PicFromWad ("backtile", ctx);
-	if (!dctx->backtile_pic) {
-		dctx->backtile_pic = dctx->white_pic;
-	}
-
-	flush_draw_scrap (ctx);
-
-	// core set + dynamic sets
-
-	VkDescriptorImageInfo imageInfo = {
-		dctx->pic_sampler,
-		QFV_ScrapImageView (dctx->scrap),
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	};
-
-	for (size_t i = 0; i < frames; i++) {
-		__auto_type frame = &dctx->frames.a[i];
-		frame->dyn_descs = (descpool_t) { .dctx = dctx };
-	}
-	dctx->core_quad_set = QFV_DSManager_AllocSet (dctx->dsmanager);
-
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  dctx->core_quad_set, 0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo, 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  dctx->core_quad_set, 1, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-		  0, 0, &dctx->svertex_objects[1].buffer_view.view },
-	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
-
-	DARRAY_APPEND (&dctx->fonts, (drawfont_t) { .set = dctx->core_quad_set });
-
-	qfvPopDebug (ctx);
 }
 
 static inline descbatch_t *

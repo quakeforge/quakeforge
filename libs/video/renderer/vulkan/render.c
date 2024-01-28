@@ -619,13 +619,62 @@ tf_free_syms (void *_sym, void *data)
 }
 
 void
+QFV_Render_Run_Init (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	if (rctx->job) {
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+		};
+		auto job = rctx->job;
+		run_tasks (job->init_task_count, job->init_tasks, &taskctx);
+	}
+}
+
+void
+QFV_Render_Run_Startup (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	if (rctx->job) {
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+		};
+		auto job = rctx->job;
+		for (size_t i = 0; i < job->startup_funcs.size; i++) {
+			job->startup_funcs.a[i] ((exprctx_t *) &taskctx);
+		}
+	}
+}
+
+void
+QFV_Render_Run_ClearState (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	if (rctx->job) {
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+		};
+		auto job = rctx->job;
+		for (size_t i = 0; i < job->clearstate_funcs.size; i++) {
+			job->clearstate_funcs.a[i] ((exprctx_t *) &taskctx);
+		}
+	}
+}
+
+void
 QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type rctx = ctx->render_context;
+	auto rctx = ctx->render_context;
 	if (rctx->job) {
-		__auto_type job = rctx->job;
+		qfv_taskctx_t taskctx = {
+			.ctx = ctx,
+		};
+		auto job = rctx->job;
+		for (size_t i = job->shutdown_funcs.size; i-- > 0; ) {
+			job->shutdown_funcs.a[i] ((exprctx_t *) &taskctx);
+		}
 		for (uint32_t i = 0; i < job->num_renderpasses; i++) {
 			dfunc->vkDestroyRenderPass (device->dev, job->renderpasses[i], 0);
 		}
@@ -703,8 +752,8 @@ void
 QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 {
 	qfZoneScoped (true);
-	__auto_type rctx = ctx->render_context;
-	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
+	auto rctx = ctx->render_context;
+	exprctx_t ectx = { .hashctx = &rctx->hashctx };
 	for (exprsym_t *sym = task_syms; sym->name; sym++) {
 		Hash_Add (rctx->task_functions.tab, sym);
 		for (exprfunc_t *f = sym->value; f->func; f++) {
@@ -716,6 +765,27 @@ QFV_Render_AddTasks (vulkan_ctx_t *ctx, exprsym_t *task_syms)
 			}
 		}
 	}
+}
+
+void
+QFV_Render_AddStartup (vulkan_ctx_t *ctx, qfv_initfunc_f func)
+{
+	auto rctx = ctx->render_context;
+	DARRAY_APPEND (&rctx->job->startup_funcs, func);
+}
+
+void
+QFV_Render_AddShutdown (vulkan_ctx_t *ctx, qfv_initfunc_f func)
+{
+	auto rctx = ctx->render_context;
+	DARRAY_APPEND (&rctx->job->shutdown_funcs, func);
+}
+
+void
+QFV_Render_AddClearState (vulkan_ctx_t *ctx, qfv_initfunc_f func)
+{
+	auto rctx = ctx->render_context;
+	DARRAY_APPEND (&rctx->job->clearstate_funcs, func);
 }
 
 void

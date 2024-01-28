@@ -53,7 +53,5 @@ typedef struct composectx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_Compose_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Compose_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Compose_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_compose_h

@@ -1592,3 +1592,19 @@ newscene_tasks = (
 	{ func = bsp_build_lightmaps; },
 	{ func = bsp_build_display_lists; },
 );
+init_tasks = (
+	{ func = texture_init; },
+	{ func = palette_init; },
+	{ func = alias_init; },
+	{ func = bsp_init; },
+	{ func = iqm_init; },
+	{ func = matrices_init; },
+	{ func = scene_init; },
+	{ func = sprite_init; },
+	{ func = output_init; },
+	{ func = compose_init; },
+	{ func = draw_init; },
+	{ func = particle_init; },
+	{ func = planes_init; },
+	{ func = translucent_init; },
+);

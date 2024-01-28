@@ -114,36 +114,27 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
-static exprtype_t *compose_draw_params[] = {
-	&cexpr_int,
-};
-static exprfunc_t compose_draw_func[] = {
-	{ .func = compose_draw, .num_params = 1,
-		.param_types = compose_draw_params },
-	{}
-};
-static exprsym_t compose_task_syms[] = {
-	{ "compose_draw", &cexpr_function, compose_draw_func },
-	{}
-};
-
-void
-Vulkan_Compose_Init (vulkan_ctx_t *ctx)
+static void
+compose_shutdown (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	QFV_Render_AddTasks (ctx, compose_task_syms);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	composectx_t *cctx = ctx->compose_context;
 
-	composectx_t *cctx = calloc (1, sizeof (composectx_t));
-	ctx->compose_context = cctx;
+	free (cctx->frames.a);
+	free (cctx);
 }
 
-void
-Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
+static void
+compose_startup (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "compose init");
-
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
+	qfvPushDebug (ctx, "compose startup");
+
 	auto cctx = ctx->compose_context;
 
 	auto rctx = ctx->render_context;
@@ -171,12 +162,43 @@ Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Compose_Shutdown (vulkan_ctx_t *ctx)
+static void
+compose_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	composectx_t *cctx = ctx->compose_context;
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	free (cctx->frames.a);
-	free (cctx);
+	QFV_Render_AddShutdown (ctx, compose_shutdown);
+	QFV_Render_AddStartup (ctx, compose_startup);
+
+	composectx_t *cctx = calloc (1, sizeof (composectx_t));
+	ctx->compose_context = cctx;
+}
+
+static exprtype_t *compose_draw_params[] = {
+	&cexpr_int,
+};
+static exprfunc_t compose_draw_func[] = {
+	{ .func = compose_draw, .num_params = 1,
+		.param_types = compose_draw_params },
+	{}
+};
+
+static exprfunc_t compose_init_func[] = {
+	{ .func = compose_init },
+	{}
+};
+
+static exprsym_t compose_task_syms[] = {
+	{ "compose_draw", &cexpr_function, compose_draw_func },
+	{ "compose_init", &cexpr_function, compose_init_func },
+	{}
+};
+
+void
+Vulkan_Compose_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, compose_task_syms);
 }

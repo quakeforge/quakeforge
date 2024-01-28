@@ -71,8 +71,6 @@ struct vulkan_ctx_s;
 struct entity_s;
 
 void Vulkan_Scene_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Scene_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Scene_Shutdown (struct vulkan_ctx_s *ctx);
 int Vulkan_Scene_MaxEntities (struct vulkan_ctx_s *ctx) __attribute__((pure));
 VkDescriptorSet Vulkan_Scene_Descriptors (struct vulkan_ctx_s *ctx) __attribute__((pure));
 int Vulkan_Scene_AddEntity (struct vulkan_ctx_s *ctx, struct entity_s entity);

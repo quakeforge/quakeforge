@@ -626,6 +626,11 @@ parse = {
 			size = newscene_num_tasks;
 			values = newscene_tasks;
 		};
+		init_tasks = {
+			type = (array, qfv_taskinfo_t);
+			size = init_num_tasks;
+			values = init_tasks;
+		};
 		plitem = ignore;
 	};
 	qfv_samplercreateinfo_s = {

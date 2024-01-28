@@ -56,7 +56,5 @@ struct mod_planes_ctx_s;
 struct planes_s;
 
 void Vulkan_Planes_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Planes_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Planes_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_planes_h

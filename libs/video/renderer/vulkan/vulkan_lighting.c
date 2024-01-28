@@ -1360,172 +1360,6 @@ lighting_load_lights (const exprval_t **params, exprval_t *result,
 	Vulkan_LoadLights (scene, ctx);
 }
 
-static exprenum_t lighting_stage_enum;
-static exprtype_t lighting_stage_type = {
-	.name = "lighting_stage",
-	.size = sizeof (int),
-	.get_string = cexpr_enum_get_string,
-	.data = &lighting_stage_enum,
-};
-static int lighting_stage_values[] = {
-	lighting_main,
-	lighting_shadow,
-	lighting_hull,
-};
-static exprsym_t lighting_stage_symbols[] = {
-	{"main", &lighting_stage_type, lighting_stage_values + 0},
-	{"shadow", &lighting_stage_type, lighting_stage_values + 1},
-	{"hull", &lighting_stage_type, lighting_stage_values + 2},
-	{}
-};
-static exprtab_t lighting_stage_symtab = { .symbols = lighting_stage_symbols };
-static exprenum_t lighting_stage_enum = {
-	&lighting_stage_type,
-	&lighting_stage_symtab,
-};
-
-static exprenum_t shadow_type_enum;
-static exprtype_t shadow_type_type = {
-	.name = "shadow_type",
-	.size = sizeof (int),
-	.get_string = cexpr_enum_get_string,
-	.data = &shadow_type_enum,
-};
-static int shadow_type_values[] = { ST_NONE, ST_PLANE, ST_CASCADE, ST_CUBE };
-static exprsym_t shadow_type_symbols[] = {
-	{"none", &shadow_type_type, shadow_type_values + 0},
-	{"plane", &shadow_type_type, shadow_type_values + 1},
-	{"cascade", &shadow_type_type, shadow_type_values + 2},
-	{"cube", &shadow_type_type, shadow_type_values + 3},
-	{}
-};
-static exprtab_t shadow_type_symtab = { .symbols = shadow_type_symbols };
-static exprenum_t shadow_type_enum = {
-	&shadow_type_type,
-	&shadow_type_symtab,
-};
-
-static exprtype_t *shadow_type_param[] = {
-	&shadow_type_type,
-	&lighting_stage_type,
-};
-
-static exprtype_t *stepref_param[] = {
-	&cexpr_string,
-};
-
-static exprfunc_t lighting_update_lights_func[] = {
-	{ .func = lighting_update_lights },
-	{}
-};
-static exprfunc_t lighting_update_descriptors_func[] = {
-	{ .func = lighting_update_descriptors, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
-static exprfunc_t lighting_bind_descriptors_func[] = {
-	{ .func = lighting_bind_descriptors, .num_params = 2,
-		.param_types = shadow_type_param },
-	{}
-};
-static exprfunc_t lighting_draw_splats_func[] = {
-	{ .func = lighting_draw_splats },
-	{}
-};
-static exprfunc_t lighting_cull_select_renderpass_func[] = {
-	{ .func = lighting_cull_select_renderpass, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
-static exprfunc_t lighting_cull_lights_func[] = {
-	{ .func = lighting_cull_lights, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
-static exprfunc_t lighting_draw_hulls_func[] = {
-	{ .func = lighting_draw_hulls },
-	{}
-};
-static exprfunc_t lighting_draw_lights_func[] = {
-	{ .func = lighting_draw_lights, .num_params = 2,
-		.param_types = shadow_type_param },
-	{}
-};
-static exprfunc_t lighting_setup_shadow_func[] = {
-	{ .func = lighting_setup_shadow },
-	{}
-};
-static exprfunc_t lighting_draw_shadow_maps_func[] = {
-	{ .func = lighting_draw_shadow_maps, .num_params = 1,
-		.param_types = stepref_param },
-	{}
-};
-
-static exprfunc_t lighting_load_lights_func[] = {
-	{ .func = lighting_load_lights },
-	{}
-};
-static exprsym_t lighting_task_syms[] = {
-	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
-	{ "lighting_update_descriptors", &cexpr_function,
-		lighting_update_descriptors_func },
-	{ "lighting_bind_descriptors", &cexpr_function,
-		lighting_bind_descriptors_func },
-	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
-	{ "lighting_cull_select_renderpass", &cexpr_function,
-		lighting_cull_select_renderpass_func },
-	{ "lighting_cull_lights", &cexpr_function, lighting_cull_lights_func },
-	{ "lighting_draw_hulls", &cexpr_function, lighting_draw_hulls_func },
-	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
-	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
-	{ "lighting_draw_shadow_maps", &cexpr_function,
-		lighting_draw_shadow_maps_func },
-
-	{ "lighting_load_lights", &cexpr_function, lighting_load_lights_func },
-	{}
-};
-
-static int
-round_light_size (int size)
-{
-	size = ((size + shadow_quanta - 1) / shadow_quanta) * shadow_quanta;
-	return min (size, 1024);
-}
-
-static void
-dynlight_size_listener (void *data, const cvar_t *cvar)
-{
-	dynlight_size = round_light_size (dynlight_size);
-}
-
-void
-Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
-	ctx->lighting_context = lctx;
-
-	Cvar_Register (&dynlight_size_cvar, dynlight_size_listener, 0);
-
-	QFV_Render_AddTasks (ctx, lighting_task_syms);
-
-	lctx->shadow_info = (qfv_attachmentinfo_t) {
-		.name = "$shadow",
-		.format = VK_FORMAT_D32_SFLOAT,
-		.samples = 1,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
-	};
-	qfv_attachmentinfo_t *attachments[] = {
-		&lctx->shadow_info,
-	};
-	QFV_Render_AddAttachments (ctx, 1, attachments);
-}
-
 static void
 make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 {
@@ -1622,15 +1456,84 @@ write_inds (qfv_packet_t *packet)
 	memcpy (inds, cone_inds, sizeof (cone_inds));
 }
 
-void
-Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
+static void
+clear_shadows (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "lighting init");
+	qfv_device_t *device = ctx->device;
+	auto dfunc = device->funcs;
+	lightingctx_t *lctx = ctx->lighting_context;
 
+	if (lctx->shadow_resources) {
+		QFV_DestroyResource (device, lctx->shadow_resources);
+		free (lctx->shadow_resources);
+		lctx->shadow_resources = 0;
+	}
+	for (int i = 0; i < LIGHTING_STAGES; i++) {
+		for (int j = 0; j < 32; j++) {
+			auto framebuffer = lctx->stage_framebuffers[j][i];
+			if (framebuffer) {
+				dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
+			}
+			lctx->stage_framebuffers[j][i] = 0;
+		}
+		// images and views freed via shadow_resources
+		lctx->stage_images[i] = 0;
+		lctx->stage_views[i] = 0;
+	}
+	free (lctx->map_images);
+	free (lctx->map_views);
+	free (lctx->map_cube);
+	lctx->map_images = 0;
+	lctx->map_views = 0;
+	lctx->map_cube = 0;
+	lctx->num_maps = 0;
+	lctx->light_control.size = 0;
+}
+
+static void
+lighting_shutdown (exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto lctx = ctx->lighting_context;
+
+	clear_shadows (ctx);
+
+	QFV_DestroyResource (device, lctx->light_resources);
+	free (lctx->light_resources);
+
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		auto lframe = &lctx->frames.a[i];
+		dfunc->vkDestroyQueryPool (device->dev, lframe->query, 0);
+		dfunc->vkDestroyFence (device->dev, lframe->fence, 0);
+		qftCVkContextDestroy (lframe->qftVkCtx);
+	}
+	free (lctx->frames.a[0].stage_targets);
+	free (lctx->frames.a[0].id_radius);
+	free (lctx->frames.a[0].positions);
+	DARRAY_CLEAR (&lctx->light_mats);
+	DARRAY_CLEAR (&lctx->light_control);
+	free (lctx->map_images);
+	free (lctx->map_views);
+	free (lctx->map_cube);
+	free (lctx->frames.a);
+	free (lctx);
+}
+
+static void
+lighting_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto lctx = ctx->lighting_context;
+	qfvPushDebug (ctx, "lighting init");
 
 	lctx->sampler = QFV_Render_Sampler (ctx, "shadow_sampler");
 
@@ -1988,69 +1891,198 @@ Vulkan_Lighting_Setup (vulkan_ctx_t *ctx)
 }
 
 static void
-clear_shadows (vulkan_ctx_t *ctx)
+lighting_clearstate (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	qfv_device_t *device = ctx->device;
-	auto dfunc = device->funcs;
-	lightingctx_t *lctx = ctx->lighting_context;
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	Vulkan_LoadLights (0, ctx);
+}
 
-	if (lctx->shadow_resources) {
-		QFV_DestroyResource (device, lctx->shadow_resources);
-		free (lctx->shadow_resources);
-		lctx->shadow_resources = 0;
-	}
-	for (int i = 0; i < LIGHTING_STAGES; i++) {
-		for (int j = 0; j < 32; j++) {
-			auto framebuffer = lctx->stage_framebuffers[j][i];
-			if (framebuffer) {
-				dfunc->vkDestroyFramebuffer (device->dev, framebuffer, 0);
-			}
-			lctx->stage_framebuffers[j][i] = 0;
-		}
-		// images and views freed via shadow_resources
-		lctx->stage_images[i] = 0;
-		lctx->stage_views[i] = 0;
-	}
-	free (lctx->map_images);
-	free (lctx->map_views);
-	free (lctx->map_cube);
-	lctx->map_images = 0;
-	lctx->map_views = 0;
-	lctx->map_cube = 0;
-	lctx->num_maps = 0;
-	lctx->light_control.size = 0;
+static void
+lighting_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	QFV_Render_AddShutdown (ctx, lighting_shutdown);
+	QFV_Render_AddStartup (ctx, lighting_startup);
+	QFV_Render_AddClearState (ctx, lighting_clearstate);
+
+	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
+	ctx->lighting_context = lctx;
+
+	lctx->shadow_info = (qfv_attachmentinfo_t) {
+		.name = "$shadow",
+		.format = VK_FORMAT_D32_SFLOAT,
+		.samples = 1,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,//FIXME plist
+	};
+	qfv_attachmentinfo_t *attachments[] = {
+		&lctx->shadow_info,
+	};
+	QFV_Render_AddAttachments (ctx, 1, attachments);
+}
+
+static exprenum_t lighting_stage_enum;
+static exprtype_t lighting_stage_type = {
+	.name = "lighting_stage",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &lighting_stage_enum,
+};
+static int lighting_stage_values[] = {
+	lighting_main,
+	lighting_shadow,
+	lighting_hull,
+};
+static exprsym_t lighting_stage_symbols[] = {
+	{"main", &lighting_stage_type, lighting_stage_values + 0},
+	{"shadow", &lighting_stage_type, lighting_stage_values + 1},
+	{"hull", &lighting_stage_type, lighting_stage_values + 2},
+	{}
+};
+static exprtab_t lighting_stage_symtab = { .symbols = lighting_stage_symbols };
+static exprenum_t lighting_stage_enum = {
+	&lighting_stage_type,
+	&lighting_stage_symtab,
+};
+
+static exprenum_t shadow_type_enum;
+static exprtype_t shadow_type_type = {
+	.name = "shadow_type",
+	.size = sizeof (int),
+	.get_string = cexpr_enum_get_string,
+	.data = &shadow_type_enum,
+};
+static int shadow_type_values[] = { ST_NONE, ST_PLANE, ST_CASCADE, ST_CUBE };
+static exprsym_t shadow_type_symbols[] = {
+	{"none", &shadow_type_type, shadow_type_values + 0},
+	{"plane", &shadow_type_type, shadow_type_values + 1},
+	{"cascade", &shadow_type_type, shadow_type_values + 2},
+	{"cube", &shadow_type_type, shadow_type_values + 3},
+	{}
+};
+static exprtab_t shadow_type_symtab = { .symbols = shadow_type_symbols };
+static exprenum_t shadow_type_enum = {
+	&shadow_type_type,
+	&shadow_type_symtab,
+};
+
+static exprtype_t *shadow_type_param[] = {
+	&shadow_type_type,
+	&lighting_stage_type,
+};
+
+static exprtype_t *stepref_param[] = {
+	&cexpr_string,
+};
+
+static exprfunc_t lighting_update_lights_func[] = {
+	{ .func = lighting_update_lights },
+	{}
+};
+static exprfunc_t lighting_update_descriptors_func[] = {
+	{ .func = lighting_update_descriptors, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
+static exprfunc_t lighting_bind_descriptors_func[] = {
+	{ .func = lighting_bind_descriptors, .num_params = 2,
+		.param_types = shadow_type_param },
+	{}
+};
+static exprfunc_t lighting_draw_splats_func[] = {
+	{ .func = lighting_draw_splats },
+	{}
+};
+static exprfunc_t lighting_cull_select_renderpass_func[] = {
+	{ .func = lighting_cull_select_renderpass, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
+static exprfunc_t lighting_cull_lights_func[] = {
+	{ .func = lighting_cull_lights, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
+static exprfunc_t lighting_draw_hulls_func[] = {
+	{ .func = lighting_draw_hulls },
+	{}
+};
+static exprfunc_t lighting_draw_lights_func[] = {
+	{ .func = lighting_draw_lights, .num_params = 2,
+		.param_types = shadow_type_param },
+	{}
+};
+static exprfunc_t lighting_setup_shadow_func[] = {
+	{ .func = lighting_setup_shadow },
+	{}
+};
+static exprfunc_t lighting_draw_shadow_maps_func[] = {
+	{ .func = lighting_draw_shadow_maps, .num_params = 1,
+		.param_types = stepref_param },
+	{}
+};
+
+static exprfunc_t lighting_load_lights_func[] = {
+	{ .func = lighting_load_lights },
+	{}
+};
+
+static exprfunc_t lighting_init_func[] = {
+	{ .func = lighting_init },
+	{}
+};
+
+static exprsym_t lighting_task_syms[] = {
+	{ "lighting_update_lights", &cexpr_function, lighting_update_lights_func },
+	{ "lighting_update_descriptors", &cexpr_function,
+		lighting_update_descriptors_func },
+	{ "lighting_bind_descriptors", &cexpr_function,
+		lighting_bind_descriptors_func },
+	{ "lighting_draw_splats", &cexpr_function, lighting_draw_splats_func },
+	{ "lighting_cull_select_renderpass", &cexpr_function,
+		lighting_cull_select_renderpass_func },
+	{ "lighting_cull_lights", &cexpr_function, lighting_cull_lights_func },
+	{ "lighting_draw_hulls", &cexpr_function, lighting_draw_hulls_func },
+	{ "lighting_draw_lights", &cexpr_function, lighting_draw_lights_func },
+	{ "lighting_setup_shadow", &cexpr_function, lighting_setup_shadow_func },
+	{ "lighting_draw_shadow_maps", &cexpr_function,
+		lighting_draw_shadow_maps_func },
+
+	{ "lighting_load_lights", &cexpr_function, lighting_load_lights_func },
+	{ "lighting_init", &cexpr_function, lighting_init_func },
+	{}
+};
+
+static int
+round_light_size (int size)
+{
+	size = ((size + shadow_quanta - 1) / shadow_quanta) * shadow_quanta;
+	return min (size, 1024);
+}
+
+static void
+dynlight_size_listener (void *data, const cvar_t *cvar)
+{
+	dynlight_size = round_light_size (dynlight_size);
 }
 
 void
-Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
+Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto lctx = ctx->lighting_context;
 
-	clear_shadows (ctx);
+	Cvar_Register (&dynlight_size_cvar, dynlight_size_listener, 0);
 
-	QFV_DestroyResource (device, lctx->light_resources);
-	free (lctx->light_resources);
-
-	for (size_t i = 0; i < lctx->frames.size; i++) {
-		auto lframe = &lctx->frames.a[i];
-		dfunc->vkDestroyQueryPool (device->dev, lframe->query, 0);
-		dfunc->vkDestroyFence (device->dev, lframe->fence, 0);
-		qftCVkContextDestroy (lframe->qftVkCtx);
-	}
-	free (lctx->frames.a[0].stage_targets);
-	free (lctx->frames.a[0].id_radius);
-	free (lctx->frames.a[0].positions);
-	DARRAY_CLEAR (&lctx->light_mats);
-	DARRAY_CLEAR (&lctx->light_control);
-	free (lctx->map_images);
-	free (lctx->map_views);
-	free (lctx->map_cube);
-	free (lctx->frames.a);
-	free (lctx);
+	QFV_Render_AddTasks (ctx, lighting_task_syms);
 }
 
 static void

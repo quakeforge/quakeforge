@@ -46,6 +46,7 @@
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_texture.h"
 
+#include "r_internal.h"
 #include "vid_vulkan.h"
 
 void
@@ -62,14 +63,30 @@ Vulkan_Palette_Update (vulkan_ctx_t *ctx, const byte *palette)
 	Vulkan_UpdateTex (ctx, pctx->palette, &tex, 0, 0, 0, 0);
 }
 
-void
-Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
+static void
+palette_shutdown (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "palette init");
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "palette shutdown");
 
-	palettectx_t *pctx = calloc (1, sizeof (palettectx_t));
-	ctx->palette_context = pctx;
+	auto pctx = ctx->palette_context;
+
+	Vulkan_UnloadTex (ctx, pctx->palette);
+	free (pctx);
+
+	qfvPopDebug (ctx);
+}
+
+static void
+palette_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "palette init");
+	auto pctx = ctx->palette_context;
 
 	pctx->sampler = QFV_Render_Sampler (ctx, "palette_sampler");
 
@@ -78,7 +95,7 @@ Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 		.height = 16,
 		.format = tex_rgb,
 		.loaded = 1,
-		.data = (byte *) palette,
+		.data = (byte *) vid.palette,
 	};
 	pctx->palette = Vulkan_LoadTex (ctx, &tex, 0, "palette");
 	pctx->descriptor = Vulkan_CreateCombinedImageSampler (ctx,
@@ -88,18 +105,35 @@ Vulkan_Palette_Init (vulkan_ctx_t *ctx, const byte *palette)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Palette_Shutdown (vulkan_ctx_t *ctx)
+static void
+palette_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "palette shutdown");
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	__auto_type pctx = ctx->palette_context;
+	QFV_Render_AddShutdown (ctx, palette_shutdown);
+	QFV_Render_AddStartup (ctx, palette_startup);
 
-	Vulkan_UnloadTex (ctx, pctx->palette);
-	free (pctx);
+	palettectx_t *pctx = calloc (1, sizeof (palettectx_t));
+	ctx->palette_context = pctx;
+}
 
-	qfvPopDebug (ctx);
+static exprfunc_t palette_init_func[] = {
+	{ .func = palette_init },
+	{}
+};
+
+static exprsym_t palette_task_syms[] = {
+	{ "palette_init", &cexpr_function, palette_init_func },
+	{}
+};
+
+void
+Vulkan_Palette_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, palette_task_syms);
 }
 
 VkDescriptorSet

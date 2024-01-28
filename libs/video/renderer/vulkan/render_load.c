@@ -222,6 +222,7 @@ count_stuff (qfv_jobinfo_t *jobinfo, objcount_t *counts)
 		count_step_stuff (&jobinfo->steps[i], counts);
 	}
 	counts->num_tasks += jobinfo->newscene_num_tasks;
+	counts->num_tasks += jobinfo->init_num_tasks;
 }
 
 static qfv_imageinfo_t * __attribute__((pure))
@@ -979,14 +980,13 @@ init_step (uint32_t ind, jobptr_t *jp, objstate_t *s)
 	}
 }
 
-static void
-init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
+static jobptr_t
+create_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t *s)
 {
 	auto rctx = ctx->render_context;
 	auto jobinfo = rctx->jobinfo;
 
 	size_t      size = sizeof (qfv_job_t);
-
 	size += sizeof (qfv_step_t       [counts->num_steps]);
 	size += sizeof (qfv_render_t     [counts->num_render]);
 	size += sizeof (qfv_compute_t    [counts->num_compute]);
@@ -1001,7 +1001,7 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	size += sizeof (VkRenderPass     [counts->num_renderpasses]);
 	size += sizeof (VkPipeline       [counts->num_graph_pipelines]);
 	size += sizeof (VkPipeline       [counts->num_comp_pipelines]);
-	size += sizeof (VkPipelineLayout [s.inds.num_layouts]);
+	size += sizeof (VkPipelineLayout [counts->num_layouts]);
 	size += sizeof (VkImageView      [counts->num_attachments]);
 	size += sizeof (qfv_dsmanager_t *[jobinfo->num_dslayouts]);
 	size += sizeof (uint32_t         [counts->num_ds_indices]);
@@ -1012,10 +1012,13 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.num_renderpasses = counts->num_renderpasses,
 		.num_pipelines = counts->num_graph_pipelines
 						 + counts->num_comp_pipelines,
-		.num_layouts = s.inds.num_layouts,
+		.num_layouts = s->inds.num_layouts,
 		.num_steps = counts->num_steps,
 		.commands = DARRAY_STATIC_INIT (16),
 		.num_dsmanagers = jobinfo->num_dslayouts,
+		.startup_funcs = DARRAY_STATIC_INIT (16),
+		.shutdown_funcs = DARRAY_STATIC_INIT (16),
+		.clearstate_funcs = DARRAY_STATIC_INIT (16),
 	};
 	job->steps = (qfv_step_t *) &job[1];
 	auto rn = (qfv_render_t *) &job->steps[job->num_steps];
@@ -1030,11 +1033,11 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 	job->renderpasses = (VkRenderPass *) &cv[counts->num_attachments];
 	job->pipelines = (VkPipeline *) &job->renderpasses[job->num_renderpasses];
 	job->layouts = (VkPipelineLayout *) &job->pipelines[job->num_pipelines];
-	auto av = (VkImageView *) &job->layouts[s.inds.num_layouts];
+	auto av = (VkImageView *) &job->layouts[counts->num_layouts];
 	job->dsmanager = (qfv_dsmanager_t **) &av[counts->num_attachments];
 	auto ds = (uint32_t *) &job->dsmanager[jobinfo->num_dslayouts];
 
-	jobptr_t jp = {
+	return (jobptr_t) {
 		.steps = job->steps,
 		.renders = rn,
 		.computes = cp,
@@ -1047,33 +1050,38 @@ init_job (vulkan_ctx_t *ctx, objcount_t *counts, objstate_t s)
 		.ds_indices = ds,
 		.attachment_views = av,
 	};
+}
+
+static void
+init_job (vulkan_ctx_t *ctx, objcount_t *counts, jobptr_t jp, objstate_t *s)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+	auto jobinfo = rctx->jobinfo;
 
 	for (uint32_t i = 0; i < job->num_renderpasses; i++) {
-		job->renderpasses[i] = s.ptr.rp[i];
+		job->renderpasses[i] = s->ptr.rp[i];
 	}
 	for (uint32_t i = 0; i < job->num_pipelines; i++) {
 		// compute pipelines come immediately after the graphics pipelines
-		job->pipelines[i] = s.ptr.gpl[i];
+		job->pipelines[i] = s->ptr.gpl[i];
 	}
-	for (uint32_t i = 0; i < s.inds.num_layouts; i++) {
-		job->layouts[i] = s.ptr.layouts[i].layout;
+	for (uint32_t i = 0; i < s->inds.num_layouts; i++) {
+		job->layouts[i] = s->ptr.layouts[i].layout;
 	}
-	memcpy (cv, s.ptr.clear, sizeof (VkClearValue [counts->num_attachments ]));
+	for (uint32_t i = s->inds.num_layouts; i < counts->num_layouts; i++) {
+		job->layouts[i] = nullptr;
+	}
+	auto cv = jp.clearvalues;
+	memcpy (cv, s->ptr.clear, sizeof (VkClearValue [counts->num_attachments ]));
 
-	uint32_t    num_layouts = s.inds.num_layouts;
-	s.inds = (objcount_t) {};
-	s.inds.num_layouts = num_layouts;
 	for (uint32_t i = 0; i < job->num_steps; i++) {
-		init_step (i, &jp, &s);
+		init_step (i, &jp, s);
 	}
 	for (uint32_t i = 0; i < job->num_dsmanagers; i++) {
 		auto layoutInfo = &jobinfo->dslayouts[i];
 		job->dsmanager[i] = QFV_DSManager_Create (layoutInfo, 16, ctx);
 	}
-
-	init_tasks (&job->newscene_task_count, &job->newscene_tasks,
-			    jobinfo->newscene_num_tasks, jobinfo->newscene_tasks,
-				&jp, &s);
 }
 
 static void
@@ -1138,6 +1146,86 @@ del_objstate (void *_state)
 }
 
 static void
+create_pipeline_layout (const qfv_pipelineinfo_t *pli, objstate_t *s)
+{
+	if (pli->layout.name) {
+		__auto_type li = find_layout (&pli->layout, s);
+		s->inds.num_ds_indices += li->num_sets;
+	}
+}
+
+static void
+create_subpass_layouts (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
+{
+	auto spi = &sub[index];
+	s->plc = &s->ptr.gplCreate[s->inds.num_graph_pipelines];
+	s->spc = &s->ptr.subpass[s->inds.num_subpasses];
+
+	for (uint32_t i = 0; i < spi->num_pipelines; i++) {
+		if (spi->base_pipeline) {
+			create_pipeline_layout (spi->base_pipeline, s);
+		}
+		create_pipeline_layout (&spi->pipelines[i], s);
+	}
+}
+
+static void
+create_renderpass_layouts (uint32_t index, const qfv_renderinfo_t *rinfo,
+						   objstate_t *s)
+{
+	auto rpi = &rinfo->renderpasses[index];
+	for (uint32_t i = 0; i < rpi->num_subpasses; i++) {
+		create_subpass_layouts (i, rpi->subpasses, s);
+	}
+}
+
+static void
+create_step_render_layouts (uint32_t index, const qfv_stepinfo_t *step,
+							objstate_t *s)
+{
+	__auto_type rinfo = step->render;
+	if (!rinfo) {
+		return;
+	}
+	for (uint32_t i = 0; i < rinfo->num_renderpasses; i++) {
+		create_renderpass_layouts (i, rinfo, s);
+	}
+}
+
+static void
+create_step_compute_layouts (uint32_t index, const qfv_stepinfo_t *step,
+							 objstate_t *s)
+{
+	__auto_type cinfo = step->compute;
+	if (!cinfo) {
+		return;
+	}
+
+	uint32_t    base = s->inds.num_graph_pipelines;
+	for (uint32_t i = 0; i < cinfo->num_pipelines; i++) {
+		auto pli = &cinfo->pipelines[i];
+		auto li = find_layout (&pli->layout, s);
+		s->ptr.plName[base + s->inds.num_comp_pipelines] = pli->name;
+		s->inds.num_ds_indices += li->num_sets;
+	}
+}
+
+static void
+create_layouts (vulkan_ctx_t *ctx, objstate_t *s)
+{
+	qfZoneScoped (true);
+	auto rctx = ctx->render_context;
+	auto jinfo = rctx->jobinfo;
+
+	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+		create_step_render_layouts (i, &jinfo->steps[i], s);
+	}
+	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
+		create_step_compute_layouts (i, &jinfo->steps[i], s);
+	}
+}
+
+static void
 create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 {
 	qfZoneScoped (true);
@@ -1191,6 +1279,24 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 		.jinfo = jinfo,
 		.symtab = QFV_CreateSymtab (jinfo->plitem, "properties", 0, 0, &ectx),
 	};
+
+	// Create pipeline layouts first so they and the descriptor set indices
+	// can be counted correctly.
+	create_layouts (ctx, &s);
+	counts->num_layouts = s.inds.num_layouts;
+	counts->num_ds_indices = s.inds.num_ds_indices;
+
+	auto jp = create_job (ctx, counts, &s);
+
+	auto job = rctx->job;
+	init_tasks (&job->newscene_task_count, &job->newscene_tasks,
+			    jinfo->newscene_num_tasks, jinfo->newscene_tasks,
+				&jp, &s);
+	init_tasks (&job->init_task_count, &job->init_tasks,
+			    jinfo->init_num_tasks, jinfo->init_tasks,
+				&jp, &s);
+	QFV_Render_Run_Init (ctx);
+
 	for (uint32_t i = 0; i < jinfo->num_steps; i++) {
 		create_step_render_objects (i, &jinfo->steps[i], &s);
 	}
@@ -1208,7 +1314,8 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 		|| s.inds.num_colorblend != counts->num_colorblend
 		|| s.inds.num_preserve != counts->num_preserve
 		|| s.inds.num_graph_pipelines != counts->num_graph_pipelines
-		|| s.inds.num_comp_pipelines != counts->num_comp_pipelines) {
+		|| s.inds.num_comp_pipelines != counts->num_comp_pipelines
+		|| s.inds.num_layouts > counts->num_layouts) {
 		Sys_Error ("create_objects: something was missed");
 	}
 
@@ -1243,7 +1350,13 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	}
 
 	counts->num_ds_indices = s.inds.num_ds_indices;
-	init_job (ctx, counts, s);
+
+	uint32_t    num_layouts = s.inds.num_layouts;
+	uint32_t    num_tasks = s.inds.num_tasks;
+	s.inds = (objcount_t) {};
+	s.inds.num_layouts = num_layouts;
+	s.inds.num_tasks = num_tasks;
+	init_job (ctx, counts, jp, &s);
 }
 
 void
@@ -1256,4 +1369,5 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 	count_stuff (rctx->jobinfo, &counts);
 
 	create_objects (ctx, &counts);
+	QFV_Render_Run_Startup (ctx);
 }

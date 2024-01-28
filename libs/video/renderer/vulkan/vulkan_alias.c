@@ -356,6 +356,46 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 }
 
+static void
+alias_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "alias shutdown");
+	auto actx = ctx->alias_context;
+
+	free (actx);
+	qfvPopDebug (ctx);
+}
+
+static void
+alias_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto actx = ctx->alias_context;
+	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
+}
+
+static void
+alias_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "alias init");
+
+	QFV_Render_AddShutdown (ctx, alias_shutdown);
+	QFV_Render_AddStartup (ctx, alias_startup);
+
+	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
+	ctx->alias_context = actx;
+
+	qfvPopDebug (ctx);
+}
+
 static exprenum_t alias_stage_enum;
 static exprtype_t alias_stage_type = {
 	.name = "alias_stage",
@@ -383,8 +423,15 @@ static exprfunc_t alias_draw_func[] = {
 	{ .func = alias_draw, .num_params = 2, .param_types = alias_draw_params },
 	{}
 };
+
+static exprfunc_t alias_init_func[] = {
+	{ .func = alias_init },
+	{}
+};
+
 static exprsym_t alias_task_syms[] = {
 	{ "alias_draw", &cexpr_function, alias_draw_func },
+	{ "alias_init", &cexpr_function, alias_init_func },
 	{}
 };
 
@@ -395,27 +442,5 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	qfvPushDebug (ctx, "alias init");
 	QFV_Render_AddTasks (ctx, alias_task_syms);
 
-	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
-	ctx->alias_context = actx;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Alias_Setup (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	auto actx = ctx->alias_context;
-	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
-}
-
-void
-Vulkan_Alias_Shutdown (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	//qfv_device_t *device = ctx->device;
-	//qfv_devfuncs_t *dfunc = device->funcs;
-	aliasctx_t *actx = ctx->alias_context;
-
-	free (actx);
 }

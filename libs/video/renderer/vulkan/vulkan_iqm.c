@@ -416,6 +416,48 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 }
 
+static void
+iqm_shutdown (exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
+	iqmctx_t   *ictx = ctx->iqm_context;
+
+	free (ictx->frames.a);
+	free (ictx);
+}
+
+static void
+iqm_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto ictx = ctx->iqm_context;
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&ictx->frames, frames);
+	DARRAY_RESIZE (&ictx->frames, frames);
+	ictx->frames.grow = 0;
+	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
+}
+
+static void
+iqm_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
+
+	QFV_Render_AddShutdown (ctx, iqm_shutdown);
+	QFV_Render_AddStartup (ctx, iqm_startup);
+
+	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
+	ctx->iqm_context = ictx;
+}
+
 static exprtype_t *iqm_draw_params[] = {
 	&cexpr_int,
 };
@@ -423,8 +465,15 @@ static exprfunc_t iqm_draw_func[] = {
 	{ .func = iqm_draw, .num_params = 1, .param_types = iqm_draw_params },
 	{}
 };
+
+static exprfunc_t iqm_init_func[] = {
+	{ .func = iqm_init },
+	{}
+};
+
 static exprsym_t iqm_task_syms[] = {
 	{ "iqm_draw", &cexpr_function, iqm_draw_func },
+	{ "iqm_init", &cexpr_function, iqm_init_func },
 	{}
 };
 
@@ -435,32 +484,5 @@ Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 	qfvPushDebug (ctx, "iqm init");
 	QFV_Render_AddTasks (ctx, iqm_task_syms);
 
-	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
-	ctx->iqm_context = ictx;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&ictx->frames, frames);
-	DARRAY_RESIZE (&ictx->frames, frames);
-	ictx->frames.grow = 0;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_IQM_Setup (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	auto ictx = ctx->iqm_context;
-	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
-}
-
-void
-Vulkan_IQM_Shutdown (vulkan_ctx_t *ctx)
-{
-	qfZoneScoped (true);
-	iqmctx_t   *ictx = ctx->iqm_context;
-
-	free (ictx->frames.a);
-	free (ictx);
 }

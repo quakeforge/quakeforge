@@ -401,8 +401,6 @@ void Vulkan_RegisterTextures (model_t **models, int num_models,
 void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 							   struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
 bsp_pass_t *Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind);
 ///@}
 

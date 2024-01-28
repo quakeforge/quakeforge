@@ -106,6 +106,7 @@ vulkan_R_Init (struct plitem_s *config)
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
+	Vulkan_Palette_Init (vulkan_ctx);
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 
@@ -131,26 +132,10 @@ vulkan_R_Init (struct plitem_s *config)
 		const char *mode = vulkan_render_mode ? "main_def" : "main_fwd";
 		auto render_graph = Vulkan_GetConfig (vulkan_ctx, mode);
 		auto samplers = Vulkan_GetConfig (vulkan_ctx, "smp_quake");
-		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
 		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
+		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
 	}
 	QFV_BuildRender (vulkan_ctx);
-
-	Vulkan_Texture_Setup (vulkan_ctx);
-	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
-	Vulkan_Alias_Setup (vulkan_ctx);
-	Vulkan_Bsp_Setup (vulkan_ctx);
-	Vulkan_IQM_Setup (vulkan_ctx);
-	Vulkan_Matrix_Setup (vulkan_ctx);
-	Vulkan_Scene_Setup (vulkan_ctx);
-	Vulkan_Sprite_Setup (vulkan_ctx);
-	Vulkan_Output_Setup (vulkan_ctx);
-	Vulkan_Compose_Setup (vulkan_ctx);
-	Vulkan_Draw_Setup (vulkan_ctx);
-	Vulkan_Particles_Setup (vulkan_ctx);
-	Vulkan_Planes_Setup (vulkan_ctx);
-	Vulkan_Translucent_Setup (vulkan_ctx);
-	Vulkan_Lighting_Setup (vulkan_ctx);
 
 	Skin_Init ();
 
@@ -166,7 +151,7 @@ vulkan_R_ClearState (void)
 	r_refdef.worldmodel = 0;
 	EntQueue_Clear (r_ent_queue);
 	R_ClearParticles ();
-	Vulkan_LoadLights (0, vulkan_ctx);
+	QFV_Render_Run_ClearState (vulkan_ctx);
 }
 
 static void
@@ -584,25 +569,8 @@ vulkan_vid_render_shutdown (void)
 	SCR_Shutdown ();
 	Mod_ClearAll ();
 
-	Vulkan_Compose_Shutdown (vulkan_ctx);
-	Vulkan_Translucent_Shutdown (vulkan_ctx);
-	Vulkan_Lighting_Shutdown (vulkan_ctx);
-	Vulkan_Draw_Shutdown (vulkan_ctx);
-	Vulkan_Sprite_Shutdown (vulkan_ctx);
-	Vulkan_Planes_Shutdown (vulkan_ctx);
-	Vulkan_Particles_Shutdown (vulkan_ctx);
-	Vulkan_IQM_Shutdown (vulkan_ctx);
-	Vulkan_Bsp_Shutdown (vulkan_ctx);
-	Vulkan_Alias_Shutdown (vulkan_ctx);
-	Vulkan_Scene_Shutdown (vulkan_ctx);
-	Vulkan_Matrix_Shutdown (vulkan_ctx);
-
 	QFV_MousePick_Shutdown (vulkan_ctx);
 	QFV_Capture_Shutdown (vulkan_ctx);
-	Vulkan_Output_Shutdown (vulkan_ctx);
-
-	Vulkan_Palette_Shutdown (vulkan_ctx);
-	Vulkan_Texture_Shutdown (vulkan_ctx);
 
 	QFV_Render_Shutdown (vulkan_ctx);
 
