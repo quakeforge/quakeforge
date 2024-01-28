@@ -73,11 +73,10 @@ get_output (vulkan_ctx_t *ctx, plitem_t *item)
 }
 
 void
-QFV_LoadRenderInfo (vulkan_ctx_t *ctx, const char *name)
+QFV_LoadRenderInfo (vulkan_ctx_t *ctx, plitem_t *item)
 {
 	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
-	auto item = Vulkan_GetConfig (ctx, name);
 	auto output = get_output (ctx, item);
 	Vulkan_Script_SetOutput (ctx, &output);
 	rctx->jobinfo = QFV_ParseJobInfo (ctx, item, rctx);
@@ -87,11 +86,10 @@ QFV_LoadRenderInfo (vulkan_ctx_t *ctx, const char *name)
 }
 
 void
-QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, const char *name)
+QFV_LoadSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item)
 {
 	qfZoneScoped (true);
 	auto rctx = ctx->render_context;
-	auto item = Vulkan_GetConfig (ctx, name);
 	rctx->samplerinfo = QFV_ParseSamplerInfo (ctx, item, rctx);
 	if (rctx->samplerinfo) {
 		rctx->samplerinfo->plitem = item;

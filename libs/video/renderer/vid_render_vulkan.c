@@ -83,6 +83,16 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
+static int vulkan_render_mode;
+static cvar_t vulkan_render_mode_cvar = {
+	.name = "vulkan_render_mode",
+	.description =
+		"Use deferred (1) or forward (0) rendering for quake.",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &vulkan_render_mode },
+};
+
 static struct psystem_s *
 vulkan_ParticleSystem (void)
 {
@@ -116,8 +126,14 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
-	QFV_LoadRenderInfo (vulkan_ctx, "main_def");
-	QFV_LoadSamplerInfo (vulkan_ctx, "smp_quake");
+	if (config) {
+	} else {
+		const char *mode = vulkan_render_mode ? "main_def" : "main_fwd";
+		auto render_graph = Vulkan_GetConfig (vulkan_ctx, mode);
+		auto samplers = Vulkan_GetConfig (vulkan_ctx, "smp_quake");
+		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
+		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
+	}
 	QFV_BuildRender (vulkan_ctx);
 
 	Vulkan_Texture_Setup (vulkan_ctx);
@@ -543,6 +559,7 @@ vulkan_vid_render_init (void)
 	vulkan_ctx = vi->vulkan_context (vi);
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
+	Cvar_Register (&vulkan_render_mode_cvar, 0, 0);
 	Vulkan_Init_Common (vulkan_ctx);
 
 	vi->set_palette = set_palette;

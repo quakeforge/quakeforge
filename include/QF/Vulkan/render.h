@@ -463,8 +463,8 @@ void QFV_RunRenderPassCmd (VkCommandBuffer cmd, struct vulkan_ctx_s *ctx,
 void QFV_RunRenderPass (struct vulkan_ctx_s *ctx, qfv_renderpass_t *renderpass,
 						uint32_t width, uint32_t height, void *data);
 void QFV_RunRenderJob (struct vulkan_ctx_s *ctx);
-void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, const char *name);
-void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, const char *name);
+void QFV_LoadRenderInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
+void QFV_LoadSamplerInfo (struct vulkan_ctx_s *ctx, struct plitem_s *item);
 void QFV_BuildRender (struct vulkan_ctx_s *ctx);
 void QFV_Render_Init (struct vulkan_ctx_s *ctx);
 void QFV_Render_Shutdown (struct vulkan_ctx_s *ctx);
