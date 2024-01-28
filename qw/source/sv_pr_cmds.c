@@ -74,7 +74,7 @@ PF_error (progs_t *pr, void *data)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0, 1);
-	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
+	Sys_Printf ("%c======SERVER ERROR in %s:\n%s\n", 3,
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
@@ -98,7 +98,7 @@ PF_objerror (progs_t *pr, void *data)
 	edict_t    *ed;
 
 	s = PF_VarString (pr, 0, 1);
-	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
+	Sys_Printf ("%c======OBJECT ERROR in %s:\n%s\n", 3,
 				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
@@ -323,7 +323,7 @@ PF_ambientsound (progs_t *pr, void *data)
 			break;
 
 	if (!*check) {
-		Sys_Printf ("no precache: %s\n", samp);
+		Sys_Printf ("%cno precache: %s\n", 3, samp);
 		return;
 	}
 

@@ -236,7 +236,7 @@ PF_cvar_set (progs_t *pr, void *data)
 	if (!var)
 		var = Cvar_FindAlias (var_name);
 	if (!var) {
-		Sys_Printf ("PF_cvar_set: variable %s not found\n", var_name);
+		Sys_Printf ("%cPF_cvar_set: variable %s not found\n", 3, var_name);
 		return;
 	}
 
@@ -369,7 +369,7 @@ static void
 PF_dprint (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
-	Sys_Printf ("%s", PF_VarString (pr, 0, 1));
+	Sys_Printf ("%c%s", 3, PF_VarString (pr, 0, 1));
 }
 
 /*

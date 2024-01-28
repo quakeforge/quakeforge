@@ -167,7 +167,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			break;
 
 	if (sound_num == MAX_SOUNDS || !sv.sound_precache[sound_num]) {
-		Sys_Printf ("SV_StartSound: %s not precacheed\n", sample);
+		Sys_Printf ("%cSV_StartSound: %s not precacheed\n", 3, sample);
 		return;
 	}
 
@@ -1159,7 +1159,7 @@ SV_SpawnServer (const char *server)
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel) {
-		Sys_Printf ("Couldn't spawn server %s\n", sv.modelname);
+		Sys_Printf ("%cCouldn't spawn server %s\n", 3, sv.modelname);
 		sv.active = false;
 		return;
 	}

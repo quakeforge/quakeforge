@@ -325,9 +325,9 @@ CL_ParseServerInfo (void)
 	Sbar_SetLevelName (cl.levelname, 0);
 
 	// separate the printfs so the server message can have a color
-	Sys_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
+	Sys_Printf ("%c\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
 				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n"
-				"\n");
+				"\n", 3);
 	Sys_Printf ("%c%s\n", 2, str);
 
 	// first we go through and touch all of the precache data that still
@@ -369,7 +369,7 @@ CL_ParseServerInfo (void)
 		DARRAY_APPEND (&cl_world.models,
 					   Mod_ForName (model_precache[i], false));
 		if (cl_world.models.a[i] == NULL) {
-			Sys_Printf ("Model %s not found\n", model_precache[i]);
+			Sys_Printf ("%cModel %s not found\n", 3, model_precache[i]);
 			goto done;
 		}
 		CL_KeepaliveMessage ();
@@ -827,7 +827,14 @@ CL_ParseServerMessage (void)
 
 			case svc_print:
 				qfMessageL ("svc_print");
-				Sys_Printf ("%s", MSG_ReadString (net_message));
+				str = MSG_ReadString (net_message);
+				if (str[0]) {
+					if (str[0] <= 3) {
+						Sys_Printf ("%s", str);
+					} else {
+						Sys_Printf ("%c%s", 3, str);
+					}
+				}
 				break;
 
 			case svc_stufftext:

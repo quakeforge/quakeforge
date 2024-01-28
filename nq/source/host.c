@@ -914,7 +914,6 @@ Host_Init (void)
 {
 	qfZoneScoped (true);
 	BT_Init (com_argv[0]);
-	sys_quake_encoding = true;
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 
@@ -970,8 +969,8 @@ Host_Init (void)
 	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
 
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
-			    PACKAGE_NAME);
+	Sys_Printf ("%c\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+			    3, PACKAGE_NAME);
 
 	host_initialized = true;
 }

@@ -478,9 +478,6 @@ C_SayTeam (inputline_t *il)
 static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
-	char       *s;
-	int         mask, c;
-
 	if (!c_print_buffer)
 		c_print_buffer = dstring_new ();
 
@@ -494,23 +491,23 @@ C_Print (const char *fmt, va_list args)
 	if (!con_initialized)
 		return;
 
-	s = c_print_buffer->str;
+	char *s = c_print_buffer->str;
 
-	mask = 0;
-	if (s[0] == 1 || s[0] == 2) {
-		mask = 128;						// go to colored text
-		s++;
-	}
-	if (mask || con_data.ormask) {
+	bool quake_encoding = s[0] > 0 && s[0] <= 3;
+	bool colored = quake_encoding && s[0] < 0;
+	int  mask = (colored ? 128 : 0) | con_data.ormask;
+	s += quake_encoding;
+
+	if (mask) {
 		for (char *m = s; *m; m++) {
 			if (*m >= ' ') {
-				*m |= mask | con_data.ormask;
+				*m |= mask;
 			}
 		}
 	}
 
 	if (con_data.realtime) {
-		c = Draw_PrintBuffer (notify_buffer, s);
+		int c = Draw_PrintBuffer (notify_buffer, s);
 		while (c-- > 0) {
 			notify_times[notify_head++] = *con_data.realtime;
 			if (notify_head >= NOTIFY_LINES + 1) {
@@ -529,14 +526,16 @@ C_Print (const char *fmt, va_list args)
 		Draw_PrintBuffer (console_buffer, s);
 	}
 
-	while (*s) {
-		*s = sys_char_map[(byte) *s];
-		s++;
+	if (quake_encoding || mask) {
+		while (*s) {
+			*s = sys_char_map[(byte) *s];
+			s++;
+		}
 	}
 
 	// echo to debugging console
-	// but don't print the highchars flag (leading \x01)
-	if ((byte)c_print_buffer->str[0] > 2)
+	// but don't print the highchars/quake_encoding flag (leading \x01/2/3)
+	if ((byte)c_print_buffer->str[0] > 3)
 		fputs (c_print_buffer->str, stdout);
 	else if ((byte)c_print_buffer->str[0])
 		fputs (c_print_buffer->str + 1, stdout);

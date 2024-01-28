@@ -2067,7 +2067,6 @@ Host_Init (void)
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
-	sys_quake_encoding = true;
 	Sys_Init ();
 	GIB_Init (true);
 	GIB_Key_Init ();
@@ -2126,7 +2125,7 @@ Host_Init (void)
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+	Sys_Printf ("%c\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", 3,
 				PACKAGE_NAME);
 
 	host_initialized = true;

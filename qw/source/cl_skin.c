@@ -188,7 +188,7 @@ CL_Color_f (void)
 	int         top, bottom;
 
 	if (Cmd_Argc () == 1) {
-		Sys_Printf ("\"color\" is \"%s %s\"\n",
+		Sys_Printf ("%c\"color\" is \"%s %s\"\n", 3,
 					Info_ValueForKey (cls.userinfo, "topcolor"),
 					Info_ValueForKey (cls.userinfo, "bottomcolor"));
 		Sys_Printf ("color <0-13> [0-13]\n");

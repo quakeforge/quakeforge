@@ -583,7 +583,7 @@ SV_Error (const char *error, va_list argptr)
 	string = dstring_new ();
 	dvsprintf (string, error, argptr);
 
-	Sys_Printf ("%s\n", string->str);
+	Sys_Printf ("%c%s\n", 3, string->str);
 
 	if (sv_net_initialized) {
 		dstring_insertstr (string, 0, "server crashed: ");
@@ -2661,7 +2661,6 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
-	sys_quake_encoding = true;
 	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();

@@ -823,13 +823,17 @@ C_Print (const char *fmt, va_list args)
 		Qputs (log_file, buffer->str);
 		Qflush (log_file);
 	}
+	char *s = buffer->str;
+	if (s[0] > 0 && s[0] <= 3) {
+		s++;
+	}
 #ifdef HAVE_NCURSES
 	if (use_curses) {
-		print (buffer->str);
+		print (s);
 	} else
 #endif
 	{
-		unsigned char *txt = (unsigned char *) buffer->str;
+		unsigned char *txt = (unsigned char *) s;
 		while (*txt)
 			putc (sys_char_map[*txt++], stdout);
 		fflush (stdout);
