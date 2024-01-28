@@ -90,7 +90,7 @@ vulkan_ParticleSystem (void)
 }
 
 static void
-vulkan_R_Init (void)
+vulkan_R_Init (struct plitem_s *config)
 {
 	QFV_Render_Init (vulkan_ctx);
 

@@ -105,8 +105,11 @@ float       r_viewmatrix[3][4];
 float       r_aliastransition, r_resfudge;
 
 void
-sw_R_Init (void)
+sw_R_Init (struct plitem_s *config)
 {
+	if (config) {
+		Sys_Printf (ONG"WARNING"DFL": sw_R_Init: render config ignored\n");
+	}
 	int         dummy;
 
 	// get stack position so we can guess if we are going to overflow

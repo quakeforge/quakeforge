@@ -174,8 +174,11 @@ glsl_R_TimeRefresh_f (void)
 }
 
 void
-glsl_R_Init (void)
+glsl_R_Init (struct plitem_s *config)
 {
+	if (config) {
+		Sys_Printf (ONG"WARNING"DFL": glsl_R_Init: render config ignored\n");
+	}
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();

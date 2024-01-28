@@ -383,7 +383,7 @@ BI_Graphics_Init (progs_t *pr)
 	VID_Init (default_palette[0], default_colormap);
 	IN_Init ();
 	Mod_Init ();
-	R_Init ();
+	R_Init (nullptr);
 	Font_Init ();
 
 	R_Progs_Init (pr);

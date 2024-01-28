@@ -101,10 +101,10 @@ R_LoadModule (vid_internal_t *vid_internal)
 }
 
 VISIBLE void
-R_Init (void)
+R_Init (struct plitem_s *config)
 {
 	qfZoneScoped (true);
-	r_funcs->R_Init ();
+	r_funcs->R_Init (config);
 	R_ClearEfrags ();	//FIXME force link of r_efrag.o for qwaq
 	Fog_Init ();
 	R_Trails_Init ();

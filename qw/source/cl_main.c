@@ -1472,7 +1472,7 @@ CL_Init (void)
 	VID_Init (basepal, colormap);
 	IN_Init ();
 	Mod_Init ();
-	R_Init ();
+	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
 

@@ -27,10 +27,10 @@ extern int r_viewsize;
 void R_LineGraph (int x, int y, int *h_vals, int count, int height);
 
 
-void gl_R_Init (void);
-void glsl_R_Init (void);
+void gl_R_Init (struct plitem_s *config);
+void glsl_R_Init (struct plitem_s *config);
 void glsl_R_Shutdown (void);
-void sw_R_Init (void);
+void sw_R_Init (struct plitem_s *config);
 void R_RenderFrame (SCR_Func *scr_funcs);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);

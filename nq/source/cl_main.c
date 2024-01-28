@@ -735,7 +735,7 @@ CL_Init (cbuf_t *cbuf)
 	VID_Init (basepal, colormap);
 	IN_Init ();
 	GIB_Key_Init ();
-	R_Init ();
+	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
 	Font_Init ();	//FIXME not here
