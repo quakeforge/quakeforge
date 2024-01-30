@@ -46,6 +46,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/image.h"
 #include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -358,6 +359,22 @@ vidsize_listener (void *data, const viddef_t *vdef)
 				   (view_pos_t) { vdef->width, vdef->height });
 }
 
+static const char *bi_dirconf = R"(
+{
+	QF = {
+		Path = "QF";
+	};
+	qwaq = {
+		Inherit = (QF);
+		Path = "qwaq";
+	};
+	qwaq:* = {
+		Inherit = (qwaq);
+		Path = "qwaq/$gamedir";
+	};
+}
+)";
+
 void
 BI_Graphics_Init (progs_t *pr)
 {
@@ -366,7 +383,8 @@ BI_Graphics_Init (progs_t *pr)
 	PR_RegisterBuiltins (pr, builtins, 0);
 	BT_Init (this_program);
 
-	QFS_Init (thread->hunk, "nq");
+	QFS_SetConfig (PL_GetPropertyList (bi_dirconf, nullptr));
+	QFS_Init (thread->hunk, "qwaq");
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 
