@@ -718,6 +718,14 @@ no_config:
 	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf, 0);
 }
 
+void
+QFS_SetConfig (plitem_t *config)
+{
+	PL_Retain (config);
+	PL_Release (qfs_gd_plist);
+	qfs_gd_plist = config;
+}
+
 /*
 	qfs_contains_updir
 
@@ -1492,7 +1500,9 @@ QFS_Init (memhunk_t *hunk, const char *game)
 
 	qfs_userpath = Sys_ExpandSquiggle (fs_userpath);
 
-	qfs_load_config ();
+	if (!qfs_gd_plist || *fs_dirconf) {
+		qfs_load_config ();
+	}
 
 	qfs_game = game;
 

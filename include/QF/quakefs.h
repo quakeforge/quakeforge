@@ -109,6 +109,7 @@ extern int qfs_filesize;
 struct cache_user_s;
 struct dstring_s;
 struct memhunk_s;
+struct plitem_s;
 
 /**	Initialize the Quake Filesystem.
 
@@ -124,6 +125,17 @@ struct memhunk_s;
 					clients and servers.
 */
 void QFS_Init (struct memhunk_s *hunk, const char *game);
+
+/**	Set the directory configuration prior to initialization
+
+	This allows the default configuration to be overriden at build time. Must
+	be called before QFS_Init is called. fs_dirconf will still allow the
+	configuration to be overridden.
+
+	\param config	Property list specifity the directory layout used by the
+					engine. The list will be 'retained'.
+*/
+void QFS_SetConfig (struct plitem_s *config);
 
 /** Change the current game directory.
 
