@@ -807,6 +807,9 @@ Vulkan_Draw_CachePic (const char *path, bool alpha, vulkan_ctx_t *ctx)
 		return cpic->pic;
 	}
 	qpic_t     *pic = load_lmp (path, ctx);
+	if (!pic) {
+		return nullptr;
+	}
 	cpic = new_cachepic (dctx, path, pic);
 	Hash_Add (dctx->pic_cache, cpic);
 	return pic;
