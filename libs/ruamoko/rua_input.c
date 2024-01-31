@@ -63,6 +63,12 @@ typedef struct input_resources_s {
 } input_resources_t;
 
 static void
+bi_IN_SendConnectedDevices (progs_t *pr, void *_res)
+{
+	IN_SendConnectedDevices ();
+}
+
+static void
 bi_IN_FindDeviceId (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -511,6 +517,7 @@ static builtin_t insecure_builtins[] = {
 	{0}
 };
 static builtin_t builtins[] = {
+	bi(IN_SendConnectedDevices, 0),
 	bi(IN_FindDeviceId,     1, p(string)),
 	bi(IN_GetDeviceName,    1, p(int)),
 	bi(IN_GetDeviceId,      1, p(int)),

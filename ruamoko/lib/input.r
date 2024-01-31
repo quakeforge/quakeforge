@@ -3,6 +3,7 @@
 void IN_LoadConfig (struct plitem_s *config) = #0;
 in_button_t *IN_CreateButton (string name, string description) = #0;
 in_axis_t *IN_CreateAxis (string name, string description) = #0;
+void IN_SendConnectedDevices (void) = #0;
 int IN_FindDeviceId (string _id) = #0;
 string IN_GetDeviceName (int devid) = #0;
 string IN_GetDeviceId (int devid) = #0;
@@ -40,3 +41,8 @@ void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj) = #0;
 int IMT_CreateContext (string name) = #0;
 int IMT_GetContext (void) = #0;
 void IMT_SetContext (int ctx) = #0;
+
+#define IE_EVENT(event) #event,
+string ie_event_names[] = {
+#include "QF/input/event_names.h"
+};

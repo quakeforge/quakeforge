@@ -2,11 +2,13 @@
 #define __ruamoko_input_h
 
 #include <QF/input.h>
+#include <QF/input/event.h>
 
 struct plitem_s;
 void IN_LoadConfig (struct plitem_s *config);
 in_button_t *IN_CreateButton (string name, string description);
 in_axis_t *IN_CreateAxis (string name, string description);
+void IN_SendConnectedDevices (void);
 int IN_FindDeviceId (string _id);
 string IN_GetDeviceName (int devid);
 string IN_GetDeviceId (int devid);
