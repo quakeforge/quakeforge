@@ -1157,15 +1157,15 @@ create_pipeline_layout (const qfv_pipelineinfo_t *pli, objstate_t *s)
 static void
 create_subpass_layouts (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 {
-	auto spi = &sub[index];
+	s->spi = &sub[index];
 	s->plc = &s->ptr.gplCreate[s->inds.num_graph_pipelines];
 	s->spc = &s->ptr.subpass[s->inds.num_subpasses];
 
-	for (uint32_t i = 0; i < spi->num_pipelines; i++) {
-		if (spi->base_pipeline) {
-			create_pipeline_layout (spi->base_pipeline, s);
+	for (uint32_t i = 0; i < s->spi->num_pipelines; i++) {
+		if (s->spi->base_pipeline) {
+			create_pipeline_layout (s->spi->base_pipeline, s);
 		}
-		create_pipeline_layout (&spi->pipelines[i], s);
+		create_pipeline_layout (&s->spi->pipelines[i], s);
 	}
 }
 
@@ -1173,9 +1173,9 @@ static void
 create_renderpass_layouts (uint32_t index, const qfv_renderinfo_t *rinfo,
 						   objstate_t *s)
 {
-	auto rpi = &rinfo->renderpasses[index];
-	for (uint32_t i = 0; i < rpi->num_subpasses; i++) {
-		create_subpass_layouts (i, rpi->subpasses, s);
+	s->rpi = &rinfo->renderpasses[index];
+	for (uint32_t i = 0; i < s->rpi->num_subpasses; i++) {
+		create_subpass_layouts (i, s->rpi->subpasses, s);
 	}
 }
 
