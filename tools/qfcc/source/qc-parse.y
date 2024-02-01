@@ -143,7 +143,7 @@ int yylex (void);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD SCALE GEOMETRIC
+%left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
 %right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL
 %left			HYPERUNARY

@@ -602,6 +602,9 @@ convert_op (int op)
 		case DOT:	return "dot";
 		case HADAMARD:	return "mul";
 		case SCALE:	return "scale";
+		case QMUL:	return "qmul";
+		case QVMUL:	return "qvmul";
+		case VQMUL:	return "vqmul";
 		default:
 			return 0;
 	}

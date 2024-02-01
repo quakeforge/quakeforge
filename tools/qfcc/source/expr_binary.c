@@ -48,6 +48,7 @@ typedef struct {
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
 	bool      (*associative) (void);
+	int         true_op;
 } expr_type_t;
 
 static const expr_t *pointer_arithmetic (int op, const expr_t *e1,
@@ -272,7 +273,12 @@ static expr_type_t quat_float[] = {
 };
 
 static expr_type_t quat_vector[] = {
-	{'*',	&type_vector},
+	{'*',	&type_vector, .true_op = QVMUL},
+	{0, 0}
+};
+
+static expr_type_t vector_quat[] = {
+	{'*',	&type_vector, .true_op = VQMUL},
 	{0, 0}
 };
 
@@ -281,7 +287,7 @@ static expr_type_t quat_quat[] = {
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_quaternion,
 		.anticommute = fp_com_add},
-	{'*',	&type_quaternion, .associative = always},
+	{'*',	&type_quaternion, .associative = always, .true_op = QMUL},
 	{EQ,	&type_int},
 	{NE,	&type_int},
 	{0, 0}
@@ -727,6 +733,7 @@ static expr_type_t *float_x[ev_type_count] = {
 static expr_type_t *vector_x[ev_type_count] = {
 	[ev_float] = vector_float,
 	[ev_vector] = vector_vector,
+	[ev_quaternion] = vector_quat,
 	[ev_int] = vector_int,
 	[ev_uint] = vector_uint,
 	[ev_short] = vector_short,
@@ -1462,6 +1469,10 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 
 	if ((e = reimplement_binary_expr (op, e1, e2)))
 		return edag_add_expr (fold_constants (e));
+
+	if (expr_type->true_op) {
+		op = expr_type->true_op;
+	}
 
 	auto ne = new_binary_expr (op, e1, e2);
 	ne->expr.type = expr_type->result_type;
