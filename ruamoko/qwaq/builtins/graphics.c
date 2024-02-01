@@ -126,7 +126,16 @@ bi_refresh (progs_t *pr, void *_res)
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
-	SCR_UpdateScreen (nulltransform, con_realtime, bi_2dfuncs);
+	auto scene = Scene_GetScene (pr, P_ULONG (pr, 0));
+	transform_t camera = nulltransform;
+	if (scene && scene->camera != nullent) {
+		entity_t ent = { .reg = scene->reg, .id = scene->camera,
+						 .base = scene->base };
+		if (Ent_HasComponent (ent.id, ent.base + scene_href, ent.reg)) {
+			camera = Entity_Transform (ent);
+		}
+	}
+	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
 

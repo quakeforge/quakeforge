@@ -13,7 +13,6 @@ typedef struct light_s {
 	vec4        attenuation;
 } light_t;
 
-//FIXME need a handle type
 typedef @handle(long) scene_h scene_t;
 typedef @handle(long) entity_h entity_t;
 typedef @handle(long) transform_h transform_t;
@@ -25,6 +24,7 @@ void Scene_DeleteScene (scene_t scene);
 entity_t Scene_CreateEntity (scene_t scene);
 void Scene_DestroyEntity (entity_t ent);
 void Scene_SetLighting (scene_t scene, lightingdata_t ldata);
+void Scene_SetCamera (scene_t scene, entity_t ent);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);

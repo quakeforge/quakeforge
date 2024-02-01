@@ -5,6 +5,7 @@ void Scene_DeleteScene (scene_t scene) = #0;
 entity_t Scene_CreateEntity (scene_t scene) = #0;
 void Scene_DestroyEntity (entity_t ent) = #0;
 void Scene_SetLighting (scene_t scene, lightingdata_t ldata) = #0;
+void Scene_SetCamera (scene_t scene, entity_t ent) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;

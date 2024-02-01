@@ -76,6 +76,8 @@ typedef struct scene_s {
 	struct model_s **models;
 	struct mleaf_s *viewleaf;
 	struct lightingdata_s *lights;
+
+	uint32_t    camera;
 } scene_t;
 
 typedef struct scene_system_s {

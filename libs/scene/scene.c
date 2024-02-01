@@ -269,6 +269,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;
+	scene->camera = nullent;
 
 	return scene;
 }

@@ -302,6 +302,18 @@ bi_Scene_SetLighting (progs_t *pr, void *_res)
 }
 
 static void
+bi_Scene_SetCamera (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t   scene_id = P_ULONG (pr, 0);
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+	pr_ulong_t  ent_id = P_ULONG (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	scene->scene->camera = ent.id;
+}
+
+static void
 bi_Entity_GetTransform (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -650,7 +662,8 @@ static builtin_t builtins[] = {
 	bi(Scene_DeleteScene,           1, p(ulong)),
 	bi(Scene_CreateEntity,          1, p(ulong)),
 	bi(Scene_DestroyEntity,         1, p(ulong)),
-	bi(Scene_SetLighting  ,         2, p(ulong), p(ulong)),
+	bi(Scene_SetLighting,           2, p(ulong), p(ulong)),
+	bi(Scene_SetCamera,				2, p(ulong), p(ulong)),
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
