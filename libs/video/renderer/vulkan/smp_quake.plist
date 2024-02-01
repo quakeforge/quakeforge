@@ -67,7 +67,7 @@ samplers = {
 		borderColor = float_transparent_black;
 		unnormalizedCoordinates = false;
 	};
-	alias_sampler = {
+	qskin_sampler = {
 		magFilter = linear;
 		minFilter = linear;
 		mipmapMode = linear;

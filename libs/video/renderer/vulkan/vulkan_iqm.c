@@ -441,7 +441,7 @@ iqm_startup (exprctx_t *ectx)
 	DARRAY_INIT (&ictx->frames, frames);
 	DARRAY_RESIZE (&ictx->frames, frames);
 	ictx->frames.grow = 0;
-	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
+	ictx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
 }
 
 static void

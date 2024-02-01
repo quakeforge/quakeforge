@@ -376,7 +376,7 @@ alias_startup (exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto actx = ctx->alias_context;
-	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
+	actx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
 }
 
 static void
