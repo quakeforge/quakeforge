@@ -128,6 +128,16 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Compose_Init (vulkan_ctx);
 
 	if (config) {
+		auto samplers = PL_ObjectForKey (config, "samplers");
+		auto render_graph = PL_ObjectForKey (config, "render_graph");
+		if (!render_graph) {
+			Sys_Error ("render_graph not found in config");
+		}
+		if (!samplers) {
+			Sys_Error ("samplers not found in config");
+		}
+		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
+		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
 	} else {
 		const char *mode = vulkan_render_mode ? "main_def" : "main_fwd";
 		auto render_graph = Vulkan_GetConfig (vulkan_ctx, mode);

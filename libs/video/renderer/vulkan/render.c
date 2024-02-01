@@ -858,6 +858,7 @@ QFV_Render_DSManager (vulkan_ctx_t *ctx, const char *setName)
 			return ds;
 		}
 	}
+	Sys_Printf ("descriptor set '%s' not found\n", setName);
 	return 0;
 }
 
