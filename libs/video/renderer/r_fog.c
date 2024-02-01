@@ -233,5 +233,5 @@ Fog_Init (void)
 	//Cvar_RegisterVariable (&r_vfog, NULL);
 
 	//set up global fog
-	fog = (vec4f_t) {0.3, 0.3, 0.3, 0.3};
+	fog = (vec4f_t) {0.3, 0.3, 0.3, 0.0};
 }
