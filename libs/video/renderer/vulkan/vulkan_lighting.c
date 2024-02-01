@@ -504,8 +504,8 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 	vec2f_t z_range[] = {
 		{ r_nearclip / 32,   1 },
 		{ r_nearclip / 256,  r_nearclip / 32 },
-		{ r_nearclip / 1024, r_nearclip / 256 },
-		{ 0,                 r_nearclip / 1024 },
+		{ r_nearclip / 2048, r_nearclip / 256 },
+		{ 0,                 r_nearclip / 2048 },
 	};
 	for (int i = 0; i < num_cascade; i++) {
 		vec4f_t     corners[8];
@@ -1330,7 +1330,7 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 
 	//FIXME dup of z_range (sort of)
 	vec4f_t depths = {
-		r_nearclip / 32, r_nearclip / 256, r_nearclip / 1024, 0,
+		r_nearclip / 32, r_nearclip / 256, r_nearclip / 2048, 0,
 	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
