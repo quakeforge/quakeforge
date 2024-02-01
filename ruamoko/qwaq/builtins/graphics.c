@@ -160,14 +160,21 @@ bi_setevents (progs_t *pr, void *_res)
 	qcevent_data = P_POINTER (pr, 1);
 }
 
+static void
+bi_setctxcbuf (progs_t *pr, void *_res)
+{
+	IMT_SetContextCbuf (P_INT (pr, 0), qwaq_cbuf);
+}
+
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
 	bi(newscene,   -1, 1, p(long)),
-	bi(refresh,    -1, 0),
+	bi(refresh,    -1, 1, p(long)),
 	bi(refresh_2d, -1, 1, p(func)),
 	bi(setpalette, -1, 2, p(ptr), p(ptr)),
 	bi(setevents,  -1, 2, p(func), p(ptr)),
+	bi(setctxcbuf, -1, 1, p(int)),
 	{0}
 };
 
