@@ -85,6 +85,8 @@ quit_f (void)
 	Sys_Quit ();
 }
 
+static byte default_palette[256][3];
+static byte default_colormap[64 * 256 + 1] = { [64 * 256] = 32 };
 static progs_t *bi_rprogs;
 static pr_func_t qc2d;
 static pr_func_t qcevent;
@@ -107,6 +109,61 @@ static SCR_Func bi_2dfuncs[] = {
 	bi_2d,
 	0,
 };
+
+static void
+vidsize_listener (void *data, const viddef_t *vdef)
+{
+	Canvas_SetLen (canvas_sys, canvas,
+				   (view_pos_t) { vdef->width, vdef->height });
+}
+
+static void
+bi_init_graphics (progs_t *pr, void *_res)
+{
+	VID_Init (default_palette[0], default_colormap);
+	IN_Init ();
+	Mod_Init ();
+	int plitem_id = P_INT (pr, 0);
+	plitem_t *plitem = nullptr;
+	if (plitem_id) {
+		plitem = Plist_GetItem (pr, plitem_id);
+	}
+	R_Init (plitem);
+	Font_Init ();
+
+	Con_Load ("client");
+	__auto_type reg = ECS_NewRegistry ("qwaq gr");
+	Canvas_InitSys (&canvas_sys, reg);
+	if (con_module) {
+		__auto_type cd = con_module->data->console;
+		cd->realtime = &con_realtime;
+		cd->frametime = &con_frametime;
+		cd->quit = quit_f;
+		cd->cbuf = qwaq_cbuf;
+		cd->component_base = ECS_RegisterComponents (reg, cd->components,
+													 cd->num_components);
+		cd->canvas_sys = &canvas_sys;
+	}
+	ECS_CreateComponentPools (reg);
+
+	canvas = Canvas_New (canvas_sys);
+	screen_view = Canvas_GetRootView (canvas_sys, canvas);
+	View_SetPos (screen_view, 0, 0);
+	View_SetLen (screen_view, viddef.width, viddef.height);
+	View_SetGravity (screen_view, grav_northwest);
+	View_SetVisible (screen_view, 1);
+
+	VID_OnVidResize_AddListener (vidsize_listener, 0);
+
+	//Key_SetKeyDest (key_game);
+	Con_Init ();
+	VID_SendSize ();
+
+	S_Init (0, &con_frametime);
+	//CDAudio_Init ();
+	Con_NewMap ();
+	basetime = Sys_DoubleTime ();
+}
 
 static void
 bi_newscene (progs_t *pr, void *_res)
@@ -169,12 +226,13 @@ bi_setctxcbuf (progs_t *pr, void *_res)
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	bi(newscene,   -1, 1, p(long)),
-	bi(refresh,    -1, 1, p(long)),
-	bi(refresh_2d, -1, 1, p(func)),
-	bi(setpalette, -1, 2, p(ptr), p(ptr)),
-	bi(setevents,  -1, 2, p(func), p(ptr)),
-	bi(setctxcbuf, -1, 1, p(int)),
+	bi(init_graphics, -1, 1, p(ptr)),
+	bi(newscene,      -1, 1, p(long)),
+	bi(refresh,       -1, 1, p(long)),
+	bi(refresh_2d,    -1, 1, p(func)),
+	bi(setpalette,    -1, 2, p(ptr), p(ptr)),
+	bi(setevents,     -1, 2, p(func), p(ptr)),
+	bi(setctxcbuf,    -1, 1, p(int)),
 	{0}
 };
 
@@ -208,8 +266,6 @@ BI_shutdown (void *data)
 	ECS_DelRegistry (canvas_sys.reg);
 	ColorCache_Shutdown ();
 }
-
-static byte default_palette[256][3];
 
 static byte *
 write_raw_rgb (byte *dst, byte r, byte g, byte b)
@@ -329,8 +385,6 @@ generate_palette (void)
 	dst = write_raw_rgb (dst, 176, 160, 176);
 }
 
-static byte default_colormap[64 * 256 + 1] = { [64 * 256] = 32 };
-
 static void
 generate_colormap (void)
 {
@@ -370,13 +424,6 @@ generate_colormap (void)
 	free (cmap);
 }
 
-static void
-vidsize_listener (void *data, const viddef_t *vdef)
-{
-	Canvas_SetLen (canvas_sys, canvas,
-				   (view_pos_t) { vdef->width, vdef->height });
-}
-
 static const char *bi_dirconf = R"(
 {
 	QF = {
@@ -408,6 +455,10 @@ BI_Graphics_Init (progs_t *pr)
 
 	Sys_RegisterShutdown (BI_shutdown, pr);
 
+	R_Progs_Init (pr);
+	RUA_Game_Init (pr, thread->rua_security);
+	S_Progs_Init (pr);
+
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
@@ -416,49 +467,6 @@ BI_Graphics_Init (progs_t *pr)
 	generate_palette ();
 	generate_colormap ();
 
-	VID_Init (default_palette[0], default_colormap);
-	IN_Init ();
-	Mod_Init ();
-	R_Init (nullptr);
-	Font_Init ();
-
-	R_Progs_Init (pr);
-	RUA_Game_Init (pr, thread->rua_security);
-	S_Progs_Init (pr);
-
 	event_handler_id = IE_Add_Handler (event_handler, pr);
 	IE_Set_Focus (event_handler_id);
-
-	Con_Load ("client");
-	__auto_type reg = ECS_NewRegistry ("qwaq gr");
-	Canvas_InitSys (&canvas_sys, reg);
-	if (con_module) {
-		__auto_type cd = con_module->data->console;
-		cd->realtime = &con_realtime;
-		cd->frametime = &con_frametime;
-		cd->quit = quit_f;
-		cd->cbuf = qwaq_cbuf;
-		cd->component_base = ECS_RegisterComponents (reg, cd->components,
-													 cd->num_components);
-		cd->canvas_sys = &canvas_sys;
-	}
-	ECS_CreateComponentPools (reg);
-
-	canvas = Canvas_New (canvas_sys);
-	screen_view = Canvas_GetRootView (canvas_sys, canvas);
-	View_SetPos (screen_view, 0, 0);
-	View_SetLen (screen_view, viddef.width, viddef.height);
-	View_SetGravity (screen_view, grav_northwest);
-	View_SetVisible (screen_view, 1);
-
-	VID_OnVidResize_AddListener (vidsize_listener, 0);
-
-	//Key_SetKeyDest (key_game);
-	Con_Init ();
-	VID_SendSize ();
-
-	S_Init (0, &con_frametime);
-	//CDAudio_Init ();
-	Con_NewMap ();
-	basetime = Sys_DoubleTime ();
 }
