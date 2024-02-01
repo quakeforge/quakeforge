@@ -2074,6 +2074,9 @@ renderpasses = {
 					@inherit = $attachment_base;
 					format = $images.cube_position.format;
 					view = cube_position;
+					clearValue = {
+						color = { int32 = ( 0, 0, 0, 0); };
+					};
 				};
 				light = {
 					@inherit = $attachment_base;
