@@ -1529,7 +1529,6 @@ steps = {
 				{ func = bsp_visit_world;
 				  params = (lightmap); },
 				{ func = scene_draw_viewmodel; },
-				//{ func = lighting_update_lights; },
 			);
 		};
 	};

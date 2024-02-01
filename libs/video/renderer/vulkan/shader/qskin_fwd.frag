@@ -38,5 +38,6 @@ main (void)
 	light -= d * shadelight;
 	light = max (light, 0.0) / 255;
 
-	frag_color = FogBlend (light * c + e, fog);
+	c = vec4 (light * c.rgb, c.w);
+	frag_color = FogBlend (c + e, fog);
 }
