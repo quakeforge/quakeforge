@@ -171,12 +171,14 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 		num_params = (num_params + 3) / 4 + 2;
 
 		PR_PushFrame (pr);
+		auto params = PR_SaveParams (pr);
 		PR_SetupParams (pr, num_params, 2);
 		auto event = &P_PACKED (pr, IE_event_t, 2);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, event);
 		P_POINTER (pr, 1) = qcevent_data;
 		*event = *ie_event;
 		PR_ExecuteProgram (pr, qcevent);
+		PR_RestoreParams (pr, params);
 		PR_PopFrame (pr);
 		return R_INT (pr);
 	}
