@@ -14,6 +14,7 @@ string IN_GetButtonName (int devid, int button) = #0;
 int IN_GetAxisNumber (int devid, string axis) = #0;
 int IN_GetButtonNumber (int devid, string button) = #0;
 void IN_ProcessEvents (void) = #0;
+float IN_UpdateAxis (in_axis_t *axis) = #0;
 void IN_ClearStates (void) = #0;
 int IN_GetAxisInfo (int devid, int axis, in_axisinfo_t *info) = #0;
 int IN_GetButtonInfo (int devid, int button, in_buttoninfo_t *info) = #0;
@@ -41,6 +42,8 @@ void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj) = #0;
 int IMT_CreateContext (string name) = #0;
 int IMT_GetContext (void) = #0;
 void IMT_SetContext (int ctx) = #0;
+
+/*bool*/int IN_Binding_HandleEvent (/*const*/ struct IE_event_s *ie_event) = #0;
 
 #define IE_EVENT(event) #event,
 string ie_event_names[] = {

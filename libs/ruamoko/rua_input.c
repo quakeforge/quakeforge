@@ -155,6 +155,14 @@ bi_IN_ProcessEvents (progs_t *pr, void *_res)
 }
 
 static void
+bi_IN_UpdateAxis (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
+	R_FLOAT(pr) = IN_UpdateAxis (axis);
+}
+
+static void
 bi_IN_ClearStates (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -492,6 +500,14 @@ bi_IMT_SetContext (progs_t *pr, void *_res)
 }
 
 static void
+bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 0);
+	IN_Binding_HandleEvent (ie_event);
+}
+
+static void
 secured (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -528,6 +544,7 @@ static builtin_t builtins[] = {
 	bi(IN_GetAxisNumber,    2, p(int), p(string)),
 	bi(IN_GetButtonNumber,  2, p(int), p(string)),
 	bi(IN_ProcessEvents,    0),
+	bi(IN_UpdateAxis,       1, p(ptr)),
 	bi(IN_ClearStates,      0),
 	bi(IN_GetAxisInfo,      3, p(int), p(int), p(ptr)),
 	bi(IN_GetButtonInfo,    3, p(int), p(int), p(ptr)),
@@ -551,6 +568,8 @@ static builtin_t builtins[] = {
 	bi(IMT_CreateContext,   1, p(string)),
 	bi(IMT_GetContext,      0),
 	bi(IMT_SetContext,      1, p(int)),
+
+	bi(IN_Binding_HandleEvent,  1, p(ptr)),
 
 	{0}
 };
