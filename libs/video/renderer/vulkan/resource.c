@@ -282,6 +282,9 @@ void
 QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 {
 	qfZoneScoped (true);
+	if (!resource) {
+		return;
+	}
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	for (unsigned i = 0; i < resource->num_objects; i++) {

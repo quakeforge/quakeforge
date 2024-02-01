@@ -96,6 +96,9 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 void
 QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 {
+	if (!stage) {
+		return;
+	}
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 

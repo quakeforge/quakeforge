@@ -831,9 +831,11 @@ draw_shutdown (exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dctx = ctx->draw_context;
 
-	QFV_DestroyResource (device, &dctx->draw_resource[0]);
-	QFV_DestroyResource (device, &dctx->draw_resource[1]);
-	free (dctx->draw_resource);
+	if (dctx->draw_resource) {
+		QFV_DestroyResource (device, &dctx->draw_resource[0]);
+		QFV_DestroyResource (device, &dctx->draw_resource[1]);
+		free (dctx->draw_resource);
+	}
 	for (size_t i = 0; i < dctx->fonts.size; i++) {
 		if (dctx->fonts.a[i].resource) {
 			QFV_DestroyResource (device, &dctx->fonts.a[i].resource->resource);

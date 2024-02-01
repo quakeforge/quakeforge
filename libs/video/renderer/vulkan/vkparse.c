@@ -1243,11 +1243,13 @@ static void
 delete_configs (void)
 {
 	int         num_plists = 0;
-	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
-		PL_Release (builtin_plists[num_plists]);
-		num_plists++;
+	if (builtin_plists) {
+		for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+			PL_Release (builtin_plists[num_plists]);
+			num_plists++;
+		}
+		free (builtin_plists);
 	}
-	free (builtin_plists);
 	Hash_DelTable (builtin_configs.tab);
 }
 

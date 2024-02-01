@@ -463,6 +463,9 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 void
 Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 {
+	if (!tex) {
+		return;
+	}
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 

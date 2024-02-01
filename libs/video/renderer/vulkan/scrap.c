@@ -173,6 +173,9 @@ QFV_ScrapClear (scrap_t *scrap)
 void
 QFV_DestroyScrap (scrap_t *scrap)
 {
+	if (!scrap) {
+		return;
+	}
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
