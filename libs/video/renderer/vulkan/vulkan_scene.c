@@ -186,7 +186,7 @@ scene_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	qfZoneScoped (true);
+
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto sctx = ctx->scene_context;
