@@ -78,12 +78,14 @@ typedef struct {
 static qpic_res_t *
 qpic_new (draw_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->qpic_map);
 }
 
 static void
 bi_draw_free_qpic (qpic_res_t *qp)
 {
+	qfZoneScoped (true);
 	if (qp->cached)
 		r_funcs->Draw_UncachePic (qp->name);
 	else
@@ -95,6 +97,7 @@ bi_draw_free_qpic (qpic_res_t *qp)
 static void
 qpic_free (draw_resources_t *res, qpic_res_t *qp)
 {
+	qfZoneScoped (true);
 	bi_draw_free_qpic (qp);
 	PR_RESFREE (res->qpic_map, qp);
 }
@@ -102,24 +105,28 @@ qpic_free (draw_resources_t *res, qpic_res_t *qp)
 static void
 qpic_reset (draw_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->qpic_map);
 }
 
 static inline qpic_res_t *
 qpic_get (draw_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (res->qpic_map, index);
 }
 
 static inline int __attribute__((pure))
 qpic_index (draw_resources_t *res, qpic_res_t *qp)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->qpic_map, qp);
 }
 
 static qpic_res_t * __attribute__((pure))
 get_qpic (progs_t *pr, draw_resources_t *res, const char *name, int qpic_handle)
 {
+	qfZoneScoped (true);
 	qpic_res_t *qp = qpic_get (res, qpic_handle);
 
 	if (!qp)
@@ -130,12 +137,14 @@ get_qpic (progs_t *pr, draw_resources_t *res, const char *name, int qpic_handle)
 static bi_charbuff_t *
 charbuff_new (draw_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->charbuff_map);
 }
 
 static void
 charbuff_free (draw_resources_t *res, bi_charbuff_t *cbuff)
 {
+	qfZoneScoped (true);
 	Draw_DestroyBuffer (cbuff->buffer);
 	PR_RESFREE (res->charbuff_map, cbuff);
 }
@@ -143,24 +152,28 @@ charbuff_free (draw_resources_t *res, bi_charbuff_t *cbuff)
 static void
 charbuff_reset (draw_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->charbuff_map);
 }
 
 static inline bi_charbuff_t *
 charbuff_get (draw_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (res->charbuff_map, index);
 }
 
 static inline int __attribute__((pure))
 charbuff_index (draw_resources_t *res, bi_charbuff_t *qp)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->charbuff_map, qp);
 }
 
 static bi_charbuff_t * __attribute__((pure))
 get_charbuff (progs_t *pr, draw_resources_t *res, const char *name, int charbuff_handle)
 {
+	qfZoneScoped (true);
 	bi_charbuff_t *cbuff = charbuff_get (res, charbuff_handle);
 
 	if (!cbuff)
@@ -171,6 +184,7 @@ get_charbuff (progs_t *pr, draw_resources_t *res, const char *name, int charbuff
 static void
 bi_Draw_FreePic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	bi_qpic_t  *bq = &P_STRUCT (pr, bi_qpic_t, 0);
 	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
@@ -182,6 +196,7 @@ bi_Draw_FreePic (progs_t *pr, void *_res)
 static void
 bi_Draw_MakePic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         width = P_INT (pr, 0);
 	int         height = P_INT (pr, 1);
@@ -206,6 +221,7 @@ bi_Draw_MakePic (progs_t *pr, void *_res)
 static void
 bi_Draw_CachePic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	int         alpha = P_INT (pr, 1);
@@ -235,6 +251,7 @@ bi_Draw_CachePic (progs_t *pr, void *_res)
 static void
 bi_Draw_Pic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -248,6 +265,7 @@ bi_Draw_Pic (progs_t *pr, void *_res)
 static void
 bi_Draw_Picf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	float       x = P_FLOAT (pr, 0);
 	float       y = P_FLOAT (pr, 1);
@@ -261,6 +279,7 @@ bi_Draw_Picf (progs_t *pr, void *_res)
 static void
 bi_Draw_SubPic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -278,6 +297,7 @@ bi_Draw_SubPic (progs_t *pr, void *_res)
 static void
 bi_Draw_CenterPic (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -291,6 +311,7 @@ bi_Draw_CenterPic (progs_t *pr, void *_res)
 static void
 bi_Draw_Character (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	int         c = P_INT (pr, 2);
@@ -301,6 +322,7 @@ bi_Draw_Character (progs_t *pr, void *_res)
 static void
 bi_Draw_String (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
@@ -311,6 +333,7 @@ bi_Draw_String (progs_t *pr, void *_res)
 static void
 bi_Draw_nString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
@@ -322,6 +345,7 @@ bi_Draw_nString (progs_t *pr, void *_res)
 static void
 bi_Draw_AltString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
@@ -338,6 +362,7 @@ bi_Draw_AltString (progs_t *pr, void *_res)
 static void
 bi_Draw_Fill (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	int         w = P_INT (pr, 2);
@@ -350,6 +375,7 @@ bi_Draw_Fill (progs_t *pr, void *_res)
 static void
 bi_Draw_Line (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         x0 = P_INT (pr, 0);
 	int         y0 = P_INT (pr, 1);
 	int         x1 = P_INT (pr, 2);
@@ -362,6 +388,7 @@ bi_Draw_Line (progs_t *pr, void *_res)
 static void
 bi_Draw_Crosshair (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int         ch = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
@@ -372,18 +399,21 @@ bi_Draw_Crosshair (progs_t *pr, void *_res)
 static void
 bi_Draw_Width (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = r_data->vid->width;
 }
 
 static void
 bi_Draw_Height (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = r_data->vid->height;
 }
 
 static void
 bi_Draw_CreateBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         width = P_INT (pr, 0);
 	int         height = P_INT (pr, 1);
@@ -401,6 +431,7 @@ bi_Draw_CreateBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_DestroyBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
 	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
@@ -411,6 +442,7 @@ bi_Draw_DestroyBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_ClearBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
 	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
@@ -421,6 +453,7 @@ bi_Draw_ClearBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_ScrollBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
 	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
@@ -432,6 +465,7 @@ bi_Draw_ScrollBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_CharBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
@@ -444,6 +478,7 @@ bi_Draw_CharBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_PrintBuffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = _res;
 	pr_ptr_t    cbuff_handle = P_POINTER (pr, 0);
 	bi_charbuff_t *cbuff = get_charbuff (pr, res, __FUNCTION__, cbuff_handle);
@@ -455,18 +490,21 @@ bi_Draw_PrintBuffer (progs_t *pr, void *_res)
 static void
 bi_Draw_SetScale (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	Draw_SetScale (P_INT (pr, 0));
 }
 
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
+	qfZoneScoped (true);
 	return ((qpic_res_t *) p)->name;
 }
 
 static void
 bi_draw_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = (draw_resources_t *) _res;
 	qpic_res_t *qp;
 	bi_charbuff_t *cbuff;
@@ -489,6 +527,7 @@ bi_draw_clear (progs_t *pr, void *_res)
 static void
 bi_draw_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = (draw_resources_t *) _res;
 	Hash_DelTable (res->pic_hash);
 	PR_RESDELMAP (res->qpic_map);
@@ -534,6 +573,7 @@ static builtin_t builtins[] = {
 void
 R_Progs_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	draw_resources_t *res = calloc (1, sizeof (draw_resources_t));
 	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0, pr->hashctx);
 
