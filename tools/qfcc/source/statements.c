@@ -2046,7 +2046,13 @@ statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		internal_error (e, "unexpected sub-expression type: %s",
 						expr_names[e->type]);
 
-	sblock = sfuncs[e->type] (sblock, e, op);
+	if (e->op) {
+		*op = e->op;
+	} else {
+		sblock = sfuncs[e->type] (sblock, e, op);
+		//FIXME const cast (store elsewhere)
+		((expr_t *) e)->op = *op;
+	}
 	return sblock;
 }
 

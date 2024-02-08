@@ -311,6 +311,7 @@ typedef struct {
 
 typedef struct expr_s {
 	expr_t     *next;
+	struct operand_s *op;
 	expr_type   type;			///< the type of the result of this expression
 	int         line;			///< source line that generated this expression
 	pr_string_t file;			///< source file that generated this expression
