@@ -2662,10 +2662,67 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 	return mvec_gather (a, algebra);
 }
 
+static const expr_t *
+component_compare (int op, const expr_t *e1, const expr_t *e2, algebra_t *alg)
+{
+	auto t = get_type (e1 ? e1 : e2);
+	auto stype = alg->type;
+	auto vtype = vector_type (stype, type_width (t));
+	pr_type_t zero[type_size (vtype)];
+	if (!e1) {
+		e1 = new_value_expr (new_type_value (vtype, zero));
+	} else {
+		e1 = offset_cast (vtype, e1, 0);
+	}
+	if (!e2) {
+		e2 = new_value_expr (new_type_value (vtype, zero));
+	} else {
+		e2 = offset_cast (vtype, e2, 0);
+	}
+	return binary_expr (op, e1, e2);
+}
+
+static const expr_t *
+algebra_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+	auto algebra = is_algebra (t1) ? algebra_get (t1) : algebra_get (t2);
+	auto layout = &algebra->layout;
+	const expr_t *a[layout->count] = {};
+	const expr_t *b[layout->count] = {};
+	e1 = mvec_expr (e1, algebra);
+	e2 = mvec_expr (e2, algebra);
+	mvec_scatter (a, e1, algebra);
+	mvec_scatter (b, e2, algebra);
+
+	const expr_t *cmp = nullptr;
+	expr_t *bool_label = nullptr;
+	for (int i = 0; i < layout->count; i++) {
+		if (a[i] || b[i]) {
+			auto c = component_compare (op, a[i], b[i], algebra);
+			if (cmp) {
+				bool_label = new_label_expr ();
+				cmp = bool_expr (AND, bool_label, cmp, c);
+			} else {
+				cmp = c;
+			}
+		}
+	}
+	return cmp;
+}
+
 const expr_t *
 algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	switch (op) {
+		case EQ:
+		case NE:
+		case LE:
+		case GE:
+		case LT:
+		case GT:
+			return algebra_compare (op, e1, e2);
 		case DOT:
 			return inner_product (e1, e2);
 		case WEDGE:
