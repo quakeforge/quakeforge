@@ -107,7 +107,7 @@ IE_Set_Focus (int handle)
 {
 	unsigned    h = handle;
 	if (h < ie_handlers.size && ie_handlers.a[handle].handler && focus != h) {
-		IE_event_t event;
+		IE_event_t event = { };
 		event.type = ie_lose_focus;
 		IE_Send_Event (&event);
 		focus = handle;
