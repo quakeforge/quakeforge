@@ -115,6 +115,7 @@ pr_uint_t get_group_mask (const type_t *type, algebra_t *algebra) __attribute__(
 const expr_t *algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *algebra_negate (const expr_t *e);
 const expr_t *algebra_dual (const expr_t *e);
+const expr_t *algebra_undual (const expr_t *e);
 const expr_t *algebra_reverse (const expr_t *e);
 const expr_t *algebra_cast_expr (type_t *dstType, const expr_t *e);
 const expr_t *algebra_assign_expr (const expr_t *dst, const expr_t *src);

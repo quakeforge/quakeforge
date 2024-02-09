@@ -2596,7 +2596,7 @@ regressive_product (const expr_t *e1, const expr_t *e2)
 	auto a = algebra_dual (e1);
 	auto b = algebra_dual (e2);
 	auto c = outer_product (a, b);
-	return algebra_dual (c);
+	return algebra_undual (c);
 }
 
 static const expr_t *
@@ -2762,12 +2762,13 @@ algebra_negate (const expr_t *e)
 	return mvec_gather (n, algebra);
 }
 
-const expr_t *
-algebra_dual (const expr_t *e)
+static const expr_t *
+hodge_dual (const expr_t *e, bool undual)
 {
 	auto algebra = algebra_context (get_type (e));
 	if (!algebra) {
-		return error (e, "cannot take the dual of a scalar without context");
+		return error (e, "cannot take the %s of a scalar without context",
+					  undual ? "undual" : "dual");
 	}
 	auto layout = &algebra->layout;
 
@@ -2776,6 +2777,7 @@ algebra_dual (const expr_t *e)
 	e = mvec_expr (e, algebra);
 	mvec_scatter (a, e, algebra);
 
+	int dim = algebra->dimension - algebra->zero;
 	pr_uint_t I_mask = (1u << algebra->dimension) - 1;
 	for (int i = 0; i < layout->count; i++) {
 		if (!a[i]) {
@@ -2784,19 +2786,37 @@ algebra_dual (const expr_t *e)
 		auto group = &layout->groups[i];
 		//FIXME assumes groups are mono-grade (either come up with something
 		//or reject mixed-grade groups)
-		pr_uint_t mask = I_mask ^ group->blades[0].mask;
-		int dual_ind = layout->group_map[layout->mask_map[mask]][0];
+		auto blade = group->blades[0];
+		pr_uint_t d_mask = I_mask ^ blade.mask;
+		int dual_ind = layout->group_map[layout->mask_map[d_mask]][0];
 		auto dual_group = &layout->groups[dual_ind];
 		auto dual_type = algebra_mvec_type (algebra, dual_group->group_mask);
 		auto dual = cast_expr (dual_type, a[i]);
-		if (algebra_count_flips (algebra, group->blades[0].mask, mask) & 1) {
-			b[dual_ind] = neg_expr (dual);
+		pr_uint_t mask = algebra_count_flips (algebra, blade.mask, d_mask);
+		if (mask & 1) {
+			dual = neg_expr (dual);
 		} else {
-			b[dual_ind] = dual;
+			dual = dual;
 		}
+		if (undual && ((dim * algebra_get_grade (get_type (a[i]))) & 1)) {
+			dual = neg_expr (dual);
+		}
+		b[dual_ind] = dual;
 	}
 
 	return mvec_gather (b, algebra);
+}
+
+const expr_t *
+algebra_dual (const expr_t *e)
+{
+	return hodge_dual (e, false);
+}
+
+const expr_t *
+algebra_undual (const expr_t *e)
+{
+	return hodge_dual (e, true);
 }
 
 static void

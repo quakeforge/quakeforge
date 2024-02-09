@@ -20,6 +20,96 @@ typedef union {
 	};
 } oddgrades_t;
 
+static int
+test_dual (void)
+{
+	@algebra (PGA) {
+		auto a = 1f;
+		auto a0 = e0;
+		auto a1 = e1;
+		auto a2 = e2;
+		auto a12 = e12;
+		auto a01 = e01;
+		auto a20 = e20;
+		auto a012 = e012;
+		#define TEST_DUAL(x, y) \
+			if (⋆x != y) { \
+				printf ("⋆" #x " != " #y "\n"); \
+				return 1; \
+			}
+		TEST_DUAL (a, e012);
+		TEST_DUAL (a0, e12);
+		TEST_DUAL (a1, e20);
+		TEST_DUAL (a2, e01);
+		TEST_DUAL (a20, e1);
+		TEST_DUAL (a01, e2);
+		TEST_DUAL (a12, e0);
+		TEST_DUAL (a012, 1);
+		#undef TEST_DUAL
+
+		#define TEST_DUAL(x) \
+			if (x * ⋆x != e012) { \
+				printf (#x " * ⋆" #x " != e012\n"); \
+				return 1; \
+			}
+		TEST_DUAL (a);
+		TEST_DUAL (a0);
+		TEST_DUAL (a1);
+		TEST_DUAL (a2);
+		TEST_DUAL (a20);
+		TEST_DUAL (a01);
+		TEST_DUAL (a12);
+		TEST_DUAL (a012);
+		#undef TEST_DUAL
+	}
+	return 0;
+}
+
+static int
+test_undual (void)
+{
+	@algebra (PGA) {
+		auto a = 1f;
+		auto a0 = e0;
+		auto a1 = e1;
+		auto a2 = e2;
+		auto a12 = e12;
+		auto a01 = e01;
+		auto a20 = e20;
+		auto a012 = e012;
+		#define TEST_UNDUAL(x, y) \
+			if (@undual x != y) { \
+				printf ("@undual " #x " != " #y "\n"); \
+				return 1; \
+			}
+		TEST_UNDUAL (a, e012);
+		TEST_UNDUAL (a0, e12);
+		TEST_UNDUAL (a1, e20);
+		TEST_UNDUAL (a2, e01);
+		TEST_UNDUAL (a20, e1);
+		TEST_UNDUAL (a01, e2);
+		TEST_UNDUAL (a12, e0);
+		TEST_UNDUAL (a012, 1);
+		#undef TEST_UNDUAL
+
+		#define TEST_UNDUAL(x) \
+			if (@undual x * x != e012) { \
+				printf ("@undual " #x " * " #x " != e012\n"); \
+				return 1; \
+			}
+		TEST_UNDUAL (a);
+		TEST_UNDUAL (a0);
+		TEST_UNDUAL (a1);
+		TEST_UNDUAL (a2);
+		TEST_UNDUAL (a20);
+		TEST_UNDUAL (a01);
+		TEST_UNDUAL (a12);
+		TEST_UNDUAL (a012);
+		#undef TEST_DUAL
+	}
+	return 0;
+}
+
 int
 main (void)
 {
@@ -269,7 +359,17 @@ main (void)
 	}
 	auto line = bvec ∨ bvecb;
 	if ((dvec3)line != '-11 8 34'd) {
-		printf ("bvec ∨ bvecb != '-11 8 34': %lv\n", line);
+		printf ("bvec(%lv) ∨ bvecb(%lv) != '-11 8 34': %lv\n", bvec, bvecb, line);
+		return 1;
+	}
+
+	if (test_dual ()) {
+		printf ("dual failed\n");
+		return 1;
+	}
+
+	if (test_undual ()) {
+		printf ("dual failed\n");
 		return 1;
 	}
 	return 0;		// to survive and prevail :)

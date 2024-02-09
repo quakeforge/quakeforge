@@ -443,6 +443,8 @@ static keyword_t qf_keywords[] = {
 	{"@regressive",	REGRESSIVE,	},
 	{"@geometric",	GEOMETRIC,	},
 	{"@algebra",	ALGEBRA,	},
+	{"@dual",		DUAL,		},
+	{"@undual",		UNDUAL,		},
 };
 
 // These keywors are always available. Other than the @ keywords, they

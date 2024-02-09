@@ -2058,6 +2058,8 @@ bitnot_expr:
 			return algebra_reverse (e);
 		case DUAL:
 			return algebra_dual (e);
+		case UNDUAL:
+			return algebra_undual (e);
 	}
 	internal_error (e, 0);
 }
