@@ -130,6 +130,11 @@
 	return dimension;
 }
 
+-(int)dim
+{
+	return dimension - zero;
+}
+
 -(MultiVector *) group:(int)group
 {
 	return [MultiVector new:self group:[layout group:group]];

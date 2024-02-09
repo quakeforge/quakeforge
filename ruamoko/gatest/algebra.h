@@ -25,6 +25,7 @@
 -(Metric *) metric;
 -(int)count;
 -(int)dimension;
+-(int)dim;
 
 -(MultiVector *) group:(int)group;
 -(MultiVector *) group:(int)group values:(double *)values;
