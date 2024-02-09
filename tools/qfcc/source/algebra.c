@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
@@ -673,6 +674,25 @@ algebra_get (const type_t *type)
 	} else {
 		return type->t.multivec->algebra;
 	}
+}
+
+algebra_t *
+algebra_context (const type_t *type)
+{
+	algebra_t *alg = nullptr;
+	if (type && is_algebra (type)) {
+		alg = algebra_get (type);
+	}
+	if (!alg) {
+		symtab_t   *scope = current_symtab;
+		while (scope && scope->procsymbol != algebra_symbol) {
+			scope = scope->parent;
+		}
+		if (scope) {
+			alg = scope->procsymbol_data;
+		}
+	}
+	return alg;
 }
 
 void

@@ -2708,11 +2708,10 @@ algebra_negate (const expr_t *e)
 const expr_t *
 algebra_dual (const expr_t *e)
 {
-	if (!is_algebra (get_type (e))) {
-		//FIXME check for being in an @algebra { } block
+	auto algebra = algebra_context (get_type (e));
+	if (!algebra) {
 		return error (e, "cannot take the dual of a scalar without context");
 	}
-	auto algebra = algebra_get (get_type (e));
 	auto layout = &algebra->layout;
 
 	const expr_t *a[layout->count] = {};

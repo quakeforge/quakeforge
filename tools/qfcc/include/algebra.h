@@ -94,6 +94,7 @@ type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 int algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b) __attribute__((pure));
 struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
 struct symtab_s *algebra_scope (type_t *type, struct symtab_s *curscope);
+algebra_t *algebra_context (const type_t *type) __attribute__((pure));
 void algebra_print_type_str (struct dstring_s *str, const type_t *type);
 void algebra_encode_type (struct dstring_s *encoding, const type_t *type);
 int algebra_type_size (const type_t *type) __attribute__((pure));
