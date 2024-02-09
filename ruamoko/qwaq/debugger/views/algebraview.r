@@ -38,7 +38,7 @@ static string type_views[] = {
 		&& type.type < sizeof(type_views) / sizeof (type_views[0])) {
 		typename = type_views[type.type];
 	}
-	printf ("AlgebraView: %s\n", typename);
+	//printf ("AlgebraView: %s\n", typename);
 	id class = obj_lookup_class (typename);
 	if (class) {
 		return [class withDef:def in:data type:type];

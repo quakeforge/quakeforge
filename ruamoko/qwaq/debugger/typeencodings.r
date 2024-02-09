@@ -201,7 +201,7 @@ static void type_free (void *t, void *unused)
 	}
 	goto error;
 hash_type:
-	printf ("fetched type %s\n", type.encoding);
+	//printf ("fetched type %s\n", type.encoding);
 	Hash_Add (dynamic_encodings, type);
 	return type;
 	// not a valid type
