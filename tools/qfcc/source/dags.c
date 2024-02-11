@@ -107,11 +107,14 @@ op_is_temp (operand_t *op)
 	return op->op_type == op_temp;
 }
 
-static int
+static bool
 op_is_alias (operand_t *op)
 {
 	if (!op) {
-		return 0;
+		return false;
+	}
+	if (op->op_type == op_alias) {
+		return true;
 	}
 	if (op->op_type == op_temp) {
 		return !!op->tempop.alias;
@@ -119,7 +122,7 @@ op_is_alias (operand_t *op)
 	if (op->op_type == op_def) {
 		return !!op->def->alias;
 	}
-	return 0;
+	return false;
 }
 
 static int __attribute__((pure))
@@ -131,6 +134,9 @@ op_alias_offset (operand_t *op)
 	if (op->op_type == op_temp) {
 		return op->tempop.offset;
 	}
+	if (op->op_type == op_def) {
+		return op->def->offset;
+	}
 	internal_error (op->expr, "eh? how?");
 }
 
@@ -140,12 +146,15 @@ unalias_op (operand_t *op)
 	if (!op_is_alias (op)) {
 		internal_error (op->expr, "not an alias op");
 	}
+	if (op->op_type == op_alias) {
+		return op->alias;;
+	}
 	if (op->op_type == op_temp) {
 		return op->tempop.alias;
 	}
 	if (op->op_type == op_def) {
-		// XXX FIXME needed?
-		return op;
+		auto def = op->def;
+		return def_operand (def->alias, def->alias->type, op->expr);
 	}
 	internal_error (op->expr, "eh? how?");
 }
@@ -1340,9 +1349,12 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				|| dagnode->children[1] || dagnode->children[2]) {
 				internal_error (dagnode->label->expr, "invalid alias node");
 			}
+			auto value = dagnode->children[0]->value;
+			if (op_is_alias (value)) {
+				value = unalias_op (value);
+			}
 			dst = offset_alias_operand (dagnode->types[0], dagnode->offset,
-										dagnode->children[0]->value,
-										dagnode->label->expr);
+										value, dagnode->label->expr);
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
