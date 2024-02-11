@@ -2792,8 +2792,8 @@ hodge_dual (const expr_t *e, bool undual)
 		auto dual_group = &layout->groups[dual_ind];
 		auto dual_type = algebra_mvec_type (algebra, dual_group->group_mask);
 		auto dual = cast_expr (dual_type, a[i]);
-		pr_uint_t mask = algebra_count_flips (algebra, blade.mask, d_mask);
-		if (mask & 1) {
+		pr_uint_t flips = algebra_count_flips (algebra, blade.mask, d_mask);
+		if (flips & 1) {
 			dual = neg_expr (dual);
 		} else {
 			dual = dual;
