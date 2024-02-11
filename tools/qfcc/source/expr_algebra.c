@@ -639,8 +639,7 @@ gather_terms (type_t *type, const expr_t **adds, const expr_t **subs)
 	return sum;
 }
 
-static const expr_t *
-sum_expr (type_t *type, const expr_t *a, const expr_t *b);
+static const expr_t *sum_expr (type_t *type, const expr_t *a, const expr_t *b);
 
 static void
 merge_extends (const expr_t **adds, const expr_t **subs)
@@ -680,10 +679,10 @@ static const expr_t *
 sum_expr (type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a) {
-		return b;
+		return cast_expr (type, b);
 	}
 	if (!b) {
-		return a;
+		return cast_expr (type, a);
 	}
 
 	auto sum = typed_binary_expr (type, '+', a, b);
@@ -2305,9 +2304,11 @@ pga2_yw_wx_xy_geom_yw_wx_xy (const expr_t **c, const expr_t *a, const expr_t *b,
 	auto geom_type = algebra_mvec_type (alg, 0x04);
 	auto sa = offset_cast (stype, a, 2);
 	auto sb = offset_cast (stype, b, 2);
-	auto cv = offset_cast (ctype, cross_expr (vtype, b, a), 0);
+	auto cv = cross_expr (vtype, b, a);
 
-	c[2] = ext_expr (cv, geom_type, 0, false);
+	if (cv) {
+		c[2] = ext_expr (offset_cast (ctype, cv, 0), geom_type, 0, false);
+	}
 	c[3] = neg_expr (scale_expr (algebra_mvec_type (alg, 0x08), sa, sb));
 }
 
@@ -2318,15 +2319,14 @@ pga2_yw_wx_xy_geom_x_y_w (const expr_t **c, const expr_t *a, const expr_t *b,
 	auto stype = alg->type;
 	auto wtype = vector_type (stype, 2);
 	auto vtype = vector_type (stype, 3);
-	auto geom_type = algebra_mvec_type (alg, 0x01);
 	auto va = offset_cast (wtype, a, 0);
 	auto sa = offset_cast (stype, a, 2);
 	auto vb = offset_cast (wtype, b, 0);
 	auto cv = edag_add_expr (new_swizzle_expr (vb, "y-x"));
 	auto cs = wedge_expr (stype, vb, va);
-	cs = ext_expr (cs, geom_type, 0, true);
+	cs = ext_expr (cs, vtype, 0, true);
 	cv = ext_expr (scale_expr (wtype, cv, sa), vtype, 0, false);
-	c[0] = sum_expr (geom_type, cv, cs);
+	c[0] = sum_expr (algebra_mvec_type (alg, 0x01), cv, cs);
 	c[1] = dot_expr (algebra_mvec_type (alg, 0x02), a, b);
 }
 
