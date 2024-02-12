@@ -65,5 +65,8 @@ void Light_EnableSun (lightingdata_t ldata);
 
 model_t Model_Load (string path);
 void Model_Unload (model_t model);
+int Model_NumJoints (model_t model);
+void Model_GetJoints (model_t model, void *j);
+int Model_NumFrames (model_t model);
 
 #endif//__ruamoko_scene_h
