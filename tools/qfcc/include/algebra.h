@@ -65,12 +65,12 @@ typedef struct metric_s {
 } metric_t;
 
 typedef struct algebra_s {
-	type_t     *type;			///< underlying type (float or double)
-	type_t     *algebra_type;	///< type for algebra
+	const type_t *type;			///< underlying type (float or double)
+	const type_t *algebra_type;	///< type for algebra
 	metric_t    metric;
 	basis_layout_t layout;
 	basis_group_t *groups;
-	type_t **mvec_types;
+	const type_t **mvec_types;
 	struct symbol_s *mvec_sym;
 	int         num_components;	///< number of componets (2^d)
 	int         dimension;		///< number of dimensions (plus + minus + zero)
@@ -88,12 +88,12 @@ typedef struct multivector_s {
 
 struct attribute_s;
 bool is_algebra (const type_t *type) __attribute__((pure));
-type_t *algebra_type (type_t *type, const expr_t *params);
-type_t *algebra_subtype (type_t *type, struct attribute_s *attr);
-type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
+const type_t *algebra_type (const type_t *type, const expr_t *params);
+const type_t *algebra_subtype (const type_t *type, struct attribute_s *attr);
+const type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
 int algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b) __attribute__((pure));
 struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
-struct symtab_s *algebra_scope (type_t *type, struct symtab_s *curscope);
+struct symtab_s *algebra_scope (const type_t *type, struct symtab_s *curscope);
 algebra_t *algebra_context (const type_t *type) __attribute__((pure));
 void algebra_print_type_str (struct dstring_s *str, const type_t *type);
 void algebra_encode_type (struct dstring_s *encoding, const type_t *type);
@@ -104,8 +104,8 @@ int metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b) __attribute_
 
 algebra_t *algebra_get (const type_t *type) __attribute__((pure));
 int algebra_type_assignable (const type_t *dst, const type_t *src) __attribute__((pure));
-type_t *algebra_base_type (const type_t *type) __attribute__((pure));
-type_t *algebra_struct_type (const type_t *type) __attribute__((pure));
+const type_t *algebra_base_type (const type_t *type) __attribute__((pure));
+const type_t *algebra_struct_type (const type_t *type) __attribute__((pure));
 bool is_mono_grade (const type_t *type) __attribute__((pure));
 int algebra_get_grade (const type_t *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
@@ -117,7 +117,7 @@ const expr_t *algebra_negate (const expr_t *e);
 const expr_t *algebra_dual (const expr_t *e);
 const expr_t *algebra_undual (const expr_t *e);
 const expr_t *algebra_reverse (const expr_t *e);
-const expr_t *algebra_cast_expr (type_t *dstType, const expr_t *e);
+const expr_t *algebra_cast_expr (const type_t *dstType, const expr_t *e);
 const expr_t *algebra_assign_expr (const expr_t *dst, const expr_t *src);
 const expr_t *algebra_field_expr (const expr_t *mvec, const expr_t *field_name);
 const expr_t *algebra_optimize (const expr_t *e);

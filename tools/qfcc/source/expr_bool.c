@@ -70,13 +70,12 @@ const expr_t *
 test_expr (const expr_t *e)
 {
 	const expr_t *new = 0;
-	type_t     *type;
 
 	e = convert_name (e);
 	if (e->type == ex_error)
 		return e;
 
-	type = get_type (e);
+	auto type = get_type (e);
 	if (e->type == ex_error)
 		return e;
 	switch (type->type) {

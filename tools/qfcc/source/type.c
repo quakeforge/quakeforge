@@ -248,14 +248,14 @@ free_type (type_t *type)
 			break;
 		case ev_field:
 		case ev_ptr:
-			free_type (type->t.fldptr.type);
+			free_type ((type_t *) type->t.fldptr.type);
 			break;
 		case ev_func:
-			free_type (type->t.func.type);
+			free_type ((type_t *) type->t.func.type);
 			break;
 		case ev_invalid:
 			if (type->meta == ty_array)
-				free_type (type->t.array.type);
+				free_type ((type_t *) type->t.array.type);
 			break;
 	}
 	memset (type, 0, sizeof (*type));
@@ -291,12 +291,12 @@ copy_chain (type_t *type, type_t *append)
 						internal_error (0, "copy basic type");
 					case ev_field:
 					case ev_ptr:
-						n = &(*n)->t.fldptr.type;
-						type = type->t.fldptr.type;
+						n = (type_t **) &(*n)->t.fldptr.type;
+						type = (type_t *) type->t.fldptr.type;
 						break;
 					case ev_func:
-						n = &(*n)->t.func.type;
-						type = type->t.func.type;
+						n = (type_t **) &(*n)->t.func.type;
+						type = (type_t *) type->t.func.type;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -304,8 +304,8 @@ copy_chain (type_t *type, type_t *append)
 				}
 				break;
 			case ty_array:
-				n = &(*n)->t.array.type;
-				type = type->t.array.type;
+				n = (type_t **) &(*n)->t.array.type;
+				type = (type_t *) type->t.array.type;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -322,10 +322,10 @@ copy_chain (type_t *type, type_t *append)
 	return new;
 }
 
-type_t *
-append_type (type_t *type, type_t *new)
+const type_t *
+append_type (const type_t *type, const type_t *new)
 {
-	type_t    **t = &type;
+	const type_t **t = &type;
 
 	while (*t) {
 		switch ((*t)->meta) {
@@ -348,14 +348,14 @@ append_type (type_t *type, type_t *new)
 						internal_error (0, "append to basic type");
 					case ev_field:
 					case ev_ptr:
-						t = &(*t)->t.fldptr.type;
-						type->alignment = 1;
-						type->width = 1;
+						t = (const type_t **) &(*t)->t.fldptr.type;
+						((type_t *) type)->alignment = 1;
+						((type_t *) type)->width = 1;
 						break;
 					case ev_func:
-						t = &(*t)->t.func.type;
-						type->alignment = 1;
-						type->width = 1;
+						t = (const type_t **) &(*t)->t.func.type;
+						((type_t *) type)->alignment = 1;
+						((type_t *) type)->width = 1;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -363,9 +363,9 @@ append_type (type_t *type, type_t *new)
 				}
 				break;
 			case ty_array:
-				t = &(*t)->t.array.type;
-				type->alignment = new->alignment;
-				type->width = new->width;
+				t = (const type_t **) &(*t)->t.array.type;
+				((type_t *) type)->alignment = new->alignment;
+				((type_t *) type)->width = new->width;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -379,7 +379,7 @@ append_type (type_t *type, type_t *new)
 		}
 	}
 	if (type && new->meta == ty_alias) {
-		type_t     *chain = find_type (copy_chain (type, new));
+		auto chain = find_type (copy_chain ((type_t *) type, (type_t *) new));
 		*t = new->t.alias.aux_type;
 		type = alias_type (type, chain, 0);
 	} else {
@@ -389,7 +389,7 @@ append_type (type_t *type, type_t *new)
 }
 
 static __attribute__((pure)) int
-types_same (type_t *a, type_t *b)
+types_same (const type_t *a, const type_t *b)
 {
 	int         i, count;
 
@@ -454,10 +454,10 @@ types_same (type_t *a, type_t *b)
 }
 
 void
-set_func_type_attrs (type_t *func, specifier_t spec)
+set_func_type_attrs (const type_t *func, specifier_t spec)
 {
-	func->t.func.no_va_list = spec.no_va_list;
-	func->t.func.void_return = spec.void_return;
+	((type_t *) func)->t.func.no_va_list = spec.no_va_list;//FIXME
+	((type_t *) func)->t.func.void_return = spec.void_return;
 }
 
 specifier_t
@@ -535,8 +535,8 @@ default_type (specifier_t spec, symbol_t *sym)
 	Returns a preexisting complex type that matches the parm, or allocates
 	a new one and copies it out.
 */
-type_t *
-find_type (type_t *type)
+const type_t *
+find_type (const type_t *type)
 {
 	type_t     *check;
 	int         i, count;
@@ -550,15 +550,15 @@ find_type (type_t *type)
 				switch (type->type) {
 					case ev_field:
 					case ev_ptr:
-						type->t.fldptr.type = find_type (type->t.fldptr.type);
+						((type_t *) type)->t.fldptr.type = find_type (type->t.fldptr.type);
 						break;
 					case ev_func:
-						type->t.func.type = find_type (type->t.func.type);
+						((type_t *) type)->t.func.type = find_type (type->t.func.type);
 						count = type->t.func.num_params;
 						if (count < 0)
 							count = ~count;	// param count is one's complement
 						for (i = 0; i < count; i++)
-							type->t.func.param_types[i]
+							((type_t *) type)->t.func.param_types[i]
 								= find_type (type->t.func.param_types[i]);
 						break;
 					default:		// other types don't have aux data
@@ -570,13 +570,13 @@ find_type (type_t *type)
 			case ty_enum:
 				break;
 			case ty_array:
-				type->t.array.type = find_type (type->t.array.type);
+				((type_t *) type)->t.array.type = find_type (type->t.array.type);
 				break;
 			case ty_class:
 				break;
 			case ty_alias:
-				type->t.alias.aux_type = find_type (type->t.alias.aux_type);
-				type->t.alias.full_type = find_type (type->t.alias.full_type);
+				((type_t *) type)->t.alias.aux_type = find_type (type->t.alias.aux_type);
+				((type_t *) type)->t.alias.full_type = find_type (type->t.alias.full_type);
 				break;
 			case ty_handle:
 				break;
@@ -616,8 +616,8 @@ find_type (type_t *type)
 	return check;
 }
 
-type_t *
-field_type (type_t *aux)
+const type_t *
+field_type (const type_t *aux)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -630,12 +630,12 @@ field_type (type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	if (aux) {
-		new = find_type (append_type (new, aux));
+		return find_type (append_type (new, aux));
 	}
 	return new;
 }
 
-type_t *
+const type_t *
 pointer_type (const type_t *aux)
 {
 	type_t      _new;
@@ -649,12 +649,12 @@ pointer_type (const type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	if (aux) {
-		new = find_type (append_type (new, (type_t *) aux));
+		return find_type (append_type (new, aux));
 	}
 	return new;
 }
 
-type_t *
+const type_t *
 vector_type (const type_t *ele_type, int width)
 {
 	if (width == 1) {
@@ -681,7 +681,7 @@ vector_type (const type_t *ele_type, int width)
 	return 0;
 }
 
-type_t *
+const type_t *
 base_type (const type_t *vec_type)
 {
 	if (is_algebra (vec_type)) {
@@ -697,7 +697,7 @@ base_type (const type_t *vec_type)
 	return ev_types[vec_type->type];
 }
 
-type_t *
+const type_t *
 int_type (const type_t *base)
 {
 	int         width = type_width (base);
@@ -713,7 +713,7 @@ int_type (const type_t *base)
 	return vector_type (base, width);
 }
 
-type_t *
+const type_t *
 uint_type (const type_t *base)
 {
 	int         width = type_width (base);
@@ -729,7 +729,7 @@ uint_type (const type_t *base)
 	return vector_type (base, width);
 }
 
-type_t *
+const type_t *
 float_type (const type_t *base)
 {
 	int         width = type_width (base);
@@ -745,7 +745,7 @@ float_type (const type_t *base)
 	return vector_type (base, width);
 }
 
-type_t *
+const type_t *
 array_type (const type_t *aux, int size)
 {
 	type_t      _new;
@@ -763,13 +763,13 @@ array_type (const type_t *aux, int size)
 	}
 	new->t.array.size = size;
 	if (aux) {
-		new = find_type (append_type (new, (type_t *) aux));
+		return find_type (append_type (new, aux));
 	}
 	return new;
 }
 
-type_t *
-based_array_type (type_t *aux, int base, int top)
+const type_t *
+based_array_type (const type_t *aux, int base, int top)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -788,13 +788,13 @@ based_array_type (type_t *aux, int base, int top)
 	new->t.array.base = base;
 	new->t.array.size = top - base + 1;
 	if (aux) {
-		new = find_type (new);
+		return find_type (new);
 	}
 	return new;
 }
 
-type_t *
-alias_type (type_t *type, type_t *alias_chain, const char *name)
+const type_t *
+alias_type (const type_t *type, const type_t *alias_chain, const char *name)
 {
 	type_t     *alias = new_type ();
 	alias->meta = ty_alias;
@@ -1543,7 +1543,7 @@ build_vector_struct (type_t *type)
 {
 	ty_meta_e   meta = type->meta;
 	etype_t     etype = type->type;
-	type_t     *ele_type = base_type (type);
+	auto ele_type = base_type (type);
 	int         width = type_width (type);
 
 	if (!ele_type || width < 2) {

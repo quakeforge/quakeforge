@@ -36,9 +36,9 @@
 #include "def.h"
 
 typedef struct ty_func_s {
-	struct type_s *type;
+	const struct type_s *type;
 	int         num_params;
-	struct type_s **param_types;
+	const struct type_s **param_types;
 	union {
 		struct {
 			unsigned    no_va_list:1;///< don't inject va_list for ... function
@@ -49,18 +49,18 @@ typedef struct ty_func_s {
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
-	struct type_s *type;
+	const struct type_s *type;
 } ty_fldptr_t;
 
 typedef struct ty_array_s {
-	struct type_s *type;
+	const struct type_s *type;
 	int         base;
 	int         size;
 } ty_array_t;
 
 typedef struct ty_alias_s {
-	struct type_s *aux_type;	///< other aliases stripped
-	struct type_s *full_type;	///< full alias chain
+	const struct type_s *aux_type;	///< other aliases stripped
+	const struct type_s *full_type;	///< full alias chain
 } ty_alias_t;
 
 typedef struct type_s {
@@ -93,7 +93,7 @@ typedef struct type_s {
 } type_t;
 
 typedef struct specifier_s {
-	type_t     *type;
+	const type_t *type;
 	struct param_s *params;
 	struct symbol_s *sym;
 	storage_class_t storage;
@@ -159,15 +159,15 @@ void chain_type (type_t *type);
 	\return			The type chain with the type appended at the deepest
 					level.
 */
-type_t *append_type (type_t *type, type_t *new);
-void set_func_type_attrs (type_t *func, specifier_t spec);
+const type_t *append_type (const type_t *type, const type_t *new);
+void set_func_type_attrs (const type_t *func, specifier_t spec);
 specifier_t default_type (specifier_t spec, struct symbol_s *sym);
-type_t *find_type (type_t *new);
+const type_t *find_type (const type_t *new);
 void new_typedef (const char *name, type_t *type);
-type_t *field_type (type_t *aux);
-type_t *pointer_type (const type_t *aux);
-type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
-type_t *base_type (const type_t *vec_type) __attribute__((pure));
+const type_t *field_type (const type_t *aux);
+const type_t *pointer_type (const type_t *aux);
+const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
+const type_t *base_type (const type_t *vec_type) __attribute__((pure));
 
 /** Return an integral type of same size as the provided type.
 
@@ -181,8 +181,8 @@ type_t *base_type (const type_t *vec_type) __attribute__((pure));
 	\return			Matching integral type (int, long, or a vector form), or
 					null if no such match can be made.
 */
-type_t *int_type (const type_t *base) __attribute__((pure));
-type_t *uint_type (const type_t *base) __attribute__((pure));
+const type_t *int_type (const type_t *base) __attribute__((pure));
+const type_t *uint_type (const type_t *base) __attribute__((pure));
 
 /** Return a floating point type of same size as the provided type.
 
@@ -197,11 +197,12 @@ type_t *uint_type (const type_t *base) __attribute__((pure));
 	\return			Matching floating point type (float, double, or a vector
 					form), or null if no such match can be made.
 */
-type_t *float_type (const type_t *base) __attribute__((pure));
+const type_t *float_type (const type_t *base) __attribute__((pure));
 
-type_t *array_type (const type_t *aux, int size);
-type_t *based_array_type (type_t *aux, int base, int top);
-type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
+const type_t *array_type (const type_t *aux, int size);
+const type_t *based_array_type (const type_t *aux, int base, int top);
+const type_t *alias_type (const type_t *type, const type_t *alias_chain,
+						  const char *name);
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
 const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);

@@ -137,7 +137,7 @@ extern function_t *current_func;
 typedef struct param_s {
 	struct param_s *next;
 	const char *selector;
-	struct type_s *type;
+	const struct type_s *type;
 	const char *name;
 	struct symbol_s *symbol;	//FIXME what is this for?
 } param_t;
@@ -146,20 +146,20 @@ struct expr_s;
 struct symbol_s;
 struct symtab_s;
 
-param_t *new_param (const char *selector, struct type_s *type,
+param_t *new_param (const char *selector, const struct type_s *type,
 					const char *name);
 param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
-								   struct type_s *type);
+								   const struct type_s *type);
 param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
-struct type_s *parse_params (struct type_s *return_type, param_t *params);
+const struct type_s *parse_params (const struct type_s *return_type, param_t *params);
 
 param_t *check_params (param_t *params);
 
 enum storage_class_e;
 struct defspace_s;
-int value_too_large (struct type_s *val_type) __attribute__((pure));
+int value_too_large (const struct type_s *val_type) __attribute__((pure));
 void make_function (struct symbol_s *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
 struct symbol_s *function_symbol (struct symbol_s *sym,

@@ -591,7 +591,7 @@ static const expr_t *
 parse_int_vector (const char *token, int width)
 {
 	char        t1 = 0, t2 = 0;
-	type_t     *type = 0;
+	const type_t *type = nullptr;
 
 	union {
 		pr_long_t   l[4];
@@ -713,7 +713,7 @@ static const expr_t *
 parse_float_vector (const char *token, int width)
 {
 	char        t = 0;
-	type_t     *type = 0;
+	const type_t *type = nullptr;
 
 	union {
 		pr_double_t d[4];

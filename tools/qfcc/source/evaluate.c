@@ -154,7 +154,7 @@ setup_value_progs (void)
 }
 
 ex_value_t *
-convert_value (ex_value_t *value, type_t *type)
+convert_value (ex_value_t *value, const type_t *type)
 {
 	if (!is_math (type) || !is_math (value->type)) {
 		error (0, "unable to convert non-math value");

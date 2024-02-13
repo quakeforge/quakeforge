@@ -1119,7 +1119,7 @@ dag_calc_node_costs (dagnode_t *dagnode)
 }
 #endif
 static operand_t *
-fix_op_type (operand_t *op, type_t *type)
+fix_op_type (operand_t *op, const type_t *type)
 {
 	if (op && op->op_type != op_label && op->type != type)
 		op = alias_operand (type, op, op->expr);
@@ -1167,7 +1167,6 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *operands[3] = {0, 0, 0};
 	statement_t *st;
 	operand_t   *dst = 0;
-	type_t      *type;
 	int          offset = 0;
 	def_t       *dstDef;
 
@@ -1187,7 +1186,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			 var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
-			type = dst->def->type;
+			auto type = dst->def->type;
 			dstDef = dst->def;
 			if (dstDef->alias) {
 				offset = dstDef->offset;
@@ -1233,7 +1232,6 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *operands[3] = {0, 0, 0};
 	statement_t *st;
 	operand_t   *dst = 0;
-	type_t      *type;
 	int          offset = 0;
 	def_t       *dstDef;
 
@@ -1248,7 +1246,7 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			 var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
-			type = dst->def->type;
+			auto type = dst->def->type;
 			dstDef = dst->def;
 			if (dstDef->alias) {
 				offset = dstDef->offset;
@@ -1302,7 +1300,7 @@ generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
-					  set_iter_t *var_iter, type_t *type)
+					  set_iter_t *var_iter, const type_t *type)
 {
 	statement_t *st;
 	operand_t   *dst = 0;
@@ -1330,7 +1328,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	statement_t *st;
 	set_iter_t *var_iter;
 	int         i;
-	type_t     *type;
+	const type_t *type;
 
 	switch (dagnode->type) {
 		case st_none:

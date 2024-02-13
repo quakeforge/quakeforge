@@ -119,7 +119,7 @@ set_storage_bits (def_t *def, storage_class_t storage)
 }
 
 def_t *
-new_def (const char *name, type_t *type, defspace_t *space,
+new_def (const char *name, const type_t *type, defspace_t *space,
 		 storage_class_t storage)
 {
 	def_t      *def;
@@ -179,7 +179,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 }
 
 def_t *
-cover_alias_def (def_t *def, type_t *type, int offset)
+cover_alias_def (def_t *def, const type_t *type, int offset)
 {
 	def_t      *alias;
 
@@ -205,7 +205,7 @@ cover_alias_def (def_t *def, type_t *type, int offset)
 }
 
 def_t *
-alias_def (def_t *def, type_t *type, int offset)
+alias_def (def_t *def, const type_t *type, int offset)
 {
 	if (def->alias) {
 		expr_t      e;
@@ -221,7 +221,7 @@ alias_def (def_t *def, type_t *type, int offset)
 }
 
 def_t *
-temp_def (type_t *type)
+temp_def (const type_t *type)
 {
 	def_t      *temp;
 	defspace_t *space = current_func->locals->space;
@@ -399,7 +399,7 @@ init_elements (struct def_s *def, const expr_t *eles)
 				reloc_def_op (c->labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				type_t     *ctype = get_type (c);
+				auto ctype = get_type (c);
 				if (ctype != element->type
 					&& type_assignable (element->type, ctype)) {
 					if (!c->implicit
@@ -630,11 +630,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		type_t     *init_type;
 		if (init->type == ex_nil) {
 			init = convert_nil (init, sym->type);
 		}
-		init_type = get_type (init);
+		auto init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer: %s = %s",
 				   get_type_string (sym->type), get_type_string (init_type));

@@ -118,7 +118,7 @@ convert_name (const expr_t *e)
 	return e;
 }
 
-type_t *
+const type_t *
 get_type (const expr_t *e)
 {
 	const type_t *type = 0;
@@ -202,13 +202,13 @@ get_type (const expr_t *e)
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
-	return (type_t *) unalias_type (type);//FIXME cast
+	return unalias_type (type);
 }
 
 etype_t
 extract_type (const expr_t *e)
 {
-	type_t     *type = get_type (e);
+	auto type = get_type (e);
 
 	if (type)
 		return type->type;
@@ -228,7 +228,8 @@ type_mismatch (const expr_t *e1, const expr_t *e2, int op)
 }
 
 const expr_t *
-param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *t2)
+param_mismatch (const expr_t *e, int param, const char *fn,
+				const type_t *t1, const type_t *t2)
 {
 	return error (e, "type mismatch for parameter %d of %s: "
 				  "expected %s, got %s", param, fn, get_type_string (t1),
@@ -236,7 +237,7 @@ param_mismatch (const expr_t *e, int param, const char *fn, type_t *t1, type_t *
 }
 
 const expr_t *
-test_error (const expr_t *e, type_t *t)
+test_error (const expr_t *e, const type_t *t)
 {
 	dstring_t  *s = dstring_newstr ();
 
@@ -576,7 +577,7 @@ new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 	if (vec->type == ex_error) {
 		return (expr_t *) vec;
 	}
-	type_t     *vec_type = get_type (vec);
+	auto vec_type = get_type (vec);
 	if (!is_math (vec_type) || is_scalar (vec_type)) {
 		internal_error (vec, "horizontal operand not a vector type");
 	}
@@ -599,7 +600,7 @@ new_swizzle_expr (const expr_t *src, const char *swizzle)
 	if (src->type == ex_error) {
 		return (expr_t *) src;
 	}
-	type_t     *src_type = get_type (src);
+	auto src_type = get_type (src);
 	int         src_width = type_width (src_type);
 	ex_swizzle_t swiz = {};
 
@@ -661,7 +662,7 @@ new_swizzle_expr (const expr_t *src, const char *swizzle)
 }
 
 const expr_t *
-new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev)
+new_extend_expr (const expr_t *src, const type_t *type, int ext, bool rev)
 {
 	expr_t     *expr = new_expr ();
 	expr->type = ex_extend;
@@ -726,7 +727,7 @@ new_value_expr (ex_value_t *value)
 }
 
 const expr_t *
-new_zero_expr (type_t *type)
+new_zero_expr (const type_t *type)
 {
 	pr_type_t zero[type_size (type)] = {};
 	return new_value_expr (new_type_value (type, zero));
@@ -779,19 +780,19 @@ new_entity_expr (int entity_val)
 }
 
 const expr_t *
-new_field_expr (int field_val, type_t *type, def_t *def)
+new_field_expr (int field_val, const type_t *type, def_t *def)
 {
 	return new_value_expr (new_field_val (field_val, type, def));
 }
 
 const expr_t *
-new_func_expr (int func_val, type_t *type)
+new_func_expr (int func_val, const type_t *type)
 {
 	return new_value_expr (new_func_val (func_val, type));
 }
 
 const expr_t *
-new_pointer_expr (int val, type_t *type, def_t *def)
+new_pointer_expr (int val, const type_t *type, def_t *def)
 {
 	return new_value_expr (new_pointer_val (val, type, def, 0));
 }
@@ -1232,7 +1233,7 @@ is_math_val (const expr_t *e)
 }
 
 const expr_t *
-new_alias_expr (type_t *type, const expr_t *expr)
+new_alias_expr (const type_t *type, const expr_t *expr)
 {
 	if (is_ptr (type) && expr->type == ex_address) {
 		auto new = new_address_expr (type, expr->address.lvalue,
@@ -1263,7 +1264,7 @@ new_alias_expr (type_t *type, const expr_t *expr)
 }
 
 const expr_t *
-new_offset_alias_expr (type_t *type, const expr_t *expr, int offset)
+new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
 {
 	if (expr->type == ex_alias && expr->alias.offset) {
 		const expr_t *ofs_expr = expr->alias.offset;
@@ -1341,7 +1342,7 @@ new_with_expr (int mode, int reg, const expr_t *val)
 }
 
 static const expr_t *
-param_expr (const char *name, type_t *type)
+param_expr (const char *name, const type_t *type)
 {
 	symbol_t   *sym;
 	expr_t     *sym_expr;
@@ -1360,7 +1361,7 @@ new_ret_expr (type_t *type)
 }
 
 const expr_t *
-new_param_expr (type_t *type, int num)
+new_param_expr (const type_t *type, int num)
 {
 	return param_expr (va (0, ".param_%d", num), type);
 }
@@ -1562,7 +1563,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 }
 
 const expr_t *
-convert_from_bool (const expr_t *e, type_t *type)
+convert_from_bool (const expr_t *e, const type_t *type)
 {
 	const expr_t *zero;
 	const expr_t *one;
@@ -1730,7 +1731,7 @@ unary_expr (int op, const expr_t *e)
 	vec3_t      v;
 	quat_t      q;
 	const char *s;
-	type_t     *t;
+	const type_t *t;
 
 	e = convert_name (e);
 	if (e->type == ex_error)
@@ -2027,7 +2028,7 @@ bitnot_expr:
 						return binary_expr ('-', n1, e);
 					} else {
 						expr_t     *n = new_unary_expr (op, e);
-						type_t     *t = get_type (e);
+						auto t = get_type (e);
 
 						if (!is_int(t) && !is_float(t)
 							&& !is_quaternion(t))
@@ -2121,11 +2122,11 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		param_count = ftype->t.func.num_params;
 	}
 
-	type_t     *arg_types[arg_count];
+	const type_t *arg_types[arg_count];
 	// params is reversed (a, b, c) -> c, b, a
 	for (int i = 0; i < arg_count; i++) {
 		auto e = arguments[i];
-		type_t     *t;
+		const type_t *t;
 
 		if (e->type == ex_compound) {
 			if (i < param_count) {
@@ -2244,7 +2245,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		//e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	type_t     *ret_type = ftype->t.func.type;
+	auto ret_type = ftype->t.func.type;
 	call->block.result = call_expr (fexpr, args, ret_type);
 	return call;
 }
@@ -2252,8 +2253,6 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 const expr_t *
 function_expr (const expr_t *fexpr, const expr_t *params)
 {
-	type_t     *ftype;
-
 	if (params) {
 		for (auto p = params->list.head; p; p = p->next) {
 			p->expr = convert_name (p->expr);
@@ -2262,7 +2261,7 @@ function_expr (const expr_t *fexpr, const expr_t *params)
 
 	fexpr = find_function (fexpr, params);
 	fexpr = convert_name (fexpr);
-	ftype = get_type (fexpr);
+	auto ftype = get_type (fexpr);
 
 	if (fexpr->type == ex_error)
 		return fexpr;
@@ -2346,7 +2345,7 @@ jump_table_expr (const expr_t *table, const expr_t *index)
 }
 
 const expr_t *
-call_expr (const expr_t *func, const expr_t *args, type_t *ret_type)
+call_expr (const expr_t *func, const expr_t *args, const type_t *ret_type)
 {
 	expr_t     *branch = new_expr ();
 	branch->type = ex_branch;
@@ -2457,7 +2456,7 @@ at_return_expr (function_t *f, const expr_t *e)
 		return error (e, "@return value not a function");
 	}
 	const expr_t *call_expr = e->block.result->branch.target;
-	const type_t *call_type = get_type (call_expr);
+	const auto call_type = get_type (call_expr);
 	if (!is_func (call_type) && !call_type->t.func.void_return) {
 		return error (e, "@return function not void_return");
 	}
@@ -2481,8 +2480,8 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 		return c;
 
 	expr_t     *block = expr_file_line (new_block_expr (0), cond);
-	type_t     *type1 = get_type (e1);
-	type_t     *type2 = get_type (e2);
+	auto type1 = get_type (e1);
+	auto type2 = get_type (e2);
 	expr_t     *tlabel = expr_file_line (new_label_expr (), cond);
 	expr_t     *flabel = expr_file_line (new_label_expr (), cond);
 	expr_t     *elabel = expr_file_line (new_label_expr (), cond);
@@ -2532,7 +2531,7 @@ incop_expr (int op, const expr_t *e, int postop)
 	}
 	if (postop) {
 		expr_t     *t1, *t2;
-		type_t     *type = get_type (e);
+		auto type = get_type (e);
 		expr_t     *block = new_block_expr (0);
 
 		if (e->type == ex_error)	// get_type failed
@@ -2557,9 +2556,9 @@ array_expr (const expr_t *array, const expr_t *index)
 	array = convert_name (array);
 	index = convert_name (index);
 
-	type_t     *array_type = get_type (array);
-	type_t     *index_type = get_type (index);
-	type_t     *ele_type;
+	auto array_type = get_type (array);
+	auto index_type = get_type (index);
+	const type_t *ele_type;
 	const expr_t *base;
 	const expr_t *ptr;
 	int         ind = 0;
@@ -2636,7 +2635,7 @@ array_expr (const expr_t *array, const expr_t *index)
 const expr_t *
 deref_pointer_expr (const expr_t *pointer)
 {
-	type_t     *pointer_type = get_type (pointer);
+	auto pointer_type = get_type (pointer);
 
 	if (pointer->type == ex_error)
 		return pointer;
@@ -2648,7 +2647,7 @@ deref_pointer_expr (const expr_t *pointer)
 const expr_t *
 offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 {
-	type_t     *ptr_type = get_type (pointer);
+	auto ptr_type = get_type (pointer);
 	if (!is_ptr (ptr_type)) {
 		internal_error (pointer, "not a pointer");
 	}
@@ -2677,7 +2676,7 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 }
 
 const expr_t *
-address_expr (const expr_t *e1, type_t *t)
+address_expr (const expr_t *e1, const type_t *t)
 {
 	expr_t     *e;
 
@@ -2691,8 +2690,8 @@ address_expr (const expr_t *e1, type_t *t)
 	switch (e1->type) {
 		case ex_def:
 			{
-				def_t      *def = e1->def;
-				type_t     *type = def->type;
+				auto def = e1->def;
+				auto type = def->type;
 
 				//FIXME this test should be in statements.c
 				if (options.code.progsversion == PROG_VERSION
@@ -2710,8 +2709,8 @@ address_expr (const expr_t *e1, type_t *t)
 			break;
 		case ex_symbol:
 			if (e1->symbol->sy_type == sy_var) {
-				def_t      *def = e1->symbol->s.def;
-				type_t     *type = def->type;
+				auto def = e1->symbol->s.def;
+				auto type = def->type;
 
 				//FIXME this test should be in statements.c
 				if (options.code.progsversion == PROG_VERSION
@@ -3010,7 +3009,7 @@ think_expr (symbol_t *think_sym)
 }
 
 const expr_t *
-encode_expr (type_t *type)
+encode_expr (const type_t *type)
 {
 	dstring_t  *encoding = dstring_newstr ();
 
@@ -3021,7 +3020,7 @@ encode_expr (type_t *type)
 }
 
 const expr_t *
-sizeof_expr (const expr_t *expr, struct type_s *type)
+sizeof_expr (const expr_t *expr, const type_t *type)
 {
 	if (!((!expr) ^ (!type)))
 		internal_error (0, 0);

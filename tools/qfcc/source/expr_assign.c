@@ -170,8 +170,8 @@ check_valid_lvalue (const expr_t *expr)
 static const expr_t *
 check_types_compatible (const expr_t *dst, const expr_t *src)
 {
-	type_t     *dst_type = get_type (dst);
-	type_t     *src_type = get_type (src);
+	auto dst_type = get_type (dst);
+	auto src_type = get_type (src);
 
 	if (dst_type == src_type) {
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
@@ -318,7 +318,7 @@ const expr_t *
 assign_expr (const expr_t *dst, const expr_t *src)
 {
 	const expr_t *expr;
-	type_t     *dst_type, *src_type;
+	const type_t *dst_type, *src_type;
 
 	dst = convert_name (dst);
 	if (dst->type == ex_error) {

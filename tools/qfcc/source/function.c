@@ -93,7 +93,7 @@ func_map_get_key (const void *_f, void *unused)
 }
 
 param_t *
-new_param (const char *selector, type_t *type, const char *name)
+new_param (const char *selector, const type_t *type, const char *name)
 {
 	param_t    *param;
 
@@ -107,7 +107,7 @@ new_param (const char *selector, type_t *type, const char *name)
 }
 
 param_t *
-param_append_identifiers (param_t *params, symbol_t *idents, type_t *type)
+param_append_identifiers (param_t *params, symbol_t *idents, const type_t *type)
 {
 	param_t   **p = &params;
 
@@ -172,8 +172,8 @@ copy_params (param_t *params)
 	return n_parms;
 }
 
-type_t *
-parse_params (type_t *return_type, param_t *parms)
+const type_t *
+parse_params (const type_t *return_type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
@@ -384,7 +384,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return e;
 		}
 	}
-	type_t *arg_types[type.t.func.num_params];
+	const type_t *arg_types[type.t.func.num_params];
 	type.t.func.param_types = arg_types;
 	for (int i = 0; i < type.t.func.num_params; i++) {
 		auto e = args[i];
@@ -469,7 +469,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 }
 
 int
-value_too_large (type_t *val_type)
+value_too_large (const type_t *val_type)
 {
 	if ((options.code.progsversion < PROG_VERSION
 		 && type_size (val_type) > type_size (&type_param))
@@ -489,12 +489,12 @@ check_function (symbol_t *fsym)
 
 	if (!type_size (fsym->type->t.func.type)) {
 		error (0, "return type is an incomplete type");
-		fsym->type->t.func.type = &type_void;//FIXME better type?
+		//fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
 	if (value_too_large (fsym->type->t.func.type)) {
 		error (0, "return value too large to be passed by value (%d)",
 			   type_size (&type_param));
-		fsym->type->t.func.type = &type_void;//FIXME better type?
+		//fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)
@@ -919,7 +919,7 @@ int
 function_parms (function_t *f, byte *parm_size)
 {
 	int         count, i;
-	ty_func_t  *func = &f->sym->type->t.func;
+	auto func = &f->sym->type->t.func;
 
 	if (func->num_params >= 0)
 		count = func->num_params;

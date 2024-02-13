@@ -70,7 +70,7 @@ typedef struct symbol_s {
 	vis_t       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
 	sy_type_e   sy_type;		///< symbol type
-	struct type_s *type;		///< type of object to which symbol refers
+	const struct type_s *type;	///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	unsigned    no_auto_init;	///< skip for non-designated initializers
 	union {
@@ -129,7 +129,7 @@ symbol_t *new_symbol (const char *name);
 	\param type		The type of the symbol.
 	\return			The new symbol.
 */
-symbol_t *new_symbol_type (const char *name, struct type_s *type);
+symbol_t *new_symbol_type (const char *name, const struct type_s *type);
 
 /**	Create a new, empty symbol table.
 
@@ -249,7 +249,7 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent,
 	\param storage	The storage class for the symbol. Only sc_extern,
 					sc_global, and sc_static are valid.
 */
-symbol_t *make_symbol (const char *name, struct type_s *type,
+symbol_t *make_symbol (const char *name, const struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
 struct specifier_s;

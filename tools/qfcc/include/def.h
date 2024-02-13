@@ -57,7 +57,7 @@ typedef struct def_s {
 	struct def_s *next;			///< general purpose linking
 	struct def_s *temp_next;	///< linked list of "free" temp defs
 
-	struct type_s *type;		///< QC type of this def
+	const struct type_s *type;	///< QC type of this def
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
@@ -139,7 +139,7 @@ typedef enum storage_class_e {
 	\param storage	The storage class for the def.
 	\return			The new def.
 */
-def_t *new_def (const char *name, struct type_s *type,
+def_t *new_def (const char *name, const struct type_s *type,
 				struct defspace_s *space, storage_class_t storage);
 
 /** Create a def that aliases another def.
@@ -164,10 +164,10 @@ def_t *new_def (const char *name, struct type_s *type,
 
 	\todo Make aliasing to the same type a no-op?
 */
-def_t *alias_def (def_t *def, struct type_s *type, int offset);
+def_t *alias_def (def_t *def, const struct type_s *type, int offset);
 //FIXME this probably shouldn't exist (it's for swizzles, so doing proper
 //multi-width swizzles will remove the need for it)
-def_t *cover_alias_def (def_t *def, struct type_s *type, int offset);
+def_t *cover_alias_def (def_t *def, const struct type_s *type, int offset);
 
 /** Free a def.
 
@@ -203,7 +203,7 @@ void free_def (def_t *def);
 	\bug size of type must be 1 to 4.
 	\todo support arbitrary sizes
 */
-def_t *temp_def (struct type_s *type);
+def_t *temp_def (const struct type_s *type);
 
 /** Free a tempary def so it may be recycled.
 

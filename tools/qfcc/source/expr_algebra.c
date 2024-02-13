@@ -43,7 +43,7 @@
 #include "tools/qfcc/source/qc-parse.h"
 
 static int __attribute__((pure))
-get_group (type_t *type, algebra_t *algebra)
+get_group (const type_t *type, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
 	if (is_scalar (type) && !is_algebra (type)) {
@@ -102,7 +102,7 @@ op_anti_com (int op)
 }
 
 const expr_t *
-typed_binary_expr (type_t *type, int op, const expr_t *e1, const expr_t *e2)
+typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e2)
 {
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = type;
@@ -133,7 +133,7 @@ neg_expr (const expr_t *e)
 }
 
 const expr_t *
-ext_expr (const expr_t *src, type_t *type, int extend, bool reverse)
+ext_expr (const expr_t *src, const type_t *type, int extend, bool reverse)
 {
 	if (!src) {
 		return 0;
@@ -164,7 +164,7 @@ is_ext (const expr_t *e)
 }
 
 static const expr_t *
-alias_expr (type_t *type, const expr_t *e, int offset)
+alias_expr (const type_t *type, const expr_t *e, int offset)
 {
 	if (type == get_type (e)) {
 		if (offset) {
@@ -187,7 +187,7 @@ alias_expr (type_t *type, const expr_t *e, int offset)
 }
 
 static const expr_t *
-offset_cast (type_t *type, const expr_t *expr, int offset)
+offset_cast (const type_t *type, const expr_t *expr, int offset)
 {
 	if (type->meta != ty_basic) {
 		internal_error (expr, "offset cast to non-basic type");
@@ -235,7 +235,7 @@ offset_cast (type_t *type, const expr_t *expr, int offset)
 }
 
 static symtab_t *
-get_mvec_struct (type_t *type)
+get_mvec_struct (const type_t *type)
 {
 	symbol_t   *sym = 0;
 	if (type->type == ev_invalid) {
@@ -247,7 +247,7 @@ get_mvec_struct (type_t *type)
 }
 
 static symbol_t *
-get_mvec_sym (type_t *type)
+get_mvec_sym (const type_t *type)
 {
 	auto symtab = get_mvec_struct (type);
 	return symtab ? symtab->symbols : 0;
@@ -270,7 +270,7 @@ check_types (const expr_t **e, algebra_t *algebra)
 }
 
 static const expr_t *
-promote_scalar (type_t *dst_type, const expr_t *scalar)
+promote_scalar (const type_t *dst_type, const expr_t *scalar)
 {
 	auto scalar_type = get_type (scalar);
 	if (scalar_type != dst_type) {
@@ -504,7 +504,7 @@ scatter_factors (const expr_t *prod, const expr_t **factors)
 }
 
 const expr_t *
-gather_factors (type_t *type, int op, const expr_t **factors, int count)
+gather_factors (const type_t *type, int op, const expr_t **factors, int count)
 {
 	if (!count) {
 		internal_error (0, "no factors to collect");
@@ -545,7 +545,7 @@ insert_expr (const expr_t **array, const expr_t *e, int count)
 }
 #endif
 static const expr_t *
-sort_factors (type_t *type, const expr_t *e)
+sort_factors (const type_t *type, const expr_t *e)
 {
 	if (!is_mult (e)) {
 		internal_error (e, "not a product");
@@ -560,7 +560,7 @@ sort_factors (type_t *type, const expr_t *e)
 }
 
 static const expr_t *
-sum_expr_low (type_t *type, int op, const expr_t *a, const expr_t *b)
+sum_expr_low (const type_t *type, int op, const expr_t *a, const expr_t *b)
 {
 	if (!a) {
 		return op == '-' ? neg_expr (b) : b;
@@ -625,7 +625,7 @@ scatter_terms (const expr_t *sum, const expr_t **adds, const expr_t **subs)
 }
 
 const expr_t *
-gather_terms (type_t *type, const expr_t **adds, const expr_t **subs)
+gather_terms (const type_t *type, const expr_t **adds, const expr_t **subs)
 {
 	const expr_t *a = 0;
 	const expr_t *b = 0;
@@ -639,7 +639,8 @@ gather_terms (type_t *type, const expr_t **adds, const expr_t **subs)
 	return sum;
 }
 
-static const expr_t *sum_expr (type_t *type, const expr_t *a, const expr_t *b);
+static const expr_t *sum_expr (const type_t *type,
+							   const expr_t *a, const expr_t *b);
 
 static void
 merge_extends (const expr_t **adds, const expr_t **subs)
@@ -676,7 +677,7 @@ merge_extends (const expr_t **adds, const expr_t **subs)
 }
 
 static const expr_t *
-sum_expr (type_t *type, const expr_t *a, const expr_t *b)
+sum_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a) {
 		return cast_expr (type, b);
@@ -761,8 +762,8 @@ component_sum (int op, const expr_t **c, const expr_t **a, const expr_t **b,
 }
 
 static const expr_t *
-distribute_product (type_t *type, const expr_t *a, const expr_t *b,
-					const expr_t *(*product) (type_t *type,
+distribute_product (const type_t *type, const expr_t *a, const expr_t *b,
+					const expr_t *(*product) (const type_t *type,
 											  const expr_t *a, const expr_t *b),
 					bool anti_com)
 {
@@ -867,7 +868,7 @@ extract_scale (const expr_t **expr, const expr_t *prod)
 }
 
 static const expr_t *
-apply_scale (type_t *type, const expr_t *expr, const expr_t *prod)
+apply_scale (const type_t *type, const expr_t *expr, const expr_t *prod)
 {
 	if (expr && prod) {
 		expr = fold_constants (expr);
@@ -878,13 +879,13 @@ apply_scale (type_t *type, const expr_t *expr, const expr_t *prod)
 }
 
 static const expr_t *
-do_mult (type_t *type, const expr_t *a, const expr_t *b)
+do_mult (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	return typed_binary_expr (type, '*', a, b);
 }
 
 static const expr_t *
-do_scale (type_t *type, const expr_t *a, const expr_t *b)
+do_scale (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	const expr_t *prod = extract_scale (&a, b);
 	if (prod) {
@@ -894,7 +895,7 @@ do_scale (type_t *type, const expr_t *a, const expr_t *b)
 }
 
 const expr_t *
-scale_expr (type_t *type, const expr_t *a, const expr_t *b)
+scale_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
 		// propagated zero
@@ -938,7 +939,7 @@ reject_dot (const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-do_dot (type_t *type, const expr_t *a, const expr_t *b)
+do_dot (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (reject_dot (a, b)) {
 		return 0;
@@ -954,7 +955,7 @@ do_dot (type_t *type, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-dot_expr (type_t *type, const expr_t *a, const expr_t *b)
+dot_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
 		// propagated zero
@@ -972,7 +973,7 @@ reject_cross (const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-do_cross (type_t *type, const expr_t *a, const expr_t *b)
+do_cross (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (reject_cross (a, b)) {
 		return 0;
@@ -988,7 +989,7 @@ do_cross (type_t *type, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-cross_expr (type_t *type, const expr_t *a, const expr_t *b)
+cross_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
 		// propagated zero
@@ -1006,7 +1007,7 @@ reject_wedge (const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-do_wedge (type_t *type, const expr_t *a, const expr_t *b)
+do_wedge (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (reject_wedge (a, b)) {
 		return 0;
@@ -1022,7 +1023,7 @@ do_wedge (type_t *type, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-wedge_expr (type_t *type, const expr_t *a, const expr_t *b)
+wedge_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {
 		// propagated zero
@@ -2873,9 +2874,9 @@ algebra_reverse (const expr_t *e)
 }
 
 const expr_t *
-algebra_cast_expr (type_t *dstType, const expr_t *e)
+algebra_cast_expr (const type_t *dstType, const expr_t *e)
 {
-	type_t *srcType = get_type (e);
+	auto srcType = get_type (e);
 	if (dstType->type == ev_invalid
 		|| srcType->type == ev_invalid
 		|| type_width (dstType) != type_width (srcType)) {
@@ -2949,8 +2950,8 @@ assign_extend (expr_t *block, const expr_t *dst, const expr_t *src)
 const expr_t *
 algebra_assign_expr (const expr_t *dst, const expr_t *src)
 {
-	type_t *srcType = get_type (src);
-	type_t *dstType = get_type (dst);
+	auto srcType = get_type (src);
+	auto dstType = get_type (dst);
 
 	if (src->type != ex_multivec) {
 		if (srcType == dstType) {

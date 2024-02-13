@@ -83,7 +83,7 @@ type_t      type_SEL = {
 	.meta = ty_basic,
 	{{&type_selector}},
 };
-type_t     *IMP_params[] = { &type_id, &type_SEL };
+const type_t *IMP_params[] = { &type_id, &type_SEL };
 type_t      type_IMP = {
 	.type = ev_func,
 	.name = "IMP",
@@ -102,7 +102,7 @@ type_t      type_SuperPtr = {
 	.meta = ty_basic,
 	{{&type_super}},
 };
-type_t     *supermsg_params[] = { &type_SuperPtr, &type_SEL };
+const type_t *supermsg_params[] = { &type_SuperPtr, &type_SEL };
 type_t      type_supermsg = {
 	.type = ev_func,
 	.name = ".supermsg",
@@ -138,7 +138,7 @@ type_t      type_moduleptr = {
 	.meta = ty_basic,
 	{{&type_module}},
 };
-type_t     *obj_exec_class_params[] = {
+const type_t *obj_exec_class_params[] = {
 	&type_moduleptr,
 };
 type_t      type_exec_class = {
@@ -353,7 +353,7 @@ emit_static_instances_list (void)
 	static_instance_t **classes;
 	int         num_classes = 0;
 	def_t     **instance_lists;
-	type_t     *instance_lists_type;
+	const type_t *instance_lists_type;
 	symbol_t   *instance_lists_sym;
 	def_t      *instance_lists_def;
 	pr_ptr_t   *list;
@@ -1228,7 +1228,7 @@ cls_find_method (methodlist_t *methodlist, selector_t *selector,
 }
 
 method_t *
-class_message_response (type_t *clstype, int class_msg, const expr_t *sel)
+class_message_response (const type_t *clstype, int class_msg, const expr_t *sel)
 {
 	selector_t *selector;
 	method_t   *m;
@@ -1934,7 +1934,7 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 						 symtab_t *param_scope)
 {
 	class_t    *class = extract_class (class_type);
-	type_t     *class_ptr = pointer_type (class->type);
+	const type_t *class_ptr = pointer_type (class->type);
 	symbol_t   *sym;
 	symbol_t   *self;
 

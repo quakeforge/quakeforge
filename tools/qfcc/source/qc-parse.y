@@ -238,7 +238,7 @@ static const expr_t *break_label;
 static const expr_t *continue_label;
 
 static specifier_t
-make_spec (type_t *type, storage_class_t storage, int is_typedef,
+make_spec (const type_t *type, storage_class_t storage, int is_typedef,
 		   int is_overload)
 {
 	specifier_t spec;
@@ -359,13 +359,13 @@ pointer_spec (specifier_t quals, specifier_t spec)
 static specifier_t
 parse_qc_params (specifier_t spec, param_t *params)
 {
-	type_t    **type;
+	const type_t **type;
 	// .float () foo; is a field holding a function variable rather
 	// than a function that returns a float field.
 	for (type = &spec.type; *type && is_field (*type);
-		 type = &(*type)->t.fldptr.type) {
+		 type = (const type_t **) &(*type)->t.fldptr.type) {
 	}
-	type_t     *ret_type = *type;
+	const type_t *ret_type = *type;
 	*type = 0;
 
 	spec.sym = new_symbol (0);
@@ -417,7 +417,7 @@ make_param (specifier_t spec)
 }
 
 static param_t *
-make_selector (const char *selector, struct type_s *type, const char *name)
+make_selector (const char *selector, const type_t *type, const char *name)
 {
 	param_t    *param = new_param (selector, type, name);
 	return param;

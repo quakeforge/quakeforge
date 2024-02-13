@@ -39,7 +39,7 @@
 const expr_t *
 new_vector_list (const expr_t *expr_list)
 {
-	type_t     *ele_type = type_default;
+	const type_t *ele_type = type_default;
 	int         count = list_count (&expr_list->list);
 	const expr_t *elements[count + 1];
 	list_scatter (&expr_list->list, elements);
@@ -76,7 +76,7 @@ new_vector_list (const expr_t *expr_list)
 	for (int i = 0; i < count; i++) {
 		auto e = elements[i];
 		int         cast_width = type_width (get_type (e));
-		type_t     *cast_type = vector_type (ele_type, cast_width);
+		const type_t *cast_type = vector_type (ele_type, cast_width);
 		all_implicit = all_implicit && e->implicit;
 		elements[i] = cast_expr (cast_type, fold_constants (e));
 		all_constant = all_constant && is_constant (elements[i]);
@@ -118,11 +118,11 @@ new_vector_list (const expr_t *expr_list)
 	}
 
 	if (all_constant) {
-		type_t     *vec_type = vector_type (ele_type, width);
+		const type_t *vec_type = vector_type (ele_type, width);
 		pr_type_t   value[type_size (vec_type)];
 
 		for (int i = 0, offs = 0; i < count; i++) {
-			type_t     *src_type = get_type (elements[i]);
+			auto src_type = get_type (elements[i]);
 			value_store (value + offs, src_type, elements[i]);
 			offs += type_size (src_type);
 		}

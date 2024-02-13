@@ -39,7 +39,7 @@
 struct type_s;
 struct ex_value_s;
 struct ex_value_s *convert_value (struct ex_value_s *value,
-								  struct type_s *type);
+								  const struct type_s *type);
 const struct expr_s *evaluate_constexpr (const struct expr_s *e);
 void setup_value_progs (void);
 

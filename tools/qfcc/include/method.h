@@ -38,7 +38,7 @@ typedef struct method_s {
 	int         instance;
 	param_t    *selector;
 	param_t    *params;
-	struct type_s *type;
+	const struct type_s *type;
 	struct def_s *def;
 	struct function_s *func;
 	char       *name;
@@ -74,7 +74,7 @@ struct class_s;
 struct expr_s;
 struct dstring_s;
 
-method_t *new_method (struct type_s *ret_type, param_t *selector,
+method_t *new_method (const struct type_s *ret_type, param_t *selector,
 					  param_t *opt_parms);
 const char *method_name (method_t *method);
 method_t *copy_method (method_t *method);

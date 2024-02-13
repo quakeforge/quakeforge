@@ -221,7 +221,7 @@ metric_apply (const metric_t *metric, pr_uint_t a, pr_uint_t b)
 	return count_minus (c & metric->minus);
 }
 
-static type_t **
+static const type_t **
 alloc_mvec_types (int num_groups)
 {
 	return calloc (1 << num_groups, sizeof (type_t *));
@@ -337,8 +337,8 @@ is_algebra (const type_t *type)
 	return type->meta == ty_algebra;
 }
 
-type_t *
-algebra_type (type_t *type, const expr_t *params)
+const type_t *
+algebra_type (const type_t *type, const expr_t *params)
 {
 	if (!is_float (type) && !is_double (type)) {
 		error (0, "algebra type must be float or double");
@@ -411,8 +411,8 @@ algebra_type (type_t *type, const expr_t *params)
 	return find_type (t);
 }
 
-type_t *
-algebra_subtype (type_t *type, attribute_t *attr)
+const type_t *
+algebra_subtype (const type_t *type, attribute_t *attr)
 {
 	if (!is_algebra (type)) {
 		internal_error (0, "unexpected type");
@@ -489,7 +489,7 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 	return make_structure (0, 's', fields, 0);
 }
 
-type_t *
+const type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 {
 	if (!group_mask || group_mask > ((1u << algebra->layout.count) - 1)) {
@@ -513,7 +513,8 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 			.algebra = algebra,
 			.mvec_sym = mvec_sym,
 		};
-		auto type = algebra->mvec_types[group_mask] = new_type ();
+		auto type = new_type ();
+		algebra->mvec_types[group_mask] = type;
 		*type = (type_t) {
 			.type = algebra->type->type,
 			.name = save_string (va (0, "algebra(%s(%d,%d,%d):%04x)",
@@ -527,7 +528,7 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 			.freeable = true,
 			.allocated = true,
 		};
-		chain_type (algebra->mvec_types[group_mask]);
+		chain_type (type);
 		if (!(group_mask & (group_mask - 1))) {
 			mvec->mvec_sym = mvec_struct (algebra, group_mask, type);
 		}
@@ -651,7 +652,7 @@ algebra_symbol (const char *name, symtab_t *symtab)
 }
 
 symtab_t *
-algebra_scope (type_t *type, symtab_t *curscope)
+algebra_scope (const type_t *type, symtab_t *curscope)
 {
 	auto scope = new_symtab (curscope, stab_local);
 	scope->space = curscope->space;
@@ -821,7 +822,7 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 	return 1;
 }
 
-type_t *
+const type_t *
 algebra_base_type (const type_t *type)
 {
 	if (type->type == ev_invalid) {
@@ -830,7 +831,7 @@ algebra_base_type (const type_t *type)
 	return ev_types[type->type];
 }
 
-type_t *
+const type_t *
 algebra_struct_type (const type_t *type)
 {
 	symbol_t   *sym = 0;

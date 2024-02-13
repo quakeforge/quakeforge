@@ -62,7 +62,7 @@ typedef struct dagnode_s {
 	struct dagnode_s *killed;	///< node is unavailable for cse (by node)
 	st_type_t   type;			///< type of node (st_none = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
-	struct type_s *tl;
+	const struct type_s *tl;
 	struct operand_s *value;	///< operand holding the value of this node
 	/// \name child nodes
 	/// if \a children[0] is null, the rest must be null as well. Similar for
@@ -75,7 +75,7 @@ typedef struct dagnode_s {
 	/// topological sort of the DAG.
 	//@{
 	struct dagnode_s *children[3];
-	struct type_s *types[3];	///< desired type of each operand (to alias)
+	const struct type_s *types[3];///< desired type of each operand (to alias)
 	struct set_s *edges;		///< includes nodes pointed to by \a children
 	int         offset;			///< for alias nodes
 	//@}

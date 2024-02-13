@@ -67,7 +67,7 @@ typedef struct pseudoop_s {
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	struct type_s *type;		///< possibly override def's/nil's type
+	const struct type_s *type;	///< possibly override def's/nil's type
 	int         size;			///< for structures
 	int         width;			///< for SIMD selection
 	const struct expr_s *expr;	///< expression generating this operand
@@ -146,18 +146,19 @@ extern const char * const st_type_names[];
 
 const char *optype_str (op_type_e type) __attribute__((const));
 
-operand_t *nil_operand (struct type_s *type, const struct expr_s *expr);
-operand_t *def_operand (struct def_s *def, struct type_s *type,
+operand_t *nil_operand (const struct type_s *type, const struct expr_s *expr);
+operand_t *def_operand (struct def_s *def, const struct type_s *type,
 						const struct expr_s *expr);
-operand_t *return_operand (struct type_s *type, const struct expr_s *expr);
+operand_t *return_operand (const struct type_s *type,
+						   const struct expr_s *expr);
 operand_t *value_operand (struct ex_value_s *value, const struct expr_s *expr);
 int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
 operand_t *temp_operand (const struct type_s *type, const struct expr_s *expr);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
-operand_t *offset_alias_operand (struct type_s *type, int offset,
+operand_t *offset_alias_operand (const struct type_s *type, int offset,
 								 operand_t *aop, const struct expr_s *expr);
-operand_t *alias_operand (struct type_s *type, operand_t *op,
+operand_t *alias_operand (const struct type_s *type, operand_t *op,
 						  const struct expr_s *expr);
 operand_t *label_operand (const struct expr_s *label);
 void free_operand (operand_t *op);

@@ -354,7 +354,7 @@ pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr)
 }
 
 operand_t *
-nil_operand (type_t *type, const expr_t *expr)
+nil_operand (const type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_nil, expr, __builtin_return_address (0));
@@ -365,7 +365,7 @@ nil_operand (type_t *type, const expr_t *expr)
 }
 
 operand_t *
-def_operand (def_t *def, type_t *type, const expr_t *expr)
+def_operand (def_t *def, const type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 
@@ -380,7 +380,7 @@ def_operand (def_t *def, type_t *type, const expr_t *expr)
 }
 
 operand_t *
-return_operand (type_t *type, const expr_t *expr)
+return_operand (const type_t *type, const expr_t *expr)
 {
 	symbol_t   *return_symbol;
 	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
@@ -475,7 +475,8 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 }
 
 operand_t *
-offset_alias_operand (type_t *type, int offset, operand_t *aop, const expr_t *expr)
+offset_alias_operand (const type_t *type, int offset, operand_t *aop,
+					  const expr_t *expr)
 {
 	operand_t *top;
 	def_t     *def;
@@ -534,7 +535,7 @@ offset_alias_operand (type_t *type, int offset, operand_t *aop, const expr_t *ex
 }
 
 operand_t *
-alias_operand (type_t *type, operand_t *op, const expr_t *expr)
+alias_operand (const type_t *type, operand_t *op, const expr_t *expr)
 {
 	operand_t  *aop;
 
@@ -765,10 +766,9 @@ static operand_t *
 operand_address (operand_t *reference, const expr_t *e)
 {
 	def_t      *def;
-	type_t     *type;
 	int         offset = 0;
 
-	type = reference->type;
+	auto type = reference->type;
 	switch (reference->op_type) {
 		case op_def:
 			// assumes aliasing is only one level deep which should be the
@@ -832,8 +832,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	statement_t *s;
 	const expr_t *dst_expr = e->assign.dst;
 	const expr_t *src_expr = e->assign.src;
-	type_t     *dst_type = get_type (dst_expr);
-	type_t     *src_type = get_type (src_expr);
+	auto dst_type = get_type (dst_expr);
+	auto src_type = get_type (src_expr);
 	unsigned    count;
 	const expr_t *count_expr;
 	operand_t  *dst = 0;
@@ -960,7 +960,7 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 	statement_t *s;
 	const expr_t *src_expr = e->assign.src;
 	const expr_t *dst_expr = e->assign.dst;
-	type_t     *dst_type = get_type (dst_expr);
+	auto dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
@@ -1184,7 +1184,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		const char *arg_name = va (0, ".arg%d", arg_num++);
 		def_t      *def = new_def (arg_name, 0, current_func->arguments,
 								   sc_argument);
-		type_t     *arg_type = get_type (a);
+		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
 		int         alignment = arg_type->alignment;
 		if (alignment < 4) {
@@ -1339,7 +1339,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
 				 operand_t **target)
 {
-	type_t     *type = get_type (ref);
+	auto type = get_type (ref);
 	if (!is_ptr (type)) {
 		internal_error (ref, "expected pointer in ref");
 	}
@@ -1361,7 +1361,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		type = type->t.fldptr.type;
 		if (offs) {
 			const expr_t *lv = lvalue->alias.expr;
-			type_t     *lvtype = get_type (lv);
+			auto lvtype = get_type (lv);
 			int         o = expr_int (offs);
 			if (o < 0 || o + type_size (type) > type_size (lvtype)) {
 				// not a valid offset for the type, which technically should
@@ -1482,7 +1482,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
-			type_t     *ret_type = get_type (ret_val);
+			auto ret_type = get_type (ret_val);
 
 			// at_return is used for passing the result of a void_return
 			// function through void. v6 progs always use .return for the
@@ -1496,7 +1496,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	} else {
 		if (!e->retrn.at_return && e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
-			type_t     *ret_type = get_type (ret_val);
+			auto ret_type = get_type (ret_val);
 			operand_t  *target = 0;
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
 			pr_ushort_t mode = 0;
@@ -1650,13 +1650,12 @@ static sblock_t *
 expr_alias (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
-	type_t    *type;
 	int        offset = 0;
 
 	if (e->alias.offset) {
 		offset = expr_int (e->alias.offset);
 	}
-	type = e->alias.type;
+	auto type = e->alias.type;
 	sblock = statement_subexpr (sblock, e->alias.expr, &aop);
 	*op = offset_alias_operand (type, offset, aop, e);
 	return sblock;
@@ -1780,7 +1779,7 @@ expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 	statement_t *s;
 	int         hop;
 	type_t     *res_type = e->hop.type;
-	type_t     *vec_type = get_type (e->hop.vec);
+	auto vec_type = get_type (e->hop.vec);
 
 	switch (e->hop.op) {
 		case '&':
@@ -1832,7 +1831,7 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const char *opcode = "swizzle";
 	statement_t *s;
 	int         swiz = 0;
-	type_t     *res_type = e->swizzle.type;
+	auto res_type = e->swizzle.type;
 
 	for (int i = 0; i < 4; i++) {
 		swiz |= (e->swizzle.source[i] & 3) << (2 * i);
@@ -1855,12 +1854,12 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_extend (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	type_t     *src_type = get_type (e->extend.src);
-	type_t     *res_type = e->extend.type;
+	auto src_type = get_type (e->extend.src);
+	auto res_type = e->extend.type;
 	int         src_width = type_width (src_type);
 	int         res_width = type_width (res_type);
-	type_t     *src_base = base_type (src_type);
-	type_t     *res_base = base_type (res_type);
+	auto src_base = base_type (src_type);
+	auto res_base = base_type (res_type);
 	static int mode[4][4] = {
 		{-1, 0, 1, 2},
 		{-1,-1, 3, 4},
@@ -1935,7 +1934,7 @@ statement_copy_elements (sblock_t **sblock, const expr_t *dst, const expr_t *src
 			index += statement_copy_elements (sblock, dst, e, index + base);
 		} else {
 			int         size = type_size (base_type (get_type (dst)));
-			type_t     *src_type = get_type (e);
+			auto src_type = get_type (e);
 			const expr_t *dst_ele = new_offset_alias_expr (src_type, dst,
 														 size * (index + base));
 			index += type_width (src_type);
@@ -1949,7 +1948,7 @@ static sblock_t *
 expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const expr_t *tmp;
-	type_t     *vec_type = get_type (e);
+	auto vec_type = get_type (e);
 	int         file = pr.source_file;
 	int         line = pr.source_line;
 

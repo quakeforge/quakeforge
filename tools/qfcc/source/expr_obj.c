@@ -187,9 +187,9 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	const expr_t *call;
 	keywordarg_t *m;
 	int         super = 0, class_msg = 0;
-	type_t     *rec_type = 0;
-	type_t     *return_type;
-	type_t     *method_type = &type_IMP;
+	const type_t *rec_type = nullptr;
+	const type_t *return_type;
+	const type_t *method_type = &type_IMP;
 	method_t   *method;
 	const expr_t *send_msg;
 

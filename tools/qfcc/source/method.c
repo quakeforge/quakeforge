@@ -82,7 +82,7 @@ method_free (void *_meth, void *unused)
 }
 
 method_t *
-new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
+new_method (const type_t *ret_type, param_t *selector, param_t *opt_params)
 {
 	method_t   *meth = malloc (sizeof (method_t));
 	param_t    *cmd = new_param (0, &type_SEL, "_cmd");
@@ -505,7 +505,7 @@ emit_selectors (void)
 {
 	symbol_t   *sel_sym;
 	def_t      *sel_def;
-	type_t     *sel_type;
+	const type_t *sel_type;
 	pr_sel_t   *sel;
 	selector_t **selectors, **s;
 
@@ -705,7 +705,7 @@ method_check_params (method_t *method, const expr_t *args)
 {
 	int         i, param_count;
 	const expr_t *err = 0;
-	type_t     *mtype = method->type;
+	auto mtype = method->type;
 
 	if (mtype->t.func.num_params == -1)
 		return 0;
@@ -725,13 +725,12 @@ method_check_params (method_t *method, const expr_t *args)
 	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
 		const expr_t *e = arg_list[i];
-		type_t     *arg_type = i < param_count ? mtype->t.func.param_types[i] : 0;
-		type_t     *t;
-
+		const type_t *arg_type = i < param_count ? mtype->t.func.param_types[i]
+												 : nullptr;
 		if (e->type == ex_compound) {
 			e = expr_file_line (initialized_temp_expr (arg_type, e), e);
 		}
-		t = get_type (e);
+		auto t = get_type (e);
 		if (!t) {
 			return e;
 		}

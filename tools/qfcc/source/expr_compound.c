@@ -144,7 +144,7 @@ designator_index (const designator_t *des, int ele_size, int array_size)
 }
 
 typedef struct {
-	type_t     *type;
+	const type_t *type;
 	symbol_t   *field;
 	int         offset;
 } initstate_t;
@@ -153,7 +153,7 @@ static initstate_t
 get_designated_offset (const type_t *type, const designator_t *des)
 {
 	int         offset = -1;
-	type_t     *ele_type = 0;
+	const type_t *ele_type = nullptr;
 	symbol_t   *field = 0;
 
 	if (is_struct (type) || is_union (type)) {
@@ -308,12 +308,12 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 				 element_chain_t *element_chain)
 {
 	element_t  *element;
-	type_t     *init_type = get_type (init);
+	auto init_type = get_type (init);
 	set_t      *initialized = set_new_size (type_size (init_type));
 
 	for (element = element_chain->head; element; element = element->next) {
 		int         offset = element->offset;
-		type_t     *type = element->type;
+		auto type = element->type;
 		const expr_t *alias = new_offset_alias_expr (type, init, offset);
 
 		const expr_t *c;

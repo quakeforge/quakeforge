@@ -49,14 +49,14 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/strpool.h"
 
-typedef void (*print_f) (dstring_t *dstr, type_t *, int, int);
-static void dot_print_type (dstring_t *dstr, type_t *t, int level, int id);
+typedef void (*print_f) (dstring_t *dstr, const type_t *, int, int);
+static void dot_print_type (dstring_t *dstr, const type_t *t, int level, int id);
 
 static void
-print_pointer (dstring_t *dstr, type_t *t, int level, int id)
+print_pointer (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	type_t     *aux = t->t.fldptr.type;
+	auto aux = t->t.fldptr.type;
 
 	dot_print_type (dstr, aux, level, id);
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, aux);
@@ -78,12 +78,12 @@ print_ellipsis (dstring_t *dstr, int level, int id)
 }
 
 static void
-print_function (dstring_t *dstr, type_t *t, int level, int id)
+print_function (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	const ty_func_t *func = &t->t.func;
-	type_t     *ret = func->type;
-	type_t     *param;
+	const type_t *ret = func->type;
+	const type_t *param;
 
 	dot_print_type (dstr, ret, level + 1, id);
 	if (func->num_params < 0) {
@@ -116,7 +116,7 @@ print_function (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-print_basic (dstring_t *dstr, type_t *t, int level, int id)
+print_basic (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	if (t->type == ev_ptr || t->type == ev_field) {
 		print_pointer (dstr, t, level, id);
@@ -129,7 +129,7 @@ print_basic (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-print_struct (dstring_t *dstr, type_t *t, int level, int id)
+print_struct (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	const symtab_t *symtab = t->t.symtab;
@@ -186,10 +186,10 @@ print_struct (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-print_array (dstring_t *dstr, type_t *t, int level, int id)
+print_array (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	type_t     *type = t->t.array.type;
+	auto type = t->t.array.type;
 
 	dot_print_type (dstr, type, level, id);
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, type);
@@ -204,7 +204,7 @@ print_array (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-print_class (dstring_t *dstr, type_t *t, int level, int id)
+print_class (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	dasprintf (dstr, "%*st_%p [label=\"class '%s'\"];\n", indent, "", t,
@@ -212,11 +212,11 @@ print_class (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-print_alias (dstring_t *dstr, type_t *t, int level, int id)
+print_alias (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	type_t     *aux = t->t.alias.aux_type;
-	type_t     *full = t->t.alias.full_type;
+	auto aux = t->t.alias.aux_type;
+	auto full = t->t.alias.full_type;
 
 	dot_print_type (dstr, aux, level, id);
 	dot_print_type (dstr, full, level, id);
@@ -227,7 +227,7 @@ print_alias (dstring_t *dstr, type_t *t, int level, int id)
 }
 
 static void
-dot_print_type (dstring_t *dstr, type_t *t, int level, int id)
+dot_print_type (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	static print_f print_funcs[] = {
 		print_basic,
@@ -246,7 +246,7 @@ dot_print_type (dstring_t *dstr, type_t *t, int level, int id)
 	}
 	if (t->printid == id)		// already printed this type
 		return;
-	t->printid = id;
+	((type_t *) t)->printid = id;
 
 	if ((unsigned) t->meta >= sizeof (print_funcs) / sizeof (print_funcs[0])) {
 		dasprintf (dstr, "%*se_%p [label=\"(bad type meta)\\n%d\"];\n",

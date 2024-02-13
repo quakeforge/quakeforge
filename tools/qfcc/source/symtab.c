@@ -83,7 +83,7 @@ new_symbol (const char *name)
 }
 
 symbol_t *
-new_symbol_type (const char *name, type_t *type)
+new_symbol_type (const char *name, const type_t *type)
 {
 	symbol_t   *symbol;
 	symbol = new_symbol (name);
@@ -213,7 +213,7 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent, stab_type_e type)
 }
 
 symbol_t *
-make_symbol (const char *name, type_t *type, defspace_t *space,
+make_symbol (const char *name, const type_t *type, defspace_t *space,
 			 storage_class_t storage)
 {
 	symbol_t   *sym;

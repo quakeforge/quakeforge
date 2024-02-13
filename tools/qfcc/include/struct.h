@@ -35,36 +35,36 @@ struct def_s;
 enum storage_class_e;
 struct symbol_s;
 struct symtab_s;
-struct type_s;
+typedef struct type_s type_t;
 
 typedef struct {
 	const char *name;
-	struct type_s *type;
+	const type_t *type;
 	void (*emit) (struct def_s *def, void *data, int index);
 } struct_def_t;
 
-struct symbol_s *find_handle (struct symbol_s *tag, struct type_s *type);
+struct symbol_s *find_handle (struct symbol_s *tag, const type_t *type);
 
 struct symtab_s *start_struct (int *su, struct symbol_s *tag,
 							   struct symtab_s *parent);
 struct symbol_s *find_struct (int su, struct symbol_s *tag,
-							  struct type_s *type);
+							  const type_t *type);
 struct symbol_s *build_struct (int su, struct symbol_s *tag,
-							   struct symtab_s *symtab, struct type_s *type,
+							   struct symtab_s *symtab, const type_t *type,
 							   int base);
 struct symbol_s *find_enum (struct symbol_s *tag);
 struct symtab_s *start_enum (struct symbol_s *enm);
 struct symbol_s *finish_enum (struct symbol_s *sym);
 void add_enum (struct symbol_s *enm, struct symbol_s *name,
 			   const struct expr_s *val);
-int enum_as_bool (struct type_s *enm, struct expr_s **zero,
+int enum_as_bool (const type_t *enm, struct expr_s **zero,
 				  struct expr_s **one);
 
 struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
-								 struct type_s *type);
+								 const type_t *type);
 struct defspace_s;
 struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
-							   struct type_s *type, void *data,
+							   const type_t *type, void *data,
 							   struct defspace_s *space,
 							   enum storage_class_e storage);
 

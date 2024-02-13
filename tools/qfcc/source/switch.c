@@ -130,8 +130,8 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 	if (!switch_block->test)
 		internal_error (value, "broken switch block");
 	if (value) {
-		type_t     *type = get_type (switch_block->test);
-		type_t     *val_type = get_type (value);
+		auto type = get_type (switch_block->test);
+		auto val_type = get_type (value);
 		if (!type)
 			return 0;
 		if (!type_assignable (type, get_type (value)))
@@ -380,7 +380,7 @@ check_enum_switch (switch_block_t *switch_block)
 {
 	case_label_t cl;
 	symbol_t   *enum_val;
-	type_t     *type = get_type (switch_block->test);
+	auto type = get_type (switch_block->test);
 
 	for (enum_val = type->t.symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
@@ -410,7 +410,7 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 	case_label_t _default_label;
 	case_label_t *default_label = &_default_label;
 	expr_t     *sw = new_block_expr (0);
-	type_t     *type = get_type (switch_block->test);
+	auto type = get_type (switch_block->test);
 	const expr_t *sw_val = new_temp_def_expr (type);
 	const expr_t *default_expr;
 	int         num_labels = 0;
