@@ -746,7 +746,7 @@ float_type (const type_t *base)
 }
 
 type_t *
-array_type (type_t *aux, int size)
+array_type (const type_t *aux, int size)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -763,7 +763,7 @@ array_type (type_t *aux, int size)
 	}
 	new->t.array.size = size;
 	if (aux) {
-		new = find_type (append_type (new, aux));
+		new = find_type (append_type (new, (type_t *) aux));
 	}
 	return new;
 }

@@ -199,7 +199,7 @@ type_t *uint_type (const type_t *base) __attribute__((pure));
 */
 type_t *float_type (const type_t *base) __attribute__((pure));
 
-type_t *array_type (type_t *aux, int size);
+type_t *array_type (const type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
 type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
