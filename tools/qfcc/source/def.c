@@ -594,8 +594,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	if (!sym->s.def) {
 		if (is_array (sym->type) && !type_size (sym->type)
 			&& init && init->type == ex_compound) {
-			sym->type = array_type (sym->type->t.array.type,
-									num_elements (init));
+			auto ele_type = dereference_type (sym->type);
+			sym->type = array_type (ele_type, num_elements (init));
 		}
 		if (sym->type == &type_auto) {
 			if (init) {
