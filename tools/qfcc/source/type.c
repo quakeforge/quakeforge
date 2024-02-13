@@ -834,8 +834,8 @@ unalias_type (const type_t *type)
 const type_t *
 dereference_type (const type_t *type)
 {
-	if (!is_ptr (type) && !is_field (type)) {
-		internal_error (0, "dereference non pointer/field type");
+	if (!is_ptr (type) && !is_field (type) && !is_array (type)) {
+		internal_error (0, "dereference non pointer/field/array type");
 	}
 	if (type->meta == ty_alias) {
 		type = type->t.alias.full_type;
