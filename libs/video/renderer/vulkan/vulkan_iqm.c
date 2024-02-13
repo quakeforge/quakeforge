@@ -345,16 +345,19 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass, bool shadow)
 	vec4f_t    *bone_data;
 	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
 						0, (void **)&bone_data);
-	for (int i = 0; i < iqm->num_joints; i++) {
-		vec4f_t    *b = bone_data + (ctx->curFrame * iqm->num_joints + i) * 3;
-		mat4f_t     f;
-		// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v, but
-		// the shader wants a 3x4 (column x row) matrix for v * m, which is
-		// just a transpose (and drop of the 4th column) away.
-		mat4ftranspose (f, (vec4f_t *) &frame[i]);
-		// copy only the first 3 columns
-		memcpy (b, f, 3 * sizeof (vec4f_t));
-	}
+	memcpy (bone_data + ctx->curFrame * iqm->num_joints * 3, frame,
+			iqm->num_joints * sizeof (iqmframe_t));
+	//for (int i = 0; i < iqm->num_joints; i++) {
+	//	vec4f_t    *b = bone_data + (ctx->curFrame * iqm->num_joints + i) * 3;
+	//	//mat4f_t     f;
+	//	// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v, but
+	//	// the shader wants a 3x4 (column x row) matrix for v * m, which is
+	//	// just a transpose (and drop of the 4th column) away.
+	//	//mat4ftranspose (f, (vec4f_t *) &frame[i]);
+	//	// copy only the first 3 columns
+	//	//memcpy (b, f, 3 * sizeof (vec4f_t));
+	//	memcpy (b, &frame[i], sizeof (iqmframe_t));
+	//}
 #define a(x) ((x) & ~0x3f)
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,

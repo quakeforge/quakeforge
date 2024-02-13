@@ -33,6 +33,14 @@ layout (location = 2) out vec3 normal;
 //layout (location = 4) out vec3 bitangent;
 //layout (location = 5) out vec4 color;
 
+vec3
+qmul (vec4 q, vec3 v)
+{
+	vec3 uv = cross (q.xyz, v);
+	vec3 uuv = cross (q.xyz, uv);
+	return v + ((uv * q.w) + uuv) * 2;
+}
+
 void
 main (void)
 {
@@ -40,17 +48,28 @@ main (void)
 	m += bones[vbones.y] * vweights.y;
 	m += bones[vbones.z] * vweights.z;
 	m += bones[vbones.w] * vweights.w;
+#if 0
 	m += mat3x4(1,0,0,0,0,1,0,0,0,0,1,0) * (1 - dot(vweights, vec4(1,1,1,1)));
-	vec4        pos = Model * vec4 (vec4(vposition, 1) * m, 1);
+	vec4        pos = vec4 (vec4(vposition, 1) * m, 1);
+#else
+	m += mat3x4(0,0,0,0,0,0,0,1,1,1,1,0) * (1 - dot(vweights, vec4(1,1,1,1)));
+	m[1] /= sqrt(dot(m[1], m[1]));
+	vec4 pos = m[0] + vec4 (qmul (m[1], m[2].xyz * vposition), 1);
+#endif
+	pos = Model * pos;
 	gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 
 	if (!IQMDepthOnly) {
 		texcoord = vtexcoord;
 		position = pos;
+#if 0
 		mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz),
 							  cross(m[2].xyz, m[0].xyz),
 							  cross(m[0].xyz, m[1].xyz));
 		normal = normalize (mat3 (Model) * vnormal * adjTrans);
+#else
+		normal = normalize (mat3 (Model) * qmul (m[1], vnormal));
+#endif
 		//tangent = mat3 (Model) * vtangent.xyz * adjTrans;
 		//tangent = normalize (tangent - dot (tangent, normal) * normal);
 		//bitangent = cross (normal, tangent) * vtangent.w;

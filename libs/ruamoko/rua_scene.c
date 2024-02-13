@@ -38,6 +38,7 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/render.h"
@@ -49,6 +50,7 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
+#include "r_local.h"
 #include "rua_internal.h"
 
 typedef struct rua_scene_s {
@@ -339,6 +341,35 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	auto renderer = Entity_GetRenderer (ent);
 	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
+}
+
+static void
+bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	R_INT (pr) = 0;
+
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	auto renderer = Entity_GetRenderer (ent);
+	if (!renderer || !renderer->model) {
+		return;
+	}
+	auto model = renderer->model;
+	auto iqm = (iqm_t *) model->alias;
+	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
+
+	if (model->type != mod_iqm || !iqm->num_joints) {
+		return;
+	}
+
+	auto anim = Entity_GetAnimation (ent);
+	float blend = R_IQMGetLerpedFrames (anim, iqm);
+	auto f = R_IQMBlendFrames (iqm, anim->pose1, anim->pose2, blend, 0);
+	memcpy (frame, f, iqm->num_joints * sizeof (frame[0]));
+
+	R_INT (pr) = 1;
 }
 
 static void
@@ -667,6 +698,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_GetPoseFrame,			2, p(ulong), p(ptr)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),

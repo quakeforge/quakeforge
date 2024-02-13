@@ -70,48 +70,110 @@ R_IQMGetLerpedFrames (animation_t *animation, iqm_t *iqm)
 	return R_EntityBlend (animation, frame, 1.0 / anim->framerate);
 }
 
+static vec4f_t
+iqm_translate (const iqm_t *iqm, const iqmpose_t *pose, int frame)
+{
+	auto data = iqm->framedata + frame * iqm->num_framechannels;
+	auto offset = &pose->channeloffset[0];
+	auto base = &pose->channelbase[0];
+	auto scale = &pose->channelscale[0];
+	vec4f_t t = { VectorExpand (offset) };
+	for (int i = 0; i < 3; i++) {
+		if (pose->mask & (1<<i)) {
+			t[i] += data[base[i]] * scale[i];
+		}
+	}
+	return t;
+}
+
+static vec4f_t
+iqm_rotate (const iqm_t *iqm, const iqmpose_t *pose, int frame)
+{
+	auto data = iqm->framedata + frame * iqm->num_framechannels;
+	auto offset = &pose->channeloffset[3];
+	auto base = &pose->channelbase[3];
+	auto scale = &pose->channelscale[3];
+	vec4f_t r = { QuatExpand (offset) };
+	for (int i = 0; i < 4; i++) {
+		if (pose->mask & (1<<(i + 3))) {
+			r[i] += data[base[i]] * scale[i];
+		}
+	}
+	return r;
+}
+
+static vec4f_t
+iqm_scale (const iqm_t *iqm, const iqmpose_t *pose, int frame)
+{
+	auto data = iqm->framedata + frame * iqm->num_framechannels;
+	auto offset = &pose->channeloffset[7];
+	auto base = &pose->channelbase[7];
+	auto scale = &pose->channelscale[7];
+	vec4f_t s = { VectorExpand (offset) };
+	for (int i = 0; i < 3; i++) {
+		if (pose->mask & (1<<(i + 7))) {
+			s[i] += data[base[i]] * scale[i];
+		}
+	}
+	return s;
+}
+
+static void
+iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
+{
+	iqmframe_t t = {
+		.translate = qvmulf (a->rotate, b->translate) + a->translate,
+		.rotate = qmulf (a->rotate, b->rotate),
+		.scale = a->scale * b->scale,
+	};
+	*c = t;
+}
+
 iqmframe_t *
 R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 				  int extra)
 {
 	qfZoneScoped (true);
 	iqmframe_t *frame;
-	int         i;
 
 	frame = Hunk_TempAlloc (0, iqm->num_joints * sizeof (iqmframe_t) + extra);
-	if (iqm->num_frames) {
-#if 0
-		for (i = 0; i < iqm->num_joints; i++) {
-			iqmframe_t *f1 = &iqm->frames[frame1][i];
-			iqmframe_t *f2 = &iqm->frames[frame2][i];
-			DualQuatBlend (f1->rt, f2->rt, blend, frame[i].rt);
-			QuatBlend (f1->shear, f2->shear, blend, frame[i].shear);
-			QuatBlend (f1->scale, f2->scale, blend, frame[i].scale);
+	for (int i = 0; i < iqm->num_joints; i++) {
+		auto f = &frame[i];
+		int parent = -1;
+		if (iqm->num_frames) {
+			auto pose = &iqm->poses[i];
+			parent = pose->parent;
+
+			vec4f_t t1 = iqm_translate (iqm, pose, frame1);
+			vec4f_t r1 = iqm_rotate (iqm, pose, frame1);
+			vec4f_t s1 = iqm_scale (iqm, pose, frame1);
+
+			vec4f_t t2 = iqm_translate (iqm, pose, frame2);
+			vec4f_t r2 = iqm_rotate (iqm, pose, frame2);
+			vec4f_t s2 = iqm_scale (iqm, pose, frame2);
+
+			*f = (iqmframe_t) {
+				.translate = t1 * (1 - blend) + t2 * blend,
+				.rotate = normalf (r1 * (1 - blend) + r2 * blend),
+				.scale = s1 * (1 - blend) + s2 * blend,
+			};
+		} else {
+			iqmjoint_t *j = &iqm->joints[i];
+			parent = j->parent;
+			*f = (iqmframe_t) {
+				.translate = { VectorExpand (j->translate) },
+				.rotate = j->rotate,
+				.scale = { VectorExpand (j->scale)},
+			};
 		}
-#else
-		for (i = 0; i < iqm->num_joints; i++) {
-			iqmframe_t *f1 = &iqm->frames[frame1][i];
-			iqmframe_t *f2 = &iqm->frames[frame2][i];
-			iqmjoint   *j = &iqm->joints[i];
-			Mat4Blend ((float *) f1, (float *) f2, blend, (float*)&frame[i]);
-			if (j->parent >= 0)
-				Mat4Mult ((float*)&frame[j->parent],
-						  (float*)&frame[i], (float*)&frame[i]);
+		// Pc * Bc^-1
+		iqm_framemul (f, f, &iqm->inverse_basejoints[i]);
+		if (parent >= 0) {
+			// Bp * Pc * Bc^-1
+			iqm_framemul (f, &iqm->basejoints[parent], f);
+			// Pp * Bp^-1 * Bp * Pc * Bc^-1
+			iqm_framemul (f, &frame[parent], f);
 		}
-#endif
-	} else {
-#if 0
-		for (i = 0; i < iqm->num_joints; i++) {
-			QuatSet (0, 0, 0, 1, frame[i].rt.q0.q);
-			QuatSet (0, 0, 0, 0, frame[i].rt.qe.q);
-			QuatSet (0, 0, 0, 0, frame[i].shear);
-			QuatSet (1, 1, 1, 0, frame[i].scale);
-		}
-#else
-		for (i = 0; i < iqm->num_joints; i++) {
-			Mat4Identity ((float*)&frame[i]);
-		}
-#endif
 	}
 	return frame;
 }
@@ -121,22 +183,26 @@ R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2, float blend,
 				   int extra, iqmblend_t *blend_palette, int palette_size)
 {
 	iqmframe_t *frame;
-	int         i, j;
 
 	extra += (palette_size - iqm->num_joints) * sizeof (iqmframe_t);
 	frame = R_IQMBlendFrames (iqm, frame1, frame2, blend, extra);
-	for (i = iqm->num_joints; i < palette_size; i++) {
-		vec_t      *mat = (vec_t *) &frame[i];
+	for (int i = iqm->num_joints; i < palette_size; i++) {
 		iqmblend_t *blend = &blend_palette[i];
-		vec_t      *f;
+		auto in = &frame[blend->indices[0]];
+		auto out = &frame[i];
 
-		f = (vec_t *) &frame[blend->indices[0]];
-		Mat4Scale (f, blend->weights[0] / 255.0, mat);
-		for (j = 1; j < 4; j++) {
-			if (!blend->weights[j])
-				break;
-			f = (vec_t *) &frame[blend->indices[j]];
-			Mat4MultAdd (mat, blend->weights[j] / 255.0, f, mat);
+		float w = blend->weights[0] / 255.0;
+		*out = (iqmframe_t) {
+			.translate = in->translate * w,
+			.rotate = in->rotate * w,
+			.scale = in->scale * w,
+		};
+		for (int j = 1; j < 4 && blend->weights[j]; j++) {
+			in = &frame[blend->indices[j]];
+			w = blend->weights[0] / 255.0;
+			out->translate += in->translate * w;
+			out->rotate += in->rotate * w;
+			out->scale += in->scale * w;
 		}
 	}
 	return frame;

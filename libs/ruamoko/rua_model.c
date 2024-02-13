@@ -203,13 +203,13 @@ bi (Model_GetJoints)
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
 	auto iqm = (iqm_t *) model->alias;
-	auto joints = (iqmjoint *) P_GPOINTER (pr, 1);
+	auto joints = (iqmjoint_t *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {
 		R_INT (pr) = 0;
 		return;
 	}
-	memcpy (joints, iqm->joints, iqm->num_joints * sizeof (iqmjoint));
+	memcpy (joints, iqm->joints, iqm->num_joints * sizeof (iqmjoint_t));
 	for (int i = 0; i < iqm->num_joints; i++) {
 		char *name = iqm->text + joints[i].name;
 		joints[i].name = PR_SetString (pr, name);
@@ -242,16 +242,39 @@ bi (Model_NumFrames)
 	}
 }
 
+static void
+bi_Model_GetBaseFrame (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	R_INT (pr) = 0;
+
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto model = h->model;
+	auto iqm = (iqm_t *) model->alias;
+	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
+
+	if (model->type != mod_iqm || !iqm->num_joints) {
+		return;
+	}
+
+	memcpy (frame, iqm->basejoints, iqm->num_joints * sizeof (frame[0]));
+
+	R_INT (pr) = 1;
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	bi(Model_Load,      1, p(string)),
-	bi(Model_Unload,    1, p(ptr)),
-	bi(Model_NumJoints, 1, p(ptr)),
-	bi(Model_GetJoints, 1, p(ptr)),
-	bi(Model_NumFrames, 1, p(ptr)),
+	bi(Model_Load,          1, p(string)),
+	bi(Model_Unload,        1, p(ptr)),
+	bi(Model_NumJoints,     1, p(ptr)),
+	bi(Model_GetJoints,     1, p(ptr)),
+	bi(Model_NumFrames,     1, p(ptr)),
+	bi(Model_GetBaseFrame,  2, p(ulong), p(ptr)),
 	{0}
 };
 

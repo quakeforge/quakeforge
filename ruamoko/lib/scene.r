@@ -9,6 +9,7 @@ void Scene_SetCamera (scene_t scene, entity_t ent) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
+int Entity_GetPoseFrame (entity_t ent, void *frame) = #0;
 
 unsigned Transform_ChildCount (transform_t transform) = #0;
 transform_t Transform_GetChild (transform_t transform,
@@ -49,3 +50,4 @@ void Model_Unload (model_t model) = #0;
 int Model_NumJoints (model_t model) = #0;
 void Model_GetJoints (model_t model, void *j) = #0;
 int Model_NumFrames (model_t model) = #0;
+int Model_GetBaseFrame (model_t model, void *f) = #0;

@@ -51,6 +51,17 @@
 #include "mod_internal.h"
 #include "r_local.h"
 
+static void
+iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
+{
+	iqmframe_t t = {
+		.translate = qvmulf (a->rotate, b->translate) + a->translate,
+		.rotate = qmulf (a->rotate, b->rotate),
+		.scale = a->scale * b->scale,
+	};
+	*c = t;
+}
+
 static iqmvertexarray *
 get_vertex_arrays (const iqmheader *hdr, byte *buffer)
 {
@@ -337,7 +348,6 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 	iqmtriangle *tris;
 	iqmmesh    *meshes;
 	iqmjoint   *joints;
-	uint32_t    i;
 
 	if (!load_iqm_vertex_arrays (mod, hdr, buffer))
 		return false;
@@ -346,11 +356,11 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 	iqm->num_elements = hdr->num_triangles * 3;
 	if (iqm->num_verts > 0xfff0) {
 		iqm->elements32 = malloc (hdr->num_triangles * 3 * sizeof (uint32_t));
-		for (i = 0; i < hdr->num_triangles; i++)
+		for (uint32_t i = 0; i < hdr->num_triangles; i++)
 			VectorCopy (tris[i].vertex, iqm->elements32 + i * 3);
 	} else {
 		iqm->elements16 = malloc (hdr->num_triangles * 3 * sizeof (uint16_t));
-		for (i = 0; i < hdr->num_triangles; i++)
+		for (uint32_t i = 0; i < hdr->num_triangles; i++)
 			VectorCopy (tris[i].vertex, iqm->elements16 + i * 3);
 	}
 	if (!(meshes = get_meshes (hdr, buffer)))
@@ -362,22 +372,59 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 		return false;
 	iqm->num_joints = hdr->num_joints;
 	iqm->joints = malloc (iqm->num_joints * sizeof (iqmjoint));
+	iqm->basejoints = malloc (iqm->num_joints * sizeof (iqmframe_t));
+	iqm->inverse_basejoints = malloc (iqm->num_joints * sizeof (iqmframe_t));
 	iqm->baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
 	iqm->inverse_baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
-	memcpy (iqm->joints, joints, iqm->num_joints * sizeof (iqmjoint));
-	for (i = 0; i < hdr->num_joints; i++) {
-		iqmjoint   *j = &iqm->joints[i];
-		mat4_t     *bf = &iqm->baseframe[i];
-		mat4_t     *ibf = &iqm->inverse_baseframe[i];
-		quat_t      t;
-		float       ilen;
-		ilen = 1.0 / sqrt(QDotProduct (j->rotate, j->rotate));
-		QuatScale (j->rotate, ilen, t);
-		Mat4Init (t, j->scale, j->translate, *bf);
-		Mat4Inverse (*bf, *ibf);
+	for (uint32_t i = 0; i < hdr->num_joints; i++) {
+		auto j = &joints[i];
+		iqm->joints[i] = (iqmjoint_t) {
+			.translate = { VectorExpand (j->translate) },
+			.name = j->name,
+			.rotate = { QuatExpand (j->rotate) },
+			.scale = { VectorExpand (j->scale) },
+			.parent = j->parent,
+		};
+	}
+	for (uint32_t i = 0; i < hdr->num_joints; i++) {
+		iqmjoint_t *j = &iqm->joints[i];
+		iqmframe_t *bj = &iqm->basejoints[i];
+		iqmframe_t *ibj = &iqm->inverse_basejoints[i];
+		mat4f_t    *bf = &iqm->baseframe[i];
+		mat4f_t    *ibf = &iqm->inverse_baseframe[i];
+
+		*bj = (iqmframe_t) {
+			.translate = loadvec3f (j->translate),
+			.rotate = normalf (j->rotate),
+			.scale = loadvec3f (j->scale),
+		};
+		*ibj = (iqmframe_t) {
+			.translate = vqmulf (-bj->translate, bj->rotate),
+			.rotate = qconjf (bj->rotate),
+			.scale = 1/bj->scale,
+		};
+		// the above division results in scale.w being infinite, which will
+		// leads to nan when scales are multiplied
+		ibj->scale[3] = 0;
+
+		mat4fquat (*bf, bj->rotate);
+		(*bf)[0] *= bj->scale[0];
+		(*bf)[1] *= bj->scale[1];
+		(*bf)[2] *= bj->scale[2];
+		(*bf)[3] = bj->translate + (vec4f_t) {0, 0, 0, 1};
+		mat4fquat (*ibf, ibj->rotate);
+		(*ibf)[0] *= ibj->scale[0];
+		(*ibf)[1] *= ibj->scale[1];
+		(*ibf)[2] *= ibj->scale[2];
+		(*ibf)[3] = ibj->translate + (vec4f_t) {0, 0, 0, 1};
 		if (j->parent >= 0) {
-			Mat4Mult (iqm->baseframe[j->parent], *bf, *bf);
-			Mat4Mult (*ibf, iqm->inverse_baseframe[j->parent], *ibf);
+			auto pbj = &iqm->basejoints[j->parent];
+			auto pibj = &iqm->inverse_basejoints[j->parent];
+			iqm_framemul (bj, pbj, bj);
+			iqm_framemul (ibj, ibj, pibj);
+
+			mmulf (*bf, iqm->baseframe[j->parent], *bf);
+			mmulf (*ibf, *ibf, iqm->inverse_baseframe[j->parent]);
 		}
 	}
 	return true;
@@ -387,18 +434,15 @@ static bool
 load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
 	iqm_t      *iqm = (iqm_t *) mod->alias;
-	iqmanim    *anims;
-	iqmpose    *poses;
-	uint16_t   *framedata;
-	uint32_t    i, j;
 
-	if (hdr->num_poses != hdr->num_joints)
+	if (hdr->num_poses != hdr->num_joints) {
 		return false;
+	}
 
 	iqm->num_anims = hdr->num_anims;
 	iqm->anims = malloc (hdr->num_anims * sizeof (iqmanim));
-	anims = (iqmanim *) (buffer + hdr->ofs_anims);
-	for (i = 0; i < hdr->num_anims; i++) {
+	auto anims = (iqmanim *) (buffer + hdr->ofs_anims);
+	for (uint32_t i = 0; i < hdr->num_anims; i++) {
 		iqm->anims[i].name = LittleLong (anims[i].name);
 		iqm->anims[i].first_frame = LittleLong (anims[i].first_frame);
 		iqm->anims[i].num_frames = LittleLong (anims[i].num_frames);
@@ -406,94 +450,33 @@ load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 		iqm->anims[i].flags = LittleLong (anims[i].flags);
 	}
 
-	poses = (iqmpose *) (buffer + hdr->ofs_poses);
-	for (i = 0; i < hdr->num_poses; i++) {
-		poses[i].parent = LittleLong (poses[i].parent);
-		poses[i].mask = LittleLong (poses[i].mask);
-		for (j = 0; j < 10; j++) {
-			poses[i].channeloffset[j] = LittleFloat(poses[i].channeloffset[j]);
-			poses[i].channelscale[j] = LittleFloat (poses[i].channelscale[j]);
-		}
+	uint32_t num_framedata = hdr->num_frames * hdr->num_framechannels;
+	iqm->framedata = malloc (num_framedata * sizeof (iqmpose_t));
+	auto framedata = (uint16_t *) (buffer + hdr->ofs_frames);
+	for (uint32_t i = 0; i < num_framedata; i++) {
+		iqm->framedata[i] = LittleShort (framedata[i]);
 	}
-
-	framedata = (uint16_t *) (buffer + hdr->ofs_frames);
-	for (i = 0; i < hdr->num_frames * hdr->num_framechannels; i++)
-		framedata[i] = LittleShort (framedata[i]);
-
 	iqm->num_frames = hdr->num_frames;
-	iqm->frames = malloc (hdr->num_frames * sizeof (iqmframe_t *));
-	iqm->frames[0] = malloc (hdr->num_frames * hdr->num_poses
-							 * sizeof (iqmframe_t));
+	iqm->num_framechannels = hdr->num_framechannels;
 
-	for (i = 0; i < hdr->num_frames; i++) {
-		iqm->frames[i] = iqm->frames[0] + i * hdr->num_poses;
-		for (j = 0; j < hdr->num_poses; j++) {
-			iqmframe_t *frame = &iqm->frames[i][j];
-			iqmpose    *p = &poses[j];
-			quat_t      rotation;
-			vec3_t      scale, translation;
-			mat4_t      mat;
-			float       ilen;
-
-			translation[0] = p->channeloffset[0];
-			if (p->mask & 0x001)
-				translation[0] += *framedata++ * p->channelscale[0];
-			translation[1] = p->channeloffset[1];
-			if (p->mask & 0x002)
-				translation[1] += *framedata++ * p->channelscale[1];
-			translation[2] = p->channeloffset[2];
-			if (p->mask & 0x004)
-				translation[2] += *framedata++ * p->channelscale[2];
-
-			rotation[0] = p->channeloffset[3];
-			if (p->mask & 0x008)
-				rotation[0] += *framedata++ * p->channelscale[3];
-			rotation[1] = p->channeloffset[4];
-			if (p->mask & 0x010)
-				rotation[1] += *framedata++ * p->channelscale[4];
-			rotation[2] = p->channeloffset[5];
-			if (p->mask & 0x020)
-				rotation[2] += *framedata++ * p->channelscale[5];
-			rotation[3] = p->channeloffset[6];
-			if (p->mask & 0x040)
-				rotation[3] += *framedata++ * p->channelscale[6];
-
-			scale[0] = p->channeloffset[7];
-			if (p->mask & 0x080)
-				scale[0] += *framedata++ * p->channelscale[7];
-			scale[1] = p->channeloffset[8];
-			if (p->mask & 0x100)
-				scale[1] += *framedata++ * p->channelscale[8];
-			scale[2] = p->channeloffset[9];
-			if (p->mask & 0x200)
-				scale[2] += *framedata++ * p->channelscale[9];
-
-			ilen = 1.0 / sqrt(QDotProduct (rotation, rotation));
-			QuatScale (rotation, ilen, rotation);
-			Mat4Init (rotation, scale, translation, mat);
-			if (p->parent >= 0)
-				Mat4Mult (iqm->baseframe[p->parent], mat, mat);
-#if 0
-			Mat4Mult (mat, iqm->inverse_baseframe[j], mat);
-			// convert the matrix to dual quaternion + shear + scale
-			Mat4Decompose (mat, frame->rt.q0.q, frame->shear, frame->scale,
-						   frame->rt.qe.sv.v);
-			frame->rt.qe.sv.s = 0;
-			// apply the inverse of scale and shear to translation so
-			// everything works out properly in the shader.
-			// Normally v' = T*Sc*Sh*R*v, but with the dual quaternion, we get
-			// v' = Sc*Sh*T'*R*v
-			VectorCompDiv (frame->rt.qe.sv.v, frame->scale, frame->rt.qe.sv.v);
-			VectorUnshear (frame->shear, frame->rt.qe.sv.v, frame->rt.qe.sv.v);
-			// Dual quaternions need 1/2 translation.
-			VectorScale (frame->rt.qe.sv.v, 0.5, frame->rt.qe.sv.v);
-			// and tranlation * rotation
-			QuatMult (frame->rt.qe.q, frame->rt.q0.q, frame->rt.qe.q);
-#else
-			Mat4Mult (mat, iqm->inverse_baseframe[j], (float *)frame);
-#endif
+	iqm->poses = malloc (hdr->num_poses * sizeof (iqmpose_t));
+	auto poses = (iqmpose *) (buffer + hdr->ofs_poses);
+	uint32_t offset = 0;
+	for (uint32_t i = 0; i < hdr->num_poses; i++) {
+		auto in = &poses[i];
+		auto out = &iqm->poses[i];
+		*out = (iqmpose_t) {
+			.parent = LittleLong (in->parent),
+			.mask = LittleLong (in->mask),
+		};
+		for (int j = 0; j < 10; j++) {
+			out->channeloffset[j] = LittleFloat (in->channeloffset[j]);
+			out->channelscale[j] = LittleFloat (in->channelscale[j]);
+			out->channelbase[j] = offset;
+			offset += (in->mask >> j) & 1;
 		}
 	}
+
 	return true;
 }
 
@@ -538,13 +521,12 @@ Mod_FreeIQM (iqm_t *iqm)
 		free (iqm->elements16);
 	free (iqm->meshes);
 	free (iqm->joints);
+	free (iqm->basejoints);
+	free (iqm->inverse_basejoints);
 	free (iqm->baseframe);
 	free (iqm->inverse_baseframe);
 	free (iqm->anims);
-	if (iqm->frames) {
-		free (iqm->frames[0]);
-		free (iqm->frames);
-	}
+	free (iqm->poses);
 	free (iqm);
 }
 

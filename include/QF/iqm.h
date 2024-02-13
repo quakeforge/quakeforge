@@ -2,12 +2,13 @@
 #define __QF_iqm_h
 
 #include "QF/qtypes.h"
+#include "QF/simd/types.h"
 
 #define IQM_MAGIC "INTERQUAKEMODEL"
 #define IQM_SMAGIC 0x45544e49
 #define IQM_VERSION 2
 
-typedef struct iqmheader_s {
+typedef struct {
     char        magic[16];
     uint32_t    version;
     uint32_t    filesize;
@@ -24,7 +25,7 @@ typedef struct iqmheader_s {
     uint32_t    num_extensions, ofs_extensions;
 } iqmheader;
 
-typedef struct iqmmesh_s {
+typedef struct {
     uint32_t    name;
     uint32_t    material;
     uint32_t    first_vertex, num_vertexes;
@@ -54,30 +55,30 @@ typedef enum : uint32_t {
     IQM_DOUBLE = 8
 } iqmformat;
 
-typedef struct iqmtriangle_s {
+typedef struct {
     uint32_t    vertex[3];
 } iqmtriangle;
 
-typedef struct iqmjointv1_s {
+typedef struct {
     uint32_t    name;
     int32_t     parent;
     float       translate[3], rotate[3], scale[3];
 } iqmjointv1;
 
-typedef struct iqmjoint_s {
+typedef struct {
     uint32_t    name;
     int32_t     parent;
     float       translate[3], rotate[4], scale[3];
 } iqmjoint;
 
-typedef struct iqmposev1_s {
+typedef struct {
     int32_t     parent;
     uint32_t    mask;
     float       channeloffset[9];
     float       channelscale[9];
 } iqmposev1;
 
-typedef struct iqmpose_s {
+typedef struct {
     int32_t     parent;
     uint32_t    mask;
     float       channeloffset[10];
@@ -88,14 +89,14 @@ typedef enum : uint32_t {
     IQM_LOOP = 1<<0
 } iqmanimflags;
 
-typedef struct iqmanim_s {
+typedef struct {
     uint32_t    name;
     uint32_t    first_frame, num_frames;
     float       framerate;
     iqmanimflags flags;
 } iqmanim;
 
-typedef struct iqmvertexarray_s {
+typedef struct {
     iqmverttype type;
     uint32_t    flags;
     iqmformat   format;
@@ -103,12 +104,12 @@ typedef struct iqmvertexarray_s {
     uint32_t    offset;
 } iqmvertexarray;
 
-typedef struct iqmbounds_s {
+typedef struct {
     float       bbmin[3], bbmax[3];
     float       xyradius, radius;
 } iqmbounds;
 
-typedef struct iqmextension_s {
+typedef struct {
     uint32_t    name;
     uint32_t    num_data, ofs_data;
     uint32_t    ofs_extensions; // pointer to next extension
@@ -116,10 +117,27 @@ typedef struct iqmextension_s {
 
 // QF stuff
 
+//Rearranged version if iqmjoint so rotate is aligned
+typedef struct iqmjoint_s {
+    float       translate[3];
+    uint32_t    name;
+	vec4f_t     rotate;
+	float       scale[3];
+    int32_t     parent;
+} iqmjoint_t;
+
+typedef struct iqmpose_s {
+    int32_t     parent;
+    uint32_t    mask;
+    float       channeloffset[10];
+	uint32_t    channelbase[10];
+    float       channelscale[10];
+} iqmpose_t;
+
 typedef struct {
-	DualQuat_t  rt;
-	quat_t      shear;
-	quat_t      scale;
+	vec4f_t     translate;
+	vec4f_t     rotate;
+	vec4f_t     scale;
 } iqmframe_t;
 
 typedef struct {
@@ -142,11 +160,15 @@ typedef struct iqm_s {
 	int         num_arrays;
 	iqmvertexarray *vertexarrays;
 	int         num_joints;
-	iqmjoint   *joints;
-	mat4_t     *baseframe;
-	mat4_t     *inverse_baseframe;
+	iqmjoint_t *joints;
+	iqmframe_t *basejoints;
+	iqmframe_t *inverse_basejoints;
+	mat4f_t    *baseframe;
+	mat4f_t    *inverse_baseframe;
 	int         num_frames;
-	iqmframe_t **frames;
+	int         num_framechannels;
+	uint16_t   *framedata;
+	iqmpose_t  *poses;	// pose joints. 0, or one per joint
 	int         num_anims;
 	iqmanim    *anims;
 	void       *extra_data;
