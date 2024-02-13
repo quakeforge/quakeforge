@@ -558,7 +558,7 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (!is_array (def->type) || !is_method(def->type->t.array.type))
+	if (!is_array (def->type) || !is_method(dereference_type (def->type)))
 		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -638,7 +638,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	pr_method_description_t *desc;
 
 	if (!is_array (def->type)
-		|| !is_method_description(def->type->t.array.type)) {
+		|| !is_method_description(dereference_type (def->type))) {
 		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
 	}

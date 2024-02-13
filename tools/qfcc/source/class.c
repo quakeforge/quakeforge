@@ -310,7 +310,7 @@ emit_instance_defs (def_t *def, void *data, int index)
 {
 	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
+	if (!is_array (def->type) || !is_ptr (dereference_type (def->type)))
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->num_instances + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
@@ -1535,7 +1535,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
+	if (!is_array (def->type) || !is_ptr (dereference_type (def->type)))
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
@@ -1843,7 +1843,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 	protocollist_t *protocols = (protocollist_t *) data;
 	protocol_t *protocol = protocols->list[index];
 
-	if (!is_array (def->type) || !is_ptr(def->type->t.array.type)) {
+	if (!is_array (def->type) || !is_ptr(dereference_type (def->type))) {
 		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
 	}
 	if (index < 0 || index >= protocols->count) {

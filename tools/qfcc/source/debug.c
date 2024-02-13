@@ -173,7 +173,7 @@ emit_num_files (def_t *def, void *data, int index)
 static void
 emit_files_item (def_t *def, void *data, int index)
 {
-	if (!is_array (def->type) || !is_string (def->type->t.array.type)) {
+	if (!is_array (def->type) || !is_string (dereference_type (def->type))) {
 		internal_error (0, "%s: expected array of string def", __FUNCTION__);
 	}
 	if ((unsigned) index >= pr.comp_files.size) {

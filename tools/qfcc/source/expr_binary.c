@@ -1341,11 +1341,11 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		e2 = cast_expr (t2, e2);
 	}
 	if (is_array (t1) && (is_ptr (t2) || is_integral (t2))) {
-		t1 = pointer_type (t1->t.array.type);
+		t1 = pointer_type (dereference_type (t1));
 		e1 = cast_expr (t1, e1);
 	}
 	if (is_array (t2) && (is_ptr (t1) || is_integral (t1))) {
-		t2 = pointer_type (t2->t.array.type);
+		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}
 

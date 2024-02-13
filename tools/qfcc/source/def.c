@@ -153,7 +153,8 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
+	if (is_class (type)
+		|| (is_array (type) && is_class(dereference_type (type)))) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;

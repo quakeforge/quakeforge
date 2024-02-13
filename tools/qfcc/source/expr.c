@@ -2590,7 +2590,7 @@ array_expr (const expr_t *array, const expr_t *index)
 		return error (index, "array index out of bounds");
 	}
 	if (is_array (array_type)) {
-		ele_type = array_type->t.array.type;
+		ele_type = dereference_type (array_type);
 		base = new_int_expr (array_type->t.array.base);
 	} else if (is_ptr (array_type)) {
 		ele_type = array_type->t.fldptr.type;

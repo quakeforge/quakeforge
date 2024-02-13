@@ -162,7 +162,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = field->type;
 	} else if (is_array (type)) {
 		int         array_size = type->t.array.size;
-		ele_type = type->t.array.type;
+		ele_type = dereference_type (type);
 		offset = designator_index (des, type_size (ele_type), array_size);
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
@@ -230,7 +230,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			state.offset = state.field->s.offset;
 		}
 	} else if (is_array (type)) {
-		state.type = type->t.array.type;
+		state.type = dereference_type (type);
 	} else {
 		internal_error (eles, "invalid initialization");
 	}
