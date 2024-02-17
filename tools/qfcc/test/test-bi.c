@@ -96,15 +96,27 @@ bi_remove (progs_t *pr, void *data)
 	ED_Free (pr, ed);
 }
 
+static void
+bi_ptr_valid (progs_t *pr, void *data)
+{
+	pr_ptr_t    ptr = P_POINTER (pr, 0);
+	R_INT (pr) = 1;
+	// check for null pointers (or nearly null)
+	R_INT (pr) &= !(ptr < pr->null_size);
+	// pointer is too large
+	R_INT (pr) &= !(ptr >= pr->globals_size);
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	bi(printf,   -2, p(string)),
-	bi(errno,    0),
-	bi(strerror, 1, p(int)),
-	bi(exit,     1, p(int)),
-	bi(spawn,    0),
-	bi(remove,   1, p(entity)),
+	bi(printf,      -2, p(string)),
+	bi(errno,       0),
+	bi(strerror,    1, p(int)),
+	bi(exit,        1, p(int)),
+	bi(spawn,       0),
+	bi(remove,      1, p(entity)),
+	bi(ptr_valid,   1, p(ptr)),
 	{0}
 };
 
