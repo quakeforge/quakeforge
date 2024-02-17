@@ -930,6 +930,29 @@ follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 }
 
 static void
+flow_find_ptr (set_t *use, set_t *use_ptr, statement_t *st, function_t *func)
+{
+	set_t      *ptr = set_new ();
+	set_t      *visited = set_new ();
+	for (int i = 0; i < st->num_use; i++) {
+		udchain_t   ud = func->ud_chains[i + st->first_use];
+		set_empty (visited);
+		set_add (visited, st->number);
+		if (set_is_member (use_ptr, ud.var)) {
+			set_empty (ptr);
+			follow_ud_chain (ud, func, ptr, visited);
+			for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
+				flowvar_t  *var = func->vars[p->element];
+				flow_add_op_var (use, var->op, 0);
+				flowvar_add_use (var, st);
+			}
+		}
+	}
+	set_delete (visited);
+	set_delete (ptr);
+}
+
+static void
 flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 {
 	if (!func->ud_chains) {
@@ -937,8 +960,6 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 	}
 	set_t      *use_ptr = set_new ();
 	set_t      *def_ptr = set_new ();
-	set_t      *ptr = set_new ();
-	set_t      *visited = set_new ();
 
 	int         have_use = 0;
 	for (operand_t *op = st->use; op; op = op->next) {
@@ -953,20 +974,28 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 		}
 	}
 	if (have_use) {
-		for (int i = 0; i < st->num_use; i++) {
-			udchain_t   ud = func->ud_chains[i + st->first_use];
-			set_empty (visited);
-			set_add (visited, st->number);
-			if (set_is_member (use_ptr, ud.var)) {
-				set_empty (ptr);
-				follow_ud_chain (ud, func, ptr, visited);
-				for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
-					flowvar_t  *var = func->vars[p->element];
-					flow_add_op_var (use, var->op, 0);
-					flowvar_add_use (var, st);
-				}
-			}
-		}
+		flow_find_ptr (use, use_ptr, st, func);
+	}
+
+	set_delete (use_ptr);
+	set_delete (def_ptr);
+}
+
+static void
+flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
+{
+	if (!func->ud_chains) {
+		return;
+	}
+	set_t      *use_ptr = set_new ();
+	set_t      *def_ptr = set_new ();
+	set_t      *ptr = set_new ();
+	set_t      *visited = set_new ();
+
+	set_add (use_ptr, flow_get_var (st->opa)->number);
+	set_add (def_ptr, flow_get_var (st->opc)->number);
+	if (use) {
+		flow_find_ptr (use, use_ptr, st, func);
 	}
 
 	set_delete (visited);
@@ -1169,6 +1198,8 @@ flow_build_chains (flowgraph_t *graph)
 				if (st->type == st_func && statement_is_call (st)) {
 					// set def later?
 					flow_check_params (st, stuse, 0, graph->func);
+				} else if (st->type == st_ptrmove) {
+					flow_check_move (st, stuse, 0, graph->func);
 				}
 				set_empty (tmp);
 				for (set_iter_t *vi = set_first (stuse); vi;
@@ -1199,6 +1230,8 @@ flow_build_chains (flowgraph_t *graph)
 				if (st->type == st_func && statement_is_call (st)) {
 					// set def later?
 					flow_check_params (st, stuse, 0, graph->func);
+				} else if (st->type == st_ptrmove) {
+					flow_check_move (st, stuse, 0, graph->func);
 				}
 				set_empty (tmp);
 				first_use[st->number] = num_ud_chains;
