@@ -836,8 +836,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	auto src_type = get_type (src_expr);
 	unsigned    count;
 	const expr_t *count_expr;
-	operand_t  *dst = 0;
-	operand_t  *size = 0;
+	operand_t  *dst = nullptr;
+	operand_t  *size = nullptr;
 	static const char *opcode_sets[][2] = {
 		{"move", "movep"},
 		{"memset", "memsetp"},
@@ -845,11 +845,11 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	const unsigned max_count = 1 << 16;
 	const char **opcode_set = opcode_sets[0];
 	const char *opcode;
-	int         need_ptr = 0;
+	bool        need_ptr = false;
 	st_type_t   type = st_move;
-	operand_t  *use = 0;
-	operand_t  *def = 0;
-	operand_t  *kill = 0;
+	operand_t  *use = nullptr;
+	operand_t  *def = nullptr;
+	operand_t  *kill = nullptr;
 
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
@@ -862,13 +862,13 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		}
 		type = st_memset;
 		if (is_indirect (dst_expr)) {
-			need_ptr = 1;
+			need_ptr = true;
 		}
 	} else {
 		if (is_indirect (src_expr)) {
 			//src_expr = expr_file_line (address_expr (src_expr, 0), e);
 			src_expr = address_expr (src_expr, 0);
-			need_ptr = 1;
+			need_ptr = true;
 		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
@@ -882,7 +882,7 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		if (op) {
 			*op = src;
 		}
-		if (is_indirect (dst_expr)) {
+		if (!need_ptr && is_indirect (dst_expr)) {
 			if (is_variable (src_expr)) {
 				// FIXME this probably needs to be more agressive
 				// shouldn't emit code...
@@ -902,7 +902,7 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 			} else {
 				src = operand_address (src, src_expr);
 			}
-			need_ptr = 1;
+			need_ptr = true;
 		}
 	}
 	if (need_ptr) {
@@ -918,7 +918,7 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		}
 		//dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		dst_expr = address_expr (dst_expr, 0);
-		need_ptr = 1;
+		need_ptr = true;
 	}
 	sblock = statement_subexpr (sblock, dst_expr, &dst);
 
@@ -961,10 +961,10 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const expr_t *src_expr = e->assign.src;
 	const expr_t *dst_expr = e->assign.dst;
 	auto dst_type = get_type (dst_expr);
-	operand_t  *src = 0;
-	operand_t  *dst = 0;
-	operand_t  *ofs = 0;
-	operand_t  *target = 0;
+	operand_t  *src = nullptr;
+	operand_t  *dst = nullptr;
+	operand_t  *ofs = nullptr;
+	operand_t  *target = nullptr;
 	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
 	st_type_t   type = st_assign;
