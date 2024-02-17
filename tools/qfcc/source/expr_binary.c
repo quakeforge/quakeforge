@@ -63,6 +63,7 @@ static const expr_t *double_compare (int op, const expr_t *e1,
 									 const expr_t *e2);
 static const expr_t *uint_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_compare (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *quat_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_dot (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_multiply (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_scale (int op, const expr_t *e1, const expr_t *e2);
@@ -288,8 +289,8 @@ static expr_type_t quat_quat[] = {
 	{'-',	&type_quaternion,
 		.anticommute = fp_com_add},
 	{'*',	&type_quaternion, .associative = always, .true_op = QMUL},
-	{EQ,	&type_int},
-	{NE,	&type_int},
+	{EQ,	.process = quat_compare},
+	{NE,	.process = quat_compare},
 	{0, 0}
 };
 
@@ -1005,6 +1006,22 @@ vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	e2 = new_alias_expr (&type_vec3, e2);
 	expr_t     *e = new_binary_expr (op, e1, e2);
 	e->expr.type = &type_ivec3;
+	return new_horizontal_expr (hop, e, &type_int);
+}
+
+static const expr_t *
+quat_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	if (options.code.progsversion < PROG_VERSION) {
+		expr_t     *e = new_binary_expr (op, e1, e2);
+		e->expr.type = &type_int;
+		return e;
+	}
+	int         hop = op == EQ ? '&' : '|';
+	e1 = new_alias_expr (&type_vec4, e1);
+	e2 = new_alias_expr (&type_vec4, e2);
+	expr_t     *e = new_binary_expr (op, e1, e2);
+	e->expr.type = &type_ivec4;
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
