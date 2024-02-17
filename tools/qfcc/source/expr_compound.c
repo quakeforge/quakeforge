@@ -251,7 +251,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 
 		if (ele->expr && ele->expr->type == ex_compound) {
 			build_element_chain (element_chain, state.type, ele->expr,
-								 state.offset);
+								 base_offset + state.offset);
 		} else {
 			element_t  *element = new_element (0, 0);
 			element->type = state.type;
