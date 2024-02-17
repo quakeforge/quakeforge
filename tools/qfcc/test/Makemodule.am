@@ -20,6 +20,7 @@ test_progs_dat=\
 	tools/qfcc/test/chewed-return.dat \
 	tools/qfcc/test/comma-expr.dat \
 	tools/qfcc/test/compound.dat \
+	tools/qfcc/test/compoundinit.dat \
 	tools/qfcc/test/const-fold-int.dat \
 	tools/qfcc/test/deadbool.dat \
 	tools/qfcc/test/dealloc-nowarn.dat \
@@ -264,6 +265,16 @@ tools/qfcc/test/compound.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(compound_dep) # am--include-marker
 r_depfiles_remade += $(compound_dep)
+
+tools_qfcc_test_compoundinit_dat_SOURCES=tools/qfcc/test/compoundinit.r
+compoundinit_obj=$(tools_qfcc_test_compoundinit_dat_SOURCES:.r=.o)
+compoundinit_dep=$(call qcautodep,$(tools_qfcc_test_compoundinit_dat_SOURCES))
+tools/qfcc/test/compoundinit.dat$(EXEEXT): $(compoundinit_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(compoundinit_obj)
+tools/qfcc/test/compoundinit.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(compoundinit_dep) # am--include-marker
+r_depfiles_remade += $(compoundinit_dep)
 
 tools_qfcc_test_const_fold_int_dat_SOURCES=tools/qfcc/test/const-fold-int.r
 const_fold_int_obj=$(tools_qfcc_test_const_fold_int_dat_SOURCES:.r=.o)
