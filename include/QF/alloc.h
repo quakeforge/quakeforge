@@ -94,10 +94,10 @@ static struct DARRAY_TYPE(t *) n##_blocks = DARRAY_STATIC_INIT(8)
 
 	\hideinitializer
 */
-#define FREE(n, p)				\
-	do {						\
-		p->next = n##_freelist;	\
-		n##_freelist = p;		\
+#define FREE(n, p)					\
+	do {							\
+		(p)->next = n##_freelist;	\
+		n##_freelist = (p);			\
 	} while (0)
 #else
 #define ALLOC(s, t, n, v)									\
