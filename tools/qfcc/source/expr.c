@@ -260,6 +260,32 @@ new_expr (void)
 	return e;
 }
 
+void
+restore_src_loc (expr_t **e)
+{
+	if (*e) {
+		pr.source_line = (*e)->line;
+		pr.source_file = (*e)->file;
+
+		FREE (exprs, *e);
+	}
+}
+
+expr_t *
+set_src_loc (const expr_t *e)
+{
+	if (!e) {
+		return nullptr;
+	}
+	// save the current source location
+	auto n = new_expr ();
+	n->type = ex_error;
+
+	pr.source_line = e->line;
+	pr.source_file = e->file;
+	return n;
+}
+
 ex_listitem_t *
 new_listitem (const expr_t *e)
 {
@@ -395,14 +421,6 @@ list_gather (ex_list_t *list, const expr_t **exprs, int count)
 	}
 }
 
-expr_t *
-expr_file_line (expr_t *dst, const expr_t *src)
-{
-	dst->file = src->file;
-	dst->line = src->line;
-	return dst;
-}
-
 const char *
 new_label_name (void)
 {
@@ -499,6 +517,7 @@ new_label_ref (const ex_label_t *label)
 expr_t *
 new_block_expr (const expr_t *old)
 {
+	scoped_src_loc (old);
 	expr_t     *b = new_expr ();
 
 	b->type = ex_block;
@@ -513,7 +532,6 @@ new_block_expr (const expr_t *old)
 		}
 		b->block.result = old->block.result;
 		b->block.is_call = old->block.is_call;
-		expr_file_line (b, old);
 	}
 	b->block.return_addr = __builtin_return_address (0);
 	return b;
@@ -891,8 +909,8 @@ constant_expr (const expr_t *e)
 	} else {
 		return e;
 	}
-	auto new = new_value_expr (value);
-	return expr_file_line ((expr_t *) new, e);//FIXME cast
+	scoped_src_loc (e);
+	return new_value_expr (value);
 }
 
 int
@@ -1541,7 +1559,8 @@ field_expr (const expr_t *e1, const expr_t *e2)
 				internal_error (e2, "unexpected field exression");
 			}
 			auto fv = new_field_val (e2->value->v.pointer.val + field->s.offset, field->type, e2->value->v.pointer.def);
-			e2 = expr_file_line ((expr_t *) new_value_expr (fv), e2);
+			scoped_src_loc (e2);
+			e2 = new_value_expr (fv);
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
@@ -1594,7 +1613,8 @@ convert_from_bool (const expr_t *e, const type_t *type)
 const expr_t *
 convert_nil (const expr_t *e, const type_t *t)
 {
-	auto nil = expr_file_line (new_expr (), e);
+	scoped_src_loc (e);
+	auto nil = new_expr ();
 	nil->type = ex_nil;
 	nil->nil = t;
 	return nil;
@@ -2046,11 +2066,14 @@ bitnot_expr:
 			}
 			break;
 		case '.':
-			if (extract_type (e) != ev_ptr)
-				return error (e, "invalid type for unary .");
-			auto new = new_unary_expr ('.', e);
-			new->expr.type = get_type (e)->t.fldptr.type;
-			return expr_file_line (new, e);
+			{
+				if (extract_type (e) != ev_ptr)
+					return error (e, "invalid type for unary .");
+				scoped_src_loc (e);
+				auto new = new_unary_expr ('.', e);
+				new->expr.type = get_type (e)->t.fldptr.type;
+				return new;
+			}
 		case '+':
 			if (!is_math (get_type (e)))
 				return error (e, "invalid type for unary +");
@@ -2197,7 +2220,8 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	if (ftype->t.func.num_params < 0) {
 		emit_args = !ftype->t.func.no_va_list;
 	}
-	call = expr_file_line (new_block_expr (0), fexpr);
+	scoped_src_loc (fexpr);
+	call = new_block_expr (0);
 	call->block.is_call = 1;
 	int         arg_expr_count = 0;
 	const expr_t *arg_exprs[arg_count][2];
@@ -2211,15 +2235,16 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 
 		auto e = arguments[i];
 		if (e->type == ex_compound) {
-			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
+			scoped_src_loc (e);
+			e = initialized_temp_expr (arg_types[i], e);
 		}
 		// FIXME this is target-specific info and should not be in the
 		// expression tree
 		// That, or always use a temp, since it should get optimized out
 		if (has_function_call (e)) {
+			scoped_src_loc (e);
 			auto cast = cast_expr (arg_types[i], e);
 			auto tmp = new_temp_def_expr (arg_types[i]);
-			tmp = expr_file_line (tmp, e);
 			expr_prepend_expr (args, tmp);
 
 			arg_exprs[arg_expr_count][0] = cast;
@@ -2235,14 +2260,14 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		expr_prepend_expr (args, new_args_expr ());
 	}
 	for (int i = 0; i < arg_expr_count - 1; i++) {
+		scoped_src_loc (arg_exprs[i][0]);
 		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
-		//append_expr (call, expr_file_line (assign, arg_exprs[i][0]));
 		append_expr (call, assign);
 	}
 	if (arg_expr_count) {
+		scoped_src_loc (arg_exprs[arg_expr_count - 1][0]);
 		auto e = assign_expr (arg_exprs[arg_expr_count - 1][1],
 							  arg_exprs[arg_expr_count - 1][0]);
-		//e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
 	auto ret_type = ftype->t.func.type;
@@ -2383,7 +2408,8 @@ return_expr (function_t *f, const expr_t *e)
 	}
 
 	if (e->type == ex_compound) {
-		e = expr_file_line (initialized_temp_expr (ret_type, e), e);
+		scoped_src_loc (e);
+		e = initialized_temp_expr (ret_type, e);
 	} else {
 		e = algebra_optimize (e);
 	}
@@ -2479,12 +2505,14 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	if (c->type == ex_error)
 		return c;
 
-	expr_t     *block = expr_file_line (new_block_expr (0), cond);
+	scoped_src_loc (cond);
+
+	expr_t     *block = new_block_expr (0);
 	auto type1 = get_type (e1);
 	auto type2 = get_type (e2);
-	expr_t     *tlabel = expr_file_line (new_label_expr (), cond);
-	expr_t     *flabel = expr_file_line (new_label_expr (), cond);
-	expr_t     *elabel = expr_file_line (new_label_expr (), cond);
+	expr_t     *tlabel = new_label_expr ();
+	expr_t     *flabel = new_label_expr ();
+	expr_t     *elabel = new_label_expr ();
 
 	backpatch (c->boolean.true_list, tlabel);
 	backpatch (c->boolean.false_list, flabel);

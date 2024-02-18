@@ -86,6 +86,7 @@ copy_joints (armature_t *arm, iqmjoint_t *joints, int num_joints)
 	}
 }
 
+#pragma code optimize
 void
 set_joint_points (armature_t *arm, int joint, float best_dist)
 {
@@ -98,6 +99,7 @@ set_joint_points (armature_t *arm, int joint, float best_dist)
 		arm.points[joint * JOINT_POINTS + j] = (vec4) p;
 	}
 }
+#pragma code optimize
 
 float
 find_best_dist (armature_t *arm, int joint)
@@ -119,6 +121,30 @@ find_best_dist (armature_t *arm, int joint)
 	}
 	return best_dist / 4;
 }
+
+#pragma code optimize
+void
+set_poses (armature_t *arm, iqmjoint_t *joints, int num_joints)
+{
+	for (int i = 0; i < num_joints; i++) {
+		if (joints[i].parent >= 0) {
+			auto p = arm.pose[joints[i].parent];
+			arm.pose[i] = {
+				.translate = p.translate + [(quaternion)p.rotate * joints[i].translate, 0],
+				.rotate = (quaternion)p.rotate * joints[i].rotate,
+				.scale = p.scale * [joints[i].scale, 0],
+			};
+		} else {
+			arm.pose[i] = {
+				.translate = [joints[i].translate, 0],
+				.rotate = joints[i].rotate,
+				.scale = [joints[i].scale, 0],
+			};
+		}
+		arm.basepose[i] = arm.pose[i];
+	}
+}
+#pragma code optimize
 
 armature_t *
 make_armature (int num_joints, iqmjoint_t *joints)
@@ -147,29 +173,7 @@ make_armature (int num_joints, iqmjoint_t *joints)
 		return arm;
 	}
 	copy_joints (arm, joints, num_joints);
-	for (int i = 0; i < num_joints; i++) {
-		if (joints[i].parent >= 0) {
-			//auto j = joints[joints[i].parent];
-			//auto p = &arm.pose[i];
-			//p.translate = [j.translate + j.rotate*joints[i].translate, 0];
-			//p.rotate = j.rotate * joints[i].rotate;
-			//p.scale = [j.scale * joints[i].scale, 0];
-			auto p = joints[joints[i].parent];
-			printf ("p:%d %q %q %q\n", i, p.translate, p.rotate, p.scale);
-			arm.pose[i] = {
-				.translate = [p.translate + p.rotate * joints[i].translate, 0],
-				.rotate = p.rotate * joints[i].rotate,
-				.scale = [p.scale * joints[i].scale, 0],
-			};
-		} else {
-			arm.pose[i] = {
-				.translate = [joints[i].translate, 0],
-				.rotate = joints[i].rotate,
-				.scale = [joints[i].scale, 0],
-			};
-		}
-		arm.basepose[i] = arm.pose[i];
-	}
+	set_poses (arm, joints, num_joints);
 
 	for (int i = 0; i < num_joints; i++) {
 		for (int j = 0; j < JOINT_EDGES; j++) {
@@ -264,7 +268,7 @@ main ()
 		auto e = joint_data[i];
 		auto a = arm.joints[i];
 		if (a.translate != e.translate || a.name != e.name
-			|| (vec4)a.rotate != (vec4)e.rotate || a.scale != e.scale
+			|| a.rotate != e.rotate || a.scale != e.scale
 			|| a.parent != e.parent) {
 			printf ("%d %v %s %q %v %d\n", i, arm.joints[i].translate,
 					arm.joints[i].name, arm.joints[i].rotate,
@@ -303,9 +307,9 @@ main ()
 		}
 		float best_dist = find_best_dist (arm, i);
 		vec4 scale = { best_dist, best_dist, best_dist, 1 };
-		//printf ("scale: %g\n", best_dist);
-		//printf ("%d %q %q %q\n", i, arm.basepose[i].translate,
-		//		arm.basepose[i].rotate, arm.basepose[i].scale);
+		printf ("scale: %g\n", best_dist);
+		printf ("%d %q %q %q\n", i, arm.basepose[i].translate,
+				arm.basepose[i].rotate, arm.basepose[i].scale);
 		auto M = make_motor (arm.basepose[i].translate, arm.basepose[i].rotate);
 		for (int j = 0; j < JOINT_POINTS; j++) {
 			auto p = (point_t) (points[j] * scale);

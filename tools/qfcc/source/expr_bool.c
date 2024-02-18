@@ -78,6 +78,7 @@ test_expr (const expr_t *e)
 	auto type = get_type (e);
 	if (e->type == ex_error)
 		return e;
+	scoped_src_loc (e);
 	switch (type->type) {
 		case ev_type_count:
 			internal_error (e, 0);
@@ -127,12 +128,12 @@ test_expr (const expr_t *e)
 				}
 				return e;
 			}
-			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
-			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			new = new_zero_expr (type);
+			new = binary_expr (NE, e, new);
 			return test_expr (new);
 		case ev_double:
-			new = expr_file_line ((expr_t *) new_zero_expr (type), e);
-			new = expr_file_line ((expr_t *) binary_expr (NE, e, new), e);
+			new = new_zero_expr (type);
+			new = binary_expr (NE, e, new);
 			return test_expr (new);
 		case ev_vector:
 			new = new_zero_expr (&type_vector);
@@ -155,9 +156,7 @@ test_expr (const expr_t *e)
 			}
 			return test_error (e, get_type (e));
 	}
-	new = expr_file_line ((expr_t *) new, e);
 	new = binary_expr (NE, e, new);
-	new = expr_file_line ((expr_t *) new, e);
 	return new;
 }
 

@@ -148,8 +148,8 @@ convert_to_float (const expr_t *e)
 	if (is_float(get_type (e)))
 		return e;
 
+	scoped_src_loc (e);
 	return cast_expr (&type_float, e);
-	//return expr_file_line (n, e);
 }
 #if 0
 static const expr_t *
@@ -158,8 +158,8 @@ convert_to_double (const expr_t *e)
 	if (is_double(get_type (e)))
 		return e;
 
+	scoped_src_loc (e);
 	expr_t     *n = cast_expr (&type_double, e);
-	return expr_file_line (n, e);
 }
 #endif
 static const expr_t *
@@ -387,7 +387,8 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 
 		if (!valid_op (op, sv_valid))
 			return error (e1, "invalid operator for scalar-vector");
-		auto t = expr_file_line (new_binary_expr (op, e2, e1), e);
+		scoped_src_loc (e);
+		auto t = new_binary_expr (op, e2, e1);
 		t->expr.type = e->expr.type;
 		return do_op_vector (op, e, e2, e1);
 	}

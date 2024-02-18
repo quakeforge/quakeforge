@@ -367,6 +367,16 @@ const expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
 							  const type_t *t1, const type_t *t2);
 const expr_t *test_error (const expr_t *e, const type_t *t);
 
+/** Set the current source location for subsequent new expressions.
+
+	Returns error expression with saved source location
+*/
+expr_t *set_src_loc (const expr_t *e);
+void restore_src_loc (expr_t **e);
+#define scoped_src_loc(e) \
+	__attribute__((cleanup(restore_src_loc))) \
+	expr_t *srclocScope = set_src_loc(e)
+
 extern expr_t *local_expr;
 
 /**	Get the type descriptor of the expression result.
@@ -406,14 +416,6 @@ expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
 	\return			The new expression node.
 */
 expr_t *new_expr (void);
-
-/**	Copy source expression's file and line to the destination expression
-
-	\param dst		The expression to receive the file and line
-	\param src		The expression from which the file and line will be taken
-	\return			\a dst
-*/
-expr_t *expr_file_line (expr_t *dst, const expr_t *src);
 
 /**	Create a new label name.
 

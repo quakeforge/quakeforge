@@ -746,8 +746,8 @@ expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 	} else if (offset && is_constant (offset)) {
 		int         o = expr_int (offset);
 		if (o < 32768 && o >= -32768) {
+			scoped_src_loc (offset);
 			offset = new_short_expr (o);
-			//offset = expr_file_line (new_short_expr (o), offset);
 		}
 	}
 
@@ -851,6 +851,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	operand_t  *def = nullptr;
 	operand_t  *kill = nullptr;
 
+	scoped_src_loc (e);
+
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
 		// can be any size
@@ -866,7 +868,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		}
 	} else {
 		if (is_indirect (src_expr)) {
-			//src_expr = expr_file_line (address_expr (src_expr, 0), e);
 			src_expr = address_expr (src_expr, 0);
 			need_ptr = true;
 		}
@@ -893,9 +894,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 				// type from the statement expression in dags. Also, can't
 				// use address_expr() because src_expr may be a function call
 				// and unary_expr doesn't like that
-				src_expr = expr_file_line (
-						new_address_expr (get_type (src_expr), src_expr, 0),
-										  src_expr);
+				scoped_src_loc (src_expr);
+				src_expr = new_address_expr (get_type (src_expr), src_expr, 0);
 				s = lea_statement (src, 0, src_expr);
 				sblock_add_statement (sblock, s);
 				src = s->opc;
@@ -916,7 +916,6 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 			//FIXME is this even necessary? if it is, should use copy_operand
 			sblock = statement_subexpr (sblock, dst_expr, &kill);
 		}
-		//dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		dst_expr = address_expr (dst_expr, 0);
 		need_ptr = true;
 	}
@@ -928,10 +927,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	}
 	count = min (type_size (dst_type), type_size (src_type));
 	if (count < (1 << 16)) {
-		//count_expr = expr_file_line (new_short_expr (count), e);
 		count_expr = new_short_expr (count);
 	} else {
-		//count_expr = expr_file_line (new_int_expr (count), e);
 		count_expr = new_int_expr (count);
 	}
 	sblock = statement_subexpr (sblock, count_expr, &size);
@@ -1028,7 +1025,7 @@ dereference_dst:
 		// need to get a pointer type, entity.field expressions do not provide
 		// one directly. FIXME it was probably a mistake extracting the operand
 		// type from the statement expression in dags
-		//dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
+		scoped_src_loc (dst_expr);
 		dst_expr = address_expr (dst_expr, 0);
 		s = new_statement (st_address, "lea", dst_expr);
 		s->opa = dst;
@@ -1174,6 +1171,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	int         num_params = 0;
 
 	defspace_reset (arg_space);
+	scoped_src_loc (call);
 
 	int         num_args = list_count (&call->branch.args->list);
 	const expr_t *args[num_args];
@@ -1194,7 +1192,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 														alignment);
 		def->type = arg_type;
 		def->reg = current_func->temp_reg;
-		const expr_t *def_expr = expr_file_line (new_def_expr (def), call);
+		const expr_t *def_expr = new_def_expr (def);
 		if (a->type == ex_args) {
 			args_va_list = def_expr;
 		} else {
@@ -1205,7 +1203,6 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 				num_params++;
 			}
 			const expr_t *assign = assign_expr (def_expr, a);
-			//expr_file_line (assign, call);
 			sblock = statement_single (sblock, assign);
 		}
 
@@ -1228,12 +1225,9 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 											 new_name_expr ("count"));
 		const expr_t *args_list = field_expr (args_va_list,
 											new_name_expr ("list"));
-		//expr_file_line (args_count, call);
-		//expr_file_line (args_list, call);
 
 		count = new_short_expr (num_params);
 		assign = assign_expr (args_count, count);
-		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 
 		if (args_params) {
@@ -1241,9 +1235,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		} else {
 			list = new_nil_expr ();
 		}
-		//expr_file_line (list, call);
 		assign = assign_expr (args_list, list);
-		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 	}
 	statement_t *s = new_statement (st_func, "call", call);
@@ -1343,6 +1335,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 	if (!is_ptr (type)) {
 		internal_error (ref, "expected pointer in ref");
 	}
+	scoped_src_loc (ref);
 	if (ref->type == ex_address
 		&& (!ref->address.offset || is_constant (ref->address.offset))
 		&& ref->address.lvalue->type == ex_alias
@@ -1373,7 +1366,6 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		} else {
 			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
-		//expr_file_line (alias, ref);
 		return addressing_mode (sblock, alias, base, offset, mode, target);
 	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
@@ -1468,6 +1460,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	const char *opcode;
 	statement_t *s;
 
+	scoped_src_loc (e);
 	debug (e, "RETURN");
 	opcode = "return";
 	if (!e->retrn.ret_val) {
@@ -1517,7 +1510,6 @@ statement_return (sblock_t *sblock, const expr_t *e)
 				def_t      *ret_ptr = new_def (0, 0, 0, sc_local);
 				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
 				ret_ptr->reg = REG;
-				//expr_file_line (with, e);
 				sblock = statement_single (sblock, with);
 				sblock = statement_subexpr (sblock, call, &ret_op);
 			}

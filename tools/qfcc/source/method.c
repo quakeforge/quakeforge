@@ -728,7 +728,8 @@ method_check_params (method_t *method, const expr_t *args)
 		const type_t *arg_type = i < param_count ? mtype->t.func.param_types[i]
 												 : nullptr;
 		if (e->type == ex_compound) {
-			e = expr_file_line (initialized_temp_expr (arg_type, e), e);
+			scoped_src_loc (e);
+			e = initialized_temp_expr (arg_type, e);
 		}
 		auto t = get_type (e);
 		if (!t) {

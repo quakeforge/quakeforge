@@ -531,11 +531,11 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 		symbol_t   *sym = init->symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
+			scoped_src_loc (init);
 			auto new = new_field_expr (0, field->type, field->s.def);
 			if (new->type != ex_value) {
 				internal_error (init, "expected value expression");
 			}
-			//FIXME init = expr_file_line (new, init);
 			init = new;
 		}
 	}
