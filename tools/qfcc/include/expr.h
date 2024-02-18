@@ -342,7 +342,7 @@ typedef struct expr_s {
 		ex_return_t retrn;				///< return expr params
 		ex_adjstk_t adjstk;				///< stack adjust param
 		ex_with_t   with;				///< with expr param
-		type_t     *nil;				///< type for nil if known
+		const type_t *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation

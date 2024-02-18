@@ -1596,7 +1596,7 @@ convert_nil (const expr_t *e, const type_t *t)
 {
 	auto nil = expr_file_line (new_expr (), e);
 	nil->type = ex_nil;
-	nil->nil = (type_t *) t;//FIXME cast
+	nil->nil = t;
 	return nil;
 }
 

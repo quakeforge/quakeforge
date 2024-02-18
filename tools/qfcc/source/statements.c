@@ -1967,7 +1967,7 @@ expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_nil (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	type_t     *nil = e->nil;
+	const type_t *nil = e->nil;
 	const expr_t *size_expr;
 	size_t      nil_size;
 	operand_t  *zero;
