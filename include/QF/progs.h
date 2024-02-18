@@ -1981,6 +1981,7 @@ typedef struct type_view_s {
 	type_view_func enum_view;
 	type_view_func array_view;
 	type_view_func class_view;
+	type_view_func handle_view;
 #define EV_TYPE(type) type_view_func type##_view;
 #include "QF/progs/pr_type_names.h"
 } type_view_t;

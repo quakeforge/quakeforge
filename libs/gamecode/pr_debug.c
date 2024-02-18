@@ -138,15 +138,17 @@ static char    *source_path_string;
 static char   **source_paths;
 
 static void pr_debug_struct_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
+								  void *_data);
 static void pr_debug_union_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
+								 void *_data);
 static void pr_debug_enum_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_array_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
+								 void *_data);
 static void pr_debug_class_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
+								 void *_data);
+static void pr_debug_handle_view (qfot_type_t *type, pr_type_t *value,
+								  void *_data);
 #define EV_TYPE(t) \
 	static void pr_debug_##t##_view (qfot_type_t *type, pr_type_t *value, \
 									 void *_data);
@@ -158,6 +160,7 @@ static type_view_t raw_type_view = {
 	pr_debug_enum_view,
 	pr_debug_array_view,
 	pr_debug_class_view,
+	pr_debug_handle_view,
 #define EV_TYPE(t) \
 	pr_debug_##t##_view,
 #include "QF/progs/pr_type_names.h"
@@ -237,6 +240,7 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_basic:
+			return pr_type_size[type->type] * type->basic.width;
 		case ty_handle:
 			return pr_type_size[type->type];
 		case ty_struct:
@@ -1064,6 +1068,8 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 			}
 			// fall through
 		case ty_handle:
+			raw_type_view.handle_view (type, value, data);
+			break;
 		case ty_basic:
 			switch (type->type) {
 #define EV_TYPE(t) \
@@ -1625,6 +1631,15 @@ pr_debug_class_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	dstring_appendstr (dstr, "<class>");
+}
+
+static void
+pr_debug_handle_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dstring_appendstr (dstr, "<handle>");
 }
 
 VISIBLE void
