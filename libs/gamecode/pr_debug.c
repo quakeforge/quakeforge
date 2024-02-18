@@ -1563,7 +1563,7 @@ pr_dump_struct (qfot_type_t *type, pr_type_t *value, void *_data,
 		qfot_var_t *field = strct->fields + i;
 		qfot_type_t *val_type = &G_STRUCT (pr, qfot_type_t, field->type);
 		pr_type_t  *val = value + field->offset;
-		dasprintf (dstr, "%s=", PR_GetString (pr, field->name));
+		dasprintf (dstr, ".%s=", PR_GetString (pr, field->name));
 		value_string (data, val_type, val);
 		if (i < strct->num_fields - 1) {
 			dstring_appendstr (dstr, ", ");
