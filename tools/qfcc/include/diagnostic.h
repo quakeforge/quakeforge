@@ -54,13 +54,13 @@ void _internal_error (const expr_t *e, const char *file, int line,
 	__attribute__ ((format (PRINTF, 5, 6), noreturn));
 #define internal_error(e, fmt...) _internal_error(e, __FILE__, __LINE__, __FUNCTION__, fmt)
 
-const expr_t *_warning (const expr_t *e, const char *file,
-						int line, const char *func, const char *fmt, ...)
+void _warning (const expr_t *e, const char *file, int line, const char *func,
+			   const char *fmt, ...)
 	__attribute__ ((format (PRINTF, 5, 6)));
 #define warning(e, fmt...) _warning(e, __FILE__, __LINE__, __FUNCTION__, fmt)
 
-const expr_t *_notice (const expr_t *e, const char *file,
-					   int line, const char *func, const char *fmt, ...)
+void _notice (const expr_t *e, const char *file, int line, const char *func,
+			  const char *fmt, ...)
 	__attribute__ ((format (PRINTF, 5, 6)));
 #define notice(e, fmt...) _notice(e, __FILE__, __LINE__, __FUNCTION__, fmt)
 

@@ -208,14 +208,14 @@ _bug (const expr_t *e, const char *file, int line, const char *func,
 	va_end (args);
 }
 
-const expr_t *
+const void
 _notice (const expr_t *e, const char *file, int line, const char *func,
 		 const char *fmt, ...)
 {
 	va_list     args;
 
 	if (options.notices.silent)
-		return e;
+		return;
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
@@ -237,10 +237,9 @@ _notice (const expr_t *e, const char *file, int line, const char *func,
 		dstring_delete (message);
 	}
 	va_end (args);
-	return e;
 }
 
-const expr_t *
+const void
 _warning (const expr_t *e, const char *file, int line, const char *func,
 		  const char *fmt, ...)
 {
@@ -249,7 +248,6 @@ _warning (const expr_t *e, const char *file, int line, const char *func,
 	va_start (args, fmt);
 	__warning (e, file, line, func, fmt, args);
 	va_end (args);
-	return e;
 }
 
 void
