@@ -2234,7 +2234,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		}
 
 		auto e = arguments[i];
-		if (e->type == ex_compound) {
+		if (e->type == ex_compound || e->type == ex_multivec) {
 			scoped_src_loc (e);
 			e = initialized_temp_expr (arg_types[i], e);
 		}
@@ -2407,7 +2407,7 @@ return_expr (function_t *f, const expr_t *e)
 		}
 	}
 
-	if (e->type == ex_compound) {
+	if (e->type == ex_compound || e->type == ex_multivec) {
 		scoped_src_loc (e);
 		e = initialized_temp_expr (ret_type, e);
 	} else {

@@ -358,18 +358,29 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 }
 
 expr_t *
-initialized_temp_expr (const type_t *type, const expr_t *compound)
+initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
-	type = unalias_type (type);
-	element_chain_t element_chain;
-	expr_t     *temp = new_temp_def_expr (type);
 	expr_t     *block = new_block_expr (0);
 
-	element_chain.head = 0;
-	element_chain.tail = &element_chain.head;
-	build_element_chain (&element_chain, type, compound, 0);
-	assign_elements (block, temp, &element_chain);
+	//type = unalias_type (type);
+	expr_t     *temp = new_temp_def_expr (type);
+
 	block->block.result = temp;
-	free_element_chain (&element_chain);
+
+	if (expr->type == ex_compound) {
+		element_chain_t element_chain;
+
+		element_chain.head = 0;
+		element_chain.tail = &element_chain.head;
+		build_element_chain (&element_chain, type, expr, 0);
+		assign_elements (block, temp, &element_chain);
+		free_element_chain (&element_chain);
+	} else if (expr->type == ex_multivec) {
+		expr = algebra_assign_expr (temp, expr);
+		append_expr (block, algebra_optimize (expr));
+	} else {
+		internal_error (expr, "unexpected expression type: %s",
+						expr_names[expr->type]);
+	}
 	return block;
 }
