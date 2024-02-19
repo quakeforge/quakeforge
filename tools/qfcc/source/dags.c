@@ -422,6 +422,14 @@ dag_make_children (dag_t *dag, statement_t *s,
 	int         i;
 
 	flow_analyze_statement (s, 0, 0, 0, operands);
+	if (!operands[0] && s->def) {
+		auto op = s->def;
+		while (op && op->op_type == op_pseudo) {
+			op = op->next;
+		}
+		//FIXME hopefully only one non-pseudo op
+		operands[0] = op;
+	}
 	for (i = 0; i < 3; i++) {
 		operand_t  *op = operands[i + 1];
 		dagnode_t  *node = dag_node (op);
@@ -436,7 +444,7 @@ dag_make_children (dag_t *dag, statement_t *s,
 			node = 0;
 		}
 
-		if (!node && op_is_alias (op)) {
+		if (!node && op_is_temp (op) && op_is_alias (op)) {
 			operand_t  *uop = unalias_op (op);
 			if (uop != op) {
 				if (!(node = dag_node (uop))) {
@@ -1005,6 +1013,7 @@ dag_create (flownode_t *flownode)
 	for (s = block->statements; s; s = s->next) {
 		num_statements++;
 		num_aux += dag_count_ops (s->use);
+		num_aux += dag_count_ops (s->def);
 		num_aux += op_is_alias (s->opa);
 		num_aux += op_is_alias (s->opb);
 		num_aux += op_is_alias (s->opc);
@@ -1029,6 +1038,7 @@ dag_create (flownode_t *flownode)
 		dag_make_leafs (dag, s, operands);
 		// make sure any auxiliary operands are given nodes, too
 		dag_make_op_leafs (s->use, dag, s->expr);
+		dag_make_op_leafs (s->def, dag, s->expr);
 	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
