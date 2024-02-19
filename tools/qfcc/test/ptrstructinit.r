@@ -129,6 +129,9 @@ set_poses (armature_t *arm, iqmjoint_t *joints, int num_joints)
 	for (int i = 0; i < num_joints; i++) {
 		if (joints[i].parent >= 0) {
 			auto p = arm.pose[joints[i].parent];
+			// printf IS the bug: its parameters get set before p is loaded,
+			// otherwise this code compiles correctly
+			printf ("%q %q %q\n", p.translate, p.rotate, p.scale);
 			arm.pose[i] = {
 				.translate = p.translate + [(quaternion)p.rotate * joints[i].translate, 0],
 				.rotate = (quaternion)p.rotate * joints[i].rotate,
