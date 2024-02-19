@@ -1004,20 +1004,14 @@ dag_create (flownode_t *flownode)
 		operand_t  *operands[FLOW_OPERANDS];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
 		daglabel_t *op, *lx;
-		int         i;
 
 		dag_make_children (dag, s, operands, children);
 		if (s->type == st_flow || s->type == st_func) {
-			for (i = 0; i < 3; i++) {
+			for (int i = 0; i < 3; i++) {
 				if (children[i]) {
 					dag_make_var_live (live_vars, operands[i + 1]);
 				}
 			}
-		}
-		if (operands[4]) {
-			// a movep instruction knew what it was reading, so mark that
-			// as live
-			dag_make_var_live (live_vars, operands[4]);
 		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
