@@ -178,7 +178,15 @@ alias_expr (const type_t *type, const expr_t *e, int offset)
 		neg = true;
 		e = neg_expr (e);
 	}
-	e = new_offset_alias_expr (type, e, offset);
+	if (e->type == ex_uexpr && e->expr.op == '.') {
+		auto offs = new_int_expr (offset);
+		auto ptr = e->expr.e1;
+		ptr = offset_pointer_expr (ptr, edag_add_expr (offs));
+		ptr = cast_expr (pointer_type (type), ptr);
+		e = unary_expr ('.', ptr);
+	} else {
+		e = new_offset_alias_expr (type, e, offset);
+	}
 	if (neg) {
 		e = edag_add_expr (e);
 		e = neg_expr (e);
