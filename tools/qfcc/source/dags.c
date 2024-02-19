@@ -927,6 +927,32 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 	n->killed = 0;
 }
 
+static __attribute__((pure)) int
+dag_count_ops (operand_t *op)
+{
+	int count = 0;
+	for (; op; op = op->next) {
+		if (op->op_type == op_pseudo) {
+			continue;
+		}
+		count++;
+	}
+	return count;
+}
+
+static void
+dag_make_op_leafs (operand_t *op, dag_t *dag, const expr_t *expr)
+{
+	for (; op; op = op->next) {
+		if (op->op_type == op_pseudo) {
+			continue;
+		}
+		if (!dag_node (op)) {
+			leaf_node (dag, op, expr);
+		}
+	}
+}
+
 dag_t *
 dag_create (flownode_t *flownode)
 {
@@ -936,8 +962,7 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
-	int         num_use = 0;
-	int         num_alias = 0;
+	int         num_aux = 0;
 	int         num_nodes;
 	int         num_lables;
 	set_t      *live_vars = set_new ();
@@ -948,26 +973,21 @@ dag_create (flownode_t *flownode)
 	// guessed
 	for (s = block->statements; s; s = s->next) {
 		num_statements++;
-		for (operand_t *use = s->use; use; use = use->next) {
-			if (use->op_type == op_pseudo) {
-				continue;
-			}
-			num_use++;
-		}
-		num_alias += op_is_alias (s->opa);
-		num_alias += op_is_alias (s->opb);
-		num_alias += op_is_alias (s->opc);
+		num_aux += dag_count_ops (s->use);
+		num_aux += op_is_alias (s->opa);
+		num_aux += op_is_alias (s->opb);
+		num_aux += op_is_alias (s->opc);
 	}
 
 	set_assign (live_vars, flownode->live_vars.out);
 
 	dag = new_dag ();
 	dag->flownode = flownode;
-	// at most FLOW_OPERANDS per statement + use + alias
-	num_nodes = num_statements * FLOW_OPERANDS + num_use + num_alias;
+	// at most FLOW_OPERANDS per statement + aux
+	num_nodes = num_statements * FLOW_OPERANDS + num_aux;
 	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
-	// at most FLOW_OPERANDS per statement, + return + params + use + alias
-	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_use + num_alias;
+	// at most FLOW_OPERANDS per statement, + return + params + aux
+	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_aux;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
@@ -977,14 +997,7 @@ dag_create (flownode_t *flownode)
 		operand_t  *operands[FLOW_OPERANDS];
 		dag_make_leafs (dag, s, operands);
 		// make sure any auxiliary operands are given nodes, too
-		for (operand_t *use = s->use; use; use = use->next) {
-			if (use->op_type == op_pseudo) {
-				continue;
-			}
-			if (!dag_node (use)) {
-				leaf_node (dag, use, s->expr);
-			}
-		}
+		dag_make_op_leafs (s->use, dag, s->expr);
 	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
