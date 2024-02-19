@@ -747,19 +747,6 @@ dag_live_aliases(operand_t *op)
 	}
 }
 
-static void
-dag_make_var_live (set_t *live_vars, operand_t *op)
-{
-	flowvar_t  *var = 0;
-
-	if (op) {
-		dag_live_aliases (op);
-		var = flow_get_var (op);
-	}
-	if (var)
-		set_add (live_vars, var->number);
-}
-
 static int
 dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 {
@@ -953,6 +940,47 @@ dag_make_op_leafs (operand_t *op, dag_t *dag, const expr_t *expr)
 	}
 }
 
+static void
+dag_free_set (set_t **set)
+{
+	set_delete (*set);
+}
+
+static bool
+dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
+				   flownode_t *flownode)
+{
+	int start = s->number + 1;
+	int end = flownode->first_statement + flownode->num_statements;
+
+	auto nvar = flow_get_var (node->label->op);
+	__attribute__((cleanup(dag_free_set))) set_t *def = set_new ();
+	set_add_range (def, start, end - start);
+	set_intersection (def, nvar->define);
+
+	auto d = set_first (def);
+	if (!d) {
+		// not set in this flow node
+		return false;
+	}
+
+	auto lvar = flow_get_var (label->op);
+	__attribute__((cleanup(dag_free_set))) set_t *use = set_new ();
+	set_add_range (use, start, end - start);
+	set_intersection (use, lvar->use);
+
+	bool overlap = false;
+	for (auto u = set_first (use); u; u = set_next (u)) {
+		if (u->element > d->element) {
+			overlap = true;
+			set_del_iter (u);
+			break;
+		}
+	}
+	set_del_iter (d);
+	return overlap;
+}
+
 dag_t *
 dag_create (flownode_t *flownode)
 {
@@ -1006,13 +1034,6 @@ dag_create (flownode_t *flownode)
 		daglabel_t *op, *lx;
 
 		dag_make_children (dag, s, operands, children);
-		if (s->type == st_flow || s->type == st_func) {
-			for (int i = 0; i < 3; i++) {
-				if (children[i]) {
-					dag_make_var_live (live_vars, operands[i + 1]);
-				}
-			}
-		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
 		if (s->type != st_assign) {
@@ -1042,6 +1063,15 @@ dag_create (flownode_t *flownode)
 				} else {
 					internal_error (s->expr, "unexpected failure to attach"
 									" label to node");
+				}
+			}
+			if (n->type == st_none && op_is_identifier (n->label->op)) {
+				// if the attached variable has a use after the variable in
+				// the leaf node has a define in the block, then force the
+				// attached variable to be live. Takes care of code similar
+				// to `while (count--) {...}`.
+				if (dag_check_overlap (s, n, lx, flownode)) {
+					lx->live = 1;
 				}
 			}
 		}

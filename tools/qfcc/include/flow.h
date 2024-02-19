@@ -93,6 +93,8 @@ typedef struct flownode_s {
 		struct set_s *in;
 		struct set_s *out;
 	}           live_vars;
+	int         first_statement;///< first statement in function's list
+	int         num_statements;	///< number of statements in this block
 	struct sblock_s *sblock;	///< original statement block
 	struct dag_s *dag;			///< dag for this node
 } flownode_t;

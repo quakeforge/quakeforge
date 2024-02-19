@@ -2137,8 +2137,15 @@ flow_build_graph (function_t *func)
 		graph->num_nodes++;
 	// + 2 for the uninitialized dummy head block and the live dummy end block
 	graph->nodes = malloc ((graph->num_nodes + 2) * sizeof (flownode_t *));
-	for (i = 0, sb = sblock; sb; i++, sb = sb->next)
+	int num_statements = 0;
+	for (i = 0, sb = sblock; sb; i++, sb = sb->next) {
 		graph->nodes[i] = flow_make_node (sb, i, func);
+		graph->nodes[i]->first_statement = num_statements;
+		for (auto s = sb->statements; s; s = s->next) {
+			graph->nodes[i]->num_statements++;
+		}
+		num_statements += graph->nodes[i]->num_statements;
+	}
 	// Create the dummy node for detecting uninitialized variables
 	node = flow_make_node (0, graph->num_nodes, func);
 	graph->nodes[graph->num_nodes] = node;
