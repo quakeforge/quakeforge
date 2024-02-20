@@ -161,6 +161,7 @@ operand_t *offset_alias_operand (const struct type_s *type, int offset,
 operand_t *alias_operand (const struct type_s *type, operand_t *op,
 						  const struct expr_s *expr);
 operand_t *label_operand (const struct expr_s *label);
+operand_t *short_operand (short short_val, const struct expr_s *expr);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);

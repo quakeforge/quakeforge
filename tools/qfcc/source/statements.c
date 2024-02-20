@@ -565,7 +565,7 @@ label_operand (const expr_t *label)
 	return lop;
 }
 
-static operand_t *
+operand_t *
 short_operand (short short_val, const expr_t *expr)
 {
 	ex_value_t *val = new_short_val (short_val);

@@ -1049,7 +1049,7 @@ dag_create (flownode_t *flownode)
 		dag_make_children (dag, s, operands, children);
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
-		if (s->type != st_assign) {
+		if (s->type != st_assign && s->type != st_move) {
 			dagnode_t search = {
 				.label = op,
 				.children = { children[0], children[1], children[2] },
@@ -1357,15 +1357,29 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[2] = fix_op_type (src, type);
-	for ( ; var_iter; var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->element];
-		operands[0] = fix_op_type (var->op, type);
-		if (!dst)
-			dst = operands[0];
+	if (is_structural (type) || type->width > 4) {
+		operands[0] = fix_op_type (src, type);
+		operands[1] = short_operand (type_size (type), src->expr);
+		for ( ; var_iter; var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			operands[2] = fix_op_type (var->op, type);
+			if (!dst)
+				dst = operands[2];
 
-		st = build_statement ("assign", operands, var->expr);
-		sblock_add_statement (block, st);
+			st = build_statement ("move", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
+	} else {
+		operands[2] = fix_op_type (src, type);
+		for ( ; var_iter; var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			operands[0] = fix_op_type (var->op, type);
+			if (!dst)
+				dst = operands[0];
+
+			st = build_statement ("assign", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
 	}
 	return dst;
 }
