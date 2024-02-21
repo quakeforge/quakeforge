@@ -1251,8 +1251,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	s->use = use;
 	s->kill = kill;
 	sblock_add_statement (sblock, s);
-	sblock->next = new_sblock ();
-	return sblock->next;
+	return sblock;
 }
 
 static sblock_t *

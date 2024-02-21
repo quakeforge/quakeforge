@@ -56,11 +56,11 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	set_iter_t *id_iter;
 	daglabel_t *id;
 
-	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d)", node,
+	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d:%d)", node,
 			   node->type != st_none ? "" : "shape=box,",
 			   daglabel_string (node->label),
 			   node->killed ? " k" : "",
-			   node->topo);
+			   node->number, node->topo);
 	for (id_iter = set_first (node->identifiers); id_iter;
 		 id_iter = set_next (id_iter)) {
 		id = dag->labels[id_iter->element];

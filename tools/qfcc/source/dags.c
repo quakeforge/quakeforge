@@ -333,7 +333,7 @@ leaf_node (dag_t *dag, operand_t *op, const expr_t *expr)
 	if (!op)
 		return 0;
 	node = new_node (dag);
-	node->tl = op->type;
+	node->vtype = op->type;
 	label = operand_label (dag, op);
 	label->dagnode = node;
 	label->expr = expr;
@@ -458,6 +458,9 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 		// No valid node found (either first reference to the value,
 		// or the value's node was killed).
 		node = leaf_node (dag, op, s->expr);
+		if (node && dag->killer_node >= 0) {
+			set_add (node->edges, dag->killer_node);
+		}
 	}
 	if (killer) {
 		// When an operand refers to a killed node, it must be
@@ -506,6 +509,9 @@ dagnode_add_children (dag_t *dag, dagnode_t *n, operand_t *operands[4],
 			set_remove (dag->roots, child->number);
 			set_add (child->parents, n->number);
 		}
+	}
+	if (operands[0]) {
+		n->vtype = operands[0]->type;
 	}
 }
 
@@ -891,7 +897,7 @@ dag_sort_nodes (dag_t *dag)
 }
 
 static void
-dag_kill_nodes (dag_t *dag, dagnode_t *n)
+dag_kill_nodes (dag_t *dag, dagnode_t *n, bool is_call)
 {
 	int         i;
 	dagnode_t  *node;
@@ -908,14 +914,14 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 			// point to itself (the required type is recursive).
 			continue;
 		}
-		if (op_is_constant (node->label->op)) {
+		if (!is_call && op_is_constant (node->label->op)) {
 			// While constants in the Quake VM can be changed via a pointer,
 			// doing so would cause much more fun than a simple
 			// mis-optimization would, so consider them safe from pointer
 			// operations.
 			continue;
 		}
-		if (op_is_temp (node->label->op)) {
+		if (!is_call && op_is_temp (node->label->op)) {
 			// Assume that the pointer cannot point to a temporary variable.
 			//  This is reasonable as there is no programmer access to temps.
 			continue;
@@ -923,6 +929,7 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 		node->killed = n;
 	}
 	n->killed = 0;
+	dag->killer_node = n->number;
 }
 
 static __attribute__((pure)) int
@@ -1017,6 +1024,7 @@ dag_create (flownode_t *flownode)
 	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_aux;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
+	dag->killer_node = -1;
 
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
@@ -1067,7 +1075,10 @@ dag_create (flownode_t *flownode)
 			}
 		}
 		if (n->type == st_ptrassign) {
-			dag_kill_nodes (dag, n);
+			dag_kill_nodes (dag, n, false);
+		}
+		if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
+			dag_kill_nodes (dag, n, true);
 		}
 	}
 
@@ -1290,43 +1301,6 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 }
 
 static operand_t *
-generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
-{
-	set_iter_t *var_iter;
-	daglabel_t  *var = 0;
-	operand_t   *operands[3] = {0, 0, 0};
-	statement_t *st;
-	operand_t   *dst;
-
-	operands[0] = make_operand (dag, block, dagnode, 0);
-	if (dagnode->children[1]) {
-		operands[1] = make_operand (dag, block, dagnode, 1);
-	}
-	dst = operands[0];
-	for (var_iter = set_first (dagnode->identifiers); var_iter;
-		 var_iter = set_next (var_iter)) {
-		if (var) {
-			internal_error (var->expr, "more than one return value for call");
-		}
-		var = dag->labels[var_iter->element];
-		operands[2] = var->op;
-		dst = operands[2];
-		st = build_statement ("call", operands, var->expr);
-		sblock_add_statement (block, st);
-	}
-	if (var_iter) {
-		set_del_iter (var_iter);
-	}
-	if (!var) {
-		// void call or return value ignored, still have to call
-		operands[2] = make_operand (dag, block, dagnode, 2);
-		st = build_statement ("call", operands, dagnode->label->expr);
-		sblock_add_statement (block, st);
-	}
-	return dst;
-}
-
-static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 					  set_iter_t *var_iter, const type_t *type)
 {
@@ -1358,6 +1332,43 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 			st = build_statement ("assign", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
+	}
+	return dst;
+}
+
+static operand_t *
+generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var = 0;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst = nullptr;
+	const type_t *type = dagnode->vtype;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	if (dagnode->children[1]) {
+		operands[1] = make_operand (dag, block, dagnode, 1);
+	}
+	if ((var_iter = set_first (dagnode->identifiers))) {
+		var = dag->labels[var_iter->element];
+		operands[2] = var->op;
+		var_iter = set_next (var_iter);
+		dst = operands[2];
+		st = build_statement ("call", operands, var->expr);
+		sblock_add_statement (block, st);
+		generate_assignments (dag, block, operands[2], var_iter, type);
+	}
+	if (!var) {
+		if (dagnode->children[2]) {
+			// void call or return value ignored, still have to call
+			operands[2] = make_operand (dag, block, dagnode, 2);
+		} else {
+			operands[2] = temp_operand (type, dagnode->label->expr);
+			dst = operands[2];
+		}
+		st = build_statement ("call", operands, dagnode->label->expr);
+		sblock_add_statement (block, st);
 	}
 	return dst;
 }
@@ -1412,10 +1423,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
-			type = get_type (dagnode->label->expr);
+			type = dagnode->vtype;
 			if (!(var_iter = set_first (dagnode->identifiers))) {
-				operands[2] = temp_operand (get_type (dagnode->label->expr),
-											dagnode->label->expr);
+				operands[2] = temp_operand (type, dagnode->label->expr);
 			} else {
 				daglabel_t *var = dag->labels[var_iter->element];
 

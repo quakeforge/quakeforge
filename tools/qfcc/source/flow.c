@@ -1765,7 +1765,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (operands) {
 				operands[1] = s->opa;
 				operands[2] = s->opb;
-				operands[3] = s->opc;
+				if (calln >= 0 || (s->opc && s->opc->op_type == op_value)) {
+					operands[3] = s->opc;
+				}
+
 			}
 			break;
 		case st_flow:
