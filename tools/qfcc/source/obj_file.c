@@ -1183,8 +1183,10 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	// clear locals data
 	memset (locals, 0, globals_info.locals_size * sizeof (pr_type_t));
 	// copy far data
-	memcpy (far_data, qfo->spaces[qfo_far_data_space].data,
-			qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
+	if (qfo->spaces[qfo_far_data_space].data_size) {
+		memcpy (far_data, qfo->spaces[qfo_far_data_space].data,
+				qfo->spaces[qfo_far_data_space].data_size * sizeof (pr_type_t));
+	}
 	qfo->spaces[qfo_far_data_space].data = far_data;
 	// copy type data
 	memcpy (type_data, qfo->spaces[qfo_type_space].data,

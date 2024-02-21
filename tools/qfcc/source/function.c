@@ -373,7 +373,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 
 	type.type = ev_func;
 	type.t.func.num_params = params ? list_count (&params->list) : 0;
-	const expr_t *args[type.t.func.num_params];
+	const expr_t *args[type.t.func.num_params + 1];
 	if (params) {
 		list_scatter_rev (&params->list, args);
 	}
@@ -384,7 +384,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return e;
 		}
 	}
-	const type_t *arg_types[type.t.func.num_params];
+	const type_t *arg_types[type.t.func.num_params + 1];
 	type.t.func.param_types = arg_types;
 	for (int i = 0; i < type.t.func.num_params; i++) {
 		auto e = args[i];

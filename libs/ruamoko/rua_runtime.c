@@ -63,9 +63,9 @@ bi_va_copy (progs_t *pr, void *data)
 	if (size) {
 		dst_list_block = PR_AllocTempBlock (pr, size);
 		dst_list = (pr_type_t *) PR_GetString (pr, dst_list_block);
+		memcpy (dst_list, src_list, size);
 	}
 
-	memcpy (dst_list, src_list, size);
 	R_PACKED (pr, pr_va_list_t).count = src_args->count;
 	R_PACKED (pr, pr_va_list_t).list = PR_SetPointer (pr, dst_list);
 }

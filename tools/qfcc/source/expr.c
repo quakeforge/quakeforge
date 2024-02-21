@@ -2105,7 +2105,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	const expr_t *err = 0;
 
 	int arg_count = params ? list_count (&params->list) :0;
-	const expr_t *arguments[arg_count];
+	const expr_t *arguments[arg_count + 1];
 	if (params) {
 		list_scatter_rev (&params->list, arguments);
 	}
@@ -2145,7 +2145,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		param_count = ftype->t.func.num_params;
 	}
 
-	const type_t *arg_types[arg_count];
+	const type_t *arg_types[arg_count + 1];
 	// params is reversed (a, b, c) -> c, b, a
 	for (int i = 0; i < arg_count; i++) {
 		auto e = arguments[i];
@@ -2224,7 +2224,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	call = new_block_expr (0);
 	call->block.is_call = 1;
 	int         arg_expr_count = 0;
-	const expr_t *arg_exprs[arg_count][2];
+	const expr_t *arg_exprs[arg_count + 1][2];
 	expr_t     *args = new_list_expr (0);
 	// args is built in reverse order so it matches params
 	for (int i = 0; i < arg_count; i++) {

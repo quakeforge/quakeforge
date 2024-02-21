@@ -1279,10 +1279,12 @@ flow_build_chains (flowgraph_t *graph)
 	set_delete (reach.stdef);
 
 	graph->func->du_chains = malloc (num_ud_chains * sizeof (udchain_t));
-	memcpy (graph->func->du_chains, graph->func->ud_chains,
-			num_ud_chains * sizeof (udchain_t));
-	heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
-			  duchain_cmp);
+	if (num_ud_chains) {
+		memcpy (graph->func->du_chains, graph->func->ud_chains,
+				num_ud_chains * sizeof (udchain_t));
+		heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
+				  duchain_cmp);
+	}
 	for (int i = 0; i < num_ud_chains; i++) {
 		udchain_t   du = graph->func->du_chains[i];
 

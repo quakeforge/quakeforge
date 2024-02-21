@@ -284,7 +284,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.int_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.uint_val + 1;
 	if (val) {
 		val = convert_name (val);
 		if (!is_constant (val))

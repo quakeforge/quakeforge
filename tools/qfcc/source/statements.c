@@ -1174,7 +1174,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	scoped_src_loc (call);
 
 	int         num_args = list_count (&call->branch.args->list);
-	const expr_t *args[num_args];
+	const expr_t *args[num_args + 1];
 	list_scatter_rev (&call->branch.args->list, args);
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
