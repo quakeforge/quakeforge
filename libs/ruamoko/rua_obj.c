@@ -1446,17 +1446,19 @@ rua___obj_forward (progs_t *pr, void *data)
 		return;
 	}
 
-	dsprintf (probj->msg, "(%s) %s does not recognize %s",
+	dsprintf (probj->msg, "(%s) %s does not recognize %s\n",
 			  PR_CLS_ISMETA (class) ? "class" : "instance",
 			  PR_GetString (pr, class->name),
 			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
 
 	err_sel = sel_register_typed_name (probj, "error:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		RUA_CALL_BEGIN (pr, 3)
+		RUA_CALL_BEGIN (pr, 4)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
+		P_PACKED  (pr, pr_va_list_t, 3).count = 0;
+		P_PACKED  (pr, pr_va_list_t, 3).list = 0;
 		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
