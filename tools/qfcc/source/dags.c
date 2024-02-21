@@ -248,6 +248,33 @@ opcode_label (dag_t *dag, const char *opcode, const expr_t *expr)
 	return label;
 }
 
+static __attribute__((pure)) dagnode_t *
+dag_node (operand_t *op)
+{
+	def_t      *def;
+	dagnode_t  *node = 0;
+
+	if (!op)
+		return 0;
+	if (op->op_type == op_def) {
+		def = op->def;
+		if (def->daglabel)
+			node = def->daglabel->dagnode;
+	} else if (op->op_type == op_temp) {
+		if (op->tempop.daglabel)
+			node = op->tempop.daglabel->dagnode;
+	} else if (op->op_type == op_value) {
+		if (op->value->daglabel)
+			node = op->value->daglabel->dagnode;
+	} else if (op->op_type == op_label) {
+		if (op->label->daglabel)
+			node = op->label->daglabel->dagnode;
+	}
+	return node;
+}
+
+static dagnode_t *leaf_node (dag_t *dag, operand_t *op, const expr_t *expr);
+
 static daglabel_t *
 operand_label (dag_t *dag, operand_t *op)
 {
@@ -266,6 +293,11 @@ operand_label (dag_t *dag, operand_t *op)
 		label = new_label (dag);
 		label->op = op;
 		op->tempop.daglabel = label;
+		if (op->tempop.alias) {
+			if (!dag_node (op->tempop.alias)) {
+				leaf_node (dag, op->tempop.alias, op->expr);
+			}
+		}
 	} else if (op->op_type == op_def) {
 		def = op->def;
 		if (def->daglabel)
@@ -306,31 +338,6 @@ leaf_node (dag_t *dag, operand_t *op, const expr_t *expr)
 	label->dagnode = node;
 	label->expr = expr;
 	node->label = label;
-	return node;
-}
-
-static __attribute__((pure)) dagnode_t *
-dag_node (operand_t *op)
-{
-	def_t      *def;
-	dagnode_t  *node = 0;
-
-	if (!op)
-		return 0;
-	if (op->op_type == op_def) {
-		def = op->def;
-		if (def->daglabel)
-			node = def->daglabel->dagnode;
-	} else if (op->op_type == op_temp) {
-		if (op->tempop.daglabel)
-			node = op->tempop.daglabel->dagnode;
-	} else if (op->op_type == op_value) {
-		if (op->value->daglabel)
-			node = op->value->daglabel->dagnode;
-	} else if (op->op_type == op_label) {
-		if (op->label->daglabel)
-			node = op->label->daglabel->dagnode;
-	}
 	return node;
 }
 
@@ -388,19 +395,6 @@ dagnode_search (dag_t *dag, const dagnode_t *search)
 }
 
 static void
-dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
-{
-	int         i;
-
-	flow_analyze_statement (s, 0, 0, 0, operands);
-	for (i = 1; i < FLOW_OPERANDS; i++) {
-		if (!dag_node (operands[i])) {
-			leaf_node (dag, operands[i], s->expr);
-		}
-	}
-}
-
-static void
 dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 {
 	for (set_iter_t *edge_iter = set_first (node->edges); edge_iter;
@@ -412,6 +406,69 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 		// from this node.
 		set_union (node->reachable, r->reachable);
 	}
+}
+
+static dagnode_t *
+dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
+{
+	dagnode_t  *node = dag_node (op);
+	dagnode_t  *killer = 0;
+
+	if (node && (node->killed || s->type == st_address)) {
+		// If the node has been killed, then a new node is needed
+		// taking the address of a variable effectively kills the node it's
+		// attached to. FIXME should this be for only when the variable is
+		// in the attached identifiers list and is not the node's label?
+		killer = node->killed;
+		node = 0;
+	}
+
+	if (!node && op_is_temp (op) && op_is_alias (op)) {
+		operand_t  *uop = unalias_op (op);
+		if (uop != op) {
+			if (!(node = dag_node (uop))) {
+				node = leaf_node (dag, uop, s->expr);
+			}
+			node->label->live = 1;
+			dagnode_t *n;
+			dagnode_t search = {
+				.type = st_alias,
+				.label = opcode_label (dag, save_string ("alias"), s->expr),
+				.children = { node },
+				.types = { op->type },
+				.offset = op_alias_offset (op),
+			};
+			if (!(n = dagnode_search (dag, &search))) {
+				n = new_node (dag);
+				n->type = st_alias;
+				n->label = search.label;
+				n->children[0] = node;
+				n->types[0] = op->type;
+				n->offset = search.offset;
+				set_remove (dag->roots, node->number);
+				set_add (node->parents, n->number);
+				dagnode_set_edges (dag, n, s);
+				dagnode_set_reachable (dag, n);
+			}
+			node = n;
+		}
+	}
+
+	if (!node) {
+		// No valid node found (either first reference to the value,
+		// or the value's node was killed).
+		node = leaf_node (dag, op, s->expr);
+	}
+	if (killer) {
+		// When an operand refers to a killed node, it must be
+		// evaluated AFTER the killing node has been evaluated.
+		set_add (node->edges, killer->number);
+		// If killer is set, then node is guaranteed to be a new node
+		// and thus does not have any parents, so no need to worry about
+		// updating the reachable sets of any parent nodes.
+		dagnode_set_reachable (dag, node);
+	}
+	return node;
 }
 
 static void
@@ -432,64 +489,7 @@ dag_make_children (dag_t *dag, statement_t *s,
 	}
 	for (i = 0; i < 3; i++) {
 		operand_t  *op = operands[i + 1];
-		dagnode_t  *node = dag_node (op);
-		dagnode_t  *killer = 0;
-
-		if (node && (node->killed || s->type == st_address)) {
-			// If the node has been killed, then a new node is needed
-			// taking the address of a variable effectively kills the node it's
-			// attached to. FIXME should this be for only when the variable is
-			// in the attached identifiers list and is not the node's label?
-			killer = node->killed;
-			node = 0;
-		}
-
-		if (!node && op_is_temp (op) && op_is_alias (op)) {
-			operand_t  *uop = unalias_op (op);
-			if (uop != op) {
-				if (!(node = dag_node (uop))) {
-					node = leaf_node (dag, uop, s->expr);
-				}
-				node->label->live = 1;
-				dagnode_t *n;
-				dagnode_t search = {
-					.type = st_alias,
-					.label = opcode_label (dag, save_string ("alias"), s->expr),
-					.children = { node },
-					.types = { op->type },
-					.offset = op_alias_offset (op),
-				};
-				if (!(n = dagnode_search (dag, &search))) {
-					n = new_node (dag);
-					n->type = st_alias;
-					n->label = search.label;
-					n->children[0] = node;
-					n->types[0] = op->type;
-					n->offset = search.offset;
-					set_remove (dag->roots, node->number);
-					set_add (node->parents, n->number);
-					dagnode_set_edges (dag, n, s);
-					dagnode_set_reachable (dag, n);
-				}
-				node = n;
-			}
-		}
-
-		if (!node) {
-			// No valid node found (either first reference to the value,
-			// or the value's node was killed).
-			node = leaf_node (dag, op, s->expr);
-		}
-		if (killer) {
-			// When an operand refers to a killed node, it must be
-			// evaluated AFTER the killing node has been evaluated.
-			set_add (node->edges, killer->number);
-			// If killer is set, then node is guaranteed to be a new node
-			// and thus does not have any parents, so no need to worry about
-			// updating the reachable sets of any parent nodes.
-			dagnode_set_reachable (dag, node);
-		}
-		children[i] = node;
+		children[i] = dag_make_child (dag, op, s);
 	}
 }
 
@@ -594,10 +594,10 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		if (use->op_type == op_pseudo) {
 			continue;
 		}
-		daglabel_t *label = operand_label (dag, use);
-		label->live = 1;
+		auto u = dag_make_child (dag, use, s);
+		u->label->live = 1;
 		dag_live_aliases (use);
-		set_add (n->edges, label->dagnode->number);
+		set_add (n->edges, u->number);
 	}
 	if (n->type == st_func) {
 		const char *num_params = 0;
@@ -939,19 +939,6 @@ dag_count_ops (operand_t *op)
 }
 
 static void
-dag_make_op_leafs (operand_t *op, dag_t *dag, const expr_t *expr)
-{
-	for (; op; op = op->next) {
-		if (op->op_type == op_pseudo) {
-			continue;
-		}
-		if (!dag_node (op)) {
-			leaf_node (dag, op, expr);
-		}
-	}
-}
-
-static void
 dag_free_set (set_t **set)
 {
 	set_delete (*set);
@@ -1031,15 +1018,6 @@ dag_create (flownode_t *flownode)
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
-	// do a first pass to ensure all operands have an "x_0" leaf node
-	// prior do actual dag creation
-	for (s = block->statements; s; s = s->next) {
-		operand_t  *operands[FLOW_OPERANDS];
-		dag_make_leafs (dag, s, operands);
-		// make sure any auxiliary operands are given nodes, too
-		dag_make_op_leafs (s->use, dag, s->expr);
-		dag_make_op_leafs (s->def, dag, s->expr);
-	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
