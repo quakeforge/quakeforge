@@ -41,6 +41,7 @@
 #include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
+#include "QF/GLSL/types.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
@@ -49,23 +50,22 @@
 static void
 glsl_sprite_clear (model_t *m, void *data)
 {
-	int         i, j;
 	msprite_t  *sprite = (msprite_t *) m->cache.data;
-	mspritegroup_t *group;
-	mspriteframe_t *frame;
+	m->cache.data = nullptr;
 
 	m->needload = true;
-	m->cache.data = 0;
-	for (i = 0; i < sprite->numframes; i++) {
-		if (sprite->frames[i].type == SPR_SINGLE) {
-			frame = sprite->frames[i].frame;
-			GLSL_ReleaseTexture (frame->gl_texturenum);
-		} else {
-			group = sprite->frames[i].group;
-			for (j = 0; j < group->numframes; j++) {
-				frame = group->frames[j];
-				GLSL_ReleaseTexture (frame->gl_texturenum);
-			}
+
+	auto skin = &sprite->skin;
+	auto skindesc = (mframedesc_t *) ((byte *) sprite + skin->descriptors);
+	auto skinframe = (mframe_t *) ((byte *) sprite + skin->frames);
+	int index = 0;
+
+	for (int i = 0; i < skin->numdesc; i++) {
+		for (int j = 0; j < skindesc[i].numframes; j++) {
+			uint32_t data = skinframe[index++].data;
+			auto frame = (mspriteframe_t *) ((byte *) sprite + data);
+			auto texnum = (GLuint *) &frame[1];
+			GLSL_ReleaseTexture (*texnum);
 		}
 	}
 }
@@ -74,16 +74,17 @@ void
 glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 {
 	ctx->mod->clear = glsl_sprite_clear;
+	auto sprite = ctx->sprite;
+
 	for (int i = 0; i < ctx->numframes; i++) {
-		__auto_type dframe = ctx->dframes[i];
-		size_t      size = sizeof (mspriteframe_t);
-		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
-		*ctx->frames[i] = frame;
+		auto dframe = ctx->dframes[i];
+		size_t      size = sizeof (GLuint) + sizeof (mspriteframe_t);
+		mspriteframe_t *frame = Hunk_AllocName (nullptr, size, ctx->mod->name);
+		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
-		const char *name = va (0, "%s_%i", ctx->mod->path,
-							   ctx->frame_numbers[i]);
-		frame->gl_texturenum =
-			GLSL_LoadQuakeTexture (name, dframe->width, dframe->height,
-								   (const byte *)(dframe + 1));
+		const char *name = va (0, "%s_%i", ctx->mod->path, i);
+		auto texnum = (GLuint *) &frame[1];
+		*texnum = GLSL_LoadQuakeTexture (name, dframe->width, dframe->height,
+									     (const byte *)(dframe + 1));
 	}
 }

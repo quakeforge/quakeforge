@@ -36,39 +36,8 @@
 mspriteframe_t *
 R_GetSpriteFrame (const msprite_t *sprite, const animation_t *animation)
 {
-	mspritegroup_t *group;
-	mspriteframe_t *frame;
-	int         i, numframes, frame_num;
-	float      *intervals, fullinterval, targettime, time;
-
-	frame_num = animation->frame;
-
-	if ((frame_num >= sprite->numframes) || (frame_num < 0)) {
-		Sys_Printf ("R_DrawSprite: no such frame %d\n", frame_num);
-		frame_num = 0;
-	}
-
-	if (sprite->frames[frame_num].type == SPR_SINGLE) {
-		frame = sprite->frames[frame_num].frame;
-	} else {
-		group = sprite->frames[frame_num].group;
-		intervals = group->intervals;
-		numframes = group->numframes;
-		fullinterval = intervals[numframes - 1];
-
-		time = vr_data.realtime + animation->syncbase;
-
-		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
-		// values are positive, so we don't have to worry about division by 0
-		targettime = time - ((int) (time / fullinterval)) * fullinterval;
-
-		for (i = 0; i < (numframes - 1); i++) {
-			if (intervals[i] > targettime)
-				break;
-		}
-
-		frame = group->frames[i];
-	}
-
-	return frame;
+	int         framenum = animation->frame;
+	float       syncbase = animation->syncbase;
+	uint32_t data = R_GetFrameData (&sprite->skin, framenum, sprite, syncbase);
+	return (mspriteframe_t *) ((byte *) sprite + data);
 }

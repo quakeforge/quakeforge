@@ -167,7 +167,10 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 	};
 
 	auto animation = Entity_GetAnimation (ent);
-	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
+	// the frame number is stored in the frame data by the vulkan sprite
+	// loader (FIXME not the best for unifying sprite/alias/iqm)
+	frame = R_GetFrameData (&sprite->skin, animation->frame, sprite,
+							animation->syncbase);
 
 	transform_t transform = Entity_Transform (ent);
 	mat[3] = Transform_GetWorldPosition (transform);
@@ -177,7 +180,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 	mat[0] = -mat[0];
 
 	emit_commands (taskctx->cmd,
-				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
+				   (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data),
 				   2, push_constants, taskctx, ent);
 }
 

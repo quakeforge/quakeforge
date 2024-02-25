@@ -70,16 +70,13 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 	tex_t *tex = skin->tex;
 	// FIXME this is gross, but the vulkan skin (and even model) handling
 	// needs a complete overhaul.
-	aliashdr_t dummy_header = {
-		.mdl.skinwidth = tex->width,
-		.mdl.skinheight = tex->height,
-	};
 	model_t dummy_model = { };
 	mod_alias_ctx_t alias_ctx = {
-		.header = &dummy_header,
+		.skinwidth = tex->width,
+		.skinheight = tex->height,
 		.mod = &dummy_model,
 	};
-	maliasskindesc_t skindesc = {};
+	mframe_t skindesc = {};
 	int    skinsize = tex->width * tex->height;
 	size_t hunk_mark = Hunk_LowMark (0);
 	auto vkskin =  Vulkan_Mod_LoadSkin (&alias_ctx, tex->data, skinsize,

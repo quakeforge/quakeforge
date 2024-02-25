@@ -191,7 +191,7 @@ bi (Model_NumJoints)
 
 	R_INT (pr) = 0;
 	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->aliashdr;
+		auto iqm = (iqm_t *) model->alias;
 		R_INT (pr) = iqm->num_joints;
 	}
 }
@@ -202,7 +202,7 @@ bi (Model_GetJoints)
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
-	auto iqm = (iqm_t *) model->aliashdr;
+	auto iqm = (iqm_t *) model->alias;
 	auto joints = (iqmjoint *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {
@@ -226,14 +226,19 @@ bi (Model_NumFrames)
 
 	R_INT (pr) = 0;
 	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->aliashdr;
+		auto iqm = (iqm_t *) model->alias;
 		R_INT (pr) = iqm->num_frames;
 	} else if (model->type == mod_alias) {
-		auto hdr = model->aliashdr;
-		if (!hdr) {
-			hdr = Cache_Get (&model->cache);
+		auto alias = model->alias;
+		bool cached = false;
+		if (!alias) {
+			alias = Cache_Get (&model->cache);
+			cached = true;
 		}
-		R_INT (pr) = hdr->mdl.numframes;
+		R_INT (pr) = alias->morph.numdesc;
+		if (cached) {
+			Cache_Release (&model->cache);
+		}
 	}
 }
 

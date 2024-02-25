@@ -125,7 +125,7 @@ add_strip (int vert, int tri)
 static int
 StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	aliashdr_t *header = alias_ctx->header;
+	malias_t   *alias = alias_ctx->alias;
 	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
 
@@ -144,7 +144,7 @@ StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
 nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < header->mdl.numtris; j++, check++) {
+		 j < alias->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -174,7 +174,7 @@ nexttri:
 done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < header->mdl.numtris; j++)
+	for (j = starttri + 1; j < alias->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -184,7 +184,7 @@ done:
 static int
 FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	aliashdr_t *header = alias_ctx->header;
+	malias_t   *alias = alias_ctx->alias;
 	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
 
@@ -204,7 +204,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
   nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < header->mdl.numtris; j++, check++) {
+		 j < alias->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -231,7 +231,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
   done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < header->mdl.numtris; j++)
+	for (j = starttri + 1; j < alias->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -247,7 +247,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 static void
 BuildTris (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
+	malias_t   *alias = alias_ctx->alias;
 	float		s, t;
 	int			bestlen, len, startv, type, i, j, k;
 	int			besttype = 0;
@@ -257,10 +257,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	numorder = 0;
 	numcommands = 0;
 	stripcount = 0;
-	alloc_used (header->mdl.numtris);
+	alloc_used (alias->numtris);
 	memset (used, 0, used_size * sizeof (used[0]));
 
-	for (i = 0; i < header->mdl.numtris; i++) {
+	for (i = 0; i < alias->numtris; i++) {
 		// pick an unused triangle and start the trifan
 		if (used[i])
 			continue;
@@ -308,9 +308,9 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[besttris[0]].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += header->mdl.skinwidth / 2;	// on back side
-			s = (s + 0.5) / header->mdl.skinwidth;
-			t = (t + 0.5) / header->mdl.skinheight;
+				s += alias->skinwidth / 2;	// on back side
+			s = (s + 0.5) / alias->skinwidth;
+			t = (t + 0.5) / alias->skinheight;
 
 			memcpy (&tmp, &s, 4);
 			add_command (tmp);
@@ -322,10 +322,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	add_command (0);					// end of list marker
 
 	Sys_MaskPrintf (SYS_dev, "%3i tri %3i vert %3i cmd\n",
-					header->mdl.numtris, numorder, numcommands);
+					alias->numtris, numorder, numcommands);
 
 	allverts += numorder;
-	alltris += header->mdl.numtris;
+	alltris += alias->numtris;
 
 	if (bestverts)
 		free (bestverts);
@@ -337,7 +337,7 @@ void
 gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
-	aliashdr_t *header = alias_ctx->header;
+	malias_t   *alias = alias_ctx->alias;
 	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
@@ -352,7 +352,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	if (!gl_alias_render_tri) {
 
-		if (gl_mesh_cache && gl_mesh_cache <= header->mdl.numtris) {
+		if (gl_mesh_cache && gl_mesh_cache <= alias->numtris) {
 			do_cache = true;
 
 			mdfour (model_digest, (unsigned char *) _m, _s);
@@ -472,25 +472,22 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 
 		// save the data out
-		header->poseverts = numorder;
-
 		cmds = Hunk_Alloc (0, numcommands * sizeof (int));
-		header->commands = (byte *) cmds - (byte *) header;
+		alias->morph.data = (byte *) cmds - (byte *) alias;
 		memcpy (cmds, commands, numcommands * sizeof (int));
 
 	} else {
 		tex_coord_t *tex_coord;
 
 		numorder = 0;
-		for (i=0; i < header->mdl.numtris; i++) {
+		for (i=0; i < alias->numtris; i++) {
 			add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
 			add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
 			add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
 		}
-		header->poseverts = numorder;
 
 		tex_coord = Hunk_Alloc (0, numorder * sizeof(tex_coord_t));
-		header->tex_coord = (byte *) tex_coord - (byte *) header;
+		alias->morph.data = (byte *) tex_coord - (byte *) alias;
 		for (i=0; i < numorder; i++) {
 			float s, t;
 			int k;
@@ -499,21 +496,22 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[i/3].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += header->mdl.skinwidth / 2;	// on back side
-			s = (s + 0.5) / header->mdl.skinwidth;
-			t = (t + 0.5) / header->mdl.skinheight;
+				s += alias->skinwidth / 2;	// on back side
+			s = (s + 0.5) / alias->skinwidth;
+			t = (t + 0.5) / alias->skinheight;
 			tex_coord[i].st[0] = s;
 			tex_coord[i].st[1] = t;
 		}
 	}
 
+	int numposes = alias_ctx->poseverts.size;
+	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
 	if (extra) {
 		trivertx16_t *verts;
-		verts = Hunk_Alloc (0, header->numposes * header->poseverts
-							* sizeof (trivertx16_t));
-		header->posedata = (byte *) verts - (byte *) header;
-		for (i = 0; i < header->numposes; i++) {
+		verts = Hunk_Alloc (0, sizeof (trivertx16_t[numposes * numorder]));
+		for (i = 0; i < numposes; i++) {
 			trivertx_t *pv = alias_ctx->poseverts.a[i];
+			frames[i].data = (byte *) verts - (byte *) alias;
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
@@ -522,7 +520,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 				// fractional bits of the vertex, giving 8.8. However, it's
 				// easier for us to multiply everything by 256 and adjust the
 				// model scale appropriately
-				VectorMultAdd (pv[vertexorder[j] + header->mdl.numverts].v,
+				VectorMultAdd (pv[vertexorder[j] + alias->numverts].v,
 							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
 					alias_ctx->poseverts.a[i][vertexorder[j]].lightnormalindex;
@@ -531,14 +529,16 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 	} else {
 		trivertx_t *verts;
-		verts = Hunk_Alloc (0, header->numposes * header->poseverts
-							* sizeof (trivertx_t));
-		header->posedata = (byte *) verts - (byte *) header;
-		for (i = 0; i < header->numposes; i++) {
-			for (j = 0; j < numorder; j++)
+		verts = Hunk_Alloc (0, sizeof (trivertx_t[numposes * numorder]));
+		for (i = 0; i < numposes; i++) {
+			frames[i].data = (byte *) verts - (byte *) alias;
+			for (j = 0; j < numorder; j++) {
 				*verts++ = alias_ctx->poseverts.a[i][vertexorder[j]];
+			}
 		}
 	}
+	alias->numverts = numorder;
+
 	dstring_delete (cache);
 	dstring_delete (fullpath);
 }

@@ -65,7 +65,7 @@ vulkan_sprite_clear (model_t *m, void *data)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	msprite_t  *msprite = m->cache.data;
-	__auto_type sprite = (qfv_sprite_t *) ((byte *) msprite + msprite->data);
+	auto sprite = (qfv_sprite_t *) ((byte *) msprite + msprite->skin.data);
 
 	Vulkan_Sprite_FreeDescriptors (ctx, sprite);
 
@@ -146,7 +146,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										   sprite_ctx->numframes * texsize);
 
 	for (int i = 0; i < sprite_ctx->numframes; i++) {
-		__auto_type dframe = sprite_ctx->dframes[i];
+		auto dframe = sprite_ctx->dframes[i];
 		mspriteframe_t f;
 		Mod_LoadSpriteFrame (&f, dframe);
 		verts[i * 4 + 0] = (spritevrt_t) { f.left, f.up, 0, 0 };
@@ -155,7 +155,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 		verts[i * 4 + 3] = (spritevrt_t) { f.right, f.down, 1, 1 };
 		Vulkan_ExpandPalette (pixels + i * texsize, (const byte *)(dframe + 1),
 							  vid.palette32, 2, texsize / 4);
-		*sprite_ctx->frames[i] = (mspriteframe_t *) (ptrdiff_t) i;
+		sprite_ctx->frames[i]->data = i;
 	}
 
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -200,7 +200,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 
 	Vulkan_Sprite_DescriptorSet (ctx, sprite);
 
-	sprite_ctx->sprite->data = (byte *) sprite - (byte *) sprite_ctx->sprite;
+	sprite_ctx->sprite->skin.data = (byte *)sprite - (byte *)sprite_ctx->sprite;
 
 	qfvPopDebug (ctx);
 }

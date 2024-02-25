@@ -143,7 +143,7 @@ get_joints (const iqmheader *hdr, byte *buffer)
 static bool
 load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
-	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	iqm_t      *iqm = (iqm_t *) mod->alias;
 	iqmvertexarray *vas;
 	float      *position = 0;
 	float      *normal = 0;
@@ -333,7 +333,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 static bool
 load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
-	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	iqm_t      *iqm = (iqm_t *) mod->alias;
 	iqmtriangle *tris;
 	iqmmesh    *meshes;
 	iqmjoint   *joints;
@@ -386,7 +386,7 @@ load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
 static bool
 load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
 {
-	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
+	iqm_t      *iqm = (iqm_t *) mod->alias;
 	iqmanim    *anims;
 	iqmpose    *poses;
 	uint16_t   *framedata;
@@ -518,7 +518,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	iqm = calloc (1, sizeof (iqm_t));
 	iqm->text = malloc (hdr->num_text);
 	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
-	mod->aliashdr = (aliashdr_t *) iqm;
+	mod->alias = (malias_t *) iqm;
 	mod->type = mod_iqm;
 	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
 		Sys_Error ("%s: error loading meshes", mod->path);

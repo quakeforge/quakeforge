@@ -272,98 +272,72 @@ typedef struct mod_brush_s {
 	unsigned int checksum2;
 } mod_brush_t;
 
+//
+
+typedef struct mframedesc_s {
+	int         firstframe;
+	int         numframes;		// 1 for single frames
+} mframedesc_t;
+
+typedef struct mframe_s {
+	float       endtime;		// 0 for single frames
+	uint32_t    data;
+} mframe_t;
+
+typedef struct manim_s {
+	int         numdesc;
+	uint32_t    descriptors;
+	uint32_t    frames;
+	uint32_t    data;
+} manim_t;
+
 // SPRITE MODELS ==============================================================
 
 typedef struct mspriteframe_s {
-	int		width;
-	int		height;
-	float	up, down, left, right;
-	byte	pixels[4];
-	int		gl_texturenum;
+	float       up, down, left, right;
 } mspriteframe_t;
-
-typedef struct {
-	int				numframes;
-	float			*intervals;
-	mspriteframe_t	*frames[1];
-} mspritegroup_t;
-
-typedef struct {
-	spriteframetype_t	type;
-	union {
-		mspriteframe_t *frame;
-		mspritegroup_t *group;
-	};
-} mspriteframedesc_t;
 
 typedef struct {
 	int         type;
 	float       beamlength;
-	int         numframes;
-	int         data;
-	mspriteframedesc_t	frames[1];
+	manim_t     skin;
 } msprite_t;
-
 
 // ALIAS MODELS ===============================================================
 // Alias models are position independent, so the cache manager can move them.
 
-// NOTE: the first three lines must match maliasgroupframedesc_t
 typedef struct {
-	trivertx_t			bboxmin;
-	trivertx_t			bboxmax;
-	int					frame;
-	aliasframetype_t	type;
-	int					firstpose;
-	int					numposes;
-	float				interval;
-	char				name[16];
-} maliasframedesc_t;
-
-typedef struct maliasskindesc_s {
-	aliasskintype_t type;
-	int     skin;
-	int     texnum;
-	int     fb_texnum;
-} maliasskindesc_t;
-
-typedef struct {
-	int					numframes;
-	int					intervals;
-	maliasframedesc_t	frames[1];
-} maliasgroup_t;
-
-typedef struct {
-	int					numskins;
-	int					intervals;
-	maliasskindesc_t	skindescs[1];
-} maliasskingroup_t;
+	trivertx_t  bboxmin;
+	trivertx_t  bboxmax;
+	uint32_t    name;
+	uint32_t    data;
+} maliasframe_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct mtriangle_s {
 	int					facesfront;
 	int					vertindex[3];
 } mtriangle_t;
-
+static_assert (sizeof (mtriangle_t) == 4 * sizeof (int),
+			   "mtriangle_t wrong size");
 
 #define	MAX_SKINS	32
-typedef struct {
-	int			model;
-	int			stverts;
-	int			skindesc;
-	int			triangles;
 
-	mdl_t		mdl;
-	int			tex_coord;
-	int			numposes;
-	int			poseverts;
-	int			posedata;	// numposes * poseverts trivert_t
-	int			commands;	// gl command list with embedded s/t
-
-	unsigned short crc;
-
-	maliasframedesc_t	frames[1];
-} aliashdr_t;
+typedef struct malias_s {
+	uint16_t    crc;
+	manim_t     skin;
+	manim_t     morph;
+	float       size;
+	int         numverts;
+	int         numtris;
+	uint32_t    triangles;
+	uint32_t    stverts;
+	vec3_t      scale;
+	vec3_t      scale_origin;
+	int         extra;
+	int         skinwidth;
+	int         skinheight;
+} malias_t;
 
 // Whole model ================================================================
 
@@ -396,7 +370,7 @@ typedef struct model_s {
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
 	bool		 needload;		// bmodels and sprites don't cache normally
-	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
+	malias_t    *alias;			// if not null, alias model is not cached
 
 	modtype_t	 type;
 	int			 numframes;

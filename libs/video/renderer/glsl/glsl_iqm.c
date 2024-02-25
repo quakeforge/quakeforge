@@ -207,7 +207,7 @@ glsl_R_DrawIQM (entity_t ent)
 	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	static quat_t color = { 1, 1, 1, 1};
-	iqm_t      *iqm = (iqm_t *) model->aliashdr;
+	iqm_t      *iqm = (iqm_t *) model->alias;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	dlight_t   *lights[MAX_IQM_LIGHTS];
 	int         i;

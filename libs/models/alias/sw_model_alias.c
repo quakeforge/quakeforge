@@ -59,18 +59,23 @@ sw_alias_clear (model_t *m, void *data)
 void
 sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int         skinsize = header->mdl.skinwidth * header->mdl.skinheight;
+	malias_t   *alias = alias_ctx->alias;
+	int         width = alias_ctx->skinwidth;
+	int         height = alias_ctx->skinheight;
+	int         skinsize = width * height;
+	int         picsize = field_offset (qpic_t, data[width * height]);
 	int         num_skins = alias_ctx->skins.size;
-	byte       *texel_block = Hunk_AllocName (0, skinsize * num_skins,
+	byte       *texel_block = Hunk_AllocName (0, picsize * num_skins,
 											  alias_ctx->mod->name);
 
 	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
-		__auto_type skin = alias_ctx->skins.a + i;
-		byte      *texels = texel_block + i * skinsize;
+		auto skin = alias_ctx->skins.a + i;
+		auto pic = (qpic_t *) (texel_block + i * picsize);
 
-		skin->skindesc->skin = texels - (byte *) header;
-		memcpy (texels, skin->texels, skinsize);
+		pic->width = width;
+		pic->height = height;
+		skin->skindesc->data = (byte *) pic - (byte *) alias;
+		memcpy (pic->data, skin->texels, skinsize);
 	}
 }
 
@@ -81,18 +86,21 @@ sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 }
 
 static void
-process_frame (mod_alias_ctx_t *alias_ctx, maliasframedesc_t *frame,
+process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
 			   int posenum, int extra)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int         size = header->mdl.numverts * sizeof (trivertx_t);
+	malias_t   *alias = alias_ctx->alias;
+	int         size = alias_ctx->mdl->numverts * sizeof (trivertx_t);
 	trivertx_t *frame_verts;
+
+	frame->bboxmin = alias_ctx->dframes[posenum]->bboxmin;
+	frame->bboxmax = alias_ctx->dframes[posenum]->bboxmax;
 
 	if (extra)
 		size *= 2;
 
 	frame_verts = Hunk_AllocName (0, size, alias_ctx->mod->name);
-	frame->frame = (byte *) frame_verts - (byte *) header;
+	frame->data = (byte *) frame_verts - (byte *) alias;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
 	// from the high-order bits (see R_AliasTransformFinalVert16 in
@@ -105,43 +113,41 @@ void
 sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int			 i, j;
-	int          posenum = 0;
-	int			 numv = header->mdl.numverts, numt = header->mdl.numtris;
-	stvert_t	*stverts;
-	mtriangle_t *tris;
+	malias_t   *alias = alias_ctx->alias;
+	int         numv = alias_ctx->stverts.size;
+	int         numt = alias_ctx->triangles.size;
+	int         nump = alias_ctx->poseverts.size;
 
-	stverts = (stvert_t *) Hunk_AllocName (0, numv * sizeof (stvert_t),
-										   alias_ctx->mod->name);
-	tris = (mtriangle_t *) Hunk_AllocName (0, numt * sizeof (mtriangle_t),
-										   alias_ctx->mod->name);
+	stvert_t *stverts = Hunk_AllocName (nullptr, sizeof (stvert_t[numv]),
+										alias_ctx->mod->name);
+	mtriangle_t *tris = Hunk_AllocName (nullptr, sizeof (mtriangle_t[numt]),
+										alias_ctx->mod->name);
+	maliasframe_t *aframes = Hunk_AllocName (nullptr,
+											 sizeof (maliasframe_t[nump]),
+											 alias_ctx->mod->name);
 
-	header->stverts = (byte *) stverts - (byte *) header;
-	header->triangles = (byte *) tris - (byte *) header;
+	alias->stverts = (byte *) stverts - (byte *) alias;
+	alias->triangles = (byte *) tris - (byte *) alias;
+	alias->morph.data = (byte *) aframes - (byte *) alias;
 
-	for (i = 0; i < numv; i++) {
+	for (int i = 0; i < numv; i++) {
 		stverts[i].onseam = alias_ctx->stverts.a[i].onseam;
 		stverts[i].s = alias_ctx->stverts.a[i].s << 16;
 		stverts[i].t = alias_ctx->stverts.a[i].t << 16;
 	}
 
-	for (i = 0; i < numt; i++) {
+	for (int i = 0; i < numt; i++) {
 		tris[i].facesfront = alias_ctx->triangles.a[i].facesfront;
 		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	for (i = 0; i < header->mdl.numframes; i++) {
-		maliasframedesc_t *frame = header->frames + i;
-		if (frame->type) {
-			maliasgroup_t *group;
-			group = (maliasgroup_t *) ((byte *) header + frame->frame);
-			for (j = 0; j < group->numframes; j++) {
-				__auto_type frame = (maliasframedesc_t *) &group->frames[j];
-				process_frame (alias_ctx, frame, posenum++, extra);
-			}
-		} else {
-			process_frame (alias_ctx, frame, posenum++, extra);
+	int posenum = 0;
+	auto desc = (mframedesc_t *) ((byte *) alias + alias->morph.descriptors);
+	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	for (int i = 0; i < alias->morph.numdesc; i++) {
+		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
+			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) alias;
+			process_frame (alias_ctx, &aframes[posenum], posenum, extra);
 		}
 	}
 }

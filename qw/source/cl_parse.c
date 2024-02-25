@@ -330,18 +330,18 @@ Model_NextDownload (void)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs) {
-			aliashdr_t *ahdr = cl_world.models.a[i]->aliashdr;
-			if (!ahdr)
-				ahdr = Cache_Get (&cl_world.models.a[i]->cache);
+			malias_t *alias = cl_world.models.a[i]->alias;
+			if (!alias)
+				alias = Cache_Get (&cl_world.models.a[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
-															 ahdr->crc),
+															 alias->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
-													info_key, ahdr->crc));
+													info_key, alias->crc));
 			}
-			if (!cl_world.models.a[i]->aliashdr)
+			if (!cl_world.models.a[i]->alias)
 				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}

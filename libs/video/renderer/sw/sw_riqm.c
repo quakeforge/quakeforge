@@ -293,7 +293,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
 	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
-	iqm_t      *iqm = (iqm_t *) model->aliashdr;
+	iqm_t      *iqm = (iqm_t *) model->alias;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         size;
 	float       blend;

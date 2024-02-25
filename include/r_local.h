@@ -166,10 +166,12 @@ surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
 void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
+uint32_t R_GetFrameData (const manim_t *anim, int framenum, const void *base,
+						 float syncbase);
 struct animation_s;
-maliasskindesc_t *R_AliasGetSkindesc (struct animation_s *animation, int skinnum, aliashdr_t *hdr);
-maliasframedesc_t *R_AliasGetFramedesc (struct animation_s *animation, aliashdr_t *hdr);
-float R_AliasGetLerpedFrames (struct animation_s *animation, aliashdr_t *hdr);
+uint32_t R_AliasGetSkindesc (struct animation_s *animation, int skinnum, malias_t *alias);
+maliasframe_t *R_AliasGetFramedesc (struct animation_s *animation, malias_t *alias);
+float R_AliasGetLerpedFrames (struct animation_s *animation, malias_t *alias);
 float R_IQMGetLerpedFrames (struct animation_s *animation, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);

@@ -148,7 +148,7 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 
 static void
-R_SetupAndDrawSprite (const vec3_t relvieworg)
+R_SetupAndDrawSprite (const vec3_t relvieworg, mspriteframe_t *spriteframe)
 {
 	int         i, nump;
 	float       dot, scale, *pv;
@@ -163,10 +163,10 @@ R_SetupAndDrawSprite (const vec3_t relvieworg)
 		return;
 
 	// build the sprite poster in worldspace
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->right, right);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->up, up);
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->left, left);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->down, down);
+	VectorScale (r_spritedesc.vright, spriteframe->right, right);
+	VectorScale (r_spritedesc.vup, spriteframe->up, up);
+	VectorScale (r_spritedesc.vright, spriteframe->left, left);
+	VectorScale (r_spritedesc.vup, spriteframe->down, down);
 
 	pverts = clip_verts[0];
 
@@ -247,10 +247,12 @@ R_DrawSprite (entity_t ent)
 	msprite_t  *sprite = renderer->model->cache.data;
 
 	auto animation = Entity_GetAnimation (ent);
-	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite, animation);
+	auto spriteframe = R_GetSpriteFrame (sprite, animation);
 
-	sprite_width = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
+	r_spritedesc.spriteframe = (qpic_t *) &spriteframe[1];
+
+	sprite_width = r_spritedesc.spriteframe->width;
+	sprite_height = r_spritedesc.spriteframe->height;
 
 	vec4f_t     up = {}, right = {}, fwd = {};
 	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
@@ -267,5 +269,5 @@ R_DrawSprite (entity_t ent)
 	vec3_t      org;
 	R_RotateSprite (cameravec, sprite->beamlength, org);
 
-	R_SetupAndDrawSprite (org);
+	R_SetupAndDrawSprite (org, spriteframe);
 }

@@ -66,13 +66,14 @@ load_texture (model_t *mod, int framenum, const dspriteframe_t *dframe)
 void
 gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 {
+	auto sprite = ctx->sprite;
 	for (int i = 0; i < ctx->numframes; i++) {
-		__auto_type dframe = ctx->dframes[i];
-		size_t      size = sizeof (mspriteframe_t);
-		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
-		*ctx->frames[i] = frame;
+		auto dframe = ctx->dframes[i];
+		size_t      size = sizeof (GLuint) + sizeof (mspriteframe_t);
+		mspriteframe_t *frame = Hunk_AllocName (nullptr, size, ctx->mod->name);
+		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
-		frame->gl_texturenum = load_texture (ctx->mod, ctx->frame_numbers[i],
-											 dframe);
+		auto texnum = (GLuint *) &frame[1];
+		*texnum = load_texture (ctx->mod, i, dframe);
 	}
 }

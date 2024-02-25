@@ -58,46 +58,33 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 glsl_alias_clear (model_t *m, void *data)
 {
-	int         i, j;
-	aliashdr_t *header;
-	GLuint      bufs[2];
-	maliasskindesc_t *skins;
-	maliasskingroup_t *group;
+	malias_t   *alias = m->alias;
 
 	m->needload = true;
 
-	if (!(header = m->aliashdr))
-		header = Cache_Get (&m->cache);
-
-	bufs[0] = header->posedata;
-	bufs[1] = header->commands;
+	GLuint      bufs[2];
+	bufs[0] = alias->stverts;
+	bufs[1] = alias->triangles;
 	qfeglDeleteBuffers (2, bufs);
 
-	skins = ((maliasskindesc_t *) ((byte *) header + header->skindesc));
-	for (i = 0; i < header->mdl.numskins; i++) {
-		if (skins[i].type == ALIAS_SKIN_GROUP) {
-			group = (maliasskingroup_t *) ((byte *) header + skins[i].skin);
-			for (j = 0; j < group->numskins; j++) {
-				GLSL_ReleaseTexture (group->skindescs[j].texnum);
-			}
-		} else {
-			GLSL_ReleaseTexture (skins[i].texnum);
-		}
-	}
+	auto skin = &alias->skin;
+	auto skindesc = (mframedesc_t *) ((byte *) alias + skin->descriptors);
+	auto skinframe = (mframe_t *) ((byte *) alias + skin->frames);
+	int index = 0;
 
-	if (!m->aliashdr) {
-		Cache_Release (&m->cache);
-		Cache_Free (&m->cache);
+	for (int i = 0; i < skin->numdesc; i++) {
+		for (int j = 0; j < skindesc[i].numframes; j++) {
+			GLSL_ReleaseTexture (skinframe[index++].data);
+		}
 	}
 }
 
 static void
 glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
-				   int snum, int gnum, maliasskindesc_t *skindesc)
+				   int snum, int gnum, mframe_t *skinframe)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int         w = header->mdl.skinwidth;
-	int         h = header->mdl.skinheight;
+	int         w = alias_ctx->skinwidth;
+	int         h = alias_ctx->skinheight;
 	size_t      skinsize = w * h;
 	byte       *tskin = alloca (skinsize);
 	const char *name;
@@ -108,7 +95,7 @@ glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
 		name = va (0, "%s_%i_%i", alias_ctx->mod->path, snum, gnum);
 	else
 		name = va (0, "%s_%i", alias_ctx->mod->path, snum);
-	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
+	skinframe->data = GLSL_LoadQuakeTexture (name, w, h, tskin);
 }
 
 void
@@ -124,10 +111,10 @@ glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 void
 glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
+	//malias_t   *alias = alias_ctx->alias;
 
-	if (header->mdl.ident == HEADER_MDL16)
-		VectorScale (header->mdl.scale, 1/256.0, header->mdl.scale);
+	//if (alias->mdl.ident == HEADER_MDL16)
+	//	VectorScale (alias->mdl.scale, 1/256.0, alias->mdl.scale);
 	alias_ctx->mod->clear = glsl_alias_clear;
 }
 
@@ -136,67 +123,45 @@ glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 }
 
-void
-glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
-									 int _s, int extra)
+static int
+separate_verts (int *indexmap, int numverts, int numtris,
+				const mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
-	mtriangle_t *tris;
-	stvert_t   *st;
-	aliasvrt_t *verts;
-	trivertx_t *pv;
-	int        *indexmap;
-	GLushort   *indices;
-	GLuint      bnum[2];
-	int         vertexsize, indexsize;
-	int         numverts;
-	int         numtris;
-	int         i, j;
-	int         pose;
-
-	numverts = header->mdl.numverts;
-	numtris = header->mdl.numtris;
-
-	// copy triangles before editing them
-	tris = malloc (numtris * sizeof (mtriangle_t));
-	memcpy (tris, alias_ctx->triangles.a, numtris * sizeof (mtriangle_t));
-
-	// initialize indexmap to -1 (unduplicated). any other value indicates
-	// both that the vertex has been duplicated and the index of the
-	// duplicate vertex.
-	indexmap = malloc (numverts * sizeof (int));
-	memset (indexmap, -1, numverts * sizeof (int));
-
-	// copy stverts. need space for duplicates
-	st = malloc (2 * numverts * sizeof (stvert_t));
-	memcpy (st, alias_ctx->stverts.a, numverts * sizeof (stvert_t));
-
 	// check for onseam verts, and duplicate any that are associated with
-	// back-facing triangles. the s coordinate is shifted right by half
-	// the skin width.
-	for (i = 0; i < numtris; i++) {
-		for (j = 0; j < 3; j++) {
-			int         vind = tris[i].vertindex[j];
-			if (st[vind].onseam && !tris[i].facesfront) {
+	// back-facing triangles
+	for (int i = 0; i < numtris; i++) {
+		for (int j = 0; j < 3; j++) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
+				// duplicate the vertex if it has not alreaddy been
+				// duplicated
 				if (indexmap[vind] == -1) {
-					st[numverts] = st[vind];
-					st[numverts].s += header->mdl.skinwidth / 2;
 					indexmap[vind] = numverts++;
 				}
-				tris[i].vertindex[j] = indexmap[vind];
 			}
 		}
 	}
+	return numverts;
+}
 
-	// we now know exactly how many vertices we need, so built the vertex
-	// array
-	vertexsize = header->numposes * numverts * sizeof (aliasvrt_t);
-	verts = malloc (vertexsize);
-	for (i = 0, pose = 0; i < header->numposes; i++, pose += numverts) {
-		for (j = 0; j < header->mdl.numverts; j++) {
-			pv = &alias_ctx->poseverts.a[i][j];
-			if (extra) {
-				VectorMultAdd (pv[header->mdl.numverts].v, 256, pv->v,
+static void
+build_verts (aliasvrt_t *verts, int numposes, int numverts,
+			 const int *indexmap, const mod_alias_ctx_t *alias_ctx)
+{
+	auto st = alias_ctx->stverts.a;
+	auto alias = alias_ctx->alias;
+	auto mdl = alias_ctx->mdl;
+	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	int         i, pose;
+	// populate the vertex position and normal data, duplicating for
+	// back-facing on-seam verts (indicated by non-negative indexmap entry)
+	for (i = 0, pose = 0; i < numposes; i++, pose += numverts) {
+		frames[i].data = i * numverts * sizeof (aliasvrt_t);
+		for (int j = 0; j < mdl->numverts; j++) {
+			auto pv = &alias_ctx->poseverts.a[i][j];
+			if (mdl->ident == HEADER_MDL16) {
+				VectorMultAdd (pv[mdl->numverts].v, 256, pv->v,
 							   verts[pose + j].vertex);
 			} else {
 				VectorCopy (pv->v, verts[pose + j].vertex);
@@ -209,42 +174,75 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			// stvert setup, using the modified st coordinates
 			if (indexmap[j] != -1) {
 				// the vertex position and normal are duplicated, only s and t
-				// are not (and really, only s, but this feels cleaner)
+				// are not (and really, only s)
 				verts[pose + indexmap[j]] = verts[pose + j];
-				verts[pose + indexmap[j]].st[0] = st[indexmap[j]].s;
-				verts[pose + indexmap[j]].st[1] = st[indexmap[j]].t;
+				verts[pose + indexmap[j]].st[0] += mdl->skinwidth / 2;
 			}
 		}
 	}
+}
 
-	// finished with st and indexmap
-	free (st);
-	free (indexmap);
+static void
+build_inds (GLushort *indices, int numtris, const int *indexmap,
+			const mod_alias_ctx_t *alias_ctx)
+{
 
 	// now build the indices for DrawElements
-	indexsize = 3 * numtris * sizeof (GLushort);
-	indices = malloc (indexsize);
-	for (i = 0; i < numtris; i++)
-		VectorCopy (tris[i].vertindex, indices + 3 * i);
+	for (int i = 0; i < numtris; i++) {
+		for (int j = 0; j < 3; j++) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			// can't use indexmap to do the test because it indicates only
+			// that the vertex has been duplicated, not whether or not
+			// the vertex is the original or the duplicate
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
+				vind = indexmap[vind];
+			}
+			indices[3 * i + j] = vind;
+		}
+	}
+}
 
-	// finished with tris
-	free (tris);
+void
+glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
+									 int _s, int extra)
+{
+	malias_t   *alias = alias_ctx->alias;
+	GLuint      bnum[2];
+	int         numverts = alias_ctx->stverts.size;
+	int         numtris = alias_ctx->triangles.size;
+	int         numposes = alias_ctx->poseverts.size;
 
-	header->poseverts = numverts;
+	// copy triangles before editing them
+	mtriangle_t tris[numtris];
+	memcpy (tris, alias_ctx->triangles.a, sizeof (tris));
+
+	// initialize indexmap to -1 (unduplicated). any other value indicates
+	// both that the vertex has been duplicated and the index of the
+	// duplicate vertex.
+	int indexmap[numverts];
+	memset (indexmap, -1, sizeof (indexmap));
+
+	numverts = separate_verts (indexmap, numverts, numtris, alias_ctx);
+
+	aliasvrt_t  verts[numverts * numposes];
+	build_verts (verts, numposes, numverts, indexmap, alias_ctx);
+
+	// now build the indices for DrawElements
+	GLushort indices[3 * numtris];
+	build_inds (indices, numtris, indexmap, alias_ctx);
 
 	// load the vertex data and indices into GL
 	qfeglGenBuffers (2, bnum);
-	header->posedata = bnum[0];
-	header->commands = bnum[1];
-	qfeglBindBuffer (GL_ARRAY_BUFFER, header->posedata);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, header->commands);
-	qfeglBufferData (GL_ARRAY_BUFFER, vertexsize, verts, GL_STATIC_DRAW);
-	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indexsize, indices,
-					GL_STATIC_DRAW);
+	alias->stverts = bnum[0];
+	alias->triangles = bnum[1];
+	qfeglBindBuffer (GL_ARRAY_BUFFER, alias->stverts);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, alias->triangles);
+	qfeglBufferData (GL_ARRAY_BUFFER, sizeof (verts), verts, GL_STATIC_DRAW);
+	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (indices), indices,
+					 GL_STATIC_DRAW);
 
 	// all done
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
-	free (verts);
-	free (indices);
 }

@@ -85,7 +85,8 @@ R_DrawSpriteModel_f (entity_t e)
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
-	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum);
+	auto texnum = (GLuint *) &frame[1];
+	qfglBindTexture (GL_TEXTURE_2D, *texnum);
 
 	qfglBegin (GL_QUADS);
 
@@ -134,7 +135,8 @@ R_DrawSpriteModel_VA_f (entity_t e)
 	auto animation = Entity_GetAnimation (e);
 	frame = R_GetSpriteFrame (psprite, animation);
 
-	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
+	auto texnum = (GLuint *) &frame[1];
+	qfglBindTexture (GL_TEXTURE_2D, *texnum); // FIXME: DESPAIR
 
 	transform_t transform = Entity_Transform (e);
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls

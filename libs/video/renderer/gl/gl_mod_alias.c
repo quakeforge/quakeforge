@@ -185,15 +185,15 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing (triangles version)
 */
 static void
-GL_DrawAliasShadowTri (transform_t transform, const aliashdr_t *ahdr,
+GL_DrawAliasShadowTri (transform_t transform, const malias_t *alias,
 					   const vert_order_t *vo)
 {
 	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
 	float       height, lheight;
 	vec3_t      point;
-	const vec_t *scale = ahdr->mdl.scale;
-	const vec_t *scale_origin = ahdr->mdl.scale_origin;
+	const vec_t *scale = alias->scale;
+	const vec_t *scale_origin = alias->scale_origin;
 	vec4f_t     entorigin;
 
 	entorigin = Transform_GetWorldPosition (transform);
@@ -225,7 +225,7 @@ GL_DrawAliasShadowTri (transform_t transform, const aliashdr_t *ahdr,
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (transform_t transform, const aliashdr_t *ahdr,
+GL_DrawAliasShadow (transform_t transform, const malias_t *alias,
 				    const vert_order_t *vo)
 {
 	float       height, lheight;
@@ -251,14 +251,14 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *ahdr,
 		do {
 			// normals and vertices come from the frame list
 			point[0] =
-				verts->vert[0] * ahdr->mdl.scale[0] +
-				ahdr->mdl.scale_origin[0];
+				verts->vert[0] * alias->scale[0] +
+				alias->scale_origin[0];
 			point[1] =
-				verts->vert[1] * ahdr->mdl.scale[1] +
-				ahdr->mdl.scale_origin[1];
+				verts->vert[1] * alias->scale[1] +
+				alias->scale_origin[1];
 			point[2] =
-				verts->vert[2] * ahdr->mdl.scale[2] +
-				ahdr->mdl.scale_origin[2] + lheight;
+				verts->vert[2] * alias->scale[2] +
+				alias->scale_origin[2] + lheight;
 
 			point[0] -= shadevector[0] * point[2];
 			point[1] -= shadevector[1] * point[2];
@@ -273,42 +273,38 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *ahdr,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (aliashdr_t *ahdr, entity_t e)
+GL_GetAliasFrameVerts16 (malias_t *alias, entity_t e)
 {
 	auto animation = Entity_GetAnimation (e);
-	float         blend = R_AliasGetLerpedFrames (animation, ahdr);
+	float         blend = R_AliasGetLerpedFrames (animation, alias);
 	int           count, i;
-	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-
-	verts = (trivertx16_t *) ((byte *) ahdr + ahdr->posedata);
-
-	count = ahdr->poseverts;
+	count = alias->numverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) ahdr + ahdr->commands);
+	vo->order = (int *) ((byte *) alias + alias->morph.data);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (ahdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) ahdr + ahdr->tex_coord);
-	} else {
+	//if (alias->tex_coord) {
+	//	vo->tex_coord = (tex_coord_t *) ((byte *) alias + alias->tex_coord);
+	//} else {
 		vo->tex_coord = NULL;
-	}
+	//}
 	vo->count = count;
 
 	if (!gl_lerp_anim)
 		blend = 1.0;
 
-
+	trivertx16_t *verts;
 	if (blend == 0.0) {
-		verts = verts + animation->pose1 * count;
+		verts = (trivertx16_t *) ((byte *) alias + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = verts + animation->pose2 * count;
+		verts = (trivertx16_t *) ((byte *) alias + animation->pose2);
 	} else {
 		trivertx16_t *verts1, *verts2;
 
-		verts1 = verts + animation->pose1 * count;
-		verts2 = verts + animation->pose2 * count;
+		verts1 = (trivertx16_t *) ((byte *) alias + animation->pose1);
+		verts2 = (trivertx16_t *) ((byte *) alias + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -337,41 +333,39 @@ GL_GetAliasFrameVerts16 (aliashdr_t *ahdr, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (aliashdr_t *ahdr, entity_t e)
+GL_GetAliasFrameVerts (malias_t *alias, entity_t e)
 {
 	auto animation = Entity_GetAnimation (e);
-	float       blend = R_AliasGetLerpedFrames (animation, ahdr);
+	float       blend = R_AliasGetLerpedFrames (animation, alias);
 	int         count, i;
-	trivertx_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-
-	verts = (trivertx_t *) ((byte *) ahdr + ahdr->posedata);
-
-	count = ahdr->poseverts;
+	count = alias->numverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) ahdr + ahdr->commands);
+	vo->order = (int *) ((byte *) alias + alias->morph.data);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (ahdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) ahdr + ahdr->tex_coord);
-	} else {
+	//if (alias->tex_coord) {
+	//	vo->tex_coord = (tex_coord_t *) ((byte *) alias + alias->tex_coord);
+	//} else {
 		vo->tex_coord = NULL;
-	}
+	//}
 	vo->count = count;
 
 	if (!gl_lerp_anim)
 		blend = 1.0;
 
+
+	trivertx_t *verts;
 	if (blend == 0.0) {
-		verts = verts + animation->pose1 * count;
+		verts = (trivertx_t *) ((byte *) alias + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = verts + animation->pose2 * count;
+		verts = (trivertx_t *) ((byte *) alias + animation->pose2);
 	} else {
 		trivertx_t *verts1, *verts2;
 
-		verts1 = verts + animation->pose1 * count;
-		verts2 = verts + animation->pose2 * count;
+		verts1 = (trivertx_t *) ((byte *) alias + animation->pose1);
+		verts2 = (trivertx_t *) ((byte *) alias + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -400,23 +394,20 @@ GL_GetAliasFrameVerts (aliashdr_t *ahdr, entity_t e)
 }
 
 static glskin_t
-gl_get_skin (entity_t e, renderer_t *renderer, aliashdr_t *ahdr)
+gl_get_skin (entity_t e, renderer_t *renderer, malias_t *alias)
 {
 	auto colormap = Entity_GetColormap (e);
 	if (!gl_nocolors) {
 		skin_t *skin = renderer->skin ? Skin_Get (renderer->skin) : nullptr;
 		if (skin) {
-			return gl_Skin_Get (skin->tex, colormap, (byte *) ahdr);
+			return gl_Skin_Get (skin->tex, colormap, (byte *) alias);
 		}
 	}
-	maliasskindesc_t *skindesc;
+
 	auto animation = Entity_GetAnimation (e);
-	skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, ahdr);
-	if (!skindesc->texnum) {
-		auto tex = (tex_t *) ((byte *) ahdr + skindesc->skin);
-		return gl_Skin_Get (tex, colormap, (byte *) ahdr);
-	}
-	return (glskin_t) { .id = skindesc->texnum, .fb = skindesc->fb_texnum };
+	uint32_t sd = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
+	auto tex = (tex_t *) ((byte *) alias + sd);
+	return gl_Skin_Get (tex, colormap, (byte *) alias);
 }
 
 void
@@ -430,7 +421,7 @@ gl_R_DrawAliasModel (entity_t e)
 	int         gl_light;
 	int         used_lights = 0;
 	bool        is_fullbright = false;
-	aliashdr_t *ahdr;
+	malias_t   *alias;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
@@ -570,37 +561,37 @@ gl_R_DrawAliasModel (entity_t e)
 	}
 
 	// locate the proper data
-	if (!(ahdr = renderer->model->aliashdr)) {
-		ahdr = Cache_Get (&renderer->model->cache);
+	if (!(alias = renderer->model->alias)) {
+		alias = Cache_Get (&renderer->model->cache);
 	}
-	gl_ctx->alias_polys += ahdr->mdl.numtris;
+	gl_ctx->alias_polys += alias->numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	auto glskin = gl_get_skin (e, renderer, ahdr);
+	auto glskin = gl_get_skin (e, renderer, alias);
 	if (!gl_fb_models || is_fullbright) {
 		glskin.fb = 0;
 	}
 
-	if (ahdr->mdl.ident == HEADER_MDL16) {
+	if (alias->extra) {
 		// because we multipled by 256 when we loaded the verts, we have to
 		// scale by 1/256 when drawing.
 		//FIXME see scaling above
-		VectorScale (ahdr->mdl.scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (ahdr, e);
+		VectorScale (alias->scale, 1 / 256.0, scale);
+		vo = GL_GetAliasFrameVerts16 (alias, e);
 	} else {
 		//FIXME see scaling above
-		VectorScale (ahdr->mdl.scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (ahdr, e);
+		VectorScale (alias->scale, 1, scale);
+		vo = GL_GetAliasFrameVerts (alias, e);
 	}
 
 	// setup the transform
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
-	qfglTranslatef (ahdr->mdl.scale_origin[0],
-					ahdr->mdl.scale_origin[1],
-					ahdr->mdl.scale_origin[2]);
+	qfglTranslatef (alias->scale_origin[0],
+					alias->scale_origin[1],
+					alias->scale_origin[2]);
 	qfglScalef (scale[0], scale[1], scale[2]);
 
 	if (gl_modelalpha < 1.0)
@@ -726,9 +717,9 @@ gl_R_DrawAliasModel (entity_t e)
 		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
-			GL_DrawAliasShadowTri (transform, ahdr, vo);
+			GL_DrawAliasShadowTri (transform, alias, vo);
 		else
-			GL_DrawAliasShadow (transform, ahdr, vo);
+			GL_DrawAliasShadow (transform, alias, vo);
 
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
@@ -744,7 +735,7 @@ gl_R_DrawAliasModel (entity_t e)
 		qfglDisable (GL_LIGHT0 + used_lights);
 	}
 
-	if (!renderer->model->aliashdr) {
+	if (!renderer->model->alias) {
 		Cache_Release (&renderer->model->cache);
 	}
 }

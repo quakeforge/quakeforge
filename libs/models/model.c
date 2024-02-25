@@ -304,7 +304,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 {
 	qfZoneScoped (true);
 	if (!mod->needload) {
-		if (mod->type == mod_alias && !mod->aliashdr) {
+		if (mod->type == mod_alias && !mod->alias) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else

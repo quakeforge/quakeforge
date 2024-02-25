@@ -227,15 +227,11 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
 	auto model = renderer->model;
-	aliashdr_t *hdr;
+	malias_t   *alias = model->alias;
 	uint16_t *matrix_base = taskctx->data;
 
-	if (!(hdr = model->aliashdr)) {
-		hdr = Cache_Get (&model->cache);
-	}
-
 	auto animation = Entity_GetAnimation (ent);
-	float blend = R_AliasGetLerpedFrames (animation, hdr);
+	float blend = R_AliasGetLerpedFrames (animation, alias);
 
 	transform_t transform = Entity_Transform (ent);
 
@@ -247,9 +243,9 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 	}
 	if (!skin) {
-		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
-		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
+		uint32_t skindesc;
+		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
+		skin = (qfv_alias_skin_t *) ((byte *) alias + skindesc);
 	}
 	vec4f_t base_color;
 	QuatCopy (renderer->colormod, base_color);
@@ -268,11 +264,11 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
+	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->stverts);
 
 	VkDeviceSize offsets[] = {
-		animation->pose1 * hdr->poseverts * sizeof (aliasvrt_t),
-		animation->pose2 * hdr->poseverts * sizeof (aliasvrt_t),
+		animation->pose1,
+		animation->pose2,
 		0,
 	};
 	VkBuffer    buffers[] = {
@@ -309,7 +305,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 								  blend, colors, base_color, pass, taskctx);
 		}
 	}
-	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
+	dfunc->vkCmdDrawIndexed (cmd, 3 * alias->numtris, 1, 0, 0, 0);
 	QFV_CmdEndLabel (device, cmd);
 }
 

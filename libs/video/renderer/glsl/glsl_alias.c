@@ -198,10 +198,7 @@ glsl_R_DrawAlias (entity_t ent)
 	static quat_t color = { 1, 1, 1, 1};
 	float       skin_size[2];
 	float       blend;
-	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
-	aliasvrt_t *pose1 = 0;		// VBO's are null based
-	aliasvrt_t *pose2 = 0;		// VBO's are null based
 	mat4f_t     worldMatrix;
 	alight_t    lighting;
 
@@ -212,8 +209,7 @@ glsl_R_DrawAlias (entity_t ent)
 		return;
 	}
 	model_t    *model = renderer->model;
-	if (!(hdr = model->aliashdr))
-		hdr = Cache_Get (&model->cache);
+	malias_t   *alias = model->alias;
 
 	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);
@@ -224,11 +220,11 @@ glsl_R_DrawAlias (entity_t ent)
 
 	// ent model scaling and offset
 	mat4f_t     mvp_mat = {
-		{ hdr->mdl.scale[0], 0, 0, 0 },
-		{ 0, hdr->mdl.scale[1], 0, 0 },
-		{ 0, 0, hdr->mdl.scale[2], 0 },
-		{ hdr->mdl.scale_origin[0], hdr->mdl.scale_origin[1],
-		  hdr->mdl.scale_origin[2], 1 },
+		{ alias->scale[0], 0, 0, 0 },
+		{ 0, alias->scale[1], 0, 0 },
+		{ 0, 0, alias->scale[2], 0 },
+		{ alias->scale_origin[0], alias->scale_origin[1],
+		  alias->scale_origin[2], 1 },
 	};
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
@@ -247,17 +243,12 @@ glsl_R_DrawAlias (entity_t ent)
 		}
 	}
 	if (!skin_tex) {
-		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
-		skin_tex = skindesc->texnum;
+		skin_tex = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
 	}
-	blend = R_AliasGetLerpedFrames (animation, hdr);
+	blend = R_AliasGetLerpedFrames (animation, alias);
 
-	pose1 += animation->pose1 * hdr->poseverts;
-	pose2 += animation->pose2 * hdr->poseverts;
-
-	skin_size[0] = hdr->mdl.skinwidth;
-	skin_size[1] = hdr->mdl.skinheight;
+	skin_size[0] = alias->skinwidth;
+	skin_size[1] = alias->skinheight;
 
 	qfeglActiveTexture (GL_TEXTURE0 + 1);
 	qfeglBindTexture (GL_TEXTURE_2D, cmap_tex);
@@ -265,8 +256,8 @@ glsl_R_DrawAlias (entity_t ent)
 	qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 
 #ifndef TETRAHEDRON
-	qfeglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, alias->stverts);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, alias->triangles);
 #endif
 
 	qfeglVertexAttrib4fv (quake_mdl.colora.location, color);
@@ -281,10 +272,11 @@ glsl_R_DrawAlias (entity_t ent)
 	qfeglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON
+	auto pose1 = (void *) (intptr_t) animation->pose1;
+	auto pose2 = (void *) (intptr_t) animation->pose2;
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose1);
 	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose2);
-	qfeglDrawElements (GL_TRIANGLES, 3 * hdr->mdl.numtris,
-					  GL_UNSIGNED_SHORT, 0);
+	qfeglDrawElements (GL_TRIANGLES, 3 * alias->numtris, GL_UNSIGNED_SHORT, 0);
 #else
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta,
 				debug_verts);
@@ -294,8 +286,6 @@ glsl_R_DrawAlias (entity_t ent)
 					  sizeof (debug_indices) / sizeof (debug_indices[0]),
 					  GL_UNSIGNED_SHORT, debug_indices);
 #endif
-	if (!model->aliashdr)
-		Cache_Release (&model->cache);
 }
 
 // All alias models are drawn in a batch, so avoid thrashing the gl state

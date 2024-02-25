@@ -53,11 +53,9 @@ const byte *acolormap;					// FIXME: should go away
 trivertx_t *r_apverts;
 
 // TODO: these probably will go away with optimized rasterization
-static mdl_t      *pmdl;
 vec3_t      r_lightvec;
 int         r_ambientlight;
 float       r_shadelight;
-static aliashdr_t *paliashdr;
 finalvert_t *pfinalverts;
 auxvert_t  *pauxverts;
 float ziscale;
@@ -65,10 +63,7 @@ static model_t *pmodel;
 
 static vec3_t alias_forward, alias_left, alias_up;
 
-static maliasskindesc_t *pskindesc;
-
 int         r_amodels_drawn;
-int         a_skinwidth;
 int         r_anumverts;
 
 float       aliastransform[3][4];
@@ -84,17 +79,17 @@ static aedge_t aedges[12] = {
 	{0, 5}, {1, 4}, {2, 7}, {3, 6}
 };
 
-static void R_AliasSetUpTransform (entity_t ent, int trivial_accept);
+static void R_AliasSetUpTransform (entity_t ent, int trivial_accept,
+								   malias_t *alias);
 
 bool
 R_AliasCheckBBox (entity_t ent)
 {
-	int         i, flags, frame, numv;
-	aliashdr_t *pahdr;
+	int         i, flags, numv;
+	malias_t   *alias;
 	float       zi, basepts[8][3], v0, v1, frac;
 	finalvert_t *pv0, *pv1, viewpts[16];
 	auxvert_t  *pa0, *pa1, viewaux[16];
-	maliasframedesc_t *pframedesc;
 	bool        zclipped, zfullyclipped;
 	unsigned int anyclip, allclip;
 	int         minz;
@@ -107,40 +102,32 @@ R_AliasCheckBBox (entity_t ent)
 
 	auto renderer = Entity_GetRenderer (ent);
 	pmodel = renderer->model;
-	if (!(pahdr = pmodel->aliashdr))
-		pahdr = Cache_Get (&pmodel->cache);
-	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
+	if (!(alias = pmodel->alias))
+		alias = Cache_Get (&pmodel->cache);
 
-	R_AliasSetUpTransform (ent, 0);
+	R_AliasSetUpTransform (ent, 0, alias);
 
 	// construct the base bounding box for this frame
 	auto animation = Entity_GetAnimation (ent);
-	frame = animation->frame;
-// TODO: don't repeat this check when drawing?
-	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
-		frame = 0;
-	}
-
-	pframedesc = &pahdr->frames[frame];
+	auto frame = R_AliasGetFramedesc (animation, alias);
 
 	// x worldspace coordinates
 	basepts[0][0] = basepts[1][0] = basepts[2][0] = basepts[3][0] =
-		(float) pframedesc->bboxmin.v[0];
+		(float) frame->bboxmin.v[0];
 	basepts[4][0] = basepts[5][0] = basepts[6][0] = basepts[7][0] =
-		(float) pframedesc->bboxmax.v[0];
+		(float) frame->bboxmax.v[0];
 
 	// y worldspace coordinates
 	basepts[0][1] = basepts[3][1] = basepts[5][1] = basepts[6][1] =
-		(float) pframedesc->bboxmin.v[1];
+		(float) frame->bboxmin.v[1];
 	basepts[1][1] = basepts[2][1] = basepts[4][1] = basepts[7][1] =
-		(float) pframedesc->bboxmax.v[1];
+		(float) frame->bboxmax.v[1];
 
 	// z worldspace coordinates
 	basepts[0][2] = basepts[1][2] = basepts[4][2] = basepts[5][2] =
-		(float) pframedesc->bboxmin.v[2];
+		(float) frame->bboxmin.v[2];
 	basepts[2][2] = basepts[3][2] = basepts[6][2] = basepts[7][2] =
-		(float) pframedesc->bboxmax.v[2];
+		(float) frame->bboxmax.v[2];
 
 	zclipped = false;
 	zfullyclipped = true;
@@ -162,7 +149,7 @@ R_AliasCheckBBox (entity_t ent)
 	}
 
 	if (zfullyclipped) {
-		if (!pmodel->aliashdr)
+		if (!pmodel->alias)
 			Cache_Release (&pmodel->cache);
 		return false;					// everything was near-z-clipped
 	}
@@ -225,7 +212,7 @@ R_AliasCheckBBox (entity_t ent)
 	}
 
 	if (allclip) {
-		if (!pmodel->aliashdr)
+		if (!pmodel->alias)
 			Cache_Release (&pmodel->cache);
 		return false;					// trivial reject off one side
 	}
@@ -233,12 +220,12 @@ R_AliasCheckBBox (entity_t ent)
 	visibility->trivial_accept = !anyclip & !zclipped;
 
 	if (visibility->trivial_accept) {
-		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
+		if (minz > (r_aliastransition + (alias->size * r_resfudge))) {
 			visibility->trivial_accept |= 2;
 		}
 	}
 
-	if (!pmodel->aliashdr)
+	if (!pmodel->alias)
 		Cache_Release (&pmodel->cache);
 	return true;
 }
@@ -272,21 +259,18 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasTransformFinalVert16 (auxvert_t *av, trivertx_t *pverts)
+R_AliasTransformFinalVert16 (auxvert_t *av, trivertx_t *pverts, int numverts)
 {
 	trivertx_t  * pextra;
 	float       vextra[3];
 
-	pextra = pverts + pmdl->numverts;
+	pextra = pverts + numverts;
 	vextra[0] = pverts->v[0] + pextra->v[0] / (float)256;
 	vextra[1] = pverts->v[1] + pextra->v[1] / (float)256;
 	vextra[2] = pverts->v[2] + pextra->v[2] / (float)256;
-	av->fv[0] = DotProduct (vextra, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (vextra, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (vextra, aliastransform[2]) +
-		aliastransform[2][3];
+	av->fv[0] = DotProduct (vextra, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (vextra, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (vextra, aliastransform[2]) + aliastransform[2][3];
 }
 
 static void
@@ -306,7 +290,7 @@ R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
 	General clipped case
 */
 static void
-R_AliasPreparePoints (void)
+R_AliasPreparePoints (malias_t *alias)
 {
 	int         i;
 	stvert_t   *pstverts;
@@ -315,15 +299,15 @@ R_AliasPreparePoints (void)
 	mtriangle_t *ptri;
 	finalvert_t *pfv[3];
 
-	pstverts = (stvert_t *) ((byte *) paliashdr + paliashdr->stverts);
-	r_anumverts = pmdl->numverts;
+	pstverts = (stvert_t *) ((byte *) alias + alias->stverts);
+	r_anumverts = alias->numverts;
 	fv = pfinalverts;
 	av = pauxverts;
 
-	if (pmdl->ident == HEADER_MDL16) {
+	if (alias->extra) {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
 				 pstverts++) {
-			R_AliasTransformFinalVert16 (av, r_apverts);
+			R_AliasTransformFinalVert16 (av, r_apverts, alias->numverts);
 			R_AliasTransformFinalVert (fv, r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
@@ -339,8 +323,8 @@ R_AliasPreparePoints (void)
 	// clip and draw all triangles
 	r_affinetridesc.numtriangles = 1;
 
-	ptri = (mtriangle_t *) ((byte *) paliashdr + paliashdr->triangles);
-	for (i = 0; i < pmdl->numtris; i++, ptri++) {
+	ptri = (mtriangle_t *) ((byte *) alias + alias->triangles);
+	for (i = 0; i < alias->numtris; i++, ptri++) {
 		pfv[0] = &pfinalverts[ptri->vertindex[0]];
 		pfv[1] = &pfinalverts[ptri->vertindex[1]];
 		pfv[2] = &pfinalverts[ptri->vertindex[2]];
@@ -361,7 +345,7 @@ R_AliasPreparePoints (void)
 }
 
 static void
-R_AliasSetUpTransform (entity_t ent, int trivial_accept)
+R_AliasSetUpTransform (entity_t ent, int trivial_accept, malias_t *alias)
 {
 	int         i;
 	float       rotationmatrix[3][4];
@@ -374,12 +358,12 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept)
 	VectorCopy (mat[2], alias_up);
 
 	for (i = 0; i < 3; i++) {
-		rotationmatrix[i][0] = pmdl->scale[0] * alias_forward[i];
-		rotationmatrix[i][1] = pmdl->scale[1] * alias_left[i];
-		rotationmatrix[i][2] = pmdl->scale[2] * alias_up[i];
-		rotationmatrix[i][3] = pmdl->scale_origin[0] * alias_forward[i]
-							 + pmdl->scale_origin[1] * alias_left[i]
-							 + pmdl->scale_origin[2] * alias_up[i]
+		rotationmatrix[i][0] = alias->scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = alias->scale[1] * alias_left[i];
+		rotationmatrix[i][2] = alias->scale[2] * alias_up[i];
+		rotationmatrix[i][3] = alias->scale_origin[0] * alias_forward[i]
+							 + alias->scale_origin[1] * alias_left[i]
+							 + alias->scale_origin[2] * alias_up[i]
 							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
@@ -391,7 +375,7 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept)
 // correspondingly so the projected x and y come out right
 // FIXME: make this work for clipped case too?
 
-	if (trivial_accept && pmdl->ident != HEADER_MDL16) {
+	if (trivial_accept && !alias->extra) {
 		for (i = 0; i < 4; i++) {
 			aliastransform[0][i] *= aliasxscale *
 				(1.0 / ((float) 0x8000 * 0x10000));
@@ -504,13 +488,13 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasPrepareUnclippedPoints (void)
+R_AliasPrepareUnclippedPoints (malias_t *alias)
 {
 	stvert_t   *pstverts;
 	finalvert_t *fv;
 
-	pstverts = (stvert_t *) ((byte *) paliashdr + paliashdr->stverts);
-	r_anumverts = pmdl->numverts;
+	pstverts = (stvert_t *) ((byte *) alias + alias->stverts);
+	r_anumverts = alias->numverts;
 // FIXME: just use pfinalverts directly?
 	fv = pfinalverts;
 
@@ -521,32 +505,25 @@ R_AliasPrepareUnclippedPoints (void)
 
 	r_affinetridesc.pfinalverts = pfinalverts;
 	r_affinetridesc.ptriangles = (mtriangle_t *)
-		((byte *) paliashdr + paliashdr->triangles);
-	r_affinetridesc.numtriangles = pmdl->numtris;
+		((byte *) alias + alias->triangles);
+	r_affinetridesc.numtriangles = alias->numtris;
 
 	D_PolysetDraw ();
 }
 
 static void
-R_AliasSetupSkin (entity_t ent)
+R_AliasSetupSkin (entity_t ent, malias_t *alias)
 {
 	auto renderer = Entity_GetRenderer (ent);
-	int         skinnum = renderer->skinnum;
-	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
-						skinnum);
-		skinnum = 0;
-	}
-
 	auto animation = Entity_GetAnimation (ent);
-	pskindesc = R_AliasGetSkindesc (animation, skinnum, paliashdr);
+	int         skinnum = renderer->skinnum;
+	uint32_t skindesc = R_AliasGetSkindesc (animation, skinnum, alias);
+	auto skin = (qpic_t *) ((byte *) alias + skindesc);
 
-	a_skinwidth = pmdl->skinwidth;
-
-	r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);
-	r_affinetridesc.skinwidth = a_skinwidth;
-	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
-	r_affinetridesc.skinheight = pmdl->skinheight;
+	r_affinetridesc.pskin = (void *) skin->data;
+	r_affinetridesc.skinwidth = skin->width;
+	r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
+	r_affinetridesc.skinheight = skin->height;
 
 	if (renderer->skin) {
 		auto skin = Skin_Get (renderer->skin);
@@ -595,13 +572,13 @@ R_AliasSetupLighting (alight_t *lighting)
 	set r_apverts
 */
 static void
-R_AliasSetupFrame (entity_t ent)
+R_AliasSetupFrame (entity_t ent, malias_t *alias)
 {
-	maliasframedesc_t *frame;
+	maliasframe_t *frame;
 
 	auto animation = Entity_GetAnimation (ent);
-	frame = R_AliasGetFramedesc (animation, paliashdr);
-	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
+	frame = R_AliasGetFramedesc (animation, alias);
+	r_apverts = (trivertx_t *) ((byte *) alias + frame->data);
 }
 
 
@@ -617,13 +594,14 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	if (renderer->onlyshadows) {
 		return;
 	}
-	if (!(paliashdr = renderer->model->aliashdr))
-		paliashdr = Cache_Get (&renderer->model->cache);
-	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
+	auto alias = renderer->model->alias;
+	if (!alias) {
+		alias = Cache_Get (&renderer->model->cache);
+	}
 
 	size = (CACHE_SIZE - 1)
-		+ sizeof (finalvert_t) * (pmdl->numverts + 1)
-		+ sizeof (auxvert_t) * pmdl->numverts;
+		+ sizeof (finalvert_t) * (alias->numverts + 1)
+		+ sizeof (auxvert_t) * alias->numverts;
 	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
@@ -631,15 +609,15 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	// cache align
 	pfinalverts = (finalvert_t *)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
+	pauxverts = (auxvert_t *) &pfinalverts[alias->numverts + 1];
 
-	R_AliasSetupSkin (ent);
+	R_AliasSetupSkin (ent, alias);
 	visibility_t *visibility = Ent_GetComponent (ent.id,
 												 ent.base + scene_visibility,
 												 ent.reg);
-	R_AliasSetUpTransform (ent, visibility->trivial_accept);
+	R_AliasSetUpTransform (ent, visibility->trivial_accept, alias);
 	R_AliasSetupLighting (lighting);
-	R_AliasSetupFrame (ent);
+	R_AliasSetupFrame (ent, alias);
 
 	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
@@ -664,13 +642,13 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (visibility->trivial_accept && pmdl->ident != HEADER_MDL16) {
-		R_AliasPrepareUnclippedPoints ();
+	if (visibility->trivial_accept && !alias->extra) {
+		R_AliasPrepareUnclippedPoints (alias);
 	} else {
-		R_AliasPreparePoints ();
+		R_AliasPreparePoints (alias);
 	}
 
-	if (!renderer->model->aliashdr) {
+	if (!renderer->model->alias) {
 		Cache_Release (&renderer->model->cache);
 	}
 }
