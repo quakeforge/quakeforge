@@ -163,6 +163,8 @@ QFGL_NEED (void, glVertexAttrib4fv, (GLuint indx, const GLfloat* values))
 QFGL_NEED (void, glVertexAttribPointer, (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr))
 QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
 
+QFGL_NEED (void, glDebugMessageCallback, (GLDEBUGPROC callback, const void *userParam))
+
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED
 #endif

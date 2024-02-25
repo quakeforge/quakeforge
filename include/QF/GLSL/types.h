@@ -44,4 +44,6 @@ typedef ptrdiff_t        GLfixed;
 typedef ptrdiff_t        GLintptr;
 typedef ptrdiff_t        GLsizeiptr;
 
+typedef void (GLAPIENTRY *GLDEBUGPROC) (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
+
 #endif//__QF_GLSL_types_h
