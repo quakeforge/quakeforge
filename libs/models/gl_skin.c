@@ -163,6 +163,7 @@ gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 	skin_counts[ind]++;
 
 	sp->tex = tex;
+	sp->skin = (glskin_t) {};
 
 	auto build_skin = vid.is8bit ? build_skin_8 : build_skin_32;
 
@@ -184,7 +185,7 @@ gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 	byte palette[256];
 	Skin_SetPalette (palette, top, bot);
 	qfglGenTextures (1, &sp->skin.id);
-	build_skin_32 (&wtex, sp->skin.id, palette, swidth, sheight, false);
+	build_skin (&wtex, sp->skin.id, palette, swidth, sheight, false);
 
 	int        size = wtex.width * wtex.height;
 	byte       fbskin[size];
