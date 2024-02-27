@@ -143,7 +143,7 @@ Draw_CachePic (const char *path, bool alpha)
 				break;
 		if (i == numcachepics) {
 			if (numcachepics == MAX_CACHED_PICS)
-				Sys_Error ("numcachepics == MAX_CACHED_PICS");
+				return nullptr;
 			numcachepics++;
 		}
 		strcpy (pic->name, path);
@@ -159,7 +159,7 @@ Draw_CachePic (const char *path, bool alpha)
 
 	dat = (qpic_t *) pic->cache.data;
 	if (!dat) {
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
+		return nullptr;
 	}
 
 	SwapPic (dat);

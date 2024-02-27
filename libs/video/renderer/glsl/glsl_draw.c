@@ -354,8 +354,7 @@ glsl_Draw_CachePic (const char *path, bool alpha)
 		return cpic->pic;
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
 		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
-		//FIXME load a null texture
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
+		return nullptr;
 	}
 
 	pic = make_glpic (path, p);
