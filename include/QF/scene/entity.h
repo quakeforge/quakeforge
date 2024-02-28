@@ -75,7 +75,8 @@ typedef struct visibility_s {
 
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
-	uint32_t    skin;
+	uint32_t    skin;				//FIXME these two likely to be confusing
+	uint32_t    skindesc;			//FIXME ^^
 	struct trail_s *trail;
 	unsigned    fullbright:1;
 	unsigned    noshadows:1;
@@ -228,6 +229,11 @@ efrag_t **R_LinkEfrag (struct mleaf_s *leaf, entity_t ent, uint32_t queue,
 void R_AddEfrags (struct mod_brush_s *, entity_t ent);
 void R_ShutdownEfrags (void);
 void R_ClearEfragChain (efrag_t *ef);
+
+typedef struct ecs_pool_s ecs_pool_t;
+void Anim_Update (double time, const ecs_pool_t *animpool,
+				  const ecs_pool_t *rendpool);
+
 
 ///@}
 

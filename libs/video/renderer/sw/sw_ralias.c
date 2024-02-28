@@ -82,6 +82,13 @@ static aedge_t aedges[12] = {
 static void R_AliasSetUpTransform (entity_t ent, int trivial_accept,
 								   malias_t *alias);
 
+static maliasframe_t *
+get_frame (double time, animation_t *animation, malias_t *alias)
+{
+	// pose2 points to the frame data
+	return (maliasframe_t *) ((byte *) alias + animation->pose2);
+}
+
 bool
 R_AliasCheckBBox (entity_t ent)
 {
@@ -109,7 +116,7 @@ R_AliasCheckBBox (entity_t ent)
 
 	// construct the base bounding box for this frame
 	auto animation = Entity_GetAnimation (ent);
-	auto frame = R_AliasGetFramedesc (animation, alias);
+	auto frame = get_frame (vr_data.realtime, animation, alias);
 
 	// x worldspace coordinates
 	basepts[0][0] = basepts[1][0] = basepts[2][0] = basepts[3][0] =
@@ -514,26 +521,24 @@ R_AliasPrepareUnclippedPoints (malias_t *alias)
 static void
 R_AliasSetupSkin (entity_t ent, malias_t *alias)
 {
+	r_affinetridesc.pskin = nullptr;
+
 	auto renderer = Entity_GetRenderer (ent);
-	auto animation = Entity_GetAnimation (ent);
-	int         skinnum = renderer->skinnum;
-	uint32_t skindesc = R_AliasGetSkindesc (animation, skinnum, alias);
-	auto skin = (qpic_t *) ((byte *) alias + skindesc);
-
-	r_affinetridesc.pskin = (void *) skin->data;
-	r_affinetridesc.skinwidth = skin->width;
-	r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
-	r_affinetridesc.skinheight = skin->height;
-
 	if (renderer->skin) {
 		auto skin = Skin_Get (renderer->skin);
-
 		if (skin) {
 			tex_t      *tex = skin->tex;
 			r_affinetridesc.pskin = tex->data;
 			r_affinetridesc.skinwidth = tex->width;
 			r_affinetridesc.skinheight = tex->height;
 		}
+	}
+	if (!r_affinetridesc.pskin) {
+		auto skinpic = (qpic_t *) ((byte *) alias + renderer->skindesc);
+		r_affinetridesc.pskin = skinpic->data;
+		r_affinetridesc.skinwidth = skinpic->width;
+		r_affinetridesc.seamfixupX16 = (skinpic->width >> 1) << 16;
+		r_affinetridesc.skinheight = skinpic->height;
 	}
 }
 
@@ -577,7 +582,7 @@ R_AliasSetupFrame (entity_t ent, malias_t *alias)
 	maliasframe_t *frame;
 
 	auto animation = Entity_GetAnimation (ent);
-	frame = R_AliasGetFramedesc (animation, alias);
+	frame = get_frame (vr_data.realtime, animation, alias);
 	r_apverts = (trivertx_t *) ((byte *) alias + frame->data);
 }
 

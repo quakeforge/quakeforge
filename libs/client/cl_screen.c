@@ -362,5 +362,11 @@ CL_UpdateScreen (viewstate_t *vs)
 
 	V_PrepBlend (vs);
 	V_RenderView (vs);
+	uint32_t c_animation = cl_world.scene->base + scene_animation;
+	uint32_t c_renderer = cl_world.scene->base + scene_renderer;
+	auto reg = cl_world.scene->reg;
+	auto animpool = reg->comp_pools + c_animation;
+	auto rendpool = reg->comp_pools + c_renderer;
+	Anim_Update (vs->realtime, animpool, rendpool);
 	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs);
 }

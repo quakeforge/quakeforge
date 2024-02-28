@@ -47,16 +47,16 @@
 
 #include "r_internal.h"
 
-float
-R_IQMGetLerpedFrames (animation_t *animation, iqm_t *iqm)
+VISIBLE float
+R_IQMGetLerpedFrames (double time, animation_t *animation, iqm_t *iqm)
 {
 	qfZoneScoped (true);
 	int         frame = animation->frame;
-	float       time, fullinterval;
+	float       fullinterval;
 	iqmanim    *anim;
 
 	if (!iqm->num_anims)
-		return R_EntityBlend (animation, 0, 1.0 / 25.0);
+		return R_EntityBlend (time, animation, 0, 1.0 / 25.0);
 	if (frame >= iqm->num_anims || frame < 0) {
 		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
 						frame);
@@ -64,10 +64,10 @@ R_IQMGetLerpedFrames (animation_t *animation, iqm_t *iqm)
 	}
 	anim = &iqm->anims[frame];
 	fullinterval = anim->num_frames / anim->framerate;
-	time = vr_data.realtime + animation->syncbase;
+	time = time + animation->syncbase;
 	time -= ((int) (time / fullinterval)) * fullinterval;
 	frame = (int) (time * anim->framerate) + anim->first_frame;
-	return R_EntityBlend (animation, frame, 1.0 / anim->framerate);
+	return R_EntityBlend (time, animation, frame, 1.0 / anim->framerate);
 }
 
 static vec4f_t
@@ -129,7 +129,7 @@ iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
 	*c = t;
 }
 
-iqmframe_t *
+VISIBLE iqmframe_t *
 R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 				  int extra)
 {
@@ -178,7 +178,7 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 	return frame;
 }
 
-iqmframe_t *
+VISIBLE iqmframe_t *
 R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2, float blend,
 				   int extra, iqmblend_t *blend_palette, int palette_size)
 {

@@ -247,7 +247,7 @@ R_DrawSprite (entity_t ent)
 	msprite_t  *sprite = renderer->model->cache.data;
 
 	auto animation = Entity_GetAnimation (ent);
-	auto spriteframe = R_GetSpriteFrame (sprite, animation);
+	auto spriteframe = (mspriteframe_t *) ((byte *) sprite + animation->pose2);
 
 	r_spritedesc.spriteframe = (qpic_t *) &spriteframe[1];
 

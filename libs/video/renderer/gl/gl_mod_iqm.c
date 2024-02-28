@@ -97,7 +97,7 @@ gl_R_DrawIQMModel (entity_t ent)
 	int         i;
 
 	auto animation = Entity_GetAnimation (ent);
-	blend = R_IQMGetLerpedFrames (animation, iqm);
+	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, 0, gl->blend_palette, gl->palette_size);
 

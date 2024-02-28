@@ -232,7 +232,7 @@ glsl_R_DrawIQM (entity_t ent)
 	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
 	auto animation = Entity_GetAnimation (ent);
-	blend = R_IQMGetLerpedFrames (animation, iqm);
+	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  blend, 0);
 

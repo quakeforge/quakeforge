@@ -167,10 +167,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 	};
 
 	auto animation = Entity_GetAnimation (ent);
-	// the frame number is stored in the frame data by the vulkan sprite
-	// loader (FIXME not the best for unifying sprite/alias/iqm)
-	frame = R_GetFrameData (&sprite->skin, animation->frame, sprite,
-							animation->syncbase);
+	frame = animation->pose2;
 
 	transform_t transform = Entity_Transform (ent);
 	mat[3] = Transform_GetWorldPosition (transform);

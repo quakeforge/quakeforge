@@ -338,7 +338,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass, bool shadow)
 	}
 
 	auto animation = Entity_GetAnimation (ent);
-	float blend = R_IQMGetLerpedFrames (animation, iqm);
+	float blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  blend, 0);
 

@@ -28,7 +28,7 @@ void Scene_SetCamera (scene_t scene, entity_t ent);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
-int Entity_GetPoseFrame (entity_t ent, void *frame);
+int Entity_GetPoseFrame (entity_t ent, void *frame, double time);
 
 unsigned Transform_ChildCount (transform_t transform);
 transform_t Transform_GetChild (transform_t transform,

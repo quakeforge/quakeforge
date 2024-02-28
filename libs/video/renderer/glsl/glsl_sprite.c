@@ -166,7 +166,7 @@ glsl_R_DrawSprite (entity_t ent)
 	}
 
 	auto animation = Entity_GetAnimation (ent);
-	auto frame = R_GetSpriteFrame (sprite, animation);
+	auto frame = (mspriteframe_t *) ((byte *) sprite + animation->pose2);
 
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	auto texnum = (GLuint *) &frame[1];

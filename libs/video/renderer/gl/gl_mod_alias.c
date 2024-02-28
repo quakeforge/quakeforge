@@ -276,7 +276,7 @@ static inline vert_order_t *
 GL_GetAliasFrameVerts16 (malias_t *alias, entity_t e)
 {
 	auto animation = Entity_GetAnimation (e);
-	float         blend = R_AliasGetLerpedFrames (animation, alias);
+	float blend = animation->blend;
 	int           count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
@@ -336,7 +336,7 @@ static inline vert_order_t *
 GL_GetAliasFrameVerts (malias_t *alias, entity_t e)
 {
 	auto animation = Entity_GetAnimation (e);
-	float       blend = R_AliasGetLerpedFrames (animation, alias);
+	float blend = animation->blend;
 	int         count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
@@ -404,9 +404,7 @@ gl_get_skin (entity_t e, renderer_t *renderer, malias_t *alias)
 		}
 	}
 
-	auto animation = Entity_GetAnimation (e);
-	uint32_t sd = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
-	auto tex = (tex_t *) ((byte *) alias + sd);
+	auto tex = (tex_t *) ((byte *) alias + renderer->skindesc);
 	return gl_Skin_Get (tex, colormap, (byte *) alias);
 }
 

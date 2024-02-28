@@ -29,9 +29,6 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_alias.c \
 	libs/video/renderer/r_billboard.c \
 	libs/video/renderer/r_dyn_textures.c \
-	libs/video/renderer/r_ent.c \
-	libs/video/renderer/r_iqm.c \
-	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
@@ -69,6 +66,7 @@ video_renderer_gl_libs= \
 libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_gl_la_LIBADD=\
 	$(video_renderer_gl_libs) \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
@@ -118,6 +116,7 @@ video_renderer_glsl_libs= \
 libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_glsl_la_LIBADD=\
 	$(video_renderer_glsl_libs) \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
@@ -148,6 +147,7 @@ video_renderer_sw_libs= \
 libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_sw_la_LIBADD=\
 	$(video_renderer_sw_libs) \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
@@ -213,6 +213,7 @@ video_renderer_vulkan_libs = \
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
 libs_video_renderer_vid_render_vulkan_la_LIBADD=\
 	$(video_renderer_vulkan_libs) \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \

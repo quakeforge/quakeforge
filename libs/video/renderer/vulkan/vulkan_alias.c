@@ -231,7 +231,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	uint16_t *matrix_base = taskctx->data;
 
 	auto animation = Entity_GetAnimation (ent);
-	float blend = R_AliasGetLerpedFrames (animation, alias);
+	float blend = animation->blend;
 
 	transform_t transform = Entity_Transform (ent);
 
@@ -244,7 +244,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	}
 	if (!skin) {
 		uint32_t skindesc;
-		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
+		skindesc = renderer->skindesc;
 		skin = (qfv_alias_skin_t *) ((byte *) alias + skindesc);
 	}
 	vec4f_t base_color;

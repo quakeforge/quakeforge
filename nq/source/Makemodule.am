@@ -46,6 +46,8 @@ nq_cl_plugin_LIBS= \
 
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
+		libs/console/libQFconsole.la \
+		libs/ruamoko/libQFruamoko_client.la \
 		libs/input/libQFinput.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la
@@ -79,8 +81,12 @@ nq_source_libnq_server_a_SOURCES= \
 		nq/source/host.c nq/source/host_cmd.c nq/source/sv_cl_phys.c nq/source/sv_cvar.c nq/source/sv_main.c \
 		nq/source/sv_move.c nq/source/sv_phys.c nq/source/sv_pr_cmds.c nq/source/sv_progs.c nq/source/sv_user.c
 
-nq_client_libs= nq/source/libnq_server.a nq/source/libnq_client.a nq/source/libnq_common.a \
-			libs/client/libQFclient.la
+nq_client_libs= \
+	nq/source/libnq_server.a \
+	nq/source/libnq_client.a \
+	nq/source/libnq_common.a \
+	libs/client/libQFclient.la
+
 server_libs = nq/source/libnq_server.a nq/source/libnq_common.a
 
 # ... X11

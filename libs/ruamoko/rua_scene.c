@@ -359,13 +359,14 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 	auto model = renderer->model;
 	auto iqm = (iqm_t *) model->alias;
 	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
+	double time = P_DOUBLE (pr, 2);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {
 		return;
 	}
 
 	auto anim = Entity_GetAnimation (ent);
-	float blend = R_IQMGetLerpedFrames (anim, iqm);
+	float blend = R_IQMGetLerpedFrames (time, anim, iqm);
 	auto f = R_IQMBlendFrames (iqm, anim->pose1, anim->pose2, blend, 0);
 	memcpy (frame, f, iqm->num_joints * sizeof (frame[0]));
 
@@ -698,7 +699,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
-	bi(Entity_GetPoseFrame,			2, p(ulong), p(ptr)),
+	bi(Entity_GetPoseFrame,			3, p(ulong), p(ptr), p(double)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),

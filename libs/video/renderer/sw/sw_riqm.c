@@ -304,7 +304,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 
 	auto animation = Entity_GetAnimation (ent);
-	blend = R_IQMGetLerpedFrames (animation, iqm);
+	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, size, sw->blend_palette,
 							   sw->palette_size);

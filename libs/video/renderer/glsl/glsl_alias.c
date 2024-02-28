@@ -197,7 +197,6 @@ glsl_R_DrawAlias (entity_t ent)
 #endif
 	static quat_t color = { 1, 1, 1, 1};
 	float       skin_size[2];
-	float       blend;
 	vec_t       norm_mat[9];
 	mat4f_t     worldMatrix;
 	alight_t    lighting;
@@ -229,7 +228,6 @@ glsl_R_DrawAlias (entity_t ent)
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
-	auto animation = Entity_GetAnimation (ent);
 	GLuint cmap_tex = glsl_colormap;
 	auto colormap = Entity_GetColormap (ent);
 	if (colormap) {
@@ -243,9 +241,8 @@ glsl_R_DrawAlias (entity_t ent)
 		}
 	}
 	if (!skin_tex) {
-		skin_tex = R_AliasGetSkindesc (animation, renderer->skinnum, alias);
+		skin_tex = renderer->skindesc;
 	}
-	blend = R_AliasGetLerpedFrames (animation, alias);
 
 	skin_size[0] = alias->skinwidth;
 	skin_size[1] = alias->skinheight;
@@ -259,6 +256,9 @@ glsl_R_DrawAlias (entity_t ent)
 	qfeglBindBuffer (GL_ARRAY_BUFFER, alias->stverts);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, alias->triangles);
 #endif
+
+	auto animation = Entity_GetAnimation (ent);
+	float blend = animation->blend;
 
 	qfeglVertexAttrib4fv (quake_mdl.colora.location, color);
 	qfeglVertexAttrib4fv (quake_mdl.colorb.location, color);

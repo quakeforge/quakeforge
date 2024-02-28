@@ -1351,7 +1351,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pass->entid_data = bframe->entid_data;
 	pass->entid_count = bframe->entid_count;
 
-	bctx->anim_index = r_data->realtime * 5;
+	bctx->anim_index = vr_data.realtime * 5;
 
 	entity_t    worldent = nullentity;
 

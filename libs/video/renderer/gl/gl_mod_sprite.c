@@ -64,7 +64,6 @@ R_DrawSpriteModel_f (entity_t e)
 	vec4f_t          cameravec = {};
 	vec4f_t          up = {}, right = {}, pn = {};
 	vec4f_t          origin, point;
-	mspriteframe_t	*frame;
 
 	transform_t transform = Entity_Transform (e);
 	origin = Transform_GetWorldPosition (transform);
@@ -72,7 +71,7 @@ R_DrawSpriteModel_f (entity_t e)
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	auto animation = Entity_GetAnimation (e);
-	frame = R_GetSpriteFrame (sprite, animation);
+	auto frame = (mspriteframe_t *) ((byte *) sprite + animation->pose2);
 
 	if (!R_BillboardFrame (transform, sprite->type, cameravec,
 						   &up, &right, &pn)) {
@@ -120,29 +119,28 @@ static void
 R_DrawSpriteModel_VA_f (entity_t e)
 {
 	auto renderer = Entity_GetRenderer (e);
-	msprite_t		*psprite = renderer->model->cache.data;
+	msprite_t		*sprite = renderer->model->cache.data;
 	unsigned char	 modelalpha, color[4];
 	vec4f_t          up = {}, right = {};
 	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
-	mspriteframe_t	*frame;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	auto animation = Entity_GetAnimation (e);
-	frame = R_GetSpriteFrame (psprite, animation);
+	auto frame = (mspriteframe_t *) ((byte *) sprite + animation->pose2);
 
 	auto texnum = (GLuint *) &frame[1];
 	qfglBindTexture (GL_TEXTURE_2D, *texnum); // FIXME: DESPAIR
 
 	transform_t transform = Entity_Transform (e);
-	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
+	if (sprite->type == SPR_ORIENTED) {	// bullet marks on walls
 		up = Transform_Up (transform);
 		right = Transform_Right (transform);
-	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
+	} else if (sprite->type == SPR_VP_PARALLEL_UPRIGHT) {
 		up = (vec4f_t) { 0, 0, 1, 0 };
 		VectorCopy (r_refdef.frame.right, right);
 	} else {								// normal sprite
