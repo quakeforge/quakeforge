@@ -78,12 +78,13 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 	};
 	mframe_t skindesc = {};
 	int    skinsize = tex->width * tex->height;
-	size_t hunk_mark = Hunk_LowMark (0);
-	auto vkskin =  Vulkan_Mod_LoadSkin (&alias_ctx, tex->data, skinsize,
-										0, 0, false, &skindesc, ctx);
-	skin->tex = malloc (sizeof (*vkskin));
-	*(qfv_alias_skin_t *) skin->tex = *vkskin;
-	Hunk_FreeToLowMark (0, hunk_mark);
+	mod_alias_skin_t askin = {
+		.texels = tex->data,
+		.skindesc = &skindesc,
+	};
+	qfv_alias_skin_t *vskin = malloc (sizeof (*vskin));
+	skin->tex = (tex_t *) vskin;
+	Vulkan_Mod_LoadSkin (&alias_ctx, &askin, skinsize, vskin, ctx);
 }
 
 void
@@ -91,4 +92,5 @@ Vulkan_Skin_Destroy (skin_t *skin, struct vulkan_ctx_s *ctx)
 {
 	auto alias_skin = (qfv_alias_skin_t *) skin->tex;
 	Vulkan_Skin_Clear (alias_skin, ctx);
+	free (alias_skin);
 }
