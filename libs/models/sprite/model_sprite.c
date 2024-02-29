@@ -125,14 +125,14 @@ static void
 find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 {
 	auto sprite = sprite_ctx->sprite;
-	auto desc = (mframedesc_t *) ((byte *) sprite + sprite->skin.descriptors);
-	auto frame = (mframe_t *) ((byte *) sprite + sprite->skin.frames);
+	auto desc = (framedesc_t *) ((byte *) sprite + sprite->skin.descriptors);
+	auto frame = (frame_t *) ((byte *) sprite + sprite->skin.frames);
 
 	int frame_index = 0;
 	auto type = (dspriteframetype_t *) (dsprite + 1);
 	for (int i = 0; i < dsprite->numframes; i++) {
 		if (type->type == SPR_SINGLE) {
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = frame_index,
 				.numframes = 1,
 			};
@@ -140,12 +140,12 @@ find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 
 			sprite_ctx->dframes[frame_index] = dframe;
 			sprite_ctx->frames[frame_index] = &frame[frame_index];
-			frame[frame_index] = (mframe_t) { };
+			frame[frame_index] = (frame_t) { };
 			frame_index += 1;
 			type = skip_frame (dframe);
 		} else {
 			auto group = (dspritegroup_t *) (type + 1);
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = frame_index,
 				.numframes = group->numframes,
 			};
@@ -154,7 +154,7 @@ find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 			for (int j = 0; j < group->numframes; j++) {
 				sprite_ctx->dframes[frame_index] = data;
 				sprite_ctx->frames[frame_index] = &frame[frame_index];
-				frame[frame_index++] = (mframe_t) {
+				frame[frame_index++] = (frame_t) {
 					.endtime = intervals[j].interval,
 				};
 				data = skip_frame (data);
@@ -182,11 +182,11 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	}
 
 	size_t      size = sizeof (msprite_t)
-						+ sizeof (mframedesc_t[dsprite->numframes])
-						+ sizeof (mframe_t[numframes]);
+						+ sizeof (framedesc_t[dsprite->numframes])
+						+ sizeof (frame_t[numframes]);
 	sprite = Hunk_AllocName (0, size, mod->name);
-	auto descriptors = (mframedesc_t *) &sprite[1];
-	auto frames = (mframe_t *) &descriptors[dsprite->numframes];
+	auto descriptors = (framedesc_t *) &sprite[1];
+	auto frames = (frame_t *) &descriptors[dsprite->numframes];
 	*sprite = (msprite_t) {
 		.type = dsprite->type,
 		.beamlength = dsprite->beamlength,

@@ -925,7 +925,7 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
 	int         newindex, oldindex, newnum, oldnum, oldmax;
 	entity_state_t *ent;
-	frame_t    *fromframe;
+	qtv_frame_t *fromframe;
 	packet_entities_t *from;
 	server_t   *sv = client->server;
 
@@ -1025,7 +1025,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 	set_t      *pvs = 0;
 	int         e;
 	vec4f_t     org;
-	frame_t    *frame;
+	qtv_frame_t *frame;
 	qtv_entity_t *ent;
 	qtv_leaf_t *el;
 	entity_state_t *state;

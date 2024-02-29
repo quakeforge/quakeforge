@@ -167,7 +167,7 @@ mod_unload_model (size_t ind)
 		mod->clear (mod, mod->data);
 		mod->clear = 0;
 	}
-	if (mod->type != mod_alias) {
+	if (mod->type != mod_mesh) {
 		mod->needload = true;
 	}
 	if (mod->type == mod_sprite) {
@@ -304,7 +304,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 {
 	qfZoneScoped (true);
 	if (!mod->needload) {
-		if (mod->type == mod_alias && !mod->alias) {
+		if (mod->type == mod_mesh && !mod->mesh) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
@@ -322,7 +322,7 @@ static void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
 	qfZoneScoped (true);
-	if (((model_t *)object)->type != mod_alias)
+	if (((model_t *)object)->type != mod_mesh)
 		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
 	// FIXME: do we want crash set to true?
 	Mod_RealLoadModel (object, true, allocator);
@@ -354,7 +354,7 @@ Mod_TouchModel (const char *name)
 	mod = Mod_FindName (name);
 
 	if (!mod->needload) {
-		if (mod->type == mod_alias)
+		if (mod->type == mod_mesh)
 			Cache_Check (&mod->cache);
 	}
 }

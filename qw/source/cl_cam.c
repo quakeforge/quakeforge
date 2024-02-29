@@ -412,7 +412,7 @@ void
 Cam_Track (usercmd_t *cmd)
 {
 	float			len;
-	frame_t		   *frame;
+	cl_frame_t	   *frame;
 	player_state_t *player, *self;
 	vec3_t			vec;
 
@@ -544,7 +544,7 @@ adjustang (float current, float ideal, float speed)
 void
 Cam_SetView (void)
 {
-	frame_t		   *frame;
+	cl_frame_t	   *frame;
 	player_state_t *player, *self;
 	vec3_t			vec, vec2;
 

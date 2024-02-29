@@ -107,7 +107,7 @@ glsl_R_RenderEntities (entqueue_t *queue)
 			glsl_R_##Type##End (); \
 	} while (0)
 
-	RE_LOOP (alias, Alias);
+	RE_LOOP (mesh, Alias);
 	RE_LOOP (iqm, IQM);
 	RE_LOOP (sprite, Sprite);
 }

@@ -1355,21 +1355,21 @@ Host_Viewframe_f (void)
 static void
 PrintFrameName (model_t *m, int frame)
 {
-	auto alias = m->alias;
+	auto mesh = m->mesh;
 	bool cached = false;
-	if (!alias) {
-		alias = Cache_TryGet (&m->cache);
-		if (!alias) {
+	if (!mesh) {
+		mesh = Cache_TryGet (&m->cache);
+		if (!mesh) {
 			return;
 		}
 		cached = true;
 	}
-	auto desc = (mframedesc_t *) ((byte *) alias + alias->morph.descriptors);
+	auto desc = (framedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
 	frame = desc[frame].firstframe;
-	auto f = (mframe_t *) ((byte *) alias + alias->morph.frames);
-	auto framedata = (maliasframe_t *) ((byte *) alias + f[frame].data);
+	auto f = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto framedata = (maliasframe_t *) ((byte *) mesh + f[frame].data);
 
-	Sys_Printf ("frame %i: %s\n", frame, (char *) alias + framedata->name);
+	Sys_Printf ("frame %i: %s\n", frame, (char *) mesh + framedata->name);
 	if (cached) {
 		Cache_Release (&m->cache);
 	}

@@ -339,7 +339,7 @@ void
 gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t    *mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
 	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
@@ -488,24 +488,24 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	} else {
 		size += sizeof (trivertx_t[numposes * numorder]);
 	}
-	gl_alias_mesh_t *mesh = nullptr;
+	gl_alias_mesh_t *rmesh = nullptr;
 	void *vertices = nullptr;
 
 	if (!gl_alias_render_tri) {
 		size += sizeof (int[numcommands]);
-		mesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
-		auto cmds = (int *) &mesh[1];
+		rmesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
+		auto cmds = (int *) &rmesh[1];
 		vertices = &cmds[numcommands];
 
-		mesh->commands = (byte *) cmds - (byte *) mesh;
+		rmesh->commands = (byte *) cmds - (byte *) rmesh;
 		memcpy (cmds, commands, sizeof (int[numcommands]));
 	} else {
 		size += sizeof (tex_coord_t[numorder]);
-		mesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
-		auto tex_coord = (tex_coord_t *) &mesh[1];
+		rmesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
+		auto tex_coord = (tex_coord_t *) &rmesh[1];
 		vertices = &tex_coord[numorder];
 
-		mesh->tex_coord = (byte *) tex_coord - (byte *) mesh;
+		rmesh->tex_coord = (byte *) tex_coord - (byte *) rmesh;
 		for (i=0; i < numorder; i++) {
 			float s, t;
 			int k;
@@ -522,12 +522,12 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 	}
 
-	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
 	if (extra) {
 		trivertx16_t *verts = vertices;
 		for (i = 0; i < numposes; i++) {
 			trivertx_t *pv = alias_ctx->poseverts.a[i];
-			frames[i].data = (byte *) verts - (byte *) mesh;
+			frames[i].data = (byte *) verts - (byte *) rmesh;
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
@@ -546,18 +546,18 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	} else {
 		trivertx_t *verts = vertices;
 		for (i = 0; i < numposes; i++) {
-			frames[i].data = (byte *) verts - (byte *) mesh;
+			frames[i].data = (byte *) verts - (byte *) rmesh;
 			for (j = 0; j < numorder; j++) {
 				*verts++ = alias_ctx->poseverts.a[i][vertexorder[j]];
 			}
 		}
 	}
-	VectorCopy (mdl->scale, mesh->scale);
-	VectorCopy (mdl->scale_origin, mesh->scale_origin);
-	mesh->numverts = numorder;
-	mesh->numtris = mdl->numtris;
-	mesh->extra = extra;
-	alias->render_data = (byte *) mesh - (byte *) alias;
+	VectorCopy (mdl->scale, rmesh->scale);
+	VectorCopy (mdl->scale_origin, rmesh->scale_origin);
+	rmesh->numverts = numorder;
+	rmesh->numtris = mdl->numtris;
+	rmesh->extra = extra;
+	mesh->render_data = (byte *) rmesh - (byte *) mesh;
 
 	dstring_delete (cache);
 	dstring_delete (fullpath);

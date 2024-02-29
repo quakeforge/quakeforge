@@ -81,7 +81,7 @@ typedef struct {
 												// usercmd
 	packet_entities_t packet_entities;
 	bool        invalid;		// true if the packet_entities delta was invalid
-} frame_t;
+} cl_frame_t;
 
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
@@ -181,7 +181,7 @@ typedef struct client_state_s {
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
 	// sentcmds[cl.netchan.outgoing_sequence & UPDATE_MASK] = cmd
-	frame_t     frames[UPDATE_BACKUP];
+	cl_frame_t  frames[UPDATE_BACKUP];
 	int         link_sequence;
 	int         prev_sequence;
 

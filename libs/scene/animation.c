@@ -40,7 +40,7 @@ R_EntityBlend (double time, animation_t *animation, int pose, float interval)
 }
 
 static uint32_t
-get_frame_data (double time, const manim_t *anim, int framenum,
+get_frame_data (double time, const anim_t *anim, int framenum,
 				const void *base)
 {
 	if ((framenum >= anim->numdesc) || (framenum < 0)) {
@@ -49,13 +49,13 @@ get_frame_data (double time, const manim_t *anim, int framenum,
 		return 0;
 	}
 
-	auto fdesc = (mframedesc_t *) (base + anim->descriptors);
+	auto fdesc = (framedesc_t *) (base + anim->descriptors);
 	fdesc += framenum;
 	if (fdesc->numframes < 1) {
 		return 0;
 	}
 
-	auto frame = (mframe_t *) (base + anim->frames);
+	auto frame = (frame_t *) (base + anim->frames);
 	frame += fdesc->firstframe;
 
 	int   numframes = fdesc->numframes;
@@ -76,14 +76,14 @@ get_frame_data (double time, const manim_t *anim, int framenum,
 static void
 update_alias (double time, animation_t *anim, model_t *model)
 {
-	auto alias = model->alias;
-	if (!alias) {
-		alias = Cache_Get (&model->cache);
+	auto mesh = model->mesh;
+	if (!mesh) {
+		mesh = Cache_Get (&model->cache);
 	}
 	int frame = anim->frame;
-	uint32_t data = get_frame_data (time, &alias->morph, frame, alias);
+	uint32_t data = get_frame_data (time, &mesh->morph, frame, mesh);
 	anim->blend = R_EntityBlend (time, anim, data, 0.1);
-	if (!model->alias) {
+	if (!model->mesh) {
 		Cache_Release (&model->cache);
 	}
 }
@@ -105,13 +105,13 @@ update_sprite (double time, animation_t *anim, model_t *model)
 static void
 alias_skin (double time, renderer_t *rend, model_t *model)
 {
-	auto alias = model->alias;
-	if (!alias) {
-		alias = Cache_Get (&model->cache);
+	auto mesh = model->mesh;
+	if (!mesh) {
+		mesh = Cache_Get (&model->cache);
 	}
 	int skinnum = rend->skin;
-	rend->skindesc = get_frame_data (time, &alias->skin, skinnum, alias);
-	if (!model->alias) {
+	rend->skindesc = get_frame_data (time, &mesh->skin, skinnum, mesh);
+	if (!model->mesh) {
 		Cache_Release (&model->cache);
 	}
 }
@@ -143,7 +143,7 @@ Anim_Update (double time, const ecs_pool_t *animpool,
 				case mod_brush:
 				case mod_light:
 					break;
-				case mod_alias:
+				case mod_mesh:
 					update_alias (time + syncbase, anim, renderer->model);
 					alias_skin (time + syncbase, renderer, renderer->model);
 					break;

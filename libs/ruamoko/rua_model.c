@@ -191,7 +191,7 @@ bi (Model_NumJoints)
 
 	R_INT (pr) = 0;
 	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->alias;
+		auto iqm = (iqm_t *) model->mesh;
 		R_INT (pr) = iqm->num_joints;
 	}
 }
@@ -202,7 +202,7 @@ bi (Model_GetJoints)
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
-	auto iqm = (iqm_t *) model->alias;
+	auto iqm = (iqm_t *) model->mesh;
 	auto joints = (iqmjoint_t *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {
@@ -226,16 +226,16 @@ bi (Model_NumFrames)
 
 	R_INT (pr) = 0;
 	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->alias;
+		auto iqm = (iqm_t *) model->mesh;
 		R_INT (pr) = iqm->num_frames;
-	} else if (model->type == mod_alias) {
-		auto alias = model->alias;
+	} else if (model->type == mod_mesh) {
+		auto mesh = model->mesh;
 		bool cached = false;
-		if (!alias) {
-			alias = Cache_Get (&model->cache);
+		if (!mesh) {
+			mesh = Cache_Get (&model->cache);
 			cached = true;
 		}
-		R_INT (pr) = alias->morph.numdesc;
+		R_INT (pr) = mesh->morph.numdesc;
 		if (cached) {
 			Cache_Release (&model->cache);
 		}
@@ -252,7 +252,7 @@ bi_Model_GetBaseFrame (progs_t *pr, void *_res)
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
-	auto iqm = (iqm_t *) model->alias;
+	auto iqm = (iqm_t *) model->mesh;
 	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {

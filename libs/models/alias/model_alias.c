@@ -48,10 +48,10 @@
 #include "mod_internal.h"
 
 static void
-load_skin (mod_alias_ctx_t *alias_ctx, mframe_t *frame, float endtime,
+load_skin (mod_alias_ctx_t *alias_ctx, frame_t *frame, float endtime,
 		  byte *skin)
 {
-	*frame = (mframe_t) { .endtime = endtime };
+	*frame = (frame_t) { .endtime = endtime };
 
 	mod_alias_skin_t askin = {
 		.texels = skin,
@@ -65,15 +65,15 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 			const mdl_t *mdl)
 {
 	int  skinsize = mdl->skinwidth * mdl->skinheight;
-	auto alias = alias_ctx->alias;
-	auto desc = (mframedesc_t *) ((byte *) alias + alias->skin.descriptors);
-	auto skinframe = (mframe_t *) ((byte *) alias + alias->skin.frames);
+	auto mesh = alias_ctx->mesh;
+	auto desc = (framedesc_t *) ((byte *) mesh + mesh->skin.descriptors);
+	auto skinframe = (frame_t *) ((byte *) mesh + mesh->skin.frames);
 	int  index = 0;
 
 	for (int i = 0; i < mdl->numskins; i++) {
 		auto skin = (byte *) &type[1];
 		if (type->type == ALIAS_SKIN_SINGLE) {
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = index,
 				.numframes = 1,
 			};
@@ -81,7 +81,7 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 			skin += skinsize;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = index,
 				.numframes = group->numframes,
 			};
@@ -117,19 +117,19 @@ static void
 load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			 const mdl_t *mdl)
 {
-	auto alias = alias_ctx->alias;
-	auto desc = (mframedesc_t *) ((byte *) alias + alias->morph.descriptors);
-	auto frame = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	auto mesh = alias_ctx->mesh;
+	auto desc = (framedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
+	auto frame = (frame_t *) ((byte *) mesh + mesh->morph.frames);
 	int  index = 0;
 
 	for (int i = 0; i < mdl->numframes; i++) {
 		trivertx_t *verts;
 		if (type->type == ALIAS_SINGLE) {
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = index,
 				.numframes = 1,
 			};
-			frame[index] = (mframe_t) { };
+			frame[index] = (frame_t) { };
 
 			void *data = &type[1];
 			alias_ctx->dframes[index] = data;
@@ -137,14 +137,14 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			index++;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
-			desc[i] = (mframedesc_t) {
+			desc[i] = (framedesc_t) {
 				.firstframe = index,
 				.numframes = group->numframes,
 			};
 			auto intervals = (float *) &group[1];
 			void *data = &intervals[group->numframes];
 			for (int j = 0; j < group->numframes; j++) {
-				frame[index] = (mframe_t) {
+				frame[index] = (frame_t) {
 					.endtime = intervals[j],
 				};
 				alias_ctx->dframes[index] = data;
@@ -330,38 +330,38 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	daliasframe_t *dframes[alias_ctx.poseverts.size];
 	alias_ctx.dframes = dframes;
 
-	// allocate space for a working alias, plus all the data except the
+	// allocate space for a working mesh, plus all the data except the
 	// frame data, skin and group info
-	size_t      size = sizeof (malias_t)
-						+ sizeof (mframedesc_t[mdl->numskins])
-						+ sizeof (mframe_t[alias_ctx.numskins])
-						+ sizeof (mframedesc_t[mdl->numframes])
-						+ sizeof (mframe_t[alias_ctx.poseverts.size])
+	size_t      size = sizeof (mesh_t)
+						+ sizeof (framedesc_t[mdl->numskins])
+						+ sizeof (frame_t[alias_ctx.numskins])
+						+ sizeof (framedesc_t[mdl->numframes])
+						+ sizeof (frame_t[alias_ctx.poseverts.size])
 						+ alias_ctx.names_size;
-	malias_t *alias = Hunk_AllocName (nullptr, size, mod->name);
-	alias_ctx.alias = alias;
-	auto skindescs = (mframedesc_t *) &alias[1];
-	auto skinframes = (mframe_t *) &skindescs[mdl->numskins];
-	auto framedescs = (mframedesc_t *) &skinframes[alias_ctx.numskins];
-	auto frames = (mframe_t *) &framedescs[mdl->numframes];
+	mesh_t *mesh = Hunk_AllocName (nullptr, size, mod->name);
+	alias_ctx.mesh = mesh;
+	auto skindescs = (framedesc_t *) &mesh[1];
+	auto skinframes = (frame_t *) &skindescs[mdl->numskins];
+	auto framedescs = (framedesc_t *) &skinframes[alias_ctx.numskins];
+	auto frames = (frame_t *) &framedescs[mdl->numframes];
 	alias_ctx.names = (char *) &frames[alias_ctx.poseverts.size];
-	*alias = (malias_t) {
+	*mesh = (mesh_t) {
 		.crc = crc,
 		.skin = {
 			.numdesc = mdl->numskins,
-			.descriptors = (byte *) skindescs - (byte *) alias,
-			.frames = (byte *) skinframes - (byte *) alias,
+			.descriptors = (byte *) skindescs - (byte *) mesh,
+			.frames = (byte *) skinframes - (byte *) mesh,
 		},
 		.morph = {
 			.numdesc = mdl->numframes,
-			.descriptors = (byte *) framedescs - (byte *) alias,
-			.frames = (byte *) frames - (byte *) alias,
+			.descriptors = (byte *) framedescs - (byte *) mesh,
+			.frames = (byte *) frames - (byte *) mesh,
 		},
 	};
 	alias_ctx.skinwidth = mdl->skinwidth;
 	alias_ctx.skinheight = mdl->skinheight;
 
-	mod->type = mod_alias;
+	mod->type = mod_mesh;
 	mod->effects = mdl->flags;
 	mod->synctype = mdl->synctype;
 	mod->numframes = mdl->numframes;
@@ -398,13 +398,13 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		size_t      total = end - start;
 		void       *mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
-			memcpy (mem, alias, total);
+			memcpy (mem, mesh, total);
 
 		Hunk_FreeToLowMark (nullptr, start);
-		mod->alias = nullptr;
+		mod->mesh = nullptr;
 	} else {
 		memset (&mod->cache, 0, sizeof (mod->cache));
-		mod->alias = alias;
+		mod->mesh = mesh;
 	}
 	DARRAY_CLEAR (&alias_ctx.poseverts);
 	DARRAY_CLEAR (&alias_ctx.stverts);

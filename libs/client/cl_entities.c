@@ -369,7 +369,8 @@ CL_TransformEntity (entity_t ent, float scale, const vec3_t angles,
 		vec3_t      ang;
 		VectorCopy (angles, ang);
 		auto renderer = Entity_GetRenderer (ent);
-		if (renderer->model && renderer->model->type == mod_alias) {
+		if (renderer->model && renderer->model->type == mod_mesh) {
+			//FIXME use a flag
 			// stupid quake bug
 			// why, oh, why, do alias models pitch in the opposite direction
 			// to everything else?

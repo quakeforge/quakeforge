@@ -11,7 +11,7 @@ typedef struct mod_alias_skin_s {
 	int         skin_num;
 	int         group_num;	// -1 if not in an animated group
 	byte       *texels;
-	mframe_t   *skindesc;
+	frame_t    *skindesc;
 } mod_alias_skin_t;
 
 typedef struct stvertset_s DARRAY_TYPE (stvert_t) stvertset_t;
@@ -20,7 +20,7 @@ typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
 typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
 typedef struct mod_alias_ctx_s {
-	malias_t   *alias;
+	mesh_t     *mesh;
 	model_t    *mod;
 	mdl_t      *mdl;
 	stvertset_t stverts;
@@ -43,7 +43,7 @@ typedef struct mod_sprite_ctx_s {
 	msprite_t  *sprite;
 	int         numframes;
 	dspriteframe_t **dframes;	///< array of pointers to dframes (in)
-	mframe_t  **frames;
+	frame_t   **frames;
 } mod_sprite_ctx_t;
 
 int Mod_CalcFullbright (byte *out, const byte *in, size_t pixels);

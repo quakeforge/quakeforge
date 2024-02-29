@@ -185,15 +185,15 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing (triangles version)
 */
 static void
-GL_DrawAliasShadowTri (transform_t transform, const gl_alias_mesh_t *alias,
+GL_DrawAliasShadowTri (transform_t transform, const gl_alias_mesh_t *rmesh,
 					   const vert_order_t *vo)
 {
 	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
 	float       height, lheight;
 	vec3_t      point;
-	const vec_t *scale = alias->scale;
-	const vec_t *scale_origin = alias->scale_origin;
+	const vec_t *scale = rmesh->scale;
+	const vec_t *scale_origin = rmesh->scale_origin;
 	vec4f_t     entorigin;
 
 	entorigin = Transform_GetWorldPosition (transform);
@@ -225,7 +225,7 @@ GL_DrawAliasShadowTri (transform_t transform, const gl_alias_mesh_t *alias,
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *alias,
+GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *rmesh,
 				    const vert_order_t *vo)
 {
 	float       height, lheight;
@@ -251,14 +251,14 @@ GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *alias,
 		do {
 			// normals and vertices come from the frame list
 			point[0] =
-				verts->vert[0] * alias->scale[0] +
-				alias->scale_origin[0];
+				verts->vert[0] * rmesh->scale[0] +
+				rmesh->scale_origin[0];
 			point[1] =
-				verts->vert[1] * alias->scale[1] +
-				alias->scale_origin[1];
+				verts->vert[1] * rmesh->scale[1] +
+				rmesh->scale_origin[1];
 			point[2] =
-				verts->vert[2] * alias->scale[2] +
-				alias->scale_origin[2] + lheight;
+				verts->vert[2] * rmesh->scale[2] +
+				rmesh->scale_origin[2] + lheight;
 
 			point[0] -= shadevector[0] * point[2];
 			point[1] -= shadevector[1] * point[2];
@@ -273,21 +273,21 @@ GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *alias,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (malias_t *alias, entity_t e)
+GL_GetAliasFrameVerts16 (mesh_t *mesh, entity_t e)
 {
-	auto mesh = (gl_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int           count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	count = mesh->numverts;
+	count = rmesh->numverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) mesh + mesh->commands);
+	vo->order = (int *) ((byte *) rmesh + rmesh->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (mesh->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + mesh->tex_coord);
+	if (rmesh->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) rmesh + rmesh->tex_coord);
 	} else {
 		vo->tex_coord = NULL;
 	}
@@ -298,14 +298,14 @@ GL_GetAliasFrameVerts16 (malias_t *alias, entity_t e)
 
 	trivertx16_t *verts;
 	if (blend == 0.0) {
-		verts = (trivertx16_t *) ((byte *) mesh + animation->pose1);
+		verts = (trivertx16_t *) ((byte *) rmesh + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = (trivertx16_t *) ((byte *) mesh + animation->pose2);
+		verts = (trivertx16_t *) ((byte *) rmesh + animation->pose2);
 	} else {
 		trivertx16_t *verts1, *verts2;
 
-		verts1 = (trivertx16_t *) ((byte *) mesh + animation->pose1);
-		verts2 = (trivertx16_t *) ((byte *) mesh + animation->pose2);
+		verts1 = (trivertx16_t *) ((byte *) rmesh + animation->pose1);
+		verts2 = (trivertx16_t *) ((byte *) rmesh + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -334,21 +334,21 @@ GL_GetAliasFrameVerts16 (malias_t *alias, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (malias_t *alias, entity_t e)
+GL_GetAliasFrameVerts (mesh_t *mesh, entity_t e)
 {
-	auto mesh = (gl_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int         count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	count = mesh->numverts;
+	count = rmesh->numverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) mesh + mesh->commands);
+	vo->order = (int *) ((byte *) rmesh + rmesh->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (mesh->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + mesh->tex_coord);
+	if (rmesh->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) rmesh + rmesh->tex_coord);
 	} else {
 		vo->tex_coord = NULL;
 	}
@@ -360,14 +360,14 @@ GL_GetAliasFrameVerts (malias_t *alias, entity_t e)
 
 	trivertx_t *verts;
 	if (blend == 0.0) {
-		verts = (trivertx_t *) ((byte *) mesh + animation->pose1);
+		verts = (trivertx_t *) ((byte *) rmesh + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = (trivertx_t *) ((byte *) mesh + animation->pose2);
+		verts = (trivertx_t *) ((byte *) rmesh + animation->pose2);
 	} else {
 		trivertx_t *verts1, *verts2;
 
-		verts1 = (trivertx_t *) ((byte *) mesh + animation->pose1);
-		verts2 = (trivertx_t *) ((byte *) mesh + animation->pose2);
+		verts1 = (trivertx_t *) ((byte *) rmesh + animation->pose1);
+		verts2 = (trivertx_t *) ((byte *) rmesh + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -396,18 +396,18 @@ GL_GetAliasFrameVerts (malias_t *alias, entity_t e)
 }
 
 static glskin_t
-gl_get_skin (entity_t e, renderer_t *renderer, malias_t *alias)
+gl_get_skin (entity_t e, renderer_t *renderer, mesh_t *mesh)
 {
 	auto colormap = Entity_GetColormap (e);
 	if (!gl_nocolors) {
 		skin_t *skin = renderer->skin ? Skin_Get (renderer->skin) : nullptr;
 		if (skin) {
-			return gl_Skin_Get (skin->tex, colormap, (byte *) alias);
+			return gl_Skin_Get (skin->tex, colormap, (byte *) mesh);
 		}
 	}
 
-	auto tex = (tex_t *) ((byte *) alias + renderer->skindesc);
-	return gl_Skin_Get (tex, colormap, (byte *) alias);
+	auto tex = (tex_t *) ((byte *) mesh + renderer->skindesc);
+	return gl_Skin_Get (tex, colormap, (byte *) mesh);
 }
 
 void
@@ -421,7 +421,7 @@ gl_R_DrawAliasModel (entity_t e)
 	int         gl_light;
 	int         used_lights = 0;
 	bool        is_fullbright = false;
-	malias_t   *alias;
+	mesh_t     *mesh;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
@@ -561,39 +561,39 @@ gl_R_DrawAliasModel (entity_t e)
 	}
 
 	// locate the proper data
-	if (!(alias = renderer->model->alias)) {
-		alias = Cache_Get (&renderer->model->cache);
+	if (!(mesh = renderer->model->mesh)) {
+		mesh = Cache_Get (&renderer->model->cache);
 	}
-	auto mesh = (gl_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 
-	gl_ctx->alias_polys += mesh->numtris;
+	gl_ctx->alias_polys += rmesh->numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	auto glskin = gl_get_skin (e, renderer, alias);
+	auto glskin = gl_get_skin (e, renderer, mesh);
 	if (!gl_fb_models || is_fullbright) {
 		glskin.fb = 0;
 	}
 
-	if (mesh->extra) {
+	if (rmesh->extra) {
 		// because we multipled by 256 when we loaded the verts, we have to
 		// scale by 1/256 when drawing.
 		//FIXME see scaling above
-		VectorScale (mesh->scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (alias, e);
+		VectorScale (rmesh->scale, 1 / 256.0, scale);
+		vo = GL_GetAliasFrameVerts16 (mesh, e);
 	} else {
 		//FIXME see scaling above
-		VectorScale (mesh->scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (alias, e);
+		VectorScale (rmesh->scale, 1, scale);
+		vo = GL_GetAliasFrameVerts (mesh, e);
 	}
 
 	// setup the transform
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
-	qfglTranslatef (mesh->scale_origin[0],
-					mesh->scale_origin[1],
-					mesh->scale_origin[2]);
+	qfglTranslatef (rmesh->scale_origin[0],
+					rmesh->scale_origin[1],
+					rmesh->scale_origin[2]);
 	qfglScalef (scale[0], scale[1], scale[2]);
 
 	if (gl_modelalpha < 1.0)
@@ -719,9 +719,9 @@ gl_R_DrawAliasModel (entity_t e)
 		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
-			GL_DrawAliasShadowTri (transform, mesh, vo);
+			GL_DrawAliasShadowTri (transform, rmesh, vo);
 		else
-			GL_DrawAliasShadow (transform, mesh, vo);
+			GL_DrawAliasShadow (transform, rmesh, vo);
 
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);
@@ -737,7 +737,7 @@ gl_R_DrawAliasModel (entity_t e)
 		qfglDisable (GL_LIGHT0 + used_lights);
 	}
 
-	if (!renderer->model->alias) {
+	if (!renderer->model->mesh) {
 		Cache_Release (&renderer->model->cache);
 	}
 }

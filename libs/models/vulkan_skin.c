@@ -76,7 +76,7 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 		.skinheight = tex->height,
 		.mod = &dummy_model,
 	};
-	mframe_t skindesc = {};
+	frame_t skindesc = {};
 	int    skinsize = tex->width * tex->height;
 	mod_alias_skin_t askin = {
 		.texels = tex->data,

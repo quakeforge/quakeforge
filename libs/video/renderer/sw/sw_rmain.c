@@ -269,7 +269,7 @@ draw_sprite_entity (entity_t ent)
 }
 
 static inline void
-draw_alias_entity (entity_t ent)
+draw_mesh_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
@@ -315,7 +315,7 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 		} \
 	} while (0)
 
-	RE_LOOP (alias);
+	RE_LOOP (mesh);
 	RE_LOOP (iqm);
 	RE_LOOP (sprite);
 

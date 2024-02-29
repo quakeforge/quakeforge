@@ -60,7 +60,7 @@ sw_alias_clear (model_t *m, void *data)
 void
 sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t     *mesh = alias_ctx->mesh;
 	int         width = alias_ctx->skinwidth;
 	int         height = alias_ctx->skinheight;
 	int         skinsize = width * height;
@@ -75,7 +75,7 @@ sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 
 		pic->width = width;
 		pic->height = height;
-		skin->skindesc->data = (byte *) pic - (byte *) alias;
+		skin->skindesc->data = (byte *) pic - (byte *) mesh;
 		memcpy (pic->data, skin->texels, skinsize);
 	}
 }
@@ -90,7 +90,7 @@ static void
 process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
 			   trivertx_t *frame_verts, int posenum, int extra)
 {
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t     *mesh = alias_ctx->mesh;
 	int         size = alias_ctx->mdl->numverts * sizeof (trivertx_t);
 
 	frame->bboxmin = alias_ctx->dframes[posenum]->bboxmin;
@@ -99,7 +99,7 @@ process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
 	if (extra)
 		size *= 2;
 
-	frame->data = (byte *) frame_verts - (byte *) alias;
+	frame->data = (byte *) frame_verts - (byte *) mesh;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
 	// from the high-order bits (see R_AliasTransformFinalVert16 in
@@ -113,7 +113,7 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
 	auto mdl = alias_ctx->mdl;
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t     *mesh = alias_ctx->mesh;
 	int         numv = alias_ctx->stverts.size;
 	int         numt = alias_ctx->triangles.size;
 	int         nump = alias_ctx->poseverts.size;
@@ -124,23 +124,23 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 					 + sizeof (trivertx_t[nump * numv]);
 
 	const char *name = alias_ctx->mod->name;
-	sw_alias_mesh_t *mesh = Hunk_AllocName (nullptr, size, name);
-	auto stverts = (stvert_t *) &mesh[1];
+	sw_alias_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	auto stverts = (stvert_t *) &rmesh[1];
 	auto tris = (mtriangle_t *) &stverts[numv];
 	auto aframes = (maliasframe_t *) &tris[numt];
 	auto frame_verts = (trivertx_t *) &aframes[nump];
 
-	*mesh = (sw_alias_mesh_t) {
+	*rmesh = (sw_alias_mesh_t) {
 		.scale = { VectorExpand (mdl->scale) },
 		.scale_origin = { VectorExpand (mdl->scale_origin) },
-		.stverts = (byte *) stverts - (byte *) mesh,
-		.triangles = (byte *) tris - (byte *) mesh,
+		.stverts = (byte *) stverts - (byte *) rmesh,
+		.triangles = (byte *) tris - (byte *) rmesh,
 		.numverts = mdl->numverts,
 		.numtris = mdl->numtris,
 		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
 	};
-	alias->render_data = (byte *) mesh - (byte *) alias;
-	alias->morph.data = (byte *) aframes - (byte *) alias;
+	mesh->render_data = (byte *) rmesh - (byte *) mesh;
+	mesh->morph.data = (byte *) aframes - (byte *) mesh;
 
 	for (int i = 0; i < numv; i++) {
 		stverts[i].onseam = alias_ctx->stverts.a[i].onseam;
@@ -153,12 +153,12 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	auto desc = (mframedesc_t *) ((byte *) alias + alias->morph.descriptors);
-	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	auto desc = (framedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
+	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
 	int  posenum = 0;
-	for (int i = 0; i < alias->morph.numdesc; i++) {
+	for (int i = 0; i < mesh->morph.numdesc; i++) {
 		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
-			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) alias;
+			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) mesh;
 			process_frame (alias_ctx, &aframes[posenum],
 						   &frame_verts[posenum * numv], posenum, extra);
 		}

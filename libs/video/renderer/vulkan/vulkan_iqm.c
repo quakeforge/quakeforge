@@ -321,7 +321,7 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass, bool shadow)
 	auto dfunc = device->funcs;
 	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
-	auto iqm = (iqm_t *) model->alias;
+	auto iqm = (iqm_t *) model->mesh;
 	qfv_iqm_t  *mesh = iqm->extra_data;
 	auto skins = mesh->skins;
 	uint16_t   *matrix_base = taskctx->data;

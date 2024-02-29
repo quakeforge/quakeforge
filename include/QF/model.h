@@ -274,22 +274,22 @@ typedef struct mod_brush_s {
 
 //
 
-typedef struct mframedesc_s {
+typedef struct framedesc_s {
 	int         firstframe;
 	int         numframes;		// 1 for single frames
-} mframedesc_t;
+} framedesc_t;
 
-typedef struct mframe_s {
+typedef struct frame_s {
 	float       endtime;		// 0 for single frames
 	uint32_t    data;
-} mframe_t;
+} frame_t;
 
-typedef struct manim_s {
+typedef struct anim_s {
 	int         numdesc;
 	uint32_t    descriptors;
 	uint32_t    frames;
 	uint32_t    data;
-} manim_t;
+} anim_t;
 
 // SPRITE MODELS ==============================================================
 
@@ -300,7 +300,7 @@ typedef struct mspriteframe_s {
 typedef struct {
 	int         type;
 	float       beamlength;
-	manim_t     skin;
+	anim_t      skin;
 } msprite_t;
 
 // ALIAS MODELS ===============================================================
@@ -323,19 +323,19 @@ static_assert (sizeof (mtriangle_t) == 4 * sizeof (int),
 
 #define	MAX_SKINS	32
 
-typedef struct malias_s {
+typedef struct mesh_s {
 	uint16_t    crc;
-	manim_t     skin;
-	manim_t     morph;
+	anim_t      skin;
+	anim_t      morph;
 	uint32_t    render_data;
-} malias_t;
+} mesh_t;
 
 // Whole model ================================================================
 
 typedef enum {
 	mod_brush,
 	mod_sprite,
-	mod_alias,
+	mod_mesh,
 	mod_iqm,
 
 	mod_light,
@@ -361,7 +361,7 @@ typedef struct model_s {
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
 	bool		 needload;		// bmodels and sprites don't cache normally
-	malias_t    *alias;			// if not null, alias model is not cached
+	mesh_t      *mesh;			// if not null, alias model is not cached
 
 	modtype_t	 type;
 	int			 numframes;

@@ -208,8 +208,8 @@ glsl_R_DrawAlias (entity_t ent)
 		return;
 	}
 	model_t    *model = renderer->model;
-	malias_t   *alias = model->alias;
-	auto mesh = (glsl_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	mesh_t     *mesh = model->mesh;
+	auto rmesh = (glsl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 
 	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);
@@ -220,10 +220,10 @@ glsl_R_DrawAlias (entity_t ent)
 
 	// ent model scaling and offset
 	mat4f_t     mvp_mat = {
-		{ mesh->scale[0], 0, 0, 0 },
-		{ 0, mesh->scale[1], 0, 0 },
-		{ 0, 0, mesh->scale[2], 0 },
-		{ VectorExpand (mesh->scale_origin), 1 },
+		{ rmesh->scale[0], 0, 0, 0 },
+		{ 0, rmesh->scale[1], 0, 0 },
+		{ 0, 0, rmesh->scale[2], 0 },
+		{ VectorExpand (rmesh->scale_origin), 1 },
 	};
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
@@ -244,8 +244,8 @@ glsl_R_DrawAlias (entity_t ent)
 		skin_tex = renderer->skindesc;
 	}
 
-	skin_size[0] = mesh->skinwidth;
-	skin_size[1] = mesh->skinheight;
+	skin_size[0] = rmesh->skinwidth;
+	skin_size[1] = rmesh->skinheight;
 
 	qfeglActiveTexture (GL_TEXTURE0 + 1);
 	qfeglBindTexture (GL_TEXTURE_2D, cmap_tex);
@@ -253,8 +253,8 @@ glsl_R_DrawAlias (entity_t ent)
 	qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 
 #ifndef TETRAHEDRON
-	qfeglBindBuffer (GL_ARRAY_BUFFER, mesh->vertices);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, mesh->indices);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, rmesh->indices);
 #endif
 
 	auto animation = Entity_GetAnimation (ent);
@@ -276,7 +276,7 @@ glsl_R_DrawAlias (entity_t ent)
 	auto pose2 = (void *) (intptr_t) animation->pose2;
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose1);
 	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose2);
-	qfeglDrawElements (GL_TRIANGLES, 3 * mesh->numtris, GL_UNSIGNED_SHORT, 0);
+	qfeglDrawElements (GL_TRIANGLES, 3 * rmesh->numtris, GL_UNSIGNED_SHORT, 0);
 #else
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta,
 				debug_verts);

@@ -176,7 +176,7 @@ int
 CL_CalcNet (void)
 {
 	int			lost, a, i;
-	frame_t	   *frame;
+	cl_frame_t *frame;
 
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
@@ -322,26 +322,26 @@ Model_NextDownload (void)
 		}
 
 		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl_world.models.a[i]->type == mod_alias) {
+			&& cl_world.models.a[i]->type == mod_mesh) {
 			info_key = pmodel_name;
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
-			&& cl_world.models.a[i]->type == mod_alias)
+			&& cl_world.models.a[i]->type == mod_mesh)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs) {
-			malias_t *alias = cl_world.models.a[i]->alias;
-			if (!alias)
-				alias = Cache_Get (&cl_world.models.a[i]->cache);
+			mesh_t *mesh = cl_world.models.a[i]->mesh;
+			if (!mesh)
+				mesh = Cache_Get (&cl_world.models.a[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
-															 alias->crc),
+															 mesh->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
-													info_key, alias->crc));
+													info_key, mesh->crc));
 			}
-			if (!cl_world.models.a[i]->alias)
+			if (!cl_world.models.a[i]->mesh)
 				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}
@@ -963,7 +963,7 @@ void
 CL_ParseClientdata (void)
 {
 	float		latency;
-	frame_t	   *frame;
+	cl_frame_t *frame;
 	int			i;
 
 	// calculate simulated time of message

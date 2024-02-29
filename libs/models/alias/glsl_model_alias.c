@@ -58,19 +58,19 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 glsl_alias_clear (model_t *m, void *data)
 {
-	malias_t   *alias = m->alias;
-	auto mesh = (glsl_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	mesh_t     *mesh = m->mesh;
+	auto rmesh = (glsl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 
 	m->needload = true;
 
 	GLuint      bufs[2];
-	bufs[0] = mesh->vertices;
-	bufs[1] = mesh->indices;
+	bufs[0] = rmesh->vertices;
+	bufs[1] = rmesh->indices;
 	qfeglDeleteBuffers (2, bufs);
 
-	auto skin = &alias->skin;
-	auto skindesc = (mframedesc_t *) ((byte *) alias + skin->descriptors);
-	auto skinframe = (mframe_t *) ((byte *) alias + skin->frames);
+	auto skin = &mesh->skin;
+	auto skindesc = (framedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinframe = (frame_t *) ((byte *) mesh + skin->frames);
 	int index = 0;
 
 	for (int i = 0; i < skin->numdesc; i++) {
@@ -82,7 +82,7 @@ glsl_alias_clear (model_t *m, void *data)
 
 static void
 glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
-				   int snum, int gnum, mframe_t *skinframe)
+				   int snum, int gnum, frame_t *skinframe)
 {
 	int         w = alias_ctx->skinwidth;
 	int         h = alias_ctx->skinheight;
@@ -112,10 +112,10 @@ glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 void
 glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	//malias_t   *alias = alias_ctx->alias;
+	//mesh_t     *mesh = alias_ctx->mesh;
 
-	//if (alias->mdl.ident == HEADER_MDL16)
-	//	VectorScale (alias->mdl.scale, 1/256.0, alias->mdl.scale);
+	//if (mesh->mdl.ident == HEADER_MDL16)
+	//	VectorScale (mesh->mdl.scale, 1/256.0, mesh->mdl.scale);
 	alias_ctx->mod->clear = glsl_alias_clear;
 }
 
@@ -151,9 +151,9 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 			 const int *indexmap, const mod_alias_ctx_t *alias_ctx)
 {
 	auto st = alias_ctx->stverts.a;
-	auto alias = alias_ctx->alias;
+	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
-	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
 	int         i, pose;
 	// populate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)
@@ -209,7 +209,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
 	auto mdl = alias_ctx->mdl;
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t     *mesh = alias_ctx->mesh;
 	int         numverts = alias_ctx->stverts.size;
 	int         numtris = alias_ctx->triangles.size;
 	int         numposes = alias_ctx->poseverts.size;
@@ -236,9 +236,9 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
-	glsl_alias_mesh_t *mesh;
-	mesh = Hunk_AllocName (nullptr, sizeof (*mesh), alias_ctx->mod->name);
-	*mesh = (glsl_alias_mesh_t) {
+	glsl_alias_mesh_t *rmesh;
+	rmesh = Hunk_AllocName (nullptr, sizeof (*rmesh), alias_ctx->mod->name);
+	*rmesh = (glsl_alias_mesh_t) {
 		.scale = { VectorExpand (mdl->scale) },
 		.scale_origin = { VectorExpand (mdl->scale_origin) },
 		.skinwidth = alias_ctx->skinwidth,
@@ -248,10 +248,10 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.numverts = numverts,
 		.numtris = numtris,
 	};
-	alias->render_data = (byte *) mesh - (byte *) alias;
+	mesh->render_data = (byte *) rmesh - (byte *) mesh;
 
-	qfeglBindBuffer (GL_ARRAY_BUFFER, mesh->vertices);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, mesh->indices);
+	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, rmesh->indices);
 	qfeglBufferData (GL_ARRAY_BUFFER, sizeof (verts), verts, GL_STATIC_DRAW);
 	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (indices), indices,
 					 GL_STATIC_DRAW);

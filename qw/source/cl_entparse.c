@@ -530,7 +530,7 @@ CL_SetSolidEntities (void)
 {
 	int					i;
 	entity_state_t	   *state;
-	frame_t			   *frame;
+	cl_frame_t		   *frame;
 	packet_entities_t  *pak;
 
 	pmove.physents[0].model = cl_world.scene->worldmodel;
@@ -585,7 +585,7 @@ void
 CL_SetUpPlayerPrediction (bool dopred)
 {
 	double			playertime;
-	frame_t		   *frame;
+	cl_frame_t	   *frame;
 	int				msec, j;
 	player_state_t	exact;
 	player_state_t *state;

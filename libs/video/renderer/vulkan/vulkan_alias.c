@@ -227,7 +227,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
 	auto model = renderer->model;
-	malias_t   *alias = model->alias;
+	mesh_t   *mesh = model->mesh;
 	uint16_t *matrix_base = taskctx->data;
 
 	auto animation = Entity_GetAnimation (ent);
@@ -245,7 +245,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	if (!skin) {
 		uint32_t skindesc;
 		skindesc = renderer->skindesc;
-		skin = (qfv_alias_skin_t *) ((byte *) alias + skindesc);
+		skin = (qfv_alias_skin_t *) ((byte *) mesh + skindesc);
 	}
 	vec4f_t base_color;
 	QuatCopy (renderer->colormod, base_color);
@@ -264,7 +264,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	auto rmesh = (qfv_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
 
 	VkDeviceSize offsets[] = {
 		animation->pose1,
@@ -272,16 +272,16 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		0,
 	};
 	VkBuffer    buffers[] = {
-		mesh->vertex_buffer,
-		mesh->vertex_buffer,
-		mesh->uv_buffer,
+		rmesh->vertex_buffer,
+		rmesh->vertex_buffer,
+		rmesh->uv_buffer,
 	};
 	int         bindingCount = skin ? 3 : 2;
 
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
+	dfunc->vkCmdBindIndexBuffer (cmd, rmesh->index_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
 	if (pass && skin) {
 		VkDescriptorSet sets[] = {
@@ -305,7 +305,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 								  blend, colors, base_color, pass, taskctx);
 		}
 	}
-	dfunc->vkCmdDrawIndexed (cmd, 3 * mesh->numtris, 1, 0, 0, 0);
+	dfunc->vkCmdDrawIndexed (cmd, 3 * rmesh->numtris, 1, 0, 0, 0);
 	QFV_CmdEndLabel (device, cmd);
 }
 
@@ -332,8 +332,8 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 									layout, 0, shadow ? 1 : 2, sets, 0, 0);
 
 	auto queue = r_ent_queue;	//FIXME fetch from scene
-	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
-		entity_t    ent = queue->ent_queues[mod_alias].a[i];
+	for (size_t i = 0; i < queue->ent_queues[mod_mesh].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_mesh].a[i];
 		auto renderer = Entity_GetRenderer (ent);
 		if ((stage == alias_shadow && renderer->noshadows)
 			|| (stage == alias_main && renderer->onlyshadows)) {

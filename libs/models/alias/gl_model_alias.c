@@ -64,15 +64,15 @@ gl_alias_clear (model_t *m, void *data)
 void
 gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	malias_t   *alias = alias_ctx->alias;
+	mesh_t     *mesh = alias_ctx->mesh;
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	int         num_skins = alias_ctx->skins.size;
 	tex_t      *tex_block = Hunk_AllocName (nullptr, sizeof (tex_t[num_skins]),
 											alias_ctx->mod->name);
 	byte       *texel_block = Hunk_AllocName (nullptr, skinsize * num_skins,
 											  alias_ctx->mod->name);
-	auto skindesc = (mframedesc_t *) ((byte *) alias + alias->skin.descriptors);
-	auto skinframe = (mframe_t *) ((byte *) alias + alias->skin.frames);
+	auto skindesc = (framedesc_t *) ((byte *) mesh + mesh->skin.descriptors);
+	auto skinframe = (frame_t *) ((byte *) mesh + mesh->skin.frames);
 
 	int index = 0;
 	for (int i = 0; i < num_skins; i++) {
@@ -80,14 +80,14 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 			auto skin = alias_ctx->skins.a + index;
 			auto skintex = &tex_block[index];
 			byte *texels = texel_block + index * skinsize;
-			skinframe[index].data = (byte *)skintex - (byte *) alias;
+			skinframe[index].data = (byte *)skintex - (byte *) mesh;
 			*skintex = (tex_t) {
 				.width = alias_ctx->skinwidth,
 				.height = alias_ctx->skinheight,
 				.format = tex_palette,
 				.relative = 1,
 				.palette = vid.palette,
-				.data = (byte *) (texels - (byte *) alias),
+				.data = (byte *) (texels - (byte *) mesh),
 			};
 			memcpy (texels, skin->texels, skinsize);
 			index++;
@@ -98,11 +98,11 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 void
 gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	//malias_t   *alias = alias_ctx->alias;
+	//mesh_t     *mesh = alias_ctx->mesh;
 
 	//if (strequal (alias_ctx->mod->path, "progs/eyes.mdl")) {
-	//	alias->mdl.scale_origin[2] -= (22 + 8);
-	//	VectorScale (alias->mdl.scale, 2, alias->mdl.scale);
+	//	mesh->mdl.scale_origin[2] -= (22 + 8);
+	//	VectorScale (mesh->mdl.scale, 2, mesh->mdl.scale);
 	//}
 
 	alias_ctx->mod->clear = gl_alias_clear;
@@ -150,11 +150,11 @@ void
 gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 	return;	//FIXME external skin support need a bit of thought
-	malias_t   *alias = alias_ctx->alias;
-	auto skin = &alias->skin;
+	mesh_t     *mesh = alias_ctx->mesh;
+	auto skin = &mesh->skin;
 	int         num_skins = alias_ctx->skins.size;
-	auto skindesc = (mframedesc_t *) ((byte *) alias + skin->descriptors);
-	auto skinframe = (mframe_t *) ((byte *) alias + skin->frames);
+	auto skindesc = (framedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinframe = (frame_t *) ((byte *) mesh + skin->frames);
 	dstring_t  *filename = dstring_new ();
 
 	char modname[strlen (alias_ctx->mod->path) + 1];
@@ -172,7 +172,7 @@ gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 				dsprintf (filename, "%s_%i_%i", modname, i, j);
 			}
 			Mod_LoadExternalSkin (&skins[index], filename->str);
-			skinframe[index].data = (byte *) &skins[index] - (byte *) alias;
+			skinframe[index].data = (byte *) &skins[index] - (byte *) mesh;
 		}
 	}
 }
