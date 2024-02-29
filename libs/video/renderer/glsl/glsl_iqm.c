@@ -215,7 +215,6 @@ glsl_R_DrawIQM (entity_t ent)
 	vec4f_t     entorigin;
 	mat4f_t     mvp_mat;
 	float       blend;
-	iqmframe_t *frame;
 
 	// we need only the rotation for normals.
 	mat4f_t mat;
@@ -233,8 +232,8 @@ glsl_R_DrawIQM (entity_t ent)
 
 	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
-	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
-							  blend, 0);
+	auto frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
+								   blend, 0);
 
 	qfeglUniform3fv (iqm_shader.ambient.location, 1, ambientcolor);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {

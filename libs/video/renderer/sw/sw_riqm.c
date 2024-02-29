@@ -81,7 +81,7 @@ calc_light (float *normal)
 }
 
 static void
-R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
+R_IQMTransformAndProjectFinalVerts (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 {
 	finalvert_t *fv = pfinalverts;
 	float       zi;
@@ -130,7 +130,7 @@ iqm_setup_skin (swiqm_t *sw, int skinnum)
 }
 
 static void
-R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
+R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 {
 	int         i;
 
@@ -154,7 +154,7 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 }
 
 static void
-R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
+R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 {
 	finalvert_t *fv = pfinalverts;
 	auxvert_t  *av = pauxverts;
@@ -297,7 +297,6 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         size;
 	float       blend;
-	iqmframe_t *frame;
 
 	size = (CACHE_SIZE - 1)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
@@ -305,9 +304,9 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 
 	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
-	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
-							   blend, size, sw->blend_palette,
-							   sw->palette_size);
+	auto frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
+									blend, size, sw->blend_palette,
+									sw->palette_size);
 
 	pfinalverts = (finalvert_t *) &frame[sw->palette_size];
 	pfinalverts = (finalvert_t *)

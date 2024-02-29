@@ -48,7 +48,7 @@ main (void)
 	m += bones[vbones.y] * vweights.y;
 	m += bones[vbones.z] * vweights.z;
 	m += bones[vbones.w] * vweights.w;
-#if 0
+#if 1
 	m += mat3x4(1,0,0,0,0,1,0,0,0,0,1,0) * (1 - dot(vweights, vec4(1,1,1,1)));
 	vec4        pos = vec4 (vec4(vposition, 1) * m, 1);
 #else
@@ -62,7 +62,7 @@ main (void)
 	if (!IQMDepthOnly) {
 		texcoord = vtexcoord;
 		position = pos;
-#if 0
+#if 1
 		mat3 adjTrans = mat3 (cross(m[1].xyz, m[2].xyz),
 							  cross(m[2].xyz, m[0].xyz),
 							  cross(m[0].xyz, m[1].xyz));

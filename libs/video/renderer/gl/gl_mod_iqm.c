@@ -56,7 +56,7 @@
 //FIXME this is really lame: normals are ignored. also, it could be
 //faster
 static void
-gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
+gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, mat4f_t *frame, iqmmesh *mesh)
 {
 	byte       *vert;
 	uint32_t    i, j;
@@ -93,13 +93,13 @@ gl_R_DrawIQMModel (entity_t ent)
 	iqm_t      *iqm = (iqm_t *) model->alias;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
 	float       blend;
-	iqmframe_t *frame;
 	int         i;
 
 	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (vr_data.realtime, animation, iqm);
-	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
-							   blend, 0, gl->blend_palette, gl->palette_size);
+	auto frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
+									blend, 0, gl->blend_palette,
+									gl->palette_size);
 
 	qfglPushMatrix ();
 	transform_t transform = Entity_Transform (ent);
