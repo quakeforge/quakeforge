@@ -958,15 +958,17 @@ Draw_Line (int x0, int y0, int x1, int y1, int c)
 		}
 		int     dx = x1 - x0;
 		int     dy = y1 - y0;
-		if (c0 & 1) { y0 = ((   0 - x0) * dy + dx * y0) / dx; x0 =    0; }
-		if (c0 & 2) { y0 = ((xmax - x0) * dy + dx * y0) / dx; x0 = xmax; }
-		if (c1 & 1) { y1 = ((   0 - x1) * dy + dx * y1) / dx; x1 =    0; }
-		if (c1 & 2) { y1 = ((xmax - x1) * dy + dx * y1) / dx; x1 = xmax; }
-
-		if (c0 & 4) { x0 = ((   0 - y0) * dx + dy * x0) / dy; y0 =    0; }
-		if (c0 & 8) { x0 = ((ymax - y0) * dx + dy * x0) / dy; y0 = ymax; }
-		if (c1 & 4) { x1 = ((   0 - y1) * dx + dy * x1) / dy; y1 =    0; }
-		if (c1 & 8) { x1 = ((ymax - y1) * dx + dy * x1) / dy; y1 = ymax; }
+		if (c0 > c1) {
+			if (c0 & 1) { y0 = ((   0 - x0) * dy + dx * y0) / dx; x0 =    0; }
+			if (c0 & 2) { y0 = ((xmax - x0) * dy + dx * y0) / dx; x0 = xmax; }
+			if (c0 & 4) { x0 = ((   0 - y0) * dx + dy * x0) / dy; y0 =    0; }
+			if (c0 & 8) { x0 = ((ymax - y0) * dx + dy * x0) / dy; y0 = ymax; }
+		} else {
+			if (c1 & 1) { y1 = ((   0 - x1) * dy + dx * y1) / dx; x1 =    0; }
+			if (c1 & 2) { y1 = ((xmax - x1) * dy + dx * y1) / dx; x1 = xmax; }
+			if (c1 & 4) { x1 = ((   0 - y1) * dx + dy * x1) / dy; y1 =    0; }
+			if (c1 & 8) { x1 = ((ymax - y1) * dx + dy * x1) / dy; y1 = ymax; }
+		}
 		c0 = test_point (x0, y0);
 		c1 = test_point (x1, y1);
 	}
