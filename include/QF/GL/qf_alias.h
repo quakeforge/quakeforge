@@ -38,6 +38,17 @@ typedef struct aliasvrt_s {
 	GLushort    vertex[3];
 } aliasvrt_t;
 
+typedef struct gl_alias_mesh_s {
+	vec3_t      scale;
+	vec3_t      scale_origin;
+	uint32_t    commands;
+	uint32_t    tex_coord;
+	uint32_t    verts;
+	uint32_t    numverts;
+	uint32_t    numtris;
+	int         extra;
+} gl_alias_mesh_t;
+
 struct entity_s;
 void gl_R_DrawAliasModel (struct entity_s ent);
 

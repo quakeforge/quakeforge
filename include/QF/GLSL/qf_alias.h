@@ -32,6 +32,17 @@
 
 #include "QF/GLSL/types.h"
 
+typedef struct glsl_alias_mesh_s {
+	vec3_t      scale;
+	vec3_t      scale_origin;
+	int         skinwidth;
+	int         skinheight;
+	GLuint      vertices;
+	GLuint      indices;
+	uint32_t    numverts;
+	uint32_t    numtris;
+} glsl_alias_mesh_t;
+
 typedef struct aliasvrt_s {
 	GLshort     st[2];
 	GLshort     normal[3];

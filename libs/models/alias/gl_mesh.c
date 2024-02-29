@@ -43,6 +43,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "QF/GL/qf_alias.h"
+
 #include "mod_internal.h"
 
 #include "compat.h"
@@ -125,7 +127,7 @@ add_strip (int vert, int tri)
 static int
 StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	malias_t   *alias = alias_ctx->alias;
+	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
 
@@ -144,7 +146,7 @@ StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
 nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < alias->numtris; j++, check++) {
+		 j < mdl->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -174,7 +176,7 @@ nexttri:
 done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < alias->numtris; j++)
+	for (j = starttri + 1; j < mdl->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -184,7 +186,7 @@ done:
 static int
 FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	malias_t   *alias = alias_ctx->alias;
+	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
 	mtriangle_t *last, *check;
 
@@ -204,7 +206,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
   nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < alias->numtris; j++, check++) {
+		 j < mdl->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -231,7 +233,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
   done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < alias->numtris; j++)
+	for (j = starttri + 1; j < mdl->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -247,7 +249,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 static void
 BuildTris (mod_alias_ctx_t *alias_ctx)
 {
-	malias_t   *alias = alias_ctx->alias;
+	auto mdl = alias_ctx->mdl;
 	float		s, t;
 	int			bestlen, len, startv, type, i, j, k;
 	int			besttype = 0;
@@ -257,10 +259,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	numorder = 0;
 	numcommands = 0;
 	stripcount = 0;
-	alloc_used (alias->numtris);
+	alloc_used (mdl->numtris);
 	memset (used, 0, used_size * sizeof (used[0]));
 
-	for (i = 0; i < alias->numtris; i++) {
+	for (i = 0; i < mdl->numtris; i++) {
 		// pick an unused triangle and start the trifan
 		if (used[i])
 			continue;
@@ -308,9 +310,9 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[besttris[0]].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += alias->skinwidth / 2;	// on back side
-			s = (s + 0.5) / alias->skinwidth;
-			t = (t + 0.5) / alias->skinheight;
+				s += mdl->skinwidth / 2;	// on back side
+			s = (s + 0.5) / mdl->skinwidth;
+			t = (t + 0.5) / mdl->skinheight;
 
 			memcpy (&tmp, &s, 4);
 			add_command (tmp);
@@ -322,10 +324,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	add_command (0);					// end of list marker
 
 	Sys_MaskPrintf (SYS_dev, "%3i tri %3i vert %3i cmd\n",
-					alias->numtris, numorder, numcommands);
+					mdl->numtris, numorder, numcommands);
 
 	allverts += numorder;
-	alltris += alias->numtris;
+	alltris += mdl->numtris;
 
 	if (bestverts)
 		free (bestverts);
@@ -338,11 +340,11 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
 	malias_t   *alias = alias_ctx->alias;
+	auto mdl = alias_ctx->mdl;
 	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
 	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 	int         i, j;
-	int        *cmds;
 	QFile      *f;
 	bool        remesh = true;
 	bool        do_cache = false;
@@ -352,7 +354,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	if (!gl_alias_render_tri) {
 
-		if (gl_mesh_cache && gl_mesh_cache <= alias->numtris) {
+		if (gl_mesh_cache && gl_mesh_cache <= mdl->numtris) {
 			do_cache = true;
 
 			mdfour (model_digest, (unsigned char *) _m, _s);
@@ -470,24 +472,40 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 				}
 			}
 		}
-
-		// save the data out
-		cmds = Hunk_Alloc (0, numcommands * sizeof (int));
-		alias->morph.data = (byte *) cmds - (byte *) alias;
-		memcpy (cmds, commands, numcommands * sizeof (int));
-
 	} else {
-		tex_coord_t *tex_coord;
-
 		numorder = 0;
-		for (i=0; i < alias->numtris; i++) {
+		for (i=0; i < mdl->numtris; i++) {
 			add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
 			add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
 			add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
 		}
+	}
 
-		tex_coord = Hunk_Alloc (0, numorder * sizeof(tex_coord_t));
-		alias->morph.data = (byte *) tex_coord - (byte *) alias;
+	int numposes = alias_ctx->poseverts.size;
+	int size = sizeof (gl_alias_mesh_t);
+	if (extra) {
+		size += sizeof (trivertx16_t[numposes * numorder]);
+	} else {
+		size += sizeof (trivertx_t[numposes * numorder]);
+	}
+	gl_alias_mesh_t *mesh = nullptr;
+	void *vertices = nullptr;
+
+	if (!gl_alias_render_tri) {
+		size += sizeof (int[numcommands]);
+		mesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
+		auto cmds = (int *) &mesh[1];
+		vertices = &cmds[numcommands];
+
+		mesh->commands = (byte *) cmds - (byte *) mesh;
+		memcpy (cmds, commands, sizeof (int[numcommands]));
+	} else {
+		size += sizeof (tex_coord_t[numorder]);
+		mesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
+		auto tex_coord = (tex_coord_t *) &mesh[1];
+		vertices = &tex_coord[numorder];
+
+		mesh->tex_coord = (byte *) tex_coord - (byte *) mesh;
 		for (i=0; i < numorder; i++) {
 			float s, t;
 			int k;
@@ -496,22 +514,20 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[i/3].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += alias->skinwidth / 2;	// on back side
-			s = (s + 0.5) / alias->skinwidth;
-			t = (t + 0.5) / alias->skinheight;
+				s += mdl->skinwidth / 2;	// on back side
+			s = (s + 0.5) / mdl->skinwidth;
+			t = (t + 0.5) / mdl->skinheight;
 			tex_coord[i].st[0] = s;
 			tex_coord[i].st[1] = t;
 		}
 	}
 
-	int numposes = alias_ctx->poseverts.size;
 	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
 	if (extra) {
-		trivertx16_t *verts;
-		verts = Hunk_Alloc (0, sizeof (trivertx16_t[numposes * numorder]));
+		trivertx16_t *verts = vertices;
 		for (i = 0; i < numposes; i++) {
 			trivertx_t *pv = alias_ctx->poseverts.a[i];
-			frames[i].data = (byte *) verts - (byte *) alias;
+			frames[i].data = (byte *) verts - (byte *) mesh;
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
@@ -520,7 +536,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 				// fractional bits of the vertex, giving 8.8. However, it's
 				// easier for us to multiply everything by 256 and adjust the
 				// model scale appropriately
-				VectorMultAdd (pv[vertexorder[j] + alias->numverts].v,
+				VectorMultAdd (pv[vertexorder[j] + mdl->numverts].v,
 							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
 					alias_ctx->poseverts.a[i][vertexorder[j]].lightnormalindex;
@@ -528,16 +544,20 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			}
 		}
 	} else {
-		trivertx_t *verts;
-		verts = Hunk_Alloc (0, sizeof (trivertx_t[numposes * numorder]));
+		trivertx_t *verts = vertices;
 		for (i = 0; i < numposes; i++) {
-			frames[i].data = (byte *) verts - (byte *) alias;
+			frames[i].data = (byte *) verts - (byte *) mesh;
 			for (j = 0; j < numorder; j++) {
 				*verts++ = alias_ctx->poseverts.a[i][vertexorder[j]];
 			}
 		}
 	}
-	alias->numverts = numorder;
+	VectorCopy (mdl->scale, mesh->scale);
+	VectorCopy (mdl->scale_origin, mesh->scale_origin);
+	mesh->numverts = numorder;
+	mesh->numtris = mdl->numtris;
+	mesh->extra = extra;
+	alias->render_data = (byte *) mesh - (byte *) alias;
 
 	dstring_delete (cache);
 	dstring_delete (fullpath);

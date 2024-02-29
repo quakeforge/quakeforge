@@ -80,7 +80,7 @@ static aedge_t aedges[12] = {
 };
 
 static void R_AliasSetUpTransform (entity_t ent, int trivial_accept,
-								   malias_t *alias);
+								   sw_alias_mesh_t *mesh);
 
 static maliasframe_t *
 get_frame (double time, animation_t *animation, malias_t *alias)
@@ -112,7 +112,8 @@ R_AliasCheckBBox (entity_t ent)
 	if (!(alias = pmodel->alias))
 		alias = Cache_Get (&pmodel->cache);
 
-	R_AliasSetUpTransform (ent, 0, alias);
+	auto mesh = (sw_alias_mesh_t *) ((byte *) alias + alias->render_data);
+	R_AliasSetUpTransform (ent, 0, mesh);
 
 	// construct the base bounding box for this frame
 	auto animation = Entity_GetAnimation (ent);
@@ -227,7 +228,7 @@ R_AliasCheckBBox (entity_t ent)
 	visibility->trivial_accept = !anyclip & !zclipped;
 
 	if (visibility->trivial_accept) {
-		if (minz > (r_aliastransition + (alias->size * r_resfudge))) {
+		if (minz > (r_aliastransition + (mesh->size * r_resfudge))) {
 			visibility->trivial_accept |= 2;
 		}
 	}
@@ -297,7 +298,7 @@ R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
 	General clipped case
 */
 static void
-R_AliasPreparePoints (malias_t *alias)
+R_AliasPreparePoints (sw_alias_mesh_t *mesh)
 {
 	int         i;
 	stvert_t   *pstverts;
@@ -306,15 +307,15 @@ R_AliasPreparePoints (malias_t *alias)
 	mtriangle_t *ptri;
 	finalvert_t *pfv[3];
 
-	pstverts = (stvert_t *) ((byte *) alias + alias->stverts);
-	r_anumverts = alias->numverts;
+	pstverts = (stvert_t *) ((byte *) mesh + mesh->stverts);
+	r_anumverts = mesh->numverts;
 	fv = pfinalverts;
 	av = pauxverts;
 
-	if (alias->extra) {
+	if (mesh->extra) {
 		for (i = 0; i < r_anumverts; i++, fv++, av++, r_apverts++,
 				 pstverts++) {
-			R_AliasTransformFinalVert16 (av, r_apverts, alias->numverts);
+			R_AliasTransformFinalVert16 (av, r_apverts, mesh->numverts);
 			R_AliasTransformFinalVert (fv, r_apverts, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
@@ -330,8 +331,8 @@ R_AliasPreparePoints (malias_t *alias)
 	// clip and draw all triangles
 	r_affinetridesc.numtriangles = 1;
 
-	ptri = (mtriangle_t *) ((byte *) alias + alias->triangles);
-	for (i = 0; i < alias->numtris; i++, ptri++) {
+	ptri = (mtriangle_t *) ((byte *) mesh + mesh->triangles);
+	for (uint32_t i = 0; i < mesh->numtris; i++, ptri++) {
 		pfv[0] = &pfinalverts[ptri->vertindex[0]];
 		pfv[1] = &pfinalverts[ptri->vertindex[1]];
 		pfv[2] = &pfinalverts[ptri->vertindex[2]];
@@ -352,7 +353,8 @@ R_AliasPreparePoints (malias_t *alias)
 }
 
 static void
-R_AliasSetUpTransform (entity_t ent, int trivial_accept, malias_t *alias)
+R_AliasSetUpTransform (entity_t ent, int trivial_accept,
+					   sw_alias_mesh_t *mesh)
 {
 	int         i;
 	float       rotationmatrix[3][4];
@@ -365,12 +367,12 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, malias_t *alias)
 	VectorCopy (mat[2], alias_up);
 
 	for (i = 0; i < 3; i++) {
-		rotationmatrix[i][0] = alias->scale[0] * alias_forward[i];
-		rotationmatrix[i][1] = alias->scale[1] * alias_left[i];
-		rotationmatrix[i][2] = alias->scale[2] * alias_up[i];
-		rotationmatrix[i][3] = alias->scale_origin[0] * alias_forward[i]
-							 + alias->scale_origin[1] * alias_left[i]
-							 + alias->scale_origin[2] * alias_up[i]
+		rotationmatrix[i][0] = mesh->scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = mesh->scale[1] * alias_left[i];
+		rotationmatrix[i][2] = mesh->scale[2] * alias_up[i];
+		rotationmatrix[i][3] = mesh->scale_origin[0] * alias_forward[i]
+							 + mesh->scale_origin[1] * alias_left[i]
+							 + mesh->scale_origin[2] * alias_up[i]
 							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
@@ -382,13 +384,12 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, malias_t *alias)
 // correspondingly so the projected x and y come out right
 // FIXME: make this work for clipped case too?
 
-	if (trivial_accept && !alias->extra) {
+	if (trivial_accept && !mesh->extra) {
+		constexpr float conv = (1.0 / ((float) 0x8000 * 0x10000));
 		for (i = 0; i < 4; i++) {
-			aliastransform[0][i] *= aliasxscale *
-				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[1][i] *= aliasyscale *
-				(1.0 / ((float) 0x8000 * 0x10000));
-			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
+			aliastransform[0][i] *= aliasxscale * conv;
+			aliastransform[1][i] *= aliasyscale * conv;
+			aliastransform[2][i] *= conv;
 		}
 	}
 }
@@ -495,13 +496,13 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasPrepareUnclippedPoints (malias_t *alias)
+R_AliasPrepareUnclippedPoints (sw_alias_mesh_t *mesh)
 {
 	stvert_t   *pstverts;
 	finalvert_t *fv;
 
-	pstverts = (stvert_t *) ((byte *) alias + alias->stverts);
-	r_anumverts = alias->numverts;
+	pstverts = (stvert_t *) ((byte *) mesh + mesh->stverts);
+	r_anumverts = mesh->numverts;
 // FIXME: just use pfinalverts directly?
 	fv = pfinalverts;
 
@@ -512,8 +513,8 @@ R_AliasPrepareUnclippedPoints (malias_t *alias)
 
 	r_affinetridesc.pfinalverts = pfinalverts;
 	r_affinetridesc.ptriangles = (mtriangle_t *)
-		((byte *) alias + alias->triangles);
-	r_affinetridesc.numtriangles = alias->numtris;
+		((byte *) mesh + mesh->triangles);
+	r_affinetridesc.numtriangles = mesh->numtris;
 
 	D_PolysetDraw ();
 }
@@ -603,10 +604,11 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	if (!alias) {
 		alias = Cache_Get (&renderer->model->cache);
 	}
+	auto mesh = (sw_alias_mesh_t *) ((byte *) alias + alias->render_data);
 
 	size = (CACHE_SIZE - 1)
-		+ sizeof (finalvert_t) * (alias->numverts + 1)
-		+ sizeof (auxvert_t) * alias->numverts;
+		+ sizeof (finalvert_t) * (mesh->numverts + 1)
+		+ sizeof (auxvert_t) * mesh->numverts;
 	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
@@ -614,13 +616,13 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	// cache align
 	pfinalverts = (finalvert_t *)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-	pauxverts = (auxvert_t *) &pfinalverts[alias->numverts + 1];
+	pauxverts = (auxvert_t *) &pfinalverts[mesh->numverts + 1];
 
 	R_AliasSetupSkin (ent, alias);
 	visibility_t *visibility = Ent_GetComponent (ent.id,
 												 ent.base + scene_visibility,
 												 ent.reg);
-	R_AliasSetUpTransform (ent, visibility->trivial_accept, alias);
+	R_AliasSetUpTransform (ent, visibility->trivial_accept, mesh);
 	R_AliasSetupLighting (lighting);
 	R_AliasSetupFrame (ent, alias);
 
@@ -647,10 +649,10 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (visibility->trivial_accept && !alias->extra) {
-		R_AliasPrepareUnclippedPoints (alias);
+	if (visibility->trivial_accept && !mesh->extra) {
+		R_AliasPrepareUnclippedPoints (mesh);
 	} else {
-		R_AliasPreparePoints (alias);
+		R_AliasPreparePoints (mesh);
 	}
 
 	if (!renderer->model->alias) {

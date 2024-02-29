@@ -47,7 +47,6 @@
 #include "compat.h"
 #include "d_iface.h"
 #include "mod_internal.h"
-#include "r_local.h"
 
 static void
 load_skin (mod_alias_ctx_t *alias_ctx, mframe_t *frame, float endtime,
@@ -362,14 +361,6 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 			.descriptors = (byte *) framedescs - (byte *) alias,
 			.frames = (byte *) frames - (byte *) alias,
 		},
-		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
-		.numverts = mdl->numverts,
-		.numtris = mdl->numtris,
-		.extra = extra,
-		.scale = { VectorExpand (mdl->scale) },
-		.scale_origin = { VectorExpand (mdl->scale_origin) },
-		.skinwidth = mdl->skinwidth,
-		.skinheight = mdl->skinheight,
 	};
 	alias_ctx.skinwidth = mdl->skinwidth;
 	alias_ctx.skinheight = mdl->skinheight;

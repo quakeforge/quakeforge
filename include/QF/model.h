@@ -327,16 +327,7 @@ typedef struct malias_s {
 	uint16_t    crc;
 	manim_t     skin;
 	manim_t     morph;
-	float       size;
-	int         numverts;
-	int         numtris;
-	uint32_t    triangles;
-	uint32_t    stverts;
-	vec3_t      scale;
-	vec3_t      scale_origin;
-	int         extra;
-	int         skinwidth;
-	int         skinheight;
+	uint32_t    render_data;
 } malias_t;
 
 // Whole model ================================================================

@@ -59,12 +59,13 @@ static void
 glsl_alias_clear (model_t *m, void *data)
 {
 	malias_t   *alias = m->alias;
+	auto mesh = (glsl_alias_mesh_t *) ((byte *) alias + alias->render_data);
 
 	m->needload = true;
 
 	GLuint      bufs[2];
-	bufs[0] = alias->stverts;
-	bufs[1] = alias->triangles;
+	bufs[0] = mesh->vertices;
+	bufs[1] = mesh->indices;
 	qfeglDeleteBuffers (2, bufs);
 
 	auto skin = &alias->skin;
@@ -207,8 +208,8 @@ void
 glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
+	auto mdl = alias_ctx->mdl;
 	malias_t   *alias = alias_ctx->alias;
-	GLuint      bnum[2];
 	int         numverts = alias_ctx->stverts.size;
 	int         numtris = alias_ctx->triangles.size;
 	int         numposes = alias_ctx->poseverts.size;
@@ -232,17 +233,29 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	GLushort indices[3 * numtris];
 	build_inds (indices, numtris, indexmap, alias_ctx);
 
-	// load the vertex data and indices into GL
+
+	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
-	alias->stverts = bnum[0];
-	alias->triangles = bnum[1];
-	qfeglBindBuffer (GL_ARRAY_BUFFER, alias->stverts);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, alias->triangles);
+	glsl_alias_mesh_t *mesh;
+	mesh = Hunk_AllocName (nullptr, sizeof (*mesh), alias_ctx->mod->name);
+	*mesh = (glsl_alias_mesh_t) {
+		.scale = { VectorExpand (mdl->scale) },
+		.scale_origin = { VectorExpand (mdl->scale_origin) },
+		.skinwidth = alias_ctx->skinwidth,
+		.skinheight = alias_ctx->skinheight,
+		.vertices = bnum[0],
+		.indices = bnum[1],
+		.numverts = numverts,
+		.numtris = numtris,
+	};
+	alias->render_data = (byte *) mesh - (byte *) alias;
+
+	qfeglBindBuffer (GL_ARRAY_BUFFER, mesh->vertices);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, mesh->indices);
 	qfeglBufferData (GL_ARRAY_BUFFER, sizeof (verts), verts, GL_STATIC_DRAW);
 	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (indices), indices,
 					 GL_STATIC_DRAW);
 
-	// all done
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 }

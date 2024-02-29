@@ -83,7 +83,7 @@ vulkan_alias_clear (model_t *m, void *data)
 
 	m->needload = true;	//FIXME is this right?
 	alias = m->alias;
-	mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->stverts);
+	mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->render_data);
 	QFV_DestroyResource (device, mesh->resources);
 	free (mesh->resources);
 
@@ -356,7 +356,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	size_t      vert_size = vert_count * sizeof (aliasvrt_t);
 	size_t      uv_size = numverts * sizeof (aliasuv_t);
 	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
-	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->stverts);
+	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->render_data);
 	mesh->resources = malloc (sizeof (qfv_resource_t)
 							  + sizeof (qfv_resobj_t)
 							  + sizeof (qfv_resobj_t)
@@ -368,6 +368,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 		.num_objects = 3,
 		.objects = (qfv_resobj_t *) &mesh->resources[1],
 	};
+	mesh->numtris = numtris;
 	auto vert_obj = mesh->resources->objects;
 	auto uv_obj = &vert_obj[1];
 	auto index_obj = &uv_obj[1];
@@ -461,5 +462,5 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
 	qfv_alias_mesh_t *mesh = Hunk_Alloc (0, sizeof (qfv_alias_mesh_t));
-	alias->stverts = (byte *) mesh - (byte *) alias;
+	alias->render_data = (byte *) mesh - (byte *) alias;
 }

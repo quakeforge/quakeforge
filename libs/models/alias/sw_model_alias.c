@@ -43,6 +43,7 @@
 
 #include "compat.h"
 #include "d_iface.h"
+#include "r_local.h"
 #include "mod_internal.h"
 
 static void
@@ -111,22 +112,34 @@ void
 sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
+	auto mdl = alias_ctx->mdl;
 	malias_t   *alias = alias_ctx->alias;
 	int         numv = alias_ctx->stverts.size;
 	int         numt = alias_ctx->triangles.size;
 	int         nump = alias_ctx->poseverts.size;
-	int         size = sizeof (stvert_t[numv])
+	int         size = sizeof (sw_alias_mesh_t)
+					 + sizeof (stvert_t[numv])
 					 + sizeof (mtriangle_t[numt])
 					 + sizeof (maliasframe_t[nump])
 					 + sizeof (trivertx_t[nump * numv]);
 
-	stvert_t *stverts = Hunk_AllocName (nullptr, size, alias_ctx->mod->name);
+	const char *name = alias_ctx->mod->name;
+	sw_alias_mesh_t *mesh = Hunk_AllocName (nullptr, size, name);
+	auto stverts = (stvert_t *) &mesh[1];
 	auto tris = (mtriangle_t *) &stverts[numv];
 	auto aframes = (maliasframe_t *) &tris[numt];
 	auto frame_verts = (trivertx_t *) &aframes[nump];
 
-	alias->stverts = (byte *) stverts - (byte *) alias;
-	alias->triangles = (byte *) tris - (byte *) alias;
+	*mesh = (sw_alias_mesh_t) {
+		.scale = { VectorExpand (mdl->scale) },
+		.scale_origin = { VectorExpand (mdl->scale_origin) },
+		.stverts = (byte *) stverts - (byte *) mesh,
+		.triangles = (byte *) tris - (byte *) mesh,
+		.numverts = mdl->numverts,
+		.numtris = mdl->numtris,
+		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
+	};
+	alias->render_data = (byte *) mesh - (byte *) alias;
 	alias->morph.data = (byte *) aframes - (byte *) alias;
 
 	for (int i = 0; i < numv; i++) {

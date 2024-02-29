@@ -264,7 +264,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->stverts);
+	auto mesh = (qfv_alias_mesh_t *) ((byte *) alias + alias->render_data);
 
 	VkDeviceSize offsets[] = {
 		animation->pose1,
@@ -305,7 +305,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 								  blend, colors, base_color, pass, taskctx);
 		}
 	}
-	dfunc->vkCmdDrawIndexed (cmd, 3 * alias->numtris, 1, 0, 0, 0);
+	dfunc->vkCmdDrawIndexed (cmd, 3 * mesh->numtris, 1, 0, 0, 0);
 	QFV_CmdEndLabel (device, cmd);
 }
 

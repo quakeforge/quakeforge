@@ -39,6 +39,17 @@
 
 #define MAX_LBM_HEIGHT	1024
 
+typedef struct sw_alias_mesh_s {
+	vec3_t      scale;
+	vec3_t      scale_origin;
+	uint32_t    stverts;
+	uint32_t    triangles;
+	uint32_t    numverts;
+	uint32_t    numtris;
+	int         extra;
+	float       size;
+} sw_alias_mesh_t;
+
 typedef struct {
 	struct tex_s **skins;
 	iqmblend_t *blend_palette;	// includes base data from iqm
