@@ -184,6 +184,7 @@ Win_Vulkan_Context (vid_internal_t *vi)
 {
 	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
 	*ctx = (vulkan_ctx_t) {
+		.delete = delete_vulkan_context,
 		.load_vulkan = load_vulkan_library,
 		.unload_vulkan = unload_vulkan_library,
 		.get_presentation_support = win_vulkan_get_presentation_support,
