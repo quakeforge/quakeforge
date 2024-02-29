@@ -52,7 +52,6 @@
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 
 static const char quakeforge_effect[] =

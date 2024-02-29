@@ -53,7 +53,6 @@
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 
 #define WARP_WIDTH              320

@@ -45,7 +45,6 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "mod_internal.h"
 
 static void
@@ -311,9 +310,6 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	if (mdl->version != ALIAS_VERSION_MDL)
 		Sys_Error ("%s has wrong version number (%i should be %i)",
 				   mod->name, mdl->version, ALIAS_VERSION_MDL);
-	if (mdl->skinheight > MAX_LBM_HEIGHT)
-		Sys_Error ("model %s has a skin taller than %d: %d", mod->name,
-				   MAX_LBM_HEIGHT, mdl->skinheight);
 	if (mdl->numskins < 1)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", mdl->numskins);
 	if (mdl->numverts < 1)

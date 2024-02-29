@@ -45,7 +45,6 @@
 #include "QF/ui/view.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "vid_internal.h"
 
 /* Software and hardware gamma support */

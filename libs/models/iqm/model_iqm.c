@@ -47,9 +47,7 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "mod_internal.h"
-#include "r_local.h"
 
 static void
 iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)

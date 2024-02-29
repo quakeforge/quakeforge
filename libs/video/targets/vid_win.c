@@ -33,7 +33,6 @@
 #include "QF/vid.h"
 
 #include "context_win.h"
-#include "d_iface.h"
 #include "vid_internal.h"
 #include "vid_sw.h"
 

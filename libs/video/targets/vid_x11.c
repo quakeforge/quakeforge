@@ -62,7 +62,6 @@
 
 #include "compat.h"
 #include "context_x11.h"
-#include "d_iface.h"
 #include "vid_internal.h"
 
 static vid_internal_t vid_internal;
