@@ -87,11 +87,10 @@ sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 
 static void
 process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
-			   int posenum, int extra)
+			   trivertx_t *frame_verts, int posenum, int extra)
 {
 	malias_t   *alias = alias_ctx->alias;
 	int         size = alias_ctx->mdl->numverts * sizeof (trivertx_t);
-	trivertx_t *frame_verts;
 
 	frame->bboxmin = alias_ctx->dframes[posenum]->bboxmin;
 	frame->bboxmax = alias_ctx->dframes[posenum]->bboxmax;
@@ -99,7 +98,6 @@ process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
 	if (extra)
 		size *= 2;
 
-	frame_verts = Hunk_AllocName (0, size, alias_ctx->mod->name);
 	frame->data = (byte *) frame_verts - (byte *) alias;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
@@ -117,14 +115,15 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	int         numv = alias_ctx->stverts.size;
 	int         numt = alias_ctx->triangles.size;
 	int         nump = alias_ctx->poseverts.size;
+	int         size = sizeof (stvert_t[numv])
+					 + sizeof (mtriangle_t[numt])
+					 + sizeof (maliasframe_t[nump])
+					 + sizeof (trivertx_t[nump * numv]);
 
-	stvert_t *stverts = Hunk_AllocName (nullptr, sizeof (stvert_t[numv]),
-										alias_ctx->mod->name);
-	mtriangle_t *tris = Hunk_AllocName (nullptr, sizeof (mtriangle_t[numt]),
-										alias_ctx->mod->name);
-	maliasframe_t *aframes = Hunk_AllocName (nullptr,
-											 sizeof (maliasframe_t[nump]),
-											 alias_ctx->mod->name);
+	stvert_t *stverts = Hunk_AllocName (nullptr, size, alias_ctx->mod->name);
+	auto tris = (mtriangle_t *) &stverts[numv];
+	auto aframes = (maliasframe_t *) &tris[numt];
+	auto frame_verts = (trivertx_t *) &aframes[nump];
 
 	alias->stverts = (byte *) stverts - (byte *) alias;
 	alias->triangles = (byte *) tris - (byte *) alias;
@@ -141,13 +140,14 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	int posenum = 0;
 	auto desc = (mframedesc_t *) ((byte *) alias + alias->morph.descriptors);
 	auto frames = (mframe_t *) ((byte *) alias + alias->morph.frames);
+	int  posenum = 0;
 	for (int i = 0; i < alias->morph.numdesc; i++) {
 		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
 			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) alias;
-			process_frame (alias_ctx, &aframes[posenum], posenum, extra);
+			process_frame (alias_ctx, &aframes[posenum],
+						   &frame_verts[posenum * numv], posenum, extra);
 		}
 	}
 }
