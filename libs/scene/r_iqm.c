@@ -117,7 +117,7 @@ iqm_scale (const iqm_t *iqm, const iqmpose_t *pose, int frame)
 	}
 	return s;
 }
-#if 0
+
 static void
 iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
 {
@@ -128,7 +128,7 @@ iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
 	};
 	*c = t;
 }
-#endif
+
 static void
 framemat (mat4f_t mat, const iqmframe_t *f)
 {
@@ -137,6 +137,55 @@ framemat (mat4f_t mat, const iqmframe_t *f)
 	mat[1] *= f->scale[1];
 	mat[2] *= f->scale[2];
 	mat[3] = f->translate + (vec4f_t) {0, 0, 0, 1};
+}
+
+VISIBLE iqmframe_t *
+R_IQMBlendPoseFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
+					  int extra)
+{
+	qfZoneScoped (true);
+	iqmframe_t *frame;
+
+	frame = Hunk_TempAlloc (0, iqm->num_joints * sizeof (iqmframe_t) + extra);
+	for (int i = 0; i < iqm->num_joints; i++) {
+		auto f = &frame[i];
+		int parent = -1;
+		if (iqm->num_frames) {
+			auto pose = &iqm->poses[i];
+			parent = pose->parent;
+
+			vec4f_t t1 = iqm_translate (iqm, pose, frame1);
+			vec4f_t r1 = iqm_rotate (iqm, pose, frame1);
+			vec4f_t s1 = iqm_scale (iqm, pose, frame1);
+
+			vec4f_t t2 = iqm_translate (iqm, pose, frame2);
+			vec4f_t r2 = iqm_rotate (iqm, pose, frame2);
+			vec4f_t s2 = iqm_scale (iqm, pose, frame2);
+
+			*f = (iqmframe_t) {
+				.translate = t1 * (1 - blend) + t2 * blend,
+				.rotate = normalf (r1 * (1 - blend) + r2 * blend),
+				.scale = s1 * (1 - blend) + s2 * blend,
+			};
+		} else {
+			iqmjoint_t *j = &iqm->joints[i];
+			parent = j->parent;
+			*f = (iqmframe_t) {
+				.translate = { VectorExpand (j->translate) },
+				.rotate = j->rotate,
+				.scale = { VectorExpand (j->scale)},
+			};
+		}
+		// Pc * Bc^-1
+		iqm_framemul (f, f, &iqm->inverse_basejoints[i]);
+		if (parent >= 0) {
+			// Bp * Pc * Bc^-1
+			iqm_framemul (f, &iqm->basejoints[parent], f);
+			// Pp * Bp^-1 * Bp * Pc * Bc^-1
+			iqm_framemul (f, &frame[parent], f);
+		}
+	}
+	return frame;
 }
 
 VISIBLE mat4f_t *

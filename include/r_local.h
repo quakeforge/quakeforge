@@ -168,6 +168,8 @@ void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
 void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
 float R_IQMGetLerpedFrames (double time, struct animation_s *animation,
 							iqm_t *hdr);
+iqmframe_t *R_IQMBlendPoseFrames (const iqm_t *iqm, int frame1, int frame2,
+								  float blend, int extra);
 mat4f_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 						   float blend, int extra);
 mat4f_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,

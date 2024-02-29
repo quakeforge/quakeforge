@@ -367,7 +367,7 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 
 	auto anim = Entity_GetAnimation (ent);
 	float blend = R_IQMGetLerpedFrames (time, anim, iqm);
-	auto f = R_IQMBlendFrames (iqm, anim->pose1, anim->pose2, blend, 0);
+	auto f = R_IQMBlendPoseFrames (iqm, anim->pose1, anim->pose2, blend, 0);
 	memcpy (frame, f, iqm->num_joints * sizeof (frame[0]));
 
 	R_INT (pr) = 1;
