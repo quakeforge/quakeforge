@@ -31,7 +31,7 @@ QuakeForge includes several tools for working with Quake data:
   Blender
 - io_qfmap for Quake map source files (WIP Blender addon)
 - pak create, list and extract Quake pak files. There's also zpak which
-  can be used to compress the contents of pak files using gzip
+  can be used to compress the contents of .pak files using gzip
   (QuakeForge has transparent support for gzip compressed files)
 - qfbsp for compiling map files to bsp files, includes support for
   vis clusters, and can be used to extract data and information from bsp
