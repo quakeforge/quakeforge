@@ -76,7 +76,7 @@ vulkan_iqm_clear (model_t *mod, void *data)
 {
 	vulkan_ctx_t *ctx = data;
 	qfv_device_t *device = ctx->device;
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	qfv_iqm_t  *mesh = iqm->extra_data;
 
 	mod->needload = true;
@@ -343,7 +343,7 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	iqmctx_t   *ictx = ctx->iqm_context;
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	mod->clear = vulkan_iqm_clear;
 	mod->data = ctx;
 

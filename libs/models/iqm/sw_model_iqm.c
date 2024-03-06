@@ -66,7 +66,7 @@ static tex_t null_texture = {
 static void
 sw_iqm_clear (model_t *mod, void *data)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         i, j;
 
@@ -142,12 +142,12 @@ sw_iqm_load_textures (iqm_t *iqm)
 static void
 sw_iqm_convert_tris (iqm_t *iqm)
 {
-	mtriangle_t *tris;
+	dtriangle_t *tris;
 	uint32_t    i;
 	uint32_t    num_tris;
 
 	num_tris = iqm->num_elements / 3;
-	tris = malloc (num_tris * sizeof (mtriangle_t));
+	tris = malloc (num_tris * sizeof (dtriangle_t));
 	for (i = 0; i < num_tris; i++) {
 		tris[i].facesfront = 1;
 		VectorCopy (iqm->elements16 + i * 3, tris[i].vertindex);
@@ -159,7 +159,7 @@ sw_iqm_convert_tris (iqm_t *iqm)
 void
 sw_Mod_IQMFinish (model_t *mod)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	swiqm_t    *sw;
 	int         i;
 

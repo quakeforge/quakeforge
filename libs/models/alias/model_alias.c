@@ -321,6 +321,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 				   mdl->numframes);
 
 	alias_ctx.mdl = mdl;
+	alias_ctx.names_size = 1;	// reserve space for empty string
 
 	void *stvertdata = swap_skins (&alias_ctx, skindata, mdl);
 	void *triangledata = swap_stverts (&alias_ctx, stvertdata, mdl);
@@ -332,21 +333,36 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// allocate space for a working mesh, plus all the data except the
 	// frame data, skin and group info
-	size_t      size = sizeof (mesh_t)
+	size_t      size = sizeof (qf_model_t)
+						+ sizeof (qf_mesh_t)
 						+ sizeof (framedesc_t[mdl->numskins])
 						+ sizeof (frame_t[alias_ctx.numskins])
 						+ sizeof (framedesc_t[mdl->numframes])
 						+ sizeof (frame_t[alias_ctx.poseverts.size])
 						+ alias_ctx.names_size;
-	mesh_t *mesh = Hunk_AllocName (nullptr, size, mod->name);
+	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
+	auto mesh = (qf_mesh_t *) &model[1];
+	alias_ctx.model = model;
 	alias_ctx.mesh = mesh;
 	auto skindescs = (framedesc_t *) &mesh[1];
 	auto skinframes = (frame_t *) &skindescs[mdl->numskins];
 	auto framedescs = (framedesc_t *) &skinframes[alias_ctx.numskins];
 	auto frames = (frame_t *) &framedescs[mdl->numframes];
 	alias_ctx.names = (char *) &frames[alias_ctx.poseverts.size];
-	*mesh = (mesh_t) {
+	alias_ctx.names[0] = 0;	// empty string
+
+	*model = (qf_model_t) {
+		.meshes = {
+			.offset = (byte *) mesh - (byte *) model,
+			.count = 1,
+		},
+		.text = {
+			.offset = (byte *) alias_ctx.names - (byte *) model,
+			.count = alias_ctx.names_size,
+		},
 		.crc = crc,
+	};
+	*mesh = (qf_mesh_t) {
 		.skin = {
 			.numdesc = mdl->numskins,
 			.descriptors = (byte *) skindescs - (byte *) mesh,
@@ -357,6 +373,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 			.descriptors = (byte *) framedescs - (byte *) mesh,
 			.frames = (byte *) frames - (byte *) mesh,
 		},
+		.scale = { VectorExpand (mdl->scale) },
+		.scale_origin = { VectorExpand (mdl->scale_origin) },
 	};
 	alias_ctx.skinwidth = mdl->skinwidth;
 	alias_ctx.skinheight = mdl->skinheight;
@@ -398,13 +416,13 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		size_t      total = end - start;
 		void       *mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
-			memcpy (mem, mesh, total);
+			memcpy (mem, model, total);
 
 		Hunk_FreeToLowMark (nullptr, start);
-		mod->mesh = nullptr;
+		mod->model = nullptr;
 	} else {
 		memset (&mod->cache, 0, sizeof (mod->cache));
-		mod->mesh = mesh;
+		mod->model = model;
 	}
 	DARRAY_CLEAR (&alias_ctx.poseverts);
 	DARRAY_CLEAR (&alias_ctx.stverts);

@@ -330,18 +330,18 @@ Model_NextDownload (void)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs) {
-			mesh_t *mesh = cl_world.models.a[i]->mesh;
-			if (!mesh)
-				mesh = Cache_Get (&cl_world.models.a[i]->cache);
+			auto model = cl_world.models.a[i]->model;
+			if (!model)
+				model = Cache_Get (&cl_world.models.a[i]->cache);
 			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
-															 mesh->crc),
+															 model->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
-													info_key, mesh->crc));
+													info_key, model->crc));
 			}
-			if (!cl_world.models.a[i]->mesh)
+			if (!cl_world.models.a[i]->model)
 				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}

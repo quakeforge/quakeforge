@@ -66,7 +66,7 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 };
 
 static qfv_alias_skin_t *
-find_skin (int skin_offset, mesh_t *mesh)
+find_skin (int skin_offset, qf_mesh_t *mesh)
 {
 	return (qfv_alias_skin_t *) ((byte *) mesh + skin_offset);
 }
@@ -76,14 +76,13 @@ vulkan_alias_clear (model_t *m, void *data)
 {
 	vulkan_ctx_t *ctx = data;
 	qfv_device_t *device = ctx->device;
-	mesh_t     *mesh = m->mesh;
-	qfv_alias_mesh_t *rmesh;
+	auto model = m->model;
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 
 	QFV_DeviceWaitIdle (device);
 
 	m->needload = true;	//FIXME is this right?
-	mesh = m->mesh;
-	rmesh = (qfv_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
 	QFV_DestroyResource (device, rmesh->resources);
 	free (rmesh->resources);
 
@@ -110,7 +109,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 	qfvPushDebug (ctx, va (ctx->va_ctx, "mesh.load_skin: %s", mod_name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto mesh = alias_ctx->mesh;
 	int         w = alias_ctx->skinwidth;
 	int         h = alias_ctx->skinheight;
 	byte       *tskin;
@@ -328,7 +327,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	alias_ctx->mod->clear = vulkan_alias_clear;
 	alias_ctx->mod->data = ctx;
 
-	auto mesh = alias_ctx->mesh;
+	auto model = alias_ctx->model;
 
 	int numverts = alias_ctx->stverts.size;
 	int numtris = alias_ctx->triangles.size;
@@ -356,7 +355,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	size_t      vert_size = vert_count * sizeof (aliasvrt_t);
 	size_t      uv_size = numverts * sizeof (aliasuv_t);
 	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
 	rmesh->resources = malloc (sizeof (qfv_resource_t)
 							  + sizeof (qfv_resobj_t)
 							  + sizeof (qfv_resobj_t)
@@ -456,11 +455,11 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									   int _s, int extra, vulkan_ctx_t *ctx)
 {
 	auto mdl = alias_ctx->mdl;
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto model = alias_ctx->model;
 
 	if (mdl->ident == HEADER_MDL16)
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
 	qfv_alias_mesh_t *rmesh = Hunk_Alloc (0, sizeof (qfv_alias_mesh_t));
-	mesh->render_data = (byte *) rmesh - (byte *) mesh;
+	model->render_data = (byte *) rmesh - (byte *) model;
 }

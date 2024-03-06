@@ -40,13 +40,6 @@
 #define MAX_LBM_HEIGHT	1024
 
 typedef struct sw_alias_mesh_s {
-	vec3_t      scale;
-	vec3_t      scale_origin;
-	uint32_t    stverts;
-	uint32_t    triangles;
-	uint32_t    numverts;
-	uint32_t    numtris;
-	int         extra;
 	float       size;
 } sw_alias_mesh_t;
 
@@ -101,11 +94,11 @@ typedef struct finalvert_s {
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct
 {
-	void				*pskin;
+	void				*skin;
 	int					skinwidth;
 	int					skinheight;
-	mtriangle_t			*ptriangles;
-	finalvert_t			*pfinalverts;
+	dtriangle_t			*triangles;
+	finalvert_t			*finalverts;
 	int					numtriangles;
 	int					drawtype;
 	int					seamfixupX16;

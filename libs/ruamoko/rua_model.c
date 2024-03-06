@@ -191,7 +191,7 @@ bi (Model_NumJoints)
 
 	R_INT (pr) = 0;
 	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->mesh;
+		auto iqm = (iqm_t *) model->model;
 		R_INT (pr) = iqm->num_joints;
 	}
 }
@@ -202,7 +202,7 @@ bi (Model_GetJoints)
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
-	auto iqm = (iqm_t *) model->mesh;
+	auto iqm = (iqm_t *) model->model;
 	auto joints = (iqmjoint_t *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {
@@ -222,22 +222,23 @@ bi (Model_NumFrames)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
+	auto m = h->model;
 
 	R_INT (pr) = 0;
-	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->mesh;
+	if (m->type == mod_iqm) {
+		auto iqm = (iqm_t *) m->model;
 		R_INT (pr) = iqm->num_frames;
-	} else if (model->type == mod_mesh) {
-		auto mesh = model->mesh;
+	} else if (m->type == mod_mesh) {
 		bool cached = false;
-		if (!mesh) {
-			mesh = Cache_Get (&model->cache);
+		auto model = m->model;
+		if (!model) {
+			model = Cache_Get (&m->cache);
 			cached = true;
 		}
+		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 		R_INT (pr) = mesh->morph.numdesc;
 		if (cached) {
-			Cache_Release (&model->cache);
+			Cache_Release (&m->cache);
 		}
 	}
 }
@@ -252,7 +253,7 @@ bi_Model_GetBaseFrame (progs_t *pr, void *_res)
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto model = h->model;
-	auto iqm = (iqm_t *) model->mesh;
+	auto iqm = (iqm_t *) model->model;
 	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
 
 	if (model->type != mod_iqm || !iqm->num_joints) {

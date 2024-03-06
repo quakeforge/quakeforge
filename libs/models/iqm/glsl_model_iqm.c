@@ -70,7 +70,7 @@ static byte null_normmap[] = {
 static void
 glsl_iqm_clear (model_t *mod, void *data)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	GLuint      bufs[2];
 	int         i;
@@ -145,7 +145,7 @@ glsl_iqm_load_arrays (iqm_t *iqm)
 void
 glsl_Mod_IQMFinish (model_t *mod)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	mod->clear = glsl_iqm_clear;
 	iqm->extra_data = calloc (1, sizeof (glsliqm_t));
 	glsl_iqm_load_textures (iqm);

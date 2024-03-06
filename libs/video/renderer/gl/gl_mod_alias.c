@@ -273,9 +273,9 @@ GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *rmesh,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (mesh_t *mesh, entity_t e)
+GL_GetAliasFrameVerts16 (qf_model_t *model, entity_t e)
 {
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int           count, i;
@@ -334,9 +334,9 @@ GL_GetAliasFrameVerts16 (mesh_t *mesh, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (mesh_t *mesh, entity_t e)
+GL_GetAliasFrameVerts (qf_model_t *model, entity_t e)
 {
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int         count, i;
@@ -396,7 +396,7 @@ GL_GetAliasFrameVerts (mesh_t *mesh, entity_t e)
 }
 
 static glskin_t
-gl_get_skin (entity_t e, renderer_t *renderer, mesh_t *mesh)
+gl_get_skin (entity_t e, renderer_t *renderer, qf_mesh_t *mesh)
 {
 	auto colormap = Entity_GetColormap (e);
 	if (!gl_nocolors) {
@@ -421,18 +421,16 @@ gl_R_DrawAliasModel (entity_t e)
 	int         gl_light;
 	int         used_lights = 0;
 	bool        is_fullbright = false;
-	mesh_t     *mesh;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
 	auto renderer = Entity_GetRenderer (e);
-	model_t    *model = renderer->model;
 
 	if (renderer->onlyshadows) {
 		return;
 	}
 
-	radius = model->radius;
+	radius = renderer->model->radius;
 	transform_t transform = Entity_Transform (e);
 	origin = Transform_GetWorldPosition (transform);
 	VectorCopy (Transform_GetWorldScale (transform), scale);
@@ -446,8 +444,8 @@ gl_R_DrawAliasModel (entity_t e)
 
 	gl_modelalpha = renderer->colormod[3];
 
-	is_fullbright = (model->fullbright || renderer->fullbright);
-	minlight = max (model->min_light, renderer->min_light);
+	is_fullbright = (renderer->model->fullbright || renderer->fullbright);
+	minlight = max (renderer->model->min_light, renderer->min_light);
 
 	qfglColor4fv (renderer->colormod);
 
@@ -561,10 +559,12 @@ gl_R_DrawAliasModel (entity_t e)
 	}
 
 	// locate the proper data
-	if (!(mesh = renderer->model->mesh)) {
-		mesh = Cache_Get (&renderer->model->cache);
+	auto model = renderer->model->model;
+	if (!model) {
+		model = Cache_Get (&renderer->model->cache);
 	}
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
 
 	gl_ctx->alias_polys += rmesh->numtris;
 
@@ -580,11 +580,11 @@ gl_R_DrawAliasModel (entity_t e)
 		// scale by 1/256 when drawing.
 		//FIXME see scaling above
 		VectorScale (rmesh->scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (mesh, e);
+		vo = GL_GetAliasFrameVerts16 (model, e);
 	} else {
 		//FIXME see scaling above
 		VectorScale (rmesh->scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (mesh, e);
+		vo = GL_GetAliasFrameVerts (model, e);
 	}
 
 	// setup the transform
@@ -692,7 +692,7 @@ gl_R_DrawAliasModel (entity_t e)
 	qfglPopMatrix ();
 
 	// torches, grenades, and lightning bolts do not have shadows
-	if (r_shadows && model->shadow_alpha) {
+	if (r_shadows && renderer->model->shadow_alpha) {
 		mat4f_t     shadow_mat;
 
 		qfglPushMatrix ();
@@ -706,10 +706,10 @@ gl_R_DrawAliasModel (entity_t e)
 
 		if (gl_modelalpha < 1.0) {
 			VectorBlend (renderer->colormod, dark, 0.5, color);
-			color[3] = gl_modelalpha * (model->shadow_alpha / 255.0);
+			color[3] = gl_modelalpha * (renderer->model->shadow_alpha / 255.0);
 			qfglColor4fv (color);
 		} else {
-			color_black[3] = model->shadow_alpha;
+			color_black[3] = renderer->model->shadow_alpha;
 			qfglColor4ubv (color_black);
 		}
 		//FIXME fully vectorize
@@ -737,7 +737,7 @@ gl_R_DrawAliasModel (entity_t e)
 		qfglDisable (GL_LIGHT0 + used_lights);
 	}
 
-	if (!renderer->model->mesh) {
+	if (!renderer->model->model) {
 		Cache_Release (&renderer->model->cache);
 	}
 }

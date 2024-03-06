@@ -60,7 +60,7 @@ sw_alias_clear (model_t *m, void *data)
 void
 sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto mesh = alias_ctx->mesh;
 	int         width = alias_ctx->skinwidth;
 	int         height = alias_ctx->skinheight;
 	int         skinsize = width * height;
@@ -87,14 +87,15 @@ sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 }
 
 static void
-process_frame (mod_alias_ctx_t *alias_ctx, maliasframe_t *frame,
+process_frame (mod_alias_ctx_t *alias_ctx, qfm_frame_t *frame,
 			   trivertx_t *frame_verts, int posenum, int extra)
 {
-	mesh_t     *mesh = alias_ctx->mesh;
-	int         size = alias_ctx->mdl->numverts * sizeof (trivertx_t);
+	auto mesh = alias_ctx->mesh;
+	auto mdl = alias_ctx->mdl;
+	int         size = mdl->numverts * sizeof (trivertx_t);
 
-	frame->bboxmin = alias_ctx->dframes[posenum]->bboxmin;
-	frame->bboxmax = alias_ctx->dframes[posenum]->bboxmax;
+	VectorCopy (alias_ctx->dframes[posenum]->bboxmin.v, frame->bounds_min);
+	VectorCopy (alias_ctx->dframes[posenum]->bboxmax.v, frame->bounds_max);
 
 	if (extra)
 		size *= 2;
@@ -113,33 +114,78 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
 	auto mdl = alias_ctx->mdl;
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
 	int         numv = alias_ctx->stverts.size;
 	int         numt = alias_ctx->triangles.size;
 	int         nump = alias_ctx->poseverts.size;
 	int         size = sizeof (sw_alias_mesh_t)
-					 + sizeof (stvert_t[numv])
-					 + sizeof (mtriangle_t[numt])
-					 + sizeof (maliasframe_t[nump])
-					 + sizeof (trivertx_t[nump * numv]);
+						+ sizeof (qfm_attrdesc_t[3])
+						+ sizeof (stvert_t[numv])
+						+ sizeof (dtriangle_t[numt])
+						+ sizeof (qfm_frame_t[nump]);
+	if (extra) {
+		size += sizeof (trivertx16_t[nump * numv]);
+	} else {
+		size += sizeof (trivertx_t[nump * numv]);
+	}
 
 	const char *name = alias_ctx->mod->name;
 	sw_alias_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
-	auto stverts = (stvert_t *) &rmesh[1];
-	auto tris = (mtriangle_t *) &stverts[numv];
-	auto aframes = (maliasframe_t *) &tris[numt];
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+	auto stverts = (stvert_t *) &attribs[3];
+	auto tris = (dtriangle_t *) &stverts[numv];
+	auto aframes = (qfm_frame_t *) &tris[numt];
 	auto frame_verts = (trivertx_t *) &aframes[nump];
 
-	*rmesh = (sw_alias_mesh_t) {
-		.scale = { VectorExpand (mdl->scale) },
-		.scale_origin = { VectorExpand (mdl->scale_origin) },
-		.stverts = (byte *) stverts - (byte *) rmesh,
-		.triangles = (byte *) tris - (byte *) rmesh,
-		.numverts = mdl->numverts,
-		.numtris = mdl->numtris,
-		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = (byte *) frame_verts - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 3,
 	};
-	mesh->render_data = (byte *) rmesh - (byte *) mesh;
+	if (extra) {
+		attribs[0].offset += field_offset (trivertx16_t, v);
+	} else {
+		attribs[0].offset += field_offset (trivertx_t, v);
+	}
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = (byte *) frame_verts - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 1,	// index into r_avertexnormals
+	};
+	if (extra) {
+		attribs[1].offset += field_offset (trivertx16_t, lightnormalindex);
+	} else {
+		attribs[1].offset += field_offset (trivertx_t, lightnormalindex);
+	}
+	attribs[2] = (qfm_attrdesc_t) {
+		.offset = (byte *) stverts - (byte *) mesh,
+		.stride = sizeof (stvert_t),
+		.attr = qfm_texcoord,
+		.type = qfm_s32,
+		.components = 3,	// onseam, s, t
+	};
+
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.count = mdl->numverts,
+	};
+
+	rmesh->size = mdl->size * ALIAS_BASE_SIZE_RATIO;
+	model->render_data = (byte *) rmesh - (byte *) model;
+
+	mesh->triangle_count = mdl->numtris;
+	mesh->index_type = qfm_special;	// dtriangle_t
+	mesh->indices = (byte *) tris - (byte *) mesh;
 	mesh->morph.data = (byte *) aframes - (byte *) mesh;
 
 	for (int i = 0; i < numv; i++) {

@@ -115,7 +115,7 @@ iqm_setup_skin (swiqm_t *sw, int skinnum)
 {
 	tex_t      *skin = sw->skins[skinnum];
 
-	r_affinetridesc.pskin = skin->data;
+	r_affinetridesc.skin = skin->data;
 	r_affinetridesc.skinwidth = skin->width;
 	r_affinetridesc.skinheight = skin->height;
 	r_affinetridesc.seamfixupX16 = (skin->width >> 1) << 16;
@@ -139,7 +139,7 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 	if (r_affinetridesc.drawtype)
 		D_PolysetDrawFinalVerts (pfinalverts, iqm->num_verts);
 
-	r_affinetridesc.pfinalverts = pfinalverts;
+	r_affinetridesc.finalverts = pfinalverts;
 	for (i = 0; i < iqm->num_meshes; i++) {
 		iqmmesh    *mesh = &iqm->meshes[i];
 		uint16_t   *tris;
@@ -147,7 +147,7 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 		iqm_setup_skin (sw, i);
 
 		tris = iqm->elements16 + mesh->first_triangle;
-		r_affinetridesc.ptriangles = (mtriangle_t *) tris;
+		r_affinetridesc.triangles = (dtriangle_t *) tris;
 		r_affinetridesc.numtriangles = mesh->num_triangles;
 		D_PolysetDraw ();
 	}
@@ -184,11 +184,11 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 
 	for (i = 0; i < iqm->num_meshes; i++) {
 		iqmmesh    *mesh = &iqm->meshes[i];
-		mtriangle_t *mtri;
+		dtriangle_t *mtri;
 
 		iqm_setup_skin (sw, i);
 
-		mtri = (mtriangle_t *) iqm->elements16 + mesh->first_triangle;
+		mtri = (dtriangle_t *) iqm->elements16 + mesh->first_triangle;
 		r_affinetridesc.numtriangles = 1;
 		for (j = 0; j < mesh->num_triangles; j++, mtri++) {
 			pfv[0] = &pfinalverts[mtri->vertindex[0]];
@@ -201,8 +201,8 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, mat4f_t *frame)
 
 			if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags)
 				  & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {// totally unclipped
-				r_affinetridesc.pfinalverts = pfinalverts;
-				r_affinetridesc.ptriangles = mtri;
+				r_affinetridesc.finalverts = pfinalverts;
+				r_affinetridesc.triangles = mtri;
 				D_PolysetDraw ();
 			} else {						// partially clipped
 				R_AliasClipTriangle (mtri);
@@ -293,7 +293,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
 	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
-	iqm_t      *iqm = (iqm_t *) model->mesh;
+	iqm_t      *iqm = (iqm_t *) model->model;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         size;
 	float       blend;

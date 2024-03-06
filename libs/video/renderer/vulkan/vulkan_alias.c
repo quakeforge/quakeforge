@@ -226,8 +226,8 @@ static void
 alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
-	auto model = renderer->model;
-	mesh_t   *mesh = model->mesh;
+	auto model = renderer->model->model;
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	uint16_t *matrix_base = taskctx->data;
 
 	auto animation = Entity_GetAnimation (ent);
@@ -264,7 +264,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
 
 	VkDeviceSize offsets[] = {
 		animation->pose1,

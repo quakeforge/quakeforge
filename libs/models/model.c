@@ -304,7 +304,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 {
 	qfZoneScoped (true);
 	if (!mod->needload) {
-		if (mod->type == mod_mesh && !mod->mesh) {
+		if (mod->type == mod_mesh && !mod->model) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else

@@ -90,7 +90,7 @@ gl_R_DrawIQMModel (entity_t ent)
 {
 	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
-	iqm_t      *iqm = (iqm_t *) model->mesh;
+	iqm_t      *iqm = (iqm_t *) model->model;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
 	float       blend;
 	int         i;

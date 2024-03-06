@@ -357,7 +357,7 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 		return;
 	}
 	auto model = renderer->model;
-	auto iqm = (iqm_t *) model->mesh;
+	auto iqm = (iqm_t *) model->model;
 	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
 	double time = P_DOUBLE (pr, 2);
 

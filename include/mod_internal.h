@@ -4,6 +4,7 @@
 #include "QF/darray.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
+#include "QF/qfmodel.h"
 #include "QF/skin.h"
 #include "QF/plugin/vid_render.h"
 
@@ -15,16 +16,17 @@ typedef struct mod_alias_skin_s {
 } mod_alias_skin_t;
 
 typedef struct stvertset_s DARRAY_TYPE (stvert_t) stvertset_t;
-typedef struct mtriangleset_s DARRAY_TYPE (mtriangle_t) mtriangleset_t;
+typedef struct dtriangleset_s DARRAY_TYPE (dtriangle_t) dtriangleset_t;
 typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
 typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
 typedef struct mod_alias_ctx_s {
-	mesh_t     *mesh;
+	qf_model_t *model;
+	qf_mesh_t *mesh;
 	model_t    *mod;
 	mdl_t      *mdl;
 	stvertset_t stverts;
-	mtriangleset_t triangles;
+	dtriangleset_t triangles;
 	trivertxset_t poseverts;
 	askinset_t  skins;
 	int         skinwidth;

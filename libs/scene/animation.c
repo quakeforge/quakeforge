@@ -74,17 +74,18 @@ get_frame_data (double time, const anim_t *anim, int framenum,
 }
 
 static void
-update_alias (double time, animation_t *anim, model_t *model)
+update_alias (double time, animation_t *anim, model_t *m)
 {
-	auto mesh = model->mesh;
-	if (!mesh) {
-		mesh = Cache_Get (&model->cache);
+	auto model = m->model;
+	if (!model) {
+		model = Cache_Get (&m->cache);
 	}
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	int frame = anim->frame;
 	uint32_t data = get_frame_data (time, &mesh->morph, frame, mesh);
 	anim->blend = R_EntityBlend (time, anim, data, 0.1);
-	if (!model->mesh) {
-		Cache_Release (&model->cache);
+	if (!m->model) {
+		Cache_Release (&m->cache);
 	}
 }
 
@@ -103,16 +104,17 @@ update_sprite (double time, animation_t *anim, model_t *model)
 }
 
 static void
-alias_skin (double time, renderer_t *rend, model_t *model)
+alias_skin (double time, renderer_t *rend, model_t *m)
 {
-	auto mesh = model->mesh;
-	if (!mesh) {
-		mesh = Cache_Get (&model->cache);
+	auto model = m->model;
+	if (!model) {
+		model = Cache_Get (&m->cache);
 	}
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	int skinnum = rend->skin;
 	rend->skindesc = get_frame_data (time, &mesh->skin, skinnum, mesh);
-	if (!model->mesh) {
-		Cache_Release (&model->cache);
+	if (!m->model) {
+		Cache_Release (&m->cache);
 	}
 }
 

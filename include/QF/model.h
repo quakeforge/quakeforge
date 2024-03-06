@@ -306,29 +306,7 @@ typedef struct {
 // ALIAS MODELS ===============================================================
 // Alias models are position independent, so the cache manager can move them.
 
-typedef struct {
-	trivertx_t  bboxmin;
-	trivertx_t  bboxmax;
-	uint32_t    name;
-	uint32_t    data;
-} maliasframe_t;
-
-// !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct mtriangle_s {
-	int					facesfront;
-	int					vertindex[3];
-} mtriangle_t;
-static_assert (sizeof (mtriangle_t) == 4 * sizeof (int),
-			   "mtriangle_t wrong size");
-
 #define	MAX_SKINS	32
-
-typedef struct mesh_s {
-	uint16_t    crc;
-	anim_t      skin;
-	anim_t      morph;
-	uint32_t    render_data;
-} mesh_t;
 
 // Whole model ================================================================
 
@@ -355,13 +333,15 @@ typedef enum {
 	ME_GLOWTRAIL  = 4096,		// glowcolor particle trail
 } modeffects_t;
 
+#include "QF/qfmodel.h"
+
 typedef struct model_s {
 	//FIXME use pointers. needs care in bsp submodel loading
 	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
 	bool		 needload;		// bmodels and sprites don't cache normally
-	mesh_t      *mesh;			// if not null, alias model is not cached
+	qf_model_t  *model;			// if not null, alias model is not cached
 
 	modtype_t	 type;
 	int			 numframes;

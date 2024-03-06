@@ -207,9 +207,9 @@ glsl_R_DrawAlias (entity_t ent)
 	if (renderer->onlyshadows) {
 		return;
 	}
-	model_t    *model = renderer->model;
-	mesh_t     *mesh = model->mesh;
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto model = renderer->model->model;
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
 
 	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);
@@ -220,10 +220,10 @@ glsl_R_DrawAlias (entity_t ent)
 
 	// ent model scaling and offset
 	mat4f_t     mvp_mat = {
-		{ rmesh->scale[0], 0, 0, 0 },
-		{ 0, rmesh->scale[1], 0, 0 },
-		{ 0, 0, rmesh->scale[2], 0 },
-		{ VectorExpand (rmesh->scale_origin), 1 },
+		{ mesh->scale[0], 0, 0, 0 },
+		{ 0, mesh->scale[1], 0, 0 },
+		{ 0, 0, mesh->scale[2], 0 },
+		{ VectorExpand (mesh->scale_origin), 1 },
 	};
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);

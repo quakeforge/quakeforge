@@ -283,7 +283,7 @@ extern int		r_outofedges;
 extern mvertex_t	*r_pcurrentvertbase;
 extern int			r_maxvalidedgeoffset;
 
-void R_AliasClipTriangle (mtriangle_t *ptri);
+void R_AliasClipTriangle (dtriangle_t *ptri);
 
 extern double	r_time1;
 extern int		r_frustum_indexes[4*6];
@@ -329,7 +329,7 @@ void R_Alias_clip_bottom (finalvert_t *pfv0, finalvert_t *pfv1,
 void R_Alias_clip_top (finalvert_t *pfv0, finalvert_t *pfv1, finalvert_t *out);
 
 void R_AliasTransformVector (vec3_t in, vec3_t out);
-void R_AliasTransformFinalVert (finalvert_t *fv, trivertx_t *pverts,
+void R_AliasTransformFinalVert (finalvert_t *fv, int lightnormalindex,
 								stvert_t *pstverts);
 void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts);
 

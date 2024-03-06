@@ -251,13 +251,13 @@ D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 static void
 D_DrawSubdiv (void)
 {
-	mtriangle_t *ptri;
+	dtriangle_t *ptri;
 	finalvert_t *pfv, *index0, *index1, *index2;
 	int         i;
 	int         lnumtriangles;
 
-	pfv = r_affinetridesc.pfinalverts;
-	ptri = r_affinetridesc.ptriangles;
+	pfv = r_affinetridesc.finalverts;
+	ptri = r_affinetridesc.triangles;
 	lnumtriangles = r_affinetridesc.numtriangles;
 
 	for (i = 0; i < lnumtriangles; i++) {
@@ -303,13 +303,13 @@ D_DrawSubdiv (void)
 static void
 D_DrawNonSubdiv (void)
 {
-	mtriangle_t *ptri;
+	dtriangle_t *ptri;
 	finalvert_t *pfv, *index0, *index1, *index2;
 	int         i;
 	int         lnumtriangles;
 
-	pfv = r_affinetridesc.pfinalverts;
-	ptri = r_affinetridesc.ptriangles;
+	pfv = r_affinetridesc.finalverts;
+	ptri = r_affinetridesc.triangles;
 	lnumtriangles = r_affinetridesc.numtriangles;
 
 	for (i = 0; i < lnumtriangles; i++, ptri++) {
@@ -414,9 +414,9 @@ D_PolysetUpdateTables (void)
 	byte       *s;
 
 	if (r_affinetridesc.skinwidth != skinwidth ||
-		r_affinetridesc.pskin != skinstart) {
+		r_affinetridesc.skin != skinstart) {
 		skinwidth = r_affinetridesc.skinwidth;
-		skinstart = r_affinetridesc.pskin;
+		skinstart = r_affinetridesc.skin;
 		s = skinstart;
 		for (i = 0; i < MAX_LBM_HEIGHT; i++, s += skinwidth)
 			skintable[i] = s;
@@ -683,7 +683,7 @@ D_RasterizeAliasPolySmooth (void)
 	ystart = plefttop[1];
 	d_aspancount = plefttop[0] - prighttop[0];
 
-	d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
+	d_ptex = (byte *) r_affinetridesc.skin + (plefttop[2] >> 16) +
 		(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
 #ifdef USE_INTEL_ASM
 	d_sfrac = (plefttop[2] & 0xFFFF) << 16;
@@ -758,7 +758,7 @@ D_RasterizeAliasPolySmooth (void)
 
 		ystart = plefttop[1];
 		d_aspancount = plefttop[0] - prighttop[0];
-		d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
+		d_ptex = (byte *) r_affinetridesc.skin + (plefttop[2] >> 16) +
 			(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
 		d_sfrac = 0;
 		d_tfrac = 0;

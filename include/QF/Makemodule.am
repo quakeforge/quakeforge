@@ -50,6 +50,7 @@ include_qf = \
 	include/QF/qargs.h \
 	include/QF/qdefs.h \
 	include/QF/qendian.h \
+	include/QF/qfmodel.h \
 	include/QF/qtypes.h \
 	include/QF/quakefs.h \
 	include/QF/quakeio.h \

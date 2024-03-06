@@ -58,8 +58,9 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 glsl_alias_clear (model_t *m, void *data)
 {
-	mesh_t     *mesh = m->mesh;
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) mesh + mesh->render_data);
+	auto model = m->model;
+	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 
 	m->needload = true;
 
@@ -209,13 +210,13 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
 	auto mdl = alias_ctx->mdl;
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto model = alias_ctx->model;
 	int         numverts = alias_ctx->stverts.size;
 	int         numtris = alias_ctx->triangles.size;
 	int         numposes = alias_ctx->poseverts.size;
 
 	// copy triangles before editing them
-	mtriangle_t tris[numtris];
+	dtriangle_t tris[numtris];
 	memcpy (tris, alias_ctx->triangles.a, sizeof (tris));
 
 	// initialize indexmap to -1 (unduplicated). any other value indicates
@@ -248,7 +249,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.numverts = numverts,
 		.numtris = numtris,
 	};
-	mesh->render_data = (byte *) rmesh - (byte *) mesh;
+	model->render_data = (byte *) rmesh - (byte *) model;
 
 	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, rmesh->indices);

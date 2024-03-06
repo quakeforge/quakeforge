@@ -58,7 +58,7 @@ static byte null_texture[] = {
 static void
 gl_iqm_clear (model_t *mod, void *data)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
 
 	mod->needload = true;
@@ -96,7 +96,7 @@ gl_iqm_load_textures (iqm_t *iqm)
 void
 gl_Mod_IQMFinish (model_t *mod)
 {
-	iqm_t      *iqm = (iqm_t *) mod->mesh;
+	iqm_t      *iqm = (iqm_t *) mod->model;
 	gliqm_t    *gl;
 	int         i;
 

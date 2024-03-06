@@ -64,7 +64,7 @@ gl_alias_clear (model_t *m, void *data)
 void
 gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto mesh = alias_ctx->mesh;
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	int         num_skins = alias_ctx->skins.size;
 	tex_t      *tex_block = Hunk_AllocName (nullptr, sizeof (tex_t[num_skins]),
@@ -150,7 +150,7 @@ void
 gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 	return;	//FIXME external skin support need a bit of thought
-	mesh_t     *mesh = alias_ctx->mesh;
+	auto mesh = alias_ctx->mesh;
 	auto skin = &mesh->skin;
 	int         num_skins = alias_ctx->skins.size;
 	auto skindesc = (framedesc_t *) ((byte *) mesh + skin->descriptors);

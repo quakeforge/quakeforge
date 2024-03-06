@@ -129,7 +129,7 @@ StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
 	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
-	mtriangle_t *last, *check;
+	dtriangle_t *last, *check;
 
 	used[starttri] = 2;
 
@@ -188,7 +188,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
 	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
-	mtriangle_t *last, *check;
+	dtriangle_t *last, *check;
 
 	used[starttri] = 2;
 
@@ -339,7 +339,8 @@ void
 gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
-	mesh_t    *mesh = alias_ctx->mesh;
+	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
 	dstring_t  *cache, *fullpath;
 	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
@@ -557,7 +558,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	rmesh->numverts = numorder;
 	rmesh->numtris = mdl->numtris;
 	rmesh->extra = extra;
-	mesh->render_data = (byte *) rmesh - (byte *) mesh;
+	model->render_data = (byte *) rmesh - (byte *) model;
 
 	dstring_delete (cache);
 	dstring_delete (fullpath);
