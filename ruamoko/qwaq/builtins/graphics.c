@@ -192,6 +192,14 @@ bi_refresh (progs_t *pr, void *_res)
 			camera = Entity_Transform (ent);
 		}
 	}
+	if (scene) {
+		uint32_t c_animation = scene->base + scene_animation;
+		uint32_t c_renderer = scene->base + scene_renderer;
+		auto reg = scene->reg;
+		auto animpool = reg->comp_pools + c_animation;
+		auto rendpool = reg->comp_pools + c_renderer;
+		Anim_Update (con_realtime, animpool, rendpool);
+	}
 	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
