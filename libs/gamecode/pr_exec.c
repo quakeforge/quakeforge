@@ -104,8 +104,10 @@ _PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 
 	params->param_ptrs[0] = pr->pr_params[0];
 	params->param_ptrs[1] = pr->pr_params[1];
+	params->return_ptr = pr->pr_return;
 	pr->pr_params[0] = pr->pr_real_params[0];
 	pr->pr_params[1] = pr->pr_real_params[1];
+	pr->pr_return = pr->pr_return_buffer;
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
@@ -122,6 +124,7 @@ PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params)
 
 	pr->pr_params[0] = params->param_ptrs[0];
 	pr->pr_params[1] = params->param_ptrs[1];
+	pr->pr_return = params->return_ptr;
 	pr->pr_argc = params->argc;
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (pr->pr_real_params[i],

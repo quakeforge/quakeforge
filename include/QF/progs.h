@@ -117,6 +117,7 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRI
 ///@{
 typedef struct pr_stashed_params_s {
 	pr_type_t  *param_ptrs[2];
+	pr_type_t  *return_ptr;
 	int         argc;
 	pr_type_t   params[1];
 } pr_stashed_params_t;
