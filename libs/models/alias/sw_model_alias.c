@@ -88,26 +88,26 @@ sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 
 static void
 process_frame (mod_alias_ctx_t *alias_ctx, qfm_frame_t *frame,
-			   trivertx_t *frame_verts, int posenum, int extra)
+			   trivertx_t *frame_verts, int posenum, int extra, void *base)
 {
-	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
 	int         size = mdl->numverts * sizeof (trivertx_t);
 
 	VectorCopy (alias_ctx->dframes[posenum]->bboxmin.v, frame->bounds_min);
 	VectorCopy (alias_ctx->dframes[posenum]->bboxmax.v, frame->bounds_max);
 
-	if (extra)
-		size *= 2;
-
-	//FIXME make relative to vertex base instead of mesh
-	frame->data = (byte *) frame_verts - (byte *) mesh;
-
-	// The low-order 8 bits (actually, fractional) are completely separate
-	// from the high-order bits (see R_AliasTransformFinalVert16 in
-	// sw_ralias.c), but in adjacant arrays. This means we can get away with
-	// just one memcpy as there are no endian issues.
-	memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
+	frame->data = (void *) frame_verts - base;
+	if (extra) {
+		auto hi_verts = alias_ctx->poseverts.a[posenum];
+		auto lo_verts = hi_verts + mdl->numverts;
+		auto verts = (trivertx16_t *) frame_verts;
+		for (int i = 0; i < mdl->numverts; i++) {
+			VectorMultAdd (lo_verts[i].v, 256, hi_verts[i].v, verts[i].v);
+			verts[i].lightnormalindex  = lo_verts[i].lightnormalindex;
+		}
+	} else {
+		memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
+	}
 }
 
 void
@@ -206,9 +206,9 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	for (int i = 0; i < mesh->morph.numdesc; i++) {
 		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
 			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) mesh;
-			//FIXME frame_verts is still split for mdl16
 			process_frame (alias_ctx, &aframes[posenum],
-						   &frame_verts[posenum * numv], posenum, extra);
+						   &frame_verts[posenum * numv], posenum, extra,
+						   frame_verts);
 		}
 	}
 }

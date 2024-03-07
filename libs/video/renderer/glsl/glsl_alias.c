@@ -276,7 +276,8 @@ glsl_R_DrawAlias (entity_t ent)
 	auto pose2 = (void *) (intptr_t) animation->pose2;
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta, pose1);
 	set_arrays (&quake_mdl.vertexb, &quake_mdl.normalb, &quake_mdl.stb, pose2);
-	qfeglDrawElements (GL_TRIANGLES, 3 * rmesh->numtris, GL_UNSIGNED_SHORT, 0);
+	qfeglDrawElements (GL_TRIANGLES, 3 * rmesh->numtris,
+					   GL_UNSIGNED_SHORT, 0);
 #else
 	set_arrays (&quake_mdl.vertexa, &quake_mdl.normala, &quake_mdl.sta,
 				debug_verts);

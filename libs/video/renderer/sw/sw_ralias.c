@@ -311,8 +311,8 @@ R_AliasPreparePoints (qf_mesh_t *mesh, uint32_t verts_offs)
 	fv = pfinalverts;
 	av = pauxverts;
 
+	verts_offs += attrib[0].offset;
 	if (attrib[0].type == qfm_u16) {
-		//auto verts = (trivertx16_t *) ((byte *) mesh + attrib[0].offset);
 		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
 		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
 			R_AliasTransformFinalVert16 (av, verts);
@@ -320,7 +320,6 @@ R_AliasPreparePoints (qf_mesh_t *mesh, uint32_t verts_offs)
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	} else {
-		//auto verts = (trivertx_t *) ((byte *) mesh + attrib[0].offset);
 		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
 		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
 			R_AliasTransformFinalVert8 (av, verts);
@@ -445,10 +444,10 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
 	float       lightcos, *plightnormal, zi;
 
 	auto stverts = (stvert_t *) (base + texcoord->offset);
+	verts_offs += position->offset;
 	if (position->type == qfm_u16) {
 		Sys_Error ("not done yet");
 	} else {
-		//auto verts = (trivertx_t *) (base + position->offset + verts_offs);
 		auto verts = (trivertx_t *) (base + verts_offs);
 
 		for (i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {

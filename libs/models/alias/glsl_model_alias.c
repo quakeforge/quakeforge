@@ -209,7 +209,6 @@ void
 glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
-	auto mdl = alias_ctx->mdl;
 	auto model = alias_ctx->model;
 	int         numverts = alias_ctx->stverts.size;
 	int         numtris = alias_ctx->triangles.size;
@@ -234,14 +233,16 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	GLushort indices[3 * numtris];
 	build_inds (indices, numtris, indexmap, alias_ctx);
 
+	if (extra) {
+		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		VectorScale (mesh->scale, 1.0f/256, mesh->scale);
+	}
 
 	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
 	glsl_alias_mesh_t *rmesh;
 	rmesh = Hunk_AllocName (nullptr, sizeof (*rmesh), alias_ctx->mod->name);
 	*rmesh = (glsl_alias_mesh_t) {
-		.scale = { VectorExpand (mdl->scale) },
-		.scale_origin = { VectorExpand (mdl->scale_origin) },
 		.skinwidth = alias_ctx->skinwidth,
 		.skinheight = alias_ctx->skinheight,
 		.vertices = bnum[0],

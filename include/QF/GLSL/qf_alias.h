@@ -33,8 +33,6 @@
 #include "QF/GLSL/types.h"
 
 typedef struct glsl_alias_mesh_s {
-	vec3_t      scale;
-	vec3_t      scale_origin;
 	int         skinwidth;
 	int         skinheight;
 	GLuint      vertices;
