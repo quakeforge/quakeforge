@@ -100,6 +100,7 @@ process_frame (mod_alias_ctx_t *alias_ctx, qfm_frame_t *frame,
 	if (extra)
 		size *= 2;
 
+	//FIXME make relative to vertex base instead of mesh
 	frame->data = (byte *) frame_verts - (byte *) mesh;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
@@ -205,6 +206,7 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	for (int i = 0; i < mesh->morph.numdesc; i++) {
 		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
 			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) mesh;
+			//FIXME frame_verts is still split for mdl16
 			process_frame (alias_ctx, &aframes[posenum],
 						   &frame_verts[posenum * numv], posenum, extra);
 		}
