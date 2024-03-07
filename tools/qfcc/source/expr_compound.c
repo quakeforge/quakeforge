@@ -232,7 +232,8 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	} else if (is_array (type)) {
 		state.type = dereference_type (type);
 	} else {
-		internal_error (eles, "invalid initialization");
+		error (eles, "invalid initialization");
+		return;
 	}
 	while (ele) {
 		if (ele->designator) {
