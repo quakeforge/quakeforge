@@ -52,9 +52,8 @@
 #include "compat.h"
 
 #include "client/particles.h"
+#include "client/world.h"
 
-float cl_frametime;
-float cl_realtime;
 cl_particle_funcs_t *clp_funcs;
 
 static mtstate_t mt;	// private PRNG state

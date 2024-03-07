@@ -1969,6 +1969,8 @@ Host_Frame (float time)
 		CL_NetUpdate ();
 	}
 	Sbar_Update (cl.time);
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
@@ -2112,6 +2114,8 @@ Host_Init (void)
 
 	cl.viewstate.time = realtime;
 	cl.viewstate.realtime = realtime;
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen (&cl.viewstate);
 	CL_UpdateScreen (&cl.viewstate);
 

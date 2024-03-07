@@ -287,6 +287,8 @@ Model_NextDownload (void)
 		Sys_Printf ("Checking models...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
@@ -377,6 +379,8 @@ Sound_NextDownload (void)
 		Sys_Printf ("Checking sounds...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}

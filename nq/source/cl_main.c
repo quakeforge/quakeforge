@@ -457,6 +457,8 @@ CL_NextDemo (void)
 	cl.viewstate.loading = true;
 	cl.viewstate.time = cl.time;
 	cl.viewstate.realtime = realtime;
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen(&cl.viewstate);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
@@ -614,6 +616,8 @@ CL_SetState (cactive_t state)
 				break;
 		}
 		Sbar_SetActive (state == ca_active);
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
@@ -674,6 +678,8 @@ CL_Frame (void)
 
 	cl.viewstate.intermission = cl.intermission != 0;
 	Sbar_Update (cl.time);
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)

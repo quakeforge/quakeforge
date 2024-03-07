@@ -44,6 +44,7 @@
 #include "QF/va.h"
 
 #include "client/screen.h"
+#include "client/world.h"
 #include "compat.h"
 
 #include "qw/include/cl_parse.h"
@@ -102,6 +103,8 @@ Skin_NextDownload (void)
 		Sys_Printf ("Checking skins...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	cls.downloadtype = dl_skin;

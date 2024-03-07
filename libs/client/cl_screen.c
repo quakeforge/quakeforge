@@ -367,6 +367,6 @@ CL_UpdateScreen (viewstate_t *vs)
 	auto reg = cl_world.scene->reg;
 	auto animpool = reg->comp_pools + c_animation;
 	auto rendpool = reg->comp_pools + c_renderer;
-	Anim_Update (vs->realtime, animpool, rendpool);
+	Anim_Update (cl_realtime, animpool, rendpool);
 	SCR_UpdateScreen (vs->camera_transform, vs->time, scr_funcs);
 }
