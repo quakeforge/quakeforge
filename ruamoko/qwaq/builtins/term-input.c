@@ -895,15 +895,6 @@ bi_input_destroy (progs_t *pr, void *_res)
 	free (_res);
 }
 
-static void
-bi_input_shutdown (void *_pr)
-{
-	__auto_type pr = (progs_t *) _pr;
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
-
-	qwaq_input_shutdown (res);
-}
-
 void
 BI_TermInput_Init (progs_t *pr)
 {
@@ -923,5 +914,4 @@ BI_TermInput_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "input", res, bi_input_clear, bi_input_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
-	Sys_RegisterShutdown (bi_input_shutdown, pr);
 }
