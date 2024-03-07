@@ -83,7 +83,7 @@ arp_end (void)
 
 	for (int i = [debuggers count]; i-- > 0; ) {
 		debugger = [debuggers objectAtIndex: i];
-		if ([debugger target].handle == target.handle) {
+		if ([debugger target] == target) {
 			return debugger;
 		}
 	}
@@ -114,7 +114,8 @@ arp_end (void)
 			}
 			break;
 		case qe_debug_event:
-			[[self find_debugger:{event.message.int_val}] handleDebugEvent];
+			[[self find_debugger:(qdb_target_t)event.message.int_val]
+				handleDebugEvent];
 			event.what = qe_none;
 			break;
 	}
