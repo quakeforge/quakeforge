@@ -122,6 +122,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
+	size = (size + 63) & ~63;
 #ifdef _WIN32
 	return _aligned_malloc (size, 64);
 #else

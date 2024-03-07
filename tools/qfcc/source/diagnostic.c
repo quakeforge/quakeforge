@@ -258,7 +258,6 @@ _internal_error (const expr_t *e, const char *file, int line,
 
 	va_start (args, fmt);
 	__internal_error (e, file, line, func, fmt, args);
-	va_end (args);
 }
 
 const expr_t *

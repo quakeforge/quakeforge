@@ -368,6 +368,7 @@ setup_sym_file (const char *output_file)
 		options.debug_file = save_string (str->str);
 		if (options.verbosity >= 1)
 			printf ("debug file: %s\n", options.debug_file);
+		dstring_delete (str);
 	}
 }
 

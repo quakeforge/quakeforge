@@ -1727,11 +1727,11 @@ Host_Error (const char *error, ...)
 	inerror = false;
 
 	if (host_initialized) {
+		dstring_delete (str);
 		Sys_longjmp (host_abort);
 	} else {
 		Sys_Error ("Host_Error: %s", str->str);
 	}
-	dstring_delete (str);
 }
 
 void
