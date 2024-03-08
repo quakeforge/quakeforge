@@ -1506,7 +1506,11 @@ statement_return (sblock_t *sblock, const expr_t *e)
 				// FIXME hard-coded reg, and assumes 3 is free
 				#define REG 3
 				const expr_t *with = new_with_expr (11, REG, new_short_expr (0));
-				def_t      *ret_ptr = new_def (0, 0, 0, sc_local);
+				def_t      *ret_ptr = new_def ("@return", 0, 0, sc_local);
+				// @return is neither global nor local, but making it not
+				// local causes flow (and dags) to treat it as global and thus
+				// it is live.
+				ret_ptr->local = 0;
 				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
 				ret_ptr->reg = REG;
 				sblock = statement_single (sblock, with);
