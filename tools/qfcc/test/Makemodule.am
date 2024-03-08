@@ -30,6 +30,7 @@ test_progs_dat=\
 	tools/qfcc/test/enum.dat \
 	tools/qfcc/test/entity-struct.dat \
 	tools/qfcc/test/fordecl.dat \
+	tools/qfcc/test/forward-return.dat \
 	tools/qfcc/test/func-expr.dat \
 	tools/qfcc/test/func-expr2.dat \
 	tools/qfcc/test/func-static.dat \
@@ -420,6 +421,16 @@ tools/qfcc/test/fordecl.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(fordecl_dep) # am--include-marker
 r_depfiles_remade += $(fordecl_dep)
+
+tools_qfcc_test_forward_return_dat_SOURCES=tools/qfcc/test/forward-return.r
+forward_return_obj=$(tools_qfcc_test_forward_return_dat_SOURCES:.r=.o)
+forward_return_dep=$(call qcautodep,$(tools_qfcc_test_forward_return_dat_SOURCES))
+tools/qfcc/test/forward-return.dat$(EXEEXT): $(forward_return_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(forward_return_obj)
+tools/qfcc/test/forward-return.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(forward_return_dep) # am--include-marker
+r_depfiles_remade += $(forward_return_dep)
 
 tools_qfcc_test_func_expr_dat_SOURCES=tools/qfcc/test/func-expr.r
 func_expr_obj=$(tools_qfcc_test_func_expr_dat_SOURCES:.r=.o)
