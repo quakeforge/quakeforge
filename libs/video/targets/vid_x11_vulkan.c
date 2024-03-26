@@ -92,8 +92,7 @@ static void *vulkan_library;
 static void
 load_vulkan_library (vulkan_ctx_t *ctx)
 {
-	vulkan_library = dlopen (vulkan_library_name,
-							 RTLD_DEEPBIND | RTLD_NOW);
+	vulkan_library = dlopen (vulkan_library_name, RTLD_DEEPBIND | RTLD_NOW);
 	if (!vulkan_library) {
 		Sys_Error ("Couldn't load vulkan library %s: %s",
 				   vulkan_library_name, dlerror ());

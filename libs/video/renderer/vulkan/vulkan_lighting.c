@@ -585,6 +585,8 @@ transition_shadow_targets (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	}
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 "lighting:cmd:transition_shadow_targets");
 	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -813,7 +815,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 		QFV_PacketScatterBuffer (packet, lframe->id_buffer,
 								 1, &lid_scatter,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+					  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 
 		auto lradii = (float *) packet_data;
 		qfv_scatter_t lradius_scatter = {
@@ -828,7 +830,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 		QFV_PacketScatterBuffer (packet, lframe->radius_buffer,
 								 1, &lradius_scatter,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+					  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 
 		auto eids = (uint32_t *) packet_data;
 		qfv_scatter_t eid_scatter = {
@@ -1111,9 +1113,10 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		enqueue_map (matrix_ids, lframe, r);
 	}
 
-	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter, bb);
-	QFV_PacketScatterBuffer (packet, lframe->radius_buffer,
-							 1, &radius_scatter, bb);
+	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter,
+					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+	QFV_PacketScatterBuffer (packet, lframe->radius_buffer, 1, &radius_scatter,
+					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
 							 1, &matrix_id_scater, bb);
 
@@ -1168,6 +1171,8 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	auto render = light_cull->render;
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 "lighting:cmd:lighting_cull_lights");
 	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -1879,7 +1884,7 @@ lighting_startup (exprctx_t *ectx)
 	make_ico (packet);
 	make_cone (packet);
 	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+						  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 	QFV_PacketSubmit (packet);
 	packet = QFV_PacketAcquire (ctx->staging);
 	write_inds (packet);

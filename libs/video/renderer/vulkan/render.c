@@ -180,6 +180,8 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
 			.data = data,
 		};
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
+							 va (ctx->va_ctx, "renderpass:%s", rp->label.name));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		QFV_duCmdEndLabel (device, cmd);
