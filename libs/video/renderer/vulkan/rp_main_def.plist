@@ -2590,6 +2590,7 @@ steps = {
 				shadow15 = $renderpasses.shadow15;
 				shadow16 = $renderpasses.shadow16;
 				shadow17 = $renderpasses.shadow17;
+/* FIXME bug in nvidia drivers? causes segfault when building the pipelines
 				shadow18 = $renderpasses.shadow18;
 				shadow19 = $renderpasses.shadow19;
 				shadow20 = $renderpasses.shadow20;
@@ -2602,7 +2603,6 @@ steps = {
 				shadow27 = $renderpasses.shadow27;
 				shadow28 = $renderpasses.shadow28;
 				shadow29 = $renderpasses.shadow29;
-/* FIXME bug in nvidia drivers causes segfault when building the pipelines
 				shadow30 = $renderpasses.shadow30;
 				shadow31 = $renderpasses.shadow31;
 				shadow32 = $renderpasses.shadow32;

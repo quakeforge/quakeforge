@@ -82,9 +82,9 @@
 #define shadow_quanta 128
 #define lnearclip 4
 #define num_cascade 4
-#define max_views 29	// FIXME should be 32 (or really, maxMultiviewViewCount,
+#define max_views 17	// FIXME should be 32 (or really, maxMultiviewViewCount,
 						// but there are other problems there), but nvidia's
-						// drivers segfault for > 29
+						// drivers segfault for > 17
 
 static vec4f_t  ref_direction = { 1, 0, 0, 0 };
 
