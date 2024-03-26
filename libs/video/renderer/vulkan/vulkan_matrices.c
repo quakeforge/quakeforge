@@ -160,7 +160,7 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdCopyBuffer (packet->cmd, mctx->stage->buffer,
 							mframe->buffer, 1, &copy_region);
 
-	bb = bufferBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	bb.barrier.buffer = mframe->buffer;
 	bb.barrier.size = packet->length;
 
