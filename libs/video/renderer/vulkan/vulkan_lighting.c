@@ -843,9 +843,18 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			memcpy (eids + queue[i].start, entids[i],
 					sizeof (uint32_t[queue[i].count]));
 		}
-		auto ir_barrier = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
-								 ir_barrier);
+				&(qfv_bufferbarrier_t) {
+					.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+					.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+					.barrier = {
+						.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+						.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+						.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					},
+				});
 
 		memset (lframe->id_radius, -1, MaxLights * sizeof (light_idrad_t));
 		for (int i = 0; i < ST_COUNT; i++) {
@@ -1077,7 +1086,6 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
 	byte *packet_data = packet_start;
@@ -1113,12 +1121,38 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		enqueue_map (matrix_ids, lframe, r);
 	}
 
+	static qfv_bufferbarrier_t vtxattr_read = {
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		.barrier = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+						   | VK_ACCESS_SHADER_READ_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		},
+	};
+	static qfv_bufferbarrier_t storage_read = {
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		.barrier = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		},
+	};
+
 	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter,
-					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+							 &vtxattr_read);
 	QFV_PacketScatterBuffer (packet, lframe->radius_buffer, 1, &radius_scatter,
-					&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+							 &vtxattr_read);
 	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
-							 1, &matrix_id_scater, bb);
+							 1, &matrix_id_scater, &storage_read);
 
 	QFV_PacketSubmit (packet);
 	transition_shadow_targets (lframe, ctx);
