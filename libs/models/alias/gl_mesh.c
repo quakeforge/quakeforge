@@ -335,179 +335,206 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 		free (besttris);
 }
 
-void
-gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
-								   int _s, int extra)
+static void
+gl_build_lists (mod_alias_ctx_t *alias_ctx, void *_m, int _s)
 {
-	auto model = alias_ctx->model;
-	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
-	dstring_t  *cache, *fullpath;
-	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
-	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
-	int         i, j;
-	QFile      *f;
 	bool        remesh = true;
 	bool        do_cache = false;
+	dstring_t  *cache = dstring_new ();
+	dstring_t  *fullpath = dstring_new ();
 
-	cache = dstring_new ();
-	fullpath = dstring_new ();
+	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
+	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 
-	if (!gl_alias_render_tri) {
+	if (gl_mesh_cache && gl_mesh_cache <= mdl->numtris) {
+		do_cache = true;
 
-		if (gl_mesh_cache && gl_mesh_cache <= mdl->numtris) {
-			do_cache = true;
+		mdfour (model_digest, (unsigned char *) _m, _s);
 
-			mdfour (model_digest, (unsigned char *) _m, _s);
+		// look for a cached version
+		dstring_copystr (cache, "glquake/");
+		dstring_appendstr (cache, alias_ctx->mod->path);
+		QFS_StripExtension (alias_ctx->mod->path + strlen ("progs/"),
+						cache->str + strlen ("glquake/"));
+		dstring_appendstr (cache, ".qfms");
 
-			// look for a cached version
-			dstring_copystr (cache, "glquake/");
-			dstring_appendstr (cache, alias_ctx->mod->path);
-			QFS_StripExtension (alias_ctx->mod->path + strlen ("progs/"),
-							cache->str + strlen ("glquake/"));
-			dstring_appendstr (cache, ".qfms");
+		QFile *f = QFS_FOpenFile (cache->str);
+		if (f) {
+			unsigned char d1[MDFOUR_DIGEST_BYTES];
+			unsigned char d2[MDFOUR_DIGEST_BYTES];
+			struct mdfour md;
+			int			len, vers;
+			int         nc = 0, no = 0;
+			int        *c = 0, *vo = 0;
 
-			f = QFS_FOpenFile (cache->str);
-			if (f) {
-				unsigned char d1[MDFOUR_DIGEST_BYTES];
-				unsigned char d2[MDFOUR_DIGEST_BYTES];
-				struct mdfour md;
-				int			len, vers;
-				int         nc = 0, no = 0;
-				int        *c = 0, *vo = 0;
+			memset (d1, 0, sizeof (d1));
+			memset (d2, 0, sizeof (d2));
 
-				memset (d1, 0, sizeof (d1));
-				memset (d2, 0, sizeof (d2));
+			Qread (f, &vers, sizeof (int));
+			Qread (f, &len, sizeof (int));
+			Qread (f, &nc, sizeof (int));
+			Qread (f, &no, sizeof (int));
 
-				Qread (f, &vers, sizeof (int));
-				Qread (f, &len, sizeof (int));
-				Qread (f, &nc, sizeof (int));
-				Qread (f, &no, sizeof (int));
+			if (vers == 1 && (nc + no) == len) {
+				c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
+				vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
+				if (!c || !vo)
+					Sys_Error ("gl_mesh.c: out of memory");
+				Qread (f, c, nc * sizeof (c[0]));
+				Qread (f, vo, no * sizeof (vo[0]));
+				Qread (f, d1, MDFOUR_DIGEST_BYTES);
+				Qread (f, d2, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
 
-				if (vers == 1 && (nc + no) == len) {
-					c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
-					vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
-					if (!c || !vo)
-						Sys_Error ("gl_mesh.c: out of memory");
-					Qread (f, c, nc * sizeof (c[0]));
-					Qread (f, vo, no * sizeof (vo[0]));
-					Qread (f, d1, MDFOUR_DIGEST_BYTES);
-					Qread (f, d2, MDFOUR_DIGEST_BYTES);
-					Qclose (f);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &no, sizeof(int));
+				mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
+				mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
+				mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
 
-					mdfour_begin (&md);
-					mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &len, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &no, sizeof(int));
-					mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
-					mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
-					mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
-					mdfour_result (&md, mesh_digest);
-
-					if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
-						&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
-						remesh = false;
-						numcommands = nc;
-						numorder = no;
-						if (numcommands > commands_size) {
-							if (commands)
-								free (commands);
-							commands_size = (numcommands + 1023) & ~1023;
-							commands = c;
-						} else {
-							memcpy (commands, c, numcommands * sizeof (c[0]));
-							free(c);
-						}
-						if (numorder > vertexorder_size) {
-							if (vertexorder)
-								free (vertexorder);
-							vertexorder_size = (numorder + 1023) & ~1023;
-							vertexorder = vo;
-						} else {
-							memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
-							free (vo);
-						}
+				if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
+					&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
+					remesh = false;
+					numcommands = nc;
+					numorder = no;
+					if (numcommands > commands_size) {
+						if (commands)
+							free (commands);
+						commands_size = (numcommands + 1023) & ~1023;
+						commands = c;
+					} else {
+						memcpy (commands, c, numcommands * sizeof (c[0]));
+						free(c);
+					}
+					if (numorder > vertexorder_size) {
+						if (vertexorder)
+							free (vertexorder);
+						vertexorder_size = (numorder + 1023) & ~1023;
+						vertexorder = vo;
+					} else {
+						memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+						free (vo);
 					}
 				}
 			}
 		}
-		if (remesh) {
-			// build it from scratch
-			Sys_MaskPrintf (SYS_dev, "meshing %s...\n", alias_ctx->mod->path);
+	}
+	if (remesh) {
+		// build it from scratch
+		Sys_MaskPrintf (SYS_dev, "meshing %s...\n", alias_ctx->mod->path);
 
-			BuildTris (alias_ctx);					// trifans or lists
+		BuildTris (alias_ctx);					// trifans or lists
 
-			if (do_cache) {
-				// save out the cached version
-				dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
-				f = QFS_WOpen (fullpath->str, 9);
+		if (do_cache) {
+			// save out the cached version
+			dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
+			QFile *f = QFS_WOpen (fullpath->str, 9);
 
-				if (f) {
-					struct mdfour md;
-					int         vers = 1;
-					int         len = numcommands + numorder;
+			if (f) {
+				struct mdfour md;
+				int         vers = 1;
+				int         len = numcommands + numorder;
 
-					mdfour_begin (&md);
-					mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
-					mdfour_update (&md, (unsigned char *) &len, sizeof (int));
-					mdfour_update (&md, (unsigned char *) &numcommands,
-								   sizeof (int));
-					mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
-					mdfour_update (&md, (unsigned char *) commands,
-								   numcommands * sizeof (commands[0]));
-					mdfour_update (&md, (unsigned char *) vertexorder,
-								   numorder * sizeof (vertexorder[0]));
-					mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
-					mdfour_result (&md, mesh_digest);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numcommands,
+							   sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
+				mdfour_update (&md, (unsigned char *) commands,
+							   numcommands * sizeof (commands[0]));
+				mdfour_update (&md, (unsigned char *) vertexorder,
+							   numorder * sizeof (vertexorder[0]));
+				mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
 
-					Qwrite (f, &vers, sizeof (int));
-					Qwrite (f, &len, sizeof (int));
-					Qwrite (f, &numcommands, sizeof (int));
-					Qwrite (f, &numorder, sizeof (int));
-					Qwrite (f, commands, numcommands * sizeof (commands[0]));
-					Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
-					Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
-					Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
-					Qclose (f);
-				}
+				Qwrite (f, &vers, sizeof (int));
+				Qwrite (f, &len, sizeof (int));
+				Qwrite (f, &numcommands, sizeof (int));
+				Qwrite (f, &numorder, sizeof (int));
+				Qwrite (f, commands, numcommands * sizeof (commands[0]));
+				Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
+				Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
+				Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
 			}
-		}
-	} else {
-		numorder = 0;
-		for (i=0; i < mdl->numtris; i++) {
-			add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
-			add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
-			add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
 		}
 	}
 
+	dstring_delete (cache);
+	dstring_delete (fullpath);
+}
+
+static void
+gl_build_tris (mod_alias_ctx_t *alias_ctx)
+{
+	auto mdl = alias_ctx->mdl;
+
+	numorder = 0;
+	for (int i = 0; i < mdl->numtris; i++) {
+		add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
+		add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
+		add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
+	}
+}
+
+void
+gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
+								   int _s, int extra)
+{
+	auto mesh = alias_ctx->mesh;
+	auto mdl = alias_ctx->mdl;
 	int numposes = alias_ctx->poseverts.size;
-	int size = sizeof (gl_alias_mesh_t);
+
+	int size = sizeof (qfm_attrdesc_t[3])
+			 + sizeof (qfm_frame_t[numposes]);
+	if (!gl_alias_render_tri) {
+		gl_build_lists (alias_ctx, _m, _s);
+		size += sizeof (int[numcommands]);
+	} else {
+		gl_build_tris (alias_ctx);
+		size += sizeof (tex_coord_t[numorder]);
+	}
 	if (extra) {
 		size += sizeof (trivertx16_t[numposes * numorder]);
 	} else {
 		size += sizeof (trivertx_t[numposes * numorder]);
 	}
-	gl_alias_mesh_t *rmesh = nullptr;
+
+	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, alias_ctx->mod->name);
+	auto aframes = (qfm_frame_t *) &attribs[3];
 	void *vertices = nullptr;
 
 	if (!gl_alias_render_tri) {
-		size += sizeof (int[numcommands]);
-		rmesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
-		auto cmds = (int *) &rmesh[1];
+		auto cmds = (int *) &aframes[numposes];
 		vertices = &cmds[numcommands];
 
-		rmesh->commands = (byte *) cmds - (byte *) rmesh;
+		attribs[2] = (qfm_attrdesc_t) {
+			.offset = (byte *) cmds - (byte *) mesh,
+			.stride = 0,			// see .type
+			.attr = qfm_texcoord,
+			.type = qfm_special,	// [cmd, (s, t) * abs(cmd)] until cmd 0
+			.components = 0,		// see .type
+		};
 		memcpy (cmds, commands, sizeof (int[numcommands]));
 	} else {
-		size += sizeof (tex_coord_t[numorder]);
-		rmesh = Hunk_AllocName (0, size, alias_ctx->mod->name);
-		auto tex_coord = (tex_coord_t *) &rmesh[1];
+		auto tex_coord = (tex_coord_t *) &aframes[numposes];
 		vertices = &tex_coord[numorder];
 
-		rmesh->tex_coord = (byte *) tex_coord - (byte *) rmesh;
-		for (i=0; i < numorder; i++) {
+		attribs[2] = (qfm_attrdesc_t) {
+			.offset = (byte *) tex_coord - (byte *) mesh,
+			.stride = sizeof (tex_coord),
+			.attr = qfm_texcoord,
+			.type = qfm_f32,
+			.components = 2,
+		};
+
+		for (int i = 0; i < numorder; i++) {
 			float s, t;
 			int k;
 			k = vertexorder[i];
@@ -523,13 +550,40 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 	}
 
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 3,
+	};
+	if (extra) {
+		attribs[0].offset += field_offset (trivertx16_t, v);
+	} else {
+		attribs[0].offset += field_offset (trivertx_t, v);
+	}
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 1,	// index into r_avertexnormals
+	};
+	if (extra) {
+		attribs[1].offset += field_offset (trivertx16_t, lightnormalindex);
+	} else {
+		attribs[1].offset += field_offset (trivertx_t, lightnormalindex);
+	}
+
 	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
 	if (extra) {
 		trivertx16_t *verts = vertices;
-		for (i = 0; i < numposes; i++) {
+		for (int i = 0; i < numposes; i++) {
 			trivertx_t *pv = alias_ctx->poseverts.a[i];
-			frames[i].data = (byte *) verts - (byte *) rmesh;
-			for (j = 0; j < numorder; j++) {
+			frames[i].data = (byte *) verts - (byte *) mesh;
+			for (int j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
 				// saner. The first chunk of vertices is fully compatible with
@@ -546,20 +600,31 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 	} else {
 		trivertx_t *verts = vertices;
-		for (i = 0; i < numposes; i++) {
-			frames[i].data = (byte *) verts - (byte *) rmesh;
-			for (j = 0; j < numorder; j++) {
+		for (int i = 0; i < numposes; i++) {
+			frames[i].data = (byte *) verts - (byte *) mesh;
+			for (int j = 0; j < numorder; j++) {
 				*verts++ = alias_ctx->poseverts.a[i][vertexorder[j]];
 			}
 		}
 	}
-	VectorCopy (mdl->scale, rmesh->scale);
-	VectorCopy (mdl->scale_origin, rmesh->scale_origin);
-	rmesh->numverts = numorder;
-	rmesh->numtris = mdl->numtris;
-	rmesh->extra = extra;
-	model->render_data = (byte *) rmesh - (byte *) model;
 
-	dstring_delete (cache);
-	dstring_delete (fullpath);
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	// except texcoords
+	mesh->morph_attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 2,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.count = numorder,
+	};
+
+	mesh->triangle_count = mdl->numtris;
+	mesh->index_type = qfm_special;	// none
+	mesh->indices = 0;
+	mesh->morph.data = (byte *) aframes - (byte *) mesh;
 }

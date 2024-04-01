@@ -177,7 +177,14 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.offset = (byte *) attribs - (byte *) mesh,
 		.count = 3,
 	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	// except texcoords
+	mesh->morph_attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 2,
+	};
 	mesh->vertices = (qfm_loc_t) {
+		.offset = (byte *) frame_verts - (byte *) mesh,
 		.count = mdl->numverts,
 	};
 

@@ -185,15 +185,15 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing (triangles version)
 */
 static void
-GL_DrawAliasShadowTri (transform_t transform, const gl_alias_mesh_t *rmesh,
+GL_DrawAliasShadowTri (transform_t transform, const qf_mesh_t *mesh,
 					   const vert_order_t *vo)
 {
 	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
 	float       height, lheight;
 	vec3_t      point;
-	const vec_t *scale = rmesh->scale;
-	const vec_t *scale_origin = rmesh->scale_origin;
+	const vec_t *scale = mesh->scale;
+	const vec_t *scale_origin = mesh->scale_origin;
 	vec4f_t     entorigin;
 
 	entorigin = Transform_GetWorldPosition (transform);
@@ -225,7 +225,7 @@ GL_DrawAliasShadowTri (transform_t transform, const gl_alias_mesh_t *rmesh,
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *rmesh,
+GL_DrawAliasShadow (transform_t transform, const qf_mesh_t *mesh,
 				    const vert_order_t *vo)
 {
 	float       height, lheight;
@@ -250,15 +250,9 @@ GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *rmesh,
 		order += 2 * count;		// skip texture coords
 		do {
 			// normals and vertices come from the frame list
-			point[0] =
-				verts->vert[0] * rmesh->scale[0] +
-				rmesh->scale_origin[0];
-			point[1] =
-				verts->vert[1] * rmesh->scale[1] +
-				rmesh->scale_origin[1];
-			point[2] =
-				verts->vert[2] * rmesh->scale[2] +
-				rmesh->scale_origin[2] + lheight;
+			VectorCompMultAdd (mesh->scale_origin, mesh->scale, verts->vert,
+							   point);
+			point[2] += lheight;
 
 			point[0] -= shadevector[0] * point[2];
 			point[1] -= shadevector[1] * point[2];
@@ -273,23 +267,26 @@ GL_DrawAliasShadow (transform_t transform, const gl_alias_mesh_t *rmesh,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (qf_model_t *model, entity_t e)
+GL_GetAliasFrameVerts16 (qf_mesh_t *mesh, entity_t e)
 {
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int           count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	count = rmesh->numverts;
+	count = mesh->vertices.count;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) rmesh + rmesh->commands);
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	//FIXME assumes 2 is texcoord
+	auto tex_coord = &attr[2];
+	*vo = (vert_order_t) {};
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (rmesh->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) rmesh + rmesh->tex_coord);
+	if (tex_coord->type != qfm_special) {
+		//FIXME assumes 2 x float32
+		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + tex_coord->offset);
 	} else {
-		vo->tex_coord = NULL;
+		vo->order = (int *) ((byte *) mesh + tex_coord->offset);
 	}
 	vo->count = count;
 
@@ -298,14 +295,14 @@ GL_GetAliasFrameVerts16 (qf_model_t *model, entity_t e)
 
 	trivertx16_t *verts;
 	if (blend == 0.0) {
-		verts = (trivertx16_t *) ((byte *) rmesh + animation->pose1);
+		verts = (trivertx16_t *) ((byte *) mesh + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = (trivertx16_t *) ((byte *) rmesh + animation->pose2);
+		verts = (trivertx16_t *) ((byte *) mesh + animation->pose2);
 	} else {
 		trivertx16_t *verts1, *verts2;
 
-		verts1 = (trivertx16_t *) ((byte *) rmesh + animation->pose1);
-		verts2 = (trivertx16_t *) ((byte *) rmesh + animation->pose2);
+		verts1 = (trivertx16_t *) ((byte *) mesh + animation->pose1);
+		verts2 = (trivertx16_t *) ((byte *) mesh + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -334,23 +331,26 @@ GL_GetAliasFrameVerts16 (qf_model_t *model, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (qf_model_t *model, entity_t e)
+GL_GetAliasFrameVerts (qf_mesh_t *mesh, entity_t e)
 {
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
 	int         count, i;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	count = rmesh->numverts;
+	count = mesh->vertices.count;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) rmesh + rmesh->commands);
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	//FIXME assumes 2 is texcoord
+	auto tex_coord = &attr[2];
+	*vo = (vert_order_t) {};
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (rmesh->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) rmesh + rmesh->tex_coord);
+	if (tex_coord->type != qfm_special) {
+		//FIXME assumes 2 x float32
+		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + tex_coord->offset);
 	} else {
-		vo->tex_coord = NULL;
+		vo->order = (int *) ((byte *) mesh + tex_coord->offset);
 	}
 	vo->count = count;
 
@@ -360,14 +360,14 @@ GL_GetAliasFrameVerts (qf_model_t *model, entity_t e)
 
 	trivertx_t *verts;
 	if (blend == 0.0) {
-		verts = (trivertx_t *) ((byte *) rmesh + animation->pose1);
+		verts = (trivertx_t *) ((byte *) mesh + animation->pose1);
 	} else if (blend == 1.0) {
-		verts = (trivertx_t *) ((byte *) rmesh + animation->pose2);
+		verts = (trivertx_t *) ((byte *) mesh + animation->pose2);
 	} else {
 		trivertx_t *verts1, *verts2;
 
-		verts1 = (trivertx_t *) ((byte *) rmesh + animation->pose1);
-		verts2 = (trivertx_t *) ((byte *) rmesh + animation->pose2);
+		verts1 = (trivertx_t *) ((byte *) mesh + animation->pose1);
+		verts2 = (trivertx_t *) ((byte *) mesh + animation->pose2);
 
 		for (i = 0, vo_v = vo->verts; i < count;
 			 i++, vo_v++, verts1++, verts2++) {
@@ -410,6 +410,182 @@ gl_get_skin (entity_t e, renderer_t *renderer, qf_mesh_t *mesh)
 	return gl_Skin_Get (tex, colormap, (byte *) mesh);
 }
 
+static void
+gl_alias_draw_mesh (qf_mesh_t *mesh, entity_t e, renderer_t *renderer,
+					transform_t transform, float *color, float *dark)
+{
+	vec3_t      scale;
+	vert_order_t *vo = nullptr;
+	bool is_fullbright = (renderer->model->fullbright || renderer->fullbright);
+
+	gl_ctx->alias_polys += mesh->triangle_count;
+
+	// if the model has a colorised/external skin, use it, otherwise use
+	// the skin embedded in the model data
+	auto glskin = gl_get_skin (e, renderer, mesh);
+	if (!gl_fb_models || is_fullbright) {
+		glskin.fb = 0;
+	}
+
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	//FIXME assumes 0 is position and only u16 and u8
+	if (attr[0].type == qfm_u16) {
+		// because we multipled by 256 when we loaded the verts, we have to
+		// scale by 1/256 when drawing.
+		VectorScale (mesh->scale, 1 / 256.0, scale);
+		vo = GL_GetAliasFrameVerts16 (mesh, e);
+	} else {
+		VectorScale (mesh->scale, 1, scale);
+		vo = GL_GetAliasFrameVerts (mesh, e);
+	}
+
+	// setup the transform
+	qfglPushMatrix ();
+	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
+
+	qfglTranslatef (mesh->scale_origin[0],
+					mesh->scale_origin[1],
+					mesh->scale_origin[2]);
+	qfglScalef (scale[0], scale[1], scale[2]);
+
+	if (gl_modelalpha < 1.0)
+		qfglDepthMask (GL_FALSE);
+
+	// draw all the triangles
+	if (is_fullbright) {
+		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
+
+		if (gl_vector_light) {
+			qfglDisable (GL_LIGHTING);
+			if (!gl_tess)
+				qfglDisable (GL_NORMALIZE);
+		}
+
+		if (vo->tex_coord)
+			GL_DrawAliasFrameTri (vo);
+		else
+			GL_DrawAliasFrame (vo);
+
+		if (gl_vector_light) {
+			if (!gl_tess)
+				qfglEnable (GL_NORMALIZE);
+			qfglEnable (GL_LIGHTING);
+		}
+	} else if (!glskin.fb) {
+		// Model has no fullbrights, don't bother with multi
+		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
+		if (vo->tex_coord)
+			GL_DrawAliasFrameTri (vo);
+		else
+			GL_DrawAliasFrame (vo);
+	} else {	// try multitexture
+		if (gl_mtex_active_tmus >= 2) {	// set up the textures
+			qglActiveTexture (gl_mtex_enum + 0);
+			qfglBindTexture (GL_TEXTURE_2D, glskin.id);
+
+			qglActiveTexture (gl_mtex_enum + 1);
+			qfglEnable (GL_TEXTURE_2D);
+			qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
+
+			// do the heavy lifting
+			if (vo->tex_coord)
+				GL_DrawAliasFrameTriMulti (vo);
+			else
+				GL_DrawAliasFrameMulti (vo);
+
+			// restore the settings
+			qfglDisable (GL_TEXTURE_2D);
+			qglActiveTexture (gl_mtex_enum + 0);
+		} else {
+			if (vo->tex_coord) {
+				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
+				GL_DrawAliasFrameTri (vo);
+
+				if (gl_vector_light) {
+					qfglDisable (GL_LIGHTING);
+					if (!gl_tess)
+						qfglDisable (GL_NORMALIZE);
+				}
+
+				qfglColor4fv (renderer->colormod);
+
+				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
+				GL_DrawAliasFrameTri (vo);
+
+				if (gl_vector_light) {
+					qfglEnable (GL_LIGHTING);
+					if (!gl_tess)
+						qfglEnable (GL_NORMALIZE);
+				}
+			} else {
+				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
+				GL_DrawAliasFrame (vo);
+
+				if (gl_vector_light) {
+					qfglDisable (GL_LIGHTING);
+					if (!gl_tess)
+						qfglDisable (GL_NORMALIZE);
+				}
+
+				qfglColor4fv (renderer->colormod);
+
+				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
+				GL_DrawAliasFrame (vo);
+
+				if (gl_vector_light) {
+					qfglEnable (GL_LIGHTING);
+					if (!gl_tess)
+						qfglEnable (GL_NORMALIZE);
+				}
+			}
+		}
+	}
+
+	qfglPopMatrix ();
+
+	// torches, grenades, and lightning bolts do not have shadows
+	if (r_shadows && renderer->model->shadow_alpha) {
+		mat4f_t     shadow_mat;
+
+		qfglPushMatrix ();
+		gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
+
+		if (!gl_tess)
+			qfglDisable (GL_NORMALIZE);
+		qfglDisable (GL_LIGHTING);
+		qfglDisable (GL_TEXTURE_2D);
+		qfglDepthMask (GL_FALSE);
+
+		if (gl_modelalpha < 1.0) {
+			VectorBlend (renderer->colormod, dark, 0.5, color);
+			color[3] = gl_modelalpha * (renderer->model->shadow_alpha / 255.0);
+			qfglColor4fv (color);
+		} else {
+			color_black[3] = renderer->model->shadow_alpha;
+			qfglColor4ubv (color_black);
+		}
+		//FIXME fully vectorize
+		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
+		Transform_GetWorldMatrix (transform, shadow_mat);
+		mat4ftranspose (shadow_mat, shadow_mat);
+		vec = m3vmulf (shadow_mat, vec);
+		VectorCopy (vec, shadevector);
+		if (vo->tex_coord)
+			GL_DrawAliasShadowTri (transform, mesh, vo);
+		else
+			GL_DrawAliasShadow (transform, mesh, vo);
+
+		qfglDepthMask (GL_TRUE);
+		qfglEnable (GL_TEXTURE_2D);
+		qfglEnable (GL_LIGHTING);
+		if (!gl_tess)
+			qfglEnable (GL_NORMALIZE);
+		qfglPopMatrix ();
+	} else if (gl_modelalpha < 1.0) {
+		qfglDepthMask (GL_TRUE);
+	}
+}
+
 void
 gl_R_DrawAliasModel (entity_t e)
 {
@@ -423,7 +599,6 @@ gl_R_DrawAliasModel (entity_t e)
 	bool        is_fullbright = false;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
-	vert_order_t *vo;
 	auto renderer = Entity_GetRenderer (e);
 
 	if (renderer->onlyshadows) {
@@ -563,174 +738,10 @@ gl_R_DrawAliasModel (entity_t e)
 	if (!model) {
 		model = Cache_Get (&renderer->model->cache);
 	}
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	auto rmesh = (gl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 
-	gl_ctx->alias_polys += rmesh->numtris;
-
-	// if the model has a colorised/external skin, use it, otherwise use
-	// the skin embedded in the model data
-	auto glskin = gl_get_skin (e, renderer, mesh);
-	if (!gl_fb_models || is_fullbright) {
-		glskin.fb = 0;
-	}
-
-	if (rmesh->extra) {
-		// because we multipled by 256 when we loaded the verts, we have to
-		// scale by 1/256 when drawing.
-		//FIXME see scaling above
-		VectorScale (rmesh->scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (model, e);
-	} else {
-		//FIXME see scaling above
-		VectorScale (rmesh->scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (model, e);
-	}
-
-	// setup the transform
-	qfglPushMatrix ();
-	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
-
-	qfglTranslatef (rmesh->scale_origin[0],
-					rmesh->scale_origin[1],
-					rmesh->scale_origin[2]);
-	qfglScalef (scale[0], scale[1], scale[2]);
-
-	if (gl_modelalpha < 1.0)
-		qfglDepthMask (GL_FALSE);
-
-	// draw all the triangles
-	if (is_fullbright) {
-		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
-
-		if (gl_vector_light) {
-			qfglDisable (GL_LIGHTING);
-			if (!gl_tess)
-				qfglDisable (GL_NORMALIZE);
-		}
-
-		if (vo->tex_coord)
-			GL_DrawAliasFrameTri (vo);
-		else
-			GL_DrawAliasFrame (vo);
-
-		if (gl_vector_light) {
-			if (!gl_tess)
-				qfglEnable (GL_NORMALIZE);
-			qfglEnable (GL_LIGHTING);
-		}
-	} else if (!glskin.fb) {
-		// Model has no fullbrights, don't bother with multi
-		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
-		if (vo->tex_coord)
-			GL_DrawAliasFrameTri (vo);
-		else
-			GL_DrawAliasFrame (vo);
-	} else {	// try multitexture
-		if (gl_mtex_active_tmus >= 2) {	// set up the textures
-			qglActiveTexture (gl_mtex_enum + 0);
-			qfglBindTexture (GL_TEXTURE_2D, glskin.id);
-
-			qglActiveTexture (gl_mtex_enum + 1);
-			qfglEnable (GL_TEXTURE_2D);
-			qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
-
-			// do the heavy lifting
-			if (vo->tex_coord)
-				GL_DrawAliasFrameTriMulti (vo);
-			else
-				GL_DrawAliasFrameMulti (vo);
-
-			// restore the settings
-			qfglDisable (GL_TEXTURE_2D);
-			qglActiveTexture (gl_mtex_enum + 0);
-		} else {
-			if (vo->tex_coord) {
-				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
-				GL_DrawAliasFrameTri (vo);
-
-				if (gl_vector_light) {
-					qfglDisable (GL_LIGHTING);
-					if (!gl_tess)
-						qfglDisable (GL_NORMALIZE);
-				}
-
-				qfglColor4fv (renderer->colormod);
-
-				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
-				GL_DrawAliasFrameTri (vo);
-
-				if (gl_vector_light) {
-					qfglEnable (GL_LIGHTING);
-					if (!gl_tess)
-						qfglEnable (GL_NORMALIZE);
-				}
-			} else {
-				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
-				GL_DrawAliasFrame (vo);
-
-				if (gl_vector_light) {
-					qfglDisable (GL_LIGHTING);
-					if (!gl_tess)
-						qfglDisable (GL_NORMALIZE);
-				}
-
-				qfglColor4fv (renderer->colormod);
-
-				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
-				GL_DrawAliasFrame (vo);
-
-				if (gl_vector_light) {
-					qfglEnable (GL_LIGHTING);
-					if (!gl_tess)
-						qfglEnable (GL_NORMALIZE);
-				}
-			}
-		}
-	}
-
-	qfglPopMatrix ();
-
-	// torches, grenades, and lightning bolts do not have shadows
-	if (r_shadows && renderer->model->shadow_alpha) {
-		mat4f_t     shadow_mat;
-
-		qfglPushMatrix ();
-		gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
-
-		if (!gl_tess)
-			qfglDisable (GL_NORMALIZE);
-		qfglDisable (GL_LIGHTING);
-		qfglDisable (GL_TEXTURE_2D);
-		qfglDepthMask (GL_FALSE);
-
-		if (gl_modelalpha < 1.0) {
-			VectorBlend (renderer->colormod, dark, 0.5, color);
-			color[3] = gl_modelalpha * (renderer->model->shadow_alpha / 255.0);
-			qfglColor4fv (color);
-		} else {
-			color_black[3] = renderer->model->shadow_alpha;
-			qfglColor4ubv (color_black);
-		}
-		//FIXME fully vectorize
-		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
-		Transform_GetWorldMatrix (transform, shadow_mat);
-		mat4ftranspose (shadow_mat, shadow_mat);
-		vec = m3vmulf (shadow_mat, vec);
-		VectorCopy (vec, shadevector);
-		if (vo->tex_coord)
-			GL_DrawAliasShadowTri (transform, rmesh, vo);
-		else
-			GL_DrawAliasShadow (transform, rmesh, vo);
-
-		qfglDepthMask (GL_TRUE);
-		qfglEnable (GL_TEXTURE_2D);
-		qfglEnable (GL_LIGHTING);
-		if (!gl_tess)
-			qfglEnable (GL_NORMALIZE);
-		qfglPopMatrix ();
-	} else if (gl_modelalpha < 1.0) {
-		qfglDepthMask (GL_TRUE);
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		gl_alias_draw_mesh (&meshes[i], e, renderer, transform, color, dark);
 	}
 
 	while (used_lights--) {
