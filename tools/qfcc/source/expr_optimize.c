@@ -53,7 +53,7 @@ clean_skips (const expr_t **expr_list)
 			*dst++ = *src;
 		}
 	}
-	*dst = 0;
+	*dst = nullptr;
 }
 
 static const expr_t *
@@ -149,7 +149,7 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	for (auto search = adds; *search; search++) {
 		if (*search != &skip) {
 			auto c = traverse_scale (*search);
-			const expr_t *scale = 0;
+			const expr_t *scale = nullptr;
 			bool neg = false;
 			if (is_cross (c)) {
 				if (c->expr.e1 == com) {
@@ -173,7 +173,7 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	for (auto search = subs; *search; search++) {
 		if (*search != &skip) {
 			auto c = traverse_scale (*search);
-			const expr_t *scale = 0;
+			const expr_t *scale = nullptr;
 			bool neg = false;
 			if (is_cross (c)) {
 				if (c->expr.e1 == com) {
@@ -282,7 +282,7 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		return expr;
 	}
 
-	const expr_t *common = 0;
+	const expr_t *common = nullptr;
 	int count = 0;
 	for (auto f = factors; *f; f++) {
 		if (fac_counts[f - factors] > count
@@ -357,7 +357,7 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 		return expr;
 	}
 
-	const expr_t *common = 0;
+	const expr_t *common = nullptr;
 	int count = 0;
 	for (auto f = factors; *f; f++) {
 		if (fac_counts[f - factors] > count
@@ -387,7 +387,9 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 
 	auto type = get_type (expr);
 	auto col = gather_terms (type, com_adds, com_subs);
-	col = optimize_core (col);
+	if (!(col = optimize_core (col))) {
+		return nullptr;
+	}
 
 	auto mult = typed_binary_expr (type, expr->expr.op, col, common);
 	mult = edag_add_expr (mult);
@@ -537,6 +539,25 @@ optimize_adds (const expr_t **expr_list)
 	clean_skips (expr_list);
 }
 
+static void
+cancel_terms (const expr_t **adds, const expr_t **subs)
+{
+	for (auto a = adds; *a; a++) {
+		if (*a == &skip) {
+			continue;
+		}
+		for (auto s = subs; *s; s++) {
+			if (*s == *a) {
+				*a = &skip;
+				*s = &skip;
+				break;
+			}
+		}
+	}
+	clean_skips (adds);
+	clean_skips (subs);
+}
+
 static const expr_t *
 optimize_core (const expr_t *expr)
 {
@@ -553,6 +574,7 @@ optimize_core (const expr_t *expr)
 		if (expr->expr.commutative) {
 			optimize_adds (adds);
 			optimize_adds (subs);
+			cancel_terms (adds, subs);
 		}
 
 		optimize_cross_products (adds, subs);

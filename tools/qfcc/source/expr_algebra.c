@@ -135,7 +135,7 @@ const expr_t *
 ext_expr (const expr_t *src, const type_t *type, int extend, bool reverse)
 {
 	if (!src) {
-		return 0;
+		return nullptr;
 	}
 	bool neg = false;
 	if (is_neg (src)) {
