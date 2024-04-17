@@ -371,13 +371,13 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 #define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
 
-typedef struct {
+typedef struct keyword_s {
 	const char *name;
 	int         value;
 	specifier_t spec;
 } keyword_t;
 
-typedef struct {
+typedef struct directive_s {
 	const char *name;
 	int         value;
 } directive_t;

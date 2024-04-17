@@ -39,6 +39,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/evaluate.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
+	tools/qfcc/source/glsl-parse.y \
 	tools/qfcc/source/grab.c \
 	tools/qfcc/source/idstuff.c \
 	tools/qfcc/source/linker.c \
@@ -82,6 +83,8 @@ qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 BUILT_SOURCES += \
+	tools/qfcc/source/glsl-parse.c \
+	tools/qfcc/source/glsl-parse.h \
 	tools/qfcc/source/pre-parse.c \
 	tools/qfcc/source/pre-parse.h \
 	tools/qfcc/source/qc-parse.c \
@@ -91,6 +94,8 @@ BUILT_SOURCES += \
 	tools/qfcc/source/qp-parse.h \
 	tools/qfcc/source/qp-lex.c
 
+tools/qfcc/source/glsl-parse.c: tools/qfcc/source/glsl-parse.y
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/pre-parse.c: tools/qfcc/source/pre-parse.y
 	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qc-parse.c: tools/qfcc/source/qc-parse.y

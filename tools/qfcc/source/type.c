@@ -95,11 +95,51 @@ type_t      type_auto = {
 	};
 #include "tools/qfcc/include/vec_types.h"
 
+#define MAT_TYPE(type_name, base_type, align_as) \
+	type_t type_##type_name = { \
+		.type = ev_##base_type, \
+		.name = #type_name, \
+		.alignment = PR_ALIGNOF(align_as), \
+		.width = 0, /*FIXME what width? */ \
+		.meta = ty_basic, \
+	};
+#include "tools/qfcc/include/mat_types.h"
+
 #define VEC_TYPE(type_name, base_type) &type_##type_name,
 static type_t *vec_types[] = {
 #include "tools/qfcc/include/vec_types.h"
 	0
 };
+
+type_t type_bool = {
+	.type = ev_int,	//FIXME create bool type?
+	.name = "bool",
+	.alignment = PR_ALIGNOF(int),
+	.width = PR_SIZEOF(int) / PR_SIZEOF (int),
+	.meta = ty_basic,
+};
+type_t type_bvec2 = {
+	.type = ev_int,	//FIXME create bool type?
+	.name = "bvec2",
+	.alignment = PR_ALIGNOF(ivec2),
+	.width = PR_SIZEOF(ivec2) / PR_SIZEOF (int),
+	.meta = ty_basic,
+};
+type_t type_bvec3 = {
+	.type = ev_int,	//FIXME create bool type?
+	.name = "bvec3",
+	.alignment = PR_ALIGNOF(ivec3),
+	.width = PR_SIZEOF(ivec3) / PR_SIZEOF (int),
+	.meta = ty_basic,
+};
+type_t type_bvec4 = {
+	.type = ev_int,	//FIXME create bool type?
+	.name = "bvec4",
+	.alignment = PR_ALIGNOF(ivec4),
+	.width = PR_SIZEOF(ivec4) / PR_SIZEOF (int),
+	.meta = ty_basic,
+};
+
 type_t     *type_nil;
 type_t     *type_default;
 type_t     *type_long_int;

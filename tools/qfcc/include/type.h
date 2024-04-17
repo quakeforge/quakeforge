@@ -98,6 +98,13 @@ typedef struct type_s {
 #define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
 #include "tools/qfcc/include/vec_types.h"
 
+#define MAT_TYPE(type_name, base_type, align_as) extern type_t type_##type_name;
+#include "tools/qfcc/include/mat_types.h"
+
+extern	type_t  type_bool;
+extern	type_t  type_bvec2;
+extern	type_t  type_bvec3;
+extern	type_t  type_bvec4;
 extern	type_t	type_auto;
 extern	type_t	type_invalid;
 extern	type_t	type_floatfield;
