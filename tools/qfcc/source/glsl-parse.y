@@ -1548,17 +1548,6 @@ identifier
 %%
 
 
-typedef struct keyword_s {
-	const char *name;
-	int         value;
-	specifier_t spec;
-} keyword_t;
-
-typedef struct directive_s {
-	const char *name;
-	int         value;
-} directive_t;
-
 static __attribute__((used)) keyword_t glsl_keywords[] = {
 	{"const",                   0},
 	{"uniform",                 0},

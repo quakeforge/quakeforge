@@ -30,6 +30,19 @@
 
 #include "QF/dstring.h"
 
+#include "specifier.h"
+
+typedef struct keyword_s {
+	const char *name;
+	int         value;
+	specifier_t spec;
+} keyword_t;
+
+typedef struct directive_s {
+	const char *name;
+	int         value;
+} directive_t;
+
 typedef struct rua_loc_s {
 	int         line, column;
 	int         last_line, last_column;

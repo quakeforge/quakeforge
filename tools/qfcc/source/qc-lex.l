@@ -371,17 +371,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 #define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
 
-typedef struct keyword_s {
-	const char *name;
-	int         value;
-	specifier_t spec;
-} keyword_t;
-
-typedef struct directive_s {
-	const char *name;
-	int         value;
-} directive_t;
-
 // preprocessor directives in ruamoko and quakec
 static directive_t rua_directives[] = {
 	{"include",  PRE_INCLUDE},

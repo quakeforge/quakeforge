@@ -210,40 +210,34 @@ FRAMEID		{ID}(\.{ID})*
 
 %%
 
-typedef struct {
-	const char *name;
-	int         value;
-	type_t     *type;
-} keyword_t;
-
 static keyword_t keywords[] = {
-	{"real",		TYPE,		&type_float},
-	{"string",		TYPE,		&type_string},
-	{"vector",		TYPE,		&type_vector},
-	{"entity",		TYPE,		&type_entity},
-	{"quaternion",	TYPE,		&type_quaternion},
-	{"integer",		TYPE,		&type_int},
+	{"real",		TYPE,		.spec = { .type = &type_float } },
+	{"string",		TYPE,		.spec = { .type = &type_string } },
+	{"vector",		TYPE,		.spec = { .type = &type_vector } },
+	{"entity",		TYPE,		.spec = { .type = &type_entity } },
+	{"quaternion",	TYPE,		.spec = { .type = &type_quaternion } },
+	{"integer",		TYPE,		.spec = { .type = &type_int } },
 
-	{"program",		PROGRAM,	0},
-	{"var",			VAR,		0},
-	{"array",		ARRAY,		0},
-	{"of",			OF,			0},
-	{"function",	FUNCTION,	0},
-	{"procedure",	PROCEDURE,	0},
-	{"begin",		PBEGIN,		0},
-	{"end",			END,		0},
-	{"if",			IF,			0},
-	{"then",		THEN,		0},
-	{"else",		ELSE,		0},
-	{"while",		WHILE,		0},
-	{"do",			DO,			0},
-	{"or",			ADDOP,		0},
-	{"div",			MULOP,		0},
-	{"mod",			MULOP,		0},
-	{"and",			MULOP,		0},
-	{"not",			NOT,		0},
+	{"program",		PROGRAM,	.spec = {} },
+	{"var",			VAR,		.spec = {} },
+	{"array",		ARRAY,		.spec = {} },
+	{"of",			OF,			.spec = {} },
+	{"function",	FUNCTION,	.spec = {} },
+	{"procedure",	PROCEDURE,	.spec = {} },
+	{"begin",		PBEGIN,		.spec = {} },
+	{"end",			END,		.spec = {} },
+	{"if",			IF,			.spec = {} },
+	{"then",		THEN,		.spec = {} },
+	{"else",		ELSE,		.spec = {} },
+	{"while",		WHILE,		.spec = {} },
+	{"do",			DO,			.spec = {} },
+	{"or",			ADDOP,		.spec = {} },
+	{"div",			MULOP,		.spec = {} },
+	{"mod",			MULOP,		.spec = {} },
+	{"and",			MULOP,		.spec = {} },
+	{"not",			NOT,		.spec = {} },
 
-	{"return",		RETURN,		0},
+	{"return",		RETURN,		.spec = {} },
 };
 
 static const char *
@@ -270,7 +264,7 @@ keyword_or_id (YYSTYPE *lval, const char *token)
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
 			lval->op = token[0];
 		} else {
-			lval->type = keyword->type;
+			lval->type = keyword->spec.type;
 		}
 		return keyword->value;
 	}
