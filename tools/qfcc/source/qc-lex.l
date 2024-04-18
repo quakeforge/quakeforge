@@ -170,6 +170,12 @@ typedef enum {
 	rua_num_term,
 } rua_term;
 
+// for debian flex
+#ifndef yystart
+#define yystart() YY_START
+#define yybuffer YY_BUFFER_STATE
+#endif
+
 #define YY_USER_ACTION \
 	update_loc (yylloc, yyleng); \
 	save_text (yylval, yytext, yyleng, yystart(), extra); \
