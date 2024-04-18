@@ -59,7 +59,6 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -151,20 +150,23 @@ Vulkan_Sprite_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 static void
 sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
 	msprite_t *sprite = model->cache.data;
 
 	mat4f_t     mat = {};
 	uint32_t    frame;
+	vec4f_t     fog = Fog_Get ();
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
 		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 72, sizeof (fog), &fog },
 	};
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
 
 	transform_t transform = Entity_Transform (ent);
@@ -182,6 +184,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 static void
 sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -202,38 +205,61 @@ sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 }
 
+static void
+sprite_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	free (sctx);
+}
+
+static void
+sprite_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto sctx = ctx->sprite_context;
+	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
+}
+
+static void
+sprite_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	QFV_Render_AddShutdown (ctx, sprite_shutdown);
+	QFV_Render_AddStartup (ctx, sprite_startup);
+	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
+	ctx->sprite_context = sctx;
+}
+
 static exprfunc_t sprite_draw_func[] = {
 	{ .func = sprite_draw },
 	{}
 };
+
+static exprfunc_t sprite_init_func[] = {
+	{ .func = sprite_init },
+	{}
+};
+
 static exprsym_t sprite_task_syms[] = {
 	{ "sprite_draw", &cexpr_function, sprite_draw_func },
+	{ "sprite_init", &cexpr_function, sprite_init_func },
 	{}
 };
 
 void
 Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "sprite init");
 	QFV_Render_AddTasks (ctx, sprite_task_syms);
 
-	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
-	ctx->sprite_context = sctx;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Sprite_Setup (vulkan_ctx_t *ctx)
-{
-	auto sctx = ctx->sprite_context;
-	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
-}
-
-void
-Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
-{
-	spritectx_t *sctx = ctx->sprite_context;
-
-	free (sctx);
 }

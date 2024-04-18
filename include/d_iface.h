@@ -56,6 +56,17 @@ typedef struct
 	float	zi;
 } emitpoint_t;
 
+typedef struct particle_s particle_t;
+
+void R_LoadParticles (void);
+bool R_CompileParticlePhysics (const char *name, const char *code);
+void R_RunParticlePhysics (particle_t *part);
+const union pt_phys_op_s *R_ParticlePhysics (const char *type);
+bool R_AddParticlePhysicsFunction (const char *name,
+								   bool  (*func) (struct particle_s *, void *),
+								   void *data);
+extern const char particle_types[];
+
 #define PARTICLE_Z_CLIP	8.0
 
 typedef struct polyvert_s {
@@ -145,8 +156,6 @@ extern vec3_t	r_pright, r_pup, r_ppn, r_porigin;
 
 
 void D_Aff8Patch (const byte *pcolormap);
-void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height);
-void D_EndDirectRect (int x, int y, int width, int height);
 void D_PolysetDraw (void);
 void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
 void D_PolysetSetEdgeTable (void);

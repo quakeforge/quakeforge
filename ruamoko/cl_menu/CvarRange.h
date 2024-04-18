@@ -14,4 +14,15 @@
 -(int)percentage;
 @end
 
+@interface CvarIntRange : CvarObject
+{
+	int min, max, step;
+}
+-(id)initWithCvar:(string)cvname min:(int)_min max:(int)_max step:(int)_step;
+-(void)inc;
+-(void)dec;
+-(float)value;
+-(int)percentage;
+@end
+
 #endif//__CvarRange_h

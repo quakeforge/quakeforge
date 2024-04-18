@@ -5,8 +5,8 @@ static int
 check_hunk_block (const memhunk_t *hunk, const void *mem, size_t size)
 {
 	const hunkblk_t  *h = (const hunkblk_t *) mem - 1;
-	if (h->sentinal1 != HUNK_SENTINAL || h->sentinal2 != HUNK_SENTINAL) {
-		printf ("invalid sentinals: %u %u\n", h->sentinal1, h->sentinal2);
+	if (h->sentinel1 != HUNK_SENTINEL || h->sentinel2 != HUNK_SENTINEL) {
+		printf ("invalid sentinels: %u %u\n", h->sentinel1, h->sentinel2);
 		return 1;
 	}
 	if (h->size % HUNK_ALIGN) {

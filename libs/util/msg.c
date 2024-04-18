@@ -589,3 +589,43 @@ MSG_ReadUTF8 (qmsg_t *msg)
 	msg->readcount += buf - start;
 	return val;
 }
+
+VISIBLE uint64_t
+MSG_ReadUleb128 (qmsg_t *msg)
+{
+	if (msg->badread || msg->message->cursize == msg->readcount) {
+		msg->badread = true;
+		return -1;
+	}
+	uintptr_t   res = 0;
+	unsigned    shift = 0;
+	byte        b;
+	do {
+		b = MSG_ReadByte (msg);
+		res |= ((uintptr_t) b & 0x7f) << shift;
+		shift += 7;
+	} while (b & 0x80 && !msg->badread);
+	return res;
+}
+
+VISIBLE int64_t
+MSG_ReadSleb128 (qmsg_t *msg)
+{
+	if (msg->badread || msg->message->cursize == msg->readcount) {
+		msg->badread = true;
+		return -1;
+	}
+	intptr_t    res = 0;
+	unsigned    shift = 0;
+	byte        b;
+	do {
+		b = MSG_ReadByte (msg);
+		res |= ((intptr_t) b & 0x7f) << shift;
+		shift += 7;
+	} while (b & 0x80 && !msg->badread);
+	constexpr unsigned bits = 8 * sizeof (res);
+	if (shift < bits) {
+		res = (res << (bits - shift)) >> (bits - shift);
+	}
+	return res;
+}

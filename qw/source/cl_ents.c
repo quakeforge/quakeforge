@@ -138,10 +138,8 @@ is_gib (entity_state_t *s1)
 static void
 set_entity_model (entity_t ent, int modelindex)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-											 cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -151,6 +149,7 @@ set_entity_model (entity_t ent, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
+		renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	}
 	animation->nolerp = 1; // don't try to lerp when the model has changed
 }
@@ -187,11 +186,9 @@ CL_LinkPacketEntities (void)
 			forcelink = true;
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-												 ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-												   ent.reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin,
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin,
 												   ent.reg);
 
 		// spawn light flashes, even ones coming from invisible objects
@@ -216,20 +213,13 @@ CL_LinkPacketEntities (void)
 				&& cl.players[new->colormap - 1].name->value[0]
 				&& new->modelindex == cl_playerindex) {
 				player_info_t *player = &cl.players[new->colormap - 1];
-				colormap_t  colormap = {
+				Entity_SetColormap (ent, &(colormap_t) {
 					.top = player->topcolor,
 					.bottom = player->bottomcolor,
-				};
-				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
-				renderer->skin
-					= mod_funcs->Skin_SetSkin (renderer->skin, new->colormap,
-											   player->skinname->value);
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  new->colormap);
+				});
+				renderer->skin = mod_funcs->skin_set (player->skinname->value);
 			} else {
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  0);
-				Ent_RemoveComponent (ent.id, scene_colormap, ent.reg);
+				Entity_RemoveColormap (ent);
 			}
 		}
 
@@ -313,14 +303,13 @@ CL_UpdateFlagModels (entity_t ent, int key)
 	};
 	float       f;
 	entity_t    fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 
 	if (!*active) {
 		return;
 	}
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   cl_world.scene->reg);
+	auto animation = Entity_GetAnimation (ent);
 
 	f = 14.0;
 	if (animation->frame >= 29 && animation->frame <= 40) {
@@ -348,7 +337,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	entity_t    fent;
 
 	fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 
 	if (cl_flagindex == -1) {
@@ -365,8 +354,7 @@ CL_AddFlagModels (entity_t ent, int team, int key)
 	}
 	CL_UpdateFlagModels (ent, key);
 
-	renderer_t *renderer = Ent_GetComponent (fent.id, scene_renderer,
-											 cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (fent);
 	renderer->model = cl_world.models.a[cl_flagindex];
 	renderer->skinnum = team;
 
@@ -379,7 +367,7 @@ CL_RemoveFlagModels (int key)
 	entity_t    fent;
 
 	fent = CL_GetFlagEnt (key);
-	byte       *active = Ent_GetComponent (fent.id, scene_active,
+	byte       *active = Ent_GetComponent (fent.id, fent.base + scene_active,
 										   cl_world.scene->reg);
 	transform_t transform = Entity_Transform (fent);
 	*active = 0;
@@ -399,6 +387,7 @@ muzzle_flash (entity_t ent, player_state_t *state, bool is_player)
 	VectorCopy (f, fv);
 	VectorCopy (state->pls.es.origin, position);
 	CL_MuzzleFlash (ent, position, fv, 0, cl.time);
+	state->muzzle_flash = false;
 }
 
 /*
@@ -442,10 +431,8 @@ CL_LinkPlayers (void)
 		if (!Entity_Valid (ent)) {
 			ent = CL_GetEntity (j + 1);
 		}
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-												 cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-												   cl_world.scene->reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
@@ -457,7 +444,7 @@ CL_LinkPlayers (void)
 			clientplayer = false;
 		}
 		if (player->chat && player->chat->value[0] != '0') {
-			Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+			Ent_SetComponent (ent.id, ent.base + scene_dynlight, ent.reg, &(dlight_t) {
 				.origin = org,
 				.color = {0.0, 1.0, 0.0, 1.0},
 				.radius = 100,
@@ -469,7 +456,9 @@ CL_LinkPlayers (void)
 						  state->pls.es.glow_size, state->pls.es.glow_color,
 						  cl.time);
 		}
-		muzzle_flash (ent, state, j == cl.playernum);
+		if (state->muzzle_flash) {
+			muzzle_flash (ent, state, j == cl.playernum);
+		}
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))
@@ -484,11 +473,13 @@ CL_LinkPlayers (void)
 			&& is_dead_body (&state->pls.es))
 			continue;
 
-		colormap_t  colormap = {
+		renderer->onlyshadows = (cl_player_shadows && j == cl.playernum
+								 && !chase_active);
+
+		Entity_SetColormap (ent, &(colormap_t) {
 			.top = player->topcolor,
 			.bottom = player->bottomcolor,
-		};
-		Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
+		});
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
@@ -547,7 +538,7 @@ CL_LinkPlayers (void)
 		int     flag_state = state->pls.es.effects & (EF_FLAG1 | EF_FLAG2);
 		if (Entity_Valid (player->flag_ent) && !flag_state) {
 			CL_RemoveFlagModels (j);
-			player->flag_ent = (entity_t) nullentity;
+			player->flag_ent = nullentity;
 		} else if (!Entity_Valid (player->flag_ent) && flag_state) {
 			if (flag_state & EF_FLAG1)
 				player->flag_ent = CL_AddFlagModels (ent, 0, j);

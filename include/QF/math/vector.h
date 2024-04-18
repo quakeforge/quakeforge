@@ -170,6 +170,8 @@ extern const vec_t *const vec3_origin;
 		(v)[2] = (v1)[2] * (1 - (b)) + (v2)[2] * (b); \
 	} while (0)
 
+#define VectorFMT "[%.9g %.9g %.9g]"
+
 //For printf etc
 #define VectorExpand(v) (v)[0], (v)[1], (v)[2]
 //For scanf etc

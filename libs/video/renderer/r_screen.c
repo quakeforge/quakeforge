@@ -74,7 +74,6 @@ static framebuffer_t *warp_buffer;
 
 static float fov_x, fov_y;
 static float tan_fov_x, tan_fov_y;
-static scene_t *scr_scene;//FIXME don't want this here
 
 static mat4f_t box_rotations[] = {
 	[BOX_FRONT] = {
@@ -190,6 +189,9 @@ render_scene (void)
 	EntQueue_Clear (r_ent_queue);
 	r_funcs->render_view ();
 	r_funcs->draw_particles (&r_psystem);
+	if (r_funcs->draw_trails) {
+		r_funcs->draw_trails (&r_tsystem);
+	}
 	r_funcs->draw_transparent ();
 }
 
@@ -285,6 +287,7 @@ SCR_UpdateScreen_legacy (SCR_Func *scr_funcs)
 void
 SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 {
+	qfZoneNamed (zone, true);
 	R_RunParticles (r_data->frametime);
 
 	if (scr_skipupdate || !scr_initialized) {
@@ -320,19 +323,19 @@ SCR_UpdateScreen (transform_t camera, double realtime, SCR_Func *scr_funcs)
 	}
 
 	R_AnimateLight ();
-	if (!r_lock_viewleaf && scr_scene && scr_scene->worldmodel) {
-		scr_scene->viewleaf = 0;
+	if (!r_lock_viewleaf && r_refdef.scene && r_refdef.scene->worldmodel) {
+		r_refdef.scene->viewleaf = 0;
 		vec4f_t     position = refdef->frame.position;
-		auto brush = &scr_scene->worldmodel->brush;
-		scr_scene->viewleaf = Mod_PointInLeaf (position, brush);
+		auto brush = &r_refdef.scene->worldmodel->brush;
+		r_refdef.scene->viewleaf = Mod_PointInLeaf (position, brush);
 		r_dowarpold = r_dowarp;
 		if (r_waterwarp) {
-			r_dowarp = scr_scene->viewleaf->contents <= CONTENTS_WATER;
+			r_dowarp = r_refdef.scene->viewleaf->contents <= CONTENTS_WATER;
 		}
-		R_MarkLeaves (&r_visstate, scr_scene->viewleaf);
+		R_MarkLeaves (&r_visstate, r_refdef.scene->viewleaf);
 	}
 	r_framecount++;
-	if (scr_scene) {
+	if (r_refdef.scene) {
 		R_PushDlights (vec3_origin, &r_visstate);
 	}
 	r_funcs->UpdateScreen (scr_funcs);
@@ -493,9 +496,10 @@ SCR_Shutdown (void)
 void
 SCR_NewScene (scene_t *scene)
 {
-	scr_scene = scene;
+	qfZoneScoped (true);
+	r_refdef.scene = scene;
 	if (scene) {
-		mod_brush_t *brush = &scr_scene->worldmodel->brush;
+		mod_brush_t *brush = &r_refdef.scene->worldmodel->brush;
 		int         count = brush->numnodes + brush->modleafs
 							+ brush->numsurfaces;
 		int         size = count * sizeof (int);

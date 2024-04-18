@@ -280,6 +280,7 @@ static imui_style_t current_style;
 void
 Con_Debug_Init (void)
 {
+	qfZoneScoped (true);
 	for (int i = 0; deb_in_axes[i]; i++) {
 		IN_RegisterAxis (deb_in_axes[i]);
 	}
@@ -300,9 +301,11 @@ Con_Debug_Init (void)
 void
 Con_Debug_Shutdown (void)
 {
+	qfZoneScoped (true);
 	IE_Remove_Handler (debug_event_id);
 
 	Scene_DeleteScene (debug_scene);
+	IMUI_DestroyContext (debug_imui);
 }
 
 static void
@@ -313,6 +316,7 @@ color_window (void)
 		.xpos = 75,
 		.ypos = 75,
 		.is_open = false,
+		.auto_fit = true,
 	};
 	static int style_selection;
 	static int style_mode;
@@ -386,8 +390,9 @@ color_window (void)
 static transform_t
 create_debug_camera (void)
 {
-	debug_camera_pivot = Transform_New (debug_scene->reg, nulltransform);
-	debug_camera = Transform_New (debug_scene->reg, debug_camera_pivot);
+	ecs_system_t ssys = { .reg = debug_scene->reg, .base = debug_scene->base };
+	debug_camera_pivot = Transform_New (ssys, nulltransform);
+	debug_camera = Transform_New (ssys, debug_camera_pivot);
 	return debug_camera;
 }
 
@@ -484,14 +489,21 @@ static imui_window_t system_info_window = {
 	.name = "System Info##window",
 	.xpos = 50,
 	.ypos = 50,
+	.auto_fit = true,
 };
 
 static imui_window_t cam_window = {
 	.name = "Debug Camera",
+	.xpos = 50,
+	.ypos = 50,
+	.auto_fit = true,
 };
 
 static imui_window_t inp_window = {
 	.name = "Debug Input",
+	.xpos = 50,
+	.ypos = 50,
+	.auto_fit = true,
 };
 
 static imui_window_t debug_menu = {
@@ -499,6 +511,7 @@ static imui_window_t debug_menu = {
 	.group_offset = 0,
 	.is_open = true,
 	.no_collapse = true,
+	.auto_fit = true,
 };
 
 static imui_window_t renderer_menu = {
@@ -506,6 +519,7 @@ static imui_window_t renderer_menu = {
 	.group_offset = 1,
 	.reference_gravity = grav_northwest,
 	.anchor_gravity = grav_southwest,
+	.auto_fit = true,
 };
 
 static void
@@ -691,6 +705,7 @@ system_info (void)
 void
 Con_Debug_Draw (void)
 {
+	qfZoneScoped (true);
 	if (debug_enable_time && Sys_LongTime () - debug_enable_time > 1000) {
 		debug_saved_focus = IE_Get_Focus ();
 		IE_Set_Focus (debug_event_id);

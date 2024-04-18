@@ -817,6 +817,7 @@ NET_shutdown (void *data)
 void
 NET_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	int         i;
 	int         controlSocket;
 	qsocket_t  *s;

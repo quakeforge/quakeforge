@@ -41,6 +41,7 @@
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/input/event.h"
@@ -53,32 +54,20 @@
 
 #define IMUI_context ctx
 
-#define c_percent_x (ctx->csys.imui_base + imui_percent_x)
-#define c_percent_y (ctx->csys.imui_base + imui_percent_y)
+#define c_fraction_x (ctx->csys.imui_base + imui_fraction_x)
+#define c_fraction_y (ctx->csys.imui_base + imui_fraction_y)
 #define c_reference (ctx->csys.imui_base + imui_reference)
+#define t_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
+#define c_passage_glyphs (ctx->csys.base + canvas_passage_glyphs)
 #define c_glyphs (ctx->csys.base + canvas_glyphs)
-#define c_passage_glyphs (ctx->csys.text_base + text_passage_glyphs)
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
+#define c_updateonce  (ctx->csys.base + canvas_updateonce)
 
-#define imui_draw_group ((1 << 14) - 1)
-#define imui_ontop ((1 << 15) - 1)
-#define imui_onbottom (-(1 << 15) + 1)
-
-const component_t imui_components[imui_comp_count] = {
-	[imui_percent_x] = {
-		.size = sizeof (int),
-		.name = "percent x",
-	},
-	[imui_percent_y] = {
-		.size = sizeof (int),
-		.name = "percent y",
-	},
-	[imui_reference] = {
-		.size = sizeof (imui_reference_t),
-		.name = "reference",
-	},
-};
+#define imui_draw_group ((1 << 30) - 1)
+#define imui_draw_order(x) ((x) << 16)
+#define imui_ontop imui_draw_order((1 << 15) - 1)
+#define imui_onbottom imui_draw_order(-(1 << 15) + 1)
 
 typedef struct imui_state_s {
 	struct imui_state_s *next;
@@ -87,10 +76,18 @@ typedef struct imui_state_s {
 	uint32_t    label_len;
 	int         key_offset;
 	imui_window_t *menu;
-	int16_t		draw_order;	// for window canvases
+	int32_t		draw_order;	// for window canvases
+	int32_t     draw_group;
+	uint32_t    first_link;
+	uint32_t    num_links;
 	uint32_t    frame_count;
+	uint32_t    old_entity;
 	uint32_t    entity;
 	uint32_t    content;
+	view_pos_t  pos;
+	view_pos_t  len;
+	imui_frac_t fraction;
+	bool        auto_fit;
 } imui_state_t;
 
 struct imui_ctx_s {
@@ -116,7 +113,9 @@ struct imui_ctx_s {
 	view_t      current_parent;
 	struct DARRAY_TYPE(view_t) parent_stack;
 	struct DARRAY_TYPE(imui_state_t *) windows;
-	int16_t     draw_order;
+	struct DARRAY_TYPE(imui_state_t *) links;
+	struct DARRAY_TYPE(imui_state_t *) scrollers;
+	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
 
@@ -124,6 +123,8 @@ struct imui_ctx_s {
 
 	uint32_t    hot;
 	uint32_t    active;
+	view_pos_t  hot_position;
+	view_pos_t  active_position;
 	view_pos_t  mouse_active;
 	uint32_t    mouse_pressed;
 	uint32_t    mouse_released;
@@ -137,14 +138,57 @@ struct imui_ctx_s {
 	struct DARRAY_TYPE(imui_style_t) style_stack;
 };
 
+static void
+imui_reference_destroy (void *_ref, ecs_registry_t *reg)
+{
+	imui_reference_t *ref = _ref;
+	if (ref->ctx) {
+#if 1
+		//FIXME there's something wrong such that deleting the entity directly
+		//instead of via a view results in corrupted href componets and an
+		//href component leak
+		auto ctx = ref->ctx;
+		auto view = View_FromEntity (ctx->vsys, ref->ref_id);
+		View_Delete (view);
+#else
+		ECS_DelEntity (ref->ctx->csys.reg, ref->ref_id);
+#endif
+	}
+}
+
+const component_t imui_components[imui_comp_count] = {
+	[imui_fraction_x] = {
+		.size = sizeof (imui_frac_t),
+		.name = "fraction x",
+	},
+	[imui_fraction_y] = {
+		.size = sizeof (imui_frac_t),
+		.name = "fraction y",
+	},
+	[imui_reference] = {
+		.size = sizeof (imui_reference_t),
+		.name = "reference",
+		.destroy = imui_reference_destroy,
+	},
+};
+
+static int32_t
+imui_next_window (imui_ctx_t *ctx)
+{
+	ctx->draw_order &= ~(imui_draw_order (1) - 1);
+	ctx->draw_order += imui_draw_order (1);
+	return ctx->draw_order;
+}
+
 static imui_state_t *
-imui_state_new (imui_ctx_t *ctx)
+imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
 	imui_state_t *state = PR_RESNEW (ctx->state_map);
 	*state = (imui_state_t) {
 		.next = ctx->states,
 		.prev = &ctx->states,
-		.entity = nullent,
+		.old_entity = nullent,
+		.entity = entity,
 	};
 	if (ctx->states) {
 		ctx->states->prev = &state->next;
@@ -178,7 +222,7 @@ imui_find_state (imui_ctx_t *ctx, const char *label)
 }
 
 static imui_state_t *
-imui_get_state (imui_ctx_t *ctx, const char *label)
+imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 {
 	int         key_offset = 0;
 	uint32_t    label_len = ~0u;
@@ -192,17 +236,21 @@ imui_get_state (imui_ctx_t *ctx, const char *label)
 	}
 	auto state = imui_find_state (ctx, label);
 	if (state) {
+		state->old_entity = state->entity;
+		state->entity = entity;
 		state->frame_count = ctx->frame_count;
 		ctx->current_state = state;
+		Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
 		return state;
 	}
-	state = imui_state_new (ctx);
+	state = imui_state_new (ctx, entity);
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
 	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
 	ctx->current_state = state;
+	Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
 	return state;
 }
 
@@ -216,6 +264,7 @@ imui_state_getkey (const void *obj, void *data)
 imui_ctx_t *
 IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 {
+	qfZoneScoped (true);
 	imui_ctx_t *ctx = malloc (sizeof (imui_ctx_t));
 	uint32_t canvas = Canvas_New (canvas_sys);
 	*ctx = (imui_ctx_t) {
@@ -227,6 +276,8 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.root_view = Canvas_GetRootView (canvas_sys, canvas),
 		.parent_stack = DARRAY_STATIC_INIT (8),
 		.windows = DARRAY_STATIC_INIT (8),
+		.links = DARRAY_STATIC_INIT (8),
+		.scrollers = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -266,9 +317,29 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 	return ctx;
 }
 
+static void
+clear_items (imui_ctx_t *ctx)
+{
+	uint32_t    root_ent = ctx->root_view.id;
+
+	// delete the root view (but not the root entity)
+	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
+
+	for (uint32_t i = 0; i < ctx->windows.size; i++) {
+		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
+		View_Delete (window);
+	}
+	DARRAY_RESIZE (&ctx->parent_stack, 0);
+	DARRAY_RESIZE (&ctx->windows, 0);
+	DARRAY_RESIZE (&ctx->links, 0);
+	DARRAY_RESIZE (&ctx->scrollers, 0);
+	DARRAY_RESIZE (&ctx->style_stack, 0);
+}
+
 void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
+	clear_items (ctx);
 	for (auto s = ctx->states; s; s = s->next) {
 		free (s->label);
 	}
@@ -280,12 +351,23 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 
 	DARRAY_CLEAR (&ctx->parent_stack);
 	DARRAY_CLEAR (&ctx->windows);
+	DARRAY_CLEAR (&ctx->links);
+	DARRAY_CLEAR (&ctx->scrollers);
 	DARRAY_CLEAR (&ctx->style_stack);
 	dstring_delete (ctx->dstr);
 
 	Hash_DelTable (ctx->tab);
 	Hash_DelContext (ctx->hashctx);
 	Shaper_Delete (ctx->shaper);
+
+	auto reg = ctx->csys.reg;
+	auto pool = &reg->comp_pools[c_reference];
+	for (uint32_t i = 0; i < pool->count; i++) {
+		auto ref = &((imui_reference_t *)pool->data)[i];
+		if (ref->ctx == ctx) {
+			ref->ctx = 0;
+		}
+	}
 	free (ctx);
 }
 
@@ -314,11 +396,14 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 		auto m = &ie_event->mouse;
 		ctx->mouse_position = (view_pos_t) { m->x, m->y };
 
-		unsigned old = ctx->mouse_buttons;
-		unsigned new = m->buttons;
-		ctx->mouse_pressed = (old ^ new) & new;
-		ctx->mouse_released = (old ^ new) & ~new;
-		ctx->mouse_buttons = m->buttons;
+		if (ie_event->mouse.type == ie_mousedown
+			|| ie_event->mouse.type == ie_mouseup) {
+			unsigned old = ctx->mouse_buttons;
+			unsigned new = m->buttons;
+			ctx->mouse_pressed = (old ^ new) & new;
+			ctx->mouse_released = (old ^ new) & ~new;
+			ctx->mouse_buttons = m->buttons;
+		}
 	} else {
 		auto k = &ie_event->key;
 		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
@@ -342,28 +427,40 @@ IMUI_GetIO (imui_ctx_t *ctx)
 	};
 }
 
+static void
+set_hierarchy_tree_mode (imui_ctx_t *ctx, hierref_t ref, bool tree)
+{
+	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
+	Hierarchy_SetTreeMode (h, tree);
+
+	viewcont_t *cont = h->components[view_control];
+	uint32_t   *ent = h->ent;
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (cont[i].is_link) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			set_hierarchy_tree_mode (ctx, View_GetRef (sub_view), tree);
+		}
+	}
+}
+
 void
 IMUI_BeginFrame (imui_ctx_t *ctx)
 {
 	Shaper_FlushUnused (ctx->shaper);
 	uint32_t    root_ent = ctx->root_view.id;
 	auto root_size = View_GetLen (ctx->root_view);
-	Ent_RemoveComponent (root_ent, ctx->root_view.comp, ctx->root_view.reg);
-	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview);
-	auto ref = View_GetRef (ctx->root_view);
-	Hierarchy_SetTreeMode (ref->hierarchy, true);
+
+	ctx->draw_order = imui_draw_order (ctx->windows.size);
+	clear_items (ctx);
+	ctx->root_view = View_AddToEntity (root_ent, ctx->vsys, nullview, true);
+	set_hierarchy_tree_mode (ctx, View_GetRef (ctx->root_view), true);
 	View_SetLen (ctx->root_view, root_size.x, root_size.y);
+
 	ctx->frame_start = Sys_LongTime ();
 	ctx->frame_count++;
 	ctx->current_parent = ctx->root_view;
-	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		View_Delete (window);
-	}
-	ctx->draw_order = ctx->windows.size;
-	DARRAY_RESIZE (&ctx->parent_stack, 0);
-	DARRAY_RESIZE (&ctx->windows, 0);
-	DARRAY_RESIZE (&ctx->style_stack, 0);
 	ctx->current_menu = 0;
 }
 
@@ -380,16 +477,6 @@ prune_objects (imui_ctx_t *ctx)
 		}
 	}
 }
-
-#define DFL "\e[39;49m"
-#define BLK "\e[30;40m"
-#define RED "\e[31;40m"
-#define GRN "\e[32;40m"
-#define ONG "\e[33;40m"
-#define BLU "\e[34;40m"
-#define MAG "\e[35;40m"
-#define CYN "\e[36;40m"
-#define WHT "\e[37;40m"
 
 static const char *
 view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
@@ -411,7 +498,7 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 			return DFL;
 		case imui_size_pixels: return GRN;
 		case imui_size_fittext: return CYN;
-		case imui_size_percent: return ONG;
+		case imui_size_fraction: return ONG;
 		case imui_size_fitchildren: return MAG;
 		case imui_size_expand: return RED;
 	}
@@ -419,36 +506,67 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 }
 
 static void __attribute__((used))
-dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
+dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 {
+	auto reg = ctx->csys.reg;
+	uint32_t ind = href.index;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	view_pos_t *abs = h->components[view_abs];
 	view_pos_t *len = h->components[view_len];
+	view_resize_f *resize = h->components[view_onresize];
+	view_move_f *move = h->components[view_onmove];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
-	printf ("%2d: %*s[%s%d %s%d"DFL"] %c %s%d %s%d"DFL, ind,
+	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] %c%s%s %s%d %s%d"DFL,
+			ind, e,
 			level * 3, "",
+			view_color (h, ind, ctx, false), abs[ind].x,
+			view_color (h, ind, ctx, true),  abs[ind].y,
 			view_color (h, ind, ctx, false), len[ind].x,
 			view_color (h, ind, ctx, true),  len[ind].y,
 			c.vertical ? 'v' : 'h',
+			resize[ind] ? "R" : "",
+			move[ind] ? "M" : "",
 			view_color (h, ind, ctx, false), c.semantic_x,
 			view_color (h, ind, ctx, true),  c.semantic_y);
-	for (uint32_t j = 0; j < h->reg->components.size; j++) {
-		if (Ent_HasComponent (e, j, h->reg)) {
-			printf (", %s", h->reg->components.a[j].name);
-			if (j == c_percent_x || j == c_percent_y) {
-				auto val = *(int *) Ent_GetComponent (e, j, h->reg);
-				printf ("(%s%d"DFL")", view_color (h, ind, ctx,
-												   j == c_percent_y), val);
+	for (uint32_t j = 0; j < reg->components.size; j++) {
+		if (Ent_HasComponent (e, j, reg)) {
+			printf (", %s", reg->components.a[j].name);
+			if (j == c_fraction_x || j == c_fraction_y) {
+				auto val = *(imui_frac_t *) Ent_GetComponent (e, j, reg);
+				printf ("(%s%d/%d"DFL")",
+						view_color (h, ind, ctx, j == c_fraction_y),
+						val.num, val.den);
+			}
+			if (j == ecs_name) {
+				auto name = *(const char **) Ent_GetComponent (e, j, reg);
+				printf ("(%s)", name);
+			}
+			if (j == c_reference) {
+				auto ref = *(imui_reference_t *) Ent_GetComponent (e, j, reg);
+				printf ("(%08x)", ref.ref_id);
 			}
 		}
 	}
 	printf (DFL"\n");
 
+	if (c.is_link) {
+		printf (GRN"%3d: %*slink"DFL"\n", ind, 8 + level * 3, "");
+		auto reg = ctx->csys.reg;
+		uint32_t    ent = h->ent[ind];
+		imui_reference_t *sub = Ent_GetComponent (ent, c_reference, reg);
+		auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+		auto href = View_GetRef (sub_view);
+		dump_tree (href, level + 1, ctx);
+		printf (RED"%3d: %*slink"DFL"\n", ind, 8 + level * 3, "");
+	}
 	if (h->childIndex[ind] > ind) {
 		for (uint32_t i = 0; i < h->childCount[ind]; i++) {
 			if (h->childIndex[ind] + i >= h->num_objects) {
 				break;
 			}
-			dump_tree (h, h->childIndex[ind] + i, level + 1, ctx);
+			hierref_t cref = { .id = href.id, .index = h->childIndex[ind] + i };
+			dump_tree (cref, level + 1, ctx);
 		}
 	}
 	if (!level) {
@@ -457,52 +575,99 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level, imui_ctx_t *ctx)
 }
 
 typedef struct {
-	bool x, y;
-} boolpair_t;
+	bool        x, y;
+	uint32_t    num_views;		// number of views in sub-hierarchy
+} downdep_t;
+
+static int
+fraction (uint32_t ent, int len, uint32_t fcomp, ecs_registry_t *reg)
+{
+	auto f = *(imui_frac_t *) Ent_GetComponent (ent, fcomp, reg);
+	int val = len;
+	if (f.den > 0) {
+		val = (len * f.num) / f.den;
+		if (val > len) {
+			val = len;
+		}
+		if (val < 1) {
+			val = 1;
+		}
+	}
+	return val;
+}
 
 static void
-calc_upwards_dependent (imui_ctx_t *ctx, hierarchy_t *h,
-						boolpair_t *down_depend)
+calc_upwards_dependent (imui_ctx_t *ctx, hierref_t href,
+						downdep_t *down_depend)
 {
 	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
+	downdep_t  *side_depend = down_depend + h->num_objects;
+
+	down_depend[0].num_views = h->num_objects;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		if (down_depend
-			&& (cont[i].semantic_x == imui_size_fitchildren
-				|| cont[i].semantic_x == imui_size_expand)) {
-			down_depend[i].x = true;
-		} else if ((!down_depend
-					|| !(i > 0
-						 && (down_depend[i].x = down_depend[parent[i]].x)))
-				   && cont[i].semantic_x == imui_size_percent) {
-			int *percent = Ent_GetComponent (ent[i], c_percent_x, reg);
-			int x = (len[parent[i]].x * *percent) / 100;
-			len[i].x = x;
+		if (i > 0) {
+			down_depend[i].num_views = 0;
 		}
-		if (down_depend
-			&& (cont[i].semantic_y == imui_size_fitchildren
-				|| cont[i].semantic_y == imui_size_expand)) {
+		if (cont[i].semantic_x == imui_size_fitchildren
+			|| cont[i].semantic_x == imui_size_expand) {
+			down_depend[i].x = true;
+		} else if (!(i > 0 && (down_depend[i].x = down_depend[parent[i]].x))
+				   && cont[i].semantic_x == imui_size_fraction) {
+			len[i].x = fraction (ent[i], len[parent[i]].x, c_fraction_x, reg);
+		} else if (cont[i].semantic_x == imui_size_pixels
+				   && Ent_HasComponent (ent[i], c_fraction_x, reg)) {
+			//FIXME uses numerator for pixels
+			int *pixels = Ent_GetComponent (ent[i], c_fraction_x, reg);
+			len[i].x = *pixels;
+			down_depend[i].x = false;
+		}
+		if (cont[i].semantic_y == imui_size_fitchildren
+			|| cont[i].semantic_y == imui_size_expand) {
 			down_depend[i].y = true;
-		} else if ((!down_depend
-					|| !(i > 0
-						 && (down_depend[i].y = down_depend[parent[i]].y)))
-				   && cont[i].semantic_y == imui_size_percent) {
-			int *percent = Ent_GetComponent (ent[i], c_percent_y, reg);
-			int y = (len[parent[i]].y * *percent) / 100;
-			len[i].y = y;
+		} else if (!(i > 0 && (down_depend[i].y = down_depend[parent[i]].y))
+				   && cont[i].semantic_y == imui_size_fraction) {
+			len[i].y = fraction (ent[i], len[parent[i]].y, c_fraction_y, reg);
+		} else if (cont[i].semantic_y == imui_size_pixels
+				   && Ent_HasComponent (ent[i], c_fraction_y, reg)) {
+			//FIXME uses numerator for pixels
+			int *pixels = Ent_GetComponent (ent[i], c_fraction_y, reg);
+			len[i].y = *pixels;
+			down_depend[i].y = false;
+		}
+		if (cont[i].is_link) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			auto href = View_GetRef (sub_view);
+			// control logic was propagated from the linked hierarcy, so
+			// propagate down_depend to the linked hierarcy.
+			side_depend[0] = down_depend[i];
+			calc_upwards_dependent (ctx, href, side_depend);
+			down_depend[0].num_views += side_depend[0].num_views;
+			side_depend += side_depend[0].num_views;
 		}
 	}
 }
 
 static void
-calc_downwards_dependent (hierarchy_t *h)
+calc_downwards_dependent (imui_ctx_t *ctx, hierref_t href)
 {
+	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	uint32_t   *ent = h->ent;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	for (uint32_t i = h->num_objects; i-- > 0; ) {
+		if (cont[i].is_link) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			calc_downwards_dependent (ctx, View_GetRef (sub_view));
+			len[i] = View_GetLen (sub_view);
+		}
 		view_pos_t  clen = len[i];
 		if (cont[i].semantic_x == imui_size_fitchildren
 			|| cont[i].semantic_x == imui_size_expand) {
@@ -539,15 +704,23 @@ calc_downwards_dependent (hierarchy_t *h)
 }
 
 static void
-calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
+calc_expansions (imui_ctx_t *ctx, hierref_t href)
 {
 	auto reg = ctx->csys.reg;
-
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 	uint32_t   *ent = h->ent;
+	uint32_t   *parent = h->parentIndex;
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 
 	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (i && cont[i].semantic_x == imui_size_fraction) {
+			len[i].x = fraction (ent[i], len[parent[i]].x, c_fraction_x, reg);
+		}
+		if (i && cont[i].semantic_y == imui_size_fraction) {
+			len[i].y = fraction (ent[i], len[parent[i]].y, c_fraction_y, reg);
+		}
+
 		view_pos_t  tlen = {};
 		view_pos_t  elen = {};
 		view_pos_t  ecount = {};
@@ -556,12 +729,14 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 			tlen.x += len[child].x;
 			tlen.y += len[child].y;
 			if (cont[child].semantic_x == imui_size_expand) {
-				int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
+				//FIXME uses numerator for weight
+				int *p = Ent_GetComponent (ent[child], c_fraction_x, reg);
 				elen.x += *p;
 				ecount.x++;
 			}
 			if (cont[child].semantic_y == imui_size_expand) {
-				int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
+				//FIXME uses numerator for weight
+				int *p = Ent_GetComponent (ent[child], c_fraction_y, reg);
 				elen.y += *p;
 				ecount.y++;
 			}
@@ -578,7 +753,8 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 					len[child].x = len[i].x;
 				}
 				if (cont[child].semantic_y == imui_size_expand) {
-					int *p = Ent_GetComponent (ent[child], c_percent_y, reg);
+					//FIXME uses numerator for weight
+					int *p = Ent_GetComponent (ent[child], c_fraction_y, reg);
 					int delta = *p * space / elen.y;
 					len[child].y += max (delta, 0);
 					filled += max (delta, 0);
@@ -600,7 +776,8 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 			for (uint32_t j = 0; j < h->childCount[i]; j++) {
 				uint32_t child = h->childIndex[i] + j;
 				if (cont[child].semantic_x == imui_size_expand) {
-					int *p = Ent_GetComponent (ent[child], c_percent_x, reg);
+					//FIXME uses numerator for weight
+					int *p = Ent_GetComponent (ent[child], c_fraction_x, reg);
 					int delta = *p * space / elen.x;
 					len[child].x += max (delta, 0);
 					filled += max (delta, 0);
@@ -621,33 +798,61 @@ calc_expansions (imui_ctx_t *ctx, hierarchy_t *h)
 			}
 		}
 	}
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (cont[i].is_link) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			View_SetLen (sub_view, len[i].x, len[i].y);
+			calc_expansions (ctx, View_GetRef (sub_view));
+			if (sub->update) {
+				View_UpdateHierarchy (sub_view);
+				if (cont[i].semantic_x == imui_size_fitchildren) {
+					len[i].x = View_GetLen (sub_view).x;
+				}
+				if (cont[i].semantic_y == imui_size_fitchildren) {
+					len[i].y = View_GetLen (sub_view).y;
+				}
+			}
+		}
+	}
 }
 
-//FIXME currently works properly only for grav_northwest
-static void
-layout_objects (imui_ctx_t *ctx, view_t root_view)
+static uint32_t __attribute__((pure))
+count_views (imui_ctx_t *ctx, hierref_t href)
 {
-	auto ref = View_GetRef (root_view);
-	auto h = ref->hierarchy;
+	auto reg = ctx->csys.reg;
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	uint32_t    count = h->num_objects;
+	viewcont_t *cont = h->components[view_control];
+	uint32_t   *ent = h->ent;
 
+	// the root object is never a link (if it has a reference component, it's
+	// to the pseudo-parent of the hierarchy)
+	for (uint32_t i = 1; i < h->num_objects; i++) {
+		if (cont[i].is_link) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			count += count_views (ctx, View_GetRef (sub_view));
+		}
+	}
+	return count;
+}
+
+static void
+position_views (imui_ctx_t *ctx, view_t root_view)
+{
+	auto reg = ctx->vsys.reg;
+	auto href = View_GetRef (root_view);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+
+	uint32_t   *ent = h->ent;
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
 	uint32_t   *parent = h->parentIndex;
-	boolpair_t  down_depend[h->num_objects];
-
-	// the root view size is always explicit
-	down_depend[0] = (boolpair_t) { false, false };
-	calc_upwards_dependent (ctx, h, down_depend);
-	calc_downwards_dependent (h);
-	calc_expansions (ctx, h);
-	//dump_tree (h, 0, 0, ctx);
-	// resolve conflicts
-	//fflush (stdout);
 
 	if (Ent_HasComponent (root_view.id, c_reference, ctx->vsys.reg)) {
 		auto ent = root_view.id;
-		auto reg = ctx->vsys.reg;
 		imui_reference_t *reference = Ent_GetComponent (ent, c_reference, reg);
 		auto anchor = View_FromEntity (ctx->vsys, reference->ref_id);
 		pos[0] = View_GetAbs (anchor);
@@ -674,15 +879,45 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 	}
 
 	View_UpdateHierarchy (root_view);
+	for (uint32_t i = 0; i < h->num_objects; i++) {
+		if (cont[i].is_link) {
+			auto reg = ctx->vsys.reg;
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			position_views (ctx, sub_view);
+		}
+	}
+}
+
+//FIXME currently works properly only for grav_northwest
+static void
+layout_objects (imui_ctx_t *ctx, view_t root_view)
+{
+	auto href = View_GetRef (root_view);
+
+	downdep_t   down_depend[count_views (ctx, href)];
+
+	// the root view size is always explicit
+	down_depend[0] = (downdep_t) { };
+	calc_upwards_dependent (ctx, href, down_depend);
+	calc_downwards_dependent (ctx, href);
+	calc_expansions (ctx, href);
+	//dump_tree (href, 0, ctx);
+	// resolve conflicts
+	//fflush (stdout);
+
+	position_views (ctx, root_view);
+	//dump_tree (href, 0, ctx);
 }
 
 static void
 check_inside (imui_ctx_t *ctx, view_t root_view)
 {
-	auto ref = View_GetRef (root_view);
-	auto h = ref->hierarchy;
+	auto reg = ctx->vsys.reg;
+	auto href = View_GetRef (root_view);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 
-	uint32_t   *entity = h->ent;
+	uint32_t   *ent = h->ent;
 	view_pos_t *abs = h->components[view_abs];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
@@ -692,9 +927,13 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 		if (cont[i].active
 			&& mp.x >= abs[i].x && mp.y >= abs[i].y
 			&& mp.x < abs[i].x + len[i].x && mp.y < abs[i].y + len[i].y) {
-			if (ctx->active == entity[i] || ctx->active == nullent) {
-				ctx->hot = entity[i];
+			if (ctx->active == ent[i] || ctx->active == nullent) {
+				ctx->hot = ent[i];
+				ctx->hot_position = abs[i];
 			}
+		}
+		if (ent[i] == ctx->active) {
+			ctx->active_position = abs[i];
 		}
 	}
 	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
@@ -715,8 +954,13 @@ sort_windows (imui_ctx_t *ctx)
 			  imui_window_cmp);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = ctx->windows.a[i];
-		window->draw_order = i + 1;
+		window->draw_order = imui_draw_order (i + 1);
 		*Canvas_DrawOrder (ctx->csys, window->entity) = window->draw_order;
+		for (uint32_t j = 0; j < window->num_links; j++) {
+			auto link = ctx->links.a[window->first_link + j];
+			link->draw_order = window->draw_order + j + 1;
+			*Canvas_DrawOrder (ctx->csys, link->entity) = link->draw_order;
+		}
 	}
 }
 
@@ -727,12 +971,18 @@ IMUI_Draw (imui_ctx_t *ctx)
 	ctx->mouse_pressed = 0;
 	ctx->mouse_released = 0;
 	sort_windows (ctx);
-	auto ref = View_GetRef (ctx->root_view);
-	Hierarchy_SetTreeMode (ref->hierarchy, false);
+	auto href = View_GetRef (ctx->root_view);
+	set_hierarchy_tree_mode (ctx, href, false);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
-		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
-		auto ref = View_GetRef (window);
-		Hierarchy_SetTreeMode (ref->hierarchy, false);
+		auto win = ctx->windows.a[i];
+		auto window = View_FromEntity (ctx->vsys, win->entity);
+		View_SetPos (window, win->pos.x, win->pos.y);
+		if (win->auto_fit) {
+			View_SetLen (window, 0, 0);
+		} else {
+			View_SetLen (window, win->len.x, win->len.y);
+		}
+		set_hierarchy_tree_mode (ctx, View_GetRef (window), false);
 	}
 	Canvas_DrawSort (ctx->csys);
 
@@ -747,6 +997,12 @@ IMUI_Draw (imui_ctx_t *ctx)
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
 		check_inside (ctx, window);
+	}
+
+	for (uint32_t i = 0; i < ctx->scrollers.size; i++) {
+		auto scroller = ctx->scrollers.a[i];
+		auto view = View_FromEntity (ctx->vsys, scroller->entity);
+		scroller->len = View_GetLen (view);
 	}
 
 	ctx->frame_end = Sys_LongTime ();
@@ -772,10 +1028,12 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 	};
 	View_SetLen (view, 0, 0);
 	if (x_size == imui_size_expand) {
-		*(int*) Ent_AddComponent (view.id, c_percent_x, ctx->csys.reg) = 100;
+		Ent_SetComponent (view.id, c_fraction_x, ctx->csys.reg,
+						  &(imui_frac_t) { 100, 100 });
 	}
 	if (y_size == imui_size_expand) {
-		*(int*) Ent_AddComponent (view.id, c_percent_y, ctx->csys.reg) = 100;
+		Ent_SetComponent (view.id, c_fraction_y, ctx->csys.reg,
+						  &(imui_frac_t) { 100, 100 });
 	}
 	return 0;
 }
@@ -792,8 +1050,10 @@ IMUI_Layout_SetXSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_x = size;
-	if (size == imui_size_percent || size == imui_size_expand) {
-		*(int *) Ent_AddComponent(id, c_percent_x, ctx->csys.reg) = value;
+	if (size == imui_size_fraction || size == imui_size_expand
+		|| size == imui_size_pixels) {
+		Ent_SetComponent (id, c_fraction_x, ctx->csys.reg,
+						  &(imui_frac_t) { value, 100 });
 	}
 }
 
@@ -803,8 +1063,10 @@ IMUI_Layout_SetYSize (imui_ctx_t *ctx, imui_size_t size, int value)
 	auto pcont = View_Control (ctx->current_parent);
 	uint32_t id = ctx->current_parent.id;
 	pcont->semantic_y = size;
-	if (size == imui_size_percent || size == imui_size_expand) {
-		*(int *) Ent_AddComponent(id, c_percent_y, ctx->csys.reg) = value;
+	if (size == imui_size_fraction || size == imui_size_expand
+		|| size == imui_size_pixels) {
+		Ent_SetComponent (id, c_fraction_y, ctx->csys.reg,
+						  &(imui_frac_t) { value, 100 });
 	}
 }
 
@@ -859,15 +1121,15 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 {
 	view_pos_t  delta = {};
 	if (ctx->active == entity) {
-		delta.x = ctx->mouse_position.x - ctx->mouse_active.x;
-		delta.y = ctx->mouse_position.y - ctx->mouse_active.y;
-		ctx->mouse_active = ctx->mouse_position;
+		auto active = ctx->active_position;
+		auto anchor = VP_add (active, ctx->mouse_active);
+		delta = VP_sub (ctx->mouse_position, anchor);
 		if (ctx->mouse_released & 1) {
 			ctx->active = nullent;
 		}
 	} else if (ctx->hot == entity) {
 		if (ctx->mouse_pressed & 1) {
-			ctx->mouse_active = ctx->mouse_position;
+			ctx->mouse_active = VP_sub (ctx->mouse_position, ctx->hot_position);
 			ctx->active = entity;
 		}
 	}
@@ -899,7 +1161,7 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
-					  Ent_GetComponent (text.id, c_passage_glyphs, reg));
+					  Ent_GetComponent (text.id, t_passage_glyphs, reg));
 
 	len = View_GetLen (text);
 	View_SetLen (view, len.x, len.y);
@@ -911,16 +1173,16 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 }
 
 static int
-update_hot_active (imui_ctx_t *ctx, uint32_t old_entity, uint32_t new_entity)
+update_hot_active (imui_ctx_t *ctx, imui_state_t *state)
 {
 	int mode = 0;
-	if (old_entity != nullent) {
-		if (ctx->hot == old_entity) {
-			ctx->hot = new_entity;
+	if (state->old_entity != nullent) {
+		if (ctx->hot == state->old_entity) {
+			ctx->hot = state->entity;
 			mode = 1;
 		}
-		if (ctx->active == old_entity) {
-			ctx->active = new_entity;
+		if (ctx->active == state->old_entity) {
+			ctx->active = state->entity;
 			mode = 2;
 		}
 	}
@@ -949,18 +1211,18 @@ static void
 set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 {
 	View_Control (view)->semantic_x = imui_size_expand;
-	*(int *) Ent_AddComponent(view.id, c_percent_x, ctx->csys.reg) = weight;
+	Ent_SetComponent (view.id, c_fraction_x, ctx->csys.reg,
+					  &(imui_frac_t) { weight, 100 });
 }
 
 void
 IMUI_Label (imui_ctx_t *ctx, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-
 	set_control (ctx, view, true);
+
+	auto state = imui_get_state (ctx, label, view.id);
+
 	set_fill (ctx, view, ctx->style.background.normal);
 	add_text (ctx, view, state, 0);
 }
@@ -975,17 +1237,76 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 	IMUI_Label (ctx, ctx->dstr->str);
 }
 
+void
+IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
+{
+	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
+	*View_Control (anchor_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_fitchildren,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+	auto reg = ctx->csys.reg;
+	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
+					  &(imui_frac_t) { 100, 100 });
+
+	uint32_t    parent = ctx->current_parent.id;
+	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
+		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
+	}
+	auto state = imui_get_state (ctx, va (0, "%s#content", name),
+								 anchor_view.id);
+	DARRAY_APPEND (&ctx->scrollers, state);
+	update_hot_active (ctx, state);
+
+	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
+
+	set_fill (ctx, anchor_view, ctx->style.background.normal);
+
+	auto psg_view = Text_PassageView (ctx->tsys, nullview,
+									  ctx->font, passage, ctx->shaper);
+	Canvas_SetReference (ctx->csys, psg_view.id,
+						 Canvas_Entity (ctx->csys,
+										View_GetRoot (anchor_view).id));
+	// FIXME this shouldn't be necessary and is a sign of bigger problems
+	Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
+	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
+					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
+	*View_Control (psg_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.free_x = 1,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+
+	View_Control (anchor_view)->is_link = 1;
+	imui_reference_t link = {
+		.ref_id = psg_view.id,
+		.update = true,
+	};
+	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
+
+	imui_reference_t anchor = {
+		.ref_id = anchor_view.id,
+	};
+	Ent_SetComponent (psg_view.id, c_reference, psg_view.reg, &anchor);
+}
+
 bool
 IMUI_Button (imui_ctx_t *ctx, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
+
 	set_fill (ctx, view, ctx->style.foreground.color[mode]);
 	add_text (ctx, view, state, mode);
 
@@ -995,16 +1316,13 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 bool
 IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
 
 	set_fill (ctx, view, ctx->style.background.color[mode]);
 
@@ -1035,16 +1353,13 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 void
 IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 {
-	auto state = imui_get_state (ctx, label);
-	uint32_t old_entity = state->entity;
-
 	auto view = View_New (ctx->vsys, ctx->current_parent);
-	state->entity = view.id;
-	int mode = update_hot_active (ctx, old_entity, state->entity);
-
 	set_control (ctx, view, true);
 	View_Control (view)->semantic_x = imui_size_fitchildren;
 	View_Control (view)->semantic_y = imui_size_fitchildren;
+
+	auto state = imui_get_state (ctx, label, view.id);
+	int mode = update_hot_active (ctx, state);
 
 	set_fill (ctx, view, ctx->style.background.color[mode]);
 
@@ -1077,10 +1392,10 @@ IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 {
 }
 
-void
-IMUI_Spacer (imui_ctx_t *ctx,
-			 imui_size_t xsize, int xvalue,
-			 imui_size_t ysize, int yvalue)
+static view_t
+sized_view (imui_ctx_t *ctx,
+			imui_size_t xsize, int xvalue,
+			imui_size_t ysize, int yvalue, bool active)
 {
 	auto view = View_New (ctx->vsys, ctx->current_parent);
 	View_SetLen (ctx->current_parent, 0, 0);
@@ -1093,18 +1408,28 @@ IMUI_Spacer (imui_ctx_t *ctx,
 	if (ysize == imui_size_pixels) {
 		ylen = yvalue;
 	}
-	set_control (ctx, view, false);
+	set_control (ctx, view, active);
 	View_SetLen (view, xlen, ylen);
 	View_Control (view)->semantic_x = xsize;
 	View_Control (view)->semantic_y = ysize;
 	auto reg = ctx->csys.reg;
-	if (xsize == imui_size_percent || xsize == imui_size_expand) {
-		*(int*) Ent_AddComponent (view.id, c_percent_x, reg) = xvalue;
+	if (xsize == imui_size_fraction || xsize == imui_size_expand) {
+		Ent_SetComponent (view.id, c_fraction_x, reg,
+						  &(imui_frac_t) { xvalue, 100 });
 	}
-	if (ysize == imui_size_percent || ysize == imui_size_expand) {
-		*(int*) Ent_AddComponent (view.id, c_percent_y, reg) = yvalue;
+	if (ysize == imui_size_fraction || ysize == imui_size_expand) {
+		Ent_SetComponent (view.id, c_fraction_y, reg,
+						  &(imui_frac_t) { yvalue, 100 });
 	}
+	return view;
+}
 
+void
+IMUI_Spacer (imui_ctx_t *ctx,
+			 imui_size_t xsize, int xvalue,
+			 imui_size_t ysize, int yvalue)
+{
+	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, false);
 	set_fill (ctx, view, ctx->style.background.normal);
 }
 
@@ -1133,25 +1458,122 @@ create_reference_anchor (imui_ctx_t *ctx, uint32_t ent, imui_window_t *panel)
 	Ent_SetComponent (ent, c_reference, ctx->vsys.reg, &reference);
 }
 
+view_pos_t
+IMUI_Dragable (imui_ctx_t *ctx,
+			   imui_size_t xsize, int xvalue,
+			   imui_size_t ysize, int yvalue,
+			   const char *name)
+{
+	auto view = sized_view (ctx, xsize, xvalue, ysize, yvalue, true);
+
+	auto state = imui_get_state (ctx, name, view.id);
+	int mode = update_hot_active (ctx, state);
+	auto delta = check_drag_delta (ctx, state->entity);
+
+	set_fill (ctx, view, ctx->style.foreground.color[mode]);
+	return delta;
+}
+
+static void
+drag_window_tl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+	int y = max (window->ylen - delta.y, 20);
+
+	window->xpos += window->xlen - x;
+	window->ypos += window->ylen - y;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_tc (view_pos_t delta, imui_window_t *window)
+{
+	int y = max (window->ylen - delta.y, 20);
+
+	window->ypos += window->ylen - y;
+	window->ylen = y;
+}
+
+static void
+drag_window_tr (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+	int y = max (window->ylen - delta.y, 20);
+
+	window->ypos += window->ylen - y;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_cl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+
+	window->xpos += window->xlen - x;
+	window->xlen = x;
+}
+
+static void
+drag_window_cr (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+
+	window->xlen = x;
+}
+
+static void
+drag_window_bl (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen - delta.x, 20);
+	int y = max (window->ylen + delta.y, 20);
+
+	window->xpos += window->xlen - x;
+	window->xlen = x;
+	window->ylen = y;
+}
+
+static void
+drag_window_bc (view_pos_t delta, imui_window_t *window)
+{
+	int y = max (window->ylen + delta.y, 20);
+
+	window->ylen = y;
+}
+
+static void
+drag_window_br (view_pos_t delta, imui_window_t *window)
+{
+	int x = max (window->xlen + delta.x, 20);
+	int y = max (window->ylen + delta.y, 20);
+
+	window->xlen = x;
+	window->ylen = y;
+}
+
+#define drag(c,e,sx,xv,sy,yv,n,p) \
+	drag_window_##c (IMUI_Dragable (ctx, sx, xv, sy, yv, \
+									va (0, "%s##drag_" #c #e, n)), p);
+
 int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 {
 	if (!panel->is_open) {
 		return 1;
 	}
-	auto state = imui_get_state (ctx, panel->name);
-	uint32_t old_entity = state->entity;
-
-	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
-
 	auto canvas = Canvas_New (ctx->csys);
 	int draw_group = imui_draw_group + panel->group_offset;
 	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
-	state->entity = panel_view.id;
-	panel->mode = update_hot_active (ctx, old_entity, state->entity);
-	auto ref = View_GetRef (panel_view);
-	Hierarchy_SetTreeMode (ref->hierarchy, true);
+
+	auto state = imui_get_state (ctx, panel->name, panel_view.id);
+	state->draw_group = draw_group;
+	panel->mode = update_hot_active (ctx, state);
+
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+
+	set_hierarchy_tree_mode (ctx, View_GetRef (panel_view), true);
 
 	grav_t      gravity = grav_northwest;
 	if (panel->reference) {
@@ -1159,40 +1581,97 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		gravity = panel->reference_gravity;
 	}
 
+	state->first_link = ctx->links.size;
+	state->num_links = 0;
 	DARRAY_APPEND (&ctx->windows, state);
 
 	if (!state->draw_order) {
-		state->draw_order = ++ctx->draw_order;
+		state->draw_order = imui_next_window (ctx);
 	}
+
+	auto semantic = panel->auto_fit ? imui_size_fitchildren : imui_size_pixels;
 
 	ctx->current_parent = panel_view;
 	*View_Control (panel_view) = (viewcont_t) {
 		.gravity = gravity,
 		.visible = 1,
-		.semantic_x = imui_size_fitchildren,
-		.semantic_y = imui_size_fitchildren,
+		.semantic_x = semantic,
+		.semantic_y = semantic,
 		.free_x = 1,
 		.free_y = 1,
 		.vertical = true,
 		.active = 1,
 	};
-	View_SetPos (panel_view, panel->xpos, panel->ypos);
-	View_SetLen (panel_view, panel->xlen, panel->ylen);
 
 	auto bg = ctx->style.background.normal;
 	UI_Vertical {
-		ctx->style.background.normal = 0;//FIXME style
-		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		ctx->style.background.normal = 0;
+		if (!panel->auto_fit) {
+			IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+			UI_Horizontal {
+				drag (tl,t, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (tc, , imui_size_expand, 100,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (tr,t, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+			}
+		} else {
+			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		}
 		UI_Horizontal {
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			if (!panel->auto_fit) {
+				IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
+				UI_Vertical {
+					drag (tl,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+					drag (cl, , imui_size_pixels, 4,
+								imui_size_expand, 100, panel->name, panel);
+					drag (bl,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+				}
+			} else {
+				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			}
 			UI_Vertical {
 				IMUI_Layout_SetXSize (ctx, imui_size_expand, 100);
 				panel_view = ctx->current_parent;
 			}
-			IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			if (!panel->auto_fit) {
+				UI_Vertical {
+					drag (tr,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+					drag (cr, , imui_size_pixels, 4,
+								imui_size_expand, 100, panel->name, panel);
+					drag (br,s, imui_size_pixels, 4,
+								imui_size_pixels, 8, panel->name, panel);
+				}
+			} else {
+				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
+			}
 		}
-		IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		if (!panel->auto_fit) {
+			UI_Horizontal {
+				drag (bl,b, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (bc, , imui_size_expand, 100,
+							imui_size_pixels, 4, panel->name, panel);
+				drag (br,b, imui_size_pixels, 12,
+							imui_size_pixels, 4, panel->name, panel);
+			}
+		} else {
+			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
+		}
 	}
+	state->pos = (view_pos_t) {
+		.x = panel->xpos,
+		.y = panel->ypos,
+	};
+	state->len = (view_pos_t) {
+		.x = panel->xlen,
+		.y = panel->ylen,
+	};
+	state->auto_fit = panel->auto_fit;
 	ctx->style.background.normal = bg;
 	ctx->current_parent = panel_view;
 	state->content = panel_view.id;
@@ -1279,6 +1758,48 @@ IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 	return res;
 }
 
+void
+IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
+{
+	auto state = ctx->windows.a[ctx->windows.size - 1];
+	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
+
+	auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar", window->name),
+									title_bar.id);
+	int tb_mode = update_hot_active (ctx, tb_state);
+
+	auto delta = check_drag_delta (ctx, tb_state->entity);
+	if (ctx->active == tb_state->entity) {
+		state->draw_order = imui_ontop;
+		window->xpos += delta.x;
+		window->ypos += delta.y;
+	}
+
+	set_control (ctx, title_bar, true);
+	set_expand_x (ctx, title_bar, 100);
+	set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
+
+	auto title = add_text (ctx, title_bar, state, window->mode);
+	View_Control (title)->gravity = grav_center;
+}
+
+void
+IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
+{
+	char cbutton = window->is_collapsed ? '>' : 'v';
+	if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
+		window->is_collapsed = !window->is_collapsed;
+	}
+}
+
+void
+IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
+{
+	if (UI_Button (va (0, "X##close_%s", window->name))) {
+		window->is_open = false;
+	}
+}
+
 int
 IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 {
@@ -1289,35 +1810,14 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 
 	UI_Horizontal {
-		char cbutton = window->is_collapsed ? '>' : 'v';
-		if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
-			window->is_collapsed = !window->is_collapsed;
-		}
-
-		auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar",
-												 window->name));
-		uint32_t tb_old_entity = tb_state->entity;
-		auto title_bar = View_New (ctx->vsys, ctx->current_parent);
-		tb_state->entity = title_bar.id;
-		int tb_mode = update_hot_active (ctx, tb_old_entity, tb_state->entity);
-		auto delta = check_drag_delta (ctx, tb_state->entity);
-		if (ctx->active == tb_state->entity) {
-			state->draw_order = imui_ontop;
-			window->xpos += delta.x;
-			window->ypos += delta.y;
-		}
-
-		set_control (ctx, title_bar, true);
-		set_expand_x (ctx, title_bar, 100);
-		set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
-
-		auto title = add_text (ctx, title_bar, state, window->mode);
-		View_Control (title)->gravity = grav_center;
-
-		if (UI_Button (va (0, "X##close_%s", window->name))) {
-			window->is_open = false;
-		}
+		IMUI_CollapseButton (ctx, window);
+		IMUI_TitleBar (ctx, window);
+		IMUI_CloseButton (ctx, window);
 	}
+	state->pos = (view_pos_t) {
+		.x = window->xpos,
+		.y = window->ypos,
+	};
 	return 0;
 }
 
@@ -1325,4 +1825,153 @@ void
 IMUI_EndWindow (imui_ctx_t *ctx)
 {
 	IMUI_PopLayout (ctx);
+}
+
+int
+IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name)
+{
+	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
+	*View_Control (anchor_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_expand,
+		.active = 0,
+	};
+	Ent_SetComponent (anchor_view.id, c_fraction_x, ctx->csys.reg,
+					  &(imui_frac_t) { 100, 100 });
+	Ent_SetComponent (anchor_view.id, c_fraction_y, ctx->csys.reg,
+					  &(imui_frac_t) { 100, 100 });
+
+	auto panel = ctx->windows.a[ctx->windows.size - 1];
+
+	auto canvas = Canvas_New (ctx->csys);
+	*Canvas_DrawGroup (ctx->csys, canvas) = panel->draw_group;
+	auto scroll_box = Canvas_GetRootView (ctx->csys, canvas);
+
+	auto state = imui_get_state (ctx, name, scroll_box.id);
+	update_hot_active (ctx, state);
+
+	DARRAY_APPEND (&ctx->links, state);
+	panel->num_links++;
+
+	DARRAY_APPEND (&ctx->scrollers, state);
+
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+
+	set_hierarchy_tree_mode (ctx, View_GetRef (scroll_box), true);
+
+	View_Control (anchor_view)->is_link = 1;
+	imui_reference_t link = {
+		.ref_id = scroll_box.id,
+		.ctx = ctx,
+	};
+	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
+	imui_reference_t anchor = {
+		.ref_id = anchor_view.id,
+	};
+	Ent_SetComponent (scroll_box.id, c_reference, scroll_box.reg, &anchor);
+
+	if (!state->draw_order) {
+		state->draw_order = ++ctx->draw_order;
+	}
+
+	ctx->current_parent = scroll_box;
+	*View_Control (scroll_box) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_pixels,
+		.semantic_y = imui_size_pixels,
+		.free_x = 1,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+	state->content = scroll_box.id;
+	return 0;
+}
+
+void
+IMUI_EndScrollBox (imui_ctx_t *ctx)
+{
+	IMUI_PopLayout (ctx);
+}
+
+void
+IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
+{
+	auto pcont = View_Control (ctx->current_parent);
+	// if the current layout is vertical, then the scroll bar will be placed
+	// under the previous item (or above the next) and thus should be
+	// horizontal, but if the layout is horizontal, then the scroll bar will
+	// be paced to the side of the next/previous item and thus should be
+	// vertical
+	bool vertical = !pcont->vertical;
+
+	IMUI_PushLayout (ctx, vertical);
+	auto sb_view = ctx->current_parent;
+	if (vertical) {
+		IMUI_Layout_SetXSize (ctx, imui_size_pixels, 12);
+	} else {
+		IMUI_Layout_SetYSize (ctx, imui_size_pixels, 12);
+	}
+	View_Control (sb_view)->active = true;
+
+	auto tt_view = View_New (ctx->vsys, sb_view);
+	*View_Control (tt_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = vertical ? imui_size_expand : imui_size_fraction,
+		.semantic_y = vertical ? imui_size_fraction : imui_size_expand,
+		.free_x = !vertical,
+		.free_y = vertical,
+		.active = true,
+	};
+	IMUI_PopLayout (ctx);
+	auto sb_state = imui_get_state (ctx, va (0, "scrollbar#%s", name),
+									sb_view.id);
+	auto tt_state = imui_get_state (ctx, va (0, "thumbtab#%s", name),
+									tt_view.id);
+	int sb_mode = update_hot_active (ctx, sb_state);
+	int tt_mode = update_hot_active (ctx, tt_state);
+	set_fill (ctx, sb_view, ctx->style.background.color[sb_mode]);
+	set_fill (ctx, tt_view, ctx->style.foreground.color[tt_mode]);
+	auto scroller = imui_find_state (ctx, name);
+	if (scroller) {
+		auto slen = scroller->len;
+		tt_state->fraction.num = vertical ? slen.y : slen.x;
+		auto content = imui_find_state (ctx, va (0, "%s#content", name));
+		if (content) {
+			auto delta = check_drag_delta (ctx, tt_state->entity);
+			auto clen = content->len;
+			if (vertical) {
+				content->pos.y += delta.y;
+				int max = clen.y - slen.y;
+				content->pos.y = bound (0, content->pos.y, max);
+			} else {
+				content->pos.x += delta.x;
+				int max = clen.x - slen.x;
+				content->pos.x = bound (0, content->pos.x, max);
+			}
+			auto cpos = content->pos;
+			tt_state->fraction.den = vertical ? clen.y : clen.x;
+			tt_state->pos = (view_pos_t) {0, 0};
+			if (vertical) {
+				if (clen.y) {
+					tt_state->pos.y = cpos.y * slen.y / clen.y;
+				}
+			} else {
+				if (clen.x) {
+					tt_state->pos.x = cpos.x * slen.x / clen.x;
+				}
+			}
+		}
+	}
+	View_SetPos (tt_view, tt_state->pos.x, tt_state->pos.y);
+	imui_frac_t efrac = { 100, 100 };
+	imui_frac_t tfrac = tt_state->fraction;
+	Ent_SetComponent (tt_view.id, c_fraction_x, ctx->csys.reg,
+					  vertical ? &efrac : &tfrac);
+	Ent_SetComponent (tt_view.id, c_fraction_y, ctx->csys.reg,
+					  vertical ? &tfrac : &efrac);
 }

@@ -52,6 +52,7 @@
 static void
 bi_va_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	__auto_type src_args = (pr_va_list_t *) &P_POINTER (pr, 0);
 	__auto_type src_list = &G_STRUCT (pr, pr_type_t, src_args->list);
 	size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
@@ -62,9 +63,9 @@ bi_va_copy (progs_t *pr, void *data)
 	if (size) {
 		dst_list_block = PR_AllocTempBlock (pr, size);
 		dst_list = (pr_type_t *) PR_GetString (pr, dst_list_block);
+		memcpy (dst_list, src_list, size);
 	}
 
-	memcpy (dst_list, src_list, size);
 	R_PACKED (pr, pr_va_list_t).count = src_args->count;
 	R_PACKED (pr, pr_va_list_t).list = PR_SetPointer (pr, dst_list);
 }
@@ -80,5 +81,6 @@ static builtin_t builtins[] = {
 void
 RUA_Runtime_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

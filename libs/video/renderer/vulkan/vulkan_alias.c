@@ -50,7 +50,9 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
+#include "r_local.h"
 #include "vid_vulkan.h"
 
 typedef struct {
@@ -64,26 +66,19 @@ typedef struct {
 typedef struct {
 	mat4f_t     mat;
 	float       blend;
+	byte        colors[4];
+	float       ambient;
+	float       shadelight;
+	vec4f_t     lightvec;
+	vec4f_t     base_color;
+	vec4f_t     fog;
+} fwd_push_constants_t;
+
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
 	uint32_t    matrix_base;
 } shadow_push_constants_t;
-
-static renderer_t *
-alias_get_renderer (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-}
-
-static animation_t *
-alias_get_animation (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, scene_animation, ent.reg);
-}
-
-static colormap_t *
-alias_get_colormap (entity_t ent)
-{
-	return Ent_GetComponent (ent.id, scene_colormap, ent.reg);
-}
 
 static void
 alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
@@ -127,6 +122,7 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 		.blend = blend,
 		.colors = { VEC4_EXP (colors) },
 		.base_color = base_color,
+		.fog = Fog_Get (),
 	};
 
 	qfv_push_constants_t push_constants[] = {
@@ -147,6 +143,55 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 			sizeof (constants.fog), &constants.fog },
 	};
 	QFV_PushConstants (device, cmd, layout, pass ? 5 : 2, push_constants);
+}
+
+static void
+push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, const alight_t *lighting,
+					int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	fwd_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.ambient = lighting->ambientlight,
+		.shadelight = lighting->shadelight,
+		.lightvec = { VectorExpand (lighting->lightvec) },
+		.base_color = base_color,
+		.fog = Fog_Get (),
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, ambient),
+			sizeof (constants.ambient), &constants.ambient },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, shadelight),
+			sizeof (constants.shadelight), &constants.shadelight },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, lightvec),
+			sizeof (constants.lightvec), &constants.lightvec },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, 8, push_constants);
 }
 
 static void
@@ -178,36 +223,41 @@ push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 }
 
 static void
-alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
+alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
 	auto model = renderer->model;
 	aliashdr_t *hdr;
-	qfv_alias_skin_t *skin;
 	uint16_t *matrix_base = taskctx->data;
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
 	}
 
-	auto animation = alias_get_animation (ent);
+	auto animation = Entity_GetAnimation (ent);
 	float blend = R_AliasGetLerpedFrames (animation, hdr);
 
 	transform_t transform = Entity_Transform (ent);
 
-	if (0/*XXX ent->skin && ent->skin->tex*/) {
-		//skin = ent->skin->tex;
-	} else {
+	qfv_alias_skin_t *skin = nullptr;
+	if (renderer->skin) {
+		skin_t     *tskin = Skin_Get (renderer->skin);
+		if (tskin) {
+			skin = (qfv_alias_skin_t *) tskin->tex;
+		}
+	}
+	if (!skin) {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
 	vec4f_t base_color;
-	byte colors[4];
 	QuatCopy (renderer->colormod, base_color);
+
+	byte colors[4] = {};
 	QuatCopy (skin->colors, colors);
-	if (Ent_HasComponent (ent.id, scene_colormap, ent.reg)) {
-		auto colormap = alias_get_colormap (ent);
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
 		colors[0] = colormap->top * 16 + 8;
 		colors[1] = colormap->bottom * 16 + 8;
 	}
@@ -248,8 +298,16 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
 							   blend, matrix_base, taskctx);
 	} else {
-		push_alias_constants (Transform_GetWorldMatrixPtr (transform),
-							  blend, colors, base_color, pass, taskctx);
+		if (pass > 1) {
+			alight_t    lighting;
+			R_Setup_Lighting (ent, &lighting);
+			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, &lighting,
+								pass, taskctx);
+		} else {
+			push_alias_constants (Transform_GetWorldMatrixPtr (transform),
+								  blend, colors, base_color, pass, taskctx);
+		}
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 	QFV_CmdEndLabel (device, cmd);
@@ -258,6 +316,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass,
 static void
 alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto pass = *(int *) params[0]->value;
 	auto stage = *(int *) params[1]->value;
@@ -279,7 +338,7 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_alias].a[i];
-		auto renderer = alias_get_renderer (ent);
+		auto renderer = Entity_GetRenderer (ent);
 		if ((stage == alias_shadow && renderer->noshadows)
 			|| (stage == alias_main && renderer->onlyshadows)) {
 			continue;
@@ -295,6 +354,46 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			alias_depth_range (taskctx, 0, 1);
 		}
 	}
+}
+
+static void
+alias_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "alias shutdown");
+	auto actx = ctx->alias_context;
+
+	free (actx);
+	qfvPopDebug (ctx);
+}
+
+static void
+alias_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto actx = ctx->alias_context;
+	actx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
+}
+
+static void
+alias_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "alias init");
+
+	QFV_Render_AddShutdown (ctx, alias_shutdown);
+	QFV_Render_AddStartup (ctx, alias_startup);
+
+	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
+	ctx->alias_context = actx;
+
+	qfvPopDebug (ctx);
 }
 
 static exprenum_t alias_stage_enum;
@@ -324,36 +423,24 @@ static exprfunc_t alias_draw_func[] = {
 	{ .func = alias_draw, .num_params = 2, .param_types = alias_draw_params },
 	{}
 };
+
+static exprfunc_t alias_init_func[] = {
+	{ .func = alias_init },
+	{}
+};
+
 static exprsym_t alias_task_syms[] = {
 	{ "alias_draw", &cexpr_function, alias_draw_func },
+	{ "alias_init", &cexpr_function, alias_init_func },
 	{}
 };
 
 void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "alias init");
 	QFV_Render_AddTasks (ctx, alias_task_syms);
 
-	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
-	ctx->alias_context = actx;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Alias_Setup (vulkan_ctx_t *ctx)
-{
-	auto actx = ctx->alias_context;
-	actx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
-}
-
-void
-Vulkan_Alias_Shutdown (vulkan_ctx_t *ctx)
-{
-	//qfv_device_t *device = ctx->device;
-	//qfv_devfuncs_t *dfunc = device->funcs;
-	aliasctx_t *actx = ctx->alias_context;
-
-	free (actx);
 }

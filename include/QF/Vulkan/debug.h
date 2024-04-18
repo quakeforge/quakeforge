@@ -8,7 +8,7 @@
 
 #include "QF/simd/types.h"
 
-#if (defined(_WIN32) && !defined(_WIN64)) || (__WORDSIZE < 64)
+#if (defined(_WIN32) && !defined(_WIN64)) || (!defined(_WIN32) && __WORDSIZE < 64)
 #define QFV_duCmdBeginLabel(device, cmd, name...)
 #define QFV_duCmdEndLabel(device, cmd)
 #define QFV_duCmdInsertLabel(device, cmd, name...)
@@ -17,7 +17,7 @@
 #define QFV_duQueueBeginLabel(device, queue, name...)
 #define QFV_duQueueEndLabel(device, queue)
 #define QFV_duQueueInsertLabel(device, queue, name...)
-#define QFV_duSetObjectName(device, type, handle, name)
+#define QFV_duSetObjectName(device, type, handle, name) ((void)device, (void)type, (void)handle)
 #define QFV_duSetObjectTag(device, type, handle, name, size, tag)
 #define QFV_duSubmitMessage(inst, severity, types, data)
 #else

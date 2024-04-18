@@ -173,19 +173,27 @@ win_vulkan_create_surface (vulkan_ctx_t *ctx)
 	return surface;
 }
 
+static void
+delete_vulkan_context (vulkan_ctx_t *ctx)
+{
+	va_destroy_context (ctx->va_ctx);
+}
+
 vulkan_ctx_t *
 Win_Vulkan_Context (vid_internal_t *vi)
 {
 	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
-	ctx->load_vulkan = load_vulkan_library;
-	ctx->unload_vulkan = unload_vulkan_library;
-	ctx->get_presentation_support = win_vulkan_get_presentation_support;
-	ctx->choose_visual = win_vulkan_choose_visual;
-	ctx->create_window = win_vulkan_create_window;
-	ctx->create_surface = win_vulkan_create_surface;
-	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (VA_CTX_COUNT);
-	ctx->twod_scale = 1;
+	*ctx = (vulkan_ctx_t) {
+		.load_vulkan = load_vulkan_library,
+		.unload_vulkan = unload_vulkan_library,
+		.get_presentation_support = win_vulkan_get_presentation_support,
+		.choose_visual = win_vulkan_choose_visual,
+		.create_window = win_vulkan_create_window,
+		.create_surface = win_vulkan_create_surface,
+		.required_extensions = required_extensions,
+		.va_ctx = va_create_context (VA_CTX_COUNT),
+		.twod_scale = 1,
+	};
 
 	vi->ctx = ctx;
 	return ctx;

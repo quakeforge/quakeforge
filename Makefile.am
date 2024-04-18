@@ -25,8 +25,9 @@ NOCONV_DIST= \
 	$(distdir)/include/win32/resources/icon1XP.ico
 
 BUILT_SOURCES = $(top_srcdir)/.version
-#AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS)
+AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
+AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
+AM_CPPFLAGS= -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
 common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
@@ -59,6 +60,14 @@ DISTCLEANFILES =
 YFLAGS = -v -d -Wno-yacc -Werror
 PTHREAD_LDFLAGS=@PTHREAD_LDFLAGS@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+
+if HAVE_TRACY
+tracy_src=tools/tracy/qftracy.cc tools/tracy/qftracy_mem.c
+tracyvk_src=tools/tracy/qftracyvk.cc
+else
+tracy_src=
+tracyvk_src=
+endif
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
@@ -144,6 +153,7 @@ SUFFICES += .plist .plc
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
+sharepath = @sharepath@
 shaderdir = @shaderdir@
 shader_DATA =
 

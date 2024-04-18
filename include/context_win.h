@@ -35,17 +35,23 @@
 
 extern HWND     win_mainwindow;
 extern HDC      win_maindc;
+extern HCURSOR  win_arrow;
+extern bool     win_cursor_visible;
 extern int      win_palettized;
-extern int      win_canalttab;
+extern bool     win_canalttab;
 extern DEVMODE  win_gdevmode;
 extern struct sw_ctx_s *win_sw_context;
-extern int      win_minimized;
+extern bool     win_minimized;
+extern bool     win_focused;
 extern int vid_ddraw;
 extern int      win_center_x, win_center_y;
 extern RECT     win_rect;
 
-LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void Win_Activate (BOOL fActive, BOOL minimize);
+
+bool Win_AddEvent (UINT event, LONG (*event_handler)(HWND, UINT, WPARAM, LPARAM));
+bool Win_RemoveEvent (UINT event);
+void Win_UpdateFullscreen (int fullscreen);
 
 void Win_UnloadAllDrivers (void);
 void Win_OpenDisplay (void);
@@ -53,7 +59,6 @@ void Win_CloseDisplay (void);
 void Win_SetVidMode (int width, int height);
 void Win_CreateWindow (int width, int height);
 void Win_Init_Cvars (void);
-void Win_UpdateWindowStatus (int x, int y);
 void Win_SetCaption (const char *text);
 bool Win_SetGamma (double gamma);
 
@@ -68,8 +73,6 @@ struct vulkan_ctx_s *Win_Vulkan_Context (struct vid_internal_s *);
 void Win_Vulkan_Init_Cvars (void);
 
 void IN_UpdateClipCursor (void);
-void IN_ShowMouse (void);
-void IN_HideMouse (void);
 void IN_ActivateMouse (void);
 void IN_DeactivateMouse (void);
 

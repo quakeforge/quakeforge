@@ -254,7 +254,8 @@ con_setcomponent (view_t view, uint32_t comp, void *data)
 static void
 con_setfunc (view_t view, uint32_t comp, canvas_update_f func)
 {
-	con_setcomponent (view, canvas_base + comp, &func);
+	con_setcomponent (view, canvas_base + comp,
+					  &(canvas_update_t) { .update = func });
 }
 
 static void
@@ -477,9 +478,6 @@ C_SayTeam (inputline_t *il)
 static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
-	char       *s;
-	int         mask, c;
-
 	if (!c_print_buffer)
 		c_print_buffer = dstring_new ();
 
@@ -493,23 +491,23 @@ C_Print (const char *fmt, va_list args)
 	if (!con_initialized)
 		return;
 
-	s = c_print_buffer->str;
+	char *s = c_print_buffer->str;
 
-	mask = 0;
-	if (s[0] == 1 || s[0] == 2) {
-		mask = 128;						// go to colored text
-		s++;
-	}
-	if (mask || con_data.ormask) {
+	bool quake_encoding = s[0] > 0 && s[0] <= 3;
+	bool colored = quake_encoding && s[0] < 0;
+	int  mask = (colored ? 128 : 0) | con_data.ormask;
+	s += quake_encoding;
+
+	if (mask) {
 		for (char *m = s; *m; m++) {
 			if (*m >= ' ') {
-				*m |= mask | con_data.ormask;
+				*m |= mask;
 			}
 		}
 	}
 
 	if (con_data.realtime) {
-		c = Draw_PrintBuffer (notify_buffer, s);
+		int c = Draw_PrintBuffer (notify_buffer, s);
 		while (c-- > 0) {
 			notify_times[notify_head++] = *con_data.realtime;
 			if (notify_head >= NOTIFY_LINES + 1) {
@@ -528,14 +526,16 @@ C_Print (const char *fmt, va_list args)
 		Draw_PrintBuffer (console_buffer, s);
 	}
 
-	while (*s) {
-		*s = sys_char_map[(byte) *s];
-		s++;
+	if (quake_encoding || mask) {
+		while (*s) {
+			*s = sys_char_map[(byte) *s];
+			s++;
+		}
 	}
 
 	// echo to debugging console
-	// but don't print the highchars flag (leading \x01)
-	if ((byte)c_print_buffer->str[0] > 2)
+	// but don't print the highchars/quake_encoding flag (leading \x01/2/3)
+	if ((byte)c_print_buffer->str[0] > 3)
 		fputs (c_print_buffer->str, stdout);
 	else if ((byte)c_print_buffer->str[0])
 		fputs (c_print_buffer->str + 1, stdout);
@@ -556,6 +556,14 @@ DrawInputLine (int x, int y, inputline_t *il)
 	}
 	if (strlen (s) >= il->width)
 		r_funcs->Draw_Character (x + ((il->width - 1) * 8), y, '>' | 0x80);
+
+	if (il->cursor) {
+		float       t = *con_data.realtime * con_cursorspeed;
+		int         ch = 10 + ((int) (t) & 1);
+
+		int         cx = (il->linepos - il->scroll) * 8;
+		r_funcs->Draw_Character (x + cx, y, ch);
+	}
 }
 
 void
@@ -669,6 +677,8 @@ resize_console_text (view_t view, view_pos_t len)
 	int			width = len.x / 8;
 	int         height = len.y / 8;
 
+	width = max (width, 1);
+	height = max (height, 1);
 	if (console_buffer->width != width || console_buffer->height != height) {
 		con_linewidth = width;
 		Draw_DestroyBuffer (console_buffer);
@@ -702,7 +712,7 @@ draw_con_scrollback (void)
 }
 
 static void
-draw_cursor (view_t view)
+draw_cursor (view_t view, void *data)
 {
 	float       t = *con_data.realtime * con_cursorspeed;
 	int         ch = 10 + ((int) (t) & 1);
@@ -791,6 +801,7 @@ setup_console (void)
 static void
 C_DrawConsole (void)
 {
+	qfZoneNamed (zone, true);
 	if (con_debug) {
 		Con_Debug_Draw ();
 	}
@@ -1221,6 +1232,8 @@ C_Init (void)
 					"file");
 
 	con_initialized = true;
+
+	Draw_Flush ();
 }
 
 static void

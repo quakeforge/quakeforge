@@ -43,6 +43,7 @@
 static void
 bi_Key_keydown (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 #if 0
 	int         keynum  = P_INT (pr, 0);
 	R_INT (pr) = keydown[keynum];
@@ -57,6 +58,7 @@ bi_Key_keydown (progs_t *pr, void *data)
 static void
 bi_Key_SetBinding (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 #if 0
 	const char *imt_name  = P_GSTRING (pr, 0);
 	int         keynum  = P_INT (pr, 1);
@@ -82,6 +84,7 @@ bi_Key_SetBinding (progs_t *pr, void *data)
 static void
 bi_Key_LookupBinding (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 #if 0
 	const char *imt_name = P_GSTRING (pr, 0);
 	int	        bindnum = P_INT (pr, 1);
@@ -120,6 +123,7 @@ bi_Key_LookupBinding (progs_t *pr, void *data)
 static void
 bi_Key_CountBinding (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 #if 0
 	const char *imt_name = P_GSTRING (pr, 0);
 	const char *binding = P_GSTRING (pr, 1);
@@ -153,6 +157,7 @@ bi_Key_CountBinding (progs_t *pr, void *data)
 static void
 bi_Key_KeynumToString (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int	        keynum  = P_INT (pr, 0);
 
 	RETURN_STRING (pr, Key_KeynumToString (keynum));
@@ -161,6 +166,7 @@ bi_Key_KeynumToString (progs_t *pr, void *data)
 static void
 bi_Key_StringToKeynum (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *keyname = P_GSTRING (pr, 0);
 	R_INT (pr) = Key_StringToKeynum (keyname);
 }
@@ -181,5 +187,6 @@ static builtin_t builtins[] = {
 void
 RUA_Key_Init (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

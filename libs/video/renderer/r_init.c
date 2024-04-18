@@ -83,6 +83,7 @@ R_shutdown (void *data)
 VISIBLE void
 R_LoadModule (vid_internal_t *vid_internal)
 {
+	qfZoneScoped (true);
 	PI_RegisterPlugins (vidrend_plugin_list);
 	Cvar_Register (&vidrend_plugin_cvar, 0, 0);
 	vidrendmodule = PI_LoadPlugin ("vid_render", vidrend_plugin);
@@ -100,9 +101,11 @@ R_LoadModule (vid_internal_t *vid_internal)
 }
 
 VISIBLE void
-R_Init (void)
+R_Init (struct plitem_s *config)
 {
-	r_funcs->R_Init ();
+	qfZoneScoped (true);
+	r_funcs->R_Init (config);
 	R_ClearEfrags ();	//FIXME force link of r_efrag.o for qwaq
 	Fog_Init ();
+	R_Trails_Init ();
 }

@@ -277,6 +277,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 void
 CL_LoadLights (plitem_t *entities, scene_t *scene)
 {
+	qfZoneScoped (true);
 	lightingdata_t *ldata = scene->lights;
 	model_t    *model = scene->worldmodel;
 
@@ -329,8 +330,8 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 	}
 	PL_Release (targets);
 
-	auto lights = &scene->reg->comp_pools[scene_light];
-	auto lefrags = &scene->reg->comp_pools[scene_efrags];
+	auto lights = &scene->reg->comp_pools[scene->base + scene_light];
+	auto lefrags = &scene->reg->comp_pools[scene->base + scene_efrags];
 	for (uint32_t i = 0; i < lights->count; i++) {
 		auto light = &((light_t *)lights->data)[i];
 		auto efrags = ((efrag_t **)lefrags->data)[i];

@@ -33,6 +33,7 @@
 
 #include "QF/cbuf.h"
 #include "QF/gib.h"
+#include "QF/sys.h"
 
 #include "gib_handle.h"
 
@@ -83,9 +84,17 @@ GIB_Handle_Get (unsigned long int num)
 	return gib_handles[num]->data;
 }
 
+static void
+gib_handle_shutdown (void *data)
+{
+	free (gib_handles);
+}
+
 void
 GIB_Handle_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_handle_shutdown, 0);
 	gib_handles_size = 256;
 	gib_handles = calloc (gib_handles_size, sizeof (gib_handle_t *));
 	gib_next_handle = 1;

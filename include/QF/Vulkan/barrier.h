@@ -23,6 +23,7 @@ enum {
 	qfv_LT_Undefined_to_TransferDst,
 	qfv_LT_Undefined_to_General,
 	qfv_LT_Undefined_to_ShaderReadOnly,
+	qfv_LT_TransferDst_to_TransferDst,
 	qfv_LT_TransferDst_to_TransferSrc,
 	qfv_LT_TransferDst_to_General,
 	qfv_LT_TransferDst_to_ShaderReadOnly,

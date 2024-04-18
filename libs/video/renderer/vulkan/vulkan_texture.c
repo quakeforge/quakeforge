@@ -42,7 +42,6 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
@@ -464,6 +463,9 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 void
 Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 {
+	if (!tex) {
+		return;
+	}
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -507,18 +509,26 @@ static tex_t default_magenta_tex = {
 	.data = magenta_data,
 };
 
-void
-Vulkan_Texture_Init (vulkan_ctx_t *ctx)
+static void
+texture_shutdown (exprctx_t *ectx)
 {
-	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
-	ctx->texture_context = tctx;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	Vulkan_UnloadTex (ctx, ctx->default_black);
+	Vulkan_UnloadTex (ctx, ctx->default_white);
+	Vulkan_UnloadTex (ctx, ctx->default_magenta);
+	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
+	free (ctx->texture_context);
 }
 
-void
-Vulkan_Texture_Setup (vulkan_ctx_t *ctx)
+static void
+texture_startup (exprctx_t *ectx)
 {
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "texture init");
-
 	auto tctx = ctx->texture_context;
 
 	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
@@ -542,13 +552,35 @@ Vulkan_Texture_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
+static void
+texture_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	Vulkan_UnloadTex (ctx, ctx->default_black);
-	Vulkan_UnloadTex (ctx, ctx->default_white);
-	Vulkan_UnloadTex (ctx, ctx->default_magenta);
-	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	QFV_Render_AddShutdown (ctx, texture_shutdown);
+	QFV_Render_AddStartup (ctx, texture_startup);
+
+	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
+	ctx->texture_context = tctx;
+}
+
+static exprfunc_t texture_init_func[] = {
+	{ .func = texture_init },
+	{}
+};
+
+static exprsym_t texture_task_syms[] = {
+	{ "texture_init", &cexpr_function, texture_init_func },
+	{}
+};
+
+void
+Vulkan_Texture_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, texture_task_syms);
 }
 
 static VkDescriptorImageInfo base_image_info = {

@@ -663,11 +663,12 @@ LoadTGA (QFile *fin, int load)
 		numPixels = 0;
 	}
 	tex = Hunk_TempAlloc (0, sizeof (tex_t) + numPixels * 4);
-	tex->data = (byte *) (tex + 1);
-	tex->width = targa->width;
-	tex->height = targa->height;
-	tex->palette = 0;
-	tex->loaded = load;
+	*tex = (tex_t) {
+		.width = targa->width,
+		.height = targa->height,
+		.loaded = load,
+		.data = (byte *) (tex + 1),
+	};
 
 	if (load) {
 		// skip TARGA image comment

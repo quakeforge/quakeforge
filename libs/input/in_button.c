@@ -177,6 +177,7 @@ button_release_cmd (void *_b)
 VISIBLE int
 IN_RegisterButton (in_button_t *button)
 {
+	qfZoneScoped (true);
 	const char *name = button->name;
 	if (Hash_Find (button_tab, name)) {
 		return 0;

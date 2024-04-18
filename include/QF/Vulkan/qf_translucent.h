@@ -43,8 +43,6 @@ typedef struct translucentctx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_Translucent_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Translucent_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Translucent_Shutdown (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Translucent_Descriptors (struct vulkan_ctx_s *ctx,
 												int frame)__attribute__((pure));
 

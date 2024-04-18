@@ -49,8 +49,34 @@ struct ecs_registry_s;
 struct canvas_system_s;
 
 void HUD_Init (struct ecs_registry_s *reg);
-void HUD_Init_Cvars (void);
 void HUD_CreateCanvas (struct canvas_system_s canvas_sys);
-void HUD_Calc_sb_lines (int view_size);
+
+extern bool sbar_showscores;
+
+struct player_info_s;
+void Sbar_Init (int *stats, float *item_gettime);
+void Sbar_SetPlayers (struct player_info_s *players, int maxplayers);
+void Sbar_SetLevelName (const char *levelname, const char *servername);
+void Sbar_SetPlayerNum (int playernum, int spectator);
+void Sbar_SetAutotrack (int autotrack);
+void Sbar_SetViewEntity (int viewentity);
+void Sbar_SetTeamplay (int teamplay);
+void Sbar_SetGameType (int gametype);
+void Sbar_SetActive (int active);
+
+void Sbar_Update (double time);
+void Sbar_UpdatePings (void);
+void Sbar_UpdatePL (int pl);
+void Sbar_UpdateFrags (int playernum);
+void Sbar_UpdateInfo (int playernum);
+void Sbar_UpdateStats (int stat);
+void Sbar_Damage (double time);
+
+void Sbar_Intermission (int mode, double completed_time);
+
+void Sbar_DrawCenterPrint (void);
+void Sbar_CenterPrint (const char *str);
+
+void Sbar_LogFrags (double time);
 
 #endif//__client_hud_h

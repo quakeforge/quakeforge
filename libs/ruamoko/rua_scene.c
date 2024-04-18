@@ -74,12 +74,14 @@ typedef struct rua_scene_resources_s {
 static rua_scene_t *
 rua_scene_new (rua_scene_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->scene_map);
 }
 
 static void
 rua_scene_free (rua_scene_resources_t *res, rua_scene_t *scene)
 {
+	qfZoneScoped (true);
 	if (scene->next) {
 		scene->next->prev = scene->prev;
 	}
@@ -91,6 +93,7 @@ rua_scene_free (rua_scene_resources_t *res, rua_scene_t *scene)
 static rua_scene_t * __attribute__((pure))
 rua__scene_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
+	qfZoneScoped (true);
 	rua_scene_t *scene = 0;
 
 	id &= 0xffffffffu;
@@ -107,12 +110,14 @@ rua__scene_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 static int __attribute__((pure))
 rua_scene_index (rua_scene_resources_t *res, rua_scene_t *scene)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->scene_map, scene);
 }
 
 static entity_t __attribute__((pure))
 rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
+	qfZoneScoped (true);
 	pr_ulong_t  scene_id = id & 0xffffffff;
 	entity_t    ent = nullentity;
 
@@ -121,6 +126,7 @@ rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 		pr_int_t     entity_id = id >> 32;
 		ent.id = entity_id;
 		ent.reg = scene->scene->reg;
+		ent.base = scene->scene->base;
 	}
 
 	if (!Entity_Valid (ent)) {
@@ -133,12 +139,17 @@ rua__entity_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 static transform_t  __attribute__((pure))
 rua__transform_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
+	qfZoneScoped (true);
 	pr_ulong_t  scene_id = id & 0xffffffff;
 	transform_t transform = nulltransform;
 
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 	if (scene) {
-		entity_t    transform_id = { .reg = scene->scene->reg, .id = id >> 32 };
+		entity_t    transform_id = {
+			.reg = scene->scene->reg,
+			.id = id >> 32,
+			.base = scene->scene->base,
+		};
 		transform = Entity_Transform (transform_id);
 	}
 
@@ -152,12 +163,14 @@ rua__transform_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 static rua_lighting_t *
 rua_lighting_new (rua_scene_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->lighting_map);
 }
 
 static void
 rua_lighting_free (rua_scene_resources_t *res, rua_lighting_t *ldata)
 {
+	qfZoneScoped (true);
 	if (ldata->next) {
 		ldata->next->prev = ldata->prev;
 	}
@@ -169,6 +182,7 @@ rua_lighting_free (rua_scene_resources_t *res, rua_lighting_t *ldata)
 static rua_lighting_t * __attribute__((pure))
 rua__lighting_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 {
+	qfZoneScoped (true);
 	rua_lighting_t *ldata = 0;
 
 	if (id <= 0xffffffffu) {
@@ -186,6 +200,7 @@ rua__lighting_get (rua_scene_resources_t *res, pr_ulong_t id, const char *name)
 static int __attribute__((pure))
 rua_lighting_index (rua_scene_resources_t *res, rua_lighting_t *ldata)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (res->lighting_map, ldata);
 }
 
@@ -195,6 +210,7 @@ rua_lighting_index (rua_scene_resources_t *res, rua_lighting_t *ldata)
 static void
 bi_Scene_NewScene (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 
 	rua_scene_t *scene = rua_scene_new (res);
@@ -216,6 +232,7 @@ bi_Scene_NewScene (progs_t *pr, void *_res)
 static void
 rua_delete_scene (rua_scene_resources_t *res, rua_scene_t *scene)
 {
+	qfZoneScoped (true);
 	Scene_DeleteScene (scene->scene);
 	rua_scene_free (res, scene);
 }
@@ -223,6 +240,7 @@ rua_delete_scene (rua_scene_resources_t *res, rua_scene_t *scene)
 static void
 bi_Scene_DeleteScene (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	rua_scene_t *scene = rua_scene_get (res, P_ULONG (pr, 0));
 
@@ -232,6 +250,7 @@ bi_Scene_DeleteScene (progs_t *pr, void *_res)
 scene_t *
 Scene_GetScene (progs_t *pr, pr_ulong_t handle)
 {
+	qfZoneScoped (true);
 	if (!handle) {
 		return 0;
 	}
@@ -243,6 +262,7 @@ Scene_GetScene (progs_t *pr, pr_ulong_t handle)
 static void
 bi_Scene_CreateEntity (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t   scene_id = P_ULONG (pr, 0);
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
@@ -253,6 +273,7 @@ bi_Scene_CreateEntity (progs_t *pr, void *_res)
 static void
 bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  id = P_ULONG (pr, 0);
 	entity_t    ent = rua_entity_get (res, id);
@@ -266,6 +287,7 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 static void
 bi_Scene_SetLighting (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t   scene_id = P_ULONG (pr, 0);
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
@@ -280,8 +302,21 @@ bi_Scene_SetLighting (progs_t *pr, void *_res)
 }
 
 static void
+bi_Scene_SetCamera (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t   scene_id = P_ULONG (pr, 0);
+	rua_scene_t *scene = rua_scene_get (res, scene_id);
+	pr_ulong_t  ent_id = P_ULONG (pr, 1);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	scene->scene->camera = ent.id;
+}
+
+static void
 bi_Entity_GetTransform (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 
 	// ent_id is used to fetch the transform every time
@@ -291,6 +326,7 @@ bi_Entity_GetTransform (progs_t *pr, void *_res)
 static void
 bi_Entity_SetModel (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 	pr_int_t    model_id = P_INT (pr, 1);
@@ -300,7 +336,7 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	// bad scene caught above
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	renderer->model = model;
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
@@ -308,6 +344,7 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 static void
 bi_Transform_ChildCount (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 
@@ -317,6 +354,7 @@ bi_Transform_ChildCount (progs_t *pr, void *_res)
 static void
 bi_Transform_GetChild (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  transform_id = P_ULONG (pr, 0);
 	transform_t transform = rua_transform_get (res, transform_id);
@@ -328,6 +366,7 @@ bi_Transform_GetChild (progs_t *pr, void *_res)
 static void
 bi_Transform_SetParent (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	transform_t parent = rua_transform_get (res, P_ULONG (pr, 1));
@@ -338,6 +377,7 @@ bi_Transform_SetParent (progs_t *pr, void *_res)
 static void
 bi_Transform_GetParent (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  transform_id = P_ULONG (pr, 0);
 	transform_t transform = rua_transform_get (res, transform_id);
@@ -351,6 +391,7 @@ bi_Transform_GetParent (progs_t *pr, void *_res)
 static void
 bi_Transform_SetTag (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	pr_uint_t   tag = P_UINT (pr, 2);
@@ -360,6 +401,7 @@ bi_Transform_SetTag (progs_t *pr, void *_res)
 static void
 bi_Transform_GetTag (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 
@@ -369,6 +411,7 @@ bi_Transform_GetTag (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetLocalMatrix (transform, &R_PACKED (pr, pr_vec4_t));
@@ -377,6 +420,7 @@ bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetLocalInverse (transform, &R_PACKED (pr, pr_vec4_t));
@@ -385,6 +429,7 @@ bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetWorldMatrix (transform, &R_PACKED (pr, pr_vec4_t));
@@ -393,6 +438,7 @@ bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_GetWorldInverse (transform, &R_PACKED (pr, pr_vec4_t));
@@ -401,6 +447,7 @@ bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
@@ -409,6 +456,7 @@ bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalPosition (transform);
@@ -417,6 +465,7 @@ bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
@@ -425,6 +474,7 @@ bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalRotation (transform);
@@ -433,6 +483,7 @@ bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalScale (transform, P_PACKED (pr, pr_vec4_t, 1));
@@ -441,6 +492,7 @@ bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 static void
 bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalScale (transform);
@@ -449,6 +501,7 @@ bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 static void
 bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetWorldPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
@@ -457,6 +510,7 @@ bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldPosition (transform);
@@ -465,6 +519,7 @@ bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 static void
 bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetWorldRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
@@ -473,6 +528,7 @@ bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldRotation (transform);
@@ -481,6 +537,7 @@ bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 static void
 bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldScale (transform);
@@ -489,6 +546,7 @@ bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 static void
 bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	Transform_SetLocalTransform (transform, P_PACKED (pr, pr_vec4_t, 1),
@@ -498,6 +556,7 @@ bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 static void
 bi_Transform_Forward (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Forward (transform);
@@ -506,6 +565,7 @@ bi_Transform_Forward (progs_t *pr, void *_res)
 static void
 bi_Transform_Right (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Right (transform);
@@ -514,6 +574,7 @@ bi_Transform_Right (progs_t *pr, void *_res)
 static void
 bi_Transform_Up (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	transform_t transform = rua_transform_get (res, P_ULONG (pr, 0));
 	R_PACKED (pr, pr_vec4_t) = Transform_Up (transform);
@@ -522,6 +583,7 @@ bi_Transform_Up (progs_t *pr, void *_res)
 static void
 bi_Light_CreateLightingData (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t   scene_id = P_ULONG (pr, 0);
 	rua_scene_t *scene = rua_scene_get (res, scene_id);
@@ -545,6 +607,7 @@ bi_Light_CreateLightingData (progs_t *pr, void *_res)
 static void
 rua_delete_lighting (rua_scene_resources_t *res, rua_lighting_t *ldata)
 {
+	qfZoneScoped (true);
 	Light_DestroyLightingData (ldata->ldata);
 	rua_lighting_free (res, ldata);
 }
@@ -552,6 +615,7 @@ rua_delete_lighting (rua_scene_resources_t *res, rua_lighting_t *ldata)
 static void
 bi_Light_DestroyLightingData (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	rua_lighting_t *ldata = rua_lighting_get (res, P_ULONG (pr, 0));
 
@@ -561,6 +625,7 @@ bi_Light_DestroyLightingData (progs_t *pr, void *_res)
 static void
 bi_Light_ClearLights (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	rua_lighting_t *ldata = rua_lighting_get (res, P_ULONG (pr, 0));
 
@@ -570,6 +635,7 @@ bi_Light_ClearLights (progs_t *pr, void *_res)
 static void
 bi_Light_AddLight (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	rua_lighting_t *ldata = rua_lighting_get (res, P_ULONG (pr, 0));
 	light_t    *light = &P_PACKED (pr, light_t, 1);
@@ -581,6 +647,7 @@ bi_Light_AddLight (progs_t *pr, void *_res)
 static void
 bi_Light_EnableSun (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	rua_lighting_t *ldata = rua_lighting_get (res, P_ULONG (pr, 0));
 
@@ -595,7 +662,8 @@ static builtin_t builtins[] = {
 	bi(Scene_DeleteScene,           1, p(ulong)),
 	bi(Scene_CreateEntity,          1, p(ulong)),
 	bi(Scene_DestroyEntity,         1, p(ulong)),
-	bi(Scene_SetLighting  ,         2, p(ulong), p(ulong)),
+	bi(Scene_SetLighting,           2, p(ulong), p(ulong)),
+	bi(Scene_SetCamera,				2, p(ulong), p(ulong)),
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
@@ -644,6 +712,7 @@ static builtin_t builtins[] = {
 static void
 bi_scene_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 
 	while (res->ldatas) {
@@ -657,6 +726,7 @@ bi_scene_clear (progs_t *pr, void *_res)
 static void
 bi_scene_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
 	PR_RESDELMAP (res->scene_map);
 	PR_RESDELMAP (res->lighting_map);
@@ -666,6 +736,7 @@ bi_scene_destroy (progs_t *pr, void *_res)
 void
 RUA_Scene_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	rua_scene_resources_t *res = calloc (sizeof (rua_scene_resources_t), 1);
 
 	res->pr = pr;

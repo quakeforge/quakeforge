@@ -97,7 +97,7 @@ int yylex (void);
 	int			op;
 	struct def_s *def;
 	struct hashtab_s *def_list;
-	struct type_s	*type;
+	const struct type_s	*type;
 	struct typedef_s *typename;
 	const struct expr_s	*expr;
 	struct expr_s	*mut_expr;

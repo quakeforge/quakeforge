@@ -130,15 +130,16 @@ glsl_iqm_load_arrays (iqm_t *iqm)
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
 	qfeglBufferData (GL_ARRAY_BUFFER, iqm->num_verts * iqm->stride,
 					 iqm->vertices, GL_STATIC_DRAW);
+	int esize = iqm->num_verts > 0xfff0 ? sizeof (uint32_t) : sizeof (uint16_t);
 	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER,
-					 iqm->num_elements * sizeof (uint16_t), iqm->elements,
+					 iqm->num_elements * esize, iqm->elements16,
 					 GL_STATIC_DRAW);
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 	free (iqm->vertices);
 	iqm->vertices = 0;
-	free (iqm->elements);
-	iqm->elements = 0;
+	free (iqm->elements16);
+	iqm->elements16 = 0;
 }
 
 void

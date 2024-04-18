@@ -51,6 +51,7 @@
 #include "compat.h"
 #include "context_win.h"
 #include "in_win.h"
+#include "vid_internal.h"
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate(a,b,c,d)	pDirectInputCreate(a,b,c,d)
@@ -60,27 +61,24 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPUNKNOWN punkOuter);
 
 // mouse local variables
-static unsigned uiWheelMessage;
-static unsigned  mouse_buttons;
+unsigned uiWheelMessage = ~0u;
+//static unsigned  mouse_buttons;
 static POINT current_pos;
 static bool mouseinitialized;
 static bool restore_spi;
 static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
 static bool mouseparmsvalid, mouseactivatetoggle;
-static bool mouseshowtoggle = 1;
 static bool dinput_acquired;
+static bool in_win_initialized;
 static unsigned int mstate_di;
 
 // misc locals
 static LPDIRECTINPUT g_pdi;
 static LPDIRECTINPUTDEVICE g_pMouse;
 
-static HINSTANCE hInstDI;
+//static HINSTANCE hInstDI;
 
 static bool dinput;
-
-static bool vid_wassuspended = false;
-static bool win_in_game = false;
 
 typedef struct win_device_s {
 	const char *name;
@@ -97,7 +95,11 @@ static int in_mouse_avail;
 #define WIN_MOUSE_BUTTONS 32
 
 static int win_driver_handle = -1;
-static in_buttoninfo_t win_key_buttons[256];
+static in_buttoninfo_t win_key_buttons[512];
+static int win_key_scancode;
+static bool win_mouse_enter = true;
+static bool win_input_grabbed;
+static bool win_warped_mouse;
 static in_axisinfo_t win_mouse_axes[2];
 static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
 static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -114,7 +116,7 @@ static const char *win_mouse_button_names[] = {
 
 #define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
-static unsigned short scantokey[128] = {
+static unsigned short scantokey[512] = {
 //  0               1               2               3
 //  4               5               6               7
 //  8               9               A               B
@@ -145,179 +147,17 @@ static unsigned short scantokey[128] = {
 	0,              0,              0,              0,			// 5
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+[0x130] =
+	0,				0,				0,				0,
+	0,				0,				0,				QFK_PRINT,
+[0x140] =
+	0,				0,				0,				0,
+	0,				0,				0,				QFK_HOME,
+	QFK_UP,			QFK_PAGEUP,		0,				QFK_LEFT,
+	0,				QFK_RIGHT,		0,				QFK_END,
+[0x150] =
+	QFK_DOWN,		QFK_PAGEDOWN,	QFK_INSERT,		QFK_DELETE,
 };
-
-static unsigned short shift_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '!',            '@',		// 0
-	'#',            '$',            '%',            '^',		// 0
-	'&',            '*',            '(',            ')',		// 0
-	'_',            '+',            QFK_BACKSPACE,  QFK_TAB,	// 0
-	'Q',            'W',            'E',            'R',		// 1
-	'T',            'Y',            'U',            'I',		// 1
-	'O',            'P',            '{',            '}',		// 1
-	QFK_RETURN,     QFK_LCTRL,      'A',            'S',		// 1
-	'D',            'F',            'G',            'H',		// 2
-	'J',            'K',            'L',            ':',		// 2
-	'"',            '~',            QFK_LSHIFT,     '|',		// 2
-	'Z',            'X',            'C',            'V',		// 2
-	'B',            'N',            'M',            '<',		// 3
-	'>',            '?',            QFK_RSHIFT,     QFK_KP_MULTIPLY,// 3
-	QFK_LALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,		// 3
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,		// 3
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,		// 4
-	QFK_F10,        QFK_PAUSE,      QFK_SCROLLOCK,  QFK_KP7,	// 4
-	QFK_KP8,        QFK_KP9,        QFK_KP_MINUS,   QFK_KP4,	// 4
-	QFK_KP5,        QFK_KP6,        QFK_KP_PLUS,    QFK_KP1,	// 4
-	QFK_KP2,        QFK_KP3,        QFK_KP0,        QFK_KP_PERIOD,//5
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,			// 5
-	0,              0,              0,              0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 6
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 7
-};
-
-static unsigned short ext_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '1',            '2',
-	'3',            '4',            '5',            '6',// 0
-	'7',            '8',            '9',            '0',
-	'-',            '=',            QFK_BACKSPACE,  QFK_TAB,
-	'q',            'w',            'e',            'r',
-	't',            'y',            'u',            'i',					// 1
-	'o',            'p',            '[',            ']',
-	QFK_KP_ENTER,     QFK_RCTRL,      'a',            's',
-	'd',            'f',            'g',            'h',
-	'j',            'k',            'l',            ';',					// 2
-	'\'',            '`',            QFK_LSHIFT,    '\\',
-	'z',            'x',            'c',            'v',
-	'b',            'n',            'm',            ',',
-	'.',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',	// 3
-	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
-	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
-	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
-	'5',            QFK_RIGHT,      '+',            QFK_END,
-	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,
-	0,              0,              0,              0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
-
-static unsigned short shift_ext_scantokey[128] = {
-//  0               1               2               3
-//  4               5               6               7
-//  8               9               A               B
-//  C               D               E               F
-	0,              QFK_ESCAPE,     '!',            '@',
-	'#',            '$',            '%',            '^',
-	'&',            '*',            '(',            ')',
-	'_',            '+',            QFK_BACKSPACE,  QFK_ESCAPE,	// 0
-	'Q',            'W',            'E',            'R',
-	'T',            'Y',            'U',            'I',
-	'O',            'P',            '{',            '}',
-	QFK_KP_ENTER,   QFK_RCTRL,      'A',            'S',	// 1
-	'D',            'F',            'G',            'H',
-	'J',            'K',            'L',            ':',
-	'"',            '~',            QFK_LSHIFT,     '|',
-	'Z',            'X',            'C',            'V',	// 2
-	'B',            'N',            'M',            '<',
-	'>',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',
-	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
-	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
-	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
-	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
-	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
-	'5',            QFK_RIGHT,      '+',            QFK_END,
-	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
-	0,              0,              0,              QFK_F11,	// 5
-	QFK_F12,        0,              0,              0,
-	0,              0,              0,              0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
-
-#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
-
-/*
-	MapKey
-
-	Map from windows to quake keynums
-*/
-static void
-MapKey (unsigned int keycode, int press, int *k, int *u)
-{
-	int         extended;
-	int         scan;
-	int         key;
-	int         uc;
-	unsigned long mask = ~1L;
-	static unsigned long shifts;
-
-	extended = (keycode >> 24) & 1;
-	scan = (keycode >> 16) & 255;
-
-	if (scan > 127) {
-		*u = *k = 0;
-		return;
-	}
-
-	if (extended)
-		key = ext_scantokey[scan];
-	else
-		key = scantokey[scan];
-
-	if (shifts & 0x03) {
-		if (extended)
-			uc = shift_ext_scantokey[scan];
-		else
-			uc = shift_scantokey[scan];
-	} else {
-		if (extended)
-			uc = ext_scantokey[scan];
-		else
-			uc = scantokey[scan];
-	}
-
-	if (uc > 255)
-		uc = 0;
-
-	switch (key) {
-		case QFK_RSHIFT:
-			shifts &= mask;
-			shifts |= press;
-			break;
-		case QFK_LSHIFT:
-			shifts &= ROTL(mask, 1);
-			shifts |= ROTL(press, 1);
-			break;
-		case QFK_RCTRL:
-			shifts &= ROTL(mask, 2);
-			shifts |= ROTL(press, 2);
-			break;
-		case QFK_LCTRL:
-			shifts &= ROTL(mask, 3);
-			shifts |= ROTL(press, 3);
-			break;
-		default:
-			break;
-	}
-
-	Sys_MaskPrintf (SYS_vid, "%08x %d %02x %02lx %04x %c\n",
-					keycode, press, scan, shifts,
-					key, uc > 32 && uc < 127 ? uc : '#');
-	*k = key;
-	*u = uc;
-}
 
 static win_device_t win_keyboard_device = {
 	"core:keyboard",
@@ -389,65 +229,11 @@ in_win_send_button_event (int devid, in_buttoninfo_t *button, void *event_data)
 	IE_Send_Event (&event);
 }
 
-typedef struct MYDATA {
-	LONG        lX;						// X axis goes here
-	LONG        lY;						// Y axis goes here
-	LONG        lZ;						// Z axis goes here
-	BYTE        bButtonA;				// One button goes here
-	BYTE        bButtonB;				// Another button goes here
-	BYTE        bButtonC;				// Another button goes here
-	BYTE        bButtonD;				// Another button goes here
-} MYDATA;
-
-static DIOBJECTDATAFORMAT rgodf[] = {
-	{&GUID_XAxis, FIELD_OFFSET (MYDATA, lX), DIDFT_AXIS | DIDFT_ANYINSTANCE,
-	 0,},
-	{&GUID_YAxis, FIELD_OFFSET (MYDATA, lY), DIDFT_AXIS | DIDFT_ANYINSTANCE,
-	 0,},
-	{&GUID_ZAxis, FIELD_OFFSET (MYDATA, lZ),
-	 0x80000000 | DIDFT_AXIS | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonA), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonB), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonC),
-	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{0, FIELD_OFFSET (MYDATA, bButtonD),
-	 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-};
-
-#define NUM_OBJECTS (sizeof(rgodf) / sizeof(rgodf[0]))
-
-static DIDATAFORMAT df = {
-	sizeof (DIDATAFORMAT),				// this structure
-	sizeof (DIOBJECTDATAFORMAT),		// size of object data format
-	DIDF_RELAXIS,						// absolute axis coordinates
-	sizeof (MYDATA),					// device data size
-	NUM_OBJECTS,						// number of objects
-	rgodf,								// and here they are
-};
-
 void
 IN_UpdateClipCursor (void)
 {
 	if (mouseinitialized && in_mouse_avail && !dinput) {
 		ClipCursor (&win_rect);
-	}
-}
-
-void
-IN_ShowMouse (void)
-{
-	if (!mouseshowtoggle) {
-		ShowCursor (TRUE);
-		mouseshowtoggle = 1;
-	}
-}
-
-void
-IN_HideMouse (void)
-{
-	if (mouseshowtoggle) {
-		ShowCursor (FALSE);
-		mouseshowtoggle = 0;
 	}
 }
 
@@ -506,131 +292,6 @@ IN_DeactivateMouse (void)
 	}
 }
 
-static bool
-IN_InitDInput (void)
-{
-	HRESULT     hr;
-	DIPROPDWORD dipdw = {
-		{
-			sizeof (DIPROPDWORD),			// diph.dwSize
-			sizeof (DIPROPHEADER),			// diph.dwHeaderSize
-			0,								// diph.dwObj
-			DIPH_DEVICE,					// diph.dwHow
-		},
-		DINPUT_BUFFERSIZE,				// dwData
-	};
-
-	if (!hInstDI) {
-		hInstDI = LoadLibrary ("dinput.dll");
-
-		if (hInstDI == NULL) {
-			Sys_Printf ("Couldn't load dinput.dll\n");
-			return false;
-		}
-	}
-
-	if (!pDirectInputCreate) {
-		pDirectInputCreate =
-			(void *) GetProcAddress (hInstDI, "DirectInputCreateA");
-
-		if (!pDirectInputCreate) {
-			Sys_Printf ("Couldn't get DI proc addr\n");
-			return false;
-		}
-	}
-	// register with DirectInput and get an IDirectInput to play with.
-	hr = iDirectInputCreate (global_hInstance, DIRECTINPUT_VERSION, &g_pdi,
-							 NULL);
-
-	if (FAILED (hr))
-		return false;
-	// obtain an interface to the system mouse device.
-	hr = IDirectInput_CreateDevice (g_pdi, &GUID_SysMouse, &g_pMouse, NULL);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't open DI mouse device\n");
-		return false;
-	}
-	// set the data format to "mouse format".
-	hr = IDirectInputDevice_SetDataFormat (g_pMouse, &df);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI mouse format\n");
-		return false;
-	}
-	// set the cooperativity level.
-	hr = IDirectInputDevice_SetCooperativeLevel (g_pMouse, win_mainwindow,
-												 DISCL_EXCLUSIVE |
-												 DISCL_FOREGROUND);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI coop level\n");
-		return false;
-	}
-
-	// set the buffer size to DINPUT_BUFFERSIZE elements.
-	// the buffer size is a DWORD property associated with the device
-	hr = IDirectInputDevice_SetProperty (g_pMouse, DIPROP_BUFFERSIZE,
-										 &dipdw.diph);
-
-	if (FAILED (hr)) {
-		Sys_Printf ("Couldn't set DI buffersize\n");
-		return false;
-	}
-
-	return true;
-}
-
-static int
-IN_StartupMouse (void)
-{
-//  HDC         hdc;
-
-	if (COM_CheckParm ("-nomouse"))
-		return 0;
-
-	mouseinitialized = true;
-
-	if (COM_CheckParm ("-dinput")) {
-		dinput = IN_InitDInput ();
-
-		if (dinput) {
-			Sys_Printf ("DirectInput initialized\n");
-		} else {
-			Sys_Printf ("DirectInput not initialized\n");
-		}
-	}
-
-	if (!dinput) {
-		mouseparmsvalid = SystemParametersInfo (SPI_GETMOUSE, 0,
-												originalmouseparms, 0);
-
-		if (mouseparmsvalid) {
-			if (COM_CheckParm ("-noforcemspd"))
-				newmouseparms[2] = originalmouseparms[2];
-
-			if (COM_CheckParm ("-noforcemaccel")) {
-				newmouseparms[0] = originalmouseparms[0];
-				newmouseparms[1] = originalmouseparms[1];
-			}
-
-			if (COM_CheckParm ("-noforcemparms")) {
-				newmouseparms[0] = originalmouseparms[0];
-				newmouseparms[1] = originalmouseparms[1];
-				newmouseparms[2] = originalmouseparms[2];
-			}
-		}
-	}
-
-	mouse_buttons = WIN_MOUSE_BUTTONS;
-
-	// if a fullscreen video mode was set before the mouse was initialized,
-	// set the mouse state appropriately
-	if (mouseactivatetoggle)
-		IN_ActivateMouse ();
-	return 1;
-}
-
 static void
 in_paste_buffer_f (void)
 {
@@ -655,20 +316,6 @@ in_paste_buffer_f (void)
 		CloseClipboard ();
 	}
 }
-#if 0
-static void
-win_keydest_callback (keydest_t key_dest, void *data)
-{
-	win_in_game = key_dest == key_game;
-	if (win_in_game) {
-		IN_ActivateMouse ();
-		IN_HideMouse ();
-	} else {
-		IN_DeactivateMouse ();
-		IN_ShowMouse ();
-	}
-}
-#endif
 
 static void
 win_add_device (win_device_t *dev)
@@ -685,17 +332,13 @@ win_add_device (win_device_t *dev)
 static void
 in_win_init (void *data)
 {
-	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
-
 	win_add_device (&win_keyboard_device);
-
-	if (IN_StartupMouse ()) {
-		win_add_device (&win_mouse_device);
-	}
+	win_add_device (&win_mouse_device);
 
 	//Key_KeydestCallback (win_keydest_callback, 0);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of the C&P buffer to the console");
+	in_win_initialized = true;
 }
 
 static const char *
@@ -773,7 +416,6 @@ in_win_shutdown (void *data)
 {
 
 	IN_DeactivateMouse ();
-	IN_ShowMouse ();
 
 	if (g_pMouse) {
 		IDirectInputDevice_Release (g_pMouse);
@@ -800,68 +442,56 @@ in_win_get_device_event_data (void *device, void *data)
 	return dev->event_data;
 }
 
-static void
-event_motion (int dmx, int dmy, int mx, int my)
+static LONG
+event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	win_mouse_axes[0].value = dmx;
-	win_mouse_axes[1].value = dmy;
+	bool        pressed = !(HIWORD(lParam) & KF_UP);
+	int         scancode = HIWORD (lParam) & (KF_EXTENDED | 0xff);
+	unsigned    vkey = (UINT) wParam;
+	bool        translated = lParam & (1 << 29);
 
-	win_mouse.shift = win_key.shift;
-	win_mouse.x = mx;
-	win_mouse.x = my;
-	if (!in_win_send_mouse_event (ie_mousemove)) {
-		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[0]);
-		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[1]);
+	if (!scancode) {
+		scancode = MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 	}
-}
-
-static void
-event_button (unsigned buttons)
-{
-	unsigned    mask = win_mouse.buttons ^ buttons;
-
-	if (!mask) {
-		// no change
-		return;
+	unsigned    mask = 0;
+	switch (vkey) {
+		case VK_SHIFT: mask = ies_shift; break;
+		case VK_CONTROL: mask = ies_control; break;
+		case VK_MENU: mask = ies_alt; break;
 	}
-
-	// FIXME this won't be right if multiple buttons change state
-	int press = buttons & mask;
-
-	for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
-		win_mouse_buttons[i].state = buttons & (1 << i);
+	if (pressed) {
+		win_key.shift |= mask;
+	} else {
+		win_key.shift &= ~mask;
 	}
-
-	win_mouse.buttons = buttons;
-	if (!in_win_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
-		for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
-			if (!(mask & (1 << i))) {
-				continue;
-			}
-			in_win_send_button_event (win_mouse_device.devid,
-									  &win_mouse_buttons[i],
-									  win_mouse_device.event_data);
+	win_key.code = scantokey[scancode];
+	Sys_MaskPrintf (SYS_input, "key: %3x %3d\n", scancode, win_key.code);
+	win_key.unicode = 0;
+	win_key_buttons[scancode].state = pressed;
+	win_key_scancode = scancode;
+	if (!pressed || !translated) {
+		// always handle releases, but not translated presses (handled by
+		// event_char())
+		if (!(pressed && in_win_send_key_event ())) {
+			in_win_send_button_event (win_keyboard_device.devid,
+									  &win_key_buttons[scancode],
+									  win_keyboard_device.event_data);
 		}
 	}
+	return 0;
 }
 
-static void
-event_key (LPARAM keydata, int pressed)
+static LONG
+event_char (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	int         extended = (keydata >> 24) & 1;
-	// This assumes windows key codes are really only 7 bits (should be, since
-	// they seem to be regular scan codes)
-	int         scan = (keydata >> 16) & 0x7f;
-	int         key = (extended << 7) | scan;
-	MapKey (keydata, pressed, &win_key.code, &win_key.unicode);
-	//FIXME windows key codes and x11 key code's don't match, so binding
-	//configs are not cross-platform (is this actually a problem?)
-	win_key_buttons[key].state = pressed;
-	if (!pressed || !in_win_send_key_event ()) {
+	win_key.unicode = wParam;
+	if (!in_win_send_key_event ()) {
+		// WM_CHAR events occur only for presses
 		in_win_send_button_event (win_keyboard_device.devid,
-								  &win_key_buttons[key],
+								  &win_key_buttons[win_key_scancode],
 								  win_keyboard_device.event_data);
 	}
+	return 0;
 }
 
 static void
@@ -870,9 +500,25 @@ in_win_clear_states (void *data)
 }
 
 static void
+in_win_grab_input (void *data, int grab)
+{
+	if (!win_mainwindow) {
+		return;
+	}
+
+	if ((win_input_grabbed = grab)) {
+		SetCapture (win_mainwindow);
+		ClipCursor (&win_rect);
+	} else {
+		ClipCursor (NULL);
+		ReleaseCapture ();
+	}
+}
+
+static void
 in_win_process_events (void *data)
 {
-	MSG         msg;
+	MSG         msg, cmsg;
 	int         mx, my;
 //  HDC hdc;
 	DIDEVICEOBJECTDATA od;
@@ -884,6 +530,11 @@ in_win_process_events (void *data)
 		if (!GetMessage (&msg, NULL, 0, 0))
 			Sys_Quit ();
 		TranslateMessage (&msg);
+		if (msg.message == WM_KEYDOWN
+			&& PeekMessage (&cmsg, NULL, 0, 0, PM_NOREMOVE)
+			&& (cmsg.message == WM_CHAR || cmsg.message == WM_SYSCHAR)) {
+			msg.lParam |= 1u << 29;
+		}
 		DispatchMessage (&msg);
 	}
 
@@ -945,7 +596,7 @@ in_win_process_events (void *data)
 			}
 		}
 
-		event_button (mstate_di);
+		//event_button (mstate_di);
 	} else {
 		GetCursorPos (&current_pos);
 		mx = current_pos.x - win_center_x;
@@ -955,7 +606,7 @@ in_win_process_events (void *data)
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
 		//FIXME abs pos
-		event_motion (mx, my, 0, 0);
+//		event_motion (mx, my, 0, 0);
 		SetCursorPos (win_center_x, win_center_y);
 	}
 }
@@ -995,183 +646,210 @@ in_win_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	MAIN WINDOW
 */
 
-/*
-  fActive - True if app is activating
-  If the application is activating, then swap the system into SYSPAL_NOSTATIC
-  mode so that our palettes will display correctly.
-*/
-void
-Win_Activate (BOOL active, BOOL minimize)
+static void
+in_win_send_focus_event (int gain)
 {
-	static BOOL sound_active;
+	IE_event_t  event = {
+		.type = gain ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
+}
 
-	win_minimized = minimize;
+static LONG
+event_leave (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	win_mouse_enter = true;
+	return 0;
+}
 
-	// enable/disable sound on focus gain/loss
-	if (!active && sound_active) {
-		S_BlockSound ();
-		sound_active = false;
-	} else if (active && !sound_active) {
-		S_UnblockSound ();
-		sound_active = true;
-	}
+static LONG
+event_focusin (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	win_focused = true;
+	in_win_send_focus_event (1);
+	return 0;
+}
 
-	if (active) {
-		if (modestate == MS_FULLDIB) {
-			IN_ActivateMouse ();
-			IN_HideMouse ();
-			if (win_canalttab && vid_wassuspended) {
-				vid_wassuspended = false;
+static LONG
+event_focusout (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	win_focused = false;
+	in_win_send_focus_event (0);
+	return 0;
+}
 
-				if (ChangeDisplaySettings (&win_gdevmode, CDS_FULLSCREEN) !=
-					DISP_CHANGE_SUCCESSFUL) {
-					IN_ShowMouse ();
-					Sys_Error ("Couldn't set fullscreen DIB mode\n"
-							   "(try upgrading your video drivers)\n (%lx)",
-							   GetLastError());
-				}
-				ShowWindow (win_mainwindow, SW_SHOWNORMAL);
+static LONG
+event_syschar (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// absorb Alt-Space
+	return 0;
+}
 
-				// Fix for alt-tab bug in NVidia drivers
-				MoveWindow(win_mainwindow, 0, 0, win_gdevmode.dmPelsWidth,
-						   win_gdevmode.dmPelsHeight, false);
-			}
-		}
-		else if ((modestate == MS_WINDOWED) && in_grab
-				 && win_in_game) {
-			IN_ActivateMouse ();
-			IN_HideMouse ();
-		}
+static void
+event_button (bool press, int but, int x, int y)
+{
+	win_mouse_buttons[but].state = press;
+
+	win_mouse.shift = win_key.shift;
+	win_mouse.x = x;
+	win_mouse.y = y;
+	if (press) {
+		win_mouse.buttons |= 1 << but;
 	} else {
-		if (modestate == MS_FULLDIB) {
-			IN_DeactivateMouse ();
-			IN_ShowMouse ();
-			if (win_canalttab) {
-				ChangeDisplaySettings (NULL, 0);
-				vid_wassuspended = true;
-			}
-		} else if ((modestate == MS_WINDOWED) && in_grab) {
-			IN_DeactivateMouse ();
-			IN_ShowMouse ();
-		}
+		win_mouse.buttons &= ~(1 << but);
+	}
+	if (!in_win_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_win_send_button_event (win_mouse_device.devid,
+								  &win_mouse_buttons[but],
+								  win_mouse_device.event_data);
 	}
 }
 
-/* main window procedure */
-LONG WINAPI
-MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LONG
+event_button_left (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	LONG        lRet = 1;
-	int         fActive, fMinimized, temp;
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_LBUTTONUP, 0, x, y);
+	return 0;
+}
 
-	if (uMsg == uiWheelMessage)
-		uMsg = WM_MOUSEWHEEL;
+static LONG
+event_button_right (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_RBUTTONUP, 2, x, y);
+	return 0;
+}
 
-	switch (uMsg) {
-		case WM_SETFOCUS:
-			//Key_FocusEvent (1);
-			break;
-		case WM_KILLFOCUS:
-			if (modestate == MS_FULLDIB)
-				ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
-			//Key_FocusEvent (0);
-			break;
-		case WM_CREATE:
-			break;
+static LONG
+event_button_mid (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	event_button (uMsg != WM_MBUTTONUP, 1, x, y);
+	return 0;
+}
 
-		case WM_MOVE:
-			Win_UpdateWindowStatus ((int) LOWORD (lParam),
-									(int) HIWORD (lParam));
-			break;
+static LONG
+event_button_X (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	int         but = HIWORD (wParam) + 7;
+	event_button (uMsg != WM_XBUTTONUP, but, x, y);
+	return 0;
+}
 
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-			event_key (lParam, 1);
-			break;
+static LONG
+event_mouse (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// this is complicated because Win32 seems to pack multiple mouse
+	// events into one update sometimes, so we always check all states and
+	// look for events
+	int         x = (short) LOWORD (lParam);
+	int         y = (short) HIWORD (lParam);
 
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-			event_key (lParam, 0);
-			break;
+	if (win_mouse_enter) {
+		win_mouse_enter = false;
+		TRACKMOUSEEVENT track = {
+			.cbSize = sizeof (track),
+			.dwFlags = TME_LEAVE,
+			.hwndTrack = win_mainwindow,
+		};
+		TrackMouseEvent (&track);
 
-		case WM_SYSCHAR:
-			// keep Alt-Space from happening
-			break;
+		win_mouse.x = x;
+		win_mouse.y = y;
 
-		// this is complicated because Win32 seems to pack multiple mouse
-		// events into one update sometimes, so we always check all states and
-		// look for events
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
-		case WM_MOUSEMOVE:
-			temp = 0;
-
-			if (wParam & MK_LBUTTON)
-				temp |= 1;
-			if (wParam & MK_RBUTTON)
-				temp |= 2;
-			if (wParam & MK_MBUTTON)
-				temp |= 4;
-			event_button (temp);
-
-			break;
-
-		// JACK: This is the mouse wheel with the Intellimouse
-		// It's delta is either positive or neg, and we generate the proper
-		// Event.
-		case WM_MOUSEWHEEL:
-			temp = win_mouse.buttons & ~((1 << 3) | (1 << 4));;
-			if ((short) HIWORD (wParam) > 0) {
-				event_button (temp | (1 << 3));
-			} else {
-				event_button (temp | (1 << 4));
-			}
-			event_button (temp);
-			break;
-
-		case WM_SIZE:
-			break;
-
-		case WM_CLOSE:
-			if (MessageBox
-				(win_mainwindow,
-				 "Are you sure you want to quit?", "Confirm Exit",
-				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
-				Sys_Quit ();
-			}
-			break;
-
-		case WM_ACTIVATE:
-			fActive = LOWORD (wParam);
-			fMinimized = (BOOL) HIWORD (wParam);
-			Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
-			// fix leftover Alt from any Alt-Tab or the like that switched us
-			// away
-			IN_ClearStates ();
-			break;
-
-		case WM_DESTROY:
-			if (win_mainwindow)
-				DestroyWindow (win_mainwindow);
-			PostQuitMessage (0);
-			break;
-
-		case MM_MCINOTIFY:
-			//FIXME lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
-			break;
-
-		default:
-			/* pass all unhandled messages to DefWindowProc */
-			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-			break;
+		if (!win_cursor_visible) {
+			SetCursor (0);
+		}
 	}
 
-	/* return 1 if handled message, 0 if not */
-	return lRet;
+	if (win_input_grabbed) {
+		if (!win_warped_mouse) {
+			int         center_x = viddef.width / 2;
+			int         center_y = viddef.height / 2;
+			unsigned    dist_x = abs (center_x - x);
+			unsigned    dist_y = abs (center_y - y);
+
+			win_mouse_axes[0].value = x - win_mouse.x;
+			win_mouse_axes[1].value = y - win_mouse.y;
+			if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
+				SetCursorPos (win_center_x, win_center_y);
+				win_warped_mouse = true;
+			}
+		} else {
+			win_warped_mouse = false;
+		}
+	} else {
+		win_mouse_axes[0].value = x - win_mouse.x;
+		win_mouse_axes[1].value = y - win_mouse.y;
+	}
+	win_mouse.shift = win_key.shift;
+	win_mouse.x = x;
+	win_mouse.y = y;
+	if (!in_win_send_mouse_event (ie_mousemove)) {
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[0]);
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[1]);
+	}
+	return 0;
+}
+
+static LONG
+event_mousewheel (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int         x = LOWORD (lParam);
+	int         y = HIWORD (lParam);
+	short       w = HIWORD (wParam);
+	int         button = w < 0 ? 5 : 4;
+	// FIXME should (also) treat as an axis
+	event_button (true, button, x, y);
+	event_button (false, button, x, y);
+	return 0;
+}
+
+static long
+event_activate (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// fix leftover Alt from any Alt-Tab or the like that switched us away
+	if (in_win_initialized) {
+		IN_ClearStates ();
+	}
+	return 0;
+}
+
+void
+IN_Win_Preinit (void)
+{
+	Win_AddEvent (WM_MOUSELEAVE, event_leave);
+
+	Win_AddEvent (WM_SETFOCUS, event_focusin);
+	Win_AddEvent (WM_KILLFOCUS, event_focusout);
+
+	Win_AddEvent (WM_KEYDOWN, event_key);
+	Win_AddEvent (WM_SYSKEYDOWN, event_key);
+	Win_AddEvent (WM_KEYUP, event_key);
+	Win_AddEvent (WM_SYSKEYUP, event_key);
+	Win_AddEvent (WM_CHAR, event_char);
+	Win_AddEvent (WM_SYSCHAR, event_syschar);
+
+	Win_AddEvent (WM_LBUTTONDOWN, event_button_left);
+	Win_AddEvent (WM_LBUTTONUP, event_button_left);
+	Win_AddEvent (WM_RBUTTONDOWN, event_button_right);
+	Win_AddEvent (WM_RBUTTONUP, event_button_right);
+	Win_AddEvent (WM_MBUTTONDOWN, event_button_mid);
+	Win_AddEvent (WM_MBUTTONUP, event_button_mid);
+	Win_AddEvent (WM_XBUTTONDOWN, event_button_X);
+	Win_AddEvent (WM_XBUTTONUP, event_button_X);
+	Win_AddEvent (WM_MOUSEMOVE, event_mouse);
+
+	Win_AddEvent (WM_MOUSEWHEEL, event_mousewheel);
+
+	Win_AddEvent (WM_ACTIVATE, event_activate);
 }
 
 static in_driver_t in_win_driver = {
@@ -1181,7 +859,7 @@ static in_driver_t in_win_driver = {
 	.get_device_event_data = in_win_get_device_event_data,
 	.process_events = in_win_process_events,
 	.clear_states = in_win_clear_states,
-	//.grab_input = in_win_grab_input,
+	.grab_input = in_win_grab_input,
 
 	.axis_info = in_win_axis_info,
 	.button_info = in_win_button_info,

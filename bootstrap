@@ -71,11 +71,11 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
+			errors="Autoconf 2.71 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "69" ; then
-			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "71" ; then
+			errors="Autoconf 2.71 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else
@@ -89,10 +89,10 @@ if test -n "$am" ; then
 		AM_VER_MAJOR=`echo $AM_VER | cut -f1 -d.`
 		AM_VER_MINOR=`echo $AM_VER | cut -f2 -d.`
 		if test "$AM_VER_MAJOR" -lt "1"; then
-			errors="Automake 1.10 or greater needed to build makefiles.\n$errors"
+			errors="Automake 1.16 or greater needed to build makefiles.\n$errors"
 		fi
-		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "10"; then
-			errors="Automake 1.10 or greater needed to build makefiles.\n$errors"
+		if test "$AM_VER_MAJOR" -eq "1" -a "$AM_VER_MINOR" -lt "16"; then
+			errors="Automake 1.16 or greater needed to build makefiles.\n$errors"
 		fi
 	fi
 else

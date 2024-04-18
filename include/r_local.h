@@ -304,6 +304,7 @@ void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
 int R_LightPoint (mod_brush_t *brush, vec4f_t p);
+void R_Setup_Lighting (struct entity_s ent, alight_t *lighting);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);

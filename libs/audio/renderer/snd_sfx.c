@@ -203,6 +203,7 @@ static void
 s_gamedir (int phase, void *data)
 {
 	snd_num_sfx = 0;
+	Hash_FlushTable (snd_sfx_hash);
 }
 
 static void

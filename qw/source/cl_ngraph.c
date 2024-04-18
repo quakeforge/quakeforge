@@ -50,7 +50,7 @@
 
 #include "qw/include/cl_parse.h"
 #include "qw/include/client.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 
 int cl_netgraph;
 static cvar_t cl_netgraph_cvar = {
@@ -111,7 +111,7 @@ cl_netgraph_height_f (void *data, const cvar_t *cvar)
 }
 
 static void
-CL_NetGraph (view_pos_t abs, view_pos_t len)
+CL_NetGraph (view_pos_t abs, view_pos_t len, void *data)
 {
 	int         lost, a, l, x, y, i, o;
 	int         timings[NET_TIMINGS];
@@ -165,9 +165,9 @@ CL_NetGraph_Init (void)
 	View_SetPos (cl_netgraph_view, 0, 64);
 	View_SetLen (cl_netgraph_view, NET_TIMINGS + 16, cl_netgraph_height + 25);
 	View_SetGravity (cl_netgraph_view, grav_southwest);
-	void       *f = CL_NetGraph;
-	Ent_SetComponent (cl_netgraph_view.id, canvas_func,
-					  cl_netgraph_view.reg, &f);
+	Ent_SetComponent (cl_netgraph_view.id, cl_canvas_sys.base + canvas_func,
+					  cl_netgraph_view.reg,
+					  &(canvas_func_t) { .func = CL_NetGraph });
 	View_SetVisible (cl_netgraph_view, cl_netgraph);
 }
 

@@ -118,12 +118,14 @@ static menu_func_t menu_functions[] = {
 static void
 run_menu_pre (void)
 {
+	qfZoneScoped (true);
 	PR_ExecuteProgram (&menu_pr_state, menu_pre);
 }
 
 static void
 run_menu_post (void)
 {
+	qfZoneScoped (true);
 	PR_ExecuteProgram (&menu_pr_state, menu_post);
 }
 
@@ -225,6 +227,7 @@ menu_pic (int x, int y, const char *name,
 static void
 bi_Menu_Begin (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
@@ -243,30 +246,35 @@ bi_Menu_Begin (progs_t *pr, void *data)
 static void
 bi_Menu_FadeScreen (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->fadescreen = P_INT (pr, 0);
 }
 
 static void
 bi_Menu_Draw (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->draw = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_EnterHook (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->enter_hook = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_LeaveHook (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->leave_hook = P_FUNCTION (pr, 0);
 }
 
 static void
 bi_Menu_Pic (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
@@ -277,6 +285,7 @@ bi_Menu_Pic (progs_t *pr, void *data)
 static void
 bi_Menu_SubPic (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
@@ -291,6 +300,7 @@ bi_Menu_SubPic (progs_t *pr, void *data)
 static void
 bi_Menu_CenterPic (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
@@ -305,6 +315,7 @@ bi_Menu_CenterPic (progs_t *pr, void *data)
 static void
 bi_Menu_CenterSubPic (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
@@ -323,6 +334,7 @@ bi_Menu_CenterSubPic (progs_t *pr, void *data)
 static void
 bi_Menu_Item (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
@@ -342,6 +354,7 @@ bi_Menu_Item (progs_t *pr, void *data)
 static void
 bi_Menu_Cursor (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->cursor = func;
@@ -350,6 +363,7 @@ bi_Menu_Cursor (progs_t *pr, void *data)
 static void
 bi_Menu_KeyEvent (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->keyevent = func;
@@ -358,12 +372,14 @@ bi_Menu_KeyEvent (progs_t *pr, void *data)
 static void
 bi_Menu_End (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu = menu->parent;
 }
 
 static void
 bi_Menu_TopMenu (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 
 	if (top_menu)
@@ -374,6 +390,7 @@ bi_Menu_TopMenu (progs_t *pr, void *data)
 static void
 bi_Menu_SelectMenu (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 
 	menu = 0;
@@ -396,6 +413,7 @@ bi_Menu_SelectMenu (progs_t *pr, void *data)
 static void
 bi_Menu_SetQuit (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu_quit = func;
@@ -404,6 +422,7 @@ bi_Menu_SetQuit (progs_t *pr, void *data)
 static void
 bi_Menu_Quit (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	if (con_data.quit)
 		con_data.quit ();
 	Sys_Quit ();
@@ -412,6 +431,7 @@ bi_Menu_Quit (progs_t *pr, void *data)
 static void
 bi_Menu_GetIndex (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	if (menu) {
 		R_INT (pr) = menu->cur_item;
 	} else {
@@ -422,6 +442,7 @@ bi_Menu_GetIndex (progs_t *pr, void *data)
 static void
 bi_Menu_Next (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->cur_item++;
 	menu->cur_item %= menu->num_items;
 }
@@ -429,6 +450,7 @@ bi_Menu_Next (progs_t *pr, void *data)
 static void
 bi_Menu_Prev (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu->cur_item += menu->num_items - 1;
 	menu->cur_item %= menu->num_items;
 }
@@ -436,6 +458,7 @@ bi_Menu_Prev (progs_t *pr, void *data)
 static void
 bi_Menu_Enter (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	menu_item_t *item;
 
 	if (!menu)
@@ -466,6 +489,7 @@ bi_Menu_Enter (progs_t *pr, void *data)
 static void
 bi_Menu_Leave (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	if (menu) {
 		if (menu->leave_hook) {
 			run_menu_pre ();
@@ -644,6 +668,7 @@ Menu_Init (void)
 void
 Menu_Load (void)
 {
+	qfZoneScoped (true);
 	int         size;
 	QFile      *file;
 

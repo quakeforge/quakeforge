@@ -46,6 +46,8 @@
 #include "compat.h"
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 vec3_t      ambientcolor;
 
 unsigned int r_maxdlights;
@@ -59,7 +61,7 @@ R_FindNearLights (vec4f_t pos, int count, dlight_t **lights)
 	int         num = 0;
 	vec3_t      d;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];
@@ -306,7 +308,7 @@ R_PushDlights (const vec3_t entorigin, const visstate_t *visstate)
 	if (!r_dlight_lightmap)
 		return;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];
@@ -472,4 +474,46 @@ R_LightPoint (mod_brush_t *brush, vec4f_t p)
 		r = 0;
 
 	return r;
+}
+
+void
+R_Setup_Lighting (entity_t ent, alight_t *lighting)
+{
+	float       minlight = 0;
+	int         j;
+	// FIXME: remove and do real lighting
+	vec3_t      dist;
+	float       add;
+	float       lightvec[3] = { -1, 0, 0 };
+
+	auto transform = Entity_Transform (ent);
+	vec4f_t origin = Transform_GetWorldPosition (transform);
+	auto renderer = Entity_GetRenderer (ent);
+	minlight = max (renderer->model->min_light, renderer->min_light);
+
+	// 128 instead of 255 due to clamping below
+	j = max (R_LightPoint (&r_refdef.worldmodel->brush, origin),
+			 minlight * 128);
+
+	lighting->ambientlight = j;
+	lighting->shadelight = j;
+
+	VectorCopy (lightvec, lighting->lightvec);
+
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		VectorSubtract (origin, dlight->origin, dist);
+		add = dlight->radius - VectorLength (dist);
+
+		if (add > 0)
+			lighting->ambientlight += add;
+	}
+
+	// clamp lighting so it doesn't overbright as much
+	if (lighting->ambientlight > 128)
+		lighting->ambientlight = 128;
+	if (lighting->ambientlight + lighting->shadelight > 192)
+		lighting->shadelight = 192 - lighting->ambientlight;
 }

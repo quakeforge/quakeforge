@@ -326,6 +326,7 @@ entid_button (uint32_t entid, vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			.xpos = io.mouse.x + 50,
 			.ypos = io.mouse.y,
 			.is_open = true,
+			.auto_fit = true,
 		}), ind);
 }
 
@@ -392,16 +393,19 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 				.name = nva ("Job Timings##%p.window", rctx),
 				.xpos = 100,
 				.ypos = 50,
+				.auto_fit = true,
 			},
 			.job_control_window = {
 				.name = nva ("Job Control##%p.window", rctx),
 				.xpos = 100,
 				.ypos = 50,
+				.auto_fit = true,
 			},
 			.entid_window = {
 				.name = nva ("Entities##%p.window", rctx),
 				.xpos = 100,
 				.ypos = 50,
+				.auto_fit = true,
 			},
 			.ent_windows = DARRAY_STATIC_INIT (4),
 			.ent_window_ids = DARRAY_STATIC_INIT (4),

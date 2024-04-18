@@ -60,6 +60,7 @@ axis_free (void *a, void *data)
 VISIBLE int
 IN_RegisterAxis (in_axis_t *axis)
 {
+	qfZoneScoped (true);
 	const char *name = axis->name;
 	if (Hash_Find (axis_tab, name)) {
 		return 0;

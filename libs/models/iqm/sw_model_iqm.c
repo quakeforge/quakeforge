@@ -124,7 +124,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 			tex = sw->skins[i] = &null_texture;
 		for (j = 0; j < (int) iqm->meshes[i].num_triangles * 3; j++) {
 			int         ind = iqm->meshes[i].first_triangle * 3 + j;
-			int         vind = iqm->elements[ind];
+			int         vind = iqm->elements16[ind];
 			byte       *vert = iqm->vertices + iqm->stride * vind;
 			byte       *tc = vert + sw->texcoord->offset;
 
@@ -150,10 +150,10 @@ sw_iqm_convert_tris (iqm_t *iqm)
 	tris = malloc (num_tris * sizeof (mtriangle_t));
 	for (i = 0; i < num_tris; i++) {
 		tris[i].facesfront = 1;
-		VectorCopy (iqm->elements + i * 3, tris[i].vertindex);
+		VectorCopy (iqm->elements16 + i * 3, tris[i].vertindex);
 	}
-	free (iqm->elements);
-	iqm->elements = (uint16_t *) tris;
+	free (iqm->elements16);
+	iqm->elements16 = (uint16_t *) tris;
 }
 
 void

@@ -35,11 +35,11 @@
 
 #include "QF/qtypes.h"
 
-void CRC_Init(unsigned short *crcvalue);
-void CRC_ProcessByte(unsigned short *crcvalue, byte data);
-void CRC_ProcessBlock (const byte *start, unsigned short *crcvalue, int count);
-unsigned short CRC_Value(unsigned short crcvalue) __attribute__((const));
-unsigned short CRC_Block (const byte *start, int count) __attribute__((pure));
+void CRC_Init(uint16_t *crcvalue);
+void CRC_ProcessByte(uint16_t *crcvalue, byte data);
+void CRC_ProcessBlock (const byte *start, uint16_t *crcvalue, int count);
+uint16_t CRC_Value(uint16_t crcvalue) __attribute__((const));
+uint16_t CRC_Block (const byte *start, int count) __attribute__((pure));
 
 ///@}
 

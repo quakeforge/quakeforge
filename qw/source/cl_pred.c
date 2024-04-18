@@ -68,9 +68,9 @@ CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u,
 {
 	if (!clientplayer) {
 		if (VectorIsZero (from->pls.es.velocity)) {
-			VectorCopy (from->pls.es.origin, to->pls.es.origin);
+			to->pls.es.origin = from->pls.es.origin;
 			VectorCopy (u->angles, to->viewangles);
-			VectorCopy (from->pls.es.velocity, to->pls.es.velocity);
+			to->pls.es.velocity = from->pls.es.velocity;
 			return;
 		}
 	}
@@ -109,8 +109,10 @@ CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u,
 	to->oldbuttons = pmove.oldbuttons;	// Tonik
 	to->oldonground = pmove.oldonground;
 	VectorCopy (pmove.origin, to->pls.es.origin);
+	to->pls.es.origin[3] = 1;//FIXME make pmove use vec4f_t
 	VectorCopy (pmove.angles, to->viewangles);
 	VectorCopy (pmove.velocity, to->pls.es.velocity);
+	to->pls.es.velocity[3] = 0;
 	to->onground = onground;
 	to->pls.es.weaponframe = from->pls.es.weaponframe;
 }

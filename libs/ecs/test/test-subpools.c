@@ -10,16 +10,6 @@
 #include "QF/mathlib.h"
 #include "QF/ecs.h"
 
-#define DFL "\e[39;49m"
-#define BLK "\e[30;40m"
-#define RED "\e[31;40m"
-#define GRN "\e[32;40m"
-#define ONG "\e[33;40m"
-#define BLU "\e[34;40m"
-#define MAG "\e[35;40m"
-#define CYN "\e[36;40m"
-#define WHT "\e[37;40m"
-
 enum test_components {
 	test_subpool,
 	test_obj,
@@ -61,14 +51,14 @@ set_ent_name (uint32_t ent, uint32_t base, ecs_registry_t *reg,
 }
 
 static void
-dump_sp_ids (ecs_registry_t *reg, uint32_t comp)
+dump_sp_ids (ecs_registry_t *reg, uint32_t comp, uint32_t t_name)
 {
 	ecs_pool_t *pool = &reg->comp_pools[comp];
 	uint32_t   *ent = pool->dense;
 	uint32_t   *id = pool->data;
 
 	for (uint32_t i = 0; i < pool->count; i++) {
-		const char **n = Ent_GetComponent (ent[i], test_name, reg);
+		const char **n = Ent_GetComponent (ent[i], t_name, reg);
 		printf ("ent[%d]: %2d, %2d %s\n", i, ent[i], id[i], *n);
 	}
 }
@@ -121,14 +111,15 @@ check_subpool_sorted (ecs_subpool_t *subpool)
 }
 
 static int
-check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect)
+check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect,
+				 uint32_t t_name)
 {
 	ecs_pool_t *pool = &reg->comp_pools[comp];
 	uint32_t   *val = pool->data;
 	int         fail = 0;
 
 	for (uint32_t i = 0; i < pool->count; i++) {
-		const char **n = Ent_GetComponent (pool->dense[i], test_name, reg);
+		const char **n = Ent_GetComponent (pool->dense[i], t_name, reg);
 		printf ("val[%d]: %2d %2d %s\n", i, val[i], expect[i], *n);
 		if (val[i] != expect[i]) {
 			fail = 1;
@@ -140,7 +131,7 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect)
 int
 main (void)
 {
-	ecs_registry_t *reg = ECS_NewRegistry ();
+	ecs_registry_t *reg = ECS_NewRegistry ("subpool");
 	uint32_t base = ECS_RegisterComponents (reg, test_components,
 											test_num_components);
 	ECS_CreateComponentPools (reg);
@@ -199,7 +190,7 @@ main (void)
 	set_ent_name (entg, base, reg, ONG"g"DFL);
 	set_ent_name (enth, base, reg, MAG"h"DFL);
 
-	dump_sp_ids (reg, base + test_subpool);
+	dump_sp_ids (reg, base + test_subpool, base + test_name);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 0, 0, 0 })) {
 		printf ("oops\n");
@@ -222,7 +213,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 1, 7, 5, 6, 2, 4, 3 })) {
+						 (uint32_t[]) { 0, 1, 7, 5, 6, 2, 4, 3 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -234,7 +226,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 2, 5, 6, 3, 4 })) {
+						 (uint32_t[]) { 0, 7, 2, 5, 6, 3, 4 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -246,7 +239,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 2, 5, 6, 4 })) {
+						 (uint32_t[]) { 0, 7, 2, 5, 6, 4 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -258,7 +252,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 2, 5, 6 })) {
+						 (uint32_t[]) { 0, 7, 2, 5, 6 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -271,7 +266,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 2, 5, 6, 8, 9 })) {
+						 (uint32_t[]) { 0, 7, 2, 5, 6, 8, 9 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -285,7 +281,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 9, 8 })) {
+						 (uint32_t[]) { 0, 7, 9, 8 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -316,7 +313,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 9, 8, 10, 11, 12 })) {
+						 (uint32_t[]) { 0, 7, 9, 8, 10, 11, 12 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}
@@ -336,7 +334,8 @@ main (void)
 		return 1;
 	}
 	if (check_obj_comps (reg, base + test_obj,
-						 (uint32_t[]) { 0, 7, 10, 11, 12, 9, 8 })) {
+						 (uint32_t[]) { 0, 7, 10, 11, 12, 9, 8 },
+						 base + test_name)) {
 		printf ("oops\n");
 		return 1;
 	}

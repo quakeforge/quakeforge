@@ -89,7 +89,7 @@ typedef enum prdebug_e {
 	prd_begin,			// not sent by VM
 	prd_terminate,		// not sent by VM
 	prd_runerror,
-	prd_error,			// lower level error thann prd_runerror
+	prd_error,			// lower level error than prd_runerror
 } prdebug_t;
 
 #endif//__QF_pr_debug_h

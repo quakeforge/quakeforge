@@ -458,7 +458,7 @@ PF_log (progs_t *pr, void *data)
 	clean_text (text);
 
 	if (P_FLOAT (pr, 1))
-		Sys_Printf ("%s", text);
+		Sys_Printf ("%c%s", 3, text);
 
 	if (!file) {
 		Sys_Printf ("coldn't open log file %s\n", name);
@@ -475,7 +475,7 @@ PF_log (progs_t *pr, void *data)
 static void
 PF_conprint (progs_t *pr, void *data)
 {
-	Sys_Printf ("%s", PF_VarString (pr, 0, pr->pr_argc));
+	Sys_Printf ("%c%s", 3, PF_VarString (pr, 0, pr->pr_argc));
 }
 
 #define QWE (PR_RANGE_QWE << PR_RANGE_SHIFT) |

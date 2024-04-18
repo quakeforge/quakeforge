@@ -54,6 +54,7 @@ static int
 find_queue_family (qfv_instance_t *instance, VkPhysicalDevice dev,
 				   uint32_t flags)
 {
+	qfZoneScoped (true);
 	qfv_instfuncs_t *funcs = instance->funcs;
 	uint32_t    numFamilies;
 	VkQueueFamilyProperties *queueFamilies;
@@ -115,6 +116,7 @@ device_extension_enabled (qfv_device_t *device, const char *ext)
 qfv_device_t *
 QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 {
+	qfZoneScoped (true);
 	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
 	uint32_t next = count_strings (extensions) + 1; // ensure terminated
 	const char **lay = alloca (nlay * sizeof (const char *));
@@ -149,25 +151,34 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
-		VkPhysicalDeviceMultiviewFeatures multiview_features = {
-			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+		VkPhysicalDeviceVulkan12Features features12 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+			.hostQueryReset = 1,
+		};
+		VkPhysicalDeviceVulkan11Features features11 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+			.pNext = &features12,
 			.multiview = 1,
 			.multiviewGeometryShader = 1,
 		};
-		VkPhysicalDeviceFeatures features = {
-			.imageCubeArray = 1,
-			.independentBlend = 1,
-			.geometryShader = 1,
-			.multiViewport = 1,
-			.fragmentStoresAndAtomics = 1,
-			.fillModeNonSolid = 1,
+		VkPhysicalDeviceFeatures2 features = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+			.pNext = &features11,
+			.features = {
+				.imageCubeArray = 1,
+				.independentBlend = 1,
+				.geometryShader = 1,
+				.multiViewport = 1,
+				.fragmentStoresAndAtomics = 1,
+				.fillModeNonSolid = 1,
+			},
 		};
 		VkDeviceCreateInfo dCreateInfo = {
-			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &multiview_features, 0,
+			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, &features, 0,
 			1, &qCreateInfo,
 			nlay, lay,
 			next, ext,
-			&features
+			0
 		};
 		qfv_device_t *device = calloc (1, sizeof (qfv_device_t)
 										  + sizeof (qfv_devfuncs_t));
@@ -195,6 +206,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 void
 QFV_DestroyDevice (qfv_device_t *device)
 {
+	qfZoneScoped (true);
 	device->funcs->vkDestroyDevice (device->dev, 0);
 	del_strset (device->enabled_extensions);
 	free (device);
@@ -203,6 +215,7 @@ QFV_DestroyDevice (qfv_device_t *device)
 int
 QFV_DeviceWaitIdle (qfv_device_t *device)
 {
+	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkDeviceWaitIdle (device->dev) == VK_SUCCESS;
 }

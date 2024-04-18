@@ -470,6 +470,7 @@ V_DriftPitch (viewstate_t *vs)
 void
 V_ParseDamage (qmsg_t *net_message, viewstate_t *vs)
 {
+	qfZoneScoped (true);
 	float       count, side;
 	int         armor, blood;
 	vec4f_t     origin = vs->player_origin;
@@ -632,6 +633,7 @@ V_DropCShift (cshift_t *cs, double time, float droprate)
 void
 V_PrepBlend (viewstate_t *vs)
 {
+	qfZoneNamed (zone, true);
 	int         i, j;
 
 	if (cl_cshift_powerup
@@ -778,7 +780,7 @@ V_CalcIntermissionRefdef (viewstate_t *vs)
 
 	Transform_SetWorldPosition (vs->camera_transform, origin);
 	Transform_SetWorldRotation (vs->camera_transform, rotation);
-	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, view.reg);
+	auto renderer = Entity_GetRenderer (view);
 	renderer->model = NULL;
 
 	// always idle in intermission
@@ -799,8 +801,8 @@ V_CalcRefdef (viewstate_t *vs)
 	vec4f_t     origin = vs->player_origin;
 	vec_t      *viewangles = vs->player_angles;
 
-	renderer_t *renderer = Ent_GetComponent (view.id, scene_renderer, view.reg);
-	animation_t *animation = Ent_GetComponent (view.id, scene_animation, view.reg);
+	auto renderer = Entity_GetRenderer (view);
+	auto animation = Entity_GetAnimation (view);
 
 	V_DriftPitch (vs);
 
@@ -868,11 +870,11 @@ V_CalcRefdef (viewstate_t *vs)
 	}
 	renderer->model = model;
 	animation->frame = vs->weaponframe;
-	renderer->skin = 0;
 
 	// set up the refresh position
+	rotation = Transform_GetWorldRotation (vs->camera_transform);
 	Transform_SetWorldRotation (vs->camera_transform,
-								qmulf (vs->punchangle, rotation));
+								qmulf (rotation, vs->punchangle));
 
 	// smooth out stair step ups
 	if ((vs->onground != -1) && (gun_origin[2] - oldz > 0)) {
@@ -905,8 +907,9 @@ DropPunchAngle (viewstate_t *vs)
 	float       ps = magnitude3f (punch)[0];
 	if (ps < 1e-3) {
 		// < 0.2 degree rotation, not worth worrying about
-		//ensure the quaternion is normalized
+		//ensure the quaternion is identity
 		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+		vs->decay_punchangle = 0;
 		return;
 	}
 	float       pc = punch[3];
@@ -916,9 +919,11 @@ DropPunchAngle (viewstate_t *vs)
 	float       c = pc * dc + ps * ds;
 	if (s <= 0 || c >= 1) {
 		vs->punchangle = (vec4f_t) { 0, 0, 0, 1 };
+		vs->decay_punchangle = 0;
 	} else {
 		punch *= s / ps;
 		punch[3] = c;
+		vs->punchangle = punch;
 	}
 }
 
@@ -931,6 +936,7 @@ DropPunchAngle (viewstate_t *vs)
 void
 V_RenderView (viewstate_t *vs)
 {
+	qfZoneNamed (zone, true);
 	if (!vs->active) {
 		if (Transform_Valid (vs->camera_transform)) {
 			vec4f_t     base = { 0, 0, 0, 1 };
@@ -957,13 +963,14 @@ V_RenderView (viewstate_t *vs)
 void
 V_NewScene (viewstate_t *viewstate, scene_t *scene)
 {
-	viewstate->camera_transform = Transform_New (cl_world.scene->reg,
-												 nulltransform);
+	ecs_system_t ssys = { .reg = cl_world.scene->reg, .base = cl_world.scene->base };
+	viewstate->camera_transform = Transform_New (ssys, nulltransform);
 }
 
 void
 V_Init (viewstate_t *viewstate)
 {
+	qfZoneScoped (true);
 	Cmd_AddDataCommand ("bf", V_BonusFlash_f, viewstate,
 						"Background flash, used when you pick up an item");
 	Cmd_AddDataCommand ("centerview", V_StartPitchDrift_f, viewstate,

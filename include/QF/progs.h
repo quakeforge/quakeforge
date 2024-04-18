@@ -99,14 +99,15 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRI
 */
 #define PR_RESET_PARAMS(pr)	PR_SetupParams (pr, PR_MAX_PARAMS, 1)
 
-/**	\name Detouring Function Calls
+/**	\name Nested Function Calls
 
 	These functions allow a builtin function that uses PR_CallFunction() to
 	safely insert a call to another VM function. The +initialize diversion
-	required by Objective-QuakeC uses this.
+	required by Objective-QuakeC uses this, but any other nested call will
+	be similar.
 
 		PR_PushFrame (pr);
-		__auto_type params = PR_SaveParams (pr);
+		auto params = PR_SaveParams (pr);
 		... set up parameters to detour_function
 		PR_ExecuteProgram (pr, detour_function)
 		PR_RestoreParams (pr, params);
@@ -1980,6 +1981,7 @@ typedef struct type_view_s {
 	type_view_func enum_view;
 	type_view_func array_view;
 	type_view_func class_view;
+	type_view_func handle_view;
 #define EV_TYPE(type) type_view_func type##_view;
 #include "QF/progs/pr_type_names.h"
 } type_view_t;

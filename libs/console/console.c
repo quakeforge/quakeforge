@@ -109,6 +109,7 @@ Con_shutdown (void *data)
 VISIBLE void
 Con_Load (const char *plugin_name)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (Con_shutdown, 0);
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
@@ -120,6 +121,7 @@ Con_Load (const char *plugin_name)
 VISIBLE void
 Con_Init (void)
 {
+	qfZoneScoped (true);
 	if (con_module) {
 		__auto_type funcs = con_module->functions->console;
 		funcs->init ();

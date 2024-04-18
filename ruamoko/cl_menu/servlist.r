@@ -68,7 +68,6 @@ void () servlist_all_menu =
 
 int (string text, int key) sl_filter_in =
 {
-	load_keybindings();
 	switch (text) {
 	case "isnfull":
 		serv_nfull ^= 1;

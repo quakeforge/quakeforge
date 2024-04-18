@@ -191,6 +191,11 @@ _set_remove (set_t *set, unsigned x)
 	SET_REMOVE(set, x);
 }
 
+#define START_MASK(start) \
+	((~SET_ZERO) << (start % SET_BITS))
+#define END_MASK(end) \
+	((~SET_ZERO) >> ((SET_BITS - ((end + 1) % SET_BITS)) % SET_BITS))
+
 static inline void
 _set_add_range (set_t *set, unsigned start, unsigned count)
 {
@@ -201,8 +206,8 @@ _set_add_range (set_t *set, unsigned start, unsigned count)
 		set_expand (set, start + count);
 	}
 	unsigned    end = start + count - 1;
-	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
-	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	set_bits_t  start_mask = START_MASK (start);
+	set_bits_t  end_mask = END_MASK (end);
 	unsigned    start_ind = start / SET_BITS;
 	unsigned    end_ind = end / SET_BITS;
 	if (start_ind == end_ind) {
@@ -229,8 +234,8 @@ _set_remove_range (set_t *set, unsigned start, unsigned count)
 		count = set->size - start;
 	}
 	unsigned    end = start + count - 1;
-	set_bits_t  start_mask = (~SET_ZERO) << (start % SET_BITS);
-	set_bits_t  end_mask = (~SET_ZERO) >> (SET_BITS - ((end + 1) % SET_BITS));
+	set_bits_t  start_mask = START_MASK (start);
+	set_bits_t  end_mask = END_MASK (end);
 	unsigned    start_ind = start / SET_BITS;
 	unsigned    end_ind = end / SET_BITS;
 	if (start_ind == end_ind) {

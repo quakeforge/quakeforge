@@ -930,6 +930,29 @@ follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 }
 
 static void
+flow_find_ptr (set_t *use, set_t *use_ptr, statement_t *st, function_t *func)
+{
+	set_t      *ptr = set_new ();
+	set_t      *visited = set_new ();
+	for (int i = 0; i < st->num_use; i++) {
+		udchain_t   ud = func->ud_chains[i + st->first_use];
+		set_empty (visited);
+		set_add (visited, st->number);
+		if (set_is_member (use_ptr, ud.var)) {
+			set_empty (ptr);
+			follow_ud_chain (ud, func, ptr, visited);
+			for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
+				flowvar_t  *var = func->vars[p->element];
+				flow_add_op_var (use, var->op, 0);
+				flowvar_add_use (var, st);
+			}
+		}
+	}
+	set_delete (visited);
+	set_delete (ptr);
+}
+
+static void
 flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 {
 	if (!func->ud_chains) {
@@ -937,8 +960,6 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 	}
 	set_t      *use_ptr = set_new ();
 	set_t      *def_ptr = set_new ();
-	set_t      *ptr = set_new ();
-	set_t      *visited = set_new ();
 
 	int         have_use = 0;
 	for (operand_t *op = st->use; op; op = op->next) {
@@ -953,20 +974,28 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 		}
 	}
 	if (have_use) {
-		for (int i = 0; i < st->num_use; i++) {
-			udchain_t   ud = func->ud_chains[i + st->first_use];
-			set_empty (visited);
-			set_add (visited, st->number);
-			if (set_is_member (use_ptr, ud.var)) {
-				set_empty (ptr);
-				follow_ud_chain (ud, func, ptr, visited);
-				for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
-					flowvar_t  *var = func->vars[p->element];
-					flow_add_op_var (use, var->op, 0);
-					flowvar_add_use (var, st);
-				}
-			}
-		}
+		flow_find_ptr (use, use_ptr, st, func);
+	}
+
+	set_delete (use_ptr);
+	set_delete (def_ptr);
+}
+
+static void
+flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
+{
+	if (!func->ud_chains) {
+		return;
+	}
+	set_t      *use_ptr = set_new ();
+	set_t      *def_ptr = set_new ();
+	set_t      *ptr = set_new ();
+	set_t      *visited = set_new ();
+
+	set_add (use_ptr, flow_get_var (st->opa)->number);
+	set_add (def_ptr, flow_get_var (st->opc)->number);
+	if (use) {
+		flow_find_ptr (use, use_ptr, st, func);
 	}
 
 	set_delete (visited);
@@ -1169,6 +1198,8 @@ flow_build_chains (flowgraph_t *graph)
 				if (st->type == st_func && statement_is_call (st)) {
 					// set def later?
 					flow_check_params (st, stuse, 0, graph->func);
+				} else if (st->type == st_ptrmove) {
+					flow_check_move (st, stuse, 0, graph->func);
 				}
 				set_empty (tmp);
 				for (set_iter_t *vi = set_first (stuse); vi;
@@ -1199,6 +1230,8 @@ flow_build_chains (flowgraph_t *graph)
 				if (st->type == st_func && statement_is_call (st)) {
 					// set def later?
 					flow_check_params (st, stuse, 0, graph->func);
+				} else if (st->type == st_ptrmove) {
+					flow_check_move (st, stuse, 0, graph->func);
 				}
 				set_empty (tmp);
 				first_use[st->number] = num_ud_chains;
@@ -1246,10 +1279,12 @@ flow_build_chains (flowgraph_t *graph)
 	set_delete (reach.stdef);
 
 	graph->func->du_chains = malloc (num_ud_chains * sizeof (udchain_t));
-	memcpy (graph->func->du_chains, graph->func->ud_chains,
-			num_ud_chains * sizeof (udchain_t));
-	heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
-			  duchain_cmp);
+	if (num_ud_chains) {
+		memcpy (graph->func->du_chains, graph->func->ud_chains,
+				num_ud_chains * sizeof (udchain_t));
+		heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
+				  duchain_cmp);
+	}
 	for (int i = 0; i < num_ud_chains; i++) {
 		udchain_t   du = graph->func->du_chains[i];
 
@@ -1732,7 +1767,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (operands) {
 				operands[1] = s->opa;
 				operands[2] = s->opb;
-				operands[3] = s->opc;
+				if (calln >= 0 || (s->opc && s->opc->op_type == op_value)) {
+					operands[3] = s->opc;
+				}
+
 			}
 			break;
 		case st_flow:
@@ -2104,8 +2142,15 @@ flow_build_graph (function_t *func)
 		graph->num_nodes++;
 	// + 2 for the uninitialized dummy head block and the live dummy end block
 	graph->nodes = malloc ((graph->num_nodes + 2) * sizeof (flownode_t *));
-	for (i = 0, sb = sblock; sb; i++, sb = sb->next)
+	int num_statements = 0;
+	for (i = 0, sb = sblock; sb; i++, sb = sb->next) {
 		graph->nodes[i] = flow_make_node (sb, i, func);
+		graph->nodes[i]->first_statement = num_statements;
+		for (auto s = sb->statements; s; s = s->next) {
+			graph->nodes[i]->num_statements++;
+		}
+		num_statements += graph->nodes[i]->num_statements;
+	}
 	// Create the dummy node for detecting uninitialized variables
 	node = flow_make_node (0, graph->num_nodes, func);
 	graph->nodes[graph->num_nodes] = node;

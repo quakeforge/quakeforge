@@ -77,7 +77,8 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/editbuffer.c \
 	ruamoko/qwaq/builtins/qwaq-curses.c \
 	ruamoko/qwaq/builtins/term-input.c \
-	ruamoko/qwaq/builtins/threading.c
+	ruamoko/qwaq/builtins/threading.c \
+	$(tracy_src)
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
@@ -88,7 +89,8 @@ qwaq_cmd_libs=
 
 ruamoko_qwaq_qwaq_cmd_SOURCES= \
 	ruamoko/qwaq/builtins/main.c \
-	ruamoko/qwaq/builtins/qwaq-cmd.c
+	ruamoko/qwaq/builtins/qwaq-cmd.c \
+	$(tracy_src)
 
 ruamoko_qwaq_qwaq_cmd_LDADD= $(qwaq_cmd_libs) $(QWAQ_LIBS) \
 				$(PTHREAD_LDFLAGS) $(DL_LIBS)
@@ -120,7 +122,7 @@ qwaq_x11_libs= \
 ruamoko_qwaq_qwaq_x11_SOURCES= \
 	ruamoko/qwaq/builtins/main.c \
 	ruamoko/qwaq/builtins/qwaq-graphics.c \
-	ruamoko/qwaq/builtins/graphics.c
+	ruamoko/qwaq/builtins/graphics.c $(tracy_src) $(tracyvk_src)
 ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(X_LIBS) \
 			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(PTHREAD_LDFLAGS) $(DL_LIBS)

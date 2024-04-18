@@ -68,6 +68,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);
@@ -88,6 +92,7 @@ main (int argc, const char **argv)
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
+		qfFrameMark;
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

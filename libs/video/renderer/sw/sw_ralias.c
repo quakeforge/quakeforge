@@ -39,6 +39,7 @@
 #include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
@@ -99,11 +100,12 @@ R_AliasCheckBBox (entity_t ent)
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id,
+												 ent.base + scene_visibility,
 												 ent.reg);
 	visibility->trivial_accept = 0;
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	pmodel = renderer->model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
@@ -112,8 +114,7 @@ R_AliasCheckBBox (entity_t ent)
 	R_AliasSetUpTransform (ent, 0);
 
 	// construct the base bounding box for this frame
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	frame = animation->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
@@ -529,7 +530,7 @@ R_AliasPrepareUnclippedPoints (void)
 static void
 R_AliasSetupSkin (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	int         skinnum = renderer->skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
 		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
@@ -537,8 +538,7 @@ R_AliasSetupSkin (entity_t ent)
 		skinnum = 0;
 	}
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	pskindesc = R_AliasGetSkindesc (animation, skinnum, paliashdr);
 
 	a_skinwidth = pmdl->skinwidth;
@@ -548,17 +548,15 @@ R_AliasSetupSkin (entity_t ent)
 	r_affinetridesc.seamfixupX16 = (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	acolormap = r_colormap;
 	if (renderer->skin) {
-		tex_t      *base;
+		auto skin = Skin_Get (renderer->skin);
 
-		base = renderer->skin->texels;
-		if (base) {
-			r_affinetridesc.pskin = base->data;
-			r_affinetridesc.skinwidth = base->width;
-			r_affinetridesc.skinheight = base->height;
+		if (skin) {
+			tex_t      *tex = skin->tex;
+			r_affinetridesc.pskin = tex->data;
+			r_affinetridesc.skinwidth = tex->width;
+			r_affinetridesc.skinheight = tex->height;
 		}
-		acolormap = renderer->skin->colormap;
 	}
 }
 
@@ -601,8 +599,7 @@ R_AliasSetupFrame (entity_t ent)
 {
 	maliasframedesc_t *frame;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	frame = R_AliasGetFramedesc (animation, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
@@ -616,7 +613,7 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 
 	r_amodels_drawn++;
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (renderer->onlyshadows) {
 		return;
 	}
@@ -637,7 +634,8 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin (ent);
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id,
+												 ent.base + scene_visibility,
 												 ent.reg);
 	R_AliasSetUpTransform (ent, visibility->trivial_accept);
 	R_AliasSetupLighting (lighting);
@@ -646,8 +644,11 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
-	if (!acolormap)
-		acolormap = r_colormap;
+	acolormap = r_colormap;
+	auto cmap = Entity_GetColormap (ent);
+	if (cmap) {
+		acolormap = sw_Skin_Colormap (cmap);
+	}
 
 	if (r_affinetridesc.drawtype) {
 		D_PolysetUpdateTables ();		// FIXME: precalc...

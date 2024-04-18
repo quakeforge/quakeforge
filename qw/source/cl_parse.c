@@ -67,7 +67,7 @@
 
 #include "client/effects.h"
 #include "client/particles.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 #include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
@@ -232,7 +232,7 @@ CL_CheckOrDownloadFile (const char *filename)
 	}
 	// ZOID - can't download when recording
 	if (cls.demorecording) {
-		Sys_Printf ("Unable to download %s in record mode.\n",
+		Sys_Printf ("%cUnable to download %s in record mode.\n", 3,
 					cls.downloadname->str);
 		return true;
 	}
@@ -242,7 +242,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	dstring_copystr (cls.downloadname, filename);
 	dstring_copystr (cls.downloadtempname, filename);
-	Sys_Printf ("Downloading %s...\n", cls.downloadname->str);
+	Sys_Printf ("%cDownloading %s...\n", 3, cls.downloadname->str);
 
 	// download to a temp name, and rename to the real name only when done,
 	// so if interrupted a runt file wont be left
@@ -312,8 +312,8 @@ Model_NextDownload (void)
 					   Mod_ForName (cl.model_name[i], false));
 
 		if (!cl_world.models.a[i]) {
-			Sys_Printf ("\nThe required model file '%s' could not be found or "
-						"downloaded.\n\n", cl.model_name[i]);
+			Sys_Printf ("%c\nThe required model file '%s' could not be found or"
+						" downloaded.\n\n", 3, cl.model_name[i]);
 			Sys_Printf ("You may need to download or purchase a %s client "
 						"pack in order to play on this server.\n\n",
 						qfs_gamedir->gamedir);
@@ -324,7 +324,6 @@ Model_NextDownload (void)
 		if (strequal (cl.model_name[i], "progs/player.mdl")
 			&& cl_world.models.a[i]->type == mod_alias) {
 			info_key = pmodel_name;
-			//XXX mod_funcs->Skin_Player_Model (cl_world.models.a[i]);
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
 			&& cl_world.models.a[i]->type == mod_alias)
@@ -454,7 +453,7 @@ CL_FinishDownload (void)
 					  cls.downloadname->str + 6);
 		}
 		if (QFS_Rename (oldn->str, newn->str))
-			Sys_Printf ("failed to rename %s to %s, %s.\n", oldn->str,
+			Sys_Printf ("%cfailed to rename %s to %s, %s.\n", 3, oldn->str,
 						newn->str, strerror (errno));
 		dstring_delete (oldn);
 		dstring_delete (newn);
@@ -511,7 +510,7 @@ CL_OpenDownload (void)
 	if (!cls.download) {
 		dstring_clearstr (cls.downloadname);
 		dstring_clearstr (cls.downloadurl);
-		Sys_Printf ("Failed to open %s\n", name->str);
+		Sys_Printf ("%cFailed to open %s\n", 3, name->str);
 		CL_RequestNextDownload ();
 		return 0;
 	}
@@ -563,7 +562,7 @@ CL_ParseDownload (void)
 					 strlen (cls.downloadname->str))
 			|| strstr (newname + strlen (cls.downloadname->str), "/")) {
 			Sys_Printf
-				("WARNING: server tried to give a strange new name: %s\n",
+				("%cWARNING: server tried to give a strange new name: %s\n", 3,
 				 newname);
 			CL_RequestNextDownload ();
 			return;
@@ -573,7 +572,7 @@ CL_ParseDownload (void)
 			unlink (cls.downloadname->str);
 		}
 		dstring_copystr (cls.downloadname, newname);
-		Sys_Printf ("downloading to %s\n", cls.downloadname->str);
+		Sys_Printf ("%cdownloading to %s\n", 3, cls.downloadname->str);
 		return;
 	}
 	if (size == DL_HTTP) {
@@ -586,8 +585,8 @@ CL_ParseDownload (void)
 						 strlen (cls.downloadname->str))
 				|| strstr (newname + strlen (cls.downloadname->str), "/")) {
 				Sys_Printf
-					("WARNING: server tried to give a strange new name: %s\n",
-					 newname);
+					("%cWARNING: server tried to give a strange new name: %s\n",
+					 3, newname);
 				CL_RequestNextDownload ();
 				return;
 			}
@@ -598,7 +597,7 @@ CL_ParseDownload (void)
 			dstring_copystr (cls.downloadname, newname);
 		}
 		dstring_copystr (cls.downloadurl, url);
-		Sys_Printf ("downloading %s to %s\n", cls.downloadurl->str,
+		Sys_Printf ("%cdownloading %s to %s\n", 3, cls.downloadurl->str,
 					cls.downloadname->str);
 		CL_HTTP_StartDownload ();
 #else
@@ -800,8 +799,9 @@ CL_ParseServerData (void)
 	movevars.entgravity = MSG_ReadFloat (net_message);
 
 	// separate the printfs so the server message can have a color
-	Sys_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
-				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
+	Sys_Printf ("%c\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36"
+				"\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n",
+				3);
 	Sys_Printf ("%c%s\n", 2, str);
 
 	// ask for the sound list next
@@ -996,48 +996,32 @@ CL_ParseClientdata (void)
 static void
 CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	char       skin[MAX_SKIN_LENGTH] = { 0 };
-	const char *s;
-
-	s = Info_ValueForKey (player->userinfo, "skin");
-
-	if (strlen(s) < sizeof skin) {
-		QFS_StripExtension (s, skin);
-		if (!strequal (s, skin))
-			Info_SetValueForKey (player->userinfo, "skin", skin, 1);
-	} else {
-		Info_SetValueForKey (player->userinfo, "skin", skin, 1);
-	}
-
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
-		if (player->userid)
-			Info_SetValueForKey (player->userinfo, "name",
-								 va (0, "user-%i [exploit]",
-									 player->userid), 1);
-		else
-			Info_SetValueForKey (player->userinfo, "name", "", 1);
+		const char *name = "";
+		if (player->userid) {
+			name = va (0, "user-%i [exploit]", player->userid);
+		}
+		Info_SetValueForKey (player->userinfo, "name", name, 1);
 	}
-	player->topcolor = atoi (Info_ValueForKey (player->userinfo, "topcolor"));
-	player->bottomcolor =
-		atoi (Info_ValueForKey (player->userinfo, "bottomcolor"));
+	const char *tc = Info_ValueForKey (player->userinfo, "topcolor");
+	const char *bc = Info_ValueForKey (player->userinfo, "bottomcolor");
+	player->topcolor = tc ? atoi (tc) : TOP_COLOR;
+	player->bottomcolor = bc ? atoi (bc) : BOTTOM_COLOR;
 
-	while (!(player->team = Info_Key (player->userinfo, "team")))
-			Info_SetValueForKey (player->userinfo, "team", "", 1);
-	while (!(player->skinname = Info_Key (player->userinfo, "skin")))
-			Info_SetValueForKey (player->userinfo, "skin", "", 1);
-	while (!(player->chat = Info_Key (player->userinfo, "chat")))
-			Info_SetValueForKey (player->userinfo, "chat", "0", 1);
+	while (!(player->team = Info_Key (player->userinfo, "team"))) {
+		Info_SetValueForKey (player->userinfo, "team", "", 1);
+	}
+	while (!(player->skinname = Info_Key (player->userinfo, "skin"))) {
+		Info_SetValueForKey (player->userinfo, "skin", "", 1);
+	}
+	while (!(player->chat = Info_Key (player->userinfo, "chat"))) {
+		Info_SetValueForKey (player->userinfo, "chat", "0", 1);
+	}
 
-	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
-		player->spectator = true;
-	else
-		player->spectator = false;
+	const char *spec = Info_ValueForKey (player->userinfo, "*spectator");
+	player->spectator = spec && *spec;
 
-	mod_funcs->Skin_SetTranslation (slot + 1, player->topcolor,
-									player->bottomcolor);
-	player->skin = mod_funcs->Skin_SetSkin (player->skin, slot + 1,
-											player->skinname->value);
-	player->skin = mod_funcs->Skin_SetColormap (player->skin, slot + 1);
+	player->skin = mod_funcs->skin_set (player->skinname->value);
 
 	Sbar_UpdateInfo (slot);
 }
@@ -1302,7 +1286,13 @@ CL_ParseServerMessage (void)
 						GIB_Event_Callback (cl_chat_e, 1, str);
 					Team_ParseChat (str);
 				}
-				Sys_Printf ("%s", str);
+				if (str[0]) {
+					if (str[0] <= 3) {
+						Sys_Printf ("%s", str);
+					} else {
+						Sys_Printf ("%c%s", 3, str);
+					}
+				}
 				if (p)
 					dstring_delete (p);
 				Con_SetOrMask (0);
@@ -1491,6 +1481,7 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
+				cl.viewstate.decay_punchangle = 1;
 				cl.viewstate.punchangle = (vec4f_t) {
 					// -2 degrees pitch
 					0, -0.0174524064, 0, 0.999847695
@@ -1498,6 +1489,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_bigkick:
+				cl.viewstate.decay_punchangle = 1;
 				cl.viewstate.punchangle = (vec4f_t) {
 					// -4 degrees pitch
 					0, -0.0348994967, 0, 0.999390827

@@ -31,7 +31,9 @@
 # include "config.h"
 #endif
 
-#define _GNU_SOURCE	// for qsort_r
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -62,6 +64,7 @@ typedef struct {
 static int
 int_compare (const void *_a, const void *_b)
 {
+	qfZoneScoped (true);
 	const int  *a = _a;
 	const int  *b = _b;
 	return *a - *b;
@@ -70,6 +73,7 @@ int_compare (const void *_a, const void *_b)
 static int
 rua_compare (const void *a, const void *b, void *_f)
 {
+	qfZoneScoped (true);
 	function_t *f = _f;
 
 	PR_PushFrame (f->pr);
@@ -86,6 +90,7 @@ rua_compare (const void *a, const void *b, void *_f)
 static void
 bi_bsearch (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const void *key = P_GPOINTER (pr, 0);
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
@@ -105,6 +110,7 @@ bi_bsearch (progs_t *pr, void *data)
 static void
 bi_fbsearch (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const void *key = P_GPOINTER (pr, 0);
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
@@ -124,6 +130,7 @@ bi_fbsearch (progs_t *pr, void *data)
 static void
 bi_qsort (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	void       *array = P_GPOINTER (pr, 0);
 	size_t      nmemb = P_INT (pr, 1);
 	size_t      size = P_INT (pr, 2) * sizeof (pr_int_t);
@@ -140,6 +147,7 @@ bi_qsort (progs_t *pr, void *data)
 static void
 bi_prefixsumi (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int        *array = (int *) P_GPOINTER (pr, 0);
 	int         count = P_INT (pr, 1);
 
@@ -151,6 +159,7 @@ bi_prefixsumi (progs_t *pr, void *data)
 static void
 bi_prefixsumf (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float      *array = (float *) P_GPOINTER (pr, 0);
 	int         count = P_INT (pr, 1);
 
@@ -174,5 +183,6 @@ static builtin_t builtins[] = {
 void
 RUA_Stdlib_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

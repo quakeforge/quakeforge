@@ -65,7 +65,7 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 	for (i = 0; i < mesh->num_triangles; i++) {
 		int     vind = (mesh->first_triangle + i) * 3;
 		for (j = 0; j < 3; j++) {
-			vert = iqm->vertices + iqm->elements[vind + j] * iqm->stride;
+			vert = iqm->vertices + iqm->elements16[vind + j] * iqm->stride;
 			if (gl->texcoord)
 				qfglTexCoord2fv ((float *) (vert + gl->texcoord->offset));
 			if (gl->color)
@@ -88,7 +88,7 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 void
 gl_R_DrawIQMModel (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
@@ -96,8 +96,7 @@ gl_R_DrawIQMModel (entity_t ent)
 	iqmframe_t *frame;
 	int         i;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, 0, gl->blend_palette, gl->palette_size);

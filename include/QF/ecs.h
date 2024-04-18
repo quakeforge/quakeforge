@@ -36,7 +36,6 @@
 
 #include "QF/darray.h"
 #include "QF/qtypes.h"
-#include "QF/progs.h"//FIXME for PR_RESMAP
 
 #include "QF/ecs/component.h"
 #include "QF/ecs/hierarchy.h"
@@ -77,7 +76,16 @@ typedef struct ecs_subpool_s {
 	uint32_t    max_ranges;
 } ecs_subpool_t;
 
+/// components that are available in every registry
+enum {
+	ecs_name,				///< const char *
+	ecs_hierarchy,			///< hierarchy_t
+
+	ecs_comp_count
+};
+
 typedef struct ecs_registry_s {
+	const char *name;
 	ecs_pool_t *comp_pools;
 	uint32_t   *entities;
 	ecs_subpool_t *subpools;
@@ -86,7 +94,6 @@ typedef struct ecs_registry_s {
 	uint32_t    num_entities;
 	uint32_t    max_entities;
 	componentset_t components;
-	PR_RESMAP (hierarchy_t) hierarchies;//FIXME find a better way
 	int         locked;
 } ecs_registry_t;
 
@@ -104,7 +111,7 @@ typedef struct ecs_system_s {
 
 #define ECSINLINE GNU89INLINE inline
 
-ecs_registry_t *ECS_NewRegistry (void);
+ecs_registry_t *ECS_NewRegistry (const char *name);
 void ECS_DelRegistry (ecs_registry_t *registry);
 uint32_t ECS_RegisterComponents (ecs_registry_t *registry,
 								 const component_t *components,
@@ -125,6 +132,8 @@ void ECS_SortComponentPoolRange (ecs_registry_t *registry, uint32_t component,
 uint32_t ECS_NewEntity (ecs_registry_t *registry);
 void ECS_DelEntity (ecs_registry_t *registry, uint32_t ent);
 void ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component);
+void ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent);
+void ECS_PrintRegistry (ecs_registry_t *registry);
 
 uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
 void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,

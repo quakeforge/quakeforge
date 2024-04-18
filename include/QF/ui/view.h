@@ -83,12 +83,14 @@ typedef struct viewcont_s {
 	unsigned resize_y:1;		///< If true, view's height follows parent's.
 	unsigned bol_suppress:1;	///< If true, view_flow skips at start of line.
 	unsigned flow_size:1;		///< If true, view's size is adjusted to flow.
-	unsigned semantic_x:3;		///< layout size control (IMUI_SizeKind)
-	unsigned semantic_y:3;		///< layout size control (IMUI_SizeKind)
+	unsigned flow_parent:1;		///< If true, parent's size is adjusted to flow.
+	unsigned semantic_x:3;		///< layout size control (imui_size_t)
+	unsigned semantic_y:3;		///< layout size control (imui_size_t)
 	unsigned free_x:1;			///< don't set position automatically
 	unsigned free_y:1;			///< don't set position automatically
 	unsigned vertical:1;		///< true: layout is vertical, else horizontal
 	unsigned active:1;			///< can respond to the mouse
+	unsigned is_link:1;			///< has non-root reference component
 } viewcont_t;
 
 enum {
@@ -137,9 +139,13 @@ typedef void (*view_move_f) (view_t view, view_pos_t abs);
 
 #define VIEWINLINE GNU89INLINE inline
 
+VIEWINLINE view_pos_t VP_add (view_pos_t a, view_pos_t b);
+VIEWINLINE view_pos_t VP_sub (view_pos_t a, view_pos_t b);
+
 VIEWINLINE view_t View_FromEntity (ecs_system_t viewsys, uint32_t ent);
 view_t View_New (ecs_system_t viewsys, view_t parent);
-view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent);
+view_t View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent,
+						 bool own);
 VIEWINLINE void View_Delete (view_t view);
 void View_SetParent (view_t view, view_t parent);
 void View_UpdateHierarchy (view_t view);
@@ -153,9 +159,10 @@ void view_flow_up_right (view_t view, view_pos_t len);
 void view_flow_down_left (view_t view, view_pos_t len);
 void view_flow_up_left (view_t view, view_pos_t len);
 
-VIEWINLINE hierref_t *View_GetRef (view_t view);
+VIEWINLINE hierref_t View_GetRef (view_t view);
 VIEWINLINE int View_Valid (view_t view);
 
+VIEWINLINE view_t View_GetRoot (view_t view);
 VIEWINLINE view_t View_GetParent (view_t view);
 VIEWINLINE uint32_t View_ChildCount (view_t view);
 VIEWINLINE view_t View_GetChild (view_t view, uint32_t index);
@@ -182,6 +189,24 @@ VIEWINLINE void View_SetOnMove (view_t view, view_move_f onmove);
 #define VIEWINLINE VISIBLE
 #endif
 
+VIEWINLINE view_pos_t
+VP_add (view_pos_t a, view_pos_t b)
+{
+	return (view_pos_t) {
+		.x = a.x + b.x,
+		.y = a.y + b.y,
+	};
+}
+
+VIEWINLINE view_pos_t
+VP_sub (view_pos_t a, view_pos_t b)
+{
+	return (view_pos_t) {
+		.x = a.x - b.x,
+		.y = a.y - b.y,
+	};
+}
+
 VIEWINLINE
 view_t
 View_FromEntity (ecs_system_t viewsys, uint32_t ent)
@@ -194,10 +219,10 @@ View_FromEntity (ecs_system_t viewsys, uint32_t ent)
 }
 
 VIEWINLINE
-hierref_t *
+hierref_t
 View_GetRef (view_t view)
 {
-	return Ent_GetComponent (view.id, view.comp, view.reg);
+	return *(hierref_t *) Ent_GetComponent (view.id, view.comp, view.reg);
 }
 
 VIEWINLINE
@@ -211,25 +236,39 @@ VIEWINLINE
 void
 View_Delete (view_t view)
 {
-	__auto_type ref = *View_GetRef (view);
-	Hierarchy_RemoveHierarchy (ref.hierarchy, ref.index, 1);
-	if (!ref.hierarchy->num_objects) {
-		Hierarchy_Delete (ref.hierarchy);
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	Hierarchy_RemoveHierarchy (h, ref.index, 1);
+	if (!h->num_objects) {
+		Hierarchy_Delete (ref.id, view.reg);
 	}
+}
+
+VIEWINLINE
+view_t
+View_GetRoot (view_t view)
+{
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	return (view_t) {
+		.reg = view.reg,
+		.id = h->ent[0],
+		.comp = view.comp,
+	};
 }
 
 VIEWINLINE
 view_t
 View_GetParent (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	if (ref->index == 0) {
+	auto ref = View_GetRef (view);
+	if (ref.index == 0) {
 		return nullview;
 	}
-	hierarchy_t *h = ref->hierarchy;
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	return (view_t) {
 		.reg = view.reg,
-		.id = h->ent[h->parentIndex[ref->index]],
+		.id = h->ent[h->parentIndex[ref.index]],
 		.comp = view.comp,
 	};
 }
@@ -238,23 +277,23 @@ VIEWINLINE
 uint32_t
 View_ChildCount (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
-	return h->childCount[ref->index];
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	return h->childCount[ref.index];
 }
 
 VIEWINLINE
 view_t
 View_GetChild (view_t view, uint32_t childIndex)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
-	if (childIndex >= h->childCount[ref->index]) {
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
+	if (childIndex >= h->childCount[ref.index]) {
 		return nullview;
 	}
 	return (view_t) {
 		.reg = view.reg,
-		.id = h->ent[h->childIndex[ref->index] + childIndex],
+		.id = h->ent[h->childIndex[ref.index] + childIndex],
 		.comp = view.comp,
 	};
 }
@@ -264,151 +303,151 @@ VIEWINLINE
 void
 View_SetPos (view_t view, int x, int y)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	byte       *modified = h->components[view_modified];
-	pos[ref->index] = (view_pos_t) { x, y };
-	modified[ref->index] |= 1;
+	pos[ref.index] = (view_pos_t) { x, y };
+	modified[ref.index] |= 1;
 }
 
 VIEWINLINE
 view_pos_t
 View_GetPos (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
-	return pos[ref->index];
+	return pos[ref.index];
 }
 
 VIEWINLINE
 view_pos_t
 View_GetAbs (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *abs = h->components[view_abs];
-	return abs[ref->index];
+	return abs[ref.index];
 }
 
 VIEWINLINE
 view_pos_t
 View_GetRel (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *rel = h->components[view_rel];
-	return rel[ref->index];
+	return rel[ref.index];
 }
 
 VIEWINLINE
 void
 View_SetLen (view_t view, int x, int y)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *len = h->components[view_len];
 	view_pos_t *oldlen = h->components[view_oldlen];
 	byte       *modified = h->components[view_modified];
-	if (!(modified[ref->index] & 2)) {
-		oldlen[ref->index] = len[ref->index];
+	if (!(modified[ref.index] & 2)) {
+		oldlen[ref.index] = len[ref.index];
 	}
-	len[ref->index] = (view_pos_t) { x, y };
-	modified[ref->index] |= 2;
+	len[ref.index] = (view_pos_t) { x, y };
+	modified[ref.index] |= 2;
 }
 
 VIEWINLINE
 view_pos_t
 View_GetLen (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *len = h->components[view_len];
-	return len[ref->index];
+	return len[ref.index];
 }
 
 VIEWINLINE
 viewcont_t *
 View_Control (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
-	return &cont[ref->index];
+	return &cont[ref.index];
 }
 
 VIEWINLINE
 void
 View_SetGravity (view_t view, grav_t grav)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
 	byte       *modified = h->components[view_modified];
-	cont[ref->index].gravity = grav;
-	modified[ref->index] |= 1;
+	cont[ref.index].gravity = grav;
+	modified[ref.index] |= 1;
 }
 
 VIEWINLINE
 grav_t
 View_GetGravity (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
-	return cont[ref->index].gravity;
+	return cont[ref.index].gravity;
 }
 
 VIEWINLINE
 void
 View_SetVisible (view_t view, int visible)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
-	cont[ref->index].visible = !!visible;
+	cont[ref.index].visible = !!visible;
 }
 
 VIEWINLINE
 int
 View_GetVisible (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
-	return cont[ref->index].visible;
+	return cont[ref.index].visible;
 }
 
 VIEWINLINE
 void
 View_SetResize (view_t view, int resize_x, int resize_y)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	viewcont_t *cont = h->components[view_control];
-	cont[ref->index].resize_x = resize_x;
-	cont[ref->index].resize_y = resize_y;
+	cont[ref.index].resize_x = resize_x;
+	cont[ref.index].resize_y = resize_y;
 }
 
 VIEWINLINE
 void
 View_SetOnResize (view_t view, view_resize_f onresize)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_resize_f *resize = h->components[view_onresize];
-	resize[ref->index] = onresize;
+	resize[ref.index] = onresize;
 }
 
 VIEWINLINE
 void
 View_SetOnMove (view_t view, view_move_f onmove)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_move_f *move = h->components[view_onmove];
-	move[ref->index] = onmove;
+	move[ref.index] = onmove;
 }
 
 ///@}

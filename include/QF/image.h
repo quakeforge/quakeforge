@@ -51,6 +51,7 @@ typedef struct tex_s {
 			int loaded:1;		// 0 if size info only, otherwise data loaded
 			int flipped:1;		// 1 if first pixel is bottom instead of top
 			int bgr:1;			// 1 if image is bgr (for tex_rgb)
+			int relative:1;		// 1 if data is an offset instead of a pointer
 		};
 		int     flagbits;		// for eazy zeroing
 	};

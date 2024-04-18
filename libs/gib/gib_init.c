@@ -102,6 +102,7 @@ GIB_Exec_Override_f (void)
 VISIBLE void
 GIB_Init (bool sandbox)
 {
+	qfZoneScoped (true);
 	// Override the exec command with a GIB-aware one
 	if (Cmd_Exists ("exec")) {
 		Cmd_RemoveCommand ("exec");

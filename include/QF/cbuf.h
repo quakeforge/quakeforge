@@ -64,22 +64,22 @@ typedef struct cbuf_s {
 		CBUF_STATE_JUNK			// Buffer can be freed or reused
 	} state;
 
-	int	      (*unknown_command)(void);	// handle unkown commands. !0 = handled
 	bool        strict;			// Should we tolerate unknown commands?
+	int	      (*unknown_command)(void);	// handle unkown commands. !0 = handled
 	double      resumetime;		// Time when stack can be executed again
 
 	void       *data;			// Pointer to interpreter data
 } cbuf_t;
 
 typedef struct cbuf_interpreter_s {
-	void		(*construct) (struct cbuf_s *cbuf);
-	void		(*destruct) (struct cbuf_s *cbuf);
-	void		(*reset) (struct cbuf_s *cbuf);
-	void		(*add) (struct cbuf_s *cbuf, const char *str);
-	void		(*insert) (struct cbuf_s *cbuf, const char *str);
-	void		(*execute) (struct cbuf_s *cbuf);
-	void		(*execute_sets) (struct cbuf_s *cbuf);
-	const char** (*complete) (struct cbuf_s *cbuf, const char *str);
+	void		(*construct) (cbuf_t *cbuf);
+	void		(*destruct) (cbuf_t *cbuf);
+	void		(*reset) (cbuf_t *cbuf);
+	void		(*add) (cbuf_t *cbuf, const char *str);
+	void		(*insert) (cbuf_t *cbuf, const char *str);
+	void		(*execute) (cbuf_t *cbuf);
+	void		(*execute_sets) (cbuf_t *cbuf);
+	const char** (*complete) (cbuf_t *cbuf, const char *str);
 } cbuf_interpreter_t;
 
 extern cbuf_t *cbuf_active;
@@ -88,7 +88,8 @@ cbuf_args_t *Cbuf_ArgsNew (void);
 void Cbuf_ArgsDelete (cbuf_args_t *);
 void Cbuf_ArgsAdd (cbuf_args_t *args, const char *arg);
 
-cbuf_t * Cbuf_New (cbuf_interpreter_t *interp);
+cbuf_t *_Cbuf_New (cbuf_interpreter_t *interp, void *data);
+cbuf_t *Cbuf_New (cbuf_interpreter_t *interp);
 
 void Cbuf_Delete (cbuf_t *cbuf);
 void Cbuf_DeleteStack (cbuf_t *stack);

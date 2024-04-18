@@ -169,6 +169,11 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 	return prod;
 }
 
+-(MultiVector *) antiwedge:(MultiVector *) rhs
+{
+	return [[[self dual] wedge:[rhs dual]] undual];
+}
+
 -(MultiVector *) dot:(MultiVector *) rhs
 {
 	MultiVector *prod = [MultiVector new:algebra];
@@ -253,10 +258,11 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 	return minus;
 }
 
--(MultiVector *) dual
+-(MultiVector *) dual:(int) undual
 {
 	MultiVector *dual = [MultiVector new:algebra];
 	unsigned dual_mask = (1 << [algebra dimension]) - 1;
+	int dim = [algebra dim];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
@@ -267,10 +273,21 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		unsigned mask = lb_mask ^ dual_mask;
 		double ls = [lb scale];
 		double s = count_flips (lb_mask, mask) & 1 ? -1 : 1;
+		s *= (dim * [lb grade]) & 1 ? -1 : 1;
 		int ind = [dual.layout bladeIndex:mask];
 		dual.components[ind] += s * lc;
 	}
 	return dual;
+}
+
+-(MultiVector *) dual
+{
+	return [self dual:0];
+}
+
+-(MultiVector *) undual
+{
+	return [self dual:1];
 }
 
 -(MultiVector *) reverse

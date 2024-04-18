@@ -48,6 +48,7 @@
 #include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 
 #ifdef PIC
@@ -145,7 +146,7 @@ R_IQMPrepareUnclippedPoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 
 		iqm_setup_skin (sw, i);
 
-		tris = iqm->elements + mesh->first_triangle;
+		tris = iqm->elements16 + mesh->first_triangle;
 		r_affinetridesc.ptriangles = (mtriangle_t *) tris;
 		r_affinetridesc.numtriangles = mesh->num_triangles;
 		D_PolysetDraw ();
@@ -187,7 +188,7 @@ R_IQMPreparePoints (iqm_t *iqm, swiqm_t *sw, iqmframe_t *frame)
 
 		iqm_setup_skin (sw, i);
 
-		mtri = (mtriangle_t *) iqm->elements + mesh->first_triangle;
+		mtri = (mtriangle_t *) iqm->elements16 + mesh->first_triangle;
 		r_affinetridesc.numtriangles = 1;
 		for (j = 0; j < mesh->num_triangles; j++, mtri++) {
 			pfv[0] = &pfinalverts[mtri->vertindex[0]];
@@ -290,7 +291,7 @@ R_IQMSetUpTransform (entity_t ent, int trivial_accept)
 void
 R_IQMDrawModel (entity_t ent, alight_t *plighting)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -302,8 +303,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendPalette (iqm, animation->pose1, animation->pose2,
 							   blend, size, sw->blend_palette,
@@ -314,7 +314,7 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
 												 ent.reg);
 	R_IQMSetUpTransform (ent, visibility->trivial_accept);
 
@@ -322,8 +322,11 @@ R_IQMDrawModel (entity_t ent, alight_t *plighting)
 	r_affinetridesc.drawtype = (visibility->trivial_accept == 3) &&
 			r_recursiveaffinetriangles;
 
-	//if (!acolormap)
-		acolormap = r_colormap;
+	acolormap = r_colormap;
+	auto cmap = Entity_GetColormap (ent);
+	if (cmap) {
+		acolormap = sw_Skin_Colormap (cmap);
+	}
 
 	//FIXME depth hack
 	if (ent.id != vr_data.view_model.id)

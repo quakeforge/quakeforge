@@ -1,5 +1,6 @@
 include_qf = \
 	include/QF/alloc.h \
+	include/QF/backtrace.h \
 	include/QF/bspfile.h \
 	include/QF/cbuf.h \
 	include/QF/cdaudio.h \
@@ -191,13 +192,13 @@ include_qf_vulkan = \
 	include/QF/Vulkan/command.h \
 	include/QF/Vulkan/cvars.h \
 	include/QF/Vulkan/debug.h \
-	include/QF/Vulkan/descriptor.h \
 	include/QF/Vulkan/device.h \
 	include/QF/Vulkan/dsmanager.h \
 	include/QF/Vulkan/funclist.h \
 	include/QF/Vulkan/image.h \
 	include/QF/Vulkan/instance.h \
 	include/QF/Vulkan/memory.h \
+	include/QF/Vulkan/mouse_pick.h \
 	include/QF/Vulkan/pipeline.h \
 	include/QF/Vulkan/projection.h \
 	include/QF/Vulkan/render.h \

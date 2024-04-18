@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include "QF/backtrace.h"
 #include "QF/dstring.h"
 
 #include "QF/Vulkan/barrier.h"
@@ -42,7 +43,7 @@ qfv_stagebuf_t *
 QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 						 VkCommandPool cmdPool)
 {
-	size_t atom = device->physDev->properties->limits.nonCoherentAtomSize;
+	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dstring_t  *str = dstring_new ();
 
@@ -95,6 +96,9 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 void
 QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 {
+	if (!stage) {
+		return;
+	}
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -104,6 +108,17 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	for (int i = 0; i < count; i++) {
 		fences->a[i] = stage->packets.buffer[i].fence;
 		cmdBuf->a[i] = stage->packets.buffer[i].cmd;
+#if 0
+		auto stat = dfunc->vkGetFenceStatus (device->dev, fences->a[i]);
+		if (stat != VK_SUCCESS) {
+			dstring_t  *str = dstring_newstr ();
+			auto packet = &stage->packets.buffer[i];
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_DestroyStagingBuffer: %d live packet in %p:%s\n",
+						stat, stage, str->str);
+			dstring_delete (str);
+		}
+#endif
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
 							5000000000ull);
@@ -114,8 +129,8 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 								 cmdBuf->size, cmdBuf->a);
 
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
-	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	dfunc->vkDestroyBuffer (device->dev, stage->buffer, 0);
+	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	free (stage);
 }
 
@@ -227,6 +242,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 qfv_packet_t *
 QFV_PacketAcquire (qfv_stagebuf_t *stage)
 {
+	qfZoneNamed (zone, true);
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -234,8 +250,19 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	if (!RB_SPACE_AVAILABLE (stage->packets)) {
 		// need to wait for a packet to become available
 		packet = RB_PEEK_DATA (stage->packets, 0);
+		auto start = Sys_LongTime ();
+		qfMessageL ("waiting on fence");
 		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
 								~0ull);
+		qfMessageL ("got fence");
+		auto end = Sys_LongTime ();
+		if (end - start > 500) {
+			dstring_t  *str = dstring_newstr ();
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
+						(int) (end - start), stage, str->str);
+			dstring_delete (str);
+		}
 		release_space (stage, packet->offset, packet->length);
 		RB_RELEASE (stage->packets, 1);
 	}
@@ -244,6 +271,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	stage->space_start = align (stage->space_start, 16);
 	packet->offset = stage->space_start;
 	packet->length = 0;
+	packet->owner = __builtin_return_address (0);
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
 	dfunc->vkResetCommandBuffer (packet->cmd, 0);
@@ -259,6 +287,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 void *
 QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 {
+	qfZoneNamed (zone, true);
 	void       *data = acquire_space (packet, size);
 	if (data) {
 		packet->length += size;
@@ -269,6 +298,7 @@ QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 void
 QFV_PacketSubmit (qfv_packet_t *packet)
 {
+	qfZoneNamed (zone, true);
 	qfv_stagebuf_t *stage = packet->stage;
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -288,6 +318,20 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 	};
 	// The fence was reset when the packet was acquired
 	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, packet->fence);
+}
+
+VkResult
+QFV_PacketWait (qfv_packet_t *packet)
+{
+	auto stage = packet->stage;
+	auto device = stage->device;
+	auto dfunc = device->funcs;
+	VkResult res = dfunc->vkWaitForFences (device->dev, 1, &packet->fence,
+										   VK_TRUE, ~0ull);
+	if (res != VK_SUCCESS) {
+		printf ("QFV_PacketWait: %d\n", res);
+	}
+	return res;
 }
 
 void
@@ -376,10 +420,12 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 								   dstImage,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy_region);
-	ib = *dstBarrier;
-	ib.barrier.image = dstImage;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	if (dstBarrier) {
+		ib = *dstBarrier;
+		ib.barrier.image = dstImage;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+									 0, 0, 0, 0, 0, 1, &ib.barrier);
+	}
 }

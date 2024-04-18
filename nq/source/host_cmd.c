@@ -298,7 +298,9 @@ Host_Map_f (void)
 	cl.viewstate.loading = true;
 	cl.viewstate.time = cl.time;
 	cl.viewstate.realtime = realtime;
-	CL_UpdateScreen (&cl.viewstate);
+	if (!net_is_dedicated) {
+		CL_UpdateScreen (&cl.viewstate);
+	}
 
 	svs.serverflags = 0;				// haven't completed an episode yet
 	strcpy (name, Cmd_Argv (1));

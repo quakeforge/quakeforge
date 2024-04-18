@@ -54,6 +54,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 #define BLOCK_SIZE (BLOCK_WIDTH * BLOCK_HEIGHT)
 
 static scrap_t *light_scrap;
@@ -83,7 +85,7 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];

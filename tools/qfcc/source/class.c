@@ -83,7 +83,7 @@ type_t      type_SEL = {
 	.meta = ty_basic,
 	{{&type_selector}},
 };
-type_t     *IMP_params[] = { &type_id, &type_SEL };
+const type_t *IMP_params[] = { &type_id, &type_SEL };
 type_t      type_IMP = {
 	.type = ev_func,
 	.name = "IMP",
@@ -102,7 +102,7 @@ type_t      type_SuperPtr = {
 	.meta = ty_basic,
 	{{&type_super}},
 };
-type_t     *supermsg_params[] = { &type_SuperPtr, &type_SEL };
+const type_t *supermsg_params[] = { &type_SuperPtr, &type_SEL };
 type_t      type_supermsg = {
 	.type = ev_func,
 	.name = ".supermsg",
@@ -138,7 +138,7 @@ type_t      type_moduleptr = {
 	.meta = ty_basic,
 	{{&type_module}},
 };
-type_t     *obj_exec_class_params[] = {
+const type_t *obj_exec_class_params[] = {
 	&type_moduleptr,
 };
 type_t      type_exec_class = {
@@ -310,7 +310,7 @@ emit_instance_defs (def_t *def, void *data, int index)
 {
 	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
+	if (!is_array (def->type) || !is_ptr (dereference_type (def->type)))
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->num_instances + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
@@ -353,7 +353,7 @@ emit_static_instances_list (void)
 	static_instance_t **classes;
 	int         num_classes = 0;
 	def_t     **instance_lists;
-	type_t     *instance_lists_type;
+	const type_t *instance_lists_type;
 	symbol_t   *instance_lists_sym;
 	def_t      *instance_lists_def;
 	pr_ptr_t   *list;
@@ -1228,7 +1228,7 @@ cls_find_method (methodlist_t *methodlist, selector_t *selector,
 }
 
 method_t *
-class_message_response (type_t *clstype, int class_msg, const expr_t *sel)
+class_message_response (const type_t *clstype, int class_msg, const expr_t *sel)
 {
 	selector_t *selector;
 	method_t   *m;
@@ -1535,7 +1535,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
+	if (!is_array (def->type) || !is_ptr (dereference_type (def->type)))
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
@@ -1843,7 +1843,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 	protocollist_t *protocols = (protocollist_t *) data;
 	protocol_t *protocol = protocols->list[index];
 
-	if (!is_array (def->type) || !is_ptr(def->type->t.array.type)) {
+	if (!is_array (def->type) || !is_ptr(dereference_type (def->type))) {
 		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
 	}
 	if (index < 0 || index >= protocols->count) {
@@ -1934,7 +1934,7 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 						 symtab_t *param_scope)
 {
 	class_t    *class = extract_class (class_type);
-	type_t     *class_ptr = pointer_type (class->type);
+	const type_t *class_ptr = pointer_type (class->type);
 	symbol_t   *sym;
 	symbol_t   *self;
 

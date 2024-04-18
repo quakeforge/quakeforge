@@ -97,6 +97,9 @@ void Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data);
 void Cvar_Set (const char *var, const char *value);
 void Cvar_SetVar (cvar_t *var, const char *value);
 
+void Cvar_Toggle (cvar_t *var);
+void Cvar_Reset (cvar_t *var);
+
 // allows you to change a Cvar's flags without a full Cvar_Get
 void	Cvar_SetFlags (cvar_t *var, int cvarflags);
 

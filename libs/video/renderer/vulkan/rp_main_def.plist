@@ -27,11 +27,11 @@ properties = {
 	};
 	depth_dependency = {
 		src = {
-			stage = late_fragment_tests;
+			stage = early_fragment_tests|late_fragment_tests;
 			access = depth_stencil_attachment_write;
 		};
 		dst = {
-			stage = fragment_shader|early_fragment_tests;
+			stage = fragment_shader|early_fragment_tests|late_fragment_tests;
 			access = input_attachment_read|depth_stencil_attachment_read;
 		};
 		flags = by_region;
@@ -83,12 +83,18 @@ properties = {
 	attachment_base = {
 		samples = 1;
 		loadOp = dont_care;
-		storeOp = dont_care;
+		storeOp = none_ext;
 		stencilLoadOp = dont_care;
-		stencilStoreOp = dont_care;
+		stencilStoreOp = none_ext;
 		initialLayout = undefined;
-		finalLayout = color_attachment_optimal;
+		finalLayout = shader_read_only_optimal;
 		clearValue = { color = "[0, 0, 0, 1]"; };
+	};
+	depth_base = {
+		@inherit = $attachment_base;
+		loadOp = clear;
+		finalLayout = depth_stencil_read_only_optimal;
+		clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 	};
 
 	no_cull = {
@@ -364,11 +370,6 @@ properties = {
 				name = main;
 				module = $builtin/alias.vert;
 			};
-			gbuf_fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/alias_gbuf.frag;
-			};
 		};
 		vertexInput = {
 			bindings = (
@@ -399,7 +400,16 @@ properties = {
 		shadow_layout = {
 			descriptorSets = (shadowmat_set);
 			pushConstants = {
-				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
+				vertex = { Model = mat4; blend = float; MatrixBase = uint; };
+			};
+		};
+	};
+	qskin = {
+		shader = {
+			fragment = {
+				stage = fragment;
+				name = main;
+				module = $builtin/qskin_gbuf.frag;
 			};
 		};
 	};
@@ -409,17 +419,16 @@ properties = {
 				mapEntries = (
 					// IQMDepthOnly
 					{ size = 4; offset = 0; constantID = 0; },
-					{ size = 4; offset = 4; constantID = 1; },
 				);
 			};
 			shadow_vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/iqm.vert;
+				module = $builtin/iqm_shadow.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(1, 1)";
+					// IQMDepthOnly
+					data = "array(1)";
 				};
 			};
 			depth_vertex = {
@@ -428,8 +437,8 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(1, 0)";
+					// IQMDepthOnly
+					data = "array(1)";
 				};
 			};
 			gbuf_vertex = {
@@ -438,14 +447,9 @@ properties = {
 				module = $builtin/iqm.vert;
 				specializationInfo = {
 					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly, IQMShadow
-					data = "array(0, 0)";
+					// IQMDepthOnly
+					data = "array(0)";
 				};
-			};
-			gbuf_fragment = {
-				stage = fragment;
-				name = main;
-				module = $builtin/iqm.frag;
 			};
 		};
 		vertexInput = {
@@ -470,16 +474,18 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                                           skin
-			descriptorSets = (matrix_set, shadowmat_set, texture_set, bone_set);
+			//                            palette      skin
+			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
+			pushConstants = {
+				vertex   = { Model = mat4; blend = float; };
+				fragment = { colors = uint; base_color = vec4; fog = vec4; };
+			};
+		};
+		shadow_layout = {
+			//                               palette(n/u) skin(n/u)
+			descriptorSets = (shadowmat_set, texture_set, texture_set, bone_set);
 			pushConstants = {
 				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
-				fragment = {
-					colorA = uint;
-					colorB = uint;
-					base_color = vec4;
-					fog = vec4;
-				};
 			};
 		};
 	};
@@ -570,6 +576,7 @@ properties = {
 				descriptorSets = (matrix_set, texture_set, oit_set);
 				pushConstants = {
 					vertex = { Model = mat4; };
+					fragment = { fog = vec4; };
 				};
 			};
 			physics = {
@@ -666,15 +673,22 @@ properties = {
 				name = main;
 				module = $builtin/light_debug.frag;
 			};
+			debug_oit = {
+				stage = fragment;
+				name = main;
+				module = $builtin/light_oit.frag;
+			};
 		};
 		vertexInput_splat = {
 			bindings = (
 				{ binding = 0; stride = "4"; inputRate = instance; },
-				{ binding = 1; stride = "3 * 4"; inputRate = vertex; },
+				{ binding = 1; stride = "4"; inputRate = instance; },
+				{ binding = 2; stride = "3 * 4"; inputRate = vertex; },
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32_uint; offset = 0; },
-				{ location = 1; binding = 1; format = r32g32b32_sfloat; offset = 0;  },
+				{ location = 1; binding = 1; format = r32_sfloat; offset = 0; },
+				{ location = 2; binding = 2; format = r32g32b32_sfloat; offset = 0;  },
 			);
 		};
 		vertexInput_flat = {
@@ -692,11 +706,15 @@ properties = {
 		splat_layout = {
 			descriptorSets = (matrix_set, lighting_lights);
 		};
+		splat_oit_layout = {
+			descriptorSets = (matrix_set, lighting_lights, oit_set);
+		};
 		layout = {
 			descriptorSets = (shadowmat_set, lighting_lights,
 							  lighting_attach, lighting_shadow);
 			pushConstants = {
 				fragment = {
+					fog = vec4;
 					CascadeDepths = vec4;
 					queue = uint;
 				};
@@ -713,6 +731,12 @@ properties = {
 		};
 		layout = {
 			descriptorSets = (compose_attach, oit_set);
+			pushConstants = {
+				fragment = {
+					fog = vec4;
+					camera = vec4;
+				};
+			};
 		};
 	};
 	output = {
@@ -815,7 +839,7 @@ properties = {
 			);
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32_sfloat;  offset = 0; },
-				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 4; },
+				{ location = 1; binding = 0; format = r8g8b8a8_unorm; offset = 8; },
 			);
 		};
 		inputAssembly = {
@@ -845,6 +869,12 @@ descriptorSetLayouts = {
 				descriptorType = storage_buffer;
 				descriptorCount = 1;
 				stageFlags = vertex|fragment;
+			},
+			{
+				binding = 1;
+				descriptorType = storage_buffer;
+				descriptorCount = 1;
+				stageFlags = vertex;
 			},
 		);
 	};
@@ -1036,6 +1066,12 @@ descriptorSetLayouts = {
 				descriptorCount = 1;
 				stageFlags = fragment;
 			},
+			{
+				binding = 3;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
 		);
 	};
 	particle_set = {
@@ -1094,9 +1130,14 @@ descriptorSetLayouts = {
 	};
 };
 images = {
+	occlusion_depth = {
+		@inherit = $image_base;
+		format = d32_sfloat;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
 	depth = {
 		@inherit = $image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	color = {
@@ -1130,9 +1171,14 @@ images = {
 		format = r32_uint;
 	};
 
+	occlusion_cube_depth = {
+		@inherit = $cube_image_base;
+		format = d32_sfloat;
+		usage = depth_stencil_attachment|input_attachment|transient_attachment;
+	};
 	cube_depth = {
 		@inherit = $cube_image_base;
-		format = x8_d24_unorm_pack32;
+		format = d32_sfloat;
 		usage = depth_stencil_attachment|input_attachment|transient_attachment;
 	};
 	cube_color = {
@@ -1168,6 +1214,14 @@ images = {
 	};
 };
 imageviews = {
+	occlusion_depth = {
+		@inherit = $view_base;
+		image = occlusion_depth;
+		format = $images.occlusion_depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
+	};
 	depth = {
 		@inherit = $view_base;
 		image = depth;
@@ -1209,6 +1263,14 @@ imageviews = {
 	entid = {
 		@inherit = $view_base;
 		image = entid;
+	};
+	occlusion_cube_depth = {
+		@inherit = $cube_view_base;
+		image = occlusion_cube_depth;
+		format = $images.occlusion_cube_depth.format;
+		subresourceRange = {
+			aspectMask = depth;
+		};
 	};
 	cube_depth = {
 		@inherit = $cube_view_base;
@@ -1260,6 +1322,120 @@ output = {
 	finalLayout = shader_read_only_optimal;
 };
 renderpasses = {
+	occlusion = {
+		color = "[0.8, 0.6, 0, 1]";
+		framebuffer = {
+			width = $render_output.extent.width;
+			height = $render_output.extent.height;
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $depth_base;
+					format = $images.depth.format;
+					view = occlusion_depth;
+				};
+			};
+		};
+		subpasses = {
+			depth = {
+				color = "[ 0.5,  0.5,  0.5, 1]";
+				attachments = {
+					depth = {
+						depth = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_and_write;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					bsp:depth = {
+						color = $color.bsp;
+						tasks = (
+							{ func = bsp_draw_queue;
+							  params = (main, solid, 0); },
+							{ func = bsp_draw_queue;
+							  params = (main, sky, 0); },
+						);
+
+						stages = (
+							$brush.shader.depth_vertex,
+						);
+						vertexInput = {
+							bindings = (
+								"$brush.vertexInput.bindings[0]",
+								"$brush.vertexInput.bindings[1]",
+							);
+							attributes = (
+								"$brush.vertexInput.attributes[0]",
+								"$brush.vertexInput.attributes[2]",
+							);
+						};
+						inputAssembly = $brush.inputAssembly;
+						layout = $brush.layout;
+					};
+				};
+			};
+			lightcull = {
+				color = "[ 0.7,  0.5,  0, 1]";
+				dependencies = {
+					depth = $depth_dependency;
+				};
+				attachments = {
+					depth = {
+						depth = depth_stencil_attachment_optimal;
+					};
+				};
+
+				base_pipeline = {
+					@inherit = $pipeline_base;
+					depthStencil = $depth_test_only;
+					rasterization = $cw_cull_back;
+				};
+				pipelines = {
+					cull_lights = {
+						@inherit = $compose_base;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (hull, none); },
+							{ func = lighting_draw_hulls; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_splat,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_layout;
+						rasterization = $counter_cw_cull_back;
+						depthStencil = $depth_test_only;
+					};
+				};
+			};
+		};
+	};
+	occlusion_cube = {
+		@inherit = $renderpasses.occlusion;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fu, 0x3fu);
+		});
+		framebuffer = {
+			width = "min($render_output.extent.width,$render_output.extent.height)";
+			height = "min($render_output.extent.width,$render_output.extent.height)";
+			layers = 1;
+			attachments = {
+				depth = {
+					@inherit = $depth_base;
+					format = $images.cube_depth.format;
+					view = occlusion_cube_depth;
+				};
+			};
+		};
+	};
 	deferred = {
 		color = "[0, 1, 0, 1]";
 		framebuffer = {
@@ -1268,11 +1444,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = depth;
 				};
 				color = {
@@ -1501,12 +1674,34 @@ renderpasses = {
 						inputAssembly = $particle.inputAssembly;
 						layout = $particle.layout.draw;
 					};
+					debug_lights = {
+						@inherit = $compose_base;
+						disabled = true;
+
+						color = $color.lights;
+						tasks = (
+							{ func = lighting_bind_descriptors;
+							  params = (hull, plane); },
+							{ func = lighting_draw_splats; },
+						);
+
+						stages = (
+							$lighting.shader.vertex_splat,
+							$lighting.shader.debug_oit,
+						);
+						vertexInput = $lighting.vertexInput_splat;
+						inputAssembly = $lighting.inputAssembly;
+						layout = $lighting.splat_oit_layout;
+						rasterization = $counter_cw_cull_back;
+						depthStencil = $depth_test_only;
+					};
 				};
 			};
 			gbuffer = {
 				color = "[ 0.3,  0.7,  0.3, 1]";
 				dependencies = {
 					depth = $depth_dependency;
+					translucent = $depth_dependency;//FIXME why?
 				};
 				attachments = {
 					color = {
@@ -1562,7 +1757,7 @@ renderpasses = {
 
 						stages = (
 							$alias.shader.gbuf_vertex,
-							$alias.shader.gbuf_fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
@@ -1577,7 +1772,7 @@ renderpasses = {
 
 						stages = (
 							$iqm.shader.gbuf_vertex,
-							$iqm.shader.gbuf_fragment,
+							$qskin.shader.fragment,
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;
@@ -1700,6 +1895,7 @@ renderpasses = {
 						color = shader_read_only_optimal;
 						light = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
+						position = shader_read_only_optimal;
 					};
 					color = {
 						output = {
@@ -1707,7 +1903,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth, normal, position);
+					preserve = (depth, normal);
 				};
 				pipelines = {
 					compose = {
@@ -1715,7 +1911,8 @@ renderpasses = {
 
 						color = $color.compose;
 						tasks = (
-							{ func = compose_draw; },
+							{ func = compose_draw;
+							  params = (0); },
 						);
 
 						stages = (
@@ -1768,7 +1965,7 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (debug, none); },
+							  params = (hull, none); },
 							{ func = lighting_draw_splats; },
 						);
 
@@ -1822,7 +2019,7 @@ renderpasses = {
 						color = $color.lights;
 						tasks = (
 							{ func = lighting_bind_descriptors;
-							  params = (debug, none); },
+							  params = (hull, none); },
 							{ func = lighting_draw_splats; },
 						);
 
@@ -1852,11 +2049,8 @@ renderpasses = {
 			layers = 1;
 			attachments = {
 				depth = {
-					@inherit = $attachment_base;
+					@inherit = $depth_base;
 					format = $images.cube_depth.format;
-					loadOp = clear;
-					finalLayout = depth_stencil_attachment_optimal;
-					clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 					view = cube_depth;
 				};
 				color = {
@@ -1880,6 +2074,9 @@ renderpasses = {
 					@inherit = $attachment_base;
 					format = $images.cube_position.format;
 					view = cube_position;
+					clearValue = {
+						color = { int32 = ( 0, 0, 0, 0); };
+					};
 				};
 				light = {
 					@inherit = $attachment_base;
@@ -2022,7 +2219,7 @@ renderpasses = {
 				color = "[ 0.5,  0.5,  0.5, 1]";
 				attachments = {
 					depth = {
-						shadow = depth_stencil_attachment_optimal;
+						shadow = transfer_src_optimal;
 					};
 				};
 
@@ -2093,30 +2290,202 @@ renderpasses = {
 						);
 						vertexInput = $iqm.vertexInput;
 						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
+						layout = $iqm.shadow_layout;
 					};
 				};
 			};
 		};
-		output = shadow;
 	};
-	cascade_shadow = {
+	shadow2 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x03u);
+		});
+	};
+	shadow3 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x07u);
+		});
+	};
+	shadow4 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x0fu);
 		});
-		output = cascade_shadow;
 	};
-	cube_shadow = {
+	shadow5 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1fu);
+		});
+	};
+	shadow6 = {
 		@inherit = $renderpasses.shadow;
 		@next = (VkRenderPassMultiviewCreateInfo, {
 			viewMasks   = (0x3fu);
 		});
-		output = cube_shadow;
+	};
+	shadow7 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7fu);
+		});
+	};
+	shadow8 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xffu);
+		});
+	};
+	shadow9 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1ffu);
+		});
+	};
+	shadow10 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3ffu);
+		});
+	};
+	shadow11 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7ffu);
+		});
+	};
+	shadow12 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xfffu);
+		});
+	};
+	shadow13 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1fffu);
+		});
+	};
+	shadow14 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fffu);
+		});
+	};
+	shadow15 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7fffu);
+		});
+	};
+	shadow16 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xffffu);
+		});
+	};
+	shadow17 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1ffffu);
+		});
+	};
+	shadow18 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3ffffu);
+		});
+	};
+	shadow19 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7ffffu);
+		});
+	};
+	shadow20 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xfffffu);
+		});
+	};
+	shadow21 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1fffffu);
+		});
+	};
+	shadow22 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fffffu);
+		});
+	};
+	shadow23 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7fffffu);
+		});
+	};
+	shadow24 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xffffffu);
+		});
+	};
+	shadow25 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1ffffffu);
+		});
+	};
+	shadow26 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3ffffffu);
+		});
+	};
+	shadow27 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7ffffffu);
+		});
+	};
+	shadow28 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xfffffffu);
+		});
+	};
+	shadow29 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x1fffffffu);
+		});
+	};
+	shadow30 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x3fffffffu);
+		});
+	};
+	shadow31 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0x7fffffffu);
+		});
+	};
+	shadow32 = {
+		@inherit = $renderpasses.shadow;
+		@next = (VkRenderPassMultiviewCreateInfo, {
+			viewMasks   = (0xffffffffu);
+		});
 	};
 };
 steps = {
 	wait_on_fence = {
+		color = "[0.6, 0.8, 0.0]";
 		process = {
 			tasks = (
 				{ func = wait_on_fence; },
@@ -2128,6 +2497,7 @@ steps = {
 		};
 	};
 	particles = {
+		color = "[0.6, 0.8, 0.9]";
 		dependencies = (wait_on_fence);
 		compute = {
 			pipelines = {
@@ -2157,6 +2527,7 @@ steps = {
 		};
 	};
 	world = {
+		color = "[0.3, 0.4, 0.0]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2168,8 +2539,29 @@ steps = {
 			);
 		};
 	};
-	shadow = {
+	light_cull = {
+		color = "[0.8, 0.6, 0, 1]";
 		dependencies = (world);
+		process = {
+			tasks = (
+				{ func = lighting_cull_select_renderpass;
+				  params = ("\"light_cull\""); },
+				{ func = update_framebuffer;
+				  params = ("\"light_cull\""); },
+				{ func = lighting_cull_lights;
+				  params = ("\"light_cull\""); },
+			);
+		};
+		render = {
+			renderpasses = {
+				occlusion = $renderpasses.occlusion;
+				occlusion_cube = $renderpasses.occlusion_cube;
+			};
+		};
+	};
+	shadow = {
+		color = "[0.3, 0.3, 0.3]";
+		dependencies = (light_cull);
 		process = {
 			tasks = (
 				{ func = lighting_setup_shadow; },
@@ -2182,12 +2574,44 @@ steps = {
 		render = {
 			renderpasses = {
 				shadow = $renderpasses.shadow;
-				cascade_shadow = $renderpasses.cascade_shadow;
-				cube_shadow = $renderpasses.cube_shadow;
+				shadow2 = $renderpasses.shadow2;
+				shadow3 = $renderpasses.shadow3;
+				shadow4 = $renderpasses.shadow4;
+				shadow5 = $renderpasses.shadow5;
+				shadow6 = $renderpasses.shadow6;
+				shadow7 = $renderpasses.shadow7;
+				shadow8 = $renderpasses.shadow8;
+				shadow9 = $renderpasses.shadow9;
+				shadow10 = $renderpasses.shadow10;
+				shadow11 = $renderpasses.shadow11;
+				shadow12 = $renderpasses.shadow12;
+				shadow13 = $renderpasses.shadow13;
+				shadow14 = $renderpasses.shadow14;
+				shadow15 = $renderpasses.shadow15;
+				shadow16 = $renderpasses.shadow16;
+				shadow17 = $renderpasses.shadow17;
+				shadow18 = $renderpasses.shadow18;
+				shadow19 = $renderpasses.shadow19;
+				shadow20 = $renderpasses.shadow20;
+				shadow21 = $renderpasses.shadow21;
+				shadow22 = $renderpasses.shadow22;
+				shadow23 = $renderpasses.shadow23;
+				shadow24 = $renderpasses.shadow24;
+				shadow25 = $renderpasses.shadow25;
+				shadow26 = $renderpasses.shadow26;
+				shadow27 = $renderpasses.shadow27;
+				shadow28 = $renderpasses.shadow28;
+				shadow29 = $renderpasses.shadow29;
+/* FIXME bug in nvidia drivers causes segfault when building the pipelines
+				shadow30 = $renderpasses.shadow30;
+				shadow31 = $renderpasses.shadow31;
+				shadow32 = $renderpasses.shadow32;
+*/
 			};
 		};
 	};
 	setup_main = {
+		color = "[0.3, 0.8, 0.3]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2204,6 +2628,7 @@ steps = {
 		};
 	};
 	main = {
+		color = "[0.3, 0.8, 0.0]";
 		dependencies = (setup_main, particles, shadow, world);
 		render = {
 			renderpasses = {
@@ -2213,6 +2638,7 @@ steps = {
 		};
 	};
 	preoutput = {
+		color = "[0.8, 0.8, 0.0]";
 		dependencies = (wait_on_fence);
 		process = {
 			tasks = (
@@ -2227,6 +2653,7 @@ steps = {
 		};
 	};
 	output = {
+		color = "[0.4, 0.8, 0.4]";
 		dependencies = (main, preoutput);
 		render = {
 			renderpasses = {
@@ -2235,6 +2662,7 @@ steps = {
 		};
 	};
 	capture = {
+		color = "[0.0, 0.8, 0.4]";
 		dependencies = (output);
 		process = {
 			tasks = (
@@ -2243,6 +2671,7 @@ steps = {
 		};
 	};
 	mouse_pick = {
+		color = "[0.0, 0.0, 0.8]";
 		dependencies = (main);
 		process = {
 			tasks = (
@@ -2251,3 +2680,25 @@ steps = {
 		};
 	};
 };
+newscene_tasks = (
+	{ func = bsp_register_textures; },
+	{ func = bsp_build_display_lists; },
+	{ func = lighting_load_lights; },
+);
+init_tasks = (
+	{ func = texture_init; },
+	{ func = palette_init; },
+	{ func = alias_init; },
+	{ func = bsp_init; },
+	{ func = iqm_init; },
+	{ func = matrices_init; },
+	{ func = scene_init; },
+	{ func = sprite_init; },
+	{ func = output_init; },
+	{ func = compose_init; },
+	{ func = draw_init; },
+	{ func = particle_init; },
+	{ func = planes_init; },
+	{ func = translucent_init; },
+	{ func = lighting_init; },
+);

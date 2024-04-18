@@ -56,6 +56,7 @@ VISIBLE const char *pr_gametype = "";
 VISIBLE char *
 PF_VarString (progs_t *pr, int first, int argc)
 {
+	qfZoneScoped (true);
 	char	   *out, *dst;
 	const char *src;
 	int			len, i;
@@ -79,6 +80,7 @@ PF_VarString (progs_t *pr, int first, int argc)
 static void
 PF_normalize (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		new;
 	float	   *value1;
 	vec3_t		newvalue;
@@ -107,6 +109,7 @@ PF_normalize (progs_t *pr, void *data)
 static void
 PF_vlen (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		new;
 	float	   *value1;
 
@@ -125,6 +128,7 @@ PF_vlen (progs_t *pr, void *data)
 static void
 PF_vectoyaw (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		yaw;
 	float	   *value1;
 
@@ -147,6 +151,7 @@ PF_vectoyaw (progs_t *pr, void *data)
 static void
 PF_vectoangles (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		forward, pitch, yaw;
 	float	   *value1;
 
@@ -182,6 +187,7 @@ PF_vectoangles (progs_t *pr, void *data)
 static void
 PF_random (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		num;
 
 	num = (rand () & 0x7fff) / ((float) 0x7fff);
@@ -195,6 +201,7 @@ PF_random (progs_t *pr, void *data)
 static void
 PF_break (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	Sys_Printf ("break statement\n");
 	PR_DumpState (pr);
 }
@@ -205,6 +212,7 @@ PF_break (progs_t *pr, void *data)
 static void
 PF_cvar (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char		*str;
 
 	str = P_GSTRING (pr, 0);
@@ -218,6 +226,7 @@ PF_cvar (progs_t *pr, void *data)
 static void
 PF_cvar_set (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char	*var_name, *val;
 	cvar_t		*var;
 
@@ -227,7 +236,7 @@ PF_cvar_set (progs_t *pr, void *data)
 	if (!var)
 		var = Cvar_FindAlias (var_name);
 	if (!var) {
-		Sys_Printf ("PF_cvar_set: variable %s not found\n", var_name);
+		Sys_Printf ("%cPF_cvar_set: variable %s not found\n", 3, var_name);
 		return;
 	}
 
@@ -240,6 +249,7 @@ PF_cvar_set (progs_t *pr, void *data)
 static void
 PF_fabs (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		v;
 
 	v = P_FLOAT (pr, 0);
@@ -252,6 +262,7 @@ PF_fabs (progs_t *pr, void *data)
 static void
 PF_find (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *s = 0, *t;	// ev_string
 	int			i;			// ev_vector
 	pr_uint_t   e, f;
@@ -316,6 +327,7 @@ PF_find (progs_t *pr, void *data)
 static void
 PF_coredump (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	ED_PrintEdicts (pr, "");
 }
 
@@ -325,6 +337,7 @@ PF_coredump (progs_t *pr, void *data)
 static void
 PF_traceon (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr->pr_trace = true;
 	pr->pr_trace_depth = pr->pr_depth;
 }
@@ -335,6 +348,7 @@ PF_traceon (progs_t *pr, void *data)
 static void
 PF_traceoff (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr->pr_trace = false;
 }
 
@@ -344,6 +358,7 @@ PF_traceoff (progs_t *pr, void *data)
 static void
 PF_eprint (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	ED_PrintNum (pr, P_EDICTNUM (pr, 0), 0);
 }
 
@@ -353,7 +368,8 @@ PF_eprint (progs_t *pr, void *data)
 static void
 PF_dprint (progs_t *pr, void *data)
 {
-	Sys_Printf ("%s", PF_VarString (pr, 0, 1));
+	qfZoneScoped (true);
+	Sys_Printf ("%c%s", 3, PF_VarString (pr, 0, 1));
 }
 
 /*
@@ -362,6 +378,7 @@ PF_dprint (progs_t *pr, void *data)
 static void
 PF_rint (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float		f;
 
 	f = P_FLOAT (pr, 0);
@@ -377,6 +394,7 @@ PF_rint (progs_t *pr, void *data)
 static void
 PF_floor (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_FLOAT (pr) = floor (P_FLOAT (pr, 0));
 }
 
@@ -386,6 +404,7 @@ PF_floor (progs_t *pr, void *data)
 static void
 PF_ceil (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_FLOAT (pr) = ceil (P_FLOAT (pr, 0));
 }
 
@@ -395,6 +414,7 @@ PF_ceil (progs_t *pr, void *data)
 static void
 PF_nextent (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_uint_t   i;
 	edict_t	   *ent;
 
@@ -426,6 +446,7 @@ PF_nextent (progs_t *pr, void *data)
 static void
 PF_ftoi (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = P_FLOAT (pr, 0);
 }
 
@@ -435,6 +456,7 @@ PF_ftoi (progs_t *pr, void *data)
 static void
 PF_ftos (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	char	string[STRING_BUF];
 	int		i;
 
@@ -459,6 +481,7 @@ PF_ftos (progs_t *pr, void *data)
 static void
 PF_itof (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_FLOAT (pr) = P_INT (pr, 0);
 }
 
@@ -468,6 +491,7 @@ PF_itof (progs_t *pr, void *data)
 static void
 PF_itos (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	char string[STRING_BUF];
 
 	snprintf (string, sizeof (string), "%d", P_INT (pr, 0));
@@ -481,6 +505,7 @@ PF_itos (progs_t *pr, void *data)
 static void
 PF_stof (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_FLOAT (pr) = atof (P_GSTRING (pr, 0));
 }
 
@@ -490,6 +515,7 @@ PF_stof (progs_t *pr, void *data)
 static void
 PF_stoi (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = atoi (P_GSTRING (pr, 0));
 }
 
@@ -499,6 +525,7 @@ PF_stoi (progs_t *pr, void *data)
 static void
 PF_stov (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	float v[3] = {0, 0, 0};
 
 	sscanf (P_GSTRING (pr, 0), "'%f %f %f'", v, v + 1, v + 2);
@@ -512,6 +539,7 @@ PF_stov (progs_t *pr, void *data)
 static void
 PF_vtos (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	char string[STRING_BUF * 3 + 5];
 
 	snprintf (string, sizeof (string), "'%5.1f %5.1f %5.1f'",
@@ -528,6 +556,7 @@ PF_vtos (progs_t *pr, void *data)
 static void
 PF_charcount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	char		goal;
 	const char *s;
 	int			count;
@@ -548,24 +577,20 @@ PF_charcount (progs_t *pr, void *data)
 	R_FLOAT (pr) = count;
 }
 
-#if (INT_MAX == 2147483647) && (INT_MIN == -2147483648)
-# define INT_WIDTH 11
-#else /* I hope... */
-# define INT_WIDTH 20
-#endif
-
 /*
 	string () gametype
 */
 static void
 PF_gametype (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	RETURN_STRING (pr, pr_gametype);
 }
 
 static void
 PF_PR_SetField (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	edict_t    *ent = P_EDICT (pr, 0);
 	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
 	const char *value = P_GSTRING (pr, 2);
@@ -578,6 +603,7 @@ PF_PR_SetField (progs_t *pr, void *data)
 static void
 PF_PR_FindFunction (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dfunction_t *func = PR_FindFunction (pr, P_GSTRING (pr, 0));
 	R_FUNCTION (pr) = 0;
 	if (func)
@@ -629,5 +655,6 @@ static builtin_t builtins[] = {
 VISIBLE void
 PR_Cmds_Init (progs_t *pr)
 {
+	qfZoneScoped (true);
 	PR_RegisterBuiltins (pr, builtins, 0);
 }

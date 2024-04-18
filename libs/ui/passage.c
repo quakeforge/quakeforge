@@ -92,21 +92,23 @@ Passage_IsSpace (const char *text)
 }
 
 static void
-add_entity (hierarchy_t *h, uint32_t parent)
+add_entity (uint32_t hent, uint32_t parent, ecs_registry_t *reg)
 {
-	uint32_t    i = Hierarchy_InsertHierarchy (h, 0, parent, 0);
-	h->ent[i] = ECS_NewEntity (h->reg);
-	hierref_t  *ref = Ent_AddComponent (h->ent[i], h->href_comp, h->reg);
-	ref->hierarchy = h;
-	ref->index = i;
+	hierarchy_t *h = Ent_GetComponent (hent, ecs_hierarchy, reg);
+	auto ref = Hierarchy_InsertHierarchy ((hierref_t) { hent, parent},
+										  (hierref_t) { nullent, nullindex },
+										  reg);
+	h->ent[ref.index] = ECS_NewEntity (reg);
+	h->own[ref.index] = true;
+	Ent_SetComponent (h->ent[ref.index], h->href_comp, reg, &ref);
 }
 
 VISIBLE void
 Passage_ParseText (passage_t *passage, const char *text)
 {
-	if (passage->hierarchy) {//FIXME just empty hierarchy
-		Hierarchy_Delete (passage->hierarchy);
-	}
+	auto reg = passage->reg;
+	//FIXME just empty hierarchy
+	ECS_DelEntity (reg, passage->hierarchy);
 	if (!*text) {
 		return;
 	}
@@ -140,33 +142,32 @@ Passage_ParseText (passage_t *passage, const char *text)
 	passage->hierarchy = Hierarchy_New (passage->reg,
 										passage->comp_base + passage_href,
 										&passage_type, 0);
-	Hierarchy_Reserve (passage->hierarchy,
-					   1 + num_paragraphs + num_text_objects);
+	hierarchy_t *h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
+	Hierarchy_Reserve (h, 1 + num_paragraphs + num_text_objects);
 #if 0
 	printf ("num_paragraphs %d, num_text_objects %d\n", num_paragraphs,
 			passage->num_text_objects);
 #endif
-	add_entity (passage->hierarchy, nullent);
+	add_entity (passage->hierarchy, nullent, reg);
 	for (unsigned i = 0; i < num_paragraphs; i++) {
-		add_entity (passage->hierarchy, 0);
+		add_entity (passage->hierarchy, 0, reg);
 	}
 
 	num_paragraphs = 0;
-	hierarchy_t *h = passage->hierarchy;
 	psg_text_t *passage_obj = h->components[passage_type_text_obj];
 	psg_text_t *par_obj = &passage_obj[h->childIndex[0]];
 	psg_text_t *text_obj = &passage_obj[h->childIndex[1]];
 	*par_obj = *text_obj = (psg_text_t) { };
 
 	*passage_obj = root_text;
-	add_entity (passage->hierarchy, par_obj - passage_obj);
+	add_entity (passage->hierarchy, par_obj - passage_obj, reg);
 
 	parsing_space = Passage_IsSpace (text);
 	for (const char *c = text; *c; c++) {
 		int         size;
 		if ((size = Passage_IsSpace (c))) {
 			if (!parsing_space) {
-				add_entity (passage->hierarchy, par_obj - passage_obj);
+				add_entity (passage->hierarchy, par_obj - passage_obj, reg);
 				text_obj->size = c - text - text_obj->text;
 				(++text_obj)->text = c - text;
 			}
@@ -177,13 +178,13 @@ Passage_ParseText (passage_t *passage, const char *text)
 			par_obj->size = c - text - par_obj->text;
 			if (c[1]) {
 				(++par_obj)->text = c + 1 - text;
-				add_entity (passage->hierarchy, par_obj - passage_obj);
+				add_entity (passage->hierarchy, par_obj - passage_obj, reg);
 				(++text_obj)->text = c + 1 - text;
 				parsing_space = Passage_IsSpace (c + 1);
 			}
 		} else {
 			if (parsing_space) {
-				add_entity (passage->hierarchy, par_obj - passage_obj);
+				add_entity (passage->hierarchy, par_obj - passage_obj, reg);
 				text_obj->size = c - text - text_obj->text;
 				(++text_obj)->text = c - text;
 			}
@@ -210,18 +211,18 @@ VISIBLE passage_t *
 Passage_New (ecs_system_t passage_sys)
 {
 	passage_t  *passage = malloc (sizeof (passage_t));
-	passage->text = 0;
-	passage->reg = passage_sys.reg;
-	passage->comp_base = passage_sys.base;
-	passage->hierarchy = 0;
+	*passage = (passage_t) {
+		.reg = passage_sys.reg,
+		.comp_base = passage_sys.base,
+		.hierarchy = nullent,
+	};
 	return passage;
 }
 
 VISIBLE void
 Passage_Delete (passage_t *passage)
 {
-	if (passage->hierarchy) {
-		Hierarchy_Delete (passage->hierarchy);
-	}
+	auto reg = passage->reg;
+	ECS_DelEntity (reg, passage->hierarchy);
 	free (passage);
 }

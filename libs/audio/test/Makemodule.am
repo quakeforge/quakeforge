@@ -8,6 +8,6 @@ testaudio_libs= \
 	libs/ruamoko/libQFruamoko.la \
 	libs/util/libQFutil.la
 
-libs_audio_test_testsound_SOURCES=		libs/audio/test/testsound.c
+libs_audio_test_testsound_SOURCES=		libs/audio/test/testsound.c $(tracy_src)
 libs_audio_test_testsound_LDADD=		$(testaudio_libs)
 libs_audio_test_testsound_DEPENDENCIES=	$(testaudio_libs)

@@ -10,12 +10,58 @@
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
 
+#ifdef HAVE_TRACY
+#include "tracy/TracyCVulkan.h"
+
+#define qftCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr) TracyCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextDestroy(ctx) TracyCVkDestroy( ctx )
+#define qftCVkContextName(ctx, name, size) TracyCVkContextName(ctx, name, size)
+#define qftCVkCollect(ctx, cmdbuf) TracyCVkCollect (ctx, cmdbuf)
+
+static inline void __qftVkZoneEnd (___tracy_vkctx_scope ***zone)
+{
+	TracyCVkZoneEnd (**zone);
+}
+
+#define __qftVkScoped(varname) \
+	__attribute__((cleanup(__qftVkZoneEnd))) \
+	___tracy_vkctx_scope **qfConcat(__qfScoped##varname, __COUNTER__) \
+		= &varname;
+#define qftVkZone(ctx, cmdbuf, name) TracyCVkZone (ctx, cmdbuf, name)
+#define qftVkScopedZone(ctx, cmdbuf, name) \
+	qftVkZone (ctx, cmdbuf, name) \
+	__qftVkScoped (___tracy_gpu_zone)
+#define qftVkZoneC(ctx, cmdbuf, name, color) \
+	TracyCVkZoneC (ctx, cmdbuf, name, color)
+#define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
+	qftVkZoneC (ctx, cmdbuf, name, color) \
+	__qftVkScoped (___tracy_gpu_zone)
+#define qftVkZoneEnd(varname) TracyCVkZoneEnd (varname)
+
+#else
+
+#define qftVkContext(instance, physdev, device, queue, cmdbuf, instanceProcAddr, deviceProcAddr)
+#define qftVkContextCalibrated(instance, physdev, device, queue, cmdbuf, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr)
+#define qftCVkContextDestroy(ctx)
+#define qftCVkContextName(ctx, name, size)
+#define qftCVkCollect(ctx, cmdbuf)
+
+#define qftVkZone(ctx, cmdbuf, name) \
+	do { (void)(ctx); (void) (cmdbuf); } while (0)
+#define qftVkScopedZone(ctx, cmdbuf, name) qftVkZone (ctx, cmdbuf, name)
+#define qftVkZoneC(ctx, cmdbuf, name, color) \
+	do { (void)(ctx); (void)(cmdbuf); (void)(name); (void)(color);} while (0)
+#define qftVkScopedZoneC(ctx, cmdbuf, name, color) \
+	qftVkZoneC (ctx, cmdbuf, name, color)
+#define qftVkZoneEnd(varname)
+
+#endif
+
 #define VA_CTX_COUNT 64
 
-typedef struct qfv_renderpassset_s
-	DARRAY_TYPE (struct qfv_orenderpass_s *) qfv_renderpassset_t;
-
 typedef struct vulkan_ctx_s {
+	void        (*delete) (struct vulkan_ctx_s *ctx);
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
 	void        (*unload_vulkan) (struct vulkan_ctx_s *ctx);
 
@@ -60,8 +106,6 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
-	qfv_renderpassset_t renderPasses;
-
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

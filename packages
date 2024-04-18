@@ -1,0 +1,9 @@
+#! /bin/sh
+apt install build-essential autoconf automake libtool flex bison git \
+	libasound2-dev libjack-jackd2-dev \
+	libsamplerate0-dev \
+	libflac-dev libogg-dev libvorbis-dev libpng-dev zlib1g-dev \
+	libcurl4-openssl-dev libncurses5-dev \
+	libxext-dev libxxf86dga-dev libxxf86vm-dev libxi-dev libxfixes-dev \
+	libvulkan-dev vulkan-tools vulkan-validationlayers glslang-tools \
+	libfreetype-dev libfontconfig-dev libharfbuzz-dev

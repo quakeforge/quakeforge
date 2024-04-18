@@ -48,7 +48,6 @@
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
@@ -131,6 +130,7 @@ trans_create_buffers (vulkan_ctx_t *ctx)
 static void
 clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -189,27 +189,6 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
 	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0, bb);
 	QFV_PacketSubmit (packet);
-}
-
-static exprtype_t *clear_translucent_params[] = {
-	&cexpr_string,
-};
-static exprfunc_t clear_translucent_func[] = {
-	{ .func = clear_translucent, .num_params = 1, clear_translucent_params },
-	{}
-};
-static exprsym_t translucent_task_syms[] = {
-	{ "clear_translucent", &cexpr_function, clear_translucent_func },
-	{}
-};
-
-void
-Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
-{
-	QFV_Render_AddTasks (ctx, translucent_task_syms);
-
-	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
-	ctx->translucent_context = tctx;
 }
 
 static void
@@ -306,11 +285,36 @@ trans_create_resources (vulkan_ctx_t *ctx)
 	}
 }
 
-void
-Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
+static void
+translucent_shutdown (exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "translucent init");
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	translucentctx_t *tctx = ctx->translucent_context;
 
+	if (tctx->resources) {
+		if (tctx->resources->memory) {
+			QFV_DestroyResource (device, tctx->resources);
+		}
+		for (uint32_t i = 0; i < tctx->resources->num_objects; i++) {
+			auto obj = &tctx->resources->objects[i];
+			free ((char *) obj->name);
+		}
+	}
+	free (tctx->resources);
+	free (tctx->frames.a);
+	free (tctx);
+}
+
+static void
+translucent_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "translucent init");
 	auto tctx = ctx->translucent_context;
 
 	auto rctx = ctx->render_context;
@@ -332,24 +336,44 @@ Vulkan_Translucent_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Translucent_Shutdown (vulkan_ctx_t *ctx)
+static void
+translucent_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfv_device_t *device = ctx->device;
-	translucentctx_t *tctx = ctx->translucent_context;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	if (tctx->resources) {
-		if (tctx->resources->memory) {
-			QFV_DestroyResource (device, tctx->resources);
-		}
-		for (uint32_t i = 0; i < tctx->resources->num_objects; i++) {
-			auto obj = &tctx->resources->objects[i];
-			free ((char *) obj->name);
-		}
-	}
-	free (tctx->resources);
-	free (tctx->frames.a);
-	free (tctx);
+	QFV_Render_AddShutdown (ctx, translucent_shutdown);
+	QFV_Render_AddStartup (ctx, translucent_startup);
+
+	translucentctx_t *tctx = calloc (1, sizeof (translucentctx_t));
+	ctx->translucent_context = tctx;
+}
+
+static exprtype_t *clear_translucent_params[] = {
+	&cexpr_string,
+};
+static exprfunc_t clear_translucent_func[] = {
+	{ .func = clear_translucent, .num_params = 1, clear_translucent_params },
+	{}
+};
+
+static exprfunc_t translucent_init_func[] = {
+	{ .func = translucent_init },
+	{}
+};
+
+static exprsym_t translucent_task_syms[] = {
+	{ "clear_translucent", &cexpr_function, clear_translucent_func },
+	{ "translucent_init", &cexpr_function, translucent_init_func },
+	{}
+};
+
+void
+Vulkan_Translucent_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, translucent_task_syms);
 }
 
 VkDescriptorSet

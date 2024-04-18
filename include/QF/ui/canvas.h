@@ -52,16 +52,18 @@ enum {
 
 	// last so deleting an entity removes the grouped components first
 	// also, does not have a subpool
-	canvas_canvas,
+	canvas_canvasref,	// reference to entity with canvas
+	canvas_canvas,		// actual canvas object
 
-	canvas_comp_count
+	canvas_comp_count,
+	canvas_subpool_count = canvas_canvasref
 };
 
 typedef struct canvas_s {
 	ecs_registry_t *reg;
 	uint32_t    base;
-	int16_t     draw_order;
-	int16_t     draw_group;
+	int32_t     draw_order;
+	int32_t     draw_group;
 	bool        visible;
 	uint32_t    range[canvas_canvas];
 } canvas_t;
@@ -79,8 +81,19 @@ typedef struct canvas_system_s {
 struct view_s;
 struct view_pos_s;
 
-typedef void (*canvas_update_f) (struct view_s);
-typedef void (*canvas_func_f) (struct view_pos_s, struct view_pos_s);
+typedef void (*canvas_update_f) (struct view_s, void *data);
+typedef void (*canvas_func_f) (struct view_pos_s, struct view_pos_s,
+							   void *data);
+
+typedef struct canvas_update_s {
+	canvas_update_f update;
+	void       *data;
+} canvas_update_t;
+
+typedef struct canvas_func_s {
+	canvas_func_f func;
+	void       *data;
+} canvas_func_t;
 
 typedef struct canvas_subpic_s {
 	struct qpic_s *pic;
@@ -99,10 +112,13 @@ void Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 void Canvas_SetLen (canvas_system_t canvas_sys, uint32_t ent, view_pos_t len);
 CANVASINLINE view_t Canvas_GetRootView (canvas_system_t canvas_sys,
 										uint32_t ent);
+CANVASINLINE uint32_t Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent);
+CANVASINLINE void Canvas_SetReference (canvas_system_t canvas_sys,
+									   uint32_t ent, uint32_t ref);
 CANVASINLINE bool *Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent);
-CANVASINLINE int16_t *Canvas_DrawGroup (canvas_system_t canvas_sys,
+CANVASINLINE int32_t *Canvas_DrawGroup (canvas_system_t canvas_sys,
 										uint32_t ent);
-CANVASINLINE int16_t *Canvas_DrawOrder (canvas_system_t canvas_sys,
+CANVASINLINE int32_t *Canvas_DrawOrder (canvas_system_t canvas_sys,
 										uint32_t ent);
 void Canvas_DrawSort (canvas_system_t canvas_sys);
 
@@ -122,6 +138,23 @@ Canvas_GetRootView (canvas_system_t canvas_sys, uint32_t ent)
 }
 
 CANVASINLINE
+uint32_t
+Canvas_Entity (canvas_system_t canvas_sys, uint32_t ent)
+{
+	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
+	return *(uint32_t *) Ent_GetComponent (ent, rcomp, canvas_sys.reg);
+}
+
+CANVASINLINE
+void
+Canvas_SetReference (canvas_system_t canvas_sys, uint32_t ent, uint32_t ref)
+{
+	uint32_t rcomp = canvas_sys.base + canvas_canvasref;
+	Ent_SetComponent (ent, rcomp, canvas_sys.reg, &ref);
+}
+
+
+CANVASINLINE
 bool *
 Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
 {
@@ -131,7 +164,7 @@ Canvas_Visible (canvas_system_t canvas_sys, uint32_t ent)
 }
 
 CANVASINLINE
-int16_t *
+int32_t *
 Canvas_DrawGroup (canvas_system_t canvas_sys, uint32_t ent)
 {
 	uint32_t comp = canvas_sys.base + canvas_canvas;
@@ -140,7 +173,7 @@ Canvas_DrawGroup (canvas_system_t canvas_sys, uint32_t ent)
 }
 
 CANVASINLINE
-int16_t *
+int32_t *
 Canvas_DrawOrder (canvas_system_t canvas_sys, uint32_t ent)
 {
 	uint32_t comp = canvas_sys.base + canvas_canvas;

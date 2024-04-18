@@ -40,4 +40,4 @@ hw_master_libs= \
 hw_master_LDFLAGS=		$(common_ldflags)
 hw_master_LDADD=		$(hw_master_libs) $(NET_LIBS)
 hw_master_DEPENDENCIES=	$(hw_master_libs)
-hw_master_SOURCES=		hw/source/master.c
+hw_master_SOURCES=		hw/source/master.c $(tracy_src)

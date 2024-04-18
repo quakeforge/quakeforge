@@ -187,9 +187,9 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	const expr_t *call;
 	keywordarg_t *m;
 	int         super = 0, class_msg = 0;
-	type_t     *rec_type = 0;
-	type_t     *return_type;
-	type_t     *method_type = &type_IMP;
+	const type_t *rec_type = nullptr;
+	const type_t *return_type;
+	const type_t *method_type = &type_IMP;
 	method_t   *method;
 	const expr_t *send_msg;
 
@@ -228,7 +228,8 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	if (method)
 		return_type = method->type->t.func.type;
 
-	expr_t     *args = expr_file_line (new_list_expr (0), receiver);
+	scoped_src_loc (receiver);
+	expr_t     *args = new_list_expr (0);
 	for (m = message; m; m = m->next) {
 		if (m->expr && m->expr->list.head) {
 			expr_append_list (args, &m->expr->list);
@@ -237,7 +238,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	expr_append_expr (args, selector);
 	expr_append_expr (args, receiver);
 
-	send_msg = expr_file_line (send_message (super), receiver);
+	send_msg = send_message (super);
 	if (method) {
 		const expr_t *err;
 		if ((err = method_check_params (method, args)))

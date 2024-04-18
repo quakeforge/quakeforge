@@ -268,6 +268,7 @@ typedef struct bsp_instance_s {
 
 typedef struct bsp_pass_s {
 	vec4f_t     position;			///< view position
+	const vec4f_t *transform;		///< transform for current model
 	const struct mod_brush_s *brush;///< data for current model
 	struct bspctx_s *bsp_context;	///< owning bsp context
 	struct entqueue_s *entqueue;	///< entities to render this pass
@@ -327,6 +328,7 @@ typedef enum {
 
 typedef enum {
 	QFV_bspMain,
+	QFV_bspLightmap,	// same as main, but using lightmaps
 	QFV_bspShadow,
 	QFV_bspDebug,
 
@@ -350,15 +352,19 @@ typedef struct bspframeset_s
  * This holds all the state and resources needed for rendering brush models.
  */
 typedef struct bspctx_s {
+	struct vulkan_ctx_s *vulkan_ctx;
 
 	vulktex_t    notexture;			///< replacement for invalid textures
 
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
+	VkDescriptorSet lightmap_descriptor;
 
 	int         num_models;			///< number of loaded brush models
+	uint32_t    num_faces;
 	bsp_model_t *models;			///< all loaded brush models
 	bsp_face_t *faces;				///< all faces from all loaded brush models
+	msurface_t **surfaces;			///< all faces from all loaded brush models
 	uint32_t   *poly_indices;	///< face indices from all loaded brush models
 
 	regtexset_t registered_textures;///< textures for all loaded brush models
@@ -395,8 +401,6 @@ void Vulkan_RegisterTextures (model_t **models, int num_models,
 void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 							   struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Bsp_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
 bsp_pass_t *Vulkan_Bsp_GetPass (struct vulkan_ctx_s *ctx, QFV_BspPass pass_ind);
 ///@}
 

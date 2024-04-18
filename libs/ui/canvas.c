@@ -42,13 +42,16 @@
 static uint32_t
 _canvas_rangeid (ecs_registry_t *reg, uint32_t ent, uint32_t comp, uint32_t c)
 {
-	comp += canvas_canvas - c;
+	uint32_t    rcomp = comp - c + canvas_canvasref;
+	uint32_t    ccomp = comp - c + canvas_canvas;
 	// view components come immediately after canvas components
-	uint32_t    vcomp = view_href + comp + canvas_comp_count - canvas_canvas;
-	hierref_t  *href = Ent_GetComponent (ent, vcomp, reg);
-	// the root entity of the hierarchy has the canvas component
-	uint32_t    cent = href->hierarchy->ent[0];
-	canvas_t   *canvas = Ent_GetComponent (cent, comp, reg);
+	uint32_t    vcomp = view_href + canvas_comp_count + comp - c;
+	auto href = *(hierref_t *) Ent_GetComponent (ent, vcomp, reg);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	// the root entity of the hierarchy has the canvasref or canvas component
+	uint32_t    cent = h->ent[0];
+	cent = *(uint32_t *) Ent_GetComponent (cent, rcomp, reg);
+	canvas_t   *canvas = Ent_GetComponent (cent, ccomp, reg);
 	return canvas->range[c];
 }
 
@@ -75,23 +78,22 @@ canvas_rangeid(outline)
 #undef canvas_rangeid
 
 static void
-canvas_canvas_destroy (void *_canvas)
+canvas_canvas_destroy (void *_canvas, ecs_registry_t *reg)
 {
 	canvas_t *canvas = _canvas;
-	auto reg = canvas->reg;
-	for (uint32_t i = 0; i < canvas_canvas; i++) {
+	for (uint32_t i = 0; i < canvas_subpool_count; i++) {
 		ECS_DelSubpoolRange (reg, canvas->base + i, canvas->range[i]);
 	}
 }
 
 const component_t canvas_components[canvas_comp_count] = {
 	[canvas_update] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "update",
 		.rangeid = canvas_update_rangeid,
 	},
 	[canvas_updateonce] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "updateonce",
 		.rangeid = canvas_updateonce_rangeid,
 	},
@@ -141,12 +143,12 @@ const component_t canvas_components[canvas_comp_count] = {
 		.rangeid = canvas_glyphs_rangeid,
 	},
 	[canvas_func] = {
-		.size = sizeof (canvas_func_f),
+		.size = sizeof (canvas_func_t),
 		.name = "func",
 		.rangeid = canvas_func_rangeid,
 	},
 	[canvas_lateupdate] = {
-		.size = sizeof (canvas_update_f),
+		.size = sizeof (canvas_update_t),
 		.name = "lateupdate",
 		.rangeid = canvas_lateupdate_rangeid,
 	},
@@ -155,6 +157,11 @@ const component_t canvas_components[canvas_comp_count] = {
 		.name = "outline",
 		.rangeid = canvas_outline_rangeid,
 	},
+
+	[canvas_canvasref] = {
+		.size = sizeof (uint32_t),
+		.name = "canvasref",
+	},
 	[canvas_canvas] = {
 		.size = sizeof (canvas_t),
 		.name = "canvas",
@@ -162,17 +169,22 @@ const component_t canvas_components[canvas_comp_count] = {
 	},
 };
 
+#define c_canvasref (canvas_sys.base + canvas_canvasref)
+#define c_canvas (canvas_sys.base + canvas_canvas)
+
 typedef void (*canvas_sysfunc_f) (canvas_system_t *canvas_sys,
 								  ecs_pool_t *pool, ecs_range_t range);
 static void
 draw_update (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
-	__auto_type func = (canvas_update_f *) pool->data + range.start;
+	auto func = (canvas_update_t *) pool->data + range.start;
 	while (count-- > 0) {
-		(*func++) (View_FromEntity (viewsys, *ent++));
+		func->update (View_FromEntity (viewsys, *ent++), func->data);
+		func++;
 	}
 }
 
@@ -180,6 +192,7 @@ static void
 draw_tile_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -197,6 +210,7 @@ static void
 draw_pic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -215,6 +229,7 @@ static void
 draw_fitpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				   ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -234,6 +249,7 @@ static void
 draw_subpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				   ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -253,6 +269,7 @@ static void
 draw_cachepic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -272,6 +289,7 @@ static void
 draw_fill_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -291,6 +309,7 @@ static void
 draw_charbuff_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -309,16 +328,17 @@ static void
 draw_func_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 				 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
-	__auto_type func = (canvas_func_f *) pool->data + range.start;
+	auto func = (canvas_func_t *) pool->data + range.start;
 	while (count-- > 0) {
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
-			(*func) (pos, len);
+			func->func (pos, len, func->data);
 		}
 		func++;
 	}
@@ -328,6 +348,7 @@ static void
 draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	ecs_system_t viewsys = { canvas_sys->reg, canvas_sys->view_base };
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
@@ -378,6 +399,7 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 static void
 draw_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool, ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
 	uint32_t    color = canvas_sys->text_base + text_color;
@@ -402,6 +424,7 @@ static void
 draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 					 ecs_range_t range)
 {
+	qfZoneNamed (zone, true);
 	auto        reg = canvas_sys->reg;
 	uint32_t    glyphs = canvas_sys->text_base + text_glyphs;
 	uint32_t    color = canvas_sys->text_base + text_color;
@@ -416,13 +439,13 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);
 		view_t      text_view = View_GetChild (para_view, 0);
-		hierref_t  *href = View_GetRef (text_view);
+		hierref_t   href = View_GetRef (text_view);
 		glyphset_t *gs = glyphset++;
-		hierarchy_t *h = href->hierarchy;
+		hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
 		view_pos_t *abs = h->components[view_abs];
 		view_pos_t *len = h->components[view_len];
 
-		for (uint32_t i = href->index; i < h->num_objects; i++) {
+		for (uint32_t i = href.index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, reg);
 			uint32_t   *c = Ent_SafeGetComponent (h->ent[i], color, reg);
 			draw_glyph_refs (&abs[i], gs, gref, c ? *c : 254);
@@ -430,7 +453,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 			if (0) draw_box (abs, len, i, 253);
 		}
 		if (0) {
-			for (uint32_t i = 1; i < href->index; i++) {
+			for (uint32_t i = 1; i < href.index; i++) {
 				draw_box (abs, len, i, 251);
 			}
 		}
@@ -440,6 +463,7 @@ draw_passage_glyphs (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 void
 Canvas_Draw (canvas_system_t canvas_sys)
 {
+	qfZoneNamed (zone, true);
 	static canvas_sysfunc_f draw_func[canvas_comp_count] = {
 		[canvas_update]     = draw_update,
 		[canvas_updateonce] = draw_update,
@@ -458,19 +482,22 @@ Canvas_Draw (canvas_system_t canvas_sys)
 	};
 
 	auto        reg = canvas_sys.reg;
-	uint32_t    comp = canvas_sys.base + canvas_canvas;
-	ecs_pool_t *canvas_pool = &reg->comp_pools[comp];
+	ecs_pool_t *canvas_pool = &reg->comp_pools[c_canvas];
 	uint32_t    count = canvas_pool->count;
-	//uint32_t   *entities = canvas_pool->dense;
+	uint32_t   *entities = canvas_pool->dense;
 	__auto_type canvases = (canvas_t *) canvas_pool->data;
 
 	while (count-- > 0) {
 		canvas_t   *canvas = canvases++;
-		//uint32_t    ent = *entities++;
+		uint32_t    ent = *entities++;
 
 		if (!canvas->visible) {
 			continue;
 		}
+		view_t      canvas_view = Canvas_GetRootView (canvas_sys, ent);
+		view_pos_t  pos = View_GetAbs (canvas_view);
+		view_pos_t  len = View_GetLen (canvas_view);
+		r_funcs->Draw_SetClip (pos.x, pos.y, len.x, len.y);
 
 		for (int i = 0; i < canvas_comp_count; i++) {
 			if (draw_func[i]) {
@@ -484,9 +511,11 @@ Canvas_Draw (canvas_system_t canvas_sys)
 			}
 		}
 	}
+	r_funcs->Draw_ResetClip ();
 	{
-		ecs_pool_t *pool = &reg->comp_pools[canvas_updateonce];
-		ecs_subpool_t *subpool = &reg->subpools[canvas_updateonce];
+		uint32_t    comp = canvas_sys.base + canvas_updateonce;
+		ecs_pool_t *pool = &reg->comp_pools[comp];
+		ecs_subpool_t *subpool = &reg->subpools[comp];
 		pool->count = 0;
 		uint32_t    rcount = subpool->num_ranges - subpool->available;
 		memset (subpool->ranges, 0, rcount * sizeof (*subpool->ranges));
@@ -517,15 +546,19 @@ Canvas_AddToEntity (canvas_system_t canvas_sys, uint32_t ent)
 		.base = canvas_sys.base,
 		.visible = true
 	};
-	for (uint32_t i = 0; i < canvas_canvas; i++) {
+	for (uint32_t i = 0; i < canvas_subpool_count; i++) {
 		canvas.range[i] = ECS_NewSubpoolRange (canvas_sys.reg,
 											   canvas_sys.base + i);
 	}
-	Ent_SetComponent (ent, canvas_sys.base + canvas_canvas, canvas_sys.reg,
-					  &canvas);
-	View_AddToEntity (ent,
-					  (ecs_system_t) { canvas_sys.reg, canvas_sys.view_base },
-					  nullview);
+	// add a self reference to keep _canvas_rangeid and Canvas_Entity simple
+	Ent_SetComponent (ent, c_canvasref, canvas_sys.reg, &ent);
+	Ent_SetComponent (ent, c_canvas, canvas_sys.reg, &canvas);
+	if (!Ent_HasComponent (ent, canvas_sys.view_base + view_href,
+						   canvas_sys.reg)) {
+		View_AddToEntity (ent, (ecs_system_t) { canvas_sys.reg,
+												canvas_sys.view_base },
+						  nullview, true);
+	}
 }
 
 uint32_t
@@ -544,12 +577,12 @@ canvas_href_cmp (const void *_a, const void *_b, void *arg)
 	canvas_system_t *canvas_sys = arg;
 	ecs_registry_t *reg = canvas_sys->reg;
 	uint32_t    href = canvas_sys->view_base + view_href;
-	hierref_t  *ref_a = Ent_GetComponent (enta, href, reg);
-	hierref_t  *ref_b = Ent_GetComponent (entb, href, reg);
-	if (ref_a->hierarchy == ref_b->hierarchy) {
-		return ref_a->index - ref_b->index;
+	auto ref_a = *(hierref_t *) Ent_GetComponent (enta, href, reg);
+	auto ref_b = *(hierref_t *) Ent_GetComponent (entb, href, reg);
+	if (ref_a.id == ref_b.id) {
+		return ref_a.index - ref_b.index;
 	}
-	ptrdiff_t  diff = ref_a->hierarchy - ref_b->hierarchy;
+	int32_t     diff = ref_a.id - ref_b.id;
 	return diff > 0 ? 1 : diff < 0 ? -1 : 0;
 }
 
@@ -557,8 +590,7 @@ void
 Canvas_SortComponentPool (canvas_system_t canvas_sys, uint32_t ent,
 						  uint32_t component)
 {
-	canvas_t   *canvas = Ent_GetComponent (ent, canvas_sys.base + canvas_canvas,
-										   canvas_sys.reg);
+	canvas_t   *canvas = Ent_GetComponent (ent, c_canvas, canvas_sys.reg);
 	uint32_t    rid = canvas->range[component];
 	uint32_t    c = component + canvas_sys.base;
 	ecs_range_t range = ECS_GetSubpoolRange (canvas_sys.reg, c, rid);
@@ -579,9 +611,8 @@ canvas_draw_cmp (const void *_a, const void *_b, void *arg)
 {
 	uint32_t    enta = *(const uint32_t *)_a;
 	uint32_t    entb = *(const uint32_t *)_b;
-	canvas_system_t *canvas_sys = arg;
-	auto reg = canvas_sys->reg;
-	uint32_t c_canvas = canvas_sys->base + canvas_canvas;
+	auto canvas_sys = *(canvas_system_t *)arg;
+	auto reg = canvas_sys.reg;
 	auto canvasa = (canvas_t *) Ent_GetComponent (enta, c_canvas, reg);
 	auto canvasb = (canvas_t *) Ent_GetComponent (entb, c_canvas, reg);
 	int diff = canvasa->draw_group - canvasb->draw_group;
@@ -600,6 +631,5 @@ void
 Canvas_DrawSort (canvas_system_t canvas_sys)
 {
 	auto reg = canvas_sys.reg;
-	uint32_t c_canvas = canvas_sys.base + canvas_canvas;
 	ECS_SortComponentPool (reg, c_canvas, canvas_draw_cmp, &canvas_sys);
 }

@@ -4,6 +4,7 @@ dnl ==================================================================
 
 AC_PROG_INSTALL
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_LN_S
 AC_PROG_RANLIB
@@ -26,9 +27,7 @@ BISON_VER=`$YACC --version | sed -n '1s/^.*) //p'`
 AS_VERSION_COMPARE([$BISON_VER], [2.6],
 	[AC_MSG_RESULT([no])
 	LOC=`which ${YACC}`
-	AC_MSG_ERROR(
-		[GNU bison >= 2.6 is required. $BISON_VER found in $LOC]
-	)],
+	AC_MSG_ERROR([GNU bison >= 2.6 is required. $BISON_VER found in $LOC])],
 	AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([yes])
 )
@@ -42,8 +41,6 @@ else
 		AC_MSG_ERROR(GNU flex is required but was not found)
 	fi
 fi
-
-
 
 
 AC_CHECK_LIB(l, main, LEXLIB="-ll", AC_CHECK_LIB(fl, main, LEXLIB="-lfl"))

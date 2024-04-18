@@ -38,6 +38,7 @@
 VISIBLE draw_charbuffer_t *
 Draw_CreateBuffer (int width, int height)
 {
+	qfZoneScoped (true);
 	size_t      size = width * height;
 	draw_charbuffer_t *buffer = malloc (sizeof (draw_charbuffer_t) + size);
 	buffer->width = width;
@@ -154,4 +155,12 @@ int
 Draw_MaxScale (void)
 {
 	return r_funcs->Draw_SetScale ? 20 : 1;
+}
+
+void
+Draw_Flush (void)
+{
+	if (r_funcs->Draw_Flush) {
+		r_funcs->Draw_Flush ();
+	}
 }

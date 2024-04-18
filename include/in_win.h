@@ -33,6 +33,7 @@
 extern bool          mouseactive;
 extern float         mouse_x, mouse_y;
 
+void IN_Win_Preinit (void);
 void IN_UpdateClipCursor (void);
 void IN_ShowMouse (void);
 void IN_HideMouse (void);

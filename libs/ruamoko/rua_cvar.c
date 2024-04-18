@@ -57,6 +57,7 @@ typedef struct {
 static void
 bi_alias_free (void *_a, void *unused)
 {
+	qfZoneScoped (true);
 	bi_alias_t *a = (bi_alias_t *) _a;
 
 	free (a->name);
@@ -66,6 +67,7 @@ bi_alias_free (void *_a, void *unused)
 static void
 bi_cvar_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	cvar_resources_t *res = (cvar_resources_t *) _res;
 	bi_alias_t *alias;
 
@@ -79,12 +81,14 @@ bi_cvar_clear (progs_t *pr, void *_res)
 static void
 bi_cvar_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
 static void
 bi_Cvar_MakeAlias (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	const char *cvar_name = P_GSTRING (pr, 1);
@@ -109,6 +113,7 @@ bi_Cvar_MakeAlias (progs_t *pr, void *_res)
 static void
 bi_Cvar_RemoveAlias (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (cvar_resources_t *) _res;
 	const char *alias_name = P_GSTRING (pr, 0);
 	bi_alias_t **a;
@@ -128,6 +133,7 @@ bi_Cvar_RemoveAlias (progs_t *pr, void *_res)
 static void
 bi_Cvar_SetString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	const char *val = P_GSTRING (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -141,6 +147,7 @@ bi_Cvar_SetString (progs_t *pr, void *_res)
 static void
 bi_Cvar_SetInteger (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	int         val = P_INT (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -154,6 +161,7 @@ bi_Cvar_SetInteger (progs_t *pr, void *_res)
 static void
 bi_Cvar_SetFloat (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	float       val = P_FLOAT (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -167,6 +175,7 @@ bi_Cvar_SetFloat (progs_t *pr, void *_res)
 static void
 bi_Cvar_SetVector (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	float      *val = P_VECTOR (pr, 1);
 	cvar_t     *var = Cvar_FindVar (varname);
@@ -180,6 +189,7 @@ bi_Cvar_SetVector (progs_t *pr, void *_res)
 static void
 bi_Cvar_GetString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
@@ -194,6 +204,7 @@ bi_Cvar_GetString (progs_t *pr, void *_res)
 static void
 bi_Cvar_GetInteger (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
@@ -209,6 +220,7 @@ bi_Cvar_GetInteger (progs_t *pr, void *_res)
 static void
 bi_Cvar_GetFloat (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
@@ -217,12 +229,13 @@ bi_Cvar_GetFloat (progs_t *pr, void *_res)
 		var = Cvar_FindAlias (varname);
 	if (!var || var->value.type != &cexpr_float)
 		return;
-	R_INT (pr) = *(float *) var->value.value;
+	R_FLOAT (pr) = *(float *) var->value.value;
 }
 
 static void
 bi_Cvar_GetVector (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var = Cvar_FindVar (varname);
 
@@ -237,14 +250,15 @@ bi_Cvar_GetVector (progs_t *pr, void *_res)
 static void
 bi_Cvar_Toggle (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *varname = P_GSTRING (pr, 0);
 	cvar_t     *var;
 
 	var = Cvar_FindVar (varname);
 	if (!var)
 		var = Cvar_FindAlias (varname);
-	if (var && var->value.type == &cexpr_int) {
-		*(int *) var->value.value = !*(int *) var->value.value;
+	if (var) {
+		Cvar_Toggle (var);
 	}
 }
 
@@ -269,6 +283,7 @@ static builtin_t builtins[] = {
 void
 RUA_Cvar_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	cvar_resources_t *res = calloc (1, sizeof (cvar_resources_t));
 
 	res->aliases = 0;

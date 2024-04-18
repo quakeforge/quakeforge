@@ -280,17 +280,16 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
-					   sizeof (float));
+	poly = Hunk_Alloc (0, field_offset (glpoly_t, verts[numverts]));
 	poly->next = warpface->polys;
 	warpface->polys = poly;
 	poly->numverts = numverts;
 	for (i = 0; i < numverts; i++, verts += 3) {
-		VectorCopy (verts, poly->verts[i]);
+		VectorCopy (verts, poly->verts[i].pos);
 		s = DotProduct (verts, warpface->texinfo->vecs[0]);
 		t = DotProduct (verts, warpface->texinfo->vecs[1]);
-		poly->verts[i][3] = s;
-		poly->verts[i][4] = t;
+		poly->verts[i].tex_uv[0] = s;
+		poly->verts[i].tex_uv[1] = t;
 	}
 }
 

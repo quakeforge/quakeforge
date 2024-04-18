@@ -44,10 +44,14 @@
 #include "qw/include/sv_progs.h"
 #include "qw/include/sv_recorder.h"
 
+static uint32_t sv_base;
+#define s_view (sv_base + server_view)
+#define s_window (sv_base + server_window)
+
 static void
 draw_cpu (view_t view)
 {
-	sv_view_t  *sv_view = Ent_GetComponent (view.id, server_view, view.reg);
+	sv_view_t  *sv_view = Ent_GetComponent (view.id, s_view, view.reg);
 	sv_sbar_t  *sb = sv_view->obj;
 	view_pos_t  rel = View_GetRel (view);
 	double      cpu;
@@ -71,7 +75,7 @@ draw_cpu (view_t view)
 static void
 draw_rec (view_t view)
 {
-	sv_view_t  *sv_view = Ent_GetComponent (view.id, server_view, view.reg);
+	sv_view_t  *sv_view = Ent_GetComponent (view.id, s_view, view.reg);
 	sv_sbar_t  *sb = sv_view->obj;
 	view_pos_t  rel = View_GetRel (view);
 	const char *str;
@@ -86,7 +90,7 @@ draw_rec (view_t view)
 static void
 draw_mem (view_t view)
 {
-	sv_view_t  *sv_view = Ent_GetComponent (view.id, server_view, view.reg);
+	sv_view_t  *sv_view = Ent_GetComponent (view.id, s_view, view.reg);
 	sv_sbar_t  *sb = sv_view->obj;
 	view_pos_t  rel = View_GetRel (view);
 	const char *str;
@@ -113,8 +117,9 @@ SV_Sbar_Init (void)
 	if (!con_module || !con_module->data->console->status_view)
 		return;
 
+	sv_base = con_module->data->console->component_base;
 	status = *con_module->data->console->status_view;
-	void       *comp =  Ent_GetComponent (status.id, server_window, status.reg);
+	void       *comp =  Ent_GetComponent (status.id, s_window, status.reg);
 	sv_view_t   sv_view = *(sv_view_t *) comp;
 	sv_view.setgeometry = 0;
 
@@ -125,21 +130,21 @@ SV_Sbar_Init (void)
 	View_SetLen (view, 11, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_cpu;
-	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
+	Ent_SetComponent (view.id, s_view, view.reg, &sv_view);
 
 	view = View_New (viewsys, status);
 	View_SetPos (view, 11, 0);
 	View_SetLen (view, 8, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_rec;
-	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
+	Ent_SetComponent (view.id, s_view, view.reg, &sv_view);
 
 	view = View_New (viewsys, status);
 	View_SetPos (view, 19, 0);
 	View_SetLen (view, 18, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_mem;
-	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
+	Ent_SetComponent (view.id, s_view, view.reg, &sv_view);
 
 	View_UpdateHierarchy (status);
 }

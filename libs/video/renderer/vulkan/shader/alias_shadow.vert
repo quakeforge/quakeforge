@@ -6,6 +6,10 @@ layout (set = 0, binding = 0) buffer ShadowView {
 	mat4x4      shadowView[];
 };
 
+layout (set = 0, binding = 1) buffer ShadowId {
+	uint        shadowId[];
+};
+
 layout (push_constant) uniform PushConstants {
 	mat4 Model;
 	float blend;
@@ -21,5 +25,6 @@ void
 main (void)
 {
 	vec4 pos = mix (vertexa, vertexb, blend);
-	gl_Position = shadowView[MatrixBase + gl_ViewIndex] * (Model * pos);
+	uint matid = shadowId[MatrixBase + gl_ViewIndex];
+	gl_Position = shadowView[matid] * (Model * pos);
 }

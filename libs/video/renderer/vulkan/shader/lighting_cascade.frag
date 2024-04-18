@@ -19,4 +19,17 @@ shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 	return texture (shadow_map[map_id], vec4 (uv, layer + ind, depth));
 }
 
+vec4
+debug_shadow (vec4 pos)
+{
+	float fd = pos.w;
+	uint ind = fd > CascadeDepths[1]
+				? fd > CascadeDepths[0] ? 0 : 1
+				: fd > CascadeDepths[2] ? 2 : 3;
+	ind += 1;
+	return vec4 (ind & 1, ind & 2, ind & 4, 1);
+}
+
+//#define DEBUG_SHADOW(p) debug_shadow(p)
+
 #include "lighting_main.finc"

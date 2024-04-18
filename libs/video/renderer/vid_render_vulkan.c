@@ -49,6 +49,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
@@ -82,6 +83,16 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
+static int vulkan_render_mode;
+static cvar_t vulkan_render_mode_cvar = {
+	.name = "vulkan_render_mode",
+	.description =
+		"Use deferred (1) or forward (0) rendering for quake.",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &vulkan_render_mode },
+};
+
 static struct psystem_s *
 vulkan_ParticleSystem (void)
 {
@@ -89,12 +100,13 @@ vulkan_ParticleSystem (void)
 }
 
 static void
-vulkan_R_Init (void)
+vulkan_R_Init (struct plitem_s *config)
 {
 	QFV_Render_Init (vulkan_ctx);
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
+	Vulkan_Palette_Init (vulkan_ctx);
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 
@@ -115,25 +127,25 @@ vulkan_R_Init (void)
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 
-	QFV_LoadRenderInfo (vulkan_ctx, "main_def");
-	QFV_LoadSamplerInfo (vulkan_ctx, "smp_quake");
+	if (config) {
+		auto samplers = PL_ObjectForKey (config, "samplers");
+		auto render_graph = PL_ObjectForKey (config, "render_graph");
+		if (!render_graph) {
+			Sys_Error ("render_graph not found in config");
+		}
+		if (!samplers) {
+			Sys_Error ("samplers not found in config");
+		}
+		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
+		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
+	} else {
+		const char *mode = vulkan_render_mode ? "main_def" : "main_fwd";
+		auto render_graph = Vulkan_GetConfig (vulkan_ctx, mode);
+		auto samplers = Vulkan_GetConfig (vulkan_ctx, "smp_quake");
+		QFV_LoadSamplerInfo (vulkan_ctx, samplers);
+		QFV_LoadRenderInfo (vulkan_ctx, render_graph);
+	}
 	QFV_BuildRender (vulkan_ctx);
-
-	Vulkan_Texture_Setup (vulkan_ctx);
-	Vulkan_Palette_Init (vulkan_ctx, vid.palette);
-	Vulkan_Alias_Setup (vulkan_ctx);
-	Vulkan_Bsp_Setup (vulkan_ctx);
-	Vulkan_IQM_Setup (vulkan_ctx);
-	Vulkan_Matrix_Setup (vulkan_ctx);
-	Vulkan_Scene_Setup (vulkan_ctx);
-	Vulkan_Sprite_Setup (vulkan_ctx);
-	Vulkan_Output_Setup (vulkan_ctx);
-	Vulkan_Compose_Setup (vulkan_ctx);
-	Vulkan_Draw_Setup (vulkan_ctx);
-	Vulkan_Particles_Setup (vulkan_ctx);
-	Vulkan_Planes_Setup (vulkan_ctx);
-	Vulkan_Translucent_Setup (vulkan_ctx);
-	Vulkan_Lighting_Setup (vulkan_ctx);
 
 	Skin_Init ();
 
@@ -143,12 +155,13 @@ vulkan_R_Init (void)
 static void
 vulkan_R_ClearState (void)
 {
+	qfZoneScoped (true);
 	QFV_DeviceWaitIdle (vulkan_ctx->device);
 	//FIXME clear scene correctly
 	r_refdef.worldmodel = 0;
 	EntQueue_Clear (r_ent_queue);
 	R_ClearParticles ();
-	Vulkan_LoadLights (0, vulkan_ctx);
+	QFV_Render_Run_ClearState (vulkan_ctx);
 }
 
 static void
@@ -326,6 +339,24 @@ vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 }
 
 static void
+vulkan_Draw_SetClip (int x, int y, int w, int h)
+{
+	Vulkan_Draw_SetClip (x, y, w, h, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_ResetClip (void)
+{
+	Vulkan_Draw_ResetClip (vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Flush (void)
+{
+	Vulkan_Draw_Flush (vulkan_ctx);
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 	//FIXME this should not be done every frame
@@ -345,6 +376,7 @@ vulkan_set_2d (int scaled)
 static void
 vulkan_UpdateScreen (SCR_Func *scr_funcs)
 {
+	qfZoneNamed (zone, true);
 	vulkan_set_2d (1);//FIXME
 	Vulkan_SetScrFuncs (scr_funcs, vulkan_ctx);
 	QFV_RunRenderJob (vulkan_ctx);
@@ -438,18 +470,15 @@ vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 }
 
 static void
-vulkan_Skin_SetupSkin (struct skin_s *skin, int cmap)
+vulkan_Skin_SetupSkin (struct skin_s *skin)
 {
+	Vulkan_Skin_SetupSkin (skin, vulkan_ctx);
 }
 
 static void
-vulkan_Skin_ProcessTranslation (int cmap, const byte *translation)
+vulkan_Skin_Destroy (struct skin_s *skin)
 {
-}
-
-static void
-vulkan_Skin_InitTranslations (void)
-{
+	Vulkan_Skin_Destroy (skin, vulkan_ctx);
 }
 
 static void
@@ -463,6 +492,7 @@ set_palette (void *data, const byte *palette)
 static void
 vulkan_vid_render_choose_visual (void *data)
 {
+	qfZoneScoped (true);
 	Vulkan_CreateDevice (vulkan_ctx);
 	if (!vulkan_ctx->device) {
 		Sys_Error ("Unable to create Vulkan device.%s",
@@ -482,6 +512,7 @@ vulkan_vid_render_choose_visual (void *data)
 static void
 vulkan_vid_render_create_context (void *data)
 {
+	qfZoneScoped (true);
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
 	Sys_MaskPrintf (SYS_vulkan, "vk create context: surface:%#zx\n",
@@ -507,18 +538,15 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = vulkan_Mod_SpriteLoadFrames,
 
-	.Skin_Free               = Skin_Free,
-	.Skin_SetColormap        = Skin_SetColormap,
-	.Skin_SetSkin            = Skin_SetSkin,
-	.Skin_SetupSkin          = vulkan_Skin_SetupSkin,
-	.Skin_SetTranslation     = Skin_SetTranslation,
-	.Skin_ProcessTranslation = vulkan_Skin_ProcessTranslation,
-	.Skin_InitTranslations   = vulkan_Skin_InitTranslations,
+	.skin_set                = Skin_Set,
+	.skin_setupskin          = vulkan_Skin_SetupSkin,
+	.skin_destroy            = vulkan_Skin_Destroy,
 };
 
 static void
 vulkan_vid_render_init (void)
 {
+	qfZoneScoped (true);
 	if (!vr_data.vid->vid_internal->vulkan_context) {
 		Sys_Error ("Sorry, Vulkan not supported by this program.");
 	}
@@ -526,6 +554,7 @@ vulkan_vid_render_init (void)
 	vulkan_ctx = vi->vulkan_context (vi);
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
+	Cvar_Register (&vulkan_render_mode_cvar, 0, 0);
 	Vulkan_Init_Common (vulkan_ctx);
 
 	vi->set_palette = set_palette;
@@ -550,25 +579,8 @@ vulkan_vid_render_shutdown (void)
 	SCR_Shutdown ();
 	Mod_ClearAll ();
 
-	Vulkan_Compose_Shutdown (vulkan_ctx);
-	Vulkan_Translucent_Shutdown (vulkan_ctx);
-	Vulkan_Lighting_Shutdown (vulkan_ctx);
-	Vulkan_Draw_Shutdown (vulkan_ctx);
-	Vulkan_Sprite_Shutdown (vulkan_ctx);
-	Vulkan_Planes_Shutdown (vulkan_ctx);
-	Vulkan_Particles_Shutdown (vulkan_ctx);
-	Vulkan_IQM_Shutdown (vulkan_ctx);
-	Vulkan_Bsp_Shutdown (vulkan_ctx);
-	Vulkan_Alias_Shutdown (vulkan_ctx);
-	Vulkan_Scene_Shutdown (vulkan_ctx);
-	Vulkan_Matrix_Shutdown (vulkan_ctx);
-
 	QFV_MousePick_Shutdown (vulkan_ctx);
 	QFV_Capture_Shutdown (vulkan_ctx);
-	Vulkan_Output_Shutdown (vulkan_ctx);
-
-	Vulkan_Palette_Shutdown (vulkan_ctx);
-	Vulkan_Texture_Shutdown (vulkan_ctx);
 
 	QFV_Render_Shutdown (vulkan_ctx);
 
@@ -576,6 +588,9 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 
 	Vulkan_Shutdown_Common (vulkan_ctx);
+
+	vulkan_ctx->delete (vulkan_ctx);
+	vulkan_ctx = 0;
 }
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
@@ -609,6 +624,9 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.Draw_SubPic            = vulkan_Draw_SubPic,
 	.Draw_AddFont           = vulkan_Draw_AddFont,
 	.Draw_Glyph             = vulkan_Draw_Glyph,
+	.Draw_SetClip           = vulkan_Draw_SetClip,
+	.Draw_ResetClip         = vulkan_Draw_ResetClip,
+	.Draw_Flush             = vulkan_Draw_Flush,
 
 	.ParticleSystem   = vulkan_ParticleSystem,
 	.R_Init           = vulkan_R_Init,

@@ -119,7 +119,7 @@ R_DrawViewModel (void)
 	if (!Entity_Valid (ent)) {
 		return;
 	}
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
@@ -174,8 +174,11 @@ glsl_R_TimeRefresh_f (void)
 }
 
 void
-glsl_R_Init (void)
+glsl_R_Init (struct plitem_s *config)
 {
+	if (config) {
+		Sys_Printf (ONG"WARNING"DFL": glsl_R_Init: render config ignored\n");
+	}
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
@@ -186,6 +189,7 @@ glsl_R_Init (void)
 	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
+	glsl_R_InitTrails ();
 	glsl_InitFisheye ();
 	glsl_InitWarp ();
 	Skin_Init ();
@@ -194,8 +198,6 @@ glsl_R_Init (void)
 void
 glsl_R_Shutdown (void)
 {
-	Skin_Shutdown();
-
 	glsl_R_ShutdownParticles ();
 	glsl_Lightmap_Shutdown ();
 	glsl_R_ShutdownBsp ();

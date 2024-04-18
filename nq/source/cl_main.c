@@ -34,6 +34,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
 #include "QF/gib.h"
 #include "QF/input.h"
 #include "QF/image.h"
@@ -59,8 +60,9 @@
 #include "compat.h"
 
 #include "client/chase.h"
+#include "client/effects.h"
 #include "client/particles.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 #include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/world.h"
@@ -188,6 +190,7 @@ CL_WriteConfiguration (void)
 int
 CL_ReadConfiguration (const char *cfg_name)
 {
+	qfZoneScoped (true);
 	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
 	if (!cfg_file) {
 		return 0;
@@ -218,11 +221,13 @@ CL_Shutdown (void *data)
 	CL_WriteConfiguration ();
 
 	Mod_ClearAll ();
+	dstring_delete (cl_stuffbuff);
 }
 
 void
 CL_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	VID_ClearMemory ();
 	SCR_SetFullscreen (0);
 
@@ -253,6 +258,7 @@ CL_ClearMemory (void)
 void
 CL_InitCvars (void)
 {
+	qfZoneScoped (true);
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();
 	Mod_Init_Cvars ();
@@ -279,6 +285,7 @@ CL_InitCvars (void)
 void
 CL_ClearState (void)
 {
+	qfZoneScoped (true);
 	CL_ClearMemory ();
 	if (!sv.active)
 		Host_ClearMemory ();
@@ -293,9 +300,7 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
-	renderer_t  *renderer = Ent_GetComponent (cl.viewstate.weapon_entity.id,
-											  scene_renderer,
-											  cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
 	renderer->depthhack = 1;
 	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
@@ -328,6 +333,9 @@ CL_StopCshifts (void)
 void
 CL_Disconnect (void)
 {
+	if (net_is_dedicated) {
+		return;
+	}
 	// stop sounds (especially looping!)
 	S_StopAllSounds ();
 
@@ -479,8 +487,8 @@ CL_PrintEntities_f (void)
 	for (i = 0; i < cl.num_entities; i++) {
 		entity_t    ent = cl_entities[i];
 		transform_t transform = Entity_Transform (ent);
-		renderer_t  *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		Sys_Printf ("%3i:", i);
 		if (!Entity_Valid (ent) || !renderer->model) {
 			Sys_Printf ("EMPTY\n");
@@ -502,6 +510,7 @@ CL_PrintEntities_f (void)
 int
 CL_ReadFromServer (void)
 {
+	qfZoneNamedN (rfzzone, "CL_ReadFromServer", true);
 	int         ret;
 	TEntContext_t tentCtx = {
 		cl.viewstate.player_origin,
@@ -631,18 +640,22 @@ write_capture (tex_t *tex, void *data)
 void
 CL_PreFrame (void)
 {
+	qfZoneNamedN (pfzone, "CL_PreFrame", true);
 	IN_ProcessEvents ();
 
+	qfMessageL ("scripts");
 	GIB_Thread_Execute ();
 	cmd_source = src_command;
 	Cbuf_Execute_Stack (host_cbuf);
 
+	qfMessageL ("send");
 	CL_SendCmd ();
 }
 
 void
 CL_Frame (void)
 {
+	qfZoneNamedN (fzone, "CL_Frame", true);
 	static double time1 = 0, time2 = 0, time3 = 0;
 	int         pass1, pass2, pass3;
 
@@ -706,6 +719,7 @@ Force_CenterView_f (void)
 void
 CL_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	byte       *basepal, *colormap;
 
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
@@ -721,13 +735,12 @@ CL_Init (cbuf_t *cbuf)
 	VID_Init (basepal, colormap);
 	IN_Init ();
 	GIB_Key_Init ();
-	R_Init ();
+	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	S_Init (&cl.viewentity, &host_frametime);
 	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Load ("client");
 	CL_Init_Screen ();
 	Con_Init ();
 
@@ -737,6 +750,7 @@ CL_Init (cbuf_t *cbuf)
 
 	CL_Init_Input (cbuf);
 	CL_Particles_Init ();
+	CL_Effects_Init ();
 	CL_TEnts_Init ();
 	CL_World_Init ();
 	CL_ClearState ();
@@ -757,6 +771,7 @@ CL_Init (cbuf_t *cbuf)
 
 	Sys_RegisterShutdown (CL_Shutdown, 0);
 
+	cl_stuffbuff = dstring_newstr ();
 	SZ_Alloc (&cls.message, 1024);
 	CL_SetState (ca_disconnected);
 }

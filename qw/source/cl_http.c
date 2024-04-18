@@ -35,6 +35,11 @@
 
 #include <curl/curl.h>
 
+#ifdef _WIN32
+//windows defines this, but of course it conflicts with progs
+#undef E_POINTER
+#endif
+
 #include "QF/dstring.h"
 #include "QF/sys.h"
 

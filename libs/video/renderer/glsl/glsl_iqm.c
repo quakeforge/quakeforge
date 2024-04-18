@@ -204,7 +204,7 @@ set_arrays (iqm_t *iqm)
 void
 glsl_R_DrawIQM (entity_t ent)
 {
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	model_t    *model = renderer->model;
 	static quat_t color = { 1, 1, 1, 1};
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
@@ -231,8 +231,7 @@ glsl_R_DrawIQM (entity_t ent)
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (entorigin, MAX_IQM_LIGHTS, lights);
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
+	auto animation = Entity_GetAnimation (ent);
 	blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
 							  blend, 0);
@@ -269,9 +268,16 @@ glsl_R_DrawIQM (entity_t ent)
 		qfeglBindTexture (GL_TEXTURE_2D, glsl->textures[i]);
 		qfeglActiveTexture (GL_TEXTURE0 + 1);
 		qfeglBindTexture (GL_TEXTURE_2D, glsl->normmaps[i]);
-		qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
-						   GL_UNSIGNED_SHORT,
-						   iqm->elements + 3 * iqm->meshes[i].first_triangle);
+		int firstElement = 3 * iqm->meshes[i].first_triangle;
+		if (iqm->num_verts > 0xfff0) {
+			qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
+							   GL_UNSIGNED_INT,
+							   iqm->elements32 + firstElement);
+		} else {
+			qfeglDrawElements (GL_TRIANGLES, 3 * iqm->meshes[i].num_triangles,
+							   GL_UNSIGNED_SHORT,
+							   iqm->elements16 + firstElement);
+		}
 	}
 }
 

@@ -228,7 +228,7 @@ static const expr_t *break_label;
 static const expr_t *continue_label;
 
 static specifier_t
-make_spec (type_t *type, storage_class_t storage, int is_typedef,
+make_spec (const type_t *type, storage_class_t storage, int is_typedef,
 		   int is_overload)
 {
 	specifier_t spec;

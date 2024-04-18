@@ -256,6 +256,13 @@ print_block (dstring_t *dstr, const expr_t *e, int level, int id,
 		dasprintf (dstr, "%*se_%p:result -> e_%p;\n", indent, "", e,
 				   e->block.result);
 	}
+	// print any label expressions first to ensure they get the correct
+	// next pointer instead of pointing to themselves.
+	for (int i = 0; i < num_exprs; i++) {
+		if (exprs[i]->type == ex_label) {
+			_print_expr (dstr, exprs[i], level + 1, id, exprs[i + 1]);
+		}
+	}
 	for (int i = 0; i < num_exprs; i++) {
 		_print_expr (dstr, exprs[i], level + 1, id, exprs[i + 1]);
 		dasprintf (dstr, "%*se_%p:b%d -> e_%p;\n", indent, "", e,
@@ -771,7 +778,7 @@ dump_dot_expr (const void *_e, const char *filename)
 	dasprintf (dstr, "digraph expr_%p {\n", e);
 	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
-	_print_expr (dstr, e, 0, ++id, 0);
+	_print_expr (dstr, e, 0, ++id, nullptr);
 	dasprintf (dstr, "}\n");
 
 	if (filename) {

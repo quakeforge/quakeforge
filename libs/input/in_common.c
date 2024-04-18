@@ -518,6 +518,7 @@ IN_SaveConfig (plitem_t *config)
 void
 IN_LoadConfig (plitem_t *config)
 {
+	qfZoneScoped (true);
 	plitem_t   *input_config = PL_ObjectForKey (config, "input");
 
 	if (input_config) {
@@ -545,6 +546,7 @@ IN_shutdown (void *data)
 void
 IN_Init (void)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (IN_shutdown, 0);
 	IN_Event_Init ();
 	IN_ButtonInit ();

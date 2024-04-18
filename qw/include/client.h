@@ -261,6 +261,7 @@ extern int cl_netgraph_box;
 
 extern int cl_draw_locs;
 extern int cl_shownet;
+extern int cl_player_shadows;
 
 extern char *cl_name;
 

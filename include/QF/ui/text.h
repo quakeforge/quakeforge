@@ -114,8 +114,9 @@ typedef struct text_system_s {
 	uint32_t    text_base;
 } text_system_t;
 
-struct view_s Text_PassageView (text_system_t textsys,
-								struct font_s *font, struct passage_s *passage);
+struct view_s Text_PassageView (text_system_t textsys, struct view_s parent,
+								struct font_s *font, struct passage_s *passage,
+								struct text_shaper_s *shaper);
 struct view_s Text_StringView (text_system_t textsys, struct view_s parent,
 							   struct font_s *font,
 							   const char *str, uint32_t len,

@@ -23,7 +23,8 @@ main (void)
 	//FIXME need a simple way to get at a def's meta-data
 	xdefs_t    *xdefs = PR_FindGlobal (".xdefs");
 	xdef_t     *xdef = xdefs.xdefs;
-	while (xdef - xdefs.xdefs < xdefs.num_xdefs && xdef.ofs != &int32_ptr) {
+	while (xdef - xdefs.xdefs < (int) xdefs.num_xdefs
+		   && xdef.ofs != &int32_ptr) {
 		xdef++;
 	}
 	printf ("int32_ptr: %s\n", xdef.type.encoding);

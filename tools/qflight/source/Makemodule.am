@@ -14,7 +14,8 @@ qflight_SOURCES=\
 	tools/qflight/source/qflight.c \
 	tools/qflight/source/threads.c \
 	tools/qflight/source/trace.c \
-	tools/qflight/source/vis.c
+	tools/qflight/source/vis.c \
+	$(tracy_src)
 
 qflight_LDFLAGS=	$(PTHREAD_LDFLAGS)
 qflight_LDADD=		$(QFLIGHT_LIBS)

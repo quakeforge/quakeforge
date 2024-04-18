@@ -1,7 +1,10 @@
-ruamoko_cl_menu_libexec=ruamoko/cl_menu/menu.dat$(EXEEXT)
-ruamoko_cl_menu_data=ruamoko/cl_menu/menu.plist ruamoko/cl_menu/menu.sym
+ruamoko_cl_menu_libexec=ruamoko/cl_menu/menu_dat$(EXEEXT)
+ruamoko_cl_menu_data=\
+	ruamoko/cl_menu/menu.dat \
+	ruamoko/cl_menu/menu.plist \
+	ruamoko/cl_menu/menu.sym
 
-ruamoko_cl_menudir = @sharepath@/QF
+ruamoko_cl_menudir = ${sharepath}/QF
 ruamoko_cl_menu_DATA = $(ruamoko_cl_menu_data)
 ruamoko_cl_menu_PROGRAMS = $(ruamoko_cl_menu_libexec)
 EXTRA_PROGRAMS += $(ruamoko_cl_menu_libexec)
@@ -36,12 +39,14 @@ ruamoko_menu_src= \
 ruamoko_cl_menu_menu_dat_SOURCES=$(ruamoko_menu_src)
 ruamoko_menu_obj=$(ruamoko_cl_menu_menu_dat_SOURCES:.r=.o)
 ruamoko_menu_dep=$(call qcautodep,$(ruamoko_cl_menu_menu_dat_SOURCES))
-ruamoko/cl_menu/menu.dat$(EXEEXT): $(ruamoko_menu_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a ruamoko/gui/libgui.a
+ruamoko/cl_menu/menu_dat$(EXEEXT): ruamoko/cl_menu/menu.dat
+	@cp $^ $@
+ruamoko/cl_menu/menu.dat: $(ruamoko_menu_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a ruamoko/gui/libgui.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_menu_obj) -Lruamoko/gui -lgui -lcsqc -lr
 include $(ruamoko_menu_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_menu_dep)
 
-ruamoko/cl_menu/menu.sym: ruamoko/cl_menu/menu.dat$(EXEEXT)
+ruamoko/cl_menu/menu.sym: ruamoko/cl_menu/menu.dat
 
 EXTRA_DIST += \
 	ruamoko/cl_menu/CrosshairCvar.h \

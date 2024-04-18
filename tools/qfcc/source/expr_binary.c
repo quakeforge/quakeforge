@@ -48,6 +48,7 @@ typedef struct {
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
 	bool      (*associative) (void);
+	int         true_op;
 } expr_type_t;
 
 static const expr_t *pointer_arithmetic (int op, const expr_t *e1,
@@ -60,7 +61,9 @@ static const expr_t *inverse_multiply (int op, const expr_t *e1,
 									   const expr_t *e2);
 static const expr_t *double_compare (int op, const expr_t *e1,
 									 const expr_t *e2);
+static const expr_t *uint_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_compare (int op, const expr_t *e1, const expr_t *e2);
+static const expr_t *quat_compare (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_dot (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_multiply (int op, const expr_t *e1, const expr_t *e2);
 static const expr_t *vector_scale (int op, const expr_t *e1, const expr_t *e2);
@@ -271,7 +274,12 @@ static expr_type_t quat_float[] = {
 };
 
 static expr_type_t quat_vector[] = {
-	{'*',	&type_vector},
+	{'*',	&type_vector, .true_op = QC_QVMUL},
+	{0, 0}
+};
+
+static expr_type_t vector_quat[] = {
+	{'*',	&type_vector, .true_op = QC_VQMUL},
 	{0, 0}
 };
 
@@ -280,9 +288,9 @@ static expr_type_t quat_quat[] = {
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_quaternion,
 		.anticommute = fp_com_add},
-	{'*',	&type_quaternion, .associative = always},
-	{QC_EQ,	&type_int},
-	{QC_NE,	&type_int},
+	{'*',	&type_quaternion, .associative = always, .true_op = QC_QMUL},
+	{QC_EQ,	.process = quat_compare},
+	{QC_NE,	.process = quat_compare},
 	{0, 0}
 };
 
@@ -391,10 +399,10 @@ static expr_type_t int_uint[] = {
 	{QC_SHR,	&type_int, 0, &type_int},
 	{QC_EQ,		&type_int, 0, &type_int},
 	{QC_NE,		&type_int, 0, &type_int},
-	{QC_LE,		&type_int, 0, &type_int},
-	{QC_GE,		&type_int, 0, &type_int},
-	{QC_LT,		&type_int, 0, &type_int},
-	{QC_GT,		&type_int, 0, &type_int},
+	{QC_LE,		.process = uint_compare},
+	{QC_GE,		.process = uint_compare},
+	{QC_LT,		.process = uint_compare},
+	{QC_GT,		.process = uint_compare},
 	{0, 0}
 };
 
@@ -469,10 +477,10 @@ static expr_type_t uint_int[] = {
 	{QC_SHR,	&type_uint, 0,        &type_int },
 	{QC_EQ,		&type_int, &type_int, &type_int },
 	{QC_NE,		&type_int, &type_int, &type_int },
-	{QC_LE,		&type_int, &type_int, &type_int },
-	{QC_GE,		&type_int, &type_int, &type_int },
-	{QC_LT,		&type_int, &type_int, &type_int },
-	{QC_GT,		&type_int, &type_int, &type_int },
+	{QC_LE,		.process = uint_compare},
+	{QC_GE,		.process = uint_compare},
+	{QC_LT,		.process = uint_compare},
+	{QC_GT,		.process = uint_compare},
 	{0, 0}
 };
 
@@ -726,6 +734,7 @@ static expr_type_t *float_x[ev_type_count] = {
 static expr_type_t *vector_x[ev_type_count] = {
 	[ev_float] = vector_float,
 	[ev_vector] = vector_vector,
+	[ev_quaternion] = vector_quat,
 	[ev_int] = vector_int,
 	[ev_uint] = vector_uint,
 	[ev_short] = vector_short,
@@ -877,7 +886,7 @@ convert_scalar (const expr_t *scalar, int op, const expr_t *vec)
 	}
 
 	// expand the scalar to a vector of the same width as vec
-	type_t     *vec_type = get_type (vec);
+	auto vec_type = get_type (vec);
 
 	if (is_constant (scalar)) {
 		int width = type_width (get_type (vec));
@@ -896,12 +905,12 @@ convert_scalar (const expr_t *scalar, int op, const expr_t *vec)
 static const expr_t *
 pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1 = get_type (e1);
-	type_t     *t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	const expr_t *ptr = 0;
 	const expr_t *offset = 0;
 	const expr_t *psize;
-	type_t     *ptype = 0;
+	const type_t *ptype = 0;
 
 	if (!is_ptr (t1) && !is_ptr (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
@@ -936,8 +945,8 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1 = get_type (e1);
-	type_t     *t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	expr_t     *e;
 
 	if (!type_assignable (t1, t2)) {
@@ -1001,6 +1010,22 @@ vector_compare (int op, const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
+quat_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	if (options.code.progsversion < PROG_VERSION) {
+		expr_t     *e = new_binary_expr (op, e1, e2);
+		e->expr.type = &type_int;
+		return e;
+	}
+	int         hop = op == QC_EQ ? '&' : '|';
+	e1 = new_alias_expr (&type_vec4, e1);
+	e2 = new_alias_expr (&type_vec4, e2);
+	expr_t     *e = new_binary_expr (op, e1, e2);
+	e->expr.type = &type_ivec4;
+	return new_horizontal_expr (hop, e, &type_int);
+}
+
+static const expr_t *
 vector_dot (int op, const expr_t *e1, const expr_t *e2)
 {
 	expr_t     *e = new_binary_expr (QC_DOT, e1, e2);
@@ -1040,8 +1065,8 @@ vector_scale (int op, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 double_compare (int op, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1 = get_type (e1);
-	type_t     *t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	expr_t     *e;
 
 	if (is_constant (e1) && e1->implicit && is_double (t1) && is_float (t2)) {
@@ -1073,6 +1098,34 @@ double_compare (int op, const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
+uint_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+	expr_t     *e;
+
+	if (is_constant (e1) && e1->implicit && is_int (t1)) {
+		t1 = &type_uint;
+		e1 = cast_expr (t1, e1);
+	}
+	if (is_constant (e2) && e2->implicit && is_int (t2)) {
+		t2 = &type_uint;
+		e2 = cast_expr (t2, e2);
+	}
+	if (t1 != t2) {
+		warning (e1, "comparison between signed and unsigned");
+		if (is_int (t1)) {
+			e1 = cast_expr (&type_uint, e2);
+		} else {
+			e2 = cast_expr (&type_uint, e2);
+		}
+	}
+	e = new_binary_expr (op, e1, e2);
+	e->expr.type = &type_int;
+	return e;
+}
+
+static const expr_t *
 entity_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (options.code.progsversion == PROG_VERSION) {
@@ -1093,9 +1146,8 @@ static const expr_t *
 _invalid_binary_expr (int op, const expr_t *e1, const expr_t *e2,
 					  const char *file, int line, const char *func)
 {
-	type_t     *t1, *t2;
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	return _error (e1, file, line, func, "invalid binary expression: %s %s %s",
 				  get_type_string (t1), get_op_string (op),
 				  get_type_string (t2));
@@ -1223,8 +1275,8 @@ is_call (const expr_t *e)
 	return e->type == ex_block && e->block.is_call;
 }
 
-static type_t *
-promote_type (type_t *dst, type_t *src)
+static const type_t *
+promote_type (const type_t *dst, const type_t *src)
 {
 	if (is_vector (dst) || is_quaternion (dst)) {
 		return dst;
@@ -1235,7 +1287,6 @@ promote_type (type_t *dst, type_t *src)
 const expr_t *
 binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1, *t2;
 	etype_t     et1, et2;
 	const expr_t *e;
 	expr_type_t *expr_type;
@@ -1279,8 +1330,8 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if ((e = check_precedence (op, e1, e2)))
 		return e;
 
-	t1 = get_type (e1);
-	t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	if (!t1 || !t2)
 		internal_error (e1, "expr with no type");
 
@@ -1307,11 +1358,11 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		e2 = cast_expr (t2, e2);
 	}
 	if (is_array (t1) && (is_ptr (t2) || is_integral (t2))) {
-		t1 = pointer_type (t1->t.array.type);
+		t1 = pointer_type (dereference_type (t1));
 		e1 = cast_expr (t1, e1);
 	}
 	if (is_array (t2) && (is_ptr (t1) || is_integral (t1))) {
-		t2 = pointer_type (t2->t.array.type);
+		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}
 
@@ -1338,8 +1389,8 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		// are distict types with type.width == 1, but vector and vec3 WILL get
 		// here because of vec3 being float{3}
 		if (t1 != t2) {
-			type_t     *pt1 = t1;
-			type_t     *pt2 = t2;
+			auto pt1 = t1;
+			auto pt2 = t2;
 			if (is_float (base_type (t1)) && is_double (base_type (t2))
 				&& e2->implicit) {
 				pt2 = promote_type (t1, t2);
@@ -1441,6 +1492,10 @@ vector_or_quaternion:
 
 	if ((e = reimplement_binary_expr (op, e1, e2)))
 		return edag_add_expr (fold_constants (e));
+
+	if (expr_type->true_op) {
+		op = expr_type->true_op;
+	}
 
 	auto ne = new_binary_expr (op, e1, e2);
 	ne->expr.type = expr_type->result_type;

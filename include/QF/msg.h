@@ -279,6 +279,9 @@ void MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles);
 */
 int MSG_ReadUTF8 (qmsg_t *msg);
 
+uint64_t MSG_ReadUleb128 (qmsg_t *msg);
+int64_t MSG_ReadSleb128 (qmsg_t *msg);
+
 ///@}
 
 #endif//__QF_msg_h

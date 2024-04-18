@@ -35,8 +35,10 @@
 #define MAX_CACHED_SKINS 128
 #define MAX_SKIN_LENGTH	32
 
-#define	TOP_RANGE		16			// soldier uniform colors
-#define	BOTTOM_RANGE	96
+#define TOP_COLOR       1			// soldier uniform colors
+#define BOTTOM_COLOR    6
+#define TOP_RANGE       (TOP_COLOR * 16)
+#define BOTTOM_RANGE    (BOTTOM_COLOR * 16)
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
@@ -48,13 +50,16 @@
 #define PLAYER_WIDTH 296
 #define PLAYER_HEIGHT 194
 
-typedef struct skin_s {
-	const char *name;
-	bool		valid;		// the skin was found
-	struct tex_s *texels;
-	byte       *colormap;
-	int         texnum;
-	int         auxtex;
-} skin_t;
+typedef struct ecs_registry_s ecs_registry_t;
+
+enum {
+	skin_name,
+	skin_skin,
+	skin_colors,
+
+	skin_comp_count
+};
+
+#define nullskin (0u)
 
 #endif//__QF_skin_h

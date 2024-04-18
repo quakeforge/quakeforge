@@ -451,7 +451,7 @@ SL_Con_List (server_entry_t *sldata)
 		cp = SL_Get_By_Num (sldata, serv);
 		if (!cp)
 			break;
-		Sys_Printf ("%i) %s\n", (serv + 1), cp->desc);
+		Sys_Printf ("%c%i) %s\n", 3, (serv + 1), cp->desc);
 	}
 }
 
@@ -491,7 +491,7 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 	cp = SL_Get_By_Num (sldata, (slitemno - 1));
 	if (!cp)
 		return;
-	Sys_Printf ("Server: %s\n", cp->server);
+	Sys_Printf ("%cServer: %s\n", 3, cp->server);
 	Sys_Printf ("Ping: ");
 	if (cp->pongback)
 		Sys_Printf ("%i\n", (int) (cp->pongback * 1000));
@@ -500,15 +500,16 @@ SL_Con_Details (server_entry_t *sldata, int slitemno)
 	if (cp->status) {
 		char *s;
 
-		Sys_Printf ("Name: %s\n", cp->desc);
-		Sys_Printf ("Game: %s\n", Info_ValueForKey (cp->status, "*gamedir"));
-		Sys_Printf ("Map: %s\n", Info_ValueForKey (cp->status, "map"));
+		Sys_Printf ("%cName: %s\n", 3, cp->desc);
+		Sys_Printf ("%cGame: %s\n", 3,
+					Info_ValueForKey (cp->status, "*gamedir"));
+		Sys_Printf ("%cMap: %s\n", 3, Info_ValueForKey (cp->status, "map"));
 
 		s = Info_MakeString (cp->status, 0);
 		for (i = 0; i < strlen (s); i++)
 			if (s[i] == '\n')
 				playercount++;
-		Sys_Printf ("Players: %i/%s\n", playercount,
+		Sys_Printf ("%cPlayers: %i/%s\n", 3, playercount,
 					Info_ValueForKey (cp->status, "maxclients"));
 	} else
 		Sys_Printf ("No Details Available\n");

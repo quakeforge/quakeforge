@@ -82,13 +82,9 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 0,
 	.Mod_SpriteLoadFrames           = glsl_Mod_SpriteLoadFrames,
 
-	.Skin_Free               = Skin_Free,
-	.Skin_SetColormap        = Skin_SetColormap,
-	.Skin_SetSkin            = Skin_SetSkin,
-	.Skin_SetupSkin          = glsl_Skin_SetupSkin,
-	.Skin_SetTranslation     = Skin_SetTranslation,
-	.Skin_ProcessTranslation = glsl_Skin_ProcessTranslation,
-	.Skin_InitTranslations   = glsl_Skin_InitTranslations,
+	.skin_set                = Skin_Set,
+	.skin_setupskin          = glsl_Skin_SetupSkin,
+	.skin_destroy            = glsl_Skin_Destroy,
 };
 
 static void
@@ -475,8 +471,11 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.Draw_SubPic            = glsl_Draw_SubPic,
 	.Draw_AddFont           = glsl_Draw_AddFont,
 	.Draw_Glyph             = glsl_Draw_Glyph,
+	.Draw_SetClip           = glsl_Draw_SetClip,
+	.Draw_ResetClip         = glsl_Draw_ResetClip,
 
 	.ParticleSystem   = glsl_ParticleSystem,
+	.TrailSystem      = glsl_TrailSystem,
 	.R_Init           = glsl_R_Init,
 	.R_ClearState     = glsl_R_ClearState,
 	.R_LoadSkys       = glsl_R_LoadSkys,
@@ -485,6 +484,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	.begin_frame      = glsl_begin_frame,
 	.render_view      = glsl_render_view,
 	.draw_particles   = glsl_R_DrawParticles,
+	.draw_trails      = glsl_R_DrawTrails,
 	.draw_transparent = glsl_draw_transparent,
 	.post_process     = glsl_post_process,
 	.set_2d           = glsl_set_2d,

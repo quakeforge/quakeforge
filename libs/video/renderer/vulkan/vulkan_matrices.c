@@ -46,7 +46,6 @@
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -129,6 +128,7 @@ Vulkan_SetSkyMatrix (vulkan_ctx_t *ctx, mat4f_t sky)
 static void
 update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -170,31 +170,34 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_PacketSubmit (packet);
 }
 
-static exprfunc_t update_matrices_func[] = {
-	{ .func = update_matrices },
-	{}
-};
-static exprsym_t matrix_task_syms[] = {
-	{ "update_matrices", &cexpr_function, update_matrices_func },
-	{}
-};
-
-void
-Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
+static void
+matrices_shutdown (exprctx_t *ectx)
 {
-	QFV_Render_AddTasks (ctx, matrix_task_syms);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "matrix shutdown");
+	auto device = ctx->device;
+	auto mctx = ctx->matrix_context;
 
-	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
-	ctx->matrix_context = mctx;
+	QFV_DestroyStagingBuffer (mctx->stage);
+	QFV_DestroyResource (device, mctx->resource);
+	free (mctx->resource);
+	free (mctx->frames.a);
+	free (mctx);
+
+	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Matrix_Setup (vulkan_ctx_t *ctx)
+static void
+matrices_startup (exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "matrix init");
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "matrix shutdown");
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 	auto mctx = ctx->matrix_context;
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -265,17 +268,41 @@ Vulkan_Matrix_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Matrix_Shutdown (vulkan_ctx_t *ctx)
+static void
+matrices_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "matrix shutdown");
-	auto device = ctx->device;
-	auto mctx = ctx->matrix_context;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	QFV_DestroyStagingBuffer (mctx->stage);
-	QFV_DestroyResource (device, mctx->resource);
+	QFV_Render_AddShutdown (ctx, matrices_shutdown);
+	QFV_Render_AddStartup (ctx, matrices_startup);
 
-	qfvPopDebug (ctx);
+	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
+	ctx->matrix_context = mctx;
+}
+
+static exprfunc_t update_matrices_func[] = {
+	{ .func = update_matrices },
+	{}
+};
+
+static exprfunc_t matrices_init_func[] = {
+	{ .func = matrices_init },
+	{}
+};
+
+static exprsym_t matrix_task_syms[] = {
+	{ "update_matrices", &cexpr_function, update_matrices_func },
+	{ "matrices_init", &cexpr_function, matrices_init_func },
+	{}
+};
+
+void
+Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, matrix_task_syms);
 }
 
 VkDescriptorSet

@@ -532,6 +532,8 @@ static keyword_t qf_keywords[] = {
 	{"@regressive",	QC_REGRESSIVE,	},
 	{"@geometric",	QC_GEOMETRIC,	},
 	{"@algebra",	QC_ALGEBRA,	},
+	{"@dual",		QC_DUAL,		},
+	{"@undual",		QC_UNDUAL,		},
 };
 
 // These keywors are always available. Other than the @ keywords, they
@@ -938,7 +940,7 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 		pr_long_t  l[4];
 		pr_type_t  t[PR_SIZEOF (lvec4)];
 	} data;
-	type_t *type = 0;
+	const type_t *type = nullptr;
 	if (expl == suff_long_double) {
 		warning (0, "long double treated as double");
 		expl = suff_double;

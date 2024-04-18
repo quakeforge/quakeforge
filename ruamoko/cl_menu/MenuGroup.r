@@ -1,4 +1,4 @@
-#include "key.h"
+#include <QF/keys.h>
 #include "sound.h"
 
 #include "Array.h"
@@ -14,7 +14,7 @@
 	return self;
 }
 
--(void)setBase:(int)b
+-(void)setBase:(unsigned)b
 {
 	if (b >= [views count])
 		b = [views count] - 1;
@@ -51,7 +51,7 @@
 
 -(void) prev
 {
-	if (--current < base)
+	if (current-- == base)
 		current = [views count] - 1;
 	S_LocalSound ("misc/menu1.wav");
 }

@@ -55,7 +55,6 @@
 #include "r_local.h"	//FIXME for r_cache_thrash
 
 #include "client/hud.h"
-#include "client/sbar.h"
 #include "client/screen.h"
 #include "client/view.h"
 #include "client/world.h"
@@ -123,35 +122,36 @@ clscr_view (int x, int y, int w, int h, grav_t gravity)
 static void
 clscr_set_pic (view_t view, qpic_t *pic)
 {
-	Ent_SetComponent (view.id, canvas_pic, view.reg, &pic);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_pic, view.reg, &pic);
 }
 
 static void
 clscr_set_cachepic (view_t view, const char *name)
 {
-	Ent_SetComponent (view.id, canvas_cachepic, view.reg, &name);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_cachepic, view.reg, &name);
 }
 
 static void
 clscr_set_canvas_func (view_t view, canvas_func_f func)
 {
-	Ent_SetComponent (view.id, canvas_func, view.reg, &func);
+	Ent_SetComponent (view.id, cl_canvas_sys.base + canvas_func, view.reg,
+					  &(canvas_func_t) { .func = func });
 }
 
 static void
-cl_draw_crosshair (view_pos_t abs, view_pos_t len)
+cl_draw_crosshair (view_pos_t abs, view_pos_t len, void *data)
 {
 	r_funcs->Draw_Crosshair ();
 }
 
 static void
-cl_draw_centerprint (view_pos_t abs, view_pos_t len)
+cl_draw_centerprint (view_pos_t abs, view_pos_t len, void *data)
 {
 	Sbar_DrawCenterPrint ();
 }
 
 static void
-SCR_CShift (view_pos_t abs, view_pos_t len)
+SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 {
 	mleaf_t    *leaf;
 	int         contents = CONTENTS_EMPTY;
@@ -169,6 +169,7 @@ SCR_CShift (view_pos_t abs, view_pos_t len)
 static void
 scr_draw_views (void)
 {
+	qfZoneNamed (zone, true);
 	if (scr_showturtle) {
 		static int  count;
 		if (r_data->frametime < 0.1) {
@@ -230,6 +231,18 @@ cl_vidsize_listener (void *data, const viddef_t *vdef)
 }
 
 static void
+cl_timegraph (view_pos_t abs, view_pos_t len, void *data)
+{
+	R_TimeGraph (abs, len);
+}
+
+static void
+cl_zgraph (view_pos_t abs, view_pos_t len, void *data)
+{
+	R_ZGraph (abs, len);
+}
+
+static void
 cl_create_views (void)
 {
 	qpic_t     *pic;
@@ -249,11 +262,11 @@ cl_create_views (void)
 	clscr_set_pic (net_view, pic);
 
 	timegraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
-	clscr_set_canvas_func (timegraph_view, R_TimeGraph);
+	clscr_set_canvas_func (timegraph_view, cl_timegraph);
 	View_SetVisible (timegraph_view, r_timegraph);
 
 	zgraph_view = clscr_view (0, 0, vid->width, 100, grav_southwest);
-	clscr_set_canvas_func (zgraph_view, R_ZGraph);
+	clscr_set_canvas_func (zgraph_view, cl_zgraph);
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	name = "gfx/loading.lmp";
@@ -278,10 +291,21 @@ cl_create_views (void)
 	clscr_set_canvas_func (centerprint_view, cl_draw_centerprint);
 }
 
+static void
+CL_Shutdown_Screen (void *data)
+{
+	ECS_DelRegistry (cl_canvas_sys.reg);
+	cl_canvas_sys.reg = 0;
+}
+
 void
 CL_Init_Screen (void)
 {
-	__auto_type reg = ECS_NewRegistry ();
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (CL_Shutdown_Screen, 0);
+	Con_Load ("client");
+
+	__auto_type reg = ECS_NewRegistry ("cl screen");
 	Canvas_InitSys (&cl_canvas_sys, reg);
 	if (con_module) {
 		__auto_type cd = con_module->data->console;
@@ -325,6 +349,7 @@ CL_Init_Screen (void)
 void
 CL_UpdateScreen (viewstate_t *vs)
 {
+	qfZoneNamedN (us_zone, "CL_UpdateScreen", true);
 	_vs = vs;
 
 	//FIXME not every time

@@ -48,6 +48,7 @@
 typedef struct entity_s {
 	ecs_registry_t *reg;
 	uint32_t    id;
+	uint32_t    base;
 } entity_t;
 
 #define nullentity ((entity_t) { .id = nullent })
@@ -74,7 +75,8 @@ typedef struct visibility_s {
 
 typedef struct renderer_s {
 	struct model_s *model;			// NULL = no model
-	struct skin_s *skin;
+	uint32_t    skin;
+	struct trail_s *trail;
 	unsigned    fullbright:1;
 	unsigned    noshadows:1;
 	unsigned    onlyshadows:1;
@@ -115,6 +117,13 @@ ENTINLINE void EntQueue_AddEntity (entqueue_t *queue, entity_t ent,
 void EntQueue_Clear (entqueue_t *queue);
 ENTINLINE int Entity_Valid (entity_t ent);
 ENTINLINE transform_t Entity_Transform (entity_t ent);
+ENTINLINE colormap_t *Entity_GetColormap (entity_t ent);
+ENTINLINE void Entity_SetColormap (entity_t ent, colormap_t *colormap);
+ENTINLINE void Entity_RemoveColormap (entity_t ent);
+ENTINLINE animation_t *Entity_GetAnimation (entity_t ent);
+ENTINLINE void Entity_SetAnimation (entity_t ent, animation_t *animation);
+ENTINLINE renderer_t *Entity_GetRenderer (entity_t ent);
+ENTINLINE void Entity_SetRenderer (entity_t ent, renderer_t *renderer);
 
 #undef ENTINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -148,7 +157,69 @@ Entity_Transform (entity_t ent)
 {
 	// The transform hierarchy reference is a component on the entity thus
 	// the entity id is the transform id.
-	return (transform_t) { .reg = ent.reg, .id = ent.id, .comp = scene_href };
+	return (transform_t) {
+		.reg = ent.reg,
+		.id = ent.id,
+		.comp = ent.base + scene_href,
+	};
+}
+
+ENTINLINE
+colormap_t *
+Entity_GetColormap (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_colormap, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_colormap, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetColormap (entity_t ent, colormap_t *colormap)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_colormap, ent.reg, colormap);
+}
+
+ENTINLINE
+void
+Entity_RemoveColormap (entity_t ent)
+{
+	return Ent_RemoveComponent (ent.id, ent.base + scene_colormap, ent.reg);
+}
+
+ENTINLINE
+animation_t *
+Entity_GetAnimation (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_animation, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_animation, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetAnimation (entity_t ent, animation_t *animation)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_animation, ent.reg, animation);
+}
+
+ENTINLINE
+renderer_t *
+Entity_GetRenderer (entity_t ent)
+{
+	if (Ent_HasComponent (ent.id, ent.base + scene_renderer, ent.reg)) {
+		return Ent_GetComponent (ent.id, ent.base + scene_renderer, ent.reg);
+	}
+	return nullptr;
+}
+
+ENTINLINE
+void
+Entity_SetRenderer (entity_t ent, renderer_t *renderer)
+{
+	Ent_SetComponent (ent.id, ent.base + scene_renderer, ent.reg, renderer);
 }
 
 struct mod_brush_s;

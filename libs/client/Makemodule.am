@@ -1,5 +1,13 @@
 noinst_LTLIBRARIES += libs/client/libQFclient.la
 
+particles_src= libs/client/particles.part
+particles_gen= libs/client/particles.pc
+
+SUFFICES += .part .pc
+.part.pc:
+	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(am__mv) $@.t $@
+
 libs_client_libQFclient_la_LDFLAGS=	@STATIC@
 libs_client_libQFclient_la_LIBADD=	\
 	libs/ui/libQFgui.la \
@@ -18,15 +26,18 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_world.c \
 		libs/client/hud.c \
 		libs/client/locs.c \
-		libs/client/old_keys.c \
-		libs/client/sbar.c
+		libs/client/old_keys.c
 
 default_input_src = libs/client/default_input.plist
 default_input_gen = libs/client/default_input.plc
 
-libs/client/cl_input.lo: libs/client/cl_input.c $(default_input_gen)
-
 EXTRA_DIST += \
-	libs/client/default_input.plist
+	$(default_input_src) \
+	$(particles_src)
 CLEANFILES += \
-	libs/client/*.plc
+	libs/client/*.plc \
+	libs/client/*.pc
+
+BUILT_SOURCES += \
+	$(default_input_gen) \
+	$(particles_gen)

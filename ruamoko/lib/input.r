@@ -3,6 +3,7 @@
 void IN_LoadConfig (struct plitem_s *config) = #0;
 in_button_t *IN_CreateButton (string name, string description) = #0;
 in_axis_t *IN_CreateAxis (string name, string description) = #0;
+void IN_SendConnectedDevices (void) = #0;
 int IN_FindDeviceId (string _id) = #0;
 string IN_GetDeviceName (int devid) = #0;
 string IN_GetDeviceId (int devid) = #0;
@@ -13,6 +14,7 @@ string IN_GetButtonName (int devid, int button) = #0;
 int IN_GetAxisNumber (int devid, string axis) = #0;
 int IN_GetButtonNumber (int devid, string button) = #0;
 void IN_ProcessEvents (void) = #0;
+float IN_UpdateAxis (in_axis_t *axis) = #0;
 void IN_ClearStates (void) = #0;
 int IN_GetAxisInfo (int devid, int axis, in_axisinfo_t *info) = #0;
 int IN_GetButtonInfo (int devid, int button, in_buttoninfo_t *info) = #0;
@@ -40,3 +42,11 @@ void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj) = #0;
 int IMT_CreateContext (string name) = #0;
 int IMT_GetContext (void) = #0;
 void IMT_SetContext (int ctx) = #0;
+void IMT_SetContextCbuf (int ctx, @handle cbuf_h cbuf) = #0;
+
+/*bool*/int IN_Binding_HandleEvent (/*const*/ struct IE_event_s *ie_event) = #0;
+
+#define IE_EVENT(event) #event,
+string ie_event_names[] = {
+#include "QF/input/event_names.h"
+};

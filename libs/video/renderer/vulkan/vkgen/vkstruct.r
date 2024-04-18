@@ -517,8 +517,22 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 		return;
 	}
 
+	fprintf (output_file, "\tqfMessageL (\"%s_symtab\");\n", [self outname]);
 	fprintf (output_file, "\tcexpr_init_symtab (&%s_symtab, context);\n",
 			 [self outname]);
+}
+
+-(void) writeSymtabShutdown
+{
+	PLItem     *field_dict = [parse getObjectForKey:[self outname]];
+
+	if ([parse string] == "skip") {
+		return;
+	}
+
+	fprintf (output_file, "\tHash_DelTable (%s_symtab.tab);\n",
+			 [self outname]);
+	fprintf (output_file, "\t%s_symtab.tab = 0;\n", [self outname]);
 }
 
 -(void) writeSymtabEntry

@@ -164,10 +164,12 @@ LoadPNG (QFile *infile, int load)
 		/* Allocate tex_t structure */
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 		tex = Hunk_TempAlloc (0, sizeof (tex_t) + height * rowbytes);
-		tex->data = (byte *) (tex + 1);
+		*tex = (tex_t) {
+			.data = (byte *) (tex + 1),
+		};
 	} else {
 		tex = Hunk_TempAlloc (0, sizeof (tex_t));
-		tex->data = 0;
+		*tex = (tex_t) { };
 	}
 
 	tex->width = width;

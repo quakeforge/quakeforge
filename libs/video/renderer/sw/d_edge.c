@@ -105,15 +105,15 @@ D_DrawSolidSurface (surf_t *surf, int color)
 
 
 static void
-D_CalcGradients (msurface_t *pface)
+D_CalcGradients (msurface_t *face)
 {
 	float       mipscale, t;
 	vec3_t      p_temp1, p_saxis, p_taxis;
 
 	mipscale = 1.0 / (float) (1 << miplevel);
 
-	TransformVector (pface->texinfo->vecs[0], p_saxis);
-	TransformVector (pface->texinfo->vecs[1], p_taxis);
+	TransformVector ((vec_t*)&face->texinfo->vecs[0], p_saxis);//FIXME
+	TransformVector ((vec_t*)&face->texinfo->vecs[1], p_taxis);//FIXME
 
 	t = xscaleinv * mipscale;
 	d_sdivzstepu = p_saxis[0] * t;
@@ -132,15 +132,15 @@ D_CalcGradients (msurface_t *pface)
 
 	t = 0x10000 * mipscale;
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[0] << 16) >> miplevel)
-		 + pface->texinfo->vecs[0][3] * t;
+		((face->texturemins[0] << 16) >> miplevel)
+		 + face->texinfo->vecs[0][3] * t;
 	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[1] << 16) >> miplevel)
-		 + pface->texinfo->vecs[1][3] * t;
+		((face->texturemins[1] << 16) >> miplevel)
+		 + face->texinfo->vecs[1][3] * t;
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
-	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
-	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
+	bbextents = ((face->extents[0] << 16) >> miplevel) - 1;
+	bbextentt = ((face->extents[1] << 16) >> miplevel) - 1;
 }
 
 static void
@@ -160,7 +160,7 @@ void
 D_DrawSurfaces (void)
 {
 	surf_t     *s;
-	msurface_t *pface;
+	msurface_t *face;
 	surfcache_t *pcurrentcache;
 	vec3_t      world_transformed_modelorg;
 
@@ -208,17 +208,17 @@ D_DrawSurfaces (void)
 				D_DrawSolidSurface (s, r_clearcolor & 0xFF);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWTURB) {
-				pface = s->data;
+				face = s->data;
 				miplevel = 0;
-				cacheblock = ((byte *) pface->texinfo->texture +
-							  pface->texinfo->texture->offsets[0]);
+				cacheblock = ((byte *) face->texinfo->texture +
+							  face->texinfo->texture->offsets[0]);
 				cachewidth = 64;
 
 				if (s->insubmodel) {
 					transform_submodel_poly (s);
 				}
 
-				D_CalcGradients (pface);
+				D_CalcGradients (face);
 
 				Turbulent (s->spans);
 				D_DrawZSpans (s->spans);
@@ -241,17 +241,17 @@ D_DrawSurfaces (void)
 					transform_submodel_poly (s);
 				}
 
-				pface = s->data;
+				face = s->data;
 				miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
-											   * pface->texinfo->mipadjust);
+											   * face->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (s->render_id, pface, miplevel);
+				pcurrentcache = D_CacheSurface (s->render_id, face, miplevel);
 
 				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
 
-				D_CalcGradients (pface);
+				D_CalcGradients (face);
 
 				(*d_drawspans) (s->spans);
 

@@ -36,9 +36,25 @@
 #include "QF/model.h"
 #include "QF/Vulkan/qf_vid.h"
 
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+
 typedef struct modelctx_s {
-	struct vulkan_ctx_s *ctx;
+	vulkan_ctx_t *ctx;
 	VkDeviceMemory texture_memory;
 } modelctx_t;
+
+typedef struct skin_s skin_t;
+typedef struct mod_alias_ctx_s mod_alias_ctx_t;
+typedef struct maliasskindesc_s maliasskindesc_t;
+typedef struct qfv_alias_skin_s qfv_alias_skin_t;
+
+qfv_alias_skin_t *
+Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix,
+					 int skinsize, int snum, int gnum, bool group,
+					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx);
+void Vulkan_Skin_Clear (qfv_alias_skin_t *skin, vulkan_ctx_t *ctx);
+
+void Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx);
+void Vulkan_Skin_Destroy (skin_t *skin, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_model_h

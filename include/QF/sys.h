@@ -73,6 +73,16 @@ sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
+#define DFL "\e[39;49m"
+#define BLK "\e[30;40m"
+#define RED "\e[31;40m"
+#define GRN "\e[32;40m"
+#define ONG "\e[33;40m"
+#define BLU "\e[34;40m"
+#define MAG "\e[35;40m"
+#define CYN "\e[36;40m"
+#define WHT "\e[37;40m"
+
 void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(PRINTF, 2, 0)));
 void Sys_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
@@ -201,6 +211,12 @@ char *Sys_ExpandSquiggle (const char *path);
 */
 int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
 					const char *suffix, int mindigits);
+
+typedef intptr_t sys_jmpbuf[5];
+#define Sys_setjmp(jmpbuf) __builtin_setjmp(jmpbuf)
+void Sys_longjmp (sys_jmpbuf jmpbuf) __attribute__((noreturn));
+
+extern sys_jmpbuf sys_exit_jmpbuf;
 
 ///@}
 

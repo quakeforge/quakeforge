@@ -48,7 +48,6 @@
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_translucent.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
@@ -71,7 +70,10 @@ static VkWriteDescriptorSet base_image_write = {
 static void
 compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
+	int  color_only = *(int *) params[0]->value;
+
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
@@ -85,8 +87,22 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	cframe->imageInfo[0].imageView = fb->views[QFV_attachColor];
 	cframe->imageInfo[1].imageView = fb->views[QFV_attachLight];
 	cframe->imageInfo[2].imageView = fb->views[QFV_attachEmission];
-	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
-								   cframe->descriptors, 0, 0);
+	cframe->imageInfo[3].imageView = fb->views[QFV_attachPosition];
+	if (color_only) {
+		dfunc->vkUpdateDescriptorSets (device->dev, 1,
+									   cframe->descriptors, 0, 0);
+	} else {
+		dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+									   cframe->descriptors, 0, 0);
+
+		vec4f_t fog = Fog_Get ();
+		vec4f_t cam = r_refdef.camera[3];
+		qfv_push_constants_t push_constants[] = {
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof (fog), &fog },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(fog), sizeof (cam), &cam },
+		};
+		QFV_PushConstants (device, cmd, layout, 2, push_constants);
+	}
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
@@ -98,30 +114,27 @@ compose_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
-static exprfunc_t compose_draw_func[] = {
-	{ .func = compose_draw },
-	{}
-};
-static exprsym_t compose_task_syms[] = {
-	{ "compose_draw", &cexpr_function, compose_draw_func },
-	{}
-};
-
-void
-Vulkan_Compose_Init (vulkan_ctx_t *ctx)
+static void
+compose_shutdown (exprctx_t *ectx)
 {
-	QFV_Render_AddTasks (ctx, compose_task_syms);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	composectx_t *cctx = ctx->compose_context;
 
-	composectx_t *cctx = calloc (1, sizeof (composectx_t));
-	ctx->compose_context = cctx;
+	free (cctx->frames.a);
+	free (cctx);
 }
 
-void
-Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
+static void
+compose_startup (exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "compose init");
-
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
+	qfvPushDebug (ctx, "compose startup");
+
 	auto cctx = ctx->compose_context;
 
 	auto rctx = ctx->render_context;
@@ -149,11 +162,43 @@ Vulkan_Compose_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Compose_Shutdown (vulkan_ctx_t *ctx)
+static void
+compose_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	composectx_t *cctx = ctx->compose_context;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	free (cctx->frames.a);
-	free (cctx);
+	QFV_Render_AddShutdown (ctx, compose_shutdown);
+	QFV_Render_AddStartup (ctx, compose_startup);
+
+	composectx_t *cctx = calloc (1, sizeof (composectx_t));
+	ctx->compose_context = cctx;
+}
+
+static exprtype_t *compose_draw_params[] = {
+	&cexpr_int,
+};
+static exprfunc_t compose_draw_func[] = {
+	{ .func = compose_draw, .num_params = 1,
+		.param_types = compose_draw_params },
+	{}
+};
+
+static exprfunc_t compose_init_func[] = {
+	{ .func = compose_init },
+	{}
+};
+
+static exprsym_t compose_task_syms[] = {
+	{ "compose_draw", &cexpr_function, compose_draw_func },
+	{ "compose_init", &cexpr_function, compose_init_func },
+	{}
+};
+
+void
+Vulkan_Compose_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, compose_task_syms);
 }

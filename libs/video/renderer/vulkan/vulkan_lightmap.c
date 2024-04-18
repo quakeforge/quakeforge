@@ -45,7 +45,6 @@
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
-#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/scrap.h"
 
 #include "QF/scene/entity.h"
@@ -54,54 +53,57 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
 #define LUXEL_SIZE 4
 
 static inline void
-add_dynamic_lights (const transform_t *transform, msurface_t *surf,
-				    float *block)
+add_dynamic_lights (const vec4f_t *transform, msurface_t *surf, vec4f_t *block)
 {
-	unsigned    lnum;
+	qfZoneScoped (true);
 	int         sd, td;
-	float       dist, rad, minlight;
-	vec3_t      impact, local, lightorigin;
-	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	int         smax, tmax;
 	int         s, t;
 	mtexinfo_t *tex;
-	plane_t    *plane;
 
 	smax = (surf->extents[0] >> 4) + 1;
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
-	plane = surf->plane;
 
+	auto p = surf->plane;
+	vec4f_t plane = { VectorExpand (p->normal), -p->dist };
+	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (transform);
+		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		if (!(surf->dlightbits[i / 32] & (1 << (i % 32))))
 			continue;					// not lit by this light
 
-		dlight_t   *light = &r_dlights[lnum];
+		vec4f_t lightorigin = dlight->origin - entorigin;
+		lightorigin[3] = 1;
+		float   rad = dlight->radius;
+		vec4f_t dist = dotf (lightorigin, plane);
+		dist[3] = 0;
+		rad -= fabs (dist[0]);
 
-		VectorSubtract (light->origin, entorigin, lightorigin);
-		rad = light->radius;
-		dist = DotProduct (lightorigin, plane->normal) - plane->dist;
-		rad -= fabs (dist);
-
-		minlight = light->minlight;
+		float minlight = dlight->minlight;
 		if (rad < minlight) {
 			continue;
 		}
-		VectorMultSub (light->origin, dist, plane->normal, impact);
+		vec4f_t impact = dlight->origin - dist * plane;
 
-		local[0] = DotProduct (impact,	tex->vecs[0]) + tex->vecs[0][3];
-		local[1] = DotProduct (impact,	tex->vecs[1]) + tex->vecs[1][3];
+		vec4f_t local = {
+			dotf (impact, tex->vecs[0])[0] - surf->texturemins[0],
+			dotf (impact, tex->vecs[1])[0] - surf->texturemins[1],
+		};
 
-		local[0] -= surf->texturemins[0];
-		local[1] -= surf->texturemins[1];
+		vec4f_t color = { VectorExpand (dlight->color), 0 };
+		color *= dlight->radius / 4096;
 
 		for (t = 0; t < tmax; t++) {
 			td = local[1] - t * 16;
@@ -113,91 +115,73 @@ add_dynamic_lights (const transform_t *transform, msurface_t *surf,
 				if (sd < 0) {
 					sd = -sd;
 				}
+				float d;
 				if (sd > td) {
-					dist = sd + (td >> 1);
+					d = sd + (td >> 1);
 				} else {
-					dist = td + (sd >> 1);
+					d = td + (sd >> 1);
 				}
-				if (dist < minlight) {
-					float *out = block + (t * smax + s) * LUXEL_SIZE;
-					float l = (rad - dist);
-					VectorMultAdd (out, l, light->color, out);
-					out[3] = 1;
-					out += LUXEL_SIZE;
+				float l = rad - d;
+				if (l > minlight) {
+					block[t * smax + s] += l * color;
 				}
 			}
 		}
 	}
 }
 
-void
-Vulkan_BuildLightMap (const transform_t *transform, mod_brush_t *brush,
-					  msurface_t *surf, vulkan_ctx_t *ctx)
+static void
+vulkan_build_lightmap (const mod_brush_t *brush, msurface_t *surf,
+					   vec4f_t *block)
 {
-	bspctx_t   *bctx = ctx->bsp_context;
-	int         smax, tmax, size;
-	unsigned    scale;
-	int         i;
-	float      *out, *block;
+	qfZoneScoped (true);
+	int         smax = (surf->extents[0] >> 4) + 1;
+	int         tmax = (surf->extents[1] >> 4) + 1;
+	int         size = smax * tmax;
 
-	surf->cached_dlight = (surf->dlightframe == r_framecount);
-
-	smax = (surf->extents[0] >> 4) + 1;
-	tmax = (surf->extents[1] >> 4) + 1;
-	size = smax * tmax * LUXEL_SIZE;
-
-	block = QFV_SubpicBatch (surf->lightpic, bctx->light_stage);
-
-	// set to full bright if no light data
 	if (!brush->lightdata) {
-		out = block;
-		while (size-- > 0) {
-			*out++ = 1;
+		for (int i = 0; i < size; i++) {
+			block[i] = (vec4f_t) {1, 1, 1, 1};
 		}
 		return;
 	}
 
-	// clear to no light
-	memset (block, 0, size * sizeof(float));
-
-	// add all the lightmaps
+	for (int i = 0; i < size; i++) {
+		block[i] = (vec4f_t) {0, 0, 0, 1};
+	}
 	if (surf->samples) {
-		byte		   *lightmap;
-
-		lightmap = surf->samples;
-		for (int maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255;
-			 maps++) {
-			scale = d_lightstylevalue[surf->styles[maps]];
-			surf->cached_light[maps] = scale;				// 8.8 fraction
-			out = block;
-			for (i = 0; i < smax * tmax; i++) {
-				*out++ += *lightmap++ * scale / 65536.0;
-				*out++ += *lightmap++ * scale / 65536.0;
-				*out++ += *lightmap++ * scale / 65536.0;
-				out++;
+		byte       *lightmap = surf->samples;
+		for (int map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255;
+			 map++) {
+			surf->cached_light[map] = d_lightstylevalue[surf->styles[map]];
+			float scale = surf->cached_light[map] / 65536.0;
+			auto bl = block;
+			for (int i = 0; i < size; i++) {
+				vec4f_t val = { VectorExpand (lightmap), 0 };
+				val *= scale;
+				lightmap += 3;
+				*bl++ += val;
 			}
 		}
-	}
-	// add all the dynamic lights
-	if (surf->dlightframe == r_framecount) {
-		add_dynamic_lights (transform, surf, block);
 	}
 }
 
 void
-Vulkan_CalcLightmaps (vulkan_ctx_t *ctx)
+Vulkan_BuildLightMap (const vec4f_t *transform, const mod_brush_t *brush,
+					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
-/*	int         i;
+	qfZoneScoped (true);
+	bspctx_t   *bctx = ctx->bsp_context;
 
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
-		if (!gl_lightmap_polys[i])
-			continue;
-		if (gl_lightmap_modified[i]) {
-			qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures + i);
-			GL_UploadLightmap (i);
-			gl_lightmap_modified[i] = false;
-		}
-	}*/
+	surf->cached_dlight = (surf->dlightframe == r_framecount);
+
+	vec4f_t *block = QFV_SubpicBatch (surf->lightpic, bctx->light_stage);
+	vulkan_build_lightmap (brush, surf, block);
+
+	// add all the dynamic lights
+	if (surf->dlightframe == r_framecount) {
+		add_dynamic_lights (transform, surf, block);
+	}
 }
 
 static void
@@ -224,25 +208,22 @@ void
 Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
-	int         i, j;
-	model_t    *m;
-	mod_brush_t *brush;
 
 	QFV_ScrapClear (bctx->light_scrap);
 
 	r_framecount = 1;					// no dlightcache
 
-	for (j = 1; j < num_models; j++) {
-		m = models[j];
+	for (int j = 1; j < num_models; j++) {
+		auto m = models[j];
 		if (!m)
 			break;
 		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		auto brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;     // paranoia
 			if (surf->flags & SURF_DRAWTURB) {
@@ -252,11 +233,13 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				continue;
 			}
 			vulkan_create_surf_lightmap (surf, ctx);
+			vec4f_t    *block = QFV_SubpicBatch (surf->lightpic, ctx->staging);
+			vulkan_build_lightmap (brush, surf, block);
 		}
 	}
 
-	for (j = 1; j < num_models; j++) {
-		m = models[j];
+	for (int j = 1; j < num_models; j++) {
+		auto m = models[j];
 		if (!m) {
 			break;
 		}
@@ -264,15 +247,16 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		brush = &m->brush;
+		auto brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (uint32_t i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic) {
-				Vulkan_BuildLightMap (0, brush, surf, ctx);
+				Vulkan_BuildLightMap (nullptr, brush, surf, ctx);
 			}
 		}
 	}
+	QFV_ScrapFlush (bctx->light_scrap);
 }
 
 VkImageView

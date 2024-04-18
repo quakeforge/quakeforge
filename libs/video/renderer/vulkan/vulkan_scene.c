@@ -41,9 +41,9 @@
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lighting.h"
+#include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_scene.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -90,14 +90,12 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		if (!Entity_Valid (entity)) {
 			return 0;	//FIXME see below
 		} else {
-			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
-													 entity.reg);
+			auto renderer = Entity_GetRenderer (entity);
 			return renderer->render_id;
 		}
 	}
 	if (Entity_Valid (entity)) {
-		renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
-												 entity.reg);
+		auto renderer = Entity_GetRenderer (entity);
 		renderer->render_id = render_id;
 	}
 	//unlock
@@ -106,8 +104,7 @@ Vulkan_Scene_AddEntity (vulkan_ctx_t *ctx, entity_t entity)
 		vec4f_t     color;
 		if (Entity_Valid (entity)) { //FIXME give world entity an entity :P
 			transform_t transform = Entity_Transform (entity);
-			renderer_t *renderer = Ent_GetComponent (entity.id, scene_renderer,
-													 entity.reg);
+			auto renderer = Entity_GetRenderer (entity);
 			mat4ftranspose (f, Transform_GetWorldMatrixPtr (transform));
 			entdata->xform[0] = f[0];
 			entdata->xform[1] = f[1];
@@ -145,11 +142,12 @@ static void
 scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 					  exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	entity_t    ent = vr_data.view_model;
 	if (!Entity_Valid (ent)) {
 		return;
 	}
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel
 		|| !r_drawentities
@@ -159,35 +157,38 @@ scene_draw_viewmodel (const exprval_t **params, exprval_t *result,
 	EntQueue_AddEntity (r_ent_queue, ent, renderer->model->type);
 }
 
-static exprfunc_t scene_draw_viewmodel_func[] = {
-	{ .func = scene_draw_viewmodel },
-	{}
-};
-static exprsym_t scene_task_syms[] = {
-	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
-	{}
-};
-
-void
-Vulkan_Scene_Init (vulkan_ctx_t *ctx)
+static void
+scene_shutdown (exprctx_t *ectx)
 {
-	QFV_Render_AddTasks (ctx, scene_task_syms);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "scene shutdown");
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	scenectx_t *sctx = ctx->scene_context;
 
-	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
-							   + sizeof (qfv_resource_t)
-							   + sizeof (qfv_resobj_t));
-	ctx->scene_context = sctx;
-	sctx->max_entities = qfv_max_entities;
+	for (size_t i = 0; i < sctx->frames.size; i++) {
+		__auto_type sframe = &sctx->frames.a[i];
+		set_delete (sframe->pooled_entities);
+	}
+
+	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
+	QFV_DestroyResource (device, sctx->entities);
+	free (sctx->frames.a);
+	free (sctx);
+	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
+static void
+scene_startup (exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "scene init");
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-
 	auto sctx = ctx->scene_context;
 
 	auto rctx = ctx->render_context;
@@ -245,30 +246,50 @@ Vulkan_Scene_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Scene_Shutdown (vulkan_ctx_t *ctx)
+static void
+scene_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "scene shutdown");
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	scenectx_t *sctx = ctx->scene_context;
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "scene init");
 
-	for (size_t i = 0; i < sctx->frames.size; i++) {
-		__auto_type sframe = &sctx->frames.a[i];
-		set_delete (sframe->pooled_entities);
-	}
+	QFV_Render_AddShutdown (ctx, scene_shutdown);
+	QFV_Render_AddStartup (ctx, scene_startup);
 
-	dfunc->vkUnmapMemory (device->dev, sctx->entities->memory);
-	QFV_DestroyResource (device, sctx->entities);
+	scenectx_t *sctx = calloc (1, sizeof (scenectx_t)
+							   + sizeof (qfv_resource_t)
+							   + sizeof (qfv_resobj_t));
+	ctx->scene_context = sctx;
+	sctx->max_entities = qfv_max_entities;
+}
 
-	free (sctx->frames.a);
-	free (sctx);
-	qfvPopDebug (ctx);
+static exprfunc_t scene_draw_viewmodel_func[] = {
+	{ .func = scene_draw_viewmodel },
+	{}
+};
+
+static exprfunc_t scene_init_func[] = {
+	{ .func = scene_init },
+	{}
+};
+
+static exprsym_t scene_task_syms[] = {
+	{ "scene_draw_viewmodel", &cexpr_function, scene_draw_viewmodel_func },
+	{ "scene_init", &cexpr_function, scene_init_func },
+	{}
+};
+
+void
+Vulkan_Scene_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, scene_task_syms);
 }
 
 void
 Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	auto sctx = ctx->scene_context;
 	sctx->scene = scene;
 
@@ -280,8 +301,6 @@ Vulkan_NewScene (scene_t *scene, vulkan_ctx_t *ctx)
 	EntQueue_Clear (r_ent_queue);
 
 	R_ClearParticles ();
-	Vulkan_RegisterTextures (scene->models, scene->num_models, ctx);
-	//Vulkan_BuildLightmaps (scene->models, scene->num_models, ctx);
-	Vulkan_BuildDisplayLists (scene->models, scene->num_models, ctx);
-	Vulkan_LoadLights (scene, ctx);
+
+	QFV_Render_NewScene (scene, ctx);
 }

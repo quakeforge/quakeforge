@@ -29,8 +29,6 @@ void Vulkan_UpdateTex (struct vulkan_ctx_s *ctx, qfv_tex_t *tex, tex_t *src,
 					   int x, int  y, int layer, int mip);
 void Vulkan_UnloadTex (struct vulkan_ctx_s *ctx, qfv_tex_t *tex);
 void Vulkan_Texture_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Texture_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Texture_Shutdown (struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_CreateCombinedImageSampler (struct vulkan_ctx_s *ctx,
 												   VkImageView view,
 												   VkSampler sampler);

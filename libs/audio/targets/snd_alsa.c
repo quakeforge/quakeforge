@@ -651,7 +651,7 @@ SNDDMA_Init (snd_t *snd)
 
 	if ((res = qfsnd_async_add_pcm_handler (&async_handler, pcm,
 										    alsa_callback, snd)) < 0) {
-		Sys_Printf ("snd_alsa: unable to register async handler: %s",
+		Sys_Printf ("snd_alsa: unable to register async handler: %s\n",
 					qfsnd_strerror (res));
 		goto error;
 	}

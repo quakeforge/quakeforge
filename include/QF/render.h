@@ -41,10 +41,8 @@ typedef enum {
 	part_tex_smoke,
 } ptextype_t;
 
-typedef struct particle_s particle_t;
-
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-struct particle_s {
+typedef struct particle_s {
 	vec4f_t     pos;
 	vec4f_t     vel;
 
@@ -61,7 +59,24 @@ struct particle_s {
 	float		ramp;
 	float		scale;
 	float		live;
-};
+} particle_t;
+
+static_assert (sizeof (particle_t) == 4 * sizeof(vec4f_t),
+			   "particle_t wrong size");
+
+typedef struct trailpnt_s {
+	vec4f_t     pos;
+	vec4f_t     vel;
+	vec3_t      bary;
+	float       pathoffset;
+	byte        colora[4];
+	byte        colorb[4];
+	uint32_t    trailid;
+	float       live;
+} trailpnt_t;
+
+static_assert (sizeof (trailpnt_t) == 4 * sizeof(vec4f_t),
+			   "trailprt_t wrong size");
 
 typedef struct partparm_s {
 	vec4f_t     drag;	// drag[3] is grav scale
@@ -70,6 +85,9 @@ typedef struct partparm_s {
 	float       scale_rate;
 	float       alpha_rate;
 } partparm_t;
+
+static_assert (sizeof (partparm_t) == 2 * sizeof(vec4f_t),
+			   "partparm_t wrong size");
 
 typedef struct psystem_s {
 	vec4f_t     gravity;
@@ -160,6 +178,7 @@ typedef struct {
 	int			ambientlight;
 	int			drawflat;
 
+	struct scene_s *scene;
 	struct ecs_registry_s *registry;
 	struct model_s *worldmodel;
 } refdef_t;
@@ -168,7 +187,8 @@ typedef struct {
 
 extern	struct texture_s	*r_notexture_mip;
 
-void R_Init (void);
+struct plitem_s;
+void R_Init (struct plitem_s *config);
 struct vid_internal_s;
 void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
@@ -176,14 +196,19 @@ void R_Progs_Init (struct progs_s *pr);
 
 void Fog_Update (float density, float red, float green, float blue,
 				 float time);
-struct plitem_s;
 void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
 
+vec4f_t Fog_Get (void) __attribute__((pure));
 void Fog_GetColor (quat_t fogcolor);
 float Fog_GetDensity (void) __attribute__((pure));
 void Fog_SetupFrame (void);
 void Fog_StartAdditive (void);
 void Fog_StopAdditive (void);
 void Fog_Init (void);
+
+bool R_Trail_Valid (psystem_t *system, uint32_t trailid) __attribute__((pure));
+uint32_t R_Trail_Create (psystem_t *system, int num_points, vec4f_t start);
+void R_Trail_Update (psystem_t *system, uint32_t trailid, vec4f_t pos);
+void R_Trail_Destroy (psystem_t *system, uint32_t trailid);
 
 #endif//__QF_render_h

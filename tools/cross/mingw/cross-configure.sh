@@ -16,6 +16,7 @@ export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
 export PATH=$MINGW/usr/bin:$PATH
 export QCSYSPREFIX=$MINGW_USR
 ../../configure \
+	--enable-silent-rules \
 	--host=i686-w64-mingw32.static \
 	--disable-shared \
 	$*

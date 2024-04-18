@@ -45,7 +45,7 @@
 #include "tools/qfcc/include/value.h"
 
 const expr_t *
-cast_error (const expr_t *e, type_t *t1, type_t *t2)
+cast_error (const expr_t *e, const type_t *t1, const type_t *t2)
 {
 	e = error (e, "cannot cast from %s to %s", get_type_string (t1),
 			   get_type_string (t2));
@@ -53,8 +53,8 @@ cast_error (const expr_t *e, type_t *t1, type_t *t2)
 }
 
 static void
-do_conversion (pr_type_t *dst_value, type_t *dstType,
-			   pr_type_t *src_value, type_t *srcType, const expr_t *expr)
+do_conversion (pr_type_t *dst_value, const type_t *dstType,
+			   pr_type_t *src_value, const type_t *srcType, const expr_t *expr)
 {
 	int         from = type_cast_map[base_type (srcType)->type];
 	int         to = type_cast_map[base_type (dstType)->type];
@@ -70,7 +70,7 @@ do_conversion (pr_type_t *dst_value, type_t *dstType,
 }
 
 static const expr_t *
-cast_math (type_t *dstType, type_t *srcType, const expr_t *expr)
+cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 {
 	pr_type_t   src_value[type_size (srcType)];
 	pr_type_t   dst_value[type_size (dstType)];
@@ -83,9 +83,9 @@ cast_math (type_t *dstType, type_t *srcType, const expr_t *expr)
 }
 
 const expr_t *
-cast_expr (type_t *dstType, const expr_t *e)
+cast_expr (const type_t *dstType, const expr_t *e)
 {
-	type_t    *srcType;
+	const type_t *srcType;
 
 	e = convert_name (e);
 

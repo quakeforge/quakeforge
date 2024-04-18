@@ -62,7 +62,7 @@ typedef struct dagnode_s {
 	struct dagnode_s *killed;	///< node is unavailable for cse (by node)
 	st_type_t   type;			///< type of node (st_none = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
-	struct type_s *tl;
+	const struct type_s *vtype;	///< operand type
 	struct operand_s *value;	///< operand holding the value of this node
 	/// \name child nodes
 	/// if \a children[0] is null, the rest must be null as well. Similar for
@@ -75,7 +75,7 @@ typedef struct dagnode_s {
 	/// topological sort of the DAG.
 	//@{
 	struct dagnode_s *children[3];
-	struct type_s *types[3];	///< desired type of each operand (to alias)
+	const struct type_s *types[3];///< desired type of each operand (to alias)
 	struct set_s *edges;		///< includes nodes pointed to by \a children
 	int         offset;			///< for alias nodes
 	//@}
@@ -89,11 +89,12 @@ typedef struct dag_s {
 	struct dag_s *next;
 	dagnode_t **nodes;			///< array of all dagnodes in this dag
 	int         num_nodes;
+	int         killer_node;	///< last mass-killer node
 	int        *topo;			///< nodes in topological sort order
 	int         num_topo;		///< number of nodes in topo (may be <
 								///< num_nodes after dead node removal)
-	daglabel_t **labels;		///< array of all daglabels in this dag
 	int         num_labels;
+	daglabel_t **labels;		///< array of all daglabels in this dag
 	struct set_s *roots;		///< set of root nodes
 	struct flownode_s *flownode;///< flow node this dag represents
 } dag_t;

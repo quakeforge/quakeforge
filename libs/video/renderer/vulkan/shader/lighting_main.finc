@@ -21,6 +21,8 @@ diffuse (vec3 incoming, vec3 normal)
 	return clamp (lightdot, 0, 1);
 }
 
+#include "fog.finc"
+
 void
 main (void)
 {
@@ -48,9 +50,9 @@ main (void)
 		float       I = (1 - a.w * r.y) / dot (a, r);
 
 		uint        id_data = renderer[id].id_data;
-		uint        mat_id = bitfieldExtract (id_data, 0, 13);
-		uint        map_id = bitfieldExtract (id_data, 13, 5);
-		uint        layer = bitfieldExtract (id_data, 18, 11);
+		uint        mat_id = bitfieldExtract (id_data, 0, 14);
+		uint        map_id = bitfieldExtract (id_data, 14, 5);
+		uint        layer = bitfieldExtract (id_data, 19, 11);
 
 		I *= shadow (map_id, layer, mat_id, p, l.position.xyz);
 
@@ -61,6 +63,12 @@ main (void)
 		if (bitfieldExtract(id_data, 31, 1) == 0) {
 			col *= style[renderer[id].style];
 		}
+		if (fog.w > 0) {
+			col = FogTransmit (col, fog, r[1]);
+		}
+#ifdef DEBUG_SHADOW
+		col = DEBUG_SHADOW(p);
+#endif
 		light += I * col.w * col.xyz;
 	}
 	//light = max (light, minLight);

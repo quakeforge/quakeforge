@@ -60,6 +60,8 @@
 #include "r_internal.h"
 #include "vid_gl.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 static struct DARRAY_TYPE (mat4f_t) ent_transforms = DARRAY_STATIC_INIT (16);
 
 static instsurf_t  *waterchain = NULL;
@@ -181,13 +183,11 @@ gl_R_ClearTextures (void)
 static void
 R_RenderFullbrights (void)
 {
-	float      *v;
-	int         i, j;
 	glpoly_t   *p;
 	instsurf_t *sc;
 	gltex_t    *tex;
 
-	for (i = 0; i < r_num_texture_chains; i++) {
+	for (int i = 0; i < r_num_texture_chains; i++) {
 		if (!(tex = r_texture_chains[i]) || !tex->gl_fb_texturenum)
 			continue;
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_fb_texturenum);
@@ -200,11 +200,11 @@ R_RenderFullbrights (void)
 				qfglColor4fv (sc->color);
 			for (p = sc->surface->polys; p; p = p->next) {
 				qfglBegin (GL_POLYGON);
-				for (j = 0, v = p->verts[0]; j < p->numverts;
-					 j++, v += VERTEXSIZE)
+				auto v = p->verts;
+				for (int j = 0; j < p->numverts; j++, v++)
 				{
-					qfglTexCoord2fv (&v[3]);
-					qfglVertex3fv (v);
+					qfglTexCoord2fv (v->tex_uv);
+					qfglVertex3fv (v->pos);
 				}
 				qfglEnd ();
 			}
@@ -219,19 +219,15 @@ R_RenderFullbrights (void)
 static inline void
 R_RenderBrushPoly_3 (msurface_t *surf)
 {
-	float      *v;
-	int			i;
-
 	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = surf->polys->verts[0];
-
-	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
-		qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
-		qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
-		qglMultiTexCoord2fv (gl_mtex_enum + 2, &v[3]);
-		qfglVertex3fv (v);
+	auto v = surf->polys->verts;
+	for (int i = 0; i < surf->polys->numverts; i++, v++) {
+		qglMultiTexCoord2fv (gl_mtex_enum + 0, v->tex_uv);
+		qglMultiTexCoord2fv (gl_mtex_enum + 1, v->lm_uv);
+		qglMultiTexCoord2fv (gl_mtex_enum + 2, v->tex_uv);
+		qfglVertex3fv (v->pos);
 	}
 
 	qfglEnd ();
@@ -240,18 +236,14 @@ R_RenderBrushPoly_3 (msurface_t *surf)
 static inline void
 R_RenderBrushPoly_2 (msurface_t *surf)
 {
-	float      *v;
-	int			i;
-
 	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = surf->polys->verts[0];
-
-	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
-		qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
-		qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
-		qfglVertex3fv (v);
+	auto v = surf->polys->verts;
+	for (int i = 0; i < surf->polys->numverts; i++, v++) {
+		qglMultiTexCoord2fv (gl_mtex_enum + 0, v->tex_uv);
+		qglMultiTexCoord2fv (gl_mtex_enum + 1, v->lm_uv);
+		qfglVertex3fv (v->pos);
 	}
 
 	qfglEnd ();
@@ -260,17 +252,13 @@ R_RenderBrushPoly_2 (msurface_t *surf)
 static inline void
 R_RenderBrushPoly_1 (msurface_t *surf)
 {
-	float      *v;
-	int			i;
-
 	gl_ctx->brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = surf->polys->verts[0];
-
-	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
-		qfglTexCoord2fv (&v[3]);
-		qfglVertex3fv (v);
+	auto v = surf->polys->verts;
+	for (int i = 0; i < surf->polys->numverts; i++, v++) {
+		qfglTexCoord2fv (v->tex_uv);
+		qfglVertex3fv (v->pos);
 	}
 
 	qfglEnd ();
@@ -505,12 +493,12 @@ gl_R_DrawBrushModel (entity_t e)
 	bool        rotated;
 	vec3_t      mins, maxs;
 	mat4f_t     worldMatrix;
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
 	mod_brush_t *brush = &model->brush;
 	glbspctx_t  bspctx = {
 		brush,
-		Ent_GetComponent (e.id, scene_animation, e.reg),
+		Entity_GetAnimation (e),
 		ent_transforms.a[ent_transforms.size++],
 		renderer->colormod,
 	};
@@ -552,7 +540,7 @@ gl_R_DrawBrushModel (entity_t e)
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap) {
-		auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+		auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 		auto dlight_data = (dlight_t *) dlight_pool->data;
 		for (uint32_t i = 0; i < dlight_pool->count; i++) {
 			auto dlight = &dlight_data[i];
@@ -818,8 +806,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	lnumverts = surf->numedges;
 
 	// draw texture
-	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (lnumverts - 4) *
-					   VERTEXSIZE * sizeof (float));
+	poly = Hunk_Alloc (0, field_offset (glpoly_t, verts[lnumverts]));
 	poly->next = surf->polys;
 	poly->flags = surf->flags;
 	surf->polys = poly;
@@ -842,9 +829,9 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
 		t /= texinfo->texture->height;
 
-		VectorCopy (vec, poly->verts[i]);
-		poly->verts[i][3] = s;
-		poly->verts[i][4] = t;
+		VectorCopy (vec, poly->verts[i].pos);
+		poly->verts[i].tex_uv[0] = s;
+		poly->verts[i].tex_uv[1] = t;
 
 		// lightmap texture coordinates
 		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
@@ -855,23 +842,22 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 		t += surf->lightpic->rect->y * 16 + 8;
 		s /= 16;
 		t /= 16;
-		poly->verts[i][5] = s * surf->lightpic->size;
-		poly->verts[i][6] = t * surf->lightpic->size;
+		poly->verts[i].lm_uv[0] = s * surf->lightpic->size;
+		poly->verts[i].lm_uv[1] = t * surf->lightpic->size;
 	}
 
 	// remove co-linear points - Ed
 	if (!gl_keeptjunctions) {
 		for (i = 0; i < lnumverts; ++i) {
 			vec3_t      v1, v2;
-			float      *prev, *this, *next;
 
-			prev = poly->verts[(i + lnumverts - 1) % lnumverts];
-			this = poly->verts[i];
-			next = poly->verts[(i + 1) % lnumverts];
+			auto prev = &poly->verts[(i + lnumverts - 1) % lnumverts];
+			auto this = &poly->verts[i];
+			auto next = &poly->verts[(i + 1) % lnumverts];
 
-			VectorSubtract (this, prev, v1);
+			VectorSubtract (this->pos, prev->pos, v1);
 			VectorNormalize (v1);
-			VectorSubtract (next, prev, v2);
+			VectorSubtract (next->pos, prev->pos, v2);
 			VectorNormalize (v2);
 
 			// skip co-linear points
@@ -879,13 +865,8 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 			if ((fabs (v1[0] - v2[0]) <= COLINEAR_EPSILON) &&
 				(fabs (v1[1] - v2[1]) <= COLINEAR_EPSILON) &&
 				(fabs (v1[2] - v2[2]) <= COLINEAR_EPSILON)) {
-				int         j;
-
-				for (j = i + 1; j < lnumverts; ++j) {
-					int         k;
-
-					for (k = 0; k < VERTEXSIZE; ++k)
-						poly->verts[j - 1][k] = poly->verts[j][k];
+				for (int j = i + 1; j < lnumverts; ++j) {
+					poly->verts[j - 1] = poly->verts[j];
 				}
 				--lnumverts;
 				// retry next vertex next time, which is now current vertex

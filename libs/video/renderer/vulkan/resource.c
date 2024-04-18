@@ -92,7 +92,7 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_physdev_t *physdev = device->physDev;
-	size_t      atom = physdev->properties->limits.nonCoherentAtomSize;
+	size_t      atom = physdev->p.properties.limits.nonCoherentAtomSize;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
 	VkMemoryRequirements req;
 	VkDeviceSize size = 0;
@@ -170,6 +170,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 		if ((req.memoryTypeBits & (1 << type))
 			&& ((memprops->memoryTypes[type].propertyFlags & properties)
 				                == properties)) {
+			Sys_MaskPrintf (SYS_vulkan, "QFV_CreateResource: %s:mti: %d\n",
+							resource->name, type);
 			VkMemoryAllocateInfo allocate_info = {
 				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 				.allocationSize = size,
@@ -279,6 +281,10 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 void
 QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 {
+	qfZoneScoped (true);
+	if (!resource) {
+		return;
+	}
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	for (unsigned i = 0; i < resource->num_objects; i++) {
@@ -289,6 +295,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 			case qfv_res_buffer_view:
 				{
+					qfZoneScoped (true);
 					__auto_type buffview = &obj->buffer_view;
 					dfunc->vkDestroyBufferView (device->dev, buffview->view, 0);
 					buffview->view = 0;
@@ -296,6 +303,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 			case qfv_res_image_view:
 				{
+					qfZoneScoped (true);
 					__auto_type imgview = &obj->image_view;
 					dfunc->vkDestroyImageView (device->dev, imgview->view, 0);
 					imgview->view = 0;
@@ -308,6 +316,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 		switch (obj->type) {
 			case qfv_res_buffer:
 				{
+					qfZoneScoped (true);
 					__auto_type buffer = &obj->buffer;
 					dfunc->vkDestroyBuffer (device->dev, buffer->buffer, 0);
 					buffer->buffer = 0;
@@ -315,6 +324,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 			case qfv_res_image:
 				{
+					qfZoneScoped (true);
 					__auto_type image = &obj->image;
 					dfunc->vkDestroyImage (device->dev, image->image, 0);
 					image->image = 0;
@@ -325,7 +335,9 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 				break;
 		}
 	}
+	qfMessageL("free memory");
 	dfunc->vkFreeMemory (device->dev, resource->memory, 0);
+	qfMessageL("memory freed");
 	resource->memory = 0;
 }
 

@@ -58,7 +58,6 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <setjmp.h>
 
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
@@ -584,7 +583,7 @@ SV_Error (const char *error, va_list argptr)
 	string = dstring_new ();
 	dvsprintf (string, error, argptr);
 
-	Sys_Printf ("%s\n", string->str);
+	Sys_Printf ("%c%s\n", 3, string->str);
 
 	if (sv_net_initialized) {
 		dstring_insertstr (string, 0, "server crashed: ");
@@ -2078,8 +2077,7 @@ SV_OutOfBandPrint (netadr_t adr, const char *format, ...)
 static void
 SV_ReadPackets (void)
 {
-	//NOTE star volatile, not volatile star
-	client_t   *volatile cl;			// * volatile for longjmp
+	client_t   *cl;
 	int         i;
 	int         qport;
 	double      until;
@@ -2663,7 +2661,6 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
-	sys_quake_encoding = true;
 	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();

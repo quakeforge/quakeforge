@@ -161,9 +161,9 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD SCALE GEOMETRIC
+%left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
-%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL
+%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -258,7 +258,7 @@ static const expr_t *break_label;
 static const expr_t *continue_label;
 
 static specifier_t
-make_spec (type_t *type, storage_class_t storage, int is_typedef,
+make_spec (const type_t *type, storage_class_t storage, int is_typedef,
 		   int is_overload)
 {
 	specifier_t spec;
@@ -379,13 +379,13 @@ pointer_spec (specifier_t quals, specifier_t spec)
 static specifier_t
 parse_qc_params (specifier_t spec, param_t *params)
 {
-	type_t    **type;
+	const type_t **type;
 	// .float () foo; is a field holding a function variable rather
 	// than a function that returns a float field.
 	for (type = &spec.type; *type && is_field (*type);
-		 type = &(*type)->t.fldptr.type) {
+		 type = (const type_t **) &(*type)->t.fldptr.type) {
 	}
-	type_t     *ret_type = *type;
+	const type_t *ret_type = *type;
 	*type = 0;
 
 	spec.sym = new_symbol (0);
@@ -437,7 +437,7 @@ make_param (specifier_t spec)
 }
 
 static param_t *
-make_selector (const char *selector, struct type_s *type, const char *name)
+make_selector (const char *selector, const type_t *type, const char *name)
 {
 	param_t    *param = new_param (selector, type, name);
 	return param;
@@ -1750,6 +1750,7 @@ unary_expr
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
 	| unary_expr REVERSE			{ $$ = unary_expr (QC_REVERSE, $1); }
 	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (QC_DUAL, $2); }
+	| UNDUAL cast_expr %prec UNARY	{ $$ = unary_expr (QC_UNDUAL, $2); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
 	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
 	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }

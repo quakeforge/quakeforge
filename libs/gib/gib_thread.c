@@ -98,9 +98,17 @@ GIB_Thread_Execute (void)
 	llist_iterate (gib_threads, LLIST_ICAST (te_iterator));
 }
 
+static void
+gib_thread_shutdown (void *data)
+{
+	llist_delete (gib_threads);
+}
+
 void
 GIB_Thread_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_thread_shutdown, 0);
 	gib_threads = llist_new (GIB_Thread_Free, NULL, NULL);
 }
 
@@ -168,8 +176,16 @@ GIB_Event_Callback (gib_event_t * event, unsigned int argc, ...)
 	Cbuf_ArgsDelete (args);
 }
 
+static void
+gib_event_shutdown (void *data)
+{
+	Hash_DelTable (gib_events);
+}
+
 void
 GIB_Event_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_event_shutdown, 0);
 	gib_events = Hash_NewTable (1024, GIB_Event_Get_Key, GIB_Event_Free, 0, 0);
 }

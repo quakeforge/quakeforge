@@ -144,7 +144,7 @@ designator_index (const designator_t *des, int ele_size, int array_size)
 }
 
 typedef struct {
-	type_t     *type;
+	const type_t *type;
 	symbol_t   *field;
 	int         offset;
 } initstate_t;
@@ -153,7 +153,7 @@ static initstate_t
 get_designated_offset (const type_t *type, const designator_t *des)
 {
 	int         offset = -1;
-	type_t     *ele_type = 0;
+	const type_t *ele_type = nullptr;
 	symbol_t   *field = 0;
 
 	if (is_struct (type) || is_union (type)) {
@@ -162,7 +162,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = field->type;
 	} else if (is_array (type)) {
 		int         array_size = type->t.array.size;
-		ele_type = type->t.array.type;
+		ele_type = dereference_type (type);
 		offset = designator_index (des, type_size (ele_type), array_size);
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
@@ -230,7 +230,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			state.offset = state.field->s.offset;
 		}
 	} else if (is_array (type)) {
-		state.type = type->t.array.type;
+		state.type = dereference_type (type);
 	} else {
 		internal_error (eles, "invalid initialization");
 	}
@@ -251,7 +251,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 
 		if (ele->expr && ele->expr->type == ex_compound) {
 			build_element_chain (element_chain, state.type, ele->expr,
-								 state.offset);
+								 base_offset + state.offset);
 		} else {
 			element_t  *element = new_element (0, 0);
 			element->type = state.type;
@@ -308,12 +308,13 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 				 element_chain_t *element_chain)
 {
 	element_t  *element;
-	type_t     *init_type = get_type (init);
+	auto init_type = get_type (init);
 	set_t      *initialized = set_new_size (type_size (init_type));
 
 	for (element = element_chain->head; element; element = element->next) {
+		scoped_src_loc (element->expr);
 		int         offset = element->offset;
-		type_t     *type = element->type;
+		auto type = element->type;
 		const expr_t *alias = new_offset_alias_expr (type, init, offset);
 
 		const expr_t *c;
@@ -357,18 +358,29 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 }
 
 expr_t *
-initialized_temp_expr (const type_t *type, const expr_t *compound)
+initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
-	type = unalias_type (type);
-	element_chain_t element_chain;
-	expr_t     *temp = new_temp_def_expr (type);
 	expr_t     *block = new_block_expr (0);
 
-	element_chain.head = 0;
-	element_chain.tail = &element_chain.head;
-	build_element_chain (&element_chain, type, compound, 0);
-	assign_elements (block, temp, &element_chain);
+	//type = unalias_type (type);
+	expr_t     *temp = new_temp_def_expr (type);
+
 	block->block.result = temp;
-	free_element_chain (&element_chain);
+
+	if (expr->type == ex_compound) {
+		element_chain_t element_chain;
+
+		element_chain.head = 0;
+		element_chain.tail = &element_chain.head;
+		build_element_chain (&element_chain, type, expr, 0);
+		assign_elements (block, temp, &element_chain);
+		free_element_chain (&element_chain);
+	} else if (expr->type == ex_multivec) {
+		expr = algebra_assign_expr (temp, expr);
+		append_expr (block, algebra_optimize (expr));
+	} else {
+		internal_error (expr, "unexpected expression type: %s",
+						expr_names[expr->type]);
+	}
 	return block;
 }

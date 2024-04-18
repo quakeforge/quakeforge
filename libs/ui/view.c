@@ -144,21 +144,21 @@ static const hierarchy_type_t view_type = {
 };
 
 view_t
-View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent)
+View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent, bool own)
 {
 	uint32_t    href_comp = viewsys.base + view_href;
-	hierref_t  *ref = Ent_AddComponent (ent, href_comp, viewsys.reg);
+	hierref_t   ref = {};
 
 	if (parent.reg && parent.id != nullent) {
-		hierref_t  *pref = View_GetRef (parent);
-		ref->hierarchy = pref->hierarchy;
-		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
-												pref->index, 0);
+		hierref_t   pref = View_GetRef (parent);
+		ref = Hierarchy_InsertHierarchy (pref, nullhref, viewsys.reg);
 	} else {
-		ref->hierarchy = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
-		ref->index = 0;
+		ref.id = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
 	}
-	ref->hierarchy->ent[ref->index] = ent;
+	Ent_SetComponent (ent, href_comp, viewsys.reg, &ref);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, viewsys.reg);
+	h->ent[ref.index] = ent;
+	h->own[ref.index] = own;
 	return (view_t) { .reg = viewsys.reg, .id = ent, .comp = href_comp };
 }
 
@@ -166,14 +166,14 @@ view_t
 View_New (ecs_system_t viewsys, view_t parent)
 {
 	uint32_t    view = ECS_NewEntity (viewsys.reg);
-	return View_AddToEntity (view, viewsys, parent);
+	return View_AddToEntity (view, viewsys, parent, true);
 }
 
 void
 View_UpdateHierarchy (view_t view)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 
 	byte       *modified = h->components[view_modified];
 	view_pos_t *pos = h->components[view_pos];
@@ -281,26 +281,17 @@ View_UpdateHierarchy (view_t view)
 void
 View_SetParent (view_t view, view_t parent)
 {
-	hierarchy_t *dst = 0;
-	uint32_t    dstParent = nullent;
-	hierarchy_t *src = 0;
-	uint32_t    srcIndex = 0;
+	hierref_t   dref = nullhref;
+	hierref_t   sref = View_GetRef (view);
 	if (View_Valid (parent)) {
-		__auto_type ref = View_GetRef (parent);
-		dst = ref->hierarchy;
-		dstParent = ref->index;
+		dref = View_GetRef (parent);
 	}
-	{
-		__auto_type ref = View_GetRef (view);
-		src = ref->hierarchy;
-		srcIndex = ref->index;
-	}
-	Hierarchy_SetParent (dst, dstParent, src, srcIndex);
+	Hierarchy_SetParent (dref, sref, view.reg);
 
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	byte       *modified = h->components[view_modified];
-	modified[ref->index] = 1;
+	modified[ref.index] = 1;
 	View_UpdateHierarchy (view);
 }
 
@@ -324,14 +315,14 @@ typedef struct flowline_s {
 static void
 flow_right (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
-	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
+	flowline_t  flowline = { .first_child = h->childIndex[ref.index] };
 	flowline_t *line = &flowline;
 	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
 		uint32_t    child = h->childIndex[vind] + i;
@@ -352,18 +343,18 @@ flow_right (view_t view, void (*set_rows) (view_t, flowline_t *))
 static void
 flow_left (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
-	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
+	flowline_t  flowline = { .first_child = h->childIndex[ref.index] };
 	flowline_t *line = &flowline;
 	line->cursor = len[vind].x;
 	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
-		uint32_t    child = h->childIndex[ref->index] + i;
+		uint32_t    child = h->childIndex[ref.index] + i;
 		if (line->cursor < len[vind].x && line->cursor - len[child].x < 0) {
 			NEXT_LINE(line, child);
 			line->cursor = len[vind].x;
@@ -382,14 +373,14 @@ flow_left (view_t view, void (*set_rows) (view_t, flowline_t *))
 static void
 flow_down (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
-	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
+	flowline_t  flowline = { .first_child = h->childIndex[ref.index] };
 	flowline_t *line = &flowline;
 	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
 		uint32_t    child = h->childIndex[vind] + i;
@@ -410,18 +401,18 @@ flow_down (view_t view, void (*set_rows) (view_t, flowline_t *))
 static void
 flow_up (view_t view, void (*set_rows) (view_t, flowline_t *))
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
-	flowline_t  flowline = { .first_child = h->childIndex[ref->index] };
+	flowline_t  flowline = { .first_child = h->childIndex[ref.index] };
 	flowline_t *line = &flowline;
 	line->cursor = len[vind].y;
 	for (uint32_t i = 0; i < h->childCount[vind]; i++) {
-		uint32_t    child = h->childIndex[ref->index] + i;
+		uint32_t    child = h->childIndex[ref.index] + i;
 		if (line->cursor < len[vind].y && line->cursor - len[child].y < 0) {
 			NEXT_LINE(line, child);
 			line->cursor = len[vind].y;
@@ -435,6 +426,22 @@ flow_up (view_t view, void (*set_rows) (view_t, flowline_t *))
 		line->child_count++;
 	}
 	set_rows (view, &flowline);
+}
+
+static void
+flow_view_vertical (view_pos_t *pos, view_pos_t *len,
+					uint32_t vind, uint32_t pind)
+{
+	pos[vind].y = len[pind].y;
+	len[pind].y += len[vind].y;
+}
+
+static void
+flow_view_horizontal (view_pos_t *pos, view_pos_t *len,
+					  uint32_t vind, uint32_t pind)
+{
+	pos[vind].x = len[pind].x;
+	len[pind].x += len[vind].x;
 }
 
 static void
@@ -458,16 +465,19 @@ flow_view_width (view_pos_t *len, flowline_t *flowlines)
 static void
 set_rows_down (view_t view, flowline_t *flowlines)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *rel = h->components[view_rel];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
 	if (cont[vind].flow_size) {
-		flow_view_height (&len[ref->index], flowlines);
+		flow_view_height (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_vertical (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = 0;
@@ -486,16 +496,19 @@ set_rows_down (view_t view, flowline_t *flowlines)
 static void
 set_rows_up (view_t view, flowline_t *flowlines)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *rel = h->components[view_rel];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
 	if (cont[vind].flow_size) {
-		flow_view_height (&len[ref->index], flowlines);
+		flow_view_height (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_vertical (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = len[vind].y;
@@ -514,16 +527,19 @@ set_rows_up (view_t view, flowline_t *flowlines)
 static void
 set_columns_right (view_t view, flowline_t *flowlines)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *rel = h->components[view_rel];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
 	if (cont[vind].flow_size) {
-		flow_view_width (&len[ref->index], flowlines);
+		flow_view_width (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_horizontal (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = 0;
@@ -542,16 +558,19 @@ set_columns_right (view_t view, flowline_t *flowlines)
 static void
 set_columns_left (view_t view, flowline_t *flowlines)
 {
-	__auto_type ref = View_GetRef (view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *rel = h->components[view_rel];
 	view_pos_t *len = h->components[view_len];
 	viewcont_t *cont = h->components[view_control];
-	uint32_t    vind = ref->index;
+	uint32_t    vind = ref.index;
 
 	if (cont[vind].flow_size) {
-		flow_view_width (&len[ref->index], flowlines);
+		flow_view_width (&len[ref.index], flowlines);
+		if (cont[vind].flow_parent) {
+			flow_view_horizontal (pos, len, vind, h->parentIndex[vind]);
+		}
 	}
 
 	int         cursor = len[vind].x;

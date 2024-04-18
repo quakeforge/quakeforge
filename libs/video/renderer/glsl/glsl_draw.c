@@ -1111,3 +1111,13 @@ glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 	QuatCopy (color, verts[4].color);
 	QuatCopy (color, verts[5].color);
 }
+
+void
+glsl_Draw_SetClip (int x, int y, int w, int h)
+{
+}
+
+void
+glsl_Draw_ResetClip (void)
+{
+}

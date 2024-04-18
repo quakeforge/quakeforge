@@ -618,7 +618,8 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 }
 
 static defref_t *
-make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
+make_def (int s, const char *name, const type_t *type, unsigned flags,
+		  void *val)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
@@ -659,7 +660,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 }
 
 void
-linker_add_def (const char *name, type_t *type, unsigned flags, void *val)
+linker_add_def (const char *name, const type_t *type, unsigned flags, void *val)
 {
 	make_def (qfo_near_data_space, name, type, flags, val);
 }
@@ -1270,7 +1271,6 @@ check_defs (void)
 			linker_add_def (".self", &type_entity, QFOD_GLOBAL, 0);
 			did_self = 1;
 		} else if (strcmp (name, ".this") == 0 && !did_this) {
-			type_t     *type;
 			int         flags;
 			defref_t   *this_ref;
 
@@ -1279,7 +1279,7 @@ check_defs (void)
 			flags = QFOD_GLOBAL | QFOD_NOSAVE;
 			this_ref = make_def (qfo_entity_space, name, &type_id, flags, 0);
 			flags |= QFOD_CONSTANT | QFOD_INITIALIZED;
-			type = field_type (&type_id);
+			auto type = field_type (&type_id);
 			linker_add_def (".this", type, flags, &REF (this_ref)->offset);
 			did_this = 1;
 		}

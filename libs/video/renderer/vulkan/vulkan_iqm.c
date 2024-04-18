@@ -42,9 +42,9 @@
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -57,17 +57,31 @@
 typedef struct {
 	mat4f_t     mat;
 	float       blend;
-	uint32_t    matrix_base;
-	byte        colorA[4];
-	byte        colorB[4];
+	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
 } iqm_push_constants_t;
 
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	byte        colors[4];
+	float       ambient;
+	float       shadelight;
+	vec4f_t     lightvec;
+	vec4f_t     base_color;
+	vec4f_t     fog;
+} fwd_push_constants_t;
+
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	uint32_t    matrix_base;
+} shadow_push_constants_t;
+
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_iqm_skin_t *skins,
-			   uint32_t numPC, qfv_push_constants_t *constants,
 			   iqm_t *iqm, qfv_taskctx_t *taskctx, entity_t ent)
 {
 	auto ctx = taskctx->ctx;
@@ -87,9 +101,9 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
-								 VK_INDEX_TYPE_UINT16);
-	QFV_PushConstants (device, cmd, layout, numPC, constants);
+	VkIndexType indexType = iqm->num_verts > 0xfff0 ? VK_INDEX_TYPE_UINT32
+													: VK_INDEX_TYPE_UINT16;
+	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0, indexType);
 	for (int i = 0; i < iqm->num_meshes; i++) {
 		if (skins) {
 			VkDescriptorSet sets[] = {
@@ -187,12 +201,125 @@ Vulkan_IQMRemoveSkin (vulkan_ctx_t *ctx, qfv_iqm_skin_t *skin)
 }
 
 static void
-iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
+push_iqm_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	iqm_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.base_color = base_color,
+		.fog = Fog_Get (),
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (iqm_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (iqm_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, pass ? 5 : 2, push_constants);
+}
+
+static void
+push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
+					vec4f_t base_color, const alight_t *lighting,
+					int pass, qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	fwd_push_constants_t constants = {
+		.blend = blend,
+		.colors = { VEC4_EXP (colors) },
+		.ambient = lighting->ambientlight,
+		.shadelight = lighting->shadelight,
+		.lightvec = { VectorExpand (lighting->lightvec) },
+		.base_color = base_color,
+		.fog = Fog_Get (),
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (fwd_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, colors),
+			sizeof (constants.colors), constants.colors },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, ambient),
+			sizeof (constants.ambient), &constants.ambient },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, shadelight),
+			sizeof (constants.shadelight), &constants.shadelight },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, lightvec),
+			sizeof (constants.lightvec), &constants.lightvec },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (fwd_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
+	QFV_PushConstants (device, cmd, layout, 8, push_constants);
+}
+
+static void
+push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
+					   qfv_taskctx_t *taskctx)
+{
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto cmd = taskctx->cmd;
+	auto layout = taskctx->pipeline->layout;
+
+	shadow_push_constants_t constants = {
+		.blend = blend,
+		.matrix_base = *matrix_base,
+	};
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, mat),
+			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (shadow_push_constants_t, matrix_base),
+			sizeof (uint32_t), &constants.matrix_base },
+	};
+	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+}
+
+static void
+iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass, bool shadow)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	auto model = renderer->model;
 	auto iqm = (iqm_t *) model->aliashdr;
 	qfv_iqm_t  *mesh = iqm->extra_data;
@@ -200,17 +327,20 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	iqmframe_t *frame;
 	uint16_t   *matrix_base = taskctx->data;
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
-	iqm_push_constants_t constants = {
-		.blend = R_IQMGetLerpedFrames (animation, iqm),
-		.matrix_base = matrix_base ? *matrix_base : 0,
-		.colorA = { VEC4_EXP (skins[0].colora) },
-		.colorB = { VEC4_EXP (skins[0].colorb) },
-		.base_color = { VEC4_EXP (renderer->colormod) },
-	};
+	vec4f_t base_color;
+	QuatCopy (renderer->colormod, base_color);
+
+	byte colors[4] = {};
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
+		colors[0] = colormap->top * 16 + 8;
+		colors[1] = colormap->bottom * 16 + 8;
+	}
+
+	auto animation = Entity_GetAnimation (ent);
+	float blend = R_IQMGetLerpedFrames (animation, iqm);
 	frame = R_IQMBlendFrames (iqm, animation->pose1, animation->pose2,
-							  constants.blend, 0);
+							  blend, 0);
 
 	vec4f_t    *bone_data;
 	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
@@ -237,39 +367,31 @@ iqm_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, bool pass)
 	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
 
 	transform_t transform = Entity_Transform (ent);
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, mat),
-			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (transform) },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, blend),
-			sizeof (float), &constants.blend },
-		{ VK_SHADER_STAGE_VERTEX_BIT,
-			field_offset (iqm_push_constants_t, matrix_base),
-			sizeof (uint32_t), &constants.matrix_base },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorA),
-			sizeof (constants.colorA), constants.colorA },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, colorB),
-			sizeof (constants.colorB), constants.colorB },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, base_color),
-			sizeof (constants.base_color), &constants.base_color },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (iqm_push_constants_t, fog),
-			sizeof (constants.fog), &constants.fog },
-	};
-
-	emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
-				   pass ? skins : 0,
-				   pass ? 7 : 3, push_constants,
-				   iqm, taskctx, ent);
+	if (shadow) {
+		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
+							   blend, matrix_base, taskctx);
+		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
+					   nullptr, iqm, taskctx, ent);
+	} else {
+		if (pass > 1) {
+			alight_t    lighting;
+			R_Setup_Lighting (ent, &lighting);
+			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, &lighting,
+								pass, taskctx);
+		} else {
+			push_iqm_constants (Transform_GetWorldMatrixPtr (transform),
+								blend, colors, base_color, pass, taskctx);
+		}
+		emit_commands (taskctx->cmd, animation->pose1, animation->pose2,
+					   pass ? skins : nullptr, iqm, taskctx, ent);
+	}
 }
 
 static void
 iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	int  pass = *(int *) params[0]->value;
 
@@ -278,10 +400,11 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
-
+	bool shadow = !!taskctx->data;
 	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-		Vulkan_Lighting_Descriptors (ctx, ctx->curFrame),
+		shadow ? Vulkan_Lighting_Descriptors (ctx, ctx->curFrame)
+			   : Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		Vulkan_Palette_Descriptor (ctx),
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 2, sets, 0, 0);
@@ -289,8 +412,50 @@ iqm_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto queue = r_ent_queue;	//FIXME fetch from scene
 	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_iqm].a[i];
-		iqm_draw_ent (taskctx, ent, pass);
+		iqm_draw_ent (taskctx, ent, pass, shadow);
 	}
+}
+
+static void
+iqm_shutdown (exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
+	iqmctx_t   *ictx = ctx->iqm_context;
+
+	free (ictx->frames.a);
+	free (ictx);
+}
+
+static void
+iqm_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto ictx = ctx->iqm_context;
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&ictx->frames, frames);
+	DARRAY_RESIZE (&ictx->frames, frames);
+	ictx->frames.grow = 0;
+	ictx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
+}
+
+static void
+iqm_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfZoneScoped (true);
+
+	QFV_Render_AddShutdown (ctx, iqm_shutdown);
+	QFV_Render_AddStartup (ctx, iqm_startup);
+
+	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
+	ctx->iqm_context = ictx;
 }
 
 static exprtype_t *iqm_draw_params[] = {
@@ -300,41 +465,24 @@ static exprfunc_t iqm_draw_func[] = {
 	{ .func = iqm_draw, .num_params = 1, .param_types = iqm_draw_params },
 	{}
 };
+
+static exprfunc_t iqm_init_func[] = {
+	{ .func = iqm_init },
+	{}
+};
+
 static exprsym_t iqm_task_syms[] = {
 	{ "iqm_draw", &cexpr_function, iqm_draw_func },
+	{ "iqm_init", &cexpr_function, iqm_init_func },
 	{}
 };
 
 void
 Vulkan_IQM_Init (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	qfvPushDebug (ctx, "iqm init");
 	QFV_Render_AddTasks (ctx, iqm_task_syms);
 
-	iqmctx_t   *ictx = calloc (1, sizeof (iqmctx_t));
-	ctx->iqm_context = ictx;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&ictx->frames, frames);
-	DARRAY_RESIZE (&ictx->frames, frames);
-	ictx->frames.grow = 0;
-
 	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_IQM_Setup (vulkan_ctx_t *ctx)
-{
-	auto ictx = ctx->iqm_context;
-	ictx->sampler = QFV_Render_Sampler (ctx, "alias_sampler");
-}
-
-void
-Vulkan_IQM_Shutdown (vulkan_ctx_t *ctx)
-{
-	iqmctx_t   *ictx = ctx->iqm_context;
-
-	free (ictx->frames.a);
-	free (ictx);
 }

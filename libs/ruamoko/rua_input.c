@@ -63,8 +63,15 @@ typedef struct input_resources_s {
 } input_resources_t;
 
 static void
+bi_IN_SendConnectedDevices (progs_t *pr, void *_res)
+{
+	IN_SendConnectedDevices ();
+}
+
+static void
 bi_IN_FindDeviceId (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *id = P_GSTRING (pr, 0);
 
 	R_INT (pr) = IN_FindDeviceId (id);
@@ -73,6 +80,7 @@ bi_IN_FindDeviceId (progs_t *pr, void *_res)
 static void
 bi_IN_GetDeviceName (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 
 	RETURN_STRING (pr, IN_GetDeviceName (devid));
@@ -81,6 +89,7 @@ bi_IN_GetDeviceName (progs_t *pr, void *_res)
 static void
 bi_IN_GetDeviceId (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 
 	RETURN_STRING (pr, IN_GetDeviceId (devid));
@@ -89,16 +98,19 @@ bi_IN_GetDeviceId (progs_t *pr, void *_res)
 static void
 bi_IN_AxisInfo (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 bi_IN_ButtonInfo (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 }
 
 static void
 bi_IN_GetAxisName (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	int	        axis  = P_INT (pr, 1);
 
@@ -108,6 +120,7 @@ bi_IN_GetAxisName (progs_t *pr, void *_res)
 static void
 bi_IN_GetButtonName (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	int	        button  = P_INT (pr, 1);
 
@@ -117,6 +130,7 @@ bi_IN_GetButtonName (progs_t *pr, void *_res)
 static void
 bi_IN_GetAxisNumber (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	const char *axis_name = P_GSTRING (pr, 1);
 
@@ -126,6 +140,7 @@ bi_IN_GetAxisNumber (progs_t *pr, void *_res)
 static void
 bi_IN_GetButtonNumber (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	const char *button_name = P_GSTRING (pr, 1);
 
@@ -135,18 +150,29 @@ bi_IN_GetButtonNumber (progs_t *pr, void *_res)
 static void
 bi_IN_ProcessEvents (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	IN_ProcessEvents ();
+}
+
+static void
+bi_IN_UpdateAxis (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
+	R_FLOAT(pr) = IN_UpdateAxis (axis);
 }
 
 static void
 bi_IN_ClearStates (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	IN_ClearStates ();
 }
 
 static int
 ptrcmp (const void *a, const void *b)
 {
+	qfZoneScoped (true);
 	pr_ptr_t    ptra = *(const pr_ptr_t *) a;
 	pr_ptr_t    ptrb = *(const pr_ptr_t *) b;
 	return ptra - ptrb;
@@ -155,6 +181,7 @@ ptrcmp (const void *a, const void *b)
 static void
 bi_add_pointer (ptrset_t *pointers, pr_ptr_t ptr)
 {
+	qfZoneScoped (true);
 	size_t      ind = pointers->size;
 	if (ind && ptr < pointers->a[ind - 1]) {
 		pr_ptr_t   *p = fbsearch (&ptr, pointers->a, ind, sizeof (pr_ptr_t),
@@ -167,6 +194,7 @@ bi_add_pointer (ptrset_t *pointers, pr_ptr_t ptr)
 static void
 bi_IN_CreateButton (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
@@ -182,6 +210,7 @@ bi_IN_CreateButton (progs_t *pr, void *_res)
 static void
 bi_IN_CreateAxis (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	const char *name = P_GSTRING (pr, 0);
 	const char *desc = P_GSTRING (pr, 1);
@@ -197,6 +226,7 @@ bi_IN_CreateAxis (progs_t *pr, void *_res)
 static void
 bi_IN_GetAxisInfo (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	int	        axis  = P_INT (pr, 1);
 
@@ -212,6 +242,7 @@ bi_IN_GetAxisInfo (progs_t *pr, void *_res)
 static void
 bi_IN_GetButtonInfo (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	int	        devid  = P_INT (pr, 0);
 	int	        button  = P_INT (pr, 1);
 
@@ -227,6 +258,7 @@ bi_IN_GetButtonInfo (progs_t *pr, void *_res)
 static rua_in_cookie_t *
 make_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 {
+	qfZoneScoped (true);
 	rua_in_cookie_t search = {
 		.func = func,
 		.data = data,
@@ -245,6 +277,7 @@ make_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 static rua_in_cookie_t *
 find_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 {
+	qfZoneScoped (true);
 	rua_in_cookie_t search = {
 		.func = func,
 		.data = data,
@@ -255,6 +288,7 @@ find_cookie (progs_t *pr, input_resources_t *res, pr_func_t func, pr_ptr_t data)
 static void
 release_cookie (progs_t *pr, input_resources_t *res, rua_in_cookie_t *cookie)
 {
+	qfZoneScoped (true);
 	if (!--cookie->users) {
 		Hash_DelElement (res->cookies, cookie);
 		Hash_Free (res->cookies, cookie);
@@ -265,6 +299,7 @@ static void
 rua_add_axis_listener (progs_t *pr, input_resources_t *res,
 					   axis_listener_t listener)
 {
+	qfZoneScoped (true);
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
@@ -276,6 +311,7 @@ static void
 rua_remove_axis_listener (progs_t *pr, input_resources_t *res,
 						  axis_listener_t listener)
 {
+	qfZoneScoped (true);
 	in_axis_t  *axis = &P_STRUCT (pr, in_axis_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
@@ -290,6 +326,7 @@ static void
 rua_add_button_listener (progs_t *pr, input_resources_t *res,
 						 button_listener_t listener)
 {
+	qfZoneScoped (true);
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
@@ -301,6 +338,7 @@ static void
 rua_remove_button_listener (progs_t *pr, input_resources_t *res,
 							button_listener_t listener)
 {
+	qfZoneScoped (true);
 	in_button_t *button = &P_STRUCT (pr, in_button_t, 0);
 	pr_func_t   func = P_FUNCTION (pr, 1);
 	pr_func_t   data = P_POINTER (pr, 2);
@@ -314,6 +352,7 @@ rua_remove_button_listener (progs_t *pr, input_resources_t *res,
 static void
 rua_listener_func (rua_in_cookie_t *cookie, const void *input)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
 	PR_RESET_PARAMS (pr);
@@ -327,6 +366,7 @@ rua_listener_func (rua_in_cookie_t *cookie, const void *input)
 static void
 rua_listener_method (rua_in_cookie_t *cookie, const void *input)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
 	PR_RESET_PARAMS (pr);
@@ -341,30 +381,35 @@ rua_listener_method (rua_in_cookie_t *cookie, const void *input)
 static void
 rua_axis_listener_func (void *data, const in_axis_t *axis)
 {
+	qfZoneScoped (true);
 	rua_listener_func (data, axis);
 }
 
 static void
 rua_axis_listener_method (void *data, const in_axis_t *axis)
 {
+	qfZoneScoped (true);
 	rua_listener_method (data, axis);
 }
 
 static void
 rua_button_listener_func (void *data, const in_button_t *button)
 {
+	qfZoneScoped (true);
 	rua_listener_func (data, button);
 }
 
 static void
 rua_button_listener_method (void *data, const in_button_t *button)
 {
+	qfZoneScoped (true);
 	rua_listener_method (data, button);
 }
 
 static void
 rua_IN_ButtonAddListener_func (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_add_button_listener (pr, res, rua_button_listener_func);
 }
@@ -372,6 +417,7 @@ rua_IN_ButtonAddListener_func (progs_t *pr, void *_res)
 static void
 rua_IN_ButtonRemoveListener_func (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_remove_button_listener (pr, res, rua_button_listener_func);
 }
@@ -379,6 +425,7 @@ rua_IN_ButtonRemoveListener_func (progs_t *pr, void *_res)
 static void
 rua_IN_AxisAddListener_func (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_add_axis_listener (pr, res, rua_axis_listener_func);
 }
@@ -386,6 +433,7 @@ rua_IN_AxisAddListener_func (progs_t *pr, void *_res)
 static void
 rua_IN_AxisRemoveListener_func (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_remove_axis_listener (pr, res, rua_axis_listener_func);
 }
@@ -393,6 +441,7 @@ rua_IN_AxisRemoveListener_func (progs_t *pr, void *_res)
 static void
 rua_IN_ButtonAddListener_method (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_add_button_listener (pr, res, rua_button_listener_method);
 }
@@ -400,6 +449,7 @@ rua_IN_ButtonAddListener_method (progs_t *pr, void *_res)
 static void
 rua_IN_ButtonRemoveListener_method (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_remove_button_listener (pr, res, rua_button_listener_method);
 }
@@ -407,6 +457,7 @@ rua_IN_ButtonRemoveListener_method (progs_t *pr, void *_res)
 static void
 rua_IN_AxisAddListener_method (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_add_axis_listener (pr, res, rua_axis_listener_method);
 }
@@ -414,6 +465,7 @@ rua_IN_AxisAddListener_method (progs_t *pr, void *_res)
 static void
 rua_IN_AxisRemoveListener_method (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_remove_axis_listener (pr, res, rua_axis_listener_method);
 }
@@ -421,12 +473,14 @@ rua_IN_AxisRemoveListener_method (progs_t *pr, void *_res)
 static void
 bi_IN_LoadConfig (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	IN_LoadConfig (Plist_GetItem (pr, P_INT (pr, 0)));
 }
 
 static void
 bi_IMT_CreateContext (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	R_INT (pr) = IMT_CreateContext (name);
 }
@@ -434,18 +488,34 @@ bi_IMT_CreateContext (progs_t *pr, void *_res)
 static void
 bi_IMT_GetContext (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = IMT_GetContext ();
 }
 
 static void
 bi_IMT_SetContext (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	IMT_SetContext (P_INT (pr, 0));
+}
+
+static void
+bi_IMT_SetContextCbuf (progs_t *pr, void *_res)
+{
+}
+
+static void
+bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 0);
+	IN_Binding_HandleEvent (ie_event);
 }
 
 static void
 secured (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	PR_RunError (pr, "Secured function called");
 }
 
@@ -468,6 +538,7 @@ static builtin_t insecure_builtins[] = {
 	{0}
 };
 static builtin_t builtins[] = {
+	bi(IN_SendConnectedDevices, 0),
 	bi(IN_FindDeviceId,     1, p(string)),
 	bi(IN_GetDeviceName,    1, p(int)),
 	bi(IN_GetDeviceId,      1, p(int)),
@@ -478,6 +549,7 @@ static builtin_t builtins[] = {
 	bi(IN_GetAxisNumber,    2, p(int), p(string)),
 	bi(IN_GetButtonNumber,  2, p(int), p(string)),
 	bi(IN_ProcessEvents,    0),
+	bi(IN_UpdateAxis,       1, p(ptr)),
 	bi(IN_ClearStates,      0),
 	bi(IN_GetAxisInfo,      3, p(int), p(int), p(ptr)),
 	bi(IN_GetButtonInfo,    3, p(int), p(int), p(ptr)),
@@ -501,6 +573,9 @@ static builtin_t builtins[] = {
 	bi(IMT_CreateContext,   1, p(string)),
 	bi(IMT_GetContext,      0),
 	bi(IMT_SetContext,      1, p(int)),
+	bi(IMT_SetContextCbuf,  2, p(int), p(int)),
+
+	bi(IN_Binding_HandleEvent,  1, p(ptr)),
 
 	{0}
 };
@@ -508,6 +583,7 @@ static builtin_t builtins[] = {
 static void
 bi_input_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	Hash_FlushTable (res->cookies);
 
@@ -539,6 +615,7 @@ bi_input_clear (progs_t *pr, void *_res)
 static void
 bi_input_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	bi_input_clear (pr, res);
 	Hash_DelTable (res->cookies);
@@ -552,6 +629,7 @@ bi_input_destroy (progs_t *pr, void *_res)
 static uintptr_t
 rua_in_hash_cookie (const void *_cookie, void *_res)
 {
+	qfZoneScoped (true);
 	const rua_in_cookie_t *cookie = _cookie;
 	return cookie->func + cookie->data;
 }
@@ -559,6 +637,7 @@ rua_in_hash_cookie (const void *_cookie, void *_res)
 static int
 rua_in_cmp_cookies (const void *_a, const void *_b, void *_res)
 {
+	qfZoneScoped (true);
 	const rua_in_cookie_t *a = _a;
 	const rua_in_cookie_t *b = _b;
 	return a->func == b->func && a->data == b->data;
@@ -567,6 +646,7 @@ rua_in_cmp_cookies (const void *_a, const void *_b, void *_res)
 static void
 rua_in_free_cookie (void *_cookie, void *_res)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = _res;
 	rua_in_cookie_t *cookie = _cookie;
 	cmemfree (res->cookie_super, cookie);
@@ -575,6 +655,7 @@ rua_in_free_cookie (void *_cookie, void *_res)
 void
 RUA_Input_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	input_resources_t *res = calloc (sizeof (input_resources_t), 1);
 
 	res->cookie_super = new_memsuper ();

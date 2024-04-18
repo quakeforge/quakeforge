@@ -148,8 +148,8 @@ convert_to_float (const expr_t *e)
 	if (is_float(get_type (e)))
 		return e;
 
+	scoped_src_loc (e);
 	return cast_expr (&type_float, e);
-	//return expr_file_line (n, e);
 }
 #if 0
 static const expr_t *
@@ -158,8 +158,8 @@ convert_to_double (const expr_t *e)
 	if (is_double(get_type (e)))
 		return e;
 
+	scoped_src_loc (e);
 	expr_t     *n = cast_expr (&type_double, e);
-	return expr_file_line (n, e);
 }
 #endif
 static const expr_t *
@@ -388,7 +388,8 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 
 		if (!valid_op (op, sv_valid))
 			return error (e1, "invalid operator for scalar-vector");
-		auto t = expr_file_line (new_binary_expr (op, e2, e1), e);
+		scoped_src_loc (e);
+		auto t = new_binary_expr (op, e2, e1);
 		t->expr.type = e->expr.type;
 		return do_op_vector (op, e, e2, e1);
 	}
@@ -496,7 +497,7 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_entity (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *type = get_type (e2);
+	auto type = get_type (e2);
 
 	if (op == '.' && type->type == ev_field) {
 		return e;
@@ -911,8 +912,8 @@ do_op_struct (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_compound (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1 = get_type (e1);
-	type_t     *t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 	if (is_struct (t1) && is_struct (t2))
 		return do_op_struct (op, e, e1, e2);
 	if (is_union (t1) && is_union (t2))
@@ -940,8 +941,8 @@ static operation_t *do_op[ev_type_count];
 static const expr_t *
 do_op_invalid (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	type_t     *t1 = get_type (e1);
-	type_t     *t2 = get_type (e2);
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
 
 	if (is_scalar (t1) && is_scalar (t2)) {
 		// one or both expressions are an enum, and the other is one of
@@ -1260,7 +1261,7 @@ static unaryop_t do_unary_op[ev_type_count];
 static const expr_t *
 uop_invalid (int op, const expr_t *e, const expr_t *e1)
 {
-	type_t     *t1 = get_type (e1);
+	auto t1 = get_type (e1);
 	if (is_scalar (t1)) {
 		// The expression is an enum. Treat the enum as the default type.
 		etype_t     t;
@@ -1301,14 +1302,13 @@ static const expr_t *
 uop_float (int op, const expr_t *e, const expr_t *e1)
 {
 	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
-	type_t     *type;
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid unary operator for float: %s",
 					  get_op_string (op));
 	if (op == '+')
 		return e1;
-	type = get_type (e);
+	auto type = get_type (e);
 	if (op == 'C' && !is_int(type) && !is_double(type))
 		return error (e1, "invalid cast of float");
 	if (!is_constant (e1))
@@ -1528,14 +1528,13 @@ static const expr_t *
 uop_double (int op, const expr_t *e, const expr_t *e1)
 {
 	static int  valid[] = { '+', '-', '!', 'C', 0 };
-	type_t     *type;
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid unary operator for double: %s",
 					  get_op_string (op));
 	if (op == '+')
 		return e1;
-	type = get_type (e);
+	auto type = get_type (e);
 	if (op == 'C' && !is_int(type) && !is_float(type))
 		return error (e1, "invalid cast of double");
 	if (!is_constant (e1))
@@ -1559,7 +1558,7 @@ uop_double (int op, const expr_t *e, const expr_t *e1)
 static const expr_t *
 uop_compound (int op, const expr_t *e, const expr_t *e1)
 {
-	type_t     *t1 = get_type (e1);
+	auto t1 = get_type (e1);
 
 	if (is_scalar (t1)) {
 		if (is_enum (t1)) {

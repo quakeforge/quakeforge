@@ -115,8 +115,11 @@ gl_R_TimeRefresh_f (void)
 }
 
 void
-gl_R_Init (void)
+gl_R_Init (struct plitem_s *config)
 {
+	if (config) {
+		Sys_Printf (ONG"WARNING"DFL": gl_R_Init: render config ignored\n");
+	}
 	r_notexture_mip->render = &gl_notexture;
 
 	R_Init_Cvars ();
@@ -134,7 +137,6 @@ gl_R_Init (void)
 	GDT_Init ();
 
 	gl_R_InitGraphTextures ();
-	gl_Skin_Init_Textures ();
 
 	r_init = 1;
 	gl_R_InitParticles ();

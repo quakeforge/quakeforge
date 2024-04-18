@@ -111,19 +111,23 @@ typedef struct {
 } medge_t;
 
 typedef struct {
-	float		vecs[2][4];
-	float		mipadjust;
-	texture_t	*texture;
-	int			flags;
+	vec4f_t     vecs[2];
+	float       mipadjust;
+	int         flags;
+	texture_t  *texture;
 } mtexinfo_t;
 
-#define	VERTEXSIZE	7
+typedef struct glvert_s {
+	float       pos[3];
+	float       tex_uv[2];
+	float       lm_uv[2];
+} glvert_t;
 
 typedef struct glpoly_s {
-	struct	glpoly_s	*next;
-	int		numverts;
-	int		flags;					// for SURF_UNDERWATER
-	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
+	struct glpoly_s *next;
+	int         numverts;
+	int         flags;					// for SURF_UNDERWATER
+	glvert_t    verts[4];				// variable
 } glpoly_t;
 
 #define MAX_DLIGHTS 128
@@ -316,7 +320,7 @@ typedef struct {
 	char				name[16];
 } maliasframedesc_t;
 
-typedef struct {
+typedef struct maliasskindesc_s {
 	aliasskintype_t type;
 	int     skin;
 	int     texnum;

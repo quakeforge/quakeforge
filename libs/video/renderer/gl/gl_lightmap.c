@@ -57,6 +57,8 @@
 #include "compat.h"
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 static scrap_t *light_scrap;
 static int          dlightdivtable[8192];
 static int			 gl_internalformat;				// 1 or 3
@@ -113,7 +115,7 @@ R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dlight = &dlight_data[i];
@@ -187,7 +189,7 @@ R_AddDynamicLights_3 (const vec4f_t *transform, msurface_t *surf)
 		entorigin = transform[3];
 	}
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t k = 0; k < dlight_pool->count; k++) {
 		auto dlight = &dlight_data[k];
@@ -430,7 +432,6 @@ R_BuildLightMap_4 (const vec4f_t *transform, mod_brush_t *brush,
 void
 gl_R_BlendLightmaps (void)
 {
-	float      *v;
 	instsurf_t *sc;
 	glpoly_t   *p;
 
@@ -445,10 +446,10 @@ gl_R_BlendLightmaps (void)
 		}
 		for (p = sc->surface->polys; p; p = p->next) {
 			qfglBegin (GL_POLYGON);
-			v = p->verts[0];
-			for (int j = 0; j < p->numverts; j++, v += VERTEXSIZE) {
-				qfglTexCoord2fv (&v[5]);
-				qfglVertex3fv (v);
+			auto v = p->verts;
+			for (int j = 0; j < p->numverts; j++, v++) {
+				qfglTexCoord2fv (v->lm_uv);
+				qfglVertex3fv (v->pos);
 			}
 			qfglEnd ();
 		}

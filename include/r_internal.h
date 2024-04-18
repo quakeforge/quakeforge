@@ -21,16 +21,16 @@ extern vid_render_funcs_t *vid_render_funcs;
 #define vr_funcs vid_render_funcs
 
 extern	refdef_t	r_refdef;
-#define SW_COMP(comp, id) ((void *)((byte *)r_refdef.registry->comp_pools[comp].data + (id) * r_refdef.registry->components.a[comp].size))
+#define SW_COMP(comp, id) ((void *)((byte *)r_refdef.registry->comp_pools[r_refdef.scene->base + comp].data + (id) * r_refdef.registry->components.a[r_refdef.scene->base + comp].size))
 extern int r_viewsize;
 
 void R_LineGraph (int x, int y, int *h_vals, int count, int height);
 
 
-void gl_R_Init (void);
-void glsl_R_Init (void);
+void gl_R_Init (struct plitem_s *config);
+void glsl_R_Init (struct plitem_s *config);
 void glsl_R_Shutdown (void);
-void sw_R_Init (void);
+void sw_R_Init (struct plitem_s *config);
 void R_RenderFrame (SCR_Func *scr_funcs);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
@@ -42,10 +42,11 @@ void R_ViewChanged (void);			// must set r_refdef first
 								// called whenever r_refdef or vid change
 
 extern struct psystem_s r_psystem;
+extern struct psystem_s r_tsystem;
 struct psystem_s *gl_ParticleSystem (void);
 struct psystem_s *glsl_ParticleSystem (void);
+struct psystem_s *glsl_TrailSystem (void);
 struct psystem_s *sw_ParticleSystem (void);
-void R_RunParticles (float dT);
 
 struct scene_s;
 void R_NewScene (struct scene_s *scene);

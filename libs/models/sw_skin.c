@@ -31,19 +31,34 @@
 # include "config.h"
 #endif
 
+#include "QF/image.h"
+
 #include "mod_internal.h"
 
-void
-sw_Skin_ProcessTranslation (int cmap, const byte *translation)
+static byte *colormaps[256];
+
+const byte *
+sw_Skin_Colormap (const colormap_t *colormap)
 {
+	byte top = colormap->top & 0x0f;
+	byte bot = colormap->bottom & 0x0f;
+	int  ind = top | (bot << 4);
+	if (colormaps[ind]) {
+		return colormaps[ind];
+	}
+	colormaps[ind] = malloc (VID_GRADES * 256);
+	Skin_SetColormap (colormaps[ind], top, bot);
+	return colormaps[ind];
 }
 
 void
-sw_Skin_SetupSkin (skin_t *skin, int cmap)
+sw_Skin_SetupSkin (skin_t *skin)
 {
+	skin->tex = Skin_DupTex (skin->tex);
 }
 
 void
-sw_Skin_InitTranslations (void)
+sw_Skin_Destroy (skin_t *skin)
 {
+	free (skin->tex);
 }

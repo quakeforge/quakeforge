@@ -69,12 +69,12 @@ typedef struct transform_s {
 
 XFORMINLINE int Transform_Valid (transform_t transform);
 
-transform_t Transform_New (ecs_registry_t *reg, transform_t parent);
+transform_t Transform_New (ecs_system_t ssys, transform_t parent);
 /* Deletes all child transforms, and transform names */
 void Transform_Delete (transform_t transform);
-transform_t Transform_NewNamed (ecs_registry_t *reg, transform_t parent,
+transform_t Transform_NewNamed (ecs_system_t ssys, transform_t parent,
 								const char *name);
-XFORMINLINE hierref_t *Transform_GetRef (transform_t transform);
+XFORMINLINE hierref_t Transform_GetRef (transform_t transform);
 XFORMINLINE uint32_t Transform_ChildCount (transform_t transform);
 XFORMINLINE transform_t Transform_GetChild (transform_t transform,
 										 uint32_t childIndex);
@@ -129,33 +129,34 @@ Transform_Valid (transform_t transform)
 }
 
 XFORMINLINE
-hierref_t *
+hierref_t
 Transform_GetRef (transform_t transform)
 {
-	return Ent_GetComponent (transform.id, transform.comp, transform.reg);
+	return *(hierref_t *) Ent_GetComponent (transform.id, transform.comp,
+											transform.reg);
 }
 
 XFORMINLINE
 uint32_t
 Transform_ChildCount (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
-	return h->childCount[ref->index];
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
+	return h->childCount[ref.index];
 }
 
 XFORMINLINE
 transform_t
 Transform_GetChild (transform_t transform, uint32_t childIndex)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
-	if (childIndex >= h->childCount[ref->index]) {
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
+	if (childIndex >= h->childCount[ref.index]) {
 		return nulltransform;
 	}
 	return (transform_t) {
 		.reg = transform.reg,
-		.id = h->ent[h->childIndex[ref->index] + childIndex],
+		.id = h->ent[h->childIndex[ref.index] + childIndex],
 		.comp = transform.comp,
 	};
 }
@@ -164,14 +165,14 @@ XFORMINLINE
 transform_t
 Transform_GetParent (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	if (ref->index == 0) {
+	auto ref = Transform_GetRef (transform);
+	if (ref.index == 0) {
 		return nulltransform;
 	}
-	hierarchy_t *h = ref->hierarchy;
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	return (transform_t) {
 		.reg = transform.reg,
-		.id = h->ent[h->parentIndex[ref->index]],
+		.id = h->ent[h->parentIndex[ref.index]],
 		.comp = transform.comp,
 	};
 }
@@ -180,30 +181,30 @@ XFORMINLINE
 const char *
 Transform_GetName (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	char      **name = h->components[transform_type_name];
-	return name[ref->index];
+	return name[ref.index];
 }
 
 XFORMINLINE
 uint32_t
 Transform_GetTag (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	uint32_t   *tag = h->components[transform_type_tag];
-	return tag[ref->index];
+	return tag[ref.index];
 }
 
 XFORMINLINE
 void
 Transform_GetLocalMatrix (transform_t transform, mat4f_t mat)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *localMatrix = h->components[transform_type_localMatrix];
-	vec4f_t     *src = localMatrix[ref->index];
+	vec4f_t     *src = localMatrix[ref.index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -214,10 +215,10 @@ XFORMINLINE
 void
 Transform_GetLocalInverse (transform_t transform, mat4f_t mat)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *localInverse = h->components[transform_type_localInverse];
-	vec4f_t     *src = localInverse[ref->index];
+	vec4f_t     *src = localInverse[ref.index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -228,10 +229,10 @@ XFORMINLINE
 void
 Transform_GetWorldMatrix (transform_t transform, mat4f_t mat)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	vec4f_t     *src = worldMatrix[ref->index];
+	vec4f_t     *src = worldMatrix[ref.index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -242,20 +243,20 @@ XFORMINLINE
 const vec4f_t *
 Transform_GetWorldMatrixPtr (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	return worldMatrix[ref->index];
+	return worldMatrix[ref.index];
 }
 
 XFORMINLINE
 void
 Transform_GetWorldInverse (transform_t transform, mat4f_t mat)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldInverse = h->components[transform_type_worldInverse];
-	vec4f_t     *src = worldInverse[ref->index];
+	vec4f_t     *src = worldInverse[ref.index];
 	mat[0] = src[0];
 	mat[1] = src[1];
 	mat[2] = src[2];
@@ -266,60 +267,60 @@ XFORMINLINE
 vec4f_t
 Transform_GetLocalPosition (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *localMatrix = h->components[transform_type_localMatrix];
-	return localMatrix[ref->index][3];
+	return localMatrix[ref.index][3];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_GetLocalRotation (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	vec4f_t     *localRotation = h->components[transform_type_localRotation];
-	return localRotation[ref->index];
+	return localRotation[ref.index];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_GetLocalScale (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	vec4f_t     *localScale = h->components[transform_type_localScale];
-	return localScale[ref->index];
+	return localScale[ref.index];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_GetWorldPosition (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	return worldMatrix[ref->index][3];
+	return worldMatrix[ref.index][3];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_GetWorldRotation (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	vec4f_t     *worldRotation = h->components[transform_type_worldRotation];
-	return worldRotation[ref->index];
+	return worldRotation[ref.index];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_GetWorldScale (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	vec4f_t     *m = worldMatrix[ref->index];
+	vec4f_t     *m = worldMatrix[ref.index];
 	vec4f_t     s = {
 		dotf (m[0], m[0])[0],
 		dotf (m[1], m[1])[0],
@@ -333,30 +334,30 @@ XFORMINLINE
 vec4f_t
 Transform_Forward (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	return worldMatrix[ref->index][0];
+	return worldMatrix[ref.index][0];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_Right (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	return -worldMatrix[ref->index][1];
+	return -worldMatrix[ref.index][1];
 }
 
 XFORMINLINE
 vec4f_t
 Transform_Up (transform_t transform)
 {
-	__auto_type ref = Transform_GetRef (transform);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = Transform_GetRef (transform);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
 	mat4f_t     *worldMatrix = h->components[transform_type_worldMatrix];
-	return worldMatrix[ref->index][2];
+	return worldMatrix[ref.index][2];
 }
 
 ///@}

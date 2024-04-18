@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -192,7 +193,7 @@ check_device (const char *path)
 	device_t   *dev;
 	int         fd;
 
-	fd = open (path, O_RDWR);
+	fd = open (path, O_RDWR | O_NONBLOCK);
 	if (fd == -1)
 		return -1;
 
@@ -235,7 +236,7 @@ check_device (const char *path)
 	return fd;
 }
 
-/*static const char *event_codes[] = {
+static const char *event_codes[] = {
 	"EV_SYN",
 	"EV_KEY",
 	"EV_REL",
@@ -250,7 +251,7 @@ check_device (const char *path)
 	"EV_FF",
 	"EV_PWR",
 	"EV_FF_STATUS",
-};*/
+};
 
 static void
 read_device_input (device_t *dev)
@@ -267,16 +268,21 @@ read_device_input (device_t *dev)
 
 	while (1) {
 		if (read (dev->fd, &event, sizeof (event)) < 0) {
-			perror(dev->name);
-			dev->fd = -1;
+			if (errno != EWOULDBLOCK) {
+				perror(dev->name);
+				dev->fd = -1;
+			}
 			return;
 		}
-		//const char *ev = event_codes[event.type];
-		//Sys_Printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?", event.code, event.value);
+		if (0) {
+			const char *ev = event_codes[event.type];
+			Sys_Printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?",
+						event.code, event.value);
+		}
 		switch (event.type) {
 			case EV_SYN:
 				dev->event_count++;
-				return;
+				break;
 			case EV_KEY:
 				button = &dev->buttons[dev->button_map[event.code]];
 				button->state = event.value;

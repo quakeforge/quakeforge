@@ -699,9 +699,17 @@ CL_TimeDemo_f (void)
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
 }
 
+static void
+CL_Demo_Shutdown (void *data)
+{
+	dstring_delete (demoname);
+}
+
 void
 CL_Demo_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (CL_Demo_Shutdown, 0);
 	demoname = dstring_newstr ();
 	demo_timeframes_isactive = 0;
 	demo_timeframes_index = 0;

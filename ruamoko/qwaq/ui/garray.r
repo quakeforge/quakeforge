@@ -7,7 +7,7 @@
 								 if: (condition_func)condition
 							   with: (void *)data
 {
-	for (int i = 0; i < [self count]; i++) {
+	for (unsigned i = 0; i < [self count]; i++) {
 		if (condition (_objs[i], data)) {
 			[_objs[i] performSelector: selector];
 		}
@@ -19,7 +19,7 @@
 								 if: (condition_func2)condition
 							   with: (void *)data
 {
-	for (int i = 0; i < [self count]; i++) {
+	for (unsigned i = 0; i < [self count]; i++) {
 		if (condition (_objs[i], anObject, data)) {
 			[_objs[i] performSelector: selector withObject: anObject];
 		}

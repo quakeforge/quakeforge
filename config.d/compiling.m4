@@ -111,6 +111,20 @@ if test "x$CLANG" = xyes -a "x$leave_cflags_alone" != xyes; then
 	CFLAGS="$CFLAGS -Wno-misleading-indentation"
 fi
 
+AC_ARG_ENABLE(ubsan,
+	AS_HELP_STRING([--enable-ubsan],
+		[compile with ubsan (for development)]),
+	ubsan=$enable_ubsan,
+	ubsan=no
+)
+if test "x$ubsan" = xyes -a "x$leave_cflags_alone" != "xyes"; then
+	QF_CC_OPTION(-fsanitize=undefined)
+	QF_CC_OPTION_TEST([-fsanitize=undefined], [
+		CFLAGS="$CFLAGS -fsanitize=undefined"
+		CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
+	])
+fi
+
 AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--disable-optimize],
 		[compile without optimizations (for development)]),

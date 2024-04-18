@@ -2,6 +2,7 @@ ruamoko_include = \
 	ruamoko/include/crudefile.h \
 	ruamoko/include/debug.h \
 	ruamoko/include/entities.h \
+	ruamoko/include/imui.h \
 	ruamoko/include/infokey.h \
 	ruamoko/include/input.h \
 	ruamoko/include/math.h \
@@ -57,6 +58,3 @@ ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
 
 ruamoko_include_HEADERS = $(ruamoko_include)
 ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)
-
-EXTRA_DIST += \
-	ruamoko/include/key.h

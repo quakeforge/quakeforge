@@ -28,10 +28,12 @@
 -(MultiVector *) product:(MultiVector *) rhs;
 -(MultiVector *) divide:(MultiVector *) rhs;
 -(MultiVector *) wedge:(MultiVector *) rhs;
+-(MultiVector *) antiwedge:(MultiVector *) rhs;
 -(MultiVector *) dot:(MultiVector *) rhs;
 -(MultiVector *) plus:(MultiVector *) rhs;
 -(MultiVector *) minus:(MultiVector *) rhs;
 -(MultiVector *) dual;
+-(MultiVector *) undual;
 -(MultiVector *) reverse;
 @end
 

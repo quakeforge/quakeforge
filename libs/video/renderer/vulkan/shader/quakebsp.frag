@@ -1,6 +1,10 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+
+#include "fog.finc"
 
 layout (set = 3, binding = 0) uniform sampler2DArray Texture;
+layout (set = 4, binding = 0) uniform sampler2D Lightmap;
 
 layout (push_constant) uniform PushConstants {
 	vec4        fog;
@@ -16,16 +20,6 @@ layout (location = 4) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 
-vec4
-fogBlend (vec4 color)
-{
-	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
-	vec3        fog_color = fog.rgb;
-	float       fog_factor = exp (-az * az);
-
-	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
-}
-
 void
 main (void)
 {
@@ -35,6 +29,7 @@ main (void)
 
 	vec4        c = texture (Texture, t_st) * color;
 	vec4        e = texture (Texture, e_st);
+	vec4        l = texture (Lightmap, l_st);
 
-	frag_color = c;//fogBlend (c);
+	frag_color = FogBlend (c * l + e, fog);
 }

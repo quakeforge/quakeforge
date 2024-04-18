@@ -413,6 +413,9 @@ new_memsuper (void)
 void
 delete_memsuper (memsuper_t *super)
 {
+	if (!super) {
+		return;
+	}
 	// The block holding the superblock is always the last block in the list
 	while (super->memblocks && super->memblocks->next) {
 		memblock_t *t = super->memblocks;

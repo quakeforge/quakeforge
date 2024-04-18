@@ -14,7 +14,6 @@ EXTRA_LTLIBRARIES += \
 
 models_sources = \
 	libs/models/clip_hull.c \
-	libs/models/fullbright.c \
 	libs/models/model.c \
 	libs/models/portal.c \
 	libs/models/trace.c \
@@ -30,7 +29,11 @@ libs_models_libQFmodels_la_LIBADD=				$(models_libs)
 libs_models_libQFmodels_la_DEPENDENCIES=		$(models_libs)
 libs_models_libQFmodels_la_SOURCES= 			$(models_sources)
 
-gl_sources=libs/models/gl_model_fullbright.c libs/models/gl_skin.c libs/models/skin.c
+gl_sources= \
+	libs/models/fullbright.c \
+	libs/models/gl_model_fullbright.c \
+	libs/models/gl_skin.c \
+	libs/models/skin.c
 gl_libs= \
 	libs/models/alias/libalias_gl.la \
 	libs/models/brush/libbrush_gl.la \
@@ -42,6 +45,10 @@ libs_models_libmodels_gl_la_LIBADD=			$(gl_libs)
 libs_models_libmodels_gl_la_DEPENDENCIES=	$(gl_libs)
 libs_models_libmodels_gl_la_SOURCES=		$(gl_sources)
 
+glsl_sources = \
+	libs/models/fullbright.c \
+	libs/models/glsl_skin.c \
+	libs/models/skin.c
 glsl_libs= \
 	libs/models/alias/libalias_glsl.la \
 	libs/models/brush/libbrush_glsl.la \
@@ -51,8 +58,12 @@ glsl_libs= \
 libs_models_libmodels_glsl_la_LDFLAGS=
 libs_models_libmodels_glsl_la_LIBADD=		$(glsl_libs)
 libs_models_libmodels_glsl_la_DEPENDENCIES=	$(glsl_libs)
-libs_models_libmodels_glsl_la_SOURCES=		libs/models/glsl_skin.c libs/models/skin.c
+libs_models_libmodels_glsl_la_SOURCES=		$(glsl_sources)
 
+sw_sources = \
+	libs/models/fullbright.c \
+	libs/models/sw_skin.c \
+	libs/models/skin.c
 sw_libs= \
 	libs/models/alias/libalias_sw.la \
 	libs/models/brush/libbrush_sw.la \
@@ -62,7 +73,12 @@ sw_libs= \
 libs_models_libmodels_sw_la_LDFLAGS=
 libs_models_libmodels_sw_la_LIBADD=			$(sw_libs)
 libs_models_libmodels_sw_la_DEPENDENCIES=	$(sw_libs)
-libs_models_libmodels_sw_la_SOURCES=		libs/models/sw_skin.c libs/models/skin.c
+libs_models_libmodels_sw_la_SOURCES=		$(sw_sources)
+
+vulkan_sources= \
+	libs/models/vulkan_skin.c \
+	libs/models/fullbright.c \
+	libs/models/skin.c
 
 vulkan_libs= \
 	libs/models/alias/libalias_vulkan.la \
@@ -73,4 +89,4 @@ vulkan_libs= \
 libs_models_libmodels_vulkan_la_LDFLAGS=
 libs_models_libmodels_vulkan_la_LIBADD=			$(vulkan_libs)
 libs_models_libmodels_vulkan_la_DEPENDENCIES=	$(vulkan_libs)
-libs_models_libmodels_vulkan_la_SOURCES=		libs/models/vulkan_skin.c libs/models/skin.c libs/models/fullbright.c
+libs_models_libmodels_vulkan_la_SOURCES=		$(vulkan_sources)

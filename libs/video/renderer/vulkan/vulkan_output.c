@@ -49,7 +49,6 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/image.h"
@@ -65,6 +64,7 @@
 static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -135,6 +135,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 update_input (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -165,6 +166,7 @@ static void
 output_select_pipeline (const exprval_t **params, exprval_t *result,
 						exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto output = QFV_GetStep (params[0], ctx->render_context->job);
@@ -192,6 +194,7 @@ static void
 output_select_renderpass (const exprval_t **params, exprval_t *result,
 						  exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto main = QFV_GetStep (params[0], ctx->render_context->job);
@@ -217,6 +220,7 @@ output_draw (qfv_taskctx_t *taskctx,
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "flat");
 	VkDescriptorSet set[] = {
 		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		oframe->set,
@@ -234,6 +238,7 @@ output_draw (qfv_taskctx_t *taskctx,
 static void
 output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	output_draw (taskctx, 0, 0);
 }
@@ -241,6 +246,7 @@ output_draw_flat (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	float time = vr_data.realtime;
 	qfv_push_constants_t push_constants[] = {
@@ -252,6 +258,7 @@ output_draw_waterwarp (const exprval_t **params, exprval_t *result, exprctx_t *e
 static void
 output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	float width = r_refdef.vrect.width;
 	float height = r_refdef.vrect.height;
@@ -263,6 +270,89 @@ output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ect
 		{ VK_SHADER_STAGE_FRAGMENT_BIT, 4, sizeof (float), &aspect },
 	};
 	output_draw (taskctx, 2, push_constants);
+}
+
+static void
+output_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	outputctx_t *octx = ctx->output_context;
+
+	if (octx->framebuffers) {
+		for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
+			dfunc->vkDestroyFramebuffer (device->dev, octx->framebuffers[i], 0);
+		}
+		free (octx->framebuffers);
+	}
+	auto step = QFV_FindStep ("output", ctx->render_context->job);
+	auto render = step->render;
+	auto rp = &render->renderpasses[0];
+	rp->beginInfo.framebuffer = 0;
+
+	free (octx->frames.a);
+	free (octx);
+}
+
+static void
+output_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfvPushDebug (ctx, "output init");
+	auto octx = ctx->output_context;
+
+	auto rctx = ctx->render_context;
+	size_t      frames = rctx->frames.size;
+	DARRAY_INIT (&octx->frames, frames);
+	DARRAY_RESIZE (&octx->frames, frames);
+	octx->frames.grow = 0;
+
+	octx->sampler = QFV_Render_Sampler (ctx, "linear");
+
+	auto dsmanager = QFV_Render_DSManager (ctx, "output_set");
+
+	for (size_t i = 0; i < frames; i++) {
+		auto oframe = &octx->frames.a[i];
+		oframe->input = 0;
+		oframe->set = QFV_DSManager_AllocSet (dsmanager);
+	}
+
+	qfvPopDebug (ctx);
+}
+
+static void
+output_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+
+	QFV_Render_AddShutdown (ctx, output_shutdown);
+	QFV_Render_AddStartup (ctx, output_startup);
+
+	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
+	ctx->output_context = octx;
+
+	octx->swapchain_info = (qfv_attachmentinfo_t) {
+		.name = "$swapchain",
+		.format = ctx->swapchain->format,
+		.samples = 1,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+	};
+	qfv_attachmentinfo_t *attachments[] = {
+		&octx->swapchain_info,
+	};
+	QFV_Render_AddAttachments (ctx, 1, attachments);
 }
 
 static exprtype_t *stepref_param[] = {
@@ -298,6 +388,12 @@ static exprfunc_t output_draw_fisheye_func[] = {
 	{ .func = output_draw_fisheye },
 	{}
 };
+
+static exprfunc_t output_init_func[] = {
+	{ .func = output_init },
+	{}
+};
+
 static exprsym_t output_task_syms[] = {
 	{ "acquire_output", &cexpr_function, acquire_output_func },
 	{ "update_input", &cexpr_function, update_input_func },
@@ -307,76 +403,13 @@ static exprsym_t output_task_syms[] = {
 	{ "output_draw_flat", &cexpr_function, output_draw_flat_func },
 	{ "output_draw_waterwarp", &cexpr_function, output_draw_waterwarp_func },
 	{ "output_draw_fisheye", &cexpr_function, output_draw_fisheye_func },
+	{ "output_init", &cexpr_function, output_init_func },
 	{}
 };
 
 void
 Vulkan_Output_Init (vulkan_ctx_t *ctx)
 {
-	outputctx_t *octx = calloc (1, sizeof (outputctx_t));
-	ctx->output_context = octx;
-
-	octx->swapchain_info = (qfv_attachmentinfo_t) {
-		.name = "$swapchain",
-		.format = ctx->swapchain->format,
-		.samples = 1,
-		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-		.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-	};
-
+	qfZoneScoped (true);
 	QFV_Render_AddTasks (ctx, output_task_syms);
-	qfv_attachmentinfo_t *attachments[] = {
-		&octx->swapchain_info,
-	};
-	QFV_Render_AddAttachments (ctx, 1, attachments);
-}
-
-void
-Vulkan_Output_Setup (vulkan_ctx_t *ctx)
-{
-	qfvPushDebug (ctx, "output init");
-
-	auto octx = ctx->output_context;
-
-	auto rctx = ctx->render_context;
-	size_t      frames = rctx->frames.size;
-	DARRAY_INIT (&octx->frames, frames);
-	DARRAY_RESIZE (&octx->frames, frames);
-	octx->frames.grow = 0;
-
-	octx->sampler = QFV_Render_Sampler (ctx, "linear");
-
-	auto dsmanager = QFV_Render_DSManager (ctx, "output_set");
-
-	for (size_t i = 0; i < frames; i++) {
-		auto oframe = &octx->frames.a[i];
-		oframe->input = 0;
-		oframe->set = QFV_DSManager_AllocSet (dsmanager);
-	}
-
-	qfvPopDebug (ctx);
-}
-
-void
-Vulkan_Output_Shutdown (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	outputctx_t *octx = ctx->output_context;
-
-	for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
-		dfunc->vkDestroyFramebuffer (device->dev, octx->framebuffers[i], 0);
-	}
-	free (octx->framebuffers);
-	auto step = QFV_FindStep ("output", ctx->render_context->job);
-	auto render = step->render;
-	auto rp = &render->renderpasses[0];
-	rp->beginInfo.framebuffer = 0;
-
-	free (octx->frames.a);
-	free (octx);
 }

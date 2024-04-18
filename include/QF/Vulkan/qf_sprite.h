@@ -76,7 +76,5 @@ void Vulkan_Mod_SpriteLoadFrames (struct mod_sprite_ctx_s *sprite_ctx,
 								  struct vulkan_ctx_s *ctx);
 
 void Vulkan_Sprite_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Sprite_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Sprite_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_sprite_h

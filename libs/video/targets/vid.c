@@ -106,6 +106,7 @@ static cvar_t vid_fullscreen_cvar = {
 void
 VID_GetWindowSize (int def_w, int def_h)
 {
+	qfZoneScoped (true);
 	int pnum;
 
 	vid_width_cvar.default_value = nva ("%d", def_w);
@@ -176,7 +177,7 @@ VID_SetWindow (int x, int y, int width, int height)
 		Sys_Error ("VID_SetWindow: invalid size: %d, %d", width, height);
 	}
 	if (x != viddef.x || y !=viddef.y
-		||width != (int) viddef.width || height != (int) viddef.height) {
+		|| width != (int) viddef.width || height != (int) viddef.height) {
 		viddef.x = x;
 		viddef.y = y;
 		viddef.width = width;
@@ -296,6 +297,7 @@ VID_InitGamma (const byte *pal)
 void
 VID_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	if (vi->flush_caches) {
 		vi->flush_caches (vi->ctx);
 	}
@@ -362,6 +364,7 @@ VID_shutdown (void *data)
 VISIBLE void
 VID_Init (byte *palette, byte *colormap)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (VID_shutdown, 0);
 	vid_system.init (palette, colormap);
 }

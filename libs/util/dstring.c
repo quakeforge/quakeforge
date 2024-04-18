@@ -301,12 +301,12 @@ dstring_clearstr (dstring_t *dstr)
 }
 
 static __attribute__((format(PRINTF, 3, 0))) char *
-_dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
+_dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list srcargs)
 {
 	int         size;
 
-	va_list     tmp_args;
-	va_copy (tmp_args, args);
+	va_list     args;
+	va_copy (args, srcargs);
 
 	if (!dstr->truesize)
 		dstring_clearstr (dstr); // Make it a string
@@ -315,15 +315,18 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 							  args)) == -1) {
 		dstr->size = (dstr->truesize & ~1023) + 1024;
 		dstring_adjust (dstr);
-		va_copy (args, tmp_args);
+		va_end (args);
+		va_copy (args, srcargs);
 	}
 	dstr->size = size + offs + 2;
 	// "Proper" implementations return the required size
 	if (dstr->size > dstr->truesize) {
 		dstring_adjust (dstr);
-		va_copy (args, tmp_args);
+		va_end (args);
+		va_copy (args, srcargs);
 		vsnprintf (dstr->str + offs, dstr->truesize - offs - 1, fmt, args);
 	}
+	va_end (args);
 	dstr->size = size + offs + 1;
 	dstr->str[dstr->size - 1] = 0;
 	return dstr->str;

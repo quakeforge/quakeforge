@@ -80,10 +80,6 @@ extern bool	WinNT;
 
 extern bool	winsock_lib_initialized;
 
-#ifdef SPLASH_SCREEN
-extern HWND		hwnd_dialog;
-#endif
-
 #undef E_POINTER
 
 #endif /* _WIN32 */

@@ -141,9 +141,8 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-#if 0
 LONG
-static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (lParam != wDeviceID)
 		return 1;
@@ -169,13 +168,12 @@ static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 		default:
 			Sys_MaskPrintf (SYS_snd, "Unexpected MM_MCINOTIFY type (%i)\n",
-							wParam);
+							(int) wParam);
 			return 1;
 	}
 
 	return 0;
 }
-#endif
 
 static void
 I_CDAudio_Pause (void)
@@ -310,6 +308,7 @@ I_CDAudio_Shutdown (void)
 	if (!initialized)
 		return;
 	I_CDAudio_Stop ();
+	Win_RemoveEvent (MM_MCINOTIFY);
 	if (mciSendCommand (wDeviceID, MCI_CLOSE, MCI_WAIT, (DWORD_PTR) NULL))
 		Sys_MaskPrintf (SYS_snd, "CDAudio_Shutdown: MCI_CLOSE failed\n");
 }
@@ -464,6 +463,8 @@ I_CDAudio_Init (void)
 	MCI_OPEN_PARMS mciOpenParms;
 	MCI_SET_PARMS mciSetParms;
 	int         n;
+
+	Win_AddEvent (MM_MCINOTIFY, CDAudio_MessageHandler);
 
 	mciOpenParms.lpstrDeviceType = "cdaudio";
 	dwReturn =

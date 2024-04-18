@@ -44,10 +44,14 @@
 #include "qtv/include/server.h"
 #include "qtv/include/qtv.h"
 
+static uint32_t sv_base;
+#define s_view (sv_base + server_view)
+#define s_window (sv_base + server_window)
+
 static void
 draw_clients (view_t view)
 {
-	sv_view_t  *sv_view = Ent_GetComponent (view.id, server_view, view.reg);
+	sv_view_t  *sv_view = Ent_GetComponent (view.id, s_view, view.reg);
 	sv_sbar_t  *sb = sv_view->obj;
 	view_pos_t  rel = View_GetRel (view);
 	const char *str;
@@ -62,7 +66,7 @@ draw_clients (view_t view)
 static void
 draw_servers (view_t view)
 {
-	sv_view_t  *sv_view = Ent_GetComponent (view.id, server_view, view.reg);
+	sv_view_t  *sv_view = Ent_GetComponent (view.id, s_view, view.reg);
 	sv_sbar_t  *sb = sv_view->obj;
 	view_pos_t  rel = View_GetRel (view);
 	const char *str;
@@ -83,8 +87,9 @@ qtv_sbar_init (void)
 	if (!con_module || !con_module->data->console->status_view)
 		return;
 
+	sv_base = con_module->data->console->component_base;
 	status = *con_module->data->console->status_view;
-	void       *comp =  Ent_GetComponent (status.id, server_window, status.reg);
+	void       *comp =  Ent_GetComponent (status.id, s_window, status.reg);
 	sv_view_t   sv_view = *(sv_view_t *) comp;
 	sv_view.setgeometry = 0;
 
@@ -95,14 +100,14 @@ qtv_sbar_init (void)
 	View_SetLen (view, 8, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_servers;
-	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
+	Ent_SetComponent (view.id, s_view, view.reg, &sv_view);
 
 	view = View_New (viewsys, status);
 	View_SetPos (view, 8, 0);
 	View_SetLen (view, 9, 1);
 	View_SetGravity (view, grav_northwest);
 	sv_view.draw = draw_clients;
-	Ent_SetComponent (view.id, server_view, view.reg, &sv_view);
+	Ent_SetComponent (view.id, s_view, view.reg, &sv_view);
 
 	View_UpdateHierarchy (status);
 }

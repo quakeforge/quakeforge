@@ -105,30 +105,45 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer,
                          cache_allocator_t allocator);
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
 
-void Skin_Init (void);
-void Skin_Shutdown (void);
-void Skin_Free (skin_t *skin);
-skin_t *Skin_SetColormap (skin_t *skin, int cmap);
-skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
-void Skin_SetTranslation (int cmap, int top, int bottom);
 int Skin_CalcTopColors (byte *out, const byte *in, size_t pixels, int stride);
 int Skin_CalcTopMask (byte *out, const byte *in, size_t pixels, int stride);
 int Skin_CalcBottomColors(byte *out, const byte *in, size_t pixels, int stride);
 int Skin_CalcBottomMask (byte *out, const byte *in, size_t pixels, int stride);
 int Skin_ClearTopColors (byte *out, const byte *in, size_t pixels);
 int Skin_ClearBottomColors (byte *out, const byte *in, size_t pixels);
+void Skin_SetColormap (byte *dest, int top, int bottom);
+void Skin_SetPalette (byte *dest, int top, int bottom);
 
-void sw_Skin_SetupSkin (skin_t *skin, int cmap);
-void sw_Skin_ProcessTranslation (int cmap, const byte *translation);
-void sw_Skin_InitTranslations (void);
+typedef struct tex_s tex_t;
+typedef struct colormap_s colormap_t;
 
-void glsl_Skin_SetupSkin (skin_t *skin, int cmap);
-void glsl_Skin_ProcessTranslation (int cmap, const byte *translation);
-void glsl_Skin_InitTranslations (void);
+tex_t *Skin_DupTex (const tex_t *tex);
 
-void gl_Skin_SetupSkin (skin_t *skin, int cmap);
-void gl_Skin_ProcessTranslation (int cmap, const byte *translation);
-void gl_Skin_InitTranslations (void);
-void gl_Skin_Init_Textures (void);
-void gl_Skin_SetPlayerSkin (int width, int height, const byte *data);
+typedef struct skin_s {
+	tex_t      *tex;
+	uint32_t    id;
+} skin_t;
+
+typedef struct glskin_s {
+	uint32_t    id;
+	uint32_t    fb;
+} glskin_t;
+
+void Skin_Init (void);
+uint32_t Skin_Set (const char *skinname);
+skin_t *Skin_Get (uint32_t skin) __attribute__((pure));
+
+void sw_Skin_SetupSkin (skin_t *skin);
+void sw_Skin_Destroy (skin_t *skin);
+const byte *sw_Skin_Colormap (const colormap_t *colormap);
+
+void glsl_Skin_SetupSkin (skin_t *skin);
+void glsl_Skin_Destroy (skin_t *skin);
+uint32_t glsl_Skin_Colormap (const colormap_t *colormap);
+
+void gl_Skin_SetupSkin (skin_t *skin);
+void gl_Skin_Destroy (skin_t *skin);
+glskin_t gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
+					  const byte *texel_base);
+
 #endif// __mod_internal_h

@@ -346,11 +346,11 @@ R_EmitCachedEdge (void)
 
 
 void
-R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
+R_RenderFace (uint32_t render_id, msurface_t *face, int clipflags)
 {
 	int         i, lindex;
 	unsigned int mask;
-	plane_t    *pplane;
+	plane_t    *plane;
 	float       distinv;
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
@@ -363,8 +363,8 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 		return;
 	}
 	// ditto if not enough edges left, or switch to auxedges if possible
-	if ((edge_p + fa->numedges + 4) >= edge_max) {
-		r_outofedges += fa->numedges;
+	if ((edge_p + face->numedges + 4) >= edge_max) {
+		r_outofedges += face->numedges;
 		return;
 	}
 
@@ -388,8 +388,8 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 	pedges = brush->edges;
 	r_lastvertvalid = false;
 
-	for (i = 0; i < fa->numedges; i++) {
-		lindex = brush->surfedges[fa->firstedge + i];
+	for (i = 0; i < face->numedges; i++) {
+		lindex = brush->surfedges[face->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -487,20 +487,20 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 
 	r_polycount++;
 
-	surface_p->data = (void *) fa;
+	surface_p->data = (void *) face;
 	surface_p->nearzi = r_nearzi;
-	surface_p->flags = fa->flags;
+	surface_p->flags = face->flags;
 	surface_p->insubmodel = insubmodel;
 	surface_p->spanstate = 0;
 	surface_p->render_id = render_id;
 	surface_p->key = r_currentkey++;
 	surface_p->spans = NULL;
 
-	pplane = fa->plane;
+	plane = face->plane;
 // FIXME: cache this?
-	TransformVector (pplane->normal, p_normal);
+	TransformVector (plane->normal, p_normal);
 // FIXME: cache this?
-	distinv = 1.0 / (pplane->dist - DotProduct (modelorg, pplane->normal));
+	distinv = 1.0 / (plane->dist - DotProduct (modelorg, plane->normal));
 
 	surface_p->d_zistepu = p_normal[0] * xscaleinv * distinv;
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
@@ -512,11 +512,11 @@ R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags)
 
 
 void
-R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
+R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *surf)
 {
 	int         i;
 	unsigned int mask;
-	plane_t    *pplane;
+	plane_t    *plane;
 	float       distinv;
 	vec3_t      p_normal;
 	clipplane_t *pclip;
@@ -527,8 +527,8 @@ R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
 		return;
 	}
 	// ditto if not enough edges left, or switch to auxedges if possible
-	if ((edge_p + psurf->numedges + 4) >= edge_max) {
-		r_outofedges += psurf->numedges;
+	if ((edge_p + surf->numedges + 4) >= edge_max) {
+		r_outofedges += surf->numedges;
 		return;
 	}
 
@@ -586,20 +586,20 @@ R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
 
 	r_polycount++;
 
-	surface_p->data = (void *) psurf;
+	surface_p->data = (void *) surf;
 	surface_p->nearzi = r_nearzi;
-	surface_p->flags = psurf->flags;
+	surface_p->flags = surf->flags;
 	surface_p->insubmodel = true;
 	surface_p->spanstate = 0;
 	surface_p->render_id = render_id;
 	surface_p->key = r_currentbkey;
 	surface_p->spans = NULL;
 
-	pplane = psurf->plane;
+	plane = surf->plane;
 // FIXME: cache this?
-	TransformVector (pplane->normal, p_normal);
+	TransformVector (plane->normal, p_normal);
 // FIXME: cache this?
-	distinv = 1.0 / (pplane->dist - DotProduct (modelorg, pplane->normal));
+	distinv = 1.0 / (plane->dist - DotProduct (modelorg, plane->normal));
 
 	surface_p->d_zistepu = p_normal[0] * xscaleinv * distinv;
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
@@ -611,7 +611,7 @@ R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf)
 
 
 void
-R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
+R_RenderPoly (uint32_t render_id, msurface_t *face, int clipflags)
 {
 	int         i, lindex, lnumverts, s_axis, t_axis;
 	float       dist, lastdist, lzi, scale, u, v, frac;
@@ -619,7 +619,7 @@ R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 	vec3_t      local, transformed;
 	clipplane_t *pclip;
 	medge_t    *pedges;
-	plane_t    *pplane;
+	plane_t    *plane;
 	mvertex_t   verts[2][100];			// FIXME: do real number
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
@@ -644,11 +644,11 @@ R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 	// reconstruct the polygon
 	// FIXME: these should be precalculated and loaded off disk
 	pedges = brush->edges;
-	lnumverts = fa->numedges;
+	lnumverts = face->numedges;
 	vertpage = 0;
 
 	for (i = 0; i < lnumverts; i++) {
-		lindex = brush->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[face->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -710,8 +710,8 @@ R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 
 	// transform and project, remembering the z values at the vertices and
 	// r_nearzi, and extract the s and t coordinates at the vertices
-	pplane = fa->plane;
-	switch (pplane->type) {
+	plane = face->plane;
+	switch (plane->type) {
 		case PLANE_X:
 		case PLANE_ANYX:
 			s_axis = 1;
@@ -766,11 +766,11 @@ R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags)
 		pverts[i].t = verts[vertpage][i].position[t_axis];
 	}
 
-	// build the polygon descriptor, including fa, r_nearzi, and u, v, s, t,
+	// build the polygon descriptor, including face, r_nearzi, and u, v, s, t,
 	// and z for each vertex
 	r_polydesc.numverts = lnumverts;
 	r_polydesc.nearzi = r_nearzi;
-	r_polydesc.pcurrentface = fa;
+	r_polydesc.pcurrentface = face;
 	r_polydesc.pverts = pverts;
 
 	// draw the polygon
@@ -782,24 +782,24 @@ void
 R_ZDrawSubmodelPolys (uint32_t render_id, mod_brush_t *brush)
 {
 	int         i, numsurfaces;
-	msurface_t *psurf;
+	msurface_t *surf;
 	float       dot;
-	plane_t    *pplane;
+	plane_t    *plane;
 
-	psurf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 	numsurfaces = brush->nummodelsurfaces;
 
-	for (i = 0; i < numsurfaces; i++, psurf++) {
+	for (i = 0; i < numsurfaces; i++, surf++) {
 		// find which side of the node we are on
-		pplane = psurf->plane;
+		plane = surf->plane;
 
-		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
+		dot = DotProduct (modelorg, plane->normal) - plane->dist;
 
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
+		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderPoly (render_id, psurf, 15);
+			R_RenderPoly (render_id, surf, 15);
 		}
 	}
 }

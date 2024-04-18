@@ -44,6 +44,7 @@ core
 /quakeforge-config
 /quakeforge.lsm
 /test-driver
+/tracy
 /ylwrap
 
 # /RPM/

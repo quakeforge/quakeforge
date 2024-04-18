@@ -11,7 +11,9 @@
 static int
 test_new_del (void)
 {
-	ecs_registry_t *reg = ECS_NewRegistry ();
+	ecs_registry_t *reg = ECS_NewRegistry ("new del");
+	ECS_CreateComponentPools (reg);
+
 	if (!reg) {
 		printf ("could not create registry\n");
 		return 0;
@@ -45,7 +47,8 @@ test_new_del (void)
 static int
 test_entities (void)
 {
-	ecs_registry_t *reg = ECS_NewRegistry ();
+	ecs_registry_t *reg = ECS_NewRegistry ("entities");
+	ECS_CreateComponentPools (reg);
 
 	uint32_t    entities[NUM_ENTS];
 

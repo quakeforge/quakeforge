@@ -83,7 +83,7 @@ static const vec_t face_offset[] = { 1024, 1024, 1024, -1024, -1024, -1024 };
 struct face_def {
 	int         tex;					// texture to bind to
 	glpoly_t    poly;					// describe the polygon of this face
-	float       verts[32][VERTEXSIZE];
+	glvert_t    verts[32];
 };
 
 struct visit_def {
@@ -224,31 +224,32 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 static void
 set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 {
-	VectorAdd (v, r_refdef.frame.position, box->face[face].poly.verts[ind]);
+	auto poly = &box->face[face].poly;
+	VectorAdd (v, r_refdef.frame.position, poly->verts[ind].pos);
 	switch (face) {
 		case 0:
-			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 - v[1] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 1:
-			box->face[face].poly.verts[ind][3] = (1024 + v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 + v[0] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 2:
-			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 + v[0] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 - v[1] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 + v[0] + 4) / BOX_WIDTH;
 			break;
 		case 3:
-			box->face[face].poly.verts[ind][3] = (1024 + v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 + v[1] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 4:
-			box->face[face].poly.verts[ind][3] = (1024 - v[0] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[2] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 - v[0] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 - v[2] + 4) / BOX_WIDTH;
 			break;
 		case 5:
-			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
-			box->face[face].poly.verts[ind][4] = (1024 - v[0] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[0] = (1024 - v[1] + 4) / BOX_WIDTH;
+			poly->verts[ind].tex_uv[1] = (1024 - v[0] + 4) / BOX_WIDTH;
 			break;
 	}
 }
@@ -300,7 +301,7 @@ insert_cube_vertices (struct box_def *box, struct visit_def visit, int count,
 		int         c = p->numverts - ind;
 		const int   vert_size = sizeof (p->verts[0]);
 
-		memmove (p->verts[ind + count], p->verts[ind], c * vert_size);
+		memmove (&p->verts[ind + count], &p->verts[ind], c * vert_size);
 		p->numverts += count;
 		for (i = 0; i < count; i++)
 			set_vertex (box, face, ind + i, *v[i]);
@@ -568,8 +569,8 @@ render_box (const struct box_def *box)
 		qfglBindTexture (GL_TEXTURE_2D, box->face[i].tex);
 		qfglBegin (GL_POLYGON);
 		for (j = 0; j < box->face[i].poly.numverts; j++) {
-			qfglTexCoord2fv (box->face[i].poly.verts[j] + 3);
-			qfglVertex3fv (box->face[i].poly.verts[j]);
+			qfglTexCoord2fv (box->face[i].poly.verts[j].tex_uv);
+			qfglVertex3fv (box->face[i].poly.verts[j].pos);
 		}
 		qfglEnd ();
 	}
@@ -598,14 +599,15 @@ R_DrawSkyBoxPoly (const glpoly_t *poly)
 		Sys_Error ("too many verts!");
 	}
 
-	VectorSubtract (poly->verts[poly->numverts - 1], r_refdef.frame.position, last_v);
+	VectorSubtract (poly->verts[poly->numverts - 1].pos,
+					r_refdef.frame.position, last_v);
 	prev_face = determine_face (last_v);
 
 	box.visited_faces[0].face = prev_face;
 	box.face_count = 1;
 
 	for (i = 0; i < poly->numverts; i++) {
-		VectorSubtract (poly->verts[i], r_refdef.frame.position, v);
+		VectorSubtract (poly->verts[i].pos, r_refdef.frame.position, v);
 		face = determine_face (v);
 		if (face != prev_face) {
 			if ((face_axis[face]) == (face_axis[prev_face])) {
@@ -637,18 +639,16 @@ static void
 EmitSkyPolys (float speedscale, const instsurf_t *sc)
 {
 	float       length, s, t;
-	float      *v;
-	int         i;
-	glpoly_t   *p;
 	vec3_t      dir;
 	msurface_t *surf = sc->surface;
 	vec4f_t     origin = r_refdef.frame.position;
 
 	//FIXME transform/color
-	for (p = surf->polys; p; p = p->next) {
+	for (auto p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
-		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
-			VectorSubtract (v, origin, dir);
+		auto v = p->verts;
+		for (int i = 0; i < p->numverts; i++, v++) {
+			VectorSubtract (v->pos, origin, dir);
 			dir[2] *= 3.0;	// flatten the sphere
 
 			length = DotProduct (dir, dir);
@@ -661,7 +661,7 @@ EmitSkyPolys (float speedscale, const instsurf_t *sc)
 			t = speedscale + dir[1];
 
 			qfglTexCoord2f (s, t);
-			qfglVertex3fv (v);
+			qfglVertex3fv (v->pos);
 		}
 		qfglEnd ();
 	}
@@ -674,7 +674,7 @@ draw_poly (const glpoly_t *poly)
 
 	qfglBegin (GL_POLYGON);
 	for (i = 0; i < poly->numverts; i++) {
-		qfglVertex3fv (poly->verts[i]);
+		qfglVertex3fv (poly->verts[i].pos);
 	}
 	qfglEnd ();
 }
@@ -836,7 +836,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 
 					qfglBegin (GL_LINE_LOOP);
 					for (i = 0; i < p->numverts; i++) {
-						qfglVertex3fv (p->verts[i]);
+						qfglVertex3fv (p->verts[i].pos);
 					}
 					qfglEnd ();
 					p = p->next;
@@ -862,7 +862,8 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 					vec3_t      x, c = { 0, 0, 0 };
 
 					for (i = 0; i < p->numverts; i++) {
-						VectorSubtract (p->verts[i], r_refdef.frame.position, x);
+						VectorSubtract (p->verts[i].pos,
+										r_refdef.frame.position, x);
 						VectorAdd (x, c, c);
 					}
 					VectorScale (c, 1.0 / p->numverts, c);

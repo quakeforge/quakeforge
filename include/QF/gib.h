@@ -70,6 +70,7 @@ typedef struct gib_method_s {
 	struct gib_method_s *parent;
 	struct gib_class_s *class;
 	void *data;
+	bool own;
 } gib_method_t;
 
 typedef int (*gib_message_handler) (gib_object_t *obj, gib_method_t *method,

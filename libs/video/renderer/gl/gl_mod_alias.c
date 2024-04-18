@@ -52,8 +52,11 @@
 #include "QF/GL/qf_vid.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_gl.h"
+
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
 typedef struct {
 	vec3_t      normal;
@@ -182,15 +185,15 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing (triangles version)
 */
 static void
-GL_DrawAliasShadowTri (transform_t transform, const aliashdr_t *paliashdr,
+GL_DrawAliasShadowTri (transform_t transform, const aliashdr_t *ahdr,
 					   const vert_order_t *vo)
 {
 	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
 	float       height, lheight;
 	vec3_t      point;
-	const vec_t *scale = paliashdr->mdl.scale;
-	const vec_t *scale_origin = paliashdr->mdl.scale_origin;
+	const vec_t *scale = ahdr->mdl.scale;
+	const vec_t *scale_origin = ahdr->mdl.scale_origin;
 	vec4f_t     entorigin;
 
 	entorigin = Transform_GetWorldPosition (transform);
@@ -222,7 +225,7 @@ GL_DrawAliasShadowTri (transform_t transform, const aliashdr_t *paliashdr,
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (transform_t transform, const aliashdr_t *paliashdr,
+GL_DrawAliasShadow (transform_t transform, const aliashdr_t *ahdr,
 				    const vert_order_t *vo)
 {
 	float       height, lheight;
@@ -248,14 +251,14 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *paliashdr,
 		do {
 			// normals and vertices come from the frame list
 			point[0] =
-				verts->vert[0] * paliashdr->mdl.scale[0] +
-				paliashdr->mdl.scale_origin[0];
+				verts->vert[0] * ahdr->mdl.scale[0] +
+				ahdr->mdl.scale_origin[0];
 			point[1] =
-				verts->vert[1] * paliashdr->mdl.scale[1] +
-				paliashdr->mdl.scale_origin[1];
+				verts->vert[1] * ahdr->mdl.scale[1] +
+				ahdr->mdl.scale_origin[1];
 			point[2] =
-				verts->vert[2] * paliashdr->mdl.scale[2] +
-				paliashdr->mdl.scale_origin[2] + lheight;
+				verts->vert[2] * ahdr->mdl.scale[2] +
+				ahdr->mdl.scale_origin[2] + lheight;
 
 			point[0] -= shadevector[0] * point[2];
 			point[1] -= shadevector[1] * point[2];
@@ -270,25 +273,24 @@ GL_DrawAliasShadow (transform_t transform, const aliashdr_t *paliashdr,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
+GL_GetAliasFrameVerts16 (aliashdr_t *ahdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
-	float         blend = R_AliasGetLerpedFrames (animation, paliashdr);
+	auto animation = Entity_GetAnimation (e);
+	float         blend = R_AliasGetLerpedFrames (animation, ahdr);
 	int           count, i;
 	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
 
-	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts = (trivertx16_t *) ((byte *) ahdr + ahdr->posedata);
 
-	count = paliashdr->poseverts;
+	count = ahdr->poseverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	vo->order = (int *) ((byte *) ahdr + ahdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (paliashdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr
-										 + paliashdr->tex_coord);
+	if (ahdr->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) ahdr + ahdr->tex_coord);
 	} else {
 		vo->tex_coord = NULL;
 	}
@@ -335,24 +337,24 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t e)
+GL_GetAliasFrameVerts (aliashdr_t *ahdr, entity_t e)
 {
-	animation_t *animation = Ent_GetComponent (e.id, scene_animation, e.reg);
-	float       blend = R_AliasGetLerpedFrames (animation, paliashdr);
+	auto animation = Entity_GetAnimation (e);
+	float       blend = R_AliasGetLerpedFrames (animation, ahdr);
 	int         count, i;
 	trivertx_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
 
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts = (trivertx_t *) ((byte *) ahdr + ahdr->posedata);
 
-	count = paliashdr->poseverts;
+	count = ahdr->poseverts;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	vo->order = (int *) ((byte *) ahdr + ahdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
-	if (paliashdr->tex_coord) {
-		vo->tex_coord = (tex_coord_t *) ((byte *) paliashdr + paliashdr->tex_coord);
+	if (ahdr->tex_coord) {
+		vo->tex_coord = (tex_coord_t *) ((byte *) ahdr + ahdr->tex_coord);
 	} else {
 		vo->tex_coord = NULL;
 	}
@@ -397,6 +399,26 @@ GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t e)
 	return vo;
 }
 
+static glskin_t
+gl_get_skin (entity_t e, renderer_t *renderer, aliashdr_t *ahdr)
+{
+	auto colormap = Entity_GetColormap (e);
+	if (!gl_nocolors) {
+		skin_t *skin = renderer->skin ? Skin_Get (renderer->skin) : nullptr;
+		if (skin) {
+			return gl_Skin_Get (skin->tex, colormap, (byte *) ahdr);
+		}
+	}
+	maliasskindesc_t *skindesc;
+	auto animation = Entity_GetAnimation (e);
+	skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, ahdr);
+	if (!skindesc->texnum) {
+		auto tex = (tex_t *) ((byte *) ahdr + skindesc->skin);
+		return gl_Skin_Get (tex, colormap, (byte *) ahdr);
+	}
+	return (glskin_t) { .id = skindesc->texnum, .fb = skindesc->fb_texnum };
+}
+
 void
 gl_R_DrawAliasModel (entity_t e)
 {
@@ -405,14 +427,14 @@ gl_R_DrawAliasModel (entity_t e)
 				color[4] = {0.0, 0.0, 0.0, 1.0},
 				dark[4] = {0.0, 0.0, 0.0, 1.0},
 				emission[4] = {0.0, 0.0, 0.0, 1.0};
-	int         gl_light, texture;
-	int         fb_texture = 0, used_lights = 0;
+	int         gl_light;
+	int         used_lights = 0;
 	bool        is_fullbright = false;
-	aliashdr_t *paliashdr;
+	aliashdr_t *ahdr;
 	vec3_t      dist, scale;
 	vec4f_t     origin;
 	vert_order_t *vo;
-	renderer_t *renderer = Ent_GetComponent (e.id, scene_renderer, e.reg);
+	auto renderer = Entity_GetRenderer (e);
 	model_t    *model = renderer->model;
 
 	if (renderer->onlyshadows) {
@@ -461,7 +483,7 @@ gl_R_DrawAliasModel (entity_t e)
 		}
 
 		if (gl_vector_light) {
-			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 			auto dlight_data = (dlight_t *) dlight_pool->data;
 			for (uint32_t i = 0; i < dlight_pool->count; i++) {
 				auto l = &dlight_data[i];
@@ -513,7 +535,7 @@ gl_R_DrawAliasModel (entity_t e)
 		} else {
 			VectorCopy (ambientcolor, emission);
 
-			auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+			auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 			auto dlight_data = (dlight_t *) dlight_pool->data;
 			for (uint32_t i = 0; i < dlight_pool->count; i++) {
 				auto l = &dlight_data[i];
@@ -548,50 +570,37 @@ gl_R_DrawAliasModel (entity_t e)
 	}
 
 	// locate the proper data
-	if (!(paliashdr = renderer->model->aliashdr)) {
-		paliashdr = Cache_Get (&renderer->model->cache);
+	if (!(ahdr = renderer->model->aliashdr)) {
+		ahdr = Cache_Get (&renderer->model->cache);
 	}
-	gl_ctx->alias_polys += paliashdr->mdl.numtris;
+	gl_ctx->alias_polys += ahdr->mdl.numtris;
 
 	// if the model has a colorised/external skin, use it, otherwise use
 	// the skin embedded in the model data
-	if (renderer->skin && renderer->skin->texnum && !gl_nocolors) {
-		skin_t *skin = renderer->skin;
-
-		texture = skin->texnum;
-		if (gl_fb_models) {
-			fb_texture = skin->auxtex;
-		}
-	} else {
-		maliasskindesc_t *skindesc;
-		animation_t *animation = Ent_GetComponent (e.id, scene_animation,
-												   e.reg);
-		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, paliashdr);
-		texture = skindesc->texnum;
-		if (gl_fb_models && !is_fullbright) {
-			fb_texture = skindesc->fb_texnum;
-		}
+	auto glskin = gl_get_skin (e, renderer, ahdr);
+	if (!gl_fb_models || is_fullbright) {
+		glskin.fb = 0;
 	}
 
-	if (paliashdr->mdl.ident == HEADER_MDL16) {
+	if (ahdr->mdl.ident == HEADER_MDL16) {
 		// because we multipled by 256 when we loaded the verts, we have to
 		// scale by 1/256 when drawing.
 		//FIXME see scaling above
-		VectorScale (paliashdr->mdl.scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (paliashdr, e);
+		VectorScale (ahdr->mdl.scale, 1 / 256.0, scale);
+		vo = GL_GetAliasFrameVerts16 (ahdr, e);
 	} else {
 		//FIXME see scaling above
-		VectorScale (paliashdr->mdl.scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (paliashdr, e);
+		VectorScale (ahdr->mdl.scale, 1, scale);
+		vo = GL_GetAliasFrameVerts (ahdr, e);
 	}
 
 	// setup the transform
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
-	qfglTranslatef (paliashdr->mdl.scale_origin[0],
-					paliashdr->mdl.scale_origin[1],
-					paliashdr->mdl.scale_origin[2]);
+	qfglTranslatef (ahdr->mdl.scale_origin[0],
+					ahdr->mdl.scale_origin[1],
+					ahdr->mdl.scale_origin[2]);
 	qfglScalef (scale[0], scale[1], scale[2]);
 
 	if (gl_modelalpha < 1.0)
@@ -599,7 +608,7 @@ gl_R_DrawAliasModel (entity_t e)
 
 	// draw all the triangles
 	if (is_fullbright) {
-		qfglBindTexture (GL_TEXTURE_2D, texture);
+		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
 
 		if (gl_vector_light) {
 			qfglDisable (GL_LIGHTING);
@@ -617,9 +626,9 @@ gl_R_DrawAliasModel (entity_t e)
 				qfglEnable (GL_NORMALIZE);
 			qfglEnable (GL_LIGHTING);
 		}
-	} else if (!fb_texture) {
+	} else if (!glskin.fb) {
 		// Model has no fullbrights, don't bother with multi
-		qfglBindTexture (GL_TEXTURE_2D, texture);
+		qfglBindTexture (GL_TEXTURE_2D, glskin.id);
 		if (vo->tex_coord)
 			GL_DrawAliasFrameTri (vo);
 		else
@@ -627,11 +636,11 @@ gl_R_DrawAliasModel (entity_t e)
 	} else {	// try multitexture
 		if (gl_mtex_active_tmus >= 2) {	// set up the textures
 			qglActiveTexture (gl_mtex_enum + 0);
-			qfglBindTexture (GL_TEXTURE_2D, texture);
+			qfglBindTexture (GL_TEXTURE_2D, glskin.id);
 
 			qglActiveTexture (gl_mtex_enum + 1);
 			qfglEnable (GL_TEXTURE_2D);
-			qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+			qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
 
 			// do the heavy lifting
 			if (vo->tex_coord)
@@ -644,7 +653,7 @@ gl_R_DrawAliasModel (entity_t e)
 			qglActiveTexture (gl_mtex_enum + 0);
 		} else {
 			if (vo->tex_coord) {
-				qfglBindTexture (GL_TEXTURE_2D, texture);
+				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
 				GL_DrawAliasFrameTri (vo);
 
 				if (gl_vector_light) {
@@ -655,7 +664,7 @@ gl_R_DrawAliasModel (entity_t e)
 
 				qfglColor4fv (renderer->colormod);
 
-				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
 				GL_DrawAliasFrameTri (vo);
 
 				if (gl_vector_light) {
@@ -664,7 +673,7 @@ gl_R_DrawAliasModel (entity_t e)
 						qfglEnable (GL_NORMALIZE);
 				}
 			} else {
-				qfglBindTexture (GL_TEXTURE_2D, texture);
+				qfglBindTexture (GL_TEXTURE_2D, glskin.id);
 				GL_DrawAliasFrame (vo);
 
 				if (gl_vector_light) {
@@ -675,7 +684,7 @@ gl_R_DrawAliasModel (entity_t e)
 
 				qfglColor4fv (renderer->colormod);
 
-				qfglBindTexture (GL_TEXTURE_2D, fb_texture);
+				qfglBindTexture (GL_TEXTURE_2D, glskin.fb);
 				GL_DrawAliasFrame (vo);
 
 				if (gl_vector_light) {
@@ -717,9 +726,9 @@ gl_R_DrawAliasModel (entity_t e)
 		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
-			GL_DrawAliasShadowTri (transform, paliashdr, vo);
+			GL_DrawAliasShadowTri (transform, ahdr, vo);
 		else
-			GL_DrawAliasShadow (transform, paliashdr, vo);
+			GL_DrawAliasShadow (transform, ahdr, vo);
 
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);

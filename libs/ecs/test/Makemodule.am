@@ -15,42 +15,48 @@ libs_ecs_test_libs= \
 	libs/util/libQFutil.la
 
 libs_ecs_test_test_components_SOURCES= 		\
-	libs/ecs/test/test-components.c
-libs_ecs_test_test_components_LDADD=			\
+	libs/ecs/test/test-components.c			\
+	$(tracy_src)
+libs_ecs_test_test_components_LDADD=		\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_components_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_compops_SOURCES= 		\
-	libs/ecs/test/test-compops.c
+	libs/ecs/test/test-compops.c			\
+	$(tracy_src)
 libs_ecs_test_test_compops_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_compops_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_hierarchy_SOURCES= 		\
-	libs/ecs/test/test-hierarchy.c
+	libs/ecs/test/test-hierarchy.c			\
+	$(tracy_src)
 libs_ecs_test_test_hierarchy_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_hierarchy_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_registry_SOURCES= 		\
-	libs/ecs/test/test-registry.c
+	libs/ecs/test/test-registry.c			\
+	$(tracy_src)
 libs_ecs_test_test_registry_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_registry_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_subpools_SOURCES= 		\
-	libs/ecs/test/test-subpools.c
+	libs/ecs/test/test-subpools.c			\
+	$(tracy_src)
 libs_ecs_test_test_subpools_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_subpools_DEPENDENCIES=	\
 	$(libs_ecs_test_libs)
 
 libs_ecs_test_test_treehierarchy_SOURCES=		\
-	libs/ecs/test/test-treehierarchy.c
+	libs/ecs/test/test-treehierarchy.c			\
+	$(tracy_src)
 libs_ecs_test_test_treehierarchy_LDADD=			\
 	$(libs_ecs_test_libs)
 libs_ecs_test_test_treehierarchy_DEPENDENCIES=	\

@@ -117,7 +117,7 @@ typedef enum {
 	OPENS, CLOSES,
 	MUL, DIV, PLUS, MINUS,
 	WEDGE, ANTIWEDGE, DOT,
-	REVERSE, DUAL,
+	REVERSE, DUAL, UNDUAL,
 } token_e;
 
 script_t script;
@@ -158,6 +158,7 @@ get_token ()
 		case ".":   return {DOT, nil};
 		case "~":   return {REVERSE, nil};
 		case "!":   return {DUAL, nil};
+		case "?":   return {UNDUAL, nil};
 	}
 	return {ID, .name = token_str };
 }
@@ -212,6 +213,9 @@ factor ()
 	} else if (match (DUAL)) {
 		advance ();
 		vec = [factor () dual];
+	} else if (match (UNDUAL)) {
+		advance ();
+		vec = [factor () undual];
 	} else if (match (MINUS)) {
 		advance ();
 		vec = [minus_one product:factor ()];
@@ -273,6 +277,9 @@ high_term ()
 		}
 		if (match (WEDGE)) {
 			op = @selector(wedge:);
+			advance ();
+		} else if (match (ANTIWEDGE)) {
+			op = @selector(antiwedge:);
 			advance ();
 		} else if (match (DOT)) {
 			op = @selector(dot:);

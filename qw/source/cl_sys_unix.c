@@ -65,6 +65,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);

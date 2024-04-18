@@ -50,6 +50,9 @@
 #include "vid_internal.h"
 #include "vid_sw.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+#define s_sw_matrix (r_refdef.scene->base + scene_sw_matrix)
+
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
@@ -102,8 +105,11 @@ float       r_viewmatrix[3][4];
 float       r_aliastransition, r_resfudge;
 
 void
-sw_R_Init (void)
+sw_R_Init (struct plitem_s *config)
 {
+	if (config) {
+		Sys_Printf (ONG"WARNING"DFL": sw_R_Init: render config ignored\n");
+	}
 	int         dummy;
 
 	// get stack position so we can guess if we are going to overflow
@@ -153,17 +159,17 @@ SW_AddEntity (entity_t ent)
 	// the pool count can be used as a render id which can in turn be used to
 	// index the components within the pools.
 	ecs_registry_t *reg = ent.reg;
-	ecs_pool_t *pool = &reg->comp_pools[scene_sw_matrix];
+	ecs_pool_t *pool = &reg->comp_pools[s_sw_matrix];
 	uint32_t    render_id = pool->count;
 
 	transform_t transform = Entity_Transform (ent);
-	Ent_SetComponent (ent.id, scene_sw_matrix, reg,
+	Ent_SetComponent (ent.id, ent.base + scene_sw_matrix, reg,
 					  Transform_GetWorldMatrixPtr (transform));
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, reg);
-	Ent_SetComponent (ent.id, scene_sw_frame, reg, &animation->frame);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, reg);
+	auto animation = Entity_GetAnimation (ent);
+	Ent_SetComponent (ent.id, ent.base + scene_sw_frame, reg, &animation->frame);
+	auto renderer = Entity_GetRenderer (ent);
 	mod_brush_t *brush = &renderer->model->brush;
-	Ent_SetComponent (ent.id, scene_sw_brush, reg, &brush);
+	Ent_SetComponent (ent.id, ent.base + scene_sw_brush, reg, &brush);
 
 	return render_id;
 }
@@ -178,13 +184,14 @@ reset_sw_components (ecs_registry_t *reg)
 	};
 
 	for (int i = 0; i < 3; i++) {
-		ecs_pool_t *pool = &reg->comp_pools[sw_comps[i]];
+		uint32_t    comp = r_refdef.scene->base + sw_comps[i];
+		ecs_pool_t *pool = &reg->comp_pools[comp];
 		pool->count = 0;	// remove component from every entity
 		// reserve first component object (render id 0) for the world
 		// pseudo-entity.
 		//FIXME takes advantage of the lack of checks for the validity of the
 		//entity id.
-		Ent_SetComponent (0, sw_comps[i], reg, 0);
+		Ent_SetComponent (0, comp, reg, 0);
 		// make sure entity 0 gets allocated a new component object as the
 		// world pseudo-entity currently has no actual entity (FIXME)
 		pool->dense[0] = nullent;
@@ -262,56 +269,16 @@ draw_sprite_entity (entity_t ent)
 }
 
 static inline void
-setup_lighting (entity_t ent, alight_t *lighting)
-{
-	float       minlight = 0;
-	int         j;
-	// FIXME: remove and do real lighting
-	vec3_t      dist;
-	float       add;
-	float       lightvec[3] = { -1, 0, 0 };
-
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	minlight = max (renderer->model->min_light, renderer->min_light);
-
-	// 128 instead of 255 due to clamping below
-	j = max (R_LightPoint (&r_refdef.worldmodel->brush, r_entorigin),
-			 minlight * 128);
-
-	lighting->ambientlight = j;
-	lighting->shadelight = j;
-
-	VectorCopy (lightvec, lighting->lightvec);
-
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
-	auto dlight_data = (dlight_t *) dlight_pool->data;
-	for (uint32_t i = 0; i < dlight_pool->count; i++) {
-		auto dlight = &dlight_data[i];
-		VectorSubtract (r_entorigin, dlight->origin, dist);
-		add = dlight->radius - VectorLength (dist);
-
-		if (add > 0)
-			lighting->ambientlight += add;
-	}
-
-	// clamp lighting so it doesn't overbright as much
-	if (lighting->ambientlight > 128)
-		lighting->ambientlight = 128;
-	if (lighting->ambientlight + lighting->shadelight > 192)
-		lighting->shadelight = 192 - lighting->ambientlight;
-}
-
-static inline void
 draw_alias_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
 												 ent.reg);
 	visibility->trivial_accept = 0;	//FIXME
 	if (R_AliasCheckBBox (ent)) {
 		alight_t    lighting;
-		setup_lighting (ent, &lighting);
+		R_Setup_Lighting (ent, &lighting);
 		R_AliasDrawModel (ent, &lighting);
 	}
 }
@@ -321,12 +288,12 @@ draw_iqm_entity (entity_t ent)
 {
 	// see if the bounding box lets us trivially reject, also
 	// sets trivial accept status
-	visibility_t *visibility = Ent_GetComponent (ent.id, scene_visibility,
+	visibility_t *visibility = Ent_GetComponent (ent.id, ent.base + scene_visibility,
 												 ent.reg);
 	visibility->trivial_accept = 0;	//FIXME
 
 	alight_t    lighting;
-	setup_lighting (ent, &lighting);
+	R_Setup_Lighting (ent, &lighting);
 	R_IQMDrawModel (ent, &lighting);
 }
 
@@ -376,16 +343,15 @@ R_DrawViewModel (void)
 		return;
 	}
 
-	renderer_t *renderer = Ent_GetComponent (viewent.id, scene_renderer,
-											 viewent.reg);
+	auto renderer = Entity_GetRenderer (viewent);
 	if (!renderer->model)
 		return;
 
-	if (!Ent_HasComponent (viewent.id, scene_visibility, viewent.reg)) {
+	if (!Ent_HasComponent (viewent.id, viewent.base + scene_visibility, viewent.reg)) {
 		// ensure the view model has a visibility component because one won't
 		// be added automatically, and the model rendering code expects there
 		// to be one
-		Ent_SetComponent (viewent.id, scene_visibility, viewent.reg, 0);
+		Ent_SetComponent (viewent.id, viewent.base + scene_visibility, viewent.reg, 0);
 	}
 
 	transform_t transform = Entity_Transform (viewent);
@@ -402,7 +368,7 @@ R_DrawViewModel (void)
 	lighting.shadelight = j;
 
 	// add dynamic lights
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t i = 0; i < dlight_pool->count; i++) {
 		auto dl = &dlight_data[i];
@@ -487,18 +453,17 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 
 	insubmodel = true;
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 
 	for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_brush].a[i];
 		uint32_t    render_id = SW_AddEntity (ent);
 
-		vec4f_t    *transform = Ent_GetComponent (ent.id, scene_sw_matrix,
+		vec4f_t    *transform = Ent_GetComponent (ent.id, ent.base + scene_sw_matrix,
 												  ent.reg);
 		VectorCopy (transform[3], origin);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer,
-												 ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
 		model_t    *model = renderer->model;
 
 		// see if the bounding box lets us trivially reject, also
@@ -539,7 +504,7 @@ R_DrawBrushEntitiesOnList (entqueue_t *queue)
 			if (r_drawpolys | r_drawculledpolys) {
 				R_ZDrawSubmodelPolys (render_id, brush);
 			} else {
-				visibility_t *visibility = Ent_GetComponent (ent.id,
+				visibility_t *visibility = Ent_GetComponent (ent.id, ent.base +
 															 scene_visibility,
 															 ent.reg);
 				int         topnode_id = visibility->topnode_id;

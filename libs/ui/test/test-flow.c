@@ -246,17 +246,17 @@ test_flow (testdata_t *child_views, int count,
 	View_UpdateHierarchy (flow_view);
 
 	int         ret = 0;
-	__auto_type ref = View_GetRef (flow_view);
-	hierarchy_t *h = ref->hierarchy;
+	auto ref = View_GetRef (flow_view);
+	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, flow_view.reg);
 	uint32_t   *childIndex = h->childIndex;
 	uint32_t   *childCount = h->childCount;
 	uint32_t   *ent = h->ent;
 	view_pos_t *pos = h->components[view_pos];
 	view_pos_t *rel = h->components[view_rel];
 	view_pos_t *abs = h->components[view_abs];
-	for (uint32_t i = 0; i < childCount[ref->index]; i++) {
+	for (uint32_t i = 0; i < childCount[ref.index]; i++) {
 		testdata_t *td = &child_views[i];
-		uint32_t    child = childIndex[ref->index] + i;
+		uint32_t    child = childIndex[ref.index] + i;
 		if (pos[child].x != td->expect.xpos
 			|| pos[child].y != td->expect.ypos
 			|| rel[child].x != td->expect.xrel
@@ -280,7 +280,7 @@ main (void)
 {
 	int         ret = 0;
 
-	test_sys.reg = ECS_NewRegistry ();
+	test_sys.reg = ECS_NewRegistry ("flow");
 	test_sys.base = ECS_RegisterComponents (test_sys.reg, test_components,
 											test_comp_count);
 	ECS_CreateComponentPools (test_sys.reg);

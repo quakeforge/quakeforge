@@ -34,12 +34,39 @@
 #define IMPLEMENT_ECS_Funcs
 #include "QF/ecs.h"
 
+static void
+ecs_hierarchy_create (void *hierarchy)
+{
+	Hierarchy_Create (hierarchy);
+}
+
+static void
+ecs_hierarchy_destroy (void *hierarchy, ecs_registry_t *reg)
+{
+	Hierarchy_Destroy (hierarchy);
+}
+
+static const component_t ecs_components[ecs_comp_count] = {
+	[ecs_name] = {
+		.size = sizeof (char *),
+		.name = "name",
+	},
+	[ecs_hierarchy] = {
+		.size = sizeof (hierarchy_t),
+		.name = "hierarchy",
+		.create = ecs_hierarchy_create,
+		.destroy = ecs_hierarchy_destroy,
+	},
+};
+
 VISIBLE ecs_registry_t *
-ECS_NewRegistry (void)
+ECS_NewRegistry (const char *name)
 {
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
+	reg->name = name;
 	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
 	reg->next = Ent_Index (nullent);
+	ECS_RegisterComponents (reg, ecs_components, ecs_comp_count);
 	return reg;
 }
 
@@ -50,10 +77,11 @@ ECS_DelRegistry (ecs_registry_t *registry)
 		return;
 	}
 	registry->locked = 1;
-	for (uint32_t i = 0; i < registry->components.size; i++) {
+	for (uint32_t i = registry->components.size; i-- > 0 ;) {
 		__auto_type comp = &registry->components.a[i];
 		__auto_type pool = &registry->comp_pools[i];
-		Component_DestroyElements (comp, pool->data, 0, pool->count);
+		Component_DestroyElements (comp, pool->data, 0, pool->count, registry);
+		pool->count = 0;
 	}
 	free (registry->entities);
 	for (uint32_t i = 0; i < registry->components.size; i++) {
@@ -68,7 +96,6 @@ ECS_DelRegistry (ecs_registry_t *registry)
 	DARRAY_CLEAR (&registry->components);
 	free (registry->subpools);
 	free (registry->comp_pools);
-	PR_RESDELMAP (registry->hierarchies);
 	free (registry);
 }
 
@@ -234,8 +261,47 @@ ECS_RemoveEntities (ecs_registry_t *registry, uint32_t component)
 	if (destroy) {
 		byte       *data = registry->comp_pools[component].data;
 		for (uint32_t i = 0; i < pool->count; i++) {
-			destroy (data + i * comp->size);
+			destroy (data + i * comp->size, registry);
 		}
 	}
 	pool->count = 0;
+}
+
+VISIBLE void
+ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
+{
+	bool valid = ECS_EntValid (ent, registry);
+	printf ("%08x %s\n", ent,
+			valid ? "valid"
+			      : ent < registry->num_entities ? "deleted"
+				  : ent == nullent ? "null"
+				  : "invalid");
+	if (!valid) {
+		return;
+	}
+	for (size_t i = 0; i < registry->components.size; i++) {
+		if (!Ent_HasComponent (ent, i, registry)) {
+			continue;
+		}
+		printf ("%3zd %s\n", i, registry->components.a[i].name);
+	}
+}
+
+VISIBLE void
+ECS_PrintRegistry (ecs_registry_t *registry)
+{
+	printf ("%s %d\n", registry->name, registry->num_entities);
+	for (size_t i = 0; i < registry->components.size; i++) {
+		printf ("%3zd %7d %s\n", i, registry->comp_pools[i].count,
+				registry->components.a[i].name);
+		auto subpool = &registry->subpools[i];
+		if (subpool->num_ranges) {
+			printf ("   ");
+			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
+				uint32_t range = subpool->ranges[j];
+				printf (" %d", range);
+			}
+			printf ("\n");
+		}
+	}
 }

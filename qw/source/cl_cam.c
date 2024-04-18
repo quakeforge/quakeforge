@@ -47,7 +47,7 @@
 
 #include "compat.h"
 
-#include "client/sbar.h"
+#include "client/hud.h"
 
 #include "qw/include/cl_cam.h"
 #include "qw/include/cl_input.h"
@@ -168,7 +168,7 @@ Cam_DrawPlayer (int playernum)
 {
 	if (playernum == cl.playernum) {						// client player
 		if (cl.viewstate.chase == 0 || chase_active == 0)
-			return false;
+			return cl_player_shadows;
 		if (!cl.spectator)
 			return true;
 	} else {

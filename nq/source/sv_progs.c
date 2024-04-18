@@ -651,9 +651,17 @@ SV_LoadProgs (void)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 }
 
+static void
+SV_Progs_Shutdown (void *data)
+{
+	PR_Shutdown (&sv_pr_state);
+}
+
 void
 SV_Progs_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (SV_Progs_Shutdown, 0);
 	SV_Progs_Init_Cvars ();
 
 	pr_gametype = "netquake";

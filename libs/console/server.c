@@ -79,7 +79,30 @@
 #include "compat.h"
 #include "sv_console.h"
 
-static console_data_t sv_con_data;
+static const component_t server_components[server_comp_count] = {
+	[server_href] = {
+		.size = sizeof (hierref_t),
+		.name = "href",
+		.destroy = Hierref_DestroyComponent,
+	},
+	[server_view] = {
+		.size = sizeof (sv_view_t),
+		.name = "sv_view",
+	},
+	[server_window] = {
+		.size = sizeof (sv_view_t),
+		.name = "sv_window",
+	},
+};
+
+static console_data_t sv_con_data = {
+	.components = server_components,
+	.num_components = server_comp_count,
+};
+#define server_base sv_con_data.component_base
+#define s_href (server_base + server_href)
+#define s_view (server_base + server_view)
+#define s_window (server_base + server_window)
 
 static QFile  *log_file;
 static char *sv_logfile;
@@ -157,7 +180,6 @@ static volatile sig_atomic_t interrupted;
 static int batch_print;
 
 static ecs_registry_t *server_reg;
-static uint32_t server_base;
 static uint32_t view_base;
 
 #define     MAXCMDLINE  256
@@ -216,23 +238,6 @@ static const byte attr_map[256] = {
 	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 };
 
-static const component_t server_components[server_comp_count] = {
-	[server_href] = {
-		.size = sizeof (hierref_t),
-		.name = "href",
-		.destroy = Hierref_DestroyComponent,
-	},
-	[server_view] = {
-		.size = sizeof (sv_view_t),
-		.name = "sv_view",
-	},
-	[server_window] = {
-		.size = sizeof (sv_view_t),
-		.name = "sv_window",
-	},
-};
-
-
 static inline void
 draw_fun_char (WINDOW *win, byte c, int blue)
 {
@@ -245,9 +250,8 @@ draw_fun_char (WINDOW *win, byte c, int blue)
 static inline void
 sv_refresh_windows (void)
 {
-	uint32_t    window_comp = server_base + server_window;
-	sv_view_t  *window = server_reg->comp_pools[window_comp].data;
-	uint32_t    count = server_reg->comp_pools[window_comp].count;
+	sv_view_t  *window = server_reg->comp_pools[s_window].data;
+	uint32_t    count = server_reg->comp_pools[s_window].count;
 	while (count-- > 0) {
 		wnoutrefresh ((WINDOW *) (window++)->win);
 	}
@@ -257,14 +261,14 @@ sv_refresh_windows (void)
 static inline int
 sv_getch (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	return wgetch ((WINDOW *) window->win);
 }
 
 static inline void
 sv_draw (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	if (window->draw)
 		window->draw (view);
 	wnoutrefresh ((WINDOW *) window->win);
@@ -274,7 +278,7 @@ sv_draw (view_t view)
 static void
 sv_setgeometry (view_t view, view_pos_t foo)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	WINDOW *win = window->win;
 
 	view_pos_t  pos = View_GetAbs (view);
@@ -298,7 +302,7 @@ sv_complete (inputline_t *il)
 static void
 draw_output (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	WINDOW     *win = window->win;
 	con_buffer_t *output_buffer = window->obj;
 	view_pos_t  len = View_GetLen (view);
@@ -346,7 +350,7 @@ draw_output (view_t view)
 static void
 draw_status (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	WINDOW     *win = window->win;
 	sv_sbar_t  *sb = window->obj;
 	char       *old = alloca (sb->width);
@@ -354,7 +358,7 @@ draw_status (view_t view)
 	memcpy (old, sb->text, sb->width);
 	memset (sb->text, ' ', sb->width);
 
-	ecs_pool_t *pool = &server_reg->comp_pools[server_view];
+	ecs_pool_t *pool = &server_reg->comp_pools[s_view];
 	sv_view_t  *sv_view = pool->data;
 	for (uint32_t i = 0; i < pool->count; i++) {
 		view_t      v = { .reg = view.reg, .id = pool->dense[i],
@@ -374,7 +378,7 @@ static void
 draw_input_line (inputline_t *il)
 {
 	view_t      view = *(view_t *) il->user_data;
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	WINDOW     *win = window->win;
 	size_t      i;
 	const char *text;
@@ -406,14 +410,14 @@ draw_input_line (inputline_t *il)
 static void
 draw_input (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	draw_input_line (window->obj);
 }
 
 static void
 setgeometry_input (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	view_pos_t  len = View_GetLen (view);
 	inputline_t *il = window->obj;
 	il->width = len.x;
@@ -422,7 +426,7 @@ setgeometry_input (view_t view)
 static void
 setgeometry_status (view_t view)
 {
-	sv_view_t  *window = Ent_GetComponent (view.id, server_window, view.reg);
+	sv_view_t  *window = Ent_GetComponent (view.id, s_window, view.reg);
 	sv_sbar_t *sb = window->obj;
 	view_pos_t  len = View_GetLen (view);
 	sb->width = len.x;
@@ -569,7 +573,7 @@ key_event (knum_t key, short unicode, bool down)
 	switch (key) {
 		case QFK_PAGEUP:
 			view_offset -= 10;
-			window = Ent_GetComponent (output.id, server_window, output.reg);
+			window = Ent_GetComponent (output.id, s_window, output.reg);
 			buffer = window->obj;
 			num_lines = (buffer->line_head - buffer->line_tail
 						 + buffer->max_lines) % buffer->max_lines;
@@ -589,7 +593,7 @@ key_event (knum_t key, short unicode, bool down)
 			sv_draw (output);
 			break;
 		default:
-			window = Ent_GetComponent (input.id, server_window, input.reg);
+			window = Ent_GetComponent (input.id, s_window, input.reg);
 			Con_ProcessInputLine (window->obj, key);
 			sv_refresh_windows ();
 			break;
@@ -599,7 +603,7 @@ key_event (knum_t key, short unicode, bool down)
 static void
 print (char *txt)
 {
-	sv_view_t  *window = Ent_GetComponent (output.id, server_window,
+	sv_view_t  *window = Ent_GetComponent (output.id, s_window,
 										   output.reg);
 	Con_BufferAddText (window->obj, txt);
 	if (!view_offset) {
@@ -631,7 +635,7 @@ create_window (view_t parent, int xpos, int ypos, int xlen, int ylen,
 		.draw = draw,
 		.setgeometry = setgeometry,
 	};
-	Ent_SetComponent (view.id, server_window, view.reg, &window);
+	Ent_SetComponent (view.id, s_window, view.reg, &window);
 
 	scrollok (window.win, (opts & sv_scroll) ? TRUE : FALSE);
 	leaveok (window.win, (opts & sv_cursor) ? FALSE : TRUE);
@@ -678,7 +682,7 @@ init (void)
 
 	nonl ();
 
-	server_reg = ECS_NewRegistry ();
+	server_reg = ECS_NewRegistry ("sv con");
 	server_base = ECS_RegisterComponents (server_reg, server_components,
 										  server_comp_count);
 	view_base = ECS_RegisterComponents (server_reg, view_components,
@@ -819,13 +823,17 @@ C_Print (const char *fmt, va_list args)
 		Qputs (log_file, buffer->str);
 		Qflush (log_file);
 	}
+	char *s = buffer->str;
+	if (s[0] > 0 && s[0] <= 3) {
+		s++;
+	}
 #ifdef HAVE_NCURSES
 	if (use_curses) {
-		print (buffer->str);
+		print (s);
 	} else
 #endif
 	{
-		unsigned char *txt = (unsigned char *) buffer->str;
+		unsigned char *txt = (unsigned char *) s;
 		while (*txt)
 			putc (sys_char_map[*txt++], stdout);
 		fflush (stdout);

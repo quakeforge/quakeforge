@@ -354,7 +354,7 @@ pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr)
 }
 
 operand_t *
-nil_operand (type_t *type, const expr_t *expr)
+nil_operand (const type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_nil, expr, __builtin_return_address (0));
@@ -365,7 +365,7 @@ nil_operand (type_t *type, const expr_t *expr)
 }
 
 operand_t *
-def_operand (def_t *def, type_t *type, const expr_t *expr)
+def_operand (def_t *def, const type_t *type, const expr_t *expr)
 {
 	operand_t  *op;
 
@@ -380,7 +380,7 @@ def_operand (def_t *def, type_t *type, const expr_t *expr)
 }
 
 operand_t *
-return_operand (type_t *type, const expr_t *expr)
+return_operand (const type_t *type, const expr_t *expr)
 {
 	symbol_t   *return_symbol;
 	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
@@ -475,7 +475,8 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 }
 
 operand_t *
-offset_alias_operand (type_t *type, int offset, operand_t *aop, const expr_t *expr)
+offset_alias_operand (const type_t *type, int offset, operand_t *aop,
+					  const expr_t *expr)
 {
 	operand_t *top;
 	def_t     *def;
@@ -534,7 +535,7 @@ offset_alias_operand (type_t *type, int offset, operand_t *aop, const expr_t *ex
 }
 
 operand_t *
-alias_operand (type_t *type, operand_t *op, const expr_t *expr)
+alias_operand (const type_t *type, operand_t *op, const expr_t *expr)
 {
 	operand_t  *aop;
 
@@ -564,7 +565,7 @@ label_operand (const expr_t *label)
 	return lop;
 }
 
-static operand_t *
+operand_t *
 short_operand (short short_val, const expr_t *expr)
 {
 	ex_value_t *val = new_short_val (short_val);
@@ -602,6 +603,9 @@ convert_op (int op)
 		case QC_DOT:		return "dot";
 		case QC_HADAMARD:	return "mul";
 		case QC_SCALE:		return "scale";
+		case QC_QMUL:		return "qmul";
+		case QC_QVMUL:		return "qvmul";
+		case QC_VQMUL:		return "vqmul";
 		default:
 			return 0;
 	}
@@ -742,8 +746,8 @@ expr_address (sblock_t *sblock, const expr_t *e, operand_t **op)
 	} else if (offset && is_constant (offset)) {
 		int         o = expr_int (offset);
 		if (o < 32768 && o >= -32768) {
+			scoped_src_loc (offset);
 			offset = new_short_expr (o);
-			//offset = expr_file_line (new_short_expr (o), offset);
 		}
 	}
 
@@ -762,10 +766,9 @@ static operand_t *
 operand_address (operand_t *reference, const expr_t *e)
 {
 	def_t      *def;
-	type_t     *type;
 	int         offset = 0;
 
-	type = reference->type;
+	auto type = reference->type;
 	switch (reference->op_type) {
 		case op_def:
 			// assumes aliasing is only one level deep which should be the
@@ -829,12 +832,12 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	statement_t *s;
 	const expr_t *dst_expr = e->assign.dst;
 	const expr_t *src_expr = e->assign.src;
-	type_t     *dst_type = get_type (dst_expr);
-	type_t     *src_type = get_type (src_expr);
+	auto dst_type = get_type (dst_expr);
+	auto src_type = get_type (src_expr);
 	unsigned    count;
 	const expr_t *count_expr;
-	operand_t  *dst = 0;
-	operand_t  *size = 0;
+	operand_t  *dst = nullptr;
+	operand_t  *size = nullptr;
 	static const char *opcode_sets[][2] = {
 		{"move", "movep"},
 		{"memset", "memsetp"},
@@ -842,11 +845,13 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	const unsigned max_count = 1 << 16;
 	const char **opcode_set = opcode_sets[0];
 	const char *opcode;
-	int         need_ptr = 0;
+	bool        need_ptr = false;
 	st_type_t   type = st_move;
-	operand_t  *use = 0;
-	operand_t  *def = 0;
-	operand_t  *kill = 0;
+	operand_t  *use = nullptr;
+	operand_t  *def = nullptr;
+	operand_t  *kill = nullptr;
+
+	scoped_src_loc (e);
 
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
@@ -859,13 +864,12 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		}
 		type = st_memset;
 		if (is_indirect (dst_expr)) {
-			need_ptr = 1;
+			need_ptr = true;
 		}
 	} else {
 		if (is_indirect (src_expr)) {
-			//src_expr = expr_file_line (address_expr (src_expr, 0), e);
 			src_expr = address_expr (src_expr, 0);
-			need_ptr = 1;
+			need_ptr = true;
 		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
@@ -879,7 +883,7 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 		if (op) {
 			*op = src;
 		}
-		if (is_indirect (dst_expr)) {
+		if (!need_ptr && is_indirect (dst_expr)) {
 			if (is_variable (src_expr)) {
 				// FIXME this probably needs to be more agressive
 				// shouldn't emit code...
@@ -890,16 +894,15 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 				// type from the statement expression in dags. Also, can't
 				// use address_expr() because src_expr may be a function call
 				// and unary_expr doesn't like that
-				src_expr = expr_file_line (
-						new_address_expr (get_type (src_expr), src_expr, 0),
-										  src_expr);
+				scoped_src_loc (src_expr);
+				src_expr = new_address_expr (get_type (src_expr), src_expr, 0);
 				s = lea_statement (src, 0, src_expr);
 				sblock_add_statement (sblock, s);
 				src = s->opc;
 			} else {
 				src = operand_address (src, src_expr);
 			}
-			need_ptr = 1;
+			need_ptr = true;
 		}
 	}
 	if (need_ptr) {
@@ -913,9 +916,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 			//FIXME is this even necessary? if it is, should use copy_operand
 			sblock = statement_subexpr (sblock, dst_expr, &kill);
 		}
-		//dst_expr = expr_file_line (address_expr (dst_expr, 0), e);
 		dst_expr = address_expr (dst_expr, 0);
-		need_ptr = 1;
+		need_ptr = true;
 	}
 	sblock = statement_subexpr (sblock, dst_expr, &dst);
 
@@ -925,10 +927,8 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 	}
 	count = min (type_size (dst_type), type_size (src_type));
 	if (count < (1 << 16)) {
-		//count_expr = expr_file_line (new_short_expr (count), e);
 		count_expr = new_short_expr (count);
 	} else {
-		//count_expr = expr_file_line (new_int_expr (count, false), e);
 		count_expr = new_int_expr (count, false);
 	}
 	sblock = statement_subexpr (sblock, count_expr, &size);
@@ -957,11 +957,11 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 	statement_t *s;
 	const expr_t *src_expr = e->assign.src;
 	const expr_t *dst_expr = e->assign.dst;
-	type_t     *dst_type = get_type (dst_expr);
-	operand_t  *src = 0;
-	operand_t  *dst = 0;
-	operand_t  *ofs = 0;
-	operand_t  *target = 0;
+	auto dst_type = get_type (dst_expr);
+	operand_t  *src = nullptr;
+	operand_t  *dst = nullptr;
+	operand_t  *ofs = nullptr;
+	operand_t  *target = nullptr;
 	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
 	st_type_t   type = st_assign;
@@ -1025,7 +1025,7 @@ dereference_dst:
 		// need to get a pointer type, entity.field expressions do not provide
 		// one directly. FIXME it was probably a mistake extracting the operand
 		// type from the statement expression in dags
-		//dst_expr = expr_file_line (address_expr (dst_expr, 0), dst_expr);
+		scoped_src_loc (dst_expr);
 		dst_expr = address_expr (dst_expr, 0);
 		s = new_statement (st_address, "lea", dst_expr);
 		s->opa = dst;
@@ -1171,9 +1171,10 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	int         num_params = 0;
 
 	defspace_reset (arg_space);
+	scoped_src_loc (call);
 
 	int         num_args = list_count (&call->branch.args->list);
-	const expr_t *args[num_args];
+	const expr_t *args[num_args + 1];
 	list_scatter_rev (&call->branch.args->list, args);
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
@@ -1181,7 +1182,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		const char *arg_name = va (0, ".arg%d", arg_num++);
 		def_t      *def = new_def (arg_name, 0, current_func->arguments,
 								   sc_argument);
-		type_t     *arg_type = get_type (a);
+		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
 		int         alignment = arg_type->alignment;
 		if (alignment < 4) {
@@ -1191,7 +1192,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 														alignment);
 		def->type = arg_type;
 		def->reg = current_func->temp_reg;
-		const expr_t *def_expr = expr_file_line (new_def_expr (def), call);
+		const expr_t *def_expr = new_def_expr (def);
 		if (a->type == ex_args) {
 			args_va_list = def_expr;
 		} else {
@@ -1202,7 +1203,6 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 				num_params++;
 			}
 			const expr_t *assign = assign_expr (def_expr, a);
-			//expr_file_line (assign, call);
 			sblock = statement_single (sblock, assign);
 		}
 
@@ -1225,12 +1225,9 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 											 new_name_expr ("count"));
 		const expr_t *args_list = field_expr (args_va_list,
 											new_name_expr ("list"));
-		//expr_file_line (args_count, call);
-		//expr_file_line (args_list, call);
 
 		count = new_short_expr (num_params);
 		assign = assign_expr (args_count, count);
-		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 
 		if (args_params) {
@@ -1238,9 +1235,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		} else {
 			list = new_nil_expr ();
 		}
-		//expr_file_line (list, call);
 		assign = assign_expr (args_list, list);
-		//expr_file_line (assign, call);
 		sblock = statement_single (sblock, assign);
 	}
 	statement_t *s = new_statement (st_func, "call", call);
@@ -1256,8 +1251,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	s->use = use;
 	s->kill = kill;
 	sblock_add_statement (sblock, s);
-	sblock->next = new_sblock ();
-	return sblock->next;
+	return sblock;
 }
 
 static sblock_t *
@@ -1336,10 +1330,11 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 				 operand_t **base, operand_t **offset, pr_ushort_t *mode,
 				 operand_t **target)
 {
-	type_t     *type = get_type (ref);
+	auto type = get_type (ref);
 	if (!is_ptr (type)) {
 		internal_error (ref, "expected pointer in ref");
 	}
+	scoped_src_loc (ref);
 	if (ref->type == ex_address
 		&& (!ref->address.offset || is_constant (ref->address.offset))
 		&& ref->address.lvalue->type == ex_alias
@@ -1358,7 +1353,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		type = type->t.fldptr.type;
 		if (offs) {
 			const expr_t *lv = lvalue->alias.expr;
-			type_t     *lvtype = get_type (lv);
+			auto lvtype = get_type (lv);
 			int         o = expr_int (offs);
 			if (o < 0 || o + type_size (type) > type_size (lvtype)) {
 				// not a valid offset for the type, which technically should
@@ -1370,7 +1365,6 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 		} else {
 			alias = new_alias_expr (type, lvalue->alias.expr);
 		}
-		//expr_file_line (alias, ref);
 		return addressing_mode (sblock, alias, base, offset, mode, target);
 	} else if (ref->type != ex_alias || ref->alias.offset) {
 		// probably just a pointer
@@ -1465,6 +1459,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	const char *opcode;
 	statement_t *s;
 
+	scoped_src_loc (e);
 	debug (e, "RETURN");
 	opcode = "return";
 	if (!e->retrn.ret_val) {
@@ -1479,7 +1474,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
-			type_t     *ret_type = get_type (ret_val);
+			auto ret_type = get_type (ret_val);
 
 			// at_return is used for passing the result of a void_return
 			// function through void. v6 progs always use .return for the
@@ -1493,7 +1488,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	} else {
 		if (!e->retrn.at_return && e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
-			type_t     *ret_type = get_type (ret_val);
+			auto ret_type = get_type (ret_val);
 			operand_t  *target = 0;
 			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
 			pr_ushort_t mode = 0;
@@ -1514,7 +1509,6 @@ statement_return (sblock_t *sblock, const expr_t *e)
 				def_t      *ret_ptr = new_def (0, 0, 0, sc_local);
 				operand_t  *ret_op = def_operand (ret_ptr, &type_void, e);
 				ret_ptr->reg = REG;
-				//expr_file_line (with, e);
 				sblock = statement_single (sblock, with);
 				sblock = statement_subexpr (sblock, call, &ret_op);
 			}
@@ -1647,13 +1641,12 @@ static sblock_t *
 expr_alias (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
-	type_t    *type;
 	int        offset = 0;
 
 	if (e->alias.offset) {
 		offset = expr_int (e->alias.offset);
 	}
-	type = e->alias.type;
+	auto type = e->alias.type;
 	sblock = statement_subexpr (sblock, e->alias.expr, &aop);
 	*op = offset_alias_operand (type, offset, aop, e);
 	return sblock;
@@ -1775,7 +1768,7 @@ expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 	statement_t *s;
 	int         hop;
 	type_t     *res_type = e->hop.type;
-	type_t     *vec_type = get_type (e->hop.vec);
+	auto vec_type = get_type (e->hop.vec);
 
 	switch (e->hop.op) {
 		case '&':
@@ -1827,7 +1820,7 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const char *opcode = "swizzle";
 	statement_t *s;
 	int         swiz = 0;
-	type_t     *res_type = e->swizzle.type;
+	auto res_type = e->swizzle.type;
 
 	for (int i = 0; i < 4; i++) {
 		swiz |= (e->swizzle.source[i] & 3) << (2 * i);
@@ -1850,12 +1843,12 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_extend (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	type_t     *src_type = get_type (e->extend.src);
-	type_t     *res_type = e->extend.type;
+	auto src_type = get_type (e->extend.src);
+	auto res_type = e->extend.type;
 	int         src_width = type_width (src_type);
 	int         res_width = type_width (res_type);
-	type_t     *src_base = base_type (src_type);
-	type_t     *res_base = base_type (res_type);
+	auto src_base = base_type (src_type);
+	auto res_base = base_type (res_type);
 	static int mode[4][4] = {
 		{-1, 0, 1, 2},
 		{-1,-1, 3, 4},
@@ -1930,7 +1923,7 @@ statement_copy_elements (sblock_t **sblock, const expr_t *dst, const expr_t *src
 			index += statement_copy_elements (sblock, dst, e, index + base);
 		} else {
 			int         size = type_size (base_type (get_type (dst)));
-			type_t     *src_type = get_type (e);
+			auto src_type = get_type (e);
 			const expr_t *dst_ele = new_offset_alias_expr (src_type, dst,
 														 size * (index + base));
 			index += type_width (src_type);
@@ -1944,7 +1937,7 @@ static sblock_t *
 expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const expr_t *tmp;
-	type_t     *vec_type = get_type (e);
+	auto vec_type = get_type (e);
 
 	auto loc = pr.loc;
 	pr.loc = e->loc;
@@ -1960,7 +1953,7 @@ expr_vector_e (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_nil (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	type_t     *nil = e->nil;
+	const type_t *nil = e->nil;
 	const expr_t *size_expr;
 	size_t      nil_size;
 	operand_t  *zero;
@@ -2038,7 +2031,13 @@ statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		internal_error (e, "unexpected sub-expression type: %s",
 						expr_names[e->type]);
 
-	sblock = sfuncs[e->type] (sblock, e, op);
+	if (e->op) {
+		*op = e->op;
+	} else {
+		sblock = sfuncs[e->type] (sblock, e, op);
+		//FIXME const cast (store elsewhere)
+		((expr_t *) e)->op = *op;
+	}
 	return sblock;
 }
 

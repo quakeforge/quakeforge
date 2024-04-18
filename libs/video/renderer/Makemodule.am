@@ -58,9 +58,10 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
 	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_progs.c \
 	libs/video/renderer/r_scrap.c \
 	libs/video/renderer/r_screen.c \
-	libs/video/renderer/r_progs.c
+	libs/video/renderer/r_trails.c
 
 video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
@@ -97,12 +98,18 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/vid_common_gl.c \
 	libs/video/renderer/gl/vtxarray.c
 
-shader_src= libs/video/renderer/glsl/quakeforge.glsl
-shader_gen= libs/video/renderer/glsl/quakeforge.slc
+glslshaderpath = libs/video/renderer/glsl
+
+shader_src = \
+	$(glslshaderpath)/quakeforge.glsl \
+	$(glslshaderpath)/sgustavson.glsl
+shader_gen = \
+	$(glslshaderpath)/quakeforge.slc \
+	$(glslshaderpath)/sgustavson.slc
 
 SUFFIXES += .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
-	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
@@ -129,10 +136,11 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
 	libs/video/renderer/glsl/glsl_textures.c \
+	libs/video/renderer/glsl/glsl_trails.c \
 	libs/video/renderer/glsl/glsl_warp.c \
 	libs/video/renderer/glsl/qfglsl.c \
-	libs/video/renderer/glsl/quakeforge.glsl \
-	libs/video/renderer/glsl/vid_common_glsl.c
+	libs/video/renderer/glsl/vid_common_glsl.c \
+	$(shader_src)
 
 video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
@@ -217,7 +225,6 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/command.c \
 	libs/video/renderer/vulkan/capture.c \
 	libs/video/renderer/vulkan/debug.c \
-	libs/video/renderer/vulkan/descriptor.c \
 	libs/video/renderer/vulkan/device.c \
 	libs/video/renderer/vulkan/dsmanager.c \
 	libs/video/renderer/vulkan/image.c \
@@ -243,6 +250,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
+	libs/video/renderer/vulkan/vulkan_lightmap.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
 	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \
@@ -342,6 +350,8 @@ light_splatf_src = $(vkshaderpath)/light_splat.frag
 light_splatf_c = $(vkshaderpath)/light_splat.frag.spvc
 light_debug_src = $(vkshaderpath)/light_debug.frag
 light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
+light_oit_src = $(vkshaderpath)/light_oit.frag
+light_oit_c = $(vkshaderpath)/light_oit.frag.spvc
 lighting_cascadef_src = $(vkshaderpath)/lighting_cascade.frag
 lighting_cascadef_c = $(vkshaderpath)/lighting_cascade.frag.spvc
 lighting_cubef_src = $(vkshaderpath)/lighting_cube.frag
@@ -354,7 +364,10 @@ lighting_planef_c = $(vkshaderpath)/lighting_plane.frag.spvc
 lighting_h = $(vkshaderpath)/lighting.h
 composef_src = $(vkshaderpath)/compose.frag
 composef_c = $(vkshaderpath)/compose.frag.spvc
+compose_fwdf_src = $(vkshaderpath)/compose_fwd.frag
+compose_fwdf_c = $(vkshaderpath)/compose_fwd.frag.spvc
 infplane = $(vkshaderpath)/infplane.finc
+fog_h = $(vkshaderpath)/fog.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -362,20 +375,18 @@ matrices_h = $(vkshaderpath)/matrices.h
 entity_h = $(vkshaderpath)/entity.h
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
-aliasf_src = $(vkshaderpath)/alias.frag
-aliasf_c = $(vkshaderpath)/alias.frag.spvc
+qskin_fwdf_src = $(vkshaderpath)/qskin_fwd.frag
+qskin_fwdf_c = $(vkshaderpath)/qskin_fwd.frag.spvc
 alias_depth_src = $(vkshaderpath)/alias_depth.vert
 alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
-alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
-alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
+qskin_gbuf_src = $(vkshaderpath)/qskin_gbuf.frag
+qskin_gbuf_c = $(vkshaderpath)/qskin_gbuf.frag.spvc
 alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
 alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
 iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
-iqmf_src = $(vkshaderpath)/iqm.frag
-iqmf_c = $(vkshaderpath)/iqm.frag.spvc
-iqm_fwd_src = $(vkshaderpath)/iqm_fwd.frag
-iqm_fwd_c = $(vkshaderpath)/iqm_fwd.frag.spvc
+iqm_shadow_src = $(vkshaderpath)/iqm_shadow.vert
+iqm_shadow_c = $(vkshaderpath)/iqm_shadow.vert.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -402,9 +413,9 @@ $(partphysicsc_c): $(partphysicsc_src)
 $(partupdatec_c): $(partupdatec_src)
 $(particlev_c): $(particlev_src) $(matrices_h)
 $(particleg_c): $(particleg_src) $(matrices_h)
-$(particlef_c): $(particlef_src) $(oit_store) $(oit_h)
+$(particlef_c): $(particlef_src) $(oit_store) $(oit_h) $(fog_h)
 
-$(spritef_c): $(spritef_src)
+$(spritef_c): $(spritef_src) $(fog_h)
 
 $(sprite_gbufv_c): $(sprite_gbufv_src) $(matrices_h)
 
@@ -422,7 +433,7 @@ $(twodf_c): $(twodf_src)
 
 $(quakebspv_c): $(quakebspv_src) $(entity_h) $(matrices_h)
 
-$(quakebspf_c): $(quakebspf_src)
+$(quakebspf_c): $(quakebspf_src) $(fog_h)
 
 $(bsp_depth_c): $(bsp_depth_src) $(entity_h) $(matrices_h)
 
@@ -434,9 +445,9 @@ $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_shadow_c): $(bsp_shadow_src) $(entity_h)
 
-$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h)
+$(bsp_skyf_c): $(bsp_skyf_src) $(oit_store) $(oit_h) $(fog_h)
 
-$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h)
+$(bsp_turbf_c): $(bsp_turbf_src) $(oit_store) $(oit_h) $(fog_h)
 
 $(debug_c): $(debug_src) $(lighting_h)
 
@@ -452,31 +463,33 @@ $(light_splatf_c): $(light_splatf_src) $(lighting_h)
 
 $(light_debug_c): $(light_debug_src) $(lighting_h)
 
-$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main)
+$(light_oit_c): $(light_oit_src) $(lighting_h)
 
-$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main)
+$(lighting_nonef_c): $(lighting_nonef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main)
+$(lighting_cascadef_c): $(lighting_cascadef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
-$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main)
+$(lighting_cubef_c): $(lighting_cubef_src) $(lighting_h) $(lighting_main) $(fog_h)
+
+$(lighting_planef_c): $(lighting_planef_src) $(lighting_h) $(lighting_main) $(fog_h)
 
 $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
+
+$(compose_fwdf_c): $(compose_fwdf_src) $(oit_blend) $(oit_h)
 
 $(aliasv_c): $(aliasv_src) $(matrices_h)
 
 $(alias_depth_c): $(alias_depth_src) $(matrices_h)
 
-$(aliasf_c): $(aliasf_src)
+$(qskin_fwdf_c): $(qskin_fwdf_src) $(fog_h)
 
-$(alias_gbuf_c): $(alias_gbuf_src)
+$(qskin_gbuf_c): $(qskin_gbuf_src)
 
 $(alias_shadow_c): $(alias_shadow_src)
 
 $(iqmv_c): $(iqmv_src) $(matrices_h)
 
-$(iqmf_c): $(iqmf_src)
-
-$(iqm_fwd_c): $(iqm_fwd_src)
+$(iqm_shadow_c): $(iqm_shadow_src)
 
 $(output_c): $(output_src) $(matrices_h)
 
@@ -527,19 +540,20 @@ vkshader_c = \
 	$(light_splatv_c) \
 	$(light_splatf_c) \
 	$(light_debug_c) \
+	$(light_oit_c) \
 	$(lighting_cascadef_c) \
 	$(lighting_cubef_c) \
 	$(lighting_nonef_c) \
 	$(lighting_planef_c) \
 	$(composef_c) \
+	$(compose_fwdf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
-	$(aliasf_c) \
-	$(alias_gbuf_c) \
+	$(qskin_fwdf_c) \
+	$(qskin_gbuf_c) \
 	$(alias_shadow_c) \
 	$(iqmv_c) \
-	$(iqmf_c) \
-	$(iqm_fwd_c) \
+	$(iqm_shadow_c) \
 	$(output_c) \
 	$(passthrough_c) \
 	$(fstriangle_c) \
@@ -623,20 +637,23 @@ EXTRA_DIST += \
 	$(light_splatv_src) \
 	$(light_splatf_src) \
 	$(light_debug_src) \
+	$(light_oit_src) \
 	$(lighting_cascadef_src) \
 	$(lighting_cubef_src) \
+	$(lighting_main) \
 	$(lighting_nonef_src) \
 	$(lighting_planef_src) \
 	$(lighting_h) \
 	$(composef_src) \
+	$(compose_fwdf_src) \
 	$(aliasv_src) \
-	$(aliasf_src) \
+	$(qskin_fwdf_src) \
 	$(alias_depth_src) \
-	$(alias_gbuf_src) \
+	$(qskin_gbuf_src) \
 	$(alias_shadow_src) \
 	$(iqmv_src) \
-	$(iqmf_src) \
-	$(iqm_fwd_src) \
+	$(iqm_shadow_src) \
+	$(iqm_shadow_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \

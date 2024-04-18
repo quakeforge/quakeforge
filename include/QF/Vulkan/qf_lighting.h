@@ -56,11 +56,11 @@ enum {
 enum {
 	lighting_main,
 	lighting_shadow,
-	lighting_debug,
+	lighting_hull,
 };
 
 typedef struct qfv_light_render_s {
-	// mat_id (13) map_id (5) layer (11) type (2)
+	// mat_id (0,14) map_id (14,5) layer (19,11) nostyle (31,1)
 	uint32_t    id_data;
 	// light style (6)
 	uint32_t    style;
@@ -70,6 +70,7 @@ typedef struct qfv_light_render_s {
 #define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
 #define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
+#define LIGHTING_STAGES 8
 
 typedef struct qfv_framebufferset_s
 	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
@@ -79,28 +80,45 @@ typedef struct light_queue_s {
 	uint16_t    count;
 } light_queue_t;
 
+typedef struct light_idrad_s {
+	uint32_t    id;
+	float       radius;
+	uint32_t    leafnum;
+} light_idrad_t;
+
 typedef struct lightingframe_s {
 	VkDescriptorSet shadowmat_set;
 	VkDescriptorSet lights_set;
 	VkDescriptorSet attach_set;
 
+	VkQueryPool query;
+	VkFence     fence;
+
 	VkBuffer    shadowmat_buffer;
+	VkBuffer    shadowmat_id_buffer;
 	VkBuffer    light_buffer;
 	VkBuffer    render_buffer;
 	VkBuffer    style_buffer;
 	VkBuffer    id_buffer;
+	VkBuffer    radius_buffer;
 	VkBuffer    entid_buffer;
 	light_queue_t light_queue[4];
 
-	qfv_imageviewset_t views;
-	qfv_framebufferset_t framebuffers;
+	light_idrad_t *id_radius;
+	vec4f_t    *positions;
+
+	light_queue_t stage_queue[LIGHTING_STAGES];
+	// map_id (0,5) first layer (5,11)
+	uint16_t   *stage_targets;
+
+	qftVkCtx_t *qftVkCtx;
 } lightingframe_t;
 
 typedef struct lightingframeset_s
     DARRAY_TYPE (lightingframe_t) lightingframeset_t;
 
 typedef struct light_control_s {
-	uint8_t     renderpass_index;
+	uint8_t     stage_index;
 	uint8_t     map_index;
 	uint16_t    size;
 	uint16_t    layer;
@@ -123,6 +141,9 @@ typedef struct lightingctx_s {
 	qfv_lightmatset_t light_mats;
 	VkImage *map_images;
 	VkImageView *map_views;
+	VkImage  stage_images[LIGHTING_STAGES];
+	VkImageView stage_views[LIGHTING_STAGES];
+	VkFramebuffer stage_framebuffers[32][LIGHTING_STAGES];
 	bool    *map_cube;
 	int      num_maps;
 	VkImage  default_map;
@@ -153,8 +174,6 @@ typedef struct lightingctx_s {
 struct vulkan_ctx_s;
 
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Lighting_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadLights (struct scene_s *scene, struct vulkan_ctx_s *ctx);
 VkDescriptorSet Vulkan_Lighting_Descriptors (struct vulkan_ctx_s *ctx,
 											 int frame) __attribute__((pure));

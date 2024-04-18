@@ -56,7 +56,7 @@ typedef struct qfv_alias_mesh_s {
 	VkBuffer    vertex_buffer;
 	VkBuffer    uv_buffer;
 	VkBuffer    index_buffer;
-	VkDeviceMemory memory;
+	struct qfv_resource_s *resources;
 } qfv_alias_mesh_t;
 
 typedef struct qfv_alias_skin_s {
@@ -100,7 +100,5 @@ void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Alias_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_alias_h

@@ -1,0 +1,87 @@
+All of QuakeForge's standard particle physics functions converted to a script
+-- pt_static
+add_vel
+
+-- pt_grav
+add_vel
+add_grav
+
+-- pt_slowgrav
+add_vel
+add_grav
+
+-- pt_fire
+add_ramp 5 6
+add_vel
+color_ramp3
+alpha_ramp 6
+sub_grav
+
+-- pt_float
+add_vel
+sub_grav
+
+-- pt_explode
+add_ramp 10 8
+add_vel
+color_ramp1
+explode_vel 4
+add_grav
+
+-- pt_explode2
+add_ramp 15 8
+add_vel
+color_ramp2
+explode_vel 1
+add_grav
+
+-- pt_blob
+add_vel
+explode_vel 4
+add_grav
+
+-- pt_blob2
+add_vel
+damp_vel 4
+add_grav
+
+-- pt_smoke
+fade_alpha 0.4
+add_vel
+grow_scale 4
+//sub_slowgrav
+
+-- pt_smokecloud
+fade_alpha 0.55
+add_vel
+grow_scale 50
+sub_slowgrav
+
+-- pt_bloodcloud
+fade_alpha 0.25
+add_vel
+grow_scale 4
+add_grav
+
+-- pt_fadespark
+add_vel
+
+-- pt_fadespark2
+add_vel
+
+-- pt_fallfade
+fade_alpha 1
+add_vel
+add_fastgrav
+
+-- pt_fallfadespark
+add_ramp 15 8
+fade_alpha 1
+color_ramp1
+add_vel
+add_fastgrav
+
+-- pt_flame
+fade_alpha 0.125
+add_vel
+shrink_scale 2

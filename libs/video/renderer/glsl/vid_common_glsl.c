@@ -57,6 +57,11 @@
 
 static const char quakeforge_effect[] =
 #include "libs/video/renderer/glsl/quakeforge.slc"
+"--\n"	// ensure the last block of the previous file doesn't merge with
+		// the first block of the next file
+// Include Stefan Gustavson's noise functions in the QuakeForge shader
+// effect "file".
+#include "libs/video/renderer/glsl/sgustavson.slc"
 ;
 
 int					glsl_palette;
@@ -148,12 +153,42 @@ GLSL_Shutdown_Common (void)
 	GLSL_ShaderShutdown ();
 }
 
+static void
+debug_breakpoint (GLenum type)
+{
+	exit (1);
+}
+
+static void
+MessageCallback (GLenum source, GLenum type, GLuint id, GLenum severity,
+				 GLsizei length, const GLchar *message, const void *uparam)
+{
+	if (type == GL_DEBUG_TYPE_OTHER
+		&& severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+			return;
+	}
+	if (type != GL_DEBUG_TYPE_PERFORMANCE) {
+		fprintf (stderr,
+				 "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+				 ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+			     type, severity, message );
+	}
+	if (type == GL_DEBUG_TYPE_ERROR) {
+		debug_breakpoint (type);
+	}
+}
+
 void
 GLSL_Init_Common (void)
 {
 	EGLF_FindFunctions ();
 
 	GLSL_Common_Init_Cvars ();
+
+	if (0) {
+		qfeglEnable (GL_DEBUG_OUTPUT);
+		qfeglDebugMessageCallback (MessageCallback, nullptr);
+	}
 
 	GLSL_TextureInit ();
 

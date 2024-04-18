@@ -43,160 +43,192 @@ test_gamecode_libs= \
 	libs/util/libQFutil.la
 
 libs_gamecode_test_test_branch_SOURCES= \
-	libs/gamecode/test/test-branch.c
+	libs/gamecode/test/test-branch.c \
+	$(tracy_src)
 libs_gamecode_test_test_branch_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_branch_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_bitops_SOURCES= \
-	libs/gamecode/test/test-bitops.c
+	libs/gamecode/test/test-bitops.c \
+	$(tracy_src)
 libs_gamecode_test_test_bitops_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_bitops_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_callret_SOURCES= \
-	libs/gamecode/test/test-callret.c
+	libs/gamecode/test/test-callret.c \
+	$(tracy_src)
 libs_gamecode_test_test_callret_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_callret_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv0_SOURCES= \
-	libs/gamecode/test/test-conv0.c
+	libs/gamecode/test/test-conv0.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv0_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv0_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv1_SOURCES= \
-	libs/gamecode/test/test-conv1.c
+	libs/gamecode/test/test-conv1.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv1_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv1_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv2_SOURCES= \
-	libs/gamecode/test/test-conv2.c
+	libs/gamecode/test/test-conv2.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv2_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv2_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv3_SOURCES= \
-	libs/gamecode/test/test-conv3.c
+	libs/gamecode/test/test-conv3.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv3_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv3_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv4_SOURCES= \
-	libs/gamecode/test/test-conv4.c
+	libs/gamecode/test/test-conv4.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv4_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv4_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv5_SOURCES= \
-	libs/gamecode/test/test-conv5.c
+	libs/gamecode/test/test-conv5.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv5_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv5_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv6_SOURCES= \
-	libs/gamecode/test/test-conv6.c
+	libs/gamecode/test/test-conv6.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv6_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv6_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv7_SOURCES= \
-	libs/gamecode/test/test-conv7.c
+	libs/gamecode/test/test-conv7.c \
+	$(tracy_src)
 libs_gamecode_test_test_conv7_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv7_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_double_SOURCES= \
-	libs/gamecode/test/test-double.c
+	libs/gamecode/test/test-double.c \
+	$(tracy_src)
 libs_gamecode_test_test_double_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_double_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_extend_SOURCES= \
-	libs/gamecode/test/test-extend.c
+	libs/gamecode/test/test-extend.c \
+	$(tracy_src)
 libs_gamecode_test_test_extend_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_extend_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_float_SOURCES= \
-	libs/gamecode/test/test-float.c
+	libs/gamecode/test/test-float.c \
+	$(tracy_src)
 libs_gamecode_test_test_float_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_float_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_hops_SOURCES= \
-	libs/gamecode/test/test-hops.c
+	libs/gamecode/test/test-hops.c \
+	$(tracy_src)
 libs_gamecode_test_test_hops_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_hops_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_int_SOURCES= \
-	libs/gamecode/test/test-int.c
+	libs/gamecode/test/test-int.c \
+	$(tracy_src)
 libs_gamecode_test_test_int_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_int_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_jump_SOURCES= \
-	libs/gamecode/test/test-jump.c
+	libs/gamecode/test/test-jump.c \
+	$(tracy_src)
 libs_gamecode_test_test_jump_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_jump_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_lea_SOURCES= \
-	libs/gamecode/test/test-lea.c
+	libs/gamecode/test/test-lea.c \
+	$(tracy_src)
 libs_gamecode_test_test_lea_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_lea_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_load_SOURCES= \
-	libs/gamecode/test/test-load.c
+	libs/gamecode/test/test-load.c \
+	$(tracy_src)
 libs_gamecode_test_test_load_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_load_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_load64_SOURCES= \
-	libs/gamecode/test/test-load64.c
+	libs/gamecode/test/test-load64.c \
+	$(tracy_src)
 libs_gamecode_test_test_load64_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_load64_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_long_SOURCES= \
-	libs/gamecode/test/test-long.c
+	libs/gamecode/test/test-long.c \
+	$(tracy_src)
 libs_gamecode_test_test_long_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_long_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_mem_SOURCES= \
-	libs/gamecode/test/test-mem.c
+	libs/gamecode/test/test-mem.c \
+	$(tracy_src)
 libs_gamecode_test_test_mem_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_mem_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_scale_SOURCES= \
-	libs/gamecode/test/test-scale.c
+	libs/gamecode/test/test-scale.c \
+	$(tracy_src)
 libs_gamecode_test_test_scale_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_scale_DEPENDENCIES=		$(test_gamecode_libs)
 
 libs_gamecode_test_test_stack_SOURCES= \
-	libs/gamecode/test/test-stack.c
+	libs/gamecode/test/test-stack.c \
+	$(tracy_src)
 libs_gamecode_test_test_stack_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_stack_DEPENDENCIES=		$(test_gamecode_libs)
 
 libs_gamecode_test_test_state_SOURCES= \
-	libs/gamecode/test/test-state.c
+	libs/gamecode/test/test-state.c \
+	$(tracy_src)
 libs_gamecode_test_test_state_LDADD=			$(test_gamecode_libs)
 
 libs_gamecode_test_test_store_SOURCES= \
-	libs/gamecode/test/test-store.c
+	libs/gamecode/test/test-store.c \
+	$(tracy_src)
 libs_gamecode_test_test_store_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_store_DEPENDENCIES=		$(test_gamecode_libs)
 
 libs_gamecode_test_test_store64_SOURCES= \
-	libs/gamecode/test/test-store64.c
+	libs/gamecode/test/test-store64.c \
+	$(tracy_src)
 libs_gamecode_test_test_store64_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_store64_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_string_SOURCES= \
-	libs/gamecode/test/test-string.c
+	libs/gamecode/test/test-string.c \
+	$(tracy_src)
 libs_gamecode_test_test_string_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_string_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_swizzle_SOURCES= \
-	libs/gamecode/test/test-swizzle.c
+	libs/gamecode/test/test-swizzle.c \
+	$(tracy_src)
 libs_gamecode_test_test_swizzle_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_swizzle_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_unsigned_SOURCES= \
-	libs/gamecode/test/test-unsigned.c
+	libs/gamecode/test/test-unsigned.c \
+	$(tracy_src)
 libs_gamecode_test_test_unsigned_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_unsigned_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_vector_SOURCES= \
-	libs/gamecode/test/test-vector.c
+	libs/gamecode/test/test-vector.c \
+	$(tracy_src)
 libs_gamecode_test_test_vector_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_vector_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_with_SOURCES= \
-	libs/gamecode/test/test-with.c
+	libs/gamecode/test/test-with.c \
+	$(tracy_src)
 libs_gamecode_test_test_with_LDADD=				$(test_gamecode_libs)
 libs_gamecode_test_test_with_DEPENDENCIES=		$(test_gamecode_libs)

@@ -46,7 +46,7 @@ typedef enum storage_class_e {
 } storage_class_t;
 
 typedef struct specifier_s {
-	type_t     *type;
+	const type_t *type;
 	struct param_s *params;
 	struct symbol_s *sym;
 	storage_class_t storage;

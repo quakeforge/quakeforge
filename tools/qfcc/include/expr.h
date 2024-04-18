@@ -92,7 +92,7 @@ typedef struct designator_s {
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
-	type_t     *type;
+	const type_t *type;
 	const expr_t *expr;			///< initializer expression
 	designator_t *designator;	///< for labeled initializers
 } element_t;
@@ -130,7 +130,7 @@ typedef struct {
 } ex_temp_t;
 
 typedef struct {
-	type_t     *type;			///< Type of vector (vector/quaternion)
+	const type_t *type;			///< Type of vector (vector/quaternion)
 	ex_list_t   list;			///< Linked list of element expressions.
 } ex_vector_t;
 
@@ -145,14 +145,14 @@ typedef struct {
 */
 typedef struct ex_pointer_s {
 	int         val;
-	type_t     *type;
+	const type_t *type;
 	struct def_s *def;
 	struct operand_s *tempop;
 } ex_pointer_t;
 
 typedef struct ex_func_s {
 	int         val;
-	type_t     *type;
+	const type_t *type;
 } ex_func_t;
 
 typedef struct {
@@ -215,7 +215,7 @@ typedef struct {
 typedef struct ex_value_s {
 	struct ex_value_s *next;
 	struct daglabel_s *daglabel;///< dag label for this value
-	type_t     *type;
+	const type_t *type;
 	etype_t     lltype;
 	union {
 		const char *string_val;			///< string constant
@@ -238,13 +238,13 @@ typedef struct ex_value_s {
 } ex_value_t;
 
 typedef struct {
-	type_t     *type;			///< type to view the expression
+	const type_t *type;			///< type to view the expression
 	const expr_t *expr;			///< the expression to alias
 	const expr_t *offset;		///< offset for alias
 } ex_alias_t;
 
 typedef struct {
-	type_t     *type;			///< pointer type
+	const type_t *type;			///< pointer type
 	const expr_t *lvalue;		///< the lvalue being addressed
 	const expr_t *offset;		///< offset from the address
 } ex_address_t;
@@ -260,7 +260,7 @@ typedef struct {
 	const expr_t *index;		///< index for indirect branches
 	const expr_t *test;			///< test expression (null for jump/call)
 	const expr_t *args;			///< only for call
-	type_t     *ret_type;		///< void for non-call
+	const type_t *ret_type;		///< void for non-call
 } ex_branch_t;
 
 typedef struct {
@@ -293,18 +293,18 @@ typedef struct {
 	unsigned    source[4];		///< src component indices
 	unsigned    neg;			///< bitmask of dst components to negate
 	unsigned    zero;			///< bitmask of dst components to 0
-	type_t     *type;			///< result type
+	const type_t *type;			///< result type
 } ex_swizzle_t;
 
 typedef struct {
 	const expr_t *src;			///< source expression
 	int         extend;			///< extend mode 0: 0, 1: 1, 2: copy/0 3:-1
 	bool        reverse;		///< reverse resultant vector
-	type_t     *type;			///< result type;
+	const type_t *type;			///< result type;
 } ex_extend_t;
 
 typedef struct {
-	type_t     *type;			///< overall type of multivector
+	const type_t *type;			///< overall type of multivector
 	algebra_t  *algebra;		///< owning algebra
 	ex_list_t   components;		///< multivector components
 } ex_multivec_t;
@@ -314,6 +314,7 @@ typedef struct {
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
+	struct operand_s *op;
 	expr_type   type;			///< the type of the result of this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    paren:1;		///< the expression is enclosed in ()
@@ -342,7 +343,7 @@ typedef struct expr_s {
 		ex_return_t retrn;				///< return expr params
 		ex_adjstk_t adjstk;				///< stack adjust param
 		ex_with_t   with;				///< with expr param
-		type_t     *nil;				///< type for nil if known
+		const type_t *nil;				///< type for nil if known
 		ex_horizontal_t hop;			///< horizontal vector operation
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation
@@ -364,8 +365,18 @@ extern const char *expr_names[];
 const expr_t *type_mismatch (const expr_t *e1, const expr_t *e2, int op);
 
 const expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
-							  struct type_s *t1, struct type_s *t2);
-const expr_t *test_error (const expr_t *e, struct type_s *t);
+							  const type_t *t1, const type_t *t2);
+const expr_t *test_error (const expr_t *e, const type_t *t);
+
+/** Set the current source location for subsequent new expressions.
+
+	Returns error expression with saved source location
+*/
+expr_t *set_src_loc (const expr_t *e);
+void restore_src_loc (expr_t **e);
+#define scoped_src_loc(e) \
+	__attribute__((cleanup(restore_src_loc))) \
+	expr_t *srclocScope = set_src_loc(e)
 
 extern expr_t *local_expr;
 
@@ -375,7 +386,7 @@ extern expr_t *local_expr;
 	\return         Pointer to the type description, or null if the expression
 					type (expr_t::type) is inappropriate.
 */
-type_t *get_type (const expr_t *e);
+const type_t *get_type (const expr_t *e);
 
 /**	Get the basic type code of the expression result.
 
@@ -406,14 +417,6 @@ expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
 	\return			The new expression node.
 */
 expr_t *new_expr (void);
-
-/**	Copy source expression's file and line to the destination expression
-
-	\param dst		The expression to receive the file and line
-	\param src		The expression from which the file and line will be taken
-	\return			\a dst
-*/
-expr_t *expr_file_line (expr_t *dst, const expr_t *src);
 
 /**	Create a new label name.
 
@@ -543,7 +546,8 @@ expr_t *new_horizontal_expr (int op, const expr_t *vec, type_t *type);
 
 const expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 
-expr_t *new_extend_expr (const expr_t *src, type_t *type, int ext, bool rev);
+const expr_t *new_extend_expr (const expr_t *src, const type_t *type, int ext,
+							   bool rev);
 
 /**	Create a new def reference (non-temporary variable) expression node.
 
@@ -598,7 +602,7 @@ const expr_t *new_value_expr (ex_value_t *value, bool implicit);
 	\param type		The type to use for the zero.
 	\return			The new value expression.
 */
-const expr_t *new_zero_expr (type_t *type);
+const expr_t *new_zero_expr (const type_t *type);
 
 /**	Create a new symbol expression node from a name.
 
@@ -662,7 +666,8 @@ const expr_t *new_entity_expr (int entity_val);
 	\return			The new field constant expression node
 					(expr_t::e::field_val).
 */
-const expr_t *new_field_expr (int field_val, type_t *type, struct def_s *def);
+const expr_t *new_field_expr (int field_val, const type_t *type,
+							  struct def_s *def);
 struct symbol_s *get_struct_field (const type_t *t1, const expr_t *e1,
 								   const expr_t *e2);
 
@@ -673,7 +678,7 @@ struct symbol_s *get_struct_field (const type_t *t1, const expr_t *e1,
 	\return			The new function constant expression node
 					(expr_t::e::func_val).
 */
-const expr_t *new_func_expr (int func_val, type_t *type);
+const expr_t *new_func_expr (int func_val, const type_t *type);
 
 /** Create a new pointer constant expression node.
 
@@ -683,7 +688,7 @@ const expr_t *new_func_expr (int func_val, type_t *type);
 	\return			The new pointer constant expression node
 					(expr_t::e::pointer_val).
 */
-const expr_t *new_pointer_expr (int val, type_t *type, struct def_s *def);
+const expr_t *new_pointer_expr (int val, const type_t *type, struct def_s *def);
 
 /** Create a new quaternion constant expression node.
 
@@ -817,8 +822,8 @@ expr_t *new_this_expr (void);
 */
 const expr_t *new_ret_expr (type_t *type);
 
-const expr_t *new_alias_expr (type_t *type, const expr_t *expr);
-const expr_t *new_offset_alias_expr (type_t *type, const expr_t *expr,
+const expr_t *new_alias_expr (const type_t *type, const expr_t *expr);
+const expr_t *new_offset_alias_expr (const type_t *type, const expr_t *expr,
 								     int offset);
 
 expr_t *new_address_expr (const type_t *lvtype, const expr_t *lvalue,
@@ -835,7 +840,7 @@ expr_t *new_with_expr (int mode, int reg, const expr_t *val);
 	\param num		The index of the parameter (0-7).
 	\return			A new expression referencing the parameter slot.
 */
-const expr_t *new_param_expr (type_t *type, int num);
+const expr_t *new_param_expr (const type_t *type, int num);
 
 expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 						 const expr_t *count);
@@ -860,7 +865,7 @@ const expr_t *convert_nil (const expr_t *e, const type_t *t) __attribute__((warn
 const expr_t *test_expr (const expr_t *e);
 void backpatch (ex_boollist_t *list, const expr_t *label);
 const expr_t *convert_bool (const expr_t *e, int block) __attribute__((warn_unused_result));
-const expr_t *convert_from_bool (const expr_t *e, type_t *type) __attribute__((warn_unused_result));
+const expr_t *convert_from_bool (const expr_t *e, const type_t *type) __attribute__((warn_unused_result));
 const expr_t *bool_expr (int op, const expr_t *label, const expr_t *e1,
 					     const expr_t *e2);
 const expr_t *binary_expr (int op, const expr_t *e1, const expr_t *e2);
@@ -876,7 +881,7 @@ const expr_t *branch_expr (int op, const expr_t *test, const expr_t *label);
 const expr_t *goto_expr (const expr_t *label);
 const expr_t *jump_table_expr (const expr_t *table, const expr_t *index);
 const expr_t *call_expr (const expr_t *func, const expr_t *args,
-						 type_t *ret_type);
+						 const type_t *ret_type);
 const expr_t *return_expr (struct function_s *f, const expr_t *e);
 const expr_t *at_return_expr (struct function_s *f, const expr_t *e);
 const expr_t *conditional_expr (const expr_t *cond, const expr_t *e1,
@@ -885,7 +890,7 @@ const expr_t *incop_expr (int op, const expr_t *e, int postop);
 const expr_t *array_expr (const expr_t *array, const expr_t *index);
 const expr_t *deref_pointer_expr (const expr_t *pointer);
 const expr_t *offset_pointer_expr (const expr_t *pointer, const expr_t *offset);
-const expr_t *address_expr (const expr_t *e1, type_t *t);
+const expr_t *address_expr (const expr_t *e1, const type_t *t);
 const expr_t *build_if_statement (int not, const expr_t *test, const expr_t *s1,
 								  const expr_t *els, const expr_t *s2);
 const expr_t *build_while_statement (int not, const expr_t *test,
@@ -904,8 +909,8 @@ const expr_t *build_state_expr (const expr_t *e);
 const expr_t *think_expr (struct symbol_s *think_sym);
 int is_lvalue (const expr_t *expr) __attribute__((pure));
 const expr_t *assign_expr (const expr_t *dst, const expr_t *src);
-const expr_t *cast_expr (type_t *t, const expr_t *e);
-const expr_t *cast_error (const expr_t *e, type_t *t1, type_t *t2);
+const expr_t *cast_expr (const type_t *t, const expr_t *e);
+const expr_t *cast_error (const expr_t *e, const type_t *t1, const type_t *t2);
 
 const char *get_op_string (int op) __attribute__((const));
 
@@ -913,11 +918,11 @@ struct keywordarg_s;
 struct class_type_s;
 const expr_t *selector_expr (struct keywordarg_s *selector);
 const expr_t *protocol_expr (const char *protocol);
-const expr_t *encode_expr (type_t *type);
+const expr_t *encode_expr (const type_t *type);
 const expr_t *super_expr (struct class_type_s *class_type);
 const expr_t *message_expr (const expr_t *receiver,
 							struct keywordarg_s *message);
-const expr_t *sizeof_expr (const expr_t *expr, type_t *type);
+const expr_t *sizeof_expr (const expr_t *expr, const type_t *type);
 
 const expr_t *fold_constants (const expr_t *e);
 
@@ -931,24 +936,24 @@ bool is_mult (const expr_t *expr) __attribute__((pure));
 bool is_neg (const expr_t *expr) __attribute__((pure));
 
 const expr_t *neg_expr (const expr_t *e);
-const expr_t *ext_expr (const expr_t *src, type_t *type, int extend,
+const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,
 						bool reverse);
-const expr_t *scale_expr (type_t *type, const expr_t *a, const expr_t *b);
+const expr_t *scale_expr (const type_t *type, const expr_t *a, const expr_t *b);
 
 const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 
-const expr_t *typed_binary_expr (type_t *type, int op,
+const expr_t *typed_binary_expr (const type_t *type, int op,
 								 const expr_t *e1, const expr_t *e2);
 
 int count_terms (const expr_t *expr) __attribute__((pure));
 void scatter_terms (const expr_t *sum,
 					const expr_t **adds, const expr_t **subs);
-const expr_t *gather_terms (type_t *type,
+const expr_t *gather_terms (const type_t *type,
 							const expr_t **adds, const expr_t **subs);
 int count_factors (const expr_t *expr) __attribute__((pure));
 void scatter_factors (const expr_t *prod, const expr_t **factors);
-const expr_t *gather_factors (type_t *type, int op, const expr_t **factors,
-							  int count);
+const expr_t *gather_factors (const type_t *type, int op,
+							  const expr_t **factors, int count);
 
 ///@}
 

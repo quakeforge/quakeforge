@@ -43,7 +43,7 @@ gl_Fog_SetupFrame (void)
 	Fog_GetColor (fogcolor);
 	qfglFogfv (GL_FOG_COLOR, fogcolor);
 	qfglFogf (GL_FOG_DENSITY, Fog_GetDensity () / 64.0);
-	qfglFogi (GL_FOG_MODE, GL_EXP2);
+	qfglFogi (GL_FOG_MODE, GL_EXP);
 }
 
 

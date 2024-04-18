@@ -119,7 +119,7 @@ set_storage_bits (def_t *def, storage_class_t storage)
 }
 
 def_t *
-new_def (const char *name, type_t *type, defspace_t *space,
+new_def (const char *name, const type_t *type, defspace_t *space,
 		 storage_class_t storage)
 {
 	def_t      *def;
@@ -152,7 +152,8 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
+	if (is_class (type)
+		|| (is_array (type) && is_class(dereference_type (type)))) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;
@@ -178,7 +179,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 }
 
 def_t *
-cover_alias_def (def_t *def, type_t *type, int offset)
+cover_alias_def (def_t *def, const type_t *type, int offset)
 {
 	def_t      *alias;
 
@@ -203,7 +204,7 @@ cover_alias_def (def_t *def, type_t *type, int offset)
 }
 
 def_t *
-alias_def (def_t *def, type_t *type, int offset)
+alias_def (def_t *def, const type_t *type, int offset)
 {
 	if (def->alias) {
 		expr_t      e = {
@@ -219,7 +220,7 @@ alias_def (def_t *def, type_t *type, int offset)
 }
 
 def_t *
-temp_def (type_t *type)
+temp_def (const type_t *type)
 {
 	def_t      *temp;
 	defspace_t *space = current_func->locals->space;
@@ -396,7 +397,7 @@ init_elements (struct def_s *def, const expr_t *eles)
 				reloc_def_op (c->labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				type_t     *ctype = get_type (c);
+				auto ctype = get_type (c);
 				if (ctype != element->type
 					&& type_assignable (element->type, ctype)) {
 					if (!c->implicit
@@ -527,11 +528,11 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 		symbol_t   *sym = init->symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
+			scoped_src_loc (init);
 			auto new = new_field_expr (0, field->type, field->s.def);
 			if (new->type != ex_value) {
 				internal_error (init, "expected value expression");
 			}
-			//FIXME init = expr_file_line (new, init);
 			init = new;
 		}
 	}
@@ -591,8 +592,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	if (!sym->s.def) {
 		if (is_array (sym->type) && !type_size (sym->type)
 			&& init && init->type == ex_compound) {
-			sym->type = array_type (sym->type->t.array.type,
-									num_elements (init));
+			auto ele_type = dereference_type (sym->type);
+			sym->type = array_type (ele_type, num_elements (init));
 		}
 		if (sym->type == &type_auto) {
 			if (init) {
@@ -627,11 +628,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		type_t     *init_type;
 		if (init->type == ex_nil) {
 			init = convert_nil (init, sym->type);
 		}
-		init_type = get_type (init);
+		auto init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer: %s = %s",
 				   get_type_string (sym->type), get_type_string (init_type));

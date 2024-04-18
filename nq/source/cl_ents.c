@@ -69,6 +69,7 @@ set_t       cl_forcelink = SET_STATIC_INIT (MAX_EDICTS, alloc_forcelink);
 void
 CL_ClearEnts (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
@@ -139,8 +140,8 @@ static void
 set_entity_model (int ent_ind, int modelindex)
 {
 	entity_t    ent = cl_entities[ent_ind];
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
@@ -156,14 +157,12 @@ set_entity_model (int ent_ind, int modelindex)
 	// the model type
 	SET_ADD (&cl_forcelink, ent_ind);
 	animation->nolerp = 1; // don't try to lerp when the model has changed
-	if (ent_ind <= cl.maxclients) {
-		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, ent_ind);
-	}
 }
 
 void
 CL_RelinkEntities (void)
 {
+	qfZoneNamedN (re_zzone, "CL_RelinkEntities", true);
 	entity_t    ent;
 	entity_state_t *new, *old;
 	float       bobjrotate, frac, f;
@@ -203,10 +202,13 @@ CL_RelinkEntities (void)
 		// if the object wasn't included in the last packet, or the model
 		// has been removed, remove the entity
 		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
-			if (Entity_Valid (ent)) {
-				Scene_DestroyEntity (cl_world.scene, ent);
+			// don't delete the player entity
+			if (i != cl.viewentity) {
+				if (Entity_Valid (ent)) {
+					Scene_DestroyEntity (cl_world.scene, ent);
+				}
+				continue;
 			}
-			continue;
 		}
 
 		if (!Entity_Valid (ent)) {
@@ -214,9 +216,9 @@ CL_RelinkEntities (void)
 			SET_ADD (&cl_forcelink, i);
 		}
 		transform_t transform = Entity_Transform (ent);
-		renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-		animation_t *animation = Ent_GetComponent (ent.id, scene_animation, ent.reg);
-		vec4f_t    *old_origin = Ent_GetComponent (ent.id, scene_old_origin, ent.reg);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 
 		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			*old = *new;
@@ -231,23 +233,16 @@ CL_RelinkEntities (void)
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
 			|| new->colormap != old->colormap) {
 			old->colormap = new->colormap;
-			renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-														  new->colormap);
 		}
 		if (SET_TEST_MEMBER (&cl_forcelink, i)
 			|| new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
 			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
-				colormap_t  colormap = {
+				Entity_SetColormap (ent, &(colormap_t) {
 					.top = cl.players[i - 1].topcolor,
 					.bottom = cl.players[i - 1].bottomcolor,
-				};
-				Ent_SetComponent (ent.id, scene_colormap, ent.reg, &colormap);
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  i);
-				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,
-												cl.players[i - 1].bottomcolor);
+				});
 			}
 		}
 

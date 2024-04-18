@@ -103,7 +103,7 @@ new_value (void)
 }
 
 static void
-set_val_type (ex_value_t *val, type_t *type)
+set_val_type (ex_value_t *val, const type_t *type)
 {
 	val->type = type;
 	val->lltype = low_level_type (type);
@@ -175,7 +175,7 @@ new_entity_val (int entity_val)
 }
 
 ex_value_t *
-new_field_val (int field_val, type_t *type, def_t *def)
+new_field_val (int field_val, const type_t *type, def_t *def)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
@@ -187,7 +187,7 @@ new_field_val (int field_val, type_t *type, def_t *def)
 }
 
 ex_value_t *
-new_func_val (int func_val, type_t *type)
+new_func_val (int func_val, const type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
@@ -198,7 +198,7 @@ new_func_val (int func_val, type_t *type)
 }
 
 ex_value_t *
-new_pointer_val (int pointer_val, type_t *type, def_t *def,
+new_pointer_val (int pointer_val, const type_t *type, def_t *def,
 				 struct operand_s *tempop)
 {
 	ex_value_t  val;
@@ -271,7 +271,7 @@ new_short_val (short short_val)
 }
 
 ex_value_t *
-new_nil_val (type_t *type)
+new_nil_val (const type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
@@ -535,7 +535,7 @@ ReuseString (const char *str)
 }
 
 ex_value_t *
-offset_alias_value (ex_value_t *value, type_t *type, int offset)
+offset_alias_value (ex_value_t *value, const type_t *type, int offset)
 {
 	if (type_size (type) > type_size (value->type)) {
 		error (0, "unable to alias to a larger sized value");
@@ -622,7 +622,7 @@ emit_value (ex_value_t *value, def_t *def)
 {
 	def_t      *cn;
 	hashtab_t  *tab = 0;
-	type_t     *type;
+	const type_t *type;
 	ex_value_t  val = *value;
 
 	if (!string_imm_defs) {

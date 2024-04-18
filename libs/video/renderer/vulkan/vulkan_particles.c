@@ -44,7 +44,6 @@
 
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -163,6 +162,7 @@ create_buffers (vulkan_ctx_t *ctx)
 static void
 particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -182,10 +182,12 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	mat4f_t     mat;
 	mat4fidentity (mat);
+	vec4f_t     fog = Fog_Get ();
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat4f_t), &mat },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 64, sizeof (fog), &fog },
 	};
-	QFV_PushConstants (device, cmd, layout, 1, push_constants);
+	QFV_PushConstants (device, cmd, layout, 2, push_constants);
 	VkDeviceSize offsets[] = { 0 };
 	VkBuffer    buffers[] = {
 		pframe->states,
@@ -198,6 +200,7 @@ particles_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -208,7 +211,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 
 	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
 
-	__auto_type limits = &device->physDev->properties->limits;
+	__auto_type limits = &device->physDev->p.properties.limits;
 	VkMemoryRequirements req = {
 		.alignment = limits->minStorageBufferOffsetAlignment
 	};
@@ -332,6 +335,7 @@ wait_on_event (VkBuffer states, VkBuffer params, VkBuffer system,
 static void
 particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -373,6 +377,7 @@ static void
 particle_wait_physics (const exprval_t **params, exprval_t *result,
 					   exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -397,48 +402,42 @@ particle_wait_physics (const exprval_t **params, exprval_t *result,
 	dfunc->vkEndCommandBuffer (cmd);
 }
 
-static exprfunc_t particles_draw_func[] = {
-	{ .func = particles_draw },
-	{}
-};
-static exprfunc_t update_particles_func[] = {
-	{ .func = update_particles },
-	{}
-};
-static exprfunc_t particle_physics_func[] = {
-	{ .func = particle_physics },
-	{}
-};
-static exprfunc_t particle_wait_physics_func[] = {
-	{ .func = particle_wait_physics },
-	{}
-};
-static exprsym_t particles_task_syms[] = {
-	{ "particles_draw", &cexpr_function, particles_draw_func },
-	{ "update_particles", &cexpr_function, update_particles_func },
-	{ "particle_physics", &cexpr_function, particle_physics_func },
-	{ "particle_wait_physics", &cexpr_function, particle_wait_physics_func },
-	{}
-};
-
-void
-Vulkan_Particles_Init (vulkan_ctx_t *ctx)
+static void
+particle_shutdown (exprctx_t *ectx)
 {
-	QFV_Render_AddTasks (ctx, particles_task_syms);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	particlectx_t *pctx = ctx->particle_context;
+	size_t      frames = pctx->frames.size;
 
-	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
-	ctx->particle_context = pctx;
-	pctx->psystem = &r_psystem;
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type pframe = &pctx->frames.a[i];
+		dfunc->vkDestroyEvent (device->dev, pframe->updateEvent, 0);
+		dfunc->vkDestroyEvent (device->dev, pframe->physicsEvent, 0);
+	}
+
+	QFV_DestroyStagingBuffer (pctx->stage);
+	QFV_DestroyResource (device, pctx->resources);
+	free (pctx->resources);
+
+	free (pctx->frames.a);
+	free (pctx);
 }
 
-void
-Vulkan_Particles_Setup (vulkan_ctx_t *ctx)
+static void
+particle_startup (exprctx_t *ectx)
 {
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "particles init");
-
+	auto pctx = ctx->particle_context;
+	pctx->psystem = &r_psystem;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto pctx = ctx->particle_context;
 
 	size_t      frames = ctx->render_context->frames.size;
 	DARRAY_INIT (&pctx->frames, frames);
@@ -468,26 +467,56 @@ Vulkan_Particles_Setup (vulkan_ctx_t *ctx)
 	qfvPopDebug (ctx);
 }
 
-void
-Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
+static void
+particle_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	particlectx_t *pctx = ctx->particle_context;
-	size_t      frames = pctx->frames.size;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	for (size_t i = 0; i < frames; i++) {
-		__auto_type pframe = &pctx->frames.a[i];
-		dfunc->vkDestroyEvent (device->dev, pframe->updateEvent, 0);
-		dfunc->vkDestroyEvent (device->dev, pframe->physicsEvent, 0);
-	}
+	QFV_Render_AddShutdown (ctx, particle_shutdown);
+	QFV_Render_AddStartup (ctx, particle_startup);
 
-	QFV_DestroyStagingBuffer (pctx->stage);
-	QFV_DestroyResource (device, pctx->resources);
-	free (pctx->resources);
+	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
+	ctx->particle_context = pctx;
+}
 
-	free (pctx->frames.a);
-	free (pctx);
+static exprfunc_t particles_draw_func[] = {
+	{ .func = particles_draw },
+	{}
+};
+static exprfunc_t update_particles_func[] = {
+	{ .func = update_particles },
+	{}
+};
+static exprfunc_t particle_physics_func[] = {
+	{ .func = particle_physics },
+	{}
+};
+static exprfunc_t particle_wait_physics_func[] = {
+	{ .func = particle_wait_physics },
+	{}
+};
+
+static exprfunc_t particle_init_func[] = {
+	{ .func = particle_init },
+	{}
+};
+
+static exprsym_t particles_task_syms[] = {
+	{ "particles_draw", &cexpr_function, particles_draw_func },
+	{ "update_particles", &cexpr_function, update_particles_func },
+	{ "particle_physics", &cexpr_function, particle_physics_func },
+	{ "particle_wait_physics", &cexpr_function, particle_wait_physics_func },
+	{ "particle_init", &cexpr_function, particle_init_func },
+	{}
+};
+
+void
+Vulkan_Particles_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	QFV_Render_AddTasks (ctx, particles_task_syms);
 }
 
 psystem_t *__attribute__((pure))//FIXME?

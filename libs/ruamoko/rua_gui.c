@@ -41,8 +41,10 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 
+#include "QF/ui/canvas.h"
 #include "QF/ui/font.h"
 #include "QF/ui/passage.h"
+#include "QF/ui/shaper.h"
 #include "QF/ui/text.h"
 #include "QF/ui/view.h"
 
@@ -69,21 +71,25 @@ typedef struct {
 	PR_RESMAP (rua_font_t) font_map;
 	rua_font_t *fonts;
 
+	text_shaper_t  *shaper;
 	ecs_registry_t *reg;
-	uint32_t    text_base;
-	uint32_t    view_base;
-	uint32_t    passage_base;
+	canvas_system_t csys;
+	text_system_t   tsys;
+	ecs_system_t    vsys;
+	ecs_system_t    psys;
 } gui_resources_t;
 
 static rua_passage_t *
 passage_new (gui_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->passage_map);
 }
 
 static void
 passage_free (gui_resources_t *res, rua_passage_t *passage)
 {
+	qfZoneScoped (true);
 	if (passage->next) {
 		passage->next->prev = passage->prev;
 	}
@@ -94,24 +100,28 @@ passage_free (gui_resources_t *res, rua_passage_t *passage)
 static void
 passage_reset (gui_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->passage_map);
 }
 
 static inline rua_passage_t *
 passage_get (gui_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->passage_map, index);
 }
 
 static inline int __attribute__((pure))
 passage_index (gui_resources_t *res, rua_passage_t *passage)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->passage_map, passage);
 }
 
 static int
 alloc_passage (gui_resources_t *res, passage_t *passage)
 {
+	qfZoneScoped (true);
 	rua_passage_t *psg = passage_new (res);
 
 	psg->next = res->passages;
@@ -127,6 +137,7 @@ alloc_passage (gui_resources_t *res, passage_t *passage)
 static rua_passage_t * __attribute__((pure))
 _get_passage (gui_resources_t *res, int handle, const char *func)
 {
+	qfZoneScoped (true);
 	rua_passage_t *psg = passage_get (res, handle);
 	if (!psg) {
 		PR_RunError (res->pr, "invalid passage handle passed to %s", func);
@@ -138,36 +149,46 @@ _get_passage (gui_resources_t *res, int handle, const char *func)
 static rua_font_t *
 font_new (gui_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->font_map);
 }
 
 static void
 font_free (gui_resources_t *res, rua_font_t *font)
 {
+	qfZoneScoped (true);
+	if (font->next) {
+		font->next->prev = font->prev;
+	}
+	*font->prev = font->next;
 	PR_RESFREE (res->font_map, font);
 }
 
 static void
 font_reset (gui_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->font_map);
 }
 
 static inline rua_font_t *
 font_get (gui_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->font_map, index);
 }
 
 static inline int __attribute__((pure))
 font_index (gui_resources_t *res, rua_font_t *font)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->font_map, font);
 }
 
 static int
 alloc_font (gui_resources_t *res, font_t *font)
 {
+	qfZoneScoped (true);
 	rua_font_t *fnt = font_new (res);
 
 	fnt->next = res->fonts;
@@ -183,6 +204,7 @@ alloc_font (gui_resources_t *res, font_t *font)
 static rua_font_t * __attribute__((pure))
 _get_font (gui_resources_t *res, int handle, const char *func)
 {
+	qfZoneScoped (true);
 	rua_font_t *psg = font_get (res, handle);
 	if (!psg) {
 		PR_RunError (res->pr, "invalid font handle passed to %s", func);
@@ -194,6 +216,7 @@ _get_font (gui_resources_t *res, int handle, const char *func)
 static void
 bi_gui_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 
 	for (rua_passage_t *psg = res->passages; psg; psg = psg->next) {
@@ -204,7 +227,7 @@ bi_gui_clear (progs_t *pr, void *_res)
 
 	rua_font_t *font;
 	for (font = res->fonts; font; font = font->next) {
-		//FIXME can't unload fonts
+		Font_Free (font->font);
 	}
 	res->fonts = 0;
 	font_reset (res);
@@ -213,7 +236,9 @@ bi_gui_clear (progs_t *pr, void *_res)
 static void
 bi_gui_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
+	Shaper_Delete (res->shaper);
 	ECS_DelRegistry (res->reg);
 	PR_RESDELMAP (res->passage_map);
 	PR_RESDELMAP (res->font_map);
@@ -224,6 +249,7 @@ bi_gui_destroy (progs_t *pr, void *_res)
 
 bi (Font_Load)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	const char *font_path = P_GSTRING (pr, 0);
 	int         font_size = P_INT (pr, 1);
@@ -239,6 +265,7 @@ bi (Font_Load)
 
 bi (Font_Free)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	rua_font_t *font = get_font (res, P_INT (pr, 0));
 
@@ -248,14 +275,15 @@ bi (Font_Free)
 
 bi (Passage_New)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
-	ecs_system_t passage_sys = { .reg = res->reg, .base = res->passage_base };
-	passage_t  *passage = Passage_New (passage_sys);
+	passage_t  *passage = Passage_New (res->psys);
 	R_INT (pr) = alloc_passage (res, passage);
 }
 
 bi (Passage_ParseText)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	rua_passage_t *psg = get_passage (res, handle);
@@ -265,6 +293,7 @@ bi (Passage_ParseText)
 
 bi (Passage_Delete)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	rua_passage_t *psg = get_passage (res, handle);
@@ -274,19 +303,24 @@ bi (Passage_Delete)
 
 bi (Passage_ChildCount)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 0));
 
 	uint32_t    par = P_UINT (pr, 1);
-	R_UINT (pr) = psg->passage->hierarchy->childCount[par];
+	auto p = psg->passage;
+	hierarchy_t *h = Ent_GetComponent (p->hierarchy, ecs_hierarchy, p->reg);
+	R_UINT (pr) = h->childCount[par];
 }
 
 bi (Passage_GetChild)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	rua_passage_t *psg = get_passage (res, P_INT (pr, 0));
 
-	hierarchy_t *h = psg->passage->hierarchy;
+	auto p = psg->passage;
+	hierarchy_t *h = Ent_GetComponent (p->hierarchy, ecs_hierarchy, p->reg);
 	uint32_t    par = P_UINT (pr, 1);
 	uint32_t    index = P_UINT (pr, 2);
 	R_UINT (pr) = h->ent[h->childIndex[par] + index];
@@ -294,32 +328,32 @@ bi (Passage_GetChild)
 
 bi (Text_PassageView)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
-	rua_font_t *font = get_font (res, P_INT (pr, 0));
-	rua_passage_t *psg = get_passage (res, P_INT (pr, 1));
-	text_system_t textsys = {
-		.reg = res->reg,
-		.view_base = res->view_base,
-		.text_base = res->text_base,
-	};
-	view_t      view = Text_PassageView (textsys, font->font, psg->passage);
+	view_t      parent = View_FromEntity (res->vsys, P_INT (pr, 0));
+	rua_font_t *font = get_font (res, P_INT (pr, 1));
+	rua_passage_t *psg = get_passage (res, P_INT (pr, 2));
+	view_t      view = Text_PassageView (res->tsys, parent,
+										 font->font, psg->passage,
+										 res->shaper);
 	R_INT (pr) = view.id;//FIXME
 }
 
 bi (Text_SetScript)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    textent = P_UINT (pr, 0);
 	const char *lang = P_GSTRING (pr, 1);
 	int         script = P_INT (pr, 1);
 	int         dir = P_INT (pr, 1);
-	text_system_t textsys = { .reg = res->reg, .text_base = res->text_base };
-	Text_SetScript (textsys, textent, lang, script, dir);
+	Text_SetScript (res->tsys, textent, lang, script, dir);
 }
 
 static void
 draw_glyphs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 {
+	qfZoneScoped (true);
 	uint32_t    count = gref->count;
 	glyphobj_t *glyph = glyphset->glyphs + gref->start;
 
@@ -333,6 +367,7 @@ draw_glyphs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 static void
 draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 {
+	qfZoneScoped (true);
 	int x = abs[ind].x;
 	int y = abs[ind].y;
 	int w = len[ind].x;
@@ -345,10 +380,11 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 
 bi (Text_Draw)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
-	uint32_t    passage_glyphs = res->text_base + text_passage_glyphs;
-	uint32_t    glyphs = res->text_base + text_glyphs;
-	uint32_t    vhref = res->view_base + view_href;
+	uint32_t    passage_glyphs = res->tsys.text_base + text_passage_glyphs;
+	uint32_t    glyphs = res->tsys.text_base + text_glyphs;
+	uint32_t    vhref = res->tsys.view_base + view_href;
 	ecs_pool_t *pool = &res->reg->comp_pools[passage_glyphs];
 	uint32_t    count = pool->count;
 	uint32_t   *ent = pool->dense;
@@ -360,92 +396,93 @@ bi (Text_Draw)
 		// first paragraph's first child are all text views
 		view_t      para_view = View_GetChild (psg_view, 0);
 		view_t      text_view = View_GetChild (para_view, 0);
-		hierref_t  *href = View_GetRef (text_view);
 		glyphset_t *gs = glyphset++;
-		hierarchy_t *h = href->hierarchy;
+		hierref_t   href = View_GetRef (text_view);
+		hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, res->reg);
 		view_pos_t *abs = h->components[view_abs];
 		view_pos_t *len = h->components[view_len];
 
-		for (uint32_t i = href->index; i < h->num_objects; i++) {
+		for (uint32_t i = href.index; i < h->num_objects; i++) {
 			glyphref_t *gref = Ent_GetComponent (h->ent[i], glyphs, res->reg);
 			draw_glyphs (&abs[i], gs, gref);
 
 			if (0) draw_box (abs, len, i, 253);
 		}
 		if (0) {
-			for (uint32_t i = 1; i < href->index; i++) {
+			for (uint32_t i = 1; i < href.index; i++) {
 				draw_box (abs, len, i, 251);
 			}
 		}
 	}
+	Shaper_FlushUnused (res->shaper);
 }
 
 bi (View_Delete)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_Delete (view);
 }
 
 bi (View_ChildCount)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	R_UINT (pr) = View_ChildCount (view);
 }
 
 bi (View_GetChild)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	uint32_t    index = P_UINT (pr, 1);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	R_UINT (pr) = View_GetChild (view, index).id;
 }
 
 bi (View_SetPos)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_SetPos (view, x, y);
 }
 
 bi (View_SetLen)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_SetLen (view, x, y);
 }
 
 bi (View_GetLen)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	view_pos_t  l = View_GetLen (view);
 	R_var (pr, ivec2) = (pr_ivec2_t) { l.x, l.y };
 }
 
 bi (View_UpdateHierarchy)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = _res;
 	uint32_t    viewid = P_UINT (pr, 0);
-	view_t      view = { .id = viewid, .reg = res->reg,
-						 .comp = res->view_base + view_href };
+	view_t      view = View_FromEntity (res->vsys, viewid);
 	View_UpdateHierarchy (view);
 }
 
@@ -462,7 +499,7 @@ static builtin_t builtins[] = {
 	bi(Passage_ChildCount,  2, p(ptr), p(uint)),
 	bi(Passage_GetChild,    3, p(ptr), p(uint), p(uint)),
 
-	bi(Text_PassageView,    2, p(ptr), p(int)),
+	bi(Text_PassageView,    3, p(int), p(ptr), p(int)),
 	bi(Text_SetScript,      4, p(uint), p(string), p(int), p (int)),
 
 	bi(View_Delete,         1, p(uint)),
@@ -481,18 +518,46 @@ static builtin_t builtins[] = {
 void
 RUA_GUI_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	gui_resources_t *res = calloc (1, sizeof (gui_resources_t));
 	res->pr = pr;
 
 	PR_Resources_Register (pr, "Draw", res, bi_gui_clear, bi_gui_destroy);
 	PR_RegisterBuiltins (pr, builtins, res);
 
-	res->reg = ECS_NewRegistry ();
-	res->text_base = ECS_RegisterComponents (res->reg, text_components,
-											 text_comp_count);
-	res->view_base = ECS_RegisterComponents (res->reg, view_components,
-											 view_comp_count);
-	res->passage_base = ECS_RegisterComponents (res->reg, passage_components,
-												passage_comp_count);
+	res->reg = ECS_NewRegistry ("rua gui");
+	Canvas_InitSys (&res->csys, res->reg);
+	res->tsys = (text_system_t) {
+		.reg = res->reg,
+		.view_base = res->csys.view_base,
+		.text_base = res->csys.text_base,
+	};
+	res->vsys = (ecs_system_t) {
+		.reg = res->reg,
+		.base = res->csys.view_base,
+	};
+	res->psys = (ecs_system_t) {
+		.reg = res->reg,
+		.base = ECS_RegisterComponents (res->reg, passage_components,
+										passage_comp_count),
+	};
 	ECS_CreateComponentPools (res->reg);
+	res->shaper = Shaper_New ();
+}
+
+canvas_system_t
+RUA_GUI_GetCanvasSystem (progs_t *pr)
+{
+	qfZoneScoped (true);
+	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	return res->csys;
+}
+
+passage_t *
+RUA_GUI_GetPassage (progs_t *pr, int handle)
+{
+	qfZoneScoped (true);
+	gui_resources_t *res = PR_Resources_Find (pr, "Draw");
+	auto psg = get_passage (res, handle);
+	return psg->passage;
 }

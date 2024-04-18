@@ -38,10 +38,11 @@
 struct plitem_s;
 struct cvar_s;
 struct scene_s;
-struct skin_s;
+struct particle_s;
 
 struct mod_alias_ctx_s;
 struct mod_sprite_ctx_s;
+typedef struct skin_s skin_t;
 struct entqueue_s;
 struct framebuffer_s;
 struct vrect_s;
@@ -69,14 +70,9 @@ typedef struct vid_model_funcs_s {
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
-	void (*Skin_Free) (struct skin_s *skin);
-	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
-	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
-									const char *skinname);
-	void (*Skin_SetupSkin) (struct skin_s *skin, int cmap);
-	void (*Skin_SetTranslation) (int cmap, int top, int bottom);
-	void (*Skin_ProcessTranslation) (int cmap, const byte *translation);
-	void (*Skin_InitTranslations) (void);
+	uint32_t (*skin_set) (const char *skinname);
+	void (*skin_setupskin) (skin_t *skin);
+	void (*skin_destroy) (skin_t *skin);
 } vid_model_funcs_t;
 
 struct tex_s;
@@ -115,9 +111,13 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 	int (*Draw_AddFont) (struct font_s *font);
 	void (*Draw_Glyph) (int x, int y, int fontid, int glyphid, int c);
+	void (*Draw_SetClip) (int x, int y, int w, int h);
+	void (*Draw_ResetClip) (void);
+	void (*Draw_Flush) (void);
 
 	struct psystem_s *(*ParticleSystem) (void);
-	void (*R_Init) (void);
+	struct psystem_s *(*TrailSystem) (void);
+	void (*R_Init) (struct plitem_s *config);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewScene) (struct scene_s *scene);
@@ -126,6 +126,7 @@ typedef struct vid_render_funcs_s {
 	void (*begin_frame) (void);
 	void (*render_view) (void);
 	void (*draw_particles) (struct psystem_s *psystem);
+	void (*draw_trails) (struct psystem_s *psystem);
 	void (*draw_transparent) (void);
 	void (*post_process) (struct framebuffer_s *src);
 	void (*set_2d) (int scaled);

@@ -7,5 +7,6 @@ void traceon (void) = #0;
 void traceoff (void) = #0;
 entity spawn (void) = #0;
 void remove (entity e) = #0;
+int ptr_valid (void *ptr) = #0;
 id obj_msgSend (id receiver, SEL op, ...) = #0;
 void __obj_exec_class (struct obj_module *msg) = #0;

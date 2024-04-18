@@ -50,7 +50,7 @@ typedef struct player_info_s {
 	int         topcolor;
 	int         bottomcolor;
 	struct info_key_s *skinname;
-	struct skin_s *skin;
+	uint32_t    skin;
 
 	entity_t    flag_ent;
 

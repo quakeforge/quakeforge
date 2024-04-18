@@ -61,36 +61,42 @@ typedef struct {
 static rua_script_t *
 script_new (script_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->script_map);
 }
 
 static void
 script_free (script_resources_t *res, rua_script_t *script)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->script_map, script);
 }
 
 static void
 script_reset (script_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->script_map);
 }
 
 static inline rua_script_t *
 script_get (script_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->script_map, index);
 }
 
 static inline int __attribute__((pure))
 script_index (script_resources_t *res, rua_script_t *script)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->script_map, script);
 }
 
 static void
 bi_script_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = (script_resources_t *) _res;
 	for (rua_script_t *s = res->scripts; s; s = s->next) {
 		free ((char *) s->script.single);
@@ -103,12 +109,14 @@ bi_script_clear (progs_t *pr, void *_res)
 static void
 bi_script_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	free (_res);
 }
 
 static void
 bi_Script_New (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_new (res);
 
@@ -130,6 +138,7 @@ bi_Script_New (progs_t *pr, void *_res)
 static void
 bi_Script_Delete (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -148,6 +157,7 @@ bi_Script_Delete (progs_t *pr, void *_res)
 static void
 bi_Script_Start (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -160,6 +170,7 @@ bi_Script_Start (progs_t *pr, void *_res)
 static void
 bi_Script_FromFile (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 	if (!script)
@@ -183,6 +194,7 @@ bi_Script_FromFile (progs_t *pr, void *_res)
 static void
 bi_Script_TokenAvailable (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -194,6 +206,7 @@ bi_Script_TokenAvailable (progs_t *pr, void *_res)
 static void
 bi_Script_GetToken (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -205,6 +218,7 @@ bi_Script_GetToken (progs_t *pr, void *_res)
 static void
 bi_Script_UngetToken (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -216,6 +230,7 @@ bi_Script_UngetToken (progs_t *pr, void *_res)
 static void
 bi_Script_Error (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -228,6 +243,7 @@ bi_Script_Error (progs_t *pr, void *_res)
 static void
 bi_Script_NoQuoteLines (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 
@@ -240,6 +256,7 @@ bi_Script_NoQuoteLines (progs_t *pr, void *_res)
 static void
 bi_Script_SetSingle (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 	if (!script)
@@ -255,6 +272,7 @@ bi_Script_SetSingle (progs_t *pr, void *_res)
 static void
 bi_Script_GetLine (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = _res;
 	rua_script_t *script = script_get (res, P_INT (pr, 0));
 	if (!script)
@@ -282,6 +300,7 @@ static builtin_t builtins[] = {
 void
 RUA_Script_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	script_resources_t *res = calloc (1, sizeof (script_resources_t));
 
 	PR_Resources_Register (pr, "Script", res, bi_script_clear,

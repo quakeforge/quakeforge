@@ -32,6 +32,7 @@
 # include <unistd.h>
 #endif
 
+#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/dstring.h"
 #include "QF/cmd.h"
@@ -40,6 +41,7 @@
 #include "QF/gib.h"
 #include "QF/idparse.h"
 #include "QF/qargs.h"
+#include "QF/va.h"
 
 #include "QF/plugin/console.h"
 
@@ -86,7 +88,7 @@ size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
-jmp_buf		host_abortserver;
+static sys_jmpbuf host_abortserver;
 
 float host_mem_size;
 static cvar_t host_mem_size_cvar = {
@@ -264,11 +266,8 @@ static cvar_t cl_usleep_cvar = {
 void
 Host_EndGame (const char *message, ...)
 {
-	static dstring_t *str;
+	dstring_t  *str = dstring_new ();
 	va_list     argptr;
-
-	if (!str)
-		str = dstring_new ();
 
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
@@ -281,12 +280,14 @@ Host_EndGame (const char *message, ...)
 	if (net_is_dedicated)
 		Sys_Error ("Host_EndGame: %s", str->str);	// dedicated servers exit
 
+	dstring_delete (str);
+
 	if (cls.demonum != -1)
 		CL_NextDemo ();
 	else
 		CL_Disconnect ();
 
-	longjmp (host_abortserver, 1);
+	Sys_longjmp (host_abortserver);
 }
 
 /*
@@ -328,7 +329,7 @@ Host_Error (const char *error, ...)
 
 	inerror = false;
 
-	longjmp (host_abortserver, 1);
+	Sys_longjmp (host_abortserver);
 }
 
 static void
@@ -377,6 +378,7 @@ Host_FindMaxClients (void)
 static void
 Host_InitLocal (void)
 {
+	qfZoneScoped (true);
 	Host_InitCommands ();
 
 	Cvar_Register (&host_framerate_cvar, 0, 0);
@@ -608,6 +610,7 @@ Host_ShutdownServer (bool crash)
 void
 Host_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	Mod_ClearAll ();
 	if (host_hunklevel)
@@ -626,6 +629,7 @@ Host_SpawnServer (void)
 void
 Host_OnServerSpawn (void (*onSpawn) (void))
 {
+	qfZoneScoped (true);
 	LISTENER_ADD (&host_server_spawn,
 				  (void(*)(void *, const void*)) onSpawn, 0);
 }
@@ -681,10 +685,11 @@ _Host_Frame (float time)
 	static int  first = 1;
 	float       sleeptime;
 
-	if (setjmp (host_abortserver))
+	if (Sys_setjmp (host_abortserver))
 		return;							// something bad happened, or the
 										// server disconnected
 
+	qfZoneScoped (true);
 	rand ();							// keep the random time dependent
 
 	if (cls.demo_capture)
@@ -777,6 +782,7 @@ Host_Frame (float time)
 static void
 Host_InitVCR (quakeparms_t *parms)
 {
+	qfZoneScoped (true);
 	char       *p;
 	int         i, len, n;
 
@@ -840,6 +846,7 @@ Host_InitVCR (quakeparms_t *parms)
 static memhunk_t *
 Host_Init_Memory (void)
 {
+	qfZoneScoped (true);
 	int         mem_parm = COM_CheckParm ("-mem");
 	size_t      mem_size;
 	void       *mem_base;
@@ -878,6 +885,7 @@ Host_Init_Memory (void)
 static void
 Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 {
+	qfZoneScoped (true);
 	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
 	// commands. If it doesn't exist, then this is the first time quakeforge
 	// has been used in this installation, thus any existing legacy config
@@ -904,7 +912,8 @@ Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 void
 Host_Init (void)
 {
-	sys_quake_encoding = true;
+	qfZoneScoped (true);
+	BT_Init (com_argv[0]);
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 
@@ -960,8 +969,8 @@ Host_Init (void)
 	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
 
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
-			    PACKAGE_NAME);
+	Sys_Printf ("%c\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+			    3, PACKAGE_NAME);
 
 	host_initialized = true;
 }
@@ -982,4 +991,7 @@ Host_Shutdown (void *data)
 		return;
 	}
 	isdown = true;
+	Cbuf_Delete (host_cbuf);
+	DARRAY_CLEAR (&host_server_spawn);
+	va_destroy_context (0);
 }

@@ -35,6 +35,7 @@
 
 static void (*init_funcs[])(progs_t *, int) = {
 	RUA_GUI_Init,
+	RUA_IMUI_Init,
 	RUA_Input_Init,
 	RUA_Mersenne_Init,
 	RUA_Model_Init,
@@ -44,6 +45,7 @@ static void (*init_funcs[])(progs_t *, int) = {
 VISIBLE void
 RUA_Game_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)

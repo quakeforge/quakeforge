@@ -21,7 +21,8 @@ qfbsp_SOURCES= \
 	tools/qfbsp/source/solidbsp.c \
 	tools/qfbsp/source/surfaces.c \
 	tools/qfbsp/source/tjunc.c \
-	tools/qfbsp/source/writebsp.c
+	tools/qfbsp/source/writebsp.c \
+	$(tracy_src)
 
 qfbsp_LDADD=		$(QFBSP_LIBS)
 qfbsp_DEPENDENCIES=	$(QFBSP_DEPS)

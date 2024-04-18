@@ -60,6 +60,7 @@ static const char * const debugExtensions[] = {
 static void
 get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	uint32_t    i;
 	VkLayerProperties *layers;
 	VkExtensionProperties *extensions;
@@ -158,6 +159,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 static void
 setup_debug_callback (qfv_instance_t *instance)
 {
+	qfZoneScoped (true);
 	VkDebugUtilsMessengerEXT debug_handle;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -204,17 +206,29 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 					const char *appName, uint32_t appVersion,
 					const char **layers, const char **extensions)
 {
+	qfZoneScoped (true);
 	VkApplicationInfo appInfo = {
-		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
-		appName, appVersion,
-		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_1,
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName = appName,
+		.applicationVersion = appVersion,
+		.pEngineName = PACKAGE_STRING,
+		.engineVersion = 0x000702ff, //FIXME version
+		.apiVersion = VK_API_VERSION_1_3,
+	};
+	VkValidationFeatureEnableEXT valfeat_enable[] = {
+//		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+	};
+#define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
+	VkValidationFeaturesEXT validation_features= {
+		.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+		.enabledValidationFeatureCount = valfeat_count,
+		.pEnabledValidationFeatures = valfeat_enable,
 	};
 	VkInstanceCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,
-		&appInfo,
-		0, 0,
-		0, 0,
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pNext = &validation_features,
+		.pApplicationInfo = &appInfo,
 	};
 	VkResult    res;
 	VkInstance  instance;
@@ -279,15 +293,22 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		qfv_physdev_t *dev = &inst->devices[i];
 		dev->instance = inst;
 		dev->dev = physDev;
-		dev->properties2 = (VkPhysicalDeviceProperties2) {
+		dev->p = (VkPhysicalDeviceProperties2) {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-			.pNext = &dev->multiViewProperties,
+			.pNext = &dev->v11Properties,
 		};
-		dev->multiViewProperties = (VkPhysicalDeviceMultiviewProperties) {
-			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES,
+		dev->v11Properties = (VkPhysicalDeviceVulkan11Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES,
+			.pNext = &dev->v12Properties,
 		};
-		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->properties2);
-		dev->properties = &dev->properties2.properties;
+		dev->v12Properties = (VkPhysicalDeviceVulkan12Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
+			.pNext = &dev->v13Properties,
+		};
+		dev->v13Properties = (VkPhysicalDeviceVulkan13Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES,
+		};
+		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->p);
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
 													&dev->memory_properties);
 	}
@@ -307,6 +328,11 @@ QFV_DestroyInstance (qfv_instance_t *instance)
 	del_strset (instance->enabled_extensions);
 	free (instance->devices);
 	free (instance);
+
+	free (instanceLayerProperties);
+	free (instanceLayers);
+	free (instanceExtensionProperties);
+	free (instanceExtensions);
 }
 
 VkSampleCountFlagBits
@@ -314,8 +340,8 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 {
 	VkSampleCountFlagBits maxSamples = VK_SAMPLE_COUNT_64_BIT;
 	VkSampleCountFlagBits counts;
-	counts = min (physdev->properties->limits.framebufferColorSampleCounts,
-				  physdev->properties->limits.framebufferDepthSampleCounts);
+	counts = min (physdev->p.properties.limits.framebufferColorSampleCounts,
+				  physdev->p.properties.limits.framebufferDepthSampleCounts);
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}

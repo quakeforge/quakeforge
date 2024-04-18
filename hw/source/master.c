@@ -13,6 +13,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/idparse.h"
 #include "QF/mathlib.h"
 #include "QF/msg.h"
@@ -245,14 +246,16 @@ SV_InitNet (void)
 	NET_Init (port);
 
 	// Add filters
+	dstring_t  *buffer = dstring_new ();
 	if ((filters = Qopen ("filters.ini", "rt"))) {
-		while ((str = Qgetline (filters))) {
+		while ((str = Qgetline (filters, buffer))) {
 			Cbuf_AddText (mst_cbuf, "filter add ");
 			Cbuf_AddText (mst_cbuf, str);
 			Cbuf_AddText (mst_cbuf, "\n");
 		}
 		Qclose (filters);
 	}
+	dstring_delete (buffer);
 }
 
 static void

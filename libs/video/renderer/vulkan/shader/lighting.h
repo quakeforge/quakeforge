@@ -35,6 +35,7 @@ layout (set = 1, binding = 4) buffer LightEntIds {
 };
 
 layout (push_constant) uniform PushConstants {
+	vec4        fog;
 	vec4        CascadeDepths;
 	uint        queue;
 };

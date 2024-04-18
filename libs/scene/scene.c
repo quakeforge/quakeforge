@@ -36,8 +36,9 @@
 #endif
 
 #include "QF/mathlib.h"
-#include "QF/sys.h"
 #include "QF/model.h"
+#include "QF/skin.h"
+#include "QF/sys.h"
 
 #include "QF/plugin/vid_render.h"
 
@@ -68,7 +69,7 @@ create_colormap (void *_colormap)
 }
 
 static void
-destroy_visibility (void *_visibility)
+destroy_visibility (void *_visibility, ecs_registry_t *reg)
 {
 	visibility_t *visibility = _visibility;
 	if (visibility->efrag) {
@@ -77,16 +78,12 @@ destroy_visibility (void *_visibility)
 }
 
 static void
-destroy_renderer (void *_renderer)
+destroy_renderer (void *_renderer, ecs_registry_t *reg)
 {
-	renderer_t *renderer = _renderer;
-	if (renderer->skin) {
-		mod_funcs->Skin_Free (renderer->skin);
-	}
 }
 
 static void
-destroy_efrags (void *_efrags)
+destroy_efrags (void *_efrags, ecs_registry_t *reg)
 {
 	efrag_t **efrags = _efrags;
 	R_ClearEfragChain (*efrags);
@@ -259,8 +256,9 @@ Scene_NewScene (scene_system_t *extra_systems)
 {
 	scene_t    *scene = calloc (1, sizeof (scene_t));
 
-	scene->reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (scene->reg, scene_components, scene_comp_count);
+	scene->reg = ECS_NewRegistry ("scene");
+	scene->base = ECS_RegisterComponents (scene->reg, scene_components,
+										  scene_comp_count);
 	for (auto extra = extra_systems; extra && extra->system; extra++) {
 		uint32_t base = ECS_RegisterComponents (scene->reg,
 												extra->components,
@@ -271,6 +269,7 @@ Scene_NewScene (scene_system_t *extra_systems)
 	ECS_CreateComponentPools (scene->reg);
 
 	scene->worldmodel = &empty_world;
+	scene->camera = nullent;
 
 	return scene;
 }
@@ -288,23 +287,25 @@ Scene_CreateEntity (scene_t *scene)
 {
 	// Transform_New creates an entity and adds a scene_href component to the
 	// entity
-	transform_t trans = Transform_New (scene->reg, nulltransform);
+	ecs_system_t ssys = { .reg = scene->reg, .base = scene->base };
+	transform_t trans = Transform_New (ssys, nulltransform);
 	uint32_t    id = trans.id;
 
-	Ent_SetComponent (id, scene_animation, scene->reg, 0);
-	Ent_SetComponent (id, scene_renderer, scene->reg, 0);
-	Ent_SetComponent (id, scene_active, scene->reg, 0);
-	Ent_SetComponent (id, scene_old_origin, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_animation, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_renderer, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_active, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_old_origin, scene->reg, 0);
 
-	renderer_t *renderer = Ent_GetComponent (id, scene_renderer, scene->reg);
+	renderer_t *renderer = Ent_GetComponent (id, scene->base + scene_renderer, scene->reg);
 	QuatSet (1, 1, 1, 1, renderer->colormod);
 
-	return (entity_t) { .reg = scene->reg, .id = id };
+	return (entity_t) { .reg = scene->reg, .id = id, .base = scene->base };
 }
 
 void
 Scene_DestroyEntity (scene_t *scene, entity_t ent)
 {
+	qfZoneScoped (true);
 	ECS_DelEntity (scene->reg, ent.id);
 }
 

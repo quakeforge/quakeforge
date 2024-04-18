@@ -1048,6 +1048,7 @@ gib_builtin_shutdown (void *data)
 void
 GIB_Builtin_Init (bool sandbox)
 {
+	qfZoneScoped (true);
 
 	if (sandbox)
 		GIB_File_Transform_Path = GIB_File_Transform_Path_Secure;

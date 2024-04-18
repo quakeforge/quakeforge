@@ -36,10 +36,11 @@
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
 struct IE_event_s;
+struct passage_s;
 
 enum {
-	imui_percent_x,	///< int
-	imui_percent_y,	///< int
+	imui_fraction_x,///< imui_frac_t
+	imui_fraction_y,///< imui_frac_t
 	imui_reference,	///< imui_reference_t
 
 	imui_comp_count
@@ -51,7 +52,7 @@ typedef enum {
 	imui_size_none,
 	imui_size_pixels,
 	imui_size_fittext,
-	imui_size_percent,
+	imui_size_fraction,
 	imui_size_fitchildren,
 	imui_size_expand,
 } imui_size_t;
@@ -71,9 +72,20 @@ typedef struct imui_style_s {
 	imui_color_t text;
 } imui_style_t;
 
+// on a root view, this points to a pseudo-parent
+// on a non-root view, this points to a pseudo-child (layout info is taken from
+// the reference to set the non-root view's size, then that is propagated back
+// to the reference)
 typedef struct imui_reference_s {
 	uint32_t    ref_id;
+	bool        update;
+	struct imui_ctx_s *ctx;		// owns entity if not null
 } imui_reference_t;
+
+typedef struct imui_frac_s {
+	int         num;
+	int         den;
+} imui_frac_t;
 
 typedef struct imui_window_s {
 	const char *name;
@@ -85,12 +97,13 @@ typedef struct imui_window_s {
 	int         mode;
 	bool        is_open;
 	bool        is_collapsed;
+	bool        no_collapse;
+	bool        auto_fit;
 
 	const char *reference;
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
 	struct imui_window_s *parent;	// for submenus
-	bool        no_collapse;
 } imui_window_t;
 
 typedef struct imui_io_s {
@@ -125,6 +138,8 @@ void IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style);
 
 void IMUI_Label (imui_ctx_t *ctx, const char *label);
 void IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)__attribute__((format(PRINTF,2,3)));
+void IMUI_Passage (imui_ctx_t *ctx, const char *name,
+				   struct passage_s *passage);
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);
 bool IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label);
 void IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label);
@@ -133,7 +148,10 @@ void IMUI_Slider (imui_ctx_t *ctx, float *value, float minval, float maxval,
 void IMUI_Spacer (imui_ctx_t *ctx,
 				  imui_size_t xsize, int xvalue,
 				  imui_size_t ysize, int yvalue);
-
+view_pos_t IMUI_Dragable (imui_ctx_t *ctx,
+						  imui_size_t xsize, int xvalue,
+						  imui_size_t ysize, int yvalue,
+						  const char *name);
 int IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel);
 int IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name);
 void IMUI_EndPanel (imui_ctx_t *ctx);
@@ -142,8 +160,17 @@ int IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical);
 void IMUI_EndMenu (imui_ctx_t *ctx);
 bool IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse);
 
+void IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window);
+
 int IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_EndWindow (imui_ctx_t *ctx);
+
+int IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name);
+void IMUI_EndScrollBox (imui_ctx_t *ctx);
+
+void IMUI_ScrollBar (imui_ctx_t *ctx, const char *name);
 
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = (begin); !_i_; _i_++, (end))
@@ -155,6 +182,9 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 
 #define UI_Labelf(fmt...) \
 	IMUI_Labelf(IMUI_context, fmt)
+
+#define UI_Passage(name, psg) \
+	IMUI_Passage(IMUI_context, name, psg)
 
 #define UI_Button(label) \
 	IMUI_Button(IMUI_context, label)
@@ -197,6 +227,12 @@ void IMUI_EndWindow (imui_ctx_t *ctx);
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \
 					IMUI_EndWindow (IMUI_context))
+
+#define UI_ScrollBox(name) \
+	IMUI_DeferLoop (IMUI_StartScrollBox (IMUI_context, name), \
+					IMUI_EndScrollBox (IMUI_context))
+#define UI_ScrollBar(name) \
+	IMUI_ScrollBar (IMUI_context, name)
 
 #define UI_Style(style) \
 	IMUI_DeferLoop (IMUI_PushStyle (IMUI_context, style), \

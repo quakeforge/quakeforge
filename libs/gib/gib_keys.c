@@ -76,5 +76,6 @@ Key_GIB_Bind_Get_f (void)
 void
 GIB_Key_Init (void)
 {
+	qfZoneScoped (true);
 	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f);
 }

@@ -371,6 +371,144 @@ test_geom (void)
 }
 
 static int
+test_dual (void)
+{
+	@algebra (PGA) {
+		auto a = 1f;
+		auto a0 = e0;
+		auto a1 = e1;
+		auto a2 = e2;
+		auto a3 = e3;
+		auto a23 = e23;
+		auto a31 = e31;
+		auto a12 = e12;
+		auto a01 = e01;
+		auto a02 = e02;
+		auto a03 = e03;
+		auto a032 = e032;
+		auto a013 = e013;
+		auto a021 = e021;
+		auto a123 = e123;
+		auto a0123 = e0123;
+		#define TEST_DUAL(x, y) \
+			if (⋆x != y) { \
+				printf ("⋆" #x " != " #y "\n"); \
+				return 1; \
+			}
+		TEST_DUAL (a, e0123);
+		TEST_DUAL (a0, e123);
+		TEST_DUAL (a1, e032);
+		TEST_DUAL (a2, e013);
+		TEST_DUAL (a3, e021);
+		TEST_DUAL (a23, e01);
+		TEST_DUAL (a31, e02);
+		TEST_DUAL (a12, e03);
+		TEST_DUAL (a01, e23);
+		TEST_DUAL (a02, e31);
+		TEST_DUAL (a03, e12);
+		TEST_DUAL (a032, -e1);
+		TEST_DUAL (a013, -e2);
+		TEST_DUAL (a021, -e3);
+		TEST_DUAL (a123, -e0);
+		TEST_DUAL (a0123, 1);
+		#undef TEST_DUAL
+
+		#define TEST_DUAL(x) \
+			if (x * ⋆x != e0123) { \
+				printf (#x " * ⋆" #x " != e0123\n"); \
+				return 1; \
+			}
+		TEST_DUAL (a);
+		TEST_DUAL (a0);
+		TEST_DUAL (a1);
+		TEST_DUAL (a2);
+		TEST_DUAL (a3);
+		TEST_DUAL (a23);
+		TEST_DUAL (a31);
+		TEST_DUAL (a12);
+		TEST_DUAL (a01);
+		TEST_DUAL (a02);
+		TEST_DUAL (a03);
+		TEST_DUAL (a032);
+		TEST_DUAL (a013);
+		TEST_DUAL (a021);
+		TEST_DUAL (a123);
+		TEST_DUAL (a0123);
+		#undef TEST_DUAL
+	}
+	return 0;
+}
+
+static int
+test_undual (void)
+{
+	@algebra (PGA) {
+		auto a = 1f;
+		auto a0 = e0;
+		auto a1 = e1;
+		auto a2 = e2;
+		auto a3 = e3;
+		auto a23 = e23;
+		auto a31 = e31;
+		auto a12 = e12;
+		auto a01 = e01;
+		auto a02 = e02;
+		auto a03 = e03;
+		auto a032 = e032;
+		auto a013 = e013;
+		auto a021 = e021;
+		auto a123 = e123;
+		auto a0123 = e0123;
+		#define TEST_UNDUAL(x, y) \
+			if (@undual x != y) { \
+				printf ("@undual" #x " != " #y "\n"); \
+				return 1; \
+			}
+		TEST_UNDUAL (a, e0123);
+		TEST_UNDUAL (a0, -e123);
+		TEST_UNDUAL (a1, -e032);
+		TEST_UNDUAL (a2, -e013);
+		TEST_UNDUAL (a3, -e021);
+		TEST_UNDUAL (a23, e01);
+		TEST_UNDUAL (a31, e02);
+		TEST_UNDUAL (a12, e03);
+		TEST_UNDUAL (a01, e23);
+		TEST_UNDUAL (a02, e31);
+		TEST_UNDUAL (a03, e12);
+		TEST_UNDUAL (a032, e1);
+		TEST_UNDUAL (a013, e2);
+		TEST_UNDUAL (a021, e3);
+		TEST_UNDUAL (a123, e0);
+		TEST_UNDUAL (a0123, 1);
+		#undef TEST_UNDUAL
+
+		#define TEST_UNDUAL(x) \
+			if (@undual x * x != e0123) { \
+				printf ("@undual " #x " * " #x " != e0123\n"); \
+				return 1; \
+			}
+		TEST_UNDUAL (a);
+		TEST_UNDUAL (a0);
+		TEST_UNDUAL (a1);
+		TEST_UNDUAL (a2);
+		TEST_UNDUAL (a3);
+		TEST_UNDUAL (a23);
+		TEST_UNDUAL (a31);
+		TEST_UNDUAL (a12);
+		TEST_UNDUAL (a01);
+		TEST_UNDUAL (a02);
+		TEST_UNDUAL (a03);
+		TEST_UNDUAL (a032);
+		TEST_UNDUAL (a013);
+		TEST_UNDUAL (a021);
+		TEST_UNDUAL (a123);
+		TEST_UNDUAL (a0123);
+		#undef TEST_UNDUAL
+	}
+	return 0;
+}
+
+static int
 test_basics (void)
 {
 	@algebra (PGA) {
@@ -473,6 +611,16 @@ main (void)
 
 	if (test_geom ()) {
 		printf ("geometric products failed\n");
+		return 1;
+	}
+
+	if (test_dual ()) {
+		printf ("dual failed\n");
+		return 1;
+	}
+
+	if (test_undual ()) {
+		printf ("dual failed\n");
 		return 1;
 	}
 

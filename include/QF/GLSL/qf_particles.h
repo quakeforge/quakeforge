@@ -44,4 +44,8 @@ void glsl_R_Particles_Init_Cvars (void);
 void glsl_R_InitParticles (void);
 void glsl_R_ShutdownParticles (void);
 
+void glsl_R_InitTrails (void);
+void glsl_R_ShutdownTrails (void);
+void glsl_R_DrawTrails (struct psystem_s *psystem);
+
 #endif//__QF_GLSL_qf_particles_h

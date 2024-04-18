@@ -72,6 +72,10 @@
 {
 }
 
+-(void) writeSymtabShutdown
+{
+}
+
 -(void) writeSymtabEntry
 {
 }

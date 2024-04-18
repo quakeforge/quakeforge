@@ -100,17 +100,17 @@ vulkan_iqm_init_image (iqm_t *iqm, int meshnum, qfv_resobj_t *image)
 	dstring_copystr (str, material);
 	QFS_StripExtension (str->str, str->str);
 
-	tex_t       dummy_tex;
+	tex_t       dummy_tex = {
+		.width = 2,
+		.height = 2,
+		.format = tex_rgba,
+	};
 	tex_t      *tex;
 	if (!(tex = LoadImage (va (0, "textures/%s", str->str), 0))) {
-		dummy_tex = (tex_t) {
-			.width = 2,
-			.height = 2,
-			.format = tex_rgba,
-		};
 		tex = &dummy_tex;
 	}
 	QFV_ResourceInitTexImage (image, material, 1, tex);
+	image->image.num_layers = 3;
 	dstring_delete (str);
 }
 
@@ -118,8 +118,6 @@ static void
 iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 					  qfv_device_t *device)
 {
-	qfv_devfuncs_t *dfunc = device->funcs;
-
 	if (tex->format != tex_rgb && tex->format != tex_rgba) {
 		Sys_Error ("can't transfer iqm image");
 	}
@@ -127,37 +125,21 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 	size_t      layer_size = tex->width * tex->height * tex->format;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
-	byte       *dst = QFV_PacketExtend (packet, layer_size);
+	byte       *dst = QFV_PacketExtend (packet, layer_size * 3);
 
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.image = image;
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 1, &ib.barrier);
 	memcpy (dst, tex->data, layer_size);
-	VkBufferImageCopy copy = {
-		packet->offset, 0, 0,
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		{0, 0, 0}, {tex->width, tex->height, 1},
-	};
-	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
-								   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   1, &copy);
+	// don't have glow/color maps yet
+	memset (dst + layer_size, 0, 2 * layer_size);
 
-	int         mipLevels = QFV_MipLevels (tex->width, tex->height);
-	if (mipLevels == 1) {
-		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-		ib.barrier.image = image;
-		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-									 0, 0, 0, 0, 0,
-									 1, &ib.barrier);
-	} else {
+	int mipLevels = QFV_MipLevels (tex->width, tex->height);
+	auto ib = mipLevels == 1
+			? &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]
+			: nullptr;
+	QFV_PacketCopyImage (packet, image, tex->width, tex->height, ib);
+
+	if (mipLevels != 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image, mipLevels,
-							 tex->width, tex->height, 1);
+							 tex->width, tex->height, 3);
 	}
 	QFV_PacketSubmit (packet);
 }
@@ -199,7 +181,7 @@ vulkan_iqm_load_textures (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		if (!(tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
-			tex_t       null_tex = {
+			static tex_t       null_tex = {
 				.width = 2,
 				.height = 2,
 				.format = tex_rgba,
@@ -225,6 +207,9 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 	size_t      geom_size = iqm->num_verts * sizeof (iqmgvert_t);
 	size_t      rend_size = iqm->num_verts * sizeof (iqmrvert_t);
 	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
+	if (iqm->num_verts > 0xfff0) {
+		elem_size = iqm->num_elements * sizeof (uint32_t);
+	}
 	size_t      buff_size = geom_size + rend_size + elem_size + 1024;
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
 													 va (ctx->va_ctx, "iqm:%s",
@@ -282,7 +267,7 @@ vulkan_iqm_load_arrays (model_t *mod, iqm_t *iqm, qfv_iqm_t *mesh,
 			data += size;
 		}
 	}
-	memcpy (elements, iqm->elements, elem_size);
+	memcpy (elements, iqm->elements16, elem_size);
 
 	qfv_bufferbarrier_t bb[] = {
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
@@ -417,11 +402,15 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		},
 	};
+	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
+	if (iqm->num_verts > 0xfff0) {
+		elem_size = iqm->num_elements * sizeof (uint32_t);
+	}
 	mesh->mesh->objects[2] = (qfv_resobj_t) {
 		.name = "index",
 		.type = qfv_res_buffer,
 		.buffer = {
-			.size = iqm->num_elements * sizeof (uint16_t),
+			.size = elem_size,
 			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		},
@@ -437,7 +426,7 @@ Vulkan_Mod_IQMFinish (model_t *mod, vulkan_ctx_t *ctx)
 			.type = qfv_res_image_view,
 			.image_view = {
 				.image = image_ind,
-				.type = VK_IMAGE_VIEW_TYPE_2D,
+				.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 				.format = mesh->mesh->objects[image_ind].image.format,
 				.subresourceRange = {
 					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

@@ -35,6 +35,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
@@ -95,7 +97,7 @@ R_AddDynamicLights (uint32_t render_id)
 		entorigin = transform[3];
 	}
 
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
 	auto dlight_data = (dlight_t *) dlight_pool->data;
 	for (uint32_t k = 0; k < dlight_pool->count; k++) {
 		auto dlight = &dlight_data[k];
@@ -460,13 +462,13 @@ R_GenTurbTile (byte *pbasetex, void *pdest)
 }
 
 void
-R_GenTile (msurface_t *psurf, void *pdest)
+R_GenTile (msurface_t *surf, void *dest)
 {
-	if (psurf->flags & SURF_DRAWTURB) {
-		R_GenTurbTile (((byte *) psurf->texinfo->texture +
-						psurf->texinfo->texture->offsets[0]), pdest);
-	} else if (psurf->flags & SURF_DRAWSKY) {
-		R_GenSkyTile (pdest);
+	if (surf->flags & SURF_DRAWTURB) {
+		R_GenTurbTile (((byte *) surf->texinfo->texture +
+						surf->texinfo->texture->offsets[0]), dest);
+	} else if (surf->flags & SURF_DRAWSKY) {
+		R_GenSkyTile (dest);
 	} else {
 		Sys_Error ("Unknown tile type");
 	}

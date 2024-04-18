@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "QF/ecs.h"
+#include "QF/sys.h"
 
 enum {
 	test_href,
@@ -15,6 +16,11 @@ enum {
 
 	test_num_components
 };
+
+static uint32_t comp_base;
+#define t_href (comp_base + test_href)
+#define t_name (comp_base + test_name)
+#define t_highlight (comp_base + test_highlight)
 
 static const component_t test_components[] = {
 	[test_href] = {
@@ -35,30 +41,30 @@ static const component_t test_components[] = {
 
 ecs_registry_t *test_reg;
 
-#define DFL "\e[39;49m"
-#define BLK "\e[30;40m"
-#define RED "\e[31;40m"
-#define GRN "\e[32;40m"
-#define ONG "\e[33;40m"
-#define BLU "\e[34;40m"
-#define MAG "\e[35;40m"
-#define CYN "\e[36;40m"
-#define WHT "\e[37;40m"
-
 static int
-check_hierarchy_size (hierarchy_t *h, uint32_t size)
+check_hierarchy_size (hierref_t href, uint32_t size)
 {
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, test_reg);
 	if (h->num_objects != size) {
 		printf ("hierarchy does not have exactly %u transform\n", size);
 		return 0;
 	}
-	ecs_registry_t *reg = h->reg;
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
-		char      **name = Ent_GetComponent (h->ent[i], test_name, reg);;
-		if (ref->hierarchy != h) {
+		if (!ECS_EntValid (h->ent[i], test_reg)) {
+			printf ("invalid entity in hierarchy: %d\n", i);
+			return 0;
+		}
+		if (!Ent_HasComponent (h->ent[i], t_href, test_reg)) {
+			printf ("entity has no href: %d\n", i);
+			return 0;
+		}
+		auto ref = *(hierref_t *) Ent_GetComponent (h->ent[i], t_href,
+													test_reg);
+		char      **name = Ent_GetComponent (h->ent[i], t_name, test_reg);;
+		if (ref.id != href.id) {
 			printf ("transform %d (%s) does not point to hierarchy\n",
 					i, *name);
+			return 0;
 		}
 	}
 	return 1;
@@ -123,9 +129,9 @@ highlight_color (hierarchy_t *h, uint32_t i)
 {
 	uint32_t    ent = h->ent[i];
 	if (ECS_EntValid (ent, test_reg)
-		&& Ent_HasComponent (ent, test_highlight, test_reg)) {
+		&& Ent_HasComponent (ent, t_highlight, test_reg)) {
 		static char color_str[] = "\e[3.;4.m";
-		byte       *color = Ent_GetComponent (ent, test_highlight, test_reg);
+		byte       *color = Ent_GetComponent (ent, t_highlight, test_reg);
 		if (*color) {
 			byte        fg = *color & 0x0f;
 			byte        bg = *color >> 4;
@@ -138,56 +144,61 @@ highlight_color (hierarchy_t *h, uint32_t i)
 }
 
 static void
-dump_hierarchy (hierarchy_t *h)
+dump_hierarchy (hierref_t href)
 {
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, test_reg);
 	ecs_registry_t *reg = h->reg;
-	puts ("in: ri pa ci cc en name");
+	puts ("in: ri pa ci cc en ow name");
 	for (uint32_t i = 0; i < h->num_objects; i++) {
 		uint32_t    rind = nullent;
 		static char fake_name[] = ONG "null" DFL;
 		static char *fake_nameptr = fake_name;
 		char      **name = &fake_nameptr;
 		if (ECS_EntValid (h->ent[i], reg)) {
-			hierref_t  *ref = Ent_GetComponent (h->ent[i], test_href, reg);
+			hierref_t  *ref = Ent_GetComponent (h->ent[i], t_href, reg);
 			rind = ref->index;
-			if (Ent_HasComponent (h->ent[i], test_name, reg)) {
-				name = Ent_GetComponent (h->ent[i], test_name, reg);
+			if (Ent_HasComponent (h->ent[i], t_name, reg)) {
+				name = Ent_GetComponent (h->ent[i], t_name, reg);
 			}
 		}
-		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %s%s"DFL"\n", i,
+		printf ("%2d: %s%2d %s%2d %s%2d %s%2d %s%2d"DFL" %2d %s%s"DFL"\n", i,
 				ref_index_color (i, rind), rind,
 				parent_index_color (h, i), h->parentIndex[i],
 				child_index_color (h, i), h->childIndex[i],
 				child_count_color (h, i), h->childCount[i],
 				entity_color (h, i), h->ent[i],
+				h->own[i],
 				highlight_color (h, i), *name);
 	}
 	puts ("");
 }
 
 static void
-dump_tree (hierarchy_t *h, uint32_t ind, int level)
+dump_tree (hierref_t href, int level)
 {
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, test_reg);
+	uint32_t    ind = href.index;
 	if (ind >= h->num_objects) {
 		printf ("index %d out of bounds (%d)\n", ind, h->num_objects);
 		return;
 	}
 	if (!level) {
-		puts ("in: pa ci cc en|name");
+		puts ("in: pa ci cc en ow|name");
 	}
 	static char fake_name[] = ONG "null" DFL;
 	static char *fake_nameptr = fake_name;
 	char      **name = &fake_nameptr;
 	ecs_registry_t *reg = h->reg;
 	if (ECS_EntValid (h->ent[ind], reg)
-		&& Ent_HasComponent (h->ent[ind], test_name, reg)) {
-		name = Ent_GetComponent (h->ent[ind], test_name, reg);;
+		&& Ent_HasComponent (h->ent[ind], t_name, reg)) {
+		name = Ent_GetComponent (h->ent[ind], t_name, reg);;
 	}
-	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL"|%*s%s%s"DFL"\n", ind,
+	printf ("%2d: %s%2d %s%2d %s%2d %s%2d"DFL" %2d|%*s%s%s"DFL"\n", ind,
 			parent_index_color (h, ind), h->parentIndex[ind],
 			child_index_color (h, ind), h->childIndex[ind],
 			child_count_color (h, ind), h->childCount[ind],
 			entity_color (h, ind), h->ent[ind],
+			h->own[ind],
 			level * 3, "", highlight_color (h, ind), *name);
 
 	if (h->childIndex[ind] > ind) {
@@ -195,7 +206,11 @@ dump_tree (hierarchy_t *h, uint32_t ind, int level)
 			if (h->childIndex[ind] + i >= h->num_objects) {
 				break;
 			}
-			dump_tree (h, h->childIndex[ind] + i, level + 1);
+			hierref_t   cref = {
+				.id = href.id,
+				.index = h->childIndex[ind] + i,
+			};
+			dump_tree (cref, level + 1);
 		}
 	}
 	if (!level) {
@@ -208,14 +223,14 @@ check_indices (uint32_t ent, uint32_t index, uint32_t parentIndex,
 			   uint32_t childIndex, uint32_t childCount)
 {
 	ecs_registry_t *reg = test_reg;
-	char      **entname = Ent_GetComponent (ent, test_name, reg);;
-	hierref_t  *ref = Ent_GetComponent (ent, test_href, reg);
-	hierarchy_t *h = ref->hierarchy;
-	if (ref->index != index) {
-		char      **name = Ent_GetComponent (h->ent[index], test_name, reg);;
+	char      **entname = Ent_GetComponent (ent, t_name, reg);;
+	auto href = *(hierref_t *) Ent_GetComponent (ent, t_href, reg);
+	hierarchy_t *h = Ent_GetComponent (href.id, ecs_hierarchy, reg);
+	if (href.index != index) {
+		char      **name = Ent_GetComponent (h->ent[index], t_name, reg);;
 		printf ("%s/%s index incorrect: expect %u got %u\n",
 				*entname, *name,
-				index, ref->index);
+				index, href.index);
 		return 0;
 	}
 	if (h->parentIndex[index] != parentIndex) {
@@ -240,39 +255,37 @@ static uint32_t
 create_ent (uint32_t parent, const char *name)
 {
 	uint32_t    ent = ECS_NewEntity (test_reg);
-	Ent_SetComponent (ent, test_name, test_reg, &name);
-	hierref_t  *ref = Ent_AddComponent (ent, test_href, test_reg);
+	Ent_SetComponent (ent, t_name, test_reg, &name);
+	hierref_t  *ref = Ent_AddComponent (ent, t_href, test_reg);
 
 	if (parent != nullent) {
-		hierref_t  *pref = Ent_GetComponent (parent, test_href, test_reg);
-		ref->hierarchy = pref->hierarchy;
-		ref->index = Hierarchy_InsertHierarchy (pref->hierarchy, 0,
-												pref->index, 0);
+		auto pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
+		*ref = Hierarchy_InsertHierarchy (pref, nullhref, test_reg);
 	} else {
-		ref->hierarchy = Hierarchy_New (test_reg, test_href, 0, 1);
+		ref->id = Hierarchy_New (test_reg, t_href, 0, 1);
 		ref->index = 0;
 	}
-	ref->hierarchy->ent[ref->index] = ent;
+	hierarchy_t *h = Ent_GetComponent (ref->id, ecs_hierarchy, test_reg);
+	h->ent[ref->index] = ent;
+	h->own[ref->index] = true;
 	return ent;
 }
 
 static void
 highlight_ent (uint32_t ent, byte color)
 {
-	Ent_SetComponent (ent, test_highlight, test_reg, &color);
+	Ent_SetComponent (ent, t_highlight, test_reg, &color);
 }
 
 static void
 set_parent (uint32_t child, uint32_t parent)
 {
+	auto cref = *(hierref_t *) Ent_GetComponent (child, t_href, test_reg);
 	if (parent != nullent) {
-		hierref_t  *pref = Ent_GetComponent (parent, test_href, test_reg);
-		hierref_t  *cref = Ent_GetComponent (child, test_href, test_reg);
-		Hierarchy_SetParent (pref->hierarchy, pref->index,
-							 cref->hierarchy, cref->index);
+		auto pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
+		Hierarchy_SetParent (pref, cref, test_reg);
 	} else {
-		hierref_t  *cref = Ent_GetComponent (child, test_href, test_reg);
-		Hierarchy_SetParent (0, nullent, cref->hierarchy, cref->index);
+		Hierarchy_SetParent (nullhref, cref, test_reg);
 	}
 }
 
@@ -280,26 +293,25 @@ static int
 test_single_transform (void)
 {
 	uint32_t    ent = create_ent (nullent, "test");
-	hierarchy_t *h;
 
 	if (ent == nullent) {
 		printf ("create_ent returned null\n");
 		return 1;
 	}
-	hierref_t  *ref = Ent_GetComponent (ent, test_href, test_reg);
+	hierref_t  *ref = Ent_GetComponent (ent, t_href, test_reg);
 	if (!ref) {
 		printf ("Ent_GetComponent(test_href) returned null\n");
 		return 1;
 	}
-	if (!(h = ref->hierarchy)) {
-		printf ("New entity has no hierarchy\n");
+	if (!ECS_EntValid (ref->id, test_reg)) {
+		printf ("New entity has invalid hierarchy reference\n");
 		return 1;
 	}
-	if (!check_hierarchy_size (h, 1)) { return 1; }
+	if (!check_hierarchy_size (*ref, 1)) { return 1; }
 	if (!check_indices (ent, 0, nullent, 1, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (h);
+	Hierarchy_Delete (ref->id, test_reg);
 
 	return 0;
 }
@@ -310,22 +322,20 @@ test_parent_child_init (void)
 	uint32_t    parent = create_ent (nullent, "parent");
 	uint32_t    child = create_ent (parent, "child");
 
-	hierref_t  *pref = Ent_GetComponent (parent, test_href, test_reg);
-	hierref_t  *cref = Ent_GetComponent (child, test_href, test_reg);
-	if (pref->hierarchy != cref->hierarchy) {
+	auto pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
+	auto cref = *(hierref_t *) Ent_GetComponent (child, t_href, test_reg);
+	if (pref.id != cref.id) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
 
-	hierarchy_t *h = pref->hierarchy;
-
-	if (!check_hierarchy_size (h, 2)) { return 1; }
+	if (!check_hierarchy_size (pref, 2)) { return 1; }
 
 	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (h);
+	Hierarchy_Delete (pref.id, test_reg);
 
 	return 0;
 }
@@ -339,9 +349,9 @@ test_parent_child_setparent (void)
 	if (!check_indices (parent, 0, nullent, 1, 0)) { return 1; }
 	if (!check_indices (child,  0, nullent, 1, 0)) { return 1; }
 
-	hierref_t  *pref = Ent_GetComponent (parent, test_href, test_reg);
-	hierref_t  *cref = Ent_GetComponent (child, test_href, test_reg);
-	if (pref->hierarchy == cref->hierarchy) {
+	auto pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
+	auto cref = *(hierref_t *) Ent_GetComponent (child, t_href, test_reg);
+	if (pref.id == cref.id) {
 		printf ("parent and child entities have same hierarchy before"
 				" set paret\n");
 		return 1;
@@ -349,20 +359,20 @@ test_parent_child_setparent (void)
 
 	set_parent (child, parent);
 
-	if (pref->hierarchy != cref->hierarchy) {
+	pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
+	cref = *(hierref_t *) Ent_GetComponent (child, t_href, test_reg);
+	if (pref.id != cref.id) {
 		printf ("parent and child transforms have separate hierarchies\n");
 		return 1;
 	}
 
-	hierarchy_t *h = pref->hierarchy;
-
-	if (!check_hierarchy_size (h, 2)) { return 1; }
+	if (!check_hierarchy_size (pref, 2)) { return 1; }
 
 	if (!check_indices (parent, 0, nullent, 1, 1)) { return 1; }
 	if (!check_indices (child,  1, 0, 2, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (h);
+	Hierarchy_Delete (pref.id, test_reg);
 
 	return 0;
 }
@@ -377,7 +387,7 @@ test_build_hierarchy (void)
 	uint32_t    B = create_ent (root, "B");
 	uint32_t    C = create_ent (root, "C");
 
-	hierref_t  *ref = Ent_GetComponent (root, test_href, test_reg);
+	hierref_t  *ref = Ent_GetComponent (root, t_href, test_reg);
 
 	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (A, 1, 0, 4, 0)) { return 1; }
@@ -406,7 +416,7 @@ test_build_hierarchy (void)
 	uint32_t    B3 = create_ent (B, "B3");
 	uint32_t    B2a = create_ent (B2, "B2a");
 
-	if (!check_hierarchy_size (ref->hierarchy, 11)) { return 1; }
+	if (!check_hierarchy_size (*ref, 11)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (  A,  1, 0,  4, 2)) { return 1; }
@@ -422,7 +432,7 @@ test_build_hierarchy (void)
 
 	uint32_t    D = create_ent (root, "D");
 
-	if (!check_hierarchy_size (ref->hierarchy, 12)) { return 1; }
+	if (!check_hierarchy_size (*ref, 12)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
@@ -437,10 +447,10 @@ test_build_hierarchy (void)
 	if (!check_indices (A1a, 10, 5, 12, 0)) { return 1; }
 	if (!check_indices (B2a, 11, 8, 12, 0)) { return 1; }
 
-	dump_hierarchy (ref->hierarchy);
+	dump_hierarchy (*ref);
 	uint32_t    C1 = create_ent (C, "C1");
-	dump_hierarchy (ref->hierarchy);
-	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
+	dump_hierarchy (*ref);
+	if (!check_hierarchy_size (*ref, 13)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
@@ -457,7 +467,7 @@ test_build_hierarchy (void)
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (ref->hierarchy);
+	Hierarchy_Delete (ref->id, test_reg);
 
 	return 0;
 }
@@ -481,9 +491,9 @@ test_build_hierarchy2 (void)
 	uint32_t    D = create_ent (root, "D");
 	uint32_t    C1 = create_ent (C, "C1");
 
-	hierref_t  *ref = Ent_GetComponent (root, test_href, test_reg);
+	hierref_t  *ref = Ent_GetComponent (root, t_href, test_reg);
 
-	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
+	if (!check_hierarchy_size (*ref, 13)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
@@ -513,9 +523,9 @@ test_build_hierarchy2 (void)
 	uint32_t    Z1 = create_ent (Z, "Z1");
 
 
-	hierref_t  *Tref = Ent_GetComponent (T, test_href, test_reg);
-	dump_hierarchy (Tref->hierarchy);
-	if (!check_hierarchy_size (Tref->hierarchy, 12)) { return 1; }
+	hierref_t  *Tref = Ent_GetComponent (T, t_href, test_reg);
+	dump_hierarchy (*Tref);
+	if (!check_hierarchy_size (*Tref, 12)) { return 1; }
 
 	if (!check_indices (  T,  0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (  X,  1, 0,  4, 2)) { return 1; }
@@ -532,9 +542,9 @@ test_build_hierarchy2 (void)
 
 	set_parent (T, B);
 
-	dump_hierarchy (ref->hierarchy);
+	dump_hierarchy (*ref);
 
-	if (!check_hierarchy_size (ref->hierarchy, 25)) { return 1; }
+	if (!check_hierarchy_size (*ref, 25)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
@@ -564,11 +574,11 @@ test_build_hierarchy2 (void)
 
 	set_parent (Y, nullent);
 
-	dump_hierarchy (ref->hierarchy);
-	hierref_t  *Yref = Ent_GetComponent (Y, test_href, test_reg);
-	dump_hierarchy (Yref->hierarchy);
-	if (!check_hierarchy_size (ref->hierarchy, 20)) { return 1; }
-	if (!check_hierarchy_size (Yref->hierarchy, 5)) { return 1; }
+	dump_hierarchy (*ref);
+	hierref_t  *Yref = Ent_GetComponent (Y, t_href, test_reg);
+	dump_hierarchy (*Yref);
+	if (!check_hierarchy_size (*ref, 20)) { return 1; }
+	if (!check_hierarchy_size (*Yref, 5)) { return 1; }
 
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
@@ -598,8 +608,8 @@ test_build_hierarchy2 (void)
 	if (!check_indices (Y2a, 4, 2, 5, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (ref->hierarchy);
-	Hierarchy_Delete (Yref->hierarchy);
+	Hierarchy_Delete (ref->id, test_reg);
+	Hierarchy_Delete (Yref->id, test_reg);
 
 	return 0;
 }
@@ -623,11 +633,11 @@ test_build_hierarchy3 (void)
 	uint32_t    D = create_ent (root, "D");
 	uint32_t    C1 = create_ent (C, "C1");
 
-	hierref_t  *ref = Ent_GetComponent (root, test_href, test_reg);
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	hierref_t  *ref = Ent_GetComponent (root, t_href, test_reg);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
+	if (!check_hierarchy_size (*ref, 13)) { return 1; }
 	if (!check_indices (root, 0, nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1, 0,  5, 2)) { return 1; }
 	if (!check_indices (  B,  2, 0,  7, 3)) { return 1; }
@@ -643,10 +653,10 @@ test_build_hierarchy3 (void)
 	if (!check_indices (B2a, 12, 8, 13, 0)) { return 1; }
 
 	set_parent (B2, C1);
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 13)) { return 1; }
+	if (!check_hierarchy_size (*ref, 13)) { return 1; }
 
 	if (!check_indices (root, 0,  nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,  1,  0,  5, 2)) { return 1; }
@@ -670,10 +680,10 @@ test_build_hierarchy3 (void)
 	uint32_t    B2b1 = create_ent (B2b, "B2b1");
 	uint32_t    B2b2 = create_ent (B2b, "B2b2");
 
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 20)) { return 1; }
+	if (!check_hierarchy_size (*ref, 20)) { return 1; }
 
 	if (!check_indices (root,  0,  nullent, 1, 4)) { return 1; }
 	if (!check_indices (  A,   1,  0,  5, 2)) { return 1; }
@@ -697,10 +707,10 @@ test_build_hierarchy3 (void)
 	if (!check_indices (B2b2, 19, 15, 20, 0)) { return 1; }
 
 	set_parent (B2, root);
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 20)) { return 1; }
+	if (!check_hierarchy_size (*ref, 20)) { return 1; }
 
 	if (!check_indices (root,  0, nullent, 1, 5)) { return 1; }
 	if (!check_indices (  A,   1,  0,  6, 2)) { return 1; }
@@ -724,7 +734,7 @@ test_build_hierarchy3 (void)
 	if (!check_indices (B2b2, 19, 12, 20, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (ref->hierarchy);
+	Hierarchy_Delete (ref->id, test_reg);
 
 	return 0;
 }
@@ -789,11 +799,11 @@ test_build_hierarchy4 (void)
 	highlight_ent (main_S_a_n, 0x01);
 	highlight_ent (main_i_f_b4, 0x01);
 
-	hierref_t  *ref = Ent_GetComponent (hud, test_href, test_reg);
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	hierref_t  *ref = Ent_GetComponent (hud, t_href, test_reg);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
-	if (!check_hierarchy_size (ref->hierarchy, 37)) { return 1; }
+	if (!check_hierarchy_size (*ref, 37)) { return 1; }
 
 	if (!check_indices (hud,       0, nullent, 1, 2)) { return 1; }
 	if (!check_indices (mt,            1,  0,  3, 1)) { return 1; }
@@ -834,8 +844,8 @@ test_build_hierarchy4 (void)
 	if (!check_indices (main_i_a_ma4, 36, 29, 37, 0)) { return 1; }
 
 	set_parent (main_i_a, hud);
-	dump_hierarchy (ref->hierarchy);
-	dump_tree (ref->hierarchy, 0, 0);
+	dump_hierarchy (*ref);
+	dump_tree (*ref, 0);
 
 	if (!check_indices (hud,       0, nullent, 1, 3)) { return 1; }
 	if (!check_indices (mt,            1,  0,  4, 1)) { return 1; }
@@ -876,7 +886,7 @@ test_build_hierarchy4 (void)
 	if (!check_indices (main_i_f_b4,  36, 29, 37, 0)) { return 1; }
 
 	// Delete the hierarchy directly as setparent isn't fully tested
-	Hierarchy_Delete (ref->hierarchy);
+	Hierarchy_Delete (ref->id, test_reg);
 
 	return 0;
 }
@@ -884,8 +894,9 @@ test_build_hierarchy4 (void)
 int
 main (void)
 {
-	test_reg = ECS_NewRegistry ();
-	ECS_RegisterComponents (test_reg, test_components, test_num_components);
+	test_reg = ECS_NewRegistry ("hierarchy");
+	comp_base = ECS_RegisterComponents (test_reg, test_components,
+										test_num_components);
 	ECS_CreateComponentPools (test_reg);
 
 	if (test_single_transform ()) { return 1; }

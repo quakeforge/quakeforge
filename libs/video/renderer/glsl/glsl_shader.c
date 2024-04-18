@@ -152,7 +152,7 @@ GLSL_BuildShader (const char **effect_keys)
 										chunk->start_line + 1,
 										chunk->text + vline_len);
 		} else {
-			shader->strings[num] = nva ("#line %d\n%s", chunk->start_line,
+			shader->strings[num] = nva ("#line %d\n%s", chunk->start_line - 1,
 										chunk->text);
 		}
 		shader->src[num] = strdup (ekey->str);

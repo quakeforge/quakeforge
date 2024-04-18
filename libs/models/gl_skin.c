@@ -41,6 +41,7 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
+#include "QF/fbsearch.h"
 #include "QF/image.h"
 #include "QF/model.h"
 #include "QF/skin.h"
@@ -55,52 +56,17 @@
 #include "r_internal.h"
 
 typedef struct {
-	tex_t      *tex;
-	tex_t      *fb_tex;
-	bool        fb;
-} glskin_t;
+	const tex_t *tex;
+	glskin_t    skin;
+} skinpair_t;
 
-static GLuint skin_textures[MAX_TRANSLATIONS];
-static GLuint skin_fb_textures[MAX_TRANSLATIONS];
-static byte skin_cmap[MAX_TRANSLATIONS][256];
+#define MAX_GLSKINS 64
 
-static glskin_t skins[MAX_TRANSLATIONS];
-static glskin_t player_skin;
+static skinpair_t skin_table[256][MAX_GLSKINS];
+static int skin_counts[256];
 
 static void
-do_fb_skin (glskin_t *s)
-{
-	int         size = s->tex->width * s->tex->height;
-
-	s->fb_tex = realloc (s->fb_tex, sizeof (tex_t) + size);
-	s->fb_tex->data = (byte *) (s->fb_tex + 1);
-	s->fb_tex->width = s->tex->width;
-	s->fb_tex->height = s->tex->height;
-	s->fb_tex->format = tex_palette;
-	s->fb_tex->palette = vid.palette;
-	s->fb = Mod_CalcFullbright (s->fb_tex->data, s->tex->data, size);
-}
-
-void
-gl_Skin_SetPlayerSkin (int width, int height, const byte *data)
-{
-	int         size = width * height;
-	glskin_t   *s;
-
-	s = &player_skin;
-	s->tex = realloc (s->tex, sizeof (tex_t) + size);
-	s->tex->data = (byte *) (s->tex + 1);
-	s->tex->width = width;
-	s->tex->height = height;
-	s->tex->format = tex_palette;
-	s->tex->palette = vid.palette;
-	memcpy (s->tex->data, data, size);
-
-	do_fb_skin (s);
-}
-
-static void
-build_skin_8 (tex_t *tex, int texnum, byte *translate,
+build_skin_8 (const tex_t *tex, int texnum, byte *translate,
 			  unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
@@ -126,7 +92,7 @@ build_skin_8 (tex_t *tex, int texnum, byte *translate,
 }
 
 static void
-build_skin_32 (tex_t *tex, int texnum, byte *translate,
+build_skin_32 (const tex_t *tex, int texnum, byte *translate,
 			   unsigned scaled_width, unsigned scaled_height, bool alpha)
 {
 	//  Improvements should be mirrored in GL_ResampleTexture in gl_textures.c
@@ -150,7 +116,7 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 			*out++ = *pal++;
 			*out++ = *pal++;
 			*out++ = *pal++;
-			*out++ = (alpha && c == 255) ? 0 : 255;
+			*out++ = (alpha && c == 0) ? 0 : 255;
 			frac += fracstep;
 		}
 	}
@@ -166,103 +132,93 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 						   gl_aniso);
 }
 
-static void
-build_skin (skin_t *skin, int cmap)
+static int
+skinpair_cmp (const void *_tex, const void *_skinpair)
 {
-	glskin_t   *s;
-	unsigned    scaled_width, scaled_height;
-	int         texnum, fb_texnum;
+	const tex_t *tex = _tex;
+	const skinpair_t *skinpair = _skinpair;
+	intptr_t diff = (intptr_t) tex - (intptr_t) skinpair->tex;
+	return diff < 0 ? -1 : diff > 0 ? 1 : 0;
+}
 
-	// FIXME deek: This 512x256 limit sucks!
-	scaled_width = min (gl_max_size, 512);
-	scaled_height = min (gl_max_size, 256);
+glskin_t
+gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
+			 const byte *texel_base)
+{
+	byte top = colormap ? colormap->top & 0x0f : TOP_COLOR;
+	byte bot = colormap ? colormap->bottom & 0x0f : BOTTOM_COLOR;
+	int  ind = top | (bot << 4);
+	skinpair_t *sp = fbsearch (tex, skin_table[ind], skin_counts[ind],
+							   sizeof (skinpair_t), skinpair_cmp);
+	if (sp && sp->tex == tex) {
+		return sp->skin;
+	}
+	if (skin_counts[ind] == MAX_GLSKINS) {
+		return (glskin_t) {};
+	}
+	sp = sp ? sp + 1 : skin_table[ind];
+	int insert = sp - skin_table[ind];
+	memmove (&skin_table[ind][insert + 1], &skin_table[ind][insert],
+			 sizeof (skinpair_t[skin_counts[ind] - insert]));
+	skin_counts[ind]++;
 
+	sp->tex = tex;
+	sp->skin = (glskin_t) {};
+
+	auto build_skin = vid.is8bit ? build_skin_8 : build_skin_32;
+
+	unsigned    swidth = min (gl_max_size, 512);
+	unsigned    sheight = min (gl_max_size, 256);
 	// allow users to crunch sizes down even more if they want
-	scaled_width >>= gl_playermip;
-	scaled_height >>= gl_playermip;
-	scaled_width = max (scaled_width, 1);
-	scaled_height = max (scaled_height, 1);
+	swidth >>= gl_playermip;
+	sheight >>= gl_playermip;
+	swidth = max (swidth, 1);
+	sheight = max (sheight, 1);
 
-	s = skins + cmap;
-	if (!s->tex)
-		s = &player_skin;
-	if (!s->tex)	// we haven't loaded the player model yet
-		return;
+	tex_t wtex = *tex;
+	if (wtex.relative) {
+		wtex.relative = 0;
+		// discarding const :(
+		wtex.data = (byte *) (texel_base + (uintptr_t) wtex.data);
+	}
 
-	texnum = skin_textures[cmap];
-	fb_texnum = 0;
-	if (s->fb)
-		fb_texnum = skin_fb_textures[cmap];
-	if (skin) {
-		skin->texnum = texnum;
-		skin->auxtex = fb_texnum;
+	byte palette[256];
+	Skin_SetPalette (palette, top, bot);
+	qfglGenTextures (1, &sp->skin.id);
+	build_skin (&wtex, sp->skin.id, palette, swidth, sheight, false);
+
+	int        size = wtex.width * wtex.height;
+	byte       fbskin[size];
+	if (Mod_CalcFullbright (fbskin, wtex.data, size)) {
+		tex_t       fb_tex = wtex;
+		fb_tex.data = fbskin;
+		qfglGenTextures (1, &sp->skin.fb);
+		build_skin (&fb_tex, sp->skin.fb, palette, swidth, sheight, true);
 	}
-	if (vid.is8bit) {
-		build_skin_8 (s->tex, texnum, skin_cmap[cmap],
-					  scaled_width, scaled_height, false);
-		if (s->fb && s->fb_tex)
-			build_skin_8 (s->fb_tex, fb_texnum, skin_cmap[cmap],
-						  scaled_width, scaled_height, true);
-	} else {
-		build_skin_32 (s->tex, texnum, skin_cmap[cmap],
-					   scaled_width, scaled_height, false);
-		if (s->fb && s->fb_tex)
-			build_skin_32 (s->fb_tex, fb_texnum, skin_cmap[cmap],
-						   scaled_width, scaled_height, true);
-	}
+	return sp->skin;
 }
 
 void
-gl_Skin_ProcessTranslation (int cmap, const byte *translation)
+gl_Skin_SetupSkin (skin_t *skin)
 {
-	int         changed;
-
-	// simplify cmap usage (texture offset/array index)
-	cmap--;
-	// skip over the colormap (GL can't use it) to the translated palette
-	translation += VID_GRADES * 256;
-	changed = memcmp (skin_cmap[cmap], translation, 256);
-	memcpy (skin_cmap[cmap], translation, 256);
-	if (!changed)
-		return;
-	build_skin (0, cmap);
+	skin->tex = Skin_DupTex (skin->tex);
 }
 
 void
-gl_Skin_SetupSkin (skin_t *skin, int cmap)
+gl_Skin_Destroy (skin_t *skin)
 {
-	int         changed;
-	glskin_t   *s;
-
-	skin->texnum = 0;
-	skin->auxtex = 0;
-	if (!cmap) {
-		return;
+	for (int i = 0; i < 256; i++) {
+		for (int j = skin_counts[i]; j-- > 0; ) {
+			auto sp = &skin_table[i][j];
+			if (sp->tex == skin->tex) {
+				qfglDeleteTextures (1, &sp->skin.id);
+				if (sp->skin.fb) {
+					qfglDeleteTextures (1, &sp->skin.fb);
+				}
+				skin_counts[i]--;
+				memmove (&skin_table[i][j], &skin_table[i][j + 1],
+						 sizeof (skinpair_t[skin_counts[i] - j]));
+			}
+		}
 	}
-	// simplify cmap usage (texture offset/array index)
-	cmap--;
-	s = skins + cmap;
-	changed = (s->tex != skin->texels);
-	s->tex = skin->texels;
-	if (!changed) {
-		skin->texnum = skin_textures[cmap];
-		if (s->fb)
-			skin->auxtex = skin_fb_textures[cmap];
-		return;
-	}
-	if (s->tex)
-		do_fb_skin (s);
-	build_skin (skin, cmap);
-}
-
-void
-gl_Skin_InitTranslations (void)
-{
-}
-
-void
-gl_Skin_Init_Textures (void)
-{
-	qfglGenTextures (MAX_TRANSLATIONS, skin_textures);
-	qfglGenTextures (MAX_TRANSLATIONS, skin_fb_textures);
 }

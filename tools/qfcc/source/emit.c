@@ -63,7 +63,7 @@ static def_t zero_def;
 static def_t *get_operand_def (const expr_t *expr, operand_t *op);
 
 static def_t *
-get_tempop_def (const expr_t *expr, operand_t *tmpop, type_t *type)
+get_tempop_def (const expr_t *expr, operand_t *tmpop, const type_t *type)
 {
 	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->def) {
@@ -81,7 +81,7 @@ get_tempop_def (const expr_t *expr, operand_t *tmpop, type_t *type)
 }
 
 static def_t *
-get_value_def (const expr_t *expr, ex_value_t *value, type_t *type)
+get_value_def (const expr_t *expr, ex_value_t *value, const type_t *type)
 {
 	def_t      *def;
 

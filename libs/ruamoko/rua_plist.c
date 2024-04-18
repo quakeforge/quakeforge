@@ -62,36 +62,42 @@ typedef struct {
 static bi_plist_t *
 plist_new (plist_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->plist_map);
 }
 
 static void
 plist_free (plist_resources_t *res, bi_plist_t *plist)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->plist_map, plist);
 }
 
 static void
 plist_reset (plist_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->plist_map);
 }
 
 static inline bi_plist_t *
 plist_get (plist_resources_t *res, unsigned index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->plist_map, index);
 }
 
 static inline int __attribute__((pure))
 plist_index (plist_resources_t *res, bi_plist_t *plist)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->plist_map, plist);
 }
 
 static void
 bi_plist_clear (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = (plist_resources_t *) _res;
 	bi_plist_t *plist;
 
@@ -106,6 +112,7 @@ bi_plist_clear (progs_t *pr, void *_res)
 static void
 bi_plist_destroy (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	__auto_type res = (plist_resources_t *) _res;
 
 	PR_RESDELMAP (res->plist_map);
@@ -116,6 +123,7 @@ bi_plist_destroy (progs_t *pr, void *_res)
 static inline int
 plist_handle (plist_resources_t *res, plitem_t *plitem)
 {
+	qfZoneScoped (true);
 	bi_plist_t *plist = PL_GetUserData (plitem);
 
 	if (plist)
@@ -142,6 +150,7 @@ plist_handle (plist_resources_t *res, plitem_t *plitem)
 static inline void
 plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
 {
+	qfZoneScoped (true);
 	PL_SetUserData (plist->plitem, 0);
 	PL_Release (plist->plitem);
 
@@ -154,6 +163,7 @@ plist_free_handle (plist_resources_t *res, bi_plist_t *plist)
 static always_inline bi_plist_t * __attribute__((pure))
 get_plist (progs_t *pr, plist_resources_t *res, const char *name, int handle)
 {
+	qfZoneScoped (true);
 	bi_plist_t *plist = plist_get (res, handle);
 
 	// plist->prev will be null if the handle is unallocated
@@ -165,6 +175,7 @@ get_plist (progs_t *pr, plist_resources_t *res, const char *name, int handle)
 static inline int
 plist_retain (plist_resources_t *res, plitem_t *plitem)
 {
+	qfZoneScoped (true);
 	int         handle;
 
 	if (!plitem)
@@ -186,6 +197,7 @@ static void
 bi_pl_getfromfile (progs_t *pr, plist_resources_t *res,
 				   plitem_t *get (const char *, struct hashctx_s **))
 {
+	qfZoneScoped (true);
 	QFile      *file = QFile_GetFile (pr, P_INT (pr, 0));
 	plitem_t   *plitem;
 	long        offset;
@@ -210,6 +222,7 @@ static void
 bi_pl_get (progs_t *pr, plist_resources_t *res,
 		   plitem_t *get (const char *, struct hashctx_s **))
 {
+	qfZoneScoped (true);
 	plitem_t   *plitem = get (P_GSTRING (pr, 0), pr->hashctx);
 
 	R_INT (pr) = plist_retain (res, plitem);
@@ -218,6 +231,7 @@ bi_pl_get (progs_t *pr, plist_resources_t *res,
 static void
 bi_PL_GetFromFile (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_getfromfile (pr, res, PL_GetPropertyList);
 }
@@ -225,6 +239,7 @@ bi_PL_GetFromFile (progs_t *pr, void *_res)
 static void
 bi_PL_GetPropertyList (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_get (pr, res, PL_GetPropertyList);
 }
@@ -232,6 +247,7 @@ bi_PL_GetPropertyList (progs_t *pr, void *_res)
 static void
 bi_PL_GetDictionaryFromFile (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_getfromfile (pr, res, PL_GetDictionary);
 }
@@ -239,6 +255,7 @@ bi_PL_GetDictionaryFromFile (progs_t *pr, void *_res)
 static void
 bi_PL_GetDictionary (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_get (pr, res, PL_GetDictionary);
 }
@@ -246,6 +263,7 @@ bi_PL_GetDictionary (progs_t *pr, void *_res)
 static void
 bi_PL_GetArrayFromFile (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_getfromfile (pr, res, PL_GetArray);
 }
@@ -253,6 +271,7 @@ bi_PL_GetArrayFromFile (progs_t *pr, void *_res)
 static void
 bi_PL_GetArray (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	bi_pl_get (pr, res, PL_GetArray);
 }
@@ -260,6 +279,7 @@ bi_PL_GetArray (progs_t *pr, void *_res)
 static void
 bi_PL_WritePropertyList (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -272,6 +292,7 @@ bi_PL_WritePropertyList (progs_t *pr, void *_res)
 static void
 bi_PL_Type (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -282,6 +303,7 @@ bi_PL_Type (progs_t *pr, void *_res)
 static void
 bi_PL_Line (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -292,6 +314,7 @@ bi_PL_Line (progs_t *pr, void *_res)
 static void
 bi_PL_String (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -303,6 +326,7 @@ bi_PL_String (progs_t *pr, void *_res)
 static void
 bi_PL_ObjectForKey (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -318,6 +342,7 @@ bi_PL_ObjectForKey (progs_t *pr, void *_res)
 static void
 bi_PL_RemoveObjectForKey (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -328,6 +353,7 @@ bi_PL_RemoveObjectForKey (progs_t *pr, void *_res)
 static void
 bi_PL_ObjectAtIndex (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -343,6 +369,7 @@ bi_PL_ObjectAtIndex (progs_t *pr, void *_res)
 static void
 bi_PL_D_AllKeys (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -354,6 +381,7 @@ bi_PL_D_AllKeys (progs_t *pr, void *_res)
 static void
 bi_PL_D_NumKeys (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -364,6 +392,7 @@ bi_PL_D_NumKeys (progs_t *pr, void *_res)
 static void
 bi_PL_KeyAtIndex (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	int         index = P_INT (pr, 1);
@@ -376,6 +405,7 @@ bi_PL_KeyAtIndex (progs_t *pr, void *_res)
 static void
 bi_PL_D_AddObject (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         dict_handle = P_INT (pr, 0);
 	int         obj_handle = P_INT (pr, 2);
@@ -389,6 +419,7 @@ bi_PL_D_AddObject (progs_t *pr, void *_res)
 static void
 bi_PL_A_AddObject (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         arr_handle = P_INT (pr, 0);
 	int         obj_handle = P_INT (pr, 1);
@@ -401,6 +432,7 @@ bi_PL_A_AddObject (progs_t *pr, void *_res)
 static void
 bi_PL_A_NumObjects (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -411,6 +443,7 @@ bi_PL_A_NumObjects (progs_t *pr, void *_res)
 static void
 bi_PL_A_InsertObjectAtIndex (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         dict_handle = P_INT (pr, 0);
 	int         obj_handle = P_INT (pr, 1);
@@ -424,6 +457,7 @@ bi_PL_A_InsertObjectAtIndex (progs_t *pr, void *_res)
 static void
 bi_PL_RemoveObjectAtIndex (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -434,6 +468,7 @@ bi_PL_RemoveObjectAtIndex (progs_t *pr, void *_res)
 static void
 bi_PL_NewDictionary (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	plitem_t   *plitem = PL_NewDictionary (pr->hashctx);
 
@@ -443,6 +478,7 @@ bi_PL_NewDictionary (progs_t *pr, void *_res)
 static void
 bi_PL_NewArray (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	plitem_t   *plitem = PL_NewArray ();
 
@@ -452,6 +488,7 @@ bi_PL_NewArray (progs_t *pr, void *_res)
 static void
 bi_PL_NewData (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	//FIXME not safe
 	plist_resources_t *res = _res;
 	plitem_t   *plitem = PL_NewData (P_GPOINTER (pr, 0), P_INT (pr, 1));
@@ -462,6 +499,7 @@ bi_PL_NewData (progs_t *pr, void *_res)
 static void
 bi_PL_NewString (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	plitem_t   *plitem = PL_NewString (P_GSTRING (pr, 0));
 
@@ -471,6 +509,7 @@ bi_PL_NewString (progs_t *pr, void *_res)
 static void
 bi_PL_Release (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -485,6 +524,7 @@ bi_PL_Release (progs_t *pr, void *_res)
 static void
 bi_PL_Retain (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = _res;
 	int         handle = P_INT (pr, 0);
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
@@ -496,6 +536,7 @@ bi_PL_Retain (progs_t *pr, void *_res)
 plitem_t *
 Plist_GetItem (progs_t *pr, int handle)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
 	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
 	return plist->plitem;
@@ -537,6 +578,7 @@ static builtin_t builtins[] = {
 void
 RUA_Plist_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	plist_resources_t *res = calloc (1, sizeof (plist_resources_t));
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear, bi_plist_destroy);

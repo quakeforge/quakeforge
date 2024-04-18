@@ -80,6 +80,7 @@ IE_Send_Event (const IE_event_t *event)
 int
 IE_Add_Handler (ie_handler_t *event_handler, void *data)
 {
+	qfZoneScoped (true);
 	size_t      handle;
 	ie_reghandler_t reg = { event_handler, data };
 
@@ -106,7 +107,7 @@ IE_Set_Focus (int handle)
 {
 	unsigned    h = handle;
 	if (h < ie_handlers.size && ie_handlers.a[handle].handler && focus != h) {
-		IE_event_t event;
+		IE_event_t event = { };
 		event.type = ie_lose_focus;
 		IE_Send_Event (&event);
 		focus = handle;

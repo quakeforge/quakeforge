@@ -56,7 +56,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <setjmp.h>
 
 #include "qfalloca.h"
 
@@ -98,8 +97,9 @@
 #include "buildnum.h"
 #include "compat.h"
 
+#include "client/effects.h"
 #include "client/particles.h"
-#include "client/sbar.h"
+#include "client/hud.h"
 #include "client/screen.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
@@ -235,6 +235,15 @@ static cvar_t cl_shownet_cvar = {
 	.default_value = "0",
 	.flags = CVAR_NONE,
 	.value = { .type = &cexpr_int, .value = &cl_shownet },
+};
+int cl_player_shadows;
+static cvar_t cl_player_shadows_cvar = {
+	.name = "cl_player_shadows",
+	.description =
+		"Show player shadows instead of weapon shadows",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_player_shadows },
 };
 int cl_autoexec;
 static cvar_t cl_autoexec_cvar = {
@@ -450,7 +459,7 @@ static cvar_t host_speeds_cvar = {
 
 int         fps_count;
 
-jmp_buf     host_abort;
+static sys_jmpbuf host_abort;
 
 char       *server_version = NULL;		// version of server we connected to
 
@@ -655,6 +664,9 @@ CL_ClearState (void)
 
 	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
 	CL_Init_Entity (cl.viewstate.weapon_entity);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
+	renderer->depthhack = 1;
+	renderer->noshadows = cl_player_shadows;
 	r_data->view_model = cl.viewstate.weapon_entity;
 
 	CL_TEnts_Precache ();
@@ -1460,12 +1472,11 @@ CL_Init (void)
 	VID_Init (basepal, colormap);
 	IN_Init ();
 	Mod_Init ();
-	R_Init ();
+	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
 	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Load ("client");
 	CL_Init_Screen ();
 	if (con_module) {
 		con_module->data->console->dl_name = cls.downloadname;
@@ -1488,6 +1499,7 @@ CL_Init (void)
 	CL_Init_Input (cl_cbuf);
 	CL_Ents_Init ();
 	CL_Particles_Init ();
+	CL_Effects_Init ();
 	CL_TEnts_Init ();
 	CL_World_Init ();
 	CL_ClearState ();
@@ -1640,6 +1652,7 @@ CL_Init_Cvars (void)
 	Cvar_Register (&cl_writecfg_cvar, 0, 0);
 	Cvar_Register (&cl_draw_locs_cvar, 0, 0);
 	Cvar_Register (&cl_shownet_cvar, 0, 0);
+	Cvar_Register (&cl_player_shadows_cvar, 0, 0);
 	Cvar_Register (&cl_maxfps_cvar, 0, 0);
 	Cvar_Register (&cl_timeout_cvar, 0, 0);
 	Cvar_Register (&host_speeds_cvar, 0, 0);
@@ -1682,7 +1695,7 @@ Host_EndGame (const char *message, ...)
 
 	CL_Disconnect ();
 
-	longjmp (host_abort, 1);
+	Sys_longjmp (host_abort);
 }
 
 /*
@@ -1714,7 +1727,7 @@ Host_Error (const char *error, ...)
 	inerror = false;
 
 	if (host_initialized) {
-		longjmp (host_abort, 1);
+		Sys_longjmp (host_abort);
 	} else {
 		Sys_Error ("Host_Error: %s", str->str);
 	}
@@ -1864,7 +1877,7 @@ Host_Frame (float time)
 	float			sleeptime;
 	int				pass1, pass2, pass3;
 
-	if (setjmp (host_abort))
+	if (Sys_setjmp (host_abort))
 		// something bad happened, or the server disconnected
 		return;
 
@@ -2054,7 +2067,6 @@ Host_Init (void)
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 
-	sys_quake_encoding = true;
 	Sys_Init ();
 	GIB_Init (true);
 	GIB_Key_Init ();
@@ -2113,7 +2125,7 @@ Host_Init (void)
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
-	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
+	Sys_Printf ("%c\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n", 3,
 				PACKAGE_NAME);
 
 	host_initialized = true;

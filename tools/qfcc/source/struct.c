@@ -65,7 +65,7 @@
 #include "tools/qfcc/include/value.h"
 
 static symbol_t *
-find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
+find_tag (ty_meta_e meta, symbol_t *tag, const type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
@@ -87,13 +87,14 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
-	if (!type)
-		type = new_type ();
-	if (!type->name)
-		type->name = sym->name;
-	sym->type = type;
-	sym->type->type = ev_invalid;
-	sym->type->meta = meta;
+	type_t *t = (type_t *) type;//FIXME
+	if (!t)
+		t = new_type ();
+	if (!t->name)
+		t->name = sym->name;
+	t->type = ev_invalid;
+	t->meta = meta;
+	sym->type = t;
 	sym->sy_type = sy_type;
 	return sym;
 }
@@ -126,7 +127,7 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 }
 
 symbol_t *
-find_handle (symbol_t *tag, type_t *type)
+find_handle (symbol_t *tag, const type_t *type)
 {
 	if (type != &type_int && type != &type_long) {
 		error (0, "@handle type must be int or long");
@@ -134,15 +135,16 @@ find_handle (symbol_t *tag, type_t *type)
 	}
 	symbol_t   *sym = find_tag (ty_handle, tag, 0);
 	if (sym->type->type == ev_invalid) {
-		sym->type->type = type->type;
-		sym->type->width = 1;
-		sym->type->alignment = type->alignment;
+		type_t *t = (type_t *) sym->type;//FIXME
+		t->type = type->type;
+		t->width = 1;
+		t->alignment = type->alignment;
 	}
 	return sym;
 }
 
 symbol_t *
-find_struct (int su, symbol_t *tag, type_t *type)
+find_struct (int su, symbol_t *tag, const type_t *type)
 {
 	ty_meta_e   meta = ty_struct;
 
@@ -153,7 +155,8 @@ find_struct (int su, symbol_t *tag, type_t *type)
 }
 
 symbol_t *
-build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
+build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
+			  int base)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
 	symbol_t   *s;
@@ -216,12 +219,13 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type, int base)
 	}
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
-	sym->type->t.symtab = symtab;
+	((type_t *) sym->type)->t.symtab = symtab;
 	if (alignment > sym->type->alignment) {
-		sym->type->alignment = alignment;
+		((type_t *) sym->type)->alignment = alignment;
 	}
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
-		sym->type->type_def = qfo_encode_type (sym->type, pr.type_data);
+		((type_t *) sym->type)->type_def = qfo_encode_type (sym->type,
+															pr.type_data);
 	return sym;
 }
 
@@ -238,9 +242,9 @@ start_enum (symbol_t *sym)
 		error (0, "%s defined as wrong kind of tag", sym->name);
 		sym = find_enum (0);
 	}
-	sym->type->t.symtab = new_symtab (current_symtab, stab_enum);
-	sym->type->alignment = 1;
-	sym->type->width = 1;
+	((type_t *) sym->type)->t.symtab = new_symtab (current_symtab, stab_enum);
+	((type_t *) sym->type)->alignment = 1;
+	((type_t *) sym->type)->width = 1;
 	return sym->type->t.symtab;
 }
 
@@ -249,10 +253,9 @@ finish_enum (symbol_t *sym)
 {
 	symbol_t   *enum_sym;
 	symbol_t   *name;
-	type_t     *enum_type;
 	symtab_t   *enum_tab;
 
-	enum_type = sym->type = find_type (sym->type);
+	auto enum_type = sym->type = find_type (sym->type);
 	enum_tab = enum_type->t.symtab;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
@@ -269,7 +272,7 @@ finish_enum (symbol_t *sym)
 void
 add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 {
-	type_t     *enum_type = enm->type;
+	auto enum_type = enm->type;
 	symtab_t   *enum_tab = enum_type->t.symtab;
 	int         value;
 
@@ -281,7 +284,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.int_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.uint_val + 1;
 	if (val) {
 		val = convert_name (val);
 		if (!is_constant (val))
@@ -296,7 +299,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 }
 
 int
-enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
+enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 {
 	symtab_t   *symtab = enm->t.symtab;
 	symbol_t   *zero_sym = 0;
@@ -330,7 +333,8 @@ enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
 }
 
 symbol_t *
-make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
+make_structure (const char *name, int su, struct_def_t *defs,
+				const type_t *type)
 {
 	symtab_t   *strct;
 	symbol_t   *field;
@@ -354,8 +358,9 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 }
 
 def_t *
-emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
-				void *data, defspace_t *space, storage_class_t storage)
+emit_structure (const char *name, int su, struct_def_t *defs,
+				const type_t *type, void *data, defspace_t *space,
+				storage_class_t storage)
 {
 	int         i, j;
 	int         saw_null = 0;
@@ -414,7 +419,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 			data = &val[type_size (field_def.type)];
 		} else {
 			if (is_array (field_def.type)) {
-				type_t     *type = field_def.type->t.array.type;
+				auto type = dereference_type (field_def.type);
 				for (j = 0; j < field_def.type->t.array.size; j++) {
 					defs[i].emit (&field_def, data, j);
 					field_def.offset += type_size (type);

@@ -70,6 +70,7 @@ Font_shutdown (void *data)
 VISIBLE void
 Font_Init (void)
 {
+	qfZoneScoped (true);
 	if (FT_Init_FreeType (&ft)) {
 		Sys_Error ("Could not init FreeType library");
 	}

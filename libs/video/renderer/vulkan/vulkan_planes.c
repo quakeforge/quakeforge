@@ -40,7 +40,6 @@
 #include "QF/Vulkan/qf_planes.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -90,6 +89,7 @@ make_plane (vec4f_t s, vec4f_t t, vec4f_t scolor, vec4f_t tcolor)
 static void
 debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -128,36 +128,31 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
-static exprtype_t *debug_planes_draw_params[] = {
-	&cexpr_int,
-};
-static exprfunc_t debug_planes_draw_func[] = {
-	{ .func = debug_planes_draw, .num_params = 1, .param_types = debug_planes_draw_params },
-	{}
-};
-static exprsym_t debug_planes_task_syms[] = {
-	{ "debug_planes_draw", &cexpr_function, debug_planes_draw_func },
-	{}
-};
-
-void
-Vulkan_Planes_Init (vulkan_ctx_t *ctx)
+static void
+planes_shutdown (exprctx_t *ectx)
 {
-	qfvPushDebug (ctx, "debug planes init");
-	QFV_Render_AddTasks (ctx, debug_planes_task_syms);
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto pctx = ctx->planes_context;
 
-	planesctx_t *pctx = calloc (1, sizeof (planesctx_t));
-	ctx->planes_context = pctx;
+	QFV_DestroyResource (device, pctx->resources);
+	free (pctx->resources);
 
-	qfvPopDebug (ctx);
+	free (pctx->frames.a);
+	free (pctx);
 }
 
-void
-Vulkan_Planes_Setup (vulkan_ctx_t *ctx)
+static void
+planes_startup (exprctx_t *ectx)
 {
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->planes_context;
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
-	auto pctx = ctx->planes_context;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -240,14 +235,45 @@ Vulkan_Planes_Setup (vulkan_ctx_t *ctx)
 	}
 }
 
-void
-Vulkan_Planes_Shutdown (vulkan_ctx_t *ctx)
+static void
+planes_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
-	auto device = ctx->device;
-	auto pctx = ctx->planes_context;
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 
-	QFV_DestroyResource (device, pctx->resources);
+	QFV_Render_AddShutdown (ctx, planes_shutdown);
+	QFV_Render_AddStartup (ctx, planes_startup);
 
-	free (pctx->frames.a);
-	free (pctx);
+	planesctx_t *pctx = calloc (1, sizeof (planesctx_t));
+	ctx->planes_context = pctx;
+}
+
+static exprtype_t *debug_planes_draw_params[] = {
+	&cexpr_int,
+};
+static exprfunc_t debug_planes_draw_func[] = {
+	{ .func = debug_planes_draw, .num_params = 1, .param_types = debug_planes_draw_params },
+	{}
+};
+
+static exprfunc_t planes_init_func[] = {
+	{ .func = planes_init },
+	{}
+};
+
+static exprsym_t debug_planes_task_syms[] = {
+	{ "debug_planes_draw", &cexpr_function, debug_planes_draw_func },
+	{ "planes_init", &cexpr_function, planes_init_func },
+	{}
+};
+
+void
+Vulkan_Planes_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	qfvPushDebug (ctx, "debug planes init");
+	QFV_Render_AddTasks (ctx, debug_planes_task_syms);
+
+	qfvPopDebug (ctx);
 }

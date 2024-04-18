@@ -52,7 +52,10 @@
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
+#include "mod_internal.h"
 #include "r_internal.h"
+
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
 static const char *alias_vert_effects[] =
 {
@@ -149,39 +152,6 @@ glsl_R_InitAlias (void)
 }
 
 static void
-calc_lighting (entity_t ent, float *ambient, float *shadelight,
-			   vec3_t lightvec)
-{
-	float       add;
-	vec3_t      dist;
-	int         light;
-
-	transform_t transform = Entity_Transform (ent);
-	vec4f_t     entorigin = Transform_GetWorldPosition (transform);
-
-	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	light = R_LightPoint (&r_refdef.worldmodel->brush, entorigin);
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
-	*ambient = max (light, max (renderer->model->min_light,
-								renderer->min_light) * 128);
-	*shadelight = *ambient;
-
-	auto dlight_pool = &r_refdef.registry->comp_pools[scene_dynlight];
-	auto dlight_data = (dlight_t *) dlight_pool->data;
-	for (uint32_t i = 0; i < dlight_pool->count; i++) {
-		auto dlight = &dlight_data[i];
-		VectorSubtract (entorigin, dlight->origin, dist);
-		add = dlight->radius - VectorLength (dist);
-		if (add > 0)
-			*ambient += add;
-	}
-	if (*ambient >= 128)
-		*ambient = 128;
-	if (*shadelight > 192 - *ambient)
-		*shadelight = 192 - *ambient;
-}
-
-static void
 set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 		    const shaderparam_t *st, aliasvrt_t *pose)
 {
@@ -226,22 +196,18 @@ glsl_R_DrawAlias (entity_t ent)
 	};
 #endif
 	static quat_t color = { 1, 1, 1, 1};
-	static vec3_t lightvec;
-	float       ambient;
-	float       shadelight;
 	float       skin_size[2];
 	float       blend;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
-	int         skin_tex;
-	int         colormap;
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
 	mat4f_t     worldMatrix;
+	alight_t    lighting;
 
-	calc_lighting (ent, &ambient, &shadelight, lightvec);
+	R_Setup_Lighting (ent, &lighting);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, ent.reg);
+	auto renderer = Entity_GetRenderer (ent);
 	if (renderer->onlyshadows) {
 		return;
 	}
@@ -267,15 +233,20 @@ glsl_R_DrawAlias (entity_t ent)
 	mmulf (mvp_mat, worldMatrix, mvp_mat);
 	mmulf (mvp_mat, alias_vp, mvp_mat);
 
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation,
-											   ent.reg);
-	colormap = glsl_colormap;
-	if (renderer->skin && renderer->skin->auxtex)
-		colormap = renderer->skin->auxtex;
-	if (renderer->skin && renderer->skin->texnum) {
-		skin_t     *skin = renderer->skin;
-		skin_tex = skin->texnum;
-	} else {
+	auto animation = Entity_GetAnimation (ent);
+	GLuint cmap_tex = glsl_colormap;
+	auto colormap = Entity_GetColormap (ent);
+	if (colormap) {
+		cmap_tex = glsl_Skin_Colormap (colormap);
+	}
+	GLuint skin_tex = 0;
+	if (renderer->skin) {
+		skin_t     *skin = Skin_Get (renderer->skin);
+		if (skin) {
+			skin_tex = skin->id;
+		}
+	}
+	if (!skin_tex) {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (animation, renderer->skinnum, hdr);
 		skin_tex = skindesc->texnum;
@@ -289,7 +260,7 @@ glsl_R_DrawAlias (entity_t ent)
 	skin_size[1] = hdr->mdl.skinheight;
 
 	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglBindTexture (GL_TEXTURE_2D, colormap);
+	qfeglBindTexture (GL_TEXTURE_2D, cmap_tex);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	qfeglBindTexture (GL_TEXTURE_2D, skin_tex);
 
@@ -301,9 +272,9 @@ glsl_R_DrawAlias (entity_t ent)
 	qfeglVertexAttrib4fv (quake_mdl.colora.location, color);
 	qfeglVertexAttrib4fv (quake_mdl.colorb.location, color);
 	qfeglUniform1f (quake_mdl.blend.location, blend);
-	qfeglUniform1f (quake_mdl.ambient.location, ambient);
-	qfeglUniform1f (quake_mdl.shadelight.location, shadelight);
-	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
+	qfeglUniform1f (quake_mdl.ambient.location, lighting.ambientlight);
+	qfeglUniform1f (quake_mdl.shadelight.location, lighting.shadelight);
+	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lighting.lightvec);
 	qfeglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
 	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false,
 						   (vec_t*)&mvp_mat[0]);//FIXME

@@ -80,12 +80,8 @@ esac
 
 m4_include(config.d/compression.m4)
 
-m4_include(config.d/mgl.m4)
-m4_include(config.d/fbdev.m4)
-m4_include(config.d/svga.m4)
 m4_include(config.d/vulkan.m4)
 m4_include(config.d/x11.m4)
-m4_include(config.d/sdl.m4)
 
 m4_include(config.d/curses.m4)
 m4_include(config.d/freetype.m4)
@@ -144,6 +140,8 @@ m4_include(config.d/paths.m4)
 
 m4_include(config.d/build_control.m4)
 m4_include(config.d/qfcc.m4)
+m4_include(config.d/tracy.m4)
+m4_include(config.d/backtrace.m4)
 
 AC_ARG_ENABLE(static-doc,
 	AS_HELP_STRING([--enable-static-doc],
@@ -163,6 +161,53 @@ fi
 
 TOPSRC=`readlink -f ${srcdir}`
 AC_SUBST(TOPSRC)
+
+case "${host}" in
+	i?86-*-mingw32*|x86_64-w64-mingw32*)
+		QF_REQUIRES([
+			[libsamplerate, HAVE_SAMPLERATE],
+			[flac, HAVE_FLAC],
+			[ogg, HAVE_OGG],
+			[vorbis, HAVE_VORBIS],
+			[libpng, HAVE_PNG],
+			[zlib, HAVE_ZLIB],
+			[curl, HAVE_LIBCURL],
+			[ncurses, HAVE_NCURSES],
+			[vulkan-dev, HAVE_VULKAN],
+			[glslang-tools, HAVE_GLSLANG],
+			[fontconfig, HAVE_FONTCONFIG],
+			[freetype, HAVE_FREETYPE],
+			[harfbuzz, HAVE_HARFBUZZ],
+			[backtrace, HAVE_BACKTRACE],
+		])
+	;;
+	*linux*)
+		QF_REQUIRES([
+			[libasound2-dev, HAVE_ALSA],
+			[libjack-jackd2-dev, HAVE_JACK],
+			[libsamplerate0-dev, HAVE_SAMPLERATE],
+			[libflac-dev, HAVE_FLAC],
+			[libogg-dev, HAVE_OGG],
+			[libvorbis-dev, HAVE_VORBIS],
+			[libpng-dev, HAVE_PNG],
+			[zlib1g-dev, HAVE_ZLIB],
+			[libcurl4-openssl-dev, HAVE_LIBCURL],
+			[libncurses5-dev, HAVE_NCURSES],
+			[libxext-dev, HAVE_X],
+			[libxxf86dga-dev, HAVE_DGA],
+			[libxxf86vm-dev, HAVE_VIDMODE],
+			[libxi-dev, HAVE_XI2],
+			[libxfixes-dev, HAVE_XFIXES],
+			[libvulkan-dev, HAVE_VULKAN],
+			[glslang-tools, HAVE_GLSLANG],
+			[libfontconfig-dev, HAVE_FONTCONFIG],
+			[libfreetype-dev, HAVE_FREETYPE],
+			[libharfbuzz-dev, HAVE_HARFBUZZ],
+			[backtrace, HAVE_BACKTRACE],
+		])
+	;;
+esac
+dnl[vulkan-validationlayers, HAVE_],
 
 dnl Output files
 m4_include(config.d/rpm.m4)

@@ -24,7 +24,9 @@
   #pragma alloca
 #endif
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 /* We need this for `regex.h', and perhaps for the Emacs include files.  */
 #include <sys/types.h>
@@ -241,8 +243,12 @@ char *alloca ();
 
 #define STREQ(s1, s2) ((strcmp (s1, s2) == 0))
 
+#ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 typedef char boolean;
 #define false 0
@@ -4619,8 +4625,7 @@ re_compile_pattern (
 static struct re_pattern_buffer re_comp_buf;
 
 const char *
-re_comp (s)
-    const char *s;
+re_comp (const char *s)
 {
   reg_errcode_t ret;
 
@@ -4657,8 +4662,7 @@ re_comp (s)
 
 
 int
-re_exec (s)
-    const char *s;
+re_exec (const char *s)
 {
   const int len = strlen (s);
   return

@@ -2,6 +2,8 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_multiview : enable
 
+#include "fog.finc"
+
 #include "oit_store.finc"
 
 layout (constant_id = 0) const bool doSkyBox = false;
@@ -25,16 +27,6 @@ layout(early_fragment_tests) in;
 //layout (location = 0) out vec4 frag_color;
 
 const float SCALE = 189.0 / 64.0;
-
-vec4
-fogBlend (vec4 color)
-{
-	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
-	vec3        fog_color = fog.rgb;
-	float       fog_factor = exp (-az * az);
-
-	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
-}
 
 vec4
 sky_sheet (vec3 dir, float time)
@@ -100,6 +92,6 @@ main (void)
 	} else {
 		c = vec4 (0, 0, 0, 1);
 	}
-	//frag_color = c;//fogBlend (c);
+	c = FogBlend (c, fog);
 	StoreFrag (c, gl_FragCoord.z);
 }

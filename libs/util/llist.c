@@ -71,7 +71,9 @@ llist_flush (llist_t *list)
 
 	for (node = list->start; node; node = next) {
 		next = node->next;
-		list->freedata (node->data, list->userdata);
+		if (list->freedata) {
+			list->freedata (node->data, list->userdata);
+		}
 		free (node);
 	}
 	list->start = list->end = 0;

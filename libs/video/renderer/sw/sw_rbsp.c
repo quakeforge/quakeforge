@@ -101,7 +101,7 @@ R_RotateBmodel (vec4f_t *mat)
 
 static void
 R_RecursiveClipBPoly (uint32_t render_id, bedge_t *pedges, mnode_t *pnode,
-					  msurface_t *psurf)
+					  msurface_t *surf)
 {
 	bedge_t    *psideedges[2], *pnextedge, *ptedge;
 	int         i, side, lastside;
@@ -236,12 +236,12 @@ R_RecursiveClipBPoly (uint32_t render_id, bedge_t *pedges, mnode_t *pnode,
 						== r_visstate.visframecount
 					&& leaf->contents != CONTENTS_SOLID) {
 					r_currentbkey = leaf->key;
-					R_RenderBmodelFace (render_id, psideedges[i], psurf);
+					R_RenderBmodelFace (render_id, psideedges[i], surf);
 				}
 			} else {
 				if (r_visstate.node_visframes[child_id]
 						== r_visstate.visframecount) {
-					R_RecursiveClipBPoly (render_id, psideedges[i], pn, psurf);
+					R_RecursiveClipBPoly (render_id, psideedges[i], pn, surf);
 				}
 			}
 		}
@@ -255,7 +255,7 @@ R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 {
 	int         i, j, lindex;
 	vec_t       dot;
-	msurface_t *psurf;
+	msurface_t *surf;
 	int         numsurfaces;
 	plane_t    *pplane;
 	mvertex_t   bverts[MAX_BMODEL_VERTS];
@@ -264,19 +264,19 @@ R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	psurf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 	numsurfaces = brush->nummodelsurfaces;
 	pedges = brush->edges;
 
-	for (i = 0; i < numsurfaces; i++, psurf++) {
+	for (i = 0; i < numsurfaces; i++, surf++) {
 		// find which side of the node we are on
-		pplane = psurf->plane;
+		pplane = surf->plane;
 
 		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
 
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
+		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			// FIXME: use bounding-box-based frustum clipping info?
 
 			// copy the edges to bedges, flipping if necessary so always
@@ -287,12 +287,12 @@ R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 			pbedges = bedges;
 			numbverts = numbedges = 0;
 
-			if (psurf->numedges > 0) {
+			if (surf->numedges > 0) {
 				pbedge = &bedges[numbedges];
-				numbedges += psurf->numedges;
+				numbedges += surf->numedges;
 
-				for (j = 0; j < psurf->numedges; j++) {
-					lindex = brush->surfedges[psurf->firstedge + j];
+				for (j = 0; j < surf->numedges; j++) {
+					lindex = brush->surfedges[surf->firstedge + j];
 
 					if (lindex > 0) {
 						pedge = &pedges[lindex];
@@ -310,7 +310,7 @@ R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 
 				pbedge[j - 1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly (render_id, pbedge, topnode, psurf);
+				R_RecursiveClipBPoly (render_id, pbedge, topnode, surf);
 			} else {
 				Sys_Error ("no edges in bmodel");
 			}
@@ -325,28 +325,28 @@ R_DrawSubmodelPolygons (uint32_t render_id, mod_brush_t *brush, int clipflags,
 {
 	int         i;
 	vec_t       dot;
-	msurface_t *psurf;
+	msurface_t *surf;
 	int         numsurfaces;
 	plane_t    *pplane;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	psurf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 	numsurfaces = brush->nummodelsurfaces;
 
-	for (i = 0; i < numsurfaces; i++, psurf++) {
+	for (i = 0; i < numsurfaces; i++, surf++) {
 		// find which side of the node we are on
-		pplane = psurf->plane;
+		pplane = surf->plane;
 
 		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
 
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
+		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
 			r_currentkey = topleaf->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderFace (render_id, psurf, clipflags);
+			R_RenderFace (render_id, surf, clipflags);
 		}
 	}
 }

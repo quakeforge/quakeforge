@@ -1,9 +1,9 @@
+#include <QF/keys.h>
 #include "AutoreleasePool.h"
 #include "menu.h"
 #include "cmd.h"
 #include "gib.h"
 #include "draw.h"
-#include "key.h"
 #include "string.h"
 #include "cbuf.h"
 #include "options.h"

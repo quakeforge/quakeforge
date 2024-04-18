@@ -55,7 +55,7 @@ static void Cache_Profile_r (memhunk_t *hunk);
 static bool Cache_FreeLRU (memhunk_t *hunk);
 
 #define	ZONEID			0x1d4a11
-#define	HUNK_SENTINAL	0x1df001ed
+#define	HUNK_SENTINEL	0x1df001ed
 
 #define MINFRAGMENT	64
 #define HUNK_ALIGN 64
@@ -88,7 +88,7 @@ struct memzone_s {
 	size_t      used;		// ammount used, including header
 	size_t      offset;
 	size_t      ele_size;
-	void        (*error) (void *, const char *);
+	zone_err_f  error;
 	void       *data;
 	memblock_t *rover;
 	memblock_t  blocklist;	// start / end cap for linked list
@@ -97,7 +97,19 @@ struct memzone_s {
 static size_t
 z_block_size (memblock_t *block)
 {
-	return block->block_size - sizeof (memblock_t) - 4;
+	size_t size = block->block_size;
+	size -= sizeof (memblock_t);	// account for size of block header
+	size -= 4;						// space for memory trash tester
+	return size;;
+}
+
+static size_t
+z_round_size (size_t size)
+{
+	size += sizeof (memblock_t);	// account for size of block header
+	size += 4;						// space for memory trash tester
+	size = (size + 63) & ~63;		// align to 64-byte boundary
+	return size;
 }
 
 static int
@@ -108,11 +120,94 @@ z_offset (memzone_t *zone, memblock_t *block)
 	return offset / zone->ele_size + zone->offset;
 }
 
+static memblock_t *
+z_next_block (memblock_t *block, size_t offset)
+{
+	return (memblock_t *) ((byte *) block + offset);
+}
+
+static memblock_t *
+z_split_block (memblock_t *block, size_t size)
+{
+	size_t extra = block->block_size - size;
+	if (extra <= MINFRAGMENT) {
+		return 0;
+	}
+	auto split = z_next_block (block, size);
+	*split = (memblock_t) {
+		.block_size = extra,
+		.next = block->next,
+		.prev = block,
+		.id = ZONEID,
+	};
+	split->next->prev = split;
+	block->next = split;
+	block->block_size = size;
+	return split;
+}
+
+static memblock_t *
+z_merge_blocks (memzone_t *zone, memblock_t *a, memblock_t *b)
+{
+	if (a->next != b) {
+		Sys_Error ("z_merge_blocks: blocks not adjacant");
+	}
+	a->block_size += b->block_size;
+	a->next = b->next;
+	a->next->prev = a;
+	if (b == zone->rover) {
+		zone->rover = a;
+	}
+	return a;
+}
+
+static void
+z_set_sentinel (memblock_t *block)
+{
+	*(int *) ((byte *) block + block->block_size - 4) = ZONEID;
+}
+
+static void
+z_deadbeef (memblock_t *block)
+{
+	auto ptr = (uint32_t *) (block + 1);
+	size_t count = (block->block_size - sizeof (*block)) / sizeof (uint32_t);
+	while (count-- > 0) {
+		*ptr++ = 0xdeadbeef;
+	}
+}
+
+static memblock_t *
+_z_ptr_block (memzone_t *zone, void *ptr, const char *func)
+{
+	auto block = (memblock_t *) ptr - 1;
+	if (((byte *) block < (byte *) zone)
+		|| (((byte *) block) >= (byte *) zone + zone->size)) {
+		if (zone->error) {
+			zone->error (zone->data, "%s: pointer outside of zone: %x", func,
+						 z_offset (zone, block));
+		}
+		Sys_Error ("%s: pointer outside of zone: %x", func,
+				   z_offset (zone, block));
+	}
+	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
+		if (zone->error) {
+			zone->error (zone->data, "%s: zone without ZONEID: %p (%x)",
+						 func, ptr, z_offset (zone, block));
+		}
+		Sys_Error ("%s: zone without ZONEID: %p (%x)",
+				   func, ptr, z_offset (zone, block));
+	}
+	return block;
+}
+#define z_ptr_block(zone, ptr) _z_ptr_block (zone, ptr, __FUNCTION__)
+
 static void
 z_error (memzone_t *zone, const char *msg)
 {
-	if (zone->error)
-		zone->error (zone->data, msg);
+	if (zone->error) {
+		zone->error (zone->data, "%s", msg);
+	}
 	Sys_Error ("%s", msg);
 }
 
@@ -153,44 +248,32 @@ Z_Free (memzone_t *zone, void *ptr)
 {
 	memblock_t	*block, *other;
 
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
+
 	if (!ptr) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Free: NULL pointer");
+		}
 		Sys_Error ("Z_Free: NULL pointer");
 	}
 
-	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (((byte *) block < (byte *) zone)
-		|| (((byte *) block) >= (byte *) zone + zone->size)) {
-		const char *msg;
-		msg = nva ("Z_Free: freed a pointer outside of the zone: %x",
-				   z_offset (zone, block));
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
-	}
-	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		const char *msg;
-		msg = nva ("bad pointer %x", z_offset (zone, block));
-		Sys_Printf ("%s\n", msg);
-		Z_Print (zone);
-		fflush (stdout);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("Z_Free: freed a pointer without ZONEID");
-	}
+	block = z_ptr_block (zone, ptr);
 	if (block->tag == 0) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Free: freed a freed pointer");
+		}
 		Sys_Error ("Z_Free: freed a freed pointer");
 	}
 	if (block->retain) {
-		const char *msg = nva ("Z_Free: freed a retained pointer: %d",
+		if (zone->error) {
+			zone->error (zone->data, "Z_Free: freed a retained pointer: %d",
 							   block->retain);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		}
+		Sys_Error ("Z_Free: freed a retained pointer: %d", block->retain);
 	}
+	z_deadbeef (block);
 
 	block->tag = 0;		// mark as free
 	block->size = 0;
@@ -199,22 +282,16 @@ Z_Free (memzone_t *zone, void *ptr)
 	other = block->prev;
 	if (!other->tag) {
 		// merge with previous free block
-		other->block_size += block->block_size;
-		other->next = block->next;
-		other->next->prev = other;
-		if (block == zone->rover)
-			zone->rover = other;
-		block = other;
+		block = z_merge_blocks (zone, other, block);
 	}
 
 	other = block->next;
 	if (!other->tag) {
 		// merge the next free block onto the end
-		block->block_size += other->block_size;
-		block->next = other->next;
-		block->next->prev = block;
-		if (other == zone->rover)
-			zone->rover = block;
+		z_merge_blocks (zone, block, other);
+	}
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
 	}
 }
 
@@ -225,11 +302,11 @@ Z_Malloc (memzone_t *zone, size_t size)
 
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf) {
-		const char *msg;
-		msg = nva ("Z_Malloc: failed on allocation of %zd bytes", size);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		if (zone->error) {
+			zone->error (zone->data,
+						 "Z_Malloc: failed on allocation of %zd bytes", size);
+		}
+		Sys_Error ("Z_Malloc: failed on allocation of %zd bytes", size);
 	}
 	memset (buf, 0, size);
 
@@ -239,24 +316,23 @@ Z_Malloc (memzone_t *zone, size_t size)
 void *
 Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 {
-	int         extra;
-	int         requested_size = size;
-	memblock_t *start, *rover, *new, *base;
+	size_t      requested_size = size;
+	memblock_t *start, *rover, *base;
 
-	if (developer & SYS_zone)
-		Z_CheckHeap (zone);	// DEBUG
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
 
 	if (!tag) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_TagMalloc: tried to use a 0 tag");
+		}
 		Sys_Error ("Z_TagMalloc: tried to use a 0 tag");
 	}
 
 	// scan through the block list looking for the first free block
 	// of sufficient size
-	size += sizeof (memblock_t);	// account for size of block header
-	size += 4;						// space for memory trash tester
-	size = (size + 63) & ~63;		// align to 64-byte boundary
+	size = z_round_size (size);
 
 	base = rover = zone->rover;
 	start = base->prev;
@@ -271,20 +347,7 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	} while (base->tag || base->block_size < size);
 
 	// found a block big enough
-	extra = base->block_size - size;
-	if (extra >  MINFRAGMENT) {
-		// there will be a free fragment after the allocated block
-		new = (memblock_t *) ((byte *) base + size);
-		new->block_size = extra;
-		new->tag = 0;			// free block
-		new->prev = base;
-		new->id = ZONEID;
-		//new->id2 = ZONEID;
-		new->next = base->next;
-		new->next->prev = new;
-		base->next = new;
-		base->block_size = size;
-	}
+	z_split_block (base, size);
 
 	base->retain = 0;				// use is optional, but must be 0 to free
 	base->tag = tag;				// no longer a free block
@@ -298,7 +361,11 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 	zone->used += base->block_size;
 
 	// marker for memory trash testing
-	*(int *) ((byte *) base + base->block_size - 4) = ZONEID;
+	z_set_sentinel (base);
+
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
+	}
 
 	return (void *) (base + 1);
 }
@@ -306,48 +373,65 @@ Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 VISIBLE void *
 Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 {
-	size_t      old_size;
-	memblock_t *block;
-	void       *old_ptr;
-
 	if (!ptr)
 		return Z_Malloc (zone, size);
 
-	if (developer & SYS_zone)
-		Z_CheckHeap (zone);	// DEBUG
-
-	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
-	if (block->id != ZONEID/* || block->id2 != ZONEID*/) {
-		if (zone->error)
-			zone->error (zone->data,
-						 "Z_Realloc: realloced a pointer without ZONEID");
-		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
 	}
+
+	auto block = z_ptr_block (zone, ptr);
 	if (block->tag == 0) {
-		if (zone->error)
+		if (zone->error) {
 			zone->error (zone->data, "Z_Realloc: realloced a freed pointer");
+		}
 		Sys_Error ("Z_Realloc: realloced a freed pointer");
 	}
 
-	old_size = block->block_size;
-	old_size -= sizeof (memblock_t);	// account for size of block header
-	old_size -= 4;						// space for memory trash tester
-	old_ptr = ptr;
+	auto new_size = z_round_size (size);
+	auto old_size = block->size;
+	auto old_ptr = ptr;
 
-	Z_Free (zone, ptr);
-	ptr = Z_TagMalloc (zone, size, 1);
+	if (new_size <= block->block_size) {
+		auto hole = z_split_block (block, new_size);
+		if (hole) {
+			z_deadbeef (hole);
+			if (!hole->next->tag) {
+				// merge the hole with the free block after it
+				z_merge_blocks (zone, hole, hole->next);
+			}
+		}
+		block->size = size;
+		z_set_sentinel (block);
+	} else {
+		auto other = block->next;
+		if (!other->tag && block->block_size + other->block_size >= new_size) {
+			z_split_block (other, new_size - block->block_size);
+			z_merge_blocks (zone, block, other);
+			block->size = size;
+			z_set_sentinel (block);
+		} else {
+			ptr = Z_TagMalloc (zone, size, 1);
+		}
+	}
 	if (!ptr) {
-		const char *msg;
-		msg = nva ("Z_Realloc: failed on allocation of %zd bytes", size);
-		if (zone->error)
-			zone->error (zone->data, msg);
-		Sys_Error ("%s", msg);
+		if (zone->error) {
+			zone->error (zone->data,
+						 "Z_Realloc: failed on allocation of %zd bytes", size);
+		}
+		Sys_Error ("Z_Realloc: failed on allocation of %zd bytes", size);
+	}
+	if (developer & SYS_zone) {
+		Z_CheckHeap (zone);
 	}
 
-	if (ptr != old_ptr)
+	if (ptr != old_ptr) {
 		memmove (ptr, old_ptr, min (old_size, size));
-	if (old_size < size)
+		Z_Free (zone, old_ptr);
+	}
+	if (old_size < size) {
 		memset ((byte *)ptr + old_size, 0, size - old_size);
+	}
 
 	return ptr;
 }
@@ -414,7 +498,7 @@ Z_CheckHeap (memzone_t *zone)
 }
 
 VISIBLE void
-Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
+Z_SetError (memzone_t *zone, zone_err_f err, void *data)
 {
 	zone->error = err;
 	zone->data = data;
@@ -446,7 +530,7 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 VISIBLE int
 Z_IncRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	if (!++block->retain) {
 		z_error (zone, "inc retain count wrapped to 0");
 	}
@@ -456,7 +540,7 @@ Z_IncRetainCount (memzone_t *zone, void *ptr)
 VISIBLE int
 Z_DecRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	if (--block->retain == -1) {
 		z_error (zone, "dec retain count wrapped past 0");
 	}
@@ -466,14 +550,14 @@ Z_DecRetainCount (memzone_t *zone, void *ptr)
 VISIBLE int
 Z_GetRetainCount (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	return block->retain;
 }
 
 VISIBLE int
 Z_GetTag (memzone_t *zone, void *ptr)
 {
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	return block->tag;
 }
 
@@ -483,7 +567,7 @@ Z_SetTag (memzone_t *zone, void *ptr, int tag)
 	if (!tag) {
 		z_error (zone, "Attept to set tag to 0");
 	}
-	memblock_t *block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	memblock_t *block = z_ptr_block (zone, ptr);
 	block->tag = tag;
 }
 VISIBLE void
@@ -509,8 +593,8 @@ struct cache_system_s {
 } __attribute__((aligned (64)));
 
 typedef struct {
-	int         sentinal1;
-	int         sentinal2;
+	int         sentinel1;
+	int         sentinel2;
 	size_t      size;		// including sizeof(hunkblk_t), -1 = not allocated
 	char        name[16];
 } __attribute__((aligned (64))) hunkblk_t;
@@ -543,7 +627,7 @@ static int
 hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 {
 	const char *msg = 0;
-	if (h->sentinal1 != HUNK_SENTINAL || h->sentinal2 != HUNK_SENTINAL) {
+	if (h->sentinel1 != HUNK_SENTINEL || h->sentinel2 != HUNK_SENTINEL) {
 		msg = "Hunk_Check: trashed sentinel";
 	}
 	if (!msg && (h->size < sizeof (hunkblk_t)
@@ -587,7 +671,7 @@ hunk_check (memhunk_t *hunk, hunkblk_t *h, int err)
 /*
 	Hunk_Check
 
-	Run consistancy and sentinal trahing checks
+	Run consistancy and sentinel trahing checks
 */
 VISIBLE void
 Hunk_Check (memhunk_t *hunk)
@@ -736,8 +820,8 @@ Hunk_RawAlloc (memhunk_t *hunk, size_t size)
 	Cache_FreeLow (hunk, hunk->low_used);
 
 	h->size = size;
-	h->sentinal1 = HUNK_SENTINAL;
-	h->sentinal2 = HUNK_SENTINAL;
+	h->sentinel1 = HUNK_SENTINEL;
+	h->sentinel2 = HUNK_SENTINEL;
 	h->name[0] = 0;
 
 	return (void *) (h + 1);
@@ -823,8 +907,8 @@ Hunk_HighAlloc (memhunk_t *hunk, size_t size)
 	Cache_FreeHigh (hunk, hunk->high_used);
 
 	h = (void *) (hunk->base + hunk->size - hunk->high_used);
-	h->sentinal1 = HUNK_SENTINAL;
-	h->sentinal2 = HUNK_SENTINAL;
+	h->sentinel1 = HUNK_SENTINEL;
+	h->sentinel2 = HUNK_SENTINEL;
 	h->size = size;
 	h->name[0] = 0;
 	return h + 1;

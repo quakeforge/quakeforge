@@ -43,6 +43,7 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 #include "QF/plist.h"
+#include "QF/progs.h"
 
 #include "QF/scene/light.h"
 
@@ -57,9 +58,28 @@ worldscene_t cl_world = {
 	.models = DARRAY_STATIC_INIT (32),
 };
 
+static void
+CL_World_Shutdown (void *data)
+{
+	qfZoneScoped (true);
+	if (cl_world.edicts) {
+		PL_Release (cl_world.edicts);
+	}
+	if (cl_world.scene) {
+		if (cl_world.scene->lights) {
+			Light_DestroyLightingData (cl_world.scene->lights);
+		}
+		Scene_DeleteScene (cl_world.scene);
+	}
+	free (cl_world.models.a);
+	free (cl_static_entities.a);
+}
+
 void
 CL_World_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (CL_World_Shutdown, 0);
 	scene_system_t extra_systems[] = {
 		{	.system = &effect_system,
 			.components = effect_components,
@@ -73,6 +93,7 @@ CL_World_Init (void)
 void
 CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 {
+	qfZoneScoped (true);
 	int         bits = 0;
 
 	if (version == 2)
@@ -107,6 +128,7 @@ CL_ParseBaseline (qmsg_t *msg, entity_state_t *baseline, int version)
 void
 CL_ParseStatic (qmsg_t *msg, int version)
 {
+	qfZoneScoped (true);
 	entity_t	    ent;
 	entity_state_t	es;
 
@@ -116,8 +138,8 @@ CL_ParseStatic (qmsg_t *msg, int version)
 	CL_ParseBaseline (msg, &es, version);
 	DARRAY_APPEND (&cl_static_entities, es);
 
-	renderer_t *renderer = Ent_GetComponent (ent.id, scene_renderer, cl_world.scene->reg);
-	animation_t *animation = Ent_GetComponent (ent.id, scene_animation, cl_world.scene->reg);
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
 
 	// copy it to the current state
 	renderer->model = cl_world.models.a[es.modelindex];
@@ -133,6 +155,7 @@ CL_ParseStatic (qmsg_t *msg, int version)
 static void
 map_cfg (const char *mapname, int all)
 {
+	qfZoneScoped (true);
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	cbuf_t     *cbuf = Cbuf_New (&id_interp);
 	QFile      *f;
@@ -213,6 +236,7 @@ CL_LoadSky (const char *name)
 void
 CL_World_NewMap (const char *mapname, const char *skyname)
 {
+	qfZoneScoped (true);
 	model_t    *worldmodel = cl_world.models.a[1];
 	cl_world.scene->worldmodel = worldmodel;
 
@@ -240,6 +264,7 @@ CL_World_NewMap (const char *mapname, const char *skyname)
 void
 CL_World_Clear (void)
 {
+	qfZoneScoped (true);
 	Scene_FreeAllEntities (cl_world.scene);
 	CL_ClearTEnts ();
 }

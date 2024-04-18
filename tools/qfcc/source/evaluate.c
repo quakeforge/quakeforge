@@ -41,9 +41,9 @@
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
-#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
@@ -155,7 +155,7 @@ setup_value_progs (void)
 }
 
 ex_value_t *
-convert_value (ex_value_t *value, type_t *type)
+convert_value (ex_value_t *value, const type_t *type)
 {
 	if (!is_math (type) || !is_math (value->type)) {
 		error (0, "unable to convert non-math value");
@@ -236,6 +236,15 @@ evaluate_constexpr (const expr_t *e)
 		if (!is_constant (e->expr.e1) || !is_constant (e->expr.e2)) {
 			return e;
 		}
+	} else if (e->type == ex_alias) {
+		// offsets are always constant
+		if (!is_constant (e->alias.expr)) {
+			return e;
+		}
+	} else if (e->type == ex_extend) {
+		if (!is_constant (e->extend.src)) {
+			return e;
+		}
 	} else {
 		return e;
 	}
@@ -276,7 +285,7 @@ evaluate_constexpr (const expr_t *e)
 	options.code.progsversion = saved_version;
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_foldconst);
-	auto val = new_type_value (e->expr.type, value_pr.pr_return_buffer);
+	auto val = new_type_value (get_type (e), value_pr.pr_return_buffer);
 	e = new_value_expr (val, false);
 	return e;
 }

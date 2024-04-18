@@ -104,6 +104,7 @@ typedef struct {
 } client_static_t;
 
 extern client_static_t	cls;
+extern struct dstring_s *cl_stuffbuff;
 
 #define FPD_NO_MACROS		0x0001	// Many clients ignore this, and it isn't used, but let's honor it
 #define FPD_NO_TIMERS		0x0002	// We never allow timers anyway

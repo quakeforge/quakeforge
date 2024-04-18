@@ -69,12 +69,15 @@ enum scene_components {
 
 typedef struct scene_s {
 	struct ecs_registry_s *reg;
+	uint32_t base;
 
 	struct model_s *worldmodel;
 	int         num_models;
 	struct model_s **models;
 	struct mleaf_s *viewleaf;
 	struct lightingdata_s *lights;
+
+	uint32_t    camera;
 } scene_t;
 
 typedef struct scene_system_s {

@@ -51,6 +51,7 @@ static struct {
 int
 VCR_Init (void)
 {
+	qfZoneScoped (true);
 	net_drivers[0].Init = VCR_Init;
 
 	net_drivers[0].SearchForHosts = VCR_SearchForHosts;

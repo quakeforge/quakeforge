@@ -82,14 +82,14 @@ CL_Ignore_Sanity_Check (void)
 
 static bool live_iterator (ignore_t *ig, llist_node_t *node)
 {
-	Sys_Printf ("%5i - %s\n", ig->uid,
+	Sys_Printf ("%c%5i - %s\n", 3, ig->uid,
 				Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 	return true;
 }
 
 static bool dead_iterator (ignore_t *ig, llist_node_t *node)
 {
-	Sys_Printf ("%s\n", ig->lastname);
+	Sys_Printf ("%c%s\n", 3, ig->lastname);
 	return true;
 }
 
@@ -118,7 +118,7 @@ CL_Ignore_f (void)
 				new->slot = i;
 				new->uid = uid;
 				llist_append (ignore_list, new);
-				Sys_Printf ("User %i (%s) is now ignored.\n", uid,
+				Sys_Printf ("%cUser %i (%s) is now ignored.\n", 3, uid,
 							Info_ValueForKey (cl.players[i].userinfo, "name"));
 				return;
 			}
@@ -141,7 +141,7 @@ CL_Unignore_f (void)
 		uid = atoi (Cmd_Argv (1));
 		if ((node = llist_findnode (ignore_list, &uid))) {
 			int         slot = LLIST_DATA (node, ignore_t)->slot;
-			Sys_Printf ("User %i (%s) is no longer ignored.\n", uid,
+			Sys_Printf ("%cUser %i (%s) is no longer ignored.\n", 3, uid,
 						Info_ValueForKey (cl.players[slot].userinfo, "name"));
 			CL_Ignore_Free (llist_remove (node), 0);
 			return;
@@ -198,8 +198,8 @@ CL_Chat_User_Disconnected (int uid)
 		ig->lastname = strdup (Info_ValueForKey (cl.players[ig->slot].userinfo,
 												 "name"));
 		llist_append (dead_ignore_list, ig);
-		Sys_Printf ("Ignored user %i (%s) left the server.  "
-					"Now ignoring by name...\n", ig->uid, ig->lastname);
+		Sys_Printf ("%cIgnored user %i (%s) left the server.  "
+					"Now ignoring by name...\n", 3, ig->uid, ig->lastname);
 	}
 }
 
@@ -228,8 +228,8 @@ CL_Chat_Check_Name (const char *name, int slot)
 		llist_append (ignore_list,
 					  llist_remove (llist_getnode (dead_ignore_list,
 												   g_ccn_found)));
-		Sys_Printf ("User %i (%s) is using an ignored name.  "
-					"Now ignoring by user id...\n", g_ccn_found->uid,
+		Sys_Printf ("%cUser %i (%s) is using an ignored name.  "
+					"Now ignoring by user id...\n", 3, g_ccn_found->uid,
 					g_ccn_found->lastname);
 	}
 }

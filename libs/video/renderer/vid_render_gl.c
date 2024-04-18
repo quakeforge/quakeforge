@@ -171,13 +171,9 @@ static vid_model_funcs_t model_funcs = {
 	.alias_cache                    = 1,
 	.Mod_SpriteLoadFrames           = gl_Mod_SpriteLoadFrames,
 
-	.Skin_Free               = Skin_Free,
-	.Skin_SetColormap        = Skin_SetColormap,
-	.Skin_SetSkin            = Skin_SetSkin,
-	.Skin_SetupSkin          = gl_Skin_SetupSkin,
-	.Skin_SetTranslation     = Skin_SetTranslation,
-	.Skin_ProcessTranslation = gl_Skin_ProcessTranslation,
-	.Skin_InitTranslations   = gl_Skin_InitTranslations,
+	.skin_set                = Skin_Set,
+	.skin_setupskin          = gl_Skin_SetupSkin,
+	.skin_destroy            = gl_Skin_Destroy,
 };
 
 static void
@@ -529,6 +525,8 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	.Draw_SubPic            = gl_Draw_SubPic,
 	.Draw_AddFont           = gl_Draw_AddFont,
 	.Draw_Glyph             = gl_Draw_Glyph,
+	.Draw_SetClip           = gl_Draw_SetClip,
+	.Draw_ResetClip         = gl_Draw_ResetClip,
 
 	.ParticleSystem   = gl_ParticleSystem,
 	.R_Init           = gl_R_Init,

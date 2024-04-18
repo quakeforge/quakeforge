@@ -38,8 +38,6 @@ struct draw_charbuffer_s;
 void Vulkan_Draw_CharBuffer (int x, int y, struct draw_charbuffer_s *buffer,
 							 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_Setup (struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Character (int x, int y, unsigned ch,
 							struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_String (int x, int y, const char *str,
@@ -82,9 +80,13 @@ void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 int Vulkan_Draw_AddFont (struct font_s *font, struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Glyph (int x, int y, int fontid, int glyphid, int c,
 						struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_SetClip (int x, int y, int w, int h, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_ResetClip (struct vulkan_ctx_s *ctx);
 
 void Vulkan_LineGraph (int x, int y, int *h_vals, int count, int height,
 					   struct vulkan_ctx_s *ctx);
 void Vulkan_SetScrFuncs (SCR_Func *scr_funcs, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Flush (struct vulkan_ctx_s *ctx);
+
 
 #endif//__QF_Vulkan_qf_draw_h

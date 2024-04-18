@@ -20,6 +20,7 @@ test_progs_dat=\
 	tools/qfcc/test/chewed-return.dat \
 	tools/qfcc/test/comma-expr.dat \
 	tools/qfcc/test/compound.dat \
+	tools/qfcc/test/compoundinit.dat \
 	tools/qfcc/test/const-fold-int.dat \
 	tools/qfcc/test/deadbool.dat \
 	tools/qfcc/test/dealloc-nowarn.dat \
@@ -51,6 +52,7 @@ test_progs_dat=\
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
 	tools/qfcc/test/ptrstructcast.dat \
+	tools/qfcc/test/ptrstructinit.dat \
 	tools/qfcc/test/motor-point.dat \
 	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
@@ -71,6 +73,7 @@ test_progs_dat=\
 	tools/qfcc/test/twice-called.dat \
 	tools/qfcc/test/typedef.dat \
 	tools/qfcc/test/typelinker.dat \
+	tools/qfcc/test/upostop.dat \
 	tools/qfcc/test/unaryminus.dat \
 	tools/qfcc/test/vecaddr.dat \
 	tools/qfcc/test/vecexpr.dat \
@@ -128,11 +131,16 @@ check_PROGRAMS += \
 
 qfcc-tests: tools/qfcc/test/test-harness $(test_progs_dat) $(test_bins)
 
-tools_qfcc_test_test_defspace_SOURCES=		tools/qfcc/test/test-defspace.c $(test_defspace_src)
+tools_qfcc_test_test_defspace_SOURCES=		\
+	tools/qfcc/test/test-defspace.c \
+	$(test_defspace_src) \
+	$(tracy_src)
 tools_qfcc_test_test_defspace_LDADD=		$(QFCC_LIBS)
 tools_qfcc_test_test_defspace_DEPENDENCIES=	$(QFCC_DEPS)
 
-tools_qfcc_test_test_harness_SOURCES=		tools/qfcc/test/test-bi.c tools/qfcc/test/test-harness.c
+tools_qfcc_test_test_harness_SOURCES=		\
+	tools/qfcc/test/test-bi.c tools/qfcc/test/test-harness.c \
+	$(tracy_src)
 tools_qfcc_test_test_harness_LDADD=			$(QFCC_TEST_LIBS)
 tools_qfcc_test_test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 
@@ -258,6 +266,16 @@ tools/qfcc/test/compound.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(compound_dep) # am--include-marker
 r_depfiles_remade += $(compound_dep)
+
+tools_qfcc_test_compoundinit_dat_SOURCES=tools/qfcc/test/compoundinit.r
+compoundinit_obj=$(tools_qfcc_test_compoundinit_dat_SOURCES:.r=.o)
+compoundinit_dep=$(call qcautodep,$(tools_qfcc_test_compoundinit_dat_SOURCES))
+tools/qfcc/test/compoundinit.dat$(EXEEXT): $(compoundinit_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(compoundinit_obj)
+tools/qfcc/test/compoundinit.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(compoundinit_dep) # am--include-marker
+r_depfiles_remade += $(compoundinit_dep)
 
 tools_qfcc_test_const_fold_int_dat_SOURCES=tools/qfcc/test/const-fold-int.r
 const_fold_int_obj=$(tools_qfcc_test_const_fold_int_dat_SOURCES:.r=.o)
@@ -623,6 +641,16 @@ tools/qfcc/test/ptrstructcast.run: $(qfcc_test_run_deps)
 include $(ptrstructcast_dep) # am--include-marker
 r_depfiles_remade += $(ptrstructcast_dep)
 
+tools_qfcc_test_ptrstructinit_dat_SOURCES=tools/qfcc/test/ptrstructinit.r
+ptrstructinit_obj=$(tools_qfcc_test_ptrstructinit_dat_SOURCES:.r=.o)
+ptrstructinit_dep=$(call qcautodep,$(tools_qfcc_test_ptrstructinit_dat_SOURCES))
+tools/qfcc/test/ptrstructinit.dat$(EXEEXT): $(ptrstructinit_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(ptrstructinit_obj)
+tools/qfcc/test/ptrstructinit.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ptrstructinit_dep) # am--include-marker
+r_depfiles_remade += $(ptrstructinit_dep)
+
 tools_qfcc_test_motor_point_dat_SOURCES=tools/qfcc/test/motor-point.r
 motor_point_obj=$(tools_qfcc_test_motor_point_dat_SOURCES:.r=.o)
 motor_point_dep=$(call qcautodep,$(tools_qfcc_test_motor_point_dat_SOURCES))
@@ -822,6 +850,16 @@ tools/qfcc/test/typelinker.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(typelinker_dep) # am--include-marker
 r_depfiles_remade += $(typelinker_dep)
+
+tools_qfcc_test_upostop_dat_SOURCES=tools/qfcc/test/upostop.r
+upostop_obj=$(tools_qfcc_test_upostop_dat_SOURCES:.r=.o)
+upostop_dep=$(call qcautodep,$(tools_qfcc_test_upostop_dat_SOURCES))
+tools/qfcc/test/upostop.dat$(EXEEXT): $(upostop_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(upostop_obj)
+tools/qfcc/test/upostop.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(upostop_dep) # am--include-marker
+r_depfiles_remade += $(upostop_dep)
 
 tools_qfcc_test_unaryminus_dat_SOURCES=tools/qfcc/test/unaryminus.r
 unaryminus_obj=$(tools_qfcc_test_unaryminus_dat_SOURCES:.r=.o)
