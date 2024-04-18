@@ -115,8 +115,9 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.planes[2] = make_plane (z, x, b, r),
 	};
 	auto buffer = &pctx->resources->objects[ctx->curFrame].buffer;
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	QFV_PacketCopyBuffer (packet, buffer->buffer, 0, bb);
+	auto bb = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	bb.dstStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, buffer->buffer, 0, &bb);
 	QFV_PacketSubmit (packet);
 
 	VkDescriptorSet sets[] = {
