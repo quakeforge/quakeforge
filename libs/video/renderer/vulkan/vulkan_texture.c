@@ -413,7 +413,7 @@ Vulkan_TexImageView (qfv_tex_t *tex)
 
 void
 Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
-				  int x, int y, int layer, int mip)
+				  int x, int y, int layer, int mip, bool vert)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -451,6 +451,9 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy);
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	if (vert) {
+		ib.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	}
 	ib.barrier.image = tex->image;
 	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
