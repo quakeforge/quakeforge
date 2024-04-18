@@ -151,4 +151,16 @@ void rua_macro_va_args (rua_macro_t *macro, void *scanner);
 
 #include "tools/qfcc/source/pre-parse.h"
 
+typedef struct rua_parser_s {
+	int (*parse) (rua_yypstate *state, int token,
+				  const rua_val_t *val, rua_loc_t *loc, void *scanner);
+	rua_yypstate *state;
+	directive_t *(*directive) (const char *token);
+	int (*keyword_or_id) (rua_val_t *lval, const char *token);
+} rua_parser_t;
+
+int rua_parse (FILE *in, rua_parser_t *parser);
+const char *rua_directive_get_key (const void *dir, void *unused) __attribute__((pure));
+const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
+
 #endif//__rua_lang_h

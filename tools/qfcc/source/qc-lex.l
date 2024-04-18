@@ -115,7 +115,7 @@ typedef struct rua_extra_s {
 		bool        suppressed;
 		bool        no_lex;
 		bool        did_space;
-		qc_yypstate *qc_state;
+		rua_parser_t *parser;
 		pre_yypstate *pre_state;
 		pre_yypstate *args_state;
 		rua_cond_stack_t cond_stack;
@@ -142,7 +142,6 @@ FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
 static int directive (const char *token, yyscan_t scanner);
-static int keyword_or_id (QC_YYSTYPE *lval, const char *token);
 static void update_loc (rua_loc_t *loc, size_t textlen);
 static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
 					   int state, rua_extra_t *extra);
@@ -377,19 +376,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 #define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
 
-// preprocessor directives in ruamoko and quakec
-static directive_t rua_directives[] = {
-	{"include",  PRE_INCLUDE},
-	{"embed",    PRE_EMBED},
-	{"define",   PRE_DEFINE},
-	{"undef",    PRE_UNDEF},
-	{"error",    PRE_ERROR},
-	{"warning",  PRE_WARNING},
-	{"notice",   PRE_NOTICE},
-	{"pragma",   PRE_PRAGMA},
-	{"line",     PRE_LINE},
-};
-
 static directive_t cond_directives[] = {
 	{"if",       PRE_IF},
 	{"ifdef",    PRE_IFDEF},
@@ -401,36 +387,38 @@ static directive_t cond_directives[] = {
 	{"endif",    PRE_ENDIF},
 };
 
-static const char *
-directive_get_key (const void *dir, void *unused)
+const char *
+rua_directive_get_key (const void *dir, void *unused)
 {
 	return ((directive_t*)dir)->name;
+}
+
+const char *
+rua_keyword_get_key (const void *kw, void *unused)
+{
+	return ((keyword_t*)kw)->name;
 }
 
 static int
 directive (const char *token, yyscan_t scanner)
 {
-	static hashtab_t *rua_directive_tab;
 	static hashtab_t *cond_directive_tab;
 
 	yy_pop_state (scanner); // pop DIRECTIVE off the stack
 	yy_push_state (PREPROC, scanner);
 
-	if (!rua_directive_tab) {
-		rua_directive_tab = Hash_NewTable (253, directive_get_key, 0, 0, 0);
-		cond_directive_tab = Hash_NewTable (253, directive_get_key, 0, 0, 0);
+	if (!cond_directive_tab) {
+		cond_directive_tab = Hash_NewTable (253, rua_directive_get_key,
+											0, 0, 0);
 
-		for (size_t i = 0; i < ARRCOUNT(rua_directives); i++) {
-			Hash_Add (rua_directive_tab, &rua_directives[i]);
-		}
 		for (size_t i = 0; i < ARRCOUNT(cond_directives); i++) {
 			Hash_Add (cond_directive_tab, &cond_directives[i]);
 		}
 	}
 	auto extra = qc_yyget_extra (scanner);
 	directive_t *directive = Hash_Find (cond_directive_tab, token);
-	if (!directive && !extra->suppressed) {
-		directive = Hash_Find (rua_directive_tab, token);
+	if (!directive && !extra->suppressed && extra->parser->directive) {
+		directive = extra->parser->directive (token);
 		if (!directive) {
 			error (0, "invalid directive `%s`", token);
 		}
@@ -444,240 +432,6 @@ directive (const char *token, yyscan_t scanner)
 	//auto lex = qc_yyget_extra (scanner);
 	//lex->current_lang = &lex->pre_lang;
 	return directive->value;
-}
-
-// These keywords are part of the Ruamoko language and require the QuakeForge
-// Ruamoko VM.
-static keyword_t rua_keywords[] = {
-#define VEC_TYPE(type_name, base_type) \
-	{ #type_name, QC_TYPE_SPEC, .spec = { .type = &type_##type_name } },
-#include "tools/qfcc/include/vec_types.h"
-};
-
-// These keywords are all part of the Ruamoko (Objective-QC) language.
-// The first time any one of them is encountered, the class system will be
-// initialized.
-// If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
-// then they will be unavailable as keywords.
-static keyword_t obj_keywords[] = {
-	{"id",				QC_OBJECT_NAME, .spec = { .type = &type_id } 		},
-	{"Class",			QC_TYPE_SPEC, .spec = { .type = &type_Class } 		},
-	{"Method",			QC_TYPE_SPEC, .spec = { .type = &type_method } 	},
-	{"Super",			QC_TYPE_SPEC, .spec = { .type = &type_super } 		},
-	{"SEL",				QC_TYPE_SPEC, .spec = { .type = &type_SEL } 		},
-	{"IMP",				QC_TYPE_SPEC, .spec = { .type = &type_IMP } 		},
-
-	{"@class",			QC_CLASS					},
-	{"@defs",			QC_DEFS					},
-	{"@encode",			QC_ENCODE					},
-	{"@end",			QC_END						},
-	{"@implementation",	QC_IMPLEMENTATION			},
-	{"@interface",		QC_INTERFACE				},
-	{"@private",		QC_PRIVATE					},
-	{"@protected",		QC_PROTECTED				},
-	{"@protocol",		QC_PROTOCOL				},
-	{"@public",			QC_PUBLIC					},
-	{"@reference",		QC_REFERENCE				},
-	{"@selector",		QC_SELECTOR				},
-	{"@self",			QC_SELF					},
-	{"@this",			QC_THIS					},
-
-	// This is a hack to trigger the initialization of the class
-	// sytem if it is seen before any other Objective-QC symbol. Otherwise,
-	// it is just an identifier, though it does reference a built-in type
-	// created by the class system.
-	{"obj_module",		0						},
-};
-
-// These keywords are extensions to QC and thus available only in advanced
-// or extended code. However, if they are preceeded by an @ (eg, @for), then
-// they are always available. This is to prevent them from causing trouble
-// for traditional code that might use these words as identifiers, but still
-// make the language features available to traditional code.
-static keyword_t at_keywords[] = {
-	{"for",			QC_FOR		},
-	{"goto",		QC_GOTO	},
-	{"break",		QC_BREAK	},
-	{"continue",	QC_CONTINUE},
-	{"switch",		QC_SWITCH	},
-	{"case",		QC_CASE	},
-	{"default",		QC_DEFAULT	},
-	{"nil",			QC_NIL		},
-	{"struct",		QC_STRUCT	},
-	{"union",		QC_STRUCT	},
-	{"enum",		QC_ENUM	},
-	{"typedef",		QC_TYPEDEF	},
-	{"extern",		QC_EXTERN	},
-	{"static",		QC_STATIC	},
-	{"sizeof",		QC_SIZEOF	},
-	{"not",			QC_NOT		},
-	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
-};
-
-// These keywords require the QuakeForge VM to be of any use. ie, they cannot
-// be supported (sanely) by v6 progs.
-static keyword_t qf_keywords[] = {
-	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
-	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
-	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
-	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = 1 } },
-	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = 1 } },
-	{"long",		QC_TYPE_SPEC, .spec = { .is_long = 1 } },
-	{"short",		QC_TYPE_SPEC, .spec = { .is_short = 1 } },
-
-	{"@function",	QC_TYPE_SPEC, .spec = { .type = &type_func } 	},
-	{"@args",		QC_ARGS,				},
-	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
-	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
-	{"@return",     QC_AT_RETURN,		},
-
-	{"@hadamard",	QC_HADAMARD,	},
-	{"@cross",		QC_CROSS,		},
-	{"@dot",		QC_DOT,		},
-	{"@wedge",		QC_WEDGE,		},
-	{"@regressive",	QC_REGRESSIVE,	},
-	{"@geometric",	QC_GEOMETRIC,	},
-	{"@algebra",	QC_ALGEBRA,	},
-	{"@dual",		QC_DUAL,		},
-	{"@undual",		QC_UNDUAL,		},
-};
-
-// These keywors are always available. Other than the @ keywords, they
-// form traditional QuakeC.
-static keyword_t keywords[] = {
-	{"void",		QC_TYPE_SPEC, .spec = { .type = &type_void } 	},
-	{"float",		QC_TYPE_SPEC, .spec = { .type = &type_float } 	},
-	{"string",		QC_TYPE_SPEC, .spec = { .type = &type_string } },
-	{"vector",		QC_TYPE_SPEC, .spec = { .type = &type_vector } },
-	{"entity",		QC_TYPE_SPEC, .spec = { .type = &type_entity } },
-	{"local",		QC_LOCAL,					},
-	{"return",		QC_RETURN,					},
-	{"while",		QC_WHILE,					},
-	{"do",			QC_DO,						},
-	{"if",			QC_IF,						},
-	{"else",		QC_ELSE,					},
-	{"@system",		QC_SYSTEM,					},
-	{"@overload",	QC_OVERLOAD,				},
-	{"@attribute",  QC_ATTRIBUTE,				},
-	{"@handle",     QC_HANDLE,					},
-};
-
-static const char *
-keyword_get_key (const void *kw, void *unused)
-{
-	return ((keyword_t*)kw)->name;
-}
-
-static int
-process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
-{
-	if (keyword->value == QC_STRUCT) {
-		lval->op = token[0];
-	} else if (keyword->value == QC_OBJECT_NAME) {
-		symbol_t   *sym;
-
-		sym = symtab_lookup (current_symtab, token);
-		lval->symbol = sym;
-		// the global id symbol is always just a name so attempts to redefine
-		// it globally can be caught and treated as an error, but it needs to
-		// be redefinable when in an enclosing scope.
-		if (sym->sy_type == sy_name) {
-			// this is the global id (object)
-			lval->spec = (specifier_t) {
-				.type = sym->type,
-				.sym = sym,
-			};
-			return QC_OBJECT_NAME;
-		} else if (sym->sy_type == sy_type) {
-			// id has been redeclared via a typedef
-			lval->spec = (specifier_t) {
-				.type = sym->type,
-				.sym = sym,
-			};
-			return QC_TYPE_NAME;
-		}
-		// id has been redelcared as a variable (hopefully)
-		return QC_NAME;
-	} else {
-		lval->spec = keyword->spec;
-	}
-	return keyword->value;
-}
-
-static int
-keyword_or_id (QC_YYSTYPE *lval, const char *token)
-{
-	static hashtab_t *keyword_tab;
-	static hashtab_t *qf_keyword_tab;
-	static hashtab_t *at_keyword_tab;
-	static hashtab_t *obj_keyword_tab;
-	static hashtab_t *rua_keyword_tab;
-
-	keyword_t  *keyword = 0;
-	symbol_t   *sym;
-
-	if (!keyword_tab) {
-		size_t      i;
-
-		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		rua_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-
-		for (i = 0; i < ARRCOUNT(keywords); i++)
-			Hash_Add (keyword_tab, &keywords[i]);
-		for (i = 0; i < ARRCOUNT(qf_keywords); i++)
-			Hash_Add (qf_keyword_tab, &qf_keywords[i]);
-		for (i = 0; i < ARRCOUNT(at_keywords); i++)
-			Hash_Add (at_keyword_tab, &at_keywords[i]);
-		for (i = 0; i < ARRCOUNT(obj_keywords); i++)
-			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
-		for (i = 0; i < ARRCOUNT(rua_keywords); i++)
-			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
-	}
-	if (options.traditional < 1) {
-		if (options.code.progsversion == PROG_VERSION) {
-			keyword = Hash_Find (rua_keyword_tab, token);
-		}
-		if (!keyword) {
-			keyword = Hash_Find (obj_keyword_tab, token);
-			if (keyword) {
-				if (!obj_initialized)
-					class_init ();
-			}
-		}
-		if (!keyword)
-			keyword = Hash_Find (qf_keyword_tab, token);
-	}
-	if (!keyword && options.traditional < 2)
-		keyword = Hash_Find (at_keyword_tab, token);
-	if (!keyword && token[0] == '@') {
-		keyword = Hash_Find (at_keyword_tab, token + 1);
-		if (keyword)
-			token += 1;
-	}
-	if (!keyword)
-		keyword = Hash_Find (keyword_tab, token);
-	if (keyword && keyword->value)
-		return process_keyword (lval, keyword, token);
-	if (token[0] == '@') {
-		return '@';
-	}
-	sym = symtab_lookup (current_symtab, token);
-	if (!sym)
-		sym = new_symbol (token);
-	lval->symbol = sym;
-	if (sym->sy_type == sy_type) {
-		lval->spec = (specifier_t) {
-			.type = sym->type,
-			.sym = sym,
-		};
-		return QC_TYPE_NAME;
-	}
-	if (sym->sy_type == sy_class)
-		return QC_CLASS_NAME;
-	return QC_NAME;
 }
 
 enum {
@@ -1242,7 +996,7 @@ qc_token (rua_extra_t *extra, QC_YYSTYPE *lval, const rua_tok_t *tok,
 			case rua_error:
 				break;
 			case rua_id:
-				token = keyword_or_id (lval, tok->text);
+				token = extra->parser->keyword_or_id (lval, tok->text);
 				break;
 			case rua_grab:
 				{
@@ -1406,8 +1160,8 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 			QC_YYSTYPE  lval = {};
 			token = qc_token (extra, &lval, tok, scanner);
 			if (token >= 0) {
-				auto state = extra->qc_state;
-				return qc_yypush_parse (state, token, &lval, loc, scanner);
+				auto p = extra->parser;
+				return p->parse (p->state, token, &lval, loc, scanner);
 			}
 		}
 	}
@@ -1816,10 +1570,10 @@ rescan:
 }
 
 int
-qc_yyparse (FILE *in)
+rua_parse (FILE *in, rua_parser_t *parser)
 {
 	rua_extra_t extra = {
-		.qc_state = qc_yypstate_new (),
+		.parser = parser,
 		.pre_state = pre_yypstate_new (),
 		.args_state = pre_yypstate_new (),
 		.cond_stack = DARRAY_STATIC_INIT (8),
@@ -1860,7 +1614,6 @@ qc_yyparse (FILE *in)
 
 	yylex_destroy (extra.subscanner);
 	yylex_destroy (scanner);
-	qc_yypstate_delete (extra.qc_state);
 	pre_yypstate_delete (extra.pre_state);
 	pre_yypstate_delete (extra.args_state);
 	free (extra.cond_stack.a);
