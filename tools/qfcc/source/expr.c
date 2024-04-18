@@ -58,14 +58,13 @@
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 ALLOC_STATE (expr_t, exprs);
 ALLOC_STATE (ex_listitem_t, listitems);

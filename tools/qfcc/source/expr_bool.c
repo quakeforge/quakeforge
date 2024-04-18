@@ -57,14 +57,13 @@
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 const expr_t *
 test_expr (const expr_t *e)

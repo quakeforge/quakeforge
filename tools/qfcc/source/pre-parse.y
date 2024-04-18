@@ -87,7 +87,7 @@ parse_error (void *scanner)
 %code requires {
 #include "tools/qfcc/include/rua-lang.h"
 }
-%define api.value.type {rua_val_t}
+%define api.value.type {rua_preval_t}
 %define api.location.type {rua_loc_t}
 
 %left LOW

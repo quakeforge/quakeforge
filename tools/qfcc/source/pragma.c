@@ -47,10 +47,9 @@
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/pragma.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct pragma_arg_s {
 	struct pragma_arg_s *next;

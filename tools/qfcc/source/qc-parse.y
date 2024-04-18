@@ -33,6 +33,8 @@
 %define api.token.prefix {QC_}
 %locations
 %parse-param {void *scanner}
+%define api.value.type {rua_val_t}
+%define api.location.type {rua_loc_t}
 
 %{
 #ifdef HAVE_CONFIG_H
@@ -107,35 +109,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %}
 
-%code requires { #include "tools/qfcc/include/type.h" }
-
-%define api.location.type {struct rua_loc_s}
-
-%union {
-	int			op;
-	unsigned    size;
-	specifier_t spec;
-	void       *pointer;			// for ensuring pointer values are null
-	struct type_s	*type;
-	const struct expr_s	*expr;
-	struct expr_s *mut_expr;
-	struct element_s *element;
-	struct function_s *function;
-	struct switch_block_s *switch_block;
-	struct param_s	*param;
-	struct method_s	*method;
-	struct class_s	*class;
-	struct category_s *category;
-	struct class_type_s	*class_type;
-	struct protocol_s *protocol;
-	struct protocollist_s *protocol_list;
-	struct keywordarg_s *keywordarg;
-	struct methodlist_s *methodlist;
-	struct symbol_s *symbol;
-	struct symtab_s *symtab;
-	struct attribute_s *attribute;
-	struct designator_s *designator;
-}
+%code requires { #define qc_yypstate rua_yypstate }
 
 // these tokens are common between qc and qp
 %left LOW

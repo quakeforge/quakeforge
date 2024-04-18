@@ -47,11 +47,10 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 typedef const expr_t *(*operation_t) (int op, const expr_t *e,
 									  const expr_t *e1, const expr_t *e2);

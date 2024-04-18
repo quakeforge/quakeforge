@@ -50,12 +50,11 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 #define EX_EXPR(expr) #expr,
 const char *expr_names[] =

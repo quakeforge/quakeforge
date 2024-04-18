@@ -36,11 +36,10 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 static int __attribute__((pure))
 get_group (const type_t *type, algebra_t *algebra)

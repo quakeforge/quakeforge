@@ -60,7 +60,34 @@ typedef struct rua_tok_s {
 	const char *text;
 } rua_tok_t;
 
+typedef union rua_val_s {
+	int			op;
+	unsigned    size;
+	specifier_t spec;
+	void       *pointer;			// for ensuring pointer values are null
+	struct type_s	*type;
+	const struct expr_s	*expr;
+	struct expr_s *mut_expr;
+	struct element_s *element;
+	struct function_s *function;
+	struct switch_block_s *switch_block;
+	struct param_s	*param;
+	struct method_s	*method;
+	struct class_s	*class;
+	struct category_s *category;
+	struct class_type_s	*class_type;
+	struct protocol_s *protocol;
+	struct protocollist_s *protocol_list;
+	struct keywordarg_s *keywordarg;
+	struct methodlist_s *methodlist;
+	struct symbol_s *symbol;
+	struct symtab_s *symtab;
+	struct attribute_s *attribute;
+	struct designator_s *designator;
+} rua_val_t;
+
 #include "tools/qfcc/source/qc-parse.h"
+#include "tools/qfcc/source/glsl-parse.h"
 
 typedef struct rua_macro_s rua_macro_t;
 typedef void (*rua_macro_f) (rua_macro_t *macro, void *scanner);
@@ -80,14 +107,14 @@ typedef struct rua_macro_s {
 	rua_macro_t **args;
 } rua_macro_t;
 
-typedef struct rua_val_s {
+typedef struct rua_preval_s {
 	rua_tok_t   t;
 	union {
 		const expr_t *expr;
 		dstring_t  *dstr;
 		rua_macro_t *macro;
 	};
-} rua_val_t;
+} rua_preval_t;
 
 rua_macro_t *rua_start_macro (const char *name, bool params, void *scanner);
 rua_macro_t *rua_macro_param (rua_macro_t *macro, const rua_tok_t *token,

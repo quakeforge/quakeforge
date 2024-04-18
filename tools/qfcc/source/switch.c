@@ -49,12 +49,11 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
 	const expr_t *low;

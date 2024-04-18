@@ -36,11 +36,10 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 static const expr_t *optimize_core (const expr_t *expr);
 static const expr_t skip;

@@ -49,11 +49,10 @@
 #include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/linker.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 options_t   options = {
 	.code = {
