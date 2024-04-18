@@ -789,7 +789,12 @@ parse_number (const rua_tok_t *tok, yyscan_t scanner)
 		}
 	}
 	if (*dst) {
-		dst += (*dst != '\'' && *dst != '_');
+		if (*dst == '.') {
+			dst++;
+			fp = true;
+		} else {
+			dst += (*dst != '\'' && *dst != '_');
+		}
 		while ((*dst = *src++)) {
 			if (hex && (*dst == 'p' || *dst == 'P')) {
 				fp = true;
