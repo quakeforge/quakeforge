@@ -163,4 +163,5 @@ int rua_parse (FILE *in, rua_parser_t *parser);
 const char *rua_directive_get_key (const void *dir, void *unused) __attribute__((pure));
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 
+
 #endif//__rua_lang_h

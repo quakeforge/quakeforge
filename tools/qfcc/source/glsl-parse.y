@@ -124,6 +124,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %right	<op>	'=' ASX
 %right			'?' ':'
 %left			OR
+%left			XOR
 %left			AND
 %left			'|'
 %left			'^'
@@ -135,1489 +136,594 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD SCALE GEOMETRIC
+%left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
-%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL
+%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
 %token	<expr>		VALUE STRING TOKEN
-// end of tokens common between qc and qp
+%token              ELLIPSIS
+%token              RESERVED
+// end of common tokens
 
-%token	<symbol>	CLASS_NAME NAME
+%token	<symbol>	IDENTIFIER
 
-%token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
-%token				RETURN AT_RETURN ELLIPSIS
-%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
-%token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
+%token				WHILE DO IF ELSE FOR BREAK CONTINUE
+%token				RETURN
+%token				SWITCH CASE DEFAULT
 %token	<op>		STRUCT
-%token				HANDLE
-%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
-%token	<spec>		OBJECT_NAME
-%token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
-%token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
+%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL VOID
 
-%type	<spec>		storage_class save_storage
-%type	<spec>		typespec typespec_reserved typespec_nonreserved
-%type	<spec>		handle
-%type	<spec>		declspecs declspecs_nosc declspecs_nots
-%type	<spec>		declspecs_ts
-%type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
-%type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
-%type	<spec>		declarator notype_declarator after_type_declarator
-%type	<spec>		param_declarator param_declarator_starttypename
-%type	<spec>		param_declarator_nostarttypename
-%type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
-
-%type	<attribute>	attribute_list attribute
-
-%type	<param>		function_params
-
-%type	<symbol>	tag
-%type	<spec>		struct_specifier struct_list
-%type	<spec>		enum_specifier algebra_specifier
-%type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
-%type	<symbol>	enum_init
-%type	<size>		array_decl
-
-%type	<expr>		const string
-
-%type   <expr>		decl
-%type	<param>		param_list parameter_list parameter
-%type	<expr>		var_initializer local_def
-
-%type	<mut_expr>	opt_init_semi opt_expr comma_expr
-%type   <expr>		expr
-%type	<expr>		compound_init
-%type   <mut_expr>	element_list expr_list
-%type	<designator> designator designator_spec
-%type	<element>	element
-%type	<expr>		texpr vector_expr
-%type	<expr>		statement
-%type	<mut_expr>	statements compound_statement
-%type	<expr>		else bool_label break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr
-%type	<mut_expr>	opt_arg_list arg_list
-%type   <expr>		arg_expr
-%type	<switch_block> switch_block
-%type	<symbol>	identifier
+%token PRECISION INVARIANT SMOOTH FLAT NOPERSPECTIVE LAYOUT SHARED
+%token PRECISE CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
+%token RESTRICT READONLY WRITEONLY HIGH_PRECISION MEDIUM_PRECISION
+%token LOW_PRECISION DISCARD COHERENT
 
 %{
-
-static switch_block_t *switch_block;
-static const expr_t *break_label;
-static const expr_t *continue_label;
-
-static specifier_t
-make_spec (const type_t *type, storage_class_t storage, int is_typedef,
-		   int is_overload)
-{
-	specifier_t spec;
-
-	memset (&spec, 0, sizeof (spec));
-	spec.type = type;
-	spec.storage = storage;
-	spec.is_typedef = is_typedef;
-	spec.is_overload = is_overload;
-	if (spec.storage && spec.is_typedef)
-		internal_error (0, "setting both storage and is_typedef");
-	return spec;
-}
-
-static specifier_t
-parse_attributes (attribute_t *attr_list)
-{
-	specifier_t spec = {};
-	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
-		if (!strcmp (attr->name, "no_va_list")) {
-			spec.no_va_list = 1;
-		} else if (!strcmp (attr->name, "nosave")) {
-			spec.nosave = 1;
-		} else if (!strcmp (attr->name, "void_return")) {
-			spec.void_return = 1;
-		} else {
-			warning (0, "skipping unknown attribute '%s'", attr->name);
-		}
-	}
-	return spec;
-}
-
-static int
-storage_auto (specifier_t spec)
-{
-	return spec.storage == sc_global || spec.storage == sc_local;
-}
-
-static specifier_t
-spec_merge (specifier_t spec, specifier_t new)
-{
-	if (new.type) {
-		// deal with "type <type_name>"
-		if (!spec.type || new.sym) {
-			spec.sym = new.sym;
-			if (!spec.type) {
-				spec.type = new.type;
-			}
-		} else if (!spec.multi_type) {
-			error (0, "two or more data types in declaration specifiers");
-			spec.multi_type = 1;
-		}
-	}
-	if (new.is_typedef || !storage_auto (new)) {
-		if ((spec.is_typedef || !storage_auto (spec)) && !spec.multi_store) {
-			error (0, "multiple storage classes in declaration specifiers");
-			spec.multi_store = 1;
-		}
-		spec.storage = new.storage;
-		spec.is_typedef = new.is_typedef;
-	}
-	if ((new.is_unsigned && spec.is_signed)
-		|| (new.is_signed && spec.is_unsigned)) {
-		if (!spec.multi_type) {
-			error (0, "both signed and unsigned in declaration specifiers");
-			spec.multi_type = 1;
-		}
-	}
-	if ((new.is_long && spec.is_short) || (new.is_short && spec.is_long)) {
-		if (!spec.multi_store) {
-			error (0, "both long and short in declaration specifiers");
-			spec.multi_store = 1;
-		}
-	}
-	spec.sym = new.sym;
-	spec.spec_bits |= new.spec_bits;
-	return spec;
-}
-
-static specifier_t
-typename_spec (specifier_t spec)
-{
-	spec = default_type (spec, 0);
-	spec.sym->type = find_type (append_type (spec.sym->type, spec.type));
-	spec.type = spec.sym->type;
-	return spec;
-}
-
-static specifier_t
-function_spec (specifier_t spec, param_t *params)
-{
-	// empty param list in an abstract decle does not create a symbol
-	if (!spec.sym) {
-		spec.sym = new_symbol (0);
-	}
-	spec = default_type (spec, spec.sym);
-	spec.sym->params = params;
-	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
-	spec.is_function = 1; //FIXME do proper void(*)() -> ev_func
-	return spec;
-}
-
-static specifier_t
-array_spec (specifier_t spec, unsigned size)
-{
-	spec = default_type (spec, spec.sym);
-	spec.sym->type = append_type (spec.sym->type, array_type (0, size));
-	return spec;
-}
-
-static specifier_t
-pointer_spec (specifier_t quals, specifier_t spec)
-{
-	spec.sym->type = append_type (spec.sym->type, pointer_type (0));
-	return spec;
-}
-
-static symbol_t *
-funtion_sym_type (specifier_t spec, symbol_t *sym)
-{
-	sym->type = append_type (spec.sym->type, spec.type);
-	set_func_type_attrs (sym->type, spec);
-	sym->type = find_type (sym->type);
-	return sym;
-}
-
-static param_t *
-make_ellipsis (void)
-{
-	return new_param (0, 0, 0);
-}
-
-static param_t *
-make_param (specifier_t spec)
-{
-	spec = default_type (spec, spec.sym);
-	spec.type = find_type (append_type (spec.sym->type, spec.type));
-	param_t    *param = new_param (0, spec.type, spec.sym->name);
-	return param;
-}
-
-static int
-is_anonymous_struct (specifier_t spec)
-{
-	if (spec.sym) {
-		return 0;
-	}
-	if (!is_struct (spec.type) && !is_union (spec.type)) {
-		return 0;
-	}
-	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
-		return 0;
-	}
-	// struct and union type names always begin with "tag ". Untagged s/u
-	// are "tag .<filename>.<id>".
-	if (spec.type->name[4] != '.') {
-		return 0;
-	}
-	return 1;
-}
-
-static int
-is_null_spec (specifier_t spec)
-{
-	static specifier_t null_spec;
-	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
-}
-
-static int
-use_type_name (specifier_t spec)
-{
-	spec.sym = new_symbol (spec.sym->name);
-	spec.sym->type = spec.type;
-	spec.sym->sy_type = sy_var;
-	symbol_t   *s = symtab_addsymbol (current_symtab, spec.sym);
-	// a different symbol being returned means that this is a redefinition
-	// of that symbol in the same scope. However, typedefs to the same type
-	// are allowed.
-	if (s != spec.sym && spec.is_typedef && s->sy_type == sy_type
-		&& type_same (s->type, spec.type)) {
-		spec.sym = s;
-	}
-	return !!spec.sym->table;
-}
-
-static void __attribute__((used))
-check_specifiers (specifier_t spec)
-{
-	if (!is_null_spec (spec)) {
-		if (!spec.type && !spec.sym) {
-			warning (0, "useless specifiers");
-		} else if (spec.type && !spec.sym) {
-			if (is_anonymous_struct (spec)){
-				warning (0, "unnamed struct/union that defines "
-						 "no instances");
-			} else if (!is_enum (spec.type)
-					   && !is_struct (spec.type) && !is_union (spec.type)) {
-				warning (0, "useless type name in empty declaration");
-			}
-		} else if (!spec.type && spec.sym) {
-			bug (0, "wha? %p %p", spec.type, spec.sym);
-		} else {
-			// a type name (id, typedef, etc) was used as a variable name.
-			// this is allowed in C, so long as it's in a different scope,
-			// or the types are the same
-			if (!use_type_name (spec)) {
-				error (0, "%s redeclared as different kind of symbol",
-					   spec.sym->name);
-			}
-		}
-	}
-}
-
 %}
 
 %expect 0
 
 %%
 
-program
-	: external_def_list
-		{
-			if (current_class) {
-				warning (0, "‘@end’ missing in implementation context");
-				class_finish (current_class);
-				current_class = 0;
-			}
-		}
-
-external_def_list
-	: /* empty */
-		{
-			current_symtab = pr.symtab;
-		}
-	| external_def_list external_def
+translation_unit
+	: external_declaration
+	| translation_unit external_declaration
 	;
 
-external_def
-	: fndef
-	| datadef
-	| storage_class '{' save_storage
-		{
-			current_storage = $1.storage;
-		}
-	  external_def_list '}' ';'
-		{
-			current_storage = $3.storage;
-		}
-	;
-
-fndef
-	: declspecs_ts declarator function_body
-	| declspecs_nots notype_declarator function_body
-	| defspecs notype_declarator function_body
-	;
-
-datadef
-	: defspecs notype_initdecls ';'
-	| declspecs_nots notype_initdecls ';'
-	| declspecs_ts initdecls ';'
-	| declspecs ';'
-	| error ';'
-	| error '}'
+external_declaration
+	: function_definition
+	| declaration
 	| ';'
 	;
 
-declarator
-	: after_type_declarator
-	| notype_declarator
+function_definition
+	: function_prototype compound_statement_no_new_scope
 	;
 
-after_type_declarator
-	: '(' copy_spec after_type_declarator ')' { $$ = $3; }
-	| after_type_declarator function_params
-		{
-			$$ = function_spec ($1, $2);
-		}
-	| after_type_declarator array_decl
-		{
-			$$ = array_spec ($1, $2);
-		}
-	| '*' ptr_spec after_type_declarator
-		{
-			$$ = pointer_spec ($2, $3);
-		}
-	| TYPE_NAME
-		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1.sym->name);
-		}
-	| OBJECT_NAME
-		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1.sym->name);
-		}
+variable_identifier
+	: IDENTIFIER
 	;
 
-copy_spec
-	: /* empty */
-		{
-			$<spec>$ = $<spec>-1;
-		}
+primary_exprsssion
+	: variable_identifier
+	| VALUE
+	| '(' expression ')'
 	;
 
-ptr_spec
-	: copy_spec	// for when no qualifiers are present
+postfix_expression
+	: primary_exprsssion
+	| postfix_expression '[' integer_expression ']'
+	| function_call
+	| postfix_expression '.' IDENTIFIER/*FIELD_SELECTION*/
+	| postfix_expression INCOP
 	;
 
-notype_declarator
-	: '(' copy_spec notype_declarator ')' { $$ = $3; }
-	| notype_declarator function_params
-		{
-			$$ = function_spec ($1, $2);
-		}
-	| notype_declarator array_decl
-		{
-			$$ = array_spec ($1, $2);
-		}
-	| '*' ptr_spec notype_declarator
-		{
-			$$ = pointer_spec ($2, $3);
-		}
-	| NAME
-		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1->name);
-		}
+integer_expression
+	: expression
 	;
 
-initdecls
-	: initdecl
-	| initdecls ',' { $<spec>$ = $<spec>0; } initdecl
+function_call
+	: function_call_or_method
 	;
 
-initdecl
-	: declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab); }
-	| declarator
-		{ declare_symbol ($1, 0, current_symtab); }
+function_call_or_method
+	: function_call_generic
 	;
 
-notype_initdecls
-	: notype_initdecl
-	| notype_initdecls ',' { $<spec>$ = $<spec>0; } notype_initdecl
+function_call_generic
+	: function_call_header_with_parameters ')'
+	| function_call_header_no_parameters ')'
 	;
 
-notype_initdecl
-	: notype_declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab); }
-	| notype_declarator
-		{ declare_symbol ($1, 0, current_symtab); }
+function_call_header_no_parameters
+	: function_call_header VOID
+	| function_call_header
 	;
 
-/* various lists of type specifiers, storage class etc */
-declspecs_ts
-	: declspecs_nosc_ts
-	| declspecs_sc_ts
+function_call_header_with_parameters
+	: function_call_header assignment_expression
+	| function_call_header_with_parameters ',' assignment_expression
 	;
 
-declspecs_nots
-	: declspecs_nosc_nots
-	| declspecs_sc_nots
+function_call_header
+	: function_identifier '('
 	;
 
-declspecs_nosc
-	: declspecs_nosc_nots
-	| declspecs_nosc_ts
+function_identifier
+	: type_specifier
+	| postfix_expression
 	;
 
-declspecs
-	: declspecs_nosc_nots
-	| declspecs_nosc_ts
-	| declspecs_sc_nots
-	| declspecs_sc_ts
+unary_expression
+	: postfix_expression
+	| INCOP unary_expression
+	| unary_operator unary_expression
 	;
 
-declspecs_nosc_nots
-	: TYPE_QUAL
-	| declspecs_nosc_nots TYPE_QUAL
-		{
-			$$ = spec_merge ($1, $2);
-		}
+unary_operator
+	: '+'
+	| '-'
+	| '!'
+	| '~'
 	;
 
-declspecs_nosc_ts
-	: typespec
-	| declspecs_nosc_ts TYPE_QUAL
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_nosc_ts typespec_reserved
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_nosc_nots typespec
-		{
-			$$ = spec_merge ($1, $2);
-		}
+multiplicative_expression
+	: unary_expression
+	| multiplicative_expression '*' unary_expression
+	| multiplicative_expression '/' unary_expression
+	| multiplicative_expression '%' unary_expression
 	;
 
-declspecs_sc_nots
-	: storage_class
-	| declspecs_sc_nots TYPE_QUAL
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_nosc_nots storage_class
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_sc_nots storage_class
-		{
-			$$ = spec_merge ($1, $2);
-		}
+additive_expression
+	: multiplicative_expression
+	| additive_expression '+' unary_expression
+	| additive_expression '-' unary_expression
 	;
 
-declspecs_sc_ts
-	: declspecs_sc_ts TYPE_QUAL
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_sc_ts typespec_reserved
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_sc_nots typespec
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_nosc_ts storage_class
-		{
-			$$ = spec_merge ($1, $2);
-		}
-	| declspecs_sc_ts storage_class
-		{
-			$$ = spec_merge ($1, $2);
-		}
+shift_expression
+	: additive_expression
+	| shift_expression SHL additive_expression
+	| shift_expression SHR additive_expression
 	;
 
-typespec
-	: typespec_reserved
-		{
-			$$ = $1;
-			if (!$$.storage) {
-				$$.storage = current_storage;
-			}
-		}
-	| typespec_nonreserved
-		{
-			$$ = $1;
-			if (!$$.storage) {
-				$$.storage = current_storage;
-			}
-		}
+relational_expression
+	: shift_expression
+	| relational_expression LT shift_expression
+	| relational_expression GT shift_expression
+	| relational_expression LE shift_expression
+	| relational_expression GE shift_expression
 	;
 
-typespec_reserved
-	: TYPE_SPEC
-	| algebra_specifier %prec LOW
-	| algebra_specifier '.' attribute
-		{
-			$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
-		}
-	| enum_specifier
+equality_expression
+	: relational_expression
+	| equality_expression EQ relational_expression
+	| relational_expression NE relational_expression
+	;
+
+and_expression
+	: equality_expression
+	| and_expression '&' equality_expression
+	;
+
+exclusive_or_expression
+	: and_expression
+	| exclusive_or_expression '^' and_expression
+	;
+
+inclusive_or_expression
+	: exclusive_or_expression
+	| inclusive_or_expression '|' exclusive_or_expression
+	;
+
+logical_and_expression
+	: inclusive_or_expression
+	| logical_and_expression AND inclusive_or_expression
+	;
+
+logical_xor_expression
+	: logical_and_expression
+	| logical_xor_expression XOR logical_and_expression
+	;
+
+logical_or_expression
+	: logical_xor_expression
+	| logical_or_expression OR logical_xor_expression
+	;
+
+conditional_expression
+	: logical_or_expression
+	| logical_or_expression '?' expression ':' assignment_expression
+	;
+
+assignment_expression
+	: conditional_expression
+	| unary_expression assignment_operator assignment_expression
+	;
+
+assignment_operator
+	: '='
+	| ASX
+	;
+
+expression
+	: assignment_expression
+	| expression ',' assignment_expression
+	;
+
+constant_expression
+	: conditional_expression
+	;
+
+declaration
+	: function_prototype ';'
+	| init_declarator_list ';'
+	| PRECISION precision_qualifier type_specifier ';'
+	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' ';'
+	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' IDENTIFIER ';'
+	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' IDENTIFIER array_specifier ';'
+	| type_qualifier ';'
+	| type_qualifier IDENTIFIER ';'
+	| type_qualifier IDENTIFIER identifier_list ';'
+	;
+
+identifier_list
+	: ',' IDENTIFIER
+	| identifier_list ',' IDENTIFIER
+	;
+
+function_prototype
+	: function_declarator ')'
+	;
+
+function_declarator
+	: function_header
+	| function_header_with_parameters
+	;
+
+function_header_with_parameters
+	: function_header parameter_declaration
+	| function_header_with_parameters ',' parameter_declaration
+	;
+
+function_header
+	: fully_specified_type IDENTIFIER '('
+	;
+
+parameter_declarator
+	: type_specifier IDENTIFIER
+	| type_specifier IDENTIFIER array_specifier
+	;
+
+parameter_declaration
+	: type_qualifier parameter_declarator
+	| parameter_declarator
+	| type_qualifier parameter_type_specifier
+	| parameter_type_specifier
+	;
+
+parameter_type_specifier
+	: type_specifier
+	;
+
+init_declarator_list
+	: single_declaration
+	| init_declarator_list ',' IDENTIFIER
+	| init_declarator_list ',' IDENTIFIER array_specifier
+	| init_declarator_list ',' IDENTIFIER array_specifier '=' initializer
+	| init_declarator_list ',' IDENTIFIER '=' initializer
+	;
+
+single_declaration
+	: fully_specified_type
+	| fully_specified_type IDENTIFIER
+	| fully_specified_type IDENTIFIER array_specifier
+	| fully_specified_type IDENTIFIER array_specifier '=' initializer
+	| fully_specified_type IDENTIFIER '=' initializer
+	;
+
+fully_specified_type
+	: type_specifier
+	| type_qualifier type_specifier
+	;
+
+invariant_qualifier
+	: INVARIANT
+	;
+
+interpolation_qualifier
+	: SMOOTH
+	| FLAT
+	| NOPERSPECTIVE
+	;
+
+layout_qualifier
+	: LAYOUT '(' layout_qualifer_id_list ')'
+	;
+
+layout_qualifer_id_list
+	: layout_qualifer_id
+	| layout_qualifer_id_list ',' layout_qualifer_id
+	;
+
+layout_qualifer_id
+	: IDENTIFIER
+	| IDENTIFIER '=' constant_expression
+	| SHARED
+	;
+
+precise_qualifer
+	: PRECISE
+	;
+
+type_qualifier
+	: single_type_qualifier
+	| type_qualifier single_type_qualifier
+	;
+
+single_type_qualifier
+	: storage_qualifier
+	| layout_qualifier
+	| precision_qualifier
+	| interpolation_qualifier
+	| invariant_qualifier
+	| precise_qualifer
+	;
+
+storage_qualifier
+	: CONST
+	| IN
+	| OUT
+	| INOUT
+	| CENTROID
+	| PATCH
+	| SAMPLE
+	| UNIFORM
+	| BUFFER
+	| SHARED
+	| COHERENT
+	| VOLATILE
+	| RESTRICT
+	| READONLY
+	| WRITEONLY
+	;
+
+type_specifier
+	: type_specifier_nonarray
+	| type_specifier_nonarray array_specifier
+	;
+
+array_specifier
+	: '[' ']'
+	| '[' conditional_expression  ']'
+	| array_specifier '[' ']'
+	| array_specifier '[' conditional_expression ']'
+	;
+
+type_specifier_nonarray
+	: VOID
+	| TYPE_SPEC
 	| struct_specifier
-	// NOTE: fields don't parse the way they should. This is not a problem
-	// for basic types, but functions need special treatment
-	| '.' typespec_reserved
-		{
-			// avoid find_type()
-			$$ = make_spec (field_type (0), 0, 0, 0);
-			$$.type = append_type ($$.type, $2.type);
-		}
+	| TYPE_NAME
 	;
 
-typespec_nonreserved
-	: TYPE_NAME %prec LOW
-	| TYPE_NAME '.' attribute
-		{
-			if (!is_algebra ($1.type)) {
-				error (0, "%s does not have any subtypes",
-					   get_type_string ($1.type));
-				$$ = $1;
-			} else {
-				$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
-			}
-		}
-	// NOTE: fields don't parse the way they should. This is not a problem
-	// for basic types, but functions need special treatment
-	| '.' typespec_nonreserved
-		{
-			// avoid find_type()
-			$$ = make_spec (field_type (0), 0, 0, 0);
-			$$.type = append_type ($$.type, $2.type);
-		}
-	;
-
-defspecs
-	: /* empty */
-		{
-			$$ = (specifier_t) {};
-		}
-	;
-
-save_storage
-	: /* emtpy */
-		{
-			$$.storage = current_storage;
-		}
-	;
-
-function_body
-	:
-		{
-			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
-			$<symbol>$ = function_symbol (sym, spec.is_overload, 1);
-		}
-	  save_storage
-		{
-			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>1, 0, current_symtab, 0,
-										   $<spec>-1.storage);
-			current_symtab = current_func->locals;
-			current_storage = sc_local;
-		}
-	  compound_statement
-		{
-			build_code_function ($<symbol>1, 0, $4);
-			current_symtab = $<symtab>3;
-			current_storage = $2.storage;
-			current_func = 0;
-		}
-	| '=' '#' expr ';'
-		{
-			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
-			sym = function_symbol (sym, spec.is_overload, 1);
-			build_builtin_function (sym, $3, 0, spec.storage);
-		}
-	;
-
-storage_class
-	: EXTERN					{ $$ = make_spec (0, sc_extern, 0, 0); }
-	| STATIC					{ $$ = make_spec (0, sc_static, 0, 0); }
-	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
-	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
-	| ATTRIBUTE '(' attribute_list ')'
-		{
-			$$ = parse_attributes ($3);
-		}
-	;
-
-attribute_list
-	: attribute
-	| attribute_list ',' attribute
-		{
-			if ($3) {
-				$3->next = $1;
-				$$ = $3;
-			} else {
-				$$ = $1;
-			}
-		}
-	;
-
-attribute
-	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0); }
-	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
-	;
-
-tag : NAME ;
-
-algebra_specifier
-	: ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
-		{
-			auto spec = make_spec (algebra_type ($3.type, $5), 0, 0, 0);
-			$$ = spec;
-		}
-	| ALGEBRA '(' TYPE_SPEC ')'
-		{
-			auto spec = make_spec (algebra_type ($3.type, 0), 0, 0, 0);
-			$$ = spec;
-		}
-	;
-
-enum_specifier
-	: ENUM tag optional_enum_list
-		{
-			$$ = make_spec ($3->type, 0, 0, 0);
-			if (!$3->table)
-				symtab_addsymbol (current_symtab, $3);
-		}
-	| ENUM enum_list
-		{
-			$$ = make_spec ($2->type, 0, 0, 0);
-			if (!$2->table)
-				symtab_addsymbol (current_symtab, $2);
-		}
-	;
-
-optional_enum_list
-	: enum_list
-	| /* empty */				{ $$ = find_enum ($<symbol>0); }
-	;
-
-enum_list
-	: '{' enum_init enumerator_list optional_comma '}'
-		{
-			current_symtab = current_symtab->parent;
-			$$ = finish_enum ($3);
-		}
-	;
-
-enum_init
-	: /* empty */
-		{
-			$$ = find_enum ($<symbol>-1);
-			start_enum ($$);
-			current_symtab = $$->type->t.symtab;
-		}
-	;
-
-enumerator_list
-	: enumerator							{ $$ = $<symbol>0; }
-	| enumerator_list ','					{ $<symbol>$ = $<symbol>0; }
-	  enumerator
-		{
-			$$ = $<symbol>0;
-		}
-	;
-
-enumerator
-	: identifier				{ add_enum ($<symbol>0, $1, 0); }
-	| identifier '=' expr		{ add_enum ($<symbol>0, $1, $3); }
+precision_qualifier
+	: HIGH_PRECISION
+	| MEDIUM_PRECISION
+	| LOW_PRECISION
 	;
 
 struct_specifier
-	: STRUCT tag struct_list { $$ = $3; }
-	| STRUCT {$<symbol>$ = 0;} struct_list { $$ = $3; }
-	| STRUCT tag
-		{
-			symbol_t   *sym;
-
-			sym = find_struct ($1, $2, 0);
-			sym->type = find_type (sym->type);
-			$$ = make_spec (sym->type, 0, 0, 0);
-			if (!sym->table) {
-				symtab_t   *tab = current_symtab;
-				while (tab->parent && tab->type == stab_struct) {
-					tab = tab->parent;
-				}
-				symtab_addsymbol (tab, sym);
-			}
-		}
-	| handle tag
-		{
-			specifier_t spec = default_type ($1, 0);
-			symbol_t   *sym = find_handle ($2, spec.type);
-			sym->type = find_type (sym->type);
-			$$ = make_spec (sym->type, 0, 0, 0);
-			if (!sym->table) {
-				symtab_t   *tab = current_symtab;
-				while (tab->parent && tab->type == stab_struct) {
-					tab = tab->parent;
-				}
-				symtab_addsymbol (tab, sym);
-			}
-		}
+	: STRUCT IDENTIFIER '{' struct_declaration_list '}'
+	| STRUCT '{' struct_declaration_list '}'
 	;
 
-handle
-	: HANDLE					{ $$ = make_spec (&type_int, 0, 0, 0); }
-	| HANDLE '(' TYPE_SPEC ')'	{ $$ = $3; }
+struct_declaration_list
+	: struct_declaration
+	| struct_declaration_list struct_declaration
 	;
 
-struct_list
-	: '{'
-		{
-			int         op = $<op>-1;
-			symbol_t   *sym = $<symbol>0;
-			current_symtab = start_struct (&op, sym, current_symtab);
-			$<op>1 = op;
-			$<symbol>$ = sym;
-		}
-	  struct_defs '}'
-		{
-			symbol_t   *sym;
-			symtab_t   *symtab = current_symtab;
-			current_symtab = symtab->parent;
-
-			if ($<op>1) {
-				sym = $<symbol>2;
-				sym = build_struct ($<op>1, sym, symtab, 0, 0);
-				$$ = make_spec (sym->type, 0, 0, 0);
-				if (!sym->table)
-					symtab_addsymbol (current_symtab, sym);
-			}
-		}
+struct_declaration
+	: type_specifier struct_declarator_list ';'
+	| type_qualifier type_specifier struct_declarator_list ';'
 	;
 
-struct_defs
-	: component_decl_list
-	| DEFS '(' identifier ')'
-		{
-			$3 = check_undefined ($3);
-			if (!$3->type || !is_class ($3->type)) {
-				error (0, "`%s' is not a class", $3->name);
-			} else {
-				// replace the struct symbol table with one built from
-				// the class ivars and the current struct fields. ivars
-				// will replace any fields of the same name.
-				current_symtab = class_to_struct ($3->type->t.class,
-												  current_symtab);
-			}
-		}
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list ',' struct_declarator
 	;
 
-component_decl_list
-	: component_decl_list2
-	| component_decl_list2 component_decl
-		{
-			warning (0, "no semicolon at end of struct or union");
-		}
+struct_declarator
+	: IDENTIFIER
+	| IDENTIFIER array_specifier
 	;
 
-component_decl_list2
-	: /* empty */
-	| component_decl_list2 component_decl ';'
-	| component_decl_list2 ';'
+initializer
+	: assignment_expression
+	| '{' initializer_list '}'
+	| '{' initializer_list ',' '}'
 	;
 
-component_decl
-	: declspecs_nosc_ts components
-	| declspecs_nosc_ts
-		{
-			if (is_anonymous_struct ($1)) {
-				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (0, ".anonymous.%s",
-										 $1.type->name + 4));
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				$1.sym->visibility = vis_anonymous;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
-				}
-			}
-		}
-	| declspecs_nosc_nots components_notype
-	| declspecs_nosc_nots { internal_error (0, "not implemented"); }
+initializer_list
+	: initializer
+	| initializer_list ',' initializer
 	;
 
-components
-	: component_declarator
-	| components ',' { $<spec>$ = $<spec>0; } component_declarator
-	;
-
-component_declarator
-	: declarator
-		{
-			declare_field ($1, current_symtab);
-		}
-	| declarator ':' expr
-	| ':' expr
-	;
-
-components_notype
-	: component_notype_declarator
-	| components_notype ',' component_notype_declarator
-	;
-
-component_notype_declarator
-	: notype_declarator { internal_error (0, "not implemented"); }
-	| notype_declarator ':' expr
-	| ':' expr
-	;
-
-function_params
-	: '(' copy_spec param_list ')'			{ $$ = check_params ($3); }
-	;
-
-param_list
-	: /* empty */							{ $$ =  0; }
-	| parameter_list
-	| parameter_list ',' ELLIPSIS
-		{
-			$$ = param_append_identifiers ($1, 0, 0);
-		}
-	| ELLIPSIS
-		{
-			$$ = make_ellipsis ();
-		}
-	;
-
-parameter_list
-	: parameter
-	| parameter_list ',' parameter
-		{
-			$$ = append_params ($1, $3);
-		}
-	;
-
-parameter
-	: declspecs_ts param_declarator
-		{
-			$$ = make_param ($2);
-		}
-	| declspecs_ts notype_declarator
-		{
-			$$ = make_param ($2);
-		}
-	| declspecs_ts absdecl
-		{
-			$$ = make_param ($2);
-		}
-	| declspecs_nosc_nots notype_declarator
-		{
-			$$ = make_param ($2);
-		}
-	| declspecs_nosc_nots absdecl
-		{
-			$$ = make_param ($2);
-		}
-	;
-
-absdecl
-	: /* empty */
-		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol (0);
-		}
-	| absdecl1
-	;
-
-absdecl1
-	: direct_absdecl
-	| '*' ptr_spec absdecl
-		{
-			$$ = pointer_spec ($2, $3);
-		}
-	;
-
-direct_absdecl
-	: '(' copy_spec absdecl1 ')' { $$ = $3; }
-	| direct_absdecl function_params
-		{
-			$$ = function_spec ($1, $2);
-		}
-	| direct_absdecl array_decl
-		{
-			$$ = array_spec ($1, $2);
-		}
-	| function_params
-		{
-			$$ = function_spec ($<spec>0, $1);
-		}
-	| array_decl
-		{
-			$$ = array_spec ($<spec>0, $1);
-		}
-	;
-
-param_declarator
-	: param_declarator_starttypename
-	| param_declarator_nostarttypename
-	;
-
-param_declarator_starttypename
-	: param_declarator_starttypename function_params
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	| param_declarator_starttypename array_decl
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	| TYPE_NAME
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	| OBJECT_NAME
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	;
-
-param_declarator_nostarttypename
-	: param_declarator_nostarttypename function_params
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	| param_declarator_nostarttypename array_decl
-		{ $$ = $1; internal_error (0, "not implemented"); }
-	| '*' ptr_spec param_declarator_starttypename
-		{ $$ = $3; internal_error (0, "not implemented"); }
-	| '*' ptr_spec param_declarator_nostarttypename
-		{ $$ = $3; internal_error (0, "not implemented"); }
-	| '(' copy_spec param_declarator_nostarttypename ')'	{ $$ = $3; }
-	;
-
-typename
-	: declspecs_nosc absdecl
-		{
-			$$ = typename_spec ($2);
-		}
-	;
-
-array_decl
-	: '[' expr ']'
-		{
-			if (is_int_val ($2) && expr_int ($2) > 0) {
-				$$ = expr_int ($2);
-			} else if (is_uint_val ($2) && expr_uint ($2) > 0) {
-				$$ = expr_uint ($2);
-			} else {
-				error (0, "invalid array size");
-				$$ = 0;
-			}
-		}
-	| '[' ']'					{ $$ = 0; }
-	;
-
-decl
-	: declspecs_ts local_expr initdecls seq_semi
-		{
-			$$ = local_expr;
-			local_expr = 0;
-		}
-	| declspecs_nots local_expr notype_initdecls seq_semi
-		{
-			$$ = local_expr;
-			local_expr = 0;
-		}
-	| declspecs ';' { $$ = 0; }
-	;
-
-local_expr
-	: /* emtpy */
-		{
-			$<spec>$ = $<spec>0;
-			local_expr = new_block_expr (0);
-		}
-	;
-
-var_initializer
-	: expr									{ $$ = $1; }
-	| compound_init
-		{
-			if (!$1 && is_scalar ($<spec>-1.type)) {
-				error (0, "empty scalar initializer");
-			}
-			$$ = $1 ? $1 : new_nil_expr ();
-		}
-	;
-
-compound_init
-	: '{' element_list optional_comma '}'		{ $$ = $2; }
-	| '{' '}'									{ $$ = 0; }
-	;
-
-element_list
-	: element
-		{
-			$$ = new_compound_init ();
-			append_element ($$, $1);
-		}
-	| element_list ','  element
-		{
-			append_element ($$, $3);
-		}
-	;
-
-element
-	: designator '=' compound_init				{ $$ = new_element ($3, $1); }
-	| designator '=' expr 						{ $$ = new_element ($3, $1); }
-	| compound_init								{ $$ = new_element ($1, 0); }
-	| expr										{ $$ = new_element ($1, 0); }
-	;
-
-designator
-	: designator_spec
-	| designator designator_spec
-		{
-			designator_t *des = $1;
-			while (des->next) {
-				des = des->next;
-			}
-			des->next = $2;
-			$$ = $1;
-		}
-	;
-
-designator_spec
-	: '.' ident_expr	{ $$ = new_designator ($2, 0); }
-	| '.' NAME			{ $$ = new_designator (new_symbol_expr ($2), 0); }
-	| '[' expr ']'      { $$ = new_designator (0, $2); }
-	;
-
-optional_comma
-	: /* empty */
-	| ','
-	;
-
-push_scope
-	: /* empty */
-		{
-			if (!options.traditional) {
-				current_symtab = new_symtab (current_symtab, stab_local);
-				current_symtab->space = current_symtab->parent->space;
-			}
-		}
-	;
-
-pop_scope
-	: /* empty */
-		{
-			if (!options.traditional)
-				current_symtab = current_symtab->parent;
-		}
-	;
-
-flush_dag
-	: /* empty */
-		{
-			if (!no_flush_dag) {
-				edag_flush ();
-			}
-		}
-	;
-
-seq_semi
-	: ';' flush_dag
-	;
-
-compound_statement
-	: '{' push_scope flush_dag statements '}' pop_scope flush_dag { $$ = $4; }
-	;
-
-statements
-	: /*empty*/
-		{
-			$$ = new_block_expr (0);
-		}
-	| statements flush_dag statement
-		{
-			$$ = append_expr ($1, $3);
-		}
-	;
-
-local_def
-	: LOCAL decl { $$ = $2; }
-	| decl
+declaration_statement
+	: declaration
 	;
 
 statement
-	: ';'						{ $$ = 0; }
-	| error ';'					{ $$ = 0; yyerrok; }
-	| compound_statement		{ $$ = $1; }
-	| local_def					{ $$ = $1; }
-	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
-	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
-	| BREAK ';'
-		{
-			$$ = 0;
-			if (break_label)
-				$$ = goto_expr (break_label);
-			else
-				error (0, "break outside of loop or switch");
-		}
-	| CONTINUE ';'
-		{
-			$$ = 0;
-			if (continue_label)
-				$$ = goto_expr (continue_label);
-			else
-				error (0, "continue outside of loop");
-		}
-	| CASE expr ':'
-		{
-			$$ = case_label_expr (switch_block, $2);
-		}
+	: compound_statement
+	| simple_statement
+	;
+
+simple_statement
+	: declaration_statement
+	| expression_statement
+	| selection_statement
+	| switch_statement
+	| case_label
+	| iteration_statement
+	| jump_statement
+	;
+
+compound_statement
+	: '{' '}'
+	| '{' statement_list '}'
+	;
+
+statement_no_new_scope
+	: compound_statement_no_new_scope
+	| simple_statement
+	;
+
+compound_statement_no_new_scope
+	: '{' '}'
+	| '{' statement_list '}'
+	;
+
+statement_list
+	: statement
+	| statement_list statement
+	;
+
+expression_statement
+	: ';'
+	| expression ';'
+	;
+
+selection_statement
+	: IF '(' expression ')' selection_rest_statement
+	;
+
+selection_rest_statement
+	: statement ELSE statement
+	| statement %prec IFX
+	;
+
+condition
+	: expression
+	| fully_specified_type IDENTIFIER '=' initializer
+	;
+
+switch_statement
+	: SWITCH '(' expression ')' '{' switch_statement_list '}'
+	;
+
+switch_statement_list
+	: /* empty */
+	| statement_list
+	;
+
+case_label
+	: CASE expression ':'
 	| DEFAULT ':'
-		{
-			$$ = case_label_expr (switch_block, 0);
-		}
-	| SWITCH break_label '(' comma_expr switch_block ')' compound_statement
-		{
-			$$ = switch_expr (switch_block, break_label, $7);
-			switch_block = $5;
-			break_label = $2;
-		}
-	| IF '(' texpr ')' flush_dag statement %prec IFX
-		{
-			$$ = build_if_statement (0, $3, $6, 0, 0);
-		}
-	| IF '(' texpr ')' flush_dag statement else statement
-		{
-			$$ = build_if_statement (0, $3, $6, $7, $8);
-		}
-	| FOR push_scope break_label continue_label
-			'(' opt_init_semi opt_expr seq_semi opt_expr ')' flush_dag statement pop_scope
-		{
-			if ($6) {
-				$6 = build_block_expr ($6, false);
-			}
-			$$ = build_for_statement ($6, $7, $9, $12,
-									  break_label, continue_label);
-			break_label = $3;
-			continue_label = $4;
-		}
-	| WHILE break_label continue_label '(' texpr ')' flush_dag statement
-		{
-			$$ = build_while_statement (0, $5, $8, break_label,
-										continue_label);
-			break_label = $2;
-			continue_label = $3;
-		}
-	| DO break_label continue_label statement WHILE '(' texpr ')' ';'
-		{
-			$$ = build_do_while_statement ($4, 0, $7,
-										   break_label, continue_label);
-			break_label = $2;
-			continue_label = $3;
-		}
-	| comma_expr ';'
-		{
-			$$ = $1;
-		}
 	;
 
-else
-	: ELSE flush_dag
-		{
-			// this is only to get the the file and line number info
-			$$ = new_nil_expr ();
-		}
+iteration_statement
+	: WHILE '(' condition ')' statement_no_new_scope
+	| DO statement WHILE '(' expression ')' ';'
+	| FOR '(' for_init_statement for_rest_statement ')' statement_no_new_scope
 	;
 
-bool_label
-	: /* empty */
-		{
-			$$ = new_label_expr ();
-		}
+for_init_statement
+	: expression_statement
+	| declaration_statement
 	;
 
-break_label
-	: /* empty */
-		{
-			$$ = break_label;
-			break_label = new_label_expr ();
-		}
+conditionopt
+	: condition
+	| /* emtpy */
 	;
 
-continue_label
-	: /* empty */
-		{
-			$$ = continue_label;
-			continue_label = new_label_expr ();
-		}
+for_rest_statement
+	: conditionopt ';'
+	| conditionopt ';' expression
 	;
 
-switch_block
-	: /* empty */
-		{
-			$$ = switch_block;
-			switch_block = new_switch_block ();
-			switch_block->test = $<expr>0;
-		}
-	;
-
-opt_init_semi
-	: comma_expr seq_semi
-	| decl /* contains ; */		{ $$ = (expr_t *) $1; }
-	| ';'
-		{
-			$$ = 0;
-		}
-	;
-
-opt_expr
-	: comma_expr
-	| /* empty */
-		{
-			$$ = 0;
-		}
-	;
-
-unary_expr
-	: NAME      				{ $$ = new_symbol_expr ($1); }
-	| ARGS						{ $$ = new_name_expr (".args"); }
-	| SELF						{ $$ = new_self_expr (); }
-	| THIS						{ $$ = new_this_expr (); }
-	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
-	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
-	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
-	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
-	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
-	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| unary_expr REVERSE			{ $$ = unary_expr (GLSL_REVERSE, $1); }
-	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (GLSL_DUAL, $2); }
-	| '+' cast_expr %prec UNARY	{ $$ = $2; }
-	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
-	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
-	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
-	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0); }
-	| '*' cast_expr %prec UNARY	{ $$ = deref_pointer_expr ($2); }
-	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
-	| SIZEOF '(' typename ')'	%prec HYPERUNARY
-		{
-			$$ = sizeof_expr (0, $3.type);
-		}
-	| vector_expr				{ $$ = new_vector_list ($1); }
-	;
-
-ident_expr
-	: OBJECT_NAME				{ $$ = new_symbol_expr ($1.sym); }
-	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
-	| TYPE_NAME					{ $$ = new_symbol_expr ($1.sym); }
-	;
-
-vector_expr
-	: '[' expr ',' { no_flush_dag = true; } expr_list ']'
-		{
-			$$ = expr_prepend_expr ($5, $2);
-			no_flush_dag = false;
-		}
-	;
-
-cast_expr
-	: '(' typename ')' cast_expr
-		{
-			$$ = cast_expr (find_type ($2.type), $4);
-		}
-	| unary_expr %prec LOW
-	;
-
-expr
-	: cast_expr
-	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
-	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
-	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
-	| expr '?' flush_dag expr ':' expr 	{ $$ = conditional_expr ($1, $4, $6); }
-	| expr AND flush_dag bool_label expr{ $$ = bool_expr (GLSL_AND, $4, $1, $5); }
-	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (GLSL_OR,  $4, $1, $5); }
-	| expr EQ expr				{ $$ = binary_expr (GLSL_EQ,  $1, $3); }
-	| expr NE expr				{ $$ = binary_expr (GLSL_NE,  $1, $3); }
-	| expr LE expr				{ $$ = binary_expr (GLSL_LE,  $1, $3); }
-	| expr GE expr				{ $$ = binary_expr (GLSL_GE,  $1, $3); }
-	| expr LT expr				{ $$ = binary_expr (GLSL_LT,  $1, $3); }
-	| expr GT expr				{ $$ = binary_expr (GLSL_GT,  $1, $3); }
-	| expr SHL expr				{ $$ = binary_expr (GLSL_SHL, $1, $3); }
-	| expr SHR expr				{ $$ = binary_expr (GLSL_SHR, $1, $3); }
-	| expr '+' expr				{ $$ = binary_expr ('+', $1, $3); }
-	| expr '-' expr				{ $$ = binary_expr ('-', $1, $3); }
-	| expr '*' expr				{ $$ = binary_expr ('*', $1, $3); }
-	| expr '/' expr				{ $$ = binary_expr ('/', $1, $3); }
-	| expr '&' expr				{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
-	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
-	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
-	| expr MOD expr				{ $$ = binary_expr (GLSL_MOD, $1, $3); }
-	| expr GEOMETRIC expr		{ $$ = binary_expr (GLSL_GEOMETRIC, $1, $3); }
-	| expr HADAMARD expr		{ $$ = binary_expr (GLSL_HADAMARD, $1, $3); }
-	| expr CROSS expr			{ $$ = binary_expr (GLSL_CROSS, $1, $3); }
-	| expr DOT expr				{ $$ = binary_expr (GLSL_DOT, $1, $3); }
-	| expr WEDGE expr			{ $$ = binary_expr (GLSL_WEDGE, $1, $3); }
-	| expr REGRESSIVE expr		{ $$ = binary_expr (GLSL_REGRESSIVE, $1, $3); }
-	;
-
-texpr
-	: expr						{ $$ = convert_bool ($1, 1); }
-	;
-
-comma_expr
-	: expr_list
-		{
-			if ($1->list.head->next) {
-				$$ = build_block_expr ($1, true);
-			} else {
-				$$ = (expr_t *) $1->list.head->expr;
-			}
-		}
-	;
-
-expr_list
-	: expr							{ $$ = new_list_expr ($1); }
-	| expr_list ',' flush_dag expr	{ $$ = expr_append_expr ($1, $4); }
-	;
-
-opt_arg_list
-	: /* emtpy */				{ $$ = 0; }
-	| arg_list					{ $$ = $1; }
-	;
-
-arg_list
-	: arg_expr					{ $$ = new_list_expr ($1); }
-	| arg_list ',' arg_expr		{ $$ = expr_prepend_expr ($1, $3); }
-	;
-
-arg_expr
-	: expr
-	| compound_init
-	;
-
-const
-	: VALUE
-	| NIL						{ $$ = new_nil_expr (); }
-	| string
-	;
-
-string
-	: STRING
-	| string STRING				{ $$ = binary_expr ('+', $1, $2); }
-	;
-
-identifier
-	: NAME
-	| OBJECT_NAME { $$ = $1.sym; }
-	| CLASS_NAME
-	| TYPE_NAME { $$ = $1.sym; }
+jump_statement
+	: CONTINUE ';'
+	| BREAK ';'
+	| RETURN ';'
+	| RETURN expression ';'
+	| DISCARD ';'
 	;
 
 %%
 
 
-static __attribute__((used)) keyword_t glsl_keywords[] = {
-	{"const",                   0},
-	{"uniform",                 0},
-	{"buffer",                  0},
-	{"shared",                  0},
-	{"attribute",               0},
-	{"varying",                 0},
-	{"coherent",                0},
-	{"volatile",                0},
-	{"restrict",                0},
-	{"readonly",                0},
-	{"writeonly",               0},
-	{"atomic_uint",             0},
-	{"layout",                  0},
-	{"centroid",                0},
-	{"flat",                    0},
-	{"smooth",                  0},
-	{"noperspective",           0},
-	{"patch",                   0},
-	{"sample",                  0},
-	{"invariant",               0},
-	{"precise",                 0},
-	{"break",                   QC_BREAK},
-	{"continue",                QC_CONTINUE},
-	{"do",                      QC_DO},
-	{"for",                     QC_FOR},
-	{"while",                   QC_WHILE},
-	{"switch",                  QC_SWITCH},
-	{"case",                    QC_CASE},
-	{"default",                 QC_DEFAULT},
-	{"if",                      QC_IF},
-	{"else",                    QC_ELSE},
-	{"subroutine",              0},
-	{"in",                      0},
-	{"out",                     0},
-	{"inout",                   0},
-	{"int",                     0},
-	{"void",                    QC_TYPE_SPEC, .spec = {.type = &type_void}},
-	{"bool",                    QC_TYPE_SPEC, .spec = {.type = &type_bool}},
-	{"true",                    0},
-	{"false",                   0},
-	{"float",                   QC_TYPE_SPEC, .spec = {.type = &type_float}},
-	{"double",                  QC_TYPE_SPEC, .spec = {.type = &type_double}},
-	{"discard",                 0},
-	{"return",                  0},
-	{"vec2",                    QC_TYPE_SPEC, .spec = {.type = &type_vec2}},
-	{"vec3",                    QC_TYPE_SPEC, .spec = {.type = &type_vec3}},
-	{"vec4",                    QC_TYPE_SPEC, .spec = {.type = &type_vec4}},
-	{"ivec2",                   QC_TYPE_SPEC, .spec = {.type = &type_ivec2}},
-	{"ivec3",                   QC_TYPE_SPEC, .spec = {.type = &type_ivec3}},
-	{"ivec4",                   QC_TYPE_SPEC, .spec = {.type = &type_ivec4}},
-	{"bvec2",                   QC_TYPE_SPEC, .spec = {.type = &type_bvec2}},
-	{"bvec3",                   QC_TYPE_SPEC, .spec = {.type = &type_bvec3}},
-	{"bvec4",                   QC_TYPE_SPEC, .spec = {.type = &type_bvec4}},
-	{"uint",                    QC_TYPE_SPEC, .spec = {.type = &type_uint}},
-	{"uvec2",                   QC_TYPE_SPEC, .spec = {.type = &type_uivec2}},
-	{"uvec3",                   QC_TYPE_SPEC, .spec = {.type = &type_uivec3}},
-	{"uvec4",                   QC_TYPE_SPEC, .spec = {.type = &type_uivec4}},
-	{"dvec2",                   QC_TYPE_SPEC, .spec = {.type = &type_dvec2}},
-	{"dvec3",                   QC_TYPE_SPEC, .spec = {.type = &type_dvec3}},
-	{"dvec4",                   QC_TYPE_SPEC, .spec = {.type = &type_dvec4}},
-	{"mat2",                    QC_TYPE_SPEC, .spec = {.type = &type_mat2x2}},
-	{"mat3",                    QC_TYPE_SPEC, .spec = {.type = &type_mat3x3}},
-	{"mat4",                    QC_TYPE_SPEC, .spec = {.type = &type_mat4x4}},
-	{"mat2x2",                  QC_TYPE_SPEC, .spec = {.type = &type_mat2x2}},
-	{"mat2x3",                  QC_TYPE_SPEC, .spec = {.type = &type_mat2x3}},
-	{"mat2x4",                  QC_TYPE_SPEC, .spec = {.type = &type_mat2x4}},
-	{"mat3x2",                  QC_TYPE_SPEC, .spec = {.type = &type_mat3x2}},
-	{"mat3x3",                  QC_TYPE_SPEC, .spec = {.type = &type_mat3x3}},
-	{"mat3x4",                  QC_TYPE_SPEC, .spec = {.type = &type_mat3x4}},
-	{"mat4x2",                  QC_TYPE_SPEC, .spec = {.type = &type_mat4x2}},
-	{"mat4x3",                  QC_TYPE_SPEC, .spec = {.type = &type_mat4x3}},
-	{"mat4x4",                  QC_TYPE_SPEC, .spec = {.type = &type_mat4x4}},
-	{"dmat2",                   QC_TYPE_SPEC, .spec = {.type = &type_dmat2x2}},
-	{"dmat3",                   QC_TYPE_SPEC, .spec = {.type = &type_dmat3x3}},
-	{"dmat4",                   QC_TYPE_SPEC, .spec = {.type = &type_dmat4x4}},
-	{"dmat2x2",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat2x2}},
-	{"dmat2x3",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat2x3}},
-	{"dmat2x4",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat2x4}},
-	{"dmat3x2",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat3x2}},
-	{"dmat3x3",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat3x3}},
-	{"dmat3x4",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat3x4}},
-	{"dmat4x2",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat4x2}},
-	{"dmat4x3",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat4x3}},
-	{"dmat4x4",                 QC_TYPE_SPEC, .spec = {.type = &type_dmat4x4}},
-	{"lowp",                    0},
-	{"mediump",                 0},
-	{"highp",                   0},
-	{"precision",               0},
+static keyword_t glsl_keywords[] = {
+	{"const",           GLSL_CONST},
+	{"uniform",         GLSL_UNIFORM},
+	{"buffer",          GLSL_BUFFER},
+	{"shared",          GLSL_SHARED},
+	{"attribute",       0},
+	{"varying",         0},
+	{"coherent",        GLSL_COHERENT},
+	{"volatile",        GLSL_VOLATILE},
+	{"restrict",        GLSL_RESTRICT},
+	{"readonly",        GLSL_READONLY},
+	{"writeonly",       GLSL_WRITEONLY},
+	{"atomic_uint",     0},
+	{"layout",          GLSL_LAYOUT},
+	{"centroid",        GLSL_CENTROID},
+	{"flat",            GLSL_FLAT},
+	{"smooth",          GLSL_SMOOTH},
+	{"noperspective",   GLSL_NOPERSPECTIVE},
+	{"patch",           GLSL_PATCH},
+	{"sample",          GLSL_SAMPLE},
+	{"invariant",       GLSL_INVARIANT},
+	{"precise",         GLSL_PRECISE},
+	{"break",           GLSL_BREAK},
+	{"continue",        GLSL_CONTINUE},
+	{"do",              GLSL_DO},
+	{"for",             GLSL_FOR},
+	{"while",           GLSL_WHILE},
+	{"switch",          GLSL_SWITCH},
+	{"case",            GLSL_CASE},
+	{"default",         GLSL_DEFAULT},
+	{"if",              GLSL_IF},
+	{"else",            GLSL_ELSE},
+	{"subroutine",      GLSL_RESERVED},
+	{"in",              GLSL_IN},
+	{"out",             GLSL_OUT},
+	{"inout",           GLSL_INOUT},
+	{"int",             GLSL_TYPE_SPEC, .spec = {.type = &type_int}},
+	{"void",            GLSL_VOID, .spec = {.type = &type_void}},
+	{"bool",            GLSL_TYPE_SPEC, .spec = {.type = &type_bool}},
+	{"true",            0},
+	{"false",           0},
+	{"float",           GLSL_TYPE_SPEC, .spec = {.type = &type_float}},
+	{"double",          GLSL_TYPE_SPEC, .spec = {.type = &type_double}},
+	{"discard",         0},
+	{"return",          GLSL_RETURN},
+	{"vec2",            GLSL_TYPE_SPEC, .spec = {.type = &type_vec2}},
+	{"vec3",            GLSL_TYPE_SPEC, .spec = {.type = &type_vec3}},
+	{"vec4",            GLSL_TYPE_SPEC, .spec = {.type = &type_vec4}},
+	{"ivec2",           GLSL_TYPE_SPEC, .spec = {.type = &type_ivec2}},
+	{"ivec3",           GLSL_TYPE_SPEC, .spec = {.type = &type_ivec3}},
+	{"ivec4",           GLSL_TYPE_SPEC, .spec = {.type = &type_ivec4}},
+	{"bvec2",           GLSL_TYPE_SPEC, .spec = {.type = &type_bvec2}},
+	{"bvec3",           GLSL_TYPE_SPEC, .spec = {.type = &type_bvec3}},
+	{"bvec4",           GLSL_TYPE_SPEC, .spec = {.type = &type_bvec4}},
+	{"uint",            GLSL_TYPE_SPEC, .spec = {.type = &type_uint}},
+	{"uvec2",           GLSL_TYPE_SPEC, .spec = {.type = &type_uivec2}},
+	{"uvec3",           GLSL_TYPE_SPEC, .spec = {.type = &type_uivec3}},
+	{"uvec4",           GLSL_TYPE_SPEC, .spec = {.type = &type_uivec4}},
+	{"dvec2",           GLSL_TYPE_SPEC, .spec = {.type = &type_dvec2}},
+	{"dvec3",           GLSL_TYPE_SPEC, .spec = {.type = &type_dvec3}},
+	{"dvec4",           GLSL_TYPE_SPEC, .spec = {.type = &type_dvec4}},
+	{"mat2",            GLSL_TYPE_SPEC, .spec = {.type = &type_mat2x2}},
+	{"mat3",            GLSL_TYPE_SPEC, .spec = {.type = &type_mat3x3}},
+	{"mat4",            GLSL_TYPE_SPEC, .spec = {.type = &type_mat4x4}},
+	{"mat2x2",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat2x2}},
+	{"mat2x3",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat2x3}},
+	{"mat2x4",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat2x4}},
+	{"mat3x2",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat3x2}},
+	{"mat3x3",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat3x3}},
+	{"mat3x4",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat3x4}},
+	{"mat4x2",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat4x2}},
+	{"mat4x3",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat4x3}},
+	{"mat4x4",          GLSL_TYPE_SPEC, .spec = {.type = &type_mat4x4}},
+	{"dmat2",           GLSL_TYPE_SPEC, .spec = {.type = &type_dmat2x2}},
+	{"dmat3",           GLSL_TYPE_SPEC, .spec = {.type = &type_dmat3x3}},
+	{"dmat4",           GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x4}},
+	{"dmat2x2",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat2x2}},
+	{"dmat2x3",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat2x3}},
+	{"dmat2x4",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat2x4}},
+	{"dmat3x2",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat3x2}},
+	{"dmat3x3",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat3x3}},
+	{"dmat3x4",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat3x4}},
+	{"dmat4x2",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x2}},
+	{"dmat4x3",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x3}},
+	{"dmat4x4",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x4}},
+
+	{"lowp",                    GLSL_LOW_PRECISION},
+	{"mediump",                 GLSL_MEDIUM_PRECISION},
+	{"highp",                   GLSL_HIGH_PRECISION},
+	{"precision",               GLSL_PRECISION},
 	{"sampler1D",               0},
 	{"sampler1DShadow",         0},
 	{"sampler1DArray",          0},
@@ -1691,7 +797,8 @@ static __attribute__((used)) keyword_t glsl_keywords[] = {
 	{"imageBuffer",             0},
 	{"iimageBuffer",            0},
 	{"uimageBuffer",            0},
-	{"struct",                  0},
+
+	{"struct",                  GLSL_STRUCT},
 
 	//vulkan
 	{"texture1D",               0},
@@ -1737,43 +844,134 @@ static __attribute__((used)) keyword_t glsl_keywords[] = {
 	{"usubpassInputMS",         0},
 
 	//reserved
-	{"common",                  0},
-	{"partition",               0},
-	{"active",                  0},
-	{"asm",                     0},
-	{"class",                   0},
-	{"union",                   0},
-	{"enum",                    0},
-	{"typedef",                 0},
-	{"template",                0},
-	{"this",                    0},
-	{"resource",                0},
-	{"goto",                    0},
-	{"inline",                  0},
-	{"noinline",                0},
-	{"public",                  0},
-	{"static",                  0},
-	{"extern",                  0},
-	{"external",                0},
-	{"interface",               0},
-	{"long",                    0},
-	{"short",                   0},
-	{"half",                    0},
-	{"fixed",                   0},
-	{"unsigned",                0},
-	{"superp",                  0},
-	{"input",                   0},
-	{"output",                  0},
-	{"hvec2",                   0},
-	{"hvec3",                   0},
-	{"hvec4",                   0},
-	{"fvec2",                   0},
-	{"fvec3",                   0},
-	{"fvec4",                   0},
-	{"filter",                  0},
-	{"sizeof",                  0},
-	{"cast",                    0},
-	{"namespace",               0},
-	{"using",                   0},
-	{"sampler3DRect",           0},
+	{"common",          GLSL_RESERVED},
+	{"partition",       GLSL_RESERVED},
+	{"active",          GLSL_RESERVED},
+	{"asm",             GLSL_RESERVED},
+	{"class",           GLSL_RESERVED},
+	{"union",           GLSL_RESERVED},
+	{"enum",            GLSL_RESERVED},
+	{"typedef",         GLSL_RESERVED},
+	{"template",        GLSL_RESERVED},
+	{"this",            GLSL_RESERVED},
+	{"resource",        GLSL_RESERVED},
+	{"goto",            GLSL_RESERVED},
+	{"inline",          GLSL_RESERVED},
+	{"noinline",        GLSL_RESERVED},
+	{"public",          GLSL_RESERVED},
+	{"static",          GLSL_RESERVED},
+	{"extern",          GLSL_RESERVED},
+	{"external",        GLSL_RESERVED},
+	{"interface",       GLSL_RESERVED},
+	{"long",            GLSL_RESERVED},
+	{"short",           GLSL_RESERVED},
+	{"half",            GLSL_RESERVED},
+	{"fixed",           GLSL_RESERVED},
+	{"unsigned",        GLSL_RESERVED},
+	{"superp",          GLSL_RESERVED},
+	{"input",           GLSL_RESERVED},
+	{"output",          GLSL_RESERVED},
+	{"hvec2",           GLSL_RESERVED},
+	{"hvec3",           GLSL_RESERVED},
+	{"hvec4",           GLSL_RESERVED},
+	{"fvec2",           GLSL_RESERVED},
+	{"fvec3",           GLSL_RESERVED},
+	{"fvec4",           GLSL_RESERVED},
+	{"filter",          GLSL_RESERVED},
+	{"sizeof",          GLSL_RESERVED},
+	{"cast",            GLSL_RESERVED},
+	{"namespace",       GLSL_RESERVED},
+	{"using",           GLSL_RESERVED},
+	{"sampler3DRect",   GLSL_RESERVED},
 };
+
+// preprocessor directives in ruamoko and quakec
+static directive_t glsl_directives[] = {
+	{"include",     PRE_INCLUDE},
+	{"define",      PRE_DEFINE},
+	{"undef",       PRE_UNDEF},
+	{"error",       PRE_ERROR},
+	{"warning",     PRE_WARNING},
+	{"notice",      PRE_NOTICE},
+	{"pragma",      PRE_PRAGMA},
+	{"line",        PRE_LINE},
+
+	{"extension",   PRE_EXTENSION},
+	{"version",     PRE_VERSION},
+};
+
+static directive_t *
+glsl_directive (const char *token)
+{
+	static hashtab_t *directive_tab;
+
+	if (!directive_tab) {
+		directive_tab = Hash_NewTable (253, rua_directive_get_key, 0, 0, 0);
+		for (size_t i = 0; i < ARRCOUNT(glsl_directives); i++) {
+			Hash_Add (directive_tab, &glsl_directives[i]);
+		}
+	}
+	directive_t *directive = Hash_Find (directive_tab, token);
+	return directive;
+}
+
+static int
+glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
+{
+	if (keyword->value == GLSL_STRUCT) {
+		lval->op = token[0];
+	} else {
+		lval->spec = keyword->spec;
+	}
+	return keyword->value;
+}
+
+static int
+glsl_keyword_or_id (rua_val_t *lval, const char *token)
+{
+	static hashtab_t *glsl_keyword_tab;
+
+	keyword_t  *keyword = 0;
+	symbol_t   *sym;
+
+	if (!glsl_keyword_tab) {
+		size_t      i;
+
+		glsl_keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+
+		for (i = 0; i < ARRCOUNT(glsl_keywords); i++)
+			Hash_Add (glsl_keyword_tab, &glsl_keywords[i]);
+	}
+	keyword = Hash_Find (glsl_keyword_tab, token);
+	if (keyword && keyword->value)
+		return glsl_process_keyword (lval, keyword, token);
+	if (token[0] == '@') {
+		return '@';
+	}
+	sym = symtab_lookup (current_symtab, token);
+	if (!sym)
+		sym = new_symbol (token);
+	lval->symbol = sym;
+	if (sym->sy_type == sy_type) {
+		lval->spec = (specifier_t) {
+			.type = sym->type,
+			.sym = sym,
+		};
+		return GLSL_TYPE_NAME;
+	}
+	return GLSL_IDENTIFIER;
+}
+
+int
+glsl_yyparse (FILE *in)
+{
+	rua_parser_t parser = {
+		.parse = glsl_yypush_parse,
+		.state = glsl_yypstate_new (),
+		.directive = glsl_directive,
+		.keyword_or_id = glsl_keyword_or_id,
+	};
+	int ret = rua_parse (in, &parser);
+	glsl_yypstate_delete (parser.state);
+	return ret;
+}

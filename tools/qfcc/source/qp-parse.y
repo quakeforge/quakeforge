@@ -123,6 +123,7 @@ int yylex (void);
 %right  <op> '=' ASX
 %right  '?' ':'
 %left   OR
+%left   XOR
 %left   AND
 %left   '|'
 %left   '^'

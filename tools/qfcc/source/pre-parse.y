@@ -102,6 +102,7 @@ parse_error (void *scanner)
 %right          <op> '=' ASX
 %right          '?' ':'
 %left           OR
+%left           XOR
 %left           AND
 %left           '|'
 %left           '^'
@@ -113,15 +114,17 @@ parse_error (void *scanner)
 
 %left           SHL SHR
 %left           '+' '-'
-%left           '*' '/' '%' MOD SCALE GEOMETRIC
+%left           '*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT WEDGE REGRESSIVE
-%right          SIZEOF UNARY INCOP REVERSE STAR DUAL
+%right          SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left           HYPERUNARY
 %left           '.' '(' '['
 
 %token <expr>   VALUE STRING
 %token <t>      TOKEN
-// end of tokens comment between qc and preprocessor
+%token          ELLIPSIS
+%token          RESERVED
+// end of common tokens
 
 %token <t.text> QSTRING HSTRING
 
@@ -133,6 +136,7 @@ parse_error (void *scanner)
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
 %token          CONCAT ARGS
+%token          EXTENSION VERSION
 
 %type <t.text>  string
 %type <macro>   params opt_params body arg arg_list arg_clist
@@ -243,6 +247,13 @@ directive
 	  extra_warn
 	| ENDIF					{ rua_endif (scanner); }
 	  extra_warn
+	| EXTENSION ID ':' ID eod
+	| VERSION VALUE opt_profile eod
+	;
+
+opt_profile
+	: /* empty */
+	| ID
 	;
 
 extra_warn

@@ -374,8 +374,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 %%
 
-#define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
-
 static directive_t cond_directives[] = {
 	{"if",       PRE_IF},
 	{"ifdef",    PRE_IFDEF},
@@ -785,7 +783,7 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 }
 
 static int
-parse_string (QC_YYSTYPE *lval, const rua_tok_t *tok, int type,
+parse_string (rua_val_t *lval, const rua_tok_t *tok, int type,
 			  yyscan_t scanner)
 {
 	const char *str = make_string (tok->text, 0);
@@ -980,7 +978,7 @@ convert_long (const expr_t *value)
 }
 
 static int
-qc_token (rua_extra_t *extra, QC_YYSTYPE *lval, const rua_tok_t *tok,
+qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 		  yyscan_t scanner)
 {
 	int         token = tok->token;

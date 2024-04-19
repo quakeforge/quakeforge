@@ -100,6 +100,7 @@ typedef enum {
 	lang_object,
 	lang_ruamoko,
 	lang_pascal,
+	lang_glsl,
 } lang_t;
 
 typedef struct ext_lang_s {
@@ -390,6 +391,9 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		case lang_pascal:
 			yyparse = qp_yyparse;
 			break;
+		case lang_glsl:
+			yyparse = glsl_yyparse;
+			break;
 		default:
 			internal_error (0, "unknown language enum");
 	}
@@ -511,6 +515,12 @@ file_language (const char *file, const char *ext)
 		{".c",		lang_ruamoko},
 		{".m",		lang_ruamoko},
 		{".qc",		lang_ruamoko},
+		{".comp",	lang_glsl},
+		{".vert",	lang_glsl},
+		{".tesc",	lang_glsl},
+		{".tese",	lang_glsl},
+		{".geom",	lang_glsl},
+		{".frag",	lang_glsl},
 		{".pas",	lang_pascal},
 		{".p",		lang_pascal},
 		{0,			lang_object},	// unrecognized extension = object file

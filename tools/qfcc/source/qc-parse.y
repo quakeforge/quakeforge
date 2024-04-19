@@ -124,6 +124,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %right	<op>	'=' ASX
 %right			'?' ':'
 %left			OR
+%left			XOR
 %left			AND
 %left			'|'
 %left			'^'
@@ -142,12 +143,14 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			'.' '(' '['
 
 %token	<expr>		VALUE STRING TOKEN
-// end of tokens common between qc and qp
+%token				ELLIPSIS
+%token				RESERVED
+// end of common tokens
 
 %token	<symbol>	CLASS_NAME NAME
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
-%token				RETURN AT_RETURN ELLIPSIS
+%token				RETURN AT_RETURN
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT
@@ -2449,8 +2452,6 @@ obj_string
 	;
 
 %%
-
-#define ARRCOUNT(_k) (sizeof (_k) / sizeof (_k[0]))
 
 // preprocessor directives in ruamoko and quakec
 static directive_t rua_directives[] = {
