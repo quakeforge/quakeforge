@@ -1442,7 +1442,7 @@ element_list
 			$$ = new_compound_init ();
 			append_element ($$, $1);
 		}
-	| element_list ','  element
+	| element_list ',' element
 		{
 			append_element ($$, $3);
 		}
