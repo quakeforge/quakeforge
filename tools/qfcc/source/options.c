@@ -887,6 +887,7 @@ DecodeArgs (int argc, char **argv)
 		pre_yydebug = 1;
 		qc_yydebug = 1;
 		qp_yydebug = 1;
+		glsl_yydebug = 1;
 	}
 	return optind;
 }

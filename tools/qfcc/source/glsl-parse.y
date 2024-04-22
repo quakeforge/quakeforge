@@ -155,12 +155,67 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token	<op>		STRUCT
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL VOID
 
-%token PRECISION INVARIANT SMOOTH FLAT NOPERSPECTIVE LAYOUT SHARED
-%token PRECISE CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
-%token RESTRICT READONLY WRITEONLY HIGH_PRECISION MEDIUM_PRECISION
-%token LOW_PRECISION DISCARD COHERENT
+%token <spec> PRECISION INVARIANT SMOOTH FLAT NOPERSPECTIVE LAYOUT SHARED
+%token <spec> PRECISE CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
+%token <spec> RESTRICT READONLY WRITEONLY HIGH_PRECISION MEDIUM_PRECISION
+%token <spec> LOW_PRECISION DISCARD COHERENT
+
+%type <symbol>  variable_identifier
+%type <expr>    expression primary_exprsssion assignment_expression
+%type <expr>    for_init_statement conditionopt expressionopt else
+%type <expr>    conditional_expression unary_expression postfix_expression
+%type <expr>    function_call function_call_or_method function_call_generic
+%type <expr>    function_call_header_with_parameters
+%type <expr>    function_call_header_no_parameters
+%type <expr>    function_call_header function_identifier
+%type <expr>    logical_or_expression logical_xor_expression
+%type <expr>    logical_and_expression
+%type <expr>    inclusive_or_expression exclusive_or_expression and_expression
+%type <expr>    equality_expression relational_expression
+%type <expr>    shift_expression additive_expression multiplicative_expression
+%type <expr>    integer_expression
+%type <expr>    initializer
+%type <expr>    condition
+%type <expr>    compound_statement_no_new_scope compound_statement
+%type <expr>    statement statement_no_new_scope statement_list
+%type <expr>    simple_statement expression_statement
+%type <expr>    declaration_statement selection_statement
+%type <expr>    switch_statement switch_statement_list case_label
+%type <switch_block> switch_block
+%type <expr>    iteration_statement jump_statement
+%type <expr>    break_label continue_label
+%type <mut_expr> initializer_list
+%type <op>      unary_operator assignment_operator
+
+%type <spec>    function_prototype function_declarator
+%type <spec>    function_header function_header_with_parameters
+%type <spec>    fully_specified_type type_specifier struct_specifier
+%type <spec>    type_qualifier single_type_qualifier type_specifier_nonarray
+%type <spec>    precision_qualifier interpolation_qualifier invariant_qualifier
+%type <spec>    precise_qualifer storage_qualifier layout_qualifier
+
+%type <size>    array_size
+%type <type>    array_specifier
+
+%type <param>   parameter_declaration
+%type <param>   parameter_declarator parameter_type_specifier
 
 %{
+
+static switch_block_t *switch_block;
+static const expr_t *break_label;
+static const expr_t *continue_label;
+
+static symbol_t *
+function_sym_type (specifier_t spec, symbol_t *sym)
+{
+	sym->type = append_type (spec.sym->type, spec.type);
+	set_func_type_attrs (sym->type, spec);
+	sym->type = find_type (sym->type);
+	return sym;
+}
+
+
 %}
 
 %expect 0
@@ -179,7 +234,28 @@ external_declaration
 	;
 
 function_definition
-	: function_prototype compound_statement_no_new_scope
+	: function_prototype
+		{
+			$<symtab>$ = current_symtab;
+			auto spec = $1;
+			spec.sym->type = parse_params (spec.sym->type, spec.params);
+			auto sym = function_sym_type (spec, spec.sym);
+			sym->params = spec.params;
+			sym = function_symbol (sym, true, true);
+			current_func = begin_function (sym, nullptr, current_symtab,
+										   false, spec.storage);
+			current_symtab = current_func->locals;
+			current_storage = sc_local;
+		}
+	  compound_statement_no_new_scope
+		{
+			auto spec = $1;
+			auto sym = spec.sym;
+			build_code_function (sym, nullptr, (expr_t *) $3);
+			current_symtab = $<symtab>2;
+			current_storage = sc_global;//FIXME
+			current_func = nullptr;
+		}
 	;
 
 variable_identifier
@@ -187,17 +263,20 @@ variable_identifier
 	;
 
 primary_exprsssion
-	: variable_identifier
+	: variable_identifier	{ $$ = new_symbol_expr ($1); }
 	| VALUE
-	| '(' expression ')'
+	| '(' expression ')'	{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	;
 
 postfix_expression
 	: primary_exprsssion
 	| postfix_expression '[' integer_expression ']'
+		{
+			$$ = array_expr ($1, $3);
+		}
 	| function_call
 	| postfix_expression '.' IDENTIFIER/*FIELD_SELECTION*/
-	| postfix_expression INCOP
+	| postfix_expression INCOP			{ $$ = incop_expr ($2, $1, 1); }
 	;
 
 integer_expression
@@ -232,98 +311,165 @@ function_call_header
 	;
 
 function_identifier
-	: type_specifier
+	: type_specifier					{ }
 	| postfix_expression
 	;
 
 unary_expression
 	: postfix_expression
-	| INCOP unary_expression
-	| unary_operator unary_expression
+	| INCOP unary_expression			{ $$ = incop_expr ($1, $2, 0); }
+	| unary_operator unary_expression	{ $$ = unary_expr ($1, $2); }
 	;
 
 unary_operator
-	: '+'
-	| '-'
-	| '!'
-	| '~'
+	: '+'								{ $$ = '+'; }
+	| '-'								{ $$ = '-'; }
+	| '!'								{ $$ = '!'; }
+	| '~'								{ $$ = '~'; }
 	;
 
 multiplicative_expression
 	: unary_expression
 	| multiplicative_expression '*' unary_expression
+		{
+			$$ = binary_expr ('*', $1, $3);
+		}
 	| multiplicative_expression '/' unary_expression
+		{
+			$$ = binary_expr ('/', $1, $3);
+		}
 	| multiplicative_expression '%' unary_expression
+		{
+			$$ = binary_expr ('%', $1, $3);
+		}
 	;
 
 additive_expression
 	: multiplicative_expression
 	| additive_expression '+' unary_expression
+		{
+			$$ = binary_expr ('+', $1, $3);
+		}
 	| additive_expression '-' unary_expression
+		{
+			$$ = binary_expr ('-', $1, $3);
+		}
 	;
 
 shift_expression
 	: additive_expression
 	| shift_expression SHL additive_expression
+		{
+			$$ = binary_expr (QC_SHL, $1, $3);
+		}
 	| shift_expression SHR additive_expression
+		{
+			$$ = binary_expr (QC_SHR, $1, $3);
+		}
 	;
 
 relational_expression
 	: shift_expression
 	| relational_expression LT shift_expression
+		{
+			$$ = binary_expr (QC_LT, $1, $3);
+		}
 	| relational_expression GT shift_expression
+		{
+			$$ = binary_expr (QC_GT, $1, $3);
+		}
 	| relational_expression LE shift_expression
+		{
+			$$ = binary_expr (QC_LE, $1, $3);
+		}
 	| relational_expression GE shift_expression
+		{
+			$$ = binary_expr (QC_GE, $1, $3);
+		}
 	;
 
 equality_expression
 	: relational_expression
 	| equality_expression EQ relational_expression
+		{
+			$$ = binary_expr (QC_EQ, $1, $3);
+		}
 	| relational_expression NE relational_expression
+		{
+			$$ = binary_expr (QC_NE, $1, $3);
+		}
 	;
 
 and_expression
 	: equality_expression
 	| and_expression '&' equality_expression
+		{
+			$$ = binary_expr ('&', $1, $3);
+		}
 	;
 
 exclusive_or_expression
 	: and_expression
 	| exclusive_or_expression '^' and_expression
+		{
+			$$ = binary_expr ('^', $1, $3);
+		}
 	;
 
 inclusive_or_expression
 	: exclusive_or_expression
 	| inclusive_or_expression '|' exclusive_or_expression
+		{
+			$$ = binary_expr ('|', $1, $3);
+		}
 	;
 
 logical_and_expression
 	: inclusive_or_expression
 	| logical_and_expression AND inclusive_or_expression
+		{
+			$$ = bool_expr (QC_AND, nullptr, $1, $3);
+		}
 	;
 
 logical_xor_expression
 	: logical_and_expression
 	| logical_xor_expression XOR logical_and_expression
+		{
+			$$ = bool_expr (QC_XOR, nullptr, $1, $3);
+		}
 	;
 
 logical_or_expression
 	: logical_xor_expression
 	| logical_or_expression OR logical_xor_expression
+		{
+			$$ = bool_expr (QC_OR, nullptr, $1, $3);
+		}
 	;
 
 conditional_expression
 	: logical_or_expression
 	| logical_or_expression '?' expression ':' assignment_expression
+		{
+			$$ = conditional_expr ($1, $3, $5);
+		}
 	;
 
 assignment_expression
 	: conditional_expression
 	| unary_expression assignment_operator assignment_expression
+		{
+			if ($2 == '=') {
+				$$ = assign_expr ($1, $3);
+			} else {
+				$$ = asx_expr ($2, $1, $3);
+			}
+		}
 	;
 
 assignment_operator
-	: '='
+	: '='								{ $$ = '='; }
 	| ASX
 	;
 
@@ -364,35 +510,75 @@ function_declarator
 
 function_header_with_parameters
 	: function_header parameter_declaration
+		{
+			auto spec = $1;
+			spec.params = $2;
+			$$ = spec;
+		}
 	| function_header_with_parameters ',' parameter_declaration
+		{
+			auto spec = $1;
+			spec.params = append_params (spec.params, $3);
+			$$ = spec;
+		}
 	;
 
 function_header
 	: fully_specified_type IDENTIFIER '('
+		{
+			auto spec = $1;
+			if ($2->table) {
+				spec.sym = new_symbol ($2->name);
+			} else {
+				spec.sym = $2;
+			}
+			$$ = spec;
+		}
 	;
 
 parameter_declarator
 	: type_specifier IDENTIFIER
+		{
+			$$ = new_param (nullptr, $1.type, $2->name);
+		}
 	| type_specifier IDENTIFIER array_specifier
+		{
+			$$ = new_param (nullptr, append_type ($1.type, $3), $2->name);
+		}
 	;
 
 parameter_declaration
-	: type_qualifier parameter_declarator
+	: type_qualifier parameter_declarator		{ $$ = $2; }//XXX
 	| parameter_declarator
-	| type_qualifier parameter_type_specifier
+	| type_qualifier parameter_type_specifier	{ $$ = $2; }//XXX
 	| parameter_type_specifier
 	;
 
 parameter_type_specifier
 	: type_specifier
+		{
+			$$ = new_param (nullptr, $1.type, nullptr);
+		}
 	;
 
 init_declarator_list
 	: single_declaration
 	| init_declarator_list ',' IDENTIFIER
+		{
+			auto symtab = current_symtab;
+			auto space = symtab->space;
+			auto storage = current_storage;
+			initialize_def ($3, nullptr, space, storage, symtab);
+		}
 	| init_declarator_list ',' IDENTIFIER array_specifier
 	| init_declarator_list ',' IDENTIFIER array_specifier '=' initializer
 	| init_declarator_list ',' IDENTIFIER '=' initializer
+		{
+			auto symtab = current_symtab;
+			auto space = symtab->space;
+			auto storage = current_storage;
+			initialize_def ($3, $5, space, storage, symtab);
+		}
 	;
 
 single_declaration
@@ -475,10 +661,26 @@ type_specifier
 	;
 
 array_specifier
-	: '[' ']'
-	| '[' conditional_expression  ']'
-	| array_specifier '[' ']'
-	| array_specifier '[' conditional_expression ']'
+	: array_size				{ $$ = (type_t *) array_type (nullptr, $1); }
+	| array_specifier array_size
+		{
+			$$ = (type_t *) append_type ($1, array_type (nullptr, $2));
+		}
+	;
+
+array_size
+	: '[' ']'							{ $$ = 0; }
+	| '[' conditional_expression ']'
+		{
+			if (is_int_val ($2) && expr_int ($2) > 0) {
+				$$ = expr_int ($2);
+			} else if (is_uint_val ($2) && expr_uint ($2) > 0) {
+				$$ = expr_uint ($2);
+			} else{
+				error (0, "invalid array size");
+				$$ = 0;
+			}
+		}
 	;
 
 type_specifier_nonarray
@@ -495,8 +697,40 @@ precision_qualifier
 	;
 
 struct_specifier
-	: STRUCT IDENTIFIER '{' struct_declaration_list '}'
-	| STRUCT '{' struct_declaration_list '}'
+	: STRUCT IDENTIFIER '{'
+		{
+			int op = 's';
+			current_symtab = start_struct (&op, $2, current_symtab);
+		}
+	  struct_declaration_list '}'
+		{
+			auto symtab = current_symtab;
+			current_symtab = symtab->parent;
+
+			auto sym = build_struct ('s', $2, symtab, nullptr, 0);
+			if (!sym->table) {
+				symtab_addsymbol (current_symtab, sym);
+			}
+			auto s = $2;
+			s->sy_type = sy_type;
+			s->type = find_type (alias_type (sym->type, sym->type, s->name));
+			symtab_addsymbol (current_symtab, s);
+		}
+	| STRUCT '{'
+		{
+			int op = 's';
+			current_symtab = start_struct (&op, nullptr, current_symtab);
+		}
+	  struct_declaration_list '}'
+		{
+			auto symtab = current_symtab;
+			current_symtab = symtab->parent;
+
+			auto sym = build_struct ('s', nullptr, symtab, nullptr, 0);
+			if (!sym->table) {
+				symtab_addsymbol (current_symtab, sym);
+			}
+		}
 	;
 
 struct_declaration_list
@@ -521,17 +755,24 @@ struct_declarator
 
 initializer
 	: assignment_expression
-	| '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
+	| '{' initializer_list '}'		{ $$ = $2; }
+	| '{' initializer_list ',' '}'	{ $$ = $2; }
 	;
 
 initializer_list
 	: initializer
+		{
+			$$ = new_compound_init ();
+			append_element ($$, new_element ($1, nullptr));
+		}
 	| initializer_list ',' initializer
+		{
+			append_element ($$, new_element ($3, nullptr));
+		}
 	;
 
 declaration_statement
-	: declaration
+	: declaration				{ $$ = nullptr; }
 	;
 
 statement
@@ -550,8 +791,8 @@ simple_statement
 	;
 
 compound_statement
-	: '{' '}'
-	| '{' statement_list '}'
+	: '{' '}'							{ $$ = nullptr; }
+	| '{' statement_list '}'			{ $$ = $2; }
 	;
 
 statement_no_new_scope
@@ -560,75 +801,189 @@ statement_no_new_scope
 	;
 
 compound_statement_no_new_scope
-	: '{' '}'
-	| '{' statement_list '}'
+	: '{' '}'							{ $$ = nullptr; }
+	| '{' statement_list '}'			{ $$ = $2; }
 	;
 
 statement_list
 	: statement
+		{
+			auto list = new_block_expr (nullptr);
+			append_expr (list, $1);
+			$$ = list;
+		}
 	| statement_list statement
+		{
+			auto list = (expr_t *) $1;
+			append_expr (list, $2);
+			$$ = list;
+		}
 	;
 
 expression_statement
-	: ';'
-	| expression ';'
+	: ';'						{ $$ = nullptr; }
+	| expression ';'			{ $$ = (expr_t *) $expression; }
 	;
 
 selection_statement
-	: IF '(' expression ')' selection_rest_statement
+//	: IF '(' expression ')' selection_rest_statement
+	: IF '(' expression ')' statement[true] %prec IFX
+		{
+			$$ = build_if_statement (false, $expression,
+									 $true, nullptr, nullptr);
+		}
+	| IF '(' expression ')' statement[true] else statement[false]
+		{
+			$$ = build_if_statement (false, $expression,
+									 $true, $else, $false);
+		}
 	;
 
-selection_rest_statement
-	: statement ELSE statement
-	| statement %prec IFX
+else
+	: ELSE
+		{
+			// this is only to get the the file and line number info
+			$$ = new_nil_expr ();
+		}
 	;
+
+//selection_rest_statement
+//	: statement ELSE statement
+//	| statement %prec IFX
+//	;
 
 condition
 	: expression
 	| fully_specified_type IDENTIFIER '=' initializer
+		{
+			auto symtab = current_symtab;
+			auto space = symtab->space;
+			auto storage = current_storage;
+			initialize_def ($2, $initializer, space, storage, symtab);
+		}
+	;
+
+break_label
+	: /* empty */
+		{
+			$$ = break_label;
+			break_label = new_label_expr ();
+		}
+	;
+
+continue_label
+	: /* empty */
+		{
+			$$ = continue_label;
+			continue_label = new_label_expr ();
+		}
 	;
 
 switch_statement
-	: SWITCH '(' expression ')' '{' switch_statement_list '}'
+	: SWITCH break_label '(' expression switch_block')'
+			'{' switch_statement_list '}'
+		{
+			$$ = switch_expr (switch_block, break_label,
+							  $switch_statement_list);
+			switch_block = $switch_block;
+			break_label = $break_label;
+		}
+	;
+
+switch_block
+	: /* empty */
+		{
+			$$ = switch_block;
+			switch_block = new_switch_block ();
+			switch_block->test = $<expr>0;
+		}
 	;
 
 switch_statement_list
-	: /* empty */
+	: /* empty */				{ $$ = nullptr; }
 	| statement_list
 	;
 
 case_label
-	: CASE expression ':'
-	| DEFAULT ':'
+	: CASE expression ':'	{ $$ = case_label_expr (switch_block, $2); }
+	| DEFAULT ':'			{ $$ = case_label_expr (switch_block, nullptr); }
 	;
 
 iteration_statement
-	: WHILE '(' condition ')' statement_no_new_scope
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' for_init_statement for_rest_statement ')' statement_no_new_scope
+	: WHILE break_label continue_label '(' condition ')' statement_no_new_scope
+		{
+			$$ = build_while_statement (false, $continue_label,
+										$statement_no_new_scope, break_label,
+										continue_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
+		}
+	| DO break_label continue_label statement WHILE '(' expression ')' ';'
+		{
+			$$ = build_do_while_statement ($statement, false, $expression,
+										   break_label, continue_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
+		}
+	| FOR break_label continue_label
+//			'(' for_init_statement for_rest_statement ')'
+			'(' for_init_statement ';' conditionopt ';' expressionopt ')'
+			statement_no_new_scope
+		{
+			if ($for_init_statement) {
+				$for_init_statement = build_block_expr ((expr_t *) $for_init_statement,
+														false);
+			}
+			$$ = build_for_statement ($for_init_statement, $conditionopt,
+									  $expressionopt, $statement_no_new_scope,
+									  break_label, continue_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
+		}
 	;
 
 for_init_statement
-	: expression_statement
-	| declaration_statement
+	: expression_statement	{ $$ = $1; }
+	| declaration_statement	{ $$ = $1; }
 	;
 
 conditionopt
 	: condition
-	| /* emtpy */
+	| /* emtpy */	{ $$ = nullptr; }
 	;
 
+expressionopt
+	: expression
+	| /* emtpy */	{ $$ = nullptr; }
+	;
+/*
 for_rest_statement
 	: conditionopt ';'
 	| conditionopt ';' expression
 	;
-
+*/
 jump_statement
 	: CONTINUE ';'
+		{
+			$$ = nullptr;
+			if (continue_label) {
+				$$ = goto_expr (continue_label);
+			} else {
+				error (nullptr, "continue outside of loop");
+			}
+		}
 	| BREAK ';'
-	| RETURN ';'
-	| RETURN expression ';'
-	| DISCARD ';'
+		{
+			$$ = nullptr;
+			if (break_label) {
+				$$ = goto_expr (break_label);
+			} else {
+				error (nullptr, "continue outside of loop or switch");
+			}
+		}
+	| RETURN ';'				{ $$ = return_expr (current_func, nullptr); }
+	| RETURN expression ';'		{ $$ = return_expr (current_func, $2); }
+	| DISCARD ';'				{ $$ = nullptr; } //XXX
 	;
 
 %%
@@ -639,14 +994,14 @@ static keyword_t glsl_keywords[] = {
 	{"uniform",         GLSL_UNIFORM},
 	{"buffer",          GLSL_BUFFER},
 	{"shared",          GLSL_SHARED},
-	{"attribute",       0},
-	{"varying",         0},
+	{"attribute",       GLSL_RESERVED},
+	{"varying",         GLSL_RESERVED},
 	{"coherent",        GLSL_COHERENT},
 	{"volatile",        GLSL_VOLATILE},
 	{"restrict",        GLSL_RESTRICT},
 	{"readonly",        GLSL_READONLY},
 	{"writeonly",       GLSL_WRITEONLY},
-	{"atomic_uint",     0},
+	{"atomic_uint",     GLSL_RESERVED},
 	{"layout",          GLSL_LAYOUT},
 	{"centroid",        GLSL_CENTROID},
 	{"flat",            GLSL_FLAT},
@@ -677,7 +1032,7 @@ static keyword_t glsl_keywords[] = {
 	{"false",           0},
 	{"float",           GLSL_TYPE_SPEC, .spec = {.type = &type_float}},
 	{"double",          GLSL_TYPE_SPEC, .spec = {.type = &type_double}},
-	{"discard",         0},
+	{"discard",         GLSL_DISCARD},
 	{"return",          GLSL_RETURN},
 	{"vec2",            GLSL_TYPE_SPEC, .spec = {.type = &type_vec2}},
 	{"vec3",            GLSL_TYPE_SPEC, .spec = {.type = &type_vec3}},
@@ -724,124 +1079,124 @@ static keyword_t glsl_keywords[] = {
 	{"mediump",                 GLSL_MEDIUM_PRECISION},
 	{"highp",                   GLSL_HIGH_PRECISION},
 	{"precision",               GLSL_PRECISION},
-	{"sampler1D",               0},
-	{"sampler1DShadow",         0},
-	{"sampler1DArray",          0},
-	{"sampler1DArrayShadow",    0},
-	{"isampler1D",              0},
-	{"isampler1DArray",         0},
-	{"usampler1D",              0},
-	{"usampler1DArray",         0},
-	{"sampler2D",               0},
-	{"sampler2DShadow",         0},
-	{"sampler2DArray",          0},
-	{"sampler2DArrayShadow",    0},
-	{"isampler2D",              0},
-	{"isampler2DArray",         0},
-	{"usampler2D",              0},
-	{"usampler2DArray",         0},
-	{"sampler2DRect",           0},
-	{"sampler2DRectShadow",     0},
-	{"isampler2DRect",          0},
-	{"usampler2DRect",          0},
-	{"sampler2DMS",             0},
-	{"isampler2DMS",            0},
-	{"usampler2DMS",            0},
-	{"sampler2DMSArray",        0},
-	{"isampler2DMSArray",       0},
-	{"usampler2DMSArray",       0},
-	{"sampler3D",               0},
-	{"isampler3D",              0},
-	{"usampler3D",              0},
-	{"samplerCube",             0},
-	{"samplerCubeShadow",       0},
-	{"isamplerCube",            0},
-	{"usamplerCube",            0},
-	{"samplerCubeArray",        0},
-	{"samplerCubeArrayShadow",  0},
-	{"isamplerCubeArray",       0},
-	{"usamplerCubeArray",       0},
-	{"samplerBuffer",           0},
-	{"isamplerBuffer",          0},
-	{"usamplerBuffer",          0},
-	{"image1D",                 0},
-	{"iimage1D",                0},
-	{"uimage1D",                0},
-	{"image1DArray",            0},
-	{"iimage1DArray",           0},
-	{"uimage1DArray",           0},
-	{"image2D",                 0},
-	{"iimage2D",                0},
-	{"uimage2D",                0},
-	{"image2DArray",            0},
-	{"iimage2DArray",           0},
-	{"uimage2DArray",           0},
-	{"image2DRect",             0},
-	{"iimage2DRect",            0},
-	{"uimage2DRect",            0},
-	{"image2DMS",               0},
-	{"iimage2DMS",              0},
-	{"uimage2DMS",              0},
-	{"image2DMSArray",          0},
-	{"iimage2DMSArray",         0},
-	{"uimage2DMSArray",         0},
-	{"image3D",                 0},
-	{"iimage3D",                0},
-	{"uimage3D",                0},
-	{"imageCube",               0},
-	{"iimageCube",              0},
-	{"uimageCube",              0},
-	{"imageCubeArray",          0},
-	{"iimageCubeArray",         0},
-	{"uimageCubeArray",         0},
-	{"imageBuffer",             0},
-	{"iimageBuffer",            0},
-	{"uimageBuffer",            0},
+	{"sampler1D",               GLSL_TYPE_SPEC},	// spec init at runtime
+	{"sampler1DShadow",         GLSL_TYPE_SPEC},
+	{"sampler1DArray",          GLSL_TYPE_SPEC},
+	{"sampler1DArrayShadow",    GLSL_TYPE_SPEC},
+	{"isampler1D",              GLSL_TYPE_SPEC},
+	{"isampler1DArray",         GLSL_TYPE_SPEC},
+	{"usampler1D",              GLSL_TYPE_SPEC},
+	{"usampler1DArray",         GLSL_TYPE_SPEC},
+	{"sampler2D",               GLSL_TYPE_SPEC},
+	{"sampler2DShadow",         GLSL_TYPE_SPEC},
+	{"sampler2DArray",          GLSL_TYPE_SPEC},
+	{"sampler2DArrayShadow",    GLSL_TYPE_SPEC},
+	{"isampler2D",              GLSL_TYPE_SPEC},
+	{"isampler2DArray",         GLSL_TYPE_SPEC},
+	{"usampler2D",              GLSL_TYPE_SPEC},
+	{"usampler2DArray",         GLSL_TYPE_SPEC},
+	{"sampler2DRect",           GLSL_TYPE_SPEC},
+	{"sampler2DRectShadow",     GLSL_TYPE_SPEC},
+	{"isampler2DRect",          GLSL_TYPE_SPEC},
+	{"usampler2DRect",          GLSL_TYPE_SPEC},
+	{"sampler2DMS",             GLSL_TYPE_SPEC},
+	{"isampler2DMS",            GLSL_TYPE_SPEC},
+	{"usampler2DMS",            GLSL_TYPE_SPEC},
+	{"sampler2DMSArray",        GLSL_TYPE_SPEC},
+	{"isampler2DMSArray",       GLSL_TYPE_SPEC},
+	{"usampler2DMSArray",       GLSL_TYPE_SPEC},
+	{"sampler3D",               GLSL_TYPE_SPEC},
+	{"isampler3D",              GLSL_TYPE_SPEC},
+	{"usampler3D",              GLSL_TYPE_SPEC},
+	{"samplerCube",             GLSL_TYPE_SPEC},
+	{"samplerCubeShadow",       GLSL_TYPE_SPEC},
+	{"isamplerCube",            GLSL_TYPE_SPEC},
+	{"usamplerCube",            GLSL_TYPE_SPEC},
+	{"samplerCubeArray",        GLSL_TYPE_SPEC},
+	{"samplerCubeArrayShadow",  GLSL_TYPE_SPEC},
+	{"isamplerCubeArray",       GLSL_TYPE_SPEC},
+	{"usamplerCubeArray",       GLSL_TYPE_SPEC},
+	{"samplerBuffer",           GLSL_TYPE_SPEC},
+	{"isamplerBuffer",          GLSL_TYPE_SPEC},
+	{"usamplerBuffer",          GLSL_TYPE_SPEC},
+	{"image1D",                 GLSL_TYPE_SPEC},
+	{"iimage1D",                GLSL_TYPE_SPEC},
+	{"uimage1D",                GLSL_TYPE_SPEC},
+	{"image1DArray",            GLSL_TYPE_SPEC},
+	{"iimage1DArray",           GLSL_TYPE_SPEC},
+	{"uimage1DArray",           GLSL_TYPE_SPEC},
+	{"image2D",                 GLSL_TYPE_SPEC},
+	{"iimage2D",                GLSL_TYPE_SPEC},
+	{"uimage2D",                GLSL_TYPE_SPEC},
+	{"image2DArray",            GLSL_TYPE_SPEC},
+	{"iimage2DArray",           GLSL_TYPE_SPEC},
+	{"uimage2DArray",           GLSL_TYPE_SPEC},
+	{"image2DRect",             GLSL_TYPE_SPEC},
+	{"iimage2DRect",            GLSL_TYPE_SPEC},
+	{"uimage2DRect",            GLSL_TYPE_SPEC},
+	{"image2DMS",               GLSL_TYPE_SPEC},
+	{"iimage2DMS",              GLSL_TYPE_SPEC},
+	{"uimage2DMS",              GLSL_TYPE_SPEC},
+	{"image2DMSArray",          GLSL_TYPE_SPEC},
+	{"iimage2DMSArray",         GLSL_TYPE_SPEC},
+	{"uimage2DMSArray",         GLSL_TYPE_SPEC},
+	{"image3D",                 GLSL_TYPE_SPEC},
+	{"iimage3D",                GLSL_TYPE_SPEC},
+	{"uimage3D",                GLSL_TYPE_SPEC},
+	{"imageCube",               GLSL_TYPE_SPEC},
+	{"iimageCube",              GLSL_TYPE_SPEC},
+	{"uimageCube",              GLSL_TYPE_SPEC},
+	{"imageCubeArray",          GLSL_TYPE_SPEC},
+	{"iimageCubeArray",         GLSL_TYPE_SPEC},
+	{"uimageCubeArray",         GLSL_TYPE_SPEC},
+	{"imageBuffer",             GLSL_TYPE_SPEC},
+	{"iimageBuffer",            GLSL_TYPE_SPEC},
+	{"uimageBuffer",            GLSL_TYPE_SPEC},
 
 	{"struct",                  GLSL_STRUCT},
 
 	//vulkan
-	{"texture1D",               0},
-	{"texture1DArray",          0},
-	{"itexture1D",              0},
-	{"itexture1DArray",         0},
-	{"utexture1D",              0},
-	{"utexture1DArray",         0},
-	{"texture2D",               0},
-	{"texture2DArray",          0},
-	{"itexture2D",              0},
-	{"itexture2DArray",         0},
-	{"utexture2D",              0},
-	{"utexture2DArray",         0},
-	{"texture2DRect",           0},
-	{"itexture2DRect",          0},
-	{"utexture2DRect",          0},
-	{"texture2DMS",             0},
-	{"itexture2DMS",            0},
-	{"utexture2DMS",            0},
-	{"texture2DMSArray",        0},
-	{"itexture2DMSArray",       0},
-	{"utexture2DMSArray",       0},
-	{"texture3D",               0},
-	{"itexture3D",              0},
-	{"utexture3D",              0},
-	{"textureCube",             0},
-	{"itextureCube",            0},
-	{"utextureCube",            0},
-	{"textureCubeArray",        0},
-	{"itextureCubeArray",       0},
-	{"utextureCubeArray",       0},
-	{"textureBuffer",           0},
-	{"itextureBuffer",          0},
-	{"utextureBuffer",          0},
-	{"sampler",                 0},
-	{"samplerShadow",           0},
-	{"subpassInput",            0},
-	{"isubpassInput",           0},
-	{"usubpassInput",           0},
-	{"subpassInputMS",          0},
-	{"isubpassInputMS",         0},
-	{"usubpassInputMS",         0},
+	{"texture1D",               GLSL_TYPE_SPEC},	// spec init at runtime
+	{"texture1DArray",          GLSL_TYPE_SPEC},
+	{"itexture1D",              GLSL_TYPE_SPEC},
+	{"itexture1DArray",         GLSL_TYPE_SPEC},
+	{"utexture1D",              GLSL_TYPE_SPEC},
+	{"utexture1DArray",         GLSL_TYPE_SPEC},
+	{"texture2D",               GLSL_TYPE_SPEC},
+	{"texture2DArray",          GLSL_TYPE_SPEC},
+	{"itexture2D",              GLSL_TYPE_SPEC},
+	{"itexture2DArray",         GLSL_TYPE_SPEC},
+	{"utexture2D",              GLSL_TYPE_SPEC},
+	{"utexture2DArray",         GLSL_TYPE_SPEC},
+	{"texture2DRect",           GLSL_TYPE_SPEC},
+	{"itexture2DRect",          GLSL_TYPE_SPEC},
+	{"utexture2DRect",          GLSL_TYPE_SPEC},
+	{"texture2DMS",             GLSL_TYPE_SPEC},
+	{"itexture2DMS",            GLSL_TYPE_SPEC},
+	{"utexture2DMS",            GLSL_TYPE_SPEC},
+	{"texture2DMSArray",        GLSL_TYPE_SPEC},
+	{"itexture2DMSArray",       GLSL_TYPE_SPEC},
+	{"utexture2DMSArray",       GLSL_TYPE_SPEC},
+	{"texture3D",               GLSL_TYPE_SPEC},
+	{"itexture3D",              GLSL_TYPE_SPEC},
+	{"utexture3D",              GLSL_TYPE_SPEC},
+	{"textureCube",             GLSL_TYPE_SPEC},
+	{"itextureCube",            GLSL_TYPE_SPEC},
+	{"utextureCube",            GLSL_TYPE_SPEC},
+	{"textureCubeArray",        GLSL_TYPE_SPEC},
+	{"itextureCubeArray",       GLSL_TYPE_SPEC},
+	{"utextureCubeArray",       GLSL_TYPE_SPEC},
+	{"textureBuffer",           GLSL_TYPE_SPEC},
+	{"itextureBuffer",          GLSL_TYPE_SPEC},
+	{"utextureBuffer",          GLSL_TYPE_SPEC},
+	{"sampler",                 GLSL_TYPE_SPEC},
+	{"samplerShadow",           GLSL_TYPE_SPEC},
+	{"subpassInput",            GLSL_TYPE_SPEC},
+	{"isubpassInput",           GLSL_TYPE_SPEC},
+	{"usubpassInput",           GLSL_TYPE_SPEC},
+	{"subpassInputMS",          GLSL_TYPE_SPEC},
+	{"isubpassInputMS",         GLSL_TYPE_SPEC},
+	{"usubpassInputMS",         GLSL_TYPE_SPEC},
 
 	//reserved
 	{"common",          GLSL_RESERVED},
@@ -920,6 +1275,11 @@ glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
 {
 	if (keyword->value == GLSL_STRUCT) {
 		lval->op = token[0];
+	} else if (keyword->value == GLSL_TYPE_SPEC && !keyword->spec.type) {
+		auto sym = new_symbol (token);
+		sym = find_handle (sym, &type_int);
+		keyword->spec.type = sym->type;
+		lval->spec = keyword->spec;
 	} else {
 		lval->spec = keyword->spec;
 	}
