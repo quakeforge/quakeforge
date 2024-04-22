@@ -285,9 +285,6 @@ typedef struct {
 	type_t     *type;			///< result type
 } ex_horizontal_t;
 
-//NOTE always operates on vec4 or dvec4, so needs a suitable destination and
-//care must be taken when working with smaller source operands (check aligmnet
-//and adjust swizzle operation as needed)
 typedef struct {
 	const expr_t *src;			///< source expression
 	unsigned    source[4];		///< src component indices

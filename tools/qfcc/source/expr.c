@@ -667,7 +667,7 @@ new_swizzle_expr (const expr_t *src, const char *swizzle)
 	}
 	swiz.zero |= (0xf << comp_count) & 0xf;
 	swiz.src = src;
-	swiz.type = src_type;
+	swiz.type = vector_type (base_type (src_type), comp_count);
 
 	expr_t     *expr = new_expr ();
 	expr->type = ex_swizzle;
