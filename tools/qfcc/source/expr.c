@@ -1461,7 +1461,7 @@ get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 		return 0;
 	}
 	field = symtab_lookup (strct, sym->name);
-	if (!field && !is_entity(t1)) {
+	if (!field && !is_entity(t1) && !is_nonscalar (t1)) {
 		const char *name = t1->name;
 		if (!strncmp (name, "tag ", 4)) {
 			name += 4;
@@ -1469,6 +1469,17 @@ get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 		error (e2, "'%s' has no member named '%s'", name, sym->name);
 	}
 	return field;
+}
+
+static const expr_t *
+swizzle_expr (const expr_t *vec, const expr_t *swizzle)
+{
+	auto sym = get_name (swizzle);
+	if (!sym) {
+		// error already reported
+		return vec;
+	}
+	return new_swizzle_expr (vec, sym->name);
 }
 
 const expr_t *
@@ -1540,8 +1551,12 @@ field_expr (const expr_t *e1, const expr_t *e2)
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
-		if (!field)
+		if (!field) {
+			if (is_nonscalar (t1)) {
+				return swizzle_expr (e1, e2);
+			}
 			return e1;
+		}
 
 		if (e1->type == ex_expr && e1->expr.op == '.'
 			&& is_entity(get_type (e1->expr.e1))) {

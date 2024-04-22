@@ -276,6 +276,10 @@ postfix_expression
 		}
 	| function_call
 	| postfix_expression '.' IDENTIFIER/*FIELD_SELECTION*/
+		{
+			auto sym = new_symbol_expr ($3);
+			$$ = field_expr ($1, sym);
+		}
 	| postfix_expression INCOP			{ $$ = incop_expr ($2, $1, 1); }
 	;
 
