@@ -150,6 +150,7 @@ void new_typedef (const char *name, type_t *type);
 const type_t *field_type (const type_t *aux);
 const type_t *pointer_type (const type_t *aux);
 const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
+const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
 const type_t *base_type (const type_t *vec_type) __attribute__((pure));
 
 /** Return an integral type of same size as the provided type.
@@ -166,6 +167,21 @@ const type_t *base_type (const type_t *vec_type) __attribute__((pure));
 */
 const type_t *int_type (const type_t *base) __attribute__((pure));
 const type_t *uint_type (const type_t *base) __attribute__((pure));
+
+/** Return a bool type of same size as the provided type.
+
+	Any 32-bit type will produce type_bool (or one of bvec2, bvec3 or bvec4).
+	Any 64-bit type will produce type_long (lor one of lvec2, lvec3, or lvec4).
+
+	Both type_width() and type_size() of the returned type will match the
+	provided type.
+
+	\param base		Type on which the return type will be based.
+	\return			Matching boolean type (bool, long, or a vector form), or
+					null if no such match can be made.
+	FIXME 64-bit bool types
+*/
+const type_t *bool_type (const type_t *base) __attribute__((pure));
 
 /** Return a floating point type of same size as the provided type.
 
@@ -204,6 +220,7 @@ int is_integral (const type_t *type) __attribute__((pure));
 int is_real (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
 int is_nonscalar (const type_t *type) __attribute__((pure));
+int is_matrix (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_union (const type_t *type) __attribute__((pure));
@@ -215,6 +232,8 @@ int type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
+int type_rows (const type_t *type) __attribute__((pure));
+int type_cols (const type_t *type) __attribute__((pure));
 int type_aligned_size (const type_t *type) __attribute__((pure));
 
 void init_types (void);

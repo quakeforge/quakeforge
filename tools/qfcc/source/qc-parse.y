@@ -160,6 +160,10 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
+%token				AT_FIELD AT_POINTER AT_ARRAY
+%token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
+%token				AT_INT AT_UINT AT_BOOL AT_FLOAT
+
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
 %type	<spec>		handle
@@ -172,6 +176,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		param_declarator_nostarttypename
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<spec>		qc_comma
+%type	<type>		type_param type_expr type_ref
 
 %type	<attribute>	attribute_list attribute
 
@@ -899,6 +904,7 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
+	| type_expr							{ $$ = make_spec ($1, 0, 0, 0); }
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute
 		{
@@ -1017,6 +1023,66 @@ storage_class
 		{
 			$$ = parse_attributes ($3);
 		}
+	;
+
+type_expr
+	: AT_FIELD '(' type_param ')'			{ $$ = field_type ($3); }
+	| AT_POINTER '(' type_param ')'			{ $$ = pointer_type ($3); }
+	| AT_ARRAY '(' type_param ')'			{ $$ = array_type ($3, 0); }
+	| AT_ARRAY '(' type_param ',' expr ')'
+		{
+			auto count = $5;
+			auto type = $3;
+			if (!is_int_val (count)) {
+				error (count, "count must be an int constant");
+			} else {
+				type = vector_type (type, expr_int (count));
+			}
+			$$ = type;
+		}
+	| AT_BASE '(' type_param ')'			{ $$ = base_type ($3); }
+	| AT_VECTOR '(' type_param ')'			{ $$ = vector_type ($3, 0); }
+	| AT_VECTOR '(' type_param ',' expr ')'
+		{
+			auto width = $5;
+			auto type = $3;
+			if (!is_int_val (width)) {
+				error (width, "width must be an int constant");
+			} else {
+				type = vector_type (type, expr_int (width));
+			}
+			$$ = type;
+		}
+	| AT_MATRIX '(' type_param ')'			{ $$ = matrix_type ($3, 0, 0); }
+	| AT_MATRIX '(' type_param ',' expr ',' expr ')'
+		{
+			auto cols = $5;
+			auto rows = $7;
+			auto type = $3;
+			if (!is_int_val (cols)) {
+				error (cols, "cols must be an int constant");
+			} else if (!is_int_val (rows)) {
+				error (rows, "rows must be an int constant");
+			} else {
+				type = matrix_type (type, expr_int (cols), expr_int (rows));
+			}
+			$$ = type;
+		}
+	| AT_INT '(' type_param ')'				{ $$ = int_type ($3); }
+	| AT_UINT '(' type_param ')'			{ $$ = uint_type ($3); }
+	| AT_BOOL '(' type_param ')'			{ $$ = bool_type ($3); }
+	| AT_FLOAT '(' type_param ')'			{ $$ = float_type ($3); }
+	;
+
+type_param
+	: type_expr
+	| type_ref
+	;
+
+type_ref
+	: TYPE_SPEC								{ $$ = $1.type; }
+	| TYPE_NAME								{ $$ = $1.type; }
+	| CLASS_NAME							{ $$ = $1->type; }
 	;
 
 attribute_list
@@ -1738,6 +1804,18 @@ unary_expr
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
 			$$ = sizeof_expr (0, $3.type);
+		}
+	| AT_WIDTH '(' type_param ')'
+		{
+			$$ = new_int_expr (type_width ($3), false);
+		}
+	| AT_ROWS '(' type_param ')'
+		{
+			$$ = new_int_expr (type_rows ($3), false);
+		}
+	| AT_COLS '(' type_param ')'
+		{
+			$$ = new_int_expr (type_cols ($3), false);
 		}
 	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
@@ -2568,13 +2646,27 @@ static keyword_t qf_keywords[] = {
 
 	{"@hadamard",	QC_HADAMARD,	},
 	{"@cross",		QC_CROSS,		},
-	{"@dot",		QC_DOT,		},
+	{"@dot",		QC_DOT,			},
 	{"@wedge",		QC_WEDGE,		},
 	{"@regressive",	QC_REGRESSIVE,	},
 	{"@geometric",	QC_GEOMETRIC,	},
-	{"@algebra",	QC_ALGEBRA,	},
+	{"@algebra",	QC_ALGEBRA,		},
 	{"@dual",		QC_DUAL,		},
 	{"@undual",		QC_UNDUAL,		},
+
+	{"@field",		QC_AT_FIELD,	},
+	{"@pointer",	QC_AT_POINTER,	},
+	{"@array",		QC_AT_ARRAY,	},
+	{"@base",		QC_AT_BASE,		},
+	{"@width",		QC_AT_WIDTH,	},
+	{"@vector",		QC_AT_VECTOR,	},
+	{"@rows",		QC_AT_ROWS,		},
+	{"@cols",		QC_AT_COLS,		},
+	{"@matrix",		QC_AT_MATRIX,	},
+	{"@int",		QC_AT_INT,		},
+	{"@uint",		QC_AT_UINT,		},
+	{"@bool",		QC_AT_BOOL,		},
+	{"@float",		QC_AT_FLOAT,	},
 };
 
 // These keywors are always available. Other than the @ keywords, they

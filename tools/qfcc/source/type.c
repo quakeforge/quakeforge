@@ -105,12 +105,6 @@ type_t      type_auto = {
 	};
 #include "tools/qfcc/include/mat_types.h"
 
-#define VEC_TYPE(type_name, base_type) &type_##type_name,
-static type_t *vec_types[] = {
-#include "tools/qfcc/include/vec_types.h"
-	0
-};
-
 type_t type_bool = {
 	.type = ev_int,	//FIXME create bool type?
 	.name = "bool",
@@ -138,6 +132,22 @@ type_t type_bvec4 = {
 	.alignment = PR_ALIGNOF(ivec4),
 	.width = PR_SIZEOF(ivec4) / PR_SIZEOF (int),
 	.meta = ty_basic,
+};
+
+#define VEC_TYPE(type_name, base_type) &type_##type_name,
+static type_t *vec_types[] = {
+#include "tools/qfcc/include/vec_types.h"
+	&type_bool,
+	&type_bvec2,
+	&type_bvec3,
+	&type_bvec4,
+	0
+};
+
+#define MAT_TYPE(type_name, base_type, align_as) &type_##type_name,
+static type_t *mat_types[] = {
+#include "tools/qfcc/include/mat_types.h"
+	0
 };
 
 type_t     *type_nil;
@@ -665,6 +675,21 @@ vector_type (const type_t *ele_type, int width)
 }
 
 const type_t *
+matrix_type (const type_t *ele_type, int cols, int rows)
+{
+	if (cols == 1) {
+		return vector_type (ele_type, rows);
+	}
+	for (type_t **mtype = mat_types; *mtype; mtype++) {
+		if ((*mtype)->type == ele_type->type
+			&& (*mtype)->width == rows) {
+			return *mtype;
+		}
+	}
+	return 0;
+}
+
+const type_t *
 base_type (const type_t *vec_type)
 {
 	if (is_algebra (vec_type)) {
@@ -708,6 +733,22 @@ uint_type (const type_t *base)
 		base = &type_uint;
 	} else if (type_size (base) == 2) {
 		base = &type_ulong;
+	}
+	return vector_type (base, width);
+}
+
+const type_t *
+bool_type (const type_t *base)
+{
+	int         width = type_width (base);
+	base = base_type (base);
+	if (!base) {
+		return 0;
+	}
+	if (type_size (base) == 1) {
+		base = &type_bool;
+	} else if (type_size (base) == 2) {
+		base = &type_long;
 	}
 	return vector_type (base, width);
 }
@@ -1213,6 +1254,15 @@ is_scalar (const type_t *type)
 }
 
 int
+is_matrix (const type_t *type)
+{
+	if (!type || type->meta != ty_basic) {
+		return 0;
+	}
+	return -1;//FIXME
+}
+
+int
 is_nonscalar (const type_t *type)
 {
 	type = unalias_type (type);
@@ -1455,6 +1505,29 @@ type_width (const type_t *type)
 			break;
 	}
 	internal_error (0, "invalid type meta: %d", type->meta);
+}
+
+int
+type_cols (const type_t *type)
+{
+	if (is_matrix (type)) {
+		return 0; //FIXME
+	} else {
+		// non-matrices have only 1 column
+		return type_width (type);
+	}
+}
+
+int
+type_rows (const type_t *type)
+{
+	if (is_matrix (type)) {
+		return 0; //FIXME
+	} else {
+		// vectors are vertical (includes vector and quaternion), other types
+		// have width of 1, thus rows == width
+		return type_width (type);
+	}
 }
 
 int

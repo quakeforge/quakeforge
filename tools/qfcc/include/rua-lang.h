@@ -65,7 +65,7 @@ typedef union rua_val_s {
 	unsigned    size;
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
-	struct type_s	*type;
+	const struct type_s	*type;
 	const struct expr_s	*expr;
 	struct expr_s *mut_expr;
 	struct element_s *element;
