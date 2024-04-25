@@ -142,17 +142,13 @@ type_t type_bvec4 = {
 };
 
 #define VEC_TYPE(type_name, base_type) &type_##type_name,
-static type_t *vec_types[] = {
+#define MAT_TYPE(type_name, base_type, cols, align_as) &type_##type_name,
+static type_t *matrix_types[] = {
 #include "tools/qfcc/include/vec_types.h"
 	&type_bool,
 	&type_bvec2,
 	&type_bvec3,
 	&type_bvec4,
-	0
-};
-
-#define MAT_TYPE(type_name, base_type, cols, align_as) &type_##type_name,
-static type_t *mat_types[] = {
 #include "tools/qfcc/include/mat_types.h"
 	0
 };
@@ -665,48 +661,43 @@ pointer_type (const type_t *aux)
 }
 
 const type_t *
-vector_type (const type_t *ele_type, int width)
+matrix_type (const type_t *ele_type, int cols, int rows)
 {
-	if (width == 1) {
+	if (rows == 1 && cols == 1) {
 		for (type_t **t = ev_types; t - ev_types < ev_type_count; t++) {
 			if ((*t)->type == ele_type->type && (*t)->width == 1) {
 				return *t;
 			}
 		}
 	}
-	for (type_t **vtype = vec_types; *vtype; vtype++) {
-		if ((*vtype)->meta == ele_type->meta
-			&& (*vtype)->type == ele_type->type
-			&& (*vtype)->width == width
-			&& (*vtype)->columns == 1) {
+	if (rows == 1) {
+		// no horizontal matrices
+		return nullptr;
+	}
+	for (type_t **mtype = matrix_types; *mtype; mtype++) {
+		if ((*mtype)->meta == ele_type->meta
+			&& (*mtype)->type == ele_type->type
+			&& (*mtype)->width == rows
+			&& (*mtype)->columns == cols) {
 			if (options.code.progsversion < PROG_VERSION) {
-				if (*vtype == &type_vec3) {
+				if (*mtype == &type_vec3) {
 					return &type_vector;
 				}
-				if (*vtype == &type_vec4) {
+				if (*mtype == &type_vec4) {
 					return &type_quaternion;
 				}
 			}
-			return *vtype;
+			return *mtype;
 		}
 	}
 	return 0;
 }
 
 const type_t *
-matrix_type (const type_t *ele_type, int cols, int rows)
+vector_type (const type_t *ele_type, int width)
 {
-	if (cols == 1) {
-		return vector_type (ele_type, rows);
-	}
-	for (type_t **mtype = mat_types; *mtype; mtype++) {
-		if ((*mtype)->type == ele_type->type
-			&& (*mtype)->width == rows
-			&& (*mtype)->columns == cols) {
-			return *mtype;
-		}
-	}
-	return 0;
+	// vectors are single-column matrices
+	return matrix_type (ele_type, 1, width);
 }
 
 const type_t *
