@@ -160,6 +160,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
+%token				GENERIC
 %token				AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
 %token				AT_INT AT_UINT AT_BOOL AT_FLOAT
@@ -176,6 +177,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		param_declarator_nostarttypename
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<spec>		qc_comma
+%type	<symbol>	generic_param
 %type	<type>		type_param type_expr type_ref
 
 %type	<attribute>	attribute_list attribute
@@ -238,6 +240,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 static switch_block_t *switch_block;
 static const expr_t *break_label;
 static const expr_t *continue_label;
+static bool generic_scope;
 
 static specifier_t
 make_spec (const type_t *type, storage_class_t storage, int is_typedef,
@@ -537,6 +540,12 @@ external_def_list
 			current_symtab = pr.symtab;
 		}
 	| external_def_list external_def
+		{
+			if (generic_scope) {
+				generic_scope = false;
+				current_symtab = current_symtab->parent;
+			}
+		}
 	| external_def_list obj_def
 	;
 
@@ -1019,10 +1028,49 @@ storage_class
 	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
 	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
 	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
+	| GENERIC '('
+		{
+			auto spec = make_spec (0, current_storage, 0, 0);
+			spec.symtab = new_symtab (current_symtab, stab_local);
+			$<spec>$ = spec;
+		}
+	  generic_param_list ')'
+		{
+			if (generic_scope) {
+				error (0, "multiple @generic in declaration");
+			} else {
+				generic_scope = true;
+				current_symtab = $<spec>3.symtab;
+			}
+			$$ = make_spec (0, current_storage, 0, 0);
+		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
 			$$ = parse_attributes ($3);
 		}
+	;
+
+generic_param_list
+	: generic_param
+		{
+			auto spec = $<spec>0;
+			symtab_addsymbol (spec.symtab, $1);
+		}
+	| generic_param_list ',' generic_param
+		{
+			auto spec = $<spec>0;
+			symtab_addsymbol (spec.symtab, $3);
+		}
+	;
+
+generic_param
+	: NAME						{ $$ = $1; }
+	| NAME '=' generic_type		{ $$ = $1; }
+	;
+
+generic_type
+	: type_expr
+	| '[' type_list ']'
 	;
 
 type_expr
@@ -1079,10 +1127,16 @@ type_param
 	| type_ref
 	;
 
+type_list
+	: type_ref
+	| type_list ',' type_ref
+	;
+
 type_ref
 	: TYPE_SPEC								{ $$ = $1.type; }
 	| TYPE_NAME								{ $$ = $1.type; }
 	| CLASS_NAME							{ $$ = $1->type; }
+	| NAME          { internal_error (nullptr, "not implemented"); }
 	;
 
 attribute_list
@@ -2654,6 +2708,7 @@ static keyword_t qf_keywords[] = {
 	{"@dual",		QC_DUAL,		},
 	{"@undual",		QC_UNDUAL,		},
 
+	{"@generic",	QC_GENERIC,		},
 	{"@field",		QC_AT_FIELD,	},
 	{"@pointer",	QC_AT_POINTER,	},
 	{"@array",		QC_AT_ARRAY,	},
