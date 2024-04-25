@@ -76,6 +76,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_adjstk:
 			case ex_with:
 			case ex_args:
+			case ex_type:
 				// these are never put in the dag
 				return expr;
 			case ex_list:

@@ -306,6 +306,10 @@ typedef struct {
 	ex_list_t   components;		///< multivector components
 } ex_multivec_t;
 
+typedef struct {
+	const type_t *type;
+} ex_type_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -345,6 +349,7 @@ typedef struct expr_s {
 		ex_swizzle_t swizzle;			///< vector swizzle operation
 		ex_extend_t extend;				///< vector extend operation
 		ex_multivec_t multivec;			///< geometric algebra multivector
+		ex_type_t typ;					///< type expression
 	};
 } expr_t;
 

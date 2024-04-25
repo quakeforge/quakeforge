@@ -198,6 +198,8 @@ get_type (const expr_t *e)
 				return get_type (last->expr);
 			}
 			return 0;
+		case ex_type:
+			return nullptr;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -1723,6 +1725,7 @@ has_function_call (const expr_t *e)
 		case ex_adjstk:
 		case ex_with:
 		case ex_args:
+		case ex_type:
 			return 0;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {
@@ -1832,6 +1835,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_with:
 				case ex_args:
 				case ex_list:
+				case ex_type:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->expr.op == '-') {
@@ -1948,6 +1952,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_with:
 				case ex_args:
 				case ex_list:
+				case ex_type:
 					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->boolean.false_list,
@@ -2042,6 +2047,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_with:
 				case ex_args:
 				case ex_list:
+				case ex_type:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->expr.op == '~')
