@@ -847,6 +847,8 @@ const expr_t *new_param_expr (const type_t *type, int num);
 expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 						 const expr_t *count);
 
+expr_t *new_type_expr (const type_t *type);
+
 /**	Convert a name to an expression of the appropriate type.
 
 	Converts the expression in-place. If the exprssion is not a name

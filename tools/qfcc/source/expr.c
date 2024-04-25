@@ -1403,6 +1403,15 @@ new_memset_expr (const expr_t *dst, const expr_t *val, const expr_t *count)
 }
 
 expr_t *
+new_type_expr (const type_t *type)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_type;
+	e->typ.type = type;
+	return e;
+}
+
+expr_t *
 append_expr (expr_t *block, const expr_t *e)
 {
 	if (block->type != ex_block)

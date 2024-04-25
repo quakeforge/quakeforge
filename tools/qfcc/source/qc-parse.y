@@ -178,7 +178,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<spec>		qc_comma
 %type	<symbol>	generic_param
-%type	<type>		type_param type_expr type_ref
+%type	<expr>		type_param type_expr type_ref generic_type
+%type	<mut_expr>	type_list
 
 %type	<attribute>	attribute_list attribute
 
@@ -913,7 +914,7 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
-	| type_expr							{ $$ = make_spec ($1, 0, 0, 0); }
+	| type_expr						{ $$ = make_spec ($1->typ.type, 0, 0, 0); }
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute
 		{
@@ -1069,44 +1070,62 @@ generic_param
 	;
 
 generic_type
-	: type_expr
-	| '[' type_list ']'
+	: type_expr					{ $$ = $1; }
+	| '[' type_list ']'			{ $$ = $2; }
 	;
 
 type_expr
-	: AT_FIELD '(' type_param ')'			{ $$ = field_type ($3); }
-	| AT_POINTER '(' type_param ')'			{ $$ = pointer_type ($3); }
-	| AT_ARRAY '(' type_param ')'			{ $$ = array_type ($3, 0); }
+	: AT_FIELD '(' type_param ')'
+		{
+			$$ = new_type_expr (field_type ($3->typ.type));
+		}
+	| AT_POINTER '(' type_param ')'
+		{
+			$$ = new_type_expr (pointer_type ($3->typ.type));
+		}
+	| AT_ARRAY '(' type_param ')'
+		{
+			$$ = new_type_expr (array_type ($3->typ.type, 0));
+		}
 	| AT_ARRAY '(' type_param ',' expr ')'
 		{
 			auto count = $5;
-			auto type = $3;
+			auto type = $3->typ.type;
 			if (!is_int_val (count)) {
 				error (count, "count must be an int constant");
 			} else {
 				type = vector_type (type, expr_int (count));
 			}
-			$$ = type;
+			$$ = new_type_expr (type);
 		}
-	| AT_BASE '(' type_param ')'			{ $$ = base_type ($3); }
-	| AT_VECTOR '(' type_param ')'			{ $$ = vector_type ($3, 0); }
+	| AT_BASE '(' type_param ')'
+		{
+			$$ = new_type_expr (base_type ($3->typ.type));
+		}
+	| AT_VECTOR '(' type_param ')'
+		{
+			$$ = new_type_expr (vector_type ($3->typ.type, 0));
+		}
 	| AT_VECTOR '(' type_param ',' expr ')'
 		{
 			auto width = $5;
-			auto type = $3;
+			auto type = $3->typ.type;
 			if (!is_int_val (width)) {
 				error (width, "width must be an int constant");
 			} else {
 				type = vector_type (type, expr_int (width));
 			}
-			$$ = type;
+			$$ = new_type_expr (type);
 		}
-	| AT_MATRIX '(' type_param ')'			{ $$ = matrix_type ($3, 0, 0); }
+	| AT_MATRIX '(' type_param ')'
+		{
+			$$ = new_type_expr (matrix_type ($3->typ.type, 0, 0));
+		}
 	| AT_MATRIX '(' type_param ',' expr ',' expr ')'
 		{
 			auto cols = $5;
 			auto rows = $7;
-			auto type = $3;
+			auto type = $3->typ.type;
 			if (!is_int_val (cols)) {
 				error (cols, "cols must be an int constant");
 			} else if (!is_int_val (rows)) {
@@ -1114,12 +1133,24 @@ type_expr
 			} else {
 				type = matrix_type (type, expr_int (cols), expr_int (rows));
 			}
-			$$ = type;
+			$$ = new_type_expr (type);
 		}
-	| AT_INT '(' type_param ')'				{ $$ = int_type ($3); }
-	| AT_UINT '(' type_param ')'			{ $$ = uint_type ($3); }
-	| AT_BOOL '(' type_param ')'			{ $$ = bool_type ($3); }
-	| AT_FLOAT '(' type_param ')'			{ $$ = float_type ($3); }
+	| AT_INT '(' type_param ')'
+		{
+			$$ = new_type_expr (int_type ($3->typ.type));
+		}
+	| AT_UINT '(' type_param ')'
+		{
+			$$ = new_type_expr (uint_type ($3->typ.type));
+		}
+	| AT_BOOL '(' type_param ')'
+		{
+			$$ = new_type_expr (bool_type ($3->typ.type));
+		}
+	| AT_FLOAT '(' type_param ')'
+		{
+			$$ = new_type_expr (float_type ($3->typ.type));
+		}
 	;
 
 type_param
@@ -1128,15 +1159,15 @@ type_param
 	;
 
 type_list
-	: type_ref
-	| type_list ',' type_ref
+	: type_ref							{ $$ = new_list_expr ($1); }
+	| type_list ',' type_ref			{ $$ = expr_append_expr ($1, $3); }
 	;
 
 type_ref
-	: TYPE_SPEC								{ $$ = $1.type; }
-	| TYPE_NAME								{ $$ = $1.type; }
-	| CLASS_NAME							{ $$ = $1->type; }
-	| NAME          { internal_error (nullptr, "not implemented"); }
+	: TYPE_SPEC							{ $$ = new_type_expr ($1.type); }
+	| TYPE_NAME							{ $$ = new_type_expr ($1.type); }
+	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
+	| NAME								{ $$ = new_symbol_expr ($1); }
 	;
 
 attribute_list
@@ -1861,15 +1892,15 @@ unary_expr
 		}
 	| AT_WIDTH '(' type_param ')'
 		{
-			$$ = new_int_expr (type_width ($3), false);
+			$$ = new_int_expr (type_width ($3->typ.type), false);
 		}
 	| AT_ROWS '(' type_param ')'
 		{
-			$$ = new_int_expr (type_rows ($3), false);
+			$$ = new_int_expr (type_rows ($3->typ.type), false);
 		}
 	| AT_COLS '(' type_param ')'
 		{
-			$$ = new_int_expr (type_cols ($3), false);
+			$$ = new_int_expr (type_cols ($3->typ.type), false);
 		}
 	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
