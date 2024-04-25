@@ -446,6 +446,7 @@ static const char *ty_meta_names[] = {
 	"ty_alias",
 	"ty_handle",
 	"ty_algebra",
+	"ty_bool",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 const int vector_types =  (1 << ev_float)
@@ -497,6 +498,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			break;
 		}
 		switch ((ty_meta_e) type->meta) {
+			case ty_bool:
 			case ty_basic:
 				printf (" %-10s", get_ev_type_name (type->type));
 				if (type->type == ev_func) {
@@ -509,9 +511,13 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				} else if (type->type == ev_ptr
 						   || type->type == ev_field) {
 					printf (" %4x", type->fldptr.aux_type);
-				} else if ((1 << type->type) & vector_types
-						   && type->basic.width > 1) {
-					printf ("[%d]", type->basic.width);
+				} else if ((1 << type->type) & vector_types) {
+					if (type->basic.columns > 1) {
+						printf ("[%d]", type->basic.columns);
+					}
+					if (type->basic.width > 1) {
+						printf ("[%d]", type->basic.width);
+					}
 				}
 				printf ("\n");
 				break;

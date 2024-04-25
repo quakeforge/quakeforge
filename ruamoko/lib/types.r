@@ -1,7 +1,7 @@
 #include <runtime.h>
 #include <types.h>
 
-string ty_meta_name[9] = {
+string ty_meta_name[10] = {
 	"basic",
 	"struct",
 	"union",
@@ -11,6 +11,7 @@ string ty_meta_name[9] = {
 	"alias",
 	"handle",
 	"algebra",
+	"bool",
 };
 
 //FIXME use pr_type_names.h, but need to fix unsigned, and add missing types

@@ -18,6 +18,7 @@ typedef enum {
 	ty_alias,
 	ty_handle,
 	ty_algebra,
+	ty_bool,
 } ty_meta_e;
 
 typedef struct qfot_alias_s {
@@ -40,6 +41,7 @@ typedef struct qfot_fldptr_s {
 typedef struct qfot_basic_s {
 	etype_t     type;
 	int         width;
+	int         columns;
 } qfot_basic_t;
 
 typedef struct qfot_func_s {
@@ -99,7 +101,7 @@ typedef struct qfot_type_encodings_s {
 	int         size;
 } qfot_type_encodings_t;
 
-@extern string ty_meta_name[9];
+@extern string ty_meta_name[10];
 @extern string pr_type_name[ev_type_count];
 @extern int pr_type_size[ev_type_count];
 

@@ -189,6 +189,7 @@ parse_params (const type_t *return_type, param_t *parms)
 	new->type = ev_func;
 	new->alignment = 1;
 	new->width = 1;
+	new->columns = 1;
 	new->t.func.type = return_type;
 	new->t.func.num_params = 0;
 

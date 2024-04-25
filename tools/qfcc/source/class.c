@@ -80,6 +80,7 @@ type_t      type_SEL = {
 	.name = "SEL",
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_selector}},
 };
@@ -89,6 +90,7 @@ type_t      type_IMP = {
 	.name = "IMP",
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_id, -3, IMP_params, .no_va_list = 1}},
 };
@@ -99,6 +101,7 @@ type_t      type_SuperPtr = {
 	.type = ev_ptr,
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_super}},
 };
@@ -108,6 +111,7 @@ type_t      type_supermsg = {
 	.name = ".supermsg",
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_id, -3, supermsg_params}},
 };
@@ -135,6 +139,7 @@ type_t      type_moduleptr = {
 	.type = ev_ptr,
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_module}},
 };
@@ -145,6 +150,7 @@ type_t      type_exec_class = {
 	.type = ev_func,
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_void, 1, obj_exec_class_params}},
 };
@@ -161,6 +167,7 @@ type_t      type_id = {
 	.name = "id",
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_object}},
 };
@@ -172,6 +179,7 @@ type_t      type_Class = {
 	.type = ev_ptr,
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_class}},
 };

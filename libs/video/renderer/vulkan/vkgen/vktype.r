@@ -51,6 +51,7 @@ static string get_type_key (void *type, void *unused)
 		return nil;
 	}
 	switch (type.meta) {
+		case ty_bool:	//FIXME special type?
 		case ty_basic:
 			if (type.type == ev_ptr) {
 				Type       *tgt = [Type findType: type.fldptr.aux_type];

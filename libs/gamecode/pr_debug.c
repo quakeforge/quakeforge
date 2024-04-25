@@ -239,8 +239,10 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	pr_short_t  size;
 	qfot_type_t *aux_type;
 	switch (type->meta) {
+		case ty_bool:
 		case ty_basic:
-			return pr_type_size[type->type] * type->basic.width;
+			return pr_type_size[type->type] * type->basic.width
+					* type->basic.columns;
 		case ty_handle:
 			return pr_type_size[type->type];
 		case ty_struct:
@@ -1070,6 +1072,8 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 		case ty_handle:
 			raw_type_view.handle_view (type, value, data);
 			break;
+		case ty_bool:
+			//FIXME add bool view
 		case ty_basic:
 			switch (type->type) {
 #define EV_TYPE(t) \

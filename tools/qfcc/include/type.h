@@ -70,6 +70,8 @@ typedef struct type_s {
 	int         width;		///< components in vector types, otherwise 1
 							///< vector and quaternion are 1 (separate from
 							///< vec3 and vec4)
+							///< also, rows in matrix types
+	int         columns;	///< for matrix types, otherwise 1
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
@@ -98,7 +100,8 @@ typedef struct type_s {
 #define VEC_TYPE(type_name, base_type) extern type_t type_##type_name;
 #include "tools/qfcc/include/vec_types.h"
 
-#define MAT_TYPE(type_name, base_type, align_as) extern type_t type_##type_name;
+#define MAT_TYPE(type_name, base_type, cols, align_as) \
+	extern type_t type_##type_name;
 #include "tools/qfcc/include/mat_types.h"
 
 extern	type_t  type_bool;

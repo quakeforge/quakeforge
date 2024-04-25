@@ -63,6 +63,7 @@ void print_type (qfot_type_t *type)
 {
 	//printf ("type: %p %d %d %s", type, type.meta, type.size, type.encoding);
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
 			//printf (" %d", type.type);
 			switch (type.type) {

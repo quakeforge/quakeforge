@@ -157,6 +157,7 @@ qfo_encode_basic (const type_t *type, defspace_t *space)
 	enc = D_POINTER (qfot_type_t, def);
 	enc->basic.type = type->type;
 	enc->basic.width = type->width;
+	enc->basic.columns = type->columns;
 	return def;
 }
 
@@ -330,6 +331,7 @@ qfo_encode_type (const type_t *type, defspace_t *space)
 		[ty_alias]   = qfo_encode_alias,
 		[ty_handle]  = qfo_encode_handle,
 		[ty_algebra] = qfo_encode_algebra,
+		[ty_bool]    = qfo_encode_basic,
 	};
 
 	if (type->type_def && type->type_def->external) {

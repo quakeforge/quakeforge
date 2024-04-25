@@ -68,6 +68,7 @@
 		.alignment = PR_ALIGNOF(t), \
 		.width = __builtin_choose_expr (ev_##t == ev_short \
 									 || ev_##t == ev_ushort, 0, 1), \
+		.columns = 1, \
 		.meta = ty_basic, \
 		{{ __builtin_choose_expr (ev_##t == ev_field \
 							   || ev_##t == ev_func \
@@ -91,47 +92,53 @@ type_t      type_auto = {
 		.name = #type_name, \
 		.alignment = PR_ALIGNOF(type_name), \
 		.width = PR_SIZEOF(type_name) / PR_SIZEOF (base_type), \
+		.columns = 1, \
 		.meta = ty_basic, \
 	};
 #include "tools/qfcc/include/vec_types.h"
 
-#define MAT_TYPE(type_name, base_type, align_as) \
+#define MAT_TYPE(type_name, base_type, cols, align_as) \
 	type_t type_##type_name = { \
 		.type = ev_##base_type, \
 		.name = #type_name, \
 		.alignment = PR_ALIGNOF(align_as), \
-		.width = 0, /*FIXME what width? */ \
+		.width = PR_SIZEOF(align_as) / PR_SIZEOF (base_type), \
+		.columns = cols, \
 		.meta = ty_basic, \
 	};
 #include "tools/qfcc/include/mat_types.h"
 
 type_t type_bool = {
-	.type = ev_int,	//FIXME create bool type?
+	.type = ev_int,
 	.name = "bool",
 	.alignment = PR_ALIGNOF(int),
 	.width = PR_SIZEOF(int) / PR_SIZEOF (int),
-	.meta = ty_basic,
+	.columns = 1,
+	.meta = ty_bool,
 };
 type_t type_bvec2 = {
-	.type = ev_int,	//FIXME create bool type?
+	.type = ev_int,
 	.name = "bvec2",
 	.alignment = PR_ALIGNOF(ivec2),
 	.width = PR_SIZEOF(ivec2) / PR_SIZEOF (int),
-	.meta = ty_basic,
+	.columns = 1,
+	.meta = ty_bool,
 };
 type_t type_bvec3 = {
-	.type = ev_int,	//FIXME create bool type?
+	.type = ev_int,
 	.name = "bvec3",
 	.alignment = PR_ALIGNOF(ivec3),
 	.width = PR_SIZEOF(ivec3) / PR_SIZEOF (int),
-	.meta = ty_basic,
+	.columns = 1,
+	.meta = ty_bool,
 };
 type_t type_bvec4 = {
-	.type = ev_int,	//FIXME create bool type?
+	.type = ev_int,
 	.name = "bvec4",
 	.alignment = PR_ALIGNOF(ivec4),
 	.width = PR_SIZEOF(ivec4) / PR_SIZEOF (int),
-	.meta = ty_basic,
+	.columns = 1,
+	.meta = ty_bool,
 };
 
 #define VEC_TYPE(type_name, base_type) &type_##type_name,
@@ -144,7 +151,7 @@ static type_t *vec_types[] = {
 	0
 };
 
-#define MAT_TYPE(type_name, base_type, align_as) &type_##type_name,
+#define MAT_TYPE(type_name, base_type, cols, align_as) &type_##type_name,
 static type_t *mat_types[] = {
 #include "tools/qfcc/include/mat_types.h"
 	0
@@ -182,6 +189,7 @@ type_t      type_xdef_pointer = {
 	.type = ev_ptr,
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_xdef}},
 };
@@ -196,6 +204,7 @@ type_t      type_floatfield = {
 	.name = ".float",
 	.alignment = 1,
 	.width = 1,
+	.columns = 1,
 	.meta = ty_basic,
 	{{&type_float}},
 };
@@ -325,6 +334,7 @@ copy_chain (type_t *type, type_t *append)
 		*n = new_type ();
 		**n = *type;
 		switch (type->meta) {
+			case ty_bool:
 			case ty_basic:
 				switch (type->type) {
 					case ev_void:
@@ -382,6 +392,7 @@ append_type (const type_t *type, const type_t *new)
 
 	while (*t) {
 		switch ((*t)->meta) {
+			case ty_bool:
 			case ty_basic:
 				switch ((*t)->type) {
 					case ev_void:
@@ -404,11 +415,13 @@ append_type (const type_t *type, const type_t *new)
 						t = (const type_t **) &(*t)->t.fldptr.type;
 						((type_t *) type)->alignment = 1;
 						((type_t *) type)->width = 1;
+						((type_t *) type)->columns = 1;
 						break;
 					case ev_func:
 						t = (const type_t **) &(*t)->t.func.type;
 						((type_t *) type)->alignment = 1;
 						((type_t *) type)->width = 1;
+						((type_t *) type)->columns = 1;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -419,6 +432,7 @@ append_type (const type_t *type, const type_t *new)
 				t = (const type_t **) &(*t)->t.array.type;
 				((type_t *) type)->alignment = new->alignment;
 				((type_t *) type)->width = new->width;
+				((type_t *) type)->columns = new->columns;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -539,6 +553,7 @@ find_type (const type_t *type)
 
 	if (type->freeable) {
 		switch (type->meta) {
+			case ty_bool:
 			case ty_basic:
 				switch (type->type) {
 					case ev_field:
@@ -622,6 +637,7 @@ field_type (const type_t *aux)
 	new->type = ev_field;
 	new->alignment = 1;
 	new->width = 1;
+	new->columns = 1;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -641,6 +657,7 @@ pointer_type (const type_t *aux)
 	new->type = ev_ptr;
 	new->alignment = 1;
 	new->width = 1;
+	new->columns = 1;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -658,8 +675,10 @@ vector_type (const type_t *ele_type, int width)
 		}
 	}
 	for (type_t **vtype = vec_types; *vtype; vtype++) {
-		if ((*vtype)->type == ele_type->type
-			&& (*vtype)->width == width) {
+		if ((*vtype)->meta == ele_type->meta
+			&& (*vtype)->type == ele_type->type
+			&& (*vtype)->width == width
+			&& (*vtype)->columns == 1) {
 			if (options.code.progsversion < PROG_VERSION) {
 				if (*vtype == &type_vec3) {
 					return &type_vector;
@@ -682,7 +701,8 @@ matrix_type (const type_t *ele_type, int cols, int rows)
 	}
 	for (type_t **mtype = mat_types; *mtype; mtype++) {
 		if ((*mtype)->type == ele_type->type
-			&& (*mtype)->width == rows) {
+			&& (*mtype)->width == rows
+			&& (*mtype)->columns == cols) {
 			return *mtype;
 		}
 	}
@@ -911,6 +931,11 @@ print_type_str (dstring_t *str, const type_t *type)
 				dasprintf (str, "[%d]", type->t.array.size);
 			}
 			return;
+		case ty_bool:
+			dasprintf (str, " %s%s", type->type == ev_int ? "bool" : "lbool",
+					   type->width > 1 ? va (0, "{%d}", type->width)
+									   : "");
+			return;
 		case ty_basic:
 			switch (type->type) {
 				case ev_field:
@@ -1104,6 +1129,14 @@ encode_type (dstring_t *encoding, const type_t *type)
 			encode_type (encoding, type->t.array.type);
 			dasprintf (encoding, "]");
 			return;
+		case ty_bool:
+			char bool_char = type->type == ev_int ? 'b' : 'B';
+			if (type->width > 1) {
+				dasprintf (encoding, "%c%d", bool_char, type->width);
+			} else {
+				dasprintf (encoding, "%c", bool_char);
+			}
+			return;
 		case ty_basic:
 			switch (type->type) {
 				case ev_void:
@@ -1113,14 +1146,20 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "*");
 					return;
 				case ev_double:
-					if (type->width > 1) {
+					if (type->columns > 1) {
+						dasprintf (encoding, "d%d%d",
+								   type->columns, type->width);
+					} else if (type->width > 1) {
 						dasprintf (encoding, "d%d", type->width);
 					} else {
 						dasprintf (encoding, "d");
 					}
 					return;
 				case ev_float:
-					if (type->width > 1) {
+					if (type->columns > 1) {
+						dasprintf (encoding, "f%d%d",
+								   type->columns, type->width);
+					} else if (type->width > 1) {
 						dasprintf (encoding, "f%d", type->width);
 					} else {
 						dasprintf (encoding, "f");
@@ -1439,7 +1478,12 @@ type_size (const type_t *type)
 {
 	switch (type->meta) {
 		case ty_handle:
+		case ty_bool:
 		case ty_basic:
+			if (type->type != ev_short && (!type->columns || !type->width)) {
+				internal_error (0, "%s:%d:%d", pr_type_name[type->type],
+								type->columns, type->width);
+			}
 			return pr_type_size[type->type] * type->width;
 		case ty_struct:
 		case ty_union:
@@ -1477,6 +1521,7 @@ int
 type_width (const type_t *type)
 {
 	switch (type->meta) {
+		case ty_bool:
 		case ty_basic:
 			if (type->type == ev_vector) {
 				return 3;
@@ -1567,6 +1612,12 @@ chain_basic_types (void)
 			chain_type (&type_ushort);
 #define VEC_TYPE(name, type) chain_type (&type_##name);
 #include "tools/qfcc/include/vec_types.h"
+#define MAT_TYPE(name, type, cols, align_as) chain_type (&type_##name);
+#include "tools/qfcc/include/mat_types.h"
+			chain_type (&type_bool);
+			chain_type (&type_bvec2);
+			chain_type (&type_bvec3);
+			chain_type (&type_bvec4);
 		}
 	}
 }

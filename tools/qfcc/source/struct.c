@@ -138,6 +138,7 @@ find_handle (symbol_t *tag, const type_t *type)
 		type_t *t = (type_t *) sym->type;//FIXME
 		t->type = type->type;
 		t->width = 1;
+		t->columns = 1;
 		t->alignment = type->alignment;
 	}
 	return sym;
@@ -245,6 +246,7 @@ start_enum (symbol_t *sym)
 	((type_t *) sym->type)->t.symtab = new_symtab (current_symtab, stab_enum);
 	((type_t *) sym->type)->alignment = 1;
 	((type_t *) sym->type)->width = 1;
+	((type_t *) sym->type)->columns = 1;
 	return sym->type->t.symtab;
 }
 

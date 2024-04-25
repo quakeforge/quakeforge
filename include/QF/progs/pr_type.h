@@ -50,6 +50,7 @@ typedef enum {
 	ty_alias,
 	ty_handle,
 	ty_algebra,
+	ty_bool,
 
 	ty_meta_count
 } ty_meta_e;
@@ -74,7 +75,8 @@ typedef struct qfot_fldptr_s {
 typedef struct qfot_basic_s {
 	etype_t     type;				///< integral and fp scalar types
 	pr_int_t    width;				///< components in vector (1 for vector or
-									///< quaternion)
+									///< quaternion), rows in matrix
+	pr_int_t    columns;			///< columns in matrix (or 1)
 } qfot_basic_t;
 
 typedef struct qfot_func_s {
