@@ -138,7 +138,6 @@ typedef struct param_s {
 	const char *selector;
 	const struct type_s *type;
 	const char *name;
-	struct symbol_s *symbol;	//FIXME what is this for?
 } param_t;
 
 struct expr_s;

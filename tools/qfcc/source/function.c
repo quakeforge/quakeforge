@@ -120,7 +120,6 @@ param_append_identifiers (param_t *params, symbol_t *idents, const type_t *type)
 	while (idents) {
 		idents->type = type;
 		*p = new_param (0, type, idents->name);
-		(*p)->symbol = idents;
 		p = &(*p)->next;
 		idents = idents->next;
 	}
