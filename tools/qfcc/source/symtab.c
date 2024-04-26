@@ -57,6 +57,7 @@ static const char * const sy_type_names[] = {
 	"sy_var",
 	"sy_const",
 	"sy_type",
+	"sy_type_param",
 	"sy_expr",
 	"sy_func",
 	"sy_class",

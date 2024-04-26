@@ -307,6 +307,8 @@ typedef struct {
 } ex_multivec_t;
 
 typedef struct {
+	int         op;				///< type "function"
+	const expr_t *params;		///< if dynamic
 	const type_t *type;
 } ex_type_t;
 
@@ -848,6 +850,8 @@ expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 						 const expr_t *count);
 
 expr_t *new_type_expr (const type_t *type);
+const expr_t *type_function (int op, const expr_t *params);
+symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
 
 /**	Convert a name to an expression of the appropriate type.
 

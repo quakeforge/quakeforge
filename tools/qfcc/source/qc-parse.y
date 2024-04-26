@@ -178,8 +178,10 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
 %type	<spec>		qc_comma
 %type	<symbol>	generic_param
-%type	<expr>		type_param type_expr type_ref generic_type
-%type	<mut_expr>	type_list
+%type	<op>		type_func type_op
+%type	<expr>		type_function type_param type_ref
+%type	<expr>		generic_type
+%type	<mut_expr>	type_list type_param_list
 
 %type	<attribute>	attribute_list attribute
 
@@ -914,7 +916,7 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
-	| type_expr						{ $$ = make_spec ($1->typ.type, 0, 0, 0); }
+	| type_function					{ $$ = make_spec ($1->typ.type, 0, 0, 0); }
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute
 		{
@@ -1065,97 +1067,47 @@ generic_param_list
 	;
 
 generic_param
-	: NAME						{ $$ = $1; }
-	| NAME '=' generic_type		{ $$ = $1; }
+	: NAME						{ $$ = type_parameter ($1, nullptr); }
+	| NAME '=' generic_type		{ $$ = type_parameter ($1, $3); }
 	;
 
 generic_type
-	: type_expr					{ $$ = $1; }
+	: type_function				{ $$ = $1; }
 	| '[' type_list ']'			{ $$ = $2; }
 	;
 
-type_expr
-	: AT_FIELD '(' type_param ')'
-		{
-			$$ = new_type_expr (field_type ($3->typ.type));
-		}
-	| AT_POINTER '(' type_param ')'
-		{
-			$$ = new_type_expr (pointer_type ($3->typ.type));
-		}
-	| AT_ARRAY '(' type_param ')'
-		{
-			$$ = new_type_expr (array_type ($3->typ.type, 0));
-		}
-	| AT_ARRAY '(' type_param ',' expr ')'
-		{
-			auto count = $5;
-			auto type = $3->typ.type;
-			if (!is_int_val (count)) {
-				error (count, "count must be an int constant");
-			} else {
-				type = vector_type (type, expr_int (count));
-			}
-			$$ = new_type_expr (type);
-		}
-	| AT_BASE '(' type_param ')'
-		{
-			$$ = new_type_expr (base_type ($3->typ.type));
-		}
-	| AT_VECTOR '(' type_param ')'
-		{
-			$$ = new_type_expr (vector_type ($3->typ.type, 0));
-		}
-	| AT_VECTOR '(' type_param ',' expr ')'
-		{
-			auto width = $5;
-			auto type = $3->typ.type;
-			if (!is_int_val (width)) {
-				error (width, "width must be an int constant");
-			} else {
-				type = vector_type (type, expr_int (width));
-			}
-			$$ = new_type_expr (type);
-		}
-	| AT_MATRIX '(' type_param ')'
-		{
-			$$ = new_type_expr (matrix_type ($3->typ.type, 0, 0));
-		}
-	| AT_MATRIX '(' type_param ',' expr ',' expr ')'
-		{
-			auto cols = $5;
-			auto rows = $7;
-			auto type = $3->typ.type;
-			if (!is_int_val (cols)) {
-				error (cols, "cols must be an int constant");
-			} else if (!is_int_val (rows)) {
-				error (rows, "rows must be an int constant");
-			} else {
-				type = matrix_type (type, expr_int (cols), expr_int (rows));
-			}
-			$$ = new_type_expr (type);
-		}
-	| AT_INT '(' type_param ')'
-		{
-			$$ = new_type_expr (int_type ($3->typ.type));
-		}
-	| AT_UINT '(' type_param ')'
-		{
-			$$ = new_type_expr (uint_type ($3->typ.type));
-		}
-	| AT_BOOL '(' type_param ')'
-		{
-			$$ = new_type_expr (bool_type ($3->typ.type));
-		}
-	| AT_FLOAT '(' type_param ')'
-		{
-			$$ = new_type_expr (float_type ($3->typ.type));
-		}
+type_function
+	: type_func '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
+	;
+
+type_func
+	: AT_FIELD					{ $$ = QC_AT_FIELD; }
+	| AT_POINTER				{ $$ = QC_AT_POINTER; }
+	| AT_ARRAY					{ $$ = QC_AT_ARRAY; }
+	| AT_BASE					{ $$ = QC_AT_BASE; }
+	| AT_VECTOR					{ $$ = QC_AT_VECTOR; }
+	| AT_MATRIX					{ $$ = QC_AT_MATRIX; }
+	| AT_INT					{ $$ = QC_AT_INT; }
+	| AT_UINT					{ $$ = QC_AT_UINT; }
+	| AT_BOOL					{ $$ = QC_AT_BOOL; }
+	| AT_FLOAT					{ $$ = QC_AT_FLOAT; }
+	;
+
+type_op
+	: AT_WIDTH					{ $$ = QC_AT_WIDTH; }
+	| AT_ROWS					{ $$ = QC_AT_ROWS; }
+	| AT_COLS					{ $$ = QC_AT_COLS; }
+	;
+
+type_param_list
+	: type_param						{ $$ = new_list_expr ($1); }
+	| type_param_list ',' type_param	{ $$ = expr_append_expr ($1, $3); }
 	;
 
 type_param
-	: type_expr
+	: type_function
 	| type_ref
+	| expr
 	;
 
 type_list
@@ -1167,7 +1119,6 @@ type_ref
 	: TYPE_SPEC							{ $$ = new_type_expr ($1.type); }
 	| TYPE_NAME							{ $$ = new_type_expr ($1.type); }
 	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
-	| NAME								{ $$ = new_symbol_expr ($1); }
 	;
 
 attribute_list
@@ -1890,18 +1841,7 @@ unary_expr
 		{
 			$$ = sizeof_expr (0, $3.type);
 		}
-	| AT_WIDTH '(' type_param ')'
-		{
-			$$ = new_int_expr (type_width ($3->typ.type), false);
-		}
-	| AT_ROWS '(' type_param ')'
-		{
-			$$ = new_int_expr (type_rows ($3->typ.type), false);
-		}
-	| AT_COLS '(' type_param ')'
-		{
-			$$ = new_int_expr (type_cols ($3->typ.type), false);
-		}
+	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
 	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
 	;
@@ -2795,6 +2735,13 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
 				.sym = sym,
 			};
 			return QC_OBJECT_NAME;
+		} else if (sym->sy_type == sy_type_param) {
+			// id has been redeclared via a generic type param
+			lval->spec = (specifier_t) {
+				.type_expr = sym->s.expr,
+				.sym = sym,
+			};
+			return QC_TYPE_NAME;
 		} else if (sym->sy_type == sy_type) {
 			// id has been redeclared via a typedef
 			lval->spec = (specifier_t) {
@@ -2878,6 +2825,12 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 	if (sym->sy_type == sy_type) {
 		lval->spec = (specifier_t) {
 			.type = sym->type,
+			.sym = sym,
+		};
+		return QC_TYPE_NAME;
+	} else if (sym->sy_type == sy_type_param) {
+		lval->spec = (specifier_t) {
+			.type_expr = sym->s.expr,
 			.sym = sym,
 		};
 		return QC_TYPE_NAME;

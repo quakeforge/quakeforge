@@ -53,6 +53,7 @@ typedef enum {
 	sy_var,						///< symbol refers to a variable
 	sy_const,					///< symbol refers to a constant
 	sy_type,					///< symbol refers to a type
+	sy_type_param,				///< symbol refers to a generic type parameter
 	sy_expr,					///< symbol refers to an expression
 	sy_func,					///< symbol refers to a function
 	sy_class,					///< symbol refers to a class
@@ -78,7 +79,7 @@ typedef struct symbol_s {
 		int         offset;			///< sy_var (in a struct/union/macro)
 		struct def_s *def;			///< sy_var
 		struct ex_value_s *value;	///< sy_const
-		const struct expr_s *expr;	///< sy_expr
+		const struct expr_s *expr;	///< sy_expr/sy_type_param
 		struct function_s *func;	///< sy_func
 		symconv_t   convert;		///< sy_convert
 		struct rua_macro_s *macro;	///< sy_macro

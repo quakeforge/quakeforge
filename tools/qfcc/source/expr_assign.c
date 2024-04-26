@@ -96,6 +96,7 @@ is_lvalue (const expr_t *expr)
 				case sy_const:
 					break;
 				case sy_type:
+				case sy_type_param:
 					break;
 				case sy_expr:
 					break;

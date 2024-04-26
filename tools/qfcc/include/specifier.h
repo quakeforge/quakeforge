@@ -32,6 +32,7 @@
 #define __specifier_h
 
 typedef struct type_s type_t;
+typedef struct expr_s expr_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 
@@ -49,6 +50,7 @@ typedef enum storage_class_e {
 
 typedef struct specifier_s {
 	const type_t *type;
+	const expr_t *type_expr;
 	struct param_s *params;
 	symbol_t   *sym;
 	symtab_t   *symtab;
