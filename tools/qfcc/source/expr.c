@@ -861,6 +861,12 @@ new_short_expr (short short_val)
 	return new_value_expr (new_short_val (short_val), false);
 }
 
+bool
+is_error (const expr_t *e)
+{
+	return e->type == ex_error;
+}
+
 int
 is_constant (const expr_t *e)
 {

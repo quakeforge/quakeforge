@@ -740,6 +740,8 @@ unsigned short expr_ushort (const expr_t *e) __attribute__((pure));
 
 int expr_integral (const expr_t *e) __attribute__((pure));
 
+bool is_error (const expr_t *e) __attribute__((pure));
+
 /**	Check if the expression refers to a constant value.
 
 	\param e		The expression to check.
