@@ -53,7 +53,7 @@ edag_flush (void)
 const expr_t *
 edag_add_expr (const expr_t *expr)
 {
-	if (!expr) {
+	if (!expr || expr->nodag) {
 		return expr;
 	}
 	for (size_t i = 0; i < expr_dag.size; i++) {

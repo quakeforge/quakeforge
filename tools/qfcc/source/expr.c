@@ -538,8 +538,6 @@ new_block_expr (const expr_t *old)
 expr_t *
 new_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	expr_t     *e = new_expr ();
-
 	if (e1->type == ex_error) {
 		internal_error (e1, "error expr in new_binary_expr");
 	}
@@ -547,7 +545,9 @@ new_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		internal_error (e2, "error expr in new_binary_expr");
 	}
 
+	expr_t     *e = new_expr ();
 	e->type = ex_expr;
+	e->nodag = e1->nodag | e2->nodag;
 	e->expr.op = op;
 	e->expr.e1 = e1;
 	e->expr.e2 = e2;
@@ -574,13 +574,14 @@ build_block_expr (expr_t *list, bool set_result)
 expr_t *
 new_unary_expr (int op, const expr_t *e1)
 {
-	expr_t     *e = new_expr ();
 
 	if (e1 && e1->type == ex_error) {
 		internal_error (e1, "error expr in new_binary_expr");
 	}
 
+	expr_t     *e = new_expr ();
 	e->type = ex_uexpr;
+	e->nodag = e1->nodag;
 	e->expr.op = op;
 	e->expr.e1 = e1;
 	return e;
