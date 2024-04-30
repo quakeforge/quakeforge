@@ -418,6 +418,10 @@ make_ellipsis (void)
 static param_t *
 make_param (specifier_t spec)
 {
+	if (spec.type_expr) {
+		if (!(spec.type = resolve_type (spec.type_expr))) {
+		}
+	}
 	spec = default_type (spec, spec.sym);
 	spec.type = find_type (append_type (spec.sym->type, spec.type));
 	param_t    *param = new_param (0, spec.type, spec.sym->name);
@@ -916,7 +920,11 @@ typespec
 
 typespec_reserved
 	: TYPE_SPEC
-	| type_function					{ $$ = make_spec ($1->typ.type, 0, 0, 0); }
+	| type_function
+		{
+			auto type = resolve_type ($1);
+			$$ = make_spec (type, 0, 0, 0);
+		}
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute
 		{
