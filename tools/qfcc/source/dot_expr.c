@@ -92,13 +92,29 @@ get_op_string (int op)
 		case QC_SHR:		return ">>";
 		case '.':			return ".";
 		case 'C':			return "<cast>";
+		case QC_SCALE:		return "@scale";
+		case QC_GEOMETRIC:	return "@geometric";
+		case QC_QMUL:		return "@qmul";
+		case QC_QVMUL:		return "@qvmul";
+		case QC_VQMUL:		return "@vqmul";
 		case QC_HADAMARD:	return "@hadamard";
 		case QC_CROSS:		return "@cross";
 		case QC_DOT:		return "@dot";
 		case QC_WEDGE:		return "@wedge";
 		case QC_REGRESSIVE:	return "@regressive";
-		case QC_GEOMETRIC:	return "@geometric";
-		case QC_SCALE:		return "@scale";
+		case QC_AT_FIELD:	return "@field";
+		case QC_AT_POINTER:	return "@pointer";
+		case QC_AT_ARRAY:	return "@array";
+		case QC_AT_BASE:	return "@base";
+		case QC_AT_WIDTH:	return "@width";
+		case QC_AT_VECTOR:	return "@vector";
+		case QC_AT_ROWS:	return "@rows";
+		case QC_AT_COLS:	return "@cols";
+		case QC_AT_MATRIX:	return "@matrix";
+		case QC_AT_INT:		return "@int";
+		case QC_AT_UINT:	return "@uint";
+		case QC_AT_BOOL:	return "@bool";
+		case QC_AT_FLOAT:	return "@float";
 		default:
 			return "unknown";
 	}
@@ -309,6 +325,25 @@ print_list (dstring_t *dstr, const expr_t *e, int level, int id,
 		dasprintf (dstr, "%*se_%p:b%d -> e_%p;\n", indent, "", e,
 				   i, exprs[i]);
 	}
+}
+
+static void
+print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
+				 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	const char *str = "(null)";
+	if (e->typ.op) {
+		_print_expr (dstr, e->typ.params, level + 1, id, nullptr);
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->typ.params);
+		str = get_op_string (e->typ.op);
+	} else if (e->typ.type) {
+	   str = e->typ.type->encoding;
+	} else if (e->typ.sym) {
+	   str = e->typ.sym->name;
+	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   str, e->loc.line);
 }
 
 static void
@@ -743,6 +778,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_extend] = print_extend,
 		[ex_multivec] = print_multivec,
 		[ex_list] = print_list,
+		[ex_type] = print_type_expr,
 	};
 	int         indent = level * 2 + 2;
 

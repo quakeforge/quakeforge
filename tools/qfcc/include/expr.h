@@ -310,6 +310,7 @@ typedef struct {
 	int         op;				///< type "function"
 	const expr_t *params;		///< if dynamic
 	const type_t *type;
+	const symbol_t *sym;
 } ex_type_t;
 
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
