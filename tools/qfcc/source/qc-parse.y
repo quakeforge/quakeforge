@@ -285,15 +285,22 @@ storage_auto (specifier_t spec)
 	return spec.storage == sc_global || spec.storage == sc_local;
 }
 
+static bool
+spec_type (specifier_t spec)
+{
+	return spec.type || spec.type_expr;
+}
+
 static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
-	if (new.type) {
+	if (spec_type (new)) {
 		// deal with "type <type_name>"
-		if (!spec.type || new.sym) {
+		if (!spec_type (spec) || new.sym) {
 			spec.sym = new.sym;
-			if (!spec.type) {
+			if (!spec_type (spec)) {
 				spec.type = new.type;
+				spec.type_expr = new.type_expr;
 			}
 		} else if (!spec.multi_type) {
 			error (0, "two or more data types in declaration specifiers");
@@ -419,13 +426,14 @@ static param_t *
 make_param (specifier_t spec)
 {
 	if (spec.type_expr) {
-		if (!(spec.type = resolve_type (spec.type_expr))) {
-		}
+		auto param = new_generic_param (spec.type_expr, spec.sym->name);
+		return param;
+	} else {
+		spec = default_type (spec, spec.sym);
+		spec.type = find_type (append_type (spec.sym->type, spec.type));
+		auto param = new_param (0, spec.type, spec.sym->name);
+		return param;
 	}
-	spec = default_type (spec, spec.sym);
-	spec.type = find_type (append_type (spec.sym->type, spec.type));
-	param_t    *param = new_param (0, spec.type, spec.sym->name);
-	return param;
 }
 
 static param_t *
@@ -922,8 +930,14 @@ typespec_reserved
 	: TYPE_SPEC
 	| type_function
 		{
-			auto type = resolve_type ($1);
-			$$ = make_spec (type, 0, 0, 0);
+			if (generic_scope) {
+				$$ = (specifier_t) {
+					.type_expr = $1,
+				};
+			} else {
+				auto type = resolve_type ($1);
+				$$ = make_spec (type, 0, 0, 0);
+			}
 		}
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute

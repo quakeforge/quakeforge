@@ -136,16 +136,18 @@ extern function_t *current_func;
 typedef struct param_s {
 	struct param_s *next;
 	const char *selector;
-	const struct type_s *type;
+	const type_t *type;
+	const expr_t *type_expr;
 	const char *name;
 } param_t;
 
-struct expr_s;
-struct symbol_s;
-struct symtab_s;
+typedef struct expr_s expr_t;
+typedef struct symbol_s symbol_t;
+typedef struct symtab_s symtab_t;
 
 param_t *new_param (const char *selector, const struct type_s *type,
 					const char *name);
+param_t *new_generic_param (const expr_t *type_expr, const char *name);
 param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
 								   const struct type_s *type);
 param_t *reverse_params (param_t *params);

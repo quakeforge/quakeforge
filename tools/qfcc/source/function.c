@@ -98,11 +98,24 @@ new_param (const char *selector, const type_t *type, const char *name)
 	param_t    *param;
 
 	ALLOC (4096, param_t, params, param);
-	param->next = 0;
-	param->selector = selector;
-	param->type = find_type (type);
-	param->name = name;
+	*param = (param_t) {
+		.selector = selector,
+		.type = find_type (type),
+		.name = name,
+	};
+	return param;
+}
 
+param_t *
+new_generic_param (const expr_t *type_expr, const char *name)
+{
+	param_t    *param;
+
+	ALLOC (4096, param_t, params, param);
+	*param = (param_t) {
+		.type_expr = type_expr,
+		.name = name,
+	};
 	return param;
 }
 
