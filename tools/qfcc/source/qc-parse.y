@@ -400,22 +400,6 @@ function_sym_type (specifier_t spec, symbol_t *sym)
 	return sym;
 }
 
-static symbol_t *
-qc_nocode_symbol (specifier_t spec, symbol_t *sym)
-{
-	sym->params = spec.sym->params;
-	sym = function_sym_type (spec, sym);
-	return sym;
-}
-
-static symbol_t *
-qc_function_symbol (specifier_t spec, symbol_t *sym)
-{
-	sym = qc_nocode_symbol (spec, sym);
-	sym = function_symbol (sym, spec.is_overload, 1);
-	return sym;
-}
-
 static param_t *
 make_ellipsis (void)
 {
@@ -679,7 +663,9 @@ qc_nocode_func
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
 			const expr_t *expr = $4;
-			sym = qc_function_symbol (spec, sym);
+			sym->params = spec.sym->params;
+			sym = function_sym_type (spec, sym);
+			sym = function_symbol (sym, spec.is_overload, 1);
 			build_builtin_function (sym, expr, 0, spec.storage);
 		}
 	| identifier '=' expr
@@ -695,10 +681,10 @@ qc_nocode_func
 		{
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
+			sym->params = spec.sym->params;
+			sym = function_sym_type (spec, sym);
 			if (!local_expr && !is_field (spec.sym->type)) {
-				sym = qc_function_symbol (spec, sym);
-			} else {
-				sym = qc_nocode_symbol (spec, sym);
+				sym = function_symbol (sym, spec.is_overload, 1);
 			}
 			if (!local_expr && !is_field (sym->type)) {
 				// things might be a confused mess from earlier errors
@@ -720,7 +706,9 @@ qc_code_func
 			$<symtab>$ = current_symtab;
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
-			sym = qc_function_symbol (spec, sym);
+			sym->params = spec.sym->params;
+			sym = function_sym_type (spec, sym);
+			sym = function_symbol (sym, spec.is_overload, 1);
 			current_func = begin_function (sym, 0, current_symtab, 0,
 										   spec.storage);
 			current_symtab = current_func->locals;
