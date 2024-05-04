@@ -372,7 +372,7 @@ pointer_spec (specifier_t quals, specifier_t spec)
 }
 
 static specifier_t
-parse_qc_params (specifier_t spec, param_t *params)
+qc_function_spec (specifier_t spec, param_t *params)
 {
 	const type_t **type;
 	// .float () foo; is a field holding a function variable rather
@@ -392,7 +392,7 @@ parse_qc_params (specifier_t spec, param_t *params)
 }
 
 static symbol_t *
-funtion_sym_type (specifier_t spec, symbol_t *sym)
+function_sym_type (specifier_t spec, symbol_t *sym)
 {
 	sym->type = append_type (spec.sym->type, spec.type);
 	set_func_type_attrs (sym->type, spec);
@@ -404,7 +404,7 @@ static symbol_t *
 qc_nocode_symbol (specifier_t spec, symbol_t *sym)
 {
 	sym->params = spec.sym->params;
-	sym = funtion_sym_type (spec, sym);
+	sym = function_sym_type (spec, sym);
 	return sym;
 }
 
@@ -455,7 +455,7 @@ make_qc_param (specifier_t spec, symbol_t *sym)
 static param_t *
 make_qc_func_param (specifier_t spec, param_t *params, symbol_t *sym)
 {
-	spec = parse_qc_params (spec, params);
+	spec = qc_function_spec (spec, params);
 	sym->type = append_type (spec.sym->type, spec.type);
 	param_t   *param = new_param (0, sym->type, sym->name);
 	return param;
@@ -589,7 +589,7 @@ datadef
 	| declspecs_ts initdecls ';'
 	| declspecs_ts qc_func_params
 		{
-			$<spec>$ = parse_qc_params ($1, $2);
+			$<spec>$ = qc_function_spec ($1, $2);
 		}
 	  qc_func_decls
 	| declspecs ';'
@@ -1020,7 +1020,7 @@ function_body
 	: method_optional_state_expr
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
+			symbol_t   *sym = function_sym_type (spec, spec.sym);
 			$<symbol>$ = function_symbol (sym, spec.is_overload, 1);
 		}
 	  save_storage
@@ -1041,7 +1041,7 @@ function_body
 	| '=' '#' expr ';'
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = funtion_sym_type (spec, spec.sym);
+			symbol_t   *sym = function_sym_type (spec, spec.sym);
 			sym = function_symbol (sym, spec.is_overload, 1);
 			build_builtin_function (sym, $3, 0, spec.storage);
 		}
@@ -1516,7 +1516,7 @@ decl
 		}
 	| declspecs_ts local_expr qc_func_params
 		{
-			$<spec>$ = parse_qc_params ($1, $3);
+			$<spec>$ = qc_function_spec ($1, $3);
 		}
 	  qc_func_decls
 		{
