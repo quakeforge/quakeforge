@@ -51,6 +51,7 @@ typedef struct rua_loc_s {
 
 typedef struct expr_s expr_t;
 typedef struct symtab_s symtab_t;
+typedef struct function_s function_t;
 
 typedef struct rua_tok_s {
 	struct rua_tok_s *next;
@@ -60,11 +61,17 @@ typedef struct rua_tok_s {
 	const char *text;
 } rua_tok_t;
 
+typedef struct {
+	symtab_t   *symtab;
+	function_t *function;
+} funcstate_t;
+
 typedef union rua_val_s {
 	int			op;
 	unsigned    size;
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
+	funcstate_t funcstate;
 	const struct type_s	*type;
 	const struct expr_s	*expr;
 	struct expr_s *mut_expr;

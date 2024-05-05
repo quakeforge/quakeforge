@@ -703,7 +703,10 @@ qc_code_func
 	: identifier '=' optional_state_expr
 	  save_storage
 		{
-			$<symtab>$ = current_symtab;
+			$<funcstate>$ = (funcstate_t) {
+				.symtab = current_symtab,
+				.function = current_func,
+			};
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
 			sym->params = spec.sym->params;
@@ -718,9 +721,9 @@ qc_code_func
 	  compound_statement
 		{
 			build_code_function ($1, $3, $6);
-			current_symtab = $<symtab>5;
+			current_symtab = $<funcstate>5.symtab;
+			current_func = $<funcstate>5.function;
 			current_storage = $4.storage;
-			current_func = 0;
 		}
 	;
 
@@ -1013,7 +1016,10 @@ function_body
 		}
 	  save_storage
 		{
-			$<symtab>$ = current_symtab;
+			$<funcstate>$ = (funcstate_t) {
+				.symtab = current_symtab,
+				.function = current_func,
+			};
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
 										   $<spec>-1.storage);
 			current_symtab = current_func->locals;
@@ -1022,9 +1028,9 @@ function_body
 	  compound_statement
 		{
 			build_code_function ($<symbol>2, $1, $5);
-			current_symtab = $<symtab>4;
+			current_symtab = $<funcstate>4.symtab;
+			current_func = $<funcstate>4.function;
 			current_storage = $3.storage;
-			current_func = 0;
 		}
 	| '=' '#' expr ';'
 		{
@@ -2357,7 +2363,10 @@ methoddef
 			symbol_t   *sym = $<symbol>4;
 			symtab_t   *ivar_scope;
 
-			$<symtab>$ = current_symtab;
+			$<funcstate>$ = (funcstate_t) {
+				.symtab = current_symtab,
+				.function = current_func,
+			};
 
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
 			current_func = begin_function (sym, nicename, ivar_scope, 1,
@@ -2372,9 +2381,9 @@ methoddef
 	  compound_statement
 		{
 			build_code_function ($<symbol>4, $3, $7);
-			current_symtab = $<symtab>6;
+			current_symtab = $<funcstate>6.symtab;
+			current_func = $<funcstate>6.function;
 			current_storage = $5.storage;
-			current_func = 0;
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
