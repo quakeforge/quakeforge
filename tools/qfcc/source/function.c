@@ -189,7 +189,6 @@ parse_params (const type_t *return_type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
-	type_t     *ptype;
 	int         count = 0;
 
 	if (return_type && is_class (return_type)) {
@@ -223,7 +222,7 @@ parse_params (const type_t *return_type, param_t *parms)
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
-			ptype = (type_t *) unalias_type (p->type); //FIXME cast
+			auto ptype = unalias_type (p->type);
 			new->t.func.param_types[new->t.func.num_params] = ptype;
 			new->t.func.num_params++;
 		}
@@ -367,8 +366,8 @@ set_func_symbol (const expr_t *fexpr, overloaded_function_t *f)
 const expr_t *
 find_function (const expr_t *fexpr, const expr_t *params)
 {
-	int         i, j, func_count, parm_count, reported = 0;
-	overloaded_function_t *f, dummy, *best = 0;
+	int         func_count, parm_count, reported = 0;
+	overloaded_function_t dummy, *best = 0;
 	type_t      type = {};
 	void      **funcs, *dummy_p = &dummy;
 
@@ -400,7 +399,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	for (func_count = 0; funcs[func_count]; func_count++)
 		;
 	if (func_count < 2) {
-		f = (overloaded_function_t *) funcs[0];
+		auto f = (overloaded_function_t *) funcs[0];
 		if (func_count && !f->overloaded) {
 			free (funcs);
 			return fexpr;
@@ -415,15 +414,15 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
-		f = (overloaded_function_t *) *(void **) dummy_p;
+		auto f = (overloaded_function_t *) *(void **) dummy_p;
 		if (f->overloaded) {
 			fexpr = set_func_symbol (fexpr, f);
 		}
 		free (funcs);
 		return fexpr;
 	}
-	for (i = 0; i < func_count; i++) {
-		f = (overloaded_function_t *) funcs[i];
+	for (int i = 0; i < func_count; i++) {
+		auto f = (overloaded_function_t *) funcs[i];
 		parm_count = f->type->t.func.num_params;
 		if ((parm_count >= 0 && parm_count != type.t.func.num_params)
 			|| (parm_count < 0 && ~parm_count > type.t.func.num_params)) {
@@ -432,6 +431,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		}
 		if (parm_count < 0)
 			parm_count = ~parm_count;
+		int j;
 		for (j = 0; j < parm_count; j++) {
 			if (!type_assignable (f->type->t.func.param_types[j],
 								  type.t.func.param_types[j])) {
@@ -442,8 +442,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		if (j < parm_count)
 			continue;
 	}
-	for (i = 0; i < func_count; i++) {
-		f = (overloaded_function_t *) funcs[i];
+	for (int i = 0; i < func_count; i++) {
+		auto f = (overloaded_function_t *) funcs[i];
 		if (f) {
 			if (!best) {
 				best = f;

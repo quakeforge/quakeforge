@@ -54,7 +54,7 @@ typedef struct overloaded_function_s {
 	const char *name;				///< source level name of function
 	const char *full_name;			///< progs name of function, with type
 									///< encoding
-	const struct type_s *type;		///< type of this function
+	const type_t *type;				///< type of this function
 	int         overloaded;			///< is this function overloaded
 	rua_loc_t   loc;				///< source location of the function
 } overloaded_function_t;
@@ -70,12 +70,12 @@ typedef struct function_s {
 	int                 params_start;///< relative to locals space. 0 for v6p
 	pr_string_t         s_file;		///< source file with definition
 	pr_string_t         s_name;		///< name of function in output
-	const struct type_s *type;		///< function's type without aliases
+	const type_t       *type;		///< function's type without aliases
 	int                 temp_reg;	///< base register to use for temp defs
 	int                 temp_num;	///< number for next temp var
 	struct def_s       *temp_defs[MAX_DEF_SIZE];///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
-	struct symbol_s    *sym;		///< internal symbol for this function
+	symbol_t           *sym;		///< internal symbol for this function
 	/** \name Local data space
 
 		The function parameters form the root scope for the function. Its
@@ -98,13 +98,13 @@ typedef struct function_s {
 		parameters will be merged into the one defspace.
 	*/
 	///@{
-	struct symtab_s    *parameters;	///< Root scope symbol table
-	struct symtab_s    *locals;		///< Actual local variables
+	symtab_t           *parameters;	///< Root scope symbol table
+	symtab_t           *locals;		///< Actual local variables
 	struct defspace_s  *arguments;	///< Space for called function arguments
 	///@}
-	struct symtab_s    *label_scope;
+	symtab_t           *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
-	struct expr_s      *var_init;
+	expr_t             *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
 	struct sblock_s    *sblock;		///< initial node of function's code
 	struct flowgraph_s *graph;		///< the function's flow graph
@@ -145,38 +145,35 @@ typedef struct expr_s expr_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 
-param_t *new_param (const char *selector, const struct type_s *type,
-					const char *name);
+param_t *new_param (const char *selector, const type_t *type, const char *name);
 param_t *new_generic_param (const expr_t *type_expr, const char *name);
 param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
-								   const struct type_s *type);
+								   const type_t *type);
 param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
-const struct type_s *parse_params (const struct type_s *return_type, param_t *params);
+const type_t *parse_params (const type_t *return_type, param_t *params);
 
 param_t *check_params (param_t *params);
 
 enum storage_class_e;
 struct defspace_s;
-int value_too_large (const struct type_s *val_type) __attribute__((pure));
-void make_function (struct symbol_s *sym, const char *nice_name,
+int value_too_large (const type_t *val_type) __attribute__((pure));
+void make_function (symbol_t *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
 symbol_t *function_symbol (symbol_t *sym, int overload);
-const struct expr_s *find_function (const struct expr_s *fexpr,
-									const struct expr_s *params);
+const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
 function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);
-function_t *begin_function (struct symbol_s *sym, const char *nicename,
-							struct symtab_s *parent, int far,
+function_t *begin_function (symbol_t *sym, const char *nicename,
+							symtab_t *parent, int far,
 							enum storage_class_e storage);
-function_t *build_code_function (struct symbol_s *fsym,
-								 const struct expr_s *state_expr,
-								 struct expr_s *statements);
-function_t *build_builtin_function (struct symbol_s *sym,
-									const struct expr_s *bi_val, int far,
+function_t *build_code_function (symbol_t *fsym,
+								 const expr_t *state_expr, expr_t *statements);
+function_t *build_builtin_function (symbol_t *sym,
+									const expr_t *bi_val, int far,
 									enum storage_class_e storage);
-void emit_function (function_t *f, struct expr_s *e);
+void emit_function (function_t *f, expr_t *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);
 
