@@ -258,7 +258,7 @@ check_params (param_t *params)
 }
 
 static overloaded_function_t *
-get_function (const char *name, const type_t *type, int overload, int create)
+get_function (const char *name, const type_t *type, int overload)
 {
 	const char *full_name;
 	overloaded_function_t *func;
@@ -275,9 +275,6 @@ get_function (const char *name, const type_t *type, int overload, int create)
 		}
 		return func;
 	}
-
-	if (!create)
-		return 0;
 
 	func = Hash_Find (function_map, name);
 	if (func) {
@@ -305,21 +302,21 @@ get_function (const char *name, const type_t *type, int overload, int create)
 }
 
 symbol_t *
-function_symbol (symbol_t *sym, int overload, int create)
+function_symbol (symbol_t *sym, int overload)
 {
 	const char *name = sym->name;
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, unalias_type (sym->type), overload, create);
+	func = get_function (name, unalias_type (sym->type), overload);
 
 	if (func && func->overloaded)
 		name = func->full_name;
 	s = symtab_lookup (current_symtab, name);
-	if ((!s || s->table != current_symtab) && create) {
+	if (!s || s->table != current_symtab) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
-		s->type = (type_t *) unalias_type (sym->type); // FIXME cast
+		s->type = unalias_type (sym->type);
 		s->params = sym->params;
 		s->s.func = 0;				// function not yet defined
 		symtab_addsymbol (current_symtab, s);
@@ -688,12 +685,12 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_func);
-		sym = function_symbol (sym, 1, 1);
+		sym = function_symbol (sym, 1);
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (0, "%s redefined", sym->name);
 		sym = new_symbol_type (sym->name, sym->type);
-		sym = function_symbol (sym, 1, 1);
+		sym = function_symbol (sym, 1);
 	}
 	space = sym->table->space;
 	if (far)

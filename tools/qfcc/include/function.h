@@ -162,8 +162,7 @@ struct defspace_s;
 int value_too_large (const struct type_s *val_type) __attribute__((pure));
 void make_function (struct symbol_s *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
-struct symbol_s *function_symbol (struct symbol_s *sym,
-								  int overload, int create);
+symbol_t *function_symbol (symbol_t *sym, int overload);
 const struct expr_s *find_function (const struct expr_s *fexpr,
 									const struct expr_s *params);
 function_t *new_function (const char *name, const char *nice_name);

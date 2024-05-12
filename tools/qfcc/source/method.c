@@ -183,7 +183,7 @@ method_symbol (class_type_t *class_type, method_t *method)
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
 	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol (sym, 0, 1);
+	sym = function_symbol (sym, 0);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -369,7 +369,7 @@ send_message (int super)
 		symtab_t   *save = current_symtab;
 		current_symtab = pr.symtab;
 		sym = new_symbol_type (sm_name, sm_type);
-		sym = function_symbol (sym, 0, 1);
+		sym = function_symbol (sym, 0);
 		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}
