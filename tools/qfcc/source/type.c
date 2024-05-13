@@ -465,29 +465,29 @@ default_type (specifier_t spec, symbol_t *sym)
 		if (is_float (spec.type) && !spec.multi_type) {
 			// no modifieres allowed
 			if (spec.is_unsigned) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both unsigned and float in declaration specifiers");
 			} else if (spec.is_signed) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both signed and float in declaration specifiers");
 			} else if (spec.is_short) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both short and float in declaration specifiers");
 			} else if (spec.is_long) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both long and float in declaration specifiers");
 			}
 		}
 		if (is_double (spec.type)) {
 			// long is allowed but ignored
 			if (spec.is_unsigned) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both unsigned and double in declaration specifiers");
 			} else if (spec.is_signed) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both signed and double in declaration specifiers");
 			} else if (spec.is_short) {
-				spec.multi_type = 1;
+				spec.multi_type = true;
 				error (0, "both short and double in declaration specifiers");
 			}
 		}

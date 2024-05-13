@@ -57,18 +57,18 @@ typedef struct specifier_s {
 	storage_class_t storage;
 	union {
 		struct {
-			unsigned    multi_type:1;
-			unsigned    multi_store:1;
-			unsigned    is_signed:1;
-			unsigned    is_unsigned:1;
-			unsigned    is_short:1;
-			unsigned    is_long:1;
-			unsigned    is_typedef:1;
-			unsigned    is_overload:1;
-			unsigned    is_function:1;//FIXME do proper void(*)() -> ev_func
-			unsigned    nosave:1;
-			unsigned    no_va_list:1;
-			unsigned    void_return:1;
+			bool        multi_type:1;
+			bool        multi_store:1;
+			bool        is_signed:1;
+			bool        is_unsigned:1;
+			bool        is_short:1;
+			bool        is_long:1;
+			bool        is_typedef:1;
+			bool        is_overload:1;
+			bool        is_function:1;//FIXME do proper void(*)() -> ev_func
+			bool        nosave:1;
+			bool        no_va_list:1;
+			bool        void_return:1;
 		};
 		unsigned    spec_bits;
 	};

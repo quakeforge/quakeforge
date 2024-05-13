@@ -267,11 +267,11 @@ parse_attributes (attribute_t *attr_list)
 	specifier_t spec = {};
 	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
 		if (!strcmp (attr->name, "no_va_list")) {
-			spec.no_va_list = 1;
+			spec.no_va_list = true;
 		} else if (!strcmp (attr->name, "nosave")) {
-			spec.nosave = 1;
+			spec.nosave = true;
 		} else if (!strcmp (attr->name, "void_return")) {
-			spec.void_return = 1;
+			spec.void_return = true;
 		} else {
 			warning (0, "skipping unknown attribute '%s'", attr->name);
 		}
@@ -304,13 +304,13 @@ spec_merge (specifier_t spec, specifier_t new)
 			}
 		} else if (!spec.multi_type) {
 			error (0, "two or more data types in declaration specifiers");
-			spec.multi_type = 1;
+			spec.multi_type = true;
 		}
 	}
 	if (new.is_typedef || !storage_auto (new)) {
 		if ((spec.is_typedef || !storage_auto (spec)) && !spec.multi_store) {
 			error (0, "multiple storage classes in declaration specifiers");
-			spec.multi_store = 1;
+			spec.multi_store = true;
 		}
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
@@ -319,13 +319,13 @@ spec_merge (specifier_t spec, specifier_t new)
 		|| (new.is_signed && spec.is_unsigned)) {
 		if (!spec.multi_type) {
 			error (0, "both signed and unsigned in declaration specifiers");
-			spec.multi_type = 1;
+			spec.multi_type = true;
 		}
 	}
 	if ((new.is_long && spec.is_short) || (new.is_short && spec.is_long)) {
 		if (!spec.multi_store) {
 			error (0, "both long and short in declaration specifiers");
-			spec.multi_store = 1;
+			spec.multi_store = true;
 		}
 	}
 	spec.sym = new.sym;
@@ -2677,10 +2677,10 @@ static keyword_t qf_keywords[] = {
 	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
 	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
 	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
-	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = 1 } },
-	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = 1 } },
-	{"long",		QC_TYPE_SPEC, .spec = { .is_long = 1 } },
-	{"short",		QC_TYPE_SPEC, .spec = { .is_short = 1 } },
+	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = true } },
+	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
+	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
+	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
 
 	{"@function",	QC_TYPE_SPEC, .spec = { .type = &type_func } 	},
 	{"@args",		QC_ARGS,				},
