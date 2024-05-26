@@ -56,7 +56,7 @@ if test "x$GCC" = xyes; then
 	shift
 	args="$*"
 	AC_MSG_CHECKING(for gcc version)
-	CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
+	CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*([[^)]]*)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
 	set $CCVER
 	save_IFS="$IFS"
 	IFS="."
@@ -341,7 +341,7 @@ if test "x$leave_cflags_alone" != xyes; then
 			[[bool flag = true;]],
 			[[return flag ? 1 : 0]])],
 		[],
-		[QF_CC_OPTION_TEST(-std=gnu23,[],QF_CC_OPTION(-std=gnu2x))]
+		[QF_CC_OPTION_TEST(-std=gnu23,QF_CC_OPTION(-std=gnu23),QF_CC_OPTION(-std=gnu2x))]
 	)
 fi
 AC_MSG_CHECKING([for c23])
