@@ -96,7 +96,7 @@ size_t strnlen (const char *str, size_t len);
 #endif
 #ifdef HAVE_STRNDUP
 # ifndef HAVE_STRNDUP_PROTO
-size_t strndup (const char *str, size_t len);
+char *strndup (const char *str, size_t len);
 # endif
 #else
 # define strndup Q_strndup
