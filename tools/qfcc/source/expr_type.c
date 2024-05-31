@@ -172,6 +172,18 @@ evaluate_int_op (int arg_count, const expr_t **args)
 }
 
 static const type_t *
+resolve_function (int arg_count, const expr_t **args)
+{
+	return &type_func;//FIXME
+	auto type = resolve_type (args[0]);
+	if (type) {
+		type = field_type (type);
+		type = find_type (type);
+	}
+	return type;
+}
+
+static const type_t *
 resolve_field (int arg_count, const expr_t **args)
 {
 	auto type = resolve_type (args[0]);
@@ -312,6 +324,11 @@ resolve_float (int arg_count, const expr_t **args)
 }
 
 static type_func_t type_funcs[] = {
+	[QC_AT_FUNCTION - QC_GENERIC] = {
+		.name = "@function",
+		.check_params = single_type,
+		.resolve = resolve_function,
+	},
 	[QC_AT_FIELD - QC_GENERIC] = {
 		.name = "@field",
 		.check_params = single_type,
@@ -386,7 +403,8 @@ type_function (int op, const expr_t *params)
 	const expr_t *args[arg_count];
 	list_scatter (&params->list, args);
 	unsigned    ind = op - QC_GENERIC;
-	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])) {
+	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])
+		|| !type_funcs[ind].name) {
 		internal_error (params, "invalid type op: %d", op);
 	}
 	const char *msg = type_funcs[ind].check_params (arg_count, args);
@@ -428,7 +446,8 @@ resolve_type (const expr_t *te)
 	}
 	int         op = te->typ.op;
 	unsigned    ind = op - QC_GENERIC;
-	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])) {
+	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])
+		|| !type_funcs[ind].name) {
 		internal_error (te, "invalid type op: %d", op);
 	}
 	int         arg_count = list_count (&te->typ.params->list);
@@ -445,7 +464,8 @@ evaluate_type (const expr_t *te)
 	}
 	int         op = te->typ.op;
 	unsigned    ind = op - QC_GENERIC;
-	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])) {
+	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])
+		|| !type_funcs[ind].name) {
 		internal_error (te, "invalid type op: %d", op);
 	}
 	int         arg_count = list_count (&te->typ.params->list);

@@ -161,7 +161,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
 %token				GENERIC
-%token				AT_FIELD AT_POINTER AT_ARRAY
+%token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
 %token				AT_INT AT_UINT AT_BOOL AT_FLOAT
 
@@ -1105,6 +1105,7 @@ type_function
 
 type_func
 	: AT_FIELD					{ $$ = QC_AT_FIELD; }
+	| AT_FUNCTION				{ $$ = QC_AT_FUNCTION; }
 	| AT_POINTER				{ $$ = QC_AT_POINTER; }
 	| AT_ARRAY					{ $$ = QC_AT_ARRAY; }
 	| AT_BASE					{ $$ = QC_AT_BASE; }
@@ -2689,7 +2690,6 @@ static keyword_t qf_keywords[] = {
 	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
 	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
 
-	{"@function",	QC_TYPE_SPEC, .spec = { .type = &type_func } 	},
 	{"@args",		QC_ARGS,				},
 	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
 	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
@@ -2706,6 +2706,7 @@ static keyword_t qf_keywords[] = {
 	{"@undual",		QC_UNDUAL,		},
 
 	{"@generic",	QC_GENERIC,		},
+	{"@function",	QC_AT_FUNCTION,	},
 	{"@field",		QC_AT_FIELD,	},
 	{"@pointer",	QC_AT_POINTER,	},
 	{"@array",		QC_AT_ARRAY,	},
