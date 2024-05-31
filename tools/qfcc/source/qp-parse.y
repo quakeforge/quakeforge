@@ -169,7 +169,7 @@ build_dotmain (symbol_t *program)
 	dotmain->params = 0;
 	dotmain->type = parse_params (&type_int, 0);
 	dotmain->type = find_type (dotmain->type);
-	dotmain = function_symbol (dotmain, 0);
+	dotmain = function_symbol (dotmain, (specifier_t) { .is_overload = false });
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
@@ -252,7 +252,7 @@ program_head
 			}
 			$$->type = parse_params (&type_void, 0);
 			$$->type = find_type ($$->type);
-			$$ = function_symbol ($$, 0);
+			$$ = function_symbol ($$, (specifier_t) { .is_overload = false });
 		}
 	;
 
@@ -339,7 +339,9 @@ subprogram_head
 				$$->params = $3;
 				$$->type = parse_params ($5, $3);
 				$$->type = find_type ($$->type);
-				$$ = function_symbol ($$, 0);
+				$$ = function_symbol ($$, (specifier_t) {
+											.is_overload = false
+										  });
 			}
 		}
 	| PROCEDURE ID arguments
@@ -351,7 +353,9 @@ subprogram_head
 				$$->params = $3;
 				$$->type = parse_params (&type_void, $3);
 				$$->type = find_type ($$->type);
-				$$ = function_symbol ($$, 0);
+				$$ = function_symbol ($$, (specifier_t) {
+											.is_overload = false
+										  });
 			}
 		}
 	;

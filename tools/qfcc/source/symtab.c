@@ -293,7 +293,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 				error (0, "function %s is initialized", s->name);
 			}
 			s->type = find_type (s->type);
-			s = function_symbol (s, spec.is_overload);
+			s = function_symbol (s, spec);
 		} else {
 			s->type = find_type (s->type);
 			initialize_def (s, init, space, spec.storage, symtab);

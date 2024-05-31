@@ -301,13 +301,13 @@ get_function (const char *name, const type_t *type, int overload)
 }
 
 symbol_t *
-function_symbol (symbol_t *sym, int overload)
+function_symbol (symbol_t *sym, specifier_t spec)
 {
 	const char *name = sym->name;
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, unalias_type (sym->type), overload);
+	func = get_function (name, unalias_type (sym->type), spec.is_overload);
 
 	if (func && func->overloaded)
 		name = func->full_name;
@@ -685,12 +685,12 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_func);
-		sym = function_symbol (sym, 1);
+		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
 		error (0, "%s redefined", sym->name);
 		sym = new_symbol_type (sym->name, sym->type);
-		sym = function_symbol (sym, 1);
+		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
 	}
 	space = sym->table->space;
 	if (far)

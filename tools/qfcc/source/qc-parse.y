@@ -665,7 +665,7 @@ qc_nocode_func
 			const expr_t *expr = $4;
 			sym->params = spec.sym->params;
 			sym = function_sym_type (spec, sym);
-			sym = function_symbol (sym, spec.is_overload);
+			sym = function_symbol (sym, spec);
 			build_builtin_function (sym, expr, 0, spec.storage);
 		}
 	| identifier '=' expr
@@ -684,7 +684,7 @@ qc_nocode_func
 			sym->params = spec.sym->params;
 			sym = function_sym_type (spec, sym);
 			if (!local_expr && !is_field (spec.sym->type)) {
-				sym = function_symbol (sym, spec.is_overload);
+				sym = function_symbol (sym, spec);
 			}
 			if (!local_expr && !is_field (sym->type)) {
 				// things might be a confused mess from earlier errors
@@ -711,7 +711,7 @@ qc_code_func
 			symbol_t   *sym = $1;
 			sym->params = spec.sym->params;
 			sym = function_sym_type (spec, sym);
-			sym = function_symbol (sym, spec.is_overload);
+			sym = function_symbol (sym, spec);
 			current_func = begin_function (sym, 0, current_symtab, 0,
 										   spec.storage);
 			current_symtab = current_func->locals;
@@ -1012,7 +1012,7 @@ function_body
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
 			symbol_t   *sym = function_sym_type (spec, spec.sym);
-			$<symbol>$ = function_symbol (sym, spec.is_overload);
+			$<symbol>$ = function_symbol (sym, spec);
 		}
 	  save_storage
 		{
@@ -1036,7 +1036,7 @@ function_body
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
 			symbol_t   *sym = function_sym_type (spec, spec.sym);
-			sym = function_symbol (sym, spec.is_overload);
+			sym = function_symbol (sym, spec);
 			build_builtin_function (sym, $3, 0, spec.storage);
 		}
 	;

@@ -241,7 +241,7 @@ function_definition
 			spec.sym->type = parse_params (spec.sym->type, spec.params);
 			auto sym = function_sym_type (spec, spec.sym);
 			sym->params = spec.params;
-			sym = function_symbol (sym, true);
+			sym = function_symbol (sym, (specifier_t) { .is_overload = true });
 			current_func = begin_function (sym, nullptr, current_symtab,
 										   false, spec.storage);
 			current_symtab = current_func->locals;
