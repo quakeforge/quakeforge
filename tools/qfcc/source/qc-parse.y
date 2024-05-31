@@ -349,10 +349,12 @@ function_spec (specifier_t spec, param_t *params)
 	if (!spec.sym) {
 		spec.sym = new_symbol (0);
 	}
-	spec = default_type (spec, spec.sym);
+	if (!spec.type_expr) {
+		spec = default_type (spec, spec.sym);
+	}
 	spec.sym->params = params;
 	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
-	spec.is_function = 1; //FIXME do proper void(*)() -> ev_func
+	spec.is_function = true; //FIXME do proper void(*)() -> ev_func
 	return spec;
 }
 
@@ -671,11 +673,16 @@ qc_nocode_func
 	| identifier '=' expr
 		{
 			specifier_t spec = $<spec>0;
-			spec.sym = $1;
-			spec.sym->params = spec.params;
-			spec.sym->type = find_type (spec.type);
-			spec.is_function = 0;
-			declare_symbol (spec, $3, current_symtab);
+			symbol_t   *sym = $1;
+			const expr_t *expr = $3;
+			sym->params = spec.sym->params;
+			sym = function_sym_type (spec, sym);
+			sym = function_symbol (sym, spec);
+			spec.sym = sym;
+			spec.type = sym->type;
+			spec.is_function = false;
+			sym->type = nullptr;
+			declare_symbol (spec, expr, current_symtab);
 		}
 	| identifier
 		{
