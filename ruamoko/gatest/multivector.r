@@ -302,7 +302,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		int         g = [b grade];
 		unsigned    mask = [b mask];
 		double s = g & 2 ? -1 : 1;//FIXME do in BasisBlade?
-		int ind = [layout bladeIndex:mask];
+		int ind = [reverse.layout bladeIndex:mask];
 		reverse.components[ind] += s * c;
 	}
 	return reverse;
