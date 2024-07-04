@@ -100,7 +100,7 @@ convert_name (const expr_t *e)
 		return new_string_expr (GETSTR (e->loc.file));
 	}
 	if (!sym->table) {
-		error (e, "%s undefined", sym->name);
+		e = error (e, "%s undefined", sym->name);
 		sym->type = type_default;
 		//FIXME need a def
 		return e;
