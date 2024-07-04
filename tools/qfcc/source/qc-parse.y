@@ -333,6 +333,16 @@ spec_merge (specifier_t spec, specifier_t new)
 	return spec;
 }
 
+static const type_t *
+resolve_type_spec (specifier_t spec)
+{
+	auto type = spec.type;
+	if (spec.type_expr) {
+		type = resolve_type (spec.type_expr);
+	}
+	return find_type (type);
+}
+
 static specifier_t
 typename_spec (specifier_t spec)
 {
@@ -1069,6 +1079,7 @@ storage_class
 				current_symtab = $<spec>3.symtab;
 			}
 			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_generic = true;
 		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
@@ -1141,8 +1152,15 @@ type_list
 
 type_ref
 	: TYPE_SPEC							{ $$ = new_type_expr ($1.type); }
-	| TYPE_NAME							{ $$ = new_type_expr ($1.type); }
 	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
+	| TYPE_NAME
+		{
+			if ($1.type_expr) {
+				$$ = $1.type_expr;
+			} else {
+				$$ = new_type_expr ($1.type);
+			}
+		}
 	;
 
 attribute_list
@@ -1863,7 +1881,8 @@ unary_expr
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
-			$$ = sizeof_expr (0, $3.type);
+			auto type = resolve_type_spec ($3);
+			$$ = sizeof_expr (0, type);
 		}
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
 	| vector_expr				{ $$ = new_vector_list ($1); }
@@ -1887,7 +1906,8 @@ vector_expr
 cast_expr
 	: '(' typename ')' cast_expr
 		{
-			$$ = cast_expr (find_type ($2.type), $4);
+			auto type = resolve_type_spec ($2);
+			$$ = cast_expr (type, $4);
 		}
 	| unary_expr %prec LOW
 	;
@@ -2449,11 +2469,17 @@ methodproto
 
 methoddecl
 	: '(' typename ')' unaryselector
-		{ $$ = new_method ($2.type, $4, 0); }
+		{
+			auto type = resolve_type_spec ($2);
+			$$ = new_method (type, $4, 0);
+		}
 	| unaryselector
 		{ $$ = new_method (&type_id, $1, 0); }
 	| '(' typename ')' keywordselector optional_param_list
-		{ $$ = new_method ($2.type, $4, $5); }
+		{
+			auto type = resolve_type_spec ($2);
+			$$ = new_method (type, $4, $5);
+		}
 	| keywordselector optional_param_list
 		{ $$ = new_method (&type_id, $1, $2); }
 	;
@@ -2506,11 +2532,17 @@ reserved_word
 
 keyworddecl
 	: selector ':' '(' typename ')' identifier
-		{ $$ = make_selector ($1->name, $4.type, $6->name); }
+		{
+			auto type = resolve_type_spec ($4);
+			$$ = make_selector ($1->name, type, $6->name);
+		}
 	| selector ':' identifier
 		{ $$ = make_selector ($1->name, &type_id, $3->name); }
 	| ':' '(' typename ')' identifier
-		{ $$ = make_selector ("", $3.type, $5->name); }
+		{
+			auto type = resolve_type_spec ($3);
+			$$ = make_selector ("", type, $5->name);
+		}
 	| ':' identifier
 		{ $$ = make_selector ("", &type_id, $2->name); }
 	;
@@ -2519,7 +2551,11 @@ obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
 	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
-	| ENCODE '(' typename ')'		{ $$ = encode_expr ($3.type); }
+	| ENCODE '(' typename ')'
+		{
+			auto type = resolve_type_spec ($3);
+			$$ = encode_expr (type);
+		}
 	| obj_string /* FIXME string object? */
 	;
 
@@ -2765,7 +2801,7 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
 		} else if (sym->sy_type == sy_type_param) {
 			// id has been redeclared via a generic type param
 			lval->spec = (specifier_t) {
-				.type_expr = sym->s.expr,
+				.type_expr = new_symbol_expr (sym),
 				.sym = sym,
 			};
 			return QC_TYPE_NAME;
@@ -2857,7 +2893,7 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 		return QC_TYPE_NAME;
 	} else if (sym->sy_type == sy_type_param) {
 		lval->spec = (specifier_t) {
-			.type_expr = sym->s.expr,
+			.type_expr = new_symbol_expr (sym),
 			.sym = sym,
 		};
 		return QC_TYPE_NAME;
