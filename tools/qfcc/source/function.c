@@ -68,6 +68,7 @@
 
 ALLOC_STATE (param_t, params);
 ALLOC_STATE (function_t, functions);
+ALLOC_STATE (genfunc_t, genfuncs);
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 
@@ -92,6 +93,163 @@ func_map_get_key (const void *_f, void *unused)
 	return f->name;
 }
 
+static const type_t *
+compute_type ()
+{
+	return nullptr;
+}
+
+static gentype_compute_f
+check_compute_type (const expr_t *expr)
+{
+	if (expr->type != ex_type) {
+		return nullptr;
+	}
+	return compute_type;
+}
+
+static const type_t **
+valid_type_list (const expr_t *expr)
+{
+	if (expr->type != ex_list) {
+		return nullptr;
+	}
+	int count = list_count (&expr->list);
+	const expr_t *type_refs[count];
+	list_scatter (&expr->list, type_refs);
+	const type_t **types = malloc (sizeof (type_t *[count + 1]));
+	types[count] = nullptr;
+	bool err = false;
+	for (int i = 0; i < count; i++) {
+		if (!(types[i] = resolve_type (type_refs[i]))) {
+			error (type_refs[i], "not a constant type ref");
+			err = true;
+		}
+	}
+	if (err) {
+		free (types);
+		return nullptr;
+	}
+	return types;
+}
+
+static gentype_t
+make_gentype (const expr_t *expr)
+{
+	if (expr->type != ex_symbol || expr->symbol->sy_type != sy_type_param) {
+		internal_error (expr, "expected generic type name");
+	}
+	auto sym = expr->symbol;
+	gentype_t gentype = {
+		.name = save_string (sym->name),
+		.compute = check_compute_type (sym->s.expr),
+		.valid_types = valid_type_list (sym->s.expr),
+	};
+	if (gentype.compute && gentype.valid_types) {
+		internal_error (expr, "both computed type and type list");
+	}
+	if (!gentype.compute && !gentype.valid_types) {
+		internal_error (expr, "empty generic type");
+	}
+	return gentype;
+}
+
+static int
+find_gentype (const expr_t *expr, genfunc_t *genfunc)
+{
+	if (expr->type != ex_symbol) {
+		return -1;
+	}
+	const char *name = expr->symbol->name;
+	for (int i = 0; i < genfunc->num_types; i++) {
+		auto t = &genfunc->types[i];
+		if (strcmp (name, t->name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static genparam_t
+make_genparam (param_t *param, genfunc_t *genfunc)
+{
+	genparam_t genparam = {
+		.name = save_string (param->name),
+		.fixed_type = param->type,
+		.gentype = find_gentype (param->type_expr, genfunc),
+	};
+	return genparam;
+}
+
+static genfunc_t *
+parse_generic_function (const char *name, specifier_t spec)
+{
+	if (!spec.is_generic) {
+		return nullptr;
+	}
+	// fake parameter for the return type
+	param_t ret_param = {
+		.next = spec.sym->params,
+		.type = spec.sym->type->t.func.ret_type,
+		.type_expr = spec.type_expr,
+	};
+	int num_params = 0;
+	int num_gentype = 0;
+	for (auto p = &ret_param; p; p = p->next) {
+		num_params++;
+	}
+	auto generic_tab = current_symtab;
+	for (auto s = generic_tab->symbols; s; s = s->next) {
+		bool found = false;
+		for (auto q = &ret_param; q; q = q->next) {
+			// FIXME check complex expressions
+			if (!q->type_expr || q->type_expr->type != ex_symbol) {
+				continue;
+			}
+			if (strcmp (q->type_expr->symbol->name, s->name) == 0) {
+				num_gentype++;
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			warning (0, "generic parameter %s not used", s->name);
+		}
+	}
+
+	genfunc_t *genfunc;
+	ALLOC (4096, genfunc_t, genfuncs, genfunc);
+	*genfunc = (genfunc_t) {
+		.name = save_string (name),
+		.types = malloc (sizeof (gentype_t[num_gentype])
+						 + sizeof (genparam_t[num_params])),
+		.num_types = num_gentype,
+		.num_params = num_params - 1, // don't count return type
+	};
+	genfunc->params = (genparam_t *) &genfunc->types[num_gentype];
+	genfunc->ret_type = &genfunc->params[num_params - 1];
+
+	num_gentype = 0;
+	for (auto s = generic_tab->symbols; s; s = s->next) {
+		for (auto q = &ret_param; q; q = q->next) {
+			// FIXME check complex expressions
+			if (!q->type_expr || q->type_expr->type != ex_symbol) {
+				continue;
+			}
+			if (strcmp (q->type_expr->symbol->name, s->name) == 0) {
+				genfunc->types[num_gentype++] = make_gentype (q->type_expr);
+				break;
+			}
+		}
+	}
+
+	num_params = 0;
+	for (auto p = ret_param.next; p; p = p->next) {
+		genfunc->params[num_params++] = make_genparam (p, genfunc);
+	}
+	*genfunc->ret_type = make_genparam (&ret_param, genfunc);
+	return genfunc;
+}
 param_t *
 new_param (const char *selector, const type_t *type, const char *name)
 {
@@ -257,8 +415,11 @@ check_params (param_t *params)
 }
 
 static overloaded_function_t *
-get_function (const char *name, const type_t *type, int overload)
+get_function (const char *name, const type_t *type, specifier_t spec)
 {
+	auto genfunc = parse_generic_function (name, spec);
+	if (genfunc) {}
+	bool overload = spec.is_overload;
 	const char *full_name;
 	overloaded_function_t *func;
 
@@ -285,7 +446,7 @@ get_function (const char *name, const type_t *type, int overload)
 					 full_name);
 			warning (&e, "(previous function is %s)", func->full_name);
 		}
-		overload = 1;
+		overload = true;
 	}
 
 	func = calloc (1, sizeof (overloaded_function_t));
@@ -307,7 +468,7 @@ function_symbol (symbol_t *sym, specifier_t spec)
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, unalias_type (sym->type), spec.is_overload);
+	func = get_function (name, unalias_type (sym->type), spec);
 
 	if (func && func->overloaded)
 		name = func->full_name;

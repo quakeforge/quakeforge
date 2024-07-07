@@ -44,6 +44,34 @@
 // The maximum size of a temp def, return value, or parameter value
 #define MAX_DEF_SIZE 32
 
+typedef struct function_s function_t;
+
+typedef const type_t *(*gentype_compute_f) ();
+
+typedef struct gentype_s {
+	const char *name;
+	gentype_compute_f compute;
+	// earlier types have priority over later types. null if compute valid
+	const type_t **valid_types;
+} gentype_t;
+
+typedef struct genparam_s {
+	const char *name;
+	const type_t *fixed_type;
+	int         gentype;	// index into function's list of types
+} genparam_t;
+
+typedef struct genfunc_s {
+	struct genfunc_s *next;
+	const char *name;
+	gentype_t  *types;
+	int         num_types;
+	int         num_params;
+	genparam_t *params;
+	genparam_t *ret_type;
+	// only automatic (#0) builtins supported for now
+} genfunc_t;
+
 /** Represent an overloading of a function.
 
 	Every function, whether overloaded or not, has an entry in the overloaded
