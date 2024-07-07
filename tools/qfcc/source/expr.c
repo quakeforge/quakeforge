@@ -2314,7 +2314,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 							  arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	auto ret_type = ftype->t.func.type;
+	auto ret_type = ftype->t.func.ret_type;
 	call->block.result = call_expr (fexpr, args, ret_type);
 	return call;
 }
@@ -2429,7 +2429,7 @@ const expr_t *
 return_expr (function_t *f, const expr_t *e)
 {
 	const type_t *t;
-	const type_t *ret_type = unalias_type (f->type->t.func.type);
+	const type_t *ret_type = unalias_type (f->type->t.func.ret_type);
 
 	e = convert_name (e);
 	if (!e) {
@@ -2499,7 +2499,7 @@ return_expr (function_t *f, const expr_t *e)
 	} else {
 		if (ret_type != t) {
 			e = cast_expr ((type_t *) ret_type, e);//FIXME cast
-			t = f->sym->type->t.func.type;
+			t = f->sym->type->t.func.ret_type;
 		}
 	}
 	if (e->type == ex_vector) {
@@ -2514,7 +2514,7 @@ return_expr (function_t *f, const expr_t *e)
 const expr_t *
 at_return_expr (function_t *f, const expr_t *e)
 {
-	const type_t *ret_type = unalias_type (f->type->t.func.type);
+	const type_t *ret_type = unalias_type (f->type->t.func.ret_type);
 
 	if (!is_void(ret_type)) {
 		return error (e, "use of @return in non-void function");

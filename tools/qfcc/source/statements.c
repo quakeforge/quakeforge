@@ -2627,7 +2627,7 @@ check_final_block (sblock_t *sblock)
 		if (statement_is_return (s))
 			return;
 	}
-	if (!is_void(current_func->sym->type->t.func.type))
+	if (!is_void(current_func->sym->type->t.func.ret_type))
 		warning (0, "control reaches end of non-void function");
 	if (s && s->type >= st_func) {
 		// func and flow end blocks, so we need to add a new block to take the

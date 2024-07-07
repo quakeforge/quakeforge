@@ -186,10 +186,10 @@ static symbol_t *
 function_value (function_t *func)
 {
 	symbol_t   *ret = 0;
-	if (func->type->t.func.type) {
+	if (func->type->t.func.ret_type) {
 		ret = symtab_lookup (func->locals, ".ret");
 		if (!ret || ret->table != func->locals) {
-			ret = new_symbol_type (".ret", func->type->t.func.type);
+			ret = new_symbol_type (".ret", func->type->t.func.ret_type);
 			initialize_def (ret, 0, func->locals->space, sc_local,
 							func->locals);
 		}

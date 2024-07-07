@@ -82,7 +82,7 @@ print_function (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	const ty_func_t *func = &t->t.func;
-	const type_t *ret = func->type;
+	const type_t *ret = func->ret_type;
 	const type_t *param;
 
 	dot_print_type (dstr, ret, level + 1, id);

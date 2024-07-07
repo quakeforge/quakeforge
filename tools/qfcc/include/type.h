@@ -36,7 +36,7 @@
 #include "specifier.h"
 
 typedef struct ty_func_s {
-	const struct type_s *type;
+	const struct type_s *ret_type;
 	int         num_params;
 	const struct type_s **param_types;
 	union {

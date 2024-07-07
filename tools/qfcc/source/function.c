@@ -201,7 +201,7 @@ parse_params (const type_t *return_type, param_t *parms)
 	new->alignment = 1;
 	new->width = 1;
 	new->columns = 1;
-	new->t.func.type = return_type;
+	new->t.func.ret_type = return_type;
 	new->t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
@@ -405,7 +405,10 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return fexpr;
 		}
 	}
-	type.t.func.type = ((overloaded_function_t *) funcs[0])->type->t.func.type;
+	{
+		auto f = (overloaded_function_t *) funcs[0];
+		type.t.func.ret_type = f->type->t.func.ret_type;
+	}
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
@@ -491,11 +494,11 @@ check_function (symbol_t *fsym)
 	param_t    *p;
 	int         i;
 
-	if (!type_size (fsym->type->t.func.type)) {
+	if (!type_size (fsym->type->t.func.ret_type)) {
 		error (0, "return type is an incomplete type");
 		//fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
-	if (value_too_large (fsym->type->t.func.type)) {
+	if (value_too_large (fsym->type->t.func.ret_type)) {
 		error (0, "return value too large to be passed by value (%d)",
 			   type_size (&type_param));
 		//fsym->type->t.func.type = &type_void;//FIXME better type?

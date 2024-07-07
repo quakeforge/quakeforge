@@ -110,7 +110,7 @@ qfo_encode_func (const type_t *type, defspace_t *space)
 	if (param_count < 0)
 		param_count = ~param_count;
 	param_type_defs = alloca (param_count * sizeof (def_t *));
-	return_type_def = qfo_encode_type (type->t.func.type, space);
+	return_type_def = qfo_encode_type (type->t.func.ret_type, space);
 	for (i = 0; i < param_count; i++)
 		param_type_defs[i] = qfo_encode_type (type->t.func.param_types[i],
 											  space);

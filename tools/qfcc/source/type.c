@@ -309,7 +309,7 @@ free_type (type_t *type)
 			free_type ((type_t *) type->t.fldptr.type);
 			break;
 		case ev_func:
-			free_type ((type_t *) type->t.func.type);
+			free_type ((type_t *) type->t.func.ret_type);
 			break;
 		case ev_invalid:
 			if (type->meta == ty_array)
@@ -354,8 +354,8 @@ copy_chain (type_t *type, type_t *append)
 						type = (type_t *) type->t.fldptr.type;
 						break;
 					case ev_func:
-						n = (type_t **) &(*n)->t.func.type;
-						type = (type_t *) type->t.func.type;
+						n = (type_t **) &(*n)->t.func.ret_type;
+						type = (type_t *) type->t.func.ret_type;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -414,7 +414,7 @@ append_type (const type_t *type, const type_t *new)
 						((type_t *) type)->columns = 1;
 						break;
 					case ev_func:
-						t = (const type_t **) &(*t)->t.func.type;
+						t = (const type_t **) &(*t)->t.func.ret_type;
 						((type_t *) type)->alignment = 1;
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
@@ -557,7 +557,7 @@ find_type (const type_t *type)
 						((type_t *) type)->t.fldptr.type = find_type (type->t.fldptr.type);
 						break;
 					case ev_func:
-						((type_t *) type)->t.func.type = find_type (type->t.func.type);
+						((type_t *) type)->t.func.ret_type = find_type (type->t.func.ret_type);
 						count = type->t.func.num_params;
 						if (count < 0)
 							count = ~count;	// param count is one's complement
@@ -935,7 +935,7 @@ print_type_str (dstring_t *str, const type_t *type)
 					dasprintf (str, ")");
 					return;
 				case ev_func:
-					print_type_str (str, type->t.func.type);
+					print_type_str (str, type->t.func.ret_type);
 					if (type->t.func.num_params == -1) {
 						dasprintf (str, "(...)");
 					} else {
@@ -1168,7 +1168,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 					return;
 				case ev_func:
 					dasprintf (encoding, "(");
-					encode_type (encoding, type->t.func.type);
+					encode_type (encoding, type->t.func.ret_type);
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
 				case ev_ptr:
