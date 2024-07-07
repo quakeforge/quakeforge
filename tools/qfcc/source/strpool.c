@@ -139,12 +139,16 @@ ss_get_key (const void *s, void *unused)
 const char *
 save_string (const char *str)
 {
-	char       *s;
-	if (!saved_strings)
+	if (!str) {
+		return nullptr;
+	}
+	if (!saved_strings) {
 		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0, 0);
-	s = Hash_Find (saved_strings, str);
-	if (s)
+	}
+	char *s = Hash_Find (saved_strings, str);
+	if (s) {
 		return s;
+	}
 	s = strdup (str);
 	Hash_Add (saved_strings, s);
 	return s;
