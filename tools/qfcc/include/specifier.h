@@ -59,6 +59,7 @@ typedef struct specifier_s {
 		struct {
 			bool        multi_type:1;
 			bool        multi_store:1;
+			bool        multi_generic:1;
 			bool        is_signed:1;
 			bool        is_unsigned:1;
 			bool        is_short:1;
@@ -66,6 +67,7 @@ typedef struct specifier_s {
 			bool        is_typedef:1;
 			bool        is_overload:1;
 			bool        is_generic:1;
+			bool        is_generic_block:1;
 			bool        is_function:1;//FIXME do proper void(*)() -> ev_func
 			bool        nosave:1;
 			bool        no_va_list:1;

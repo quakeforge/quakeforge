@@ -105,8 +105,8 @@ static void
 check_generic_param (genparam_t *param, genfunc_t *genfunc)
 {
 	if (param->gentype < 0 || param->gentype >= genfunc->num_types) {
-		internal_error (0, "invalid type index %s for %s",
-						param->name, genfunc->name);
+		internal_error (0, "invalid type index %d on %s for %s",
+						param->gentype, param->name, genfunc->name);
 	}
 }
 
@@ -295,7 +295,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	for (auto p = &ret_param; p; p = p->next) {
 		num_params++;
 	}
-	auto generic_tab = current_symtab;
+	auto generic_tab = spec.symtab;
 	for (auto s = generic_tab->symbols; s; s = s->next) {
 		bool found = false;
 		for (auto q = &ret_param; q; q = q->next) {
@@ -309,7 +309,7 @@ parse_generic_function (const char *name, specifier_t spec)
 				break;
 			}
 		}
-		if (!found) {
+		if (!spec.is_generic_block && !found) {
 			warning (0, "generic parameter %s not used", s->name);
 		}
 	}

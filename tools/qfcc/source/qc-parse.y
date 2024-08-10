@@ -243,7 +243,25 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 static switch_block_t *switch_block;
 static const expr_t *break_label;
 static const expr_t *continue_label;
-static bool generic_scope;
+static bool generic_scope, generic_block;
+static symtab_t *generic_symtab;
+
+static void
+end_generic_scope (void)
+{
+	generic_scope = false;
+	generic_symtab = nullptr;
+}
+
+static void
+restore_storage (specifier_t st)
+{
+	if (generic_block && !st.is_generic) {
+		end_generic_scope ();
+	}
+	generic_block = st.is_generic;
+	current_storage = st.storage;
+}
 
 static specifier_t
 type_spec (const type_t *type)
@@ -291,6 +309,7 @@ generic_spec (void)
 		.symtab = new_symtab (current_symtab, stab_local),
 		.is_generic = true,
 	};
+	generic_symtab = spec.symtab;
 	return spec;
 }
 
@@ -348,6 +367,12 @@ spec_merge (specifier_t spec, specifier_t new)
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
 	}
+	if (new.is_generic) {
+		if (spec.is_generic && !spec.multi_generic) {
+			error (0, "multiple @generic in declaration");
+			spec.multi_generic = true;
+		}
+	}
 	if ((new.is_unsigned && spec.is_signed)
 		|| (new.is_signed && spec.is_unsigned)) {
 		if (!spec.multi_type) {
@@ -398,6 +423,9 @@ function_spec (specifier_t spec, param_t *params)
 	spec.sym->params = params;
 	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
 	spec.is_function = true; //FIXME do proper void(*)() -> ev_func
+	spec.is_generic = generic_scope;
+	spec.is_generic_block = generic_block;
+	spec.symtab = generic_symtab;
 	return spec;
 }
 
@@ -581,13 +609,14 @@ program
 external_def_list
 	: /* empty */
 		{
-			current_symtab = pr.symtab;
+			if (!generic_block) {
+				current_symtab = pr.symtab;
+			}
 		}
 	| external_def_list external_def
 		{
-			if (generic_scope) {
-				generic_scope = false;
-				current_symtab = current_symtab->parent;
+			if (generic_scope && !generic_block) {
+				end_generic_scope ();
 			}
 		}
 	| external_def_list obj_def
@@ -599,10 +628,11 @@ external_def
 	| storage_class '{' save_storage
 		{
 			current_storage = $1.storage;
+			generic_block = generic_scope;
 		}
 	  external_def_list '}' ';'
 		{
-			current_storage = $3.storage;
+			restore_storage ($3);
 		}
 	;
 
@@ -773,7 +803,7 @@ qc_code_func
 			build_code_function ($1, $3, $6);
 			current_symtab = $<funcstate>5.symtab;
 			current_func = $<funcstate>5.function;
-			current_storage = $4.storage;
+			restore_storage ($4);
 		}
 	;
 
@@ -1054,6 +1084,7 @@ save_storage
 	: /* emtpy */
 		{
 			$$.storage = current_storage;
+			$$.is_generic = generic_block;
 		}
 	;
 
@@ -1080,7 +1111,7 @@ function_body
 			build_code_function ($<symbol>2, $1, $5);
 			current_symtab = $<funcstate>4.symtab;
 			current_func = $<funcstate>4.function;
-			current_storage = $3.storage;
+			restore_storage ($3);
 		}
 	| '=' '#' expr ';'
 		{
@@ -1100,13 +1131,14 @@ storage_class
 	| GENERIC '('				{ $<spec>$ = generic_spec (); }
 	  generic_param_list ')'
 		{
+			$$ = $<spec>3;
+
 			if (generic_scope) {
 				error (0, "multiple @generic in declaration");
+				$$.multi_generic = true;
 			} else {
 				generic_scope = true;
-				current_symtab = $<spec>3.symtab;
 			}
-			$$ = $<spec>3;
 		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
@@ -2438,7 +2470,7 @@ methoddef
 			build_code_function ($<symbol>4, $3, $7);
 			current_symtab = $<funcstate>6.symtab;
 			current_func = $<funcstate>6.function;
-			current_storage = $5.storage;
+			restore_storage ($5);
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
@@ -2858,7 +2890,6 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 	static hashtab_t *rua_keyword_tab;
 
 	keyword_t  *keyword = 0;
-	symbol_t   *sym;
 
 	if (!keyword_tab) {
 		size_t      i;
@@ -2908,9 +2939,17 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 	if (token[0] == '@') {
 		return '@';
 	}
-	sym = symtab_lookup (current_symtab, token);
-	if (!sym)
+
+	symbol_t   *sym = nullptr;
+	if (generic_symtab) {
+		sym = symtab_lookup (generic_symtab, token);
+	}
+	if (!sym) {
+		sym = symtab_lookup (current_symtab, token);
+	}
+	if (!sym) {
 		sym = new_symbol (token);
+	}
 	lval->symbol = sym;
 	if (sym->sy_type == sy_type) {
 		lval->spec = (specifier_t) {
