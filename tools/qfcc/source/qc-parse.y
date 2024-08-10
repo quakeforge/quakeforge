@@ -246,18 +246,51 @@ static const expr_t *continue_label;
 static bool generic_scope;
 
 static specifier_t
-make_spec (const type_t *type, storage_class_t storage, int is_typedef,
-		   int is_overload)
+type_spec (const type_t *type)
 {
-	specifier_t spec;
+	specifier_t spec = {
+		.type = type,
+	};
+	return spec;
+}
 
-	memset (&spec, 0, sizeof (spec));
-	spec.type = type;
-	spec.storage = storage;
-	spec.is_typedef = is_typedef;
-	spec.is_overload = is_overload;
-	if (spec.storage && spec.is_typedef)
-		internal_error (0, "setting both storage and is_typedef");
+static specifier_t
+storage_spec (storage_class_t storage)
+{
+	specifier_t spec = {
+		.storage = storage,
+	};
+	return spec;
+}
+
+static specifier_t
+typedef_spec (void)
+{
+	specifier_t spec = {
+		.storage = sc_global,
+		.is_typedef = true,
+	};
+	return spec;
+}
+
+static specifier_t
+overload_spec (void)
+{
+	specifier_t spec = {
+		.storage = current_storage,
+		.is_overload = true,
+	};
+	return spec;
+}
+
+static specifier_t
+generic_spec (void)
+{
+	specifier_t spec = {
+		.storage = current_storage,
+		.symtab = new_symtab (current_symtab, stab_local),
+		.is_generic = true,
+	};
 	return spec;
 }
 
@@ -944,13 +977,13 @@ typespec_reserved
 				};
 			} else {
 				auto type = resolve_type ($1);
-				$$ = make_spec (type, 0, 0, 0);
+				$$ = type_spec (type);
 			}
 		}
 	| algebra_specifier %prec LOW
 	| algebra_specifier '.' attribute
 		{
-			$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+			$$ = type_spec (algebra_subtype ($1.type, $3));
 		}
 	| enum_specifier
 	| struct_specifier
@@ -959,7 +992,7 @@ typespec_reserved
 	| '.' typespec_reserved
 		{
 			// avoid find_type()
-			$$ = make_spec (field_type (0), 0, 0, 0);
+			$$ = type_spec (field_type (0));
 			$$.type = append_type ($$.type, $2.type);
 		}
 	;
@@ -973,7 +1006,7 @@ typespec_nonreserved
 					   get_type_string ($1.type));
 				$$ = $1;
 			} else {
-				$$ = make_spec (algebra_subtype ($1.type, $3), 0, 0, 0);
+				$$ = type_spec (algebra_subtype ($1.type, $3));
 			}
 		}
 	| OBJECT_NAME protocolrefs
@@ -982,9 +1015,9 @@ typespec_nonreserved
 				type_t      type = *type_id.t.fldptr.type;
 				type.next = 0;
 				type.protos = $2;
-				$$ = make_spec (pointer_type (find_type (&type)), 0, 0, 0);
+				$$ = type_spec (pointer_type (find_type (&type)));
 			} else {
-				$$ = make_spec (&type_id, 0, 0, 0);
+				$$ = type_spec (&type_id);
 			}
 			$$.sym = $1.sym;
 		}
@@ -994,9 +1027,9 @@ typespec_nonreserved
 				type_t      type = *$1->type;
 				type.next = 0;
 				type.protos = $2;
-				$$ = make_spec (find_type (&type), 0, 0, 0);
+				$$ = type_spec (find_type (&type));
 			} else {
-				$$ = make_spec ($1->type, 0, 0, 0);
+				$$ = type_spec ($1->type);
 			}
 			$$.sym = $1;
 		}
@@ -1005,7 +1038,7 @@ typespec_nonreserved
 	| '.' typespec_nonreserved
 		{
 			// avoid find_type()
-			$$ = make_spec (field_type (0), 0, 0, 0);
+			$$ = type_spec (field_type (0));
 			$$.type = append_type ($$.type, $2.type);
 		}
 	;
@@ -1059,17 +1092,12 @@ function_body
 	;
 
 storage_class
-	: EXTERN					{ $$ = make_spec (0, sc_extern, 0, 0); }
-	| STATIC					{ $$ = make_spec (0, sc_static, 0, 0); }
-	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
-	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
-	| GENERIC '('
-		{
-			auto spec = make_spec (0, current_storage, 0, 0);
-			spec.symtab = new_symtab (current_symtab, stab_local);
-			$<spec>$ = spec;
-		}
+	: EXTERN					{ $$ = storage_spec (sc_extern); }
+	| STATIC					{ $$ = storage_spec (sc_static); }
+	| SYSTEM					{ $$ = storage_spec (sc_system); }
+	| TYPEDEF					{ $$ = typedef_spec (); }
+	| OVERLOAD					{ $$ = overload_spec (); }
+	| GENERIC '('				{ $<spec>$ = generic_spec (); }
 	  generic_param_list ')'
 		{
 			if (generic_scope) {
@@ -1078,8 +1106,7 @@ storage_class
 				generic_scope = true;
 				current_symtab = $<spec>3.symtab;
 			}
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.is_generic = true;
+			$$ = $<spec>3;
 		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
@@ -1186,12 +1213,12 @@ tag : NAME ;
 algebra_specifier
 	: ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
 		{
-			auto spec = make_spec (algebra_type ($3.type, $5), 0, 0, 0);
+			auto spec = type_spec (algebra_type ($3.type, $5));
 			$$ = spec;
 		}
 	| ALGEBRA '(' TYPE_SPEC ')'
 		{
-			auto spec = make_spec (algebra_type ($3.type, 0), 0, 0, 0);
+			auto spec = type_spec (algebra_type ($3.type, 0));
 			$$ = spec;
 		}
 	;
@@ -1199,13 +1226,13 @@ algebra_specifier
 enum_specifier
 	: ENUM tag optional_enum_list
 		{
-			$$ = make_spec ($3->type, 0, 0, 0);
+			$$ = type_spec ($3->type);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
 		}
 	| ENUM enum_list
 		{
-			$$ = make_spec ($2->type, 0, 0, 0);
+			$$ = type_spec ($2->type);
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
 		}
@@ -1256,7 +1283,7 @@ struct_specifier
 
 			sym = find_struct ($1, $2, 0);
 			sym->type = find_type (sym->type);
-			$$ = make_spec (sym->type, 0, 0, 0);
+			$$ = type_spec (sym->type);
 			if (!sym->table) {
 				symtab_t   *tab = current_symtab;
 				while (tab->parent && tab->type == stab_struct) {
@@ -1270,7 +1297,7 @@ struct_specifier
 			specifier_t spec = default_type ($1, 0);
 			symbol_t   *sym = find_handle ($2, spec.type);
 			sym->type = find_type (sym->type);
-			$$ = make_spec (sym->type, 0, 0, 0);
+			$$ = type_spec (sym->type);
 			if (!sym->table) {
 				symtab_t   *tab = current_symtab;
 				while (tab->parent && tab->type == stab_struct) {
@@ -1282,7 +1309,7 @@ struct_specifier
 	;
 
 handle
-	: HANDLE					{ $$ = make_spec (&type_int, 0, 0, 0); }
+	: HANDLE					{ $$ = type_spec (&type_int); }
 	| HANDLE '(' TYPE_SPEC ')'	{ $$ = $3; }
 	;
 
@@ -1304,7 +1331,7 @@ struct_list
 			if ($<op>1) {
 				sym = $<symbol>2;
 				sym = build_struct ($<op>1, sym, symtab, 0, 0);
-				$$ = make_spec (sym->type, 0, 0, 0);
+				$$ = type_spec (sym->type);
 				if (!sym->table)
 					symtab_addsymbol (current_symtab, sym);
 			}
