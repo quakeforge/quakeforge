@@ -69,6 +69,7 @@
 ALLOC_STATE (param_t, params);
 ALLOC_STATE (function_t, functions);
 ALLOC_STATE (genfunc_t, genfuncs);
+static hashtab_t *generic_functions;
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 
@@ -78,6 +79,13 @@ static hashtab_t *function_map;
 // keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
 // having to do shenanigans with mixed-alignment stack frames
 #define STACK_ALIGN 8
+
+static const char *
+gen_func_get_key (const void *_f, void *unused)
+{
+	auto f = (genfunc_t *) _f;
+	return f->name;
+}
 
 static const char *
 ol_func_get_key (const void *_f, void *unused)
@@ -91,6 +99,95 @@ func_map_get_key (const void *_f, void *unused)
 {
 	overloaded_function_t *f = (overloaded_function_t *) _f;
 	return f->name;
+}
+
+static void
+check_generic_param (genparam_t *param, genfunc_t *genfunc)
+{
+	if (param->gentype < 0 || param->gentype >= genfunc->num_types) {
+		internal_error (0, "invalid type index %s for %s",
+						param->name, genfunc->name);
+	}
+}
+
+static bool __attribute__((pure))
+cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
+{
+	if (p1->fixed_type || p2->fixed_type) {
+		return p1->fixed_type == p2->fixed_type;
+	}
+	// fixed_type for both p1 and p2 is null
+	auto t1 = g1->types[p1->gentype];
+	auto t2 = g2->types[p2->gentype];
+	if (t1.compute || t2.compute) {
+		// FIXME probably not right
+		return t1.compute == t2.compute;
+	}
+	auto vt1 = t1.valid_types;
+	auto vt2 = t2.valid_types;
+	for (; *vt1 && *vt2 && *vt1 == *vt2; vt1++, vt2++) continue;
+	return *vt1 == *vt2;
+}
+
+void
+add_generic_function (genfunc_t *genfunc)
+{
+	for (int i = 0; i < genfunc->num_types; i++) {
+		auto gentype = &genfunc->types[i];
+		if (gentype->compute && gentype->valid_types) {
+			internal_error (0, "both compute and valid_types set in "
+							"generic type");
+		}
+		for (auto type = gentype->valid_types; type && *type; type++) {
+			if (is_void (*type)) {
+				internal_error (0, "void in list of valid types");
+			}
+		}
+	}
+	int gen_params = 0;
+	for (int i = 0; i < genfunc->num_params; i++) {
+		auto param = &genfunc->params[i];
+		if (!param->fixed_type) {
+			gen_params++;
+			check_generic_param (param, genfunc);
+		}
+	}
+	if (!gen_params) {
+		internal_error (0, "%s has no generic parameters", genfunc->name);
+	}
+	if (!genfunc->ret_type) {
+		internal_error (0, "%s has no return type", genfunc->name);
+	}
+	check_generic_param (genfunc->ret_type, genfunc);
+
+	bool is_new = true;
+	genfunc_t *old = Hash_Find (generic_functions, genfunc->name);
+	if (old && old->num_params == genfunc->num_params) {
+		is_new = false;
+		for (int i = 0; i < genfunc->num_params; i++) {
+			if (!cmp_genparams (genfunc, &genfunc->params[i],
+								old, &old->params[i])) {
+				is_new = true;
+				break;
+			}
+		}
+		if (!is_new && !cmp_genparams (genfunc, genfunc->ret_type,
+									   old, old->ret_type)) {
+			error (0, "can't overload on return types");
+			return;
+		}
+	}
+
+	if (is_new) {
+		Hash_Add (generic_functions, genfunc);
+	} else {
+		for (int i = 0; i < genfunc->num_types; i++) {
+			auto gentype = &genfunc->types[i];
+			free (gentype->valid_types);
+		}
+		free (genfunc->types);
+		FREE (genfuncs, genfunc);
+	}
 }
 
 static const type_t *
@@ -418,15 +515,30 @@ static overloaded_function_t *
 get_function (const char *name, const type_t *type, specifier_t spec)
 {
 	auto genfunc = parse_generic_function (name, spec);
-	if (genfunc) {}
+
+	//FIXME want to be able to provide specific overloads for generic functions
+	//but need to figure out details, so disallow for now.
+	if (genfunc) {
+		if (Hash_Find (function_map, name)) {
+			error (0, "can't mix generic and overload");
+			return nullptr;
+		}
+		add_generic_function (genfunc);
+		return nullptr;// FIXME
+	}
+	if (Hash_Find (generic_functions, name)) {
+		error (0, "can't mix generic and overload");
+		return nullptr;
+	}
+
 	bool overload = spec.is_overload;
 	const char *full_name;
-	overloaded_function_t *func;
-
-	name = save_string (name);
 
 	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
+	overloaded_function_t *func;
+	// check if the exact function signature already exists, in which case
+	// simply return it.
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
 		if (func->type != type) {
@@ -439,22 +551,22 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 	func = Hash_Find (function_map, name);
 	if (func) {
 		if (!overload && !func->overloaded) {
-			expr_t      e = {
-				.loc = func->loc,
-			};
 			warning (0, "creating overloaded function %s without @overload",
 					 full_name);
-			warning (&e, "(previous function is %s)", func->full_name);
+			warning (&(expr_t) { .loc = func->loc },
+					 "(previous function is %s)", func->full_name);
 		}
 		overload = true;
 	}
 
-	func = calloc (1, sizeof (overloaded_function_t));
-	func->name = name;
-	func->full_name = full_name;
-	func->type = type;
-	func->overloaded = overload;
-	func->loc = pr.loc;
+	func = malloc (sizeof (overloaded_function_t));
+	*func = (overloaded_function_t) {
+		.name = save_string (name),
+		.full_name = full_name,
+		.type = type,
+		.overloaded = overload,
+		.loc = pr.loc,
+	};
 
 	Hash_Add (overloaded_functions, func);
 	Hash_Add (function_map, func);
@@ -1099,9 +1211,11 @@ void
 clear_functions (void)
 {
 	if (overloaded_functions) {
+		Hash_FlushTable (generic_functions);
 		Hash_FlushTable (overloaded_functions);
 		Hash_FlushTable (function_map);
 	} else {
+		generic_functions = Hash_NewTable (1021, gen_func_get_key, 0, 0, 0);
 		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
 		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
 	}
