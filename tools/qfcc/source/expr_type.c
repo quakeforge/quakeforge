@@ -39,6 +39,7 @@ typedef struct {
 	const char *name;
 	const char *(*check_params) (int arg_count, const expr_t **args);
 	const type_t *(*resolve) (int arg_count, const expr_t **args);
+	const type_t **(*expand) (int arg_count, const expr_t **args);
 	const expr_t *(*evaluate) (int arg_count, const expr_t **args);
 } type_func_t;
 
@@ -323,6 +324,75 @@ resolve_float (int arg_count, const expr_t **args)
 	return type;
 }
 
+static const type_t **
+expand_vector (int arg_count, const expr_t **args)
+{
+	const type_t *base = resolve_type (args[0]);
+	if (!is_bool (base) && !is_scalar (base)) {
+		error (args[0], "invalid vector component type");
+		return nullptr;
+	}
+
+	if (arg_count == 2) {
+		auto comps_expr = evaluate_int (args[1]);
+		if (is_error (comps_expr)) {
+			return nullptr;
+		}
+		int comps = expr_integral (comps_expr);
+		if (comps < 1 || comps > 4) {
+			error (args[1], "invalid vector component count");
+			return nullptr;
+		}
+
+		const type_t **types = malloc (sizeof(type_t[2]));
+		types[0] = vector_type (base, comps);
+		types[1] = nullptr;
+		return types;
+	} else {
+		const type_t **types = malloc (sizeof(type_t *[5]));
+		for (int i = 0; i < 4; i++) {
+			types[i] = vector_type (base, i + 1);
+		}
+		types[4] = nullptr;
+		return types;
+	}
+}
+
+static const type_t **
+expand_matrix (int arg_count, const expr_t **args)
+{
+	const type_t *base = resolve_type (args[0]);
+	if (!is_scalar (base)) {
+		error (args[0], "invalid matrix component type");
+		return nullptr;
+	}
+
+	// @matrix doesn't include vectors for generic parameters
+	if (arg_count == 3) {
+		auto rows_expr = evaluate_int (args[2]);
+		auto cols_expr = evaluate_int (args[1]);
+		if (is_error (rows_expr) || is_error (cols_expr)) {
+			return nullptr;
+		}
+		int rows = expr_integral (rows_expr);
+		int cols = expr_integral (cols_expr);
+
+		const type_t **types = malloc (sizeof(type_t *[2]));
+		types[0] = matrix_type (base, cols, rows);
+		types[1] = nullptr;
+		return types;
+	} else {
+		const type_t **types = malloc (sizeof(type_t *[3*3 + 1]));
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				types[i*3 + j] = matrix_type (base, i + 2, j + 2);
+			}
+		}
+		types[3*3] = nullptr;
+		return types;
+	}
+}
+
 static type_func_t type_funcs[] = {
 	[QC_AT_FUNCTION - QC_GENERIC] = {
 		.name = "@function",
@@ -358,6 +428,7 @@ static type_func_t type_funcs[] = {
 		.name = "@vector",
 		.check_params = single_type_opt_int,
 		.resolve = resolve_vector,
+		.expand = expand_vector,
 	},
 	[QC_AT_ROWS - QC_GENERIC] = {
 		.name = "@rows",
@@ -373,6 +444,7 @@ static type_func_t type_funcs[] = {
 		.name = "@matrix",
 		.check_params = single_type_opt_int_pair,
 		.resolve = resolve_matrix,
+		.expand = expand_matrix,
 	},
 	[QC_AT_INT - QC_GENERIC] = {
 		.name = "@int",
@@ -454,6 +526,37 @@ resolve_type (const expr_t *te)
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
 	return type_funcs[ind].resolve (arg_count, args);
+}
+
+const type_t **
+expand_type (const expr_t *te)
+{
+	if (te->type != ex_type) {
+		internal_error (te, "not a type expression");
+	}
+	if (!te->typ.op) {
+		if (!te->typ.type) {
+			internal_error (te, "no type in reference");
+		}
+		//FIXME is this correct?
+		const type_t **types = malloc (sizeof(type_t *[2]));
+		types[0] = te->typ.type;
+		types[1] = nullptr;
+		return types;
+	}
+	int         op = te->typ.op;
+	unsigned    ind = op - QC_GENERIC;
+	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])
+		|| !type_funcs[ind].name) {
+		internal_error (te, "invalid type op: %d", op);
+	}
+	if (!type_funcs[ind].expand) {
+		error (te, "cannot expand %s", type_funcs[ind].name);
+	}
+	int         arg_count = list_count (&te->typ.params->list);
+	const expr_t *args[arg_count];
+	list_scatter (&te->typ.params->list, args);
+	return type_funcs[ind].expand (arg_count, args);
 }
 
 const expr_t *

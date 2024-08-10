@@ -190,26 +190,17 @@ add_generic_function (genfunc_t *genfunc)
 	}
 }
 
-static const type_t *
-compute_type ()
-{
-	return nullptr;
-}
-
 static gentype_compute_f
 check_compute_type (const expr_t *expr)
 {
-	if (expr->type != ex_type) {
-		return nullptr;
-	}
-	return compute_type;
+	return nullptr;
 }
 
 static const type_t **
 valid_type_list (const expr_t *expr)
 {
 	if (expr->type != ex_list) {
-		return nullptr;
+		return expand_type (expr);
 	}
 	int count = list_count (&expr->list);
 	const expr_t *type_refs[count];

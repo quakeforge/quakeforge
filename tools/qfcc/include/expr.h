@@ -858,6 +858,7 @@ expr_t *new_type_expr (const type_t *type);
 const expr_t *type_function (int op, const expr_t *params);
 symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
 const type_t *resolve_type (const expr_t *te);
+const type_t **expand_type (const expr_t *te);
 const expr_t *evaluate_type (const expr_t *te);
 
 /**	Convert a name to an expression of the appropriate type.
