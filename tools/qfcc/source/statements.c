@@ -2114,7 +2114,7 @@ static int
 is_if_expr (const expr_t *e)
 {
 	return e && e->type == ex_branch && e->branch.type != pr_branch_jump
-			 && e->branch.type != pr_branch_call;;
+			 && e->branch.type != pr_branch_call;
 }
 
 static int

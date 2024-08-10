@@ -147,7 +147,7 @@ unalias_op (operand_t *op)
 		internal_error (op->expr, "not an alias op");
 	}
 	if (op->op_type == op_alias) {
-		return op->alias;;
+		return op->alias;
 	}
 	if (op->op_type == op_temp) {
 		return op->tempop.alias;

@@ -756,7 +756,7 @@ build_rua_scope (symbol_t *fsym)
 			param = new_symbol_type (p->name, p->type);
 		}
 		create_param (fsym->s.func->parameters, param);
-		param->s.def->reg = fsym->s.func->temp_reg;;
+		param->s.def->reg = fsym->s.func->temp_reg;
 	}
 }
 

@@ -110,7 +110,7 @@ designator_field (const designator_t *des, const type_t *type)
 	}
 	symtab_t   *symtab = type->t.symtab;
 	symbol_t   *sym = des->field->symbol;
-	symbol_t   *field = symtab_lookup (symtab, sym->name);;
+	symbol_t   *field = symtab_lookup (symtab, sym->name);
 	if (!field) {
 		const char *name = type->name;
 		if (!strncmp (name, "tag ", 4)) {

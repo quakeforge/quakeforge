@@ -449,7 +449,7 @@ count_terms (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_sum (e1) + !is_sum (e2);;
+	int terms = !is_sum (e1) + !is_sum (e2);
 	if (is_sum (e1)) {
 		terms += count_terms (expr->expr.e1);
 	}
@@ -467,7 +467,7 @@ count_factors (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_mult (e1) + !is_mult (e2);;
+	int terms = !is_mult (e1) + !is_mult (e2);
 	if (is_mult (e1)) {
 		terms += count_factors (expr->expr.e1);
 	}
