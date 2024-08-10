@@ -112,9 +112,9 @@ static const char *mvec_3d_names[] = {
 
 static const char *mvec_4d_names[] = {
 	"vec",
-	"bvect",
+	"bvect",	// tangential (directional) (in PGA)
 	"scalar",
-	"bvecp",
+	"bvecp",	// positional (in PGA)
 	"qvec",
 	"tvec",
 	0
