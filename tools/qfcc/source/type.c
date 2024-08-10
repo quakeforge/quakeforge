@@ -663,6 +663,9 @@ pointer_type (const type_t *aux)
 const type_t *
 matrix_type (const type_t *ele_type, int cols, int rows)
 {
+	if (!is_bool (ele_type) && !is_scalar (ele_type)) {
+		return nullptr;
+	}
 	if (rows == 1 && cols == 1) {
 		for (type_t **t = ev_types; t - ev_types < ev_type_count; t++) {
 			if ((*t)->type == ele_type->type && (*t)->width == 1) {
@@ -1249,6 +1252,17 @@ is_enum (const type_t *type)
 	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
 	return 0;
+}
+
+int
+is_bool (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_bool) {
+		return 0;
+	}
+	//FIXME 64-bit bool
+	return type->type == ev_int;
 }
 
 int

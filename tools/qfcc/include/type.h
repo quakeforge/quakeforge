@@ -219,6 +219,7 @@ const char *type_get_encoding (const type_t *type);
 #include "QF/progs/pr_type_names.h"
 
 int is_enum (const type_t *type) __attribute__((pure));
+int is_bool (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
 int is_real (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
