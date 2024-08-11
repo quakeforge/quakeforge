@@ -656,7 +656,8 @@ check_type (const type_t *type, const type_t *param_type, unsigned *cost)
 }
 
 static const expr_t *
-find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
+find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
+					   const type_t *call_type)
 {
 	int num_funcs = 0;
 	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
@@ -687,12 +688,13 @@ find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
 			costs[j] = ~0u;
 		}
 	}
+
+	auto fsym = fexpr->symbol;
 	unsigned best_cost = ~0u;
 	int best_ind = -1;
 	for (int i = 0; i < num_funcs; i++) {
 		if (best_ind >= 0 && costs[i] == best_cost) {
-			return error (0, "unable to disambiguate %s",
-						  genfuncs[best_ind]->name);
+			return error (fexpr, "unable to disambiguate %s", fsym->name);
 		}
 		if (costs[i] < best_cost) {
 			best_ind = i;
@@ -700,8 +702,8 @@ find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
 		}
 	}
 	if (best_ind < 0) {
-		return error (0, "unable to find generic function matching %s",
-					  genfuncs[0]->name);
+		return error (fexpr, "unable to find generic function matching %s",
+					  fsym->name);
 	}
 
 	auto g = genfuncs[best_ind];
@@ -729,8 +731,11 @@ find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
 	} else {
 		return_type = g->ret_type->fixed_type;
 	}
+	param_t *params = nullptr;
 	for (int i = 0; i < num_params; i++) {
 		param_types[i] = unalias_type (param_types[i]);
+		params = append_params (params, new_param (nullptr, param_types[i],
+												   g->params[i].name));
 	}
 	return_type = unalias_type (return_type);
 
@@ -746,9 +751,17 @@ find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
 	auto type = find_type (&ftype);
 	auto name = g->name;
 	auto full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
-	printf ("%s\n", full_name);
-	auto nf = new_expr ();
-	return nf;
+
+	auto sym = symtab_lookup (fsym->table, full_name);
+	if (!sym || sym->table != fsym->table) {
+		sym = new_symbol (full_name);
+		sym->sy_type = sy_func;
+		sym->type = type;
+		sym->params = params;
+		sym->s.func = nullptr;
+		symtab_addsymbol (fsym->table, sym);
+	}
+	return new_symbol_expr (sym);
 }
 
 const expr_t *
@@ -787,7 +800,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	const char *fname = fexpr->symbol->name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
-		return find_generic_function (genfuncs, &call_type);
+		return find_generic_function (fexpr, genfuncs, &call_type);
 	}
 
 	auto funcs = (overloaded_function_t **) Hash_FindList (function_map, fname);
