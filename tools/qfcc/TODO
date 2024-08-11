@@ -19,5 +19,8 @@ o	arrays in entities
 o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
 o	rewrite type system to be const-correct (hard!)
+o	symbolic differentiation
+o	tensor calculus
+o	geometric calculus
 ?	try to reduce memory consumption
 ??	embedded nul characters in strings (why?)
