@@ -7,10 +7,13 @@
 \textclass scrbook
 \begin_preamble
 % Added by lyx2lyx
-\setlength{\parskip}{\medskipamount}
-\setlength{\parindent}{0pt}
+%\setlength{\parskip}{\medskipamount}
+%\setlength{\parindent}{0pt}
 \end_preamble
 \use_default_options false
+\begin_modules
+logicalmkup
+\end_modules
 \maintain_unincluded_children no
 \language american
 \language_package default
@@ -30,12 +33,13 @@
 \font_tt_scale 100 100
 \use_microtype false
 \use_dash_ligatures true
-\graphics dvips
+\graphics default
 \default_output_format default
 \output_sync 0
 \bibtex_command default
 \index_command default
-\float_placement htb
+\float_placement tbh
+\float_alignment class
 \paperfontsize 12
 \spacing single
 \use_hyperref false
@@ -2305,96 +2309,166 @@ New Types
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
-integer
-\family default
+\begin_layout Plain Layout
+int
+\end_layout
+
+\end_inset
+
  32 bit signed integer
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 id
-\family default
+\end_layout
+
+\end_inset
+
  generic object pointer
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 Class
-\family default
+\end_layout
+
+\end_inset
+
  class object pointer
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 Protocol
-\family default
+\end_layout
+
+\end_inset
+
  protocol object pointer
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 Method
-\family default
+\end_layout
+
+\end_inset
+
  method pointer
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 SEL
-\family default
+\end_layout
+
+\end_inset
+
  selector
 \end_layout
 
 \begin_layout Labeling
 \labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 IMP
-\family default
+\end_layout
+
+\end_inset
+
  message implementation
 \end_layout
 
 \begin_layout Standard
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 id
-\family default
+\end_layout
+
+\end_inset
+
 ,
  
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 Class
-\family default
+\end_layout
+
+\end_inset
+
 ,
  
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 Protocol
-\family default
+\end_layout
+
+\end_inset
+
 ,
  
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 Method
-\family default
+\end_layout
+
+\end_inset
+
 ,
  
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 SEL
-\family default
+\end_layout
+
+\end_inset
+
  and 
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 IMP
-\family default
+\end_layout
+
+\end_inset
+
  are part of 
 \family typewriter
 \series bold
@@ -2445,7 +2519,7 @@ Arrays
 \end_layout
 
 \begin_layout LyX-Code
-integer [13] array;
+int [13] array;
 \end_layout
 
 \begin_layout Subsection
@@ -2499,16 +2573,29 @@ s around the
 \end_layout
 
 \begin_layout Subsection
+\begin_inset Flex Code
+status open
 
-\family typewriter
+\begin_layout Plain Layout
 typedef
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
 By using 
-\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
 typedef
-\family default
+\end_layout
+
+\end_inset
+
  complex types can be given symbolic names.
  e.g.:
 \end_layout
@@ -2598,6 +2685,1012 @@ Function parameters and return types are are fully checked,
  including the number of parameters passed to a function.
  Functions with different return types and/or different parameter types or counts are distinct types and mixing them up will cause a type mismatch error.
  Similar for pointers to various types.
+\end_layout
+
+\begin_layout Section
+Type Expressions
+\end_layout
+
+\begin_layout Standard
+Type expressions allow for more reusable code as they can specify types based on other types and and their attributes.
+\end_layout
+
+\begin_layout LyX-Code
+int foo[3];
+\end_layout
+
+\begin_layout LyX-Code
+@vector(float,sizeof(foo)) bar = '3.14 2.72 1.62';
+ 
+\end_layout
+
+\begin_layout Standard
+In the following,
+ 
+\family typewriter
+type
+\family default
+ must be a type (keyword,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+typedef
+\end_layout
+
+\end_inset
+
+,
+ or another type expression) and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+count
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+width
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+cols
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+,
+ 
+\family typewriter
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+rows
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\family default
+ must be constant integral expressions.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+
+\family typewriter
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+@function(
+\family default
+
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\family typewriter
+)
+\end_layout
+
+\end_inset
+
+
+\family default
+ A function returning 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ but taking no parameters
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@field(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A field of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@pointer(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A pointer to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@array(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+,[
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+count
+\end_layout
+
+\end_inset
+
+])
+\end_layout
+
+\end_inset
+
+ An array of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ elements,
+ optionally sized to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+count
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@base(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ The base scalar type for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Always 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@vector(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+,
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+width
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A vector type with the same base type as 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+,
+ but with the specified width.
+ Never returns 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+ (returns 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec4
+\end_layout
+
+\end_inset
+
+ instead)
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@matrix(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+,
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+cols
+\end_layout
+
+\end_inset
+
+,
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+rows
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A matrix type with the same base type as 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ but with the specified columns and rows
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@int(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ An integral scalar with the same size as the base type of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+int
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+long
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@uint(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ An unsigned integral scalar with the same size as the base type of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+unsigned int
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+unsigned long
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@bool(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A boolean scalar with the same size as the base type of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@float(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ A floating point scalar with the same size as the base type of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The following complement the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+sizeof
+\end_layout
+
+\end_inset
+
+ keyword:
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@width(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ The number of elements in 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Always 1 for scalars and matrices,
+ 3 for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ and 4 for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@rows(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ The number of rows in 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Same as 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@width(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ for vectors and scalars.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@cols(
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+)
+\end_layout
+
+\end_inset
+
+ The number of columns in 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Noun
+status open
+
+\begin_layout Plain Layout
+type
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+ Always 1 for vectors and scalars:
+ vectors are column matrices and scalars are essentially 1x1 matrices.
 \end_layout
 
 \begin_layout Chapter
