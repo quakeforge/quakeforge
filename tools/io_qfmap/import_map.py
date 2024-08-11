@@ -54,25 +54,45 @@ def load_image(tx):
             p[l + 2] = c[2] / 255.0
             p[l + 3] = 1.0
     img.pixels[:] = p[:]
-    img.pack(True)
+    img.pack()
     return img
 
 def load_material(tx):
     if tx.name in bpy.data.materials:
         return bpy.data.materials[tx.name]
     mat = bpy.data.materials.new(tx.name)
+    mat.blend_method = 'OPAQUE'
     mat.diffuse_color = (1, 1, 1, 1)
+    mat.metallic = 1
+    mat.roughness = 1
     mat.specular_intensity = 0
+    mat.use_nodes = True
     if tx.image:
-        tex = bpy.data.textures.new(tx.name, 'IMAGE')
-        tex.extension = 'REPEAT'
-        tex.use_preview_alpha = True
-        tex.image = tx.image
-        mat.texture_slots.add()
-        ts = mat.texture_slots[0]
-        ts.texture = tex
-        ts.use_map_alpha = True
-        ts.texture_coords = 'UV'
+        emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+        shaderOut = mat.node_tree.nodes["Material Output"]
+        mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
+
+        tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        tex_node.image = tx.image
+        tex_node.interpolation = "Closest"
+
+        emissionNode.location = (0, 0)
+        shaderOut.location = (200, 0)
+        tex_node.location = (-300, 0)
+
+        mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
+        mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
+
+        #FIXME uvs etc
+        #tex = bpy.data.textures.new(tx.name, 'IMAGE')
+        #tex.extension = 'REPEAT'
+        #tex.use_preview_alpha = True
+        #tex.image = tx.image
+        #ts = mat.texture_paint_slots.new()
+        #ts = mat.texture_paint_slots[0]
+        #ts.texture = tex
+        #ts.use_map_alpha = True
+        #ts.texture_coords = 'UV'
     return mat
 
 def load_textures(texdefs, wads):
@@ -114,13 +134,14 @@ def process_entity(ent, wads):
     name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
         light = bpy.data.lights.new("light", 'POINT')
+        light.use_custom_distance = True
         if "light" in ent.d:
-            light.distance = float(ent.d["light"])
+            light.cutoff_distance = float(ent.d["light"])
         elif "_light" in ent.d:
-            light.distance = float(ent.d["_light"])
+            light.cutoff_distance = float(ent.d["_light"])
         else:
-            light.distance = 300.0
-        light.falloff_type = 'CUSTOM_CURVE'
+            light.cutoff_distance = 300.0
+        #light.falloff_type = 'CUSTOM_CURVE'
         obj = bpy.data.objects.new(name, light)
     elif ent.b:
         verts = []
