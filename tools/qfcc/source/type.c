@@ -1370,6 +1370,10 @@ is_structural (const type_t *type)
 int
 type_compatible (const type_t *dst, const type_t *src)
 {
+	if (!dst || !src) {
+		return 0;
+	}
+
 	// same type
 	if (dst == src) {
 		return 1;
@@ -1389,7 +1393,9 @@ type_compatible (const type_t *dst, const type_t *src)
 int
 type_assignable (const type_t *dst, const type_t *src)
 {
-	int         ret;
+	if (!dst || !src) {
+		return 0;
+	}
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
@@ -1423,7 +1429,7 @@ type_assignable (const type_t *dst, const type_t *src)
 	// pointer = pointer
 	// give the object system first shot because the pointee types might have
 	// protocols attached.
-	ret = obj_types_assignable (dst, src);
+	int ret = obj_types_assignable (dst, src);
 	// ret < 0 means obj_types_assignable can't decide
 	if (ret >= 0)
 		return ret;
@@ -1443,8 +1449,16 @@ type_assignable (const type_t *dst, const type_t *src)
 int
 type_promotes (const type_t *dst, const type_t *src)
 {
+	if (!dst || !src) {
+		return 0;
+	}
+
 	dst = unalias_type (dst);
 	src = unalias_type (src);
+	if (type_rows (dst) != type_rows (src)
+		|| type_cols (dst) != type_cols (src)) {
+		return 0;
+	}
 	// nothing promotes to int
 	if (is_int (dst)) {
 		return 0;
@@ -1462,8 +1476,9 @@ type_promotes (const type_t *dst, const type_t *src)
 		return 1;
 	}
 	//XXX what to do with (u)long<->float?
-	// everything promotes to double
-	if (is_double (dst)) {
+	if (is_double (dst)
+		&& (is_int (src) || is_uint (src) || is_long (src) || is_ulong (src)
+			|| is_float (src))) {
 		return 1;
 	}
 	return 0;
@@ -1561,23 +1576,20 @@ int
 type_cols (const type_t *type)
 {
 	if (is_matrix (type)) {
-		return 0; //FIXME
+		type = unalias_type (type);
+		return type->columns;
 	} else {
 		// non-matrices have only 1 column
-		return type_width (type);
+		return 1;
 	}
 }
 
 int
 type_rows (const type_t *type)
 {
-	if (is_matrix (type)) {
-		return 0; //FIXME
-	} else {
-		// vectors are vertical (includes vector and quaternion), other types
-		// have width of 1, thus rows == width
-		return type_width (type);
-	}
+	// vectors are vertical (includes vector and quaternion), other types
+	// have width of 1, thus rows == width
+	return type_width (type);
 }
 
 int
