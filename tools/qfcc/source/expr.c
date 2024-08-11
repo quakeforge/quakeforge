@@ -2330,10 +2330,11 @@ function_expr (const expr_t *fexpr, const expr_t *params)
 
 	fexpr = find_function (fexpr, params);
 	fexpr = convert_name (fexpr);
-	auto ftype = get_type (fexpr);
-
-	if (fexpr->type == ex_error)
+	if (is_error (fexpr)) {
 		return fexpr;
+	}
+
+	auto ftype = get_type (fexpr);
 	if (ftype->type != ev_func) {
 		if (fexpr->type == ex_symbol)
 			return error (fexpr, "Called object \"%s\" is not a function",

@@ -338,6 +338,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	*genfunc->ret_type = make_genparam (&ret_param, genfunc);
 	return genfunc;
 }
+
 param_t *
 new_param (const char *selector, const type_t *type, const char *name)
 {
@@ -605,11 +606,14 @@ func_compare (const void *a, const void *b)
 		nb = ~nb;
 	if (na != nb)
 		return nb - na;
-	if ((ret = (fb->type->t.func.num_params - fa->type->t.func.num_params)))
+	if ((ret = (tb->t.func.num_params - ta->t.func.num_params)))
 		return ret;
-	for (i = 0; i < na && i < nb; i++)
-		if (ta->t.func.param_types[i] != tb->t.func.param_types[i])
-			return (long)(tb->t.func.param_types[i] - ta->t.func.param_types[i]);
+	for (i = 0; i < na && i < nb; i++) {
+		auto diff = tb->t.func.param_types[i] - ta->t.func.param_types[i];
+		if (diff) {
+			return diff < 0 ? -1 : 1;
+		}
+	}
 	return 0;
 }
 
@@ -632,52 +636,51 @@ find_function (const expr_t *fexpr, const expr_t *params)
 {
 	int         func_count, parm_count, reported = 0;
 	overloaded_function_t dummy, *best = 0;
-	type_t      type = {};
-	void      **funcs, *dummy_p = &dummy;
+	void      *dummy_p = &dummy;
 
-	if (fexpr->type != ex_symbol)
+	if (fexpr->type != ex_symbol) {
 		return fexpr;
+	}
 
-	type.type = ev_func;
-	type.t.func.num_params = params ? list_count (&params->list) : 0;
-	const expr_t *args[type.t.func.num_params + 1];
+	int         num_params = params ? list_count (&params->list) : 0;
+	const type_t *arg_types[num_params + 1];
+	const expr_t *args[num_params + 1];
 	if (params) {
 		list_scatter_rev (&params->list, args);
 	}
-
-	for (int i = 0; i < type.t.func.num_params; i++) {
+	for (int i = 0; i < num_params; i++) {
 		auto e = args[i];
 		if (e->type == ex_error) {
 			return e;
 		}
+		arg_types[i] = get_type (e);
 	}
-	const type_t *arg_types[type.t.func.num_params + 1];
-	type.t.func.param_types = arg_types;
-	for (int i = 0; i < type.t.func.num_params; i++) {
-		auto e = args[i];
-		type.t.func.param_types[i] = get_type (e);
-	}
-	funcs = Hash_FindList (function_map, fexpr->symbol->name);
+
+	type_t call_type = {
+		.type = ev_func,
+		.t.func = {
+			.num_params = num_params,
+			.param_types = arg_types,
+		},
+	};
+
+	const char *fname = fexpr->symbol->name;
+	auto funcs = (overloaded_function_t **) Hash_FindList (function_map, fname);
 	if (!funcs)
 		return fexpr;
-	for (func_count = 0; funcs[func_count]; func_count++)
-		;
+	for (func_count = 0; funcs[func_count]; func_count++) continue;
 	if (func_count < 2) {
-		auto f = (overloaded_function_t *) funcs[0];
-		if (func_count && !f->overloaded) {
+		if (func_count && !funcs[0]->overloaded) {
 			free (funcs);
 			return fexpr;
 		}
 	}
-	{
-		auto f = (overloaded_function_t *) funcs[0];
-		type.t.func.ret_type = f->type->t.func.ret_type;
-	}
-	dummy.type = find_type (&type);
+	call_type.t.func.ret_type = funcs[0]->type->t.func.ret_type;
+	dummy.type = find_type (&call_type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
 	dummy.full_name = save_string (va (0, "%s|%s", fexpr->symbol->name,
-									   encode_params (&type)));
+									   encode_params (&call_type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
@@ -691,8 +694,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	for (int i = 0; i < func_count; i++) {
 		auto f = (overloaded_function_t *) funcs[i];
 		parm_count = f->type->t.func.num_params;
-		if ((parm_count >= 0 && parm_count != type.t.func.num_params)
-			|| (parm_count < 0 && ~parm_count > type.t.func.num_params)) {
+		if ((parm_count >= 0 && parm_count != call_type.t.func.num_params)
+			|| (parm_count < 0 && ~parm_count > call_type.t.func.num_params)) {
 			funcs[i] = 0;
 			continue;
 		}
@@ -701,7 +704,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		int j;
 		for (j = 0; j < parm_count; j++) {
 			if (!type_assignable (f->type->t.func.param_types[j],
-								  type.t.func.param_types[j])) {
+								  call_type.t.func.param_types[j])) {
 				funcs[i] = 0;
 				break;
 			}
