@@ -631,6 +631,126 @@ set_func_symbol (const expr_t *fexpr, overloaded_function_t *f)
 	return nf;
 }
 
+static const type_t * __attribute__((pure))
+select_type (gentype_t *gentype, const type_t *param_type)
+{
+	for (auto t = gentype->valid_types; t && *t; t++) {
+		if (*t == param_type || type_promotes (*t, param_type)) {
+			return *t;
+		}
+	}
+	return nullptr;
+}
+
+static bool
+check_type (const type_t *type, const type_t *param_type, unsigned *cost)
+{
+	if (type != param_type) {
+		if (type_promotes (type, param_type)) {
+			*cost += 1;
+		} else {
+			return false;
+		}
+	}
+	return true;
+}
+
+static const expr_t *
+find_generic_function (genfunc_t **genfuncs, const type_t *call_type)
+{
+	int num_funcs = 0;
+	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
+	unsigned costs[num_funcs] = {};
+
+	int num_params = call_type->t.func.num_params;
+	auto call_params = call_type->t.func.param_types;
+	for (int j = 0; j < num_funcs; j++) {
+		auto g = genfuncs[j];
+		if (g->num_params != num_params) {
+			continue;
+		}
+		const type_t *types[g->num_types] = {};
+		bool ok = true;
+		for (int i = 0; ok && i < num_params; i++) {
+			auto p = &g->params[i];
+			if (!p->fixed_type) {
+				int ind = p->gentype;
+				if (!types[ind]) {
+					types[ind] = select_type (&g->types[ind], call_params[i]);
+				}
+				ok &= check_type (types[ind], call_params[i], costs + j);
+			} else {
+				ok &= check_type (p->fixed_type, call_params[i], costs + j);
+			}
+		}
+		if (!ok) {
+			costs[j] = ~0u;
+		}
+	}
+	unsigned best_cost = ~0u;
+	int best_ind = -1;
+	for (int i = 0; i < num_funcs; i++) {
+		if (best_ind >= 0 && costs[i] == best_cost) {
+			return error (0, "unable to disambiguate %s",
+						  genfuncs[best_ind]->name);
+		}
+		if (costs[i] < best_cost) {
+			best_ind = i;
+			best_cost = costs[i];
+		}
+	}
+	if (best_ind < 0) {
+		return error (0, "unable to find generic function matching %s",
+					  genfuncs[0]->name);
+	}
+
+	auto g = genfuncs[best_ind];
+	const type_t *types[g->num_types] = {};
+	const type_t *param_types[num_params];
+	const type_t *return_type;
+	for (int i = 0; i < num_params; i++) {
+		auto p = &g->params[i];
+		if (!p->fixed_type) {
+			int ind = p->gentype;
+			if (!types[ind]) {
+				types[ind] = select_type (&g->types[ind], call_params[i]);
+			}
+			param_types[i] = types[ind];
+		} else {
+			param_types[i] = p->fixed_type;
+		}
+	}
+	if (!g->ret_type->fixed_type) {
+		int ind = g->ret_type->gentype;
+		if (!types[ind]) {
+			internal_error (0, "return type not determined");
+		}
+		return_type = types[ind];
+	} else {
+		return_type = g->ret_type->fixed_type;
+	}
+	for (int i = 0; i < num_params; i++) {
+		param_types[i] = unalias_type (param_types[i]);
+	}
+	return_type = unalias_type (return_type);
+
+	type_t ftype = {
+		.type = ev_func,
+
+		.t.func = {
+			.ret_type = return_type,
+			.num_params = num_params,
+			.param_types = param_types,
+		},
+	};
+	auto type = find_type (&ftype);
+	auto name = g->name;
+	auto full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
+	printf ("%s\n", full_name);
+	auto nf = new_expr ();
+	return nf;
+}
+
 const expr_t *
 find_function (const expr_t *fexpr, const expr_t *params)
 {
@@ -665,6 +785,11 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	};
 
 	const char *fname = fexpr->symbol->name;
+	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
+	if (genfuncs) {
+		return find_generic_function (genfuncs, &call_type);
+	}
+
 	auto funcs = (overloaded_function_t **) Hash_FindList (function_map, fname);
 	if (!funcs)
 		return fexpr;
