@@ -56,7 +56,7 @@ static void
 print_pointer (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	auto aux = t->t.fldptr.type;
+	auto aux = t->fldptr.type;
 
 	dot_print_type (dstr, aux, level, id);
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, aux);
@@ -81,7 +81,7 @@ static void
 print_function (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	const ty_func_t *func = &t->t.func;
+	const ty_func_t *func = &t->func;
 	const type_t *ret = func->ret_type;
 	const type_t *param;
 
@@ -132,7 +132,7 @@ static void
 print_struct (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	const symtab_t *symtab = t->t.symtab;
+	const symtab_t *symtab = t->symtab;
 	const symbol_t *sym;
 	int         pnum;
 	static const char *struct_type_names[3] = {"struct", "union", "enum"};
@@ -189,17 +189,16 @@ static void
 print_array (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	auto type = t->t.array.type;
+	auto type = t->array.type;
 
 	dot_print_type (dstr, type, level, id);
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, type);
-	if (t->t.array.base) {
+	if (t->array.base) {
 		dasprintf (dstr, "%*st_%p [label=\"[%d..%d]\"];\n", indent, "", t,
-				   t->t.array.base,
-				   t->t.array.base + t->t.array.size - 1);
+				   t->array.base, t->array.base + t->array.size - 1);
 	} else {
 		dasprintf (dstr, "%*st_%p [label=\"[%d]\"];\n", indent, "", t,
-				   t->t.array.size);
+				   t->array.size);
 	}
 }
 
@@ -208,15 +207,15 @@ print_class (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
 	dasprintf (dstr, "%*st_%p [label=\"class '%s'\"];\n", indent, "", t,
-			   t->t.class->name);
+			   t->class->name);
 }
 
 static void
 print_alias (dstring_t *dstr, const type_t *t, int level, int id)
 {
 	int         indent = level * 2 + 2;
-	auto aux = t->t.alias.aux_type;
-	auto full = t->t.alias.full_type;
+	auto aux = t->alias.aux_type;
+	auto full = t->alias.full_type;
 
 	dot_print_type (dstr, aux, level, id);
 	dot_print_type (dstr, full, level, id);

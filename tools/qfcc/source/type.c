@@ -306,14 +306,14 @@ free_type (type_t *type)
 			break;
 		case ev_field:
 		case ev_ptr:
-			free_type ((type_t *) type->t.fldptr.type);
+			free_type ((type_t *) type->fldptr.type);
 			break;
 		case ev_func:
-			free_type ((type_t *) type->t.func.ret_type);
+			free_type ((type_t *) type->func.ret_type);
 			break;
 		case ev_invalid:
 			if (type->meta == ty_array)
-				free_type ((type_t *) type->t.array.type);
+				free_type ((type_t *) type->array.type);
 			break;
 	}
 	memset (type, 0, sizeof (*type));
@@ -350,12 +350,12 @@ copy_chain (type_t *type, type_t *append)
 						internal_error (0, "copy basic type");
 					case ev_field:
 					case ev_ptr:
-						n = (type_t **) &(*n)->t.fldptr.type;
-						type = (type_t *) type->t.fldptr.type;
+						n = (type_t **) &(*n)->fldptr.type;
+						type = (type_t *) type->fldptr.type;
 						break;
 					case ev_func:
-						n = (type_t **) &(*n)->t.func.ret_type;
-						type = (type_t *) type->t.func.ret_type;
+						n = (type_t **) &(*n)->func.ret_type;
+						type = (type_t *) type->func.ret_type;
 						break;
 					case ev_invalid:
 						internal_error (0, "invalid basic type");
@@ -363,8 +363,8 @@ copy_chain (type_t *type, type_t *append)
 				}
 				break;
 			case ty_array:
-				n = (type_t **) &(*n)->t.array.type;
-				type = (type_t *) type->t.array.type;
+				n = (type_t **) &(*n)->array.type;
+				type = (type_t *) type->array.type;
 				break;
 			case ty_struct:
 			case ty_union:
@@ -408,13 +408,13 @@ append_type (const type_t *type, const type_t *new)
 						internal_error (0, "append to basic type");
 					case ev_field:
 					case ev_ptr:
-						t = (const type_t **) &(*t)->t.fldptr.type;
+						t = (const type_t **) &(*t)->fldptr.type;
 						((type_t *) type)->alignment = 1;
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
 						break;
 					case ev_func:
-						t = (const type_t **) &(*t)->t.func.ret_type;
+						t = (const type_t **) &(*t)->func.ret_type;
 						((type_t *) type)->alignment = 1;
 						((type_t *) type)->width = 1;
 						((type_t *) type)->columns = 1;
@@ -425,7 +425,7 @@ append_type (const type_t *type, const type_t *new)
 				}
 				break;
 			case ty_array:
-				t = (const type_t **) &(*t)->t.array.type;
+				t = (const type_t **) &(*t)->array.type;
 				((type_t *) type)->alignment = new->alignment;
 				((type_t *) type)->width = new->width;
 				((type_t *) type)->columns = new->columns;
@@ -443,7 +443,7 @@ append_type (const type_t *type, const type_t *new)
 	}
 	if (type && new->meta == ty_alias) {
 		auto chain = find_type (copy_chain ((type_t *) type, (type_t *) new));
-		*t = new->t.alias.aux_type;
+		*t = new->alias.aux_type;
 		type = alias_type (type, chain, 0);
 	} else {
 		*t = new;
@@ -454,8 +454,8 @@ append_type (const type_t *type, const type_t *new)
 void
 set_func_type_attrs (const type_t *func, specifier_t spec)
 {
-	((type_t *) func)->t.func.no_va_list = spec.no_va_list;//FIXME
-	((type_t *) func)->t.func.void_return = spec.void_return;
+	((type_t *) func)->func.no_va_list = spec.no_va_list;//FIXME
+	((type_t *) func)->func.void_return = spec.void_return;
 }
 
 specifier_t
@@ -554,16 +554,16 @@ find_type (const type_t *type)
 				switch (type->type) {
 					case ev_field:
 					case ev_ptr:
-						((type_t *) type)->t.fldptr.type = find_type (type->t.fldptr.type);
+						((type_t *) type)->fldptr.type = find_type (type->fldptr.type);
 						break;
 					case ev_func:
-						((type_t *) type)->t.func.ret_type = find_type (type->t.func.ret_type);
-						count = type->t.func.num_params;
+						((type_t *) type)->func.ret_type = find_type (type->func.ret_type);
+						count = type->func.num_params;
 						if (count < 0)
 							count = ~count;	// param count is one's complement
 						for (i = 0; i < count; i++)
-							((type_t *) type)->t.func.param_types[i]
-								= find_type (type->t.func.param_types[i]);
+							((type_t *) type)->func.param_types[i]
+								= find_type (type->func.param_types[i]);
 						break;
 					default:		// other types don't have aux data
 						break;
@@ -574,13 +574,13 @@ find_type (const type_t *type)
 			case ty_enum:
 				break;
 			case ty_array:
-				((type_t *) type)->t.array.type = find_type (type->t.array.type);
+				((type_t *) type)->array.type = find_type (type->array.type);
 				break;
 			case ty_class:
 				break;
 			case ty_alias:
-				((type_t *) type)->t.alias.aux_type = find_type (type->t.alias.aux_type);
-				((type_t *) type)->t.alias.full_type = find_type (type->t.alias.full_type);
+				((type_t *) type)->alias.aux_type = find_type (type->alias.aux_type);
+				((type_t *) type)->alias.full_type = find_type (type->alias.full_type);
 				break;
 			case ty_handle:
 				break;
@@ -600,16 +600,16 @@ find_type (const type_t *type)
 	check = new_type ();
 	*check = *type;
 	if (is_func (type)) {
-		check->t.func.param_types = 0;
+		check->func.param_types = 0;
 		const type_t *t = unalias_type (type);
-		int         num_params = t->t.func.num_params;
+		int         num_params = t->func.num_params;
 		if (num_params < 0) {
 			num_params = ~num_params;
 		}
 		if (num_params) {
-			check->t.func.param_types = malloc (sizeof (type_t *) * num_params);
+			check->func.param_types = malloc (sizeof (type_t *) * num_params);
 			for (int i = 0; i < num_params; i++) {
-				check->t.func.param_types[i] = t->t.func.param_types[i];
+				check->func.param_types[i] = t->func.param_types[i];
 			}
 		}
 	}
@@ -799,7 +799,7 @@ array_type (const type_t *aux, int size)
 		new->alignment = aux->alignment;
 		new->width = aux->width;
 	}
-	new->t.array.size = size;
+	new->array.size = size;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -822,9 +822,9 @@ based_array_type (const type_t *aux, int base, int top)
 		new->width = aux->width;
 	}
 	new->meta = ty_array;
-	new->t.array.type = aux;
-	new->t.array.base = base;
-	new->t.array.size = top - base + 1;
+	new->array.type = aux;
+	new->array.base = base;
+	new->array.size = top - base + 1;
 	if (aux) {
 		return find_type (new);
 	}
@@ -842,15 +842,15 @@ alias_type (const type_t *type, const type_t *alias_chain, const char *name)
 	if (type == alias_chain && type->meta == ty_alias) {
 		// typedef of a type that contains a typedef somewhere
 		// grab the alias-free branch for type
-		type = alias_chain->t.alias.aux_type;
+		type = alias_chain->alias.aux_type;
 		if (!alias_chain->name) {
 			// the other typedef is further inside, so replace the unnamed
 			// alias node with the typedef
-			alias_chain = alias_chain->t.alias.full_type;
+			alias_chain = alias_chain->alias.full_type;
 		}
 	}
-	alias->t.alias.aux_type = type;
-	alias->t.alias.full_type = alias_chain;
+	alias->alias.aux_type = type;
+	alias->alias.full_type = alias_chain;
 	if (name) {
 		alias->name = save_string (name);
 	}
@@ -861,7 +861,7 @@ const type_t *
 unalias_type (const type_t *type)
 {
 	if (type->meta == ty_alias) {
-		type = type->t.alias.aux_type;
+		type = type->alias.aux_type;
 		if (type->meta == ty_alias) {
 			internal_error (0, "alias type node in alias-free chain");
 		}
@@ -876,9 +876,9 @@ dereference_type (const type_t *type)
 		internal_error (0, "dereference non pointer/field/array type");
 	}
 	if (type->meta == ty_alias) {
-		type = type->t.alias.full_type;
+		type = type->alias.full_type;
 	}
-	return type->t.fldptr.type;
+	return type->fldptr.type;
 }
 
 void
@@ -899,11 +899,11 @@ print_type_str (dstring_t *str, const type_t *type)
 			return;
 		case ty_alias:
 			dasprintf (str, "({%s=", type->name);
-			print_type_str (str, type->t.alias.aux_type);
+			print_type_str (str, type->alias.aux_type);
 			dstring_appendstr (str, "})");
 			return;
 		case ty_class:
-			dasprintf (str, " %s", type->t.class->name);
+			dasprintf (str, " %s", type->class->name);
 			if (type->protos)
 				print_protocollist (str, type->protos);
 			return;
@@ -917,12 +917,12 @@ print_type_str (dstring_t *str, const type_t *type)
 			dasprintf (str, " union %s", type->name);
 			return;
 		case ty_array:
-			print_type_str (str, type->t.array.type);
-			if (type->t.array.base) {
-				dasprintf (str, "[%d..%d]", type->t.array.base,
-						type->t.array.base + type->t.array.size - 1);
+			print_type_str (str, type->array.type);
+			if (type->array.base) {
+				dasprintf (str, "[%d..%d]", type->array.base,
+						type->array.base + type->array.size - 1);
 			} else {
-				dasprintf (str, "[%d]", type->t.array.size);
+				dasprintf (str, "[%d]", type->array.size);
 			}
 			return;
 		case ty_bool:
@@ -934,32 +934,32 @@ print_type_str (dstring_t *str, const type_t *type)
 			switch (type->type) {
 				case ev_field:
 					dasprintf (str, ".(");
-					print_type_str (str, type->t.fldptr.type);
+					print_type_str (str, type->fldptr.type);
 					dasprintf (str, ")");
 					return;
 				case ev_func:
-					print_type_str (str, type->t.func.ret_type);
-					if (type->t.func.num_params == -1) {
+					print_type_str (str, type->func.ret_type);
+					if (type->func.num_params == -1) {
 						dasprintf (str, "(...)");
 					} else {
 						int         c, i;
 						dasprintf (str, "(");
-						if ((c = type->t.func.num_params) < 0)
+						if ((c = type->func.num_params) < 0)
 							c = ~c;		// num_params is one's compliment
 						for (i = 0; i < c; i++) {
 							if (i)
 								dasprintf (str, ", ");
-							print_type_str (str, type->t.func.param_types[i]);
+							print_type_str (str, type->func.param_types[i]);
 						}
-						if (type->t.func.num_params < 0)
+						if (type->func.num_params < 0)
 								dasprintf (str, ", ...");
 						dasprintf (str, ")");
 					}
 					return;
 				case ev_ptr:
-					if (type->t.fldptr.type) {
+					if (type->fldptr.type) {
 						if (is_id (type)) {
-							__auto_type ptr = type->t.fldptr.type;
+							__auto_type ptr = type->fldptr.type;
 							dasprintf (str, "id");
 							if (ptr->protos)
 								print_protocollist (str, ptr->protos);
@@ -971,7 +971,7 @@ print_type_str (dstring_t *str, const type_t *type)
 						}
 					}
 					dasprintf (str, "(*");
-					print_type_str (str, type->t.fldptr.type);
+					print_type_str (str, type->fldptr.type);
 					dasprintf (str, ")");
 					return;
 				case ev_void:
@@ -1035,13 +1035,13 @@ encode_params (const type_t *type)
 	dstring_t  *encoding = dstring_newstr ();
 	int         i, count;
 
-	if (type->t.func.num_params < 0)
-		count = -type->t.func.num_params - 1;
+	if (type->func.num_params < 0)
+		count = -type->func.num_params - 1;
 	else
-		count = type->t.func.num_params;
+		count = type->func.num_params;
 	for (i = 0; i < count; i++)
-		encode_type (encoding, unalias_type (type->t.func.param_types[i]));
-	if (type->t.func.num_params < 0)
+		encode_type (encoding, unalias_type (type->func.param_types[i]));
+	if (type->func.num_params < 0)
 		dasprintf (encoding, ".");
 
 	ret = save_string (encoding->str);
@@ -1052,7 +1052,7 @@ encode_params (const type_t *type)
 static void
 encode_class (dstring_t *encoding, const type_t *type)
 {
-	class_t    *class = type->t.class;
+	class_t    *class = type->class;
 	const char *name ="?";
 
 	if (class->name)
@@ -1101,7 +1101,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 			return;
 		case ty_alias:
 			dasprintf (encoding, "{%s>", type->name ? type->name : "");
-			encode_type (encoding, type->t.alias.full_type);
+			encode_type (encoding, type->alias.full_type);
 			dasprintf (encoding, "}");
 			return;
 		case ty_class:
@@ -1116,11 +1116,11 @@ encode_type (dstring_t *encoding, const type_t *type)
 			return;
 		case ty_array:
 			dasprintf (encoding, "[");
-			dasprintf (encoding, "%d", type->t.array.size);
-			if (type->t.array.base)
-				dasprintf (encoding, ":%d", type->t.array.base);
+			dasprintf (encoding, "%d", type->array.size);
+			if (type->array.base)
+				dasprintf (encoding, ":%d", type->array.base);
 			dasprintf (encoding, "=");
-			encode_type (encoding, type->t.array.type);
+			encode_type (encoding, type->array.type);
 			dasprintf (encoding, "]");
 			return;
 		case ty_bool:
@@ -1167,11 +1167,11 @@ encode_type (dstring_t *encoding, const type_t *type)
 					return;
 				case ev_field:
 					dasprintf (encoding, "F");
-					encode_type (encoding, type->t.fldptr.type);
+					encode_type (encoding, type->fldptr.type);
 					return;
 				case ev_func:
 					dasprintf (encoding, "(");
-					encode_type (encoding, type->t.func.ret_type);
+					encode_type (encoding, type->func.ret_type);
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
 				case ev_ptr:
@@ -1187,7 +1187,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 						dasprintf (encoding, "#");
 						return;
 					}
-					type = type->t.fldptr.type;
+					type = type->fldptr.type;
 					dasprintf (encoding, "^");
 					encode_type (encoding, type);
 					return;
@@ -1407,8 +1407,8 @@ type_assignable (const type_t *dst, const type_t *src)
 		return 1;
 	// pointer = array
 	if (is_ptr (dst) && is_array (src)) {
-		if (is_void (dst->t.fldptr.type)
-			|| dst->t.fldptr.type == src->t.array.type)
+		if (is_void (dst->fldptr.type)
+			|| dst->fldptr.type == src->array.type)
 			return 1;
 		return 0;
 	}
@@ -1434,8 +1434,8 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (ret >= 0)
 		return ret;
 
-	dst = dst->t.fldptr.type;
-	src = src->t.fldptr.type;
+	dst = dst->fldptr.type;
+	src = src->fldptr.type;
 	if (dst == src) {
 		return 1;
 	}
@@ -1507,18 +1507,18 @@ type_size (const type_t *type)
 			return pr_type_size[type->type] * type->width;
 		case ty_struct:
 		case ty_union:
-			if (!type->t.symtab)
+			if (!type->symtab)
 				return 0;
-			return type->t.symtab->size;
+			return type->symtab->size;
 		case ty_enum:
-			if (!type->t.symtab)
+			if (!type->symtab)
 				return 0;
 			return type_size (&type_int);
 		case ty_array:
-			return type->t.array.size * type_size (type->t.array.type);
+			return type->array.size * type_size (type->array.type);
 		case ty_class:
 			{
-				class_t    *class = type->t.class;
+				class_t    *class = type->class;
 				int         size;
 				if (!class->ivars)
 					return 0;
@@ -1528,7 +1528,7 @@ type_size (const type_t *type)
 				return size;
 			}
 		case ty_alias:
-			return type_size (type->t.alias.aux_type);
+			return type_size (type->alias.aux_type);
 		case ty_algebra:
 			return algebra_type_size (type);
 		case ty_meta_count:
@@ -1555,15 +1555,15 @@ type_width (const type_t *type)
 		case ty_union:
 			return 1;
 		case ty_enum:
-			if (!type->t.symtab)
+			if (!type->symtab)
 				return 0;
 			return type_width (&type_int);
 		case ty_array:
-			return type_width (type->t.array.type);
+			return type_width (type->array.type);
 		case ty_class:
 			return 1;
 		case ty_alias:
-			return type_width (type->t.alias.aux_type);
+			return type_width (type->alias.aux_type);
 		case ty_algebra:
 			return algebra_type_width (type);
 		case ty_meta_count:
@@ -1602,7 +1602,7 @@ type_aligned_size (const type_t *type)
 static void
 chain_basic_types (void)
 {
-	type_entity.t.symtab = pr.entity_fields;
+	type_entity.symtab = pr.entity_fields;
 	if (options.code.progsversion == PROG_VERSION) {
 		type_quaternion.alignment = 4;
 	}
@@ -1789,11 +1789,11 @@ init_types (void)
 
 		sym = new_symbol_type ("v", &type_vector);
 		sym->offset = 0;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		symtab_addsymbol (type_quaternion.symtab, sym);
 
 		sym = new_symbol_type ("s", &type_float);
 		sym->offset = 3;
-		symtab_addsymbol (type_quaternion.t.symtab, sym);
+		symtab_addsymbol (type_quaternion.symtab, sym);
 	}
 #define VEC_TYPE(type_name, base_type) build_vector_struct (&type_##type_name);
 #include "tools/qfcc/include/vec_types.h"

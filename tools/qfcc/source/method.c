@@ -496,7 +496,7 @@ get_selector (const expr_t *sel)
 		return 0;
 	}
 	_sel.index = expr_short (sel->address.offset);
-	_sel.index /= type_size (type_SEL.t.fldptr.type);
+	_sel.index /= type_size (type_SEL.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
 
@@ -512,7 +512,7 @@ emit_selectors (void)
 	if (!sel_index)
 		return 0;
 
-	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
+	sel_type = array_type (type_SEL.fldptr.type, sel_index);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", sel_type,
 						   pr.far_data, sc_static);
 	if (!sel_sym->table)
@@ -707,25 +707,25 @@ method_check_params (method_t *method, const expr_t *args)
 	const expr_t *err = 0;
 	auto mtype = method->type;
 
-	if (mtype->t.func.num_params == -1)
+	if (mtype->func.num_params == -1)
 		return 0;
 
-	if (mtype->t.func.num_params >= 0)
-		param_count = mtype->t.func.num_params;
+	if (mtype->func.num_params >= 0)
+		param_count = mtype->func.num_params;
 	else
-		param_count = -mtype->t.func.num_params - 1;
+		param_count = -mtype->func.num_params - 1;
 
 	int count = list_count (&args->list);
 	if (count < param_count)
 		return error (args, "too few arguments");
-	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
+	if (mtype->func.num_params >= 0 && count > mtype->func.num_params)
 		return error (args, "too many arguments");
 
 	const expr_t *arg_list[count];
 	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
 		const expr_t *e = arg_list[i];
-		const type_t *arg_type = i < param_count ? mtype->t.func.param_types[i]
+		const type_t *arg_type = i < param_count ? mtype->func.param_types[i]
 												 : nullptr;
 		if (e->type == ex_compound) {
 			scoped_src_loc (e);

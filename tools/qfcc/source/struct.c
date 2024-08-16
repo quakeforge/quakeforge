@@ -114,7 +114,7 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 			tag->type = sym->type;
 		}
 		if (sym->type->meta == ty_enum
-			|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
+			|| (sym->type->meta == ty_struct && sym->type->symtab)) {
 			error (0, "%s %s redefined",
 				   *su == 's' ? "struct" : "union", tag->name);
 		   *su = 0;
@@ -166,7 +166,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
 
-	if (sym->table == current_symtab && sym->type->t.symtab) {
+	if (sym->table == current_symtab && sym->type->symtab) {
 		error (0, "%s defined as wrong kind of tag", tag->name);
 		return sym;
 	}
@@ -175,7 +175,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 			continue;
 		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
-				   s->type->t.class->name);
+				   s->type->class->name);
 		}
 		if (su == 's') {
 			symtab->size = RUP (symtab->size + base, s->type->alignment) - base;
@@ -198,7 +198,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 			if (!is_struct (s->type) && !is_union (s->type)) {
 				internal_error (0, "non-struct/union anonymous field");
 			}
-			anonymous = s->type->t.symtab;
+			anonymous = s->type->symtab;
 			for (as = anonymous->symbols; as; as = as->next) {
 				if (as->visibility == vis_anonymous || as->sy_type!= sy_var) {
 					continue;
@@ -220,7 +220,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 	}
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
-	((type_t *) sym->type)->t.symtab = symtab;
+	((type_t *) sym->type)->symtab = symtab;
 	if (alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = alignment;
 	}
@@ -239,15 +239,15 @@ find_enum (symbol_t *tag)
 symtab_t *
 start_enum (symbol_t *sym)
 {
-	if (sym->table == current_symtab && sym->type->t.symtab) {
+	if (sym->table == current_symtab && sym->type->symtab) {
 		error (0, "%s defined as wrong kind of tag", sym->name);
 		sym = find_enum (0);
 	}
-	((type_t *) sym->type)->t.symtab = new_symtab (current_symtab, stab_enum);
+	((type_t *) sym->type)->symtab = new_symtab (current_symtab, stab_enum);
 	((type_t *) sym->type)->alignment = 1;
 	((type_t *) sym->type)->width = 1;
 	((type_t *) sym->type)->columns = 1;
-	return sym->type->t.symtab;
+	return sym->type->symtab;
 }
 
 symbol_t *
@@ -258,7 +258,7 @@ finish_enum (symbol_t *sym)
 	symtab_t   *enum_tab;
 
 	auto enum_type = sym->type = find_type (sym->type);
-	enum_tab = enum_type->t.symtab;
+	enum_tab = enum_type->symtab;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
 		name->type = sym->type;
@@ -275,7 +275,7 @@ void
 add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 {
 	auto enum_type = enm->type;
-	symtab_t   *enum_tab = enum_type->t.symtab;
+	symtab_t   *enum_tab = enum_type->symtab;
 	int         value;
 
 	if (name->table == current_symtab || name->table == enum_tab)
@@ -303,7 +303,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 int
 enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 {
-	symtab_t   *symtab = enm->t.symtab;
+	symtab_t   *symtab = enm->symtab;
 	symbol_t   *zero_sym = 0;
 	symbol_t   *one_sym = 0;
 	symbol_t   *sym;
@@ -377,7 +377,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		type = make_structure (0, su, defs, 0)->type;
 	if ((su == 's' && !is_struct (type)) || (su == 'u' && !is_union (type)))
 		internal_error (0, "structure %s type mismatch", name);
-	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+	for (i = 0, field_sym = type->symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {
 		if (!defs[i].name)
 			internal_error (0, "structure %s unexpected end of defs", name);
@@ -407,7 +407,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 	struct_def->initialized = struct_def->constant = 1;
 	struct_def->nosave = 1;
 
-	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+	for (i = 0, field_sym = type->symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {
 		field_def.type = field_sym->type;
 		field_def.name = save_string (va (0, "%s.%s", name, field_sym->name));
@@ -422,7 +422,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		} else {
 			if (is_array (field_def.type)) {
 				auto type = dereference_type (field_def.type);
-				for (j = 0; j < field_def.type->t.array.size; j++) {
+				for (j = 0; j < field_def.type->array.size; j++) {
 					defs[i].emit (&field_def, data, j);
 					field_def.offset += type_size (type);
 				}

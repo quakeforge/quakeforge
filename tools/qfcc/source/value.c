@@ -280,7 +280,7 @@ new_nil_val (const type_t *type)
 		val.lltype = type_nil->type;
 	}
 	if (val.lltype == ev_ptr || val.lltype == ev_field )
-		val.pointer.type = type->t.fldptr.type;
+		val.pointer.type = type->fldptr.type;
 	if (val.lltype == ev_func)
 		val.func_val.type = type;
 	return find_value (&val);

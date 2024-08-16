@@ -84,7 +84,7 @@ typedef struct type_s {
 		struct algebra_s *algebra;
 		struct multivector_s *multivec;
 		ty_alias_t  alias;
-	} t;
+	};
 	struct type_s *next;
 	int         freeable;
 	int         allocated;

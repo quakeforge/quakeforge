@@ -53,7 +53,7 @@ get_group (const type_t *type, algebra_t *algebra)
 	}
 	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (type->type != ev_invalid) {
-		group_mask = type->t.multivec->group_mask;
+		group_mask = type->multivec->group_mask;
 	}
 	if (group_mask & (group_mask - 1)) {
 		internal_error (0, "multi-group mult-vector");
@@ -72,7 +72,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 		if (type->type == ev_invalid) {
 			return (1 << algebra->layout.count) - 1;
 		}
-		return type->t.multivec->group_mask;
+		return type->multivec->group_mask;
 	}
 }
 
@@ -246,11 +246,11 @@ get_mvec_struct (const type_t *type)
 {
 	symbol_t   *sym = 0;
 	if (type->type == ev_invalid) {
-		sym = type->t.algebra->mvec_sym;
+		sym = type->algebra->mvec_sym;
 	} else {
-		sym = type->t.multivec->mvec_sym;
+		sym = type->multivec->mvec_sym;
 	}
-	return sym ? sym->type->t.symtab : 0;
+	return sym ? sym->type->symtab : 0;
 }
 
 static symbol_t *
@@ -309,7 +309,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 	auto layout = &algebra->layout;
 	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (mvtype->type != ev_invalid) {
-		group_mask = mvtype->t.multivec->group_mask;
+		group_mask = mvtype->multivec->group_mask;
 	}
 	if (!(group_mask & (group_mask - 1))) {
 		return expr;
@@ -346,7 +346,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 			if (type->type == ev_invalid) {
 				internal_error (mvec, "full algebra in mvec_scatter");
 			}
-			pr_uint_t mask = type->t.multivec->group_mask;
+			pr_uint_t mask = type->multivec->group_mask;
 			if (mask & (mask - 1)) {
 				internal_error (mvec, "bare multivector in mvec_scatter");
 			}
@@ -361,7 +361,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		if (!is_algebra (ct)) {
 			group = layout->group_map[layout->mask_map[0]][0];
 		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
-			pr_uint_t mask = ct->t.multivec->group_mask;
+			pr_uint_t mask = ct->multivec->group_mask;
 			if (mask & (mask - 1)) {
 				internal_error (mvec, "multivector in multivec expression");
 			}
@@ -3023,7 +3023,7 @@ algebra_field_expr (const expr_t *mvec, const expr_t *field_name)
 	auto mvec_struct = get_mvec_struct (mvec_type);
 	auto field = mvec_struct ? symtab_lookup (mvec_struct, field_sym->name) : 0;
 	if (!field) {
-		mvec_struct = algebra->mvec_sym->type->t.symtab;
+		mvec_struct = algebra->mvec_sym->type->symtab;
 		field = symtab_lookup (mvec_struct, field_sym->name);
 		if (field) {
 			debug (field_name, "'%s' not in sub-type '%s' of '%s', "

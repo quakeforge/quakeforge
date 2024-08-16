@@ -1466,7 +1466,7 @@ get_name (const expr_t *e)
 symbol_t *
 get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 {
-	symtab_t   *strct = t1->t.symtab;
+	symtab_t   *strct = t1->symtab;
 	symbol_t   *sym = get_name (e2);
 	symbol_t   *field;
 
@@ -1527,15 +1527,15 @@ field_expr (const expr_t *e1, const expr_t *e2)
 				return e2;
 			if (t2->type == ev_field) {
 				e = new_binary_expr ('.', e1, e2);
-				e->expr.type = t2->t.fldptr.type;
+				e->expr.type = t2->fldptr.type;
 				return e;
 			}
 		}
 	} else if (is_ptr (t1)) {
-		if (is_struct (t1->t.fldptr.type) || is_union (t1->t.fldptr.type)) {
+		if (is_struct (t1->fldptr.type) || is_union (t1->fldptr.type)) {
 			symbol_t   *field;
 
-			field = get_struct_field (t1->t.fldptr.type, e1, e2);
+			field = get_struct_field (t1->fldptr.type, e1, e2);
 			if (!field)
 				return e1;
 
@@ -1546,8 +1546,8 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			}
 			e1 = cast_expr (pointer_type (field->type), e1);
 			return unary_expr ('.', e1);
-		} else if (is_class (t1->t.fldptr.type)) {
-			class_t    *class = t1->t.fldptr.type->t.class;
+		} else if (is_class (t1->fldptr.type)) {
+			class_t    *class = t1->fldptr.type->class;
 			symbol_t   *sym = e2->symbol;//FIXME need to check
 			symbol_t   *ivar;
 			int         protected = class_access (current_class, class);
@@ -2115,7 +2115,7 @@ bitnot_expr:
 					return error (e, "invalid type for unary .");
 				scoped_src_loc (e);
 				auto new = new_unary_expr ('.', e);
-				new->expr.type = get_type (e)->t.fldptr.type;
+				new->expr.type = get_type (e)->fldptr.type;
 				return new;
 			}
 		case '+':
@@ -2169,24 +2169,24 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		return error (fexpr, "more than %d parameters", PR_MAX_PARAMS);
 	}
 
-	if (ftype->t.func.num_params < -1) {
-		if (-arg_count > ftype->t.func.num_params + 1) {
+	if (ftype->func.num_params < -1) {
+		if (-arg_count > ftype->func.num_params + 1) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		param_count = -ftype->t.func.num_params - 1;
-	} else if (ftype->t.func.num_params >= 0) {
-		if (arg_count > ftype->t.func.num_params) {
+		param_count = -ftype->func.num_params - 1;
+	} else if (ftype->func.num_params >= 0) {
+		if (arg_count > ftype->func.num_params) {
 			return error (fexpr, "too many arguments");
-		} else if (arg_count < ftype->t.func.num_params) {
+		} else if (arg_count < ftype->func.num_params) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");
 			if (options.warnings.traditional)
 				warning (fexpr, "too few arguments");
 		}
-		param_count = ftype->t.func.num_params;
+		param_count = ftype->func.num_params;
 	}
 
 	const type_t *arg_types[arg_count + 1];
@@ -2197,7 +2197,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 
 		if (e->type == ex_compound) {
 			if (i < param_count) {
-				t = ftype->t.func.param_types[i];
+				t = ftype->func.param_types[i];
 			} else {
 				return error (e, "cannot pass compound initializer "
 							  "through ...");
@@ -2219,16 +2219,16 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		}
 		if (i < param_count) {
 			if (e->type == ex_nil)
-				e = convert_nil (e, t = ftype->t.func.param_types[i]);
+				e = convert_nil (e, t = ftype->func.param_types[i]);
 			if (e->type == ex_bool)
-				e = convert_from_bool (e, ftype->t.func.param_types[i]);
+				e = convert_from_bool (e, ftype->func.param_types[i]);
 			if (e->type == ex_error)
 				return e;
-			if (!type_assignable (ftype->t.func.param_types[i], t)) {
+			if (!type_assignable (ftype->func.param_types[i], t)) {
 				err = param_mismatch (e, i + 1, fexpr->symbol->name,
-									  ftype->t.func.param_types[i], t);
+									  ftype->func.param_types[i], t);
 			}
-			t = ftype->t.func.param_types[i];
+			t = ftype->func.param_types[i];
 		} else {
 			if (e->type == ex_nil)
 				e = convert_nil (e, t = type_nil);
@@ -2261,8 +2261,8 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	}
 
 	bool        emit_args = false;
-	if (ftype->t.func.num_params < 0) {
-		emit_args = !ftype->t.func.no_va_list;
+	if (ftype->func.num_params < 0) {
+		emit_args = !ftype->func.no_va_list;
 	}
 	scoped_src_loc (fexpr);
 	call = new_block_expr (0);
@@ -2314,7 +2314,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 							  arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	auto ret_type = ftype->t.func.ret_type;
+	auto ret_type = ftype->func.ret_type;
 	call->block.result = call_expr (fexpr, args, ret_type);
 	return call;
 }
@@ -2430,7 +2430,7 @@ const expr_t *
 return_expr (function_t *f, const expr_t *e)
 {
 	const type_t *t;
-	const type_t *ret_type = unalias_type (f->type->t.func.ret_type);
+	const type_t *ret_type = unalias_type (f->type->func.ret_type);
 
 	e = convert_name (e);
 	if (!e) {
@@ -2500,7 +2500,7 @@ return_expr (function_t *f, const expr_t *e)
 	} else {
 		if (ret_type != t) {
 			e = cast_expr ((type_t *) ret_type, e);//FIXME cast
-			t = f->sym->type->t.func.ret_type;
+			t = f->sym->type->func.ret_type;
 		}
 	}
 	if (e->type == ex_vector) {
@@ -2515,7 +2515,7 @@ return_expr (function_t *f, const expr_t *e)
 const expr_t *
 at_return_expr (function_t *f, const expr_t *e)
 {
-	const type_t *ret_type = unalias_type (f->type->t.func.ret_type);
+	const type_t *ret_type = unalias_type (f->type->func.ret_type);
 
 	if (!is_void(ret_type)) {
 		return error (e, "use of @return in non-void function");
@@ -2528,7 +2528,7 @@ at_return_expr (function_t *f, const expr_t *e)
 	}
 	const expr_t *call_expr = e->block.result->branch.target;
 	const auto call_type = get_type (call_expr);
-	if (!is_func (call_type) && !call_type->t.func.void_return) {
+	if (!is_func (call_type) && !call_type->func.void_return) {
 		return error (e, "@return function not void_return");
 	}
 	expr_t     *ret_expr = new_return_expr (e);
@@ -2651,10 +2651,10 @@ array_expr (const expr_t *array, const expr_t *index)
 	if (is_int_val (index))
 		ind = expr_int (index);
 	if (is_array (array_type)
-		&& array_type->t.array.size
+		&& array_type->array.size
 		&& is_constant (index)
-		&& (ind < array_type->t.array.base
-			|| ind - array_type->t.array.base >= array_type->t.array.size)) {
+		&& (ind < array_type->array.base
+			|| ind - array_type->array.base >= array_type->array.size)) {
 		return error (index, "array index out of bounds");
 	}
 	if (is_nonscalar (array_type)
@@ -2664,9 +2664,9 @@ array_expr (const expr_t *array, const expr_t *index)
 	}
 	if (is_array (array_type)) {
 		ele_type = dereference_type (array_type);
-		base = new_int_expr (array_type->t.array.base, false);
+		base = new_int_expr (array_type->array.base, false);
 	} else if (is_ptr (array_type)) {
-		ele_type = array_type->t.fldptr.type;
+		ele_type = array_type->fldptr.type;
 		base = new_int_expr (0, false);
 	} else {
 		ele_type = ev_types[array_type->type];
@@ -2735,7 +2735,7 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 		if (pointer->address.offset) {
 			offset = binary_expr ('+', pointer->address.offset, offset);
 		}
-		ptr = new_address_expr (ptr_type->t.fldptr.type,
+		ptr = new_address_expr (ptr_type->fldptr.type,
 								pointer->address.lvalue, offset);
 		return ptr;
 	} else {
@@ -3059,8 +3059,8 @@ think_expr (symbol_t *think_sym)
 	sym = symtab_lookup (current_symtab, "think");
 	if (sym && sym->sy_type == sy_var && sym->type
 		&& sym->type->type == ev_field
-		&& sym->type->t.fldptr.type->type == ev_func) {
-		think_sym->type = sym->type->t.fldptr.type;
+		&& sym->type->fldptr.type->type == ev_func) {
+		think_sym->type = sym->type->fldptr.type;
 	} else {
 		think_sym->type = &type_func;
 	}

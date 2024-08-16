@@ -278,7 +278,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	// fake parameter for the return type
 	param_t ret_param = {
 		.next = spec.sym->params,
-		.type = spec.sym->type->t.func.ret_type,
+		.type = spec.sym->type->func.ret_type,
 		.type_expr = spec.type_expr,
 	};
 	int num_params = 0;
@@ -448,8 +448,8 @@ parse_params (const type_t *return_type, param_t *parms)
 	new->alignment = 1;
 	new->width = 1;
 	new->columns = 1;
-	new->t.func.ret_type = return_type;
-	new->t.func.num_params = 0;
+	new->func.ret_type = return_type;
+	new->func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
 		if (p->type) {
@@ -457,21 +457,21 @@ parse_params (const type_t *return_type, param_t *parms)
 		}
 	}
 	if (count) {
-		new->t.func.param_types = malloc (count * sizeof (type_t));
+		new->func.param_types = malloc (count * sizeof (type_t));
 	}
 	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
 				internal_error (0, 0);
-			new->t.func.num_params = -(new->t.func.num_params + 1);
+			new->func.num_params = -(new->func.num_params + 1);
 		} else if (p->type) {
 			if (is_class (p->type)) {
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
 			auto ptype = unalias_type (p->type);
-			new->t.func.param_types[new->t.func.num_params] = ptype;
-			new->t.func.num_params++;
+			new->func.param_types[new->func.num_params] = ptype;
+			new->func.num_params++;
 		}
 	}
 	return new;
@@ -596,8 +596,8 @@ func_compare (const void *a, const void *b)
 	overloaded_function_t *fb = *(overloaded_function_t **) b;
 	const type_t *ta = fa->type;
 	const type_t *tb = fb->type;
-	int         na = ta->t.func.num_params;
-	int         nb = tb->t.func.num_params;
+	int         na = ta->func.num_params;
+	int         nb = tb->func.num_params;
 	int         ret, i;
 
 	if (na < 0)
@@ -606,10 +606,10 @@ func_compare (const void *a, const void *b)
 		nb = ~nb;
 	if (na != nb)
 		return nb - na;
-	if ((ret = (tb->t.func.num_params - ta->t.func.num_params)))
+	if ((ret = (tb->func.num_params - ta->func.num_params)))
 		return ret;
 	for (i = 0; i < na && i < nb; i++) {
-		auto diff = tb->t.func.param_types[i] - ta->t.func.param_types[i];
+		auto diff = tb->func.param_types[i] - ta->func.param_types[i];
 		if (diff) {
 			return diff < 0 ? -1 : 1;
 		}
@@ -663,8 +663,8 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
 	unsigned costs[num_funcs] = {};
 
-	int num_params = call_type->t.func.num_params;
-	auto call_params = call_type->t.func.param_types;
+	int num_params = call_type->func.num_params;
+	auto call_params = call_type->func.param_types;
 	for (int j = 0; j < num_funcs; j++) {
 		auto g = genfuncs[j];
 		if (g->num_params != num_params) {
@@ -742,7 +742,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 	type_t ftype = {
 		.type = ev_func,
 
-		.t.func = {
+		.func = {
 			.ret_type = return_type,
 			.num_params = num_params,
 			.param_types = param_types,
@@ -791,7 +791,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 
 	type_t call_type = {
 		.type = ev_func,
-		.t.func = {
+		.func = {
 			.num_params = num_params,
 			.param_types = arg_types,
 		},
@@ -813,7 +813,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return fexpr;
 		}
 	}
-	call_type.t.func.ret_type = funcs[0]->type->t.func.ret_type;
+	call_type.func.ret_type = funcs[0]->type->func.ret_type;
 	dummy.type = find_type (&call_type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
@@ -831,9 +831,9 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	}
 	for (int i = 0; i < func_count; i++) {
 		auto f = (overloaded_function_t *) funcs[i];
-		parm_count = f->type->t.func.num_params;
-		if ((parm_count >= 0 && parm_count != call_type.t.func.num_params)
-			|| (parm_count < 0 && ~parm_count > call_type.t.func.num_params)) {
+		parm_count = f->type->func.num_params;
+		if ((parm_count >= 0 && parm_count != call_type.func.num_params)
+			|| (parm_count < 0 && ~parm_count > call_type.func.num_params)) {
 			funcs[i] = 0;
 			continue;
 		}
@@ -841,8 +841,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			parm_count = ~parm_count;
 		int j;
 		for (j = 0; j < parm_count; j++) {
-			if (!type_assignable (f->type->t.func.param_types[j],
-								  call_type.t.func.param_types[j])) {
+			if (!type_assignable (f->type->func.param_types[j],
+								  call_type.func.param_types[j])) {
 				funcs[i] = 0;
 				break;
 			}
@@ -899,14 +899,14 @@ check_function (symbol_t *fsym)
 	param_t    *p;
 	int         i;
 
-	if (!type_size (fsym->type->t.func.ret_type)) {
+	if (!type_size (fsym->type->func.ret_type)) {
 		error (0, "return type is an incomplete type");
-		//fsym->type->t.func.type = &type_void;//FIXME better type?
+		//fsym->type->func.type = &type_void;//FIXME better type?
 	}
-	if (value_too_large (fsym->type->t.func.ret_type)) {
+	if (value_too_large (fsym->type->func.ret_type)) {
 		error (0, "return value too large to be passed by value (%d)",
 			   type_size (&type_param));
-		//fsym->type->t.func.type = &type_void;//FIXME better type?
+		//fsym->type->func.type = &type_void;//FIXME better type?
 	}
 	for (p = params, i = 0; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name)
@@ -934,7 +934,7 @@ build_v6p_scope (symbol_t *fsym)
 	symtab_t   *parameters = fsym->func->parameters;
 	symtab_t   *locals = fsym->func->locals;
 
-	if (fsym->func->type->t.func.num_params < 0) {
+	if (fsym->func->type->func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, 0, parameters->space, sc_param, locals);
 	}
@@ -1129,7 +1129,7 @@ static void
 build_function (symbol_t *fsym)
 {
 	const type_t *func_type = fsym->func->type;
-	if (func_type->t.func.num_params > PR_MAX_PARAMS) {
+	if (func_type->func.num_params > PR_MAX_PARAMS) {
 		error (0, "too many params");
 	}
 }
@@ -1327,7 +1327,7 @@ int
 function_parms (function_t *f, byte *parm_size)
 {
 	int         count, i;
-	auto func = &f->sym->type->t.func;
+	auto func = &f->sym->type->func;
 
 	if (func->num_params >= 0)
 		count = func->num_params;

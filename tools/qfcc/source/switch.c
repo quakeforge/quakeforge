@@ -381,7 +381,7 @@ check_enum_switch (switch_block_t *switch_block)
 	symbol_t   *enum_val;
 	auto type = get_type (switch_block->test);
 
-	for (enum_val = type->t.symtab->symbols; enum_val;
+	for (enum_val = type->symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
 		cl.value = new_int_expr (enum_val->value->int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {

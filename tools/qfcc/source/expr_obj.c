@@ -99,13 +99,13 @@ selector_expr (keywordarg_t *selector)
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
 	index = selector_index (sel_id->str);
-	index *= type_size (type_SEL.t.fldptr.type);
+	index *= type_size (type_SEL.fldptr.type);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE_PTR", &type_SEL,
 						   pr.near_data, sc_static);
 	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
 		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE",
-								 array_type (type_SEL.t.fldptr.type, 0),
+								 array_type (type_SEL.fldptr.type, 0),
 								 pr.far_data, sc_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);
@@ -211,7 +211,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 		} else if (receiver->symbol->sy_type == sy_class) {
 			class_t    *class;
 			rec_type = receiver->symbol->type;
-			class = rec_type->t.class;
+			class = rec_type->class;
 			class_msg = 1;
 			receiver = new_symbol_expr (class_pointer_symbol (class));
 		}
@@ -226,7 +226,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	return_type = &type_id;
 	method = class_message_response (rec_type, class_msg, selector);
 	if (method)
-		return_type = method->type->t.func.ret_type;
+		return_type = method->type->func.ret_type;
 
 	scoped_src_loc (receiver);
 	expr_t     *args = new_list_expr (0);

@@ -415,10 +415,10 @@ is_id (const type_t *type)
 	// a qualified obj_object struct
 	if (type->type != ev_ptr)
 		return 0;
-	if (!is_struct (type->t.fldptr.type))
+	if (!is_struct (type->fldptr.type))
 		return 0;
 	// if the the symtabs match, then type is id in disguise
-	if (type->t.fldptr.type->t.symtab == type_object.t.symtab)
+	if (type->fldptr.type->symtab == type_object.symtab)
 		return 1;
 	return 0;
 }
@@ -447,7 +447,7 @@ is_classptr (const type_t *type)
 		return 1;
 	if (type->type != ev_ptr)
 		return 0;
-	type = type->t.fldptr.type;
+	type = type->fldptr.type;
 	if (is_class (type))
 		return 1;
 	return 0;
@@ -481,9 +481,9 @@ static protocollist_t *
 obj_get_class_protos (const type_t *type)
 {
 	if (is_ptr (type))
-		type = type->t.fldptr.type;
+		type = type->fldptr.type;
 	if (is_class (type))
-		return type->t.class->protocols;
+		return type->class->protocols;
 	return 0;
 }
 
@@ -491,7 +491,7 @@ static protocollist_t *
 obj_get_protos (const type_t *type)
 {
 	if (is_ptr (type))
-		type = type->t.fldptr.type;
+		type = type->fldptr.type;
 	return type->protos;
 }
 
@@ -499,9 +499,9 @@ static category_t *
 obj_get_categories (const type_t *type)
 {
 	if (is_ptr (type))
-		type = type->t.fldptr.type;
+		type = type->fldptr.type;
 	if (is_class (type))
-		return type->t.class->categories;
+		return type->class->categories;
 	return 0;
 }
 
@@ -520,9 +520,9 @@ obj_classname (const type_t *type)
 		dstring_copystr (str, "Class");
 	} else {
 		if (is_ptr (type))
-			type = type->t.fldptr.type;
+			type = type->fldptr.type;
 		if (is_class (type))
-			dstring_copystr (str, type->t.class->name);
+			dstring_copystr (str, type->class->name);
 	}
 	if ((protos = obj_get_protos (type)))
 		print_protocollist (str, protos);
@@ -595,9 +595,9 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 		return 1;
 
 	// check dst is a base class of src
-	dst_class = dst->t.fldptr.type->t.class;
-	if (src->t.fldptr.type->meta == ty_class) {
-		src_class = src->t.fldptr.type->t.class;
+	dst_class = dst->fldptr.type->class;
+	if (src->fldptr.type->meta == ty_class) {
+		src_class = src->fldptr.type->class;
 	}
 	//printf ("%s %s\n", dst_class->name, src_class->name);
 	while (dst_class != src_class && src_class) {
@@ -714,7 +714,7 @@ get_class (symbol_t *sym, int create)
 	new.type = ev_invalid;
 	new.name = c->name;
 	new.meta = ty_class;
-	new.t.class = c;
+	new.class = c;
 	c->type = find_type (&new);
 	if (sym)
 		sym->type = c->type;
@@ -913,7 +913,7 @@ begin_class (class_t *class)
 		// root class of the hierachy.
 		// NOTE: type_class is not actually a class
 		EMIT_DEF (space, meta->ivars,
-				  emit_ivars (type_class.t.symtab, "Class"));
+				  emit_ivars (type_class.symtab, "Class"));
 	} else {
 		meta->ivars = 0;
 	}
@@ -1254,7 +1254,7 @@ class_message_response (const type_t *clstype, int class_msg, const expr_t *sel)
 		return 0;
 	}
 	if (is_id (clstype)) {
-		protocollist_t *protos = clstype->t.fldptr.type->protos;
+		protocollist_t *protos = clstype->fldptr.type->protos;
 		if (protos) {
 			if ((m = protocollist_find_method (protos, selector, !class_msg))) {
 				return m;
@@ -1267,9 +1267,9 @@ class_message_response (const type_t *clstype, int class_msg, const expr_t *sel)
 		}
 	} else {
 		if (is_class (clstype)) {
-			class = clstype->t.class;
-		} else if (is_class (clstype->t.fldptr.type)) {
-			class = clstype->t.fldptr.type->t.class;
+			class = clstype->class;
+		} else if (is_class (clstype->fldptr.type)) {
+			class = clstype->fldptr.type->class;
 		}
 		if (class && !is_object(class->type)) {
 			if (!class->interface_declared) {
@@ -1503,7 +1503,7 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
-		D_INT (def) = da->refs->type->t.array.size;
+		D_INT (def) = da->refs->type->array.size;
 }
 
 static void

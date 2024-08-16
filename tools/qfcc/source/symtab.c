@@ -229,8 +229,7 @@ make_symbol (const char *name, const type_t *type, defspace_t *space,
 		sym = new_symbol_type (name, type);
 	}
 	if (sym->type != type) {
-		if (is_array (sym->type) && is_array (type)
-			&& !sym->type->t.array.size) {
+		if (is_array (sym->type) && is_array (type) && !sym->type->array.size) {
 			sym->type = type;
 		} else {
 			error (0, "%s redefined", name);

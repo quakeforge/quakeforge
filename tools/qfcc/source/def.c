@@ -155,7 +155,7 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 	if (is_class (type)
 		|| (is_array (type) && is_class(dereference_type (type)))) {
 		error (0, "statically allocated instance of class %s",
-			   type->t.class->name);
+			   type->class->name);
 		return def;
 	}
 
@@ -300,7 +300,7 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	const type_t *type = unalias_type (def->type);
 
 	if (aux)
-		type = type->t.fldptr.type;	// aux is true only for fields
+		type = type->fldptr.type;	// aux is true only for fields
 	ddef->type = type->type;
 	ddef->ofs = def->offset;
 	ddef->name = ReuseString (def->name);

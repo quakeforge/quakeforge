@@ -108,7 +108,7 @@ designator_field (const designator_t *des, const type_t *type)
 		error (des->index, "designator index in non-array");
 		return 0;
 	}
-	symtab_t   *symtab = type->t.symtab;
+	symtab_t   *symtab = type->symtab;
 	symbol_t   *sym = des->field->symbol;
 	symbol_t   *field = symtab_lookup (symtab, sym->name);
 	if (!field) {
@@ -161,12 +161,12 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		offset = field->offset;
 		ele_type = field->type;
 	} else if (is_array (type)) {
-		int         array_size = type->t.array.size;
+		int         array_size = type->array.size;
 		ele_type = dereference_type (type);
 		offset = designator_index (des, type_size (ele_type), array_size);
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
-		if (type->t.symtab && des->field) {
+		if (type->symtab && des->field) {
 			field = designator_field (des, type);
 			offset = field->offset;
 		} else {
@@ -220,8 +220,8 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		}
 		type = t;
 	} else if (is_struct (type) || is_union (type)
-			   || (is_nonscalar (type) && type->t.symtab)) {
-		state.field = type->t.symtab->symbols;
+			   || (is_nonscalar (type) && type->symtab)) {
+		state.field = type->symtab->symbols;
 		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;
 		}

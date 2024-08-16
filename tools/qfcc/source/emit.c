@@ -92,7 +92,7 @@ get_value_def (const expr_t *expr, ex_value_t *value, const type_t *type)
 	}
 	if (is_ptr (type) && value->pointer.tempop && !value->pointer.def) {
 		value->pointer.def = get_tempop_def (expr, value->pointer.tempop,
-											 type->t.fldptr.type);
+											 type->fldptr.type);
 	}
 	def = emit_value (value, 0);
 	if (type != def->type)

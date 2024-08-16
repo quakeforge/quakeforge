@@ -106,14 +106,13 @@ qfo_encode_func (const type_t *type, defspace_t *space)
 	def_t      *def;
 	int         i;
 
-	param_count = type->t.func.num_params;
+	param_count = type->func.num_params;
 	if (param_count < 0)
 		param_count = ~param_count;
 	param_type_defs = alloca (param_count * sizeof (def_t *));
-	return_type_def = qfo_encode_type (type->t.func.ret_type, space);
+	return_type_def = qfo_encode_type (type->func.ret_type, space);
 	for (i = 0; i < param_count; i++)
-		param_type_defs[i] = qfo_encode_type (type->t.func.param_types[i],
-											  space);
+		param_type_defs[i] = qfo_encode_type (type->func.param_types[i], space);
 	size = field_offset (qfot_func_t, param_types[param_count]);
 
 	def = qfo_new_encoding (type, size, space);
@@ -121,7 +120,7 @@ qfo_encode_func (const type_t *type, defspace_t *space)
 	func = &enc->func;
 	func->type = ev_func;
 	ENC_DEF (func->return_type, return_type_def);
-	func->num_params = type->t.func.num_params;
+	func->num_params = type->func.num_params;
 	for (i = 0; i < param_count; i++)
 		ENC_DEF (func->param_types[i], param_type_defs[i]);
 	return def;
@@ -134,7 +133,7 @@ qfo_encode_fldptr (const type_t *type, defspace_t *space)
 	def_t      *def;
 	def_t      *type_def;
 
-	type_def = qfo_encode_type (type->t.fldptr.type, space);
+	type_def = qfo_encode_type (type->fldptr.type, space);
 	def = qfo_new_encoding (type, sizeof (enc->fldptr), space);
 	enc = D_POINTER (qfot_type_t, def);
 	enc->fldptr.type = type->type;
@@ -178,11 +177,11 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 	sy = sy_var;
 	if (type->meta == ty_enum)
 		sy = sy_const;
-	if (!type->t.symtab) {
+	if (!type->symtab) {
 		def = new_def (type->encoding, 0, pr.type_data, sc_extern);
 		return def;
 	}
-	for (num_fields = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+	for (num_fields = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
 		num_fields++;
@@ -198,7 +197,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 	((type_t *)type)->type_def = def;	// avoid infinite recursion
 
 	field_types = alloca (num_fields * sizeof (def_t *));
-	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+	for (i = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
 		if (i == num_fields)
@@ -211,7 +210,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		i++;
 	}
 
-	for (i = 0, sym = type->t.symtab->symbols; sym; sym = sym->next) {
+	for (i = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy)
 			continue;
 		if (i == num_fields)
@@ -235,13 +234,13 @@ qfo_encode_array (const type_t *type, defspace_t *space)
 	def_t      *def;
 	def_t      *array_type_def;
 
-	array_type_def = qfo_encode_type (type->t.array.type, space);
+	array_type_def = qfo_encode_type (type->array.type, space);
 
 	def = qfo_new_encoding (type, sizeof (enc->array), space);
 	enc = D_POINTER (qfot_type_t, def);
 	ENC_DEF (enc->array.type, array_type_def);
-	enc->array.base = type->t.array.base;
-	enc->array.size = type->t.array.size;
+	enc->array.base = type->array.base;
+	enc->array.size = type->array.size;
 	return def;
 }
 
@@ -253,7 +252,7 @@ qfo_encode_class (const type_t *type, defspace_t *space)
 
 	def = qfo_new_encoding (type, sizeof (enc->class), space);
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_STR (enc->class, type->t.class->name);
+	ENC_STR (enc->class, type->class->name);
 	return def;
 }
 
@@ -265,8 +264,8 @@ qfo_encode_alias (const type_t *type, defspace_t *space)
 	def_t      *type_def;
 	def_t      *full_def;
 
-	type_def = qfo_encode_type (type->t.alias.aux_type, space);
-	full_def = qfo_encode_type (type->t.alias.full_type, space);
+	type_def = qfo_encode_type (type->alias.aux_type, space);
+	full_def = qfo_encode_type (type->alias.full_type, space);
 
 	def = qfo_new_encoding (type, sizeof (enc->alias), space);
 	enc = D_POINTER (qfot_type_t, def);
@@ -300,7 +299,7 @@ qfo_encode_algebra (const type_t *type, defspace_t *space)
 	def_t      *algebra_type_def = 0;
 
 	if (type->type != ev_invalid) {
-		auto m = (multivector_t *) type->t.algebra;
+		auto m = (multivector_t *) type->algebra;
 		algebra_type_def = qfo_encode_type (m->algebra->type, space);
 	}
 

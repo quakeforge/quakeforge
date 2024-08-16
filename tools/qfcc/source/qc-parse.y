@@ -451,7 +451,7 @@ qc_function_spec (specifier_t spec, param_t *params)
 	// .float () foo; is a field holding a function variable rather
 	// than a function that returns a float field.
 	for (type = &spec.type; *type && is_field (*type);
-		 type = (const type_t **) &(*type)->t.fldptr.type) {
+		 type = (const type_t **) &(*type)->fldptr.type) {
 	}
 	const type_t *ret_type = *type;
 	*type = 0;
@@ -527,7 +527,7 @@ is_anonymous_struct (specifier_t spec)
 	if (!is_struct (spec.type) && !is_union (spec.type)) {
 		return 0;
 	}
-	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
+	if (!spec.type->symtab || spec.type->symtab->parent) {
 		return 0;
 	}
 	// struct and union type names always begin with "tag ". Untagged s/u
@@ -1042,7 +1042,7 @@ typespec_nonreserved
 	| OBJECT_NAME protocolrefs
 		{
 			if ($2) {
-				type_t      type = *type_id.t.fldptr.type;
+				type_t      type = *type_id.fldptr.type;
 				type.next = 0;
 				type.protos = $2;
 				$$ = type_spec (pointer_type (find_type (&type)));
@@ -1288,7 +1288,7 @@ enum_init
 		{
 			$$ = find_enum ($<symbol>-1);
 			start_enum ($$);
-			current_symtab = $$->type->t.symtab;
+			current_symtab = $$->type->symtab;
 		}
 	;
 
@@ -1381,7 +1381,7 @@ struct_defs
 				// replace the struct symbol table with one built from
 				// the class ivars and the current struct fields. ivars
 				// will replace any fields of the same name.
-				current_symtab = class_to_struct ($3->type->t.class,
+				current_symtab = class_to_struct ($3->type->class,
 												  current_symtab);
 			}
 		}
@@ -2110,7 +2110,7 @@ class_name
 				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {
-				$$ = $1->type->t.class;
+				$$ = $1->type->class;
 			}
 		}
 	;

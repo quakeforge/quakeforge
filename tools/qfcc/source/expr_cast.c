@@ -130,7 +130,7 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
-		return address_expr (e, dstType->t.fldptr.type);
+		return address_expr (e, dstType->fldptr.type);
 	}
 	if (is_short (srcType)) {
 		e = new_int_expr (expr_short (e), false);

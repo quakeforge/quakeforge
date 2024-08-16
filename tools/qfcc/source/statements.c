@@ -686,7 +686,7 @@ statement_get_targetlist (statement_t *s)
 		count = 1;
 	} else if (statement_is_jumpb (s)) {
 		table = s->opa->def;
-		count = table->type->t.array.size;
+		count = table->type->array.size;
 	}
 	target_list = malloc ((count + 1) * sizeof (sblock_t *));
 	target_list[count] = 0;
@@ -1349,7 +1349,7 @@ ptr_addressing_mode (sblock_t *sblock, const expr_t *ref,
 				offs = lvalue->alias.offset;
 			}
 		}
-		type = type->t.fldptr.type;
+		type = type->fldptr.type;
 		if (offs) {
 			const expr_t *lv = lvalue->alias.expr;
 			auto lvtype = get_type (lv);
@@ -2627,7 +2627,7 @@ check_final_block (sblock_t *sblock)
 		if (statement_is_return (s))
 			return;
 	}
-	if (!is_void(current_func->sym->type->t.func.ret_type))
+	if (!is_void(current_func->sym->type->func.ret_type))
 		warning (0, "control reaches end of non-void function");
 	if (s && s->type >= st_func) {
 		// func and flow end blocks, so we need to add a new block to take the
