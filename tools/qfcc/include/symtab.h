@@ -83,7 +83,7 @@ typedef struct symbol_s {
 		struct function_s *func;	///< sy_func
 		symconv_t   convert;		///< sy_convert
 		struct rua_macro_s *macro;	///< sy_macro
-	} s;
+	};
 } symbol_t;
 
 typedef enum {

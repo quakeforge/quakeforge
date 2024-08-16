@@ -773,8 +773,8 @@ qc_nocode_func
 			} else {
 				initialize_def (sym, 0, current_symtab->space, spec.storage,
 								current_symtab);
-				if (sym->s.def)
-					sym->s.def->nosave |= spec.nosave;
+				if (sym->def)
+					sym->def->nosave |= spec.nosave;
 			}
 		}
 	;
@@ -2460,8 +2460,8 @@ methoddef
 										   sc_static);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->locals);
-			method->func = sym->s.func;
-			method->def = sym->s.func->def;
+			method->func = sym->func;
+			method->def = sym->func->def;
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
@@ -2481,8 +2481,8 @@ methoddef
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
 			build_builtin_function (sym, $5, 1, sc_static);
-			method->func = sym->s.func;
-			method->def = sym->s.func->def;
+			method->func = sym->func;
+			method->def = sym->func->def;
 		}
 	;
 

@@ -179,7 +179,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 		}
 		if (su == 's') {
 			symtab->size = RUP (symtab->size + base, s->type->alignment) - base;
-			s->s.offset = symtab->size;
+			s->offset = symtab->size;
 			symtab->size += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
@@ -193,7 +193,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 		if (s->visibility == vis_anonymous) {
 			symtab_t   *anonymous;
 			symbol_t   *t = s->next;
-			int         offset = s->s.offset;
+			int         offset = s->offset;
 
 			if (!is_struct (s->type) && !is_union (s->type)) {
 				internal_error (0, "non-struct/union anonymous field");
@@ -209,7 +209,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 				} else {
 					s->next = copy_symbol (as);
 					s = s->next;
-					s->s.offset += offset;
+					s->offset += offset;
 					s->table = symtab;
 					s->no_auto_init = 1;
 					Hash_Add (symtab->tab, s);
@@ -265,7 +265,7 @@ finish_enum (symbol_t *sym)
 
 		enum_sym = new_symbol_type (name->name, enum_type);
 		enum_sym->sy_type = sy_const;
-		enum_sym->s.value = name->s.value;
+		enum_sym->value = name->value;
 		symtab_addsymbol (enum_tab->parent, enum_sym);
 	}
 	return sym;
@@ -286,7 +286,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.uint_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->value->v.uint_val + 1;
 	if (val) {
 		val = convert_name (val);
 		if (!is_constant (val))
@@ -296,7 +296,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 		else
 			value = expr_int (val);
 	}
-	name->s.value = new_int_val (value);
+	name->value = new_int_val (value);
 	symtab_addsymbol (enum_tab, name);
 }
 
@@ -314,12 +314,12 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->s.value->v.int_val;
+		val = sym->value->v.int_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->s.value->v.int_val;
+				v = one_sym->value->v.int_val;
 				if (val * val > v * v)
 					continue;
 			}
@@ -401,7 +401,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 	}
 	struct_sym = make_symbol (name, type, space, storage);
 
-	struct_def = struct_sym->s.def;
+	struct_def = struct_sym->def;
 	if (struct_def->initialized)
 		internal_error (0, "structure %s already initialized", name);
 	struct_def->initialized = struct_def->constant = 1;
@@ -412,7 +412,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		field_def.type = field_sym->type;
 		field_def.name = save_string (va (0, "%s.%s", name, field_sym->name));
 		field_def.space = struct_def->space;
-		field_def.offset = struct_def->offset + field_sym->s.offset;
+		field_def.offset = struct_def->offset + field_sym->offset;
 		if (!defs[i].emit) {
 			//FIXME relocs? arrays? structs?
 			pr_type_t  *val = (pr_type_t *) data;

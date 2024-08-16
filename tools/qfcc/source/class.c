@@ -393,7 +393,7 @@ emit_static_instances_list (void)
 	if (!instance_lists_sym->table) {
 		symtab_addsymbol (pr.symtab, instance_lists_sym);
 	}
-	instance_lists_def = instance_lists_sym->s.def;
+	instance_lists_def = instance_lists_sym->def;
 	instance_lists_def->initialized = instance_lists_def->constant = 1;
 	instance_lists_def->nosave = 1;
 
@@ -696,7 +696,7 @@ _get_class (symbol_t *sym, int create)
 	}
 
 	sym = class_symbol (&c->class_type, 1);
-	c->def = sym->s.def;
+	c->def = sym->def;
 
 	return c;
 }
@@ -793,7 +793,7 @@ begin_category (category_t *category)
 
 	current_class = &category->class_type;
 	sym = class_symbol (current_class, 0);
-	category->def = def = sym->s.def;
+	category->def = def = sym->def;
 	def->initialized = def->constant = def->nosave = 1;
 	space = def->space;
 
@@ -855,7 +855,7 @@ emit_ivar_list_item (def_t *def, void *data, int index)
 	EMIT_STRING (space, ivar->ivar_name, ivar_sym->name);
 	encode_type (ivar_data->encoding, ivar_sym->type);
 	EMIT_STRING (space, ivar->ivar_type, ivar_data->encoding->str);
-	ivar->ivar_offset = ivar_sym->s.offset;
+	ivar->ivar_offset = ivar_sym->offset;
 }
 
 static def_t *
@@ -898,7 +898,7 @@ begin_class (class_t *class)
 
 	sym = make_symbol (va (0, "_OBJ_METACLASS_%s", class->name),
 					   &type_class, pr.far_data, sc_static);
-	meta_def = sym->s.def;
+	meta_def = sym->def;
 	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
 	space = meta_def->space;
 	meta = &D_STRUCT (pr_class_t, meta_def);
@@ -919,7 +919,7 @@ begin_class (class_t *class)
 	}
 	current_class = &class->class_type;
 	sym = class_symbol (current_class, 0);
-	class->def = def = sym->s.def;
+	class->def = def = sym->def;
 	def->initialized = def->constant = def->nosave = 1;
 	space = def->space;
 
@@ -969,7 +969,7 @@ emit_class_ref (const char *class_name)
 						   &type_ptr, pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
-	ref_def = ref_sym->s.def;
+	ref_def = ref_sym->def;
 	if (ref_def->initialized)
 		return;
 	ref_def->initialized = ref_def->constant = ref_def->nosave = 1;
@@ -977,7 +977,7 @@ emit_class_ref (const char *class_name)
 							&type_ptr, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
-	name_def = name_sym->s.def;
+	name_def = name_sym->def;
 	if (!name_def->external)
 		D_INT (ref_def) = name_def->offset;
 	reloc_def_def (name_def, ref_def);
@@ -993,7 +993,7 @@ emit_class_name (const char *class_name)
 							&type_ptr, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
-	name_def = name_sym->s.def;
+	name_def = name_sym->def;
 	if (name_def->initialized)
 		return;
 	name_def->initialized = name_def->constant = 1;
@@ -1014,7 +1014,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 						   &type_ptr, pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
-	ref_def = ref_sym->s.def;
+	ref_def = ref_sym->def;
 	if (ref_def->initialized)
 		return;
 	ref_def->initialized = ref_def->constant = 1;
@@ -1024,7 +1024,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 							&type_ptr, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
-	name_def = name_sym->s.def;
+	name_def = name_sym->def;
 	if (!name_def->external)
 		D_INT (ref_def) = name_def->offset;
 	reloc_def_def (name_def, ref_def);
@@ -1041,7 +1041,7 @@ emit_category_name (const char *class_name, const char *category_name)
 							&type_ptr, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
-	name_def = name_sym->s.def;
+	name_def = name_sym->def;
 	if (name_def->initialized)
 		return;
 	name_def->initialized = name_def->constant = 1;
@@ -1342,7 +1342,7 @@ class_add_ivars (class_t *class, symtab_t *ivars)
 	if (class->super_class)
 		base = type_size (class->super_class->type);
 	for (sym = ivars->symbols; sym; sym = sym->next)
-		sym->s.offset += base;
+		sym->offset += base;
 	class->ivars = ivars;
 }
 
@@ -1471,13 +1471,13 @@ class_pointer_symbol (class_t *class)
 					   &type_Class, pr.near_data, sc_static);
 	if (!sym->table)
 		symtab_addsymbol (pr.symtab, sym);
-	def = sym->s.def;
+	def = sym->def;
 	if (def->initialized)
 		return sym;
 	def->initialized = def->constant = 1;
 	def->nosave = 1;
 	if (!class->def)
-		class->def = class_symbol (&class_type, 1)->s.def;
+		class->def = class_symbol (&class_type, 1)->def;
 	if (!class->def->external)
 		D_INT (def) = class->def->offset;
 	reloc_def_def (class->def, def);
@@ -1625,11 +1625,10 @@ class_finish_module (void)
 	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.far_data,
 							  sc_static);
 	symtab_addsymbol (current_symtab, module_sym);
-	module = &D_STRUCT (pr_module_t, module_sym->s.def);
+	module = &D_STRUCT (pr_module_t, module_sym->def);
 	module->size = type_size (&type_module);
-	EMIT_STRING (module_sym->s.def->space, module->name,
-				 GETSTR (pr.loc.file));
-	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
+	EMIT_STRING (module_sym->def->space, module->name, GETSTR (pr.loc.file));
+	EMIT_DEF (module_sym->def->space, module->symtab, symtab_def);
 
 	exec_class_sym = symtab_lookup (pr.symtab, "__obj_exec_class");
 	if (!exec_class_sym) {
@@ -1810,7 +1809,7 @@ emit_protocol (protocol_t *protocol)
 	defspace_t *space;
 
 	proto_def = make_symbol (va (0, "_OBJ_PROTOCOL_%s", protocol->name),
-							 &type_protocol, pr.far_data, sc_static)->s.def;
+							 &type_protocol, pr.far_data, sc_static)->def;
 	if (proto_def->initialized)
 		return proto_def;
 	proto_def->initialized = proto_def->constant = 1;
@@ -1967,8 +1966,8 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 		if (sym->sy_type != sy_var)
 			continue;
 		sym->sy_type = sy_convert;
-		sym->s.convert.conv = class_dereference_ivar;
-		sym->s.convert.data = (void *) self_expr;
+		sym->convert.conv = class_dereference_ivar;
+		sym->convert.data = (void *) self_expr;
 	}
 }
 

@@ -67,7 +67,7 @@ static ex_value_t * __attribute__((pure))
 get_value (const expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->symbol->s.value;
+		return e->symbol->value;
 	if (e->type != ex_value)
 		internal_error (e, "bogus case label");
 	return e->value;
@@ -383,7 +383,7 @@ check_enum_switch (switch_block_t *switch_block)
 
 	for (enum_val = type->t.symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_int_expr (enum_val->s.value->v.int_val, false);
+		cl.value = new_int_expr (enum_val->value->v.int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",

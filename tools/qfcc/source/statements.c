@@ -387,7 +387,7 @@ return_operand (const type_t *type, const expr_t *expr)
 	if (!return_symbol->table) {
 		symtab_addsymbol (pr.symtab, return_symbol);
 	}
-	def_t      *return_def = return_symbol->s.def;
+	def_t      *return_def = return_symbol->def;
 	return def_operand (alias_def (return_def, type, 0), 0, expr);
 }
 
@@ -1892,14 +1892,14 @@ expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 	symbol_t   *sym = e->symbol;
 
 	if (sym->sy_type == sy_var) {
-		*op = def_operand (sym->s.def, sym->type, e);
+		*op = def_operand (sym->def, sym->type, e);
 	} else if (sym->sy_type == sy_const) {
-		*op = value_operand (sym->s.value, e);
+		*op = value_operand (sym->value, e);
 	} else if (sym->sy_type == sy_func) {
-		if (!sym->s.func) {
+		if (!sym->func) {
 			make_function (sym, 0, pr.symtab->space, sc_extern);
 		}
-		*op = def_operand (sym->s.func->def, 0, e);
+		*op = def_operand (sym->func->def, 0, e);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);

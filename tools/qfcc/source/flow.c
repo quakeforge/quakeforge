@@ -653,7 +653,7 @@ flow_build_vars (function_t *func)
 	}
 	// count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
-		def_t      *def = param_symbol (flow_params[i].name)->s.def;
+		def_t      *def = param_symbol (flow_params[i].name)->def;
 		def_visit_all (def, 0, flow_def_clear_flowvars, 0);
 		flow_params[i].op.def = def;
 		num_vars += count_operand (&flow_params[i].op);

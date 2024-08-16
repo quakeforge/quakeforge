@@ -246,8 +246,8 @@ program_head
 				sym->type = &type_int;
 				initialize_def (sym, 0, current_symtab->space, sc_global,
 								current_symtab);
-				if (sym->s.def) {
-					sym->s.def->nosave = 1;
+				if (sym->def) {
+					sym->def->nosave = 1;
 				}
 			}
 			$$->type = parse_params (&type_void, 0);
@@ -426,7 +426,7 @@ statement
 		{
 			$$ = $1;
 			if ($$->type == ex_symbol && $$->symbol->sy_type == sy_func) {
-				if ($$->symbol->s.func != current_func) {
+				if ($$->symbol->func != current_func) {
 					$$ = error ($$, "cannot assign to other function");
 				} else {
 					symbol_t   *ret = function_value (current_func);

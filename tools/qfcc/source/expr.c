@@ -106,10 +106,10 @@ convert_name (const expr_t *e)
 		return e;
 	}
 	if (sym->sy_type == sy_convert) {
-		return sym->s.convert.conv (sym, sym->s.convert.data);
+		return sym->convert.conv (sym, sym->convert.data);
 	}
 	if (sym->sy_type == sy_expr) {
-		return sym->s.expr;
+		return sym->expr;
 	}
 	if (sym->sy_type == sy_type)
 		internal_error (e, "unexpected typedef");
@@ -488,16 +488,16 @@ named_label_expr (symbol_t *label)
 	sym = symtab_lookup (current_func->label_scope, label->name);
 
 	if (sym) {
-		return sym->s.expr;
+		return sym->expr;
 	}
 	l = new_label_expr ();
 	l->label.name = save_string (va (0, "%s_%s", l->label.name,
 									   label->name));
 	l->label.symbol = label;
 	label->sy_type = sy_expr;
-	label->s.expr = l;
+	label->expr = l;
 	symtab_addsymbol (current_func->label_scope, label);
-	return label->s.expr;
+	return label->expr;
 }
 
 expr_t *
@@ -876,7 +876,7 @@ is_constant (const expr_t *e)
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_var
-			&& e->symbol->s.def->constant))
+			&& e->symbol->def->constant))
 		return 1;
 	return 0;
 }
@@ -915,13 +915,13 @@ constant_expr (const expr_t *e)
 		return e;
 	sym = e->symbol;
 	if (sym->sy_type == sy_const) {
-		value = sym->s.value;
-	} else if (sym->sy_type == sy_var && sym->s.def->constant) {
+		value = sym->value;
+	} else if (sym->sy_type == sy_var && sym->def->constant) {
 		//FIXME pointers and fields
 		internal_error (e, "what to do here?");
 		//memset (&value, 0, sizeof (value));
-		//memcpy (&value.v, &D_INT (sym->s.def),
-				//type_size (sym->s.def->type) * sizeof (pr_type_t));
+		//memcpy (&value.v, &D_INT (sym->def),
+				//type_size (sym->def->type) * sizeof (pr_type_t));
 	} else {
 		return e;
 	}
@@ -980,11 +980,11 @@ expr_double (const expr_t *e)
 		return e->value->v.double_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_double)
-		return e->symbol->s.value->v.double_val;
+		return e->symbol->value->v.double_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& is_double (e->symbol->s.def->type))
-		return D_DOUBLE (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& is_double (e->symbol->def->type))
+		return D_DOUBLE (e->symbol->def);
 	internal_error (e, "not a double constant");
 }
 
@@ -997,11 +997,11 @@ expr_float (const expr_t *e)
 		return e->value->v.float_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_float)
-		return e->symbol->s.value->v.float_val;
+		return e->symbol->value->v.float_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& is_float (e->symbol->s.def->type))
-		return D_FLOAT (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& is_float (e->symbol->def->type))
+		return D_FLOAT (e->symbol->def);
 	internal_error (e, "not a float constant");
 }
 
@@ -1027,11 +1027,11 @@ expr_vector (const expr_t *e)
 		return e->value->v.vector_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_vector)
-		return e->symbol->s.value->v.vector_val;
+		return e->symbol->value->v.vector_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& e->symbol->s.def->type->type == ev_vector)
-		return D_VECTOR (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& e->symbol->def->type->type == ev_vector)
+		return D_VECTOR (e->symbol->def);
 	internal_error (e, "not a vector constant");
 }
 
@@ -1057,11 +1057,11 @@ expr_quaternion (const expr_t *e)
 		return e->value->v.quaternion_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_quaternion)
-		return e->symbol->s.value->v.quaternion_val;
+		return e->symbol->value->v.quaternion_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& e->symbol->s.def->type->type == ev_quaternion)
-		return D_QUAT (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& e->symbol->def->type->type == ev_quaternion)
+		return D_QUAT (e->symbol->def);
 	internal_error (e, "not a quaternion constant");
 }
 
@@ -1100,12 +1100,12 @@ expr_int (const expr_t *e)
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& (e->symbol->type->type == ev_int
 			|| is_enum (e->symbol->type))) {
-		return e->symbol->s.value->v.int_val;
+		return e->symbol->value->v.int_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& is_integral (e->symbol->s.def->type)) {
-		return D_INT (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& is_integral (e->symbol->def->type)) {
+		return D_INT (e->symbol->def);
 	}
 	if (e->type == ex_def && e->def->constant
 		&& is_integral (e->def->type)) {
@@ -1145,12 +1145,12 @@ expr_uint (const expr_t *e)
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_uint) {
-		return e->symbol->s.value->v.uint_val;
+		return e->symbol->value->v.uint_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
-		&& e->symbol->s.def->constant
-		&& is_integral (e->symbol->s.def->type)) {
-		return D_INT (e->symbol->s.def);
+		&& e->symbol->def->constant
+		&& is_integral (e->symbol->def->type)) {
+		return D_INT (e->symbol->def);
 	}
 	if (e->type == ex_def && e->def->constant
 		&& is_integral (e->def->type)) {
@@ -1186,7 +1186,7 @@ expr_short (const expr_t *e)
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_short) {
-		return e->symbol->s.value->v.short_val;
+		return e->symbol->value->v.short_val;
 	}
 	internal_error (e, "not a short constant");
 }
@@ -1202,7 +1202,7 @@ expr_ushort (const expr_t *e)
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_ushort) {
-		return e->symbol->s.value->v.ushort_val;
+		return e->symbol->value->v.ushort_val;
 	}
 	internal_error (e, "not a ushort constant");
 }
@@ -1260,7 +1260,7 @@ is_math_val (const expr_t *e)
 		return 1;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
-		&& is_math (e->symbol->s.value->type)) {
+		&& is_math (e->symbol->value->type)) {
 		return 1;
 	}
 	return 0;
@@ -1516,7 +1516,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 		if (e2->type == ex_symbol)
 			field = get_struct_field (&type_entity, e1, e2);
 		if (field) {
-			e2 = new_field_expr (0, field->type, field->s.def);
+			e2 = new_field_expr (0, field->type, field->def);
 			e = new_binary_expr ('.', e1, e2);
 			e->expr.type = field->type;
 			return e;
@@ -1539,7 +1539,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			if (!field)
 				return e1;
 
-			const expr_t *offset = new_short_expr (field->s.offset);
+			const expr_t *offset = new_short_expr (field->offset);
 			e1 = offset_pointer_expr (e1, offset);
 			if (e1->type == ex_error) {
 				return e1;
@@ -1555,7 +1555,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			ivar = class_find_ivar (class, protected, sym->name);
 			if (!ivar)
 				return new_error_expr ();
-			const expr_t *offset = new_short_expr (ivar->s.offset);
+			const expr_t *offset = new_short_expr (ivar->offset);
 			e1 = offset_pointer_expr (e1, offset);
 			e1 = cast_expr (pointer_type (ivar->type), e1);
 			if (e1->type == ex_error) {
@@ -1590,25 +1590,25 @@ field_expr (const expr_t *e1, const expr_t *e2)
 					internal_error (e2, "failed to find entity field %s",
 									e2->symbol->name);
 				}
-				def = sym->s.def;
+				def = sym->def;
 				e2 = new_field_expr (0, field->type, def);
 			} else if (e2->type != ex_value
 					   || e2->value->lltype != ev_field) {
 				internal_error (e2, "unexpected field exression");
 			}
-			auto fv = new_field_val (e2->value->v.pointer.val + field->s.offset, field->type, e2->value->v.pointer.def);
+			auto fv = new_field_val (e2->value->v.pointer.val + field->offset, field->type, e2->value->v.pointer.def);
 			scoped_src_loc (e2);
 			e2 = new_value_expr (fv, false);
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
 			if (e1->type == ex_uexpr && e1->expr.op == '.') {
-				const expr_t *offset = new_short_expr (field->s.offset);
+				const expr_t *offset = new_short_expr (field->offset);
 				e1 = offset_pointer_expr (e1->expr.e1, offset);
 				e1 = cast_expr (pointer_type (field->type), e1);
 				return unary_expr ('.', e1);
 			} else {
-				return new_offset_alias_expr (field->type, e1, field->s.offset);
+				return new_offset_alias_expr (field->type, e1, field->offset);
 			}
 		}
 	} else if (is_class (t1)) {
@@ -2782,7 +2782,7 @@ address_expr (const expr_t *e1, const type_t *t)
 			break;
 		case ex_symbol:
 			if (e1->symbol->sy_type == sy_var) {
-				auto def = e1->symbol->s.def;
+				auto def = e1->symbol->def;
 				auto type = def->type;
 
 				//FIXME this test should be in statements.c

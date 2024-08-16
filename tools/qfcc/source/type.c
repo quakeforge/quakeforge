@@ -1788,11 +1788,11 @@ init_types (void)
 		symbol_t   *sym;
 
 		sym = new_symbol_type ("v", &type_vector);
-		sym->s.offset = 0;
+		sym->offset = 0;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 
 		sym = new_symbol_type ("s", &type_float);
-		sym->s.offset = 3;
+		sym->offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}
 #define VEC_TYPE(type_name, base_type) build_vector_struct (&type_##type_name);

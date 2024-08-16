@@ -230,8 +230,8 @@ make_gentype (const expr_t *expr)
 	auto sym = expr->symbol;
 	gentype_t gentype = {
 		.name = save_string (sym->name),
-		.compute = check_compute_type (sym->s.expr),
-		.valid_types = valid_type_list (sym->s.expr),
+		.compute = check_compute_type (sym->expr),
+		.valid_types = valid_type_list (sym->expr),
 	};
 	if (gentype.compute && gentype.valid_types) {
 		internal_error (expr, "both computed type and type list");
@@ -582,7 +582,7 @@ function_symbol (symbol_t *sym, specifier_t spec)
 		s->sy_type = sy_func;
 		s->type = unalias_type (sym->type);
 		s->params = sym->params;
-		s->s.func = 0;				// function not yet defined
+		s->func = 0;				// function not yet defined
 		symtab_addsymbol (current_symtab, s);
 	}
 	return s;
@@ -758,7 +758,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		sym->sy_type = sy_func;
 		sym->type = type;
 		sym->params = params;
-		sym->s.func = nullptr;
+		sym->func = nullptr;
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return new_symbol_expr (sym);
@@ -931,10 +931,10 @@ build_v6p_scope (symbol_t *fsym)
 	param_t    *p;
 	symbol_t   *args = 0;
 	symbol_t   *param;
-	symtab_t   *parameters = fsym->s.func->parameters;
-	symtab_t   *locals = fsym->s.func->locals;
+	symtab_t   *parameters = fsym->func->parameters;
+	symtab_t   *locals = fsym->func->locals;
 
-	if (fsym->s.func->type->t.func.num_params < 0) {
+	if (fsym->func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, 0, parameters->space, sc_param, locals);
 	}
@@ -974,7 +974,7 @@ create_param (symtab_t *parameters, symbol_t *param)
 	}
 	def->offset = defspace_alloc_aligned_highwater (space, size, alignment);
 	def->type = param->type;
-	param->s.def = def;
+	param->def = def;
 	param->sy_type = sy_var;
 	symtab_addsymbol (parameters, param);
 	if (is_vector(param->type) && options.code.vector_components)
@@ -999,8 +999,8 @@ build_rua_scope (symbol_t *fsym)
 			}
 			param = new_symbol_type (p->name, p->type);
 		}
-		create_param (fsym->s.func->parameters, param);
-		param->s.def->reg = fsym->s.func->temp_reg;
+		create_param (fsym->func->parameters, param);
+		param->def->reg = fsym->func->temp_reg;
 	}
 }
 
@@ -1010,24 +1010,24 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	symtab_t   *parameters;
 	symtab_t   *locals;
 
-	if (!fsym->s.func) {
+	if (!fsym->func) {
 		internal_error (0, "function %s not defined", fsym->name);
 	}
-	if (!is_func (fsym->s.func->type)) {
+	if (!is_func (fsym->func->type)) {
 		internal_error (0, "function type %s not a funciton", fsym->name);
 	}
 
 	check_function (fsym);
 
-	fsym->s.func->label_scope = new_symtab (0, stab_label);
+	fsym->func->label_scope = new_symtab (0, stab_label);
 
 	parameters = new_symtab (parent, stab_param);
 	parameters->space = defspace_new (ds_virtual);
-	fsym->s.func->parameters = parameters;
+	fsym->func->parameters = parameters;
 
 	locals = new_symtab (parameters, stab_local);
 	locals->space = defspace_new (ds_virtual);
-	fsym->s.func->locals = locals;
+	fsym->func->locals = locals;
 
 	if (options.code.progsversion == PROG_VERSION) {
 		build_rua_scope (fsym);
@@ -1056,23 +1056,23 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	reloc_t    *relocs = 0;
 	if (sym->sy_type != sy_func)
 		internal_error (0, "%s is not a function", sym->name);
-	if (storage == sc_extern && sym->s.func)
+	if (storage == sc_extern && sym->func)
 		return;
-	if (!sym->s.func) {
-		sym->s.func = new_function (sym->name, nice_name);
-		sym->s.func->sym = sym;
-		sym->s.func->type = unalias_type (sym->type);
+	if (!sym->func) {
+		sym->func = new_function (sym->name, nice_name);
+		sym->func->sym = sym;
+		sym->func->type = unalias_type (sym->type);
 	}
-	if (sym->s.func->def && sym->s.func->def->external
+	if (sym->func->def && sym->func->def->external
 		&& storage != sc_extern) {
 		//FIXME this really is not the right way
-		relocs = sym->s.func->def->relocs;
-		free_def (sym->s.func->def);
-		sym->s.func->def = 0;
+		relocs = sym->func->def->relocs;
+		free_def (sym->func->def);
+		sym->func->def = 0;
 	}
-	if (!sym->s.func->def) {
-		sym->s.func->def = new_def (sym->name, sym->type, space, storage);
-		reloc_attach_relocs (relocs, &sym->s.func->def->relocs);
+	if (!sym->func->def) {
+		sym->func->def = new_def (sym->name, sym->type, space, storage);
+		reloc_attach_relocs (relocs, &sym->func->def->relocs);
 	}
 }
 
@@ -1095,7 +1095,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		sym = new_symbol_type (sym->name, &type_func);
 		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
 	}
-	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
+	if (sym->func && sym->func->def && sym->func->def->initialized) {
 		error (0, "%s redefined", sym->name);
 		sym = new_symbol_type (sym->name, sym->type);
 		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
@@ -1104,31 +1104,31 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (far)
 		space = pr.far_data;
 	make_function (sym, nicename, space, storage);
-	if (!sym->s.func->def->external) {
-		sym->s.func->def->initialized = 1;
-		sym->s.func->def->constant = 1;
-		sym->s.func->def->nosave = 1;
-		add_function (sym->s.func);
-		reloc_def_func (sym->s.func, sym->s.func->def);
+	if (!sym->func->def->external) {
+		sym->func->def->initialized = 1;
+		sym->func->def->constant = 1;
+		sym->func->def->nosave = 1;
+		add_function (sym->func);
+		reloc_def_func (sym->func, sym->func->def);
 
-		sym->s.func->def->loc = pr.loc;
+		sym->func->def->loc = pr.loc;
 	}
-	sym->s.func->code = pr.code->size;
+	sym->func->code = pr.code->size;
 
-	sym->s.func->s_file = pr.loc.file;
+	sym->func->s_file = pr.loc.file;
 	if (options.code.debug) {
 		pr_lineno_t *lineno = new_lineno ();
-		sym->s.func->line_info = lineno - pr.linenos;
+		sym->func->line_info = lineno - pr.linenos;
 	}
 
 	build_scope (sym, parent);
-	return sym->s.func;
+	return sym->func;
 }
 
 static void
 build_function (symbol_t *fsym)
 {
-	const type_t *func_type = fsym->s.func->type;
+	const type_t *func_type = fsym->func->type;
 	if (func_type->t.func.num_params > PR_MAX_PARAMS) {
 		error (0, "too many params");
 	}
@@ -1170,7 +1170,7 @@ build_code_function (symbol_t *fsym, const expr_t *state_expr,
 	if (state_expr) {
 		prepend_expr (statements, state_expr);
 	}
-	function_t *func = fsym->s.func;
+	function_t *func = fsym->func;
 	if (options.code.progsversion == PROG_VERSION) {
 		/* Create a function entry block to set up the stack frame and add the
 		 * actual function code to that block. This ensure that the adjstk and
@@ -1254,7 +1254,7 @@ build_code_function (symbol_t *fsym, const expr_t *state_expr,
 		// the final parameter is smaller than STACK_ALIGN words
 		defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
 	}
-	return fsym->s.func;
+	return fsym->func;
 }
 
 function_t *
@@ -1268,7 +1268,7 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 		error (bi_val, "%s is not a function", sym->name);
 		return 0;
 	}
-	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {
+	if (sym->func && sym->func->def && sym->func->def->initialized) {
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
@@ -1280,13 +1280,13 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 	if (far)
 		space = pr.far_data;
 	make_function (sym, 0, space, storage);
-	if (sym->s.func->def->external)
+	if (sym->func->def->external)
 		return 0;
 
-	sym->s.func->def->initialized = 1;
-	sym->s.func->def->constant = 1;
-	sym->s.func->def->nosave = 1;
-	add_function (sym->s.func);
+	sym->func->def->initialized = 1;
+	sym->func->def->constant = 1;
+	sym->func->def->nosave = 1;
+	add_function (sym->func);
 
 	if (is_int_val (bi_val))
 		bi = expr_int (bi_val);
@@ -1296,15 +1296,15 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 		error (bi_val, "builtin functions must be positive or 0");
 		return 0;
 	}
-	sym->s.func->builtin = bi;
-	reloc_def_func (sym->s.func, sym->s.func->def);
+	sym->func->builtin = bi;
+	reloc_def_func (sym->func, sym->func->def);
 	build_function (sym);
 
 	// for debug info
 	build_scope (sym, current_symtab);
-	sym->s.func->parameters->space->size = 0;
-	sym->s.func->locals->space = sym->s.func->parameters->space;
-	return sym->s.func;
+	sym->func->parameters->space->size = 0;
+	sym->func->locals->space = sym->func->parameters->space;
+	return sym->func;
 }
 
 void

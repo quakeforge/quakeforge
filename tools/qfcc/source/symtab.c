@@ -176,11 +176,10 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
-	sym->visibility = symbol->visibility;
-	sym->type = symbol->type;
+	*sym = *symbol;
+	sym->next = nullptr;
+	sym->table = nullptr;
 	sym->params = copy_params (symbol->params);
-	sym->sy_type = symbol->sy_type;
-	sym->s = symbol->s;
 	return sym;
 }
 
@@ -238,15 +237,15 @@ make_symbol (const char *name, const type_t *type, defspace_t *space,
 			sym = new_symbol_type (name, type);
 		}
 	}
-	if (sym->s.def && sym->s.def->external && storage != sc_extern) {
+	if (sym->def && sym->def->external && storage != sc_extern) {
 		//FIXME this really is not the right way
-		relocs = sym->s.def->relocs;
-		free_def (sym->s.def);
-		sym->s.def = 0;
+		relocs = sym->def->relocs;
+		free_def (sym->def);
+		sym->def = 0;
 	}
-	if (!sym->s.def) {
-		sym->s.def = new_def (name, type, space, storage);
-		reloc_attach_relocs (relocs, &sym->s.def->relocs);
+	if (!sym->def) {
+		sym->def = new_def (name, type, space, storage);
+		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
 	sym->sy_type = sy_var;
 	return sym;
@@ -303,8 +302,8 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		} else {
 			s->type = find_type (s->type);
 			initialize_def (s, init, space, spec.storage, symtab);
-			if (s->s.def) {
-				s->s.def->nosave |= spec.nosave;
+			if (s->def) {
+				s->def->nosave |= spec.nosave;
 			}
 		}
 	}

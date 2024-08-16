@@ -399,7 +399,7 @@ make_magic_macro (symtab_t *tab, const char *name, rua_macro_f update)
 	}
 	sym = new_symbol (macro->name);
 	sym->sy_type = sy_macro;
-	sym->s.macro = macro;
+	sym->macro = macro;
 	symtab_addsymbol (tab, sym);
 	return macro;
 }

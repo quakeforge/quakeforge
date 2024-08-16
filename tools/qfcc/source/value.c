@@ -308,7 +308,7 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 	if (src->type == ex_symbol && src->symbol->sy_type == sy_var) {
 		// initialized global def treated as a constant
 		// from the tests in cast_expr, the def is known to be constant
-		def_t      *def = src->symbol->s.def;
+		def_t      *def = src->symbol->def;
 		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
 		return;
 	}
@@ -317,7 +317,7 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		val = src->value;
 	}
 	if (src->type == ex_symbol && src->symbol->sy_type == sy_const) {
-		val = src->symbol->s.value;
+		val = src->symbol->value;
 	}
 	if (!val) {
 		internal_error (src, "unexpected constant expression type");
@@ -671,7 +671,7 @@ emit_value (ex_value_t *value, def_t *def)
 		} else {
 			symbol_t   *sym;
 			sym = make_symbol (".zero", &type_zero, 0, sc_extern);
-			return sym->s.def;
+			return sym->def;
 		}
 	}
 	if (imm) {
@@ -742,7 +742,7 @@ clear_immediates (void)
 		Hash_SetHashCompare (value_imm_defs, imm_get_hash, imm_compare);
 	}
 
-	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
+	def = make_symbol (".zero", &type_zero, 0, sc_extern)->def;
 
 	memset (&zero_val, 0, sizeof (zero_val));
 	make_def_imm (def, string_imm_defs, &zero_val);

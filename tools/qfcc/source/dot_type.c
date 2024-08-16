@@ -169,12 +169,12 @@ print_struct (dstring_t *dstr, const type_t *t, int level, int id)
 		int         val;
 		const char *port = "";
 		if (sym->sy_type == sy_const) {
-			val = sym->s.value->v.int_val;
+			val = sym->value->v.int_val;
 		} else {
 			if (sym->sy_type != sy_var) {
 				continue;
 			}
-			val = sym->s.offset;
+			val = sym->offset;
 			port = va (0, " port=\"f%d\"", pnum++);
 		}
 		dasprintf (dstr, "%*s<tr><td>%s</td><td%s>%d</td></tr>\n",

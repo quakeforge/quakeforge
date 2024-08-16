@@ -158,7 +158,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 
 	if (is_struct (type) || is_union (type)) {
 		field = designator_field (des, type);
-		offset = field->s.offset;
+		offset = field->offset;
 		ele_type = field->type;
 	} else if (is_array (type)) {
 		int         array_size = type->t.array.size;
@@ -168,7 +168,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = ev_types[type->type];
 		if (type->t.symtab && des->field) {
 			field = designator_field (des, type);
-			offset = field->s.offset;
+			offset = field->offset;
 		} else {
 			int         vec_width = type_width (type);
 			offset = designator_index (des, type_size (ele_type), vec_width);
@@ -227,7 +227,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		}
 		if (state.field) {
 			state.type = state.field->type;
-			state.offset = state.field->s.offset;
+			state.offset = state.field->offset;
 		}
 	} else if (is_array (type)) {
 		state.type = dereference_type (type);
@@ -269,7 +269,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			}
 			if (state.field) {
 				state.type = state.field->type;
-				state.offset = state.field->s.offset;
+				state.offset = state.field->offset;
 			}
 		}
 

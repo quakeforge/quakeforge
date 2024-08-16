@@ -324,7 +324,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 	int count = 0;
 	for (auto sym = get_mvec_sym (mvtype); sym; sym = sym->next) {
 		auto c = &components[count++];
-		*c = new_offset_alias_expr (sym->type, expr, sym->s.offset);
+		*c = new_offset_alias_expr (sym->type, expr, sym->offset);
 		*c = edag_add_expr (*c);
 	}
 	list_gather (&mvec->multivec.components, components, count);
@@ -2990,18 +2990,18 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		while (sym->type != get_type (c[i])) {
 			sym = sym->next;
 		}
-		int size = sym->s.offset - memset_base;
+		int size = sym->offset - memset_base;
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
+		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->offset);
 		if (summed_extend (c[i])) {
 			assign_extend (block, dst_alias, c[i]);
 		} else {
 			append_expr (block,
 						 edag_add_expr (new_assign_expr (dst_alias, c[i])));
 		}
-		memset_base = sym->s.offset + type_size (sym->type);
+		memset_base = sym->offset + type_size (sym->type);
 	}
 	if (type_size (dstType) - memset_base) {
 		zero_components (block, dst, memset_base,

@@ -109,7 +109,7 @@ selector_expr (keywordarg_t *selector)
 								 pr.far_data, sc_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);
-		reloc_def_def (sel_table->s.def, sel_sym->s.def);
+		reloc_def_def (sel_table->def, sel_sym->def);
 	}
 	sel_ref = new_symbol_expr (sel_sym);
 	sel_ref = new_address_expr (&type_selector, sel_ref,

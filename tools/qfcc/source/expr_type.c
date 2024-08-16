@@ -72,7 +72,7 @@ check_int (const expr_t *arg)
 		&& arg->type != ex_type) {
 		return false;
 	}
-	int op = arg->symbol->s.expr->typ.op;
+	int op = arg->symbol->expr->typ.op;
 	if (op != QC_AT_WIDTH && op != QC_AT_ROWS && op != QC_AT_COLS) {
 		return false;
 	}
@@ -500,7 +500,7 @@ type_parameter (symbol_t *sym, const expr_t *type)
 		sym = new_symbol (sym->name);
 	}
 	sym->sy_type = sy_type_param;
-	sym->s.expr = type;
+	sym->expr = type;
 	return sym;
 }
 

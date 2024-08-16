@@ -517,7 +517,7 @@ emit_selectors (void)
 						   pr.far_data, sc_static);
 	if (!sel_sym->table)
 		symtab_addsymbol (pr.symtab, sel_sym);
-	sel_def = sel_sym->s.def;
+	sel_def = sel_sym->def;
 	sel_def->initialized = sel_def->constant = 1;
 	sel_def->nosave = 1;
 

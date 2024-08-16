@@ -1182,7 +1182,7 @@ get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
 
 	if (arg->token == -rua_va_opt) {
 		sym = symtab_lookup (macro->params, arg->text);
-		auto m = sym->s.macro;
+		auto m = sym->macro;
 		m->update (m, scanner);
 		if (last) {
 			if (m->tokens) {
@@ -1195,8 +1195,8 @@ get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
 	}
 	if (arg->token == -rua_id && macro->params
 	    && (sym = symtab_lookup (macro->params, arg->text))
-	    && !macro->args[sym->s.offset]->next) {
-		auto a = macro->args[sym->s.offset];
+	    && !macro->args[sym->offset]->next) {
+		auto a = macro->args[sym->offset];
 		if (last) {
 			if (a->tokens) {
 				return (rua_tok_t *) a->tail;
@@ -1244,11 +1244,11 @@ copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
 	if (arg->token == -rua_va_opt) {
 		sym = symtab_lookup (macro->params, arg->text);
 		// __VA_OPT__'s macro was updated by get_arg_token
-		do_arg_copy (dst, sym->s.macro, skip_first, skip_last);
+		do_arg_copy (dst, sym->macro, skip_first, skip_last);
 	} else if (arg->token == -rua_id && macro->params
 	    && (sym = symtab_lookup (macro->params, arg->text))
-	    && !macro->args[sym->s.offset]->next) {
-		do_arg_copy (dst, macro->args[sym->s.offset], skip_first, skip_last);
+	    && !macro->args[sym->offset]->next) {
+		do_arg_copy (dst, macro->args[sym->offset], skip_first, skip_last);
 	} else if (!skip_first && !skip_last) {
 		copy_token (dst, arg);
 	}
@@ -1412,12 +1412,12 @@ rescan:
 			macro->cursor = macro->cursor->next;	// consume arg
 			if (n->token == -rua_va_opt) {
 				sym = symtab_lookup (macro->params, n->text);
-				auto m = sym->s.macro;
+				auto m = sym->macro;
 				m->update (m, scanner);
 				arg = m;
 			} else {
 				sym = symtab_lookup (macro->params, n->text);
-				arg = macro->args[sym->s.offset];
+				arg = macro->args[sym->offset];
 			}
 			stringize_arg (&e, arg, extra);
 		} else if (e.next && e.next->token == PRE_CONCAT) {
@@ -1456,22 +1456,22 @@ rescan:
 				goto rescan;
 			}
 			sym = symtab_lookup (macro->params, e.text);
-			auto m = sym->s.macro;
+			auto m = sym->macro;
 			m->update (m, scanner);
 			queue_macro (extra, m);
 			goto rescan;
 		} else if (token == -rua_id && macro->params
 				   && (sym = symtab_lookup (macro->params, e.text))
-				   && !macro->args[sym->s.offset]->next) {
-			auto arg = macro->args[sym->s.offset];
+				   && !macro->args[sym->offset]->next) {
+			auto arg = macro->args[sym->offset];
 			queue_macro (extra, arg);
 			goto rescan;
 		} else if (token == -rua_id && !macro->name // in an arg
 				   && (sym = symtab_lookup (extra->macro_tab, e.text))
-				   && !sym->s.macro->next
-				   && !sym->s.macro->params) {
+				   && !sym->macro->next
+				   && !sym->macro->params) {
 			// force object-type macros in macro arguments to be expanded
-			auto m = sym->s.macro;
+			auto m = sym->macro;
 			if (m->update) {
 				m->update (m, scanner);
 			}
@@ -1480,10 +1480,10 @@ rescan:
 #if 0	// causes preproc-1.r to fail (see XXX below)
 		} else if (token == -rua_id && !macro->name // in an arg
 				   && (sym = symtab_lookup (extra->macro_tab, e.text))
-				   && !sym->s.macro->next
-				   && sym->s.macro->params) {
+				   && !sym->macro->next
+				   && sym->macro->params) {
 			// force function-type macros in macro arguments to be expanded
-			auto m = sym->s.macro;
+			auto m = sym->macro;
 			auto c = macro->cursor;
 			// XXX breakage for preproc-1.r: collect_args assumes the macro
 			// is complete, but in the case of preproc-1.r, it is not. In fact,
@@ -1541,8 +1541,8 @@ rescan:
 	if ((extra->expand || !(extra->preprocessor || extra->suppressed))
 		&& token == -rua_id
 		&& (sym = symtab_lookup (extra->macro_tab, e.text))
-		&& !sym->s.macro->next) {
-		auto macro = sym->s.macro;
+		&& !sym->macro->next) {
+		auto macro = sym->macro;
 		if (macro->update) {
 			macro->update (macro, scanner);
 		}
@@ -1692,7 +1692,7 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 	}
 	auto sym = new_symbol (token->text);
 	sym->sy_type = sy_var;
-	sym->s.offset = macro->num_params++;
+	sym->offset = macro->num_params++;
 	symtab_addsymbol (macro->params, sym);
 	if (token->token == -rua_ellipsis) {
 		macro->num_params = -macro->num_params;
@@ -1734,7 +1734,7 @@ build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 
 	auto sym = new_symbol (va_opt_name);
 	sym->sy_type = sy_macro;
-	sym->s.macro = va_opt;
+	sym->macro = va_opt;
 	symtab_addsymbol (macro->params, sym);
 	return va_opt_tok;
 }
@@ -1817,7 +1817,7 @@ hashhash_error:
 	auto macro_tab = extra->macro_tab;
 	auto sym = symtab_lookup (macro_tab, macro->name);
 	if (sym) {
-		auto o = sym->s.macro->tokens;
+		auto o = sym->macro->tokens;
 		auto n = macro->tokens;
 		while (o && n && o->text == n->text) {
 			o = o->next;
@@ -1830,7 +1830,7 @@ hashhash_error:
 	}
 	sym = new_symbol (macro->name);
 	sym->sy_type = sy_macro;
-	sym->s.macro = macro;
+	sym->macro = macro;
 	symtab_addsymbol (macro_tab, sym);
 }
 
@@ -2287,8 +2287,8 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 		symbol_t   *sym;
 		if (macro->params
 			&& (sym = symtab_lookup (macro->params, t->text))
-			&& !macro->args[sym->s.offset]->next) {
-			auto arg = macro->args[sym->s.offset];
+			&& !macro->args[sym->offset]->next) {
+			auto arg = macro->args[sym->offset];
 			arg->next = macro;
 			bool empty = macro_empty (arg, scanner);
 			arg->next = 0;
@@ -2297,8 +2297,8 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 			}
 		}
 		if ((sym = symtab_lookup (extra->macro_tab, t->text))
-			&& !sym->s.macro->next) {
-			auto m = sym->s.macro;
+			&& !sym->macro->next) {
+			auto m = sym->macro;
 			if (m->params) {
 				macro->cursor = t;
 				collect_args (m, macro, scanner);

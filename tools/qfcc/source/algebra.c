@@ -645,7 +645,7 @@ algebra_symbol (const char *name, symtab_t *symtab)
 	if (blade_val) {
 		sym = new_symbol_type (name, blade_val->type);
 		sym->sy_type = sy_const;
-		sym->s.value = blade_val;
+		sym->value = blade_val;
 		symtab_addsymbol (symtab, sym);
 	}
 	return sym;

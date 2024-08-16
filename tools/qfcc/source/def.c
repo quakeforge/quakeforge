@@ -455,14 +455,14 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 					error (0, "%s redefined", name);
 					sym = 0;
 				} else {
-					expr = sym->s.expr;
+					expr = sym->expr;
 					if (is_field) {
 						if (expr->type != ex_value
 							|| expr->value->lltype != ev_field) {
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
-							expr->value->v.pointer.def = vector_sym->s.def;
+							expr->value->v.pointer.def = vector_sym->def;
 							expr->value->v.pointer.val = i;
 						}
 					}
@@ -475,14 +475,14 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 			sym = new_symbol (name);
 		if (!expr) {
 			if (is_field) {
-				expr = new_field_expr (i, &type_float, vector_sym->s.def);
+				expr = new_field_expr (i, &type_float, vector_sym->def);
 			} else {
 				expr = field_expr (vector_expr,
 								   new_symbol_expr (new_symbol (fields[i])));
 			}
 		}
 		sym->sy_type = sy_expr;
-		sym->s.expr = expr;
+		sym->expr = expr;
 		if (!sym->table)
 			symtab_addsymbol (symtab, sym);
 	}
@@ -501,18 +501,18 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 		field_sym = symtab_lookup (pr.entity_fields, def->name);
 		if (!field_sym)
 			field_sym = new_symbol_type (def->name, type);
-		if (field_sym->s.def && field_sym->s.def->external) {
+		if (field_sym->def && field_sym->def->external) {
 			//FIXME this really is not the right way
-			relocs = field_sym->s.def->relocs;
-			free_def (field_sym->s.def);
-			field_sym->s.def = 0;
+			relocs = field_sym->def->relocs;
+			free_def (field_sym->def);
+			field_sym->def = 0;
 		}
-		if (!field_sym->s.def) {
-			field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
-			reloc_attach_relocs (relocs, &field_sym->s.def->relocs);
-			field_sym->s.def->nosave = 1;
+		if (!field_sym->def) {
+			field_sym->def = new_def (def->name, type, pr.entity_data, storage);
+			reloc_attach_relocs (relocs, &field_sym->def->relocs);
+			field_sym->def->nosave = 1;
 		}
-		field_def = field_sym->s.def;
+		field_def = field_sym->def;
 		if (!field_sym->table)
 			symtab_addsymbol (pr.entity_fields, field_sym);
 		if (storage != sc_extern) {
@@ -529,7 +529,7 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
 			scoped_src_loc (init);
-			auto new = new_field_expr (0, field->type, field->s.def);
+			auto new = new_field_expr (0, field->type, field->def);
 			if (new->type != ex_value) {
 				internal_error (init, "expected value expression");
 			}
@@ -565,14 +565,14 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
-			if (!check->s.def)
+			if (!check->def)
 				internal_error (0, "half defined var");
 			if (storage == sc_extern) {
 				if (init)
 					error (0, "initializing external variable");
 				return;
 			}
-			if (init && check->s.def->initialized) {
+			if (init && check->def->initialized) {
 				error (0, "%s redefined", sym->name);
 				return;
 			}
@@ -583,13 +583,13 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	if (!sym->table)
 		symtab_addsymbol (symtab, sym);
 
-	if (sym->s.def && sym->s.def->external) {
+	if (sym->def && sym->def->external) {
 		//FIXME this really is not the right way
-		relocs = sym->s.def->relocs;
-		free_def (sym->s.def);
-		sym->s.def = 0;
+		relocs = sym->def->relocs;
+		free_def (sym->def);
+		sym->def = 0;
 	}
-	if (!sym->s.def) {
+	if (!sym->def) {
 		if (is_array (sym->type) && !type_size (sym->type)
 			&& init && init->type == ex_compound) {
 			auto ele_type = dereference_type (sym->type);
@@ -605,14 +605,14 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 				sym->type = type_default;
 			}
 		}
-		sym->s.def = new_def (sym->name, sym->type, space, storage);
-		reloc_attach_relocs (relocs, &sym->s.def->relocs);
+		sym->def = new_def (sym->name, sym->type, space, storage);
+		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
 	if (is_vector(sym->type) && options.code.vector_components)
 		init_vector_components (sym, 0, symtab);
 	if (sym->type->type == ev_field && storage != sc_local
 		&& storage != sc_param)
-		init = init_field_def (sym->s.def, init, storage, symtab);
+		init = init_field_def (sym->def, init, storage, symtab);
 	if (storage == sc_extern) {
 		if (init)
 			error (0, "initializing external variable");
@@ -625,8 +625,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		return;
 	if ((is_structural (sym->type) || is_nonscalar (sym->type))
 		&& (init->type == ex_compound || init->type == ex_nil)) {
-		init_elements (sym->s.def, init);
-		sym->s.def->initialized = 1;
+		init_elements (sym->def, init);
+		sym->def->initialized = 1;
 	} else {
 		if (init->type == ex_nil) {
 			init = convert_nil (init, sym->type);
@@ -638,7 +638,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			return;
 		}
 		if (storage == sc_local && local_expr) {
-			sym->s.def->initialized = 1;
+			sym->def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));
@@ -657,9 +657,9 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			if (init->value->lltype == ev_ptr
 				|| init->value->lltype == ev_field) {
 				// FIXME offset pointers
-				D_INT (sym->s.def) = init->value->v.pointer.val;
+				D_INT (sym->def) = init->value->v.pointer.val;
 				if (init->value->v.pointer.def)
-					reloc_def_field (init->value->v.pointer.def, sym->s.def);
+					reloc_def_field (init->value->v.pointer.def, sym->def);
 			} else {
 				ex_value_t *v = init->value;
 				if (!init->implicit
@@ -671,21 +671,21 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 				if (!type_same (sym->type, init_type))
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {
-					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
+					EMIT_STRING (sym->def->space, D_STRING (sym->def),
 								 v->v.string_val);
 				} else {
-					memcpy (D_POINTER (pr_type_t, sym->s.def), &v->v,
+					memcpy (D_POINTER (pr_type_t, sym->def), &v->v,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}
-			sym->s.def->initialized = 1;
+			sym->def->initialized = 1;
 			if (options.code.const_initializers) {
-				sym->s.def->constant = 1;
-				sym->s.def->nosave = 1;
+				sym->def->constant = 1;
+				sym->def->nosave = 1;
 			}
 		}
 	}
-	sym->s.def->initializer = init;
+	sym->def->initializer = init;
 }
 
 static int
