@@ -64,13 +64,15 @@
 typedef struct {
 	def_t      *def;
 	union {
+		uint8_t     raw_imm;
 #define EV_TYPE(type) pr_##type##_t type##_val;
 #include "QF/progs/pr_type_names.h"
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
 		ex_pointer_t pointer;
-	} i;
+	};
 } immediate_t;
+#define imm_size (sizeof(immediate_t) - field_offset(immediate_t, raw_imm))
 
 static hashtab_t *value_table;
 ALLOC_STATE (ex_value_t, values);
@@ -491,13 +493,13 @@ imm_get_hash (const void *_imm, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		const char *str = pr.strings->strings + imm->i.string_val;
+		const char *str = pr.strings->strings + imm->string_val;
 		return str ? Hash_String (str) : 0;
 	} else if (tab == &fldptr_imm_defs) {
-		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
+		return Hash_Buffer (&imm->pointer, sizeof (&imm->pointer));
 	} else if (tab == &value_imm_defs) {
 		size_t      size = type_size (imm->def->type) * sizeof (pr_type_t);
-		return Hash_Buffer (&imm->i, size) ^ (uintptr_t) imm->def->type;
+		return Hash_Buffer (&imm->raw_imm, size) ^ (uintptr_t) imm->def->type;
 	} else {
 		internal_error (0, "invalid immediate hash table");
 	}
@@ -511,18 +513,18 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		const char *str1 = pr.strings->strings + imm1->i.string_val;
-		const char *str2 = pr.strings->strings + imm2->i.string_val;
+		const char *str1 = pr.strings->strings + imm1->string_val;
+		const char *str2 = pr.strings->strings + imm2->string_val;
 		return (str1 == str2 || (str1 && str2 && !strcmp (str1, str2)));
 	} else if (tab == &fldptr_imm_defs) {
-		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
-						sizeof (imm1->i.pointer));
+		return !memcmp (&imm1->pointer, &imm2->pointer,
+						sizeof (imm1->pointer));
 	} else if (tab == &value_imm_defs) {
 		size_t      size = type_size (imm1->def->type) * sizeof (pr_type_t);
 		if (imm1->def->type->alignment != imm2->def->type->alignment) {
 			return 0;
 		}
-		return !memcmp (&imm1->i, &imm2->i, size);
+		return !memcmp (&imm1->raw_imm, &imm2->raw_imm, size);
 	} else {
 		internal_error (0, "invalid immediate hash table");
 	}
@@ -573,7 +575,7 @@ make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 	imm = aligned_alloc (__alignof__(immediate_t), sizeof (immediate_t));
 	memset (imm, 0, sizeof (immediate_t));
 	imm->def = def;
-	memcpy (&imm->i, &val->raw_value, sizeof (imm->i));
+	memcpy (&imm->raw_imm, &val->raw_value, imm_size);
 
 	Hash_AddElement (tab, imm);
 
@@ -665,7 +667,7 @@ emit_value (ex_value_t *value, def_t *def)
 	}
 	def_t       search_def = { .type = type };
 	immediate_t search = { .def = &search_def };
-	memcpy (&search.i, &val.raw_value, sizeof (search.i));
+	memcpy (&search.raw_imm, &val.raw_value, imm_size);
 	immediate_t *imm = Hash_FindElement (tab, &search);
 	if (imm && strcmp (imm->def->name, ".zero") == 0) {
 		if (def) {
