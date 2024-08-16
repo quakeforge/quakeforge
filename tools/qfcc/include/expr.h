@@ -218,6 +218,7 @@ typedef struct ex_value_s {
 	const type_t *type;
 	etype_t     lltype;
 	union {
+		uint8_t     raw_value;			///< for memcpy
 		const char *string_val;			///< string constant
 		double      double_val;			///< double constant
 		int64_t     long_val;			///< signed 64-bit constant
@@ -234,8 +235,9 @@ typedef struct ex_value_s {
 		uint16_t    ushort_val;			///< unsigned short constant
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
-	} v;
+	};
 } ex_value_t;
+#define value_size (sizeof(ex_value_t) - field_offset(ex_value_t, raw_value))
 
 typedef struct {
 	const type_t *type;			///< type to view the expression

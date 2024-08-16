@@ -1552,14 +1552,14 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 	operand_t  *op = 0;
 
 	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_ptr) {
-		ex_pointer_t *ptr = &ptrop->value->v.pointer;
-		if (ptrop->value->v.pointer.def) {
+		ex_pointer_t *ptr = &ptrop->value->pointer;
+		if (ptrop->value->pointer.def) {
 			def_t      *alias;
 			alias = alias_def (ptr->def, ptr->type, ptr->val);
 			op = def_operand (alias, ptr->type, ptrop->expr);
 		}
-		if (ptrop->value->v.pointer.tempop) {
-			op = ptrop->value->v.pointer.tempop;
+		if (ptrop->value->pointer.tempop) {
+			op = ptrop->value->pointer.tempop;
 		}
 		if (op) {
 			flow_add_op_var (def, op, 6);
@@ -1648,9 +1648,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			aux_op1 = s->opb;
 			if (s->type != st_ptrassign && s->opb->op_type == op_value) {
 				if (is_short (s->opb->type)) {
-					size = s->opb->value->v.short_val;
+					size = s->opb->value->short_val;
 				} else if (is_int (s->opb->type)) {
-					size = s->opb->value->v.int_val;
+					size = s->opb->value->int_val;
 				} else {
 					print_type (s->opb->type);
 					internal_error (s->expr, "unexpected type for memset/move");
@@ -1717,7 +1717,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				if (s->opc) {
 					// ruamoko
 					// opc always short
-					short       ret_mode = s->opc->value->v.short_val;
+					short       ret_mode = s->opc->value->short_val;
 					// -1 is void
 					// FIXME size and addressing
 					if (ret_mode >= 0) {

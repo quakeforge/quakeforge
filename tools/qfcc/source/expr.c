@@ -844,7 +844,7 @@ expr_long (const expr_t *e)
 		return 0;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_long) {
-		return e->value->v.long_val;
+		return e->value->long_val;
 	}
 	internal_error (e, "not a long constant");
 }
@@ -954,7 +954,7 @@ expr_string (const expr_t *e)
 	if (e->type == ex_nil)
 		return 0;
 	if (e->type == ex_value && e->value->lltype == ev_string)
-		return e->value->v.string_val;
+		return e->value->string_val;
 	internal_error (e, "not a string constant");
 }
 
@@ -977,10 +977,10 @@ expr_double (const expr_t *e)
 	if (e->type == ex_nil)
 		return 0;
 	if (e->type == ex_value && e->value->lltype == ev_double)
-		return e->value->v.double_val;
+		return e->value->double_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_double)
-		return e->symbol->value->v.double_val;
+		return e->symbol->value->double_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
 		&& is_double (e->symbol->def->type))
@@ -994,10 +994,10 @@ expr_float (const expr_t *e)
 	if (e->type == ex_nil)
 		return 0;
 	if (e->type == ex_value && e->value->lltype == ev_float)
-		return e->value->v.float_val;
+		return e->value->float_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_float)
-		return e->symbol->value->v.float_val;
+		return e->symbol->value->float_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
 		&& is_float (e->symbol->def->type))
@@ -1024,10 +1024,10 @@ expr_vector (const expr_t *e)
 	if (e->type == ex_nil)
 		return vec3_origin;
 	if (e->type == ex_value && e->value->lltype == ev_vector)
-		return e->value->v.vector_val;
+		return e->value->vector_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_vector)
-		return e->symbol->value->v.vector_val;
+		return e->symbol->value->vector_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
 		&& e->symbol->def->type->type == ev_vector)
@@ -1054,10 +1054,10 @@ expr_quaternion (const expr_t *e)
 	if (e->type == ex_nil)
 		return quat_origin;
 	if (e->type == ex_value && e->value->lltype == ev_quaternion)
-		return e->value->v.quaternion_val;
+		return e->value->quaternion_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_quaternion)
-		return e->symbol->value->v.quaternion_val;
+		return e->symbol->value->quaternion_val;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
 		&& e->symbol->def->type->type == ev_quaternion)
@@ -1092,15 +1092,15 @@ expr_int (const expr_t *e)
 		return 0;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_int) {
-		return e->value->v.int_val;
+		return e->value->int_val;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_short) {
-		return e->value->v.short_val;
+		return e->value->short_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& (e->symbol->type->type == ev_int
 			|| is_enum (e->symbol->type))) {
-		return e->symbol->value->v.int_val;
+		return e->symbol->value->int_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
@@ -1141,11 +1141,11 @@ expr_uint (const expr_t *e)
 		return 0;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_uint) {
-		return e->value->v.uint_val;
+		return e->value->uint_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_uint) {
-		return e->symbol->value->v.uint_val;
+		return e->symbol->value->uint_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
 		&& e->symbol->def->constant
@@ -1182,11 +1182,11 @@ expr_short (const expr_t *e)
 		return 0;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_short) {
-		return e->value->v.short_val;
+		return e->value->short_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_short) {
-		return e->symbol->value->v.short_val;
+		return e->symbol->value->short_val;
 	}
 	internal_error (e, "not a short constant");
 }
@@ -1198,11 +1198,11 @@ expr_ushort (const expr_t *e)
 		return 0;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_ushort) {
-		return e->value->v.ushort_val;
+		return e->value->ushort_val;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_ushort) {
-		return e->symbol->value->v.ushort_val;
+		return e->symbol->value->ushort_val;
 	}
 	internal_error (e, "not a ushort constant");
 }
@@ -1596,7 +1596,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 					   || e2->value->lltype != ev_field) {
 				internal_error (e2, "unexpected field exression");
 			}
-			auto fv = new_field_val (e2->value->v.pointer.val + field->offset, field->type, e2->value->v.pointer.def);
+			auto fv = new_field_val (e2->value->pointer.val + field->offset, field->type, e2->value->pointer.def);
 			scoped_src_loc (e2);
 			e2 = new_value_expr (fv, false);
 			// create a new . expression

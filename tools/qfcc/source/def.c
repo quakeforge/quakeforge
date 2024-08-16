@@ -424,9 +424,9 @@ init_elements (struct def_s *def, const expr_t *eles)
 			}
 			if (c->value->lltype == ev_string) {
 				EMIT_STRING (def->space, *(pr_string_t *) g,
-							 c->value->v.string_val);
+							 c->value->string_val);
 			} else {
-				memcpy (g, &c->value->v, type_size (get_type (c)) * 4);
+				memcpy (g, &c->value->raw_value, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -462,8 +462,8 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
-							expr->value->v.pointer.def = vector_sym->def;
-							expr->value->v.pointer.val = i;
+							expr->value->pointer.def = vector_sym->def;
+							expr->value->pointer.val = i;
 						}
 					}
 				}
@@ -657,9 +657,9 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			if (init->value->lltype == ev_ptr
 				|| init->value->lltype == ev_field) {
 				// FIXME offset pointers
-				D_INT (sym->def) = init->value->v.pointer.val;
-				if (init->value->v.pointer.def)
-					reloc_def_field (init->value->v.pointer.def, sym->def);
+				D_INT (sym->def) = init->value->pointer.val;
+				if (init->value->pointer.def)
+					reloc_def_field (init->value->pointer.def, sym->def);
 			} else {
 				ex_value_t *v = init->value;
 				if (!init->implicit
@@ -672,9 +672,9 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {
 					EMIT_STRING (sym->def->space, D_STRING (sym->def),
-								 v->v.string_val);
+								 v->string_val);
 				} else {
-					memcpy (D_POINTER (pr_type_t, sym->def), &v->v,
+					memcpy (D_POINTER (pr_type_t, sym->def), &v->raw_value,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}

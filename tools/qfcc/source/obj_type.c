@@ -217,7 +217,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		if (i == num_fields)
 			internal_error (0, "whoa, what happened?");
 		if (sym->sy_type == sy_const)
-			offset = sym->value->v.int_val;
+			offset = sym->value->int_val;
 		else
 			offset = sym->offset;
 		ENC_DEF (strct->fields[i].type, field_types[i]);

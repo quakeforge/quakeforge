@@ -82,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
+	return Hash_Buffer (&val->raw_value, value_size) + val->lltype;
 }
 
 static int
@@ -104,7 +104,7 @@ compare (const void *_cla, const void *_clb, void *unused)
 	val2 = get_value (v2);
 	if (val1->type != val2->type)
 		return 0;
-	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
+	return memcmp (&val1->raw_value, &val2->raw_value, value_size) == 0;
 }
 
 const expr_t *
@@ -383,7 +383,7 @@ check_enum_switch (switch_block_t *switch_block)
 
 	for (enum_val = type->t.symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_int_expr (enum_val->value->v.int_val, false);
+		cl.value = new_int_expr (enum_val->value->int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",

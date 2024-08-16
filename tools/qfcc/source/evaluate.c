@@ -172,7 +172,7 @@ convert_value (ex_value_t *value, const type_t *type)
 	int         addr = value_functions[vf_convert].first_statement;
 	value_statements[addr + 0].b = conv;
 	value_statements[addr + 1].c = type_size (type) - 1;
-	memcpy (value_globals, &value->v,
+	memcpy (value_globals, &value->raw_value,
 			type_size (value->type) * sizeof (pr_type_t));
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_convert);
@@ -204,7 +204,7 @@ get_def (operand_t *op)
 {
 	if (is_short (op->type)) {
 		auto def = new_def (0, &type_short, 0, sc_extern);
-		def->offset = op->value->v.short_val;
+		def->offset = op->value->short_val;
 		return def;
 	}
 	switch (op->op_type) {

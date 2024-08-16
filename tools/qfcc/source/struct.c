@@ -286,7 +286,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->value->v.uint_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->value->uint_val + 1;
 	if (val) {
 		val = convert_name (val);
 		if (!is_constant (val))
@@ -314,12 +314,12 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->value->v.int_val;
+		val = sym->value->int_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->value->v.int_val;
+				v = one_sym->value->int_val;
 				if (val * val > v * v)
 					continue;
 			}
