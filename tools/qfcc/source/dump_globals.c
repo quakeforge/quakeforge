@@ -49,6 +49,17 @@
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/strpool.h"
 
+//This is a bit of a hack, but currently, the debug view functions do not
+//try to do anything with field/pointer/function types other than determine
+//that the def is one of those types, but it allows globals dumping to work
+//with progs that don't have qfcc's type encodings, in particular, anything
+//compiled using qcc.
+#define EV_TYPE(t) { .meta = ty_basic, .type = ev_##t },
+static qfot_type_t basic_types[] = {
+#include "QF/progs/pr_type_names.h"
+	{ .meta = ty_basic, .type = ev_invalid },
+};
+
 static int
 cmp (const void *_a, const void *_b)
 {
@@ -84,6 +95,16 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 		}
 		dstring_clearstr (value_dstr);
 		qfot_type_t *ty = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+		if (!ty) {
+			//FIXME Rather iffy for any progs with extended types, but better
+			//than segfaulting
+			etype_t t = def->type & ~DEF_SAVEGLOBAL;
+			if (t < ev_invalid) {
+				ty = &basic_types[t];
+			} else {
+				ty = &basic_types[ev_invalid];
+			}
+		}
 		comment = PR_Debug_ValueString (pr, offset, ty, value_dstr);
 	}
 	printf ("%*s %x:%d %d %s %s:%x %s\n", indent * 12, "",
