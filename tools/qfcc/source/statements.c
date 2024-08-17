@@ -408,8 +408,8 @@ temp_operand (const type_t *type, const expr_t *expr)
 {
 	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
-	op->tempop.type = (type_t *) type;
-	op->type = (type_t *) type;
+	op->tempop.type = type;
+	op->type = type;
 	op->size = type_size (type);
 	op->width = type_width (type);
 	return op;

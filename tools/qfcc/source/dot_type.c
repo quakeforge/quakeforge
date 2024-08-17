@@ -260,7 +260,7 @@ dump_dot_type (void *_t, const char *filename)
 {
 	static int  id = 0;
 	dstring_t  *dstr = dstring_newstr ();
-	type_t     *t = (type_t *) _t;
+	const type_t *t = _t;
 
 	dasprintf (dstr, "digraph type_%p {\n", t);
 	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));

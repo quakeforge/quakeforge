@@ -492,7 +492,7 @@ static const expr_t *
 init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 				symtab_t *symtab)
 {
-	type_t     *type = (type_t *) dereference_type (def->type);//FIXME cast
+	const type_t *type = dereference_type (def->type);
 	def_t      *field_def;
 	symbol_t   *field_sym;
 	reloc_t    *relocs = 0;

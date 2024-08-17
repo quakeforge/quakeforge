@@ -714,7 +714,7 @@ new_temp_def_expr (const type_t *type)
 	expr_t     *e = new_expr ();
 
 	e->type = ex_temp;
-	e->temp.type = (type_t *) unalias_type (type);	// FIXME cast
+	e->temp.type = unalias_type (type);
 	return e;
 }
 
@@ -2471,7 +2471,7 @@ return_expr (function_t *f, const expr_t *e)
 			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool) {
-		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
+		e = convert_from_bool (e, ret_type);
 	}
 	if (is_float(ret_type) && is_int_val (e)) {
 		e = cast_expr (&type_float, e);
@@ -2499,7 +2499,7 @@ return_expr (function_t *f, const expr_t *e)
 					 f->sym->name);
 	} else {
 		if (ret_type != t) {
-			e = cast_expr ((type_t *) ret_type, e);//FIXME cast
+			e = cast_expr (ret_type, e);
 			t = f->sym->type->func.ret_type;
 		}
 	}

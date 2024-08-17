@@ -413,7 +413,7 @@ typename_spec (specifier_t spec)
 static specifier_t
 function_spec (specifier_t spec, param_t *params)
 {
-	// empty param list in an abstract decle does not create a symbol
+	// empty param list in an abstract decl does not create a symbol
 	if (!spec.sym) {
 		spec.sym = new_symbol (0);
 	}
@@ -447,17 +447,22 @@ pointer_spec (specifier_t quals, specifier_t spec)
 static specifier_t
 qc_function_spec (specifier_t spec, param_t *params)
 {
-	const type_t **type;
 	// .float () foo; is a field holding a function variable rather
 	// than a function that returns a float field.
-	for (type = &spec.type; *type && is_field (*type);
-		 type = (const type_t **) &(*type)->fldptr.type) {
+	// FIXME I think this breaks fields holding functions that return fields
+	// but that would require some messy ()s to get parsing anyway, and it can
+	// wait until such is needed (if ever).
+	const type_t *field_chain = nullptr;
+	const type_t *ret_type = spec.type;
+	while (ret_type && is_field (ret_type)) {
+		field_chain = field_type (field_chain);
+		ret_type = ret_type->fldptr.type;
 	}
-	const type_t *ret_type = *type;
-	*type = 0;
 
+	// qc-style functions are known to be functions before the symbol is seen,
+	// so provide an unnamed symbol to hold any field type information
 	spec.sym = new_symbol (0);
-	spec.sym->type = spec.type;
+	spec.sym->type = field_chain;
 	spec.type = ret_type;
 
 	spec = function_spec (spec, params);

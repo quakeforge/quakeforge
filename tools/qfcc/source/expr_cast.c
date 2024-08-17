@@ -96,7 +96,7 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return convert_nil (e, dstType);
 	}
 
-	dstType = (type_t *) unalias_type (dstType); //FIXME cast
+	dstType = unalias_type (dstType);
 	srcType = get_type (e);
 
 	if (dstType == srcType)

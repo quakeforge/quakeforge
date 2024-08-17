@@ -126,7 +126,7 @@ typedef union {
 typedef struct {
 	struct operand_s *op;		///< The operand for the temporary variable, if
 								///< allocated
-	type_t     *type;			///< The type of the temporary variable.
+	const type_t *type;			///< The type of the temporary variable.
 } ex_temp_t;
 
 typedef struct {
