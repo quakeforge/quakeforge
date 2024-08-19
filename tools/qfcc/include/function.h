@@ -72,20 +72,26 @@ typedef struct genfunc_s {
 	// only automatic (#0) builtins supported for now
 } genfunc_t;
 
+typedef enum {
+	mf_simple,
+	mf_overload,
+	mf_generic,
+} mf_type_e;
+
 /** Represent an overloading of a function.
 
 	Every function, whether overloaded or not, has an entry in the overloaded
 	function database.
 */
-typedef struct overloaded_function_s {
-	struct overloaded_function_s *next;
+typedef struct metafunc_s {
+	struct metafunc_s *next;
 	const char *name;				///< source level name of function
 	const char *full_name;			///< progs name of function, with type
 									///< encoding
 	const type_t *type;				///< type of this function
-	int         overloaded;			///< is this function overloaded
 	rua_loc_t   loc;				///< source location of the function
-} overloaded_function_t;
+	mf_type_e   meta_type;			///< is this function overloaded
+} metafunc_t;
 
 /** Internal representation of a function.
 */

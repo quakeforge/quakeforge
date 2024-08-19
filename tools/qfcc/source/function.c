@@ -68,9 +68,10 @@
 
 ALLOC_STATE (param_t, params);
 ALLOC_STATE (function_t, functions);
+ALLOC_STATE (metafunc_t, metafuncs);
 ALLOC_STATE (genfunc_t, genfuncs);
 static hashtab_t *generic_functions;
-static hashtab_t *overloaded_functions;
+static hashtab_t *metafuncs;
 static hashtab_t *function_map;
 
 // standardized base register to use for all locals (arguments, local defs,
@@ -90,14 +91,14 @@ gen_func_get_key (const void *_f, void *unused)
 static const char *
 ol_func_get_key (const void *_f, void *unused)
 {
-	overloaded_function_t *f = (overloaded_function_t *) _f;
+	metafunc_t *f = (metafunc_t *) _f;
 	return f->full_name;
 }
 
 static const char *
 func_map_get_key (const void *_f, void *unused)
 {
-	overloaded_function_t *f = (overloaded_function_t *) _f;
+	metafunc_t *f = (metafunc_t *) _f;
 	return f->name;
 }
 
@@ -503,7 +504,7 @@ check_params (param_t *params)
 	return params;
 }
 
-static overloaded_function_t *
+static metafunc_t *
 get_function (const char *name, const type_t *type, specifier_t spec)
 {
 	auto genfunc = parse_generic_function (name, spec);
@@ -528,10 +529,10 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 
 	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
-	overloaded_function_t *func;
+	metafunc_t *func;
 	// check if the exact function signature already exists, in which case
 	// simply return it.
-	func = Hash_Find (overloaded_functions, full_name);
+	func = Hash_Find (metafuncs, full_name);
 	if (func) {
 		if (func->type != type) {
 			error (0, "can't overload on return types");
@@ -542,7 +543,7 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 
 	func = Hash_Find (function_map, name);
 	if (func) {
-		if (!overload && !func->overloaded) {
+		if (!overload && func->meta_type != mf_overload) {
 			warning (0, "creating overloaded function %s without @overload",
 					 full_name);
 			warning (&(expr_t) { .loc = func->loc },
@@ -551,16 +552,16 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 		overload = true;
 	}
 
-	func = malloc (sizeof (overloaded_function_t));
-	*func = (overloaded_function_t) {
+	ALLOC (1024, metafunc_t, metafuncs, func);
+	*func = (metafunc_t) {
 		.name = save_string (name),
 		.full_name = full_name,
 		.type = type,
-		.overloaded = overload,
 		.loc = pr.loc,
+		.meta_type = overload ? mf_overload : mf_simple,
 	};
 
-	Hash_Add (overloaded_functions, func);
+	Hash_Add (metafuncs, func);
 	Hash_Add (function_map, func);
 	return func;
 }
@@ -569,12 +570,12 @@ symbol_t *
 function_symbol (symbol_t *sym, specifier_t spec)
 {
 	const char *name = sym->name;
-	overloaded_function_t *func;
+	metafunc_t *func;
 	symbol_t   *s;
 
 	func = get_function (name, unalias_type (sym->type), spec);
 
-	if (func && func->overloaded)
+	if (func && func->meta_type == mf_overload)
 		name = func->full_name;
 	s = symtab_lookup (current_symtab, name);
 	if (!s || s->table != current_symtab) {
@@ -592,8 +593,8 @@ function_symbol (symbol_t *sym, specifier_t spec)
 static int
 func_compare (const void *a, const void *b)
 {
-	overloaded_function_t *fa = *(overloaded_function_t **) a;
-	overloaded_function_t *fb = *(overloaded_function_t **) b;
+	metafunc_t *fa = *(metafunc_t **) a;
+	metafunc_t *fb = *(metafunc_t **) b;
 	const type_t *ta = fa->type;
 	const type_t *tb = fb->type;
 	int         na = ta->func.num_params;
@@ -618,7 +619,7 @@ func_compare (const void *a, const void *b)
 }
 
 static const expr_t *
-set_func_symbol (const expr_t *fexpr, overloaded_function_t *f)
+set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 {
 	auto sym = symtab_lookup (current_symtab, f->full_name);
 	if (!sym) {
@@ -768,8 +769,8 @@ const expr_t *
 find_function (const expr_t *fexpr, const expr_t *params)
 {
 	int         func_count, parm_count, reported = 0;
-	overloaded_function_t dummy, *best = 0;
-	void      *dummy_p = &dummy;
+	metafunc_t  dummy, *best = 0;
+	void       *dummy_p = &dummy;
 
 	if (fexpr->type != ex_symbol) {
 		return fexpr;
@@ -803,12 +804,12 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		return find_generic_function (fexpr, genfuncs, &call_type);
 	}
 
-	auto funcs = (overloaded_function_t **) Hash_FindList (function_map, fname);
+	auto funcs = (metafunc_t **) Hash_FindList (function_map, fname);
 	if (!funcs)
 		return fexpr;
 	for (func_count = 0; funcs[func_count]; func_count++) continue;
 	if (func_count < 2) {
-		if (func_count && !funcs[0]->overloaded) {
+		if (func_count && funcs[0]->meta_type != mf_overload) {
 			free (funcs);
 			return fexpr;
 		}
@@ -822,15 +823,15 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
 	if (dummy_p) {
-		auto f = (overloaded_function_t *) *(void **) dummy_p;
-		if (f->overloaded) {
+		auto f = (metafunc_t *) *(void **) dummy_p;
+		if (f->meta_type == mf_overload) {
 			fexpr = set_func_symbol (fexpr, f);
 		}
 		free (funcs);
 		return fexpr;
 	}
 	for (int i = 0; i < func_count; i++) {
-		auto f = (overloaded_function_t *) funcs[i];
+		auto f = (metafunc_t *) funcs[i];
 		parm_count = f->type->func.num_params;
 		if ((parm_count >= 0 && parm_count != call_type.func.num_params)
 			|| (parm_count < 0 && ~parm_count > call_type.func.num_params)) {
@@ -851,7 +852,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			continue;
 	}
 	for (int i = 0; i < func_count; i++) {
-		auto f = (overloaded_function_t *) funcs[i];
+		auto f = (metafunc_t *) funcs[i];
 		if (f) {
 			if (!best) {
 				best = f;
@@ -869,7 +870,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	if (reported)
 		return fexpr;
 	if (best) {
-		if (best->overloaded) {
+		if (best->meta_type == mf_overload) {
 			fexpr = set_func_symbol (fexpr, best);
 		}
 		free (funcs);
@@ -1342,13 +1343,13 @@ function_parms (function_t *f, byte *parm_size)
 void
 clear_functions (void)
 {
-	if (overloaded_functions) {
+	if (metafuncs) {
 		Hash_FlushTable (generic_functions);
-		Hash_FlushTable (overloaded_functions);
+		Hash_FlushTable (metafuncs);
 		Hash_FlushTable (function_map);
 	} else {
 		generic_functions = Hash_NewTable (1021, gen_func_get_key, 0, 0, 0);
-		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
+		metafuncs = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
 		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
 	}
 }
