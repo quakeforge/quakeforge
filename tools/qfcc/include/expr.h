@@ -808,6 +808,7 @@ int is_quaternion_val (const expr_t *e) __attribute__((pure));
 int is_int_val (const expr_t *e) __attribute__((pure));
 int is_uint_val (const expr_t *e) __attribute__((pure));
 int is_short_val (const expr_t *e) __attribute__((pure));
+int is_double_val (const expr_t *e) __attribute__((pure));
 int is_integral_val (const expr_t *e) __attribute__((pure));
 int is_pointer_val (const expr_t *e) __attribute__((pure));
 int is_math_val (const expr_t *e) __attribute__((pure));

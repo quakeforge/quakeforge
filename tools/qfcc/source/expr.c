@@ -966,7 +966,20 @@ is_float_val (const expr_t *e)
 	if (e->type == ex_value && e->value->lltype == ev_float)
 		return 1;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
-		&& e->symbol->type->type == ev_float)
+		&& is_float (e->symbol->type))
+		return 1;
+	return 0;
+}
+
+int
+is_double_val (const expr_t *e)
+{
+	if (e->type == ex_nil)
+		return 1;
+	if (e->type == ex_value && e->value->lltype == ev_double)
+		return 1;
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
+		&& is_double (e->symbol->type))
 		return 1;
 	return 0;
 }
