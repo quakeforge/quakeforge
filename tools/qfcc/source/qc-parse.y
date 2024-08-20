@@ -421,6 +421,17 @@ function_spec (specifier_t spec, param_t *params)
 		spec = default_type (spec, spec.sym);
 	}
 	spec.sym->params = params;
+	if (spec.sym->type) {
+		if (is_func (spec.sym->type)) {
+			error (0, "'%s' declared as a function returning a function",
+				   spec.sym->name);
+		} else if (is_array (spec.sym->type)) {
+			error (0, "declaration of '%s' as array of functions",
+				   spec.sym->name);
+		} else if (!is_ptr (spec.sym->type) && !is_field (spec.sym->type)) {
+			internal_error (0, "unexpected type");
+		}
+	}
 	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
 	spec.is_function = true; //FIXME do proper void(*)() -> ev_func
 	spec.is_generic = generic_scope;
@@ -433,6 +444,16 @@ static specifier_t
 array_spec (specifier_t spec, unsigned size)
 {
 	spec = default_type (spec, spec.sym);
+	if (spec.sym->type) {
+		if (is_func (spec.sym->type)) {
+			error (0, "'%s' declared as function returning an array",
+				   spec.sym->name);
+		} else if (!is_ptr (spec.sym->type)
+				   && !is_array (spec.sym->type)
+				   && !is_field (spec.sym->type)) {
+			internal_error (0, "unexpected type");
+	   }
+	}
 	spec.sym->type = append_type (spec.sym->type, array_type (0, size));
 	return spec;
 }
@@ -440,6 +461,14 @@ array_spec (specifier_t spec, unsigned size)
 static specifier_t
 pointer_spec (specifier_t quals, specifier_t spec)
 {
+	if (spec.sym->type) {
+		if (!is_func (spec.sym->type)
+			&& !is_ptr (spec.sym->type)
+			&& !is_array (spec.sym->type)
+			&& !is_field (spec.sym->type)) {
+			internal_error (0, "unexpected type");
+	   }
+	}
 	spec.sym->type = append_type (spec.sym->type, pointer_type (0));
 	return spec;
 }
@@ -688,7 +717,7 @@ qc_param_list
 	;
 // quakec function parameters cannot use a typedef as the return type
 // in the first parameter (really, they should't use any as standard quakec
-// doesn't support typedef, but that seems overly restrictive), howevery,
+// doesn't support typedef, but that seems overly restrictive), however,
 // they can stil use a typedef first parameter. This is due to grammar issues
 qc_first_param
 	: typespec identifier
