@@ -199,8 +199,6 @@ void make_function (symbol_t *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
 symbol_t *function_symbol (symbol_t *sym, specifier_t spec);
 const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
-function_t *new_function (const char *name, const char *nice_name);
-void add_function (function_t *f);
 function_t *begin_function (symbol_t *sym, const char *nicename,
 							symtab_t *parent, int far,
 							enum storage_class_e storage);
@@ -210,7 +208,6 @@ function_t *build_builtin_function (symbol_t *sym,
 									const expr_t *bi_val, int far,
 									enum storage_class_e storage);
 void emit_function (function_t *f, expr_t *e);
-int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);
 
 ///@}

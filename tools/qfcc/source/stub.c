@@ -13,7 +13,6 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
-#include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"
 #include "tools/qfcc/include/options.h"
@@ -52,7 +51,6 @@ type_t *algebra_base_type (const type_t *type){return 0;}
 __attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
-__attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
 __attribute__((noreturn)) void _internal_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {abort();}
 void _warning (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {}

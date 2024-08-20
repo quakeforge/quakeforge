@@ -1037,7 +1037,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	}
 }
 
-function_t *
+static function_t *
 new_function (const char *name, const char *nice_name)
 {
 	function_t	*f;
@@ -1077,7 +1077,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	}
 }
 
-void
+static void
 add_function (function_t *f)
 {
 	*pr.func_tail = f;
@@ -1322,22 +1322,6 @@ emit_function (function_t *f, expr_t *e)
 		statements_count_temps (f->sblock);
 	}
 	emit_statements (f->sblock);
-}
-
-int
-function_parms (function_t *f, byte *parm_size)
-{
-	int         count, i;
-	auto func = &f->sym->type->func;
-
-	if (func->num_params >= 0)
-		count = func->num_params;
-	else
-		count = -func->num_params - 1;
-
-	for (i = 0; i < count; i++)
-		parm_size[i] = type_size (func->param_types[i]);
-	return func->num_params;
 }
 
 void
