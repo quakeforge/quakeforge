@@ -508,10 +508,15 @@ make_selector (const char *selector, const type_t *type, const char *name)
 static param_t *
 make_qc_param (specifier_t spec, symbol_t *sym)
 {
-	spec = default_type (spec, sym);
-	sym->type = spec.type;
-	param_t   *param = new_param (0, sym->type, sym->name);
-	return param;
+	if (spec.type_expr) {
+		auto param = new_generic_param (spec.type_expr, spec.sym->name);
+		return param;
+	} else {
+		spec = default_type (spec, spec.sym);
+		sym->type = spec.type;
+		auto param = new_param (0, spec.type, sym->name);
+		return param;
+	}
 }
 
 static param_t *
@@ -744,7 +749,10 @@ qc_nocode_func
 			symbol_t   *sym = $1;
 			const expr_t *expr = $4;
 			sym->params = spec.sym->params;
-			sym = function_sym_type (spec, sym);
+
+			if (!spec.is_generic) {
+				sym = function_sym_type (spec, sym);
+			}
 			sym = function_symbol (sym, spec);
 			build_builtin_function (sym, expr, 0, spec.storage);
 		}
@@ -1120,10 +1128,16 @@ function_body
 		}
 	| '=' '#' expr ';'
 		{
-			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = function_sym_type (spec, spec.sym);
+			specifier_t spec = $<spec>0;
+			symbol_t   *sym = spec.sym;
+			const expr_t *expr = $3;
+
+			if (!spec.is_generic) {
+				spec = default_type (spec, spec.sym);
+				sym = function_sym_type (spec, sym);
+			}
 			sym = function_symbol (sym, spec);
-			build_builtin_function (sym, $3, 0, spec.storage);
+			build_builtin_function (sym, expr, 0, spec.storage);
 		}
 	;
 
@@ -2481,11 +2495,12 @@ methoddef
 		{
 			symbol_t   *sym;
 			method_t   *method = $2;
+			const expr_t *expr = $5;
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, $5, 1, sc_static);
+			build_builtin_function (sym, expr, 1, sc_static);
 			method->func = sym->func;
 			method->def = sym->func->def;
 		}
