@@ -276,7 +276,8 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		s->type = append_type (spec.sym->type, spec.type);
 	}
 	//FIXME is_function is bad (this whole implementation of handling
-	//function prototypes is bad)
+	//function prototypes is bad), and is actually broken for function
+	//pointers
 	if (spec.is_function && is_func (s->type)) {
 		set_func_type_attrs (s->type, spec);
 	}
