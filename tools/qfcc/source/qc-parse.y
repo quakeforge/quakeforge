@@ -2559,20 +2559,13 @@ methodprotolist2
 	;
 
 methodproto
-	: '+' methoddecl ';'
+	: ci methoddecl ';'
 		{
-			$2->instance = 0;
+			$2->instance = $1;
 			$$ = $2;
 		}
-	| '-' error ';'
+	| ci error ';'
 		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0); }
-	| '+' error ';'
-		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0); }
-	| '-' methoddecl ';'
-		{
-			$2->instance = 1;
-			$$ = $2;
-		}
 	;
 
 methoddecl
