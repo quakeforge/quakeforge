@@ -202,7 +202,7 @@ usage (int status)
 "                              default for separate compilation mode\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
-"        --traditional         Traditional QuakeC mode: implies v6only\n"
+"        --traditional         Traditional QuakeC mode: implies target=v6\n"
 "                              default when using progs.src\n"
 "    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
 "    -V, --version             Output version information and exit\n"
@@ -860,6 +860,7 @@ DecodeArgs (int argc, char **argv)
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = false;
+		options.code.no_double = true;
 		cpp_define ("__VERSION6__=1");
 		if (!options_user_set.code.crc) {
 			options.code.crc = true;

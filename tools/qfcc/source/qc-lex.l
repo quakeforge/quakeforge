@@ -584,16 +584,24 @@ parse_number (const rua_tok_t *tok, yyscan_t scanner)
 			   fp ? "floating" : type);
 		return 0;
 	}
+	if (expl == suff_long_double) {
+		warning (0, "long double treated as double");
+		expl = suff_double;
+	}
+	if (options.code.no_double && expl == suff_double) {
+		warning (0, "double treated as float");
+		expl = suff_float;
+	}
 
 	if (fp) {
 		if (expl == suff_float) {
 			return new_float_expr (fvalue);
 		} else {
-			if (expl == suff_long_double) {
-				warning (0, "long double treated as double");
-				expl = suff_double;
+			if (options.code.no_double) {
+				return new_float_expr (fvalue);
+			} else {
+				return new_double_expr (fvalue, expl == suff_implicit);
 			}
-			return new_double_expr (fvalue, expl == suff_implicit);
 		}
 	} else {
 		if (expl == suff_unsigned) {
@@ -696,6 +704,14 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 			   fp ? "floating" : "integer");
 		return 0;
 	}
+	if (expl == suff_long_double) {
+		warning (0, "long double treated as double");
+		expl = suff_double;
+	}
+	if (options.code.no_double && expl == suff_double) {
+		warning (0, "double treated as float");
+		expl = suff_float;
+	}
 	union {
 		pr_float_t f[4];
 		pr_int_t   i[4];
@@ -704,10 +720,6 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 		pr_type_t  t[PR_SIZEOF (lvec4)];
 	} data;
 	const type_t *type = nullptr;
-	if (expl == suff_long_double) {
-		warning (0, "long double treated as double");
-		expl = suff_double;
-	}
 	if (expl == suff_float) {
 		for (int i = 0; i < width; i++) {
 			auto c = components[i];
