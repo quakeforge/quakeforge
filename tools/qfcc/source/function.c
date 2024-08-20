@@ -89,14 +89,14 @@ gen_func_get_key (const void *_f, void *unused)
 }
 
 static const char *
-ol_func_get_key (const void *_f, void *unused)
+metafunc_get_full_name (const void *_f, void *unused)
 {
 	metafunc_t *f = (metafunc_t *) _f;
 	return f->full_name;
 }
 
 static const char *
-func_map_get_key (const void *_f, void *unused)
+metafunc_get_name (const void *_f, void *unused)
 {
 	metafunc_t *f = (metafunc_t *) _f;
 	return f->name;
@@ -507,20 +507,31 @@ check_params (param_t *params)
 static metafunc_t *
 get_function (const char *name, const type_t *type, specifier_t spec)
 {
-	auto genfunc = parse_generic_function (name, spec);
+	metafunc_t *func = Hash_Find (function_map, name);
 
+	auto genfunc = parse_generic_function (name, spec);
 	//FIXME want to be able to provide specific overloads for generic functions
 	//but need to figure out details, so disallow for now.
 	if (genfunc) {
-		if (Hash_Find (function_map, name)) {
-			error (0, "can't mix generic and overload");
+		if (func && func->meta_type != mf_generic) {
+			error (0, "can't mix generic and simple or overload");
 			return nullptr;
 		}
 		add_generic_function (genfunc);
-		return nullptr;// FIXME
+
+		ALLOC (1024, metafunc_t, metafuncs, func);
+		*func = (metafunc_t) {
+			.name = save_string (name),
+			.full_name = name,
+			.loc = pr.loc,
+			.meta_type = mf_generic,
+		};
+		Hash_Add (metafuncs, func);
+		Hash_Add (function_map, func);
+		return func;
 	}
-	if (Hash_Find (generic_functions, name)) {
-		error (0, "can't mix generic and overload");
+	if (func && func->meta_type == mf_generic) {
+		error (0, "can't mix generic and simple or overload");
 		return nullptr;
 	}
 
@@ -529,7 +540,6 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 
 	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
-	metafunc_t *func;
 	// check if the exact function signature already exists, in which case
 	// simply return it.
 	func = Hash_Find (metafuncs, full_name);
@@ -899,12 +909,14 @@ check_function (symbol_t *fsym)
 	param_t    *params = fsym->params;
 	param_t    *p;
 	int         i;
+	auto ret_type = fsym->type->func.ret_type;
 
-	if (!type_size (fsym->type->func.ret_type)) {
+	if (!ret_type || !type_size (ret_type)) {
 		error (0, "return type is an incomplete type");
-		//fsym->type->func.type = &type_void;//FIXME better type?
+		return;
+		//fsym->type->t.func.type = &type_void;//FIXME better type?
 	}
-	if (value_too_large (fsym->type->func.ret_type)) {
+	if (value_too_large (ret_type)) {
 		error (0, "return value too large to be passed by value (%d)",
 			   type_size (&type_param));
 		//fsym->type->func.type = &type_void;//FIXME better type?
@@ -1089,8 +1101,6 @@ function_t *
 begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 				int far, storage_class_t storage)
 {
-	defspace_t *space;
-
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_func);
@@ -1101,9 +1111,9 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		sym = new_symbol_type (sym->name, sym->type);
 		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
 	}
-	space = sym->table->space;
-	if (far)
-		space = pr.far_data;
+
+	defspace_t *space = far ? pr.far_data : sym->table->space;
+
 	make_function (sym, nicename, space, storage);
 	if (!sym->func->def->external) {
 		sym->func->def->initialized = 1;
@@ -1263,7 +1273,6 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 						storage_class_t storage)
 {
 	int         bi;
-	defspace_t *space;
 
 	if (sym->sy_type != sy_func) {
 		error (bi_val, "%s is not a function", sym->name);
@@ -1277,10 +1286,10 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
-	space = sym->table->space;
-	if (far)
-		space = pr.far_data;
+
+	defspace_t *space = far ? pr.far_data : sym->table->space;
 	make_function (sym, 0, space, storage);
+
 	if (sym->func->def->external)
 		return 0;
 
@@ -1333,7 +1342,7 @@ clear_functions (void)
 		Hash_FlushTable (function_map);
 	} else {
 		generic_functions = Hash_NewTable (1021, gen_func_get_key, 0, 0, 0);
-		metafuncs = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
-		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
+		metafuncs = Hash_NewTable (1021, metafunc_get_full_name, 0, 0, 0);
+		function_map = Hash_NewTable (1021, metafunc_get_name, 0, 0, 0);
 	}
 }
