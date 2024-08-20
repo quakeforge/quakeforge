@@ -459,7 +459,7 @@ set_func_type_attrs (const type_t *func, specifier_t spec)
 }
 
 specifier_t
-default_type (specifier_t spec, symbol_t *sym)
+default_type (specifier_t spec, const symbol_t *sym)
 {
 	if (spec.type) {
 		if (is_float (spec.type) && !spec.multi_type) {

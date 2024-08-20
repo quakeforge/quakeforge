@@ -147,7 +147,7 @@ void chain_type (type_t *type);
 */
 const type_t *append_type (const type_t *type, const type_t *new);
 void set_func_type_attrs (const type_t *func, specifier_t spec);
-specifier_t default_type (specifier_t spec, struct symbol_s *sym);
+specifier_t default_type (specifier_t spec, const struct symbol_s *sym);
 const type_t *find_type (const type_t *new);
 void new_typedef (const char *name, type_t *type);
 const type_t *field_type (const type_t *aux);
