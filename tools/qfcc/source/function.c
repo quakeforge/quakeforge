@@ -1282,7 +1282,8 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
-	if (!is_int_val (bi_val) && !is_float_val (bi_val)) {
+	if (!is_int_val (bi_val)
+		&& !(type_default != &type_int && is_float_val (bi_val))) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
@@ -1298,10 +1299,14 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 	sym->func->def->nosave = 1;
 	add_function (sym->func);
 
-	if (is_int_val (bi_val))
+	if (is_int_val (bi_val)) {
 		bi = expr_int (bi_val);
-	else
+	} else {
 		bi = expr_float (bi_val);
+		if (bi != expr_float (bi_val)) {
+			error (bi_val, "invalid constant for = #");
+		}
+	}
 	if (bi < 0) {
 		error (bi_val, "builtin functions must be positive or 0");
 		return 0;
