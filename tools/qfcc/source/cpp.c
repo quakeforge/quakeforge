@@ -668,10 +668,16 @@ FILE *
 preprocess_file (const char *filename, const char *ext)
 {
 	if (cpp_name) {
-		return  run_cpp (filename, ext);
+		return run_cpp (filename, ext);
 	} else {
 		set_line_file (1, filename, 0);
-		return fopen (filename, "rb");
+		FILE *file = fopen (filename, "rb");
+		if (!file) {
+			fprintf (stderr, "%s: error: %s: %s\n", this_program, filename,
+					 strerror (errno));
+			pr.error_count++;
+		}
+		return file;
 	}
 }
 
