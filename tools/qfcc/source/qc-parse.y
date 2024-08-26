@@ -776,14 +776,14 @@ qc_nocode_func
 		{
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = $1;
-			const expr_t *expr = $4;
+			const expr_t *bi_val = $4;
 			sym->params = spec.sym->params;
 
 			if (!spec.is_generic) {
 				sym = function_sym_type (spec, sym);
 			}
 			sym = function_symbol (sym, spec);
-			build_builtin_function (sym, expr, 0, spec.storage);
+			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
 	| identifier '=' expr
 		{
@@ -1159,14 +1159,14 @@ function_body
 		{
 			specifier_t spec = $<spec>0;
 			symbol_t   *sym = spec.sym;
-			const expr_t *expr = $3;
+			const expr_t *bi_val = $3;
 
 			if (!spec.is_generic) {
 				spec = default_type (spec, spec.sym);
 				sym = function_sym_type (spec, sym);
 			}
 			sym = function_symbol (sym, spec);
-			build_builtin_function (sym, expr, 0, spec.storage);
+			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
 	;
 
@@ -2524,12 +2524,12 @@ methoddef
 		{
 			symbol_t   *sym;
 			method_t   *method = $2;
-			const expr_t *expr = $5;
+			const expr_t *bi_val = $5;
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, expr, 1, sc_static);
+			build_builtin_function (sym, bi_val, 1, sc_static);
 			method->func = sym->func;
 			method->def = sym->func->def;
 		}
