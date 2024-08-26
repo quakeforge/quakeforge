@@ -577,8 +577,16 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 }
 
 symbol_t *
-function_symbol (symbol_t *sym, specifier_t spec)
+function_symbol (specifier_t spec)
 {
+	if (!spec.is_generic && (!spec.sym->type || !spec.sym->type->encoding)) {
+		spec = default_type (spec, spec.sym);
+		spec.sym->type = append_type (spec.sym->type, spec.type);
+		set_func_type_attrs (spec.sym->type, spec);
+		spec.sym->type = find_type (spec.sym->type);
+	}
+
+	symbol_t   *sym = spec.sym;
 	const char *name = sym->name;
 	metafunc_t *func;
 	symbol_t   *s;
@@ -1104,12 +1112,18 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_func);
-		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
+		sym = function_symbol ((specifier_t) {
+								.sym = sym,
+								.is_overload = true
+							   });
 	}
 	if (sym->func && sym->func->def && sym->func->def->initialized) {
 		error (0, "%s redefined", sym->name);
 		sym = new_symbol_type (sym->name, sym->type);
-		sym = function_symbol (sym, (specifier_t) { .is_overload = true });
+		sym = function_symbol ((specifier_t) {
+								.sym = sym,
+								.is_overload = true
+							   });
 	}
 
 	defspace_t *space = far ? pr.far_data : sym->table->space;

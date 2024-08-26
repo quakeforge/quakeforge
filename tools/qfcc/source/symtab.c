@@ -272,14 +272,8 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		space = pr.near_data;
 	}
 
-	if (spec.type) {
+	if (spec.type && (spec.is_typedef || !s->type || !is_func (s->type))) {
 		s->type = append_type (spec.sym->type, spec.type);
-	}
-	//FIXME is_function is bad (this whole implementation of handling
-	//function prototypes is bad), and is actually broken for function
-	//pointers
-	if (spec.is_function && is_func (s->type)) {
-		set_func_type_attrs (s->type, spec);
 	}
 
 	if (spec.is_typedef) {
@@ -295,10 +289,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 			if (init) {
 				error (0, "function %s is initialized", s->name);
 			}
-			if (!spec.type_expr) {
-				s->type = find_type (s->type);
-			}
-			s = function_symbol (s, spec);
+			s = function_symbol (spec);
 		} else {
 			s->type = find_type (s->type);
 			initialize_def (s, init, space, spec.storage, symtab);

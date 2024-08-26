@@ -1634,18 +1634,15 @@ class_finish_module (void)
 	if (!exec_class_sym) {
 		exec_class_sym = new_symbol_type ("__obj_exec_class",
 										  &type_exec_class);
-		exec_class_sym = function_symbol (exec_class_sym,
-										  (specifier_t) {
-											.is_overload = false
+		exec_class_sym = function_symbol ((specifier_t) {
+											.sym = exec_class_sym
 										  });
 		make_function (exec_class_sym, 0, exec_class_sym->table->space,
 					   sc_extern);
 	}
 
 	init_sym = new_symbol_type (".ctor", &type_func);
-	init_sym = function_symbol (init_sym, (specifier_t) {
-											.is_overload = false
-										  });
+	init_sym = function_symbol ((specifier_t) { .sym = init_sym });
 
 	const expr_t *module_expr;
 	module_expr = address_expr (new_symbol_expr (module_sym), 0);

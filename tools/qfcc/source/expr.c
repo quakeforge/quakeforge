@@ -3077,9 +3077,7 @@ think_expr (symbol_t *think_sym)
 	} else {
 		think_sym->type = &type_func;
 	}
-	think_sym = function_symbol (think_sym, (specifier_t) {
-												.is_overload = false
-											});
+	think_sym = function_symbol ((specifier_t) { .sym = think_sym });
 	make_function (think_sym, 0, current_symtab->space, current_storage);
 	return new_symbol_expr (think_sym);
 }

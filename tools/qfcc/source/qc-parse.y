@@ -432,8 +432,8 @@ function_spec (specifier_t spec, param_t *params)
 			internal_error (0, "unexpected type");
 		}
 	}
+	spec.is_function = !spec.sym->type; //FIXME do proper void(*)() -> ev_func
 	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
-	spec.is_function = true; //FIXME do proper void(*)() -> ev_func
 	spec.is_generic = generic_scope;
 	spec.is_generic_block = generic_block;
 	spec.symtab = generic_symtab;
@@ -498,13 +498,16 @@ qc_function_spec (specifier_t spec, param_t *params)
 	return spec;
 }
 
-static symbol_t *
-function_sym_type (specifier_t spec, symbol_t *sym)
+static specifier_t
+qc_set_symbol (specifier_t spec, symbol_t *sym)
 {
-	sym->type = append_type (spec.sym->type, spec.type);
-	set_func_type_attrs (sym->type, spec);
-	sym->type = find_type (sym->type);
-	return sym;
+	// qc-style function declarations don't know the symbol name until the
+	// declaration is fully parsed, so spec.sym's name is null but its type
+	// carries any extra type information (field, pointer, array)
+	sym->params = spec.sym->params;
+	sym->type = spec.sym->type;
+	spec.sym = sym;
+	return spec;
 }
 
 static param_t *
@@ -774,50 +777,23 @@ qc_func_decl
 qc_nocode_func
 	: identifier '=' '#' expr
 		{
-			specifier_t spec = $<spec>0;
-			symbol_t   *sym = $1;
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
 			const expr_t *bi_val = $4;
-			sym->params = spec.sym->params;
 
-			if (!spec.is_generic) {
-				sym = function_sym_type (spec, sym);
-			}
-			sym = function_symbol (sym, spec);
+			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
 	| identifier '=' expr
 		{
-			specifier_t spec = $<spec>0;
-			symbol_t   *sym = $1;
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
 			const expr_t *expr = $3;
-			sym->params = spec.sym->params;
-			sym = function_sym_type (spec, sym);
-			sym = function_symbol (sym, spec);
-			spec.sym = sym;
-			spec.type = sym->type;
-			spec.is_function = false;
-			sym->type = nullptr;
+
 			declare_symbol (spec, expr, current_symtab);
 		}
 	| identifier
 		{
-			specifier_t spec = $<spec>0;
-			symbol_t   *sym = $1;
-			sym->params = spec.sym->params;
-			sym = function_sym_type (spec, sym);
-			if (!local_expr && !is_field (spec.sym->type)) {
-				sym = function_symbol (sym, spec);
-			}
-			if (!local_expr && !is_field (sym->type)) {
-				// things might be a confused mess from earlier errors
-				if (sym->sy_type == sy_func)
-					make_function (sym, 0, sym->table->space, spec.storage);
-			} else {
-				initialize_def (sym, 0, current_symtab->space, spec.storage,
-								current_symtab);
-				if (sym->def)
-					sym->def->nosave |= spec.nosave;
-			}
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			declare_symbol (spec, nullptr, current_symtab);
 		}
 	;
 
@@ -829,11 +805,8 @@ qc_code_func
 				.symtab = current_symtab,
 				.function = current_func,
 			};
-			specifier_t spec = $<spec>0;
-			symbol_t   *sym = $1;
-			sym->params = spec.sym->params;
-			sym = function_sym_type (spec, sym);
-			sym = function_symbol (sym, spec);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			symbol_t   *sym = function_symbol (spec);
 			current_func = begin_function (sym, 0, current_symtab, 0,
 										   spec.storage);
 			current_symtab = current_func->locals;
@@ -1134,8 +1107,7 @@ function_body
 	: method_optional_state_expr
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
-			symbol_t   *sym = function_sym_type (spec, spec.sym);
-			$<symbol>$ = function_symbol (sym, spec);
+			$<symbol>$ = function_symbol (spec);
 		}
 	  save_storage
 		{
@@ -1158,14 +1130,9 @@ function_body
 	| '=' '#' expr ';'
 		{
 			specifier_t spec = $<spec>0;
-			symbol_t   *sym = spec.sym;
 			const expr_t *bi_val = $3;
 
-			if (!spec.is_generic) {
-				spec = default_type (spec, spec.sym);
-				sym = function_sym_type (spec, sym);
-			}
-			sym = function_symbol (sym, spec);
+			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
 	;
@@ -2914,7 +2881,7 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
 			};
 			return QC_TYPE_NAME;
 		}
-		// id has been redelcared as a variable (hopefully)
+		// id has been redeclared as a variable (hopefully)
 		return QC_NAME;
 	} else {
 		lval->spec = keyword->spec;

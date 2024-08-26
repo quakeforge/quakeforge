@@ -197,7 +197,7 @@ struct defspace_s;
 int value_too_large (const type_t *val_type) __attribute__((pure));
 void make_function (symbol_t *sym, const char *nice_name,
 					struct defspace_s *space, enum storage_class_e storage);
-symbol_t *function_symbol (symbol_t *sym, specifier_t spec);
+symbol_t *function_symbol (specifier_t spec);
 const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
 function_t *begin_function (symbol_t *sym, const char *nicename,
 							symtab_t *parent, int far,
