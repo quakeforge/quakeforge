@@ -422,7 +422,7 @@ statement
 		{
 			$$ = $1;
 			if ($$->type == ex_symbol && $$->symbol->sy_type == sy_func) {
-				if ($$->symbol->func != current_func) {
+				if ($$->symbol->metafunc->func != current_func) {
 					$$ = error ($$, "cannot assign to other function");
 				} else {
 					symbol_t   *ret = function_value (current_func);

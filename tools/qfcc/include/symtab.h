@@ -80,7 +80,7 @@ typedef struct symbol_s {
 		struct def_s *def;			///< sy_var
 		struct ex_value_s *value;	///< sy_const
 		const struct expr_s *expr;	///< sy_expr/sy_type_param
-		struct function_s *func;	///< sy_func
+		struct metafunc_s *metafunc;///< sy_func
 		symconv_t   convert;		///< sy_convert
 		struct rua_macro_s *macro;	///< sy_macro
 	};

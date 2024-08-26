@@ -1896,10 +1896,10 @@ expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 	} else if (sym->sy_type == sy_const) {
 		*op = value_operand (sym->value, e);
 	} else if (sym->sy_type == sy_func) {
-		if (!sym->func) {
+		if (!sym->metafunc->func) {
 			make_function (sym, 0, pr.symtab->space, sc_extern);
 		}
-		*op = def_operand (sym->func->def, 0, e);
+		*op = def_operand (sym->metafunc->func->def, 0, e);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);

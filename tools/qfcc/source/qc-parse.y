@@ -2475,8 +2475,8 @@ methoddef
 										   sc_static);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->locals);
-			method->func = sym->func;
-			method->def = sym->func->def;
+			method->func = sym->metafunc->func;
+			method->def = method->func->def;
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
@@ -2497,8 +2497,8 @@ methoddef
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
 			build_builtin_function (sym, bi_val, 1, sc_static);
-			method->func = sym->func;
-			method->def = sym->func->def;
+			method->func = sym->metafunc->func;
+			method->def = method->func->def;
 		}
 	;
 

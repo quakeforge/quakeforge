@@ -78,21 +78,6 @@ typedef enum {
 	mf_generic,
 } mf_type_e;
 
-/** Represent an overloading of a function.
-
-	Every function, whether overloaded or not, has an entry in the overloaded
-	function database.
-*/
-typedef struct metafunc_s {
-	struct metafunc_s *next;
-	const char *name;				///< source level name of function
-	const char *full_name;			///< progs name of function, with type
-									///< encoding
-	const type_t *type;				///< type of this function
-	rua_loc_t   loc;				///< source location of the function
-	mf_type_e   meta_type;			///< is this function overloaded
-} metafunc_t;
-
 /** Internal representation of a function.
 */
 typedef struct function_s {
@@ -161,6 +146,21 @@ typedef struct function_s {
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 } function_t;
 
+/** Represent an overloading of a function.
+
+	Every function, whether overloaded or not, has a meta-function
+*/
+typedef struct metafunc_s {
+	struct metafunc_s *next;
+	const char *name;				///< source level name of function
+	const char *full_name;			///< progs name of function, with type
+									///< encoding
+	const type_t *type;				///< type of this function
+	rua_loc_t   loc;				///< source location of the function
+	mf_type_e   meta_type;			///< is this function overloaded
+	function_t *func;
+} metafunc_t;
+
 extern function_t *current_func;
 
 /** Representation of a function parameter.
@@ -195,8 +195,9 @@ param_t *check_params (param_t *params);
 enum storage_class_e;
 struct defspace_s;
 int value_too_large (const type_t *val_type) __attribute__((pure));
-void make_function (symbol_t *sym, const char *nice_name,
-					struct defspace_s *space, enum storage_class_e storage);
+function_t *make_function (symbol_t *sym, const char *nice_name,
+						struct defspace_s *space,
+						enum storage_class_e storage);
 symbol_t *function_symbol (specifier_t spec);
 const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
 function_t *begin_function (symbol_t *sym, const char *nicename,
