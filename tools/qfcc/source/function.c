@@ -305,6 +305,12 @@ parse_generic_function (const char *name, specifier_t spec)
 			warning (0, "generic parameter %s not used", s->name);
 		}
 	}
+	if (!num_gentype) {
+		if (!spec.is_generic_block) {
+			warning (0, "no generic parameters for %s", name);
+		}
+		return nullptr;
+	}
 
 	genfunc_t *genfunc;
 	ALLOC (4096, genfunc_t, genfuncs, genfunc);
@@ -508,28 +514,6 @@ static metafunc_t *
 get_function (const char *name, const type_t *type, specifier_t spec)
 {
 	metafunc_t *func = Hash_Find (function_map, name);
-
-	auto genfunc = parse_generic_function (name, spec);
-	//FIXME want to be able to provide specific overloads for generic functions
-	//but need to figure out details, so disallow for now.
-	if (genfunc) {
-		if (func && func->meta_type != mf_generic) {
-			error (0, "can't mix generic and simple or overload");
-			return nullptr;
-		}
-		add_generic_function (genfunc);
-
-		ALLOC (1024, metafunc_t, metafuncs, func);
-		*func = (metafunc_t) {
-			.name = save_string (name),
-			.full_name = name,
-			.loc = pr.loc,
-			.meta_type = mf_generic,
-		};
-		Hash_Add (metafuncs, func);
-		Hash_Add (function_map, func);
-		return func;
-	}
 	if (func && func->meta_type == mf_generic) {
 		error (0, "can't mix generic and simple or overload");
 		return nullptr;
@@ -579,23 +563,42 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 symbol_t *
 function_symbol (specifier_t spec)
 {
-	if (!spec.is_generic && (!spec.sym->type || !spec.sym->type->encoding)) {
-		spec = default_type (spec, spec.sym);
-		spec.sym->type = append_type (spec.sym->type, spec.type);
-		set_func_type_attrs (spec.sym->type, spec);
-		spec.sym->type = find_type (spec.sym->type);
-	}
-
 	symbol_t   *sym = spec.sym;
 	const char *name = sym->name;
-	metafunc_t *func;
-	symbol_t   *s;
+	metafunc_t *func = Hash_Find (function_map, name);
 
-	func = get_function (name, unalias_type (sym->type), spec);
+	auto genfunc = parse_generic_function (name, spec);
+	//FIXME want to be able to provide specific overloads for generic functions
+	//but need to figure out details, so disallow for now.
+	if (genfunc) {
+		if (func && func->meta_type != mf_generic) {
+			error (0, "can't mix generic and simple or overload");
+			return nullptr;
+		}
+		add_generic_function (genfunc);
+
+		ALLOC (1024, metafunc_t, metafuncs, func);
+		*func = (metafunc_t) {
+			.name = save_string (name),
+			.full_name = name,
+			.loc = pr.loc,
+			.meta_type = mf_generic,
+		};
+		Hash_Add (metafuncs, func);
+		Hash_Add (function_map, func);
+	} else {
+		if (!spec.sym->type || !spec.sym->type->encoding) {
+			spec = default_type (spec, spec.sym);
+			spec.sym->type = append_type (spec.sym->type, spec.type);
+			set_func_type_attrs (spec.sym->type, spec);
+			spec.sym->type = find_type (spec.sym->type);
+		}
+		func = get_function (name, unalias_type (sym->type), spec);
+	}
 
 	if (func && func->meta_type == mf_overload)
 		name = func->full_name;
-	s = symtab_lookup (current_symtab, name);
+	symbol_t   *s = symtab_lookup (current_symtab, name);
 	if (!s || s->table != current_symtab) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
@@ -777,7 +780,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		sym->sy_type = sy_func;
 		sym->type = type;
 		sym->params = params;
-		sym->metafunc = nullptr;
+		sym->metafunc = fsym->metafunc;
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return new_symbol_expr (sym);
@@ -1299,14 +1302,18 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 		error (bi_val, "%s is not a function", sym->name);
 		return 0;
 	}
-	function_t *func = sym->metafunc->func;
-	if (func && func->def && func->def->initialized) {
-		error (bi_val, "%s redefined", sym->name);
-		return 0;
-	}
 	if (!is_int_val (bi_val)
 		&& !(type_default != &type_int && is_float_val (bi_val))) {
 		error (bi_val, "invalid constant for = #");
+		return 0;
+	}
+	if (sym->metafunc->meta_type == mf_generic) {
+		return 0;
+	}
+
+	function_t *func = sym->metafunc->func;
+	if (func && func->def && func->def->initialized) {
+		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
 
