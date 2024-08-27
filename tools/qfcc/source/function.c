@@ -133,6 +133,8 @@ cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
 void
 add_generic_function (genfunc_t *genfunc)
 {
+	auto name = genfunc->name;
+
 	for (int i = 0; i < genfunc->num_types; i++) {
 		auto gentype = &genfunc->types[i];
 		if (gentype->compute && gentype->valid_types) {
@@ -154,28 +156,31 @@ add_generic_function (genfunc_t *genfunc)
 		}
 	}
 	if (!gen_params) {
-		internal_error (0, "%s has no generic parameters", genfunc->name);
+		internal_error (0, "%s has no generic parameters", name);
 	}
 	if (!genfunc->ret_type) {
-		internal_error (0, "%s has no return type", genfunc->name);
+		internal_error (0, "%s has no return type", name);
 	}
 	check_generic_param (genfunc->ret_type, genfunc);
 
 	bool is_new = true;
-	genfunc_t *old = Hash_Find (generic_functions, genfunc->name);
-	if (old && old->num_params == genfunc->num_params) {
-		is_new = false;
-		for (int i = 0; i < genfunc->num_params; i++) {
-			if (!cmp_genparams (genfunc, &genfunc->params[i],
-								old, &old->params[i])) {
-				is_new = true;
-				break;
+	auto old_list = (genfunc_t **) Hash_FindList (generic_functions, name);
+	for (auto o = old_list; is_new && o && *o; o++) {
+		auto old = *o;
+		if (old->num_params == genfunc->num_params) {
+			is_new = false;
+			for (int i = 0; i < genfunc->num_params; i++) {
+				if (!cmp_genparams (genfunc, &genfunc->params[i],
+									old, &old->params[i])) {
+					is_new = true;
+					break;
+				}
 			}
-		}
-		if (!is_new && !cmp_genparams (genfunc, genfunc->ret_type,
-									   old, old->ret_type)) {
-			error (0, "can't overload on return types");
-			return;
+			if (!is_new && !cmp_genparams (genfunc, genfunc->ret_type,
+										   old, old->ret_type)) {
+				error (0, "can't overload on return types");
+				return;
+			}
 		}
 	}
 
