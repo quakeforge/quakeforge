@@ -560,6 +560,10 @@ qfo_read (QFile *file)
 	unsigned    i;
 
 	size = Qfilesize (file);
+	if (size < (int) sizeof (qfo_header_t)) {
+		fprintf (stderr, "not a valid qfo file\n");
+		return 0;
+	}
 	data = malloc (size);
 	Qread (file, data, size);
 
