@@ -178,12 +178,6 @@ typedef struct language_s {
 } language_t;
 
 extern language_t lang_ruamoko;
-extern language_t lang_glsl_comp;
-extern language_t lang_glsl_vert;
-extern language_t lang_glsl_tesc;
-extern language_t lang_glsl_tese;
-extern language_t lang_glsl_geom;
-extern language_t lang_glsl_frag;
 extern language_t lang_pascal;
 
 #endif//__rua_lang_h

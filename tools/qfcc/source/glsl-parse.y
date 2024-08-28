@@ -66,6 +66,7 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -1343,26 +1344,46 @@ glsl_yyparse (FILE *in)
 	return ret;
 }
 
+int
+glsl_parse_string (const char *str)
+{
+	rua_parser_t parser = {
+		.parse = glsl_yypush_parse,
+		.state = glsl_yypstate_new (),
+		.directive = glsl_directive,
+		.keyword_or_id = glsl_keyword_or_id,
+	};
+	int ret = rua_parse_string (str, &parser);
+	glsl_yypstate_delete (parser.state);
+	return ret;
+}
+
 language_t lang_glsl_comp = {
+	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
 };
 
 language_t lang_glsl_vert = {
+	.init = glsl_init_vert,
 	.parse = glsl_yyparse,
 };
 
 language_t lang_glsl_tesc = {
+	.init = glsl_init_tesc,
 	.parse = glsl_yyparse,
 };
 
 language_t lang_glsl_tese = {
+	.init = glsl_init_tese,
 	.parse = glsl_yyparse,
 };
 
 language_t lang_glsl_geom = {
+	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
 };
 
 language_t lang_glsl_frag = {
+	.init = glsl_init_frag,
 	.parse = glsl_yyparse,
 };

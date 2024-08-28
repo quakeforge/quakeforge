@@ -76,6 +76,7 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/grab.h"
 #include "tools/qfcc/include/idstuff.h"
 #include "tools/qfcc/include/linker.h"
