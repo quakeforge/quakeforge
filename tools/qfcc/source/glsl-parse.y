@@ -1329,7 +1329,7 @@ glsl_keyword_or_id (rua_val_t *lval, const char *token)
 	return GLSL_IDENTIFIER;
 }
 
-int
+static int
 glsl_yyparse (FILE *in)
 {
 	rua_parser_t parser = {
@@ -1342,3 +1342,27 @@ glsl_yyparse (FILE *in)
 	glsl_yypstate_delete (parser.state);
 	return ret;
 }
+
+language_t lang_glsl_comp = {
+	.parse = glsl_yyparse,
+};
+
+language_t lang_glsl_vert = {
+	.parse = glsl_yyparse,
+};
+
+language_t lang_glsl_tesc = {
+	.parse = glsl_yyparse,
+};
+
+language_t lang_glsl_tese = {
+	.parse = glsl_yyparse,
+};
+
+language_t lang_glsl_geom = {
+	.parse = glsl_yyparse,
+};
+
+language_t lang_glsl_frag = {
+	.parse = glsl_yyparse,
+};

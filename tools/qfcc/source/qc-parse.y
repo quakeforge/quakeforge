@@ -66,6 +66,7 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/grab.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -2978,7 +2979,7 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 	return QC_NAME;
 }
 
-int
+static int
 qc_yyparse (FILE *in)
 {
 	rua_parser_t parser = {
@@ -2991,3 +2992,17 @@ qc_yyparse (FILE *in)
 	qc_yypstate_delete (parser.state);
 	return ret;
 }
+
+static int qc_finish (const char *file)
+{
+	if (options.frames_files) {
+		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
+	}
+	class_finish_module ();
+	return pr.error_count;
+}
+
+language_t lang_ruamoko = {
+	.parse = qc_yyparse,
+	.finish = qc_finish,
+};

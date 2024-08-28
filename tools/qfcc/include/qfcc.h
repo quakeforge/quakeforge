@@ -117,9 +117,6 @@ extern	pr_info_t	pr;
 
 const char *file_basename (const char *filename, int keepdot) __attribute__((pure));
 
-int glsl_yyparse (FILE *in);
-int qc_yyparse (FILE *in);
-int qp_yyparse (FILE *in);
 extern int pre_yydebug;
 extern int glsl_yydebug;
 extern int qc_yydebug;

@@ -307,7 +307,7 @@ convert_relop (const char *relop)
 	internal_error (0, "bad relop %s", relop);
 }
 
-int
+static int
 qp_yyparse (FILE *in)
 {
 	int         status;
@@ -327,6 +327,10 @@ qp_yyparse (FILE *in)
 	qp_yypstate_delete (ps);
 	return status;
 }
+
+language_t lang_pascal = {
+	.parse = qp_yyparse,
+};
 
 static void
 update_loc (rua_loc_t *loc, size_t textlen)

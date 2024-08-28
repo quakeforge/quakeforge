@@ -96,16 +96,9 @@ const char *progs_src;
 
 pr_info_t   pr;
 
-typedef enum {
-	lang_object,
-	lang_ruamoko,
-	lang_pascal,
-	lang_glsl,
-} lang_t;
-
 typedef struct ext_lang_s {
 	const char *ext;
-	lang_t      lang;
+	language_t *lang;
 } ext_lang_t;
 
 #ifdef _WIN32
@@ -378,30 +371,15 @@ setup_sym_file (const char *output_file)
 }
 
 static int
-compile_to_obj (const char *file, const char *obj, lang_t lang)
+compile_to_obj (const char *file, const char *obj, language_t *lang)
 {
 	int         err;
 	FILE       *yyin;
-	int       (*yyparse) (FILE *in);
-
-	switch (lang) {
-		case lang_ruamoko:
-			yyparse = qc_yyparse;
-			break;
-		case lang_pascal:
-			yyparse = qp_yyparse;
-			break;
-		case lang_glsl:
-			yyparse = glsl_yyparse;
-			break;
-		default:
-			internal_error (0, "unknown language enum");
-	}
 
 	yyin = preprocess_file (file, 0);
 	if (options.preprocess_only || !yyin) {
 		if (yyin) {
-			return yyparse (yyin);
+			return lang->parse (yyin);
 		}
 		return !options.preprocess_only;
 	}
@@ -411,7 +389,10 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	begin_compilation ();
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
-	err = yyparse (yyin) || pr.error_count;
+	if (lang->init) {
+		lang->init ();
+	}
+	err = lang->parse (yyin) || pr.error_count;
 	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
@@ -419,14 +400,12 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
-	if (options.frames_files) {
-		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
-	}
 	if (!err) {
 		qfo_t      *qfo;
 
-		class_finish_module ();
-		err = pr.error_count;
+		if (lang->finish) {
+			err = lang->finish (file);
+		}
 		if (!err) {
 			debug_finish_module (obj);
 		}
@@ -507,28 +486,28 @@ finish_link (void)
 	return 0;
 }
 
-static __attribute__((pure)) lang_t
+static __attribute__((pure)) language_t *
 file_language (const char *file, const char *ext)
 {
 	static ext_lang_t ext_lang[] = {
-		{".r",		lang_ruamoko},
-		{".c",		lang_ruamoko},
-		{".m",		lang_ruamoko},
-		{".qc",		lang_ruamoko},
-		{".comp",	lang_glsl},
-		{".vert",	lang_glsl},
-		{".tesc",	lang_glsl},
-		{".tese",	lang_glsl},
-		{".geom",	lang_glsl},
-		{".frag",	lang_glsl},
-		{".pas",	lang_pascal},
-		{".p",		lang_pascal},
-		{0,			lang_object},	// unrecognized extension = object file
+		{".r",		&lang_ruamoko},
+		{".c",		&lang_ruamoko},
+		{".m",		&lang_ruamoko},
+		{".qc",		&lang_ruamoko},
+		{".comp",	&lang_glsl_comp},
+		{".vert",	&lang_glsl_vert},
+		{".tesc",	&lang_glsl_tesc},
+		{".tese",	&lang_glsl_tese},
+		{".geom",	&lang_glsl_geom},
+		{".frag",	&lang_glsl_frag},
+		{".pas",	&lang_pascal},
+		{".p",		&lang_pascal},
+		{nullptr,	nullptr},		// unrecognized extension = object file
 	};
 	ext_lang_t *el;
 
 	if (strncmp (file, "-l", 2) == 0)
-		return lang_object;
+		return nullptr;
 	for (el = ext_lang; el->ext; el++)
 		if (strcmp (ext, el->ext) == 0)
 			break;
@@ -540,7 +519,6 @@ separate_compile (void)
 {
 	const char **file, *ext;
 	const char **temp_files;
-	lang_t      lang;
 	dstring_t  *output_file;
 	dstring_t  *extension;
 	int         err = 0;
@@ -579,7 +557,8 @@ separate_compile (void)
 			dstring_appendstr (output_file, ".qfo");
 		}
 		// need *file for checking -lfoo
-		if ((lang = file_language (*file, extension->str)) != lang_object) {
+		auto lang = file_language (*file, extension->str);
+		if (lang) {
 			if (options.verbosity >= 1)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
@@ -690,7 +669,7 @@ compile_file (const char *filename)
 {
 	int         err;
 	FILE       *yyin;
-	int       (*yyparse) (FILE *in) = qc_yyparse;
+	int       (*yyparse) (FILE *in) = lang_ruamoko.parse;
 
 	yyin = preprocess_file (filename, 0);
 	if (options.preprocess_only || !yyin)

@@ -170,5 +170,19 @@ int rua_parse (FILE *in, rua_parser_t *parser);
 const char *rua_directive_get_key (const void *dir, void *unused) __attribute__((pure));
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 
+typedef struct language_s {
+	void      (*init) (void);
+	int       (*parse) (FILE *in);
+	int       (*finish) (const char *file);
+} language_t;
+
+extern language_t lang_ruamoko;
+extern language_t lang_glsl_comp;
+extern language_t lang_glsl_vert;
+extern language_t lang_glsl_tesc;
+extern language_t lang_glsl_tese;
+extern language_t lang_glsl_geom;
+extern language_t lang_glsl_frag;
+extern language_t lang_pascal;
 
 #endif//__rua_lang_h
