@@ -167,6 +167,7 @@ typedef struct rua_parser_s {
 } rua_parser_t;
 
 int rua_parse (FILE *in, rua_parser_t *parser);
+int rua_parse_string (const char *str, rua_parser_t *parser);
 const char *rua_directive_get_key (const void *dir, void *unused) __attribute__((pure));
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 

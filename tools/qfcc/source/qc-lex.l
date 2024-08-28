@@ -1579,10 +1579,10 @@ rescan:
 	return token;
 }
 
-int
-rua_parse (FILE *in, rua_parser_t *parser)
+static yyscan_t *
+rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser)
 {
-	rua_extra_t extra = {
+	*extra = (rua_extra_t) {
 		.parser = parser,
 		.pre_state = pre_yypstate_new (),
 		.args_state = pre_yypstate_new (),
@@ -1592,43 +1592,78 @@ rua_parse (FILE *in, rua_parser_t *parser)
 		.macro_tab = cpp_macros ? cpp_macros : new_symtab (0, stab_global),
 		.location = { 1, 1, 1, 1, pr.loc.file },
 	};
-
 	yyscan_t    scanner;
-	yylex_init_extra (&extra, &scanner);
-	yylex_init (&extra.subscanner);
-	yyset_in (in, scanner);
+	yylex_init_extra (extra, &scanner);
+	yylex_init (&extra->subscanner);
+	return scanner;
+}
 
+static void
+rua_destroy_scanner (yyscan_t scanner, rua_extra_t *extra)
+{
+	yylex_destroy (extra->subscanner);
+	yylex_destroy (scanner);
+	pre_yypstate_delete (extra->pre_state);
+	pre_yypstate_delete (extra->args_state);
+	free (extra->cond_stack.a);
+	free (extra->include_stack.a);
+	dstring_delete (extra->dstr);
+}
+
+static int
+rua_do_scan (yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
 	int         status;
 	rua_tok_t   tok = {};
 	do {
 		int token = next_token (&tok, scanner);
-		if (!token && extra.cond_stack.size) {
-			int ind = extra.cond_stack.size - 1;
-			auto cond = extra.cond_stack.a[ind];
+		if (!token && extra->cond_stack.size) {
+			int ind = extra->cond_stack.size - 1;
+			auto cond = extra->cond_stack.a[ind];
 			error (0, "end of file in conditional started on %d", cond.line);
 		}
-		if (!token && extra.include_stack.size) {
-			//printf ("*** pop include %d\n", (int) extra.include_stack.size);
-			auto incl = DARRAY_REMOVE (&extra.include_stack);
-			extra.location = incl.location;
+		if (!token && extra->include_stack.size) {
+			//printf ("*** pop include %d\n", (int) extra->include_stack.size);
+			auto incl = DARRAY_REMOVE (&extra->include_stack);
+			extra->location = incl.location;
 			struct yyguts_t *yyg = (struct yyguts_t*) scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
 			set_line_file (-1, 0, 2);
 			yy_switch_to_buffer (incl.buffer, scanner);
-			DARRAY_CLEAR (&extra.cond_stack);
-			extra.cond_stack = incl.cond_stack;
+			DARRAY_CLEAR (&extra->cond_stack);
+			extra->cond_stack = incl.cond_stack;
 			continue;
 		}
-		status = qc_process (&extra, token, &tok, scanner);
+		status = qc_process (extra, token, &tok, scanner);
 	} while (status == YYPUSH_MORE);
 
-	yylex_destroy (extra.subscanner);
-	yylex_destroy (scanner);
-	pre_yypstate_delete (extra.pre_state);
-	pre_yypstate_delete (extra.args_state);
-	free (extra.cond_stack.a);
-	free (extra.include_stack.a);
-	dstring_delete (extra.dstr);
+	return status;
+}
+
+int
+rua_parse (FILE *in, rua_parser_t *parser)
+{
+	rua_extra_t extra;
+
+	yyscan_t    scanner = rua_init_scanner (&extra, parser);
+	yyset_in (in, scanner);
+	int status = rua_do_scan (scanner);
+	rua_destroy_scanner (scanner, &extra);
+	return status;
+}
+
+int
+rua_parse_string (const char *str, rua_parser_t *parser)
+{
+	auto loc = pr.loc;
+	rua_extra_t extra;
+
+	yyscan_t    scanner = rua_init_scanner (&extra, parser);
+	yy_scan_string (str, scanner);
+	int status = rua_do_scan (scanner);
+	rua_destroy_scanner (scanner, &extra);
+	pr.loc = loc;
 	return status;
 }
 
