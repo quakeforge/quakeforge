@@ -516,6 +516,14 @@ check_params (param_t *params)
 }
 
 static metafunc_t *
+new_metafunc (void)
+{
+	metafunc_t *metafunc;
+	ALLOC (1024, metafunc_t, metafuncs, metafunc);
+	return metafunc;
+}
+
+static metafunc_t *
 get_function (const char *name, const type_t *type, specifier_t spec)
 {
 	metafunc_t *func = Hash_Find (function_map, name);
@@ -551,7 +559,7 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 		overload = true;
 	}
 
-	ALLOC (1024, metafunc_t, metafuncs, func);
+	func = new_metafunc ();
 	*func = (metafunc_t) {
 		.name = save_string (name),
 		.full_name = full_name,
@@ -785,7 +793,8 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		sym->sy_type = sy_func;
 		sym->type = type;
 		sym->params = params;
-		sym->metafunc = fsym->metafunc;
+		sym->metafunc = new_metafunc ();
+		*sym->metafunc = *fsym->metafunc;
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return new_symbol_expr (sym);
