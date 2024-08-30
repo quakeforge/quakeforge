@@ -260,6 +260,8 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		// due to the way declarations work, we need a new symbol at all times.
 		// redelcarations will be checked later
 		s = new_symbol (s->name);
+		*s = *spec.sym;
+		s->table = nullptr;
 	}
 
 	if (!spec.type_expr && !spec.is_function) {

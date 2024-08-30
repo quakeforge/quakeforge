@@ -57,6 +57,7 @@ test_progs_dat=\
 	tools/qfcc/test/motor-point.dat \
 	tools/qfcc/test/motor-xform.dat \
 	tools/qfcc/test/quaternion.dat \
+	tools/qfcc/test/reproto.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/return-postop.dat \
 	tools/qfcc/test/sendv.dat \
@@ -691,6 +692,16 @@ tools/qfcc/test/quaternion.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(quaternion_dep) # am--include-marker
 r_depfiles_remade += $(quaternion_dep)
+
+tools_qfcc_test_reproto_dat_SOURCES=tools/qfcc/test/reproto.r
+reproto_obj=$(tools_qfcc_test_reproto_dat_SOURCES:.r=.o)
+reproto_dep=$(call qcautodep,$(tools_qfcc_test_reproto_dat_SOURCES))
+tools/qfcc/test/reproto.dat$(EXEEXT): $(reproto_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(reproto_obj)
+tools/qfcc/test/reproto.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(reproto_dep) # am--include-marker
+r_depfiles_remade += $(reproto_dep)
 
 tools_qfcc_test_return_ivar_dat_SOURCES=tools/qfcc/test/return-ivar.r
 return_ivar_obj=$(tools_qfcc_test_return_ivar_dat_SOURCES:.r=.o)
