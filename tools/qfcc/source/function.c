@@ -1034,6 +1034,16 @@ build_rua_scope (symbol_t *fsym)
 			if (!p->type) {
 				continue;					// non-param selector
 			}
+			if (is_void (p->type)) {
+				if (p->name) {
+					error (0, "invalid parameter type for %s", p->name);
+				} else if (p != fsym->params || p->next) {
+					error (0, "void must be the only parameter");
+					continue;
+				} else {
+					continue;
+				}
+			}
 			if (!p->name) {
 				error (0, "parameter name omitted");
 				p->name = save_string ("");
