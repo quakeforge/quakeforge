@@ -1303,7 +1303,7 @@ is_matrix (const type_t *type)
 	if (!type || type->meta != ty_basic) {
 		return 0;
 	}
-	return -1;//FIXME
+	return type->columns > 1;
 }
 
 int
