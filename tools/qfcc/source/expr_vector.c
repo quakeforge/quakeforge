@@ -37,6 +37,23 @@
 #include "tools/qfcc/include/value.h"
 
 const expr_t *
+new_vector_value (const type_t *ele_type, int width, int count,
+				  const expr_t **elements, bool implicit)
+{
+	const type_t *vec_type = vector_type (ele_type, width);
+	pr_type_t   value[type_size (vec_type)];
+
+	for (int i = 0, offs = 0; i < count; i++) {
+		auto src_type = get_type (elements[i]);
+		value_store (value + offs, src_type, elements[i]);
+		offs += type_size (src_type);
+	}
+
+	return new_value_expr (new_type_value (vec_type, value), implicit);
+}
+
+
+const expr_t *
 new_vector_list (const expr_t *expr_list)
 {
 	const type_t *ele_type = type_default;
@@ -118,16 +135,8 @@ new_vector_list (const expr_t *expr_list)
 	}
 
 	if (all_constant) {
-		const type_t *vec_type = vector_type (ele_type, width);
-		pr_type_t   value[type_size (vec_type)];
-
-		for (int i = 0, offs = 0; i < count; i++) {
-			auto src_type = get_type (elements[i]);
-			value_store (value + offs, src_type, elements[i]);
-			offs += type_size (src_type);
-		}
-
-		return new_value_expr (new_type_value (vec_type, value), all_implicit);
+		return new_vector_value (ele_type, width, count, elements,
+								 all_implicit);
 	}
 
 	expr_t     *vec = new_expr ();

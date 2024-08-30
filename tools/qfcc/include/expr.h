@@ -658,6 +658,9 @@ float expr_float (const expr_t *e) __attribute__((pure));
 const expr_t *new_vector_expr (const float *vector_val);
 const float *expr_vector (const expr_t *e) __attribute__((pure));
 const expr_t *new_vector_list (const expr_t *e);
+const expr_t *new_vector_value (const type_t *ele_type, int width,
+								int count, const expr_t **elements,
+								bool implicit);
 
 /** Create a new entity constant expression node.
 
@@ -895,6 +898,7 @@ void vararg_integer (const expr_t *e);
 const expr_t *build_function_call (const expr_t *fexpr, const type_t *ftype,
 								   const expr_t *params);
 const expr_t *function_expr (const expr_t *e1, const expr_t *e2);
+const expr_t *constructor_expr (const expr_t *e, const expr_t *params);
 struct function_s;
 const expr_t *branch_expr (int op, const expr_t *test, const expr_t *label);
 const expr_t *goto_expr (const expr_t *label);

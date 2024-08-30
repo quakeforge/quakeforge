@@ -2341,6 +2341,10 @@ function_expr (const expr_t *fexpr, const expr_t *params)
 		}
 	}
 
+	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_type) {
+		return constructor_expr (fexpr, params);
+	}
+
 	fexpr = find_function (fexpr, params);
 	fexpr = convert_name (fexpr);
 	if (is_error (fexpr)) {
