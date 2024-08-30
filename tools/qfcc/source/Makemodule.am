@@ -41,6 +41,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/evaluate.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
+	tools/qfcc/source/glsl-block.c \
 	tools/qfcc/source/glsl-builtins.c \
 	tools/qfcc/source/glsl-parse.y \
 	tools/qfcc/source/grab.c \

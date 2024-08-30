@@ -823,44 +823,51 @@ glsl_parse_vars (const char *var_src)
 	glsl_parse_string (var_src);
 }
 
+static void
+glsl_init_common (void)
+{
+	glsl_block_clear ();
+	glsl_parse_vars (glsl_system_constants);
+}
+
 void
 glsl_init_comp (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_compute_vars);
 }
 
 void
 glsl_init_vert (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_Vulkan_vertex_vars);
 }
 
 void
 glsl_init_tesc (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_tesselation_control_vars);
 }
 
 void
 glsl_init_tese (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_tesselation_evaluation_vars);
 }
 
 void
 glsl_init_geom (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_geometry_vars);
 }
 
 void
 glsl_init_frag (void)
 {
-	glsl_parse_vars (glsl_system_constants);
+	glsl_init_common ();
 	glsl_parse_vars (glsl_fragment_vars);
 }

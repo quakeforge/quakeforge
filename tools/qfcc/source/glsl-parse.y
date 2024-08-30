@@ -162,7 +162,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token <spec> LOW_PRECISION DISCARD COHERENT
 
 %type <symbol>  variable_identifier
-%type <symtab>  block_declaration
+%type <symbol>  block_declaration
 %type <expr>    expression primary_exprsssion assignment_expression
 %type <expr>    for_init_statement conditionopt expressionopt else
 %type <expr>    conditional_expression unary_expression postfix_expression
@@ -546,17 +546,23 @@ declaration
 		{
 			auto spec = $1;
 			auto block = $2;
-			for (auto s = block->symbols; s; s = s->next) {
-				auto b_spec = spec_merge (spec, (specifier_t) {
-											  .type = s->type,
-											  .sym = new_symbol (s->name),
-										  });
-				b_spec.storage = sc_extern;
-				declare_symbol (b_spec, nullptr, current_symtab);
-			}
+			glsl_declare_block (spec, block, nullptr);
 		}
 	| type_qualifier block_declaration IDENTIFIER ';'
+		{
+			auto spec = $1;
+			auto block = $2;
+			auto instance_name = $3;
+			glsl_declare_block (spec, block, instance_name);
+		}
 	| type_qualifier block_declaration IDENTIFIER array_specifier ';'
+		{
+			auto spec = $1;
+			auto block = $2;
+			auto instance_name = $3;
+			instance_name->type = $4;
+			glsl_declare_block (spec, block, instance_name);
+		}
 	| type_qualifier ';'
 	| type_qualifier IDENTIFIER ';'
 	| type_qualifier IDENTIFIER identifier_list ';'
@@ -565,15 +571,16 @@ declaration
 block_declaration
 	: IDENTIFIER '{'
 		{
-			int op = 's';//FIXME 'b' might be better (for block)
-			auto sym = $1;
-			current_symtab = start_struct (&op, sym, current_symtab);
+			auto block = new_symtab (current_symtab, stab_struct);
+			current_symtab = block;
 		}
 	  struct_declaration_list '}'
 		{
-			auto block = current_symtab;
-			current_symtab = block->parent;
-			$$ = block;
+			auto sym = $1;
+			sym->sy_type = sy_namespace;
+			sym->namespace = current_symtab;
+			current_symtab = sym->namespace->parent;
+			$$ = sym;
 		}
 	;
 

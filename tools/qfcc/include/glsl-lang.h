@@ -45,4 +45,17 @@ extern language_t lang_glsl_tese;
 extern language_t lang_glsl_geom;
 extern language_t lang_glsl_frag;
 
+typedef struct glsl_block_s {
+	struct glsl_block_s *next;
+	const char *name;
+	struct symtab_s *members;
+	struct symbol_s *instance_name;
+} glsl_block_t;
+
+struct specifier_s;
+
+void glsl_block_clear (void);
+void glsl_declare_block (struct specifier_s spec, struct symbol_s *block_sym,
+						 struct symbol_s *instance_name);
+
 #endif//__glsl_lang_h

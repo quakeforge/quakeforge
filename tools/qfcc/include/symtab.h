@@ -59,6 +59,7 @@ typedef enum {
 	sy_class,					///< symbol refers to a class
 	sy_convert,					///< symbol refers to a conversion function
 	sy_macro,					///< symbol refers to a macro definition
+	sy_namespace,				///< symbol refers to a namespace definition
 } sy_type_e;
 
 typedef struct symconv_s {
@@ -74,7 +75,7 @@ typedef struct symbol_s {
 	sy_type_e   sy_type;		///< symbol type
 	const struct type_s *type;	///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
-	unsigned    no_auto_init;	///< skip for non-designated initializers
+	bool        no_auto_init:1;	///< skip for non-designated initializers
 	union {
 		int         offset;			///< sy_var (in a struct/union/macro)
 		struct def_s *def;			///< sy_var
@@ -83,6 +84,7 @@ typedef struct symbol_s {
 		struct metafunc_s *metafunc;///< sy_func
 		symconv_t   convert;		///< sy_convert
 		struct rua_macro_s *macro;	///< sy_macro
+		struct symtab_s *namespace;	///< sy_namespace
 	};
 } symbol_t;
 
