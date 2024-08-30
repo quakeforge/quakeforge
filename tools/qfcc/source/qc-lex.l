@@ -2408,3 +2408,10 @@ rua_macro_va_args (rua_macro_t *macro, void *scanner)
 		macro->tail = arg->tail;
 	}
 }
+
+void
+rua_print_location (FILE *out, const rua_loc_t *loc)
+{
+	fprintf (out, "%s:[%d.%d-%d.%d]", GETSTR (loc->file),
+			 loc->line, loc->column, loc->last_line, loc->last_column);
+}

@@ -80,8 +80,8 @@ parse_error (void *scanner)
 #define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
 #endif
 
-#define first_line line
-#define first_column column
+#define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
+#define YYLOCATION_PRINT rua_print_location
 %}
 
 %code requires {

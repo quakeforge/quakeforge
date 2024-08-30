@@ -49,6 +49,21 @@ typedef struct rua_loc_s {
 	int         file;
 } rua_loc_t;
 
+#define RUA_LOC_DEFAULT(Current, Rhs, N) \
+	do if (N) { \
+		(Current).line         = YYRHSLOC (Rhs, 1).line;        \
+		(Current).column       = YYRHSLOC (Rhs, 1).column;      \
+		(Current).last_line    = YYRHSLOC (Rhs, N).last_line;   \
+		(Current).last_column  = YYRHSLOC (Rhs, N).last_column; \
+		(Current).file         = YYRHSLOC (Rhs, N).file;        \
+	} else {                                                    \
+		(Current).line         = (Current).last_line   =        \
+		  YYRHSLOC (Rhs, 0).last_line;                          \
+		(Current).column       = (Current).last_column =        \
+		  YYRHSLOC (Rhs, 0).last_column;                        \
+		(Current).file         = YYRHSLOC (Rhs, 0).file;        \
+	} while (0)
+
 typedef struct expr_s expr_t;
 typedef struct symtab_s symtab_t;
 typedef struct function_s function_t;
@@ -155,6 +170,8 @@ void rua_macro_file (rua_macro_t *macro, void *scanner);
 void rua_macro_line (rua_macro_t *macro, void *scanner);
 void rua_macro_va_opt (rua_macro_t *macro, void *scanner);
 void rua_macro_va_args (rua_macro_t *macro, void *scanner);
+
+void rua_print_location (FILE *out, const rua_loc_t *loc);
 
 #include "tools/qfcc/source/pre-parse.h"
 
