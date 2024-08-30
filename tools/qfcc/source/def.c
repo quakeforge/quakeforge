@@ -69,11 +69,29 @@ static void
 set_storage_bits (def_t *def, storage_class_t storage)
 {
 	switch (storage) {
+		case sc_out:
+		case sc_buffer:
+		case sc_shared:
+			def->global = 1;
+			def->external = 0;
+			def->local = 0;
+			def->param = 0;
+			def->argument = 0;
+			break;
 		case sc_system:
 			def->system = 1;
 			// fall through
 		case sc_global:
 			def->global = 1;
+			def->external = 0;
+			def->local = 0;
+			def->param = 0;
+			def->argument = 0;
+			break;
+		case sc_in:
+		case sc_uniform:
+			def->global = 1;
+			def->constant = 1;
 			def->external = 0;
 			def->local = 0;
 			def->param = 0;

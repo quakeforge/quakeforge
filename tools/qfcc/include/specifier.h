@@ -46,6 +46,12 @@ typedef enum storage_class_e {
 	sc_param,					///< def is an incoming function parameter
 	sc_local,					///< def is local to the current function
 	sc_argument,				///< def is a function argument
+
+	sc_in,
+	sc_out,
+	sc_uniform,
+	sc_buffer,
+	sc_shared,
 } storage_class_t;
 
 typedef struct specifier_s {
@@ -60,6 +66,7 @@ typedef struct specifier_s {
 			bool        multi_type:1;
 			bool        multi_store:1;
 			bool        multi_generic:1;
+			bool        is_const:1;
 			bool        is_signed:1;
 			bool        is_unsigned:1;
 			bool        is_short:1;

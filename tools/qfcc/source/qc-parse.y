@@ -217,8 +217,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<mut_expr>	statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
 %type	<expr>		unary_expr ident_expr cast_expr
-%type	<mut_expr>	opt_arg_list arg_list
-%type   <expr>		arg_expr
+%type	<mut_expr>	arg_list
+%type   <expr>		opt_arg_list arg_expr
 %type	<switch_block> switch_block
 %type	<symbol>	identifier label
 

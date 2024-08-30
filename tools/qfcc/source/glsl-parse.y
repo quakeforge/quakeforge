@@ -112,7 +112,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %code requires { #define glsl_yypstate rua_yypstate }
 
-// these tokens are common between qc and qp
+// these tokens are common between qc and glsl
 %left LOW
 %nonassoc IFX
 %nonassoc ELSE
@@ -162,11 +162,12 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token <spec> LOW_PRECISION DISCARD COHERENT
 
 %type <symbol>  variable_identifier
+%type <symtab>  block_declaration
 %type <expr>    expression primary_exprsssion assignment_expression
 %type <expr>    for_init_statement conditionopt expressionopt else
 %type <expr>    conditional_expression unary_expression postfix_expression
 %type <expr>    function_call function_call_or_method function_call_generic
-%type <expr>    function_call_header_with_parameters
+%type <mut_expr> function_call_header_with_parameters
 %type <expr>    function_call_header_no_parameters
 %type <expr>    function_call_header function_identifier
 %type <expr>    logical_or_expression logical_xor_expression
@@ -201,21 +202,42 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <param>   parameter_declaration
 %type <param>   parameter_declarator parameter_type_specifier
 
+%printer { fprintf (yyo, "%s", $$->name); } <symbol>
+%printer { fprintf (yyo, "%s", $$->type == ex_value ? get_value_string ($$->value) : "<expr>"); } <expr>
+%printer { fprintf (yyo, "%p", $<pointer>$); } <*>
+%printer { fprintf (yyo, "<>"); } <>
+
 %{
 
 static switch_block_t *switch_block;
 static const expr_t *break_label;
 static const expr_t *continue_label;
 
-static symbol_t *
-function_sym_type (specifier_t spec, symbol_t *sym)
+static specifier_t
+spec_merge (specifier_t spec, specifier_t new)
 {
-	sym->type = append_type (spec.sym->type, spec.type);
-	set_func_type_attrs (sym->type, spec);
-	sym->type = find_type (sym->type);
-	return sym;
+	if (spec.type && new.type) {
+		if (!spec.multi_type) {
+			error (0, "two or more data types in declaration specifiers");
+			spec.multi_type = true;
+		}
+	}
+	if (spec.storage && new.storage) {
+		if (!spec.multi_store) {
+			error (0, "multiple storage classes in declaration specifiers");
+			spec.multi_store = true;
+		}
+	}
+	if (!spec.type) {
+		spec.type = new.type;
+	}
+	if (!spec.storage) {
+		spec.storage = new.storage;
+	}
+	spec.sym = new.sym;
+	spec.spec_bits |= new.spec_bits;
+	return spec;
 }
-
 
 %}
 
@@ -239,17 +261,13 @@ function_definition
 		{
 			$<symtab>$ = current_symtab;
 			auto spec = $1;
-			spec.sym->type = parse_params (spec.sym->type, spec.params);
-			auto sym = function_sym_type (spec, spec.sym);
-			sym->params = spec.params;
-			sym = function_symbol ((specifier_t) {
-									.sym = sym,
-									.is_overload = true
-								   });
+			auto sym = function_symbol (spec);
 			current_func = begin_function (sym, nullptr, current_symtab,
 										   false, spec.storage);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
+			spec.sym = sym;
+			$1 = spec;
 		}
 	  compound_statement_no_new_scope
 		{
@@ -297,11 +315,26 @@ function_call
 
 function_call_or_method
 	: function_call_generic
+		{
+			// pull apart the args+func list
+			// args are in reverse order, so f(a,b,c) <- c,b,a,f
+			auto list = &$1->list;
+			int count = list_count (list);
+			const expr_t *exprs[count];
+			list_scatter (list, exprs);
+			auto func = exprs[count - 1];
+			auto args = new_list_expr (nullptr);
+			list_gather (&args->list, exprs, count - 1);
+			$$ = function_expr (func, args);
+		}
 	;
 
 function_call_generic
-	: function_call_header_with_parameters ')'
+	: function_call_header_with_parameters ')' { $$ = $1; }
 	| function_call_header_no_parameters ')'
+		{
+			$$ = new_list_expr ($1);
+		}
 	;
 
 function_call_header_no_parameters
@@ -311,7 +344,15 @@ function_call_header_no_parameters
 
 function_call_header_with_parameters
 	: function_call_header assignment_expression
+		{
+			auto list = new_list_expr ($1);
+			$$ = expr_prepend_expr (list, $2);
+		}
 	| function_call_header_with_parameters ',' assignment_expression
+		{
+			auto list = $1;
+			$$ = expr_prepend_expr (list, $3);
+		}
 	;
 
 function_call_header
@@ -319,7 +360,14 @@ function_call_header
 	;
 
 function_identifier
-	: type_specifier					{ }
+	: type_specifier
+		{
+			auto type = $1.type;
+			auto sym = new_symbol (type->name);
+			sym->sy_type = sy_type;
+			sym->type = type;
+			$$ = new_symbol_expr (sym);
+		}
 	| postfix_expression
 	;
 
@@ -494,12 +542,39 @@ declaration
 	: function_prototype ';'
 	| init_declarator_list ';'
 	| PRECISION precision_qualifier type_specifier ';'
-	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' ';'
-	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' IDENTIFIER ';'
-	| type_qualifier IDENTIFIER '{' struct_declaration_list '}' IDENTIFIER array_specifier ';'
+	| type_qualifier block_declaration ';'
+		{
+			auto spec = $1;
+			auto block = $2;
+			for (auto s = block->symbols; s; s = s->next) {
+				auto b_spec = spec_merge (spec, (specifier_t) {
+											  .type = s->type,
+											  .sym = new_symbol (s->name),
+										  });
+				b_spec.storage = sc_extern;
+				declare_symbol (b_spec, nullptr, current_symtab);
+			}
+		}
+	| type_qualifier block_declaration IDENTIFIER ';'
+	| type_qualifier block_declaration IDENTIFIER array_specifier ';'
 	| type_qualifier ';'
 	| type_qualifier IDENTIFIER ';'
 	| type_qualifier IDENTIFIER identifier_list ';'
+	;
+
+block_declaration
+	: IDENTIFIER '{'
+		{
+			int op = 's';//FIXME 'b' might be better (for block)
+			auto sym = $1;
+			current_symtab = start_struct (&op, sym, current_symtab);
+		}
+	  struct_declaration_list '}'
+		{
+			auto block = current_symtab;
+			current_symtab = block->parent;
+			$$ = block;
+		}
 	;
 
 identifier_list
@@ -509,6 +584,11 @@ identifier_list
 
 function_prototype
 	: function_declarator ')'
+		{
+			auto spec = $1;
+			spec.sym->type = parse_params (0, spec.params);
+			$$ = spec;
+		}
 	;
 
 function_declarator
@@ -585,6 +665,9 @@ init_declarator_list
 			auto symtab = current_symtab;
 			auto space = symtab->space;
 			auto storage = current_storage;
+			if (storage == sc_local && !local_expr) {
+				local_expr = new_block_expr (nullptr);
+			}
 			initialize_def ($3, $5, space, storage, symtab);
 		}
 	;
@@ -592,14 +675,34 @@ init_declarator_list
 single_declaration
 	: fully_specified_type
 	| fully_specified_type IDENTIFIER
+		{
+			auto spec = $1;
+			spec.sym = $2;
+			declare_symbol (spec, nullptr, current_symtab);
+		}
 	| fully_specified_type IDENTIFIER array_specifier
+		{
+			auto spec = $1;
+			spec.type = append_type ($3, spec.type);
+			spec.type = find_type (spec.type);
+			spec.sym = $2;
+			declare_symbol (spec, nullptr, current_symtab);
+		}
 	| fully_specified_type IDENTIFIER array_specifier '=' initializer
 	| fully_specified_type IDENTIFIER '=' initializer
+		{
+			auto spec = $1;
+			spec.sym = $2;
+			if (current_storage == sc_local && !local_expr) {
+				local_expr = new_block_expr (nullptr);
+			}
+			declare_symbol (spec, $4, current_symtab);
+		}
 	;
 
 fully_specified_type
 	: type_specifier
-	| type_qualifier type_specifier
+	| type_qualifier type_specifier		{ $$ = spec_merge ($1, $2); }
 	;
 
 invariant_qualifier
@@ -666,6 +769,12 @@ storage_qualifier
 type_specifier
 	: type_specifier_nonarray
 	| type_specifier_nonarray array_specifier
+		{
+			auto spec = $1;
+			auto type = append_type ($2, spec.type);
+			spec.type = find_type (type);
+			$$ = spec;
+		}
 	;
 
 array_specifier
@@ -748,17 +857,31 @@ struct_declaration_list
 
 struct_declaration
 	: type_specifier struct_declarator_list ';'
-	| type_qualifier type_specifier struct_declarator_list ';'
+	| type_qualifier type_specifier		{ $<spec>$ = spec_merge ($1, $2); }
+	  struct_declarator_list ';'
 	;
 
 struct_declarator_list
 	: struct_declarator
-	| struct_declarator_list ',' struct_declarator
+	| struct_declarator_list ','		{ $<spec>$ = $<spec>0; }
+	  struct_declarator
 	;
 
 struct_declarator
 	: IDENTIFIER
+		{
+			auto spec = $<spec>0;
+			spec.sym = $1;
+			declare_field (spec, current_symtab);
+		}
 	| IDENTIFIER array_specifier
+		{
+			auto spec = $<spec>0;
+			spec.type = append_type ($2, spec.type);
+			spec.type = find_type (spec.type);
+			spec.sym = $1;
+			declare_field (spec, current_symtab);
+		}
 	;
 
 initializer
@@ -780,7 +903,11 @@ initializer_list
 	;
 
 declaration_statement
-	: declaration				{ $$ = nullptr; }
+	: declaration
+		{
+			$$ = local_expr;
+			local_expr = nullptr;
+		}
 	;
 
 statement
@@ -830,7 +957,7 @@ statement_list
 
 expression_statement
 	: ';'						{ $$ = nullptr; }
-	| expression ';'			{ $$ = (expr_t *) $expression; }
+	| expression ';'			{ $$ = $expression; }
 	;
 
 selection_statement
@@ -951,8 +1078,8 @@ iteration_statement
 	;
 
 for_init_statement
-	: expression_statement	{ $$ = $1; }
-	| declaration_statement	{ $$ = $1; }
+	: expression_statement
+	| declaration_statement
 	;
 
 conditionopt
@@ -998,10 +1125,10 @@ jump_statement
 
 
 static keyword_t glsl_keywords[] = {
-	{"const",           GLSL_CONST},
-	{"uniform",         GLSL_UNIFORM},
-	{"buffer",          GLSL_BUFFER},
-	{"shared",          GLSL_SHARED},
+	{"const",           GLSL_CONST,     .spec = { .is_const = true }},
+	{"uniform",         GLSL_UNIFORM,   .spec = { .storage = sc_uniform }},
+	{"buffer",          GLSL_BUFFER,    .spec = { .storage = sc_buffer }},
+	{"shared",          GLSL_SHARED,    .spec = { .storage = sc_shared }},
 	{"attribute",       GLSL_RESERVED},
 	{"varying",         GLSL_RESERVED},
 	{"coherent",        GLSL_COHERENT},
@@ -1030,11 +1157,11 @@ static keyword_t glsl_keywords[] = {
 	{"if",              GLSL_IF},
 	{"else",            GLSL_ELSE},
 	{"subroutine",      GLSL_RESERVED},
-	{"in",              GLSL_IN},
-	{"out",             GLSL_OUT},
+	{"in",              GLSL_IN,        .spec = { .storage = sc_in }},
+	{"out",             GLSL_OUT,       .spec = { .storage = sc_out }},
 	{"inout",           GLSL_INOUT},
 	{"int",             GLSL_TYPE_SPEC, .spec = {.type = &type_int}},
-	{"void",            GLSL_VOID, .spec = {.type = &type_void}},
+	{"void",            GLSL_VOID,      .spec = {.type = &type_void}},
 	{"bool",            GLSL_TYPE_SPEC, .spec = {.type = &type_bool}},
 	{"true",            0},
 	{"false",           0},
