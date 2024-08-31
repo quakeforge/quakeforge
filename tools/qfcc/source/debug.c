@@ -118,7 +118,6 @@ set_line_file (int line, const char *file, int flags)
 	};
 	if (file) {
 		add_source_file (file);
-		cpp_set_quote_file (file);
 	}
 }
 

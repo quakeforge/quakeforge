@@ -1630,6 +1630,7 @@ rua_do_scan (yyscan_t scanner)
 			struct yyguts_t *yyg = (struct yyguts_t*) scanner;//FIXME
 			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
 			set_line_file (-1, 0, 2);
+			cpp_pop_quote_path ();
 			yy_switch_to_buffer (incl.buffer, scanner);
 			DARRAY_CLEAR (&extra->cond_stack);
 			extra->cond_stack = incl.cond_stack;
@@ -2151,6 +2152,7 @@ rua_include_file (const char *name, void *scanner)
 	}
 	//printf ("*** push include %s\n", name);
 	set_line_file (1, found, 1);
+	cpp_push_quote_path (found);
 	DARRAY_APPEND (&extra->include_stack, ((rua_incl_t) {
 		.buffer = YY_CURRENT_BUFFER,
 		.cond_stack = extra->cond_stack,

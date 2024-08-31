@@ -53,6 +53,7 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include "QF/alloc.h"
 #include "QF/dstring.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -76,6 +77,8 @@ typedef struct cpp_func_s {
 	int       (*func) (const char *opt, const char *arg);
 } cpp_func_t;
 
+ALLOC_STATE (cpp_arg_t, cpp_args);
+
 static cpp_arg_t *cpp_quote_list,  **cpp_quote_tail  = &cpp_quote_list;
 static cpp_arg_t *cpp_include_list,**cpp_include_tail= &cpp_include_list;
 static cpp_arg_t *cpp_system_list, **cpp_system_tail = &cpp_system_list;
@@ -83,7 +86,7 @@ static cpp_arg_t *cpp_after_list,  **cpp_after_tail  = &cpp_after_list;
 
 static const char *cpp_prefix = "";
 static const char *cpp_sysroot = QFCC_INCLUDE_PATH;
-static const char *cpp_quote_start = 0;
+static cpp_arg_t *cpp_quote_start = 0;	// stack
 
 static cpp_arg_t *cpp_arg_list,    **cpp_arg_tail    = &cpp_arg_list;
 static cpp_arg_t *cpp_def_list,    **cpp_def_tail    = &cpp_def_list;
@@ -113,9 +116,23 @@ append_cpp_args (const char **arg, cpp_arg_t *arg_list)
 	return arg;
 }
 
+static cpp_arg_t *
+cpp_alloc_arg (void)
+{
+	cpp_arg_t *cpp_arg;
+	ALLOC (256, cpp_arg_t, cpp_args, cpp_arg);
+	return cpp_arg;
+}
+
+static void
+cpp_free_arg (cpp_arg_t *cpp_arg)
+{
+	FREE (cpp_args, cpp_arg);
+}
+
 #define CPP_ADD(list, a) \
 	do { \
-		cpp_arg_t *cpp_arg = malloc (sizeof (cpp_arg_t)); \
+		cpp_arg_t *cpp_arg = cpp_alloc_arg (); \
 		*(cpp_arg) = (cpp_arg_t) { .arg = save_string (a) }; \
 		*cpp_##list##_tail = cpp_arg; \
 		cpp_##list##_tail = &cpp_arg->next; \
@@ -671,6 +688,7 @@ preprocess_file (const char *filename, const char *ext)
 		return run_cpp (filename, ext);
 	} else {
 		set_line_file (1, filename, 0);
+		cpp_push_quote_path (filename);
 		FILE *file = fopen (filename, "rb");
 		if (!file) {
 			fprintf (stderr, "%s: error: %s: %s\n", this_program, filename,
@@ -708,11 +726,12 @@ cpp_find_file (const char *name, int quote, bool *is_system)
 	}
 	const char *path;
 	if (quote == '"') {
-		if (cpp_quote_start && (path = test_path (cpp_quote_start, name))) {
+		if (cpp_quote_start
+			&& (path = test_path (cpp_quote_start->arg, name))) {
 			return path;
 		}
 		for (auto dir = cpp_quote_list; dir; dir = dir->next) {
-			if ((path = test_path (cpp_quote_start, dir->arg))) {
+			if ((path = test_path (cpp_quote_start->arg, dir->arg))) {
 				return path;
 			}
 		}
@@ -740,18 +759,32 @@ cpp_find_file (const char *name, int quote, bool *is_system)
 }
 
 void
-cpp_set_quote_file (const char *path)
+cpp_push_quote_path (const char *path)
 {
 	if (!path) {
-		cpp_quote_start = "";
-		return;
+		path = "";
+	} else {
+		const char *e = strrchr (path, '/');
+		if (!e) {
+			path = "";
+		} else {
+			path = save_substring (path, e - path);
+		}
 	}
-	const char *e = strrchr (path, '/');
-	if (!e) {
-		cpp_quote_start = "";
-		return;
+	auto quote_path = cpp_alloc_arg ();
+	quote_path->arg = path;
+	quote_path->next = cpp_quote_start;
+	cpp_quote_start = quote_path;
+}
+
+void cpp_pop_quote_path (void)
+{
+	if (!cpp_quote_start) {
+		internal_error (0, "quote path stack underflow");
 	}
-	cpp_quote_start = save_substring (path, e - path);
+	auto quote_path = cpp_quote_start;
+	cpp_quote_start = cpp_quote_start->next;
+	cpp_free_arg (quote_path);
 }
 
 void

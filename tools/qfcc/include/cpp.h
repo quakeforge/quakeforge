@@ -42,7 +42,8 @@ int cpp_include (const char *opt, const char *arg);
 void cpp_define (const char *arg);
 void cpp_undefine (const char *arg);
 const char *cpp_find_file (const char *name, int quote, bool *is_system);
-void cpp_set_quote_file (const char *path);
+void cpp_push_quote_path (const char *path);
+void cpp_pop_quote_path (void);
 
 void intermediate_file (struct dstring_s *ifile, const char *filename,
 						const char *ext, int local);
