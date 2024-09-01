@@ -28,6 +28,8 @@
 #ifndef __rua_lang_h
 #define __rua_lang_h
 
+#include <stdio.h>
+
 #include "QF/dstring.h"
 
 #include "specifier.h"
@@ -189,10 +191,16 @@ const char *rua_directive_get_key (const void *dir, void *unused) __attribute__(
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 
 typedef struct language_s {
+	bool        initialized;
 	void      (*init) (void);
 	int       (*parse) (FILE *in);
 	int       (*finish) (const char *file);
+	void      (*extension) (const char *name, const char *value, void *scanner);
+	void      (*version) (int version, const char *profile);
+	bool      (*on_include) (const char *name);
 } language_t;
+
+extern language_t current_language;
 
 extern language_t lang_ruamoko;
 extern language_t lang_pascal;

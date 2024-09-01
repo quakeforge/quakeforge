@@ -28,7 +28,9 @@
 # include "config.h"
 #endif
 
+#include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/rua-lang.h"
 
 #define SRC_LINE_EXP2(l,f) "#line " #l " " #f "\n"
 #define SRC_LINE_EXP(l,f) SRC_LINE_EXP2(l,f)
@@ -41,6 +43,9 @@ SRC_LINE
 "in int gl_DrawID;"             "\n"
 "in int gl_BaseVertex;"         "\n"
 "in int gl_BaseInstance;"       "\n"
+"#ifdef GL_EXT_multiview"       "\n"
+"highp int gl_ViewIndex;"       "\n"
+"#endif"                        "\n"
 "out gl_PerVertex {"            "\n"
 "    vec4 gl_Position;"         "\n"
 "    float gl_PointSize;"       "\n"
@@ -60,6 +65,9 @@ SRC_LINE
 "in int gl_PatchVerticesIn;"            "\n"
 "in int gl_PrimitiveID;"                "\n"
 "in int gl_InvocationID;"               "\n"
+"#ifdef GL_EXT_multiview"               "\n"
+"highp int gl_ViewIndex;"               "\n"
+"#endif"                                "\n"
 "out gl_PerVertex {"                    "\n"
 "    vec4 gl_Position;"                 "\n"
 "    float gl_PointSize;"               "\n"
@@ -82,6 +90,9 @@ SRC_LINE
 "in vec3 gl_TessCoord;"                 "\n"
 "patch in float gl_TessLevelOuter[4];"  "\n"
 "patch in float gl_TessLevelInner[2];"  "\n"
+"#ifdef GL_EXT_multiview"               "\n"
+"highp int gl_ViewIndex;"               "\n"
+"#endif"                                "\n"
 "out gl_PerVertex {"                    "\n"
 "    vec4 gl_Position;"                 "\n"
 "    float gl_PointSize;"               "\n"
@@ -99,6 +110,9 @@ SRC_LINE
 "} gl_in[];"                    "\n"
 "in int gl_PrimitiveIDIn;"      "\n"
 "in int gl_InvocationID;"       "\n"
+"#ifdef GL_EXT_multiview"       "\n"
+"highp int gl_ViewIndex;"       "\n"
+"#endif"                        "\n"
 "out gl_PerVertex {"            "\n"
 "    vec4 gl_Position;"         "\n"
 "    float gl_PointSize;"       "\n"
@@ -123,6 +137,9 @@ SRC_LINE
 "in int gl_Layer;"              "\n"
 "in int gl_ViewportIndex;"      "\n"
 "in bool gl_HelperInvocation;"  "\n"
+"#ifdef GL_EXT_multiview"       "\n"
+"highp int gl_ViewIndex;"       "\n"
+"#endif"                        "\n"
 "out float gl_FragDepth;"       "\n"
 "out int gl_SampleMask[];"      "\n";
 
@@ -817,6 +834,37 @@ bool allInvocations(bool value)
 bool allInvocationsEqual(bool value)
 #endif
 
+void
+glsl_multiview (int behavior, void *scanner)
+{
+	if (behavior) {
+		rua_parse_define ("GL_EXT_multiview 1\n");
+	} else {
+		rua_undefine ("GL_EXT_multiview", scanner);
+	}
+}
+
+static int glsl_include_state = 0;
+
+bool
+glsl_on_include (const char *name)
+{
+	if (!glsl_include_state) {
+		error (0, "'#include' : required extension not requested");
+		return false;
+	}
+	if (glsl_include_state > 1) {
+		warning (0, "'#include' : required extension not requested");
+	}
+	return true;
+}
+
+void
+glsl_include (int behavior, void *scanner)
+{
+	glsl_include_state = behavior;
+}
+
 static void
 glsl_parse_vars (const char *var_src)
 {
@@ -826,6 +874,7 @@ glsl_parse_vars (const char *var_src)
 static void
 glsl_init_common (void)
 {
+	current_language.initialized = true;
 	glsl_block_clear ();
 	glsl_parse_vars (glsl_system_constants);
 }

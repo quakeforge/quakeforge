@@ -40,6 +40,7 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
+language_t current_language;
 function_t *current_func;
 class_type_t *current_class;
 expr_t     *local_expr;

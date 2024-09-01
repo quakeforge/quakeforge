@@ -138,7 +138,7 @@ parse_error (void *scanner)
 %token          CONCAT ARGS
 %token          EXTENSION VERSION
 
-%type <t.text>  string
+%type <t.text>  string opt_profile
 %type <macro>   params opt_params body arg arg_list arg_clist
 %type <dstr>    text text_text
 %type <expr>    unary_expr expr id defined defined_id line_expr
@@ -247,12 +247,29 @@ directive
 	  extra_warn
 	| ENDIF					{ rua_endif (scanner); }
 	  extra_warn
-	| EXTENSION ID ':' ID eod
-	| VERSION VALUE opt_profile eod
+	| EXTENSION ID ':' ID
+		{
+			if (current_language.extension) {
+				current_language.extension ($2, $4, scanner);
+			} else {
+				internal_error (0, "invalid directive");
+			}
+		}
+	  extra_warn
+	| VERSION VALUE opt_profile
+		{
+			if (current_language.version) {
+				auto version = get_long ($2, $<t.text>2, 460);
+				current_language.version (expr_long (version), $3);
+			} else {
+				internal_error (0, "invalid directive");
+			}
+		}
+	  extra_warn
 	;
 
 opt_profile
-	: /* empty */
+	: /* empty */	{ $$ = nullptr; }
 	| ID
 	;
 

@@ -58,4 +58,8 @@ void glsl_block_clear (void);
 void glsl_declare_block (struct specifier_s spec, struct symbol_s *block_sym,
 						 struct symbol_s *instance_name);
 
+bool glsl_on_include (const char *name);
+void glsl_include (int behavior, void *scanner);
+void glsl_multiview (int behavior, void *scanner);
+
 #endif//__glsl_lang_h

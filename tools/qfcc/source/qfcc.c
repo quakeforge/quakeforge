@@ -385,14 +385,14 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 		return !options.preprocess_only;
 	}
 
+	current_language = *lang;
+
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
-	if (lang->init) {
-		lang->init ();
-	}
+	lang->initialized = false;
 	err = lang->parse (yyin) || pr.error_count;
 	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
@@ -672,6 +672,7 @@ compile_file (const char *filename)
 	FILE       *yyin;
 	int       (*yyparse) (FILE *in) = lang_ruamoko.parse;
 
+	current_language = lang_ruamoko;
 	yyin = preprocess_file (filename, 0);
 	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;

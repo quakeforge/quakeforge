@@ -427,8 +427,6 @@ directive (const char *token, yyscan_t scanner)
 		extra->preprocessor = false;
 		return -1;
 	}
-	//auto lex = qc_yyget_extra (scanner);
-	//lex->current_lang = &lex->pre_lang;
 	return directive->value;
 }
 
@@ -1166,6 +1164,9 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 					extra->did_space = token == -rua_space;
 				}
 				return token ? YYPUSH_MORE : 0;
+			}
+			if (!current_language.initialized && current_language.init) {
+				current_language.init ();
 			}
 			QC_YYSTYPE  lval = {};
 			token = qc_token (extra, &lval, tok, scanner);
@@ -2140,6 +2141,11 @@ rua_include_file (const char *name, void *scanner)
 	auto extra = qc_yyget_extra (scanner);
 	if (extra->suppressed) {
 		return;
+	}
+	if (current_language.on_include) {
+		if (!current_language.on_include (name)) {
+			return;
+		}
 	}
 	struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
 	int quote = *name;

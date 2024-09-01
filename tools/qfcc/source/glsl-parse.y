@@ -1492,32 +1492,143 @@ glsl_parse_string (const char *str)
 	return ret;
 }
 
+static const char *glsl_behaviors[] = {
+	"disable",
+	"enable",
+	"require",
+	"warn",
+};
+#define num_behaviors (sizeof (glsl_behaviors) / sizeof (glsl_behaviors[0]))
+
+typedef struct {
+	const char *name;
+	void      (*set_behavior) (int behavior, void *scanner);
+} glsl_ext_t;
+
+static glsl_ext_t glsl_extensions[] = {
+	{"GL_EXT_multiview", glsl_multiview },
+	{"GL_GOOGLE_include_directive", glsl_include },
+};
+#define num_extensions (sizeof (glsl_extensions) / sizeof (glsl_extensions[0]))
+
+static int
+extension_cmp (const void *_a, const void *_b)
+{
+	auto a = (const glsl_ext_t *) _a;
+	auto b = (const glsl_ext_t *) _b;
+	return strcmp (a->name, b->name);
+}
+
+static int
+behavior_cmp (const void *_a, const void *_b)
+{
+	auto a = (const char **) _a;
+	auto b = (const char **) _b;
+	return strcmp (*a, *b);
+}
+
+static void
+glsl_extension (const char *name, const char *value, void *scanner)
+{
+	if (current_language.initialized) {
+		error (0, "extensions directives must occur before any "
+			   "non-preprocessor tokens");
+		return;
+	}
+	const char **res;
+	res = bsearch (&value, glsl_behaviors, num_behaviors, sizeof (char *),
+				   behavior_cmp);
+	if (!res) {
+		error (0, "invalid behavior: %s", value);
+		return;
+	}
+	int behavior = res - glsl_behaviors;
+	if (strcmp (name, "all") == 0) {
+		if (behavior != 0 && behavior != 3) {
+			error (0, "behavior must be 'warn' or 'disable' for 'all'");
+			return;
+		}
+		for (size_t i = 0; i < num_extensions; i++) {
+			glsl_extensions[i].set_behavior (behavior, scanner);
+		}
+	} else {
+		glsl_ext_t  key = { .name = name };
+		glsl_ext_t *ext;
+		ext = bsearch (&key, glsl_extensions, num_extensions,
+					   sizeof (glsl_ext_t), extension_cmp);
+		if (ext) {
+			ext->set_behavior (behavior, scanner);
+		} else {
+			if (behavior == 2) {
+				error (0, "unknown extension '%s'", name);
+			} else {
+				warning (0, "unknown extension '%s'", name);
+			}
+		}
+	}
+}
+
+static void
+glsl_version (int version, const char *profile)
+{
+	if (!profile || strcmp (profile, "core") == 0) {
+		// ok
+	} else if (strcmp (profile, "es") == 0
+			   || strcmp (profile, "compatibility") == 0) {
+		error (0, "profile '%s' not supported", profile);
+	} else {
+		error (0, "bad profile name '%s': use es, core or compatibility",
+			   profile);
+	}
+	if (version != 450 && version != 460) {
+		error (0, "version not supported");
+	}
+}
+
 language_t lang_glsl_comp = {
 	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
 
 language_t lang_glsl_vert = {
 	.init = glsl_init_vert,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
 
 language_t lang_glsl_tesc = {
 	.init = glsl_init_tesc,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
 
 language_t lang_glsl_tese = {
 	.init = glsl_init_tese,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
 
 language_t lang_glsl_geom = {
 	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
 
 language_t lang_glsl_frag = {
 	.init = glsl_init_frag,
 	.parse = glsl_yyparse,
+	.extension = glsl_extension,
+	.version = glsl_version,
+	.on_include = glsl_on_include,
 };
