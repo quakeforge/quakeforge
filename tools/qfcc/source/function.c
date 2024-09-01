@@ -251,7 +251,7 @@ make_gentype (const expr_t *expr)
 static int
 find_gentype (const expr_t *expr, genfunc_t *genfunc)
 {
-	if (expr->type != ex_symbol) {
+	if (!expr || expr->type != ex_symbol) {
 		return -1;
 	}
 	const char *name = expr->symbol->name;
