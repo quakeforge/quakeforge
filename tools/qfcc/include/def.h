@@ -93,16 +93,23 @@ typedef struct def_s {
 	struct daglabel_s *daglabel;///< daglabel for this def
 	struct flowvar_s *flowvar;	///< flowvar for this def
 
-	unsigned    offset_reloc:1;	///< use *_def_ofs relocs
-	unsigned    initialized:1;	///< the def has been initialized
-	unsigned    constant:1;		///< stores constant value
-	unsigned    global:1;		///< globally declared def
-	unsigned    external:1;		///< externally declared def
-	unsigned    local:1;		///< function local def
-	unsigned    param:1;		///< function param def
-	unsigned    argument:1;		///< function argument def
-	unsigned    system:1;		///< system def
-	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
+	union {
+		struct {
+	        bool    offset_reloc:1;	///< use *_def_ofs relocs
+	        bool    initialized:1;	///< the def has been initialized
+	        bool    constant:1;		///< stores constant value
+	        bool    readonly:1;
+	        bool    writeonly:1;
+	        bool    global:1;		///< globally declared def
+	        bool    external:1;		///< externally declared def
+	        bool    local:1;		///< function local def
+	        bool    param:1;		///< function param def
+	        bool    argument:1;		///< function argument def
+	        bool    system:1;		///< system def
+	        bool    nosave:1;		///< don't set DEF_SAVEGLOBAL
+		};
+		unsigned    storage_bits;
+	};
 
 	rua_loc_t   loc;			///< declaring/defining source location
 

@@ -68,72 +68,42 @@ ALLOC_STATE (def_t, defs);
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
 {
+	def->storage_bits = 0;
 	switch (storage) {
 		case sc_out:
 		case sc_buffer:
 		case sc_shared:
-			def->global = 1;
-			def->external = 0;
-			def->local = 0;
-			def->param = 0;
-			def->argument = 0;
+			def->global = true;
 			break;
 		case sc_system:
-			def->system = 1;
+			def->system = true;
 			// fall through
 		case sc_global:
-			def->global = 1;
-			def->external = 0;
-			def->local = 0;
-			def->param = 0;
-			def->argument = 0;
+			def->global = true;
 			break;
 		case sc_in:
 		case sc_uniform:
-			def->global = 1;
-			def->constant = 1;
-			def->external = 0;
-			def->local = 0;
-			def->param = 0;
-			def->argument = 0;
+			def->global = true;
+			def->readonly = true;
 			break;
 		case sc_extern:
-			def->global = 1;
-			def->external = 1;
-			def->local = 0;
-			def->param = 0;
-			def->argument = 0;
+			def->global = true;
+			def->external = true;
 			break;
 		case sc_static:
-			def->external = 0;
-			def->global = 0;
-			def->local = 0;
-			def->param = 0;
-			def->argument = 0;
 			break;
 		case sc_local:
-			def->external = 0;
-			def->global = 0;
-			def->local = 1;
-			def->param = 0;
-			def->argument = 0;
+			def->local = true;
 			break;
 		case sc_param:
-			def->external = 0;
-			def->global = 0;
-			def->local = 1;
-			def->param = 1;
-			def->argument = 0;
+			def->local = true;
+			def->param = true;
 			break;
 		case sc_argument:
-			def->external = 0;
-			def->global = 0;
-			def->local = 1;
-			def->param = 0;
-			def->argument = 1;
+			def->local = true;
+			def->argument = true;
 			break;
 	}
-	def->initialized = 0;
 }
 
 def_t *
@@ -144,12 +114,12 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 
 	ALLOC (16384, def_t, defs, def);
 
-	def->return_addr = __builtin_return_address (0);
-
-	def->name = name ? save_string (name) : 0;
-	def->type = type;
-
-	def->loc = pr.loc;
+	*def = (def_t) {
+		.type = type,
+		.name = name ? save_string (name) : 0,
+		.loc = pr.loc,
+		.return_addr = __builtin_return_address (0),
+	};
 
 	set_storage_bits (def, storage);
 
