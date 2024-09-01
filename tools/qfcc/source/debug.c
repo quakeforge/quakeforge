@@ -115,6 +115,7 @@ set_line_file (int line, const char *file, int flags)
 		.column = 1,
 		.last_line = line,
 		.last_column = 1,
+		.file = ReuseString (file),
 	};
 	if (file) {
 		add_source_file (file);

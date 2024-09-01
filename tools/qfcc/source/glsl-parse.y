@@ -203,7 +203,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <param>   parameter_declarator parameter_type_specifier
 
 %printer { fprintf (yyo, "%s", $$->name); } <symbol>
-%printer { fprintf (yyo, "%s", $$->type == ex_value ? get_value_string ($$->value) : "<expr>"); } <expr>
+%printer { fprintf (yyo, "%s", ($$ && $$->type == ex_value) ? get_value_string ($$->value) : "<expr>"); } <expr>
 %printer { fprintf (yyo, "%p", $<pointer>$); } <*>
 %printer { fprintf (yyo, "<>"); } <>
 
@@ -744,6 +744,9 @@ precise_qualifer
 type_qualifier
 	: single_type_qualifier
 	| type_qualifier single_type_qualifier
+		{
+			$<spec>$ = spec_merge ($1, $2);
+		}
 	;
 
 single_type_qualifier
@@ -1069,7 +1072,7 @@ iteration_statement
 		}
 	| FOR break_label continue_label
 //			'(' for_init_statement for_rest_statement ')'
-			'(' for_init_statement ';' conditionopt ';' expressionopt ')'
+			'(' for_init_statement conditionopt ';' expressionopt ')'
 			statement_no_new_scope
 		{
 			if ($for_init_statement) {
