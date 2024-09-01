@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 ALLOC_STATE (glsl_block_t, blocks);
 
@@ -109,7 +110,7 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 			break;
 	}
 	if (!block_tab) {
-		error (0, "invalid storage for block");
+		error (0, "invalid storage for block: %d", spec.storage);
 		return;
 	}
 	glsl_block_t *block;
@@ -127,7 +128,21 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 		sym->def = def;
 	}
 	if (instance_name) {
-		//namespace_add (instance_name, block->members);
+		auto type = new_type ();
+		*type = (type_t) {
+			.type = ev_invalid,
+			.name = save_string (block_sym->name),
+			.alignment = 4,
+			.width = 1,
+			.columns = 1,
+			.meta = ty_struct,
+			.symtab = block->members,
+		};
+		instance_name->type = append_type (instance_name->type, type);
+		instance_name->type = find_type (instance_name->type);
+		auto space = current_symtab->space;// FIXME
+		initialize_def (instance_name, nullptr, space, spec.storage,
+						current_symtab);
 	} else {
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {
 			auto new = new_symbol (sym->name);

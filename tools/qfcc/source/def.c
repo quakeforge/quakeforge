@@ -106,6 +106,15 @@ set_storage_bits (def_t *def, storage_class_t storage)
 	}
 }
 
+static bool
+deferred_size (storage_class_t storage)
+{
+	if (storage == sc_in || storage == sc_uniform || storage == sc_buffer) {
+		return true;
+	}
+	return false;
+}
+
 def_t *
 new_def (const char *name, const type_t *type, defspace_t *space,
 		 storage_class_t storage)
@@ -151,7 +160,7 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 		int         size = type_size (type);
 		int         alignment = type->alignment;
 
-		if (!size) {
+		if (!size && is_array (type) && !deferred_size (storage)) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
 			alignment = 1;
@@ -160,7 +169,9 @@ new_def (const char *name, const type_t *type, defspace_t *space,
 			print_type (type);
 			internal_error (0, "type has no alignment");
 		}
-		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
+		if (size) {
+			def->offset = defspace_alloc_aligned_loc (space, size, alignment);
+		}
 	}
 
 	return def;
