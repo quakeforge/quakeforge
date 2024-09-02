@@ -541,15 +541,9 @@ make_selector (const char *selector, const type_t *type, const char *name)
 static param_t *
 make_qc_param (specifier_t spec, symbol_t *sym)
 {
-	if (spec.type_expr) {
-		auto param = new_generic_param (spec.type_expr, spec.sym->name);
-		return param;
-	} else {
-		spec = default_type (spec, spec.sym);
-		sym->type = spec.type;
-		auto param = new_param (0, spec.type, sym->name);
-		return param;
-	}
+	sym->type = nullptr;
+	spec.sym = sym;
+	return make_param (spec);
 }
 
 static param_t *
