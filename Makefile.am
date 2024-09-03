@@ -111,10 +111,6 @@ qfcc_compile=\
 am__mv = mv -f
 
 SUFFIXES=.o .r .pas
-%_v6p.o: %.r
-	$(call qfcc_compile,-Ctarget=v6p)
-%_v6.o: %.r
-	$(call qfcc_compile,-Ctarget=v6)
 .r.o:
 	$(qfcc_compile)
 .pas.o:
