@@ -652,7 +652,7 @@ double expr_double (const expr_t *e) __attribute__((pure));
 	\return			The new float constant expression node
 					(expr_t::e::float_val).
 */
-const expr_t *new_float_expr (float float_val);
+const expr_t *new_float_expr (float float_val, bool implicit);
 float expr_float (const expr_t *e) __attribute__((pure));
 
 /** Create a new vector constant expression node.
@@ -737,6 +737,7 @@ unsigned expr_uint (const expr_t *e) __attribute__((pure));
 
 const expr_t *new_long_expr (pr_long_t long_val, bool implicit);
 pr_long_t expr_long (const expr_t *e) __attribute__((pure));
+pr_ulong_t expr_ulong (const expr_t *e) __attribute__((pure));
 const expr_t *new_ulong_expr (pr_ulong_t ulong_val);
 
 /** Create a new short constant expression node.
@@ -749,7 +750,8 @@ const expr_t *new_short_expr (short short_val);
 short expr_short (const expr_t *e) __attribute__((pure));
 unsigned short expr_ushort (const expr_t *e) __attribute__((pure));
 
-int expr_integral (const expr_t *e) __attribute__((pure));
+pr_long_t expr_integral (const expr_t *e) __attribute__((pure));
+double expr_floating (const expr_t *e) __attribute__((pure));
 
 bool is_error (const expr_t *e) __attribute__((pure));
 
@@ -817,8 +819,11 @@ int is_quaternion_val (const expr_t *e) __attribute__((pure));
 int is_int_val (const expr_t *e) __attribute__((pure));
 int is_uint_val (const expr_t *e) __attribute__((pure));
 int is_short_val (const expr_t *e) __attribute__((pure));
+int is_long_val (const expr_t *e) __attribute__((pure));
+int is_ulong_val (const expr_t *e) __attribute__((pure));
 int is_double_val (const expr_t *e) __attribute__((pure));
 int is_integral_val (const expr_t *e) __attribute__((pure));
+int is_floating_val (const expr_t *e) __attribute__((pure));
 int is_pointer_val (const expr_t *e) __attribute__((pure));
 int is_math_val (const expr_t *e) __attribute__((pure));
 

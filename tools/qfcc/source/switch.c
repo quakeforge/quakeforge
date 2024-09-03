@@ -143,9 +143,9 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 			value = new_int_expr (expr_float (value), false);
 		} else if (is_float (type) && is_integral (val_type)) {
 			debug (value, "integeral label used in float switch");
-			value = new_float_expr (expr_int (value));
+			value = new_float_expr (expr_int (value), false);
 		} else if (is_float (type) && is_float (val_type)) {
-			value = new_float_expr (expr_float (value));
+			value = new_float_expr (expr_float (value), false);
 			debug (value, "float label used in float switch");
 		}
 	}

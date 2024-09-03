@@ -138,7 +138,7 @@ FRAMEID		{ID}(\.{ID})*
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
-						yylval->expr = new_float_expr (f);
+						yylval->expr = new_float_expr (f, false);
 						return VALUE;
 					}
 

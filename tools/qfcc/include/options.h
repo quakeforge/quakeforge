@@ -53,6 +53,7 @@ typedef struct {
 	bool        assoc_float_add;	// allow fp addition to be associative
 	bool        assoc_float_mul;	// allow fp multiplication to be associative
 	bool        no_double;			// double fp type is not supported
+	bool        no_int;				// int type is not supported
 
 	bool        help;
 } code_options_t;

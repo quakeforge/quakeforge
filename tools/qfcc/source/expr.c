@@ -93,7 +93,7 @@ convert_name (const expr_t *e)
 	}
 	if (!strcmp (sym->name, "__INFINITY__")
 		&& current_func) {
-		return new_float_expr (INFINITY);
+		return new_float_expr (INFINITY, false);
 	}
 	if (!strcmp (sym->name, "__FILE__")
 		&& current_func) {
@@ -784,9 +784,9 @@ new_double_expr (double double_val, bool implicit)
 }
 
 const expr_t *
-new_float_expr (float float_val)
+new_float_expr (float float_val, bool implicit)
 {
-	return new_value_expr (new_float_val (float_val), false);
+	return new_value_expr (new_float_val (float_val), implicit);
 }
 
 const expr_t *
@@ -843,6 +843,54 @@ new_long_expr (pr_long_t long_val, bool implicit)
 	return new_value_expr (new_long_val (long_val), implicit);
 }
 
+int
+is_long_val (const expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 1;
+	}
+	if (e->type == ex_value && e->value->lltype == ev_long) {
+		return 1;
+	}
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
+		auto type = e->symbol->type;
+		if (is_long (type)) {
+			return 1;
+		}
+	}
+	if (e->type == ex_def && e->def->constant) {
+		auto type = e->def->type;
+		if (is_long (type)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
+is_ulong_val (const expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 1;
+	}
+	if (e->type == ex_value && e->value->lltype == ev_ulong) {
+		return 1;
+	}
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
+		auto type = e->symbol->type;
+		if (is_ulong (type)) {
+			return 1;
+		}
+	}
+	if (e->type == ex_def && e->def->constant) {
+		auto type = e->def->type;
+		if (is_ulong (type)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 pr_long_t
 expr_long (const expr_t *e)
 {
@@ -859,6 +907,18 @@ const expr_t *
 new_ulong_expr (pr_ulong_t ulong_val)
 {
 	return new_value_expr (new_ulong_val (ulong_val), false);
+}
+
+pr_ulong_t
+expr_ulong (const expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 0;
+	}
+	if (e->type == ex_value && e->value->lltype == ev_ulong) {
+		return e->value->ulong_val;
+	}
+	internal_error (e, "not a ulong constant");
 }
 
 const expr_t *
@@ -1093,13 +1153,17 @@ is_int_val (const expr_t *e)
 	if (e->type == ex_value && e->value->lltype == ev_int) {
 		return 1;
 	}
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
-		&& is_integral (e->symbol->type)) {
-		return 1;
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
+		auto type = e->symbol->type;
+		if (!is_long (type) && !is_ulong (type) && is_integral (type)) {
+			return 1;
+		}
 	}
-	if (e->type == ex_def && e->def->constant
-		&& is_integral (e->def->type)) {
-		return 1;
+	if (e->type == ex_def && e->def->constant) {
+		auto type = e->def->type;
+		if (!is_long (type) && !is_ulong (type) && is_integral (type)) {
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -1239,11 +1303,31 @@ is_integral_val (const expr_t *e)
 		if (is_short_val (e)) {
 			return 1;
 		}
+		if (is_long_val (e)) {
+			return 1;
+		}
+		if (is_ulong_val (e)) {
+			return 1;
+		}
 	}
 	return 0;
 }
 
 int
+is_floating_val (const expr_t *e)
+{
+	if (is_constant (e)) {
+		if (is_float_val (e)) {
+			return 1;
+		}
+		if (is_double_val (e)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+pr_long_t
 expr_integral (const expr_t *e)
 {
 	if (is_constant (e)) {
@@ -1255,6 +1339,26 @@ expr_integral (const expr_t *e)
 		}
 		if (is_short_val (e)) {
 			return expr_short (e);
+		}
+		if (is_long_val (e)) {
+			return expr_long (e);
+		}
+		if (is_ulong_val (e)) {
+			return expr_ulong (e);
+		}
+	}
+	internal_error (e, "not an integral constant");
+}
+
+double
+expr_floating (const expr_t *e)
+{
+	if (is_constant (e)) {
+		if (is_float_val (e)) {
+			return expr_float (e);
+		}
+		if (is_double_val (e)) {
+			return expr_double (e);
 		}
 	}
 	internal_error (e, "not an integral constant");
@@ -1647,8 +1751,8 @@ convert_from_bool (const expr_t *e, const type_t *type)
 	expr_t     *enum_zero, *enum_one;
 
 	if (is_float (type)) {
-		one = new_float_expr (1);
-		zero = new_float_expr (0);
+		one = new_float_expr (1, false);
+		zero = new_float_expr (0, false);
 	} else if (is_int (type)) {
 		one = new_int_expr (1, false);
 		zero = new_int_expr (0, false);
@@ -1835,7 +1939,7 @@ unary_expr (int op, const expr_t *e)
 					case ev_double:
 						return new_double_expr (-expr_double (e), e->implicit);
 					case ev_float:
-						return new_float_expr (-expr_float (e));
+						return new_float_expr (-expr_float (e), e->implicit);
 					case ev_vector:
 						VectorNegate (expr_vector (e), v);
 						return new_vector_expr (v);
@@ -2047,7 +2151,8 @@ unary_expr (int op, const expr_t *e)
 					case ev_double:
 						return error (e, "invalid type for unary ~");
 					case ev_float:
-						return new_float_expr (~(int) expr_float (e));
+						return new_float_expr (~(int) expr_float (e),
+											   e->implicit);
 					case ev_quaternion:
 						QuatConj (expr_vector (e), q);
 						return new_vector_expr (q);

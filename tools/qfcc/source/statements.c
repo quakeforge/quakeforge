@@ -1057,7 +1057,7 @@ vector_call (sblock_t *sblock, const expr_t *earg, const expr_t *param, int ind,
 
 	for (i = 0; i < 3; i++) {
 		n = new_name_expr (names[i]);
-		v = new_float_expr (earg->value->vector_val[i]);
+		v = new_float_expr (earg->value->vector_val[i], false);
 		a = assign_expr (field_expr (param, n), v);
 		param = new_param_expr (get_type (earg), ind);
 		//a->line = earg->line;
@@ -1554,7 +1554,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			auto n = new_expr ();
 			*n = *e;
-			n->retrn.ret_val = new_float_expr (0);
+			n->retrn.ret_val = new_float_expr (0, false);
 			e = n;
 		}
 	}

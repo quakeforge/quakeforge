@@ -593,10 +593,10 @@ parse_number (const rua_tok_t *tok, yyscan_t scanner)
 
 	if (fp) {
 		if (expl == suff_float) {
-			return new_float_expr (fvalue);
+			return new_float_expr (fvalue, false);
 		} else {
 			if (options.code.no_double) {
-				return new_float_expr (fvalue);
+				return new_float_expr (fvalue, expl == suff_implicit);
 			} else {
 				return new_double_expr (fvalue, expl == suff_implicit);
 			}
@@ -609,7 +609,7 @@ parse_number (const rua_tok_t *tok, yyscan_t scanner)
 		} else if (expl == suff_unsigned_long) {
 			return new_ulong_expr (lvalue);
 		} else if (expl == suff_float) {
-			return new_float_expr (lvalue);
+			return new_float_expr (lvalue, false);
 		} else if (expl == suff_double) {
 			return new_double_expr (lvalue, false);
 		} else {
@@ -688,11 +688,12 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 	bool fp = false;
 	for (int i = 0; i < width; i++) {
 		if (!components[i]->implicit) {
-			error (0, "explict numeric constant in vector literal."
-				   " Suggest suffix after closing '.");
+			warning (0, "explicit numeric constant in vector literal."
+					 " Suggest suffix after closing '.");
 			return 0;
 		}
-		fp |= is_double (get_type (components[i]));
+		auto t = get_type (components[i]);
+		fp |= is_double (t) || is_float (t);
 	}
 
 	// end points at the final ' and thus any suffix is after that
@@ -721,10 +722,10 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 	if (expl == suff_float) {
 		for (int i = 0; i < width; i++) {
 			auto c = components[i];
-			if (is_double (get_type (c))) {
-				data.f[i] = expr_double (c);
+			if (is_floating_val (c)) {
+				data.f[i] = expr_floating (c);
 			} else {
-				data.f[i] = expr_long (c);
+				data.f[i] = expr_integral (c);
 			}
 			if (negate[i]) {
 				data.f[i] = -data.f[i];
@@ -734,10 +735,10 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 	} else if (expl == suff_double) {
 		for (int i = 0; i < width; i++) {
 			auto c = components[i];
-			if (is_double (get_type (c))) {
-				data.d[i] = expr_double (c);
+			if (is_floating_val (c)) {
+				data.d[i] = expr_floating (c);
 			} else {
-				data.d[i] = expr_long (c);
+				data.d[i] = expr_integral (c);
 			}
 			if (negate[i]) {
 				data.d[i] = -data.d[i];
@@ -748,10 +749,10 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 		if (fp) {
 			for (int i = 0; i < width; i++) {
 				auto c = components[i];
-				if (is_double (get_type (c))) {
-					data.f[i] = expr_double (c);
+				if (is_floating_val (c)) {
+					data.f[i] = expr_floating (c);
 				} else {
-					data.f[i] = expr_long (c);
+					data.f[i] = expr_integral (c);
 				}
 				if (negate[i]) {
 					data.f[i] = -data.f[i];
@@ -761,7 +762,11 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 		} else {
 			for (int i = 0; i < width; i++) {
 				auto c = components[i];
-				data.i[i] = expr_long (c);
+				if (is_floating_val (c)) {
+					data.i[i] = expr_floating (c);
+				} else {
+					data.i[i] = expr_integral (c);
+				}
 				if (negate[i]) {
 					data.i[i] = -data.i[i];
 				}
@@ -983,7 +988,7 @@ convert_long (const expr_t *value)
 		if (f != v) {
 			warning (0, "cannot represent value");
 		}
-		return new_float_expr (f);
+		return new_float_expr (f, true);
 	}
 }
 

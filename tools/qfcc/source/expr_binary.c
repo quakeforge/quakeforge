@@ -985,7 +985,7 @@ inverse_multiply (int op, const expr_t *e1, const expr_t *e2)
 {
 	// There is no vector/float or quaternion/float instruction and adding
 	// one would mean the engine would have to do 1/f every time
-	auto one = new_float_expr (1);
+	auto one = new_float_expr (1, false);
 	return binary_expr ('*', e1, binary_expr ('/', one, e2));
 }
 

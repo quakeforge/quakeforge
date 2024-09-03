@@ -861,6 +861,7 @@ DecodeArgs (int argc, char **argv)
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = false;
 		options.code.no_double = true;
+		options.code.no_int = true;
 		cpp_define ("__VERSION6__=1");
 		if (!options_user_set.code.crc) {
 			options.code.crc = true;

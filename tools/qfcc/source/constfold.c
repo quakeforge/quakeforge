@@ -69,7 +69,7 @@ static const expr_t *
 cmp_result_expr (int result)
 {
 	if (is_float (type_default)) {
-		return new_float_expr (result);
+		return new_float_expr (result, false);
 	} else {
 		return new_int_expr (result, false);
 	}
@@ -224,36 +224,36 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	const expr_t *new = 0;
 	switch (op) {
 		case '+':
-			new = new_float_expr (f1 + f2);
+			new = new_float_expr (f1 + f2, false);
 			break;
 		case '-':
-			new = new_float_expr (f1 - f2);
+			new = new_float_expr (f1 - f2, false);
 			break;
 		case '*':
-			new = new_float_expr (f1 * f2);
+			new = new_float_expr (f1 * f2, false);
 			break;
 		case '/':
 			if (!f2)
 				return error (e1, "divide by zero");
-			new = new_float_expr (f1 / f2);
+			new = new_float_expr (f1 / f2, false);
 			break;
 		case '&':
-			new = new_float_expr ((int)f1 & (int)f2);
+			new = new_float_expr ((int)f1 & (int)f2, false);
 			break;
 		case '|':
-			new = new_float_expr ((int)f1 | (int)f2);
+			new = new_float_expr ((int)f1 | (int)f2, false);
 			break;
 		case '^':
-			new = new_float_expr ((int)f1 ^ (int)f2);
+			new = new_float_expr ((int)f1 ^ (int)f2, false);
 			break;
 		case '%':
-			new = new_float_expr ((int)f1 % (int)f2);
+			new = new_float_expr ((int)f1 % (int)f2, false);
 			break;
 		case QC_SHL:
-			new = new_float_expr ((int)f1 << (int)f2);
+			new = new_float_expr ((int)f1 << (int)f2, false);
 			break;
 		case QC_SHR:
-			new = new_float_expr ((int)f1 >> (int)f2);
+			new = new_float_expr ((int)f1 >> (int)f2, false);
 			break;
 		case QC_AND:
 			new = cmp_result_expr (f1 && f2);
@@ -414,7 +414,7 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	} else if (op == QC_DOT && is_vector(get_type (e2))) {
 		//e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
-		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1, false), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		//e->expr.type = &type_vector;
@@ -475,7 +475,7 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 			new = new_vector_expr (v);
 			break;
 		case QC_DOT:
-			new = new_float_expr (DotProduct (v1, v2));
+			new = new_float_expr (DotProduct (v1, v2), false);
 			break;
 		case QC_SCALE:
 			VectorScale (v1, v2[0], v);
@@ -561,7 +561,7 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		else
 			e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
-		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1, false), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		e->expr.type = &type_quaternion;
@@ -1314,12 +1314,12 @@ uop_float (int op, const expr_t *e, const expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_float_expr (-expr_float (e1));
+			return new_float_expr (-expr_float (e1), false);
 		case '!':
 			print_type (get_type (e));
 			return cmp_result_expr (!expr_float (e1));
 		case '~':
-			return new_float_expr (~(int) expr_float (e1));
+			return new_float_expr (~(int) expr_float (e1), false);
 		case 'C':
 			if (is_int(type)) {
 				return new_int_expr (expr_float (e1), false);
@@ -1472,7 +1472,7 @@ uop_int (int op, const expr_t *e, const expr_t *e1)
 		case '~':
 			return new_int_expr (~expr_int (e1), false);
 		case 'C':
-			return new_float_expr (expr_int (e1));
+			return new_float_expr (expr_int (e1), false);
 	}
 	internal_error (e, "int unary op blew up");
 }
@@ -1548,7 +1548,7 @@ uop_double (int op, const expr_t *e, const expr_t *e1)
 			if (is_int(type)) {
 				return new_int_expr (expr_double (e1), false);
 			} else {
-				return new_float_expr (expr_double (e1));
+				return new_float_expr (expr_double (e1), false);
 			}
 	}
 	internal_error (e, "float unary op blew up");
