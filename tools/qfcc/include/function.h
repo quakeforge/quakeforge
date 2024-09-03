@@ -163,6 +163,13 @@ typedef struct metafunc_s {
 
 extern function_t *current_func;
 
+typedef enum param_qual_e {
+	pq_const,
+	pq_in,
+	pq_out,
+	pq_inout,
+} param_qual_t;
+
 /** Representation of a function parameter.
 	\note	The first two fields match the first two fields of keywordarg_t
 			in method.h
@@ -173,6 +180,7 @@ typedef struct param_s {
 	const type_t *type;
 	const expr_t *type_expr;
 	const char *name;
+	param_qual_t qual;
 } param_t;
 
 typedef struct expr_s expr_t;

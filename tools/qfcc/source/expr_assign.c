@@ -92,7 +92,7 @@ is_lvalue (const expr_t *expr)
 				case sy_name:
 					break;
 				case sy_var:
-					return 1;
+					return !expr->symbol->def->readonly;
 				case sy_const:
 					break;
 				case sy_type:
@@ -130,6 +130,7 @@ is_lvalue (const expr_t *expr)
 			}
 			break;
 		case ex_branch:
+		case ex_inout:
 		case ex_memset:
 		case ex_compound:
 		case ex_state:

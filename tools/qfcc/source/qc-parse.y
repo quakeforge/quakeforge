@@ -520,15 +520,45 @@ make_ellipsis (void)
 static param_t *
 make_param (specifier_t spec)
 {
+	//FIXME should not be sc_global
+	if (spec.storage == sc_global) {
+		spec.storage = sc_param;
+	}
+
+	param_t *param;
 	if (spec.type_expr) {
-		auto param = new_generic_param (spec.type_expr, spec.sym->name);
-		return param;
+		param = new_generic_param (spec.type_expr, spec.sym->name);
 	} else {
 		spec = default_type (spec, spec.sym);
 		spec.type = find_type (append_type (spec.sym->type, spec.type));
-		auto param = new_param (0, spec.type, spec.sym->name);
-		return param;
+		param = new_param (0, spec.type, spec.sym->name);
 	}
+	if (spec.is_const) {
+		if (spec.storage == sc_out) {
+			error (0, "cannot use const with @out");
+		} else if (spec.storage == sc_inout) {
+			error (0, "cannot use const with @inout");
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+		}
+		param->qual = pq_const;
+	} else {
+		if (spec.storage == sc_out) {
+			param->qual = pq_out;
+		} else if (spec.storage == sc_inout) {
+			param->qual = pq_inout;
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+			param->qual = pq_in;
+		}
+	}
+	return param;
 }
 
 static param_t *
@@ -2776,6 +2806,7 @@ static keyword_t at_keywords[] = {
 	{"sizeof",		QC_SIZEOF	},
 	{"not",			QC_NOT		},
 	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
+	{"const",		QC_TYPE_QUAL, .spec = { .is_const = true } },
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
@@ -2793,6 +2824,9 @@ static keyword_t qf_keywords[] = {
 	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
 	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
 	{"@return",     QC_AT_RETURN,		},
+	{"@in",			QC_TYPE_QUAL, .spec = { .storage = sc_in } },
+	{"@out",		QC_TYPE_QUAL, .spec = { .storage = sc_out } },
+	{"@inout",		QC_TYPE_QUAL, .spec = { .storage = sc_inout } },
 
 	{"@hadamard",	QC_HADAMARD,	},
 	{"@cross",		QC_CROSS,		},

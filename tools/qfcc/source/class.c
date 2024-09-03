@@ -85,6 +85,7 @@ type_t      type_SEL = {
 	{{&type_selector}},
 };
 const type_t *IMP_params[] = { &type_id, &type_SEL };
+param_qual_t IMP_quals[] = { pq_in, pq_in };
 type_t      type_IMP = {
 	.type = ev_func,
 	.name = "IMP",
@@ -92,7 +93,13 @@ type_t      type_IMP = {
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
-	{{&type_id, -3, IMP_params, .no_va_list = 1}},
+	.func = {
+		.ret_type = &type_id,
+		.num_params = -3,
+		.param_types = IMP_params,
+		.param_quals = IMP_quals,
+		.no_va_list = 1,
+	},
 };
 type_t      type_super = {
 	.type = ev_invalid,
@@ -106,6 +113,7 @@ type_t      type_SuperPtr = {
 	{{&type_super}},
 };
 const type_t *supermsg_params[] = { &type_SuperPtr, &type_SEL };
+param_qual_t supermsg_quals[] = { pq_in, pq_in };
 type_t      type_supermsg = {
 	.type = ev_func,
 	.name = ".supermsg",
@@ -113,7 +121,12 @@ type_t      type_supermsg = {
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
-	{{&type_id, -3, supermsg_params}},
+	.func = {//FIXME is this right?
+		.ret_type = &type_id,
+		.num_params = -3,
+		.param_types = supermsg_params,
+		.param_quals = supermsg_quals,
+	},
 };
 type_t      type_method = {
 	.type = ev_invalid,
@@ -146,13 +159,19 @@ type_t      type_moduleptr = {
 const type_t *obj_exec_class_params[] = {
 	&type_moduleptr,
 };
+param_qual_t obj_exec_class_quals[] = { pq_in };
 type_t      type_exec_class = {
 	.type = ev_func,
 	.alignment = 1,
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
-	{{&type_void, 1, obj_exec_class_params}},
+	.func = {
+		.ret_type = &type_void,
+		.num_params = 1,
+		.param_types = obj_exec_class_params,
+		.param_quals = obj_exec_class_quals,
+	},
 };
 // the cast of 1 in the init is to ensure pointers to incomplete types
 // are never misidentified as id. It will be set to the correct value

@@ -1413,7 +1413,9 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 				} else {
 					def_t      *def = flowvar_get_def (var);
 					if (def) {
-						if (options.warnings.uninited_variable) {
+						if (def->out_param) {
+							error (st->expr, "%s not initialized", def->name);
+						} else if (options.warnings.uninited_variable) {
 							warning (st->expr, "%s may be used uninitialized",
 									 def->name);
 						}

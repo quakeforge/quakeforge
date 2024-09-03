@@ -107,6 +107,7 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 		case sc_param:
 		case sc_local:
 		case sc_argument:
+		case sc_inout:
 			break;
 	}
 	if (!block_tab) {

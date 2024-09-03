@@ -95,6 +95,7 @@ set_storage_bits (def_t *def, storage_class_t storage)
 		case sc_local:
 			def->local = true;
 			break;
+		case sc_inout:
 		case sc_param:
 			def->local = true;
 			def->param = true;

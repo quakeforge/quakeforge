@@ -1099,6 +1099,12 @@ expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 			continue;
 		}
 		ind--;
+		if (a->type == ex_inout) {
+			a = a->inout.in;
+			if (!a) {
+				continue;
+			}
+		}
 		param = new_param_expr (get_type (a), ind);
 		if (count && options.code.progsversion != PROG_ID_VERSION && ind < 2) {
 			pref = "r";
@@ -1148,8 +1154,26 @@ expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 		*op = return_operand (call->branch.ret_type, call);
 	}
 	sblock_add_statement (sblock, s);
-	sblock->next = new_sblock ();
-	return sblock->next;
+
+	ind = count;
+	for (auto li = args->list.head; li; li = li->next) {
+		auto a = li->expr;
+		if (a->type != ex_args) {
+			ind--;
+		}
+		if (a->type != ex_inout) {
+			continue;
+		}
+		a = a->inout.out;
+		param = new_param_expr (get_type (a), ind);
+		operand_t  *p = nullptr;
+		sblock = statement_subexpr (sblock, param, &p);
+		operand_t  *arg = nullptr;
+		sblock = statement_subexpr (sblock, a, &arg);
+		s = assign_statement (arg, p, a);
+		sblock_add_statement (sblock, s);
+	}
+	return sblock;
 }
 
 static sblock_t *
@@ -1167,6 +1191,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	const expr_t *args_params = 0;	// first arg in ...
 	operand_t  *use = 0;
 	operand_t  *kill = 0;
+	operand_t  *define = nullptr;
 	int         num_params = 0;
 
 	defspace_reset (arg_space);
@@ -1174,6 +1199,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 
 	int         num_args = list_count (&call->branch.args->list);
 	const expr_t *args[num_args + 1];
+	def_t      *out_args[num_args + 1] = {};
 	list_scatter_rev (&call->branch.args->list, args);
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
@@ -1191,6 +1217,9 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 														alignment);
 		def->type = arg_type;
 		def->reg = current_func->temp_reg;
+		if (a->type == ex_inout) {
+			out_args[i] = def;
+		}
 		const expr_t *def_expr = new_def_expr (def);
 		if (a->type == ex_args) {
 			args_va_list = def_expr;
@@ -1201,20 +1230,35 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 			if (args_va_list) {
 				num_params++;
 			}
-			const expr_t *assign = assign_expr (def_expr, a);
-			sblock = statement_single (sblock, assign);
+			auto src = a;
+			if (a->type == ex_inout) {
+				src = a->inout.in;
+			}
+			if (src) {
+				const expr_t *assign = assign_expr (def_expr, src);
+				sblock = statement_single (sblock, assign);
+			}
 		}
 
 		// The call both uses and kills the arguments: use is obvious, but kill
 		// is because the callee has direct access to them and might modify
 		// them
 		// need two ops for the one def because there's two lists
-		operand_t  *u = def_operand (def, arg_type, call);
-		operand_t  *k = def_operand (def, arg_type, call);
-		u->next = use;
-		use = u;
-		k->next = kill;
-		kill = k;
+		if (a->type != ex_inout || a->inout.in) {
+			auto u = def_operand (def, arg_type, call);
+			u->next = use;
+			use = u;
+		}
+		if (a->type != ex_inout) {
+			auto k = def_operand (def, arg_type, call);
+			k->next = kill;
+			kill = k;
+		} else {
+			// inout and out params define the argument
+			auto d = def_operand (def, arg_type, call);
+			d->next = define;
+			define = d;
+		}
 	}
 	if (args_va_list) {
 		const expr_t *assign;
@@ -1249,7 +1293,25 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	}
 	s->use = use;
 	s->kill = kill;
+	s->def = define;
 	sblock_add_statement (sblock, s);
+	for (int i = 0; i < num_args; i++) {
+		auto a = args[i];
+		auto out = out_args[i];
+		if (a->type != ex_inout) {
+			continue;
+		}
+		auto dst_expr = a->inout.out;
+		if (!dst_expr) {
+			internal_error (dst_expr, "inout with no out");
+		}
+		if (!out) {
+			internal_error (a, "no arg def for %d", i);
+		}
+		const expr_t *out_expr = new_def_expr (out);
+		const expr_t *assign = assign_expr (dst_expr, out_expr);
+		sblock = statement_single (sblock, assign);
+	}
 	return sblock;
 }
 
@@ -1457,10 +1519,37 @@ statement_return (sblock_t *sblock, const expr_t *e)
 {
 	const char *opcode;
 	statement_t *s;
+	operand_t  *use = nullptr;
 
 	scoped_src_loc (e);
 	debug (e, "RETURN");
 	opcode = "return";
+	if (current_func) {
+		bool v6p = options.code.progsversion < PROG_VERSION;
+		auto parameters = v6p ? current_func->locals : current_func->parameters;
+		int ind = 0;
+		for (auto p = parameters->symbols; p; p = p->next, ind++) {
+			if (p->sy_type != sy_var || !p->def->out_param) {
+				continue;
+			}
+			auto type = p->def->type;
+			if (v6p) {
+				auto param = new_param_expr (type, ind);
+				operand_t  *p_op = nullptr;
+				sblock = statement_subexpr (sblock, param, &p_op);
+
+				auto a = new_def_expr (p->def);
+				operand_t  *out = nullptr;
+				sblock = statement_subexpr (sblock, a, &out);
+				s = assign_statement (p_op, out, e);
+				sblock_add_statement (sblock, s);
+			} else {
+				auto u = def_operand (p->def, type, e);
+				u->next = use;
+				use = u;
+			}
+		}
+	}
 	if (!e->retrn.ret_val) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			auto n = new_expr ();
@@ -1470,6 +1559,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 		}
 	}
 	s = new_statement (st_func, opcode, e);
+	s->use = use;
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;

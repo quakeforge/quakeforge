@@ -361,6 +361,7 @@ new_param (const char *selector, const type_t *type, const char *name)
 		.selector = selector,
 		.type = find_type (type),
 		.name = name,
+		.qual = pq_in,
 	};
 	return param;
 }
@@ -374,6 +375,7 @@ new_generic_param (const expr_t *type_expr, const char *name)
 	*param = (param_t) {
 		.type_expr = type_expr,
 		.name = name,
+		.qual = pq_in,
 	};
 	return param;
 }
@@ -469,7 +471,8 @@ parse_params (const type_t *return_type, param_t *parms)
 		}
 	}
 	if (count) {
-		new->func.param_types = malloc (count * sizeof (type_t));
+		new->func.param_types = malloc (count * sizeof (type_t *));
+		new->func.param_quals = malloc (count * sizeof (param_qual_t));
 	}
 	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
@@ -483,6 +486,7 @@ parse_params (const type_t *return_type, param_t *parms)
 			}
 			auto ptype = unalias_type (p->type);
 			new->func.param_types[new->func.num_params] = ptype;
+			new->func.param_quals[new->func.num_params] = p->qual;
 			new->func.num_params++;
 		}
 	}
@@ -989,6 +993,14 @@ build_v6p_scope (symbol_t *fsym)
 		}
 		param = new_symbol_type (p->name, p->type);
 		initialize_def (param, 0, parameters->space, sc_param, locals);
+		if (p->qual == pq_out) {
+			param->def->param = false;
+			param->def->out_param = true;
+		} else if (p->qual == pq_inout) {
+			param->def->out_param = true;
+		} else if (p->qual == pq_const) {
+			param->def->readonly = true;
+		}
 		i++;
 	}
 
@@ -1051,6 +1063,14 @@ build_rua_scope (symbol_t *fsym)
 			param = new_symbol_type (p->name, p->type);
 		}
 		create_param (func->parameters, param);
+		if (p->qual == pq_out) {
+			param->def->param = false;
+			param->def->out_param = true;
+		} else if (p->qual == pq_inout) {
+			param->def->out_param = true;
+		} else if (p->qual == pq_const) {
+			param->def->readonly = true;
+		}
 		param->def->reg = func->temp_reg;
 	}
 }

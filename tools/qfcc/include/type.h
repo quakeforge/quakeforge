@@ -35,10 +35,12 @@
 
 #include "specifier.h"
 
+typedef enum param_qual_e param_qual_t;
 typedef struct ty_func_s {
 	const struct type_s *ret_type;
 	int         num_params;
 	const struct type_s **param_types;
+	param_qual_t *param_quals;
 	union {
 		struct {
 			unsigned    no_va_list:1;///< don't inject va_list for ... function

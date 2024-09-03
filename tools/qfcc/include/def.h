@@ -104,6 +104,7 @@ typedef struct def_s {
 	        bool    external:1;		///< externally declared def
 	        bool    local:1;		///< function local def
 	        bool    param:1;		///< function param def
+	        bool    out_param:1;	///< function out param def
 	        bool    argument:1;		///< function argument def
 	        bool    system:1;		///< system def
 	        bool    nosave:1;		///< don't set DEF_SAVEGLOBAL

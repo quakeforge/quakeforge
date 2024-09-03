@@ -266,6 +266,11 @@ typedef struct {
 } ex_branch_t;
 
 typedef struct {
+	const expr_t *in;			///< source expression for arg
+	const expr_t *out;			///< destination expression for arg
+} ex_inout_t;
+
+typedef struct {
 	const expr_t *ret_val;
 	int         at_return;		///< return void_return call through void
 } ex_return_t;
@@ -348,6 +353,7 @@ typedef struct expr_s {
 		ex_address_t address;			///< alias expr params
 		ex_assign_t assign;				///< assignment expr params
 		ex_branch_t branch;				///< branch expr params
+		ex_inout_t inout;				///< inout arg params
 		ex_return_t retrn;				///< return expr params
 		ex_adjstk_t adjstk;				///< stack adjust param
 		ex_with_t   with;				///< with expr param

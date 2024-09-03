@@ -49,6 +49,7 @@ typedef enum storage_class_e {
 
 	sc_in,
 	sc_out,
+	sc_inout,
 	sc_uniform,
 	sc_buffer,
 	sc_shared,

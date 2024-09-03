@@ -123,6 +123,12 @@ get_type (const expr_t *e)
 	const type_t *type = 0;
 	e = convert_name (e);
 	switch (e->type) {
+		case ex_inout:
+			if (!e->inout.out) {
+				internal_error (e, "inout with no out");
+			}
+			type = get_type (e->inout.out);
+			break;
 		case ex_branch:
 			type = e->branch.ret_type;
 			break;
@@ -1730,6 +1736,9 @@ has_function_call (const expr_t *e)
 				return 0;
 			}
 			return has_function_call (e->branch.test);
+		case ex_inout:
+			// in is just a cast of out, if it's not null
+			return has_function_call (e->inout.out);
 		case ex_return:
 			return has_function_call (e->retrn.ret_val);
 		case ex_horizontal:
@@ -1887,6 +1896,7 @@ unary_expr (int op, const expr_t *e)
 						return edag_add_expr (n);
 					}
 				case ex_branch:
+				case ex_inout:
 					return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_bool:
@@ -2015,6 +2025,7 @@ unary_expr (int op, const expr_t *e)
 				case ex_multivec:
 					return algebra_dual (e);
 				case ex_branch:
+				case ex_inout:
 				case ex_nil:
 					return error (e, "invalid type for unary !");
 				case ex_count:
@@ -2087,6 +2098,7 @@ unary_expr (int op, const expr_t *e)
 						return error (e, "invalid type for unary ~");
 					goto bitnot_expr;
 				case ex_branch:
+				case ex_inout:
 					return error (e, "invalid type for unary ~");
 				case ex_expr:
 				case ex_bool:
@@ -2161,7 +2173,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	expr_t     *call;
 	const expr_t *err = 0;
 
-	int arg_count = params ? list_count (&params->list) :0;
+	int arg_count = params ? list_count (&params->list) : 0;
 	const expr_t *arguments[arg_count + 1];
 	if (params) {
 		list_scatter_rev (&params->list, arguments);
@@ -2231,17 +2243,42 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 						 " value", i + 1);
 		}
 		if (i < param_count) {
+			auto param_type = ftype->func.param_types[i];
 			if (e->type == ex_nil)
-				e = convert_nil (e, t = ftype->func.param_types[i]);
+				e = convert_nil (e, t = param_type);
 			if (e->type == ex_bool)
-				e = convert_from_bool (e, ftype->func.param_types[i]);
-			if (e->type == ex_error)
-				return e;
-			if (!type_assignable (ftype->func.param_types[i], t)) {
-				err = param_mismatch (e, i + 1, fexpr->symbol->name,
-									  ftype->func.param_types[i], t);
+				e = convert_from_bool (e, param_type);
+			if (e->type == ex_error) {
+				err = e;
+				continue;
 			}
-			t = ftype->func.param_types[i];
+			auto param_qual = ftype->func.param_quals[i];
+			if (param_qual == pq_out || param_qual == pq_inout) {
+				//FIXME should be able to use something like *foo() as
+				//an out or inout arg
+				if (!is_lvalue (e) || has_function_call (e)) {
+					error (e, "lvalue required for %s parameter",
+						   param_qual & pq_in ? "inout" : "out");
+				}
+				if (param_qual == pq_inout
+					&& !type_assignable (param_type, t)) {
+					err = param_mismatch (e, i + 1, fexpr->symbol->name,
+										  param_type, t);
+				}
+				// check assignment FROM parameter is ok, but only if
+				// there wasn't an earlier error so param mismatch doesn't
+				// get double-reported for inout params.
+				if (!err && !type_assignable (t, param_type)) {
+					err = param_mismatch (e, i + 1, fexpr->symbol->name,
+										  t, param_type);
+				}
+			} else {
+				if (!type_assignable (param_type, t)) {
+					err = param_mismatch (e, i + 1, fexpr->symbol->name,
+										  param_type, t);
+				}
+			}
+			t = param_type;
 		} else {
 			if (e->type == ex_nil)
 				e = convert_nil (e, t = type_nil);
@@ -2285,6 +2322,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 	expr_t     *args = new_list_expr (0);
 	// args is built in reverse order so it matches params
 	for (int i = 0; i < arg_count; i++) {
+		auto param_qual = i < param_count ? ftype->func.param_quals[i] : pq_in;
 		if (emit_args && i == param_count) {
 			expr_prepend_expr (args, new_args_expr ());
 			emit_args = false;
@@ -2308,7 +2346,20 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 			arg_exprs[arg_expr_count][1] = tmp;
 			arg_expr_count++;
 		} else {
-			e = cast_expr (arg_types[i], e);
+			if (param_qual != pq_out) {
+				// out parameters do not need to be sent so no need to cast
+			}
+			if (param_qual & pq_out) {
+				auto inout = new_expr ();
+				inout->type = ex_inout;
+				if (param_qual == pq_inout) {
+					inout->inout.in = cast_expr (arg_types[i], e);
+				}
+				inout->inout.out = e;
+				e = inout;
+			} else {
+				e = cast_expr (arg_types[i], e);
+			}
 			expr_prepend_expr (args, e);
 		}
 	}
