@@ -37,6 +37,9 @@ test_progs_dat=\
 	tools/qfcc/test/gcd.dat \
 	tools/qfcc/test/ifsuper.dat \
 	tools/qfcc/test/infloop.dat \
+	tools/qfcc/test/inout.dat \
+	tools/qfcc/test/inout_v6.dat \
+	tools/qfcc/test/inout_v6p.dat \
 	tools/qfcc/test/iterfunc.dat \
 	tools/qfcc/test/ivar-struct-return.dat \
 	tools/qfcc/test/link_order.dat \
@@ -492,6 +495,36 @@ tools/qfcc/test/infloop.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(infloop_dep) # am--include-marker
 r_depfiles_remade += $(infloop_dep)
+
+tools_qfcc_test_inout_dat_SOURCES=tools/qfcc/test/inout.r
+inout_obj=$(tools_qfcc_test_inout_dat_SOURCES:.r=.o)
+inout_dep=$(call qcautodep,$(tools_qfcc_test_inout_dat_SOURCES))
+tools/qfcc/test/inout.dat$(EXEEXT): $(inout_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(inout_obj)
+tools/qfcc/test/inout.run: $(qfcc_test_run_deps)
+	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
+include $(inout_dep) # am--include-marker
+r_depfiles_remade += $(inout_dep)
+
+tools_qfcc_test_inout_v6_dat_SOURCES=tools/qfcc/test/inout.r
+inout_v6_obj=$(tools_qfcc_test_inout_v6_dat_SOURCES:.r=_v6.o)
+inout_v6_dep=$(call qcautodep,$(tools_qfcc_test_inout_v6_dat_SOURCES,_v6))
+tools/qfcc/test/inout_v6.dat$(EXEEXT): $(inout_v6_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -Ctarget=v6 -o $@ $(inout_v6_obj)
+tools/qfcc/test/inout_v6.run: $(qfcc_test_run_deps)
+	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
+include $(inout_v6_dep) # am--include-marker
+r_depfiles_remade += $(inout_v6_dep)
+
+tools_qfcc_test_inout_v6p_dat_SOURCES=tools/qfcc/test/inout.r
+inout_v6p_obj=$(tools_qfcc_test_inout_v6p_dat_SOURCES:.r=_v6p.o)
+inout_v6p_dep=$(call qcautodep,$(tools_qfcc_test_inout_v6p_dat_SOURCES,_v6p))
+tools/qfcc/test/inout_v6p.dat$(EXEEXT): $(inout_v6p_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -Ctarget=v6p -o $@ $(inout_v6p_obj)
+tools/qfcc/test/inout_v6p.run: $(qfcc_test_run_deps)
+	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
+include $(inout_v6p_dep) # am--include-marker
+r_depfiles_remade += $(inout_v6p_dep)
 
 tools_qfcc_test_iterfunc_dat_SOURCES=tools/qfcc/test/iterfunc.r
 iterfunc_obj=$(tools_qfcc_test_iterfunc_dat_SOURCES:.r=.o)

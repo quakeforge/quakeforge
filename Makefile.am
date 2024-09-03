@@ -102,21 +102,25 @@ QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 
+qfcc_compile=\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
 am__mv = mv -f
 
 SUFFIXES=.o .r .pas
+%_v6p.o: %.r
+	$(call qfcc_compile,-Ctarget=v6p)
+%_v6.o: %.r
+	$(call qfcc_compile,-Ctarget=v6)
 .r.o:
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
-	$(am__mv) $$depbase.Tqo $$depbase.Qo
+	$(qfcc_compile)
 .pas.o:
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
-	$(am__mv) $$depbase.Tqo $$depbase.Qo
+	$(qfcc_compile)
 
-qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix .Qo,$(notdir $(basename $(basename $(1))))))
+qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(basename $(basename $(1))))))
 r_depfiles_remade=
 pas_depfiles_remade=
 
