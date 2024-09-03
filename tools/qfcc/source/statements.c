@@ -1154,6 +1154,10 @@ expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 		*op = return_operand (call->branch.ret_type, call);
 	}
 	sblock_add_statement (sblock, s);
+	// the global params make optimization difficult, so split the statements
+	// into a new block to ensure they get written
+	sblock->next = new_sblock ();
+	sblock = sblock->next;
 
 	ind = count;
 	for (auto li = args->list.head; li; li = li->next) {
