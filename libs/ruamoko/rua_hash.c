@@ -101,15 +101,17 @@ bi_get_key (const void *key, void *_ht)
 {
 	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_PushFrame (ht->pr);
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->gk);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->gk);
 	pr_string_t string = R_STRING (ht->pr);
-	PR_PopFrame (ht->pr);
-	return PR_GetString (ht->pr, string);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+	return PR_GetString (pr, string);
 }
 
 static uintptr_t
@@ -117,14 +119,16 @@ bi_get_hash (const void *key, void *_ht)
 {
 	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_PushFrame (ht->pr);
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->gh);
-	int         hash = R_INT (ht->pr);
-	PR_PopFrame (ht->pr);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->gh);
+	int         hash = R_INT (pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
 	return hash;
 }
 
@@ -133,15 +137,17 @@ bi_compare (const void *key1, const void *key2, void *_ht)
 {
 	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_PushFrame (ht->pr);
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key1);
-	P_INT (ht->pr, 1) = (intptr_t) (key2);
-	P_INT (ht->pr, 2) = ht->ud;
-	ht->pr->pr_argc = 3;
-	PR_ExecuteProgram (ht->pr, ht->cmp);
-	int         cmp = R_INT (ht->pr);
-	PR_PopFrame (ht->pr);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 3, 1);
+	P_INT (pr, 0) = (intptr_t) (key1);
+	P_INT (pr, 1) = (intptr_t) (key2);
+	P_INT (pr, 2) = ht->ud;
+	PR_ExecuteProgram (pr, ht->cmp);
+	int         cmp = R_INT (pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
 	return cmp;
 }
 
@@ -150,13 +156,15 @@ bi_free (void *key, void *_ht)
 {
 	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_PushFrame (ht->pr);
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->f);
-	PR_PopFrame (ht->pr);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->f);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
 }
 
 static void

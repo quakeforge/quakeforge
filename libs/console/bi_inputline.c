@@ -133,18 +133,19 @@ bi_inputline_enter (inputline_t *il)
 		return;			// no callback defined
 
 	PR_PushFrame (pr);
-	PR_RESET_PARAMS (pr);
+	auto params = PR_SaveParams (pr);
 	if (data->method) {
+		PR_SetupParams (pr, 3, 1);
 		P_POINTER (pr, 0) = data->data[0];
 		P_POINTER (pr, 1) = data->data[1];
 		P_STRING (pr, 2) = PR_SetTempString (pr, line);
-		pr->pr_argc = 3;
 	} else {
+		PR_SetupParams (pr, 2, 1);
 		P_STRING (pr, 0) = PR_SetTempString (pr, line);
 		P_POINTER (pr, 1) = data->data[0];
-		pr->pr_argc = 2;
 	}
 	PR_ExecuteProgram (pr, data->enter);
+	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 }
 

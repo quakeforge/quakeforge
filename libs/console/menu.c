@@ -468,11 +468,10 @@ bi_Menu_Enter (progs_t *pr, void *data)
 	if (item->func) {
 		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
-		PR_RESET_PARAMS (&menu_pr_state);
+		PR_SetupParams (pr, 2, 1);
 		P_STRING (&menu_pr_state, 0) =
 			PR_SetTempString (&menu_pr_state, item->text);
 		P_INT (&menu_pr_state, 1) = 0;
-		pr->pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
@@ -727,10 +726,9 @@ Menu_Draw (view_t view)
 
 		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
-		PR_RESET_PARAMS (&menu_pr_state);
+		PR_SetupParams (&menu_pr_state, 2, 1);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
-		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
 		ret = R_INT (&menu_pr_state);
 		PR_PopFrame (&menu_pr_state);
@@ -764,10 +762,9 @@ Menu_Draw (view_t view)
 	if (menu->cursor) {
 		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
-		PR_RESET_PARAMS (&menu_pr_state);
+		PR_SetupParams (&menu_pr_state, 2, 1);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
-		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
@@ -799,11 +796,10 @@ menu_key_event (const IE_event_t *ie_event)
 	if (menu->keyevent) {
 		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
-		PR_RESET_PARAMS (&menu_pr_state);
+		PR_SetupParams (&menu_pr_state, 3, 1);
 		P_INT (&menu_pr_state, 0) = key.code;
 		P_INT (&menu_pr_state, 1) = key.unicode;
 		P_INT (&menu_pr_state, 2) = 1;	//FIXME only presses now
-		menu_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
 		ret = R_INT (&menu_pr_state);
 		PR_PopFrame (&menu_pr_state);
@@ -815,11 +811,10 @@ menu_key_event (const IE_event_t *ie_event)
 		run_menu_pre ();
 		PR_PushFrame (&menu_pr_state);
 		item = menu->items[menu->cur_item];
-		PR_RESET_PARAMS (&menu_pr_state);
+		PR_SetupParams (&menu_pr_state, 2, 1);
 		P_STRING (&menu_pr_state, 0) = PR_SetTempString (&menu_pr_state,
 														 item->text);
 		P_INT (&menu_pr_state, 1) = key.code;
-		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		ret = R_INT (&menu_pr_state);
 		PR_PopFrame (&menu_pr_state);

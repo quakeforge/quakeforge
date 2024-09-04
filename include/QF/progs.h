@@ -84,21 +84,6 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRI
 */
 ///@{
 
-/** Ensure P_* macros point to the right place for passing parameters to progs
-	functions.
-	\param pr		pointer to ::progs_t VM struct
-
-	\warning Failure to use this macro before assigning to the P_* macros can
-	cause corruption of the VM data due to "register" based calling. Can be
-	safely ignored for parameterless functions, or forwarding parameters
-	though a builtin. However, it is ok (and encouraged) to call
-	PR_SetupParams instead, as this macro calls PR_SetupParams with
-	PR_MAX_PARAMS and 1 for the alignment.
-
-	\hideinitializer
-*/
-#define PR_RESET_PARAMS(pr)	PR_SetupParams (pr, PR_MAX_PARAMS, 1)
-
 /**	\name Nested Function Calls
 
 	These functions allow a builtin function that uses PR_CallFunction() to
@@ -116,7 +101,7 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRI
 */
 ///@{
 typedef struct pr_stashed_params_s {
-	pr_type_t  *param_ptrs[2];
+	pr_type_t  *param_ptrs[PR_MAX_PARAMS];
 	pr_type_t  *return_ptr;
 	int         argc;
 	pr_type_t   params[1];

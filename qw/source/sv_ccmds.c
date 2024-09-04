@@ -954,12 +954,13 @@ SV_SetLocalinfo (const char *key, const char *value)
 		*sv_globals.time = sv.time;
 		*sv_globals.self = 0;
 		PR_PushFrame (&sv_pr_state);
-		PR_RESET_PARAMS (&sv_pr_state);
+		auto params = PR_SaveParams (&sv_pr_state);
+		PR_SetupParams (&sv_pr_state, 3, 1);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
-		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
+		PR_RestoreParams (&sv_pr_state, params);
 		PR_PopFrame (&sv_pr_state);
 	}
 

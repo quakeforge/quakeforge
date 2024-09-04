@@ -217,18 +217,21 @@ static inline void
 sv_pr_exec (edict_t *self, edict_t *other, pr_func_t func)
 {
 	pr_int_t    this;
+	pr_stashed_params_t *params = nullptr;
 
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, self);
 	*sv_globals.other = EDICT_TO_PROG (&sv_pr_state, other);
 	if ((this = sv_pr_state.fields.this) != -1) {
 		PR_PushFrame (&sv_pr_state);
-		PR_RESET_PARAMS (&sv_pr_state);
+		params = PR_SaveParams (&sv_pr_state);
+		PR_SetupParams (&sv_pr_state, 3, 1);
 		P_INT (&sv_pr_state, 0) = E_POINTER (self, this);
 		P_INT (&sv_pr_state, 1) = 0;
 		P_INT (&sv_pr_state, 2) = other ? E_POINTER (other, this) : 0;
 	}
 	PR_ExecuteProgram (&sv_pr_state, func);
-	if ((this = sv_pr_state.fields.this) != -1) {
+	if (this != -1) {
+		PR_RestoreParams (&sv_pr_state, params);
 		PR_PopFrame (&sv_pr_state);
 	}
 }

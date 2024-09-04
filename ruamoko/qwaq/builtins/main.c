@@ -297,10 +297,9 @@ spawn_progs (qwaq_thread_t *thread)
 	}
 	pr_argv[i] = 0;
 
-	PR_RESET_PARAMS (pr);
+	PR_SetupParams (pr, 2, 1);
 	P_INT (pr, 0) = pr_argc;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
-	pr->pr_argc = 2;
 }
 
 static void *

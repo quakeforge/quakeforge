@@ -102,17 +102,19 @@ _PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	params->param_ptrs[0] = pr->pr_params[0];
-	params->param_ptrs[1] = pr->pr_params[1];
+	memcpy (params->param_ptrs, pr->pr_params, sizeof (pr->pr_params));
 	params->return_ptr = pr->pr_return;
+
 	pr->pr_params[0] = pr->pr_real_params[0];
 	pr->pr_params[1] = pr->pr_real_params[1];
 	pr->pr_return = pr->pr_return_buffer;
+
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
 	}
 	params->argc = pr->pr_argc;
+
 	return params;
 }
 
@@ -122,9 +124,9 @@ PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params)
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_params[0] = params->param_ptrs[0];
-	pr->pr_params[1] = params->param_ptrs[1];
+	memcpy (pr->pr_params, params->param_ptrs, sizeof (pr->pr_params));
 	pr->pr_return = params->return_ptr;
+
 	pr->pr_argc = params->argc;
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (pr->pr_real_params[i],
@@ -493,6 +495,7 @@ PR_SetupParams (progs_t *pr, int num_params, int min_alignment)
 		}
 		pr->pr_params[0] = pr->pr_real_params[0];
 		pr->pr_params[1] = pr->pr_real_params[1];
+		pr->pr_argc = num_params;
 		return pr->pr_real_params[0];
 	}
 	int         offset = num_params * 4;
@@ -1504,7 +1507,8 @@ op_rcall:
 			case OP_CALL6_v6p:
 			case OP_CALL7_v6p:
 			case OP_CALL8_v6p:
-				PR_RESET_PARAMS (pr);
+				pr->pr_params[0] = pr->pr_real_params[0];
+				pr->pr_params[1] = pr->pr_real_params[1];
 				pr->pr_argc = st->op - OP_CALL0_v6p;
 op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
