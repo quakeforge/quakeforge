@@ -921,9 +921,10 @@ parse_task_function (const plitem_t *item, void **data,
 		offs = ((offs + type->size - 1) & ~(type->size - 1));
 		offs += type->size;
 	}
-	*(exprfunc_t **) data[0] = func;
-	*(exprval_t ***) data[1] = param_ptrs;
-	*(void **) data[2] = param_data;
+	*(const char **) data[0] = vkstrdup (pctx, fname);
+	*(exprfunc_t **) data[1] = func;
+	*(exprval_t ***) data[2] = param_ptrs;
+	*(void **) data[3] = param_data;
 	return 1;
 }
 
