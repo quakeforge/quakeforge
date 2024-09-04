@@ -2752,6 +2752,17 @@ static keyword_t rua_keywords[] = {
 #define VEC_TYPE(type_name, base_type) \
 	{ #type_name, QC_TYPE_SPEC, .spec = { .type = &type_##type_name } },
 #include "tools/qfcc/include/vec_types.h"
+
+	{"bvec2", QC_TYPE_SPEC, .spec = {.type = &type_bvec2}},
+	{"bvec3", QC_TYPE_SPEC, .spec = {.type = &type_bvec3}},
+	{"bvec4", QC_TYPE_SPEC, .spec = {.type = &type_bvec4}},
+
+#define MAT_TYPE(type_name, base_type, cols, align_as) \
+	{ #type_name, QC_TYPE_SPEC, .spec = { . type = &type_##type_name } },
+#include "tools/qfcc/include/mat_types.h"
+	{ "mat2", QC_TYPE_SPEC, .spec = { . type = &type_mat2x2 } },
+	{ "mat3", QC_TYPE_SPEC, .spec = { . type = &type_mat3x3 } },
+	{ "mat4", QC_TYPE_SPEC, .spec = { . type = &type_mat4x4 } },
 };
 
 // These keywords are all part of the Ruamoko (Objective-QC) language.
@@ -2821,6 +2832,7 @@ static keyword_t qf_keywords[] = {
 	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
 	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
 	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
+	{"bool",		QC_TYPE_SPEC, .spec = { .type = &type_bool } 	},
 	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = true } },
 	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
 	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
