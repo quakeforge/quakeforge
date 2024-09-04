@@ -205,4 +205,6 @@ extern language_t current_language;
 extern language_t lang_ruamoko;
 extern language_t lang_pascal;
 
+int qc_parse_string (const char *str);
+
 #endif//__rua_lang_h

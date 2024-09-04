@@ -3021,6 +3021,20 @@ qc_yyparse (FILE *in)
 	return ret;
 }
 
+int
+qc_parse_string (const char *str)
+{
+	rua_parser_t parser = {
+		.parse = qc_yypush_parse,
+		.state = qc_yypstate_new (),
+		.directive = qc_directive,
+		.keyword_or_id = qc_keyword_or_id,
+	};
+	int ret = rua_parse_string (str, &parser);
+	glsl_yypstate_delete (parser.state);
+	return ret;
+}
+
 static int qc_finish (const char *file)
 {
 	if (options.frames_files) {
