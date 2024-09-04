@@ -309,217 +309,256 @@ static gentype_t genDType = {
 	.name = "genDType",
 	.valid_types = Dtypes,
 };
+#endif
 
-genFType radians(genFType degrees)
-genFType degrees(genFType radians)
-genFType sin(genFType angle)
-genFType cos(genFType angle)
-genFType tan(genFType angle)
-genFType asin(genFType x)
-genFType acos(genFType x)
-genFType atan(genFType y, genFType x)
-genFType atan(genFType y_over_x)
-genFType sinh(genFType x)
-genFType cosh(genFType x)
-genFType tanh(genFType x)
-genFType asinh(genFType x)
-genFType acosh(genFType x)
-genFType atanh(genFType x)
+static const char *glsl_general_functions =
+SRC_LINE
+"#define out @out"                                                  "\n"
+"#define highp"                                                     "\n"
+"#define lowp"                                                      "\n"
+"#define uint unsigned"                                             "\n"
+"#define uvec2 uivec2"                                              "\n"
+"@generic(genFType=@vector(float),"                                 "\n"
+"         genDType=@vector(double),"                                "\n"
+"         genIType=@vector(int),"                                   "\n"
+"         genUType=@vector(unsigned int),"                          "\n"
+"         genBType=@vector(bool),"                                  "\n"
+"         mat=@matrix(float),"                                      "\n"
+"         vec=[vec2,vec3,vec4,dvec2,dvec3,dvec4],"                  "\n"
+"         ivec=[ivec2,ivec3,ivec4],"                                "\n"
+"         uvec=[uivec2,uivec3,uivec4],"                             "\n"
+"         bvec=[bvec2,bvec3,bvec4]) {"                              "\n"
+"genFType radians(genFType degrees);"                               "\n"
+"genFType degrees(genFType radians);"                               "\n"
+"genFType sin(genFType angle);"                                     "\n"
+"genFType cos(genFType angle);"                                     "\n"
+"genFType tan(genFType angle);"                                     "\n"
+"genFType asin(genFType x);"                                        "\n"
+"genFType acos(genFType x);"                                        "\n"
+"genFType atan(genFType y, genFType x);"                            "\n"
+"genFType atan(genFType y_over_x);"                                 "\n"
+"genFType sinh(genFType x);"                                        "\n"
+"genFType cosh(genFType x);"                                        "\n"
+"genFType tanh(genFType x);"                                        "\n"
+"genFType asinh(genFType x);"                                       "\n"
+"genFType acosh(genFType x);"                                       "\n"
+"genFType atanh(genFType x);"                                       "\n"
 
 //exponential functions
-genFType pow(genFType x, genFType y)
-genFType exp(genFType x)
-genFType log(genFType x)
-genFType exp2(genFType x)
-genFType log2(genFType x)
-genFType sqrt(genFType x)
-genDType sqrt(genDType x)
-genFType inversesqrt(genFType x)
-genDType inversesqrt(genDType x)
+SRC_LINE
+"genFType pow(genFType x, genFType y);"                             "\n"
+"genFType exp(genFType x);"                                         "\n"
+"genFType log(genFType x);"                                         "\n"
+"genFType exp2(genFType x);"                                        "\n"
+"genFType log2(genFType x);"                                        "\n"
+"genFType sqrt(genFType x);"                                        "\n"
+"genDType sqrt(genDType x);"                                        "\n"
+"genFType inversesqrt(genFType x);"                                 "\n"
+"genDType inversesqrt(genDType x);"                                 "\n"
 
 //common functions
-genFType abs(genFType x)
-genIType abs(genIType x)
-genDType abs(genDType x)
-genFType sign(genFType x)
-genIType sign(genIType x)
-genDType sign(genDType x)
-genFType floor(genFType x)
-genDType floor(genDType x)
-genFType trunc(genFType x)
-genDType trunc(genDType x)
-genFType round(genFType x)
-genDType round(genDType x)
-genFType roundEven(genFType x)
-genDType roundEven(genDType x)
-genFType ceil(genFType x)
-genDType ceil(genDType x)
-genFType fract(genFType x)
-genDType fract(genDType x)
-genFType mod(genFType x, float y)
-genFType mod(genFType x, genFType y)
-genDType mod(genDType x, double y)
-genDType mod(genDType x, genDType y)
-genFType modf(genFType x, out genFType i)
-genDType modf(genDType x, out genDType i)
-genFType min(genFType x, genFType y)
-genFType min(genFType x, float y)
-genDType min(genDType x, genDType y)
-genDType min(genDType x, double y)
-genIType min(genIType x, genIType y)
-genIType min(genIType x, int y)
-genUType min(genUType x, genUType y)
-genUType min(genUType x, uint y)
-genFType max(genFType x, genFType y)
-genFType max(genFType x, float y)
-genDType max(genDType x, genDType y)
-genDType max(genDType x, double y)
-genIType max(genIType x, genIType y)
-genIType max(genIType x, int y)
-genUType max(genUType x, genUType y)
-genUType max(genUType x, uint y)
-genFType clamp(genFType x, genFType minVal, genFType maxVal)
-genFType clamp(genFType x, float minVal, float maxVal)
-genDType clamp(genDType x, genDType minVal, genDType maxVal)
-genDType clamp(genDType x, double minVal, double maxVal)
-genIType clamp(genIType x, genIType minVal, genIType maxVal)
-genIType clamp(genIType x, int minVal, int maxVal)
-genUType clamp(genUType x, genUType minVal, genUType maxVal)
-genUType clamp(genUType x, uint minVal, uint maxVal)
-genFType mix(genFType x, genFType y, genFType a)
-genFType mix(genFType x, genFType y, float a)
-genDType mix(genDType x, genDType y, genDType a)
-genDType mix(genDType x, genDType y, double a)
-genFType mix(genFType x, genFType y, genBType a)
-genDType mix(genDType x, genDType y, genBType a)
-genIType mix(genIType x, genIType y, genBType a)
-genUType mix(genUType x, genUType y, genBType a)
-genBType mix(genBType x, genBType y, genBType a)
-genFType step(genFType edge, genFType x)
-genFType step(float edge, genFType x)
-genDType step(genDType edge, genDType x)
-genDType step(double edge, genDType x)
-genFType smoothstep(genFType edge0, genFType edge1, genFType x)
-genFType smoothstep(float edge0, float edge1, genFType x)
-genDType smoothstep(genDType edge0, genDType edge1, genDType x)
-genDType smoothstep(double edge0, double edge1, genDType x)
-genBType isnan(genFType x)
-genBType isnan(genDType x)
-genBType isinf(genFType x)
-genBType isinf(genDType x)
-genIType floatBitsToInt(highp genFType value)
-genUType floatBitsToUint(highp genFType value)
-genFType intBitsToFloat(highp genIType value)
-genFType uintBitsToFloat(highp genUType value)
-genFType fma(genFType a, genFType b, genFType c)
-genDType fma(genDType a, genDType b, genDType c)
-genFType frexp(highp genFType x, out highp genIType exp)
-genDType frexp(genDType x, out genIType exp)
-genFType ldexp(highp genFType x, highp genIType exp)
-genDType ldexp(genDType x, genIType exp)
+SRC_LINE
+"genFType abs(genFType x);"                                         "\n"
+"genIType abs(genIType x);"                                         "\n"
+"genDType abs(genDType x);"                                         "\n"
+"genFType sign(genFType x);"                                        "\n"
+"genIType sign(genIType x);"                                        "\n"
+"genDType sign(genDType x);"                                        "\n"
+"genFType floor(genFType x);"                                       "\n"
+"genDType floor(genDType x);"                                       "\n"
+"genFType trunc(genFType x);"                                       "\n"
+"genDType trunc(genDType x);"                                       "\n"
+"genFType round(genFType x);"                                       "\n"
+"genDType round(genDType x);"                                       "\n"
+"genFType roundEven(genFType x);"                                   "\n"
+"genDType roundEven(genDType x);"                                   "\n"
+"genFType ceil(genFType x);"                                        "\n"
+"genDType ceil(genDType x);"                                        "\n"
+"genFType fract(genFType x);"                                       "\n"
+"genDType fract(genDType x);"                                       "\n"
+"genFType mod(genFType x, float y);"                                "\n"
+"genFType mod(genFType x, genFType y);"                             "\n"
+"genDType mod(genDType x, double y);"                               "\n"
+"genDType mod(genDType x, genDType y);"                             "\n"
+"genFType modf(genFType x, out genFType i);"                        "\n"
+"genDType modf(genDType x, out genDType i);"                        "\n"
+"genFType min(genFType x, genFType y);"                             "\n"
+"genFType min(genFType x, float y);"                                "\n"
+"genDType min(genDType x, genDType y);"                             "\n"
+"genDType min(genDType x, double y);"                               "\n"
+"genIType min(genIType x, genIType y);"                             "\n"
+"genIType min(genIType x, int y);"                                  "\n"
+"genUType min(genUType x, genUType y);"                             "\n"
+"genUType min(genUType x, uint y);"                                 "\n"
+"genFType max(genFType x, genFType y);"                             "\n"
+"genFType max(genFType x, float y);"                                "\n"
+"genDType max(genDType x, genDType y);"                             "\n"
+"genDType max(genDType x, double y);"                               "\n"
+"genIType max(genIType x, genIType y);"                             "\n"
+"genIType max(genIType x, int y);"                                  "\n"
+"genUType max(genUType x, genUType y);"                             "\n"
+"genUType max(genUType x, uint y);"                                 "\n"
+"genFType clamp(genFType x, genFType minVal, genFType maxVal);"     "\n"
+"genFType clamp(genFType x, float minVal, float maxVal);"           "\n"
+"genDType clamp(genDType x, genDType minVal, genDType maxVal);"     "\n"
+"genDType clamp(genDType x, double minVal, double maxVal);"         "\n"
+"genIType clamp(genIType x, genIType minVal, genIType maxVal);"     "\n"
+"genIType clamp(genIType x, int minVal, int maxVal);"               "\n"
+"genUType clamp(genUType x, genUType minVal, genUType maxVal);"     "\n"
+"genUType clamp(genUType x, uint minVal, uint maxVal);"             "\n"
+"genFType mix(genFType x, genFType y, genFType a);"                 "\n"
+"genFType mix(genFType x, genFType y, float a);"                    "\n"
+"genDType mix(genDType x, genDType y, genDType a);"                 "\n"
+"genDType mix(genDType x, genDType y, double a);"                   "\n"
+"genFType mix(genFType x, genFType y, genBType a);"                 "\n"
+"genDType mix(genDType x, genDType y, genBType a);"                 "\n"
+"genIType mix(genIType x, genIType y, genBType a);"                 "\n"
+"genUType mix(genUType x, genUType y, genBType a);"                 "\n"
+"genBType mix(genBType x, genBType y, genBType a);"                 "\n"
+"genFType step(genFType edge, genFType x);"                         "\n"
+"genFType step(float edge, genFType x);"                            "\n"
+"genDType step(genDType edge, genDType x);"                         "\n"
+"genDType step(double edge, genDType x);"                           "\n"
+"genFType smoothstep(genFType edge0, genFType edge1, genFType x);"  "\n"
+"genFType smoothstep(float edge0, float edge1, genFType x);"        "\n"
+"genDType smoothstep(genDType edge0, genDType edge1, genDType x);"  "\n"
+"genDType smoothstep(double edge0, double edge1, genDType x);"      "\n"
+"genBType isnan(genFType x);"                                       "\n"
+"genBType isnan(genDType x);"                                       "\n"
+"genBType isinf(genFType x);"                                       "\n"
+"genBType isinf(genDType x);"                                       "\n"
+"genIType floatBitsToInt(highp genFType value);"                    "\n"
+"genUType floatBitsToUint(highp genFType value);"                   "\n"
+"genFType intBitsToFloat(highp genIType value);"                    "\n"
+"genFType uintBitsToFloat(highp genUType value);"                   "\n"
+"genFType fma(genFType a, genFType b, genFType c);"                 "\n"
+"genDType fma(genDType a, genDType b, genDType c);"                 "\n"
+"genFType frexp(highp genFType x, out highp genIType exp);"         "\n"
+"genDType frexp(genDType x, out genIType exp);"                     "\n"
+"genFType ldexp(highp genFType x, highp genIType exp);"             "\n"
+"genDType ldexp(genDType x, genIType exp);"                         "\n"
 
 //floating-point pack and unpack functions
-highp uint packUnorm2x16(vec2 v)
-highp uint packSnorm2x16(vec2 v)
-uint packUnorm4x8(vec4 v)
-uint packSnorm4x8(vec4 v)
-vec2 unpackUnorm2x16(highp uint p)
-vec2 unpackSnorm2x16(highp uint p)
-vec4 unpackUnorm4x8(highp uint p)
-vec4 unpackSnorm4x8(highp uint p)
-uint packHalf2x16(vec2 v)
-vec2 unpackHalf2x16(uint v)
-double packDouble2x32(uvec2 v)
-uvec2 unpackDouble2x32(double v)
+SRC_LINE
+"highp uint packUnorm2x16(vec2 v);"                                 "\n"
+"highp uint packSnorm2x16(vec2 v);"                                 "\n"
+"uint packUnorm4x8(vec4 v);"                                        "\n"
+"uint packSnorm4x8(vec4 v);"                                        "\n"
+"vec2 unpackUnorm2x16(highp uint p);"                               "\n"
+"vec2 unpackSnorm2x16(highp uint p);"                               "\n"
+"vec4 unpackUnorm4x8(highp uint p);"                                "\n"
+"vec4 unpackSnorm4x8(highp uint p);"                                "\n"
+"uint packHalf2x16(vec2 v);"                                        "\n"
+"vec2 unpackHalf2x16(uint v);"                                      "\n"
+"double packDouble2x32(uvec2 v);"                                   "\n"
+"uvec2 unpackDouble2x32(double v);"                                 "\n"
 
 //geometric functions
-float length(genFType x)
-double length(genDType x)
-float distance(genFType p0, genFType p1)
-double distance(genDType p0, genDType p1)
-float dot(genFType x, genFType y)
-double dot(genDType x, genDType y)
-vec3 cross(vec3 x, vec3 y)
-dvec3 cross(dvec3 x, dvec3 y)
-genFType normalize(genFType x)
-genDType normalize(genDType x)
-genFType faceforward(genFType N, genFType I, genFType Nref)
-genDType faceforward(genDType N, genDType I, genDType Nref)
-genFType reflect(genFType I, genFType N)
-genDType reflect(genDType I, genDType N)
-genFType refract(genFType I, genFType N, float eta)
-genDType refract(genDType I, genDType N, double eta)
+SRC_LINE
+"float length(genFType x);"                                         "\n"
+"double length(genDType x);"                                        "\n"
+"float distance(genFType p0, genFType p1);"                         "\n"
+"double distance(genDType p0, genDType p1);"                        "\n"
+"float dot(genFType x, genFType y);"                                "\n"
+"double dot(genDType x, genDType y);"                               "\n"
+"@overload vec3 cross(vec3 x, vec3 y);"                             "\n"
+"@overload dvec3 cross(dvec3 x, dvec3 y);"                          "\n"
+"genFType normalize(genFType x);"                                   "\n"
+"genDType normalize(genDType x);"                                   "\n"
+"genFType faceforward(genFType N, genFType I, genFType Nref);"      "\n"
+"genDType faceforward(genDType N, genDType I, genDType Nref);"      "\n"
+"genFType reflect(genFType I, genFType N);"                         "\n"
+"genDType reflect(genDType I, genDType N);"                         "\n"
+"genFType refract(genFType I, genFType N, float eta);"              "\n"
+"genDType refract(genDType I, genDType N, double eta);"             "\n"
 
 //matrix functions
-mat matrixCompMult(mat x, mat y)
-mat2 outerProduct(vec2 c, vec2 r)
-mat3 outerProduct(vec3 c, vec3 r)
-mat4 outerProduct(vec4 c, vec4 r)
-mat2x3 outerProduct(vec3 c, vec2 r)
-mat3x2 outerProduct(vec2 c, vec3 r)
-mat2x4 outerProduct(vec4 c, vec2 r)
-mat4x2 outerProduct(vec2 c, vec4 r)
-mat3x4 outerProduct(vec4 c, vec3 r)
-mat4x3 outerProduct(vec3 c, vec4 r)
-mat2 transpose(mat2 m)
-mat3 transpose(mat3 m)
-mat4 transpose(mat4 m)
-mat2x3 transpose(mat3x2 m)
-mat3x2 transpose(mat2x3 m)
-mat2x4 transpose(mat4x2 m)
-mat4x2 transpose(mat2x4 m)
-mat3x4 transpose(mat4x3 m)
-mat4x3 transpose(mat3x4 m)
-float determinant(mat2 m)
-float determinant(mat3 m)
-float determinant(mat4 m)
-mat2 inverse(mat2 m)
-mat3 inverse(mat3 m)
-mat4 inverse(mat4 m)
+SRC_LINE
+"mat matrixCompMult(mat x, mat y);"                                 "\n"
+"@overload mat2 outerProduct(vec2 c, vec2 r);"                      "\n"
+"@overload mat3 outerProduct(vec3 c, vec3 r);"                      "\n"
+"@overload mat4 outerProduct(vec4 c, vec4 r);"                      "\n"
+"@overload mat2x3 outerProduct(vec3 c, vec2 r);"                    "\n"
+"@overload mat3x2 outerProduct(vec2 c, vec3 r);"                    "\n"
+"@overload mat2x4 outerProduct(vec4 c, vec2 r);"                    "\n"
+"@overload mat4x2 outerProduct(vec2 c, vec4 r);"                    "\n"
+"@overload mat3x4 outerProduct(vec4 c, vec3 r);"                    "\n"
+"@overload mat4x3 outerProduct(vec3 c, vec4 r);"                    "\n"
+"@overload mat2 transpose(mat2 m);"                                 "\n"
+"@overload mat3 transpose(mat3 m);"                                 "\n"
+"@overload mat4 transpose(mat4 m);"                                 "\n"
+"@overload mat2x3 transpose(mat3x2 m);"                             "\n"
+"@overload mat3x2 transpose(mat2x3 m);"                             "\n"
+"@overload mat2x4 transpose(mat4x2 m);"                             "\n"
+"@overload mat4x2 transpose(mat2x4 m);"                             "\n"
+"@overload mat3x4 transpose(mat4x3 m);"                             "\n"
+"@overload mat4x3 transpose(mat3x4 m);"                             "\n"
+"@overload float determinant(mat2 m);"                              "\n"
+"@overload float determinant(mat3 m);"                              "\n"
+"@overload float determinant(mat4 m);"                              "\n"
+"@overload mat2 inverse(mat2 m);"                                   "\n"
+"@overload mat3 inverse(mat3 m);"                                   "\n"
+"@overload mat4 inverse(mat4 m);"                                   "\n"
 
 //vector relational functions
-bvec lessThan(vec x, vec y)
-bvec lessThan(ivec x, ivec y)
-bvec lessThan(uvec x, uvec y)
-bvec lessThanEqual(vec x, vec y)
-bvec lessThanEqual(ivec x, ivec y)
-bvec lessThanEqual(uvec x, uvec y)
-bvec greaterThan(vec x, vec y)
-bvec greaterThan(ivec x, ivec y)
-bvec greaterThan(uvec x, uvec y)
-bvec greaterThanEqual(vec x, vec y)
-bvec greaterThanEqual(ivec x, ivec y)
-bvec greaterThanEqual(uvec x, uvec y)
-bvec equal(vec x, vec y)
-bvec equal(ivec x, ivec y)
-bvec equal(uvec x, uvec y)
-bvec equal(bvec x, bvec y)
-bvec notEqual(vec x, vec y)
-bvec notEqual(ivec x, ivec y)
-bvec notEqual(uvec x, uvec y)
-bvec notEqual(bvec x, bvec y)
-bool any(bvec x)
-bool all(bvec x)
-bvec not(bvec x)
+SRC_LINE
+"@vector(bool,@width(vec)) lessThan(vec x, vec y);"                 "\n"
+"@vector(bool,@width(ivec)) lessThan(ivec x, ivec y);"              "\n"
+"@vector(bool,@width(uvec)) lessThan(uvec x, uvec y);"              "\n"
+"@vector(bool,@width(vec)) lessThanEqual(vec x, vec y);"            "\n"
+"@vector(bool,@width(ivec)) lessThanEqual(ivec x, ivec y);"         "\n"
+"@vector(bool,@width(uvec)) lessThanEqual(uvec x, uvec y);"         "\n"
+"@vector(bool,@width(vec)) greaterThan(vec x, vec y);"              "\n"
+"@vector(bool,@width(ivec)) greaterThan(ivec x, ivec y);"           "\n"
+"@vector(bool,@width(uvec)) greaterThan(uvec x, uvec y);"           "\n"
+"@vector(bool,@width(vec)) greaterThanEqual(vec x, vec y);"         "\n"
+"@vector(bool,@width(ivec)) greaterThanEqual(ivec x, ivec y);"      "\n"
+"@vector(bool,@width(uvec)) greaterThanEqual(uvec x, uvec y);"      "\n"
+"@vector(bool,@width(vec)) equal(vec x, vec y);"                    "\n"
+"@vector(bool,@width(ivec)) equal(ivec x, ivec y);"                 "\n"
+"@vector(bool,@width(uvec)) equal(uvec x, uvec y);"                 "\n"
+"@vector(bool,@width(bvec)) equal(bvec x, bvec y);"                 "\n"
+"@vector(bool,@width(vec)) notEqual(vec x, vec y);"                 "\n"
+"@vector(bool,@width(ivec)) notEqual(ivec x, ivec y);"              "\n"
+"@vector(bool,@width(uvec)) notEqual(uvec x, uvec y);"              "\n"
+"@vector(bool,@width(bvec)) notEqual(bvec x, bvec y);"              "\n"
+"bool any(bvec x);"                                                 "\n"
+"bool all(bvec x);"                                                 "\n"
+"@vector(bool,@width(bvec)) not(bvec x);"                           "\n"
 
 //integer functions
-genUType uaddCarry(highp genUType x, highp genUType y, out lowp genUType carry)
-genUType usubBorrow(highp genUType x, highp genUType y, out lowp genUType borrow)
-void umulExtended(highp genUType x, highp genUType y, out highp genUType msb, out highp genUType lsb)
-void imulExtended(highp genIType x, highp genIType y, out highp genIType msb, out highp genIType lsb)
-genIType bitfieldExtract(genIType value, int offset, int bits)
-genUType bitfieldExtract(genUType value, int offset, int bits)
-genIType bitfieldInsert(genIType base, genIType insert, int offset, int bits)
-genUType bitfieldInsert(genUType base, genUType insert, int offset, int bits)
-genIType bitfieldReverse(highp genIType value)
-genUType bitfieldReverse(highp genUType value)
-genIType bitCount(genIType value)
-genIType bitCount(genUType value)
-genIType findLSB(genIType value)
-genIType findLSB(genUType value)
-genIType findMSB(highp genIType value)
-genIType findMSB(highp genUType value)
-
+SRC_LINE
+"genUType uaddCarry(highp genUType x, highp genUType y,"            "\n"
+"                   out lowp genUType carry);"                      "\n"
+"genUType usubBorrow(highp genUType x, highp genUType y,"           "\n"
+"                    out lowp genUType borrow);"                    "\n"
+"void umulExtended(highp genUType x, highp genUType y,"             "\n"
+"                  out highp genUType msb,"                         "\n"
+"                  out highp genUType lsb);"                        "\n"
+"void imulExtended(highp genIType x, highp genIType y,"             "\n"
+"                  out highp genIType msb,"                         "\n"
+"                  out highp genIType lsb);"                        "\n"
+"genIType bitfieldExtract(genIType value, int offset, int bits);"   "\n"
+"genUType bitfieldExtract(genUType value, int offset, int bits);"   "\n"
+"genIType bitfieldInsert(genIType base, genIType insert,"           "\n"
+"                        int offset, int bits);"                    "\n"
+"genUType bitfieldInsert(genUType base, genUType insert,"           "\n"
+"                        int offset, int bits);"                    "\n"
+"genIType bitfieldReverse(highp genIType value);"                   "\n"
+"genUType bitfieldReverse(highp genUType value);"                   "\n"
+"genIType bitCount(genIType value);"                                "\n"
+"genIType bitCount(genUType value);"                                "\n"
+"genIType findLSB(genIType value);"                                 "\n"
+"genIType findLSB(genUType value);"                                 "\n"
+"genIType findMSB(highp genIType value);"                           "\n"
+"genIType findMSB(highp genUType value);"                           "\n"
+"};"                                                                "\n"
+"#undef out"                                                        "\n"
+"#undef highp"                                                      "\n"
+"#undef lowp"                                                       "\n"
+"#undef uint"                                                       "\n"
+"#undef uvec2"                                                      "\n";
+#if 0
 //texture functions
 //query
 int textureSize(gsampler1D sampler, int lod)
@@ -876,6 +915,7 @@ glsl_init_common (void)
 {
 	current_language.initialized = true;
 	glsl_block_clear ();
+	qc_parse_string (glsl_general_functions);
 	glsl_parse_vars (glsl_system_constants);
 }
 
