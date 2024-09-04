@@ -72,7 +72,7 @@ check_int (const expr_t *arg)
 		&& arg->type != ex_type) {
 		return false;
 	}
-	int op = arg->symbol->expr->typ.op;
+	int op = arg->type ? arg->typ.op : arg->symbol->expr->typ.op;
 	if (op != QC_AT_WIDTH && op != QC_AT_ROWS && op != QC_AT_COLS) {
 		return false;
 	}
