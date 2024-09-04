@@ -219,6 +219,11 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	if (!rec_type) {
 		rec_type = get_type (receiver);
 	}
+	if (!rec_type) {
+		auto err = new_expr ();
+		err->type = ex_error;
+		return err;
+	}
 
 	if (receiver->type == ex_error)
 		return receiver;
