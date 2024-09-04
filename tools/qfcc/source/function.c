@@ -105,7 +105,12 @@ metafunc_get_name (const void *_f, void *unused)
 static void
 check_generic_param (genparam_t *param, genfunc_t *genfunc)
 {
-	if (param->gentype < 0 || param->gentype >= genfunc->num_types) {
+	if (param->fixed_type) {
+		if (param->gentype != -1) {
+			internal_error (0, "invalid type index %d on %s for %s",
+							param->gentype, param->name, genfunc->name);
+		}
+	} else if (param->gentype < 0 || param->gentype >= genfunc->num_types) {
 		internal_error (0, "invalid type index %d on %s for %s",
 						param->gentype, param->name, genfunc->name);
 	}
@@ -284,7 +289,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	// fake parameter for the return type
 	param_t ret_param = {
 		.next = spec.sym->params,
-		.type = spec.sym->type->func.ret_type,
+		.type = spec.type,
 		.type_expr = spec.type_expr,
 	};
 	int num_params = 0;
