@@ -181,6 +181,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<symbol>	generic_param
 %type	<op>		type_func type_op
 %type	<expr>		type_function type_param type_ref
+%type	<spec>		type_ref_spec
 %type	<expr>		generic_type
 %type	<mut_expr>	type_list type_param_list
 
@@ -1250,7 +1251,7 @@ type_list
 	;
 
 type_ref
-	: TYPE_SPEC							{ $$ = new_type_expr ($1.type); }
+	: type_ref_spec						{ $$ = new_type_expr ($1.type); }
 	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
 	| TYPE_NAME
 		{
@@ -1260,6 +1261,11 @@ type_ref
 				$$ = new_type_expr ($1.type);
 			}
 		}
+	;
+
+type_ref_spec
+	: TYPE_SPEC
+	| type_ref_spec TYPE_SPEC			{ $$ = spec_merge ($1, $2); }
 	;
 
 attribute_list
