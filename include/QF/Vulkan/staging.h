@@ -44,6 +44,7 @@ VkResult QFV_PacketWait (qfv_packet_t *packet);
 struct qfv_bufferbarrier_s;
 void QFV_PacketCopyBuffer (qfv_packet_t *packet,
 						   VkBuffer dstBuffer, VkDeviceSize offset,
+						   const struct qfv_bufferbarrier_s *srcBarrier,
 						   const struct qfv_bufferbarrier_s *dstBarrier);
 void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  uint32_t count, qfv_scatter_t *scatter,

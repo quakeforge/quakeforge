@@ -289,8 +289,9 @@ generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 		ind[i + 18] = i + 8;
 	}
 	ind[8] = ind[17] = ~0;
-	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 }
 
@@ -511,8 +512,14 @@ flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	quadvert_t *verts = QFV_PacketExtend (packet, size);
 	memcpy (verts, queue->verts, size);
-	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_duCmdBeginLabel (ctx->device, packet->cmd, "flush_vertqueue",
+						 {0.2, 0.8, 0.3, 1});
+	auto sb = bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	sb.srcStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	db.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base, &sb, &db);
+	QFV_duCmdEndLabel (ctx->device, packet->cmd);
 	QFV_PacketSubmit (packet);
 	queue->base += size;
 	queue->count = 0;
@@ -1791,8 +1798,9 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.uv     = {(u + w) * s, (v + h) * t },
 		};
 	}
-	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 
 	packet = QFV_PacketAcquire (ctx->staging);

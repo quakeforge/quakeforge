@@ -1917,13 +1917,14 @@ lighting_startup (exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	make_ico (packet);
 	make_cone (packet);
-	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto dbv = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	auto dbi = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0, &sb, &dbv);
 	QFV_PacketSubmit (packet);
 	packet = QFV_PacketAcquire (ctx->staging);
 	write_inds (packet);
-	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0, &sb, &dbi);
 	QFV_PacketSubmit (packet);
 
 	qfvPopDebug (ctx);
@@ -2214,10 +2215,11 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
 	void *mat_data = QFV_PacketExtend (packet, mat_size);
 	memcpy (mat_data, lctx->light_mats.a, mat_size);
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 
@@ -2227,7 +2229,7 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	memset (id_data, -1, id_size);
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 }
@@ -2243,10 +2245,11 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	auto light_data = QFV_PacketExtend (packet, sizeof (light_t[count]));
 	memcpy (light_data, lights, sizeof (light_t[count]));
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->light_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->light_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 
@@ -2268,7 +2271,7 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->render_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->render_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 }

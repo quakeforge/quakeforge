@@ -337,10 +337,11 @@ QFV_PacketWait (qfv_packet_t *packet)
 void
 QFV_PacketCopyBuffer (qfv_packet_t *packet,
 					  VkBuffer dstBuffer, VkDeviceSize offset,
+					  const qfv_bufferbarrier_t *srcBarrier,
 					  const qfv_bufferbarrier_t *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	qfv_bufferbarrier_t bb = *srcBarrier;
 	bb.barrier.buffer = dstBuffer;
 	bb.barrier.offset = offset;
 	bb.barrier.size = packet->length;

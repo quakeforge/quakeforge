@@ -183,9 +183,20 @@ const qfv_bufferbarrier_t bufferBarriers[] = {
 		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.barrier = {
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		},
+	},
+	[qfv_BB_UniformRead_to_TransferWrite] = {
+		.srcStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.barrier = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 		},
 	},
 	[qfv_BB_TransferWrite_to_VertexAttrRead] = {
