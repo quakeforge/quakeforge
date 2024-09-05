@@ -39,6 +39,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/expr_type.c \
 	tools/qfcc/source/expr_vector.c \
 	tools/qfcc/source/evaluate.c \
+	tools/qfcc/source/evaluate_type.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
 	tools/qfcc/source/glsl-block.c \

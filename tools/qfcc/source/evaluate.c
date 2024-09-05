@@ -53,8 +53,8 @@
 
 //FIXME this (to setup_value_progs) should be in its own file and more
 //general (good for constant folding, too, and maybe some others).
-static void
-value_debug_handler (prdebug_t event, void *param, void *data)
+void
+evaluate_debug_handler (prdebug_t event, void *param, void *data)
 {
 	progs_t      *pr = data;
 	dstatement_t *st = 0;
@@ -89,7 +89,7 @@ enum {
 
 static bfunction_t value_functions[] = {
 	{},	// null function
-	[vf_convert] = { .first_statement = vf_convert * 16 },
+	[vf_convert]   = { .first_statement = vf_convert * 16 },
 	[vf_foldconst] = { .first_statement = vf_foldconst * 16 },
 };
 
@@ -112,13 +112,13 @@ static codespace_t value_codespace = {
 #define num_globals 16384
 #define stack_size 8192
 static __attribute__((aligned(64)))
-pr_type_t value_globals[num_globals + 128] = {
+pr_type_t evaluate_globals[num_globals + 128] = {
 	[num_globals - stack_size] = { .uint_value = num_globals },
 };
 static defspace_t value_defspace = {
 	.type = ds_backed,
 	.def_tail = &value_defspace.defs,
-	.data = value_globals,
+	.data = evaluate_globals,
 	.max_size = num_globals - stack_size,
 	.grow = 0,
 };
@@ -131,19 +131,19 @@ static dprograms_t value_progs = {
 };
 static progs_t value_pr = {
 	.progs = &value_progs,
-	.debug_handler = value_debug_handler,
+	.debug_handler = evaluate_debug_handler,
 	.debug_data = &value_pr,
 	.pr_trace = 1,
 	.pr_trace_depth = -1,
 	.function_table = value_functions,
 	.pr_statements = value_statements,
 	.globals_size = num_globals,
-	.pr_globals = value_globals,
+	.pr_globals = evaluate_globals,
 	.stack_bottom = num_globals - stack_size + 4,
-	.pr_return_buffer = value_globals + num_globals,
-	.pr_return = value_globals + num_globals,
+	.pr_return_buffer = evaluate_globals + num_globals,
+	.pr_return = evaluate_globals + num_globals,
 	.globals = {
-		.stack = (pr_ptr_t *) (value_globals + num_globals - stack_size),
+		.stack = (pr_ptr_t *) (evaluate_globals + num_globals - stack_size),
 	}
 };
 
@@ -172,7 +172,7 @@ convert_value (ex_value_t *value, const type_t *type)
 	int         addr = value_functions[vf_convert].first_statement;
 	value_statements[addr + 0].b = conv;
 	value_statements[addr + 1].c = type_size (type) - 1;
-	memcpy (value_globals, &value->raw_value,
+	memcpy (evaluate_globals, &value->raw_value,
 			type_size (value->type) * sizeof (pr_type_t));
 	value_pr.pr_trace = options.verbosity > 1;
 	PR_ExecuteProgram (&value_pr, vf_convert);

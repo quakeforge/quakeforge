@@ -52,6 +52,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/evaluate_type.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/flow.h"
@@ -1424,6 +1425,7 @@ clear_functions (void)
 		Hash_FlushTable (metafuncs);
 		Hash_FlushTable (function_map);
 	} else {
+		setup_type_progs ();
 		generic_functions = Hash_NewTable (1021, gen_func_get_key, 0, 0, 0);
 		metafuncs = Hash_NewTable (1021, metafunc_get_full_name, 0, 0, 0);
 		function_map = Hash_NewTable (1021, metafunc_get_name, 0, 0, 0);
