@@ -120,6 +120,19 @@ typedef struct def_s {
 	void       *free_addr;		///< who freed this
 } def_t;
 
+#define D_PACKED(t,d)		(*(t *) &(d)->space->data[(d)->offset])
+#define D_var(t, d)			D_PACKED (pr_##t##_t, d)
+#define	D_DOUBLE(d)			D_var (double, d)
+#define	D_FLOAT(d)			D_var (float, d)
+#define	D_INT(d)			D_var (int, d)
+#define	D_VECTOR(d)			(&D_var (float, d))
+#define	D_QUAT(d)			(&D_var (float, d))
+#define	D_STRING(d)			D_var (string, d)
+#define	D_GETSTR(d)			GETSTR (D_STRING (d))
+#define	D_FUNCTION(d)		D_var (func, d)
+#define D_POINTER(t,d)		(&D_PACKED (t, d))
+#define D_STRUCT(t,d)		(*D_POINTER (t, d))
+
 /** Create a new def.
 
 	Defs may be unnamed.
