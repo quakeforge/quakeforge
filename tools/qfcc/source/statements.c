@@ -316,7 +316,9 @@ copy_operand (operand_t *src)
 void
 free_operand (operand_t *op)
 {
-	FREE (operands, op);
+	if (op) {
+		FREE (operands, op);
+	}
 }
 
 static void
@@ -571,7 +573,7 @@ short_operand (short short_val, const expr_t *expr)
 	return value_operand (val, expr);
 }
 
-static const char *
+const char *
 convert_op (int op)
 {
 	switch (op) {
