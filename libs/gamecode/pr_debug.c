@@ -1274,7 +1274,8 @@ pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		dasprintf (dstr, "<void>");
 		return;
 	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
+	int count = type->basic.width * type->basic.columns;
+	for (int i = 0; i < count; i++, value++) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
 		}
@@ -1325,29 +1326,54 @@ pr_debug_string_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
-pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_debug_print_matrix (qfot_type_t *type, pr_type_t *value,
+					   pr_debug_data_t *data, int step,
+					   void (*print) (pr_type_t *, pr_debug_data_t *))
 {
-	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	if (type->basic.width > 1) {
+	if (type->basic.columns > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
+	for (int j = 0; j < type->basic.columns; j++) {
+		if (type->basic.width > 1) {
+			if (j) {
+				dstring_appendstr (dstr, ", ");
+			}
+			dstring_appendstr (dstr, "[");
 		}
-		if (data->pr->progs->version == PROG_ID_VERSION
-			&& ISDENORM (PR_PTR (int, value))
-			&& PR_PTR (uint, value) != 0x80000000) {
-			dasprintf (dstr, "<%08x>", PR_PTR (int, value));
-		} else {
-			dasprintf (dstr, "%.9g", PR_PTR (float, value));
+		for (int i = 0; i < type->basic.width; i++, value += step) {
+			if (i) {
+				dstring_appendstr (dstr, ", ");
+			}
+			print (value, data);
+		}
+		if (type->basic.width > 1) {
+			dstring_appendstr (dstr, "]");
 		}
 	}
-	if (type->basic.width > 1) {
+	if (type->basic.columns > 1) {
 		dstring_appendstr (dstr, "]");
 	}
+}
+
+static void
+pr_debug_print_float (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	if (data->pr->progs->version == PROG_ID_VERSION
+		&& ISDENORM (PR_PTR (int, value))
+		&& PR_PTR (uint, value) != 0x80000000) {
+		dasprintf (dstr, "<%08x>", PR_PTR (int, value));
+	} else {
+		dasprintf (dstr, "%.9g", PR_PTR (float, value));
+	}
+}
+
+static void
+pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_float);
 }
 
 static void
@@ -1442,43 +1468,29 @@ pr_debug_quaternion_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_int (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%d", PR_PTR (int, value));
+}
+
+static void
 pr_debug_int_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_int);
+}
 
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "[");
-	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
-		}
-		dasprintf (dstr, "%d", PR_PTR (int, value));
-	}
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "]");
-	}
+static void
+pr_debug_print_uint (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "$%08x", PR_PTR (uint, value));
 }
 
 static void
 pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "[");
-	}
-	for (int i = 0; i < type->basic.width; i++, value++) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
-		}
-		dasprintf (dstr, "$%08x", PR_PTR (uint, value));
-	}
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "]");
-	}
+	pr_debug_print_matrix (type, value, _data, 1, pr_debug_print_uint);
 }
 
 static void
@@ -1491,63 +1503,42 @@ pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
+pr_debug_print_double (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%.17g", *(double *)value);
+}
+
+static void
 pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
+	pr_debug_print_matrix (type, value, _data, 2, pr_debug_print_double);
+}
 
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "[");
-	}
-	for (int i = 0; i < type->basic.width; i++, value += 2) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
-		}
-		dasprintf (dstr, "%.17g", *(double *)value);
-	}
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "]");
-	}
+static void
+pr_debug_print_long (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
 }
 
 static void
 pr_debug_long_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
+	pr_debug_print_matrix (type, value, _data, 2, pr_debug_print_long);
+}
 
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "[");
-	}
-	for (int i = 0; i < type->basic.width; i++, value += 2) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
-		}
-		dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
-	}
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "]");
-	}
+static void
+pr_debug_print_ulong (pr_type_t *value, pr_debug_data_t *data)
+{
+	dstring_t  *dstr = data->dstr;
+	dasprintf (dstr, "%" PRIx64, *(uint64_t *)value);
 }
 
 static void
 pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "[");
-	}
-	for (int i = 0; i < type->basic.width; i++, value += 2) {
-		if (i) {
-			dstring_appendstr (dstr, ", ");
-		}
-		dasprintf (dstr, "%" PRIx64, *(uint64_t *)value);
-	}
-	if (type->basic.width > 1) {
-		dstring_appendstr (dstr, "]");
-	}
+	pr_debug_print_matrix (type, value, _data, 2, pr_debug_print_ulong);
 }
 
 static void
