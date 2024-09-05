@@ -1919,6 +1919,7 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const char *opcode = "swizzle";
 	statement_t *s;
 	int         swiz = 0;
+	auto src_type = get_type (e->swizzle.src);
 	auto res_type = e->swizzle.type;
 
 	for (int i = 0; i < 4; i++) {
@@ -1934,7 +1935,25 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 		*op = temp_operand (res_type, e);
 	}
 	s->opc = *op;
-	sblock_add_statement (sblock, s);
+	if (type_width (res_type) < type_width (src_type)) {
+		auto tmp = temp_operand (src_type, e);
+		s->opc = tmp;
+		sblock_add_statement (sblock, s);
+
+		tmp = offset_alias_operand (res_type, 0, tmp, e);
+		auto stmp = assign_statement (*op, tmp, e);
+		sblock_add_statement (sblock, stmp);
+	} else if (type_width (res_type) > type_width (src_type)) {
+		auto tmp = temp_operand (res_type, e);
+		auto atmp = offset_alias_operand (src_type, 0, tmp, e);
+		auto stmp = assign_statement (atmp, s->opa, e);
+		sblock_add_statement (sblock, stmp);
+
+		s->opa = tmp;
+		sblock_add_statement (sblock, s);
+	} else {
+		sblock_add_statement (sblock, s);
+	}
 
 	return sblock;
 }
