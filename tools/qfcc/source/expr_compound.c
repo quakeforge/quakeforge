@@ -229,6 +229,10 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			state.type = state.field->type;
 			state.offset = state.field->offset;
 		}
+	} else if (is_matrix (type)) {
+		state.type = vector_type (base_type (type), type->width);
+	} else if (is_nonscalar (type)) {
+		state.type = base_type (type);
 	} else if (is_array (type)) {
 		state.type = dereference_type (type);
 	} else {

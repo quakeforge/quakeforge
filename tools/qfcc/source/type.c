@@ -987,9 +987,18 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_short:
 				case ev_ushort:
 				case ev_double:
-					dasprintf (str, " %s%s", pr_type_name[type->type],
-							   type->width > 1 ? va (0, "{%d}", type->width)
-											   : "");
+					{
+						const char *name = pr_type_name[type->type];
+						int width = type->width;
+						int cols = type->columns;
+						if (cols > 1) {
+							dasprintf (str, " %s{%d,%d}", name, cols, width);
+						} else if (type->width > 1) {
+							dasprintf (str, " %s{%d}", name, width);
+						} else {
+							dasprintf (str, " %s", name);
+						}
+					}
 					return;
 				case ev_invalid:
 				case ev_type_count:
@@ -1504,7 +1513,7 @@ type_size (const type_t *type)
 				internal_error (0, "%s:%d:%d", pr_type_name[type->type],
 								type->columns, type->width);
 			}
-			return pr_type_size[type->type] * type->width;
+			return pr_type_size[type->type] * type->width * type->columns;
 		case ty_struct:
 		case ty_union:
 			if (!type->symtab)

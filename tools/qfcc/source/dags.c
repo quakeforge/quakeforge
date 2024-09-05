@@ -1309,7 +1309,7 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	if (is_structural (type) || type->width > 4) {
+	if (is_structural (type) || is_matrix (type) || type->width > 4) {
 		operands[0] = fix_op_type (src, type);
 		operands[1] = short_operand (type_size (type), src->expr);
 		for ( ; var_iter; var_iter = set_next (var_iter)) {

@@ -2830,9 +2830,14 @@ array_expr (const expr_t *array, const expr_t *index)
 			|| ind - array_type->array.base >= array_type->array.size)) {
 		return error (index, "array index out of bounds");
 	}
-	if (is_nonscalar (array_type)
+	if (is_nonscalar (array_type) && !is_matrix (array_type)
 		&& is_constant (index)
 		&& (ind < 0 || ind >= array_type->width)) {
+		return error (index, "array index out of bounds");
+	}
+	if (is_matrix (array_type)
+		&& is_constant (index)
+		&& (ind < 0 || ind >= array_type->columns)) {
 		return error (index, "array index out of bounds");
 	}
 	if (is_array (array_type)) {
@@ -2842,7 +2847,10 @@ array_expr (const expr_t *array, const expr_t *index)
 		ele_type = array_type->fldptr.type;
 		base = new_int_expr (0, false);
 	} else {
-		ele_type = ev_types[array_type->type];
+		ele_type = base_type (array_type);
+		if (is_matrix (array_type)) {
+			ele_type = vector_type (ele_type, array_type->width);
+		}
 		if (array->type == ex_uexpr && array->expr.op == '.') {
 			auto vec = offset_pointer_expr (array->expr.e1, index);
 			vec = cast_expr (pointer_type (ele_type), vec);
