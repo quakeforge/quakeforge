@@ -608,8 +608,10 @@ find_type (const type_t *type)
 		}
 		if (num_params) {
 			check->func.param_types = malloc (sizeof (type_t *) * num_params);
+			check->func.param_quals = malloc (sizeof (param_qual_t)*num_params);
 			for (int i = 0; i < num_params; i++) {
 				check->func.param_types[i] = t->func.param_types[i];
+				check->func.param_quals[i] = t->func.param_quals[i];
 			}
 		}
 	}
