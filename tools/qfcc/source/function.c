@@ -111,6 +111,15 @@ check_generic_param (genparam_t *param, genfunc_t *genfunc)
 			internal_error (0, "invalid type index %d on %s for %s",
 							param->gentype, param->name, genfunc->name);
 		}
+		if (param->compute) {
+			internal_error (0, "fixed and computed types on %s for %s",
+							param->name, genfunc->name);
+		}
+	} else if (param->compute) {
+		if (param->gentype != -1) {
+			internal_error (0, "invalid type index %d on %s for %s",
+							param->gentype, param->name, genfunc->name);
+		}
 	} else if (param->gentype < 0 || param->gentype >= genfunc->num_types) {
 		internal_error (0, "invalid type index %d on %s for %s",
 						param->gentype, param->name, genfunc->name);
@@ -126,10 +135,6 @@ cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
 	// fixed_type for both p1 and p2 is null
 	auto t1 = g1->types[p1->gentype];
 	auto t2 = g2->types[p2->gentype];
-	if (t1.compute || t2.compute) {
-		// FIXME probably not right
-		return t1.compute == t2.compute;
-	}
 	auto vt1 = t1.valid_types;
 	auto vt2 = t2.valid_types;
 	for (; *vt1 && *vt2 && *vt1 == *vt2; vt1++, vt2++) continue;
@@ -143,9 +148,8 @@ add_generic_function (genfunc_t *genfunc)
 
 	for (int i = 0; i < genfunc->num_types; i++) {
 		auto gentype = &genfunc->types[i];
-		if (gentype->compute && gentype->valid_types) {
-			internal_error (0, "both compute and valid_types set in "
-							"generic type");
+		if (!gentype->valid_types) {
+			internal_error (0, "no valid_types set in generic type");
 		}
 		for (auto type = gentype->valid_types; type && *type; type++) {
 			if (is_void (*type)) {
@@ -202,12 +206,6 @@ add_generic_function (genfunc_t *genfunc)
 	}
 }
 
-static gentype_compute_f
-check_compute_type (const expr_t *expr)
-{
-	return nullptr;
-}
-
 static const type_t **
 valid_type_list (const expr_t *expr)
 {
@@ -242,13 +240,9 @@ make_gentype (const expr_t *expr)
 	auto sym = expr->symbol;
 	gentype_t gentype = {
 		.name = save_string (sym->name),
-		.compute = check_compute_type (sym->expr),
 		.valid_types = valid_type_list (sym->expr),
 	};
-	if (gentype.compute && gentype.valid_types) {
-		internal_error (expr, "both computed type and type list");
-	}
-	if (!gentype.compute && !gentype.valid_types) {
+	if (!gentype.valid_types) {
 		internal_error (expr, "empty generic type");
 	}
 	return gentype;
@@ -273,10 +267,18 @@ find_gentype (const expr_t *expr, genfunc_t *genfunc)
 static genparam_t
 make_genparam (param_t *param, genfunc_t *genfunc)
 {
+	int gentype = find_gentype (param->type_expr, genfunc);
+	typeeval_t *compute = nullptr;
+	if (gentype < 0 && param->type_expr) {
+		compute = build_type_function (param->type_expr,
+									   genfunc->num_types, genfunc->types);
+	}
 	genparam_t genparam = {
 		.name = save_string (param->name),
 		.fixed_type = param->type,
-		.gentype = find_gentype (param->type_expr, genfunc),
+		.compute = compute,
+		.gentype = gentype,
+		.qual = param->qual,
 	};
 	return genparam;
 }
@@ -302,7 +304,8 @@ parse_generic_function (const char *name, specifier_t spec)
 	for (auto s = generic_tab->symbols; s; s = s->next) {
 		bool found = false;
 		for (auto q = &ret_param; q; q = q->next) {
-			// FIXME check complex expressions
+			// skip complex expressions because they will be either fixed
+			// or rely on earlier parameters
 			if (!q->type_expr || q->type_expr->type != ex_symbol) {
 				continue;
 			}
@@ -338,7 +341,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	num_gentype = 0;
 	for (auto s = generic_tab->symbols; s; s = s->next) {
 		for (auto q = &ret_param; q; q = q->next) {
-			// FIXME check complex expressions
+			// see complex expressions comment above
 			if (!q->type_expr || q->type_expr->type != ex_symbol) {
 				continue;
 			}
@@ -350,6 +353,7 @@ parse_generic_function (const char *name, specifier_t spec)
 	}
 
 	num_params = 0;
+	// skip return type so it can be done last to support complex expressions
 	for (auto p = ret_param.next; p; p = p->next) {
 		genfunc->params[num_params++] = make_genparam (p, genfunc);
 	}
@@ -754,6 +758,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 	auto g = genfuncs[best_ind];
 	const type_t *types[g->num_types] = {};
 	const type_t *param_types[num_params];
+	param_qual_t param_quals[num_params];
 	const type_t *return_type;
 	for (int i = 0; i < num_params; i++) {
 		auto p = &g->params[i];
@@ -766,6 +771,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		} else {
 			param_types[i] = p->fixed_type;
 		}
+		param_quals[i] = p->qual;
 	}
 	if (!g->ret_type->fixed_type) {
 		int ind = g->ret_type->gentype;
@@ -791,6 +797,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 			.ret_type = return_type,
 			.num_params = num_params,
 			.param_types = param_types,
+			.param_quals = param_quals,
 		},
 	};
 	auto type = find_type (&ftype);
@@ -823,6 +830,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 
 	int         num_params = params ? list_count (&params->list) : 0;
 	const type_t *arg_types[num_params + 1];
+	param_qual_t arg_quals[num_params + 1];
 	const expr_t *args[num_params + 1];
 	if (params) {
 		list_scatter_rev (&params->list, args);
@@ -833,6 +841,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return e;
 		}
 		arg_types[i] = get_type (e);
+		arg_quals[i] = pq_in;
 	}
 
 	type_t call_type = {
@@ -840,6 +849,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		.func = {
 			.num_params = num_params,
 			.param_types = arg_types,
+			.param_quals = arg_quals,
 		},
 	};
 

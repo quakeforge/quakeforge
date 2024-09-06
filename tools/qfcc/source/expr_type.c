@@ -912,19 +912,18 @@ build_type_function (const expr_t *te, int num_types, gentype_t *types)
 	}
 	C (OP_NOP, nullptr, nullptr, nullptr);
 	def_t *res = nullptr;
+	typeeval_t *func = nullptr;
 	if (!Sys_setjmp (ctx->jmpbuf)) {
 		res = compute_type (te, ctx);
-	} else {
-		res = compute_tmp (ctx);
+		C (OP_RETURN, res, nullptr, 0);
+		func = malloc (sizeof (typeeval_t));
+		*func = (typeeval_t) {
+			.code = code->code,
+			.data = data->data,
+			.code_size = code->size,
+			.data_size = data->size,
+		};
 	}
-	C (OP_RETURN, res, nullptr, 0);
-	typeeval_t *func = malloc (sizeof (typeeval_t));
-	*func = (typeeval_t) {
-		.code = code->code,
-		.data = data->data,
-		.code_size = code->size,
-		.data_size = data->size,
-	};
 	code->code = nullptr;
 	data->data = nullptr;
 	codespace_delete (code);

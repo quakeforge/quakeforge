@@ -44,13 +44,18 @@
 // The maximum size of a temp def, return value, or parameter value
 #define MAX_DEF_SIZE 32
 
-typedef struct function_s function_t;
+typedef enum param_qual_e {
+	pq_const,
+	pq_in,
+	pq_out,
+	pq_inout,
+} param_qual_t;
 
-typedef const type_t *(*gentype_compute_f) ();
+typedef struct function_s function_t;
+typedef struct typeeval_s typeeval_t;
 
 typedef struct gentype_s {
 	const char *name;
-	gentype_compute_f compute;
 	// earlier types have priority over later types. null if compute valid
 	const type_t **valid_types;
 } gentype_t;
@@ -58,7 +63,9 @@ typedef struct gentype_s {
 typedef struct genparam_s {
 	const char *name;
 	const type_t *fixed_type;
+	typeeval_t *compute;
 	int         gentype;	// index into function's list of types
+	param_qual_t qual;
 } genparam_t;
 
 typedef struct genfunc_s {
@@ -162,13 +169,6 @@ typedef struct metafunc_s {
 } metafunc_t;
 
 extern function_t *current_func;
-
-typedef enum param_qual_e {
-	pq_const,
-	pq_in,
-	pq_out,
-	pq_inout,
-} param_qual_t;
 
 /** Representation of a function parameter.
 	\note	The first two fields match the first two fields of keywordarg_t
