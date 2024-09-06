@@ -909,6 +909,11 @@ notype_declarator
 			$$ = $<spec>0;
 			$$.sym = new_symbol ($1->name);
 		}
+	| NOT
+		{
+			$$ = $<spec>0;
+			$$.sym = new_symbol ("NOT");
+		}
 	;
 
 initdecls
@@ -2101,6 +2106,7 @@ identifier
 	| OBJECT_NAME { $$ = $1.sym; }
 	| CLASS_NAME
 	| TYPE_NAME { $$ = $1.sym; }
+	| NOT { $$ = new_symbol ("not"); }
 	;
 
 // Objective-QC stuff
