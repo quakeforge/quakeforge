@@ -70,21 +70,11 @@ set_storage_bits (def_t *def, storage_class_t storage)
 {
 	def->storage_bits = 0;
 	switch (storage) {
-		case sc_out:
-		case sc_buffer:
-		case sc_shared:
-			def->global = true;
-			break;
 		case sc_system:
 			def->system = true;
 			// fall through
 		case sc_global:
 			def->global = true;
-			break;
-		case sc_in:
-		case sc_uniform:
-			def->global = true;
-			def->readonly = true;
 			break;
 		case sc_extern:
 			def->global = true;
@@ -96,6 +86,8 @@ set_storage_bits (def_t *def, storage_class_t storage)
 			def->local = true;
 			break;
 		case sc_inout:
+		case sc_in:
+		case sc_out:
 		case sc_param:
 			def->local = true;
 			def->param = true;
@@ -104,13 +96,15 @@ set_storage_bits (def_t *def, storage_class_t storage)
 			def->local = true;
 			def->argument = true;
 			break;
+		case sc_count:
+			break;
 	}
 }
 
 static bool
 deferred_size (storage_class_t storage)
 {
-	if (storage == sc_in || storage == sc_uniform || storage == sc_buffer) {
+	if (storage >= sc_in) {
 		return true;
 	}
 	return false;

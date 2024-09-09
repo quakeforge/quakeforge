@@ -38,7 +38,7 @@ typedef struct symtab_s symtab_t;
 
 /** Specify the storage class of a def.
 */
-typedef enum storage_class_e {
+typedef enum storage_class_e : unsigned {
 	sc_global,					///< def is globally visible across units
 	sc_system,					///< def may be redefined once
 	sc_extern,					///< def is externally allocated
@@ -47,13 +47,14 @@ typedef enum storage_class_e {
 	sc_local,					///< def is local to the current function
 	sc_argument,				///< def is a function argument
 
+	sc_inout,
 	sc_in,
 	sc_out,
-	sc_inout,
-	sc_uniform,
-	sc_buffer,
-	sc_shared,
+
+	sc_count
 } storage_class_t;
+
+extern const char *storage_class_names[sc_count];
 
 typedef struct specifier_s {
 	const type_t *type;

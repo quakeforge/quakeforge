@@ -1133,12 +1133,18 @@ jump_statement
 
 %%
 
-
+#define GLSL_INTERFACE(bt) .spec = { .storage = glsl_sc_from_iftype (bt) }
 static keyword_t glsl_keywords[] = {
 	{"const",           GLSL_CONST,     .spec = { .is_const = true }},
-	{"uniform",         GLSL_UNIFORM,   .spec = { .storage = sc_uniform }},
-	{"buffer",          GLSL_BUFFER,    .spec = { .storage = sc_buffer }},
-	{"shared",          GLSL_SHARED,    .spec = { .storage = sc_shared }},
+	{"uniform",         GLSL_UNIFORM,   GLSL_INTERFACE (glsl_uniform)},
+	{"buffer",          GLSL_BUFFER,    GLSL_INTERFACE (glsl_buffer)},
+	{"shared",          GLSL_SHARED,    GLSL_INTERFACE (glsl_shared)},
+	// in and out are both parameter qualifiers (sc_in and sc_out) and
+	// glsl interface types (glsl_in and glsl_out). Assume interface type
+	// here.
+	{"in",              GLSL_IN,        GLSL_INTERFACE (glsl_in )},
+	{"out",             GLSL_OUT,       GLSL_INTERFACE (glsl_out )},
+	{"inout",           GLSL_INOUT,     .spec = { .storage = sc_inout }},
 	{"attribute",       GLSL_RESERVED},
 	{"varying",         GLSL_RESERVED},
 	{"coherent",        GLSL_COHERENT},
@@ -1167,9 +1173,6 @@ static keyword_t glsl_keywords[] = {
 	{"if",              GLSL_IF},
 	{"else",            GLSL_ELSE},
 	{"subroutine",      GLSL_RESERVED},
-	{"in",              GLSL_IN,        .spec = { .storage = sc_in }},
-	{"out",             GLSL_OUT,       .spec = { .storage = sc_out }},
-	{"inout",           GLSL_INOUT},
 	{"int",             GLSL_TYPE_SPEC, .spec = {.type = &type_int}},
 	{"void",            GLSL_VOID,      .spec = {.type = &type_void}},
 	{"bool",            GLSL_TYPE_SPEC, .spec = {.type = &type_bool}},

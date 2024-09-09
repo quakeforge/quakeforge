@@ -40,6 +40,19 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
+const char *storage_class_names[sc_count] = {
+	"global",
+	"system",
+	"extern",
+	"static",
+	"param",
+	"local",
+	"argument",
+	"inout",
+	"in",
+	"out",
+};
+
 language_t current_language;
 function_t *current_func;
 class_type_t *current_class;

@@ -45,6 +45,18 @@ extern language_t lang_glsl_tese;
 extern language_t lang_glsl_geom;
 extern language_t lang_glsl_frag;
 
+typedef enum glsl_interface_e : unsigned {
+	glsl_in,
+	glsl_out,
+	glsl_uniform,
+	glsl_buffer,
+	glsl_shared,
+
+	glsl_num_interfaces
+} glsl_interface_t;
+#define glsl_iftype_from_sc(sc) ((glsl_interface_t)((sc) - sc_in))
+#define glsl_sc_from_iftype(it) (((storage_class_t)(it)) + sc_in)
+
 typedef struct glsl_block_s {
 	struct glsl_block_s *next;
 	const char *name;

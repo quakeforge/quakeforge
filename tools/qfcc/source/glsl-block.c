@@ -42,11 +42,7 @@
 
 ALLOC_STATE (glsl_block_t, blocks);
 
-static hashtab_t *input_blocks;
-static hashtab_t *output_blocks;
-static hashtab_t *uniform_blocks;
-static hashtab_t *buffer_blocks;
-static hashtab_t *shared_blocks;
+static hashtab_t *interfaces[glsl_num_interfaces];
 
 static const char *
 block_get_key (const void *_b, void *)
@@ -58,18 +54,14 @@ block_get_key (const void *_b, void *)
 void
 glsl_block_clear (void)
 {
-	if (input_blocks) {
-		Hash_FlushTable (input_blocks);
-		Hash_FlushTable (output_blocks);
-		Hash_FlushTable (uniform_blocks);
-		Hash_FlushTable (buffer_blocks);
-		Hash_FlushTable (shared_blocks);
+	if (interfaces[glsl_in]) {
+		for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
+			Hash_FlushTable (interfaces[i]);
+		}
 	} else {
-		input_blocks = Hash_NewTable (127, block_get_key, 0, 0, 0);
-		output_blocks = Hash_NewTable (127, block_get_key, 0, 0, 0);
-		uniform_blocks = Hash_NewTable (127, block_get_key, 0, 0, 0);
-		buffer_blocks = Hash_NewTable (127, block_get_key, 0, 0, 0);
-		shared_blocks = Hash_NewTable (127, block_get_key, 0, 0, 0);
+		for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
+			interfaces[i] = Hash_NewTable (127, block_get_key, 0, 0, 0);
+		}
 	}
 }
 
@@ -83,32 +75,10 @@ void
 glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 					symbol_t *instance_name)
 {
+	auto interface = glsl_iftype_from_sc(spec.storage);
 	hashtab_t *block_tab = nullptr;
-	switch (spec.storage) {
-		case sc_in:
-			block_tab = input_blocks;
-			break;
-		case sc_out:
-			block_tab = output_blocks;
-			break;
-		case sc_uniform:
-			block_tab = uniform_blocks;
-			break;
-		case sc_buffer:
-			block_tab = buffer_blocks;
-			break;
-		case sc_shared:
-			block_tab = shared_blocks;
-			break;
-		case sc_global:
-		case sc_system:
-		case sc_extern:
-		case sc_static:
-		case sc_param:
-		case sc_local:
-		case sc_argument:
-		case sc_inout:
-			break;
+	if (interface < glsl_num_interfaces) {
+		block_tab = interfaces[interface];
 	}
 	if (!block_tab) {
 		error (0, "invalid storage for block: %d", spec.storage);
