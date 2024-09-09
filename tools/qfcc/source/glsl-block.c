@@ -88,6 +88,7 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 	ALLOC (64, glsl_block_t, blocks, block);
 	*block = (glsl_block_t) {
 		.name = save_string (block_sym->name),
+		.attributes = spec.attributes,
 		.members = block_sym->namespace,
 		.instance_name = instance_name,
 	};
@@ -126,4 +127,13 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 			symtab_addsymbol (current_symtab, new);
 		}
 	}
+}
+
+glsl_block_t *
+glsl_get_block (const char *name, glsl_interface_t interface)
+{
+	if (interface >= glsl_num_interfaces) {
+		internal_error (0, "invalid interface");
+	}
+	return Hash_Find (interfaces[interface], name);
 }

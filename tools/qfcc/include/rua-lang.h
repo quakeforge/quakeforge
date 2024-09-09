@@ -37,6 +37,7 @@
 typedef struct keyword_s {
 	const char *name;
 	int         value;
+	bool        use_name;
 	specifier_t spec;
 } keyword_t;
 
@@ -88,6 +89,7 @@ typedef union rua_val_s {
 	unsigned    size;
 	specifier_t spec;
 	void       *pointer;			// for ensuring pointer values are null
+	const char *string;
 	funcstate_t funcstate;
 	const struct type_s	*type;
 	const struct expr_s	*expr;
@@ -198,6 +200,7 @@ typedef struct language_s {
 	void      (*extension) (const char *name, const char *value, void *scanner);
 	void      (*version) (int version, const char *profile);
 	bool      (*on_include) (const char *name);
+	void       *sublanguage;
 } language_t;
 
 extern language_t current_language;

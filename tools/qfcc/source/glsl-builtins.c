@@ -820,13 +820,15 @@ int imageAtomicExchange(IMAGE_PARAMS, int data)
 float imageAtomicExchange(IMAGE_PARAMS, float data)
 uint imageAtomicCompSwap(IMAGE_PARAMS, uint compare, uint data)
 int imageAtomicCompSwap(IMAGE_PARAMS, int compare, int data)
-
+#endif
 //geometry shader functions
-void EmitStreamVertex(int stream)
-void EndStreamPrimitive(int stream)
-void EmitVertex()
-void EndPrimitive()
-
+static const char *glsl_geometry_functions =
+SRC_LINE
+"void EmitStreamVertex(int stream);"    "\n"
+"void EndStreamPrimitive(int stream);"  "\n"
+"void EmitVertex();"                    "\n"
+"void EndPrimitive();"                  "\n";
+#if 0
 //fragment processing functions
 //derivative
 genFType dFdx(genFType p)
@@ -952,6 +954,7 @@ glsl_init_geom (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_geometry_vars);
+	qc_parse_string (glsl_geometry_functions);
 }
 
 void

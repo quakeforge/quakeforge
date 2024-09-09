@@ -28,6 +28,14 @@
 #ifndef __glsl_lang_h
 #define __glsl_lang_h
 
+typedef struct specifier_s specifier_t;
+typedef struct attribute_s attribute_t;
+typedef struct expr_s expr_t;
+typedef struct type_s type_t;
+typedef struct symbol_s symbol_t;
+typedef struct symtab_s symtab_t;
+typedef struct language_s language_t;
+
 void glsl_init_comp (void);
 void glsl_init_vert (void);
 void glsl_init_tesc (void);
@@ -37,7 +45,6 @@ void glsl_init_frag (void);
 
 int glsl_parse_string (const char *str);
 
-typedef struct language_s language_t;
 extern language_t lang_glsl_comp;
 extern language_t lang_glsl_vert;
 extern language_t lang_glsl_tesc;
@@ -57,18 +64,38 @@ typedef enum glsl_interface_e : unsigned {
 #define glsl_iftype_from_sc(sc) ((glsl_interface_t)((sc) - sc_in))
 #define glsl_sc_from_iftype(it) (((storage_class_t)(it)) + sc_in)
 
+extern const char *glsl_interface_names[glsl_num_interfaces];
+
 typedef struct glsl_block_s {
 	struct glsl_block_s *next;
 	const char *name;
-	struct symtab_s *members;
-	struct symbol_s *instance_name;
+	attribute_t *attributes;
+	symtab_t   *members;
+	symbol_t   *instance_name;
 } glsl_block_t;
 
-struct specifier_s;
+typedef struct glsl_sublang_s {
+	const char *name;
+	const char **interface_default_names;
+} glsl_sublang_t;
+#define glsl_sublang (*(glsl_sublang_t *) current_language.sublanguage)
+extern glsl_sublang_t glsl_comp_sublanguage;
+extern glsl_sublang_t glsl_vert_sublanguage;
+extern glsl_sublang_t glsl_tesc_sublanguage;
+extern glsl_sublang_t glsl_tese_sublanguage;
+extern glsl_sublang_t glsl_geom_sublanguage;
+extern glsl_sublang_t glsl_frag_sublanguage;
 
 void glsl_block_clear (void);
-void glsl_declare_block (struct specifier_s spec, struct symbol_s *block_sym,
-						 struct symbol_s *instance_name);
+void glsl_declare_block (specifier_t spec, symbol_t *block_sym,
+						 symbol_t *instance_name);
+glsl_block_t *glsl_get_block (const char *name, glsl_interface_t interface);
+symtab_t *glsl_optimize_attributes (attribute_t *attributes);
+
+void glsl_parse_declaration (specifier_t spec,
+							 symbol_t *sym, const type_t *array,
+							 const expr_t *init, symtab_t *symtab);
+void glsl_declare_field (specifier_t spec, symtab_t *symtab);
 
 bool glsl_on_include (const char *name);
 void glsl_include (int behavior, void *scanner);

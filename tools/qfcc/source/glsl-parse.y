@@ -93,6 +93,7 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 #else
 	error (0, "%s before %s", s, glsl_yytext);
 #endif
+	exit(1);
 }
 
 static void __attribute__((used))
@@ -157,18 +158,22 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token	<op>		STRUCT
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL VOID
 
-%token <spec> PRECISION INVARIANT SMOOTH FLAT NOPERSPECTIVE LAYOUT SHARED
-%token <spec> PRECISE CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
-%token <spec> RESTRICT READONLY WRITEONLY HIGH_PRECISION MEDIUM_PRECISION
-%token <spec> LOW_PRECISION DISCARD COHERENT
+%token        PRECISION
+%token <string> INVARIANT SMOOTH FLAT NOPERSPECTIVE PRECISE
+%token <string> HIGH_PRECISION MEDIUM_PRECISION LOW_PRECISION
+%token <spec> LAYOUT SHARED
+%token <spec> CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
+%token <spec> RESTRICT READONLY WRITEONLY
+%token <spec> DISCARD COHERENT
 
 %type <symbol>  variable_identifier
 %type <symbol>  block_declaration
+%type <expr>    constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
 %type <expr>    for_init_statement conditionopt expressionopt else
 %type <expr>    conditional_expression unary_expression postfix_expression
 %type <expr>    function_call function_call_or_method function_call_generic
-%type <mut_expr> function_call_header_with_parameters
+%type <mut_expr> function_call_header_with_parameters identifier_list
 %type <expr>    function_call_header_no_parameters
 %type <expr>    function_call_header function_identifier
 %type <expr>    logical_or_expression logical_xor_expression
@@ -190,12 +195,17 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <mut_expr> initializer_list
 %type <op>      unary_operator assignment_operator
 
+%type <spec>    single_declaration init_declarator_list
 %type <spec>    function_prototype function_declarator
 %type <spec>    function_header function_header_with_parameters
 %type <spec>    fully_specified_type type_specifier struct_specifier
 %type <spec>    type_qualifier single_type_qualifier type_specifier_nonarray
-%type <spec>    precision_qualifier interpolation_qualifier invariant_qualifier
-%type <spec>    precise_qualifer storage_qualifier layout_qualifier
+%type <string>  precision_qualifier interpolation_qualifier invariant_qualifier
+%type <string>  precise_qualifier
+%type <spec>    storage_qualifier layout_qualifier
+
+%type <expr>    layout_qualifier_id
+%type <mut_expr> layout_qualifier_id_list
 
 %type <size>    array_size
 %type <type>    array_specifier
@@ -234,6 +244,12 @@ spec_merge (specifier_t spec, specifier_t new)
 	}
 	if (!spec.storage) {
 		spec.storage = new.storage;
+	}
+	for (auto attr = &spec.attributes; *attr; attr = &(*attr)->next) {
+		if (!(*attr)->next) {
+			(*attr)->next = new.attributes;
+			break;
+		}
 	}
 	spec.sym = new.sym;
 	spec.spec_bits |= new.spec_bits;
@@ -555,6 +571,9 @@ declaration
 	: function_prototype ';'
 	| init_declarator_list ';'
 	| PRECISION precision_qualifier type_specifier ';'
+		{
+			notice (0, "PRECISION precision_qualifier");
+		}
 	| type_qualifier block_declaration ';'
 		{
 			auto spec = $1;
@@ -577,8 +596,26 @@ declaration
 			glsl_declare_block (spec, block, instance_name);
 		}
 	| type_qualifier ';'
+		{
+			glsl_parse_declaration ($type_qualifier, nullptr,
+									nullptr, nullptr, current_symtab);
+		}
 	| type_qualifier IDENTIFIER ';'
+		{
+			glsl_parse_declaration ($type_qualifier, $IDENTIFIER,
+									nullptr, nullptr, current_symtab);
+		}
 	| type_qualifier IDENTIFIER identifier_list ';'
+		{
+			auto id_list = $identifier_list;
+			auto expr = new_symbol_expr ($IDENTIFIER);
+			expr_prepend_expr (id_list, expr);
+			auto sym = new_symbol (nullptr);
+			sym->sy_type = sy_expr;
+			sym->expr = id_list;
+			glsl_parse_declaration ($type_qualifier, sym,
+									nullptr, nullptr, current_symtab);
+		}
 	;
 
 block_declaration
@@ -599,7 +636,15 @@ block_declaration
 
 identifier_list
 	: ',' IDENTIFIER
+		{
+			auto expr = new_symbol_expr ($2);
+			$$ = new_list_expr (expr);
+		}
 	| identifier_list ',' IDENTIFIER
+		{
+			auto expr = new_symbol_expr ($3);
+			$$ = expr_append_expr ($1, expr);
+		}
 	;
 
 function_prototype
@@ -673,6 +718,7 @@ init_declarator_list
 	: single_declaration
 	| init_declarator_list ',' IDENTIFIER
 		{
+			$$ = $1;
 			auto symtab = current_symtab;
 			auto space = symtab->space;
 			auto storage = current_storage;
@@ -682,6 +728,7 @@ init_declarator_list
 	| init_declarator_list ',' IDENTIFIER array_specifier '=' initializer
 	| init_declarator_list ',' IDENTIFIER '=' initializer
 		{
+			$$ = $1;
 			auto symtab = current_symtab;
 			auto space = symtab->space;
 			auto storage = current_storage;
@@ -694,29 +741,37 @@ init_declarator_list
 
 single_declaration
 	: fully_specified_type
+		{
+			glsl_parse_declaration ($$ = $fully_specified_type,
+									nullptr, nullptr,
+									nullptr, current_symtab);
+		}
 	| fully_specified_type IDENTIFIER
 		{
-			auto spec = $1;
-			spec.sym = $2;
-			declare_symbol (spec, nullptr, current_symtab);
+			glsl_parse_declaration ($$ = $fully_specified_type,
+									$IDENTIFIER, nullptr,
+									nullptr, current_symtab);
 		}
 	| fully_specified_type IDENTIFIER array_specifier
 		{
-			auto spec = $1;
-			spec.type = append_type ($3, spec.type);
-			spec.type = find_type (spec.type);
-			spec.sym = $2;
-			declare_symbol (spec, nullptr, current_symtab);
+			glsl_parse_declaration ($$ = $fully_specified_type,
+									$IDENTIFIER, $array_specifier,
+									nullptr, current_symtab);
 		}
 	| fully_specified_type IDENTIFIER array_specifier '=' initializer
+		{
+			glsl_parse_declaration ($$ = $fully_specified_type,
+									$IDENTIFIER, $array_specifier,
+									$initializer, current_symtab);
+		}
 	| fully_specified_type IDENTIFIER '=' initializer
 		{
-			auto spec = $1;
-			spec.sym = $2;
 			if (current_storage == sc_local && !local_expr) {
 				local_expr = new_block_expr (nullptr);
 			}
-			declare_symbol (spec, $4, current_symtab);
+			glsl_parse_declaration ($$ = $fully_specified_type,
+									$IDENTIFIER, nullptr,
+									$initializer, current_symtab);
 		}
 	;
 
@@ -736,21 +791,38 @@ interpolation_qualifier
 	;
 
 layout_qualifier
-	: LAYOUT '(' layout_qualifer_id_list ')'
+	: LAYOUT '(' layout_qualifier_id_list ')'
+		{
+			auto attr = new_attribute ("layout", $3);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	;
 
-layout_qualifer_id_list
-	: layout_qualifer_id
-	| layout_qualifer_id_list ',' layout_qualifer_id
+layout_qualifier_id_list
+	: layout_qualifier_id
+		{
+			$$ = new_list_expr ($1);
+		}
+	| layout_qualifier_id_list ',' layout_qualifier_id
+		{
+			$$ = expr_append_expr ($1, $3);
+		}
 	;
 
-layout_qualifer_id
-	: IDENTIFIER
+layout_qualifier_id
+	: IDENTIFIER					{ $$ = new_string_expr ($1->name); }
 	| IDENTIFIER '=' constant_expression
+		{
+			auto id = new_string_expr ($1->name);
+			$$ = new_binary_expr ('=', id, $3);
+		}
 	| SHARED
+		{
+			$$ = new_string_expr ("shared");
+		}
 	;
 
-precise_qualifer
+precise_qualifier
 	: PRECISE
 	;
 
@@ -766,9 +838,25 @@ single_type_qualifier
 	: storage_qualifier
 	| layout_qualifier
 	| precision_qualifier
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	| interpolation_qualifier
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	| invariant_qualifier
-	| precise_qualifer
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
+	| precise_qualifier
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	;
 
 storage_qualifier
@@ -824,10 +912,10 @@ array_size
 	;
 
 type_specifier_nonarray
-	: VOID
-	| TYPE_SPEC
-	| struct_specifier
-	| TYPE_NAME
+	: VOID							{ $$ = $1; $$.storage = current_storage; }
+	| TYPE_SPEC						{ $$ = $1; $$.storage = current_storage; }
+	| struct_specifier				{ $$ = $1; $$.storage = current_storage; }
+	| TYPE_NAME						{ $$ = $1; $$.storage = current_storage; }
 	;
 
 precision_qualifier
@@ -839,6 +927,9 @@ precision_qualifier
 struct_specifier
 	: STRUCT IDENTIFIER '{'
 		{
+			if (current_symtab->type == stab_struct) {
+				error (0, "nested struct declaration");
+			}
 			int op = 's';
 			current_symtab = start_struct (&op, $2, current_symtab);
 		}
@@ -855,9 +946,13 @@ struct_specifier
 			s->sy_type = sy_type;
 			s->type = find_type (alias_type (sym->type, sym->type, s->name));
 			symtab_addsymbol (current_symtab, s);
+			$$ = (specifier_t) { .type = s->type };
 		}
 	| STRUCT '{'
 		{
+			if (current_symtab->type == stab_struct) {
+				error (0, "nested struct declaration");
+			}
 			int op = 's';
 			current_symtab = start_struct (&op, nullptr, current_symtab);
 		}
@@ -870,6 +965,7 @@ struct_specifier
 			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
 			}
+			$$ = (specifier_t) { .type = sym->type };
 		}
 	;
 
@@ -895,7 +991,7 @@ struct_declarator
 		{
 			auto spec = $<spec>0;
 			spec.sym = $1;
-			declare_field (spec, current_symtab);
+			glsl_declare_field (spec, current_symtab);
 		}
 	| IDENTIFIER array_specifier
 		{
@@ -903,7 +999,7 @@ struct_declarator
 			spec.type = append_type ($2, spec.type);
 			spec.type = find_type (spec.type);
 			spec.sym = $1;
-			declare_field (spec, current_symtab);
+			glsl_declare_field (spec, current_symtab);
 		}
 	;
 
@@ -1168,13 +1264,13 @@ static keyword_t glsl_keywords[] = {
 	{"atomic_uint",     GLSL_RESERVED},
 	{"layout",          GLSL_LAYOUT},
 	{"centroid",        GLSL_CENTROID},
-	{"flat",            GLSL_FLAT},
-	{"smooth",          GLSL_SMOOTH},
-	{"noperspective",   GLSL_NOPERSPECTIVE},
+	{"flat",            GLSL_FLAT,          .use_name = true},
+	{"smooth",          GLSL_SMOOTH,        .use_name = true},
+	{"noperspective",   GLSL_NOPERSPECTIVE, .use_name = true},
 	{"patch",           GLSL_PATCH},
 	{"sample",          GLSL_SAMPLE},
-	{"invariant",       GLSL_INVARIANT},
-	{"precise",         GLSL_PRECISE},
+	{"invariant",       GLSL_INVARIANT,     .use_name = true},
+	{"precise",         GLSL_PRECISE,       .use_name = true},
 	{"break",           GLSL_BREAK},
 	{"continue",        GLSL_CONTINUE},
 	{"do",              GLSL_DO},
@@ -1236,9 +1332,9 @@ static keyword_t glsl_keywords[] = {
 	{"dmat4x3",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x3}},
 	{"dmat4x4",         GLSL_TYPE_SPEC, .spec = {.type = &type_dmat4x4}},
 
-	{"lowp",                    GLSL_LOW_PRECISION},
-	{"mediump",                 GLSL_MEDIUM_PRECISION},
-	{"highp",                   GLSL_HIGH_PRECISION},
+	{"lowp",                    GLSL_LOW_PRECISION,     .use_name = true},
+	{"mediump",                 GLSL_MEDIUM_PRECISION,  .use_name = true},
+	{"highp",                   GLSL_HIGH_PRECISION,    .use_name = true},
 	{"precision",               GLSL_PRECISION},
 	{"sampler1D",               GLSL_TYPE_SPEC},	// spec init at runtime
 	{"sampler1DShadow",         GLSL_TYPE_SPEC},
@@ -1441,6 +1537,8 @@ glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
 		sym = find_handle (sym, &type_int);
 		keyword->spec.type = sym->type;
 		lval->spec = keyword->spec;
+	} else if (keyword->use_name) {
+		lval->string = keyword->name;
 	} else {
 		lval->spec = keyword->spec;
 	}
@@ -1610,6 +1708,7 @@ language_t lang_glsl_comp = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_comp_sublanguage,
 };
 
 language_t lang_glsl_vert = {
@@ -1618,6 +1717,7 @@ language_t lang_glsl_vert = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_vert_sublanguage,
 };
 
 language_t lang_glsl_tesc = {
@@ -1626,6 +1726,7 @@ language_t lang_glsl_tesc = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_tesc_sublanguage,
 };
 
 language_t lang_glsl_tese = {
@@ -1634,6 +1735,7 @@ language_t lang_glsl_tese = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_tese_sublanguage,
 };
 
 language_t lang_glsl_geom = {
@@ -1642,6 +1744,7 @@ language_t lang_glsl_geom = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_geom_sublanguage,
 };
 
 language_t lang_glsl_frag = {
@@ -1650,4 +1753,5 @@ language_t lang_glsl_frag = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.sublanguage = &glsl_frag_sublanguage,
 };

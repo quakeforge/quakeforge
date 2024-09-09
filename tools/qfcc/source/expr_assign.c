@@ -108,6 +108,7 @@ is_lvalue (const expr_t *expr)
 					break;
 				case sy_macro:
 				case sy_namespace:
+				case sy_list:
 					break;
 			}
 			break;

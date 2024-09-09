@@ -42,9 +42,17 @@ qfcc_SOURCES = \
 	tools/qfcc/source/evaluate_type.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
+	tools/qfcc/source/glsl-attribute.c \
 	tools/qfcc/source/glsl-block.c \
 	tools/qfcc/source/glsl-builtins.c \
+	tools/qfcc/source/glsl-declaration.c \
 	tools/qfcc/source/glsl-parse.y \
+	tools/qfcc/source/glsl-sub_comp.c \
+	tools/qfcc/source/glsl-sub_frag.c \
+	tools/qfcc/source/glsl-sub_geom.c \
+	tools/qfcc/source/glsl-sub_tesc.c \
+	tools/qfcc/source/glsl-sub_tese.c \
+	tools/qfcc/source/glsl-sub_vert.c \
 	tools/qfcc/source/grab.c \
 	tools/qfcc/source/idstuff.c \
 	tools/qfcc/source/linker.c \

@@ -312,6 +312,20 @@ list_append (ex_list_t *list, const expr_t *expr)
 }
 
 void
+list_append_list (ex_list_t *dst, const ex_list_t *src)
+{
+	if (!dst->tail) {
+		dst->tail = &dst->head;
+	}
+
+	for (auto s = src->head; s; s = s->next) {
+		auto li = new_listitem (s->expr);
+		*dst->tail = li;
+		dst->tail = &li->next;
+	}
+}
+
+void
 list_prepend (ex_list_t *list, const expr_t *expr)
 {
 	if (!list->tail) {

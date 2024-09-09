@@ -60,6 +60,7 @@ typedef enum {
 	sy_convert,					///< symbol refers to a conversion function
 	sy_macro,					///< symbol refers to a macro definition
 	sy_namespace,				///< symbol refers to a namespace definition
+	sy_list,
 } sy_type_e;
 
 typedef struct symconv_s {
@@ -85,6 +86,7 @@ typedef struct symbol_s {
 		symconv_t   convert;		///< sy_convert
 		struct rua_macro_s *macro;	///< sy_macro
 		struct symtab_s *namespace;	///< sy_namespace
+		ex_list_t   list;			///< sy_list
 	};
 } symbol_t;
 
