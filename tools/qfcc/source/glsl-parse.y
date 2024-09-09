@@ -402,11 +402,11 @@ multiplicative_expression
 
 additive_expression
 	: multiplicative_expression
-	| additive_expression '+' unary_expression
+	| additive_expression '+' multiplicative_expression
 		{
 			$$ = binary_expr ('+', $1, $3);
 		}
-	| additive_expression '-' unary_expression
+	| additive_expression '-' multiplicative_expression
 		{
 			$$ = binary_expr ('-', $1, $3);
 		}
