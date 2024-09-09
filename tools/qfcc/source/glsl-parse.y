@@ -144,6 +144,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			'.' '(' '['
 
 %token	<expr>		VALUE STRING TOKEN
+%token              TRUE FALSE
 %token              ELLIPSIS
 %token              RESERVED
 // end of common tokens
@@ -287,6 +288,18 @@ variable_identifier
 primary_exprsssion
 	: variable_identifier	{ $$ = new_symbol_expr ($1); }
 	| VALUE
+	| TRUE
+		{
+			pr_type_t data = { .value = 1 };
+			auto val = new_type_value (&type_bool, &data);
+			$$ = new_value_expr (val, false);
+		}
+	| FALSE
+		{
+			pr_type_t data = { .value = 0 };
+			auto val = new_type_value (&type_bool, &data);
+			$$ = new_value_expr (val, false);
+		}
 	| '(' expression ')'	{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	;
 
@@ -1176,8 +1189,8 @@ static keyword_t glsl_keywords[] = {
 	{"int",             GLSL_TYPE_SPEC, .spec = {.type = &type_int}},
 	{"void",            GLSL_VOID,      .spec = {.type = &type_void}},
 	{"bool",            GLSL_TYPE_SPEC, .spec = {.type = &type_bool}},
-	{"true",            0},
-	{"false",           0},
+	{"true",            GLSL_TRUE},
+	{"false",           GLSL_FALSE},
 	{"float",           GLSL_TYPE_SPEC, .spec = {.type = &type_float}},
 	{"double",          GLSL_TYPE_SPEC, .spec = {.type = &type_double}},
 	{"discard",         GLSL_DISCARD},
