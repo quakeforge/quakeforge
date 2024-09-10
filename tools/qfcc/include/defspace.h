@@ -60,6 +60,19 @@ typedef struct defspace_s {
 	int         size;			///< current high-water mark for alloced data
 	int         max_size;		///< size of backing memory, or highwater mark
 								///< for ds_virtual
+	/** Optional callback for aligned allocation of space
+
+		Overrides defspace_alloc_aligned_loc.
+
+		\param space	This defspace.
+		\param size     Size of space to allocate. Must be > 0.
+		\param alignment Requested alignment for the space. Must be > 0.
+		\return         The offset of the allocated space. If allocation fails
+						(because the backing memory cannot be grown), it is
+						treated as an internal error.
+	*/
+	int       (*alloc_aligned) (struct defspace_s *space, int size,
+								int alignment);
 	/** Grow the backing memory of the defspace.
 
 		This function is called when more memory is needed for the space.

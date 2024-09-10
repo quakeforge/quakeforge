@@ -159,6 +159,9 @@ defspace_alloc_loc (defspace_t *space, int size)
 int
 defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
 {
+	if (space->alloc_aligned) {
+		return space->alloc_aligned (space, size, alignment);
+	}
 	int         ofs, pad;
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
