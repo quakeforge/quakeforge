@@ -229,6 +229,7 @@ int is_nonscalar (const type_t *type) __attribute__((pure));
 int is_matrix (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
+int is_handle (const type_t *type) __attribute__((pure));
 int is_union (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));

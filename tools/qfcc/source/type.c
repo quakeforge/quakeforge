@@ -1354,6 +1354,15 @@ is_struct (const type_t *type)
 }
 
 int
+is_handle (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->type == ev_invalid && type->meta == ty_handle)
+		return 1;
+	return 0;
+}
+
+int
 is_union (const type_t *type)
 {
 	type = unalias_type (type);
