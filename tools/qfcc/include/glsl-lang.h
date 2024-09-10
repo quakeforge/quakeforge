@@ -31,6 +31,7 @@
 typedef struct specifier_s specifier_t;
 typedef struct attribute_s attribute_t;
 typedef struct expr_s expr_t;
+typedef struct ex_list_s ex_list_t;
 typedef struct type_s type_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
@@ -91,11 +92,13 @@ void glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 						 symbol_t *instance_name);
 glsl_block_t *glsl_get_block (const char *name, glsl_interface_t interface);
 symtab_t *glsl_optimize_attributes (attribute_t *attributes);
+void glsl_apply_attributes (symtab_t *attributes, specifier_t spec);
 
 void glsl_parse_declaration (specifier_t spec,
 							 symbol_t *sym, const type_t *array,
 							 const expr_t *init, symtab_t *symtab);
 void glsl_declare_field (specifier_t spec, symtab_t *symtab);
+void glsl_layout (const ex_list_t *qualifiers, specifier_t spec);
 
 bool glsl_on_include (const char *name);
 void glsl_include (int behavior, void *scanner);

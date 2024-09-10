@@ -49,7 +49,7 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
 		spec.type = append_type (array, spec.type);
 		spec.type = find_type (spec.type);
 	}
-	/*auto attributes =*/ glsl_optimize_attributes (spec.attributes);
+	auto attributes = glsl_optimize_attributes (spec.attributes);
 	if (sym && sym->sy_type == sy_expr) {
 		auto id_list = sym->expr;
 		if (id_list->type != ex_list) {
@@ -60,19 +60,22 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
 				internal_error (id_list, "not a symbol");
 			}
 			spec.sym = id->expr->symbol;
-			declare_symbol (spec, init, symtab);
+			spec.sym = declare_symbol (spec, init, symtab);
+			glsl_apply_attributes (attributes, spec);
 		}
 	} else {
 		spec.sym = sym;
 		if (spec.sym) {
-			declare_symbol (spec, init, symtab);
+			spec.sym = declare_symbol (spec, init, symtab);
 		}
+		glsl_apply_attributes (attributes, spec);
 	}
 }
 
 void
 glsl_declare_field (specifier_t spec, symtab_t *symtab)
 {
-	/*auto attributes =*/ glsl_optimize_attributes (spec.attributes);
-	declare_field (spec, symtab);
+	auto attributes = glsl_optimize_attributes (spec.attributes);
+	spec.sym = declare_field (spec, symtab);
+	glsl_apply_attributes (attributes, spec);
 }

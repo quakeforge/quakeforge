@@ -46,6 +46,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/glsl-block.c \
 	tools/qfcc/source/glsl-builtins.c \
 	tools/qfcc/source/glsl-declaration.c \
+	tools/qfcc/source/glsl-layout.c \
 	tools/qfcc/source/glsl-parse.y \
 	tools/qfcc/source/glsl-sub_comp.c \
 	tools/qfcc/source/glsl-sub_frag.c \
