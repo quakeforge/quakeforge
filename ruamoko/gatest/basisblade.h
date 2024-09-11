@@ -21,6 +21,8 @@
 -(unsigned) mask;
 -(double) scale;
 -(string) name;
+-(int) commutesWith:(BasisBlade *) b;
+-(int) commutesWith:(BasisBlade *) b metric:(Metric *)m;
 @end
 
 #endif//__basisblade_h

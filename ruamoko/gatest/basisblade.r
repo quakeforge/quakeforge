@@ -103,4 +103,17 @@
 {
 	return sprintf ("%g%s", scale, [self name]);
 }
+
+-(int) commutesWith:(BasisBlade *) b metric:(Metric *)m
+{
+	int         sign1 = count_flips (mask, b.mask) & 1;
+	int         sign2 = count_flips (b.mask, mask) & 1;
+	return sign1 == sign2 || (m && ![m apply:mask, b.mask]);
+}
+
+-(int) commutesWith:(BasisBlade *) b
+{
+	return [self commutesWith: b metric:nil];
+}
+
 @end

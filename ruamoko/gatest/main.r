@@ -43,6 +43,44 @@ basic_test (void)
 //	printf ("d: %@\n", d);
 
 	arp_end ();
+
+	arp_start ();
+	{
+		auto ab = [a outerProduct:b];
+		auto ac = [a outerProduct:c];
+		auto ad = [a outerProduct:d];
+		auto bc = [b outerProduct:c];
+		auto bd = [b outerProduct:d];
+		auto cd = [c outerProduct:d];
+		auto abc = [ab outerProduct:c];
+		auto bcd = [bc outerProduct:d];
+		auto cda = [cd outerProduct:a];
+		auto dab = [d outerProduct:ab];
+		auto abcd = [abc outerProduct:d];
+		printf ("a, bcd: %d\n", [a commutesWith:bcd]);
+		printf ("b, bcd: %d\n", [b commutesWith:bcd]);
+		printf ("c, bcd: %d\n", [c commutesWith:bcd]);
+		printf ("d, bcd: %d\n", [d commutesWith:bcd]);
+		printf ("bcd, a: %d\n", [bcd commutesWith:a]);
+		printf ("bcd, b: %d\n", [bcd commutesWith:b]);
+		printf ("bcd, c: %d\n", [bcd commutesWith:c]);
+		printf ("bcd, d: %d\n", [bcd commutesWith:d]);
+
+		printf ("ab, bcd: %d\n", [ab commutesWith:bcd]);
+		printf ("ac, bcd: %d\n", [ac commutesWith:bcd]);
+		printf ("ad, bcd: %d\n", [ad commutesWith:bcd]);
+		printf ("bc, bcd: %d\n", [bc commutesWith:bcd]);
+		printf ("bd, bcd: %d\n", [bd commutesWith:bcd]);
+		printf ("cd, bcd: %d\n", [cd commutesWith:bcd]);
+
+		printf ("ab, bc: %d\n", [ab commutesWith:bc]);
+		printf ("ac, bc: %d\n", [ac commutesWith:bc]);
+		printf ("ad, bc: %d\n", [ad commutesWith:bc]);
+		printf ("bc, bc: %d\n", [bc commutesWith:bc]);
+		printf ("bd, bc: %d\n", [bd commutesWith:bc]);
+		printf ("cd, bc: %d\n", [cd commutesWith:bc]);
+	}
+	arp_end ();
 #if 0
 	arp_start ();
 	for (int i = 0; i < 4; i++) {
