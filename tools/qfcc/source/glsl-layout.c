@@ -296,37 +296,37 @@ static layout_qual_t layout_qualifiers[] = {
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_y",
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_z",
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_x_id",
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_y_id",
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_z_id",
 		.apply = E(nullptr),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
-		.stage_filter = C { "comp", nullptr },
+		.stage_filter = C { "compute", nullptr },
 	},
 
 	{	.name = "xfb_buffer",
@@ -691,7 +691,7 @@ layout_qual_cmp (const void *_a, const void *_b)
 	return strcasecmp (a->name, b->name);
 }
 
-static bool
+static bool __attribute__((pure))
 layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 {
 	unsigned obj_mask = 0;
