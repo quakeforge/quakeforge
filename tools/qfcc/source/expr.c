@@ -2238,7 +2238,7 @@ bitnot_expr:
 						expr_t     *n = new_unary_expr (op, e);
 						auto t = get_type (e);
 
-						if (!is_int(t) && !is_float(t)
+						if (!is_integral(t) && !is_float(t)
 							&& !is_quaternion(t))
 							return error (e, "invalid type for unary ~");
 						n->expr.type = t;
