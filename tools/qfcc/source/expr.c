@@ -1644,9 +1644,24 @@ field_expr (const expr_t *e1, const expr_t *e2)
 	expr_t     *e;
 
 	e1 = convert_name (e1);
-	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
+	if (e1->type == ex_symbol && e1->symbol->sy_type == sy_namespace) {
+		if (e2->type != ex_symbol) {
+			return error (e2, "symbol required for namespace access");
+		}
+		auto namespace = e1->symbol->namespace;
+		auto sym = symtab_lookup (namespace, e2->symbol->name);
+		if (!sym) {
+			return error (e2, "%s not in %s namespace",
+						  e2->symbol->name, e1->symbol->name);
+		}
+		return new_symbol_expr (sym);
+	}
+	t1 = get_type (e1);
+	if (!t1) {
+		return new_error_expr ();
+	}
 	if (is_entity (t1)) {
 		symbol_t   *field = 0;
 
