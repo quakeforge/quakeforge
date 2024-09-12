@@ -167,7 +167,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token <spec> DISCARD COHERENT
 
 %type <symbol>  variable_identifier
-%type <symbol>  block_declaration
+%type <block>   block_declaration
 %type <expr>    constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
 %type <expr>    for_init_statement conditionopt expressionopt else
@@ -576,24 +576,21 @@ declaration
 		}
 	| type_qualifier block_declaration ';'
 		{
-			auto spec = $1;
-			auto block = $2;
-			glsl_declare_block (spec, block, nullptr);
+			auto block = $block_declaration;
+			glsl_declare_block_instance (block, nullptr);
 		}
 	| type_qualifier block_declaration IDENTIFIER ';'
 		{
-			auto spec = $1;
-			auto block = $2;
-			auto instance_name = $3;
-			glsl_declare_block (spec, block, instance_name);
+			auto block = $block_declaration;
+			auto instance_name = $IDENTIFIER;
+			glsl_declare_block_instance (block, instance_name);
 		}
 	| type_qualifier block_declaration IDENTIFIER array_specifier ';'
 		{
-			auto spec = $1;
-			auto block = $2;
-			auto instance_name = $3;
-			instance_name->type = $4;
-			glsl_declare_block (spec, block, instance_name);
+			auto block = $block_declaration;
+			auto instance_name = $IDENTIFIER;
+			instance_name->type = $array_specifier;
+			glsl_declare_block_instance (block, instance_name);
 		}
 	| type_qualifier ';'
 		{
@@ -621,16 +618,25 @@ declaration
 block_declaration
 	: IDENTIFIER '{'
 		{
-			auto block = new_symtab (current_symtab, stab_struct);
-			current_symtab = block;
+			auto spec = $<spec>0;
+			auto block_sym = $IDENTIFIER;
+			auto block = glsl_create_block (spec, block_sym);
+			if (block) {
+				current_symtab = block->members;
+			}
+			$<block>$ = block;
 		}
 	  struct_declaration_list '}'
 		{
-			auto sym = $1;
-			sym->sy_type = sy_namespace;
-			sym->namespace = current_symtab;
-			current_symtab = sym->namespace->parent;
-			$$ = sym;
+			auto block = $<block>3;
+			if (block) {
+				current_symtab = block->members->parent;
+				auto sym = $IDENTIFIER;
+				glsl_finish_block (block);
+				sym->sy_type = sy_namespace;
+				sym->namespace = current_symtab;
+			}
+			$$ = block;
 		}
 	;
 

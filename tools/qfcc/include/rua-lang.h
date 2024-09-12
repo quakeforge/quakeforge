@@ -110,6 +110,8 @@ typedef union rua_val_s {
 	struct symtab_s *symtab;
 	struct attribute_s *attribute;
 	struct designator_s *designator;
+
+	struct glsl_block_s *block;
 } rua_val_t;
 
 #include "tools/qfcc/source/qc-parse.h"

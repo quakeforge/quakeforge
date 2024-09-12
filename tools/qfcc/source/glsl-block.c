@@ -48,7 +48,7 @@ static const char *
 block_get_key (const void *_b, void *)
 {
 	auto b = (const glsl_block_t *) _b;
-	return b->name;
+	return b->name->name;
 }
 
 void
@@ -68,12 +68,17 @@ glsl_block_clear (void)
 static const expr_t *
 block_sym_ref (symbol_t *sym, void *data)
 {
-	return new_symbol_expr (data);
+	sym = data;
+	glsl_block_t *block = sym->table->data;
+	auto interface = new_name_expr (glsl_interface_names[block->interface]);
+	auto blk = new_symbol_expr (block->name);
+	auto expr = field_expr (interface, blk);
+	expr = field_expr (expr, new_symbol_expr (sym));
+	return expr;
 }
 
-void
-glsl_declare_block (specifier_t spec, symbol_t *block_sym,
-					symbol_t *instance_name)
+glsl_block_t *
+glsl_create_block (specifier_t spec, symbol_t *block_sym)
 {
 	auto interface = glsl_iftype_from_sc(spec.storage);
 	hashtab_t *block_tab = nullptr;
@@ -81,17 +86,18 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 		block_tab = interfaces[interface];
 	}
 	if (!block_tab) {
-		error (0, "invalid storage for block: %d", spec.storage);
-		return;
+		error (0, "invalid interface for block: %d", spec.storage);
+		return nullptr;
 	}
 	glsl_block_t *block;
 	ALLOC (64, glsl_block_t, blocks, block);
 	*block = (glsl_block_t) {
-		.name = save_string (block_sym->name),
-		.attributes = spec.attributes,
-		.members = block_sym->namespace,
-		.instance_name = instance_name,
+		.name = new_symbol (block_sym->name),
+		.interface = interface,
+		.attributes = glsl_optimize_attributes (spec.attributes),
+		.members = new_symtab (current_symtab, stab_struct),
 	};
+	block->members->data = block;
 	Hash_Add (block_tab, block);
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
 		auto def = new_def (sym->name, nullptr, nullptr, spec.storage);
@@ -99,11 +105,27 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 		sym->sy_type = sy_var;
 		sym->def = def;
 	}
+	return block;
+}
+
+void
+glsl_finish_block (glsl_block_t *block)
+{
+}
+
+void
+glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
+{
+	if (!block) {
+		// error recovery
+		return;
+	}
 	if (instance_name) {
+		block->instance_name = instance_name;
 		auto type = new_type ();
 		*type = (type_t) {
 			.type = ev_invalid,
-			.name = save_string (block_sym->name),
+			.name = save_string (block->name->name),
 			.alignment = 4,
 			.width = 1,
 			.columns = 1,
@@ -113,7 +135,8 @@ glsl_declare_block (specifier_t spec, symbol_t *block_sym,
 		instance_name->type = append_type (instance_name->type, type);
 		instance_name->type = find_type (instance_name->type);
 		auto space = current_symtab->space;// FIXME
-		initialize_def (instance_name, nullptr, space, spec.storage,
+		initialize_def (instance_name, nullptr, space,
+						glsl_sc_from_iftype (block->interface),
 						current_symtab);
 	} else {
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {

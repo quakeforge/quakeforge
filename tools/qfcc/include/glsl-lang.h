@@ -69,8 +69,9 @@ extern const char *glsl_interface_names[glsl_num_interfaces];
 
 typedef struct glsl_block_s {
 	struct glsl_block_s *next;
-	const char *name;
-	attribute_t *attributes;
+	symbol_t   *name;
+	glsl_interface_t interface;
+	symtab_t   *attributes;
 	symtab_t   *members;
 	symbol_t   *instance_name;
 } glsl_block_t;
@@ -88,8 +89,9 @@ extern glsl_sublang_t glsl_geom_sublanguage;
 extern glsl_sublang_t glsl_frag_sublanguage;
 
 void glsl_block_clear (void);
-void glsl_declare_block (specifier_t spec, symbol_t *block_sym,
-						 symbol_t *instance_name);
+glsl_block_t *glsl_create_block (specifier_t spec, symbol_t *block_sym);
+void glsl_finish_block (glsl_block_t *block);
+void glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name);
 glsl_block_t *glsl_get_block (const char *name, glsl_interface_t interface);
 symtab_t *glsl_optimize_attributes (attribute_t *attributes);
 void glsl_apply_attributes (symtab_t *attributes, specifier_t spec);
