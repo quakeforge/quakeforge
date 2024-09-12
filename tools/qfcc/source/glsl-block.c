@@ -33,6 +33,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/shared.h"
@@ -63,6 +64,16 @@ glsl_block_clear (void)
 			interfaces[i] = Hash_NewTable (127, block_get_key, 0, 0, 0);
 		}
 	}
+	for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
+		auto name = glsl_interface_names[i];
+		if (symtab_lookup (current_symtab, name)) {
+			internal_error (0, "%s already declared", name);
+		}
+		auto sym = new_symbol (name);
+		sym->sy_type = sy_namespace;
+		sym->namespace = new_symtab (nullptr, stab_block);
+		symtab_addsymbol (current_symtab, sym);
+	}
 }
 
 static const expr_t *
@@ -75,6 +86,13 @@ block_sym_ref (symbol_t *sym, void *data)
 	auto expr = field_expr (interface, blk);
 	expr = field_expr (expr, new_symbol_expr (sym));
 	return expr;
+}
+
+static int
+glsl_block_alloc_loc (defspace_t *space, int size, int alignment)
+{
+	// XXX
+	return -1;
 }
 
 glsl_block_t *
@@ -96,8 +114,10 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 		.interface = interface,
 		.attributes = glsl_optimize_attributes (spec.attributes),
 		.members = new_symtab (current_symtab, stab_struct),
+		.space = defspace_new (ds_backed),
 	};
 	block->members->data = block;
+	block->space->alloc_aligned = glsl_block_alloc_loc;
 	Hash_Add (block_tab, block);
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
 		auto def = new_def (sym->name, nullptr, nullptr, spec.storage);
@@ -111,6 +131,12 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 void
 glsl_finish_block (glsl_block_t *block)
 {
+	for (auto sym = block->members->symbols; sym; sym = sym->next) {
+		if (sym->sy_type == sy_var) {
+			//FIXME sc_extern isn't correct (problem with unsized arrays)
+			sym->def = new_def (sym->name, sym->type, block->space, sc_extern);
+		}
+	}
 }
 
 void
@@ -120,6 +146,13 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		// error recovery
 		return;
 	}
+	auto interface_name = glsl_interface_names[block->interface];
+	auto interface_sym = symtab_lookup (current_symtab, interface_name);
+	if (!interface_sym) {
+		internal_error (0, "%s interface not defined", interface_name);
+	}
+	auto interface = interface_sym->namespace;
+
 	if (instance_name) {
 		block->instance_name = instance_name;
 		auto type = new_type ();
@@ -139,6 +172,16 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 						glsl_sc_from_iftype (block->interface),
 						current_symtab);
 	} else {
+		auto block_sym = symtab_lookup (interface, block->name->name);
+		if (block_sym) {
+			error (0, "%s block %s redeclared", interface_name,
+				   block_sym->name);
+		} else {
+			block_sym = block->name;
+			block_sym->sy_type = sy_namespace;
+			block_sym->namespace = block->members;
+			symtab_addsymbol (interface, block->name);
+		}
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {
 			auto new = new_symbol (sym->name);
 			new->sy_type = sy_convert;

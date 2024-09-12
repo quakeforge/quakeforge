@@ -619,8 +619,8 @@ block_declaration
 	: IDENTIFIER '{'
 		{
 			auto spec = $<spec>0;
-			auto block_sym = $IDENTIFIER;
-			auto block = glsl_create_block (spec, block_sym);
+			auto sym = $IDENTIFIER;
+			auto block = glsl_create_block (spec, sym);
 			if (block) {
 				current_symtab = block->members;
 			}
@@ -631,10 +631,7 @@ block_declaration
 			auto block = $<block>3;
 			if (block) {
 				current_symtab = block->members->parent;
-				auto sym = $IDENTIFIER;
 				glsl_finish_block (block);
-				sym->sy_type = sy_namespace;
-				sym->namespace = current_symtab;
 			}
 			$$ = block;
 		}

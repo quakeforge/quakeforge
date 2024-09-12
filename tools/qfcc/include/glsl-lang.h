@@ -36,6 +36,7 @@ typedef struct type_s type_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct language_s language_t;
+typedef struct defspace_s defspace_t;
 
 void glsl_init_comp (void);
 void glsl_init_vert (void);
@@ -73,6 +74,7 @@ typedef struct glsl_block_s {
 	glsl_interface_t interface;
 	symtab_t   *attributes;
 	symtab_t   *members;
+	defspace_t *space;
 	symbol_t   *instance_name;
 } glsl_block_t;
 

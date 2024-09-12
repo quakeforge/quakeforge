@@ -90,6 +90,7 @@ typedef enum {
 	stab_union,
 	stab_enum,
 	stab_label,
+	stab_block,
 } stab_type_e;
 
 typedef struct symtab_s {
