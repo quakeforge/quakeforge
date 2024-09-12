@@ -52,25 +52,18 @@
 ALLOC_STATE (symtab_t, symtabs);
 ALLOC_STATE (symbol_t, symbols);
 
-static const char * const sy_type_names[] = {
-	"sy_name",
-	"sy_var",
-	"sy_const",
-	"sy_type",
-	"sy_type_param",
-	"sy_expr",
-	"sy_func",
-	"sy_class",
-	"sy_convert",
-	"sy_macro",
+#define SY_TYPE(type) #type,
+static const char * const sy_type_names[sy_num_types] = {
+#include "tools/qfcc/include/sy_type_names.h"
 };
 
 const char *
 symtype_str (sy_type_e type)
 {
-	if (type > sy_convert)
-		return "<invalid sy_type>";
-	return sy_type_names[type];
+	if (type < sy_num_types) {
+		return sy_type_names[type];
+	}
+	return "<invalid sy_type>";
 }
 
 symbol_t *

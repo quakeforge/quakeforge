@@ -70,4 +70,6 @@ EX_EXPR(multivec)	///< geometric algebra multivector (::ex_multivec_t)
 EX_EXPR(list)		///< non-invasive list of expressions (::ex_list_t)
 EX_EXPR(type)		///< type expression for generics
 
+#undef EX_EXPR
+
 ///@}

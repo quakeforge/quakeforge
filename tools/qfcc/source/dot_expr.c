@@ -62,7 +62,6 @@ const char *expr_names[] =
 #include "tools/qfcc/include/expr_names.h"
 	0
 };
-#undef EX_EXPR
 
 const char *
 get_op_string (int op)

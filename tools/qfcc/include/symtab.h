@@ -48,19 +48,10 @@ typedef enum vis_e {
 	vis_anonymous,
 } vis_t;
 
-typedef enum {
-	sy_name,					///< just a name (referent tbd)
-	sy_var,						///< symbol refers to a variable
-	sy_const,					///< symbol refers to a constant
-	sy_type,					///< symbol refers to a type
-	sy_type_param,				///< symbol refers to a generic type parameter
-	sy_expr,					///< symbol refers to an expression
-	sy_func,					///< symbol refers to a function
-	sy_class,					///< symbol refers to a class
-	sy_convert,					///< symbol refers to a conversion function
-	sy_macro,					///< symbol refers to a macro definition
-	sy_namespace,				///< symbol refers to a namespace definition
-	sy_list,
+#define SY_TYPE(type) sy_##type,
+typedef enum : unsigned {
+#include "tools/qfcc/include/sy_type_names.h"
+	sy_num_types	///< number of symtab types
 } sy_type_e;
 
 typedef struct symconv_s {

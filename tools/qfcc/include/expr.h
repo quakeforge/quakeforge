@@ -51,7 +51,6 @@ typedef enum {
 #include "tools/qfcc/include/expr_names.h"
 	ex_count,		///< number of valid expression types
 } expr_type;
-#undef EX_EXPR
 
 /**	Binary and unary expressions.
 
