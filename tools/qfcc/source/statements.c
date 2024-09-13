@@ -1729,11 +1729,26 @@ expr_deref (sblock_t *sblock, const expr_t *deref, operand_t **op)
 }
 
 static sblock_t *
+expr_slist (sblock_t *sblock, const ex_list_t *slist, const expr_t *result,
+			operand_t **op)
+{
+
+	for (auto s = slist->head; s; s = s->next) {
+		if (s->expr == result) {
+			sblock = statement_subexpr (sblock, s->expr, op);
+		} else {
+			sblock = statement_single (sblock, s->expr);
+		}
+	}
+	return sblock;
+}
+
+static sblock_t *
 expr_block (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	if (!e->block.result)
 		internal_error (e, "block sub-expression without result");
-	sblock = statement_slist (sblock, &e->block.list);
+	sblock = expr_slist (sblock, &e->block.list, e->block.result, op);
 	sblock = statement_subexpr (sblock, e->block.result, op);
 	return sblock;
 }
@@ -2389,7 +2404,7 @@ statement_assign (sblock_t *sblock, const expr_t *e)
 static sblock_t *
 statement_nonexec (sblock_t *sblock, const expr_t *e)
 {
-	if (!e->rvalue && options.warnings.executable)
+	if (options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
 }

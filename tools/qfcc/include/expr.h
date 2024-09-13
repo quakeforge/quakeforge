@@ -328,7 +328,6 @@ typedef struct expr_s {
 	expr_type   type;			///< the type of the result of this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    paren:1;		///< the expression is enclosed in ()
-	unsigned    rvalue:1;		///< the expression is on the right side of =
 	unsigned    implicit:1;		///< don't warn for implicit casts
 	unsigned    nodag:1;		///< prevent use of dags for this expression
 								///< propagates up

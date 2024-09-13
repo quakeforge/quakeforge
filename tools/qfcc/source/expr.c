@@ -2708,9 +2708,6 @@ return_expr (function_t *f, const expr_t *e)
 	if (e->type == ex_vector) {
 		e = assign_expr (new_temp_def_expr (t), e);
 	}
-	if (e->type == ex_block) {
-		((expr_t *) e->block.result)->rvalue = 1;//FIXME
-	}
 	return new_return_expr (e);
 }
 
