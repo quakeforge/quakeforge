@@ -623,7 +623,9 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 			 type_ptr += type->size) {
 			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
 			if (type->meta == ty_basic
-				&& (unsigned) type->type < ev_type_count) {
+				&& (unsigned) type->type < ev_type_count
+				&& type->basic.width == 1
+				&& type->basic.columns == 1) {
 				res->type_encodings[type->type] = type;
 			}
 		}
