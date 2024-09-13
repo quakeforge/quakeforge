@@ -75,7 +75,7 @@ check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 		// change {a = (b logic c)} to {(a = b) logic c}
 		auto assignment = assign_expr (dst, src->expr.e1);
 		// protect assignment from binary_expr
-		((expr_t *) assignment)->paren = 1;
+		assignment = paren_expr (assignment);
 		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
 	return 0;

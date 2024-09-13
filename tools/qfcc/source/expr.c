@@ -607,6 +607,15 @@ new_unary_expr (int op, const expr_t *e1)
 	return e;
 }
 
+const expr_t *
+paren_expr (const expr_t *e)
+{
+	auto paren = new_expr ();
+	*paren = *e;
+	paren->paren = 1;
+	return paren;
+}
+
 expr_t *
 new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 {
@@ -1929,13 +1938,8 @@ asx_expr (int op, const expr_t *e1, const expr_t *e2)
 	else if (e2->type == ex_error)
 		return e2;
 	else {
-		expr_t     *e = new_expr ();
-		auto paren = new_expr ();
-
-		*e = *e1;
-		*paren = *e2;
-		paren->paren = 1;
-		return assign_expr (e, binary_expr (op, e1, paren));
+		e2 = paren_expr (e2);
+		return assign_expr (e1, binary_expr (op, e1, e2));
 	}
 }
 

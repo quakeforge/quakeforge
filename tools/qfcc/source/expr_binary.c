@@ -1177,12 +1177,6 @@ reimplement_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	return 0;
 }
 
-static void
-set_paren (const expr_t *e)
-{
-	((expr_t *) e)->paren = 1;
-}
-
 static const expr_t *
 check_precedence (int op, const expr_t *e1, const expr_t *e2)
 {
@@ -1191,8 +1185,8 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 			if (op != QC_AND && op != QC_OR && op != '=') {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
-				set_paren (e1->expr.e1);
-				return unary_expr ('!', binary_expr (op, e1->expr.e1, e2));
+				e1 = paren_expr (e1->expr.e1);
+				return unary_expr ('!', binary_expr (op, e1, e2));
 			}
 		} else if (op == '&' || op == '|') {
 			if (options.warnings.precedence)
@@ -1211,7 +1205,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				set_paren (e1);
+				e1 = paren_expr (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 			if (((op == QC_EQ || op == QC_NE) && is_compare (e2->expr.op))
@@ -1221,7 +1215,7 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				set_paren (e1);
+				e1 = paren_expr (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
@@ -1233,8 +1227,8 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 							"traditional code", get_op_string (op),
 							get_op_string (e1->expr.op));
 				e2 = binary_expr (op, e1->expr.e2, e2);
-				set_paren (e1);
-				return binary_expr (e1->expr.op, e1->expr.e1, e2);
+				e1 = paren_expr (e1->expr.e1);
+				return binary_expr (e1->expr.op, e1, e2);
 			}
 		}
 	} else {

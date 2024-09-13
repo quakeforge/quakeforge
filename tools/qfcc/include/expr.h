@@ -545,6 +545,8 @@ expr_t *new_binary_expr (int op, const expr_t *e1, const expr_t *e2);
 */
 expr_t *new_unary_expr (int op, const expr_t *e1);
 
+const expr_t *paren_expr (const expr_t *e);
+
 /**	Create a new horizontal vector operantion node.
 
 	If \a vec is an error expression, then it will be returned instead of a
