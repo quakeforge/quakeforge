@@ -66,6 +66,10 @@ void dstring_delete (dstring_t *dstr);
 	large enough to hold size bytes (rounded up to the next 1kB boundary)
 */
 void dstring_adjust (dstring_t *dstr);
+/** Ensure the string buffer is large enough to hold the requested additional
+	bytes (total size will be rounded up to the next 1kB boundary).
+*/
+void dstring_reserve (dstring_t *dstr, size_t delta);
 /** Open up a hole in the string buffer. The contents of the opened hole
 	are undefined.
 	\param dstr		the dstring in which to open the hole.

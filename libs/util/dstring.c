@@ -103,6 +103,20 @@ dstring_adjust (dstring_t *dstr)
 	}
 }
 
+VISIBLE void
+dstring_reserve (dstring_t *dstr, size_t delta)
+{
+	size_t newsize = dstr->size + delta;
+	if (newsize > dstr->truesize) {
+		dstr->truesize = (newsize + 1023) & ~1023;
+		dstr->str = dstr->mem->realloc (dstr->mem->data, dstr->str,
+										dstr->truesize);
+		if (!dstr->str) {
+			Sys_Error ("dstring_reserve:  Failed to reallocate memory.");
+		}
+	}
+}
+
 VISIBLE char *
 dstring_open (dstring_t *dstr, size_t len)
 {
