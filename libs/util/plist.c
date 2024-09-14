@@ -51,7 +51,11 @@
 struct plitem_s {
 	pltype_t    type;
 	unsigned    users;
-	void       *data;
+	union {
+		void       *data;
+		double      number;
+		bool        boolean;
+	};
 	void       *user_data;
 	int         line;
 };//plitem_t
@@ -97,6 +101,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    pos;
 	unsigned    line;
 	unsigned    line_start;
+	bool        json;
 	dstring_t  *errmsg;
 	hashctx_t **hashctx;
 } pldata_t;
@@ -111,8 +116,11 @@ typedef struct pldata_s {	// Unparsed property list string
 static const char *pl_types[] = {
 	"dictionary",
 	"array",
-	"biinary",
+	"binary",
 	"string",
+	"number",
+	"bool",
+	"null",
 };
 
 static byte quotable_bitmap[32];
@@ -165,7 +173,7 @@ PL_NewDictionary (hashctx_t **hashctx)
 {
 	plitem_t   *item = pl_newitem (QFDictionary);
 	pldict_t   *dict = malloc (sizeof (pldict_t));
-	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, NULL, hashctx);
+	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, nullptr, hashctx);
 	DARRAY_INIT (&dict->keys, 8);
 	item->data = dict;
 	return item;
@@ -255,6 +263,9 @@ PL_Release (plitem_t *item)
 		case QFString:
 			free (item->data);
 			break;
+		case QFNumber:
+		case QFBool:
+		case QFNull:
 		case QFMultiType:
 			break;
 	}
@@ -300,33 +311,51 @@ VISIBLE const char *
 PL_String (const plitem_t *string)
 {
 	if (!string || string->type != QFString) {
-		return NULL;
+		return nullptr;
 	}
 	return string->data;
+}
+
+VISIBLE double
+PL_Number (const plitem_t *number)
+{
+	if (!number || number->type != QFNumber) {
+		return 0;
+	}
+	return number->number;
+}
+
+VISIBLE bool
+PL_Bool (const plitem_t *boolean)
+{
+	if (!boolean || boolean->type != QFBool) {
+		return false;
+	}
+	return boolean->boolean;
 }
 
 VISIBLE plitem_t *
 PL_ObjectForKey (const plitem_t *item, const char *key)
 {
 	if (!item || item->type != QFDictionary) {
-		return NULL;
+		return nullptr;
 	}
 
 	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *k = (dictkey_t *) Hash_Find (dict->tab, key);
-	return k ? k->value : NULL;
+	return k ? k->value : nullptr;
 }
 
 VISIBLE const char *
 PL_KeyAtIndex (const plitem_t *item, int index)
 {
 	if (!item || item->type != QFDictionary) {
-		return NULL;
+		return nullptr;
 	}
 
 	pldict_t   *dict = (pldict_t *) item->data;
 	if (index < 0 || (size_t) index >= dict->keys.size) {
-		return NULL;
+		return nullptr;
 	}
 
 	return dict->keys.a[index]->key;
@@ -356,14 +385,14 @@ PL_RemoveObjectForKey (plitem_t *item, const char *key)
 		}
 	}
 	dict_free (k, 0);
-	value->users--;
+	PL_Release (value);
 }
 
 VISIBLE plitem_t *
 PL_D_AllKeys (const plitem_t *item)
 {
 	if (!item || item->type != QFDictionary) {
-		return NULL;
+		return nullptr;
 	}
 
 	pldict_t   *dict = (pldict_t *) item->data;
@@ -371,7 +400,7 @@ PL_D_AllKeys (const plitem_t *item)
 	plitem_t   *array;
 
 	if (!(array = PL_NewArray ()))
-		return NULL;
+		return nullptr;
 
 	for (size_t i = 0; i < dict->keys.size; i++) {
 		current = dict->keys.a[i];
@@ -396,11 +425,11 @@ VISIBLE plitem_t *
 PL_ObjectAtIndex (const plitem_t *array, int index)
 {
 	if (!array || array->type != QFArray) {
-		return NULL;
+		return nullptr;
 	}
 
 	plarray_t  *arr = (plarray_t *) array->data;
-	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
+	return index >= 0 && index < arr->numvals ? arr->values[index] : nullptr;
 }
 
 VISIBLE bool
@@ -574,10 +603,10 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 		index++;
 	}
 
-	item->users--;
+	PL_Release (item);
 }
 
-static void __attribute__((format(PRINTF, 2, 3)))
+static plitem_t * __attribute__((format(PRINTF, 2, 3)))
 pl_error (pldata_t *pl, const char *fmt, ...)
 {
 	if (!pl->errmsg) {
@@ -588,66 +617,90 @@ pl_error (pldata_t *pl, const char *fmt, ...)
 	va_start (args, fmt);
 	dvsprintf (pl->errmsg, fmt, args);
 	va_end (args);
+	return nullptr;
 }
 
 static bool
-pl_skipspace (pldata_t *pl, int end_ok)
+pl_skipspace (pldata_t *pl, bool end_ok)
 {
-	while (pl->pos < pl->end) {
-		char	c = pl->ptr[pl->pos];
+	if (pl->json) {
+		while (pl->pos < pl->end) {
+			byte	c = pl->ptr[pl->pos];
 
-		if (!isspace ((byte) c)) {
-			if (c == '/' && pl->pos < pl->end - 1) {	// check for comments
-				if (pl->ptr[pl->pos + 1] == '/') {
-					pl->pos += 2;
+			if (c > ' ') {
+				return true;
+			}
+			if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
+				pl_error (pl, "Invalid character 0x%02x", c);
+				return false;
+			}
+			if (c == '\n') {
+				pl->line++;
+				pl->line_start = pl->pos + 1;
+			}
+			pl->pos++;
+		}
+	} else {
+		while (pl->pos < pl->end) {
+			byte	c = pl->ptr[pl->pos];
 
-					while (pl->pos < pl->end) {
-						c = pl->ptr[pl->pos];
+			if (c > ' ') {
+				if (c == '/' && pl->pos < pl->end - 1) {	// check for comments
+					if (pl->ptr[pl->pos + 1] == '/') {
+						pl->pos += 2;
 
-						if (c == '\n')
-							break;
-						pl->pos++;
-					}
-					if (pl->pos >= pl->end) {
-						// end of string in a single-line comment is always
-						// an error
-						pl_error (pl, "Reached end of string in comment");
-						return false;
-					}
-				} else if (pl->ptr[pl->pos + 1] == '*') {	// "/*" comments
-					pl->pos += 2;
+						while (pl->pos < pl->end) {
+							c = pl->ptr[pl->pos];
 
-					while (pl->pos < pl->end) {
-						c = pl->ptr[pl->pos];
-
-						if (c == '\n') {
-							pl->line++;
-							pl->line_start = pl->pos + 1;
-						} else if (c == '*' && pl->pos < pl->end - 1
-									&& pl->ptr[pl->pos+1] == '/') {
+							if (c == '\n')
+								break;
 							pl->pos++;
-							break;
 						}
-						pl->pos++;
-					}
-					if (pl->pos >= pl->end) {
-						// end of string in a multi-line comment is always
-						// an error
-						pl_error (pl, "Reached end of string in comment");
-						return false;
+						if (pl->pos >= pl->end) {
+							// end of string in a single-line comment is always
+							// an error
+							pl_error (pl, "Reached end of string in comment");
+							return false;
+						}
+					} else if (pl->ptr[pl->pos + 1] == '*') {	// "/*" comments
+						pl->pos += 2;
+
+						while (pl->pos < pl->end) {
+							c = pl->ptr[pl->pos];
+
+							if (c == '\n') {
+								pl->line++;
+								pl->line_start = pl->pos + 1;
+							} else if (c == '*' && pl->pos < pl->end - 1
+										&& pl->ptr[pl->pos+1] == '/') {
+								pl->pos++;
+								break;
+							}
+							pl->pos++;
+						}
+						if (pl->pos >= pl->end) {
+							// end of string in a multi-line comment is always
+							// an error
+							pl_error (pl, "Reached end of string in comment");
+							return false;
+						}
+					} else {
+						return true;
 					}
 				} else {
 					return true;
 				}
-			} else {
-				return true;
 			}
+			if (c < ' ' && c != '\n' && c != '\r' && c != '\t') {
+				pl_error (pl, "Invalid character 0x%02x", c);
+				return false;
+			}
+			if (c == '\n') {
+				pl->line++;
+				pl->line_start = pl->pos + 1;
+			}
+			pl->pos++;
 		}
-		if (c == '\n') {
-			pl->line++;
-			pl->line_start = pl->pos + 1;
-		}
-		pl->pos++;
 	}
 	if (!end_ok) {
 		pl_error (pl, "Reached end of string");
@@ -656,7 +709,7 @@ pl_skipspace (pldata_t *pl, int end_ok)
 }
 
 static int
-pl_checknext (pldata_t *pl, const char *valid, int end_ok)
+pl_checknext (pldata_t *pl, const char *valid, bool end_ok)
 {
 	if (!pl_skipspace (pl, end_ok)) {
 		return end_ok;
@@ -700,7 +753,7 @@ make_byte (byte h, byte l)
 }
 
 static int
-pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
+pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, bool end_ok)
 {
 	plitem_t	*key = 0;
 	plitem_t	*value = 0;
@@ -713,7 +766,7 @@ pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
 		goto error;
 	}
 
-	if (!pl_checknext (pl, "=", 0)) {
+	if (!pl_checknext (pl, pl->json ? ":" : "=", 0)) {
 		goto error;
 	}
 	pl->pos++;
@@ -727,11 +780,13 @@ pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, int end_ok)
 	}
 	PL_Release (key);	// don't need the key item
 
-	if (!pl_checknext (pl, end_ok ? ";" : ";}", end_ok)) {
+	const char *next = pl->json ? (end_ok ? "," : ",}")
+								: (end_ok ? ";" : ";}");
+	if (!pl_checknext (pl, next, end_ok)) {
 		return 0;
 	}
 
-	if (pl->ptr[pl->pos] == ';') {
+	if (pl->ptr[pl->pos] == next[0]) {
 		pl->pos++;
 	}
 	return 1;
@@ -748,16 +803,16 @@ pl_parsedictionary (pldata_t *pl)
 	dict->line = pl->line;
 
 	pl->pos++;	// skip over opening {
-	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != '}') {
-		if (!pl_parsekeyvalue (pl, dict, 0)) {
+	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != '}') {
+		if (!pl_parsekeyvalue (pl, dict, false)) {
 			PL_Release (dict);
-			return NULL;
+			return nullptr;
 		}
 	}
 	if (pl->pos >= pl->end) {
 		pl_error (pl, "Unexpected end of string when parsing dictionary");
 		PL_Release (dict);
-		return NULL;
+		return nullptr;
 	}
 	pl->pos++;	// skip over closing }
 
@@ -778,7 +833,9 @@ pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
 		return 0;
 	}
 
-	if (!pl_checknext (pl, end_ok ? "," : ",)", end_ok)) {
+	const char *next = pl->json ? (end_ok ? "," : ",]")
+								: (end_ok ? "," : ",)");
+	if (!pl_checknext (pl, next, end_ok)) {
 		return 0;
 	}
 
@@ -797,16 +854,16 @@ pl_parsearray (pldata_t *pl)
 
 	pl->pos++;	// skip over opening (
 
-	while (pl_skipspace (pl, 0) && pl->ptr[pl->pos] != ')') {
+	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != ')') {
 		if (!pl_parsevalue (pl, array, 0)) {
 			PL_Release (array);
-			return NULL;
+			return nullptr;
 		}
 	}
 	if (pl->pos >= pl->end) {
 		pl_error (pl, "Unexpected end of string when parsing array");
 		PL_Release (array);
-		return NULL;
+		return nullptr;
 	}
 	pl->pos++;	// skip over opening )
 
@@ -829,7 +886,7 @@ pl_parsebinary (pldata_t *pl)
 		if (c == '>') {
 			if (nibbles & 1) {
 				pl_error (pl, "invalid data, missing nibble");
-				return NULL;
+				return nullptr;
 			}
 			int         len = nibbles / 2;
 			str = malloc (len);
@@ -842,10 +899,10 @@ pl_parsebinary (pldata_t *pl)
 			return item;
 		}
 		pl_error (pl, "invalid character in data: %02x", c);
-		return NULL;
+		return nullptr;
 	}
 	pl_error (pl, "Reached end of string while parsing data");
-	return NULL;
+	return nullptr;
 }
 
 static plitem_t *
@@ -858,8 +915,9 @@ pl_parsequotedstring (pldata_t *pl)
 	bool            long_string = false;
 	plitem_t       *str;
 
-	if (pl->ptr[pl->pos] == '"' &&
-		pl->ptr[pl->pos + 1] == '"') {
+	if (!pl->json
+		&& pl->ptr[pl->pos] == '"'
+		&& pl->ptr[pl->pos + 1] == '"') {
 		long_string = true;
 		start += 2;
 		pl->pos += 2;
@@ -913,7 +971,7 @@ pl_parsequotedstring (pldata_t *pl)
 
 	if (pl->pos >= pl->end) {
 		pl_error (pl, "Reached end of string while parsing quoted string");
-		return NULL;
+		return nullptr;
 	}
 
 	if (pl->pos - start - shrink == 0) {
@@ -1017,8 +1075,8 @@ pl_parseunquotedstring (pldata_t *pl)
 static plitem_t *
 pl_parsepropertylistitem (pldata_t *pl)
 {
-	if (!pl_skipspace (pl, 0)) {
-		return NULL;
+	if (!pl_skipspace (pl, false)) {
+		return nullptr;
 	}
 
 	switch (pl->ptr[pl->pos]) {
@@ -1031,10 +1089,126 @@ pl_parsepropertylistitem (pldata_t *pl)
 }
 
 static plitem_t *
-pl_parseitem (const char *string, hashctx_t **hashctx,
-			  plitem_t *(*parse) (pldata_t *))
+pl_parsejson_array (pldata_t *pl)
 {
-	plitem_t	*newpl = NULL;
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	pl->pos++;	// skip over opening [
+
+	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != ']') {
+		if (!pl_parsevalue (pl, array, false)) {
+			PL_Release (array);
+			return nullptr;
+		}
+	}
+	if (pl->pos >= pl->end) {
+		pl_error (pl, "Unexpected end of string when parsing array");
+		PL_Release (array);
+		return nullptr;
+	}
+	pl->pos++;	// skip over opening )
+
+	return array;
+}
+
+static unsigned
+pl_parsejson_literal (pldata_t *pl)
+{
+	unsigned    start = pl->pos;
+	while (pl->pos < pl->end) {
+		char c = pl->ptr[pl->pos];
+		if (!isdigit (c) && c != '-' && c != '.' && (c < 'a' || c > 'z')) {
+			break;
+		}
+		pl->pos++;
+	}
+	return pl->pos - start;
+}
+
+static plitem_t *
+pl_parsejson_null (pldata_t *pl)
+{
+	unsigned    start = pl->pos;
+	unsigned    len = pl_parsejson_literal (pl);
+	if (len == 4 && strncmp ("null", pl->ptr + start, len) == 0) {
+		return pl_newitem (QFNull);
+	} else {
+		return pl_error (pl, "Invalid literal: %.*s", len, pl->ptr + start);
+	}
+}
+
+static plitem_t *
+pl_parsejson_bool (pldata_t *pl)
+{
+	unsigned    start = pl->pos;
+	unsigned    len = pl_parsejson_literal (pl);
+	if (len == 4 && strncmp ("true", pl->ptr + start, len) == 0) {
+		auto item = pl_newitem (QFBool);
+		item->boolean = true;
+		return item;
+	} else if (len == 5 && strncmp ("false", pl->ptr + start, len) == 0) {
+		auto item = pl_newitem (QFBool);
+		item->boolean = false;
+		return item;
+	} else {
+		return pl_error (pl, "Invalid literal: %.*s", len, pl->ptr + start);
+	}
+}
+
+static plitem_t *
+pl_parsejson_number (pldata_t *pl)
+{
+	unsigned    start = pl->pos;
+	unsigned    len = pl_parsejson_literal (pl);
+	char        str[len + 1];
+	char       *end = nullptr;
+
+	memcpy (str, pl->ptr + start, len);
+	str[len] = 0;
+	double      val = strtod (str, &end);
+
+	if (*end) {
+		return pl_error (pl, "Invalid literal: %.*s", len, pl->ptr + start);
+	}
+	auto item = pl_newitem (QFNumber);
+	item->number = val;
+	return item;
+}
+
+static plitem_t *
+pl_parsejson_element (pldata_t *pl)
+{
+	if (!pl_skipspace (pl, false)) {
+		return nullptr;
+	}
+	switch (pl->ptr[pl->pos]) {
+		case '[': return pl_parsejson_array (pl);
+		case '{': return pl_parsedictionary (pl);
+		case ']':
+		case '}':
+		case ':':
+		case ',':
+			return pl_error (pl, "Unexpected character %c", pl->ptr[pl->pos]);
+		case '"': return pl_parsequotedstring (pl);
+		case 'n':
+			return pl_parsejson_null (pl);
+		case 't':
+		case 'f':
+			return pl_parsejson_bool (pl);
+		default:
+			if (pl->ptr[pl->pos] == '-' || isdigit (pl->ptr[pl->pos])) {
+				return pl_parsejson_number (pl);
+			}
+			return pl_error (pl, "Invalid literal");
+	}
+}
+
+static plitem_t *
+pl_parseitem (const char *string, hashctx_t **hashctx,
+			  plitem_t *(*parse) (pldata_t *), bool json)
+{
+	plitem_t	*newpl = nullptr;
 
 	if (!quotable_bitmap[0])
 		init_quotables ();
@@ -1043,6 +1217,7 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 		.ptr = string,
 		.end = strlen (string),
 		.line = 1,
+		.json = json,
 		.hashctx = hashctx,
 	};
 
@@ -1052,7 +1227,7 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 						pl.errmsg->str);
 			dstring_delete (pl.errmsg);
 		}
-		return NULL;
+		return nullptr;
 	}
 	return newpl;
 }
@@ -1060,7 +1235,13 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 VISIBLE plitem_t *
 PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsepropertylistitem);
+	return pl_parseitem (string, hashctx, pl_parsepropertylistitem, false);
+}
+
+VISIBLE plitem_t *
+PL_ParseJSON (const char *string, hashctx_t **hashctx)
+{
+	return pl_parseitem (string, hashctx, pl_parsejson_element, true);
 }
 
 
@@ -1070,10 +1251,10 @@ pl_getdictionary (pldata_t *pl)
 	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
 	dict->line = pl->line;
 
-	while (pl_skipspace (pl, 1)) {
-		if (!pl_parsekeyvalue (pl, dict, 1)) {
+	while (pl_skipspace (pl, true)) {
+		if (!pl_parsekeyvalue (pl, dict, true)) {
 			PL_Release (dict);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -1083,7 +1264,7 @@ pl_getdictionary (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetDictionary (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getdictionary);
+	return pl_parseitem (string, hashctx, pl_getdictionary, false);
 }
 
 static plitem_t *
@@ -1092,10 +1273,10 @@ pl_getarray (pldata_t *pl)
 	plitem_t   *array = PL_NewArray ();
 	array->line = pl->line;
 
-	while (pl_skipspace (pl, 1)) {
-		if (!pl_parsevalue (pl, array, 1)) {
+	while (pl_skipspace (pl, true)) {
+		if (!pl_parsevalue (pl, array, true)) {
 			PL_Release (array);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -1105,7 +1286,7 @@ pl_getarray (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetArray (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getarray);
+	return pl_parseitem (string, hashctx, pl_getarray, false);
 }
 
 static void
@@ -1146,17 +1327,19 @@ write_binary (dstring_t *dstr, byte *binary, int len)
 }
 
 static void
-write_string (dstring_t *dstr, const char *str)
+write_string (dstring_t *dstr, const char *str, bool json)
 {
 	const char *s;
 	int         len = 0;
 	char       *dst;
-	int         quoted = 0;
+	bool        quoted = json;
 
-	for (s = str; *s; s++) {
-		if (is_quotable (*s))
-			quoted = 1;
-		len++;
+	if (!quoted) {
+		for (s = str; *s; s++) {
+			if (is_quotable (*s))
+				quoted = true;
+			len++;
+		}
 	}
 	if (!quoted) {
 		dst = dstring_openstr (dstr, len);
@@ -1215,7 +1398,7 @@ write_string (dstring_t *dstr, const char *str)
 }
 
 static void
-write_item (dstring_t *dstr, const plitem_t *item, int level)
+write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 {
 	dictkey_t	*current;
 	plarray_t	*array;
@@ -1230,9 +1413,9 @@ write_item (dstring_t *dstr, const plitem_t *item, int level)
 			for (size_t i = 0; i < dict->keys.size; i++) {
 				current = dict->keys.a[i];
 				write_tabs (dstr, level + 1);
-				write_string (dstr, current->key);
+				write_string (dstr, current->key, json);
 				write_string_len (dstr, " = ", 3);
-				write_item (dstr, current->value, level + 1);
+				write_item (dstr, current->value, level + 1, json);
 				write_string_len (dstr, ";\n", 2);
 			}
 			write_tabs (dstr, level);
@@ -1243,7 +1426,7 @@ write_item (dstring_t *dstr, const plitem_t *item, int level)
 			array = (plarray_t *) item->data;
 			for (i = 0; i < array->numvals; i++) {
 				write_tabs (dstr, level + 1);
-				write_item (dstr, array->values[i], level + 1);
+				write_item (dstr, array->values[i], level + 1, json);
 				if (i < array->numvals - 1)
 					write_string_len (dstr, ",\n", 2);
 			}
@@ -1258,9 +1441,18 @@ write_item (dstring_t *dstr, const plitem_t *item, int level)
 			write_string_len (dstr, ">", 1);
 			break;
 		case QFString:
-			write_string (dstr, item->data);
+			write_string (dstr, item->data, json);
 			break;
-		default:
+		case QFNumber:
+			dasprintf (dstr, "%.17g", item->number);
+			break;
+		case QFBool:
+			dstring_appendstr (dstr, item->boolean ? "true" : "false");
+			break;
+		case QFNull:
+			dstring_appendstr (dstr, "null");
+			break;
+		case QFMultiType:
 			break;
 	}
 }
@@ -1273,7 +1465,21 @@ PL_WritePropertyList (const plitem_t *pl)
 	if (pl) {
 		if (!quotable_bitmap[0])
 			init_quotables ();
-		write_item (dstr, pl, 0);
+		write_item (dstr, pl, 0, false);
+		write_string_len (dstr, "\n", 1);
+	}
+	return dstring_freeze (dstr);
+}
+
+VISIBLE char *
+PL_WriteJSON (const plitem_t *pl)
+{
+	dstring_t  *dstr = dstring_newstr ();
+
+	if (pl) {
+		if (!quotable_bitmap[0])
+			init_quotables ();
+		write_item (dstr, pl, 0, true);
 		write_string_len (dstr, "\n", 1);
 	}
 	return dstring_freeze (dstr);
@@ -1350,6 +1556,15 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 		case QFString:
 			*(char **)data = (char *)item->data;
 			return 1;
+		case QFNumber:
+			*(double *)data = item->number;
+			return 1;
+		case QFBool:
+			*(bool *)data = item->boolean;
+			return 1;
+		case QFNull:
+			// needs special handling, so not valid for default parsing
+			break;
 		case QFMultiType:
 			break;
 	}
