@@ -140,12 +140,12 @@ void dstring_copystr (dstring_t *dstr, const char *str);
 void dstring_copysubstr (dstring_t *dstr, const char *str, size_t len);
 /** Append the null terminated string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
-	However, any embedded nulls will be treated as the end of the dstring.
+	\note any embedded nulls will be ignored.
 */
 void dstring_appendstr (dstring_t *dstr, const char *str);
 /** Append up to len bytes from the string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
-	However, any embedded nulls will be treated as the end of the dstring.
+	\note any embedded nulls will be ignored.
 */
 void dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len);
 /** Insert the null terminated string into the dstring at pos. The dstring

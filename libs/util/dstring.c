@@ -271,9 +271,12 @@ dstring_copysubstr (dstring_t *dstr, const char *str, size_t len)
 VISIBLE void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 	size_t      len = strlen (str);
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
 	strcpy (dstr->str + pos, str);
@@ -282,8 +285,11 @@ dstring_appendstr (dstring_t *dstr, const char *str)
 VISIBLE void
 dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	len = strnlen (str, len);
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
