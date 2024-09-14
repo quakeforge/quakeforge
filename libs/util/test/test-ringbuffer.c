@@ -127,7 +127,7 @@ locked_reader (void *data)
 			cnd_wait (&rb_read_cnd, &rb_mtx);
 		}
 		unsigned    len = RB_DATA_AVAILABLE (ringbuffer_char);
-		RB_READ_DATA (ringbuffer_char, dstring_reserve (out_text, len), len);
+		RB_READ_DATA (ringbuffer_char, dstring_open (out_text, len), len);
 		cnd_signal (&rb_write_cnd);
 		mtx_unlock (&rb_mtx);
 	} while (out_text->str[out_text->size - 1]);
@@ -193,7 +193,7 @@ free_reader (void *data)
 		while (RB_DATA_AVAILABLE (ringbuffer_atomic) < 1) {
 		}
 		unsigned    len = RB_DATA_AVAILABLE (ringbuffer_atomic);
-		RB_READ_DATA (ringbuffer_atomic, dstring_reserve (out_text, len), len);
+		RB_READ_DATA (ringbuffer_atomic, dstring_open (out_text, len), len);
 	} while (out_text->str[out_text->size - 1]);
 
 	return 0;

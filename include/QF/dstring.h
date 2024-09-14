@@ -72,7 +72,7 @@ void dstring_adjust (dstring_t *dstr);
 	\param len		the size of the hole to open.
 	\return			pointer to the beginning of the opened hole.
 */
-char *dstring_reserve (dstring_t *dstr, size_t len);
+char *dstring_open (dstring_t *dstr, size_t len);
 /** Copy len bytes from data into the dstring, replacing any existing data.
 */
 void dstring_copy (dstring_t *dstr, const char *data, size_t len);
@@ -123,7 +123,7 @@ dstring_t *dstring_strdup (const char *str);
 	\return			pointer to the current null terminator or beginning of the
 					opened hole if there was no terminator.
 */
-char *dstring_reservestr (dstring_t *dstr, size_t len);
+char *dstring_openstr (dstring_t *dstr, size_t len);
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.

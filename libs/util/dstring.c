@@ -104,7 +104,7 @@ dstring_adjust (dstring_t *dstr)
 }
 
 VISIBLE char *
-dstring_reserve (dstring_t *dstr, size_t len)
+dstring_open (dstring_t *dstr, size_t len)
 {
 	dstr->size += len;
 	dstring_adjust (dstr);
@@ -225,7 +225,7 @@ dstring_strdup (const char *str)
 }
 
 VISIBLE char *
-dstring_reservestr (dstring_t *dstr, size_t len)
+dstring_openstr (dstring_t *dstr, size_t len)
 {
 	int         pos = dstr->size;
 	if (pos && !dstr->str[pos - 1])

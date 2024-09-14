@@ -1111,7 +1111,7 @@ PL_GetArray (const char *string, hashctx_t **hashctx)
 static void
 write_tabs (dstring_t *dstr, int num)
 {
-	char       *tabs = dstring_reservestr (dstr, num);
+	char       *tabs = dstring_openstr (dstr, num);
 
 	memset (tabs, '\t', num);
 	tabs[num] = 0;
@@ -1120,7 +1120,7 @@ write_tabs (dstring_t *dstr, int num)
 static void
 write_string_len (dstring_t *dstr, const char *str, int len)
 {
-	char       *dst = dstring_reservestr (dstr, len);
+	char       *dst = dstring_openstr (dstr, len);
 	memcpy (dst, str, len);
 	dst[len] = 0;
 }
@@ -1138,7 +1138,7 @@ static void
 write_binary (dstring_t *dstr, byte *binary, int len)
 {
 	int         i;
-	char       *dst = dstring_reservestr (dstr, len * 2);
+	char       *dst = dstring_openstr (dstr, len * 2);
 	for (i = 0; i < len; i++) {
 		*dst++ = to_hex (binary[i] >> 4);
 		*dst++ = to_hex (binary[i]);
@@ -1159,12 +1159,12 @@ write_string (dstring_t *dstr, const char *str)
 		len++;
 	}
 	if (!quoted) {
-		dst = dstring_reservestr (dstr, len);
+		dst = dstring_openstr (dstr, len);
 		strcpy (dst, str);
 		return;
 	}
 	// assume worst case of all octal chars plus two quotes.
-	dst = dstring_reservestr (dstr, len * 4 + 2);
+	dst = dstring_openstr (dstr, len * 4 + 2);
 	*dst++= '\"';
 	while (*str) {
 		if (*str && isascii ((byte) *str) && isprint ((byte) *str)
