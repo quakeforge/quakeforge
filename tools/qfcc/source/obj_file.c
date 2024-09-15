@@ -137,7 +137,7 @@ qfo_encode_defs (qfo_t *qfo, def_t *defs, qfo_def_t **qfo_defs,
 		d->qfo_def = q - qfo->defs;
 		// defs in the type data space do not have types
 		if (d->type)
-			q->type = d->type->type_def->offset;
+			q->type = type_encodings.a[d->type->id]->offset;
 		q->name = ReuseString (d->name);
 		q->offset = d->offset;
 		q->relocs = *qfo_relocs - qfo->relocs;
@@ -299,7 +299,7 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 
 	for (f = functions, q = qfo->funcs; f; f = f->next, q++) {
 		q->name = f->s_name;
-		q->type = f->def->type->type_def->offset;
+		q->type = type_encodings.a[f->def->type->id]->offset;
 		q->file = f->s_file;
 		q->line = f->def->loc.line;
 		q->code = f->code;

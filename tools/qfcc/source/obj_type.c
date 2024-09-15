@@ -194,7 +194,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 	ENC_STR (strct->tag, type->name);
 	strct->num_fields = num_fields;
 
-	((type_t *)type)->type_def = def;	// avoid infinite recursion
+	type_encodings.a[type->id] = def;	// avoid infinite recursion
 
 	field_types = alloca (num_fields * sizeof (def_t *));
 	for (i = 0, sym = type->symtab->symbols; sym; sym = sym->next) {
@@ -205,7 +205,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		if (type->meta != ty_enum) {
 			field_types[i] = qfo_encode_type (sym->type, space);
 		} else {
-			field_types[i] = type_default->type_def;
+			field_types[i] = type_encodings.a[type_default->id];
 		}
 		i++;
 	}
@@ -333,17 +333,16 @@ qfo_encode_type (const type_t *type, defspace_t *space)
 		[ty_bool]    = qfo_encode_basic,
 	};
 
-	if (type->type_def && type->type_def->external) {
-		relocs = type->type_def->relocs;
-		((type_t *) type)->type_def = 0;
+	auto type_def = &type_encodings.a[type->id];
+	if (*type_def && (*type_def)->external) {
+		relocs = type_encodings.a[type->id]->relocs;
+		type_encodings.a[type->id] = nullptr;
 	}
-	if (type->type_def)
-		return type->type_def;
+	if (*type_def)
+		return *type_def;
 	if (type->meta >= sizeof (funcs) / (sizeof (funcs[0])))
 		internal_error (0, "bad type meta type");
-	if (!type->encoding)
-		((type_t *) type)->encoding = type_get_encoding (type);
-	((type_t *) type)->type_def = funcs[type->meta] (type, space);
-	reloc_attach_relocs (relocs, &type->type_def->relocs);
-	return type->type_def;
+	*type_def = funcs[type->meta] (type, space);
+	reloc_attach_relocs (relocs, &(*type_def)->relocs);
+	return *type_def;
 }

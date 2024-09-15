@@ -31,6 +31,7 @@
 #ifndef __type_h
 #define __type_h
 
+#include "QF/darray.h"
 #include "QF/progs/pr_type.h"
 
 #include "specifier.h"
@@ -93,7 +94,6 @@ typedef struct type_s {
 	int         allocated;
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
-	struct def_s *type_def;	///< offset of qfo encodoing
 } type_t;
 
 #define EV_TYPE(type) extern type_t type_##type;
@@ -248,7 +248,12 @@ void chain_initial_types (void);
 
 void clear_typedefs (void);
 
-extern type_t *ev_types[];
+typedef struct def_s def_t;
+
+typedef struct defset_s DARRAY_TYPE (def_t *) defset_t;
+extern defset_t type_encodings; ///< qfo encodoing
+
+extern const type_t *ev_types[];
 extern int type_cast_map[];
 #define TYPE_CAST_CODE(from, to, width) (((width) << 6) | ((from) << 3) | (to))
 

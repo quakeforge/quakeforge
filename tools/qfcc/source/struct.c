@@ -225,9 +225,11 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 	if (alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = alignment;
 	}
-	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
-		((type_t *) sym->type)->type_def = qfo_encode_type (sym->type,
-															pr.type_data);
+	//FIXME should not be necessary
+	if (!type && type_encodings.a[sym->type->id]->external) {
+		unsigned id = sym->type->id;
+		type_encodings.a[id] = qfo_encode_type (sym->type, pr.type_data);
+	}
 	return sym;
 }
 

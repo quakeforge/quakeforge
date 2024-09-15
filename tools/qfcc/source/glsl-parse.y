@@ -892,10 +892,10 @@ type_specifier
 	;
 
 array_specifier
-	: array_size				{ $$ = (type_t *) array_type (nullptr, $1); }
+	: array_size				{ $$ = array_type (nullptr, $1); }
 	| array_specifier array_size
 		{
-			$$ = (type_t *) append_type ($1, array_type (nullptr, $2));
+			$$ = append_type ($1, array_type (nullptr, $2));
 		}
 	;
 

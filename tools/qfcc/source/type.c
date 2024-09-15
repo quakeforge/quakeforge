@@ -206,7 +206,7 @@ type_t      type_floatfield = {
 };
 
 #define EV_TYPE(type) &type_##type,
-type_t     *ev_types[ev_type_count] = {
+const type_t *ev_types[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
 	&type_invalid,
 };
@@ -222,9 +222,10 @@ int type_cast_map[ev_type_count] = {
 	//[ev_bool64] = 7,
 };
 
+defset_t type_encodings = DARRAY_STATIC_INIT (64);
+
 ALLOC_STATE (type_t, types);
 
-static unsigned type_id_number;
 static hashtab_t *type_tab;
 
 etype_t
@@ -265,13 +266,13 @@ chain_type (type_t *type)
 	if (type->id) {
 		internal_error (0, "type already has id");
 	}
-	type->id = ++type_id_number;
+	type->id = type_encodings.size;
+	DARRAY_APPEND (&type_encodings, nullptr);
 	type->next = pr.types;
 	pr.types = type;
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);
-	if (!type->type_def)
-		type->type_def = qfo_encode_type (type, pr.type_data);
+	type_encodings.a[type->id] = qfo_encode_type (type, pr.type_data);
 	Hash_Add (type_tab, type);
 }
 
@@ -677,7 +678,7 @@ matrix_type (const type_t *ele_type, int cols, int rows)
 		return nullptr;
 	}
 	if (rows == 1 && cols == 1) {
-		for (type_t **t = ev_types; t - ev_types < ev_type_count; t++) {
+		for (auto t = ev_types; t - ev_types < ev_type_count; t++) {
 			if ((*t)->type == ele_type->type && (*t)->width == 1) {
 				return *t;
 			}
@@ -687,7 +688,7 @@ matrix_type (const type_t *ele_type, int cols, int rows)
 		// no horizontal matrices
 		return nullptr;
 	}
-	for (type_t **mtype = matrix_types; *mtype; mtype++) {
+	for (auto mtype = matrix_types; *mtype; mtype++) {
 		if ((*mtype)->meta == ele_type->meta
 			&& (*mtype)->type == ele_type->type
 			&& (*mtype)->width == rows
@@ -1633,6 +1634,9 @@ type_aligned_size (const type_t *type)
 static void
 chain_basic_types (void)
 {
+	type_encodings.size = 0;
+	DARRAY_APPEND (&type_encodings, nullptr);
+
 	type_entity.symtab = pr.entity_fields;
 	if (options.code.progsversion == PROG_VERSION) {
 		type_quaternion.alignment = 4;

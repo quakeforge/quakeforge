@@ -124,7 +124,6 @@ InitData (void)
 	for (type = pr.types; type; type = ntype) {
 		ntype = type->next;
 		free_type (type);
-		type->type_def = 0;
 	}
 
 	if (pr.code) {

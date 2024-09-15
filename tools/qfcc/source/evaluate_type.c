@@ -140,7 +140,8 @@ tf_gentype_func (progs_t *pr, void *data)
 		error (ctx->expr, "refernce to unresolved type");
 		Sys_longjmp (ctx->jmpbuf);
 	}
-	R_POINTER (pr) = type->type_def->offset;
+	auto type_def = type_encodings.a[type->id];
+	R_POINTER (pr) = type_def->offset;
 }
 
 #define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)

@@ -876,7 +876,8 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 			internal_error (arg, "no type in reference");
 		}
 		auto val = compute_tmp (ctx);
-		D_INT (val) = arg->typ.type->type_def->offset;
+		auto type_def = type_encodings.a[arg->typ.type->id];
+		D_INT (val) = type_def->offset;
 		return val;
 	}
 	int         op = arg->typ.op;
