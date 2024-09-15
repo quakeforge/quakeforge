@@ -224,6 +224,7 @@ int type_cast_map[ev_type_count] = {
 
 ALLOC_STATE (type_t, types);
 
+static unsigned type_id_number;
 static hashtab_t *type_tab;
 
 etype_t
@@ -258,8 +259,13 @@ type_get_encoding (const type_t *type)
 void
 chain_type (type_t *type)
 {
-	if (type->next)
+	if (type->next) {
 		internal_error (0, "type already chained");
+	}
+	if (type->id) {
+		internal_error (0, "type already has id");
+	}
+	type->id = ++type_id_number;
 	type->next = pr.types;
 	pr.types = type;
 	if (!type->encoding)
@@ -284,8 +290,10 @@ free_type (type_t *type)
 {
 	if (!type)
 		return;
-	if (!type->allocated)		// for statically allocated types
+	if (!type->allocated) {		// for statically allocated types
 		type->next = 0;
+		type->id = 0;
+	}
 	if (!type->freeable)
 		return;
 	switch (type->type) {

@@ -67,6 +67,7 @@ typedef struct ty_alias_s {
 
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
+	unsigned    id;			///< internal id for registerd types
 	const char *name;
 	int         alignment;	///< required alignment for instances
 	int         width;		///< components in vector types, otherwise 1
@@ -90,7 +91,6 @@ typedef struct type_s {
 	struct type_s *next;
 	int         freeable;
 	int         allocated;
-	int         printid;	///< for dot output
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
 	struct def_s *type_def;	///< offset of qfo encodoing
