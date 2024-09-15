@@ -2676,7 +2676,7 @@ component_compare (int op, const expr_t *e1, const expr_t *e2, algebra_t *alg)
 	auto t = get_type (e1 ? e1 : e2);
 	auto stype = alg->type;
 	auto vtype = vector_type (stype, type_width (t));
-	pr_type_t zero[type_size (vtype)];
+	pr_type_t zero[type_size (vtype)] = {};
 	if (!e1) {
 		e1 = new_value_expr (new_type_value (vtype, zero), false);
 	} else {
