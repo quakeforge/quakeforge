@@ -75,6 +75,7 @@ typedef struct pr_info_s {
 	struct DARRAY_TYPE (const char *) comp_files;
 	const char *comp_dir;
 	const char *unit_name;
+	const char *src_name;				///< main source file name
 
 	struct symtab_s *symtab;
 	struct symtab_s *entity_fields;

@@ -522,6 +522,9 @@ parse_code_option (const char *opt)
 			options.code.progsversion = PROG_V6P_VERSION;
 		} else if (!strcasecmp (tgt, "ruamoko")) {
 			options.code.progsversion = PROG_VERSION;
+		} else if (!strcasecmp (tgt, "spir-v")) {
+			options.code.progsversion = PROG_VERSION;
+			options.code.spirv = true;
 		} else {
 			fprintf (stderr, "unknown target: %s\n", tgt);
 			exit (1);

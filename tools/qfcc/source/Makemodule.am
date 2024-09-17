@@ -71,6 +71,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/qp-parse.y  \
 	tools/qfcc/source/reloc.c \
 	tools/qfcc/source/shared.c \
+	tools/qfcc/source/spirv.c \
 	tools/qfcc/source/statements.c \
 	tools/qfcc/source/strpool.c \
 	tools/qfcc/source/struct.c \

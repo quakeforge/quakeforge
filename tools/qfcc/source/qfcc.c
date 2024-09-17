@@ -86,6 +86,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
@@ -389,6 +390,7 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
+	pr.src_name = save_string (file);
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
 	lang->initialized = false;
@@ -411,9 +413,13 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 		}
 		err = pr.error_count;
 		if (!err) {
-			qfo = qfo_from_progs (&pr);
-			err = qfo_write (qfo, obj);
-			qfo_delete (qfo);
+			if (options.code.spirv) {
+				err = spirv_write (&pr, obj);
+			} else {
+				qfo = qfo_from_progs (&pr);
+				err = qfo_write (qfo, obj);
+				qfo_delete (qfo);
+			}
 		}
 	}
 	return err;
@@ -554,7 +560,11 @@ separate_compile (void)
 			} else {
 				dstring_copysubstr (output_file, base, ext - base);
 			}
-			dstring_appendstr (output_file, ".qfo");
+			if (options.code.spirv) {
+				dstring_appendstr (output_file, ".spv");
+			} else {
+				dstring_appendstr (output_file, ".qfo");
+			}
 		}
 		// need *file for checking -lfoo
 		auto lang = file_language (*file, extension->str);

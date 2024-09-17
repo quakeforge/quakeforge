@@ -120,8 +120,10 @@ typedef struct def_s {
 	void       *free_addr;		///< who freed this
 } def_t;
 
-#define D_PACKED(t,d)		(*(t *) &(d)->space->data[(d)->offset])
-#define D_var(t, d)			D_PACKED (pr_##t##_t, d)
+#define D_packed(t,d,o)		(*(t *) &(d)->space->data[(d)->offset + (o)])
+#define D_PACKED(t,d)		D_packed (t, d, 0)
+#define D_var_o(t,d,o)		D_packed (pr_##t##_t, d, o)
+#define D_var(t,d)			D_var_o (t, d, 0)
 #define	D_DOUBLE(d)			D_var (double, d)
 #define	D_FLOAT(d)			D_var (float, d)
 #define	D_INT(d)			D_var (int, d)

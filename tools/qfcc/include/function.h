@@ -89,6 +89,7 @@ typedef enum {
 */
 typedef struct function_s {
 	struct function_s  *next;
+	const char         *o_name;
 	int                 builtin;	///< if non 0, call an internal function
 	int                 code;		///< first statement
 	int                 function_num;

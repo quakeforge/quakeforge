@@ -133,6 +133,7 @@ typedef struct sblock_s {
 	int         offset;			///< offset of first statement of block
 	int         reachable;
 	int         number;			///< number of this block in flow graph
+	unsigned    id;				///< label id for this block (spir-v)
 	statement_t *statements;
 	statement_t **tail;
 } sblock_t;

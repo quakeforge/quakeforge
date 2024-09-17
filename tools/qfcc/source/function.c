@@ -1130,6 +1130,7 @@ new_function (const char *name, const char *nice_name)
 	function_t	*f;
 
 	ALLOC (1024, function_t, functions, f);
+	f->o_name = save_string (name);
 	f->s_name = ReuseString (name);
 	f->s_file = pr.loc.file;
 	if (!(f->name = nice_name))
