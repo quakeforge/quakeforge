@@ -525,6 +525,7 @@ parse_code_option (const char *opt)
 		} else if (!strcasecmp (tgt, "spir-v")) {
 			options.code.progsversion = PROG_VERSION;
 			options.code.spirv = true;
+			options.code.no_vararg = true;
 		} else {
 			fprintf (stderr, "unknown target: %s\n", tgt);
 			exit (1);

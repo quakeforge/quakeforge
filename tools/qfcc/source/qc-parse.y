@@ -757,7 +757,13 @@ qc_first_param
 		{
 			$$ = make_qc_func_param ($1, $2, $3);
 		}
-	| ELLIPSIS	{ $$ = make_ellipsis (); }
+	| ELLIPSIS
+		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = make_ellipsis ();
+		}
 	;
 
 qc_param
@@ -769,7 +775,13 @@ qc_param
 		{
 			$$ = make_qc_func_param ($1, $2, $3);
 		}
-	| ELLIPSIS	{ $$ = make_ellipsis (); }
+	| ELLIPSIS
+		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = make_ellipsis ();
+		}
 	;
 
 /*	This rule is used only to get an action before both qc_func_decl and
@@ -1507,10 +1519,16 @@ param_list
 	| parameter_list
 	| parameter_list ',' ELLIPSIS
 		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
 			$$ = param_append_identifiers ($1, 0, 0);
 		}
 	| ELLIPSIS
 		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
 			$$ = make_ellipsis ();
 		}
 	;

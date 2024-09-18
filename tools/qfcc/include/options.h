@@ -55,6 +55,7 @@ typedef struct {
 	bool        assoc_float_mul;	// allow fp multiplication to be associative
 	bool        no_double;			// double fp type is not supported
 	bool        no_int;				// int type is not supported
+	bool        no_vararg;			// variadic functions (...) not supported
 
 	bool        help;
 } code_options_t;
