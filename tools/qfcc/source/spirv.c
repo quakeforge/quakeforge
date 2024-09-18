@@ -36,6 +36,7 @@
 
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/spirv.h"
@@ -179,6 +180,19 @@ spirv_TypeMatrix (unsigned col_type, unsigned columns, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
+{
+	auto rtype = dereference_type (type);
+	unsigned rid = type_id (rtype, ctx);
+
+	auto def = spirv_new_insn (SpvOpTypePointer, 4, ctx->types);
+	D_var_o(int, def, 1) = spirv_id (ctx);
+	D_var_o(int, def, 2) = SpvStorageClassFunction;//FIXME
+	D_var_o(int, def, 3) = rid;
+	return D_var_o(int, def, 1);
+}
+
+static unsigned
 spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 {
 	auto symtab = type->symtab;
@@ -197,6 +211,8 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	D_var_o(int, def, 1) = id;
 	memcpy (&D_var_o(int, def, 2), member_types, sizeof (member_types));
 
+	spirv_Name (id, type->name + 4, ctx);
+
 	num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
 		int m = num_members++;
@@ -206,26 +222,32 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_TypeFunction (const type_t *type, spirvctx_t *ctx)
+spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 {
-	int num_params = type->func.num_params;
-	if (num_params < 0) {
-		//FIXME no vararg functions?
-		num_params = ~num_params;
+	int num_params = 0;
+	for (auto p = fsym->params; p; p = p->next) {
+		num_params++;
 	}
-	unsigned ret_type = type_id (type->func.ret_type, ctx);
+	unsigned ret_type = type_id (fsym->type->func.ret_type, ctx);
+
 	unsigned param_types[num_params];
-	for (int i = 0; i < num_params; i++) {
-		param_types[i] = type_id (type->func.param_types[i], ctx);
+	num_params = 0;
+	for (auto p = fsym->params; p; p = p->next) {
+		auto ptype = p->type;
+		if (p->qual != pq_const) {
+			ptype = pointer_type (ptype);
+		}
+		param_types[num_params++] = type_id (ptype, ctx);
 	}
 
+	unsigned ft_id = spirv_id (ctx);
 	auto def = spirv_new_insn (SpvOpTypeFunction, 3 + num_params, ctx->types);
-	D_var_o(int, def, 1) = spirv_id (ctx);
+	D_var_o(int, def, 1) = ft_id;
 	D_var_o(int, def, 2) = ret_type;
 	for (int i = 0; i < num_params; i++) {
 		D_var_o(int, def, 3 + i) = param_types[i];
 	}
-	return D_var_o(int, def, 1);
+	return ft_id;
 }
 
 static unsigned
@@ -244,19 +266,6 @@ type_id (const type_t *type, spirvctx_t *ctx)
 	unsigned id = 0;
 	if (is_void (type)) {
 		id = spirv_TypeVoid (ctx);
-	} else if (is_int (type)) {
-		id = spirv_TypeInt (32, true, ctx);
-	} else if (is_uint (type)) {
-		id = spirv_TypeInt (32, false, ctx);
-	} else if (is_float (type) && type->width == 1) {
-		id = spirv_TypeFloat (32, ctx);
-	} else if (is_float (type) && type_cols (type) == 1) {
-		unsigned fid = type_id (&type_float, ctx);
-		id = spirv_TypeVector (fid, type->width, ctx);
-	} else if (is_float (type)) {
-		auto ctype = vector_type (&type_float, type_rows (type));
-		unsigned cid = type_id (ctype, ctx);
-		id = spirv_TypeMatrix (cid, type_cols (type), ctx);
 	} else if (is_vector (type)) {
 		// spir-v doesn't allow duplicate non-aggregate types, so emit
 		// vector as vec3
@@ -267,10 +276,35 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		// quaternion as vec4
 		auto qtype = vector_type (&type_float, 4);
 		id = type_id (qtype, ctx);
+	} else if (type_cols (type) > 1) {
+		auto ctype = vector_type (base_type (type), type_rows (type));
+		unsigned cid = type_id (ctype, ctx);
+		id = spirv_TypeMatrix (cid, type_cols (type), ctx);
+	} else if (type_width (type) > 1) {
+		auto btype = base_type (type);
+		unsigned bid = type_id (btype, ctx);
+		id = spirv_TypeVector (bid, type_width (type), ctx);
+	} else if (is_int (type)) {
+		id = spirv_TypeInt (32, true, ctx);
+	} else if (is_uint (type)) {
+		id = spirv_TypeInt (32, false, ctx);
+	} else if (is_long (type)) {
+		id = spirv_TypeInt (64, true, ctx);
+	} else if (is_ulong (type)) {
+		id = spirv_TypeInt (64, false, ctx);
+	} else if (is_float (type)) {
+		id = spirv_TypeFloat (32, ctx);
+	} else if (is_double (type)) {
+		id = spirv_TypeFloat (64, ctx);
+	} else if (is_ptr (type)) {
+		id = spirv_TypePointer (type, ctx);
 	} else if (is_struct (type)) {
 		id = spirv_TypeStruct (type, ctx);
-	} else if (is_func (type)) {
-		id = spirv_TypeFunction (type, ctx);
+	}
+	if (!id) {
+		dstring_t  *str = dstring_newstr ();
+		print_type_str (str, type);
+		internal_error (0, "can't emit type %s", str->str);
 	}
 
 	ctx->type_ids.a[type->id] = id;
@@ -311,16 +345,22 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
+	unsigned ft_id = spirv_TypeFunction (func->sym, ctx);
+
 	unsigned func_id = spirv_id (ctx);
 	auto def = spirv_new_insn (SpvOpFunction, 5, ctx->code);
 	D_var_o(int, def, 1) = type_id (func->type->func.ret_type, ctx);
 	D_var_o(int, def, 2) = func_id;
 	D_var_o(int, def, 3) = 0;
-	D_var_o(int, def, 4) = type_id (func->type, ctx);
+	D_var_o(int, def, 4) = ft_id;
 	spirv_Name (func_id, GETSTR (func->s_name), ctx);
 
-	for (auto p = func->parameters->symbols; p; p = p->next) {
-		spirv_FunctionParameter (p->name, p->type, ctx);
+	for (auto p = func->sym->params; p; p = p->next) {
+		auto ptype = p->type;
+		if (p->qual != pq_const) {
+			ptype = pointer_type (ptype);
+		}
+		spirv_FunctionParameter (p->name, ptype, ctx);
 	}
 
 	if (!func->sblock) {
