@@ -86,6 +86,13 @@ set_pool_init (set_pool_t *set_pool)
 	};
 }
 
+void
+set_pool_clear (set_pool_t *set_pool)
+{
+	ALLOC_FREE_BLOCKS (set_pool->set);
+	ALLOC_FREE_BLOCKS (set_pool->set_iter);
+}
+
 inline set_t *
 set_new_r (set_pool_t *set_pool)
 {
@@ -835,8 +842,7 @@ set_as_string (const set_t *set)
 static void
 set_shutdown (void *data)
 {
-	ALLOC_FREE_BLOCKS (static_set_pool.set);
-	ALLOC_FREE_BLOCKS (static_set_pool.set_iter);
+	set_pool_clear (&static_set_pool);
 }
 
 static void __attribute__((constructor))
