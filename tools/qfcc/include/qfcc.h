@@ -93,6 +93,8 @@ typedef struct pr_info_s {
 	struct pr_lineno_s *linenos;
 	int             linenos_size;
 	int             num_linenos;
+
+	struct module_s *module;
 } pr_info_t;
 
 extern	pr_info_t	pr;

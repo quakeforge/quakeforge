@@ -30,8 +30,6 @@
 
 #include <string.h>
 
-#include <spirv/unified1/spirv.h>
-
 #include "QF/quakeio.h"
 
 #include "tools/qfcc/include/def.h"
@@ -409,11 +407,13 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	D_var_o(int, header, 3) = 0;	// Filled in later
 	D_var_o(int, header, 4) = 0;	// Reserved
 
+	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
+		spirv_Capability (expr_uint (cap->expr), ctx.space);
+	}
+
 	//FIXME none of these should be hard-coded
-	spirv_Capability (SpvCapabilityShader, ctx.space);
-	//spirv_Capability (SpvCapabilityLinkage, ctx.space);
-	spirv_MemoryModel (SpvAddressingModelLogical, SpvMemoryModelGLSL450,
-					   ctx.space);
+	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
+					   expr_uint (pr->module->memory_model), ctx.space);
 
 	auto srcid = spirv_String (pr->src_name, &ctx);
 	spirv_Source (0, 1, srcid, nullptr, &ctx);
@@ -441,4 +441,23 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	Qwrite (file, ctx.space->data, ctx.space->size * sizeof (pr_type_t));
 	Qclose (file);
 	return false;
+}
+
+void
+spirv_add_capability (module_t *module, SpvCapability capability)
+{
+	auto cap = new_uint_expr (capability);
+	list_append (&module->capabilities, cap);
+}
+
+void
+spirv_set_addressing_model (module_t *module, SpvAddressingModel model)
+{
+	module->addressing_model = new_uint_expr (model);
+}
+
+void
+spirv_set_memory_model (module_t *module, SpvMemoryModel model)
+{
+	module->memory_model = new_uint_expr (model);
 }

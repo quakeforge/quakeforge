@@ -28,6 +28,37 @@
 #ifndef __spirv_h
 #define __spirv_h
 
+#include <spirv/unified1/spirv.h>
+
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/expr.h"
+
+typedef struct entrypoint_s {
+	struct entrypoint_s *next;
+	SpvExecutionModel model;
+	const char *name;
+	attribute_t *modes;
+	ex_list_t   interface;			///< list of symbols forming interface
+} entrypoint_t;
+
+typedef struct module_s {
+	ex_list_t   capabilities;
+	ex_list_t   extensions;
+	ex_list_t   extinst_imports;
+	const expr_t *addressing_model;
+	const expr_t *memory_model;
+	entrypoint_t *entry_points;
+	defspace_t *strings;
+	defspace_t *names;
+	defspace_t *decorations;
+	defspace_t *globals;
+	defspace_t *func_import;
+	defspace_t *func_code;
+} module_t;
+
+void spirv_add_capability (module_t *module, SpvCapability capability);
+void spirv_set_addressing_model (module_t *module, SpvAddressingModel model);
+void spirv_set_memory_model (module_t *module, SpvMemoryModel model);
 bool spirv_write (struct pr_info_s *pr, const char *filename);
 
 #endif//__spirv_h

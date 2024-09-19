@@ -30,7 +30,9 @@
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
+#include "tools/qfcc/include/spirv.h"
 
 #define SRC_LINE_EXP2(l,f) "#line " #l " " #f "\n"
 #define SRC_LINE_EXP(l,f) SRC_LINE_EXP2(l,f)
@@ -915,6 +917,12 @@ glsl_parse_vars (const char *var_src)
 static void
 glsl_init_common (void)
 {
+	static module_t module;		//FIXME probably not what I want
+	pr.module = &module;
+
+	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
+	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+
 	current_language.initialized = true;
 	glsl_block_clear ();
 	qc_parse_string (glsl_general_functions);
@@ -926,6 +934,8 @@ glsl_init_comp (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_compute_vars);
+
+	spirv_add_capability (pr.module, SpvCapabilityShader);
 }
 
 void
@@ -933,6 +943,8 @@ glsl_init_vert (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_Vulkan_vertex_vars);
+
+	spirv_add_capability (pr.module, SpvCapabilityShader);
 }
 
 void
@@ -940,6 +952,8 @@ glsl_init_tesc (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_tesselation_control_vars);
+
+	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 }
 
 void
@@ -947,6 +961,8 @@ glsl_init_tese (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_tesselation_evaluation_vars);
+
+	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 }
 
 void
@@ -955,6 +971,8 @@ glsl_init_geom (void)
 	glsl_init_common ();
 	glsl_parse_vars (glsl_geometry_vars);
 	qc_parse_string (glsl_geometry_functions);
+
+	spirv_add_capability (pr.module, SpvCapabilityGeometry);
 }
 
 void
@@ -962,4 +980,6 @@ glsl_init_frag (void)
 {
 	glsl_init_common ();
 	glsl_parse_vars (glsl_fragment_vars);
+
+	spirv_add_capability (pr.module, SpvCapabilityShader);
 }

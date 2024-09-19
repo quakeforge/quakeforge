@@ -73,6 +73,7 @@
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/switch.h"
@@ -3086,7 +3087,24 @@ static int qc_finish (const char *file)
 	return pr.error_count;
 }
 
+static void
+rua_init (void)
+{
+	current_language.initialized = true;
+	if (options.code.spirv) {
+		static module_t module;		//FIXME probably not what I want
+		pr.module = &module;
+
+		spirv_add_capability (pr.module, SpvCapabilityShader);
+		//FIXME sufficient? phys 32/storage?
+		spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
+		//FIXME look into Vulkan, or even configurable
+		spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+	}
+}
+
 language_t lang_ruamoko = {
+	.init = rua_init,
 	.parse = qc_yyparse,
 	.finish = qc_finish,
 };
