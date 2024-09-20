@@ -43,11 +43,13 @@ ALLOC_STATE (attribute_t, attributes);
 attribute_t *
 new_attribute(const char *name, const expr_t *params)
 {
-	if (params && params->type != ex_list) {
+	if (params
+		&& params->type != ex_list
+		&& params->type != ex_value) {
 		internal_error (params, "attribute params not a list");
 	}
 	bool err = false;
-	if (params) {
+	if (params && params->type == ex_list) {
 		for (auto p = params->list.head; p; p = p->next) {
 			auto e = p->expr;
 			if (e->type == ex_expr) {
