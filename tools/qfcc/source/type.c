@@ -1706,7 +1706,7 @@ build_vector_struct (type_t *type)
 	auto ele_type = base_type (type);
 	int         width = type_width (type);
 
-	if (!ele_type || width < 2) {
+	if (!ele_type || width < 2 || width > 4) {
 		internal_error (0, "%s not a vector type: %p %d", type->name, ele_type, width);
 	}
 
