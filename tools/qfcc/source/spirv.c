@@ -64,6 +64,18 @@ spirv_new_insn (int op, int size, defspace_t *space)
 	return def;
 }
 
+static def_t *
+spirv_str_insn (int op, int offs, int extra, const char *str, defspace_t *space)
+{
+	int len = strlen (str) + 1;
+	int str_size = RUP(len, 4) / 4;
+	int size = offs + str_size + extra;
+	auto def = spirv_new_insn (op, size, space);
+	D_var_o(int, def, str_size - 1) = 0;
+	memcpy (&D_var_o(int, def, offs), str, len);
+	return def;
+}
+
 static unsigned
 spirv_id (spirvctx_t *ctx)
 {
@@ -78,6 +90,21 @@ spirv_Capability (SpvCapability capability, defspace_t *space)
 }
 
 static void
+spirv_Extension (const char *ext, defspace_t *space)
+{
+	spirv_str_insn (SpvOpExtension, 1, 0, ext, space);
+}
+
+static unsigned
+spirv_ExtInstImport (const char *imp, spirvctx_t *ctx)
+{
+	auto def = spirv_str_insn (SpvOpExtInstImport, 2, 0, imp, ctx->space);
+	int id = spirv_id (ctx);
+	D_var_o(int, def, 1) = id;
+	return id;
+}
+
+static void
 spirv_MemoryModel (SpvAddressingModel addressing, SpvMemoryModel memory,
 				   defspace_t *space)
 {
@@ -89,11 +116,9 @@ spirv_MemoryModel (SpvAddressingModel addressing, SpvMemoryModel memory,
 static unsigned
 spirv_String (const char *name, spirvctx_t *ctx)
 {
+	auto def = spirv_str_insn (SpvOpString, 2, 0, name, ctx->strings);
 	int id = spirv_id (ctx);
-	int len = strlen (name) + 1;
-	auto def = spirv_new_insn (SpvOpString, 2 + RUP(len, 4) / 4, ctx->strings);
 	D_var_o(int, def, 1) = id;
-	memcpy (&D_var_o(int, def, 2), name, len);
 	return id;
 }
 
@@ -410,8 +435,14 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
 		spirv_Capability (expr_uint (cap->expr), ctx.space);
 	}
+	for (auto ext = pr->module->extensions.head; ext; ext = ext->next) {
+		spirv_Extension (expr_string (ext->expr), ctx.space);
+	}
+	for (auto imp = pr->module->extinst_imports.head; imp; imp = imp->next) {
+		//FIXME need to store id where it can be used for instructions
+		spirv_ExtInstImport (expr_string (imp->expr), &ctx);
+	}
 
-	//FIXME none of these should be hard-coded
 	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
 					   expr_uint (pr->module->memory_model), ctx.space);
 
@@ -448,6 +479,20 @@ spirv_add_capability (module_t *module, SpvCapability capability)
 {
 	auto cap = new_uint_expr (capability);
 	list_append (&module->capabilities, cap);
+}
+
+void
+spirv_add_extension (module_t *module, const char *extension)
+{
+	auto ext = new_string_expr (extension);
+	list_append (&module->extensions, ext);
+}
+
+void
+spirv_add_extinst_import (module_t *module, const char *import)
+{
+	auto imp = new_string_expr (import);
+	list_append (&module->extinst_imports, imp);
 }
 
 void

@@ -3096,6 +3096,9 @@ rua_init (void)
 		pr.module = &module;
 
 		spirv_add_capability (pr.module, SpvCapabilityShader);
+		//FIXME unhardcode
+		spirv_add_extension (pr.module, "SPV_KHR_multiview");
+		spirv_add_extinst_import (pr.module, "GLSL.std.450");
 		//FIXME sufficient? phys 32/storage?
 		spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
 		//FIXME look into Vulkan, or even configurable

@@ -57,6 +57,8 @@ typedef struct module_s {
 } module_t;
 
 void spirv_add_capability (module_t *module, SpvCapability capability);
+void spirv_add_extension (module_t *module, const char *extension);
+void spirv_add_extinst_import (module_t *module, const char *import);
 void spirv_set_addressing_model (module_t *module, SpvAddressingModel model);
 void spirv_set_memory_model (module_t *module, SpvMemoryModel model);
 bool spirv_write (struct pr_info_s *pr, const char *filename);
