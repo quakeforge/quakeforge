@@ -861,7 +861,7 @@ emit_ivar_list_item (def_t *def, void *data, int index)
 						__FUNCTION__, index, ivar_data->count);
 
 	for (ivar_sym = ivar_data->ivars; ivar_sym; ivar_sym = ivar_sym->next) {
-		if (ivar_sym->sy_type != sy_var)
+		if (ivar_sym->sy_type != sy_offset)
 			continue;
 		if (!index--)
 			break;
@@ -893,7 +893,7 @@ emit_ivars (symtab_t *ivars, const char *name)
 	if (ivars) {
 		ivar_data.ivars = ivars->symbols;
 		for (s = ivars->symbols; s; s = s->next)
-			if (s->sy_type == sy_var)
+			if (s->sy_type == sy_offset)
 				ivar_data.count++;
 	}
 	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
@@ -1979,7 +1979,7 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 		self_expr = cast_expr (class_ptr, self_expr);
 	}
 	for (sym = ivar_scope->symbols; sym; sym = sym->next) {
-		if (sym->sy_type != sy_var)
+		if (sym->sy_type != sy_offset)
 			continue;
 		sym->sy_type = sy_convert;
 		sym->convert.conv = class_dereference_ivar;

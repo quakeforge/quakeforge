@@ -964,7 +964,7 @@ is_constant (const expr_t *e)
 	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_const)
-		|| (e->type == ex_symbol && e->symbol->sy_type == sy_var
+		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def
 			&& e->symbol->def->constant))
 		return 1;
 	return 0;
@@ -977,7 +977,7 @@ is_variable (const expr_t *e)
 		e = e->alias.expr;
 	}
 	if (e->type == ex_def
-		|| (e->type == ex_symbol && e->symbol->sy_type == sy_var)
+		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def)
 		|| e->type == ex_temp) {
 		return 1;
 	}
@@ -1005,7 +1005,7 @@ constant_expr (const expr_t *e)
 	sym = e->symbol;
 	if (sym->sy_type == sy_const) {
 		value = sym->value;
-	} else if (sym->sy_type == sy_var && sym->def->constant) {
+	} else if (sym->sy_type == sy_def && sym->def->constant) {
 		//FIXME pointers and fields
 		internal_error (e, "what to do here?");
 		//memset (&value, 0, sizeof (value));
@@ -1083,7 +1083,7 @@ expr_double (const expr_t *e)
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_double)
 		return e->symbol->value->double_val;
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& is_double (e->symbol->def->type))
 		return D_DOUBLE (e->symbol->def);
@@ -1100,7 +1100,7 @@ expr_float (const expr_t *e)
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_float)
 		return e->symbol->value->float_val;
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& is_float (e->symbol->def->type))
 		return D_FLOAT (e->symbol->def);
@@ -1130,7 +1130,7 @@ expr_vector (const expr_t *e)
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_vector)
 		return e->symbol->value->vector_val;
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& e->symbol->def->type->type == ev_vector)
 		return D_VECTOR (e->symbol->def);
@@ -1160,7 +1160,7 @@ expr_quaternion (const expr_t *e)
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_quaternion)
 		return e->symbol->value->quaternion_val;
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& e->symbol->def->type->type == ev_quaternion)
 		return D_QUAT (e->symbol->def);
@@ -1208,7 +1208,7 @@ expr_int (const expr_t *e)
 			|| is_enum (e->symbol->type))) {
 		return e->symbol->value->int_val;
 	}
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& is_integral (e->symbol->def->type)) {
 		return D_INT (e->symbol->def);
@@ -1253,7 +1253,7 @@ expr_uint (const expr_t *e)
 		&& e->symbol->type->type == ev_uint) {
 		return e->symbol->value->uint_val;
 	}
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_var
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
 		&& is_integral (e->symbol->def->type)) {
 		return D_INT (e->symbol->def);
@@ -2992,7 +2992,7 @@ address_expr (const expr_t *e1, const type_t *t)
 			}
 			break;
 		case ex_symbol:
-			if (e1->symbol->sy_type == sy_var) {
+			if (e1->symbol->sy_type == sy_def) {
 				auto def = e1->symbol->def;
 				auto type = def->type;
 
@@ -3268,7 +3268,7 @@ think_expr (symbol_t *think_sym)
 		return new_symbol_expr (think_sym);
 
 	sym = symtab_lookup (current_symtab, "think");
-	if (sym && sym->sy_type == sy_var && sym->type
+	if (sym && sym->sy_type == sy_def && sym->type
 		&& sym->type->type == ev_field
 		&& sym->type->fldptr.type->type == ev_func) {
 		think_sym->type = sym->type->fldptr.type;

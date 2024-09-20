@@ -1537,7 +1537,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 		auto parameters = v6p ? current_func->locals : current_func->parameters;
 		int ind = 0;
 		for (auto p = parameters->symbols; p; p = p->next, ind++) {
-			if (p->sy_type != sy_var || !p->def->out_param) {
+			if (p->sy_type != sy_def || !p->def->out_param) {
 				continue;
 			}
 			auto type = p->def->type;
@@ -2023,7 +2023,7 @@ expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	symbol_t   *sym = e->symbol;
 
-	if (sym->sy_type == sy_var) {
+	if (sym->sy_type == sy_def) {
 		*op = def_operand (sym->def, sym->type, e);
 	} else if (sym->sy_type == sy_const) {
 		*op = value_operand (sym->value, e);

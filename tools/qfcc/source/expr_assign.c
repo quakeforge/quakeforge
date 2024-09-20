@@ -90,8 +90,9 @@ is_lvalue (const expr_t *expr)
 		case ex_symbol:
 			switch (expr->symbol->sy_type) {
 				case sy_name:
+				case sy_offset:
 					break;
-				case sy_var:
+				case sy_def:
 					return !expr->symbol->def->readonly;
 				case sy_const:
 					break;

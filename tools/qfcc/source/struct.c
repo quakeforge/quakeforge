@@ -172,7 +172,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 		return sym;
 	}
 	for (s = symtab->symbols; s; s = s->next) {
-		if (s->sy_type != sy_var)
+		if (s->sy_type != sy_offset)
 			continue;
 		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
@@ -201,7 +201,8 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 			}
 			anonymous = s->type->symtab;
 			for (as = anonymous->symbols; as; as = as->next) {
-				if (as->visibility == vis_anonymous || as->sy_type!= sy_var) {
+				if (as->visibility == vis_anonymous
+					|| as->sy_type != sy_offset) {
 					continue;
 				}
 				if (Hash_Find (symtab->tab, as->name)) {
@@ -353,7 +354,7 @@ make_structure (const char *name, int su, struct_def_t *defs,
 		strct = new_symtab (0, stab_struct);
 	while (defs->name) {
 		field = new_symbol_type (defs->name, defs->type);
-		field->sy_type = sy_var;
+		field->sy_type = sy_offset;
 		if (!symtab_addsymbol (strct, field))
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;

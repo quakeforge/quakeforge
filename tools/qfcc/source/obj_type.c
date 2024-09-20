@@ -174,7 +174,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 	int         size;
 	int         offset;
 
-	sy = sy_var;
+	sy = sy_offset;
 	if (type->meta == ty_enum)
 		sy = sy_const;
 	if (!type->symtab) {

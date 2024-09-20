@@ -35,7 +35,8 @@
 #endif
 
 SY_TYPE(name)					///< just a name (referent tbd)
-SY_TYPE(var)					///< symbol refers to a variable
+SY_TYPE(offset)					///< symbol refers to a variable (struct member)
+SY_TYPE(def)					///< symbol refers to a variable
 SY_TYPE(const)					///< symbol refers to a constant
 SY_TYPE(type)					///< symbol refers to a type
 SY_TYPE(type_param)				///< symbol refers to a generic type parameter

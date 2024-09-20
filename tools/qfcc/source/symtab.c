@@ -239,7 +239,7 @@ make_symbol (const char *name, const type_t *type, defspace_t *space,
 		sym->def = new_def (name, type, space, storage);
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
-	sym->sy_type = sy_var;
+	sym->sy_type = sy_def;
 	return sym;
 }
 
@@ -302,7 +302,7 @@ declare_field (specifier_t spec, symtab_t *symtab)
 	symbol_t   *s = spec.sym;
 	spec = default_type (spec, s);
 	s->type = find_type (append_type (s->type, spec.type));
-	s->sy_type = sy_var;
+	s->sy_type = sy_offset;
 	s->visibility = current_visibility;
 	symtab_addsymbol (current_symtab, s);
 	if (!s->table) {

@@ -619,7 +619,7 @@ use_type_name (specifier_t spec)
 {
 	spec.sym = new_symbol (spec.sym->name);
 	spec.sym->type = spec.type;
-	spec.sym->sy_type = sy_var;
+	spec.sym->sy_type = sy_name;
 	symbol_t   *s = symtab_addsymbol (current_symtab, spec.sym);
 	// a different symbol being returned means that this is a redefinition
 	// of that symbol in the same scope. However, typedefs to the same type
@@ -1474,7 +1474,7 @@ component_decl
 				$1.sym = new_symbol (va (0, ".anonymous.%s",
 										 $1.type->name + 4));
 				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
+				$1.sym->sy_type = sy_offset;
 				$1.sym->visibility = vis_anonymous;
 				symtab_addsymbol (current_symtab, $1.sym);
 				if (!$1.sym->table) {
@@ -2468,7 +2468,7 @@ ivar_decl
 				$1.sym = new_symbol (va (0, ".anonymous.%s",
 										 $1.type->name + 4));
 				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
+				$1.sym->sy_type = sy_offset;
 				$1.sym->visibility = vis_anonymous;
 				symtab_addsymbol (current_symtab, $1.sym);
 				if (!$1.sym->table) {

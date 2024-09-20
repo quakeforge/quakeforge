@@ -147,13 +147,13 @@ print_struct (dstring_t *dstr, const type_t *t, int level, set_t *seen)
 	}
 	if (t->meta != ty_enum) {
 		for (sym = symtab->symbols; sym; sym = sym->next) {
-			if (sym->sy_type != sy_var) {
+			if (sym->sy_type != sy_offset) {
 				continue;
 			}
 			dot_print_type (dstr, sym->type, level, seen);
 		}
 		for (pnum = 0, sym = symtab->symbols; sym; sym = sym->next) {
-			if (sym->sy_type != sy_var) {
+			if (sym->sy_type != sy_offset) {
 				continue;
 			}
 			dasprintf (dstr, "%*st_%p:f%d -> \"t_%p\";\n", indent, "",
@@ -173,7 +173,7 @@ print_struct (dstring_t *dstr, const type_t *t, int level, set_t *seen)
 		if (sym->sy_type == sy_const) {
 			val = sym->value->int_val;
 		} else {
-			if (sym->sy_type != sy_var) {
+			if (sym->sy_type != sy_offset) {
 				continue;
 			}
 			val = sym->offset;

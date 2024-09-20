@@ -122,7 +122,7 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
 		auto def = new_def (sym->name, nullptr, nullptr, spec.storage);
 		def->type = sym->type;
-		sym->sy_type = sy_var;
+		sym->sy_type = sy_def;
 		sym->def = def;
 	}
 	return block;
@@ -132,7 +132,7 @@ void
 glsl_finish_block (glsl_block_t *block)
 {
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
-		if (sym->sy_type == sy_var) {
+		if (sym->sy_type == sy_def) {
 			//FIXME sc_extern isn't correct (problem with unsized arrays)
 			sym->def = new_def (sym->name, sym->type, block->space, sc_extern);
 		}

@@ -307,7 +307,7 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		memset (dst, 0, dstSize);
 		return;
 	}
-	if (src->type == ex_symbol && src->symbol->sy_type == sy_var) {
+	if (src->type == ex_symbol && src->symbol->sy_type == sy_def) {
 		// initialized global def treated as a constant
 		// from the tests in cast_expr, the def is known to be constant
 		def_t      *def = src->symbol->def;

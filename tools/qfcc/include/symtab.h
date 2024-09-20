@@ -69,8 +69,8 @@ typedef struct symbol_s {
 	struct param_s *params;		///< the parameters if a function
 	bool        no_auto_init:1;	///< skip for non-designated initializers
 	union {
-		int         offset;			///< sy_var (in a struct/union/macro)
-		struct def_s *def;			///< sy_var
+		int         offset;			///< sy_offset
+		struct def_s *def;			///< sy_def
 		struct ex_value_s *value;	///< sy_const
 		const struct expr_s *expr;	///< sy_expr/sy_type_param
 		struct metafunc_s *metafunc;///< sy_func

@@ -555,7 +555,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		error (0, "%s shadows a parameter", sym->name);
 	}
 	if (check && check->table == symtab) {
-		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
+		if (check->sy_type != sy_def || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
@@ -573,7 +573,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			sym = check;
 		}
 	}
-	sym->sy_type = sy_var;
+	sym->sy_type = sy_def;
 	if (!sym->table)
 		symtab_addsymbol (symtab, sym);
 

@@ -1745,7 +1745,7 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 		return macro;
 	}
 	auto sym = new_symbol (token->text);
-	sym->sy_type = sy_var;
+	sym->sy_type = sy_offset;
 	sym->offset = macro->num_params++;
 	symtab_addsymbol (macro->params, sym);
 	if (token->token == -rua_ellipsis) {

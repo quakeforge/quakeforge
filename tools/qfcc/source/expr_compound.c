@@ -187,7 +187,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 static int
 skip_field (symbol_t *field)
 {
-	if (field->sy_type != sy_var) {
+	if (field->sy_type != sy_offset) {
 		return 1;
 	}
 	if (field->no_auto_init) {
