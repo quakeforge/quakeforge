@@ -129,8 +129,10 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 }
 
 void
-glsl_finish_block (glsl_block_t *block)
+glsl_finish_block (glsl_block_t *block, specifier_t spec)
 {
+	spec.sym = block->name;
+	glsl_apply_attributes (block->attributes, spec);
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
 		if (sym->sy_type == sy_def) {
 			//FIXME sc_extern isn't correct (problem with unsized arrays)

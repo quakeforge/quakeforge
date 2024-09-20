@@ -92,7 +92,7 @@ extern glsl_sublang_t glsl_frag_sublanguage;
 
 void glsl_block_clear (void);
 glsl_block_t *glsl_create_block (specifier_t spec, symbol_t *block_sym);
-void glsl_finish_block (glsl_block_t *block);
+void glsl_finish_block (glsl_block_t *block, specifier_t spec);
 void glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name);
 glsl_block_t *glsl_get_block (const char *name, glsl_interface_t interface);
 symtab_t *glsl_optimize_attributes (attribute_t *attributes);

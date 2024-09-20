@@ -628,10 +628,11 @@ block_declaration
 		}
 	  struct_declaration_list '}'
 		{
+			auto spec = $<spec>0;
 			auto block = $<block>3;
 			if (block) {
 				current_symtab = block->members->parent;
-				glsl_finish_block (block);
+				glsl_finish_block (block, spec);
 			}
 			$$ = block;
 		}

@@ -45,6 +45,38 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+static void
+glsl_layout_location_invalid (specifier_t spec, const expr_t *qual_name,
+							  const expr_t *val)
+{
+	error (qual_name, "not allowed for vulkan");
+}
+
+static void
+glsl_layout_location (specifier_t spec, const expr_t *qual_name,
+					  const expr_t *val)
+{
+	notice (qual_name, "%s %s", expr_string (qual_name),
+			get_value_string (val->value));
+}
+
+static void
+glsl_layout_binding (specifier_t spec, const expr_t *qual_name,
+					  const expr_t *val)
+{
+	notice (qual_name, "%s %s", expr_string (qual_name),
+			get_value_string (val->value));
+}
+
+static void
+glsl_layout_set_property (specifier_t spec, const expr_t *qual_name,
+						  const expr_t *val)
+{
+	auto interface = glsl_iftype_from_sc (spec.storage);
+	notice (qual_name, "%s %s %s", glsl_interface_names[interface],
+			expr_string (qual_name), get_value_string (val->value));
+}
+
 typedef enum {
 	decl_var    = 1 << 0,
 	decl_qual   = 1 << 1,
@@ -65,8 +97,9 @@ typedef enum {
 
 typedef struct layout_qual_s {
 	const char *name;
-	bool      (*apply) ();
-	bool      (*apply_expr) ();
+	void      (*apply) (specifier_t spec, const expr_t *qual_name);
+	void      (*apply_expr) (specifier_t spec, const expr_t *qual_name,
+							 const expr_t *val);
 	unsigned    obj_mask;
 	glsl_var_t  var_type;
 	unsigned    if_mask;
@@ -115,7 +148,7 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "binding",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_binding),
 		.obj_mask = D(var)|D(block),
 		.var_type = V(opaque),
 		.if_mask = I(uniform)|I(buffer),
@@ -151,14 +184,14 @@ static layout_qual_t layout_qualifiers[] = {
 		.if_mask = I(uniform),
 	},
 	{	.name = "location",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_location_invalid),
 		.obj_mask = D(var),
 		.var_type = V(any),
 		.if_mask = I(uniform)|I(buffer),
 	},
 
 	{	.name = "location",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_location),
 		.obj_mask = D(var)|D(block)|D(member),
 		.var_type = V(any),
 		.if_mask = I(in)|I(out),
@@ -293,37 +326,37 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "local_size_x",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_y",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_z",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_x_id",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_y_id",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
 	},
 	{	.name = "local_size_z_id",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set_property),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
@@ -704,18 +737,22 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 	}
 	if (spec.sym) {
 		auto sym = spec.sym;
-		if (is_handle (sym->type)) {
-			var_type = var_opaque;
-		} else if (is_scalar (sym->type)) {
-			var_type = var_scalar;
-		} else if (strcmp (sym->name, "gl_FragCoord") == 0) {
-			var_type = var_gl_FragCoord;
-		} else if (strcmp (sym->name, "gl_FragDepth") == 0) {
-			var_type = var_gl_FragDepth;
-		}
-		obj_mask = decl_var;
-		if (sym->table->parent && sym->table->parent->type == stab_struct) {
-			obj_mask = decl_member;
+		if (sym->type) {
+			if (is_handle (sym->type)) {
+				var_type = var_opaque;
+			} else if (spec.is_const && is_scalar (sym->type)) {
+				var_type = var_scalar;
+			} else if (strcmp (sym->name, "gl_FragCoord") == 0) {
+				var_type = var_gl_FragCoord;
+			} else if (strcmp (sym->name, "gl_FragDepth") == 0) {
+				var_type = var_gl_FragDepth;
+			}
+			obj_mask = decl_var;
+			if (sym->table->parent && sym->table->parent->type == stab_struct) {
+				obj_mask = decl_member;
+			}
+		} else {
+			obj_mask = decl_block;
 		}
 	} else {
 		obj_mask = decl_qual;
@@ -723,7 +760,9 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 	if (!(qual->obj_mask & obj_mask)) {
 		return false;
 	}
-	if (qual->var_type != var_type) {
+	if (obj_mask == decl_var
+		&& qual->var_type != var_any
+		&& qual->var_type != var_type) {
 		return false;
 	}
 	if (!(qual->if_mask & if_mask)) {
@@ -760,7 +799,6 @@ layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 				? qualifier->expr.e2
 				: nullptr;
 
-	notice (qualifier, "%s %p", key.name, spec.sym);
 	const layout_qual_t *qual;
 	qual = bsearch (&key, layout_qualifiers, layout_qual_sz, layout_qual_cmp);
 	if (!qual) {
@@ -780,14 +818,14 @@ layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 				if (!val) {
 					error (qualifier, "%s requires a value", key.name);
 				} else {
-					qual->apply_expr ();
+					qual->apply_expr (spec, qualifier->expr.e1, val);
 				}
 				return;
 			} else if (qual->apply) {
 				if (!val) {
 					error (qualifier, "%s does not take a value", key.name);
 				} else {
-					qual->apply ();
+					qual->apply (spec, qualifier->expr.e1);
 				}
 				return;
 			} else {
