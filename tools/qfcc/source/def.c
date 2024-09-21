@@ -602,6 +602,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		sym->def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
+	sym->lvalue = !sym->def->readonly;
 	if (is_vector(sym->type) && options.code.vector_components)
 		init_vector_components (sym, 0, symtab);
 	if (sym->type->type == ev_field && storage != sc_local

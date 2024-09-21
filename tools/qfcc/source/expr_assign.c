@@ -88,32 +88,7 @@ is_lvalue (const expr_t *expr)
 		case ex_def:
 			return !expr->def->constant;
 		case ex_symbol:
-			switch (expr->symbol->sy_type) {
-				case sy_name:
-				case sy_offset:
-					break;
-				case sy_def:
-					return !expr->symbol->def->readonly;
-				case sy_const:
-					break;
-				case sy_type:
-				case sy_type_param:
-					break;
-				case sy_expr:
-					break;
-				case sy_func:
-					break;
-				case sy_class:
-					break;
-				case sy_convert:
-					break;
-				case sy_macro:
-				case sy_namespace:
-				case sy_list:
-				case sy_num_types:
-					break;
-			}
-			break;
+			return expr->symbol->lvalue;
 		case ex_temp:
 			return 1;
 		case ex_expr:

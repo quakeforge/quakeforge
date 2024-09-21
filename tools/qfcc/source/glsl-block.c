@@ -124,6 +124,7 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 		def->type = sym->type;
 		sym->sy_type = sy_def;
 		sym->def = def;
+		sym->lvalue = true;
 	}
 	return block;
 }
@@ -134,9 +135,11 @@ glsl_finish_block (glsl_block_t *block, specifier_t spec)
 	spec.sym = block->name;
 	glsl_apply_attributes (block->attributes, spec);
 	for (auto sym = block->members->symbols; sym; sym = sym->next) {
-		if (sym->sy_type == sy_def) {
+		if (sym->sy_type == sy_offset) {
 			//FIXME sc_extern isn't correct (problem with unsized arrays)
 			sym->def = new_def (sym->name, sym->type, block->space, sc_extern);
+			sym->sy_type = sy_def;
+			sym->lvalue = !sym->def->readonly;
 		}
 	}
 }

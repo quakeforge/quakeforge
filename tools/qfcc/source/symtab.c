@@ -240,6 +240,7 @@ make_symbol (const char *name, const type_t *type, defspace_t *space,
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
 	sym->sy_type = sy_def;
+	sym->lvalue = !sym->def->readonly;
 	return sym;
 }
 

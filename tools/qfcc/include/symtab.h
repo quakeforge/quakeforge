@@ -68,6 +68,7 @@ typedef struct symbol_s {
 	const struct type_s *type;	///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	bool        no_auto_init:1;	///< skip for non-designated initializers
+	bool        lvalue;
 	union {
 		int         offset;			///< sy_offset
 		struct def_s *def;			///< sy_def

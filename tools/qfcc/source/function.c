@@ -1043,6 +1043,7 @@ create_param (symtab_t *parameters, symbol_t *param)
 	def->type = param->type;
 	param->def = def;
 	param->sy_type = sy_def;
+	param->lvalue = !def->readonly;
 	symtab_addsymbol (parameters, param);
 	if (is_vector(param->type) && options.code.vector_components)
 		init_vector_components (param, 0, parameters);
