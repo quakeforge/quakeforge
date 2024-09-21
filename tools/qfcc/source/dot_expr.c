@@ -495,6 +495,21 @@ print_branch (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t 
 }
 
 static void
+print_inout (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->inout.in, level, id, next);
+	_print_expr (dstr, e->inout.out, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"in\"];\n", indent, "",
+			   e, e->inout.in);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"out\"];\n", indent, "",
+			   e, e->inout.out);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "inout", e->loc.line);
+}
+
+static void
 print_return (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -768,6 +783,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_address] = print_address,
 		[ex_assign] = print_assign,
 		[ex_branch] = print_branch,
+		[ex_inout] = print_inout,
 		[ex_return] = print_return,
 		[ex_adjstk] = print_adjstk,
 		[ex_with] = print_with,
