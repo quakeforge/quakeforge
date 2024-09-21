@@ -116,6 +116,7 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 		.members = new_symtab (current_symtab, stab_struct),
 		.space = defspace_new (ds_backed),
 	};
+	block->members->name = save_string (block_sym->name);
 	block->members->data = block;
 	block->space->alloc_aligned = glsl_block_alloc_loc;
 	Hash_Add (block_tab, block);

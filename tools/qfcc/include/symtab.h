@@ -107,6 +107,7 @@ typedef struct symtab_s {
 	symbol_t *(*procsymbol) (const char *name, struct symtab_s *symtab);
 	void       *procsymbol_data;
 	void       *data;
+	const char *name;
 } symtab_t;
 
 const char *symtype_str (sy_type_e type) __attribute__((const));
