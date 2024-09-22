@@ -273,6 +273,16 @@ new_short_val (short short_val)
 }
 
 ex_value_t *
+new_ushort_val (unsigned short ushort_val)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	set_val_type (&val, &type_ushort);
+	val.ushort_val = ushort_val;
+	return find_value (&val);
+}
+
+ex_value_t *
 new_nil_val (const type_t *type)
 {
 	ex_value_t  val;

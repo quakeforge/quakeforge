@@ -750,6 +750,7 @@ const expr_t *new_ulong_expr (pr_ulong_t ulong_val);
 */
 const expr_t *new_short_expr (short short_val);
 short expr_short (const expr_t *e) __attribute__((pure));
+const expr_t *new_ushort_expr (unsigned short short_val);
 unsigned short expr_ushort (const expr_t *e) __attribute__((pure));
 
 pr_long_t expr_integral (const expr_t *e) __attribute__((pure));

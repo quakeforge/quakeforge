@@ -952,6 +952,12 @@ new_short_expr (short short_val)
 	return new_value_expr (new_short_val (short_val), false);
 }
 
+const expr_t *
+new_ushort_expr (unsigned short ushort_val)
+{
+	return new_value_expr (new_ushort_val (ushort_val), false);
+}
+
 bool
 is_error (const expr_t *e)
 {

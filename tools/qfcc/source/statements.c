@@ -1847,11 +1847,56 @@ expr_negate (sblock_t *sblock, const expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_uexpr_core (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	auto opcode = convert_op (e->expr.op);
+	if (!opcode) {
+		internal_error (e, "ice ice baby");
+	}
+	auto s = new_statement (st_expr, opcode, e);
+	sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
+	if (!*op)
+		*op = temp_operand (e->expr.type, e);
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
+expr_not (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	if (options.code.progsversion == PROG_VERSION) {
+		scoped_src_loc (e);
+		auto zero = new_nil_expr ();
+		zero->loc = e->loc;
+		zero = (expr_t *) convert_nil (zero, get_type (e->expr.e1));
+
+		auto not = new_binary_expr (QC_EQ, e->expr.e1, zero);
+		not->expr.type = e->expr.type;
+		not->loc = e->loc;
+
+		return statement_subexpr (sblock, not, op);
+	} else {
+		return expr_uexpr_core (sblock, e, op);
+	}
+}
+
+static sblock_t *
+expr_bitnot (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		scoped_src_loc (e);
+		auto negone = new_int_expr (-1, false);
+		auto bitnot = binary_expr ('-', negone, e);
+		return statement_subexpr (sblock, bitnot, op);
+	} else {
+		return expr_uexpr_core (sblock, e, op);
+	}
+}
+
+static sblock_t *
 expr_uexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	const char *opcode;
-	statement_t *s;
-
 	switch (e->expr.op) {
 		case '.':
 			sblock = expr_deref (sblock, e, op);
@@ -1860,19 +1905,20 @@ expr_uexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 			sblock = expr_cast (sblock, e, op);
 			break;
 		case '-':
-			// progs has no neg instruction!?!
+			// progs has no neg instruction
 			sblock = expr_negate (sblock, e, op);
 			break;
+		case '!':
+			// rua progs has no not instruction
+			sblock = expr_not (sblock, e, op);
+			break;
+		case '~':
+			// v6 progs has no not instruction
+			sblock = expr_bitnot (sblock, e, op);
+			break;
 		default:
-			opcode = convert_op (e->expr.op);
-			if (!opcode)
-				internal_error (e, "ice ice baby");
-			s = new_statement (st_expr, opcode, e);
-			sblock = statement_subexpr (sblock, e->expr.e1, &s->opa);
-			if (!*op)
-				*op = temp_operand (e->expr.type, e);
-			s->opc = *op;
-			sblock_add_statement (sblock, s);
+			sblock = expr_uexpr_core (sblock, e, op);
+			break;
 	}
 	return sblock;
 }

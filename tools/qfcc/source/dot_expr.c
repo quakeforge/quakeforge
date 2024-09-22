@@ -101,6 +101,9 @@ get_op_string (int op)
 		case QC_DOT:		return "@dot";
 		case QC_WEDGE:		return "@wedge";
 		case QC_REGRESSIVE:	return "@regressive";
+		case QC_REVERSE:	return "@reverse";
+		case QC_DUAL:		return "@dual";
+		case QC_UNDUAL:		return "@undual";
 		case QC_AT_FIELD:	return "@field";
 		case QC_AT_POINTER:	return "@pointer";
 		case QC_AT_ARRAY:	return "@array";

@@ -40,9 +40,9 @@
 
 typedef struct {
 	int         op;
-	type_t     *result_type;
-	type_t     *a_cast;
-	type_t     *b_cast;
+	const type_t *result_type;
+	const type_t *a_cast;
+	const type_t *b_cast;
 	const expr_t *(*process)(int op, const expr_t *e1, const expr_t *e2);
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);

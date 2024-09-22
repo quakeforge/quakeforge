@@ -63,354 +63,434 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+typedef struct {
+	int         op;
+	const type_t *result_type;
+	const expr_t *(*process)(const expr_t *e);
+	const expr_t *(*constant)(const expr_t *e);
+} unary_type_t;
+
+static const expr_t *
+string_not (const expr_t *e)
+{
+	const char *s = expr_string (e);
+	return new_int_expr (!s || !s[0], false);
+}
+
+static const expr_t *
+float_negate (const expr_t *e)
+{
+	return new_float_expr (-expr_float (e), e->implicit);
+}
+
+static const expr_t *
+float_not (const expr_t *e)
+{
+	return new_int_expr (!expr_float (e), false);
+}
+
+static const expr_t *
+float_bitnot (const expr_t *e)
+{
+	return new_float_expr (~(int) expr_float (e), false);
+}
+
+static const expr_t *
+vector_negate (const expr_t *e)
+{
+	vec3_t      v;
+
+	VectorNegate (expr_vector (e), v);
+	return new_vector_expr (v);
+}
+
+static const expr_t *
+vector_not (const expr_t *e)
+{
+	return new_int_expr (!VectorIsZero (expr_vector (e)), false);
+}
+
+static const expr_t *
+quat_negate (const expr_t *e)
+{
+	quat_t      q;
+
+	QuatNegate (expr_quaternion (e), q);
+	return new_vector_expr (q);
+}
+
+static const expr_t *
+pointer_deref (const expr_t *e)
+{
+	scoped_src_loc (e);
+	auto new = new_unary_expr ('.', e);
+	new->expr.type = get_type (e)->fldptr.type;
+	return new;
+}
+
+static const expr_t *
+quat_not (const expr_t *e)
+{
+	return new_int_expr (!QuatIsZero (expr_quaternion (e)), false);
+}
+
+static const expr_t *
+quat_conj (const expr_t *e)
+{
+	quat_t      q;
+
+	QuatConj (expr_vector (e), q);
+	return new_quaternion_expr (q);
+}
+
+static const expr_t *
+int_negate (const expr_t *e)
+{
+	return new_int_expr (-expr_int (e), false);
+}
+
+static const expr_t *
+int_not (const expr_t *e)
+{
+	return new_int_expr (!expr_int (e), e->implicit);
+}
+
+static const expr_t *
+int_bitnot (const expr_t *e)
+{
+	return new_int_expr (~expr_int (e), e->implicit);
+}
+
+static const expr_t *
+uint_negate (const expr_t *e)
+{
+	return new_uint_expr (-expr_uint (e));
+}
+
+static const expr_t *
+uint_not (const expr_t *e)
+{
+	return new_uint_expr (!expr_uint (e));
+}
+
+static const expr_t *
+uint_bitnot (const expr_t *e)
+{
+	return new_uint_expr (~expr_uint (e));
+}
+
+static const expr_t *
+short_negate (const expr_t *e)
+{
+	return new_short_expr (-expr_short (e));
+}
+
+static const expr_t *
+short_not (const expr_t *e)
+{
+	return new_short_expr (!expr_short (e));
+}
+
+static const expr_t *
+short_bitnot (const expr_t *e)
+{
+	return new_short_expr (~expr_short (e));
+}
+
+static const expr_t *
+ushort_negate (const expr_t *e)
+{
+	return new_ushort_expr (-expr_ushort (e));
+}
+
+static const expr_t *
+ushort_not (const expr_t *e)
+{
+	return new_ushort_expr (!expr_ushort (e));
+}
+
+static const expr_t *
+ushort_bitnot (const expr_t *e)
+{
+	return new_ushort_expr (~expr_ushort (e));
+}
+
+static const expr_t *
+double_negate (const expr_t *e)
+{
+	return new_double_expr (-expr_double (e), e->implicit);
+}
+
+static const expr_t *
+double_not (const expr_t *e)
+{
+	return new_int_expr (!expr_double (e), false);
+}
+
+static const expr_t *
+double_bitnot (const expr_t *e)
+{
+	return new_double_expr (~(pr_long_t) expr_double (e), false);
+}
+
+static const expr_t *
+long_negate (const expr_t *e)
+{
+	return new_long_expr (-expr_long (e), e->implicit);
+}
+
+static const expr_t *
+long_not (const expr_t *e)
+{
+	return new_int_expr (!expr_long (e), false);
+}
+
+static const expr_t *
+long_bitnot (const expr_t *e)
+{
+	return new_long_expr (~expr_long (e), e->implicit);
+}
+
+static const expr_t *
+ulong_negate (const expr_t *e)
+{
+	return new_ulong_expr (-expr_ulong (e));
+}
+
+static const expr_t *
+ulong_not (const expr_t *e)
+{
+	return new_int_expr (!expr_ulong (e), false);
+}
+
+static const expr_t *
+ulong_bitnot (const expr_t *e)
+{
+	return new_ulong_expr (~expr_ulong (e));
+}
+
+static unary_type_t string_u[] = {
+	{ .op = '!', .result_type = &type_bool, .constant = string_not, },
+
+	{}
+};
+
+static unary_type_t float_u[] = {
+	{ .op = '-', .result_type = &type_float, .constant = float_negate, },
+	{ .op = '!', .result_type = &type_bool,  .constant = float_not,    },
+	{ .op = '~', .result_type = &type_float, .constant = float_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t vector_u[] = {
+	{ .op = '-', .result_type = &type_vector, .constant = vector_negate, },
+	{ .op = '!', .result_type = &type_bool,   .constant = vector_not,    },
+
+	{}
+};
+
+static unary_type_t entity_u[] = {
+	{ .op = '!', .result_type = &type_bool, },
+
+	{}
+};
+
+static unary_type_t field_u[] = {
+	{ .op = '!', .result_type = &type_bool, },
+
+	{}
+};
+
+static unary_type_t func_u[] = {
+	{ .op = '!', .result_type = &type_bool, },
+
+	{}
+};
+
+static unary_type_t pointer_u[] = {
+	{ .op = '!', .result_type = &type_bool, },
+	{ .op = '.', .process = pointer_deref, },
+
+	{}
+};
+
+static unary_type_t quat_u[] = {
+	{ .op = '-', .result_type = &type_quaternion, .constant = quat_negate, },
+	{ .op = '!', .result_type = &type_bool,       .constant = quat_not,    },
+	{ .op = '~', .result_type = &type_quaternion, .constant = quat_conj,   },
+
+	{}
+};
+
+static unary_type_t int_u[] = {
+	{ .op = '-', .result_type = &type_int,  .constant = int_negate, },
+	{ .op = '!', .result_type = &type_bool, .constant = int_not,    },
+	{ .op = '~', .result_type = &type_int,  .constant = int_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t uint_u[] = {
+	{ .op = '-', .result_type = &type_uint, .constant = uint_negate, },
+	{ .op = '!', .result_type = &type_bool, .constant = uint_not, },
+	{ .op = '~', .result_type = &type_uint, .constant = uint_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t short_u[] = {
+	{ .op = '-', .result_type = &type_short, .constant = short_negate, },
+	{ .op = '!', .result_type = &type_bool,  .constant = short_not,    },
+	{ .op = '~', .result_type = &type_short, .constant = short_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t ushort_u[] = {
+	{ .op = '-', .result_type = &type_ushort, .constant = ushort_negate, },
+	{ .op = '!', .result_type = &type_bool,   .constant = ushort_not,    },
+	{ .op = '~', .result_type = &type_ushort, .constant = ushort_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t double_u[] = {
+	{ .op = '-', .result_type = &type_double, .constant = double_negate, },
+	{ .op = '!', .result_type = &type_bool,   .constant = double_not,    },
+	{ .op = '~', .result_type = &type_double, .constant = double_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t long_u[] = {
+	{ .op = '-', .result_type = &type_long, .constant = ulong_negate, },
+	{ .op = '!', .result_type = &type_bool, .constant = ulong_not,    },
+	{ .op = '~', .result_type = &type_long, .constant = ulong_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t ulong_u[] = {
+	{ .op = '-', .result_type = &type_ulong, .constant = long_negate, },
+	{ .op = '!', .result_type = &type_bool,  .constant = long_not,    },
+	{ .op = '~', .result_type = &type_ulong, .constant = long_bitnot, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t algebra_u[] = {
+	{ .op = '-',        .process = algebra_negate,  },
+	{ .op = '!',        .process = algebra_dual,    },
+	{ .op = '~',        .process = algebra_reverse, },
+	{ .op = QC_REVERSE, .process = algebra_reverse, },
+	{ .op = QC_DUAL,    .process = algebra_dual,    },
+	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
+
+	{}
+};
+
+static unary_type_t *unary_expr_types[ev_type_count] = {
+	[ev_string] = string_u,
+	[ev_float] = float_u,
+	[ev_vector] = vector_u,
+	[ev_entity] = entity_u,
+	[ev_field] = field_u,
+	[ev_func] = func_u,
+	[ev_ptr] = pointer_u,
+	[ev_quaternion] = quat_u,
+	[ev_int] = int_u,
+	[ev_uint] = uint_u,
+	[ev_short] = short_u,
+	[ev_ushort] = ushort_u,
+	[ev_double] = double_u,
+	[ev_long] = long_u,
+	[ev_ulong] = ulong_u,
+};
+
 const expr_t *
 unary_expr (int op, const expr_t *e)
 {
-	vec3_t      v;
-	quat_t      q;
-	const char *s;
-	const type_t *t;
-
 	e = convert_name (e);
-	if (e->type == ex_error)
+	if (e->type == ex_error) {
 		return e;
-	switch (op) {
-		case '-':
-			if (!is_math (get_type (e)))
-				return error (e, "invalid type for unary -");
-			if (is_algebra (get_type (e))) {
-				return algebra_negate (e);
-			}
-			if (is_constant (e)) {
-				switch (extract_type (e)) {
-					case ev_string:
-					case ev_entity:
-					case ev_field:
-					case ev_func:
-					case ev_ptr:
-						internal_error (e, "type check failed!");
-					case ev_double:
-						return new_double_expr (-expr_double (e), e->implicit);
-					case ev_float:
-						return new_float_expr (-expr_float (e), e->implicit);
-					case ev_vector:
-						VectorNegate (expr_vector (e), v);
-						return new_vector_expr (v);
-					case ev_quaternion:
-						QuatNegate (expr_vector (e), q);
-						return new_vector_expr (q);
-					case ev_long:
-					case ev_ulong:
-					case ev_ushort:
-						internal_error (e, "long not implemented");
-					case ev_int:
-						return new_int_expr (-expr_int (e), false);
-					case ev_uint:
-						return new_uint_expr (-expr_uint (e));
-					case ev_short:
-						return new_short_expr (-expr_short (e));
-					case ev_invalid:
-					case ev_type_count:
-					case ev_void:
-						break;
-				}
-				internal_error (e, "weird expression type");
-			}
-			switch (e->type) {
-				case ex_value:	// should be handled above
-				case ex_error:
-				case ex_label:
-				case ex_labelref:
-				case ex_state:
-				case ex_compound:
-				case ex_memset:
-				case ex_selector:
-				case ex_return:
-				case ex_adjstk:
-				case ex_with:
-				case ex_args:
-				case ex_list:
-				case ex_type:
-					internal_error (e, "unexpected expression type");
-				case ex_uexpr:
-					if (e->expr.op == '-') {
-						return e->expr.e1;
-					}
-					{
-						expr_t     *n = new_unary_expr (op, e);
-
-						n->expr.type = get_type (e);
-						return edag_add_expr (n);
-					}
-				case ex_block:
-					if (!e->block.result) {
-						return error (e, "invalid type for unary -");
-					}
-					{
-						expr_t     *n = new_unary_expr (op, e);
-
-						n->expr.type = get_type (e);
-						return edag_add_expr (n);
-					}
-				case ex_branch:
-				case ex_inout:
-					return error (e, "invalid type for unary -");
-				case ex_expr:
-				case ex_bool:
-				case ex_temp:
-				case ex_vector:
-				case ex_alias:
-				case ex_assign:
-				case ex_horizontal:
-				case ex_swizzle:
-				case ex_extend:
-					{
-						expr_t     *n = new_unary_expr (op, e);
-
-						n->expr.type = get_type (e);
-						return edag_add_expr (n);
-					}
-				case ex_def:
-					{
-						expr_t     *n = new_unary_expr (op, e);
-
-						n->expr.type = e->def->type;
-						return edag_add_expr (n);
-					}
-				case ex_symbol:
-					{
-						expr_t     *n = new_unary_expr (op, e);
-
-						n->expr.type = e->symbol->type;
-						return edag_add_expr (n);
-					}
-				case ex_multivec:
-					return algebra_negate (e);
-				case ex_nil:
-				case ex_address:
-					return error (e, "invalid type for unary -");
-				case ex_count:
-					internal_error (e, "invalid expression");
-			}
-			break;
-		case '!':
-			if (is_algebra (get_type (e))) {
-				return algebra_dual (e);
-			}
-			if (is_constant (e)) {
-				switch (extract_type (e)) {
-					case ev_entity:
-					case ev_field:
-					case ev_func:
-					case ev_ptr:
-						internal_error (e, 0);
-					case ev_string:
-						s = expr_string (e);
-						return new_int_expr (!s || !s[0], false);
-					case ev_double:
-						return new_int_expr (!expr_double (e), false);
-					case ev_float:
-						return new_int_expr (!expr_float (e), false);
-					case ev_vector:
-						return new_int_expr (!VectorIsZero (expr_vector (e)),
-											 false);
-					case ev_quaternion:
-						return new_int_expr (!QuatIsZero (expr_quaternion (e)),
-											 false);
-					case ev_long:
-					case ev_ulong:
-					case ev_ushort:
-						internal_error (e, "long not implemented");
-					case ev_int:
-						return new_int_expr (!expr_int (e), e->implicit);
-					case ev_uint:
-						return new_uint_expr (!expr_uint (e));
-					case ev_short:
-						return new_short_expr (!expr_short (e));
-					case ev_invalid:
-					case ev_type_count:
-					case ev_void:
-						break;
-				}
-				internal_error (e, "weird expression type");
-			}
-			switch (e->type) {
-				case ex_value:	// should be handled above
-				case ex_error:
-				case ex_label:
-				case ex_labelref:
-				case ex_state:
-				case ex_compound:
-				case ex_memset:
-				case ex_selector:
-				case ex_return:
-				case ex_adjstk:
-				case ex_with:
-				case ex_args:
-				case ex_list:
-				case ex_type:
-					internal_error (e, "unexpected expression type");
-				case ex_bool:
-					return new_bool_expr (e->boolean.false_list,
-										  e->boolean.true_list, e);
-				case ex_block:
-					if (!e->block.result)
-						return error (e, "invalid type for unary !");
-				case ex_uexpr:
-				case ex_expr:
-				case ex_def:
-				case ex_symbol:
-				case ex_temp:
-				case ex_vector:
-				case ex_alias:
-				case ex_address:
-				case ex_assign:
-				case ex_horizontal:
-				case ex_swizzle:
-				case ex_extend:
-					if (options.code.progsversion == PROG_VERSION) {
-						return binary_expr (QC_EQ, e, new_nil_expr ());
-					} else {
-						expr_t     *n = new_unary_expr (op, e);
-
-						if (options.code.progsversion > PROG_ID_VERSION)
-							n->expr.type = &type_int;
-						else
-							n->expr.type = &type_float;
-						return n;
-					}
-				case ex_multivec:
-					return algebra_dual (e);
-				case ex_branch:
-				case ex_inout:
-				case ex_nil:
-					return error (e, "invalid type for unary !");
-				case ex_count:
-					internal_error (e, "invalid expression");
-			}
-			break;
-		case '~':
-			if (is_algebra (get_type (e))) {
-				return algebra_reverse (e);
-			}
-			if (is_constant (e)) {
-				switch (extract_type (e)) {
-					case ev_string:
-					case ev_entity:
-					case ev_field:
-					case ev_func:
-					case ev_ptr:
-					case ev_vector:
-					case ev_double:
-						return error (e, "invalid type for unary ~");
-					case ev_float:
-						return new_float_expr (~(int) expr_float (e),
-											   e->implicit);
-					case ev_quaternion:
-						QuatConj (expr_vector (e), q);
-						return new_vector_expr (q);
-					case ev_long:
-					case ev_ulong:
-					case ev_ushort:
-						internal_error (e, "long not implemented");
-					case ev_int:
-						return new_int_expr (~expr_int (e), e->implicit);
-					case ev_uint:
-						return new_uint_expr (~expr_uint (e));
-					case ev_short:
-						return new_short_expr (~expr_short (e));
-					case ev_invalid:
-						t = get_type (e);
-						if (t->meta == ty_enum) {
-							return new_int_expr (~expr_int (e), false);
-						}
-						break;
-					case ev_type_count:
-					case ev_void:
-						break;
-				}
-				internal_error (e, "weird expression type");
-			}
-			switch (e->type) {
-				case ex_value:	// should be handled above
-				case ex_error:
-				case ex_label:
-				case ex_labelref:
-				case ex_state:
-				case ex_compound:
-				case ex_memset:
-				case ex_selector:
-				case ex_return:
-				case ex_adjstk:
-				case ex_with:
-				case ex_args:
-				case ex_list:
-				case ex_type:
-					internal_error (e, "unexpected expression type");
-				case ex_uexpr:
-					if (e->expr.op == '~')
-						return e->expr.e1;
-					goto bitnot_expr;
-				case ex_block:
-					if (!e->block.result)
-						return error (e, "invalid type for unary ~");
-					goto bitnot_expr;
-				case ex_branch:
-				case ex_inout:
-					return error (e, "invalid type for unary ~");
-				case ex_expr:
-				case ex_bool:
-				case ex_def:
-				case ex_symbol:
-				case ex_temp:
-				case ex_vector:
-				case ex_alias:
-				case ex_assign:
-				case ex_horizontal:
-				case ex_swizzle:
-				case ex_extend:
-bitnot_expr:
-					if (options.code.progsversion == PROG_ID_VERSION) {
-						const expr_t *n1 = new_int_expr (-1, false);
-						return binary_expr ('-', n1, e);
-					} else {
-						expr_t     *n = new_unary_expr (op, e);
-						auto t = get_type (e);
-
-						if (!is_integral(t) && !is_float(t)
-							&& !is_quaternion(t))
-							return error (e, "invalid type for unary ~");
-						n->expr.type = t;
-						return n;
-					}
-				case ex_multivec:
-					return algebra_reverse (e);
-				case ex_nil:
-				case ex_address:
-					return error (e, "invalid type for unary ~");
-				case ex_count:
-					internal_error (e, "invalid expression");
-			}
-			break;
-		case '.':
-			{
-				if (extract_type (e) != ev_ptr)
-					return error (e, "invalid type for unary .");
-				scoped_src_loc (e);
-				auto new = new_unary_expr ('.', e);
-				new->expr.type = get_type (e)->fldptr.type;
-				return new;
-			}
-		case '+':
-			if (!is_math (get_type (e)))
-				return error (e, "invalid type for unary +");
-			return e;
-		case QC_REVERSE:
-			return algebra_reverse (e);
-		case QC_DUAL:
-			return algebra_dual (e);
-		case QC_UNDUAL:
-			return algebra_undual (e);
 	}
-	internal_error (e, 0);
+
+	unary_type_t *unary_type = nullptr;
+	auto t = get_type (e);
+
+	if (op == '!' && e->type == ex_bool) {
+		return new_bool_expr (e->boolean.false_list, e->boolean.true_list, e);
+	}
+
+	if (op == '+' && is_math (t)) {
+		// unary + is a no-op
+		return e;
+	}
+	if (is_algebra (t)) {
+		unary_type = algebra_u;
+	} else if (is_enum (t)) {
+		unary_type = int_u;
+	} else if (t->meta == ty_basic || is_handle (t)) {
+		unary_type = unary_expr_types[t->type];
+	}
+
+	if (!unary_type) {
+		return error (e, "invalid type for unary expression");
+	}
+	while (unary_type->op && unary_type->op != op) {
+		unary_type++;
+	}
+	if (!unary_type->op) {
+		return error (e, "invalid type for unary %s", get_op_string (op));
+	}
+
+	if (unary_type->process) {
+		return unary_type->process (e);
+	}
+	if (is_constant (e) && !unary_type->constant) {
+		internal_error (e, "unexpected expression type");
+	}
+	if (is_constant (e) && unary_type->constant) {
+		return unary_type->constant (e);
+	}
+	auto result_type = t;
+	if (unary_type->result_type) {
+		result_type = unary_type->result_type;
+	}
+	if (result_type == &type_bool) {
+		//FIXME support bool properly
+		if (is_long (t) || is_ulong (t) || is_double (t)) {
+			result_type = &type_long;
+		} else {
+			result_type = type_default;
+		}
+	}
+	auto new = new_unary_expr (op, e);
+	new->expr.type = result_type;
+	return new;
 }
