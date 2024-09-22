@@ -63,6 +63,7 @@ typedef struct ex_expr_s {
 	bool    commutative;		///< e1 and e2 can be swapped
 	bool    anticommute;		///< e1 and e2 can be swapped with negation
 	bool    associative;		///< a op (b op c) == (a op b) op c
+	bool    constant;			///< constant that has/will not been folded
 	const type_t *type;			///< the type of the result of this expression
 	const expr_t *e1;			///< left side of binary, sole of unary
 	const expr_t *e2;			///< right side of binary, null for unary
@@ -758,10 +759,19 @@ bool is_error (const expr_t *e) __attribute__((pure));
 
 /**	Check if the expression refers to a constant value.
 
+	This does not included computed constants that have not been folded.
+
 	\param e		The expression to check.
 	\return			True if the expression is constant.
 */
 int is_constant (const expr_t *e) __attribute__((pure));
+
+/**	Check if the expression refers to a constant expression or value.
+
+	\param e		The expression to check.
+	\return			True if the expression is constant.
+*/
+bool is_constexpr (const expr_t *e) __attribute__((pure));
 
 /** Check if the expression refers to a variable.
 

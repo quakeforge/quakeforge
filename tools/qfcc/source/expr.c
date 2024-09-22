@@ -568,6 +568,7 @@ new_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	expr_t     *e = new_expr ();
 	e->type = ex_expr;
 	e->nodag = e1->nodag | e2->nodag;
+	e->expr.constant = is_constexpr (e1) && is_constexpr (e2);
 	e->expr.op = op;
 	e->expr.e1 = e1;
 	e->expr.e2 = e2;
@@ -596,12 +597,13 @@ new_unary_expr (int op, const expr_t *e1)
 {
 
 	if (e1 && e1->type == ex_error) {
-		internal_error (e1, "error expr in new_binary_expr");
+		internal_error (e1, "error expr in new_unary_expr");
 	}
 
 	expr_t     *e = new_expr ();
 	e->type = ex_uexpr;
 	e->nodag = e1->nodag;
+	e->expr.constant = is_constexpr (e1);
 	e->expr.op = op;
 	e->expr.e1 = e1;
 	return e;
@@ -968,6 +970,18 @@ is_constant (const expr_t *e)
 			&& e->symbol->def->constant))
 		return 1;
 	return 0;
+}
+
+bool
+is_constexpr (const expr_t *e)
+{
+	while (e->type == ex_alias) {
+		e = e->alias.expr;
+	}
+	if ((e->type == ex_expr || e->type == ex_uexpr) && e->expr.constant) {
+		return true;
+	}
+	return is_constant (e);
 }
 
 int

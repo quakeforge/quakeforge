@@ -45,6 +45,9 @@ void
 glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
 						const expr_t *init, symtab_t *symtab)
 {
+	if (sym->type) {
+		internal_error (0, "unexected typed symbol");
+	}
 	if (array) {
 		spec.type = append_type (array, spec.type);
 		spec.type = find_type (spec.type);
@@ -66,7 +69,40 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
 	} else {
 		spec.sym = sym;
 		if (spec.sym) {
-			spec.sym = declare_symbol (spec, init, symtab);
+			if (spec.is_const && !init) {
+				error (0, "uninitialized const %s", sym->name);
+				init = new_zero_expr (spec.type);
+			}
+			if (spec.is_const && init->type != ex_compound) {
+				auto type = get_type (init);
+				if (type != spec.type && type_assignable (spec.type, type)) {
+					if (!init->implicit && !type_promotes (spec.type, type)) {
+						warning (init, "initialization of %s with %s"
+								 " (use a cast)\n)",
+								 get_type_string (spec.type),
+								 get_type_string (type));
+					}
+					init = cast_expr (spec.type, init);
+				}
+				if (get_type (init) != spec.type) {
+					error (init, "type mismatch in initializer");
+					init = new_zero_expr (spec.type);
+				}
+				if (!is_constexpr (init)) {
+					error (init, "non-constant initializer");
+					init = new_zero_expr (spec.type);
+				}
+				sym->type = spec.type;
+				sym->sy_type = sy_expr;
+				sym->expr = init;
+				auto s = symtab_lookup (symtab, sym->name);
+				if (s && s->table == symtab) {
+					error (0, "%s redeclared", sym->name);
+				}
+				symtab_addsymbol (symtab, sym);
+			} else {
+				spec.sym = declare_symbol (spec, init, symtab);
+			}
 		}
 		glsl_apply_attributes (attributes, spec);
 	}

@@ -61,6 +61,14 @@ glsl_layout_location (specifier_t spec, const expr_t *qual_name,
 }
 
 static void
+glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
+						 const expr_t *val)
+{
+	notice (qual_name, "%s %s", expr_string (qual_name),
+			get_value_string (val->value));
+}
+
+static void
 glsl_layout_binding (specifier_t spec, const expr_t *qual_name,
 					  const expr_t *val)
 {
@@ -466,7 +474,7 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "constant_id",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_constant_id),
 		.obj_mask = D(var),
 		.var_type = V(scalar),
 	},
@@ -765,7 +773,7 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 		&& qual->var_type != var_type) {
 		return false;
 	}
-	if (!(qual->if_mask & if_mask)) {
+	if (qual->if_mask != if_mask && !(qual->if_mask & if_mask)) {
 		return false;
 	}
 	if (qual->stage_filter) {
