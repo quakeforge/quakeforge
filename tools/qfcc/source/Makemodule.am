@@ -37,6 +37,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/expr_obj.c \
 	tools/qfcc/source/expr_optimize.c \
 	tools/qfcc/source/expr_type.c \
+	tools/qfcc/source/expr_unary.c \
 	tools/qfcc/source/expr_vector.c \
 	tools/qfcc/source/evaluate.c \
 	tools/qfcc/source/evaluate_type.c \
