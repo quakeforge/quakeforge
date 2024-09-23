@@ -217,6 +217,7 @@ typedef struct ex_value_s {
 	struct daglabel_s *daglabel;///< dag label for this value
 	const type_t *type;
 	etype_t     lltype;
+	unsigned    id;
 	union {
 		uint8_t     raw_value;			///< for memcpy
 		const char *string_val;			///< string constant
@@ -328,6 +329,7 @@ typedef struct expr_s {
 	struct operand_s *op;
 	expr_type   type;			///< the type of the result of this expression
 	int         printid;		///< avoid duplicate output when printing
+	unsigned    id;
 	unsigned    paren:1;		///< the expression is enclosed in ()
 	unsigned    implicit:1;		///< don't warn for implicit casts
 	unsigned    nodag:1;		///< prevent use of dags for this expression

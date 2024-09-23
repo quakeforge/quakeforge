@@ -30,6 +30,8 @@
 
 #include <string.h>
 
+#include <spirv/unified1/GLSL.std.450.h>
+
 #include "QF/quakeio.h"
 
 #include "tools/qfcc/include/def.h"
@@ -412,6 +414,265 @@ spirv_EntryPoint (unsigned func_id, const char *func_name,
 	memcpy (&D_var_o(int, def, 3), func_name, len);
 }
 
+typedef struct {
+	const char *name;
+	unsigned    id;
+} extinst_t;
+
+typedef unsigned (*spirv_expr_f) (const expr_t *e, spirvctx_t *ctx);
+
+typedef struct {
+	const char *op_name;
+	SpvOp       op;
+	unsigned    types1;
+	unsigned    types2;
+	spirv_expr_f generate;
+	extinst_t  *extinst;
+} spvop_t;
+
+static unsigned
+spirv_generate_wedge (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+static unsigned
+spirv_generate_qmul (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+static unsigned
+spirv_generate_qvmul (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+static unsigned
+spirv_generate_vqmul (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+#define SPV_type(t) (1<<(t))
+#define SPV_SINT  (SPV_type(ev_int)|SPV_type(ev_long))
+#define SPV_UINT  (SPV_type(ev_uint)|SPV_type(ev_ulong))
+#define SPV_FLOAT (SPV_type(ev_float)|SPV_type(ev_double))
+#define SPV_INT   (SPV_SINT|SPV_UINT)
+
+static extinst_t glsl_450 = {
+	.name = "GLSL.std.450"
+};
+
+static spvop_t spv_ops[] = {
+	{"or",     SpvOpLogicalOr,            SPV_INT,   SPV_INT   },
+	{"and",    SpvOpLogicalAnd,           SPV_INT,   SPV_INT   },
+
+	{"eq",     SpvOpIEqual,               SPV_INT,   SPV_INT   },
+	{"eq",     SpvOpFOrdEqual,            SPV_FLOAT, SPV_FLOAT },
+	{"eq",     SpvOpFOrdNotEqual,         SPV_FLOAT, SPV_FLOAT },
+	{"ne",     SpvOpINotEqual,            SPV_INT,   SPV_INT   },
+	{"le",     SpvOpULessThanEqual,       SPV_UINT,  SPV_UINT  },
+	{"le",     SpvOpSLessThanEqual,       SPV_SINT,  SPV_SINT  },
+	{"le",     SpvOpFOrdLessThanEqual,    SPV_FLOAT, SPV_FLOAT },
+	{"ge",     SpvOpUGreaterThanEqual,    SPV_UINT,  SPV_UINT  },
+	{"ge",     SpvOpSGreaterThanEqual,    SPV_SINT,  SPV_SINT  },
+	{"ge",     SpvOpFOrdGreaterThanEqual, SPV_FLOAT, SPV_FLOAT },
+	{"lt",     SpvOpULessThan,            SPV_UINT,  SPV_UINT  },
+	{"lt",     SpvOpSLessThan,            SPV_SINT,  SPV_SINT  },
+	{"lt",     SpvOpFOrdLessThan,         SPV_FLOAT, SPV_FLOAT },
+	{"gt",     SpvOpUGreaterThan,         SPV_UINT,  SPV_UINT  },
+	{"gt",     SpvOpSGreaterThan,         SPV_SINT,  SPV_SINT  },
+	{"gt",     SpvOpFOrdGreaterThan,      SPV_FLOAT, SPV_FLOAT },
+
+	{"sub",    SpvOpSNegate,              SPV_INT,   0         },
+	{"sub",    SpvOpFNegate,              SPV_FLOAT, 0         },
+
+	{"add",    SpvOpIAdd,                 SPV_INT,   SPV_INT   },
+	{"add",    SpvOpFAdd,                 SPV_FLOAT, SPV_FLOAT },
+	{"sub",    SpvOpISub,                 SPV_INT,   SPV_INT   },
+	{"sub",    SpvOpFSub,                 SPV_FLOAT, SPV_FLOAT },
+	{"mul",    SpvOpIMul,                 SPV_INT,   SPV_INT   },
+	{"mul",    SpvOpFMul,                 SPV_FLOAT, SPV_FLOAT },
+	{"div",    SpvOpUDiv,                 SPV_UINT,  SPV_UINT  },
+	{"div",    SpvOpSDiv,                 SPV_SINT,  SPV_SINT  },
+	{"div",    SpvOpFDiv,                 SPV_FLOAT, SPV_FLOAT },
+	{"rem",    SpvOpSRem,                 SPV_INT,   SPV_INT   },
+	{"rem",    SpvOpFRem,                 SPV_FLOAT, SPV_FLOAT },
+	{"mod",    SpvOpUMod,                 SPV_UINT,  SPV_UINT  },
+	{"mod",    SpvOpSMod,                 SPV_SINT,  SPV_SINT  },
+	{"mod",    SpvOpFMod,                 SPV_FLOAT, SPV_FLOAT },
+
+	{"bitor",  SpvOpBitwiseOr,            SPV_INT,   SPV_INT   },
+	{"bitxor", SpvOpBitwiseXor,           SPV_INT,   SPV_INT   },
+	{"bitand", SpvOpBitwiseAnd,           SPV_INT,   SPV_INT   },
+
+	{"bitnot", SpvOpNot,                  SPV_INT,   0         },
+	{"not",    SpvOpLogicalNot,           SPV_INT,   0         },
+
+	{"shl",    SpvOpShiftLeftLogical,     SPV_INT,   SPV_INT   },
+	{"shr",    SpvOpShiftRightLogical,    SPV_UINT,  SPV_UINT  },
+	{"shr",    SpvOpShiftRightArithmetic, SPV_SINT,  SPV_SINT  },
+
+	{"dot",    SpvOpDot,                  SPV_FLOAT, SPV_FLOAT },
+	{"scale",  SpvOpVectorTimesScalar,    SPV_FLOAT, SPV_FLOAT },
+
+	{"cross",  GLSLstd450Cross,           SPV_FLOAT, SPV_FLOAT,
+		.extinst = &glsl_450 },
+	{"wedge",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+		.generate = spirv_generate_wedge, .extinst = &glsl_450 },
+	{"qmul",   .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+		.generate = spirv_generate_qmul, .extinst = &glsl_450 },
+	{"qvmul",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+		.generate = spirv_generate_qvmul, .extinst = &glsl_450 },
+	{"vqmul",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+		.generate = spirv_generate_vqmul, .extinst = &glsl_450 },
+};
+
+static const spvop_t *
+spirv_find_op (const char *op_name, etype_t type1, etype_t type2)
+{
+	constexpr int num_ops = sizeof (spv_ops) / sizeof (spv_ops[0]);
+	for (int i = 0; i < num_ops; i++) {
+		if (strcmp (spv_ops[i].op_name, op_name) == 0
+			&& spv_ops[i].types1 & SPV_type(type1)
+			&& ((!spv_ops[i].types2 && type2 == ev_void)
+				|| (spv_ops[i].types2
+					&& (spv_ops[i].types2 & SPV_type(type2))))) {
+			return &spv_ops[i];
+		}
+	}
+	return nullptr;
+}
+
+static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
+
+static unsigned
+spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
+{
+	if (e->expr.op == '+') {
+		return spirv_emit_expr (e->expr.e1, ctx);
+	}
+
+	auto op_name = convert_op (e->expr.op);
+	if (!op_name) {
+		internal_error (e, "unexpected unary op: %d\n", e->expr.op);
+	}
+	auto t = get_type (e->expr.e1);
+	auto spv_op = spirv_find_op (op_name, t->type, 0);
+	if (!spv_op) {
+		internal_error (e, "unexpected unary op_name: %s %s\n", op_name,
+						pr_type_name[t->type]);
+	}
+	if (!spv_op->op) {
+		internal_error (e, "unimplemented op: %s %s\n", op_name,
+						pr_type_name[t->type]);
+	}
+	unsigned uid = spirv_emit_expr (e->expr.e1, ctx);
+
+	unsigned tid = type_id (get_type (e), ctx);
+	auto def = spirv_new_insn (spv_op->op, 4, ctx->types);
+	unsigned id;
+	D_var_o(int, def, 1) = tid;
+	D_var_o(int, def, 2) = id = spirv_id (ctx);
+	D_var_o(int, def, 3) = uid;
+	return id;
+}
+
+static unsigned
+spirv_expr (const expr_t *e, spirvctx_t *ctx)
+{
+	auto op_name = convert_op (e->expr.op);
+	if (!op_name) {
+		internal_error (e, "unexpected binary op: %d\n", e->expr.op);
+	}
+	auto t1 = get_type (e->expr.e1);
+	auto t2 = get_type (e->expr.e1);
+	auto spv_op = spirv_find_op (op_name, t1->type, t2->type);
+	if (!spv_op) {
+		internal_error (e, "unexpected binary op_name: %s %s %s\n", op_name,
+						pr_type_name[t1->type],
+						pr_type_name[t2->type]);
+	}
+	if (!spv_op->op) {
+		internal_error (e, "unimplemented op: %s %s %s\n", op_name,
+						pr_type_name[t1->type],
+						pr_type_name[t2->type]);
+	}
+	unsigned bid1 = spirv_emit_expr (e->expr.e1, ctx);
+	unsigned bid2 = spirv_emit_expr (e->expr.e2, ctx);
+
+	unsigned tid = type_id (get_type (e), ctx);
+	auto def = spirv_new_insn (spv_op->op, 5, ctx->types);
+	unsigned id;
+	D_var_o(int, def, 1) = tid;
+	D_var_o(int, def, 2) = id = spirv_id (ctx);
+	D_var_o(int, def, 3) = bid1;
+	D_var_o(int, def, 4) = bid2;
+	return id;
+}
+
+static unsigned
+spirv_value (const expr_t *e, spirvctx_t *ctx)
+{
+	auto value = e->value;
+	if (!value->id) {
+		unsigned tid = type_id (value->type, ctx);
+		unsigned op = SpvOpConstant;
+		int val_size = 1;
+		pr_ulong_t val = 0;
+		if (is_bool (value->type)) {
+			op = value->int_val ? SpvOpConstantTrue : SpvOpConstantFalse;
+			val_size = 0;
+		} else {
+			if (type_size (value->type) == 1) {
+				val = value->uint_val;
+				val_size = 1;
+			} else if (type_size (value->type) == 2) {
+				val = value->ulong_val;
+				val_size = 2;
+			} else {
+				internal_error (e, "not implemented");
+			}
+		}
+		auto def = spirv_new_insn (op, 3 + val_size, ctx->types);
+		D_var_o(int, def, 1) = tid;
+		D_var_o(int, def, 2) = value->id = spirv_id (ctx);
+		if (val_size > 0) {
+			D_var_o(int, def, 3) = val;
+		}
+		if (val_size > 1) {
+			D_var_o(int, def, 4) = val >> 32;
+		}
+	}
+	return value->id;
+}
+
+static unsigned
+spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
+{
+	static spirv_expr_f funcs[ex_count] = {
+		[ex_expr] = spirv_expr,
+		[ex_uexpr] = spirv_uexpr,
+		[ex_value] = spirv_value,
+	};
+
+	if (e->type >= ex_count) {
+		internal_error (e, "bad sub-expression type: %d", e->type);
+	}
+	if (!funcs[e->type]) {
+		internal_error (e, "unexpected sub-expression type: %s",
+						expr_names[e->type]);
+	}
+
+	if (!e->id) {
+		unsigned id = funcs[e->type] (e, ctx);
+		//FIXME const cast (store elsewhere)
+		((expr_t *) e)->id = id;
+	}
+	return e->id;
+}
+
 bool
 spirv_write (struct pr_info_s *pr, const char *filename)
 {
@@ -445,6 +706,13 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 
 	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
 					   expr_uint (pr->module->memory_model), ctx.space);
+
+	for (auto sym = pr->symtab->symbols; sym; sym = sym->next) {
+		if (sym->sy_type == sy_expr && is_constexpr (sym->expr)) {
+			puts (sym->name);
+			spirv_emit_expr (sym->expr, &ctx);
+		}
+	}
 
 	auto srcid = spirv_String (pr->src_name, &ctx);
 	spirv_Source (0, 1, srcid, nullptr, &ctx);

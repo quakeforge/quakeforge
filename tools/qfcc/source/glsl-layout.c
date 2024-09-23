@@ -53,19 +53,44 @@ glsl_layout_location_invalid (specifier_t spec, const expr_t *qual_name,
 }
 
 static void
+set_attribute (attribute_t **attributes, const char *name, const expr_t *val)
+{
+	for (auto a = *attributes; a; a = a->next) {
+		if (strcmp (a->name, name) == 0) {
+			a->params = val;
+			return;
+		}
+	}
+	auto attr = new_attribute (name, val);
+	attr->next = *attributes;
+	*attributes = attr;
+}
+
+static void
 glsl_layout_location (specifier_t spec, const expr_t *qual_name,
 					  const expr_t *val)
 {
-	notice (qual_name, "%s %s", expr_string (qual_name),
-			get_value_string (val->value));
+	const char *name = expr_string (qual_name);
+	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
 glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
 						 const expr_t *val)
 {
-	notice (qual_name, "%s %s", expr_string (qual_name),
-			get_value_string (val->value));
+	if (spec.sym->sy_type == sy_const) {
+		auto expr = new_value_expr (spec.sym->value, false);
+		spec.sym->sy_type = sy_expr;
+		spec.sym->expr = expr;
+	}
+	if (spec.sym->sy_type == sy_expr && spec.sym->expr->type == ex_value) {
+		auto expr = new_unary_expr ('+', spec.sym->expr);
+		expr->expr.constant = true;
+		expr->expr.type = spec.sym->type;
+		spec.sym->expr = expr;
+	}
+	const char *name = expr_string (qual_name);
+	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
