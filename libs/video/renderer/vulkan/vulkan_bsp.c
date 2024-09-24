@@ -971,6 +971,13 @@ queue_faces (bsp_pass_t *pass, QFV_BspPass pass_ind,
 			}
 
 			size_t      dq_size = pass->draw_queues[dq].size;
+			// ubsan complains about a non-zero offset applied to a null
+			// pointer when both size is 0 and a is null: quite right, but
+			// when a is null, size must be 0 or there will be bigger
+			// problems. When size is 0, the array gets initialized if it's
+			// not already (ie, if a is null) then the pointer is
+			// recalculated. Thus while not quite a false-positive, it's a
+			// non-issue
 			bsp_draw_t *draw = &pass->draw_queues[dq].a[dq_size - 1];
 			if (!pass->draw_queues[dq].size
 				|| draw->tex_id != i
@@ -1336,7 +1343,10 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		pass->position = r_refdef.frame.position;
 		pass->vis_frame = r_visstate.visframecount;
 	}
-	pass->brush = &r_refdef.worldmodel->brush;
+	pass->brush = nullptr;
+	if (r_refdef.worldmodel) {
+		pass->brush = &r_refdef.worldmodel->brush;
+	}
 
 	EntQueue_Clear (pass->entqueue);
 

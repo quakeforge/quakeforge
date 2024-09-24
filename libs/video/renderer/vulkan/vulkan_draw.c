@@ -1251,9 +1251,15 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 static inline descbatch_t *
 get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 {
+	// ubsan complains about a non-zero offset applied to a null pointer when
+	// both size is 0 and a is null: quite right, but when a is null, size
+	// must be 0 or there will be bigger problems. When size is 0, the array
+	// gets initialized if it's not already (ie, if a is null) then the
+	// pointer is recalculated. Thus while not quite a false-positive, it's
+	// a non-issue
 	descbatch_t *batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
 	if (!frame->quad_batch.size || batch->descid != descid
-		|| ((batch->count & (0xff << 24)) != (ind_count << 24))) {
+		|| ((batch->count & (0xffu << 24)) != (ind_count << 24))) {
 		DARRAY_APPEND(&frame->quad_batch, ((descbatch_t) { .descid = descid }));
 		batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
 		batch->count = ind_count << 24;
