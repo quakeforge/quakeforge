@@ -530,13 +530,21 @@ quit_f (void)
 static void *
 menu_allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+#ifdef _WIN32
+	return _aligned_malloc (size, 64);
+#else
+	return aligned_alloc (64, size);
+#endif
 }
 
 static void
 menu_free_progs_mem (progs_t *pr, void *mem)
 {
+#ifdef _WIN32
+	_aligned_free (mem);
+#else
 	free (mem);
+#endif
 }
 
 static void *
