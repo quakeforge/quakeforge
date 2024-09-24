@@ -14,7 +14,7 @@ struct PlaneData {
 	vec4        tcolor;
 };
 
-layout (set = 1, binding = 0) buffer Planes {
+layout (set = 1, binding = 0) readonly buffer Planes {
 	int         numPlanes;
 	PlaneData   planes[];
 };

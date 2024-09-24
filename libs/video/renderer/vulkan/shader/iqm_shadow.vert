@@ -4,15 +4,15 @@
 
 layout (constant_id = 0) const bool IQMDepthOnly = false;
 
-layout (set = 0, binding = 0) buffer ShadowView {
+layout (set = 0, binding = 0) readonly buffer ShadowView {
 	mat4x4      shadowView[];
 };
 
-layout (set = 0, binding = 1) buffer ShadowId {
+layout (set = 0, binding = 1) readonly buffer ShadowId {
 	uint        shadowId[];
 };
 
-layout (set = 3, binding = 0) buffer Bones {
+layout (set = 3, binding = 0) readonly buffer Bones {
 	// NOTE these are transposed, so v * m
 	mat3x4      bones[];
 };
