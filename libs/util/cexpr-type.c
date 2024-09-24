@@ -108,7 +108,7 @@ exprtype_t cexpr_bool = {
 	.get_string = bool_get_string,
 };
 
-static int bool_values[] = {
+static bool bool_values[] = {
 	false,
 	true,
 };
