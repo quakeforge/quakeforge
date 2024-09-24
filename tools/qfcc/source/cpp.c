@@ -576,7 +576,7 @@ run_cpp (const char *filename, const char *ext)
 	}
 
 #ifdef _WIN32
-	if (!options.save_temps && !options.preprocess_only)
+	if (!options.save_temps && !options.preprocess_only) {
 		mktemp (tempname->str);
 	}
 
