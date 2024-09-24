@@ -732,7 +732,7 @@ draw_sigils (view_t view, void *data)
 {
 	for (int i = 0; i < 4; i++) {
 		view_t      sigil = View_GetChild (view, i);
-		if (sbar_stats[STAT_ITEMS] & (1 << (28 + i))) {
+		if (sbar_stats[STAT_ITEMS] & (1u << (28 + i))) {
 			sbar_setcomponent (sigil, canvas_pic, &sb_sigil[i]);
 		} else {
 			sbar_remcomponent (sigil, canvas_pic);
