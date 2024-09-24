@@ -1247,7 +1247,9 @@ in_x11_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 	if (*numaxes > dev->num_axes) {
 		*numaxes = dev->num_axes;
 	}
-	memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+	if (dev->num_axes) {
+		memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+	}
 }
 
 static void
@@ -1262,7 +1264,9 @@ in_x11_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	if (*numbuttons > dev->num_buttons) {
 		*numbuttons = dev->num_buttons;
 	}
-	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+	if (dev->num_buttons) {
+		memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+	}
 }
 
 static const char *
