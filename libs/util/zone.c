@@ -82,6 +82,9 @@ typedef struct memblock_s {
 	int         id;			// should be ZONEID
 	int         retain;		// reference counter (optional usage)
 } __attribute__((aligned (64))) memblock_t;
+static_assert (__builtin_offsetof (memblock_t, retain) == 60,
+			   "memblock_t.retain at incorrect offset");
+
 
 struct memzone_s {
 	size_t      size;		// total bytes malloced, including header
@@ -214,13 +217,9 @@ z_error (memzone_t *zone, const char *msg)
 VISIBLE void
 Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset, size_t ele_size)
 {
-	memblock_t	*block
-		= __builtin_choose_expr (__builtin_offsetof (memblock_t, retain) == 60,
-								 0, (void) 0);
-
 	// set the entire zone to one free block
 
-	block = (memblock_t *) (zone + 1);
+	auto block = (memblock_t *) (zone + 1);
 	zone->blocklist.next = block;
 	zone->blocklist.prev = block;
 	zone->blocklist.tag = 1;	// in use block
