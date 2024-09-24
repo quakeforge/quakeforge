@@ -49,6 +49,8 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+#define MAX_SIGNATURE 16
+
 static struct DARRAY_TYPE (algebra_t *) algebras = DARRAY_STATIC_INIT (16);
 
 static void
@@ -234,6 +236,9 @@ algebra_init (algebra_t *a)
 	int m = a->minus;
 	int z = a->zero;
 	int d = p + m + z;
+	if (d > MAX_SIGNATURE) {
+		internal_error (0, "algebra too large");
+	}
 	metric_init (&a->metric, p, m, z);
 	a->dimension = d;
 	a->num_components = 1 << d;
@@ -380,7 +385,7 @@ algebra_type (const type_t *type, const expr_t *params)
 		error (err, "signature must be positive");
 		return type_default;
 	}
-	if (dim > 16) {
+	if (dim > MAX_SIGNATURE) {
 		error (err, "signature too large (that's %zd components!)",
 			   ((size_t) 1) << dim);
 		return type_default;
