@@ -532,7 +532,7 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 
 	fprintf (output_file, "\tHash_DelTable (%s_symtab.tab);\n",
 			 [self outname]);
-	fprintf (output_file, "\t%s_symtab.tab = 0;\n", [self outname]);
+	fprintf (output_file, "\t%s_symtab.tab = nullptr;\n", [self outname]);
 }
 
 -(void) writeSymtabEntry

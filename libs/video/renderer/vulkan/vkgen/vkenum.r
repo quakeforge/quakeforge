@@ -200,7 +200,7 @@ skip_value(string name)
 {
 	fprintf (output_file, "\tHash_DelTable (%s_symtab.tab);\n",
 			 [self name]);
-	fprintf (output_file, "\t%s_symtab.tab = 0;\n", [self name]);
+	fprintf (output_file, "\t%s_symtab.tab = nullptr;\n", [self name]);
 }
 
 -(void) writeSymtabEntry

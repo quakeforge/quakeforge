@@ -19,4 +19,15 @@
 {
 	return "QFString";
 }
+
+-(string) parseFunc
+{
+	return "parse_enum";
+}
+
+-(string) parseData
+{
+	return "&cexpr_bool_enum";
+}
+
 @end
