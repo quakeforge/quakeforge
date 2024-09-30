@@ -1,7 +1,7 @@
 /*
 	expr_optimize.c
 
-	 algebraic expression optimization
+	algebraic expression optimization
 
 	Copyright (C) 2023 Bill Currie <bill@taniwha.org>
 

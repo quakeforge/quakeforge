@@ -58,7 +58,7 @@ edag_add_expr (const expr_t *expr)
 	}
 	for (size_t i = 0; i < expr_dag.size; i++) {
 		auto e = expr_dag.a[i];
-		if (e->type != expr->type) {
+		if (e->type != expr->type || e->paren != expr->paren) {
 			continue;
 		}
 		switch (expr->type) {

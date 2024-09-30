@@ -450,10 +450,10 @@ count_terms (const expr_t *expr)
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
 	int terms = !is_sum (e1) + !is_sum (e2);
-	if (is_sum (e1)) {
+	if (!e1->paren && is_sum (e1)) {
 		terms += count_terms (expr->expr.e1);
 	}
-	if (is_sum (e2)) {
+	if (!e2->paren && is_sum (e2)) {
 		terms += count_terms (expr->expr.e2);
 	}
 	return terms;
@@ -593,13 +593,13 @@ scatter_terms_core (const expr_t *sum,
 	bool subtract = (sum->expr.op == '-') ^ negative;
 	auto e1 = sum->expr.e1;
 	auto e2 = sum->expr.e2;
-	if (is_sum (e1)) {
+	if (!e1->paren && is_sum (e1)) {
 		scatter_terms_core (e1, adds, addind, subs, subind, negative);
 	}
-	if (is_sum (e2)) {
+	if (!e2->paren && is_sum (e2)) {
 		scatter_terms_core (e2, adds, addind, subs, subind, subtract);
 	}
-	if (!is_sum (e1)) {
+	if (e1->paren || !is_sum (e1)) {
 		auto e = sum->expr.e1;
 		auto arr = negative ^ is_neg (e) ? subs : adds;
 		auto ind = negative ^ is_neg (e) ? subind : addind;
@@ -608,7 +608,7 @@ scatter_terms_core (const expr_t *sum,
 		}
 		arr[(*ind)++] = e;
 	}
-	if (!is_sum (e2)) {
+	if (e2->paren || !is_sum (e2)) {
 		auto e = sum->expr.e2;
 		auto arr = subtract ^ is_neg (e) ? subs : adds;
 		auto ind = subtract ^ is_neg (e) ? subind : addind;
