@@ -88,6 +88,16 @@ static bool fp_com_dot (void)
 	return options.code.commute_float_dot;
 }
 
+static bool fp_anti_cross (void)
+{
+	return options.code.anticom_float_cross;
+}
+
+static bool fp_anti_sub (void)
+{
+	return options.code.anticom_float_sub;
+}
+
 static bool fp_ass_add (void)
 {
 	return options.code.assoc_float_add;
@@ -113,7 +123,7 @@ static expr_type_t float_float[] = {
 	{'+',	&type_float,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_float,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_float,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float},
@@ -152,7 +162,7 @@ static expr_type_t float_int[] = {
 	{'+',	&type_float, 0, &type_float,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_float, 0, &type_float,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_float, 0, &type_float,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float, 0, &type_float},
@@ -181,7 +191,7 @@ static expr_type_t float_double[] = {
 	{'+',	&type_double, &type_double, 0,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_double, &type_double, 0,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_double, &type_double, 0,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, &type_double, 0},
@@ -206,11 +216,11 @@ static expr_type_t vector_vector[] = {
 	{'+',	&type_vector,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_vector,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{QC_DOT,	.process = vector_dot,
 		.commutative = fp_com_dot},
 	{QC_CROSS,	&type_vector,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_cross},
 	{QC_HADAMARD,	&type_vector,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'*',	.process = vector_multiply},
@@ -286,7 +296,7 @@ static expr_type_t quat_quat[] = {
 	{'+',	&type_quaternion,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_quaternion,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_quaternion, .associative = always, .true_op = QC_QMUL},
 	{QC_EQ,	.process = quat_compare},
 	{QC_NE,	.process = quat_compare},
@@ -311,7 +321,7 @@ static expr_type_t int_float[] = {
 	{'+',	&type_float, &type_float, 0,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_float, &type_float, 0,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_float, &type_float, 0,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_float, &type_float, 0},
@@ -597,7 +607,7 @@ static expr_type_t double_float[] = {
 	{'+',	&type_double, 0, &type_double,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_double, 0, &type_double,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_double, 0, &type_double,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
@@ -626,7 +636,7 @@ static expr_type_t double_int[] = {
 	{'+',	&type_double, 0, &type_double,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_double, 0, &type_double,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_double, 0, &type_double,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double, 0, &type_double},
@@ -647,7 +657,7 @@ static expr_type_t double_double[] = {
 	{'+',	&type_double,
 		.commutative = fp_com_add, .associative = fp_ass_add},
 	{'-',	&type_double,
-		.anticommute = fp_com_add},
+		.anticommute = fp_anti_sub},
 	{'*',	&type_double,
 		.commutative = fp_com_mul, .associative = fp_ass_mul},
 	{'/',	&type_double},
