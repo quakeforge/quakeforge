@@ -58,6 +58,11 @@ options_t   options = {
 	.code = {
 		.fast_float = true,
 		.promote_float = true,
+		.commute_float_add = true,
+		.commute_float_mul = true,
+		.commute_float_dot = true,
+		.anticom_float_cross = true,
+		.anticom_float_sub = true,
 	},
 	.warnings = {
 		.uninited_variable = true,
