@@ -2634,6 +2634,18 @@ commutator_product (const expr_t *e1, const expr_t *e2)
 								new_int_expr (2, false));
 }
 
+static bool
+is_two (const expr_t *e)
+{
+	if (is_integral_val (e)) {
+		return expr_integral (e) == 2;
+	}
+	if (is_floating_val (e)) {
+		return expr_floating (e) == 2;
+	}
+	return false;
+}
+
 static const expr_t *
 multivector_divide (const expr_t *e1, const expr_t *e2)
 {
@@ -2650,6 +2662,7 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 	auto layout = &algebra->layout;
 	auto stype = algebra->type;
 	const expr_t *a[layout->count] = {};
+	bool is_half = is_two (e2);
 	e1 = mvec_expr (e1, algebra);
 	e2 = promote_scalar (algebra->type, e2);
 	mvec_scatter (a, e1, algebra);
@@ -2659,13 +2672,18 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 			continue;
 		}
 		auto den = e2;
-		auto ct = get_type (a[i]);
-		int width = type_width (ct);
-		if (width > 1) {
-			den = ext_expr (den, vector_type (stype, width), 2, false);
+		if (is_half && a[i]->type == ex_expr && a[i]->expr.op == '+'
+			&& a[i]->expr.e1 == a[i]->expr.e2) {
+			a[i] = a[i]->expr.e1;
+		} else {
+			auto ct = get_type (a[i]);
+			int width = type_width (ct);
+			if (width > 1) {
+				den = ext_expr (den, vector_type (stype, width), 2, false);
+			}
+			a[i] = typed_binary_expr (ct, '/', a[i], den);
+			a[i] = edag_add_expr (a[i]);
 		}
-		a[i] = typed_binary_expr (ct, '/', a[i], den);
-		a[i] = edag_add_expr (a[i]);
 	}
 	return mvec_gather (a, algebra);
 }
