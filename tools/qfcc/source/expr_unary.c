@@ -469,6 +469,13 @@ unary_expr (int op, const expr_t *e)
 		return error (e, "invalid type for unary %s", get_op_string (op));
 	}
 
+	if (op == '-' && e->type == ex_expr && e->expr.anticommute) {
+		auto neg = new_expr ();
+		*neg = *e;
+		neg->expr.e1 = e->expr.e2;
+		neg->expr.e2 = e->expr.e1;
+		return neg;
+	}
 	if (unary_type->process) {
 		return unary_type->process (e);
 	}

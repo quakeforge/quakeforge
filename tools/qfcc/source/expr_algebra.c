@@ -121,6 +121,11 @@ neg_expr (const expr_t *e)
 		return e->expr.e1;
 	}
 	auto type = get_type (e);
+	if (e->type == ex_alias && !e->alias.offset && anti_com (e->alias.expr)) {
+		auto n = neg_expr (e->alias.expr);
+		n = algebra_cast_expr (type, n);
+		return n;
+	}
 	expr_t *neg;
 	if (anti_com (e)) {
 		neg = new_binary_expr (e->expr.op, e->expr.e2, e->expr.e1);
