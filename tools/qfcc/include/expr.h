@@ -333,6 +333,18 @@ typedef struct {
 	const expr_t *false_expr;
 } ex_cond_t;
 
+typedef struct {
+	const expr_t *object;
+	const expr_t *member;
+	const type_t *type;
+} ex_field_t;
+
+typedef struct {
+	const expr_t *base;
+	const expr_t *index;
+	const type_t *type;
+} ex_array_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -378,6 +390,8 @@ typedef struct expr_s {
 		ex_type_t typ;					///< type expression
 		ex_incop_t incop;				///< incop expression
 		ex_cond_t cond;					///< ?: conditional expression
+		ex_field_t field;				///< field reference expression
+		ex_array_t array;				///< array index expression
 	};
 } expr_t;
 
@@ -889,6 +903,8 @@ expr_t *new_with_expr (int mode, int reg, const expr_t *val);
 expr_t *new_incop_expr (int op, const expr_t *e, bool postop);
 expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
 					   const expr_t *false_expr);
+expr_t *new_field_expr (const expr_t *object, const expr_t *member);
+expr_t *new_array_expr (const expr_t *base, const expr_t *index);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

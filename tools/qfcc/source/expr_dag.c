@@ -189,6 +189,20 @@ edag_add_expr (const expr_t *expr)
 					return e;
 				}
 				break;
+			case ex_field:
+				if (e->field.type == expr->field.type
+					&& e->field.object == expr->field.object
+					&& e->field.member == expr->field.member) {
+					return e;
+				}
+				break;
+			case ex_array:
+				if (e->array.type == expr->array.type
+					&& e->array.base == expr->array.base
+					&& e->array.index == expr->array.index) {
+					return e;
+				}
+				break;
 		}
 	}
 	DARRAY_APPEND (&expr_dag, expr);

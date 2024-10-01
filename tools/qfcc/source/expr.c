@@ -212,6 +212,10 @@ get_type (const expr_t *e)
 			//FIXME true_expr and false_expr need to have the same type,
 			//unless one is nil
 			return get_type (e->cond.true_expr);
+		case ex_field:
+			return e->field.type;
+		case ex_array:
+			return e->array.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -1949,6 +1953,11 @@ has_function_call (const expr_t *e)
 			return (has_function_call (e->cond.test)
 					|| has_function_call (e->cond.true_expr)
 					|| has_function_call (e->cond.false_expr));
+		case ex_field:
+			return has_function_call (e->field.object);
+		case ex_array:
+			return (has_function_call (e->array.base)
+					|| has_function_call (e->array.index));
 		case ex_count:
 			break;
 	}
@@ -2505,6 +2514,29 @@ new_cond_expr (const expr_t *test, const expr_t *true_expr,
 	return cond;
 }
 
+expr_t *
+new_field_expr (const expr_t *object, const expr_t *member)
+{
+	auto field = new_expr ();
+	field->type = ex_field;
+	field->field = (ex_field_t) {
+		.object = object,
+		.member = member,
+	};
+	return field;
+}
+
+expr_t *
+new_array_expr (const expr_t *base, const expr_t *index)
+{
+	auto array = new_expr ();
+	array->type = ex_array;
+	array->array = (ex_array_t) {
+		.base = base,
+		.index = index,
+	};
+	return array;
+}
 
 const expr_t *
 incop_expr (int op, const expr_t *e, int postop)

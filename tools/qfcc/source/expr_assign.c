@@ -136,6 +136,10 @@ is_lvalue (const expr_t *expr)
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)
 					&& is_lvalue (expr->cond.false_expr));
+		case ex_field:
+			return 1;
+		case ex_array:
+			return 1;
 		case ex_count:
 			internal_error (expr, "invalid expression");
 	}

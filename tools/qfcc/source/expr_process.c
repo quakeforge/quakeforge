@@ -75,6 +75,28 @@ proc_symbol (const expr_t *expr)
 	return expr;
 }
 
+static void
+proc_do_list (ex_list_t *out, const ex_list_t *in)
+{
+	int count = list_count (in);
+	const expr_t *exprs[count + 1];
+	list_scatter (in, exprs);
+	for (int i = 0; i < count; i++) {
+		exprs[i] = expr_process (exprs[i]);
+	}
+	list_gather (out, exprs, count);
+}
+
+static const expr_t *
+proc_vector (const expr_t *expr)
+{
+	auto vec = new_expr ();
+	vec->type = ex_vector;
+	vec->vector.type = expr->vector.type;
+	proc_do_list (&vec->vector.list, &expr->vector.list);
+	return vec;
+}
+
 static const expr_t *
 proc_value (const expr_t *expr)
 {
@@ -92,15 +114,59 @@ proc_compound (const expr_t *expr)
 	return comp;
 }
 
+static const expr_t *
+proc_assign (const expr_t *expr)
+{
+	auto dst = expr_process (expr->assign.dst);
+	auto src = expr_process (expr->assign.src);
+	if (is_error (src)) {
+		return src;
+	}
+	if (is_error (src)) {
+		return src;
+	}
+	return assign_expr (dst, src);
+}
+
+static const expr_t *
+proc_branch (const expr_t *expr)
+{
+	if (expr->branch.type == pr_branch_call) {
+		auto args = new_list_expr (nullptr);
+		proc_do_list (&args->list, &expr->branch.args->list);
+		return function_expr (expr->branch.target, args);
+	} else {
+		auto branch = new_expr ();
+		branch->type = ex_branch;
+		branch->branch = expr->branch;
+		branch->branch.target = expr_process (expr->branch.target);
+		branch->branch.index = expr_process (expr->branch.index);
+		branch->branch.test = expr_process (expr->branch.test);
+		if (is_error (branch->branch.target)) {
+			return branch->branch.target;
+		}
+		if (is_error (branch->branch.index)) {
+			return branch->branch.index;
+		}
+		if (is_error (branch->branch.test)) {
+			return branch->branch.test;
+		}
+		return branch;
+	}
+}
+
 const expr_t *
 expr_process (const expr_t *expr)
 {
 	static process_f funcs[ex_count] = {
 		[ex_expr] = proc_expr,
 		[ex_uexpr] = proc_uexpr,
+		[ex_symbol] = proc_symbol,
+		[ex_vector] = proc_vector,
 		[ex_value] = proc_value,
 		[ex_compound] = proc_compound,
-		[ex_symbol] = proc_symbol,
+		[ex_assign] = proc_assign,
+		[ex_branch] = proc_branch,
 	};
 
 	if (expr->type >= ex_count) {

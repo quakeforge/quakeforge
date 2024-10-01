@@ -2078,6 +2078,11 @@ expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 			make_function (sym, 0, pr.symtab->space, sc_extern);
 		}
 		*op = def_operand (sym->metafunc->func->def, 0, e);
+	} else if (sym->sy_type == sy_convert) {
+		e = sym->convert.conv (sym, sym->convert.data);
+		return statement_subexpr (sblock, e, op);
+	} else if (sym->sy_type == sy_expr) {
+		return statement_subexpr (sblock, sym->expr, op);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);

@@ -323,15 +323,15 @@ postfix_expression
 	: primary_exprsssion
 	| postfix_expression '[' integer_expression ']'
 		{
-			$$ = array_expr ($1, $3);
+			$$ = new_array_expr ($1, $3);
 		}
 	| function_call
 	| postfix_expression '.' IDENTIFIER/*FIELD_SELECTION*/
 		{
 			auto sym = new_symbol_expr ($3);
-			$$ = field_expr ($1, sym);
+			$$ = new_field_expr ($1, sym);
 		}
-	| postfix_expression INCOP			{ $$ = incop_expr ($2, $1, 1); }
+	| postfix_expression INCOP			{ $$ = new_incop_expr ($2, $1, 1); }
 	;
 
 integer_expression
@@ -354,7 +354,7 @@ function_call_or_method
 			auto func = exprs[count - 1];
 			auto args = new_list_expr (nullptr);
 			list_gather (&args->list, exprs, count - 1);
-			$$ = function_expr (func, args);
+			$$ = call_expr (func, args, nullptr);
 		}
 	;
 
@@ -402,7 +402,7 @@ function_identifier
 
 unary_expression
 	: postfix_expression
-	| INCOP unary_expression			{ $$ = incop_expr ($1, $2, 0); }
+	| INCOP unary_expression			{ $$ = new_incop_expr ($1, $2, 0); }
 	| unary_operator unary_expression	{ $$ = new_unary_expr ($1, $2); }
 	;
 
@@ -1041,7 +1041,7 @@ statement
 
 simple_statement
 	: declaration_statement
-	| expression_statement
+	| expression_statement { $$ = expr_process ($1); }//FIXME shouldn't be here
 	| selection_statement
 	| switch_statement
 	| case_label

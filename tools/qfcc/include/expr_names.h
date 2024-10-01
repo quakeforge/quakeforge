@@ -71,6 +71,8 @@ EX_EXPR(list)		///< non-invasive list of expressions (::ex_list_t)
 EX_EXPR(type)		///< type expression for generics
 EX_EXPR(incop)		///< pre or post increment/decrement (::ex_incop_t)
 EX_EXPR(cond)		///< ?: conditional expression (::ex_cond_t)
+EX_EXPR(field)		///< field reference expression (::ex_field_t)
+EX_EXPR(array)		///< array index ex_field_t (::ex_array_t)
 
 #undef EX_EXPR
 
