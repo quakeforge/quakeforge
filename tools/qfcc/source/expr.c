@@ -74,7 +74,7 @@ convert_name (const expr_t *e)
 {
 	symbol_t   *sym;
 
-	if (!e || e->type != ex_symbol)
+	if (!e || e->type != ex_symbol || e->symbol->is_constexpr)
 		return e;
 
 	sym = e->symbol;
@@ -992,6 +992,9 @@ is_constexpr (const expr_t *e)
 	}
 	if ((e->type == ex_expr || e->type == ex_uexpr) && e->expr.constant) {
 		return true;
+	}
+	if (e->type == ex_symbol) {
+		return e->symbol->is_constexpr;
 	}
 	return is_constant (e);
 }

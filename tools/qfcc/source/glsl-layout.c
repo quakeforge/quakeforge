@@ -83,12 +83,7 @@ glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
 		spec.sym->sy_type = sy_expr;
 		spec.sym->expr = expr;
 	}
-	if (spec.sym->sy_type == sy_expr && spec.sym->expr->type == ex_value) {
-		auto expr = new_unary_expr ('+', spec.sym->expr);
-		expr->expr.constant = true;
-		expr->expr.type = spec.sym->type;
-		spec.sym->expr = expr;
-	}
+	spec.sym->is_constexpr = true;
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
 }

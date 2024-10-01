@@ -69,6 +69,7 @@ typedef struct symbol_s {
 	struct param_s *params;		///< the parameters if a function
 	bool        no_auto_init:1;	///< skip for non-designated initializers
 	bool        lvalue:1;
+	bool        is_constexpr:1;
 	struct attribute_s *attributes;
 	union {
 		int         offset;			///< sy_offset
