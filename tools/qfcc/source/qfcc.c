@@ -409,6 +409,7 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 			err = lang->finish (file);
 		}
 		if (!err) {
+			emit_ctor ();
 			debug_finish_module (obj);
 		}
 		err = pr.error_count;
@@ -838,6 +839,7 @@ progs_src_compile (void)
 	}
 
 	class_finish_module ();
+	emit_ctor ();
 	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {

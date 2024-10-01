@@ -220,6 +220,9 @@ function_t *build_builtin_function (symbol_t *sym,
 void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);
 
+void add_ctor_expr (const expr_t *expr);
+void emit_ctor (void);
+
 ///@}
 
 #endif//__function_h

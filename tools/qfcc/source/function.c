@@ -1443,3 +1443,25 @@ clear_functions (void)
 		function_map = Hash_NewTable (1021, metafunc_get_name, 0, 0, 0);
 	}
 }
+
+void
+add_ctor_expr (const expr_t *expr)
+{
+	if (!pr.ctor_exprs) {
+		pr.ctor_exprs = new_block_expr (nullptr);
+	}
+	append_expr (pr.ctor_exprs, expr);
+}
+
+void
+emit_ctor (void)
+{
+	if (!pr.ctor_exprs) {
+		return;
+	}
+
+	auto ctor_sym = new_symbol_type (".ctor", &type_func);
+	ctor_sym = function_symbol ((specifier_t) { .sym = ctor_sym });
+	current_func = begin_function (ctor_sym, 0, current_symtab, 1, sc_static);
+	build_code_function (ctor_sym, 0, pr.ctor_exprs);
+}

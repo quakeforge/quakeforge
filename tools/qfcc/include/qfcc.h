@@ -80,6 +80,8 @@ typedef struct pr_info_s {
 	struct symtab_s *symtab;
 	struct symtab_s *entity_fields;
 
+	struct expr_s  *ctor_exprs;
+
 	srcline_t      *srcline_stack;
 	rua_loc_t       loc;
 	int             error_count;

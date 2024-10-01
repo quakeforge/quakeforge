@@ -1612,8 +1612,6 @@ class_finish_module (void)
 	symbol_t   *module_sym;
 	pr_module_t *module;
 	symbol_t   *exec_class_sym;
-	symbol_t   *init_sym;
-	expr_t     *init_expr;
 
 	data.refs = emit_selectors ();
 	if (class_hash) {
@@ -1660,20 +1658,12 @@ class_finish_module (void)
 					   sc_extern);
 	}
 
-	init_sym = new_symbol_type (".ctor", &type_func);
-	init_sym = function_symbol ((specifier_t) { .sym = init_sym });
-
 	const expr_t *module_expr;
 	module_expr = address_expr (new_symbol_expr (module_sym), 0);
 	module_expr = new_list_expr (module_expr);
 
-	init_expr = new_block_expr (0);
-	append_expr (init_expr,
-				 build_function_call (new_symbol_expr (exec_class_sym),
-									  exec_class_sym->type, module_expr));
-
-	current_func = begin_function (init_sym, 0, current_symtab, 1, sc_static);
-	build_code_function (init_sym, 0, init_expr);
+	add_ctor_expr (build_function_call (new_symbol_expr (exec_class_sym),
+										exec_class_sym->type, module_expr));
 }
 
 protocol_t *
