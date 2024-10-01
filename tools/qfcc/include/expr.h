@@ -702,8 +702,8 @@ const expr_t *new_entity_expr (int entity_val);
 	\return			The new field constant expression node
 					(expr_t::e::field_val).
 */
-const expr_t *new_field_expr (int field_val, const type_t *type,
-							  struct def_s *def);
+const expr_t *new_deffield_expr (int field_val, const type_t *type,
+							     struct def_s *def);
 struct symbol_s *get_struct_field (const type_t *t1, const expr_t *e1,
 								   const expr_t *e2);
 

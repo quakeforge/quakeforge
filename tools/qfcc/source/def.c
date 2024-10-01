@@ -469,7 +469,7 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 			sym = new_symbol (name);
 		if (!expr) {
 			if (is_field) {
-				expr = new_field_expr (i, &type_float, vector_sym->def);
+				expr = new_deffield_expr (i, &type_float, vector_sym->def);
 			} else {
 				expr = field_expr (vector_expr,
 								   new_symbol_expr (new_symbol (fields[i])));
@@ -523,7 +523,7 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
 			scoped_src_loc (init);
-			auto new = new_field_expr (0, field->type, field->def);
+			auto new = new_deffield_expr (0, field->type, field->def);
 			if (new->type != ex_value) {
 				internal_error (init, "expected value expression");
 			}

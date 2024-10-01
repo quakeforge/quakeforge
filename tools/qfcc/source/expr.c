@@ -833,7 +833,7 @@ new_entity_expr (int entity_val)
 }
 
 const expr_t *
-new_field_expr (int field_val, const type_t *type, def_t *def)
+new_deffield_expr (int field_val, const type_t *type, def_t *def)
 {
 	return new_value_expr (new_field_val (field_val, type, def), false);
 }
@@ -1706,7 +1706,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 		if (e2->type == ex_symbol)
 			field = get_struct_field (&type_entity, e1, e2);
 		if (field) {
-			e2 = new_field_expr (0, field->type, field->def);
+			e2 = new_deffield_expr (0, field->type, field->def);
 			e = new_binary_expr ('.', e1, e2);
 			e->expr.type = field->type;
 			return e;
@@ -1781,7 +1781,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 									e2->symbol->name);
 				}
 				def = sym->def;
-				e2 = new_field_expr (0, field->type, def);
+				e2 = new_deffield_expr (0, field->type, def);
 			} else if (e2->type != ex_value
 					   || e2->value->lltype != ev_field) {
 				internal_error (e2, "unexpected field exression");
