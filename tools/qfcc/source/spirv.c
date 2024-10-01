@@ -58,6 +58,28 @@ typedef struct spirvctx_s {
 	unsigned id;
 } spirvctx_t;
 
+static unsigned
+spirv_type_id (const type_t *type, spirvctx_t *ctx)
+{
+	if (type->id < ctx->type_ids.size && ctx->type_ids.a[type->id]) {
+		return ctx->type_ids.a[type->id];
+	}
+	return 0;
+}
+
+static void
+spirv_add_type_id (const type_t *type, unsigned id, spirvctx_t *ctx)
+{
+	if (type->id >= ctx->type_ids.size) {
+		size_t base = ctx->type_ids.size;
+		DARRAY_RESIZE (&ctx->type_ids, type->id + 1);
+		while (base < type->id + 1) {
+			ctx->type_ids.a[base++] = 0;
+		}
+	}
+	ctx->type_ids.a[type->id] = id;
+}
+
 static def_t *
 spirv_new_insn (int op, int size, defspace_t *space)
 {
@@ -271,6 +293,10 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	for (auto p = fsym->params; p; p = p->next) {
 		num_params++;
 	}
+	auto type = fsym->type;
+	if (spirv_type_id (type, ctx)) {
+		return spirv_type_id (type, ctx);
+	}
 	unsigned ret_type = type_id (fsym->type->func.ret_type, ctx);
 
 	unsigned param_types[num_params];
@@ -290,21 +316,15 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	for (int i = 0; i < num_params; i++) {
 		D_var_o(int, def, 3 + i) = param_types[i];
 	}
+	spirv_add_type_id (type, ft_id, ctx);
 	return ft_id;
 }
 
 static unsigned
 type_id (const type_t *type, spirvctx_t *ctx)
 {
-	if (type->id < ctx->type_ids.size && ctx->type_ids.a[type->id]) {
-		return ctx->type_ids.a[type->id];
-	}
-	if (type->id >= ctx->type_ids.size) {
-		size_t base = ctx->type_ids.size;
-		DARRAY_RESIZE (&ctx->type_ids, type->id + 1);
-		while (base < type->id + 1) {
-			ctx->type_ids.a[base++] = 0;
-		}
+	if (spirv_type_id (type, ctx)) {
+		return spirv_type_id (type, ctx);
 	}
 	unsigned id = 0;
 	if (is_void (type)) {
@@ -349,8 +369,7 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		print_type_str (str, type);
 		internal_error (0, "can't emit type %s", str->str);
 	}
-
-	ctx->type_ids.a[type->id] = id;
+	spirv_add_type_id (type, id, ctx);
 	return id;
 }
 
