@@ -52,6 +52,9 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
 		spec.type = append_type (array, spec.type);
 		spec.type = find_type (spec.type);
 	}
+	if (init) {
+		init = expr_process (init);
+	}
 	auto attributes = glsl_optimize_attributes (spec.attributes);
 	if (sym && sym->sy_type == sy_expr) {
 		auto id_list = sym->expr;

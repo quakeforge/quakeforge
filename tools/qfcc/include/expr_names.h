@@ -69,6 +69,8 @@ EX_EXPR(extend)		///< vector extend operation (::ex_extend_t)
 EX_EXPR(multivec)	///< geometric algebra multivector (::ex_multivec_t)
 EX_EXPR(list)		///< non-invasive list of expressions (::ex_list_t)
 EX_EXPR(type)		///< type expression for generics
+EX_EXPR(incop)		///< pre or post increment/decrement (::ex_incop_t)
+EX_EXPR(cond)		///< ?: conditional expression (::ex_cond_t)
 
 #undef EX_EXPR
 

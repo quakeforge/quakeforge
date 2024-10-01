@@ -78,6 +78,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_with:
 			case ex_args:
 			case ex_type:
+			case ex_incop:
 				// these are never put in the dag
 				return expr;
 			case ex_list:
@@ -181,6 +182,13 @@ edag_add_expr (const expr_t *expr)
 				break;
 			case ex_multivec:
 				return expr;	//FIXME ?
+			case ex_cond:
+				if (e->cond.test == expr->cond.test
+					&& e->cond.true_expr == expr->cond.true_expr
+					&& e->cond.false_expr == expr->cond.false_expr) {
+					return e;
+				}
+				break;
 		}
 	}
 	DARRAY_APPEND (&expr_dag, expr);

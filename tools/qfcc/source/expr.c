@@ -206,6 +206,12 @@ get_type (const expr_t *e)
 			return 0;
 		case ex_type:
 			return nullptr;
+		case ex_incop:
+			return get_type (e->incop.expr);
+		case ex_cond:
+			//FIXME true_expr and false_expr need to have the same type,
+			//unless one is nil
+			return get_type (e->cond.true_expr);
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -1934,6 +1940,12 @@ has_function_call (const expr_t *e)
 				}
 			}
 			return 0;
+		case ex_incop:
+			return has_function_call (e->incop.expr);
+		case ex_cond:
+			return (has_function_call (e->cond.test)
+					|| has_function_call (e->cond.true_expr)
+					|| has_function_call (e->cond.false_expr));
 		case ex_count:
 			break;
 	}
@@ -2462,6 +2474,34 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	append_expr (block, elabel);
 	return block;
 }
+
+expr_t *
+new_incop_expr (int op, const expr_t *e, bool postop)
+{
+	auto incop = new_expr ();
+	incop->type = ex_incop;
+	incop->incop = (ex_incop_t) {
+		.op = op,
+		.postop = postop,
+		.expr = e,
+	};
+	return incop;
+}
+
+expr_t *
+new_cond_expr (const expr_t *test, const expr_t *true_expr,
+			   const expr_t *false_expr)
+{
+	auto cond = new_expr ();
+	cond->type = ex_cond;
+	cond->cond = (ex_cond_t) {
+		.test = test,
+		.true_expr = true_expr,
+		.false_expr = false_expr,
+	};
+	return cond;
+}
+
 
 const expr_t *
 incop_expr (int op, const expr_t *e, int postop)

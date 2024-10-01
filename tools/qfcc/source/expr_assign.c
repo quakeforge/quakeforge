@@ -131,7 +131,11 @@ is_lvalue (const expr_t *expr)
 		case ex_multivec:
 		case ex_list:
 		case ex_type:
+		case ex_incop:
 			break;
+		case ex_cond:
+			return (is_lvalue (expr->cond.true_expr)
+					&& is_lvalue (expr->cond.false_expr));
 		case ex_count:
 			internal_error (expr, "invalid expression");
 	}

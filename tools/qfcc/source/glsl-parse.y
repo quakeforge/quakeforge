@@ -403,7 +403,7 @@ function_identifier
 unary_expression
 	: postfix_expression
 	| INCOP unary_expression			{ $$ = incop_expr ($1, $2, 0); }
-	| unary_operator unary_expression	{ $$ = unary_expr ($1, $2); }
+	| unary_operator unary_expression	{ $$ = new_unary_expr ($1, $2); }
 	;
 
 unary_operator
@@ -417,15 +417,15 @@ multiplicative_expression
 	: unary_expression
 	| multiplicative_expression '*' unary_expression
 		{
-			$$ = binary_expr ('*', $1, $3);
+			$$ = new_binary_expr ('*', $1, $3);
 		}
 	| multiplicative_expression '/' unary_expression
 		{
-			$$ = binary_expr ('/', $1, $3);
+			$$ = new_binary_expr ('/', $1, $3);
 		}
 	| multiplicative_expression '%' unary_expression
 		{
-			$$ = binary_expr ('%', $1, $3);
+			$$ = new_binary_expr ('%', $1, $3);
 		}
 	;
 
@@ -433,11 +433,11 @@ additive_expression
 	: multiplicative_expression
 	| additive_expression '+' multiplicative_expression
 		{
-			$$ = binary_expr ('+', $1, $3);
+			$$ = new_binary_expr ('+', $1, $3);
 		}
 	| additive_expression '-' multiplicative_expression
 		{
-			$$ = binary_expr ('-', $1, $3);
+			$$ = new_binary_expr ('-', $1, $3);
 		}
 	;
 
@@ -445,11 +445,11 @@ shift_expression
 	: additive_expression
 	| shift_expression SHL additive_expression
 		{
-			$$ = binary_expr (QC_SHL, $1, $3);
+			$$ = new_binary_expr (QC_SHL, $1, $3);
 		}
 	| shift_expression SHR additive_expression
 		{
-			$$ = binary_expr (QC_SHR, $1, $3);
+			$$ = new_binary_expr (QC_SHR, $1, $3);
 		}
 	;
 
@@ -457,19 +457,19 @@ relational_expression
 	: shift_expression
 	| relational_expression LT shift_expression
 		{
-			$$ = binary_expr (QC_LT, $1, $3);
+			$$ = new_binary_expr (QC_LT, $1, $3);
 		}
 	| relational_expression GT shift_expression
 		{
-			$$ = binary_expr (QC_GT, $1, $3);
+			$$ = new_binary_expr (QC_GT, $1, $3);
 		}
 	| relational_expression LE shift_expression
 		{
-			$$ = binary_expr (QC_LE, $1, $3);
+			$$ = new_binary_expr (QC_LE, $1, $3);
 		}
 	| relational_expression GE shift_expression
 		{
-			$$ = binary_expr (QC_GE, $1, $3);
+			$$ = new_binary_expr (QC_GE, $1, $3);
 		}
 	;
 
@@ -477,11 +477,11 @@ equality_expression
 	: relational_expression
 	| equality_expression EQ relational_expression
 		{
-			$$ = binary_expr (QC_EQ, $1, $3);
+			$$ = new_binary_expr (QC_EQ, $1, $3);
 		}
 	| relational_expression NE relational_expression
 		{
-			$$ = binary_expr (QC_NE, $1, $3);
+			$$ = new_binary_expr (QC_NE, $1, $3);
 		}
 	;
 
@@ -489,7 +489,7 @@ and_expression
 	: equality_expression
 	| and_expression '&' equality_expression
 		{
-			$$ = binary_expr ('&', $1, $3);
+			$$ = new_binary_expr ('&', $1, $3);
 		}
 	;
 
@@ -497,7 +497,7 @@ exclusive_or_expression
 	: and_expression
 	| exclusive_or_expression '^' and_expression
 		{
-			$$ = binary_expr ('^', $1, $3);
+			$$ = new_binary_expr ('^', $1, $3);
 		}
 	;
 
@@ -505,7 +505,7 @@ inclusive_or_expression
 	: exclusive_or_expression
 	| inclusive_or_expression '|' exclusive_or_expression
 		{
-			$$ = binary_expr ('|', $1, $3);
+			$$ = new_binary_expr ('|', $1, $3);
 		}
 	;
 
@@ -545,11 +545,12 @@ assignment_expression
 	: conditional_expression
 	| unary_expression assignment_operator assignment_expression
 		{
-			if ($2 == '=') {
-				$$ = assign_expr ($1, $3);
-			} else {
-				$$ = asx_expr ($2, $1, $3);
+			auto expr = $3;
+			if ($2 != '=') {
+				expr = paren_expr (expr);
+				expr = new_binary_expr ($2, $1, expr);
 			}
+			$$ = new_assign_expr ($1, expr);
 		}
 	;
 

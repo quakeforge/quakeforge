@@ -321,6 +321,18 @@ typedef struct {
 	const symbol_t *sym;
 } ex_type_t;
 
+typedef struct {
+	int         op;
+	bool        postop;
+	const expr_t *expr;
+} ex_incop_t;
+
+typedef struct {
+	const expr_t *test;
+	const expr_t *true_expr;
+	const expr_t *false_expr;
+} ex_cond_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -364,6 +376,8 @@ typedef struct expr_s {
 		ex_extend_t extend;				///< vector extend operation
 		ex_multivec_t multivec;			///< geometric algebra multivector
 		ex_type_t typ;					///< type expression
+		ex_incop_t incop;				///< incop expression
+		ex_cond_t cond;					///< ?: conditional expression
 	};
 } expr_t;
 
@@ -872,6 +886,9 @@ expr_t *new_assign_expr (const expr_t *dst, const expr_t *src);
 expr_t *new_return_expr (const expr_t *ret_val);
 expr_t *new_adjstk_expr (int mode, int offset);
 expr_t *new_with_expr (int mode, int reg, const expr_t *val);
+expr_t *new_incop_expr (int op, const expr_t *e, bool postop);
+expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
+					   const expr_t *false_expr);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
@@ -1002,6 +1019,8 @@ int count_factors (const expr_t *expr) __attribute__((pure));
 void scatter_factors (const expr_t *prod, const expr_t **factors);
 const expr_t *gather_factors (const type_t *type, int op,
 							  const expr_t **factors, int count);
+
+const expr_t *expr_process (const expr_t *expr);
 
 ///@}
 
