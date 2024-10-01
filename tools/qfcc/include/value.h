@@ -43,6 +43,7 @@ struct type_s;
 struct pr_type_s;
 struct operand_s;
 
+struct ex_value_s *new_value (void);
 struct ex_value_s *new_string_val (const char *string_val);
 struct ex_value_s *new_double_val (double double_val);
 struct ex_value_s *new_float_val (float float_val);

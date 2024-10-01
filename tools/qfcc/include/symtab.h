@@ -65,6 +65,7 @@ typedef struct symbol_s {
 	vis_t       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
 	sy_type_e   sy_type;		///< symbol type
+	unsigned    id;
 	const struct type_s *type;	///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
 	bool        no_auto_init:1;	///< skip for non-designated initializers

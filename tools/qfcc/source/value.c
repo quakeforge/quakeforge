@@ -94,7 +94,7 @@ value_compare (const void *_val1, const void *_val2, void *unused)
 	return memcmp (&val1->raw_value, &val2->raw_value, value_size) == 0;
 }
 
-static ex_value_t *
+ex_value_t *
 new_value (void)
 {
 	ex_value_t *value;

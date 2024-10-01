@@ -34,6 +34,7 @@
 
 #include "QF/quakeio.h"
 
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -50,6 +51,7 @@ typedef struct spirvctx_s {
 	defspace_t *linkage;
 	defspace_t *strings;
 	defspace_t *names;
+	defspace_t *annotations;
 	defspace_t *types;
 	defspace_t *code;
 	struct DARRAY_TYPE (unsigned) type_ids;
@@ -141,6 +143,22 @@ spirv_Name (unsigned id, const char *name, spirvctx_t *ctx)
 	auto def = spirv_new_insn (SpvOpName, 2 + RUP(len, 4) / 4, ctx->names);
 	D_var_o(int, def, 1) = id;
 	memcpy (&D_var_o(int, def, 2), name, len);
+}
+
+static void
+spirv_Decorate (unsigned id, SpvDecoration decoration, void *literal,
+				etype_t type, spirvctx_t *ctx)
+{
+	if (type != ev_int) {
+		internal_error (0, "unexpected type");
+	}
+	int size = pr_type_size[type];
+	auto def = spirv_new_insn (SpvOpDecorate, 3 + size, ctx->annotations);
+	D_var_o(int, def, 1) = id;
+	D_var_o(int, def, 2) = decoration;
+	if (type == ev_int) {
+		D_var_o(int, def, 3) = *(int *)literal;
+	}
 }
 
 static void
@@ -571,11 +589,19 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 	unsigned uid = spirv_emit_expr (e->expr.e1, ctx);
 
 	unsigned tid = type_id (get_type (e), ctx);
-	auto def = spirv_new_insn (spv_op->op, 4, ctx->types);
 	unsigned id;
-	D_var_o(int, def, 1) = tid;
-	D_var_o(int, def, 2) = id = spirv_id (ctx);
-	D_var_o(int, def, 3) = uid;
+	if (e->expr.constant) {
+		auto def = spirv_new_insn (SpvOpSpecConstantOp, 5, ctx->types);
+		D_var_o(int, def, 1) = tid;
+		D_var_o(int, def, 2) = id = spirv_id (ctx);
+		D_var_o(int, def, 3) = spv_op->op;
+		D_var_o(int, def, 4) = uid;
+	} else {
+		auto def = spirv_new_insn (spv_op->op, 4, ctx->types);
+		D_var_o(int, def, 1) = tid;
+		D_var_o(int, def, 2) = id = spirv_id (ctx);
+		D_var_o(int, def, 3) = uid;
+	}
 	return id;
 }
 
@@ -603,13 +629,46 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 	unsigned bid2 = spirv_emit_expr (e->expr.e2, ctx);
 
 	unsigned tid = type_id (get_type (e), ctx);
-	auto def = spirv_new_insn (spv_op->op, 5, ctx->types);
 	unsigned id;
-	D_var_o(int, def, 1) = tid;
-	D_var_o(int, def, 2) = id = spirv_id (ctx);
-	D_var_o(int, def, 3) = bid1;
-	D_var_o(int, def, 4) = bid2;
+	if (e->expr.constant) {
+		auto def = spirv_new_insn (SpvOpSpecConstantOp, 6, ctx->types);
+		D_var_o(int, def, 1) = tid;
+		D_var_o(int, def, 2) = id = spirv_id (ctx);
+		D_var_o(int, def, 3) = spv_op->op;
+		D_var_o(int, def, 4) = bid1;
+		D_var_o(int, def, 5) = bid2;
+	} else {
+		auto def = spirv_new_insn (spv_op->op, 5, ctx->types);
+		D_var_o(int, def, 1) = tid;
+		D_var_o(int, def, 2) = id = spirv_id (ctx);
+		D_var_o(int, def, 3) = bid1;
+		D_var_o(int, def, 4) = bid2;
+	}
 	return id;
+}
+
+static unsigned
+spirv_symbol (const expr_t *e, spirvctx_t *ctx)
+{
+	auto sym = e->symbol;
+	if (sym->id) {
+		return sym->id;
+	}
+	if (sym->sy_type == sy_expr) {
+		sym->id = spirv_emit_expr (sym->expr, ctx);
+		spirv_Name (sym->id, sym->name, ctx);
+		for (auto attr = sym->attributes; attr; attr = attr->next) {
+			if (strcmp (attr->name, "constant_id") == 0) {
+				int specid = expr_integral (attr->params);
+				spirv_Decorate (sym->id, SpvDecorationSpecId,
+								&specid, ev_int, ctx);
+			}
+		}
+	} else {
+		internal_error (e, "unexpected symbol type: %s for %s",
+						symtype_str (sym->sy_type), sym->name);
+	}
+	return sym->id;
 }
 
 static unsigned
@@ -635,14 +694,23 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 				internal_error (e, "not implemented");
 			}
 		}
-		auto def = spirv_new_insn (op, 3 + val_size, ctx->types);
-		D_var_o(int, def, 1) = tid;
-		D_var_o(int, def, 2) = value->id = spirv_id (ctx);
-		if (val_size > 0) {
-			D_var_o(int, def, 3) = val;
+		if (value->is_constexpr) {
+			op += SpvOpSpecConstantTrue - SpvOpConstantTrue;
 		}
-		if (val_size > 1) {
-			D_var_o(int, def, 4) = val >> 32;
+		if (op == SpvOpConstant && !val) {
+			auto def = spirv_new_insn (SpvOpConstantNull, 3, ctx->types);
+			D_var_o(int, def, 1) = tid;
+			D_var_o(int, def, 2) = value->id = spirv_id (ctx);
+		} else {
+			auto def = spirv_new_insn (op, 3 + val_size, ctx->types);
+			D_var_o(int, def, 1) = tid;
+			D_var_o(int, def, 2) = value->id = spirv_id (ctx);
+			if (val_size > 0) {
+				D_var_o(int, def, 3) = val;
+			}
+			if (val_size > 1) {
+				D_var_o(int, def, 4) = val >> 32;
+			}
 		}
 	}
 	return value->id;
@@ -654,6 +722,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 	static spirv_expr_f funcs[ex_count] = {
 		[ex_expr] = spirv_expr,
 		[ex_uexpr] = spirv_uexpr,
+		[ex_symbol] = spirv_symbol,
 		[ex_value] = spirv_value,
 	};
 
@@ -681,6 +750,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.linkage = defspace_new (ds_backed),
 		.strings = defspace_new (ds_backed),
 		.names = defspace_new (ds_backed),
+		.annotations = defspace_new (ds_backed),
 		.types = defspace_new (ds_backed),
 		.code = defspace_new (ds_backed),
 		.type_ids = DARRAY_STATIC_INIT (64),
@@ -733,6 +803,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	defspace_add_data (ctx.space, ctx.linkage->data, ctx.linkage->size);
 	defspace_add_data (ctx.space, ctx.strings->data, ctx.strings->size);
 	defspace_add_data (ctx.space, ctx.names->data, ctx.names->size);
+	defspace_add_data (ctx.space, ctx.annotations->data, ctx.annotations->size);
 	defspace_add_data (ctx.space, ctx.types->data, ctx.types->size);
 	defspace_add_data (ctx.space, ctx.code->data, ctx.code->size);
 

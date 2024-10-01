@@ -218,6 +218,7 @@ typedef struct ex_value_s {
 	const type_t *type;
 	etype_t     lltype;
 	unsigned    id;
+	bool        is_constexpr;
 	union {
 		uint8_t     raw_value;			///< for memcpy
 		const char *string_val;			///< string constant

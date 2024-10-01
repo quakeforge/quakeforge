@@ -83,6 +83,16 @@ glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
 		spec.sym->sy_type = sy_expr;
 		spec.sym->expr = expr;
 	}
+	if (spec.sym->sy_type == sy_expr && spec.sym->expr->type == ex_value) {
+		auto value = new_value ();
+		*value = *spec.sym->expr->value;
+		value->is_constexpr = true;
+		spec.sym->expr = new_value_expr (value, false);
+	} else {
+		error (spec.sym->expr,
+			   "specialization constant must be a scalar literal");
+		return;
+	}
 	spec.sym->is_constexpr = true;
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
