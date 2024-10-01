@@ -265,7 +265,8 @@ dump_dot_type (void *_t, const char *filename)
 	const type_t *t = _t;
 
 	dasprintf (dstr, "digraph type_%p {\n", t);
-	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
+	dasprintf (dstr, "  graph [label=\"%s\"];\n",
+			   filename ? quote_string (filename) : "");
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
 	dot_print_type (dstr, t, 0, seen);
 	dasprintf (dstr, "}\n");

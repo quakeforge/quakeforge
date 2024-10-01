@@ -161,7 +161,8 @@ print_sblock (sblock_t *sblock, const char *filename)
 	dstring_t  *dstr = dstring_newstr();
 
 	dasprintf (dstr, "digraph sblock_%p {\n", sblock);
-	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
+	dasprintf (dstr, "  graph [label=\"%s\"];\n",
+			   filename ? quote_string (filename) : "");
 	dasprintf (dstr, "  layout=dot; rankdir=TB;\n");
 	for (i = 0; sblock; sblock = sblock->next, i++)
 		flow_sblock (dstr, sblock, i);
