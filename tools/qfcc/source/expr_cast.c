@@ -72,8 +72,9 @@ do_conversion (pr_type_t *dst_value, const type_t *dstType,
 static const expr_t *
 cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 {
-	pr_type_t   src_value[type_size (srcType)];
-	pr_type_t   dst_value[type_size (dstType)];
+#define ALIGN [[gnu::aligned(alignof(pr_lvec4_t))]]
+	pr_type_t   src_value[type_size (srcType)] ALIGN;
+	pr_type_t   dst_value[type_size (dstType)] ALIGN;
 
 	value_store (src_value, srcType, expr);
 
