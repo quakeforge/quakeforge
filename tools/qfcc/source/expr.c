@@ -549,17 +549,11 @@ new_block_expr (const expr_t *old)
 	expr_t     *b = new_expr ();
 
 	b->type = ex_block;
-	b->block.head = 0;
-	b->block.tail = &b->block.head;
 	if (old) {
 		if (old->type != ex_block) {
 			internal_error (old, "not a block expression");
 		}
-		if ((b->block.head = old->block.head)) {
-			b->block.tail = old->block.tail;
-		}
-		b->block.result = old->block.result;
-		b->block.is_call = old->block.is_call;
+		b->block = old->block;
 	}
 	b->block.return_addr = __builtin_return_address (0);
 	return b;
@@ -593,10 +587,9 @@ build_block_expr (expr_t *list, bool set_result)
 	}
 	expr_t     *b = new_block_expr (0);
 
-	b->block.head = list->list.head;
-	b->block.tail = list->list.tail;
-	if (set_result && b->block.tail != &b->block.head) {
-		auto last = (ex_listitem_t *) b->block.tail;
+	b->block.list = list->list;
+	if (set_result && b->block.list.tail != &b->block.list.head) {
+		auto last = (ex_listitem_t *) b->block.list.tail;
 		b->block.result = last->expr;
 	}
 	return b;
@@ -1606,9 +1599,7 @@ append_expr (expr_t *block, const expr_t *e)
 	if (!e || e->type == ex_error)
 		return block;
 
-	auto li = new_listitem (e);
-	*block->block.tail = li;
-	block->block.tail = &li->next;
+	list_append (&block->block.list, e);
 
 	return block;
 }
@@ -1622,13 +1613,7 @@ prepend_expr (expr_t *block, const expr_t *e)
 	if (!e || e->type == ex_error)
 		return block;
 
-	auto li = new_listitem (e);
-	li->next = block->block.head;
-	block->block.head = li;
-
-	if (block->block.tail == &block->block.head) {
-		block->block.tail = &li->next;
-	}
+	list_prepend (&block->block.list, e);
 
 	return block;
 }
@@ -1887,7 +1872,7 @@ has_function_call (const expr_t *e)
 			if (e->block.is_call)
 				return 1;
 		case ex_list:
-			for (auto li = e->block.head; li; li = li->next)
+			for (auto li = e->block.list.head; li; li = li->next)
 				if (has_function_call (li->expr))
 					return 1;
 			return 0;

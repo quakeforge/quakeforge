@@ -2160,7 +2160,7 @@ identifier_list
 classdecl
 	: CLASS identifier_list ';'
 		{
-			for (auto li = $2->block.head; li; li = li->next) {
+			for (auto li = $2->block.list.head; li; li = li->next) {
 				auto e = li->expr;
 				get_class (e->symbol, 1);
 				if (!e->symbol->table)

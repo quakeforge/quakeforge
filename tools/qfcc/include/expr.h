@@ -112,15 +112,11 @@ typedef struct ex_list_s {
 	ex_listitem_t **tail;
 } ex_list_t;
 
-typedef union {
+typedef struct {
 	ex_list_t   list;
-	struct {
-		ex_listitem_t *head;
-		ex_listitem_t **tail;
-		const expr_t *result;	///< the result of this block if non-void
-		int         is_call;	///< this block exprssion forms a function call
-		void       *return_addr;///< who allocated this
-	};
+	const expr_t *result;		///< the result of this block if non-void
+	int         is_call;		///< this block exprssion forms a function call
+	void       *return_addr;	///< who allocated this
 } ex_block_t;
 
 typedef struct {

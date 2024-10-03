@@ -2274,7 +2274,7 @@ build_bool_block (expr_t *block, expr_t *e)
 			break;
 		case ex_block:
 			if (!e->block.result) {
-				for (auto t = e->block.head; t; t = t->next) {
+				for (auto t = e->block.list.head; t; t = t->next) {
 					build_bool_block (block, (expr_t *) t->expr);
 				}
 				return;

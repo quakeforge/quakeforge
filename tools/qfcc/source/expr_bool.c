@@ -308,8 +308,8 @@ convert_bool (const expr_t *e, int block)
 			auto b = new_block_expr (0);
 			append_expr (b, branch_expr (QC_NE, e, 0));
 			append_expr (b, goto_expr (0));
-			e = new_bool_expr (make_list (b->block.head->expr),
-							   make_list (b->block.head->next->expr), b);
+			e = new_bool_expr (make_list (b->block.list.head->expr),
+							   make_list (b->block.list.head->next->expr), b);
 		}
 	}
 	if (block && e->boolean.e->type != ex_block) {
