@@ -796,12 +796,6 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
 					   expr_uint (pr->module->memory_model), ctx.space);
 
-	for (auto sym = pr->symtab->symbols; sym; sym = sym->next) {
-		if (sym->sy_type == sy_expr && is_constexpr (sym->expr)) {
-			puts (sym->name);
-			spirv_emit_expr (sym->expr, &ctx);
-		}
-	}
 
 	auto srcid = spirv_String (pr->src_name, &ctx);
 	spirv_Source (0, 1, srcid, nullptr, &ctx);

@@ -74,6 +74,9 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 		if (p < num_param) {
 			auto pexpr = param_exprs[p++];
 			auto ptype = get_type (pexpr);
+			if (!ptype) {
+				continue;
+			}
 			if (!is_math (ptype)) {
 				components[c++] = error (pexpr, "invalid type for conversion");
 				continue;

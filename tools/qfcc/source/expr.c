@@ -141,6 +141,7 @@ get_type (const expr_t *e)
 		case ex_error:
 			return 0;
 		case ex_return:
+		case ex_decl:
 			internal_error (e, "unexpected expression type");
 		case ex_label:
 		case ex_compound:
@@ -461,7 +462,7 @@ new_label_name (void)
 	return lname;
 }
 
-static expr_t *
+expr_t *
 new_error_expr (void)
 {
 	expr_t     *e = new_expr ();
@@ -1593,8 +1594,12 @@ new_type_expr (const type_t *type)
 expr_t *
 append_expr (expr_t *block, const expr_t *e)
 {
-	if (block->type != ex_block)
+	if (block->type != ex_block) {
 		internal_error (block, "not a block expression");
+	}
+	if (e == block) {
+		internal_error (block, "adding block to itself");
+	}
 
 	if (!e || e->type == ex_error)
 		return block;
@@ -1924,6 +1929,7 @@ has_function_call (const expr_t *e)
 		case ex_with:
 		case ex_args:
 		case ex_type:
+		case ex_decl:
 			return 0;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {
@@ -2521,6 +2527,38 @@ new_array_expr (const expr_t *base, const expr_t *index)
 		.index = index,
 	};
 	return array;
+}
+
+expr_t *
+new_decl_expr (specifier_t spec)
+{
+	auto decl = new_expr ();
+	decl->type = ex_decl;
+	decl->decl = (ex_decl_t) {
+		.spec = spec,
+	};
+	return decl;
+}
+
+expr_t *
+append_decl (expr_t *decl, symbol_t *sym, const expr_t *init)
+{
+	auto expr = new_symbol_expr (sym);
+	if (init) {
+		expr = new_assign_expr (expr, init);
+	}
+	list_append (&decl->decl.list, expr);
+	return decl;
+}
+
+expr_t *
+append_decl_list (expr_t *decl, const expr_t *list)
+{
+	if (list->type != ex_list) {
+		internal_error (list, "not a list expression");
+	}
+	list_append_list (&decl->decl.list, &list->list);
+	return decl;
 }
 
 const expr_t *

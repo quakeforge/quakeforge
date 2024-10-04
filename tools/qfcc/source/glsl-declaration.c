@@ -42,18 +42,17 @@
 #include "tools/qfcc/include/type.h"
 
 void
-glsl_parse_declaration (specifier_t spec, symbol_t *sym, const type_t *array,
+glsl_parse_declaration (specifier_t spec, symbol_t *sym,
 						const expr_t *init, symtab_t *symtab)
 {
 	if (sym->type) {
 		internal_error (0, "unexected typed symbol");
 	}
-	if (array) {
-		spec.type = append_type (array, spec.type);
-		spec.type = find_type (spec.type);
-	}
 	if (init) {
 		init = expr_process (init);
+		if (is_error (init)) {
+			return;
+		}
 	}
 	auto attributes = glsl_optimize_attributes (spec.attributes);
 	if (sym && sym->sy_type == sy_expr) {

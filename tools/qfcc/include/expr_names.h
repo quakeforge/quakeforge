@@ -56,7 +56,7 @@ EX_EXPR(compound)	///< compound initializer
 EX_EXPR(memset)		///< memset needs three params...
 EX_EXPR(alias)		///< view expression as different type (::ex_alias_t)
 EX_EXPR(address)	///< address of an lvalue expression (::ex_address_t)
-EX_EXPR(assign)		///< assignment of src expr to dst expr (::ex_assing_t)
+EX_EXPR(assign)		///< assignment of src expr to dst expr (::ex_assign_t)
 EX_EXPR(branch)		///< branch expression  (::ex_branch_t)
 EX_EXPR(inout)		///< inout arg expression  (::ex_inout_t)
 EX_EXPR(return)		///< return expression  (::ex_return_t)
@@ -72,7 +72,8 @@ EX_EXPR(type)		///< type expression for generics
 EX_EXPR(incop)		///< pre or post increment/decrement (::ex_incop_t)
 EX_EXPR(cond)		///< ?: conditional expression (::ex_cond_t)
 EX_EXPR(field)		///< field reference expression (::ex_field_t)
-EX_EXPR(array)		///< array index ex_field_t (::ex_array_t)
+EX_EXPR(array)		///< array index expression (::ex_array_t)
+EX_EXPR(decl)		///< delcaration expression (::ex_array_t)
 
 #undef EX_EXPR
 

@@ -68,6 +68,7 @@ typedef struct rua_loc_s {
 	} while (0)
 
 typedef struct expr_s expr_t;
+typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct function_s function_t;
 
@@ -202,6 +203,8 @@ typedef struct language_s {
 	void      (*extension) (const char *name, const char *value, void *scanner);
 	void      (*version) (int version, const char *profile);
 	bool      (*on_include) (const char *name);
+	void      (*parse_declaration) (specifier_t spec, symbol_t *sym,
+									const expr_t *init, symtab_t *symtab);
 	void       *sublanguage;
 } language_t;
 

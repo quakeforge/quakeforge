@@ -132,6 +132,7 @@ is_lvalue (const expr_t *expr)
 		case ex_list:
 		case ex_type:
 		case ex_incop:
+		case ex_decl:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

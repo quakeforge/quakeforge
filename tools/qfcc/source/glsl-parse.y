@@ -168,7 +168,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type <symbol>  variable_identifier
 %type <block>   block_declaration
-%type <expr>    constant_expression
+%type <expr>    declaration constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
 %type <expr>    for_init_statement conditionopt expressionopt else
 %type <expr>    conditional_expression unary_expression postfix_expression
@@ -186,6 +186,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <expr>    condition
 %type <expr>    compound_statement_no_new_scope compound_statement
 %type <expr>    statement statement_no_new_scope statement_list
+%type <expr>    new_block new_scope
 %type <expr>    simple_statement expression_statement
 %type <expr>    declaration_statement selection_statement
 %type <expr>    switch_statement switch_statement_list case_label
@@ -193,9 +194,9 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <expr>    iteration_statement jump_statement
 %type <expr>    break_label continue_label
 %type <mut_expr> initializer_list
+%type <mut_expr> single_declaration init_declarator_list
 %type <op>      unary_operator assignment_operator
 
-%type <spec>    single_declaration init_declarator_list
 %type <spec>    function_prototype function_declarator
 %type <spec>    function_header function_header_with_parameters
 %type <spec>    fully_specified_type type_specifier struct_specifier
@@ -269,7 +270,7 @@ translation_unit
 
 external_declaration
 	: function_definition
-	| declaration
+	| declaration { if ($1) expr_process ($1); }
 	| ';'
 	;
 
@@ -290,7 +291,8 @@ function_definition
 		{
 			auto spec = $1;
 			auto sym = spec.sym;
-			build_code_function (sym, nullptr, (expr_t *) $3);
+			expr_t *statments = (expr_t *) expr_process ($3);
+			build_code_function (sym, nullptr, statments);
 			current_symtab = $<symtab>2;
 			current_storage = sc_global;//FIXME
 			current_func = nullptr;
@@ -569,50 +571,62 @@ constant_expression
 	;
 
 declaration
-	: function_prototype ';'
-	| init_declarator_list ';'
+	: function_prototype ';'	{ $$ = nullptr; }
+	| init_declarator_list ';'	{ $$ = $1; }
 	| PRECISION precision_qualifier type_specifier ';'
 		{
 			notice (0, "PRECISION precision_qualifier");
+			$$ = nullptr;
 		}
 	| type_qualifier block_declaration ';'
 		{
-			auto block = $block_declaration;
-			glsl_declare_block_instance (block, nullptr);
+			if (current_symtab != pr.symtab) {
+				error (0, "blocks must be declared globally");
+			} else {
+				auto block = $block_declaration;
+				glsl_declare_block_instance (block, nullptr);
+			}
+			$$ = nullptr;
 		}
 	| type_qualifier block_declaration IDENTIFIER ';'
 		{
-			auto block = $block_declaration;
-			auto instance_name = $IDENTIFIER;
-			glsl_declare_block_instance (block, instance_name);
+			if (current_symtab != pr.symtab) {
+				error (0, "blocks must be declared globally");
+			} else {
+				auto block = $block_declaration;
+				auto instance_name = $IDENTIFIER;
+				glsl_declare_block_instance (block, instance_name);
+			}
+			$$ = nullptr;
 		}
 	| type_qualifier block_declaration IDENTIFIER array_specifier ';'
 		{
-			auto block = $block_declaration;
-			auto instance_name = $IDENTIFIER;
-			instance_name->type = $array_specifier;
-			glsl_declare_block_instance (block, instance_name);
+			if (current_symtab != pr.symtab) {
+				error (0, "blocks must be declared globally");
+			} else {
+				auto block = $block_declaration;
+				auto instance_name = $IDENTIFIER;
+				instance_name->type = $array_specifier;
+				glsl_declare_block_instance (block, instance_name);
+			}
+			$$ = nullptr;
 		}
 	| type_qualifier ';'
 		{
 			glsl_parse_declaration ($type_qualifier, nullptr,
-									nullptr, nullptr, current_symtab);
+									nullptr, current_symtab);
+			$$ = nullptr;
 		}
 	| type_qualifier IDENTIFIER ';'
 		{
-			glsl_parse_declaration ($type_qualifier, $IDENTIFIER,
-									nullptr, nullptr, current_symtab);
+			auto decl = new_decl_expr ($type_qualifier);
+			$$ = append_decl (decl, $IDENTIFIER, nullptr);
 		}
 	| type_qualifier IDENTIFIER identifier_list ';'
 		{
-			auto id_list = $identifier_list;
-			auto expr = new_symbol_expr ($IDENTIFIER);
-			expr_prepend_expr (id_list, expr);
-			auto sym = new_symbol (nullptr);
-			sym->sy_type = sy_expr;
-			sym->expr = id_list;
-			glsl_parse_declaration ($type_qualifier, sym,
-									nullptr, nullptr, current_symtab);
+			auto decl = new_decl_expr ($type_qualifier);
+			append_decl (decl, $IDENTIFIER, nullptr);
+			$$ = append_decl_list (decl, $identifier_list);
 		}
 	;
 
@@ -723,60 +737,58 @@ init_declarator_list
 	: single_declaration
 	| init_declarator_list ',' IDENTIFIER
 		{
-			$$ = $1;
-			auto symtab = current_symtab;
-			auto space = symtab->space;
-			auto storage = current_storage;
-			initialize_def ($3, nullptr, space, storage, symtab);
+			auto decl = $1;
+			$$ = append_decl (decl, $IDENTIFIER, nullptr);
 		}
 	| init_declarator_list ',' IDENTIFIER array_specifier
+		{
+			auto decl = $1;
+			$IDENTIFIER->type = $array_specifier;
+			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+		}
 	| init_declarator_list ',' IDENTIFIER array_specifier '=' initializer
+		{
+			auto decl = $1;
+			$IDENTIFIER->type = $array_specifier;
+			$$ = append_decl (decl, $IDENTIFIER, $initializer);
+		}
 	| init_declarator_list ',' IDENTIFIER '=' initializer
 		{
-			$$ = $1;
-			auto symtab = current_symtab;
-			auto space = symtab->space;
-			auto storage = current_storage;
-			if (storage == sc_local && !local_expr) {
-				local_expr = new_block_expr (nullptr);
-			}
-			initialize_def ($3, $5, space, storage, symtab);
+			auto decl = $1;
+			$$ = append_decl (decl, $IDENTIFIER, $initializer);
 		}
 	;
 
 single_declaration
 	: fully_specified_type
 		{
-			glsl_parse_declaration ($$ = $fully_specified_type,
-									nullptr, nullptr,
-									nullptr, current_symtab);
+			$$ = new_decl_expr ($fully_specified_type);
 		}
 	| fully_specified_type IDENTIFIER
 		{
-			glsl_parse_declaration ($$ = $fully_specified_type,
-									$IDENTIFIER, nullptr,
-									nullptr, current_symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
+			$$ = append_decl (decl, $IDENTIFIER, nullptr);
 		}
 	| fully_specified_type IDENTIFIER array_specifier
 		{
-			glsl_parse_declaration ($$ = $fully_specified_type,
-									$IDENTIFIER, $array_specifier,
-									nullptr, current_symtab);
+			auto spec = $fully_specified_type;
+			spec.type = append_type ($array_specifier, spec.type);
+			spec.type = find_type (spec.type);
+			auto decl = new_decl_expr (spec);
+			$$ = append_decl (decl, $IDENTIFIER, nullptr);
 		}
 	| fully_specified_type IDENTIFIER array_specifier '=' initializer
 		{
-			glsl_parse_declaration ($$ = $fully_specified_type,
-									$IDENTIFIER, $array_specifier,
-									$initializer, current_symtab);
+			auto spec = $fully_specified_type;
+			spec.type = append_type ($array_specifier, spec.type);
+			spec.type = find_type (spec.type);
+			auto decl = new_decl_expr (spec);
+			$$ = append_decl (decl, $IDENTIFIER, $initializer);
 		}
 	| fully_specified_type IDENTIFIER '=' initializer
 		{
-			if (current_storage == sc_local && !local_expr) {
-				local_expr = new_block_expr (nullptr);
-			}
-			glsl_parse_declaration ($$ = $fully_specified_type,
-									$IDENTIFIER, nullptr,
-									$initializer, current_symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
+			$$ = append_decl (decl, $IDENTIFIER, $initializer);
 		}
 	;
 
@@ -1028,10 +1040,6 @@ initializer_list
 
 declaration_statement
 	: declaration
-		{
-			$$ = local_expr;
-			local_expr = nullptr;
-		}
 	;
 
 statement
@@ -1041,7 +1049,7 @@ statement
 
 simple_statement
 	: declaration_statement
-	| expression_statement { $$ = expr_process ($1); }//FIXME shouldn't be here
+	| expression_statement
 	| selection_statement
 	| switch_statement
 	| case_label
@@ -1051,7 +1059,11 @@ simple_statement
 
 compound_statement
 	: '{' '}'							{ $$ = nullptr; }
-	| '{' statement_list '}'			{ $$ = $2; }
+	| '{' new_scope statement_list '}'
+		{
+			$$ = $3;
+			current_symtab = $2->block.scope->parent;
+		}
 	;
 
 statement_no_new_scope
@@ -1061,13 +1073,31 @@ statement_no_new_scope
 
 compound_statement_no_new_scope
 	: '{' '}'							{ $$ = nullptr; }
-	| '{' statement_list '}'			{ $$ = $2; }
+	| '{' new_block statement_list '}'	{ $$ = $3; }
+	;
+
+new_scope
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = new_symtab (nullptr, stab_local);
+			current_symtab = block->block.scope;
+			$$ = block;
+		}
+	;
+
+new_block
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			$$ = block;
+		}
 	;
 
 statement_list
 	: statement
 		{
-			auto list = new_block_expr (nullptr);
+			auto list = $<mut_expr>0;
 			append_expr (list, $1);
 			$$ = list;
 		}
@@ -1160,7 +1190,7 @@ switch_block
 
 switch_statement_list
 	: /* empty */				{ $$ = nullptr; }
-	| statement_list
+	| new_block statement_list	{ $$ = $2; }
 	;
 
 case_label
@@ -1713,6 +1743,7 @@ language_t lang_glsl_comp = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_comp_sublanguage,
 };
 
@@ -1722,6 +1753,7 @@ language_t lang_glsl_vert = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_vert_sublanguage,
 };
 
@@ -1731,6 +1763,7 @@ language_t lang_glsl_tesc = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_tesc_sublanguage,
 };
 
@@ -1740,6 +1773,7 @@ language_t lang_glsl_tese = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_tese_sublanguage,
 };
 
@@ -1749,6 +1783,7 @@ language_t lang_glsl_geom = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_geom_sublanguage,
 };
 
@@ -1758,5 +1793,6 @@ language_t lang_glsl_frag = {
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,
+	.parse_declaration = glsl_parse_declaration,
 	.sublanguage = &glsl_frag_sublanguage,
 };

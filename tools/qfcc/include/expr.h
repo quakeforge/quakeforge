@@ -114,6 +114,7 @@ typedef struct ex_list_s {
 
 typedef struct {
 	ex_list_t   list;
+	symtab_t   *scope;
 	const expr_t *result;		///< the result of this block if non-void
 	int         is_call;		///< this block exprssion forms a function call
 	void       *return_addr;	///< who allocated this
@@ -342,6 +343,11 @@ typedef struct {
 	const type_t *type;
 } ex_array_t;
 
+typedef struct {
+	specifier_t spec;
+	ex_list_t   list;
+} ex_decl_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -389,6 +395,7 @@ typedef struct expr_s {
 		ex_cond_t cond;					///< ?: conditional expression
 		ex_field_t field;				///< field reference expression
 		ex_array_t array;				///< array index expression
+		ex_decl_t decl;					///< variable declaration expression
 	};
 } expr_t;
 
@@ -459,6 +466,8 @@ expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
 	\return			The new expression node.
 */
 expr_t *new_expr (void);
+
+expr_t *new_error_expr (void);
 
 /**	Create a new label name.
 
@@ -902,6 +911,9 @@ expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
 					   const expr_t *false_expr);
 expr_t *new_field_expr (const expr_t *object, const expr_t *member);
 expr_t *new_array_expr (const expr_t *base, const expr_t *index);
+expr_t *new_decl_expr (specifier_t spec);
+expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);
+expr_t *append_decl_list (expr_t *decl, const expr_t *list);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
