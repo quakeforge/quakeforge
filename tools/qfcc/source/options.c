@@ -52,6 +52,7 @@
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 options_t   options = {
@@ -520,22 +521,7 @@ parse_code_option (const char *opt)
 	bool        flag = true;
 
 	if (!(strncasecmp (opt, "target=", 7))) {
-		const char *tgt = opt + 7;
-		if (!strcasecmp (tgt, "v6")) {
-			options.code.progsversion = PROG_ID_VERSION;
-		} else if (!strcasecmp (tgt, "v6p")) {
-			options.code.progsversion = PROG_V6P_VERSION;
-		} else if (!strcasecmp (tgt, "ruamoko")) {
-			options.code.progsversion = PROG_VERSION;
-		} else if (!strcasecmp (tgt, "spir-v")) {
-			options.code.progsversion = PROG_VERSION;
-			options.code.spirv = true;
-			options.code.no_vararg = true;
-		} else {
-			fprintf (stderr, "unknown target: %s\n", tgt);
-			exit (1);
-		}
-		return true;
+		return target_set_backend (opt + 7);
 	}
 	if (!strncasecmp (opt, "no-", 3)) {
 		flag = false;
@@ -692,25 +678,25 @@ DecodeArgs (int argc, char **argv)
 			case OPT_EXTENDED:
 				options.traditional = 1;
 				options.advanced = false;
-				options.code.progsversion = PROG_ID_VERSION;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
 				options.advanced = 0;
-				options.code.progsversion = PROG_ID_VERSION;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = 1;
-				options.code.progsversion = PROG_V6P_VERSION;
+				target_set_backend ("v6p");
 				options.code.const_initializers = false;
 				break;
 			case OPT_RUAMOKO:
 				options.traditional = 0;
 				options.advanced = 2;
-				options.code.progsversion = PROG_VERSION;
+				target_set_backend ("ruamoko");
 				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
@@ -822,7 +808,7 @@ DecodeArgs (int argc, char **argv)
 			options.traditional = 2;
 		options.advanced = false;
 		if (!options.code.progsversion) {
-			options.code.progsversion = PROG_ID_VERSION;
+			target_set_backend ("v6");
 		}
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
@@ -840,8 +826,9 @@ DecodeArgs (int argc, char **argv)
 			options.math.vector_mult = QC_DOT;
 		}
 	}
-	if (!options.code.progsversion)
-		options.code.progsversion = PROG_VERSION;
+	if (!options.code.progsversion) {
+		target_set_backend ("ruamoko");
+	}
 	if (!options.traditional) {
 		// avanced=2 requires the Ruamoko ISA
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);

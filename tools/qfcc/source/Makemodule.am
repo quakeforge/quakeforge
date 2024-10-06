@@ -73,12 +73,15 @@ qfcc_SOURCES = \
 	tools/qfcc/source/qp-parse.y  \
 	tools/qfcc/source/reloc.c \
 	tools/qfcc/source/shared.c \
-	tools/qfcc/source/spirv.c \
 	tools/qfcc/source/statements.c \
 	tools/qfcc/source/strpool.c \
 	tools/qfcc/source/struct.c \
 	tools/qfcc/source/switch.c \
 	tools/qfcc/source/symtab.c \
+	tools/qfcc/source/target.c \
+	tools/qfcc/source/target_rua.c \
+	tools/qfcc/source/target_spirv.c \
+	tools/qfcc/source/target_v6.c \
 	tools/qfcc/source/type.c \
 	tools/qfcc/source/value.c \
 	$(tracy_src)

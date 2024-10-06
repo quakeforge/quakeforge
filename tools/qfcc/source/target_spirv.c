@@ -44,7 +44,18 @@
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
+
+static bool
+spirv_value_too_large (const type_t *val_type)
+{
+	return false;
+}
+
+target_t spirv_target = {
+	.value_too_large = spirv_value_too_large,
+};
 
 typedef struct spirvctx_s {
 	defspace_t *space;

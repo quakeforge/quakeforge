@@ -64,6 +64,7 @@
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -939,6 +940,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 int
 value_too_large (const type_t *val_type)
 {
+	return current_target.value_too_large (val_type);
 	if ((options.code.progsversion < PROG_VERSION
 		 && type_size (val_type) > type_size (&type_param))
 		|| (options.code.progsversion == PROG_VERSION
