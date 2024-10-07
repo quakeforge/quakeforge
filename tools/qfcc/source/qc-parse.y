@@ -216,7 +216,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		method_optional_state_expr optional_state_expr
 %type	<expr>		texpr vector_expr
 %type	<expr>		statement
-%type	<mut_expr>	statements compound_statement
+%type	<mut_expr>	statements compound_statement compound_statement_ns
 %type	<expr>		else bool_label break_label continue_label
 %type	<expr>		unary_expr ident_expr cast_expr
 %type	<mut_expr>	arg_list
@@ -852,7 +852,7 @@ qc_code_func
 			current_storage = sc_local;
 			$1 = sym;
 		}
-	  compound_statement
+	  compound_statement_ns
 		{
 			build_code_function ($1, $3, $6);
 			current_symtab = $<funcstate>5.symtab;
@@ -1164,7 +1164,7 @@ function_body
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
-	  compound_statement
+	  compound_statement_ns
 		{
 			build_code_function ($<symbol>2, $1, $5);
 			current_symtab = $<funcstate>4.symtab;
@@ -1785,6 +1785,10 @@ seq_semi
 
 compound_statement
 	: '{' push_scope flush_dag statements '}' pop_scope flush_dag { $$ = $4; }
+	;
+
+compound_statement_ns
+	: '{' flush_dag statements '}' flush_dag { $$ = $3; }
 	;
 
 statements
@@ -2536,7 +2540,7 @@ methoddef
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
-	  compound_statement
+	  compound_statement_ns
 		{
 			build_code_function ($<symbol>4, $3, $7);
 			current_symtab = $<funcstate>6.symtab;
