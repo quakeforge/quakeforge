@@ -941,13 +941,6 @@ int
 value_too_large (const type_t *val_type)
 {
 	return current_target.value_too_large (val_type);
-	if ((options.code.progsversion < PROG_VERSION
-		 && type_size (val_type) > type_size (&type_param))
-		|| (options.code.progsversion == PROG_VERSION
-			&& type_size (val_type) > MAX_DEF_SIZE)) {
-		return 1;
-	}
-	return 0;
 }
 
 static void
@@ -985,116 +978,6 @@ check_function (symbol_t *fsym)
 }
 
 static void
-build_v6p_scope (symbol_t *fsym)
-{
-	int         i;
-	param_t    *p;
-	symbol_t   *args = 0;
-	symbol_t   *param;
-	function_t *func = fsym->metafunc->func;
-	symtab_t   *parameters = func->parameters;
-	symtab_t   *locals = func->locals;
-
-	if (func->type->func.num_params < 0) {
-		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, 0, parameters->space, sc_param, locals);
-	}
-
-	for (p = fsym->params, i = 0; p; p = p->next) {
-		if (!p->selector && !p->type && !p->name)
-			continue;					// ellipsis marker
-		if (!p->type)
-			continue;					// non-param selector
-		if (!p->name) {
-			error (0, "parameter name omitted");
-			p->name = save_string ("");
-		}
-		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, 0, parameters->space, sc_param, locals);
-		if (p->qual == pq_out) {
-			param->def->param = false;
-			param->def->out_param = true;
-		} else if (p->qual == pq_inout) {
-			param->def->out_param = true;
-		} else if (p->qual == pq_const) {
-			param->def->readonly = true;
-		}
-		i++;
-	}
-
-	if (args) {
-		while (i < PR_MAX_PARAMS) {
-			param = new_symbol_type (va (0, ".par%d", i), &type_param);
-			initialize_def (param, 0, parameters->space, sc_param, locals);
-			i++;
-		}
-	}
-}
-
-static void
-create_param (symtab_t *parameters, symbol_t *param)
-{
-	defspace_t *space = parameters->space;
-	def_t      *def = new_def (param->name, 0, space, sc_param);
-	int         size = type_size (param->type);
-	int         alignment = param->type->alignment;
-	if (alignment < 4) {
-		alignment = 4;
-	}
-	def->offset = defspace_alloc_aligned_highwater (space, size, alignment);
-	def->type = param->type;
-	param->def = def;
-	param->sy_type = sy_def;
-	param->lvalue = !def->readonly;
-	symtab_addsymbol (parameters, param);
-	if (is_vector(param->type) && options.code.vector_components)
-		init_vector_components (param, 0, parameters);
-}
-
-static void
-build_rua_scope (symbol_t *fsym)
-{
-	function_t *func = fsym->metafunc->func;
-
-	for (param_t *p = fsym->params; p; p = p->next) {
-		symbol_t   *param;
-		if (!p->selector && !p->type && !p->name) {
-			// ellipsis marker
-			param = new_symbol_type (".args", &type_va_list);
-		} else {
-			if (!p->type) {
-				continue;					// non-param selector
-			}
-			if (is_void (p->type)) {
-				if (p->name) {
-					error (0, "invalid parameter type for %s", p->name);
-				} else if (p != fsym->params || p->next) {
-					error (0, "void must be the only parameter");
-					continue;
-				} else {
-					continue;
-				}
-			}
-			if (!p->name) {
-				error (0, "parameter name omitted");
-				p->name = save_string ("");
-			}
-			param = new_symbol_type (p->name, p->type);
-		}
-		create_param (func->parameters, param);
-		if (p->qual == pq_out) {
-			param->def->param = false;
-			param->def->out_param = true;
-		} else if (p->qual == pq_inout) {
-			param->def->out_param = true;
-		} else if (p->qual == pq_const) {
-			param->def->readonly = true;
-		}
-		param->def->reg = func->temp_reg;
-	}
-}
-
-static void
 build_scope (symbol_t *fsym, symtab_t *parent)
 {
 	function_t *func = fsym->metafunc->func;
@@ -1120,11 +1003,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	locals->space = defspace_new (ds_virtual);
 	func->locals = locals;
 
-	if (options.code.progsversion == PROG_VERSION) {
-		build_rua_scope (fsym);
-	} else {
-		build_v6p_scope (fsym);
-	}
+	current_target.build_scope (fsym);
 }
 
 static function_t *

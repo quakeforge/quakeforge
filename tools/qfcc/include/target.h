@@ -28,10 +28,12 @@
 #ifndef __target_h
 #define __target_h
 
+typedef struct symbol_s symbol_t;
 typedef struct type_s type_t;
 
 typedef struct {
 	bool      (*value_too_large) (const type_t *val_type);
+	void      (*build_scope) (symbol_t *fsym);
 } target_t;
 
 extern target_t current_target;

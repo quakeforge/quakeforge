@@ -53,8 +53,14 @@ spirv_value_too_large (const type_t *val_type)
 	return false;
 }
 
+static void
+spirv_build_scope (symbol_t *fsym)
+{
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
+	.build_scope = spirv_build_scope,
 };
 
 typedef struct spirvctx_s {
