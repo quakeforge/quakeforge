@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/symtab.h"
@@ -221,6 +222,7 @@ proc_decl (const expr_t *expr)
 	list_scatter (&expr->decl.list, decls);
 	for (int i = 0; i < count; i++) {
 		auto decl = decls[i];
+		scoped_src_loc (decl);
 		const expr_t *init = nullptr;
 		symbol_t   *sym;
 		if (decl->type == ex_assign) {
@@ -228,11 +230,12 @@ proc_decl (const expr_t *expr)
 			if (decl->assign.dst->type != ex_symbol) {
 				internal_error (decl->assign.dst, "not a symbol");
 			}
+			pr.loc = decl->assign.dst->loc;
 			sym = decl->assign.dst->symbol;
 		} else if (decl->type == ex_symbol) {
 			sym = decl->symbol;
 		} else {
-			internal_error (decl->assign.dst, "not a symbol");
+			internal_error (decl, "not a symbol");
 		}
 		auto spec = expr->decl.spec;
 		if (sym && sym->type) {

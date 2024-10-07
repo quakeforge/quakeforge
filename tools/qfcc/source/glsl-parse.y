@@ -166,7 +166,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token <spec> RESTRICT READONLY WRITEONLY
 %token <spec> DISCARD COHERENT
 
-%type <symbol>  variable_identifier
+%type <symbol>  variable_identifier new_identifier
 %type <block>   block_declaration
 %type <expr>    declaration constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
@@ -279,6 +279,7 @@ function_definition
 		{
 			$<symtab>$ = current_symtab;
 			auto spec = $1;
+			spec.sym->params = spec.params;
 			auto sym = function_symbol (spec);
 			current_func = begin_function (sym, nullptr, current_symtab,
 										   false, spec.storage);
@@ -301,6 +302,10 @@ function_definition
 
 variable_identifier
 	: IDENTIFIER
+	;
+
+new_identifier
+	: IDENTIFIER			{ $$ = new_symbol ($1->name); }
 	;
 
 primary_exprsssion
@@ -588,24 +593,24 @@ declaration
 			}
 			$$ = nullptr;
 		}
-	| type_qualifier block_declaration IDENTIFIER ';'
+	| type_qualifier block_declaration new_identifier ';'
 		{
 			if (current_symtab != pr.symtab) {
 				error (0, "blocks must be declared globally");
 			} else {
 				auto block = $block_declaration;
-				auto instance_name = $IDENTIFIER;
+				auto instance_name = $new_identifier;
 				glsl_declare_block_instance (block, instance_name);
 			}
 			$$ = nullptr;
 		}
-	| type_qualifier block_declaration IDENTIFIER array_specifier ';'
+	| type_qualifier block_declaration new_identifier array_specifier ';'
 		{
 			if (current_symtab != pr.symtab) {
 				error (0, "blocks must be declared globally");
 			} else {
 				auto block = $block_declaration;
-				auto instance_name = $IDENTIFIER;
+				auto instance_name = $new_identifier;
 				instance_name->type = $array_specifier;
 				glsl_declare_block_instance (block, instance_name);
 			}
@@ -617,15 +622,15 @@ declaration
 									nullptr, current_symtab);
 			$$ = nullptr;
 		}
-	| type_qualifier IDENTIFIER ';'
+	| type_qualifier new_identifier ';'
 		{
 			auto decl = new_decl_expr ($type_qualifier);
-			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
-	| type_qualifier IDENTIFIER identifier_list ';'
+	| type_qualifier new_identifier identifier_list ';'
 		{
 			auto decl = new_decl_expr ($type_qualifier);
-			append_decl (decl, $IDENTIFIER, nullptr);
+			append_decl (decl, $new_identifier, nullptr);
 			$$ = append_decl_list (decl, $identifier_list);
 		}
 	;
@@ -654,12 +659,12 @@ block_declaration
 	;
 
 identifier_list
-	: ',' IDENTIFIER
+	: ',' new_identifier
 		{
 			auto expr = new_symbol_expr ($2);
 			$$ = new_list_expr (expr);
 		}
-	| identifier_list ',' IDENTIFIER
+	| identifier_list ',' new_identifier
 		{
 			auto expr = new_symbol_expr ($3);
 			$$ = expr_append_expr ($1, expr);
@@ -696,7 +701,7 @@ function_header_with_parameters
 	;
 
 function_header
-	: fully_specified_type IDENTIFIER '('
+	: fully_specified_type new_identifier '('
 		{
 			auto spec = $1;
 			if ($2->table) {
@@ -709,11 +714,11 @@ function_header
 	;
 
 parameter_declarator
-	: type_specifier IDENTIFIER
+	: type_specifier new_identifier
 		{
 			$$ = new_param (nullptr, $1.type, $2->name);
 		}
-	| type_specifier IDENTIFIER array_specifier
+	| type_specifier new_identifier array_specifier
 		{
 			$$ = new_param (nullptr, append_type ($1.type, $3), $2->name);
 		}
@@ -735,27 +740,27 @@ parameter_type_specifier
 
 init_declarator_list
 	: single_declaration
-	| init_declarator_list ',' IDENTIFIER
+	| init_declarator_list ',' new_identifier
 		{
 			auto decl = $1;
-			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
-	| init_declarator_list ',' IDENTIFIER array_specifier
+	| init_declarator_list ',' new_identifier array_specifier
 		{
 			auto decl = $1;
-			$IDENTIFIER->type = $array_specifier;
-			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+			$new_identifier->type = $array_specifier;
+			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
-	| init_declarator_list ',' IDENTIFIER array_specifier '=' initializer
+	| init_declarator_list ',' new_identifier array_specifier '=' initializer
 		{
 			auto decl = $1;
-			$IDENTIFIER->type = $array_specifier;
-			$$ = append_decl (decl, $IDENTIFIER, $initializer);
+			$new_identifier->type = $array_specifier;
+			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
-	| init_declarator_list ',' IDENTIFIER '=' initializer
+	| init_declarator_list ',' new_identifier '=' initializer
 		{
 			auto decl = $1;
-			$$ = append_decl (decl, $IDENTIFIER, $initializer);
+			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
 
@@ -764,31 +769,31 @@ single_declaration
 		{
 			$$ = new_decl_expr ($fully_specified_type);
 		}
-	| fully_specified_type IDENTIFIER
+	| fully_specified_type new_identifier
 		{
 			auto decl = new_decl_expr ($fully_specified_type);
-			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
-	| fully_specified_type IDENTIFIER array_specifier
+	| fully_specified_type new_identifier array_specifier
 		{
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
 			auto decl = new_decl_expr (spec);
-			$$ = append_decl (decl, $IDENTIFIER, nullptr);
+			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
-	| fully_specified_type IDENTIFIER array_specifier '=' initializer
+	| fully_specified_type new_identifier array_specifier '=' initializer
 		{
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
 			auto decl = new_decl_expr (spec);
-			$$ = append_decl (decl, $IDENTIFIER, $initializer);
+			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
-	| fully_specified_type IDENTIFIER '=' initializer
+	| fully_specified_type new_identifier '=' initializer
 		{
 			auto decl = new_decl_expr ($fully_specified_type);
-			$$ = append_decl (decl, $IDENTIFIER, $initializer);
+			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
 
@@ -1004,13 +1009,13 @@ struct_declarator_list
 	;
 
 struct_declarator
-	: IDENTIFIER
+	: new_identifier
 		{
 			auto spec = $<spec>0;
 			spec.sym = $1;
 			glsl_declare_field (spec, current_symtab);
 		}
-	| IDENTIFIER array_specifier
+	| new_identifier array_specifier
 		{
 			auto spec = $<spec>0;
 			spec.type = append_type ($2, spec.type);
@@ -1143,7 +1148,7 @@ else
 
 condition
 	: expression
-	| fully_specified_type IDENTIFIER '=' initializer
+	| fully_specified_type new_identifier '=' initializer
 		{
 			auto symtab = current_symtab;
 			auto space = symtab->space;
