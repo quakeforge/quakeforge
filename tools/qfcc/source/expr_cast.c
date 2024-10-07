@@ -106,8 +106,8 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	if ((dstType == type_default && is_enum (srcType))
 		|| (is_enum (dstType) && srcType == type_default))
 		return e;
-	if ((is_ptr (dstType) && is_string (srcType))
-		|| (is_string (dstType) && is_ptr (srcType))) {
+	if ((is_pointer (dstType) && is_string (srcType))
+		|| (is_string (dstType) && is_pointer (srcType))) {
 		return new_alias_expr (dstType, e);
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {
@@ -118,9 +118,10 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 
-	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
-							   || is_array (srcType)))
-		&& !(is_integral (dstType) && is_ptr (srcType))
+	if (!(is_pointer (dstType)
+		  && (is_pointer (srcType) || is_integral (srcType)
+			  || is_array (srcType)))
+		&& !(is_integral (dstType) && is_pointer (srcType))
 		&& !(is_func (dstType) && is_func (srcType))
 		&& !(is_math (dstType) && is_math (srcType)
 			 && type_width (dstType) == type_width (srcType))

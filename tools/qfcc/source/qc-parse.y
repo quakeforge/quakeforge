@@ -431,7 +431,8 @@ function_spec (specifier_t spec, param_t *params)
 		} else if (is_array (spec.sym->type)) {
 			error (0, "declaration of '%s' as array of functions",
 				   spec.sym->name);
-		} else if (!is_ptr (spec.sym->type) && !is_field (spec.sym->type)) {
+		} else if (!is_pointer (spec.sym->type)
+				   && !is_field (spec.sym->type)) {
 			internal_error (0, "unexpected type");
 		}
 	}
@@ -451,7 +452,7 @@ array_spec (specifier_t spec, unsigned size)
 		if (is_func (spec.sym->type)) {
 			error (0, "'%s' declared as function returning an array",
 				   spec.sym->name);
-		} else if (!is_ptr (spec.sym->type)
+		} else if (!is_pointer (spec.sym->type)
 				   && !is_array (spec.sym->type)
 				   && !is_field (spec.sym->type)) {
 			internal_error (0, "unexpected type");
@@ -466,7 +467,7 @@ pointer_spec (specifier_t quals, specifier_t spec)
 {
 	if (spec.sym->type) {
 		if (!is_func (spec.sym->type)
-			&& !is_ptr (spec.sym->type)
+			&& !is_pointer (spec.sym->type)
 			&& !is_array (spec.sym->type)
 			&& !is_field (spec.sym->type)) {
 			internal_error (0, "unexpected type");

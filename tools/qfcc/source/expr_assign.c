@@ -352,7 +352,7 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		internal_error (src, "src_type broke in assign_expr");
 	}
 
-	if (is_ptr (dst_type) && is_array (src_type)) {
+	if (is_pointer (dst_type) && is_array (src_type)) {
 		// assigning an array to a pointer is the same as taking the address of
 		// the array but using the type of the array elements
 		src = address_expr (src, src_type->fldptr.type);

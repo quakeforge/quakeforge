@@ -1442,7 +1442,7 @@ is_math_val (const expr_t *e)
 const expr_t *
 new_alias_expr (const type_t *type, const expr_t *expr)
 {
-	if (is_ptr (type) && expr->type == ex_address) {
+	if (is_pointer (type) && expr->type == ex_address) {
 		auto new = new_address_expr (type, expr->address.lvalue,
 									 expr->address.offset);
 		new->address.type = type;
@@ -1715,7 +1715,7 @@ field_expr (const expr_t *e1, const expr_t *e2)
 				return e;
 			}
 		}
-	} else if (is_ptr (t1)) {
+	} else if (is_pointer (t1)) {
 		if (is_struct (t1->fldptr.type) || is_union (t1->fldptr.type)) {
 			symbol_t   *field;
 
@@ -2610,7 +2610,7 @@ array_expr (const expr_t *array, const expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (!is_ptr (array_type) && !is_array (array_type)
+	if (!is_pointer (array_type) && !is_array (array_type)
 		&& !is_nonscalar (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
@@ -2639,7 +2639,7 @@ array_expr (const expr_t *array, const expr_t *index)
 	if (is_array (array_type)) {
 		ele_type = dereference_type (array_type);
 		base = new_int_expr (array_type->array.base, false);
-	} else if (is_ptr (array_type)) {
+	} else if (is_pointer (array_type)) {
 		ele_type = array_type->fldptr.type;
 		base = new_int_expr (0, false);
 	} else {
@@ -2698,7 +2698,7 @@ const expr_t *
 offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 {
 	auto ptr_type = get_type (pointer);
-	if (!is_ptr (ptr_type)) {
+	if (!is_pointer (ptr_type)) {
 		internal_error (pointer, "not a pointer");
 	}
 	if (!is_integral (get_type (offset))) {

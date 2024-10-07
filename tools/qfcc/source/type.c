@@ -665,6 +665,28 @@ pointer_type (const type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	new->columns = 1;
+	new->fldptr.deref = false;
+	if (aux) {
+		return find_type (append_type (new, aux));
+	}
+	return new;
+}
+
+const type_t *
+reference_type (const type_t *aux)
+{
+	type_t      _new;
+	type_t     *new = &_new;
+
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_ptr;
+	new->alignment = 1;
+	new->width = 1;
+	new->columns = 1;
+	new->fldptr.deref = true;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -1207,8 +1229,8 @@ encode_type (dstring_t *encoding, const type_t *type)
 						dasprintf (encoding, "#");
 						return;
 					}
+					dasprintf (encoding, type->fldptr.deref ? "&" : "^");
 					type = type->fldptr.type;
-					dasprintf (encoding, "^");
 					encode_type (encoding, type);
 					return;
 				case ev_quaternion:
@@ -1267,6 +1289,18 @@ int is_##t (const type_t *type) \
 	return type->type == ev_##t; \
 }
 #include "QF/progs/pr_type_names.h"
+
+int
+is_pointer (const type_t *type)
+{
+	return is_ptr (type) && !type->fldptr.deref;
+}
+
+int
+is_reference (const type_t *type)
+{
+	return is_ptr (type) && type->fldptr.deref;
+}
 
 int
 is_enum (const type_t *type)
@@ -1416,7 +1450,7 @@ type_compatible (const type_t *dst, const type_t *src)
 	if (is_func (dst) && is_func (src)) {
 		return 1;
 	}
-	if (is_ptr (dst) && is_ptr (src)) {
+	if (is_pointer (dst) && is_pointer (src)) {
 		return 1;
 	}
 	return 0;
@@ -1438,13 +1472,13 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// pointer = array
-	if (is_ptr (dst) && is_array (src)) {
+	if (is_pointer (dst) && is_array (src)) {
 		if (is_void (dst->fldptr.type)
 			|| dst->fldptr.type == src->array.type)
 			return 1;
 		return 0;
 	}
-	if (!is_ptr (dst) || !is_ptr (src)) {
+	if (!is_pointer (dst) || !is_pointer (src)) {
 		if (is_algebra (dst) || is_algebra (src)) {
 			return algebra_type_assignable (dst, src);
 		}

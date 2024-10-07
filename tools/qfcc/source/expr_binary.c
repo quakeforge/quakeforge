@@ -921,10 +921,10 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 	const expr_t *psize;
 	const type_t *ptype = 0;
 
-	if (!is_ptr (t1) && !is_ptr (t2)) {
+	if (!is_pointer (t1) && !is_pointer (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
 	}
-	if (is_ptr (t1) && is_ptr (t2)) {
+	if (is_pointer (t1) && is_pointer (t2)) {
 		if (op != '-') {
 			return error (e2, "invalid pointer operation");
 		}
@@ -936,11 +936,11 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 		e2 = cast_expr (&type_int, e2);
 		psize = new_int_expr (type_size (t1->fldptr.type), false);
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
-	} else if (is_ptr (t1)) {
+	} else if (is_pointer (t1)) {
 		offset = cast_expr (&type_int, e2);
 		ptr = e1;
 		ptype = t1;
-	} else if (is_ptr (t2)) {
+	} else if (is_pointer (t2)) {
 		offset = cast_expr (&type_int, e1);
 		ptr = e2;
 		ptype = t2;
@@ -1360,11 +1360,11 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		t2 = float_type (t1);
 		e2 = cast_expr (t2, e2);
 	}
-	if (is_array (t1) && (is_ptr (t2) || is_integral (t2))) {
+	if (is_array (t1) && (is_pointer (t2) || is_integral (t2))) {
 		t1 = pointer_type (dereference_type (t1));
 		e1 = cast_expr (t1, e1);
 	}
-	if (is_array (t2) && (is_ptr (t1) || is_integral (t1))) {
+	if (is_array (t2) && (is_pointer (t1) || is_integral (t1))) {
 		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}

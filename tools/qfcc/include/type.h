@@ -53,6 +53,7 @@ typedef struct ty_func_s {
 
 typedef struct ty_fldptr_s {
 	const struct type_s *type;
+	bool        deref;			///< automatic dereference for pointers (C++ &)
 } ty_fldptr_t;
 
 typedef struct ty_array_s {
@@ -154,6 +155,7 @@ const type_t *find_type (const type_t *new);
 void new_typedef (const char *name, type_t *type);
 const type_t *field_type (const type_t *aux);
 const type_t *pointer_type (const type_t *aux);
+const type_t *reference_type (const type_t *aux);
 const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
 const type_t *base_type (const type_t *vec_type) __attribute__((pure));
@@ -220,6 +222,8 @@ const char *type_get_encoding (const type_t *type);
 #define EV_TYPE(t) int is_##t (const type_t *type) __attribute__((pure));
 #include "QF/progs/pr_type_names.h"
 
+int is_pointer (const type_t *type) __attribute__((pure));
+int is_reference (const type_t *type) __attribute__((pure));
 int is_enum (const type_t *type) __attribute__((pure));
 int is_bool (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
