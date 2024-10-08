@@ -211,6 +211,21 @@ proc_branch (const expr_t *expr)
 }
 
 static const expr_t *
+proc_return (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto ret_val = expr->retrn.ret_val;
+	if (ret_val) {
+		ret_val = expr_process (ret_val);
+	}
+	if (expr->retrn.at_return) {
+		return at_return_expr (current_func, ret_val);
+	} else {
+		return return_expr (current_func, ret_val);
+	}
+}
+
+static const expr_t *
 proc_decl (const expr_t *expr)
 {
 	if (expr->decl.spec.storage == sc_local) {
@@ -263,6 +278,7 @@ expr_process (const expr_t *expr)
 		[ex_compound] = proc_compound,
 		[ex_assign] = proc_assign,
 		[ex_branch] = proc_branch,
+		[ex_return] = proc_return,
 		[ex_decl] = proc_decl,
 	};
 

@@ -1275,8 +1275,8 @@ jump_statement
 				error (nullptr, "continue outside of loop or switch");
 			}
 		}
-	| RETURN ';'				{ $$ = return_expr (current_func, nullptr); }
-	| RETURN expression ';'		{ $$ = return_expr (current_func, $2); }
+	| RETURN ';'				{ $$ = new_return_expr (nullptr); }
+	| RETURN expression ';'		{ $$ = new_return_expr ($2); }
 	| DISCARD ';'				{ $$ = nullptr; } //XXX
 	;
 
