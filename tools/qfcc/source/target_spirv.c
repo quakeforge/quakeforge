@@ -47,22 +47,6 @@
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-static bool
-spirv_value_too_large (const type_t *val_type)
-{
-	return false;
-}
-
-static void
-spirv_build_scope (symbol_t *fsym)
-{
-}
-
-target_t spirv_target = {
-	.value_too_large = spirv_value_too_large,
-	.build_scope = spirv_build_scope,
-};
-
 typedef struct spirvctx_s {
 	defspace_t *space;
 	defspace_t *linkage;
@@ -875,3 +859,56 @@ spirv_set_memory_model (module_t *module, SpvMemoryModel model)
 {
 	module->memory_model = new_uint_expr (model);
 }
+
+static bool
+spirv_value_too_large (const type_t *val_type)
+{
+	return false;
+}
+
+static void
+spirv_create_param (symtab_t *parameters, symbol_t *param, param_qual_t qual)
+{
+	if (!param->name) {
+		if (qual == pq_out) {
+			warning (0, "unnamed out parameter");
+		}
+		param->name = save_string ("");
+
+		symtab_appendsymbol (parameters, param);
+	} else {
+		symtab_addsymbol (parameters, param);
+	}
+	auto type = param->type;
+	if (qual != pq_const) {
+		param->lvalue = true;
+	}
+	param->type = type;
+}
+
+static void
+spirv_build_scope (symbol_t *fsym)
+{
+	function_t *func = fsym->metafunc->func;
+
+	for (param_t *p = fsym->params; p; p = p->next) {
+		symbol_t   *param;
+		if (is_void (p->type)) {
+			if (p->name) {
+				error (0, "invalid parameter type for %s", p->name);
+			} else if (p != fsym->params || p->next) {
+				error (0, "void must be the only parameter");
+				continue;
+			} else {
+				continue;
+			}
+		}
+		param = new_symbol_type (p->name, p->type);
+		spirv_create_param (func->parameters, param, p->qual);
+	}
+}
+
+target_t spirv_target = {
+	.value_too_large = spirv_value_too_large,
+	.build_scope = spirv_build_scope,
+};

@@ -127,6 +127,22 @@ symtab_lookup (symtab_t *symtab, const char *name)
 }
 
 symbol_t *
+symtab_appendsymbol (symtab_t *symtab, symbol_t *symbol)
+{
+	if (symbol->table)
+		internal_error (0, "symbol '%s' is already in another symbol table",
+						symbol->name);
+
+	symbol->next = *symtab->symtail;
+	*symtab->symtail = symbol;
+	symtab->symtail = &symbol->next;
+
+	symbol->table = symtab;
+
+	return symbol;
+}
+
+symbol_t *
 symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 {
 	symbol_t   *s;
@@ -137,13 +153,7 @@ symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 		return s;
 	Hash_Add (symtab->tab, symbol);
 
-	symbol->next = *symtab->symtail;
-	*symtab->symtail = symbol;
-	symtab->symtail = &symbol->next;
-
-	symbol->table = symtab;
-
-	return symbol;
+	return symtab_appendsymbol (symtab, symbol);
 }
 
 symbol_t *

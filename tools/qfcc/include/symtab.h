@@ -174,6 +174,17 @@ symbol_t *symtab_lookup (symtab_t *symtab, const char *name);
 */
 symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol);
 
+/**	Append a symbol to the symbol table's symbols.
+
+	The symbol is not checked for duplicate names, nor is it added to the
+	hash table.
+
+	\param symtab	The symol table to which the symbol will be added.
+	\param symbol	The symbol to be added to the symbol table.
+	\return			The symbol as in the table
+*/
+symbol_t *symtab_appendsymbol (symtab_t *symtab, symbol_t *symbol);
+
 /**	Remove a symbol from the symbol table.
 
 	\param symtab	The symol table from which the symbol will be removed.
