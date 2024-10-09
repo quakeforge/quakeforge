@@ -1003,7 +1003,7 @@ print_type_str (dstring_t *str, const type_t *type)
 							return;
 						}
 					}
-					dasprintf (str, "(*");
+					dasprintf (str, "(%c", type->fldptr.deref ? '&' : '*');
 					print_type_str (str, type->fldptr.type);
 					dasprintf (str, ")");
 					return;

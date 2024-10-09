@@ -685,7 +685,22 @@ static const type_t * __attribute__((pure))
 select_type (gentype_t *gentype, const type_t *param_type)
 {
 	for (auto t = gentype->valid_types; t && *t; t++) {
-		if (*t == param_type || type_promotes (*t, param_type)) {
+		if (*t == param_type) {
+			return *t;
+		}
+		if (is_reference (*t) && dereference_type (*t) == param_type) {
+			// pass value by reference: no promotion
+			return *t;
+		}
+		auto pt = param_type;
+		if (is_reference (pt)) {
+			// pass reference by value: promotion ok
+			pt = dereference_type (pt);
+		}
+		if (*t == pt) {
+			return *t;
+		}
+		if (type_promotes (*t, pt)) {
 			return *t;
 		}
 	}
@@ -695,13 +710,28 @@ select_type (gentype_t *gentype, const type_t *param_type)
 static bool
 check_type (const type_t *type, const type_t *param_type, unsigned *cost)
 {
-	if (type != param_type) {
-		if (type_promotes (type, param_type)) {
-			*cost += 1;
-		} else {
-			return false;
-		}
+	if (!type) {
+		return false;
 	}
+	if (type == param_type) {
+		return true;
+	}
+	if (is_reference (type)) {
+		// pass by references is a free conversion, but no promotion
+		return dereference_type (type) == param_type;
+	}
+	if (is_reference (param_type)) {
+		// dereferencing a reference is free so long as there's no
+		// promotion, otherwise there's the promotion cost
+		param_type = dereference_type (param_type);
+	}
+	if (type == param_type) {
+		return true;
+	}
+	if (!type_promotes (type, param_type)) {
+		return false;
+	}
+	*cost += 1;
 	return true;
 }
 
