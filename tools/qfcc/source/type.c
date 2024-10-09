@@ -1293,12 +1293,14 @@ int is_##t (const type_t *type) \
 int
 is_pointer (const type_t *type)
 {
+	type = unalias_type (type);
 	return is_ptr (type) && !type->fldptr.deref;
 }
 
 int
 is_reference (const type_t *type)
 {
+	type = unalias_type (type);
 	return is_ptr (type) && type->fldptr.deref;
 }
 
