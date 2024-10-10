@@ -2188,16 +2188,10 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		emit_args = false;
 		expr_prepend_expr (args, new_args_expr ());
 	}
-	for (int i = 0; i < arg_expr_count - 1; i++) {
+	for (int i = 0; i < arg_expr_count; i++) {
 		scoped_src_loc (arg_exprs[i][0]);
 		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
 		append_expr (call, assign);
-	}
-	if (arg_expr_count) {
-		scoped_src_loc (arg_exprs[arg_expr_count - 1][0]);
-		auto e = assign_expr (arg_exprs[arg_expr_count - 1][1],
-							  arg_exprs[arg_expr_count - 1][0]);
-		append_expr (call, e);
 	}
 	auto ret_type = ftype->func.ret_type;
 	call->block.result = call_expr (fexpr, args, ret_type);
