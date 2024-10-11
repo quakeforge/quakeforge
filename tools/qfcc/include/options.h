@@ -43,6 +43,7 @@ typedef struct {
 	bool        vector_calls;		// use floats instead of vectors for constant function args
 	bool        local_merging;		// merge function locals into one block
 	unsigned    progsversion;		// Progs version to generate code for
+	int         max_params;			// maximum param count (-1 = unlimited)
 	bool        spirv;				// Target spir-v instead of Quake
 	bool        vector_components;	// add *_[xyz] symbols for vectors
 	bool        ifstring;			// expand if (str) to if (str != "")

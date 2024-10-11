@@ -44,15 +44,19 @@ target_set_backend (const char *tgt)
 	if (!strcasecmp (tgt, "v6")) {
 		current_target = v6_target;
 		options.code.progsversion = PROG_ID_VERSION;
+		options.code.max_params = PR_MAX_PARAMS;
 	} else if (!strcasecmp (tgt, "v6p")) {
 		current_target = v6p_target;
 		options.code.progsversion = PROG_V6P_VERSION;
+		options.code.max_params = PR_MAX_PARAMS;
 	} else if (!strcasecmp (tgt, "ruamoko")) {
 		current_target = ruamoko_target;
 		options.code.progsversion = PROG_VERSION;
+		options.code.max_params = -1;
 	} else if (!strcasecmp (tgt, "spir-v")) {
 		current_target = spirv_target;
 		options.code.progsversion = PROG_VERSION;
+		options.code.max_params = -1;
 		options.code.spirv = true;
 		options.code.no_vararg = true;
 	} else {

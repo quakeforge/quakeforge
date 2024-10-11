@@ -2010,12 +2010,13 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		}
 	}
 
-	if (options.code.progsversion < PROG_VERSION
-		&& arg_count > PR_MAX_PARAMS) {
-		return error (fexpr, "more than %d parameters", PR_MAX_PARAMS);
-	}
 
 	if (ftype->func.num_params < -1) {
+		if (options.code.max_params >= 0
+			&& arg_count > options.code.max_params) {
+			return error (fexpr, "more than %d parameters",
+						  options.code.max_params);
+		}
 		if (-arg_count > ftype->func.num_params + 1) {
 			if (!options.traditional)
 				return error (fexpr, "too few arguments");

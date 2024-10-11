@@ -1137,7 +1137,8 @@ static void
 build_function (symbol_t *fsym)
 {
 	const type_t *func_type = fsym->metafunc->func->type;
-	if (func_type->func.num_params > PR_MAX_PARAMS) {
+	if (options.code.max_params >= 0
+		&& func_type->func.num_params > options.code.max_params) {
 		error (0, "too many params");
 	}
 }
