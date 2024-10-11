@@ -32,7 +32,6 @@
 # include <unistd.h>
 #endif
 
-#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/dstring.h"
 #include "QF/cmd.h"
@@ -913,7 +912,6 @@ void
 Host_Init (void)
 {
 	qfZoneScoped (true);
-	BT_Init (com_argv[0]);
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 

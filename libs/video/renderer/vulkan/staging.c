@@ -28,7 +28,6 @@
 # include "config.h"
 #endif
 
-#include "QF/backtrace.h"
 #include "QF/dstring.h"
 
 #include "QF/Vulkan/barrier.h"
@@ -258,7 +257,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 		auto end = Sys_LongTime ();
 		if (end - start > 500) {
 			dstring_t  *str = dstring_newstr ();
-			BT_pcInfo (str, (intptr_t) packet->owner);
+			dasprintf (str, "(%"PRIxPTR")", (uintptr_t)(intptr_t)packet->owner);
 			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
 						(int) (end - start), stage, str->str);
 			dstring_delete (str);

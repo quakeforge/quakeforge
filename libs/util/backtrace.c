@@ -71,6 +71,5 @@ BT_pcInfo (dstring_t *str, uintptr_t pc)
 	if (bt_state) {
 		backtrace_pcinfo (bt_state, pc, bt_print, 0, str);
 	} else {
-		dasprintf (str, "(%"PRIxPTR")", pc);
 	}
 }
