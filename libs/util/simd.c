@@ -54,21 +54,18 @@
 vec4f_t
 BarycentricCoords_vf (const vec4f_t **points, int num_points, const vec4f_t p)
 {
-	vec4f_t zero = { };
-	vec4f_t     a, b, c, x, l, ab, bc, ca, d;
+	vec4f_t     a, b, c, x, l = {}, ab, bc, ca, d;
 	if (num_points > 4)
 		Sys_Error ("Don't know how to compute the barycentric coordinates "
 				   "for %d points", num_points);
 	switch (num_points) {
 		case 1:
-			l = zero;
 			l[0] = 1;
 			return l;
 		case 2:
 			x = p - *points[0];
 			a = *points[1] - *points[0];
 			d = dotf (x, a) / dotf (a, a);
-			l = zero;
 			l[1] = d[0];
 			l[0] = 1 - d[0];
 			return l;
