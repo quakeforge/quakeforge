@@ -141,8 +141,6 @@ init_quotables (void)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
 }
 
-static plitem_t *pl_parsepropertylistitem (pldata_t *pl);
-
 static const char *
 dict_get_key (const void *i, void *unused)
 {
@@ -753,12 +751,13 @@ make_byte (byte h, byte l)
 }
 
 static int
-pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, bool end_ok)
+pl_parsekeyvalue (pldata_t *pl, plitem_t *dict,
+				  plitem_t *(*parse_item) (pldata_t *pl), bool end_ok)
 {
 	plitem_t	*key = 0;
 	plitem_t	*value = 0;
 
-	if (!(key = pl_parsepropertylistitem (pl))) {
+	if (!(key = parse_item (pl))) {
 		return 0;
 	}
 	if (key->type != QFString) {
@@ -771,7 +770,7 @@ pl_parsekeyvalue (pldata_t *pl, plitem_t *dict, bool end_ok)
 	}
 	pl->pos++;
 
-	if (!(value = pl_parsepropertylistitem (pl))) {
+	if (!(value = parse_item (pl))) {
 		goto error;
 	}
 
@@ -797,14 +796,14 @@ error:
 }
 
 static plitem_t *
-pl_parsedictionary (pldata_t *pl)
+pl_parsedictionary (pldata_t *pl, plitem_t *(*parse_item) (pldata_t *pl))
 {
 	plitem_t   *dict = PL_NewDictionary (pl->hashctx);
 	dict->line = pl->line;
 
 	pl->pos++;	// skip over opening {
 	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != '}') {
-		if (!pl_parsekeyvalue (pl, dict, false)) {
+		if (!pl_parsekeyvalue (pl, dict, parse_item, false)) {
 			PL_Release (dict);
 			return nullptr;
 		}
@@ -820,11 +819,12 @@ pl_parsedictionary (pldata_t *pl)
 }
 
 static int
-pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
+pl_parsevalue (pldata_t *pl, plitem_t *array,
+			   plitem_t *(*parse_item) (pldata_t *pl), int end_ok)
 {
 	plitem_t	*value;
 
-	if (!(value = pl_parsepropertylistitem (pl))) {
+	if (!(value = parse_item (pl))) {
 		return 0;
 	}
 	if (!PL_A_AddObject (array, value)) {
@@ -847,7 +847,7 @@ pl_parsevalue (pldata_t *pl, plitem_t *array, int end_ok)
 }
 
 static plitem_t *
-pl_parsearray (pldata_t *pl)
+pl_parsearray (pldata_t *pl, plitem_t *(*parse_item) (pldata_t *pl))
 {
 	plitem_t   *array = PL_NewArray ();
 	array->line = pl->line;
@@ -855,7 +855,7 @@ pl_parsearray (pldata_t *pl)
 	pl->pos++;	// skip over opening (
 
 	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != ')') {
-		if (!pl_parsevalue (pl, array, 0)) {
+		if (!pl_parsevalue (pl, array, parse_item, false)) {
 			PL_Release (array);
 			return nullptr;
 		}
@@ -1080,8 +1080,8 @@ pl_parsepropertylistitem (pldata_t *pl)
 	}
 
 	switch (pl->ptr[pl->pos]) {
-		case '{': return pl_parsedictionary (pl);
-		case '(': return pl_parsearray (pl);
+		case '{': return pl_parsedictionary (pl, pl_parsepropertylistitem);
+		case '(': return pl_parsearray (pl, pl_parsepropertylistitem);
 		case '<': return pl_parsebinary (pl);
 		case '"': return pl_parsequotedstring (pl);
 		default:  return pl_parseunquotedstring (pl);
@@ -1089,7 +1089,7 @@ pl_parsepropertylistitem (pldata_t *pl)
 }
 
 static plitem_t *
-pl_parsejson_array (pldata_t *pl)
+pl_parsejson_array (pldata_t *pl, plitem_t *(*parse_item) (pldata_t *pl))
 {
 	plitem_t   *array = PL_NewArray ();
 	array->line = pl->line;
@@ -1097,7 +1097,7 @@ pl_parsejson_array (pldata_t *pl)
 	pl->pos++;	// skip over opening [
 
 	while (pl_skipspace (pl, false) && pl->ptr[pl->pos] != ']') {
-		if (!pl_parsevalue (pl, array, false)) {
+		if (!pl_parsevalue (pl, array, parse_item, false)) {
 			PL_Release (array);
 			return nullptr;
 		}
@@ -1183,8 +1183,8 @@ pl_parsejson_element (pldata_t *pl)
 		return nullptr;
 	}
 	switch (pl->ptr[pl->pos]) {
-		case '[': return pl_parsejson_array (pl);
-		case '{': return pl_parsedictionary (pl);
+		case '[': return pl_parsejson_array (pl, pl_parsejson_element);
+		case '{': return pl_parsedictionary (pl, pl_parsejson_element);
 		case ']':
 		case '}':
 		case ':':
@@ -1252,7 +1252,7 @@ pl_getdictionary (pldata_t *pl)
 	dict->line = pl->line;
 
 	while (pl_skipspace (pl, true)) {
-		if (!pl_parsekeyvalue (pl, dict, true)) {
+		if (!pl_parsekeyvalue (pl, dict, pl_parsepropertylistitem, true)) {
 			PL_Release (dict);
 			return nullptr;
 		}
@@ -1274,7 +1274,7 @@ pl_getarray (pldata_t *pl)
 	array->line = pl->line;
 
 	while (pl_skipspace (pl, true)) {
-		if (!pl_parsevalue (pl, array, true)) {
+		if (!pl_parsevalue (pl, array, pl_parsepropertylistitem, true)) {
 			PL_Release (array);
 			return nullptr;
 		}
@@ -1404,7 +1404,6 @@ write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 	plarray_t	*array;
 	pldict_t    *dict;
 	plbinary_t	*binary;
-	int			i;
 
 	switch (item->type) {
 		case QFDictionary:
@@ -1414,17 +1413,24 @@ write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 				current = dict->keys.a[i];
 				write_tabs (dstr, level + 1);
 				write_string (dstr, current->key, json);
-				write_string_len (dstr, " = ", 3);
+				if (json) {
+					write_string_len (dstr, ": ", 2);
+				} else {
+					write_string_len (dstr, " = ", 3);
+				}
 				write_item (dstr, current->value, level + 1, json);
-				write_string_len (dstr, ";\n", 2);
+				if (i + 1 < dict->keys.size) {
+					write_string_len (dstr, json ? ",\n" : ";\n", 2);
+				}
 			}
+			write_string_len (dstr, "\n", 1);
 			write_tabs (dstr, level);
 			write_string_len (dstr, "}", 1);
 			break;
 		case QFArray:
-			write_string_len (dstr, "(\n", 2);
+			write_string_len (dstr, json ? "[\n" : "(\n", 2);
 			array = (plarray_t *) item->data;
-			for (i = 0; i < array->numvals; i++) {
+			for (int i = 0; i < array->numvals; i++) {
 				write_tabs (dstr, level + 1);
 				write_item (dstr, array->values[i], level + 1, json);
 				if (i < array->numvals - 1)
@@ -1432,7 +1438,7 @@ write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 			}
 			write_string_len (dstr, "\n", 1);
 			write_tabs (dstr, level);
-			write_string_len (dstr, ")", 1);
+			write_string_len (dstr, json ? "]\n" : ")", 1);
 			break;
 		case QFBinary:
 			write_string_len (dstr, "<", 1);

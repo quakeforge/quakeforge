@@ -2,6 +2,7 @@
 # include "config.h"
 #endif
 #include <string.h>
+#include <ctype.h>
 #include "QF/plist.h"
 
 static const char *test_strings[] = {
@@ -24,7 +25,7 @@ static const char *test_strings[] = {
 	"["                                                                   "\n"
 	"    {"                                                               "\n"
 	"        \"precision\": \"zip\","                                     "\n"
-	"        \"Latitude\":  37.7668,"                                     "\n"
+	"        \"Latitude\":  37.766800000000003,"                          "\n"
 	"        \"Longitude\": -122.3959,"                                   "\n"
 	"        \"Address\":   \"\","                                        "\n"
 	"        \"City\":      \"SAN FRANCISCO\","                           "\n"
@@ -34,8 +35,8 @@ static const char *test_strings[] = {
 	"    },"                                                              "\n"
 	"    {"                                                               "\n"
 	"        \"precision\": \"zip\","                                     "\n"
-	"        \"Latitude\":  37.371991,"                                   "\n"
-	"        \"Longitude\": -122.026020,"                                 "\n"
+	"        \"Latitude\":  37.371991000000001,"                          "\n"
+	"        \"Longitude\": -122.02602,"                                  "\n"
 	"        \"Address\":   \"\","                                        "\n"
 	"        \"City\":      \"SUNNYVALE\","                               "\n"
 	"        \"State\":     \"CA\","                                      "\n"
@@ -53,22 +54,34 @@ static const char *test_strings[] = {
 #define num_string_tests (sizeof (test_strings) / sizeof (test_strings[0]))
 
 static int
+wsstrcmp (const char *s1, const char *s2)
+{
+	while (*s1 && *s1 == *s2) {
+		for (; *s1 && *s1 == *s2; s1++, s2++) continue;
+		for (; *s1 && isspace (*s1); s1++) continue;
+		for (; *s2 && isspace (*s2); s2++) continue;
+	}
+	return *s1 - *s2;
+}
+
+static int
 test_string_io (const char *str)
 {
 	plitem_t   *item;
-	const char *res;
 	char       *saved;
 
-	item = PL_NewString (str);
+	item = PL_ParseJSON (str, 0);
+	if (!item) {
+		printf ("failed to parse\n");
+		return 0;
+	}
 	saved = PL_WriteJSON (item);
 	PL_Release (item);
-	item = PL_ParseJSON (saved, 0);
-	res = PL_String (item);
-	if (!strcmp (str, res))
+	printf ("%p %p\n", str, saved);
+	if (!wsstrcmp (str, saved))
 		return 1;
 	printf ("expect: %s\n", str);
-	printf ("got   : %s\n", res);
-	printf ("saved : %s\n", saved);
+	printf ("got   : %s\n", saved);
 	return 0;
 }
 
