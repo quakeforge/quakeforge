@@ -1106,28 +1106,6 @@ descriptorSetLayouts = {
 			},
 		);
 	};
-	particle_set = {
-		bindings = (
-			{
-				binding = 0;
-				descriptorType = storage_buffer;
-				descriptorCount = 1;
-				stageFlags = compute;
-			},
-			{
-				binding = 1;
-				descriptorType = storage_buffer;
-				descriptorCount = 1;
-				stageFlags = compute;
-			},
-			{
-				binding = 2;
-				descriptorType = storage_buffer;
-				descriptorCount = 1;
-				stageFlags = compute;
-			},
-		);
-	};
 	output_set = {
 		bindings = (
 			{
