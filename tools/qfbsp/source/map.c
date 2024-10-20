@@ -187,17 +187,28 @@ ParseEpair (void)
 	e->value = strdup (map_script->token->str);
 }
 
-vec3_t      baseaxis[18] = {
-	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},	// floor
-	{0, 0, -1}, {1, 0, 0}, {0, -1, 0},	// ceiling
-	{1, 0, 0}, {0, 1, 0}, {0, 0, -1},	// west wall
-	{-1, 0, 0}, {0, 1, 0}, {0, 0, -1},	// east wall
-	{0, 1, 0}, {1, 0, 0}, {0, 0, -1},	// south wall
-	{0, -1, 0}, {1, 0, 0}, {0, 0, -1}	// north wall
+typedef struct wall_s {
+	vec3_t      n;
+	vec3_t      xv;
+	vec3_t      yv;
+} wall_t;
+
+// Quake's view of the world is +x forward, +y left, +z up
+// north/south/east/west is from the original qbsp source.
+// front/back/left/right is from inside the cube defined by the faces
+// xv and yv are the st axes for the texture, using 0,0 as top-left with
+// y (t) going down the texture.
+static wall_t baseaxis[] = {
+	{ .n = { 0, 0, 1}, .xv = {1, 0, 0}, .yv = {0, -1, 0} },//floor
+	{ .n = { 0, 0,-1}, .xv = {1, 0, 0}, .yv = {0, -1, 0} },//ceiling
+	{ .n = { 1, 0, 0}, .xv = {0, 1, 0}, .yv = {0, 0, -1} },//west wall  (back)
+	{ .n = {-1, 0, 0}, .xv = {0, 1, 0}, .yv = {0, 0, -1} },//east wall  (front)
+	{ .n = { 0, 1, 0}, .xv = {1, 0, 0}, .yv = {0, 0, -1} },//south wall (right)
+	{ .n = { 0,-1, 0}, .xv = {1, 0, 0}, .yv = {0, 0, -1} },//north wall (left)
 };
 
 static void
-TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
+TextureAxisFromPlane (const plane_t *pln, vec3_t xv, vec3_t yv)
 {
 	float       dot, best;
 	int         bestaxis, i;
@@ -206,15 +217,15 @@ TextureAxisFromPlane (plane_t *pln, vec3_t xv, vec3_t yv)
 	bestaxis = 0;
 
 	for (i = 0; i < 6; i++) {
-		dot = DotProduct (pln->normal, baseaxis[i * 3]);
+		dot = DotProduct (pln->normal, baseaxis[i].n);
 		if (dot > best) {
 			best = dot;
 			bestaxis = i;
 		}
 	}
 
-	VectorCopy (baseaxis[bestaxis * 3 + 1], xv);
-	VectorCopy (baseaxis[bestaxis * 3 + 2], yv);
+	VectorCopy (baseaxis[bestaxis].xv, xv);
+	VectorCopy (baseaxis[bestaxis].yv, yv);
 }
 
 static vec3_t *
