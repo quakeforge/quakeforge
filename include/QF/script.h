@@ -44,8 +44,10 @@ typedef struct script_s {
 	/// contains last error message or null if no error
 	/// if set, no tokens will be parsed.
 	const char *error;
-	/// if set, multi line quoted tokens will be treated as errors
-	int         no_quote_lines;
+	/// if true, multi line quoted tokens will be treated as errors
+	bool        no_quote_lines;
+	/// if true, quotes do not delimit strips
+	bool        no_quotes;
 	/// if set, characters in this string will always be lexed as single
 	/// character tokens. If not set, defaults to "{}()':". Set to ""
 	/// (empty string) to disable. Not set by default.
@@ -88,6 +90,16 @@ bool Script_TokenAvailable (script_t *script, bool crossline);
 	\return True on success, false on failure (no token available)
 */
 bool Script_GetToken (script_t *script, bool crossline);
+
+/** Get the remainder of the current line as a token
+
+	Parses the rest of the line (minus // style comments) as the token.
+	Trailing whitespace is not stripped.
+	If a token has been pushed back, it will be included in the new token.
+	\param script The script_t object being parsed
+	\return true if there is more to parse (EOF not hit)
+*/
+bool Script_GetLine (script_t *script);
 
 /** Unget the current token. Only one level of unget is supported.
 	\param script The script_t object being parsed

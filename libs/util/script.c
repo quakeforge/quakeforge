@@ -55,6 +55,10 @@ Script_Start (script_t *script, const char *file, const char *data)
 	script->line = 1;
 	script->file = file;
 	script->p = data;
+	// skip over the dreaded BOM if it's present
+	if (strncmp (script->p, "\xef\xbb\xbf", 3) == 0) {
+		script->p += 3;
+	}
 	script->unget = false;
 	script->error = 0;
 }
@@ -120,7 +124,7 @@ Script_GetToken (script_t *script, bool crossline)
 	}
 
 	// copy token
-	if (*script->p == '"') {
+	if (!script->no_quotes && *script->p == '"') {
 		int         start_line = script->line;
 		script->p++;
 		token_p = script->p;
@@ -158,6 +162,29 @@ Script_GetToken (script_t *script, bool crossline)
 	}
 
 	return true;
+}
+
+VISIBLE bool
+Script_GetLine (script_t *script)
+{
+	const char *token_p = script->p;
+	while (*script->p) {
+		if (script->p[0] == '\n') {
+			script->line++;
+			script->p++;
+			break;
+		}
+		if (script->p[0] == '/' && script->p[1] == '/') {
+			break;
+		}
+		script->p++;
+	}
+	if (script->unget) {
+		dstring_appendsubstr (script->token, token_p, script->p - token_p);
+	} else {
+		dstring_copysubstr (script->token, token_p, script->p - token_p);
+	}
+	return *script->p;
 }
 
 VISIBLE void
