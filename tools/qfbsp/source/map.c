@@ -548,6 +548,8 @@ LoadMapFile (const char *filename)
 	Qclose (file);
 
 	map_script = Script_New ();
+	// qbsp treats {foo as one token, not two. The original intent, but the
+	// quake community takes advantage of it for transparent textures
 	map_script->single = "";
 	Script_Start (map_script, filename, buf);
 
