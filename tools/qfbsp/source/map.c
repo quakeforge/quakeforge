@@ -77,6 +77,18 @@ map_error (const char *fmt, ...)
 	exit (1);
 }
 
+static void __attribute__ ((format (PRINTF, 1, 2)))
+map_warning (const char *fmt, ...)
+{
+	va_list     args;
+
+	va_start (args, fmt);
+	fprintf (stderr, "%s:%d: warning:", map_script->file, map_script->line);
+	vfprintf (stderr, fmt, args);
+	fprintf (stderr, "\n");
+	va_end (args);
+}
+
 static const char *
 miptex_getkey (const void *key, void *unused)
 {
@@ -167,7 +179,9 @@ ParseEpair (void)
 	memset (e, 0, sizeof (epair_t));
 	e->next = mapent->epairs;
 	mapent->epairs = e;
+	e->line = map_script->line;
 
+	//FIXME no error checking
 	e->key = strdup (map_script->token->str);
 	Script_GetToken (map_script, false);
 	e->value = strdup (map_script->token->str);
@@ -254,6 +268,7 @@ ParseBrush (void)
 	b = calloc (1, sizeof (mbrush_t));
 	b->next = mapent->brushes;
 	mapent->brushes = b;
+	b->line = map_script->line;
 
 	Script_GetToken (map_script, true);
 	if (strcmp (map_script->token->str, "(") != 0) {
@@ -268,6 +283,7 @@ ParseBrush (void)
 		if (!strcmp (map_script->token->str, "}"))
 			break;
 
+		int face_line = map_script->line;
 		if (verts) {
 			int         n_v, v;
 			n_v = atoi (map_script->token->str);
@@ -372,13 +388,13 @@ ParseBrush (void)
 				break;
 		}
 		if (f2) {
-			printf ("WARNING: brush with duplicate plane\n");
+			map_warning ("brush with duplicate plane (duplicate of plane at %d",
+						 f2->line);
 			continue;
 		}
 
 		if (DotProduct (plane.normal, plane.normal) < 0.1) {
-			printf ("WARNING: brush plane with no normal on line %d\n",
-					map_script->line);
+			map_warning ("brush plane with no normal");
 			continue;
 		}
 
@@ -443,6 +459,7 @@ ParseBrush (void)
 		f->plane = plane;
 		// unique the texinfo
 		f->texinfo = FindTexinfo (&tx);
+		f->line = face_line;
 		nummapbrushfaces++;
 	} while (1);
 	if (verts)

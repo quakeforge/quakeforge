@@ -34,18 +34,21 @@ typedef struct mface_s {
 	struct mface_s *next;
 	plane_t     plane;
 	int         texinfo;
+	int         line;
 } mface_t;
 
 typedef struct mbrush_s {
 	struct mbrush_s *next;
 	mface_t    *faces;
 	bool        detail;			///< true if brush is detail brush
+	int         line;
 } mbrush_t;
 
 typedef struct epair_s {
 	struct epair_s *next;
 	char       *key;
 	char       *value;
+	int         line;
 } epair_t;
 
 /**	In-memory representation of an entity as parsed from the map script.
