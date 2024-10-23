@@ -208,8 +208,12 @@ def process_entity(ent, wads):
             angles = Vector((0, 0, float(ent.d["angle"])))
             del ent.d["angle"]
         elif "angles" in ent.d:
-            angles = parse_vector(ent.d["angles"])
-            angles = angles.xzy
+            try:
+                angles = parse_vector(ent.d["angles"])
+                angles = angles.xzy
+            except ValueError:
+                #buggy map
+                angles = Vector((0, 0, float(ent.d["angles"])))
             del ent.d["angles"]
     obj.rotation_mode = 'XZY'
     obj.rotation_euler = angles * pi / 180
