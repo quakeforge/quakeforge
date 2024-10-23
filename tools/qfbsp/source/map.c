@@ -40,6 +40,7 @@
 
 #include "compat.h"
 
+#include "tools/qfbsp/include/brush.h"
 #include "tools/qfbsp/include/map.h"
 
 /**	\addtogroup qfbsp_map
@@ -273,7 +274,7 @@ ParseBrush (void)
 	texinfo_t   tx;
 	vec3_t      planepts[3];
 	vec3_t      t1, t2, *verts = 0;
-	vec_t       d, vecs[2][4];
+	vec_t       vecs[2][4];
 
 	nummapbrushes++;
 	b = calloc (1, sizeof (mbrush_t));
@@ -386,20 +387,14 @@ ParseBrush (void)
 				map_error ("parse error");
 		}
 
-		// if the three points are all on a previous plane, it is a duplicate
-		// plane
+		// convex objects can't have duplicate planes
 		for (f2 = b->faces; f2; f2 = f2->next) {
-			for (i = 0; i < 3; i++) {
-				d = DotProduct (planepts[i], f2->plane.normal)
-					- f2->plane.dist;
-				if (d < -ON_EPSILON || d > ON_EPSILON)
-					break;
-			}
-			if (i == 3)
+			if (PlaneEqual (&f2->plane, &plane)) {
 				break;
+			}
 		}
 		if (f2) {
-			map_warning ("brush with duplicate plane (duplicate of plane at %d",
+			map_warning ("brush with duplicate plane (of plane at %d)",
 						 f2->line);
 			continue;
 		}

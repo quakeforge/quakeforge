@@ -38,6 +38,9 @@
 #include "tools/qfbsp/include/options.h"
 #include "tools/qfbsp/include/surfaces.h"
 
+#define NORMAL_EPSILON 0.000001
+#define DIST_EPSILON 0.0001
+
 /**	\addtogroup qfbsp_brush
 */
 //@{
@@ -251,6 +254,15 @@ NormalizePlane (plane_t *dp)
 		flip = 1;
 	}
 	return flip;
+}
+
+bool
+PlaneEqual (const plane_t *p1, const plane_t *p2)
+{
+	return (fabs(p1->normal[0] - p2->normal[0]) < NORMAL_EPSILON
+			&& fabs(p1->normal[1] - p2->normal[1]) < NORMAL_EPSILON
+			&& fabs(p1->normal[2] - p2->normal[2]) < NORMAL_EPSILON
+			&& fabs(p1->dist - p2->dist) < DIST_EPSILON);
 }
 
 int

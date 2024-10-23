@@ -83,6 +83,17 @@ int	PlaneTypeForNormal (const vec3_t normal) __attribute__((pure));
 */
 int NormalizePlane (plane_t *dp);
 
+/** Check whether two planes are close enough to being equal
+
+	The plane normals must point in the same direction with the same magnitude
+	and the distances must be the same.
+
+	\param p1		The first plane to check.
+	\param p1		The second plane to check.
+	\return			true if the two planes are within tolerance of each other.
+*/
+bool PlaneEqual (const plane_t *p1, const plane_t *p2) __attribute__((pure));
+
 /**	Add a plane to the global list of planes.
 
 	Make the plane canonical, and add it to the global list of planes if it
