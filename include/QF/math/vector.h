@@ -193,7 +193,7 @@ void _VectorAdd (const vec3_t veca, const vec3_t vecb, vec3_t out);
 void _VectorCopy (const vec3_t in, vec3_t out);
 int _VectorCompare (const vec3_t v1, const vec3_t v2) __attribute__((pure));	// uses EQUAL_EPSILON
 vec_t _VectorLength (const vec3_t v) __attribute__((pure));
-void _VectorMA (const vec3_t veca, float scale, const vec3_t vecb,
+void _VectorMA (const vec3_t veca, double scale, const vec3_t vecb,
 				vec3_t vecc);
 void _VectorScale (const vec3_t in, vec_t scale, vec3_t out);
 void _VectorSubtract (const vec3_t veca, const vec3_t vecb, vec3_t out);

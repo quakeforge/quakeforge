@@ -602,7 +602,7 @@ _VectorCompare (const vec3_t v1, const vec3_t v2)
 }
 
 VISIBLE void
-_VectorMA (const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
+_VectorMA (const vec3_t veca, double scale, const vec3_t vecb, vec3_t vecc)
 {
 	vecc[0] = veca[0] + scale * vecb[0];
 	vecc[1] = veca[1] + scale * vecb[1];
