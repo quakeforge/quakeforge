@@ -291,6 +291,8 @@ FindPlane (const plane_t *dplane, int *side)
 
 	pl = *dplane;
 	NormalizePlane (&pl);
+	// convert any -0 to 0
+	VectorAdd (pl.normal, vec3_origin, pl.normal);
 	if (DotProduct (pl.normal, dplane->normal) > 0)
 		*side = 0;
 	else
