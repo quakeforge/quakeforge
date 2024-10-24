@@ -246,12 +246,21 @@ NormalizePlane (plane_t *dp)
 	ay = fabs (dp->normal[1]);
 	az = fabs (dp->normal[2]);
 
-	if (az >= ax && az >= ay)
-		dp->type = PLANE_ANYZ;
-	else if (ay >= ax && ay >= az)
-		dp->type = PLANE_ANYY;
-	else
-		dp->type = PLANE_ANYX;
+	if (options.preferz) {
+		if (az >= ax && az >= ay)
+			dp->type = PLANE_ANYZ;
+		else if (ay >= ax && ay >= az)
+			dp->type = PLANE_ANYY;
+		else
+			dp->type = PLANE_ANYX;
+	} else {
+		if (ax >= ay && ax >= az)
+			dp->type = PLANE_ANYX;
+		else if (ay >= ax && ay >= az)
+			dp->type = PLANE_ANYY;
+		else
+			dp->type = PLANE_ANYZ;
+	}
 	// Make the plane's normal point towards +inf along its primary axis.
 	if (dp->normal[dp->type - PLANE_ANYX] < 0) {
 		VectorNegate (dp->normal, dp->normal);

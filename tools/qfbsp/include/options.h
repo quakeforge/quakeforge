@@ -45,6 +45,7 @@ typedef struct {
 	bool        noclip;
 	bool        onlyents;
 	bool        portal;
+	bool        preferz;
 	bool        info;
 	bool        extract;
 	bool        extract_textures;
