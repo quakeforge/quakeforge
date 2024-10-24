@@ -372,8 +372,7 @@ CreateBrushFaces (void)
 			VectorNegate (faces[j].plane.normal, plane.normal);
 			plane.dist = -faces[j].plane.dist;
 
-			// keepon was false. avoid clipping away windings on plane?
-			w = ClipWinding (w, &plane, true);
+			w = ClipWinding (w, &plane, options.keepon);
 		}
 
 		if (!w)

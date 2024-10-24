@@ -52,6 +52,7 @@ enum {
 	long_opt_base = 255,
 
 	fix_point_off_plane,
+	keepon,
 
 	extract_textures,
 	extract_entities,
@@ -67,6 +68,7 @@ static struct option const long_options[] = {
 	{"version",				no_argument,		0, 'V'},
 	{"draw",				no_argument,		0, 'd'},
 	{"fix-off-plane",		no_argument,		0, fix_point_off_plane},
+	{"keepon",				no_argument,		0, keepon},
 	{"notjunc",				no_argument,		0, 't'},
 	{"nofill",				no_argument,		0, 'f'},
 	{"noclip",				no_argument,		0, 'c'},
@@ -179,6 +181,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case fix_point_off_plane:
 				options.fix_point_off_plane = true;
+				break;
+			case keepon:
+				options.keepon = true;
 				break;
 			case 'o':
 				options.output_file = strdup (optarg);
