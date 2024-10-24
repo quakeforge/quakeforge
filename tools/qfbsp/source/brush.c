@@ -338,7 +338,7 @@ CreateBrushFaces (void)
 	plane_t     plane;
 	vec_t       r;
 	winding_t  *w;
-	vec3_t      offset, point;
+	vec3_t      offset;
 
 	VectorZero (offset);
 	brush_mins[0] = brush_mins[1] = brush_mins[2] = BOGUS_RANGE;
@@ -398,13 +398,9 @@ CreateBrushFaces (void)
 			}
 
 		}
-		VectorCopy (mf->plane.normal, plane.normal);
-		VectorScale (mf->plane.normal, mf->plane.dist, point);
-		VectorSubtract (point, offset, point);
-		plane.dist = DotProduct (plane.normal, point);
 
 		f->texturenum = mf->texinfo;
-		f->planenum = FindPlane (&plane, &f->planeside);
+		f->planenum = FindPlane (&mf->plane, &f->planeside);
 		f->next = brush_faces;
 		brush_faces = f;
 		CheckFace (f);

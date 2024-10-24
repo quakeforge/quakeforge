@@ -330,7 +330,7 @@ ParseBrush (void)
 		VectorSubtract (planepts[0], planepts[1], t1);
 		VectorSubtract (planepts[2], planepts[1], t2);
 		CrossProduct(t1, t2, plane.normal);
-		VectorNormalize (plane.normal);
+		_VectorNormalize (plane.normal);
 		plane.dist = DotProduct(planepts[1], plane.normal);
 
 		// read the texturedef

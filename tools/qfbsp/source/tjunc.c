@@ -191,7 +191,7 @@ FindEdge (const vec3_t p1, const vec3_t p2, vec_t *t1, vec_t *t2)
 	*t1 = DotProduct (p1, dir);
 	*t2 = DotProduct (p2, dir);
 
-	VectorMultSub (p1, *t1, dir, origin);
+	_VectorMA (p1, -*t1, dir, origin);
 
 	if (*t1 > *t2) {
 		// swap t1 and t2
@@ -334,7 +334,7 @@ FixFaceEdges (face_t *f)
 			for (k = fp->numpoints; k > j; k--) {
 				VectorCopy (fp->points[k - 1], fp->points[k]);
 			}
-			VectorMultAdd (w->origin, v->t, w->dir, fp->points[j]);
+			_VectorMA (w->origin, v->t, w->dir, fp->points[j]);
 			fp->numpoints++;
 			goto restart;
 		}
