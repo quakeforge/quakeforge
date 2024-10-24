@@ -51,6 +51,8 @@ const char *this_program;
 enum {
 	long_opt_base = 255,
 
+	fix_point_off_plane,
+
 	extract_textures,
 	extract_entities,
 	extract_hull,
@@ -64,6 +66,7 @@ static struct option const long_options[] = {
 	{"help",				no_argument,		0, 'h'},
 	{"version",				no_argument,		0, 'V'},
 	{"draw",				no_argument,		0, 'd'},
+	{"fix-off-plane",		no_argument,		0, fix_point_off_plane},
 	{"notjunc",				no_argument,		0, 't'},
 	{"nofill",				no_argument,		0, 'f'},
 	{"noclip",				no_argument,		0, 'c'},
@@ -173,6 +176,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'e':					// onlyents
 				options.onlyents = true;
+				break;
+			case fix_point_off_plane:
+				options.fix_point_off_plane = true;
 				break;
 			case 'o':
 				options.output_file = strdup (optarg);

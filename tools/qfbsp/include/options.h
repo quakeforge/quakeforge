@@ -38,6 +38,7 @@
 typedef struct {
 	int         verbosity;		// 0=silent
 	bool        drawflag;
+	bool        fix_point_off_plane;
 	bool        notjunc;
 	bool        nofill;
 	bool        noclip;

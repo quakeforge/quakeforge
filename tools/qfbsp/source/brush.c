@@ -96,12 +96,17 @@ CheckFace (const face_t *f)
 		// check the point is on the face plane
 		d = PlaneDiff (p1, &planes.a[f->planenum]);
 
-		// point off plane autofix
-		if (d < -ON_EPSILON || d > ON_EPSILON)
+		if (d < -ON_EPSILON || d > ON_EPSILON) {
+			if (!options.fix_point_off_plane) {
+				Sys_Error ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
+						   p1[0], p1[1], p1[2]);
+			}
+			// point off plane autofix
 			if (options.verbosity > 1)
 				printf ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
 						p1[0], p1[1], p1[2]);
-		VectorMultSub (p1, d, planes.a[f->planenum].normal, p1);
+			_VectorMA (p1, -d, planes.a[f->planenum].normal, p1);
+		}
 
 		// check the edge isn't degenerate
 		p2 = f->points->points[j];
