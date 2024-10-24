@@ -39,6 +39,7 @@
 #include "QF/winding.h"
 
 #define BOGUS (18000.0)
+#define SIZE (8192.0)
 
 int         c_activewindings, c_peakwindings;
 
@@ -76,15 +77,15 @@ BaseWindingForPlane (const plane_t *p)
 	}
 
 	v = DotProduct (vup, p->normal);
-	VectorMultSub (vup, v, p->normal, vup);
+	_VectorMA (vup, -v, p->normal, vup);
 	_VectorNormalize (vup);
 
 	VectorScale (p->normal, p->dist, org);
 
 	CrossProduct (vup, p->normal, vright);
 
-	VectorScale (vup, BOGUS, vup);
-	VectorScale (vright, BOGUS, vright);
+	VectorScale (vup, SIZE, vup);
+	VectorScale (vright, SIZE, vright);
 
 	// project a really big axis aligned box onto the plane
 	w = NewWinding (4);
@@ -149,7 +150,7 @@ WindingVectors (const winding_t *w, int unit)
 		VectorSubtract (w->points[(i + 1) % w->numpoints], w->points[i],
 						c->points[i]);
 		if (unit)
-			VectorNormalize (c->points[i]);
+			_VectorNormalize (c->points[i]);
 	}
 	return c;
 }
