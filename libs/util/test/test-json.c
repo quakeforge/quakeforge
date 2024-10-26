@@ -53,7 +53,7 @@ static const char *test_strings[] = {
 };
 #define num_string_tests (sizeof (test_strings) / sizeof (test_strings[0]))
 
-static int
+static int __attribute__((pure))
 wsstrcmp (const char *s1, const char *s2)
 {
 	while (*s1 && *s1 == *s2) {
