@@ -31,8 +31,15 @@
 #include "QF/va.h"
 #include "QF/progs/pr_comp.h"
 
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/flow.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
@@ -91,12 +98,28 @@ v6_value_too_large (const type_t *val_type)
 	return type_size (val_type) > type_size (&type_param);
 }
 
+static void
+v6p_emit_function (function_t *f, const expr_t *e)
+{
+	f->code = pr.code->size;
+	lineno_base = f->def->loc.line;
+	f->sblock = make_statements (e);
+	if (options.code.optimize) {
+		flow_data_flow (f);
+	} else {
+		statements_count_temps (f->sblock);
+	}
+	emit_statements (f->sblock);
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
+	.emit_function = v6p_emit_function,
 };
 
 target_t v6p_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
+	.emit_function = v6p_emit_function,
 };

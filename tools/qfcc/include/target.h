@@ -30,10 +30,13 @@
 
 typedef struct symbol_s symbol_t;
 typedef struct type_s type_t;
+typedef struct function_s function_t;
+typedef struct expr_s expr_t;
 
 typedef struct {
 	bool      (*value_too_large) (const type_t *val_type);
 	void      (*build_scope) (symbol_t *fsym);
+	void      (*emit_function) (function_t *f, const expr_t *e);
 } target_t;
 
 extern target_t current_target;

@@ -1330,15 +1330,7 @@ emit_function (function_t *f, expr_t *e)
 {
 	if (pr.error_count)
 		return;
-	f->code = pr.code->size;
-	lineno_base = f->def->loc.line;
-	f->sblock = make_statements (e);
-	if (options.code.optimize) {
-		flow_data_flow (f);
-	} else {
-		statements_count_temps (f->sblock);
-	}
-	emit_statements (f->sblock);
+	current_target.emit_function (f, e);
 }
 
 void

@@ -162,6 +162,9 @@ spirv_Source (unsigned lang, unsigned version, unsigned srcid,
 static void
 spirv_Name (unsigned id, const char *name, spirvctx_t *ctx)
 {
+	if (!name) {
+		name = "";
+	}
 	int len = strlen (name) + 1;
 	auto def = spirv_new_insn (SpvOpName, 2 + RUP(len, 4) / 4, ctx->names);
 	D_var_o(int, def, 1) = id;
@@ -324,6 +327,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 static unsigned
 type_id (const type_t *type, spirvctx_t *ctx)
 {
+	type = unalias_type (type);
 	if (spirv_type_id (type, ctx)) {
 		return spirv_type_id (type, ctx);
 	}
@@ -909,7 +913,13 @@ spirv_build_scope (symbol_t *fsym)
 	}
 }
 
+static void
+spirv_emit_function (function_t *f, const expr_t *e)
+{
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
+	.emit_function = spirv_emit_function,
 };

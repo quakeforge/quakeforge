@@ -31,10 +31,16 @@
 #include "QF/va.h"
 #include "QF/progs/pr_comp.h"
 
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/flow.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
@@ -109,7 +115,22 @@ ruamoko_build_scope (symbol_t *fsym)
 	}
 }
 
+static void
+ruamoko_emit_function (function_t *f, const expr_t *e)
+{
+	f->code = pr.code->size;
+	lineno_base = f->def->loc.line;
+	f->sblock = make_statements (e);
+	if (options.code.optimize) {
+		flow_data_flow (f);
+	} else {
+		statements_count_temps (f->sblock);
+	}
+	emit_statements (f->sblock);
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
+	.emit_function = ruamoko_emit_function,
 };
