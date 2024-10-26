@@ -882,6 +882,7 @@ spirv_create_param (symtab_t *parameters, symbol_t *param, param_qual_t qual)
 	auto type = param->type;
 	if (qual != pq_const) {
 		param->lvalue = true;
+		type = reference_type (type);
 	}
 	param->type = type;
 }
