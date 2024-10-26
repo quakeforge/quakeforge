@@ -372,7 +372,7 @@ static unary_type_t ushort_u[] = {
 
 static unary_type_t double_u[] = {
 	{ .op = '-', .result_type = &type_double, .constant = double_negate, },
-	{ .op = '!', .result_type = &type_bool,   .constant = double_not,    },
+	{ .op = '!', .result_type = &type_lbool,  .constant = double_not,    },
 	{ .op = '~', .result_type = &type_double, .constant = double_bitnot, },
 	{ .op = QC_REVERSE, .process = algebra_reverse, },
 	{ .op = QC_DUAL,    .process = algebra_dual,    },
@@ -382,9 +382,9 @@ static unary_type_t double_u[] = {
 };
 
 static unary_type_t long_u[] = {
-	{ .op = '-', .result_type = &type_long, .constant = ulong_negate, },
-	{ .op = '!', .result_type = &type_bool, .constant = ulong_not,    },
-	{ .op = '~', .result_type = &type_long, .constant = ulong_bitnot, },
+	{ .op = '-', .result_type = &type_long,  .constant = ulong_negate, },
+	{ .op = '!', .result_type = &type_lbool, .constant = ulong_not,    },
+	{ .op = '~', .result_type = &type_long,  .constant = ulong_bitnot, },
 	{ .op = QC_REVERSE, .process = algebra_reverse, },
 	{ .op = QC_DUAL,    .process = algebra_dual,    },
 	{ .op = QC_UNDUAL,  .process = algebra_undual,  },
@@ -394,7 +394,7 @@ static unary_type_t long_u[] = {
 
 static unary_type_t ulong_u[] = {
 	{ .op = '-', .result_type = &type_ulong, .constant = long_negate, },
-	{ .op = '!', .result_type = &type_bool,  .constant = long_not,    },
+	{ .op = '!', .result_type = &type_lbool, .constant = long_not,    },
 	{ .op = '~', .result_type = &type_ulong, .constant = long_bitnot, },
 	{ .op = QC_REVERSE, .process = algebra_reverse, },
 	{ .op = QC_DUAL,    .process = algebra_dual,    },

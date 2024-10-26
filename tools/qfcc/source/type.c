@@ -140,6 +140,38 @@ type_t type_bvec4 = {
 	.columns = 1,
 	.meta = ty_bool,
 };
+type_t type_lbool = {
+	.type = ev_long,
+	.name = "lbool",
+	.alignment = PR_ALIGNOF(long),
+	.width = PR_SIZEOF(long) / PR_SIZEOF (long),
+	.columns = 1,
+	.meta = ty_bool,
+};
+type_t type_lbvec2 = {
+	.type = ev_long,
+	.name = "lbvec2",
+	.alignment = PR_ALIGNOF(lvec2),
+	.width = PR_SIZEOF(lvec2) / PR_SIZEOF (long),
+	.columns = 1,
+	.meta = ty_bool,
+};
+type_t type_lbvec3 = {
+	.type = ev_long,
+	.name = "lbvec3",
+	.alignment = PR_ALIGNOF(lvec3),
+	.width = PR_SIZEOF(lvec3) / PR_SIZEOF (long),
+	.columns = 1,
+	.meta = ty_bool,
+};
+type_t type_lbvec4 = {
+	.type = ev_long,
+	.name = "lbvec4",
+	.alignment = PR_ALIGNOF(lvec4),
+	.width = PR_SIZEOF(lvec4) / PR_SIZEOF (long),
+	.columns = 1,
+	.meta = ty_bool,
+};
 
 #define VEC_TYPE(type_name, base_type) &type_##type_name,
 #define MAT_TYPE(type_name, base_type, cols, align_as) &type_##type_name,
@@ -149,6 +181,10 @@ static type_t *matrix_types[] = {
 	&type_bvec2,
 	&type_bvec3,
 	&type_bvec4,
+	&type_lbool,
+	&type_lbvec2,
+	&type_lbvec3,
+	&type_lbvec4,
 #include "tools/qfcc/include/mat_types.h"
 	0
 };
@@ -795,7 +831,7 @@ bool_type (const type_t *base)
 	if (type_size (base) == 1) {
 		base = &type_bool;
 	} else if (type_size (base) == 2) {
-		base = &type_long;
+		base = &type_lbool;
 	}
 	return vector_type (base, width);
 }
@@ -1320,8 +1356,7 @@ is_bool (const type_t *type)
 	if (type->meta != ty_bool) {
 		return 0;
 	}
-	//FIXME 64-bit bool
-	return type->type == ev_int;
+	return type->type == ev_int || type->type == ev_long;
 }
 
 int
@@ -1706,6 +1741,10 @@ chain_basic_types (void)
 			chain_type (&type_bvec2);
 			chain_type (&type_bvec3);
 			chain_type (&type_bvec4);
+			chain_type (&type_lbool);
+			chain_type (&type_lbvec2);
+			chain_type (&type_lbvec3);
+			chain_type (&type_lbvec4);
 		}
 	}
 }
