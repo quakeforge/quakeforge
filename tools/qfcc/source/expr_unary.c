@@ -492,6 +492,10 @@ unary_expr (int op, const expr_t *e)
 	auto result_type = t;
 	if (unary_type->result_type) {
 		result_type = unary_type->result_type;
+		if (!is_handle (t)) {
+			result_type = matrix_type (result_type,
+									   type_cols (t), type_rows (t));
+		}
 	}
 	if (result_type == &type_bool) {
 		//FIXME support bool properly
