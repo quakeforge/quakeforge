@@ -320,6 +320,9 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	if ((expr = check_valid_lvalue (dst))) {
 		return expr;
 	}
+	if (is_reference (get_type (dst))) {
+		dst = pointer_deref (dst);
+	}
 	dst_type = get_type (dst);
 	if (!dst_type) {
 		internal_error (dst, "dst_type broke in assign_expr");
@@ -346,6 +349,9 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		if (src->type == ex_error) {
 			return src;
 		}
+	}
+	if (is_reference (get_type (src))) {
+		src = pointer_deref (src);
 	}
 	src_type = get_type (src);
 	if (!src_type) {

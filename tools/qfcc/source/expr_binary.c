@@ -1333,6 +1333,13 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if ((e = check_precedence (op, e1, e2)))
 		return e;
 
+	if (is_reference (get_type (e1))) {
+		e1 = pointer_deref (e1);
+	}
+	if (is_reference (get_type (e2))) {
+		e2 = pointer_deref (e2);
+	}
+
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
 	if (!t1 || !t2)

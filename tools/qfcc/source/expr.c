@@ -254,6 +254,13 @@ param_mismatch (const expr_t *e, int param, const char *fn,
 				  get_type_string (t2));
 }
 
+static const expr_t *
+reference_error (const expr_t *e, const type_t *dst, const type_t *src)
+{
+	return error (e, "cannot bind reference of type %s to %s",
+				  get_type_string (dst), get_type_string (src));
+}
+
 const expr_t *
 test_error (const expr_t *e, const type_t *t)
 {
@@ -1988,7 +1995,8 @@ vararg_integer (const expr_t *e)
 }
 
 const expr_t *
-build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *params)
+build_function_call (const expr_t *fexpr, const type_t *ftype,
+					 const expr_t *params)
 {
 	int         param_count = 0;
 	expr_t     *call;
@@ -2009,7 +2017,6 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 			arguments[i] = algebra_optimize (e);
 		}
 	}
-
 
 	if (ftype->func.num_params < -1) {
 		if (options.code.max_params >= 0
@@ -2066,15 +2073,24 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 		}
 		if (i < param_count) {
 			auto param_type = ftype->func.param_types[i];
-			if (e->type == ex_nil)
-				e = convert_nil (e, t = param_type);
-			if (e->type == ex_bool)
-				e = convert_from_bool (e, param_type);
-			if (e->type == ex_error) {
-				err = e;
-				continue;
-			}
 			auto param_qual = ftype->func.param_quals[i];
+
+			if (is_reference (param_type) && param_qual != pq_in) {
+				internal_error (e, "qualified reference param (not yet)");
+			}
+			if (is_reference (param_type) && !is_reference (t)) {
+				if (!is_lvalue (e)) {
+					err = error (e, "cannot pass non-lvalue by reference");
+				}
+				if (!err && dereference_type (param_type) != t) {
+					err = reference_error (e, param_type, t);
+				}
+			} else if (!is_reference (param_type) && is_reference (t)) {
+				t = dereference_type (t);
+			}
+			if (e->type == ex_nil) {
+				t = param_type;
+			}
 			if (param_qual == pq_out || param_qual == pq_inout) {
 				//FIXME should be able to use something like *foo() as
 				//an out or inout arg
@@ -2102,13 +2118,9 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 			}
 			t = param_type;
 		} else {
-			if (e->type == ex_nil)
-				e = convert_nil (e, t = type_nil);
-			if (e->type == ex_bool)
-				e = convert_from_bool (e, get_type (e));
-			if (is_int_val (e)
-				&& options.code.progsversion == PROG_ID_VERSION)
-				e = cast_expr (&type_float, e);
+			if (e->type == ex_nil) {
+				t = type_nil;
+			}
 			if (options.code.promote_float) {
 				if (is_scalar (get_type (e)) && is_float (get_type (e))) {
 					t = &type_double;
@@ -2180,7 +2192,18 @@ build_function_call (const expr_t *fexpr, const type_t *ftype, const expr_t *par
 				inout->inout.out = e;
 				e = inout;
 			} else {
-				e = cast_expr (arg_types[i], e);
+				if (is_reference (arg_types[i])) {
+					if (is_reference (get_type (e))) {
+						// just copy the param, so no op
+					} else {
+						e = address_expr (e, nullptr);
+					}
+				} else {
+					if (is_reference (get_type (e))) {
+						e = pointer_deref (e);
+					}
+					e = cast_expr (arg_types[i], e);
+				}
 			}
 			expr_prepend_expr (args, e);
 		}

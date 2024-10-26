@@ -979,6 +979,7 @@ const expr_t *conditional_expr (const expr_t *cond, const expr_t *e1,
 const expr_t *incop_expr (int op, const expr_t *e, int postop);
 const expr_t *array_expr (const expr_t *array, const expr_t *index);
 const expr_t *deref_pointer_expr (const expr_t *pointer);
+const expr_t *pointer_deref (const expr_t *pointer);
 const expr_t *offset_pointer_expr (const expr_t *pointer, const expr_t *offset);
 const expr_t *address_expr (const expr_t *e1, const type_t *t);
 const expr_t *build_if_statement (int not, const expr_t *test, const expr_t *s1,

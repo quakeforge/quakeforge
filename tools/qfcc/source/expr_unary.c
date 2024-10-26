@@ -119,7 +119,7 @@ quat_negate (const expr_t *e)
 	return new_vector_expr (q);
 }
 
-static const expr_t *
+const expr_t *
 pointer_deref (const expr_t *e)
 {
 	scoped_src_loc (e);
@@ -438,6 +438,10 @@ unary_expr (int op, const expr_t *e)
 	e = convert_name (e);
 	if (e->type == ex_error) {
 		return e;
+	}
+
+	if (is_reference (get_type (e))) {
+		e = pointer_deref (e);
 	}
 
 	unary_type_t *unary_type = nullptr;
