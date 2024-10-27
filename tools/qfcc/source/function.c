@@ -76,13 +76,6 @@ static hashtab_t *generic_functions;
 static hashtab_t *metafuncs;
 static hashtab_t *function_map;
 
-// standardized base register to use for all locals (arguments, local defs,
-// params)
-#define LOCALS_REG 1
-// keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
-// having to do shenanigans with mixed-alignment stack frames
-#define STACK_ALIGN 8
-
 static const char *
 gen_func_get_key (const void *_f, void *unused)
 {
@@ -1143,32 +1136,6 @@ build_function (symbol_t *fsym)
 	}
 }
 
-static void
-merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
-{
-	int         offset;
-
-	for (def_t *def = src->defs; def; def = def->next) {
-		if (def->type->alignment > alignment) {
-			alignment = def->type->alignment;
-		}
-	}
-	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);
-	for (def_t *def = src->defs; def; def = def->next) {
-		def->offset += offset;
-		def->space = dst;
-	}
-
-	if (src->defs) {
-		*dst->def_tail = src->defs;
-		dst->def_tail = src->def_tail;
-		src->def_tail = &src->defs;
-		*src->def_tail = 0;
-	}
-
-	defspace_delete (src);
-}
-
 function_t *
 build_code_function (symbol_t *fsym, const expr_t *state_expr,
 					 expr_t *statements)
@@ -1180,89 +1147,8 @@ build_code_function (symbol_t *fsym, const expr_t *state_expr,
 		prepend_expr (statements, state_expr);
 	}
 	function_t *func = fsym->metafunc->func;
-	if (options.code.progsversion == PROG_VERSION) {
-		/* Create a function entry block to set up the stack frame and add the
-		 * actual function code to that block. This ensure that the adjstk and
-		 * with statements always come first, regardless of what ideas the
-		 * optimizer gets.
-		 */
-		expr_t     *e;
-		expr_t     *entry = new_block_expr (0);
-		entry->loc = func->def->loc;
+	current_target.build_code (func, statements);
 
-		e = new_adjstk_expr (0, 0);
-		e->loc = entry->loc;
-		append_expr (entry, e);
-
-		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
-		e->loc = entry->loc;
-		append_expr (entry, e);
-
-		append_expr (entry, statements);
-		statements = entry;
-
-		/* Mark all local defs as using the base register used for stack
-		 * references.
-		 */
-		func->temp_reg = LOCALS_REG;
-		for (def_t *def = func->locals->space->defs; def; def = def->next) {
-			if (def->local || def->param) {
-				def->reg = LOCALS_REG;
-			}
-		}
-		for (def_t *def = func->parameters->space->defs; def; def = def->next) {
-			if (def->local || def->param) {
-				def->reg = LOCALS_REG;
-			}
-		}
-	}
-	emit_function (func, statements);
-	defspace_sort_defs (func->parameters->space);
-	defspace_sort_defs (func->locals->space);
-	if (options.code.progsversion < PROG_VERSION) {
-		// stitch parameter and locals data together with parameters coming
-		// first
-		defspace_t *space = defspace_new (ds_virtual);
-
-		func->params_start = 0;
-
-		merge_spaces (space, func->parameters->space, 1);
-		func->parameters->space = space;
-
-		merge_spaces (space, func->locals->space, 1);
-		func->locals->space = space;
-	} else {
-		defspace_t *space = defspace_new (ds_virtual);
-
-		if (func->arguments) {
-			func->arguments->size = func->arguments->max_size;
-			merge_spaces (space, func->arguments, STACK_ALIGN);
-			func->arguments = 0;
-		}
-
-		merge_spaces (space, func->locals->space, STACK_ALIGN);
-		func->locals->space = space;
-
-		// allocate 0 words to force alignment and get the address
-		func->params_start = defspace_alloc_aligned_highwater (space, 0,
-															   STACK_ALIGN);
-
-		dstatement_t *st = &pr.code->code[func->code];
-		if (pr.code->size > func->code && st->op == OP_ADJSTK) {
-			if (func->params_start) {
-				st->b = -func->params_start;
-			} else {
-				// skip over adjstk so a zero adjustment doesn't get executed
-				func->code += 1;
-			}
-		}
-		merge_spaces (space, func->parameters->space, STACK_ALIGN);
-		func->parameters->space = space;
-
-		// force the alignment again so the full stack slot is counted when
-		// the final parameter is smaller than STACK_ALIGN words
-		defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
-	}
 	return fsym->metafunc->func;
 }
 
@@ -1323,14 +1209,6 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 	func->parameters->space->size = 0;
 	func->locals->space = func->parameters->space;
 	return func;
-}
-
-void
-emit_function (function_t *f, expr_t *e)
-{
-	if (pr.error_count)
-		return;
-	current_target.emit_function (f, e);
 }
 
 void

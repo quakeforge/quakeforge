@@ -36,7 +36,7 @@ typedef struct expr_s expr_t;
 typedef struct {
 	bool      (*value_too_large) (const type_t *val_type);
 	void      (*build_scope) (symbol_t *fsym);
-	void      (*emit_function) (function_t *f, const expr_t *e);
+	void      (*build_code) (function_t *func, const expr_t *statements);
 } target_t;
 
 extern target_t current_target;

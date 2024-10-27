@@ -49,6 +49,7 @@
 #include "tools/qfcc/include/pragma.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 typedef struct pragma_arg_s {
@@ -67,7 +68,7 @@ set_traditional (int traditional)
 		case -1:
 			options.traditional = 0;
 			options.advanced = 2;
-			options.code.progsversion = PROG_VERSION;
+			target_set_backend ("ruamoko");
 			type_default = &type_int;
 			type_long_int = &type_long;
 			type_ulong_uint = &type_ulong;
@@ -75,7 +76,7 @@ set_traditional (int traditional)
 		case 0:
 			options.traditional = 0;
 			options.advanced = 1;
-			options.code.progsversion = PROG_V6P_VERSION;
+			target_set_backend ("v6p");
 			type_default = &type_int;
 			type_long_int = &type_int;
 			type_ulong_uint = &type_uint;
@@ -83,13 +84,13 @@ set_traditional (int traditional)
 		case 1:
 			options.traditional = 1;
 			options.advanced = 0;
-			options.code.progsversion = PROG_ID_VERSION;
+			target_set_backend ("v6");
 			type_default = &type_float;
 			break;
 		case 2:
 			options.traditional = 2;
 			options.advanced = 0;
-			options.code.progsversion = PROG_ID_VERSION;
+			target_set_backend ("v6");
 			type_default = &type_float;
 			break;
 	}

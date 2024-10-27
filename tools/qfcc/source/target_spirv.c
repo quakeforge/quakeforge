@@ -914,12 +914,12 @@ spirv_build_scope (symbol_t *fsym)
 }
 
 static void
-spirv_emit_function (function_t *f, const expr_t *e)
+spirv_build_code (function_t *func, const expr_t *statements)
 {
 }
 
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
-	.emit_function = spirv_emit_function,
+	.build_code = spirv_build_code,
 };

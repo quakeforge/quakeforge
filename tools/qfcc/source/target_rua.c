@@ -46,6 +46,13 @@
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
+// standardized base register to use for all locals (arguments, local defs,
+// params)
+#define LOCALS_REG 1
+// keep the stack aligned to 8 words (32 bytes) so lvec etc can be used without
+// having to do shenanigans with mixed-alignment stack frames
+#define STACK_ALIGN 8
+
 static bool
 ruamoko_value_too_large (const type_t *val_type)
 {
@@ -116,21 +123,90 @@ ruamoko_build_scope (symbol_t *fsym)
 }
 
 static void
-ruamoko_emit_function (function_t *f, const expr_t *e)
+ruamoko_build_code (function_t *func, const expr_t *statements)
 {
-	f->code = pr.code->size;
-	lineno_base = f->def->loc.line;
-	f->sblock = make_statements (e);
-	if (options.code.optimize) {
-		flow_data_flow (f);
-	} else {
-		statements_count_temps (f->sblock);
+	/* Create a function entry block to set up the stack frame and add the
+	 * actual function code to that block. This ensure that the adjstk and
+	 * with statements always come first, regardless of what ideas the
+	 * optimizer gets.
+	 */
+	expr_t     *e;
+	expr_t     *entry = new_block_expr (0);
+	entry->loc = func->def->loc;
+
+	e = new_adjstk_expr (0, 0);
+	e->loc = entry->loc;
+	append_expr (entry, e);
+
+	e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
+	e->loc = entry->loc;
+	append_expr (entry, e);
+
+	append_expr (entry, statements);
+	statements = entry;
+
+	/* Mark all local defs as using the base register used for stack
+	 * references.
+	 */
+	func->temp_reg = LOCALS_REG;
+	for (def_t *def = func->locals->space->defs; def; def = def->next) {
+		if (def->local || def->param) {
+			def->reg = LOCALS_REG;
+		}
 	}
-	emit_statements (f->sblock);
+	for (def_t *def = func->parameters->space->defs; def; def = def->next) {
+		if (def->local || def->param) {
+			def->reg = LOCALS_REG;
+		}
+	}
+
+	func->code = pr.code->size;
+	lineno_base = func->def->loc.line;
+	func->sblock = make_statements (statements);
+	if (options.code.optimize) {
+		flow_data_flow (func);
+	} else {
+		statements_count_temps (func->sblock);
+	}
+	emit_statements (func->sblock);
+
+	defspace_sort_defs (func->parameters->space);
+	defspace_sort_defs (func->locals->space);
+
+	defspace_t *space = defspace_new (ds_virtual);
+
+	if (func->arguments) {
+		func->arguments->size = func->arguments->max_size;
+		merge_spaces (space, func->arguments, STACK_ALIGN);
+		func->arguments = 0;
+	}
+
+	merge_spaces (space, func->locals->space, STACK_ALIGN);
+	func->locals->space = space;
+
+	// allocate 0 words to force alignment and get the address
+	func->params_start = defspace_alloc_aligned_highwater (space, 0,
+														   STACK_ALIGN);
+
+	dstatement_t *st = &pr.code->code[func->code];
+	if (pr.code->size > func->code && st->op == OP_ADJSTK) {
+		if (func->params_start) {
+			st->b = -func->params_start;
+		} else {
+			// skip over adjstk so a zero adjustment doesn't get executed
+			func->code += 1;
+		}
+	}
+	merge_spaces (space, func->parameters->space, STACK_ALIGN);
+	func->parameters->space = space;
+
+	// force the alignment again so the full stack slot is counted when
+	// the final parameter is smaller than STACK_ALIGN words
+	defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
 }
 
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
-	.emit_function = ruamoko_emit_function,
+	.build_code = ruamoko_build_code,
 };

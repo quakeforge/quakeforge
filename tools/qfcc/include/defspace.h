@@ -237,6 +237,8 @@ void defspace_reset (defspace_t *space);
 
 void defspace_sort_defs (defspace_t *space);
 
+void merge_spaces (defspace_t *dst, defspace_t *src, int alignment);
+
 ///@}
 
 #endif//__defspace_h

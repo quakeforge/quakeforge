@@ -33,6 +33,7 @@
 
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/flow.h"
@@ -99,27 +100,42 @@ v6_value_too_large (const type_t *val_type)
 }
 
 static void
-v6p_emit_function (function_t *f, const expr_t *e)
+v6p_build_code (function_t *func, const expr_t *statements)
 {
-	f->code = pr.code->size;
-	lineno_base = f->def->loc.line;
-	f->sblock = make_statements (e);
+	func->code = pr.code->size;
+	lineno_base = func->def->loc.line;
+	func->sblock = make_statements (statements);
 	if (options.code.optimize) {
-		flow_data_flow (f);
+		flow_data_flow (func);
 	} else {
-		statements_count_temps (f->sblock);
+		statements_count_temps (func->sblock);
 	}
-	emit_statements (f->sblock);
+	emit_statements (func->sblock);
+
+	defspace_sort_defs (func->parameters->space);
+	defspace_sort_defs (func->locals->space);
+
+	// stitch parameter and locals data together with parameters coming
+	// first
+	defspace_t *space = defspace_new (ds_virtual);
+
+	func->params_start = 0;
+
+	merge_spaces (space, func->parameters->space, 1);
+	func->parameters->space = space;
+
+	merge_spaces (space, func->locals->space, 1);
+	func->locals->space = space;
 }
 
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
-	.emit_function = v6p_emit_function,
+	.build_code = v6p_build_code,
 };
 
 target_t v6p_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
-	.emit_function = v6p_emit_function,
+	.build_code = v6p_build_code,
 };
