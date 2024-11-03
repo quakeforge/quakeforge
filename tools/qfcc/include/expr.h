@@ -678,6 +678,8 @@ const char *expr_string (const expr_t *e) __attribute__((pure));
 /** Create a new double constant expression node.
 
 	\param double_val	The double constant being represented.
+	\param implicit		The constant was implicit and should be auto-cast
+						without diagnostics
 	\return			The new double constant expression node
 					(expr_t::e::double_val).
 */
@@ -687,6 +689,8 @@ double expr_double (const expr_t *e) __attribute__((pure));
 /** Create a new float constant expression node.
 
 	\param float_val	The float constant being represented.
+	\param implicit		The constant was implicit and should be auto-cast
+						without diagnostics
 	\return			The new float constant expression node
 					(expr_t::e::float_val).
 */
@@ -758,6 +762,8 @@ const float *expr_quaternion (const expr_t *e) __attribute__((pure));
 /** Create a new itn constant expression node.
 
 	\param int_val	The int constant being represented.
+	\param implicit	The constant was implicit and should be auto-cast
+					without diagnostics
 	\return			The new int constant expression node
 					(expr_t::e::int_val).
 */
