@@ -55,6 +55,8 @@ typedef struct spirvctx_s {
 	defspace_t *annotations;
 	defspace_t *types;
 	defspace_t *code;
+
+	defspace_t *current;
 	struct DARRAY_TYPE (unsigned) type_ids;
 	unsigned id;
 } spirvctx_t;
@@ -410,6 +412,19 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_variable (symbol_t *sym, SpvStorageClass storage_class, spirvctx_t *ctx)
+{
+	unsigned id = spirv_id (ctx);
+	//FIXME init value
+	auto def = spirv_new_insn (SpvOpVariable, 4, ctx->code);
+	D_var_o(int, def, 1) = type_id (sym->type, ctx);
+	D_var_o(int, def, 2) = id;
+	D_var_o(int, def, 3) = storage_class;
+	spirv_Name (id, sym->name, ctx);
+	return id;
+}
+
+static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
 	unsigned ft_id = spirv_TypeFunction (func->sym, ctx);
@@ -427,11 +442,22 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 		if (p->qual != pq_const) {
 			ptype = pointer_type (ptype);
 		}
-		spirv_FunctionParameter (p->name, ptype, ctx);
+		unsigned pid = spirv_FunctionParameter (p->name, ptype, ctx);
+		if (func->parameters) {
+			for (auto s = func->parameters->symbols; s; s = s->next) {
+				if (p->name && p->name[0] && s->name && s->name[0]
+					&& !strcmp (s->name, p->name)) {
+					s->id = pid;
+					break;
+				}
+			}
+		}
 	}
 
-	if (!func->sblock) {
+	if (func->exprs) {
 		spirv_Label (ctx);
+	}
+	if (0&&!func->sblock) {
 		spirv_Unreachable (ctx);
 	}
 	for (auto sblock = func->sblock; sblock; sblock = sblock->next) {
@@ -440,7 +466,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 		}
 		spirv_Unreachable (ctx);
 	}
-	spirv_FunctionEnd (ctx);
+	if (0)spirv_FunctionEnd (ctx);
 	return func_id;
 }
 
@@ -501,12 +527,15 @@ spirv_generate_vqmul (const expr_t *e, spirvctx_t *ctx)
 #define SPV_UINT  (SPV_type(ev_uint)|SPV_type(ev_ulong))
 #define SPV_FLOAT (SPV_type(ev_float)|SPV_type(ev_double))
 #define SPV_INT   (SPV_SINT|SPV_UINT)
+#define SPV_PTR   (SPV_type(ev_ptr))
 
 static extinst_t glsl_450 = {
 	.name = "GLSL.std.450"
 };
 
 static spvop_t spv_ops[] = {
+	{"load",   SpvOpLoad,                 SPV_PTR,   0         },
+
 	{"or",     SpvOpLogicalOr,            SPV_INT,   SPV_INT   },
 	{"and",    SpvOpLogicalAnd,           SPV_INT,   SPV_INT   },
 
@@ -592,13 +621,13 @@ static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 static unsigned
 spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 {
-	if (e->expr.op == '+') {
-		return spirv_emit_expr (e->expr.e1, ctx);
-	}
-
 	auto op_name = convert_op (e->expr.op);
 	if (!op_name) {
-		internal_error (e, "unexpected unary op: %d\n", e->expr.op);
+		if (e->expr.op > 32 && e->expr.op < 127) {
+			internal_error (e, "unexpected unary op: '%c'\n", e->expr.op);
+		} else {
+			internal_error (e, "unexpected unary op: %d\n", e->expr.op);
+		}
 	}
 	auto t = get_type (e->expr.e1);
 	auto spv_op = spirv_find_op (op_name, t->type, 0);
@@ -621,10 +650,24 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 		D_var_o(int, def, 3) = spv_op->op;
 		D_var_o(int, def, 4) = uid;
 	} else {
-		auto def = spirv_new_insn (spv_op->op, 4, ctx->types);
+		auto def = spirv_new_insn (spv_op->op, 4, ctx->current);
 		D_var_o(int, def, 1) = tid;
 		D_var_o(int, def, 2) = id = spirv_id (ctx);
 		D_var_o(int, def, 3) = uid;
+	}
+	return id;
+}
+
+static unsigned
+spirv_block (const expr_t *e, spirvctx_t *ctx)
+{
+	unsigned id = 0;
+	auto slist = &e->block.list;
+	for (auto s = slist->head; s; s = s->next) {
+		spirv_emit_expr (s->expr, ctx);
+	}
+	if (e->block.result) {
+		id = spirv_emit_expr (e->block.result, ctx);
 	}
 	return id;
 }
@@ -662,7 +705,7 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 		D_var_o(int, def, 4) = bid1;
 		D_var_o(int, def, 5) = bid2;
 	} else {
-		auto def = spirv_new_insn (spv_op->op, 5, ctx->types);
+		auto def = spirv_new_insn (spv_op->op, 5, ctx->current);
 		D_var_o(int, def, 1) = tid;
 		D_var_o(int, def, 2) = id = spirv_id (ctx);
 		D_var_o(int, def, 3) = bid1;
@@ -696,6 +739,12 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_temp (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;//FIXME don't want
+}
+
+static unsigned
 spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
@@ -726,7 +775,7 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 			D_var_o(int, def, 1) = tid;
 			D_var_o(int, def, 2) = value->id = spirv_id (ctx);
 		} else {
-			auto def = spirv_new_insn (op, 3 + val_size, ctx->types);
+			auto def = spirv_new_insn (op, 3 + val_size, ctx->current);
 			D_var_o(int, def, 1) = tid;
 			D_var_o(int, def, 2) = value->id = spirv_id (ctx);
 			if (val_size > 0) {
@@ -741,13 +790,112 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_assign (const expr_t *e, spirvctx_t *ctx)
+{
+	unsigned src = spirv_emit_expr (e->assign.src, ctx);
+	unsigned dst = spirv_emit_expr (e->assign.dst, ctx);
+
+	if (!dst) return src;//FIXME workaround for temp
+
+	auto def = spirv_new_insn (SpvOpStore, 3, ctx->current);
+	D_var_o(int, def, 1) = dst;
+	D_var_o(int, def, 2) = src;
+	return 0;
+}
+
+static unsigned
+spirv_branch (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+static unsigned
+spirv_return (const expr_t *e, spirvctx_t *ctx)
+{
+	if (e->retrn.ret_val) {
+		auto def = spirv_new_insn (SpvOpReturnValue, 2, ctx->current);
+		D_var_o(int, def, 1) = spirv_emit_expr (e->retrn.ret_val, ctx);
+	} else {
+		spirv_new_insn (SpvOpReturn, 1, ctx->current);
+	}
+	return 0;
+}
+
+static unsigned
+spirv_extend (const expr_t *e, spirvctx_t *ctx)
+{
+	auto src_type = get_type (e->extend.src);
+	auto res_type = e->extend.type;
+	auto src_base = base_type (src_type);
+	auto res_base = base_type (res_type);
+	int  src_width = type_width (src_type);
+	int  res_width = type_width (res_type);
+
+	if (res_base != src_type || res_width <= src_width) {
+		internal_error (e, "invalid type combination for extend");
+	}
+	unsigned sid = spirv_emit_expr (e->extend.src, ctx);
+	unsigned eid = sid;
+	static int id_counts[4][4] = {
+		{-1, 2, 3, 4},
+		{-1,-1, 2, 2},
+		{-1,-1,-1, 2},
+		{-1,-1,-1,-1},
+	};
+	int nids = id_counts[src_width - 1][res_width - 1];
+	if (e->extend.extend != 2
+		|| !(src_width == 1 || (src_width == 2 && res_width == 4))) {
+		int val = e->extend.extend == 3 ? -1 : e->extend.extend == 1 ? 1 : 0;
+		scoped_src_loc (e);
+		auto ext = cast_expr (src_base, new_int_expr (val, false));
+		eid = spirv_emit_expr (ext, ctx);
+		if (src_width == 2 && res_width == 4) {
+			nids += 1;
+		}
+	}
+	unsigned cids[4] = {};
+	int start = 0;
+	if (e->extend.reverse) {
+		if (src_width > 1) {
+			internal_error (e, "reverse extend for width %d not implemented",
+							src_width);
+		}
+		cids[0] = eid;
+		cids[1] = eid;
+		cids[2] = eid;
+		cids[3] = sid;
+		start = 4 - nids;
+	} else {
+		cids[0] = sid;
+		cids[1] = eid;
+		cids[2] = eid;
+		cids[3] = eid;
+	}
+	int tid = type_id (res_type, ctx);
+	int id = spirv_id (ctx);
+	auto def = spirv_new_insn (SpvOpCompositeConstruct, 3 + nids, ctx->current);
+	D_var_o(int, def, 1) = tid;
+	D_var_o(int, def, 2) = id;
+	for (int i = 0; i < nids; i++) {
+		D_var_o(int, def, 3 + i) = cids[start + i];
+	}
+	return id;
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
+		[ex_block] = spirv_block,
 		[ex_expr] = spirv_expr,
 		[ex_uexpr] = spirv_uexpr,
 		[ex_symbol] = spirv_symbol,
+		[ex_temp] = spirv_temp,//FIXME don't want
 		[ex_value] = spirv_value,
+		[ex_assign] = spirv_assign,
+		[ex_branch] = spirv_branch,
+		[ex_return] = spirv_return,
+		[ex_extend] = spirv_extend,
 	};
 
 	if (e->type >= ex_count) {
@@ -804,9 +952,14 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 
 	auto srcid = spirv_String (pr->src_name, &ctx);
 	spirv_Source (0, 1, srcid, nullptr, &ctx);
+	ctx.current = ctx.code;
 	for (auto func = pr->func_head; func; func = func->next)
 	{
 		auto func_id = spirv_function (func, &ctx);
+		for (auto sym = func->locals->symbols; sym; sym = sym->next) {
+			sym->id = spirv_variable (sym, SpvStorageClassFunction, &ctx);
+		}
+		spirv_emit_expr (func->exprs, &ctx);
 		if (strcmp ("main", func->o_name) == 0) {
 			auto model = SpvExecutionModelVertex;//FIXME
 			spirv_EntryPoint (func_id, func->o_name, model, &ctx);
@@ -916,11 +1069,18 @@ spirv_build_scope (symbol_t *fsym)
 static void
 spirv_build_code (function_t *func, const expr_t *statements)
 {
+	func->exprs = statements;
 }
 
 static void
 spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab)
 {
+	symbol_t   *sym = spec.sym;
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
+	if (check && check->table == symtab) {
+		error (0, "%s redefined", sym->name);
+	}
+	symtab_addsymbol (symtab, sym);
 }
 
 target_t spirv_target = {

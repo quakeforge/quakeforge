@@ -152,6 +152,7 @@ typedef struct function_s {
 	struct udchain_s   *du_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
+	const expr_t       *exprs;
 } function_t;
 
 /** Represent an overloading of a function.
