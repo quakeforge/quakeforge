@@ -270,6 +270,8 @@ void initialize_def (struct symbol_s *sym,
 					 const struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage, struct symtab_s *symtab);
 
+void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab);
+
 /** Convenience function for obtaining a def's actual offset.
 
 	Takes care of an alias def's relative offset.

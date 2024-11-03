@@ -918,8 +918,14 @@ spirv_build_code (function_t *func, const expr_t *statements)
 {
 }
 
+static void
+spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab)
+{
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
+	.declare_sym = spirv_declare_sym,
 };

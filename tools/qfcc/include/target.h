@@ -29,14 +29,18 @@
 #define __target_h
 
 typedef struct symbol_s symbol_t;
+typedef struct symtab_s symtab_t;
 typedef struct type_s type_t;
 typedef struct function_s function_t;
 typedef struct expr_s expr_t;
+typedef struct specifier_s specifier_t;
 
 typedef struct {
 	bool      (*value_too_large) (const type_t *val_type);
 	void      (*build_scope) (symbol_t *fsym);
 	void      (*build_code) (function_t *func, const expr_t *statements);
+	void      (*declare_sym) (specifier_t spec, const expr_t *init,
+							  symtab_t *symtab);
 } target_t;
 
 extern target_t current_target;

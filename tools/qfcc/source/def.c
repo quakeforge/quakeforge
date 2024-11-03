@@ -550,10 +550,6 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
 
-	if (check && check->table == symtab->parent
-		&& symtab->parent->type == stab_param) {
-		error (0, "%s shadows a parameter", sym->name);
-	}
 	if (check && check->table == symtab) {
 		if (check->sy_type != sy_def || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
@@ -684,6 +680,22 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		}
 	}
 	sym->def->initializer = init;
+}
+
+void
+declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab)
+{
+	symbol_t   *sym = spec.sym;
+	defspace_t *space = symtab->space;
+
+	if (spec.storage == sc_static) {
+		space = pr.near_data;
+	}
+
+	initialize_def (sym, init, space, spec.storage, symtab);
+	if (sym->def) {
+		sym->def->nosave |= spec.nosave;
+	}
 }
 
 static int

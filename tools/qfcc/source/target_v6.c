@@ -132,10 +132,12 @@ target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
 	.build_code = v6p_build_code,
+	.declare_sym = declare_def,
 };
 
 target_t v6p_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
 	.build_code = v6p_build_code,
+	.declare_sym = declare_def,
 };

@@ -209,4 +209,5 @@ target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
 	.build_code = ruamoko_build_code,
+	.declare_sym = declare_def,
 };

@@ -47,6 +47,7 @@
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 ALLOC_STATE (symtab_t, symtabs);
@@ -254,57 +255,66 @@ make_symbol (const char *name, const type_t *type, defspace_t *space,
 	return sym;
 }
 
+static bool
+shadows_param (symbol_t *sym, symtab_t *symtab)
+{
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
+
+	if (check && check->table == symtab->parent
+		&& symtab->parent->type == stab_param) {
+		error (0, "%s shadows a parameter", sym->name);
+		return true;
+	}
+	return false;
+}
+
 symbol_t *
 declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 {
-	symbol_t   *s = spec.sym;
-	defspace_t *space = symtab->space;
+	symbol_t   *sym = spec.sym;
 
-	if (s->table) {
+	if (sym->table) {
 		// due to the way declarations work, we need a new symbol at all times.
 		// redelcarations will be checked later
-		s = new_symbol (s->name);
-		*s = *spec.sym;
-		s->table = nullptr;
+		sym = new_symbol (sym->name);
+		*sym = *spec.sym;
+		sym->table = nullptr;
 	}
 
 	if (!spec.type_expr && !spec.is_function) {
-		spec = default_type (spec, s);
+		spec = default_type (spec, sym);
 	}
 	if (!spec.storage) {
 		spec.storage = current_storage;
 	}
-	if (spec.storage == sc_static) {
-		space = pr.near_data;
-	}
 
-	if (spec.type && (spec.is_typedef || !s->type || !is_func (s->type))) {
-		s->type = append_type (spec.sym->type, spec.type);
+	if (spec.type && (spec.is_typedef || !sym->type || !is_func (sym->type))) {
+		sym->type = append_type (spec.sym->type, spec.type);
 	}
 
 	if (spec.is_typedef) {
 		if (init) {
-			error (0, "typedef %s is initialized", s->name);
+			error (0, "typedef %s is initialized", sym->name);
 		}
-		s->sy_type = sy_type;
-		s->type = find_type (s->type);
-		s->type = find_type (alias_type (s->type, s->type, s->name));
-		symtab_addsymbol (symtab, s);
+		sym->sy_type = sy_type;
+		sym->type = find_type (sym->type);
+		sym->type = find_type (alias_type (sym->type, sym->type, sym->name));
+		symtab_addsymbol (symtab, sym);
 	} else {
-		if (spec.is_function && is_func (s->type)) {
+		if (spec.is_function && is_func (sym->type)) {
 			if (init) {
-				error (0, "function %s is initialized", s->name);
+				error (0, "function %s is initialized", sym->name);
 			}
-			s = function_symbol (spec);
+			sym = function_symbol (spec);
 		} else {
-			s->type = find_type (s->type);
-			initialize_def (s, init, space, spec.storage, symtab);
-			if (s->def) {
-				s->def->nosave |= spec.nosave;
+			if (!shadows_param (sym, symtab)) {
+				sym->type = find_type (sym->type);
+				spec.sym = sym;
+				current_target.declare_sym (spec, init, symtab);
 			}
 		}
 	}
-	return s;
+	return sym;
 }
 
 symbol_t *
