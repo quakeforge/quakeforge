@@ -348,8 +348,6 @@ typedef struct {
 	ex_list_t   list;
 } ex_decl_t;
 
-#define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
-
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
