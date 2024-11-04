@@ -1875,6 +1875,12 @@ is_logic (int op)
 }
 
 bool
+is_deref (const expr_t *e)
+{
+	return e->type == ex_uexpr && e->expr.op == '.';
+}
+
+bool
 has_function_call (const expr_t *e)
 {
 	switch (e->type) {

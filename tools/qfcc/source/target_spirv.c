@@ -796,7 +796,12 @@ static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
-	unsigned dst = spirv_emit_expr (e->assign.dst, ctx);
+	unsigned dst = 0;
+
+	if (is_deref (e->assign.dst)) {
+		auto ptr = e->assign.dst->expr.e1;
+		dst = spirv_emit_expr (ptr, ctx);
+	}
 
 	if (!dst) return src;//FIXME workaround for temp
 
