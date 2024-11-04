@@ -131,11 +131,20 @@ v6p_build_code (function_t *func, const expr_t *statements)
 	func->locals->space = space;
 }
 
+static void
+vararg_int (const expr_t *e)
+{
+	if (is_int_val (e) && options.warnings.vararg_integer) {
+		warning (e, "passing int constant into ... function");
+	}
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
 	.build_code = v6p_build_code,
 	.declare_sym = declare_def,
+	.vararg_int = vararg_int,
 };
 
 target_t v6p_target = {
@@ -143,4 +152,5 @@ target_t v6p_target = {
 	.build_scope = v6p_build_scope,
 	.build_code = v6p_build_code,
 	.declare_sym = declare_def,
+	.vararg_int = vararg_int,
 };

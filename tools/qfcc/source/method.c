@@ -60,6 +60,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -743,7 +744,9 @@ method_check_params (method_t *method, const expr_t *args)
 				}
 			}
 		} else {
-			vararg_integer (e);
+			if (current_target.vararg_int) {
+				current_target.vararg_int (e);
+			}
 		}
 	}
 	return err;

@@ -412,6 +412,8 @@ const expr_t *type_mismatch (const expr_t *e1, const expr_t *e2, int op);
 
 const expr_t *param_mismatch (const expr_t *e, int param, const char *fn,
 							  const type_t *t1, const type_t *t2);
+const expr_t *reference_error (const expr_t *e, const type_t *dst,
+							   const type_t *src);
 const expr_t *test_error (const expr_t *e, const type_t *t);
 
 /** Set the current source location for subsequent new expressions.
@@ -635,6 +637,8 @@ expr_t *new_nil_expr (void);
 	\return			The new args expression node.
 */
 expr_t *new_args_expr (void);
+const expr_t *new_call_expr (const expr_t *func, const expr_t *args,
+							 const type_t *ret_type);
 
 /** Create a new value expression node.
 
@@ -966,7 +970,6 @@ const expr_t *binary_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *field_expr (const expr_t *e1, const expr_t *e2);
 const expr_t *asx_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *unary_expr (int op, const expr_t *e);
-void vararg_integer (const expr_t *e);
 const expr_t *build_function_call (const expr_t *fexpr, const type_t *ftype,
 								   const expr_t *params);
 const expr_t *function_expr (const expr_t *e1, const expr_t *e2);
@@ -975,8 +978,6 @@ struct function_s;
 const expr_t *branch_expr (int op, const expr_t *test, const expr_t *label);
 const expr_t *goto_expr (const expr_t *label);
 const expr_t *jump_table_expr (const expr_t *table, const expr_t *index);
-const expr_t *call_expr (const expr_t *func, const expr_t *args,
-						 const type_t *ret_type);
 const expr_t *return_expr (struct function_s *f, const expr_t *e);
 const expr_t *at_return_expr (struct function_s *f, const expr_t *e);
 const expr_t *conditional_expr (const expr_t *cond, const expr_t *e1,

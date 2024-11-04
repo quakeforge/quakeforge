@@ -41,6 +41,7 @@ typedef struct {
 	void      (*build_code) (function_t *func, const expr_t *statements);
 	void      (*declare_sym) (specifier_t spec, const expr_t *init,
 							  symtab_t *symtab, expr_t *block);
+	void      (*vararg_int) (const expr_t *e);
 } target_t;
 
 extern target_t current_target;

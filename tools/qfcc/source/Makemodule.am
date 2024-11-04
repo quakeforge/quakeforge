@@ -31,6 +31,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/expr_binary.c \
 	tools/qfcc/source/expr_bool.c \
 	tools/qfcc/source/expr_cast.c \
+	tools/qfcc/source/expr_call.c \
 	tools/qfcc/source/expr_compound.c \
 	tools/qfcc/source/expr_construct.c \
 	tools/qfcc/source/expr_dag.c \

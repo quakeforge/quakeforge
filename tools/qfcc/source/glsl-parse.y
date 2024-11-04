@@ -361,7 +361,7 @@ function_call_or_method
 			auto func = exprs[count - 1];
 			auto args = new_list_expr (nullptr);
 			list_gather (&args->list, exprs, count - 1);
-			$$ = call_expr (func, args, nullptr);
+			$$ = new_call_expr (func, args, nullptr);
 		}
 	;
 
