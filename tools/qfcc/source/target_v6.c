@@ -59,7 +59,8 @@ v6p_build_scope (symbol_t *fsym)
 
 	if (func->type->func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, 0, parameters->space, sc_param, locals);
+		initialize_def (args, nullptr, parameters->space, sc_param, locals,
+						nullptr);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -72,7 +73,8 @@ v6p_build_scope (symbol_t *fsym)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, 0, parameters->space, sc_param, locals);
+		initialize_def (param, nullptr, parameters->space, sc_param, locals,
+						nullptr);
 		if (p->qual == pq_out) {
 			param->def->param = false;
 			param->def->out_param = true;
@@ -87,7 +89,8 @@ v6p_build_scope (symbol_t *fsym)
 	if (args) {
 		while (i < PR_MAX_PARAMS) {
 			param = new_symbol_type (va (0, ".par%d", i), &type_param);
-			initialize_def (param, 0, parameters->space, sc_param, locals);
+			initialize_def (param, nullptr, parameters->space, sc_param,
+							locals, nullptr);
 			i++;
 		}
 	}

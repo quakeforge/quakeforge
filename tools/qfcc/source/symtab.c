@@ -269,7 +269,8 @@ shadows_param (symbol_t *sym, symtab_t *symtab)
 }
 
 symbol_t *
-declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
+declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				expr_t *block)
 {
 	symbol_t   *sym = spec.sym;
 
@@ -310,7 +311,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab)
 			if (!shadows_param (sym, symtab)) {
 				sym->type = find_type (sym->type);
 				spec.sym = sym;
-				current_target.declare_sym (spec, init, symtab);
+				current_target.declare_sym (spec, init, symtab, block);
 			}
 		}
 	}

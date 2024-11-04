@@ -191,7 +191,7 @@ function_value (function_t *func)
 		if (!ret || ret->table != func->locals) {
 			ret = new_symbol_type (".ret", func->type->func.ret_type);
 			initialize_def (ret, 0, func->locals->space, sc_local,
-							func->locals);
+							func->locals, nullptr);
 		}
 	}
 	return ret;
@@ -245,7 +245,7 @@ program_head
 				symbol_t   *sym = new_symbol ("ExitCode");
 				sym->type = &type_int;
 				initialize_def (sym, 0, current_symtab->space, sc_global,
-								current_symtab);
+								current_symtab, nullptr);
 				if (sym->def) {
 					sym->def->nosave = 1;
 				}
@@ -281,7 +281,7 @@ declarations
 				symbol_t   *next = $3->next;
 				$3->type = $5;
 				initialize_def ($3, 0, current_symtab->space, current_storage,
-								current_symtab);
+								current_symtab, nullptr);
 				$3 = next;
 			}
 		}

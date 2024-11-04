@@ -349,7 +349,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 									 array_type (&type_int,
 												 high - low + 1));
 		initialize_def (table_sym, table_init, pr.near_data, sc_static,
-						current_symtab);
+						current_symtab, nullptr);
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {

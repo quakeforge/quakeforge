@@ -40,7 +40,7 @@ typedef struct {
 	void      (*build_scope) (symbol_t *fsym);
 	void      (*build_code) (function_t *func, const expr_t *statements);
 	void      (*declare_sym) (specifier_t spec, const expr_t *init,
-							  symtab_t *symtab);
+							  symtab_t *symtab, expr_t *block);
 } target_t;
 
 extern target_t current_target;

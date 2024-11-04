@@ -248,6 +248,7 @@ static const expr_t *break_label;
 static const expr_t *continue_label;
 static bool generic_scope, generic_block;
 static symtab_t *generic_symtab;
+static expr_t *local_expr;
 
 static void
 end_generic_scope (void)
@@ -828,12 +829,12 @@ qc_nocode_func
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
 			const expr_t *expr = $3;
 
-			declare_symbol (spec, expr, current_symtab);
+			declare_symbol (spec, expr, current_symtab, local_expr);
 		}
 	| identifier
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
-			declare_symbol (spec, nullptr, current_symtab);
+			declare_symbol (spec, nullptr, current_symtab, local_expr);
 		}
 	;
 
@@ -937,9 +938,9 @@ initdecls
 
 initdecl
 	: declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab); }
+		{ declare_symbol ($1, $3, current_symtab, local_expr); }
 	| declarator
-		{ declare_symbol ($1, 0, current_symtab); }
+		{ declare_symbol ($1, 0, current_symtab, local_expr); }
 	;
 
 notype_initdecls
@@ -949,9 +950,9 @@ notype_initdecls
 
 notype_initdecl
 	: notype_declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab); }
+		{ declare_symbol ($1, $3, current_symtab, local_expr); }
 	| notype_declarator
-		{ declare_symbol ($1, 0, current_symtab); }
+		{ declare_symbol ($1, 0, current_symtab, local_expr); }
 	;
 
 /* various lists of type specifiers, storage class etc */

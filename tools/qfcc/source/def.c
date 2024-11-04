@@ -301,7 +301,7 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 }
 
 static int
-zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
+zero_memory (expr_t *block, def_t *def, type_t *zero_type,
 			 int init_size, int init_offset)
 {
 	int         zero_size = type_size (zero_type);
@@ -311,48 +311,47 @@ zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
 	for (; init_offset < init_size + 1 - zero_size; init_offset += zero_size) {
 		dst = new_def_expr (def);
 		dst = new_offset_alias_expr (zero_type, dst, init_offset);
-		append_expr (local_expr, assign_expr (dst, zero));
+		append_expr (block, assign_expr (dst, zero));
 	}
 	return init_offset;
 }
 
 static void
-init_elements_nil (def_t *def)
+init_elements_nil (def_t *def, expr_t *block)
 {
-	if (def->local && local_expr) {
+	if (def->local && block) {
 		// memset to 0
 		int         init_size = type_size (def->type);
 		int         init_offset = 0;
 
 		if (options.code.progsversion != PROG_ID_VERSION) {
-			init_offset = zero_memory (local_expr, def, &type_zero,
+			init_offset = zero_memory (block, def, &type_zero,
 									   init_size, init_offset);
 		}
 		// probably won't happen any time soon, but who knows...
 		if (options.code.progsversion != PROG_ID_VERSION
 			&& init_size - init_offset >= type_size (&type_quaternion)) {
-			init_offset = zero_memory (local_expr, def, &type_quaternion,
+			init_offset = zero_memory (block, def, &type_quaternion,
 									   init_size, init_offset);
 		}
 		if (init_size - init_offset >= type_size (&type_vector)) {
-			init_offset = zero_memory (local_expr, def, &type_vector,
+			init_offset = zero_memory (block, def, &type_vector,
 									   init_size, init_offset);
 		}
 		if (options.code.progsversion != PROG_ID_VERSION
 			&& init_size - init_offset >= type_size (&type_double)) {
-			init_offset = zero_memory (local_expr, def, &type_double,
+			init_offset = zero_memory (block, def, &type_double,
 									   init_size, init_offset);
 		}
 		if (init_size - init_offset >= type_size (type_default)) {
-			zero_memory (local_expr, def, type_default,
-						 init_size, init_offset);
+			zero_memory (block, def, type_default, init_size, init_offset);
 		}
 	}
 	// it's a global, so already initialized to 0
 }
 
 static void
-init_elements (struct def_s *def, const expr_t *eles)
+init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
 {
 	const expr_t *c;
 	pr_type_t  *g;
@@ -360,7 +359,7 @@ init_elements (struct def_s *def, const expr_t *eles)
 	element_t  *element;
 
 	if (eles->type == ex_nil) {
-		init_elements_nil (def);
+		init_elements_nil (def, block);
 		return;
 	}
 
@@ -368,9 +367,9 @@ init_elements (struct def_s *def, const expr_t *eles)
 	element_chain.tail = &element_chain.head;
 	build_element_chain (&element_chain, def->type, eles, 0);
 
-	if (def->local && local_expr) {
+	if (def->local && block) {
 		expr_t     *dst = new_def_expr (def);
-		assign_elements (local_expr, dst, &element_chain);
+		assign_elements (block, dst, &element_chain);
 	} else {
 		def_t       dummy = *def;
 		for (element = element_chain.head; element; element = element->next) {
@@ -408,7 +407,7 @@ init_elements (struct def_s *def, const expr_t *eles)
 					continue;
 				}
 			} else {
-				if (!def->local || !local_expr) {
+				if (!def->local || !block) {
 					error (c, "non-constant initializer");
 					continue;
 				}
@@ -545,7 +544,7 @@ num_elements (const expr_t *e)
 
 void
 initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
-				storage_class_t storage, symtab_t *symtab)
+				storage_class_t storage, symtab_t *symtab, expr_t *block)
 {
 	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
@@ -616,7 +615,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		return;
 	if ((is_structural (sym->type) || is_nonscalar (sym->type))
 		&& (init->type == ex_compound || init->type == ex_nil)) {
-		init_elements (sym->def, init);
+		init_elements (sym->def, init, block);
 		sym->def->initialized = 1;
 	} else {
 		if (init->type == ex_nil) {
@@ -628,11 +627,11 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 				   get_type_string (sym->type), get_type_string (init_type));
 			return;
 		}
-		if (storage == sc_local && local_expr) {
+		if (storage == sc_local && block) {
 			sym->def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
-			append_expr (local_expr, fold_constants (init));
+			append_expr (block, fold_constants (init));
 		} else if (is_constexpr (init)) {
 			init = assign_expr (new_symbol_expr (sym), init);
 			add_ctor_expr (init);
@@ -683,7 +682,8 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 }
 
 void
-declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab)
+declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
+			 expr_t *block)
 {
 	symbol_t   *sym = spec.sym;
 	defspace_t *space = symtab->space;
@@ -692,7 +692,7 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		space = pr.near_data;
 	}
 
-	initialize_def (sym, init, space, spec.storage, symtab);
+	initialize_def (sym, init, space, spec.storage, symtab, block);
 	if (sym->def) {
 		sym->def->nosave |= spec.nosave;
 	}

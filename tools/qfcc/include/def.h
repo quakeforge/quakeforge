@@ -268,9 +268,11 @@ void init_vector_components (struct symbol_s *vector_sym, int is_field,
 */
 void initialize_def (struct symbol_s *sym,
 					 const struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage, struct symtab_s *symtab);
+					 storage_class_t storage, struct symtab_s *symtab,
+					 expr_t *block);
 
-void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab);
+void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				  expr_t *block);
 
 /** Convenience function for obtaining a def's actual offset.
 

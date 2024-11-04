@@ -42,8 +42,8 @@
 #include "tools/qfcc/include/type.h"
 
 void
-glsl_parse_declaration (specifier_t spec, symbol_t *sym,
-						const expr_t *init, symtab_t *symtab)
+glsl_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
+						symtab_t *symtab, expr_t *block)
 {
 	if (sym->type) {
 		internal_error (0, "unexected typed symbol");
@@ -65,7 +65,7 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym,
 				internal_error (id_list, "not a symbol");
 			}
 			spec.sym = id->expr->symbol;
-			spec.sym = declare_symbol (spec, init, symtab);
+			spec.sym = declare_symbol (spec, init, symtab, block);
 			glsl_apply_attributes (attributes, spec);
 		}
 	} else {
@@ -103,7 +103,7 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym,
 				}
 				symtab_addsymbol (symtab, sym);
 			} else {
-				spec.sym = declare_symbol (spec, init, symtab);
+				spec.sym = declare_symbol (spec, init, symtab, block);
 			}
 		}
 		glsl_apply_attributes (attributes, spec);

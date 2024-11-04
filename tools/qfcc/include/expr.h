@@ -426,8 +426,6 @@ void restore_src_loc (expr_t **e);
 	__attribute__((cleanup(restore_src_loc))) \
 	expr_t *srclocScope = set_src_loc(e)
 
-extern expr_t *local_expr;
-
 /**	Get the type descriptor of the expression result.
 
 	\param e		The expression from which to get the result type.

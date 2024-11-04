@@ -228,9 +228,10 @@ proc_return (const expr_t *expr)
 static const expr_t *
 proc_decl (const expr_t *expr)
 {
+	expr_t *block = nullptr;
 	if (expr->decl.spec.storage == sc_local) {
 		scoped_src_loc (expr);
-		local_expr = new_block_expr (nullptr);
+		block = new_block_expr (nullptr);
 	}
 	int count = list_count (&expr->decl.list);
 	const expr_t *decls[count + 1];
@@ -258,10 +259,9 @@ proc_decl (const expr_t *expr)
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
 		}
-		current_language.parse_declaration (spec, sym, init, current_symtab);
+		current_language.parse_declaration (spec, sym, init, current_symtab,
+											block);
 	}
-	auto block = local_expr;
-	local_expr = nullptr;
 	return block;
 }
 

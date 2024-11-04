@@ -1078,7 +1078,8 @@ spirv_build_code (function_t *func, const expr_t *statements)
 }
 
 static void
-spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab)
+spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				   expr_t *block)
 {
 	symbol_t   *sym = spec.sym;
 	symbol_t   *check = symtab_lookup (symtab, sym->name);
@@ -1090,6 +1091,18 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab)
 		sym->type = reference_type (sym->type);
 	}
 	symtab_addsymbol (symtab, sym);
+	if (symtab->type == stab_local) {
+		if (init) {
+			if (is_constexpr (init)) {
+			} else if (block) {
+				auto r = pointer_deref (new_symbol_expr (sym));
+				auto e = assign_expr (r, init);
+				append_expr (block, e);
+			} else {
+				error (init, "non-constant initializer");
+			}
+		}
+	}
 }
 
 target_t spirv_target = {

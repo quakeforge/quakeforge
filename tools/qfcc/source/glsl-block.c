@@ -176,7 +176,7 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		auto space = current_symtab->space;// FIXME
 		initialize_def (instance_name, nullptr, space,
 						glsl_sc_from_iftype (block->interface),
-						current_symtab);
+						current_symtab, nullptr);
 	} else {
 		auto block_sym = symtab_lookup (interface, block->name->name);
 		if (block_sym) {

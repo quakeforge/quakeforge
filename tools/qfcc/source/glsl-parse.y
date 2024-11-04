@@ -619,7 +619,7 @@ declaration
 	| type_qualifier ';'
 		{
 			glsl_parse_declaration ($type_qualifier, nullptr,
-									nullptr, current_symtab);
+									nullptr, current_symtab, nullptr);
 			$$ = nullptr;
 		}
 	| type_qualifier new_identifier ';'
@@ -1150,10 +1150,8 @@ condition
 	: expression
 	| fully_specified_type new_identifier '=' initializer
 		{
-			auto symtab = current_symtab;
-			auto space = symtab->space;
-			auto storage = current_storage;
-			initialize_def ($2, $initializer, space, storage, symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
+			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
 

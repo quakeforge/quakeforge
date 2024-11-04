@@ -99,7 +99,8 @@ symtab_t *glsl_optimize_attributes (attribute_t *attributes);
 void glsl_apply_attributes (symtab_t *attributes, specifier_t spec);
 
 void glsl_parse_declaration (specifier_t spec, symbol_t *sym,
-							 const expr_t *init, symtab_t *symtab);
+							 const expr_t *init, symtab_t *symtab,
+							 expr_t *block);
 void glsl_declare_field (specifier_t spec, symtab_t *symtab);
 void glsl_layout (const ex_list_t *qualifiers, specifier_t spec);
 

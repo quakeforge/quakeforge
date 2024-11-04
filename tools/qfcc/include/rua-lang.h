@@ -204,7 +204,8 @@ typedef struct language_s {
 	void      (*version) (int version, const char *profile);
 	bool      (*on_include) (const char *name);
 	void      (*parse_declaration) (specifier_t spec, symbol_t *sym,
-									const expr_t *init, symtab_t *symtab);
+									const expr_t *init, symtab_t *symtab,
+									expr_t *block);
 	void       *sublanguage;
 } language_t;
 
