@@ -807,7 +807,7 @@ bool is_error (const expr_t *e) __attribute__((pure));
 	\param e		The expression to check.
 	\return			True if the expression is constant.
 */
-int is_constant (const expr_t *e) __attribute__((pure));
+bool is_constant (const expr_t *e) __attribute__((pure));
 
 /**	Check if the expression refers to a constant expression or value.
 
@@ -822,14 +822,14 @@ bool is_constexpr (const expr_t *e) __attribute__((pure));
 	\return			True if the expression refers to a variable (def
 					expression, var symbol expression, or temp expression).
 */
-int is_variable (const expr_t *e) __attribute__((pure));
+bool is_variable (const expr_t *e) __attribute__((pure));
 
 /** Check if the expression refers to a selector
 
 	\param e		The expression to check.
 	\return			True if the expression is a selector.
 */
-int is_selector (const expr_t *e) __attribute__((pure));
+bool is_selector (const expr_t *e) __attribute__((pure));
 
 /**	Return a value expression representing the constant stored in \a e.
 
@@ -846,40 +846,40 @@ const expr_t *constant_expr (const expr_t *e);
 	\param op		The op-code to check.
 	\return			True if the op-code is a comparison operator.
 */
-int is_compare (int op) __attribute__((const));
+bool is_compare (int op) __attribute__((const));
 
 /**	Check if the op-code is a math operator.
 
 	\param op		The op-code to check.
 	\return			True if the op-code is a math operator.
 */
-int is_math_op (int op) __attribute__((const));
+bool is_math_op (int op) __attribute__((const));
 
 /**	Check if the op-code is a logic operator.
 
 	\param op		The op-code to check.
 	\return			True if the op-code is a logic operator.
 */
-int is_logic (int op) __attribute__((const));
+bool is_logic (int op) __attribute__((const));
 
-int has_function_call (const expr_t *e) __attribute__((pure));
-int is_function_call (const expr_t *e) __attribute__((pure));
+bool has_function_call (const expr_t *e) __attribute__((pure));
+bool is_function_call (const expr_t *e) __attribute__((pure));
 
-int is_nil (const expr_t *e) __attribute__((pure));
-int is_string_val (const expr_t *e) __attribute__((pure));
-int is_float_val (const expr_t *e) __attribute__((pure));
-int is_vector_val (const expr_t *e) __attribute__((pure));
-int is_quaternion_val (const expr_t *e) __attribute__((pure));
-int is_int_val (const expr_t *e) __attribute__((pure));
-int is_uint_val (const expr_t *e) __attribute__((pure));
-int is_short_val (const expr_t *e) __attribute__((pure));
-int is_long_val (const expr_t *e) __attribute__((pure));
-int is_ulong_val (const expr_t *e) __attribute__((pure));
-int is_double_val (const expr_t *e) __attribute__((pure));
-int is_integral_val (const expr_t *e) __attribute__((pure));
-int is_floating_val (const expr_t *e) __attribute__((pure));
-int is_pointer_val (const expr_t *e) __attribute__((pure));
-int is_math_val (const expr_t *e) __attribute__((pure));
+bool is_nil (const expr_t *e) __attribute__((pure));
+bool is_string_val (const expr_t *e) __attribute__((pure));
+bool is_float_val (const expr_t *e) __attribute__((pure));
+bool is_vector_val (const expr_t *e) __attribute__((pure));
+bool is_quaternion_val (const expr_t *e) __attribute__((pure));
+bool is_int_val (const expr_t *e) __attribute__((pure));
+bool is_uint_val (const expr_t *e) __attribute__((pure));
+bool is_short_val (const expr_t *e) __attribute__((pure));
+bool is_long_val (const expr_t *e) __attribute__((pure));
+bool is_ulong_val (const expr_t *e) __attribute__((pure));
+bool is_double_val (const expr_t *e) __attribute__((pure));
+bool is_integral_val (const expr_t *e) __attribute__((pure));
+bool is_floating_val (const expr_t *e) __attribute__((pure));
+bool is_pointer_val (const expr_t *e) __attribute__((pure));
+bool is_math_val (const expr_t *e) __attribute__((pure));
 
 /**	Create a reference to the global <code>.self</code> entity variable.
 

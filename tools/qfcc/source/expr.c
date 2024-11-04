@@ -120,7 +120,7 @@ convert_name (const expr_t *e)
 const type_t *
 get_type (const expr_t *e)
 {
-	const type_t *type = 0;
+	const type_t *type = nullptr;
 	e = convert_name (e);
 	switch (e->type) {
 		case ex_inout:
@@ -137,15 +137,15 @@ get_type (const expr_t *e)
 		case ex_with:
 			return &type_void;
 		case ex_memset:
-			return 0;
+			return nullptr;
 		case ex_error:
-			return 0;
+			return nullptr;
 		case ex_return:
 		case ex_decl:
 			internal_error (e, "unexpected expression type");
 		case ex_label:
 		case ex_compound:
-			return 0;
+			return nullptr;
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return &type_float;
@@ -204,7 +204,7 @@ get_type (const expr_t *e)
 				auto last = (ex_listitem_t *) e->list.tail;
 				return get_type (last->expr);
 			}
-			return 0;
+			return nullptr;
 		case ex_type:
 			return nullptr;
 		case ex_incop:
@@ -879,52 +879,52 @@ new_long_expr (pr_long_t long_val, bool implicit)
 	return new_value_expr (new_long_val (long_val), implicit);
 }
 
-int
+bool
 is_long_val (const expr_t *e)
 {
 	if (e->type == ex_nil) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_long) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
 		auto type = e->symbol->type;
 		if (is_long (type)) {
-			return 1;
+			return true;
 		}
 	}
 	if (e->type == ex_def && e->def->constant) {
 		auto type = e->def->type;
 		if (is_long (type)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 is_ulong_val (const expr_t *e)
 {
 	if (e->type == ex_nil) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_ulong) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
 		auto type = e->symbol->type;
 		if (is_ulong (type)) {
-			return 1;
+			return true;
 		}
 	}
 	if (e->type == ex_def && e->def->constant) {
 		auto type = e->def->type;
 		if (is_ulong (type)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 pr_long_t
@@ -975,7 +975,7 @@ is_error (const expr_t *e)
 	return e->type == ex_error;
 }
 
-int
+bool
 is_constant (const expr_t *e)
 {
 	while (e->type == ex_alias) {
@@ -985,8 +985,8 @@ is_constant (const expr_t *e)
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def
 			&& e->symbol->def->constant))
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 bool
@@ -1004,7 +1004,7 @@ is_constexpr (const expr_t *e)
 	return is_constant (e);
 }
 
-int
+bool
 is_variable (const expr_t *e)
 {
 	while (e->type == ex_alias) {
@@ -1013,12 +1013,12 @@ is_variable (const expr_t *e)
 	if (e->type == ex_def
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def)
 		|| e->type == ex_temp) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 is_selector (const expr_t *e)
 {
 	return e->type == ex_selector;
@@ -1052,59 +1052,59 @@ constant_expr (const expr_t *e)
 	return new_value_expr (value, false);
 }
 
-int
+bool
 is_nil (const expr_t *e)
 {
 	return e->type == ex_nil;
 }
 
-int
+bool
 is_string_val (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 1;
+		return true;
 	if (e->type == ex_value && e->value->lltype == ev_string)
-		return 1;
+		return true;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_string)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 const char *
 expr_string (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 0;
+		return nullptr;
 	if (e->type == ex_value && e->value->lltype == ev_string)
 		return e->value->string_val;
 	internal_error (e, "not a string constant");
 }
 
-int
+bool
 is_float_val (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 1;
+		return true;
 	if (e->type == ex_value && e->value->lltype == ev_float)
-		return 1;
+		return true;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& is_float (e->symbol->type))
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_double_val (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 1;
+		return true;
 	if (e->type == ex_value && e->value->lltype == ev_double)
-		return 1;
+		return true;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& is_double (e->symbol->type))
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 double
@@ -1141,17 +1141,17 @@ expr_float (const expr_t *e)
 	internal_error (e, "not a float constant");
 }
 
-int
+bool
 is_vector_val (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 1;
+		return true;
 	if (e->type == ex_value && e->value->lltype == ev_vector)
-		return 1;
+		return true;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_vector)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 const float *
@@ -1171,17 +1171,17 @@ expr_vector (const expr_t *e)
 	internal_error (e, "not a vector constant");
 }
 
-int
+bool
 is_quaternion_val (const expr_t *e)
 {
 	if (e->type == ex_nil)
-		return 1;
+		return true;
 	if (e->type == ex_value && e->value->lltype == ev_quaternion)
-		return 1;
+		return true;
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_quaternion)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 const float *
@@ -1201,28 +1201,28 @@ expr_quaternion (const expr_t *e)
 	internal_error (e, "not a quaternion constant");
 }
 
-int
+bool
 is_int_val (const expr_t *e)
 {
 	if (e->type == ex_nil) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_int) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
 		auto type = e->symbol->type;
 		if (!is_long (type) && !is_ulong (type) && is_integral (type)) {
-			return 1;
+			return true;
 		}
 	}
 	if (e->type == ex_def && e->def->constant) {
 		auto type = e->def->type;
 		if (!is_long (type) && !is_ulong (type) && is_integral (type)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 int
@@ -1254,24 +1254,24 @@ expr_int (const expr_t *e)
 	internal_error (e, "not an int constant");
 }
 
-int
+bool
 is_uint_val (const expr_t *e)
 {
 	if (e->type == ex_nil) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_uint) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& is_integral (e->symbol->type)) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_def && e->def->constant
 		&& is_integral (e->def->type)) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 unsigned
@@ -1299,20 +1299,20 @@ expr_uint (const expr_t *e)
 	internal_error (e, "not an unsigned constant");
 }
 
-int
+bool
 is_short_val (const expr_t *e)
 {
 	if (e->type == ex_nil) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_value && e->value->lltype == ev_short) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& e->symbol->type->type == ev_short) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 short
@@ -1347,41 +1347,41 @@ expr_ushort (const expr_t *e)
 	internal_error (e, "not a ushort constant");
 }
 
-int
+bool
 is_integral_val (const expr_t *e)
 {
 	if (is_constant (e)) {
 		if (is_int_val (e)) {
-			return 1;
+			return true;
 		}
 		if (is_uint_val (e)) {
-			return 1;
+			return true;
 		}
 		if (is_short_val (e)) {
-			return 1;
+			return true;
 		}
 		if (is_long_val (e)) {
-			return 1;
+			return true;
 		}
 		if (is_ulong_val (e)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 is_floating_val (const expr_t *e)
 {
 	if (is_constant (e)) {
 		if (is_float_val (e)) {
-			return 1;
+			return true;
 		}
 		if (is_double_val (e)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 pr_long_t
@@ -1421,29 +1421,29 @@ expr_floating (const expr_t *e)
 	internal_error (e, "not an integral constant");
 }
 
-int
+bool
 is_pointer_val (const expr_t *e)
 {
 	if (e->type == ex_value && e->value->lltype == ev_ptr) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 is_math_val (const expr_t *e)
 {
 	while (e->type == ex_alias) {
 		e = e->alias.expr;
 	}
 	if (e->type == ex_value && is_math (e->value->type)) {
-		return 1;
+		return true;
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
 		&& is_math (e->symbol->value->type)) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 const expr_t *
@@ -1636,7 +1636,7 @@ get_name (const expr_t *e)
 	if (e->type == ex_symbol) {
 		return e->symbol;
 	}
-	return 0;
+	return nullptr;
 }
 
 symbol_t *
@@ -1648,11 +1648,11 @@ get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 
 	if (!strct) {
 		error (e1, "dereferencing pointer to incomplete type");
-		return 0;
+		return nullptr;
 	}
 	if (!sym) {
 		error (e2, "field reference is not a name");
-		return 0;
+		return nullptr;
 	}
 	field = symtab_lookup (strct, sym->name);
 	if (!field && !is_entity(t1) && !is_nonscalar (t1)) {
@@ -1849,32 +1849,32 @@ convert_nil (const expr_t *e, const type_t *t)
 	return nil;
 }
 
-int
+bool
 is_compare (int op)
 {
 	if (op == QC_EQ || op == QC_NE || op == QC_LE || op == QC_GE
 		|| op == QC_LT || op == QC_GT || op == '>' || op == '<')
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_math_op (int op)
 {
 	if (op == '*' || op == '/' || op == '+' || op == '-')
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_logic (int op)
 {
 	if (op == QC_OR || op == QC_AND)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 has_function_call (const expr_t *e)
 {
 	switch (e->type) {
@@ -1882,12 +1882,12 @@ has_function_call (const expr_t *e)
 			return has_function_call (e->boolean.e);
 		case ex_block:
 			if (e->block.is_call)
-				return 1;
+				return true;
 		case ex_list:
 			for (auto li = e->block.list.head; li; li = li->next)
 				if (has_function_call (li->expr))
-					return 1;
-			return 0;
+					return true;
+			return false;
 		case ex_expr:
 			return (has_function_call (e->expr.e1)
 					|| has_function_call (e->expr.e2));
@@ -1902,10 +1902,10 @@ has_function_call (const expr_t *e)
 					|| has_function_call (e->assign.src));
 		case ex_branch:
 			if (e->branch.type == pr_branch_call) {
-				return 1;
+				return true;
 			}
 			if (e->branch.type == pr_branch_jump) {
-				return 0;
+				return false;
 			}
 			return has_function_call (e->branch.test);
 		case ex_inout:
@@ -1937,14 +1937,14 @@ has_function_call (const expr_t *e)
 		case ex_args:
 		case ex_type:
 		case ex_decl:
-			return 0;
+			return false;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {
 				if (has_function_call (c->expr)) {
-					return 1;
+					return true;
 				}
 			}
-			return 0;
+			return false;
 		case ex_incop:
 			return has_function_call (e->incop.expr);
 		case ex_cond:
@@ -1962,11 +1962,11 @@ has_function_call (const expr_t *e)
 	internal_error (e, "invalid expression type");
 }
 
-int
+bool
 is_function_call (const expr_t *e)
 {
 	if (e->type != ex_block || !e->block.is_call) {
-		return 0;
+		return false;
 	}
 	e = e->block.result;
 	return e->type == ex_branch && e->branch.type == pr_branch_call;
