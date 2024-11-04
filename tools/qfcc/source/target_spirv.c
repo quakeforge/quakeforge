@@ -424,6 +424,8 @@ spirv_variable (symbol_t *sym, SpvStorageClass storage_class, spirvctx_t *ctx)
 	return id;
 }
 
+static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
+
 static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
@@ -454,19 +456,22 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 		}
 	}
 
-	if (func->exprs) {
+	if (func->locals) {
 		spirv_Label (ctx);
-	}
-	if (0&&!func->sblock) {
-		spirv_Unreachable (ctx);
-	}
-	for (auto sblock = func->sblock; sblock; sblock = sblock->next) {
-		if (!sblock->id) {
-			sblock->id = spirv_Label (ctx);
+		for (auto sym = func->locals->symbols; sym; sym = sym->next) {
+			sym->id = spirv_variable (sym, SpvStorageClassFunction, ctx);
 		}
+	}
+	int start_size = ctx->code->size;
+	if (func->exprs) {
+		spirv_emit_expr (func->exprs, ctx);
+	} else {
 		spirv_Unreachable (ctx);
 	}
-	if (0)spirv_FunctionEnd (ctx);
+	if (ctx->code->size == start_size) {
+		spirv_Unreachable (ctx);
+	}
+	spirv_FunctionEnd (ctx);
 	return func_id;
 }
 
@@ -615,8 +620,6 @@ spirv_find_op (const char *op_name, etype_t type1, etype_t type2)
 	}
 	return nullptr;
 }
-
-static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 
 static unsigned
 spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
@@ -813,8 +816,9 @@ static unsigned
 spirv_return (const expr_t *e, spirvctx_t *ctx)
 {
 	if (e->retrn.ret_val) {
+		unsigned ret_id = spirv_emit_expr (e->retrn.ret_val, ctx);
 		auto def = spirv_new_insn (SpvOpReturnValue, 2, ctx->current);
-		D_var_o(int, def, 1) = spirv_emit_expr (e->retrn.ret_val, ctx);
+		D_var_o(int, def, 1) = ret_id;
 	} else {
 		spirv_new_insn (SpvOpReturn, 1, ctx->current);
 	}
@@ -956,10 +960,6 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	for (auto func = pr->func_head; func; func = func->next)
 	{
 		auto func_id = spirv_function (func, &ctx);
-		for (auto sym = func->locals->symbols; sym; sym = sym->next) {
-			sym->id = spirv_variable (sym, SpvStorageClassFunction, &ctx);
-		}
-		spirv_emit_expr (func->exprs, &ctx);
 		if (strcmp ("main", func->o_name) == 0) {
 			auto model = SpvExecutionModelVertex;//FIXME
 			spirv_EntryPoint (func_id, func->o_name, model, &ctx);
@@ -1079,6 +1079,10 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab)
 	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	if (check && check->table == symtab) {
 		error (0, "%s redefined", sym->name);
+	}
+	if (symtab->type == stab_local) {
+		// spir-v locals are references
+		sym->type = reference_type (sym->type);
 	}
 	symtab_addsymbol (symtab, sym);
 }

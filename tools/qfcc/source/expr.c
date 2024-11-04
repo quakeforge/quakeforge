@@ -2380,6 +2380,10 @@ return_expr (function_t *f, const expr_t *e)
 	if (e->type == ex_bool) {
 		e = convert_from_bool (e, ret_type);
 	}
+	if (is_reference (t) && !is_reference (ret_type)) {
+		e = pointer_deref (e);
+		t = dereference_type (t);
+	}
 	if (is_float(ret_type) && is_int_val (e)) {
 		e = cast_expr (&type_float, e);
 		t = &type_float;
