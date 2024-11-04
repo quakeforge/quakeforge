@@ -1881,6 +1881,12 @@ is_deref (const expr_t *e)
 }
 
 bool
+is_temp (const expr_t *e)
+{
+	return e->type == ex_temp;
+}
+
+bool
 has_function_call (const expr_t *e)
 {
 	switch (e->type) {

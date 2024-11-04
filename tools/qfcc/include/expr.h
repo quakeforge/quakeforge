@@ -859,6 +859,7 @@ bool is_math_op (int op) __attribute__((const));
 bool is_logic (int op) __attribute__((const));
 
 bool is_deref (const expr_t *e) __attribute__((pure));
+bool is_temp (const expr_t *e) __attribute__((pure));
 
 bool has_function_call (const expr_t *e) __attribute__((pure));
 bool is_function_call (const expr_t *e) __attribute__((pure));

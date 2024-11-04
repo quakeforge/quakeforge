@@ -798,12 +798,22 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
 	unsigned dst = 0;
 
+	if (is_temp (e->assign.dst)) {
+		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
+		// use the temp expression as a reference for the result id of the
+		// rhs of the assignment.
+		//FIXME const cast (store elsewhere)
+		((expr_t *) e->assign.dst)->id = src;
+		return src;
+	}
 	if (is_deref (e->assign.dst)) {
 		auto ptr = e->assign.dst->expr.e1;
 		dst = spirv_emit_expr (ptr, ctx);
 	}
 
-	if (!dst) return src;//FIXME workaround for temp
+	if (!dst) {
+		internal_error (e, "invalid assignment?");
+	}
 
 	auto def = spirv_new_insn (SpvOpStore, 3, ctx->current);
 	D_var_o(int, def, 1) = dst;
@@ -814,7 +824,8 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_branch (const expr_t *e, spirvctx_t *ctx)
 {
-	return 0;
+	//FIXME
+	return 1;
 }
 
 static unsigned
