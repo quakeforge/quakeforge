@@ -46,57 +46,63 @@
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-const expr_t *
-build_function_call (const expr_t *fexpr, const type_t *ftype,
-					 const expr_t *params)
+static const expr_t *
+check_too_few (const expr_t *fexpr, int arg_count, int param_count)
 {
-	int         param_count = 0;
-	expr_t     *call;
-	const expr_t *err = 0;
-
-	int arg_count = params ? list_count (&params->list) : 0;
-	const expr_t *arguments[arg_count + 1];
-	if (params) {
-		list_scatter_rev (&params->list, arguments);
-	}
-
-	for (int i = 0; i < arg_count; i++) {
-		auto e = arguments[i];
-		if (e->type == ex_error) {
-			return e;
+	if (arg_count < param_count) {
+		if (!options.traditional) {
+			return error (fexpr, "too few arguments");
 		}
-		if (e->type != ex_compound) {
-			arguments[i] = algebra_optimize (e);
+		// qcc was slack about missing parameters
+		if (options.warnings.traditional) {
+			warning (fexpr, "too few arguments");
 		}
 	}
+	return nullptr;
+}
 
-	if (ftype->func.num_params < -1) {
+static const expr_t *
+check_arg_count (const expr_t *fexpr, const type_t *ftype,
+				 int arg_count, int *param_count)
+{
+	if (ftype->func.num_params < 0) {
+		*param_count = -ftype->func.num_params - 1;
 		if (options.code.max_params >= 0
 			&& arg_count > options.code.max_params) {
-			return error (fexpr, "more than %d parameters",
+			return error (fexpr, "more than %d arguments",
 						  options.code.max_params);
 		}
-		if (-arg_count > ftype->func.num_params + 1) {
-			if (!options.traditional)
-				return error (fexpr, "too few arguments");
-			if (options.warnings.traditional)
-				warning (fexpr, "too few arguments");
-		}
-		param_count = -ftype->func.num_params - 1;
-	} else if (ftype->func.num_params >= 0) {
+	} else {
+		*param_count = ftype->func.num_params;
 		if (arg_count > ftype->func.num_params) {
 			return error (fexpr, "too many arguments");
-		} else if (arg_count < ftype->func.num_params) {
-			if (!options.traditional)
-				return error (fexpr, "too few arguments");
-			if (options.warnings.traditional)
-				warning (fexpr, "too few arguments");
 		}
-		param_count = ftype->func.num_params;
+	}
+	return check_too_few (fexpr, arg_count, *param_count);
+}
+
+static const expr_t *
+optimize_arguments (const expr_t **arguments, int arg_count)
+{
+	const expr_t *err = 0;
+
+	for (int i = 0; i < arg_count; i++) {
+		if (is_error (arguments[i])) {
+			err = arguments[i];
+		} else if (arguments[i]->type != ex_compound) {
+			arguments[i] = algebra_optimize (arguments[i]);
+		}
 	}
 
-	const type_t *arg_types[arg_count + 1];
-	// params is reversed (a, b, c) -> c, b, a
+	return err;
+}
+
+static const expr_t *
+check_arg_types (const expr_t **arguments, const type_t **arg_types,
+				 int arg_count, int param_count,
+				 const expr_t *fexpr, const type_t *ftype)
+{
+	const expr_t *err = 0;
 	for (int i = 0; i < arg_count; i++) {
 		auto e = arguments[i];
 		const type_t *t;
@@ -194,19 +200,15 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		}
 		arg_types[i] = t;
 	}
-	if (err) {
-		return err;
-	}
+	return err;
+}
 
-	bool        emit_args = false;
-	if (ftype->func.num_params < 0) {
-		emit_args = !ftype->func.no_va_list;
-	}
-	scoped_src_loc (fexpr);
-	call = new_block_expr (0);
-	call->block.is_call = 1;
-	int         arg_expr_count = 0;
-	const expr_t *arg_exprs[arg_count + 1][2];
+static expr_t *
+build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
+			const expr_t **arguments, const type_t **arg_types,
+			int arg_count, int param_count, const type_t *ftype)
+{
+	bool emit_args = ftype->func.num_params < 0 && !ftype->func.no_va_list;
 	expr_t     *args = new_list_expr (0);
 	// args is built in reverse order so it matches params
 	for (int i = 0; i < arg_count; i++) {
@@ -228,11 +230,10 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 			scoped_src_loc (e);
 			auto cast = cast_expr (arg_types[i], e);
 			auto tmp = new_temp_def_expr (arg_types[i]);
-			expr_prepend_expr (args, tmp);
-
-			arg_exprs[arg_expr_count][0] = cast;
-			arg_exprs[arg_expr_count][1] = tmp;
-			arg_expr_count++;
+			arg_exprs[*arg_expr_count][0] = cast;
+			arg_exprs[*arg_expr_count][1] = tmp;
+			++*arg_expr_count;
+			e = tmp;
 		} else {
 			if (param_qual != pq_out) {
 				// out parameters do not need to be sent so no need to cast
@@ -259,13 +260,52 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 					e = cast_expr (arg_types[i], e);
 				}
 			}
-			expr_prepend_expr (args, e);
 		}
+		expr_prepend_expr (args, e);
 	}
+	// if no args are provided for ..., the args expression wont have
+	// been emitted
 	if (emit_args) {
-		emit_args = false;
 		expr_prepend_expr (args, new_args_expr ());
 	}
+	return args;
+}
+
+const expr_t *
+build_function_call (const expr_t *fexpr, const type_t *ftype,
+					 const expr_t *params)
+{
+	int         param_count = 0;
+	expr_t     *call;
+	const expr_t *err = 0;
+
+	int arg_count = params ? list_count (&params->list) : 0;
+	const expr_t *arguments[arg_count + 1] = {};
+	const type_t *arg_types[arg_count + 1] = {};
+
+	if (params) {
+		// params is reversed (a, b, c) -> c, b, a
+		list_scatter_rev (&params->list, arguments);
+	}
+
+	if ((err = optimize_arguments (arguments, arg_count))) {
+		return err;
+	}
+	if ((err = check_arg_count (fexpr, ftype, arg_count, &param_count))) {
+		return err;
+	}
+	if ((err = check_arg_types (arguments, arg_types, arg_count, param_count,
+								fexpr, ftype))) {
+		return err;
+	}
+
+	scoped_src_loc (fexpr);
+	call = new_block_expr (0);
+	call->block.is_call = 1;
+	int         arg_expr_count = 0;
+	const expr_t *arg_exprs[arg_count + 1][2];
+	auto args = build_args (arg_exprs, &arg_expr_count, arguments, arg_types,
+							arg_count, param_count, ftype);
 	for (int i = 0; i < arg_expr_count; i++) {
 		scoped_src_loc (arg_exprs[i][0]);
 		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
