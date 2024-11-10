@@ -273,19 +273,19 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 
 const expr_t *
 build_function_call (const expr_t *fexpr, const type_t *ftype,
-					 const expr_t *params)
+					 const expr_t *args)
 {
 	int         param_count = 0;
 	expr_t     *call;
 	const expr_t *err = 0;
 
-	int arg_count = params ? list_count (&params->list) : 0;
+	int arg_count = args ? list_count (&args->list) : 0;
 	const expr_t *arguments[arg_count + 1] = {};
 	const type_t *arg_types[arg_count + 1] = {};
 
-	if (params) {
-		// params is reversed (a, b, c) -> c, b, a
-		list_scatter_rev (&params->list, arguments);
+	if (args) {
+		// args is reversed (a, b, c) -> c, b, a
+		list_scatter_rev (&args->list, arguments);
 	}
 
 	if ((err = optimize_arguments (arguments, arg_count))) {
@@ -302,34 +302,34 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 	scoped_src_loc (fexpr);
 	call = new_block_expr (0);
 	call->block.is_call = 1;
-	int         arg_expr_count = 0;
+	int         num_args = 0;
 	const expr_t *arg_exprs[arg_count + 1][2];
-	auto args = build_args (arg_exprs, &arg_expr_count, arguments, arg_types,
-							arg_count, param_count, ftype);
-	for (int i = 0; i < arg_expr_count; i++) {
+	auto arg_list = build_args (arg_exprs, &num_args, arguments, arg_types,
+								arg_count, param_count, ftype);
+	for (int i = 0; i < num_args; i++) {
 		scoped_src_loc (arg_exprs[i][0]);
 		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
 		append_expr (call, assign);
 	}
 	auto ret_type = ftype->func.ret_type;
-	call->block.result = new_call_expr (fexpr, args, ret_type);
+	call->block.result = new_call_expr (fexpr, arg_list, ret_type);
 	return call;
 }
 
 const expr_t *
-function_expr (const expr_t *fexpr, const expr_t *params)
+function_expr (const expr_t *fexpr, const expr_t *args)
 {
-	if (params) {
-		for (auto p = params->list.head; p; p = p->next) {
+	if (args) {
+		for (auto p = args->list.head; p; p = p->next) {
 			p->expr = convert_name (p->expr);
 		}
 	}
 
 	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_type) {
-		return constructor_expr (fexpr, params);
+		return constructor_expr (fexpr, args);
 	}
 
-	fexpr = find_function (fexpr, params);
+	fexpr = find_function (fexpr, args);
 	fexpr = convert_name (fexpr);
 	if (is_error (fexpr)) {
 		return fexpr;
@@ -344,18 +344,20 @@ function_expr (const expr_t *fexpr, const expr_t *params)
 			return error (fexpr, "Called object is not a function");
 	}
 
-	if (fexpr->type == ex_symbol && params && is_string_val (params)) {
+	if (fexpr->type == ex_symbol && args
+		&& args->list.head && is_string_val (args->list.head->expr)) {
+		auto arg = args->list.head->expr;
 		// FIXME eww, I hate this, but it's needed :(
 		// FIXME make a qc hook? :)
 		if (strncmp (fexpr->symbol->name, "precache_sound", 14) == 0)
-			PrecacheSound (expr_string (params), fexpr->symbol->name[14]);
+			PrecacheSound (expr_string (arg), fexpr->symbol->name[14]);
 		else if (strncmp (fexpr->symbol->name, "precache_model", 14) == 0)
-			PrecacheModel (expr_string (params), fexpr->symbol->name[14]);
+			PrecacheModel (expr_string (arg), fexpr->symbol->name[14]);
 		else if (strncmp (fexpr->symbol->name, "precache_file", 13) == 0)
-			PrecacheFile (expr_string (params), fexpr->symbol->name[13]);
+			PrecacheFile (expr_string (arg), fexpr->symbol->name[13]);
 	}
 
-	return build_function_call (fexpr, ftype, params);
+	return build_function_call (fexpr, ftype, args);
 }
 
 const expr_t *
