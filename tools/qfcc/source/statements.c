@@ -1213,8 +1213,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	for (int i = 0; i < num_args; i++) {
 		const expr_t *a = args[i];
 		const char *arg_name = va (0, ".arg%d", arg_num++);
-		def_t      *def = new_def (arg_name, 0, current_func->arguments,
-								   sc_argument);
+		def_t      *def = new_def (arg_name, 0, arg_space, sc_argument);
 		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
 		int         alignment = arg_type->alignment;
