@@ -47,13 +47,20 @@ typedef struct module_s {
 	ex_list_t   extinst_imports;
 	const expr_t *addressing_model;
 	const expr_t *memory_model;
-	entrypoint_t *entry_points;
+	//entrypoint_t *entry_points;
+	defspace_t *entry_points;
+	defspace_t *exec_modes;
+	// debug
 	defspace_t *strings;
 	defspace_t *names;
+	defspace_t *module_processed;
+	// annotations
 	defspace_t *decorations;
+	// types, non-function variables, undefs
 	defspace_t *globals;
-	defspace_t *func_import;
-	defspace_t *func_code;
+	// functions
+	defspace_t *func_declarations;
+	defspace_t *func_definitions;
 } module_t;
 
 void spirv_add_capability (module_t *module, SpvCapability capability);
