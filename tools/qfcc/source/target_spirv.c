@@ -449,6 +449,17 @@ spirv_variable (symbol_t *sym, SpvStorageClass storage_class, spirvctx_t *ctx)
 static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 
 static unsigned
+spirv_function_ref (function_t *func, spirvctx_t *ctx)
+{
+	unsigned func_id = func->id;
+	if (!func_id) {
+		func_id = spirv_id (ctx);
+		func->id = func_id;
+	}
+	return func_id;
+}
+
+static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
 	unsigned ft_id = spirv_TypeFunction (func->sym, ctx);
@@ -456,7 +467,8 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	defspace_reset (ctx->code_space);
 	defspace_reset (ctx->decl_space);
 
-	unsigned func_id = spirv_id (ctx);
+	unsigned func_id = spirv_function_ref (func, ctx);
+
 	auto insn = spirv_new_insn (SpvOpFunction, 5, ctx->decl_space);
 	INSN (insn, 1) = type_id (func->type->func.ret_type, ctx);
 	INSN (insn, 2) = func_id;
@@ -765,6 +777,9 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 								&specid, ev_int, ctx);
 			}
 		}
+	} else if (sym->sy_type == sy_func) {
+		auto func = sym->metafunc->func;
+		sym->id = spirv_function_ref (func, ctx);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);
@@ -804,13 +819,13 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 		if (value->is_constexpr) {
 			op += SpvOpSpecConstantTrue - SpvOpConstantTrue;
 		}
+		auto globals = ctx->module->globals;
 		if (op == SpvOpConstant && !val) {
-			auto globals = ctx->module->globals;
 			auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals);
 			INSN (insn, 1) = tid;
 			INSN (insn, 2) = value->id = spirv_id (ctx);
 		} else {
-			auto insn = spirv_new_insn (op, 3 + val_size, ctx->code_space);
+			auto insn = spirv_new_insn (op, 3 + val_size, globals);
 			INSN (insn, 1) = tid;
 			INSN (insn, 2) = value->id = spirv_id (ctx);
 			if (val_size > 0) {
@@ -854,8 +869,42 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_call (const expr_t *call, spirvctx_t *ctx)
+{
+	int num_args = list_count (&call->branch.args->list);
+	const expr_t *args[num_args + 1];
+	unsigned arg_ids[num_args + 1];
+	auto func = call->branch.target;
+	auto func_type = get_type (func);
+	auto ret_type = func_type->func.ret_type;
+
+	unsigned func_id = spirv_emit_expr (func, ctx);
+	unsigned ret_type_id = spirv_type_id (ret_type, ctx);
+
+	list_scatter_rev (&call->branch.args->list, args);
+	for (int i = 0; i < num_args; i++) {
+		auto a = args[i];
+		arg_ids[i] = spirv_emit_expr (a, ctx);
+	}
+
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpFunctionCall, 4 + num_args,
+								ctx->code_space);
+	INSN(insn, 1) = ret_type_id;
+	INSN(insn, 2) = id;
+	INSN(insn, 3) = func_id;
+	for (int i = 0; i < num_args; i++) {
+		INSN(insn, 4 + i) = arg_ids[i];
+	}
+	return id;
+}
+
+static unsigned
 spirv_branch (const expr_t *e, spirvctx_t *ctx)
 {
+	if (e->branch.type == pr_branch_call) {
+		return spirv_call (e, ctx);
+	}
 	//FIXME
 	return 1;
 }

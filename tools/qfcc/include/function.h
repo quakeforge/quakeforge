@@ -92,6 +92,7 @@ typedef struct function_s {
 	const char         *o_name;
 	int                 builtin;	///< if non 0, call an internal function
 	int                 code;		///< first statement
+	int                 id;
 	int                 function_num;
 	int                 line_info;
 	int                 params_start;///< relative to locals space. 0 for v6p
