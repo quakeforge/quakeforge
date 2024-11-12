@@ -212,7 +212,6 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <type>    array_specifier
 
 %type <param>   parameter_declaration
-%type <param>   parameter_declarator parameter_type_specifier
 
 %printer { fprintf (yyo, "%s", $$->name); } <symbol>
 %printer { fprintf (yyo, "%s", ($$ && $$->type == ex_value) ? get_value_string ($$->value) : "<expr>"); } <expr>
@@ -255,6 +254,58 @@ spec_merge (specifier_t spec, specifier_t new)
 	spec.sym = new.sym;
 	spec.spec_bits |= new.spec_bits;
 	return spec;
+}
+
+static param_t *
+make_param (specifier_t spec)
+{
+	//FIXME should not be sc_global
+	if (spec.storage == sc_global) {
+		spec.storage = sc_param;
+	}
+	auto interface = glsl_iftype_from_sc (spec.storage);
+	if (interface == glsl_in) {
+		spec.storage = sc_in;
+	} else if (interface == glsl_out) {
+		spec.storage = sc_out;
+	}
+
+	param_t *param;
+	if (spec.type_expr) {
+		param = new_generic_param (spec.type_expr, spec.sym->name);
+	} else {
+		if (spec.sym) {
+			param = new_param (nullptr, spec.type, spec.sym->name);
+		} else {
+			param = new_param (nullptr, spec.type, nullptr);
+		}
+	}
+	if (spec.is_const) {
+		if (spec.storage == sc_out) {
+			error (0, "cannot use const with @out");
+		} else if (spec.storage == sc_inout) {
+			error (0, "cannot use const with @inout");
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+		}
+		param->qual = pq_const;
+	} else {
+		if (spec.storage == sc_out) {
+			param->qual = pq_out;
+		} else if (spec.storage == sc_inout) {
+			param->qual = pq_inout;
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+			param->qual = pq_in;
+		}
+	}
+	return param;
 }
 
 %}
@@ -713,28 +764,42 @@ function_header
 		}
 	;
 
-parameter_declarator
-	: type_specifier new_identifier
+parameter_declaration
+	: type_qualifier type_specifier new_identifier
 		{
-			$$ = new_param (nullptr, $1.type, $2->name);
+			auto spec = spec_merge ($1, $2);
+			spec.sym = $3;
+			$$ = make_param (spec);
+		}
+	| type_qualifier type_specifier new_identifier array_specifier
+		{
+			auto spec = spec_merge ($1, $2);
+			spec.type = append_type ($1.type, $4);
+			spec.sym = $3;
+			$$ = make_param (spec);
+		}
+	| type_qualifier type_specifier
+		{
+			auto spec = spec_merge ($1, $2);
+			$$ = make_param (spec);
+		}
+	| type_specifier new_identifier
+		{
+			auto spec = $1;
+			spec.sym = $2;
+			$$ = make_param (spec);
 		}
 	| type_specifier new_identifier array_specifier
 		{
-			$$ = new_param (nullptr, append_type ($1.type, $3), $2->name);
+			auto spec = $1;
+			spec.type = append_type ($1.type, $3);
+			spec.sym = $2;
+			$$ = make_param (spec);
 		}
-	;
-
-parameter_declaration
-	: type_qualifier parameter_declarator		{ $$ = $2; }//XXX
-	| parameter_declarator
-	| type_qualifier parameter_type_specifier	{ $$ = $2; }//XXX
-	| parameter_type_specifier
-	;
-
-parameter_type_specifier
-	: type_specifier
+	| type_specifier
 		{
-			$$ = new_param (nullptr, $1.type, nullptr);
+			auto spec = $1;
+			$$ = make_param (spec);
 		}
 	;
 
