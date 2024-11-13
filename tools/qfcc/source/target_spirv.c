@@ -1193,6 +1193,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		// spir-v locals are references
 		sym->type = reference_type (sym->type);
 	}
+	sym->lvalue = !spec.is_const;
 	symtab_addsymbol (symtab, sym);
 	if (symtab->type == stab_local) {
 		if (init) {
