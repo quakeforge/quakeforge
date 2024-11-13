@@ -171,6 +171,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 		error (0, "%s defined as wrong kind of tag", tag->name);
 		return sym;
 	}
+	int index = 0;
 	for (s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_offset)
 			continue;
@@ -214,10 +215,13 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 					s->offset += offset;
 					s->table = symtab;
 					s->no_auto_init = true;
+					s->id = index++;
 					Hash_Add (symtab->tab, s);
 				}
 			}
 			s->next = t;
+		} else {
+			s->id = index++;
 		}
 	}
 	if (!type)
