@@ -34,6 +34,7 @@
 #include "QF/math/bitop.h"
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -71,6 +72,90 @@ proc_uexpr (const expr_t *expr)
 
 	scoped_src_loc (expr);
 	return unary_expr (expr->expr.op, e1);
+}
+
+static const expr_t *
+proc_field (const expr_t *expr)
+{
+	auto object = expr_process (expr->field.object);
+	auto member = expr->field.member;
+	if (is_error (object)) {
+		return object;
+	}
+	if (object->type == ex_symbol && object->symbol->sy_type == sy_namespace) {
+		if (member->type != ex_symbol) {
+			return error (member, "symbol required for namespace access");
+		}
+		auto namespace = object->symbol->namespace;
+		auto sym = symtab_lookup (namespace, member->symbol->name);
+		if (!sym) {
+			return error (member, "%s not in %s namespace",
+						  member->symbol->name, object->symbol->name);
+		}
+		return new_symbol_expr (sym);
+	}
+
+	auto obj_type = get_type (object);
+	if (!obj_type) {
+		return new_error_expr ();
+	}
+
+	if (is_reference (obj_type)) {
+		obj_type = dereference_type (obj_type);
+		object = pointer_deref (object);
+	}
+
+	if (is_class (obj_type)) {
+		//Class instance variables aren't allowed and thus declaring one
+		//is treated as an error, so this is a follow-on error.
+		return new_error_expr ();
+	}
+	if (is_pointer (obj_type)) {
+		auto ref_type = dereference_type (obj_type);
+		if (!(is_struct (ref_type) || is_union (ref_type)
+			  || is_class (ref_type))) {
+			return type_mismatch (object, member, '.');
+		}
+		object = pointer_deref (object);
+		obj_type = ref_type;
+	}
+	if (is_algebra (obj_type)) {
+		return algebra_field_expr (object, member);
+	}
+	if (is_entity (obj_type)) {
+		obj_type = &type_entity;
+	}
+	if (is_nonscalar (obj_type)) {
+		auto field = get_struct_field (obj_type, object, member);
+		if (!field) {
+			if (member->type != ex_symbol) {
+				return error (member, "invalid swizzle");
+			}
+			return new_swizzle_expr (object, member->symbol->name);
+		}
+		member = new_symbol_expr (field);
+	} else if (is_struct (obj_type) || is_union (obj_type)) {
+		auto field = get_struct_field (obj_type, object, member);
+		if (!field) {
+			return new_error_expr ();
+		}
+		member = new_symbol_expr (field);
+	} else if (is_class (obj_type)) {
+		if (member->type != ex_symbol) {
+			return error (member, "invalid class member access");
+		}
+		auto class = obj_type->class;
+		auto sym = member->symbol;
+		int  protected = class_access (current_class, class);
+		auto ivar = class_find_ivar (class, protected, sym->name);
+		if (!ivar) {
+			return new_error_expr ();
+		}
+		member = new_symbol_expr (ivar);
+	}
+	auto e = new_field_expr (object, member);
+	e->field.type = member->symbol->type;
+	return e;
 }
 
 static const expr_t *
@@ -271,6 +356,7 @@ expr_process (const expr_t *expr)
 	static process_f funcs[ex_count] = {
 		[ex_expr] = proc_expr,
 		[ex_uexpr] = proc_uexpr,
+		[ex_field] = proc_field,
 		[ex_block] = proc_block,
 		[ex_symbol] = proc_symbol,
 		[ex_vector] = proc_vector,
