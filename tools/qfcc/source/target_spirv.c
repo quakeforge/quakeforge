@@ -985,6 +985,50 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_field (const expr_t *e, spirvctx_t *ctx)
+{
+	auto res_type = get_type (e);
+	ex_list_t list = {};
+	// convert the left-branching field expression chain to a list
+	for (; e->type == ex_field; e = e->field.object) {
+		list_prepend (&list, e);
+	}
+	int num_fields = list_count (&list);
+	// e is now the base object of the field expression chain
+	auto base_type = get_type (e);
+	unsigned base_id = spirv_emit_expr (e, ctx);
+	int op = SpvOpCompositeExtract;
+	bool literal_ind = true;
+
+	if (is_pointer (base_type)) {
+		res_type = pointer_type (res_type);
+		op = SpvOpAccessChain;
+		literal_ind = false;
+	}
+
+	int tid = type_id (res_type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4 + num_fields, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = base_id;
+	auto field_ind = &INSN (insn, 4);
+	for (auto l = list.head; l; l = l->next) {
+		if (l->expr->field.member->type != ex_symbol) {
+			internal_error (l->expr->field.member, "not a symbol");
+		}
+		auto sym = l->expr->field.member->symbol;
+		if (literal_ind) {
+			*field_ind++ = sym->id;
+		} else {
+			auto ind = new_uint_expr (sym->id);
+			*field_ind++ = spirv_emit_expr (ind, ctx);
+		}
+	}
+	return id;
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
@@ -998,6 +1042,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
 		[ex_extend] = spirv_extend,
+		[ex_field] = spirv_field,
 	};
 
 	if (e->type >= ex_count) {
