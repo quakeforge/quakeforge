@@ -48,7 +48,7 @@
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-#define INSN(i,o) D_var_o(int,&(i),o)
+#define INSN(i,o) D_var_o(int,(i),o)
 #define ADD_DATA(d,s) defspace_add_data((d), (s)->data, (s)->size)
 
 typedef struct spirvctx_s {
@@ -83,19 +83,17 @@ spirv_add_type_id (const type_t *type, unsigned id, spirvctx_t *ctx)
 	ctx->type_ids.a[type->id] = id;
 }
 
-static def_t
+static def_t *
 spirv_new_insn (int op, int size, defspace_t *space)
 {
-	def_t insn = {
-		.space = space,
-		.offset = defspace_alloc_highwater (space, size),
-	};
+	auto insn = new_def (nullptr, nullptr, space, sc_static);
+	insn->offset = defspace_alloc_highwater (space, size);
 
 	INSN (insn, 0) = (op & SpvOpCodeMask) | (size << SpvWordCountShift);
 	return insn;
 }
 
-static def_t
+static def_t *
 spirv_str_insn (int op, int offs, int extra, const char *str, defspace_t *space)
 {
 	int len = strlen (str) + 1;
@@ -474,6 +472,17 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 
 static unsigned
+spirv_undef (const type_t *type, spirvctx_t *ctx)
+{
+	unsigned type_id = spirv_type_id (type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpUndef, 3, ctx->module->globals);
+	INSN (insn, 1) = type_id;
+	INSN (insn, 2) = id;
+	return id;
+}
+
+static unsigned
 spirv_function_ref (function_t *func, spirvctx_t *ctx)
 {
 	unsigned func_id = func->id;
@@ -492,10 +501,11 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	defspace_reset (ctx->code_space);
 	defspace_reset (ctx->decl_space);
 
+	auto ret_type = func->type->func.ret_type;
 	unsigned func_id = spirv_function_ref (func, ctx);
 
 	auto insn = spirv_new_insn (SpvOpFunction, 5, ctx->decl_space);
-	INSN (insn, 1) = type_id (func->type->func.ret_type, ctx);
+	INSN (insn, 1) = type_id (ret_type, ctx);
 	INSN (insn, 2) = func_id;
 	INSN (insn, 3) = 0;
 	INSN (insn, 4) = ft_id;
@@ -529,8 +539,22 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	int start_size = ctx->code_space->size;
 	if (func->exprs) {
 		spirv_emit_expr (func->exprs, ctx);
-	} else {
-		spirv_Unreachable (ctx);
+	}
+	def_t *last_insn = nullptr;
+	if (ctx->code_space->def_tail != &ctx->code_space->defs) {
+		last_insn = (def_t *) ctx->code_space->def_tail;
+	}
+	if (!last_insn
+		|| ((INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpReturn
+			&& (INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpReturnValue
+			&& (INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpUnreachable)) {
+		if (is_void (ret_type)) {
+			spirv_new_insn (SpvOpReturn, 1, ctx->code_space);
+		} else {
+			unsigned ret_id = spirv_undef (ret_type, ctx);
+			auto insn = spirv_new_insn (SpvOpReturnValue, 2, ctx->code_space);
+			INSN (insn, 1) = ret_id;
+		}
 	}
 	if (ctx->code_space->size == start_size) {
 		spirv_Unreachable (ctx);
