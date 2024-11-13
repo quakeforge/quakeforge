@@ -100,6 +100,11 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	dstType = unalias_type (dstType);
 	srcType = get_type (e);
 
+	if (is_reference (srcType)) {
+		srcType = dereference_type (srcType);
+		e = pointer_deref (e);
+	}
+
 	if (dstType == srcType)
 		return e;
 
