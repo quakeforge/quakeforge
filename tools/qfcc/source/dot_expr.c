@@ -349,6 +349,22 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_field (dstring_t *dstr, const expr_t *e, int level, int id,
+			 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->field.object, level, id, next);
+	_print_expr (dstr, e->field.member, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"f\"];\n", indent, "", e,
+			   e->field.object);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"o\"];\n", indent, "", e,
+			   e->field.member);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   ".", e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -797,6 +813,11 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_multivec] = print_multivec,
 		[ex_list] = print_list,
 		[ex_type] = print_type_expr,
+		[ex_incop] = nullptr,
+		[ex_cond] = nullptr,
+		[ex_field] = print_field,
+		[ex_array] = nullptr,
+		[ex_decl] = nullptr,
 	};
 	int         indent = level * 2 + 2;
 
