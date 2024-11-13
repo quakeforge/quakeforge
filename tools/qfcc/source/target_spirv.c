@@ -998,18 +998,19 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 	auto base_type = get_type (e);
 	unsigned base_id = spirv_emit_expr (e, ctx);
 	int op = SpvOpCompositeExtract;
-	bool literal_ind = true;
 
-	if (is_pointer (base_type)) {
-		res_type = pointer_type (res_type);
+	auto acc_type = res_type;
+	bool literal_ind = true;
+	if (is_pointer (base_type) || is_reference (base_type)) {
+		acc_type = pointer_type (res_type);
 		op = SpvOpAccessChain;
 		literal_ind = false;
 	}
 
-	int tid = type_id (res_type, ctx);
+	int acc_type_id = type_id (acc_type, ctx);
 	int id = spirv_id (ctx);
 	auto insn = spirv_new_insn (op, 4 + num_fields, ctx->code_space);
-	INSN (insn, 1) = tid;
+	INSN (insn, 1) = acc_type_id;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = base_id;
 	auto field_ind = &INSN (insn, 4);
@@ -1024,6 +1025,17 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 			auto ind = new_uint_expr (sym->id);
 			*field_ind++ = spirv_emit_expr (ind, ctx);
 		}
+	}
+	if (acc_type != res_type) {
+		// base is a pointer or reference so load the value
+		unsigned ptr_id = id;
+		int res_type_id = type_id (res_type, ctx);
+
+		id = spirv_id (ctx);
+		insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space);
+		INSN (insn, 1) = res_type_id;
+		INSN (insn, 2) = id;
+		INSN (insn, 3) = ptr_id;
 	}
 	return id;
 }

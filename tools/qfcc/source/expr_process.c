@@ -102,7 +102,6 @@ proc_field (const expr_t *expr)
 
 	if (is_reference (obj_type)) {
 		obj_type = dereference_type (obj_type);
-		object = pointer_deref (object);
 	}
 
 	if (is_class (obj_type)) {
@@ -116,7 +115,6 @@ proc_field (const expr_t *expr)
 			  || is_class (ref_type))) {
 			return type_mismatch (object, member, '.');
 		}
-		object = pointer_deref (object);
 		obj_type = ref_type;
 	}
 	if (is_algebra (obj_type)) {
