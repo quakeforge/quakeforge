@@ -81,7 +81,7 @@ check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 	return 0;
 }
 
-int
+bool
 is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
@@ -90,21 +90,21 @@ is_lvalue (const expr_t *expr)
 		case ex_symbol:
 			return expr->symbol->lvalue;
 		case ex_temp:
-			return 1;
+			return true;
 		case ex_expr:
 			if (expr->expr.op == '.') {
-				return 1;
+				return true;
 			}
 			break;
 		case ex_alias:
 			return is_lvalue (expr->alias.expr);
 		case ex_address:
-			return 0;
+			return false;
 		case ex_assign:
-			return 0;
+			return false;
 		case ex_uexpr:
 			if (expr->expr.op == '.') {
-				return 1;
+				return true;
 			}
 			break;
 		case ex_branch:
@@ -138,13 +138,13 @@ is_lvalue (const expr_t *expr)
 			return (is_lvalue (expr->cond.true_expr)
 					&& is_lvalue (expr->cond.false_expr));
 		case ex_field:
-			return 1;
+			return true;
 		case ex_array:
-			return 1;
+			return true;
 		case ex_count:
 			internal_error (expr, "invalid expression");
 	}
-	return 0;
+	return false;
 }
 
 static const expr_t *
