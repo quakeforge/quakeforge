@@ -241,6 +241,9 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 			if (param_qual & pq_out) {
 				auto inout = new_expr ();
 				inout->type = ex_inout;
+				if (is_reference(get_type (e))) {
+					e = pointer_deref (e);
+				}
 				if (param_qual == pq_inout) {
 					inout->inout.in = cast_expr (arg_types[i], e);
 				}

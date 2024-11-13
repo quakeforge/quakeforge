@@ -39,6 +39,7 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/statements.h"
@@ -323,7 +324,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	for (auto p = fsym->params; p; p = p->next) {
 		auto ptype = p->type;
 		if (p->qual != pq_const) {
-			ptype = pointer_type (ptype);
+			ptype = reference_type (ptype);
 		}
 		param_types[num_params++] = type_id (ptype, ctx);
 	}
@@ -434,14 +435,38 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_variable (symbol_t *sym, SpvStorageClass storage_class, spirvctx_t *ctx)
+spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 {
+	if (sym->sy_type != sy_var) {
+		internal_error (0, "unexpected variable symbol type");
+	}
+	auto interface = glsl_iftype_from_sc (sym->var.storage);
+	SpvStorageClass storage;
+	if (interface < glsl_num_interfaces) {
+		static SpvStorageClass iface_storage[glsl_num_interfaces] = {
+			[glsl_in] = SpvStorageClassInput,
+			[glsl_out] = SpvStorageClassOutput,
+			[glsl_uniform] = SpvStorageClassUniform,
+			[glsl_buffer] = SpvStorageClassStorageBuffer,
+		};
+		storage = iface_storage[interface];
+	} else if (sym->var.storage < sc_count) {
+		static SpvStorageClass sc_storage[sc_count] = {
+			[sc_static] = SpvStorageClassPrivate,
+			[sc_local] = SpvStorageClassFunction,
+		};
+		storage = sc_storage[sym->var.storage];
+	}
+	auto space = ctx->module->globals;
+	if (storage == SpvStorageClassFunction) {
+		space = ctx->decl_space;
+	}
 	unsigned id = spirv_id (ctx);
 	//FIXME init value
-	auto insn = spirv_new_insn (SpvOpVariable, 4, ctx->decl_space);
-	INSN (insn, 1) = type_id (sym->type, ctx);
+	auto insn = spirv_new_insn (SpvOpVariable, 4, space);
+	INSN (insn, 1) = type_id (reference_type (sym->type), ctx);
 	INSN (insn, 2) = id;
-	INSN (insn, 3) = storage_class;
+	INSN (insn, 3) = storage;
 	spirv_Name (id, sym->name, ctx);
 	return id;
 }
@@ -479,7 +504,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	for (auto p = func->sym->params; p; p = p->next) {
 		auto ptype = p->type;
 		if (p->qual != pq_const) {
-			ptype = pointer_type (ptype);
+			ptype = reference_type (ptype);
 		}
 		unsigned pid = spirv_FunctionParameter (p->name, ptype, ctx);
 		if (func->parameters) {
@@ -496,7 +521,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	if (func->locals) {
 		spirv_DeclLabel (ctx);
 		for (auto sym = func->locals->symbols; sym; sym = sym->next) {
-			sym->id = spirv_variable (sym, SpvStorageClassFunction, ctx);
+			sym->id = spirv_variable (sym, ctx);
 		}
 	} else {
 		spirv_Label (ctx);
@@ -780,6 +805,8 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 	} else if (sym->sy_type == sy_func) {
 		auto func = sym->metafunc->func;
 		sym->id = spirv_function_ref (func, ctx);
+	} else if (sym->sy_type == sy_var) {
+		sym->id = spirv_variable (sym, ctx);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);
@@ -1002,7 +1029,7 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 	auto acc_type = res_type;
 	bool literal_ind = true;
 	if (is_pointer (base_type) || is_reference (base_type)) {
-		acc_type = pointer_type (res_type);
+		acc_type = reference_type (res_type);
 		op = SpvOpAccessChain;
 		literal_ind = false;
 	}
@@ -1251,6 +1278,8 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		sym->type = reference_type (sym->type);
 	}
 	sym->lvalue = !spec.is_const;
+	sym->sy_type = sy_var;
+	sym->var.storage = spec.storage;
 	symtab_addsymbol (symtab, sym);
 	if (symtab->type == stab_local) {
 		if (init) {

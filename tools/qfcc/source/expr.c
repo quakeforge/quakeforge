@@ -99,6 +99,9 @@ convert_name (const expr_t *e)
 		&& current_func) {
 		return new_string_expr (GETSTR (e->loc.file));
 	}
+	if (sym->sy_type == sy_var) {
+		return e;
+	}
 	if (!sym->table) {
 		e = error (e, "%s undefined", sym->name);
 		sym->type = type_default;

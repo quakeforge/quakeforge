@@ -59,6 +59,10 @@ typedef struct symconv_s {
 	void       *data;
 } symconv_t;
 
+typedef struct var_s {
+	enum storage_class_e storage;
+} var_t;
+
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
 	struct symtab_s *table;		///< symbol table that owns this symbol
@@ -73,6 +77,7 @@ typedef struct symbol_s {
 	bool        is_constexpr:1;
 	struct attribute_s *attributes;
 	union {
+		var_t       var;			///< sy_var
 		int         offset;			///< sy_offset
 		struct def_s *def;			///< sy_def
 		struct ex_value_s *value;	///< sy_const
