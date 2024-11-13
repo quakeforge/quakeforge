@@ -911,7 +911,25 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 	list_scatter_rev (&call->branch.args->list, args);
 	for (int i = 0; i < num_args; i++) {
 		auto a = args[i];
-		arg_ids[i] = spirv_emit_expr (a, ctx);
+		if (func_type->func.param_quals[i] == pq_const) {
+			arg_ids[i] = spirv_emit_expr (a, ctx);
+		} else {
+			auto psym = new_symbol ("param");
+			psym->type = reference_type (get_type (a));
+			psym->sy_type = sy_var;
+			psym->var.storage = SpvStorageClassFunction;
+			psym->id = spirv_variable (psym, ctx);
+			psym->lvalue = true;
+			arg_ids[i] = psym->id;
+			if (func_type->func.param_quals[i] != pq_out) {
+				if (a->type == ex_inout) {
+					a = a->inout.in;
+				}
+				auto pexpr = new_symbol_expr (psym);
+				auto assign = assign_expr (pexpr, a);
+				spirv_emit_expr (assign, ctx);
+			}
+		}
 	}
 
 	unsigned id = spirv_id (ctx);
