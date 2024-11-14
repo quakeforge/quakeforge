@@ -30,8 +30,12 @@
 
 #include <spirv/unified1/spirv.h>
 
+#include "QF/darray.h"
+
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/expr.h"
+
+typedef struct symbol_s symbol_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -47,6 +51,7 @@ typedef struct module_s {
 	ex_list_t   extinst_imports;
 	const expr_t *addressing_model;
 	const expr_t *memory_model;
+	struct DARRAY_TYPE (symbol_t *) interface_syms;
 	//entrypoint_t *entry_points;
 	defspace_t *entry_points;
 	defspace_t *exec_modes;

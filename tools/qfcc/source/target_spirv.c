@@ -470,6 +470,8 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	auto storage = spirv_storage_class (sym->var.storage);
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
+	} else {
+		DARRAY_APPEND (&ctx->module->interface_syms, sym);
 	}
 	auto type = sym->type;
 	unsigned tid = type_id (type, ctx);
@@ -584,11 +586,16 @@ spirv_EntryPoint (unsigned func_id, const char *func_name,
 				  SpvExecutionModel model, spirvctx_t *ctx)
 {
 	int len = strlen (func_name) + 1;
+	int iface_start = 3 + RUP(len, 4) / 4;
 	auto linkage = ctx->module->entry_points;
-	auto insn = spirv_new_insn (SpvOpEntryPoint, 3 + RUP(len, 4) / 4, linkage);
+	int count = ctx->module->interface_syms.size;
+	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count, linkage);
 	INSN (insn, 1) = model;
 	INSN (insn, 2) = func_id;
 	memcpy (&INSN (insn, 3), func_name, len);
+	for (int i = 0; i < count; i++) {
+		INSN (insn, iface_start + i) = ctx->module->interface_syms.a[i]->id;
+	}
 }
 
 typedef struct {
@@ -1169,6 +1176,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	pr->module->globals = defspace_new (ds_backed);
 	pr->module->func_declarations = defspace_new (ds_backed);
 	pr->module->func_definitions = defspace_new (ds_backed);
+	DARRAY_INIT (&pr->module->interface_syms, 16);
 
 	spirvctx_t ctx = {
 		.module = pr->module,
