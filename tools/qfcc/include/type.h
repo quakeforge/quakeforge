@@ -53,6 +53,7 @@ typedef struct ty_func_s {
 
 typedef struct ty_fldptr_s {
 	const struct type_s *type;
+	unsigned    tag;
 	bool        deref;			///< automatic dereference for pointers (C++ &)
 } ty_fldptr_t;
 
@@ -159,7 +160,9 @@ const type_t *find_type (const type_t *new);
 void new_typedef (const char *name, type_t *type);
 const type_t *field_type (const type_t *aux);
 const type_t *pointer_type (const type_t *aux);
+const type_t *tagged_pointer_type (unsigned tag, const type_t *aux);
 const type_t *reference_type (const type_t *aux);
+const type_t *tagged_reference_type (unsigned tag, const type_t *aux);
 const type_t *vector_type (const type_t *ele_type, int width) __attribute__((pure));
 const type_t *matrix_type (const type_t *ele_type, int cols, int rows) __attribute__((pure));
 const type_t *base_type (const type_t *vec_type) __attribute__((pure));

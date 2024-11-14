@@ -688,7 +688,7 @@ field_type (const type_t *aux)
 }
 
 const type_t *
-pointer_type (const type_t *aux)
+tagged_pointer_type (unsigned tag, const type_t *aux)
 {
 	type_t      _new;
 	type_t     *new = &_new;
@@ -701,7 +701,36 @@ pointer_type (const type_t *aux)
 	new->alignment = 1;
 	new->width = 1;
 	new->columns = 1;
+	new->fldptr.tag = tag;
 	new->fldptr.deref = false;
+	if (aux) {
+		return find_type (append_type (new, aux));
+	}
+	return new;
+}
+
+const type_t *
+pointer_type (const type_t *aux)
+{
+	return tagged_pointer_type (0, aux);
+}
+
+const type_t *
+tagged_reference_type (unsigned tag, const type_t *aux)
+{
+	type_t      _new;
+	type_t     *new = &_new;
+
+	if (aux)
+		memset (&_new, 0, sizeof (_new));
+	else
+		new = new_type ();
+	new->type = ev_ptr;
+	new->alignment = 1;
+	new->width = 1;
+	new->columns = 1;
+	new->fldptr.tag = tag;
+	new->fldptr.deref = true;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -711,22 +740,7 @@ pointer_type (const type_t *aux)
 const type_t *
 reference_type (const type_t *aux)
 {
-	type_t      _new;
-	type_t     *new = &_new;
-
-	if (aux)
-		memset (&_new, 0, sizeof (_new));
-	else
-		new = new_type ();
-	new->type = ev_ptr;
-	new->alignment = 1;
-	new->width = 1;
-	new->columns = 1;
-	new->fldptr.deref = true;
-	if (aux) {
-		return find_type (append_type (new, aux));
-	}
-	return new;
+	return tagged_reference_type (0, aux);
 }
 
 const type_t *
@@ -1040,6 +1054,9 @@ print_type_str (dstring_t *str, const type_t *type)
 						}
 					}
 					dasprintf (str, "(%c", type->fldptr.deref ? '&' : '*');
+					if (type->fldptr.tag) {
+						dasprintf (str, "%d", type->fldptr.tag);
+					}
 					print_type_str (str, type->fldptr.type);
 					dasprintf (str, ")");
 					return;
@@ -1266,6 +1283,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 						return;
 					}
 					dasprintf (encoding, type->fldptr.deref ? "&" : "^");
+					if (type->fldptr.tag) {
+						dasprintf (encoding, "%d", type->fldptr.tag);
+					}
 					type = type->fldptr.type;
 					encode_type (encoding, type);
 					return;

@@ -269,7 +269,7 @@ spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypePointer, 4, globals);
 	INSN (insn, 1) = spirv_id (ctx);
-	INSN (insn, 2) = SpvStorageClassFunction;//FIXME
+	INSN (insn, 2) = type->fldptr.tag;
 	INSN (insn, 3) = rid;
 	return INSN (insn, 1);
 }
@@ -322,7 +322,7 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	for (auto p = fsym->params; p; p = p->next) {
 		auto ptype = p->type;
 		if (p->qual != pq_const) {
-			ptype = reference_type (ptype);
+			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
 		param_types[num_params++] = type_id (ptype, ctx);
 	}
@@ -432,14 +432,11 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 	return id;
 }
 
-static unsigned
-spirv_variable (symbol_t *sym, spirvctx_t *ctx)
+static SpvStorageClass
+spirv_storage_class (unsigned storage)
 {
-	if (sym->sy_type != sy_var) {
-		internal_error (0, "unexpected variable symbol type");
-	}
-	auto interface = glsl_iftype_from_sc (sym->var.storage);
-	SpvStorageClass storage;
+	auto interface = glsl_iftype_from_sc (storage);
+	SpvStorageClass sc = 0;
 	if (interface < glsl_num_interfaces) {
 		static SpvStorageClass iface_storage[glsl_num_interfaces] = {
 			[glsl_in] = SpvStorageClassInput,
@@ -447,22 +444,39 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 			[glsl_uniform] = SpvStorageClassUniform,
 			[glsl_buffer] = SpvStorageClassStorageBuffer,
 		};
-		storage = iface_storage[interface];
-	} else if (sym->var.storage < sc_count) {
+		sc = iface_storage[interface];
+	} else if (storage < sc_count) {
 		static SpvStorageClass sc_storage[sc_count] = {
+			[sc_global] = SpvStorageClassPrivate,
 			[sc_static] = SpvStorageClassPrivate,
 			[sc_local] = SpvStorageClassFunction,
+			[sc_inout] = SpvStorageClassFunction,
 		};
-		storage = sc_storage[sym->var.storage];
+		sc = sc_storage[storage];
+	}
+	if (!sc) {
+		internal_error (0, "invalid storage class: %d", storage);
+	}
+	return sc;
+}
+
+static unsigned
+spirv_variable (symbol_t *sym, spirvctx_t *ctx)
+{
+	if (sym->sy_type != sy_var) {
+		internal_error (0, "unexpected variable symbol type");
 	}
 	auto space = ctx->module->globals;
+	auto storage = spirv_storage_class (sym->var.storage);
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
 	}
+	auto type = sym->type;
+	unsigned tid = type_id (type, ctx);
 	unsigned id = spirv_id (ctx);
 	//FIXME init value
 	auto insn = spirv_new_insn (SpvOpVariable, 4, space);
-	INSN (insn, 1) = type_id (reference_type (sym->type), ctx);
+	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = storage;
 	spirv_Name (id, sym->name, ctx);
@@ -514,7 +528,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	for (auto p = func->sym->params; p; p = p->next) {
 		auto ptype = p->type;
 		if (p->qual != pq_const) {
-			ptype = reference_type (ptype);
+			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
 		unsigned pid = spirv_FunctionParameter (p->name, ptype, ctx);
 		if (func->parameters) {
@@ -939,7 +953,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 			arg_ids[i] = spirv_emit_expr (a, ctx);
 		} else {
 			auto psym = new_symbol ("param");
-			psym->type = reference_type (get_type (a));
+			psym->type = tagged_reference_type (SpvStorageClassFunction, get_type (a));
 			psym->sy_type = sy_var;
 			psym->var.storage = SpvStorageClassFunction;
 			psym->id = spirv_variable (psym, ctx);
@@ -1071,7 +1085,8 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 	auto acc_type = res_type;
 	bool literal_ind = true;
 	if (is_pointer (base_type) || is_reference (base_type)) {
-		acc_type = reference_type (res_type);
+		unsigned storage = base_type->fldptr.tag;
+		acc_type = tagged_reference_type (storage, res_type);
 		op = SpvOpAccessChain;
 		literal_ind = false;
 	}
@@ -1273,7 +1288,7 @@ spirv_create_param (symtab_t *parameters, symbol_t *param, param_qual_t qual)
 	auto type = param->type;
 	if (qual != pq_const) {
 		param->lvalue = true;
-		type = reference_type (type);
+		type = tagged_reference_type (SpvStorageClassFunction, type);
 	}
 	param->type = type;
 }
@@ -1315,10 +1330,8 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	if (check && check->table == symtab) {
 		error (0, "%s redefined", sym->name);
 	}
-	if (symtab->type == stab_local) {
-		// spir-v locals are references
-		sym->type = reference_type (sym->type);
-	}
+	auto storage = spirv_storage_class (spec.storage);
+	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
 	sym->sy_type = sy_var;
 	sym->var.storage = spec.storage;
