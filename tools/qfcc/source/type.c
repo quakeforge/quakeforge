@@ -776,7 +776,7 @@ matrix_type (const type_t *ele_type, int cols, int rows)
 			return *mtype;
 		}
 	}
-	return 0;
+	return nullptr;
 }
 
 const type_t *
@@ -793,7 +793,7 @@ base_type (const type_t *vec_type)
 		return algebra_base_type (vec_type);
 	}
 	if (!is_math (vec_type)) {
-		return 0;
+		return nullptr;
 	}
 	// vec_type->type for quaternion and vector points back to itself
 	if (is_quaternion (vec_type) || is_vector (vec_type)) {
@@ -808,7 +808,7 @@ int_type (const type_t *base)
 	int         width = type_width (base);
 	base = base_type (base);
 	if (!base) {
-		return 0;
+		return nullptr;
 	}
 	if (type_size (base) == 1) {
 		base = &type_int;
@@ -824,7 +824,7 @@ uint_type (const type_t *base)
 	int         width = type_width (base);
 	base = base_type (base);
 	if (!base) {
-		return 0;
+		return nullptr;
 	}
 	if (type_size (base) == 1) {
 		base = &type_uint;
@@ -840,7 +840,7 @@ bool_type (const type_t *base)
 	int         width = type_width (base);
 	base = base_type (base);
 	if (!base) {
-		return 0;
+		return nullptr;
 	}
 	if (type_size (base) == 1) {
 		base = &type_bool;
@@ -856,7 +856,7 @@ float_type (const type_t *base)
 	int         width = type_width (base);
 	base = base_type (base);
 	if (!base) {
-		return 0;
+		return nullptr;
 	}
 	if (type_size (base) == 1) {
 		base = &type_float;
