@@ -1146,8 +1146,13 @@ encode_params (const type_t *type)
 		count = -type->func.num_params - 1;
 	else
 		count = type->func.num_params;
-	for (i = 0; i < count; i++)
+	for (i = 0; i < count; i++) {
+		// in is the default qualifier
+		if (type->func.param_quals[i] != pq_in) {
+			dasprintf (encoding, "%c", "c_Oo"[type->func.param_quals[i]]);
+		}
 		encode_type (encoding, unalias_type (type->func.param_types[i]));
+	}
 	if (type->func.num_params < 0)
 		dasprintf (encoding, ".");
 
