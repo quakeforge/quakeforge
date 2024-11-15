@@ -234,15 +234,15 @@ bool_expr (int op, const expr_t *label, const expr_t *e1, const expr_t *e2)
 	switch (op) {
 		case QC_OR:
 			backpatch (e1->boolean.false_list, label);
-			return new_bool_expr (merge (e1->boolean.true_list,
-										 e2->boolean.true_list),
-								  e2->boolean.false_list, block);
+			return new_boolean_expr (merge (e1->boolean.true_list,
+											e2->boolean.true_list),
+									 e2->boolean.false_list, block);
 			break;
 		case QC_AND:
 			backpatch (e1->boolean.true_list, label);
-			return new_bool_expr (e2->boolean.true_list,
-								  merge (e1->boolean.false_list,
-										 e2->boolean.false_list), block);
+			return new_boolean_expr (e2->boolean.true_list,
+									 merge (e1->boolean.false_list,
+											e2->boolean.false_list), block);
 			break;
 	}
 	internal_error (e1, 0);
@@ -301,15 +301,16 @@ convert_bool (const expr_t *e, int block)
 				val = expr_float (e) != 0;
 			}
 			if (val)
-				e = new_bool_expr (make_list (b), 0, b);
+				e = new_boolean_expr (make_list (b), 0, b);
 			else
-				e = new_bool_expr (0, make_list (b), b);
+				e = new_boolean_expr (0, make_list (b), b);
 		} else {
 			auto b = new_block_expr (0);
 			append_expr (b, branch_expr (QC_NE, e, 0));
 			append_expr (b, goto_expr (0));
-			e = new_bool_expr (make_list (b->block.list.head->expr),
-							   make_list (b->block.list.head->next->expr), b);
+			e = new_boolean_expr (make_list (b->block.list.head->expr),
+								  make_list (b->block.list.head->next->expr),
+								  b);
 		}
 	}
 	if (block && e->boolean.e->type != ex_block) {

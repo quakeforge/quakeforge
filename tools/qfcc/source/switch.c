@@ -445,7 +445,7 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		case_node_t *case_tree;
 
 		if (is_string(type))
-			temp = new_temp_def_expr (&type_int);
+			temp = new_temp_def_expr (&type_bool);
 		else
 			temp = new_temp_def_expr (type);
 		case_tree = build_case_tree (labels, num_labels, is_integral (type));

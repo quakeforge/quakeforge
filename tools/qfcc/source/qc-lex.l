@@ -324,6 +324,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 "&&"					{ return QC_AND; }
 "||"					{ return QC_OR; }
+"^^"					{ return QC_XOR; }
 "=="					{ return QC_EQ; }
 "!="					{ return QC_NE; }
 "<="					{ return QC_LE; }

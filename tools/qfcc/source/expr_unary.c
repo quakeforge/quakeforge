@@ -269,6 +269,18 @@ ulong_bitnot (const expr_t *e)
 	return new_ulong_expr (~expr_ulong (e));
 }
 
+static const expr_t *
+bool_not (const expr_t *e)
+{
+	return new_bool_expr (expr_int (e));
+}
+
+static const expr_t *
+lbool_not (const expr_t *e)
+{
+	return new_lbool_expr (expr_long (e));
+}
+
 static unary_type_t string_u[] = {
 	{ .op = '!', .result_type = &type_bool, .constant = string_not, },
 
@@ -414,6 +426,18 @@ static unary_type_t algebra_u[] = {
 	{}
 };
 
+static unary_type_t bool_u[] = {
+	{ .op = '!', .result_type = &type_bool,       .constant = bool_not,    },
+
+	{}
+};
+
+static unary_type_t lbool_u[] = {
+	{ .op = '!', .result_type = &type_lbool,      .constant = lbool_not,    },
+
+	{}
+};
+
 static unary_type_t *unary_expr_types[ev_type_count] = {
 	[ev_string] = string_u,
 	[ev_float] = float_u,
@@ -448,7 +472,8 @@ unary_expr (int op, const expr_t *e)
 	auto t = get_type (e);
 
 	if (op == '!' && e->type == ex_bool) {
-		return new_bool_expr (e->boolean.false_list, e->boolean.true_list, e);
+		return new_boolean_expr (e->boolean.false_list,
+								 e->boolean.true_list, e);
 	}
 
 	if (op == '+' && is_math (t)) {
@@ -459,6 +484,10 @@ unary_expr (int op, const expr_t *e)
 		unary_type = algebra_u;
 	} else if (is_enum (t)) {
 		unary_type = int_u;
+	} else if (is_bool (t)) {
+		unary_type = bool_u;
+	} else if (is_lbool (t)) {
+		unary_type = lbool_u;
 	} else if (t->meta == ty_basic || is_handle (t)) {
 		unary_type = unary_expr_types[t->type];
 	}

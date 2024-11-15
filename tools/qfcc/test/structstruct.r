@@ -46,7 +46,7 @@ test_struct_4(Rect rect)
 int
 main()
 {
-	int ret = 0;
+	bool ret = false;
 	ret |= test_struct_1(rect) != 1;
 	ret |= test_struct_2(rect) != 2;
 	ret |= test_struct_3(rect) != 3;

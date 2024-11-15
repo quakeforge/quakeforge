@@ -208,7 +208,7 @@ syntax_error ()
 			   Script_GetLine (script));
 }
 
-static int
+static bool
 match (token_e token)
 {
 	if (lookahead == -1) {

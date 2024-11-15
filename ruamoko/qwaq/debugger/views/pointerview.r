@@ -49,7 +49,7 @@
 								  in:ptr_data
 							  target:target] retain];
 	}
-	invalid = 1;
+	invalid = true;
 	if (!ptr_view || ptr != (unsigned) data[0]) {
 		invalid = qdb_get_data (target, data[0], ptr_size, ptr_data) < 0;
 	}

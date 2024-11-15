@@ -16,7 +16,7 @@
 						int (func)(string text, int key),
 						int allkeys);
 @extern void Menu_Cursor (void (func)(int x, int y));
-@extern void Menu_KeyEvent (int (func)(int key, int unicode, int down));
+@extern void Menu_KeyEvent (bool (func)(int key, int unicode, bool down));
 @extern void Menu_End (void);
 @extern void Menu_TopMenu (string name);
 @extern void Menu_SelectMenu (string name);

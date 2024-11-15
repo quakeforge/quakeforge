@@ -308,7 +308,7 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	symtab_addsymbol (enum_tab, name);
 }
 
-int
+bool
 enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 {
 	symtab_t   *symtab = enm->symtab;
@@ -318,7 +318,7 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 	int         val, v;
 
 	if (!symtab)
-		return 0;
+		return false;
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
@@ -336,10 +336,10 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 
 	}
 	if (!zero_sym || !one_sym)
-		return 0;
+		return false;
 	*zero = new_symbol_expr (zero_sym);
 	*one = new_symbol_expr (one_sym);
-	return 1;
+	return true;
 }
 
 symbol_t *

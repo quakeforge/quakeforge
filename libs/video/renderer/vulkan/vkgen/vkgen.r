@@ -53,7 +53,7 @@ next_type (qfot_type_t *type)
 	return (qfot_type_t *) ((int *) type + size);
 }
 
-int
+bool
 type_is_null (qfot_type_t *type)
 {
 	return type.size == 0;

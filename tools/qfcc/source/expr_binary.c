@@ -110,12 +110,12 @@ static bool fp_ass_mul (void)
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
-	{QC_EQ,	&type_int},
-	{QC_NE,	&type_int},
-	{QC_LE,	&type_int},
-	{QC_GE,	&type_int},
-	{QC_LT,	&type_int},
-	{QC_GT,	&type_int},
+	{QC_EQ,	&type_bool},
+	{QC_NE,	&type_bool},
+	{QC_LE,	&type_bool},
+	{QC_GE,	&type_bool},
+	{QC_LT,	&type_bool},
+	{QC_GT,	&type_bool},
 	{0, 0}
 };
 
@@ -137,14 +137,14 @@ static expr_type_t float_float[] = {
 	{QC_MOD,	&type_float},
 	{QC_SHL,	&type_float},
 	{QC_SHR,	&type_float},
-	{QC_AND,	&type_int},
-	{QC_OR,		&type_int},
-	{QC_EQ,		&type_int},
-	{QC_NE,		&type_int},
-	{QC_LE,		&type_int},
-	{QC_GE,		&type_int},
-	{QC_LT,		&type_int},
-	{QC_GT,		&type_int},
+	{QC_AND,	&type_bool},
+	{QC_OR,		&type_bool},
+	{QC_EQ,		&type_bool},
+	{QC_NE,		&type_bool},
+	{QC_LE,		&type_bool},
+	{QC_GE,		&type_bool},
+	{QC_LT,		&type_bool},
+	{QC_GT,		&type_bool},
 	{0, 0}
 };
 
@@ -176,12 +176,12 @@ static expr_type_t float_int[] = {
 	{QC_MOD,	&type_float, 0, &type_float},
 	{QC_SHL,	&type_float, 0, &type_float},
 	{QC_SHR,	&type_float, 0, &type_float},
-	{QC_EQ,		&type_int, 0, &type_float},
-	{QC_NE,		&type_int, 0, &type_float},
-	{QC_LE,		&type_int, 0, &type_float},
-	{QC_GE,		&type_int, 0, &type_float},
-	{QC_LT,		&type_int, 0, &type_float},
-	{QC_GT,		&type_int, 0, &type_float},
+	{QC_EQ,		&type_bool, 0, &type_float},
+	{QC_NE,		&type_bool, 0, &type_float},
+	{QC_LE,		&type_bool, 0, &type_float},
+	{QC_GE,		&type_bool, 0, &type_float},
+	{QC_LT,		&type_bool, 0, &type_float},
+	{QC_GT,		&type_bool, 0, &type_float},
 	{0, 0}
 };
 #define float_uint float_int
@@ -240,14 +240,14 @@ static expr_type_t vector_double[] = {
 };
 
 static expr_type_t entity_entity[] = {
-	{QC_EQ,	&type_int, 0, 0, entity_compare},
-	{QC_NE,	&type_int, 0, 0, entity_compare},
+	{QC_EQ,	&type_bool, 0, 0, entity_compare},
+	{QC_NE,	&type_bool, 0, 0, entity_compare},
 	{0, 0}
 };
 
 static expr_type_t field_field[] = {
-	{QC_EQ,	&type_int},
-	{QC_NE,	&type_int},
+	{QC_EQ,	&type_bool},
+	{QC_NE,	&type_bool},
 	{0, 0}
 };
 
@@ -335,12 +335,12 @@ static expr_type_t int_float[] = {
 	{QC_MOD,	&type_float, &type_float, 0},
 	{QC_SHL,	&type_int, 0, &type_int},	//FIXME?
 	{QC_SHR,	&type_int, 0, &type_int},	//FIXME?
-	{QC_EQ,		&type_int, &type_float, 0},
-	{QC_NE,		&type_int, &type_float, 0},
-	{QC_LE,		&type_int, &type_float, 0},
-	{QC_GE,		&type_int, &type_float, 0},
-	{QC_LT,		&type_int, &type_float, 0},
-	{QC_GT,		&type_int, &type_float, 0},
+	{QC_EQ,		&type_bool, &type_float, 0},
+	{QC_NE,		&type_bool, &type_float, 0},
+	{QC_LE,		&type_bool, &type_float, 0},
+	{QC_GE,		&type_bool, &type_float, 0},
+	{QC_LT,		&type_bool, &type_float, 0},
+	{QC_GT,		&type_bool, &type_float, 0},
 	{0, 0}
 };
 
@@ -377,14 +377,14 @@ static expr_type_t int_int[] = {
 	{QC_MOD,	&type_int},
 	{QC_SHL,	&type_int},
 	{QC_SHR,	&type_int},
-	{QC_AND,	&type_int},
-	{QC_OR,		&type_int},
-	{QC_EQ,		&type_int},
-	{QC_NE,		&type_int},
-	{QC_LE,		&type_int},
-	{QC_GE,		&type_int},
-	{QC_LT,		&type_int},
-	{QC_GT,		&type_int},
+	{QC_AND,	&type_bool},
+	{QC_OR,		&type_bool},
+	{QC_EQ,		&type_bool},
+	{QC_NE,		&type_bool},
+	{QC_LE,		&type_bool},
+	{QC_GE,		&type_bool},
+	{QC_LT,		&type_bool},
+	{QC_GT,		&type_bool},
 	{0, 0}
 };
 
@@ -406,8 +406,8 @@ static expr_type_t int_uint[] = {
 	{QC_MOD,	&type_int, 0, &type_int},
 	{QC_SHL,	&type_int, 0, &type_int},
 	{QC_SHR,	&type_int, 0, &type_int},
-	{QC_EQ,		&type_int, 0, &type_int},
-	{QC_NE,		&type_int, 0, &type_int},
+	{QC_EQ,		&type_bool, 0, &type_int},
+	{QC_NE,		&type_bool, 0, &type_int},
 	{QC_LE,		.process = uint_compare},
 	{QC_GE,		.process = uint_compare},
 	{QC_LT,		.process = uint_compare},
@@ -433,12 +433,12 @@ static expr_type_t int_short[] = {
 	{QC_MOD,	&type_int, 0, &type_int},
 	{QC_SHL,	&type_int, 0, &type_int},
 	{QC_SHR,	&type_int, 0, &type_int},
-	{QC_EQ,		&type_int, 0, &type_int},
-	{QC_NE,		&type_int, 0, &type_int},
-	{QC_LE,		&type_int, 0, &type_int},
-	{QC_GE,		&type_int, 0, &type_int},
-	{QC_LT,		&type_int, 0, &type_int},
-	{QC_GT,		&type_int, 0, &type_int},
+	{QC_EQ,		&type_bool, 0, &type_int},
+	{QC_NE,		&type_bool, 0, &type_int},
+	{QC_LE,		&type_bool, 0, &type_int},
+	{QC_GE,		&type_bool, 0, &type_int},
+	{QC_LT,		&type_bool, 0, &type_int},
+	{QC_GT,		&type_bool, 0, &type_int},
 	{0, 0}
 };
 
@@ -452,12 +452,12 @@ static expr_type_t int_double[] = {
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{QC_MOD,	&type_double, &type_double, 0},
-	{QC_EQ,		&type_long, &type_double, 0},
-	{QC_NE,		&type_long, &type_double, 0},
-	{QC_LE,		&type_long, &type_double, 0},
-	{QC_GE,		&type_long, &type_double, 0},
-	{QC_LT,		&type_long, &type_double, 0},
-	{QC_GT,		&type_long, &type_double, 0},
+	{QC_EQ,		&type_lbool, &type_double, 0},
+	{QC_NE,		&type_lbool, &type_double, 0},
+	{QC_LE,		&type_lbool, &type_double, 0},
+	{QC_GE,		&type_lbool, &type_double, 0},
+	{QC_LT,		&type_lbool, &type_double, 0},
+	{QC_GT,		&type_lbool, &type_double, 0},
 	{0, 0}
 };
 
@@ -484,8 +484,8 @@ static expr_type_t uint_int[] = {
 	{QC_MOD,	&type_int, &type_int, &type_int },
 	{QC_SHL,	&type_uint, &type_int, &type_int },
 	{QC_SHR,	&type_uint, 0,        &type_int },
-	{QC_EQ,		&type_int, &type_int, &type_int },
-	{QC_NE,		&type_int, &type_int, &type_int },
+	{QC_EQ,		&type_bool, &type_int, &type_int },
+	{QC_NE,		&type_bool, &type_int, &type_int },
 	{QC_LE,		.process = uint_compare},
 	{QC_GE,		.process = uint_compare},
 	{QC_LT,		.process = uint_compare},
@@ -511,8 +511,8 @@ static expr_type_t uint_uint[] = {
 	{QC_MOD,	&type_uint},
 	{QC_SHL,	&type_uint},
 	{QC_SHR,	&type_uint},
-	{QC_EQ,		&type_int, &type_int, &type_int},
-	{QC_NE,		&type_int, &type_int, &type_int},
+	{QC_EQ,		&type_bool, &type_int, &type_int},
+	{QC_NE,		&type_bool, &type_int, &type_int},
 	{QC_LE,		&type_int},
 	{QC_GE,		&type_int},
 	{QC_LT,		&type_int},
@@ -545,12 +545,12 @@ static expr_type_t short_int[] = {
 	{QC_MOD,	&type_int, &type_int, 0},
 	{QC_SHL,	&type_short},
 	{QC_SHR,	&type_short},
-	{QC_EQ,		&type_int, &type_int, 0},
-	{QC_NE,		&type_int, &type_int, 0},
-	{QC_LE,		&type_int, &type_int, 0},
-	{QC_GE,		&type_int, &type_int, 0},
-	{QC_LT,		&type_int, &type_int, 0},
-	{QC_GT,		&type_int, &type_int, 0},
+	{QC_EQ,		&type_bool, &type_int, 0},
+	{QC_NE,		&type_bool, &type_int, 0},
+	{QC_LE,		&type_bool, &type_int, 0},
+	{QC_GE,		&type_bool, &type_int, 0},
+	{QC_LT,		&type_bool, &type_int, 0},
+	{QC_GT,		&type_bool, &type_int, 0},
 	{0, 0}
 };
 
@@ -572,12 +572,12 @@ static expr_type_t short_uint[] = {
 	{QC_MOD,	&type_uint, &type_uint, 0},
 	{QC_SHL,	&type_short},
 	{QC_SHR,	&type_short},
-	{QC_EQ,		&type_int, &type_uint, 0},
-	{QC_NE,		&type_int, &type_uint, 0},
-	{QC_LE,		&type_int, &type_uint, 0},
-	{QC_GE,		&type_int, &type_uint, 0},
-	{QC_LT,		&type_int, &type_uint, 0},
-	{QC_GT,		&type_int, &type_uint, 0},
+	{QC_EQ,		&type_bool, &type_uint, 0},
+	{QC_NE,		&type_bool, &type_uint, 0},
+	{QC_LE,		&type_bool, &type_uint, 0},
+	{QC_GE,		&type_bool, &type_uint, 0},
+	{QC_LT,		&type_bool, &type_uint, 0},
+	{QC_GT,		&type_bool, &type_uint, 0},
 	{0, 0}
 };
 
@@ -593,12 +593,12 @@ static expr_type_t short_short[] = {
 	{QC_MOD,	&type_short},
 	{QC_SHL,	&type_short},
 	{QC_SHR,	&type_short},
-	{QC_EQ,		&type_int},
-	{QC_NE,		&type_int},
-	{QC_LE,		&type_int},
-	{QC_GE,		&type_int},
-	{QC_LT,		&type_int},
-	{QC_GT,		&type_int},
+	{QC_EQ,		&type_bool},
+	{QC_NE,		&type_bool},
+	{QC_LE,		&type_bool},
+	{QC_GE,		&type_bool},
+	{QC_LT,		&type_bool},
+	{QC_GT,		&type_bool},
 	{0, 0}
 };
 #define short_double int_double
@@ -663,12 +663,12 @@ static expr_type_t double_double[] = {
 	{'/',	&type_double},
 	{'%',	&type_double},
 	{QC_MOD,	&type_double},
-	{QC_EQ,		&type_long},
-	{QC_NE,		&type_long},
-	{QC_LE,		&type_long},
-	{QC_GE,		&type_long},
-	{QC_LT,		&type_long},
-	{QC_GT,		&type_long},
+	{QC_EQ,		&type_lbool},
+	{QC_NE,		&type_lbool},
+	{QC_LE,		&type_lbool},
+	{QC_GE,		&type_lbool},
+	{QC_LT,		&type_lbool},
+	{QC_GT,		&type_lbool},
 	{0, 0}
 };
 
@@ -690,12 +690,12 @@ static expr_type_t long_long[] = {
 	{QC_MOD,	&type_long},
 	{QC_SHL,	&type_long},
 	{QC_SHR,	&type_long},
-	{QC_EQ,		&type_long},
-	{QC_NE,		&type_long},
-	{QC_LE,		&type_long},
-	{QC_GE,		&type_long},
-	{QC_LT,		&type_long},
-	{QC_GT,		&type_long},
+	{QC_EQ,		&type_lbool},
+	{QC_NE,		&type_lbool},
+	{QC_LE,		&type_lbool},
+	{QC_GE,		&type_lbool},
+	{QC_LT,		&type_lbool},
+	{QC_GT,		&type_lbool},
 	{0, 0}
 };
 
@@ -717,12 +717,12 @@ static expr_type_t ulong_ulong[] = {
 	{QC_MOD,	&type_ulong},
 	{QC_SHL,	&type_ulong},
 	{QC_SHR,	&type_ulong},
-	{QC_EQ,		&type_long},
-	{QC_NE,		&type_long},
-	{QC_LE,		&type_long},
-	{QC_GE,		&type_long},
-	{QC_LT,		&type_long},
-	{QC_GT,		&type_long},
+	{QC_EQ,		&type_lbool},
+	{QC_NE,		&type_lbool},
+	{QC_LE,		&type_lbool},
+	{QC_GE,		&type_lbool},
+	{QC_LT,		&type_lbool},
+	{QC_GT,		&type_lbool},
 	{0, 0}
 };
 
@@ -848,15 +848,15 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 };
 
 static expr_type_t int_handle[] = {
-	{QC_EQ,	&type_int},
-	{QC_NE,	&type_int},
+	{QC_EQ,	&type_bool},
+	{QC_NE,	&type_bool},
 
 	{0, 0}
 };
 
 static expr_type_t long_handle[] = {
-	{QC_EQ,	&type_int},
-	{QC_NE,	&type_int},
+	{QC_EQ,	&type_bool},
+	{QC_NE,	&type_bool},
 
 	{0, 0}
 };
@@ -874,11 +874,45 @@ static expr_type_t **binary_expr_handle[ev_type_count] = {
 	[ev_long] = long_handle_x,
 };
 
+static expr_type_t int_bool[] = {
+	{'|',	&type_bool},
+	{'&',	&type_bool},
+	{'^',	&type_bool},
+	{QC_EQ,	&type_bool},
+	{QC_NE,	&type_bool},
+
+	{0, 0}
+};
+
+static expr_type_t long_bool[] = {
+	{'|',	&type_lbool},
+	{'&',	&type_lbool},
+	{'^',	&type_lbool},
+	{QC_EQ,	&type_lbool},
+	{QC_NE,	&type_lbool},
+
+	{0, 0}
+};
+
+static expr_type_t *int_bool_x[ev_type_count] = {
+	[ev_int] = int_bool,
+};
+
+static expr_type_t *long_bool_x[ev_type_count] = {
+	[ev_long] = long_bool,
+};
+
+static expr_type_t **binary_expr_bool[ev_type_count] = {
+	[ev_int] = int_bool_x,
+	[ev_long] = long_bool_x,
+};
+
 static expr_type_t ***binary_expr_meta[ty_meta_count] = {
 	[ty_basic] = binary_expr_types,
 	[ty_enum] = binary_expr_types,
 	[ty_alias] = binary_expr_types,
 	[ty_handle] = binary_expr_handle,
+	[ty_bool] = binary_expr_bool,
 };
 
 // supported operators for scalar-vector expressions
@@ -968,7 +1002,7 @@ pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 		e = new_binary_expr (op, cast_expr (&type_int, e1),
 							 cast_expr (&type_int, e2));
 	}
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	return e;
 }
 
@@ -983,7 +1017,7 @@ func_compare (int op, const expr_t *e1, const expr_t *e2)
 		e = new_binary_expr (op, new_alias_expr (&type_int, e1),
 							 new_alias_expr (&type_int, e2));
 	}
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		e->expr.type = &type_float;
 	}
@@ -1014,7 +1048,7 @@ vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	e1 = new_alias_expr (&type_vec3, e1);
 	e2 = new_alias_expr (&type_vec3, e2);
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_ivec3;
+	e->expr.type = &type_bvec3;
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
@@ -1023,14 +1057,14 @@ quat_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (options.code.progsversion < PROG_VERSION) {
 		expr_t     *e = new_binary_expr (op, e1, e2);
-		e->expr.type = &type_int;
+		e->expr.type = &type_bool;
 		return e;
 	}
 	int         hop = op == QC_EQ ? '&' : '|';
 	e1 = new_alias_expr (&type_vec4, e1);
 	e2 = new_alias_expr (&type_vec4, e2);
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_ivec4;
+	e->expr.type = &type_bvec4;
 	return new_horizontal_expr (hop, e, &type_int);
 }
 
@@ -1102,7 +1136,7 @@ double_compare (int op, const expr_t *e1, const expr_t *e2)
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_long;
+	e->expr.type = &type_lbool;
 	return e;
 }
 
@@ -1130,7 +1164,7 @@ uint_compare (int op, const expr_t *e1, const expr_t *e2)
 		}
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	return e;
 }
 
@@ -1142,7 +1176,7 @@ entity_compare (int op, const expr_t *e1, const expr_t *e2)
 		e2 = new_alias_expr (&type_int, e2);
 	}
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		e->expr.type = &type_float;
 	}

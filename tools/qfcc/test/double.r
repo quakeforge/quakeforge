@@ -6,10 +6,10 @@ union {
 	int    i[2];
 } type_pun;
 
-long
+bool
 test_format ()
 {
-	int         fail = 0;
+	bool        fail;
 	type_pun.d = M_PI;
 	printf ("%.17g %08x%08x\n", type_pun.d, type_pun.i[1], type_pun.i[0]);
 	// this will fail on big-endian systems
@@ -17,10 +17,10 @@ test_format ()
 	return fail;
 }
 
-long
+lbool
 test_constant ()
 {
-	long        fail = 0;
+	lbool       fail = false;
 	double      a, b, c, d, e;
 	a = 1;
 	b = 2.0;
@@ -43,7 +43,7 @@ double greater = 5;
 long
 test_copare ()
 {
-	long fail = 0;
+	lbool fail = 0;
 
 	fail |= !(less < greater);
 	fail |= (less > greater);
@@ -75,10 +75,10 @@ test_copare ()
 	return fail;
 }
 
-long
+lbool
 test_ops ()
 {
-	long        fail = 0;
+	lbool       fail = 0;
 	double      a = 6.25, b = 2.375;
 	double      c;
 
@@ -98,8 +98,8 @@ test_ops ()
 int
 main ()
 {
-	long        fail = 0;
-	fail |= test_format ();
+	lbool       fail = false;
+	fail |= (lbool) test_format ();
 	fail |= test_constant ();
 	fail |= test_ops ();
 	return fail;

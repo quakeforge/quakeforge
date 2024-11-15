@@ -41,6 +41,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -114,6 +115,23 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	if ((is_pointer (dstType) && is_string (srcType))
 		|| (is_string (dstType) && is_pointer (srcType))) {
 		return new_alias_expr (dstType, e);
+	}
+	if (is_enum (dstType) && is_boolean (srcType)) {
+		expr_t     *enum_zero, *enum_one;
+		if (enum_as_bool (dstType, &enum_zero, &enum_one)) {
+			return conditional_expr (e, enum_one, enum_zero);
+		}
+	}
+	if (is_integral (dstType) && is_boolean (srcType)) {
+		auto type = dstType;
+		if (type_size (dstType) != type_size (srcType)) {
+			type = ev_types[srcType->type];
+		}
+		e = new_alias_expr (type, e);
+		if (type != dstType) {
+			e = cast_expr (dstType, e);
+		}
+		return e;
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {
 		const expr_t *c;

@@ -493,7 +493,8 @@ new_state_expr (const expr_t *frame, const expr_t *think, const expr_t *step)
 }
 
 expr_t *
-new_bool_expr (ex_boollist_t *true_list, ex_boollist_t *false_list, const expr_t *e)
+new_boolean_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
+				  const expr_t *e)
 {
 	expr_t     *b = new_expr ();
 
@@ -640,7 +641,8 @@ new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 		return (expr_t *) vec;
 	}
 	auto vec_type = get_type (vec);
-	if (!is_math (vec_type) || is_scalar (vec_type)) {
+	if (!(is_math (vec_type) || is_boolean (vec_type))
+		|| is_scalar (vec_type)) {
 		internal_error (vec, "horizontal operand not a vector type");
 	}
 	if (!is_scalar (type)) {
@@ -862,6 +864,25 @@ const expr_t *
 new_quaternion_expr (const float *quaternion_val)
 {
 	return new_value_expr (new_quaternion_val (quaternion_val), false);
+}
+
+const expr_t *
+new_bool_expr (bool bool_val)
+{
+	pr_type_t data = { .value = -bool_val };
+	auto val = new_type_value (&type_bool, &data);
+	return new_value_expr (val, false);
+}
+
+const expr_t *
+new_lbool_expr (bool lbool_val)
+{
+	pr_type_t data[2] = {
+		{ .value = -lbool_val },
+		{ .value = -lbool_val },
+	};
+	auto val = new_type_value (&type_lbool, data);
+	return new_value_expr (val, false);
 }
 
 const expr_t *
@@ -1827,6 +1848,12 @@ convert_from_bool (const expr_t *e, const type_t *type)
 	} else if (is_int (type)) {
 		one = new_int_expr (1, false);
 		zero = new_int_expr (0, false);
+	} else if (is_bool (type)) {
+		one = new_bool_expr (1);
+		zero = new_bool_expr (0);
+	} else if (is_lbool (type)) {
+		one = new_lbool_expr (1);
+		zero = new_lbool_expr (0);
 	} else if (is_enum (type) && enum_as_bool (type, &enum_zero, &enum_one)) {
 		zero = enum_zero;
 		one = enum_one;

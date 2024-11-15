@@ -746,10 +746,16 @@ reference_type (const type_t *aux)
 const type_t *
 matrix_type (const type_t *ele_type, int cols, int rows)
 {
-	if (!is_bool (ele_type) && !is_scalar (ele_type)) {
+	if (!is_boolean (ele_type) && !is_scalar (ele_type)) {
 		return nullptr;
 	}
 	if (rows == 1 && cols == 1) {
+		if (is_bool (ele_type)) {
+			return &type_bool;
+		}
+		if (is_lbool (ele_type)) {
+			return &type_lbool;
+		}
 		for (auto t = ev_types; t - ev_types < ev_type_count; t++) {
 			if ((*t)->type == ele_type->type && (*t)->width == 1) {
 				return *t;
@@ -1376,7 +1382,23 @@ is_bool (const type_t *type)
 	if (type->meta != ty_bool) {
 		return false;
 	}
-	return type->type == ev_int || type->type == ev_long;
+	return type->type == ev_int;
+}
+
+bool
+is_lbool (const type_t *type)
+{
+	type = unalias_type (type);
+	if (type->meta != ty_bool) {
+		return false;
+	}
+	return type->type == ev_long;
+}
+
+bool
+is_boolean (const type_t *type)
+{
+	return is_bool (type) || is_lbool (type);
 }
 
 bool
@@ -1425,7 +1447,7 @@ is_scalar (const type_t *type)
 	if (type->width != 1) {
 		return false;
 	}
-	return is_real (type) || is_integral (type);
+	return is_real (type) || is_integral (type) || is_boolean (type);
 }
 
 bool
@@ -1563,6 +1585,20 @@ type_assignable (const type_t *dst, const type_t *src)
 			&& type_width (dst) == type_width (src)) {
 			return true;
 		}
+		if ((is_int (dst) || is_uint (dst) || is_float (dst))
+			&& is_bool (src)) {
+			return true;
+		}
+		if (is_enum (dst) && is_bool (src)) {
+			return true;
+		}
+		if ((is_long (dst) || is_ulong (dst) || is_double (dst))
+			&& is_boolean (src)) {
+			return true;
+		}
+		if (is_lbool (dst) && is_bool (src)) {
+			return true;
+		}
 		return false;
 	}
 
@@ -1599,26 +1635,30 @@ type_promotes (const type_t *dst, const type_t *src)
 		|| type_cols (dst) != type_cols (src)) {
 		return false;
 	}
-	// nothing promotes to int
-	if (is_int (dst)) {
+
+	if (is_int (dst) && is_bool (src)) {
 		return true;
 	}
 	if (is_uint (dst) && is_int (src)) {
 		return true;
 	}
-	if (is_long (dst) && (is_int (src) || is_uint (src))) {
+	if (is_long (dst) && (is_int (src) || is_uint (src) || is_boolean (src))) {
 		return true;
 	}
-	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src))) {
+	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src)
+		|| is_boolean (src))) {
 		return true;
 	}
-	if (is_float (dst) && (is_int (src) || is_uint (src))) {
+	if (is_float (dst) && (is_int (src) || is_uint (src) || is_bool (src))) {
 		return true;
 	}
 	//XXX what to do with (u)long<->float?
 	if (is_double (dst)
 		&& (is_int (src) || is_uint (src) || is_long (src) || is_ulong (src)
-			|| is_float (src))) {
+			|| is_float (src) || is_boolean (src))) {
+		return true;
+	}
+	if (is_lbool (dst) && is_bool (src)) {
 		return true;
 	}
 	return false;

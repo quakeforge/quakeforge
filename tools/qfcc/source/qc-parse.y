@@ -145,6 +145,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			'.' '(' '['
 
 %token	<expr>		VALUE STRING TOKEN
+%token              TRUE FALSE
 %token				ELLIPSIS
 %token				RESERVED
 // end of common tokens
@@ -2117,6 +2118,18 @@ arg_expr
 
 const
 	: VALUE
+	| TRUE
+		{
+			pr_type_t data = { .value = 1 };
+			auto val = new_type_value (&type_bool, &data);
+			$$ = new_value_expr (val, false);
+		}
+	| FALSE
+		{
+			pr_type_t data = { .value = 0 };
+			auto val = new_type_value (&type_bool, &data);
+			$$ = new_value_expr (val, false);
+		}
 	| NIL						{ $$ = new_nil_expr (); }
 	| string
 	;
@@ -2864,10 +2877,14 @@ static keyword_t qf_keywords[] = {
 	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
 	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
 	{"bool",		QC_TYPE_SPEC, .spec = { .type = &type_bool } 	},
+	{"lbool",		QC_TYPE_SPEC, .spec = { .type = &type_lbool } 	},
 	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = true } },
 	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
 	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
 	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
+
+	{"true",        QC_TRUE },
+	{"false",       QC_FALSE},
 
 	{"@args",		QC_ARGS,				},
 	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},

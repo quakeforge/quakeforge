@@ -521,8 +521,8 @@ expr_t *new_label_ref (const ex_label_t *label);
 expr_t *new_state_expr (const expr_t *frame, const expr_t *think,
 						const expr_t *step);
 
-expr_t *new_bool_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
-					   const expr_t *e);
+expr_t *new_boolean_expr (ex_boollist_t *true_list, ex_boollist_t *false_list,
+						  const expr_t *e);
 
 /**	Create a new statement block expression node.
 
@@ -758,6 +758,9 @@ const expr_t *new_pointer_expr (int val, const type_t *type, struct def_s *def);
 */
 const expr_t *new_quaternion_expr (const float *quaternion_val);
 const float *expr_quaternion (const expr_t *e) __attribute__((pure));
+
+const expr_t *new_bool_expr (bool bool_val);
+const expr_t *new_lbool_expr (bool lbool_val);
 
 /** Create a new itn constant expression node.
 

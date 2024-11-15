@@ -141,9 +141,12 @@ int yylex (void);
 %token	<type>		TYPE TYPE_NAME
 %token	<symbol>	ID
 %token	<expr>		VALUE
+%token              TRUE FALSE
+%token				ELLIPSIS
+%token				RESERVED
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
-%token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
+%token	WHILE DO RANGE ASSIGNOP NOT
 %token	RETURN
 
 %type	<type>		type standard_type
