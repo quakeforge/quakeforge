@@ -657,7 +657,7 @@ static spvop_t spv_ops[] = {
 
 	{"eq",     SpvOpIEqual,               SPV_INT,   SPV_INT   },
 	{"eq",     SpvOpFOrdEqual,            SPV_FLOAT, SPV_FLOAT },
-	{"eq",     SpvOpFOrdNotEqual,         SPV_FLOAT, SPV_FLOAT },
+	{"ne",     SpvOpFOrdNotEqual,         SPV_FLOAT, SPV_FLOAT },
 	{"ne",     SpvOpINotEqual,            SPV_INT,   SPV_INT   },
 	{"le",     SpvOpULessThanEqual,       SPV_UINT,  SPV_UINT  },
 	{"le",     SpvOpSLessThanEqual,       SPV_SINT,  SPV_SINT  },
@@ -733,8 +733,56 @@ spirv_find_op (const char *op_name, etype_t type1, etype_t type2)
 }
 
 static unsigned
+spirv_cast (const expr_t *e, spirvctx_t *ctx)
+{
+	auto src_type = get_type (e->expr.e1);
+	auto dst_type = e->expr.type;
+	SpvOp op = 0;
+	if (is_real (src_type)) {
+		if (is_unsigned (dst_type)) {
+			op = SpvOpConvertFToU;
+		} else if (is_signed (dst_type)) {
+			op = SpvOpConvertFToS;
+		} else if (is_real (dst_type)) {
+			op = SpvOpFConvert;
+		}
+	} else if (is_real (dst_type)) {
+		if (is_unsigned (src_type)) {
+			op = SpvOpConvertUToF;
+		} else if (is_signed (src_type)) {
+			op = SpvOpConvertSToF;
+		}
+	} else if (is_unsigned (dst_type)) {
+		if (type_size (base_type (dst_type))
+			!= type_size (base_type (src_type))) {
+			op = SpvOpUConvert;
+		}
+	} else if (is_signed (dst_type)) {
+		if (type_size (base_type (dst_type))
+			!= type_size (base_type (src_type))) {
+			op = SpvOpSConvert;
+		}
+	}
+	if (!op) {
+		internal_error (e, "unexpected type combination");
+	}
+
+	unsigned cid = spirv_emit_expr (e->expr.e1, ctx);
+	unsigned tid = type_id (dst_type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = cid;
+	return id;
+}
+
+static unsigned
 spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 {
+	if (e->expr.op == 'C') {
+		return spirv_cast (e, ctx);
+	}
 	auto op_name = convert_op (e->expr.op);
 	if (!op_name) {
 		if (e->expr.op > 32 && e->expr.op < 127) {
@@ -1075,6 +1123,25 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_cond (const expr_t *e, spirvctx_t *ctx)
+{
+	unsigned test_id = spirv_emit_expr (e->cond.test, ctx);
+	unsigned true_id = spirv_emit_expr (e->cond.true_expr, ctx);
+	unsigned false_id = spirv_emit_expr (e->cond.false_expr, ctx);
+
+	auto type = get_type (e);
+	unsigned tid = type_id (type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpSelect, 6, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = test_id;
+	INSN (insn, 4) = true_id;
+	INSN (insn, 5) = false_id;
+	return id;
+}
+
+static unsigned
 spirv_field (const expr_t *e, spirvctx_t *ctx)
 {
 	auto res_type = get_type (e);
@@ -1145,6 +1212,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
 		[ex_extend] = spirv_extend,
+		[ex_cond] = spirv_cond,
 		[ex_field] = spirv_field,
 	};
 

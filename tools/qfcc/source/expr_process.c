@@ -309,6 +309,15 @@ proc_return (const expr_t *expr)
 }
 
 static const expr_t *
+proc_cond (const expr_t *expr)
+{
+	auto test = expr_process (expr->cond.test);
+	auto true_expr = expr_process (expr->cond.true_expr);
+	auto false_expr = expr_process (expr->cond.false_expr);
+	return new_cond_expr (test, true_expr, false_expr);
+}
+
+static const expr_t *
 proc_decl (const expr_t *expr)
 {
 	expr_t *block = nullptr;
@@ -352,10 +361,9 @@ const expr_t *
 expr_process (const expr_t *expr)
 {
 	static process_f funcs[ex_count] = {
+		[ex_block] = proc_block,
 		[ex_expr] = proc_expr,
 		[ex_uexpr] = proc_uexpr,
-		[ex_field] = proc_field,
-		[ex_block] = proc_block,
 		[ex_symbol] = proc_symbol,
 		[ex_vector] = proc_vector,
 		[ex_value] = proc_value,
@@ -363,6 +371,8 @@ expr_process (const expr_t *expr)
 		[ex_assign] = proc_assign,
 		[ex_branch] = proc_branch,
 		[ex_return] = proc_return,
+		[ex_cond] = proc_cond,
+		[ex_field] = proc_field,
 		[ex_decl] = proc_decl,
 	};
 

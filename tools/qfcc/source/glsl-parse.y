@@ -595,7 +595,7 @@ conditional_expression
 	: logical_or_expression
 	| logical_or_expression '?' expression ':' assignment_expression
 		{
-			$$ = conditional_expr ($1, $3, $5);
+			$$ = new_cond_expr ($1, $3, $5);
 		}
 	;
 
