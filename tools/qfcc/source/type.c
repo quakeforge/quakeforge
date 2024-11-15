@@ -801,6 +801,12 @@ base_type (const type_t *vec_type)
 	if (!is_math (vec_type)) {
 		return nullptr;
 	}
+	if (is_bool (vec_type)) {
+		return &type_bool;
+	}
+	if (is_lbool (vec_type)) {
+		return &type_lbool;
+	}
 	// vec_type->type for quaternion and vector points back to itself
 	if (is_quaternion (vec_type) || is_vector (vec_type)) {
 		return &type_float;

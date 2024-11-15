@@ -304,6 +304,34 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	return id;
 }
 
+static void
+spirv_mirror_bool (const type_t *type, unsigned id, spirvctx_t *ctx)
+{
+	// This is rather hacky as spir-v supports only an abstract bool type,
+	// thus bool and lbool need to get the same type id
+	auto base = base_type (type);
+	int width = type_width (type);
+	// invert the size
+	if (is_bool (base)) {
+		base = &type_lbool;
+	} else {
+		base = &type_bool;
+	}
+	type = vector_type (base, width);
+	spirv_add_type_id (type, id, ctx);
+}
+
+static unsigned
+spirv_TypeBool (const type_t *type, spirvctx_t *ctx)
+{
+	auto globals = ctx->module->globals;
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpTypeBool, 2, globals);
+	INSN (insn, 1) = id;
+	spirv_mirror_bool (type, id, ctx);
+	return id;
+}
+
 static unsigned
 spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 {
@@ -367,6 +395,9 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		auto btype = base_type (type);
 		unsigned bid = type_id (btype, ctx);
 		id = spirv_TypeVector (bid, type_width (type), ctx);
+		if (is_boolean (type)) {
+			spirv_mirror_bool (type, id, ctx);
+		}
 	} else if (is_int (type)) {
 		id = spirv_TypeInt (32, true, ctx);
 	} else if (is_uint (type)) {
@@ -383,6 +414,8 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypePointer (type, ctx);
 	} else if (is_struct (type)) {
 		id = spirv_TypeStruct (type, ctx);
+	} else if (is_boolean (type)) {
+		id = spirv_TypeBool (type, ctx);
 	}
 	if (!id) {
 		dstring_t  *str = dstring_newstr ();
