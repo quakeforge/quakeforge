@@ -47,6 +47,7 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 #define INSN(i,o) D_var_o(int,(i),o)
 #define ADD_DATA(d,s) defspace_add_data((d), (s)->data, (s)->size)
@@ -946,11 +947,51 @@ spirv_temp (const expr_t *e, spirvctx_t *ctx)
 	return 0;//FIXME don't want
 }
 
+static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
+
+static unsigned
+spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
+{
+	auto base = base_type (value->type);
+	int width = type_width (value->type);
+	ex_value_t *comp_vals[width];
+	if (type_size (base) == 1) {
+		for (int i = 0; i < width; i++) {
+			comp_vals[i] = new_type_value (base, &value->raw_value + i);
+		}
+	} else if (type_size (base) == 2) {
+		for (int i = 0; i < width; i++) {
+			comp_vals[i] = new_type_value (base, &value->raw_value + i * 2);
+		}
+	} else {
+		internal_error (nullptr, "invalid vector component size");
+	}
+	unsigned comp_ids[width];
+	for (int i = 0; i < width; i++) {
+		auto e = new_value_expr (comp_vals[i], false);
+		comp_ids[i] = spirv_value (e, ctx);
+	}
+
+	auto space = ctx->module->globals;
+	int tid = type_id (value->type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + width, space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	for (int i = 0; i < width; i++) {
+		INSN (insn, 3 + i) = comp_ids[i];
+	}
+	return id;
+}
+
 static unsigned
 spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
 	if (!value->id) {
+		if (is_nonscalar (value->type) && type_cols (value->type) == 1) {
+			return spirv_vector_value (value, ctx);
+		}
 		unsigned tid = type_id (value->type, ctx);
 		unsigned op = SpvOpConstant;
 		int val_size = 1;

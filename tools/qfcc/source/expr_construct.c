@@ -77,6 +77,10 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 			if (!ptype) {
 				continue;
 			}
+			if (is_reference (ptype)) {
+				pexpr = pointer_deref (pexpr);
+				ptype = dereference_type (ptype);
+			}
 			if (!is_math (ptype)) {
 				components[c++] = error (pexpr, "invalid type for conversion");
 				continue;
