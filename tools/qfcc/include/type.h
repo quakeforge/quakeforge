@@ -233,6 +233,8 @@ bool is_pointer (const type_t *type) __attribute__((pure));
 bool is_reference (const type_t *type) __attribute__((pure));
 bool is_enum (const type_t *type) __attribute__((pure));
 bool is_bool (const type_t *type) __attribute__((pure));
+bool is_signed (const type_t *type) __attribute__((pure));
+bool is_unsigned (const type_t *type) __attribute__((pure));
 bool is_integral (const type_t *type) __attribute__((pure));
 bool is_real (const type_t *type) __attribute__((pure));
 bool is_scalar (const type_t *type) __attribute__((pure));

@@ -1380,13 +1380,30 @@ is_bool (const type_t *type)
 }
 
 bool
-is_integral (const type_t *type)
+is_signed (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_int (type) || is_uint (type) || is_short (type))
-		return 1;
-	if (is_long (type) || is_ulong (type) || is_ushort (type))
-		return 1;
+	if (is_int (type) || is_long (type) || is_short (type)) {
+		return true;
+	}
+	return false;
+}
+
+bool
+is_unsigned (const type_t *type)
+{
+	type = unalias_type (type);
+	if (is_uint (type) || is_ulong (type) || is_ushort (type)) {
+		return true;
+	}
+	return false;
+}
+
+bool
+is_integral (const type_t *type)
+{
+	if (is_signed (type) || is_unsigned (type))
+		return true;
 	return is_enum (type);
 }
 
