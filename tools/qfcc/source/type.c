@@ -1336,50 +1336,50 @@ encode_type (dstring_t *encoding, const type_t *type)
 }
 
 #define EV_TYPE(t) \
-int is_##t (const type_t *type) \
+bool is_##t (const type_t *type) \
 { \
 	type = unalias_type (type); \
 	if (type->meta != ty_basic && type->meta != ty_algebra) { \
-		return 0; \
+		return false; \
 	} \
 	return type->type == ev_##t; \
 }
 #include "QF/progs/pr_type_names.h"
 
-int
+bool
 is_pointer (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_ptr (type) && !type->fldptr.deref;
 }
 
-int
+bool
 is_reference (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_ptr (type) && type->fldptr.deref;
 }
 
-int
+bool
 is_enum (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_enum)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_bool (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->meta != ty_bool) {
-		return 0;
+		return false;
 	}
 	return type->type == ev_int || type->type == ev_long;
 }
 
-int
+bool
 is_integral (const type_t *type)
 {
 	type = unalias_type (type);
@@ -1390,163 +1390,163 @@ is_integral (const type_t *type)
 	return is_enum (type);
 }
 
-int
+bool
 is_real (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_float (type) || is_double (type);
 }
 
-int
+bool
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
 	if (is_short (type) || is_ushort (type)) {
 		// shorts have width 0
-		return 1;
+		return true;
 	}
 	if (type->width != 1) {
-		return 0;
+		return false;
 	}
 	return is_real (type) || is_integral (type);
 }
 
-int
+bool
 is_matrix (const type_t *type)
 {
 	if (!type || type->meta != ty_basic) {
-		return 0;
+		return false;
 	}
 	return type->columns > 1;
 }
 
-int
+bool
 is_nonscalar (const type_t *type)
 {
 	type = unalias_type (type);
 	if (is_vector (type) || is_quaternion (type)) {
-		return 1;
+		return true;
 	}
 	if (type->width < 2) {
-		return 0;
+		return false;
 	}
 	return is_real (type) || is_integral (type);
 }
 
-int
+bool
 is_math (const type_t *type)
 {
 	type = unalias_type (type);
 
 	if (is_vector (type) || is_quaternion (type)) {
-		return 1;
+		return true;
 	}
 	if (is_algebra (type)) {
-		return 1;
+		return true;
 	}
 	return is_scalar (type) || is_nonscalar (type);
 }
 
-int
+bool
 is_struct (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_struct)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_handle (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->meta == ty_handle)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_union (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_union)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_array (const type_t *type)
 {
 	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_array)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 is_structural (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_struct (type) || is_union (type) || is_array (type);
 }
 
-int
+bool
 type_compatible (const type_t *dst, const type_t *src)
 {
 	if (!dst || !src) {
-		return 0;
+		return false;
 	}
 
 	// same type
 	if (dst == src) {
-		return 1;
+		return true;
 	}
 	if (is_field (dst) && is_field (src)) {
-		return 1;
+		return true;
 	}
 	if (is_func (dst) && is_func (src)) {
-		return 1;
+		return true;
 	}
 	if (is_pointer (dst) && is_pointer (src)) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 type_assignable (const type_t *dst, const type_t *src)
 {
 	if (!dst || !src) {
-		return 0;
+		return false;
 	}
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
 	// same type
 	if (dst == src)
-		return 1;
+		return true;
 	// any field = any field
 	if (dst->type == ev_field && src->type == ev_field)
-		return 1;
+		return true;
 	// pointer = array
 	if (is_pointer (dst) && is_array (src)) {
 		if (is_void (dst->fldptr.type)
 			|| dst->fldptr.type == src->array.type)
-			return 1;
-		return 0;
+			return true;
+		return false;
 	}
 	if (!is_pointer (dst) || !is_pointer (src)) {
 		if (is_algebra (dst) || is_algebra (src)) {
 			return algebra_type_assignable (dst, src);
 		}
 		if (is_scalar (dst) && is_scalar (src)) {
-			return 1;
+			return true;
 		}
 		if (is_nonscalar (dst) && is_nonscalar (src)
 			&& type_width (dst) == type_width (src)) {
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
 	// pointer = pointer
@@ -1560,54 +1560,54 @@ type_assignable (const type_t *dst, const type_t *src)
 	dst = dst->fldptr.type;
 	src = src->fldptr.type;
 	if (dst == src) {
-		return 1;
+		return true;
 	}
 	if (is_void (dst))
-		return 1;
+		return true;
 	if (is_void (src))
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
-int
+bool
 type_promotes (const type_t *dst, const type_t *src)
 {
 	if (!dst || !src) {
-		return 0;
+		return false;
 	}
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
 	if (type_rows (dst) != type_rows (src)
 		|| type_cols (dst) != type_cols (src)) {
-		return 0;
+		return false;
 	}
 	// nothing promotes to int
 	if (is_int (dst)) {
-		return 0;
+		return true;
 	}
 	if (is_uint (dst) && is_int (src)) {
-		return 1;
+		return true;
 	}
 	if (is_long (dst) && (is_int (src) || is_uint (src))) {
-		return 1;
+		return true;
 	}
 	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src))) {
-		return 1;
+		return true;
 	}
 	if (is_float (dst) && (is_int (src) || is_uint (src))) {
-		return 1;
+		return true;
 	}
 	//XXX what to do with (u)long<->float?
 	if (is_double (dst)
 		&& (is_int (src) || is_uint (src) || is_long (src) || is_ulong (src)
 			|| is_float (src))) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
-int
+bool
 type_same (const type_t *dst, const type_t *src)
 {
 	dst = unalias_type (dst);
