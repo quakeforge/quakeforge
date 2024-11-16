@@ -1586,7 +1586,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	symtab_addsymbol (symtab, sym);
 	if (symtab->type == stab_local) {
 		if (init) {
-			if (is_constexpr (init)) {
+			if (!block && is_constexpr (init)) {
 			} else if (block) {
 				auto r = pointer_deref (new_symbol_expr (sym));
 				auto e = assign_expr (r, init);

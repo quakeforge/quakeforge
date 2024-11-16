@@ -165,10 +165,8 @@ proc_label (const expr_t *expr)
 static const expr_t *
 proc_block (const expr_t *expr)
 {
-	if (expr->block.scope) {
-		expr->block.scope->parent = current_symtab;
-		current_symtab = expr->block.scope;
-	}
+	auto old_scope = current_symtab;
+	current_symtab = expr->block.scope;
 	int count = list_count (&expr->block.list);
 	int num_out = 0;
 	const expr_t *result = nullptr;
@@ -191,9 +189,8 @@ proc_block (const expr_t *expr)
 	block->block.scope = expr->block.scope;
 	block->block.result = result;
 	block->block.is_call = expr->block.is_call;
-	if (expr->block.scope) {
-		current_symtab = current_symtab->parent;
-	}
+
+	current_symtab = old_scope;
 	return block;
 }
 

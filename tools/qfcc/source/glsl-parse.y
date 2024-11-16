@@ -186,7 +186,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <expr>    condition
 %type <expr>    compound_statement_no_new_scope compound_statement
 %type <expr>    statement statement_no_new_scope statement_list
-%type <expr>    new_block new_scope
+%type <mut_expr> new_block new_scope
 %type <expr>    simple_statement expression_statement
 %type <expr>    declaration_statement selection_statement
 %type <expr>    switch_statement switch_statement_list case_label
@@ -1160,6 +1160,7 @@ new_block
 	: /* empty */
 		{
 			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
 			$$ = block;
 		}
 	;
@@ -1266,7 +1267,7 @@ case_label
 
 iteration_statement
 	: WHILE new_scope break_label continue_label '(' condition ')'
-			  statement_no_new_scope
+			  { $<mut_expr>$ = $new_scope; } statement_no_new_scope
 		{
 			$$ = new_loop_expr (false, false,
 								$condition, $statement_no_new_scope,
@@ -1286,7 +1287,7 @@ iteration_statement
 	| FOR new_scope break_label continue_label
 //			'(' for_init_statement for_rest_statement ')'
 			'(' for_init_statement conditionopt ';' expressionopt ')'
-			statement_no_new_scope
+			{ $<mut_expr>$ = $new_scope; } statement_no_new_scope
 		{
 			auto loop = new_loop_expr (false, false,
 									   $conditionopt, $statement_no_new_scope,
