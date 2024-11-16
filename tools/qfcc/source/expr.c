@@ -63,6 +63,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -515,6 +516,7 @@ new_label_expr (void)
 
 	l->type = ex_label;
 	l->label.name = new_label_name ();
+	l->label.id = current_target.label_id++;
 	return l;
 }
 

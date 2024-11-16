@@ -59,8 +59,15 @@ typedef struct spirvctx_s {
 	defspace_t *code_space;
 
 	struct DARRAY_TYPE (unsigned) type_ids;
+	struct DARRAY_TYPE (unsigned) label_ids;
 	unsigned id;
 } spirvctx_t;
+
+static unsigned
+spirv_id (spirvctx_t *ctx)
+{
+	return ++ctx->id;
+}
 
 static unsigned
 spirv_type_id (const type_t *type, spirvctx_t *ctx)
@@ -84,6 +91,42 @@ spirv_add_type_id (const type_t *type, unsigned id, spirvctx_t *ctx)
 	ctx->type_ids.a[type->id] = id;
 }
 
+static unsigned
+spirv_label_id (const ex_label_t *label, spirvctx_t *ctx)
+{
+	if (label->id < ctx->label_ids.size && ctx->label_ids.a[label->id]) {
+		return ctx->label_ids.a[label->id];
+	}
+	unsigned id = spirv_id (ctx);
+	if (label->id >= ctx->label_ids.size) {
+		size_t base = ctx->label_ids.size;
+		DARRAY_RESIZE (&ctx->label_ids, label->id + 1);
+		while (base < label->id + 1) {
+			ctx->label_ids.a[base++] = 0;
+		}
+	}
+	ctx->label_ids.a[label->id] = id;
+	return id;
+}
+
+static bool
+is_block_terminated (defspace_t *code_space)
+{
+	def_t *last_insn = nullptr;
+	if (code_space->def_tail != &code_space->defs) {
+		last_insn = (def_t *) code_space->def_tail;
+	}
+	if (last_insn
+		&& ((INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpReturn
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpReturnValue
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpUnreachable
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpBranchConditional
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpBranch)) {
+		return true;
+	}
+	return false;
+}
+
 static def_t *
 spirv_new_insn (int op, int size, defspace_t *space)
 {
@@ -104,12 +147,6 @@ spirv_str_insn (int op, int offs, int extra, const char *str, defspace_t *space)
 	INSN (insn, str_size - 1) = 0;
 	memcpy (&INSN (insn, offs), str, len);
 	return insn;
-}
-
-static unsigned
-spirv_id (spirvctx_t *ctx)
-{
-	return ++ctx->id;
 }
 
 static void
@@ -462,6 +499,14 @@ spirv_LoopMerge (unsigned merge, unsigned cont, spirvctx_t *ctx)
 }
 
 static void
+spirv_SelectionMerge (unsigned merge, spirvctx_t *ctx)
+{
+	auto insn = spirv_new_insn (SpvOpSelectionMerge, 3, ctx->code_space);
+	INSN (insn, 1) = merge;
+	INSN (insn, 2) = SpvSelectionControlMaskNone;
+}
+
+static void
 spirv_Branch (unsigned label, spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpBranch, 2, ctx->code_space);
@@ -483,13 +528,13 @@ spirv_SplitBlock (spirvctx_t *ctx)
 }
 
 static void
-spirv_BranchConditional (unsigned test, unsigned true_label,
+spirv_BranchConditional (bool not, unsigned test, unsigned true_label,
 						 unsigned false_label, spirvctx_t *ctx)
 {
 	auto insn = spirv_new_insn (SpvOpBranchConditional, 4, ctx->code_space);
 	INSN (insn, 1) = test;
-	INSN (insn, 2) = true_label;
-	INSN (insn, 3) = false_label;
+	INSN (insn, 2) = not ? false_label : true_label;
+	INSN (insn, 3) = not ? true_label : false_label;
 }
 
 static void
@@ -639,14 +684,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	if (func->exprs) {
 		spirv_emit_expr (func->exprs, ctx);
 	}
-	def_t *last_insn = nullptr;
-	if (ctx->code_space->def_tail != &ctx->code_space->defs) {
-		last_insn = (def_t *) ctx->code_space->def_tail;
-	}
-	if (!last_insn
-		|| ((INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpReturn
-			&& (INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpReturnValue
-			&& (INSN(last_insn, 0) & SpvOpCodeMask) != SpvOpUnreachable)) {
+	if (!is_block_terminated (ctx->code_space)) {
 		if (is_void (ret_type)) {
 			spirv_new_insn (SpvOpReturn, 1, ctx->code_space);
 		} else {
@@ -1161,13 +1199,24 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_jump (const expr_t *e, spirvctx_t *ctx)
+{
+	auto target_label = &e->branch.target->label;
+	unsigned target = spirv_label_id (target_label, ctx);
+	spirv_Branch (target, ctx);
+	return 0;
+}
+
+static unsigned
 spirv_branch (const expr_t *e, spirvctx_t *ctx)
 {
 	if (e->branch.type == pr_branch_call) {
 		return spirv_call (e, ctx);
 	}
-	//FIXME
-	return 1;
+	if (e->branch.type == pr_branch_jump) {
+		return spirv_jump (e, ctx);
+	}
+	internal_error (e, "unexpected branch");
 }
 
 static unsigned
@@ -1324,35 +1373,26 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_loop (const expr_t *e, spirvctx_t *ctx)
 {
-	unsigned loop = spirv_id (ctx);
-	unsigned merge = spirv_id (ctx);
-	unsigned cont = spirv_id (ctx);
-		spirv_Branch (loop, ctx);
-		spirv_LabelId (loop, ctx);
+	auto break_label = &e->loop.break_label->label;
+	auto continue_label = &e->loop.continue_label->label;
+	unsigned merge = spirv_label_id (break_label, ctx);
+	unsigned cont = spirv_label_id (continue_label, ctx);
 	if (e->loop.do_while) {
+		unsigned loop = spirv_SplitBlock (ctx);
 		spirv_LoopMerge (merge, cont, ctx);
 		spirv_SplitBlock (ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
 		unsigned test = spirv_emit_expr (e->loop.test, ctx);
-		if (e->loop.not) {
-			spirv_BranchConditional (test, merge, loop, ctx);
-		} else {
-			spirv_BranchConditional (test, loop, merge, ctx);
-		}
+		spirv_BranchConditional (e->loop.not, test, merge, loop, ctx);
 		spirv_LabelId (merge, ctx);
 	} else {
-		spirv_Branch (loop, ctx);
-		spirv_LabelId (loop, ctx);
+		unsigned loop = spirv_SplitBlock (ctx);
 		spirv_LoopMerge (merge, cont, ctx);
 		spirv_SplitBlock (ctx);
 		unsigned body = spirv_id (ctx);
 		unsigned test = spirv_emit_expr (e->loop.test, ctx);
-		if (e->loop.not) {
-			spirv_BranchConditional (test, merge, body, ctx);
-		} else {
-			spirv_BranchConditional (test, body, merge, ctx);
-		}
+		spirv_BranchConditional (e->loop.not, test, body, merge, ctx);
 		spirv_LabelId (body, ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
@@ -1365,6 +1405,28 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_select (const expr_t *e, spirvctx_t *ctx)
 {
+	unsigned merge = spirv_id (ctx);
+	unsigned true_label = spirv_id (ctx);
+	unsigned false_label = merge;
+	if (e->select.false_body) {
+		false_label = spirv_id (ctx);
+	}
+	unsigned test = spirv_emit_expr (e->select.test, ctx);
+	spirv_SelectionMerge (merge, ctx);
+	spirv_BranchConditional (e->select.not, test, true_label, false_label, ctx);
+	spirv_LabelId (true_label, ctx);
+	spirv_emit_expr (e->select.true_body, ctx);
+	if (!is_block_terminated (ctx->code_space)) {
+		spirv_Branch (merge, ctx);
+	}
+	if (e->select.false_body) {
+		spirv_LabelId (false_label, ctx);
+		spirv_emit_expr (e->select.false_body, ctx);
+		if (!is_block_terminated (ctx->code_space)) {
+			spirv_Branch (merge, ctx);
+		}
+	}
+	spirv_LabelId (merge, ctx);
 	return 0;
 }
 
@@ -1423,6 +1485,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.code_space = defspace_new (ds_backed),
 		.decl_space = defspace_new (ds_backed),
 		.type_ids = DARRAY_STATIC_INIT (64),
+		.label_ids = DARRAY_STATIC_INIT (64),
 		.id = 0,
 	};
 	auto space = defspace_new (ds_backed);

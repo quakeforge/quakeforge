@@ -42,6 +42,8 @@ typedef struct {
 	void      (*declare_sym) (specifier_t spec, const expr_t *init,
 							  symtab_t *symtab, expr_t *block);
 	void      (*vararg_int) (const expr_t *e);
+
+	unsigned    label_id;
 } target_t;
 
 extern target_t current_target;
