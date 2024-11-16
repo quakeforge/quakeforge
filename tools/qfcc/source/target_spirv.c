@@ -1327,9 +1327,9 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 	unsigned loop = spirv_id (ctx);
 	unsigned merge = spirv_id (ctx);
 	unsigned cont = spirv_id (ctx);
-	if (e->loop.body_first) {
 		spirv_Branch (loop, ctx);
 		spirv_LabelId (loop, ctx);
+	if (e->loop.do_while) {
 		spirv_LoopMerge (merge, cont, ctx);
 		spirv_SplitBlock (ctx);
 		spirv_emit_expr (e->loop.body, ctx);

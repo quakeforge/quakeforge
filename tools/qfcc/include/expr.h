@@ -354,7 +354,7 @@ typedef struct {
 	const expr_t *body;
 	const expr_t *break_label;
 	const expr_t *continue_label;
-	bool        body_first;		///< true for do-while loops
+	bool        do_while;
 	bool        not;
 } ex_loop_t;
 
@@ -947,7 +947,7 @@ expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
 expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);
 expr_t *append_decl_list (expr_t *decl, const expr_t *list);
 
-expr_t *new_loop_expr (bool not, bool body_first,
+expr_t *new_loop_expr (bool not, bool do_while,
 					   const expr_t *test, const expr_t *body,
 					   const expr_t *break_label, const expr_t *continue_label);
 

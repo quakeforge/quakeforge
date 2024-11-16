@@ -367,10 +367,10 @@ proc_loop (const expr_t *expr)
 	auto body = expr_process (expr->loop.body);
 	auto break_label = expr->loop.break_label;
 	auto continue_label = expr->loop.continue_label;
-	bool body_first = expr->loop.body_first;
+	bool do_while = expr->loop.do_while;
 	bool not = expr->loop.not;
 	scoped_src_loc (expr);
-	return new_loop_expr (not, body_first, test, body,
+	return new_loop_expr (not, do_while, test, body,
 						  break_label, continue_label);
 }
 

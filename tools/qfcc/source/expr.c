@@ -2220,7 +2220,7 @@ new_decl_expr (specifier_t spec, symtab_t *symtab)
 }
 
 expr_t *
-new_loop_expr (bool not, bool body_first,
+new_loop_expr (bool not, bool do_while,
 			   const expr_t *test, const expr_t *body,
 			   const expr_t *break_label, const expr_t *continue_label)
 {
@@ -2231,7 +2231,7 @@ new_loop_expr (bool not, bool body_first,
 		.body = body,
 		.break_label = break_label,
 		.continue_label = continue_label,
-		.body_first = body_first,
+		.do_while = do_while,
 		.not = not,
 	};
 	return loop;
