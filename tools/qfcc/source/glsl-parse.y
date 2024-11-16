@@ -675,12 +675,12 @@ declaration
 		}
 	| type_qualifier new_identifier ';'
 		{
-			auto decl = new_decl_expr ($type_qualifier);
+			auto decl = new_decl_expr ($type_qualifier, current_symtab);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| type_qualifier new_identifier identifier_list ';'
 		{
-			auto decl = new_decl_expr ($type_qualifier);
+			auto decl = new_decl_expr ($type_qualifier, current_symtab);
 			append_decl (decl, $new_identifier, nullptr);
 			$$ = append_decl_list (decl, $identifier_list);
 		}
@@ -832,11 +832,11 @@ init_declarator_list
 single_declaration
 	: fully_specified_type
 		{
-			$$ = new_decl_expr ($fully_specified_type);
+			$$ = new_decl_expr ($fully_specified_type, current_symtab);
 		}
 	| fully_specified_type new_identifier
 		{
-			auto decl = new_decl_expr ($fully_specified_type);
+			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| fully_specified_type new_identifier array_specifier
@@ -844,7 +844,7 @@ single_declaration
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
-			auto decl = new_decl_expr (spec);
+			auto decl = new_decl_expr (spec, current_symtab);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| fully_specified_type new_identifier array_specifier '=' initializer
@@ -852,12 +852,12 @@ single_declaration
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
-			auto decl = new_decl_expr (spec);
+			auto decl = new_decl_expr (spec, current_symtab);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	| fully_specified_type new_identifier '=' initializer
 		{
-			auto decl = new_decl_expr ($fully_specified_type);
+			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
@@ -1132,7 +1132,7 @@ compound_statement
 	| '{' new_scope statement_list '}'
 		{
 			$$ = $3;
-			current_symtab = $2->block.scope->parent;
+			current_symtab = $new_scope->block.scope->parent;
 		}
 	;
 
@@ -1150,7 +1150,7 @@ new_scope
 	: /* empty */
 		{
 			auto block = new_block_expr (nullptr);
-			block->block.scope = new_symtab (nullptr, stab_local);
+			block->block.scope = new_symtab (current_symtab, stab_local);
 			current_symtab = block->block.scope;
 			$$ = block;
 		}
@@ -1215,7 +1215,7 @@ condition
 	: expression
 	| fully_specified_type new_identifier '=' initializer
 		{
-			auto decl = new_decl_expr ($fully_specified_type);
+			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
@@ -1267,13 +1267,15 @@ case_label
 	;
 
 iteration_statement
-	: WHILE break_label continue_label '(' condition ')' statement_no_new_scope
+	: WHILE new_scope break_label continue_label '(' condition ')'
+			  statement_no_new_scope
 		{
 			$$ = build_while_statement (false, $continue_label,
 										$statement_no_new_scope, break_label,
 										continue_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
+			current_symtab = $new_scope->block.scope->parent;
 		}
 	| DO break_label continue_label statement WHILE '(' expression ')' ';'
 		{
@@ -1282,7 +1284,7 @@ iteration_statement
 			break_label = $break_label;
 			continue_label = $continue_label;
 		}
-	| FOR break_label continue_label
+	| FOR new_scope break_label continue_label
 //			'(' for_init_statement for_rest_statement ')'
 			'(' for_init_statement conditionopt ';' expressionopt ')'
 			statement_no_new_scope
@@ -1296,6 +1298,7 @@ iteration_statement
 									  break_label, continue_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
+			current_symtab = $new_scope->block.scope->parent;
 		}
 	;
 

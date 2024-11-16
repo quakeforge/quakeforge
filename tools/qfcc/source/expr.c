@@ -2204,12 +2204,13 @@ new_array_expr (const expr_t *base, const expr_t *index)
 }
 
 expr_t *
-new_decl_expr (specifier_t spec)
+new_decl_expr (specifier_t spec, symtab_t *symtab)
 {
 	auto decl = new_expr ();
 	decl->type = ex_decl;
 	decl->decl = (ex_decl_t) {
 		.spec = spec,
+		.symtab = symtab,
 	};
 	return decl;
 }

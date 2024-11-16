@@ -351,8 +351,8 @@ proc_decl (const expr_t *expr)
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
 		}
-		current_language.parse_declaration (spec, sym, init, current_symtab,
-											block);
+		auto symtab = expr->decl.symtab;
+		current_language.parse_declaration (spec, sym, init, symtab, block);
 	}
 	return block;
 }
