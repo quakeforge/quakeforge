@@ -145,6 +145,8 @@ get_type (const expr_t *e)
 			return nullptr;
 		case ex_return:
 		case ex_decl:
+		case ex_loop:
+		case ex_select:
 			internal_error (e, "unexpected expression type");
 		case ex_label:
 		case ex_compound:
@@ -996,7 +998,7 @@ new_ushort_expr (unsigned short ushort_val)
 bool
 is_error (const expr_t *e)
 {
-	return e->type == ex_error;
+	return e && e->type == ex_error;
 }
 
 bool
@@ -1979,6 +1981,8 @@ has_function_call (const expr_t *e)
 		case ex_args:
 		case ex_type:
 		case ex_decl:
+		case ex_loop:
+		case ex_select:
 			return false;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {
@@ -2213,6 +2217,44 @@ new_decl_expr (specifier_t spec, symtab_t *symtab)
 		.symtab = symtab,
 	};
 	return decl;
+}
+
+expr_t *
+new_loop_expr (bool not, bool body_first,
+			   const expr_t *test, const expr_t *body,
+			   const expr_t *break_label, const expr_t *continue_label)
+{
+	auto loop = new_expr ();
+	loop->type = ex_loop;
+	loop->loop = (ex_loop_t) {
+		.test = test,
+		.body = body,
+		.break_label = break_label,
+		.continue_label = continue_label,
+		.body_first = body_first,
+		.not = not,
+	};
+	return loop;
+}
+
+expr_t *
+new_select_expr (bool not, const expr_t *test,
+				 const expr_t *true_body,
+				 const expr_t *els,
+				 const expr_t *false_body)
+{
+	auto select = new_expr ();
+	select->type = ex_select;
+	select->select = (ex_select_t) {
+		.test = test,
+		.true_body = true_body,
+		.false_body = false_body,
+		.not = not,
+	};
+	if (els) {
+		select->select.els = els->loc;
+	}
+	return select;
 }
 
 expr_t *
@@ -2485,7 +2527,8 @@ address_expr (const expr_t *e1, const type_t *t)
 }
 
 const expr_t *
-build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t *els, const expr_t *s2)
+build_if_statement (bool not, const expr_t *test, const expr_t *s1,
+					const expr_t *els, const expr_t *s2)
 {
 	expr_t     *if_expr;
 	expr_t     *tl = new_label_expr ();
@@ -2540,7 +2583,7 @@ build_if_statement (int not, const expr_t *test, const expr_t *s1, const expr_t 
 }
 
 const expr_t *
-build_while_statement (int not, const expr_t *test, const expr_t *statement,
+build_while_statement (bool not, const expr_t *test, const expr_t *statement,
 					   const expr_t *break_label, const expr_t *continue_label)
 {
 	const expr_t *l1 = new_label_expr ();
@@ -2576,7 +2619,7 @@ build_while_statement (int not, const expr_t *test, const expr_t *statement,
 }
 
 const expr_t *
-build_do_while_statement (const expr_t *statement, int not, const expr_t *test,
+build_do_while_statement (const expr_t *statement, bool not, const expr_t *test,
 						  const expr_t *break_label,
 						  const expr_t *continue_label)
 {

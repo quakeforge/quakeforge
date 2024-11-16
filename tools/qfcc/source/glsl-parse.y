@@ -1186,15 +1186,13 @@ expression_statement
 
 selection_statement
 //	: IF '(' expression ')' selection_rest_statement
-	: IF '(' expression ')' statement[true] %prec IFX
+	: IF '(' expression[test] ')' statement[true] %prec IFX
 		{
-			$$ = build_if_statement (false, $expression,
-									 $true, nullptr, nullptr);
+			$$ = new_select_expr (false, $test, $true, nullptr, nullptr);
 		}
-	| IF '(' expression ')' statement[true] else statement[false]
+	| IF '(' expression[test] ')' statement[true] else statement[false]
 		{
-			$$ = build_if_statement (false, $expression,
-									 $true, $else, $false);
+			$$ = new_select_expr (false, $test, $true, $else, $false);
 		}
 	;
 
@@ -1270,17 +1268,18 @@ iteration_statement
 	: WHILE new_scope break_label continue_label '(' condition ')'
 			  statement_no_new_scope
 		{
-			$$ = build_while_statement (false, $continue_label,
-										$statement_no_new_scope, break_label,
-										continue_label);
+			$$ = new_loop_expr (false, false,
+								$condition, $statement_no_new_scope,
+								break_label, continue_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
 			current_symtab = $new_scope->block.scope->parent;
 		}
 	| DO break_label continue_label statement WHILE '(' expression ')' ';'
 		{
-			$$ = build_do_while_statement ($statement, false, $expression,
-										   break_label, continue_label);
+			$$ = new_loop_expr (false, true,
+								$expression, $statement,
+								break_label, continue_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
 		}
@@ -1289,13 +1288,15 @@ iteration_statement
 			'(' for_init_statement conditionopt ';' expressionopt ')'
 			statement_no_new_scope
 		{
+			auto loop = new_loop_expr (false, false,
+									   $conditionopt, $statement_no_new_scope,
+									   break_label, continue_label);
+			auto block = new_block_expr (nullptr);
 			if ($for_init_statement) {
-				$for_init_statement = build_block_expr ((expr_t *) $for_init_statement,
-														false);
+				append_expr (block, $for_init_statement);
 			}
-			$$ = build_for_statement ($for_init_statement, $conditionopt,
-									  $expressionopt, $statement_no_new_scope,
-									  break_label, continue_label);
+			$$ = append_expr (block, loop);
+
 			break_label = $break_label;
 			continue_label = $continue_label;
 			current_symtab = $new_scope->block.scope->parent;

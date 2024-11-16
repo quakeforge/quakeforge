@@ -157,6 +157,12 @@ proc_field (const expr_t *expr)
 }
 
 static const expr_t *
+proc_label (const expr_t *expr)
+{
+	return expr;
+}
+
+static const expr_t *
 proc_block (const expr_t *expr)
 {
 	if (expr->block.scope) {
@@ -357,10 +363,41 @@ proc_decl (const expr_t *expr)
 	return block;
 }
 
+static const expr_t *
+proc_loop (const expr_t *expr)
+{
+	auto test = expr_process (expr->loop.test);
+	auto body = expr_process (expr->loop.body);
+	auto break_label = expr->loop.break_label;
+	auto continue_label = expr->loop.continue_label;
+	bool body_first = expr->loop.body_first;
+	bool not = expr->loop.not;
+	scoped_src_loc (expr);
+	return new_loop_expr (not, body_first, test, body,
+						  break_label, continue_label);
+}
+
+static const expr_t *
+proc_select (const expr_t *expr)
+{
+	auto test = expr_process (expr->select.test);
+	auto true_body = expr_process (expr->select.true_body);
+	auto false_body = expr_process (expr->select.false_body);
+	scoped_src_loc (expr);
+	auto select = new_select_expr (expr->select.not, test, true_body, nullptr,
+								   false_body);
+	select->select.els = expr->select.els;
+	return select;
+}
+
 const expr_t *
 expr_process (const expr_t *expr)
 {
+	if (!expr) {
+		return expr;
+	}
 	static process_f funcs[ex_count] = {
+		[ex_label] = proc_label,
 		[ex_block] = proc_block,
 		[ex_expr] = proc_expr,
 		[ex_uexpr] = proc_uexpr,
@@ -374,6 +411,8 @@ expr_process (const expr_t *expr)
 		[ex_cond] = proc_cond,
 		[ex_field] = proc_field,
 		[ex_decl] = proc_decl,
+		[ex_loop] = proc_loop,
+		[ex_select] = proc_select,
 	};
 
 	if (expr->type >= ex_count) {

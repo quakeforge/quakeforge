@@ -133,6 +133,8 @@ is_lvalue (const expr_t *expr)
 		case ex_type:
 		case ex_incop:
 		case ex_decl:
+		case ex_loop:
+		case ex_select:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

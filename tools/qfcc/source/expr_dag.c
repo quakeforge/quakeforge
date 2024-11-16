@@ -80,6 +80,8 @@ edag_add_expr (const expr_t *expr)
 			case ex_type:
 			case ex_incop:
 			case ex_decl:
+			case ex_loop:
+			case ex_select:
 				// these are never put in the dag
 				return expr;
 			case ex_list:

@@ -74,6 +74,8 @@ EX_EXPR(cond)		///< ?: conditional expression (::ex_cond_t)
 EX_EXPR(field)		///< field reference expression (::ex_field_t)
 EX_EXPR(array)		///< array index expression (::ex_array_t)
 EX_EXPR(decl)		///< delcaration expression (::ex_array_t)
+EX_EXPR(loop)		///< loop construct expression (::ex_loop_t)
+EX_EXPR(select)		///< select construct expression (::ex_select_t)
 
 #undef EX_EXPR
 

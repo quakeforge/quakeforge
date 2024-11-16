@@ -349,6 +349,23 @@ typedef struct {
 	symtab_t   *symtab;
 } ex_decl_t;
 
+typedef struct {
+	const expr_t *test;
+	const expr_t *body;
+	const expr_t *break_label;
+	const expr_t *continue_label;
+	bool        body_first;		///< true for do-while loops
+	bool        not;
+} ex_loop_t;
+
+typedef struct {
+	const expr_t *test;
+	const expr_t *true_body;
+	const expr_t *false_body;
+	rua_loc_t   els;
+	bool        not;
+} ex_select_t;
+
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
@@ -395,6 +412,8 @@ typedef struct expr_s {
 		ex_field_t field;				///< field reference expression
 		ex_array_t array;				///< array index expression
 		ex_decl_t decl;					///< variable declaration expression
+		ex_loop_t loop;					///< loop construct expression
+		ex_select_t select;				///< selection construct expression
 	};
 } expr_t;
 
@@ -928,6 +947,14 @@ expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
 expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);
 expr_t *append_decl_list (expr_t *decl, const expr_t *list);
 
+expr_t *new_loop_expr (bool not, bool body_first,
+					   const expr_t *test, const expr_t *body,
+					   const expr_t *break_label, const expr_t *continue_label);
+
+expr_t *new_select_expr (bool not, const expr_t *test,
+						 const expr_t *true_body,
+						 const expr_t *els, const expr_t *false_body);
+
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
 
@@ -992,13 +1019,14 @@ const expr_t *deref_pointer_expr (const expr_t *pointer);
 const expr_t *pointer_deref (const expr_t *pointer);
 const expr_t *offset_pointer_expr (const expr_t *pointer, const expr_t *offset);
 const expr_t *address_expr (const expr_t *e1, const type_t *t);
-const expr_t *build_if_statement (int not, const expr_t *test, const expr_t *s1,
-								  const expr_t *els, const expr_t *s2);
-const expr_t *build_while_statement (int not, const expr_t *test,
+const expr_t *build_if_statement (bool not, const expr_t *test,
+								  const expr_t *s1, const expr_t *els,
+								  const expr_t *s2);
+const expr_t *build_while_statement (bool not, const expr_t *test,
 								     const expr_t *statement,
 								     const expr_t *break_label,
 								     const expr_t *continue_label);
-const expr_t *build_do_while_statement (const expr_t *statement, int not,
+const expr_t *build_do_while_statement (const expr_t *statement, bool not,
 										const expr_t *test,
 										const expr_t *break_label,
 										const expr_t *continue_label);
