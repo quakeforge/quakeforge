@@ -1729,6 +1729,38 @@ type_size (const type_t *type)
 }
 
 int
+type_count (const type_t *type)
+{
+	switch (type->meta) {
+		case ty_handle:
+		case ty_bool:
+		case ty_basic:
+		case ty_enum:
+			if (type->type != ev_short && (!type->columns || !type->width)) {
+				internal_error (0, "%s:%d:%d", pr_type_name[type->type],
+								type->columns, type->width);
+			}
+			return type->width * type->columns;
+		case ty_struct:
+		case ty_union:
+			if (!type->symtab)
+				return 0;
+			return type->symtab->count;
+		case ty_array:
+			return type->array.count;
+		case ty_class:
+			return 1;
+		case ty_alias:
+			return type_size (type->alias.aux_type);
+		case ty_algebra:
+			internal_error (0, "count of algebra type");
+		case ty_meta_count:
+			break;
+	}
+	internal_error (0, "invalid type meta: %d", type->meta);
+}
+
+int
 type_width (const type_t *type)
 {
 	switch (type->meta) {

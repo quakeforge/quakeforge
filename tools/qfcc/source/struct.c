@@ -224,6 +224,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 			s->id = index++;
 		}
 	}
+	symtab->count = index;
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	((type_t *) sym->type)->symtab = symtab;

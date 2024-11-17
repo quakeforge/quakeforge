@@ -107,6 +107,7 @@ typedef struct symtab_s {
 	struct symtab_s *next;		///< next in global collection of symtabs
 	stab_type_e type;			///< type of symbol table
 	int         size;			///< size of structure represented by symtab
+	int         count;			///< number of real members in structure
 	struct hashtab_s *tab;		///< symbols defined in this table
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
