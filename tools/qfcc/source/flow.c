@@ -1745,6 +1745,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				if (operands && s->opc->op_type != op_value) {
 					operands[0] = s->opc;
 				}
+				flow_add_op_var (use, s->opa, 1);
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				calln = s->opcode[4] - '0';
 				flow_add_op_var (use, s->opa, 1);

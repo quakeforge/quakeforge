@@ -16,6 +16,7 @@ test_progs_dat=\
 	tools/qfcc/test/arraytypedef.dat \
 	tools/qfcc/test/assignchain.dat \
 	tools/qfcc/test/anonstruct.dat \
+	tools/qfcc/test/calluse.dat \
 	tools/qfcc/test/chewed-alias.dat \
 	tools/qfcc/test/chewed-return.dat \
 	tools/qfcc/test/comma-expr.dat \
@@ -91,6 +92,7 @@ test_progs_dat=\
 fail_progs_dat=
 
 test_build_passes=\
+	tools/qfcc/test/calluse2.r \
 	tools/qfcc/test/motor.r \
 	tools/qfcc/test/typeredef1.r \
 	tools/qfcc/test/typeredef2.r
@@ -230,6 +232,16 @@ tools/qfcc/test/assignchain.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(assignchain_dep) # am--include-marker
 r_depfiles_remade += $(assignchain_dep)
+
+tools_qfcc_test_calluse_dat_SOURCES=tools/qfcc/test/calluse.r
+calluse_obj=$(tools_qfcc_test_calluse_dat_SOURCES:.r=.o)
+calluse_dep=$(call qcautodep,$(tools_qfcc_test_calluse_dat_SOURCES))
+tools/qfcc/test/calluse.dat$(EXEEXT): $(calluse_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(calluse_obj)
+tools/qfcc/test/calluse.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(calluse_dep) # am--include-marker
+r_depfiles_remade += $(calluse_dep)
 
 tools_qfcc_test_chewed_alias_dat_SOURCES=tools/qfcc/test/chewed-alias.r
 chewed_alias_obj=$(tools_qfcc_test_chewed_alias_dat_SOURCES:.r=.o)
@@ -388,6 +400,9 @@ tools/qfcc/test/double-float-compare.run$(EXEEXT): tools/qfcc/test/double-float-
 
 tools/qfcc/test/shadow-param.run$(EXEEXT): tools/qfcc/test/shadow-param.r $(qfcc_fail_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+tools/qfcc/test/calluse2.run$(EXEEXT): tools/qfcc/test/calluse2.r $(qfcc_comp_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools/qfcc/test/motor.run$(EXEEXT): tools/qfcc/test/motor.r $(qfcc_comp_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
