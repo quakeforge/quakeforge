@@ -2340,10 +2340,10 @@ array_expr (const expr_t *array, const expr_t *index)
 	if (is_int_val (index))
 		ind = expr_int (index);
 	if (is_array (array_type)
-		&& array_type->array.size
+		&& array_type->array.count
 		&& is_constant (index)
 		&& (ind < array_type->array.base
-			|| ind - array_type->array.base >= array_type->array.size)) {
+			|| ind - array_type->array.base >= array_type->array.count)) {
 		return error (index, "array index out of bounds");
 	}
 	if (is_nonscalar (array_type) && !is_matrix (array_type)

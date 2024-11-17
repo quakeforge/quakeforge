@@ -60,7 +60,7 @@ typedef struct ty_fldptr_s {
 typedef struct ty_array_s {
 	const struct type_s *type;
 	int         base;
-	int         size;
+	int         count;
 } ty_array_t;
 
 typedef struct ty_alias_s {

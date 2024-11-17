@@ -228,7 +228,7 @@ error:
 			break;
 		case ty_array:
 			aux_type = type.array.type;
-			size = type.array.size * [TypeEncodings typeSize:aux_type];
+			size = type.array.count * [TypeEncodings typeSize:aux_type];
 			break;
 		case ty_struct:
 			for (int i = 0; i < type.strct.num_fields; i++) {

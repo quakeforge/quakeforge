@@ -555,7 +555,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				break;
 			case ty_array:
 				printf (" %-5x %d %d\n", type->array.type,
-						type->array.base, type->array.size);
+						type->array.base, type->array.count);
 				break;
 			case ty_class:
 				printf (" %-5x\n", type->class);

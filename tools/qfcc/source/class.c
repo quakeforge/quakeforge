@@ -1522,7 +1522,7 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
-		D_INT (def) = da->refs->type->array.size;
+		D_INT (def) = da->refs->type->array.count;
 }
 
 static void

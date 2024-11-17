@@ -66,7 +66,7 @@ typedef struct qfot_struct_s {
 typedef struct qfot_array_s {
 	struct qfot_type_s *type;
 	int         base;
-	int         size;
+	int         count;
 } qfot_array_t;
 
 typedef struct qfot_algebra_s {

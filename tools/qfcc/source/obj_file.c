@@ -760,7 +760,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 		case ty_enum:
 			return pr_type_size[ev_int];
 		case ty_array:
-			return type_def->array.size
+			return type_def->array.count
 					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
 		case ty_algebra:

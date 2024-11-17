@@ -894,7 +894,7 @@ array_type (const type_t *aux, int size)
 		new->alignment = aux->alignment;
 		new->width = aux->width;
 	}
-	new->array.size = size;
+	new->array.count = size;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}
@@ -919,7 +919,7 @@ based_array_type (const type_t *aux, int base, int top)
 	new->meta = ty_array;
 	new->array.type = aux;
 	new->array.base = base;
-	new->array.size = top - base + 1;
+	new->array.count = top - base + 1;
 	if (aux) {
 		return find_type (new);
 	}
@@ -1015,9 +1015,9 @@ print_type_str (dstring_t *str, const type_t *type)
 			print_type_str (str, type->array.type);
 			if (type->array.base) {
 				dasprintf (str, "[%d..%d]", type->array.base,
-						type->array.base + type->array.size - 1);
+						type->array.base + type->array.count - 1);
 			} else {
-				dasprintf (str, "[%d]", type->array.size);
+				dasprintf (str, "[%d]", type->array.count);
 			}
 			return;
 		case ty_bool:
@@ -1228,7 +1228,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 			return;
 		case ty_array:
 			dasprintf (encoding, "[");
-			dasprintf (encoding, "%d", type->array.size);
+			dasprintf (encoding, "%d", type->array.count);
 			if (type->array.base)
 				dasprintf (encoding, ":%d", type->array.base);
 			dasprintf (encoding, "=");
@@ -1480,7 +1480,7 @@ is_nonscalar (const type_t *type)
 	if (type->width < 2) {
 		return false;
 	}
-	return is_real (type) || is_integral (type);
+	return is_real (type) || is_integral (type) || is_boolean (type);
 }
 
 bool
@@ -1706,7 +1706,7 @@ type_size (const type_t *type)
 				return 0;
 			return type_size (&type_int);
 		case ty_array:
-			return type->array.size * type_size (type->array.type);
+			return type->array.count * type_size (type->array.type);
 		case ty_class:
 			{
 				class_t    *class = type->class;

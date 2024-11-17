@@ -260,7 +260,7 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 		case ty_array:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
 			size = pr_debug_type_size (pr, aux_type);
-			return type->array.size * size;
+			return type->array.count * size;
 		case ty_class:
 			return 1;	//FIXME or should it return sizeof class struct?
 		case ty_alias:
@@ -1610,11 +1610,11 @@ pr_debug_array_view (qfot_type_t *type, pr_type_t *value, void *_data)
 
 	dstring_appendstr (dstr, "{");
 	int offset = 0;
-	for (int i = 0; i < array->size; i++, offset += val_size) {
+	for (int i = 0; i < array->count; i++, offset += val_size) {
 		pr_type_t  *val = value + offset;
 		dasprintf (dstr, "[%d]=", array->base + i);
 		value_string (data, val_type, val);
-		if (i < array->size - 1) {
+		if (i < array->count - 1) {
 			dstring_appendstr (dstr, ", ");
 		}
 	}

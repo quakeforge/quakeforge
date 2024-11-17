@@ -430,7 +430,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		} else {
 			if (is_array (field_def.type)) {
 				auto type = dereference_type (field_def.type);
-				for (j = 0; j < field_def.type->array.size; j++) {
+				for (j = 0; j < field_def.type->array.count; j++) {
 					defs[i].emit (&field_def, data, j);
 					field_def.offset += type_size (type);
 				}

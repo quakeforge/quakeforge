@@ -688,7 +688,7 @@ statement_get_targetlist (statement_t *s)
 		count = 1;
 	} else if (statement_is_jumpb (s)) {
 		table = s->opa->def;
-		count = table->type->array.size;
+		count = table->type->array.count;
 	}
 	target_list = malloc ((count + 1) * sizeof (sblock_t *));
 	target_list[count] = 0;

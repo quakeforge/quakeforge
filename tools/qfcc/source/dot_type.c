@@ -197,10 +197,10 @@ print_array (dstring_t *dstr, const type_t *t, int level, set_t *seen)
 	dasprintf (dstr, "%*st_%p -> \"t_%p\";\n", indent, "", t, type);
 	if (t->array.base) {
 		dasprintf (dstr, "%*st_%p [label=\"[%d..%d]\"];\n", indent, "", t,
-				   t->array.base, t->array.base + t->array.size - 1);
+				   t->array.base, t->array.base + t->array.count - 1);
 	} else {
 		dasprintf (dstr, "%*st_%p [label=\"[%d]\"];\n", indent, "", t,
-				   t->array.size);
+				   t->array.count);
 	}
 }
 

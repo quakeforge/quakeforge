@@ -240,7 +240,7 @@ qfo_encode_array (const type_t *type, defspace_t *space)
 	enc = D_POINTER (qfot_type_t, def);
 	ENC_DEF (enc->array.type, array_type_def);
 	enc->array.base = type->array.base;
-	enc->array.size = type->array.size;
+	enc->array.count = type->array.count;
 	return def;
 }
 

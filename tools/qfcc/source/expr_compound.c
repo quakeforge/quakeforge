@@ -123,7 +123,7 @@ designator_field (const designator_t *des, const type_t *type)
 }
 
 static int
-designator_index (const designator_t *des, int ele_size, int array_size)
+designator_index (const designator_t *des, int ele_size, int array_count)
 {
 	if (des->field) {
 		error (des->field, "field designator in array initializer");
@@ -136,7 +136,7 @@ designator_index (const designator_t *des, int ele_size, int array_size)
 		return -1;
 	}
 	int         index = expr_integral (des->index);
-	if (index <= 0 || index >= array_size) {
+	if (index <= 0 || index >= array_count) {
 		error (des->index, "designator index out of bounds");
 		return -1;
 	}
@@ -161,9 +161,9 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		offset = field->offset;
 		ele_type = field->type;
 	} else if (is_array (type)) {
-		int         array_size = type->array.size;
+		int         array_count = type->array.count;
 		ele_type = dereference_type (type);
-		offset = designator_index (des, type_size (ele_type), array_size);
+		offset = designator_index (des, type_size (ele_type), array_count);
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
 		if (type->symtab && des->field) {

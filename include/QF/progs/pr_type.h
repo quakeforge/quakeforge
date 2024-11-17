@@ -107,7 +107,7 @@ typedef struct qfot_struct_s {
 typedef struct qfot_array_s {
 	pr_ptr_t    type;				///< element type
 	pr_int_t    base;				///< start index of array
-	pr_int_t    size;				///< number of elements in array
+	pr_int_t    count;				///< number of elements in array
 } qfot_array_t;
 
 typedef struct qfot_algebra_s {
