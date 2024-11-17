@@ -100,6 +100,7 @@ typedef struct element_s {
 typedef struct element_chain_s {
 	element_t  *head;
 	element_t **tail;
+	const type_t *type;			///< inferred if null
 } element_chain_t;
 
 typedef struct ex_listitem_s {

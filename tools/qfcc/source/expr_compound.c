@@ -365,6 +365,9 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 expr_t *
 initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
+	if (expr->type == ex_compound && expr->compound.type) {
+		type = expr->compound.type;
+	}
 	expr_t     *block = new_block_expr (0);
 
 	//type = unalias_type (type);

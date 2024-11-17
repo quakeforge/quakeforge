@@ -211,6 +211,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<mut_expr>	opt_init_semi opt_expr comma_expr
 %type   <expr>		expr
 %type	<expr>		compound_init
+%type	<spec>		opt_cast
 %type   <mut_expr>	element_list expr_list
 %type	<designator> designator designator_spec
 %type	<element>	element
@@ -1698,8 +1699,28 @@ var_initializer
 	;
 
 compound_init
-	: '{' element_list optional_comma '}'		{ $$ = $2; }
-	| '{' '}'									{ $$ = 0; }
+	: opt_cast '{' element_list optional_comma '}'
+		{
+			auto type = resolve_type_spec ($1);
+			$3->compound.type = type;
+			$$ = $3;
+		}
+	| opt_cast '{' '}'
+		{
+			auto type = resolve_type_spec ($1);
+			if (type) {
+				auto elements = new_compound_init ();
+				elements->compound.type = type;
+				$$ = elements;
+			} else {
+				$$ = nullptr;
+			}
+		}
+	;
+
+opt_cast
+	: '(' typename ')'					{ $$ = $2; }
+	| /*empty*/							{ $$ = (specifier_t) {}; }
 	;
 
 method_optional_state_expr

@@ -150,8 +150,9 @@ get_type (const expr_t *e)
 		case ex_select:
 			internal_error (e, "unexpected expression type");
 		case ex_label:
-		case ex_compound:
 			return nullptr;
+		case ex_compound:
+			return e->compound.type;
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return &type_float;
