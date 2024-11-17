@@ -82,7 +82,7 @@ new_element (const expr_t *expr, designator_t *designator)
 	return element;
 }
 
-static element_t *
+element_t *
 append_init_element (element_chain_t *element_chain, element_t *element)
 {
 	element->next = 0;
@@ -143,12 +143,6 @@ designator_index (const designator_t *des, int ele_size, int array_count)
 	return index * ele_size;
 }
 
-typedef struct {
-	const type_t *type;
-	symbol_t   *field;
-	int         offset;
-} initstate_t;
-
 static initstate_t
 get_designated_offset (const type_t *type, const designator_t *des)
 {
@@ -184,16 +178,16 @@ get_designated_offset (const type_t *type, const designator_t *des)
 	return (initstate_t) { .type = ele_type, .field = field, .offset = offset};
 }
 
-static int
+bool
 skip_field (symbol_t *field)
 {
 	if (field->sy_type != sy_offset) {
-		return 1;
+		return true;
 	}
 	if (field->no_auto_init) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 void
@@ -222,6 +216,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 	} else if (is_struct (type) || is_union (type)
 			   || (is_nonscalar (type) && type->symtab)) {
 		state.field = type->symtab->symbols;
+		// find first initializable field
 		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;
 		}
@@ -362,7 +357,7 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 	set_delete (initialized);
 }
 
-expr_t *
+const expr_t *
 initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
 	if (expr->type == ex_compound && expr->compound.type) {

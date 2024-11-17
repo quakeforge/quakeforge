@@ -145,6 +145,7 @@ target_t v6_target = {
 	.build_code = v6p_build_code,
 	.declare_sym = declare_def,
 	.vararg_int = vararg_int,
+	.initialized_temp = initialized_temp_expr,
 };
 
 target_t v6p_target = {
@@ -153,4 +154,5 @@ target_t v6p_target = {
 	.build_code = v6p_build_code,
 	.declare_sym = declare_def,
 	.vararg_int = vararg_int,
+	.initialized_temp = initialized_temp_expr,
 };

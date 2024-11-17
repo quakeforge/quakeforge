@@ -62,6 +62,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -316,12 +317,15 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	const type_t *dst_type, *src_type;
 
 	dst = convert_name (dst);
-	if (dst->type == ex_error) {
+	if (is_error (dst)) {
 		return dst;
 	}
-	if ((expr = check_valid_lvalue (dst))) {
-		return expr;
+
+	const expr_t *err;
+	if ((err = check_valid_lvalue (dst))) {
+		return err;
 	}
+
 	if (is_reference (get_type (dst))) {
 		dst = pointer_deref (dst);
 	}
@@ -332,7 +336,7 @@ assign_expr (const expr_t *dst, const expr_t *src)
 
 	if (src && !is_memset (src)) {
 		src = convert_name (src);
-		if (src->type == ex_error) {
+		if (is_error (src)) {
 			return src;
 		}
 
@@ -347,8 +351,8 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		src = new_nil_expr ();
 	}
 	if (src->type == ex_compound) {
-		src = initialized_temp_expr (dst_type, src);
-		if (src->type == ex_error) {
+		src = current_target.initialized_temp (dst_type, src);
+		if (is_error (src)) {
 			return src;
 		}
 	}
@@ -370,7 +374,7 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		// boolean expressions are chains of tests, so extract the result
 		// of the tests
 		src = convert_from_bool (src, dst_type);
-		if (src->type == ex_error) {
+		if (is_error (src)) {
 			return src;
 		}
 		src_type = get_type (src);

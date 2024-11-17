@@ -40,6 +40,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/statements.h"
@@ -1121,6 +1122,32 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_compound (const expr_t *e, spirvctx_t *ctx)
+{
+	int num_ele = 0;
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		num_ele++;
+	}
+	unsigned ele_ids[num_ele];
+	int ind = 0;
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		ele_ids[ind++] = spirv_emit_expr (ele->expr, ctx);
+	}
+
+	auto type = e->compound.type;
+	int tid = type_id (type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpCompositeConstruct, 3 + num_ele,
+								ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	for (int i = 0; i < num_ele; i++) {
+		INSN (insn, 3 + i) = ele_ids[i];
+	}
+	return id;
+}
+
+static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
@@ -1440,6 +1467,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_symbol] = spirv_symbol,
 		[ex_temp] = spirv_temp,//FIXME don't want
 		[ex_value] = spirv_value,
+		[ex_compound] = spirv_compound,
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
@@ -1651,7 +1679,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		if (init) {
 			if (!block && is_constexpr (init)) {
 			} else if (block) {
-				auto r = pointer_deref (new_symbol_expr (sym));
+				auto r = new_symbol_expr (sym);
 				auto e = assign_expr (r, init);
 				append_expr (block, e);
 			} else {
@@ -1661,9 +1689,109 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	}
 }
 
+static const expr_t *
+spirv_build_element_chain (element_chain_t *element_chain, const type_t *type,
+						   const expr_t *eles)
+{
+	type = unalias_type (type);
+
+	initstate_t state = {};
+
+	if (is_struct (type) || (is_nonscalar (type) && type->symtab)) {
+		state.field = type->symtab->symbols;
+		// find first initializable field
+		while (state.field && skip_field (state.field)) {
+			state.field = state.field->next;
+		}
+		if (state.field) {
+			state.type = state.field->type;
+			state.offset = state.field->id;
+		}
+	} else if (is_matrix (type)) {
+		state.type = vector_type (base_type (type), type_rows (type));
+	} else if (is_nonscalar (type)) {
+		state.type = base_type (type);
+	} else if (is_array (type)) {
+		state.type = dereference_type (type);
+	} else {
+		return error (eles, "invalid initialization");
+	}
+	if (!state.type) {
+		return error (eles, "initialization of incomplete type");
+	}
+
+	for (auto ele = eles->compound.head; ele; ele = ele->next) {
+		//FIXME designated initializers
+		if (!state.type) {
+			return new_error_expr ();
+		}
+		// FIXME vectors are special (ie, check for overlaps)
+		if (state.offset >= type_count (type)) {
+			if (options.warnings.initializer) {
+				warning (eles, "excessive elements in initializer");
+			}
+			break;
+		}
+		if (ele->expr && ele->expr->type == ex_compound) {
+			const expr_t *err;
+			if ((err = spirv_build_element_chain (element_chain, state.type,
+												  ele->expr))) {
+				return err;
+			}
+		} else {
+			auto element = new_element (nullptr, nullptr);
+			auto expr = ele->expr;
+			if (expr) {
+				expr = cast_expr (state.type, expr);
+			}
+			if (is_error (expr)) {
+				return expr;
+			}
+			*element = (element_t) {
+				.type = state.type,
+				.offset = state.offset,
+				.expr = expr,
+			};
+			append_init_element (element_chain, element);
+		}
+		state.offset += type_count (state.type);
+		if (state.field) {
+			state.field = state.field->next;
+			// find next initializable field
+			while (state.field && skip_field (state.field)) {
+				state.field = state.field->next;
+			}
+			if (state.field) {
+				state.type = state.field->type;
+				state.offset = state.field->id;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+static const expr_t *
+spirv_initialized_temp (const type_t *type, const expr_t *src)
+{
+	if (src->compound.type) {
+		type = src->compound.type;
+	}
+
+	scoped_src_loc (src);
+	auto new = new_compound_init ();
+	const expr_t *err;
+	if ((err = spirv_build_element_chain (&new->compound, type, src))) {
+		return err;
+	}
+	new->compound.type = type;
+	return new;
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
 	.declare_sym = spirv_declare_sym,
+	.initialized_temp = spirv_initialized_temp,
 };

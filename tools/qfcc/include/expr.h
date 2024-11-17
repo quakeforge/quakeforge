@@ -89,6 +89,12 @@ typedef struct designator_s {
 	const expr_t *index;
 } designator_t;
 
+typedef struct {
+	const type_t *type;
+	symbol_t   *field;
+	int         offset;
+} initstate_t;
+
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
@@ -567,8 +573,12 @@ expr_t *build_block_expr (expr_t *list, bool set_result);
 designator_t *new_designator (const expr_t *field, const expr_t *index);
 element_t *new_element (const expr_t *expr, designator_t *designator);
 expr_t *new_compound_init (void);
+element_t *append_init_element (element_chain_t *element_chain,
+								element_t *element);
 expr_t *append_element (expr_t *compound, element_t *element);
-expr_t *initialized_temp_expr (const type_t *type, const expr_t *compound);
+bool skip_field (symbol_t *field)__attribute__((pure));
+const expr_t *initialized_temp_expr (const type_t *type,
+									 const expr_t *compound);
 void assign_elements (expr_t *local_expr, const expr_t *ptr,
 					  element_chain_t *element_chain);
 void build_element_chain (element_chain_t *element_chain, const type_t *type,

@@ -210,4 +210,5 @@ target_t ruamoko_target = {
 	.build_scope = ruamoko_build_scope,
 	.build_code = ruamoko_build_code,
 	.declare_sym = declare_def,
+	.initialized_temp = initialized_temp_expr,
 };

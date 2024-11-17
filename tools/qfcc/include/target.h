@@ -43,6 +43,8 @@ typedef struct {
 							  symtab_t *symtab, expr_t *block);
 	void      (*vararg_int) (const expr_t *e);
 
+	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
+
 	unsigned    label_id;
 } target_t;
 
