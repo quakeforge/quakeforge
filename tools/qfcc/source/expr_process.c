@@ -341,6 +341,10 @@ proc_decl (const expr_t *expr)
 			if (decl->assign.dst->type != ex_symbol) {
 				internal_error (decl->assign.dst, "not a symbol");
 			}
+			init = expr_process (init);
+			if (is_error (init)) {
+				return init;
+			}
 			pr.loc = decl->assign.dst->loc;
 			sym = decl->assign.dst->symbol;
 		} else if (decl->type == ex_symbol) {

@@ -51,7 +51,9 @@ get_value (const expr_t *e, int i, int j)
 	}
 	if (type_rows (t) > 1) {
 		auto ind = new_int_expr (j, false);
-		e = array_expr (e, ind);
+		auto a = new_array_expr (e, ind);
+		a->array.type = base_type (t);
+		e = a;
 	}
 	return e;
 }

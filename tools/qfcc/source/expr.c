@@ -666,10 +666,14 @@ const expr_t *
 new_swizzle_expr (const expr_t *src, const char *swizzle)
 {
 	src = convert_name (src);
-	if (src->type == ex_error) {
+	if (is_error (src)) {
 		return (expr_t *) src;
 	}
 	auto src_type = get_type (src);
+	if (is_reference (src_type)) {
+		src_type = dereference_type (src_type);
+		src = pointer_deref (src);
+	}
 	int         src_width = type_width (src_type);
 	ex_swizzle_t swiz = {};
 
@@ -720,7 +724,6 @@ new_swizzle_expr (const expr_t *src, const char *swizzle)
 			swiz.source[comp_count++] = ind;
 		}
 	}
-	swiz.zero |= (0xf << comp_count) & 0xf;
 	swiz.src = src;
 	swiz.type = vector_type (base_type (src_type), comp_count);
 

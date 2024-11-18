@@ -384,6 +384,22 @@ print_field (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_array (dstring_t *dstr, const expr_t *e, int level, int id,
+			 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->array.base, level, id, next);
+	_print_expr (dstr, e->array.index, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->array.base);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"i\"];\n", indent, "", e,
+			   e->array.index);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "[]", e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -715,9 +731,10 @@ print_swizzle (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 	static char swizzle_components[] = "xyzw";
 	int         indent = level * 2 + 2;
 	ex_swizzle_t swiz = e->swizzle;
+	int         count = type_width (swiz.type);
 	const char *swizzle = "";
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < count; i++) {
 		if (swiz.zero & (1 << i)) {
 			swizzle = va (0, "%s0", swizzle);
 		} else {
@@ -835,7 +852,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_incop] = nullptr,
 		[ex_cond] = print_cond,
 		[ex_field] = print_field,
-		[ex_array] = nullptr,
+		[ex_array] = print_array,
 		[ex_decl] = nullptr,
 	};
 	int         indent = level * 2 + 2;

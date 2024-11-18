@@ -1260,6 +1260,24 @@ spirv_return (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_swizzle (const expr_t *e, spirvctx_t *ctx)
+{
+	int count = type_width (e->swizzle.type);
+	unsigned src_id = spirv_emit_expr (e->swizzle.src, ctx);
+	unsigned tid = type_id (e->swizzle.type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpVectorShuffle, 4 + count, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = src_id;
+	INSN (insn, 4) = src_id;
+	for (int i = 0; i < count; i++) {
+		INSN (insn, 5 + i) = e->swizzle.source[i];
+	}
+	return id;
+}
+
+static unsigned
 spirv_extend (const expr_t *e, spirvctx_t *ctx)
 {
 	auto src_type = get_type (e->extend.src);
@@ -1341,16 +1359,21 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_field (const expr_t *e, spirvctx_t *ctx)
+spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 {
 	auto res_type = get_type (e);
 	ex_list_t list = {};
-	// convert the left-branching field expression chain to a list
-	for (; e->type == ex_field; e = e->field.object) {
-		list_prepend (&list, e);
+	// convert the left-branching field/array expression chain to a list
+	while (e->type == ex_field || e->type == ex_array) {
+		for (; e->type == ex_field; e = e->field.object) {
+			list_prepend (&list, e);
+		}
+		for (; e->type == ex_array; e = e->array.base) {
+			list_prepend (&list, e);
+		}
 	}
-	int num_fields = list_count (&list);
-	// e is now the base object of the field expression chain
+	int num_obj = list_count (&list);
+	// e is now the base object of the field/array expression chain
 	auto base_type = get_type (e);
 	unsigned base_id = spirv_emit_expr (e, ctx);
 	int op = SpvOpCompositeExtract;
@@ -1366,20 +1389,29 @@ spirv_field (const expr_t *e, spirvctx_t *ctx)
 
 	int acc_type_id = type_id (acc_type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_fields, ctx->code_space);
+	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
 	INSN (insn, 1) = acc_type_id;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = base_id;
 	auto field_ind = &INSN (insn, 4);
 	for (auto l = list.head; l; l = l->next) {
-		if (l->expr->field.member->type != ex_symbol) {
-			internal_error (l->expr->field.member, "not a symbol");
-		}
-		auto sym = l->expr->field.member->symbol;
-		if (literal_ind) {
-			*field_ind++ = sym->id;
+		auto obj = l->expr;
+		unsigned index;
+		if (obj->type == ex_field) {
+			if (obj->field.member->type != ex_symbol) {
+				internal_error (obj->field.member, "not a symbol");
+			}
+			auto sym = obj->field.member->symbol;
+			index = sym->id;
+		} else if (obj->type == ex_array) {
+			index = expr_integral (obj->array.index);
 		} else {
-			auto ind = new_uint_expr (sym->id);
+			internal_error (obj, "what the what?!?");
+		}
+		if (literal_ind) {
+			*field_ind++ = index;
+		} else {
+			auto ind = new_uint_expr (index);
 			*field_ind++ = spirv_emit_expr (ind, ctx);
 		}
 	}
@@ -1471,9 +1503,11 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
+		[ex_swizzle] = spirv_swizzle,
 		[ex_extend] = spirv_extend,
 		[ex_cond] = spirv_cond,
-		[ex_field] = spirv_field,
+		[ex_field] = spirv_field_array,
+		[ex_array] = spirv_field_array,
 		[ex_loop] = spirv_loop,
 		[ex_select] = spirv_select,
 	};
