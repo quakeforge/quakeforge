@@ -145,3 +145,23 @@ new_vector_list (const expr_t *expr_list)
 	list_gather (&vec->vector.list, elements, count);
 	return vec;
 }
+
+const expr_t *
+vector_to_compound (const expr_t *vector)
+{
+	if (vector->type != ex_vector) {
+		internal_error (vector, "not a vector expression");
+	}
+	int count = list_count (&vector->vector.list);
+	const expr_t *elements[count];
+	list_scatter (&vector->vector.list, elements);
+
+	scoped_src_loc (vector);
+	auto compound = new_compound_init ();
+	compound->compound.type = vector->vector.type;
+	for (int i = 0; i < count; i++) {
+		auto ele = new_element (elements[i], nullptr);
+		append_init_element (&compound->compound, ele);
+	}
+	return compound;
+}

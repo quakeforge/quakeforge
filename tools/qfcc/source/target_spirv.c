@@ -1148,6 +1148,13 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_vector (const expr_t *e, spirvctx_t *ctx)
+{
+	auto compound = vector_to_compound (e);
+	return spirv_compound (compound, ctx);
+}
+
+static unsigned
 spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 					const type_t **res_type, const type_t **acc_type)
 {
@@ -1518,6 +1525,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_symbol] = spirv_symbol,
 		[ex_temp] = spirv_temp,//FIXME don't want
 		[ex_value] = spirv_value,
+		[ex_vector] = spirv_vector,
 		[ex_compound] = spirv_compound,
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
@@ -1844,18 +1852,7 @@ spirv_initialized_temp (const type_t *type, const expr_t *src)
 static const expr_t *
 spirv_assign_vector (const expr_t *dst, const expr_t *src)
 {
-	int count = list_count (&src->vector.list);
-	const expr_t *elements[count];
-	list_scatter (&src->vector.list, elements);
-
-	scoped_src_loc (src);
-	auto new = new_compound_init ();
-	new->compound.type = src->vector.type;
-	for (int i = 0; i < count; i++) {
-		auto ele = new_element (elements[i], nullptr);
-		append_init_element (&new->compound, ele);
-	}
-
+	auto new = vector_to_compound (src);
 	return new_assign_expr (dst, new);;
 }
 
