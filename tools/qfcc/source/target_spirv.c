@@ -1148,6 +1148,67 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
+					const type_t **res_type, const type_t **acc_type)
+{
+	*res_type = get_type (e);
+	ex_list_t list = {};
+	// convert the left-branching field/array expression chain to a list
+	while (e->type == ex_field || e->type == ex_array) {
+		for (; e->type == ex_field; e = e->field.object) {
+			list_prepend (&list, e);
+		}
+		for (; e->type == ex_array; e = e->array.base) {
+			list_prepend (&list, e);
+		}
+	}
+	int num_obj = list_count (&list);
+	// e is now the base object of the field/array expression chain
+	auto base_type = get_type (e);
+	unsigned base_id = spirv_emit_expr (e, ctx);
+	int op = SpvOpCompositeExtract;
+
+	*acc_type = *res_type;
+	bool literal_ind = true;
+	if (is_pointer (base_type) || is_reference (base_type)) {
+		unsigned storage = base_type->fldptr.tag;
+		*acc_type = tagged_reference_type (storage, *res_type);
+		op = SpvOpAccessChain;
+		literal_ind = false;
+	}
+
+	int acc_type_id = type_id (*acc_type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
+	INSN (insn, 1) = acc_type_id;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = base_id;
+	auto field_ind = &INSN (insn, 4);
+	for (auto l = list.head; l; l = l->next) {
+		auto obj = l->expr;
+		unsigned index;
+		if (obj->type == ex_field) {
+			if (obj->field.member->type != ex_symbol) {
+				internal_error (obj->field.member, "not a symbol");
+			}
+			auto sym = obj->field.member->symbol;
+			index = sym->id;
+		} else if (obj->type == ex_array) {
+			index = expr_integral (obj->array.index);
+		} else {
+			internal_error (obj, "what the what?!?");
+		}
+		if (literal_ind) {
+			*field_ind++ = index;
+		} else {
+			auto ind = new_uint_expr (index);
+			*field_ind++ = spirv_emit_expr (ind, ctx);
+		}
+	}
+	return id;
+}
+
+static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
@@ -1161,7 +1222,14 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		((expr_t *) e->assign.dst)->id = src;
 		return src;
 	}
-	if (is_deref (e->assign.dst)) {
+	if (e->assign.dst->type == ex_field) {
+		const type_t *res_type;
+		const type_t *acc_type;
+		dst = spirv_access_chain (e->assign.dst, ctx, &res_type, &acc_type);
+		if (res_type == acc_type) {
+			internal_error (e, "assignment to temp?");
+		}
+	} else if (is_deref (e->assign.dst)) {
 		auto ptr = e->assign.dst->expr.e1;
 		dst = spirv_emit_expr (ptr, ctx);
 	}
@@ -1361,67 +1429,18 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 {
-	auto res_type = get_type (e);
-	ex_list_t list = {};
-	// convert the left-branching field/array expression chain to a list
-	while (e->type == ex_field || e->type == ex_array) {
-		for (; e->type == ex_field; e = e->field.object) {
-			list_prepend (&list, e);
-		}
-		for (; e->type == ex_array; e = e->array.base) {
-			list_prepend (&list, e);
-		}
-	}
-	int num_obj = list_count (&list);
-	// e is now the base object of the field/array expression chain
-	auto base_type = get_type (e);
-	unsigned base_id = spirv_emit_expr (e, ctx);
-	int op = SpvOpCompositeExtract;
+	const type_t *res_type;
+	const type_t *acc_type;
 
-	auto acc_type = res_type;
-	bool literal_ind = true;
-	if (is_pointer (base_type) || is_reference (base_type)) {
-		unsigned storage = base_type->fldptr.tag;
-		acc_type = tagged_reference_type (storage, res_type);
-		op = SpvOpAccessChain;
-		literal_ind = false;
-	}
+	unsigned id = spirv_access_chain (e, ctx, &res_type, &acc_type);
 
-	int acc_type_id = type_id (acc_type, ctx);
-	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
-	INSN (insn, 1) = acc_type_id;
-	INSN (insn, 2) = id;
-	INSN (insn, 3) = base_id;
-	auto field_ind = &INSN (insn, 4);
-	for (auto l = list.head; l; l = l->next) {
-		auto obj = l->expr;
-		unsigned index;
-		if (obj->type == ex_field) {
-			if (obj->field.member->type != ex_symbol) {
-				internal_error (obj->field.member, "not a symbol");
-			}
-			auto sym = obj->field.member->symbol;
-			index = sym->id;
-		} else if (obj->type == ex_array) {
-			index = expr_integral (obj->array.index);
-		} else {
-			internal_error (obj, "what the what?!?");
-		}
-		if (literal_ind) {
-			*field_ind++ = index;
-		} else {
-			auto ind = new_uint_expr (index);
-			*field_ind++ = spirv_emit_expr (ind, ctx);
-		}
-	}
 	if (acc_type != res_type) {
 		// base is a pointer or reference so load the value
 		unsigned ptr_id = id;
 		int res_type_id = type_id (res_type, ctx);
 
 		id = spirv_id (ctx);
-		insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space);
+		auto insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space);
 		INSN (insn, 1) = res_type_id;
 		INSN (insn, 2) = id;
 		INSN (insn, 3) = ptr_id;
