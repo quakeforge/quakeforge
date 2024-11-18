@@ -1266,7 +1266,7 @@ spirv_swizzle (const expr_t *e, spirvctx_t *ctx)
 	unsigned src_id = spirv_emit_expr (e->swizzle.src, ctx);
 	unsigned tid = type_id (e->swizzle.type, ctx);
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpVectorShuffle, 4 + count, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpVectorShuffle, 5 + count, ctx->code_space);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = src_id;
@@ -1822,10 +1822,29 @@ spirv_initialized_temp (const type_t *type, const expr_t *src)
 	return new;
 }
 
+static const expr_t *
+spirv_assign_vector (const expr_t *dst, const expr_t *src)
+{
+	int count = list_count (&src->vector.list);
+	const expr_t *elements[count];
+	list_scatter (&src->vector.list, elements);
+
+	scoped_src_loc (src);
+	auto new = new_compound_init ();
+	new->compound.type = src->vector.type;
+	for (int i = 0; i < count; i++) {
+		auto ele = new_element (elements[i], nullptr);
+		append_init_element (&new->compound, ele);
+	}
+
+	return new_assign_expr (dst, new);;
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
 	.declare_sym = spirv_declare_sym,
 	.initialized_temp = spirv_initialized_temp,
+	.assign_vector = spirv_assign_vector,
 };

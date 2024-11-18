@@ -44,6 +44,7 @@ typedef struct {
 	void      (*vararg_int) (const expr_t *e);
 
 	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
+	const expr_t *(*assign_vector) (const expr_t *dst, const expr_t *src);
 
 	unsigned    label_id;
 } target_t;

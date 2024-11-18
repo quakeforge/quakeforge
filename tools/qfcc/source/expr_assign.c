@@ -217,93 +217,6 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 	return type_mismatch (dst, src, '=');
 }
 
-static void
-copy_qv_elements (expr_t *block, const expr_t *dst, const expr_t *src)
-{
-	const expr_t *dx, *sx;
-	const expr_t *dy, *sy;
-	const expr_t *dz, *sz;
-	const expr_t *dw, *sw;
-	const expr_t *ds, *ss;
-	const expr_t *dv, *sv;
-	int         count = list_count (&src->vector.list);
-	const expr_t *components[count];
-	list_scatter (&src->vector.list, components);
-
-	if (is_vector (src->vector.type)) {
-		// guaranteed to have three elements
-		sx = components[0];
-		sy = components[1];
-		sz = components[2];
-		dx = field_expr (dst, new_name_expr ("x"));
-		dy = field_expr (dst, new_name_expr ("y"));
-		dz = field_expr (dst, new_name_expr ("z"));
-		append_expr (block, assign_expr (dx, sx));
-		append_expr (block, assign_expr (dy, sy));
-		append_expr (block, assign_expr (dz, sz));
-	} else {
-		// guaranteed to have two or four elements
-		if (count == 4) {
-			// four vals: x, y, z, w
-			sx = components[0];
-			sy = components[1];
-			sz = components[2];
-			sw = components[3];
-			dx = field_expr (dst, new_name_expr ("x"));
-			dy = field_expr (dst, new_name_expr ("y"));
-			dz = field_expr (dst, new_name_expr ("z"));
-			dw = field_expr (dst, new_name_expr ("w"));
-			append_expr (block, assign_expr (dx, sx));
-			append_expr (block, assign_expr (dy, sy));
-			append_expr (block, assign_expr (dz, sz));
-			append_expr (block, assign_expr (dw, sw));
-		} else {
-			// v, s
-			sv = components[0];
-			ss = components[1];
-			dv = field_expr (dst, new_name_expr ("v"));
-			ds = field_expr (dst, new_name_expr ("s"));
-			append_expr (block, assign_expr (dv, sv));
-			append_expr (block, assign_expr (ds, ss));
-		}
-	}
-}
-
-static int
-copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
-{
-	int         index = 0;
-	for (auto li = src->vector.list.head; li; li = li->next) {
-		auto e = li->expr;
-		if (e->type == ex_vector) {
-			index += copy_elements (block, dst, e, index + base);
-		} else {
-			auto type = get_type (e);
-			auto dst_ele = new_offset_alias_expr (type, dst, index + base);
-			append_expr (block, assign_expr (dst_ele, e));
-			index += type_width (type);
-		}
-	}
-	return index;
-}
-
-static const expr_t *
-assign_vector_expr (const expr_t *dst, const expr_t *src)
-{
-	if (src->type == ex_vector && dst->type != ex_vector) {
-		expr_t     *block = new_block_expr (0);
-
-		if (options.code.progsversion < PROG_VERSION) {
-			copy_qv_elements (block, dst, src);
-		} else {
-			copy_elements (block, dst, src, 0);
-		}
-		block->block.result = dst;
-		return block;
-	}
-	return 0;
-}
-
 static int __attribute__((pure))
 is_memset (const expr_t *e)
 {
@@ -386,8 +299,8 @@ assign_expr (const expr_t *dst, const expr_t *src)
 			// check_types_compatible will take care of everything
 			return expr;
 		}
-		if ((expr = assign_vector_expr (dst, src))) {
-			return expr;
+		if (src->type == ex_vector) {
+			return current_target.assign_vector (dst, src);
 		}
 	} else {
 		src = convert_nil (src, dst_type);

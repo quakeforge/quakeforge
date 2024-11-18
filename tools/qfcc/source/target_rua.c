@@ -205,10 +205,39 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 	defspace_alloc_aligned_highwater (space, 0, STACK_ALIGN);
 }
 
+static int
+copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
+{
+	int         index = 0;
+	for (auto li = src->vector.list.head; li; li = li->next) {
+		auto e = li->expr;
+		if (e->type == ex_vector) {
+			index += copy_elements (block, dst, e, index + base);
+		} else {
+			auto type = get_type (e);
+			auto dst_ele = new_offset_alias_expr (type, dst, index + base);
+			append_expr (block, assign_expr (dst_ele, e));
+			index += type_width (type);
+		}
+	}
+	return index;
+}
+
+static const expr_t *
+ruamoko_assign_vector (const expr_t *dst, const expr_t *src)
+{
+	expr_t     *block = new_block_expr (0);
+
+	copy_elements (block, dst, src, 0);
+	block->block.result = dst;
+	return block;
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
 	.build_code = ruamoko_build_code,
 	.declare_sym = declare_def,
 	.initialized_temp = initialized_temp_expr,
+	.assign_vector = ruamoko_assign_vector,
 };

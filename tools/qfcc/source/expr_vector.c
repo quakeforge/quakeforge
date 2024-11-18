@@ -105,7 +105,7 @@ new_vector_list (const expr_t *expr_list)
 			break;
 		case 3:
 			// shuffle any vectors to the beginning of the list (there should
-			// be only one, but futhre...)
+			// be only one, but future...)
 			for (int i = 1; i < count; i++) {
 				if (is_nonscalar (get_type (elements[i]))) {
 					auto t = elements[i];

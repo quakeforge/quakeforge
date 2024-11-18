@@ -139,6 +139,60 @@ vararg_int (const expr_t *e)
 	}
 }
 
+static const expr_t *
+v6p_assign_vector (const expr_t *dst, const expr_t *src)
+{
+	expr_t     *block = new_block_expr (0);
+	const expr_t *dx, *sx;
+	const expr_t *dy, *sy;
+	const expr_t *dz, *sz;
+	const expr_t *dw, *sw;
+	const expr_t *ds, *ss;
+	const expr_t *dv, *sv;
+	int         count = list_count (&src->vector.list);
+	const expr_t *components[count];
+	list_scatter (&src->vector.list, components);
+
+	if (is_vector (src->vector.type)) {
+		// guaranteed to have three elements
+		sx = components[0];
+		sy = components[1];
+		sz = components[2];
+		dx = field_expr (dst, new_name_expr ("x"));
+		dy = field_expr (dst, new_name_expr ("y"));
+		dz = field_expr (dst, new_name_expr ("z"));
+		append_expr (block, assign_expr (dx, sx));
+		append_expr (block, assign_expr (dy, sy));
+		append_expr (block, assign_expr (dz, sz));
+	} else {
+		// guaranteed to have two or four elements
+		if (count == 4) {
+			// four vals: x, y, z, w
+			sx = components[0];
+			sy = components[1];
+			sz = components[2];
+			sw = components[3];
+			dx = field_expr (dst, new_name_expr ("x"));
+			dy = field_expr (dst, new_name_expr ("y"));
+			dz = field_expr (dst, new_name_expr ("z"));
+			dw = field_expr (dst, new_name_expr ("w"));
+			append_expr (block, assign_expr (dx, sx));
+			append_expr (block, assign_expr (dy, sy));
+			append_expr (block, assign_expr (dz, sz));
+			append_expr (block, assign_expr (dw, sw));
+		} else {
+			// v, s
+			sv = components[0];
+			ss = components[1];
+			dv = field_expr (dst, new_name_expr ("v"));
+			ds = field_expr (dst, new_name_expr ("s"));
+			append_expr (block, assign_expr (dv, sv));
+			append_expr (block, assign_expr (ds, ss));
+		}
+	}
+	return block;
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
@@ -146,6 +200,7 @@ target_t v6_target = {
 	.declare_sym = declare_def,
 	.vararg_int = vararg_int,
 	.initialized_temp = initialized_temp_expr,
+	.assign_vector = v6p_assign_vector,
 };
 
 target_t v6p_target = {
@@ -155,4 +210,5 @@ target_t v6p_target = {
 	.declare_sym = declare_def,
 	.vararg_int = vararg_int,
 	.initialized_temp = initialized_temp_expr,
+	.assign_vector = v6p_assign_vector,
 };
