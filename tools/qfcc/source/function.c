@@ -540,7 +540,7 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 		return nullptr;
 	}
 
-	bool overload = spec.is_overload;
+	bool overload = spec.is_overload | current_language.always_override;
 	const char *full_name;
 
 	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));

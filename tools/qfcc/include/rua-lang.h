@@ -197,6 +197,7 @@ const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((p
 
 typedef struct language_s {
 	bool        initialized;
+	bool        always_override;
 	void      (*init) (void);
 	int       (*parse) (FILE *in);
 	int       (*finish) (const char *file);

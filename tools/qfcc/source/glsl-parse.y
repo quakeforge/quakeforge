@@ -1811,6 +1811,7 @@ glsl_version (int version, const char *profile)
 }
 
 language_t lang_glsl_comp = {
+	.always_override = true,
 	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1821,6 +1822,7 @@ language_t lang_glsl_comp = {
 };
 
 language_t lang_glsl_vert = {
+	.always_override = true,
 	.init = glsl_init_vert,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1831,6 +1833,7 @@ language_t lang_glsl_vert = {
 };
 
 language_t lang_glsl_tesc = {
+	.always_override = true,
 	.init = glsl_init_tesc,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1841,6 +1844,7 @@ language_t lang_glsl_tesc = {
 };
 
 language_t lang_glsl_tese = {
+	.always_override = true,
 	.init = glsl_init_tese,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1851,6 +1855,7 @@ language_t lang_glsl_tese = {
 };
 
 language_t lang_glsl_geom = {
+	.always_override = true,
 	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1861,6 +1866,7 @@ language_t lang_glsl_geom = {
 };
 
 language_t lang_glsl_frag = {
+	.always_override = true,
 	.init = glsl_init_frag,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
