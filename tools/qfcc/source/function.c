@@ -816,7 +816,9 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 
 	type_t ftype = {
 		.type = ev_func,
-
+		.alignment = 1,
+		.width = 1,
+		.columns = 1,
 		.func = {
 			.ret_type = return_type,
 			.num_params = num_params,
@@ -870,6 +872,9 @@ find_function (const expr_t *fexpr, const expr_t *params)
 
 	type_t call_type = {
 		.type = ev_func,
+		.alignment = 1,
+		.width = 1,
+		.columns = 1,
 		.func = {
 			.num_params = num_params,
 			.param_types = arg_types,
