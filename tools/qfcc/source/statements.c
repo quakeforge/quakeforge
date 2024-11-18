@@ -1866,13 +1866,18 @@ expr_not (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	if (options.code.progsversion == PROG_VERSION) {
 		scoped_src_loc (e);
+		auto un = e->expr.e1;
+		auto type = get_type (un);
+		if (is_pointer (type) || is_func (type)
+			|| is_entity (type) || is_field (type)) {
+			type = vector_type (&type_int, type_width (type));
+			un = cast_expr (type, un);
+		}
 		auto zero = new_nil_expr ();
-		zero->loc = e->loc;
-		zero = (expr_t *) convert_nil (zero, get_type (e->expr.e1));
+		zero = (expr_t *) convert_nil (zero, type);
 
-		auto not = new_binary_expr (QC_EQ, e->expr.e1, zero);
+		auto not = new_binary_expr (QC_EQ, un, zero);
 		not->expr.type = e->expr.type;
-		not->loc = e->loc;
 
 		return statement_subexpr (sblock, not, op);
 	} else {
