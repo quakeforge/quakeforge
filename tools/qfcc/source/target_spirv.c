@@ -343,6 +343,34 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	return id;
 }
 
+static unsigned
+spirv_TypeArray (const type_t *type, spirvctx_t *ctx)
+{
+	auto ele_type = dereference_type (type);
+	unsigned count = type_count (type);
+	unsigned tid = type_id (ele_type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpTypeArray, 4, globals);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = tid;
+	INSN (insn, 3) = count;
+	return id;
+}
+
+static unsigned
+spirv_TypeRuntimeArray (const type_t *type, spirvctx_t *ctx)
+{
+	auto ele_type = dereference_type (type);
+	unsigned tid = type_id (ele_type, ctx);
+	unsigned id = spirv_id (ctx);
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpTypeRuntimeArray, 3, globals);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = tid;
+	return id;
+}
+
 static void
 spirv_mirror_bool (const type_t *type, unsigned id, spirvctx_t *ctx)
 {
@@ -453,6 +481,13 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypePointer (type, ctx);
 	} else if (is_struct (type)) {
 		id = spirv_TypeStruct (type, ctx);
+	} else if (is_array (type)) {
+		//FIXME should size be checked against something for validity?
+		if (type_count (type)) {
+			id = spirv_TypeArray (type, ctx);
+		} else {
+			id = spirv_TypeRuntimeArray (type, ctx);
+		}
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
 	}

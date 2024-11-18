@@ -39,6 +39,7 @@
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 ALLOC_STATE (glsl_block_t, blocks);
@@ -79,12 +80,13 @@ glsl_block_clear (void)
 static const expr_t *
 block_sym_ref (symbol_t *sym, void *data)
 {
+	// data is set to the symbol in the table (saves having to find it)
 	sym = data;
 	glsl_block_t *block = sym->table->data;
-	auto interface = new_name_expr (glsl_interface_names[block->interface]);
-	auto blk = new_symbol_expr (block->name);
-	auto expr = field_expr (interface, blk);
-	expr = field_expr (expr, new_symbol_expr (sym));
+	auto block_sym = block->instance_name;
+	auto expr = new_field_expr (new_symbol_expr (block_sym),
+								new_symbol_expr (sym));
+	expr->field.type = sym->type;
 	return expr;
 }
 
@@ -120,13 +122,6 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 	block->members->data = block;
 	block->space->alloc_aligned = glsl_block_alloc_loc;
 	Hash_Add (block_tab, block);
-	for (auto sym = block->members->symbols; sym; sym = sym->next) {
-		auto def = new_def (sym->name, nullptr, nullptr, spec.storage);
-		def->type = sym->type;
-		sym->sy_type = sy_def;
-		sym->def = def;
-		sym->lvalue = true;
-	}
 	return block;
 }
 
@@ -135,14 +130,6 @@ glsl_finish_block (glsl_block_t *block, specifier_t spec)
 {
 	spec.sym = block->name;
 	glsl_apply_attributes (block->attributes, spec);
-	for (auto sym = block->members->symbols; sym; sym = sym->next) {
-		if (sym->sy_type == sy_offset) {
-			//FIXME sc_extern isn't correct (problem with unsized arrays)
-			sym->def = new_def (sym->name, sym->type, block->space, sc_extern);
-			sym->sy_type = sy_def;
-			sym->lvalue = !sym->def->readonly;
-		}
-	}
 }
 
 void
@@ -159,35 +146,39 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	}
 	auto interface = interface_sym->namespace;
 
-	if (instance_name) {
-		block->instance_name = instance_name;
-		auto type = new_type ();
-		*type = (type_t) {
-			.type = ev_invalid,
-			.name = save_string (block->name->name),
-			.alignment = 4,
-			.width = 1,
-			.columns = 1,
-			.meta = ty_struct,
-			.symtab = block->members,
-		};
-		instance_name->type = append_type (instance_name->type, type);
-		instance_name->type = find_type (instance_name->type);
-		auto space = current_symtab->space;// FIXME
-		initialize_def (instance_name, nullptr, space,
-						glsl_sc_from_iftype (block->interface),
-						current_symtab, nullptr);
+	if (!instance_name) {
+		instance_name = new_symbol ("");
+	}
+	block->instance_name = instance_name;
+	auto type = new_type ();
+	*type = (type_t) {
+		.type = ev_invalid,
+		.name = save_string (va (0, "blk %s", block->name->name)),
+		.alignment = 4,
+		.width = 1,
+		.columns = 1,
+		.meta = ty_struct,
+		.symtab = block->members,
+	};
+	specifier_t spec = {
+		.sym = instance_name,
+		.storage = glsl_sc_from_iftype (block->interface),
+	};
+	spec.sym->type = find_type (type);
+	auto symtab = current_symtab;// FIXME
+	current_target.declare_sym (spec, nullptr, symtab, nullptr);
+
+	auto block_sym = symtab_lookup (interface, block->name->name);
+	if (block_sym) {
+		error (0, "%s block %s redeclared", interface_name,
+			   block_sym->name);
 	} else {
-		auto block_sym = symtab_lookup (interface, block->name->name);
-		if (block_sym) {
-			error (0, "%s block %s redeclared", interface_name,
-				   block_sym->name);
-		} else {
-			block_sym = block->name;
-			block_sym->sy_type = sy_namespace;
-			block_sym->namespace = block->members;
-			symtab_addsymbol (interface, block->name);
-		}
+		block_sym = block->name;
+		block_sym->sy_type = sy_namespace;
+		block_sym->namespace = block->members;
+		symtab_addsymbol (interface, block->name);
+	}
+	if (!instance_name->name[0]) {
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {
 			auto new = new_symbol (sym->name);
 			new->sy_type = sy_convert;
