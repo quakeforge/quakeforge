@@ -157,6 +157,22 @@ proc_field (const expr_t *expr)
 }
 
 static const expr_t *
+proc_array (const expr_t *expr)
+{
+	auto base = expr_process (expr->array.base);
+	auto index = expr_process (expr->array.index);
+	if (is_error (base)) {
+		return base;
+	}
+	if (is_error (index)) {
+		return index;
+	}
+	auto e = new_array_expr (base, index);
+	e->array.type = dereference_type (get_type (base));
+	return e;
+}
+
+static const expr_t *
 proc_label (const expr_t *expr)
 {
 	return expr;
@@ -411,6 +427,7 @@ expr_process (const expr_t *expr)
 		[ex_return] = proc_return,
 		[ex_cond] = proc_cond,
 		[ex_field] = proc_field,
+		[ex_array] = proc_array,
 		[ex_decl] = proc_decl,
 		[ex_loop] = proc_loop,
 		[ex_select] = proc_select,
