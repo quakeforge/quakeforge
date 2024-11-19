@@ -1761,16 +1761,20 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				   expr_t *block)
 {
 	symbol_t   *sym = spec.sym;
-	symbol_t   *check = symtab_lookup (symtab, sym->name);
-	if (check && check->table == symtab) {
-		error (0, "%s redefined", sym->name);
+	if (sym->name[0]) {
+		symbol_t   *check = symtab_lookup (symtab, sym->name);
+		if (check && check->table == symtab) {
+			error (0, "%s redefined", sym->name);
+		}
 	}
 	auto storage = spirv_storage_class (spec.storage);
 	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
 	sym->sy_type = sy_var;
 	sym->var.storage = spec.storage;
-	symtab_addsymbol (symtab, sym);
+	if (sym->name[0]) {
+		symtab_addsymbol (symtab, sym);
+	}
 	if (symtab->type == stab_local) {
 		if (init) {
 			if (!block && is_constexpr (init)) {
