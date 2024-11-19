@@ -102,8 +102,16 @@ static void
 glsl_layout_binding (specifier_t spec, const expr_t *qual_name,
 					  const expr_t *val)
 {
-	notice (qual_name, "%s %s", expr_string (qual_name),
-			get_value_string (val->value));
+	const char *name = expr_string (qual_name);
+	set_attribute (&spec.sym->attributes, name, val);
+}
+
+static void
+glsl_layout_set (specifier_t spec, const expr_t *qual_name,
+					  const expr_t *val)
+{
+	const char *name = expr_string (qual_name);
+	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
@@ -204,7 +212,7 @@ static layout_qual_t layout_qualifiers[] = {
 		.if_mask = I(uniform)|I(buffer),
 	},
 	{	.name = "set",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_set),
 		.obj_mask = D(var)|D(block),
 		.var_type = V(opaque),
 		.if_mask = I(uniform)|I(buffer),
