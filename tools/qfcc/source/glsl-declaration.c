@@ -45,7 +45,7 @@ void
 glsl_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 						symtab_t *symtab, expr_t *block)
 {
-	if (sym->type) {
+	if (sym && sym->type) {
 		internal_error (0, "unexected typed symbol");
 	}
 	auto attributes = glsl_optimize_attributes (spec.attributes);

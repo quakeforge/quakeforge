@@ -1394,11 +1394,11 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 
 	if (is_constant (e1) && is_double (t1) && e1->implicit && is_float (t2)) {
-		t1 = float_type (t2);
+		t1 = float_type (base_type (t2));
 		e1 = cast_expr (t1, e1);
 	}
 	if (is_constant (e2) && is_double (t2) && e2->implicit && is_float (t1)) {
-		t2 = float_type (t1);
+		t2 = float_type (base_type (t1));
 		e2 = cast_expr (t2, e2);
 	}
 	if (is_array (t1) && (is_pointer (t2) || is_integral (t2))) {
