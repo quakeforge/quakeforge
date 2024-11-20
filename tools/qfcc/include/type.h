@@ -91,6 +91,7 @@ typedef struct type_s {
 		struct multivector_s *multivec;
 		ty_alias_t  alias;
 	};
+	attribute_t *attributes;
 	struct type_s *next;
 	int         freeable;
 	int         allocated;

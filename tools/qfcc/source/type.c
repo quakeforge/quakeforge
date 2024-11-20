@@ -572,6 +572,73 @@ default_type (specifier_t spec, const symbol_t *sym)
 	return spec;
 }
 
+static __attribute__((pure)) bool
+types_same (const type_t *a, const type_t *b)
+{
+	int         i, count;
+
+	if (a->type != b->type || a->meta != b->meta)
+		return false;
+	switch (a->meta) {
+		case ty_basic:
+			switch (a->type) {
+				case ev_field:
+				case ev_ptr:
+					if (a->fldptr.type != b->fldptr.type)
+						return false;
+				case ev_func:
+					if (a->func.ret_type != b->func.ret_type
+						|| a->func.num_params != b->func.num_params
+						|| a->func.attribute_bits != b->func.attribute_bits)
+						return false;
+					count = a->func.num_params;
+					if (count < 0)
+						count = ~count;	// param count is one's complement
+					for (i = 0; i < count; i++)
+						if (a->func.param_types[i]
+							!= b->func.param_types[i])
+							return false;
+					return 1;
+				default:		// other types don't have aux data
+					return a->width == b->width && a->columns == b->columns;
+			}
+			break;
+		case ty_struct:
+		case ty_union:
+		case ty_enum:
+			if (strcmp (a->name, b->name))
+				return false;
+			if (a->meta == ty_struct)
+				return compare_protocols (a->protos, b->protos);
+			return 1;
+		case ty_array:
+			if (a->array.type != b->array.type
+				|| a->array.base != b->array.base
+				|| a->array.count != b->array.count)
+				return false;
+			return 1;
+		case ty_class:
+			if (a->class != b->class)
+				return false;
+			return compare_protocols (a->protos, b->protos);
+		case ty_alias:
+			// names have gone through save_string
+			return (a->name == b->name
+					&& a->alias.aux_type == b->alias.aux_type
+					&& a->alias.full_type == b->alias.full_type);
+		case ty_handle:
+			// names have gone through save_string
+			return a->name == b->name;
+		case ty_algebra:
+			return a->algebra == b->algebra;
+		case ty_bool:
+			return a->type == b->type;
+		case ty_meta_count:
+			break;
+	}
+	internal_error (nullptr, "we be broke");
+}
+
 /*
 	find_type
 
@@ -581,7 +648,6 @@ default_type (specifier_t spec, const symbol_t *sym)
 const type_t *
 find_type (const type_t *type)
 {
-	type_t     *check;
 	int         i, count;
 
 	if (!type || type == &type_auto)
@@ -636,35 +702,47 @@ find_type (const type_t *type)
 		}
 	}
 
-	check = Hash_Find (type_tab, type->encoding);
+	const type_t *check;
+	if (strchr (type->encoding, '%')) {
+		// type chain has attributes so the encoding may be aliased
+		auto list = (const type_t **) Hash_FindList (type_tab, type->encoding);
+		for (auto c = list; (check = *c); c++) {
+			if (types_same (check, type)) {
+				break;
+			}
+		}
+		free (list);
+	} else {
+		check = Hash_Find (type_tab, type->encoding);
+	}
 	if (check) {
 		return check;
 	}
 
 	// allocate a new one
-	check = new_type ();
-	*check = *type;
+	auto new = new_type ();
+	*new = *type;
 	if (is_func (type)) {
-		check->func.param_types = 0;
+		new->func.param_types = 0;
 		const type_t *t = unalias_type (type);
 		int         num_params = t->func.num_params;
 		if (num_params < 0) {
 			num_params = ~num_params;
 		}
 		if (num_params) {
-			check->func.param_types = malloc (sizeof (type_t *) * num_params);
-			check->func.param_quals = malloc (sizeof (param_qual_t)*num_params);
+			new->func.param_types = malloc (sizeof (type_t *) * num_params);
+			new->func.param_quals = malloc (sizeof (param_qual_t)*num_params);
 			for (int i = 0; i < num_params; i++) {
-				check->func.param_types[i] = t->func.param_types[i];
-				check->func.param_quals[i] = t->func.param_quals[i];
+				new->func.param_types[i] = t->func.param_types[i];
+				new->func.param_quals[i] = t->func.param_quals[i];
 			}
 		}
 	}
-	check->freeable = false;
+	new->freeable = false;
 
-	chain_type (check);
+	chain_type (new);
 
-	return check;
+	return new;
 }
 
 const type_t *
@@ -1202,6 +1280,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 {
 	if (!type)
 		return;
+	if (type->attributes && is_func (type) && type->func.attribute_bits) {
+		dstring_appendstr (encoding, "%");
+	}
 	switch (type->meta) {
 		case ty_meta_count:
 			break;
