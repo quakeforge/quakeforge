@@ -48,9 +48,9 @@ struct symbol_s *find_handle (struct symbol_s *tag, const type_t *type);
 struct symtab_s *start_struct (int *su, struct symbol_s *tag,
 							   struct symtab_s *parent);
 struct symbol_s *find_struct (int su, struct symbol_s *tag,
-							  const type_t *type);
+							  type_t *type);
 struct symbol_s *build_struct (int su, struct symbol_s *tag,
-							   struct symtab_s *symtab, const type_t *type,
+							   struct symtab_s *symtab, type_t *type,
 							   int base);
 struct symbol_s *find_enum (struct symbol_s *tag);
 struct symtab_s *start_enum (struct symbol_s *enm);
@@ -61,7 +61,7 @@ bool enum_as_bool (const type_t *enm, struct expr_s **zero,
 				   struct expr_s **one);
 
 struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
-								 const type_t *type);
+								 type_t *type);
 struct defspace_s;
 struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
 							   const type_t *type, void *data,

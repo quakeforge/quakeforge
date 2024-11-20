@@ -65,7 +65,7 @@
 #include "tools/qfcc/include/value.h"
 
 static symbol_t *
-find_tag (ty_meta_e meta, symbol_t *tag, const type_t *type)
+find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
@@ -87,7 +87,7 @@ find_tag (ty_meta_e meta, symbol_t *tag, const type_t *type)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
-	type_t *t = (type_t *) type;//FIXME
+	type_t *t = type;
 	if (!t)
 		t = new_type ();
 	if (!t->name)
@@ -146,7 +146,7 @@ find_handle (symbol_t *tag, const type_t *type)
 }
 
 symbol_t *
-find_struct (int su, symbol_t *tag, const type_t *type)
+find_struct (int su, symbol_t *tag, type_t *type)
 {
 	ty_meta_e   meta = ty_struct;
 
@@ -157,7 +157,7 @@ find_struct (int su, symbol_t *tag, const type_t *type)
 }
 
 symbol_t *
-build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
+build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 			  int base)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
@@ -344,8 +344,7 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 }
 
 symbol_t *
-make_structure (const char *name, int su, struct_def_t *defs,
-				const type_t *type)
+make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 {
 	symtab_t   *strct;
 	symbol_t   *field;
