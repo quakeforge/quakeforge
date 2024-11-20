@@ -68,6 +68,11 @@ typedef struct ty_alias_s {
 	const struct type_s *full_type;	///< full alias chain
 } ty_alias_t;
 
+typedef struct ty_handle_s {
+	const type_t *type;		///< descriptor for extra
+	unsigned    extra;		///< handle for extra
+} ty_handle_t;
+
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	unsigned    id;			///< internal id for registerd types
@@ -90,6 +95,7 @@ typedef struct type_s {
 		struct algebra_s *algebra;
 		struct multivector_s *multivec;
 		ty_alias_t  alias;
+		ty_handle_t handle;
 	};
 	attribute_t *attributes;
 	struct type_s *next;

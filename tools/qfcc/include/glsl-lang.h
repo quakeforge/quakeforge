@@ -28,6 +28,8 @@
 #ifndef __glsl_lang_h
 #define __glsl_lang_h
 
+#include "QF/darray.h"
+
 typedef struct specifier_s specifier_t;
 typedef struct attribute_s attribute_t;
 typedef struct expr_s expr_t;
@@ -77,6 +79,31 @@ typedef struct glsl_block_s {
 	defspace_t *space;
 	symbol_t   *instance_name;
 } glsl_block_t;
+
+typedef enum {
+	glid_1d,
+	glid_2d,
+	glid_3d,
+	glid_cube,
+	glid_rect,
+	glid_buffer,
+	glid_subpassdata,
+} glsl_imagedim_t;
+
+typedef struct glsl_image_s {
+	const type_t *sample_type;
+	glsl_imagedim_t dim;
+	char        depth;
+	bool        arrayed;
+	bool        multisample;
+	char        sampled;
+	unsigned    format;
+} glsl_image_t;
+
+typedef struct DARRAY_TYPE (glsl_image_t) glsl_imageset_t;
+extern glsl_imageset_t glsl_imageset;
+extern type_t type_glsl_image;
+extern type_t type_glsl_sampler;
 
 typedef struct glsl_sublang_s {
 	const char *name;

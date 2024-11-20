@@ -68,4 +68,6 @@ struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
 							   struct defspace_s *space,
 							   enum storage_class_e storage);
 
+struct symbol_s *make_handle (const char *name, type_t *type);
+
 #endif//__struct_h

@@ -33,6 +33,30 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/spirv.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/type.h"
+
+glsl_imageset_t glsl_imageset = DARRAY_STATIC_INIT (16);
+
+static struct_def_t glsl_image_struct[] = {
+	{"type",        &type_ptr},
+	{"dim",         &type_uint},	//FIXME enum
+	{"depth",       &type_uint},	//FIXME enum
+	{"arrayed",     &type_bool},
+	{"multisample", &type_bool},
+	{"sampled",     &type_uint},	//FIXME enum
+	{"format",      &type_uint},	//FIXME enum
+	{}
+};
+
+type_t type_glsl_image = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t type_glsl_sampler = {
+	.type = ev_int,
+	.meta = ty_handle,
+};
 
 #define SRC_LINE_EXP2(l,f) "#line " #l " " #f "\n"
 #define SRC_LINE_EXP(l,f) SRC_LINE_EXP2(l,f)
@@ -920,6 +944,13 @@ glsl_init_common (void)
 {
 	static module_t module;		//FIXME probably not what I want
 	pr.module = &module;
+
+	make_structure ("@image", 's', glsl_image_struct, &type_glsl_image);
+	make_handle ("@sampler", &type_glsl_sampler);
+	chain_type (&type_glsl_image);
+	chain_type (&type_glsl_sampler);
+
+	DARRAY_RESIZE (&glsl_imageset, 0);
 
 	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
 	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);

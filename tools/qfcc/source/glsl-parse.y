@@ -1554,7 +1554,7 @@ static keyword_t glsl_keywords[] = {
 	{"textureBuffer",           GLSL_TYPE_SPEC},
 	{"itextureBuffer",          GLSL_TYPE_SPEC},
 	{"utextureBuffer",          GLSL_TYPE_SPEC},
-	{"sampler",                 GLSL_TYPE_SPEC},
+	{"sampler",         GLSL_TYPE_SPEC, .spec = {.type = &type_glsl_sampler}},
 	{"samplerShadow",           GLSL_TYPE_SPEC},
 	{"subpassInput",            GLSL_TYPE_SPEC},
 	{"isubpassInput",           GLSL_TYPE_SPEC},
@@ -1635,14 +1635,141 @@ glsl_directive (const char *token)
 	return directive;
 }
 
+typedef struct {
+	const char *substr;
+	int         val;
+	const type_t *type;
+} image_sub_t;
+
+static image_sub_t * __attribute__((pure))
+find_image_sub (image_sub_t *sub, const char *str)
+{
+	for (; sub->substr; sub++) {
+		if (strncmp (sub->substr, str, strlen(sub->substr)) == 0) {
+			return sub;
+		}
+	}
+	return nullptr;
+}
+
+static symbol_t *
+glsl_parse_image (const char *token)
+{
+	static image_sub_t image_type[] = {
+		{ .substr = "sampler",  .val = 0, .type = &type_float },
+		{ .substr = "image",    .val = 1, .type = &type_float },
+		{ .substr = "texture",  .val = 2, .type = &type_float },
+		{ .substr = "isampler", .val = 0, .type = &type_int   },
+		{ .substr = "iimage",   .val = 1, .type = &type_int   },
+		{ .substr = "itexture", .val = 2, .type = &type_int   },
+		{ .substr = "usampler", .val = 0, .type = &type_uint  },
+		{ .substr = "uimage",   .val = 1, .type = &type_uint  },
+		{ .substr = "utexture", .val = 2, .type = &type_uint  },
+		{ .substr = "i",        .val = 1, .type = &type_int   },
+		{ .substr = "u",        .val = 1, .type = &type_uint  },
+		{ .substr = "",         .val = 1, .type = &type_float },
+		// subpassInput is dimension in spir-v
+		{}
+	};
+	static image_sub_t image_dim[] = {
+		{ "2DRect",       glid_rect        },	// so 2D doesn't falsly match
+		{ "1D",           glid_1d          },
+		{ "2D",           glid_2d          },
+		{ "3D",           glid_3d          },
+		{ "Cube",         glid_cube        },
+		{ "Buffer",       glid_buffer      },
+		{ "subpassInput", glid_subpassdata },
+		{}
+	};
+	static image_sub_t image_ms[] = {
+		{ "MS", true  },
+		{ "",   false },
+		{}
+	};
+	static image_sub_t image_array[] = {
+		{ "Array", true  },
+		{ "",      false },
+		{}
+	};
+	static image_sub_t image_shadow[] = {
+		{ "Shadow", true  },
+		{ "",       false },
+		{}
+	};
+
+	int offset = 0;
+	auto type = *find_image_sub (image_type, token + offset);// always succeeds
+	offset += strlen (type.substr);
+	auto dim = find_image_sub (image_dim, token + offset);
+	if (!dim) {
+		goto invalid;
+	}
+	offset += strlen (dim->substr);
+	if (!is_float (type.type)) {
+		type.substr++;	// skip over type char
+	}
+	if (dim->val == glid_subpassdata) {
+		type.substr = dim->substr;
+	}
+	auto ms = *find_image_sub (image_ms, token + offset);
+	offset += strlen (ms.substr);
+	auto array = *find_image_sub (image_array, token + offset);
+	offset += strlen (array.substr);
+
+	glsl_image_t image = {
+		.sample_type = type.type,
+		.dim = dim->val,
+		.depth = 0,		//XXX what sets this?
+		.arrayed = array.val,
+		.multisample = ms.val,
+		.format = 0,	//unknown (comes from layout)
+	};
+	if (type.val == 0) {	// sampler
+		auto shad = *find_image_sub (image_shadow, token + offset);
+		offset += strlen (shad.substr);
+		if (shad.val) {
+			type.substr = "samplerShadow";
+		}
+	}
+	if (token[offset]) {
+		goto invalid;
+	}
+
+	unsigned index = 0;
+	// slot 0 is never used
+	for (unsigned i = 1; i < glsl_imageset.size; i++) {
+		if (memcmp (&glsl_imageset.a[i], &image, sizeof (image)) == 0) {
+			index = i;
+			break;
+		}
+	}
+	if (!index) {
+		index = glsl_imageset.size;
+		DARRAY_APPEND (&glsl_imageset, image);
+	}
+
+	auto sym = new_symbol (token);
+	sym = find_handle (sym, &type_int);
+	//FIXME the type isn't chained yet and so doesn't need to be const, but
+	// symbols keep the type in a const pointer.
+	auto t = (type_t *) sym->type;
+	if (t->handle.extra) {
+		internal_error (0, "image type handle alread set");
+	}
+	t->handle.extra = index;
+
+	return sym;
+invalid:
+	internal_error (0, "invalid image type: %s", token);
+}
+
 static int
 glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
 {
 	if (keyword->value == GLSL_STRUCT) {
 		lval->op = token[0];
 	} else if (keyword->value == GLSL_TYPE_SPEC && !keyword->spec.type) {
-		auto sym = new_symbol (token);
-		sym = find_handle (sym, &type_int);
+		auto sym = glsl_parse_image (token);
 		keyword->spec.type = sym->type;
 		lval->spec = keyword->spec;
 	} else if (keyword->use_name) {

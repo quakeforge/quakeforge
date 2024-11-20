@@ -441,3 +441,10 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 	}
 	return struct_def;
 }
+
+symbol_t *
+make_handle (const char *name, type_t *type)
+{
+	auto tag = new_symbol (name);
+	return find_tag (ty_handle, tag, type);
+}
