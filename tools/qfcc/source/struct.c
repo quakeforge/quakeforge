@@ -172,17 +172,26 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 		return sym;
 	}
 	int index = 0;
+	int offset = 0;
 	for (s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_offset)
 			continue;
+		if (!s->type) {
+			if (su != 's' || strcmp (s->name, ".reset") != 0) {
+				internal_error (0, "invalid struct field");
+			}
+			index = 0;
+			offset = 0;
+			continue;
+		}
 		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
 				   s->type->class->name);
 		}
 		if (su == 's') {
-			symtab->size = RUP (symtab->size + base, s->type->alignment) - base;
-			s->offset = symtab->size;
-			symtab->size += type_size (s->type);
+			offset = RUP (offset + base, s->type->alignment) - base;
+			s->offset = offset;
+			offset += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
 			if (size > symtab->size) {
@@ -223,6 +232,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 		} else {
 			s->id = index++;
 		}
+	}
+	if (su == 's') {
+		symtab->size = offset;
 	}
 	symtab->count = index;
 	if (!type)

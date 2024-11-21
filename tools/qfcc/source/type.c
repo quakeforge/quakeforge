@@ -1971,11 +1971,11 @@ chain_initial_types (void)
 }
 
 static const char *vector_field_names[] = { "x", "y", "z", "w" };
-//static const char *color_field_names[] = { "r", "g", "b", "a" };
-//static const char *texture_field_names[] = { "s", "t", "p", "q" };
+static const char *color_field_names[] = { "r", "g", "b", "a" };
+static const char *texture_field_names[] = { "s", "t", "p", "q" };
 
 static void
-build_vector_struct (type_t *type)
+build_vector_struct (type_t *type, bool extra_names)
 {
 	ty_meta_e   meta = type->meta;
 	etype_t     etype = type->type;
@@ -1986,11 +1986,21 @@ build_vector_struct (type_t *type)
 		internal_error (0, "%s not a vector type: %p %d", type->name, ele_type, width);
 	}
 
-	struct_def_t fields[width + 1];
+	struct_def_t fields[3 * (width + 1)] = {};
 	for (int i = 0; i < width; i++) {
-		fields[i] = (struct_def_t) { vector_field_names[i], ele_type };
+		auto v = &fields[i + 0 * (width + 1)];
+		auto c = &fields[i + 1 * (width + 1)];
+		auto t = &fields[i + 2 * (width + 1)];
+		*v = (struct_def_t) { vector_field_names[i], ele_type };
+		*c = (struct_def_t) { color_field_names[i], ele_type };
+		*t = (struct_def_t) { texture_field_names[i], ele_type };
 	}
-	fields[width] = (struct_def_t) {};
+	if (extra_names) {
+		// these slots were zero-initialized so filling them in with a
+		// reset field enables the additional component names
+		fields[1 * (width + 1) - 1] = (struct_def_t) { ".reset" };
+		fields[2 * (width + 1) - 1] = (struct_def_t) { ".reset" };
+	}
 
 	make_structure (va (0, "@%s", type->name), 's', fields, type);
 	type->type = etype;
@@ -2084,7 +2094,7 @@ init_types (void)
 
 	make_structure ("@zero", 'u', zero_struct, &type_zero);
 	make_structure ("@param", 'u', param_struct, &type_param);
-	build_vector_struct (&type_vector);
+	build_vector_struct (&type_vector, false);
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
@@ -2094,7 +2104,7 @@ init_types (void)
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
-	build_vector_struct (&type_quaternion);
+	build_vector_struct (&type_quaternion, false);
 	{
 		symbol_t   *sym;
 
@@ -2106,7 +2116,8 @@ init_types (void)
 		sym->offset = 3;
 		symtab_addsymbol (type_quaternion.symtab, sym);
 	}
-#define VEC_TYPE(type_name, base_type) build_vector_struct (&type_##type_name);
+#define VEC_TYPE(type_name, base_type) \
+	build_vector_struct (&type_##type_name, true);
 #include "tools/qfcc/include/vec_types.h"
 
 	chain_structural_types ();
