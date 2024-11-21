@@ -77,6 +77,7 @@ proc_uexpr (const expr_t *expr)
 static const expr_t *
 proc_field (const expr_t *expr)
 {
+	scoped_src_loc (expr);
 	auto object = expr_process (expr->field.object);
 	auto member = expr->field.member;
 	if (is_error (object)) {
@@ -167,6 +168,7 @@ proc_array (const expr_t *expr)
 	if (is_error (index)) {
 		return index;
 	}
+	scoped_src_loc (expr);
 	auto e = new_array_expr (base, index);
 	e->array.type = dereference_type (get_type (base));
 	return e;
@@ -330,6 +332,7 @@ proc_return (const expr_t *expr)
 static const expr_t *
 proc_cond (const expr_t *expr)
 {
+	scoped_src_loc (expr);
 	auto test = expr_process (expr->cond.test);
 	auto true_expr = expr_process (expr->cond.true_expr);
 	auto false_expr = expr_process (expr->cond.false_expr);
@@ -339,6 +342,7 @@ proc_cond (const expr_t *expr)
 static const expr_t *
 proc_decl (const expr_t *expr)
 {
+	scoped_src_loc (expr);
 	expr_t *block = nullptr;
 	if (expr->decl.spec.storage == sc_local) {
 		scoped_src_loc (expr);
