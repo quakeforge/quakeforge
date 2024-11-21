@@ -129,6 +129,10 @@ void
 glsl_finish_block (glsl_block_t *block, specifier_t spec)
 {
 	spec.sym = block->name;
+	int index = 0;
+	for (auto s = block->members->symbols; s; s = s->next) {
+		s->id = index++;
+	}
 	glsl_apply_attributes (block->attributes, spec);
 }
 
