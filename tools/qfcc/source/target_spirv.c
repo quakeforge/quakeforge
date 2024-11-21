@@ -1216,7 +1216,6 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			list_prepend (&list, e);
 		}
 	}
-	int num_obj = list_count (&list);
 	// e is now the base object of the field/array expression chain
 	auto base_type = get_type (e);
 	unsigned base_id = spirv_emit_expr (e, ctx);
@@ -1231,15 +1230,13 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 		literal_ind = false;
 	}
 
-	int acc_type_id = type_id (*acc_type, ctx);
-	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
-	INSN (insn, 1) = acc_type_id;
-	INSN (insn, 2) = id;
-	INSN (insn, 3) = base_id;
-	auto field_ind = &INSN (insn, 4);
-	for (auto l = list.head; l; l = l->next) {
-		auto obj = l->expr;
+	int num_obj = list_count (&list);
+	const expr_t *ind_expr[num_obj];
+	unsigned ind_id[num_obj];
+	list_scatter (&list, ind_expr);
+	for (int i = 0; i < num_obj; i++) {
+		auto obj = ind_expr[i];
+		bool direct_ind = false;
 		unsigned index;
 		if (obj->type == ex_field) {
 			if (obj->field.member->type != ex_symbol) {
@@ -1248,16 +1245,36 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 			auto sym = obj->field.member->symbol;
 			index = sym->id;
 		} else if (obj->type == ex_array) {
-			index = expr_integral (obj->array.index);
+			auto ind = obj->array.index;
+			if (is_integral_val (ind)) {
+				index = expr_integral (ind);
+			} else {
+				if (is_reference (get_type (ind))) {
+					ind = pointer_deref (ind);
+				}
+				index = spirv_emit_expr (ind, ctx);
+				direct_ind = true;
+			}
 		} else {
 			internal_error (obj, "what the what?!?");
 		}
-		if (literal_ind) {
-			*field_ind++ = index;
+		if (literal_ind || direct_ind) {
+			ind_id[i] = index;
 		} else {
 			auto ind = new_uint_expr (index);
-			*field_ind++ = spirv_emit_expr (ind, ctx);
+			ind_id[i] = spirv_emit_expr (ind, ctx);
 		}
+	}
+
+	int acc_type_id = type_id (*acc_type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
+	INSN (insn, 1) = acc_type_id;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = base_id;
+	auto field_ind = &INSN (insn, 4);
+	for (int i = 0; i < num_obj; i++) {
+		field_ind[i] = ind_id[i];
 	}
 	return id;
 }
