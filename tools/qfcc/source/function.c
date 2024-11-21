@@ -926,8 +926,15 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			parm_count = ~parm_count;
 		int j;
 		for (j = 0; j < parm_count; j++) {
-			if (!type_assignable (f->type->func.param_types[j],
-								  call_type.func.param_types[j])) {
+			auto fptype = f->type->func.param_types[j];
+			auto cptype = call_type.func.param_types[j];
+			if (is_reference (fptype)) {
+				fptype = dereference_type (fptype);
+			}
+			if (is_reference (cptype)) {
+				cptype = dereference_type (cptype);
+			}
+			if (!type_assignable (fptype, cptype)) {
 				funcs[i] = 0;
 				break;
 			}
