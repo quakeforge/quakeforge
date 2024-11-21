@@ -404,6 +404,12 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 {
 	int num_params = 0;
 	for (auto p = fsym->params; p; p = p->next) {
+		if (is_void (p->type)) {
+			if (num_params || p->next) {
+				internal_error (0, "void param with other params");
+			}
+			break;
+		}
 		num_params++;
 	}
 	auto type = fsym->type;
@@ -412,10 +418,13 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 	}
 	unsigned ret_type = type_id (fsym->type->func.ret_type, ctx);
 
-	unsigned param_types[num_params];
+	unsigned param_types[num_params + 1];
 	num_params = 0;
 	for (auto p = fsym->params; p; p = p->next) {
 		auto ptype = p->type;
+		if (is_void (p->type)) {
+			break;
+		}
 		if (p->qual != pq_const) {
 			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
@@ -693,6 +702,9 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 
 	for (auto p = func->sym->params; p; p = p->next) {
 		auto ptype = p->type;
+		if (is_void (ptype)) {
+			break;
+		}
 		if (p->qual != pq_const) {
 			ptype = tagged_reference_type (SpvStorageClassFunction, ptype);
 		}
@@ -1640,7 +1652,8 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	for (auto func = pr->func_head; func; func = func->next)
 	{
 		auto func_id = spirv_function (func, &ctx);
-		if (strcmp ("main", func->o_name) == 0) {
+		if (strncmp ("main", func->o_name, 4) == 0
+			&& (!func->o_name[4] || func->o_name[4] == '|')) {
 			auto model = SpvExecutionModelVertex;//FIXME
 			spirv_EntryPoint (func_id, func->o_name, model, &ctx);
 		}
