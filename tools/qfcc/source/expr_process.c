@@ -218,6 +218,9 @@ proc_symbol (const expr_t *expr)
 	auto sym = symtab_lookup (current_symtab, expr->symbol->name);
 	if (sym) {
 		scoped_src_loc (expr);
+		if (sym->sy_type == sy_convert) {
+			return sym->convert.conv (sym, sym->convert.data);
+		}
 		expr = new_symbol_expr (sym);
 	}
 	return expr;
