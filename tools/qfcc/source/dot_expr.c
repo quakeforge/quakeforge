@@ -400,6 +400,22 @@ print_array (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_intrinsic (dstring_t *dstr, const expr_t *e, int level, int id,
+				 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->intrinsic.opcode, level, id, next);
+	for (auto l = e->intrinsic.operands.head; l; l = l->next) {
+		_print_expr (dstr, l->expr, level, id, next);
+	}
+	for (auto l = e->intrinsic.operands.head; l; l = l->next) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+				   l->expr);
+	}
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -854,6 +870,9 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_field] = print_field,
 		[ex_array] = print_array,
 		[ex_decl] = nullptr,
+		[ex_loop] = nullptr,
+		[ex_select] = nullptr,
+		[ex_intrinsic] = print_intrinsic,
 	};
 	int         indent = level * 2 + 2;
 

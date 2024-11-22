@@ -224,6 +224,9 @@ get_type (const expr_t *e)
 			return e->field.type;
 		case ex_array:
 			return e->array.type;
+		case ex_intrinsic:
+			type = e->intrinsic.res_type;
+			break;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -1990,6 +1993,7 @@ has_function_call (const expr_t *e)
 		case ex_decl:
 		case ex_loop:
 		case ex_select:
+		case ex_intrinsic:
 			return false;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {

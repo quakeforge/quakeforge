@@ -414,6 +414,27 @@ proc_select (const expr_t *expr)
 	return select;
 }
 
+static const expr_t *
+proc_intrinsic (const expr_t *expr)
+{
+	int count = list_count (&expr->intrinsic.operands);
+	const expr_t *operands[count + 1];
+	list_scatter (&expr->intrinsic.operands, operands);
+	auto opcode = expr_process (expr->intrinsic.opcode);
+	for (int i = 0; i < count; i++) {
+		operands[i] = expr_process (operands[i]);
+	}
+	scoped_src_loc (expr);
+	auto e = new_expr ();
+	e->type = ex_intrinsic;
+	e->intrinsic = (ex_intrinsic_t) {
+		.opcode = opcode,
+		.res_type = expr->intrinsic.res_type,
+	};
+	list_gather (&e->intrinsic.operands, operands, count);
+	return e;
+}
+
 const expr_t *
 expr_process (const expr_t *expr)
 {
@@ -438,6 +459,7 @@ expr_process (const expr_t *expr)
 		[ex_decl] = proc_decl,
 		[ex_loop] = proc_loop,
 		[ex_select] = proc_select,
+		[ex_intrinsic] = proc_intrinsic,
 	};
 
 	if (expr->type >= ex_count) {

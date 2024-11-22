@@ -76,6 +76,7 @@ EX_EXPR(array)		///< array index expression (::ex_array_t)
 EX_EXPR(decl)		///< delcaration expression (::ex_array_t)
 EX_EXPR(loop)		///< loop construct expression (::ex_loop_t)
 EX_EXPR(select)		///< select construct expression (::ex_select_t)
+EX_EXPR(intrinsic)	///< intrinsic instruction expression (::ex_intrinsic_t)
 
 #undef EX_EXPR
 

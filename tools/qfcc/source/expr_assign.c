@@ -136,6 +136,7 @@ is_lvalue (const expr_t *expr)
 		case ex_decl:
 		case ex_loop:
 		case ex_select:
+		case ex_intrinsic:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

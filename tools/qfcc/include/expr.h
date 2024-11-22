@@ -373,6 +373,12 @@ typedef struct {
 	bool        not;
 } ex_select_t;
 
+typedef struct {
+	const expr_t *opcode;
+	const type_t *res_type;
+	ex_list_t   operands;
+} ex_intrinsic_t;
+
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
@@ -421,6 +427,7 @@ typedef struct expr_s {
 		ex_decl_t decl;					///< variable declaration expression
 		ex_loop_t loop;					///< loop construct expression
 		ex_select_t select;				///< selection construct expression
+		ex_intrinsic_t intrinsic;		///< intrinsic intruction expression
 	};
 } expr_t;
 
