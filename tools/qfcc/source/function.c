@@ -46,6 +46,7 @@
 
 #include "tools/qfcc/include/qfcc.h"
 
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/debug.h"
@@ -581,6 +582,21 @@ get_function (const char *name, const type_t *type, specifier_t spec)
 	return func;
 }
 
+static void
+set_func_type_attrs (const type_t *func_type, attribute_t *attr_list)
+{
+	auto func = &((type_t *) func_type)->func;//FIXME
+	for (auto attr = attr_list; attr; attr = attr->next) {
+		if (!strcmp (attr->name, "no_va_list")) {
+			func->no_va_list = true;
+		} else if (!strcmp (attr->name, "void_return")) {
+			func->void_return = true;
+		} else {
+			warning (0, "skipping unknown function attribute '%s'", attr->name);
+		}
+	}
+}
+
 symbol_t *
 function_symbol (specifier_t spec)
 {
@@ -611,7 +627,7 @@ function_symbol (specifier_t spec)
 		if (!spec.sym->type || !spec.sym->type->encoding) {
 			spec = default_type (spec, spec.sym);
 			spec.sym->type = append_type (spec.sym->type, spec.type);
-			set_func_type_attrs (spec.sym->type, spec);
+			set_func_type_attrs (spec.sym->type, spec.attributes);
 			spec.sym->type = find_type (spec.sym->type);
 		}
 		func = get_function (name, unalias_type (sym->type), spec);

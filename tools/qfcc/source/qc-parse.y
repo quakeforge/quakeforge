@@ -319,24 +319,6 @@ generic_spec (void)
 	return spec;
 }
 
-static specifier_t
-parse_attributes (attribute_t *attr_list)
-{
-	specifier_t spec = {};
-	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
-		if (!strcmp (attr->name, "no_va_list")) {
-			spec.no_va_list = true;
-		} else if (!strcmp (attr->name, "nosave")) {
-			spec.nosave = true;
-		} else if (!strcmp (attr->name, "void_return")) {
-			spec.void_return = true;
-		} else {
-			warning (0, "skipping unknown attribute '%s'", attr->name);
-		}
-	}
-	return spec;
-}
-
 static int
 storage_auto (specifier_t spec)
 {
@@ -390,6 +372,12 @@ spec_merge (specifier_t spec, specifier_t new)
 		if (!spec.multi_store) {
 			error (0, "both long and short in declaration specifiers");
 			spec.multi_store = true;
+		}
+	}
+	for (auto attr = &spec.attributes; *attr; attr = &(*attr)->next) {
+		if (!(*attr)->next) {
+			(*attr)->next = new.attributes;
+			break;
 		}
 	}
 	spec.sym = new.sym;
@@ -1205,7 +1193,7 @@ storage_class
 		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
-			$$ = parse_attributes ($3);
+			$$ = (specifier_t) { .attributes = $3 };
 		}
 	;
 

@@ -46,6 +46,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -681,6 +682,18 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	sym->def->initializer = init;
 }
 
+static void
+set_def_attributes (def_t *def, attribute_t *attr_list)
+{
+	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
+		if (!strcmp (attr->name, "nosave")) {
+			def->nosave = true;
+		} else {
+			warning (0, "skipping unknown attribute '%s'", attr->name);
+		}
+	}
+}
+
 void
 declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			 expr_t *block)
@@ -693,9 +706,7 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	}
 
 	initialize_def (sym, init, space, spec.storage, symtab, block);
-	if (sym->def) {
-		sym->def->nosave |= spec.nosave;
-	}
+	set_def_attributes (sym->def, spec.attributes);
 }
 
 static int

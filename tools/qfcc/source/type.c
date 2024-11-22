@@ -496,13 +496,6 @@ append_type (const type_t *type, const type_t *new)
 	return type;
 }
 
-void
-set_func_type_attrs (const type_t *func, specifier_t spec)
-{
-	((type_t *) func)->func.no_va_list = spec.no_va_list;//FIXME
-	((type_t *) func)->func.void_return = spec.void_return;
-}
-
 specifier_t
 default_type (specifier_t spec, const symbol_t *sym)
 {

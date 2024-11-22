@@ -81,9 +81,6 @@ typedef struct specifier_s {
 			bool        is_generic:1;
 			bool        is_generic_block:1;
 			bool        is_function:1;//FIXME do proper void(*)() -> ev_func
-			bool        nosave:1;
-			bool        no_va_list:1;
-			bool        void_return:1;
 		};
 		unsigned    spec_bits;
 	};
