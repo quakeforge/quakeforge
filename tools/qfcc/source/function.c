@@ -717,7 +717,7 @@ select_type (gentype_t *gentype, const type_t *param_type)
 }
 
 static bool
-check_type (const type_t *type, const type_t *param_type, unsigned *cost)
+check_type (const type_t *type, const type_t *param_type, unsigned *cost, bool promote)
 {
 	if (!type) {
 		return false;
@@ -737,16 +737,16 @@ check_type (const type_t *type, const type_t *param_type, unsigned *cost)
 	if (type == param_type) {
 		return true;
 	}
-	if (!type_promotes (type, param_type)) {
+	if (!promote || !type_promotes (type, param_type)) {
 		return false;
 	}
 	*cost += 1;
 	return true;
 }
 
-static const expr_t *
-find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
-					   const type_t *call_type)
+static genfunc_t *
+find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
+					   const type_t *call_type, bool promote)
 {
 	int num_funcs = 0;
 	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
@@ -768,9 +768,11 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 				if (!types[ind]) {
 					types[ind] = select_type (&g->types[ind], call_params[i]);
 				}
-				ok &= check_type (types[ind], call_params[i], costs + j);
+				ok &= check_type (types[ind], call_params[i], costs + j,
+								  promote);
 			} else {
-				ok &= check_type (p->fixed_type, call_params[i], costs + j);
+				ok &= check_type (p->fixed_type, call_params[i], costs + j,
+								  promote);
 			}
 		}
 		if (!ok) {
@@ -783,7 +785,8 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 	int best_ind = -1;
 	for (int i = 0; i < num_funcs; i++) {
 		if (best_ind >= 0 && costs[i] == best_cost) {
-			return error (fexpr, "unable to disambiguate %s", fsym->name);
+			error (fexpr, "unable to disambiguate %s", fsym->name);
+			return nullptr;
 		}
 		if (costs[i] < best_cost) {
 			best_ind = i;
@@ -791,11 +794,19 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		}
 	}
 	if (best_ind < 0) {
-		return error (fexpr, "unable to find generic function matching %s",
-					  fsym->name);
+		error (fexpr, "unable to find generic function matching %s",
+			   fsym->name);
+		return nullptr;
 	}
+	return genfuncs[best_ind];
+}
 
-	auto g = genfuncs[best_ind];
+static symbol_t *
+create_generic_sym (genfunc_t *g, const expr_t *fexpr, const type_t *call_type)
+{
+	auto fsym = fexpr->symbol;
+	int num_params = call_type->func.num_params;
+	auto call_params = call_type->func.param_types;
 	const type_t *types[g->num_types] = {};
 	const type_t *param_types[num_params];
 	param_qual_t param_quals[num_params];
@@ -856,7 +867,7 @@ find_generic_function (const expr_t *fexpr, genfunc_t **genfuncs,
 		*sym->metafunc = *fsym->metafunc;
 		symtab_addsymbol (fsym->table, sym);
 	}
-	return new_symbol_expr (sym);
+	return sym;
 }
 
 const expr_t *
@@ -901,7 +912,12 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	const char *fname = fexpr->symbol->name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
-		return find_generic_function (fexpr, genfuncs, &call_type);
+		auto gen = find_generic_function (genfuncs, fexpr, &call_type, true);
+		if (!gen) {
+			return new_error_expr ();
+		}
+		auto sym = create_generic_sym (gen, fexpr, &call_type);
+		return new_symbol_expr (sym);
 	}
 
 	auto funcs = (metafunc_t **) Hash_FindList (function_map, fname);
