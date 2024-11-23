@@ -532,58 +532,8 @@ new_metafunc (void)
 	return metafunc;
 }
 
-static metafunc_t *
-get_function (const char *name, const type_t *type, specifier_t spec)
-{
-	metafunc_t *func = Hash_Find (function_map, name);
-	if (func && func->meta_type == mf_generic) {
-		error (0, "can't mix generic and simple or overload");
-		return nullptr;
-	}
-
-	bool overload = spec.is_overload | current_language.always_override;
-	const char *full_name;
-
-	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
-
-	// check if the exact function signature already exists, in which case
-	// simply return it.
-	func = Hash_Find (metafuncs, full_name);
-	if (func) {
-		if (func->type != type) {
-			error (0, "can't overload on return types");
-			return func;
-		}
-		return func;
-	}
-
-	func = Hash_Find (function_map, name);
-	if (func) {
-		if (!overload && func->meta_type != mf_overload) {
-			warning (0, "creating overloaded function %s without @overload",
-					 full_name);
-			warning (&(expr_t) { .loc = func->loc },
-					 "(previous function is %s)", func->full_name);
-		}
-		overload = true;
-	}
-
-	func = new_metafunc ();
-	*func = (metafunc_t) {
-		.name = save_string (name),
-		.full_name = full_name,
-		.type = type,
-		.loc = pr.loc,
-		.meta_type = overload ? mf_overload : mf_simple,
-	};
-
-	Hash_Add (metafuncs, func);
-	Hash_Add (function_map, func);
-	return func;
-}
-
 static void
-set_func_type_attrs (const type_t *func_type, attribute_t *attr_list)
+set_func_attrs (const type_t *func_type, attribute_t *attr_list)
 {
 	auto func = &((type_t *) func_type)->func;//FIXME
 	for (auto attr = attr_list; attr; attr = attr->next) {
@@ -597,97 +547,33 @@ set_func_type_attrs (const type_t *func_type, attribute_t *attr_list)
 	}
 }
 
-symbol_t *
-function_symbol (specifier_t spec)
+static bool
+check_type (const type_t *type, const type_t *param_type, unsigned *cost,
+			bool promote)
 {
-	symbol_t   *sym = spec.sym;
-	const char *name = sym->name;
-	metafunc_t *func = Hash_Find (function_map, name);
-
-	auto genfunc = parse_generic_function (name, spec);
-	//FIXME want to be able to provide specific overloads for generic functions
-	//but need to figure out details, so disallow for now.
-	if (genfunc) {
-		if (func && func->meta_type != mf_generic) {
-			error (0, "can't mix generic and simple or overload");
-			return nullptr;
-		}
-		add_generic_function (genfunc);
-
-		ALLOC (1024, metafunc_t, metafuncs, func);
-		*func = (metafunc_t) {
-			.name = save_string (name),
-			.full_name = name,
-			.loc = pr.loc,
-			.meta_type = mf_generic,
-		};
-		Hash_Add (metafuncs, func);
-		Hash_Add (function_map, func);
-	} else {
-		if (!spec.sym->type || !spec.sym->type->encoding) {
-			spec = default_type (spec, spec.sym);
-			spec.sym->type = append_type (spec.sym->type, spec.type);
-			set_func_type_attrs (spec.sym->type, spec.attributes);
-			spec.sym->type = find_type (spec.sym->type);
-		}
-		func = get_function (name, unalias_type (sym->type), spec);
+	if (!type) {
+		return false;
 	}
-
-	if (func && func->meta_type == mf_overload)
-		name = func->full_name;
-	symbol_t   *s = symtab_lookup (current_symtab, name);
-	if (!s || s->table != current_symtab) {
-		s = new_symbol (name);
-		s->sy_type = sy_func;
-		s->type = unalias_type (sym->type);
-		s->params = sym->params;
-		s->metafunc = func;
-		symtab_addsymbol (current_symtab, s);
+	if (type == param_type) {
+		return true;
 	}
-	return s;
-}
-
-// NOTE sorts the list in /reverse/ order
-static int
-func_compare (const void *a, const void *b)
-{
-	metafunc_t *fa = *(metafunc_t **) a;
-	metafunc_t *fb = *(metafunc_t **) b;
-	const type_t *ta = fa->type;
-	const type_t *tb = fb->type;
-	int         na = ta->func.num_params;
-	int         nb = tb->func.num_params;
-	int         ret, i;
-
-	if (na < 0)
-		na = ~na;
-	if (nb < 0)
-		nb = ~nb;
-	if (na != nb)
-		return nb - na;
-	if ((ret = (tb->func.num_params - ta->func.num_params)))
-		return ret;
-	for (i = 0; i < na && i < nb; i++) {
-		auto diff = tb->func.param_types[i] - ta->func.param_types[i];
-		if (diff) {
-			return diff < 0 ? -1 : 1;
-		}
+	if (is_reference (type)) {
+		// pass by references is a free conversion, but no promotion
+		return dereference_type (type) == param_type;
 	}
-	return 0;
-}
-
-static const expr_t *
-set_func_symbol (const expr_t *fexpr, metafunc_t *f)
-{
-	auto sym = symtab_lookup (current_symtab, f->full_name);
-	if (!sym) {
-		internal_error (fexpr, "overloaded function %s not found",
-						f->full_name);
+	if (is_reference (param_type)) {
+		// dereferencing a reference is free so long as there's no
+		// promotion, otherwise there's the promotion cost
+		param_type = dereference_type (param_type);
 	}
-	auto nf = new_expr ();
-	*nf = *fexpr;
-	nf->symbol = sym;
-	return nf;
+	if (type == param_type) {
+		return true;
+	}
+	if (!promote || !type_promotes (type, param_type)) {
+		return false;
+	}
+	*cost += 1;
+	return true;
 }
 
 static const type_t * __attribute__((pure))
@@ -714,34 +600,6 @@ select_type (gentype_t *gentype, const type_t *param_type)
 		}
 	}
 	return nullptr;
-}
-
-static bool
-check_type (const type_t *type, const type_t *param_type, unsigned *cost, bool promote)
-{
-	if (!type) {
-		return false;
-	}
-	if (type == param_type) {
-		return true;
-	}
-	if (is_reference (type)) {
-		// pass by references is a free conversion, but no promotion
-		return dereference_type (type) == param_type;
-	}
-	if (is_reference (param_type)) {
-		// dereferencing a reference is free so long as there's no
-		// promotion, otherwise there's the promotion cost
-		param_type = dereference_type (param_type);
-	}
-	if (type == param_type) {
-		return true;
-	}
-	if (!promote || !type_promotes (type, param_type)) {
-		return false;
-	}
-	*cost += 1;
-	return true;
 }
 
 static genfunc_t *
@@ -804,7 +662,6 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 static symbol_t *
 create_generic_sym (genfunc_t *g, const expr_t *fexpr, const type_t *call_type)
 {
-	auto fsym = fexpr->symbol;
 	int num_params = call_type->func.num_params;
 	auto call_params = call_type->func.param_types;
 	const type_t *types[g->num_types] = {};
@@ -857,6 +714,7 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, const type_t *call_type)
 	auto name = g->name;
 	auto full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
+	auto fsym = fexpr->symbol;
 	auto sym = symtab_lookup (fsym->table, full_name);
 	if (!sym || sym->table != fsym->table) {
 		sym = new_symbol (full_name);
@@ -868,6 +726,167 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, const type_t *call_type)
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return sym;
+}
+
+static metafunc_t *
+get_function (const char *name, specifier_t spec)
+{
+	if (!spec.sym->type || !spec.sym->type->encoding) {
+		spec = default_type (spec, spec.sym);
+		spec.sym->type = append_type (spec.sym->type, spec.type);
+		set_func_attrs (spec.sym->type, spec.attributes);
+		spec.sym->type = find_type (spec.sym->type);
+	}
+	auto type = unalias_type (spec.sym->type);
+
+	bool overload = spec.is_overload | current_language.always_override;
+	metafunc_t *func = Hash_Find (function_map, name);
+	if (func && func->meta_type == mf_generic) {
+		auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, name);
+		auto type = spec.sym->type;
+		expr_t fexpr = {
+			.loc = pr.loc,
+			.type = ex_symbol,
+			.symbol = symtab_lookup (current_symtab, name),
+		};
+		if (!fexpr.symbol || fexpr.symbol->sy_type != sy_func
+			|| !fexpr.symbol->metafunc) {
+			internal_error (0, "genfunc oops");
+		}
+		auto gen = find_generic_function (genfuncs, &fexpr, type, false);
+		if (gen) {
+			auto sym = create_generic_sym (gen, &fexpr, type);
+			if (sym == fexpr.symbol
+				|| sym->metafunc == fexpr.symbol->metafunc) {
+				internal_error (0, "genfunc oops");
+			}
+			func = sym->metafunc;
+			overload = true;
+		} else {
+			func = nullptr;
+		}
+	}
+
+	const char *full_name;
+	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
+
+	if (!func || func->meta_type != mf_generic) {
+		// check if the exact function signature already exists, in which case
+		// simply return it.
+		func = Hash_Find (metafuncs, full_name);
+		if (func) {
+			if (func->type != type) {
+				error (0, "can't overload on return types");
+				return func;
+			}
+			return func;
+		}
+
+		func = Hash_Find (function_map, name);
+		if (func) {
+			if (!overload && func->meta_type != mf_overload) {
+				warning (0, "creating overloaded function %s without @overload",
+						 full_name);
+				warning (&(expr_t) { .loc = func->loc },
+						 "(previous function is %s)", func->full_name);
+			}
+			overload = true;
+		}
+
+		func = new_metafunc ();
+	}
+	*func = (metafunc_t) {
+		.name = save_string (name),
+		.full_name = full_name,
+		.type = type,
+		.loc = pr.loc,
+		.meta_type = overload ? mf_overload : mf_simple,
+	};
+
+	Hash_Add (metafuncs, func);
+	Hash_Add (function_map, func);
+	return func;
+}
+
+symbol_t *
+function_symbol (specifier_t spec)
+{
+	symbol_t   *sym = spec.sym;
+	const char *name = sym->name;
+	metafunc_t *func = Hash_Find (function_map, name);
+
+	auto genfunc = parse_generic_function (name, spec);
+	if (genfunc) {
+		add_generic_function (genfunc);
+
+		ALLOC (1024, metafunc_t, metafuncs, func);
+		*func = (metafunc_t) {
+			.name = save_string (name),
+			.full_name = name,
+			.loc = pr.loc,
+			.meta_type = mf_generic,
+		};
+		Hash_Add (metafuncs, func);
+		Hash_Add (function_map, func);
+	} else {
+		func = get_function (name, spec);
+	}
+
+	if (func && func->meta_type == mf_overload)
+		name = func->full_name;
+	symbol_t   *s = symtab_lookup (current_symtab, name);
+	if (!s || s->table != current_symtab) {
+		s = new_symbol (name);
+		s->sy_type = sy_func;
+		s->type = unalias_type (sym->type);
+		s->params = sym->params;
+		s->metafunc = func;
+		symtab_addsymbol (current_symtab, s);
+	}
+	return s;
+}
+
+// NOTE sorts the list in /reverse/ order
+static int
+func_compare (const void *a, const void *b)
+{
+	metafunc_t *fa = *(metafunc_t **) a;
+	metafunc_t *fb = *(metafunc_t **) b;
+	const type_t *ta = fa->type;
+	const type_t *tb = fb->type;
+	int         na = ta->func.num_params;
+	int         nb = tb->func.num_params;
+	int         ret, i;
+
+	if (na < 0)
+		na = ~na;
+	if (nb < 0)
+		nb = ~nb;
+	if (na != nb)
+		return nb - na;
+	if ((ret = (tb->func.num_params - ta->func.num_params)))
+		return ret;
+	for (i = 0; i < na && i < nb; i++) {
+		auto diff = tb->func.param_types[i] - ta->func.param_types[i];
+		if (diff) {
+			return diff < 0 ? -1 : 1;
+		}
+	}
+	return 0;
+}
+
+static const expr_t *
+set_func_symbol (const expr_t *fexpr, metafunc_t *f)
+{
+	auto sym = symtab_lookup (current_symtab, f->full_name);
+	if (!sym) {
+		internal_error (fexpr, "overloaded function %s not found",
+						f->full_name);
+	}
+	auto nf = new_expr ();
+	*nf = *fexpr;
+	nf->symbol = sym;
+	return nf;
 }
 
 const expr_t *
