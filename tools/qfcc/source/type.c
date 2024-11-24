@@ -1750,6 +1750,33 @@ type_promotes (const type_t *dst, const type_t *src)
 }
 
 bool
+type_demotes (const type_t *dst, const type_t *src)
+{
+	if (!dst || !src) {
+		return false;
+	}
+
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	if (type_rows (dst) != type_rows (src)
+		|| type_cols (dst) != type_cols (src)) {
+		return false;
+	}
+
+	if (is_float (dst) && is_double (src)) {
+		return true;
+	}
+	if ((is_boolean (dst) || is_int (dst) || is_uint (dst))
+		&& is_lbool (src)) {
+		return true;
+	}
+	if (is_bool (dst) && (is_lbool (src) || is_long (src))) {
+		return true;
+	}
+	return false;
+}
+
+bool
 type_same (const type_t *dst, const type_t *src)
 {
 	dst = unalias_type (dst);

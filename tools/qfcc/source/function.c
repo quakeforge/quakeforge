@@ -547,47 +547,60 @@ set_func_attrs (const type_t *func_type, attribute_t *attr_list)
 	}
 }
 
+typedef struct {
+	const type_t *type;
+	bool        implicit;
+} callparm_t;
+
+typedef struct {
+	int         num_params;
+	callparm_t *params;
+} calltype_t;
+
 static bool
-check_type (const type_t *type, const type_t *param_type, unsigned *cost,
-			bool promote)
+check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 {
 	if (!type) {
 		return false;
 	}
-	if (type == param_type) {
+	if (type == param.type) {
 		return true;
 	}
 	if (is_reference (type)) {
 		// pass by references is a free conversion, but no promotion
-		return dereference_type (type) == param_type;
+		return dereference_type (type) == param.type;
 	}
-	if (is_reference (param_type)) {
+	if (is_reference (param.type)) {
 		// dereferencing a reference is free so long as there's no
 		// promotion, otherwise there's the promotion cost
-		param_type = dereference_type (param_type);
+		param.type = dereference_type (param.type);
 	}
-	if (type == param_type) {
+	if (type == param.type) {
 		return true;
 	}
-	if (!promote || !type_promotes (type, param_type)) {
+	if (!promote) {
+		// want exact match
 		return false;
+	}
+	if (!type_promotes (type, param.type)) {
+		return param.implicit && type_demotes (type, param.type);
 	}
 	*cost += 1;
 	return true;
 }
 
 static const type_t * __attribute__((pure))
-select_type (gentype_t *gentype, const type_t *param_type)
+select_type (gentype_t *gentype, callparm_t param)
 {
 	for (auto t = gentype->valid_types; t && *t; t++) {
-		if (*t == param_type) {
+		if (*t == param.type) {
 			return *t;
 		}
-		if (is_reference (*t) && dereference_type (*t) == param_type) {
+		if (is_reference (*t) && dereference_type (*t) == param.type) {
 			// pass value by reference: no promotion
 			return *t;
 		}
-		auto pt = param_type;
+		auto pt = param.type;
 		if (is_reference (pt)) {
 			// pass reference by value: promotion ok
 			pt = dereference_type (pt);
@@ -604,14 +617,14 @@ select_type (gentype_t *gentype, const type_t *param_type)
 
 static genfunc_t *
 find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
-					   const type_t *call_type, bool promote)
+					   calltype_t *calltype, bool promote)
 {
 	int num_funcs = 0;
 	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
 	unsigned costs[num_funcs] = {};
 
-	int num_params = call_type->func.num_params;
-	auto call_params = call_type->func.param_types;
+	int num_params = calltype->num_params;
+	auto call_params = calltype->params;
 	for (int j = 0; j < num_funcs; j++) {
 		auto g = genfuncs[j];
 		if (g->num_params != num_params) {
@@ -660,10 +673,10 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 }
 
 static symbol_t *
-create_generic_sym (genfunc_t *g, const expr_t *fexpr, const type_t *call_type)
+create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
 {
-	int num_params = call_type->func.num_params;
-	auto call_params = call_type->func.param_types;
+	int num_params = calltype->num_params;
+	auto call_params = calltype->params;
 	const type_t *types[g->num_types] = {};
 	const type_t *param_types[num_params];
 	param_qual_t param_quals[num_params];
@@ -738,12 +751,23 @@ get_function (const char *name, specifier_t spec)
 		spec.sym->type = find_type (spec.sym->type);
 	}
 	auto type = unalias_type (spec.sym->type);
+	int num_params = type->func.num_params;
+	if (num_params < 0) {
+		num_params = ~num_params;
+	}
+	callparm_t call_params[num_params + 1] = {};
+	calltype_t calltype = {
+		.num_params = type->func.num_params,
+		.params = call_params,
+	};
+	for (int i = 0; i < num_params; i++) {
+		call_params[i].type = type->func.param_types[i];
+	}
 
 	bool overload = spec.is_overload | current_language.always_override;
 	metafunc_t *func = Hash_Find (function_map, name);
 	if (func && func->meta_type == mf_generic) {
 		auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, name);
-		auto type = spec.sym->type;
 		expr_t fexpr = {
 			.loc = pr.loc,
 			.type = ex_symbol,
@@ -753,9 +777,9 @@ get_function (const char *name, specifier_t spec)
 			|| !fexpr.symbol->metafunc) {
 			internal_error (0, "genfunc oops");
 		}
-		auto gen = find_generic_function (genfuncs, &fexpr, type, false);
+		auto gen = find_generic_function (genfuncs, &fexpr, &calltype, false);
 		if (gen) {
-			auto sym = create_generic_sym (gen, &fexpr, type);
+			auto sym = create_generic_sym (gen, &fexpr, &calltype);
 			if (sym == fexpr.symbol
 				|| sym->metafunc == fexpr.symbol->metafunc) {
 				internal_error (0, "genfunc oops");
@@ -869,41 +893,35 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	}
 
 	int         num_params = params ? list_count (&params->list) : 0;
-	const type_t *arg_types[num_params + 1];
-	param_qual_t arg_quals[num_params + 1];
 	const expr_t *args[num_params + 1];
 	if (params) {
 		list_scatter_rev (&params->list, args);
 	}
+
+	callparm_t call_params[num_params] = {};
 	for (int i = 0; i < num_params; i++) {
 		auto e = args[i];
 		if (e->type == ex_error) {
 			return e;
 		}
-		arg_types[i] = get_type (e);
-		arg_quals[i] = pq_in;
+		call_params[i] = (callparm_t) {
+			.type = get_type (e),
+			.implicit = e->implicit,
+		};
 	}
-
-	type_t call_type = {
-		.type = ev_func,
-		.alignment = 1,
-		.width = 1,
-		.columns = 1,
-		.func = {
-			.num_params = num_params,
-			.param_types = arg_types,
-			.param_quals = arg_quals,
-		},
+	calltype_t calltype = {
+		.num_params = num_params,
+		.params = call_params,
 	};
 
 	const char *fname = fexpr->symbol->name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
-		auto gen = find_generic_function (genfuncs, fexpr, &call_type, true);
+		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true);
 		if (!gen) {
 			return new_error_expr ();
 		}
-		auto sym = create_generic_sym (gen, fexpr, &call_type);
+		auto sym = create_generic_sym (gen, fexpr, &calltype);
 		return new_symbol_expr (sym);
 	}
 
@@ -923,8 +941,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	for (int i = 0; i < num_funcs; i++) {
 		auto f = (metafunc_t *) funcs[i];
 		int num_params = f->type->func.num_params;
-		if ((num_params >= 0 && num_params != call_type.func.num_params)
-			|| (num_params < 0 && ~num_params > call_type.func.num_params)) {
+		if ((num_params >= 0 && num_params != calltype.num_params)
+			|| (num_params < 0 && ~num_params > calltype.num_params)) {
 			costs[i] = ~0u;
 			continue;
 		}
@@ -934,8 +952,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		bool ok = true;
 		for (int j = 0; ok && j < num_params; j++) {
 			auto fptype = f->type->func.param_types[j];
-			auto cptype = call_type.func.param_types[j];
-			ok &= check_type (fptype, cptype, costs + i, true);
+			auto cparam = calltype.params[j];
+			ok &= check_type (fptype, cparam, costs + i, true);
 		}
 		if (!ok) {
 			costs[i] = ~0u;
