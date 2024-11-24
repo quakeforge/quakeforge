@@ -578,6 +578,10 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (type == param.type) {
 		return true;
 	}
+	int ret = obj_types_assignable (type, param.type);
+	if (ret >= 0) {
+		return ret;
+	}
 	if (!promote) {
 		// want exact match
 		return false;
