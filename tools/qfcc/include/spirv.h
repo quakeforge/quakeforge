@@ -48,7 +48,7 @@ typedef struct entrypoint_s {
 typedef struct module_s {
 	ex_list_t   capabilities;
 	ex_list_t   extensions;
-	ex_list_t   extinst_imports;
+	symtab_t   *extinst_imports;
 	const expr_t *addressing_model;
 	const expr_t *memory_model;
 	struct DARRAY_TYPE (symbol_t *) interface_syms;

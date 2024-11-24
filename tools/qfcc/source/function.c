@@ -847,7 +847,7 @@ function_symbol (specifier_t spec)
 	if (genfunc) {
 		add_generic_function (genfunc);
 
-		ALLOC (1024, metafunc_t, metafuncs, func);
+		func = new_metafunc ();
 		*func = (metafunc_t) {
 			.name = save_string (name),
 			.full_name = name,
@@ -897,7 +897,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	}
 
 	int         num_params = params ? list_count (&params->list) : 0;
-	const expr_t *args[num_params + 1];
+	const expr_t *args[num_params + 1] = {};
 	if (params) {
 		list_scatter_rev (&params->list, args);
 	}
@@ -1238,6 +1238,21 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 	func->parameters->space->size = 0;
 	func->locals->space = func->parameters->space;
 	return func;
+}
+
+void
+build_intrinsic_function (specifier_t spec, const expr_t *intrinsic)
+{
+	auto sym = function_symbol (spec);
+	if (sym->metafunc->expr || sym->metafunc->func) {
+		error (intrinsic, "%s already defined", sym->name);
+		return;
+	}
+	if (sym->type->func.num_params < 0) {
+		error (intrinsic, "intrinsic functions cannot be variadic");
+		return;
+	}
+	sym->metafunc->expr = intrinsic;
 }
 
 void

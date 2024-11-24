@@ -166,11 +166,30 @@ spirv_Extension (const char *ext, defspace_t *space)
 static unsigned
 spirv_ExtInstImport (const char *imp, spirvctx_t *ctx)
 {
-	auto strings = ctx->module->strings;
-	auto insn = spirv_str_insn (SpvOpExtInstImport, 2, 0, imp, strings);
+	auto space = ctx->module->extinst_imports->space;
+	auto insn = spirv_str_insn (SpvOpExtInstImport, 2, 0, imp, space);
 	int id = spirv_id (ctx);
 	INSN (insn, 1) = id;
 	return id;
+}
+
+static unsigned
+spirv_extinst_import (module_t *module, const char *import, spirvctx_t *ctx)
+{
+	if (!module->extinst_imports) {
+		module->extinst_imports = new_symtab (nullptr, stab_enum);
+		module->extinst_imports->space = defspace_new (ds_backed);
+	}
+	auto imp = symtab_lookup (module->extinst_imports, import);
+	if (!imp) {
+		imp = new_symbol (import);
+		imp->sy_type = sy_offset;
+		symtab_addsymbol (module->extinst_imports, imp);
+	}
+	if (ctx && !imp->offset) {
+		imp->offset = spirv_ExtInstImport (import, ctx);
+	}
+	return imp->offset;
 }
 
 static void
@@ -1580,6 +1599,36 @@ spirv_select (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
+{
+	auto intr = e->intrinsic;
+	unsigned op = expr_integral (intr.opcode);
+
+	int count = list_count (&intr.operands);
+	int start = 0;
+	const expr_t *operands[count + 1] = {};
+	unsigned op_ids[count + 1] = {};
+	list_scatter (&intr.operands, operands);
+	if (op == SpvOpExtInst) {
+		auto set = expr_string (operands[0]);
+		op_ids[0] = spirv_extinst_import (ctx->module, set, ctx);
+		op_ids[1] = expr_integral (operands[1]);
+		start = 2;
+	}
+	for (int i = start; i < count; i++) {
+		op_ids[i] = spirv_emit_expr (operands[i], ctx);
+	}
+	unsigned tid = type_id (intr.res_type, ctx);
+	unsigned id = spirv_id (ctx);
+
+	auto insn = spirv_new_insn (op, 3 + count, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	memcpy (&INSN (insn, 3), op_ids, count * sizeof (op_ids[0]));
+	return id;
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
@@ -1601,6 +1650,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_array] = spirv_field_array,
 		[ex_loop] = spirv_loop,
 		[ex_select] = spirv_select,
+		[ex_intrinsic] = spirv_intrinsic,
 	};
 
 	if (e->type >= ex_count) {
@@ -1649,23 +1699,6 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	INSN (header, 3) = 0;	// Filled in later
 	INSN (header, 4) = 0;	// Reserved
 
-	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
-		spirv_Capability (expr_uint (cap->expr), space);
-	}
-	for (auto ext = pr->module->extensions.head; ext; ext = ext->next) {
-		spirv_Extension (expr_string (ext->expr), space);
-	}
-	for (auto imp = pr->module->extinst_imports.head; imp; imp = imp->next) {
-		//FIXME need to store id where it can be used for instructions
-		spirv_ExtInstImport (expr_string (imp->expr), &ctx);
-	}
-
-	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
-					   expr_uint (pr->module->memory_model), space);
-
-
-	auto srcid = spirv_String (pr->src_name, &ctx);
-	spirv_Source (0, 1, srcid, nullptr, &ctx);
 	for (auto func = pr->func_head; func; func = func->next)
 	{
 		auto func_id = spirv_function (func, &ctx);
@@ -1676,11 +1709,28 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		}
 	}
 
+	auto mod = pr->module;
+	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
+		spirv_Capability (expr_uint (cap->expr), space);
+	}
+	for (auto ext = pr->module->extensions.head; ext; ext = ext->next) {
+		spirv_Extension (expr_string (ext->expr), space);
+	}
+	if (mod->extinst_imports) {
+		ADD_DATA (space, mod->extinst_imports->space);
+	}
+
+	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
+					   expr_uint (pr->module->memory_model), space);
+
+
+	auto srcid = spirv_String (pr->src_name, &ctx);
+	spirv_Source (0, 1, srcid, nullptr, &ctx);
+
 	auto main_sym = symtab_lookup (pr->symtab, "main");
 	if (main_sym && main_sym->sy_type == sy_func) {
 	}
 
-	auto mod = pr->module;
 	INSN (header, 3) = ctx.id + 1;
 	ADD_DATA (space, mod->entry_points);
 	ADD_DATA (space, mod->exec_modes);
@@ -1715,8 +1765,7 @@ spirv_add_extension (module_t *module, const char *extension)
 void
 spirv_add_extinst_import (module_t *module, const char *import)
 {
-	auto imp = new_string_expr (import);
-	list_append (&module->extinst_imports, imp);
+	spirv_extinst_import (module, import, nullptr);
 }
 
 void

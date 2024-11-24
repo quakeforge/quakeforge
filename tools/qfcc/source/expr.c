@@ -2269,6 +2269,25 @@ new_select_expr (bool not, const expr_t *test,
 }
 
 expr_t *
+new_intrinsic_expr (const expr_t *expr_list)
+{
+	auto intrinsic = new_expr ();
+	intrinsic->type = ex_intrinsic;
+
+	if (expr_list) {
+		int count = list_count (&expr_list->list);
+		const expr_t *exprs[count + 1];
+		list_scatter (&expr_list->list, exprs);
+
+		intrinsic->intrinsic = (ex_intrinsic_t) {
+			.opcode = exprs[0],
+		};
+		list_gather (&intrinsic->intrinsic.operands, exprs + 1, count - 1);
+	}
+	return intrinsic;
+}
+
+expr_t *
 append_decl (expr_t *decl, symbol_t *sym, const expr_t *init)
 {
 	auto expr = new_symbol_expr (sym);

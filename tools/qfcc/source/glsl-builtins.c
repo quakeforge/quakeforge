@@ -337,6 +337,9 @@ static gentype_t genDType = {
 };
 #endif
 
+#define SPV(op) "@intrinsic(" #op ")"
+#define GLSL(op) "@intrinsic(12, \"GLSL.std.450\", " #op ")"
+
 static const char *glsl_general_functions =
 SRC_LINE
 "#define out @out"                                                  "\n"
@@ -377,8 +380,8 @@ SRC_LINE
 "genFType log(genFType x);"                                         "\n"
 "genFType exp2(genFType x);"                                        "\n"
 "genFType log2(genFType x);"                                        "\n"
-"genFType sqrt(genFType x);"                                        "\n"
-"genDType sqrt(genDType x);"                                        "\n"
+"genFType sqrt(genFType x) = " GLSL(31) ";"                         "\n"
+"genDType sqrt(genDType x) = " GLSL(31) ";"                         "\n"
 "genFType inversesqrt(genFType x);"                                 "\n"
 "genDType inversesqrt(genDType x);"                                 "\n"
 
@@ -485,10 +488,10 @@ SRC_LINE
 "double length(genDType x);"                                        "\n"
 "float distance(genFType p0, genFType p1);"                         "\n"
 "double distance(genDType p0, genDType p1);"                        "\n"
-"float dot(genFType x, genFType y);"                                "\n"
-"double dot(genDType x, genDType y);"                               "\n"
-"@overload vec3 cross(vec3 x, vec3 y);"                             "\n"
-"@overload dvec3 cross(dvec3 x, dvec3 y);"                          "\n"
+"float dot(genFType x, genFType y) = " SPV(148) ";"                 "\n"
+"double dot(genDType x, genDType y) = " SPV(148) ";"                "\n"
+"@overload vec3 cross(vec3 x, vec3 y) = " GLSL(68) ";"              "\n"
+"@overload dvec3 cross(dvec3 x, dvec3 y) = " GLSL(68) ";"           "\n"
 "genFType normalize(genFType x);"                                   "\n"
 "genDType normalize(genDType x);"                                   "\n"
 "genFType faceforward(genFType N, genFType I, genFType Nref);"      "\n"

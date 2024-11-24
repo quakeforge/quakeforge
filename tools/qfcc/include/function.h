@@ -169,6 +169,7 @@ typedef struct metafunc_s {
 	rua_loc_t   loc;				///< source location of the function
 	mf_type_e   meta_type;			///< is this function overloaded
 	function_t *func;
+	const expr_t *expr;				///< inline or intrinsic
 } metafunc_t;
 
 extern function_t *current_func;
@@ -219,6 +220,7 @@ function_t *build_code_function (symbol_t *fsym,
 function_t *build_builtin_function (symbol_t *sym,
 									const expr_t *bi_val, int far,
 									enum storage_class_e storage);
+void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic);
 void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);
 

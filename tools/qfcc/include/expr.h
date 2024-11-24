@@ -974,6 +974,8 @@ expr_t *new_select_expr (bool not, const expr_t *test,
 						 const expr_t *true_body,
 						 const expr_t *els, const expr_t *false_body);
 
+expr_t *new_intrinsic_expr (const expr_t *expr_list);
+
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
 

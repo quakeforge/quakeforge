@@ -157,7 +157,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT
-%token				HANDLE
+%token				HANDLE INTRINSIC
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
 %token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
@@ -217,6 +217,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<element>	element
 %type	<expr>		method_optional_state_expr optional_state_expr
 %type	<expr>		texpr vector_expr
+%type	<expr>		intrinsic
 %type	<expr>		statement
 %type	<mut_expr>	statements compound_statement compound_statement_ns
 %type	<expr>		else bool_label break_label continue_label
@@ -814,6 +815,11 @@ qc_nocode_func
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
+	| identifier '=' intrinsic
+		{
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			build_intrinsic_function (spec, $3);
+		}
 	| identifier '=' expr
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
@@ -1171,6 +1177,15 @@ function_body
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
+	| '=' intrinsic
+		{
+			specifier_t spec = $<spec>0;
+			build_intrinsic_function (spec, $2);
+		}
+	;
+
+intrinsic
+	: INTRINSIC '(' expr_list ')'	{ $$ = new_intrinsic_expr ($3); }
 	;
 
 storage_class
@@ -2948,6 +2963,7 @@ static keyword_t keywords[] = {
 	{"@overload",	QC_OVERLOAD,				},
 	{"@attribute",  QC_ATTRIBUTE,				},
 	{"@handle",     QC_HANDLE,					},
+	{"@intrinsic",  QC_INTRINSIC,				},
 };
 
 static int

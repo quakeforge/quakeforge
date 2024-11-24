@@ -279,7 +279,6 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 					 const expr_t *args)
 {
 	int         param_count = 0;
-	expr_t     *call;
 	const expr_t *err = 0;
 
 	int arg_count = args ? list_count (&args->list) : 0;
@@ -302,20 +301,39 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		return err;
 	}
 
+	expr_t     *call = nullptr;
 	scoped_src_loc (fexpr);
-	call = new_block_expr (0);
-	call->block.is_call = 1;
-	int         num_args = 0;
-	const expr_t *arg_exprs[arg_count + 1][2];
-	auto arg_list = build_args (arg_exprs, &num_args, arguments, arg_types,
-								arg_count, param_count, ftype);
-	for (int i = 0; i < num_args; i++) {
-		scoped_src_loc (arg_exprs[i][0]);
-		auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
-		append_expr (call, assign);
+	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_func
+		&& fexpr->symbol->metafunc->expr) {
+		auto expr = fexpr->symbol->metafunc->expr;
+		if (expr->type == ex_intrinsic) {
+			for (int i = 0; i < arg_count; i++) {
+				if (is_reference (get_type (arguments[i]))) {
+					arguments[i] = pointer_deref (arguments[i]);
+				}
+			}
+			call = new_intrinsic_expr (nullptr);
+			call->intrinsic.opcode = expr->intrinsic.opcode;
+			call->intrinsic.res_type = ftype->func.ret_type;
+			list_append_list (&call->intrinsic.operands,
+							  &expr->intrinsic.operands);
+			list_gather (&call->intrinsic.operands, arguments, arg_count);
+		}
+	} else {
+		call = new_block_expr (0);
+		call->block.is_call = 1;
+		int         num_args = 0;
+		const expr_t *arg_exprs[arg_count + 1][2];
+		auto arg_list = build_args (arg_exprs, &num_args, arguments, arg_types,
+									arg_count, param_count, ftype);
+		for (int i = 0; i < num_args; i++) {
+			scoped_src_loc (arg_exprs[i][0]);
+			auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
+			append_expr (call, assign);
+		}
+		auto ret_type = ftype->func.ret_type;
+		call->block.result = new_call_expr (fexpr, arg_list, ret_type);
 	}
-	auto ret_type = ftype->func.ret_type;
-	call->block.result = new_call_expr (fexpr, arg_list, ret_type);
 	return call;
 }
 

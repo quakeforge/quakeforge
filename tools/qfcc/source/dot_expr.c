@@ -409,10 +409,14 @@ print_intrinsic (dstring_t *dstr, const expr_t *e, int level, int id,
 	for (auto l = e->intrinsic.operands.head; l; l = l->next) {
 		_print_expr (dstr, l->expr, level, id, next);
 	}
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"op\"];\n", indent, "", e,
+			   e->intrinsic.opcode);
 	for (auto l = e->intrinsic.operands.head; l; l = l->next) {
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 				   l->expr);
 	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "@intrinsic", e->loc.line);
 }
 
 static void
