@@ -839,10 +839,11 @@ function_symbol (specifier_t spec)
 		s = new_symbol (name);
 		s->sy_type = sy_func;
 		s->type = unalias_type (sym->type);
-		s->params = sym->params;
-		s->metafunc = func;
 		symtab_addsymbol (current_symtab, s);
 	}
+	//if it existed, override the declaration's parameters and metafunc
+	s->params = sym->params;
+	s->metafunc = func;
 	return s;
 }
 
