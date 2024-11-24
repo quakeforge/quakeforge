@@ -339,6 +339,15 @@ proc_cond (const expr_t *expr)
 	auto test = expr_process (expr->cond.test);
 	auto true_expr = expr_process (expr->cond.true_expr);
 	auto false_expr = expr_process (expr->cond.false_expr);
+	if (is_error (test)) {
+		return test;
+	}
+	if (is_error (true_expr)) {
+		return true_expr;
+	}
+	if (is_error (false_expr)) {
+		return false_expr;
+	}
 	return new_cond_expr (test, true_expr, false_expr);
 }
 
