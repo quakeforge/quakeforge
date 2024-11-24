@@ -847,35 +847,6 @@ function_symbol (specifier_t spec)
 	return s;
 }
 
-// NOTE sorts the list in /reverse/ order
-static int
-func_compare (const void *a, const void *b)
-{
-	metafunc_t *fa = *(metafunc_t **) a;
-	metafunc_t *fb = *(metafunc_t **) b;
-	const type_t *ta = fa->type;
-	const type_t *tb = fb->type;
-	int         na = ta->func.num_params;
-	int         nb = tb->func.num_params;
-	int         ret, i;
-
-	if (na < 0)
-		na = ~na;
-	if (nb < 0)
-		nb = ~nb;
-	if (na != nb)
-		return nb - na;
-	if ((ret = (tb->func.num_params - ta->func.num_params)))
-		return ret;
-	for (i = 0; i < na && i < nb; i++) {
-		auto diff = tb->func.param_types[i] - ta->func.param_types[i];
-		if (diff) {
-			return diff < 0 ? -1 : 1;
-		}
-	}
-	return 0;
-}
-
 static const expr_t *
 set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 {
@@ -893,10 +864,6 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 const expr_t *
 find_function (const expr_t *fexpr, const expr_t *params)
 {
-	int         func_count, parm_count, reported = 0;
-	metafunc_t  dummy, *best = 0;
-	void       *dummy_p = &dummy;
-
 	if (fexpr->type != ex_symbol) {
 		return fexpr;
 	}
@@ -943,83 +910,59 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	auto funcs = (metafunc_t **) Hash_FindList (function_map, fname);
 	if (!funcs)
 		return fexpr;
-	for (func_count = 0; funcs[func_count]; func_count++) continue;
-	if (func_count < 2) {
-		if (func_count && funcs[0]->meta_type != mf_overload) {
+	int num_funcs;
+	for (num_funcs = 0; funcs[num_funcs]; num_funcs++) continue;
+	if (num_funcs < 2) {
+		if (num_funcs && funcs[0]->meta_type != mf_overload) {
 			free (funcs);
 			return fexpr;
 		}
 	}
-	call_type.func.ret_type = funcs[0]->type->func.ret_type;
-	dummy.type = find_type (&call_type);
 
-	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va (0, "%s|%s", fexpr->symbol->name,
-									   encode_params (&call_type)));
-	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
-					   func_compare);
-	if (dummy_p) {
-		auto f = (metafunc_t *) *(void **) dummy_p;
-		if (f->meta_type == mf_overload) {
-			fexpr = set_func_symbol (fexpr, f);
-		}
-		free (funcs);
-		return fexpr;
-	}
-	for (int i = 0; i < func_count; i++) {
+	unsigned costs[num_funcs] = {};
+	for (int i = 0; i < num_funcs; i++) {
 		auto f = (metafunc_t *) funcs[i];
-		parm_count = f->type->func.num_params;
-		if ((parm_count >= 0 && parm_count != call_type.func.num_params)
-			|| (parm_count < 0 && ~parm_count > call_type.func.num_params)) {
-			funcs[i] = 0;
+		int num_params = f->type->func.num_params;
+		if ((num_params >= 0 && num_params != call_type.func.num_params)
+			|| (num_params < 0 && ~num_params > call_type.func.num_params)) {
+			costs[i] = ~0u;
 			continue;
 		}
-		if (parm_count < 0)
-			parm_count = ~parm_count;
-		int j;
-		for (j = 0; j < parm_count; j++) {
+		if (num_params < 0) {
+			num_params = ~num_params;
+		}
+		bool ok = true;
+		for (int j = 0; ok && j < num_params; j++) {
 			auto fptype = f->type->func.param_types[j];
 			auto cptype = call_type.func.param_types[j];
-			if (is_reference (fptype)) {
-				fptype = dereference_type (fptype);
-			}
-			if (is_reference (cptype)) {
-				cptype = dereference_type (cptype);
-			}
-			if (!type_assignable (fptype, cptype)) {
-				funcs[i] = 0;
-				break;
-			}
+			ok &= check_type (fptype, cptype, costs + i, true);
 		}
-		if (j < parm_count)
+		if (!ok) {
+			costs[i] = ~0u;
+		}
+	}
+	unsigned best_cost = ~0u;
+	int best_ind = -1;
+	for (int i = 0; i < num_funcs; i++) {
+		if (best_ind >= 0 && costs[i] == best_cost) {
+			error (fexpr, "unable to disambiguate %s", fexpr->symbol->name);
 			continue;
-	}
-	for (int i = 0; i < func_count; i++) {
-		auto f = (metafunc_t *) funcs[i];
-		if (f) {
-			if (!best) {
-				best = f;
-			} else {
-				if (!reported) {
-					reported = 1;
-					error (fexpr, "unable to disambiguate %s",
-						   dummy.full_name);
-					error (fexpr, "possible match: %s", best->full_name);
-				}
-				error (fexpr, "possible match: %s", f->full_name);
-			}
+		}
+		if (costs[i] < best_cost) {
+			best_ind = i;
+			best_cost = costs[i];
 		}
 	}
-	if (reported)
-		return fexpr;
-	if (best) {
+
+	if (best_ind >= 0) {
+		auto best = funcs[best_ind];
 		if (best->meta_type == mf_overload) {
 			fexpr = set_func_symbol (fexpr, best);
 		}
 		free (funcs);
 		return fexpr;
 	}
-	error (fexpr, "unable to find function matching %s", dummy.full_name);
+	error (fexpr, "unable to find function matching");
 	free (funcs);
 	return fexpr;
 }
