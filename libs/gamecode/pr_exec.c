@@ -2291,13 +2291,146 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				stk = pr_stack_pop (pr);
 				MM(ivec4) = STK(ivec4);
 				break;
+
+#define OP_mvmul_T_3(T,cols,rows,t) \
+			case OP_MVMUL_##cols##3##_##T: \
+				{ \
+					auto a = &OPA(t##vec##rows); \
+					auto b = OPB(t##vec##rows); \
+					auto c = OPC(t##vec##rows); \
+					VectorScale (a[0], b[0], c); \
+					for (int i = 1; i < cols; i++) { \
+						VectorMultAdd(c, b[i], a[i], c); \
+					} \
+				} \
+				break
+#define OP_mvmul_T(T,cols,rows,t) \
+			case OP_MVMUL_##cols##rows##_##T: \
+				{ \
+					auto a = &OPA(t##vec##rows); \
+					auto b = OPB(t##vec##rows); \
+					pr_##t##vec##rows##_t c = a[0] * b[0]; \
+					for (int i = 1; i < cols; i++) { \
+						c += a[i] * b[i]; \
+					} \
+					OPC(t##vec##rows) = c; \
+				} \
+				break
 			// 0 0100
-			// spare
+			OP_mvmul_T  (F,3,2,);
+			OP_mvmul_T_3(F,3,3,);
+			OP_mvmul_T  (F,3,4,);
+			OP_mvmul_T_3(F,2,3,);
+			OP_mvmul_T  (D,3,2,d);
+			OP_mvmul_T_3(D,3,3,d);
+			OP_mvmul_T  (D,3,4,d);
+			OP_mvmul_T_3(D,2,3,d);
+			OP_mvmul_T  (F,4,2,);
+			OP_mvmul_T_3(F,4,3,);
+			OP_mvmul_T  (F,4,4,);
+			OP_mvmul_T  (F,2,4,);
+			OP_mvmul_T  (D,4,2,d);
+			OP_mvmul_T_3(D,4,3,d);
+			OP_mvmul_T  (D,4,4,d);
+			OP_mvmul_T  (D,2,4,d);
+
+#define OP_vmmul_T_3(T,cols,rows,t) \
+			case OP_VMMUL_##cols##3##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = &OPB(t##vec##rows); \
+					auto c = &OPC(t##vec##cols)[0]; \
+					for (int i = 0; i < cols; i++) { \
+						c[i] = DotProduct (a, b[i]); \
+					} \
+				} \
+				break
+#define OP_vmmul_T(T,cols,rows,t,t2) \
+			case OP_VMMUL_##cols##rows##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = &OPB(t##vec##rows); \
+					pr_##t##vec##rows##_t c; \
+					for (int i = 0; i < cols; i++) { \
+						c[i] = dot##rows##t2(a, b[i])[0]; \
+					} \
+					OPC(t##vec##rows) = c; \
+				} \
+				break
+#define dot4f dotf
+#define dot4d dotd
 			// 0 0101
-			// spare
+			OP_vmmul_T  (F,3,2,,f);
+			OP_vmmul_T_3(F,3,3,);
+			OP_vmmul_T  (F,3,4,,f);
+			OP_vmmul_T_3(F,2,3,);
+			OP_vmmul_T  (D,3,2,d,d);
+			OP_vmmul_T_3(D,3,3,d);
+			OP_vmmul_T  (D,3,4,d,d);
+			OP_vmmul_T_3(D,2,3,d);
+			OP_vmmul_T  (F,4,2,,f);
+			OP_vmmul_T_3(F,4,3,);
+			OP_vmmul_T  (F,4,4,,f);
+			OP_vmmul_T  (F,2,4,,f);
+			OP_vmmul_T  (D,4,2,d,d);
+			OP_vmmul_T_3(D,4,3,d);
+			OP_vmmul_T  (D,4,4,d,d);
+			OP_vmmul_T  (D,2,4,d,d);
+#undef dot4f
+#undef dot4d
+
+#define OP_outer_T(T,cols,rows,t) \
+			case OP_OUTER_##cols##rows##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = OPB(t##vec##rows); \
+					auto c = &OPC(t##vec##rows); \
+					for (int i = 0; i < cols; i++) { \
+						for (int j = 0; j < rows; j++) { \
+							c[i][j] = a[i] * b[j]; \
+						} \
+					} \
+				} \
+				break
 			// 0 0110
-			// spare
+			OP_outer_T(F,3,2,);
+			OP_outer_T(F,3,3,);
+			OP_outer_T(F,3,4,);
+			OP_outer_T(F,2,3,);
+			OP_outer_T(D,3,2,d);
+			OP_outer_T(D,3,3,d);
+			OP_outer_T(D,3,4,d);
+			OP_outer_T(D,2,3,d);
+			OP_outer_T(F,4,2,);
+			OP_outer_T(F,4,3,);
+			OP_outer_T(F,4,4,);
+			OP_outer_T(F,2,4,);
+			OP_outer_T(D,4,2,d);
+			OP_outer_T(D,4,3,d);
+			OP_outer_T(D,4,4,d);
+			OP_outer_T(D,2,4,d);
+
 			// 0 0111
+			OP_mvmul_T(F,2,2,);
+			OP_vmmul_T(F,2,2,,f);
+			OP_outer_T(F,2,2,);
+			case OP_WEDGE_F_2:
+				{
+					auto a = OPA(vec2);
+					auto b = OPB(vec2);
+					OPC(float) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
+			OP_mvmul_T(D,2,2,d);
+			OP_vmmul_T(D,2,2,d,d);
+			OP_outer_T(D,2,2,d);
+			case OP_WEDGE_D_2:
+				{
+					auto a = OPA(dvec2);
+					auto b = OPB(dvec2);
+					OPC(double) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
 			case OP_SWIZZLE_F_2:
 				{
 					auto s2 = OPA(ivec2);
@@ -2328,21 +2461,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					storevec3l (&OPC(long), s4);
 				}
 				break;
-			case OP_WEDGE_F_2:
-				{
-					auto a = OPA(vec2);
-					auto b = OPB(vec2);
-					OPC(float) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
 			// spare
-			case OP_WEDGE_D_2:
-				{
-					auto a = OPA(dvec2);
-					auto b = OPB(dvec2);
-					OPC(double) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
+			// spare
+			// spare
 			// spare
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \
