@@ -747,6 +747,9 @@ const expr_t *new_vector_list (const expr_t *e);
 const expr_t *new_vector_value (const type_t *ele_type, int width,
 								int count, const expr_t **elements,
 								bool implicit);
+const expr_t *new_matrix_value (const type_t *ele_type, int cols, int rows,
+								int count, const expr_t **elements,
+								bool implicit);
 const expr_t *vector_to_compound (const expr_t *vector);
 
 /** Create a new entity constant expression node.

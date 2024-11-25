@@ -59,20 +59,23 @@ get_value (const expr_t *e, int i, int j)
 }
 
 static const expr_t *
-math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
+construct_by_components (const type_t *type, const expr_t *params,
+						 const expr_t *e)
 {
 	auto base = base_type (type);
-	int num_comp = type->width;
+	int num_comp = type_rows (type) * type_cols (type);
 	const expr_t *components[num_comp] = {};
 
 	int num_param = list_count (&params->list);
 	const expr_t *param_exprs[num_param + 1] = {};
 	list_scatter_rev (&params->list, param_exprs);
+
 	bool all_constant = true;
 	bool all_implicit = true;
 
-	int p = 0;
-	for (int c = 0; c < num_comp; ) {
+	int c = 0, p = 0;
+	int err = -1;
+	while (c < num_comp) {
 		if (p < num_param) {
 			auto pexpr = param_exprs[p++];
 			auto ptype = get_type (pexpr);
@@ -84,7 +87,8 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 				ptype = dereference_type (ptype);
 			}
 			if (!is_math (ptype)) {
-				components[c++] = error (pexpr, "invalid type for conversion");
+				err = c++;
+				components[err] = error (pexpr, "invalid type for conversion");
 				continue;
 			}
 			for (int i = 0; i < type_cols (ptype) && c < num_comp; i++) {
@@ -96,8 +100,14 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 				}
 			}
 		} else {
-			components[c++] = new_nil_expr ();
+			break;
 		}
+	}
+	if (err >= 0) {
+		return components[err];
+	}
+	if (c < num_comp) {
+		return error (e, "too few parameters for %s", type->name);
 	}
 	if (p < num_param) {
 		return error (e, "too may parameters for %s", type->name);
@@ -106,8 +116,13 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 		return components[0];
 	}
 	if (all_constant) {
-		return new_vector_value (base, num_comp, num_comp, components,
-								 all_implicit);
+		if (is_matrix (type)) {
+			return new_matrix_value (base, type_cols (type), type_rows (type),
+									 num_comp, components, all_implicit);
+		} else {
+			return new_vector_value (base, type_width (type),
+									 num_comp, components, all_implicit);
+		}
 	}
 
 	auto vec = new_expr ();
@@ -117,15 +132,96 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 	return vec;
 }
 
+static const expr_t *
+construct_diagonal (const type_t *type, const expr_t *scalar, const expr_t *e)
+{
+	scoped_src_loc (scalar);
+	int cols = type_cols (type);
+	int rows = type_rows (type);
+	const expr_t *components[cols * rows + 1] = {};
+	auto zero = new_nil_expr ();
+
+	for (int i = 0; i < cols; i++) {
+		for (int j = 0; j < rows; j++) {
+			components[i * rows + j] = i == j ? scalar : zero;
+		}
+	}
+	auto params = new_list_expr (nullptr);
+	list_gather (&params->list, components, cols * rows);
+	return construct_by_components (type, params, e);
+}
+
+static const expr_t *
+construct_matrix (const type_t *type, const expr_t *matrix, const expr_t *e)
+{
+	scoped_src_loc (matrix);
+	int cols = type_cols (type);
+	int rows = type_rows (type);
+	int src_cols = type_cols (get_type (matrix));
+	int src_rows = type_rows (get_type (matrix));
+	const expr_t *components[cols * rows + 1] = {};
+	auto zero = new_nil_expr ();
+
+	for (int i = 0; i < cols; i++) {
+		for (int j = 0; j < rows; j++) {
+			const expr_t *val;
+			if (i < src_cols && j < src_rows) {
+				val = get_value (matrix, i, j);
+			} else {
+				val = zero;
+			}
+			components[i * rows + j] = val;
+		}
+	}
+	auto params = new_list_expr (nullptr);
+	list_gather (&params->list, components, cols * rows);
+	return construct_by_components (type, params, e);
+}
+
+static const expr_t *
+construct_broadcast (const type_t *type, const expr_t *scalar, const expr_t *e)
+{
+	scoped_src_loc (scalar);
+	int width = type_width (type);
+	const expr_t *components[width + 1] = {};
+
+	for (int i = 0; i < width; i++) {
+		components[i] = scalar;
+	}
+	auto params = new_list_expr (nullptr);
+	list_gather (&params->list, components, width);
+	return construct_by_components (type, params, e);
+}
+
+static const expr_t *
+math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
+{
+	int num_param = list_count (&params->list);
+	const expr_t *param_exprs[num_param + 1] = {};
+	list_scatter_rev (&params->list, param_exprs);
+
+	if (num_param == 1 && is_scalar (get_type (param_exprs[0]))) {
+		if (is_matrix (type)) {
+			return construct_diagonal (type, param_exprs[0], e);
+		}
+		if (is_vector (type)) {
+			return construct_broadcast (type, param_exprs[0], e);
+		}
+	}
+	if (num_param == 1 && is_matrix (get_type (param_exprs[0]))) {
+		if (is_matrix (type)) {
+			return construct_matrix (type, param_exprs[0], e);
+		}
+	}
+	return construct_by_components (type, params, e);
+}
+
 const expr_t *
 constructor_expr (const expr_t *e, const expr_t *params)
 {
 	auto type = e->symbol->type;
 	if (is_algebra (type)) {
 		return error (e, "algebra not implemented");
-	}
-	if (is_matrix (type)) {
-		return error (e, "matrix not implemented");
 	}
 	if (is_math (type)) {
 		return math_constructor (type, params, e);
