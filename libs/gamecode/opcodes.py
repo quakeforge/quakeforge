@@ -281,7 +281,7 @@ load64_formats = {
     "opname": "load64",
     "format": "{load_fmt[mm]}, %gc",
     "widths": "{load_widths[s+2][mm]}, {s+3}",
-    "columns": "{load_columns[s+2][mm]}, {s+3}",
+    "columns": "{load_columns[s+2][mm]}, -1",
     "types": "{load_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -329,7 +329,7 @@ load_formats = {
     "opname": "load",
     "format": "{load_fmt[mm]}, %gc",
     "widths": "{load_widths[ss][mm]}, {ss+1}",
-    "columns": "{load_columns[ss][mm]}, {ss+1}",
+    "columns": "{load_columns[ss][mm]}, -1",
     "types": "{load_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -510,7 +510,7 @@ statef_formats = {
     "opname": "state",
     "format": "{state_fmt[c]}",
     "widths": "1, 1, {c}",
-    "columns": "1, 1, 1",
+    "columns": "1, 1, {c}",
     "types": "ev_float, ev_func, {state_types[c]}",
     "args": {
         "state": ["ft", "ftt"],
@@ -538,7 +538,7 @@ store_formats = {
     "opname": "{store_op[mm]}",
     "format": "%Gc, {store_fmt[mm]}",
     "widths": "{store_widths[ss][mm]}, {ss+1}",
-    "columns": "{store_columns[ss][mm]}, {ss+1}",
+    "columns": "{store_columns[ss][mm]}, -1",
     "types": "{store_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -555,7 +555,7 @@ store64_formats = {
     "opname": "{store_op[mm]}64",
     "format": "%Gc, {store_fmt[mm]}",
     "widths": "{store_widths[s+2][mm]}, {s+3}",
-    "columns": "{store_columns[s+2][mm]}, 1",
+    "columns": "{store_columns[s+2][mm]}, -1",
     "types": "{store_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -642,7 +642,7 @@ return_formats = {
     "mnemonic": "return",
     "opname": "return",
     "widths": "-1, -1, 0",    # width specified by st->c
-    "columns": "-1, -1, 1",
+    "columns": "-1, -1, 0",
     "format": "%Mc5",
     "types": "ev_void, ev_void, ev_void",
 }
