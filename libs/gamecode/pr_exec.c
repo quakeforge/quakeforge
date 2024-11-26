@@ -2296,7 +2296,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_MVMUL_##cols##3##_##T: \
 				{ \
 					auto a = &OPA(t##vec##rows); \
-					auto b = OPB(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
 					auto c = OPC(t##vec##rows); \
 					VectorScale (a[0], b[0], c); \
 					for (int i = 1; i < cols; i++) { \
@@ -2308,7 +2308,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_MVMUL_##cols##rows##_##T: \
 				{ \
 					auto a = &OPA(t##vec##rows); \
-					auto b = OPB(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
 					pr_##t##vec##rows##_t c = a[0] * b[0]; \
 					for (int i = 1; i < cols; i++) { \
 						c += a[i] * b[i]; \
@@ -2350,11 +2350,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				{ \
 					auto a = OPA(t##vec##rows); \
 					auto b = &OPB(t##vec##rows); \
-					pr_##t##vec##rows##_t c; \
+					auto c = &OPC(t##vec##cols); \
 					for (int i = 0; i < cols; i++) { \
-						c[i] = dot##rows##t2(a, b[i])[0]; \
+						(*c)[i] = dot##rows##t2(a, b[i])[0]; \
 					} \
-					OPC(t##vec##rows) = c; \
 				} \
 				break
 #define dot4f dotf
@@ -2383,10 +2382,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_OUTER_##cols##rows##_##T: \
 				{ \
 					auto a = OPA(t##vec##rows); \
-					auto b = OPB(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
 					auto c = &OPC(t##vec##rows); \
-					for (int i = 0; i < cols; i++) { \
-						for (int j = 0; j < rows; j++) { \
+					for (int i = 0; i < rows; i++) { \
+						for (int j = 0; j < cols; j++) { \
 							c[i][j] = a[i] * b[j]; \
 						} \
 					} \
