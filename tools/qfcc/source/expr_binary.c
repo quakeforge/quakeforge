@@ -1208,6 +1208,15 @@ reimplement_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 					return binary_expr ('-', e1, binary_expr ('*', e2, trn));
 				}
 				break;
+			case QC_MOD:
+				{
+					auto div = paren_expr (binary_expr ('/', e1, e2));
+					auto trn = binary_expr ('&', div, div);
+					auto one = binary_expr (QC_GT, trn, div);
+					auto flr = binary_expr ('-', trn, one);
+					return binary_expr ('-', e1, binary_expr ('*', e2, flr));
+				}
+				break;
 		}
 	}
 	return nullptr;
