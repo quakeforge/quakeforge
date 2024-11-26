@@ -142,6 +142,8 @@ rua_get_hash (const void *_op, void *_tab)
 		+ ROTL (~op->types[2], 24);
 	hash += ROTL (~op->widths[0], 12) + ROTL (~op->widths[1], 20)
 		+ ROTL (~op->widths[2], 28);
+	hash += ROTL (~op->columns[0], 12) + ROTL (~op->columns[1], 20)
+		+ ROTL (~op->columns[2], 28);
 	return hash + Hash_String (op->opname);
 }
 
@@ -158,6 +160,9 @@ rua_compare (const void *_opa, const void *_opb, void *unused)
 	cmp &= (opa->widths[0] == opb->widths[0])
 		  && (opa->widths[1] == opb->widths[1])
 		  && (opa->widths[2] == opb->widths[2]);
+	cmp &= (opa->columns[0] == opb->columns[0])
+		  && (opa->columns[1] == opb->columns[1])
+		  && (opa->columns[2] == opb->columns[2]);
 	return cmp && !strcmp (opa->opname, opb->opname);
 }
 
@@ -177,7 +182,7 @@ check_operand_type (etype_t ot1, etype_t ot2)
 }
 
 static int
-check_operand_width (int ow1, int ow2)
+check_operand_wc (int ow1, int ow2)
 {
 	return (ow1 == -1 || ow1 == ow2);
 }
@@ -303,26 +308,25 @@ operand_width (const char *opname, operand_t *op)
 	}
 	return op->width;
 }
-#if 0
-	if (!strcmp (name, "swizzle")) {
-		adjust_swizzle_op (&search_op, 0);
-		adjust_swizzle_op (&search_op, 2);
-	}
-static void
-adjust_swizzle_op (opcode_t *op, int opind)
+
+static int
+operand_columns (const char *opname, operand_t *op)
 {
-	// swizzle instructions require both operands to be 4 components (4 or 8
-	// words) in size with the same alignment.
-	op->widths[opind] = 4;
-	if (pr_type_size[op->types[opind]] == 1) {
-		op->types[opind] = ev_float;
-	} else if (pr_type_size[op->types[opind]] == 2) {
-		op->types[opind] = ev_double;
-	} else {
-		internal_error (0, "unexpected swizzle op size");
+	if (!op) {
+		return 0;
 	}
+	return op->columns;
 }
-#endif
+
+static void
+print_search_op (opcode_t *op)
+{
+	printf ("%s [%s %d %d] [%s %d %d] [%s %d %d]\n", op->opname,
+			pr_type_name[op->types[0]], op->widths[0], op->columns[0],
+			pr_type_name[op->types[1]], op->widths[1], op->columns[1],
+			pr_type_name[op->types[2]], op->widths[2], op->columns[2]);
+}
+
 static opcode_t *
 rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)
@@ -371,18 +375,20 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			operand_width ("", op_b),
 			operand_width (opname_c, op_c),
 		},
+		.columns = {
+			operand_columns (opname_a, op_a),
+			operand_columns ("", op_b),
+			operand_columns (opname_c, op_c),
+		},
 	};
 	opcode_t   *op;
 	opcode_t   *sop;
 	void      **op_list;
 	int         i;
 
-#if 0
-	printf ("%s [%s %d] [%s %d] [%s %d]\n", search_op.opname,
-			pr_type_name[search_op.types[0]], search_op.widths[0],
-			pr_type_name[search_op.types[1]], search_op.widths[1],
-			pr_type_name[search_op.types[2]], search_op.widths[2]);
-#endif
+	if (0) {
+		print_search_op (&search_op);
+	}
 	op = Hash_FindElement (rua_opcode_type_table, &search_op);
 	if (op)
 		return op;
@@ -396,15 +402,15 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			  && check_operand_type (sop->types[2], search_op.types[2]))) {
 			continue;
 		}
-		if (!(check_operand_width (sop->widths[0], search_op.widths[0])
-			  && check_operand_width (sop->widths[1], search_op.widths[1])
-			  && check_operand_width (sop->widths[2], search_op.widths[2]))) {
-#if 0
-			printf ("%s [%s %d] [%s %d] [%s %d]\n", sop->opname,
-					pr_type_name[sop->types[0]], sop->widths[0],
-					pr_type_name[sop->types[1]], sop->widths[1],
-					pr_type_name[sop->types[2]], sop->widths[2]);
-#endif
+		if (!(check_operand_wc (sop->widths[0], search_op.widths[0])
+			  && check_operand_wc (sop->widths[1], search_op.widths[1])
+			  && check_operand_wc (sop->widths[2], search_op.widths[2]))
+			|| !(check_operand_wc (sop->columns[0], search_op.columns[0])
+			     && check_operand_wc (sop->columns[1], search_op.columns[1])
+                 && check_operand_wc (sop->columns[2], search_op.columns[2]))) {
+			if (0) {
+				printf ("    "); print_search_op (sop);
+			}
 			continue;
 		}
 		op = sop;

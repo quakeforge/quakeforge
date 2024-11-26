@@ -362,6 +362,7 @@ nil_operand (const type_t *type, const expr_t *expr)
 	op->type = type;
 	op->size = type_size (type);
 	op->width = type_width (type);
+	op->columns = type_cols (type);
 	return op;
 }
 
@@ -376,6 +377,7 @@ def_operand (def_t *def, const type_t *type, const expr_t *expr)
 	op->type = type;
 	op->size = type_size (type);
 	op->width = type_width (type);
+	op->columns = type_cols (type);
 	op->def = def;
 	return op;
 }
@@ -401,6 +403,7 @@ value_operand (ex_value_t *value, const expr_t *expr)
 	op->type = value->type;
 	op->size = type_size (value->type);
 	op->width = type_width (value->type);
+	op->columns = type_cols (value->type);
 	op->value = value;
 	return op;
 }
@@ -414,6 +417,7 @@ temp_operand (const type_t *type, const expr_t *expr)
 	op->type = type;
 	op->size = type_size (type);
 	op->width = type_width (type);
+	op->columns = type_cols (type);
 	return op;
 }
 
@@ -550,6 +554,7 @@ alias_operand (const type_t *type, operand_t *op, const expr_t *expr)
 	aop->type = type;
 	aop->size = type_size (type);
 	aop->width = type_width (type);
+	aop->columns = type_cols (type);
 	return aop;
 }
 

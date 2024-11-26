@@ -68,7 +68,8 @@
 		.alignment = PR_ALIGNOF(t), \
 		.width = __builtin_choose_expr (ev_##t == ev_short \
 									 || ev_##t == ev_ushort, 0, 1), \
-		.columns = 1, \
+		.columns = __builtin_choose_expr (ev_##t == ev_short \
+										  || ev_##t == ev_ushort, 0, 1), \
 		.meta = ty_basic, \
 		{{ __builtin_choose_expr (ev_##t == ev_field \
 							   || ev_##t == ev_func \
@@ -1899,13 +1900,30 @@ type_width (const type_t *type)
 int
 type_cols (const type_t *type)
 {
-	if (is_matrix (type)) {
-		type = unalias_type (type);
-		return type->columns;
-	} else {
-		// non-matrices have only 1 column
-		return 1;
+	switch (type->meta) {
+		case ty_bool:
+		case ty_basic:
+			return type->columns;
+		case ty_handle:
+		case ty_struct:
+		case ty_union:
+			return 1;
+		case ty_enum:
+			if (!type->symtab)
+				return 0;
+			return type_cols (&type_int);
+		case ty_array:
+			return type_cols (type->array.type);
+		case ty_class:
+			return 1;
+		case ty_alias:
+			return type_cols (type->alias.aux_type);
+		case ty_algebra:
+			return 1;
+		case ty_meta_count:
+			break;
 	}
+	internal_error (0, "invalid type meta: %d", type->meta);
 }
 
 int

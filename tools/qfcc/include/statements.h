@@ -70,6 +70,7 @@ typedef struct operand_s {
 	const struct type_s *type;	///< possibly override def's/nil's type
 	int         size;			///< for structures
 	int         width;			///< for SIMD selection
+	int         columns;		///< for matrix selection
 	const struct expr_s *expr;	///< expression generating this operand
 	void       *return_addr;	///< who created this operand
 	union {
