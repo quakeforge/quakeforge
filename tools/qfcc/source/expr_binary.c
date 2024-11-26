@@ -1199,26 +1199,18 @@ _invalid_binary_expr (int op, const expr_t *e1, const expr_t *e2,
 static const expr_t *
 reimplement_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	expr_t     *e;
-
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		switch (op) {
 			case '%':
 				{
-					expr_t     *tmp1, *tmp2;
-					e = new_block_expr (0);
-					tmp1 = new_temp_def_expr (&type_float);
-					tmp2 = new_temp_def_expr (&type_float);
-
-					append_expr (e, assign_expr (tmp1, binary_expr ('/', e1, e2)));
-					append_expr (e, assign_expr (tmp2, binary_expr ('&', tmp1, tmp1)));
-					e->block.result = binary_expr ('-', e1, binary_expr ('*', e2, tmp2));
-					return e;
+					auto div = paren_expr (binary_expr ('/', e1, e2));
+					auto trn = binary_expr ('&', div, div);
+					return binary_expr ('-', e1, binary_expr ('*', e2, trn));
 				}
 				break;
 		}
 	}
-	return 0;
+	return nullptr;
 }
 
 static const expr_t *
