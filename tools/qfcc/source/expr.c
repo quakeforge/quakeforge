@@ -2276,7 +2276,7 @@ new_intrinsic_expr (const expr_t *expr_list)
 
 	if (expr_list) {
 		int count = list_count (&expr_list->list);
-		const expr_t *exprs[count + 1];
+		const expr_t *exprs[count + 1] = {};
 		list_scatter (&expr_list->list, exprs);
 
 		intrinsic->intrinsic = (ex_intrinsic_t) {
