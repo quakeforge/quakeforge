@@ -365,10 +365,11 @@ QFV_PacketCopyBuffer (qfv_packet_t *packet,
 void
 QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 						 uint32_t count, qfv_scatter_t *scatter,
+						 const qfv_bufferbarrier_t *srcBarrier,
 						 const qfv_bufferbarrier_t *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	qfv_bufferbarrier_t bb = *srcBarrier;
 	VkBufferCopy copy_regions[count];
 	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
 	for (uint32_t i = 0; i < count; i++) {
@@ -401,10 +402,11 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 					 int width, int height,
+					 const qfv_imagebarrier_t *srcBarrier,
 					 const qfv_imagebarrier_t *dstBarrier)
 {
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	qfv_imagebarrier_t ib = *srcBarrier;
 	ib.barrier.image = dstImage;
 	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;

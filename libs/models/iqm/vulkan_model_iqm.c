@@ -132,10 +132,11 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 	memset (dst + layer_size, 0, 2 * layer_size);
 
 	int mipLevels = QFV_MipLevels (tex->width, tex->height);
+	auto sb = &imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto ib = mipLevels == 1
 			? &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]
 			: nullptr;
-	QFV_PacketCopyImage (packet, image, tex->width, tex->height, ib);
+	QFV_PacketCopyImage (packet, image, tex->width, tex->height, sb, ib);
 
 	if (mipLevels != 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image, mipLevels,
