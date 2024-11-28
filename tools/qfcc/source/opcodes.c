@@ -334,7 +334,7 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	// FIXME this is a bit of an ugly hack to map 64-bit load and store/assign
 	// instructions: 1 and 2 component instructions become 2 and 4 components
 	// using the 32-bit instructions, while 3 and 4 remain unchanged but use
-	// the 64-bit versions of the instructs (of which there are only 3 and 4
+	// the 64-bit versions of the instructions (of which there are only 3 and 4
 	// component versions). That bit of fun can't be helped without wasting a
 	// lot of instructions, but this mapping scheme leaves a lot to be desired.
 	const char *opname_a = "";
