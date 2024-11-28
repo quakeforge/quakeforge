@@ -375,9 +375,9 @@ print_field (dstring_t *dstr, const expr_t *e, int level, int id,
 
 	_print_expr (dstr, e->field.object, level, id, next);
 	_print_expr (dstr, e->field.member, level, id, next);
-	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"f\"];\n", indent, "", e,
-			   e->field.object);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"o\"];\n", indent, "", e,
+			   e->field.object);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"m\"];\n", indent, "", e,
 			   e->field.member);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   ".", e->loc.line);
