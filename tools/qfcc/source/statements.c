@@ -607,6 +607,7 @@ convert_op (int op)
 		case QC_CROSS:		return "cross";
 		case QC_WEDGE:		return "wedge";
 		case QC_DOT:		return "dot";
+		case QC_OUTER:      return "outer";
 		case QC_HADAMARD:	return "mul";
 		case QC_SCALE:		return "scale";
 		case QC_QMUL:		return "qmul";

@@ -139,7 +139,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			SHL SHR
 %left			'+' '-'
 %left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
-%left           HADAMARD CROSS DOT WEDGE REGRESSIVE
+%left           HADAMARD CROSS DOT OUTER WEDGE REGRESSIVE
 %right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
@@ -2101,6 +2101,7 @@ expr
 	| expr HADAMARD expr		{ $$ = binary_expr (QC_HADAMARD, $1, $3); }
 	| expr CROSS expr			{ $$ = binary_expr (QC_CROSS, $1, $3); }
 	| expr DOT expr				{ $$ = binary_expr (QC_DOT, $1, $3); }
+	| expr OUTER expr			{ $$ = binary_expr (QC_OUTER, $1, $3); }
 	| expr WEDGE expr			{ $$ = binary_expr (QC_WEDGE, $1, $3); }
 	| expr REGRESSIVE expr		{ $$ = binary_expr (QC_REGRESSIVE, $1, $3); }
 	;
@@ -2921,6 +2922,7 @@ static keyword_t qf_keywords[] = {
 	{"@hadamard",	QC_HADAMARD,	},
 	{"@cross",		QC_CROSS,		},
 	{"@dot",		QC_DOT,			},
+	{"@outer",		QC_OUTER,		},
 	{"@wedge",		QC_WEDGE,		},
 	{"@regressive",	QC_REGRESSIVE,	},
 	{"@geometric",	QC_GEOMETRIC,	},
