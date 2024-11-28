@@ -1901,10 +1901,24 @@ is_compare (int op)
 }
 
 bool
+is_shift (int op)
+{
+	if (op == QC_SHL || op == QC_SHR) {
+		return true;
+	}
+	return false;
+}
+
+bool
 is_math_op (int op)
 {
-	if (op == '*' || op == '/' || op == '+' || op == '-')
+	if (op == '*' || op == '/' || op == '+' || op == '-' || op == '%'
+		|| op == QC_MOD || op == QC_SCALE || op == QC_GEOMETRIC
+		|| op == QC_QMUL || op == QC_QVMUL || op == QC_VQMUL
+		|| op == QC_HADAMARD || op == QC_CROSS || op == QC_DOT
+		|| op == QC_OUTER || op == QC_WEDGE || op == QC_REGRESSIVE) {
 		return true;
+	}
 	return false;
 }
 

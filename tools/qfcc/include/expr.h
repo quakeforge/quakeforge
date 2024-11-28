@@ -893,6 +893,13 @@ const expr_t *constant_expr (const expr_t *e);
 */
 bool is_compare (int op) __attribute__((const));
 
+/**	Check if the op-code is a bit-shift.
+
+	\param op		The op-code to check.
+	\return			True if the op-code is a bit-shift operator.
+*/
+bool is_shift (int op) __attribute__((const));
+
 /**	Check if the op-code is a math operator.
 
 	\param op		The op-code to check.
