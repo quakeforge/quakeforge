@@ -488,19 +488,22 @@ scale_formats = {
     },
 }
 shiftops_formats = {
-    "opcode": "OP_{mn_shift[u*2+r].upper()}_{shift_type[u*2+t]}_{ss+1}",
-    "mnemonic": "{mn_shift[u*2+r]}.{shift_type[u*2+t]}",
+    "opcode": "OP_{mn_shift[u*2+r].upper()}_{shift_type[t][u*2+r]}_{ss+1}",
+    "mnemonic": "{mn_shift[u*2+r]}.{shift_type[t][u*2+r]}",
     "opname": "{op_shift[u*2+r]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
     "columns": "1, 1, 1",
-    "types": "{shift_types[t][u]}, {shift_types[t][0]}, {shift_types[t][u]}",
+    "types": "{shift_types[t][u*2+r]}, {shift_types[t][0]}, {shift_types[t][u*2+r]}",
     "args": {
         "mn_shift": ["shl", "asr", "shl", "shr"],
         "op_shift": ["shl", "shr", "shl", "shr"],
-        "shift_type": ['I', 'L', 'u', 'U'],
+        "shift_type": [
+            ['I', 'I', 'u', 'u'],
+            ['L', 'L', 'U', 'U'],
+        ],
         "shift_types": [
-            ["ev_int", "ev_uint"],
-            ["ev_long", "ev_ulong"],
+            ["ev_int", "ev_int", "ev_uint", "ev_uint"],
+            ["ev_long", "ev_long", "ev_ulong", "ev_ulong"],
         ],
     },
 }
