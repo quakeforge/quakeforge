@@ -1307,6 +1307,58 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 	return 0;
 }
 
+static const expr_t *
+matrix_binary_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+
+	int rowsa = type_rows (ta);
+	int colsa = type_cols (ta);
+	int rowsb = type_rows (tb);
+	int colsb = type_cols (tb);
+
+	int rowsc, colsc;
+
+	if (op == '+' || op == '-') {
+		if (rowsa != rowsb || colsa != colsb) {
+			return error (a, "matrix size mismatch");
+		}
+		rowsc = rowsa;
+		colsc = colsa;
+	} else if (op == '*') {
+		if (colsa != rowsb) {
+			return error (a, "matrix columns-rows mismatch");
+		}
+		rowsc = rowsa;
+		colsc = colsb;
+	} else {
+		return error (is_matrix (ta) ? a : b, "invalid operator for matrices");
+	}
+	auto type = matrix_type (ta, colsc, rowsc);
+	auto e = typed_binary_expr (type, op, a, b);
+	return e;
+}
+
+static const expr_t *
+outer_product_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+	if (is_integral (ta) || is_integral (tb)) {
+		warning (a, "integral vectors in outer product");
+		ta = float_type (ta);
+		tb = float_type (tb);
+		a = cast_expr (ta, a);
+		b = cast_expr (tb, b);
+	}
+	int rows = type_width (ta);
+	int cols = type_width (tb);
+	auto type = matrix_type (ta, cols, rows);
+	auto e = typed_binary_expr (type, QC_OUTER, a, b);
+	return e;
+}
+
 static int
 is_call (const expr_t *e)
 {
@@ -1409,6 +1461,14 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (is_array (t2) && (is_pointer (t1) || is_integral (t1))) {
 		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
+	}
+
+	if ((is_matrix (t1) && is_matrix (t2))
+		|| (is_matrix (t1) && is_nonscalar (t2))
+		|| (is_nonscalar (t1) && is_matrix (t2))) {
+		return matrix_binary_expr (op, e1, e2);
+	} else if (op == QC_OUTER && is_nonscalar (t1) && is_nonscalar (t2)) {
+		return outer_product_expr (op, e1, e2);
 	}
 
 	et1 = low_level_type (t1);
