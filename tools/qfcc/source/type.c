@@ -1555,6 +1555,11 @@ is_nonscalar (const type_t *type)
 	if (type->width < 2) {
 		return false;
 	}
+	if (type->columns > 1) {
+		// while matrices are technically non-scalar, treat them as both
+		// niether scalar nor non-scalar for type checking
+		return false;
+	}
 	return is_real (type) || is_integral (type) || is_boolean (type);
 }
 
