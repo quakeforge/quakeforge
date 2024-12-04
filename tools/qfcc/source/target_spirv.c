@@ -64,6 +64,8 @@ typedef struct spirvctx_s {
 	unsigned id;
 } spirvctx_t;
 
+static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
+
 static unsigned
 spirv_id (spirvctx_t *ctx)
 {
@@ -366,7 +368,8 @@ static unsigned
 spirv_TypeArray (const type_t *type, spirvctx_t *ctx)
 {
 	auto ele_type = dereference_type (type);
-	unsigned count = type_count (type);
+	auto count_expr = new_int_expr (type_count (type), false);
+	unsigned count = spirv_value (count_expr, ctx);
 	unsigned tid = type_id (ele_type, ctx);
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
@@ -472,6 +475,13 @@ type_id (const type_t *type, spirvctx_t *ctx)
 	unsigned id = 0;
 	if (is_void (type)) {
 		id = spirv_TypeVoid (ctx);
+	} else if (is_array (type)) {
+		//FIXME should size be checked against something for validity?
+		if (type_count (type)) {
+			id = spirv_TypeArray (type, ctx);
+		} else {
+			id = spirv_TypeRuntimeArray (type, ctx);
+		}
 	} else if (is_vector (type)) {
 		// spir-v doesn't allow duplicate non-aggregate types, so emit
 		// vector as vec3
@@ -509,13 +519,6 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypePointer (type, ctx);
 	} else if (is_struct (type)) {
 		id = spirv_TypeStruct (type, ctx);
-	} else if (is_array (type)) {
-		//FIXME should size be checked against something for validity?
-		if (type_count (type)) {
-			id = spirv_TypeArray (type, ctx);
-		} else {
-			id = spirv_TypeRuntimeArray (type, ctx);
-		}
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
 	}
@@ -1100,8 +1103,6 @@ spirv_temp (const expr_t *e, spirvctx_t *ctx)
 {
 	return 0;//FIXME don't want
 }
-
-static unsigned spirv_value (const expr_t *e, spirvctx_t *ctx);
 
 static unsigned
 spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
