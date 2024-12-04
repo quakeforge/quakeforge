@@ -482,8 +482,8 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		// quaternion as vec4
 		auto qtype = vector_type (&type_float, 4);
 		id = type_id (qtype, ctx);
-	} else if (type_cols (type) > 1) {
-		auto ctype = vector_type (base_type (type), type_rows (type));
+	} else if (is_matrix (type)) {
+		auto ctype = column_type (type);
 		unsigned cid = type_id (ctype, ctx);
 		id = spirv_TypeMatrix (cid, type_cols (type), ctx);
 	} else if (type_width (type) > 1) {
@@ -1109,16 +1109,13 @@ spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 	auto base = base_type (value->type);
 	int width = type_width (value->type);
 	ex_value_t *comp_vals[width];
-	if (type_size (base) == 1) {
-		for (int i = 0; i < width; i++) {
-			comp_vals[i] = new_type_value (base, &value->raw_value + i);
-		}
-	} else if (type_size (base) == 2) {
-		for (int i = 0; i < width; i++) {
-			comp_vals[i] = new_type_value (base, &value->raw_value + i * 2);
-		}
-	} else {
+	auto val = &value->raw_value;
+	if (type_size (base) < 1 || type_size (base) > 2) {
 		internal_error (nullptr, "invalid vector component size");
+	}
+	for (int i = 0; i < width; i++) {
+		comp_vals[i] = new_type_value (base, val);
+		val += type_size (base);
 	}
 	unsigned comp_ids[width];
 	for (int i = 0; i < width; i++) {
@@ -1139,11 +1136,39 @@ spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_matrix_value (const ex_value_t *value, spirvctx_t *ctx)
+{
+	auto ctype = column_type (value->type);
+	int count = type_cols (value->type);
+	ex_value_t *columns[count];
+	auto val = &value->raw_value;
+	for (int i = 0; i < count; i++) {
+		columns[i] = new_type_value (ctype, val);
+		val += type_size (ctype);
+		columns[i]->id = spirv_vector_value (columns[i], ctx);
+	}
+
+	auto space = ctx->module->globals;
+	int tid = type_id (value->type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + count, space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	for (int i = 0; i < count; i++) {
+		INSN (insn, 3 + i) = columns[i]->id;
+	}
+	return id;
+}
+
+static unsigned
 spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
 	if (!value->id) {
-		if (is_nonscalar (value->type) && type_cols (value->type) == 1) {
+		if (is_matrix (value->type)) {
+			return spirv_matrix_value (value, ctx);
+		}
+		if (is_nonscalar (value->type)) {
 			return spirv_vector_value (value, ctx);
 		}
 		unsigned tid = type_id (value->type, ctx);
@@ -1887,7 +1912,7 @@ spirv_build_element_chain (element_chain_t *element_chain, const type_t *type,
 			state.offset = state.field->id;
 		}
 	} else if (is_matrix (type)) {
-		state.type = vector_type (base_type (type), type_rows (type));
+		state.type = column_type (type);
 	} else if (is_nonscalar (type)) {
 		state.type = base_type (type);
 	} else if (is_array (type)) {

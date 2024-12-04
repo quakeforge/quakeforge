@@ -856,6 +856,12 @@ matrix_type (const type_t *ele_type, int cols, int rows)
 }
 
 const type_t *
+column_type (const type_t *mat_type)
+{
+	return vector_type (base_type (mat_type), type_rows (mat_type));
+}
+
+const type_t *
 vector_type (const type_t *ele_type, int width)
 {
 	// vectors are single-column matrices
@@ -1040,6 +1046,7 @@ unalias_type (const type_t *type)
 const type_t *
 dereference_type (const type_t *type)
 {
+	// is_ptr is used to catch both pointer and reference
 	if (!is_ptr (type) && !is_field (type) && !is_array (type)) {
 		internal_error (0, "dereference non pointer/field/array type");
 	}
@@ -1575,7 +1582,7 @@ is_math (const type_t *type)
 	if (is_algebra (type)) {
 		return true;
 	}
-	return is_scalar (type) || is_nonscalar (type);
+	return is_scalar (type) || is_nonscalar (type) || is_matrix (type);
 }
 
 bool

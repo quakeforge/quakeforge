@@ -170,7 +170,19 @@ proc_array (const expr_t *expr)
 	}
 	scoped_src_loc (expr);
 	auto e = new_array_expr (base, index);
-	e->array.type = dereference_type (get_type (base));
+	auto bt = get_type (base);
+	if (is_reference (bt)) {
+		bt = dereference_type (bt);
+	}
+	const type_t *type;
+	if (is_matrix (bt)) {
+		type = column_type (bt);
+	} else if (is_nonscalar (bt)) {
+		type = base_type (bt);
+	} else {
+		type = dereference_type (bt);
+	}
+	e->array.type = type;
 	return e;
 }
 
@@ -230,7 +242,7 @@ static bool
 proc_do_list (ex_list_t *out, const ex_list_t *in)
 {
 	int count = list_count (in);
-	const expr_t *exprs[count + 1];
+	const expr_t *exprs[count + 1] = {};
 	list_scatter (in, exprs);
 	bool ok = true;
 	for (int i = 0; i < count; i++) {

@@ -2372,7 +2372,7 @@ array_expr (const expr_t *array, const expr_t *index)
 		return index;
 
 	if (!is_pointer (array_type) && !is_array (array_type)
-		&& !is_nonscalar (array_type))
+		&& !is_nonscalar (array_type) && !is_matrix (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
 		return error (index, "invalid array index type");

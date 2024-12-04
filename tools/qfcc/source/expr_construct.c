@@ -47,7 +47,9 @@ get_value (const expr_t *e, int i, int j)
 	}
 	if (type_cols (t) > 1) {
 		auto ind = new_int_expr (i, false);
-		e = array_expr (e, ind);
+		auto a = new_array_expr (e, ind);
+		a->array.type = column_type (t);
+		e = a;
 	}
 	if (type_rows (t) > 1) {
 		auto ind = new_int_expr (j, false);
@@ -127,7 +129,7 @@ construct_by_components (const type_t *type, const expr_t *params,
 
 	auto vec = new_expr ();
 	vec->type = ex_vector;
-	vec->vector.type = vector_type (base, num_comp);
+	vec->vector.type = type;
 	list_gather (&vec->vector.list, components, num_comp);
 	return vec;
 }
