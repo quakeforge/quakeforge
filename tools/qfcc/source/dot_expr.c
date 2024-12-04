@@ -99,6 +99,7 @@ get_op_string (int op)
 		case QC_HADAMARD:	return "@hadamard";
 		case QC_CROSS:		return "@cross";
 		case QC_DOT:		return "@dot";
+		case QC_OUTER:		return "@outer";
 		case QC_WEDGE:		return "@wedge";
 		case QC_REGRESSIVE:	return "@regressive";
 		case QC_REVERSE:	return "@reverse";
@@ -397,6 +398,25 @@ print_array (dstring_t *dstr, const expr_t *e, int level, int id,
 			   e->array.index);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   "[]", e->loc.line);
+}
+
+static void
+print_select (dstring_t *dstr, const expr_t *e, int level, int id,
+			  const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->select.test, level, id, next);
+	_print_expr (dstr, e->select.true_body, level, id, next);
+	_print_expr (dstr, e->select.false_body, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"\"];\n", indent, "", e,
+			   e->select.test);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
+			   e->select.true_body);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"f\"];\n", indent, "", e,
+			   e->select.false_body);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "select", e->loc.line);
 }
 
 static void
@@ -875,7 +895,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_array] = print_array,
 		[ex_decl] = nullptr,
 		[ex_loop] = nullptr,
-		[ex_select] = nullptr,
+		[ex_select] = print_select,
 		[ex_intrinsic] = print_intrinsic,
 	};
 	int         indent = level * 2 + 2;
