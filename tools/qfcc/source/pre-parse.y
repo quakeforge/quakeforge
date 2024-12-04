@@ -115,7 +115,7 @@ parse_error (void *scanner)
 %left           SHL SHR
 %left           '+' '-'
 %left           '*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
-%left           HADAMARD CROSS DOT WEDGE REGRESSIVE
+%left           HADAMARD CROSS DOT OUTER WEDGE REGRESSIVE
 %right          SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left           HYPERUNARY
 %left           '.' '(' '['
