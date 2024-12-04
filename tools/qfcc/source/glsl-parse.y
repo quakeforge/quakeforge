@@ -362,18 +362,8 @@ new_identifier
 primary_exprsssion
 	: variable_identifier	{ $$ = new_symbol_expr ($1); }
 	| VALUE
-	| TRUE
-		{
-			pr_type_t data = { .value = 1 };
-			auto val = new_type_value (&type_bool, &data);
-			$$ = new_value_expr (val, false);
-		}
-	| FALSE
-		{
-			pr_type_t data = { .value = 0 };
-			auto val = new_type_value (&type_bool, &data);
-			$$ = new_value_expr (val, false);
-		}
+	| TRUE					{ $$ = new_bool_expr (true); }
+	| FALSE					{ $$ = new_bool_expr (false); }
 	| '(' expression ')'	{ $$ = paren_expr ($2); }
 	;
 

@@ -131,7 +131,7 @@ pointer_deref (const expr_t *e)
 static const expr_t *
 quat_not (const expr_t *e)
 {
-	return new_int_expr (!QuatIsZero (expr_quaternion (e)), false);
+	return new_bool_expr (!QuatIsZero (expr_quaternion (e)));
 }
 
 static const expr_t *
@@ -152,7 +152,7 @@ int_negate (const expr_t *e)
 static const expr_t *
 int_not (const expr_t *e)
 {
-	return new_int_expr (!expr_int (e), e->implicit);
+	return new_bool_expr (!expr_int (e));
 }
 
 static const expr_t *
@@ -170,7 +170,7 @@ uint_negate (const expr_t *e)
 static const expr_t *
 uint_not (const expr_t *e)
 {
-	return new_uint_expr (!expr_uint (e));
+	return new_bool_expr (!expr_uint (e));
 }
 
 static const expr_t *
@@ -188,7 +188,7 @@ short_negate (const expr_t *e)
 static const expr_t *
 short_not (const expr_t *e)
 {
-	return new_short_expr (!expr_short (e));
+	return new_bool_expr (!expr_short (e));
 }
 
 static const expr_t *
@@ -206,7 +206,7 @@ ushort_negate (const expr_t *e)
 static const expr_t *
 ushort_not (const expr_t *e)
 {
-	return new_ushort_expr (!expr_ushort (e));
+	return new_bool_expr (!expr_ushort (e));
 }
 
 static const expr_t *
@@ -224,7 +224,7 @@ double_negate (const expr_t *e)
 static const expr_t *
 double_not (const expr_t *e)
 {
-	return new_int_expr (!expr_double (e), false);
+	return new_lbool_expr (!expr_double (e));
 }
 
 static const expr_t *
@@ -242,7 +242,7 @@ long_negate (const expr_t *e)
 static const expr_t *
 long_not (const expr_t *e)
 {
-	return new_int_expr (!expr_long (e), false);
+	return new_lbool_expr (!expr_long (e));
 }
 
 static const expr_t *
@@ -260,7 +260,7 @@ ulong_negate (const expr_t *e)
 static const expr_t *
 ulong_not (const expr_t *e)
 {
-	return new_int_expr (!expr_ulong (e), false);
+	return new_lbool_expr (!expr_ulong (e));
 }
 
 static const expr_t *
@@ -524,14 +524,6 @@ unary_expr (int op, const expr_t *e)
 		if (!is_handle (t)) {
 			result_type = matrix_type (result_type,
 									   type_cols (t), type_rows (t));
-		}
-	}
-	if (result_type == &type_bool) {
-		//FIXME support bool properly
-		if (is_long (t) || is_ulong (t) || is_double (t)) {
-			result_type = &type_long;
-		} else {
-			result_type = type_default;
 		}
 	}
 	auto new = new_unary_expr (op, e);
