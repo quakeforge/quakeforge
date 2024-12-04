@@ -258,6 +258,7 @@ bool type_compatible (const type_t *dst, const type_t *src) __attribute__((pure)
 bool type_assignable (const type_t *dst, const type_t *src);
 bool type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_demotes (const type_t *dst, const type_t *src) __attribute__((pure));
+bool type_compares (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 int type_count (const type_t *type) __attribute__((pure));

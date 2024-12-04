@@ -1787,6 +1787,55 @@ type_demotes (const type_t *dst, const type_t *src)
 	return dst_mask & (1 << src->type);
 }
 
+#define C(type) (1 << ev_##type)
+static unsigned compare_masks[ev_type_count] = {
+	[ev_float] = C(float),
+	[ev_int] = C(int) | C(long),
+	[ev_uint] = C(uint) | C(ulong),
+	[ev_double] = C(double),
+	[ev_long] = C(long) | C(int),
+	[ev_ulong] = C(ulong) | C(uint),
+};
+#undef C
+
+bool
+type_compares (const type_t *dst, const type_t *src)
+{
+	if (!dst || !src) {
+		return false;
+	}
+
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+	if (dst == src) {
+		return true;
+	}
+	if (type_rows (dst) != type_rows (src)
+		|| type_cols (dst) != type_cols (src)) {
+		return false;
+	}
+	if (!is_math (dst) || !is_math (src)) {
+		return false;
+	}
+
+	if (is_boolean (dst) || is_boolean (src)) {
+		// comparison between bool and lbool are ok, but not between either
+		// bool and any other type
+		return is_boolean (dst) && is_boolean (src);
+	}
+	if (is_enum (src)) {
+		return is_integral (dst) && !is_enum (dst);
+	}
+	if (is_enum (dst)) {
+		return is_integral (src) && !is_enum (src);
+	}
+
+	dst = base_type (dst);
+	src = base_type (src);
+	int dst_mask = compare_masks[dst->type];
+	return dst_mask & (1 << src->type);
+}
+
 bool
 type_same (const type_t *dst, const type_t *src)
 {
