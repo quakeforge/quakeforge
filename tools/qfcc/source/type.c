@@ -869,7 +869,7 @@ base_type (const type_t *vec_type)
 		return algebra_base_type (vec_type);
 	}
 	if (!is_math (vec_type)) {
-		return nullptr;
+		return vec_type;
 	}
 	if (is_bool (vec_type)) {
 		return &type_bool;
@@ -880,6 +880,9 @@ base_type (const type_t *vec_type)
 	// vec_type->type for quaternion and vector points back to itself
 	if (is_quaternion (vec_type) || is_vector (vec_type)) {
 		return &type_float;
+	}
+	if (is_enum (vec_type)) {//FIXME enum should use valid ev_type
+		return type_default;
 	}
 	return ev_types[vec_type->type];
 }

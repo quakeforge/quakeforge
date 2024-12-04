@@ -1481,12 +1481,13 @@ just_a_pointer:
 			ptr = new_alias_expr (ref->alias.type, ptr);
 			sblock = statement_subexpr (sblock, ptr, base);
 			if (is_constant (offs)
-				&& (const_offs = expr_int (offs)) < 32768
+				&& (const_offs = expr_integral (offs)) < 32768
 				&& const_offs >= -32768) {
 				*mode = 2;
 				*offset = short_operand (const_offs, ref);
 			} else {
 				*mode = 3;
+				offs = cast_expr (&type_int, offs);
 				sblock = statement_subexpr (sblock, offs, offset);
 			}
 		}

@@ -146,7 +146,7 @@ quat_conj (const expr_t *e)
 static const expr_t *
 int_negate (const expr_t *e)
 {
-	return new_int_expr (-expr_int (e), false);
+	return new_int_expr (-expr_int (e), e->implicit);
 }
 
 static const expr_t *

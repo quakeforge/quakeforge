@@ -1016,7 +1016,7 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 				{
 					int ret = do_grab (tok->text);
 					if (ret >= 0) {
-						lval->expr = new_int_expr (ret, false);
+						lval->expr = new_int_expr (ret, true);
 						token = QC_VALUE;
 					} else {
 						yy_push_state (-ret, scanner);
