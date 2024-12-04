@@ -1711,6 +1711,19 @@ type_assignable (const type_t *dst, const type_t *src)
 	return false;
 }
 
+#define P(type) (1 << ev_##type)
+static unsigned promote_masks[ev_type_count] = {
+	[ev_float] = P(int) | P(uint),
+	[ev_int] = P(short) | P(ushort),
+	[ev_uint] = P(int) | P(short) | P(ushort),
+	[ev_double] = P(float) | P(ulong) | P(long)
+				| P(int) | P(uint) | P(short) | P(ushort),
+	[ev_long] = P(int) | P(uint) | P(short) | P(ushort),
+	[ev_ulong] = P(long) | P(int) | P(uint) | P(short) | P(ushort),
+	[ev_ushort] = P(short),
+};
+#undef P
+
 bool
 type_promotes (const type_t *dst, const type_t *src)
 {
@@ -1720,38 +1733,36 @@ type_promotes (const type_t *dst, const type_t *src)
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
-	if (type_rows (dst) != type_rows (src)
-		|| type_cols (dst) != type_cols (src)) {
+	if (!is_math (dst) || !is_math (src)) {
 		return false;
 	}
 
-	if (is_int (dst) && is_bool (src)) {
-		return true;
+	if (is_bool (src)) {
+		return !is_short (dst) && !is_ushort (dst);
 	}
-	if (is_uint (dst) && is_int (src)) {
-		return true;
+	if (is_lbool (src)) {
+		return is_long (dst) || is_ulong (dst) || is_double (dst);
 	}
-	if (is_long (dst) && (is_int (src) || is_uint (src) || is_boolean (src))) {
-		return true;
+	if (is_enum (src)) {
+		return is_integral (dst) && !is_enum (dst);
 	}
-	if (is_ulong (dst) && (is_int (src) || is_uint (src) || is_long (src)
-		|| is_boolean (src))) {
-		return true;
-	}
-	if (is_float (dst) && (is_int (src) || is_uint (src) || is_bool (src))) {
-		return true;
-	}
-	//XXX what to do with (u)long<->float?
-	if (is_double (dst)
-		&& (is_int (src) || is_uint (src) || is_long (src) || is_ulong (src)
-			|| is_float (src) || is_boolean (src))) {
-		return true;
-	}
-	if (is_lbool (dst) && is_bool (src)) {
-		return true;
-	}
-	return false;
+
+	dst = base_type (dst);
+	src = base_type (src);
+	int dst_mask = promote_masks[dst->type];
+	return dst_mask & (1 << src->type);
 }
+
+#define D(type) (1 << ev_##type)
+static unsigned demote_masks[ev_type_count] = {
+	// FIXME should this be a complete matrix, or just from implicit constants?
+	// currently implicit constants are assumed
+	[ev_float] = D(double) | D(int) | D(long),
+	[ev_int] = D(long),
+	[ev_uint] = D(long) | D(int),
+	[ev_double] = D(int),
+};
+#undef D
 
 bool
 type_demotes (const type_t *dst, const type_t *src)
@@ -1762,22 +1773,18 @@ type_demotes (const type_t *dst, const type_t *src)
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
-	if (type_rows (dst) != type_rows (src)
-		|| type_cols (dst) != type_cols (src)) {
+	if (!is_math (dst) || !is_math (src)) {
 		return false;
 	}
 
-	if (is_float (dst) && is_double (src)) {
-		return true;
+	if (is_boolean (dst)) {
+		return is_lbool (src) || is_long (src);
 	}
-	if ((is_boolean (dst) || is_int (dst) || is_uint (dst))
-		&& is_lbool (src)) {
-		return true;
-	}
-	if (is_bool (dst) && (is_lbool (src) || is_long (src))) {
-		return true;
-	}
-	return false;
+
+	dst = base_type (dst);
+	src = base_type (src);
+	int dst_mask = demote_masks[dst->type];
+	return dst_mask & (1 << src->type);
 }
 
 bool
