@@ -637,7 +637,7 @@ paren_expr (const expr_t *e)
 {
 	auto paren = new_expr ();
 	*paren = *e;
-	paren->paren = 1;
+	paren->paren = true;
 	return paren;
 }
 

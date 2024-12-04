@@ -684,7 +684,7 @@ type_function (int op, const expr_t *params)
 	}
 	auto te = new_expr ();
 	te->type = ex_type;
-	te->nodag = 1;
+	te->nodag = true;
 	te->typ = (ex_type_t) {
 		.op = op,
 		.params = params,

@@ -374,7 +374,7 @@ primary_exprsssion
 			auto val = new_type_value (&type_bool, &data);
 			$$ = new_value_expr (val, false);
 		}
-	| '(' expression ')'	{ $$ = $2; ((expr_t *) $$)->paren = 1; }
+	| '(' expression ')'	{ $$ = paren_expr ($2); }
 	;
 
 postfix_expression

@@ -386,9 +386,9 @@ typedef struct expr_s {
 	expr_type   type;			///< the type of the result of this expression
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    id;
-	unsigned    paren:1;		///< the expression is enclosed in ()
-	unsigned    implicit:1;		///< don't warn for implicit casts
-	unsigned    nodag:1;		///< prevent use of dags for this expression
+	bool        paren:1;		///< the expression is enclosed in ()
+	bool        implicit:1;		///< don't warn for implicit casts
+	bool        nodag:1;		///< prevent use of dags for this expression
 								///< propagates up
 	union {
 		ex_label_t  label;				///< label expression
