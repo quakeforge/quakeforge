@@ -170,7 +170,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <block>   block_declaration
 %type <expr>    declaration constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
-%type <expr>    for_init_statement conditionopt expressionopt else
+%type <expr>    for_init_statement conditionopt expressionopt else line
 %type <expr>    conditional_expression unary_expression postfix_expression
 %type <expr>    function_call function_call_or_method function_call_generic
 %type <mut_expr> function_call_header_with_parameters identifier_list
@@ -403,6 +403,7 @@ function_call
 function_call_or_method
 	: function_call_generic
 		{
+			scoped_src_loc ($1);
 			// pull apart the args+func list
 			// args are in reverse order, so f(a,b,c) <- c,b,a,f
 			auto list = &$1->list;
@@ -432,6 +433,7 @@ function_call_header_no_parameters
 function_call_header_with_parameters
 	: function_call_header assignment_expression
 		{
+			scoped_src_loc ($1);
 			auto list = new_list_expr ($1);
 			$$ = expr_prepend_expr (list, $2);
 		}
@@ -1187,22 +1189,28 @@ expression_statement
 
 selection_statement
 //	: IF '(' expression ')' selection_rest_statement
-	: IF '(' expression[test] ')' statement[true] %prec IFX
+	: IF line '(' expression[test] ')' statement[true] %prec IFX
 		{
+			scoped_src_loc ($line);
 			$$ = new_select_expr (false, $test, $true, nullptr, nullptr);
 		}
-	| IF '(' expression[test] ')' statement[true] else statement[false]
+	| IF line '(' expression[test] ')' statement[true] else statement[false]
 		{
+			scoped_src_loc ($line);
 			$$ = new_select_expr (false, $test, $true, $else, $false);
 		}
 	;
 
-else
-	: ELSE
+line
+	: /* empty */
 		{
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
+	;
+
+else
+	: ELSE line					{ $$ = $2; }
 	;
 
 //selection_rest_statement
