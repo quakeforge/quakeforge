@@ -56,23 +56,23 @@ address_types = [
     "ev_void, ev_int",
 ]
 address_widths = [
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "2, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "3, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "4, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "-1, 0", "1, 1", "1, 0", "1, 1", "-1, 0", "-1, 1"],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "2, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "3, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "4, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 1", "1, 1", "-1, 1", "-1, 1"],
 ]
 address_columns = [
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "-1, 0", "1, 1", "1, 0", "1, 1", "-1, 0", "-1, 1"],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 1", "1, 1", "-1, 1", "-1, 1"],
 ]
-move_widths    = [ "-1, 0, -1", "1, 1, 1", "1, 0, 1", None, ]
-move_columns   = [ "-1, 0, -1", "1, 1, 1", "1, 0, 1", None, ]
-memset_widths  = [ "1, 0, -1", "1, 1, 1", "1, 0, 1", None, ]
-memset_columns = [ "1, 0, -1", "1, 1, 1", "1, 0, 1", None, ]
+move_widths    = [ "-1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+move_columns   = [ "-1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+memset_widths  = [ "1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+memset_columns = [ "1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
 #store, pop, lea
 store_fmt = [
     "%ga",
@@ -106,8 +106,8 @@ adjstk_formats = {
     "mnemonic": "adjstk",
     "opname": "adjstk",
     "format": "%sa, %sb",
-    "widths": "0, 0, 0",
-    "columns": "0, 0, 0",
+    "widths": "1, 1, 0",
+    "columns": "1, 1, 0",
     "types": "ev_short, ev_short, ev_invalid",
 }
 bitops_formats = {
@@ -135,8 +135,8 @@ branch_formats = {
     "mnemonic": "{op_cond[c*4+cc]}",
     "opname": "{op_cond[c*4+cc]}",
     "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
-    "widths": "0, 0, 1",
-    "columns": "0, 0, 1",
+    "widths": "1, 0, 1",
+    "columns": "1, 0, 1",
     "types": "ev_short, ev_invalid, ev_int",
     "args": {
         "op_mode": "ABCD",
@@ -168,8 +168,8 @@ call_formats = {
             "ev_ptr, ev_short",
             "ev_ptr, ev_int",
         ],
-        "call_widths": [ None, "1, 0", "1, 0", "1, 1" ],
-        "call_columns": [ None, "1, 0", "1, 0", "1, 1" ],
+        "call_widths": [ None, "1, 0", "1, 1", "1, 1" ],
+        "call_columns": [ None, "1, 0", "1, 1", "1, 1" ],
     },
 }
 compare_formats = {
@@ -204,8 +204,8 @@ constant_formats = {
     "mnemonic": "ldconst",
     "opname": "ldconst",
     "format": "%sa, %sb, %gc",
-    "widths": "0, 0, -1",
-    "columns": "0, 0, -1",
+    "widths": "1, 1, -1",
+    "columns": "1, 1, -1",
     "types": "ev_short, ev_short, ev_void",
 }
 convert_formats = {
@@ -213,8 +213,8 @@ convert_formats = {
     "mnemonic": "conv",
     "opname": "conv",
     "format": "%Ga %Cb %gc",
-    "widths": "-1, 0, -1",
-    "columns": "1, 0, 1",
+    "widths": "-1, 1, -1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 fbitops_formats = {
@@ -241,8 +241,8 @@ extend_formats = {
     "mnemonic": "extend",
     "opname": "extend",
     "format": "%Ga%Xb, %gc",
-    "widths": "-1, 0, -1",
-    "columns": "1, 0, 1",
+    "widths": "-1, 1, -1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 hops_formats = {
@@ -250,8 +250,8 @@ hops_formats = {
     "mnemonic": "hops",
     "opname": "hops",
     "format": "%Hb %Ga, %gc",
-    "widths": "-1, 0, 1",
-    "columns": "1, 0, 1",
+    "widths": "-1, 1, 1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 jump_formats = {
@@ -271,8 +271,8 @@ jump_formats = {
             "ev_ptr, ev_short, ev_invalid",
             "ev_ptr, ev_int, ev_invalid",
         ],
-        "jump_widths": [ "0, 0", "1, 1", "1, 0", "1, 1" ],
-        "jump_columns": [ "0, 0", "1, 1", "1, 0", "1, 1" ],
+        "jump_widths": [ "1, 0", "1, 1", "1, 1", "1, 1" ],
+        "jump_columns": [ "1, 0", "1, 1", "1, 1", "1, 1" ],
     },
 }
 load64_formats = {
@@ -606,8 +606,8 @@ swizzle_formats = {
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga.%Sb %gc",
-    "widths": "4, 0, 4",
-    "columns": "1, 0, 1",
+    "widths": "4, 1, 4",
+    "columns": "1, 1, 1",
     "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
@@ -619,8 +619,8 @@ swizzle2_formats = {
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga.%Sb %gc",
-    "widths": "{s+2}, 0, {s+2}",
-    "columns": "1, 0, 1",
+    "widths": "{s+2}, 1, {s+2}",
+    "columns": "1, 1, 1",
     "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
@@ -644,8 +644,8 @@ return_formats = {
     "opcode": "OP_RETURN",
     "mnemonic": "return",
     "opname": "return",
-    "widths": "-1, -1, 0",    # width specified by st->c
-    "columns": "-1, -1, 0",
+    "widths": "-1, -1, -1",    # width specified by st->c
+    "columns": "-1, -1, -1",
     "format": "%Mc5",
     "types": "ev_void, ev_void, ev_void",
 }
@@ -718,8 +718,8 @@ with_formats = {
     "mnemonic": "with",
     "opname": "with",
     "format": "%sa, %sb, %sc",
-    "widths": "0, -1, 0",
-    "columns": "0, -1, 0",
+    "widths": "1, -1, 1",
+    "columns": "1, -1, 1",
     "types": "ev_short, ev_void, ev_short",
 }
 

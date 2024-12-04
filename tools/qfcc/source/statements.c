@@ -567,6 +567,8 @@ label_operand (const expr_t *label)
 		internal_error (label, "not a label expression");
 	}
 	lop = new_operand (op_label, label, __builtin_return_address (0));
+	lop->width = 1;
+	lop->columns = 1;
 	lop->label = (ex_label_t *) &label->label;
 	return lop;
 }

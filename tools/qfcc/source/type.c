@@ -66,10 +66,8 @@
 		.type = ev_##t, \
 		.name = #t, \
 		.alignment = PR_ALIGNOF(t), \
-		.width = __builtin_choose_expr (ev_##t == ev_short \
-									 || ev_##t == ev_ushort, 0, 1), \
-		.columns = __builtin_choose_expr (ev_##t == ev_short \
-										  || ev_##t == ev_ushort, 0, 1), \
+		.width = 1, \
+		.columns = 1, \
 		.meta = ty_basic, \
 		{{ __builtin_choose_expr (ev_##t == ev_field \
 							   || ev_##t == ev_func \
