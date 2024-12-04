@@ -45,6 +45,7 @@
 #include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/statements.h"
@@ -251,6 +252,8 @@ evaluate_constexpr (const expr_t *e)
 
 	defspace_reset (&value_defspace);
 	auto saved_version = options.code.progsversion;
+	auto saved_func = current_func;
+	current_func = nullptr;
 	options.code.progsversion = PROG_VERSION;
 	sblock_t    sblock = {
 		.tail = &sblock.statements,
@@ -258,6 +261,8 @@ evaluate_constexpr (const expr_t *e)
 	ex_listitem_t return_expr = { .expr = new_return_expr (e) };
 	ex_list_t return_st = { .head = &return_expr, .tail = &return_expr.next };
 	auto sb = statement_slist (&sblock, &return_st);
+	current_func = saved_func;
+
 	if (sblock.next != sb && sb->statements) {
 		internal_error (e, "statement_slist did too much");
 	}
