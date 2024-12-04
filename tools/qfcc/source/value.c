@@ -303,6 +303,9 @@ new_type_value (const type_t *type, const pr_type_t *data)
 {
 	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
 	ex_value_t  val = {};
+	if (typeSize > sizeof (val) - field_offset (ex_value_t, raw_value)) {
+		internal_error (0, "value too large");
+	}
 	set_val_type (&val, type);
 	memcpy (&val.raw_value, data, typeSize);
 	return find_value (&val);
