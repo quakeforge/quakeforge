@@ -1594,12 +1594,12 @@ statement_return (sblock_t *sblock, const expr_t *e)
 			const expr_t *ret_val = e->retrn.ret_val;
 			auto ret_type = get_type (ret_val);
 			operand_t  *target = 0;
-			pr_ushort_t ret_crtl = type_size (ret_type) - 1;
+			pr_ushort_t ret_ctrl = type_size (ret_type) - 1;
 			pr_ushort_t mode = 0;
 			sblock = addressing_mode (sblock, ret_val, &s->opa, &s->opb, &mode,
 									  &target);
-			ret_crtl |= mode << 5;
-			s->opc = short_operand (ret_crtl, e);
+			ret_ctrl |= mode << 5;
+			s->opc = short_operand (ret_ctrl, e);
 			statement_add_use (s, target);
 		} else {
 			if (e->retrn.at_return) {
