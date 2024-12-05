@@ -659,10 +659,6 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 	unsigned best_cost = ~0u;
 	int best_ind = -1;
 	for (int i = 0; i < num_funcs; i++) {
-		if (best_ind >= 0 && costs[i] == best_cost) {
-			error (fexpr, "unable to disambiguate %s", fsym->name);
-			return nullptr;
-		}
 		if (costs[i] < best_cost) {
 			best_ind = i;
 			best_cost = costs[i];
@@ -672,6 +668,12 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 		error (fexpr, "unable to find generic function matching %s",
 			   fsym->name);
 		return nullptr;
+	}
+	for (int i = 0; i < num_funcs; i++) {
+		if (i != best_ind && costs[i] == best_cost) {
+			error (fexpr, "unable to disambiguate %s", fsym->name);
+			return nullptr;
+		}
 	}
 	return genfuncs[best_ind];
 }
@@ -918,7 +920,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		.params = call_params,
 	};
 
-	const char *fname = fexpr->symbol->name;
+	auto fsym = fexpr->symbol;
+	const char *fname = fsym->name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
 		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true);
@@ -967,7 +970,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	int best_ind = -1;
 	for (int i = 0; i < num_funcs; i++) {
 		if (best_ind >= 0 && costs[i] == best_cost) {
-			error (fexpr, "unable to disambiguate %s", fexpr->symbol->name);
+			error (fexpr, "unable to disambiguate %s", fsym->name);
 			continue;
 		}
 		if (costs[i] < best_cost) {
@@ -975,16 +978,21 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			best_cost = costs[i];
 		}
 	}
-
-	if (best_ind >= 0) {
-		auto best = funcs[best_ind];
-		if (best->meta_type == mf_overload) {
-			fexpr = set_func_symbol (fexpr, best);
-		}
+	if (best_ind < 0) {
 		free (funcs);
-		return fexpr;
+		return error (fexpr, "unable to find function matching");
 	}
-	error (fexpr, "unable to find function matching");
+	for (int i = 0; i < num_funcs; i++) {
+		if (i != best_ind && costs[i] == best_cost) {
+			free (funcs);
+			return error (fexpr, "unable to disambiguate %s", fsym->name);
+		}
+	}
+
+	auto best = funcs[best_ind];
+	if (best->meta_type == mf_overload) {
+		fexpr = set_func_symbol (fexpr, best);
+	}
 	free (funcs);
 	return fexpr;
 }
