@@ -130,7 +130,21 @@ construct_by_components (const type_t *type, const expr_t *params,
 	auto vec = new_expr ();
 	vec->type = ex_vector;
 	vec->vector.type = type;
-	list_gather (&vec->vector.list, components, num_comp);
+	if (is_matrix (type)) {
+		const expr_t *columns[type_cols (type)];
+		const expr_t **col = components;
+		for (int i = 0; i < type_cols (type); i++) {
+			auto c = new_expr ();
+			c->type = ex_vector;
+			c->vector.type = column_type (type);
+			list_gather (&c->vector.list, col, type_rows (type));
+			columns[i] = c;
+			col += type_rows (type);
+		}
+		list_gather (&vec->vector.list, columns, type_cols (type));
+	} else {
+		list_gather (&vec->vector.list, components, num_comp);
+	}
 	return vec;
 }
 
