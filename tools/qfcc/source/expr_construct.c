@@ -257,7 +257,7 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 		if (is_matrix (type)) {
 			return construct_diagonal (type, param_exprs[0], e);
 		}
-		if (is_vector (type)) {
+		if (is_nonscalar (type)) {
 			return construct_broadcast (type, param_exprs[0], e);
 		}
 	}
