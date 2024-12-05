@@ -229,6 +229,24 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 			return construct_matrix (type, param_exprs[0], e);
 		}
 	}
+	if (is_matrix (type) && num_param == type_cols (type)) {
+		bool by_vector = true;
+		for (int i = 0; i < type_cols (type); i++) {
+			auto ptype = get_type (param_exprs[i]);
+			if (!is_nonscalar (ptype)
+				|| type_width (ptype) != type_rows (type)) {
+				by_vector = false;
+				break;
+			}
+		}
+		if (by_vector) {
+			auto mat = new_expr ();
+			mat->type = ex_vector;
+			mat->vector.type = type;
+			list_gather (&mat->vector.list, param_exprs, type_cols (type));
+			return mat;
+		}
+	}
 	return construct_by_components (type, params, e);
 }
 
