@@ -136,7 +136,7 @@ cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
 	return *vt1 == *vt2;
 }
 
-void
+genfunc_t *
 add_generic_function (genfunc_t *genfunc)
 {
 	auto name = genfunc->name;
@@ -169,9 +169,10 @@ add_generic_function (genfunc_t *genfunc)
 	check_generic_param (genfunc->ret_type, genfunc);
 
 	bool is_new = true;
+	genfunc_t *old = nullptr;
 	auto old_list = (genfunc_t **) Hash_FindList (generic_functions, name);
 	for (auto o = old_list; is_new && o && *o; o++) {
-		auto old = *o;
+		old = *o;
 		if (old->num_params == genfunc->num_params) {
 			is_new = false;
 			for (int i = 0; i < genfunc->num_params; i++) {
@@ -184,7 +185,7 @@ add_generic_function (genfunc_t *genfunc)
 			if (!is_new && !cmp_genparams (genfunc, genfunc->ret_type,
 										   old, old->ret_type)) {
 				error (0, "can't overload on return types");
-				return;
+				return nullptr;
 			}
 		}
 	}
@@ -198,7 +199,9 @@ add_generic_function (genfunc_t *genfunc)
 		}
 		free (genfunc->types);
 		FREE (genfuncs, genfunc);
+		genfunc = old;
 	}
+	return genfunc;
 }
 
 static const type_t **
@@ -742,6 +745,7 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
 		sym->params = params;
 		sym->metafunc = new_metafunc ();
 		*sym->metafunc = *fsym->metafunc;
+		sym->metafunc->expr = g->expr;
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return sym;
@@ -1252,15 +1256,26 @@ void
 build_intrinsic_function (specifier_t spec, const expr_t *intrinsic)
 {
 	auto sym = function_symbol (spec);
-	if (sym->metafunc->expr || sym->metafunc->func) {
-		error (intrinsic, "%s already defined", sym->name);
-		return;
-	}
 	if (sym->type->func.num_params < 0) {
 		error (intrinsic, "intrinsic functions cannot be variadic");
 		return;
 	}
-	sym->metafunc->expr = intrinsic;
+	if (sym->metafunc->meta_type == mf_generic) {
+		//FIXME find a better way to find the specific genfunc
+		auto genfunc = parse_generic_function (sym->name, spec);
+		genfunc = add_generic_function (genfunc);
+		if (genfunc->expr) {
+			error (intrinsic, "%s already defined", sym->name);
+			return;
+		}
+		genfunc->expr = intrinsic;
+	} else {
+		if (sym->metafunc->expr || sym->metafunc->func) {
+			error (intrinsic, "%s already defined", sym->name);
+			return;
+		}
+		sym->metafunc->expr = intrinsic;
+	}
 }
 
 void

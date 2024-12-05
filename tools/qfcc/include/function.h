@@ -76,7 +76,7 @@ typedef struct genfunc_s {
 	int         num_params;
 	genparam_t *params;
 	genparam_t *ret_type;
-	// only automatic (#0) builtins supported for now
+	const expr_t *expr;				///< inline or intrinsic
 } genfunc_t;
 
 typedef enum {
@@ -191,7 +191,7 @@ typedef struct expr_s expr_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 
-void add_generic_function (genfunc_t *genfunc);
+genfunc_t *add_generic_function (genfunc_t *genfunc);
 
 param_t *new_param (const char *selector, const type_t *type, const char *name);
 param_t *new_generic_param (const expr_t *type_expr, const char *name);
