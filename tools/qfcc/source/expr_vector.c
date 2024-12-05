@@ -68,6 +68,15 @@ new_matrix_value (const type_t *ele_type, int cols, int rows, int count,
 	return new_value_expr (new_type_value (mat_type, value), implicit);
 }
 
+const expr_t *
+new_vector_list_gather (const type_t *type, const expr_t **elements, int count)
+{
+	auto vec = new_expr ();
+	vec->type = ex_vector;
+	vec->vector.type = type;
+	list_gather (&vec->vector.list, elements, count);
+	return vec;
+}
 
 const expr_t *
 new_vector_list (const expr_t *expr_list)
@@ -155,11 +164,8 @@ new_vector_list (const expr_t *expr_list)
 								 all_implicit);
 	}
 
-	expr_t     *vec = new_expr ();
-	vec->type = ex_vector;
-	vec->vector.type = vector_type (ele_type, width);
-	list_gather (&vec->vector.list, elements, count);
-	return vec;
+	auto type = vector_type (ele_type, width);
+	return new_vector_list_gather (type, elements, count);
 }
 
 const expr_t *

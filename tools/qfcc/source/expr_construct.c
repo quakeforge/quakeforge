@@ -127,25 +127,20 @@ construct_by_components (const type_t *type, const expr_t *params,
 		}
 	}
 
-	auto vec = new_expr ();
-	vec->type = ex_vector;
-	vec->vector.type = type;
 	if (is_matrix (type)) {
-		const expr_t *columns[type_cols (type)];
+		auto ctype = column_type (type);
+		int num_cols = type_cols (type);
+		int num_rows = type_rows (type);
+		const expr_t *columns[num_cols];
 		const expr_t **col = components;
-		for (int i = 0; i < type_cols (type); i++) {
-			auto c = new_expr ();
-			c->type = ex_vector;
-			c->vector.type = column_type (type);
-			list_gather (&c->vector.list, col, type_rows (type));
-			columns[i] = c;
-			col += type_rows (type);
+		for (int i = 0; i < num_cols; i++) {
+			columns[i] = new_vector_list_gather (ctype, col, num_rows);
+			col += num_rows;
 		}
-		list_gather (&vec->vector.list, columns, type_cols (type));
+		return new_vector_list_gather (type, columns, num_cols);
 	} else {
-		list_gather (&vec->vector.list, components, num_comp);
+		return new_vector_list_gather (type, components, num_comp);
 	}
-	return vec;
 }
 
 static const expr_t *
@@ -170,7 +165,7 @@ construct_diagonal (const type_t *type, const expr_t *scalar, const expr_t *e)
 static const expr_t *
 construct_matrix (const type_t *type, const expr_t *matrix, const expr_t *e)
 {
-	scoped_src_loc (matrix);
+	scoped_src_loc (e);
 	int cols = type_cols (type);
 	int rows = type_rows (type);
 	int src_cols = type_cols (get_type (matrix));
@@ -197,7 +192,7 @@ construct_matrix (const type_t *type, const expr_t *matrix, const expr_t *e)
 static const expr_t *
 construct_broadcast (const type_t *type, const expr_t *scalar, const expr_t *e)
 {
-	scoped_src_loc (scalar);
+	scoped_src_loc (e);
 	int width = type_width (type);
 	const expr_t *components[width + 1] = {};
 
@@ -240,11 +235,8 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 			}
 		}
 		if (by_vector) {
-			auto mat = new_expr ();
-			mat->type = ex_vector;
-			mat->vector.type = type;
-			list_gather (&mat->vector.list, param_exprs, type_cols (type));
-			return mat;
+			scoped_src_loc (e);
+			return new_vector_list_gather (type, param_exprs, type_cols (type));
 		}
 	}
 	return construct_by_components (type, params, e);
