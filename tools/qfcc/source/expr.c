@@ -2430,7 +2430,7 @@ array_expr (const expr_t *array, const expr_t *index)
 			auto alias = new_offset_alias_expr (ele_type, array, 0);
 			ptr = new_address_expr (ele_type, alias, 0);
 		}
-	} else if (is_nonscalar (array_type)) {
+	} else if (is_nonscalar (array_type) || is_matrix (array_type)) {
 		auto alias = new_offset_alias_expr (ele_type, array, 0);
 		ptr = new_address_expr (ele_type, alias, 0);
 	} else {
