@@ -38,6 +38,23 @@
 #include "tools/qfcc/include/value.h"
 
 static const expr_t *
+get_column (const expr_t *e, int i)
+{
+	auto t = get_type (e);
+	if (!is_matrix (t)) {
+		internal_error (e, "not a matrix");
+	}
+	if (i < 0 || i >= type_cols (t)) {
+		internal_error (e, "invalid index");
+	}
+
+	auto ind = new_int_expr (i, false);
+	auto a = new_array_expr (e, ind);
+	a->array.type = column_type (t);
+	return a;
+}
+
+static const expr_t *
 get_value (const expr_t *e, int i, int j)
 {
 	auto t = get_type (e);
@@ -46,10 +63,7 @@ get_value (const expr_t *e, int i, int j)
 		internal_error (e, "invalid index");
 	}
 	if (type_cols (t) > 1) {
-		auto ind = new_int_expr (i, false);
-		auto a = new_array_expr (e, ind);
-		a->array.type = column_type (t);
-		e = a;
+		e = get_column (e, i);
 	}
 	if (type_rows (t) > 1) {
 		auto ind = new_int_expr (j, false);
@@ -170,23 +184,51 @@ construct_matrix (const type_t *type, const expr_t *matrix, const expr_t *e)
 	int rows = type_rows (type);
 	int src_cols = type_cols (get_type (matrix));
 	int src_rows = type_rows (get_type (matrix));
-	const expr_t *components[cols * rows + 1] = {};
-	auto zero = new_nil_expr ();
 
-	for (int i = 0; i < cols; i++) {
-		for (int j = 0; j < rows; j++) {
-			const expr_t *val;
-			if (i < src_cols && j < src_rows) {
-				val = get_value (matrix, i, j);
-			} else {
-				val = zero;
+	if (src_rows >= rows) {
+		char swizzle[] = "xyzw";
+		swizzle[rows] = 0;
+		const expr_t *columns[cols] = {};
+		const expr_t *zero_column = nullptr;
+		if (src_cols < cols) {
+			auto ctype = column_type (type);
+			const expr_t *zero_col[rows];
+			auto zero = new_nil_expr ();
+			for (int j = 0; j < rows; j++) {
+				zero_col[j] = zero;
 			}
-			components[i * rows + j] = val;
+			zero_column = new_vector_list_gather (ctype, zero_col, rows);
 		}
+		int i;
+		for (i = 0; i < src_cols && i < cols; i++) {
+			columns[i] = get_column (matrix, i);
+			if (src_rows > rows) {
+				columns[i] = new_swizzle_expr (columns[i], swizzle);
+			}
+		}
+		for (; i < cols; i++) {
+			columns[i] = zero_column;
+		}
+		return new_vector_list_gather (type, columns, cols);
+	} else {
+		const expr_t *components[cols * rows + 1] = {};
+		auto zero = new_nil_expr ();
+
+		for (int i = 0; i < cols; i++) {
+			for (int j = 0; j < rows; j++) {
+				const expr_t *val;
+				if (i < src_cols && j < src_rows) {
+					val = get_value (matrix, i, j);
+				} else {
+					val = zero;
+				}
+				components[i * rows + j] = val;
+			}
+		}
+		auto params = new_list_expr (nullptr);
+		list_gather (&params->list, components, cols * rows);
+		return construct_by_components (type, params, e);
 	}
-	auto params = new_list_expr (nullptr);
-	list_gather (&params->list, components, cols * rows);
-	return construct_by_components (type, params, e);
 }
 
 static const expr_t *
