@@ -1276,7 +1276,11 @@ type_list
 	;
 
 type_ref
-	: type_ref_spec						{ $$ = new_type_expr ($1.type); }
+	: type_ref_spec
+		{
+			specifier_t spec = default_type ($1, 0);
+			$$ = new_type_expr (spec.type);
+		}
 	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
 	| TYPE_NAME
 		{
