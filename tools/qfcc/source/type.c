@@ -534,6 +534,8 @@ default_type (specifier_t spec, const symbol_t *sym)
 				spec.type = &type_ulong;
 			} else if (spec.is_long) {
 				spec.type = &type_long;
+			} else if (spec.is_unsigned) {
+				spec.type = &type_uint;
 			}
 		}
 	} else {
