@@ -1138,21 +1138,21 @@ compound_statement_no_new_scope
 	| '{' new_block statement_list '}'	{ $$ = $3; }
 	;
 
+new_block
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
+			$$ = block;
+		}
+	;
+
 new_scope
 	: /* empty */
 		{
 			auto block = new_block_expr (nullptr);
 			block->block.scope = new_symtab (current_symtab, stab_local);
 			current_symtab = block->block.scope;
-			$$ = block;
-		}
-	;
-
-new_block
-	: /* empty */
-		{
-			auto block = new_block_expr (nullptr);
-			block->block.scope = current_symtab;
 			$$ = block;
 		}
 	;
@@ -1178,7 +1178,6 @@ expression_statement
 	;
 
 selection_statement
-//	: IF '(' expression ')' selection_rest_statement
 	: IF line '(' expression[test] ')' statement[true] %prec IFX
 		{
 			scoped_src_loc ($line);
@@ -1202,11 +1201,6 @@ line
 else
 	: ELSE line					{ $$ = $2; }
 	;
-
-//selection_rest_statement
-//	: statement ELSE statement
-//	| statement %prec IFX
-//	;
 
 condition
 	: expression
@@ -1265,31 +1259,30 @@ case_label
 
 iteration_statement
 	: WHILE new_scope break_label continue_label '(' condition ')'
-			  { $<mut_expr>$ = $new_scope; } statement_no_new_scope
+			statement_no_new_scope
 		{
-			$$ = new_loop_expr (false, false,
-								$condition, $statement_no_new_scope,
-								break_label, continue_label);
+			$$ = new_loop_expr (false, false, $condition,
+								$statement_no_new_scope,
+								continue_label, nullptr, break_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
 			current_symtab = $new_scope->block.scope->parent;
 		}
 	| DO break_label continue_label statement WHILE '(' expression ')' ';'
 		{
-			$$ = new_loop_expr (false, true,
-								$expression, $statement,
-								break_label, continue_label);
+			$$ = new_loop_expr (false, true, $expression, $statement,
+								continue_label, nullptr, break_label);
 			break_label = $break_label;
 			continue_label = $continue_label;
 		}
 	| FOR new_scope break_label continue_label
-//			'(' for_init_statement for_rest_statement ')'
 			'(' for_init_statement conditionopt ';' expressionopt ')'
-			{ $<mut_expr>$ = $new_scope; } statement_no_new_scope
+			statement_no_new_scope
 		{
-			auto loop = new_loop_expr (false, false,
-									   $conditionopt, $statement_no_new_scope,
-									   break_label, continue_label);
+			auto loop = new_loop_expr (false, false, $conditionopt,
+									   $statement_no_new_scope,
+									   continue_label, $expressionopt,
+									   break_label);
 			auto block = new_block_expr (nullptr);
 			if ($for_init_statement) {
 				append_expr (block, $for_init_statement);
@@ -1316,12 +1309,7 @@ expressionopt
 	: expression
 	| /* emtpy */	{ $$ = nullptr; }
 	;
-/*
-for_rest_statement
-	: conditionopt ';'
-	| conditionopt ';' expression
-	;
-*/
+
 jump_statement
 	: CONTINUE ';'
 		{
