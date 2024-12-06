@@ -516,8 +516,10 @@ offset_alias_operand (const type_t *type, int offset, operand_t *aop,
 		return top;
 	} else if (aop->op_type == op_def) {
 		def = aop->def;
-		while (def->alias)
+		while (def->alias) {
+			offset += def->offset;
 			def = def->alias;
+		}
 		return def_operand (alias_def (def, type, offset), 0, expr);
 	} else if (aop->op_type == op_value) {
 		if (!is_ptr (aop->value->type)) {
