@@ -1,5 +1,13 @@
 #include "test-harness.h"
 #pragma warn no-vararg-integer
+
+#define error(fmt, ...) \
+	do { \
+		printf ("%s:%d: in %s: " fmt, __FILE__, __LINE__, __FUNCTION__ \
+				__VA_OPT__(,) __VA_ARGS__); \
+		ret = 1; \
+	} while (false)
+
 typedef @algebra(float(3,0,1)) PGA;
 typedef PGA.group_mask(0x04) scalar_t;
 typedef PGA.group_mask(0x01) vector_t;
@@ -33,6 +41,7 @@ typedef union {
 static int
 test_wedge (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -55,80 +64,68 @@ test_wedge (void)
 	}
 
 	if (scalar != 42) {
-		printf ("scalar != 42: %g\n", scalar);
-		return 1;
+		error ("scalar != 42: %g\n", scalar);
 	}
 	if ((vec4)vec != '3 -2 4 1') {
-		printf ("vec != '3 -2 4 1': %q\n", vec);
-		return 1;
+		error ("vec != '3 -2 4 1': %q\n", vec);
 	}
 	if ((vec3)bvec.dir != '11 -4 2' || (vec3)bvec.mom != '-3 5 7') {
-		printf ("bvec != '11 -4 2' '-3 5 7': %v %v\n", bvec.dir, bvec.mom);
-		return 1;
+		error ("bvec != '11 -4 2' '-3 5 7': %v %v\n", bvec.dir, bvec.mom);
 	}
 	if ((vec4)tvec != '1 4 7 -2') {
-		printf ("tvec != '1 4 7 -2': %g\n", tvec);
-		return 1;
+		error ("tvec != '1 4 7 -2': %g\n", tvec);
 	}
 	if ((scalar_t)qvec != 8) {
-		printf ("tvec != 8: %g\n", qvec);
-		return 1;
+		error ("tvec != 8: %g\n", qvec);
 	}
 
 	bivector_t a = { .bvec = vec ∧ vecb };
 	if ((vec3)a.dir != '-48 20 46' || (vec3)a.mom != '44 -14 52') {
-		printf ("vec ∧ vecb != '-48 20 46' '44 -14 52': %v %v\n", a.dir, a.mom);
-		return 1;
+		error ("vec ∧ vecb != '-48 20 46' '44 -14 52': %v %v\n", a.dir, a.mom);
 	}
 
 	auto b = a.bvec ∧ vecc;
 	if ((vec4)b != '358 -472 -430 -298') {
-		printf ("a ∧ vecc != '358 -472 -430 -298': %v\n", b);
-		return 1;
+		error ("a ∧ vecc != '358 -472 -430 -298': %v\n", b);
 	}
 
 	auto c = b ∧ vecd;
 	if ((scalar_t)c != 842) {
-		printf ("b ∧ vecd != 742': %g\n", c);
-		return 1;
+		error ("b ∧ vecd != 842': %g\n", c);
 	}
 
 	a.bvec = vecb ∧ vec;
 	if ((vec3)a.dir != '48 -20 -46' || (vec3)a.mom != '-44 14 -52') {
-		printf ("vecb ∧ vec != '48 -20 -46' '-44 14 -52': %v %v\n",
-				a.dir, a.mom);
-		return 1;
+		error ("vecb ∧ vec != '48 -20 -46' '-44 14 -52': %v %v\n",
+			   a.dir, a.mom);
 	}
 
 	b = vecc ∧ a.bvec;
 	if ((vec4)b != '-358 472 430 298') {
-		printf ("vecc ∧ a != '-358 472 430 298': %v\n", b);
-		return 1;
+		error ("vecc ∧ a != '-358 472 430 298': %v\n", b);
 	}
 
 	c = vecd ∧ b;
 	if ((scalar_t)c != 842) {
-		printf ("vecd ^ b != 842': %g\n", c);
-		return 1;
+		error ("vecd ^ b != 842': %g\n", c);
 	}
 
 	c = a.bvec ∧ (vecc ∧ vecd);
 	if ((scalar_t)c != -842) {
-		printf ("a ∧ (vecc ∧ vecd) != -842': %g\n", c);
-		return 1;
+		error ("a ∧ (vecc ∧ vecd) != -842': %g\n", c);
 	}
 
 	c = (vecd ∧ vecc) ∧ a.bvec;
 	if ((scalar_t)c != 842) {
-		printf ("(vecd ∧ vecc) ∧ a != 842': %g\n", c);
-		return 1;
+		error ("(vecd ∧ vecc) ∧ a != 842': %g\n", c);
 	}
-	return 0;
+	return ret;
 }
 
 static int
 test_dot (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -151,98 +148,84 @@ test_dot (void)
 	}
 
 	if (qvec • qvecb != 0) {
-		printf ("(qvec • qvecb) != 0': %g\n", qvec • qvecb);
-		return 1;
+		error ("(qvec • qvecb) != 0': %g\n", qvec • qvecb);
 	}
 
 	auto a = tvec • qvec;
 	if ((vec4)a != '0 0 0 -16') {
-		printf ("vec • vecb != '0 0 0 -16': %v\n", a);
-		return 1;
+		error ("vec • vecb != '0 0 0 -16': %v\n", a);
 	}
 
 	bivector_t b = { .mom = bvec.bvec • qvec };
 	if ((vec3)b.dir != '0 0 0' || (vec3)b.mom != '-88 32 -16') {
-		printf ("bvec • qvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
-		return 1;
+		error ("bvec • qvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
 	}
 
 	auto c = vec • qvec;
 	if ((vec4)c != '24 -16 32 0') {
-		printf ("vec • qvec != '24 -16 32 0': %v\n", c);
-		return 1;
+		error ("vec • qvec != '24 -16 32 0': %v\n", c);
 	}
 
 	a = bvec.bvec • tvec;
 	if ((vec4)a != '22 -8 4 9') {
-		printf ("bvec • tvec != '22 -8 4 9': %v\n", a);
-		return 1;
+		error ("bvec • tvec != '22 -8 4 9': %v\n", a);
 	}
 
 	b.bvec = vec • tvec;
 	if ((vec3)b.dir != '-6 4 -8' || (vec3)b.mom != '30 17 -14') {
-		printf ("vec • tvec != '-6 4 -8' '30 17 -14': %v %v\n", b.dir, b.mom);
-		return 1;
+		error ("vec • tvec != '-6 4 -8' '30 17 -14': %v %v\n", b.dir, b.mom);
 	}
 
 	if (bvec.bvec • bvec.bvec != -141) {
-		printf ("(bvec • bvec) != -141': %g\n", bvec.bvec • bvec.bvec);
-		return 1;
+		error ("(bvec • bvec) != -141': %g\n", bvec.bvec • bvec.bvec);
 	}
 
 	a = vec • bvec.bvec;
 	if ((vec4)a != '-12 -38 -10 -9') {
-		printf ("vec • bvec != '-12 -38 -10 -9': %v\n", a);
-		return 1;
+		error ("vec • bvec != '-12 -38 -10 -9': %v\n", a);
 	}
 
 	if (vec • vecb != -9) {
-		printf ("(vec • vecb) != -9': %g\n", vec • vecb);
-		return 1;
+		error ("(vec • vecb) != -9': %g\n", vec • vecb);
 	}
 
 	a = qvec • tvec;
 	if ((vec4)a != '0 0 0 16') {
-		printf ("vec • vecb != '0 0 0 16': %v\n", a);
-		return 1;
+		error ("vec • vecb != '0 0 0 16': %v\n", a);
 	}
 
 	b.bvec = qvec • bvec.bvec;
 	if ((vec3)b.dir != '0 0 0' || (vec3)b.mom != '-88 32 -16') {
-		printf ("qvec • bvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
-		return 1;
+		error ("qvec • bvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
 	}
 
 	c = qvec • vec;
 	if ((vec4)c != '-24 16 -32 0') {
-		printf ("vec • qvec != '-24 16 -32 0': %v\n", c);
-		return 1;
+		error ("vec • qvec != '-24 16 -32 0': %v\n", c);
 	}
 
 	a = tvec • bvec.bvec;
 	if ((vec4)a != '22 -8 4 9') {
-		printf ("tvec • vec != '22 -8 4 9': %v\n", a);
-		return 1;
+		error ("tvec • vec != '22 -8 4 9': %v\n", a);
 	}
 
 	b.bvec = tvec • vec;
 	if ((vec3)b.dir != '-6 4 -8' || (vec3)b.mom != '30 17 -14') {
-		printf ("tvec • vec != '-6 4 -8' '30 17 -14': %v %v\n", b.dir, b.mom);
-		return 1;
+		error ("tvec • vec != '-6 4 -8' '30 17 -14': %v %v\n", b.dir, b.mom);
 	}
 
 	a = bvec.bvec • vec;
 	if ((vec4)a != '12 38 10 9') {
-		printf ("bvec • vec != '12 38 10 9': %q\n", a);
-		return 1;
+		error ("bvec • vec != '12 38 10 9': %q\n", a);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
 test_geom (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -265,114 +248,100 @@ test_geom (void)
 	}
 
 	if (qvec * qvecb != 0) {
-		printf ("(qvec * qvecb) != 0': %g\n", qvec * qvecb);
-		return 1;
+		error ("(qvec * qvecb) != 0': %g\n", qvec * qvecb);
 	}
 
 	auto a = tvec * qvec;
 	if ((vec4)a != '0 0 0 -16') {
-		printf ("vec * vecb != '0 0 0 -16': %v\n", a);
-		return 1;
+		error ("vec * vecb != '0 0 0 -16': %v\n", a);
 	}
 
 	bivector_t b = { .mom = bvec.bvec * qvec };
 	if ((vec3)b.dir != '0 0 0' || (vec3)b.mom != '-88 32 -16') {
-		printf ("bvec * qvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
-		return 1;
+		error ("bvec * qvec != '0 0 0' '-88 32 -16': %v %v\n", b.dir, b.mom);
 	}
 
 	auto c = vec * qvec;
 	if ((vec4)c != '24 -16 32 0') {
-		printf ("vec * qvec != '24 -16 32 0': %v\n", c);
-		return 1;
+		error ("vec * qvec != '24 -16 32 0': %v\n", c);
 	}
 
 	oddgrades_t d = { .mvec = bvec.bvec * tvec };
 	if ((vec4)d.vec != '22 -8 4 9' || (vec4)d.tvec != '30 85 -34 0') {
-		printf ("bvec * tvec != '22 -8 4 9' '30 85 -34 0': %q %q\n",
-				d.vec, d.tvec);
-		return 1;
+		error ("bvec * tvec != '22 -8 4 9' '30 85 -34 0': %q %q\n",
+			   d.vec, d.tvec);
 	}
 
 	evengrades_t e = { .mvec = vec * tvec };
 	if ((vec3)e.dir != '-6 4 -8' || (vec3)e.mom != '30 17 -14'
 		|| e.scalar || (scalar_t)e.qvec != 21) {
-		printf ("vec * tvec != 0 '-6 4 -8' '30 17 -14' 21: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
-		return 1;
+		error ("vec * tvec != 0 '-6 4 -8' '30 17 -14' 21: %g %v %v %g\n",
+			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 	}
 
 	e.mvec = bvec.bvec * bvec.bvec;
 	if (e.scalar != -141 || (vec3)e.bvec.dir || (vec3)e.bvec.mom
 		|| (scalar_t)e.qvec != -78) {
-		printf ("bvec * bvec != -141 '0 0 0' '0 0 0' -78: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
-		return 1;
+		error ("bvec * bvec != -141 '0 0 0' '0 0 0' -78: %g %v %v %g\n",
+			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 	}
 
 	d = { .mvec = vec * bvec.bvec };
 	if ((vec4)d.vec != '-12 -38 -10 -9' || (vec4)d.tvec != '-45 -29 7 49') {
-		printf ("vec * bvec != '-12 -38 -10 -9' '-45 -29 7 49': %v %v\n",
-				d.vec, d.tvec);
-		return 1;
+		error ("vec * bvec != '-12 -38 -10 -9' '-45 -29 7 49': %v %v\n",
+			   d.vec, d.tvec);
 	}
 
 	e.mvec = vec * vecb;
 	if (e.scalar != -9 || (scalar_t)e.qvec
 		|| (vec3)e.bvec.dir != '-48 20 46' || (vec3)e.bvec.mom != '44 -14 52') {
-		printf ("(vec * vecb) != -9 '-48 20 46' '44 -14 52' 0': %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
-		return 1;
+		error ("(vec * vecb) != -9 '-48 20 46' '44 -14 52' 0': %g %v %v %g\n",
+			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 	}
 
 	a = qvec * tvec;
 	if ((vec4)a != '0 0 0 16') {
-		printf ("vec * vecb != '0 0 0 16': %v\n", a);
-		return 1;
+		error ("vec * vecb != '0 0 0 16': %v\n", a);
 	}
 
 	e.mvec = qvec * bvec.bvec;
 	if (e.scalar || (scalar_t)e.qvec
 		|| (vec3)e.bvec.dir || (vec3)e.bvec.mom != '-88 32 -16') {
-		printf ("(vec * vecb) != 0 '0 0 0' '-88 32 -16' 0': %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
-		return 1;
+		error ("(vec * vecb) != 0 '0 0 0' '-88 32 -16' 0': %g %v %v %g\n",
+			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 	}
 
 	c = qvec * vec;
 	if ((vec4)c != '-24 16 -32 0') {
-		printf ("qvec * vec != '-24 16 -32 0': %q\n", c);
-		return 1;
+		error ("qvec * vec != '-24 16 -32 0': %q\n", c);
 	}
 
 	d = { .mvec = tvec * bvec.bvec };
 	if ((vec4)d.vec != '22 -8 4 9' || (vec4)d.tvec != '-30 -85 34 0') {
-		printf ("tvec * bvec != '22 -8 4 9' '-30 -85 34 0': %q %q\n",
-				d.vec, d.tvec);
-		return 1;
+		error ("tvec * bvec != '22 -8 4 9' '-30 -85 34 0': %q %q\n",
+			   d.vec, d.tvec);
 	}
 
 	e.mvec = tvec * vec;
 	if (e.scalar || (scalar_t)e.qvec != -21
 		|| (vec3)e.bvec.dir != '-6 4 -8' || (vec3)e.bvec.mom != '30 17 -14') {
-		printf ("tvec * vec != 0 '-6 4 -8' '30 17 -14' -21: %g %v %v %g\n",
-				e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
-		return 1;
+		error ("tvec * vec != 0 '-6 4 -8' '30 17 -14' -21: %g %v %v %g\n",
+			   e.scalar, e.bvec.dir, e.bvec.mom, e.qvec);
 	}
 
 	d.mvec = bvec.bvec * vec;
 	if ((vec4)d.vec != '12 38 10 9' || (vec4)d.tvec != '-45 -29 7 49') {
-		printf ("vec * bvec != '12 38 10 9' '-45 -29 7 49': %q %q\n",
-				d.vec, d.tvec);
-		return 1;
+		error ("vec * bvec != '12 38 10 9' '-45 -29 7 49': %q %q\n",
+			   d.vec, d.tvec);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
 test_dual (void)
 {
+	int ret = 0;
 	@algebra (PGA) {
 		auto a = 1f;
 		auto a0 = e0;
@@ -392,8 +361,7 @@ test_dual (void)
 		auto a0123 = e0123;
 		#define TEST_DUAL(x, y) \
 			if (⋆x != y) { \
-				printf ("⋆" #x " != " #y "\n"); \
-				return 1; \
+				error ("⋆" #x " != " #y "\n"); \
 			}
 		TEST_DUAL (a, e0123);
 		TEST_DUAL (a0, e123);
@@ -415,8 +383,7 @@ test_dual (void)
 
 		#define TEST_DUAL(x) \
 			if (x * ⋆x != e0123) { \
-				printf (#x " * ⋆" #x " != e0123\n"); \
-				return 1; \
+				error (#x " * ⋆" #x " != e0123\n"); \
 			}
 		TEST_DUAL (a);
 		TEST_DUAL (a0);
@@ -436,12 +403,13 @@ test_dual (void)
 		TEST_DUAL (a0123);
 		#undef TEST_DUAL
 	}
-	return 0;
+	return ret;
 }
 
 static int
 test_undual (void)
 {
+	int ret = 0;
 	@algebra (PGA) {
 		auto a = 1f;
 		auto a0 = e0;
@@ -461,8 +429,7 @@ test_undual (void)
 		auto a0123 = e0123;
 		#define TEST_UNDUAL(x, y) \
 			if (@undual x != y) { \
-				printf ("@undual" #x " != " #y "\n"); \
-				return 1; \
+				error ("@undual" #x " != " #y "\n"); \
 			}
 		TEST_UNDUAL (a, e0123);
 		TEST_UNDUAL (a0, -e123);
@@ -484,8 +451,7 @@ test_undual (void)
 
 		#define TEST_UNDUAL(x) \
 			if (@undual x * x != e0123) { \
-				printf ("@undual " #x " * " #x " != e0123\n"); \
-				return 1; \
+				error ("@undual " #x " * " #x " != e0123\n"); \
 			}
 		TEST_UNDUAL (a);
 		TEST_UNDUAL (a0);
@@ -505,12 +471,13 @@ test_undual (void)
 		TEST_UNDUAL (a0123);
 		#undef TEST_UNDUAL
 	}
-	return 0;
+	return ret;
 }
 
 static int
 test_basics (void)
 {
+	int ret = 0;
 	@algebra (PGA) {
 		auto plane1 = e1 + 8*e0;
 		auto plane2 = e2 + 8*e0;
@@ -523,68 +490,56 @@ test_basics (void)
 		auto x = point @regressive rot;
 
 		if ((vec4)plane1 != '1 0 0 8' || (vec4)plane2 != '0 1 0 8') {
-			printf ("plane1 or plane2 wrong: %q %q\n", plane1, plane2);
-			return 1;
+			error ("plane1 or plane2 wrong: %q %q\n", plane1, plane2);
 		}
 		if ((vec4)p != '0 0 -3 1' || (vec4)p1 != '12 4 0 1'
 			|| (vec4)p2 != '4 12 0 1') {
-			printf ("p or p1 or p2 wrong: %q %q %q\n", p, p1, p2);
-			return 1;
+			error ("p or p1 or p2 wrong: %q %q %q\n", p, p1, p2);
 		}
 		bivector_t b = { .bvec = line };
 		if ((vec3)b.dir != '0 0 1' || (vec3)b.mom != '-8 8 0') {
-			printf ("line is wrong: %v %v\n", b.dir, b.mom);
-			return 1;
+			error ("line is wrong: %v %v\n", b.dir, b.mom);
 		}
 		oddgrades_t o = { .mvec = point };
 		if ((vec4)o.vec || (vec4)o.tvec != '-8 -8 -3 1') {
-			printf ("point is wrong: %q\n", point);
-			return 1;
+			error ("point is wrong: %q\n", point);
 		}
 		o.mvec = rot;
 		if ((vec4)o.vec || (vec4)o.tvec != '-16 -16 -3 1') {
-			printf ("rot is wrong: %q %q\n", o.vec, o.tvec);
-			return 1;
+			error ("rot is wrong: %q %q\n", o.vec, o.tvec);
 		}
 		evengrades_t e = { .mvec = x };
 		if (e.scalar || (scalar_t)e.qvec
 			|| (vec3)e.dir != '-8 -8 0' || (vec3)e.mom != '-24 24 0') {
-			printf ("x is wrong: %g %v %v %g\n",
-					e.scalar, e.dir, e.mom, e.qvec);
-			return 1;
+			error ("x is wrong: %g %v %v %g\n", e.scalar, e.dir, e.mom, e.qvec);
 		}
 	}
-	return 0;
+	return ret;
 }
 
 int
 main (void)
 {
+	int ret = 0;
 	if (sizeof (scalar_t) != sizeof (float)) {
-		printf ("scalar has wrong size: %d\n", sizeof (scalar_t));
-		return 1;
+		error ("scalar has wrong size: %d\n", sizeof (scalar_t));
 	}
 	if (sizeof (vector_t) != 4 * sizeof (scalar_t)) {
-		printf ("bivector has wrong size: %d\n", sizeof (vector_t));
-		return 1;
+		error ("bivector has wrong size: %d\n", sizeof (vector_t));
 	}
 	// the pair of vec3s in a bivector have an alignment of 4
 	if (sizeof (bivector_t) != 8 * sizeof (scalar_t)) {
-		printf ("bivector has wrong size: %d\n", sizeof (bivector_t));
-		return 1;
+		error ("bivector has wrong size: %d\n", sizeof (bivector_t));
 	}
 	if (sizeof (bivector_t) != sizeof (PGA.group_mask(0x0a))) {
-		printf ("bivector group has wrong size: %d\n",
+		error ("bivector group has wrong size: %d\n",
 				sizeof (PGA.group_mask(0x0a)));
-		return 1;
 	}
 	if (sizeof (trivector_t) != 4 * sizeof (scalar_t)) {
-		printf ("trivector has wrong size: %d\n", sizeof (trivector_t));
-		return 1;
+		error ("trivector has wrong size: %d\n", sizeof (trivector_t));
 	}
 	if (sizeof (quadvector_t) != sizeof (scalar_t)) {
-		printf ("quadvector has wrong size: %d\n", sizeof (quadvector_t));
-		return 1;
+		error ("quadvector has wrong size: %d\n", sizeof (quadvector_t));
 	}
 	if (sizeof (evengrades_t) != sizeof (bivector_t)) {
 		evengrades_t e;
@@ -596,38 +551,38 @@ main (void)
 		printf ("mvec: %d, bvec: %d, scalar: %d, qvec: %d\n",
 				offsetof (evengrades_t, mvec), offsetof (evengrades_t, bvec),
 				offsetof (evengrades_t, scalar), offsetof (evengrades_t, qvec));
-		return 1;
+		ret = 1;
 	}
 
 	if (test_wedge ()) {
 		printf ("wedge products failed\n");
-		return 1;
+		ret = 1;
 	}
 
 	if (test_dot ()) {
 		printf ("dot products failed\n");
-		return 1;
+		ret = 1;
 	}
 
 	if (test_geom ()) {
 		printf ("geometric products failed\n");
-		return 1;
+		ret = 1;
 	}
 
 	if (test_dual ()) {
 		printf ("dual failed\n");
-		return 1;
+		ret = 1;
 	}
 
 	if (test_undual ()) {
 		printf ("dual failed\n");
-		return 1;
+		ret = 1;
 	}
 
 	if (test_basics ()) {
 		printf ("basics failed\n");
-		return 1;
+		ret = 1;
 	}
 
-	return 0;		// to survive and prevail :)
+	return ret;
 }
