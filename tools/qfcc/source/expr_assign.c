@@ -122,6 +122,7 @@ is_lvalue (const expr_t *expr)
 		case ex_value:
 		case ex_error:
 		case ex_selector:
+		case ex_message:
 		case ex_return:
 		case ex_adjstk:
 		case ex_with:
@@ -137,6 +138,8 @@ is_lvalue (const expr_t *expr)
 		case ex_loop:
 		case ex_select:
 		case ex_intrinsic:
+		case ex_switch:
+		case ex_caselabel:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

@@ -98,7 +98,6 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return convert_nil (e, dstType);
 	}
 
-	dstType = unalias_type (dstType);
 	srcType = get_type (e);
 
 	if (is_reference (srcType)) {
@@ -106,8 +105,9 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		e = pointer_deref (e);
 	}
 
-	if (dstType == srcType)
+	if (type_same (dstType, srcType)) {
 		return e;
+	}
 
 	if ((dstType == type_default && is_enum (srcType))
 		|| (is_enum (dstType) && srcType == type_default))
@@ -155,7 +155,8 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
-		return address_expr (e, dstType->fldptr.type);
+		dstType = dereference_type (dstType);
+		return address_expr (e, dstType);
 	}
 	if (is_short (srcType)) {
 		e = new_int_expr (expr_short (e), false);

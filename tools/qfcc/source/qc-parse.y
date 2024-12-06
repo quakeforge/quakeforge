@@ -186,6 +186,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		type_ref_spec
 %type	<expr>		generic_type
 %type	<mut_expr>	type_list type_param_list
+%type	<expr>		initdecl notype_initdecl
+%type	<mut_expr>	initdecls notype_initdecls
 
 %type	<attribute>	attribute_list attribute
 
@@ -208,7 +210,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<symbol>	methoddef
 %type	<expr>		var_initializer local_def
 
-%type	<mut_expr>	opt_init_semi opt_expr comma_expr
+%type	<expr>		opt_init_semi opt_expr comma_expr
 %type   <expr>		expr
 %type	<expr>		compound_init
 %type	<spec>		opt_cast
@@ -216,15 +218,15 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		method_optional_state_expr optional_state_expr
-%type	<expr>		texpr vector_expr
+%type	<expr>		vector_expr
 %type	<expr>		intrinsic
 %type	<expr>		statement
-%type	<mut_expr>	statements compound_statement compound_statement_ns
-%type	<expr>		else bool_label break_label continue_label
+%type	<mut_expr>	statement_list compound_statement compound_statement_ns
+%type	<mut_expr>	new_block new_scope
+%type	<expr>		else line break_label continue_label
 %type	<expr>		unary_expr ident_expr cast_expr
 %type	<mut_expr>	arg_list
 %type   <expr>		opt_arg_list arg_expr
-%type	<switch_block> switch_block
 %type	<symbol>	identifier label
 
 %type	<mut_expr>	identifier_list
@@ -246,7 +248,6 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %{
 
-static switch_block_t *switch_block;
 static const expr_t *break_label;
 static const expr_t *continue_label;
 static bool generic_scope, generic_block;
@@ -652,6 +653,15 @@ check_specifiers (specifier_t spec)
 	}
 }
 
+static const expr_t *
+decl_expr (specifier_t spec, const expr_t *init)
+{
+	auto sym = spec.sym;
+	spec.sym = nullptr;
+	auto decl = new_decl_expr (spec, current_symtab);
+	return append_decl (decl, sym, init);
+}
+
 %}
 
 %expect 2
@@ -706,8 +716,17 @@ fndef
 
 datadef
 	: defspecs notype_initdecls ';'
+		{
+			expr_process ($2);
+		}
 	| declspecs_nots notype_initdecls ';'
+		{
+			expr_process ($2);
+		}
 	| declspecs_ts initdecls ';'
+		{
+			expr_process ($2);
+		}
 	| declspecs_ts qc_func_params
 		{
 			$<spec>$ = qc_function_spec ($1, $2);
@@ -810,7 +829,7 @@ qc_nocode_func
 	: identifier '=' '#' expr
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
-			const expr_t *bi_val = $4;
+			const expr_t *bi_val = expr_process ($4);
 
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
@@ -852,7 +871,8 @@ qc_code_func
 		}
 	  compound_statement_ns
 		{
-			build_code_function ($1, $3, $6);
+			auto statements = (expr_t *) expr_process ($6);
+			build_code_function ($1, $3, statements);
 			current_symtab = $<funcstate>5.symtab;
 			current_func = $<funcstate>5.function;
 			restore_storage ($4);
@@ -864,6 +884,7 @@ declarator
 	| notype_declarator
 	;
 
+// reuses typedef or class name
 after_type_declarator
 	: '(' copy_spec after_type_declarator ')' { $$ = $3; }
 	| after_type_declarator function_params
@@ -901,6 +922,7 @@ ptr_spec
 	: copy_spec	// for when no qualifiers are present
 	;
 
+// does not reuse a typedef or class name
 notype_declarator
 	: '(' copy_spec notype_declarator ')' { $$ = $3; }
 	| notype_declarator function_params
@@ -928,27 +950,29 @@ notype_declarator
 	;
 
 initdecls
-	: initdecl
+	: initdecl								{ $$ = new_list_expr ($1); }
 	| initdecls ',' { $<spec>$ = $<spec>0; } initdecl
+		{
+			$$ = expr_append_expr ($1, $4);
+		}
 	;
 
 initdecl
-	: declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab, local_expr); }
-	| declarator
-		{ declare_symbol ($1, 0, current_symtab, local_expr); }
+	: declarator '=' var_initializer		{ $$ = decl_expr ($1, $3); }
+	| declarator							{ $$ = decl_expr ($1, nullptr); }
 	;
 
 notype_initdecls
-	: notype_initdecl
+	: notype_initdecl						{ $$ = new_list_expr ($1); }
 	| notype_initdecls ',' { $<spec>$ = $<spec>0; } notype_initdecl
+		{
+			$$ = expr_append_expr ($1, $4);
+		}
 	;
 
 notype_initdecl
-	: notype_declarator '=' var_initializer
-		{ declare_symbol ($1, $3, current_symtab, local_expr); }
-	| notype_declarator
-		{ declare_symbol ($1, 0, current_symtab, local_expr); }
+	: notype_declarator '=' var_initializer	{ $$ = decl_expr ($1, $3); }
+	| notype_declarator						{ $$ = decl_expr ($1, nullptr); }
 	;
 
 /* various lists of type specifiers, storage class etc */
@@ -1164,7 +1188,8 @@ function_body
 		}
 	  compound_statement_ns
 		{
-			build_code_function ($<symbol>2, $1, $5);
+			auto statements = (expr_t *) expr_process ($5);
+			build_code_function ($<symbol>2, $1, statements);
 			current_symtab = $<funcstate>4.symtab;
 			current_func = $<funcstate>4.function;
 			restore_storage ($3);
@@ -1172,7 +1197,7 @@ function_body
 	| '=' '#' expr ';'
 		{
 			specifier_t spec = $<spec>0;
-			const expr_t *bi_val = $3;
+			const expr_t *bi_val = expr_process ($3);
 
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
@@ -1377,8 +1402,15 @@ enumerator_list
 	;
 
 enumerator
-	: identifier				{ add_enum ($<symbol>0, $1, 0); }
-	| identifier '=' expr		{ add_enum ($<symbol>0, $1, $3); }
+	: identifier
+		{
+			add_enum ($<symbol>0, $identifier, nullptr);
+		}
+	| identifier '=' expr
+		{
+			$expr = expr_process ($expr);
+			add_enum ($<symbol>0, $identifier, $expr);
+		}
 	;
 
 struct_specifier
@@ -1666,13 +1698,11 @@ array_decl
 decl
 	: declspecs_ts local_expr initdecls seq_semi
 		{
-			$$ = local_expr;
-			local_expr = 0;
+			$$ = $3;
 		}
 	| declspecs_nots local_expr notype_initdecls seq_semi
 		{
-			$$ = local_expr;
-			local_expr = 0;
+			$$ = $3;
 		}
 	| declspecs_ts local_expr qc_func_params
 		{
@@ -1783,53 +1813,61 @@ optional_comma
 	| ','
 	;
 
-push_scope
+new_block
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
+			$$ = block;
+		}
+
+new_scope
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
+			if (!options.traditional) {
+				block->block.scope = new_symtab (current_symtab, stab_local);
+				block->block.scope->space = current_symtab->space;
+				current_symtab = block->block.scope;
+			}
+			$$ = block;
+		}
+	;
+
+end_scope
 	: /* empty */
 		{
 			if (!options.traditional) {
-				current_symtab = new_symtab (current_symtab, stab_local);
-				current_symtab->space = current_symtab->parent->space;
-			}
-		}
-	;
-
-pop_scope
-	: /* empty */
-		{
-			if (!options.traditional)
 				current_symtab = current_symtab->parent;
-		}
-	;
-
-flush_dag
-	: /* empty */
-		{
-			if (!no_flush_dag) {
-				edag_flush ();
 			}
 		}
 	;
 
 seq_semi
-	: ';' flush_dag
+	: ';'
 	;
 
 compound_statement
-	: '{' push_scope flush_dag statements '}' pop_scope flush_dag { $$ = $4; }
+	: '{' '}'										{ $$ = new_block_expr (0); }
+	| '{' new_scope statement_list '}' end_scope	{ $$ = $3; }
 	;
 
 compound_statement_ns
-	: '{' flush_dag statements '}' flush_dag { $$ = $3; }
+	: '{' '}'										{ $$ = new_block_expr (0); }
+	| '{' new_block statement_list '}'				{ $$ = $3; }
 	;
 
-statements
-	: /*empty*/
+statement_list
+	: statement
 		{
-			$$ = new_block_expr (0);
+			auto list = $<mut_expr>0;
+			$$ = append_expr (list, $1);
 		}
-	| statements flush_dag statement
+	| statement_list statement
 		{
-			$$ = append_expr ($1, $3);
+			auto list = $1;
+			$$ = append_expr (list, $2);
 		}
 	;
 
@@ -1843,9 +1881,14 @@ statement
 	| error ';'					{ $$ = 0; yyerrok; }
 	| compound_statement		{ $$ = $1; }
 	| local_def					{ $$ = $1; }
-	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
-	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
-	| AT_RETURN	expr ';'		{ $$ = at_return_expr (current_func, $2); }
+	| RETURN opt_expr ';'		{ $$ = new_return_expr ($2); }
+	| RETURN compound_init ';'	{ $$ = new_return_expr ($2); }
+	| AT_RETURN	expr ';'
+		{
+			auto at = new_return_expr ($2);
+			at->retrn.at_return = true;
+			$$ = at;
+		}
 	| BREAK ';'
 		{
 			$$ = 0;
@@ -1868,55 +1911,65 @@ statement
 		}
 	| CASE expr ':'
 		{
-			$$ = case_label_expr (switch_block, $2);
+			$$ = new_caselabel_expr ($2, nullptr);
 		}
 	| DEFAULT ':'
 		{
-			$$ = case_label_expr (switch_block, 0);
+			$$ = new_caselabel_expr (nullptr, nullptr);
 		}
-	| SWITCH break_label '(' comma_expr switch_block ')' compound_statement
+	| SWITCH break_label line '(' comma_expr[test] ')' compound_statement[body]
 		{
-			$$ = switch_expr (switch_block, break_label, $7);
-			switch_block = $5;
-			break_label = $2;
+			scoped_src_loc ($line);
+			$$ = new_switch_expr ($test, $body, break_label);
+			break_label = $break_label;
 		}
 	| GOTO NAME
 		{
 			const expr_t *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
-	| IF not '(' texpr ')' flush_dag statement %prec IFX
+	| IF not line '(' expr[test] ')' statement[true] %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, $7, 0, 0);
+			scoped_src_loc ($line);
+			$$ = new_select_expr ($not, $test, $true, nullptr, nullptr);
 		}
-	| IF not '(' texpr ')' flush_dag statement else statement
+	| IF not line '(' expr[test]')' statement[true]
+			else statement[false]
 		{
-			$$ = build_if_statement ($2, $4, $7, $8, $9);
+			scoped_src_loc ($line);
+			$$ = new_select_expr ($not, $test, $true, $else, $false);
 		}
-	| FOR push_scope break_label continue_label
-			'(' opt_init_semi opt_expr seq_semi opt_expr ')' flush_dag statement pop_scope
+	| FOR new_scope break_label continue_label
+			'(' opt_init_semi[init] opt_expr[test] ';' opt_expr[cont] ')'
+			statement[body] end_scope
 		{
-			if ($6) {
-				$6 = build_block_expr ($6, false);
+			auto test = $test;
+			if (!test) {
+				test = new_bool_expr (true);
 			}
-			$$ = build_for_statement ($6, $7, $9, $12,
-									  break_label, continue_label);
-			break_label = $3;
-			continue_label = $4;
+			auto loop = new_loop_expr (false, false, test, $body,
+									   continue_label, $cont, break_label);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, loop);
+			break_label = $break_label;
+			continue_label = $continue_label;
 		}
-	| WHILE break_label continue_label not '(' texpr ')' flush_dag statement
+	| WHILE break_label continue_label not '(' expr[test] ')'
+			statement[body]
 		{
-			$$ = build_while_statement ($4, $6, $9, break_label,
-										continue_label);
-			break_label = $2;
-			continue_label = $3;
+			$$ = new_loop_expr ($not, false, $test, $body,
+								continue_label, nullptr, break_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
 		}
-	| DO break_label continue_label statement WHILE not '(' texpr ')' ';'
+	| DO break_label continue_label statement[body]
+			WHILE not '(' expr[test] ')' ';'
 		{
-			$$ = build_do_while_statement ($4, $6, $8,
-										   break_label, continue_label);
-			break_label = $2;
-			continue_label = $3;
+			$$ = new_loop_expr ($not, true, $test, $body,
+								continue_label, nullptr, break_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
 		}
 	| ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
 		{
@@ -1959,23 +2012,19 @@ not
 	| /* empty */				{ $$ = 0; }
 	;
 
-else
-	: ELSE flush_dag
+line
+	: /* empty */
 		{
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
+
+else
+	: ELSE line				{ $$ = $line; }
 	;
 
 label
 	: NAME ':'
-	;
-
-bool_label
-	: /* empty */
-		{
-			$$ = new_label_expr ();
-		}
 	;
 
 break_label
@@ -1994,17 +2043,8 @@ continue_label
 		}
 	;
 
-switch_block
-	: /* empty */
-		{
-			$$ = switch_block;
-			switch_block = new_switch_block ();
-			switch_block->test = $<expr>0;
-		}
-	;
-
 opt_init_semi
-	: comma_expr seq_semi
+	: comma_expr ';'
 	| decl /* contains ; */		{ $$ = (expr_t *) $1; }
 	| ';'
 		{
@@ -2027,29 +2067,34 @@ unary_expr
 	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
-	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
-	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
-	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
-	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
-	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
-	| unary_expr REVERSE			{ $$ = unary_expr (QC_REVERSE, $1); }
-	| DUAL cast_expr %prec UNARY	{ $$ = unary_expr (QC_DUAL, $2); }
-	| UNDUAL cast_expr %prec UNARY	{ $$ = unary_expr (QC_UNDUAL, $2); }
+	| unary_expr '(' opt_arg_list ')' { $$ = new_call_expr ($1, $3, nullptr); }
+	| unary_expr '[' expr ']'		{ $$ = new_array_expr ($1, $3); }
+	| unary_expr '.' ident_expr		{ $$ = new_field_expr ($1, $3); }
+	| unary_expr '.' unary_expr		{ $$ = new_field_expr ($1, $3); }
+	| INCOP unary_expr				{ $$ = new_incop_expr ($1, $2, false); }
+	| unary_expr INCOP				{ $$ = new_incop_expr ($2, $1, true); }
+	| unary_expr REVERSE			{ $$ = new_unary_expr (QC_REVERSE, $1); }
+	| DUAL cast_expr %prec UNARY	{ $$ = new_unary_expr (QC_DUAL, $2); }
+	| UNDUAL cast_expr %prec UNARY	{ $$ = new_unary_expr (QC_UNDUAL, $2); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
-	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
-	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
-	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
-	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0); }
-	| '*' cast_expr %prec UNARY	{ $$ = deref_pointer_expr ($2); }
-	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
+	| '-' cast_expr %prec UNARY	{ $$ = new_unary_expr ('-', $2); }
+	| '!' cast_expr %prec UNARY	{ $$ = new_unary_expr ('!', $2); }
+	| '~' cast_expr %prec UNARY	{ $$ = new_unary_expr ('~', $2); }
+	| '&' cast_expr %prec UNARY	{ $$ = new_unary_expr ('&', $2); }
+	| '*' cast_expr %prec UNARY	{ $$ = new_unary_expr ('.', $2); }
+	| SIZEOF unary_expr	%prec UNARY	{ $$ = new_unary_expr ('S', $2); }
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
-			auto type = resolve_type_spec ($3);
-			$$ = sizeof_expr (0, type);
+			auto spec = $3;
+			auto type_expr = spec.type_expr;
+			if (!type_expr) {
+				spec = default_type (spec, nullptr);
+				type_expr = new_type_expr (spec.type);
+			}
+			$$ = new_unary_expr ('S', type_expr);
 		}
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
-	| vector_expr				{ $$ = new_vector_list ($1); }
+	| vector_expr				{ $$ = new_vector_list_expr ($1); }
 	| obj_expr					{ $$ = $1; }
 	;
 
@@ -2060,65 +2105,74 @@ ident_expr
 	;
 
 vector_expr
-	: '[' expr ',' { no_flush_dag = true; } expr_list ']'
+	: '[' expr ',' expr_list ']'
 		{
-			$$ = expr_prepend_expr ($5, $2);
-			no_flush_dag = false;
+			$$ = expr_prepend_expr ($4, $2);
 		}
 	;
 
 cast_expr
 	: '(' typename ')' cast_expr
 		{
-			auto type = resolve_type_spec ($2);
-			$$ = cast_expr (type, $4);
+			auto spec = $2;
+			auto type_expr = spec.type_expr;
+			if (!type_expr) {
+				spec = default_type (spec, nullptr);
+				type_expr = new_type_expr (spec.type);
+			}
+			$$ = new_binary_expr ('C', type_expr, $4);
 		}
 	| unary_expr %prec LOW
 	;
 
 expr
 	: cast_expr
-	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
-	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
-	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
-	| expr '?' flush_dag expr ':' expr 	{ $$ = conditional_expr ($1, $4, $6); }
-	| expr AND flush_dag bool_label expr{ $$ = bool_expr (QC_AND, $4, $1, $5); }
-	| expr OR flush_dag bool_label expr	{ $$ = bool_expr (QC_OR,  $4, $1, $5); }
-	| expr EQ expr				{ $$ = binary_expr (QC_EQ,  $1, $3); }
-	| expr NE expr				{ $$ = binary_expr (QC_NE,  $1, $3); }
-	| expr LE expr				{ $$ = binary_expr (QC_LE,  $1, $3); }
-	| expr GE expr				{ $$ = binary_expr (QC_GE,  $1, $3); }
-	| expr LT expr				{ $$ = binary_expr (QC_LT,  $1, $3); }
-	| expr GT expr				{ $$ = binary_expr (QC_GT,  $1, $3); }
-	| expr SHL expr				{ $$ = binary_expr (QC_SHL, $1, $3); }
-	| expr SHR expr				{ $$ = binary_expr (QC_SHR, $1, $3); }
-	| expr '+' expr				{ $$ = binary_expr ('+', $1, $3); }
-	| expr '-' expr				{ $$ = binary_expr ('-', $1, $3); }
-	| expr '*' expr				{ $$ = binary_expr ('*', $1, $3); }
-	| expr '/' expr				{ $$ = binary_expr ('/', $1, $3); }
-	| expr '&' expr				{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
-	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
-	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
-	| expr MOD expr				{ $$ = binary_expr (QC_MOD, $1, $3); }
-	| expr GEOMETRIC expr		{ $$ = binary_expr (QC_GEOMETRIC, $1, $3); }
-	| expr HADAMARD expr		{ $$ = binary_expr (QC_HADAMARD, $1, $3); }
-	| expr CROSS expr			{ $$ = binary_expr (QC_CROSS, $1, $3); }
-	| expr DOT expr				{ $$ = binary_expr (QC_DOT, $1, $3); }
-	| expr OUTER expr			{ $$ = binary_expr (QC_OUTER, $1, $3); }
-	| expr WEDGE expr			{ $$ = binary_expr (QC_WEDGE, $1, $3); }
-	| expr REGRESSIVE expr		{ $$ = binary_expr (QC_REGRESSIVE, $1, $3); }
-	;
-
-texpr
-	: expr						{ $$ = convert_bool ($1, 1); }
+	| expr '=' expr				{ $$ = new_assign_expr ($1, $3); }
+	| expr '=' compound_init	{ $$ = new_assign_expr ($1, $3); }
+	| expr ASX expr
+		{
+			scoped_src_loc ($1);
+			auto expr = $3;
+			expr = paren_expr (expr);
+			expr = new_binary_expr ($2, $1, expr);
+			$$ = new_assign_expr ($1, expr);
+		}
+	| expr '?' expr ':' expr 	{ $$ = new_cond_expr ($1, $3, $5); }
+	| expr AND expr				{ $$ = new_binary_expr (QC_AND, $1, $3); }
+	| expr OR expr				{ $$ = new_binary_expr (QC_OR,  $1, $3); }
+	| expr EQ expr				{ $$ = new_binary_expr (QC_EQ,  $1, $3); }
+	| expr NE expr				{ $$ = new_binary_expr (QC_NE,  $1, $3); }
+	| expr LE expr				{ $$ = new_binary_expr (QC_LE,  $1, $3); }
+	| expr GE expr				{ $$ = new_binary_expr (QC_GE,  $1, $3); }
+	| expr LT expr				{ $$ = new_binary_expr (QC_LT,  $1, $3); }
+	| expr GT expr				{ $$ = new_binary_expr (QC_GT,  $1, $3); }
+	| expr SHL expr				{ $$ = new_binary_expr (QC_SHL, $1, $3); }
+	| expr SHR expr				{ $$ = new_binary_expr (QC_SHR, $1, $3); }
+	| expr '+' expr				{ $$ = new_binary_expr ('+', $1, $3); }
+	| expr '-' expr				{ $$ = new_binary_expr ('-', $1, $3); }
+	| expr '*' expr				{ $$ = new_binary_expr ('*', $1, $3); }
+	| expr '/' expr				{ $$ = new_binary_expr ('/', $1, $3); }
+	| expr '&' expr				{ $$ = new_binary_expr ('&', $1, $3); }
+	| expr '|' expr				{ $$ = new_binary_expr ('|', $1, $3); }
+	| expr '^' expr				{ $$ = new_binary_expr ('^', $1, $3); }
+	| expr '%' expr				{ $$ = new_binary_expr ('%', $1, $3); }
+	| expr MOD expr				{ $$ = new_binary_expr (QC_MOD, $1, $3); }
+	| expr GEOMETRIC expr		{ $$ = new_binary_expr (QC_GEOMETRIC, $1, $3); }
+	| expr HADAMARD expr		{ $$ = new_binary_expr (QC_HADAMARD, $1, $3); }
+	| expr CROSS expr			{ $$ = new_binary_expr (QC_CROSS, $1, $3); }
+	| expr DOT expr				{ $$ = new_binary_expr (QC_DOT, $1, $3); }
+	| expr OUTER expr			{ $$ = new_binary_expr (QC_OUTER, $1, $3); }
+	| expr WEDGE expr			{ $$ = new_binary_expr (QC_WEDGE, $1, $3); }
+	| expr REGRESSIVE expr		{ $$ = new_binary_expr (QC_REGRESSIVE, $1, $3); }
 	;
 
 comma_expr
 	: expr_list
 		{
 			if ($1->list.head->next) {
-				$$ = build_block_expr ($1, true);
+				auto b = build_block_expr ($1, true);
+				b->block.scope = current_symtab;
+				$$ = b;
 			} else {
 				$$ = (expr_t *) $1->list.head->expr;
 			}
@@ -2126,8 +2180,8 @@ comma_expr
 	;
 
 expr_list
-	: expr							{ $$ = new_list_expr ($1); }
-	| expr_list ',' flush_dag expr	{ $$ = expr_append_expr ($1, $4); }
+	: expr						{ $$ = new_list_expr ($1); }
+	| expr_list ',' expr		{ $$ = expr_append_expr ($1, $3); }
 	;
 
 opt_arg_list
@@ -2576,7 +2630,8 @@ methoddef
 		}
 	  compound_statement_ns
 		{
-			build_code_function ($<symbol>4, $3, $7);
+			auto statements = (expr_t *) expr_process ($7);
+			build_code_function ($<symbol>4, $3, statements);
 			current_symtab = $<funcstate>6.symtab;
 			current_func = $<funcstate>6.function;
 			restore_storage ($5);
@@ -2585,7 +2640,7 @@ methoddef
 		{
 			symbol_t   *sym;
 			method_t   *method = $2;
-			const expr_t *bi_val = $5;
+			const expr_t *bi_val = expr_process ($5);
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
@@ -2722,7 +2777,11 @@ obj_expr
 	;
 
 obj_messageexpr
-	: '[' receiver messageargs ']'	{ $$ = message_expr ($2, $3); }
+	: '[' receiver messageargs ']'
+		{
+			scoped_src_loc ($receiver);
+			$$ = new_message_expr ($receiver, $messageargs);
+		}
 	;
 
 receiver
@@ -3154,4 +3213,5 @@ language_t lang_ruamoko = {
 	.init = rua_init,
 	.parse = qc_yyparse,
 	.finish = qc_finish,
+	.parse_declaration = rua_parse_declaration,
 };

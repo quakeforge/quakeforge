@@ -1635,6 +1635,9 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 		spirv_SplitBlock (ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
+		if (e->loop.continue_body) {
+			spirv_emit_expr (e->loop.continue_body, ctx);
+		}
 		unsigned test = spirv_emit_expr (e->loop.test, ctx);
 		spirv_BranchConditional (e->loop.not, test, merge, loop, ctx);
 		spirv_LabelId (merge, ctx);
@@ -1648,6 +1651,9 @@ spirv_loop (const expr_t *e, spirvctx_t *ctx)
 		spirv_LabelId (body, ctx);
 		spirv_emit_expr (e->loop.body, ctx);
 		spirv_SplitBlockId (cont, ctx);
+		if (e->loop.continue_body) {
+			spirv_emit_expr (e->loop.continue_body, ctx);
+		}
 		spirv_Branch (loop, ctx);
 		spirv_LabelId (merge, ctx);
 	}

@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
@@ -233,6 +234,127 @@ ruamoko_assign_vector (const expr_t *dst, const expr_t *src)
 	return block;
 }
 
+static switch_block_t *switch_block;
+const expr_t *
+ruamoko_proc_switch (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto test = expr_process (expr->switchblock.test);
+
+	auto sb = switch_block;
+	switch_block = new_switch_block ();
+	switch_block->test = test;
+	auto body = expr_process (expr->switchblock.body);
+
+	auto break_label = expr->switchblock.break_label;
+	auto swtch = switch_expr (switch_block, break_label, body);
+	switch_block = sb;
+	return swtch;
+}
+
+const expr_t *
+ruamoko_proc_caselabel (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	if (expr->caselabel.end_value) {
+		internal_error (expr, "case ranges not implemented");
+	}
+	auto value = expr_process (expr->caselabel.value);
+	if (is_error (value)) {
+		return value;
+	}
+	return case_label_expr (switch_block, value);
+}
+
+const expr_t *
+ruamoko_field_array (const expr_t *e)
+{
+	ex_list_t list = {};
+	// convert the left-branching field/array expression chain to a list
+	while (e->type == ex_field || e->type == ex_array) {
+		for (; e->type == ex_field; e = e->field.object) {
+			list_prepend (&list, e);
+		}
+		for (; e->type == ex_array; e = e->array.base) {
+			list_prepend (&list, e);
+		}
+	}
+	// e is now the base object of the field/array expression chain
+
+	int num_obj = list_count (&list);
+	const expr_t *objects[num_obj];
+	list_scatter (&list, objects);
+	for (int i = 0; i < num_obj; i++) {
+		auto obj = objects[i];
+		auto base_type = get_type (e);
+		if (obj->type == ex_field) {
+			if (obj->field.member->type != ex_symbol) {
+				internal_error (obj->field.member, "not a symbol");
+			}
+			auto sym = obj->field.member->symbol;
+			if (is_pointer (base_type)) {
+				auto offset = new_short_expr (sym->offset);
+				e = offset_pointer_expr (e, offset);
+				e = cast_expr (pointer_type (obj->field.type), e);
+				e = unary_expr ('.', e);
+			} else if (e->type == ex_uexpr && e->expr.op == '.') {
+				auto offset = new_short_expr (sym->offset);
+				e = offset_pointer_expr (e->expr.e1, offset);
+				e = cast_expr (pointer_type (obj->field.type), e);
+				e = unary_expr ('.', e);
+			} else {
+				e = new_offset_alias_expr (obj->field.type, e, sym->offset);
+			}
+		} else if (obj->type == ex_array) {
+			scoped_src_loc (obj->array.index);
+			int base_ind = 0;
+			if (is_array (base_type)) {
+				base_ind = base_type->array.base;
+			}
+			auto ele_type = obj->array.type;
+			auto base = new_int_expr (base_ind, false);
+			auto scale = new_int_expr (type_size (ele_type), false);
+			auto offset = binary_expr ('*', base, scale);
+			auto index = binary_expr ('*', obj->array.index, scale);
+			offset = binary_expr ('-', index, offset);
+			const expr_t *ptr;
+			if (is_array (base_type)) {
+				if (e->type == ex_uexpr && e->expr.op == '.') {
+					ptr = e->expr.e1;
+				} else {
+					auto alias = new_offset_alias_expr (ele_type, e, 0);
+					ptr = new_address_expr (ele_type, alias, 0);
+				}
+			} else if (is_nonscalar (base_type) || is_matrix (base_type)) {
+				auto alias = new_offset_alias_expr (ele_type, e, 0);
+				ptr = new_address_expr (ele_type, alias, 0);
+			} else {
+				ptr = e;
+			}
+			ptr = offset_pointer_expr (ptr, offset);
+			ptr = cast_expr (pointer_type (obj->field.type), ptr);
+			e = unary_expr ('.', ptr);
+		} else {
+			internal_error (obj, "what the what?!?");
+		}
+	}
+	return e;
+}
+
+const expr_t *
+ruamoko_proc_address (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto e = expr_process (expr->expr.e1);
+	if (is_error (e)) {
+		return e;
+	}
+	if (e->type == ex_field || e->type == ex_array) {
+		e = ruamoko_field_array (e);
+	}
+	return address_expr (e, nullptr);
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -240,4 +362,7 @@ target_t ruamoko_target = {
 	.declare_sym = declare_def,
 	.initialized_temp = initialized_temp_expr,
 	.assign_vector = ruamoko_assign_vector,
+	.proc_switch = ruamoko_proc_switch,
+	.proc_caselabel = ruamoko_proc_caselabel,
+	.proc_address = ruamoko_proc_address,
 };

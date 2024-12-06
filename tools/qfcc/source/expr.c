@@ -139,7 +139,7 @@ get_type (const expr_t *e)
 		case ex_labelref:
 		case ex_adjstk:
 		case ex_with:
-			return &type_void;
+			type = &type_void;
 		case ex_memset:
 			return nullptr;
 		case ex_error:
@@ -148,25 +148,33 @@ get_type (const expr_t *e)
 		case ex_decl:
 		case ex_loop:
 		case ex_select:
-			internal_error (e, "unexpected expression type");
+		case ex_message:
+			internal_error (e, "unexpected expression type: %s",
+							expr_names[e->type]);
 		case ex_label:
+		case ex_switch:
+		case ex_caselabel:
 			return nullptr;
 		case ex_compound:
-			return e->compound.type;
+			type = e->compound.type;
+			break;
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return &type_float;
 			return &type_int;
 		case ex_nil:
 			if (e->nil) {
-				return e->nil;
+				type = e->nil;
+				break;
 			}
 			// fall through
 		case ex_state:
 			return &type_void;
+			break;
 		case ex_block:
-			if (e->block.result)
+			if (e->block.result) {
 				return get_type (e->block.result);
+			}
 			return &type_void;
 		case ex_expr:
 		case ex_uexpr:
@@ -185,7 +193,8 @@ get_type (const expr_t *e)
 			type = e->value->type;
 			break;
 		case ex_vector:
-			return e->vector.type;
+			type = e->vector.type;
+			break;
 		case ex_selector:
 			return &type_SEL;
 		case ex_alias:
@@ -199,13 +208,17 @@ get_type (const expr_t *e)
 		case ex_args:
 			return &type_va_list;
 		case ex_horizontal:
-			return e->hop.type;
+			type = e->hop.type;
+			break;
 		case ex_swizzle:
-			return e->swizzle.type;
+			type = e->swizzle.type;
+			break;
 		case ex_extend:
-			return e->extend.type;
+			type = e->extend.type;
+			break;
 		case ex_multivec:
-			return e->multivec.type;
+			type = e->multivec.type;
+			break;
 		case ex_list:
 			if (e->list.head) {
 				auto last = (ex_listitem_t *) e->list.tail;
@@ -221,16 +234,18 @@ get_type (const expr_t *e)
 			//unless one is nil
 			return get_type (e->cond.true_expr);
 		case ex_field:
-			return e->field.type;
+			type = e->field.type;
+			break;
 		case ex_array:
-			return e->array.type;
+			type = e->array.type;
+			break;
 		case ex_intrinsic:
 			type = e->intrinsic.res_type;
 			break;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
-	return unalias_type (type);
+	return type ? unalias_type (type) : nullptr;
 }
 
 etype_t
@@ -1987,6 +2002,8 @@ has_function_call (const expr_t *e)
 			return has_function_call (e->swizzle.src);
 		case ex_extend:
 			return has_function_call (e->extend.src);
+		case ex_message:
+			return true;
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -2008,6 +2025,7 @@ has_function_call (const expr_t *e)
 		case ex_loop:
 		case ex_select:
 		case ex_intrinsic:
+		case ex_caselabel:
 			return false;
 		case ex_multivec:
 			for (auto c = e->multivec.components.head; c; c = c->next) {
@@ -2027,6 +2045,8 @@ has_function_call (const expr_t *e)
 		case ex_array:
 			return (has_function_call (e->array.base)
 					|| has_function_call (e->array.index));
+		case ex_switch:
+			return has_function_call (e->switchblock.test);
 		case ex_count:
 			break;
 	}
@@ -2126,6 +2146,16 @@ new_call_expr (const expr_t *func, const expr_t *args, const type_t *ret_type)
 }
 
 const expr_t *
+new_message_expr (const expr_t *receiver, struct keywordarg_s *message)
+{
+	auto msg = new_expr ();
+	msg->type = ex_message;
+	msg->message.receiver = receiver;
+	msg->message.message = message;
+	return msg;
+}
+
+const expr_t *
 conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 {
 	if (cond->type == ex_error)
@@ -2135,7 +2165,7 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
-	expr_t *c = (expr_t *) convert_bool (cond, 1);
+	expr_t *c = (expr_t *) convert_bool (cond, true);
 	if (c->type == ex_error)
 		return c;
 
@@ -2247,15 +2277,17 @@ new_decl_expr (specifier_t spec, symtab_t *symtab)
 expr_t *
 new_loop_expr (bool not, bool do_while,
 			   const expr_t *test, const expr_t *body,
-			   const expr_t *break_label, const expr_t *continue_label)
+			   const expr_t *continue_label, const expr_t *continue_body,
+			   const expr_t *break_label)
 {
 	auto loop = new_expr ();
 	loop->type = ex_loop;
 	loop->loop = (ex_loop_t) {
 		.test = test,
 		.body = body,
-		.break_label = break_label,
 		.continue_label = continue_label,
+		.continue_body = continue_body,
+		.break_label = break_label,
 		.do_while = do_while,
 		.not = not,
 	};
@@ -2271,14 +2303,12 @@ new_select_expr (bool not, const expr_t *test,
 	auto select = new_expr ();
 	select->type = ex_select;
 	select->select = (ex_select_t) {
+		.not = not,
 		.test = test,
 		.true_body = true_body,
+		.els = els,
 		.false_body = false_body,
-		.not = not,
 	};
-	if (els) {
-		select->select.els = els->loc;
-	}
 	return select;
 }
 
@@ -2302,12 +2332,48 @@ new_intrinsic_expr (const expr_t *expr_list)
 }
 
 expr_t *
-append_decl (expr_t *decl, symbol_t *sym, const expr_t *init)
+new_switch_expr (const expr_t *test, const expr_t *body,
+				 const expr_t *break_label)
+{
+	auto swtch = new_expr ();
+	swtch->type = ex_switch;
+	swtch->switchblock = (ex_switch_t) {
+		.test = test,
+		.body = body,
+		.break_label = break_label,
+	};
+	return swtch;
+}
+
+expr_t *
+new_caselabel_expr (const expr_t *value, const expr_t *end_value)
+{
+	if (end_value && !value) {
+		internal_error (end_value, "case label with end value but no value");
+	}
+	auto cl = new_expr ();
+	cl->type = ex_caselabel;
+	cl->caselabel = (ex_caselabel_t) {
+		.value = value,
+		.end_value = end_value,
+	};
+	return cl;
+}
+
+expr_t *
+new_decl (symbol_t *sym, const expr_t *init)
 {
 	auto expr = new_symbol_expr (sym);
 	if (init) {
 		expr = new_assign_expr (expr, init);
 	}
+	return expr;
+}
+
+expr_t *
+append_decl (expr_t *decl, symbol_t *sym, const expr_t *init)
+{
+	auto expr = new_decl (sym, init);
 	list_append (&decl->decl.list, expr);
 	return decl;
 }
@@ -2406,7 +2472,7 @@ array_expr (const expr_t *array, const expr_t *index)
 	} else {
 		ele_type = base_type (array_type);
 		if (is_matrix (array_type)) {
-			ele_type = vector_type (ele_type, array_type->width);
+			ele_type = column_type (array_type);
 		}
 		if (array->type == ex_uexpr && array->expr.op == '.') {
 			auto vec = offset_pointer_expr (array->expr.e1, index);
@@ -2592,7 +2658,7 @@ build_if_statement (bool not, const expr_t *test, const expr_t *s1,
 
 	if_expr = new_block_expr (0);
 
-	test = convert_bool (test, 1);
+	test = convert_bool (test, true);
 	if (test->type != ex_error) {
 		if (not) {
 			backpatch (test->boolean.true_list, fl);
@@ -2644,7 +2710,7 @@ build_while_statement (bool not, const expr_t *test, const expr_t *statement,
 	append_expr (while_expr, statement);
 	append_expr (while_expr, continue_label);
 
-	test = convert_bool (test, 1);
+	test = convert_bool (test, true);
 	if (test->type != ex_error) {
 		if (not) {
 			backpatch (test->boolean.true_list, l2);
@@ -2684,7 +2750,7 @@ build_do_while_statement (const expr_t *statement, bool not, const expr_t *test,
 	append_expr (do_while_expr, statement);
 	append_expr (do_while_expr, continue_label);
 
-	test = convert_bool (test, 1);
+	test = convert_bool (test, true);
 	if (test->type != ex_error) {
 		if (not) {
 			backpatch (test->boolean.true_list, break_label);
@@ -2737,7 +2803,7 @@ build_for_statement (const expr_t *init, const expr_t *test, const expr_t *next,
 	append_expr (for_expr, next);
 	if (test) {
 		append_expr (for_expr, l1);
-		test = convert_bool (test, 1);
+		test = convert_bool (test, true);
 		if (test->type != ex_error) {
 			backpatch (test->boolean.true_list, tl);
 			backpatch (test->boolean.false_list, fl);

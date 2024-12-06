@@ -37,10 +37,12 @@
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -49,6 +51,12 @@ typedef const expr_t *(*process_f) (const expr_t *expr);
 static const expr_t *
 proc_expr (const expr_t *expr)
 {
+	scoped_src_loc (expr);
+	if (expr->expr.op == 'C') {
+		auto type = resolve_type (expr->expr.e1);
+		expr = expr_process (expr->expr.e2);
+		return cast_expr (type, expr);
+	}
 	auto e1 = expr_process (expr->expr.e1);
 	auto e2 = expr_process (expr->expr.e2);
 	if (is_error (e1)) {
@@ -58,19 +66,39 @@ proc_expr (const expr_t *expr)
 		return e2;
 	}
 
-	scoped_src_loc (expr);
-	return binary_expr (expr->expr.op, e1, e2);
+	if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
+		auto label = new_label_expr ();
+		return bool_expr (expr->expr.op, label, e1, e2);
+	}
+
+	auto e = binary_expr (expr->expr.op, e1, e2);
+	if (expr->paren) {
+		e = paren_expr (e);
+	}
+	return e;
 }
 
 static const expr_t *
 proc_uexpr (const expr_t *expr)
 {
+	scoped_src_loc (expr);
+	if (expr->expr.op == '&') {
+		return current_target.proc_address (expr);
+	}
 	auto e1 = expr_process (expr->expr.e1);
 	if (is_error (e1)) {
 		return e1;
 	}
+	if (expr->expr.op == 'S') {
+		const type_t *type;
+		if (e1->type == ex_type) {
+			type = e1->typ.type;
+		} else {
+			type = get_type (e1);
+		}
+		return sizeof_expr (nullptr, type);
+	}
 
-	scoped_src_loc (expr);
 	return unary_expr (expr->expr.op, e1);
 }
 
@@ -122,9 +150,26 @@ proc_field (const expr_t *expr)
 		return algebra_field_expr (object, member);
 	}
 	if (is_entity (obj_type)) {
-		obj_type = &type_entity;
-	}
-	if (is_nonscalar (obj_type)) {
+		symbol_t *field = nullptr;
+		if (member->type == ex_symbol) {
+			field = get_struct_field (&type_entity, object, member);
+		}
+		if (field) {
+			member = new_deffield_expr (0, field->type, field->def);
+			return typed_binary_expr (field->type, '.', object, member);
+		} else {
+			member = expr_process (member);
+			if (is_error (member)) {
+				return member;
+			}
+			auto mem_type = get_type (member);
+			if (is_field (mem_type)) {
+				mem_type = dereference_type (mem_type);
+				return typed_binary_expr (mem_type, '.', object, member);
+			}
+		}
+		return type_mismatch (object, member, '.');
+	} else if (is_nonscalar (obj_type)) {
 		auto field = get_struct_field (obj_type, object, member);
 		if (!field) {
 			if (member->type != ex_symbol) {
@@ -204,6 +249,7 @@ proc_block (const expr_t *expr)
 	const expr_t *out[count + 1];
 	list_scatter (&expr->block.list, in);
 	for (int i = 0; i < count; i++) {
+		edag_flush ();
 		auto e = expr_process (in[i]);
 		if (e && !is_error (e)) {
 			out[num_out++] = e;
@@ -212,6 +258,7 @@ proc_block (const expr_t *expr)
 			}
 		}
 	}
+	edag_flush ();
 
 	scoped_src_loc (expr);
 	auto block = new_block_expr (nullptr);
@@ -245,13 +292,17 @@ proc_do_list (ex_list_t *out, const ex_list_t *in)
 	const expr_t *exprs[count + 1] = {};
 	list_scatter (in, exprs);
 	bool ok = true;
+	int new_count = 0;
 	for (int i = 0; i < count; i++) {
-		exprs[i] = expr_process (exprs[i]);
+		exprs[new_count] = expr_process (exprs[i]);
+		// keep null expressions out of the list (non-local declarations
+		// or local declarations without initializers return null)
+		new_count += !!exprs[new_count];
 		if (is_error (exprs[i])) {
 			ok = false;
 		}
 	}
-	list_gather (out, exprs, count);
+	list_gather (out, exprs, new_count);
 	return ok;
 }
 
@@ -259,13 +310,38 @@ static const expr_t *
 proc_vector (const expr_t *expr)
 {
 	scoped_src_loc (expr);
-	auto vec = new_expr ();
-	vec->type = ex_vector;
-	vec->vector.type = expr->vector.type;
-	if (!proc_do_list (&vec->vector.list, &expr->vector.list)) {
+	auto list = new_expr ();
+	list->type = ex_list;
+	if (!proc_do_list (&list->list, &expr->vector.list)) {
 		return new_error_expr ();
 	}
-	return vec;
+	return new_vector_list (list);
+}
+
+static const expr_t *
+proc_selector (const expr_t *expr)
+{
+	return expr;
+}
+
+static const expr_t *
+proc_message (const expr_t *expr)
+{
+	auto receiver = expr_process (expr->message.receiver);
+	auto message = expr->message.message;
+	scoped_src_loc (receiver);
+	for (auto k = message; k; k = k->next) {
+		if (k->expr) {
+			k->expr = (expr_t *) expr_process (k->expr);
+		}
+	}
+	return message_expr (receiver, message);
+}
+
+static const expr_t *
+proc_nil (const expr_t *expr)
+{
+	return expr;
 }
 
 static const expr_t *
@@ -298,7 +374,11 @@ proc_assign (const expr_t *expr)
 		return src;
 	}
 	scoped_src_loc (expr);
-	return assign_expr (dst, src);
+	auto assign = assign_expr (dst, src);
+	if (expr->paren) {
+		assign = paren_expr (assign);
+	}
+	return assign;
 }
 
 static const expr_t *
@@ -306,9 +386,13 @@ proc_branch (const expr_t *expr)
 {
 	scoped_src_loc (expr);
 	if (expr->branch.type == pr_branch_call) {
-		auto args = new_list_expr (nullptr);
-		proc_do_list (&args->list, &expr->branch.args->list);
-		return function_expr (expr->branch.target, args);
+		auto target = expr_process (expr->branch.target);
+		auto args = (expr_t *) expr->branch.args;
+		if (expr->branch.args) {
+			args = new_list_expr (nullptr);
+			proc_do_list (&args->list, &expr->branch.args->list);
+		}
+		return function_expr (target, args);
 	} else {
 		auto branch = new_expr ();
 		branch->type = ex_branch;
@@ -342,6 +426,40 @@ proc_return (const expr_t *expr)
 	} else {
 		return return_expr (current_func, ret_val);
 	}
+}
+
+static const expr_t *
+proc_list (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto list = new_list_expr (nullptr);
+	if (!proc_do_list (&list->list, &expr->list)) {
+		return new_error_expr ();
+	}
+	return list;
+}
+
+static const expr_t *
+proc_type (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto type = resolve_type (expr);
+	return new_type_expr (type);
+}
+
+static const expr_t *
+proc_incop (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto e = expr_process (expr->incop.expr);
+	if (is_error (e)) {
+		return e;
+	}
+	if (!is_lvalue (e)) {
+		return error (expr, "invalid lvalue for %c%c",
+					  expr->incop.op, expr->incop.op);
+	}
+	return new_incop_expr (expr->incop.op, e, expr->incop.postop);
 }
 
 static const expr_t *
@@ -405,6 +523,7 @@ proc_decl (const expr_t *expr)
 		auto symtab = expr->decl.symtab;
 		current_language.parse_declaration (spec, sym, init, symtab, block);
 	}
+	edag_flush ();
 	return block;
 }
 
@@ -413,13 +532,14 @@ proc_loop (const expr_t *expr)
 {
 	auto test = expr_process (expr->loop.test);
 	auto body = expr_process (expr->loop.body);
-	auto break_label = expr->loop.break_label;
 	auto continue_label = expr->loop.continue_label;
+	auto continue_body = expr_process (expr->loop.continue_body);
+	auto break_label = expr->loop.break_label;
 	bool do_while = expr->loop.do_while;
 	bool not = expr->loop.not;
 	scoped_src_loc (expr);
 	return new_loop_expr (not, do_while, test, body,
-						  break_label, continue_label);
+						  continue_label, continue_body, break_label);
 }
 
 static const expr_t *
@@ -456,6 +576,18 @@ proc_intrinsic (const expr_t *expr)
 	return e;
 }
 
+static const expr_t *
+proc_switch (const expr_t *expr)
+{
+	return current_target.proc_switch (expr);
+}
+
+static const expr_t *
+proc_caselabel (const expr_t *expr)
+{
+	return current_target.proc_caselabel (expr);
+}
+
 const expr_t *
 expr_process (const expr_t *expr)
 {
@@ -469,11 +601,17 @@ expr_process (const expr_t *expr)
 		[ex_uexpr] = proc_uexpr,
 		[ex_symbol] = proc_symbol,
 		[ex_vector] = proc_vector,
+		[ex_selector] = proc_selector,
+		[ex_message] = proc_message,
+		[ex_nil] = proc_nil,
 		[ex_value] = proc_value,
 		[ex_compound] = proc_compound,
 		[ex_assign] = proc_assign,
 		[ex_branch] = proc_branch,
 		[ex_return] = proc_return,
+		[ex_list] = proc_list,
+		[ex_type] = proc_type,
+		[ex_incop] = proc_incop,
 		[ex_cond] = proc_cond,
 		[ex_field] = proc_field,
 		[ex_array] = proc_array,
@@ -481,6 +619,8 @@ expr_process (const expr_t *expr)
 		[ex_loop] = proc_loop,
 		[ex_select] = proc_select,
 		[ex_intrinsic] = proc_intrinsic,
+		[ex_switch] = proc_switch,
+		[ex_caselabel] = proc_caselabel,
 	};
 
 	if (expr->type >= ex_count) {

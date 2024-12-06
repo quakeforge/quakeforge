@@ -143,6 +143,11 @@ typedef struct {
 	struct selector_s *sel;		///< selector
 } ex_selector_t;
 
+typedef struct {
+	const expr_t *receiver;
+	struct keywordarg_s *message;
+} ex_message_t;
+
 /**	Pointer constant expression.
 
 	Represent a pointer to an absolute address in data space.
@@ -279,7 +284,7 @@ typedef struct {
 
 typedef struct {
 	const expr_t *ret_val;
-	int         at_return;		///< return void_return call through void
+	bool        at_return;		///< return void_return call through void
 } ex_return_t;
 
 typedef struct {
@@ -360,18 +365,19 @@ typedef struct {
 typedef struct {
 	const expr_t *test;
 	const expr_t *body;
-	const expr_t *break_label;
 	const expr_t *continue_label;
+	const expr_t *continue_body;
+	const expr_t *break_label;
 	bool        do_while;
 	bool        not;
 } ex_loop_t;
 
 typedef struct {
+	bool        not;
 	const expr_t *test;
 	const expr_t *true_body;
+	const expr_t *els;
 	const expr_t *false_body;
-	rua_loc_t   els;
-	bool        not;
 } ex_select_t;
 
 typedef struct {
@@ -379,6 +385,17 @@ typedef struct {
 	const type_t *res_type;
 	ex_list_t   operands;
 } ex_intrinsic_t;
+
+typedef struct {
+	const expr_t *test;
+	const expr_t *body;
+	const expr_t *break_label;
+} ex_switch_t;
+
+typedef struct {
+	const expr_t *value;			///< null if default
+	const expr_t *end_value;		///< for case value ranges (otherwise null)
+} ex_caselabel_t;
 
 typedef struct expr_s {
 	expr_t     *next;
@@ -404,6 +421,7 @@ typedef struct expr_s {
 		ex_temp_t   temp;				///< temporary variable expression
 		ex_vector_t vector;				///< vector expression list
 		ex_selector_t selector;			///< selector ref and name
+		ex_message_t message;			///< message receiver and message
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
@@ -429,6 +447,8 @@ typedef struct expr_s {
 		ex_loop_t loop;					///< loop construct expression
 		ex_select_t select;				///< selection construct expression
 		ex_intrinsic_t intrinsic;		///< intrinsic intruction expression
+		ex_switch_t switchblock;		///< switch block expression
+		ex_caselabel_t caselabel;		///< case label expression
 	};
 } expr_t;
 
@@ -747,6 +767,7 @@ const float *expr_vector (const expr_t *e) __attribute__((pure));
 const expr_t *new_vector_list (const expr_t *e);
 const expr_t *new_vector_list_gather (const type_t *type,
 									  const expr_t **elements, int count);
+const expr_t *new_vector_list_expr (const expr_t *e);
 const expr_t *new_vector_value (const type_t *ele_type, int width,
 								int count, const expr_t **elements,
 								bool implicit);
@@ -976,18 +997,24 @@ expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
 expr_t *new_field_expr (const expr_t *object, const expr_t *member);
 expr_t *new_array_expr (const expr_t *base, const expr_t *index);
 expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
+expr_t *new_decl (symbol_t *sym, const expr_t *init);
 expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);
 expr_t *append_decl_list (expr_t *decl, const expr_t *list);
 
 expr_t *new_loop_expr (bool not, bool do_while,
 					   const expr_t *test, const expr_t *body,
-					   const expr_t *break_label, const expr_t *continue_label);
+					   const expr_t *continue_label,
+					   const expr_t *continue_body,
+					   const expr_t *break_label);
 
 expr_t *new_select_expr (bool not, const expr_t *test,
 						 const expr_t *true_body,
 						 const expr_t *els, const expr_t *false_body);
 
 expr_t *new_intrinsic_expr (const expr_t *expr_list);
+expr_t *new_switch_expr (const expr_t *test, const expr_t *body,
+						 const expr_t *break_label);
+expr_t *new_caselabel_expr (const expr_t *value, const expr_t *end_value);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
@@ -1027,7 +1054,7 @@ const expr_t *convert_nil (const expr_t *e, const type_t *t) __attribute__((warn
 
 const expr_t *test_expr (const expr_t *e);
 void backpatch (ex_boollist_t *list, const expr_t *label);
-const expr_t *convert_bool (const expr_t *e, int block) __attribute__((warn_unused_result));
+const expr_t *convert_bool (const expr_t *e, bool block) __attribute__((warn_unused_result));
 const expr_t *convert_from_bool (const expr_t *e, const type_t *type) __attribute__((warn_unused_result));
 const expr_t *bool_expr (int op, const expr_t *label, const expr_t *e1,
 					     const expr_t *e2);
@@ -1085,6 +1112,8 @@ const expr_t *encode_expr (const type_t *type);
 const expr_t *super_expr (struct class_type_s *class_type);
 const expr_t *message_expr (const expr_t *receiver,
 							struct keywordarg_s *message);
+const expr_t *new_message_expr (const expr_t *receiver,
+								struct keywordarg_s *message);
 const expr_t *sizeof_expr (const expr_t *expr, const type_t *type);
 
 const expr_t *fold_constants (const expr_t *e);

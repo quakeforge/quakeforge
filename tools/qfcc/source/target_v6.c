@@ -201,6 +201,9 @@ target_t v6_target = {
 	.vararg_int = vararg_int,
 	.initialized_temp = initialized_temp_expr,
 	.assign_vector = v6p_assign_vector,
+	.proc_switch = ruamoko_proc_switch,
+	.proc_caselabel = ruamoko_proc_caselabel,
+	.proc_address = ruamoko_proc_address,
 };
 
 target_t v6p_target = {
@@ -211,4 +214,7 @@ target_t v6p_target = {
 	.vararg_int = vararg_int,
 	.initialized_temp = initialized_temp_expr,
 	.assign_vector = v6p_assign_vector,
+	.proc_switch = ruamoko_proc_switch,
+	.proc_caselabel = ruamoko_proc_caselabel,
+	.proc_address = ruamoko_proc_address,
 };

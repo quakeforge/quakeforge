@@ -79,6 +79,18 @@ new_vector_list_gather (const type_t *type, const expr_t **elements, int count)
 }
 
 const expr_t *
+new_vector_list_expr (const expr_t *e)
+{
+	if (e->type != ex_list) {
+		internal_error (e, "not a list");
+	}
+	int count = list_count (&e->list);
+	const expr_t *elements[count + 1] = {};
+	list_scatter (&e->list, elements);
+	return new_vector_list_gather (nullptr, elements, count);
+}
+
+const expr_t *
 new_vector_list (const expr_t *expr_list)
 {
 	const type_t *ele_type = type_default;

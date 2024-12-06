@@ -61,6 +61,7 @@
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -864,6 +865,13 @@ expr_assign_copy (sblock_t *sblock, const expr_t *e, operand_t **op, operand_t *
 
 	scoped_src_loc (e);
 
+	if (dst_expr->type == ex_field || dst_expr->type == ex_array) {
+		dst_expr = ruamoko_field_array (dst_expr);
+	}
+	if (src_expr->type == ex_field || src_expr->type == ex_array) {
+		src_expr = ruamoko_field_array (src_expr);
+	}
+
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
 		// can be any size
@@ -976,6 +984,13 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 	pr_ushort_t mode = 0;	// assign
 	const char *opcode = "assign";
 	st_type_t   type = st_assign;
+
+	if (dst_expr->type == ex_field || dst_expr->type == ex_array) {
+		dst_expr = ruamoko_field_array (dst_expr);
+	}
+	if (src_expr->type == ex_field || src_expr->type == ex_array) {
+		src_expr = ruamoko_field_array (src_expr);
+	}
 
 	if (src_expr->type == ex_assign) {
 		sblock = statement_subexpr (sblock, src_expr, &src);
@@ -1595,6 +1610,9 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	} else {
 		if (!e->retrn.at_return && e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
+			if (ret_val->type == ex_field || ret_val->type == ex_array) {
+				ret_val = ruamoko_field_array (ret_val);
+			}
 			auto ret_type = get_type (ret_val);
 			operand_t  *target = 0;
 			pr_ushort_t ret_ctrl = type_size (ret_type) - 1;
@@ -1655,6 +1673,95 @@ statement_with (sblock_t *sblock, const expr_t *e)
 	sblock = statement_subexpr (sblock, e->with.with, &s->opb);
 	sblock_add_statement (sblock, s);
 	return sblock;
+}
+
+static sblock_t *
+statement_list (sblock_t *sblock, const expr_t *e)
+{
+	return statement_slist (sblock, &e->list);
+}
+
+static sblock_t *
+statement_incop (sblock_t *sblock, const expr_t *e)
+{
+	scoped_src_loc (e);
+	// postop is irrelevant because the value is discarded
+	auto one = new_int_expr (1, false);
+	auto type = get_type (e->incop.expr);
+	if (is_scalar (type)) {
+		one = cast_expr (type, one);
+	}
+	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
+	incop = assign_expr (e->incop.expr, incop);
+	return statement_single (sblock, incop);
+}
+
+static sblock_t *
+statement_loop (sblock_t *sblock, const expr_t *e)
+{
+	scoped_src_loc (e);
+	auto test = e->loop.test;
+	auto body_label = new_label_expr ();
+	auto body = e->loop.body;
+	auto continue_label = e->loop.continue_label;
+	auto continue_body = e->loop.continue_body;
+	auto break_label = e->loop.break_label;
+	bool do_while = e->loop.do_while;
+	bool not = e->loop.not;
+
+	auto loop = new_block_expr (nullptr);
+	if (do_while) {
+		append_expr (loop, body_label);
+		append_expr (loop, body);
+		append_expr (loop, continue_label);
+		append_expr (loop, continue_body);
+		test = convert_bool (test, true);
+		if (!is_error (test)) {
+			if (not) {
+				backpatch (test->boolean.true_list, break_label);
+				backpatch (test->boolean.false_list, body_label);
+			} else {
+				backpatch (test->boolean.true_list, body_label);
+				backpatch (test->boolean.false_list, break_label);
+			}
+			append_expr (loop, test);
+		}
+		append_expr (loop, break_label);
+	} else {
+		scoped_src_loc (test);
+		auto test_label = new_label_expr ();
+		append_expr (loop, test_label);
+		test = convert_bool (test, true);
+		if (!is_error (test)) {
+			if (not) {
+				backpatch (test->boolean.true_list, break_label);
+				backpatch (test->boolean.false_list, body_label);
+			} else {
+				backpatch (test->boolean.true_list, body_label);
+				backpatch (test->boolean.false_list, break_label);
+			}
+			append_expr (loop, test);
+		}
+		append_expr (loop, body_label);
+		append_expr (loop, body);
+		append_expr (loop, continue_label);
+		append_expr (loop, continue_body);
+		append_expr (loop, goto_expr (test_label));
+		append_expr (loop, break_label);
+	}
+	return statement_slist (sblock, &loop->block.list);
+}
+
+static sblock_t *
+statement_select (sblock_t *sblock, const expr_t *e)
+{
+	bool not = e->select.not;
+	auto test = e->select.test;
+	auto true_body = e->select.true_body;
+	auto els = e->select.els;
+	auto false_body = e->select.false_body;
+	auto sel = build_if_statement (not, test, true_body, els, false_body);
+	return statement_slist (sblock, &sel->block.list);
 }
 
 static statement_t *
@@ -2073,6 +2180,49 @@ expr_extend (sblock_t *sblock, const expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_incop (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	scoped_src_loc (e);
+
+	if (e->incop.postop) {
+		auto tmp = new_temp_def_expr (get_type (e->incop.expr));
+		auto assign = assign_expr (tmp, e->incop.expr);
+		sblock = statement_single (sblock, assign);
+		sblock = statement_subexpr (sblock, tmp, op);
+	}
+	auto one = new_int_expr (1, false);
+	auto type = get_type (e->incop.expr);
+	if (is_scalar (type)) {
+		one = cast_expr (type, one);
+	}
+	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
+	incop = assign_expr (e->incop.expr, incop);
+	if (e->incop.postop) {
+		return statement_single (sblock, incop);
+	} else {
+		return statement_subexpr (sblock, incop, op);
+	}
+}
+
+static sblock_t *
+expr_cond (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	scoped_src_loc (e);
+	auto test = e->cond.test;
+	auto true_expr = e->cond.true_expr;
+	auto false_expr = e->cond.false_expr;
+	e = conditional_expr (test, true_expr, false_expr);
+	return statement_subexpr (sblock, e, op);
+}
+
+static sblock_t *
+expr_field_array (sblock_t *sblock, const expr_t *e, operand_t **op)
+{
+	e = ruamoko_field_array (e);
+	return statement_subexpr (sblock, e, op);
+}
+
+static sblock_t *
 expr_def (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	*op = def_operand (e->def, e->def->type, e);
@@ -2206,20 +2356,24 @@ statement_subexpr (sblock_t *sblock, const expr_t *e, operand_t **op)
 		[ex_block] = expr_block,
 		[ex_expr] = expr_expr,
 		[ex_uexpr] = expr_uexpr,
-		[ex_horizontal] = expr_horizontal,
-		[ex_swizzle] = expr_swizzle,
 		[ex_def] = expr_def,
 		[ex_symbol] = expr_symbol,
 		[ex_temp] = expr_temp,
 		[ex_vector] = expr_vector_e,
+		[ex_selector] = expr_selector,
 		[ex_nil] = expr_nil,
 		[ex_value] = expr_value,
-		[ex_selector] = expr_selector,
 		[ex_alias] = expr_alias,
 		[ex_address] = expr_address,
 		[ex_assign] = expr_assign,
 		[ex_branch] = expr_branch,
+		[ex_horizontal] = expr_horizontal,
+		[ex_swizzle] = expr_swizzle,
 		[ex_extend] = expr_extend,
+		[ex_incop] = expr_incop,
+		[ex_cond] = expr_cond,
+		[ex_field] = expr_field_array,
+		[ex_array] = expr_field_array,
 	};
 	if (!e) {
 		*op = 0;
@@ -2498,6 +2652,10 @@ statement_single (sblock_t *sblock, const expr_t *e)
 		[ex_return] = statement_return,
 		[ex_adjstk] = statement_adjstk,
 		[ex_with] = statement_with,
+		[ex_list] = statement_list,
+		[ex_incop] = statement_incop,
+		[ex_loop] = statement_loop,
+		[ex_select] = statement_select,
 	};
 
 	if (e->type >= ex_count || !sfuncs[e->type]) {

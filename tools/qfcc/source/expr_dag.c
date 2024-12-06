@@ -72,6 +72,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_compound:
 			case ex_memset:
 			case ex_branch:
+			case ex_message:
 			case ex_inout:
 			case ex_return:
 			case ex_adjstk:
@@ -83,6 +84,8 @@ edag_add_expr (const expr_t *expr)
 			case ex_loop:
 			case ex_select:
 			case ex_intrinsic:
+			case ex_switch:
+			case ex_caselabel:
 				// these are never put in the dag
 				return expr;
 			case ex_list:

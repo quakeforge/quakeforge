@@ -45,6 +45,9 @@ typedef struct {
 
 	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
 	const expr_t *(*assign_vector) (const expr_t *dst, const expr_t *src);
+	const expr_t *(*proc_switch) (const expr_t *expr);
+	const expr_t *(*proc_caselabel) (const expr_t *expr);
+	const expr_t *(*proc_address) (const expr_t *expr);
 
 	unsigned    label_id;
 } target_t;
@@ -56,5 +59,10 @@ extern target_t ruamoko_target;
 extern target_t spirv_target;
 
 bool target_set_backend (const char *tgt);
+
+const expr_t *ruamoko_proc_switch (const expr_t *expr);
+const expr_t *ruamoko_proc_caselabel (const expr_t *expr);
+const expr_t *ruamoko_field_array (const expr_t *e);
+const expr_t *ruamoko_proc_address (const expr_t *expr);
 
 #endif//__target_h

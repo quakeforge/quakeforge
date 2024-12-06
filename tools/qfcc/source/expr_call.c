@@ -488,6 +488,6 @@ at_return_expr (function_t *f, const expr_t *e)
 		return error (e, "@return function not void_return");
 	}
 	expr_t     *ret_expr = new_return_expr (e);
-	ret_expr->retrn.at_return = 1;
+	ret_expr->retrn.at_return = true;
 	return ret_expr;
 }

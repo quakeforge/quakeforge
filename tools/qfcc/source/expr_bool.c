@@ -218,11 +218,11 @@ bool_expr (int op, const expr_t *label, const expr_t *e1, const expr_t *e2)
 	if (!options.code.short_circuit)
 		return binary_expr (op, e1, e2);
 
-	e1 = convert_bool (e1, 0);
+	e1 = convert_bool (e1, false);
 	if (e1->type == ex_error)
 		return e1;
 
-	e2 = convert_bool (e2, 0);
+	e2 = convert_bool (e2, false);
 	if (e2->type == ex_error)
 		return e2;
 
@@ -258,7 +258,7 @@ has_block_expr (const expr_t *e)
 }
 
 const expr_t *
-convert_bool (const expr_t *e, int block)
+convert_bool (const expr_t *e, bool block)
 {
 	if (e->type == ex_assign) {
 		if (!e->paren && options.warnings.precedence)
@@ -272,7 +272,7 @@ convert_bool (const expr_t *e, int block)
 		} else if (has_block_expr (tst)) {
 			tst = e->assign.dst;
 		}
-		auto b = convert_bool (tst, 1);
+		auto b = convert_bool (tst, true);
 		if (b->type == ex_error)
 			return b;
 		// insert the assignment into the boolean's block
@@ -282,7 +282,7 @@ convert_bool (const expr_t *e, int block)
 
 	if (e->type == ex_uexpr && e->expr.op == '!'
 		&& !is_string(get_type (e->expr.e1))) {
-		e = convert_bool (e->expr.e1, 0);
+		e = convert_bool (e->expr.e1, false);
 		if (e->type == ex_error)
 			return (expr_t *) e;
 		e = unary_expr ('!', e);

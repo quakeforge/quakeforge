@@ -217,4 +217,8 @@ extern language_t lang_pascal;
 
 int qc_parse_string (const char *str);
 
+void rua_parse_declaration (specifier_t spec, symbol_t *sym,
+							const expr_t *init, symtab_t *symtab,
+							expr_t *block);
+
 #endif//__rua_lang_h

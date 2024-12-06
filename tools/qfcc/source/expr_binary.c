@@ -788,7 +788,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 
 	if ((unsigned) op > countof (expr_types) || !expr_types[op]) {
-		internal_error (e1, "invalid operator: %d", op);
+		internal_error (e1, "invalid operator: %s", get_op_string (op));
 	}
 	expr_type_t *expr_type = expr_types[op];
 	for (; expr_type->match_a; expr_type++) {

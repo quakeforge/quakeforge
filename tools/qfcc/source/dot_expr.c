@@ -350,6 +350,22 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_incop (dstring_t *dstr, const expr_t *e, int level, int id,
+			 const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"m\"];\n", indent, "", e,
+			   e->incop.expr);
+	_print_expr (dstr, e->incop.expr, level, id, next);
+	const char *b = e->incop.postop ? "Q" : "";
+	const char *a = e->incop.postop ? "" : "Q";
+	int op = e->incop.op;
+	dasprintf (dstr, "%*se_%p [label=\"%s%c%c%s\\n%d\"];\n", indent, "", e,
+			   b, op, op, a, e->loc.line);
+}
+
+static void
 print_cond (dstring_t *dstr, const expr_t *e, int level, int id,
 			const expr_t *next)
 {
@@ -398,6 +414,23 @@ print_array (dstring_t *dstr, const expr_t *e, int level, int id,
 			   e->array.index);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   "[]", e->loc.line);
+}
+
+static void
+print_decl (dstring_t *dstr, const expr_t *e, int level, int id,
+			const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	for (auto l = e->decl.list.head; l; l = l->next) {
+		_print_expr (dstr, l->expr, level, id, next);
+	}
+	for (auto l = e->decl.list.head; l; l = l->next) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+				   l->expr);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"decl:%s\\n%d\"];\n", indent, "", e,
+			   get_type_string (e->decl.spec.type), e->loc.line);
 }
 
 static void
@@ -450,8 +483,10 @@ print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 			   e->expr.e1);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
 			   e->expr.e2);
-	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->expr.op), e->loc.line);
+	const char *o = e->paren ? "(" : "";
+	const char *c = e->paren ? ")" : "";
+	dasprintf (dstr, "%*se_%p [label=\"%s%s%s\\n%d\"];\n", indent, "", e,
+			   o, get_op_string (e->expr.op), c, e->loc.line);
 }
 
 static void
@@ -889,11 +924,11 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_multivec] = print_multivec,
 		[ex_list] = print_list,
 		[ex_type] = print_type_expr,
-		[ex_incop] = nullptr,
+		[ex_incop] = print_incop,
 		[ex_cond] = print_cond,
 		[ex_field] = print_field,
 		[ex_array] = print_array,
-		[ex_decl] = nullptr,
+		[ex_decl] = print_decl,
 		[ex_loop] = nullptr,
 		[ex_select] = print_select,
 		[ex_intrinsic] = print_intrinsic,
