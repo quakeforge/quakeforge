@@ -2356,6 +2356,7 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 			if (!empty) {
 				return false;
 			}
+			continue;
 		}
 		if ((sym = symtab_lookup (extra->macro_tab, t->text))
 			&& !sym->macro->next) {
@@ -2373,7 +2374,9 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 			if (!empty) {
 				return false;
 			}
+			continue;
 		}
+		return false;
 	}
 	return true;
 }
