@@ -325,12 +325,7 @@ free_operand (operand_t *op)
 static void
 free_statement (statement_t *s)
 {
-//	if (s->opa)
-//		free_operand (s->opa);
-//	if (s->opb)
-//		free_operand (s->opb);
-//	if (s->opc)
-//		free_operand (s->opc);
+	//FIXME free operands (need ref counting?)
 	FREE (statements, s);
 }
 
@@ -1085,7 +1080,7 @@ vector_call (sblock_t *sblock, const expr_t *earg, const expr_t *param, int ind,
 	static const char *names[] = {"x", "y", "z"};
 
 	for (i = 0; i < 3; i++) {
-		n = new_name_expr (names[i]);
+		n = new_symbol_expr (new_symbol (names[i]));
 		v = new_float_expr (earg->value->vector_val[i], false);
 		a = assign_expr (field_expr (param, n), v);
 		param = new_param_expr (get_type (earg), ind);
@@ -1297,9 +1292,9 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		const expr_t *count;
 		const expr_t *list;
 		const expr_t *args_count = field_expr (args_va_list,
-											 new_name_expr ("count"));
+									new_symbol_expr (new_symbol ("count")));
 		const expr_t *args_list = field_expr (args_va_list,
-											new_name_expr ("list"));
+									new_symbol_expr (new_symbol ("list")));
 
 		count = new_short_expr (num_params);
 		assign = assign_expr (args_count, count);
@@ -2243,9 +2238,6 @@ expr_symbol (sblock_t *sblock, const expr_t *e, operand_t **op)
 			make_function (sym, 0, pr.symtab->space, sc_extern);
 		}
 		*op = def_operand (sym->metafunc->func->def, 0, e);
-	} else if (sym->sy_type == sy_convert) {
-		e = sym->convert.conv (sym, sym->convert.data);
-		return statement_subexpr (sblock, e, op);
 	} else if (sym->sy_type == sy_expr) {
 		return statement_subexpr (sblock, sym->expr, op);
 	} else {
