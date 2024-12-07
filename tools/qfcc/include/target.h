@@ -34,6 +34,7 @@ typedef struct type_s type_t;
 typedef struct function_s function_t;
 typedef struct expr_s expr_t;
 typedef struct specifier_s specifier_t;
+typedef struct rua_ctx_s rua_ctx_t;
 
 typedef struct {
 	bool      (*value_too_large) (const type_t *val_type);
@@ -45,9 +46,9 @@ typedef struct {
 
 	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
 	const expr_t *(*assign_vector) (const expr_t *dst, const expr_t *src);
-	const expr_t *(*proc_switch) (const expr_t *expr);
-	const expr_t *(*proc_caselabel) (const expr_t *expr);
-	const expr_t *(*proc_address) (const expr_t *expr);
+	const expr_t *(*proc_switch) (const expr_t *expr, rua_ctx_t *ctx);
+	const expr_t *(*proc_caselabel) (const expr_t *expr, rua_ctx_t *ctx);
+	const expr_t *(*proc_address) (const expr_t *expr, rua_ctx_t *ctx);
 
 	unsigned    label_id;
 } target_t;
@@ -60,9 +61,9 @@ extern target_t spirv_target;
 
 bool target_set_backend (const char *tgt);
 
-const expr_t *ruamoko_proc_switch (const expr_t *expr);
-const expr_t *ruamoko_proc_caselabel (const expr_t *expr);
+const expr_t *ruamoko_proc_switch (const expr_t *expr, rua_ctx_t *ctx);
+const expr_t *ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_field_array (const expr_t *e);
-const expr_t *ruamoko_proc_address (const expr_t *expr);
+const expr_t *ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx);
 
 #endif//__target_h

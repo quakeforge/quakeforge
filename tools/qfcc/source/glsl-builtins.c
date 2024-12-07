@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/type.h"
 
+glsl_sublang_t glsl_sublang;
 glsl_imageset_t glsl_imageset = DARRAY_STATIC_INIT (16);
 
 static struct_def_t glsl_image_struct[] = {
@@ -918,7 +919,7 @@ glsl_multiview (int behavior, void *scanner)
 static int glsl_include_state = 0;
 
 bool
-glsl_on_include (const char *name)
+glsl_on_include (const char *name, rua_ctx_t *ctx)
 {
 	if (!glsl_include_state) {
 		error (0, "'#include' : required extension not requested");
@@ -937,13 +938,13 @@ glsl_include (int behavior, void *scanner)
 }
 
 static void
-glsl_parse_vars (const char *var_src)
+glsl_parse_vars (const char *var_src, rua_ctx_t *ctx)
 {
-	glsl_parse_string (var_src);
+	glsl_parse_string (var_src, ctx);
 }
 
 static void
-glsl_init_common (void)
+glsl_init_common (rua_ctx_t *ctx)
 {
 	static module_t module;		//FIXME probably not what I want
 	pr.module = &module;
@@ -958,63 +959,66 @@ glsl_init_common (void)
 	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
 	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
 
-	current_language.initialized = true;
+	glsl_sublang = *(glsl_sublang_t *) ctx->language->sublanguage;
+	ctx->language->initialized = true;
 	glsl_block_clear ();
-	qc_parse_string (glsl_general_functions);
-	glsl_parse_vars (glsl_system_constants);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_general_functions, &rua_ctx);
+	glsl_parse_vars (glsl_system_constants, ctx);
 }
 
 void
-glsl_init_comp (void)
+glsl_init_comp (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_compute_vars);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_compute_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 }
 
 void
-glsl_init_vert (void)
+glsl_init_vert (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_Vulkan_vertex_vars);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_Vulkan_vertex_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 }
 
 void
-glsl_init_tesc (void)
+glsl_init_tesc (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_tesselation_control_vars);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_tesselation_control_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 }
 
 void
-glsl_init_tese (void)
+glsl_init_tese (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_tesselation_evaluation_vars);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_tesselation_evaluation_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 }
 
 void
-glsl_init_geom (void)
+glsl_init_geom (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_geometry_vars);
-	qc_parse_string (glsl_geometry_functions);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_geometry_vars, ctx);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_geometry_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityGeometry);
 }
 
 void
-glsl_init_frag (void)
+glsl_init_frag (rua_ctx_t *ctx)
 {
-	glsl_init_common ();
-	glsl_parse_vars (glsl_fragment_vars);
+	glsl_init_common (ctx);
+	glsl_parse_vars (glsl_fragment_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 }

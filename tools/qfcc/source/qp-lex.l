@@ -80,7 +80,7 @@ int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
 FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
 
-static int keyword_or_id (YYSTYPE *lval, const char *token);
+static int keyword_or_id (YYSTYPE *lval, const char *token, rua_ctx_t *ctx);
 static int convert_relop (const char *relop) __attribute__((pure));
 static void update_loc (rua_loc_t *loc, size_t textlen);
 static void next_line (rua_loc_t *loc, yyscan_t scanner);
@@ -108,6 +108,7 @@ FRAMEID		{ID}(\.{ID})*
 %x			GRAB_FRAME GRAB_OTHER COMMENT
 
 %%
+					auto ctx = (rua_ctx_t *) qp_yyget_extra (yyscanner);
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 
@@ -142,7 +143,7 @@ FRAMEID		{ID}(\.{ID})*
 						return VALUE;
 					}
 
-{ID}				return keyword_or_id (yylval, yytext);
+{ID}				return keyword_or_id (yylval, yytext, ctx);
 
 \"(\\.|[^"\\])*\"	{
 						const char *s = make_string (yytext, 0);
@@ -247,7 +248,7 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-keyword_or_id (YYSTYPE *lval, const char *token)
+keyword_or_id (YYSTYPE *lval, const char *token, rua_ctx_t *ctx)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
@@ -308,19 +309,19 @@ convert_relop (const char *relop)
 }
 
 static int
-qp_yyparse (FILE *in)
+qp_yyparse (FILE *in, rua_ctx_t *ctx)
 {
 	int         status;
 	yyscan_t    scanner;
 	qp_yypstate *ps = qp_yypstate_new ();
 
-	yylex_init_extra (0, &scanner);
+	yylex_init_extra (ctx, &scanner);
 	yyset_in (in, scanner);
 	YYLTYPE lloc = { 1, 1, 1, 1 };
 	do {
 		YYSTYPE lval;
 		int token = yylex (&lval, &lloc, scanner);
-		status = qp_yypush_parse (ps, token, &lval, &lloc, scanner);
+		status = qp_yypush_parse (ps, token, &lval, &lloc, ctx);
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (scanner);

@@ -67,6 +67,7 @@ typedef struct rua_loc_s {
 		(Current).file         = YYRHSLOC (Rhs, 0).file;        \
 	} while (0)
 
+typedef struct rua_ctx_s rua_ctx_t;
 typedef struct expr_s expr_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
@@ -119,7 +120,7 @@ typedef union rua_val_s {
 #include "tools/qfcc/source/glsl-parse.h"
 
 typedef struct rua_macro_s rua_macro_t;
-typedef void (*rua_macro_f) (rua_macro_t *macro, void *scanner);
+typedef void (*rua_macro_f) (rua_macro_t *macro, rua_ctx_t *ctx);
 
 typedef struct rua_macro_s {
 	rua_macro_t *next;
@@ -145,38 +146,38 @@ typedef struct rua_preval_s {
 	};
 } rua_preval_t;
 
-rua_macro_t *rua_start_macro (const char *name, bool params, void *scanner);
+rua_macro_t *rua_start_macro (const char *name, bool params, rua_ctx_t *ctx);
 rua_macro_t *rua_macro_param (rua_macro_t *macro, const rua_tok_t *token,
-							  void *scanner);
-rua_macro_t *rua_end_params (rua_macro_t *macro, void *scanner);
+							  rua_ctx_t *ctx);
+rua_macro_t *rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx);
 rua_macro_t *rua_macro_append (rua_macro_t *macro, const rua_tok_t *token,
-							   void *scanner);
-void rua_macro_finish (rua_macro_t *macro, void *scanner);
-rua_macro_t *rua_macro_arg (const rua_tok_t *token, void *scanner);
-void rua_start_pragma (void *scanner);
-void rua_start_text (void *scanner);
-void rua_start_expr (void *scanner);
-void rua_start_include (void *scanner);
-void rua_expand_on (void *scanner);
-void rua_expand_off (void *scanner);
-void rua_end_directive (void *scanner);
-void rua_start_if (bool expand, void *scanner);
-void rua_start_else (bool expand, void *scanner);
-void rua_if (bool pass, void *scanner);
-void rua_else (bool pass, const char *tok, void *scanner);
-void rua_endif (void *scanner);
-bool rua_defined (const char *sym, void *scanner);
-void rua_undefine (const char *sym, void *scanner);
-void rua_include_file (const char *name, void *scanner);
-void rua_embed_file (const char *name, void *scanner);
+							   rua_ctx_t *ctx);
+void rua_macro_finish (rua_macro_t *macro, rua_ctx_t *ctx);
+rua_macro_t *rua_macro_arg (const rua_tok_t *token, rua_ctx_t *ctx);
+void rua_start_pragma (rua_ctx_t *ctx);
+void rua_start_text (rua_ctx_t *ctx);
+void rua_start_expr (rua_ctx_t *ctx);
+void rua_start_include (rua_ctx_t *ctx);
+void rua_expand_on (rua_ctx_t *ctx);
+void rua_expand_off (rua_ctx_t *ctx);
+void rua_end_directive (rua_ctx_t *ctx);
+void rua_start_if (bool expand, rua_ctx_t *ctx);
+void rua_start_else (bool expand, rua_ctx_t *ctx);
+void rua_if (bool pass, rua_ctx_t *ctx);
+void rua_else (bool pass, const char *tok, rua_ctx_t *ctx);
+void rua_endif (rua_ctx_t *ctx);
+bool rua_defined (const char *sym, rua_ctx_t *ctx);
+void rua_undefine (const char *sym, rua_ctx_t *ctx);
+void rua_include_file (const char *name, rua_ctx_t *ctx);
+void rua_embed_file (const char *name, rua_ctx_t *ctx);
 int rua_parse_define (const char *def);
 void rua_line_info (const expr_t *line_expr, const char *text,
-					const expr_t *flags_epxr, void *scanner);
+					const expr_t *flags_epxr, rua_ctx_t *ctx);
 
-void rua_macro_file (rua_macro_t *macro, void *scanner);
-void rua_macro_line (rua_macro_t *macro, void *scanner);
-void rua_macro_va_opt (rua_macro_t *macro, void *scanner);
-void rua_macro_va_args (rua_macro_t *macro, void *scanner);
+void rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx);
+void rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx);
+void rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx);
+void rua_macro_va_args (rua_macro_t *macro, rua_ctx_t *ctx);
 
 void rua_print_location (FILE *out, const rua_loc_t *loc);
 
@@ -184,41 +185,46 @@ void rua_print_location (FILE *out, const rua_loc_t *loc);
 
 typedef struct rua_parser_s {
 	int (*parse) (rua_yypstate *state, int token,
-				  const rua_val_t *val, rua_loc_t *loc, void *scanner);
+				  const rua_val_t *val, rua_loc_t *loc, rua_ctx_t *ctx);
 	rua_yypstate *state;
 	directive_t *(*directive) (const char *token);
-	int (*keyword_or_id) (rua_val_t *lval, const char *token);
+	int (*keyword_or_id) (rua_val_t *lval, const char *token, rua_ctx_t *ctx);
 } rua_parser_t;
 
-int rua_parse (FILE *in, rua_parser_t *parser);
-int rua_parse_string (const char *str, rua_parser_t *parser);
+int rua_parse (FILE *in, rua_parser_t *parser, rua_ctx_t *ctx);
+int rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx);
 const char *rua_directive_get_key (const void *dir, void *unused) __attribute__((pure));
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 
 typedef struct language_s {
 	bool        initialized;
-	bool        always_override;
-	void      (*init) (void);
-	int       (*parse) (FILE *in);
-	int       (*finish) (const char *file);
-	void      (*extension) (const char *name, const char *value, void *scanner);
-	void      (*version) (int version, const char *profile);
-	bool      (*on_include) (const char *name);
+	bool        always_overload;
+	void      (*init) (rua_ctx_t *ctx);
+	int       (*parse) (FILE *in, rua_ctx_t *ctx);
+	int       (*finish) (const char *file, rua_ctx_t *ctx);
+	void      (*extension) (const char *name, const char *value,
+							rua_ctx_t *ctx);
+	void      (*version) (int version, const char *profile, rua_ctx_t *ctx);
+	bool      (*on_include) (const char *name, rua_ctx_t *ctx);
 	void      (*parse_declaration) (specifier_t spec, symbol_t *sym,
 									const expr_t *init, symtab_t *symtab,
-									expr_t *block);
+									expr_t *block, rua_ctx_t *ctx);
 	void       *sublanguage;
 } language_t;
 
-extern language_t current_language;
+typedef struct rua_ctx_s {
+	struct rua_extra_s *extra;
+	void       *scanner;
+	language_t *language;
+} rua_ctx_t;
 
 extern language_t lang_ruamoko;
 extern language_t lang_pascal;
 
-int qc_parse_string (const char *str);
+int qc_parse_string (const char *str, rua_ctx_t *ctx);
 
 void rua_parse_declaration (specifier_t spec, symbol_t *sym,
 							const expr_t *init, symtab_t *symtab,
-							expr_t *block);
+							expr_t *block, rua_ctx_t *ctx);
 
 #endif//__rua_lang_h

@@ -32,7 +32,7 @@
 %define api.push-pull push
 %define api.token.prefix {PRE_}
 %locations
-%parse-param {void *scanner}
+%parse-param {struct rua_ctx_s *ctx}
 
 %{
 #ifdef HAVE_CONFIG_H
@@ -56,11 +56,11 @@
 
 #include "tools/qfcc/source/pre-parse.h"
 
-#define pre_yytext qc_yyget_text (scanner)
+#define pre_yytext qc_yyget_text (ctx->scanner)
 char *qc_yyget_text (void *scanner);
 
 static void
-yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 	const char *text = quote_string (pre_yytext);
 #ifdef YYERROR_VERBOSE
@@ -71,13 +71,13 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 }
 #if 0
 static void
-parse_error (void *scanner)
+parse_error (rua_ctx_t *ctx)
 {
 	const char *text = pre_yytext;
 	error (0, "parse error before %s", text);
 }
 
-#define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (ctx); YYERROR; } while (0)
 #endif
 
 #define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
@@ -188,7 +188,7 @@ start
 	: directive_list
 	| ARGS
 		<macro>{
-			$$ = rua_macro_arg (&$<t>1, scanner);
+			$$ = rua_macro_arg (&$<t>1, ctx);
 		}
 	  args ')' { YYACCEPT; }
 	;
@@ -198,19 +198,19 @@ directive_list
 	| directive_list directive
 	;
 
-eod : EOD { rua_end_directive (scanner); } ;
+eod : EOD { rua_end_directive (ctx); } ;
 
 directive
-	: INCLUDE incexp string extra_warn { rua_include_file ($3, scanner); }
-	| EMBED incexp string extra_ignore { rua_embed_file ($3, scanner); }
-	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, scanner); }
-	  body					{ rua_macro_finish ($body, scanner); }
+	: INCLUDE incexp string extra_warn { rua_include_file ($3, ctx); }
+	| EMBED incexp string extra_ignore { rua_embed_file ($3, ctx); }
+	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, ctx); }
+	  body					{ rua_macro_finish ($body, ctx); }
 	  eod
-	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, scanner); }
-	  opt_params ')' <macro>{ $$ = rua_end_params ($3, scanner); }
-	  body					{ rua_macro_finish ($body, scanner); }
+	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, ctx); }
+	  opt_params ')' <macro>{ $$ = rua_end_params ($3, ctx); }
+	  body					{ rua_macro_finish ($body, ctx); }
 	  eod
-	| UNDEF ID				{ rua_undefine ($2, scanner); }
+	| UNDEF ID				{ rua_undefine ($2, ctx); }
 	  extra_warn
 	| ERROR text { error (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
@@ -218,39 +218,39 @@ directive
 	  eod
 	| NOTICE text { notice (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
-	| PRAGMA expand { rua_start_pragma (scanner); }
+	| PRAGMA expand { rua_start_pragma (ctx); }
 	  pragma_params { pragma_process (); }
 	  eod
 	| LINE expand expr extra_warn
-		{ rua_line_info ($3, 0, 0, scanner); }
+		{ rua_line_info ($3, 0, 0, ctx); }
 	| LINE expand expr string line_expr extra_warn
-		{ rua_line_info ($3, $4, $5, scanner); }
-	| IF					{ rua_start_if (true, scanner); }
-	  expr					{ rua_if (expr_long ($3), scanner); }
+		{ rua_line_info ($3, $4, $5, ctx); }
+	| IF					{ rua_start_if (true, ctx); }
+	  expr					{ rua_if (expr_long ($3), ctx); }
 	  eod
-	| IFDEF					{ rua_start_if (false, scanner); }
-	  ID					{ rua_if (rua_defined ($3, scanner), scanner); }
+	| IFDEF					{ rua_start_if (false, ctx); }
+	  ID					{ rua_if (rua_defined ($3, ctx), ctx); }
 	  extra_warn
-	| IFNDEF				{ rua_start_if (false, scanner); }
-	  ID					{ rua_if (!rua_defined ($3, scanner), scanner); }
+	| IFNDEF				{ rua_start_if (false, ctx); }
+	  ID					{ rua_if (!rua_defined ($3, ctx), ctx); }
 	  extra_warn
-	| ELSE					{ rua_else (true, "else", scanner); }
+	| ELSE					{ rua_else (true, "else", ctx); }
 	  extra_warn
-	| ELIF					{ rua_start_else (true, scanner); }
-	  expr					{ rua_else (expr_long ($3), "elif", scanner); }
+	| ELIF					{ rua_start_else (true, ctx); }
+	  expr					{ rua_else (expr_long ($3), "elif", ctx); }
 	  eod
-	| ELIFDEF				{ rua_start_else (false, scanner); }
-	  ID		{ rua_else (rua_defined ($3, scanner), "elifdef", scanner); }
+	| ELIFDEF				{ rua_start_else (false, ctx); }
+	  ID		{ rua_else (rua_defined ($3, ctx), "elifdef", ctx); }
 	  extra_warn
-	| ELIFNDEF				{ rua_start_else (false, scanner); }
-	  ID		{ rua_else (!rua_defined ($3, scanner), "elifndef", scanner); }
+	| ELIFNDEF				{ rua_start_else (false, ctx); }
+	  ID		{ rua_else (!rua_defined ($3, ctx), "elifndef", ctx); }
 	  extra_warn
-	| ENDIF					{ rua_endif (scanner); }
+	| ENDIF					{ rua_endif (ctx); }
 	  extra_warn
 	| EXTENSION ID ':' ID
 		{
-			if (current_language.extension) {
-				current_language.extension ($2, $4, scanner);
+			if (ctx->language->extension) {
+				ctx->language->extension ($2, $4, ctx);
 			} else {
 				internal_error (0, "invalid directive");
 			}
@@ -258,9 +258,9 @@ directive
 	  extra_warn
 	| VERSION VALUE opt_profile
 		{
-			if (current_language.version) {
+			if (ctx->language->version) {
 				auto version = get_long ($2, $<t.text>2, 460);
-				current_language.version (expr_long (version), $3);
+				ctx->language->version (expr_long (version), $3, ctx);
 			} else {
 				internal_error (0, "invalid directive");
 			}
@@ -281,7 +281,7 @@ extra_ignore
 	: {} eod
 	;
 
-text: { rua_start_text (scanner); $<dstr>$ = dstring_new (); } text_text
+text: { rua_start_text (ctx); $<dstr>$ = dstring_new (); } text_text
 	  { $text = $text_text; }
 	;
 text_text
@@ -290,7 +290,7 @@ text_text
 	;
 
 body: /* empty */		{ $$ = $<macro>0; }
-	| body body_token	{ $$ = rua_macro_append ($1, &$2, scanner); }
+	| body body_token	{ $$ = rua_macro_append ($1, &$2, ctx); }
 	;
 
 body_token
@@ -301,11 +301,11 @@ body_token
 	;
 
 incexp
-	: { rua_start_include (scanner); }
+	: { rua_start_include (ctx); }
 	;
 
 expand
-	: { rua_start_expr (scanner); }
+	: { rua_start_expr (ctx); }
 	;
 
 pragma_params
@@ -324,14 +324,14 @@ opt_params
 	;
 
 params
-	: TOKEN				{ $$ = rua_macro_param ($<macro>0, &$1, scanner); }
-	| params ',' TOKEN	{ $$ = rua_macro_param ($1, &$3, scanner); }
+	: TOKEN				{ $$ = rua_macro_param ($<macro>0, &$1, ctx); }
+	| params ',' TOKEN	{ $$ = rua_macro_param ($1, &$3, ctx); }
 	;
 
 args: arg_list
 	| args ','
 		<macro>{
-			$$ = rua_macro_arg (&$<t>2, scanner);
+			$$ = rua_macro_arg (&$<t>2, ctx);
 		}
 	  arg_list
 	;
@@ -341,18 +341,18 @@ arg_list
 	| arg_list arg	{ $$ = $2; }
 	;
 
-arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
+arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
 	  arg_clist	<macro>	{ $$ = $<macro>2; }
-	  ')'			{ $$ = rua_macro_append ($<macro>4, &$<t>5, scanner); }
-	| TOKEN			{ $$ = rua_macro_append ($<macro>0, &$1, scanner); }
-	| VALUE			{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
-	| ID			{ $$ = rua_macro_append ($<macro>0, &$<t>1, scanner); }
+	  ')'			{ $$ = rua_macro_append ($<macro>4, &$<t>5, ctx); }
+	| TOKEN			{ $$ = rua_macro_append ($<macro>0, &$1, ctx); }
+	| VALUE			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	| ID			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
 	;
 
 arg_clist
 	: /* emtpy */	{ $$ = $<macro>0; }
 	| arg_clist arg	{ $$ = $2; }
-	| arg_clist ','	{ $$ = rua_macro_append ($1, &$<t>2, scanner); }
+	| arg_clist ','	{ $$ = rua_macro_append ($1, &$<t>2, ctx); }
 	;
 
 id  : ID					{ $$ = new_long_expr (0, false); }
@@ -366,7 +366,7 @@ defined
 
 //the token's text is quite ephemeral when short (the usual case)
 defined_id
-	: ID { $$ = new_long_expr (rua_defined ($1, scanner), false); }
+	: ID { $$ = new_long_expr (rua_defined ($1, ctx), false); }
 	;
 
 unary_expr
@@ -374,8 +374,8 @@ unary_expr
 	| VALUE				{ $$ = get_long ($1, $<t.text>1, 1); }
 	| QSTRING			{ $$ = get_long (0, $<t.text>1, 1); }
 	| '(' expr ')'		{ $$ = $2; }
-	| DEFINED			{ rua_expand_off (scanner); }
-	  defined			{ rua_expand_on (scanner); $$ = $3; }
+	| DEFINED			{ rua_expand_off (ctx); }
+	  defined			{ rua_expand_on (ctx); $$ = $3; }
 	| '+' unary_expr	{ $$ = $2; }
 	| '-' unary_expr	{ $$ = UEXPR (-, $2); }
 	| '~' unary_expr	{ $$ = UEXPR (~, $2); }

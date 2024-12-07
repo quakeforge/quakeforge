@@ -32,7 +32,7 @@
 %define api.push-pull push
 %define api.token.prefix {GLSL_}
 %locations
-%parse-param {void *scanner}
+%parse-param {struct rua_ctx_s *ctx}
 %define api.value.type {rua_val_t}
 %define api.location.type {rua_loc_t}
 
@@ -82,11 +82,11 @@
 
 #include "tools/qfcc/source/glsl-parse.h"
 
-#define glsl_yytext qc_yyget_text (scanner)
+#define glsl_yytext qc_yyget_text (ctx->scanner)
 char *qc_yyget_text (void *scanner);
 
 static void
-yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 #ifdef GLSL_YYERROR_VERBOSE
 	error (0, "%s %s\n", glsl_yytext, s);
@@ -97,7 +97,7 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 }
 
 static void __attribute__((used))
-parse_error (void *scanner)
+parse_error (rua_ctx_t *ctx)
 {
 	error (0, "parse error before %s", glsl_yytext);
 }
@@ -321,7 +321,7 @@ translation_unit
 
 external_declaration
 	: function_definition
-	| declaration { if ($1) expr_process ($1); }
+	| declaration { if ($1) expr_process ($1, ctx); }
 	| ';'
 	;
 
@@ -331,6 +331,7 @@ function_definition
 			$<symtab>$ = current_symtab;
 			auto spec = $1;
 			spec.sym->params = spec.params;
+			spec.is_overload = true;
 			auto sym = function_symbol (spec);
 			current_func = begin_function (sym, nullptr, current_symtab,
 										   false, spec.storage);
@@ -343,7 +344,7 @@ function_definition
 		{
 			auto spec = $1;
 			auto sym = spec.sym;
-			expr_t *statments = (expr_t *) expr_process ($3);
+			expr_t *statments = (expr_t *) expr_process ($3, ctx);
 			build_code_function (sym, nullptr, statments);
 			current_symtab = $<symtab>2;
 			current_storage = sc_global;//FIXME
@@ -662,7 +663,7 @@ declaration
 	| type_qualifier ';'
 		{
 			glsl_parse_declaration ($type_qualifier, nullptr,
-									nullptr, current_symtab, nullptr);
+									nullptr, current_symtab, nullptr, ctx);
 			$$ = nullptr;
 		}
 	| type_qualifier new_identifier ';'
@@ -1070,7 +1071,7 @@ struct_declarator
 		{
 			auto spec = $<spec>0;
 			spec.sym = $1;
-			glsl_declare_field (spec, current_symtab);
+			glsl_declare_field (spec, current_symtab, ctx);
 		}
 	| new_identifier array_specifier
 		{
@@ -1078,7 +1079,7 @@ struct_declarator
 			spec.type = append_type ($2, spec.type);
 			spec.type = find_type (spec.type);
 			spec.sym = $1;
-			glsl_declare_field (spec, current_symtab);
+			glsl_declare_field (spec, current_symtab, ctx);
 		}
 	;
 
@@ -1639,7 +1640,7 @@ find_image_sub (image_sub_t *sub, const char *str)
 }
 
 static symbol_t *
-glsl_parse_image (const char *token)
+glsl_parse_image (const char *token, rua_ctx_t *ctx)
 {
 	static image_sub_t image_type[] = {
 		{ .substr = "sampler",  .val = 0, .type = &type_float },
@@ -1750,12 +1751,13 @@ invalid:
 }
 
 static int
-glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
+glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token,
+					  rua_ctx_t *ctx)
 {
 	if (keyword->value == GLSL_STRUCT) {
 		lval->op = token[0];
 	} else if (keyword->value == GLSL_TYPE_SPEC && !keyword->spec.type) {
-		auto sym = glsl_parse_image (token);
+		auto sym = glsl_parse_image (token, ctx);
 		keyword->spec.type = sym->type;
 		lval->spec = keyword->spec;
 	} else if (keyword->use_name) {
@@ -1767,7 +1769,7 @@ glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token)
 }
 
 static int
-glsl_keyword_or_id (rua_val_t *lval, const char *token)
+glsl_keyword_or_id (rua_val_t *lval, const char *token, rua_ctx_t *ctx)
 {
 	static hashtab_t *glsl_keyword_tab;
 
@@ -1784,7 +1786,7 @@ glsl_keyword_or_id (rua_val_t *lval, const char *token)
 	}
 	keyword = Hash_Find (glsl_keyword_tab, token);
 	if (keyword && keyword->value)
-		return glsl_process_keyword (lval, keyword, token);
+		return glsl_process_keyword (lval, keyword, token, ctx);
 	if (token[0] == '@') {
 		return '@';
 	}
@@ -1803,7 +1805,7 @@ glsl_keyword_or_id (rua_val_t *lval, const char *token)
 }
 
 static int
-glsl_yyparse (FILE *in)
+glsl_yyparse (FILE *in, rua_ctx_t *ctx)
 {
 	rua_parser_t parser = {
 		.parse = glsl_yypush_parse,
@@ -1811,13 +1813,13 @@ glsl_yyparse (FILE *in)
 		.directive = glsl_directive,
 		.keyword_or_id = glsl_keyword_or_id,
 	};
-	int ret = rua_parse (in, &parser);
+	int ret = rua_parse (in, &parser, ctx);
 	glsl_yypstate_delete (parser.state);
 	return ret;
 }
 
 int
-glsl_parse_string (const char *str)
+glsl_parse_string (const char *str, rua_ctx_t *ctx)
 {
 	rua_parser_t parser = {
 		.parse = glsl_yypush_parse,
@@ -1825,7 +1827,8 @@ glsl_parse_string (const char *str)
 		.directive = glsl_directive,
 		.keyword_or_id = glsl_keyword_or_id,
 	};
-	int ret = rua_parse_string (str, &parser);
+	auto glsl_ctx = *ctx;
+	int ret = rua_parse_string (str, &parser, &glsl_ctx);
 	glsl_yypstate_delete (parser.state);
 	return ret;
 }
@@ -1866,9 +1869,9 @@ behavior_cmp (const void *_a, const void *_b)
 }
 
 static void
-glsl_extension (const char *name, const char *value, void *scanner)
+glsl_extension (const char *name, const char *value, rua_ctx_t *ctx)
 {
-	if (current_language.initialized) {
+	if (ctx->language->initialized) {
 		error (0, "extensions directives must occur before any "
 			   "non-preprocessor tokens");
 		return;
@@ -1887,7 +1890,7 @@ glsl_extension (const char *name, const char *value, void *scanner)
 			return;
 		}
 		for (size_t i = 0; i < num_extensions; i++) {
-			glsl_extensions[i].set_behavior (behavior, scanner);
+			glsl_extensions[i].set_behavior (behavior, ctx);
 		}
 	} else {
 		glsl_ext_t  key = { .name = name };
@@ -1895,7 +1898,7 @@ glsl_extension (const char *name, const char *value, void *scanner)
 		ext = bsearch (&key, glsl_extensions, num_extensions,
 					   sizeof (glsl_ext_t), extension_cmp);
 		if (ext) {
-			ext->set_behavior (behavior, scanner);
+			ext->set_behavior (behavior, ctx);
 		} else {
 			if (behavior == 2) {
 				error (0, "unknown extension '%s'", name);
@@ -1907,7 +1910,7 @@ glsl_extension (const char *name, const char *value, void *scanner)
 }
 
 static void
-glsl_version (int version, const char *profile)
+glsl_version (int version, const char *profile, rua_ctx_t *ctx)
 {
 	if (!profile || strcmp (profile, "core") == 0) {
 		// ok
@@ -1924,7 +1927,7 @@ glsl_version (int version, const char *profile)
 }
 
 language_t lang_glsl_comp = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1935,7 +1938,7 @@ language_t lang_glsl_comp = {
 };
 
 language_t lang_glsl_vert = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_vert,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1946,7 +1949,7 @@ language_t lang_glsl_vert = {
 };
 
 language_t lang_glsl_tesc = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_tesc,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1957,7 +1960,7 @@ language_t lang_glsl_tesc = {
 };
 
 language_t lang_glsl_tese = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_tese,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1968,7 +1971,7 @@ language_t lang_glsl_tese = {
 };
 
 language_t lang_glsl_geom = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1979,7 +1982,7 @@ language_t lang_glsl_geom = {
 };
 
 language_t lang_glsl_frag = {
-	.always_override = true,
+	.always_overload = true,
 	.init = glsl_init_frag,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,

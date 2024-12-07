@@ -372,20 +372,19 @@ setup_sym_file (const char *output_file)
 }
 
 static int
-compile_to_obj (const char *file, const char *obj, language_t *lang)
+compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 {
 	int         err;
 	FILE       *yyin;
+	auto        lang = ctx->language;
 
 	yyin = preprocess_file (file, 0);
 	if (options.preprocess_only || !yyin) {
 		if (yyin) {
-			return lang->parse (yyin);
+			return lang->parse (yyin, ctx);
 		}
 		return !options.preprocess_only;
 	}
-
-	current_language = *lang;
 
 	InitData ();
 	chain_initial_types ();
@@ -394,7 +393,7 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
 	lang->initialized = false;
-	err = lang->parse (yyin) || pr.error_count;
+	err = lang->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
@@ -406,7 +405,7 @@ compile_to_obj (const char *file, const char *obj, language_t *lang)
 		qfo_t      *qfo;
 
 		if (lang->finish) {
-			err = lang->finish (file);
+			err = lang->finish (file, ctx);
 		}
 		if (!err) {
 			emit_ctor ();
@@ -570,10 +569,14 @@ separate_compile (void)
 		// need *file for checking -lfoo
 		auto lang = file_language (*file, extension->str);
 		if (lang) {
+			rua_ctx_t ctx = {
+				.language = lang,
+			};
+
 			if (options.verbosity >= 1)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
-			err = compile_to_obj (*file, output_file->str, lang) || err;
+			err = compile_to_obj (*file, output_file->str, &ctx) || err;
 
 			if (!err) {
 				cpp_write_dependencies (*file, output_file->str);
@@ -676,13 +679,11 @@ parse_cpp_line (script_t *script, dstring_t *filename)
 }
 
 static int
-compile_file (const char *filename)
+compile_file (const char *filename, rua_ctx_t *ctx)
 {
 	int         err;
 	FILE       *yyin;
-	int       (*yyparse) (FILE *in) = lang_ruamoko.parse;
 
-	current_language = lang_ruamoko;
 	yyin = preprocess_file (filename, 0);
 	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
@@ -695,7 +696,7 @@ compile_file (const char *filename)
 	};
 	add_source_file (filename);
 	clear_frame_macros ();
-	err = yyparse (yyin) || pr.error_count;
+	err = ctx->language->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
@@ -780,6 +781,9 @@ progs_src_compile (void)
 	}
 	setup_sym_file (options.output_file);
 
+	rua_ctx_t   ctx = {
+		.language = &lang_ruamoko,
+	};
 	InitData ();
 	chain_initial_types ();
 
@@ -811,7 +815,7 @@ progs_src_compile (void)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
 							 file_basename (qc_filename->str, 0));
 			} else {
-				if (compile_file (qc_filename->str))
+				if (compile_file (qc_filename->str, &ctx))
 					return 1;
 				if (options.frames_files) {
 					write_frame_macros (va (0, "%s.frame",
@@ -827,7 +831,7 @@ progs_src_compile (void)
 	if (single) {
 		int         err;
 		fclose (single);
-		err = compile_file (single_name->str);
+		err = compile_file (single_name->str, &ctx);
 		if (!options.save_temps) {
 			if (unlink (single_name->str)) {
 				perror ("unlink");

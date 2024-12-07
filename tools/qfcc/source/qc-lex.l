@@ -995,7 +995,7 @@ convert_long (const expr_t *value)
 
 static int
 qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
-		  yyscan_t scanner)
+		  yyscan_t scanner, rua_ctx_t *ctx)
 {
 	int         token = tok->token;
 
@@ -1010,7 +1010,7 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 			case rua_error:
 				break;
 			case rua_id:
-				token = extra->parser->keyword_or_id (lval, tok->text);
+				token = extra->parser->keyword_or_id (lval, tok->text, ctx);
 				break;
 			case rua_grab:
 				{
@@ -1141,7 +1141,8 @@ dump_macro (rua_macro_t *macro)
 }
 
 static int
-qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
+qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner,
+			rua_ctx_t *ctx)
 {
 	auto loc = &tok->location;
 
@@ -1159,7 +1160,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 		if (-token == rua_ignore) {
 			return YYPUSH_MORE;
 		}
-		return pre_yypush_parse (state, token, &lval, loc, scanner);
+		return pre_yypush_parse (state, token, &lval, loc, ctx);
 	} else {
 		if (!extra->suppressed) {
 			if (options.preprocess_only) {
@@ -1171,14 +1172,14 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner)
 				}
 				return token ? YYPUSH_MORE : 0;
 			}
-			if (!current_language.initialized && current_language.init) {
-				current_language.init ();
+			if (!ctx->language->initialized && ctx->language->init) {
+				ctx->language->init (ctx);
 			}
 			QC_YYSTYPE  lval = {};
-			token = qc_token (extra, &lval, tok, scanner);
+			token = qc_token (extra, &lval, tok, scanner, ctx);
 			if (token >= 0) {
 				auto p = extra->parser;
-				return p->parse (p->state, token, &lval, loc, scanner);
+				return p->parse (p->state, token, &lval, loc, ctx);
 			}
 		}
 	}
@@ -1195,14 +1196,14 @@ next_macro_token (rua_macro_t *macro)
 
 static const rua_tok_t *
 get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
-			   yyscan_t scanner)
+			   yyscan_t scanner, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 
 	if (arg->token == -rua_va_opt) {
 		sym = symtab_lookup (macro->params, arg->text);
 		auto m = sym->macro;
-		m->update (m, scanner);
+		m->update (m, ctx);
 		if (last) {
 			if (m->tokens) {
 				return (rua_tok_t *) m->tail;
@@ -1383,7 +1384,7 @@ check_macro (rua_macro_t *macro)
 }
 
 static int
-next_token (rua_tok_t *tok, yyscan_t scanner)
+next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
 {
 	auto extra = qc_yyget_extra (scanner);
 rescan:
@@ -1432,7 +1433,7 @@ rescan:
 			if (n->token == -rua_va_opt) {
 				sym = symtab_lookup (macro->params, n->text);
 				auto m = sym->macro;
-				m->update (m, scanner);
+				m->update (m, ctx);
 				arg = m;
 			} else {
 				sym = symtab_lookup (macro->params, n->text);
@@ -1448,8 +1449,8 @@ rescan:
 			bool sf = false;
 			bool sl;
 			do {
-				auto p = get_arg_token (true, &e, macro, scanner);
-				auto n = get_arg_token (false, e.next->next, macro, scanner);
+				auto p = get_arg_token (true, &e, macro, scanner, ctx);
+				auto n = get_arg_token (false, e.next->next, macro, scanner, ctx);
 				rua_tok_t   cat;
 				if (!(sl = join_tokens (&cat, p, n, extra))) {
 					cat.location = e.next->location;
@@ -1476,7 +1477,7 @@ rescan:
 			}
 			sym = symtab_lookup (macro->params, e.text);
 			auto m = sym->macro;
-			m->update (m, scanner);
+			m->update (m, ctx);
 			queue_macro (extra, m);
 			goto rescan;
 		} else if (token == -rua_id && macro->params
@@ -1492,7 +1493,7 @@ rescan:
 			// force object-type macros in macro arguments to be expanded
 			auto m = sym->macro;
 			if (m->update) {
-				m->update (m, scanner);
+				m->update (m, ctx);
 			}
 			queue_macro (extra, m);
 			goto rescan;
@@ -1513,7 +1514,7 @@ rescan:
 			collect_args (m, macro, scanner);
 			if (macro->cursor != c) {
 				if (m->update) {
-					m->update (m, scanner);
+					m->update (m, ctx);
 				}
 				queue_macro (extra, m);
 				goto rescan;
@@ -1528,7 +1529,7 @@ rescan:
 		if (extra->recording) {
 			token = preproc_token (extra, &lval, &e, scanner);
 			int s = pre_yypush_parse (extra->args_state, token, &lval,
-									  &e.location, scanner);
+									  &e.location, ctx);
 			if (s == YYPUSH_MORE) {
 				goto rescan;
 			}
@@ -1563,7 +1564,7 @@ rescan:
 		&& !sym->macro->next) {
 		auto macro = sym->macro;
 		if (macro->update) {
-			macro->update (macro, scanner);
+			macro->update (macro, ctx);
 		}
 		if (macro->params) {
 			// function-type macro, need to check for ( so set up a temporary
@@ -1618,13 +1619,13 @@ rua_destroy_scanner (yyscan_t scanner, rua_extra_t *extra)
 }
 
 static int
-rua_do_scan (yyscan_t scanner)
+rua_do_scan (yyscan_t scanner, rua_ctx_t *ctx)
 {
 	auto extra = qc_yyget_extra (scanner);
 	int         status;
 	rua_tok_t   tok = {};
 	do {
-		int token = next_token (&tok, scanner);
+		int token = next_token (&tok, scanner, ctx);
 		if (!token && extra->cond_stack.size) {
 			int ind = extra->cond_stack.size - 1;
 			auto cond = extra->cond_stack.a[ind];
@@ -1643,42 +1644,44 @@ rua_do_scan (yyscan_t scanner)
 			extra->cond_stack = incl.cond_stack;
 			continue;
 		}
-		status = qc_process (extra, token, &tok, scanner);
+		status = qc_process (extra, token, &tok, scanner, ctx);
 	} while (status == YYPUSH_MORE);
 
 	return status;
 }
 
 int
-rua_parse (FILE *in, rua_parser_t *parser)
+rua_parse (FILE *in, rua_parser_t *parser, rua_ctx_t *ctx)
 {
 	rua_extra_t extra;
 
-	yyscan_t    scanner = rua_init_scanner (&extra, parser);
-	yyset_in (in, scanner);
-	int status = rua_do_scan (scanner);
-	rua_destroy_scanner (scanner, &extra);
+	ctx->extra = &extra;
+	ctx->scanner = rua_init_scanner (&extra, parser);
+	yyset_in (in, ctx->scanner);
+	int status = rua_do_scan (ctx->scanner, ctx);
+	rua_destroy_scanner (ctx->scanner, &extra);
 	return status;
 }
 
 int
-rua_parse_string (const char *str, rua_parser_t *parser)
+rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx)
 {
 	auto loc = pr.loc;
 	rua_extra_t extra;
 
-	yyscan_t    scanner = rua_init_scanner (&extra, parser);
-	yy_scan_string (str, scanner);
-	int status = rua_do_scan (scanner);
-	rua_destroy_scanner (scanner, &extra);
+	ctx->extra = &extra;
+	ctx->scanner = rua_init_scanner (&extra, parser);
+	yy_scan_string (str, ctx->scanner);
+	int status = rua_do_scan (ctx->scanner, ctx);
+	rua_destroy_scanner (ctx->scanner, &extra);
 	pr.loc = loc;
 	return status;
 }
 
 rua_macro_t *
-rua_start_macro (const char *name, bool params, void *scanner)
+rua_start_macro (const char *name, bool params, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return 0;
 	}
@@ -1694,16 +1697,16 @@ rua_start_macro (const char *name, bool params, void *scanner)
 		}
 	}
 
-	yy_pop_state (scanner);
-	yy_push_state (MACRO, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (MACRO, ctx->scanner);
 
 	return alloc_macro (name, params);
 }
 
 rua_macro_t *
-rua_end_params (rua_macro_t *macro, void *scanner)
+rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return 0;
 	}
@@ -1713,9 +1716,9 @@ rua_end_params (rua_macro_t *macro, void *scanner)
 }
 
 rua_macro_t *
-rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
+rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed || !macro) {
 		return 0;
 	}
@@ -1724,9 +1727,9 @@ rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
 }
 
 rua_macro_t *
-rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, void *scanner)
+rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return 0;
 	}
@@ -1795,9 +1798,9 @@ build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 }
 
 void
-rua_macro_finish (rua_macro_t *macro, void *scanner)
+rua_macro_finish (rua_macro_t *macro, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return;
 	}
@@ -1890,14 +1893,14 @@ hashhash_error:
 }
 
 rua_macro_t *
-rua_macro_arg (const rua_tok_t *token, void *scanner)
+rua_macro_arg (const rua_tok_t *token, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	auto macro = extra->pending_macro;
 	rua_macro_t *arg;
 	if (macro->num_params < 0 && macro->num_args == -macro->num_params) {
 		arg = macro->args[macro->num_args - 1];
-		rua_macro_append (arg, token, scanner);
+		rua_macro_append (arg, token, ctx->scanner);
 	} else {
 		if (macro->num_args < macro->num_params
 			|| macro->num_args < -macro->num_params) {
@@ -1912,64 +1915,64 @@ rua_macro_arg (const rua_tok_t *token, void *scanner)
 }
 
 void
-rua_start_pragma (void *scanner)
+rua_start_pragma (rua_ctx_t *ctx)
 {
 	if (options.preprocess_output) {
 		printf ("#pragma");
 	}
-	yy_pop_state (scanner);
-	yy_push_state (PRAGMA, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PRAGMA, ctx->scanner);
 }
 
 void
-rua_start_text (void *scanner)
+rua_start_text (rua_ctx_t *ctx)
 {
-	yy_pop_state (scanner);
-	yy_push_state (TEXT, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (TEXT, ctx->scanner);
 }
 
 void
-rua_start_include (void *scanner)
+rua_start_include (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->expand = true;
 
-	yy_pop_state (scanner);
-	yy_push_state (PREPROC, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREPROC, ctx->scanner);
 }
 
 void
-rua_start_expr (void *scanner)
+rua_start_expr (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->expand = !extra->suppressed;
 
-	yy_pop_state (scanner);
-	yy_push_state (PREEXPR, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
 }
 
 void
-rua_expand_on (void *scanner)
+rua_expand_on (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->expand = !extra->suppressed;
 }
 
 void
-rua_expand_off (void *scanner)
+rua_expand_off (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->expand = false;
 }
 
 void
-rua_end_directive (void *scanner)
+rua_end_directive (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->preprocessor = false;
 	extra->recording = false;
 	extra->expand = false;
-	yy_pop_state (scanner);
+	yy_pop_state (ctx->scanner);
 }
 
 static void
@@ -2016,9 +2019,9 @@ dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
 }
 
 void
-rua_start_if (bool expand, void *scanner)
+rua_start_if (bool expand, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	rua_cond_t  cond = {
 		.saw_true = false,
 		.saw_else = false,
@@ -2033,49 +2036,49 @@ rua_start_if (bool expand, void *scanner)
 	DARRAY_APPEND (&extra->cond_stack, cond);
 	extra->expand = expand;
 
-	yy_pop_state (scanner);
-	yy_push_state (PREEXPR, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
 }
 
 void
-rua_start_else (bool expand, void *scanner)
+rua_start_else (bool expand, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	extra->expand = expand;
 
-	yy_pop_state (scanner);
-	yy_push_state (PREEXPR, scanner);
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
 }
 
 void
-rua_if (bool pass, void *scanner)
+rua_if (bool pass, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (!extra->cond_stack.size) {
 		internal_error (0, "#if without start_if");
 		return;
 	}
 	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
 	cond->saw_true = cond->enabled = pass;
-	//yy_pop_state (scanner);	// remove DIRECTIVE/PREEXPR state
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE/PREEXPR state
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = true;
 	}
 	//printf ("#if on %s:%d %d\n", GETSTR(pr.loc.file),
 	//		cond->line, extra->suppressed);
 	// put PREEXPR on the stack for EOD to pop
-	//yy_push_state (PREEXPR, scanner);
+	//yy_push_state (PREEXPR, ctx->scanner);
 }
 
 void
-rua_else (bool pass, const char *tok, void *scanner)
+rua_else (bool pass, const char *tok, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (!extra->cond_stack.size) {
 		error (0, "#else without #if");
 		return;
 	}
-	//yy_pop_state (scanner);	// remove DIRECTIVE state
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE state
 	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
 	if (cond->saw_else) {
 		error (0, "#%s after #else", tok);
@@ -2083,7 +2086,7 @@ rua_else (bool pass, const char *tok, void *scanner)
 	}
 	if (cond->own_state && !cond->enabled) {
 		extra->suppressed = false;
-		//yy_pop_state (scanner);
+		//yy_pop_state (ctx->scanner);
 	}
 	pass &= !cond->saw_true;
 	cond->enabled = pass;
@@ -2096,41 +2099,41 @@ rua_else (bool pass, const char *tok, void *scanner)
 		extra->suppressed = true;
 	}
 	// put PREEXPR on the stack for EOD to pop
-	//yy_push_state (PREEXPR, scanner);
+	//yy_push_state (PREEXPR, ctx->scanner);
 }
 
 void
-rua_endif (void *scanner)
+rua_endif (rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (!extra->cond_stack.size) {
 		error (0, "#endif without #if");
 		return;
 	}
-	//yy_pop_state (scanner);	// remove DIRECTIVE state
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE state
 	auto cond = DARRAY_REMOVE (&extra->cond_stack);
 	//printf ("#endif on %s:%d for %d %d\n", GETSTR(pr.loc.file),
 	//		pr.loc.line, cond.line, extra->suppressed);
 	if (cond.own_state && !cond.enabled) {
 		extra->suppressed = false;
-		//yy_pop_state (scanner);
+		//yy_pop_state (ctx->scanner);
 	}
 	// put PREEXPR on the stack for EOD to pop
-	//yy_push_state (PREEXPR, scanner);
+	//yy_push_state (PREEXPR, ctx->scanner);
 }
 
 bool
-rua_defined (const char *name, void *scanner)
+rua_defined (const char *name, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	auto macro_tab = extra->macro_tab;
 	return symtab_lookup (macro_tab, name);
 }
 
 void
-rua_undefine (const char *name, void *scanner)
+rua_undefine (const char *name, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return;
 	}
@@ -2142,18 +2145,18 @@ rua_undefine (const char *name, void *scanner)
 }
 
 void
-rua_include_file (const char *name, void *scanner)
+rua_include_file (const char *name, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return;
 	}
-	if (current_language.on_include) {
-		if (!current_language.on_include (name)) {
+	if (ctx->language->on_include) {
+		if (!ctx->language->on_include (name, ctx)) {
 			return;
 		}
 	}
-	struct yyguts_t * yyg = (struct yyguts_t*)scanner;//FIXME
+	struct yyguts_t * yyg = (struct yyguts_t*)ctx->scanner;//FIXME
 	int quote = *name;
 	name = make_string (name, 0);
 	bool is_system;
@@ -2171,8 +2174,8 @@ rua_include_file (const char *name, void *scanner)
 		.location = extra->location,
 	}));
 	extra->cond_stack = (rua_cond_stack_t) DARRAY_STATIC_INIT (8);
-	auto buffer = yy_create_buffer (yyin, YY_BUF_SIZE, scanner);
-	yy_switch_to_buffer (buffer, scanner);
+	auto buffer = yy_create_buffer (yyin, YY_BUF_SIZE, ctx->scanner);
+	yy_switch_to_buffer (buffer, ctx->scanner);
 	extra->location = (rua_loc_t) {
 		.line = 1,
 		.column = 1,
@@ -2183,9 +2186,9 @@ rua_include_file (const char *name, void *scanner)
 }
 
 void
-rua_embed_file (const char *name, void *scanner)
+rua_embed_file (const char *name, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return;
 	}
@@ -2197,31 +2200,33 @@ int
 rua_parse_define (const char *def)
 {
 	int         status;
-	yyscan_t    scanner;
 	rua_tok_t   tok = { .location = { 1, 1, 1, 1 }, .token = -1, };
 	rua_extra_t extra = {
 		.preprocessor = true,
 		.pre_state = pre_yypstate_new (),
 		.macro_tab = cpp_macros,
 	};
+	rua_ctx_t   ctx = {
+		.extra = &extra,
+	};
 
-	yylex_init_extra (&extra, &scanner);
-	yy_scan_string (def, scanner);
+	yylex_init_extra (&extra, &ctx.scanner);
+	yy_scan_string (def, ctx.scanner);
 
-	yy_push_state (PREPROC, scanner);
+	yy_push_state (PREPROC, ctx.scanner);
 
 	do {
 		if (tok.token == -1) {
 			tok.token = PRE_DEFINE;
 		} else {
-			tok.token = yylex (&tok, &tok.location, scanner);
+			tok.token = yylex (&tok, &tok.location, ctx.scanner);
 			if (tok.text == extra.str_text) {
 				tok.text = save_string (tok.text);
 			}
 			status = 0;
 		}
 		while (tok.token) {
-			status = qc_process (&extra, tok.token, &tok, scanner);
+			status = qc_process (&extra, tok.token, &tok, ctx.scanner, &ctx);
 			if (status != YYPUSH_MORE || !extra.macro) {
 				break;
 			}
@@ -2233,7 +2238,7 @@ rua_parse_define (const char *def)
 		}
 	} while (status == YYPUSH_MORE);
 
-	yylex_destroy (scanner);
+	yylex_destroy (ctx.scanner);
 	pre_yypstate_delete (extra.pre_state);
 	dstring_delete (extra.dstr);
 	return status;
@@ -2241,9 +2246,9 @@ rua_parse_define (const char *def)
 
 void
 rua_line_info (const expr_t *line_expr, const char *file,
-			   const expr_t *flags_expr, void *scanner)
+			   const expr_t *flags_expr, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 
 	int line = expr_long (line_expr);
 	int flags = flags_expr ? expr_long (flags_expr) : 0;
@@ -2260,9 +2265,9 @@ rua_line_info (const expr_t *line_expr, const char *file,
 }
 
 void
-rua_macro_file (rua_macro_t *macro, void *scanner)
+rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	int         file = extra->location.file;
 	if (macro->tokens && macro->tokens->location.file == file) {
 		return;
@@ -2286,9 +2291,9 @@ rua_macro_file (rua_macro_t *macro, void *scanner)
 }
 
 void
-rua_macro_line (rua_macro_t *macro, void *scanner)
+rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
 {
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	int         line = extra->location.line;
 
 	if (macro->tokens && macro->tokens->location.line == line) {
@@ -2312,7 +2317,7 @@ rua_macro_line (rua_macro_t *macro, void *scanner)
 }
 
 static void
-expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner)
+expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner, rua_ctx_t *ctx)
 {
 	auto extra = qc_yyget_extra (scanner);
 	rua_extra_t arg_extra = *extra;
@@ -2323,7 +2328,7 @@ expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner)
 
 	while (true) {
 		rua_tok_t   e;
-		if (next_token (&e, scanner)) {
+		if (next_token (&e, scanner, ctx)) {
 			if (macro->tokens
 				|| (e.token != -rua_space && e.token != -rua_ignore)) {
 				append_token (macro, &e);
@@ -2382,19 +2387,19 @@ macro_empty (rua_macro_t *macro, yyscan_t scanner)
 }
 
 void
-rua_macro_va_opt (rua_macro_t *macro, void *scanner)
+rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx)
 {
 	macro->tokens = 0;
 	macro->tail = &macro->tokens;
 
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	auto cur = extra->macro;
 	if (!cur || !cur->params || cur->num_params >= 0) {
 		warning (0, "__VA_OPT__ can appear only in the expansion of a "
 				 "variadic macro");
 		return;
 	}
-	if (macro_empty (cur->args[~cur->num_params], scanner)) {
+	if (macro_empty (cur->args[~cur->num_params], ctx->scanner)) {
 		return;
 	}
 	auto arg = macro->args[0];
@@ -2403,16 +2408,16 @@ rua_macro_va_opt (rua_macro_t *macro, void *scanner)
 	arg->num_args = cur->num_args;
 	arg->args = cur->args;
 
-	expand_arg (macro, arg, scanner);
+	expand_arg (macro, arg, ctx->scanner, ctx);
 }
 
 void
-rua_macro_va_args (rua_macro_t *macro, void *scanner)
+rua_macro_va_args (rua_macro_t *macro, rua_ctx_t *ctx)
 {
 	macro->tokens = 0;
 	macro->tail = &macro->tokens;
 
-	auto extra = qc_yyget_extra (scanner);
+	auto extra = ctx->extra;
 	auto cur = extra->macro;
 	if (!cur || !cur->params || cur->num_params >= 0) {
 		warning (0, "__VA_ARGS__ can appear only in the expansion of a "

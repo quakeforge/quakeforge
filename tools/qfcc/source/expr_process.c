@@ -48,19 +48,19 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-typedef const expr_t *(*process_f) (const expr_t *expr);
+typedef const expr_t *(*process_f) (const expr_t *expr, rua_ctx_t *ctx);
 
 static const expr_t *
-proc_expr (const expr_t *expr)
+proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->expr.op == 'C') {
 		auto type = resolve_type (expr->expr.e1);
-		expr = expr_process (expr->expr.e2);
+		expr = expr_process (expr->expr.e2, ctx);
 		return cast_expr (type, expr);
 	}
-	auto e1 = expr_process (expr->expr.e1);
-	auto e2 = expr_process (expr->expr.e2);
+	auto e1 = expr_process (expr->expr.e1, ctx);
+	auto e2 = expr_process (expr->expr.e2, ctx);
 	if (is_error (e1)) {
 		return e1;
 	}
@@ -81,13 +81,13 @@ proc_expr (const expr_t *expr)
 }
 
 static const expr_t *
-proc_uexpr (const expr_t *expr)
+proc_uexpr (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->expr.op == '&') {
-		return current_target.proc_address (expr);
+		return current_target.proc_address (expr, ctx);
 	}
-	auto e1 = expr_process (expr->expr.e1);
+	auto e1 = expr_process (expr->expr.e1, ctx);
 	if (is_error (e1)) {
 		return e1;
 	}
@@ -105,10 +105,10 @@ proc_uexpr (const expr_t *expr)
 }
 
 static const expr_t *
-proc_field (const expr_t *expr)
+proc_field (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto object = expr_process (expr->field.object);
+	auto object = expr_process (expr->field.object, ctx);
 	auto member = expr->field.member;
 	if (is_error (object)) {
 		return object;
@@ -160,7 +160,7 @@ proc_field (const expr_t *expr)
 			member = new_deffield_expr (0, field->type, field->def);
 			return typed_binary_expr (field->type, '.', object, member);
 		} else {
-			member = expr_process (member);
+			member = expr_process (member, ctx);
 			if (is_error (member)) {
 				return member;
 			}
@@ -205,10 +205,10 @@ proc_field (const expr_t *expr)
 }
 
 static const expr_t *
-proc_array (const expr_t *expr)
+proc_array (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto base = expr_process (expr->array.base);
-	auto index = expr_process (expr->array.index);
+	auto base = expr_process (expr->array.base, ctx);
+	auto index = expr_process (expr->array.index, ctx);
 	if (is_error (base)) {
 		return base;
 	}
@@ -234,13 +234,13 @@ proc_array (const expr_t *expr)
 }
 
 static const expr_t *
-proc_label (const expr_t *expr)
+proc_label (const expr_t *expr, rua_ctx_t *ctx)
 {
 	return expr;
 }
 
 static const expr_t *
-proc_block (const expr_t *expr)
+proc_block (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto old_scope = current_symtab;
 	current_symtab = expr->block.scope;
@@ -252,7 +252,7 @@ proc_block (const expr_t *expr)
 	list_scatter (&expr->block.list, in);
 	for (int i = 0; i < count; i++) {
 		edag_flush ();
-		auto e = expr_process (in[i]);
+		auto e = expr_process (in[i], ctx);
 		if (e && !is_error (e)) {
 			out[num_out++] = e;
 			if (expr->block.result == in[i]) {
@@ -317,7 +317,7 @@ static struct {
 };
 
 static const expr_t *
-proc_symbol (const expr_t *expr)
+proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto sym = expr->symbol;
 	for (auto bi = builtin_names; bi->name; bi++) {
@@ -341,7 +341,7 @@ proc_symbol (const expr_t *expr)
 }
 
 static bool
-proc_do_list (ex_list_t *out, const ex_list_t *in)
+proc_do_list (ex_list_t *out, const ex_list_t *in, rua_ctx_t *ctx)
 {
 	int count = list_count (in);
 	const expr_t *exprs[count + 1] = {};
@@ -349,7 +349,7 @@ proc_do_list (ex_list_t *out, const ex_list_t *in)
 	bool ok = true;
 	int new_count = 0;
 	for (int i = 0; i < count; i++) {
-		exprs[new_count] = expr_process (exprs[i]);
+		exprs[new_count] = expr_process (exprs[i], ctx);
 		// keep null expressions out of the list (non-local declarations
 		// or local declarations without initializers return null)
 		new_count += !!exprs[new_count];
@@ -362,66 +362,66 @@ proc_do_list (ex_list_t *out, const ex_list_t *in)
 }
 
 static const expr_t *
-proc_vector (const expr_t *expr)
+proc_vector (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto list = new_expr ();
 	list->type = ex_list;
-	if (!proc_do_list (&list->list, &expr->vector.list)) {
+	if (!proc_do_list (&list->list, &expr->vector.list, ctx)) {
 		return new_error_expr ();
 	}
 	return new_vector_list (list);
 }
 
 static const expr_t *
-proc_selector (const expr_t *expr)
+proc_selector (const expr_t *expr, rua_ctx_t *ctx)
 {
 	return expr;
 }
 
 static const expr_t *
-proc_message (const expr_t *expr)
+proc_message (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto receiver = expr_process (expr->message.receiver);
+	auto receiver = expr_process (expr->message.receiver, ctx);
 	auto message = expr->message.message;
 	scoped_src_loc (receiver);
 	for (auto k = message; k; k = k->next) {
 		if (k->expr) {
-			k->expr = (expr_t *) expr_process (k->expr);
+			k->expr = (expr_t *) expr_process (k->expr, ctx);
 		}
 	}
 	return message_expr (receiver, message);
 }
 
 static const expr_t *
-proc_nil (const expr_t *expr)
+proc_nil (const expr_t *expr, rua_ctx_t *ctx)
 {
 	return expr;
 }
 
 static const expr_t *
-proc_value (const expr_t *expr)
+proc_value (const expr_t *expr, rua_ctx_t *ctx)
 {
 	return expr;
 }
 
 static const expr_t *
-proc_compound (const expr_t *expr)
+proc_compound (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto comp = new_compound_init ();
 	for (auto ele = expr->compound.head; ele; ele = ele->next) {
-		append_element (comp, new_element (expr_process (ele->expr),
+		append_element (comp, new_element (expr_process (ele->expr, ctx),
 										   ele->designator));
 	}
 	return comp;
 }
 
 static const expr_t *
-proc_assign (const expr_t *expr)
+proc_assign (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto dst = expr_process (expr->assign.dst);
-	auto src = expr_process (expr->assign.src);
+	auto dst = expr_process (expr->assign.dst, ctx);
+	auto src = expr_process (expr->assign.src, ctx);
 	if (is_error (src)) {
 		return src;
 	}
@@ -437,24 +437,24 @@ proc_assign (const expr_t *expr)
 }
 
 static const expr_t *
-proc_branch (const expr_t *expr)
+proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->branch.type == pr_branch_call) {
-		auto target = expr_process (expr->branch.target);
+		auto target = expr_process (expr->branch.target, ctx);
 		auto args = (expr_t *) expr->branch.args;
 		if (expr->branch.args) {
 			args = new_list_expr (nullptr);
-			proc_do_list (&args->list, &expr->branch.args->list);
+			proc_do_list (&args->list, &expr->branch.args->list, ctx);
 		}
 		return function_expr (target, args);
 	} else {
 		auto branch = new_expr ();
 		branch->type = ex_branch;
 		branch->branch = expr->branch;
-		branch->branch.target = expr_process (expr->branch.target);
-		branch->branch.index = expr_process (expr->branch.index);
-		branch->branch.test = expr_process (expr->branch.test);
+		branch->branch.target = expr_process (expr->branch.target, ctx);
+		branch->branch.index = expr_process (expr->branch.index, ctx);
+		branch->branch.test = expr_process (expr->branch.test, ctx);
 		if (is_error (branch->branch.target)) {
 			return branch->branch.target;
 		}
@@ -469,12 +469,12 @@ proc_branch (const expr_t *expr)
 }
 
 static const expr_t *
-proc_return (const expr_t *expr)
+proc_return (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto ret_val = expr->retrn.ret_val;
 	if (ret_val) {
-		ret_val = expr_process (ret_val);
+		ret_val = expr_process (ret_val, ctx);
 	}
 	if (expr->retrn.at_return) {
 		return at_return_expr (current_func, ret_val);
@@ -484,18 +484,18 @@ proc_return (const expr_t *expr)
 }
 
 static const expr_t *
-proc_list (const expr_t *expr)
+proc_list (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto list = new_list_expr (nullptr);
-	if (!proc_do_list (&list->list, &expr->list)) {
+	if (!proc_do_list (&list->list, &expr->list, ctx)) {
 		return new_error_expr ();
 	}
 	return list;
 }
 
 static const expr_t *
-proc_type (const expr_t *expr)
+proc_type (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto type = resolve_type (expr);
@@ -503,10 +503,10 @@ proc_type (const expr_t *expr)
 }
 
 static const expr_t *
-proc_incop (const expr_t *expr)
+proc_incop (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto e = expr_process (expr->incop.expr);
+	auto e = expr_process (expr->incop.expr, ctx);
 	if (is_error (e)) {
 		return e;
 	}
@@ -518,12 +518,12 @@ proc_incop (const expr_t *expr)
 }
 
 static const expr_t *
-proc_cond (const expr_t *expr)
+proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto test = expr_process (expr->cond.test);
-	auto true_expr = expr_process (expr->cond.true_expr);
-	auto false_expr = expr_process (expr->cond.false_expr);
+	auto test = expr_process (expr->cond.test, ctx);
+	auto true_expr = expr_process (expr->cond.true_expr, ctx);
+	auto false_expr = expr_process (expr->cond.false_expr, ctx);
 	if (is_error (test)) {
 		return test;
 	}
@@ -537,11 +537,12 @@ proc_cond (const expr_t *expr)
 }
 
 static const expr_t *
-proc_decl (const expr_t *expr)
+proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	expr_t *block = nullptr;
-	if (expr->decl.spec.storage == sc_local) {
+	auto decl_spec = expr->decl.spec;
+	if (decl_spec.storage == sc_local) {
 		scoped_src_loc (expr);
 		block = new_block_expr (nullptr);
 	}
@@ -558,7 +559,7 @@ proc_decl (const expr_t *expr)
 			if (decl->assign.dst->type != ex_symbol) {
 				internal_error (decl->assign.dst, "not a symbol");
 			}
-			init = expr_process (init);
+			init = expr_process (init, ctx);
 			if (is_error (init)) {
 				return init;
 			}
@@ -569,26 +570,26 @@ proc_decl (const expr_t *expr)
 		} else {
 			internal_error (decl, "not a symbol");
 		}
-		auto spec = expr->decl.spec;
-		if (sym && sym->type) {
+		auto spec = decl_spec;
+		if (sym && !spec.type_expr) {
 			spec.type = append_type (sym->type, spec.type);
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
 		}
 		auto symtab = expr->decl.symtab;
-		current_language.parse_declaration (spec, sym, init, symtab, block);
+		ctx->language->parse_declaration (spec, sym, init, symtab, block, ctx);
 	}
 	edag_flush ();
 	return block;
 }
 
 static const expr_t *
-proc_loop (const expr_t *expr)
+proc_loop (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto test = expr_process (expr->loop.test);
-	auto body = expr_process (expr->loop.body);
+	auto test = expr_process (expr->loop.test, ctx);
+	auto body = expr_process (expr->loop.body, ctx);
 	auto continue_label = expr->loop.continue_label;
-	auto continue_body = expr_process (expr->loop.continue_body);
+	auto continue_body = expr_process (expr->loop.continue_body, ctx);
 	auto break_label = expr->loop.break_label;
 	bool do_while = expr->loop.do_while;
 	bool not = expr->loop.not;
@@ -598,11 +599,11 @@ proc_loop (const expr_t *expr)
 }
 
 static const expr_t *
-proc_select (const expr_t *expr)
+proc_select (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto test = expr_process (expr->select.test);
-	auto true_body = expr_process (expr->select.true_body);
-	auto false_body = expr_process (expr->select.false_body);
+	auto test = expr_process (expr->select.test, ctx);
+	auto true_body = expr_process (expr->select.true_body, ctx);
+	auto false_body = expr_process (expr->select.false_body, ctx);
 	scoped_src_loc (expr);
 	auto select = new_select_expr (expr->select.not, test, true_body, nullptr,
 								   false_body);
@@ -611,14 +612,14 @@ proc_select (const expr_t *expr)
 }
 
 static const expr_t *
-proc_intrinsic (const expr_t *expr)
+proc_intrinsic (const expr_t *expr, rua_ctx_t *ctx)
 {
 	int count = list_count (&expr->intrinsic.operands);
 	const expr_t *operands[count + 1];
 	list_scatter (&expr->intrinsic.operands, operands);
-	auto opcode = expr_process (expr->intrinsic.opcode);
+	auto opcode = expr_process (expr->intrinsic.opcode, ctx);
 	for (int i = 0; i < count; i++) {
-		operands[i] = expr_process (operands[i]);
+		operands[i] = expr_process (operands[i], ctx);
 	}
 	scoped_src_loc (expr);
 	auto e = new_expr ();
@@ -632,19 +633,19 @@ proc_intrinsic (const expr_t *expr)
 }
 
 static const expr_t *
-proc_switch (const expr_t *expr)
+proc_switch (const expr_t *expr, rua_ctx_t *ctx)
 {
-	return current_target.proc_switch (expr);
+	return current_target.proc_switch (expr, ctx);
 }
 
 static const expr_t *
-proc_caselabel (const expr_t *expr)
+proc_caselabel (const expr_t *expr, rua_ctx_t *ctx)
 {
-	return current_target.proc_caselabel (expr);
+	return current_target.proc_caselabel (expr, ctx);
 }
 
 const expr_t *
-expr_process (const expr_t *expr)
+expr_process (const expr_t *expr, rua_ctx_t *ctx)
 {
 	if (!expr) {
 		return expr;
@@ -686,5 +687,5 @@ expr_process (const expr_t *expr)
 						expr_names[expr->type]);
 	}
 
-	return funcs[expr->type] (expr);
+	return funcs[expr->type] (expr, ctx);
 }

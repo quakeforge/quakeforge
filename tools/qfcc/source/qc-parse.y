@@ -32,7 +32,7 @@
 %define api.push-pull push
 %define api.token.prefix {QC_}
 %locations
-%parse-param {void *scanner}
+%parse-param {struct rua_ctx_s *ctx}
 %define api.value.type {rua_val_t}
 %define api.location.type {rua_loc_t}
 
@@ -83,11 +83,11 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
-#define qc_yytext qc_yyget_text (scanner)
-char *qc_yyget_text (void *scanner);
+#define qc_yytext qc_yyget_text (ctx->scanner)
+char *qc_yyget_text (rua_ctx_t *ctx);
 
 static void
-yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 #ifdef QC_YYERROR_VERBOSE
 	error (0, "%s %s\n", qc_yytext, s);
@@ -97,12 +97,12 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 }
 
 static void
-parse_error (void *scanner)
+parse_error (rua_ctx_t *ctx)
 {
 	error (0, "parse error before %s", qc_yytext);
 }
 
-#define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (ctx); YYERROR; } while (0)
 
 #define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
 #define YYLOCATION_PRINT rua_print_location
@@ -310,7 +310,7 @@ overload_spec (void)
 }
 
 static specifier_t
-generic_spec (void)
+generic_spec (rua_ctx_t *ctx)
 {
 	specifier_t spec = {
 		.storage = current_storage,
@@ -609,7 +609,7 @@ is_null_spec (specifier_t spec)
 }
 
 static int
-use_type_name (specifier_t spec)
+use_type_name (specifier_t spec, rua_ctx_t *ctx)
 {
 	spec.sym = new_symbol (spec.sym->name);
 	spec.sym->type = spec.type;
@@ -626,7 +626,7 @@ use_type_name (specifier_t spec)
 }
 
 static void __attribute__((used))
-check_specifiers (specifier_t spec)
+check_specifiers (specifier_t spec, rua_ctx_t *ctx)
 {
 	if (!is_null_spec (spec)) {
 		if (!spec.type && !spec.sym) {
@@ -645,7 +645,7 @@ check_specifiers (specifier_t spec)
 			// a type name (id, typedef, etc) was used as a variable name.
 			// this is allowed in C, so long as it's in a different scope,
 			// or the types are the same
-			if (!use_type_name (spec)) {
+			if (!use_type_name (spec, ctx)) {
 				error (0, "%s redeclared as different kind of symbol",
 					   spec.sym->name);
 			}
@@ -654,7 +654,7 @@ check_specifiers (specifier_t spec)
 }
 
 static const expr_t *
-decl_expr (specifier_t spec, const expr_t *init)
+decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	spec.sym = nullptr;
@@ -717,15 +717,15 @@ fndef
 datadef
 	: defspecs notype_initdecls ';'
 		{
-			expr_process ($2);
+			expr_process ($2, ctx);
 		}
 	| declspecs_nots notype_initdecls ';'
 		{
-			expr_process ($2);
+			expr_process ($2, ctx);
 		}
 	| declspecs_ts initdecls ';'
 		{
-			expr_process ($2);
+			expr_process ($2, ctx);
 		}
 	| declspecs_ts qc_func_params
 		{
@@ -829,8 +829,9 @@ qc_nocode_func
 	: identifier '=' '#' expr
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
-			const expr_t *bi_val = expr_process ($4);
+			const expr_t *bi_val = expr_process ($4, ctx);
 
+			spec.is_overload |= ctx->language->always_overload;
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
@@ -862,6 +863,7 @@ qc_code_func
 				.function = current_func,
 			};
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			spec.is_overload |= ctx->language->always_overload;
 			symbol_t   *sym = function_symbol (spec);
 			current_func = begin_function (sym, 0, current_symtab, 0,
 										   spec.storage);
@@ -871,7 +873,7 @@ qc_code_func
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($6);
+			auto statements = (expr_t *) expr_process ($6, ctx);
 			build_code_function ($1, $3, statements);
 			current_symtab = $<funcstate>5.symtab;
 			current_func = $<funcstate>5.function;
@@ -958,8 +960,8 @@ initdecls
 	;
 
 initdecl
-	: declarator '=' var_initializer		{ $$ = decl_expr ($1, $3); }
-	| declarator							{ $$ = decl_expr ($1, nullptr); }
+	: declarator '=' var_initializer	{ $$ = decl_expr ($1, $3, ctx); }
+	| declarator						{ $$ = decl_expr ($1, nullptr, ctx); }
 	;
 
 notype_initdecls
@@ -971,8 +973,8 @@ notype_initdecls
 	;
 
 notype_initdecl
-	: notype_declarator '=' var_initializer	{ $$ = decl_expr ($1, $3); }
-	| notype_declarator						{ $$ = decl_expr ($1, nullptr); }
+	: notype_declarator '=' var_initializer	{ $$ = decl_expr ($1, $3, ctx); }
+	| notype_declarator					{ $$ = decl_expr ($1, nullptr, ctx); }
 	;
 
 /* various lists of type specifiers, storage class etc */
@@ -1173,6 +1175,7 @@ function_body
 	: method_optional_state_expr
 		{
 			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
+			spec.is_overload |= ctx->language->always_overload;
 			$<symbol>$ = function_symbol (spec);
 		}
 	  save_storage
@@ -1188,7 +1191,7 @@ function_body
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($5);
+			auto statements = (expr_t *) expr_process ($5, ctx);
 			build_code_function ($<symbol>2, $1, statements);
 			current_symtab = $<funcstate>4.symtab;
 			current_func = $<funcstate>4.function;
@@ -1197,8 +1200,9 @@ function_body
 	| '=' '#' expr ';'
 		{
 			specifier_t spec = $<spec>0;
-			const expr_t *bi_val = expr_process ($3);
+			const expr_t *bi_val = expr_process ($3, ctx);
 
+			spec.is_overload |= ctx->language->always_overload;
 			symbol_t   *sym = function_symbol (spec);
 			build_builtin_function (sym, bi_val, 0, spec.storage);
 		}
@@ -1219,7 +1223,7 @@ storage_class
 	| SYSTEM					{ $$ = storage_spec (sc_system); }
 	| TYPEDEF					{ $$ = typedef_spec (); }
 	| OVERLOAD					{ $$ = overload_spec (); }
-	| GENERIC '('				{ $<spec>$ = generic_spec (); }
+	| GENERIC '('				{ $<spec>$ = generic_spec (ctx); }
 	  generic_param_list ')'
 		{
 			$$ = $<spec>3;
@@ -1408,7 +1412,7 @@ enumerator
 		}
 	| identifier '=' expr
 		{
-			$expr = expr_process ($expr);
+			$expr = expr_process ($expr, ctx);
 			add_enum ($<symbol>0, $identifier, $expr);
 		}
 	;
@@ -2630,7 +2634,7 @@ methoddef
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($7);
+			auto statements = (expr_t *) expr_process ($7, ctx);
 			build_code_function ($<symbol>4, $3, statements);
 			current_symtab = $<funcstate>6.symtab;
 			current_func = $<funcstate>6.function;
@@ -2640,7 +2644,7 @@ methoddef
 		{
 			symbol_t   *sym;
 			method_t   *method = $2;
-			const expr_t *bi_val = expr_process ($5);
+			const expr_t *bi_val = expr_process ($5, ctx);
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
@@ -3022,7 +3026,8 @@ static keyword_t keywords[] = {
 };
 
 static int
-qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
+qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token,
+					rua_ctx_t *ctx)
 {
 	if (keyword->value == QC_STRUCT) {
 		lval->op = token[0];
@@ -3065,7 +3070,7 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token)
 }
 
 static int
-qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
+qc_keyword_or_id (QC_YYSTYPE *lval, const char *token, rua_ctx_t *ctx)
 {
 	static hashtab_t *keyword_tab;
 	static hashtab_t *qf_keyword_tab;
@@ -3119,7 +3124,7 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 	if (!keyword)
 		keyword = Hash_Find (keyword_tab, token);
 	if (keyword && keyword->value)
-		return qc_process_keyword (lval, keyword, token);
+		return qc_process_keyword (lval, keyword, token, ctx);
 	if (token[0] == '@') {
 		return '@';
 	}
@@ -3154,7 +3159,7 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token)
 }
 
 static int
-qc_yyparse (FILE *in)
+qc_yyparse (FILE *in, rua_ctx_t *ctx)
 {
 	rua_parser_t parser = {
 		.parse = qc_yypush_parse,
@@ -3162,13 +3167,13 @@ qc_yyparse (FILE *in)
 		.directive = qc_directive,
 		.keyword_or_id = qc_keyword_or_id,
 	};
-	int ret = rua_parse (in, &parser);
+	int ret = rua_parse (in, &parser, ctx);
 	qc_yypstate_delete (parser.state);
 	return ret;
 }
 
 int
-qc_parse_string (const char *str)
+qc_parse_string (const char *str, rua_ctx_t *ctx)
 {
 	rua_parser_t parser = {
 		.parse = qc_yypush_parse,
@@ -3176,12 +3181,13 @@ qc_parse_string (const char *str)
 		.directive = qc_directive,
 		.keyword_or_id = qc_keyword_or_id,
 	};
-	int ret = rua_parse_string (str, &parser);
+	auto qc_ctx = *ctx;
+	int ret = rua_parse_string (str, &parser, &qc_ctx);
 	glsl_yypstate_delete (parser.state);
 	return ret;
 }
 
-static int qc_finish (const char *file)
+static int qc_finish (const char *file, rua_ctx_t *ctx)
 {
 	if (options.frames_files) {
 		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
@@ -3191,9 +3197,9 @@ static int qc_finish (const char *file)
 }
 
 static void
-rua_init (void)
+rua_init (rua_ctx_t *ctx)
 {
-	current_language.initialized = true;
+	ctx->language->initialized = true;
 	if (options.code.spirv) {
 		static module_t module;		//FIXME probably not what I want
 		pr.module = &module;

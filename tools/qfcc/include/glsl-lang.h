@@ -39,15 +39,16 @@ typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct language_s language_t;
 typedef struct defspace_s defspace_t;
+typedef struct rua_ctx_s rua_ctx_t;
 
-void glsl_init_comp (void);
-void glsl_init_vert (void);
-void glsl_init_tesc (void);
-void glsl_init_tese (void);
-void glsl_init_geom (void);
-void glsl_init_frag (void);
+void glsl_init_comp (rua_ctx_t *ctx);
+void glsl_init_vert (rua_ctx_t *ctx);
+void glsl_init_tesc (rua_ctx_t *ctx);
+void glsl_init_tese (rua_ctx_t *ctx);
+void glsl_init_geom (rua_ctx_t *ctx);
+void glsl_init_frag (rua_ctx_t *ctx);
 
-int glsl_parse_string (const char *str);
+int glsl_parse_string (const char *str, rua_ctx_t *ctx);
 
 extern language_t lang_glsl_comp;
 extern language_t lang_glsl_vert;
@@ -109,7 +110,7 @@ typedef struct glsl_sublang_s {
 	const char *name;
 	const char **interface_default_names;
 } glsl_sublang_t;
-#define glsl_sublang (*(glsl_sublang_t *) current_language.sublanguage)
+extern glsl_sublang_t glsl_sublang;
 extern glsl_sublang_t glsl_comp_sublanguage;
 extern glsl_sublang_t glsl_vert_sublanguage;
 extern glsl_sublang_t glsl_tesc_sublanguage;
@@ -127,11 +128,11 @@ void glsl_apply_attributes (symtab_t *attributes, specifier_t spec);
 
 void glsl_parse_declaration (specifier_t spec, symbol_t *sym,
 							 const expr_t *init, symtab_t *symtab,
-							 expr_t *block);
-void glsl_declare_field (specifier_t spec, symtab_t *symtab);
+							 expr_t *block, rua_ctx_t *ctx);
+void glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx);
 void glsl_layout (const ex_list_t *qualifiers, specifier_t spec);
 
-bool glsl_on_include (const char *name);
+bool glsl_on_include (const char *name, rua_ctx_t *ctx);
 void glsl_include (int behavior, void *scanner);
 void glsl_multiview (int behavior, void *scanner);
 

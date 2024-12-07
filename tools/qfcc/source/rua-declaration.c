@@ -43,11 +43,8 @@
 
 void
 rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
-					   symtab_t *symtab, expr_t *block)
+					   symtab_t *symtab, expr_t *block, rua_ctx_t *ctx)
 {
-	if (sym && sym->type) {
-		internal_error (0, "unexected typed symbol");
-	}
 	if (sym && sym->sy_type == sy_expr) {
 		auto id_list = sym->expr;
 		if (id_list->type != ex_list) {

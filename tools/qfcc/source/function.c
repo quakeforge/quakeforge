@@ -774,7 +774,7 @@ get_function (const char *name, specifier_t spec)
 		call_params[i].type = type->func.param_types[i];
 	}
 
-	bool overload = spec.is_overload | current_language.always_override;
+	bool overload = spec.is_overload;
 	metafunc_t *func = Hash_Find (function_map, name);
 	if (func && func->meta_type == mf_generic) {
 		auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, name);

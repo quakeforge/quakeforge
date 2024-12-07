@@ -43,7 +43,7 @@
 
 void
 glsl_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
-						symtab_t *symtab, expr_t *block)
+						symtab_t *symtab, expr_t *block, rua_ctx_t *ctx)
 {
 	if (sym && sym->type) {
 		internal_error (0, "unexected typed symbol");
@@ -105,7 +105,7 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 }
 
 void
-glsl_declare_field (specifier_t spec, symtab_t *symtab)
+glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	auto attributes = glsl_optimize_attributes (spec.attributes);
 	spec.sym = declare_field (spec, symtab);

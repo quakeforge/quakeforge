@@ -1138,7 +1138,8 @@ void scatter_factors (const expr_t *prod, const expr_t **factors);
 const expr_t *gather_factors (const type_t *type, int op,
 							  const expr_t **factors, int count);
 
-const expr_t *expr_process (const expr_t *expr);
+typedef struct rua_ctx_s rua_ctx_t;
+const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
 
 ///@}
 

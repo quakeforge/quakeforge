@@ -236,15 +236,15 @@ ruamoko_assign_vector (const expr_t *dst, const expr_t *src)
 
 static switch_block_t *switch_block;
 const expr_t *
-ruamoko_proc_switch (const expr_t *expr)
+ruamoko_proc_switch (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto test = expr_process (expr->switchblock.test);
+	auto test = expr_process (expr->switchblock.test, ctx);
 
 	auto sb = switch_block;
 	switch_block = new_switch_block ();
 	switch_block->test = test;
-	auto body = expr_process (expr->switchblock.body);
+	auto body = expr_process (expr->switchblock.body, ctx);
 
 	auto break_label = expr->switchblock.break_label;
 	auto swtch = switch_expr (switch_block, break_label, body);
@@ -253,13 +253,13 @@ ruamoko_proc_switch (const expr_t *expr)
 }
 
 const expr_t *
-ruamoko_proc_caselabel (const expr_t *expr)
+ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->caselabel.end_value) {
 		internal_error (expr, "case ranges not implemented");
 	}
-	auto value = expr_process (expr->caselabel.value);
+	auto value = expr_process (expr->caselabel.value, ctx);
 	if (is_error (value)) {
 		return value;
 	}
@@ -342,10 +342,10 @@ ruamoko_field_array (const expr_t *e)
 }
 
 const expr_t *
-ruamoko_proc_address (const expr_t *expr)
+ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto e = expr_process (expr->expr.e1);
+	auto e = expr_process (expr->expr.e1, ctx);
 	if (is_error (e)) {
 		return e;
 	}
