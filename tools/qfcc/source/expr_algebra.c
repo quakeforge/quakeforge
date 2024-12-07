@@ -133,7 +133,7 @@ neg_expr (const expr_t *e)
 		neg = new_unary_expr ('-', e);
 	}
 	neg->expr.type = type;
-	return edag_add_expr (fold_constants (neg));
+	return edag_add_expr (neg);
 }
 
 const expr_t *
@@ -585,7 +585,6 @@ sum_expr_low (const type_t *type, int op, const expr_t *a, const expr_t *b)
 	}
 
 	auto sum = typed_binary_expr (type, op, a, b);
-	sum = fold_constants (sum);
 	sum = edag_add_expr (sum);
 	return sum;
 }
@@ -821,7 +820,6 @@ distribute_product (const type_t *type, const expr_t *a, const expr_t *b,
 		for (auto j = b_adds; *j; j++) {
 			auto p = product (type, *i, *j);
 			if (p) {
-				p = fold_constants (p);
 				p = edag_add_expr (p);
 				a = sum_expr (type, a, p);
 			}
@@ -831,7 +829,6 @@ distribute_product (const type_t *type, const expr_t *a, const expr_t *b,
 		for (auto j = b_subs; *j; j++) {
 			auto p = product (type, *i, *j);
 			if (p) {
-				p = fold_constants (p);
 				p = edag_add_expr (p);
 				a = sum_expr (type, a, p);
 			}
@@ -841,7 +838,6 @@ distribute_product (const type_t *type, const expr_t *a, const expr_t *b,
 		for (auto j = b_subs; *j; j++) {
 			auto p = product (type, *i, *j);
 			if (p) {
-				p = fold_constants (p);
 				p = edag_add_expr (p);
 				b = sum_expr (type, b, p);
 			}
@@ -851,7 +847,6 @@ distribute_product (const type_t *type, const expr_t *a, const expr_t *b,
 		for (auto j = b_adds; *j; j++) {
 			auto p = product (type, *i, *j);
 			if (p) {
-				p = fold_constants (p);
 				p = edag_add_expr (p);
 				b = sum_expr (type, b, p);
 			}
@@ -883,7 +878,6 @@ static const expr_t *
 apply_scale (const type_t *type, const expr_t *expr, const expr_t *prod)
 {
 	if (expr && prod) {
-		expr = fold_constants (expr);
 		expr = edag_add_expr (expr);
 		expr = scale_expr (type, expr, prod);
 	}
