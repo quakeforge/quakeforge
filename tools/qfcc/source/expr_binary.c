@@ -712,7 +712,6 @@ is_call (const expr_t *e)
 const expr_t *
 binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	e1 = convert_name (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
 	if (e1->type == ex_alias && is_call (e1->alias.expr)) {
@@ -739,7 +738,6 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (e1->type == ex_error)
 		return e1;
 
-	e2 = convert_name (e2);
 	if (e2->type == ex_error)
 		return e2;
 

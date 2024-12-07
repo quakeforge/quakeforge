@@ -233,7 +233,6 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	const expr_t *expr;
 	const type_t *dst_type, *src_type;
 
-	dst = convert_name (dst);
 	if (is_error (dst)) {
 		return dst;
 	}
@@ -252,7 +251,6 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	}
 
 	if (src && !is_memset (src)) {
-		src = convert_name (src);
 		if (is_error (src)) {
 			return src;
 		}

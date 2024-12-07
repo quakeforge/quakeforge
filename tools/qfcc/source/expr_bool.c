@@ -70,7 +70,6 @@ test_expr (const expr_t *e)
 {
 	const expr_t *new = 0;
 
-	e = convert_name (e);
 	if (e->type == ex_error)
 		return e;
 

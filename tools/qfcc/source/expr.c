@@ -70,62 +70,10 @@
 ALLOC_STATE (expr_t, exprs);
 ALLOC_STATE (ex_listitem_t, listitems);
 
-const expr_t *
-convert_name (const expr_t *e)
-{
-	symbol_t   *sym;
-
-	if (!e || e->type != ex_symbol || e->symbol->is_constexpr)
-		return e;
-
-	sym = e->symbol;
-
-	if (!strcmp (sym->name, "__PRETTY_FUNCTION__")
-		&& current_func) {
-		return new_string_expr (current_func->name);
-	}
-	if (!strcmp (sym->name, "__FUNCTION__")
-		&& current_func) {
-		return new_string_expr (current_func->def->name);
-	}
-	if (!strcmp (sym->name, "__LINE__")
-		&& current_func) {
-		return new_int_expr (e->loc.line, false);
-	}
-	if (!strcmp (sym->name, "__INFINITY__")
-		&& current_func) {
-		return new_float_expr (INFINITY, false);
-	}
-	if (!strcmp (sym->name, "__FILE__")
-		&& current_func) {
-		return new_string_expr (GETSTR (e->loc.file));
-	}
-	if (sym->sy_type == sy_var) {
-		return e;
-	}
-	if (!sym->table) {
-		e = error (e, "%s undefined", sym->name);
-		sym->type = type_default;
-		//FIXME need a def
-		return e;
-	}
-	if (sym->sy_type == sy_convert) {
-		return sym->convert.conv (sym, sym->convert.data);
-	}
-	if (sym->sy_type == sy_expr) {
-		return sym->expr;
-	}
-	if (sym->sy_type == sy_type)
-		internal_error (e, "unexpected typedef");
-	// var, const and func shouldn't need extra handling
-	return e;
-}
-
 const type_t *
 get_type (const expr_t *e)
 {
 	const type_t *type = nullptr;
-	e = convert_name (e);
 	switch (e->type) {
 		case ex_inout:
 			if (!e->inout.out) {
@@ -659,7 +607,6 @@ paren_expr (const expr_t *e)
 expr_t *
 new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 {
-	vec = convert_name (vec);
 	if (vec->type == ex_error) {
 		return (expr_t *) vec;
 	}
@@ -683,7 +630,6 @@ new_horizontal_expr (int op, const expr_t *vec, type_t *type)
 const expr_t *
 new_swizzle_expr (const expr_t *src, const char *swizzle)
 {
-	src = convert_name (src);
 	if (is_error (src)) {
 		return (expr_t *) src;
 	}
@@ -1733,7 +1679,6 @@ field_expr (const expr_t *e1, const expr_t *e2)
 	const type_t *t1, *t2;
 	expr_t     *e;
 
-	e1 = convert_name (e1);
 	if (e1->type == ex_error)
 		return e1;
 	if (e1->type == ex_symbol && e1->symbol->sy_type == sy_namespace) {
@@ -1763,7 +1708,6 @@ field_expr (const expr_t *e1, const expr_t *e2)
 			e->expr.type = field->type;
 			return e;
 		} else {
-			e2 = convert_name (e2);
 			t2 = get_type (e2);
 			if (e2->type == ex_error)
 				return e2;
@@ -2422,9 +2366,6 @@ incop_expr (int op, const expr_t *e, int postop)
 const expr_t *
 array_expr (const expr_t *array, const expr_t *index)
 {
-	array = convert_name (array);
-	index = convert_name (index);
-
 	auto array_type = get_type (array);
 	auto index_type = get_type (index);
 	const type_t *ele_type;
@@ -2557,7 +2498,6 @@ address_expr (const expr_t *e1, const type_t *t)
 {
 	expr_t     *e;
 
-	e1 = convert_name (e1);
 	if (e1->type == ex_error)
 		return e1;
 

@@ -340,18 +340,11 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 const expr_t *
 function_expr (const expr_t *fexpr, const expr_t *args)
 {
-	if (args) {
-		for (auto p = args->list.head; p; p = p->next) {
-			p->expr = convert_name (p->expr);
-		}
-	}
-
 	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_type) {
 		return constructor_expr (fexpr, args);
 	}
 
 	fexpr = find_function (fexpr, args);
-	fexpr = convert_name (fexpr);
 	if (is_error (fexpr)) {
 		return fexpr;
 	}
@@ -387,7 +380,6 @@ return_expr (function_t *f, const expr_t *e)
 	const type_t *t;
 	const type_t *ret_type = unalias_type (f->type->func.ret_type);
 
-	e = convert_name (e);
 	if (!e) {
 		if (!is_void(ret_type)) {
 			if (options.traditional) {

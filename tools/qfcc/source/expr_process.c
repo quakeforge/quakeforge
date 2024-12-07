@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 #include <string.h>
+#include <math.h>
 
 #include "QF/fbsearch.h"
 #include "QF/heapsort.h"
@@ -41,6 +42,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
@@ -272,14 +274,67 @@ proc_block (const expr_t *expr)
 }
 
 static const expr_t *
+ps_pretty_function (const expr_t *e)
+{
+	return new_string_expr (current_func->name);
+}
+
+static const expr_t *
+ps_function (const expr_t *e)
+{
+	return new_string_expr (current_func->def->name);
+}
+
+static const expr_t *
+ps_line (const expr_t *e)
+{
+	return new_int_expr (e->loc.line, false);
+}
+
+static const expr_t *
+ps_infinity (const expr_t *e)
+{
+	return new_float_expr (INFINITY, false);
+}
+
+static const expr_t *
+ps_file (const expr_t *e)
+{
+	return new_string_expr (GETSTR (e->loc.file));
+}
+
+static struct {
+	const char *name;
+	const expr_t *(*expr) (const expr_t *e);
+} builtin_names[] = {
+	{ .name = "__PRETTY_FUNCTION__", .expr = ps_pretty_function },
+	{ .name = "__FUNCTION__",        .expr = ps_function        },
+	{ .name = "__LINE__",            .expr = ps_line            },
+	{ .name = "__INFINITY__",        .expr = ps_infinity        },
+	{ .name = "__FILE__",            .expr = ps_file            },
+
+	{}
+};
+
+static const expr_t *
 proc_symbol (const expr_t *expr)
 {
-	auto sym = symtab_lookup (current_symtab, expr->symbol->name);
+	auto sym = expr->symbol;
+	for (auto bi = builtin_names; bi->name; bi++) {
+		if (strcmp (bi->name, sym->name) == 0) {
+			scoped_src_loc (expr);
+			return bi->expr (expr);
+		}
+	}
+	sym = symtab_lookup (current_symtab, sym->name);
 	if (sym) {
-		scoped_src_loc (expr);
+		if (sym->sy_type == sy_expr) {
+			return sym->expr;
+		}
 		if (sym->sy_type == sy_convert) {
 			return sym->convert.conv (sym, sym->convert.data);
 		}
+		scoped_src_loc (expr);
 		expr = new_symbol_expr (sym);
 	}
 	return expr;

@@ -611,7 +611,6 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 	}
 	if (!init)
 		return;
-	init = convert_name (init);
 	if (init->type == ex_error)
 		return;
 	if ((is_structural (sym->type) || is_nonscalar (sym->type))

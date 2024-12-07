@@ -1035,15 +1035,6 @@ const type_t *resolve_type (const expr_t *te);
 const type_t **expand_type (const expr_t *te);
 const expr_t *evaluate_type (const expr_t *te);
 
-/**	Convert a name to an expression of the appropriate type.
-
-	Converts the expression in-place. If the exprssion is not a name
-	expression (ex_name), no converision takes place.
-
-	\param e		The expression to convert.
-*/
-const expr_t *convert_name (const expr_t *e) __attribute__((warn_unused_result));
-
 expr_t *append_expr (expr_t *block, const expr_t *e);
 expr_t *prepend_expr (expr_t *block, const expr_t *e);
 

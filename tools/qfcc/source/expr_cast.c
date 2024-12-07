@@ -89,8 +89,6 @@ cast_expr (const type_t *dstType, const expr_t *e)
 {
 	const type_t *srcType;
 
-	e = convert_name (e);
-
 	if (e->type == ex_error)
 		return e;
 

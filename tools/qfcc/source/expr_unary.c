@@ -459,7 +459,6 @@ static unary_type_t *unary_expr_types[ev_type_count] = {
 const expr_t *
 unary_expr (int op, const expr_t *e)
 {
-	e = convert_name (e);
 	if (e->type == ex_error) {
 		return e;
 	}

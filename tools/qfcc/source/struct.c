@@ -309,7 +309,6 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	if (enum_tab->symbols)
 		value = ((symbol_t *)(enum_tab->symtail))->value->uint_val + 1;
 	if (val) {
-		val = convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
 		else if (!is_int_val (val))
