@@ -1194,8 +1194,8 @@ build_code_function (symbol_t *fsym, const expr_t *state_expr,
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
-						storage_class_t storage)
+build_builtin_function (symbol_t *sym, const char *ext_name,
+						const expr_t *bi_val, int far, storage_class_t storage)
 {
 	int         bi;
 
@@ -1219,7 +1219,10 @@ build_builtin_function (symbol_t *sym, const expr_t *bi_val, int far,
 	}
 
 	defspace_t *space = far ? pr.far_data : sym->table->space;
-	func = make_function (sym, 0, space, storage);
+	func = make_function (sym, nullptr, space, storage);
+	if (ext_name) {
+		func->s_name = ReuseString (ext_name);
+	}
 
 	if (func->def->external)
 		return 0;

@@ -217,7 +217,7 @@ function_t *begin_function (symbol_t *sym, const char *nicename,
 							enum storage_class_e storage);
 function_t *build_code_function (symbol_t *fsym,
 								 const expr_t *state_expr, expr_t *statements);
-function_t *build_builtin_function (symbol_t *sym,
+function_t *build_builtin_function (symbol_t *sym, const char *ext_name,
 									const expr_t *bi_val, int far,
 									enum storage_class_e storage);
 void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic);

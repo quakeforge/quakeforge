@@ -833,7 +833,7 @@ qc_nocode_func
 
 			spec.is_overload |= ctx->language->always_overload;
 			symbol_t   *sym = function_symbol (spec);
-			build_builtin_function (sym, bi_val, 0, spec.storage);
+			build_builtin_function (sym, nullptr, bi_val, 0, spec.storage);
 		}
 	| identifier '=' intrinsic
 		{
@@ -1204,7 +1204,7 @@ function_body
 
 			spec.is_overload |= ctx->language->always_overload;
 			symbol_t   *sym = function_symbol (spec);
-			build_builtin_function (sym, bi_val, 0, spec.storage);
+			build_builtin_function (sym, nullptr, bi_val, 0, spec.storage);
 		}
 	| '=' intrinsic
 		{
@@ -2649,7 +2649,7 @@ methoddef
 			method->instance = $1;
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, bi_val, 1, sc_static);
+			build_builtin_function (sym, nullptr, bi_val, 1, sc_static);
 			method->func = sym->metafunc->func;
 			method->def = method->func->def;
 		}

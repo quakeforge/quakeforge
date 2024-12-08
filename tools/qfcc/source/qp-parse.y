@@ -400,7 +400,7 @@ subprogram_declaration
 			// always an sy_xvalue with callable symbol in lvalue and
 			// actual function symbol in rvalue
 			auto fsym = (symbol_t *) sym->xvalue.rvalue;
-			build_builtin_function (fsym, $4, 0, current_storage);
+			build_builtin_function (fsym, sym->name, $4, 0, current_storage);
 		}
 	;
 
