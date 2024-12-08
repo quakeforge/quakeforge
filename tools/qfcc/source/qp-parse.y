@@ -243,7 +243,7 @@ static symbol_t *
 function_value (function_t *func)
 {
 	symbol_t   *ret = 0;
-	if (func->type->func.ret_type) {
+	if (!is_void (func->type->func.ret_type)) {
 		ret = symtab_lookup (func->locals, ".ret");
 		if (!ret || ret->table != func->locals) {
 			ret = new_symbol_type (".ret", func->type->func.ret_type);
