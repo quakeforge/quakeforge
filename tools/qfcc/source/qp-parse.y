@@ -387,6 +387,10 @@ subprogram_declaration
 			// actual function symbol in rvalue
 			auto fsym = (symbol_t *) sym->xvalue.rvalue;
 			auto statements = $5;
+			if (!statements) {
+				statements = new_block_expr (0);
+				statements->block.scope = current_symtab;
+			}
 			auto ret_expr = new_return_expr (function_return (current_func));
 			append_expr (statements, ret_expr);
 			statements = (expr_t *) expr_process (statements, ctx);
