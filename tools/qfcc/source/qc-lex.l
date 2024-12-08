@@ -1660,6 +1660,7 @@ rua_parse (FILE *in, rua_parser_t *parser, rua_ctx_t *ctx)
 	yyset_in (in, ctx->scanner);
 	int status = rua_do_scan (ctx->scanner, ctx);
 	rua_destroy_scanner (ctx->scanner, &extra);
+	ctx->scanner = nullptr;
 	return status;
 }
 
@@ -1674,6 +1675,7 @@ rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx)
 	yy_scan_string (str, ctx->scanner);
 	int status = rua_do_scan (ctx->scanner, ctx);
 	rua_destroy_scanner (ctx->scanner, &extra);
+	ctx->scanner = nullptr;
 	pr.loc = loc;
 	return status;
 }
@@ -2239,6 +2241,7 @@ rua_parse_define (const char *def)
 	} while (status == YYPUSH_MORE);
 
 	yylex_destroy (ctx.scanner);
+	ctx.scanner = nullptr;
 	pre_yypstate_delete (extra.pre_state);
 	dstring_delete (extra.dstr);
 	return status;

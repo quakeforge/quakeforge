@@ -312,19 +312,19 @@ static int
 qp_yyparse (FILE *in, rua_ctx_t *ctx)
 {
 	int         status;
-	yyscan_t    scanner;
 	qp_yypstate *ps = qp_yypstate_new ();
 
-	yylex_init_extra (ctx, &scanner);
-	yyset_in (in, scanner);
+	yylex_init_extra (ctx, &ctx->scanner);
+	yyset_in (in, ctx->scanner);
 	YYLTYPE lloc = { 1, 1, 1, 1 };
 	do {
 		YYSTYPE lval;
-		int token = yylex (&lval, &lloc, scanner);
+		int token = yylex (&lval, &lloc, ctx->scanner);
 		status = qp_yypush_parse (ps, token, &lval, &lloc, ctx);
 	} while (status == YYPUSH_MORE);
 
-	yylex_destroy (scanner);
+	yylex_destroy (ctx->scanner);
+	ctx->scanner = nullptr;
 	qp_yypstate_delete (ps);
 	return status;
 }

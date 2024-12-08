@@ -31,7 +31,9 @@
 %define api.pure full
 %define api.push-pull push
 %locations
-%parse-param {void *scanner}
+%parse-param {struct rua_ctx_s *ctx}
+%define api.value.type {rua_val_t}
+%define api.location.type {rua_loc_t}
 
 %{
 #ifdef HAVE_CONFIG_H
@@ -46,6 +48,7 @@
 #endif
 
 #include "QF/dstring.h"
+#include "QF/va.h"
 
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -53,6 +56,7 @@
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -63,11 +67,11 @@
 
 #include "tools/qfcc/source/qp-parse.h"
 
-#define qp_yytext qp_yyget_text (scanner)
+#define qp_yytext qp_yyget_text (ctx->scanner)
 char *qp_yyget_text (void *scanner);
 
 static void
-yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 #ifdef YYERROR_VERBOSE
 	error (0, "%s %s\n", qp_yytext, s);
@@ -77,12 +81,12 @@ yyerror (YYLTYPE *yylloc, void *scanner, const char *s)
 }
 
 static void
-parse_error (void *scanner)
+parse_error (rua_ctx_t *ctx)
 {
 	error (0, "parse error before %s", qp_yytext);
 }
 
-#define PARSE_ERROR do { parse_error (scanner); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (ctx); YYERROR; } while (0)
 
 #define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
 #define YYLOCATION_PRINT rua_print_location
@@ -90,25 +94,6 @@ parse_error (void *scanner)
 int yylex (void);
 
 %}
-
-%define api.location.type {struct rua_loc_s}
-
-%union {
-	int			op;
-	struct def_s *def;
-	struct hashtab_s *def_list;
-	const struct type_s	*type;
-	struct typedef_s *typename;
-	const struct expr_s	*expr;
-	struct expr_s	*mut_expr;
-	struct function_s *function;
-	struct switch_block_s *switch_block;
-	struct param_s	*param;
-	struct struct_s *strct;
-	struct symtab_s *symtab;
-	struct symbol_s *symbol;
-	int              storage;
-}
 
 // these tokens are common between qc and qp
 %left LOW
@@ -185,6 +170,75 @@ build_dotmain (symbol_t *program)
 	build_code_function (dotmain, 0, code);
 }
 
+static const expr_t *
+lvalue_expr (const expr_t *expr)
+{
+	if (expr->type == ex_xvalue) {
+		if (expr->xvalue.lvalue) {
+			// already an lvalue
+			return expr;
+		}
+		// convert rvalue to lvalue (validity checked later)
+		expr = expr->xvalue.expr;
+	}
+	return new_xvalue_expr (expr, true);
+}
+
+static const expr_t *
+rvalue_expr (const expr_t *expr)
+{
+	if (expr->type == ex_xvalue) {
+		if (!expr->xvalue.lvalue) {
+			// already an rvalue
+			return expr;
+		}
+		// convert lvalue to rvalue
+		bug (expr, "lvalue in rvalue?");
+		expr = expr->xvalue.expr;
+	}
+	return new_xvalue_expr (expr, false);
+}
+
+static symbol_t *
+function_decl (symbol_t *sym, param_t *params, const type_t *ret_type)
+{
+	if (sym->table == current_symtab) {
+		error (0, "%s redefined", sym->name);
+		sym = new_symbol (sym->name);
+	}
+	// use `@name` so `main` can be used (`.main` is reserved for the entry
+	// point)
+	auto fsym = new_symbol (va (0, "@%s", sym->name));
+	fsym->params = params;
+	fsym->type = parse_params (ret_type, params);
+	fsym->type = find_type (fsym->type);
+	fsym = function_symbol ((specifier_t) { .sym = fsym, });
+	auto fsym_expr = new_symbol_expr (fsym);
+	if (!params) {
+		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);
+	}
+
+	auto csym = new_symbol (sym->name);
+	csym->sy_type = sy_xvalue;
+	csym->xvalue = (sy_xvalue_t) {
+		.lvalue = nullptr,
+		.rvalue = fsym_expr,
+	};
+	symtab_addsymbol (current_symtab, csym);
+
+	// return both symbols:
+	//    lvalue has the language-level symbol
+	//    rvalue has the internal function symbol
+	// XXX NOTE: not a valid symbol
+	sym->sy_type = sy_xvalue;
+	sym->xvalue = (sy_xvalue_t) {
+		.lvalue = (expr_t *) csym,
+		.rvalue = (expr_t *) fsym,
+	};
+
+	return sym;
+}
+
 static symbol_t *
 function_value (function_t *func)
 {
@@ -229,7 +283,8 @@ program
 			current_func = begin_function ($1, 0, current_symtab, 0,
 										   current_storage);
 			current_symtab = current_func->locals;
-			build_code_function ($1, 0, $4);
+			auto statements = (expr_t *) expr_process ($4, ctx);
+			build_code_function ($1, 0, statements);
 			current_symtab = st;
 
 			build_dotmain ($1);
@@ -312,50 +367,51 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			$<storage>$ = current_storage;
-			current_func = begin_function ($1, 0, current_symtab, 0,
+			$<spec>$.storage = current_storage;
+			auto sym = $1;
+			// always an sy_xvalue with callable symbol in lvalue and
+			// actual function symbol in rvalue
+			auto csym = (symbol_t *) sym->xvalue.lvalue;
+			auto fsym = (symbol_t *) sym->xvalue.rvalue;
+			current_func = begin_function (fsym, sym->name, current_symtab, 0,
 										   current_storage);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-			function_value (current_func);
+			// null for procedures, valid symbol expression for functions
+			csym->xvalue.lvalue = function_return (current_func);
 		}
 	  declarations compound_statement ';'
 		{
-			append_expr ($5, new_return_expr (function_return (current_func)));
-			build_code_function ($1, 0, $5);
+			auto sym = $1;
+			// always an sy_xvalue with callable symbol in lvalue and
+			// actual function symbol in rvalue
+			auto fsym = (symbol_t *) sym->xvalue.rvalue;
+			auto statements = $5;
+			auto ret_expr = new_return_expr (function_return (current_func));
+			append_expr (statements, ret_expr);
+			statements = (expr_t *) expr_process (statements, ctx);
+			build_code_function (fsym, 0, statements);
 			current_symtab = current_func->parameters->parent;
-			current_storage = $<storage>3;
+			current_storage = $<spec>3.storage;
 		}
 	| subprogram_head ASSIGNOP '#' VALUE ';'
 		{
-			build_builtin_function ($1, $4, 0, current_storage);
+			auto sym = $1;
+			// always an sy_xvalue with callable symbol in lvalue and
+			// actual function symbol in rvalue
+			auto fsym = (symbol_t *) sym->xvalue.rvalue;
+			build_builtin_function (fsym, $4, 0, current_storage);
 		}
 	;
 
 subprogram_head
 	: FUNCTION ID arguments ':' standard_type
 		{
-			$$ = $2;
-			if ($$->table == current_symtab) {
-				error (0, "%s redefined", $$->name);
-			} else {
-				$$->params = $3;
-				$$->type = parse_params ($5, $3);
-				$$->type = find_type ($$->type);
-				$$ = function_symbol ((specifier_t) { .sym = $$ });
-			}
+			$$ = function_decl ($2, $3, $5);
 		}
 	| PROCEDURE ID arguments
 		{
-			$$ = $2;
-			if ($$->table == current_symtab) {
-				error (0, "%s redefined", $$->name);
-			} else {
-				$$->params = $3;
-				$$->type = parse_params (&type_void, $3);
-				$$->type = find_type ($$->type);
-				$$ = function_symbol ((specifier_t) { .sym = $$ });
-			}
+			$$ = function_decl ($2, $3, &type_void);
 		}
 	;
 
@@ -411,6 +467,7 @@ statement_list
 	: statement
 		{
 			$$ = new_block_expr (0);
+			$$->block.scope = current_symtab;
 			append_expr ($$, $1);
 		}
 	| statement_list ';' statement
@@ -423,43 +480,30 @@ statement_list
 statement
 	: variable ASSIGNOP expression
 		{
-			$$ = $1;
-			if ($$->type == ex_symbol && $$->symbol->sy_type == sy_func) {
-				if ($$->symbol->metafunc->func != current_func) {
-					$$ = error ($$, "cannot assign to other function");
-				} else {
-					symbol_t   *ret = function_value (current_func);
-					if (!ret) {
-						$$ = error ($$, "cannot assign to procedure");
-					} else {
-						$$ = new_symbol_expr (ret);
-					}
-				}
-			}
-			$$ = assign_expr ($$, $3);
+			auto lvalue = lvalue_expr ($variable);
+			$$ = new_assign_expr (lvalue, $expression);
 		}
 	| procedure_statement
 	| compound_statement
 		{
 			$$ = $1;
 		}
-	| IF expression THEN statement else statement
+	| IF expression[test] THEN statement[true] else statement[false]
 		{
-			$$ = build_if_statement (0, $2, $4, $5, $6);
+			$$ = new_select_expr (false, $test, $true, $else, $false);
 		}
-	| IF expression THEN statement %prec IFX
+	| IF expression[test] THEN statement[true] %prec IFX
 		{
-			$$ = build_if_statement (0, $2, $4, 0, 0);
+			$$ = new_select_expr (false, $test, $true, nullptr, nullptr);
 		}
-	| WHILE expression DO statement
+	| WHILE expression[test] DO statement[body]
 		{
-			$$ = build_while_statement (0, $2, $4,
-										new_label_expr (),
-										new_label_expr ());
+			$$ = new_loop_expr (false, false, $test, $body, nullptr,
+								nullptr, nullptr);
 		}
 	| RETURN
 		{
-			$$ = return_expr (current_func, function_return (current_func));
+			$$ = new_return_expr (function_return (current_func));
 		}
 	;
 
@@ -472,13 +516,20 @@ else
 	;
 
 variable
-	: name
-	| name '[' expression ']'				{ $$ = array_expr ($1, $3); }
+	: name									{ $$ = rvalue_expr ($1); }
+	| name '[' expression ']'				{ $$ = new_array_expr ($1, $3); }
 	;
 
+//FIXME calling a procedure that takes no parameters with parameters
+// results in "Called object is not a function", which I'm sure will be
+// very confusing (especially for prececures) as the called object sure looks
+// like a function/procedure.
 procedure_statement
-	: name									{ $$ = function_expr ($1, 0); }
-	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
+	: name									{ $$ = rvalue_expr ($1); }
+	| name '(' expression_list ')'
+		{
+			$$ = new_call_expr (rvalue_expr ($1), $3, nullptr);
+		}
 	;
 
 expression_list
@@ -493,58 +544,54 @@ unary_expr
 	;
 
 primary
-	: variable
-		{
-			$$ = $1;
-			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
-				$$ = function_expr ($$, 0);
-		}
+	: variable						{ $$ = rvalue_expr ($1); }
 	| VALUE
-	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
-	| '(' expression ')'					{ $$ = $2; }
+	| name '(' expression_list ')'
+		{
+			//FIXME see procedure_statement
+			$$ = new_call_expr (rvalue_expr ($1), $3, nullptr);
+		}
+	| '(' expression ')'			{ $$ = $2; }
 	;
 
 expression
 	: unary_expr
-	| expression RELOP expression			{ $$ = binary_expr ($2, $1, $3); }
+	| expression RELOP expression		{ $$ = new_binary_expr ($2, $1, $3); }
 	| expression ADDOP expression
 		{
-			if ($2 == 'o')
-				$$ = bool_expr (OR, new_label_expr (), $1, $3);
-			else
-				$$ = binary_expr ($2, $1, $3);
+			int op = $2;
+			if (op == 'o') {
+				op = OR;
+			}
+			$$ = new_binary_expr (op, $1, $3);
 		}
 	| expression MULOP expression
 		{
-			if ($2 == 'd')
-				$2 = '/';
-			else if ($2 == 'm')
-				$2 = '%';
-			if ($2 == 'a')
-				$$ = bool_expr (AND, new_label_expr (), $1, $3);
-			else
-				$$ = binary_expr ($2, $1, $3);
+			int op = $2;
+			if (op == 'd') {
+				op = '/';
+			} else if (op == 'm') {
+				op = '%';
+			} else if (op == 'a') {
+				op = AND;
+			}
+			$$ = new_binary_expr (op, $1, $3);
 		}
 	;
 
 sign
 	: ADDOP
 		{
-			if ($$ == 'o')
+			if ($$ == 'o') {
+				// no unary `or`
 				PARSE_ERROR;
+			}
+			$$ = $1;
 		}
 	;
 
 name
-	: ID
-		{
-			if (!$1->table) {
-				error (0, "%s undefined", $1->name);
-				$1->type = &type_int;
-				symtab_addsymbol (current_symtab, $1);
-			}
-			$$ = new_symbol_expr ($1);
-		}
+	: ID						{ $$ = new_symbol_expr ($1); }
 	;
 
 %%
