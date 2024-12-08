@@ -2083,7 +2083,7 @@ jump_table_expr (const expr_t *table, const expr_t *index)
 	return branch;
 }
 
-const expr_t *
+expr_t *
 new_call_expr (const expr_t *func, const expr_t *args, const type_t *ret_type)
 {
 	expr_t     *branch = new_expr ();

@@ -702,8 +702,8 @@ expr_t *new_nil_expr (void);
 	\return			The new args expression node.
 */
 expr_t *new_args_expr (void);
-const expr_t *new_call_expr (const expr_t *func, const expr_t *args,
-							 const type_t *ret_type);
+expr_t *new_call_expr (const expr_t *func, const expr_t *args,
+					   const type_t *ret_type);
 
 /** Create a new value expression node.
 
