@@ -148,7 +148,7 @@ int yylex (void);
 %{
 
 static void
-build_dotmain (symbol_t *program)
+build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 {
 	symbol_t   *dotmain = new_symbol (".main");
 	expr_t     *code;
@@ -163,11 +163,12 @@ build_dotmain (symbol_t *program)
 
 	current_func = begin_function (dotmain, 0, current_symtab, 0,
 								   current_storage);
-	current_symtab = current_func->locals;
 	code = new_block_expr (0);
-	append_expr (code, function_expr (new_symbol_expr (program), 0));
-	append_expr (code, return_expr (current_func, exitcode));
-	build_code_function (dotmain, 0, code);
+	code->block.scope = current_func->locals;
+	auto call = new_call_expr (new_symbol_expr (program), nullptr, nullptr);
+	append_expr (code, call);
+	append_expr (code, new_return_expr (exitcode));
+	build_code_function (dotmain, 0, code, ctx);
 }
 
 static const expr_t *
@@ -283,11 +284,10 @@ program
 			current_func = begin_function ($1, 0, current_symtab, 0,
 										   current_storage);
 			current_symtab = current_func->locals;
-			auto statements = (expr_t *) expr_process ($4, ctx);
-			build_code_function ($1, 0, statements);
+			build_code_function ($1, 0, $4, ctx);
 			current_symtab = st;
 
-			build_dotmain ($1);
+			build_dotmain ($1, ctx);
 			current_symtab = st;
 		}
 	;
@@ -393,8 +393,7 @@ subprogram_declaration
 			}
 			auto ret_expr = new_return_expr (function_return (current_func));
 			append_expr (statements, ret_expr);
-			statements = (expr_t *) expr_process (statements, ctx);
-			build_code_function (fsym, 0, statements);
+			build_code_function (fsym, 0, statements, ctx);
 			current_symtab = current_func->parameters->parent;
 			current_storage = $<spec>3.storage;
 		}

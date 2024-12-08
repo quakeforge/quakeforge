@@ -344,8 +344,7 @@ function_definition
 		{
 			auto spec = $1;
 			auto sym = spec.sym;
-			expr_t *statments = (expr_t *) expr_process ($3, ctx);
-			build_code_function (sym, nullptr, statments);
+			build_code_function (sym, nullptr, (expr_t *) $3, ctx);
 			current_symtab = $<symtab>2;
 			current_storage = sc_global;//FIXME
 			current_func = nullptr;

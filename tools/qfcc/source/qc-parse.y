@@ -873,8 +873,7 @@ qc_code_func
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($6, ctx);
-			build_code_function ($1, $3, statements);
+			build_code_function ($1, $3, $6, ctx);
 			current_symtab = $<funcstate>5.symtab;
 			current_func = $<funcstate>5.function;
 			restore_storage ($4);
@@ -1191,8 +1190,7 @@ function_body
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($5, ctx);
-			build_code_function ($<symbol>2, $1, statements);
+			build_code_function ($<symbol>2, $1, $5, ctx);
 			current_symtab = $<funcstate>4.symtab;
 			current_func = $<funcstate>4.function;
 			restore_storage ($3);
@@ -2634,8 +2632,7 @@ methoddef
 		}
 	  compound_statement_ns
 		{
-			auto statements = (expr_t *) expr_process ($7, ctx);
-			build_code_function ($<symbol>4, $3, statements);
+			build_code_function ($<symbol>4, $3, $7, ctx);
 			current_symtab = $<funcstate>6.symtab;
 			current_func = $<funcstate>6.function;
 			restore_storage ($5);

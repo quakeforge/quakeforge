@@ -1179,8 +1179,11 @@ build_function (symbol_t *fsym)
 
 function_t *
 build_code_function (symbol_t *fsym, const expr_t *state_expr,
-					 expr_t *statements)
+					 expr_t *statements, rua_ctx_t *ctx)
 {
+	if (ctx) {
+		statements = (expr_t *) expr_process (statements, ctx);
+	}
 	if (fsym->sy_type != sy_func)	// probably in error recovery
 		return 0;
 	build_function (fsym);
@@ -1315,5 +1318,5 @@ emit_ctor (void)
 	auto ctor_sym = new_symbol_type (".ctor", &type_func);
 	ctor_sym = function_symbol ((specifier_t) { .sym = ctor_sym });
 	current_func = begin_function (ctor_sym, 0, current_symtab, 1, sc_static);
-	build_code_function (ctor_sym, 0, pr.ctor_exprs);
+	build_code_function (ctor_sym, 0, pr.ctor_exprs, nullptr);
 }

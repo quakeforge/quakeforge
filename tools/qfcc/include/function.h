@@ -215,8 +215,8 @@ const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
 function_t *begin_function (symbol_t *sym, const char *nicename,
 							symtab_t *parent, int far,
 							enum storage_class_e storage);
-function_t *build_code_function (symbol_t *fsym,
-								 const expr_t *state_expr, expr_t *statements);
+function_t *build_code_function (symbol_t *fsym, const expr_t *state_expr,
+								 expr_t *statements, rua_ctx_t *ctx);
 function_t *build_builtin_function (symbol_t *sym, const char *ext_name,
 									const expr_t *bi_val, int far,
 									enum storage_class_e storage);
