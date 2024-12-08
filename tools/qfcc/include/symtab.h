@@ -59,6 +59,11 @@ typedef struct symconv_s {
 	void       *data;
 } symconv_t;
 
+typedef struct {
+	const expr_t *lvalue;
+	const expr_t *rvalue;
+} sy_xvalue_t;
+
 typedef struct var_s {
 	enum storage_class_e storage;
 } var_t;
@@ -87,6 +92,7 @@ typedef struct symbol_s {
 		struct rua_macro_s *macro;	///< sy_macro
 		struct symtab_s *namespace;	///< sy_namespace
 		ex_list_t   list;			///< sy_list
+		sy_xvalue_t xvalue;			///< sy_xvalue
 	};
 } symbol_t;
 

@@ -397,6 +397,11 @@ typedef struct {
 	const expr_t *end_value;		///< for case value ranges (otherwise null)
 } ex_caselabel_t;
 
+typedef struct {
+	const expr_t *expr;
+	bool        lvalue;			///< rvalue if false
+} ex_xvalue_t;
+
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
@@ -449,6 +454,7 @@ typedef struct expr_s {
 		ex_intrinsic_t intrinsic;		///< intrinsic intruction expression
 		ex_switch_t switchblock;		///< switch block expression
 		ex_caselabel_t caselabel;		///< case label expression
+		ex_xvalue_t xvalue;				///< lvalue/rvalue specific expression
 	};
 } expr_t;
 
@@ -1015,6 +1021,7 @@ expr_t *new_intrinsic_expr (const expr_t *expr_list);
 expr_t *new_switch_expr (const expr_t *test, const expr_t *body,
 						 const expr_t *break_label);
 expr_t *new_caselabel_expr (const expr_t *value, const expr_t *end_value);
+expr_t *new_xvalue_expr (const expr_t *expr, bool lvalue);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

@@ -210,6 +210,16 @@ edag_add_expr (const expr_t *expr)
 					return e;
 				}
 				break;
+			case ex_xvalue:
+				bug (expr, "should xvalue happen here?");
+				if (e->xvalue.expr == expr->xvalue.expr
+					&& e->xvalue.lvalue == expr->xvalue.lvalue) {
+					// never dag an lvalue
+					if (!e->xvalue.lvalue) {
+						return e;
+					}
+				}
+				break;
 		}
 	}
 	DARRAY_APPEND (&expr_dag, expr);

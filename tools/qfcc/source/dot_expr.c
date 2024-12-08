@@ -473,6 +473,20 @@ print_intrinsic (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_xvalue (dstring_t *dstr, const expr_t *e, int level, int id,
+			  const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->xvalue.expr, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->xvalue.expr);
+	const char *b = e->xvalue.lvalue ? "Q" : "";
+	const char *a = e->xvalue.lvalue ? "" : "Q";
+	dasprintf (dstr, "%*se_%p [label=\"%s%c%s\\n%d\"];\n", indent, "", e,
+			   b, '=', a, e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -932,6 +946,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_loop] = nullptr,
 		[ex_select] = print_select,
 		[ex_intrinsic] = print_intrinsic,
+		[ex_xvalue] = print_xvalue,
 	};
 	int         indent = level * 2 + 2;
 

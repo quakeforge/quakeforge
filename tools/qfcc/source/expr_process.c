@@ -644,6 +644,24 @@ proc_caselabel (const expr_t *expr, rua_ctx_t *ctx)
 	return current_target.proc_caselabel (expr, ctx);
 }
 
+static const expr_t *
+proc_xvalue (const expr_t *expr, rua_ctx_t *ctx)
+{
+	auto xvalue = expr->xvalue.expr;
+	if (xvalue->type == ex_symbol && xvalue->symbol->sy_type == sy_xvalue) {
+		if (expr->xvalue.lvalue) {
+			auto xv = xvalue->symbol->xvalue.lvalue;
+			if (!xv || !is_lvalue (xv)) {
+				return error (xv, "invalid lvalue");
+			}
+			xvalue = xv;
+		} else {
+			xvalue = xvalue->symbol->xvalue.rvalue;
+		}
+	}
+	return expr_process (xvalue, ctx);
+}
+
 const expr_t *
 expr_process (const expr_t *expr, rua_ctx_t *ctx)
 {
@@ -677,6 +695,7 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 		[ex_intrinsic] = proc_intrinsic,
 		[ex_switch] = proc_switch,
 		[ex_caselabel] = proc_caselabel,
+		[ex_xvalue] = proc_xvalue,
 	};
 
 	if (expr->type >= ex_count) {

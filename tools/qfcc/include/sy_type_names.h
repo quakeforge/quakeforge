@@ -48,6 +48,7 @@ SY_TYPE(convert)				///< symbol refers to a conversion function
 SY_TYPE(macro)					///< symbol refers to a macro definition
 SY_TYPE(namespace)				///< symbol refers to a namespace definition
 SY_TYPE(list)
+SY_TYPE(xvalue)					///< symbol has different lvalue and rvalue
 
 #undef SY_TYPE
 

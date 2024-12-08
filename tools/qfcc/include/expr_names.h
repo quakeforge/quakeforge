@@ -80,6 +80,7 @@ EX_EXPR(select)		///< select construct expression (::ex_select_t)
 EX_EXPR(intrinsic)	///< intrinsic instruction expression (::ex_intrinsic_t)
 EX_EXPR(switch)		///< switch expression (::ex_switch_t)
 EX_EXPR(caselabel)	///< case expression (::ex_caselabel_t)
+EX_EXPR(xvalue)		///< xvalue expression (::ex_xvalue_t)
 
 #undef EX_EXPR
 

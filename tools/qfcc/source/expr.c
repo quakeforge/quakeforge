@@ -81,6 +81,9 @@ get_type (const expr_t *e)
 			}
 			type = get_type (e->inout.out);
 			break;
+		case ex_xvalue:
+			bug (e, "should xvalue happen here?");
+			return get_type (e->xvalue.expr);
 		case ex_branch:
 			type = e->branch.ret_type;
 			break;
@@ -1991,6 +1994,9 @@ has_function_call (const expr_t *e)
 					|| has_function_call (e->array.index));
 		case ex_switch:
 			return has_function_call (e->switchblock.test);
+		case ex_xvalue:
+			bug (e, "should xvalue happen here?");
+			return has_function_call (e->xvalue.expr);
 		case ex_count:
 			break;
 	}
@@ -2302,6 +2308,18 @@ new_caselabel_expr (const expr_t *value, const expr_t *end_value)
 		.end_value = end_value,
 	};
 	return cl;
+}
+
+expr_t *
+new_xvalue_expr (const expr_t *expr, bool lvalue)
+{
+	auto xv = new_expr ();
+	xv->type = ex_xvalue;
+	xv->xvalue = (ex_xvalue_t) {
+		.expr = expr,
+		.lvalue = lvalue,
+	};
+	return xv;
 }
 
 expr_t *
