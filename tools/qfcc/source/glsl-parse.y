@@ -332,19 +332,16 @@ function_definition
 			auto spec = $1;
 			spec.sym->params = spec.params;
 			spec.is_overload = true;
-			auto sym = function_symbol (spec);
-			current_func = begin_function (sym, nullptr, current_symtab,
-										   false, spec.storage);
+			spec.sym = function_symbol (spec);
+			current_func = begin_function (spec, nullptr, current_symtab);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-			spec.sym = sym;
 			$1 = spec;
 		}
 	  compound_statement_no_new_scope
 		{
 			auto spec = $1;
-			auto sym = spec.sym;
-			build_code_function (sym, nullptr, (expr_t *) $3, ctx);
+			build_code_function (spec, nullptr, (expr_t *) $3, ctx);
 			current_symtab = $<symtab>2;
 			current_storage = sc_global;//FIXME
 			current_func = nullptr;

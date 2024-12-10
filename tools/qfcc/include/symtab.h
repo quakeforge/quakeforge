@@ -107,6 +107,7 @@ typedef enum {
 	stab_enum,
 	stab_label,
 	stab_block,
+	stab_bypass,				///< symbols are added to parent
 } stab_type_e;
 
 typedef struct symtab_s {

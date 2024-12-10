@@ -161,14 +161,17 @@ build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
-	current_func = begin_function (dotmain, 0, current_symtab, 0,
-								   current_storage);
+	auto spec = (specifier_t) {
+		.sym = dotmain,
+		.storage = current_storage,
+	};
+	current_func = begin_function (spec, nullptr, current_symtab);
 	code = new_block_expr (0);
 	code->block.scope = current_func->locals;
 	auto call = new_call_expr (new_symbol_expr (program), nullptr, nullptr);
 	append_expr (code, call);
 	append_expr (code, new_return_expr (exitcode));
-	build_code_function (dotmain, 0, code, ctx);
+	build_code_function (spec, 0, code, ctx);
 }
 
 static const expr_t *
@@ -281,10 +284,13 @@ program
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
 
-			current_func = begin_function ($1, 0, current_symtab, 0,
-										   current_storage);
+			auto spec = (specifier_t) {
+				.sym = $1,
+				.storage = current_storage,
+			};
+			current_func = begin_function (spec, nullptr, current_symtab);
 			current_symtab = current_func->locals;
-			build_code_function ($1, 0, $4, ctx);
+			build_code_function (spec, 0, $4, ctx);
 			current_symtab = st;
 
 			build_dotmain ($1, ctx);
@@ -367,25 +373,25 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			$<spec>$.storage = current_storage;
 			auto sym = $1;
 			// always an sy_xvalue with callable symbol in lvalue and
 			// actual function symbol in rvalue
 			auto csym = (symbol_t *) sym->xvalue.lvalue;
 			auto fsym = (symbol_t *) sym->xvalue.rvalue;
-			current_func = begin_function (fsym, sym->name, current_symtab, 0,
-										   current_storage);
+			auto spec = (specifier_t) {
+				.sym = fsym,
+				.storage = current_storage,
+			};
+			current_func = begin_function (spec, sym->name, current_symtab);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 			// null for procedures, valid symbol expression for functions
 			csym->xvalue.lvalue = function_return (current_func);
+			$<spec>$ = spec;
 		}
 	  declarations compound_statement ';'
 		{
-			auto sym = $1;
-			// always an sy_xvalue with callable symbol in lvalue and
-			// actual function symbol in rvalue
-			auto fsym = (symbol_t *) sym->xvalue.rvalue;
+			auto spec = $<spec>3;
 			auto statements = $5;
 			if (!statements) {
 				statements = new_block_expr (0);
@@ -393,17 +399,20 @@ subprogram_declaration
 			}
 			auto ret_expr = new_return_expr (function_return (current_func));
 			append_expr (statements, ret_expr);
-			build_code_function (fsym, 0, statements, ctx);
+			build_code_function (spec, 0, statements, ctx);
 			current_symtab = current_func->parameters->parent;
-			current_storage = $<spec>3.storage;
+			current_storage = spec.storage;
 		}
 	| subprogram_head ASSIGNOP '#' VALUE ';'
 		{
 			auto sym = $1;
 			// always an sy_xvalue with callable symbol in lvalue and
 			// actual function symbol in rvalue
-			auto fsym = (symbol_t *) sym->xvalue.rvalue;
-			build_builtin_function (fsym, sym->name, $4, 0, current_storage);
+			auto spec = (specifier_t) {
+				.sym = (symbol_t *) sym->xvalue.rvalue,
+				.storage = current_storage,
+			};
+			build_builtin_function (spec, sym->name, $4);
 		}
 	;
 

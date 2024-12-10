@@ -152,6 +152,12 @@ symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 	if (symbol->table)
 		internal_error (0, "symbol '%s' is already in another symbol table",
 						symbol->name);
+	if (symtab->type == stab_bypass) {
+		if (!symtab->parent) {
+			internal_error (0, "bypass symbol table with no parent");
+		}
+		symtab = symtab->parent;
+	}
 	if ((s = Hash_Find (symtab->tab, symbol->name)))
 		return s;
 	Hash_Add (symtab->tab, symbol);

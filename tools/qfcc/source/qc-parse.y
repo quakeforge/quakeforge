@@ -257,8 +257,12 @@ static expr_t *local_expr;
 static void
 end_generic_scope (void)
 {
-	generic_scope = false;
+	if (generic_symtab != current_symtab || !generic_symtab->parent) {
+		internal_error (0, "scope stack tangled?");
+	}
+	current_symtab = generic_symtab->parent;
 	generic_symtab = nullptr;
+	generic_scope = false;
 }
 
 static void
@@ -662,6 +666,23 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 	return append_decl (decl, sym, init);
 }
 
+static symtab_t *
+pop_scope (symtab_t *current)
+{
+	auto parent = current->parent;
+	if (!parent) {
+		internal_error (0, "scope stack underflow");
+	}
+	if (parent->type == stab_bypass) {
+		if (!parent->parent) {
+			internal_error (0, "bypass scope with no parent");
+		}
+		// reconnect the current scope to the parent of the bypassed scope
+		current->parent = parent->parent;
+	}
+	return parent;
+}
+
 %}
 
 %expect 2
@@ -681,7 +702,7 @@ program
 external_def_list
 	: /* empty */
 		{
-			if (!generic_block) {
+			if (!current_symtab) {
 				current_symtab = pr.symtab;
 			}
 		}
@@ -832,8 +853,8 @@ qc_nocode_func
 			const expr_t *bi_val = expr_process ($4, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
-			symbol_t   *sym = function_symbol (spec);
-			build_builtin_function (sym, nullptr, bi_val, 0, spec.storage);
+			spec.sym = function_symbol (spec);
+			build_builtin_function (spec, nullptr, bi_val);
 		}
 	| identifier '=' intrinsic
 		{
@@ -858,24 +879,24 @@ qc_code_func
 	: identifier '=' optional_state_expr
 	  save_storage
 		{
-			$<funcstate>$ = (funcstate_t) {
-				.symtab = current_symtab,
+			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			auto fs = (funcstate_t) {
 				.function = current_func,
 			};
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
 			spec.is_overload |= ctx->language->always_overload;
-			symbol_t   *sym = function_symbol (spec);
-			current_func = begin_function (sym, 0, current_symtab, 0,
-										   spec.storage);
+			spec.sym = function_symbol (spec);
+			current_func = begin_function (spec, nullptr, current_symtab);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
-			$1 = sym;
+			fs.spec = spec;
+			$<funcstate>$ = fs;
 		}
 	  compound_statement_ns
 		{
-			build_code_function ($1, $3, $6, ctx);
-			current_symtab = $<funcstate>5.symtab;
-			current_func = $<funcstate>5.function;
+			auto fs = $<funcstate>5;
+			build_code_function (fs.spec, $3, $6, ctx);
+			current_symtab = pop_scope (current_func->parameters);
+			current_func = fs.function;
 			restore_storage ($4);
 		}
 	;
@@ -1171,29 +1192,34 @@ save_storage
 	;
 
 function_body
-	: method_optional_state_expr
+	: method_optional_state_expr[state]
 		{
-			specifier_t spec = default_type ($<spec>0, $<spec>0.sym);
+			specifier_t spec = $<spec>0;
+			if (!spec.is_generic) {
+				spec = default_type (spec, spec.sym);
+			}
 			spec.is_overload |= ctx->language->always_overload;
-			$<symbol>$ = function_symbol (spec);
+			spec.sym = function_symbol (spec);
+			$<spec>$ = spec;
 		}
-	  save_storage
+	  save_storage[storage]
 		{
 			$<funcstate>$ = (funcstate_t) {
-				.symtab = current_symtab,
 				.function = current_func,
 			};
-			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
-										   $<spec>-1.storage);
+			auto spec = $<spec>2;
+			current_func = begin_function (spec, nullptr, current_symtab);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
-	  compound_statement_ns
+	  compound_statement_ns[body]
 		{
-			build_code_function ($<symbol>2, $1, $5, ctx);
-			current_symtab = $<funcstate>4.symtab;
-			current_func = $<funcstate>4.function;
-			restore_storage ($3);
+			auto spec = $<spec>2;
+			auto funcstate = $<funcstate>4;
+			build_code_function (spec, $state, $body, ctx);
+			current_symtab = pop_scope (current_func->parameters);
+			current_func = funcstate.function;
+			restore_storage ($storage);
 		}
 	| '=' '#' expr ';'
 		{
@@ -1201,8 +1227,8 @@ function_body
 			const expr_t *bi_val = expr_process ($3, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
-			symbol_t   *sym = function_symbol (spec);
-			build_builtin_function (sym, nullptr, bi_val, 0, spec.storage);
+			spec.sym = function_symbol (spec);
+			build_builtin_function (spec, nullptr, bi_val);
 		}
 	| '=' intrinsic
 		{
@@ -1232,6 +1258,9 @@ storage_class
 			} else {
 				generic_scope = true;
 			}
+			generic_symtab->type = stab_bypass;
+			generic_symtab->parent = current_symtab;
+			current_symtab = generic_symtab;
 		}
 	| ATTRIBUTE '(' attribute_list ')'
 		{
@@ -1380,7 +1409,7 @@ optional_enum_list
 enum_list
 	: '{' enum_init enumerator_list optional_comma '}'
 		{
-			current_symtab = current_symtab->parent;
+			current_symtab = pop_scope (current_symtab);
 			$$ = finish_enum ($3);
 		}
 	;
@@ -1467,7 +1496,7 @@ struct_list
 		{
 			symbol_t   *sym;
 			symtab_t   *symtab = current_symtab;
-			current_symtab = symtab->parent;
+			current_symtab = pop_scope (symtab);
 
 			if ($<op>1) {
 				sym = $<symbol>2;
@@ -1841,7 +1870,7 @@ end_scope
 	: /* empty */
 		{
 			if (!options.traditional) {
-				current_symtab = current_symtab->parent;
+				current_symtab = pop_scope (current_symtab);
 			}
 		}
 	;
@@ -1980,7 +2009,7 @@ statement
 		}
 	  compound_statement
 		{
-			current_symtab = current_symtab->parent;
+			current_symtab = pop_scope (current_symtab);
 			$$ = $9;
 		}
 	| ALGEBRA '(' TYPE_SPEC ')'
@@ -1990,7 +2019,7 @@ statement
 		}
 	  compound_statement
 		{
-			current_symtab = current_symtab->parent;
+			current_symtab = pop_scope (current_symtab);
 			$$ = $6;
 		}
 	| ALGEBRA '(' TYPE_NAME ')'
@@ -2000,7 +2029,7 @@ statement
 		}
 	  compound_statement
 		{
-			current_symtab = current_symtab->parent;
+			current_symtab = pop_scope (current_symtab);
 			$$ = $6;
 		}
 	| comma_expr ';'
@@ -2523,7 +2552,7 @@ ivar_decl_list
 		{
 			symtab_t   *tab = $<symtab>1;
 			$$ = current_symtab;
-			current_symtab = tab->parent;
+			current_symtab = pop_scope (tab);
 			tab->parent = 0;
 
 			tab = $$->parent;	// preserve the ivars inheritance chain
@@ -2615,14 +2644,18 @@ methoddef
 			symbol_t   *sym = $<symbol>4;
 			symtab_t   *ivar_scope;
 
-			$<funcstate>$ = (funcstate_t) {
-				.symtab = current_symtab,
-				.function = current_func,
+			auto spec = (specifier_t) {
+				.sym = sym,
+				.storage = sc_static,
+				.is_far = true,
 			};
 
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
-			current_func = begin_function (sym, nicename, ivar_scope, 1,
-										   sc_static);
+			$<funcstate>$ = (funcstate_t) {
+				.symtab = ivar_scope,
+				.function = current_func,
+			};
+			current_func = begin_function (spec, nicename, ivar_scope);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->locals);
 			method->func = sym->metafunc->func;
@@ -2632,22 +2665,29 @@ methoddef
 		}
 	  compound_statement_ns
 		{
-			build_code_function ($<symbol>4, $3, $7, ctx);
-			current_symtab = $<funcstate>6.symtab;
-			current_func = $<funcstate>6.function;
+			auto fs = $<funcstate>6;
+			auto fsym = $<symbol>4;
+			fs.spec.sym = fsym;
+			build_code_function (fs.spec, $3, $7, ctx);
+			current_symtab = pop_scope (fs.symtab);
+			current_func = fs.function;
 			restore_storage ($5);
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
-			symbol_t   *sym;
 			method_t   *method = $2;
 			const expr_t *bi_val = expr_process ($5, ctx);
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
-			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, nullptr, bi_val, 1, sc_static);
-			method->func = sym->metafunc->func;
+
+			auto spec = (specifier_t) {
+				.sym = method_symbol (current_class, method),
+				.storage = sc_static,
+				.is_far = true,
+			};
+			build_builtin_function (spec, nullptr, bi_val);
+			method->func = spec.sym->metafunc->func;
 			method->def = method->func->def;
 		}
 	;
@@ -3127,9 +3167,6 @@ qc_keyword_or_id (QC_YYSTYPE *lval, const char *token, rua_ctx_t *ctx)
 	}
 
 	symbol_t   *sym = nullptr;
-	if (generic_symtab) {
-		sym = symtab_lookup (generic_symtab, token);
-	}
 	if (!sym) {
 		sym = symtab_lookup (current_symtab, token);
 	}

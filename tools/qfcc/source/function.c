@@ -1010,10 +1010,18 @@ value_too_large (const type_t *val_type)
 static void
 check_function (symbol_t *fsym)
 {
+	function_t *func = fsym->metafunc->func;
 	param_t    *params = fsym->params;
 	param_t    *p;
 	int         i;
 	auto ret_type = fsym->type->func.ret_type;
+
+	if (!func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
 
 	if (!ret_type || !type_size (ret_type)) {
 		error (0, "return type is an incomplete type");
@@ -1047,15 +1055,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	function_t *func = fsym->metafunc->func;
 	symtab_t   *parameters;
 	symtab_t   *locals;
-
-	if (!func) {
-		internal_error (0, "function %s not defined", fsym->name);
-	}
-	if (!is_func (func->type)) {
-		internal_error (0, "function type %s not a funciton", fsym->name);
-	}
-
-	check_function (fsym);
 
 	func->label_scope = new_symtab (0, stab_label);
 
@@ -1122,9 +1121,9 @@ add_function (function_t *f)
 }
 
 function_t *
-begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
-				int far, storage_class_t storage)
+begin_function (specifier_t spec, const char *nicename, symtab_t *parent)
 {
+	auto sym = spec.sym;
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
 		sym = new_symbol_type (sym->name, &type_func);
@@ -1143,9 +1142,9 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 							   });
 	}
 
-	defspace_t *space = far ? pr.far_data : sym->table->space;
+	defspace_t *space = spec.is_far ? pr.far_data : sym->table->space;
 
-	func = make_function (sym, nicename, space, storage);
+	func = make_function (sym, nicename, space, spec.storage);
 	if (!func->def->external) {
 		func->def->initialized = 1;
 		func->def->constant = 1;
@@ -1163,6 +1162,8 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 		func->line_info = lineno - pr.linenos;
 	}
 
+	check_function (sym);
+
 	build_scope (sym, parent);
 	return func;
 }
@@ -1177,58 +1178,60 @@ build_function (symbol_t *fsym)
 	}
 }
 
-function_t *
-build_code_function (symbol_t *fsym, const expr_t *state_expr,
+void
+build_code_function (specifier_t spec, const expr_t *state_expr,
 					 expr_t *statements, rua_ctx_t *ctx)
 {
+	auto fsym = spec.sym;
 	if (ctx) {
 		statements = (expr_t *) expr_process (statements, ctx);
 	}
-	if (fsym->sy_type != sy_func)	// probably in error recovery
-		return 0;
+	if (fsym->sy_type != sy_func) {	// probably in error recovery
+		return;
+	}
 	build_function (fsym);
 	if (state_expr) {
 		prepend_expr (statements, state_expr);
 	}
 	function_t *func = fsym->metafunc->func;
 	current_target.build_code (func, statements);
-
-	return fsym->metafunc->func;
 }
 
-function_t *
-build_builtin_function (symbol_t *sym, const char *ext_name,
-						const expr_t *bi_val, int far, storage_class_t storage)
+void
+build_builtin_function (specifier_t spec, const char *ext_name,
+						const expr_t *bi_val)
 {
+	auto sym = spec.sym;
 	int         bi;
 
 	if (sym->sy_type != sy_func) {
 		error (bi_val, "%s is not a function", sym->name);
-		return 0;
+		return;
 	}
 	if (!is_int_val (bi_val)
 		&& !(type_default != &type_int && is_float_val (bi_val))) {
 		error (bi_val, "invalid constant for = #");
-		return 0;
+		return;
 	}
 	if (sym->metafunc->meta_type == mf_generic) {
-		return 0;
+		return;
 	}
 
 	function_t *func = sym->metafunc->func;
 	if (func && func->def && func->def->initialized) {
 		error (bi_val, "%s redefined", sym->name);
-		return 0;
+		return;
 	}
 
-	defspace_t *space = far ? pr.far_data : sym->table->space;
-	func = make_function (sym, nullptr, space, storage);
+	defspace_t *space = spec.is_far ? pr.far_data : sym->table->space;
+	func = make_function (sym, nullptr, space, spec.storage);
 	if (ext_name) {
 		func->s_name = ReuseString (ext_name);
 	}
 
-	if (func->def->external)
-		return 0;
+	if (func->def->external) {
+		return;
+	}
 
 	func->def->initialized = 1;
 	func->def->constant = 1;
@@ -1245,17 +1248,18 @@ build_builtin_function (symbol_t *sym, const char *ext_name,
 	}
 	if (bi < 0) {
 		error (bi_val, "builtin functions must be positive or 0");
-		return 0;
+		return;
 	}
 	func->builtin = bi;
 	reloc_def_func (func, func->def);
 	build_function (sym);
 
+	check_function (sym);
+
 	// for debug info
 	build_scope (sym, current_symtab);
 	func->parameters->space->size = 0;
 	func->locals->space = func->parameters->space;
-	return func;
 }
 
 void
@@ -1315,8 +1319,12 @@ emit_ctor (void)
 		return;
 	}
 
-	auto ctor_sym = new_symbol_type (".ctor", &type_func);
-	ctor_sym = function_symbol ((specifier_t) { .sym = ctor_sym });
-	current_func = begin_function (ctor_sym, 0, current_symtab, 1, sc_static);
-	build_code_function (ctor_sym, 0, pr.ctor_exprs, nullptr);
+	auto spec = (specifier_t) {
+		.sym = new_symbol_type (".ctor", &type_func),
+		.storage = sc_static,
+		.is_far = true,
+	};
+	spec.sym = function_symbol (spec);
+	current_func = begin_function (spec, nullptr, current_symtab);
+	build_code_function (spec, 0, pr.ctor_exprs, nullptr);
 }

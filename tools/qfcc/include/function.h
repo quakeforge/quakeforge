@@ -212,14 +212,12 @@ function_t *make_function (symbol_t *sym, const char *nice_name,
 						enum storage_class_e storage);
 symbol_t *function_symbol (specifier_t spec);
 const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
-function_t *begin_function (symbol_t *sym, const char *nicename,
-							symtab_t *parent, int far,
-							enum storage_class_e storage);
-function_t *build_code_function (symbol_t *fsym, const expr_t *state_expr,
-								 expr_t *statements, rua_ctx_t *ctx);
-function_t *build_builtin_function (symbol_t *sym, const char *ext_name,
-									const expr_t *bi_val, int far,
-									enum storage_class_e storage);
+function_t *begin_function (specifier_t spec, const char *nicename,
+							symtab_t *parent);
+void build_code_function (specifier_t spec, const expr_t *state_expr,
+						  expr_t *statements, rua_ctx_t *ctx);
+void build_builtin_function (specifier_t spec, const char *ext_name,
+							 const expr_t *bi_val);
 void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic);
 void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);

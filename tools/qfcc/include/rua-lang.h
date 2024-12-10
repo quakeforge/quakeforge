@@ -84,6 +84,7 @@ typedef struct rua_tok_s {
 typedef struct {
 	symtab_t   *symtab;
 	function_t *function;
+	specifier_t spec;
 } funcstate_t;
 
 typedef union rua_val_s {
