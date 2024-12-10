@@ -94,6 +94,7 @@ typedef struct symbol_s {
 		ex_list_t   list;			///< sy_list
 		sy_xvalue_t xvalue;			///< sy_xvalue
 	};
+	void       *return_addr;
 } symbol_t;
 
 typedef enum {

@@ -75,6 +75,7 @@ new_symbol (const char *name)
 	if (name) {
 		symbol->name = save_string (name);
 	}
+	symbol->return_addr = __builtin_return_address (0);
 	return symbol;
 }
 
@@ -84,6 +85,7 @@ new_symbol_type (const char *name, const type_t *type)
 	symbol_t   *symbol;
 	symbol = new_symbol (name);
 	symbol->type = type;
+	symbol->return_addr = __builtin_return_address (0);
 	return symbol;
 }
 
