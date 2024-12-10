@@ -538,7 +538,7 @@ default_type (specifier_t spec, const symbol_t *sym)
 				spec.type = &type_uint;
 			}
 		}
-	} else {
+	} else if (!spec.type_expr) {
 		if (spec.is_long) {
 			if (spec.is_unsigned) {
 				spec.type = type_ulong_uint;
@@ -553,7 +553,7 @@ default_type (specifier_t spec, const symbol_t *sym)
 			}
 		}
 	}
-	if (!spec.type) {
+	if (!spec.type && !spec.type_expr) {
 		spec.type = type_default;
 		if (sym) {
 			warning (0, "type defaults to '%s' in declaration of '%s'",
