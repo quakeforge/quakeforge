@@ -58,6 +58,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/flow.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
@@ -682,11 +683,11 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 }
 
 static symbol_t *
-create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
+create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
+					const type_t **types)
 {
 	int num_params = calltype->num_params;
 	auto call_params = calltype->params;
-	const type_t *types[g->num_types] = {};
 	const type_t *param_types[num_params];
 	param_qual_t param_quals[num_params];
 	const type_t *return_type;
@@ -746,6 +747,7 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
 		sym->metafunc = new_metafunc ();
 		*sym->metafunc = *fsym->metafunc;
 		sym->metafunc->expr = g->expr;
+		sym->metafunc->can_inline = g->can_inline;
 		symtab_addsymbol (fsym->table, sym);
 	}
 	return sym;
@@ -789,7 +791,8 @@ get_function (const char *name, specifier_t spec)
 		}
 		auto gen = find_generic_function (genfuncs, &fexpr, &calltype, false);
 		if (gen) {
-			auto sym = create_generic_sym (gen, &fexpr, &calltype);
+			const type_t *ref_types[gen->num_types] = {};
+			auto sym = create_generic_sym (gen, &fexpr, &calltype, ref_types);
 			if (sym == fexpr.symbol
 				|| sym->metafunc == fexpr.symbol->metafunc) {
 				internal_error (0, "genfunc oops");
@@ -859,6 +862,7 @@ function_symbol (specifier_t spec)
 			.full_name = name,
 			.loc = pr.loc,
 			.meta_type = mf_generic,
+			.genfunc = genfunc,
 		};
 		Hash_Add (metafuncs, func);
 		Hash_Add (function_map, func);
@@ -893,6 +897,46 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 	*nf = *fexpr;
 	nf->symbol = sym;
 	return nf;
+}
+
+static void
+build_generic_scope (symbol_t *fsym, symtab_t *parent, genfunc_t *genfunc,
+					 const type_t **ref_types)
+{
+	auto func = fsym->metafunc->func;
+	func->label_scope = new_symtab (0, stab_label);
+
+	auto parameters = new_symtab (parent, stab_param);
+	parameters->space = parent->space;
+	func->parameters = parameters;
+
+	auto locals = new_symtab (parameters, stab_local);
+	locals->space = parent->space;
+	func->locals = locals;
+
+	for (int i = 0; i < genfunc->num_types; i++) {
+		auto type = &genfunc->types[i];
+		auto sym = new_symbol (type->name);
+		sym->sy_type = sy_type_param;
+		if (ref_types) {
+			sym->expr = new_type_expr (ref_types[i]);
+		}
+		symtab_addsymbol (func->parameters, sym);
+	}
+}
+
+static function_t *
+new_function (const char *name, const char *nice_name)
+{
+	function_t	*f;
+
+	ALLOC (1024, function_t, functions, f);
+	f->o_name = save_string (name);
+	f->s_name = ReuseString (name);
+	f->s_file = pr.loc.file;
+	if (!(f->name = nice_name))
+		f->name = name;
+	return f;
 }
 
 const expr_t *
@@ -932,7 +976,14 @@ find_function (const expr_t *fexpr, const expr_t *params)
 		if (!gen) {
 			return new_error_expr ();
 		}
-		auto sym = create_generic_sym (gen, fexpr, &calltype);
+		const type_t *ref_types[gen->num_types] = {};
+		auto sym = create_generic_sym (gen, fexpr, &calltype, ref_types);
+		if (gen->can_inline) {
+			// the call will be inlined, so a new scope is needed every
+			// time
+			sym->metafunc->func = new_function (sym->name, gen->name);
+			build_generic_scope (sym, current_symtab, gen, ref_types);
+		}
 		return new_symbol_expr (sym);
 	}
 
@@ -1069,20 +1120,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	current_target.build_scope (fsym);
 }
 
-static function_t *
-new_function (const char *name, const char *nice_name)
-{
-	function_t	*f;
-
-	ALLOC (1024, function_t, functions, f);
-	f->o_name = save_string (name);
-	f->s_name = ReuseString (name);
-	f->s_file = pr.loc.file;
-	if (!(f->name = nice_name))
-		f->name = name;
-	return f;
-}
-
 function_t *
 make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 			   storage_class_t storage)
@@ -1142,6 +1179,15 @@ begin_function (specifier_t spec, const char *nicename, symtab_t *parent)
 							   });
 	}
 
+	if (spec.is_generic) {
+		auto genfunc = sym->metafunc->genfunc;
+		func = new_function (sym->name, nicename);
+		sym->metafunc->func = func;
+		sym->metafunc->genfunc = genfunc;
+		build_generic_scope (sym, parent, genfunc, nullptr);
+		return func;
+	}
+
 	defspace_t *space = spec.is_far ? pr.far_data : sym->table->space;
 
 	func = make_function (sym, nicename, space, spec.storage);
@@ -1183,6 +1229,16 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 					 expr_t *statements, rua_ctx_t *ctx)
 {
 	auto fsym = spec.sym;
+	if (fsym->metafunc->meta_type == mf_generic) {
+		auto genfunc = fsym->metafunc->genfunc;
+		if (genfunc->expr) {
+			error (statements, "%s already defined", fsym->name);
+			return;
+		}
+		genfunc->expr = statements;
+		genfunc->can_inline = can_inline (statements, fsym);
+		return;
+	}
 	if (ctx) {
 		statements = (expr_t *) expr_process (statements, ctx);
 	}
@@ -1271,9 +1327,7 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic)
 		return;
 	}
 	if (sym->metafunc->meta_type == mf_generic) {
-		//FIXME find a better way to find the specific genfunc
-		auto genfunc = parse_generic_function (sym->name, spec);
-		genfunc = add_generic_function (genfunc);
+		auto genfunc = sym->metafunc->genfunc;
 		if (genfunc->expr) {
 			error (intrinsic, "%s already defined", sym->name);
 			return;

@@ -41,6 +41,7 @@
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/opcodes.h"
 #include "tools/qfcc/include/rua-lang.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -706,6 +707,17 @@ type_parameter (symbol_t *sym, const expr_t *type)
 const type_t *
 resolve_type (const expr_t *te)
 {
+	if (te->type == ex_symbol) {
+		auto sym = te->symbol;
+		if (sym->type == sy_name) {
+			sym = symtab_lookup (current_symtab, sym->name);
+			if (sym && sym->sy_type == sy_type_param) {
+				te = sym->expr;
+			}
+		} else if (sym->sy_type == sy_type) {
+			return sym->type;
+		}
+	}
 	if (te->type != ex_type) {
 		internal_error (te, "not a type expression");
 	}

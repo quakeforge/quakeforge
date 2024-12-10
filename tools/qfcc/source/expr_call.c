@@ -37,11 +37,13 @@
 #include <stdlib.h>
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/idstuff.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
@@ -204,6 +206,84 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 }
 
 static expr_t *
+build_intrinsic_call (const expr_t *expr, const type_t *ftype,
+					  const expr_t **arguments, int arg_count)
+{
+	for (int i = 0; i < arg_count; i++) {
+		if (is_reference (get_type (arguments[i]))) {
+			arguments[i] = pointer_deref (arguments[i]);
+		}
+	}
+	auto call = new_intrinsic_expr (nullptr);
+	call->intrinsic.opcode = expr->intrinsic.opcode;
+	call->intrinsic.res_type = ftype->func.ret_type;
+	list_append_list (&call->intrinsic.operands,
+					  &expr->intrinsic.operands);
+	list_gather (&call->intrinsic.operands, arguments, arg_count);
+	return call;
+}
+
+static expr_t *
+build_inline_call (symbol_t *fsym, const type_t *ftype,
+				   const expr_t **arguments, int arg_count)
+{
+	auto metafunc = fsym->metafunc;
+	auto func = metafunc->func;
+
+	auto params = func->parameters;
+	auto locals = func->locals;
+
+	for (auto p = fsym->params; p; p = p->next) {
+		if (!p->selector && !p->type && !p->name) {
+			internal_error (0, "inline variadic not implemented");
+		}
+		if (!p->type) {
+			continue;						// non-param selector
+		}
+		if (is_void (p->type)) {
+			if (p->name) {
+				error (0, "invalid parameter type for %s", p->name);
+			} else if (p != fsym->params || p->next) {
+				error (0, "void must be the only parameter");
+				continue;
+			} else {
+				continue;
+			}
+		}
+		if (!p->name) {
+			notice (0, "parameter name omitted");
+			continue;
+		}
+		auto param = new_symbol_type (p->name, p->type);
+		symtab_addsymbol (params, param);
+	}
+
+	auto call = new_block_expr (nullptr);
+	call->block.scope = locals;
+
+	if (!is_void (ftype->func.ret_type)) {
+		auto spec = (specifier_t) {
+			.type = ftype->func.ret_type,
+			.storage = sc_local,
+		};
+		auto decl = new_decl_expr (spec, locals);
+		auto ret = new_symbol (".ret");
+		append_decl (decl, ret, nullptr);
+		append_expr (call, decl);
+		call->block.result = new_symbol_expr (ret);
+	}
+	auto expr = metafunc->expr;
+	if (expr->type == ex_block) {
+		expr->block.scope->parent = locals;
+	}
+	append_expr (call, expr);
+
+	auto proc = new_process_expr (call);
+
+	return proc;
+}
+
+static expr_t *
 build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 			const expr_t **arguments, const type_t **arg_types,
 			int arg_count, int param_count, const type_t *ftype)
@@ -301,26 +381,22 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		return err;
 	}
 
-	expr_t     *call = nullptr;
 	scoped_src_loc (fexpr);
 	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_func
 		&& fexpr->symbol->metafunc->expr) {
-		auto expr = fexpr->symbol->metafunc->expr;
+		auto fsym = fexpr->symbol;
+		auto metafunc = fsym->metafunc;
+		auto expr = metafunc->expr;
 		if (expr->type == ex_intrinsic) {
-			for (int i = 0; i < arg_count; i++) {
-				if (is_reference (get_type (arguments[i]))) {
-					arguments[i] = pointer_deref (arguments[i]);
-				}
-			}
-			call = new_intrinsic_expr (nullptr);
-			call->intrinsic.opcode = expr->intrinsic.opcode;
-			call->intrinsic.res_type = ftype->func.ret_type;
-			list_append_list (&call->intrinsic.operands,
-							  &expr->intrinsic.operands);
-			list_gather (&call->intrinsic.operands, arguments, arg_count);
+			return build_intrinsic_call (expr, ftype, arguments, arg_count);
 		}
+		if (metafunc->can_inline) {
+			return build_inline_call (fsym, ftype, arguments, arg_count);
+		}
+		internal_error (fexpr, "calls to inline functions that cannot be "
+						"inlined not implemented");
 	} else {
-		call = new_block_expr (0);
+		auto call = new_block_expr (nullptr);
 		call->block.is_call = 1;
 		int         num_args = 0;
 		const expr_t *arg_exprs[arg_count + 1][2];
@@ -333,8 +409,8 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		}
 		auto ret_type = ftype->func.ret_type;
 		call->block.result = new_call_expr (fexpr, arg_list, ret_type);
+		return call;
 	}
-	return call;
 }
 
 const expr_t *

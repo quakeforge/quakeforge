@@ -86,6 +86,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_intrinsic:
 			case ex_switch:
 			case ex_caselabel:
+			case ex_process:
 				// these are never put in the dag
 				return expr;
 			case ex_list:

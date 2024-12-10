@@ -100,6 +100,7 @@ get_type (const expr_t *e)
 		case ex_loop:
 		case ex_select:
 		case ex_message:
+		case ex_process:
 			internal_error (e, "unexpected expression type: %s",
 							expr_names[e->type]);
 		case ex_label:
@@ -1997,6 +1998,8 @@ has_function_call (const expr_t *e)
 		case ex_xvalue:
 			bug (e, "should xvalue happen here?");
 			return has_function_call (e->xvalue.expr);
+		case ex_process:
+			internal_error (e, "unexpected expression type");
 		case ex_count:
 			break;
 	}
@@ -2318,6 +2321,17 @@ new_xvalue_expr (const expr_t *expr, bool lvalue)
 	xv->xvalue = (ex_xvalue_t) {
 		.expr = expr,
 		.lvalue = lvalue,
+	};
+	return xv;
+}
+
+expr_t *
+new_process_expr (const expr_t *expr)
+{
+	auto xv = new_expr ();
+	xv->type = ex_process;
+	xv->process = (ex_process_t) {
+		.expr = expr,
 	};
 	return xv;
 }
@@ -2854,4 +2868,162 @@ sizeof_expr (const expr_t *expr, const type_t *type)
 		expr = new_int_expr (type_aligned_size (type), false);
 	}
 	return expr;
+}
+
+static bool
+can_inline_list (const ex_list_t *list, symbol_t *fsym)
+{
+	int count = list_count (list);
+	const expr_t *arg_exprs[count + 1] = {};
+	list_scatter (list, arg_exprs);
+	for (int i = 0; i < count; i++) {
+		if (!can_inline (arg_exprs[i], fsym)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool
+can_inline (const expr_t *expr, symbol_t *fsym)
+{
+	if (!expr) {
+		return true;
+	}
+	switch (expr->type) {
+		case ex_block:
+			return can_inline_list (&expr->block.list, fsym);
+		case ex_expr:
+			if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
+				//FIXME
+				return false;
+			}
+			return (can_inline (expr->expr.e1, fsym)
+					&& can_inline (expr->expr.e2, fsym));
+		case ex_uexpr:
+			return can_inline (expr->expr.e1, fsym);
+		case ex_symbol:
+			auto sym = expr->symbol;
+			if (sym->table == fsym->table
+				&& strcmp (sym->name, fsym->name) == 0) {
+				// recursive function, however to get here, no conditional
+				// expresions were found
+				warning (expr, "infinite recursion in %s", fsym->name);
+				return false;
+			}
+			return true;
+		case ex_vector:
+			return can_inline_list (&expr->vector.list, fsym);
+		case ex_selector:
+			return can_inline (expr->selector.sel_ref, fsym);
+		case ex_message:
+			if (!can_inline (expr->message.receiver, fsym)) {
+				return false;
+			}
+			for (auto k = expr->message.message; k; k = k->next) {
+				if (!can_inline (k->expr, fsym)) {
+					return false;
+				}
+			}
+			return true;
+		case ex_compound:
+			for (auto ele = expr->compound.head; ele; ele = ele->next) {
+				if (!can_inline (ele->expr, fsym)) {
+					return false;
+				}
+			}
+			return true;
+		case ex_memset:
+			return (can_inline (expr->memset.dst, fsym)
+					&& can_inline (expr->memset.val, fsym)
+					&& can_inline (expr->memset.count, fsym));
+		case ex_alias:
+			return (can_inline (expr->alias.expr, fsym)
+					&& can_inline (expr->alias.offset, fsym));
+		case ex_address:
+			return (can_inline (expr->address.lvalue, fsym)
+					&& can_inline (expr->address.offset, fsym));
+		case ex_assign:
+			return (can_inline (expr->assign.dst, fsym)
+					&& can_inline (expr->assign.src, fsym));
+		case ex_branch:
+			if (expr->branch.type != pr_branch_call) {
+				notice (expr, "%s", expr_names[expr->type]);
+				return false;
+			}
+			if (!can_inline (expr->branch.target, fsym)) {
+				notice (expr, "%s", expr_names[expr->type]);
+				return false;
+			}
+			auto args = (expr_t *) expr->branch.args;
+			if (!args) {
+				return true;
+			}
+			return can_inline_list (&args->list, fsym);
+		case ex_return:
+			if (expr->retrn.ret_val) {
+				return can_inline (expr->retrn.ret_val, fsym);
+			}
+			return true;
+		case ex_horizontal:
+			return can_inline (expr->hop.vec, fsym);
+		case ex_swizzle:
+			return can_inline (expr->swizzle.src, fsym);
+		case ex_extend:
+			return can_inline (expr->extend.src, fsym);
+		case ex_incop:
+			return can_inline (expr->incop.expr, fsym);
+		case ex_list:
+			return can_inline_list (&expr->list, fsym);
+		case ex_cond:
+			return (can_inline (expr->cond.test, fsym)
+					&& can_inline (expr->cond.true_expr, fsym)
+					&& can_inline (expr->cond.false_expr, fsym));
+		case ex_field:
+			return (can_inline (expr->field.object, fsym)
+					&& can_inline (expr->field.member, fsym));
+		case ex_array:
+			return (can_inline (expr->array.base, fsym)
+					&& can_inline (expr->array.index, fsym));
+		case ex_decl:
+			return can_inline_list (&expr->decl.list, fsym);
+		case ex_xvalue:
+			auto xvalue = expr->xvalue.expr;
+			if (xvalue->type == ex_symbol
+				&& xvalue->symbol->sy_type == sy_xvalue) {
+				if (expr->xvalue.lvalue) {
+					xvalue = xvalue->symbol->xvalue.lvalue;
+				} else {
+					xvalue = xvalue->symbol->xvalue.rvalue;
+				}
+			}
+			return can_inline (xvalue, fsym);
+		case ex_def:
+		case ex_temp:
+		case ex_nil:
+		case ex_value:
+		case ex_type:
+		case ex_adjstk:
+		case ex_with:
+		case ex_args:
+			return true;
+		case ex_loop://FIXME
+		case ex_state://FIXME
+		case ex_bool://FIXME
+		case ex_label://FIXME
+		case ex_labelref://FIXME
+		case ex_select://FIXME
+		case ex_switch:
+			return false;
+		case ex_error:
+		case ex_inout:
+		case ex_caselabel:
+		case ex_multivec:
+		case ex_intrinsic:
+		case ex_process:
+		case ex_count:
+			internal_error (expr, "unexpected expr %s",
+							expr_names[expr->type]);
+	}
+	internal_error (expr, "invald expr type %d", expr->type);
 }

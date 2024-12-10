@@ -140,6 +140,7 @@ is_lvalue (const expr_t *expr)
 		case ex_intrinsic:
 		case ex_switch:
 		case ex_caselabel:
+		case ex_process:
 			break;
 		case ex_cond:
 			return (is_lvalue (expr->cond.true_expr)

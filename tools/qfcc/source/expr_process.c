@@ -249,11 +249,16 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 	const expr_t *result = nullptr;
 	const expr_t *in[count + 1];
 	const expr_t *out[count + 1];
+	const expr_t *err = nullptr;
 	list_scatter (&expr->block.list, in);
 	for (int i = 0; i < count; i++) {
 		edag_flush ();
 		auto e = expr_process (in[i], ctx);
-		if (e && !is_error (e)) {
+		if (is_error (e)) {
+			err = e;
+			continue;
+		}
+		if (e) {
 			out[num_out++] = e;
 			if (expr->block.result == in[i]) {
 				result = e;
@@ -261,6 +266,10 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 		}
 	}
 	edag_flush ();
+	if (err) {
+		current_symtab = old_scope;
+		return err;
+	}
 
 	scoped_src_loc (expr);
 	auto block = new_block_expr (nullptr);
@@ -706,5 +715,9 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 						expr_names[expr->type]);
 	}
 
-	return funcs[expr->type] (expr, ctx);
+	auto proc = funcs[expr->type] (expr, ctx);
+	if (proc && proc->type == ex_process) {
+		proc = expr_process (proc->process.expr, ctx);
+	}
+	return proc;
 }

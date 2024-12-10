@@ -402,6 +402,10 @@ typedef struct {
 	bool        lvalue;			///< rvalue if false
 } ex_xvalue_t;
 
+typedef struct {
+	const expr_t *expr;
+} ex_process_t;
+
 typedef struct expr_s {
 	expr_t     *next;
 	rua_loc_t   loc;			///< source location of expression
@@ -455,6 +459,7 @@ typedef struct expr_s {
 		ex_switch_t switchblock;		///< switch block expression
 		ex_caselabel_t caselabel;		///< case label expression
 		ex_xvalue_t xvalue;				///< lvalue/rvalue specific expression
+		ex_process_t process;			///< expression than needs processing
 	};
 } expr_t;
 
@@ -1022,6 +1027,7 @@ expr_t *new_switch_expr (const expr_t *test, const expr_t *body,
 						 const expr_t *break_label);
 expr_t *new_caselabel_expr (const expr_t *value, const expr_t *end_value);
 expr_t *new_xvalue_expr (const expr_t *expr, bool lvalue);
+expr_t *new_process_expr (const expr_t *expr);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.
@@ -1147,6 +1153,7 @@ const expr_t *gather_factors (const type_t *type, int op,
 
 typedef struct rua_ctx_s rua_ctx_t;
 const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
+bool can_inline (const expr_t *expr, symbol_t *fsym);
 
 ///@}
 

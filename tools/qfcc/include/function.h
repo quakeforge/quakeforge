@@ -77,6 +77,7 @@ typedef struct genfunc_s {
 	genparam_t *params;
 	genparam_t *ret_type;
 	const expr_t *expr;				///< inline or intrinsic
+	bool        can_inline;
 } genfunc_t;
 
 typedef enum {
@@ -169,7 +170,9 @@ typedef struct metafunc_s {
 	rua_loc_t   loc;				///< source location of the function
 	mf_type_e   meta_type;			///< is this function overloaded
 	function_t *func;
+	genfunc_t  *genfunc;
 	const expr_t *expr;				///< inline or intrinsic
+	bool        can_inline;
 } metafunc_t;
 
 extern function_t *current_func;
