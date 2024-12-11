@@ -982,6 +982,7 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			// the call will be inlined, so a new scope is needed every
 			// time
 			sym->metafunc->func = new_function (sym->name, gen->name);
+			sym->metafunc->func->type = sym->type;
 			build_generic_scope (sym, current_symtab, gen, ref_types);
 		}
 		return new_symbol_expr (sym);

@@ -717,7 +717,12 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 
 	auto proc = funcs[expr->type] (expr, ctx);
 	if (proc && proc->type == ex_process) {
+		auto func = current_func;
+		if (proc->process.function) {
+			current_func = proc->process.function;
+		}
 		proc = expr_process (proc->process.expr, ctx);
+		current_func = func;
 	}
 	return proc;
 }

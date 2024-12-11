@@ -279,6 +279,7 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	append_expr (call, expr);
 
 	auto proc = new_process_expr (call);
+	proc->process.function = func;
 
 	return proc;
 }

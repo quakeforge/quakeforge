@@ -38,6 +38,7 @@
 typedef struct type_s type_t;
 typedef struct expr_s expr_t;
 typedef struct algebra_s algebra_t;
+typedef struct function_s function_t;
 
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc
@@ -404,6 +405,7 @@ typedef struct {
 
 typedef struct {
 	const expr_t *expr;
+	function_t *function;		///< for better reporting in inline functions
 } ex_process_t;
 
 typedef struct expr_s {
