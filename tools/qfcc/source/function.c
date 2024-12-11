@@ -852,6 +852,17 @@ function_symbol (specifier_t spec)
 	const char *name = sym->name;
 	metafunc_t *func = Hash_Find (function_map, name);
 
+	auto check = symtab_lookup (current_symtab, name);
+	if ((sym->table == current_symtab && sym->sy_type != sy_func)
+		|| (check && check->table == current_symtab
+			&& check->sy_type != sy_func)) {
+		auto err = new_symbol (nullptr);
+		err->sy_type = sy_expr;
+		err->expr = error (0, "`%s` redeclared as different kind of symbol",
+						   name);
+		return err;
+	}
+
 	auto genfunc = parse_generic_function (name, spec);
 	if (genfunc) {
 		add_generic_function (genfunc);
@@ -878,6 +889,17 @@ function_symbol (specifier_t spec)
 		s->sy_type = sy_func;
 		s->type = unalias_type (sym->type);
 		symtab_addsymbol (current_symtab, s);
+	}
+	if (!sym->table && strcmp (s->name, sym->name) != 0) {
+		// record unmangled function symbol to avoid false undefined symbol
+		// errors
+		sym->sy_type = sy_func;
+		sym->metafunc = new_metafunc ();
+		*sym->metafunc = (metafunc_t) {
+			.name = save_string (name),
+			.meta_type = mf_overload,
+		};
+		symtab_addsymbol (current_symtab, sym);
 	}
 	//if it existed, override the declaration's parameters and metafunc
 	s->params = sym->params;

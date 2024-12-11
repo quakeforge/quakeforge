@@ -312,6 +312,16 @@ ps_file (const expr_t *e)
 	return new_string_expr (GETSTR (e->loc.file));
 }
 
+static const expr_t *
+ps_super (const expr_t *e)
+{
+	if (current_class && strcmp (e->symbol->name, "super") == 0) {
+		// FIXME check for in message receiver expr?
+		return e;
+	}
+	return nullptr;
+}
+
 static struct {
 	const char *name;
 	const expr_t *(*expr) (const expr_t *e);
@@ -321,6 +331,7 @@ static struct {
 	{ .name = "__LINE__",            .expr = ps_line            },
 	{ .name = "__INFINITY__",        .expr = ps_infinity        },
 	{ .name = "__FILE__",            .expr = ps_file            },
+	{ .name = "super",               .expr = ps_super           },
 
 	{}
 };
@@ -332,7 +343,11 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 	for (auto bi = builtin_names; bi->name; bi++) {
 		if (strcmp (bi->name, sym->name) == 0) {
 			scoped_src_loc (expr);
-			return bi->expr (expr);
+			auto e = bi->expr (expr);
+			if (e) {
+				return bi->expr (expr);
+			}
+			break;
 		}
 	}
 	sym = symtab_lookup (current_symtab, sym->name);
@@ -344,9 +359,9 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 			return sym->convert.conv (sym, sym->convert.data);
 		}
 		scoped_src_loc (expr);
-		expr = new_symbol_expr (sym);
+		return new_symbol_expr (sym);
 	}
-	return expr;
+	return error (expr, "undefined symbol `%s`", expr->symbol->name);
 }
 
 static bool
