@@ -253,6 +253,12 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 	const expr_t *param_exprs[num_param + 1] = {};
 	list_scatter_rev (&params->list, param_exprs);
 
+	for (int i = 0; i < num_param; i++) {
+		if (is_reference (get_type (param_exprs[i]))) {
+			param_exprs[i] = pointer_deref (param_exprs[i]);
+		}
+	}
+
 	if (num_param == 1 && is_scalar (get_type (param_exprs[0]))) {
 		if (is_matrix (type)) {
 			return construct_diagonal (type, param_exprs[0], e);
