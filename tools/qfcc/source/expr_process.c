@@ -270,6 +270,12 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 		current_symtab = old_scope;
 		return err;
 	}
+	if (!result && expr->block.result) {
+		result = expr_process (expr->block.result, ctx);
+		if (is_error (result)) {
+			return result;
+		}
+	}
 
 	scoped_src_loc (expr);
 	auto block = new_block_expr (nullptr);

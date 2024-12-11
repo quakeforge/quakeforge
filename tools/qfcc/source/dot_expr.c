@@ -487,6 +487,18 @@ print_xvalue (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_process (dstring_t *dstr, const expr_t *e, int level, int id,
+			   const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->process.expr, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->process.expr);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "<process>", e->loc.line);
+}
+
+static void
 print_subexpr (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -947,6 +959,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_select] = print_select,
 		[ex_intrinsic] = print_intrinsic,
 		[ex_xvalue] = print_xvalue,
+		[ex_process] = print_process,
 	};
 	int         indent = level * 2 + 2;
 
