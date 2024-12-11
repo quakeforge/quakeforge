@@ -337,7 +337,7 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 	}
 	sym = symtab_lookup (current_symtab, sym->name);
 	if (sym) {
-		if (sym->sy_type == sy_expr) {
+		if (sym->sy_type == sy_expr || sym->sy_type == sy_type_param) {
 			return sym->expr;
 		}
 		if (sym->sy_type == sy_convert) {

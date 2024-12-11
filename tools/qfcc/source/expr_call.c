@@ -416,7 +416,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 const expr_t *
 function_expr (const expr_t *fexpr, const expr_t *args)
 {
-	if (fexpr->type == ex_symbol && fexpr->symbol->sy_type == sy_type) {
+	if (fexpr->type == ex_type) {
 		return constructor_expr (fexpr, args);
 	}
 

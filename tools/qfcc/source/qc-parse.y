@@ -163,7 +163,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
-%token				GENERIC
+%token				GENERIC CONSTRUCT
 %token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
 %token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
 %token				AT_INT AT_UINT AT_BOOL AT_FLOAT
@@ -2153,6 +2153,17 @@ cast_expr
 			}
 			$$ = new_binary_expr ('C', type_expr, $4);
 		}
+	| CONSTRUCT '(' typename ',' expr_list[args] ')' //FIXME arg_expr instead?
+		{
+			auto spec = $3;
+			auto args = $args;
+			auto type_expr = spec.type_expr;
+			if (!type_expr) {
+				spec = default_type ($typename, nullptr);
+				type_expr = new_type_expr (spec.type);
+			}
+			$$ = new_call_expr (type_expr, args, nullptr);
+		}
 	| unary_expr %prec LOW
 	;
 
@@ -3024,6 +3035,7 @@ static keyword_t qf_keywords[] = {
 	{"@dual",		QC_DUAL,		},
 	{"@undual",		QC_UNDUAL,		},
 
+	{"@construct",	QC_CONSTRUCT,	},
 	{"@generic",	QC_GENERIC,		},
 	{"@function",	QC_AT_FUNCTION,	},
 	{"@field",		QC_AT_FIELD,	},

@@ -436,14 +436,7 @@ function_call_header
 	;
 
 function_identifier
-	: type_specifier
-		{
-			auto type = $1.type;
-			auto sym = new_symbol (type->name);
-			sym->sy_type = sy_type;
-			sym->type = type;
-			$$ = new_symbol_expr (sym);
-		}
+	: type_specifier					{ $$ = new_type_expr ($1.type); }
 	| postfix_expression
 	;
 

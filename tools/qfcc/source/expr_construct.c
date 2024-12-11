@@ -287,7 +287,7 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 const expr_t *
 constructor_expr (const expr_t *e, const expr_t *params)
 {
-	auto type = e->symbol->type;
+	auto type = e->typ.type;
 	if (is_algebra (type)) {
 		return error (e, "algebra not implemented");
 	}
