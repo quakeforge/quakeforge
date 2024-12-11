@@ -1944,9 +1944,10 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	if (sym->name[0]) {
 		symtab_addsymbol (symtab, sym);
 	}
-	if (symtab->type == stab_local) {
+	if (symtab->type == stab_param || symtab->type == stab_local) {
 		if (init) {
 			if (!block && is_constexpr (init)) {
+				printf ("!block %s\n", sym->name);
 			} else if (block) {
 				auto r = new_symbol_expr (sym);
 				auto e = assign_expr (r, init);
