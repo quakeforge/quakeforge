@@ -451,10 +451,15 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 	scoped_src_loc (expr);
 	if (expr->branch.type == pr_branch_call) {
 		auto target = expr_process (expr->branch.target, ctx);
+		if (is_error (target)) {
+			return target;
+		}
 		auto args = (expr_t *) expr->branch.args;
 		if (expr->branch.args) {
 			args = new_list_expr (nullptr);
-			proc_do_list (&args->list, &expr->branch.args->list, ctx);
+			if (!proc_do_list (&args->list, &expr->branch.args->list, ctx)) {
+				return new_error_expr ();
+			}
 		}
 		return function_expr (target, args);
 	} else {
