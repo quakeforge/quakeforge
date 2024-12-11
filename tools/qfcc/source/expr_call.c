@@ -233,7 +233,11 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	auto params = func->parameters;
 	auto locals = func->locals;
 
-	for (auto p = fsym->params; p; p = p->next) {
+	auto call = new_block_expr (nullptr);
+	call->block.scope = locals;
+
+	int i = 0;
+	for (auto p = fsym->params; p; p = p->next, i++) {
 		if (!p->selector && !p->type && !p->name) {
 			internal_error (0, "inline variadic not implemented");
 		}
@@ -254,12 +258,14 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 			notice (0, "parameter name omitted");
 			continue;
 		}
-		auto param = new_symbol_type (p->name, p->type);
-		symtab_addsymbol (params, param);
+		auto spec = (specifier_t) {
+			.type = p->type,
+			.storage = sc_local,
+		};
+		auto decl = new_decl_expr (spec, params);
+		append_decl (decl, new_symbol (p->name), arguments[i]);
+		append_expr (call, decl);
 	}
-
-	auto call = new_block_expr (nullptr);
-	call->block.scope = locals;
 
 	if (!is_void (ftype->func.ret_type)) {
 		auto spec = (specifier_t) {
