@@ -149,9 +149,11 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		internal_error (0, "%s interface not defined", interface_name);
 	}
 	auto interface = interface_sym->namespace;
+	bool transparent = false;
 
 	if (!instance_name) {
-		instance_name = new_symbol ("");
+		instance_name = new_symbol (va (0, ".%s", block->name->name));
+		transparent = true;
 	}
 	block->instance_name = instance_name;
 	auto type = new_type ();
@@ -182,7 +184,7 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		block_sym->namespace = block->members;
 		symtab_addsymbol (interface, block->name);
 	}
-	if (!instance_name->name[0]) {
+	if (transparent) {
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {
 			auto new = new_symbol (sym->name);
 			new->sy_type = sy_convert;
