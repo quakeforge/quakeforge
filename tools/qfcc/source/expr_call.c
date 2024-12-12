@@ -305,8 +305,8 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	}
 	append_expr (call, expr);
 
-	func->return_label = nullptr;//new_label_expr ();
-	//append_expr (call, func->return_label);
+	func->return_label = new_label_expr ();
+	append_expr (call, func->return_label);
 
 	func->return_imp = inline_return_expr;
 

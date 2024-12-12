@@ -1068,6 +1068,14 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_label (const expr_t *e, spirvctx_t *ctx)
+{
+	auto label = &e->label;
+	unsigned id = spirv_label_id (label, ctx);
+	return spirv_LabelId (id, ctx);
+}
+
+static unsigned
 spirv_block (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned id = 0;
@@ -1722,6 +1730,7 @@ static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
+		[ex_label] = spirv_label,
 		[ex_block] = spirv_block,
 		[ex_expr] = spirv_expr,
 		[ex_uexpr] = spirv_uexpr,
