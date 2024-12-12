@@ -511,6 +511,9 @@ proc_return (const expr_t *expr, rua_ctx_t *ctx)
 	if (ret_val) {
 		ret_val = expr_process (ret_val, ctx);
 	}
+	if (current_func->return_imp) {
+		return current_func->return_imp (current_func, ret_val);
+	}
 	if (expr->retrn.at_return) {
 		return at_return_expr (current_func, ret_val);
 	} else {

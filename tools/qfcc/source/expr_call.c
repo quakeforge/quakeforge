@@ -223,6 +223,25 @@ build_intrinsic_call (const expr_t *expr, const type_t *ftype,
 	return call;
 }
 
+static const expr_t *
+inline_return_expr (function_t *func, const expr_t *val)
+{
+	if (!func->return_val && val) {
+		return error (val, "returning a value for a void function");
+	}
+	if (func->return_val && !val) {
+		return error (val, "return from non-void function without a value");
+	}
+	auto ret = new_block_expr (nullptr);
+	if (val) {
+		append_expr (ret, assign_expr (func->return_val, val));
+	}
+	if (func->return_label) {
+		append_expr (ret, goto_expr (func->return_label));
+	}
+	return ret;
+}
+
 static expr_t *
 build_inline_call (symbol_t *fsym, const type_t *ftype,
 				   const expr_t **arguments, int arg_count)
@@ -278,11 +297,18 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 		append_expr (call, decl);
 		call->block.result = new_symbol_expr (ret);
 	}
+	func->return_val = call->block.result;
+
 	auto expr = metafunc->expr;
 	if (expr->type == ex_block) {
 		expr->block.scope->parent = locals;
 	}
 	append_expr (call, expr);
+
+	func->return_label = nullptr;//new_label_expr ();
+	//append_expr (call, func->return_label);
+
+	func->return_imp = inline_return_expr;
 
 	auto proc = new_process_expr (call);
 	proc->process.function = func;
