@@ -1306,6 +1306,19 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_alias (const expr_t *e, spirvctx_t *ctx)
+{
+	if (e->alias.offset) {
+		internal_error (e, "offset alias in spir-v");
+	}
+	if (!is_integral (e->alias.type)
+		|| !is_integral (get_type (e->alias.expr))) {
+		internal_error (e, "non-integral alias in spir-v");
+	}
+	return spirv_emit_expr (e->alias.expr, ctx);
+}
+
+static unsigned
 spirv_vector (const expr_t *e, spirvctx_t *ctx)
 {
 	auto compound = vector_to_compound (e);
@@ -1739,6 +1752,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_value] = spirv_value,
 		[ex_vector] = spirv_vector,
 		[ex_compound] = spirv_compound,
+		[ex_alias] = spirv_alias,
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
