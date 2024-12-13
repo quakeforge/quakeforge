@@ -862,11 +862,17 @@ save_text (rua_tok_t *tok, const char *text, size_t textlen, int state,
 }
 
 static bool
+is_blank (const rua_tok_t *tok)
+{
+	return !tok || tok->token == -rua_space || tok->token == -rua_ignore;
+}
+
+static bool
 join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 			 rua_extra_t *extra)
 {
-	if (!p1 || p1->token == -rua_space || p1->token == -rua_ignore) {
-		if (!p2 || p2->token == -rua_space || p2->token == -rua_ignore) {
+	if (is_blank (p1)) {
+		if (is_blank (p2)) {
 			*out = (rua_tok_t) {
 				.token = -rua_ignore,
 				.text = "",
@@ -876,7 +882,7 @@ join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 		}
 		return true;
 	}
-	if (!p2 || p2->token == -rua_space || p1->token == -rua_ignore) {
+	if (is_blank (p2)) {
 		// p1 cannot be null, space or ignore here
 		*out = *p1;
 		return true;
@@ -1240,41 +1246,6 @@ copy_token (rua_macro_t *dst, const rua_tok_t *t)
 }
 
 static void
-do_arg_copy (rua_macro_t *dst, const rua_macro_t *a,
-			 bool skip_first, bool skip_last)
-{
-	if (!a->tokens) {
-		return;
-	}
-	for (auto t = skip_first ? a->tokens->next : a->tokens;
-		 t; t = t->next) {
-		if (skip_last && !t->next) {
-			break;
-		}
-		copy_token (dst, t);
-	}
-}
-
-static void
-copy_arg_token (rua_macro_t *dst, bool skip_first, bool skip_last,
-				const rua_tok_t *arg, const rua_macro_t *macro)
-{
-	symbol_t   *sym;
-
-	if (arg->token == -rua_va_opt) {
-		sym = symtab_lookup (macro->params, arg->text);
-		// __VA_OPT__'s macro was updated by get_arg_token
-		do_arg_copy (dst, sym->macro, skip_first, skip_last);
-	} else if (arg->token == -rua_id && macro->params
-	    && (sym = symtab_lookup (macro->params, arg->text))
-	    && !macro->args[sym->offset]->next) {
-		do_arg_copy (dst, macro->args[sym->offset], skip_first, skip_last);
-	} else if (!skip_first && !skip_last) {
-		copy_token (dst, arg);
-	}
-}
-
-static void
 collect_args (rua_macro_t *m, rua_macro_t *macro, yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
@@ -1458,26 +1429,27 @@ rescan:
 				.tail = &m->tokens,
 			};
 
-			bool sf = false;
-			bool sl;
+			auto p = get_arg_token (true, &e, macro, scanner, ctx);
+			rua_tok_t   con = {};
 			do {
-				auto p = get_arg_token (true, &e, macro, scanner, ctx);
 				auto n = get_arg_token (false, e.next->next, macro, scanner, ctx);
 				rua_tok_t   cat;
-				if (!(sl = join_tokens (&cat, p, n, extra))) {
-					cat.location = e.next->location;
-					cat.token = -rua_space;
-					cat.text = " ";
-				}
-				copy_arg_token (m, sf, sl, &e, macro);
-				if (cat.token) {
-					copy_token (m, &cat);
+				if (join_tokens (&cat, p, n, extra)) {
+					con = cat;
+					p = &con;
+				} else {
+					if (p) {
+						copy_token (m, p);
+					}
+					con = (rua_tok_t) {};
+					p = n;
 				}
 				next_macro_token (extra->macro);	// consume ##
 				e = next_macro_token (extra->macro);
-				sf = sl;
 			} while (e.next && e.next->token == PRE_CONCAT);
-			copy_arg_token (m, sl, false, &e, macro);
+			if (con.token) {
+				copy_token (m, &con);
+			}
 			m->cursor = m->tokens;
 			m->next = extra->macro;
 			extra->macro = m;
