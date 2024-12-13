@@ -1383,6 +1383,18 @@ check_macro (rua_macro_t *macro)
 	return true;
 }
 
+static bool __attribute__((pure))
+recursive_invocation (rua_macro_t *macro, rua_extra_t *extra)
+{
+	while (macro && extra->macro) {
+		if (macro == extra->macro) {
+			return true;
+		}
+		macro = macro->next;
+	}
+	return false;
+}
+
 static int
 next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
 {
@@ -1561,7 +1573,7 @@ rescan:
 	if ((extra->expand || !(extra->preprocessor || extra->suppressed))
 		&& token == -rua_id
 		&& (sym = symtab_lookup (extra->macro_tab, e.text))
-		&& !sym->macro->next) {
+		&& !recursive_invocation (sym->macro, extra)) {
 		auto macro = sym->macro;
 		if (macro->update) {
 			macro->update (macro, ctx);
