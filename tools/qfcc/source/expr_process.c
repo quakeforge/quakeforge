@@ -522,6 +522,18 @@ proc_return (const expr_t *expr, rua_ctx_t *ctx)
 }
 
 static const expr_t *
+proc_swizzle (const expr_t *expr, rua_ctx_t *ctx)
+{
+	// To get here, a field expression was processed and then passed to an
+	// inline function.
+	// FIXME this is probably a bug in argument setup for inline functions
+	if (!expr->swizzle.type) {
+		internal_error (expr, "unprocessed swizzle");
+	}
+	return expr;
+}
+
+static const expr_t *
 proc_list (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
@@ -721,6 +733,7 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 		[ex_assign] = proc_assign,
 		[ex_branch] = proc_branch,
 		[ex_return] = proc_return,
+		[ex_swizzle] = proc_swizzle,
 		[ex_list] = proc_list,
 		[ex_type] = proc_type,
 		[ex_incop] = proc_incop,
