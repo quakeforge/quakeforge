@@ -1464,7 +1464,7 @@ struct_specifier
 		}
 	| handle tag
 		{
-			specifier_t spec = default_type ($1, 0);
+			specifier_t spec = $1;
 			symbol_t   *sym = find_handle ($2, spec.type);
 			sym->type = find_type (sym->type);
 			$$ = type_spec (sym->type);
@@ -1480,7 +1480,7 @@ struct_specifier
 
 handle
 	: HANDLE					{ $$ = type_spec (&type_int); }
-	| HANDLE '(' TYPE_SPEC ')'	{ $$ = $3; }
+	| HANDLE '(' typename ')'	{ $$ = $3; }
 	;
 
 struct_list
@@ -2119,7 +2119,6 @@ unary_expr
 			auto spec = $3;
 			auto type_expr = spec.type_expr;
 			if (!type_expr) {
-				spec = default_type (spec, nullptr);
 				type_expr = new_type_expr (spec.type);
 			}
 			$$ = new_unary_expr ('S', type_expr);
@@ -2148,7 +2147,6 @@ cast_expr
 			auto spec = $2;
 			auto type_expr = spec.type_expr;
 			if (!type_expr) {
-				spec = default_type (spec, nullptr);
 				type_expr = new_type_expr (spec.type);
 			}
 			$$ = new_binary_expr ('C', type_expr, $4);
@@ -2159,7 +2157,6 @@ cast_expr
 			auto args = $args;
 			auto type_expr = spec.type_expr;
 			if (!type_expr) {
-				spec = default_type ($typename, nullptr);
 				type_expr = new_type_expr (spec.type);
 			}
 			$$ = new_call_expr (type_expr, args, nullptr);
