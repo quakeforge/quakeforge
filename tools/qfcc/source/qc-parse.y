@@ -666,6 +666,25 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 	return append_decl (decl, sym, init);
 }
 
+static const expr_t *
+forward_decl_expr (symbol_t *tag, int sueh, const type_t *base_type)
+{
+	symbol_t *sym;
+
+	if (sueh == 's' || sueh == 'u') {
+		sym = find_struct (sueh, tag, nullptr);
+		sym->type = find_type (sym->type);
+	} else if (sueh == 'e') {
+		sym = find_enum (tag);
+	} else if (sueh == 'h') {
+		sym = find_handle (tag, base_type);
+		sym->type = find_type (sym->type);
+	} else {
+		internal_error (0, "invalude decl thing");
+	}
+	return new_symbol_expr (sym);
+}
+
 static symtab_t *
 pop_scope (symtab_t *current)
 {
@@ -1337,7 +1356,10 @@ type_ref
 			specifier_t spec = default_type ($1, 0);
 			$$ = new_type_expr (spec.type);
 		}
-	| CLASS_NAME						{ $$ = new_type_expr ($1->type); }
+	| STRUCT tag				{ $$ = forward_decl_expr ($2, $1, nullptr); }
+	| ENUM tag					{ $$ = forward_decl_expr ($2, 'e', nullptr); }
+	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
+	| CLASS_NAME				{ $$ = new_type_expr ($1->type); }
 	| TYPE_NAME
 		{
 			if ($1.type_expr) {

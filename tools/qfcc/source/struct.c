@@ -142,6 +142,9 @@ find_handle (symbol_t *tag, const type_t *type)
 		t->columns = 1;
 		t->alignment = type->alignment;
 	}
+	if (sym->type->type != type->type) {
+		error (0, "@handle %s redeclared with different base type", tag->name);
+	}
 	return sym;
 }
 
