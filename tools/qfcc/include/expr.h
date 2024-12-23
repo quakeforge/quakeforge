@@ -1046,9 +1046,9 @@ expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 expr_t *new_type_expr (const type_t *type);
 const expr_t *type_function (int op, const expr_t *params);
 symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
-const type_t *resolve_type (const expr_t *te);
-const type_t **expand_type (const expr_t *te);
-const expr_t *evaluate_type (const expr_t *te);
+const type_t *resolve_type (const expr_t *te, rua_ctx_t *ctx);
+const type_t **expand_type (const expr_t *te, rua_ctx_t *ctx);
+const expr_t *evaluate_type (const expr_t *te, rua_ctx_t *ctx);
 
 expr_t *append_expr (expr_t *block, const expr_t *e);
 expr_t *prepend_expr (expr_t *block, const expr_t *e);
@@ -1101,8 +1101,8 @@ const expr_t *build_for_statement (const expr_t *init, const expr_t *test,
 								   const expr_t *next, const expr_t *statement,
 								   const expr_t *break_label,
 								   const expr_t *continue_label);
-const expr_t *build_state_expr (const expr_t *e);
-const expr_t *think_expr (struct symbol_s *think_sym);
+const expr_t *build_state_expr (const expr_t *e, rua_ctx_t *ctx);
+const expr_t *think_expr (struct symbol_s *think_sym, rua_ctx_t *ctx);
 bool is_lvalue (const expr_t *expr) __attribute__((pure));
 const expr_t *assign_expr (const expr_t *dst, const expr_t *src);
 const expr_t *cast_expr (const type_t *t, const expr_t *e);
@@ -1117,7 +1117,7 @@ const expr_t *protocol_expr (const char *protocol);
 const expr_t *encode_expr (const type_t *type);
 const expr_t *super_expr (struct class_type_s *class_type);
 const expr_t *message_expr (const expr_t *receiver,
-							struct keywordarg_s *message);
+							struct keywordarg_s *message, rua_ctx_t *ctx);
 const expr_t *new_message_expr (const expr_t *receiver,
 								struct keywordarg_s *message);
 const expr_t *sizeof_expr (const expr_t *expr, const type_t *type);

@@ -181,7 +181,7 @@ super_expr (class_type_t *class_type)
 }
 
 const expr_t *
-message_expr (const expr_t *receiver, keywordarg_t *message)
+message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 {
 	const expr_t *selector = selector_expr (message);
 	const expr_t *call;
@@ -243,7 +243,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	expr_append_expr (args, selector);
 	expr_append_expr (args, receiver);
 
-	send_msg = send_message (super);
+	send_msg = send_message (super, ctx);
 	if (method) {
 		const expr_t *err;
 		if ((err = method_check_params (method, args)))

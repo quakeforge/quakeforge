@@ -165,7 +165,7 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 symbol_t *
-method_symbol (class_type_t *class_type, method_t *method)
+method_symbol (class_type_t *class_type, method_t *method, rua_ctx_t *ctx)
 {
 	dstring_t  *str = dstring_newstr ();
 	symbol_t   *sym;
@@ -184,7 +184,7 @@ method_symbol (class_type_t *class_type, method_t *method)
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
 	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol ((specifier_t) { .sym = sym });
+	sym = function_symbol ((specifier_t) { .sym = sym }, ctx);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -355,7 +355,7 @@ copy_keywordargs (const keywordarg_t *kwargs)
 }
 
 expr_t *
-send_message (int super)
+send_message (int super, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 	const char *sm_name = "obj_msgSend";
@@ -370,7 +370,7 @@ send_message (int super)
 		symtab_t   *save = current_symtab;
 		current_symtab = pr.symtab;
 		sym = new_symbol_type (sm_name, sm_type);
-		sym = function_symbol ((specifier_t) { .sym = sym });
+		sym = function_symbol ((specifier_t) { .sym = sym }, ctx);
 		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}

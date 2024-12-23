@@ -157,7 +157,7 @@ build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 	dotmain->params = 0;
 	dotmain->type = parse_params (&type_int, 0);
 	dotmain->type = find_type (dotmain->type);
-	dotmain = function_symbol ((specifier_t) { .sym = dotmain });
+	dotmain = function_symbol ((specifier_t) { .sym = dotmain }, ctx);
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
@@ -165,7 +165,7 @@ build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 		.sym = dotmain,
 		.storage = current_storage,
 	};
-	current_func = begin_function (spec, nullptr, current_symtab);
+	current_func = begin_function (spec, nullptr, current_symtab, ctx);
 	code = new_block_expr (0);
 	code->block.scope = current_func->locals;
 	auto call = new_call_expr (new_symbol_expr (program), nullptr, nullptr);
@@ -204,7 +204,8 @@ rvalue_expr (const expr_t *expr)
 }
 
 static symbol_t *
-function_decl (symbol_t *sym, param_t *params, const type_t *ret_type)
+function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
+			   rua_ctx_t *ctx)
 {
 	if (sym->table == current_symtab) {
 		error (0, "%s redefined", sym->name);
@@ -216,7 +217,7 @@ function_decl (symbol_t *sym, param_t *params, const type_t *ret_type)
 	fsym->params = params;
 	fsym->type = parse_params (ret_type, params);
 	fsym->type = find_type (fsym->type);
-	fsym = function_symbol ((specifier_t) { .sym = fsym, });
+	fsym = function_symbol ((specifier_t) { .sym = fsym, }, ctx);
 	auto fsym_expr = new_symbol_expr (fsym);
 	if (!params) {
 		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);
@@ -288,7 +289,7 @@ program
 				.sym = $1,
 				.storage = current_storage,
 			};
-			current_func = begin_function (spec, nullptr, current_symtab);
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			build_code_function (spec, 0, $4, ctx);
 			current_symtab = st;
@@ -316,7 +317,7 @@ program_head
 			}
 			$$->type = parse_params (&type_void, 0);
 			$$->type = find_type ($$->type);
-			$$ = function_symbol ((specifier_t) { .sym = $$ });
+			$$ = function_symbol ((specifier_t) { .sym = $$ }, ctx);
 		}
 	;
 
@@ -382,7 +383,8 @@ subprogram_declaration
 				.sym = fsym,
 				.storage = current_storage,
 			};
-			current_func = begin_function (spec, sym->name, current_symtab);
+			current_func = begin_function (spec, sym->name, current_symtab,
+										   ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 			// null for procedures, valid symbol expression for functions
@@ -419,11 +421,11 @@ subprogram_declaration
 subprogram_head
 	: FUNCTION ID arguments ':' standard_type
 		{
-			$$ = function_decl ($2, $3, $5);
+			$$ = function_decl ($2, $3, $5, ctx);
 		}
 	| PROCEDURE ID arguments
 		{
-			$$ = function_decl ($2, $3, &type_void);
+			$$ = function_decl ($2, $3, &type_void, ctx);
 		}
 	;
 

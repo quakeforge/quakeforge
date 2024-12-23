@@ -2793,7 +2793,7 @@ build_for_statement (const expr_t *init, const expr_t *test, const expr_t *next,
 }
 
 const expr_t *
-build_state_expr (const expr_t *e)
+build_state_expr (const expr_t *e, rua_ctx_t *ctx)
 {
 	int         count = e ? list_count (&e->list) : 0;
 	if (count < 2) {
@@ -2809,7 +2809,7 @@ build_state_expr (const expr_t *e)
 	const expr_t *step = state_args[2];
 
 	if (think->type == ex_symbol)
-		think = think_expr (think->symbol);
+		think = think_expr (think->symbol, ctx);
 	if (is_int_val (frame))
 		frame = cast_expr (&type_float, frame);
 	if (!type_assignable (&type_float, get_type (frame)))
@@ -2826,7 +2826,7 @@ build_state_expr (const expr_t *e)
 }
 
 const expr_t *
-think_expr (symbol_t *think_sym)
+think_expr (symbol_t *think_sym, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 
@@ -2841,7 +2841,7 @@ think_expr (symbol_t *think_sym)
 	} else {
 		think_sym->type = &type_func;
 	}
-	think_sym = function_symbol ((specifier_t) { .sym = think_sym });
+	think_sym = function_symbol ((specifier_t) { .sym = think_sym }, ctx);
 	make_function (think_sym, 0, current_symtab->space, current_storage);
 	return new_symbol_expr (think_sym);
 }

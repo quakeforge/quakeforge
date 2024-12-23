@@ -408,7 +408,7 @@ compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 			err = lang->finish (file, ctx);
 		}
 		if (!err) {
-			emit_ctor ();
+			emit_ctor (ctx);
 			debug_finish_module (obj);
 		}
 		err = pr.error_count;
@@ -842,8 +842,8 @@ progs_src_compile (void)
 			return 1;
 	}
 
-	class_finish_module ();
-	emit_ctor ();
+	class_finish_module (&ctx);
+	emit_ctor (&ctx);
 	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {

@@ -279,7 +279,7 @@ shadows_param (symbol_t *sym, symtab_t *symtab)
 
 symbol_t *
 declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
-				expr_t *block)
+				expr_t *block, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
 
@@ -315,7 +315,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			if (init) {
 				error (0, "function %s is initialized", sym->name);
 			}
-			sym = function_symbol (spec);
+			sym = function_symbol (spec, ctx);
 		} else {
 			if (!shadows_param (sym, symtab)) {
 				sym->type = find_type (sym->type);

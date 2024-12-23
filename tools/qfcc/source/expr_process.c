@@ -55,7 +55,7 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->expr.op == 'C') {
-		auto type = resolve_type (expr->expr.e1);
+		auto type = resolve_type (expr->expr.e1, ctx);
 		expr = expr_process (expr->expr.e2, ctx);
 		return cast_expr (type, expr);
 	}
@@ -420,7 +420,7 @@ proc_message (const expr_t *expr, rua_ctx_t *ctx)
 			k->expr = (expr_t *) expr_process (k->expr, ctx);
 		}
 	}
-	return message_expr (receiver, message);
+	return message_expr (receiver, message, ctx);
 }
 
 static const expr_t *
@@ -548,7 +548,7 @@ static const expr_t *
 proc_type (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto type = resolve_type (expr);
+	auto type = resolve_type (expr, ctx);
 	return new_type_expr (type);
 }
 

@@ -392,11 +392,11 @@ spec_merge (specifier_t spec, specifier_t new)
 }
 
 static const type_t *
-resolve_type_spec (specifier_t spec)
+resolve_type_spec (specifier_t spec, rua_ctx_t *ctx)
 {
 	auto type = spec.type;
 	if (spec.type_expr) {
-		type = resolve_type (spec.type_expr);
+		type = resolve_type (spec.type_expr, ctx);
 	}
 	return find_type (type);
 }
@@ -755,18 +755,9 @@ fndef
 	;
 
 datadef
-	: defspecs notype_initdecls ';'
-		{
-			expr_process ($2, ctx);
-		}
-	| declspecs_nots notype_initdecls ';'
-		{
-			expr_process ($2, ctx);
-		}
-	| declspecs_ts initdecls ';'
-		{
-			expr_process ($2, ctx);
-		}
+	: defspecs notype_initdecls ';'			{ expr_process ($2, ctx); }
+	| declspecs_nots notype_initdecls ';'	{ expr_process ($2, ctx); }
+	| declspecs_ts initdecls ';'			{ expr_process ($2, ctx); }
 	| declspecs_ts qc_func_params
 		{
 			$<spec>$ = qc_function_spec ($1, $2);
@@ -872,25 +863,25 @@ qc_nocode_func
 			const expr_t *bi_val = expr_process ($4, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
-			spec.sym = function_symbol (spec);
+			spec.sym = function_symbol (spec, ctx);
 			build_builtin_function (spec, nullptr, bi_val);
 		}
 	| identifier '=' intrinsic
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
-			build_intrinsic_function (spec, $3);
+			build_intrinsic_function (spec, $3, ctx);
 		}
 	| identifier '=' expr
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
 			const expr_t *expr = $3;
 
-			declare_symbol (spec, expr, current_symtab, local_expr);
+			declare_symbol (spec, expr, current_symtab, local_expr, ctx);
 		}
 	| identifier
 		{
 			specifier_t spec = qc_set_symbol ($<spec>0, $1);
-			declare_symbol (spec, nullptr, current_symtab, local_expr);
+			declare_symbol (spec, nullptr, current_symtab, local_expr, ctx);
 		}
 	;
 
@@ -903,8 +894,8 @@ qc_code_func
 				.function = current_func,
 			};
 			spec.is_overload |= ctx->language->always_overload;
-			spec.sym = function_symbol (spec);
-			current_func = begin_function (spec, nullptr, current_symtab);
+			spec.sym = function_symbol (spec, ctx);
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 			fs.spec = spec;
@@ -1128,7 +1119,7 @@ typespec_reserved
 					.type_expr = $1,
 				};
 			} else {
-				auto type = resolve_type ($1);
+				auto type = resolve_type ($1, ctx);
 				$$ = type_spec (type);
 			}
 		}
@@ -1218,7 +1209,7 @@ function_body
 				spec = default_type (spec, spec.sym);
 			}
 			spec.is_overload |= ctx->language->always_overload;
-			spec.sym = function_symbol (spec);
+			spec.sym = function_symbol (spec, ctx);
 			$<spec>$ = spec;
 		}
 	  save_storage[storage]
@@ -1227,7 +1218,7 @@ function_body
 				.function = current_func,
 			};
 			auto spec = $<spec>2;
-			current_func = begin_function (spec, nullptr, current_symtab);
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
@@ -1246,13 +1237,13 @@ function_body
 			const expr_t *bi_val = expr_process ($3, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
-			spec.sym = function_symbol (spec);
+			spec.sym = function_symbol (spec, ctx);
 			build_builtin_function (spec, nullptr, bi_val);
 		}
 	| '=' intrinsic
 		{
 			specifier_t spec = $<spec>0;
-			build_intrinsic_function (spec, $2);
+			build_intrinsic_function (spec, $2, ctx);
 		}
 	;
 
@@ -1791,13 +1782,13 @@ var_initializer
 compound_init
 	: opt_cast '{' element_list optional_comma '}'
 		{
-			auto type = resolve_type_spec ($1);
+			auto type = resolve_type_spec ($1, ctx);
 			$3->compound.type = type;
 			$$ = $3;
 		}
 	| opt_cast '{' '}'
 		{
-			auto type = resolve_type_spec ($1);
+			auto type = resolve_type_spec ($1, ctx);
 			if (type) {
 				auto elements = new_compound_init ();
 				elements->compound.type = type;
@@ -1815,12 +1806,12 @@ opt_cast
 
 method_optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
-	| SHR vector_expr					{ $$ = build_state_expr ($2); }
+	| SHR vector_expr					{ $$ = build_state_expr ($2, ctx); }
 	;
 
 optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
-	| vector_expr						{ $$ = build_state_expr ($1); }
+	| vector_expr						{ $$ = build_state_expr ($1, ctx); }
 	;
 
 element_list
@@ -2665,7 +2656,7 @@ methoddef
 
 			method->instance = $1;
 			$2 = method = class_find_method (current_class, method);
-			$<symbol>$ = method_symbol (current_class, method);
+			$<symbol>$ = method_symbol (current_class, method, ctx);
 		}
 	  save_storage
 		{
@@ -2685,7 +2676,7 @@ methoddef
 				.symtab = ivar_scope,
 				.function = current_func,
 			};
-			current_func = begin_function (spec, nicename, ivar_scope);
+			current_func = begin_function (spec, nicename, ivar_scope, ctx);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->locals);
 			method->func = sym->metafunc->func;
@@ -2712,7 +2703,7 @@ methoddef
 			method = class_find_method (current_class, method);
 
 			auto spec = (specifier_t) {
-				.sym = method_symbol (current_class, method),
+				.sym = method_symbol (current_class, method, ctx),
 				.storage = sc_static,
 				.is_far = true,
 			};
@@ -2758,14 +2749,14 @@ methodproto
 methoddecl
 	: '(' typename ')' unaryselector
 		{
-			auto type = resolve_type_spec ($2);
+			auto type = resolve_type_spec ($2, ctx);
 			$$ = new_method (type, $4, 0);
 		}
 	| unaryselector
 		{ $$ = new_method (&type_id, $1, 0); }
 	| '(' typename ')' keywordselector optional_param_list
 		{
-			auto type = resolve_type_spec ($2);
+			auto type = resolve_type_spec ($2, ctx);
 			$$ = new_method (type, $4, $5);
 		}
 	| keywordselector optional_param_list
@@ -2821,14 +2812,14 @@ reserved_word
 keyworddecl
 	: selector ':' '(' typename ')' identifier
 		{
-			auto type = resolve_type_spec ($4);
+			auto type = resolve_type_spec ($4, ctx);
 			$$ = make_selector ($1->name, type, $6->name);
 		}
 	| selector ':' identifier
 		{ $$ = make_selector ($1->name, &type_id, $3->name); }
 	| ':' '(' typename ')' identifier
 		{
-			auto type = resolve_type_spec ($3);
+			auto type = resolve_type_spec ($3, ctx);
 			$$ = make_selector ("", type, $5->name);
 		}
 	| ':' identifier
@@ -2841,7 +2832,7 @@ obj_expr
 	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
 	| ENCODE '(' typename ')'
 		{
-			auto type = resolve_type_spec ($3);
+			auto type = resolve_type_spec ($3, ctx);
 			$$ = encode_expr (type);
 		}
 	| obj_string /* FIXME string object? */
@@ -3257,7 +3248,7 @@ static int qc_finish (const char *file, rua_ctx_t *ctx)
 	if (options.frames_files) {
 		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
 	}
-	class_finish_module ();
+	class_finish_module (ctx);
 	return pr.error_count;
 }
 

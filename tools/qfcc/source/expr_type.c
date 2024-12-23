@@ -59,9 +59,12 @@ typedef struct {
 typedef struct {
 	const char *name;
 	const char *(*check_params) (int arg_count, const expr_t **args);
-	const type_t *(*resolve) (int arg_count, const expr_t **args);
-	const type_t **(*expand) (int arg_count, const expr_t **args);
-	const expr_t *(*evaluate) (int arg_count, const expr_t **args);
+	const type_t *(*resolve) (int arg_count, const expr_t **args,
+							  rua_ctx_t *ctx);
+	const type_t **(*expand) (int arg_count, const expr_t **args,
+							  rua_ctx_t *ctx);
+	const expr_t *(*evaluate) (int arg_count, const expr_t **args,
+							   rua_ctx_t *ctx);
 	def_t *(*compute) (int arg_count, const expr_t **args, comp_ctx_t *ctx);
 } type_func_t;
 
@@ -156,14 +159,14 @@ single_type_opt_int_pair (int arg_count, const expr_t **args)
 }
 
 static const expr_t *
-evaluate_int (const expr_t *expr)
+evaluate_int (const expr_t *expr, rua_ctx_t *ctx)
 {
 	if (expr->type == ex_expr || expr->type == ex_uexpr) {
 		auto e = new_expr ();
 		*e = *expr;
-		e->expr.e1 = evaluate_int (expr->expr.e1);
-		if (expr->type == ex_uexpr) {
-			e->expr.e2 = evaluate_int (expr->expr.e2);
+		e->expr.e1 = evaluate_int (expr->expr.e1, ctx);
+		if (expr->type == ex_expr) {
+			e->expr.e2 = evaluate_int (expr->expr.e2, ctx);
 		}
 		return fold_constants (e);
 	}
@@ -189,16 +192,16 @@ evaluate_int (const expr_t *expr)
 }
 
 static const expr_t *
-evaluate_int_op (int arg_count, const expr_t **args)
+evaluate_int_op (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	return evaluate_int (args[0]);
+	return evaluate_int (args[0], ctx);
 }
 
 static const type_t *
-resolve_function (int arg_count, const expr_t **args)
+resolve_function (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	return &type_func;//FIXME
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = field_type (type);
 		type = find_type (type);
@@ -207,9 +210,9 @@ resolve_function (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_field (int arg_count, const expr_t **args)
+resolve_field (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = field_type (type);
 		type = find_type (type);
@@ -218,9 +221,9 @@ resolve_field (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_pointer (int arg_count, const expr_t **args)
+resolve_pointer (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = pointer_type (type);
 		type = find_type (type);
@@ -229,13 +232,13 @@ resolve_pointer (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_array (int arg_count, const expr_t **args)
+resolve_array (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		int count = 0;
 		if (arg_count > 1) {
-			auto count_expr = evaluate_int (args[1]);
+			auto count_expr = evaluate_int (args[1], ctx);
 			if (is_error (count_expr)) {
 				return nullptr;
 			}
@@ -247,9 +250,9 @@ resolve_array (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_base (int arg_count, const expr_t **args)
+resolve_base (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = base_type (type);
 	}
@@ -257,13 +260,13 @@ resolve_base (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_vector (int arg_count, const expr_t **args)
+resolve_vector (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		int width = 0;
 		if (arg_count > 1) {
-			auto width_expr = evaluate_int (args[1]);
+			auto width_expr = evaluate_int (args[1], ctx);
 			if (is_error (width_expr)) {
 				return nullptr;
 			}
@@ -280,15 +283,15 @@ resolve_vector (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_matrix (int arg_count, const expr_t **args)
+resolve_matrix (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		int rows = 0;
 		int cols = 0;
 		if (arg_count > 1) {
-			auto rows_expr = evaluate_int (args[2]);
-			auto cols_expr = evaluate_int (args[1]);
+			auto rows_expr = evaluate_int (args[2], ctx);
+			auto cols_expr = evaluate_int (args[1], ctx);
 			if (is_error (rows_expr) || is_error (cols_expr)) {
 				return nullptr;
 			}
@@ -307,9 +310,9 @@ resolve_matrix (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_int (int arg_count, const expr_t **args)
+resolve_int (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = int_type (type);
 	}
@@ -317,9 +320,9 @@ resolve_int (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_uint (int arg_count, const expr_t **args)
+resolve_uint (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = uint_type (type);
 	}
@@ -327,9 +330,9 @@ resolve_uint (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_bool (int arg_count, const expr_t **args)
+resolve_bool (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = bool_type (type);
 	}
@@ -337,9 +340,9 @@ resolve_bool (int arg_count, const expr_t **args)
 }
 
 static const type_t *
-resolve_float (int arg_count, const expr_t **args)
+resolve_float (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	auto type = resolve_type (args[0]);
+	auto type = resolve_type (args[0], ctx);
 	if (type) {
 		type = float_type (type);
 	}
@@ -347,16 +350,16 @@ resolve_float (int arg_count, const expr_t **args)
 }
 
 static const type_t **
-expand_vector (int arg_count, const expr_t **args)
+expand_vector (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	const type_t *base = resolve_type (args[0]);
+	const type_t *base = resolve_type (args[0], ctx);
 	if (!is_bool (base) && !is_scalar (base)) {
 		error (args[0], "invalid vector component type");
 		return nullptr;
 	}
 
 	if (arg_count == 2) {
-		auto comps_expr = evaluate_int (args[1]);
+		auto comps_expr = evaluate_int (args[1], ctx);
 		if (is_error (comps_expr)) {
 			return nullptr;
 		}
@@ -381,9 +384,9 @@ expand_vector (int arg_count, const expr_t **args)
 }
 
 static const type_t **
-expand_matrix (int arg_count, const expr_t **args)
+expand_matrix (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
-	const type_t *base = resolve_type (args[0]);
+	const type_t *base = resolve_type (args[0], ctx);
 	if (!is_scalar (base)) {
 		error (args[0], "invalid matrix component type");
 		return nullptr;
@@ -391,8 +394,8 @@ expand_matrix (int arg_count, const expr_t **args)
 
 	// @matrix doesn't include vectors for generic parameters
 	if (arg_count == 3) {
-		auto rows_expr = evaluate_int (args[2]);
-		auto cols_expr = evaluate_int (args[1]);
+		auto rows_expr = evaluate_int (args[2], ctx);
+		auto cols_expr = evaluate_int (args[1], ctx);
 		if (is_error (rows_expr) || is_error (cols_expr)) {
 			return nullptr;
 		}
@@ -705,7 +708,7 @@ type_parameter (symbol_t *sym, const expr_t *type)
 }
 
 const type_t *
-resolve_type (const expr_t *te)
+resolve_type (const expr_t *te, rua_ctx_t *ctx)
 {
 	if (te->type == ex_symbol) {
 		auto sym = te->symbol;
@@ -736,11 +739,11 @@ resolve_type (const expr_t *te)
 	int         arg_count = list_count (&te->typ.params->list);
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
-	return type_funcs[ind].resolve (arg_count, args);
+	return type_funcs[ind].resolve (arg_count, args, ctx);
 }
 
 const type_t **
-expand_type (const expr_t *te)
+expand_type (const expr_t *te, rua_ctx_t *ctx)
 {
 	if (te->type != ex_type) {
 		internal_error (te, "not a type expression");
@@ -767,11 +770,11 @@ expand_type (const expr_t *te)
 	int         arg_count = list_count (&te->typ.params->list);
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
-	return type_funcs[ind].expand (arg_count, args);
+	return type_funcs[ind].expand (arg_count, args, ctx);
 }
 
 const expr_t *
-evaluate_type (const expr_t *te)
+evaluate_type (const expr_t *te, rua_ctx_t *ctx)
 {
 	if (te->type != ex_type) {
 		internal_error (te, "not a type expression");
@@ -785,7 +788,7 @@ evaluate_type (const expr_t *te)
 	int         arg_count = list_count (&te->typ.params->list);
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
-	return type_funcs[ind].evaluate (arg_count, args);
+	return type_funcs[ind].evaluate (arg_count, args, ctx);
 }
 
 static def_t *

@@ -206,10 +206,10 @@ add_generic_function (genfunc_t *genfunc)
 }
 
 static const type_t **
-valid_type_list (const expr_t *expr)
+valid_type_list (const expr_t *expr, rua_ctx_t *ctx)
 {
 	if (expr->type != ex_list) {
-		return expand_type (expr);
+		return expand_type (expr, ctx);
 	}
 	int count = list_count (&expr->list);
 	const expr_t *type_refs[count];
@@ -218,7 +218,7 @@ valid_type_list (const expr_t *expr)
 	types[count] = nullptr;
 	bool err = false;
 	for (int i = 0; i < count; i++) {
-		if (!(types[i] = resolve_type (type_refs[i]))) {
+		if (!(types[i] = resolve_type (type_refs[i], ctx))) {
 			error (type_refs[i], "not a constant type ref");
 			err = true;
 		}
@@ -231,7 +231,7 @@ valid_type_list (const expr_t *expr)
 }
 
 static gentype_t
-make_gentype (const expr_t *expr)
+make_gentype (const expr_t *expr, rua_ctx_t *ctx)
 {
 	if (expr->type != ex_symbol || expr->symbol->sy_type != sy_type_param) {
 		internal_error (expr, "expected generic type name");
@@ -239,7 +239,7 @@ make_gentype (const expr_t *expr)
 	auto sym = expr->symbol;
 	gentype_t gentype = {
 		.name = save_string (sym->name),
-		.valid_types = valid_type_list (sym->expr),
+		.valid_types = valid_type_list (sym->expr, ctx),
 	};
 	if (!gentype.valid_types) {
 		internal_error (expr, "empty generic type");
@@ -283,7 +283,7 @@ make_genparam (param_t *param, genfunc_t *genfunc)
 }
 
 static genfunc_t *
-parse_generic_function (const char *name, specifier_t spec)
+parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
 	if (!spec.is_generic) {
 		return nullptr;
@@ -345,7 +345,8 @@ parse_generic_function (const char *name, specifier_t spec)
 				continue;
 			}
 			if (strcmp (q->type_expr->symbol->name, s->name) == 0) {
-				genfunc->types[num_gentype++] = make_gentype (q->type_expr);
+				genfunc->types[num_gentype++] = make_gentype (q->type_expr,
+															  ctx);
 				break;
 			}
 		}
@@ -846,7 +847,7 @@ get_function (const char *name, specifier_t spec)
 }
 
 symbol_t *
-function_symbol (specifier_t spec)
+function_symbol (specifier_t spec, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
 	const char *name = sym->name;
@@ -863,7 +864,7 @@ function_symbol (specifier_t spec)
 		return err;
 	}
 
-	auto genfunc = parse_generic_function (name, spec);
+	auto genfunc = parse_generic_function (name, spec, ctx);
 	if (genfunc) {
 		add_generic_function (genfunc);
 
@@ -1181,7 +1182,8 @@ add_function (function_t *f)
 }
 
 function_t *
-begin_function (specifier_t spec, const char *nicename, symtab_t *parent)
+begin_function (specifier_t spec, const char *nicename, symtab_t *parent,
+				rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	if (sym->sy_type != sy_func) {
@@ -1190,7 +1192,7 @@ begin_function (specifier_t spec, const char *nicename, symtab_t *parent)
 		sym = function_symbol ((specifier_t) {
 								.sym = sym,
 								.is_overload = true
-							   });
+							   }, ctx);
 	}
 	function_t *func = sym->metafunc->func;
 	if (func && func->def && func->def->initialized) {
@@ -1199,7 +1201,7 @@ begin_function (specifier_t spec, const char *nicename, symtab_t *parent)
 		sym = function_symbol ((specifier_t) {
 								.sym = sym,
 								.is_overload = true
-							   });
+							   }, ctx);
 	}
 
 	if (spec.is_generic) {
@@ -1342,9 +1344,10 @@ build_builtin_function (specifier_t spec, const char *ext_name,
 }
 
 void
-build_intrinsic_function (specifier_t spec, const expr_t *intrinsic)
+build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
+						  rua_ctx_t *ctx)
 {
-	auto sym = function_symbol (spec);
+	auto sym = function_symbol (spec, ctx);
 	if (sym->type->func.num_params < 0) {
 		error (intrinsic, "intrinsic functions cannot be variadic");
 		return;
@@ -1390,7 +1393,7 @@ add_ctor_expr (const expr_t *expr)
 }
 
 void
-emit_ctor (void)
+emit_ctor (rua_ctx_t *ctx)
 {
 	if (!pr.ctor_exprs) {
 		return;
@@ -1401,7 +1404,7 @@ emit_ctor (void)
 		.storage = sc_static,
 		.is_far = true,
 	};
-	spec.sym = function_symbol (spec);
-	current_func = begin_function (spec, nullptr, current_symtab);
+	spec.sym = function_symbol (spec, ctx);
+	current_func = begin_function (spec, nullptr, current_symtab, ctx);
 	build_code_function (spec, 0, pr.ctor_exprs, nullptr);
 }

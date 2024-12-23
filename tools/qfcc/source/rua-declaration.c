@@ -55,7 +55,7 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 				internal_error (id_list, "not a symbol");
 			}
 			spec.sym = id->expr->symbol;
-			spec.sym = declare_symbol (spec, init, symtab, block);
+			spec.sym = declare_symbol (spec, init, symtab, block, ctx);
 		}
 	} else {
 		spec.sym = sym;
@@ -92,7 +92,7 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 				}
 				symtab_addsymbol (symtab, sym);
 			} else {
-				spec.sym = declare_symbol (spec, init, symtab, block);
+				spec.sym = declare_symbol (spec, init, symtab, block, ctx);
 			}
 		}
 	}

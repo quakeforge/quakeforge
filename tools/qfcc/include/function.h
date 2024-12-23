@@ -217,20 +217,21 @@ int value_too_large (const type_t *val_type) __attribute__((pure));
 function_t *make_function (symbol_t *sym, const char *nice_name,
 						struct defspace_s *space,
 						enum storage_class_e storage);
-symbol_t *function_symbol (specifier_t spec);
+symbol_t *function_symbol (specifier_t spec, rua_ctx_t *ctx);
 const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
 function_t *begin_function (specifier_t spec, const char *nicename,
-							symtab_t *parent);
+							symtab_t *parent, rua_ctx_t *ctx);
 void build_code_function (specifier_t spec, const expr_t *state_expr,
 						  expr_t *statements, rua_ctx_t *ctx);
 void build_builtin_function (specifier_t spec, const char *ext_name,
 							 const expr_t *bi_val);
-void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic);
+void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
+							   rua_ctx_t *ctx);
 void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);
 
 void add_ctor_expr (const expr_t *expr);
-void emit_ctor (void);
+void emit_ctor (rua_ctx_t *ctx);
 
 ///@}
 

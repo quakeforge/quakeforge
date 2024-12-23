@@ -1593,7 +1593,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 }
 
 void
-class_finish_module (void)
+class_finish_module (rua_ctx_t *ctx)
 {
 	static struct_def_t symtab_struct[] = {
 		{"sel_ref_cnt",	&type_int, emit_symtab_ref_cnt},
@@ -1653,7 +1653,7 @@ class_finish_module (void)
 										  &type_exec_class);
 		exec_class_sym = function_symbol ((specifier_t) {
 											.sym = exec_class_sym
-										  });
+										  }, ctx);
 		make_function (exec_class_sym, 0, exec_class_sym->table->space,
 					   sc_extern);
 	}
