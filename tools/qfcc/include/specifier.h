@@ -61,6 +61,7 @@ extern const char *storage_class_names[sc_count];
 typedef struct specifier_s {
 	const type_t *type;
 	const expr_t *type_expr;
+	expr_t     *type_list;
 	attribute_t *attributes;
 	param_t    *params;
 	symbol_t   *sym;
@@ -80,7 +81,6 @@ typedef struct specifier_s {
 			bool        is_overload:1;
 			bool        is_generic:1;
 			bool        is_generic_block:1;
-			bool        is_function:1;//FIXME do proper void(*)() -> ev_func
 			bool        is_far:1;
 		};
 		unsigned    spec_bits;

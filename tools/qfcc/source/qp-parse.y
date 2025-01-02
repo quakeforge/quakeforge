@@ -214,10 +214,9 @@ function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
 	// use `@name` so `main` can be used (`.main` is reserved for the entry
 	// point)
 	auto fsym = new_symbol (va (0, "@%s", sym->name));
-	fsym->params = params;
 	fsym->type = parse_params (ret_type, params);
 	fsym->type = find_type (fsym->type);
-	fsym = function_symbol ((specifier_t) { .sym = fsym, }, ctx);
+	fsym = function_symbol ((specifier_t) {.sym = fsym, .params = params}, ctx);
 	auto fsym_expr = new_symbol_expr (fsym);
 	if (!params) {
 		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);

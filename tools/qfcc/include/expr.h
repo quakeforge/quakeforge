@@ -108,6 +108,7 @@ typedef struct element_chain_s {
 	element_t  *head;
 	element_t **tail;
 	const type_t *type;			///< inferred if null
+	const expr_t *type_expr;
 } element_chain_t;
 
 typedef struct ex_listitem_s {
@@ -1045,6 +1046,7 @@ expr_t *new_memset_expr (const expr_t *dst, const expr_t *val,
 						 const expr_t *count);
 
 expr_t *new_type_expr (const type_t *type);
+expr_t *new_type_function (int op, const expr_t *params);
 const expr_t *type_function (int op, const expr_t *params);
 symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
 const type_t *resolve_type (const expr_t *te, rua_ctx_t *ctx);
@@ -1156,6 +1158,7 @@ const expr_t *gather_factors (const type_t *type, int op,
 
 typedef struct rua_ctx_s rua_ctx_t;
 const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
+specifier_t spec_process (specifier_t spec, rua_ctx_t *ctx);
 bool can_inline (const expr_t *expr, symbol_t *fsym);
 
 ///@}

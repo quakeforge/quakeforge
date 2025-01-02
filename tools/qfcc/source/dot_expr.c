@@ -106,6 +106,7 @@ get_op_string (int op)
 		case QC_REVERSE:	return "@reverse";
 		case QC_DUAL:		return "@dual";
 		case QC_UNDUAL:		return "@undual";
+		case QC_AT_FUNCTION:return "@function";
 		case QC_AT_FIELD:	return "@field";
 		case QC_AT_POINTER:	return "@pointer";
 		case QC_AT_ARRAY:	return "@array";
@@ -342,7 +343,10 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, e->typ.params);
 		str = get_op_string (e->typ.op);
 	} else if (e->typ.type) {
-	   str = e->typ.type->encoding;
+		str = e->typ.type->encoding;
+		if (!str) {
+		   str = type_get_encoding (e->typ.type);
+		}
 	} else if (e->typ.sym) {
 	   str = e->typ.sym->name;
 	}

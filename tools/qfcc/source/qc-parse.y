@@ -199,7 +199,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		enum_specifier algebra_specifier
 %type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
-%type	<size>		array_decl
+%type	<expr>		array_decl
 
 %type	<expr>		const string
 
@@ -213,7 +213,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		opt_init_semi opt_expr comma_expr
 %type   <expr>		expr
 %type	<expr>		compound_init
-%type	<spec>		opt_cast
+%type	<expr>		opt_cast
 %type   <mut_expr>	element_list expr_list
 %type	<designator> designator designator_spec
 %type	<element>	element
@@ -353,6 +353,7 @@ spec_merge (specifier_t spec, specifier_t new)
 			spec.multi_type = true;
 		}
 	}
+	spec.type_list = new.type_list;
 	if (new.is_typedef || !storage_auto (new)) {
 		if ((spec.is_typedef || !storage_auto (spec)) && !spec.multi_store) {
 			error (0, "multiple storage classes in declaration specifiers");
@@ -391,50 +392,40 @@ spec_merge (specifier_t spec, specifier_t new)
 	return spec;
 }
 
-static const type_t *
+static specifier_t
 resolve_type_spec (specifier_t spec, rua_ctx_t *ctx)
 {
+	spec = spec_process (spec, ctx);
 	auto type = spec.type;
 	if (spec.type_expr) {
 		type = resolve_type (spec.type_expr, ctx);
+		spec.type_expr = nullptr;
 	}
-	return find_type (type);
-}
-
-static specifier_t
-typename_spec (specifier_t spec)
-{
-	spec = default_type (spec, 0);
-	spec.sym->type = find_type (append_type (spec.sym->type, spec.type));
-	spec.type = spec.sym->type;
+	spec.type = find_type (type);
 	return spec;
 }
 
 static specifier_t
-function_spec (specifier_t spec, param_t *params)
+typename_spec (specifier_t spec, rua_ctx_t *ctx)
 {
-	// empty param list in an abstract decl does not create a symbol
-	if (!spec.sym) {
-		spec.sym = new_symbol (0);
+	spec = default_type (spec, 0);
+	return spec;
+}
+
+static specifier_t
+function_spec (specifier_t spec, param_t *parameters)
+{
+	// return type will be filled in when building the final type
+	// FIXME not sure I like this setup for @function
+	auto params = new_type_expr (parse_params (0, parameters));
+	auto type_expr = new_type_function (QC_AT_FUNCTION, params);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
 	}
-	if (!spec.type_expr) {
-		spec = default_type (spec, spec.sym);
-	}
-	spec.sym->params = params;
-	if (spec.sym->type) {
-		if (is_func (spec.sym->type)) {
-			error (0, "'%s' declared as a function returning a function",
-				   spec.sym->name);
-		} else if (is_array (spec.sym->type)) {
-			error (0, "declaration of '%s' as array of functions",
-				   spec.sym->name);
-		} else if (!is_pointer (spec.sym->type)
-				   && !is_field (spec.sym->type)) {
-			internal_error (0, "unexpected type");
-		}
-	}
-	spec.is_function = !spec.sym->type; //FIXME do proper void(*)() -> ev_func
-	spec.sym->type = append_type (spec.sym->type, parse_params (0, params));
+
+	spec.params = parameters;
 	spec.is_generic = generic_scope;
 	spec.is_generic_block = generic_block;
 	spec.symtab = generic_symtab;
@@ -442,41 +433,50 @@ function_spec (specifier_t spec, param_t *params)
 }
 
 static specifier_t
-array_spec (specifier_t spec, unsigned size)
+array_spec (specifier_t spec, const expr_t *size)
 {
-	spec = default_type (spec, spec.sym);
-	if (spec.sym->type) {
-		if (is_func (spec.sym->type)) {
-			error (0, "'%s' declared as function returning an array",
-				   spec.sym->name);
-		} else if (!is_pointer (spec.sym->type)
-				   && !is_array (spec.sym->type)
-				   && !is_field (spec.sym->type)) {
-			internal_error (0, "unexpected type");
-	   }
+	// element type will be filled in when building the final type
+	auto params = new_list_expr (size);
+	auto type_expr = new_type_function (QC_AT_ARRAY, params);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
 	}
-	spec.sym->type = append_type (spec.sym->type, array_type (0, size));
 	return spec;
 }
 
 static specifier_t
 pointer_spec (specifier_t quals, specifier_t spec)
 {
-	if (spec.sym->type) {
-		if (!is_func (spec.sym->type)
-			&& !is_pointer (spec.sym->type)
-			&& !is_array (spec.sym->type)
-			&& !is_field (spec.sym->type)) {
-			internal_error (0, "unexpected type");
-	   }
+	// referenced type will be filled in when building the final type
+	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
 	}
-	spec.sym->type = append_type (spec.sym->type, pointer_type (0));
+	return spec;
+}
+
+static specifier_t
+field_spec (specifier_t spec)
+{
+	// referenced type will be filled in when building the final type
+	auto type_expr = new_type_function (QC_AT_FIELD, nullptr);
+	if (spec.type_list) {
+		expr_prepend_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
+	}
 	return spec;
 }
 
 static specifier_t
 qc_function_spec (specifier_t spec, param_t *params)
 {
+#if 0
+	//FIXME this is borked
 	// .float () foo; is a field holding a function variable rather
 	// than a function that returns a float field.
 	// FIXME I think this breaks fields holding functions that return fields
@@ -494,19 +494,17 @@ qc_function_spec (specifier_t spec, param_t *params)
 	spec.sym = new_symbol (0);
 	spec.sym->type = field_chain;
 	spec.type = ret_type;
+#endif
 
 	spec = function_spec (spec, params);
 	return spec;
 }
 
 static specifier_t
-qc_set_symbol (specifier_t spec, symbol_t *sym)
+qc_set_symbol (specifier_t spec, symbol_t *sym, rua_ctx_t *ctx)
 {
-	// qc-style function declarations don't know the symbol name until the
-	// declaration is fully parsed, so spec.sym's name is null but its type
-	// carries any extra type information (field, pointer, array)
-	sym->params = spec.sym->params;
-	sym->type = spec.sym->type;
+	spec = spec_process (spec, ctx);
+	sym->type = spec.type;
 	spec.sym = sym;
 	return spec;
 }
@@ -518,20 +516,25 @@ make_ellipsis (void)
 }
 
 static param_t *
-make_param (specifier_t spec)
+make_param (specifier_t spec, rua_ctx_t *ctx)
 {
 	//FIXME should not be sc_global
 	if (spec.storage == sc_global) {
 		spec.storage = sc_param;
 	}
 
+	spec = spec_process (spec, ctx);
+
 	param_t *param;
 	if (spec.type_expr) {
 		param = new_generic_param (spec.type_expr, spec.sym->name);
-	} else {
+	} else if (spec.sym) {
 		spec = default_type (spec, spec.sym);
 		spec.type = find_type (append_type (spec.sym->type, spec.type));
-		param = new_param (0, spec.type, spec.sym->name);
+		param = new_param (nullptr, spec.type, spec.sym->name);
+	} else {
+		spec = default_type (spec, spec.sym);
+		param = new_param (nullptr, spec.type, nullptr);
 	}
 	if (spec.is_const) {
 		if (spec.storage == sc_out) {
@@ -569,19 +572,20 @@ make_selector (const char *selector, const type_t *type, const char *name)
 }
 
 static param_t *
-make_qc_param (specifier_t spec, symbol_t *sym)
+make_qc_param (specifier_t spec, symbol_t *sym, rua_ctx_t *ctx)
 {
 	sym->type = nullptr;
 	spec.sym = sym;
-	return make_param (spec);
+	return make_param (spec, ctx);
 }
 
 static param_t *
-make_qc_func_param (specifier_t spec, param_t *params, symbol_t *sym)
+make_qc_func_param (specifier_t spec, param_t *params, symbol_t *sym,
+					rua_ctx_t *ctx)
 {
 	spec = qc_function_spec (spec, params);
-	sym->type = append_type (spec.sym->type, spec.type);
-	param_t   *param = new_param (0, sym->type, sym->name);
+	spec = spec_process (spec, ctx);
+	param_t   *param = new_param (0, spec.type, sym->name);
 	return param;
 }
 
@@ -795,11 +799,11 @@ qc_param_list
 qc_first_param
 	: typespec identifier
 		{
-			$$ = make_qc_param ($1, $2);
+			$$ = make_qc_param ($1, $2, ctx);
 		}
 	| typespec_reserved qc_func_params identifier
 		{
-			$$ = make_qc_func_param ($1, $2, $3);
+			$$ = make_qc_func_param ($1, $2, $3, ctx);
 		}
 	| ELLIPSIS
 		{
@@ -813,11 +817,11 @@ qc_first_param
 qc_param
 	: typespec identifier
 		{
-			$$ = make_qc_param ($1, $2);
+			$$ = make_qc_param ($1, $2, ctx);
 		}
 	| typespec qc_func_params identifier
 		{
-			$$ = make_qc_func_param ($1, $2, $3);
+			$$ = make_qc_func_param ($1, $2, $3, ctx);
 		}
 	| ELLIPSIS
 		{
@@ -859,7 +863,7 @@ qc_func_decl
 qc_nocode_func
 	: identifier '=' '#' expr
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
 			const expr_t *bi_val = expr_process ($4, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
@@ -868,19 +872,19 @@ qc_nocode_func
 		}
 	| identifier '=' intrinsic
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
 			build_intrinsic_function (spec, $3, ctx);
 		}
 	| identifier '=' expr
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
 			const expr_t *expr = $3;
 
 			declare_symbol (spec, expr, current_symtab, local_expr, ctx);
 		}
 	| identifier
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
 			declare_symbol (spec, nullptr, current_symtab, local_expr, ctx);
 		}
 	;
@@ -889,7 +893,7 @@ qc_code_func
 	: identifier '=' optional_state_expr
 	  save_storage
 		{
-			specifier_t spec = qc_set_symbol ($<spec>0, $1);
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
 			auto fs = (funcstate_t) {
 				.function = current_func,
 			};
@@ -971,8 +975,9 @@ notype_declarator
 		}
 	| NAME
 		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1->name);
+			auto spec = $<spec>0;
+			spec.sym = new_symbol ($1->name);
+			$$ = spec;
 		}
 	| NOT
 		{
@@ -1134,9 +1139,7 @@ typespec_reserved
 	// for basic types, but functions need special treatment
 	| '.' typespec_reserved
 		{
-			// avoid find_type()
-			$$ = type_spec (field_type (0));
-			$$.type = append_type ($$.type, $2.type);
+			$$ = field_spec ($2);
 		}
 	;
 
@@ -1178,9 +1181,7 @@ typespec_nonreserved
 	// for basic types, but functions need special treatment
 	| '.' typespec_nonreserved
 		{
-			// avoid find_type()
-			$$ = type_spec (field_type (0));
-			$$.type = append_type ($$.type, $2.type);
+			$$ = field_spec ($2);
 		}
 	;
 
@@ -1202,10 +1203,7 @@ save_storage
 function_body
 	: method_optional_state_expr[state]
 		{
-			specifier_t spec = $<spec>0;
-			if (!spec.is_generic) {
-				spec = default_type (spec, spec.sym);
-			}
+			specifier_t spec = spec_process ($<spec>0, ctx);
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
 			$<spec>$ = spec;
@@ -1231,7 +1229,7 @@ function_body
 		}
 	| '=' '#' expr ';'
 		{
-			specifier_t spec = $<spec>0;
+			specifier_t spec = spec_process ($<spec>0, ctx);
 			const expr_t *bi_val = expr_process ($3, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
@@ -1240,7 +1238,7 @@ function_body
 		}
 	| '=' intrinsic
 		{
-			specifier_t spec = $<spec>0;
+			specifier_t spec = spec_process ($<spec>0, ctx);
 			build_intrinsic_function (spec, $2, ctx);
 		}
 	;
@@ -1300,7 +1298,7 @@ generic_type
 	;
 
 type_function
-	: type_func '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
+	: type_func '(' type_param_list ')'	{ $$ = new_type_function ($1, $3); }
 	;
 
 type_func
@@ -1579,7 +1577,7 @@ components
 component_declarator
 	: declarator
 		{
-			declare_field ($1, current_symtab);
+			declare_field ($1, current_symtab, ctx);
 		}
 	| declarator ':' expr
 	| ':' expr
@@ -1630,23 +1628,23 @@ parameter_list
 parameter
 	: declspecs_ts param_declarator
 		{
-			$$ = make_param ($2);
+			$$ = make_param ($2, ctx);
 		}
 	| declspecs_ts notype_declarator
 		{
-			$$ = make_param ($2);
+			$$ = make_param ($2, ctx);
 		}
 	| declspecs_ts absdecl
 		{
-			$$ = make_param ($2);
+			$$ = make_param ($2, ctx);
 		}
 	| declspecs_nosc_nots notype_declarator
 		{
-			$$ = make_param ($2);
+			$$ = make_param ($2, ctx);
 		}
 	| declspecs_nosc_nots absdecl
 		{
-			$$ = make_param ($2);
+			$$ = make_param ($2, ctx);
 		}
 	;
 
@@ -1654,7 +1652,6 @@ absdecl
 	: /* empty */
 		{
 			$$ = $<spec>0;
-			$$.sym = new_symbol (0);
 		}
 	| absdecl1
 	;
@@ -1716,24 +1713,11 @@ param_declarator_nostarttypename
 	;
 
 typename
-	: declspecs_nosc absdecl
-		{
-			$$ = typename_spec ($2);
-		}
+	: declspecs_nosc absdecl	{ $$ = typename_spec ($2, ctx); }
 	;
 
 array_decl
-	: '[' expr ']'
-		{
-			if (is_int_val ($2) && expr_int ($2) > 0) {
-				$$ = expr_int ($2);
-			} else if (is_uint_val ($2) && expr_uint ($2) > 0) {
-				$$ = expr_uint ($2);
-			} else {
-				error (0, "invalid array size");
-				$$ = 0;
-			}
-		}
+	: '[' expr ']'				{ $$ = $expr; }
 	| '[' ']'					{ $$ = 0; }
 	;
 
@@ -1780,16 +1764,16 @@ var_initializer
 compound_init
 	: opt_cast '{' element_list optional_comma '}'
 		{
-			auto type = resolve_type_spec ($1, ctx);
-			$3->compound.type = type;
+			auto cast = $1;
+			$3->compound.type_expr = cast;
 			$$ = $3;
 		}
 	| opt_cast '{' '}'
 		{
-			auto type = resolve_type_spec ($1, ctx);
-			if (type) {
+			auto cast = $1;
+			if (cast) {
 				auto elements = new_compound_init ();
-				elements->compound.type = type;
+				elements->compound.type_expr = cast;
 				$$ = elements;
 			} else {
 				$$ = nullptr;
@@ -1798,8 +1782,8 @@ compound_init
 	;
 
 opt_cast
-	: '(' typename ')'					{ $$ = $2; }
-	| /*empty*/							{ $$ = (specifier_t) {}; }
+	: '(' typename ')'					{ $$ = new_decl_expr ($2, nullptr); }
+	| /*empty*/							{ $$ = nullptr; }
 	;
 
 method_optional_state_expr
@@ -2156,11 +2140,8 @@ cast_expr
 	: '(' typename ')' cast_expr
 		{
 			auto spec = $2;
-			auto type_expr = spec.type_expr;
-			if (!type_expr) {
-				type_expr = new_type_expr (spec.type);
-			}
-			$$ = new_binary_expr ('C', type_expr, $4);
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_binary_expr ('C', decl, $4);
 		}
 	| CONSTRUCT '(' typename ',' expr_list[args] ')' //FIXME arg_expr instead?
 		{
@@ -2635,7 +2616,7 @@ notype_ivars
 ivar_declarator
 	: declarator
 		{
-			declare_field ($1, current_symtab);
+			declare_field ($1, current_symtab, ctx);
 		}
 	| declarator ':' expr
 	| ':' expr
@@ -2747,15 +2728,15 @@ methodproto
 methoddecl
 	: '(' typename ')' unaryselector
 		{
-			auto type = resolve_type_spec ($2, ctx);
-			$$ = new_method (type, $4, 0);
+			auto spec = resolve_type_spec ($2, ctx);
+			$$ = new_method (spec.type, $4, 0);
 		}
 	| unaryselector
 		{ $$ = new_method (&type_id, $1, 0); }
 	| '(' typename ')' keywordselector optional_param_list
 		{
-			auto type = resolve_type_spec ($2, ctx);
-			$$ = new_method (type, $4, $5);
+			auto spec = resolve_type_spec ($2, ctx);
+			$$ = new_method (spec.type, $4, $5);
 		}
 	| keywordselector optional_param_list
 		{ $$ = new_method (&type_id, $1, $2); }
@@ -2810,18 +2791,22 @@ reserved_word
 keyworddecl
 	: selector ':' '(' typename ')' identifier
 		{
-			auto type = resolve_type_spec ($4, ctx);
-			$$ = make_selector ($1->name, type, $6->name);
+			auto spec = resolve_type_spec ($4, ctx);
+			$$ = make_selector ($1->name, spec.type, $6->name);
 		}
 	| selector ':' identifier
-		{ $$ = make_selector ($1->name, &type_id, $3->name); }
+		{
+			$$ = make_selector ($1->name, &type_id, $3->name);
+		}
 	| ':' '(' typename ')' identifier
 		{
-			auto type = resolve_type_spec ($3, ctx);
-			$$ = make_selector ("", type, $5->name);
+			auto spec = resolve_type_spec ($3, ctx);
+			$$ = make_selector ("", spec.type, $5->name);
 		}
 	| ':' identifier
-		{ $$ = make_selector ("", &type_id, $2->name); }
+		{
+			$$ = make_selector ("", &type_id, $2->name);
+		}
 	;
 
 obj_expr
@@ -2830,8 +2815,8 @@ obj_expr
 	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
 	| ENCODE '(' typename ')'
 		{
-			auto type = resolve_type_spec ($3, ctx);
-			$$ = encode_expr (type);
+			auto spec = resolve_type_spec ($3, ctx);
+			$$ = encode_expr (spec.type);
 		}
 	| obj_string /* FIXME string object? */
 	;

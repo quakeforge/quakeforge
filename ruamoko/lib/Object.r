@@ -78,7 +78,7 @@ BOOL (id object) object_is_meta_class = #0;
 
 @end
 
-typedef void arIMP(id, SEL, id);
+typedef void (*arIMP)(id, SEL, id);
 
 @static BOOL allocDebug;
 @static Class autoreleaseClass;

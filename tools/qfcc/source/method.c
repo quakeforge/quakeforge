@@ -359,7 +359,7 @@ send_message (int super, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 	const char *sm_name = "obj_msgSend";
-	type_t     *sm_type = &type_IMP;
+	const type_t *sm_type = type_IMP.fldptr.type;
 
 	if (super) {
 		sm_name = "obj_msgSend_super";

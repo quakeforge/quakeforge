@@ -202,6 +202,14 @@ type_t      type_param = {
 	.type = ev_invalid,
 	.meta = ty_struct,
 };
+static type_t type_param_pointer = {
+	.type = ev_ptr,
+	.alignment = 1,
+	.width = 1,
+	.columns = 1,
+	.meta = ty_basic,
+	.fldptr.type = &type_param,
+};
 type_t      type_zero = {
 	.type = ev_invalid,
 	.meta = ty_struct,
@@ -222,7 +230,7 @@ type_t      type_xdef_pointer = {
 	.width = 1,
 	.columns = 1,
 	.meta = ty_basic,
-	{{&type_xdef}},
+	.fldptr.type = &type_xdef,
 };
 type_t      type_xdefs = {
 	.type = ev_invalid,
@@ -1668,6 +1676,10 @@ type_assignable (const type_t *dst, const type_t *src)
 	// any field = any field
 	if (dst->type == ev_field && src->type == ev_field)
 		return true;
+	if (is_pointer (dst) && is_func (src)) {
+		auto type = dereference_type (dst);
+		return type == src;
+	}
 	// pointer = array
 	if (is_pointer (dst) && is_array (src)) {
 		if (is_void (dst->fldptr.type)
@@ -2063,6 +2075,7 @@ static void
 chain_structural_types (void)
 {
 	chain_type (&type_param);
+	chain_type (&type_param_pointer);
 	chain_type (&type_zero);
 	chain_type (&type_type_encodings);
 	chain_type (&type_xdef);
@@ -2203,6 +2216,7 @@ init_types (void)
 
 	make_structure ("@zero", 'u', zero_struct, &type_zero);
 	make_structure ("@param", 'u', param_struct, &type_param);
+
 	build_vector_struct (&type_vector, false);
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
@@ -2210,7 +2224,7 @@ init_types (void)
 	make_structure ("@xdef", 's', xdef_struct, &type_xdef);
 	make_structure ("@xdefs", 's', xdefs_struct, &type_xdefs);
 
-	va_list_struct[1].type = pointer_type (&type_param);
+	va_list_struct[1].type = &type_param_pointer;
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
 	build_vector_struct (&type_quaternion, false);

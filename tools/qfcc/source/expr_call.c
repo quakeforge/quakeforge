@@ -459,7 +459,10 @@ function_expr (const expr_t *fexpr, const expr_t *args)
 	}
 
 	auto ftype = get_type (fexpr);
-	if (ftype->type != ev_func) {
+	if (is_ptr (ftype) && is_func (dereference_type (ftype))) {
+		ftype = dereference_type (ftype);
+	}
+	if (!is_func (ftype)) {
 		if (fexpr->type == ex_symbol)
 			return error (fexpr, "Called object \"%s\" is not a function",
 						  fexpr->symbol->name);

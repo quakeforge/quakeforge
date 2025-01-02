@@ -755,11 +755,11 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 }
 
 static metafunc_t *
-get_function (const char *name, specifier_t spec)
+get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
 	if (!spec.sym->type || !spec.sym->type->encoding) {
-		spec = default_type (spec, spec.sym);
-		spec.sym->type = append_type (spec.sym->type, spec.type);
+		spec = spec_process (spec, ctx);
+		spec.sym->type = spec.type;
 		set_func_attrs (spec.sym->type, spec.attributes);
 		spec.sym->type = find_type (spec.sym->type);
 	}
@@ -850,6 +850,7 @@ symbol_t *
 function_symbol (specifier_t spec, rua_ctx_t *ctx)
 {
 	symbol_t   *sym = spec.sym;
+	sym->params = spec.params;
 	const char *name = sym->name;
 	metafunc_t *func = Hash_Find (function_map, name);
 
@@ -879,7 +880,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 		Hash_Add (metafuncs, func);
 		Hash_Add (function_map, func);
 	} else {
-		func = get_function (name, spec);
+		func = get_function (name, spec, ctx);
 	}
 
 	if (func && func->meta_type == mf_overload)

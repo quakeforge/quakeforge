@@ -161,6 +161,7 @@ single_type_opt_int_pair (int arg_count, const expr_t **args)
 static const expr_t *
 evaluate_int (const expr_t *expr, rua_ctx_t *ctx)
 {
+	expr = expr_process (expr, ctx);
 	if (expr->type == ex_expr || expr->type == ex_uexpr) {
 		auto e = new_expr ();
 		*e = *expr;
@@ -203,7 +204,7 @@ resolve_function (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 	return &type_func;//FIXME
 	auto type = resolve_type (args[0], ctx);
 	if (type) {
-		type = field_type (type);
+		type = field_type (type);//FIXME wrong type
 		type = find_type (type);
 	}
 	return type;
@@ -224,10 +225,7 @@ static const type_t *
 resolve_pointer (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
-	if (type) {
-		type = pointer_type (type);
-		type = find_type (type);
-	}
+	type = pointer_type (type);
 	return type;
 }
 
@@ -235,17 +233,15 @@ static const type_t *
 resolve_array (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
-	if (type) {
-		int count = 0;
-		if (arg_count > 1) {
-			auto count_expr = evaluate_int (args[1], ctx);
-			if (is_error (count_expr)) {
-				return nullptr;
-			}
-			count = expr_int (count_expr);
+	int count = 0;
+	if (arg_count > 1) {
+		auto count_expr = evaluate_int (args[1], ctx);
+		if (is_error (count_expr)) {
+			return nullptr;
 		}
-		type = array_type (type, count);
+		count = expr_integral (count_expr);
 	}
+	type = array_type (type, count);
 	return type;
 }
 
@@ -671,6 +667,19 @@ static type_func_t type_funcs[] = {
 	},
 };
 
+expr_t *
+new_type_function (int op, const expr_t *params)
+{
+	auto te = new_expr ();
+	te->type = ex_type;
+	te->nodag = true;
+	te->typ = (ex_type_t) {
+		.op = op,
+		.params = params,
+	};
+	return te;
+}
+
 const expr_t *
 type_function (int op, const expr_t *params)
 {
@@ -686,14 +695,7 @@ type_function (int op, const expr_t *params)
 	if (msg) {
 		return error (params, "%s for %s", msg, type_funcs[ind].name);
 	}
-	auto te = new_expr ();
-	te->type = ex_type;
-	te->nodag = true;
-	te->typ = (ex_type_t) {
-		.op = op,
-		.params = params,
-	};
-	return te;
+	return new_type_function (op, params);
 }
 
 symbol_t *
@@ -725,9 +727,9 @@ resolve_type (const expr_t *te, rua_ctx_t *ctx)
 		internal_error (te, "not a type expression");
 	}
 	if (!te->typ.op) {
-		if (!te->typ.type) {
-			internal_error (te, "no type in reference");
-		}
+		//if (!te->typ.type) {
+		//	internal_error (te, "no type in reference");
+		//}
 		return te->typ.type;
 	}
 	int         op = te->typ.op;

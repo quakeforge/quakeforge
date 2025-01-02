@@ -86,9 +86,8 @@ type_t      type_SEL = {
 };
 const type_t *IMP_params[] = { &type_id, &type_SEL };
 param_qual_t IMP_quals[] = { pq_in, pq_in };
-type_t      type_IMP = {
+type_t      type_IMP_func = {
 	.type = ev_func,
-	.name = "IMP",
 	.alignment = 1,
 	.width = 1,
 	.columns = 1,
@@ -99,6 +98,17 @@ type_t      type_IMP = {
 		.param_types = IMP_params,
 		.param_quals = IMP_quals,
 		.no_va_list = 1,
+	},
+};
+type_t      type_IMP = {
+	.type = ev_ptr,
+	.name = "IMP",
+	.alignment = 1,
+	.width = 1,
+	.columns = 1,
+	.meta = ty_basic,
+	.fldptr = {
+		.type = &type_IMP_func,
 	},
 };
 type_t      type_super = {
@@ -1983,6 +1993,7 @@ init_objective_structs (void)
 	make_structure ("obj_selector", 's', sel_struct, &type_selector);
 	chain_type (&type_selector);
 	chain_type (&type_SEL);
+	chain_type (&type_IMP_func);
 	chain_type (&type_IMP);
 
 	make_structure ("obj_method", 's', method_struct, &type_method);
@@ -2009,8 +2020,8 @@ init_objective_structs (void)
 static void
 init_classes (void)
 {
-	make_structure ("obj_class", 's', class_struct, &type_class);
 	chain_type (&type_class);
+	make_structure ("obj_class", 's', class_struct, &type_class);
 	chain_type (&type_Class);
 	make_structure ("obj_object", 's', object_struct, &type_object);
 	chain_type (&type_object);

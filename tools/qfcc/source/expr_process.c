@@ -50,14 +50,27 @@
 
 typedef const expr_t *(*process_f) (const expr_t *expr, rua_ctx_t *ctx);
 
+static const type_t *
+proc_decl_type (const expr_t *decl, rua_ctx_t *ctx)
+{
+	if (decl->type != ex_decl) {
+		internal_error (decl, "not a decl expression");
+	}
+	if (decl->decl.list.head) {
+		internal_error (decl, "non-empty cast decl");
+	}
+	auto spec = spec_process (decl->decl.spec, ctx);
+	return spec.type;
+}
+
 static const expr_t *
 proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->expr.op == 'C') {
-		auto type = resolve_type (expr->expr.e1, ctx);
-		expr = expr_process (expr->expr.e2, ctx);
-		return cast_expr (type, expr);
+		auto type = proc_decl_type (expr->expr.e1, ctx);
+		auto e = expr_process (expr->expr.e2, ctx);
+		return cast_expr (type, e);
 	}
 	auto e1 = expr_process (expr->expr.e1, ctx);
 	auto e2 = expr_process (expr->expr.e2, ctx);
@@ -447,6 +460,9 @@ proc_compound (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto comp = new_compound_init ();
+	if (expr->compound.type_expr) {
+		comp->compound.type = proc_decl_type (expr->compound.type_expr, ctx);
+	}
 	for (auto ele = expr->compound.head; ele; ele = ele->next) {
 		append_element (comp, new_element (expr_process (ele->expr, ctx),
 										   ele->designator));
@@ -593,18 +609,132 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 	return new_cond_expr (test, true_expr, false_expr);
 }
 
+static const type_t *
+decl_function (const type_t *type, const expr_t *t, const symbol_t *sym,
+			   rua_ctx_t *ctx)
+{
+	scoped_src_loc (t);
+	if (type && is_func (type)) {
+		error (t, "'%s' declared as a function returning a function",
+			   sym->name);
+	} else if (type && is_array (type)) {
+		error (t, "'%s' declared as function returning an array", sym->name);
+	}
+	// FIXME not sure I like this setup for @function
+	auto params = t->typ.params;
+	auto ftype = params->typ.type;
+	if (type) {
+		ftype = append_type (ftype, type);
+		ftype = find_type (ftype);
+	}
+	return ftype;
+}
+
+static const type_t *
+decl_array (const type_t *type, const expr_t *t, const symbol_t *sym,
+			rua_ctx_t *ctx)
+{
+	scoped_src_loc (t);
+	if (type && is_func (type)) {
+		error (t, "declaration of '%s' as array of functions", sym->name);
+	}
+	auto params = new_list_expr (nullptr);
+	if (!proc_do_list (&params->list, &t->typ.params->list, ctx)) {
+		return type;
+	}
+	expr_prepend_expr (params, new_type_expr (type));
+	auto type_expr = type_function (QC_AT_ARRAY, params);
+	return resolve_type (type_expr, ctx);
+}
+
+static const type_t *
+decl_pointer (const type_t *type, const expr_t *t, const symbol_t *sym,
+			  rua_ctx_t *ctx)
+{
+	scoped_src_loc (t);
+	auto params = new_list_expr (new_type_expr (type));
+	auto type_expr = type_function (QC_AT_POINTER, params);
+	return resolve_type (type_expr, ctx);
+}
+
+static const type_t *
+decl_field (const type_t *type, const expr_t *t, const symbol_t *sym,
+			rua_ctx_t *ctx)
+{
+	scoped_src_loc (t);
+	auto params = new_list_expr (new_type_expr (type));
+	auto type_expr = type_function (QC_AT_FIELD, params);
+	return resolve_type (type_expr, ctx);
+}
+
+specifier_t
+spec_process (specifier_t spec, rua_ctx_t *ctx)
+{
+	if (spec.type && spec.type_expr) {
+		internal_error (0, "both type and type_expr set");
+	}
+	if (!spec.type_expr) {
+		spec = default_type (spec, spec.sym);
+	}
+	if (!spec.type_list) {
+		return spec;
+	}
+	if (spec.type_list->type != ex_list) {
+		internal_error (spec.type_list, "not a list");
+	}
+	int num_types = list_count (&spec.type_list->list);
+	const expr_t *type_list[num_types];
+	auto type = spec.type; // core type (int etc)
+	if (spec.type_expr) {
+		type = resolve_type (spec.type_expr, ctx);
+	}
+	//const type_t *type = nullptr;
+	// other than fields, the type list is built up by appending types
+	// to the list, but it's the final type in the list that takes the
+	// core type, so extract them in reverse for a forward loop
+	list_scatter_rev (&spec.type_list->list, type_list);
+	for (int i = 0; i < num_types; i++) {
+		auto t = type_list[i];
+		if (t->type != ex_type) {
+			internal_error (t, "not a type expr");
+		}
+		switch (t->typ.op) {
+			case QC_AT_FUNCTION:
+				type = decl_function (type, t, spec.sym, ctx);
+				break;
+			case QC_AT_ARRAY:
+				type = decl_array (type, t, spec.sym, ctx);
+				break;
+			case QC_AT_POINTER:
+				type = decl_pointer (type, t, spec.sym, ctx);
+				break;
+			case QC_AT_FIELD:
+				type = decl_field (type, t, spec.sym, ctx);
+				break;
+			default:
+				internal_error (t, "unexpected type op: %d", t->typ.op);
+		}
+	}
+	spec.type_list = nullptr;
+	spec.type = type;
+	return spec;
+}
+
 static const expr_t *
 proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	expr_t *block = nullptr;
 	auto decl_spec = expr->decl.spec;
+	if (decl_spec.type && decl_spec.type_expr) {
+		internal_error (0, "both type and type_expr set");
+	}
 	if (decl_spec.storage == sc_local) {
 		scoped_src_loc (expr);
 		block = new_block_expr (nullptr);
 	}
 	int count = list_count (&expr->decl.list);
-	const expr_t *decls[count + 1];
+	const expr_t *decls[count];
 	list_scatter (&expr->decl.list, decls);
 	for (int i = 0; i < count; i++) {
 		auto decl = decls[i];
@@ -628,6 +758,12 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			internal_error (decl, "not a symbol");
 		}
 		auto spec = decl_spec;
+		spec.sym = sym;
+		if (spec.type_list) {
+			// to get here, a concrete declaration is being made
+			spec.is_generic = false;
+			spec = spec_process (spec, ctx);
+		}
 		if (sym && !spec.type_expr) {
 			spec.type = append_type (sym->type, spec.type);
 			spec.type = find_type (spec.type);

@@ -6,10 +6,10 @@
 #include <script.h>
 #include <string.h>
 
-typedef void () void_function;
+typedef void (*void_function)();
 
 int PR_SetField (entity ent, string field, string value) = #0;
-@function(void) PR_FindFunction (string func) = #0;
+void_function PR_FindFunction (string func) = #0;
 
 @static void ParseEntities (string ent_data);
 
@@ -80,7 +80,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 	local int count;
 	local string field, value;
 	local plitem_t *keys;
-	local @function(void) func;
+	local void_function func;
 	local Entity *e;
 
 	classname = PL_String (PL_ObjectForKey (dict, "classname"));

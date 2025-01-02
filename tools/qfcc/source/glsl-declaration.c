@@ -108,6 +108,6 @@ void
 glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	auto attributes = glsl_optimize_attributes (spec.attributes);
-	spec.sym = declare_field (spec, symtab);
+	spec.sym = declare_field (spec, symtab, ctx);
 	glsl_apply_attributes (attributes, spec);
 }

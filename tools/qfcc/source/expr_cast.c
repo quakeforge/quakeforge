@@ -108,8 +108,12 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	}
 
 	if ((dstType == type_default && is_enum (srcType))
-		|| (is_enum (dstType) && srcType == type_default))
+		|| (is_enum (dstType) && srcType == type_default)) {
 		return e;
+	}
+	if ((is_pointer (dstType) && is_func (srcType))) {
+		return new_alias_expr (dstType, e);
+	}
 	if ((is_pointer (dstType) && is_string (srcType))
 		|| (is_string (dstType) && is_pointer (srcType))) {
 		return new_alias_expr (dstType, e);

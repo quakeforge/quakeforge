@@ -291,16 +291,12 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		sym->table = nullptr;
 	}
 
-	if (!spec.type_expr && !spec.is_function) {
-		spec = default_type (spec, sym);
-	}
+	spec = spec_process (spec, ctx);
 	if (!spec.storage) {
 		spec.storage = current_storage;
 	}
 
-	if (spec.type && (spec.is_typedef || !sym->type || !is_func (sym->type))) {
-		sym->type = append_type (spec.sym->type, spec.type);
-	}
+	sym->type = spec.type;
 
 	if (spec.is_typedef) {
 		if (init) {
@@ -311,7 +307,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		sym->type = find_type (alias_type (sym->type, sym->type, sym->name));
 		symtab_addsymbol (symtab, sym);
 	} else {
-		if (spec.is_function && is_func (sym->type)) {
+		if (is_func (sym->type)) {
 			if (init) {
 				error (0, "function %s is initialized", sym->name);
 			}
@@ -328,10 +324,10 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 }
 
 symbol_t *
-declare_field (specifier_t spec, symtab_t *symtab)
+declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	symbol_t   *s = spec.sym;
-	spec = default_type (spec, s);
+	spec = spec_process (spec, ctx);
 	s->type = find_type (append_type (s->type, spec.type));
 	s->sy_type = sy_offset;
 	s->visibility = current_visibility;
