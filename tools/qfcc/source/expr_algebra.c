@@ -2987,6 +2987,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		if (srcType == dstType) {
 			if (summed_extend (src)) {
 				auto block = new_block_expr (0);
+				block->block.no_flush = true;
 				assign_extend (block, dst, src);
 				return block;
 			}
@@ -3005,6 +3006,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 
 	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr (0);
+	block->block.no_flush = true;
 	int  memset_base = 0;
 	for (int i = 0; i < layout->count; i++) {
 		if (!c[i]) {

@@ -124,7 +124,8 @@ typedef struct {
 	ex_list_t   list;
 	symtab_t   *scope;
 	const expr_t *result;		///< the result of this block if non-void
-	int         is_call;		///< this block exprssion forms a function call
+	bool        is_call;		///< this block exprssion forms a function call
+	bool        no_flush;		///< don't flush edags
 	void       *return_addr;	///< who allocated this
 } ex_block_t;
 

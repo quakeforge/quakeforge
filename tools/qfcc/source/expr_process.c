@@ -158,6 +158,7 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		if (field) {
 			member = new_deffield_expr (0, field->type, field->def);
+			member = edag_add_expr (member);
 			return typed_binary_expr (field->type, '.', object, member);
 		} else {
 			member = expr_process (member, ctx);
@@ -199,6 +200,7 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		member = new_symbol_expr (ivar);
 	}
+	member = edag_add_expr (member);
 	auto e = new_field_expr (object, member);
 	e->field.type = member->symbol->type;
 	return e;
@@ -246,13 +248,16 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 	current_symtab = expr->block.scope;
 	int count = list_count (&expr->block.list);
 	int num_out = 0;
+	bool flush = !expr->block.no_flush;
 	const expr_t *result = nullptr;
 	const expr_t *in[count + 1];
 	const expr_t *out[count + 1];
 	const expr_t *err = nullptr;
 	list_scatter (&expr->block.list, in);
 	for (int i = 0; i < count; i++) {
-		edag_flush ();
+		if (flush) {
+			edag_flush ();
+		}
 		auto e = expr_process (in[i], ctx);
 		if (is_error (e)) {
 			err = e;
@@ -265,7 +270,9 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 			}
 		}
 	}
-	edag_flush ();
+	if (flush) {
+		edag_flush ();
+	}
 	if (err) {
 		current_symtab = old_scope;
 		return err;
@@ -758,6 +765,7 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 	}
 
 	auto proc = funcs[expr->type] (expr, ctx);
+	proc = edag_add_expr (proc);
 	if (proc && proc->type == ex_process) {
 		auto func = current_func;
 		if (proc->process.function) {
