@@ -1162,7 +1162,6 @@ typespec_nonreserved
 			} else {
 				$$ = type_spec (&type_id);
 			}
-			$$.sym = $1.sym;
 		}
 	| CLASS_NAME protocolrefs
 		{
@@ -1174,7 +1173,6 @@ typespec_nonreserved
 			} else {
 				$$ = type_spec ($1->type);
 			}
-			$$.sym = $1;
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment
