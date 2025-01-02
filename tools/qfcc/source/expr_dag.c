@@ -141,7 +141,7 @@ edag_add_expr (const expr_t *expr)
 				}
 				break;
 			case ex_value:
-				if (e->value == expr->value) {
+				if (e->value == expr->value && e->implicit == expr->implicit) {
 					return e;
 				}
 				break;
