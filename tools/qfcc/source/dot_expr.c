@@ -91,6 +91,7 @@ get_op_string (int op)
 		case QC_SHR:		return ">>";
 		case '.':			return ".";
 		case 'C':			return "<cast>";
+		case 'S':			return "<sizeof>";
 		case QC_SCALE:		return "@scale";
 		case QC_GEOMETRIC:	return "@geometric";
 		case QC_QMUL:		return "@qmul";
