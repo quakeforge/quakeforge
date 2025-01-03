@@ -183,8 +183,9 @@ method_symbol (class_type_t *class_type, method_t *method, rua_ctx_t *ctx)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
-	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol ((specifier_t) { .sym = sym }, ctx);
+	sym = new_symbol (str->str);
+	sym = function_symbol ((specifier_t) { .type = method->type, .sym = sym },
+						   ctx);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -369,8 +370,9 @@ send_message (int super, rua_ctx_t *ctx)
 	if (!sym) {
 		symtab_t   *save = current_symtab;
 		current_symtab = pr.symtab;
-		sym = new_symbol_type (sm_name, sm_type);
-		sym = function_symbol ((specifier_t) { .sym = sym }, ctx);
+		sym = new_symbol (sm_name);
+		sym = function_symbol ((specifier_t) { .type = sm_type, .sym = sym },
+							   ctx);
 		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}

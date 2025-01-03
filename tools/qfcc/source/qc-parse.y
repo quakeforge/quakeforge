@@ -422,6 +422,7 @@ function_spec (specifier_t spec, param_t *parameters)
 	if (spec.type_list) {
 		expr_append_expr (spec.type_list, type_expr);
 	} else {
+		spec.is_function = true;
 		spec.type_list = new_list_expr (type_expr);
 	}
 

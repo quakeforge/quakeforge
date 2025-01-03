@@ -757,12 +757,11 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 static metafunc_t *
 get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
-	if (!spec.sym->type || !spec.sym->type->encoding) {
-		spec = spec_process (spec, ctx);
-		spec.sym->type = spec.type;
-		set_func_attrs (spec.sym->type, spec.attributes);
-		spec.sym->type = find_type (spec.sym->type);
-	}
+	spec = spec_process (spec, ctx);
+	spec.sym->type = spec.type;
+	set_func_attrs (spec.sym->type, spec.attributes);
+	spec.sym->type = find_type (spec.sym->type);
+
 	auto type = unalias_type (spec.sym->type);
 	int num_params = type->func.num_params;
 	if (num_params < 0) {
@@ -1401,7 +1400,8 @@ emit_ctor (rua_ctx_t *ctx)
 	}
 
 	auto spec = (specifier_t) {
-		.sym = new_symbol_type (".ctor", &type_func),
+		.type = &type_func,
+		.sym = new_symbol (".ctor"),
 		.storage = sc_static,
 		.is_far = true,
 	};

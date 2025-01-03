@@ -291,7 +291,9 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		sym->table = nullptr;
 	}
 
-	spec = spec_process (spec, ctx);
+	if (spec.is_typedef || !spec.is_function) {
+		spec = spec_process (spec, ctx);
+	}
 	if (!spec.storage) {
 		spec.storage = current_storage;
 	}
@@ -307,7 +309,7 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		sym->type = find_type (alias_type (sym->type, sym->type, sym->name));
 		symtab_addsymbol (symtab, sym);
 	} else {
-		if (is_func (sym->type)) {
+		if (spec.is_function) {
 			if (init) {
 				error (0, "function %s is initialized", sym->name);
 			}

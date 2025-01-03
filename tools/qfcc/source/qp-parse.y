@@ -154,10 +154,11 @@ build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 	expr_t     *code;
 	expr_t     *exitcode;
 
-	dotmain->params = 0;
-	dotmain->type = parse_params (&type_int, 0);
-	dotmain->type = find_type (dotmain->type);
-	dotmain = function_symbol ((specifier_t) { .sym = dotmain }, ctx);
+	auto dmtype = find_type (parse_params (&type_int, 0));
+	dotmain = function_symbol ((specifier_t) {
+								.type = dmtype,
+								.sym = dotmain,
+							   }, ctx);
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
@@ -214,9 +215,12 @@ function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
 	// use `@name` so `main` can be used (`.main` is reserved for the entry
 	// point)
 	auto fsym = new_symbol (va (0, "@%s", sym->name));
-	fsym->type = parse_params (ret_type, params);
-	fsym->type = find_type (fsym->type);
-	fsym = function_symbol ((specifier_t) {.sym = fsym, .params = params}, ctx);
+	auto ftype = find_type (parse_params (ret_type, params));
+	fsym = function_symbol ((specifier_t) {
+								.type = ftype,
+								.sym = fsym,
+								.params = params
+							}, ctx);
 	auto fsym_expr = new_symbol_expr (fsym);
 	if (!params) {
 		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);
@@ -314,9 +318,11 @@ program_head
 					sym->def->nosave = 1;
 				}
 			}
-			$$->type = parse_params (&type_void, 0);
-			$$->type = find_type ($$->type);
-			$$ = function_symbol ((specifier_t) { .sym = $$ }, ctx);
+			auto ftype = find_type (parse_params (&type_void, 0));
+			$$ = function_symbol ((specifier_t) {
+									.type = ftype,
+									.sym = $$,
+								  }, ctx);
 		}
 	;
 

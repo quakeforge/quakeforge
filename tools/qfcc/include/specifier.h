@@ -81,6 +81,7 @@ typedef struct specifier_s {
 			bool        is_overload:1;
 			bool        is_generic:1;
 			bool        is_generic_block:1;
+			bool        is_function:1;
 			bool        is_far:1;
 		};
 		unsigned    spec_bits;

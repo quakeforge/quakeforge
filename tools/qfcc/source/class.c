@@ -1659,9 +1659,9 @@ class_finish_module (rua_ctx_t *ctx)
 
 	exec_class_sym = symtab_lookup (pr.symtab, "__obj_exec_class");
 	if (!exec_class_sym) {
-		exec_class_sym = new_symbol_type ("__obj_exec_class",
-										  &type_exec_class);
+		exec_class_sym = new_symbol ("__obj_exec_class");
 		exec_class_sym = function_symbol ((specifier_t) {
+											.type = &type_exec_class,
 											.sym = exec_class_sym
 										  }, ctx);
 		make_function (exec_class_sym, 0, exec_class_sym->table->space,

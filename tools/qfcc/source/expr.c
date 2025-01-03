@@ -2829,6 +2829,7 @@ const expr_t *
 think_expr (symbol_t *think_sym, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
+	const type_t *type;
 
 	if (think_sym->table)
 		return new_symbol_expr (think_sym);
@@ -2837,11 +2838,14 @@ think_expr (symbol_t *think_sym, rua_ctx_t *ctx)
 	if (sym && sym->sy_type == sy_def && sym->type
 		&& sym->type->type == ev_field
 		&& sym->type->fldptr.type->type == ev_func) {
-		think_sym->type = sym->type->fldptr.type;
+		type = sym->type->fldptr.type;
 	} else {
-		think_sym->type = &type_func;
+		type = &type_func;
 	}
-	think_sym = function_symbol ((specifier_t) { .sym = think_sym }, ctx);
+	think_sym = function_symbol ((specifier_t) {
+									.type = type,
+									.sym = think_sym,
+								 }, ctx);
 	make_function (think_sym, 0, current_symtab->space, current_storage);
 	return new_symbol_expr (think_sym);
 }
