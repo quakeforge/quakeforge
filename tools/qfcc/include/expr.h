@@ -1050,6 +1050,7 @@ expr_t *new_type_function (int op, const expr_t *params);
 const expr_t *type_function (int op, const expr_t *params);
 symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
 const type_t *resolve_type (const expr_t *te, rua_ctx_t *ctx);
+const expr_t *process_type (const expr_t *te, rua_ctx_t *ctx);
 const type_t **expand_type (const expr_t *te, rua_ctx_t *ctx);
 const expr_t *evaluate_type (const expr_t *te, rua_ctx_t *ctx);
 

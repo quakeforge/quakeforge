@@ -571,8 +571,7 @@ static const expr_t *
 proc_type (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
-	auto type = resolve_type (expr, ctx);
-	return new_type_expr (type);
+	return process_type (expr, ctx);
 }
 
 static const expr_t *

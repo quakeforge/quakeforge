@@ -174,6 +174,9 @@ evaluate_int (const expr_t *expr, rua_ctx_t *ctx)
 	if (is_integral_val (expr)) {
 		return expr;
 	}
+	if (expr->type != ex_type) {
+		internal_error (expr, "invalid type op");
+	}
 	int op = expr->typ.op;
 	int ind = op - QC_GENERIC;
 	auto type = expr->typ.type;
@@ -742,6 +745,37 @@ resolve_type (const expr_t *te, rua_ctx_t *ctx)
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
 	return type_funcs[ind].resolve (arg_count, args, ctx);
+}
+
+const expr_t *
+process_type (const expr_t *te, rua_ctx_t *ctx)
+{
+	if (te->type != ex_type) {
+		internal_error (te, "not a type expression");
+	}
+	if (!te->typ.op) {
+		if (!te->typ.type) {
+			internal_error (te, "no type in reference");
+		}
+		return new_type_expr (te->typ.type);
+	}
+	int         op = te->typ.op;
+	unsigned    ind = op - QC_GENERIC;
+	if (ind >= sizeof (type_funcs) / sizeof (type_funcs[0])
+		|| !type_funcs[ind].name) {
+		internal_error (te, "invalid type op: %d", op);
+	}
+	int         arg_count = list_count (&te->typ.params->list);
+	const expr_t *args[arg_count];
+	list_scatter (&te->typ.params->list, args);
+	if (type_funcs[ind].resolve) {
+		auto type = type_funcs[ind].resolve (arg_count, args, ctx);
+		return new_type_expr (type);
+	} else if (type_funcs[ind].evaluate) {
+		return type_funcs[ind].evaluate (arg_count, args, ctx);
+	} else {
+		internal_error (te, "invalid type op: %s", type_funcs[ind].name);
+	}
 }
 
 const type_t **
