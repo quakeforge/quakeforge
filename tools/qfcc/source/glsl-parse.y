@@ -332,6 +332,7 @@ function_definition
 			auto spec = $1;
 			spec.sym->params = spec.params;
 			spec.is_overload = true;
+			spec.type = find_type (parse_params (spec.type, spec.params));
 			spec.sym = function_symbol (spec, ctx);
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
