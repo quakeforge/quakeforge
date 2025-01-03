@@ -1158,6 +1158,7 @@ const expr_t *gather_factors (const type_t *type, int op,
 							  const expr_t **factors, int count);
 
 typedef struct rua_ctx_s rua_ctx_t;
+void decl_process (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
 specifier_t spec_process (specifier_t spec, rua_ctx_t *ctx);
 bool can_inline (const expr_t *expr, symbol_t *fsym);

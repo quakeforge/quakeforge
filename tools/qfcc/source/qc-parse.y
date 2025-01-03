@@ -760,9 +760,9 @@ fndef
 	;
 
 datadef
-	: defspecs notype_initdecls ';'			{ expr_process ($2, ctx); }
-	| declspecs_nots notype_initdecls ';'	{ expr_process ($2, ctx); }
-	| declspecs_ts initdecls ';'			{ expr_process ($2, ctx); }
+	: defspecs notype_initdecls ';'			{ decl_process ($2, ctx); }
+	| declspecs_nots notype_initdecls ';'	{ decl_process ($2, ctx); }
+	| declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
 	| declspecs_ts qc_func_params
 		{
 			$<spec>$ = qc_function_spec ($1, $2);
@@ -1204,7 +1204,7 @@ save_storage
 function_body
 	: method_optional_state_expr[state]
 		{
-			specifier_t spec = spec_process ($<spec>0, ctx);
+			specifier_t spec = $<spec>0;
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
 			$<spec>$ = spec;
@@ -1230,7 +1230,7 @@ function_body
 		}
 	| '=' '#' expr ';'
 		{
-			specifier_t spec = spec_process ($<spec>0, ctx);
+			specifier_t spec = $<spec>0;
 			const expr_t *bi_val = expr_process ($3, ctx);
 
 			spec.is_overload |= ctx->language->always_overload;
@@ -1239,7 +1239,7 @@ function_body
 		}
 	| '=' intrinsic
 		{
-			specifier_t spec = spec_process ($<spec>0, ctx);
+			specifier_t spec = $<spec>0;
 			build_intrinsic_function (spec, $2, ctx);
 		}
 	;

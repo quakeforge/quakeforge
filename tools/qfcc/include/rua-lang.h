@@ -217,6 +217,7 @@ typedef struct rua_ctx_s {
 	struct rua_extra_s *extra;
 	void       *scanner;
 	language_t *language;
+	bool        extdecl;
 } rua_ctx_t;
 
 extern language_t lang_ruamoko;

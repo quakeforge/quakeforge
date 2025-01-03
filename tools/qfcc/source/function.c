@@ -290,7 +290,7 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	}
 	// fake parameter for the return type
 	param_t ret_param = {
-		.next = spec.sym->params,
+		.next = spec.params,
 		.type = spec.type,
 		.type_expr = spec.type_expr,
 	};
@@ -351,6 +351,10 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 			}
 		}
 	}
+
+	auto type = new_type ();
+	*type = type_func;
+	spec.sym->type = type;
 
 	num_params = 0;
 	// skip return type so it can be done last to support complex expressions

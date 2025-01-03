@@ -758,7 +758,7 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		auto spec = decl_spec;
 		spec.sym = sym;
-		if (spec.type_list) {
+		if (!ctx->extdecl && spec.type_list) {
 			// to get here, a concrete declaration is being made
 			spec.is_generic = false;
 			spec = spec_process (spec, ctx);
@@ -910,4 +910,12 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 		current_func = func;
 	}
 	return proc;
+}
+
+void
+decl_process (const expr_t *expr, rua_ctx_t *ctx)
+{
+	ctx->extdecl = true;
+	expr_process (expr, ctx);
+	ctx->extdecl = false;
 }
