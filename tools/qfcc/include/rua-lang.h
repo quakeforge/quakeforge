@@ -211,6 +211,7 @@ typedef struct language_s {
 									const expr_t *init, symtab_t *symtab,
 									expr_t *block, rua_ctx_t *ctx);
 	void       *sublanguage;
+	const expr_t *(*parse_number) (const rua_tok_t *tok, rua_ctx_t *ctx);
 } language_t;
 
 typedef struct rua_ctx_s {

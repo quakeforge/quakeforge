@@ -507,7 +507,7 @@ parse_suffix (const char *suffix, bool fp)
 }
 
 static const expr_t *
-parse_number (const rua_tok_t *tok, yyscan_t scanner)
+parse_number (const rua_tok_t *tok)
 {
 	bool binary = false;
 	const char *type = "integer";
@@ -666,7 +666,7 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 	do {
 		token = yylex (&vtok, &vtok.location, scanner);
 		if (-token == rua_number) {
-			auto expr = parse_number (&vtok, scanner);
+			auto expr = parse_number (&vtok);
 			if (expr) {
 				if (width < 4) {
 					components[width] = expr;
@@ -946,7 +946,7 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 			case rua_number:
 				if (!extra->recording) {
 					token = -rua_error;
-					if ((lval->expr = parse_number (tok, scanner))) {
+					if ((lval->expr = parse_number (tok))) {
 						token = PRE_VALUE;
 					}
 				}
@@ -1031,7 +1031,12 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 				break;
 			case rua_number:
 				token = -rua_error;
-				lval->expr = parse_number (tok, scanner);
+				if (ctx->language->parse_number) {
+					lval->expr = ctx->language->parse_number (tok, ctx);
+				}
+				if (!lval->expr) {
+					lval->expr = parse_number (tok);
+				}
 				if (lval->expr) {
 					token = QC_VALUE;
 					if (lval->expr->implicit) {
