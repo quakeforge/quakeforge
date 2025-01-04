@@ -1334,12 +1334,10 @@ write_string (dstring_t *dstr, const char *str, bool json)
 	char       *dst;
 	bool        quoted = json;
 
-	if (!quoted) {
-		for (s = str; *s; s++) {
-			if (is_quotable (*s))
-				quoted = true;
-			len++;
-		}
+	for (s = str; *s; s++) {
+		if (is_quotable (*s))
+			quoted = true;
+		len++;
 	}
 	if (!quoted) {
 		dst = dstring_openstr (dstr, len);
