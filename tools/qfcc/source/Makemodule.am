@@ -75,6 +75,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/reloc.c \
 	tools/qfcc/source/rua-declaration.c \
 	tools/qfcc/source/shared.c \
+	tools/qfcc/source/spirv_grammar.c \
 	tools/qfcc/source/statements.c \
 	tools/qfcc/source/strpool.c \
 	tools/qfcc/source/struct.c \
@@ -87,6 +88,31 @@ qfcc_SOURCES = \
 	tools/qfcc/source/type.c \
 	tools/qfcc/source/value.c \
 	$(tracy_src)
+
+qfcc_source = $(top_builddir)/tools/qfcc/source
+
+embed_py = $(srcdir)/tools/qfcc/source/embed.py
+
+spirv_core_grammar_json = spirv/unified1/spirv.core.grammar.json
+spirv_core_grammar_jinc = $(qfcc_source)/spirv.core.grammar.jinc
+$(spirv_core_grammar_jinc): $(embed_py)
+	$(V_PY)$(PYTHON) $(embed_py) $(COMPILE) \
+		-o $@.t $(spirv_core_grammar_json) && \
+	$(am__mv) $@.t $@
+
+extinst_glsl_std_450_grammar_json = \
+	spirv/unified1/extinst.glsl.std.450.grammar.json
+extinst_glsl_std_450_grammar_jinc = \
+	$(qfcc_source)/extinst.glsl.std.450.grammar.jinc
+$(extinst_glsl_std_450_grammar_jinc): $(embed_py)
+	$(V_PY)$(PYTHON) $(embed_py) $(COMPILE) \
+		-o $@.t $(extinst_glsl_std_450_grammar_json) && \
+	$(am__mv) $@.t $@
+
+tools/qfcc/source/spirv_grammar.$(OBJEXT): \
+	tools/qfcc/source/spirv_grammar.c \
+	$(spirv_core_grammar_jinc) \
+	$(extinst_glsl_std_450_grammar_jinc)
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
