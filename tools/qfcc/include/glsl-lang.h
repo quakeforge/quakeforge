@@ -99,12 +99,18 @@ typedef struct glsl_image_s {
 	bool        multisample;
 	char        sampled;
 	unsigned    format;
+	uint32_t    id;
 } glsl_image_t;
+
+typedef struct glsl_sampled_image_s {
+	const type_t *image_type;
+} glsl_sampled_image_t;
 
 typedef struct DARRAY_TYPE (glsl_image_t) glsl_imageset_t;
 extern glsl_imageset_t glsl_imageset;
 extern type_t type_glsl_image;
 extern type_t type_glsl_sampler;
+extern type_t type_glsl_sampled_image;
 
 typedef struct glsl_sublang_s {
 	const char *name;

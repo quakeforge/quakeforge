@@ -1616,6 +1616,7 @@ typedef struct {
 	const char *substr;
 	int         val;
 	const type_t *type;
+	const type_t *htype;
 } image_sub_t;
 
 static image_sub_t * __attribute__((pure))
@@ -1633,19 +1634,31 @@ static symbol_t *
 glsl_parse_image (const char *token, rua_ctx_t *ctx)
 {
 	static image_sub_t image_type[] = {
-		{ .substr = "sampler",  .val = 0, .type = &type_float },
-		{ .substr = "image",    .val = 1, .type = &type_float },
-		{ .substr = "texture",  .val = 2, .type = &type_float },
-		{ .substr = "isampler", .val = 0, .type = &type_int   },
-		{ .substr = "iimage",   .val = 1, .type = &type_int   },
-		{ .substr = "itexture", .val = 2, .type = &type_int   },
-		{ .substr = "usampler", .val = 0, .type = &type_uint  },
-		{ .substr = "uimage",   .val = 1, .type = &type_uint  },
-		{ .substr = "utexture", .val = 2, .type = &type_uint  },
-		{ .substr = "i",        .val = 1, .type = &type_int   },
-		{ .substr = "u",        .val = 1, .type = &type_uint  },
-		{ .substr = "",         .val = 1, .type = &type_float },
+		{ .substr = "sampler",  .val = 1, .type = &type_float,
+		  .htype = &type_glsl_sampled_image },
+		{ .substr = "image",    .val = 2, .type = &type_float,
+		  .htype = &type_glsl_image },
+		{ .substr = "texture",  .val = 1, .type = &type_float,
+		  .htype = &type_glsl_image },
+		{ .substr = "isampler", .val = 1, .type = &type_int,
+		  .htype = &type_glsl_sampled_image },
+		{ .substr = "iimage",   .val = 2, .type = &type_int,
+		  .htype = &type_glsl_image },
+		{ .substr = "itexture", .val = 1, .type = &type_int,
+		  .htype = &type_glsl_image },
+		{ .substr = "usampler", .val = 1, .type = &type_uint,
+		  .htype = &type_glsl_sampled_image },
+		{ .substr = "uimage",   .val = 2, .type = &type_uint,
+		  .htype = &type_glsl_image },
+		{ .substr = "utexture", .val = 1, .type = &type_uint,
+		  .htype = &type_glsl_image },
 		// subpassInput is dimension in spir-v
+		{ .substr = "i",        .val = 2, .type = &type_int,
+		  .htype = &type_glsl_image },
+		{ .substr = "u",        .val = 2, .type = &type_uint,
+		  .htype = &type_glsl_image },
+		{ .substr = "",         .val = 2, .type = &type_float,
+		  .htype = &type_glsl_image },
 		{}
 	};
 	static image_sub_t image_dim[] = {
@@ -1696,17 +1709,16 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 	glsl_image_t image = {
 		.sample_type = type.type,
 		.dim = dim->val,
-		.depth = 0,		//XXX what sets this?
+		.depth = 0,		//set below for shadow samplers
 		.arrayed = array.val,
 		.multisample = ms.val,
+		.sampled = type.val,
 		.format = 0,	//unknown (comes from layout)
 	};
 	if (type.val == 0) {	// sampler
 		auto shad = *find_image_sub (image_shadow, token + offset);
 		offset += strlen (shad.substr);
-		if (shad.val) {
-			type.substr = "samplerShadow";
-		}
+		image.depth = shad.val;
 	}
 	if (token[offset]) {
 		goto invalid;
@@ -1721,18 +1733,23 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 		}
 	}
 	if (!index) {
+		if (!glsl_imageset.size) {
+			DARRAY_APPEND (&glsl_imageset, (glsl_image_t) { } );
+		}
 		index = glsl_imageset.size;
 		DARRAY_APPEND (&glsl_imageset, image);
 	}
 
 	auto sym = new_symbol (token);
 	sym = find_handle (sym, &type_int);
+	sym->type = find_type (sym->type);
 	//FIXME the type isn't chained yet and so doesn't need to be const, but
 	// symbols keep the type in a const pointer.
 	auto t = (type_t *) sym->type;
 	if (t->handle.extra) {
-		internal_error (0, "image type handle alread set");
+		internal_error (0, "image type handle already set");
 	}
+	t->handle.type = type.htype;
 	t->handle.extra = index;
 
 	return sym;

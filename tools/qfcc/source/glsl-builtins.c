@@ -50,7 +50,16 @@ static struct_def_t glsl_image_struct[] = {
 	{}
 };
 
+static struct_def_t glsl_sampled_image_struct[] = {
+	{"image_type",  &type_ptr},
+	{}
+};
+
 type_t type_glsl_image = {
+	.type = ev_invalid,
+	.meta = ty_struct,
+};
+type_t type_glsl_sampled_image = {
 	.type = ev_invalid,
 	.meta = ty_struct,
 };
@@ -348,6 +357,7 @@ SRC_LINE
 "#define lowp"                                                      "\n"
 "#define uint unsigned"                                             "\n"
 "#define uvec2 uivec2"                                              "\n"
+"#define sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"         "\n"
 "@generic(genFType=@vector(float),"                                 "\n"
 "         genDType=@vector(double),"                                "\n"
 "         genIType=@vector(int),"                                   "\n"
@@ -357,7 +367,19 @@ SRC_LINE
 "         vec=[vec2,vec3,vec4,dvec2,dvec3,dvec4],"                  "\n"
 "         ivec=[ivec2,ivec3,ivec4],"                                "\n"
 "         uvec=[uivec2,uivec3,uivec4],"                             "\n"
-"         bvec=[bvec2,bvec3,bvec4]) {"                              "\n"
+"         bvec=[bvec2,bvec3,bvec4],"                                "\n"
+"         gsampler2DArray=[sampler(,2D,,Array,),"                   "\n"
+"                          sampler(i,2D,,Array,),"                  "\n"
+"                          sampler(u,2D,,Array,)],"                 "\n"
+"         gsampler1D=[sampler(,1D,,,),"                             "\n"
+"                     sampler(i,1D,,,),"                            "\n"
+"                     sampler(u,1D,,,)],"                           "\n"
+"         gsampler2D=[sampler(,2D,,,),"                             "\n"
+"                     sampler(i,2D,,,),"                            "\n"
+"                     sampler(u,2D,,,)],"                           "\n"
+"         gsampler3D=[sampler(,3D,,,),"                             "\n"
+"                     sampler(i,3D,,,),"                            "\n"
+"                     sampler(u,3D,,,)]) {"                         "\n"
 "genFType radians(genFType degrees);"                               "\n"
 "genFType degrees(genFType radians);"                               "\n"
 "genFType sin(genFType angle);"                                     "\n"
@@ -377,7 +399,7 @@ SRC_LINE
 //exponential functions
 SRC_LINE
 "genFType pow(genFType x, genFType y);"                             "\n"
-"genFType exp(genFType x);"                                         "\n"
+"genFType exp(genFType x) = " GLSL(27) ";"                          "\n"
 "genFType log(genFType x);"                                         "\n"
 "genFType exp2(genFType x);"                                        "\n"
 "genFType log2(genFType x);"                                        "\n"
@@ -584,6 +606,10 @@ SRC_LINE
 "genIType findLSB(genUType value);"                                 "\n"
 "genIType findMSB(highp genIType value);"                           "\n"
 "genIType findMSB(highp genUType value);"                           "\n"
+"vec4 texture(gsampler1D sampler, float P ) = " SPV(87) ";"         "\n"
+"vec4 texture(gsampler2D sampler, vec2 P ) = " SPV(87) ";"          "\n"
+"vec4 texture(gsampler3D sampler, vec3 P ) = " SPV(87) ";"          "\n"
+"vec4 texture(gsampler2DArray sampler, vec3 P ) = " SPV(87) ";"     "\n"
 "};"                                                                "\n"
 "#undef out"                                                        "\n"
 "#undef highp"                                                      "\n"
@@ -952,9 +978,12 @@ glsl_init_common (rua_ctx_t *ctx)
 	pr.module = &module;
 
 	make_structure ("@image", 's', glsl_image_struct, &type_glsl_image);
+	make_structure ("@sampled_image", 's', glsl_sampled_image_struct,
+					&type_glsl_sampled_image);
 	make_handle ("@sampler", &type_glsl_sampler);
 	chain_type (&type_glsl_image);
 	chain_type (&type_glsl_sampler);
+	chain_type (&type_glsl_sampled_image);
 
 	DARRAY_RESIZE (&glsl_imageset, 0);
 

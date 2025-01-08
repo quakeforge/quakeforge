@@ -422,6 +422,38 @@ spirv_TypeBool (const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_TypeImage (glsl_image_t *image, spirvctx_t *ctx)
+{
+	if (image->id) {
+		return image->id;
+	}
+	unsigned tid = type_id (image->sample_type, ctx);
+	auto globals = ctx->module->globals;
+	image->id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpTypeImage, 9, globals);
+	INSN (insn, 1) = image->id;
+	INSN (insn, 2) = tid;
+	INSN (insn, 3) = image->dim;
+	INSN (insn, 4) = image->depth;
+	INSN (insn, 5) = image->arrayed;
+	INSN (insn, 6) = image->multisample;
+	INSN (insn, 7) = image->sampled;
+	INSN (insn, 8) = image->format;
+	return image->id;
+}
+
+static unsigned
+spirv_TypeSampledImage (unsigned image_id, spirvctx_t *ctx)
+{
+	auto globals = ctx->module->globals;
+	unsigned id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpTypeSampledImage, 3, globals);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = image_id;
+	return id;
+}
+
+static unsigned
 spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 {
 	int num_params = 0;
@@ -521,6 +553,14 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
+	} else if (is_handle (type)
+			   && (type->handle.type == &type_glsl_image
+				   || type->handle.type == &type_glsl_sampled_image)) {
+		auto image = &glsl_imageset.a[type->handle.extra];
+		id = spirv_TypeImage (image, ctx);
+		if (type->handle.type == &type_glsl_sampled_image) {
+			id = spirv_TypeSampledImage (id, ctx);
+		}
 	}
 	if (!id) {
 		dstring_t  *str = dstring_newstr ();
