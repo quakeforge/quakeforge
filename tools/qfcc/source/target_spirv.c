@@ -706,7 +706,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
 	} else {
-		DARRAY_APPEND (&ctx->module->interface_syms, sym);
+		DARRAY_APPEND (&ctx->module->entry_points->interface_syms, sym);
 	}
 	auto type = sym->type;
 	unsigned tid = type_id (type, ctx);
@@ -813,19 +813,28 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 }
 
 static void
-spirv_EntryPoint (unsigned func_id, const char *func_name,
-				  SpvExecutionModel model, spirvctx_t *ctx)
+spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 {
-	int len = strlen (func_name) + 1;
+
+	unsigned func_id = spirv_function (entrypoint->func, ctx);
+	int len = strlen (entrypoint->name) + 1;
 	int iface_start = 3 + RUP(len, 4) / 4;
-	auto linkage = ctx->module->entry_points;
-	int count = ctx->module->interface_syms.size;
+	auto linkage = ctx->module->entry_point_space;
+	auto interface_syms = &entrypoint->interface_syms;
+	int count = interface_syms->size;
 	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count, linkage);
-	INSN (insn, 1) = model;
+	INSN (insn, 1) = entrypoint->model;
 	INSN (insn, 2) = func_id;
-	memcpy (&INSN (insn, 3), func_name, len);
+	memcpy (&INSN (insn, 3), entrypoint->name, len);
 	for (int i = 0; i < count; i++) {
-		INSN (insn, iface_start + i) = ctx->module->interface_syms.a[i]->id;
+		INSN (insn, iface_start + i) = interface_syms->a[i]->id;
+	}
+
+	auto exec_modes = ctx->module->exec_modes;
+	for (auto m = entrypoint->modes; m; m = m->next) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (m->params);
 	}
 }
 
@@ -1825,7 +1834,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 bool
 spirv_write (struct pr_info_s *pr, const char *filename)
 {
-	pr->module->entry_points = defspace_new (ds_backed);
+	pr->module->entry_point_space = defspace_new (ds_backed);
 	pr->module->exec_modes = defspace_new (ds_backed);
 	pr->module->strings = defspace_new (ds_backed);
 	pr->module->names = defspace_new (ds_backed);
@@ -1834,7 +1843,6 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	pr->module->globals = defspace_new (ds_backed);
 	pr->module->func_declarations = defspace_new (ds_backed);
 	pr->module->func_definitions = defspace_new (ds_backed);
-	DARRAY_INIT (&pr->module->interface_syms, 16);
 
 	spirvctx_t ctx = {
 		.module = pr->module,
@@ -1852,14 +1860,8 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	INSN (header, 3) = 0;	// Filled in later
 	INSN (header, 4) = 0;	// Reserved
 
-	for (auto func = pr->func_head; func; func = func->next)
-	{
-		auto func_id = spirv_function (func, &ctx);
-		if (strncmp ("main", func->o_name, 4) == 0
-			&& (!func->o_name[4] || func->o_name[4] == '|')) {
-			auto model = SpvExecutionModelVertex;//FIXME
-			spirv_EntryPoint (func_id, func->o_name, model, &ctx);
-		}
+	for (auto ep = pr->module->entry_points; ep; ep = ep->next) {
+		spirv_EntryPoint (ep, &ctx);
 	}
 
 	auto mod = pr->module;
@@ -1885,7 +1887,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	}
 
 	INSN (header, 3) = ctx.id + 1;
-	ADD_DATA (space, mod->entry_points);
+	ADD_DATA (space, mod->entry_point_space);
 	ADD_DATA (space, mod->exec_modes);
 	ADD_DATA (space, mod->strings);
 	ADD_DATA (space, mod->names);
@@ -1986,6 +1988,24 @@ static void
 spirv_build_code (function_t *func, const expr_t *statements)
 {
 	func->exprs = statements;
+	if (strncmp ("main", func->o_name, 4) == 0
+		&& (!func->o_name[4] || func->o_name[4] == '|')) {
+		attribute_t *mode = nullptr;
+		if (pr.module->default_model == SpvExecutionModelFragment) {
+			mode = new_attribute ("mode",
+					new_int_expr (SpvExecutionModeOriginUpperLeft, false));
+		}
+		entrypoint_t *ep = malloc (sizeof (entrypoint_t));
+		*(ep) = (entrypoint_t) {
+			.next = pr.module->entry_points,
+			.model = pr.module->default_model,
+			.name = "main",
+			.modes = mode,
+			.interface_syms = DARRAY_STATIC_INIT (16),
+			.func = func,
+		};
+		pr.module->entry_points = ep;
+	}
 }
 
 static void

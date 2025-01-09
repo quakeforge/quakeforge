@@ -43,17 +43,19 @@ typedef struct entrypoint_s {
 	const char *name;
 	attribute_t *modes;
 	ex_list_t   interface;			///< list of symbols forming interface
+	struct DARRAY_TYPE (symbol_t *) interface_syms;
+	struct function_s *func;
 } entrypoint_t;
 
 typedef struct module_s {
 	ex_list_t   capabilities;
 	ex_list_t   extensions;
+	SpvExecutionModel default_model;
 	symtab_t   *extinst_imports;
 	const expr_t *addressing_model;
 	const expr_t *memory_model;
-	struct DARRAY_TYPE (symbol_t *) interface_syms;
-	//entrypoint_t *entry_points;
-	defspace_t *entry_points;
+	entrypoint_t *entry_points;
+	defspace_t *entry_point_space;
 	defspace_t *exec_modes;
 	// debug
 	defspace_t *strings;

@@ -1014,6 +1014,7 @@ glsl_init_vert (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_Vulkan_vertex_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
+	pr.module->default_model = SpvExecutionModelVertex;
 }
 
 void
@@ -1023,6 +1024,7 @@ glsl_init_tesc (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_tesselation_control_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
+	pr.module->default_model = SpvExecutionModelTessellationControl;
 }
 
 void
@@ -1032,6 +1034,7 @@ glsl_init_tese (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_tesselation_evaluation_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
+	pr.module->default_model = SpvExecutionModelTessellationEvaluation;
 }
 
 void
@@ -1043,6 +1046,7 @@ glsl_init_geom (rua_ctx_t *ctx)
 	qc_parse_string (glsl_geometry_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityGeometry);
+	pr.module->default_model = SpvExecutionModelGeometry;
 }
 
 void
@@ -1052,4 +1056,5 @@ glsl_init_frag (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_fragment_vars, ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
+	pr.module->default_model = SpvExecutionModelFragment;
 }
