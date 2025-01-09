@@ -102,7 +102,7 @@ construct_by_components (const type_t *type, const expr_t *params,
 				pexpr = pointer_deref (pexpr);
 				ptype = dereference_type (ptype);
 			}
-			if (!is_math (ptype)) {
+			if (!is_math (ptype) && !is_nil (pexpr)) {
 				err = c++;
 				components[err] = error (pexpr, "invalid type for conversion");
 				continue;
