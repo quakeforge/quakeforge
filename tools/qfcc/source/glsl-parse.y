@@ -1715,7 +1715,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 		.sampled = type.val,
 		.format = 0,	//unknown (comes from layout)
 	};
-	if (type.val == 0) {	// sampler
+	if (type.val == 1) {	// sampler
 		auto shad = *find_image_sub (image_shadow, token + offset);
 		offset += strlen (shad.substr);
 		image.depth = shad.val;
