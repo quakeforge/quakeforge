@@ -1277,6 +1277,18 @@ spirv_matrix_value (const ex_value_t *value, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_nil (const expr_t *e, spirvctx_t *ctx)
+{
+	unsigned tid = type_id (e->nil, ctx);
+	unsigned id = spirv_id (ctx);
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	return id;
+}
+
+static unsigned
 spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
@@ -1798,6 +1810,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_uexpr] = spirv_uexpr,
 		[ex_symbol] = spirv_symbol,
 		[ex_temp] = spirv_temp,//FIXME don't want
+		[ex_nil] = spirv_nil,
 		[ex_value] = spirv_value,
 		[ex_vector] = spirv_vector,
 		[ex_compound] = spirv_compound,
