@@ -1691,13 +1691,17 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 
 static const char *
 print_raw_op (progs_t *pr, pr_short_t op, pr_ushort_t base_ind,
-			  etype_t op_type, int op_width)
+			  etype_t op_type, int op_width, int op_columns)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	const char *width = va (res->va, "%d", op_width);
-	return va (res->va, "%d:%04hx<%08x>%s:%-8s",
+	const char *columns = "";
+	if (op_columns > 1) {
+		columns = va (res->va, ",%d", op_columns);
+	}
+	return va (res->va, "%d:%04hx<%08x>%s%s:%-8s",
 				base_ind, op, op + pr->pr_bases[base_ind],
-				op_width > 0 ? width : op_width < 0 ? "X" : "?",
+				op_width > 0 ? width : op_width < 0 ? "X" : "?", columns,
 				pr_type_name[op_type]);
 }
 
@@ -1725,6 +1729,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	pr_debug_data_t data;
 	etype_t     op_type[3];
 	int         op_width[3];
+	int         op_columns[3];
 
 	dstring_clearstr (res->line);
 
@@ -1754,6 +1759,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 		}
 		VectorSet (op->type_a, op->type_b, op->type_c, op_type);
 		VectorSet (1, 1, 1, op_width);
+		VectorSet (1, 1, 1, op_columns);
 		fmt = op->fmt;
 		mnemonic = op->opname;
 	} else {
@@ -1763,6 +1769,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			return;
 		}
 		VectorCopy (op->widths, op_width);
+		VectorCopy (op->columns, op_columns);
 		VectorCopy (op->types, op_type);
 		fmt = op->fmt;
 		mnemonic = op->mnemonic;
@@ -1785,11 +1792,11 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			dasprintf (res->line, "%04x %s %s %s\t",
 						s->op,
 						print_raw_op (pr, s->a, PR_BASE_IND (s->op, A),
-									  op_type[0], op_width[0]),
+									  op_type[0], op_width[0], op_columns[0]),
 						print_raw_op (pr, s->b, PR_BASE_IND (s->op, B),
-									  op_type[1], op_width[1]),
+									  op_type[1], op_width[1], op_columns[1]),
 						print_raw_op (pr, s->c, PR_BASE_IND (s->op, C),
-									  op_type[2], op_width[2]));
+									  op_type[2], op_width[2], op_columns[2]));
 		}
 	} else if (op_width[0] > 1 || op_width[1] > 1 || op_width[2] > 1) {
 		width = va (res->va, "{%d,%d,%d}", VectorExpand (op_width));
@@ -1836,18 +1843,21 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						opval = get_opval (pr, s->a);
 						basic_type = *res->type_encodings[op_type[0]];
 						basic_type.basic.width = op_width[0];
+						basic_type.basic.columns = op_columns[0];
 						break;
 					case 'b':
 						opreg = PR_BASE_IND (s->op, B);
 						opval = get_opval (pr, s->b);
 						basic_type = *res->type_encodings[op_type[1]];
 						basic_type.basic.width = op_width[1];
+						basic_type.basic.columns = op_columns[1];
 						break;
 					case 'c':
 						opreg = PR_BASE_IND (s->op, C);
 						opval = get_opval (pr, s->c);
 						basic_type = *res->type_encodings[op_type[2]];
 						basic_type.basic.width = op_width[2];
+						basic_type.basic.columns = op_columns[2];
 						break;
 					case 'o':
 						opreg = 0;
