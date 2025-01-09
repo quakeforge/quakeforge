@@ -50,6 +50,9 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+#undef P_PACKED
+#define P_PACKED(p,t,n) (*(t *) &(p)->pr_globals[1+n])
+
 typedef struct typectx_s {
 	const type_t **types;
 	int         num_types;
@@ -57,74 +60,158 @@ typedef struct typectx_s {
 	sys_jmpbuf  jmpbuf;
 } typectx_t;
 
+static const type_t *
+fetch_type (unsigned id, typectx_t *ctx)
+{
+	const type_t *type = nullptr;
+	if (id < type_registry.size) {
+		type = type_registry.a[id];
+	}
+	if (!type) {
+		internal_error (ctx->expr, "invalid type id");
+	}
+	return type;
+}
+
 static void
 tf_function_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	internal_error (ctx->expr, "not implemented");
 }
 
 static void
 tf_field_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = pointer_type (type);
+	type = find_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_pointer_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = pointer_type (type);
+	type = find_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_array_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	unsigned count = P_UINT (pr, 1);
+	auto type = fetch_type (id, ctx);
+	type = array_type (type, count);
+	type = find_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_base_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = base_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_width_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	R_UINT (pr) = type_width (type);
 }
 
 static void
 tf_vector_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	unsigned width = P_UINT (pr, 1);
+	auto base = fetch_type (id, ctx);
+	auto type = vector_type (base, width);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_rows_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	R_UINT (pr) = type_rows (type);
 }
 
 static void
 tf_cols_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	R_UINT (pr) = type_cols (type);
 }
 
 static void
 tf_matrix_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	unsigned cols = P_UINT (pr, 1);
+	unsigned rows = P_UINT (pr, 2);
+	auto base = fetch_type (id, ctx);
+	auto type = matrix_type (base, cols, rows);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_int_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = int_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_uint_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = uint_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_bool_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = bool_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
 tf_float_func (progs_t *pr, void *data)
 {
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	auto type = fetch_type (id, ctx);
+	type = float_type (type);
+	R_UINT (pr) = type->id;
 }
 
 static void
@@ -140,8 +227,7 @@ tf_gentype_func (progs_t *pr, void *data)
 		error (ctx->expr, "refernce to unresolved type");
 		Sys_longjmp (ctx->jmpbuf);
 	}
-	auto type_def = type_encodings.a[type->id];
-	R_POINTER (pr) = type_def->offset;
+	R_UINT (pr) = type->id;
 }
 
 #define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
@@ -212,4 +298,27 @@ setup_type_progs (void)
 {
 	PR_Init (&type_pr);
 	PR_Debug_Init (&type_pr);
+}
+
+const type_t *
+evaluate_type (const typeeval_t *typeeval, int num_types, const type_t **types,
+			   const expr_t *expr)
+{
+	typectx_t   ctx = {
+		types = types,
+		num_types = num_types,
+		expr = expr,
+	};
+	int         err;
+	if ((err = Sys_setjmp (ctx.jmpbuf))) {
+		return nullptr;
+	}
+	type_genfunc = &ctx;
+	type_pr.pr_statements = typeeval->code;
+	type_pr.pr_globals = typeeval->data;
+	type_pr.globals_size = typeeval->data_size;
+	type_pr.pr_trace = options.verbosity > 1;
+	PR_ExecuteProgram (&type_pr, tf_eval);
+	unsigned id = R_UINT (&type_pr);
+	return fetch_type (id, &ctx);
 }

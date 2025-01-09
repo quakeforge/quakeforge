@@ -265,6 +265,7 @@ int type_cast_map[ev_type_count] = {
 	//[ev_bool64] = 7,
 };
 
+typeset_t type_registry = DARRAY_STATIC_INIT (64);
 defset_t type_encodings = DARRAY_STATIC_INIT (64);
 
 ALLOC_STATE (type_t, types);
@@ -309,7 +310,8 @@ chain_type (type_t *type)
 	if (type->id) {
 		internal_error (0, "type already has id");
 	}
-	type->id = type_encodings.size;
+	type->id = type_registry.size;
+	DARRAY_APPEND (&type_registry, type);
 	DARRAY_APPEND (&type_encodings, nullptr);
 	type->next = pr.types;
 	pr.types = type;
@@ -2027,7 +2029,9 @@ type_aligned_size (const type_t *type)
 static void
 chain_basic_types (void)
 {
+	type_registry.size = 0;
 	type_encodings.size = 0;
+	DARRAY_APPEND (&type_registry, nullptr);
 	DARRAY_APPEND (&type_encodings, nullptr);
 
 	type_entity.symtab = pr.entity_fields;

@@ -564,6 +564,7 @@ typedef struct {
 typedef struct {
 	int         num_params;
 	callparm_t *params;
+	const type_t **types;
 } calltype_t;
 
 static bool
@@ -687,36 +688,43 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 	return genfuncs[best_ind];
 }
 
+static const type_t *
+compute_param_type (const genparam_t *param, int param_ind,
+					const genfunc_t *genfunc, calltype_t *calltype,
+					const expr_t *fexpr)
+{
+	auto call_types = calltype->types;
+	auto call_params = calltype->params;
+	if (param->fixed_type) {
+		return param->fixed_type;
+	}
+	if (param->compute) {
+		return evaluate_type (param->compute, genfunc->num_types,
+							  calltype->types, fexpr);
+	}
+	int ind = param->gentype;
+	if (!call_types[ind] && param_ind >= 0) {
+		call_types[ind] = select_type (&genfunc->types[ind],
+									   call_params[param_ind]);
+	}
+	return call_types[ind];
+}
+
 static symbol_t *
-create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
-					const type_t **types)
+create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
 {
 	int num_params = calltype->num_params;
-	auto call_params = calltype->params;
 	const type_t *param_types[num_params];
 	param_qual_t param_quals[num_params];
 	const type_t *return_type;
 	for (int i = 0; i < num_params; i++) {
 		auto p = &g->params[i];
-		if (!p->fixed_type) {
-			int ind = p->gentype;
-			if (!types[ind]) {
-				types[ind] = select_type (&g->types[ind], call_params[i]);
-			}
-			param_types[i] = types[ind];
-		} else {
-			param_types[i] = p->fixed_type;
-		}
+		param_types[i] = compute_param_type (p, i, g, calltype, fexpr);
 		param_quals[i] = p->qual;
 	}
-	if (!g->ret_type->fixed_type) {
-		int ind = g->ret_type->gentype;
-		if (!types[ind]) {
-			internal_error (0, "return type not determined");
-		}
-		return_type = types[ind];
-	} else {
-		return_type = g->ret_type->fixed_type;
+	return_type = compute_param_type (g->ret_type, -1, g, calltype, fexpr);
+	if (!return_type) {
+		internal_error (0, "return type not determined");
 	}
 	param_t *params = nullptr;
 	for (int i = 0; i < num_params; i++) {
@@ -796,13 +804,15 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		auto gen = find_generic_function (genfuncs, &fexpr, &calltype, false);
 		if (gen) {
 			const type_t *ref_types[gen->num_types] = {};
-			auto sym = create_generic_sym (gen, &fexpr, &calltype, ref_types);
+			calltype.types = ref_types;
+			auto sym = create_generic_sym (gen, &fexpr, &calltype);
 			if (sym == fexpr.symbol
 				|| sym->metafunc == fexpr.symbol->metafunc) {
 				internal_error (0, "genfunc oops");
 			}
 			func = sym->metafunc;
 			overload = true;
+			calltype.types = nullptr;
 		} else {
 			func = nullptr;
 		}
@@ -1004,7 +1014,8 @@ find_function (const expr_t *fexpr, const expr_t *params)
 			return new_error_expr ();
 		}
 		const type_t *ref_types[gen->num_types] = {};
-		auto sym = create_generic_sym (gen, fexpr, &calltype, ref_types);
+		calltype.types = ref_types;
+		auto sym = create_generic_sym (gen, fexpr, &calltype);
 		if (gen->can_inline) {
 			// the call will be inlined, so a new scope is needed every
 			// time

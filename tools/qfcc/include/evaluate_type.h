@@ -69,7 +69,8 @@ typedef struct expr_s expr_t;
 typedef struct gentype_s gentype_t;
 typeeval_t *build_type_function (const expr_t *te, int num_types,
 								 gentype_t *types);
-
+const type_t *evaluate_type (const typeeval_t *typeeval, int num_types,
+							 const type_t **types, const expr_t *expr);
 ///@}
 
 #endif//__evaluate_type_h

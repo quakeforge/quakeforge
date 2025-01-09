@@ -276,7 +276,9 @@ void clear_typedefs (void);
 typedef struct def_s def_t;
 
 typedef struct defset_s DARRAY_TYPE (def_t *) defset_t;
+typedef struct typeset_s DARRAY_TYPE (const type_t *) typeset_t;
 extern defset_t type_encodings; ///< qfo encodoing
+extern typeset_t type_registry;
 
 extern const type_t *ev_types[];
 extern int type_cast_map[];

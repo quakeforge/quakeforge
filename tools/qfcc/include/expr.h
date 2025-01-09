@@ -1052,7 +1052,7 @@ symbol_t *type_parameter (symbol_t *sym, const expr_t *type);
 const type_t *resolve_type (const expr_t *te, rua_ctx_t *ctx);
 const expr_t *process_type (const expr_t *te, rua_ctx_t *ctx);
 const type_t **expand_type (const expr_t *te, rua_ctx_t *ctx);
-const expr_t *evaluate_type (const expr_t *te, rua_ctx_t *ctx);
+const expr_t *eval_type (const expr_t *te, rua_ctx_t *ctx);
 
 expr_t *append_expr (expr_t *block, const expr_t *e);
 expr_t *prepend_expr (expr_t *block, const expr_t *e);

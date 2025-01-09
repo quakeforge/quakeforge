@@ -517,10 +517,10 @@ static def_t *
 compute_type_array (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 {
 	auto type = compute_type (args[0], ctx);
-	auto size = compute_val (args[1], ctx);
+	auto count = compute_val (args[1], ctx);
 	auto res = compute_tmp (ctx);
 	C (OP_STORE_A_1, ctx->args[0],         nullptr, type);
-	C (OP_STORE_A_1, ctx->args[1],         nullptr, size);
+	C (OP_STORE_A_1, ctx->args[1],         nullptr, count);
 	C (OP_CALL_B,    ctx->funcs[tf_array], nullptr, res);
 	return res;
 }
@@ -810,7 +810,7 @@ expand_type (const expr_t *te, rua_ctx_t *ctx)
 }
 
 const expr_t *
-evaluate_type (const expr_t *te, rua_ctx_t *ctx)
+eval_type (const expr_t *te, rua_ctx_t *ctx)
 {
 	if (te->type != ex_type) {
 		internal_error (te, "not a type expression");
@@ -927,8 +927,7 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 			internal_error (arg, "no type in reference");
 		}
 		auto val = compute_tmp (ctx);
-		auto type_def = type_encodings.a[arg->typ.type->id];
-		D_INT (val) = type_def->offset;
+		D_INT (val) = arg->typ.type->id;
 		return val;
 	}
 	int         op = arg->typ.op;

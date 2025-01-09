@@ -62,7 +62,7 @@ evaluate_debug_handler (prdebug_t event, void *param, void *data)
 	switch (event) {
 		case prd_trace:
 			st = pr->pr_statements + pr->pr_xstatement;
-			PR_PrintStatement (pr, st, 0);
+			PR_PrintStatement (pr, st, 3);
 			break;
 		case prd_breakpoint:
 		case prd_subenter:
