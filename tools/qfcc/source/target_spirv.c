@@ -985,8 +985,8 @@ static spvop_t spv_ops[] = {
 	{"not",    SpvOpLogicalNot,           SPV_INT,   0         },
 
 	{"shl",    SpvOpShiftLeftLogical,     SPV_INT,   SPV_INT   },
-	{"shr",    SpvOpShiftRightLogical,    SPV_UINT,  SPV_UINT  },
-	{"shr",    SpvOpShiftRightArithmetic, SPV_SINT,  SPV_SINT  },
+	{"shr",    SpvOpShiftRightLogical,    SPV_UINT,  SPV_INT   },
+	{"shr",    SpvOpShiftRightArithmetic, SPV_SINT,  SPV_INT   },
 
 	{"dot",    SpvOpDot,                  SPV_FLOAT, SPV_FLOAT },
 	{"scale",  SpvOpVectorTimesScalar,    SPV_FLOAT, SPV_FLOAT },
