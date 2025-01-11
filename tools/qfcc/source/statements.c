@@ -2203,6 +2203,7 @@ expr_incop (sblock_t *sblock, const expr_t *e, operand_t **op)
 		sblock = statement_single (sblock, assign);
 		sblock = statement_subexpr (sblock, tmp, op);
 	}
+	// binary_expr will take care of pointers
 	auto one = new_int_expr (1, false);
 	auto type = get_type (e->incop.expr);
 	if (is_scalar (type)) {

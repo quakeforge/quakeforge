@@ -1670,6 +1670,29 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_incop (const expr_t *e, spirvctx_t *ctx)
+{
+	scoped_src_loc (e);
+
+	// binary_expr will take care of pointers (FIXME is this correct for
+	// spir-v?)
+	auto one = new_int_expr (1, false);
+	auto type = get_type (e->incop.expr);
+	if (is_scalar (type)) {
+		one = cast_expr (type, one);
+	}
+	auto dst = new_expr ();
+	*dst = *e->incop.expr;
+	dst->id = 0;
+	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
+	unsigned inc_id = spirv_emit_expr (incop, ctx);
+	unsigned src_id = incop->expr.e1->id;
+	auto assign = assign_expr (dst, incop);
+	spirv_emit_expr (assign, ctx);
+	return e->incop.postop ? src_id : inc_id;
+}
+
+static unsigned
 spirv_cond (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned test_id = spirv_emit_expr (e->cond.test, ctx);
@@ -1827,6 +1850,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_return] = spirv_return,
 		[ex_swizzle] = spirv_swizzle,
 		[ex_extend] = spirv_extend,
+		[ex_incop] = spirv_incop,
 		[ex_cond] = spirv_cond,
 		[ex_field] = spirv_field_array,
 		[ex_array] = spirv_field_array,
