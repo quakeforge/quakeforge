@@ -1117,6 +1117,12 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_bool (const expr_t *e, spirvctx_t *ctx)
+{
+	internal_error (e, "oops");
+}
+
+static unsigned
 spirv_label (const expr_t *e, spirvctx_t *ctx)
 {
 	auto label = &e->label;
@@ -1804,6 +1810,7 @@ static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
+		[ex_bool] = spirv_bool,
 		[ex_label] = spirv_label,
 		[ex_block] = spirv_block,
 		[ex_expr] = spirv_expr,

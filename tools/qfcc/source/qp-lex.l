@@ -330,6 +330,7 @@ qp_yyparse (FILE *in, rua_ctx_t *ctx)
 }
 
 language_t lang_pascal = {
+	.short_circuit = true,
 	.parse = qp_yyparse,
 };
 

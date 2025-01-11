@@ -554,7 +554,7 @@ logical_and_expression
 	: inclusive_or_expression
 	| logical_and_expression AND inclusive_or_expression
 		{
-			$$ = bool_expr (QC_AND, nullptr, $1, $3);
+			$$ = new_binary_expr (QC_AND, $1, $3);
 		}
 	;
 
@@ -562,7 +562,7 @@ logical_xor_expression
 	: logical_and_expression
 	| logical_xor_expression XOR logical_and_expression
 		{
-			$$ = bool_expr (QC_XOR, nullptr, $1, $3);
+			$$ = new_binary_expr (QC_XOR, $1, $3);
 		}
 	;
 
@@ -570,7 +570,7 @@ logical_or_expression
 	: logical_xor_expression
 	| logical_or_expression OR logical_xor_expression
 		{
-			$$ = bool_expr (QC_OR, nullptr, $1, $3);
+			$$ = new_binary_expr (QC_OR, $1, $3);
 		}
 	;
 
@@ -1935,6 +1935,7 @@ glsl_version (int version, const char *profile, rua_ctx_t *ctx)
 
 language_t lang_glsl_comp = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1946,6 +1947,7 @@ language_t lang_glsl_comp = {
 
 language_t lang_glsl_vert = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_vert,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1957,6 +1959,7 @@ language_t lang_glsl_vert = {
 
 language_t lang_glsl_tesc = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_tesc,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1968,6 +1971,7 @@ language_t lang_glsl_tesc = {
 
 language_t lang_glsl_tese = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_tese,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1979,6 +1983,7 @@ language_t lang_glsl_tese = {
 
 language_t lang_glsl_geom = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,
@@ -1990,6 +1995,7 @@ language_t lang_glsl_geom = {
 
 language_t lang_glsl_frag = {
 	.always_overload = true,
+	.short_circuit = false,
 	.init = glsl_init_frag,
 	.parse = glsl_yyparse,
 	.extension = glsl_extension,

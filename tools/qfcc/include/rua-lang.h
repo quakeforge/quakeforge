@@ -200,6 +200,7 @@ const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((p
 typedef struct language_s {
 	bool        initialized;
 	bool        always_overload;
+	bool        short_circuit;
 	void      (*init) (rua_ctx_t *ctx);
 	int       (*parse) (FILE *in, rua_ctx_t *ctx);
 	int       (*finish) (const char *file, rua_ctx_t *ctx);

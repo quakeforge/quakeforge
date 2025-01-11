@@ -3256,6 +3256,7 @@ rua_init (rua_ctx_t *ctx)
 }
 
 language_t lang_ruamoko = {
+	.short_circuit = true,
 	.init = rua_init,
 	.parse = qc_yyparse,
 	.finish = qc_finish,

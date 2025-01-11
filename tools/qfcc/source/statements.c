@@ -1880,13 +1880,31 @@ expr_alias (sblock_t *sblock, const expr_t *e, operand_t **op)
 	return sblock;
 }
 
+static int
+convert_boolean_op (int op)
+{
+	// short-circuit logic has been disabled so the operators get here, but
+	// there are no such instructions, so convert to bit ops (and hope the
+	// midle layers have done proper boolean conversions)
+	if (op == QC_AND) {
+		return '&';
+	}
+	if (op == QC_OR) {
+		return '|';
+	}
+	if (op == QC_XOR) {
+		return '^';
+	}
+	return op;
+}
+
 static sblock_t *
 expr_expr (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
 	const char *opcode;
 	statement_t *s;
 
-	opcode = convert_op (e->expr.op);
+	opcode = convert_op (convert_boolean_op (e->expr.op));
 	if (!opcode)
 		internal_error (e, "ice ice baby");
 	if (strcmp (opcode, "ne") == 0 && is_string (get_type (e->expr.e1))) {

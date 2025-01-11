@@ -563,6 +563,12 @@ static expr_type_t bit_ops[] = {
 	{}
 };
 
+static expr_type_t bool_ops[] = {
+	{   .match_a = is_boolean, .match_b = is_boolean, },
+
+	{}
+};
+
 #define countof(x) (sizeof(x)/sizeof(x[0]))
 
 static expr_type_t *expr_types[] = {
@@ -582,6 +588,9 @@ static expr_type_t *expr_types[] = {
 	['|'] = bit_ops,
 	['^'] = bit_ops,
 	['%'] = mod_ops,
+	[QC_AND] = bool_ops,
+	[QC_OR] = bool_ops,
+	[QC_XOR] = bool_ops,
 	[QC_MOD] = mod_ops,
 	[QC_GEOMETRIC] = nullptr,	// handled by algebra_binary_expr
 	[QC_HADAMARD] = mul_ops,

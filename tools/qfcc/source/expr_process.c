@@ -39,6 +39,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
@@ -81,9 +82,12 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 		return e2;
 	}
 
-	if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
-		auto label = new_label_expr ();
-		return bool_expr (expr->expr.op, label, e1, e2);
+	if (options.code.short_circuit
+		&& ctx->language->short_circuit) {
+		if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
+			auto label = new_label_expr ();
+			return bool_expr (expr->expr.op, label, e1, e2);
+		}
 	}
 
 	auto e = binary_expr (expr->expr.op, e1, e2);
