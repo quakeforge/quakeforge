@@ -170,7 +170,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <block>   block_declaration
 %type <expr>    declaration constant_expression
 %type <expr>    expression primary_exprsssion assignment_expression
-%type <expr>    for_init_statement conditionopt expressionopt else line
+%type <expr>    for_init_statement opt_cond opt_expr else line
 %type <expr>    conditional_expression unary_expression postfix_expression
 %type <expr>    function_call function_call_or_method function_call_generic
 %type <mut_expr> function_call_header_with_parameters identifier_list
@@ -1111,12 +1111,8 @@ simple_statement
 	;
 
 compound_statement
-	: '{' '}'							{ $$ = nullptr; }
-	| '{' new_scope statement_list '}'
-		{
-			$$ = $3;
-			current_symtab = $new_scope->block.scope->parent;
-		}
+	: '{' '}'										{ $$ = nullptr; }
+	| '{' new_scope statement_list '}' end_scope	{ $$ = $3; }
 	;
 
 statement_no_new_scope
@@ -1145,6 +1141,13 @@ new_scope
 			block->block.scope = new_symtab (current_symtab, stab_local);
 			current_symtab = block->block.scope;
 			$$ = block;
+		}
+	;
+
+end_scope
+	: /* empty */
+		{
+			current_symtab = current_symtab->parent;
 		}
 	;
 
@@ -1267,22 +1270,20 @@ iteration_statement
 			continue_label = $continue_label;
 		}
 	| FOR new_scope break_label continue_label
-			'(' for_init_statement conditionopt ';' expressionopt ')'
-			statement_no_new_scope
+			'(' for_init_statement[init] opt_cond[test] ';' opt_expr[cont] ')'
+			statement_no_new_scope[body] end_scope
 		{
-			auto loop = new_loop_expr (false, false, $conditionopt,
-									   $statement_no_new_scope,
-									   continue_label, $expressionopt,
-									   break_label);
-			auto block = new_block_expr (nullptr);
-			if ($for_init_statement) {
-				append_expr (block, $for_init_statement);
+			auto test = $test;
+			if (!test) {
+				test = new_bool_expr (true);
 			}
+			auto loop = new_loop_expr (false, false, test, $body,
+									   continue_label, $cont, break_label);
+			auto block = $new_scope;
+			append_expr (block, $init);
 			$$ = append_expr (block, loop);
-
 			break_label = $break_label;
 			continue_label = $continue_label;
-			current_symtab = $new_scope->block.scope->parent;
 		}
 	;
 
@@ -1291,12 +1292,12 @@ for_init_statement
 	| declaration_statement
 	;
 
-conditionopt
+opt_cond
 	: condition
 	| /* emtpy */	{ $$ = nullptr; }
 	;
 
-expressionopt
+opt_expr
 	: expression
 	| /* emtpy */	{ $$ = nullptr; }
 	;
