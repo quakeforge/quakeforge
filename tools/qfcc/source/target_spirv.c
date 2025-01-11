@@ -1484,7 +1484,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		((expr_t *) e->assign.dst)->id = src;
 		return src;
 	}
-	if (e->assign.dst->type == ex_field) {
+	if (e->assign.dst->type == ex_field || e->assign.dst->type == ex_array) {
 		const type_t *res_type;
 		const type_t *acc_type;
 		dst = spirv_access_chain (e->assign.dst, ctx, &res_type, &acc_type);
