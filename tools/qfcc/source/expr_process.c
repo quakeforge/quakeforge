@@ -680,6 +680,10 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 		spec = default_type (spec, spec.sym);
 	}
 	if (!spec.type_list) {
+		if (spec.type_expr) {
+			spec.type = resolve_type (spec.type_expr, ctx);
+			spec.type_list = nullptr;
+		}
 		return spec;
 	}
 	if (spec.type_list->type != ex_list) {

@@ -284,6 +284,20 @@ type_spec (const type_t *type)
 	return spec;
 }
 
+static const expr_t *
+type_attribute (specifier_t spec, const attribute_t *attrib)
+{
+	auto type_expr = spec.type_expr;
+	if (!type_expr) {
+		type_expr = new_type_expr (spec.type);
+	}
+	auto params = new_list_expr (type_expr);
+	auto attr = new_type_expr (nullptr);
+	attr->typ.attrib = attrib;
+	expr_append_expr (params, attr);
+	return new_type_function (QC_ATTRIBUTE, params);
+}
+
 static specifier_t
 storage_spec (storage_class_t storage)
 {
@@ -524,17 +538,15 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 		spec.storage = sc_param;
 	}
 
-	spec = spec_process (spec, ctx);
-
 	param_t *param;
 	if (spec.type_expr) {
 		param = new_generic_param (spec.type_expr, spec.sym->name);
 	} else if (spec.sym) {
-		spec = default_type (spec, spec.sym);
+		spec = spec_process (spec, ctx);
 		spec.type = find_type (append_type (spec.sym->type, spec.type));
 		param = new_param (nullptr, spec.type, spec.sym->name);
 	} else {
-		spec = default_type (spec, spec.sym);
+		spec = spec_process (spec, ctx);
 		param = new_param (nullptr, spec.type, nullptr);
 	}
 	if (spec.is_const) {
@@ -1146,15 +1158,10 @@ typespec_reserved
 
 typespec_nonreserved
 	: TYPE_NAME %prec LOW
-	| TYPE_NAME '.' attribute
+	| TYPE_NAME[spec] '.' attribute
 		{
-			if (!is_algebra ($1.type)) {
-				error (0, "%s does not have any subtypes",
-					   get_type_string ($1.type));
-				$$ = $1;
-			} else {
-				$$ = type_spec (algebra_subtype ($1.type, $3));
-			}
+			auto te = type_attribute ($spec, $attribute);
+			$$ = (specifier_t) { .type_expr = te };
 		}
 	| OBJECT_NAME protocolrefs
 		{
@@ -1355,6 +1362,10 @@ type_ref
 			} else {
 				$$ = new_type_expr ($1.type);
 			}
+		}
+	| TYPE_NAME[spec] '.' attribute
+		{
+			$$ = type_attribute ($spec, $attribute);
 		}
 	;
 
@@ -2885,6 +2896,12 @@ obj_string
 	;
 
 %%
+
+static void __attribute__((used))
+qc_dump_stack(yypstate *yyps)
+{
+	yy_stack_print (yyps->yyss, yyps->yyssp);
+}
 
 // preprocessor directives in ruamoko and quakec
 static directive_t rua_directives[] = {

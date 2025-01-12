@@ -342,6 +342,13 @@ is_algebra (const type_t *type)
 	return type->meta == ty_algebra;
 }
 
+static const expr_t *
+algebra_attrib (const type_t *type, const attribute_t *attr)
+{
+	type = algebra_subtype (type, attr);
+	return new_type_expr (type);
+}
+
 const type_t *
 algebra_type (const type_t *type, const expr_t *params)
 {
@@ -412,12 +419,13 @@ algebra_type (const type_t *type, const expr_t *params)
 	t->type = ev_invalid;
 	t->alignment = (dim > 1 ? 4 : 2) * type->alignment;
 	t->algebra = algebra;
+	t->attrib = algebra_attrib;
 	algebra->algebra_type = t;
 	return find_type (t);
 }
 
 const type_t *
-algebra_subtype (const type_t *type, attribute_t *attr)
+algebra_subtype (const type_t *type, const attribute_t *attr)
 {
 	if (!is_algebra (type)) {
 		internal_error (0, "unexpected type");
@@ -532,6 +540,7 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 			.algebra = (algebra_t *) mvec,
 			.freeable = true,
 			.allocated = true,
+			.attrib = algebra_attrib,
 		};
 		chain_type (type);
 		if (!(group_mask & (group_mask - 1))) {

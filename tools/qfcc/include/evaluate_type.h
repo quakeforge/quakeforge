@@ -36,6 +36,7 @@
 enum {
 	tf_null,
 	tf_eval,
+	tf_attribute,
 	tf_function,
 	tf_field,
 	tf_pointer,
@@ -59,8 +60,10 @@ typedef struct typeeval_s {
 	struct typeeval_s *next;
 	struct dstatement_s *code;
 	struct pr_type_s *data;
+	const char *strings;
 	int code_size;
 	int data_size;
+	int string_size;
 } typeeval_t;
 
 void setup_type_progs (void);

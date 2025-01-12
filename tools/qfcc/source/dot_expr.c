@@ -48,6 +48,7 @@
 #include "qfalloca.h"
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/rua-lang.h"
@@ -106,6 +107,7 @@ get_op_string (int op)
 		case QC_REVERSE:	return "@reverse";
 		case QC_DUAL:		return "@dual";
 		case QC_UNDUAL:		return "@undual";
+		case QC_ATTRIBUTE:  return ".attribute";
 		case QC_AT_FUNCTION:return "@function";
 		case QC_AT_FIELD:	return "@field";
 		case QC_AT_POINTER:	return "@pointer";
@@ -347,6 +349,11 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		if (!str) {
 		   str = type_get_encoding (e->typ.type);
 		}
+	} else if (e->typ.attrib) {
+		auto attrib = e->typ.attrib;
+		_print_expr (dstr, attrib->params, level + 1, id, nullptr);
+		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, attrib->params);
+		str = attrib->name;
 	} else if (e->typ.sym) {
 	   str = e->typ.sym->name;
 	}

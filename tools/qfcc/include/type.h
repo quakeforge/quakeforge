@@ -103,6 +103,7 @@ typedef struct type_s {
 	int         allocated;
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
+	const expr_t *(*attrib) (const type_t *type, const attribute_t *attr);
 } type_t;
 
 #define EV_TYPE(type) extern type_t type_##type;
