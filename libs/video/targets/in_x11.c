@@ -1143,6 +1143,7 @@ event_focusout (XEvent *event)
 			CDAudio_Pause ();
 		}
 		X11_RestoreGamma ();
+		X11_RestoreScreenSaver ();
 	}
 }
 
@@ -1162,6 +1163,10 @@ event_focusin (XEvent *event)
 #endif
 	}
 	VID_UpdateGamma ();
+	// The assumption is that kb+mouse will generate enough input it doesn't
+	// matter, and that if the game is in focus, then assume a controller
+	// (which does not generate X11 events) might be in use.
+	X11_SetScreenSaver ();
 }
 
 static void
