@@ -46,7 +46,13 @@
 #include "tools/qfcc/include/value.h"
 
 static void
-glsl_layout_location_invalid (specifier_t spec, const expr_t *qual_name,
+glsl_layout_invalid_A (specifier_t spec, const expr_t *qual_name)
+{
+	error (qual_name, "not allowed for vulkan");
+}
+
+static void
+glsl_layout_invalid_E (specifier_t spec, const expr_t *qual_name,
 							  const expr_t *val)
 {
 	error (qual_name, "not allowed for vulkan");
@@ -67,11 +73,21 @@ set_attribute (attribute_t **attributes, const char *name, const expr_t *val)
 }
 
 static void
+glsl_layout_packing (specifier_t spec, const expr_t *qual_name)
+{
+}
+
+static void
 glsl_layout_location (specifier_t spec, const expr_t *qual_name,
 					  const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
+}
+
+static void
+glsl_layout_geom_in_primitive (specifier_t spec, const expr_t *qual_name)
+{
 }
 
 static void
@@ -124,12 +140,29 @@ glsl_layout_set_property (specifier_t spec, const expr_t *qual_name,
 }
 
 static void
+glsl_layout_geom_out_primitive (specifier_t spec, const expr_t *qual_name)
+{
+}
+
+static void
+glsl_layout_geom_out_max_vertices (specifier_t spec, const expr_t *qual_name,
+								   const expr_t *val)
+{
+}
+
+static void
 glsl_layout_format (specifier_t spec, const expr_t *qual_name)
 {
 }
 
 static void
 glsl_layout_push_constant (specifier_t spec, const expr_t *qual_name)
+{
+}
+
+static void
+glsl_layout_input_attachment_index (specifier_t spec, const expr_t *qual_name,
+									const expr_t *val)
 {
 }
 
@@ -178,22 +211,22 @@ typedef struct layout_qual_s {
 static bool sorted_layout_qualifiers;
 static layout_qual_t layout_qualifiers[] = {
 	{	.name = "shared",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_invalid_A),
 		.obj_mask = D(qual)|D(block),
 		.if_mask = I(uniform)|I(buffer),
 	},
 	{	.name = "packed",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_invalid_A),
 		.obj_mask = D(qual)|D(block),
 		.if_mask = I(uniform)|I(buffer),
 	},
 	{	.name = "std140",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_packing),
 		.obj_mask = D(qual)|D(block),
 		.if_mask = I(uniform)|I(buffer),
 	},
 	{	.name = "std430",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_packing),
 		.obj_mask = D(qual)|D(block),
 		.if_mask = I(uniform)|I(buffer),
 	},
@@ -239,13 +272,13 @@ static layout_qual_t layout_qualifiers[] = {
 		.if_mask = I(uniform),
 	},
 	{	.name = "input_attachment_index",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_input_attachment_index),
 		.obj_mask = D(var),
 		.var_type = V(subpass),
 		.if_mask = I(uniform),
 	},
 	{	.name = "location",
-		.apply = E(glsl_layout_location_invalid),
+		.apply = E(glsl_layout_invalid_E),
 		.obj_mask = D(var),
 		.var_type = V(any),
 		.if_mask = I(uniform)|I(buffer),
@@ -330,26 +363,25 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "points",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_in_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(in)|I(out),
 		.stage_filter = C { "geometry", nullptr },
 	},
-//? [ points ]					// q _ _ _ geom in
 	{	.name = "lines",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_in_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
 	},
 	{	.name = "lines_adjacency",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_in_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
 	},
 	{	.name = "triangles",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_in_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
@@ -470,21 +502,26 @@ static layout_qual_t layout_qualifiers[] = {
 		.stage_filter = C { "tessellation control", nullptr },
 	},
 
-//? [ points ]					// q _ _ _ geom out
+	{	.name = "points",
+		.apply = A(glsl_layout_geom_out_primitive),
+		.obj_mask = D(qual),
+		.if_mask = I(out),
+		.stage_filter = C { "geometry", nullptr },
+	},
 	{	.name = "line_strip",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_out_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
 	},
 	{	.name = "triangle_strip",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_geom_out_primitive),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
 	},
 	{	.name = "max_vertices",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_geom_out_max_vertices),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
@@ -803,16 +840,26 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 			if (is_reference (type)) {
 				type = dereference_type (type);
 			}
+			if (is_array (type)) {
+				type = dereference_type (type);
+			}
 			//FIXME is_handle works only for glsl as there are no user handles
 			if (is_handle (type)) {
 				var_type = var_opaque;
 				// images are opaque types, but certain qualifiers support
 				// only images and not other opaque types, but qualifiers that
 				// support opaque types in general also support images
-				if (qual->var_type == var_image
-					//FIXME shouldn't rely on name
-					&& strstr (type->name, "image")) {
-					var_type = var_image;
+				glsl_image_t *image = nullptr;
+				//FIXME nicer type check (and remove glsl)
+				if (type->handle.type == &type_glsl_image) {
+					image = &glsl_imageset.a[type->handle.extra];
+				}
+				if (qual->var_type != var_opaque && image) {
+					if (image->dim == glid_subpassdata) {
+						var_type = var_subpass;
+					} else {
+						var_type = var_image;
+					}
 				}
 			} else if (spec.is_const && is_scalar (type)) {
 				var_type = var_scalar;
