@@ -597,9 +597,13 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 		return false;
 	}
 	if (!type_promotes (type, param.type)) {
-		return param.implicit && type_demotes (type, param.type);
+		bool demotes = param.implicit && type_demotes (type, param.type);
+		if (demotes) {
+			*cost += 1;
+		}
+		return demotes;
 	}
-	*cost += 1;
+	*cost += 2;
 	return true;
 }
 
@@ -649,6 +653,7 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 		for (int i = 0; ok && i < num_params; i++) {
 			auto p = &g->params[i];
 			if (!p->fixed_type) {
+				costs[j] += 1;
 				int ind = p->gentype;
 				if (!types[ind]) {
 					types[ind] = select_type (&g->types[ind], call_params[i]);
