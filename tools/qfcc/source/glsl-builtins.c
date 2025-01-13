@@ -417,9 +417,9 @@ SRC_LINE
 
 //common functions
 SRC_LINE
-"genFType abs(genFType x);"                                         "\n"
-"genIType abs(genIType x);"                                         "\n"
-"genDType abs(genDType x);"                                         "\n"
+"genFType abs(genFType x) = " GLSL(FAbs) ";"                        "\n"
+"genIType abs(genIType x) = " GLSL(SAbs) ";"                        "\n"
+"genDType abs(genDType x) = " GLSL(FAbs) ";"                        "\n"
 "genFType sign(genFType x);"                                        "\n"
 "genIType sign(genIType x);"                                        "\n"
 "genDType sign(genDType x);"                                        "\n"
