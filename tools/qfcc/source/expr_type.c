@@ -1035,6 +1035,11 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 		C (OP_CALL_B,    ctx->funcs[tf_gentype], nullptr, res);
 		return res;
 	}
+	if (arg->type == ex_field) {
+		// type attribute
+		const expr_t *args[2] = {arg->field.object, arg->field.member};
+		return compute_attribute (2, args, ctx);
+	}
 	if (arg->type != ex_type) {
 		internal_error (arg, "not a type expression");
 	}
