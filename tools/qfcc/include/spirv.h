@@ -77,6 +77,4 @@ void spirv_set_addressing_model (module_t *module, SpvAddressingModel model);
 void spirv_set_memory_model (module_t *module, SpvMemoryModel model);
 bool spirv_write (struct pr_info_s *pr, const char *filename);
 
-const struct plitem_s *spirv_operand_kind (const char *set, const char *kind);
-
 #endif//__spirv_h

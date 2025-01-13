@@ -43,6 +43,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/spirv.h"
+#include "tools/qfcc/include/spirv_grammar.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
@@ -1803,7 +1804,7 @@ static unsigned
 spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 {
 	auto intr = e->intrinsic;
-	unsigned op = expr_integral (intr.opcode);
+	unsigned op = spirv_instruction_opcode ("core", intr.opcode);
 
 	int count = list_count (&intr.operands);
 	int start = 0;
@@ -1813,7 +1814,7 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	if (op == SpvOpExtInst) {
 		auto set = expr_string (operands[0]);
 		op_ids[0] = spirv_extinst_import (ctx->module, set, ctx);
-		op_ids[1] = expr_integral (operands[1]);
+		op_ids[1] = spirv_instruction_opcode (set, operands[1]);
 		start = 2;
 	}
 	for (int i = start; i < count; i++) {

@@ -433,3 +433,42 @@ spirv_operand_kind (const char *set, const char *kind)
 	}
 	return nullptr;
 }
+
+const uint32_t
+spirv_instruction_opcode (const char *set, const expr_t *opcode)
+{
+	if (!built) {
+		build_grammars ();
+		built = true;
+	}
+
+	if (is_integral_val (opcode)) {
+		return expr_integral (opcode);
+	}
+	if (opcode->type != ex_symbol) {
+		error (opcode, "not a an integer constant or symbol");
+		return 0;
+	}
+	spirv_grammar_t *grammar = nullptr;
+	for (int i = 0; builtin_json[i].name; i++) {
+		if (strcmp (builtin_json[i].name, set) == 0) {
+			grammar = builtin_json[i].grammar;
+			break;
+		}
+	}
+	if (!grammar) {
+		error (opcode, "unrecognized grammar set %s", set);
+		return 0;
+	}
+
+	const char *opname = opcode->symbol->name;
+	const spirv_instruction_t *instruction = nullptr;
+	instruction = bsearch (&(spirv_instruction_t) { .opname = opname },
+						   grammar->instructions, grammar->num_instructions,
+						   sizeof (spirv_instruction_t), spirv_instruction_cmp);
+	if (!instruction) {
+		error (opcode, "unknown instruction opcode %s", opname);
+		return 0;
+	}
+	return instruction->opcode;
+}

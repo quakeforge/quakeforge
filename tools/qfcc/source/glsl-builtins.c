@@ -348,7 +348,7 @@ static gentype_t genDType = {
 #endif
 
 #define SPV(op) "@intrinsic(" #op ")"
-#define GLSL(op) "@intrinsic(12, \"GLSL.std.450\", " #op ")"
+#define GLSL(op) "@intrinsic(OpExtInst, \"GLSL.std.450\", " #op ")"
 
 static const char *glsl_general_functions =
 SRC_LINE

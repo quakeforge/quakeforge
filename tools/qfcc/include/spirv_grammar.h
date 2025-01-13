@@ -88,4 +88,11 @@ typedef struct spirv_grammar_s {
 	spirv_kind_t *operand_kinds;
 } spirv_grammar_t;
 
+typedef struct plitem_s plitem_t;
+typedef struct expr_s expr_t;
+
+const plitem_t *spirv_operand_kind (const char *set, const char *kind);
+
+uint32_t spirv_instruction_opcode (const char *set, const expr_t *opcode);
+
 #endif//__spirv_grammar_h
