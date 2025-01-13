@@ -249,7 +249,7 @@ matrix_binary_expr (int op, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-matrix_scalar_expr (int op, const expr_t *a, const expr_t *b)
+matrix_scalar_mul (int op, const expr_t *a, const expr_t *b)
 {
 	auto ta = get_type (a);
 	auto tb = get_type (b);
@@ -272,6 +272,8 @@ convert_scalar (const expr_t *scalar, const expr_t *vec)
 {
 	// expand the scalar to a vector of the same width as vec
 	auto vec_type = get_type (vec);
+	// vec might actually be a matrix, so get its column "width"
+	vec_type = vector_type (base_type (vec_type), type_width (vec_type));
 
 	if (is_constant (scalar)) {
 		int width = type_width (get_type (vec));
@@ -279,12 +281,41 @@ convert_scalar (const expr_t *scalar, const expr_t *vec)
 		for (int i = 0; i < width; i++) {
 			elements[i] = scalar;
 		}
-		auto scalar_list = new_list_expr (0);
+		auto scalar_list = new_list_expr (nullptr);
 		list_gather (&scalar_list->list, elements, width);
 		return new_vector_list (scalar_list);
 	}
 
 	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy
+}
+
+static const expr_t *
+matrix_scalar_expr (int op, const expr_t *a, const expr_t *b)
+{
+	scoped_src_loc (a);
+	bool left = is_scalar (get_type (a));
+	auto mat_type = get_type (left ? b : a);
+	int count = type_cols (mat_type);
+	const expr_t *a_cols[count];
+	const expr_t *b_cols[count];
+	if (left) {
+		a_cols[0] = convert_scalar (a, b);
+		for (int i = 0; i < count; i++) {
+			a_cols[i] = a_cols[0];
+			b_cols[i] = get_column (b, i);
+		}
+	} else {
+		b_cols[0] = convert_scalar (b, a);
+		for (int i = 0; i < count; i++) {
+			a_cols[i] = get_column (a, i);
+			b_cols[i] = b_cols[0];
+		}
+	}
+	auto params = new_list_expr (nullptr);
+	for (int i = 0; i < count; i++) {
+		expr_append_expr (params, binary_expr (op, a_cols[i], b_cols[i]));
+	}
+	return constructor_expr (new_type_expr (mat_type), params);
 }
 
 static const expr_t *
@@ -305,7 +336,20 @@ matrix_scalar_div (int op, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
-vector_vector_expr (int op, const expr_t *a, const expr_t *b)
+vector_scalar_expr (int op, const expr_t *a, const expr_t *b)
+{
+	scoped_src_loc (a);
+	bool left = is_scalar (get_type (a));
+	if (left) {
+		a = convert_scalar (a, b);
+	} else {
+		b = convert_scalar (b, a);
+	}
+	return binary_expr (op, a, b);
+}
+
+static const expr_t *
+vector_vector_mul (int op, const expr_t *a, const expr_t *b)
 {
 	expr_t     *e = new_binary_expr ('*', a, b);
 	if (options.math.vector_mult == QC_DOT) {
@@ -458,6 +502,18 @@ static expr_type_t add_ops[] = {
 	{   .match_a = is_integral, .match_b = is_ptr,
 			.process = pointer_arithmetic, },
 	{   .match_a = is_string,   .match_b = is_string,   },
+	{   .match_a = is_matrix,   .match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_matrix,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_nonscalar,.match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_nonscalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
 	{   .match_a = is_math,     .match_b = is_math,
 			.promote = true },
 
@@ -469,6 +525,18 @@ static expr_type_t sub_ops[] = {
 			.process = pointer_arithmetic, },
 	{   .match_a = is_ptr,      .match_b = is_ptr,
 			.process = pointer_arithmetic, },
+	{   .match_a = is_matrix,   .match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_matrix,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_nonscalar,.match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_nonscalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
 	{   .match_a = is_math,     .match_b = is_math,
 			.promote = true },
 
@@ -487,18 +555,18 @@ static expr_type_t mul_ops[] = {
 			.process = matrix_binary_expr, },
 	{   .match_a = is_matrix,     .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_expr, },
+			.promote = true, .process = matrix_scalar_mul, },
 	{   .match_a = is_scalar,     .match_b = is_matrix,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_expr, },
+			.promote = true, .process = matrix_scalar_mul, },
 	{   .match_a = is_nonscalar,  .match_b = is_scalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_expr, },
+			.promote = true, .process = matrix_scalar_mul, },
 	{   .match_a = is_scalar,     .match_b = is_nonscalar,
 			.match_shape = shape_always,
-			.promote = true, .process = matrix_scalar_expr, },
+			.promote = true, .process = matrix_scalar_mul, },
 	{	.match_a = is_vector,     .match_b = is_vector,
-			.process = vector_vector_expr, },
+			.process = vector_vector_mul, },
 	{	.match_a = is_quaternion, .match_b = is_quaternion,
 			.process = quaternion_quaternion_expr, },
 	{	.match_a = is_quaternion, .match_b = is_vector,

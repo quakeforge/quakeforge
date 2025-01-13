@@ -37,7 +37,7 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static const expr_t *
+const expr_t *
 get_column (const expr_t *e, int i)
 {
 	auto t = get_type (e);
