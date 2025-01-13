@@ -165,6 +165,7 @@ const type_t *append_type (const type_t *type, const type_t *new);
 specifier_t default_type (specifier_t spec, const struct symbol_s *sym);
 const type_t *find_type (const type_t *new);
 void new_typedef (const char *name, type_t *type);
+const type_t *auto_type (const type_t *type, const expr_t *init);
 const type_t *field_type (const type_t *aux);
 const type_t *pointer_type (const type_t *aux);
 const type_t *tagged_pointer_type (unsigned tag, const type_t *aux);

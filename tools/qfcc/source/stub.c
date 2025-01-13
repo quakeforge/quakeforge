@@ -71,3 +71,4 @@ void dump_dot (const char *stage, const void *data,
 void dump_dot_type (void *_t, const char *filename){}
 char *fubar;
 const char *file_basename(const char *p, int keepdot) { return fubar;}
+__attribute__((const)) const type_t *get_type (const expr_t *e) {return nullptr;}

@@ -750,6 +750,22 @@ find_type (const type_t *type)
 }
 
 const type_t *
+auto_type (const type_t *type, const expr_t *init)
+{
+	if (type == &type_auto) {
+		if (init) {
+			if (!(type = get_type (init))) {
+				type = type_default;
+			}
+		} else {
+			error (0, "'auto' requires an initialized data declaration");
+			type = type_default;
+		}
+	}
+	return type;
+}
+
+const type_t *
 field_type (const type_t *aux)
 {
 	type_t      _new;

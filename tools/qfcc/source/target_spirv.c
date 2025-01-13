@@ -2065,6 +2065,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		}
 	}
 	auto storage = spirv_storage_class (spec.storage);
+	sym->type = auto_type (sym->type, init);
 	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
 	sym->sy_type = sy_var;

@@ -585,16 +585,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			auto ele_type = dereference_type (sym->type);
 			sym->type = array_type (ele_type, num_elements (init));
 		}
-		if (sym->type == &type_auto) {
-			if (init) {
-				if (!(sym->type = get_type (init))) {
-					sym->type = type_default;
-				}
-			} else {
-				error (0, "'auto' requires an initialized data declaration");
-				sym->type = type_default;
-			}
-		}
+		sym->type = auto_type (sym->type, init);
 		sym->def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
