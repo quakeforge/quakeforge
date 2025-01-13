@@ -128,6 +128,36 @@ cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
 	if (p1->fixed_type || p2->fixed_type) {
 		return p1->fixed_type == p2->fixed_type;
 	}
+	if (p1->compute && p2->compute) {
+		auto c1 = p1->compute;
+		auto c2 = p2->compute;
+		if (c1 == c2) {
+			// same program
+			return true;
+		}
+		if (!c1 || !c2) {
+			// only one parameter is computed so they can't be the same
+			return false;
+		}
+		if (c1->code_size != c2->code_size || c1->data_size != c2->data_size
+			|| c1->string_size != c2->string_size) {
+			// computation programs are different sizes, so not the same
+			return false;
+		}
+		size_t csize = c1->code_size * sizeof (dstatement_t);
+		size_t dsize = c1->data_size * sizeof (pr_type_t);
+		size_t ssize = c1->string_size;
+		if (memcmp (c1->code, c2->code, csize) != 0) {
+			return false;
+		}
+		if (memcmp (c1->data, c2->data, dsize) != 0) {
+			return false;
+		}
+		if (memcmp (c1->strings, c2->strings, ssize) != 0) {
+			return false;
+		}
+		return true;
+	}
 	// fixed_type for both p1 and p2 is null
 	auto t1 = g1->types[p1->gentype];
 	auto t2 = g2->types[p2->gentype];
