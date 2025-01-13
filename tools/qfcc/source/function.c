@@ -666,7 +666,7 @@ select_type (gentype_t *gentype, callparm_t param)
 
 static genfunc_t *
 find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
-					   calltype_t *calltype, bool promote)
+					   calltype_t *calltype, bool promote, rua_ctx_t *ctx)
 {
 	int num_funcs = 0;
 	for (auto gf = genfuncs; *gf; gf++, num_funcs++) continue;
@@ -683,7 +683,11 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 		bool ok = true;
 		for (int i = 0; ok && i < num_params; i++) {
 			auto p = &g->params[i];
-			if (!p->fixed_type) {
+			if (p->compute) {
+				auto ptype = evaluate_type (p->compute, g->num_types,
+										    types, fexpr, ctx);
+				ok &= check_type (ptype, call_params[i], costs + j, promote);
+			} else if (!p->fixed_type) {
 				costs[j] += 1;
 				int ind = p->gentype;
 				if (!types[ind]) {
@@ -727,7 +731,7 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 static const type_t *
 compute_param_type (const genparam_t *param, int param_ind,
 					const genfunc_t *genfunc, calltype_t *calltype,
-					const expr_t *fexpr)
+					const expr_t *fexpr, rua_ctx_t *ctx)
 {
 	auto call_types = calltype->types;
 	auto call_params = calltype->params;
@@ -736,7 +740,7 @@ compute_param_type (const genparam_t *param, int param_ind,
 	}
 	if (param->compute) {
 		return evaluate_type (param->compute, genfunc->num_types,
-							  calltype->types, fexpr);
+							  calltype->types, fexpr, ctx);
 	}
 	int ind = param->gentype;
 	if (!call_types[ind] && param_ind >= 0) {
@@ -747,7 +751,8 @@ compute_param_type (const genparam_t *param, int param_ind,
 }
 
 static symbol_t *
-create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
+create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
+					rua_ctx_t *ctx)
 {
 	int num_params = calltype->num_params;
 	const type_t *param_types[num_params];
@@ -755,10 +760,10 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype)
 	const type_t *return_type;
 	for (int i = 0; i < num_params; i++) {
 		auto p = &g->params[i];
-		param_types[i] = compute_param_type (p, i, g, calltype, fexpr);
+		param_types[i] = compute_param_type (p, i, g, calltype, fexpr, ctx);
 		param_quals[i] = p->qual;
 	}
-	return_type = compute_param_type (g->ret_type, -1, g, calltype, fexpr);
+	return_type = compute_param_type (g->ret_type, -1, g, calltype, fexpr, ctx);
 	if (!return_type) {
 		internal_error (0, "return type not determined");
 	}
@@ -837,11 +842,12 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 			|| !fexpr.symbol->metafunc) {
 			internal_error (0, "genfunc oops");
 		}
-		auto gen = find_generic_function (genfuncs, &fexpr, &calltype, false);
+		auto gen = find_generic_function (genfuncs, &fexpr, &calltype, false,
+										  ctx);
 		if (gen) {
 			const type_t *ref_types[gen->num_types] = {};
 			calltype.types = ref_types;
-			auto sym = create_generic_sym (gen, &fexpr, &calltype);
+			auto sym = create_generic_sym (gen, &fexpr, &calltype, ctx);
 			if (sym == fexpr.symbol
 				|| sym->metafunc == fexpr.symbol->metafunc) {
 				internal_error (0, "genfunc oops");
@@ -1013,7 +1019,7 @@ new_function (const char *name, const char *nice_name)
 }
 
 const expr_t *
-find_function (const expr_t *fexpr, const expr_t *params)
+find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 {
 	if (fexpr->type != ex_symbol) {
 		return fexpr;
@@ -1045,13 +1051,14 @@ find_function (const expr_t *fexpr, const expr_t *params)
 	const char *fname = fsym->name;
 	auto genfuncs = (genfunc_t **) Hash_FindList (generic_functions, fname);
 	if (genfuncs) {
-		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true);
+		auto gen = find_generic_function (genfuncs, fexpr, &calltype, true,
+										  ctx);
 		if (!gen) {
 			return new_error_expr ();
 		}
 		const type_t *ref_types[gen->num_types] = {};
 		calltype.types = ref_types;
-		auto sym = create_generic_sym (gen, fexpr, &calltype);
+		auto sym = create_generic_sym (gen, fexpr, &calltype, ctx);
 		if (gen->can_inline) {
 			// the call will be inlined, so a new scope is needed every
 			// time

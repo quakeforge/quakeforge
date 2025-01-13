@@ -1075,7 +1075,8 @@ const expr_t *asx_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *unary_expr (int op, const expr_t *e);
 const expr_t *build_function_call (const expr_t *fexpr, const type_t *ftype,
 								   const expr_t *params);
-const expr_t *function_expr (const expr_t *e1, const expr_t *e2);
+const expr_t *function_expr (const expr_t *e1, const expr_t *e2,
+							 rua_ctx_t *ctx);
 const expr_t *get_column (const expr_t *e, int i);
 const expr_t *constructor_expr (const expr_t *e, const expr_t *params);
 struct function_s;

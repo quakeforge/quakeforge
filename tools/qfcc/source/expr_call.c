@@ -447,13 +447,13 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 }
 
 const expr_t *
-function_expr (const expr_t *fexpr, const expr_t *args)
+function_expr (const expr_t *fexpr, const expr_t *args, rua_ctx_t *ctx)
 {
 	if (fexpr->type == ex_type) {
 		return constructor_expr (fexpr, args);
 	}
 
-	fexpr = find_function (fexpr, args);
+	fexpr = find_function (fexpr, args, ctx);
 	if (is_error (fexpr)) {
 		return fexpr;
 	}

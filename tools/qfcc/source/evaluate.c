@@ -67,13 +67,14 @@ evaluate_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_breakpoint:
 		case prd_subenter:
 		case prd_subexit:
-		case prd_runerror:
 		case prd_watchpoint:
 		case prd_begin:
 		case prd_terminate:
 		case prd_error:
 		case prd_none:
 			break;
+		case prd_runerror:
+			internal_error (0, "program error in evaluation");
 	}
 }
 

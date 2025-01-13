@@ -509,7 +509,7 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 				return new_error_expr ();
 			}
 		}
-		return function_expr (target, args);
+		return function_expr (target, args, ctx);
 	} else {
 		auto branch = new_expr ();
 		branch->type = ex_branch;

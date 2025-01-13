@@ -218,7 +218,8 @@ function_t *make_function (symbol_t *sym, const char *nice_name,
 						struct defspace_s *space,
 						enum storage_class_e storage);
 symbol_t *function_symbol (specifier_t spec, rua_ctx_t *ctx);
-const expr_t *find_function (const expr_t *fexpr, const expr_t *params);
+const expr_t *find_function (const expr_t *fexpr, const expr_t *params,
+							 rua_ctx_t *ctx);
 function_t *begin_function (specifier_t spec, const char *nicename,
 							symtab_t *parent, rua_ctx_t *ctx);
 void build_code_function (specifier_t spec, const expr_t *state_expr,

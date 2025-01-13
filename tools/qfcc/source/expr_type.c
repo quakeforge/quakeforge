@@ -529,7 +529,7 @@ compute_attribute (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 		}
 	}
 	C (OP_STORE_A_1, ctx->args[0],             nullptr, type);
-	C (OP_STORE_A_1, ctx->args[1],             nullptr, attr_params);
+	C (OP_LEA_A,     attr_params,              nullptr, ctx->args[1]);
 	C (OP_CALL_B,    ctx->funcs[tf_attribute], nullptr, res);
 	return res;
 }
