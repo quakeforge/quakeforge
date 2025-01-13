@@ -183,7 +183,7 @@ static const char *glsl_compute_vars =
 SRC_LINE
 "// workgroup dimensions"           "\n"
 "in uvec3 gl_NumWorkGroups;"        "\n"
-"const uvec3 gl_WorkGroupSize;"     "\n"
+"readonly uvec3 gl_WorkGroupSize;"  "\n"
 "// workgroup and invocation IDs"   "\n"
 "in uvec3 gl_WorkGroupID;"          "\n"
 "in uvec3 gl_LocalInvocationID;"    "\n"
@@ -406,12 +406,12 @@ SRC_LINE
 //exponential functions
 SRC_LINE
 "genFType pow(genFType x, genFType y);"                             "\n"
-"genFType exp(genFType x) = " GLSL(27) ";"                          "\n"
+"genFType exp(genFType x) = " GLSL(Exp) ";"                         "\n"
 "genFType log(genFType x);"                                         "\n"
 "genFType exp2(genFType x);"                                        "\n"
 "genFType log2(genFType x);"                                        "\n"
-"genFType sqrt(genFType x) = " GLSL(31) ";"                         "\n"
-"genDType sqrt(genDType x) = " GLSL(31) ";"                         "\n"
+"genFType sqrt(genFType x) = " GLSL(Sqrt) ";"                       "\n"
+"genDType sqrt(genDType x) = " GLSL(Sqrt) ";"                       "\n"
 "genFType inversesqrt(genFType x);"                                 "\n"
 "genDType inversesqrt(genDType x);"                                 "\n"
 
@@ -465,17 +465,17 @@ SRC_LINE
 "genIType clamp(genIType x, int minVal, int maxVal);"               "\n"
 "genUType clamp(genUType x, genUType minVal, genUType maxVal);"     "\n"
 "genUType clamp(genUType x, uint minVal, uint maxVal);"             "\n"
-"genFType mix(genFType x, genFType y, genFType a) = " GLSL(46) ";"  "\n"
+"genFType mix(genFType x, genFType y, genFType a) = " GLSL(FMix) ";""\n"
 "genFType mix(genFType x, genFType y, float a)"                     "\n"
 "{ return mix (x, y, @construct (genFType, a)); }"                  "\n"
-"genDType mix(genDType x, genDType y, genDType a) = " GLSL(46) ";"  "\n"
+"genDType mix(genDType x, genDType y, genDType a) = " GLSL(FMix) ";""\n"
 "genDType mix(genDType x, genDType y, double a)"                    "\n"
 "{ return mix (x, y, @construct (genDType, a)); }"                  "\n"
-"genFType mix(genFType x, genFType y, genBType a) = " SPV(169) ";"  "\n"
-"genDType mix(genDType x, genDType y, genBType a) = " SPV(169) ";"  "\n"
-"genIType mix(genIType x, genIType y, genBType a) = " SPV(169) ";"  "\n"
-"genUType mix(genUType x, genUType y, genBType a) = " SPV(169) ";"  "\n"
-"genBType mix(genBType x, genBType y, genBType a) = " SPV(169) ";"  "\n"
+"genFType mix(genFType x, genFType y, genBType a) = " SPV(OpSelect) ";"  "\n"
+"genDType mix(genDType x, genDType y, genBType a) = " SPV(OpSelect) ";"  "\n"
+"genIType mix(genIType x, genIType y, genBType a) = " SPV(OpSelect) ";"  "\n"
+"genUType mix(genUType x, genUType y, genBType a) = " SPV(OpSelect) ";"  "\n"
+"genBType mix(genBType x, genBType y, genBType a) = " SPV(OpSelect) ";"  "\n"
 "genFType step(genFType edge, genFType x);"                         "\n"
 "genFType step(float edge, genFType x);"                            "\n"
 "genDType step(genDType edge, genDType x);"                         "\n"
@@ -488,10 +488,10 @@ SRC_LINE
 "genBType isnan(genDType x);"                                       "\n"
 "genBType isinf(genFType x);"                                       "\n"
 "genBType isinf(genDType x);"                                       "\n"
-"@vector(int,@width(genFType)) floatBitsToInt(highp genFType value) = " SPV(124) ";" "\n"
-"@vector(uint,@width(genFType)) floatBitsToUint(highp genFType value) = " SPV(124) ";"                   "\n"
-"@vector(float,@width(genIType)) intBitsToFloat(highp genIType value) = " SPV(124) ";"                    "\n"
-"@vector(float,@width(genUType)) uintBitsToFloat(highp genUType value) = " SPV(124) ";"                   "\n"
+"@vector(int,@width(genFType)) floatBitsToInt(highp genFType value) = " SPV(OpBitcast) ";" "\n"
+"@vector(uint,@width(genFType)) floatBitsToUint(highp genFType value) = " SPV(OpBitcast) ";" "\n"
+"@vector(float,@width(genIType)) intBitsToFloat(highp genIType value) = " SPV(OpBitcast) ";" "\n"
+"@vector(float,@width(genUType)) uintBitsToFloat(highp genUType value) = " SPV(OpBitcast) ";" "\n"
 "genFType fma(genFType a, genFType b, genFType c);"                 "\n"
 "genDType fma(genDType a, genDType b, genDType c);"                 "\n"
 "genFType frexp(highp genFType x, out highp genIType exp);"         "\n"
@@ -520,12 +520,12 @@ SRC_LINE
 "double length(genDType x);"                                        "\n"
 "float distance(genFType p0, genFType p1);"                         "\n"
 "double distance(genDType p0, genDType p1);"                        "\n"
-"float dot(genFType x, genFType y) = " SPV(148) ";"                 "\n"
-"double dot(genDType x, genDType y) = " SPV(148) ";"                "\n"
-"@overload vec3 cross(vec3 x, vec3 y) = " GLSL(68) ";"              "\n"
-"@overload dvec3 cross(dvec3 x, dvec3 y) = " GLSL(68) ";"           "\n"
-"genFType normalize(genFType x) = " GLSL(69) ";"                    "\n"
-"genDType normalize(genDType x) = " GLSL(69) ";"                    "\n"
+"float dot(genFType x, genFType y) = " SPV(OpDot) ";"               "\n"
+"double dot(genDType x, genDType y) = " SPV(OpDot) ";"              "\n"
+"@overload vec3 cross(vec3 x, vec3 y) = " GLSL(Cross) ";"           "\n"
+"@overload dvec3 cross(dvec3 x, dvec3 y) = " GLSL(Cross) ";"        "\n"
+"genFType normalize(genFType x) = " GLSL(Normalize) ";"             "\n"
+"genDType normalize(genDType x) = " GLSL(Normalize) ";"             "\n"
 "genFType faceforward(genFType N, genFType I, genFType Nref);"      "\n"
 "genDType faceforward(genDType N, genDType I, genDType Nref);"      "\n"
 "genFType reflect(genFType I, genFType N);"                         "\n"
@@ -557,9 +557,9 @@ SRC_LINE
 "@overload float determinant(mat2 m);"                              "\n"
 "@overload float determinant(mat3 m);"                              "\n"
 "@overload float determinant(mat4 m);"                              "\n"
-"@overload mat2 inverse(mat2 m);"                                   "\n"
-"@overload mat3 inverse(mat3 m);"                                   "\n"
-"@overload mat4 inverse(mat4 m);"                                   "\n"
+"@overload mat2 inverse(mat2 m) = " GLSL(MatrixInverse) ";"         "\n"
+"@overload mat3 inverse(mat3 m) = " GLSL(MatrixInverse) ";"         "\n"
+"@overload mat4 inverse(mat4 m) = " GLSL(MatrixInverse) ";"         "\n"
 
 //vector relational functions
 SRC_LINE
@@ -614,12 +614,12 @@ SRC_LINE
 "genIType findMSB(highp genIType value);"                           "\n"
 "genIType findMSB(highp genUType value);"                           "\n"
 "//FIXME these are wrong (ret type)\n"
-"vec4 texture(gsampler1D sampler, float P ) = " SPV(87) ";"         "\n"
-"vec4 texture(gsampler2D sampler, vec2 P ) = " SPV(87) ";"          "\n"
-"vec4 texture(gsampler3D sampler, vec3 P ) = " SPV(87) ";"          "\n"
-"vec4 texture(gsampler2DArray sampler, vec3 P ) = " SPV(87) ";"     "\n"
-"vec4 texture(gsamplerCube sampler, vec3 P ) = " SPV(87) ";"     "\n"
-"vec4 texelFetch(gtextureBuffer sampler, int P) = " SPV(95) ";"     "\n"
+"vec4 texture(gsampler1D sampler, float P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
+"vec4 texture(gsampler2D sampler, vec2 P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
+"vec4 texture(gsampler3D sampler, vec3 P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
+"vec4 texture(gsampler2DArray sampler, vec3 P ) = "SPV(OpImageSampleImplicitLod) ";" "\n"
+"vec4 texture(gsamplerCube sampler, vec3 P ) = "   SPV(OpImageSampleImplicitLod) ";" "\n"
+"vec4 texelFetch(gtextureBuffer sampler, int P) = " SPV(OpImageFetch) ";" "\n"
 "};"                                                                "\n"
 "#undef out"                                                        "\n"
 "#undef highp"                                                      "\n"
@@ -837,59 +837,107 @@ vec4 textureGatherOffsets(sampler2DShadow sampler, vec2 P, float refZ, ivec2 off
 vec4 textureGatherOffsets(sampler2DArrayShadow sampler, vec3 P, float refZ, ivec2 offsets[4])
 gvec4 textureGatherOffsets(gsampler2DRect sampler, vec2 P, ivec2 offsets[4] [, int comp])
 vec4 textureGatherOffsets(sampler2DRectShadow sampler, vec2 P, float refZ, ivec2 offsets[4])
-
-//atomic memory functions
-uint atomicAdd(inout uint mem, uint data)
-int atomicAdd(inout int mem, int data)
-uint atomicMin(inout uint mem, uint data)
-int atomicMin(inout int mem, int data)
-uint atomicMax(inout uint mem, uint data)
-int atomicMax(inout int mem, int data)
-uint atomicAnd(inout uint mem, uint data)
-int atomicAnd(inout int mem, int data)
-uint atomicOr(inout uint mem, uint data)
-int atomicOr(inout int mem, int data)
-uint atomicXor(inout uint mem, uint data)
-int atomicXor(inout int mem, int data)
-uint atomicExchange(inout uint mem, uint data)
-int atomicExchange(inout int mem, int data)
-uint atomicCompSwap(inout uint mem, uint compare, uint data)
-int atomicCompSwap(inout int mem, int compare, int data)
-
-//image functions
-int imageSize(readonly writeonly gimage1D image)
-ivec2 imageSize(readonly writeonly gimage2D image)
-ivec3 imageSize(readonly writeonly gimage3D image)
-ivec2 imageSize(readonly writeonly gimageCube image)
-ivec3 imageSize(readonly writeonly gimageCubeArray image)
-ivec3 imageSize(readonly writeonly gimage2DArray image)
-ivec2 imageSize(readonly writeonly gimageRect image)
-ivec2 imageSize(readonly writeonly gimage1DArray image)
-ivec2 imageSize(readonly writeonly gimage2DMS image)
-ivec3 imageSize(readonly writeonly gimage2DMSArray image)
-int imageSize(readonly writeonly gimageBuffer image)
-int imageSamples(readonly writeonly gimage2DMS image)
-int imageSamples(readonly writeonly gimage2DMSArray image)
-gvec4 imageLoad(readonly IMAGE_PARAMS)
-void imageStore(writeonly IMAGE_PARAMS, gvec4 data)
-uint imageAtomicAdd(IMAGE_PARAMS, uint data)
-int imageAtomicAdd(IMAGE_PARAMS, int data)
-uint imageAtomicMin(IMAGE_PARAMS, uint data)
-int imageAtomicMin(IMAGE_PARAMS, int data)
-uint imageAtomicMax(IMAGE_PARAMS, uint data)
-int imageAtomicMax(IMAGE_PARAMS, int data)
-uint imageAtomicAnd(IMAGE_PARAMS, uint data)
-int imageAtomicAnd(IMAGE_PARAMS, int data)
-uint imageAtomicOr(IMAGE_PARAMS, uint data)
-int imageAtomicOr(IMAGE_PARAMS, int data)
-uint imageAtomicXor(IMAGE_PARAMS, uint data)
-int imageAtomicXor(IMAGE_PARAMS, int data)
-uint imageAtomicExchange(IMAGE_PARAMS, uint data)
-int imageAtomicExchange(IMAGE_PARAMS, int data)
-float imageAtomicExchange(IMAGE_PARAMS, float data)
-uint imageAtomicCompSwap(IMAGE_PARAMS, uint compare, uint data)
-int imageAtomicCompSwap(IMAGE_PARAMS, int compare, int data)
 #endif
+
+static const char *glsl_atomic_functions =
+SRC_LINE
+"#define uint unsigned"                                                 "\n"
+"#define inout @inout"                                                  "\n"
+"@overload uint atomicAdd(inout uint mem, uint data) = " SPV(OpAtomicIAdd) ";"    "\n"
+"@overload int atomicAdd(inout int mem, int data) = " SPV(OpAtomicIAdd) ";"       "\n"
+"@overload uint atomicMin(inout uint mem, uint data) = " SPV(OpAtomicUMin) ";"    "\n"
+"@overload int atomicMin(inout int mem, int data) = " SPV(OpAtomicSMin) ";"       "\n"
+"@overload uint atomicMax(inout uint mem, uint data) = " SPV(OpAtomicUMax) ";"    "\n"
+"@overload int atomicMax(inout int mem, int data) = " SPV(OpAtomicUMax) ";"       "\n"
+"@overload uint atomicAnd(inout uint mem, uint data) = " SPV(OpAtomicAnd) ";"     "\n"
+"@overload int atomicAnd(inout int mem, int data) = " SPV(OpAtomicAnd) ";"        "\n"
+"@overload uint atomicOr(inout uint mem, uint data) = " SPV(OpAtomicOr) ";"       "\n"
+"@overload int atomicOr(inout int mem, int data) = " SPV(OpAtomicOr) ";"          "\n"
+"@overload uint atomicXor(inout uint mem, uint data) = " SPV(OpAtomicXor) ";"     "\n"
+"@overload int atomicXor(inout int mem, int data) = " SPV(OpAtomicXor) ";"        "\n"
+"@overload uint atomicExchange(inout uint mem, uint data) = " SPV(OpAtomicExchange) ";" "\n"
+"@overload int atomicExchange(inout int mem, int data) = " SPV(OpAtomicExchange) ";" "\n"
+"@overload uint atomicCompSwap(inout uint mem, uint compare, uint data) = " SPV(OpAtomicCompareExchange) ";" "\n"
+"@overload int atomicCompSwap(inout int mem, int compare, int data) = " SPV(OpAtomicCompareExchange) ";" "\n"
+"#undef uint"     "\n"
+"#undef inout"     "\n";
+
+static const char *glsl_image_functions =
+SRC_LINE
+"#define uint unsigned"                                                 "\n"
+"#define readonly"                                                      "\n"
+"#define writeonly"                                                     "\n"
+"#define __image(t,d,m,a,s) @handle t##image##d##m##a##s"               "\n"
+"#define _image(d,m,a,s) __image(,d,m,a,s),__image(i,d,m,a,s),__image(u,d,m,a,s)\n"
+"#define gvec4 @vector(gimage.base_type, 4)"                            "\n"
+"#define gvec4MS @vector(gimageMS.base_type, 4)"                        "\n"
+"#define IMAGE_PARAMS gimage image, gimage.coord_type P"                "\n"
+"#define IMAGE_PARAMS_MS gimageMS image, gimageMS.coord_type P, int sample" "\n"
+"@generic(gimage=[_image(1D,,,),"                                       "\n"
+"                 _image(1D,,Array,),"                                  "\n"
+"                 _image(2D,,,),"                                       "\n"
+"                 _image(2D,,Array,),"                                  "\n"
+"                 _image(2DRect,,,),"                                   "\n"
+"                 _image(3D,,,),"                                       "\n"
+"                 _image(Cube,,,),"                                     "\n"
+"                 _image(Cube,,Array,),"                                "\n"
+"                 _image(Buffer,,,)],"                                  "\n"
+"         gimageMS=[_image(2D,MS,,),"                                   "\n"
+"                   _image(2D,MS,Array,)]) {"                           "\n"
+"gimage.size_type imageSize(readonly writeonly gimage image) = " SPV(OpImageQuerySize) ";" "\n"
+"gimageMS.size_type imageSize(readonly writeonly gimageMS image) = " SPV(OpImageQuerySize) ";" "\n"
+"int imageSamples(readonly writeonly gimageMS image) = " SPV(OpImageQuerySamples) ";" "\n"
+"gvec4 imageLoad(readonly IMAGE_PARAMS) = " SPV(OpImageRead) ";" "\n"
+"gvec4MS imageLoad(readonly IMAGE_PARAMS_MS) = " SPV(OpImageRead) ";" "\n"
+"void imageStore(writeonly IMAGE_PARAMS, gvec4 data) = " SPV(OpImageWrite) ";" "\n"
+"void imageStore(writeonly IMAGE_PARAMS_MS, gvec4MS data) = " SPV(OpImageWrite) ";" "\n"
+"@pointer(gimage.base_type) __imageTexel(IMAGE_PARAMS, int sample) = " SPV(OpImageTexelPointer) ";" "\n"
+"@pointer(gimageMS.base_type) __imageTexel(IMAGE_PARAMS_MS) = " SPV(OpImageTexelPointer) ";" "\n"
+"#define __imageAtomic(op,type) \\"                                     "\n"
+"type imageAtomic##op(IMAGE_PARAMS, type data) \\"                      "\n"
+"{ \\"                                                                  "\n"
+"    auto ptr = __imageTexel(image, P, 0); \\"                          "\n"
+"    return atomic##op(ptr, data); \\"                                  "\n"
+"} \\"                                                                  "\n"
+"type imageAtomic##op(IMAGE_PARAMS_MS, type data) \\"                   "\n"
+"{ \\"                                                                  "\n"
+"    auto ptr = __imageTexel(image, P, sample); \\"                     "\n"
+"    return atomic##op(ptr, data); \\"                                  "\n"
+"}"                                                                     "\n"
+"#define imageAtomic(op) \\"                                            "\n"
+"__imageAtomic(op,uint) \\"                                             "\n"
+"__imageAtomic(op,int)"                                                 "\n"
+"imageAtomic(Add)"                                                      "\n"
+"imageAtomic(Min)"                                                      "\n"
+"imageAtomic(Max)"                                                      "\n"
+"imageAtomic(And)"                                                      "\n"
+"imageAtomic(Or)"                                                       "\n"
+"imageAtomic(Xor)"                                                      "\n"
+"__imageAtomic(Exchange, float)"                                        "\n"
+"__imageAtomic(Exchange, uint)"                                         "\n"
+"__imageAtomic(Exchange, int)"                                          "\n"
+"#define __imageAtomicCompSwap(type) \\"                                "\n"
+"type imageAtomicCompSwap(IMAGE_PARAMS, type data) \\"                  "\n"
+"{ \\"                                                                  "\n"
+"    auto ptr = __imageTexel(image, P, 0); \\"                          "\n"
+"    return atomicCompSwap(ptr, data); \\"                              "\n"
+"} \\"                                                                  "\n"
+"type imageAtomicCompSwap(IMAGE_PARAMS_MS, type data) \\"               "\n"
+"{ \\"                                                                  "\n"
+"    auto ptr = __imageTexel(image, P, sample); \\"                     "\n"
+"    return atomicCompSwap(ptr, data); \\"                              "\n"
+"}"                                                                     "\n"
+"__imageAtomicCompSwap(uint)"                                           "\n"
+"__imageAtomicCompSwap(int)"                                            "\n"
+"};" "\n"
+"#undef IMAGE_PARAMS"   "\n"
+"#undef IMAGE_PARAMS_MS""\n"
+"#undef _image"         "\n"
+"#undef __image"        "\n"
+"#undef uint"           "\n"
+"#undef readonly"       "\n"
+"#undef writeonly"      "\n";
+
 //geometry shader functions
 static const char *glsl_geometry_functions =
 SRC_LINE
@@ -897,18 +945,23 @@ SRC_LINE
 "void EndStreamPrimitive(int stream);"  "\n"
 "void EmitVertex();"                    "\n"
 "void EndPrimitive();"                  "\n";
-#if 0
+
 //fragment processing functions
-//derivative
-genFType dFdx(genFType p)
-genFType dFdy(genFType p)
-genFType dFdxFine(genFType p)
-genFType dFdyFine(genFType p)
-genFType dFdxCoarse(genFType p)
-genFType dFdyCoarse(genFType p)
-genFType fwidth(genFType p)
-genFType fwidthFine(genFType p)
-genFType fwidthCoarse(genFType p)
+static const char *glsl_fragment_functions =
+SRC_LINE
+"@generic(genFType=@vector(float)) {"                                   "\n"
+"genFType dFdx(genFType p) = " SPV(OpDPdx) ";"                          "\n"
+"genFType dFdy(genFType p) = " SPV(OpDPdy) ";"                          "\n"
+"genFType dFdxFine(genFType p) = " SPV(OpDPdxFine) ";"                  "\n"
+"genFType dFdyFine(genFType p) = " SPV(OpDPdyFine) ";"                  "\n"
+"genFType dFdxCoarse(genFType p) = " SPV(OpDPdxCoarse) ";"              "\n"
+"genFType dFdyCoarse(genFType p) = " SPV(OpDPdyCoarse) ";"              "\n"
+"genFType fwidth(genFType p) = " SPV(OpFwidth) ";"                      "\n"
+"genFType fwidthFine(genFType p) = " SPV(OpFwidthFine) ";"              "\n"
+"genFType fwidthCoarse(genFType p) = " SPV(OpFwidthCoarse) ";"          "\n"
+"};" "\n"
+
+#if 0
 //interpolation
 float interpolateAtCentroid(float interpolant)
 vec2 interpolateAtCentroid(vec2 interpolant)
@@ -933,11 +986,33 @@ void memoryBarrierBuffer()
 void memoryBarrierShared()
 void memoryBarrierImage()
 void groupMemoryBarrier()
-
+#endif
 //subpass-input functions
-gvec4 subpassLoad(gsubpassInput subpass)
-gvec4 subpassLoad(gsubpassInputMS subpass, int sample)
-
+SRC_LINE
+"#define uint unsigned"                                                 "\n"
+"#define readonly"                                                      "\n"
+"#define writeonly"                                                     "\n"
+"#define __spI(t,m) @handle t##subpassInput##m"                         "\n"
+"#define _subpassInput(x,m) __spI(,m),__spI(i,m),__spI(u,m)"            "\n"
+"#define gvec4 @vector(gimage.base_type, 4)"                            "\n"
+"#define gvec4MS @vector(gimageMS.base_type, 4)"                        "\n"
+"#define gvec4 @vector(gimage.base_type, 4)"                            "\n"
+"#define gvec4MS @vector(gimageMS.base_type, 4)"                        "\n"
+"@generic(gsubpassInput=[_subpassInput(,)],"                            "\n"
+"         gsubpassInputMS=[_subpassInput(,MS)]) {"                      "\n"
+"gvec4 subpassLoad(gsubpassInput subpass)"                              "\n"
+"{"                                                                     "\n"
+"    return imageLoad(subpass, gsubpassInput.coord_type(0));"           "\n"
+"}"                                                                     "\n"
+"gvec4MS subpassLoad(gsubpassInputMS subpass, int sample)"              "\n"
+"{"                                                                     "\n"
+"    return imageLoad(subpass, gsubpassInputMS.coord_type(0), sample);" "\n"
+"}"                                                                     "\n"
+"};" "\n"
+"#undef _subpassInput"         "\n"
+"#undef __spI"                 "\n"
+;
+#if 0
 //shader invocation group functions
 bool anyInvocation(bool value)
 bool allInvocations(bool value)
@@ -1005,6 +1080,8 @@ glsl_init_common (rua_ctx_t *ctx)
 	glsl_block_clear ();
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_general_functions, &rua_ctx);
+	qc_parse_string (glsl_atomic_functions, &rua_ctx);
+	qc_parse_string (glsl_image_functions, &rua_ctx);
 	glsl_parse_vars (glsl_system_constants, ctx);
 }
 
@@ -1064,6 +1141,8 @@ glsl_init_frag (rua_ctx_t *ctx)
 {
 	glsl_init_common (ctx);
 	glsl_parse_vars (glsl_fragment_vars, ctx);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_fragment_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 	pr.module->default_model = SpvExecutionModelFragment;
