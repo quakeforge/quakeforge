@@ -677,6 +677,7 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 	for (int j = 0; j < num_funcs; j++) {
 		auto g = genfuncs[j];
 		if (g->num_params != num_params) {
+			costs[j] = ~0u;
 			continue;
 		}
 		const type_t *types[g->num_types] = {};
