@@ -288,6 +288,7 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	if (!spec.is_generic) {
 		return nullptr;
 	}
+	spec = default_type (spec, spec.sym);
 	// fake parameter for the return type
 	param_t ret_param = {
 		.next = spec.params,
