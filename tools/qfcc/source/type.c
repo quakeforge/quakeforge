@@ -1779,6 +1779,10 @@ type_promotes (const type_t *dst, const type_t *src)
 	if (!is_math (dst) || !is_math (src)) {
 		return false;
 	}
+	if (type_cols (dst) != type_cols (src)
+		|| type_rows (dst) != type_rows (src)) {
+		return false;
+	}
 
 	if (is_bool (src)) {
 		return !is_short (dst) && !is_ushort (dst);
