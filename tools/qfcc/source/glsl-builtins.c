@@ -438,8 +438,11 @@ SRC_LINE
 "#define lowp"                                                      "\n"
 "#define uint unsigned"                                             "\n"
 "#define uvec2 uivec2"                                              "\n"
-"#define sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"         "\n"
-"#define _texture(t,d,m,a,s) @handle t##texture##d##m##a##s"        "\n"
+"#define gbvec(base) @vector(bool, @width(base))"                   "\n"
+"#define gvec(base) @vector(float, @width(base))"                   "\n"
+"#define gdvec(base) @vector(double, @width(base))"                 "\n"
+"#define givec(base) @vector(int, @width(base))"                    "\n"
+"#define guvec(base) @vector(uint, @width(base))"                   "\n"
 "@generic(genFType=@vector(float),"                                 "\n"
 "         genDType=@vector(double),"                                "\n"
 "         genIType=@vector(int),"                                   "\n"
@@ -449,52 +452,34 @@ SRC_LINE
 "         vec=[vec2,vec3,vec4,dvec2,dvec3,dvec4],"                  "\n"
 "         ivec=[ivec2,ivec3,ivec4],"                                "\n"
 "         uvec=[uivec2,uivec3,uivec4],"                             "\n"
-"         bvec=[bvec2,bvec3,bvec4],"                                "\n"
-"         gtextureBuffer=[_texture(,Buffer,,,),"                    "\n"
-"                         _texture(i,Buffer,,,),"                   "\n"
-"                         _texture(u,Buffer,,,)],"                  "\n"
-"         gsamplerCube=[sampler(,Cube,,,),"                         "\n"
-"                       sampler(i,Cube,,,),"                        "\n"
-"                       sampler(u,Cube,,,)],"                       "\n"
-"         gsampler2DArray=[sampler(,2D,,Array,),"                   "\n"
-"                          sampler(i,2D,,Array,),"                  "\n"
-"                          sampler(u,2D,,Array,)],"                 "\n"
-"         gsampler1D=[sampler(,1D,,,),"                             "\n"
-"                     sampler(i,1D,,,),"                            "\n"
-"                     sampler(u,1D,,,)],"                           "\n"
-"         gsampler2D=[sampler(,2D,,,),"                             "\n"
-"                     sampler(i,2D,,,),"                            "\n"
-"                     sampler(u,2D,,,)],"                           "\n"
-"         gsampler3D=[sampler(,3D,,,),"                             "\n"
-"                     sampler(i,3D,,,),"                            "\n"
-"                     sampler(u,3D,,,)]) {"                         "\n"
-"genFType radians(genFType degrees);"                               "\n"
-"genFType degrees(genFType radians);"                               "\n"
-"genFType sin(genFType angle);"                                     "\n"
-"genFType cos(genFType angle);"                                     "\n"
-"genFType tan(genFType angle);"                                     "\n"
-"genFType asin(genFType x);"                                        "\n"
-"genFType acos(genFType x);"                                        "\n"
-"genFType atan(genFType y, genFType x);"                            "\n"
-"genFType atan(genFType y_over_x);"                                 "\n"
-"genFType sinh(genFType x);"                                        "\n"
-"genFType cosh(genFType x);"                                        "\n"
-"genFType tanh(genFType x);"                                        "\n"
-"genFType asinh(genFType x);"                                       "\n"
-"genFType acosh(genFType x);"                                       "\n"
-"genFType atanh(genFType x);"                                       "\n"
+"         bvec=[bvec2,bvec3,bvec4]) {"                              "\n"
+"genFType radians(genFType degrees) = " GLSL(Radians) ";"           "\n"
+"genFType degrees(genFType radians) = " GLSL(Degrees) ";"           "\n"
+"genFType sin(genFType angle) = " GLSL(Sin) ";"                     "\n"
+"genFType cos(genFType angle) = " GLSL(Cos) ";"                     "\n"
+"genFType tan(genFType angle) = " GLSL(Tan) ";"                     "\n"
+"genFType asin(genFType x) = " GLSL(Asin) ";"                       "\n"
+"genFType acos(genFType x) = " GLSL(Acos) ";"                       "\n"
+"genFType atan(genFType y, genFType x) = " GLSL(Atan2) ";"          "\n"
+"genFType atan(genFType y_over_x) = " GLSL(Atan) ";"                "\n"
+"genFType sinh(genFType x) = " GLSL(Sinh) ";"                       "\n"
+"genFType cosh(genFType x) = " GLSL(Cosh) ";"                       "\n"
+"genFType tanh(genFType x) = " GLSL(Tanh) ";"                       "\n"
+"genFType asinh(genFType x) = " GLSL(Asinh) ";"                     "\n"
+"genFType acosh(genFType x) = " GLSL(Acosh) ";"                     "\n"
+"genFType atanh(genFType x) = " GLSL(Atanh) ";"                     "\n"
 
 //exponential functions
 SRC_LINE
-"genFType pow(genFType x, genFType y);"                             "\n"
+"genFType pow(genFType x, genFType y) = " GLSL(Pow) ";"             "\n"
 "genFType exp(genFType x) = " GLSL(Exp) ";"                         "\n"
-"genFType log(genFType x);"                                         "\n"
-"genFType exp2(genFType x);"                                        "\n"
-"genFType log2(genFType x);"                                        "\n"
+"genFType log(genFType x) = " GLSL(Log) ";"                         "\n"
+"genFType exp2(genFType x) = " GLSL(Exp2) ";"                       "\n"
+"genFType log2(genFType x) = " GLSL(Log2) ";"                       "\n"
 "genFType sqrt(genFType x) = " GLSL(Sqrt) ";"                       "\n"
 "genDType sqrt(genDType x) = " GLSL(Sqrt) ";"                       "\n"
-"genFType inversesqrt(genFType x);"                                 "\n"
-"genDType inversesqrt(genDType x);"                                 "\n"
+"genFType inversesqrt(genFType x) = " GLSL(InverseSqrt) ";"         "\n"
+"genDType inversesqrt(genDType x) = " GLSL(InverseSqrt) ";"         "\n"
 
 //common functions
 SRC_LINE
@@ -530,28 +515,26 @@ SRC_LINE
 "genIType min(genIType x, int y);"                                  "\n"
 "genUType min(genUType x, genUType y);"                             "\n"
 "genUType min(genUType x, uint y);"                                 "\n"
-"genFType max(genFType x, genFType y);"                             "\n"
-"genFType max(genFType x, float y);"                                "\n"
-"genDType max(genDType x, genDType y);"                             "\n"
-"genDType max(genDType x, double y);"                               "\n"
-"genIType max(genIType x, genIType y);"                             "\n"
-"genIType max(genIType x, int y);"                                  "\n"
-"genUType max(genUType x, genUType y);"                             "\n"
-"genUType max(genUType x, uint y);"                                 "\n"
-"genFType clamp(genFType x, genFType minVal, genFType maxVal);"     "\n"
-"genFType clamp(genFType x, float minVal, float maxVal);"           "\n"
-"genDType clamp(genDType x, genDType minVal, genDType maxVal);"     "\n"
-"genDType clamp(genDType x, double minVal, double maxVal);"         "\n"
-"genIType clamp(genIType x, genIType minVal, genIType maxVal);"     "\n"
-"genIType clamp(genIType x, int minVal, int maxVal);"               "\n"
-"genUType clamp(genUType x, genUType minVal, genUType maxVal);"     "\n"
-"genUType clamp(genUType x, uint minVal, uint maxVal);"             "\n"
+"genFType max(genFType x, genFType y) = " GLSL(FMax) ";"            "\n"
+"genFType max(genFType x, float y) = " GLSL(FMax) "[x, @construct (genFType, y)];" "\n"
+"genDType max(genDType x, genDType y) = " GLSL(FMax) ";"            "\n"
+"genDType max(genDType x, double y) = " GLSL(FMax) "[x, @construct (genDType, y)];" "\n"
+"genIType max(genIType x, genIType y) = " GLSL(SMax) ";"            "\n"
+"genIType max(genIType x, int y) = " GLSL(SMax) "[x, @construct (genIType, y)];" "\n"
+"genUType max(genUType x, genUType y) = " GLSL(UMax) ";"            "\n"
+"genUType max(genUType x, uint y) = " GLSL(UMax) "[x, @construct (genUType, y)];" "\n"
+"genFType clamp(genFType x, genFType minVal, genFType maxVal) = " GLSL(FClamp) ";" "\n"
+"genFType clamp(genFType x, float minVal, float maxVal) = " GLSL(FMax) "[x, @construct (genFType, minVal), @construct (genFType, maxVal)];" "\n"
+"genDType clamp(genDType x, genDType minVal, genDType maxVal) = " GLSL(FClamp) ";" "\n"
+"genDType clamp(genDType x, double minVal, double maxVal) = " GLSL(FMax) "[x, @construct (genDType, minVal), @construct (genDType, maxVal)];" "\n"
+"genIType clamp(genIType x, genIType minVal, genIType maxVal) = " GLSL(IClamp) ";" "\n"
+"genIType clamp(genIType x, int minVal, int maxVal) = " GLSL(SMax) "[x, @construct (genIType, minVal), @construct (genIType, maxVal)];" "\n"
+"genUType clamp(genUType x, genUType minVal, genUType maxVal) = " GLSL(UClamp) ";" "\n"
+"genUType clamp(genUType x, uint minVal, uint maxVal) = " GLSL(UMax) "[x, @construct (genUType, minVal), @construct (genUType, maxVal)];" "\n"
 "genFType mix(genFType x, genFType y, genFType a) = " GLSL(FMix) ";""\n"
-"genFType mix(genFType x, genFType y, float a)"                     "\n"
-"{ return mix (x, y, @construct (genFType, a)); }"                  "\n"
+"genFType mix(genFType x, genFType y, float a) = " GLSL(FMix) "[x, y, @construct (genFType, a)];" "\n"
 "genDType mix(genDType x, genDType y, genDType a) = " GLSL(FMix) ";""\n"
-"genDType mix(genDType x, genDType y, double a)"                    "\n"
-"{ return mix (x, y, @construct (genDType, a)); }"                  "\n"
+"genDType mix(genDType x, genDType y, double a) = " GLSL(FMix) "[x, y, @construct (genDType, a)];" "\n"
 "genFType mix(genFType x, genFType y, genBType a) = " SPV(OpSelect) ";"  "\n"
 "genDType mix(genDType x, genDType y, genBType a) = " SPV(OpSelect) ";"  "\n"
 "genIType mix(genIType x, genIType y, genBType a) = " SPV(OpSelect) ";"  "\n"
@@ -565,14 +548,14 @@ SRC_LINE
 "genFType smoothstep(float edge0, float edge1, genFType x);"        "\n"
 "genDType smoothstep(genDType edge0, genDType edge1, genDType x);"  "\n"
 "genDType smoothstep(double edge0, double edge1, genDType x);"      "\n"
-"genBType isnan(genFType x);"                                       "\n"
-"genBType isnan(genDType x);"                                       "\n"
-"genBType isinf(genFType x);"                                       "\n"
-"genBType isinf(genDType x);"                                       "\n"
-"@vector(int,@width(genFType)) floatBitsToInt(highp genFType value) = " SPV(OpBitcast) ";" "\n"
-"@vector(uint,@width(genFType)) floatBitsToUint(highp genFType value) = " SPV(OpBitcast) ";" "\n"
-"@vector(float,@width(genIType)) intBitsToFloat(highp genIType value) = " SPV(OpBitcast) ";" "\n"
-"@vector(float,@width(genUType)) uintBitsToFloat(highp genUType value) = " SPV(OpBitcast) ";" "\n"
+"gbvec(genFType) isnan(genFType x);"                                "\n"
+"gbvec(genDType) isnan(genDType x);"                                "\n"
+"gbvec(genFType) isinf(genFType x);"                                "\n"
+"gbvec(genDType) isinf(genDType x);"                                "\n"
+"givec(genFType) floatBitsToInt(highp genFType value) = " SPV(OpBitcast) ";" "\n"
+"guvec(genFType) floatBitsToUint(highp genFType value) = " SPV(OpBitcast) ";" "\n"
+"gvec(genIType) intBitsToFloat(highp genIType value) = " SPV(OpBitcast) ";" "\n"
+"gvec(genUType) uintBitsToFloat(highp genUType value) = " SPV(OpBitcast) ";" "\n"
 "genFType fma(genFType a, genFType b, genFType c);"                 "\n"
 "genDType fma(genDType a, genDType b, genDType c);"                 "\n"
 "genFType frexp(highp genFType x, out highp genIType exp);"         "\n"
@@ -597,10 +580,10 @@ SRC_LINE
 
 //geometric functions
 SRC_LINE
-"float length(genFType x);"                                         "\n"
-"double length(genDType x);"                                        "\n"
-"float distance(genFType p0, genFType p1);"                         "\n"
-"double distance(genDType p0, genDType p1);"                        "\n"
+"float length(genFType x) = " GLSL(Length) ";"                      "\n"
+"double length(genDType x) = " GLSL(Length) ";"                     "\n"
+"float distance(genFType p0, genFType p1) = " GLSL(Distance) ";"    "\n"
+"double distance(genDType p0, genDType p1) = " GLSL(Distance) ";"   "\n"
 "float dot(genFType x, genFType y) = " SPV(OpDot) ";"               "\n"
 "double dot(genDType x, genDType y) = " SPV(OpDot) ";"              "\n"
 "@overload vec3 cross(vec3 x, vec3 y) = " GLSL(Cross) ";"           "\n"
@@ -644,29 +627,29 @@ SRC_LINE
 
 //vector relational functions
 SRC_LINE
-"@vector(bool,@width(vec)) lessThan(vec x, vec y);"                 "\n"
-"@vector(bool,@width(ivec)) lessThan(ivec x, ivec y);"              "\n"
-"@vector(bool,@width(uvec)) lessThan(uvec x, uvec y);"              "\n"
-"@vector(bool,@width(vec)) lessThanEqual(vec x, vec y);"            "\n"
-"@vector(bool,@width(ivec)) lessThanEqual(ivec x, ivec y);"         "\n"
-"@vector(bool,@width(uvec)) lessThanEqual(uvec x, uvec y);"         "\n"
-"@vector(bool,@width(vec)) greaterThan(vec x, vec y);"              "\n"
-"@vector(bool,@width(ivec)) greaterThan(ivec x, ivec y);"           "\n"
-"@vector(bool,@width(uvec)) greaterThan(uvec x, uvec y);"           "\n"
-"@vector(bool,@width(vec)) greaterThanEqual(vec x, vec y);"         "\n"
-"@vector(bool,@width(ivec)) greaterThanEqual(ivec x, ivec y);"      "\n"
-"@vector(bool,@width(uvec)) greaterThanEqual(uvec x, uvec y);"      "\n"
-"@vector(bool,@width(vec)) equal(vec x, vec y);"                    "\n"
-"@vector(bool,@width(ivec)) equal(ivec x, ivec y);"                 "\n"
-"@vector(bool,@width(uvec)) equal(uvec x, uvec y);"                 "\n"
-"@vector(bool,@width(bvec)) equal(bvec x, bvec y);"                 "\n"
-"@vector(bool,@width(vec)) notEqual(vec x, vec y);"                 "\n"
-"@vector(bool,@width(ivec)) notEqual(ivec x, ivec y);"              "\n"
-"@vector(bool,@width(uvec)) notEqual(uvec x, uvec y);"              "\n"
-"@vector(bool,@width(bvec)) notEqual(bvec x, bvec y);"              "\n"
+"gbvec(vec) lessThan(vec x, vec y);"                 "\n"
+"gbvec(ivec) lessThan(ivec x, ivec y);"              "\n"
+"gbvec(uvec) lessThan(uvec x, uvec y);"              "\n"
+"gbvec(vec) lessThanEqual(vec x, vec y);"            "\n"
+"gbvec(ivec) lessThanEqual(ivec x, ivec y);"         "\n"
+"gbvec(uvec) lessThanEqual(uvec x, uvec y);"         "\n"
+"gbvec(vec) greaterThan(vec x, vec y);"              "\n"
+"gbvec(ivec) greaterThan(ivec x, ivec y);"           "\n"
+"gbvec(uvec) greaterThan(uvec x, uvec y);"           "\n"
+"gbvec(vec) greaterThanEqual(vec x, vec y);"         "\n"
+"gbvec(ivec) greaterThanEqual(ivec x, ivec y);"      "\n"
+"gbvec(uvec) greaterThanEqual(uvec x, uvec y);"      "\n"
+"gbvec(vec) equal(vec x, vec y);"                    "\n"
+"gbvec(ivec) equal(ivec x, ivec y);"                 "\n"
+"gbvec(uvec) equal(uvec x, uvec y);"                 "\n"
+"gbvec(bvec) equal(bvec x, bvec y);"                 "\n"
+"gbvec(vec) notEqual(vec x, vec y);"                 "\n"
+"gbvec(ivec) notEqual(ivec x, ivec y);"              "\n"
+"gbvec(uvec) notEqual(uvec x, uvec y);"              "\n"
+"gbvec(bvec) notEqual(bvec x, bvec y);"              "\n"
 "bool any(bvec x);"                                                 "\n"
 "bool all(bvec x);"                                                 "\n"
-"@vector(bool,@width(bvec)) not(bvec x);"                           "\n"
+"bvec not(bvec x);"                           "\n"
 
 //integer functions
 SRC_LINE
@@ -680,244 +663,396 @@ SRC_LINE
 "void imulExtended(highp genIType x, highp genIType y,"             "\n"
 "                  out highp genIType msb,"                         "\n"
 "                  out highp genIType lsb);"                        "\n"
-"genIType bitfieldExtract(genIType value, int offset, int bits);"   "\n"
-"genUType bitfieldExtract(genUType value, int offset, int bits);"   "\n"
+"genIType bitfieldExtract(genIType value, int offset, int bits) = " SPV(OpBitFieldSExtract) ";" "\n"
+"genUType bitfieldExtract(genUType value, int offset, int bits) = " SPV(OpBitFieldUExtract) ";" "\n"
 "genIType bitfieldInsert(genIType base, genIType insert,"           "\n"
-"                        int offset, int bits);"                    "\n"
+"                        int offset, int bits) = " SPV(OpBitFieldInsert) ";" "\n"
 "genUType bitfieldInsert(genUType base, genUType insert,"           "\n"
-"                        int offset, int bits);"                    "\n"
-"genIType bitfieldReverse(highp genIType value);"                   "\n"
-"genUType bitfieldReverse(highp genUType value);"                   "\n"
-"genIType bitCount(genIType value);"                                "\n"
-"genIType bitCount(genUType value);"                                "\n"
+"                        int offset, int bits) = " SPV(OpBitFieldInsert) ";" "\n"
+"genIType bitfieldReverse(highp genIType value) = " SPV(OpBitReverse) ";" "\n"
+"givec(genUType) bitfieldReverse(highp genUType value) = " SPV(OpBitReverse) ";" "\n"
+"genIType bitCount(genIType value) = " SPV(OpBitCount) ";"          "\n"
+"givec(genUType) bitCount(genUType value) = " SPV(OpBitCount) ";"   "\n"
 "genIType findLSB(genIType value);"                                 "\n"
-"genIType findLSB(genUType value);"                                 "\n"
+"givec(genUType) findLSB(genUType value);"                          "\n"
 "genIType findMSB(highp genIType value);"                           "\n"
-"genIType findMSB(highp genUType value);"                           "\n"
-"//FIXME these are wrong (ret type)\n"
-"vec4 texture(gsampler1D sampler, float P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
-"vec4 texture(gsampler2D sampler, vec2 P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
-"vec4 texture(gsampler3D sampler, vec3 P ) = " SPV(OpImageSampleImplicitLod) ";" "\n"
-"vec4 texture(gsampler2DArray sampler, vec3 P ) = "SPV(OpImageSampleImplicitLod) ";" "\n"
-"vec4 texture(gsamplerCube sampler, vec3 P ) = "   SPV(OpImageSampleImplicitLod) ";" "\n"
-"vec4 texelFetch(gtextureBuffer sampler, int P) = " SPV(OpImageFetch) ";" "\n"
+"givec(genUType) findMSB(highp genUType value);"                    "\n"
 "};"                                                                "\n"
 "#undef out"                                                        "\n"
 "#undef highp"                                                      "\n"
 "#undef lowp"                                                       "\n"
 "#undef uint"                                                       "\n"
 "#undef uvec2"                                                      "\n";
-#if 0
+
 //texture functions
-//query
-int textureSize(gsampler1D sampler, int lod)
-ivec2 textureSize(gsampler2D sampler, int lod)
-ivec3 textureSize(gsampler3D sampler, int lod)
-ivec2 textureSize(gsamplerCube sampler, int lod)
-int textureSize(sampler1DShadow sampler, int lod)
-ivec2 textureSize(sampler2DShadow sampler, int lod)
-ivec2 textureSize(samplerCubeShadow sampler, int lod)
-ivec3 textureSize(gsamplerCubeArray sampler, int lod)
-ivec3 textureSize(samplerCubeArrayShadow sampler, int lod)
-ivec2 textureSize(gsampler2DRect sampler)
-ivec2 textureSize(sampler2DRectShadow sampler)
-ivec2 textureSize(gsampler1DArray sampler, int lod)
-ivec2 textureSize(sampler1DArrayShadow sampler, int lod)
-ivec3 textureSize(gsampler2DArray sampler, int lod)
-ivec3 textureSize(sampler2DArrayShadow sampler, int lod)
-int textureSize(gsamplerBuffer sampler)
-ivec2 textureSize(gsampler2DMS sampler)
-ivec3 textureSize(gsampler2DMSArray sampler)
-vec2 textureQueryLod(gsampler1D sampler, float P)
-vec2 textureQueryLod(gsampler2D sampler, vec2 P)
-vec2 textureQueryLod(gsampler3D sampler, vec3 P)
-vec2 textureQueryLod(gsamplerCube sampler, vec3 P)
-vec2 textureQueryLod(gsampler1DArray sampler, float P)
-vec2 textureQueryLod(gsampler2DArray sampler, vec2 P)
-vec2 textureQueryLod(gsamplerCubeArray sampler, vec3 P)
-vec2 textureQueryLod(sampler1DShadow sampler, float P)
-vec2 textureQueryLod(sampler2DShadow sampler, vec2 P)
-vec2 textureQueryLod(samplerCubeShadow sampler, vec3 P)
-vec2 textureQueryLod(sampler1DArrayShadow sampler, float P)
-vec2 textureQueryLod(sampler2DArrayShadow sampler, vec2 P)
-vec2 textureQueryLod(samplerCubeArrayShadow sampler, vec3 P)
-int textureQueryLevels(gsampler1D sampler)
-int textureQueryLevels(gsampler2D sampler)
-int textureQueryLevels(gsampler3D sampler)
-int textureQueryLevels(gsamplerCube sampler)
-int textureQueryLevels(gsampler1DArray sampler)
-int textureQueryLevels(gsampler2DArray sampler)
-int textureQueryLevels(gsamplerCubeArray sampler)
-int textureQueryLevels(sampler1DShadow sampler)
-int textureQueryLevels(sampler2DShadow sampler)
-int textureQueryLevels(samplerCubeShadow sampler)
-int textureQueryLevels(sampler1DArrayShadow sampler)
-int textureQueryLevels(sampler2DArrayShadow sampler)
-int textureQueryLevels(samplerCubeArrayShado w sampler)
-int textureSamples(gsampler2DMS sampler)
-int textureSamples(gsampler2DMSArray sampler)
-//texel lookup
-gvec4 texture(gsampler1D sampler, float P [, float bias] )
-gvec4 texture(gsampler2D sampler, vec2 P [, float bias] )
-gvec4 texture(gsampler3D sampler, vec3 P [, float bias] )
-gvec4 texture(gsamplerCube sampler, vec3 P[, float bias] )
-float texture(sampler1DShadow sampler, vec3 P [, float bias])
-float texture(sampler2DShadow sampler, vec3 P [, float bias])
-float texture(samplerCubeShadow sampler, vec4 P [, float bias] )
-gvec4 texture(gsampler2DArray sampler, vec3 P [, float bias] )
-gvec4 texture(gsamplerCubeArray sampler, vec4 P [, float bias] )
-gvec4 texture(gsampler1DArray sampler, vec2 P [, float bias] )
-float texture(sampler1DArrayShadow sampler, vec3 P [, float bias] )
-float texture(sampler2DArrayShadow sampler, vec4 P)
-gvec4 texture(gsampler2DRect sampler, vec2 P)
-float texture(sampler2DRectShadow sampler, vec3 P)
-float texture(samplerCubeArrayShadow sampler, vec4 P, float compare)
-gvec4 textureProj(gsampler1D sampler, vec2 P [, float bias] )
-gvec4 textureProj(gsampler1D sampler, vec4 P [, float bias] )
-gvec4 textureProj(gsampler2D sampler, vec3 P [, float bias] )
-gvec4 textureProj(gsampler2D sampler, vec4 P [, float bias] )
-gvec4 textureProj(gsampler3D sampler, vec4 P [, float bias] )
-float textureProj(sampler1DShadow sampler, vec4 P [, float bias] )
-float textureProj(sampler2DShadow sampler, vec4 P [, float bias] )
-gvec4 textureProj(gsampler2DRect sampler, vec3 P)
-gvec4 textureProj(gsampler2DRect sampler, vec4 P)
-float textureProj(sampler2DRectShadow sampler, vec4 P)
-gvec4 textureLod(gsampler1D sampler, float P, float lod)
-gvec4 textureLod(gsampler2D sampler, vec2 P, float lod)
-gvec4 textureLod(gsampler3D sampler, vec3 P, float lod)
-gvec4 textureLod(gsamplerCube sampler, vec3 P, float lod)
-float textureLod(sampler2DShadow sampler, vec3 P, float lod)
-float textureLod(sampler1DShadow sampler, vec3 P, float lod)
-gvec4 textureLod(gsampler1DArray sampler, vec2 P, float lod)
-float textureLod(sampler1DArrayShadow sampler, vec3 P, float lod)
-gvec4 textureLod(gsampler2DArray sampler, vec3 P, float lod)
-gvec4 textureLod(gsamplerCubeArray sampler, vec4 P, float lod)
-gvec4 textureOffset(gsampler1D sampler, float P, int offset [, float bias] )
-gvec4 textureOffset(gsampler2D sampler, vec2 P, ivec2 offset [, float bias] )
-gvec4 textureOffset(gsampler3D sampler, vec3 P, ivec3 offset [, float bias] )
-float textureOffset(sampler2DShadow sampler, vec3 P, ivec2 offset [, float bias] )
-gvec4 textureOffset(gsampler2DRect sampler, vec2 P, ivec2 offset)
-float textureOffset(sampler2DRectShadow sampler, vec3 P, ivec2 offset)
-float textureOffset(sampler1DShadow sampler, vec3 P, int offset [, float bias] )
-gvec4 textureOffset(gsampler1DArray sampler, vec2 P, int offset [, float bias] )
-gvec4 textureOffset(gsampler2DArray sampler, vec3 P, ivec2 offset [, float bias] )
-float textureOffset(sampler1DArrayShadow sampler, vec3 P, int offset [, float bias] )
-float textureOffset(sampler2DArrayShadow sampler, vec4 P, ivec2 offset)
-gvec4 texelFetch(gsampler1D sampler, int P, int lod)
-gvec4 texelFetch(gsampler2D sampler, ivec2 P, int lod)
-gvec4 texelFetch(gsampler3D sampler, ivec3 P, int lod)
-gvec4 texelFetch(gsampler2DRect sampler, ivec2 P)
-gvec4 texelFetch(gsampler1DArray sampler, ivec2 P, int lod)
-gvec4 texelFetch(gsampler2DArray sampler, ivec3 P, int lod)
-gvec4 texelFetch(gsamplerBuffer sampler, int P)
-gvec4 texelFetch(gsampler2DMS sampler, ivec2 P, int sample)
-gvec4 texelFetch(gsampler2DMSArray sampler, ivec3 P, int sample)
-gvec4 texelFetchOffset(gsampler1D sampler, int P, int lod, int offset)
-gvec4 texelFetchOffset(gsampler2D sampler, ivec2 P, int lod, ivec2 offset)
-gvec4 texelFetchOffset(gsampler3D sampler, ivec3 P, int lod, ivec3 offset)
-gvec4 texelFetchOffset(gsampler2DRect sampler, ivec2 P, ivec2 offset)
-gvec4 texelFetchOffset(gsampler1DArray sampler, ivec2 P, int lod, int offset)
-gvec4 texelFetchOffset(gsampler2DArray sampler, ivec3 P, int lod, ivec2 offset)
-gvec4 textureProjOffset(gsampler1D sampler, vec2 P, int offset [, float bias] )
-gvec4 textureProjOffset(gsampler1D sampler, vec4 P, int offset [, float bias] )
-gvec4 textureProjOffset(gsampler2D sampler, vec3 P, ivec2 offset [, float bias] )
-gvec4 textureProjOffset(gsampler2D sampler, vec4 P, ivec2 offset [, float bias] )
-gvec4 textureProjOffset(gsampler3D sampler, vec4 P, ivec3 offset [, float bias] )
-gvec4 textureProjOffset(gsampler2DRect sampler, vec3 P, ivec2 offset)
-gvec4 textureProjOffset(gsampler2DRect sampler, vec4 P, ivec2 offset)
-float textureProjOffset(sampler2DRectShadow sampler, vec4 P, ivec2 offset)
-float textureProjOffset(sampler1DShadow sampler, vec4 P, int offset [, float bias] )
-float textureProjOffset(sampler2DShadow sampler, vec4 P, ivec2 offset [, float bias] )
-gvec4 textureLodOffset(gsampler1D sampler, float P, float lod, int offset)
-gvec4 textureLodOffset(gsampler2D sampler, vec2 P, float lod, ivec2 offset)
-gvec4 textureLodOffset(gsampler3D sampler, vec3 P, float lod, ivec3 offset)
-float textureLodOffset(sampler1DShadow sampler, vec3 P, float lod, int offset)
-float textureLodOffset(sampler2DShadow sampler, vec3 P, float lod, ivec2 offset)
-gvec4 textureLodOffset(gsampler1DArray sampler, vec2 P, float lod, int offset)
-gvec4 textureLodOffset(gsampler2DArray sampler, vec3 P, float lod, ivec2 offset)
-float textureLodOffset(sampler1DArrayShadow sampler, vec3 P, float lod, int offset)
-gvec4 textureProjLod(gsampler1D sampler, vec2 P, float lod)
-gvec4 textureProjLod(gsampler1D sampler, vec4 P, float lod)
-gvec4 textureProjLod(gsampler2D sampler, vec3 P, float lod)
-gvec4 textureProjLod(gsampler2D sampler, vec4 P, float lod)
-gvec4 textureProjLod(gsampler3D sampler, vec4 P, float lod)
-float textureProjLod(sampler1DShadow sampler, vec4 P, float lod)
-float textureProjLod(sampler2DShadow sampler, vec4 P, float lod)
-gvec4 textureProjLodOffset(gsampler1D sampler, vec2 P, float lod, int offset)
-gvec4 textureProjLodOffset(gsampler1D sampler, vec4 P, float lod, int offset)
-gvec4 textureProjLodOffset(gsampler2D sampler, vec3 P, float lod, ivec2 offset)
-gvec4 textureProjLodOffset(gsampler2D sampler, vec4 P, float lod, ivec2 offset)
-gvec4 textureProjLodOffset(gsampler3D sampler, vec4 P, float lod, ivec3 offset)
-float textureProjLodOffset(sampler1DShadow sampler, vec4 P, float lod, int offset)
-float textureProjLodOffset(sampler2DShadow sampler, vec4 P, float lod, ivec2 offset)
-gvec4 textureGrad(gsampler1D sampler, float _P, float dPdx, float dPdy)
-gvec4 textureGrad(gsampler2D sampler, vec2 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureGrad(gsampler3D sampler, P, vec3 dPdx, vec3 dPdy)
-gvec4 textureGrad(gsamplerCube sampler, vec3 P, vec3 dPdx, vec3 dPdy)
-gvec4 textureGrad(gsampler2DRect sampler, vec2 P, vec2 dPdx, vec2 dPdy)
-float textureGrad(sampler2DRectShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy)
-float textureGrad(sampler1DShadow sampler, vec3 P, float dPdx, float dPdy)
-gvec4 textureGrad(gsampler1DArray sampler, vec2 P, float dPdx, float dPdy)
-gvec4 textureGrad(gsampler2DArray sampler, vec3 P, vec2 dPdx, vec2 dPdy)
-float textureGrad(sampler1DArrayShadow sampler, vec3 P, float dPdx, float dPdy)
-float textureGrad(sampler2DShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy)
-float textureGrad(samplerCubeShadow sampler, vec4 P, vec3 dPdx, vec3 dPdy)
-float textureGrad(sampler2DArrayShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureGrad(gsamplerCubeArray sampler, vec4 P, vec3 dPdx, vec3 dPdy)
-gvec4 textureGradOffset(gsampler1D sampler, float P, float dPdx, float dPdy, int offset)
-gvec4 textureGradOffset(gsampler2D sampler, vec2 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureGradOffset(gsampler3D sampler, vec3 P, vec3 dPdx, vec3 dPdy, ivec3 offset)
-gvec4 textureGradOffset(gsampler2DRect sampler, vec2 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-float textureGradOffset(sampler2DRectShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-float textureGradOffset(sampler1DShadow sampler, vec3 P, float dPdx, float dPdy, int offset)
-float textureGradOffset(sampler2DShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureGradOffset(gsampler2DArray sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureGradOffset(gsampler1DArray sampler, vec2 P, float dPdx, float dPdy, int offset)
-float textureGradOffset(sampler1DArrayShadow sampler, vec3 P, float dPdx, float dPdy, int offset)
-float textureGradOffset(sampler2DArrayShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureProjGrad(gsampler1D sampler, vec2 P, float dPdx, float dPdy)
-gvec4 textureProjGrad(gsampler1D sampler, vec4 P, float dPdx, float dPdy)
-gvec4 textureProjGrad(gsampler2D sampler, vec3 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureProjGrad(gsampler2D sampler, vec4 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureProjGrad(gsampler3D sampler, vec4 P, vec3 dPdx, vec3 dPdy)
-gvec4 textureProjGrad(gsampler2DRect sampler, vec3 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureProjGrad(gsampler2DRect sampler, vec4 P, vec2 dPdx, vec2 dPdy)
-float textureProjGrad(sampler2DRectShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)
-float textureProjGrad(sampler1DShadow sampler, vec4 P, float dPdx, float dPdy)
-float textureProjGrad(sampler2DShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)
-gvec4 textureProjGradOffset(gsampler1D sampler, vec2 P, float dPdx, float dPdy, int offset)
-gvec4 textureProjGradOffset(gsampler1D sampler, vec4 P, float dPdx, float dPdy, int offset)
-gvec4 textureProjGradOffset(gsampler2D sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureProjGradOffset(gsampler2D sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureProjGradOffset(gsampler3D sampler, vec4 P, vec3 dPdx, vec3 dPdy, ivec3 offset)
-gvec4 textureProjGradOffset(gsampler2DRect sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-gvec4 textureProjGradOffset(gsampler2DRect sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-float textureProjGradOffset(sampler2DRectShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-float textureProjGradOffset(sampler1DShadow sampler, vec4 P, float dPdx, float dPdy, int offset)
-float textureProjGradOffset(sampler2DShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)
-//gather
-gvec4 textureGather(gsampler2D sampler, vec2 P [, int comp])
-gvec4 textureGather(gsampler2DArray sampler, vec3 P [, int comp])
-gvec4 textureGather(gsamplerCube sampler, vec3 P [, int comp])
-gvec4 textureGather(gsamplerCubeArray sampler, vec4 P[, int comp])
-gvec4 textureGather(gsampler2DRect sampler, vec2 P[, int comp])
-vec4 textureGather(sampler2DShadow sampler, vec2 P, float refZ)
-vec4 textureGather(sampler2DArrayShadow sampler, vec3 P, float refZ)
-vec4 textureGather(samplerCubeShadow sampler, vec3 P, float refZ)
-vec4 textureGather(samplerCubeArrayShadow sampler, vec4 P, float refZ)
-vec4 textureGather(sampler2DRectShadow sampler, vec2 P, float refZ)
-gvec4 textureGatherOffset(gsampler2D sampler, vec2 P, ivec2 offset, [ int comp])
-gvec4 textureGatherOffset(gsampler2DArray sampler, vec3 P, ivec2 offset [ int comp])
-vec4 textureGatherOffset(sampler2DShadow sampler, vec2 P, float refZ, ivec2 offset)
-vec4 textureGatherOffset(sampler2DArrayShadow sampler, vec3 P, float refZ, ivec2 offset)
-gvec4 textureGatherOffset(gsampler2DRect sampler, vec2 P, ivec2 offset [ int comp])
-vec4 textureGatherOffset(sampler2DRectShadow sampler, vec2 P, float refZ, ivec2 offset)
-gvec4 textureGatherOffsets(gsampler2D sampler, vec2 P, ivec2 offsets[4] [, int comp])
-gvec4 textureGatherOffsets(gsampler2DArray sampler, vec3 P, ivec2 offsets[4] [, int comp])
-vec4 textureGatherOffsets(sampler2DShadow sampler, vec2 P, float refZ, ivec2 offsets[4])
-vec4 textureGatherOffsets(sampler2DArrayShadow sampler, vec3 P, float refZ, ivec2 offsets[4])
-gvec4 textureGatherOffsets(gsampler2DRect sampler, vec2 P, ivec2 offsets[4] [, int comp])
-vec4 textureGatherOffsets(sampler2DRectShadow sampler, vec2 P, float refZ, ivec2 offsets[4])
+static const char *glsl_texture_size_functions =
+SRC_LINE
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"               "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsamplerLod=[_sampler(1D,,,),"                            "\n"
+"                      _sampler(2D,,,),"                            "\n"
+"                      _sampler(3D,,,),"                            "\n"
+"                      _sampler(Cube,,,),"                          "\n"
+"                      _sampler(1D,,Array,),"                       "\n"
+"                      _sampler(2D,,Array,),"                       "\n"
+"                      _sampler(Cube,,Array,),"                     "\n"
+"                      _sampler(1D,,,Shadow),"                      "\n"
+"                      _sampler(2D,,,Shadow),"                      "\n"
+"                      _sampler(Cube,,,Shadow),"                    "\n"
+"                      _sampler(1D,,Array,Shadow),"                 "\n"
+"                      _sampler(2D,,Array,Shadow),"                 "\n"
+"                      _sampler(Cube,,Array,Shadow)],"              "\n"
+"         gsampler=[_sampler(2DRect,,,),"                           "\n"
+"                   _sampler(2D,MS,,),"                             "\n"
+"                   _sampler(2D,MS,Array,),"                        "\n"
+"                   _sampler(Buffer,,Array,),"                      "\n"
+"                   _sampler(2DRect,,,Shadow)]) {"                  "\n"
+"gsamplerLod.size_type textureSize(gsamplerLod sampler, int lod) = " SPV(OpImageQuerySizeLod) ";" "\n"
+"gsampler.size_type textureSize(gsampler sampler) = " SPV(OpImageQuerySize) ";" "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+;
+
+static const char *glsl_texture_lod_functions =
+SRC_LINE
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"               "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsamplerLod=[_sampler(1D,,,),"                            "\n"
+"                      _sampler(2D,,,),"                            "\n"
+"                      _sampler(3D,,,),"                            "\n"
+"                      _sampler(Cube,,,),"                          "\n"
+"                      _sampler(1D,,Array,),"                       "\n"
+"                      _sampler(2D,,Array,),"                       "\n"
+"                      _sampler(Cube,,Array,),"                     "\n"
+"                      _sampler(1D,,,Shadow),"                      "\n"
+"                      _sampler(2D,,,Shadow),"                      "\n"
+"                      _sampler(Cube,,,Shadow),"                    "\n"
+"                      _sampler(1D,,Array,Shadow),"                 "\n"
+"                      _sampler(2D,,Array,Shadow),"                 "\n"
+"                      _sampler(Cube,,Array,Shadow)]) {"            "\n"
+"vec2 textureQueryLod(gsamplerLod sampler, gsamplerLod.lod_coord P) = " SPV(OpImageQueryLod) ";" "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+;
+
+static const char *glsl_texture_levels_functions =
+SRC_LINE
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"               "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsamplerLod=[_sampler(1D,,,),"                            "\n"
+"                      _sampler(2D,,,),"                            "\n"
+"                      _sampler(3D,,,),"                            "\n"
+"                      _sampler(Cube,,,),"                          "\n"
+"                      _sampler(1D,,Array,),"                       "\n"
+"                      _sampler(2D,,Array,),"                       "\n"
+"                      _sampler(Cube,,Array,),"                     "\n"
+"                      _sampler(1D,,,Shadow),"                      "\n"
+"                      _sampler(2D,,,Shadow),"                      "\n"
+"                      _sampler(Cube,,,Shadow),"                    "\n"
+"                      _sampler(1D,,Array,Shadow),"                 "\n"
+"                      _sampler(2D,,Array,Shadow),"                 "\n"
+"                      _sampler(Cube,,Array,Shadow)],"              "\n"
+"         gsamplerMS=[_sampler(2D,MS,,),"                           "\n"
+"                     _sampler(2D,MS,Array,)]) {"                   "\n"
+"int textureQueryLevels(gsamplerLod sampler) = " SPV(OpImageQueryLevels) ";" "\n"
+"int textureSamples(gsamplerMS sampler) = " SPV(OpImageQuerySamples) ";" "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+;
+
+static const char *glsl_other_texture_functions =
+SRC_LINE
+"#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
+"#define gtex_coord gsampler.tex_coord"                             "\n"
+"#define gshadow_coord gsamplerSh.shadow_coord"                     "\n"
+"#define gproj_coord gsampler.proj_coord"                           "\n"
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"       "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsampler=[_sampler(1D,,,),"                               "\n"
+"                   _sampler(2D,,,),"                               "\n"
+"                   _sampler(3D,,,),"                               "\n"
+"                   _sampler(Cube,,,),"                             "\n"
+"                   _sampler(1D,,Array,),"                          "\n"
+"                   _sampler(2D,,Array,),"                          "\n"
+"                   _sampler(Cube,,Array,)],"                       "\n"
+"         gsamplerSh=[__sampler(,1D,,,Shadow),"                     "\n"
+"                     __sampler(,2D,,,Shadow),"                     "\n"
+"                     __sampler(,Cube,,,Shadow),"                   "\n"
+"                     __sampler(,1D,,Array,Shadow),"                "\n"
+"                     __sampler(,2D,,Array,Shadow)],"               "\n"
+"         gsamplerCAS=[__sampler(,Cube,,Array,Shadow)]) {"          "\n"
+"gvec4 texture(gsampler sampler, gtex_coord P)"                     "\n"
+	"= " SPV(OpImageSampleExplicitLod) "[sampler, P, Lod, 0];"      "\n"
+"float texture(gsamplerSh sampler, gshadow_coord P)"                "\n"
+	"= " SPV(OpImageSampleDrefExplicitLod)                          "\n"
+	"[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)], Lod, 0];" "\n"
+"float texture(gsamplerCAS sampler, vec4 P, float comp)"            "\n"
+	"= " SPV(OpImageSampleDrefExplicitLod) "[sampler, P, comp, Lod, 0];" "\n"
+"gvec4 textureProj(gsampler sampler, gproj_coord P)"                "\n"
+	"= " SPV(OpImageSampleProjExplicitLod) "[sampler, P, Lod, 0];"  "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+"#undef gtex_coord"                                                 "\n"
+"#undef gvec4"                                                      "\n"
+;
+
+static const char *glsl_frag_texture_functions =
+SRC_LINE
+"#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
+"#define gtex_coord gsampler.tex_coord"                             "\n"
+"#define gshadow_coord gsamplerSh.shadow_coord"                     "\n"
+"#define gproj_coord gsampler.proj_coord"                           "\n"
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"       "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsampler=[_sampler(1D,,,),"                               "\n"
+"                   _sampler(2D,,,),"                               "\n"
+"                   _sampler(3D,,,),"                               "\n"
+"                   _sampler(Cube,,,),"                             "\n"
+"                   _sampler(1D,,Array,),"                          "\n"
+"                   _sampler(2D,,Array,),"                          "\n"
+"                   _sampler(Cube,,Array,)],"                       "\n"
+"         gsamplerSh=[__sampler(,1D,,,Shadow),"                     "\n"
+"                     __sampler(,2D,,,Shadow),"                     "\n"
+"                     __sampler(,Cube,,,Shadow),"                   "\n"
+"                     __sampler(,1D,,Array,Shadow),"                "\n"
+"                     __sampler(,2D,,Array,Shadow)],"               "\n"
+"         gsamplerCAS=[__sampler(,Cube,,Array,Shadow)]) {"          "\n"
+"gvec4 texture(gsampler sampler, gtex_coord P, float bias)"         "\n"
+	"= " SPV(OpImageSampleImplicitLod) "[sampler, P, Bias, bias];"  "\n"
+"gvec4 texture(gsampler sampler, gtex_coord P)"                     "\n"
+	"= " SPV(OpImageSampleImplicitLod) "[sampler, P];"              "\n"
+"float texture(gsamplerSh sampler, gshadow_coord P, float bias)"    "\n"
+	"= " SPV(OpImageSampleDrefImplicitLod)                          "\n"
+	"[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)], Bias, bias];" "\n"
+"float texture(gsamplerSh sampler, gshadow_coord P)"                "\n"
+	"= " SPV(OpImageSampleDrefImplicitLod)                          "\n"
+	"[sampler, [gsamplerSh shadow_coord(P)], [gsamplerSh comp(P)]];" "\n"
+"float texture(gsamplerCAS sampler, vec4 P, float comp)"            "\n"
+	"= " SPV(OpImageSampleDrefImplicitLod) "[sampler, P, comp];"    "\n"
+"gvec4 textureProj(gsampler sampler, gproj_coord P, float bias)"    "\n"
+	"= " SPV(OpImageSampleProjImplicitLod) "[sampler, P, Bias, bias];" "\n"
+"gvec4 textureProj(gsampler sampler, gproj_coord P)"                "\n"
+	"= " SPV(OpImageSampleProjImplicitLod) "[sampler, P];"          "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+"#undef gtex_coord"                                                 "\n"
+"#undef gvec4"                                                      "\n"
+;
+
+static const char *glsl_common_texture_functions =
+SRC_LINE
+"#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
+"#define gvec4B @vector(gsamplerB.sample_type, 4)"                  "\n"
+"#define gvec4MS @vector(gsamplerMS.sample_type, 4)"                "\n"
+"#define gtex_coord gsampler.tex_coord"                             "\n"
+"#define gshadow_coord gsamplerSh.shadow_coord"                     "\n"
+"#define gproj_coord gsampler.proj_coord"                           "\n"
+"#define __sampler(t,d,m,a,s) @handle t##sampler##d##m##a##s"       "\n"
+"#define _sampler(d,m,a,s) __sampler(,d,m,a,s),__sampler(i,d,m,a,s),__sampler(u,d,m,a,s)\n"
+"@generic(gsampler=[_sampler(1D,,,),"                               "\n"
+"                   _sampler(2D,,,),"                               "\n"
+"                   _sampler(3D,,,),"                               "\n"
+"                   _sampler(1D,,Array,),"                          "\n"
+"                   _sampler(2D,,Array,)],"                         "\n"
+"         gsamplerB=[__sampler(,Buffer,,,)],"                       "\n"
+"         gsamplerMS=[_sampler(2D,MS,,),"                           "\n"
+"                     _sampler(2D,MS,Array,)]) {"                   "\n"
+"gvec4 texelFetch(gsampler sampler, gtex_coord P, int lod)"         "\n"
+	"= " SPV(OpImageFetch) "[sampler, P, Lod, lod];"                "\n"
+"gvec4B texelFetch(gsamplerB sampler, int P)"                       "\n"
+	"= " SPV(OpImageFetch) "[sampler, P];"                          "\n"
+"gvec4MS texelFetch(gsamplerMS sampler, ivec2 P, int sample)"       "\n"
+	"= " SPV(OpImageFetch) "[sampler, P, Sample, sample];"          "\n"
+"};"                                                                "\n"
+"#undef __sampler"                                                  "\n"
+"#undef _sampler"                                                   "\n"
+"#undef gproj_coord"                                                "\n"
+"#undef gshadow_coord"                                              "\n"
+"#undef gtex_coord"                                                 "\n"
+"#undef gvec4MS"                                                    "\n"
+"#undef gvec4B"                                                     "\n"
+"#undef gvec4"                                                      "\n"
+"#define gvec4 @vector(gtexture.sample_type, 4)"                    "\n"
+"#define gvec4B @vector(gtextureB.sample_type, 4)"                  "\n"
+"#define gvec4MS @vector(gtextureMS.sample_type, 4)"                "\n"
+"#define gtex_coord gtexture.tex_coord"                             "\n"
+"#define gshadow_coord gtextureSh.shadow_coord"                     "\n"
+"#define gproj_coord gtexture.proj_coord"                           "\n"
+"#define __texture(t,d,m,a,s) @handle t##texture##d##m##a##s"       "\n"
+"#define _texture(d,m,a,s) __texture(,d,m,a,s),__texture(i,d,m,a,s),__texture(u,d,m,a,s)\n"
+"@generic(gtexture=[_texture(1D,,,),"                               "\n"
+"                   _texture(2D,,,),"                               "\n"
+"                   _texture(3D,,,),"                               "\n"
+"                   _texture(1D,,Array,),"                          "\n"
+"                   _texture(2D,,Array,)],"                         "\n"
+"         gtextureB=[__texture(,Buffer,,,)],"                       "\n"
+"         gtextureMS=[_texture(2D,MS,,),"                           "\n"
+"                     _texture(2D,MS,Array,)]) {"                   "\n"
+"gvec4 texelFetch(gtexture texture, gtex_coord P, int lod)"         "\n"
+	"= " SPV(OpImageFetch) "[texture, P, Lod, lod];"                "\n"
+"gvec4B texelFetch(gtextureB texture, int P)"                       "\n"
+	"= " SPV(OpImageFetch) "[texture, P];"                          "\n"
+"gvec4MS texelFetch(gtextureMS texture, ivec2 P, int sample)"       "\n"
+	"= " SPV(OpImageFetch) "[texture, P, Sample, sample];"          "\n"
+"};"                                                                "\n"
+"#undef __texture"                                                  "\n"
+"#undef _texture"                                                   "\n"
+"#undef gproj_coord"                                                "\n"
+"#undef gshadow_coord"                                              "\n"
+"#undef gtex_coord"                                                 "\n"
+"#undef gvec4MS"                                                    "\n"
+"#undef gvec4B"                                                     "\n"
+"#undef gvec4"                                                      "\n"
+;
+#if 0
+"gvec4 textureLod(gsampler1D sampler, float P, float lod)"          "\n"
+"gvec4 textureLod(gsampler2D sampler, vec2 P, float lod)"           "\n"
+"gvec4 textureLod(gsampler3D sampler, vec3 P, float lod)"           "\n"
+"gvec4 textureLod(gsamplerCube sampler, vec3 P, float lod)"         "\n"
+"float textureLod(sampler2DShadow sampler, vec3 P, float lod)"      "\n"
+"float textureLod(sampler1DShadow sampler, vec3 P, float lod)"      "\n"
+"float textureLod(sampler1DArrayShadow sampler, vec3 P, float lod)" "\n"
+"gvec4 textureLod(gsampler1DArray sampler, vec2 P, float lod)"      "\n"
+"gvec4 textureLod(gsampler2DArray sampler, vec3 P, float lod)"      "\n"
+"gvec4 textureLod(gsamplerCubeArray sampler, vec4 P, float lod)"    "\n"
+
+"gvec4 textureOffset(gsampler1D sampler, float P, int offset [, float bias] )" "\n"
+"gvec4 textureOffset(gsampler2D sampler, vec2 P, ivec2 offset [, float bias] )" "\n"
+"gvec4 textureOffset(gsampler3D sampler, vec3 P, ivec3 offset [, float bias] )" "\n"
+"gvec4 textureOffset(gsampler2DRect sampler, vec2 P, ivec2 offset)" "\n"
+"float textureOffset(sampler2DShadow sampler, vec3 P, ivec2 offset [, float bias] )" "\n"
+"float textureOffset(sampler2DRectShadow sampler, vec3 P, ivec2 offset)" "\n"
+"float textureOffset(sampler1DShadow sampler, vec3 P, int offset [, float bias] )" "\n"
+"float textureOffset(sampler1DArrayShadow sampler, vec3 P, int offset [, float bias] )" "\n"
+"float textureOffset(sampler2DArrayShadow sampler, vec4 P, ivec2 offset)" "\n"
+"gvec4 textureOffset(gsampler1DArray sampler, vec2 P, int offset [, float bias] )" "\n"
+"gvec4 textureOffset(gsampler2DArray sampler, vec3 P, ivec2 offset [, float bias] )" "\n"
+
+
+"gvec4 texelFetchOffset(gsampler1D sampler, int P, int lod, int offset)" "\n"
+"gvec4 texelFetchOffset(gsampler2D sampler, ivec2 P, int lod, ivec2 offset)" "\n"
+"gvec4 texelFetchOffset(gsampler3D sampler, ivec3 P, int lod, ivec3 offset)" "\n"
+"gvec4 texelFetchOffset(gsampler2DRect sampler, ivec2 P, ivec2 offset)" "\n"
+"gvec4 texelFetchOffset(gsampler1DArray sampler, ivec2 P, int lod, int offset)" "\n"
+"gvec4 texelFetchOffset(gsampler2DArray sampler, ivec3 P, int lod, ivec2 offset)" "\n"
+
+"gvec4 textureProjOffset(gsampler1D sampler, vec2 P, int offset [, float bias] )" "\n"
+"gvec4 textureProjOffset(gsampler1D sampler, vec4 P, int offset [, float bias] )" "\n"
+"gvec4 textureProjOffset(gsampler2D sampler, vec3 P, ivec2 offset [, float bias] )" "\n"
+"gvec4 textureProjOffset(gsampler2D sampler, vec4 P, ivec2 offset [, float bias] )" "\n"
+"gvec4 textureProjOffset(gsampler3D sampler, vec4 P, ivec3 offset [, float bias] )" "\n"
+"gvec4 textureProjOffset(gsampler2DRect sampler, vec3 P, ivec2 offset)" "\n"
+"gvec4 textureProjOffset(gsampler2DRect sampler, vec4 P, ivec2 offset)" "\n"
+"float textureProjOffset(sampler2DRectShadow sampler, vec4 P, ivec2 offset)" "\n"
+"float textureProjOffset(sampler1DShadow sampler, vec4 P, int offset [, float bias] )" "\n"
+"float textureProjOffset(sampler2DShadow sampler, vec4 P, ivec2 offset [, float bias] )" "\n"
+
+"gvec4 textureLodOffset(gsampler1D sampler, float P, float lod, int offset)" "\n"
+"gvec4 textureLodOffset(gsampler2D sampler, vec2 P, float lod, ivec2 offset)" "\n"
+"gvec4 textureLodOffset(gsampler3D sampler, vec3 P, float lod, ivec3 offset)" "\n"
+"gvec4 textureLodOffset(gsampler1DArray sampler, vec2 P, float lod, int offset)" "\n"
+"gvec4 textureLodOffset(gsampler2DArray sampler, vec3 P, float lod, ivec2 offset)" "\n"
+"float textureLodOffset(sampler1DArrayShadow sampler, vec3 P, float lod, int offset)" "\n"
+"float textureLodOffset(sampler1DShadow sampler, vec3 P, float lod, int offset)" "\n"
+"float textureLodOffset(sampler2DShadow sampler, vec3 P, float lod, ivec2 offset)" "\n"
+
+"gvec4 textureProjLod(gsampler1D sampler, vec2 P, float lod)"       "\n"
+"gvec4 textureProjLod(gsampler1D sampler, vec4 P, float lod)"       "\n"
+"gvec4 textureProjLod(gsampler2D sampler, vec3 P, float lod)"       "\n"
+"gvec4 textureProjLod(gsampler2D sampler, vec4 P, float lod)"       "\n"
+"gvec4 textureProjLod(gsampler3D sampler, vec4 P, float lod)"       "\n"
+"float textureProjLod(sampler1DShadow sampler, vec4 P, float lod)"  "\n"
+"float textureProjLod(sampler2DShadow sampler, vec4 P, float lod)"  "\n"
+
+"gvec4 textureProjLodOffset(gsampler1D sampler, vec2 P, float lod, int offset)" "\n"
+"gvec4 textureProjLodOffset(gsampler1D sampler, vec4 P, float lod, int offset)" "\n"
+"gvec4 textureProjLodOffset(gsampler2D sampler, vec3 P, float lod, ivec2 offset)" "\n"
+"gvec4 textureProjLodOffset(gsampler2D sampler, vec4 P, float lod, ivec2 offset)" "\n"
+"gvec4 textureProjLodOffset(gsampler3D sampler, vec4 P, float lod, ivec3 offset)" "\n"
+"float textureProjLodOffset(sampler1DShadow sampler, vec4 P, float lod, int offset)" "\n"
+"float textureProjLodOffset(sampler2DShadow sampler, vec4 P, float lod, ivec2 offset)" "\n"
+
+"gvec4 textureGrad(gsampler1D sampler, float _P, float dPdx, float dPdy)" "\n"
+"gvec4 textureGrad(gsampler2D sampler, vec2 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureGrad(gsampler3D sampler, P, vec3 dPdx, vec3 dPdy)"    "\n"
+"gvec4 textureGrad(gsamplerCube sampler, vec3 P, vec3 dPdx, vec3 dPdy)" "\n"
+"gvec4 textureGrad(gsampler2DRect sampler, vec2 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureGrad(gsampler1DArray sampler, vec2 P, float dPdx, float dPdy)" "\n"
+"gvec4 textureGrad(gsampler2DArray sampler, vec3 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureGrad(gsamplerCubeArray sampler, vec4 P, vec3 dPdx, vec3 dPdy)" "\n"
+"float textureGrad(sampler2DRectShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy)" "\n"
+"float textureGrad(sampler1DShadow sampler, vec3 P, float dPdx, float dPdy)" "\n"
+"float textureGrad(sampler1DArrayShadow sampler, vec3 P, float dPdx, float dPdy)" "\n"
+"float textureGrad(sampler2DShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy)" "\n"
+"float textureGrad(samplerCubeShadow sampler, vec4 P, vec3 dPdx, vec3 dPdy)" "\n"
+"float textureGrad(sampler2DArrayShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)" "\n"
+
+"gvec4 textureGradOffset(gsampler1D sampler, float P, float dPdx, float dPdy, int offset)" "\n"
+"gvec4 textureGradOffset(gsampler2D sampler, vec2 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureGradOffset(gsampler3D sampler, vec3 P, vec3 dPdx, vec3 dPdy, ivec3 offset)" "\n"
+"gvec4 textureGradOffset(gsampler2DRect sampler, vec2 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureGradOffset(gsampler2DArray sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureGradOffset(gsampler1DArray sampler, vec2 P, float dPdx, float dPdy, int offset)" "\n"
+
+"float textureGradOffset(sampler1DArrayShadow sampler, vec3 P, float dPdx, float dPdy, int offset)" "\n"
+"float textureGradOffset(sampler2DArrayShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"float textureGradOffset(sampler2DRectShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"float textureGradOffset(sampler1DShadow sampler, vec3 P, float dPdx, float dPdy, int offset)" "\n"
+"float textureGradOffset(sampler2DShadow sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+
+"gvec4 textureProjGrad(gsampler1D sampler, vec2 P, float dPdx, float dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler1D sampler, vec4 P, float dPdx, float dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler2D sampler, vec3 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler2D sampler, vec4 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler3D sampler, vec4 P, vec3 dPdx, vec3 dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler2DRect sampler, vec3 P, vec2 dPdx, vec2 dPdy)" "\n"
+"gvec4 textureProjGrad(gsampler2DRect sampler, vec4 P, vec2 dPdx, vec2 dPdy)" "\n"
+"float textureProjGrad(sampler2DRectShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)" "\n"
+"float textureProjGrad(sampler1DShadow sampler, vec4 P, float dPdx, float dPdy)" "\n"
+"float textureProjGrad(sampler2DShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy)" "\n"
+
+"gvec4 textureProjGradOffset(gsampler1D sampler, vec2 P, float dPdx, float dPdy, int offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler1D sampler, vec4 P, float dPdx, float dPdy, int offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler2D sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler2D sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler3D sampler, vec4 P, vec3 dPdx, vec3 dPdy, ivec3 offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler2DRect sampler, vec3 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"gvec4 textureProjGradOffset(gsampler2DRect sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"float textureProjGradOffset(sampler2DRectShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+"float textureProjGradOffset(sampler1DShadow sampler, vec4 P, float dPdx, float dPdy, int offset)" "\n"
+"float textureProjGradOffset(sampler2DShadow sampler, vec4 P, vec2 dPdx, vec2 dPdy, ivec2 offset)" "\n"
+
+"//gather"                                                          "\n"
+"gvec4 textureGather(gsampler2D sampler, vec2 P [, int comp])"      "\n"
+"gvec4 textureGather(gsampler2DArray sampler, vec3 P [, int comp])" "\n"
+"gvec4 textureGather(gsamplerCube sampler, vec3 P [, int comp])"    "\n"
+"gvec4 textureGather(gsamplerCubeArray sampler, vec4 P[, int comp])""\n"
+"gvec4 textureGather(gsampler2DRect sampler, vec2 P[, int comp])"   "\n"
+"vec4 textureGather(sampler2DShadow sampler, vec2 P, float refZ)"   "\n"
+"vec4 textureGather(sampler2DArrayShadow sampler, vec3 P, float refZ)" "\n"
+"vec4 textureGather(samplerCubeShadow sampler, vec3 P, float refZ)" "\n"
+"vec4 textureGather(samplerCubeArrayShadow sampler, vec4 P, float refZ)" "\n"
+"vec4 textureGather(sampler2DRectShadow sampler, vec2 P, float refZ)" "\n"
+
+"gvec4 textureGatherOffset(gsampler2D sampler, vec2 P, ivec2 offset, [ int comp])" "\n"
+"gvec4 textureGatherOffset(gsampler2DArray sampler, vec3 P, ivec2 offset [ int comp])" "\n"
+"gvec4 textureGatherOffset(gsampler2DRect sampler, vec2 P, ivec2 offset [ int comp])" "\n"
+"vec4 textureGatherOffset(sampler2DShadow sampler, vec2 P, float refZ, ivec2 offset)" "\n"
+"vec4 textureGatherOffset(sampler2DArrayShadow sampler, vec3 P, float refZ, ivec2 offset)" "\n"
+"vec4 textureGatherOffset(sampler2DRectShadow sampler, vec2 P, float refZ, ivec2 offset)" "\n"
+
+"gvec4 textureGatherOffsets(gsampler2D sampler, vec2 P, ivec2 offsets[4] [, int comp])" "\n"
+"gvec4 textureGatherOffsets(gsampler2DArray sampler, vec3 P, ivec2 offsets[4] [, int comp])" "\n"
+"gvec4 textureGatherOffsets(gsampler2DRect sampler, vec2 P, ivec2 offsets[4] [, int comp])" "\n"
+"vec4 textureGatherOffsets(sampler2DShadow sampler, vec2 P, float refZ, ivec2 offsets[4])" "\n"
+"vec4 textureGatherOffsets(sampler2DArrayShadow sampler, vec3 P, float refZ, ivec2 offsets[4])" "\n"
+"vec4 textureGatherOffsets(sampler2DRectShadow sampler, vec2 P, float refZ, ivec2 offsets[4])" "\n"
+"};"                                                                "\n"
 #endif
 
 static const char *glsl_atomic_functions =
@@ -952,8 +1087,8 @@ SRC_LINE
 "#define _image(d,m,a,s) __image(,d,m,a,s),__image(i,d,m,a,s),__image(u,d,m,a,s)\n"
 "#define gvec4 @vector(gimage.sample_type, 4)"                          "\n"
 "#define gvec4MS @vector(gimageMS.sample_type, 4)"                      "\n"
-"#define IMAGE_PARAMS gimage image, gimage.coord_type P"                "\n"
-"#define IMAGE_PARAMS_MS gimageMS image, gimageMS.coord_type P, int sample" "\n"
+"#define IMAGE_PARAMS gimage image, gimage.image_coord P"               "\n"
+"#define IMAGE_PARAMS_MS gimageMS image, gimageMS.image_coord P, int sample" "\n"
 "@generic(gimage=[_image(1D,,,),"                                       "\n"
 "                 _image(1D,,Array,),"                                  "\n"
 "                 _image(2D,,,),"                                       "\n"
@@ -1079,23 +1214,12 @@ SRC_LINE
 "#define _subpassInput(x,m) __spI(,m),__spI(i,m),__spI(u,m)"            "\n"
 "#define gvec4 @vector(gsubpassInput.sample_type, 4)"                   "\n"
 "#define gvec4MS @vector(gsubpassInputMS.sample_type, 4)"               "\n"
-"#define IMAGE_PARAMS gsubpassInput image, gsubpassInput.coord_type P"  "\n"
-"#define IMAGE_PARAMS_MS gsubpassInputMS image, gsubpassInputMS.coord_type P, int sample" "\n"
+"#define IMAGE_PARAMS gsubpassInput image, gsubpassInput.image_coord P" "\n"
+"#define IMAGE_PARAMS_MS gsubpassInputMS image, gsubpassInputMS.image_coord P, int sample" "\n"
 "@generic(gsubpassInput=[_subpassInput(,)],"                            "\n"
 "         gsubpassInputMS=[_subpassInput(,MS)]) {"                      "\n"
-"gvec4 __imageLoad(readonly IMAGE_PARAMS) = " SPV(OpImageRead) ";"      "\n"
-"gvec4MS __imageLoad(readonly IMAGE_PARAMS_MS) = " SPV(OpImageRead) ";" "\n"
-"gvec4 subpassLoad(gsubpassInput subpass)"                              "\n"
-"{"                                                                     "\n"
-"    return __imageLoad(subpass,"                                       "\n"
-"                       @construct(gsubpassInput.coord_type, 0));"      "\n"
-"}"                                                                     "\n"
-"gvec4MS subpassLoad(gsubpassInputMS subpass, int sample)"              "\n"
-"{"                                                                     "\n"
-"    return __imageLoad(subpass,"                                       "\n"
-"                       @construct(gsubpassInputMS.coord_type, 0),"     "\n"
-"                                  sample);"                            "\n"
-"}"                                                                     "\n"
+"gvec4 subpassLoad(gsubpassInput subpass) = " SPV(OpImageRead) "[subpass, @construct(gsubpassInput.image_coord, 0)];" "\n"
+"gvec4MS subpassLoad(gsubpassInputMS subpass) = " SPV(OpImageRead) "[subpass, @construct(gsubpassInputMS.image_coord, 0), sample];" "\n"
 "};" "\n"
 "#undef uint"           "\n"
 "#undef readonly"       "\n"
@@ -1173,6 +1297,10 @@ glsl_init_common (rua_ctx_t *ctx)
 	glsl_block_clear ();
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_general_functions, &rua_ctx);
+	qc_parse_string (glsl_texture_size_functions, &rua_ctx);
+	qc_parse_string (glsl_texture_lod_functions, &rua_ctx);
+	qc_parse_string (glsl_texture_levels_functions, &rua_ctx);
+	qc_parse_string (glsl_common_texture_functions, &rua_ctx);
 	qc_parse_string (glsl_atomic_functions, &rua_ctx);
 	qc_parse_string (glsl_image_functions, &rua_ctx);
 	glsl_parse_vars (glsl_system_constants, ctx);
@@ -1192,6 +1320,8 @@ glsl_init_vert (rua_ctx_t *ctx)
 {
 	glsl_init_common (ctx);
 	glsl_parse_vars (glsl_Vulkan_vertex_vars, ctx);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 	pr.module->default_model = SpvExecutionModelVertex;
@@ -1202,6 +1332,8 @@ glsl_init_tesc (rua_ctx_t *ctx)
 {
 	glsl_init_common (ctx);
 	glsl_parse_vars (glsl_tesselation_control_vars, ctx);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 	pr.module->default_model = SpvExecutionModelTessellationControl;
@@ -1212,6 +1344,8 @@ glsl_init_tese (rua_ctx_t *ctx)
 {
 	glsl_init_common (ctx);
 	glsl_parse_vars (glsl_tesselation_evaluation_vars, ctx);
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
 	pr.module->default_model = SpvExecutionModelTessellationEvaluation;
@@ -1224,6 +1358,7 @@ glsl_init_geom (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_geometry_vars, ctx);
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_geometry_functions, &rua_ctx);
+	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityGeometry);
 	pr.module->default_model = SpvExecutionModelGeometry;
@@ -1236,6 +1371,7 @@ glsl_init_frag (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_fragment_vars, ctx);
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_fragment_functions, &rua_ctx);
+	qc_parse_string (glsl_frag_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityShader);
 	pr.module->default_model = SpvExecutionModelFragment;
