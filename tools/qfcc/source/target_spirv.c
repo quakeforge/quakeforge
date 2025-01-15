@@ -1210,6 +1210,10 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 		}
 	} else if (sym->sy_type == sy_func) {
 		auto func = sym->metafunc->func;
+		if (!func) {
+			error (e, "%s called but not defined", sym->name);
+			return 0;
+		}
 		sym->id = spirv_function_ref (func, ctx);
 	} else if (sym->sy_type == sy_var) {
 		sym->id = spirv_variable (sym, ctx);

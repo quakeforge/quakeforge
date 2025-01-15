@@ -756,8 +756,8 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 					rua_ctx_t *ctx)
 {
 	int num_params = calltype->num_params;
-	const type_t *param_types[num_params];
-	param_qual_t param_quals[num_params];
+	const type_t *param_types[num_params] = {};
+	param_qual_t param_quals[num_params] = {};
 	const type_t *return_type;
 	for (int i = 0; i < num_params; i++) {
 		auto p = &g->params[i];
@@ -1065,6 +1065,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 			// time
 			sym->metafunc->func = new_function (sym->name, gen->name);
 			sym->metafunc->func->type = sym->type;
+			sym->metafunc->func->sym = sym;
 			build_generic_scope (sym, current_symtab, gen, ref_types);
 		}
 		return new_symbol_expr (sym);
@@ -1323,6 +1324,8 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 		genfunc->can_inline = can_inline (statements, fsym);
 		return;
 	}
+	function_t *func = fsym->metafunc->func;
+	current_func = func;
 	if (ctx) {
 		statements = (expr_t *) expr_process (statements, ctx);
 	}
@@ -1333,7 +1336,6 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 	if (state_expr) {
 		prepend_expr (statements, state_expr);
 	}
-	function_t *func = fsym->metafunc->func;
 	current_target.build_code (func, statements);
 }
 

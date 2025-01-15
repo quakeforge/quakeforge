@@ -430,6 +430,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 						"inlined not implemented");
 	} else {
 		auto call = new_block_expr (nullptr);
+		call->block.scope = current_symtab;
 		call->block.is_call = 1;
 		int         num_args = 0;
 		const expr_t *arg_exprs[arg_count + 1][2];
