@@ -41,6 +41,16 @@
 ALLOC_STATE (attribute_t, attributes);
 
 attribute_t *
+new_attrfunc (const char *name, const expr_t *params)
+{
+	attribute_t *attr;
+	ALLOC (16384, attribute_t, attributes, attr);
+	attr->name = save_string (name);
+	attr->params = params;
+	return attr;
+}
+
+attribute_t *
 new_attribute(const char *name, const expr_t *params)
 {
 	if (params
@@ -68,10 +78,5 @@ new_attribute(const char *name, const expr_t *params)
 	if (err) {
 		return nullptr;
 	}
-
-	attribute_t *attr;
-	ALLOC (16384, attribute_t, attributes, attr);
-	attr->name = save_string (name);
-	attr->params = params;
-	return attr;
+	return new_attrfunc (name, params);
 }

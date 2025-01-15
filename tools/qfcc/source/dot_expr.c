@@ -351,8 +351,11 @@ print_type_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		}
 	} else if (e->typ.attrib) {
 		auto attrib = e->typ.attrib;
-		_print_expr (dstr, attrib->params, level + 1, id, nullptr);
-		dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e, attrib->params);
+		if (attrib->params) {
+			_print_expr (dstr, attrib->params, level + 1, id, nullptr);
+			dasprintf (dstr, "%*se_%p -> e_%p;\n", indent, "", e,
+					   attrib->params);
+		}
 		str = attrib->name;
 	} else if (e->typ.sym) {
 	   str = e->typ.sym->name;

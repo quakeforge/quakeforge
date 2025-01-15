@@ -189,7 +189,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		initdecl notype_initdecl
 %type	<mut_expr>	initdecls notype_initdecls
 
-%type	<attribute>	attribute_list attribute
+%type	<attribute>	attribute_list attribute attrfunc
 
 %type	<param>		function_params
 %type   <param>		qc_func_params qc_param_list qc_first_param qc_param
@@ -1390,6 +1390,11 @@ attribute_list
 attribute
 	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0); }
 	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
+	;
+
+attrfunc
+	: NAME %prec LOW			{ $$ = new_attrfunc ($1->name, 0); }
+	| NAME '(' expr_list ')'	{ $$ = new_attrfunc ($1->name, $3); }
 	;
 
 tag : NAME ;
@@ -2838,6 +2843,10 @@ obj_messageexpr
 		{
 			scoped_src_loc ($receiver);
 			$$ = new_message_expr ($receiver, $messageargs);
+		}
+	| '[' TYPE_NAME[spec] attrfunc ']'
+		{
+			$$ = type_attribute ($spec, $attrfunc);
 		}
 	;
 
