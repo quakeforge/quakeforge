@@ -81,7 +81,7 @@ typedef struct glsl_block_s {
 	symbol_t   *instance_name;
 } glsl_block_t;
 
-typedef enum {
+typedef enum : unsigned {
 	glid_1d,
 	glid_2d,
 	glid_3d,

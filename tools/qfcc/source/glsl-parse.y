@@ -1634,69 +1634,7 @@ find_image_sub (image_sub_t *sub, const char *str)
 static const expr_t *
 image_attrib (const type_t *type, const attribute_t *attr)
 {
-	auto image = &glsl_imageset.a[type->handle.extra];
-
-	if (strcmp (attr->name, "sample_type") == 0) {
-		return new_type_expr (image->sample_type);
-	} else if (strcmp (attr->name, "coord_type") == 0) {
-		int width = 0;
-		switch (image->dim) {
-			case glid_1d:
-				width = 1 + image->arrayed;
-				break;
-			case glid_2d:
-				width = 2 + image->arrayed;
-				break;
-			case glid_3d:
-			case glid_cube:
-				width = 3;
-				break;
-			case glid_rect:
-				width = 2;
-				break;
-			case glid_buffer:
-				width = 1;
-				break;
-			case glid_subpassdata:
-				width = 2;
-				break;
-		}
-		if (!width) {
-			internal_error (0, "image has bogus dimension");
-		}
-		return new_type_expr (vector_type (&type_int, width));
-	} else if (strcmp (attr->name, "size_type") == 0) {
-		int width = 0;
-		switch (image->dim) {
-			case glid_1d:
-				width = 1 + image->arrayed;
-				break;
-			case glid_2d:
-				width = 2 + image->arrayed;
-				break;
-			case glid_3d:
-				width = 3;
-				break;
-			case glid_cube:
-				width = 2 + image->arrayed;
-				break;
-			case glid_rect:
-				width = 2;
-				break;
-			case glid_buffer:
-				width = 1;
-				break;
-			case glid_subpassdata:
-				// shouldn't actually happen, but doesn't hurt
-				width = 2;
-				break;
-		}
-		if (!width) {
-			internal_error (0, "image has bogus dimension");
-		}
-		return new_type_expr (vector_type (&type_int, width));
-	}
-	return error (0, "no attribute %s on %s", attr->name, type->name + 4);
+	return type->handle.type->attrib (type, attr);
 }
 
 static symbol_t *

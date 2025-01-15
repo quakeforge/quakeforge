@@ -28,6 +28,14 @@
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -55,13 +63,86 @@ static struct_def_t glsl_sampled_image_struct[] = {
 	{}
 };
 
+static int dim_widths[7] = { 1, 2, 3, 3, 2, 1, 0 };
+static int size_widths[7] = { 1, 2, 3, 2, 2, 1, 0 };
+static int shadow_widths[7] = { 3, 3, 0, 4, 3, 0, 0 };
+
+static const expr_t *
+image_attrib (const type_t *type, const attribute_t *attr)
+{
+	auto image = &glsl_imageset.a[type->handle.extra];
+
+	if (image->dim > glid_subpassdata) {
+		internal_error (0, "image has bogus dimension");
+	}
+
+	if (strcmp (attr->name, "sample_type") == 0) {
+		return new_type_expr (image->sample_type);
+	} else if (strcmp (attr->name, "image_coord") == 0) {
+		int width = dim_widths[image->dim];
+		if (!width) {
+			return new_type_expr (&type_void);
+		}
+		if (image->dim < glid_3d) {
+			width += image->arrayed;
+		}
+		return new_type_expr (vector_type (&type_float, width));
+	} else if (strcmp (attr->name, "size_type") == 0) {
+		int width = size_widths[image->dim];
+		if (!width) {
+			return new_type_expr (&type_void);
+		}
+		if (width < 3 && image->dim <= glid_cube) {
+			width += image->arrayed;
+		}
+		return new_type_expr (vector_type (&type_int, width));
+	}
+	return error (0, "no attribute %s on %s", attr->name, type->name + 4);
+}
+
+static const expr_t *
+sampled_image_attrib (const type_t *type, const attribute_t *attr)
+{
+	auto image = &glsl_imageset.a[type->handle.extra];
+
+	if (image->dim > glid_subpassdata) {
+		internal_error (0, "image has bogus dimension");
+	}
+
+	if (strcmp (attr->name, "tex_coord") == 0) {
+		int width = dim_widths[image->dim];
+		if (!width) {
+			return new_type_expr (&type_void);
+		}
+		if (image->dim < glid_3d) {
+			width += image->arrayed;
+		}
+		return new_type_expr (vector_type (&type_float, width));
+	} else if (strcmp (attr->name, "shadow_coord") == 0) {
+		if (attr->params) {
+		} else {
+			int width = shadow_widths[image->dim];
+			if (!image->depth || !width) {
+				return new_type_expr (&type_void);
+			}
+			if (image->dim == glid_2d) {
+				width += image->arrayed;
+			}
+			return new_type_expr (vector_type (&type_float, width));
+		}
+	}
+	return image_attrib (type, attr);
+}
+
 type_t type_glsl_image = {
 	.type = ev_invalid,
 	.meta = ty_struct,
+	.attrib = image_attrib,
 };
 type_t type_glsl_sampled_image = {
 	.type = ev_invalid,
 	.meta = ty_struct,
+	.attrib = sampled_image_attrib,
 };
 type_t type_glsl_sampler = {
 	.type = ev_int,
