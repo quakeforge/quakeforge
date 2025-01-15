@@ -1253,6 +1253,12 @@ function_body
 
 intrinsic
 	: INTRINSIC '(' expr_list ')'	{ $$ = new_intrinsic_expr ($3); }
+	| INTRINSIC '(' expr_list ')' vector_expr
+		{
+			auto e = new_intrinsic_expr ($3);
+			e->intrinsic.extra = $5;
+			$$ = e;
+		}
 	;
 
 storage_class

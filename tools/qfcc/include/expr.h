@@ -388,6 +388,7 @@ typedef struct {
 	const expr_t *opcode;
 	const type_t *res_type;
 	ex_list_t   operands;
+	const expr_t *extra;
 } ex_intrinsic_t;
 
 typedef struct {

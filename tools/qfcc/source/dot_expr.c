@@ -473,6 +473,11 @@ print_intrinsic (dstring_t *dstr, const expr_t *e, int level, int id,
 {
 	int         indent = level * 2 + 2;
 
+	if (e->intrinsic.extra) {
+		_print_expr (dstr, e->intrinsic.extra, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"extra\"];\n",
+				   indent, "", e, e->intrinsic.extra);
+	}
 	_print_expr (dstr, e->intrinsic.opcode, level, id, next);
 	for (auto l = e->intrinsic.operands.head; l; l = l->next) {
 		_print_expr (dstr, l->expr, level, id, next);
