@@ -115,10 +115,11 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 		.name = new_symbol (block_sym->name),
 		.interface = interface,
 		.attributes = glsl_optimize_attributes (spec.attributes),
-		.members = new_symtab (current_symtab, stab_struct),
+		.members = new_symtab (current_symtab, stab_block),
 		.space = defspace_new (ds_backed),
 	};
 	block->members->name = save_string (block_sym->name);
+	block->members->storage = spec.storage;
 	block->members->data = block;
 	block->space->alloc_aligned = glsl_block_alloc_loc;
 	Hash_Add (block_tab, block);

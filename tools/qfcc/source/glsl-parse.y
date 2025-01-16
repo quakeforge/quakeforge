@@ -997,7 +997,8 @@ precision_qualifier
 struct_specifier
 	: STRUCT IDENTIFIER '{'
 		{
-			if (current_symtab->type == stab_struct) {
+			if (current_symtab->type == stab_struct
+				|| current_symtab->type == stab_block) {
 				error (0, "nested struct declaration");
 			}
 			int op = 's';

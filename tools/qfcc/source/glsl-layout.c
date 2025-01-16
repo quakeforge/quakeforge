@@ -116,15 +116,21 @@ glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
 
 static void
 glsl_layout_binding (specifier_t spec, const expr_t *qual_name,
-					  const expr_t *val)
+					 const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
+glsl_layout_offset (specifier_t spec, const expr_t *qual_name,
+					const expr_t *val)
+{
+}
+
+static void
 glsl_layout_set (specifier_t spec, const expr_t *qual_name,
-					  const expr_t *val)
+				 const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
@@ -134,9 +140,9 @@ static void
 glsl_layout_set_property (specifier_t spec, const expr_t *qual_name,
 						  const expr_t *val)
 {
-	auto interface = glsl_iftype_from_sc (spec.storage);
-	notice (qual_name, "%s %s %s", glsl_interface_names[interface],
-			expr_string (qual_name), get_value_string (val->value));
+	//auto interface = glsl_iftype_from_sc (spec.storage);
+	//notice (qual_name, "%s %s %s", glsl_interface_names[interface],
+	//		expr_string (qual_name), get_value_string (val->value));
 }
 
 static void
@@ -248,7 +254,7 @@ static layout_qual_t layout_qualifiers[] = {
 		.if_mask = I(uniform)|I(buffer),
 	},
 	{	.name = "offset",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_offset),
 		.obj_mask = D(var)|D(member),
 		.var_type = V(opaque),
 		.if_mask = I(uniform)|I(buffer),
@@ -822,17 +828,24 @@ layout_qual_cmp (const void *_a, const void *_b)
 	return strcasecmp (a->name, b->name);
 }
 
+static unsigned
+get_interface_mask (int storage)
+{
+	unsigned if_mask = 0;
+
+	auto interface = glsl_iftype_from_sc (storage);
+	if (interface < glsl_num_interfaces) {
+		if_mask = 1 << interface;
+	}
+	return if_mask;
+}
+
 static bool __attribute__((pure))
 layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 {
 	unsigned obj_mask = 0;
 	glsl_var_t var_type = var_any;
-	unsigned if_mask = 0;
-
-	auto interface = glsl_iftype_from_sc (spec.storage);
-	if (interface < glsl_num_interfaces) {
-		if_mask = 1 << interface;
-	}
+	unsigned if_mask = get_interface_mask (spec.storage);
 	if (spec.sym) {
 		auto sym = spec.sym;
 		if (sym->type) {
@@ -869,8 +882,9 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 				var_type = var_gl_FragDepth;
 			}
 			obj_mask = decl_var;
-			if (sym->table->parent && sym->table->parent->type == stab_struct) {
+			if (sym->table->type == stab_block) {
 				obj_mask = decl_member;
+				if_mask = get_interface_mask (sym->table->storage);
 			}
 		} else {
 			obj_mask = decl_block;
