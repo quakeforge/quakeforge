@@ -201,6 +201,7 @@ typedef struct language_s {
 	bool        initialized;
 	bool        always_overload;
 	bool        short_circuit;
+	bool        default_float;	// 1.0 defaults to float instead of double
 	void      (*init) (rua_ctx_t *ctx);
 	int       (*parse) (FILE *in, rua_ctx_t *ctx);
 	int       (*finish) (const char *file, rua_ctx_t *ctx);

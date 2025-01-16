@@ -471,6 +471,11 @@ parse_suffix (const char *suffix, bool fp)
 		} else if (*suffix == 'l' || *suffix == 'L') {
 			expl = suff_long_double;
 			suffix++;
+			if (*suffix == 'f' || *suffix == 'F') {
+				// glsl long float is double
+				expl = suff_double;
+				suffix++;
+			}
 		}
 	} else {
 		if (*suffix == 'f' || *suffix == 'F') {
@@ -485,6 +490,11 @@ parse_suffix (const char *suffix, bool fp)
 				expl = suff_unsigned;
 				suffix++;
 			}
+			if (!unsign && (*suffix == 'f' || *suffix == 'F')) {
+				// glsl long float is double
+				expl = suff_float;
+				suffix++;
+			}
 			if (*suffix == 'l' || *suffix == 'L') {
 				expl = unsign ? suff_unsigned_long : suff_long;
 				suffix++;
@@ -493,6 +503,13 @@ parse_suffix (const char *suffix, bool fp)
 				}
 				if (!unsign && (*suffix == 'u' || *suffix == 'U')) {
 					expl = suff_unsigned_long;
+					unsign = true;
+					suffix++;
+				}
+				if (!unsign && expl != suff_float
+					&& (*suffix == 'f' || *suffix == 'F')) {
+					// glsl long float is double
+					expl = suff_double;
 					suffix++;
 				}
 			}
@@ -507,7 +524,7 @@ parse_suffix (const char *suffix, bool fp)
 }
 
 static const expr_t *
-parse_number (const rua_tok_t *tok)
+parse_number (const rua_tok_t *tok, rua_ctx_t *ctx)
 {
 	bool binary = false;
 	const char *type = "integer";
@@ -596,7 +613,7 @@ parse_number (const rua_tok_t *tok)
 		if (expl == suff_float) {
 			return new_float_expr (fvalue, false);
 		} else {
-			if (options.code.no_double) {
+			if (options.code.no_double || ctx->language->default_float) {
 				return new_float_expr (fvalue, expl == suff_implicit);
 			} else {
 				return new_double_expr (fvalue, expl == suff_implicit);
@@ -637,7 +654,7 @@ qc_delete_buffer (buffer_raii_t *raii)
 }
 
 static const expr_t *
-parse_vector (const rua_tok_t *tok, yyscan_t scanner)
+parse_vector (const rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
 {
 	const char *end = tok->text + tok->textlen;
 	while (end > tok->text && *--end != '\'') continue;
@@ -666,7 +683,7 @@ parse_vector (const rua_tok_t *tok, yyscan_t scanner)
 	do {
 		token = yylex (&vtok, &vtok.location, scanner);
 		if (-token == rua_number) {
-			auto expr = parse_number (&vtok);
+			auto expr = parse_number (&vtok, ctx);
 			if (expr) {
 				if (width < 4) {
 					components[width] = expr;
@@ -922,7 +939,7 @@ stringize_arg (rua_tok_t *out, rua_macro_t *arg, rua_extra_t *extra)
 
 static int
 preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
-			   yyscan_t scanner)
+			   yyscan_t scanner, rua_ctx_t *ctx)
 {
 	int         token = tok->token;
 	if (!token) {
@@ -946,7 +963,7 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 			case rua_number:
 				if (!extra->recording) {
 					token = -rua_error;
-					if ((lval->expr = parse_number (tok))) {
+					if ((lval->expr = parse_number (tok, ctx))) {
 						token = PRE_VALUE;
 					}
 				}
@@ -954,7 +971,7 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 			case rua_vector:
 				if (!extra->recording) {
 					token = -rua_error;
-					if (!(lval->expr = parse_vector (tok, scanner))) {
+					if (!(lval->expr = parse_vector (tok, scanner, ctx))) {
 						token = PRE_VALUE;
 					}
 				}
@@ -1035,7 +1052,7 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 					lval->expr = ctx->language->parse_number (tok, ctx);
 				}
 				if (!lval->expr) {
-					lval->expr = parse_number (tok);
+					lval->expr = parse_number (tok, ctx);
 				}
 				if (lval->expr) {
 					token = QC_VALUE;
@@ -1048,7 +1065,7 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 				break;
 			case rua_vector:
 				token = -rua_error;
-				if ((lval->expr = parse_vector (tok, scanner))) {
+				if ((lval->expr = parse_vector (tok, scanner, ctx))) {
 					token = QC_VALUE;
 				}
 				break;
@@ -1167,7 +1184,7 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner,
 		auto state = extra->pre_state;
 		PRE_YYSTYPE lval = { .t = *tok };
 
-		token = preproc_token (extra, &lval, tok, scanner);
+		token = preproc_token (extra, &lval, tok, scanner, ctx);
 		if (-token == rua_ignore) {
 			return YYPUSH_MORE;
 		}
@@ -1516,7 +1533,7 @@ rescan:
 		PRE_YYSTYPE lval = { .t = e };
 		auto pending_macro = extra->pending_macro;
 		if (extra->recording) {
-			token = preproc_token (extra, &lval, &e, scanner);
+			token = preproc_token (extra, &lval, &e, scanner, ctx);
 			int s = pre_yypush_parse (extra->args_state, token, &lval,
 									  &e.location, ctx);
 			if (s == YYPUSH_MORE) {
