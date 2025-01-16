@@ -331,7 +331,7 @@ typedef struct {
 typedef struct {
 	int         op;				///< type "function"
 	const expr_t *params;		///< if dynamic
-	const attribute_t *attrib;
+	const attribute_t *property;
 	const type_t *type;
 	const symbol_t *sym;
 } ex_type_t;

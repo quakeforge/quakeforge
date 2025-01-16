@@ -84,9 +84,9 @@ check_type (const expr_t *arg)
 }
 
 static bool
-check_attribute (const expr_t *arg)
+check_property (const expr_t *arg)
 {
-	if (arg->type != ex_type && !arg->typ.attrib) {
+	if (arg->type != ex_type && !arg->typ.property) {
 		return false;
 	}
 	return true;
@@ -132,7 +132,7 @@ single_type (int arg_count, const expr_t **args)
 }
 
 static const char *
-single_type_attribute (int arg_count, const expr_t **args)
+single_type_property (int arg_count, const expr_t **args)
 {
 	if (arg_count < 1) {
 		return "too few arguments";
@@ -143,8 +143,8 @@ single_type_attribute (int arg_count, const expr_t **args)
 	if (!check_type (args[0])) {
 		return "first parameter must be a type";
 	}
-	if (!check_attribute (args[1])) {
-		return "second parameter must be a type attribute";
+	if (!check_property (args[1])) {
+		return "second parameter must be a type property";
 	}
 	return nullptr;
 }
@@ -189,16 +189,16 @@ single_type_opt_int_pair (int arg_count, const expr_t **args)
 }
 
 static const expr_t *
-evaluate_attribute (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+evaluate_property (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
 	if (!type) {
 		return error (args[0], "could not resolve type");
 	}
-	if (!type->attrib) {
-		return error (args[0], "type doesn't support attributes");
+	if (!type->property) {
+		return error (args[0], "type doesn't support properties");
 	} else {
-		auto e = type->attrib (type, args[1]->typ.attrib);
+		auto e = type->property (type, args[1]->typ.property);
 		if (!is_error (e)) {
 			e = eval_type (e, ctx);
 		}
@@ -249,14 +249,14 @@ evaluate_int_op (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 }
 
 static const type_t *
-resolve_attribute (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+resolve_property (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
 	if (type) {
-		if (!type->attrib) {
-			error (args[0], "type doesn't support attributes");
+		if (!type->property) {
+			error (args[0], "type doesn't support properties");
 		} else {
-			auto e = type->attrib (type, args[1]->typ.attrib);
+			auto e = type->property (type, args[1]->typ.property);
 			if (is_error (e)) {
 				type = nullptr;
 			} else {
@@ -502,21 +502,21 @@ static def_t *compute_val (const expr_t *arg, comp_ctx_t *ctx);
 #define C(op, a, b, c) codespace_addcode (ctx->code, I(op, a, b, c), 1)
 
 static def_t *
-compute_attribute (int arg_count, const expr_t **args, comp_ctx_t *ctx)
+compute_property (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 {
 	auto type = compute_type (args[0], ctx);
 	auto res = compute_tmp (ctx);
-	auto attrib = args[1]->typ.attrib;
-	int count = attrib->params ? list_count (&attrib->params->list) : 0;
+	auto property = args[1]->typ.property;
+	int count = property->params ? list_count (&property->params->list) : 0;
 	// FIXME assumes simple 1-component types
 	auto attr_params = compute_sized_tmp (2 + 2 * count, ctx);
 	def_t ndef = { .offset = attr_params->offset + 0, .space = ctx->data };
 	def_t cdef = { .offset = attr_params->offset + 1, .space = ctx->data };
-	D_STRING (&ndef) = compute_str (attrib->name, ctx);
+	D_STRING (&ndef) = compute_str (property->name, ctx);
 	D_INT (&cdef) = count;
 	if (count) {
 		const expr_t *params[count];
-		list_scatter (&attrib->params->list, params);
+		list_scatter (&property->params->list, params);
 		for (int i = 0; i < count; i++) {
 			auto p = compute_type (params[i], ctx);
 			auto s = codespace_newstatement (ctx->code);
@@ -530,7 +530,7 @@ compute_attribute (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 	}
 	C (OP_STORE_A_1, ctx->args[0],             nullptr, type);
 	C (OP_LEA_A,     attr_params,              nullptr, ctx->args[1]);
-	C (OP_CALL_B,    ctx->funcs[tf_attribute], nullptr, res);
+	C (OP_CALL_B,    ctx->funcs[tf_property], nullptr, res);
 	return res;
 }
 
@@ -684,11 +684,11 @@ compute_cols (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 
 static type_func_t type_funcs[] = {
 	[QC_ATTRIBUTE] = {
-		.name = ".attribute",
-		.check_params = single_type_attribute,
-		.resolve = resolve_attribute,
-		.evaluate = evaluate_attribute,
-		.compute = compute_attribute,
+		.name = ".property",
+		.check_params = single_type_property,
+		.resolve = resolve_property,
+		.evaluate = evaluate_property,
+		.compute = compute_property,
 	},
 	[QC_AT_FUNCTION] = {
 		.name = "@function",
@@ -1036,9 +1036,9 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 		return res;
 	}
 	if (arg->type == ex_field) {
-		// type attribute
+		// type property
 		const expr_t *args[2] = {arg->field.object, arg->field.member};
-		return compute_attribute (2, args, ctx);
+		return compute_property (2, args, ctx);
 	}
 	if (arg->type != ex_type) {
 		internal_error (arg, "not a type expression");

@@ -36,7 +36,7 @@
 enum {
 	tf_null,
 	tf_eval,
-	tf_attribute,
+	tf_property,
 	tf_function,
 	tf_field,
 	tf_pointer,

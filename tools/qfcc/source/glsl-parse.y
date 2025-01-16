@@ -1633,9 +1633,9 @@ find_image_sub (image_sub_t *sub, const char *str)
 }
 
 static const expr_t *
-image_attrib (const type_t *type, const attribute_t *attr)
+image_property (const type_t *type, const attribute_t *attr)
 {
-	return type->handle.type->attrib (type, attr);
+	return type->handle.type->property (type, attr);
 }
 
 static symbol_t *
@@ -1759,7 +1759,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 	}
 	t->handle.type = type.htype;
 	t->handle.extra = index;
-	t->attrib = image_attrib;
+	t->property = image_property;
 
 	return sym;
 invalid:

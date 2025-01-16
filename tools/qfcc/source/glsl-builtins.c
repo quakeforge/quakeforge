@@ -68,7 +68,7 @@ static int size_widths[7] = { 1, 2, 3, 2, 2, 1, 0 };
 static int shadow_widths[7] = { 3, 3, 0, 4, 3, 0, 0 };
 
 static const expr_t *
-image_attrib (const type_t *type, const attribute_t *attr)
+image_property (const type_t *type, const attribute_t *property)
 {
 	auto image = &glsl_imageset.a[type->handle.extra];
 
@@ -76,9 +76,9 @@ image_attrib (const type_t *type, const attribute_t *attr)
 		internal_error (0, "image has bogus dimension");
 	}
 
-	if (strcmp (attr->name, "sample_type") == 0) {
+	if (strcmp (property->name, "sample_type") == 0) {
 		return new_type_expr (image->sample_type);
-	} else if (strcmp (attr->name, "image_coord") == 0) {
+	} else if (strcmp (property->name, "image_coord") == 0) {
 		int width = dim_widths[image->dim];
 		if (!width) {
 			return new_type_expr (&type_void);
@@ -87,7 +87,7 @@ image_attrib (const type_t *type, const attribute_t *attr)
 			width += image->arrayed;
 		}
 		return new_type_expr (vector_type (&type_float, width));
-	} else if (strcmp (attr->name, "size_type") == 0) {
+	} else if (strcmp (property->name, "size_type") == 0) {
 		int width = size_widths[image->dim];
 		if (!width) {
 			return new_type_expr (&type_void);
@@ -97,11 +97,11 @@ image_attrib (const type_t *type, const attribute_t *attr)
 		}
 		return new_type_expr (vector_type (&type_int, width));
 	}
-	return error (0, "no attribute %s on %s", attr->name, type->name + 4);
+	return error (0, "no property %s on %s", property->name, type->name + 4);
 }
 
 static const expr_t *
-sampled_image_attrib (const type_t *type, const attribute_t *attr)
+sampled_image_property (const type_t *type, const attribute_t *property)
 {
 	auto image = &glsl_imageset.a[type->handle.extra];
 
@@ -109,7 +109,7 @@ sampled_image_attrib (const type_t *type, const attribute_t *attr)
 		internal_error (0, "image has bogus dimension");
 	}
 
-	if (strcmp (attr->name, "tex_coord") == 0) {
+	if (strcmp (property->name, "tex_coord") == 0) {
 		int width = dim_widths[image->dim];
 		if (!width) {
 			return new_type_expr (&type_void);
@@ -118,8 +118,8 @@ sampled_image_attrib (const type_t *type, const attribute_t *attr)
 			width += image->arrayed;
 		}
 		return new_type_expr (vector_type (&type_float, width));
-	} else if (strcmp (attr->name, "shadow_coord") == 0) {
-		if (attr->params) {
+	} else if (strcmp (property->name, "shadow_coord") == 0) {
+		if (property->params) {
 		} else {
 			int width = shadow_widths[image->dim];
 			if (!image->depth || !width) {
@@ -131,18 +131,18 @@ sampled_image_attrib (const type_t *type, const attribute_t *attr)
 			return new_type_expr (vector_type (&type_float, width));
 		}
 	}
-	return image_attrib (type, attr);
+	return image_property (type, property);
 }
 
 type_t type_glsl_image = {
 	.type = ev_invalid,
 	.meta = ty_struct,
-	.attrib = image_attrib,
+	.property = image_property,
 };
 type_t type_glsl_sampled_image = {
 	.type = ev_invalid,
 	.meta = ty_struct,
-	.attrib = sampled_image_attrib,
+	.property = sampled_image_property,
 };
 type_t type_glsl_sampler = {
 	.type = ev_int,

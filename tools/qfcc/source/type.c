@@ -1056,7 +1056,7 @@ alias_type (const type_t *type, const type_t *alias_chain, const char *name)
 	if (name) {
 		alias->name = save_string (name);
 	}
-	alias->attrib = type->attrib;
+	alias->property = type->property;
 	return alias;
 }
 

@@ -285,16 +285,16 @@ type_spec (const type_t *type)
 }
 
 static const expr_t *
-type_attribute (specifier_t spec, const attribute_t *attrib)
+type_property (specifier_t spec, const attribute_t *property)
 {
 	auto type_expr = spec.type_expr;
 	if (!type_expr) {
 		type_expr = new_type_expr (spec.type);
 	}
 	auto params = new_list_expr (type_expr);
-	auto attr = new_type_expr (nullptr);
-	attr->typ.attrib = attrib;
-	expr_append_expr (params, attr);
+	auto prop = new_type_expr (nullptr);
+	prop->typ.property = property;
+	expr_append_expr (params, prop);
 	return new_type_function (QC_ATTRIBUTE, params);
 }
 
@@ -1160,7 +1160,7 @@ typespec_nonreserved
 	: TYPE_NAME %prec LOW
 	| TYPE_NAME[spec] '.' attribute
 		{
-			auto te = type_attribute ($spec, $attribute);
+			auto te = type_property ($spec, $attribute);
 			$$ = (specifier_t) { .type_expr = te };
 		}
 	| OBJECT_NAME protocolrefs
@@ -1371,7 +1371,7 @@ type_ref
 		}
 	| TYPE_NAME[spec] '.' attribute
 		{
-			$$ = type_attribute ($spec, $attribute);
+			$$ = type_property ($spec, $attribute);
 		}
 	;
 
@@ -2852,7 +2852,7 @@ obj_messageexpr
 		}
 	| '[' TYPE_NAME[spec] attrfunc ']'
 		{
-			$$ = type_attribute ($spec, $attrfunc);
+			$$ = type_property ($spec, $attrfunc);
 		}
 	;
 

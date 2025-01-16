@@ -76,29 +76,29 @@ fetch_type (unsigned id, typectx_t *ctx)
 }
 
 static void
-tf_attribute_func (progs_t *pr, void *data)
+tf_property_func (progs_t *pr, void *data)
 {
 	auto ctx = *(typectx_t **) data;
 	unsigned id = P_UINT (pr, 0);
 	auto type = fetch_type (id, ctx);
-	if (!type->attrib) {
+	if (!type->property) {
 		error (ctx->expr, "type doesn't support attributes");
 		Sys_longjmp (ctx->jmpbuf);
 	}
 	auto attr_params = &P_STRUCT (pr, pr_int_t, 1);
 	auto name = PR_GetString (pr, attr_params[0]);
 	int count = attr_params[1];
-	attribute_t *attrib = nullptr;
+	attribute_t *property = nullptr;
 	if (count) {
 		const expr_t *param_exprs[count] = {};
 		internal_error (ctx->expr, "not implemented");
 		auto params = new_list_expr (nullptr);
 		list_gather (&params->list, param_exprs, count);
-		attrib = new_attribute (name, params);
+		property = new_attribute (name, params);
 	} else {
-		attrib = new_attribute (name, nullptr);
+		property = new_attribute (name, nullptr);
 	}
-	auto e = type->attrib (type, attrib);
+	auto e = type->property (type, property);
 	if (is_error (e)) {
 		Sys_longjmp (ctx->jmpbuf);
 	}
@@ -272,7 +272,7 @@ static typectx_t *type_genfunc;
 static bfunction_t type_functions[] = {
 	{},	// null function
 	[tf_eval] = { .first_statement = 1 },
-	TF_FUNC(tf_attribute),
+	TF_FUNC(tf_property),
 	TF_FUNC(tf_function),
 	TF_FUNC(tf_field),
 	TF_FUNC(tf_pointer),
