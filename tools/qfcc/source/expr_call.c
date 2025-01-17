@@ -205,6 +205,42 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 	return err;
 }
 
+static void
+build_call_scope (symbol_t *fsym, const expr_t **arguments)
+{
+	auto metafunc = fsym->metafunc;
+	auto func = metafunc->func;
+	auto params = func->parameters;
+
+	int i = 0;
+	for (auto p = fsym->params; p; p = p->next, i++) {
+		if (!p->selector && !p->type && !p->name) {
+			internal_error (0, "inline variadic not implemented");
+		}
+		if (!p->type) {
+			continue;						// non-param selector
+		}
+		if (is_void (p->type)) {
+			if (p->name) {
+				error (0, "invalid parameter type for %s", p->name);
+			} else if (p != fsym->params || p->next) {
+				error (0, "void must be the only parameter");
+				continue;
+			} else {
+				continue;
+			}
+		}
+		if (!p->name) {
+			notice (0, "parameter name omitted");
+			continue;
+		}
+		auto psym = new_symbol (p->name);
+		psym->sy_type = sy_expr;
+		psym->expr = arguments[i];
+		symtab_addsymbol (params, psym);
+	}
+}
+
 static expr_t *
 build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 					  const expr_t **arguments, int arg_count, rua_ctx_t *ctx)
@@ -219,42 +255,17 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 			internal_error (expr->intrinsic.extra, "not a list");
 		}
 
-		auto params = new_symtab (current_symtab, stab_param);
-		int i = 0;
-		for (auto p = fsym->params; p; p = p->next, i++) {
-			if (!p->selector && !p->type && !p->name) {
-				internal_error (0, "inline variadic not implemented");
-			}
-			if (!p->type) {
-				continue;						// non-param selector
-			}
-			if (is_void (p->type)) {
-				if (p->name) {
-					error (0, "invalid parameter type for %s", p->name);
-				} else if (p != fsym->params || p->next) {
-					error (0, "void must be the only parameter");
-					continue;
-				} else {
-					continue;
-				}
-			}
-			if (!p->name) {
-				notice (0, "parameter name omitted");
-				continue;
-			}
-			auto psym = new_symbol (p->name);
-			psym->sy_type = sy_expr;
-			psym->expr = arguments[i];
-			symtab_addsymbol (params, psym);
-		}
+		build_call_scope (fsym, arguments);
 
 		auto extra = &expr->intrinsic.extra->list;
 		int extra_count = list_count (extra);
 		const expr_t *extra_args[extra_count + 1] = {};
 		list_scatter (extra, extra_args);
 
+		auto metafunc = fsym->metafunc;
+		auto func = metafunc->func;
 		auto scope = current_symtab;
-		current_symtab = params;
+		current_symtab = func->locals;
 		for (int i = 0; i < extra_count; i++) {
 			extra_args[i] = expr_process (extra_args[i], ctx);
 		}
@@ -297,42 +308,11 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	auto metafunc = fsym->metafunc;
 	auto func = metafunc->func;
 
-	auto params = func->parameters;
-	auto locals = func->locals;
+	build_call_scope (fsym, arguments);
 
+	auto locals = func->locals;
 	auto call = new_block_expr (nullptr);
 	call->block.scope = locals;
-
-	int i = 0;
-	for (auto p = fsym->params; p; p = p->next, i++) {
-		if (!p->selector && !p->type && !p->name) {
-			internal_error (0, "inline variadic not implemented");
-		}
-		if (!p->type) {
-			continue;						// non-param selector
-		}
-		if (is_void (p->type)) {
-			if (p->name) {
-				error (0, "invalid parameter type for %s", p->name);
-			} else if (p != fsym->params || p->next) {
-				error (0, "void must be the only parameter");
-				continue;
-			} else {
-				continue;
-			}
-		}
-		if (!p->name) {
-			notice (0, "parameter name omitted");
-			continue;
-		}
-		auto spec = (specifier_t) {
-			.type = p->type,
-			.storage = sc_local,
-		};
-		auto decl = new_decl_expr (spec, params);
-		append_decl (decl, new_symbol (p->name), arguments[i]);
-		append_expr (call, decl);
-	}
 
 	if (!is_void (ftype->func.ret_type)) {
 		auto spec = (specifier_t) {

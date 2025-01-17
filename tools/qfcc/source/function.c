@@ -1420,6 +1420,9 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 			return;
 		}
 		genfunc->expr = intrinsic;
+		// intrinsic functions with extra (ie, explict) arguments are similar
+		// to inline functions
+		genfunc->can_inline = intrinsic->intrinsic.extra;
 	} else {
 		if (sym->metafunc->expr || sym->metafunc->func) {
 			error (intrinsic, "%s already defined", sym->name);
