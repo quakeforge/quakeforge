@@ -294,6 +294,9 @@ const expr_t *
 constructor_expr (const expr_t *e, const expr_t *params)
 {
 	auto type = e->typ.type;
+	if (is_void (type)) {
+		return error (e, "cannot construct the void");
+	}
 	if (is_algebra (type)) {
 		return error (e, "algebra not implemented");
 	}

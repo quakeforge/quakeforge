@@ -80,13 +80,16 @@ image_property (const type_t *type, const attribute_t *property)
 		return new_type_expr (image->sample_type);
 	} else if (strcmp (property->name, "image_coord") == 0) {
 		int width = dim_widths[image->dim];
+		if (image->dim == glid_subpassdata) {
+			width = 2;
+		}
 		if (!width) {
 			return new_type_expr (&type_void);
 		}
 		if (image->dim < glid_3d) {
 			width += image->arrayed;
 		}
-		return new_type_expr (vector_type (&type_float, width));
+		return new_type_expr (vector_type (&type_int, width));
 	} else if (strcmp (property->name, "size_type") == 0) {
 		int width = size_widths[image->dim];
 		if (!width) {
