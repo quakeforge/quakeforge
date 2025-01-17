@@ -226,27 +226,38 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 static const expr_t *
 proc_array (const expr_t *expr, rua_ctx_t *ctx)
 {
-	auto base = expr_process (expr->array.base, ctx);
+	auto array = expr_process (expr->array.base, ctx);
 	auto index = expr_process (expr->array.index, ctx);
-	if (is_error (base)) {
-		return base;
+	if (is_error (array)) {
+		return array;
 	}
 	if (is_error (index)) {
 		return index;
 	}
-	scoped_src_loc (expr);
-	auto e = new_array_expr (base, index);
-	auto bt = get_type (base);
-	if (is_reference (bt)) {
-		bt = dereference_type (bt);
+	auto array_type = get_type (array);
+	auto index_type = get_type (index);
+	if (is_reference (array_type)) {
+		array_type = dereference_type (array_type);
 	}
+	if (is_reference (index_type)) {
+		index_type = dereference_type (index_type);
+	}
+	if (!is_pointer (array_type) && !is_array (array_type)
+		&& !is_nonscalar (array_type) && !is_matrix (array_type)) {
+		return error (array, "not an array");
+	}
+	if (!is_integral (index_type)) {
+		return error (index, "invalid array index type");
+	}
+	scoped_src_loc (expr);
+	auto e = new_array_expr (array, index);
 	const type_t *type;
-	if (is_matrix (bt)) {
-		type = column_type (bt);
-	} else if (is_nonscalar (bt)) {
-		type = base_type (bt);
+	if (is_matrix (array_type)) {
+		type = column_type (array_type);
+	} else if (is_nonscalar (array_type)) {
+		type = base_type (array_type);
 	} else {
-		type = dereference_type (bt);
+		type = dereference_type (array_type);
 	}
 	e->array.type = type;
 	return e;
