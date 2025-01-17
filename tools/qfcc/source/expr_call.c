@@ -206,20 +206,68 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 }
 
 static expr_t *
-build_intrinsic_call (const expr_t *expr, const type_t *ftype,
-					  const expr_t **arguments, int arg_count)
+build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
+					  const expr_t **arguments, int arg_count, rua_ctx_t *ctx)
 {
-	for (int i = 0; i < arg_count; i++) {
-		if (is_reference (get_type (arguments[i]))) {
-			arguments[i] = pointer_deref (arguments[i]);
-		}
-	}
 	auto call = new_intrinsic_expr (nullptr);
 	call->intrinsic.opcode = expr->intrinsic.opcode;
 	call->intrinsic.res_type = ftype->func.ret_type;
 	list_append_list (&call->intrinsic.operands,
 					  &expr->intrinsic.operands);
-	list_gather (&call->intrinsic.operands, arguments, arg_count);
+	if (expr->intrinsic.extra) {
+		if (expr->intrinsic.extra->type != ex_list) {
+			internal_error (expr->intrinsic.extra, "not a list");
+		}
+
+		auto params = new_symtab (current_symtab, stab_param);
+		int i = 0;
+		for (auto p = fsym->params; p; p = p->next, i++) {
+			if (!p->selector && !p->type && !p->name) {
+				internal_error (0, "inline variadic not implemented");
+			}
+			if (!p->type) {
+				continue;						// non-param selector
+			}
+			if (is_void (p->type)) {
+				if (p->name) {
+					error (0, "invalid parameter type for %s", p->name);
+				} else if (p != fsym->params || p->next) {
+					error (0, "void must be the only parameter");
+					continue;
+				} else {
+					continue;
+				}
+			}
+			if (!p->name) {
+				notice (0, "parameter name omitted");
+				continue;
+			}
+			auto psym = new_symbol (p->name);
+			psym->sy_type = sy_expr;
+			psym->expr = arguments[i];
+			symtab_addsymbol (params, psym);
+		}
+
+		auto extra = &expr->intrinsic.extra->list;
+		int extra_count = list_count (extra);
+		const expr_t *extra_args[extra_count + 1] = {};
+		list_scatter (extra, extra_args);
+
+		auto scope = current_symtab;
+		current_symtab = params;
+		for (int i = 0; i < extra_count; i++) {
+			extra_args[i] = expr_process (extra_args[i], ctx);
+		}
+		current_symtab = scope;
+		list_gather (&call->intrinsic.operands, extra_args, extra_count);
+	} else {
+		for (int i = 0; i < arg_count; i++) {
+			if (is_reference (get_type (arguments[i]))) {
+				arguments[i] = pointer_deref (arguments[i]);
+			}
+		}
+		list_gather (&call->intrinsic.operands, arguments, arg_count);
+	}
 	return call;
 }
 
@@ -389,7 +437,7 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 
 const expr_t *
 build_function_call (const expr_t *fexpr, const type_t *ftype,
-					 const expr_t *args)
+					 const expr_t *args, rua_ctx_t *ctx)
 {
 	int         param_count = 0;
 	const expr_t *err = 0;
@@ -421,7 +469,8 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		auto metafunc = fsym->metafunc;
 		auto expr = metafunc->expr;
 		if (expr->type == ex_intrinsic) {
-			return build_intrinsic_call (expr, ftype, arguments, arg_count);
+			return build_intrinsic_call (expr, fsym, ftype,
+										 arguments, arg_count, ctx);
 		}
 		if (metafunc->can_inline) {
 			return build_inline_call (fsym, ftype, arguments, arg_count);
@@ -484,7 +533,7 @@ function_expr (const expr_t *fexpr, const expr_t *args, rua_ctx_t *ctx)
 			PrecacheFile (expr_string (arg), fexpr->symbol->name[13]);
 	}
 
-	return build_function_call (fexpr, ftype, args);
+	return build_function_call (fexpr, ftype, args, ctx);
 }
 
 const expr_t *

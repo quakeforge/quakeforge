@@ -250,7 +250,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 			return err;
 		method_type = method->type;
 	}
-	call = build_function_call (send_msg, method_type, args);
+	call = build_function_call (send_msg, method_type, args, ctx);
 
 	if (call->type == ex_error)
 		return receiver;

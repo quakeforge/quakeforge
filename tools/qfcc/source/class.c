@@ -1672,8 +1672,9 @@ class_finish_module (rua_ctx_t *ctx)
 	module_expr = address_expr (new_symbol_expr (module_sym), 0);
 	module_expr = new_list_expr (module_expr);
 
-	add_ctor_expr (build_function_call (new_symbol_expr (exec_class_sym),
-										exec_class_sym->type, module_expr));
+	auto class_sym_expr = new_symbol_expr (exec_class_sym);
+	add_ctor_expr (build_function_call (class_sym_expr, exec_class_sym->type,
+										module_expr, ctx));
 }
 
 protocol_t *
