@@ -157,8 +157,7 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		transparent = true;
 	}
 	block->instance_name = instance_name;
-	auto type = new_type ();
-	*type = (type_t) {
+	type_t type = {
 		.type = ev_invalid,
 		.name = save_string (va (0, "blk %s", block->name->name)),
 		.alignment = 4,
@@ -167,11 +166,16 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		.meta = ty_struct,
 		.symtab = block->members,
 	};
+	auto inst_type = find_type (&type);
 	specifier_t spec = {
 		.sym = instance_name,
 		.storage = glsl_sc_from_iftype (block->interface),
 	};
-	spec.sym->type = find_type (type);
+	if (spec.sym->type) {
+		inst_type = append_type (spec.sym->type, inst_type);
+		inst_type = find_type (inst_type);
+	}
+	spec.sym->type = inst_type;
 	auto symtab = current_symtab;// FIXME
 	current_target.declare_sym (spec, nullptr, symtab, nullptr);
 
