@@ -1159,10 +1159,10 @@ SRC_LINE
 //geometry shader functions
 static const char *glsl_geometry_functions =
 SRC_LINE
-"void EmitStreamVertex(int stream);"    "\n"
-"void EndStreamPrimitive(int stream);"  "\n"
-"void EmitVertex();"                    "\n"
-"void EndPrimitive();"                  "\n";
+"void EmitStreamVertex(int stream) = " SPV(OpEmitStreamVertex) ";"      "\n"
+"void EndStreamPrimitive(int stream) = " SPV(OpEndStreamPrimitive) ";"  "\n"
+"void EmitVertex() = " SPV(OpEmitVertex) ";"                            "\n"
+"void EndPrimitive() = " SPV(OpEndPrimitive) ";"                        "\n";
 
 //fragment processing functions
 static const char *glsl_fragment_functions =
