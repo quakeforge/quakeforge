@@ -687,6 +687,9 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	if (spec.type && spec.type_expr) {
 		internal_error (0, "both type and type_expr set");
 	}
+	if (spec.storage == sc_local || spec.storage == sc_param) {
+		spec.is_function = false;
+	}
 	if (!spec.type_expr) {
 		spec = default_type (spec, spec.sym);
 	}
