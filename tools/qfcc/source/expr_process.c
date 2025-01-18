@@ -490,8 +490,8 @@ proc_assign (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto dst = expr_process (expr->assign.dst, ctx);
 	auto src = expr_process (expr->assign.src, ctx);
-	if (is_error (src)) {
-		return src;
+	if (is_error (dst)) {
+		return dst;
 	}
 	if (is_error (src)) {
 		return src;

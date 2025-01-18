@@ -68,6 +68,7 @@ typedef struct {
 	const type_t *result_type;
 	const expr_t *(*process)(const expr_t *e);
 	const expr_t *(*constant)(const expr_t *e);
+	bool        no_vectorize;
 } unary_type_t;
 
 static const expr_t *
@@ -299,8 +300,10 @@ static unary_type_t float_u[] = {
 };
 
 static unary_type_t vector_u[] = {
-	{ .op = '-', .result_type = &type_vector, .constant = vector_negate, },
-	{ .op = '!', .result_type = &type_bool,   .constant = vector_not,    },
+	{ .op = '-', .result_type = &type_vector, .constant = vector_negate,
+		.no_vectorize = true },
+	{ .op = '!', .result_type = &type_bool,   .constant = vector_not,
+		.no_vectorize = true },
 
 	{}
 };
@@ -331,9 +334,12 @@ static unary_type_t pointer_u[] = {
 };
 
 static unary_type_t quat_u[] = {
-	{ .op = '-', .result_type = &type_quaternion, .constant = quat_negate, },
-	{ .op = '!', .result_type = &type_bool,       .constant = quat_not,    },
-	{ .op = '~', .result_type = &type_quaternion, .constant = quat_conj,   },
+	{ .op = '-', .result_type = &type_quaternion, .constant = quat_negate,
+		.no_vectorize = true },
+	{ .op = '!', .result_type = &type_bool,       .constant = quat_not,
+		.no_vectorize = true },
+	{ .op = '~', .result_type = &type_quaternion, .constant = quat_conj,
+		.no_vectorize = true },
 
 	{}
 };
@@ -520,7 +526,7 @@ unary_expr (int op, const expr_t *e)
 	auto result_type = t;
 	if (unary_type->result_type) {
 		result_type = unary_type->result_type;
-		if (!is_handle (t)) {
+		if (!unary_type->no_vectorize && !is_handle (t)) {
 			result_type = matrix_type (result_type,
 									   type_cols (t), type_rows (t));
 		}
