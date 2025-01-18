@@ -256,6 +256,11 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 		}
 
 		build_call_scope (fsym, arguments);
+		if (current_target.setup_intrinsic_symtab) {
+			auto metafunc = fsym->metafunc;
+			auto func = metafunc->func;
+			current_target.setup_intrinsic_symtab (func->locals);
+		}
 
 		auto extra = &expr->intrinsic.extra->list;
 		int extra_count = list_count (extra);

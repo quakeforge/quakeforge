@@ -472,3 +472,69 @@ spirv_instruction_opcode (const char *set, const expr_t *opcode)
 	}
 	return instruction->opcode;
 }
+
+static symbol_t *
+spirv_kind_symbol (const char *name, symtab_t *symtab)
+{
+	symbol_t   *sym = nullptr;
+	spirv_kind_t *kind = symtab->procsymbol_data;
+
+	spirv_enumerant_t *enumerant = nullptr;
+	enumerant = bsearch (&(spirv_enumerant_t) { .enumerant = name },
+						 kind->enumerants, kind->num,
+						 sizeof (spirv_enumerant_t), spirv_enumerant_cmp);
+	if (enumerant) {
+		sym = new_symbol_type (name, &type_uint);
+		sym->sy_type = sy_const;
+		sym->value = new_uint_val (enumerant->value);
+	}
+	return sym;
+}
+
+static symbol_t *
+spirv_intrinsic_symbol (const char *name, symtab_t *symtab)
+{
+	symbol_t   *sym = nullptr;
+	spirv_grammar_t *grammar = symtab->procsymbol_data;
+
+	spirv_kind_t *kind = nullptr;
+	kind = bsearch (&(spirv_kind_t) { .kind = name },
+					grammar->operand_kinds, grammar->num_operand_kinds,
+					sizeof (spirv_kind_t), spirv_kind_cmp);
+	if (kind && strcmp (kind->category, "Composite") != 0
+		&& strcmp (kind->category, "Literal") != 1) {
+		if (!kind->symtab) {
+			kind->symtab = new_symtab (nullptr, stab_enum);
+			kind->symtab->procsymbol = spirv_kind_symbol;
+			kind->symtab->procsymbol_data = kind;
+		}
+		sym = new_symbol (name);
+		sym->sy_type = sy_namespace;
+		sym->namespace = kind->symtab;
+	}
+	return sym;
+}
+
+bool
+spirv_setup_intrinsic_symtab (symtab_t *symtab)
+{
+	if (!built) {
+		build_grammars ();
+		built = true;
+	}
+	const char *set = "core";
+	spirv_grammar_t *grammar = nullptr;
+	for (int i = 0; builtin_json[i].name; i++) {
+		if (strcmp (builtin_json[i].name, set) == 0) {
+			grammar = builtin_json[i].grammar;
+			break;
+		}
+	}
+	if (!grammar) {
+		error (0, "unrecognized grammar set %s", set);
+		return false;
+	}
+	symtab->procsymbol = spirv_intrinsic_symbol;
+	symtab->procsymbol_data = grammar;
+	return true;
+}

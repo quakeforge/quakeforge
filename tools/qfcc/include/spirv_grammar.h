@@ -30,6 +30,8 @@
 #ifndef __spirv_grammar_h
 #define __spirv_grammar_h
 
+typedef struct symtab_s symtab_t;
+
 typedef struct spirv_operand_s {
 	const char *kind;
 	char        quantifier;	// ?
@@ -58,6 +60,8 @@ typedef struct spirv_kind_s {
 		spirv_enumerant_t *enumerants;
 		const char **bases;
 	};
+
+	symtab_t   *symtab;
 } spirv_kind_t;
 
 typedef struct spirv_instruction_s {
@@ -94,5 +98,7 @@ typedef struct expr_s expr_t;
 const plitem_t *spirv_operand_kind (const char *set, const char *kind);
 
 uint32_t spirv_instruction_opcode (const char *set, const expr_t *opcode);
+
+bool spirv_setup_intrinsic_symtab (symtab_t *symtab);
 
 #endif//__spirv_grammar_h

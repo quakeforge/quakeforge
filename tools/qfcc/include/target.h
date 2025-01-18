@@ -50,6 +50,8 @@ typedef struct {
 	const expr_t *(*proc_caselabel) (const expr_t *expr, rua_ctx_t *ctx);
 	const expr_t *(*proc_address) (const expr_t *expr, rua_ctx_t *ctx);
 
+	bool      (*setup_intrinsic_symtab) (symtab_t *symtab);
+
 	unsigned    label_id;
 } target_t;
 

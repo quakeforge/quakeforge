@@ -1217,6 +1217,9 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 		sym->id = spirv_function_ref (func, ctx);
 	} else if (sym->sy_type == sy_var) {
 		sym->id = spirv_variable (sym, ctx);
+	} else if (sym->sy_type == sy_const) {
+		auto e = new_value_expr (sym->value, false);
+		sym->id = spirv_value (e, ctx);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
 						symtype_str (sym->sy_type), sym->name);
@@ -2205,4 +2208,5 @@ target_t spirv_target = {
 	.declare_sym = spirv_declare_sym,
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
+	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 };
