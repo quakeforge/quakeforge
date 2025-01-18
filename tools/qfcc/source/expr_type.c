@@ -198,8 +198,20 @@ evaluate_property (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 	if (!type->property) {
 		return error (args[0], "type doesn't support properties");
 	} else {
-		auto e = type->property (type, args[1]->typ.property);
-		if (!is_error (e)) {
+		auto property = args[1]->typ.property;
+		if (property->params) {
+			scoped_src_loc (property->params);
+			auto params = new_list_expr (nullptr);
+			if (!proc_do_list (&params->list, &property->params->list,
+							   ctx)) {
+				return nullptr;
+			}
+			auto prop = new_type_expr (nullptr);
+			property = new_attrfunc (property->name, params);
+			args[1] = prop;
+		}
+		auto e = type->property (type, property);
+		if (e->type == ex_type) {
 			e = eval_type (e, ctx);
 		}
 		return e;
@@ -873,10 +885,7 @@ process_type (const expr_t *te, rua_ctx_t *ctx)
 	int         arg_count = list_count (&te->typ.params->list);
 	const expr_t *args[arg_count];
 	list_scatter (&te->typ.params->list, args);
-	if (type_funcs[op].resolve) {
-		auto type = type_funcs[op].resolve (arg_count, args, ctx);
-		return new_type_expr (type);
-	} else if (type_funcs[op].evaluate) {
+	if (type_funcs[op].evaluate) {
 		return type_funcs[op].evaluate (arg_count, args, ctx);
 	} else {
 		internal_error (te, "invalid type op: %s", type_funcs[op].name);
@@ -920,6 +929,12 @@ eval_type (const expr_t *te, rua_ctx_t *ctx)
 		internal_error (te, "not a type expression");
 	}
 	unsigned    op = te->typ.op;
+	if (op == 0) {
+		if (!te->typ.type) {
+			internal_error (te, "type ref with no type");
+		}
+		return te;
+	}
 	if (op >= sizeof (type_funcs) / sizeof (type_funcs[0])
 		|| !type_funcs[op].name) {
 		internal_error (te, "invalid type op: %d", op);

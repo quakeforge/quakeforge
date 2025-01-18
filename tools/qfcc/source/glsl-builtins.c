@@ -66,6 +66,24 @@ static struct_def_t glsl_sampled_image_struct[] = {
 static int dim_widths[7] = { 1, 2, 3, 3, 2, 1, 0 };
 static int size_widths[7] = { 1, 2, 3, 2, 2, 1, 0 };
 static int shadow_widths[7] = { 3, 3, 0, 4, 3, 0, 0 };
+static const char *shadow_swizzle[7][2] = {
+	{ "x", "xy" },
+	{ "xy", "xyz" },
+	{},
+	{ "xyz", "xyzw" },
+	{ "xy", "xyz" },
+	{},
+	{},
+};
+static const char *shadow_comp_swizzle[7][2] = {
+	{ "z", "z" },	// glsl braindeadery for 1d (non-arrayed) images
+	{ "z", "w" },
+	{},
+	{ "w", "" },	// cubemap array shadows get comp from a param
+	{ "z", "w" },
+	{},
+	{},
+};
 
 static const expr_t *
 image_property (const type_t *type, const attribute_t *property)
@@ -104,6 +122,33 @@ image_property (const type_t *type, const attribute_t *property)
 }
 
 static const expr_t *
+sampled_shadow_swizzle (const attribute_t *property, const char *swizzle[7][2],
+						glsl_image_t *image)
+{
+	int count = list_count (&property->params->list);
+	if (count != 1) {
+		return error (property->params, "wrong number of params");
+	}
+	const expr_t *params[count];
+	list_scatter (&property->params->list, params);
+	const char *swiz = swizzle[image->dim][image->arrayed];
+	if (!swiz) {
+		return error (property->params, "image does not support"
+					  " shadow sampling");
+	}
+	if (!swiz[0]) {
+		// cube map array
+		return error (property->params, "cube map array shadow compare is not"
+					  " in the coordinate vector");
+	}
+	if (strcmp (swiz, "xyzw") == 0) {
+		// no-op swizzle
+		return params[0];
+	}
+	return new_swizzle_expr (params[0], swiz);
+}
+
+static const expr_t *
 sampled_image_property (const type_t *type, const attribute_t *property)
 {
 	auto image = &glsl_imageset.a[type->handle.extra];
@@ -123,6 +168,21 @@ sampled_image_property (const type_t *type, const attribute_t *property)
 		return new_type_expr (vector_type (&type_float, width));
 	} else if (strcmp (property->name, "shadow_coord") == 0) {
 		if (property->params) {
+			return sampled_shadow_swizzle (property, shadow_swizzle, image);
+		} else {
+			int width = shadow_widths[image->dim];
+			if (!image->depth || !width) {
+				return new_type_expr (&type_void);
+			}
+			if (image->dim == glid_2d) {
+				width += image->arrayed;
+			}
+			return new_type_expr (vector_type (&type_float, width));
+		}
+	} else if (strcmp (property->name, "comp") == 0) {
+		if (property->params) {
+			return sampled_shadow_swizzle (property, shadow_comp_swizzle,
+										   image);
 		} else {
 			int width = shadow_widths[image->dim];
 			if (!image->depth || !width) {

@@ -405,7 +405,7 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 	return error (expr, "undefined symbol `%s`", expr->symbol->name);
 }
 
-static bool
+bool
 proc_do_list (ex_list_t *out, const ex_list_t *in, rua_ctx_t *ctx)
 {
 	int count = list_count (in);

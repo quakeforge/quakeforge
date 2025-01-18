@@ -1166,6 +1166,7 @@ void decl_process (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
 specifier_t spec_process (specifier_t spec, rua_ctx_t *ctx);
 bool can_inline (const expr_t *expr, symbol_t *fsym);
+bool proc_do_list (ex_list_t *out, const ex_list_t *in, rua_ctx_t *ctx);
 
 ///@}
 
