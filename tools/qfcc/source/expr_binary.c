@@ -436,6 +436,21 @@ dot_product_expr (int op, const expr_t *a, const expr_t *b)
 	return e;
 }
 
+static const expr_t *
+boolean_op (int op, const expr_t *a, const expr_t *b)
+{
+	if (!is_boolean (get_type (a))) {
+		a = test_expr (a);
+	}
+	if (!is_boolean (get_type (b))) {
+		b = test_expr (b);
+	}
+	promote_exprs (&a, &b);
+	auto type = base_type (get_type (a));
+	auto e = typed_binary_expr (type, op, a, b);
+	return e;
+}
+
 static const type_t *
 bool_result (const type_t *a, const type_t *b)
 {
@@ -666,6 +681,8 @@ static expr_type_t bit_ops[] = {
 
 static expr_type_t bool_ops[] = {
 	{   .match_a = is_boolean, .match_b = is_boolean, },
+	{   .match_a = is_scalar, .match_b = is_scalar,
+			.process = boolean_op },
 
 	{}
 };
