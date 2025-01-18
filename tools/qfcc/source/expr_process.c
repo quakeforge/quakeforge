@@ -813,8 +813,11 @@ static const expr_t *
 proc_select (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto test = expr_process (expr->select.test, ctx);
+	edag_flush ();
 	auto true_body = expr_process (expr->select.true_body, ctx);
+	edag_flush ();
 	auto false_body = expr_process (expr->select.false_body, ctx);
+	edag_flush ();
 	scoped_src_loc (expr);
 	auto select = new_select_expr (expr->select.not, test, true_body, nullptr,
 								   false_body);
