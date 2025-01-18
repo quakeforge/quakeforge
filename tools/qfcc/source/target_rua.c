@@ -355,6 +355,21 @@ ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx)
 	return address_expr (e, nullptr);
 }
 
+static const expr_t *
+ruamoko_vector_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	// both e1 and e2 should have the same types here
+	auto type = get_type (e1);
+	if (op != QC_EQ && op != QC_NE) {
+		return error (e2, "invalid comparison for %s", type->name);
+	}
+	int hop = op == QC_EQ ? '&' : '|';
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = bool_type (type);
+	e = new_horizontal_expr (hop, e, &type_int);
+	return e;
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -365,4 +380,5 @@ target_t ruamoko_target = {
 	.proc_switch = ruamoko_proc_switch,
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
+	.vector_compare = ruamoko_vector_compare,
 };

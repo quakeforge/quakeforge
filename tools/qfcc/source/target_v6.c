@@ -193,6 +193,32 @@ v6p_assign_vector (const expr_t *dst, const expr_t *src)
 	return block;
 }
 
+static const expr_t *
+do_vector_compare (int op, const expr_t *e1, const expr_t *e2,
+				   const type_t *res_type)
+{
+	// both e1 and e2 should have the same types here
+	auto type = get_type (e1);
+	if (op != QC_EQ && op != QC_NE) {
+		return error (e2, "invalid comparison for %s", type->name);
+	}
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = res_type;
+	return e;
+}
+
+static const expr_t *
+v6_vector_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	return do_vector_compare (op, e1, e2, &type_float);
+}
+
+static const expr_t *
+v6p_vector_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	return do_vector_compare (op, e1, e2, &type_int);
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
@@ -204,6 +230,7 @@ target_t v6_target = {
 	.proc_switch = ruamoko_proc_switch,
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
+	.vector_compare = v6_vector_compare,
 };
 
 target_t v6p_target = {
@@ -217,4 +244,5 @@ target_t v6p_target = {
 	.proc_switch = ruamoko_proc_switch,
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
+	.vector_compare = v6p_vector_compare,
 };

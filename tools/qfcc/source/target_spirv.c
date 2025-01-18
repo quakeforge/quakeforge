@@ -2201,6 +2201,21 @@ spirv_assign_vector (const expr_t *dst, const expr_t *src)
 	return new_assign_expr (dst, new);;
 }
 
+static const expr_t *
+spirv_vector_compare (int op, const expr_t *e1, const expr_t *e2)
+{
+	// both e1 and e2 should have the same types here
+	auto type = get_type (e1);
+	if (op != QC_EQ && op != QC_NE) {
+		return error (e2, "invalid comparison for %s", type->name);
+	}
+	int hop = op == QC_EQ ? '&' : '|';
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = bool_type (type);
+	e = new_horizontal_expr (hop, e, &type_int);
+	return e;
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
@@ -2209,4 +2224,5 @@ target_t spirv_target = {
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
+	.vector_compare = spirv_vector_compare,
 };

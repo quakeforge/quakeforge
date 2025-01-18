@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/rua-lang.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 typedef struct {
@@ -213,13 +214,12 @@ math_compare (int op, const expr_t *e1, const expr_t *e2)
 		t1 = get_type (e1);
 		t2 = get_type (e2);
 	}
+	if (is_vector (t1) || is_quaternion (t1)) {
+		return current_target.vector_compare (op, e1, e2);
+	}
+
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = bool_type (t1);
-	if (is_vector (t1) || is_quaternion (t1)) {
-		//FIXME operators other than just == and != ?
-		int hop = op == QC_EQ ? '&' : '|';
-		e = new_horizontal_expr (hop, e, &type_int);
-	}
 	return e;
 }
 
