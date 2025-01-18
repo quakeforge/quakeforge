@@ -1943,6 +1943,10 @@ has_function_call (const expr_t *e)
 			// in is just a cast of out, if it's not null
 			return has_function_call (e->inout.out);
 		case ex_return:
+			if (!e->retrn.ret_val) {
+				// if there's no return value, can't possibly have a call
+				return false;
+			}
 			return has_function_call (e->retrn.ret_val);
 		case ex_horizontal:
 			return has_function_call (e->hop.vec);
