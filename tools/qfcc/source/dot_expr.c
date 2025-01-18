@@ -760,6 +760,23 @@ print_selector (dstring_t *dstr, const expr_t *e, int level, int id, const expr_
 }
 
 static void
+print_message (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->message.receiver, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->message.receiver);
+	for (auto kw = e->message.message; kw; kw = kw->next) {
+		_print_expr (dstr, kw->expr, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"%s\"];\n", indent, "", e,
+				   kw->expr, kw->selector);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\"];\n", indent, "", e,
+			   "[message]");
+}
+
+static void
 print_nil (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -951,6 +968,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_temp] = print_temp,
 		[ex_vector] = print_vector,
 		[ex_selector] = print_selector,
+		[ex_message] = print_message,
 		[ex_nil] = print_nil,
 		[ex_value] = print_value,
 		[ex_compound] = print_compound,
