@@ -822,7 +822,7 @@ DecodeArgs (int argc, char **argv)
 		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = true;
 		}
-		if (options.math.vector_mult == 0) {
+		if (!options_user_set.math.vector_mult) {
 			options.math.vector_mult = QC_DOT;
 		}
 	}
@@ -846,7 +846,7 @@ DecodeArgs (int argc, char **argv)
 		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = false;
 		}
-		if (!options_user_set.math.vector_mult == 0) {
+		if (!options_user_set.math.vector_mult) {
 			options.math.vector_mult = options.advanced == 1 ? QC_DOT
 															 : QC_HADAMARD;
 		}
