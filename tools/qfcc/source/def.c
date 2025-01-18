@@ -623,7 +623,7 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
 			append_expr (block, fold_constants (init));
-		} else if (is_constexpr (init)) {
+		} else if (!options.code.const_initializers && is_constexpr (init)) {
 			init = assign_expr (new_symbol_expr (sym), init);
 			add_ctor_expr (init);
 		} else {
