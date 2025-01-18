@@ -53,6 +53,19 @@ typedef struct {
 	int         true_op;
 } expr_type_t;
 
+static bool
+is_vector_compat (const type_t *type)
+{
+	return is_vector (type) || (is_nonscalar (type) && type_width (type) == 3);
+}
+
+static bool
+is_quaternion_compat (const type_t *type)
+{
+	return is_quaternion (type) || (is_nonscalar (type)
+									&& type_width (type) == 4);
+}
+
 static const expr_t *
 pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 {
@@ -567,14 +580,22 @@ static expr_type_t mul_ops[] = {
 			.promote = true, .process = matrix_scalar_mul, },
 	{	.match_a = is_vector,     .match_b = is_vector,
 			.process = vector_vector_mul, },
+	{	.match_a = is_vector,     .match_b = is_vector_compat,
+			.promote = true, .process = vector_vector_mul, },
+	{	.match_a = is_vector_compat, .match_b = is_vector,
+			.promote = true, .process = vector_vector_mul, },
 	{	.match_a = is_quaternion, .match_b = is_quaternion,
 			.process = quaternion_quaternion_expr, },
-	{	.match_a = is_quaternion, .match_b = is_vector,
+	{	.match_a = is_quaternion, .match_b = is_quaternion_compat,
+			.promote = true, .process = quaternion_quaternion_expr, },
+	{	.match_a = is_quaternion_compat, .match_b = is_quaternion,
+			.promote = true, .process = quaternion_quaternion_expr, },
+	{	.match_a = is_quaternion, .match_b = is_vector_compat,
 			.match_shape = shape_always,
-			.process = quaternion_vector_expr, },
-	{	.match_a = is_vector,     .match_b = is_quaternion,
+			.promote = true, .process = quaternion_vector_expr, },
+	{	.match_a = is_vector_compat,     .match_b = is_quaternion,
 			.match_shape = shape_always,
-			.process = vector_quaternion_expr, },
+			.promote = true, .process = vector_quaternion_expr, },
 	{   .match_a = is_math,       .match_b = is_math,
 			.promote = true },
 
@@ -590,6 +611,10 @@ static expr_type_t outer_ops[] = {
 
 static expr_type_t cross_ops[] = {
 	{   .match_a = is_vector, .match_b = is_vector, },
+	{   .match_a = is_vector, .match_b = is_vector_compat,
+			.promote = true },
+	{   .match_a = is_vector_compat, .match_b = is_vector,
+			.promote = true },
 
 	{}
 };
