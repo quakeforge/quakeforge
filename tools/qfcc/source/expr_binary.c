@@ -626,7 +626,8 @@ static expr_type_t mod_ops[] = {
 };
 
 static expr_type_t bit_ops[] = {
-	{   .match_a = is_math,     .match_b = is_math,     },
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
 
 	{}
 };
