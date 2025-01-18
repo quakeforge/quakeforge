@@ -454,7 +454,7 @@ count_terms (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_sum (e1) + !is_sum (e2);
+	int terms = (!is_sum (e1) || e1->paren) + (!is_sum (e2) || e2->paren);
 	if (!e1->paren && is_sum (e1)) {
 		terms += count_terms (expr->expr.e1);
 	}
