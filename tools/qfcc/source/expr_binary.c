@@ -160,6 +160,12 @@ entity_compare (int op, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
+static const expr_t *
+target_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	return current_target.shift_op (op, e1, e2);
+}
+
 static const type_t *
 promote_type (const type_t *dst, const type_t *src)
 {
@@ -504,7 +510,8 @@ static expr_type_t compare_ops[] = {
 };
 
 static expr_type_t shift_ops[] = {
-	{   .match_a = is_math,    .match_b = is_math,    },
+	{   .match_a = is_math,    .match_b = is_math,
+			.process = target_shift_op },
 
 	{}
 };

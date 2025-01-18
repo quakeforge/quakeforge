@@ -219,6 +219,41 @@ v6p_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	return do_vector_compare (op, e1, e2, &type_int);
 }
 
+static const expr_t *
+v6_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	return error (e1, "shift ops not supported");
+}
+
+static const expr_t *
+v6p_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+
+	if (!is_scalar (t1) || !is_scalar (t2)) {
+		return error (e1, "invalid operands for %s", get_op_string (op));
+	}
+	if (is_double (t1) && !e1->implicit) {
+		warning (e1, "shift of double");
+	}
+	if (is_double (t2) && !e2->implicit) {
+		warning (e2, "shift by double");
+	}
+	const type_t *type;
+	if (is_real (t1)) {
+		e1 = cast_expr (&type_float, e1);
+		e2 = cast_expr (&type_float, e2);
+		type = &type_float;
+	} else {
+		e2 = cast_expr (&type_int, e2);
+		type = t1;
+	}
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = type;
+	return fold_constants (e);
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
@@ -231,6 +266,7 @@ target_t v6_target = {
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = v6_vector_compare,
+	.shift_op = v6_shift_op,
 };
 
 target_t v6p_target = {
@@ -245,4 +281,5 @@ target_t v6p_target = {
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = v6p_vector_compare,
+	.shift_op = v6p_shift_op,
 };

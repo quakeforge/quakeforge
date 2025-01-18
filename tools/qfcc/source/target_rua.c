@@ -370,6 +370,42 @@ ruamoko_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
+static const expr_t *
+ruamoko_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+
+	if (is_matrix (t1) || is_matrix (t2)) {
+		return error (e1, "invalid operands for %s", get_op_string (op));
+	}
+	if (is_real (t1)) {
+		warning (e1, "shift of floating point value");
+	}
+	if (is_real (t2)) {
+		warning (e2, "shift by floating point value");
+	}
+	if (is_double (t1)) {
+		t1 = vector_type (&type_long, type_width (t1));
+		t2 = vector_type (&type_long, type_width (t1));
+	}
+	if (is_float (t1)) {
+		t1 = vector_type (&type_int, type_width (t1));
+		t2 = vector_type (&type_int, type_width (t1));
+	}
+	if (is_uint (t1) || is_int (t1)) {
+		t2 = vector_type (&type_int, type_width (t1));
+	}
+	if (is_ulong (t1) || is_long (t1)) {
+		t2 = vector_type (&type_long, type_width (t1));
+	}
+	e1 = cast_expr (t1, e1);
+	e2 = cast_expr (t2, e2);
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = t1;
+	return fold_constants (e);
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -381,4 +417,5 @@ target_t ruamoko_target = {
 	.proc_caselabel = ruamoko_proc_caselabel,
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = ruamoko_vector_compare,
+	.shift_op = ruamoko_shift_op,
 };

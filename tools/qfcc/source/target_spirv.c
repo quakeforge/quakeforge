@@ -2216,6 +2216,31 @@ spirv_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
+static const expr_t *
+spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	auto t1 = get_type (e1);
+	auto t2 = get_type (e2);
+
+	if (is_matrix (t1) || is_matrix (t2)) {
+		return error (e1, "invalid operands for %s", get_op_string (op));
+	}
+	if (!is_integral (t1) || !is_integral (t2)) {
+		return error (e1, "invalid operands for %s", get_op_string (op));
+	}
+	if (is_uint (t1)) {
+		t2 = vector_type (&type_int, type_width (t1));
+	}
+	if (is_ulong (t1)) {
+		t2 = vector_type (&type_long, type_width (t1));
+	}
+	e1 = cast_expr (t1, e1);
+	e2 = cast_expr (t2, e2);
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = t1;
+	return fold_constants (e);
+}
+
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
@@ -2225,4 +2250,5 @@ target_t spirv_target = {
 	.assign_vector = spirv_assign_vector,
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 	.vector_compare = spirv_vector_compare,
+	.shift_op = spirv_shift_op,
 };
