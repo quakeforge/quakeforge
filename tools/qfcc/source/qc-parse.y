@@ -534,7 +534,8 @@ static param_t *
 make_param (specifier_t spec, rua_ctx_t *ctx)
 {
 	//FIXME should not be sc_global
-	if (spec.storage == sc_global) {
+	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
+	if (spec.storage < sc_inout) {
 		spec.storage = sc_param;
 	}
 
