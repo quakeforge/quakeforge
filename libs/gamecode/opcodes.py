@@ -116,7 +116,7 @@ bitops_formats = {
     "opname": "{op_bit[oo]}",
     "format": "{bit_fmt[oo]}",
     "widths": "{ss+1}, { oo < 3 and ss+1 or 0}, {ss+1}",
-    "columns": "1, 1, 1",
+    "columns": "1, { oo < 3 and ss+1 or 0}, 1",
     "types": "{bit_types[t]}, {oo < 3 and bit_types[t] or 'ev_invalid'}, {bit_types[t]}",
     "args": {
         "op_bit": ["bitand", "bitor", "bitxor", "bitnot"],
