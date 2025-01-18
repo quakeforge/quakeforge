@@ -2808,9 +2808,9 @@ build_state_expr (const expr_t *e, rua_ctx_t *ctx)
 	}
 	const expr_t *state_args[3] = {};
 	list_scatter (&e->list, state_args);
-	const expr_t *frame = state_args[0];
+	const expr_t *frame = expr_process (state_args[0], ctx);
 	const expr_t *think = state_args[1];
-	const expr_t *step = state_args[2];
+	const expr_t *step = expr_process (state_args[2], ctx);
 
 	if (think->type == ex_symbol)
 		think = think_expr (think->symbol, ctx);
