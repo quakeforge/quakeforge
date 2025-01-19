@@ -845,7 +845,7 @@ const float *expr_quaternion (const expr_t *e) __attribute__((pure));
 const expr_t *new_bool_expr (bool bool_val);
 const expr_t *new_lbool_expr (bool lbool_val);
 
-/** Create a new itn constant expression node.
+/** Create a new int constant expression node.
 
 	\param int_val	The int constant being represented.
 	\param implicit	The constant was implicit and should be auto-cast
