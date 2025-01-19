@@ -186,6 +186,10 @@ promote_exprs (const expr_t **e1, const expr_t **e2)
 		//FIXME proper backing type for enum like handle
 		t1 = type_default;
 		t2 = type_default;
+	} else if (is_math (t1) && is_enum (t2)) {
+		t2 = promote_type (t1, t2);
+	} else if (is_math (t2) && is_enum (t1)) {
+		t1 = promote_type (t2, t1);
 	} else if ((is_vector (t1) || is_quaternion (t1))
 			   && (is_float (t2) || is_bool (t2))) {
 		t2 = promote_type (t1, t2);
