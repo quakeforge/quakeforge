@@ -157,5 +157,10 @@ tools/qfcc/source/qp-parse.c: tools/qfcc/source/qp-parse.y
 tools/qfcc/source/qp-lex.c: tools/qfcc/source/qp-lex.l
 	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 
+CLEANFILES += \
+	$(extinst_glsl_std_450_grammar_jinc) \
+	$(spirv_core_grammar_jinc)
+
 EXTRA_DIST += \
+	tools/qfcc/source/embed.py \
 	tools/qfcc/source/qfpreqcc

@@ -367,7 +367,7 @@ composef_c = $(vkshaderpath)/compose.frag.spvc
 compose_fwdf_src = $(vkshaderpath)/compose_fwd.frag
 compose_fwdf_c = $(vkshaderpath)/compose_fwd.frag.spvc
 infplane = $(vkshaderpath)/infplane.finc
-fog_h = $(vkshaderpath)/fog.finc
+fog = $(vkshaderpath)/fog.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -599,6 +599,7 @@ EXTRA_DIST += \
 	$(rp_main_def_src) \
 	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
+	$(fog) \
 	$(infplane) \
 	$(oit_blend) \
 	$(oit_store) \
