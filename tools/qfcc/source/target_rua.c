@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
@@ -406,6 +407,120 @@ ruamoko_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
+static const expr_t *
+ruamoko_test_expr (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto type = get_type (expr);
+	if (is_bool (type) && is_scalar (type)) {
+		return expr;
+	}
+	if (is_lbool (type) && is_scalar (type)) {
+		expr = new_alias_expr (&type_ivec2, expr);
+		expr = fold_constants (expr);
+		expr = edag_add_expr (expr);
+		return new_horizontal_expr ('|', expr, &type_int);
+	}
+	if (is_boolean (type)) {
+		// the above is_bool and is_lbool tests ensure a boolean type
+		// is a vector (there are no bool matrices)
+		type = base_type (type);
+		expr = new_horizontal_expr ('|', expr, type);
+		if (type_size (type) > 1) {
+			expr = fold_constants (expr);
+			expr = edag_add_expr (expr);
+			expr = new_alias_expr (&type_ivec2, expr);
+			expr = fold_constants (expr);
+			expr = edag_add_expr (expr);
+			expr = new_horizontal_expr ('|', expr, &type_bool);
+		}
+		return expr;
+	}
+	if (is_enum (type)) {
+		expr_t     *zero, *one;
+		if (!enum_as_bool (type, &zero, &one)) {
+			warning (expr, "enum doesn't convert to bool");
+		}
+		return new_alias_expr (&type_bool, expr);
+	}
+	switch (type->type) {
+		case ev_float:
+		case ev_double:
+		case ev_short:
+		case ev_ushort:
+		{
+			// short and ushort handled with the same code as float/double
+			// because they have no backing type and and thus constants, which
+			// fold_constants will take care of.
+			auto zero = new_zero_expr (type);
+			auto btype = bool_type (type);
+			expr = typed_binary_expr (btype, QC_NE, expr, zero);
+			if (type_width (btype) > 1) {
+				btype = base_type (btype);
+				expr = fold_constants (expr);
+				expr = edag_add_expr (expr);
+				expr = new_horizontal_expr ('|', expr, btype);
+			}
+			if (type_size (btype) > 1) {
+				expr = fold_constants (expr);
+				expr = edag_add_expr (expr);
+				expr = new_alias_expr (&type_ivec2, expr);
+				expr = fold_constants (expr);
+				expr = edag_add_expr (expr);
+				expr = new_horizontal_expr ('|', expr, &type_bool);
+			}
+			return expr;
+		}
+		case ev_vector:
+		case ev_quaternion:
+		{
+			auto zero = new_zero_expr (type);
+			auto btype = bool_type (type);
+			expr = typed_binary_expr (btype, QC_NE, expr, zero);
+			expr = fold_constants (expr);
+			expr = edag_add_expr (expr);
+			expr = new_horizontal_expr ('|', expr, &type_bool);
+			return expr;
+		}
+		case ev_string:
+			if (!options.code.ifstring) {
+				return new_alias_expr (&type_bool, expr);
+			}
+			return typed_binary_expr (&type_bool, QC_NE, expr,
+									  new_string_expr (0));
+		case ev_int:
+		case ev_uint:
+			if (type_width (type) > 1) {
+				expr = new_horizontal_expr ('|', expr, &type_int);
+				expr = fold_constants (expr);
+				expr = edag_add_expr (expr);
+			}
+			if (is_constant (expr)) {
+				return new_bool_expr (expr_int (expr));
+			}
+			return new_alias_expr (&type_bool, expr);
+		case ev_long:
+		case ev_ulong:
+			if (type_width (type) > 1) {
+				expr = new_horizontal_expr ('|', expr, &type_long);
+				expr = fold_constants (expr);
+				expr = edag_add_expr (expr);
+			}
+			expr = new_alias_expr (&type_ivec2, expr);
+			return new_horizontal_expr ('|', expr, &type_int);
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_ptr:
+			return new_alias_expr (&type_bool, expr);
+		case ev_void:
+		case ev_invalid:
+		case ev_type_count:
+			break;
+	}
+	return error (expr, "cannot convert to bool");
+}
+
 target_t ruamoko_target = {
 	.value_too_large = ruamoko_value_too_large,
 	.build_scope = ruamoko_build_scope,
@@ -418,4 +533,5 @@ target_t ruamoko_target = {
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = ruamoko_vector_compare,
 	.shift_op = ruamoko_shift_op,
+	.test_expr = ruamoko_test_expr,
 };

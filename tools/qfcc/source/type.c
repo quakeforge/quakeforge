@@ -1130,7 +1130,7 @@ print_type_str (dstring_t *str, const type_t *type)
 			}
 			return;
 		case ty_bool:
-			dasprintf (str, " %s%s", type->type == ev_int ? "bool" : "lbool",
+			dasprintf (str, " %s%s", is_bool (type) ? "bool" : "lbool",
 					   type->width > 1 ? va (0, "{%d}", type->width)
 									   : "");
 			return;
@@ -1505,7 +1505,7 @@ is_bool (const type_t *type)
 	if (type->meta != ty_bool) {
 		return false;
 	}
-	return type->type == ev_int;
+	return type->type == ev_int || type->type == ev_float;
 }
 
 bool
@@ -2059,6 +2059,11 @@ chain_basic_types (void)
 	if (options.code.progsversion == PROG_VERSION) {
 		type_quaternion.alignment = 4;
 	}
+	if (options.code.progsversion == PROG_ID_VERSION) {
+		type_bool.type = ev_float;
+	} else {
+		type_bool.type = ev_int;
+	}
 
 	chain_type (&type_void);
 	chain_type (&type_string);
@@ -2069,6 +2074,7 @@ chain_basic_types (void)
 	chain_type (&type_func);
 	chain_type (&type_ptr);
 	chain_type (&type_floatfield);
+	chain_type (&type_bool);
 	if (!options.traditional) {
 		chain_type (&type_quaternion);
 		chain_type (&type_int);
@@ -2084,7 +2090,6 @@ chain_basic_types (void)
 #include "tools/qfcc/include/vec_types.h"
 #define MAT_TYPE(name, type, cols, align_as) chain_type (&type_##name);
 #include "tools/qfcc/include/mat_types.h"
-			chain_type (&type_bool);
 			chain_type (&type_bvec2);
 			chain_type (&type_bvec3);
 			chain_type (&type_bvec4);

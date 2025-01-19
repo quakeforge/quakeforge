@@ -186,9 +186,11 @@ promote_exprs (const expr_t **e1, const expr_t **e2)
 		//FIXME proper backing type for enum like handle
 		t1 = type_default;
 		t2 = type_default;
-	} else if ((is_vector (t1) || is_quaternion (t1)) && is_float (t2)) {
+	} else if ((is_vector (t1) || is_quaternion (t1))
+			   && (is_float (t2) || is_bool (t2))) {
 		t2 = promote_type (t1, t2);
-	} else if ((is_vector (t2) || is_quaternion (t2)) && is_float (t1)) {
+	} else if ((is_vector (t2) || is_quaternion (t2))
+			   && (is_float (t1) || is_bool (t2))) {
 		t1 = promote_type (t2, t1);
 	} else if (type_promotes (t1, t2)) {
 		t2 = promote_type (t1, t2);
@@ -952,7 +954,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 
 	if (expr_type->process) {
 		auto e = expr_type->process (op, e1, e2);
-		return edag_add_expr (e);
+		return edag_add_expr (fold_constants (e));
 	}
 
 	auto type = t1;
@@ -980,11 +982,6 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 	if (expr_type->associative) {
 		ne->expr.associative = expr_type->associative ();
-	}
-	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion == PROG_ID_VERSION) {
-			ne->expr.type = &type_float;
-		}
 	}
 	return edag_add_expr (fold_constants (ne));
 }

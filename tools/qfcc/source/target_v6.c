@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
@@ -254,6 +255,125 @@ v6p_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
+static const expr_t *
+v6_test_expr (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto type = get_type (expr);
+	if (is_bool (type)) {
+		return expr;
+	}
+	if (is_enum (type)) {
+		expr_t     *zero, *one;
+		if (!enum_as_bool (type, &zero, &one)) {
+			warning (expr, "enum doesn't convert to bool");
+		}
+		return new_alias_expr (&type_bool, expr);
+	}
+	switch (type->type) {
+		case ev_float:
+		{
+			// short and ushort handled with the same code as float/double
+			// because they have no backing type and and thus constants, which
+			// fold_constants will take care of.
+			auto zero = new_zero_expr (type);
+			auto btype = bool_type (type);
+			expr = typed_binary_expr (btype, QC_NE, expr, zero);
+			return expr;
+		}
+		case ev_vector:
+		case ev_quaternion:
+		{
+			auto zero = new_zero_expr (type);
+			return typed_binary_expr (&type_bool, QC_NE, expr, zero);
+		}
+		case ev_string:
+			if (!options.code.ifstring) {
+				return new_alias_expr (&type_bool, expr);
+			}
+			return typed_binary_expr (&type_bool, QC_NE, expr,
+									  new_string_expr (0));
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_ptr:
+			return new_alias_expr (&type_bool, expr);
+		case ev_int:
+		case ev_uint:
+		case ev_long:
+		case ev_ulong:
+		case ev_double:
+		case ev_short:
+		case ev_ushort:
+		case ev_void:
+		case ev_invalid:
+		case ev_type_count:
+			break;
+	}
+	return error (expr, "cannot convert to bool");
+}
+
+static const expr_t *
+v6p_test_expr (const expr_t *expr)
+{
+	scoped_src_loc (expr);
+	auto type = get_type (expr);
+	if (is_bool (type)) {
+		return expr;
+	}
+	if (is_enum (type)) {
+		expr_t     *zero, *one;
+		if (!enum_as_bool (type, &zero, &one)) {
+			warning (expr, "enum doesn't convert to bool");
+		}
+		return new_alias_expr (&type_bool, expr);
+	}
+	switch (type->type) {
+		case ev_float:
+		case ev_double:
+		case ev_short:
+		case ev_ushort:
+		{
+			// short and ushort handled with the same code as float/double
+			// because they have no backing type and and thus constants, which
+			// fold_constants will take care of.
+			auto zero = new_zero_expr (type);
+			expr = typed_binary_expr (&type_bool, QC_NE, expr, zero);
+			return expr;
+		}
+		case ev_vector:
+		case ev_quaternion:
+		{
+			auto zero = new_zero_expr (type);
+			return typed_binary_expr (&type_bool, QC_NE, expr, zero);
+		}
+		case ev_string:
+			if (!options.code.ifstring) {
+				return new_alias_expr (&type_bool, expr);
+			}
+			return typed_binary_expr (&type_bool, QC_NE, expr,
+									  new_string_expr (0));
+		case ev_int:
+		case ev_uint:
+			if (is_constant (expr)) {
+				return new_bool_expr (expr_int (expr));
+			}
+			return new_alias_expr (&type_bool, expr);
+		case ev_entity:
+		case ev_field:
+		case ev_func:
+		case ev_ptr:
+			return new_alias_expr (&type_bool, expr);
+		case ev_long:
+		case ev_ulong:
+		case ev_void:
+		case ev_invalid:
+		case ev_type_count:
+			break;
+	}
+	return error (expr, "cannot convert to bool");
+}
+
 target_t v6_target = {
 	.value_too_large = v6_value_too_large,
 	.build_scope = v6p_build_scope,
@@ -267,6 +387,7 @@ target_t v6_target = {
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = v6_vector_compare,
 	.shift_op = v6_shift_op,
+	.test_expr = v6_test_expr,
 };
 
 target_t v6p_target = {
@@ -282,4 +403,5 @@ target_t v6p_target = {
 	.proc_address = ruamoko_proc_address,
 	.vector_compare = v6p_vector_compare,
 	.shift_op = v6p_shift_op,
+	.test_expr = v6p_test_expr,
 };

@@ -124,15 +124,8 @@ cast_expr (const type_t *dstType, const expr_t *e)
 			return conditional_expr (e, enum_one, enum_zero);
 		}
 	}
-	if (is_integral (dstType) && is_boolean (srcType)) {
-		auto type = dstType;
-		if (type_size (dstType) != type_size (srcType)) {
-			type = ev_types[srcType->type];
-		}
-		e = new_alias_expr (type, e);
-		if (type != dstType) {
-			e = cast_expr (dstType, e);
-		}
+	if (is_boolean (srcType) && srcType->type == dstType->type) {
+		e = new_alias_expr (dstType, e);
 		return e;
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {

@@ -816,6 +816,7 @@ static const expr_t *
 proc_select (const expr_t *expr, rua_ctx_t *ctx)
 {
 	auto test = expr_process (expr->select.test, ctx);
+	test = test_expr (test);
 	edag_flush ();
 	auto true_body = expr_process (expr->select.true_body, ctx);
 	edag_flush ();

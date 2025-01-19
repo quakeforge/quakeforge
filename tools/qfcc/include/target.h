@@ -52,6 +52,7 @@ typedef struct {
 	// for both vector and quaternion types
 	const expr_t *(*vector_compare)(int op, const expr_t *e1, const expr_t *e2);
 	const expr_t *(*shift_op)(int op, const expr_t *e1, const expr_t *e2);
+	const expr_t *(*test_expr) (const expr_t *expr);
 
 	bool      (*setup_intrinsic_symtab) (symtab_t *symtab);
 

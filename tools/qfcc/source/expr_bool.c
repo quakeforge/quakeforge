@@ -62,100 +62,36 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
 const expr_t *
 test_expr (const expr_t *e)
 {
-	const expr_t *new = 0;
-
-	if (e->type == ex_error)
+	if (is_error (e)) {
 		return e;
-
+	}
+	if (e->type == ex_bool) {
+		return e;
+	}
 	auto type = get_type (e);
-	if (e->type == ex_error)
-		return e;
-	scoped_src_loc (e);
-	switch (type->type) {
-		case ev_type_count:
-			internal_error (e, 0);
-		case ev_void:
-			if (options.traditional) {
-				if (options.warnings.traditional)
-					warning (e, "void has no value");
-				return e;
-			}
-			return error (e, "void has no value");
-		case ev_string:
-			if (!options.code.ifstring)
-				return new_alias_expr (type_default, e);
-			new = new_string_expr (0);
-			break;
-		case ev_long:
-		case ev_ulong:
-			if (type->width > 1) {
-				e = new_horizontal_expr ('|', e, &type_long);
-			}
-			e = new_alias_expr (&type_ivec2, e);
-			return new_horizontal_expr ('|', e, &type_int);
-		case ev_ushort:
-			internal_error (e, "ushort not implemented");
-		case ev_uint:
-		case ev_int:
-		case ev_short:
-			if (type->width > 1) {
-				e = new_horizontal_expr ('|', e, &type_int);
-			}
-			if (!is_int(type_default)) {
-				if (is_constant (e)) {
-					return cast_expr (type_default, e);
-				}
-				return new_alias_expr (type_default, e);
+	if (!type) {
+		// an error occured while getting the type and was already reported
+		return new_error_expr ();
+	}
+	if (is_void (type)) {
+		if (options.traditional) {
+			if (options.warnings.traditional) {
+				warning (e, "void has no value");
 			}
 			return e;
-		case ev_float:
-			if (options.code.progsversion < PROG_VERSION
-				&& (options.code.fast_float
-					|| options.code.progsversion == PROG_ID_VERSION)) {
-				if (!is_float(type_default)) {
-					if (is_constant (e)) {
-						return cast_expr (type_default, e);
-					}
-					return new_alias_expr (type_default, e);
-				}
-				return e;
-			}
-			new = new_zero_expr (type);
-			new = binary_expr (QC_NE, e, new);
-			return test_expr (new);
-		case ev_double:
-			new = new_zero_expr (type);
-			new = binary_expr (QC_NE, e, new);
-			return test_expr (new);
-		case ev_vector:
-			new = new_zero_expr (&type_vector);
-			break;
-		case ev_entity:
-			return new_alias_expr (type_default, e);
-		case ev_field:
-			return new_alias_expr (type_default, e);
-		case ev_func:
-			return new_alias_expr (type_default, e);
-		case ev_ptr:
-			return new_alias_expr (type_default, e);
-		case ev_quaternion:
-			new = new_zero_expr (&type_quaternion);
-			break;
-		case ev_invalid:
-			if (is_enum (type)) {
-				new = new_nil_expr ();
-				break;
-			}
-			return test_error (e, get_type (e));
+		}
+		return error (e, "void has no value");
 	}
-	new = binary_expr (QC_NE, e, new);
-	return new;
+	e = current_target.test_expr (e);
+	fold_constants (e);
+	return edag_add_expr (e);
 }
 
 void

@@ -111,9 +111,7 @@ get_type (const expr_t *e)
 			type = e->compound.type;
 			break;
 		case ex_bool:
-			if (options.code.progsversion == PROG_ID_VERSION)
-				return &type_float;
-			return &type_int;
+			return &type_bool;
 		case ex_nil:
 			if (e->nil) {
 				type = e->nil;
