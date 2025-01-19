@@ -304,7 +304,7 @@ typedef struct {
 typedef struct {
 	int         op;				///< operation to perform
 	const expr_t *vec;			///< vector expression on which to operate
-	type_t     *type;			///< result type
+	const type_t *type;			///< result type
 } ex_horizontal_t;
 
 typedef struct {
@@ -669,7 +669,7 @@ const expr_t *paren_expr (const expr_t *e);
 	\return			The new unary expression node (::ex_expr_t) if \a e1
 					is not an error expression, otherwise \a e1.
 */
-expr_t *new_horizontal_expr (int op, const expr_t *vec, type_t *type);
+expr_t *new_horizontal_expr (int op, const expr_t *vec, const type_t *type);
 
 const expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 

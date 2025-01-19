@@ -2064,7 +2064,7 @@ expr_horizontal (sblock_t *sblock, const expr_t *e, operand_t **op)
 	const char *opcode = "hops";
 	statement_t *s;
 	int         hop;
-	type_t     *res_type = e->hop.type;
+	const type_t *res_type = e->hop.type;
 	auto vec_type = get_type (e->hop.vec);
 
 	switch (e->hop.op) {

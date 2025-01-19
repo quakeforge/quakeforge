@@ -609,7 +609,7 @@ paren_expr (const expr_t *e)
 }
 
 expr_t *
-new_horizontal_expr (int op, const expr_t *vec, type_t *type)
+new_horizontal_expr (int op, const expr_t *vec, const type_t *type)
 {
 	if (vec->type == ex_error) {
 		return (expr_t *) vec;
