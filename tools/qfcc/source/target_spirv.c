@@ -2241,12 +2241,6 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
-static const expr_t *
-spirv_test_expr (const expr_t *expr)
-{
-	return error (expr, "not implemented");
-}
-
 target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
@@ -2257,5 +2251,7 @@ target_t spirv_target = {
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 	.vector_compare = spirv_vector_compare,
 	.shift_op = spirv_shift_op,
-	.test_expr = spirv_test_expr,
+	// ruamoko and spirv are mostly compatible for bools other than lbool
+	// but that's handled by spirv_mirror_bool
+	.test_expr = ruamoko_test_expr,
 };

@@ -71,5 +71,6 @@ const expr_t *ruamoko_proc_switch (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *ruamoko_field_array (const expr_t *e);
 const expr_t *ruamoko_proc_address (const expr_t *expr, rua_ctx_t *ctx);
+const expr_t *ruamoko_test_expr (const expr_t *expr);
 
 #endif//__target_h

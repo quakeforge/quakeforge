@@ -407,7 +407,7 @@ ruamoko_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
-static const expr_t *
+const expr_t *
 ruamoko_test_expr (const expr_t *expr)
 {
 	scoped_src_loc (expr);
