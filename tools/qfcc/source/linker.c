@@ -1447,8 +1447,13 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	error (0, "%s", string->str);
 }
 
@@ -1465,8 +1470,13 @@ def_warning (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	warning (0, "%s", string->str);
 }
 

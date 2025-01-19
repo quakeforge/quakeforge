@@ -20,4 +20,5 @@ export QCSYSPREFIX=$MINGW_USR
 	--enable-silent-rules \
 	--host=x86_64-w64-mingw32.static \
 	--disable-shared \
+	--disable-lto \
 	$*

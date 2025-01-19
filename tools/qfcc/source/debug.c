@@ -43,6 +43,7 @@
 #include "QF/alloc.h"
 #include "QF/progs/pr_comp.h"
 
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -65,8 +66,7 @@ push_source_file (void)
 {
 	srcline_t  *srcline;
 	ALLOC (16, srcline_t, srclines, srcline);
-	srcline->source_file = pr.source_file;
-	srcline->source_line = pr.source_line;
+	srcline->loc = pr.loc;
 	srcline->next = pr.srcline_stack;
 	pr.srcline_stack = srcline;
 }
@@ -81,6 +81,7 @@ pop_source_file (void)
 		return;
 	}
 	tmp = pr.srcline_stack;
+	pr.loc = tmp->loc;
 	pr.srcline_stack = tmp->next;
 	FREE (srclines, tmp);
 }
@@ -89,7 +90,7 @@ pop_source_file (void)
 void
 add_source_file (const char *file)
 {
-	pr.source_file = ReuseString (file);
+	pr.loc.file = ReuseString (file);
 	if (!strpool_findstr (pr.comp_file_set, file)) {
 		strpool_addstr (pr.comp_file_set, file);
 		DARRAY_APPEND (&pr.comp_files, save_string (file));
@@ -97,38 +98,28 @@ add_source_file (const char *file)
 }
 
 void
-line_info (char *text)
+set_line_file (int line, const char *file, int flags)
 {
-	char *p;
-	char *s;
-	const char *str;
-	int line;
-	int flags;
-
-	p = text;
-	line = strtol (p, &s, 10);
-	p = s;
-	while (isspace ((unsigned char)*p))
-		p++;
-	if (!*p)
-		error (0, "Unexpected end of file");
-	str = make_string (p, &s);		// grab the filename
-	p = s;
-	while (isspace ((unsigned char) *p))
-		p++;
-	flags = strtol (p, &s, 10);
-	switch (flags) {
+	switch (flags & 3) {
 		case 1:
 			push_source_file ();
 			break;
 		case 2:
 			pop_source_file ();
+			file = GETSTR (pr.loc.file);
+			line = pr.loc.line;
 			break;
 	}
-	while (*p && *p != '\n')	// ignore rest
-		p++;
-	pr.source_line = line - 1;
-	add_source_file (str);
+	pr.loc = (rua_loc_t) {
+		.line = line,
+		.column = 1,
+		.last_line = line,
+		.last_column = 1,
+		.file = ReuseString (file),
+	};
+	if (file) {
+		add_source_file (file);
+	}
 }
 
 pr_lineno_t *

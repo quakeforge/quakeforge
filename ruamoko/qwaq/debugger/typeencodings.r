@@ -36,6 +36,7 @@ static void type_free (void *t, void *unused)
 	qfot_type_t *type = (qfot_type_t *) t;
 	str_free (type.encoding);
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
 		case ty_array:
 			break;
@@ -112,6 +113,7 @@ static void type_free (void *t, void *unused)
 		goto error;
 	}
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
 			if (type.type == ev_ptr || type.type == ev_field) {
 				t = [TypeEncodings getType:(unsigned)type.fldptr.aux_type
@@ -219,12 +221,14 @@ error:
 		case ty_handle:
 			size = pr_type_size[type.type];
 			break;
+		case ty_bool:
 		case ty_basic:
-			size = pr_type_size[type.type] * type.basic.width;
+			size = pr_type_size[type.type] * type.basic.width
+					* type.basic.columns;
 			break;
 		case ty_array:
 			aux_type = type.array.type;
-			size = type.array.size * [TypeEncodings typeSize:aux_type];
+			size = type.array.count * [TypeEncodings typeSize:aux_type];
 			break;
 		case ty_struct:
 			for (int i = 0; i < type.strct.num_fields; i++) {

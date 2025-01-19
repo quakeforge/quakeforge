@@ -231,6 +231,8 @@ qfcc_include_qf = include/QF/input.h
 qfcc_include_qf_progs =	include/QF/progs/pr_type_names.h
 qfcc_include_qf_input = \
 	include/QF/input/binding.h \
+	include/QF/input/event.h \
+	include/QF/input/event_names.h \
 	include/QF/input/imt.h
 
 qf_includedir = $(includedir)/QF

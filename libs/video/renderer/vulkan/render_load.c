@@ -162,7 +162,33 @@ count_rp_stuff (qfv_renderpassinfo_t *rpi, objcount_t *counts)
 	counts->num_attachments += rpi->framebuffer.num_attachments;
 	counts->num_subpasses += rpi->num_subpasses;
 	for (uint32_t i = 0; i < rpi->num_subpasses; i++) {
-		count_sp_stuff (&rpi->subpasses[i], counts);
+		auto spi = &rpi->subpasses[i];
+		count_sp_stuff (spi, counts);
+		if (!strcmp (spi->name, "$external")) {
+			counts->num_subpasses--;
+			if (i != rpi->num_subpasses - 1) {
+				Sys_Error ("%s: external subpass not last in list", rpi->name);
+			}
+			if (spi->attachments) {
+				Sys_Error ("%s: external subpass cannot have attachments",
+						   rpi->name);
+			}
+			if (spi->num_pipelines || spi->base_pipeline) {
+				Sys_Error ("%s: external subpass cannot have pipelines",
+						   rpi->name);
+			}
+			if (!spi->num_dependencies) {
+				Sys_Error ("%s: external subpass has no dependencies",
+						   rpi->name);
+			}
+			for (uint32_t j = 0; j < spi->num_dependencies; j++) {
+				auto d = &spi->dependencies[j];
+				if (!strcmp (d->name, "$external")) {
+					Sys_Error ("%s: external subpass has external dependency",
+							   rpi->name);
+				}
+			}
+		}
 	}
 }
 
@@ -510,7 +536,7 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	for (uint32_t i = 0; i < li->num_sets; i++) {
 		sets[i] = find_descriptorSet (&li->sets[i], s);
 	}
-	VkPushConstantRange ranges[li->num_pushconstantranges];
+	VkPushConstantRange ranges[li->num_pushconstantranges + 1];
 	uint32_t    offset = 0;
 	for (uint32_t i = 0; i < li->num_pushconstantranges; i++) {
 		offset = parse_pushconstantrange (&ranges[i],
@@ -614,7 +640,7 @@ init_cbCreate (const qfv_attachmentrefinfo_t *ari, objstate_t *s)
 	*cbc = ari->blend;
 }
 
-static void
+static bool
 init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 {
 	s->spi = &sub[index];
@@ -628,12 +654,13 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 	*s->spc = (VkSubpassDescription) {
 		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 	};
+	bool external = !strcmp (s->spi->name, "$external");
 	for (uint32_t i = 0; i < s->spi->num_dependencies; i++) {
 		__auto_type d = &s->spi->dependencies[i];
 		__auto_type dep = &s->ptr.depend[s->inds.num_dependencies++];
 		*dep = (VkSubpassDependency) {
 			.srcSubpass = find_subpass (d, index, s->rpi->subpasses),
-			.dstSubpass = index,
+			.dstSubpass = external ? VK_SUBPASS_EXTERNAL : index,
 			.srcStageMask = d->src.stage,
 			.dstStageMask = d->dst.stage,
 			.srcAccessMask = d->src.access,
@@ -658,7 +685,7 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 
 	__auto_type att = s->spi->attachments;
 	if (!att) {
-		return;
+		return external;
 	}
 	for (uint32_t i = 0; i < s->spi->num_pipelines; i++) {
 		cbs[i].attachmentCount = att->num_color;
@@ -699,6 +726,7 @@ init_spCreate (uint32_t index, qfv_subpassinfo_t *sub, objstate_t *s)
 			= find_attachment (&att->preserve[i], s);
 		s->inds.num_preserve++;
 	}
+	return external;
 }
 
 static void
@@ -766,7 +794,10 @@ init_rpCreate (uint32_t index, const qfv_renderinfo_t *rinfo, objstate_t *s)
 
 	uint32_t    num_dependencies = s->inds.num_dependencies;
 	for (uint32_t i = 0; i < s->rpi->num_subpasses; i++) {
-		init_spCreate (i, s->rpi->subpasses, s);
+		if (init_spCreate (i, s->rpi->subpasses, s)) {
+			s->rpi->num_subpasses--;
+			continue;
+		}
 		s->inds.num_subpasses++;
 	}
 	num_dependencies = s->inds.num_dependencies - num_dependencies;

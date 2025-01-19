@@ -131,8 +131,6 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
 	auto mctx = ctx->matrix_context;
 	auto mframe = &mctx->frames.a[ctx->curFrame];
 
@@ -150,23 +148,11 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfv_matrix_buffer_t *m = QFV_PacketExtend (packet, sizeof (*m));
 	*m = mctx->matrices;
 
-	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];		bb.barrier.buffer = mframe->buffer;
-	bb.barrier.size = packet->length;
-
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-
-	VkBufferCopy copy_region = { packet->offset, 0, packet->length };
-	dfunc->vkCmdCopyBuffer (packet->cmd, mctx->stage->buffer,
-							mframe->buffer, 1, &copy_region);
-
-	bb = bufferBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	bb.barrier.buffer = mframe->buffer;
-	bb.barrier.size = packet->length;
-
-	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
-								 0, 0, 0, 1, &bb.barrier, 0, 0);
-
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	db.dstStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	db.dstStages |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, mframe->buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 }
 

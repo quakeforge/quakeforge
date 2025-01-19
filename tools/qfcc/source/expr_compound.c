@@ -82,7 +82,7 @@ new_element (const expr_t *expr, designator_t *designator)
 	return element;
 }
 
-static element_t *
+element_t *
 append_init_element (element_chain_t *element_chain, element_t *element)
 {
 	element->next = 0;
@@ -108,9 +108,9 @@ designator_field (const designator_t *des, const type_t *type)
 		error (des->index, "designator index in non-array");
 		return 0;
 	}
-	symtab_t   *symtab = type->t.symtab;
+	symtab_t   *symtab = type->symtab;
 	symbol_t   *sym = des->field->symbol;
-	symbol_t   *field = symtab_lookup (symtab, sym->name);;
+	symbol_t   *field = symtab_lookup (symtab, sym->name);
 	if (!field) {
 		const char *name = type->name;
 		if (!strncmp (name, "tag ", 4)) {
@@ -123,7 +123,7 @@ designator_field (const designator_t *des, const type_t *type)
 }
 
 static int
-designator_index (const designator_t *des, int ele_size, int array_size)
+designator_index (const designator_t *des, int ele_size, int array_count)
 {
 	if (des->field) {
 		error (des->field, "field designator in array initializer");
@@ -136,18 +136,12 @@ designator_index (const designator_t *des, int ele_size, int array_size)
 		return -1;
 	}
 	int         index = expr_integral (des->index);
-	if (index <= 0 || index >= array_size) {
+	if (index <= 0 || index >= array_count) {
 		error (des->index, "designator index out of bounds");
 		return -1;
 	}
 	return index * ele_size;
 }
-
-typedef struct {
-	const type_t *type;
-	symbol_t   *field;
-	int         offset;
-} initstate_t;
 
 static initstate_t
 get_designated_offset (const type_t *type, const designator_t *des)
@@ -158,17 +152,17 @@ get_designated_offset (const type_t *type, const designator_t *des)
 
 	if (is_struct (type) || is_union (type)) {
 		field = designator_field (des, type);
-		offset = field->s.offset;
+		offset = field->offset;
 		ele_type = field->type;
 	} else if (is_array (type)) {
-		int         array_size = type->t.array.size;
+		int         array_count = type->array.count;
 		ele_type = dereference_type (type);
-		offset = designator_index (des, type_size (ele_type), array_size);
+		offset = designator_index (des, type_size (ele_type), array_count);
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
-		if (type->t.symtab && des->field) {
+		if (type->symtab && des->field) {
 			field = designator_field (des, type);
-			offset = field->s.offset;
+			offset = field->offset;
 		} else {
 			int         vec_width = type_width (type);
 			offset = designator_index (des, type_size (ele_type), vec_width);
@@ -184,16 +178,16 @@ get_designated_offset (const type_t *type, const designator_t *des)
 	return (initstate_t) { .type = ele_type, .field = field, .offset = offset};
 }
 
-static int
+bool
 skip_field (symbol_t *field)
 {
-	if (field->sy_type != sy_var) {
-		return 1;
+	if (field->sy_type != sy_offset) {
+		return true;
 	}
 	if (field->no_auto_init) {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 void
@@ -220,19 +214,25 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		}
 		type = t;
 	} else if (is_struct (type) || is_union (type)
-			   || (is_nonscalar (type) && type->t.symtab)) {
-		state.field = type->t.symtab->symbols;
+			   || (is_nonscalar (type) && type->symtab)) {
+		state.field = type->symtab->symbols;
+		// find first initializable field
 		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;
 		}
 		if (state.field) {
 			state.type = state.field->type;
-			state.offset = state.field->s.offset;
+			state.offset = state.field->offset;
 		}
+	} else if (is_matrix (type)) {
+		state.type = vector_type (base_type (type), type->width);
+	} else if (is_nonscalar (type)) {
+		state.type = base_type (type);
 	} else if (is_array (type)) {
 		state.type = dereference_type (type);
 	} else {
-		internal_error (eles, "invalid initialization");
+		error (eles, "invalid initialization");
+		return;
 	}
 	while (ele) {
 		if (ele->designator) {
@@ -268,7 +268,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			}
 			if (state.field) {
 				state.type = state.field->type;
-				state.offset = state.field->s.offset;
+				state.offset = state.field->offset;
 			}
 		}
 
@@ -338,8 +338,8 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 		unsigned    end = in->element;
 		if (end > start) {
 			auto dst = new_offset_alias_expr (&type_int, init, start);
-			auto zero = new_int_expr (0);
-			auto count = new_int_expr (end - start);
+			auto zero = new_int_expr (0, false);
+			auto count = new_int_expr (end - start, false);
 			append_expr (local_expr, new_memset_expr (dst, zero, count));
 		}
 		// skip over all the initialized locations
@@ -350,16 +350,19 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 	}
 	if (start < (unsigned) type_size (init_type)) {
 		auto dst = new_offset_alias_expr (&type_int, init, start);
-		auto zero = new_int_expr (0);
-		auto count = new_int_expr (type_size (init_type) - start);
+		auto zero = new_int_expr (0, false);
+		auto count = new_int_expr (type_size (init_type) - start, false);
 		append_expr (local_expr, new_memset_expr (dst, zero, count));
 	}
 	set_delete (initialized);
 }
 
-expr_t *
+const expr_t *
 initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
+	if (expr->type == ex_compound && expr->compound.type) {
+		type = expr->compound.type;
+	}
 	expr_t     *block = new_block_expr (0);
 
 	//type = unalias_type (type);

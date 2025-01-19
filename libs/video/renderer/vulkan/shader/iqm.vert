@@ -8,7 +8,7 @@ layout (set = 0, binding = 0) uniform
 #include "matrices.h"
 ;
 
-layout (set = 3, binding = 0) buffer Bones {
+layout (set = 3, binding = 0) readonly buffer Bones {
 	// NOTE these are transposed, so v * m
 	mat3x4      bones[];
 };

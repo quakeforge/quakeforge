@@ -186,8 +186,20 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_ShaderRW];
-	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0, bb);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0, &sb,
+		&(qfv_bufferbarrier_t) {
+			.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+			.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+			.barrier = {
+				.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+				.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+				.dstAccessMask = VK_ACCESS_SHADER_READ_BIT
+							   | VK_ACCESS_SHADER_WRITE_BIT,
+				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			},
+		});
 	QFV_PacketSubmit (packet);
 }
 

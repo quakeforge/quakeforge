@@ -482,6 +482,7 @@ typedef struct opcode_s {
 	const char *opname;
 	const char *mnemonic;
 	int         widths[3];		///< component count for each argument (1-4)
+	int         columns[3];		///< column count for each argument (1-4)
 	etype_t     types[3];		///< component type for each argument
 	const char *fmt;
 } opcode_t;
@@ -563,7 +564,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
 #define	PROG_V6P_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,011)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,012)
 
 typedef struct pr_chunk_s {
 	pr_uint_t   offset;

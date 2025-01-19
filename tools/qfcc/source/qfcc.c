@@ -76,6 +76,7 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/grab.h"
 #include "tools/qfcc/include/idstuff.h"
 #include "tools/qfcc/include/linker.h"
@@ -85,6 +86,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
@@ -96,15 +98,9 @@ const char *progs_src;
 
 pr_info_t   pr;
 
-typedef enum {
-	lang_object,
-	lang_ruamoko,
-	lang_pascal,
-} lang_t;
-
 typedef struct ext_lang_s {
 	const char *ext;
-	lang_t      lang;
+	language_t *lang;
 } ext_lang_t;
 
 #ifdef _WIN32
@@ -129,7 +125,6 @@ InitData (void)
 	for (type = pr.types; type; type = ntype) {
 		ntype = type->next;
 		free_type (type);
-		type->type_def = 0;
 	}
 
 	if (pr.code) {
@@ -152,7 +147,12 @@ InitData (void)
 	}
 
 	memset (&pr, 0, sizeof (pr));
-	pr.source_line = 1;
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
 	pr.error_count = 0;
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
@@ -372,55 +372,54 @@ setup_sym_file (const char *output_file)
 }
 
 static int
-compile_to_obj (const char *file, const char *obj, lang_t lang)
+compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 {
 	int         err;
-	FILE      **yyin;
-	int       (*yyparse) (void);
+	FILE       *yyin;
+	auto        lang = ctx->language;
 
-	switch (lang) {
-		case lang_ruamoko:
-			yyin = &qc_yyin;
-			yyparse = qc_yyparse;
-			break;
-		case lang_pascal:
-			yyin = &qp_yyin;
-			yyparse = qp_yyparse;
-			break;
-		default:
-			internal_error (0, "unknown language enum");
-	}
-
-	*yyin = preprocess_file (file, 0);
-	if (options.preprocess_only || !*yyin)
+	yyin = preprocess_file (file, 0);
+	if (options.preprocess_only || !yyin) {
+		if (yyin) {
+			return lang->parse (yyin, ctx);
+		}
 		return !options.preprocess_only;
+	}
 
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
+	pr.src_name = save_string (file);
 	pr.comp_dir = save_cwd ();
 	add_source_file (file);
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	lang->initialized = false;
+	err = lang->parse (yyin, ctx) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
 			exit (1);
 		}
 	}
-	if (options.frames_files) {
-		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
-	}
 	if (!err) {
 		qfo_t      *qfo;
 
-		class_finish_module ();
+		if (lang->finish) {
+			err = lang->finish (file, ctx);
+		}
+		if (!err) {
+			emit_ctor (ctx);
+			debug_finish_module (obj);
+		}
 		err = pr.error_count;
 		if (!err) {
-			debug_finish_module (obj);
-			qfo = qfo_from_progs (&pr);
-			err = qfo_write (qfo, obj);
-			qfo_delete (qfo);
+			if (options.code.spirv) {
+				err = spirv_write (&pr, obj);
+			} else {
+				qfo = qfo_from_progs (&pr);
+				err = qfo_write (qfo, obj);
+				qfo_delete (qfo);
+			}
 		}
 	}
 	return err;
@@ -493,22 +492,28 @@ finish_link (void)
 	return 0;
 }
 
-static __attribute__((pure)) lang_t
+static __attribute__((pure)) language_t *
 file_language (const char *file, const char *ext)
 {
 	static ext_lang_t ext_lang[] = {
-		{".r",		lang_ruamoko},
-		{".c",		lang_ruamoko},
-		{".m",		lang_ruamoko},
-		{".qc",		lang_ruamoko},
-		{".pas",	lang_pascal},
-		{".p",		lang_pascal},
-		{0,			lang_object},	// unrecognized extension = object file
+		{".r",		&lang_ruamoko},
+		{".c",		&lang_ruamoko},
+		{".m",		&lang_ruamoko},
+		{".qc",		&lang_ruamoko},
+		{".comp",	&lang_glsl_comp},
+		{".vert",	&lang_glsl_vert},
+		{".tesc",	&lang_glsl_tesc},
+		{".tese",	&lang_glsl_tese},
+		{".geom",	&lang_glsl_geom},
+		{".frag",	&lang_glsl_frag},
+		{".pas",	&lang_pascal},
+		{".p",		&lang_pascal},
+		{nullptr,	nullptr},		// unrecognized extension = object file
 	};
 	ext_lang_t *el;
 
 	if (strncmp (file, "-l", 2) == 0)
-		return lang_object;
+		return nullptr;
 	for (el = ext_lang; el->ext; el++)
 		if (strcmp (ext, el->ext) == 0)
 			break;
@@ -520,7 +525,6 @@ separate_compile (void)
 {
 	const char **file, *ext;
 	const char **temp_files;
-	lang_t      lang;
 	dstring_t  *output_file;
 	dstring_t  *extension;
 	int         err = 0;
@@ -542,21 +546,41 @@ separate_compile (void)
 
 	for (file = source_files, i = 0; *file; file++) {
 		ext = QFS_FileExtension (*file);
-		dstring_copysubstr (output_file, *file, ext - *file);
 		dstring_copystr (extension, ext);
 
 		if (options.compile && options.output_file) {
 			dstring_clearstr (output_file);
-			dstring_appendstr (output_file, options.output_file);
+			dstring_copystr (output_file, options.output_file);
 		} else {
-			dstring_appendstr (output_file, ".qfo");
+			const char *base = strrchr (*file, '/');
+			base = base ? base + 1 : *file;
+			if (options.output_path) {
+				dstring_copystr (output_file, options.output_path);
+				dstring_appendsubstr (output_file, base, ext - base);
+			} else {
+				dstring_copysubstr (output_file, base, ext - base);
+			}
+			if (options.code.spirv) {
+				dstring_appendstr (output_file, ".spv");
+			} else {
+				dstring_appendstr (output_file, ".qfo");
+			}
 		}
-		if ((lang = file_language (*file, extension->str)) != lang_object) {
-			if (options.verbosity >= 2)
+		// need *file for checking -lfoo
+		auto lang = file_language (*file, extension->str);
+		if (lang) {
+			rua_ctx_t ctx = {
+				.language = lang,
+			};
+
+			if (options.verbosity >= 1)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
-			err = compile_to_obj (*file, output_file->str, lang) || err;
+			err = compile_to_obj (*file, output_file->str, &ctx) || err;
 
+			if (!err) {
+				cpp_write_dependencies (*file, output_file->str);
+			}
 			*file = save_string (output_file->str);
 		} else {
 			if (options.compile)
@@ -587,9 +611,14 @@ separate_compile (void)
 			}
 		}
 		err = finish_link ();
-		if (!options.save_temps)
-			for (file = temp_files; *file; file++)
+		if (!options.save_temps) {
+			for (file = temp_files; *file; file++) {
+				if (options.verbosity >= 1) {
+					printf ("unlink %s\n", *file);
+				}
 				unlink (*file);
+			}
+		}
 	}
 	free (temp_files);
 	return err;
@@ -650,21 +679,25 @@ parse_cpp_line (script_t *script, dstring_t *filename)
 }
 
 static int
-compile_file (const char *filename)
+compile_file (const char *filename, rua_ctx_t *ctx)
 {
 	int         err;
-	FILE      **yyin = &qc_yyin;
-	int       (*yyparse) (void) = qc_yyparse;
+	FILE       *yyin;
 
-	*yyin = preprocess_file (filename, 0);
-	if (options.preprocess_only || !*yyin)
+	yyin = preprocess_file (filename, 0);
+	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
 
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
 	add_source_file (filename);
-	pr.source_line = 1;
 	clear_frame_macros ();
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	err = ctx->language->parse (yyin, ctx) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
@@ -748,6 +781,9 @@ progs_src_compile (void)
 	}
 	setup_sym_file (options.output_file);
 
+	rua_ctx_t   ctx = {
+		.language = &lang_ruamoko,
+	};
 	InitData ();
 	chain_initial_types ();
 
@@ -779,7 +815,7 @@ progs_src_compile (void)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
 							 file_basename (qc_filename->str, 0));
 			} else {
-				if (compile_file (qc_filename->str))
+				if (compile_file (qc_filename->str, &ctx))
 					return 1;
 				if (options.frames_files) {
 					write_frame_macros (va (0, "%s.frame",
@@ -795,7 +831,7 @@ progs_src_compile (void)
 	if (single) {
 		int         err;
 		fclose (single);
-		err = compile_file (single_name->str);
+		err = compile_file (single_name->str, &ctx);
 		if (!options.save_temps) {
 			if (unlink (single_name->str)) {
 				perror ("unlink");
@@ -806,7 +842,8 @@ progs_src_compile (void)
 			return 1;
 	}
 
-	class_finish_module ();
+	class_finish_module (&ctx);
+	emit_ctor (&ctx);
 	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {
@@ -824,6 +861,7 @@ progs_src_compile (void)
 				return 1;
 	}
 	qfo_delete (qfo);
+	cpp_write_dependencies (progs_src, options.output_file);
 
 	return 0;
 }

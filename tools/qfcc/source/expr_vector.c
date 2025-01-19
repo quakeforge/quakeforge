@@ -37,6 +37,60 @@
 #include "tools/qfcc/include/value.h"
 
 const expr_t *
+new_vector_value (const type_t *ele_type, int width, int count,
+				  const expr_t **elements, bool implicit)
+{
+	const type_t *vec_type = vector_type (ele_type, width);
+	pr_type_t   value[type_size (vec_type)] = {};
+
+	for (int i = 0, offs = 0; i < count; i++) {
+		auto src_type = get_type (elements[i]);
+		value_store (value + offs, src_type, elements[i]);
+		offs += type_size (src_type);
+	}
+
+	return new_value_expr (new_type_value (vec_type, value), implicit);
+}
+
+const expr_t *
+new_matrix_value (const type_t *ele_type, int cols, int rows, int count,
+				  const expr_t **elements, bool implicit)
+{
+	const type_t *mat_type = matrix_type (ele_type, cols, rows);
+	pr_type_t   value[type_size (mat_type)] = {};
+
+	for (int i = 0, offs = 0; i < count; i++) {
+		auto src_type = get_type (elements[i]);
+		value_store (value + offs, src_type, elements[i]);
+		offs += type_size (src_type);
+	}
+
+	return new_value_expr (new_type_value (mat_type, value), implicit);
+}
+
+const expr_t *
+new_vector_list_gather (const type_t *type, const expr_t **elements, int count)
+{
+	auto vec = new_expr ();
+	vec->type = ex_vector;
+	vec->vector.type = type;
+	list_gather (&vec->vector.list, elements, count);
+	return vec;
+}
+
+const expr_t *
+new_vector_list_expr (const expr_t *e)
+{
+	if (e->type != ex_list) {
+		internal_error (e, "not a list");
+	}
+	int count = list_count (&e->list);
+	const expr_t *elements[count + 1] = {};
+	list_scatter (&e->list, elements);
+	return new_vector_list_gather (nullptr, elements, count);
+}
+
+const expr_t *
 new_vector_list (const expr_t *expr_list)
 {
 	const type_t *ele_type = type_default;
@@ -88,7 +142,7 @@ new_vector_list (const expr_t *expr_list)
 			break;
 		case 3:
 			// shuffle any vectors to the beginning of the list (there should
-			// be only one, but futhre...)
+			// be only one, but future...)
 			for (int i = 1; i < count; i++) {
 				if (is_nonscalar (get_type (elements[i]))) {
 					auto t = elements[i];
@@ -118,23 +172,30 @@ new_vector_list (const expr_t *expr_list)
 	}
 
 	if (all_constant) {
-		const type_t *vec_type = vector_type (ele_type, width);
-		pr_type_t   value[type_size (vec_type)];
-
-		for (int i = 0, offs = 0; i < count; i++) {
-			auto src_type = get_type (elements[i]);
-			value_store (value + offs, src_type, elements[i]);
-			offs += type_size (src_type);
-		}
-
-		auto vec = (expr_t *) new_value_expr (new_type_value (vec_type, value));
-		vec->implicit = all_implicit;
-		return vec;
+		return new_vector_value (ele_type, width, count, elements,
+								 all_implicit);
 	}
 
-	expr_t     *vec = new_expr ();
-	vec->type = ex_vector;
-	vec->vector.type = vector_type (ele_type, width);
-	list_gather (&vec->vector.list, elements, count);
-	return vec;
+	auto type = vector_type (ele_type, width);
+	return new_vector_list_gather (type, elements, count);
+}
+
+const expr_t *
+vector_to_compound (const expr_t *vector)
+{
+	if (vector->type != ex_vector) {
+		internal_error (vector, "not a vector expression");
+	}
+	int count = list_count (&vector->vector.list);
+	const expr_t *elements[count];
+	list_scatter (&vector->vector.list, elements);
+
+	scoped_src_loc (vector);
+	auto compound = new_compound_init ();
+	compound->compound.type = vector->vector.type;
+	for (int i = 0; i < count; i++) {
+		auto ele = new_element (elements[i], nullptr);
+		append_init_element (&compound->compound, ele);
+	}
+	return compound;
 }

@@ -112,8 +112,16 @@ update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
 static void
 run_tasks (uint32_t task_count, qfv_taskinfo_t *tasks, qfv_taskctx_t *ctx)
 {
+	auto device = ctx->ctx->device;
 	for (uint32_t i = 0; i < task_count; i++) {
+		if (ctx->cmd) {
+			QFV_duCmdBeginLabel (device, ctx->cmd, tasks[i].name,
+								 {0.2, 0.8, 0.3, 1});
+		}
 		tasks[i].func->func (tasks[i].params, 0, (exprctx_t *) ctx);
+		if (ctx->cmd) {
+			QFV_duCmdEndLabel (device, ctx->cmd);
+		}
 	}
 }
 
@@ -147,7 +155,10 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 
 		for (uint32_t i = 0; i < sp->pipeline_count; i++) {
 			__auto_type pipeline = &sp->pipelines[i];
+			QFV_duCmdBeginLabel (device, taskctx->cmd, pipeline->label.name,
+								 {VEC4_EXP (pipeline->label.color)});
 			run_pipeline (pipeline, taskctx);
+			QFV_duCmdEndLabel (device, taskctx->cmd);
 		}
 	}
 
@@ -180,6 +191,8 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.cmd = QFV_GetCmdBuffer (ctx, true),
 			.data = data,
 		};
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
+							 va (ctx->va_ctx, "renderpass:%s", rp->label.name));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		QFV_duCmdEndLabel (device, cmd);

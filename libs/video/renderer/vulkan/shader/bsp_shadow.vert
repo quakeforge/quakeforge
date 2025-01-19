@@ -2,11 +2,11 @@
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_multiview : enable
 
-layout (set = 0, binding = 0) buffer ShadowView {
+layout (set = 0, binding = 0) readonly buffer ShadowView {
 	mat4x4      shadowView[];
 };
 
-layout (set = 0, binding = 1) buffer ShadowId {
+layout (set = 0, binding = 1) readonly buffer ShadowId {
 	uint        shadowId[];
 };
 
@@ -16,7 +16,7 @@ layout (push_constant) uniform PushConstants {
 
 #include "entity.h"
 
-layout (set = 1, binding = 0) buffer Entities {
+layout (set = 1, binding = 0) readonly buffer Entities {
 	Entity      entities[];
 };
 

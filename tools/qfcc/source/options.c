@@ -49,16 +49,21 @@
 #include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/linker.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 options_t   options = {
 	.code = {
 		.fast_float = true,
 		.promote_float = true,
+		.commute_float_add = true,
+		.commute_float_mul = true,
+		.commute_float_dot = true,
+		.anticom_float_cross = true,
+		.anticom_float_sub = true,
 	},
 	.warnings = {
 		.uninited_variable = true,
@@ -140,6 +145,7 @@ static const char *short_options =
 	"F"		// generate files.dat
 	"g"		// debug
 	"h"		// help
+	"i::"	// set includes
 	"I:"	// set includes
 	"L:"	// lib path
 	"l:"	// lib file
@@ -202,7 +208,7 @@ usage (int status)
 "                              default for separate compilation mode\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
-"        --traditional         Traditional QuakeC mode: implies v6only\n"
+"        --traditional         Traditional QuakeC mode: implies target=v6\n"
 "                              default when using progs.src\n"
 "    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
 "    -V, --version             Output version information and exit\n"
@@ -515,18 +521,7 @@ parse_code_option (const char *opt)
 	bool        flag = true;
 
 	if (!(strncasecmp (opt, "target=", 7))) {
-		const char *tgt = opt + 7;
-		if (!strcasecmp (tgt, "v6")) {
-			options.code.progsversion = PROG_ID_VERSION;
-		} else if (!strcasecmp (tgt, "v6p")) {
-			options.code.progsversion = PROG_V6P_VERSION;
-		} else if (!strcasecmp (tgt, "ruamoko")) {
-			options.code.progsversion = PROG_VERSION;
-		} else {
-			fprintf (stderr, "unknown target: %s\n", tgt);
-			exit (1);
-		}
-		return true;
+		return target_set_backend (opt + 7);
 	}
 	if (!strncasecmp (opt, "no-", 3)) {
 		flag = false;
@@ -607,8 +602,9 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_undef ("-undef");
 	add_cpp_undef ("-nostdinc");
 	add_cpp_undef ("-fno-extended-identifiers");
-	add_cpp_def ("-D__QFCC__=1");
-	add_cpp_def ("-D__QUAKEC__=1");
+
+	cpp_define ("__QFCC__");
+	cpp_define ("__QUAKEC__");
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -625,7 +621,15 @@ DecodeArgs (int argc, char **argv)
 							 this_program);
 					exit (1);
 				} else {
-					options.output_file = save_string (NORMALIZE (optarg));
+					const char *file = save_string (NORMALIZE (optarg));
+					options.output_file = file;
+					const char *dir = strrchr (file, '/');
+					if (dir) {
+						dir += 1; // keep / from path
+						options.output_path = save_substring (file, dir - file);
+					} else {
+						options.output_path = "";
+					}
 				}
 				break;
 			case 'l':					// lib file
@@ -674,25 +678,25 @@ DecodeArgs (int argc, char **argv)
 			case OPT_EXTENDED:
 				options.traditional = 1;
 				options.advanced = false;
-				options.code.progsversion = PROG_ID_VERSION;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
 				options.advanced = 0;
-				options.code.progsversion = PROG_ID_VERSION;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = 1;
-				options.code.progsversion = PROG_V6P_VERSION;
+				target_set_backend ("v6p");
 				options.code.const_initializers = false;
 				break;
 			case OPT_RUAMOKO:
 				options.traditional = 0;
 				options.advanced = 2;
-				options.code.progsversion = PROG_VERSION;
+				target_set_backend ("ruamoko");
 				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
@@ -740,7 +744,7 @@ DecodeArgs (int argc, char **argv)
 				options.save_temps = true;
 				break;
 			case 'D':					// defines for cpp
-				add_cpp_def (nva ("%s%s", "-D", optarg));
+				cpp_define (optarg);
 				break;
 			case 'E':					// defines for cpp
 				saw_E = 1;
@@ -751,23 +755,33 @@ DecodeArgs (int argc, char **argv)
 				add_cpp_def (nva ("%s", "-include"));
 				add_cpp_def (nva ("%s", optarg));
 				break;
+			case 'i':					// includes
+				{
+					int o = cpp_include (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
+				}
+				break;
 			case 'I':					// includes
-				add_cpp_def (nva ("%s%s", "-I", optarg));
+				cpp_include ("I", optarg);
 				break;
 			case 'U':					// undefines
-				add_cpp_def (nva ("%s%s", "-U", optarg));
+				cpp_undefine (optarg);
 				break;
 			case 'M':
-				options.preprocess_only = 1;
-				if (optarg) {
-					add_cpp_def (nva ("-M%s", optarg));
-					if (strchr (optarg, 'D'))
+				{
+					if (optarg && strchr (optarg, 'D')) {
 						saw_MD = 1;
-					if (strchr ("FQT", optarg[0]))
-						add_cpp_def (argv[optind++]);
-				} else {
-					options.preprocess_only = 1;
-					add_cpp_def (nva ("-M"));
+					}
+					int o = cpp_depend (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
 				}
 				break;
 			case OPT_NO_DEFAULT_PATHS:
@@ -783,8 +797,10 @@ DecodeArgs (int argc, char **argv)
 		fprintf (stderr, "%s: cannot use -E and -MD together\n", this_program);
 		exit (1);
 	}
-	if (saw_MD)
+	if (saw_MD) {
 		options.preprocess_only = 0;
+	}
+	options.preprocess_output = saw_E;
 	if (!source_files && !options.advanced) {
 		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
@@ -792,7 +808,7 @@ DecodeArgs (int argc, char **argv)
 			options.traditional = 2;
 		options.advanced = false;
 		if (!options.code.progsversion) {
-			options.code.progsversion = PROG_ID_VERSION;
+			target_set_backend ("v6");
 		}
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
@@ -806,17 +822,18 @@ DecodeArgs (int argc, char **argv)
 		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = true;
 		}
-		if (options.math.vector_mult == 0) {
-			options.math.vector_mult = DOT;
+		if (!options_user_set.math.vector_mult) {
+			options.math.vector_mult = QC_DOT;
 		}
 	}
-	if (!options.code.progsversion)
-		options.code.progsversion = PROG_VERSION;
+	if (!options.code.progsversion) {
+		target_set_backend ("ruamoko");
+	}
 	if (!options.traditional) {
 		// avanced=2 requires the Ruamoko ISA
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
-		const char *ruamoko = va (0, "-D__RUAMOKO__=%d", options.advanced);
-		add_cpp_def (save_string (ruamoko));
+		const char *ruamoko = va (0, "__RUAMOKO__=%d", options.advanced);
+		cpp_define (ruamoko);
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
 		}
@@ -829,15 +846,19 @@ DecodeArgs (int argc, char **argv)
 		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = false;
 		}
-		if (!options_user_set.math.vector_mult == 0) {
-			options.math.vector_mult = options.advanced == 1 ? DOT : HADAMARD;
+		if (!options_user_set.math.vector_mult) {
+			options.math.vector_mult = options.advanced == 1 ? QC_DOT
+															 : QC_HADAMARD;
 		}
 	} else {
 		options.code.promote_float = false;
+		options.math.vector_mult = QC_DOT;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		options.code.promote_float = false;
-		add_cpp_def ("-D__VERSION6__=1");
+		options.code.no_double = true;
+		options.code.no_int = true;
+		cpp_define ("__VERSION6__=1");
 		if (!options_user_set.code.crc) {
 			options.code.crc = true;
 		}
@@ -856,14 +877,15 @@ DecodeArgs (int argc, char **argv)
 
 	// add the default paths
 	if (!options.no_default_paths) {
-		add_cpp_sysinc ("-isystem");
-		add_cpp_sysinc (QFCC_INCLUDE_PATH);
+		cpp_include ("system", QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 
 	if (options.verbosity >= 3) {
+		pre_yydebug = 1;
 		qc_yydebug = 1;
 		qp_yydebug = 1;
+		glsl_yydebug = 1;
 	}
 	return optind;
 }

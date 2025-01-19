@@ -289,8 +289,9 @@ generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 		ind[i + 18] = i + 8;
 	}
 	ind[8] = ind[17] = ~0;
-	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	QFV_PacketCopyBuffer (packet, ind_buffer->buffer.buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 }
 
@@ -511,8 +512,14 @@ flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	quadvert_t *verts = QFV_PacketExtend (packet, size);
 	memcpy (verts, queue->verts, size);
-	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	QFV_duCmdBeginLabel (ctx->device, packet->cmd, "flush_vertqueue",
+						 {0.2, 0.8, 0.3, 1});
+	auto sb = bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	sb.srcStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	db.dstStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, queue->buffer, queue->base, &sb, &db);
+	QFV_duCmdEndLabel (ctx->device, packet->cmd);
 	QFV_PacketSubmit (packet);
 	queue->base += size;
 	queue->count = 0;
@@ -760,6 +767,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 	Vulkan_ExpandPalette (texels, tex.data, palette, 2, count);
 	QFV_PacketCopyImage (packet, cache_image->image.image,
 						 tex.width, tex.height,
+						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);
 
@@ -1244,9 +1252,15 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 static inline descbatch_t *
 get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 {
+	// ubsan complains about a non-zero offset applied to a null pointer when
+	// both size is 0 and a is null: quite right, but when a is null, size
+	// must be 0 or there will be bigger problems. When size is 0, the array
+	// gets initialized if it's not already (ie, if a is null) then the
+	// pointer is recalculated. Thus while not quite a false-positive, it's
+	// a non-issue
 	descbatch_t *batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
 	if (!frame->quad_batch.size || batch->descid != descid
-		|| ((batch->count & (0xff << 24)) != (ind_count << 24))) {
+		|| ((batch->count & (0xffu << 24)) != (ind_count << 24))) {
 		DARRAY_APPEND(&frame->quad_batch, ((descbatch_t) { .descid = descid }));
 		batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
 		batch->count = ind_count << 24;
@@ -1791,8 +1805,9 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.uv     = {(u + w) * s, (v + h) * t },
 		};
 	}
-	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 
 	packet = QFV_PacketAcquire (ctx->staging);
@@ -1800,6 +1815,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	memcpy (texels, tex.data, tex.width * tex.height);
 	QFV_PacketCopyImage (packet, glyph_image->image.image,
 						 tex.width, tex.height,
+						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
 						 &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]);
 	QFV_PacketSubmit (packet);
 

@@ -14,12 +14,12 @@
 		return nil;
 	}
 	self.data = (unsigned *)(data + def.offset);
-	element_views = obj_malloc (type.array.size);
-	element_rows = obj_malloc (type.array.size);
+	element_views = obj_malloc (type.array.count);
+	element_rows = obj_malloc (type.array.count);
 	element_rows[0] = 0;
 	qfot_type_t *element_type = type.array.type;
 	int         element_size = [TypeEncodings typeSize:element_type];
-	for (int i = 0; i < type.array.size; i++) {
+	for (int i = 0; i < type.array.count; i++) {
 		qdb_def_t   def = {
 			0,	// XXX type/size not needed at this stage
 			i * element_size,
@@ -32,7 +32,7 @@
 									  target:target] retain];
 		element_rows[i + 1] = [element_views[i] rows];
 	}
-	prefixsum (element_rows, type.array.size + 1);
+	prefixsum (element_rows, type.array.count + 1);
 	return self;
 }
 
@@ -44,7 +44,7 @@
 -setTarget:(qdb_target_t)target
 {
 	[super setTarget:target];
-	for (int i = 0; i < type.array.size; i++) {
+	for (int i = 0; i < type.array.count; i++) {
 		[element_views[i] setTarget:target];
 	}
 	return self;
@@ -52,7 +52,7 @@
 
 -(void)dealloc
 {
-	for (int i = 0; i < type.array.size; i++) {
+	for (int i = 0; i < type.array.count; i++) {
 		[element_views[i] release];
 	}
 	obj_free (element_views);
@@ -65,7 +65,7 @@
 	[super draw];
 	string      val = sprintf ("%s[%d..%d]", type.array.type.encoding,
 							   type.array.base,
-							   type.array.base + type.array.size - 1);
+							   type.array.base + type.array.count - 1);
 	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
@@ -74,17 +74,17 @@
 {
 	[super fetchData];
 	element_rows[0] = 0;
-	for (int i = 0; i < type.array.size; i++) {
+	for (int i = 0; i < type.array.count; i++) {
 		[element_views[i] fetchData];
 		element_rows[i + 1] = [element_views[i] rows];
 	}
-	prefixsum (element_rows, type.array.size + 1);
+	prefixsum (element_rows, type.array.count + 1);
 	return self;
 }
 
 -(int) rows
 {
-	return 1 + element_rows[type.array.size];
+	return 1 + element_rows[type.array.count];
 }
 
 -(View *) viewAtRow:(int)row forColumn:(TableViewColumn *)column
@@ -99,7 +99,7 @@
 	row -= 1;
 
 	View      *view = nil;
-	int       *index = fbsearch (&row, element_rows, type.array.size, 1, nil);
+	int       *index = fbsearch (&row, element_rows, type.array.count, 1, nil);
 
 	if ([column name] == "name") {
 		return [IndexView withIndex:index - element_rows + type.array.base];

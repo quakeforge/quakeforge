@@ -1,7 +1,7 @@
 /*
-	exprtype.c
+	expr_binary.c
 
-	Expression type manipulation
+	Binary expression manipulation
 
 	Copyright (C) 2013 Bill Currie <bill@taniwha.org>
 
@@ -35,871 +35,35 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/rua-lang.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-#include "tools/qfcc/source/qc-parse.h"
-
 typedef struct {
-	int         op;
-	type_t     *result_type;
-	type_t     *a_cast;
-	type_t     *b_cast;
-	const expr_t *(*process)(int op, const expr_t *e1, const expr_t *e2);
+	bool      (*match_a) (const type_t *type);
+	bool      (*match_b) (const type_t *type);
+	bool      (*match_shape) (const type_t *a, const type_t *b);
+	const type_t *(*res_type) (const type_t *a, const type_t *b);
+	const expr_t *(*process) (int op, const expr_t *e1, const expr_t *e2);
+	bool        promote;
+	bool        no_implicit;
 	bool      (*commutative) (void);
 	bool      (*anticommute) (void);
 	bool      (*associative) (void);
 	int         true_op;
 } expr_type_t;
 
-static const expr_t *pointer_arithmetic (int op, const expr_t *e1,
-										 const expr_t *e2);
-static const expr_t *pointer_compare (int op, const expr_t *e1,
-									  const expr_t *e2);
-static const expr_t *func_compare (int op, const expr_t *e1,
-								   const expr_t *e2);
-static const expr_t *inverse_multiply (int op, const expr_t *e1,
-									   const expr_t *e2);
-static const expr_t *double_compare (int op, const expr_t *e1,
-									 const expr_t *e2);
-static const expr_t *uint_compare (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *vector_compare (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *quat_compare (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *vector_dot (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *vector_multiply (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *vector_scale (int op, const expr_t *e1, const expr_t *e2);
-static const expr_t *entity_compare (int op, const expr_t *e1, const expr_t *e2);
-
-static bool always (void)
+static bool
+is_vector_compat (const type_t *type)
 {
-	return true;
+	return is_vector (type) || (is_nonscalar (type) && type_width (type) == 3);
 }
 
-static bool fp_com_add (void)
+static bool
+is_quaternion_compat (const type_t *type)
 {
-	return options.code.commute_float_add;
-}
-
-static bool fp_com_mul (void)
-{
-	return options.code.commute_float_mul;
-}
-
-static bool fp_com_dot (void)
-{
-	return options.code.commute_float_dot;
-}
-
-static bool fp_ass_add (void)
-{
-	return options.code.assoc_float_add;
-}
-
-static bool fp_ass_mul (void)
-{
-	return options.code.assoc_float_mul;
-}
-
-static expr_type_t string_string[] = {
-	{'+',	&type_string},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
-	{0, 0}
-};
-
-static expr_type_t float_float[] = {
-	{'+',	&type_float,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_float,
-		.anticommute = fp_com_add},
-	{'*',	&type_float,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_float},
-	{'&',	&type_float,
-		.commutative = always, .associative = always},
-	{'|',	&type_float,
-		.commutative = always, .associative = always},
-	{'^',	&type_float,
-		.commutative = always, .associative = always},
-	{'%',	&type_float},
-	{MOD,	&type_float},
-	{SHL,	&type_float},
-	{SHR,	&type_float},
-	{AND,	&type_int},
-	{OR,	&type_int},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
-	{0, 0}
-};
-
-static expr_type_t float_vector[] = {
-	{'*',	.process = vector_scale },
-	{0, 0}
-};
-
-static expr_type_t float_quat[] = {
-	{'*',	&type_quaternion},
-	{0, 0}
-};
-
-static expr_type_t float_int[] = {
-	{'+',	&type_float, 0, &type_float,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_float, 0, &type_float,
-		.anticommute = fp_com_add},
-	{'*',	&type_float, 0, &type_float,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_float, 0, &type_float},
-	{'&',	&type_float, 0, &type_float,
-		.commutative = always, .associative = always},
-	{'|',	&type_float, 0, &type_float,
-		.commutative = always, .associative = always},
-	{'^',	&type_float, 0, &type_float,
-		.commutative = always, .associative = always},
-	{'%',	&type_float, 0, &type_float},
-	{MOD,	&type_float, 0, &type_float},
-	{SHL,	&type_float, 0, &type_float},
-	{SHR,	&type_float, 0, &type_float},
-	{EQ,	&type_int, 0, &type_float},
-	{NE,	&type_int, 0, &type_float},
-	{LE,	&type_int, 0, &type_float},
-	{GE,	&type_int, 0, &type_float},
-	{LT,	&type_int, 0, &type_float},
-	{GT,	&type_int, 0, &type_float},
-	{0, 0}
-};
-#define float_uint float_int
-#define float_short float_int
-
-static expr_type_t float_double[] = {
-	{'+',	&type_double, &type_double, 0,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_double, &type_double, 0,
-		.anticommute = fp_com_add},
-	{'*',	&type_double, &type_double, 0,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_double, &type_double, 0},
-	{'%',	&type_double, &type_double, 0},
-	{MOD,	&type_double, &type_double, 0},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
-	{0, 0}
-};
-
-static expr_type_t vector_float[] = {
-	{'*',	.process = vector_scale },
-	{'/',	.process = inverse_multiply},
-	{0, 0}
-};
-
-static expr_type_t vector_vector[] = {
-	{'+',	&type_vector,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_vector,
-		.anticommute = fp_com_add},
-	{DOT,	.process = vector_dot,
-		.commutative = fp_com_dot},
-	{CROSS,	&type_vector,
-		.anticommute = fp_com_add},
-	{HADAMARD,	&type_vector,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'*',	.process = vector_multiply},
-	{EQ,	.process = vector_compare},
-	{NE,	.process = vector_compare},
-	{0, 0}
-};
-
-#define vector_int vector_float
-#define vector_uint vector_float
-#define vector_short vector_float
-
-static expr_type_t vector_double[] = {
-	{'*',	&type_vector, 0, &type_float, vector_scale},
-	{'/',	.process = inverse_multiply},
-	{0, 0}
-};
-
-static expr_type_t entity_entity[] = {
-	{EQ,	&type_int, 0, 0, entity_compare},
-	{NE,	&type_int, 0, 0, entity_compare},
-	{0, 0}
-};
-
-static expr_type_t field_field[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{0, 0}
-};
-
-static expr_type_t func_func[] = {
-	{EQ,	.process = func_compare},
-	{NE,	.process = func_compare},
-	{0, 0}
-};
-
-static expr_type_t pointer_pointer[] = {
-	{'-',	.process = pointer_arithmetic},
-	{EQ,	.process = pointer_compare},
-	{NE,	.process = pointer_compare},
-	{LE,	.process = pointer_compare},
-	{GE,	.process = pointer_compare},
-	{LT,	.process = pointer_compare},
-	{GT,	.process = pointer_compare},
-	{0, 0}
-};
-
-static expr_type_t pointer_int[] = {
-	{'+',	.process = pointer_arithmetic},
-	{'-',	.process = pointer_arithmetic},
-	{0, 0}
-};
-#define pointer_uint pointer_int
-#define pointer_short pointer_int
-
-static expr_type_t quat_float[] = {
-	{'*',	&type_quaternion},
-	{'/',	.process = inverse_multiply},
-	{0, 0}
-};
-
-static expr_type_t quat_vector[] = {
-	{'*',	&type_vector, .true_op = QVMUL},
-	{0, 0}
-};
-
-static expr_type_t vector_quat[] = {
-	{'*',	&type_vector, .true_op = VQMUL},
-	{0, 0}
-};
-
-static expr_type_t quat_quat[] = {
-	{'+',	&type_quaternion,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_quaternion,
-		.anticommute = fp_com_add},
-	{'*',	&type_quaternion, .associative = always, .true_op = QMUL},
-	{EQ,	.process = quat_compare},
-	{NE,	.process = quat_compare},
-	{0, 0}
-};
-
-static expr_type_t quat_int[] = {
-	{'*',	&type_quaternion, 0, &type_float},
-	{'/',	.process = inverse_multiply},
-	{0, 0}
-};
-#define quat_uint quat_int
-#define quat_short quat_int
-
-static expr_type_t quat_double[] = {
-	{'*',	&type_quaternion},
-	{'/',	.process = inverse_multiply},
-	{0, 0}
-};
-
-static expr_type_t int_float[] = {
-	{'+',	&type_float, &type_float, 0,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_float, &type_float, 0,
-		.anticommute = fp_com_add},
-	{'*',	&type_float, &type_float, 0,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_float, &type_float, 0},
-	{'&',	&type_float, &type_float, 0,
-		.commutative = always, .associative = always},
-	{'|',	&type_float, &type_float, 0,
-		.commutative = always, .associative = always},
-	{'^',	&type_float, &type_float, 0,
-		.commutative = always, .associative = always},
-	{'%',	&type_float, &type_float, 0},
-	{MOD,	&type_float, &type_float, 0},
-	{SHL,	&type_int, 0, &type_int},	//FIXME?
-	{SHR,	&type_int, 0, &type_int},	//FIXME?
-	{EQ,	&type_int, &type_float, 0},
-	{NE,	&type_int, &type_float, 0},
-	{LE,	&type_int, &type_float, 0},
-	{GE,	&type_int, &type_float, 0},
-	{LT,	&type_int, &type_float, 0},
-	{GT,	&type_int, &type_float, 0},
-	{0, 0}
-};
-
-static expr_type_t int_vector[] = {
-	{'*',	&type_vector, &type_float, 0, vector_scale},
-	{0, 0}
-};
-
-static expr_type_t int_pointer[] = {
-	{'+',	.process = pointer_arithmetic},
-	{0, 0}
-};
-
-static expr_type_t int_quat[] = {
-	{'*',	&type_quaternion, &type_float, 0},
-	{0, 0}
-};
-
-static expr_type_t int_int[] = {
-	{'+',	&type_int,
-		.commutative = always, .associative = always},
-	{'-',	&type_int,
-		.anticommute = always},
-	{'*',	&type_int,
-		.commutative = always, .associative = always},
-	{'/',	&type_int},
-	{'&',	&type_int,
-		.commutative = always, .associative = always},
-	{'|',	&type_int,
-		.commutative = always, .associative = always},
-	{'^',	&type_int,
-		.commutative = always, .associative = always},
-	{'%',	&type_int},
-	{MOD,	&type_int},
-	{SHL,	&type_int},
-	{SHR,	&type_int},
-	{AND,	&type_int},
-	{OR,	&type_int},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
-	{0, 0}
-};
-
-static expr_type_t int_uint[] = {
-	{'+',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'-',	&type_int, 0, &type_int,
-		.anticommute = always},
-	{'*',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'/',	&type_int, 0, &type_int},
-	{'&',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'|',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'^',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'%',	&type_int, 0, &type_int},
-	{MOD,	&type_int, 0, &type_int},
-	{SHL,	&type_int, 0, &type_int},
-	{SHR,	&type_int, 0, &type_int},
-	{EQ,	&type_int, 0, &type_int},
-	{NE,	&type_int, 0, &type_int},
-	{LE,	.process = uint_compare},
-	{GE,	.process = uint_compare},
-	{LT,	.process = uint_compare},
-	{GT,	.process = uint_compare},
-	{0, 0}
-};
-
-static expr_type_t int_short[] = {
-	{'+',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'-',	&type_int, 0, &type_int,
-		.anticommute = always},
-	{'*',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'/',	&type_int, 0, &type_int},
-	{'&',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'|',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'^',	&type_int, 0, &type_int,
-		.commutative = always, .associative = always},
-	{'%',	&type_int, 0, &type_int},
-	{MOD,	&type_int, 0, &type_int},
-	{SHL,	&type_int, 0, &type_int},
-	{SHR,	&type_int, 0, &type_int},
-	{EQ,	&type_int, 0, &type_int},
-	{NE,	&type_int, 0, &type_int},
-	{LE,	&type_int, 0, &type_int},
-	{GE,	&type_int, 0, &type_int},
-	{LT,	&type_int, 0, &type_int},
-	{GT,	&type_int, 0, &type_int},
-	{0, 0}
-};
-
-static expr_type_t int_double[] = {
-	{'+',	&type_double, &type_double, 0,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_double, &type_double, 0,
-		.anticommute = fp_com_add},
-	{'*',	&type_double, &type_double, 0,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_double, &type_double, 0},
-	{'%',	&type_double, &type_double, 0},
-	{MOD,	&type_double, &type_double, 0},
-	{EQ,	&type_long, &type_double, 0},
-	{NE,	&type_long, &type_double, 0},
-	{LE,	&type_long, &type_double, 0},
-	{GE,	&type_long, &type_double, 0},
-	{LT,	&type_long, &type_double, 0},
-	{GT,	&type_long, &type_double, 0},
-	{0, 0}
-};
-
-#define uint_float int_float
-#define uint_vector int_vector
-#define uint_pointer int_pointer
-#define uint_quat int_quat
-
-static expr_type_t uint_int[] = {
-	{'+',	&type_int, &type_int, &type_int,
-		.commutative = always, .associative = always},
-	{'-',	&type_int, &type_int, &type_int,
-		.anticommute = always },
-	{'*',	&type_int, &type_int, &type_int,
-		.commutative = always, .associative = always},
-	{'/',	&type_int, &type_int, &type_int },
-	{'&',	&type_int, &type_int, &type_int,
-		.commutative = always, .associative = always},
-	{'|',	&type_int, &type_int, &type_int,
-		.commutative = always, .associative = always},
-	{'^',	&type_int, &type_int, &type_int,
-		.commutative = always, .associative = always},
-	{'%',	&type_int, &type_int, &type_int },
-	{MOD,	&type_int, &type_int, &type_int },
-	{SHL,	&type_uint, &type_int, &type_int },
-	{SHR,	&type_uint, 0,        &type_int },
-	{EQ,	&type_int, &type_int, &type_int },
-	{NE,	&type_int, &type_int, &type_int },
-	{LE,	.process = uint_compare},
-	{GE,	.process = uint_compare},
-	{LT,	.process = uint_compare},
-	{GT,	.process = uint_compare},
-	{0, 0}
-};
-
-static expr_type_t uint_uint[] = {
-	{'+',	&type_uint,
-		.commutative = always, .associative = always},
-	{'-',	&type_uint,
-		.anticommute = always},
-	{'*',	&type_uint,
-		.commutative = always, .associative = always},
-	{'/',	&type_uint},
-	{'&',	&type_uint,
-		.commutative = always, .associative = always},
-	{'|',	&type_uint,
-		.commutative = always, .associative = always},
-	{'^',	&type_uint,
-		.commutative = always, .associative = always},
-	{'%',	&type_uint},
-	{MOD,	&type_uint},
-	{SHL,	&type_uint},
-	{SHR,	&type_uint},
-	{EQ,	&type_int, &type_int, &type_int},
-	{NE,	&type_int, &type_int, &type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
-	{0, 0}
-};
-#define uint_short uint_int
-#define uint_double int_double
-
-#define short_float int_float
-#define short_vector int_vector
-#define short_pointer int_pointer
-#define short_quat int_quat
-
-static expr_type_t short_int[] = {
-	{'+',	&type_int, &type_int, 0,
-		.commutative = always, .associative = always},
-	{'-',	&type_int, &type_int, 0,
-		.anticommute = always},
-	{'*',	&type_int, &type_int, 0,
-		.commutative = always, .associative = always},
-	{'/',	&type_int, &type_int, 0},
-	{'&',	&type_int, &type_int, 0,
-		.commutative = always, .associative = always},
-	{'|',	&type_int, &type_int, 0,
-		.commutative = always, .associative = always},
-	{'^',	&type_int, &type_int, 0,
-		.commutative = always, .associative = always},
-	{'%',	&type_int, &type_int, 0},
-	{MOD,	&type_int, &type_int, 0},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int, &type_int, 0},
-	{NE,	&type_int, &type_int, 0},
-	{LE,	&type_int, &type_int, 0},
-	{GE,	&type_int, &type_int, 0},
-	{LT,	&type_int, &type_int, 0},
-	{GT,	&type_int, &type_int, 0},
-	{0, 0}
-};
-
-static expr_type_t short_uint[] = {
-	{'+',	&type_uint, &type_uint, 0,
-		.commutative = always},
-	{'-',	&type_uint, &type_uint, 0,
-		.anticommute = always},
-	{'*',	&type_uint, &type_uint, 0,
-		.commutative = always},
-	{'/',	&type_uint, &type_uint, 0},
-	{'&',	&type_uint, &type_uint, 0,
-		.commutative = always},
-	{'|',	&type_uint, &type_uint, 0,
-		.commutative = always},
-	{'^',	&type_uint, &type_uint, 0,
-		.commutative = always},
-	{'%',	&type_uint, &type_uint, 0},
-	{MOD,	&type_uint, &type_uint, 0},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int, &type_uint, 0},
-	{NE,	&type_int, &type_uint, 0},
-	{LE,	&type_int, &type_uint, 0},
-	{GE,	&type_int, &type_uint, 0},
-	{LT,	&type_int, &type_uint, 0},
-	{GT,	&type_int, &type_uint, 0},
-	{0, 0}
-};
-
-static expr_type_t short_short[] = {
-	{'+',	&type_short},
-	{'-',	&type_short},
-	{'*',	&type_short},
-	{'/',	&type_short},
-	{'&',	&type_short},
-	{'|',	&type_short},
-	{'^',	&type_short},
-	{'%',	&type_short},
-	{MOD,	&type_short},
-	{SHL,	&type_short},
-	{SHR,	&type_short},
-	{EQ,	&type_int},
-	{NE,	&type_int},
-	{LE,	&type_int},
-	{GE,	&type_int},
-	{LT,	&type_int},
-	{GT,	&type_int},
-	{0, 0}
-};
-#define short_double int_double
-
-static expr_type_t double_float[] = {
-	{'+',	&type_double, 0, &type_double,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_double, 0, &type_double,
-		.anticommute = fp_com_add},
-	{'*',	&type_double, 0, &type_double,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_double, 0, &type_double},
-	{'%',	&type_double, 0, &type_double},
-	{MOD,	&type_double, 0, &type_double},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
-	{0, 0}
-};
-
-static expr_type_t double_vector[] = {
-	{'*',	&type_vector, &type_float, 0, vector_scale},
-	{0, 0}
-};
-
-static expr_type_t double_quat[] = {
-	{'*',	&type_quaternion},
-	{0, 0}
-};
-
-static expr_type_t double_int[] = {
-	{'+',	&type_double, 0, &type_double,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_double, 0, &type_double,
-		.anticommute = fp_com_add},
-	{'*',	&type_double, 0, &type_double,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_double, 0, &type_double},
-	{'%',	&type_double, 0, &type_double},
-	{MOD,	&type_double, 0, &type_double},
-	{EQ,	.process = double_compare},
-	{NE,	.process = double_compare},
-	{LE,	.process = double_compare},
-	{GE,	.process = double_compare},
-	{LT,	.process = double_compare},
-	{GT,	.process = double_compare},
-	{0, 0}
-};
-#define double_uint double_int
-#define double_short double_int
-
-static expr_type_t double_double[] = {
-	{'+',	&type_double,
-		.commutative = fp_com_add, .associative = fp_ass_add},
-	{'-',	&type_double,
-		.anticommute = fp_com_add},
-	{'*',	&type_double,
-		.commutative = fp_com_mul, .associative = fp_ass_mul},
-	{'/',	&type_double},
-	{'%',	&type_double},
-	{MOD,	&type_double},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
-	{0, 0}
-};
-
-static expr_type_t long_long[] = {
-	{'+',	&type_long,
-		.commutative = always},
-	{'-',	&type_long,
-		.anticommute = always},
-	{'*',	&type_long,
-		.commutative = always},
-	{'/',	&type_long},
-	{'&',	&type_long,
-		.commutative = always},
-	{'|',	&type_long,
-		.commutative = always},
-	{'^',	&type_long,
-		.commutative = always},
-	{'%',	&type_long},
-	{MOD,	&type_long},
-	{SHL,	&type_long},
-	{SHR,	&type_long},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
-	{0, 0}
-};
-
-static expr_type_t ulong_ulong[] = {
-	{'+',	&type_ulong,
-		.commutative = always},
-	{'-',	&type_ulong,
-		.anticommute = always},
-	{'*',	&type_ulong,
-		.commutative = always},
-	{'/',	&type_ulong},
-	{'&',	&type_ulong,
-		.commutative = always},
-	{'|',	&type_ulong,
-		.commutative = always},
-	{'^',	&type_ulong,
-		.commutative = always},
-	{'%',	&type_ulong},
-	{MOD,	&type_ulong},
-	{SHL,	&type_ulong},
-	{SHR,	&type_ulong},
-	{EQ,	&type_long},
-	{NE,	&type_long},
-	{LE,	&type_long},
-	{GE,	&type_long},
-	{LT,	&type_long},
-	{GT,	&type_long},
-	{0, 0}
-};
-
-static expr_type_t *string_x[ev_type_count] = {
-	[ev_string] = string_string,
-};
-
-static expr_type_t *float_x[ev_type_count] = {
-	[ev_float] = float_float,
-	[ev_vector] = float_vector,
-	[ev_quaternion] = float_quat,
-	[ev_int] = float_int,
-	[ev_uint] = float_uint,
-	[ev_short] = float_short,
-	[ev_double] = float_double,
-};
-
-static expr_type_t *vector_x[ev_type_count] = {
-	[ev_float] = vector_float,
-	[ev_vector] = vector_vector,
-	[ev_quaternion] = vector_quat,
-	[ev_int] = vector_int,
-	[ev_uint] = vector_uint,
-	[ev_short] = vector_short,
-	[ev_double] = vector_double,
-};
-
-static expr_type_t *entity_x[ev_type_count] = {
-	[ev_entity] = entity_entity,
-};
-
-static expr_type_t *field_x[ev_type_count] = {
-	[ev_field] = field_field,
-};
-
-static expr_type_t *func_x[ev_type_count] = {
-	[ev_func] = func_func,
-};
-
-static expr_type_t *pointer_x[ev_type_count] = {
-	[ev_ptr] = pointer_pointer,
-	[ev_int] = pointer_int,
-	[ev_uint] = pointer_uint,
-	[ev_short] = pointer_short,
-};
-
-static expr_type_t *quat_x[ev_type_count] = {
-	[ev_float] = quat_float,
-	[ev_vector] = quat_vector,
-	[ev_quaternion] = quat_quat,
-	[ev_int] = quat_int,
-	[ev_uint] = quat_uint,
-	[ev_short] = quat_short,
-	[ev_double] = quat_double,
-};
-
-static expr_type_t *int_x[ev_type_count] = {
-	[ev_float] = int_float,
-	[ev_vector] = int_vector,
-	[ev_ptr] = int_pointer,
-	[ev_quaternion] = int_quat,
-	[ev_int] = int_int,
-	[ev_uint] = int_uint,
-	[ev_short] = int_short,
-	[ev_double] = int_double,
-};
-
-static expr_type_t *uint_x[ev_type_count] = {
-	[ev_float] = uint_float,
-	[ev_vector] = uint_vector,
-	[ev_ptr] = uint_pointer,
-	[ev_quaternion] = uint_quat,
-	[ev_int] = uint_int,
-	[ev_uint] = uint_uint,
-	[ev_short] = uint_short,
-	[ev_double] = uint_double,
-};
-
-static expr_type_t *short_x[ev_type_count] = {
-	[ev_float] = short_float,
-	[ev_vector] = short_vector,
-	[ev_ptr] = short_pointer,
-	[ev_quaternion] = short_quat,
-	[ev_int] = short_int,
-	[ev_uint] = short_uint,
-	[ev_short] = short_short,
-	[ev_double] = short_double,
-};
-
-static expr_type_t *double_x[ev_type_count] = {
-	[ev_float] = double_float,
-	[ev_vector] = double_vector,
-	[ev_quaternion] = double_quat,
-	[ev_int] = double_int,
-	[ev_uint] = double_uint,
-	[ev_short] = double_short,
-	[ev_double] = double_double,
-};
-
-static expr_type_t *long_x[ev_type_count] = {
-	[ev_long] = long_long,
-};
-
-static expr_type_t *ulong_x[ev_type_count] = {
-	[ev_ulong] = ulong_ulong,
-};
-
-static expr_type_t **binary_expr_types[ev_type_count] = {
-	[ev_string] = string_x,
-	[ev_float] = float_x,
-	[ev_vector] = vector_x,
-	[ev_entity] = entity_x,
-	[ev_field] = field_x,
-	[ev_func] = func_x,
-	[ev_ptr] = pointer_x,
-	[ev_quaternion] = quat_x,
-	[ev_int] = int_x,
-	[ev_uint] = uint_x,
-	[ev_short] = short_x,
-	[ev_double] = double_x,
-	[ev_long] = long_x,
-	[ev_ulong] = ulong_x,
-};
-
-static expr_type_t int_handle[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
-
-	{0, 0}
-};
-
-static expr_type_t long_handle[] = {
-	{EQ,	&type_int},
-	{NE,	&type_int},
-
-	{0, 0}
-};
-
-static expr_type_t *int_handle_x[ev_type_count] = {
-	[ev_int] = int_handle,
-};
-
-static expr_type_t *long_handle_x[ev_type_count] = {
-	[ev_long] = long_handle,
-};
-
-static expr_type_t **binary_expr_handle[ev_type_count] = {
-	[ev_int] = int_handle_x,
-	[ev_long] = long_handle_x,
-};
-
-static expr_type_t ***binary_expr_meta[ty_meta_count] = {
-	[ty_basic] = binary_expr_types,
-	[ty_enum] = binary_expr_types,
-	[ty_alias] = binary_expr_types,
-	[ty_handle] = binary_expr_handle,
-};
-
-// supported operators for scalar-vector expressions
-static int scalar_vec_ops[] = { '*', '/', '%', MOD, 0 };
-static const expr_t *
-convert_scalar (const expr_t *scalar, int op, const expr_t *vec)
-{
-	int        *s_op = scalar_vec_ops;
-	while (*s_op && *s_op != op) {
-		s_op++;
-	}
-	if (!*s_op) {
-		return 0;
-	}
-
-	// expand the scalar to a vector of the same width as vec
-	auto vec_type = get_type (vec);
-
-	if (is_constant (scalar)) {
-		int width = type_width (get_type (vec));
-		const expr_t *elements[width];
-		for (int i = 0; i < width; i++) {
-			elements[i] = scalar;
-		}
-		auto scalar_list = new_list_expr (0);
-		list_gather (&scalar_list->list, elements, width);
-		return new_vector_list (scalar_list);
-	}
-
-	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy
+	return is_quaternion (type) || (is_nonscalar (type)
+									&& type_width (type) == 4);
 }
 
 static const expr_t *
@@ -912,10 +76,10 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 	const expr_t *psize;
 	const type_t *ptype = 0;
 
-	if (!is_ptr (t1) && !is_ptr (t2)) {
+	if (!is_pointer (t1) && !is_pointer (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
 	}
-	if (is_ptr (t1) && is_ptr (t2)) {
+	if (is_pointer (t1) && is_pointer (t2)) {
 		if (op != '-') {
 			return error (e2, "invalid pointer operation");
 		}
@@ -925,19 +89,19 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 		}
 		e1 = cast_expr (&type_int, e1);
 		e2 = cast_expr (&type_int, e2);
-		psize = new_int_expr (type_size (t1->t.fldptr.type));
+		psize = new_int_expr (type_size (t1->fldptr.type), false);
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
-	} else if (is_ptr (t1)) {
+	} else if (is_pointer (t1)) {
 		offset = cast_expr (&type_int, e2);
 		ptr = e1;
 		ptype = t1;
-	} else if (is_ptr (t2)) {
+	} else if (is_pointer (t2)) {
 		offset = cast_expr (&type_int, e1);
 		ptr = e2;
 		ptype = t2;
 	}
 	// op is known to be + or -
-	psize = new_int_expr (type_size (ptype->t.fldptr.type));
+	psize = new_int_expr (type_size (ptype->fldptr.type), false);
 	offset = unary_expr (op, binary_expr ('*', offset, psize));
 	return offset_pointer_expr (ptr, offset);
 }
@@ -959,7 +123,7 @@ pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 		e = new_binary_expr (op, cast_expr (&type_int, e1),
 							 cast_expr (&type_int, e2));
 	}
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	return e;
 }
 
@@ -974,154 +138,10 @@ func_compare (int op, const expr_t *e1, const expr_t *e2)
 		e = new_binary_expr (op, new_alias_expr (&type_int, e1),
 							 new_alias_expr (&type_int, e2));
 	}
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		e->expr.type = &type_float;
 	}
-	return e;
-}
-
-static const expr_t *
-inverse_multiply (int op, const expr_t *e1, const expr_t *e2)
-{
-	// There is no vector/float or quaternion/float instruction and adding
-	// one would mean the engine would have to do 1/f every time
-	auto one = new_float_expr (1);
-	return binary_expr ('*', e1, binary_expr ('/', one, e2));
-}
-
-static const expr_t *
-vector_compare (int op, const expr_t *e1, const expr_t *e2)
-{
-	if (options.code.progsversion < PROG_VERSION) {
-		expr_t     *e = new_binary_expr (op, e1, e2);
-		e->expr.type = &type_int;
-		if (options.code.progsversion == PROG_ID_VERSION) {
-			e->expr.type = &type_float;
-		}
-		return e;
-	}
-	int         hop = op == EQ ? '&' : '|';
-	e1 = new_alias_expr (&type_vec3, e1);
-	e2 = new_alias_expr (&type_vec3, e2);
-	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_ivec3;
-	return new_horizontal_expr (hop, e, &type_int);
-}
-
-static const expr_t *
-quat_compare (int op, const expr_t *e1, const expr_t *e2)
-{
-	if (options.code.progsversion < PROG_VERSION) {
-		expr_t     *e = new_binary_expr (op, e1, e2);
-		e->expr.type = &type_int;
-		return e;
-	}
-	int         hop = op == EQ ? '&' : '|';
-	e1 = new_alias_expr (&type_vec4, e1);
-	e2 = new_alias_expr (&type_vec4, e2);
-	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_ivec4;
-	return new_horizontal_expr (hop, e, &type_int);
-}
-
-static const expr_t *
-vector_dot (int op, const expr_t *e1, const expr_t *e2)
-{
-	expr_t     *e = new_binary_expr (DOT, e1, e2);
-	e->expr.type = &type_float;
-	return e;
-}
-
-static const expr_t *
-vector_multiply (int op, const expr_t *e1, const expr_t *e2)
-{
-	if (options.math.vector_mult == DOT) {
-		// vector * vector is dot product in v6 progs (ick)
-		return vector_dot (op, e1, e2);
-	}
-	// component-wise multiplication
-	expr_t     *e = new_binary_expr ('*', e1, e2);
-	e->expr.type = &type_vector;
-	return e;
-}
-
-static const expr_t *
-vector_scale (int op, const expr_t *e1, const expr_t *e2)
-{
-	// Ensure the expression is always vector * scalar. The operation is
-	// always commutative, and the Ruamoko ISA supports only vector * scalar
-	// (though v6 does support scalar * vector, one less if).
-	if (is_scalar (get_type (e1))) {
-		auto t = e1;
-		e1 = e2;
-		e2 = t;
-	}
-	expr_t     *e = new_binary_expr (SCALE, e1, e2);
-	e->expr.type = get_type (e1);
-	return e;
-}
-
-static const expr_t *
-double_compare (int op, const expr_t *e1, const expr_t *e2)
-{
-	auto t1 = get_type (e1);
-	auto t2 = get_type (e2);
-	expr_t     *e;
-
-	if (is_constant (e1) && e1->implicit && is_double (t1) && is_float (t2)) {
-		t1 = &type_float;
-		e1 = cast_expr (t1, e1);
-	}
-	if (is_float (t1) && is_constant (e2) && e2->implicit && is_double (t2)) {
-		t2 = &type_float;
-		e2 = cast_expr (t2, e2);
-	}
-	if (is_double (t1)) {
-		if (is_float (t2)) {
-			warning (e2, "comparison between double and float");
-		} else if (!is_constant (e2)) {
-			warning (e2, "comparison between double and int");
-		}
-		e2 = cast_expr (&type_double, e2);
-	} else if (is_double (t2)) {
-		if (is_float (t1)) {
-			warning (e1, "comparison between float and double");
-		} else if (!is_constant (e1)) {
-			warning (e1, "comparison between int and double");
-		}
-		e1 = cast_expr (&type_double, e1);
-	}
-	e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_long;
-	return e;
-}
-
-static const expr_t *
-uint_compare (int op, const expr_t *e1, const expr_t *e2)
-{
-	auto t1 = get_type (e1);
-	auto t2 = get_type (e2);
-	expr_t     *e;
-
-	if (is_constant (e1) && e1->implicit && is_int (t1)) {
-		t1 = &type_uint;
-		e1 = cast_expr (t1, e1);
-	}
-	if (is_constant (e2) && e2->implicit && is_int (t2)) {
-		t2 = &type_uint;
-		e2 = cast_expr (t2, e2);
-	}
-	if (t1 != t2) {
-		warning (e1, "comparison between signed and unsigned");
-		if (is_int (t1)) {
-			e1 = cast_expr (&type_uint, e2);
-		} else {
-			e2 = cast_expr (&type_uint, e2);
-		}
-	}
-	e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_int;
 	return e;
 }
 
@@ -1133,55 +153,602 @@ entity_compare (int op, const expr_t *e1, const expr_t *e2)
 		e2 = new_alias_expr (&type_int, e2);
 	}
 	expr_t     *e = new_binary_expr (op, e1, e2);
-	e->expr.type = &type_int;
+	e->expr.type = &type_bool;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		e->expr.type = &type_float;
 	}
 	return e;
 }
 
-#define invalid_binary_expr(_op, _e1, _e2) \
-	_invalid_binary_expr(_op, _e1, _e2, __FILE__, __LINE__, __FUNCTION__)
 static const expr_t *
-_invalid_binary_expr (int op, const expr_t *e1, const expr_t *e2,
-					  const char *file, int line, const char *func)
+target_shift_op (int op, const expr_t *e1, const expr_t *e2)
+{
+	return current_target.shift_op (op, e1, e2);
+}
+
+static const type_t *
+promote_type (const type_t *dst, const type_t *src)
+{
+	if ((is_vector (dst) || is_quaternion (dst))
+		&& type_width (dst) == type_width (src)) {
+		return dst;
+	}
+	return vector_type (base_type (dst), type_width (src));
+}
+
+static void
+promote_exprs (const expr_t **e1, const expr_t **e2)
+{
+	auto t1 = get_type (*e1);
+	auto t2 = get_type (*e2);
+
+	if (is_enum (t1) && is_enum (t2)) {
+		//FIXME proper backing type for enum like handle
+		t1 = type_default;
+		t2 = type_default;
+	} else if (is_math (t1) && is_enum (t2)) {
+		t2 = promote_type (t1, t2);
+	} else if (is_math (t2) && is_enum (t1)) {
+		t1 = promote_type (t2, t1);
+	} else if ((is_vector (t1) || is_quaternion (t1))
+			   && (is_float (t2) || is_bool (t2))) {
+		t2 = promote_type (t1, t2);
+	} else if ((is_vector (t2) || is_quaternion (t2))
+			   && (is_float (t1) || is_bool (t2))) {
+		t1 = promote_type (t2, t1);
+	} else if (type_promotes (t1, t2)) {
+		t2 = promote_type (t1, t2);
+	} else if (type_promotes (t2, t1)) {
+		t1 = promote_type (t2, t1);
+	} else if (base_type (t1) != base_type (t2)) {
+		internal_error (*e1, "failed to promote types %s %s",
+						get_type_string (t1), get_type_string (t2));
+	}
+	*e1 = cast_expr (t1, *e1);
+	*e2 = cast_expr (t2, *e2);
+}
+
+static const expr_t *
+math_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
-	return _error (e1, file, line, func, "invalid binary expression: %s %s %s",
-				  get_type_string (t1), get_op_string (op),
-				  get_type_string (t2));
+	if (is_matrix (t1) || is_matrix (t2)
+		|| type_width (t1) != type_width (t2)) {
+		//FIXME glsl does not support comparison of vectors using operators
+		// (it uses functions)
+		return error (e1, "cannot compare %s and %s",
+					  get_type_string (t1), get_type_string (t2));
+	}
+	if (t1 != t2) {
+		if (e1->implicit && type_demotes (t2, t1)) {
+			t1 = promote_type (t2, t1);
+		} else if (e2->implicit && type_demotes (t1, t2)) {
+			t2 = promote_type (t1, t2);
+		}
+		e1 = cast_expr (t1, e1);
+		e2 = cast_expr (t2, e2);
+	}
+	if (!type_compares (t1, t2)) {
+		warning (e2, "comparison between %s and %s",
+				 get_type_string (t1),
+				 get_type_string (t2));
+	}
+	if (t1 != t2) {
+		promote_exprs (&e1, &e2);
+		t1 = get_type (e1);
+		t2 = get_type (e2);
+	}
+	if (is_vector (t1) || is_quaternion (t1)) {
+		return current_target.vector_compare (op, e1, e2);
+	}
+
+	auto e = new_binary_expr (op, e1, e2);
+	e->expr.type = bool_type (t1);
+	return e;
 }
+
+static const expr_t *
+matrix_binary_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+
+	int rowsa = type_rows (ta);
+	int colsb = type_cols (tb);
+
+	int rowsc, colsc;
+
+	if (is_nonscalar (ta)) {
+		// vectors * matrix treats vector as row matrix, resulting in vector
+		rowsc = colsb;
+		colsc = 1;
+	} else {
+		rowsc = rowsa;
+		colsc = colsb;
+	}
+
+	auto type = matrix_type (base_type (ta), colsc, rowsc);
+	auto e = typed_binary_expr (type, op, a, b);
+	return e;
+}
+
+static const expr_t *
+matrix_scalar_mul (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+
+	if (is_scalar (ta)) {
+		// ensure the expression is always matrix * scalar
+		auto te = a;
+		a = b;
+		b = te;
+		ta = tb;
+	}
+
+	op = QC_SCALE;
+	auto e = typed_binary_expr (ta, op, a, b);
+	return e;
+}
+
+static const expr_t *
+convert_scalar (const expr_t *scalar, const expr_t *vec)
+{
+	// expand the scalar to a vector of the same width as vec
+	auto vec_type = get_type (vec);
+	// vec might actually be a matrix, so get its column "width"
+	vec_type = vector_type (base_type (vec_type), type_width (vec_type));
+
+	if (is_constant (scalar)) {
+		int width = type_width (get_type (vec));
+		const expr_t *elements[width];
+		for (int i = 0; i < width; i++) {
+			elements[i] = scalar;
+		}
+		auto scalar_list = new_list_expr (nullptr);
+		list_gather (&scalar_list->list, elements, width);
+		return new_vector_list (scalar_list);
+	}
+
+	return new_extend_expr (scalar, vec_type, 2, false);//2 = copy
+}
+
+static const expr_t *
+matrix_scalar_expr (int op, const expr_t *a, const expr_t *b)
+{
+	scoped_src_loc (a);
+	bool left = is_scalar (get_type (a));
+	auto mat_type = get_type (left ? b : a);
+	int count = type_cols (mat_type);
+	const expr_t *a_cols[count];
+	const expr_t *b_cols[count];
+	if (left) {
+		a_cols[0] = convert_scalar (a, b);
+		for (int i = 0; i < count; i++) {
+			a_cols[i] = a_cols[0];
+			b_cols[i] = get_column (b, i);
+		}
+	} else {
+		b_cols[0] = convert_scalar (b, a);
+		for (int i = 0; i < count; i++) {
+			a_cols[i] = get_column (a, i);
+			b_cols[i] = b_cols[0];
+		}
+	}
+	auto params = new_list_expr (nullptr);
+	for (int i = 0; i < count; i++) {
+		expr_append_expr (params, binary_expr (op, a_cols[i], b_cols[i]));
+	}
+	return constructor_expr (new_type_expr (mat_type), params);
+}
+
+static const expr_t *
+matrix_scalar_div (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+
+	if (is_vector (ta) || is_quaternion (ta) || is_matrix (ta)) {
+		// There is no vector/float or quaternion/float instruction and adding
+		// one would mean the engine would have to do 1/f every time
+		// similar for matrix
+		auto one = new_float_expr (1, false);
+		return binary_expr ('*', a, binary_expr ('/', one, b));
+	}
+	b = convert_scalar (b, a);
+	auto e = typed_binary_expr (ta, op, a, b);
+	return e;
+}
+
+static const expr_t *
+vector_scalar_expr (int op, const expr_t *a, const expr_t *b)
+{
+	scoped_src_loc (a);
+	bool left = is_scalar (get_type (a));
+	if (left) {
+		a = convert_scalar (a, b);
+	} else {
+		b = convert_scalar (b, a);
+	}
+	return binary_expr (op, a, b);
+}
+
+static const expr_t *
+vector_vector_mul (int op, const expr_t *a, const expr_t *b)
+{
+	expr_t     *e = new_binary_expr ('*', a, b);
+	if (options.math.vector_mult == QC_DOT) {
+		// vector * vector is dot product in v6 progs (ick)
+		e->expr.op = QC_DOT;
+		e->expr.type = &type_float;
+	} else {
+		// component-wise multiplication
+		e->expr.type = &type_vector;
+	}
+	return e;
+}
+
+static const expr_t *
+quaternion_quaternion_expr (int op, const expr_t *a, const expr_t *b)
+{
+	return typed_binary_expr (&type_quaternion, QC_QMUL, a, b);
+}
+
+static const expr_t *
+quaternion_vector_expr (int op, const expr_t *a, const expr_t *b)
+{
+	return typed_binary_expr (&type_vector, QC_QVMUL, a, b);
+}
+
+static const expr_t *
+vector_quaternion_expr (int op, const expr_t *a, const expr_t *b)
+{
+	return typed_binary_expr (&type_vector, QC_VQMUL, a, b);
+}
+
+static const expr_t *
+outer_product_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+	if (is_integral (ta) || is_integral (tb)) {
+		warning (a, "integral vectors in outer product");
+		ta = float_type (ta);
+		tb = float_type (tb);
+		a = cast_expr (ta, a);
+		b = cast_expr (tb, b);
+	}
+	int rows = type_width (ta);
+	int cols = type_width (tb);
+	auto type = matrix_type (ta, cols, rows);
+	auto e = typed_binary_expr (type, QC_OUTER, a, b);
+	return e;
+}
+
+static const expr_t *
+dot_product_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+	if (is_integral (ta) || is_integral (tb)) {
+		warning (a, "integral vectors in dot product");
+		ta = float_type (ta);
+		tb = float_type (tb);
+		a = cast_expr (ta, a);
+		b = cast_expr (tb, b);
+	}
+	auto type = base_type (ta);
+	auto e = typed_binary_expr (type, QC_DOT, a, b);
+	return e;
+}
+
+static const expr_t *
+boolean_op (int op, const expr_t *a, const expr_t *b)
+{
+	if (!is_boolean (get_type (a))) {
+		a = test_expr (a);
+	}
+	if (!is_boolean (get_type (b))) {
+		b = test_expr (b);
+	}
+	promote_exprs (&a, &b);
+	auto type = base_type (get_type (a));
+	auto e = typed_binary_expr (type, op, a, b);
+	return e;
+}
+
+static const type_t *
+bool_result (const type_t *a, const type_t *b)
+{
+	return bool_type (a);
+}
+
+static bool
+shape_matrix (const type_t *a, const type_t *b)
+{
+	if (type_cols (a) == type_rows (b)) {
+		return true;
+	}
+	error (0, "matrix colums != matrix rows: %d %d",
+		   type_cols (a), type_rows (b));
+	return false;
+}
+
+static bool
+shape_matvec (const type_t *a, const type_t *b)
+{
+	if (type_cols (a) == type_width (b)) {
+		return true;
+	}
+	error (0, "matrix colums != vectors width: %d %d",
+		   type_cols (a), type_width (b));
+	return false;
+}
+
+static bool
+shape_vecmat (const type_t *a, const type_t *b)
+{
+	if (type_width (a) == type_rows (b)) {
+		return true;
+	}
+	error (0, "vectors width != matrix rows: %d %d",
+		   type_width (a), type_rows (b));
+	return false;
+}
+
+static bool
+shape_always (const type_t *a, const type_t *b)
+{
+	return true;
+}
+
+static expr_type_t equality_ops[] = {
+	{	.match_a = is_string,  .match_b = is_string,
+			.res_type = bool_result },
+	{	.match_a = is_math,    .match_b = is_math,
+			.process = math_compare },
+	{	.match_a = is_entity,  .match_b = is_entity,
+			.process = entity_compare },
+	{	.match_a = is_field,   .match_b = is_field,   },
+	{	.match_a = is_func,    .match_b = is_func,
+			.process = func_compare },
+	{	.match_a = is_pointer, .match_b = is_pointer,
+			.process = pointer_compare },
+	{	.match_a = is_handle,  .match_b = is_handle,  },
+
+	{}
+};
+
+static expr_type_t compare_ops[] = {
+	{   .match_a = is_string,  .match_b = is_string,
+			.res_type = bool_result },
+	{   .match_a = is_math,    .match_b = is_math,
+			.process = math_compare },
+	{   .match_a = is_pointer, .match_b = is_pointer,
+			.process = pointer_compare },
+
+	{}
+};
+
+static expr_type_t shift_ops[] = {
+	{   .match_a = is_math,    .match_b = is_math,
+			.process = target_shift_op },
+
+	{}
+};
+
+static expr_type_t add_ops[] = {
+	{   .match_a = is_ptr,      .match_b = is_integral,
+			.process = pointer_arithmetic, },
+	{   .match_a = is_integral, .match_b = is_ptr,
+			.process = pointer_arithmetic, },
+	{   .match_a = is_string,   .match_b = is_string,   },
+	{   .match_a = is_matrix,   .match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_matrix,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_nonscalar,.match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_nonscalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t sub_ops[] = {
+	{   .match_a = is_ptr,      .match_b = is_integral,
+			.process = pointer_arithmetic, },
+	{   .match_a = is_ptr,      .match_b = is_ptr,
+			.process = pointer_arithmetic, },
+	{   .match_a = is_matrix,   .match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_matrix,
+			.match_shape = shape_always,
+			.process = matrix_scalar_expr, },
+	{   .match_a = is_nonscalar,.match_b = is_scalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_scalar,   .match_b = is_nonscalar,
+			.match_shape = shape_always,
+			.process = vector_scalar_expr, },
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t mul_ops[] = {
+	{   .match_a = is_matrix,     .match_b = is_matrix,
+			.match_shape = shape_matrix,
+			.process = matrix_binary_expr, },
+	{   .match_a = is_matrix,     .match_b = is_nonscalar,
+			.match_shape = shape_matvec,
+			.process = matrix_binary_expr, },
+	{   .match_a = is_nonscalar,  .match_b = is_matrix,
+			.match_shape = shape_vecmat,
+			.process = matrix_binary_expr, },
+	{   .match_a = is_matrix,     .match_b = is_scalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_mul, },
+	{   .match_a = is_scalar,     .match_b = is_matrix,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_mul, },
+	{   .match_a = is_nonscalar,  .match_b = is_scalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_mul, },
+	{   .match_a = is_scalar,     .match_b = is_nonscalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_mul, },
+	{	.match_a = is_vector,     .match_b = is_vector,
+			.process = vector_vector_mul, },
+	{	.match_a = is_vector,     .match_b = is_vector_compat,
+			.promote = true, .process = vector_vector_mul, },
+	{	.match_a = is_vector_compat, .match_b = is_vector,
+			.promote = true, .process = vector_vector_mul, },
+	{	.match_a = is_quaternion, .match_b = is_quaternion,
+			.process = quaternion_quaternion_expr, },
+	{	.match_a = is_quaternion, .match_b = is_quaternion_compat,
+			.promote = true, .process = quaternion_quaternion_expr, },
+	{	.match_a = is_quaternion_compat, .match_b = is_quaternion,
+			.promote = true, .process = quaternion_quaternion_expr, },
+	{	.match_a = is_quaternion, .match_b = is_vector_compat,
+			.match_shape = shape_always,
+			.promote = true, .process = quaternion_vector_expr, },
+	{	.match_a = is_vector_compat,     .match_b = is_quaternion,
+			.match_shape = shape_always,
+			.promote = true, .process = vector_quaternion_expr, },
+	{   .match_a = is_math,       .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t outer_ops[] = {
+	{   .match_a = is_nonscalar, .match_b = is_nonscalar,
+			.process = outer_product_expr, },
+
+	{}
+};
+
+static expr_type_t cross_ops[] = {
+	{   .match_a = is_vector, .match_b = is_vector, },
+	{   .match_a = is_vector, .match_b = is_vector_compat,
+			.promote = true },
+	{   .match_a = is_vector_compat, .match_b = is_vector,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t dot_ops[] = {
+	{   .match_a = is_nonscalar, .match_b = is_nonscalar,
+			.process = dot_product_expr, },
+
+	{}
+};
+
+static expr_type_t div_ops[] = {
+	{   .match_a = is_matrix,     .match_b = is_scalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_div, },
+	{   .match_a = is_nonscalar,  .match_b = is_scalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_div, },
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t mod_ops[] = {
+	{   .match_a = is_matrix,   .match_b = is_matrix, },	// invalid op
+	{   .match_a = is_nonscalar,  .match_b = is_scalar,
+			.match_shape = shape_always,
+			.promote = true, .process = matrix_scalar_div, },
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t bit_ops[] = {
+	{   .match_a = is_math,     .match_b = is_math,
+			.promote = true },
+
+	{}
+};
+
+static expr_type_t bool_ops[] = {
+	{   .match_a = is_boolean, .match_b = is_boolean, },
+	{   .match_a = is_scalar, .match_b = is_scalar,
+			.process = boolean_op },
+
+	{}
+};
+
+#define countof(x) (sizeof(x)/sizeof(x[0]))
+
+static expr_type_t *expr_types[] = {
+	[QC_EQ] = equality_ops,
+	[QC_NE] = equality_ops,
+	[QC_LE] = compare_ops,
+	[QC_GE] = compare_ops,
+	[QC_LT] = compare_ops,
+	[QC_GT] = compare_ops,
+	[QC_SHL] = shift_ops,
+	[QC_SHR] = shift_ops,
+	['+'] = add_ops,
+	['-'] = sub_ops,
+	['*'] = mul_ops,
+	['/'] = div_ops,
+	['&'] = bit_ops,
+	['|'] = bit_ops,
+	['^'] = bit_ops,
+	['%'] = mod_ops,
+	[QC_AND] = bool_ops,
+	[QC_OR] = bool_ops,
+	[QC_XOR] = bool_ops,
+	[QC_MOD] = mod_ops,
+	[QC_GEOMETRIC] = nullptr,	// handled by algebra_binary_expr
+	[QC_HADAMARD] = mul_ops,
+	[QC_CROSS] = cross_ops,
+	[QC_DOT] = dot_ops,
+	[QC_OUTER] = outer_ops,
+	[QC_WEDGE] = nullptr,	// handled by algebra_binary_expr
+	[QC_REGRESSIVE] = nullptr,	// handled by algebra_binary_expr
+};
 
 static const expr_t *
 reimplement_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	expr_t     *e;
-
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		switch (op) {
 			case '%':
 				{
-					expr_t     *tmp1, *tmp2;
-					e = new_block_expr (0);
-					tmp1 = new_temp_def_expr (&type_float);
-					tmp2 = new_temp_def_expr (&type_float);
-
-					append_expr (e, assign_expr (tmp1, binary_expr ('/', e1, e2)));
-					append_expr (e, assign_expr (tmp2, binary_expr ('&', tmp1, tmp1)));
-					e->block.result = binary_expr ('-', e1, binary_expr ('*', e2, tmp2));
-					return e;
+					auto div = paren_expr (binary_expr ('/', e1, e2));
+					auto trn = binary_expr ('&', div, div);
+					return binary_expr ('-', e1, binary_expr ('*', e2, trn));
+				}
+				break;
+			case QC_MOD:
+				{
+					auto div = paren_expr (binary_expr ('/', e1, e2));
+					auto trn = binary_expr ('&', div, div);
+					auto one = binary_expr (QC_GT, trn, div);
+					auto flr = binary_expr ('-', trn, one);
+					return binary_expr ('-', e1, binary_expr ('*', e2, flr));
 				}
 				break;
 		}
 	}
-	return 0;
-}
-
-static void
-set_paren (const expr_t *e)
-{
-	((expr_t *) e)->paren = 1;
+	return nullptr;
 }
 
 static const expr_t *
@@ -1189,11 +756,11 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 {
 	if (e1->type == ex_uexpr && e1->expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
-			if (op != AND && op != OR && op != '=') {
+			if (op != QC_AND && op != QC_OR && op != '=') {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
-				set_paren (e1->expr.e1);
-				return unary_expr ('!', binary_expr (op, e1->expr.e1, e2));
+				e1 = paren_expr (e1->expr.e1);
+				return unary_expr ('!', binary_expr (op, e1, e2));
 			}
 		} else if (op == '&' || op == '|') {
 			if (options.warnings.precedence)
@@ -1207,35 +774,35 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e2->expr.op) || is_compare (e2->expr.op)))
 				|| (op == '='
-					&&(e2->expr.op == OR || e2->expr.op == AND))) {
+					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				set_paren (e1);
+				e1 = paren_expr (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
-			if (((op == EQ || op == NE) && is_compare (e2->expr.op))
-				|| (op == OR && e2->expr.op == AND)
+			if (((op == QC_EQ || op == QC_NE) && is_compare (e2->expr.op))
+				|| (op == QC_OR && e2->expr.op == QC_AND)
 				|| (op == '|' && e2->expr.op == '&')) {
 				notice (e1, "precedence of `%s' raised to `%s' for "
 							"traditional code", get_op_string (op),
 							get_op_string (e2->expr.op));
 				e1 = binary_expr (op, e1, e2->expr.e1);
-				set_paren (e1);
+				e1 = paren_expr (e1);
 				return binary_expr (e2->expr.op, e1, e2->expr.e2);
 			}
 		} else if (e1->type == ex_expr && !e1->paren) {
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e1->expr.op) || is_compare (e1->expr.op)))
 				|| (op == '='
-					&&(e2->expr.op == OR || e2->expr.op == AND))) {
+					&&(e2->expr.op == QC_OR || e2->expr.op == QC_AND))) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e1->expr.op));
 				e2 = binary_expr (op, e1->expr.e2, e2);
-				set_paren (e1);
-				return binary_expr (e1->expr.op, e1->expr.e1, e2);
+				e1 = paren_expr (e1->expr.e1);
+				return binary_expr (e1->expr.op, e1, e2);
 			}
 		}
 	} else {
@@ -1275,23 +842,9 @@ is_call (const expr_t *e)
 	return e->type == ex_block && e->block.is_call;
 }
 
-static const type_t *
-promote_type (const type_t *dst, const type_t *src)
-{
-	if (is_vector (dst) || is_quaternion (dst)) {
-		return dst;
-	}
-	return vector_type (base_type (dst), type_width (src));
-}
-
 const expr_t *
 binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	etype_t     et1, et2;
-	const expr_t *e;
-	expr_type_t *expr_type;
-
-	e1 = convert_name (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
 	if (e1->type == ex_alias && is_call (e1->alias.expr)) {
@@ -1318,7 +871,6 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (e1->type == ex_error)
 		return e1;
 
-	e2 = convert_name (e2);
 	if (e2->type == ex_error)
 		return e2;
 
@@ -1327,8 +879,16 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	if (e2->type == ex_bool)
 		e2 = convert_from_bool (e2, get_type (e1));
 
+	const expr_t *e;
 	if ((e = check_precedence (op, e1, e2)))
 		return e;
+
+	if (is_reference (get_type (e1))) {
+		e1 = pointer_deref (e1);
+	}
+	if (is_reference (get_type (e2))) {
+		e2 = pointer_deref (e2);
+	}
 
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
@@ -1339,7 +899,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		return algebra_binary_expr (op, e1, e2);
 	}
 
-	if (op == EQ || op == NE) {
+	if (op == QC_EQ || op == QC_NE) {
 		if (e1->type == ex_nil) {
 			t1 = t2;
 			e1 = convert_nil (e1, t1);
@@ -1349,137 +909,64 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		}
 	}
 
-	if (is_constant (e1) && is_double (t1) && e1->implicit && is_float (t2)) {
-		t1 = float_type (t2);
-		e1 = cast_expr (t1, e1);
-	}
-	if (is_constant (e2) && is_double (t2) && e2->implicit && is_float (t1)) {
-		t2 = float_type (t1);
-		e2 = cast_expr (t2, e2);
-	}
-	if (is_array (t1) && (is_ptr (t2) || is_integral (t2))) {
+	if (is_array (t1) && (is_pointer (t2) || is_integral (t2))) {
 		t1 = pointer_type (dereference_type (t1));
 		e1 = cast_expr (t1, e1);
 	}
-	if (is_array (t2) && (is_ptr (t1) || is_integral (t1))) {
+	if (is_array (t2) && (is_pointer (t1) || is_integral (t1))) {
 		t1 = pointer_type (dereference_type (t2));
 		e2 = cast_expr (t2, e2);
 	}
 
-	et1 = low_level_type (t1);
-	et2 = low_level_type (t2);
-
-	if (t1->meta >= ty_meta_count || !binary_expr_meta[t1->meta]) {
-		return invalid_binary_expr(op, e1, e2);
+	if ((unsigned) op > countof (expr_types) || !expr_types[op]) {
+		internal_error (e1, "invalid operator: %s", get_op_string (op));
 	}
-	if (t2->meta >= ty_meta_count || !binary_expr_meta[t2->meta]) {
-		return invalid_binary_expr(op, e1, e2);
-	}
-	if (binary_expr_meta[t1->meta] != binary_expr_meta[t2->meta]) {
-		return invalid_binary_expr(op, e1, e2);
-	}
-	auto expr_meta = binary_expr_meta[t1->meta];
-	if (et1 >= ev_type_count || !expr_meta[et1])
-		return invalid_binary_expr(op, e1, e2);
-	if (et2 >= ev_type_count || !expr_meta[et1][et2])
-		return invalid_binary_expr(op, e1, e2);
-
-	if ((t1->width > 1 || t2->width > 1)) {
-		// vector/quaternion and scalar won't get here as vector and quaternion
-		// are distict types with type.width == 1, but vector and vec3 WILL get
-		// here because of vec3 being float{3}
-		if (t1 != t2) {
-			auto pt1 = t1;
-			auto pt2 = t2;
-			if (is_float (base_type (t1)) && is_double (base_type (t2))
-				&& e2->implicit) {
-				pt2 = promote_type (t1, t2);
-			} else if (is_double (base_type (t1)) && is_float (base_type (t2))
-					   && e1->implicit) {
-				pt1 = promote_type (t2, t1);
-			} else if (type_promotes (base_type (t1), base_type (t2))) {
-				pt2 = promote_type (t1, t2);
-			} else if (type_promotes (base_type (t2), base_type (t1))) {
-				pt1 = promote_type (t2, t1);
-			} else if (base_type (t1) == base_type (t2)) {
-				if (is_vector (t1) || is_quaternion (t1)) {
-					pt2 = t1;
-				} else if (is_vector (t2) || is_quaternion (t2)) {
-					pt1 = t2;
-				}
-			} else {
-				debug (e1, "%d %d\n", e1->implicit, e2->implicit);
-				return invalid_binary_expr (op, e1, e2);
-			}
-			if (pt1 != t1) {
-				e1 = cast_expr (pt1, e1);
-				t1 = pt1;
-			}
-			if (pt2 != t2) {
-				e2 = cast_expr (pt2, e2);
-				t2 = pt2;
-			}
+	expr_type_t *expr_type = expr_types[op];
+	for (; expr_type->match_a; expr_type++) {
+		if (expr_type->match_a (t1) && expr_type->match_b (t2)) {
+			break;
 		}
-		int         scalar_op = 0;
-		if (type_width (t1) == 1) {
-			// scalar op vec
-			if (!(e = edag_add_expr (convert_scalar (e1, op, e2)))) {
-				return invalid_binary_expr (op, e1, e2);
-			}
-			scalar_op = 1;
-			e1 = e;
+	}
+	if (!expr_type->match_a) {
+		return error (e1, "invalid binary expression");
+	}
+	if (expr_type->match_shape) {
+		scoped_src_loc (e1);//for error messages
+		if (!expr_type->match_shape (t1, t2)) {
+			return new_error_expr ();
+		}
+	} else {
+		if (type_width (t1) != type_width (t2)
+			|| type_cols(t1) != type_cols(t2)) {
+			return error (e1, "operand size mismatch in binary expression");
+		}
+	}
+
+	if (expr_type->promote) {
+		if (e1->implicit && type_demotes (t2, t1)) {
+			t1 = promote_type (t2, t1);
+			e1 = cast_expr (t1, e1);
+		} else if (e2->implicit && type_demotes (t1, t2)) {
+			t2 = promote_type (t1, t2);
+			e2 = cast_expr (t2, e2);
+		} else {
+			promote_exprs (&e1, &e2);
 			t1 = get_type (e1);
-		}
-		if (type_width (t2) == 1) {
-			// vec op scalar
-			if (!(e = edag_add_expr (convert_scalar (e2, op, e1)))) {
-				return invalid_binary_expr (op, e1, e2);
-			}
-			scalar_op = 1;
-			e2 = e;
 			t2 = get_type (e2);
 		}
-		if (scalar_op && op == '*') {
-			op = HADAMARD;
-		}
-		if (type_width (t1) != type_width (t2)) {
-			// vec op vec of different widths
-			return invalid_binary_expr (op, e1, e2);
-		}
-		t1 = get_type (e1);
-		t2 = get_type (e2);
-		et1 = low_level_type (t1);
-		et2 = low_level_type (t2);
-		// both widths are the same at this point
-		if (t1->width > 1) {
-			auto ne = new_binary_expr (op, e1, e2);
-			if (is_compare (op)) {
-				t1 = int_type (t1);
-			}
-			if (op == DOT) {
-				if (!is_real (t1)) {
-					return invalid_binary_expr (op, e1, e2);
-				}
-				t1 = base_type (t1);
-			}
-			ne->expr.type = t1;
-			return edag_add_expr (ne);
-		}
 	}
 
-	expr_type = expr_meta[et1][et2];
-	while (expr_type->op && expr_type->op != op)
-		expr_type++;
-	if (!expr_type->op)
-		return invalid_binary_expr(op, e1, e2);
-
-	if (expr_type->a_cast)
-		e1 = cast_expr (expr_type->a_cast, e1);
-	if (expr_type->b_cast)
-		e2 = cast_expr (expr_type->b_cast, e2);
 	if (expr_type->process) {
-		e = fold_constants (expr_type->process (op, e1, e2));
-		return edag_add_expr (e);
+		auto e = expr_type->process (op, e1, e2);
+		return edag_add_expr (fold_constants (e));
+	}
+
+	auto type = t1;
+	if (expr_type->res_type) {
+		type = expr_type->res_type (t1, t2);
+		if (!type) {
+			return new_error_expr ();
+		}
 	}
 
 	if ((e = reimplement_binary_expr (op, e1, e2)))
@@ -1490,7 +977,7 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 
 	auto ne = new_binary_expr (op, e1, e2);
-	ne->expr.type = expr_type->result_type;
+	ne->expr.type = type;
 	if (expr_type->commutative) {
 		ne->expr.commutative = expr_type->commutative ();
 	}
@@ -1499,11 +986,6 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 	}
 	if (expr_type->associative) {
 		ne->expr.associative = expr_type->associative ();
-	}
-	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion == PROG_ID_VERSION) {
-			ne->expr.type = &type_float;
-		}
 	}
 	return edag_add_expr (fold_constants (ne));
 }

@@ -53,10 +53,11 @@ int strpool_findstr (strpool_t *strpool, const char *str);
 	\return			The unique copy of the string.
 */
 const char *save_string (const char *str);
+const char *save_substring (const char *str, int len);
 
 const char *save_cwd (void);
 
-const char *make_string (char *token, char **end);
+const char *make_string (const char *token, char **end);
 
 const char *html_string (const char *str);
 const char *quote_string (const char *str);

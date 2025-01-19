@@ -36,11 +36,10 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 static int __attribute__((pure))
 get_group (const type_t *type, algebra_t *algebra)
@@ -54,7 +53,7 @@ get_group (const type_t *type, algebra_t *algebra)
 	}
 	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (type->type != ev_invalid) {
-		group_mask = type->t.multivec->group_mask;
+		group_mask = type->multivec->group_mask;
 	}
 	if (group_mask & (group_mask - 1)) {
 		internal_error (0, "multi-group mult-vector");
@@ -73,7 +72,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 		if (type->type == ev_invalid) {
 			return (1 << algebra->layout.count) - 1;
 		}
-		return type->t.multivec->group_mask;
+		return type->multivec->group_mask;
 	}
 }
 
@@ -92,13 +91,13 @@ anti_com (const expr_t *e)
 static bool __attribute__((const))
 op_commute (int op)
 {
-	return (op == '+' || op == '*' || op == HADAMARD || op == DOT);
+	return (op == '+' || op == '*' || op == QC_HADAMARD || op == QC_DOT);
 }
 
 static bool __attribute__((const))
 op_anti_com (int op)
 {
-	return (op == '-' || op == CROSS || op == WEDGE);
+	return (op == '-' || op == QC_CROSS || op == QC_WEDGE);
 }
 
 const expr_t *
@@ -122,6 +121,11 @@ neg_expr (const expr_t *e)
 		return e->expr.e1;
 	}
 	auto type = get_type (e);
+	if (e->type == ex_alias && !e->alias.offset && anti_com (e->alias.expr)) {
+		auto n = neg_expr (e->alias.expr);
+		n = algebra_cast_expr (type, n);
+		return n;
+	}
 	expr_t *neg;
 	if (anti_com (e)) {
 		neg = new_binary_expr (e->expr.op, e->expr.e2, e->expr.e1);
@@ -136,7 +140,7 @@ const expr_t *
 ext_expr (const expr_t *src, const type_t *type, int extend, bool reverse)
 {
 	if (!src) {
-		return 0;
+		return nullptr;
 	}
 	bool neg = false;
 	if (is_neg (src)) {
@@ -179,7 +183,7 @@ alias_expr (const type_t *type, const expr_t *e, int offset)
 		e = neg_expr (e);
 	}
 	if (e->type == ex_uexpr && e->expr.op == '.') {
-		auto offs = new_int_expr (offset);
+		auto offs = new_int_expr (offset, false);
 		auto ptr = e->expr.e1;
 		ptr = offset_pointer_expr (ptr, edag_add_expr (offs));
 		ptr = cast_expr (pointer_type (type), ptr);
@@ -247,11 +251,11 @@ get_mvec_struct (const type_t *type)
 {
 	symbol_t   *sym = 0;
 	if (type->type == ev_invalid) {
-		sym = type->t.algebra->mvec_sym;
+		sym = type->algebra->mvec_sym;
 	} else {
-		sym = type->t.multivec->mvec_sym;
+		sym = type->multivec->mvec_sym;
 	}
-	return sym ? sym->type->t.symtab : 0;
+	return sym ? sym->type->symtab : 0;
 }
 
 static symbol_t *
@@ -310,7 +314,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 	auto layout = &algebra->layout;
 	pr_uint_t group_mask = (1u << layout->count) - 1;
 	if (mvtype->type != ev_invalid) {
-		group_mask = mvtype->t.multivec->group_mask;
+		group_mask = mvtype->multivec->group_mask;
 	}
 	if (!(group_mask & (group_mask - 1))) {
 		return expr;
@@ -325,7 +329,7 @@ mvec_expr (const expr_t *expr, algebra_t *algebra)
 	int count = 0;
 	for (auto sym = get_mvec_sym (mvtype); sym; sym = sym->next) {
 		auto c = &components[count++];
-		*c = new_offset_alias_expr (sym->type, expr, sym->s.offset);
+		*c = new_offset_alias_expr (sym->type, expr, sym->offset);
 		*c = edag_add_expr (*c);
 	}
 	list_gather (&mvec->multivec.components, components, count);
@@ -347,7 +351,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 			if (type->type == ev_invalid) {
 				internal_error (mvec, "full algebra in mvec_scatter");
 			}
-			pr_uint_t mask = type->t.multivec->group_mask;
+			pr_uint_t mask = type->multivec->group_mask;
 			if (mask & (mask - 1)) {
 				internal_error (mvec, "bare multivector in mvec_scatter");
 			}
@@ -362,7 +366,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		if (!is_algebra (ct)) {
 			group = layout->group_map[layout->mask_map[0]][0];
 		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
-			pr_uint_t mask = ct->t.multivec->group_mask;
+			pr_uint_t mask = ct->multivec->group_mask;
 			if (mask & (mask - 1)) {
 				internal_error (mvec, "multivector in multivec expression");
 			}
@@ -416,7 +420,7 @@ mvec_gather (const expr_t **components, algebra_t *algebra)
 bool
 is_scale (const expr_t *expr)
 {
-	return expr && expr->type == ex_expr && expr->expr.op == SCALE;
+	return expr && expr->type == ex_expr && expr->expr.op == QC_SCALE;
 }
 
 const expr_t *
@@ -439,7 +443,7 @@ bool
 is_mult (const expr_t *expr)
 {
 	return (expr && expr->type == ex_expr
-			&& (expr->expr.op == '*' || expr->expr.op == HADAMARD));
+			&& (expr->expr.op == '*' || expr->expr.op == QC_HADAMARD));
 }
 
 int
@@ -450,11 +454,11 @@ count_terms (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_sum (e1) + !is_sum (e2);;
-	if (is_sum (e1)) {
+	int terms = (!is_sum (e1) || e1->paren) + (!is_sum (e2) || e2->paren);
+	if (!e1->paren && is_sum (e1)) {
 		terms += count_terms (expr->expr.e1);
 	}
-	if (is_sum (e2)) {
+	if (!e2->paren && is_sum (e2)) {
 		terms += count_terms (expr->expr.e2);
 	}
 	return terms;
@@ -468,7 +472,7 @@ count_factors (const expr_t *expr)
 	}
 	auto e1 = expr->expr.e1;
 	auto e2 = expr->expr.e2;
-	int terms = !is_mult (e1) + !is_mult (e2);;
+	int terms = !is_mult (e1) + !is_mult (e2);
 	if (is_mult (e1)) {
 		terms += count_factors (expr->expr.e1);
 	}
@@ -481,7 +485,7 @@ count_factors (const expr_t *expr)
 bool __attribute__((pure))
 is_cross (const expr_t *expr)
 {
-	return (expr && expr->type == ex_expr && (expr->expr.op == CROSS));
+	return (expr && expr->type == ex_expr && (expr->expr.op == QC_CROSS));
 }
 
 static void
@@ -594,13 +598,13 @@ scatter_terms_core (const expr_t *sum,
 	bool subtract = (sum->expr.op == '-') ^ negative;
 	auto e1 = sum->expr.e1;
 	auto e2 = sum->expr.e2;
-	if (is_sum (e1)) {
+	if (!e1->paren && is_sum (e1)) {
 		scatter_terms_core (e1, adds, addind, subs, subind, negative);
 	}
-	if (is_sum (e2)) {
+	if (!e2->paren && is_sum (e2)) {
 		scatter_terms_core (e2, adds, addind, subs, subind, subtract);
 	}
-	if (!is_sum (e1)) {
+	if (e1->paren || !is_sum (e1)) {
 		auto e = sum->expr.e1;
 		auto arr = negative ^ is_neg (e) ? subs : adds;
 		auto ind = negative ^ is_neg (e) ? subind : addind;
@@ -609,7 +613,7 @@ scatter_terms_core (const expr_t *sum,
 		}
 		arr[(*ind)++] = e;
 	}
-	if (!is_sum (e2)) {
+	if (e2->paren || !is_sum (e2)) {
 		auto e = sum->expr.e2;
 		auto arr = subtract ^ is_neg (e) ? subs : adds;
 		auto ind = subtract ^ is_neg (e) ? subind : addind;
@@ -899,7 +903,7 @@ do_scale (const type_t *type, const expr_t *a, const expr_t *b)
 	if (prod) {
 		b = prod;
 	}
-	return typed_binary_expr (type, SCALE, a, b);
+	return typed_binary_expr (type, QC_SCALE, a, b);
 }
 
 const expr_t *
@@ -957,7 +961,7 @@ do_dot (const type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto dot = typed_binary_expr (type, DOT, a, b);
+	auto dot = typed_binary_expr (type, QC_DOT, a, b);
 	dot = apply_scale (type, dot, prod);
 	return dot;
 }
@@ -991,7 +995,7 @@ do_cross (const type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto cross = typed_binary_expr (type, CROSS, a, b);
+	auto cross = typed_binary_expr (type, QC_CROSS, a, b);
 	cross = apply_scale (type, cross, prod);
 	return cross;
 }
@@ -1025,7 +1029,7 @@ do_wedge (const type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&a, prod);
 	prod = extract_scale (&b, prod);
 
-	auto wedge = typed_binary_expr (type, WEDGE, a, b);
+	auto wedge = typed_binary_expr (type, QC_WEDGE, a, b);
 	wedge = apply_scale (type, wedge, prod);
 	return wedge;
 }
@@ -2632,7 +2636,19 @@ commutator_product (const expr_t *e1, const expr_t *e2)
 	auto ab = geometric_product (e1, e2);
 	auto ba = geometric_product (e2, e1);
 	return algebra_binary_expr ('/', multivector_sum ('-', ab, ba),
-								new_int_expr (2));
+								new_int_expr (2, false));
+}
+
+static bool
+is_two (const expr_t *e)
+{
+	if (is_integral_val (e)) {
+		return expr_integral (e) == 2;
+	}
+	if (is_floating_val (e)) {
+		return expr_floating (e) == 2;
+	}
+	return false;
 }
 
 static const expr_t *
@@ -2651,6 +2667,7 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 	auto layout = &algebra->layout;
 	auto stype = algebra->type;
 	const expr_t *a[layout->count] = {};
+	bool is_half = is_two (e2);
 	e1 = mvec_expr (e1, algebra);
 	e2 = promote_scalar (algebra->type, e2);
 	mvec_scatter (a, e1, algebra);
@@ -2660,13 +2677,18 @@ multivector_divide (const expr_t *e1, const expr_t *e2)
 			continue;
 		}
 		auto den = e2;
-		auto ct = get_type (a[i]);
-		int width = type_width (ct);
-		if (width > 1) {
-			den = ext_expr (den, vector_type (stype, width), 2, false);
+		if (is_half && a[i]->type == ex_expr && a[i]->expr.op == '+'
+			&& a[i]->expr.e1 == a[i]->expr.e2) {
+			a[i] = a[i]->expr.e1;
+		} else {
+			auto ct = get_type (a[i]);
+			int width = type_width (ct);
+			if (width > 1) {
+				den = ext_expr (den, vector_type (stype, width), 2, false);
+			}
+			a[i] = typed_binary_expr (ct, '/', a[i], den);
+			a[i] = edag_add_expr (a[i]);
 		}
-		a[i] = typed_binary_expr (ct, '/', a[i], den);
-		a[i] = edag_add_expr (a[i]);
 	}
 	return mvec_gather (a, algebra);
 }
@@ -2677,14 +2699,14 @@ component_compare (int op, const expr_t *e1, const expr_t *e2, algebra_t *alg)
 	auto t = get_type (e1 ? e1 : e2);
 	auto stype = alg->type;
 	auto vtype = vector_type (stype, type_width (t));
-	pr_type_t zero[type_size (vtype)];
+	pr_type_t zero[type_size (vtype)] = {};
 	if (!e1) {
-		e1 = new_value_expr (new_type_value (vtype, zero));
+		e1 = new_value_expr (new_type_value (vtype, zero), false);
 	} else {
 		e1 = offset_cast (vtype, e1, 0);
 	}
 	if (!e2) {
-		e2 = new_value_expr (new_type_value (vtype, zero));
+		e2 = new_value_expr (new_type_value (vtype, zero), false);
 	} else {
 		e2 = offset_cast (vtype, e2, 0);
 	}
@@ -2712,7 +2734,7 @@ algebra_compare (int op, const expr_t *e1, const expr_t *e2)
 			auto c = component_compare (op, a[i], b[i], algebra);
 			if (cmp) {
 				bool_label = new_label_expr ();
-				cmp = bool_expr (AND, bool_label, cmp, c);
+				cmp = bool_expr (QC_AND, bool_label, cmp, c);
 			} else {
 				cmp = c;
 			}
@@ -2725,20 +2747,20 @@ const expr_t *
 algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	switch (op) {
-		case EQ:
-		case NE:
-		case LE:
-		case GE:
-		case LT:
-		case GT:
+		case QC_EQ:
+		case QC_NE:
+		case QC_LE:
+		case QC_GE:
+		case QC_LT:
+		case QC_GT:
 			return algebra_compare (op, e1, e2);
-		case DOT:
+		case QC_DOT:
 			return inner_product (e1, e2);
-		case WEDGE:
+		case QC_WEDGE:
 			return outer_product (e1, e2);
-		case REGRESSIVE:
+		case QC_REGRESSIVE:
 			return regressive_product (e1, e2);
-		case CROSS:
+		case QC_CROSS:
 			return commutator_product (e1, e2);
 		case '+':
 		case '-':
@@ -2746,7 +2768,7 @@ algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2)
 		case '/':
 			return multivector_divide (e1, e2);
 		case '*':
-		case GEOMETRIC:
+		case QC_GEOMETRIC:
 			return geometric_product (e1, e2);
 	}
 	return error (e1, "invalid operator");
@@ -2871,9 +2893,9 @@ algebra_reverse (const expr_t *e)
 				set_sign (&ones[j * type_size (algebra->type)], sign, ct);
 			}
 			if (neg) {
-				auto rev = new_value_expr (new_type_value (ct, ones));
+				auto rev = new_value_expr (new_type_value (ct, ones), false);
 				rev = edag_add_expr (rev);
-				r[i] = typed_binary_expr (ct, HADAMARD, r[i], rev);
+				r[i] = typed_binary_expr (ct, QC_HADAMARD, r[i], rev);
 				r[i] = edag_add_expr (rev);
 			}
 		}
@@ -2908,8 +2930,8 @@ static void
 zero_components (expr_t *block, const expr_t *dst, int memset_base, int memset_size)
 {
 	auto base = alias_expr (&type_int, dst, memset_base);
-	auto zero = new_int_expr (0);
-	auto size = new_int_expr (memset_size);
+	auto zero = new_int_expr (0, false);
+	auto size = new_int_expr (memset_size, false);
 	append_expr (block, new_memset_expr (base, zero, size));
 }
 
@@ -2965,6 +2987,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		if (srcType == dstType) {
 			if (summed_extend (src)) {
 				auto block = new_block_expr (0);
+				block->block.no_flush = true;
 				assign_extend (block, dst, src);
 				return block;
 			}
@@ -2983,6 +3006,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 
 	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr (0);
+	block->block.no_flush = true;
 	int  memset_base = 0;
 	for (int i = 0; i < layout->count; i++) {
 		if (!c[i]) {
@@ -2991,18 +3015,18 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		while (sym->type != get_type (c[i])) {
 			sym = sym->next;
 		}
-		int size = sym->s.offset - memset_base;
+		int size = sym->offset - memset_base;
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->s.offset);
+		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->offset);
 		if (summed_extend (c[i])) {
 			assign_extend (block, dst_alias, c[i]);
 		} else {
 			append_expr (block,
 						 edag_add_expr (new_assign_expr (dst_alias, c[i])));
 		}
-		memset_base = sym->s.offset + type_size (sym->type);
+		memset_base = sym->offset + type_size (sym->type);
 	}
 	if (type_size (dstType) - memset_base) {
 		zero_components (block, dst, memset_base,
@@ -3024,7 +3048,7 @@ algebra_field_expr (const expr_t *mvec, const expr_t *field_name)
 	auto mvec_struct = get_mvec_struct (mvec_type);
 	auto field = mvec_struct ? symtab_lookup (mvec_struct, field_sym->name) : 0;
 	if (!field) {
-		mvec_struct = algebra->mvec_sym->type->t.symtab;
+		mvec_struct = algebra->mvec_sym->type->symtab;
 		field = symtab_lookup (mvec_struct, field_sym->name);
 		if (field) {
 			debug (field_name, "'%s' not in sub-type '%s' of '%s', "

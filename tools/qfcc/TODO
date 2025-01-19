@@ -11,13 +11,17 @@ M	arrays in structures
 M	unnamed function parameters for prototypes/typdefs etc.
 I	optimizations (esp CSE)
 I	fix used/uninitialized warnings
-o	id id;
-M	vec = [x, y, z]; expressions (nice feature in fteqcc)
+X	id id;
+X	vec = [x, y, z]; expressions (nice feature in fteqcc)
 M	finish -Fifstring
 o	isset() intrinsic for more consistent string handling.
 o	arrays in entities
 o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
-o	rewrite type system to be const-correct (hard!)
+	Also, vector(vector fwd ... vector up) style syntax maybe
+X	rewrite type system to be const-correct (hard!)
+o	symbolic differentiation
+o	tensor calculus
+o	geometric calculus
 ?	try to reduce memory consumption
 ??	embedded nul characters in strings (why?)

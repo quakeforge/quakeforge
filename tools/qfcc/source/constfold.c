@@ -47,11 +47,10 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 typedef const expr_t *(*operation_t) (int op, const expr_t *e,
 									  const expr_t *e1, const expr_t *e2);
@@ -70,9 +69,9 @@ static const expr_t *
 cmp_result_expr (int result)
 {
 	if (is_float (type_default)) {
-		return new_float_expr (result);
+		return new_float_expr (result, false);
 	} else {
-		return new_int_expr(result);
+		return new_int_expr (result, false);
 	}
 }
 
@@ -93,7 +92,7 @@ do_op_string (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	const char *s1, *s2;
 	static dstring_t *temp_str;
-	static int  valid[] = {'+', LT, GT, LE, GE, EQ, NE, 0};
+	static int  valid[] = {'+', QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for string");
@@ -118,22 +117,22 @@ do_op_string (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 			dstring_appendstr (temp_str, s2);
 			new = new_string_expr (save_string (temp_str->str));
 			break;
-		case LT:
+		case QC_LT:
 			new = cmp_result_expr (strcmp (s1, s2) < 0);
 			break;
-		case GT:
+		case QC_GT:
 			new = cmp_result_expr (strcmp (s1, s2) > 0);
 			break;
-		case LE:
+		case QC_LE:
 			new = cmp_result_expr (strcmp (s1, s2) <= 0);
 			break;
-		case GE:
+		case QC_GE:
 			new = cmp_result_expr (strcmp (s1, s2) >= 0);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (strcmp (s1, s2) == 0);
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (strcmp (s1, s2));
 			break;
 		default:
@@ -170,7 +169,8 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	//type_t     *type = &type_float;
 	static int  valid[] = {
 		'+', '-', '*', '/', '&', '|', '^', '%',
-		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
+		QC_SHL, QC_SHR, QC_AND, QC_OR,
+		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
 	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
@@ -224,59 +224,59 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	const expr_t *new = 0;
 	switch (op) {
 		case '+':
-			new = new_float_expr (f1 + f2);
+			new = new_float_expr (f1 + f2, false);
 			break;
 		case '-':
-			new = new_float_expr (f1 - f2);
+			new = new_float_expr (f1 - f2, false);
 			break;
 		case '*':
-			new = new_float_expr (f1 * f2);
+			new = new_float_expr (f1 * f2, false);
 			break;
 		case '/':
 			if (!f2)
 				return error (e1, "divide by zero");
-			new = new_float_expr (f1 / f2);
+			new = new_float_expr (f1 / f2, false);
 			break;
 		case '&':
-			new = new_float_expr ((int)f1 & (int)f2);
+			new = new_float_expr ((int)f1 & (int)f2, false);
 			break;
 		case '|':
-			new = new_float_expr ((int)f1 | (int)f2);
+			new = new_float_expr ((int)f1 | (int)f2, false);
 			break;
 		case '^':
-			new = new_float_expr ((int)f1 ^ (int)f2);
+			new = new_float_expr ((int)f1 ^ (int)f2, false);
 			break;
 		case '%':
-			new = new_float_expr ((int)f1 % (int)f2);
+			new = new_float_expr ((int)f1 % (int)f2, false);
 			break;
-		case SHL:
-			new = new_float_expr ((int)f1 << (int)f2);
+		case QC_SHL:
+			new = new_float_expr ((int)f1 << (int)f2, false);
 			break;
-		case SHR:
-			new = new_float_expr ((int)f1 >> (int)f2);
+		case QC_SHR:
+			new = new_float_expr ((int)f1 >> (int)f2, false);
 			break;
-		case AND:
+		case QC_AND:
 			new = cmp_result_expr (f1 && f2);
 			break;
-		case OR:
+		case QC_OR:
 			new = cmp_result_expr (f1 || f2);
 			break;
-		case LT:
+		case QC_LT:
 			new = cmp_result_expr (f1 < f2);
 			break;
-		case GT:
+		case QC_GT:
 			new = cmp_result_expr (f1 > f2);
 			break;
-		case LE:
+		case QC_LE:
 			new = cmp_result_expr (f1 <= f2);
 			break;
-		case GE:
+		case QC_GE:
 			new = cmp_result_expr (f1 >= f2);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (f1 == f2);
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (f1 != f2);
 			break;
 		default:
@@ -293,7 +293,7 @@ do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	//type_t     *type = &type_double;
 	static int  valid[] = {
 		'+', '-', '*', '/', '%',
-		LT, GT, LE, GE, EQ, NE, 0
+		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
 	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
@@ -350,22 +350,22 @@ do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		case '%':
 			new = new_double_expr ((int)d1 % (int)d2, implicit);
 			break;
-		case LT:
+		case QC_LT:
 			new = cmp_result_expr (d1 < d2);
 			break;
-		case GT:
+		case QC_GT:
 			new = cmp_result_expr (d1 > d2);
 			break;
-		case LE:
+		case QC_LE:
 			new = cmp_result_expr (d1 <= d2);
 			break;
-		case GE:
+		case QC_GE:
 			new = cmp_result_expr (d1 >= d2);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (d1 == d2);
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (d1 != d2);
 			break;
 		default:
@@ -379,9 +379,9 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	const float *v1, *v2;
 	vec3_t      v, float_vec;
-	static int  vv_valid[] = {'+', '-', DOT, HADAMARD, EQ, NE, 0};
-	static int  vs_valid[] = {SCALE, 0};
-	static int  sv_valid[] = {SCALE, '/', 0};
+	static int  vv_valid[] = {'+', '-', QC_DOT, QC_HADAMARD, QC_EQ, QC_NE, 0};
+	static int  vs_valid[] = {QC_SCALE, 0};
+	static int  sv_valid[] = {QC_SCALE, '/', 0};
 
 	if (!is_vector(get_type (e1))) {
 
@@ -411,18 +411,18 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		//	e->expr.type = &type_int;
 		//else
 		//	e->expr.type = &type_float;
-	} else if (op == DOT && is_vector(get_type (e2))) {
+	} else if (op == QC_DOT && is_vector(get_type (e2))) {
 		//e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
-		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1, false), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		//e->expr.type = &type_vector;
 	}
 
-	if (op == SCALE && is_float_val (e2) && expr_float (e2) == 1)
+	if (op == QC_SCALE && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == SCALE && is_float_val (e2) && expr_float (e2) == 0)
+	if (op == QC_SCALE && is_float_val (e2) && expr_float (e2) == 0)
 		return new_vector_expr (vec3_origin);
 	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
@@ -474,17 +474,17 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 			VectorScale (v1, 1 / v2[0], v);
 			new = new_vector_expr (v);
 			break;
-		case DOT:
-			new = new_float_expr (DotProduct (v1, v2));
+		case QC_DOT:
+			new = new_float_expr (DotProduct (v1, v2), false);
 			break;
-		case SCALE:
+		case QC_SCALE:
 			VectorScale (v1, v2[0], v);
 			new = new_vector_expr (v);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (VectorCompare (v1, v2));
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (!VectorCompare (v1, v2));
 			break;
 		default:
@@ -534,7 +534,7 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	const float *q1, *q2;
 	quat_t      q, float_quat;
-	//static int  valid[] = {'+', '-', '*', EQ, NE, 0};
+	//static int  valid[] = {'+', '-', '*', QC_EQ, QC_NE, 0};
 #if 0
 	if (!is_quaternion(get_type (e1))) {
 
@@ -561,7 +561,7 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		else
 			e->expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
-		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
+		e2 = fold_constants (binary_expr ('/', new_float_expr (1, false), e2));
 		e = fold_constants (binary_expr ('*', e1, e2));
 	} else {
 		e->expr.type = &type_quaternion;
@@ -625,10 +625,10 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 			}
 			new = new_quaternion_expr (q);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (QuatCompare (q1, q2));
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (!QuatCompare (q1, q2));
 			break;
 		default:
@@ -644,7 +644,8 @@ do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	int         val1 = 0, val2 = 0;
 	static int  valid[] = {
 		'+', '-', '*', '/', '&', '|', '^', '%',
-		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
+		QC_SHL, QC_SHR, QC_AND, QC_OR,
+		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
 	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
@@ -751,59 +752,59 @@ do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	const expr_t *new = 0;
 	switch (op) {
 		case '+':
-			new = new_int_expr (val1 + val2);
+			new = new_int_expr (val1 + val2, false);
 			break;
 		case '-':
-			new = new_int_expr (val1 - val2);
+			new = new_int_expr (val1 - val2, false);
 			break;
 		case '*':
-			new = new_int_expr (val1 * val2);
+			new = new_int_expr (val1 * val2, false);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
 				warning (e2, "%d / %d == %d", val1, val2, val1 / val2);
-			new = new_int_expr (val1 / val2);
+			new = new_int_expr (val1 / val2, false);
 			break;
 		case '&':
-			new = new_int_expr (val1 & val2);
+			new = new_int_expr (val1 & val2, false);
 			break;
 		case '|':
-			new = new_int_expr (val1 | val2);
+			new = new_int_expr (val1 | val2, false);
 			break;
 		case '^':
-			new = new_int_expr (val1 ^ val2);
+			new = new_int_expr (val1 ^ val2, false);
 			break;
 		case '%':
-			new = new_int_expr (val1 % val2);
+			new = new_int_expr (val1 % val2, false);
 			break;
-		case SHL:
-			new = new_int_expr (val1 << val2);
+		case QC_SHL:
+			new = new_int_expr (val1 << val2, false);
 			break;
-		case SHR:
-			new = new_int_expr (val1 >> val2);
+		case QC_SHR:
+			new = new_int_expr (val1 >> val2, false);
 			break;
-		case AND:
+		case QC_AND:
 			new = cmp_result_expr (val1 && val2);
 			break;
-		case OR:
+		case QC_OR:
 			new = cmp_result_expr (val1 || val2);
 			break;
-		case LT:
+		case QC_LT:
 			new = cmp_result_expr (val1 < val2);
 			break;
-		case GT:
+		case QC_GT:
 			new = cmp_result_expr (val1 > val2);
 			break;
-		case LE:
+		case QC_LE:
 			new = cmp_result_expr (val1 <= val2);
 			break;
-		case GE:
+		case QC_GE:
 			new = cmp_result_expr (val1 >= val2);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (val1 == val2);
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (val1 != val2);
 			break;
 		default:
@@ -824,7 +825,8 @@ do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	short       i1, i2;
 	static int  valid[] = {
 		'+', '-', '*', '/', '&', '|', '^', '%',
-		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
+		QC_SHL, QC_SHR, QC_AND, QC_OR,
+		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
 	};
 
 	if (!valid_op (op, valid))
@@ -864,34 +866,34 @@ do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		case '%':
 			new = new_short_expr (i1 % i2);
 			break;
-		case SHL:
+		case QC_SHL:
 			new = new_short_expr (i1 << i2);
 			break;
-		case SHR:
+		case QC_SHR:
 			new = new_short_expr (i1 >> i2);
 			break;
-		case AND:
+		case QC_AND:
 			new = new_short_expr (i1 && i2);
 			break;
-		case OR:
+		case QC_OR:
 			new = new_short_expr (i1 || i2);
 			break;
-		case LT:
+		case QC_LT:
 			new = cmp_result_expr (i1 < i2);
 			break;
-		case GT:
+		case QC_GT:
 			new = cmp_result_expr (i1 > i2);
 			break;
-		case LE:
+		case QC_LE:
 			new = cmp_result_expr (i1 <= i2);
 			break;
-		case GE:
+		case QC_GE:
 			new = cmp_result_expr (i1 >= i2);
 			break;
-		case EQ:
+		case QC_EQ:
 			new = cmp_result_expr (i1 == i2);
 			break;
-		case NE:
+		case QC_NE:
 			new = cmp_result_expr (i1 != i2);
 			break;
 		default:
@@ -1312,15 +1314,15 @@ uop_float (int op, const expr_t *e, const expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_float_expr (-expr_float (e1));
+			return new_float_expr (-expr_float (e1), false);
 		case '!':
 			print_type (get_type (e));
 			return cmp_result_expr (!expr_float (e1));
 		case '~':
-			return new_float_expr (~(int) expr_float (e1));
+			return new_float_expr (~(int) expr_float (e1), false);
 		case 'C':
 			if (is_int(type)) {
-				return new_int_expr (expr_float (e1));
+				return new_int_expr (expr_float (e1), false);
 			} else {
 				return new_double_expr (expr_float (e1), false);
 			}
@@ -1464,13 +1466,13 @@ uop_int (int op, const expr_t *e, const expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_int_expr (-expr_int (e1));
+			return new_int_expr (-expr_int (e1), false);
 		case '!':
 			return cmp_result_expr (!expr_int (e1));
 		case '~':
-			return new_int_expr (~expr_int (e1));
+			return new_int_expr (~expr_int (e1), false);
 		case 'C':
-			return new_float_expr (expr_int (e1));
+			return new_float_expr (expr_int (e1), false);
 	}
 	internal_error (e, "int unary op blew up");
 }
@@ -1544,9 +1546,9 @@ uop_double (int op, const expr_t *e, const expr_t *e1)
 			return cmp_result_expr (!expr_double (e1));
 		case 'C':
 			if (is_int(type)) {
-				return new_int_expr (expr_double (e1));
+				return new_int_expr (expr_double (e1), false);
 			} else {
-				return new_float_expr (expr_double (e1));
+				return new_float_expr (expr_double (e1), false);
 			}
 	}
 	internal_error (e, "float unary op blew up");

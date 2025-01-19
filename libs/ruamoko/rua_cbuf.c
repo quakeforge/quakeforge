@@ -149,8 +149,7 @@ bi__call_cbuf (progs_t *pr, pr_func_t func, pr_int_t cbuf)
 {
 	PR_PushFrame (pr);
 	auto params = PR_SaveParams (pr);
-	pr->pr_argc = 1;
-	PR_SetupParams (pr, pr->pr_argc, 1);
+	PR_SetupParams (pr, 1, 1);
 	P_INT (pr, 0) = cbuf;
 	PR_ExecuteProgram (pr, func);
 	PR_RestoreParams (pr, params);
@@ -163,8 +162,7 @@ bi__call_cbuf_string (progs_t *pr, pr_func_t func, pr_int_t cbuf,
 {
 	PR_PushFrame (pr);
 	auto params = PR_SaveParams (pr);
-	pr->pr_argc = 2;
-	PR_SetupParams (pr, pr->pr_argc, 1);
+	PR_SetupParams (pr, 2, 1);
 	P_INT (pr, 0) = cbuf;
 	P_STRING (pr, 1) = PR_SetTempString (pr, str);
 	PR_ExecuteProgram (pr, func);

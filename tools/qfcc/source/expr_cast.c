@@ -41,6 +41,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -72,22 +73,21 @@ do_conversion (pr_type_t *dst_value, const type_t *dstType,
 static const expr_t *
 cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 {
-	pr_type_t   src_value[type_size (srcType)];
-	pr_type_t   dst_value[type_size (dstType)];
+#define ALIGN [[gnu::aligned(alignof(pr_lvec4_t))]]
+	pr_type_t   src_value[type_size (srcType)] ALIGN;
+	pr_type_t   dst_value[type_size (dstType)] ALIGN;
 
 	value_store (src_value, srcType, expr);
 
 	do_conversion (dst_value, dstType, src_value, srcType, expr);
 
-	return new_value_expr (new_type_value (dstType, dst_value));
+	return new_value_expr (new_type_value (dstType, dst_value), false);
 }
 
 const expr_t *
 cast_expr (const type_t *dstType, const expr_t *e)
 {
 	const type_t *srcType;
-
-	e = convert_name (e);
 
 	if (e->type == ex_error)
 		return e;
@@ -96,18 +96,38 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return convert_nil (e, dstType);
 	}
 
-	dstType = (type_t *) unalias_type (dstType); //FIXME cast
 	srcType = get_type (e);
 
-	if (dstType == srcType)
+	if (is_reference (srcType)) {
+		srcType = dereference_type (srcType);
+		e = pointer_deref (e);
+	}
+
+	if (type_same (dstType, srcType)) {
 		return e;
+	}
 
 	if ((dstType == type_default && is_enum (srcType))
-		|| (is_enum (dstType) && srcType == type_default))
+		|| (is_enum (dstType) && srcType == type_default)) {
 		return e;
-	if ((is_ptr (dstType) && is_string (srcType))
-		|| (is_string (dstType) && is_ptr (srcType))) {
+	}
+	if ((is_pointer (dstType) && is_func (srcType))
+		|| (is_func (dstType) && is_pointer (srcType))) {
 		return new_alias_expr (dstType, e);
+	}
+	if ((is_pointer (dstType) && is_string (srcType))
+		|| (is_string (dstType) && is_pointer (srcType))) {
+		return new_alias_expr (dstType, e);
+	}
+	if (is_enum (dstType) && is_boolean (srcType)) {
+		expr_t     *enum_zero, *enum_one;
+		if (enum_as_bool (dstType, &enum_zero, &enum_one)) {
+			return conditional_expr (e, enum_one, enum_zero);
+		}
+	}
+	if (is_boolean (srcType) && srcType->type == dstType->type) {
+		e = new_alias_expr (dstType, e);
+		return e;
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {
 		const expr_t *c;
@@ -117,9 +137,10 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 
-	if (!(is_ptr (dstType) && (is_ptr (srcType) || is_integral (srcType)
-							   || is_array (srcType)))
-		&& !(is_integral (dstType) && is_ptr (srcType))
+	if (!(is_pointer (dstType)
+		  && (is_pointer (srcType) || is_integral (srcType)
+			  || is_array (srcType)))
+		&& !(is_integral (dstType) && is_pointer (srcType))
 		&& !(is_func (dstType) && is_func (srcType))
 		&& !(is_math (dstType) && is_math (srcType)
 			 && type_width (dstType) == type_width (srcType))
@@ -130,13 +151,14 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
-		return address_expr (e, dstType->t.fldptr.type);
+		dstType = dereference_type (dstType);
+		return address_expr (e, dstType);
 	}
 	if (is_short (srcType)) {
-		e = new_int_expr (expr_short (e));
+		e = new_int_expr (expr_short (e), false);
 		srcType = &type_int;
 	} else if (is_ushort (srcType)) {
-		e = new_int_expr (expr_ushort (e));
+		e = new_int_expr (expr_ushort (e), false);
 		srcType = &type_int;
 	}
 	expr_t *c = 0;

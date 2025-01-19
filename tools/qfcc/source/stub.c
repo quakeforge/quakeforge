@@ -13,7 +13,6 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
-#include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"
 #include "tools/qfcc/include/options.h"
@@ -44,20 +43,19 @@ __attribute__((const)) int algebra_type_width (const struct type_s *type);
 int algebra_type_width (const struct type_s *type){return 0;}
 __attribute__((const)) int algebra_type_assignable (const type_t *dst, const type_t *src);
 int algebra_type_assignable (const type_t *dst, const type_t *src){return 0;}
-__attribute__((const)) int is_algebra (const type_t *type);
-int is_algebra (const type_t *type){return 0;}
-__attribute__((const)) int algebra_base_type (const type_t *type);
-int algebra_base_type (const type_t *type){return 0;}
+__attribute__((const)) bool is_algebra (const type_t *type);
+bool is_algebra (const type_t *type){return 0;}
+__attribute__((const)) type_t *algebra_base_type (const type_t *type);
+type_t *algebra_base_type (const type_t *type){return 0;}
 
 __attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
-__attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
 __attribute__((noreturn)) void _internal_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {abort();}
 void _warning (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {}
 __attribute__((const)) const expr_t *_error (const expr_t *e, const char *file, int line, const char *func, const char *fmt, ...) {return 0;}
-__attribute__((const)) symbol_t *make_structure (const char *name, int su, struct_def_t *defs, const type_t *type) {return 0;}
+__attribute__((const)) symbol_t *make_structure (const char *name, int su, struct_def_t *defs, type_t *type) {return 0;}
 __attribute__((const)) symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol) {return 0;}
 __attribute__((const)) symbol_t *new_symbol_type (const char *name, const type_t *type) {return 0;}
 __attribute__((const)) def_t *qfo_encode_type (const type_t *type, defspace_t *space) {return 0;}
@@ -73,3 +71,4 @@ void dump_dot (const char *stage, const void *data,
 void dump_dot_type (void *_t, const char *filename){}
 char *fubar;
 const char *file_basename(const char *p, int keepdot) { return fubar;}
+__attribute__((const)) const type_t *get_type (const expr_t *e) {return nullptr;}

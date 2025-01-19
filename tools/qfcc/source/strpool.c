@@ -139,15 +139,28 @@ ss_get_key (const void *s, void *unused)
 const char *
 save_string (const char *str)
 {
-	char       *s;
-	if (!saved_strings)
+	if (!str) {
+		return nullptr;
+	}
+	if (!saved_strings) {
 		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0, 0);
-	s = Hash_Find (saved_strings, str);
-	if (s)
+	}
+	char *s = Hash_Find (saved_strings, str);
+	if (s) {
 		return s;
+	}
 	s = strdup (str);
 	Hash_Add (saved_strings, s);
 	return s;
+}
+
+const char *
+save_substring (const char *str, int len)
+{
+	char        substr[len + 1];
+	strncpy (substr, str, len);
+	substr[len] = 0;
+	return save_string (substr);
 }
 
 const char *
@@ -160,7 +173,7 @@ save_cwd (void)
 }
 
 const char *
-make_string (char *token, char **end)
+make_string (const char *token, char **end)
 {
 	char        s[7];	// utf8 needs 6 + nul
 	sizebuf_t   utf8str = {
@@ -186,6 +199,9 @@ make_string (char *token, char **end)
 	unicount = 0;
 
 	quote = *token++;
+	if (quote == '<') {
+		quote = '>';		// #include <file>
+	}
 	do {
 		c = *token++;
 		if (!c)
@@ -417,7 +433,7 @@ make_string (char *token, char **end)
 	} while (1);
 
 	if (end)
-		*end = token;
+		*end = (char *) token;
 
 	return save_string (str->str);
 }

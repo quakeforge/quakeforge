@@ -49,12 +49,11 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
 	const expr_t *low;
@@ -68,7 +67,7 @@ static ex_value_t * __attribute__((pure))
 get_value (const expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->symbol->s.value;
+		return e->symbol->value;
 	if (e->type != ex_value)
 		internal_error (e, "bogus case label");
 	return e->value;
@@ -83,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
+	return Hash_Buffer (&val->raw_value, value_size) + val->lltype;
 }
 
 static int
@@ -105,7 +104,7 @@ compare (const void *_cla, const void *_clb, void *unused)
 	val2 = get_value (v2);
 	if (val1->type != val2->type)
 		return 0;
-	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
+	return memcmp (&val1->raw_value, &val2->raw_value, value_size) == 0;
 }
 
 const expr_t *
@@ -115,8 +114,6 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 
 	SYS_CHECKMEM (cl);
 
-	if (value)
-		value = convert_name (value);
 	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);
@@ -137,16 +134,16 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
-			value = new_int_expr (expr_int (value));
+			value = new_int_expr (expr_int (value), false);
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
-			value = new_int_expr (expr_float (value));
+			value = new_int_expr (expr_float (value), false);
 		} else if (is_float (type) && is_integral (val_type)) {
 			debug (value, "integeral label used in float switch");
-			value = new_float_expr (expr_int (value));
+			value = new_float_expr (expr_int (value), false);
 		} else if (is_float (type) && is_float (val_type)) {
-			value = new_float_expr (expr_float (value));
+			value = new_float_expr (expr_float (value), false);
 			debug (value, "float label used in float switch");
 		}
 	}
@@ -312,12 +309,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr (EQ, new_alias_expr (&type_int, temp),
+		branch = branch_expr (QC_EQ, new_alias_expr (&type_int, temp),
 							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (GT, new_alias_expr (&type_int, temp),
+			branch = branch_expr (QC_GT, new_alias_expr (&type_int, temp),
 								  high_label);
 			append_expr (sw, branch);
 
@@ -350,16 +347,16 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 									 array_type (&type_int,
 												 high - low + 1));
 		initialize_def (table_sym, table_init, pr.near_data, sc_static,
-						current_symtab);
+						current_symtab, nullptr);
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {
-			branch = branch_expr (LT, temp, low_label);
+			branch = branch_expr (QC_LT, temp, low_label);
 			append_expr (sw, branch);
 		}
-		test = binary_expr (GT, cast_expr (&type_uint, temp),
+		test = binary_expr (QC_GT, cast_expr (&type_uint, temp),
 							cast_expr (&type_uint, range));
-		branch = branch_expr (NE, test, high_label);
+		branch = branch_expr (QC_NE, test, high_label);
 		append_expr (sw, branch);
 		branch = jump_table_expr (table_expr, temp);
 		append_expr (sw, branch);
@@ -382,9 +379,9 @@ check_enum_switch (switch_block_t *switch_block)
 	symbol_t   *enum_val;
 	auto type = get_type (switch_block->test);
 
-	for (enum_val = type->t.symtab->symbols; enum_val;
+	for (enum_val = type->symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_int_expr (enum_val->s.value->v.int_val);
+		cl.value = new_int_expr (enum_val->value->int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",
@@ -401,10 +398,8 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		return switch_block->test;
 	}
 
-	int         saved_line = pr.source_line;
-	pr_string_t saved_file = pr.source_file;
-	pr.source_line = switch_block->test->line;
-	pr.source_file = switch_block->test->file;
+	auto        saved_loc = pr.loc;
+	pr.loc = switch_block->test->loc;
 
 	case_label_t **labels, **l;
 	case_label_t _default_label;
@@ -434,8 +429,8 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
-			const expr_t *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			const expr_t *test = branch_expr (NE, test_expr (cmp),
+			const expr_t *cmp = binary_expr (QC_EQ, sw_val, (*l)->value);
+			const expr_t *test = branch_expr (QC_NE, test_expr (cmp),
 											  (*l)->label);
 
 			append_expr (sw, test);
@@ -448,17 +443,16 @@ switch_expr (switch_block_t *switch_block, const expr_t *break_label,
 		case_node_t *case_tree;
 
 		if (is_string(type))
-			temp = new_temp_def_expr (&type_int);
+			temp = new_temp_def_expr (&type_bool);
 		else
 			temp = new_temp_def_expr (type);
 		case_tree = build_case_tree (labels, num_labels, is_integral (type));
 		op = '-';
 		if (type->type == ev_string)
-			op = NE;
+			op = QC_NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
-	pr.source_line = saved_line;
-	pr.source_file = saved_file;
+	pr.loc = saved_loc;
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;

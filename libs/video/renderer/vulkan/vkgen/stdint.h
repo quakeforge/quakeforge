@@ -10,5 +10,4 @@ typedef int int32_t;
 typedef int int64_t;
 typedef int size_t;
 typedef struct char { int x; } char;//FIXME add char to qfcc
-typedef struct bool { int x; } bool;//FIXME add bool to qfcc
 #endif//__vkgen_stdint_h

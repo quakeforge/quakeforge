@@ -75,15 +75,17 @@ rua_compare (const void *a, const void *b, void *_f)
 {
 	qfZoneScoped (true);
 	function_t *f = _f;
+	progs_t    *pr = f->pr;
 
-	PR_PushFrame (f->pr);
-	PR_RESET_PARAMS (f->pr);
-	P_POINTER (f->pr, 0) = PR_SetPointer (f->pr, a);
-	P_POINTER (f->pr, 1) = PR_SetPointer (f->pr, b);
-	f->pr->pr_argc = 2;
-	PR_ExecuteProgram (f->pr, f->func);
-	int         cmp = R_INT (f->pr);
-	PR_PopFrame (f->pr);
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_POINTER (pr, 0) = PR_SetPointer (pr, a);
+	P_POINTER (pr, 1) = PR_SetPointer (pr, b);
+	PR_ExecuteProgram (pr, f->func);
+	int         cmp = R_INT (pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
 	return cmp;
 }
 

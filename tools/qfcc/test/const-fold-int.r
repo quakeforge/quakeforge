@@ -36,7 +36,7 @@ int subsub_c_t_c_e (int x) { return 6 - (7 - x); }
 int
 main ()
 {
-	int         fail = 0;
+	bool        fail = false;
 
 	fail |= mul_e_c_t_c (10) != 420;
 	fail |= mul_c_e_t_c (10) != 420;

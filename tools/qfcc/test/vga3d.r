@@ -1,5 +1,13 @@
 #include "test-harness.h"
 #pragma warn no-vararg-integer
+
+#define error(fmt, ...) \
+	do { \
+		printf ("%s:%d: in %s: " fmt, __FILE__, __LINE__, __FUNCTION__ \
+				__VA_OPT__(,) __VA_ARGS__); \
+		ret = 1; \
+	} while (false)
+
 typedef @algebra(float(3,0,0)) VGA;
 typedef VGA.group_mask(0x08) scalar_t;
 typedef VGA.group_mask(0x01) vector_t;
@@ -23,6 +31,7 @@ typedef union {
 static int
 test_wedge (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -42,75 +51,64 @@ test_wedge (void)
 	}
 
 	if (scalar != 42) {
-		printf ("scalar != 42: %g\n", scalar);
-		return 1;
+		error ("scalar != 42: %g\n", scalar);
 	}
 	if ((vec3)vec != '3 -2 4') {
-		printf ("vec != '3 -2 4': %v\n", vec);
-		return 1;
+		error ("vec != '3 -2 4': %v\n", vec);
 	}
 	if ((vec3)bvec != '11 -4 2') {
-		printf ("bvec != '11 -4 2': %v\n", bvec);
-		return 1;
+		error ("bvec != '11 -4 2': %v\n", bvec);
 	}
 	if ((scalar_t)tvec != 2) {
-		printf ("tvec != 2: %g\n", (scalar_t)tvec);
-		return 1;
+		error ("tvec != 2: %g\n", (scalar_t)tvec);
 	}
 
 	bivector_t a = vec ∧ vecb;
 	if ((vec3)a != '-48 20 46') {
-		printf ("vec ∧ vecb != '-48 20 46': %v\n", a);
-		return 1;
+		error ("vec ∧ vecb != '-48 20 46': %v\n", a);
 	}
 
 	auto b = a ∧ vecc;
 	if ((scalar_t)b != -298) {
-		printf ("a ∧ vecc != -298: %g\n", (scalar_t)b);
-		return 1;
+		error ("a ∧ vecc != -298: %g\n", (scalar_t)b);
 	}
 
 	auto c = b ∧ vecd;
 	if ((scalar_t)c != 0) {
-		printf ("b ∧ vecd != 0': %g\n", (scalar_t) c);
-		return 1;
+		error ("b ∧ vecd != 0': %g\n", (scalar_t) c);
 	}
 
 	a = vecb ∧ vec;
 	if ((vec3)a != '48 -20 -46') {
-		printf ("vecb ∧ vec != '48 -20 -46': %v\n", a);
-		return 1;
+		error ("vecb ∧ vec != '48 -20 -46': %v\n", a);
 	}
 
 	b = vecc ∧ a;
 	if ((scalar_t)b != 298) {
-		printf ("vecc ∧ a != 298: %g\n", (scalar_t)b);
-		return 1;
+		error ("vecc ∧ a != 298: %g\n", (scalar_t)b);
 	}
 
 	c = vecd ∧ b;
 	if ((scalar_t)c != 0) {
-		printf ("vecd ^ b != 0': %g\n", (scalar_t) c);
-		return 1;
+		error ("vecd ^ b != 0': %g\n", (scalar_t) c);
 	}
 
 	c = a ∧ (vecc ∧ vecd);
 	if ((scalar_t)c != 0) {
-		printf ("a ∧ (vecc ∧ vecd) != 0': %g\n", (scalar_t) c);
-		return 1;
+		error ("a ∧ (vecc ∧ vecd) != 0': %g\n", (scalar_t) c);
 	}
 
 	c = (vecd ∧ vecc) ∧ a;
 	if ((scalar_t)c != 0) {
-		printf ("(vecd ∧ vecc) ∧ a != 0': %g\n", (scalar_t) c);
-		return 1;
+		error ("(vecd ∧ vecc) ∧ a != 0': %g\n", (scalar_t) c);
 	}
-	return 0;
+	return ret;
 }
 
 static int
 test_dot (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -131,62 +129,54 @@ test_dot (void)
 
 	auto a = bvec • tvec;
 	if ((vec3)a != '-88 32 -16') {
-		printf ("bvec • tvec != '-88 32 -16': %v\n", a);
-		return 1;
+		error ("bvec • tvec != '-88 32 -16': %v\n", a);
 	}
 
 	auto b = vec • tvec;
 	if ((vec3)b != '24 -16 32') {
-		printf ("vec • tvec != '24 -16 32': %v\n", b);
-		return 1;
+		error ("vec • tvec != '24 -16 32': %v\n", b);
 	}
 
 	if (bvec • bvec != -141) {
-		printf ("(bvec • bvec) != -141': %g\n", bvec • bvec);
-		return 1;
+		error ("(bvec • bvec) != -141': %g\n", bvec • bvec);
 	}
 
 	a = vec • bvec;
 	if ((vec3)a != '-12 -38 -10') {
-		printf ("vec • bvec != '-12 -38 -10': %v\n", a);
-		return 1;
+		error ("vec • bvec != '-12 -38 -10': %v\n", a);
 	}
 
 	if (vec • vecb != -9) {
-		printf ("(vec • vecb) != -9': %g\n", vec • vecb);
-		return 1;
+		error ("(vec • vecb) != -9': %g\n", vec • vecb);
 	}
 
 	auto d = tvec • tvec;
 	if (d != -64) {
-		printf ("tvec • tvec != -64: %g\n", a);
-		return 1;
+		error ("tvec • tvec != -64: %g\n", a);
 	}
 
 	a = tvec • bvec;
 	if ((vec3)a != '-88 32 -16') {
-		printf ("tvec • vec != '-88 32 -16': %v\n", a);
-		return 1;
+		error ("tvec • vec != '-88 32 -16': %v\n", a);
 	}
 
 	b = tvec • vec;
 	if ((vec3)b != '24 -16 32') {
-		printf ("tvec • vec != '24 -16 32': %v\n", b);
-		return 1;
+		error ("tvec • vec != '24 -16 32': %v\n", b);
 	}
 
 	a = bvec • vec;
 	if ((vec3)a != '12 38 10') {
-		printf ("bvec • vec != '12 38 10': %v\n", a);
-		return 1;
+		error ("bvec • vec != '12 38 10': %v\n", a);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
 test_geom (void)
 {
+	int ret = 0;
 	scalar_t scalar;
 	vector_t vec, vecb, vecc, vecd;
 	bivector_t bvec, bvecb;
@@ -206,62 +196,53 @@ test_geom (void)
 	}
 
 	if (tvec * tvecb != -8) {
-		printf ("(tvec * tvecb) != -8': %g\n", tvec * tvecb);
-		return 1;
+		error ("(tvec * tvecb) != -8': %g\n", tvec * tvecb);
 	}
 
 	auto d = bvec * tvec;
 	if ((vec3)d != '-88 32 -16') {
-		printf ("bvec * tvec != '-88 32 -16': %v\n", d);
-		return 1;
+		error ("bvec * tvec != '-88 32 -16': %v\n", d);
 	}
 
 	auto e = vec * tvec;
 	if ((vec3)e != '24 -16 32') {
-		printf ("vec * tvec != 0 '24 -16 32': %v\n", e);
-		return 1;
+		error ("vec * tvec != 0 '24 -16 32': %v\n", e);
 	}
 
 	auto f = bvec * bvec;
 	if (f != -141) {
-		printf ("bvec * bvec != -141: %g\n", f);
-		return 1;
+		error ("bvec * bvec != -141: %g\n", f);
 	}
 
 	oddgrades_t odd = { .mvec = vec * bvec };
 	if ((vec3)odd.vec != '-12 -38 -10' || (scalar_t)odd.tvec != 49) {
-		printf ("vec * bvec != '-12 -38 -10' 49: %v %g\n",
-				odd.vec, (scalar_t)odd.tvec);
-		return 1;
+		error ("vec * bvec != '-12 -38 -10' 49: %v %g\n",
+			   odd.vec, (scalar_t)odd.tvec);
 	}
 
 	evengrades_t even = { .mvec = vec * vecb };
 	if (even.scalar != -9 || (vec3)even.bvec != '-48 20 46') {
-		printf ("(vec * vecb) != -9 '-48 20 46': %g %v\n",
-				even.scalar, even.bvec);
-		return 1;
+		error ("(vec * vecb) != -9 '-48 20 46': %g %v\n",
+			   even.scalar, even.bvec);
 	}
 
 	auto b = tvec * bvec;
 	if ((vec3)b != '-88 32 -16') {
-		printf ("tvec * bvec != '-88 32 -16': %v\n", b);
-		return 1;
+		error ("tvec * bvec != '-88 32 -16': %v\n", b);
 	}
 
 	e = tvec * vec;
 	if ((vec3)e != '24 -16 32') {
-		printf ("tvec * vec != '24 -16 32': %v\n", e);
-		return 1;
+		error ("tvec * vec != '24 -16 32': %v\n", e);
 	}
 
 	odd.mvec = bvec * vec;
 	if ((vec3)odd.vec != '12 38 10' || (scalar_t)odd.tvec != 49) {
-		printf ("vec * bvec != '12 38 10' 49: %v %g\n",
-				odd.vec, (scalar_t)odd.tvec);
-		return 1;
+		error ("vec * bvec != '12 38 10' 49: %v %g\n",
+			   odd.vec, (scalar_t)odd.tvec);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
@@ -273,21 +254,18 @@ test_basics (void)
 int
 main (void)
 {
+	int ret = 0;
 	if (sizeof (scalar_t) != sizeof (float)) {
-		printf ("scalar has wrong size: %d\n", sizeof (scalar_t));
-		return 1;
+		error ("scalar has wrong size: %d\n", sizeof (scalar_t));
 	}
 	if (sizeof (vector_t) != 4 * sizeof (scalar_t)) {
-		printf ("vector has wrong size: %d\n", sizeof (vector_t));
-		return 1;
+		error ("vector has wrong size: %d\n", sizeof (vector_t));
 	}
 	if (sizeof (bivector_t) != 4 * sizeof (scalar_t)) {
-		printf ("bivector has wrong size: %d\n", sizeof (bivector_t));
-		return 1;
+		error ("bivector has wrong size: %d\n", sizeof (bivector_t));
 	}
 	if (sizeof (trivector_t) != sizeof (scalar_t)) {
-		printf ("trivector has wrong size: %d\n", sizeof (trivector_t));
-		return 1;
+		error ("trivector has wrong size: %d\n", sizeof (trivector_t));
 	}
 	if (sizeof (evengrades_t) != 4) {
 		evengrades_t e;
@@ -298,7 +276,7 @@ main (void)
 		printf ("mvec: %d, bvec: %d, scalar: %d\n",
 				offsetof (evengrades_t, mvec), offsetof (evengrades_t, bvec),
 				offsetof (evengrades_t, scalar));
-		return 1;
+		ret = 1;
 	}
 	if (sizeof (oddgrades_t) != 4) {
 		oddgrades_t o;
@@ -309,28 +287,24 @@ main (void)
 		printf ("mvec: %d, vec: %d, tvec: %d\n",
 				offsetof (oddgrades_t, mvec), offsetof (oddgrades_t, vec),
 				offsetof (oddgrades_t, tvec));
-		return 1;
+		ret = 1;
 	}
 
 	if (test_wedge ()) {
-		printf ("wedge products failed\n");
-		return 1;
+		error ("wedge products failed\n");
 	}
 
 	if (test_dot ()) {
-		printf ("dot products failed\n");
-		return 1;
+		error ("dot products failed\n");
 	}
 
 	if (test_geom ()) {
-		printf ("geometric products failed\n");
-		return 1;
+		error ("geometric products failed\n");
 	}
 
 	if (test_basics ()) {
-		printf ("basics failed\n");
-		return 1;
+		error ("basics failed\n");
 	}
 
-	return 0;		// to survive and prevail :)
+	return ret;
 }

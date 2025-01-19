@@ -125,6 +125,7 @@ typedef struct set_pool_s {
 } set_pool_t;
 
 void set_pool_init (set_pool_t *set_pool);
+void set_pool_clear (set_pool_t *set_pool);
 
 /** Delete a set iterator that is no longer needed.
 

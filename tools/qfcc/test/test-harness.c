@@ -294,10 +294,9 @@ main (int argc, char **argv)
 	}
 	pr_argv[i] = 0;
 
-	PR_RESET_PARAMS (&test_pr);
+	PR_SetupParams (&test_pr, 2, 0);
 	P_INT (&test_pr, 0) = pr_argc;
 	P_POINTER (&test_pr, 1) = PR_SetPointer (&test_pr, pr_argv);
-	test_pr.pr_argc = 2;
 
 	PR_ExecuteProgram (&test_pr, main_func);
 	PR_PopFrame (&test_pr);

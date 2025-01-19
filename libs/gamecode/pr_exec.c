@@ -102,15 +102,19 @@ _PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	params->param_ptrs[0] = pr->pr_params[0];
-	params->param_ptrs[1] = pr->pr_params[1];
+	memcpy (params->param_ptrs, pr->pr_params, sizeof (pr->pr_params));
+	params->return_ptr = pr->pr_return;
+
 	pr->pr_params[0] = pr->pr_real_params[0];
 	pr->pr_params[1] = pr->pr_real_params[1];
+	pr->pr_return = pr->pr_return_buffer;
+
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
 	}
 	params->argc = pr->pr_argc;
+
 	return params;
 }
 
@@ -120,8 +124,9 @@ PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params)
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_params[0] = params->param_ptrs[0];
-	pr->pr_params[1] = params->param_ptrs[1];
+	memcpy (pr->pr_params, params->param_ptrs, sizeof (pr->pr_params));
+	pr->pr_return = params->return_ptr;
+
 	pr->pr_argc = params->argc;
 	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (pr->pr_real_params[i],
@@ -490,6 +495,7 @@ PR_SetupParams (progs_t *pr, int num_params, int min_alignment)
 		}
 		pr->pr_params[0] = pr->pr_real_params[0];
 		pr->pr_params[1] = pr->pr_real_params[1];
+		pr->pr_argc = num_params;
 		return pr->pr_real_params[0];
 	}
 	int         offset = num_params * 4;
@@ -1501,7 +1507,8 @@ op_rcall:
 			case OP_CALL6_v6p:
 			case OP_CALL7_v6p:
 			case OP_CALL8_v6p:
-				PR_RESET_PARAMS (pr);
+				pr->pr_params[0] = pr->pr_real_params[0];
+				pr->pr_params[1] = pr->pr_real_params[1];
 				pr->pr_argc = st->op - OP_CALL0_v6p;
 op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
@@ -2284,13 +2291,145 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				stk = pr_stack_pop (pr);
 				MM(ivec4) = STK(ivec4);
 				break;
+
+#define OP_mvmul_T_3(T,cols,rows,t) \
+			case OP_MVMUL_##cols##3##_##T: \
+				{ \
+					auto a = &OPA(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
+					auto c = OPC(t##vec##rows); \
+					VectorScale (a[0], b[0], c); \
+					for (int i = 1; i < cols; i++) { \
+						VectorMultAdd(c, b[i], a[i], c); \
+					} \
+				} \
+				break
+#define OP_mvmul_T(T,cols,rows,t) \
+			case OP_MVMUL_##cols##rows##_##T: \
+				{ \
+					auto a = &OPA(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
+					pr_##t##vec##rows##_t c = a[0] * b[0]; \
+					for (int i = 1; i < cols; i++) { \
+						c += a[i] * b[i]; \
+					} \
+					OPC(t##vec##rows) = c; \
+				} \
+				break
 			// 0 0100
-			// spare
+			OP_mvmul_T  (F,3,2,);
+			OP_mvmul_T_3(F,3,3,);
+			OP_mvmul_T  (F,3,4,);
+			OP_mvmul_T_3(F,2,3,);
+			OP_mvmul_T  (D,3,2,d);
+			OP_mvmul_T_3(D,3,3,d);
+			OP_mvmul_T  (D,3,4,d);
+			OP_mvmul_T_3(D,2,3,d);
+			OP_mvmul_T  (F,4,2,);
+			OP_mvmul_T_3(F,4,3,);
+			OP_mvmul_T  (F,4,4,);
+			OP_mvmul_T  (F,2,4,);
+			OP_mvmul_T  (D,4,2,d);
+			OP_mvmul_T_3(D,4,3,d);
+			OP_mvmul_T  (D,4,4,d);
+			OP_mvmul_T  (D,2,4,d);
+
+#define OP_vmmul_T_3(T,cols,rows,t) \
+			case OP_VMMUL_##cols##3##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = &OPB(t##vec##rows); \
+					auto c = &OPC(t##vec##cols)[0]; \
+					for (int i = 0; i < cols; i++) { \
+						c[i] = DotProduct (a, b[i]); \
+					} \
+				} \
+				break
+#define OP_vmmul_T(T,cols,rows,t,t2) \
+			case OP_VMMUL_##cols##rows##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = &OPB(t##vec##rows); \
+					auto c = &OPC(t##vec##cols); \
+					for (int i = 0; i < cols; i++) { \
+						(*c)[i] = dot##rows##t2(a, b[i])[0]; \
+					} \
+				} \
+				break
+#define dot4f dotf
+#define dot4d dotd
 			// 0 0101
-			// spare
+			OP_vmmul_T  (F,3,2,,f);
+			OP_vmmul_T_3(F,3,3,);
+			OP_vmmul_T  (F,3,4,,f);
+			OP_vmmul_T_3(F,2,3,);
+			OP_vmmul_T  (D,3,2,d,d);
+			OP_vmmul_T_3(D,3,3,d);
+			OP_vmmul_T  (D,3,4,d,d);
+			OP_vmmul_T_3(D,2,3,d);
+			OP_vmmul_T  (F,4,2,,f);
+			OP_vmmul_T_3(F,4,3,);
+			OP_vmmul_T  (F,4,4,,f);
+			OP_vmmul_T  (F,2,4,,f);
+			OP_vmmul_T  (D,4,2,d,d);
+			OP_vmmul_T_3(D,4,3,d);
+			OP_vmmul_T  (D,4,4,d,d);
+			OP_vmmul_T  (D,2,4,d,d);
+#undef dot4f
+#undef dot4d
+
+#define OP_outer_T(T,cols,rows,t) \
+			case OP_OUTER_##cols##rows##_##T: \
+				{ \
+					auto a = OPA(t##vec##rows); \
+					auto b = OPB(t##vec##cols); \
+					auto c = &OPC(t##vec##rows); \
+					for (int i = 0; i < rows; i++) { \
+						for (int j = 0; j < cols; j++) { \
+							c[i][j] = a[i] * b[j]; \
+						} \
+					} \
+				} \
+				break
 			// 0 0110
-			// spare
+			OP_outer_T(F,3,2,);
+			OP_outer_T(F,3,3,);
+			OP_outer_T(F,3,4,);
+			OP_outer_T(F,2,3,);
+			OP_outer_T(D,3,2,d);
+			OP_outer_T(D,3,3,d);
+			OP_outer_T(D,3,4,d);
+			OP_outer_T(D,2,3,d);
+			OP_outer_T(F,4,2,);
+			OP_outer_T(F,4,3,);
+			OP_outer_T(F,4,4,);
+			OP_outer_T(F,2,4,);
+			OP_outer_T(D,4,2,d);
+			OP_outer_T(D,4,3,d);
+			OP_outer_T(D,4,4,d);
+			OP_outer_T(D,2,4,d);
+
 			// 0 0111
+			OP_mvmul_T(F,2,2,);
+			OP_vmmul_T(F,2,2,,f);
+			OP_outer_T(F,2,2,);
+			case OP_WEDGE_F_2:
+				{
+					auto a = OPA(vec2);
+					auto b = OPB(vec2);
+					OPC(float) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
+			OP_mvmul_T(D,2,2,d);
+			OP_vmmul_T(D,2,2,d,d);
+			OP_outer_T(D,2,2,d);
+			case OP_WEDGE_D_2:
+				{
+					auto a = OPA(dvec2);
+					auto b = OPB(dvec2);
+					OPC(double) = a[0] * b[1] - a[1] * b[0];
+				}
+				break;
 			case OP_SWIZZLE_F_2:
 				{
 					auto s2 = OPA(ivec2);
@@ -2321,21 +2460,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					storevec3l (&OPC(long), s4);
 				}
 				break;
-			case OP_WEDGE_F_2:
-				{
-					auto a = OPA(vec2);
-					auto b = OPB(vec2);
-					OPC(float) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
 			// spare
-			case OP_WEDGE_D_2:
-				{
-					auto a = OPA(dvec2);
-					auto b = OPB(dvec2);
-					OPC(double) = a[0] * b[1] - a[1] * b[0];
-				}
-				break;
+			// spare
+			// spare
 			// spare
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \

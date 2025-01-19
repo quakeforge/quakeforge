@@ -5,6 +5,7 @@ EXTRA_PROGRAMS += vkgen.dat$(EXEEXT)
 
 vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkalias.r \
+	libs/video/renderer/vulkan/vkgen/vkbool.r \
 	libs/video/renderer/vulkan/vkgen/vkenum.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.r \
@@ -51,6 +52,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/stddef.h \
 	libs/video/renderer/vulkan/vkgen/stdint.h \
 	libs/video/renderer/vulkan/vkgen/vkalias.h \
+	libs/video/renderer/vulkan/vkgen/vkbool.h \
 	libs/video/renderer/vulkan/vkgen/vkenum.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.h \

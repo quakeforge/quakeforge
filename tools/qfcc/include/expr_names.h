@@ -50,14 +50,16 @@ EX_EXPR(symbol)		///< non-temporary variable (::symbol_t)
 EX_EXPR(temp)		///< temporary variable (::ex_temp_t)
 EX_EXPR(vector)		///< "vector" expression (::ex_vector_t)
 EX_EXPR(selector)	///< selector expression (::ex_selector_t)
+EX_EXPR(message)	///< message expression (::ex_message_t)
 EX_EXPR(nil)		///< umm, nil, null. nuff said (0 of any type)
 EX_EXPR(value)		///< constant value (::ex_value_t)
 EX_EXPR(compound)	///< compound initializer
 EX_EXPR(memset)		///< memset needs three params...
 EX_EXPR(alias)		///< view expression as different type (::ex_alias_t)
 EX_EXPR(address)	///< address of an lvalue expression (::ex_address_t)
-EX_EXPR(assign)		///< assignment of src expr to dst expr (::ex_assing_t)
+EX_EXPR(assign)		///< assignment of src expr to dst expr (::ex_assign_t)
 EX_EXPR(branch)		///< branch expression  (::ex_branch_t)
+EX_EXPR(inout)		///< inout arg expression  (::ex_inout_t)
 EX_EXPR(return)		///< return expression  (::ex_return_t)
 EX_EXPR(adjstk)		///< stack adjust expression  (::ex_adjstk_t)
 EX_EXPR(with)		///< with expression  (::ex_with_t)
@@ -67,5 +69,20 @@ EX_EXPR(swizzle)	///< vector swizzle operation (::ex_swizzle_t)
 EX_EXPR(extend)		///< vector extend operation (::ex_extend_t)
 EX_EXPR(multivec)	///< geometric algebra multivector (::ex_multivec_t)
 EX_EXPR(list)		///< non-invasive list of expressions (::ex_list_t)
+EX_EXPR(type)		///< type expression for generics
+EX_EXPR(incop)		///< pre or post increment/decrement (::ex_incop_t)
+EX_EXPR(cond)		///< ?: conditional expression (::ex_cond_t)
+EX_EXPR(field)		///< field reference expression (::ex_field_t)
+EX_EXPR(array)		///< array index expression (::ex_array_t)
+EX_EXPR(decl)		///< delcaration expression (::ex_array_t)
+EX_EXPR(loop)		///< loop construct expression (::ex_loop_t)
+EX_EXPR(select)		///< select construct expression (::ex_select_t)
+EX_EXPR(intrinsic)	///< intrinsic instruction expression (::ex_intrinsic_t)
+EX_EXPR(switch)		///< switch expression (::ex_switch_t)
+EX_EXPR(caselabel)	///< case expression (::ex_caselabel_t)
+EX_EXPR(xvalue)		///< xvalue expression (::ex_xvalue_t)
+EX_EXPR(process)	///< expression that needs processing (::ex_process_t)
+
+#undef EX_EXPR
 
 ///@}

@@ -1548,11 +1548,12 @@ rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 	pr_func_t   imp = get_imp (probj, class, describe_sel);
 
 	PR_PushFrame (pr);
-	PR_RESET_PARAMS (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
 	P_POINTER (pr, 0) = at_param;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, describe_sel);
-	pr->pr_argc = 2;
 	PR_ExecuteProgram (pr, imp);
+	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 	//FIXME the lifetime of the string may be a problem
 	return PR_GetString (pr, R_STRING (pr));

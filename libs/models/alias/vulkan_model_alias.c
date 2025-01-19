@@ -442,12 +442,15 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	packet_data += ind_scatter.length;
 	build_inds (indices, hdr->mdl.numtris, indexmap, alias_ctx);
 
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto var = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	auto ir = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
 	QFV_PacketScatterBuffer (packet, mesh->vertex_buffer, 1, &vert_scatter,
-				&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+							 sb, var);
 	QFV_PacketScatterBuffer (packet, mesh->uv_buffer, 1, &uv_scatter,
-				&bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+							 sb, var);
 	QFV_PacketScatterBuffer (packet, mesh->index_buffer, 1, &ind_scatter,
-				&bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+							 sb, ir);
 	QFV_PacketSubmit (packet);
 }
 

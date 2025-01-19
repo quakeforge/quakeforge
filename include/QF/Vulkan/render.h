@@ -142,6 +142,7 @@ typedef struct qfv_attachmentinfo_s {
 } qfv_attachmentinfo_t;
 
 typedef struct qfv_taskinfo_s {
+	const char *name;
 	exprfunc_t *func;
 	const exprval_t **params;
 	void       *param_data;

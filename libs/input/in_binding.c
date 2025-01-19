@@ -121,6 +121,9 @@ devid_cmp (const void *a, const void *b)
 static int * __attribute__ ((pure))
 in_find_devid (int devid)
 {
+	if (!known_devices.size) {
+		return nullptr;
+	}
 	return bsearch (&devid, known_devices.a, known_devices.size,
 					sizeof (int), devid_cmp);
 }

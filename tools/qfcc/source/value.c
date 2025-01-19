@@ -64,13 +64,15 @@
 typedef struct {
 	def_t      *def;
 	union {
+		uint8_t     raw_imm;
 #define EV_TYPE(type) pr_##type##_t type##_val;
 #include "QF/progs/pr_type_names.h"
 #define VEC_TYPE(type_name, base_type) pr_##type_name##_t type_name##_val;
 #include "tools/qfcc/include/vec_types.h"
 		ex_pointer_t pointer;
-	} i;
+	};
 } immediate_t;
+#define imm_size (sizeof(immediate_t) - field_offset(immediate_t, raw_imm))
 
 static hashtab_t *value_table;
 ALLOC_STATE (ex_value_t, values);
@@ -79,7 +81,7 @@ static uintptr_t
 value_get_hash (const void *_val, void *unused)
 {
 	const ex_value_t *val = (const ex_value_t *) _val;
-	return Hash_Buffer (&val->v, sizeof (val->v)) ^ (uintptr_t) val->type;
+	return Hash_Buffer (&val->raw_value, value_size) ^ (uintptr_t) val->type;
 }
 
 static int
@@ -89,10 +91,10 @@ value_compare (const void *_val1, const void *_val2, void *unused)
 	const ex_value_t *val2 = (const ex_value_t *) _val2;
 	if (val1->type != val2->type)
 		return 0;
-	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
+	return memcmp (&val1->raw_value, &val2->raw_value, value_size) == 0;
 }
 
-static ex_value_t *
+ex_value_t *
 new_value (void)
 {
 	ex_value_t *value;
@@ -130,7 +132,7 @@ new_string_val (const char *string_val)
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_string);
 	if (string_val)
-		val.v.string_val = save_string (string_val);
+		val.string_val = save_string (string_val);
 	return find_value (&val);
 }
 
@@ -140,7 +142,7 @@ new_double_val (double double_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_double);
-	val.v.double_val = double_val;
+	val.double_val = double_val;
 	return find_value (&val);
 }
 
@@ -150,7 +152,7 @@ new_float_val (float float_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_float);
-	val.v.float_val = float_val;
+	val.float_val = float_val;
 	return find_value (&val);
 }
 
@@ -160,7 +162,7 @@ new_vector_val (const float *vector_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_vector);
-	VectorCopy (vector_val, val.v.vector_val);
+	VectorCopy (vector_val, val.vector_val);
 	return find_value (&val);
 }
 
@@ -170,7 +172,7 @@ new_entity_val (int entity_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_entity);
-	val.v.entity_val = entity_val;
+	val.entity_val = entity_val;
 	return find_value (&val);
 }
 
@@ -180,9 +182,9 @@ new_field_val (int field_val, const type_t *type, def_t *def)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, field_type (type));
-	val.v.pointer.val = field_val;
-	val.v.pointer.type = type;
-	val.v.pointer.def = def;
+	val.pointer.val = field_val;
+	val.pointer.type = type;
+	val.pointer.def = def;
 	return find_value (&val);
 }
 
@@ -192,8 +194,8 @@ new_func_val (int func_val, const type_t *type)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, type);
-	val.v.func_val.val = func_val;
-	val.v.func_val.type = type;
+	val.func_val.val = func_val;
+	val.func_val.type = type;
 	return find_value (&val);
 }
 
@@ -207,10 +209,10 @@ new_pointer_val (int pointer_val, const type_t *type, def_t *def,
 	}
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, pointer_type (type));
-	val.v.pointer.val = pointer_val;
-	val.v.pointer.type = type;
-	val.v.pointer.def = def;
-	val.v.pointer.tempop = tempop;
+	val.pointer.val = pointer_val;
+	val.pointer.type = type;
+	val.pointer.def = def;
+	val.pointer.tempop = tempop;
 	return find_value (&val);
 }
 
@@ -220,7 +222,7 @@ new_quaternion_val (const float *quaternion_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_quaternion);
-	QuatCopy (quaternion_val, val.v.quaternion_val);
+	QuatCopy (quaternion_val, val.quaternion_val);
 	return find_value (&val);
 }
 
@@ -230,7 +232,7 @@ new_int_val (int int_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_int);
-	val.v.int_val = int_val;
+	val.int_val = int_val;
 	return find_value (&val);
 }
 
@@ -240,14 +242,14 @@ new_uint_val (int uint_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_uint);
-	val.v.uint_val = uint_val;
+	val.uint_val = uint_val;
 	return find_value (&val);
 }
 
 ex_value_t *
 new_long_val (pr_long_t long_val)
 {
-	ex_value_t  val = { .v = { .long_val = long_val } };
+	ex_value_t  val = { .long_val = long_val };
 	set_val_type (&val, &type_long);
 	return find_value (&val);
 }
@@ -255,7 +257,7 @@ new_long_val (pr_long_t long_val)
 ex_value_t *
 new_ulong_val (pr_ulong_t ulong_val)
 {
-	ex_value_t  val = { .v = { .ulong_val = ulong_val } };
+	ex_value_t  val = { .ulong_val = ulong_val };
 	set_val_type (&val, &type_ulong);
 	return find_value (&val);
 }
@@ -266,7 +268,17 @@ new_short_val (short short_val)
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, &type_short);
-	val.v.short_val = short_val;
+	val.short_val = short_val;
+	return find_value (&val);
+}
+
+ex_value_t *
+new_ushort_val (unsigned short ushort_val)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	set_val_type (&val, &type_ushort);
+	val.ushort_val = ushort_val;
 	return find_value (&val);
 }
 
@@ -280,9 +292,9 @@ new_nil_val (const type_t *type)
 		val.lltype = type_nil->type;
 	}
 	if (val.lltype == ev_ptr || val.lltype == ev_field )
-		val.v.pointer.type = type->t.fldptr.type;
+		val.pointer.type = type->fldptr.type;
 	if (val.lltype == ev_func)
-		val.v.func_val.type = type;
+		val.func_val.type = type;
 	return find_value (&val);
 }
 
@@ -291,8 +303,11 @@ new_type_value (const type_t *type, const pr_type_t *data)
 {
 	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
 	ex_value_t  val = {};
-	set_val_type (&val, (type_t *) type);//FIXME cast
-	memcpy (&val.v, data, typeSize);
+	if (typeSize > sizeof (val) - field_offset (ex_value_t, raw_value)) {
+		internal_error (0, "value too large");
+	}
+	set_val_type (&val, type);
+	memcpy (&val.raw_value, data, typeSize);
 	return find_value (&val);
 }
 
@@ -305,10 +320,10 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		memset (dst, 0, dstSize);
 		return;
 	}
-	if (src->type == ex_symbol && src->symbol->sy_type == sy_var) {
+	if (src->type == ex_symbol && src->symbol->sy_type == sy_def) {
 		// initialized global def treated as a constant
 		// from the tests in cast_expr, the def is known to be constant
-		def_t      *def = src->symbol->s.def;
+		def_t      *def = src->symbol->def;
 		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
 		return;
 	}
@@ -317,12 +332,12 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		val = src->value;
 	}
 	if (src->type == ex_symbol && src->symbol->sy_type == sy_const) {
-		val = src->symbol->s.value;
+		val = src->symbol->value;
 	}
 	if (!val) {
 		internal_error (src, "unexpected constant expression type");
 	}
-	memcpy (dst, &val->v, dstSize);
+	memcpy (dst, &val->raw_value, dstSize);
 }
 
 const char *
@@ -332,135 +347,135 @@ get_value_string (const ex_value_t *value)
 	const char *str = "";
 	switch (type->type) {
 		case ev_string:
-			return va (0, "\"%s\"", quote_string (value->v.string_val));
+			return va (0, "\"%s\"", quote_string (value->string_val));
 		case ev_vector:
 		case ev_quaternion:
 		case ev_float:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%.9g", value->v.float_val);
+					str = va (0, "%.9g", value->float_val);
 					break;
 				case 2:
-					str = va (0, VEC2F_FMT, VEC2_EXP (value->v.vec2_val));
+					str = va (0, VEC2F_FMT, VEC2_EXP (value->vec2_val));
 					break;
 				case 3:
 					str = va (0, "[%.9g, %.9g, %.9g]",
-							  VectorExpand (value->v.vec3_val));
+							  VectorExpand (value->vec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4F_FMT, VEC4_EXP (value->v.vec4_val));
+					str = va (0, VEC4F_FMT, VEC4_EXP (value->vec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
 		case ev_entity:
 		case ev_func:
-			return va (0, "%s %d", type->name, value->v.int_val);
+			return va (0, "%s %d", type->name, value->int_val);
 		case ev_field:
-			if (value->v.pointer.def) {
-				int         offset = value->v.pointer.val;
-				offset += value->v.pointer.def->offset;
+			if (value->pointer.def) {
+				int         offset = value->pointer.val;
+				offset += value->pointer.def->offset;
 				return va (0, "field %d", offset);
 			} else {
-				return va (0, "field %d", value->v.pointer.val);
+				return va (0, "field %d", value->pointer.val);
 			}
 		case ev_ptr:
-			if (value->v.pointer.def) {
-				str = va (0, "<%s>", value->v.pointer.def->name);
+			if (value->pointer.def) {
+				str = va (0, "<%s>", value->pointer.def->name);
 			}
 			return va (0, "(* %s)[%d]%s",
-					   value->v.pointer.type
-						? get_type_string (value->v.pointer.type) : "???",
-					   value->v.pointer.val, str);
+					   value->pointer.type
+						? get_type_string (value->pointer.type) : "???",
+					   value->pointer.val, str);
 		case ev_int:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIi32, value->v.int_val);
+					str = va (0, "%"PRIi32, value->int_val);
 					break;
 				case 2:
-					str = va (0, VEC2I_FMT, VEC2_EXP (value->v.ivec2_val));
+					str = va (0, VEC2I_FMT, VEC2_EXP (value->ivec2_val));
 					break;
 				case 3:
 					str = va (0, "[%"PRIi32", %"PRIi32", %"PRIi32"]",
-							  VectorExpand (value->v.ivec3_val));
+							  VectorExpand (value->ivec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4I_FMT, VEC4_EXP (value->v.ivec4_val));
+					str = va (0, VEC4I_FMT, VEC4_EXP (value->ivec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
 		case ev_uint:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIu32, value->v.uint_val);
+					str = va (0, "%"PRIu32, value->uint_val);
 					break;
 				case 2:
 					str = va (0, "[%"PRIu32", %"PRIi32"]",
-							  VEC2_EXP (value->v.uivec2_val));
+							  VEC2_EXP (value->uivec2_val));
 					break;
 				case 3:
 					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32"]",
-							  VectorExpand (value->v.uivec3_val));
+							  VectorExpand (value->uivec3_val));
 					break;
 				case 4:
 					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
-							  VEC4_EXP (value->v.uivec4_val));
+							  VEC4_EXP (value->uivec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
 		case ev_short:
-			return va (0, "%s %"PRIi16, type->name, value->v.short_val);
+			return va (0, "%s %"PRIi16, type->name, value->short_val);
 		case ev_ushort:
-			return va (0, "%s %"PRIu16, type->name, value->v.ushort_val);
+			return va (0, "%s %"PRIu16, type->name, value->ushort_val);
 		case ev_double:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%.17g", value->v.double_val);
+					str = va (0, "%.17g", value->double_val);
 					break;
 				case 2:
-					str = va (0, VEC2D_FMT, VEC2_EXP (value->v.dvec2_val));
+					str = va (0, VEC2D_FMT, VEC2_EXP (value->dvec2_val));
 					break;
 				case 3:
 					str = va (0, "[%.17g, %.17g, %.17g]",
-							  VectorExpand (value->v.dvec3_val));
+							  VectorExpand (value->dvec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4D_FMT, VEC4_EXP (value->v.dvec4_val));
+					str = va (0, VEC4D_FMT, VEC4_EXP (value->dvec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
 		case ev_long:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIi64, value->v.long_val);
+					str = va (0, "%"PRIi64, value->long_val);
 					break;
 				case 2:
-					str = va (0, VEC2L_FMT, VEC2_EXP (value->v.lvec2_val));
+					str = va (0, VEC2L_FMT, VEC2_EXP (value->lvec2_val));
 					break;
 				case 3:
 					str = va (0, "[%"PRIi64", %"PRIi64", %"PRIi64"]",
-							  VectorExpand (value->v.lvec3_val));
+							  VectorExpand (value->lvec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4L_FMT, VEC4_EXP (value->v.lvec4_val));
+					str = va (0, VEC4L_FMT, VEC4_EXP (value->lvec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
 		case ev_ulong:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIu64, value->v.ulong_val);
+					str = va (0, "%"PRIu64, value->ulong_val);
 					break;
 				case 2:
 					str = va (0, "[%"PRIu64", %"PRIi64"]",
-							  VEC2_EXP (value->v.ulvec2_val));
+							  VEC2_EXP (value->ulvec2_val));
 					break;
 				case 3:
 					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64"]",
-							  VectorExpand (value->v.ulvec3_val));
+							  VectorExpand (value->ulvec3_val));
 					break;
 				case 4:
 					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
-							  VEC4_EXP (value->v.ulvec4_val));
+							  VEC4_EXP (value->ulvec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);
@@ -491,13 +506,13 @@ imm_get_hash (const void *_imm, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		const char *str = pr.strings->strings + imm->i.string_val;
+		const char *str = pr.strings->strings + imm->string_val;
 		return str ? Hash_String (str) : 0;
 	} else if (tab == &fldptr_imm_defs) {
-		return Hash_Buffer (&imm->i.pointer, sizeof (&imm->i.pointer));
+		return Hash_Buffer (&imm->pointer, sizeof (&imm->pointer));
 	} else if (tab == &value_imm_defs) {
 		size_t      size = type_size (imm->def->type) * sizeof (pr_type_t);
-		return Hash_Buffer (&imm->i, size) ^ (uintptr_t) imm->def->type;
+		return Hash_Buffer (&imm->raw_imm, size) ^ (uintptr_t) imm->def->type;
 	} else {
 		internal_error (0, "invalid immediate hash table");
 	}
@@ -511,18 +526,18 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 	hashtab_t  **tab = (hashtab_t **) _tab;
 
 	if (tab == &string_imm_defs) {
-		const char *str1 = pr.strings->strings + imm1->i.string_val;
-		const char *str2 = pr.strings->strings + imm2->i.string_val;
+		const char *str1 = pr.strings->strings + imm1->string_val;
+		const char *str2 = pr.strings->strings + imm2->string_val;
 		return (str1 == str2 || (str1 && str2 && !strcmp (str1, str2)));
 	} else if (tab == &fldptr_imm_defs) {
-		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
-						sizeof (imm1->i.pointer));
+		return !memcmp (&imm1->pointer, &imm2->pointer,
+						sizeof (imm1->pointer));
 	} else if (tab == &value_imm_defs) {
 		size_t      size = type_size (imm1->def->type) * sizeof (pr_type_t);
 		if (imm1->def->type->alignment != imm2->def->type->alignment) {
 			return 0;
 		}
-		return !memcmp (&imm1->i, &imm2->i, size);
+		return !memcmp (&imm1->raw_imm, &imm2->raw_imm, size);
 	} else {
 		internal_error (0, "invalid immediate hash table");
 	}
@@ -546,7 +561,8 @@ offset_alias_value (ex_value_t *value, const type_t *type, int offset)
 		return value;
 	}
 	pr_type_t   data[type_size (value->type)];
-	memcpy (data, &value->v, sizeof (pr_type_t) * type_size (value->type));
+	size_t      data_size = sizeof (pr_type_t) * type_size (value->type);
+	memcpy (data, &value->raw_value, data_size);
 	return new_type_value (type, data + offset);
 }
 
@@ -572,7 +588,7 @@ make_def_imm (def_t *def, hashtab_t *tab, ex_value_t *val)
 	imm = aligned_alloc (__alignof__(immediate_t), sizeof (immediate_t));
 	memset (imm, 0, sizeof (immediate_t));
 	imm->def = def;
-	memcpy (&imm->i, &val->v, sizeof (imm->i));
+	memcpy (&imm->raw_imm, &val->raw_value, imm_size);
 
 	Hash_AddElement (tab, imm);
 
@@ -593,7 +609,7 @@ emit_value_core (ex_value_t *val, def_t *def, defspace_t *data)
 			reloc_def_string (def);
 			break;
 		case ev_func:
-			if (val->v.func_val.val) {
+			if (val->func_val.val) {
 				reloc_t    *reloc;
 				reloc = new_reloc (def->space, def->offset, rel_def_func);
 				reloc->next = pr.relocs;
@@ -601,19 +617,20 @@ emit_value_core (ex_value_t *val, def_t *def, defspace_t *data)
 			}
 			break;
 		case ev_field:
-			if (val->v.pointer.def)
-				reloc_def_field_ofs (val->v.pointer.def, def);
+			if (val->pointer.def)
+				reloc_def_field_ofs (val->pointer.def, def);
 			break;
 		case ev_ptr:
-			if (val->v.pointer.def) {
-				EMIT_DEF_OFS (data, D_INT (def), val->v.pointer.def);
+			if (val->pointer.def) {
+				EMIT_DEF_OFS (data, D_INT (def), val->pointer.def);
 			}
 			break;
 		default:
 			break;
 	}
 
-	memcpy (D_POINTER (pr_type_t, def), &val->v, 4 * type_size (val->type));
+	size_t      data_size = sizeof (pr_type_t) * type_size (val->type);
+	memcpy (D_POINTER (pr_type_t, def), &val->raw_value, data_size);
 	return def;
 }
 
@@ -651,7 +668,7 @@ emit_value (ex_value_t *value, def_t *def)
 			type = ev_types[val.lltype];
 			break;
 		case ev_string:
-			val.v.int_val = ReuseString (val.v.string_val);
+			val.int_val = ReuseString (val.string_val);
 			tab = string_imm_defs;
 			type = &type_string;
 			break;
@@ -663,7 +680,7 @@ emit_value (ex_value_t *value, def_t *def)
 	}
 	def_t       search_def = { .type = type };
 	immediate_t search = { .def = &search_def };
-	memcpy (&search.i, &val.v, sizeof (search.i));
+	memcpy (&search.raw_imm, &val.raw_value, imm_size);
 	immediate_t *imm = Hash_FindElement (tab, &search);
 	if (imm && strcmp (imm->def->name, ".zero") == 0) {
 		if (def) {
@@ -671,7 +688,7 @@ emit_value (ex_value_t *value, def_t *def)
 		} else {
 			symbol_t   *sym;
 			sym = make_symbol (".zero", &type_zero, 0, sc_extern);
-			return sym->s.def;
+			return sym->def;
 		}
 	}
 	if (imm) {
@@ -742,7 +759,7 @@ clear_immediates (void)
 		Hash_SetHashCompare (value_imm_defs, imm_get_hash, imm_compare);
 	}
 
-	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;
+	def = make_symbol (".zero", &type_zero, 0, sc_extern)->def;
 
 	memset (&zero_val, 0, sizeof (zero_val));
 	make_def_imm (def, string_imm_defs, &zero_val);

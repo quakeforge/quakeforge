@@ -48,15 +48,10 @@ typedef enum vis_e {
 	vis_anonymous,
 } vis_t;
 
-typedef enum {
-	sy_name,					///< just a name (referent tbd)
-	sy_var,						///< symbol refers to a variable
-	sy_const,					///< symbol refers to a constant
-	sy_type,					///< symbol refers to a type
-	sy_expr,					///< symbol refers to an expression
-	sy_func,					///< symbol refers to a function
-	sy_class,					///< symbol refers to a class
-	sy_convert,					///< symbol refers to a conversion function
+#define SY_TYPE(type) sy_##type,
+typedef enum : unsigned {
+#include "tools/qfcc/include/sy_type_names.h"
+	sy_num_types	///< number of symtab types
 } sy_type_e;
 
 typedef struct symconv_s {
@@ -64,23 +59,42 @@ typedef struct symconv_s {
 	void       *data;
 } symconv_t;
 
+typedef struct {
+	const expr_t *lvalue;
+	const expr_t *rvalue;
+} sy_xvalue_t;
+
+typedef struct var_s {
+	enum storage_class_e storage;
+} var_t;
+
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
 	struct symtab_s *table;		///< symbol table that owns this symbol
 	vis_t       visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
 	sy_type_e   sy_type;		///< symbol type
+	unsigned    id;
 	const struct type_s *type;	///< type of object to which symbol refers
 	struct param_s *params;		///< the parameters if a function
-	unsigned    no_auto_init;	///< skip for non-designated initializers
+	bool        no_auto_init:1;	///< skip for non-designated initializers
+	bool        lvalue:1;
+	bool        is_constexpr:1;
+	struct attribute_s *attributes;
 	union {
-		int         offset;			///< sy_var (in a struct/union)
-		struct def_s *def;			///< sy_var
+		var_t       var;			///< sy_var
+		int         offset;			///< sy_offset
+		struct def_s *def;			///< sy_def
 		struct ex_value_s *value;	///< sy_const
-		const struct expr_s *expr;	///< sy_expr
-		struct function_s *func;	///< sy_func
+		const struct expr_s *expr;	///< sy_expr/sy_type_param
+		struct metafunc_s *metafunc;///< sy_func
 		symconv_t   convert;		///< sy_convert
-	} s;
+		struct rua_macro_s *macro;	///< sy_macro
+		struct symtab_s *namespace;	///< sy_namespace
+		ex_list_t   list;			///< sy_list
+		sy_xvalue_t xvalue;			///< sy_xvalue
+	};
+	void       *return_addr;
 } symbol_t;
 
 typedef enum {
@@ -92,13 +106,17 @@ typedef enum {
 	stab_union,
 	stab_enum,
 	stab_label,
+	stab_block,
+	stab_bypass,				///< symbols are added to parent
 } stab_type_e;
 
 typedef struct symtab_s {
 	struct symtab_s *parent;	///< points to parent table
 	struct symtab_s *next;		///< next in global collection of symtabs
 	stab_type_e type;			///< type of symbol table
+	int         storage;		///< storage class for stab_block
 	int         size;			///< size of structure represented by symtab
+	int         count;			///< number of real members in structure
 	struct hashtab_s *tab;		///< symbols defined in this table
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
@@ -106,6 +124,8 @@ typedef struct symtab_s {
 	struct class_s *class;		///< owning class if ivar scope
 	symbol_t *(*procsymbol) (const char *name, struct symtab_s *symtab);
 	void       *procsymbol_data;
+	void       *data;
+	const char *name;
 } symtab_t;
 
 const char *symtype_str (sy_type_e type) __attribute__((const));
@@ -168,6 +188,17 @@ symbol_t *symtab_lookup (symtab_t *symtab, const char *name);
 					table, or the symbol that was found in the table.
 */
 symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol);
+
+/**	Append a symbol to the symbol table's symbols.
+
+	The symbol is not checked for duplicate names, nor is it added to the
+	hash table.
+
+	\param symtab	The symol table to which the symbol will be added.
+	\param symbol	The symbol to be added to the symbol table.
+	\return			The symbol as in the table
+*/
+symbol_t *symtab_appendsymbol (symtab_t *symtab, symbol_t *symbol);
 
 /**	Remove a symbol from the symbol table.
 
@@ -253,9 +284,10 @@ symbol_t *make_symbol (const char *name, const struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
 struct specifier_s;
-symbol_t *declare_symbol (struct specifier_s spec, const struct expr_s *init,
-						  symtab_t *symtab);
-symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab);
+symbol_t *declare_symbol (struct specifier_s spec, const expr_t *init,
+						  symtab_t *symtab, expr_t *block, rua_ctx_t *ctx);
+symbol_t *declare_field (struct specifier_s spec, symtab_t *symtab,
+						 rua_ctx_t *ctx);
 
 ///@}
 

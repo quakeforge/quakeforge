@@ -43,10 +43,16 @@ struct hashctx_s;
 */
 typedef enum {
 	QFDictionary,	///< The property list item represents a dictionary.
+					///< JSON object.
 	QFArray,		///< The property list item represents an array.
+					///< JSON array.
 	QFBinary,		///< The property list item represents arbitrary binary
 					///< data.
 	QFString,		///< The property list item represents a C string.
+					///< JSON string.
+	QFNumber,		///< JSON number
+	QFBool,			///< JSON bool value (true/false)
+	QFNull,			///< JSON null value
 
 	QFMultiType = (1 << 31)	///< if bit 31 is set, the type indicates a mask
 					///< of allowed types for plfield_t
@@ -136,6 +142,11 @@ typedef struct plelement_s {
 
 /** Create an in-memory representation of the contents of a property list.
 
+	The string is parsed as per the old NextStep property lists, with a few
+	extensions.
+
+	\note Does not create number, bool or null items.
+
 	\param string	the saved plist, as read from a file.
 	\param hashctx	Hashlink chain to use when creating dictionaries (see
 					Hash_NewTable()). May be null.
@@ -144,6 +155,21 @@ typedef struct plelement_s {
 	\note You are responsible for freeing the returned object.
 */
 plitem_t *PL_GetPropertyList (const char *string, struct hashctx_s **hashctx);
+
+/** Create an in-memory representation of the contents of a JSON object.
+
+	The string is parsed as standard JSON (rfc7159)
+
+	\note does not create binary items.
+
+	\param string	the saved JSON, as read from a file.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns an object equivalent to the passed-in string.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_ParseJSON (const char *string, struct hashctx_s **hashctx);
 
 /** Create a property list from a bare dictionary list.
 
@@ -179,6 +205,14 @@ plitem_t *PL_GetArray (const char *string, struct hashctx_s **hashctx);
 	\note You are responsible for freeing the returned string.
 */
 char *PL_WritePropertyList (const plitem_t *pl);
+
+/** Create a JSON list string from the in-memory representation.
+
+	\param pl the in-memory representation
+	\return the text representation of the property list
+	\note You are responsible for freeing the returned string.
+*/
+char *PL_WriteJSON (const plitem_t *pl);
 
 /** Retrieve the type of an object.
 
@@ -222,6 +256,10 @@ const void *PL_BinaryData (const plitem_t *binary) __attribute__((pure));
 	be destroyed when its container is.
 */
 const char *PL_String (const plitem_t *string) __attribute__((pure));
+
+double PL_Number (const plitem_t *number) __attribute__((pure));
+
+bool PL_Bool (const plitem_t *boolean) __attribute__((pure));
 
 /** Retrieve a value from a dictionary object.
 

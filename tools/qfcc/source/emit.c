@@ -87,12 +87,12 @@ get_value_def (const expr_t *expr, ex_value_t *value, const type_t *type)
 
 	if (is_short (type)) {
 		def = new_def (0, &type_short, 0, sc_extern);
-		def->offset = value->v.short_val;
+		def->offset = value->short_val;
 		return def;
 	}
-	if (is_ptr (type) && value->v.pointer.tempop && !value->v.pointer.def) {
-		value->v.pointer.def = get_tempop_def (expr, value->v.pointer.tempop,
-											   type->t.fldptr.type);
+	if (is_ptr (type) && value->pointer.tempop && !value->pointer.def) {
+		value->pointer.def = get_tempop_def (expr, value->pointer.tempop,
+											 type->fldptr.type);
 	}
 	def = emit_value (value, 0);
 	if (type != def->type)
@@ -134,10 +134,10 @@ add_statement_def_ref (def_t *def, dstatement_t *st, int field)
 		int         st_ofs = st - pr.code->code;
 		int         offset_reloc = 0;
 		int         alias_depth = 0;
-		expr_t      alias_depth_expr;
+		expr_t      alias_depth_expr = {
+			.loc = def->loc,
+		};
 
-		alias_depth_expr.file = def->file;
-		alias_depth_expr.line = def->line;
 		while (def->alias) {
 			alias_depth++;
 			offset_reloc |= def->offset_reloc;
@@ -228,7 +228,8 @@ emit_statement (statement_t *statement)
 	}
 	if (options.code.debug) {
 		const expr_t *e = statement->expr;
-		pr_uint_t   line = (e ? e->line : pr.source_line) - lineno_base;
+		auto loc = e ? e->loc : pr.loc;
+		pr_uint_t   line = loc.line - lineno_base;
 
 		if (line != pr.linenos[pr.num_linenos - 1].line) {
 			pr_lineno_t *lineno = new_lineno ();

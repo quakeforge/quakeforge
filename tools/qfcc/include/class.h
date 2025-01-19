@@ -116,6 +116,8 @@ struct method_s;
 struct symbol_s;
 struct selector_s;
 
+typedef struct rua_ctx_s rua_ctx_t;
+
 int is_id (const struct type_s *type) __attribute__((pure));
 int is_class (const struct type_s *type) __attribute__((pure));
 int is_Class (const struct type_s *type) __attribute__((const));
@@ -155,7 +157,7 @@ category_t *get_category (struct symbol_s *class_name,
 						  const char *category_name, int create);
 void category_add_methods (category_t *category, struct methodlist_s *methods);
 void category_add_protocols (category_t *category, protocollist_t *protocols);
-void class_finish_module (void);
+void class_finish_module (rua_ctx_t *ctx);
 
 struct symtab_s *class_to_struct (class_t *class, struct symtab_s *symtab);
 void emit_class_ref (const char *class_name);

@@ -99,17 +99,17 @@ selector_expr (keywordarg_t *selector)
 	selector = (keywordarg_t *) reverse_params ((param_t *) selector);
 	selector_name (sel_id, selector);
 	index = selector_index (sel_id->str);
-	index *= type_size (type_SEL.t.fldptr.type);
+	index *= type_size (type_SEL.fldptr.type);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE_PTR", &type_SEL,
 						   pr.near_data, sc_static);
 	if (!sel_sym->table) {
 		symtab_addsymbol (pr.symtab, sel_sym);
 		sel_table = make_symbol ("_OBJ_SELECTOR_TABLE",
-								 array_type (type_SEL.t.fldptr.type, 0),
+								 array_type (type_SEL.fldptr.type, 0),
 								 pr.far_data, sc_extern);
 		if (!sel_table->table)
 			symtab_addsymbol (pr.symtab, sel_table);
-		reloc_def_def (sel_table->s.def, sel_sym->s.def);
+		reloc_def_def (sel_table->def, sel_sym->def);
 	}
 	sel_ref = new_symbol_expr (sel_sym);
 	sel_ref = new_address_expr (&type_selector, sel_ref,
@@ -155,8 +155,8 @@ super_expr (class_type_t *class_type)
 	sym = symtab_lookup (current_symtab, ".super");
 	if (!sym || sym->table != current_symtab) {
 		sym = new_symbol_type (".super", &type_super);
-		initialize_def (sym, 0, current_symtab->space, sc_local,
-						current_symtab);
+		initialize_def (sym, nullptr, current_symtab->space, sc_local,
+						current_symtab, nullptr);
 	}
 	super = new_symbol_expr (sym);
 
@@ -181,7 +181,7 @@ super_expr (class_type_t *class_type)
 }
 
 const expr_t *
-message_expr (const expr_t *receiver, keywordarg_t *message)
+message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 {
 	const expr_t *selector = selector_expr (message);
 	const expr_t *call;
@@ -211,13 +211,18 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 		} else if (receiver->symbol->sy_type == sy_class) {
 			class_t    *class;
 			rec_type = receiver->symbol->type;
-			class = rec_type->t.class;
+			class = rec_type->class;
 			class_msg = 1;
 			receiver = new_symbol_expr (class_pointer_symbol (class));
 		}
 	}
 	if (!rec_type) {
 		rec_type = get_type (receiver);
+	}
+	if (!rec_type) {
+		auto err = new_expr ();
+		err->type = ex_error;
+		return err;
 	}
 
 	if (receiver->type == ex_error)
@@ -226,7 +231,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	return_type = &type_id;
 	method = class_message_response (rec_type, class_msg, selector);
 	if (method)
-		return_type = method->type->t.func.type;
+		return_type = method->type->func.ret_type;
 
 	scoped_src_loc (receiver);
 	expr_t     *args = new_list_expr (0);
@@ -238,14 +243,14 @@ message_expr (const expr_t *receiver, keywordarg_t *message)
 	expr_append_expr (args, selector);
 	expr_append_expr (args, receiver);
 
-	send_msg = send_message (super);
+	send_msg = send_message (super, ctx);
 	if (method) {
 		const expr_t *err;
 		if ((err = method_check_params (method, args)))
 			return err;
 		method_type = method->type;
 	}
-	call = build_function_call (send_msg, method_type, args);
+	call = build_function_call (send_msg, method_type, args, ctx);
 
 	if (call->type == ex_error)
 		return receiver;

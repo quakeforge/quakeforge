@@ -1,4 +1,3 @@
-%{
 /*
 	qc-lex.l
 
@@ -28,6 +27,15 @@
 		Boston, MA  02111-1307, USA
 
 */
+%option bison-locations
+%option bison-bridge
+%option reentrant
+%option prefix="qc_yy"
+%option noyywrap
+%option debug
+%option stack
+
+%top{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -44,8 +52,10 @@
 #include <QF/dstring.h>
 #include <QF/hash.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
@@ -53,15 +63,16 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/pragma.h"
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
+}
 
-#include "tools/qfcc/source/qc-parse.h"
-
+%{
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
 #else
@@ -72,701 +83,2366 @@
 #define YY_NO_UNPUT	// debian flex
 #define YY_NO_YYINPUT
 #define YY_NO_YYUNPUT
-#define YY_DECL int yylex YY_PROTO(( void ))
-YY_DECL;
 
-int yyget_lineno (void) __attribute__((pure));
-int yyget_leng (void) __attribute__((pure));
-int yywrap (void) __attribute__((const));
-char *yyget_text (void) __attribute__((pure));
-int yyget_debug (void) __attribute__((pure));
-FILE *yyget_in (void) __attribute__((pure));
-FILE *yyget_out (void) __attribute__((pure));
+#define YYSTYPE rua_tok_t
+#define YYLTYPE rua_loc_t
 
-static int keyword_or_id (const char *token);
-static const expr_t *parse_float_vector (const char *token, int width);
-static const expr_t *parse_int_vector (const char *token, int width);
+typedef struct {
+	bool        saw_true;
+	bool        saw_else;
+	bool        own_state;
+	bool        enabled;
+	int         line;
+} rua_cond_t;
 
-extern QC_YYSTYPE qc_yylval;
+typedef struct DARRAY_TYPE (rua_cond_t) rua_cond_stack_t;
+
+typedef struct {
+	YY_BUFFER_STATE buffer;
+	rua_cond_stack_t cond_stack;
+	rua_loc_t   location;
+} rua_incl_t;
+
+typedef struct DARRAY_TYPE (rua_macro_t *) rua_macro_list_t;
+typedef struct DARRAY_TYPE (rua_incl_t) rua_include_stack_t;
+
+typedef struct rua_extra_s {
+		int         start_state;
+		bool        preprocessor;
+		bool        recording;
+		bool        params;
+		bool        expand;
+		bool        suppressed;
+		bool        no_lex;
+		bool        did_space;
+		rua_parser_t *parser;
+		pre_yypstate *pre_state;
+		pre_yypstate *args_state;
+		rua_cond_stack_t cond_stack;
+		rua_include_stack_t include_stack;
+		dstring_t  *dstr;
+		symtab_t   *macro_tab;
+		rua_macro_t *pending_macro;	// function-type waiting for args
+		rua_macro_t *macro;			// macro being expanded
+		yyscan_t    subscanner;
+		rua_loc_t   location;
+		char        str_text[8];	// EPHEMERAL! for short token strings
+	} rua_extra_t;
+#define YY_EXTRA_TYPE rua_extra_t *
+
+rua_extra_t *qc_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
+int yyget_lineno (yyscan_t yyscanner) __attribute__((pure));
+int yyget_column (yyscan_t yyscanner) __attribute__((pure));
+YYSTYPE *yyget_lval (yyscan_t yyscanner) __attribute__((pure));
+YYLTYPE *yyget_lloc (yyscan_t yyscanner) __attribute__((pure));
+int yyget_leng (yyscan_t yyscanner) __attribute__((pure));
+char *yyget_text (yyscan_t yyscanner) __attribute__((pure));
+int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
+
+static int directive (const char *token, yyscan_t scanner);
+static void update_loc (rua_loc_t *loc, size_t textlen);
+static void save_text (rua_tok_t *tok, const char *text, size_t textlen,
+					   int state, rua_extra_t *extra);
+static void next_line (rua_loc_t *loc, yyscan_t scanner);
+static void dump_state_stack (yyscan_t scanner);
+static void dump_token (rua_tok_t *tok, rua_loc_t *loc, int state);
+static void dump_debug (int act, const char *text, int state);
+
+typedef enum {
+	rua_eof = 1,
+	rua_ignore,
+	rua_error,
+	rua_id,
+	rua_number,
+	rua_vector,
+	rua_string,
+	rua_char,
+	rua_space,
+	rua_ellipsis,
+	rua_asx,
+	rua_incop,
+	rua_grab,
+	rua_va_opt,
+
+	rua_num_term,
+} rua_term;
+
+// for debian flex
+#ifndef yystart
+#define yystart() YY_START
+#define yybuffer YY_BUFFER_STATE
+#endif
+
+#define YY_USER_ACTION \
+	update_loc (yylloc, yyleng); \
+	save_text (yylval, yytext, yyleng, yystart(), extra); \
+	if (0) { dump_debug (yy_act, yytext, yystart()); } \
+	if (0) { dump_token (yylval, yylloc, yystart ()); } \
+	if (0) { dump_state_stack(yyscanner); }
 
 %}
 
 s			[ \t]
 m			[\-+]
 D			[0-9]
-B			[01]
-X			[0-9a-fA-F]
-ID			[a-zA-Z_][a-zA-Z_0-9]*
-FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
-FLOATf		{FLOAT}[fF]
-FLOATd		{FLOAT}[dD]
-FCOMP		{m}?{FLOAT}
+IDs			[a-zA-Z_]
+IDc			[a-zA-Z_0-9]
+ID			{IDs}{IDc}*
 FD			[fFdD]
-INT			({D}+|0[xX]{X}+|0[bB]{B})
-ICOMP		{m}?{INT}
 UL			([uU]?([lL][lL]?)?)
 ULFD		({UL}|{FD})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
 FRAMEID		{ID}(\.{ID})*
 PRAGMAID	{ID}(-{ID})*
-STRING		\"(\\.|[^"\\])*\"
+s_string	\"(\\.|[^"\\])*\"
+c_string	'(\\.|[^'\\])*'
+h_string    <[^>]*>
+q_string    \"[^\"]*\"
 
-%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE COMMENT PRAGMA
+pp_number	\.?{D}({IDc}|'{IDc}|[eEpP]{m}|\.)*
+pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
+
+%x		GRAB_FRAME GRAB_OTHER GRAB_WRITE
+%x		COMMENT LCOMMENT
+%x		DIRECTIVE TEXT
+%x		PRAGMA VECTOR
+%s		PREPROC PREEXPR
+%s		MACRO ARGS
+%x		CONT
 
 %%
-					grab_frame = GRAB_FRAME;
-					grab_other = GRAB_OTHER;
-					grab_write = GRAB_WRITE;
-					qc_yylval.pointer = 0;	// ensure pointer vals are null
+						auto extra = qc_yyget_extra (yyscanner);
+						yyset_debug (0, yyscanner);
+						grab_frame = GRAB_FRAME;
+						grab_other = GRAB_OTHER;
+						grab_write = GRAB_WRITE;
 
-"/*"				{ BEGIN (COMMENT); }
-<COMMENT>"/*"		{ warning (0, "nested /* in comment"); }
-<COMMENT>"*/"		{ BEGIN (INITIAL); }
-<COMMENT>\r*\n		{ pr.source_line++; }
-<COMMENT>.			/* nothing to do */
-<COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
-"//".*				/* nothing to do */
-
-^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 1); }
-^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$ { line_info (yytext + 5); }
-
-^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
-
-{INT}+{UL}?			{
-						const char *c = yytext + yyleng - 1;
-						pr_long_t   i;
-
-						if (yytext[0] == '0' && tolower (yytext[1] == 'b'))
-							i = strtol (yytext + 2, 0, 2);
-						else
-							i = strtol (yytext, 0, 0);
-						if (tolower (*c) == 'u') {
-							if (tolower (c[1]) == 'l') {
-								qc_yylval.expr = new_ulong_expr (i);
-							} else {
-								qc_yylval.expr = new_uint_expr (i);
-							}
-						} else {
-							if (tolower (c[1]) == 'l') {
-								qc_yylval.expr = new_long_expr (i);
-							} else {
-								qc_yylval.expr = new_int_expr (i);
-								((expr_t *) qc_yylval.expr)->implicit = 1;
+<COMMENT>"/*"			{ warning (0, "nested /* in comment"); yymore();}
+<COMMENT>\*+"/"			{ yy_pop_state (yyscanner); return -rua_space; }
+<COMMENT>\r*\n			{ next_line (yylloc, yyscanner); yymore();}
+<COMMENT>[^*/\n]*		{ yymore(); }/* munch on anything but possible end of comment */
+<COMMENT>\/+[^*\n]*		{ yymore(); }/* handle /s not followed by * */
+<COMMENT>\*+/[^/]		{ yymore(); }/* handle *s not followed by / */
+<COMMENT><<EOF>>		{ error (0, "EOF in comment"); return 0; }
+<*>"/*"					{ yy_push_state (COMMENT, yyscanner); yymore(); }
+<*>"//"					{
+							yymore();
+							yy_push_state (LCOMMENT, yyscanner);
+						}
+<LCOMMENT>[^\\\r\n]+	/* consume all but \ and EOL (see line continuation) */
+<LCOMMENT>[\\]+/[^\r\n]	/* consume \ */
+<LCOMMENT>\r*\n			{
+							next_line (yylloc, yyscanner);
+							yy_pop_state (yyscanner);
+							int state = yystart ();
+							if (state == PREEXPR || state == PREPROC
+								|| state == DIRECTIVE || state == MACRO) {
+								return PRE_EOD;
 							}
 						}
-						return VALUE;
-					}
 
-{FLOAT}				{
-						// advanced code defaults to double, but traditional
-						// and extended code defaults to float
-						if (options.traditional < 1) {
-							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d, true);
-						} else {
-							float       f = strtof (yytext, 0);
-							qc_yylval.expr = new_float_expr (f);
+<ARGS>^#				{	return '#'; }
+^#{s}+/{D}				{
+							yy_push_state (PREPROC, yyscanner);
+							extra->preprocessor = true;
+							return PRE_LINE;
 						}
-						return VALUE;
-					}
-{FLOATf}			{
-						float       f = strtof (yytext, 0);
-						qc_yylval.expr = new_float_expr (f);
-						return VALUE;
-					}
-{FLOATd}			{
-						// advanced code defaults to double, but traditional
-						// and extended code defaults to float
-						if (options.traditional < 1) {
-							double      d = strtod (yytext, 0);
-							qc_yylval.expr = new_double_expr (d, false);
-						} else {
-							float       f = strtof (yytext, 0);
-							qc_yylval.expr = new_float_expr (f);
-							warning (0, "truncating double constant to float");
+<CONT>^.				{ yyless (yyleng - 1); yy_pop_state (yyscanner); }
+<*>^{s}*#{s}*			{
+							yy_push_state (DIRECTIVE, yyscanner);
+							extra->preprocessor = true;
 						}
-						return VALUE;
-					}
+<ARGS><<EOF>>			{ return 0; }
+<ARGS>^{s}*				{ return -rua_space; }
 
-{ID}				{
-						int         tok = keyword_or_id(yytext);
-						return tok;
-					}
-@{ID}				{
-						int         tok = keyword_or_id(yytext);
-						if (tok == '@')
-							REJECT;
-						return tok;
-					}
+<DIRECTIVE>{ID}			{ {
+							int tok = directive (yytext, yyscanner);
+							if (tok >= 0) {
+								return tok;
+							}
+						} }
+<PREPROC>{ID}			{ return PRE_ID; }
+<PREPROC>{ID}\(			{ return PRE_IDp; }
 
-{STRING}			{
-						const char *s = make_string (yytext, 0);
-						qc_yylval.expr = new_string_expr (s);
-						return STRING;
-					}
-@					return '@';
+<ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
+<DIRECTIVE>\r*\n		|
+<PREEXPR>\r*\n			|
+<MACRO,TEXT>\r*\n		|
+<PREPROC>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
-'{s}*{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 2);
-						return VALUE;
-					}
+<TEXT>[^\\\r\n]*		{ return PRE_TEXT; }
+<TEXT>[\\]*				{ return PRE_TEXT; }
+<MACRO>##				{ return PRE_CONCAT; }
+<MACRO>#				{ return '#'; }
+<PREPROC>{h_string}		{ return PRE_HSTRING; }
+<PREPROC>{q_string}		{ return PRE_QSTRING; }
+<PREEXPR>{q_string}		{ return PRE_QSTRING; }
+<PREEXPR>defined		{ return PRE_DEFINED; }
+<PREEXPR>{ID}			{ return PRE_ID; }
 
-'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 3);
-						return VALUE;
-					}
+<INITIAL,ARGS,MACRO>{
+	{ID}				|
+	@{ID}				{ return -rua_id; }
+}
+@						{ return '@'; }
 
-'{s}*{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}+{ICOMP}{s}*'{ULFD}?	{
-						qc_yylval.expr = parse_int_vector (yytext, 4);
-						return VALUE;
-					}
+{pp_number}				{ return -rua_number; }
+{pp_vnumber}			{ return -rua_vector; }
+<VECTOR>{pp_number}		{ return -rua_number; }
+<VECTOR>{m}				{ return yytext[0]; }
+<VECTOR>'				{ return -rua_eof; }
 
-'{s}*{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 2);
-						return VALUE;
-					}
+{s_string}				{ return -rua_string; };
+{c_string}				{ return -rua_char; }
 
-'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 3);
-						return VALUE;
-					}
+[+\-*/&|^%]=			{ return -rua_asx; }
+"%%="					{ return -rua_asx; }
+"<<="					{ return -rua_asx; }
+">>="					{ return -rua_asx; }
 
-'{s}*{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}+{FCOMP}{s}*'{FD}?	{
-						qc_yylval.expr = parse_float_vector (yytext, 4);
-						return VALUE;
-					}
+[!(){}.*/&|^~+\-=\[\];,#%?:] { return yytext[0]; }
 
-'(\\[^xX0-7\r\n]|[^'\r\n]|\\[xX][0-9A-Fa-f]+|\\[0-7]+)*'	{
-						const char *str = make_string (yytext, 0);
+"·"						{ return QC_DOT; }
+"⋀"						{ return QC_WEDGE; }
+"•"						{ return QC_DOT; }
+"∧"						{ return QC_WEDGE; }
+"∨"						{ return QC_REGRESSIVE; }
+"†"						{ return QC_REVERSE; }
+"∗"						{ return QC_STAR; }
+"×"						{ return QC_CROSS; }
+"⋆"						{ return QC_DUAL; }
 
-						if (str[1])
-							warning (0, "multibyte char constant");
-						qc_yylval.expr = new_int_expr (*str);
-						return VALUE;
-					}
+"%%"					{ return QC_MOD; }
 
-[+\-*/&|^%]=		{
-						qc_yylval.op = yytext[0];
-						return ASX;
-					}
+{ELLIPSIS}				{ return -rua_ellipsis; }
 
-"%%="				{
-						qc_yylval.op = MOD;
-						return ASX;
-					}
+"<<"					{ return QC_SHL; }
+">>"					{ return QC_SHR; }
 
-"<<="				{
-						qc_yylval.op = SHL;
-						return ASX;
-					}
+"&&"					{ return QC_AND; }
+"||"					{ return QC_OR; }
+"^^"					{ return QC_XOR; }
+"=="					{ return QC_EQ; }
+"!="					{ return QC_NE; }
+"<="					{ return QC_LE; }
+">="					{ return QC_GE; }
+"<"						{ return QC_LT; }
+">"						{ return QC_GT; }
 
-">>="				{
-						qc_yylval.op = SHR;
-						return ASX;
-					}
+"++"					{ return -rua_incop; }
+"--"					{ return -rua_incop; }
 
-[!(){}.*/&|^~+\-=\[\];,#%?:] {
-						return yytext[0];
-					}
+"$"{s}*{FRAMEID}		{ return -rua_grab; }
 
-"·"					{ return DOT; }
-"⋀"					{ return WEDGE; }
-"•"					{ return DOT; }
-"∧"					{ return WEDGE; }
-"∨"					{ return REGRESSIVE; }
-"†"					{ return REVERSE; }
-"∗"					{ return STAR; }
-"×"					{ return CROSS; }
-"⋆"					{ return DUAL; }
-
-"%%"				{
-						return MOD;
-					}
-
-{ELLIPSIS}			return ELLIPSIS;
-
-"<<"				return SHL;
-">>"				return SHR;
-
-"&&"				return AND;
-"||"				return OR;
-"=="				return EQ;
-"!="				return NE;
-"<="				return LE;
-">="				return GE;
-"<"					return LT;
-">"					return GT;
-
-"++"				{
-						qc_yylval.op = '+';
-						return INCOP;
-					}
-
-"--"				{
-						qc_yylval.op = '-';
-						return INCOP;
-					}
-
-"$"{s}*{FRAMEID}	{
-						int ret = do_grab (yytext);
-						if (ret >= 0) {
-							qc_yylval.expr = new_int_expr (ret);
-							return VALUE;
-						} else {
-							BEGIN (-ret);
-						}
-					}
-
-<GRAB_FRAME>{FRAMEID}	add_frame_macro (yytext);
+<GRAB_FRAME>{FRAMEID}	{ add_frame_macro (yytext); }
 <GRAB_OTHER>[^\r\n]*	/* skip */
-<GRAB_WRITE>{STRING}	{
+<GRAB_WRITE>{s_string}	{
 							const char *s = make_string (yytext, 0);
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{PRAGMAID}		{ pragma_add_arg (yytext); }
-<PRAGMA>@{PRAGMAID}		{ pragma_add_arg (yytext); }
+<PRAGMA>{PRAGMAID}		|
+<PRAGMA>@{PRAGMAID}		{ return PRE_ID; }
+<PRAGMA>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
-<*>\r*\n			{
-						if (YY_START == PRAGMA) {
-							pragma_process ();
+<*>\\\r*\n				{
+							/* line continuation */
+							next_line (yylloc, yyscanner);
 						}
-						pr.source_line++;
-						BEGIN (INITIAL);
-					}
+<CONT><<EOF>>			{
+							warning (0, "\\ at end of file");
+							yy_pop_state (yyscanner);
+							return 0;
+						}
+<*>\r*\n				{
+							next_line (yylloc, yyscanner);
+							if (yyg->yy_start_stack_ptr) {
+								yy_pop_state (yyscanner);
+								extra->preprocessor = false;
+							}
+						}
 
-<*>{s}*				/* skip */
+<*>{s}+					{ return -rua_space; }
 
-<*>.				error (0, "all your typo are belong to us");
+<*>.					{
+							error (0, "all your typo are belong to us:%d %d-%d",
+								   yystart(),
+								   yylloc->column, yylloc->last_column);
+						}
 
 %%
 
-int
-yywrap (void)
+static directive_t cond_directives[] = {
+	{"if",       PRE_IF},
+	{"ifdef",    PRE_IFDEF},
+	{"ifndef",   PRE_IFNDEF},
+	{"else",     PRE_ELSE},
+	{"elif",     PRE_ELIF},
+	{"elifdef",  PRE_ELIFDEF},
+	{"elifndef", PRE_ELIFNDEF},
+	{"endif",    PRE_ENDIF},
+};
+
+const char *
+rua_directive_get_key (const void *dir, void *unused)
 {
-	return 1;
+	return ((directive_t*)dir)->name;
 }
 
-typedef struct {
-	const char *name;
-	int         value;
-	specifier_t spec;
-} keyword_t;
-
-// These keywords are part of the Ruamoko language and require the QuakeForge
-// Ruamoko VM.
-static keyword_t rua_keywords[] = {
-#define VEC_TYPE(type_name, base_type) \
-	{ #type_name, TYPE_SPEC, .spec = { .type = &type_##type_name } },
-#include "tools/qfcc/include/vec_types.h"
-};
-
-// These keywords are all part of the Ruamoko (Objective-QC) language.
-// The first time any one of them is encountered, the class system will be
-// initialized.
-// If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
-// then they will be unavailable as keywords.
-static keyword_t obj_keywords[] = {
-	{"id",				OBJECT_NAME, .spec = { .type = &type_id } 		},
-	{"Class",			TYPE_SPEC, .spec = { .type = &type_Class } 		},
-	{"Method",			TYPE_SPEC, .spec = { .type = &type_method } 	},
-	{"Super",			TYPE_SPEC, .spec = { .type = &type_super } 		},
-	{"SEL",				TYPE_SPEC, .spec = { .type = &type_SEL } 		},
-	{"IMP",				TYPE_SPEC, .spec = { .type = &type_IMP } 		},
-
-	{"@class",			CLASS					},
-	{"@defs",			DEFS					},
-	{"@encode",			ENCODE					},
-	{"@end",			END						},
-	{"@implementation",	IMPLEMENTATION			},
-	{"@interface",		INTERFACE				},
-	{"@private",		PRIVATE					},
-	{"@protected",		PROTECTED				},
-	{"@protocol",		PROTOCOL				},
-	{"@public",			PUBLIC					},
-	{"@reference",		REFERENCE				},
-	{"@selector",		SELECTOR				},
-	{"@self",			SELF					},
-	{"@this",			THIS					},
-
-	// This is a hack to trigger the initialization of the class
-	// sytem if it is seen before any other Objective-QC symbol. Otherwise,
-	// it is just an identifier, though it does reference a built-in type
-	// created by the class system.
-	{"obj_module",		0						},
-};
-
-// These keywords are extensions to QC and thus available only in advanced
-// or extended code. However, if they are preceeded by an @ (eg, @for), then
-// they are always available. This is to prevent them from causing trouble
-// for traditional code that might use these words as identifiers, but still
-// make the language features available to traditional code.
-static keyword_t at_keywords[] = {
-	{"for",			FOR		},
-	{"goto",		GOTO	},
-	{"break",		BREAK	},
-	{"continue",	CONTINUE},
-	{"switch",		SWITCH	},
-	{"case",		CASE	},
-	{"default",		DEFAULT	},
-	{"nil",			NIL		},
-	{"struct",		STRUCT	},
-	{"union",		STRUCT	},
-	{"enum",		ENUM	},
-	{"typedef",		TYPEDEF	},
-	{"extern",		EXTERN	},
-	{"static",		STATIC	},
-	{"sizeof",		SIZEOF	},
-	{"not",			NOT		},
-	{"auto",		TYPE_SPEC, .spec = { .type = &type_auto } },
-};
-
-// These keywords require the QuakeForge VM to be of any use. ie, they cannot
-// be supported (sanely) by v6 progs.
-static keyword_t qf_keywords[] = {
-	{"quaternion",	TYPE_SPEC, .spec = { .type = &type_quaternion } },
-	{"double",		TYPE_SPEC, .spec = { .type = &type_double } },
-	{"int",			TYPE_SPEC, .spec = { .type = &type_int } 	},
-	{"unsigned",	TYPE_SPEC, .spec = { .is_unsigned = 1 } },
-	{"signed",		TYPE_SPEC, .spec = { .is_signed = 1 } },
-	{"long",		TYPE_SPEC, .spec = { .is_long = 1 } },
-	{"short",		TYPE_SPEC, .spec = { .is_short = 1 } },
-
-	{"@function",	TYPE_SPEC, .spec = { .type = &type_func } 	},
-	{"@args",		ARGS,					},
-	{"@va_list",	TYPE_SPEC, .spec = { .type = &type_va_list } 	},
-	{"@param",		TYPE_SPEC, .spec = { .type = &type_param } 		},
-	{"@return",     AT_RETURN,		},
-
-	{"@hadamard",	HADAMARD,	},
-	{"@cross",		CROSS,		},
-	{"@dot",		DOT,		},
-	{"@wedge",		WEDGE,		},
-	{"@regressive",	REGRESSIVE,	},
-	{"@geometric",	GEOMETRIC,	},
-	{"@algebra",	ALGEBRA,	},
-	{"@dual",		DUAL,		},
-	{"@undual",		UNDUAL,		},
-};
-
-// These keywors are always available. Other than the @ keywords, they
-// form traditional QuakeC.
-static keyword_t keywords[] = {
-	{"void",		TYPE_SPEC, .spec = { .type = &type_void } 	},
-	{"float",		TYPE_SPEC, .spec = { .type = &type_float } 	},
-	{"string",		TYPE_SPEC, .spec = { .type = &type_string } },
-	{"vector",		TYPE_SPEC, .spec = { .type = &type_vector } },
-	{"entity",		TYPE_SPEC, .spec = { .type = &type_entity } },
-	{"local",		LOCAL,					},
-	{"return",		RETURN,					},
-	{"while",		WHILE,					},
-	{"do",			DO,						},
-	{"if",			IF,						},
-	{"else",		ELSE,					},
-	{"@system",		SYSTEM,					},
-	{"@overload",	OVERLOAD,				},
-	{"@attribute",  ATTRIBUTE,				},
-	{"@handle",     HANDLE,					},
-};
-
-static const char *
-keyword_get_key (const void *kw, void *unused)
+const char *
+rua_keyword_get_key (const void *kw, void *unused)
 {
 	return ((keyword_t*)kw)->name;
 }
 
 static int
-process_keyword (keyword_t *keyword, const char *token)
+directive (const char *token, yyscan_t scanner)
 {
-	if (keyword->value == STRUCT) {
-		qc_yylval.op = token[0];
-	} else if (keyword->value == OBJECT_NAME) {
-		symbol_t   *sym;
+	static hashtab_t *cond_directive_tab;
 
-		sym = symtab_lookup (current_symtab, token);
-		qc_yylval.symbol = sym;
-		// the global id symbol is always just a name so attempts to redefine
-		// it globally can be caught and treated as an error, but it needs to
-		// be redefinable when in an enclosing scope.
-		if (sym->sy_type == sy_name) {
-			// this is the global id (object)
-			qc_yylval.spec = (specifier_t) {
-				.type = sym->type,
-				.sym = sym,
-			};
-			return OBJECT_NAME;
-		} else if (sym->sy_type == sy_type) {
-			// id has been redeclared via a typedef
-			qc_yylval.spec = (specifier_t) {
-				.type = sym->type,
-				.sym = sym,
-			};
-			return TYPE_NAME;
+	yy_pop_state (scanner); // pop DIRECTIVE off the stack
+	yy_push_state (PREPROC, scanner);
+
+	if (!cond_directive_tab) {
+		cond_directive_tab = Hash_NewTable (253, rua_directive_get_key,
+											0, 0, 0);
+
+		for (size_t i = 0; i < ARRCOUNT(cond_directives); i++) {
+			Hash_Add (cond_directive_tab, &cond_directives[i]);
 		}
-		// id has been redelcared as a variable (hopefully)
-		return NAME;
-	} else {
-		qc_yylval.spec = keyword->spec;
 	}
-	return keyword->value;
+	auto extra = qc_yyget_extra (scanner);
+	directive_t *directive = Hash_Find (cond_directive_tab, token);
+	if (!directive && !extra->suppressed && extra->parser->directive) {
+		directive = extra->parser->directive (token);
+		if (!directive) {
+			error (0, "invalid directive `%s`", token);
+		}
+	}
+	if (!directive) {
+		yy_pop_state (scanner);// suppressed non-conditional directive
+		yy_push_state (LCOMMENT, scanner);
+		extra->preprocessor = false;
+		return -1;
+	}
+	return directive->value;
+}
+
+enum {
+	suff_error = -1,
+	suff_implicit,
+	suff_unsigned,
+	suff_long,
+	suff_unsigned_long,
+	suff_float,
+	suff_double,
+	suff_long_double,
+};
+
+static int
+parse_suffix (const char *suffix, bool fp)
+{
+	int  expl = suff_implicit;
+	bool unsign = false;
+
+	if (!*suffix) {
+		return 0;
+	}
+	if (fp) {
+		if (*suffix == 'f' || *suffix == 'F') {
+			expl = suff_float;
+			suffix++;
+		} else if (*suffix == 'd' || *suffix == 'D') {
+			// treat as explicit double unless it's a proper C decimal
+			// suffix, in which case the decimal part will be ignored
+			// (non-standard, but no decimal support)
+			expl = suff_double;
+			suffix++;
+			if (*suffix == 'f' || *suffix == 'F'
+				|| *suffix == 'd' || *suffix == 'D'
+				|| *suffix == 'l' || *suffix == 'L') {
+				warning (0, "decimal fp treated as binary fp");
+				expl = suff_double;
+				suffix++;
+			}
+		} else if (*suffix == 'l' || *suffix == 'L') {
+			expl = suff_long_double;
+			suffix++;
+			if (*suffix == 'f' || *suffix == 'F') {
+				// glsl long float is double
+				expl = suff_double;
+				suffix++;
+			}
+		}
+	} else {
+		if (*suffix == 'f' || *suffix == 'F') {
+			expl = suff_float;
+			suffix++;
+		} else if (*suffix == 'd' || *suffix == 'D') {
+			expl = suff_double;
+			suffix++;
+		} else {
+			if (*suffix == 'u' || *suffix == 'U') {
+				unsign = true;
+				expl = suff_unsigned;
+				suffix++;
+			}
+			if (!unsign && (*suffix == 'f' || *suffix == 'F')) {
+				// glsl long float is double
+				expl = suff_float;
+				suffix++;
+			}
+			if (*suffix == 'l' || *suffix == 'L') {
+				expl = unsign ? suff_unsigned_long : suff_long;
+				suffix++;
+				if (*suffix == 'l' || *suffix == 'L') {
+					suffix++;
+				}
+				if (!unsign && (*suffix == 'u' || *suffix == 'U')) {
+					expl = suff_unsigned_long;
+					unsign = true;
+					suffix++;
+				}
+				if (!unsign && expl != suff_float
+					&& (*suffix == 'f' || *suffix == 'F')) {
+					// glsl long float is double
+					expl = suff_double;
+					suffix++;
+				}
+			}
+		}
+	}
+
+	if (*suffix) {
+		return suff_error;
+	}
+
+	return expl;
+}
+
+static const expr_t *
+parse_number (const rua_tok_t *tok, rua_ctx_t *ctx)
+{
+	bool binary = false;
+	const char *type = "integer";
+	bool hex = false;
+	bool fp = false;
+	char buf[tok->textlen + 1], *dst = buf;
+	const char *src = tok->text;
+	if ((*dst = *src++) == '0') {
+		switch ((*++dst = *src++)) {
+			case 'b': case 'B':
+				binary = true;
+				type = "binary";
+				break;
+			case 'x': case 'X':
+				hex = true;
+				type = "hexadecimal";
+				break;
+			case '.':
+				fp = true;
+				break;
+			case '1' ... '9':
+				type = "octal";	// unless fp becomes true
+				break;
+			case '\'': case '_':
+				if (*src == 'b' || *src == 'B' || *src == 'x' || *src == 'X') {
+					error (0, "digit separator outside digit sequence");
+					return 0;
+				}
+				break;
+		}
+	}
+	if (*dst) {
+		if (*dst == '.') {
+			dst++;
+			fp = true;
+		} else {
+			dst += (*dst != '\'' && *dst != '_');
+		}
+		while ((*dst = *src++)) {
+			if (hex && (*dst == 'p' || *dst == 'P')) {
+				fp = true;
+			}
+			if (!hex && (*dst == 'e' || *dst == 'E')) {
+				fp = true;
+			}
+			if (*dst == '.') {
+				fp = true;
+			}
+			// strip out digit separators (' is standard C, _ is a rust
+			// thing, but it does look a bit nicerer than ', so why not).
+			dst += (*dst != '\'' && *dst != '_');
+		}
+	}
+	// use long long to avoid bit-size issues on windows
+	long long   lvalue = 0;
+	double      fvalue = 0;
+	char       *endptr = 0;
+	if (binary) {
+		// to get here, 0b (or 0B) was seen, so buf is guaranted to start with
+		// that
+		lvalue = strtoll (buf + 2, &endptr, 2);
+	} else {
+		if (fp) {
+			fvalue = strtod (buf, &endptr);
+		} else {
+			lvalue = strtoll (buf, &endptr, 0);
+		}
+	}
+
+	int expl = parse_suffix (endptr, fp);
+	if (expl < 0) {
+		error (0, "invalid suffix \"%s\" on %s constant", endptr,
+			   fp ? "floating" : type);
+		return 0;
+	}
+	if (expl == suff_long_double) {
+		warning (0, "long double treated as double");
+		expl = suff_double;
+	}
+	if (options.code.no_double && expl == suff_double) {
+		warning (0, "double treated as float");
+		expl = suff_float;
+	}
+
+	if (fp) {
+		if (expl == suff_float) {
+			return new_float_expr (fvalue, false);
+		} else {
+			if (options.code.no_double || ctx->language->default_float) {
+				return new_float_expr (fvalue, expl == suff_implicit);
+			} else {
+				return new_double_expr (fvalue, expl == suff_implicit);
+			}
+		}
+	} else {
+		if (expl == suff_unsigned) {
+			return new_uint_expr (lvalue);
+		} else if (expl == suff_long || expl == suff_implicit) {
+			return new_long_expr (lvalue, expl == suff_implicit);
+		} else if (expl == suff_unsigned_long) {
+			return new_ulong_expr (lvalue);
+		} else if (expl == suff_float) {
+			return new_float_expr (lvalue, false);
+		} else if (expl == suff_double) {
+			return new_double_expr (lvalue, false);
+		} else {
+			internal_error (0, "invalid suffix enum: %d", expl);
+		}
+	}
+}
+
+typedef struct {
+	yyscan_t    scanner;
+	yybuffer    buffer;
+} buffer_raii_t;
+
+static void
+qc_restore_buffer (buffer_raii_t *raii)
+{
+	yy_switch_to_buffer (raii->buffer, raii->scanner);
+}
+
+static void
+qc_delete_buffer (buffer_raii_t *raii)
+{
+	yy_delete_buffer (raii->buffer, raii->scanner);
+}
+
+static const expr_t *
+parse_vector (const rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
+{
+	const char *end = tok->text + tok->textlen;
+	while (end > tok->text && *--end != '\'') continue;
+
+	const char *start = tok->text + 1;
+	auto yyg = (struct yyguts_t *)scanner;
+	auto __attribute__((cleanup (qc_restore_buffer)))
+		saved_buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = YY_CURRENT_BUFFER,
+		};
+	auto __attribute__((cleanup (qc_delete_buffer)))
+		buffer = (buffer_raii_t) {
+			.scanner = scanner,
+			.buffer = yy_scan_bytes (start, end - start, scanner),
+		};
+
+	int         token;
+	rua_tok_t   vtok = { .location = tok->location, };
+	vtok.location.column++;
+	const expr_t *components[4+1] = {};	// currently, max of 4
+	bool        negate[4] = {};
+	int         width = 0;
+
+	yy_push_state (VECTOR, scanner);
+	do {
+		token = yylex (&vtok, &vtok.location, scanner);
+		if (-token == rua_number) {
+			auto expr = parse_number (&vtok, ctx);
+			if (expr) {
+				if (width < 4) {
+					components[width] = expr;
+				}
+				width++;
+			}
+		} else if (token == '-') {
+			if (width < 4) {
+				negate[width] = true;
+			}
+		}
+	} while (token && token != -rua_eof);
+	yy_pop_state (scanner);
+
+	if (width > 4) {
+		error (0, "too many components in vector literal");
+		width = 4;
+		return 0;
+	}
+	bool fp = false;
+	for (int i = 0; i < width; i++) {
+		if (!components[i]->implicit) {
+			warning (0, "explicit numeric constant in vector literal."
+					 " Suggest suffix after closing '.");
+			return 0;
+		}
+		auto t = get_type (components[i]);
+		fp |= is_double (t) || is_float (t);
+	}
+
+	// end points at the final ' and thus any suffix is after that
+	int expl = parse_suffix (++end, fp);
+	if (expl < 0) {
+		error (0, "invalid suffix \"%s\" on %s vector constant", end,
+			   fp ? "floating" : "integer");
+		return 0;
+	}
+	if (expl == suff_long_double) {
+		warning (0, "long double treated as double");
+		expl = suff_double;
+	}
+	if (options.code.no_double && expl == suff_double) {
+		warning (0, "double treated as float");
+		expl = suff_float;
+	}
+	union {
+		pr_float_t f[4];
+		pr_int_t   i[4];
+		pr_double_t d[4];
+		pr_long_t  l[4];
+		pr_type_t  t[PR_SIZEOF (lvec4)];
+	} data;
+	const type_t *type = nullptr;
+	if (expl == suff_float) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			if (is_floating_val (c)) {
+				data.f[i] = expr_floating (c);
+			} else {
+				data.f[i] = expr_integral (c);
+			}
+			if (negate[i]) {
+				data.f[i] = -data.f[i];
+			}
+		}
+		type = &type_float;
+	} else if (expl == suff_double) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			if (is_floating_val (c)) {
+				data.d[i] = expr_floating (c);
+			} else {
+				data.d[i] = expr_integral (c);
+			}
+			if (negate[i]) {
+				data.d[i] = -data.d[i];
+			}
+		}
+		type = &type_double;
+	} else if (expl == suff_implicit) {
+		if (fp) {
+			for (int i = 0; i < width; i++) {
+				auto c = components[i];
+				if (is_floating_val (c)) {
+					data.f[i] = expr_floating (c);
+				} else {
+					data.f[i] = expr_integral (c);
+				}
+				if (negate[i]) {
+					data.f[i] = -data.f[i];
+				}
+			}
+			type = &type_float;
+		} else {
+			for (int i = 0; i < width; i++) {
+				auto c = components[i];
+				if (is_floating_val (c)) {
+					data.i[i] = expr_floating (c);
+				} else {
+					data.i[i] = expr_integral (c);
+				}
+				if (negate[i]) {
+					data.i[i] = -data.i[i];
+				}
+			}
+			type = &type_int;
+		}
+	} else if (expl == suff_unsigned) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			data.i[i] = fp ? expr_double (c) : expr_long (c);
+			if (negate[i]) {
+				data.i[i] = -data.i[i];
+			}
+		}
+		type = &type_uint;
+	} else if (expl == suff_long || expl == suff_unsigned_long) {
+		for (int i = 0; i < width; i++) {
+			auto c = components[i];
+			data.l[i] = expr_long (c);
+			if (negate[i]) {
+				data.l[i] = -data.l[i];
+			}
+		}
+		type = expl == suff_unsigned_long ? &type_ulong : &type_long;
+	}
+	type = vector_type (type, width);
+	return new_value_expr (new_type_value (type, data.t),
+						   expl == suff_implicit);
 }
 
 static int
-keyword_or_id (const char *token)
+parse_string (rua_val_t *lval, const rua_tok_t *tok, int type,
+			  yyscan_t scanner)
 {
-	static hashtab_t *keyword_tab;
-	static hashtab_t *qf_keyword_tab;
-	static hashtab_t *at_keyword_tab;
-	static hashtab_t *obj_keyword_tab;
-	static hashtab_t *rua_keyword_tab;
+	const char *str = make_string (tok->text, 0);
+	if (type == rua_char) {
+		if (str[1]) {
+			warning (0, "multibyte char constant");
+		}
+		lval->expr = new_int_expr (*str, false);
+		return QC_VALUE;
+	} else {
+		lval->expr = new_string_expr (str);
+		return QC_STRING;
+	}
+}
 
-	keyword_t  *keyword = 0;
+static void
+next_line (rua_loc_t *loc, yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	loc->last_column = 1;
+	loc->last_line++;
+	if (!extra->recording && options.preprocess_output) {
+		puts ("");
+	}
+}
+
+static void
+update_loc (rua_loc_t *loc, size_t textlen)
+{
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	// \n handling rules will take care of the column and line
+	loc->last_column += textlen;
+}
+
+static void
+save_text (rua_tok_t *tok, const char *text, size_t textlen, int state,
+		   rua_extra_t *extra)
+{
+	/*if (state == TEXT) {
+		while (isspace (*text)) {
+			text++;
+		}
+	}
+	if (state == COMMENT || state == LCOMMENT || isspace (*text)) {
+		tok->str_text[0] = ' ';
+		tok->str_text[1] = 0;
+		tok->text = tok->str_text;
+		textlen = 1;
+	} else */if (extra && textlen < sizeof (extra->str_text)) {
+		strncpy (extra->str_text, text, textlen);
+		extra->str_text[textlen] = 0;
+		tok->text = extra->str_text;
+	} else {
+		tok->text = save_string (text);
+	}
+	tok->textlen = textlen;
+}
+
+static bool
+is_blank (const rua_tok_t *tok)
+{
+	return !tok || tok->token == -rua_space || tok->token == -rua_ignore;
+}
+
+static bool
+join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
+			 rua_extra_t *extra)
+{
+	if (is_blank (p1)) {
+		if (is_blank (p2)) {
+			*out = (rua_tok_t) {
+				.token = -rua_ignore,
+				.text = "",
+			};
+		} else {
+			*out = *p2;
+		}
+		return true;
+	}
+	if (is_blank (p2)) {
+		// p1 cannot be null, space or ignore here
+		*out = *p1;
+		return true;
+	}
+	auto str = va (0, "%s%s", p1->text, p2->text);
+	yy_scan_string (str, extra->subscanner);
+	rua_tok_t   tok = { .text = str, };
+	int token = yylex (&tok, &tok.location, extra->subscanner);
+	if (token && yylex (&tok, &tok.location, extra->subscanner)) {
+		error (0, "pasting \"%s\" and \"%s\" does not give a valid"
+			   " preprocessing token", p1->text, p2->text);
+		out->token = -rua_space;
+		out->text = " ";
+		return false;
+	}
+	tok.token = token;
+	*out = tok;
+	return true;
+}
+
+static bool
+stringize_arg (rua_tok_t *out, rua_macro_t *arg, rua_extra_t *extra)
+{
+	dstring_copystr (extra->dstr, "\"");
+	for (auto e = arg->tokens; e; e = e->next) {
+		auto str = quote_string (e->text);
+		dstring_appendstr (extra->dstr, str);
+	}
+	dstring_appendstr (extra->dstr, "\"");
+	*out = (rua_tok_t) {
+		.textlen = extra->dstr->size - 1,
+		.token = -rua_string,
+		.text = save_string (extra->dstr->str),
+	};
+	return true;
+}
+
+static int
+preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
+			   yyscan_t scanner, rua_ctx_t *ctx)
+{
+	int         token = tok->token;
+	if (!token) {
+		return token;
+	}
+	if (token < 0) {
+		rua_term    term = -token;
+		switch (term) {
+			case rua_ignore:
+			case rua_num_term:
+			case rua_grab:
+			case rua_va_opt:
+				internal_error (0, "unexpected rua token: %d", term);
+			case rua_eof:
+			case rua_error:
+			case rua_id:
+			case rua_ellipsis:
+			case rua_asx:
+			case rua_incop:
+				break;
+			case rua_number:
+				if (!extra->recording) {
+					token = -rua_error;
+					if ((lval->expr = parse_number (tok, ctx))) {
+						token = PRE_VALUE;
+					}
+				}
+				break;
+			case rua_vector:
+				if (!extra->recording) {
+					token = -rua_error;
+					if (!(lval->expr = parse_vector (tok, scanner, ctx))) {
+						token = PRE_VALUE;
+					}
+				}
+				break;
+			case rua_string:
+			case rua_char:
+				break;
+			case rua_space:
+				if (!extra->recording || extra->params) {
+					token = -rua_ignore;
+				}
+				break;
+		}
+	}
+	if (-token != rua_ignore && extra->recording) {
+		if (token == PRE_ID) {
+			token = -rua_id;
+		}
+		lval->t.token = token;
+		if (token != PRE_EOD && token != ',' && token != '(' && token != ')') {
+			token = PRE_TOKEN;
+		}
+	}
+	return token;
+}
+
+static const expr_t *
+convert_long (const expr_t *value)
+{
+	pr_long_t v = expr_long (value);
+	if (is_int (type_default)) {
+		if (v < INT32_MIN || v > UINT32_MAX) {
+			warning (0, "integer value truncated");
+		}
+		return new_int_expr (v, true);
+	} else {
+		float f = v;
+		if (f != v) {
+			warning (0, "cannot represent value");
+		}
+		return new_float_expr (f, true);
+	}
+}
+
+static int
+qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
+		  yyscan_t scanner, rua_ctx_t *ctx)
+{
+	int         token = tok->token;
+
+	if (token < 0) {
+		rua_term    term = -token;
+		switch (term) {
+			case rua_ignore:
+			case rua_num_term:
+			case rua_va_opt:
+				internal_error (0, "unexpected rua token: %d", term);
+			case rua_eof:
+			case rua_error:
+				break;
+			case rua_id:
+				token = extra->parser->keyword_or_id (lval, tok->text, ctx);
+				break;
+			case rua_grab:
+				{
+					int ret = do_grab (tok->text);
+					if (ret >= 0) {
+						lval->expr = new_int_expr (ret, true);
+						token = QC_VALUE;
+					} else {
+						yy_push_state (-ret, scanner);
+					}
+				}
+				break;
+			case rua_number:
+				token = -rua_error;
+				if (ctx->language->parse_number) {
+					lval->expr = ctx->language->parse_number (tok, ctx);
+				}
+				if (!lval->expr) {
+					lval->expr = parse_number (tok, ctx);
+				}
+				if (lval->expr) {
+					token = QC_VALUE;
+					if (lval->expr->implicit) {
+						if (is_long (get_type (lval->expr))) {
+							lval->expr = convert_long (lval->expr);
+						}
+					}
+				}
+				break;
+			case rua_vector:
+				token = -rua_error;
+				if ((lval->expr = parse_vector (tok, scanner, ctx))) {
+					token = QC_VALUE;
+				}
+				break;
+			case rua_string:
+			case rua_char:
+				token = parse_string (lval, tok, -token, scanner);
+				break;
+			case rua_space:
+				if (options.preprocess_output) {
+					printf (" ");
+				}
+				break;
+			case rua_ellipsis:
+				token = QC_ELLIPSIS;
+				break;
+			case rua_asx:
+				token = QC_ASX;
+				lval->op = tok->text[0];
+				switch (tok->text[1]) {
+					case '=':	break;
+					case '%':   lval->op = QC_MOD;	break;
+					case '<':   lval->op = QC_SHL;	break;
+					case '>':   lval->op = QC_SHR;	break;
+				}
+				break;
+			case rua_incop:
+				token = QC_INCOP;
+				lval->op = tok->text[0];
+				break;
+		}
+	}
+	return token;
+}
+
+static void
+rua_reset_args (rua_macro_t *macro)
+{
+	macro->num_args = 0;
+
+	int  num_params = macro->num_params;
+	if (num_params < 0) {
+		num_params = -num_params;
+	}
+	if (num_params && !macro->args) {
+		macro->args = calloc (num_params, sizeof (rua_macro_t *));
+		for (int i = 0; i < num_params; i++) {
+			macro->args[i] = malloc (sizeof (rua_macro_t));
+		}
+	}
+	for (int i = 0; i < num_params; i++) {
+		auto arg = macro->args[i];
+		*arg = (rua_macro_t) {
+			.tail = &arg->tokens,
+		};
+	}
+}
+
+static void
+rua_start_args (yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = true;
+
+	rua_reset_args (extra->pending_macro);
+	yy_push_state (ARGS, scanner);
+}
+
+static void
+rua_end_args (yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	extra->recording = false;
+	yy_pop_state (scanner);
+
+	auto macro = extra->pending_macro;
+	if (macro->num_params < 0) {
+		auto arg = macro->args[~macro->num_params];
+		auto t = arg->tokens;
+		while (t && (t->token == -rua_space || t->token == -rua_ignore)) {
+			t = t->next;
+		}
+		if (!t) {
+			arg->tokens = 0;
+			arg->tail = &arg->tokens;
+		}
+	}
+}
+
+static void __attribute__((used))
+dump_macro (rua_macro_t *macro)
+{
+	printf ("\n%s: ", macro->name);
+	for (auto t = macro->tokens; t; t = t->next) {
+		printf ("%s", t->text);
+	}
+	if (macro->args) {
+		for (int i = 0; i < macro->num_args; i++) {
+			dump_macro (macro->args[i]);
+		}
+	}
+}
+
+static int
+qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner,
+			rua_ctx_t *ctx)
+{
+	auto loc = &tok->location;
+
+	if (-token == rua_ignore) {
+		return YYPUSH_MORE;
+	}
+
+	pr.loc = *loc;
+
+	if (extra->preprocessor) {
+		auto state = extra->pre_state;
+		PRE_YYSTYPE lval = { .t = *tok };
+
+		token = preproc_token (extra, &lval, tok, scanner, ctx);
+		if (-token == rua_ignore) {
+			return YYPUSH_MORE;
+		}
+		return pre_yypush_parse (state, token, &lval, loc, ctx);
+	} else {
+		if (!extra->suppressed) {
+			if (options.preprocess_only) {
+				if (options.preprocess_output) {
+					if (token != -rua_space || !extra->did_space) {
+						printf ("%s", tok->text);
+					}
+					extra->did_space = token == -rua_space;
+				}
+				return token ? YYPUSH_MORE : 0;
+			}
+			if (!ctx->language->initialized && ctx->language->init) {
+				ctx->language->init (ctx);
+			}
+			QC_YYSTYPE  lval = {};
+			token = qc_token (extra, &lval, tok, scanner, ctx);
+			if (token >= 0) {
+				auto p = extra->parser;
+				return p->parse (p->state, token, &lval, loc, ctx);
+			}
+		}
+	}
+	return YYPUSH_MORE;
+}
+
+static rua_tok_t
+next_macro_token (rua_macro_t *macro)
+{
+	auto e = *macro->cursor;
+	macro->cursor = e.next;
+	return e;
+}
+
+static const rua_tok_t *
+get_arg_token (bool last, const rua_tok_t *arg, const rua_macro_t *macro,
+			   yyscan_t scanner, rua_ctx_t *ctx)
+{
 	symbol_t   *sym;
 
-	if (!keyword_tab) {
-		size_t      i;
-
-		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-		rua_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
-
-		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
-
-		for (i = 0; i < NUMKEYS(keywords); i++)
-			Hash_Add (keyword_tab, &keywords[i]);
-		for (i = 0; i < NUMKEYS(qf_keywords); i++)
-			Hash_Add (qf_keyword_tab, &qf_keywords[i]);
-		for (i = 0; i < NUMKEYS(at_keywords); i++)
-			Hash_Add (at_keyword_tab, &at_keywords[i]);
-		for (i = 0; i < NUMKEYS(obj_keywords); i++)
-			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
-		for (i = 0; i < NUMKEYS(rua_keywords); i++)
-			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
-	}
-	if (options.traditional < 1) {
-		if (options.code.progsversion == PROG_VERSION) {
-			keyword = Hash_Find (rua_keyword_tab, token);
-		}
-		if (!keyword) {
-			keyword = Hash_Find (obj_keyword_tab, token);
-			if (keyword) {
-				if (!obj_initialized)
-					class_init ();
+	if (arg->token == -rua_va_opt) {
+		sym = symtab_lookup (macro->params, arg->text);
+		auto m = sym->macro;
+		m->update (m, ctx);
+		if (last) {
+			if (m->tokens) {
+				return (rua_tok_t *) m->tail;
 			}
+			return 0;
+		} else {
+			return m->tokens;
 		}
-		if (!keyword)
-			keyword = Hash_Find (qf_keyword_tab, token);
 	}
-	if (!keyword && options.traditional < 2)
-		keyword = Hash_Find (at_keyword_tab, token);
-	if (!keyword && token[0] == '@') {
-		keyword = Hash_Find (at_keyword_tab, token + 1);
-		if (keyword)
-			token += 1;
+	if (arg->token == -rua_id && macro->params
+	    && (sym = symtab_lookup (macro->params, arg->text))
+	    && !macro->args[sym->offset]->next) {
+		auto a = macro->args[sym->offset];
+		if (last) {
+			if (a->tokens) {
+				return (rua_tok_t *) a->tail;
+			}
+			return 0;
+		} else {
+			return a->tokens;
+		}
 	}
-	if (!keyword)
-		keyword = Hash_Find (keyword_tab, token);
-	if (keyword && keyword->value)
-		return process_keyword (keyword, token);
-	if (token[0] == '@') {
-		return '@';
-	}
-	sym = symtab_lookup (current_symtab, token);
-	if (!sym)
-		sym = new_symbol (token);
-	qc_yylval.symbol = sym;
-	if (sym->sy_type == sy_type) {
-		qc_yylval.spec = (specifier_t) {
-			.type = sym->type,
-			.sym = sym,
-		};
-		return TYPE_NAME;
-	}
-	if (sym->sy_type == sy_class)
-		return CLASS_NAME;
-	return NAME;
+	return arg;
 }
 
-static const expr_t *
-parse_int_vector (const char *token, int width)
+static void
+copy_token (rua_macro_t *dst, const rua_tok_t *t)
 {
-	char        t1 = 0, t2 = 0;
-	const type_t *type = nullptr;
+	rua_tok_t *e = malloc (sizeof (*e));
+	*e = *t;
+	e->next = 0;
+	*dst->tail = e;
+	dst->tail = &e->next;
+}
 
-	union {
-		pr_long_t   l[4];
-		pr_type_t   t[PR_SIZEOF (dvec4)];
-	}           long_data = {};
-	pr_type_t  *data = __builtin_choose_expr (
-		sizeof (pr_long_t) == sizeof (int64_t), long_data.t, (void) 0);
-
-	switch (width) {
-		case 4:
-			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1],
-					&long_data.l[2], &long_data.l[3], &t1, &t2);
-			break;
-		case 3:
-			sscanf (token, "' %"SCNi64" %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1],
-					&long_data.l[2], &t1, &t2);
-			break;
-		case 2:
-			sscanf (token, "' %"SCNi64" %"SCNi64" '%c%c",
-					&long_data.l[0], &long_data.l[1], &t1, &t2);
-			break;
-	}
-	t1 = tolower (t1);
-	t2 = tolower (t2);
-	if (options.code.progsversion < PROG_VERSION) {
-		if (!t1) {
-			t1 = 'f';
-		}
-	}
-	const expr_t *expr = 0;
-	switch (t1) {
-		case 'u':
-			if (t2 == 'l') {
-				type = &type_ulong;
-				type = vector_type (type, width);
-				expr = new_value_expr (new_type_value (type, data));
+static void
+collect_args (rua_macro_t *m, rua_macro_t *macro, yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	m->next = extra->pending_macro;
+	extra->pending_macro = m;
+	auto t = macro->cursor;
+	for (; t && t->token == -rua_space; t = t->next) continue;
+	// to be in an arg, a function-like macro must either have
+	// both open and close parans, or none
+	if (t && t->token == '(') {
+		rua_reset_args (m);
+		int paren = 1;
+		auto a = rua_macro_arg (t, scanner);
+		for (t = t->next; t; t = t->next) {
+			if (t->token == '(') {
+				paren++;
+			} else if (t->token == ')') {
+				if (!(--paren)) {
+					t = t->next;
+					break;
+				}
+			}
+			if (t->token == ',' && paren == 1) {
+				a = rua_macro_arg (t, scanner);
 			} else {
-				type = &type_uint;
-				union {
-					pr_uint_t   u[4];
-					pr_type_t   t[PR_SIZEOF (ivec4)];
-				}           uint_data = {
-					.u = {
-						long_data.l[0],
-						long_data.l[1],
-						long_data.l[2],
-						long_data.l[3],
-					}
-				};
-				data = uint_data.t;
-				type = vector_type (type, width);
-				expr = new_value_expr (new_type_value (type, data));
+				rua_macro_append (a, t, scanner);
 			}
-			break;
-		case 'l':
-			type = &type_long;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data));
-			break;
-		case 'f':
-			type = &type_float;
-			union {
-				pr_float_t  f[4];
-				pr_type_t   t[PR_SIZEOF (vec4)];
-			}           float_data = {
-				.f = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = float_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data));
-			break;
-		case 'd':
-			type = &type_double;
-			union {
-				pr_double_t d[4];
-				pr_type_t   t[PR_SIZEOF (dvec4)];
-			}           double_data = {
-				.d = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = double_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data));
-			break;
-		case 0:
-			type = &type_int;
-			union {
-				pr_int_t    i[4];
-				pr_type_t   t[PR_SIZEOF (ivec4)];
-			}           int_data = {
-				.i = {
-					long_data.l[0],
-					long_data.l[1],
-					long_data.l[2],
-					long_data.l[3],
-				}
-			};
-			data = int_data.t;
-			type = vector_type (type, width);
-			expr = new_value_expr (new_type_value (type, data));
-			break;
+		}
+		macro->cursor = t;
 	}
-	((expr_t *) expr)->implicit = !t1;
-	return expr;
+	extra->pending_macro = m->next;
 }
 
-static const expr_t *
-parse_float_vector (const char *token, int width)
+static rua_macro_t *
+alloc_macro (const char *name, bool params)
 {
-	char        t = 0;
-	const type_t *type = nullptr;
+	rua_macro_t *macro = malloc (sizeof (*macro));
+	*macro = (rua_macro_t) {
+		.name = name,
+		.params = params ? new_symtab (0, stab_param) : 0,
+		.tail = &macro->tokens,
+	};
+	return macro;
+}
 
-	union {
-		pr_double_t d[4];
-		pr_type_t   t[PR_SIZEOF (dvec4)];
-	}           double_data = {};
-	pr_type_t  *data = __builtin_choose_expr (
-		sizeof (pr_double_t) == sizeof (double), double_data.t, (void) 0);
-
-	switch (width) {
-		case 4:
-			sscanf (token, "' %lf %lf %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1],
-					&double_data.d[2], &double_data.d[3], &t);
-			break;
-		case 3:
-			sscanf (token, "' %lf %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1],
-					&double_data.d[2], &t);
-			type = (t == 'f' || t == 'F') ? &type_vec3 : &type_dvec3;
-			break;
-		case 2:
-			sscanf (token, "' %lf %lf '%c",
-					&double_data.d[0], &double_data.d[1], &t);
-			type = (t == 'f' || t == 'F') ? &type_vec2 : &type_dvec2;
-			break;
-	}
-	if (options.code.progsversion < PROG_VERSION) {
-		if (!t) {
-			t = 'f';
+static void
+append_token (rua_macro_t *macro, const rua_tok_t *token)
+{
+	if (token->token == -rua_space) {
+		if (!macro->tokens) {
+			// ignore leading space
+			return;
+		}
+		auto t = (rua_tok_t *) macro->tail;
+		if (t->token == '#' || t->token == PRE_CONCAT) {
+			// ignore space after '#' and '##'
+			return;
+		}
+		if (t->token == -rua_space) {
+			// ignore space after space
+			return;
 		}
 	}
-	if (t == 'f' || t == 'F') {
-		volatile union {
-			pr_float_t  f[4];
-			pr_type_t   t[PR_SIZEOF (vec4)];
-		}           float_data = {
-			.f = {
-				double_data.d[0],
-				double_data.d[1],
-				double_data.d[2],
-				double_data.d[3],
-			}
-		};
-		data = (pr_type_t *) float_data.t;
-		type = &type_float;
-	} else {
-		type = &type_double;
+
+	auto t = (rua_tok_t *) macro->tail;
+	if (token->token != PRE_CONCAT
+		|| !macro->tokens
+		|| t->token != -rua_space) {
+		t = malloc (sizeof (*t));
+		macro->num_tokens++;
 	}
-	type = vector_type (type, width);
-	auto expr = (expr_t *) new_value_expr (new_type_value (type, data));
-	expr->implicit = !t;
-	return expr;
+	*t = *token;
+	t->next = 0;
+	*macro->tail = t;
+	macro->tail = &t->next;
+}
+
+static void
+queue_macro (rua_extra_t *extra, rua_macro_t *macro)
+{
+	macro->next = extra->macro;
+	extra->macro = macro;
+	macro->cursor = macro->tokens;
+}
+
+static bool
+check_macro (rua_macro_t *macro)
+{
+	int num_args = macro->num_args;
+	if (num_args == 1 && !macro->args) {
+		num_args = 0;
+	}
+	if (macro->num_params >= 0) {
+		if (num_args != macro->num_params) {
+			error (0, "macro \"%s\" passed %d arguments, but takes just %d",
+				   macro->name, num_args, macro->num_params);
+			return false;
+		}
+	} else {
+		if (num_args < ~macro->num_params) {
+			error (0, "macro \"%s\" requires %d arguments, but only %d given",
+				   macro->name, ~macro->num_params, num_args);
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool __attribute__((pure))
+recursive_invocation (rua_macro_t *macro, rua_extra_t *extra)
+{
+	while (macro && extra->macro) {
+		if (macro == extra->macro) {
+			return true;
+		}
+		macro = macro->next;
+	}
+	return false;
+}
+
+static int
+next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
+{
+	auto extra = qc_yyget_extra (scanner);
+rescan:
+	while (extra->macro && !extra->macro->cursor) {
+		auto macro = extra->macro;
+		extra->macro = macro->next;
+		macro->next = 0;
+	}
+	rua_tok_t e = {};
+	if (extra->macro) {
+		e = next_macro_token (extra->macro);
+	} else if (!extra->no_lex) {
+		tok->token = yylex (tok, &extra->location, scanner);
+		tok->location = extra->location;
+		if ((extra->pending_macro || extra->recording)
+			&& tok->text == extra->str_text) {
+			tok->text = save_string (tok->text);
+		}
+		e = *tok;
+	}
+	int token = e.token;
+	if (extra->pending_macro && !extra->recording) {
+		if (token != -rua_space && token != '(') {
+			auto pending_macro = extra->pending_macro;
+			append_token (pending_macro, &e);
+			extra->pending_macro = pending_macro->next;
+			if (extra->macro) {
+				auto macro = extra->macro;
+				pending_macro->params = macro->params;
+				pending_macro->args = macro->args;
+			}
+			queue_macro (extra, pending_macro);
+			// get the token that looked like a macro
+			e = next_macro_token (extra->macro);
+			*tok = e;
+			return e.token;
+		}
+	}
+	if (extra->macro) {
+		symbol_t   *sym;
+		auto macro = extra->macro;
+		if (token == '#') {
+			auto n = e.next;
+			rua_macro_t *arg;
+			macro->cursor = macro->cursor->next;	// consume arg
+			if (n->token == -rua_va_opt) {
+				sym = symtab_lookup (macro->params, n->text);
+				auto m = sym->macro;
+				m->update (m, ctx);
+				arg = m;
+			} else {
+				sym = symtab_lookup (macro->params, n->text);
+				arg = macro->args[sym->offset];
+			}
+			stringize_arg (&e, arg, extra);
+		} else if (e.next && e.next->token == PRE_CONCAT) {
+			rua_macro_t *m = malloc (sizeof (*m));
+			*m = (rua_macro_t) {
+				.tail = &m->tokens,
+			};
+
+			auto p = get_arg_token (true, &e, macro, scanner, ctx);
+			rua_tok_t   con = {};
+			do {
+				auto n = get_arg_token (false, e.next->next, macro, scanner, ctx);
+				rua_tok_t   cat;
+				if (join_tokens (&cat, p, n, extra)) {
+					con = cat;
+					p = &con;
+				} else {
+					if (p) {
+						copy_token (m, p);
+					}
+					con = (rua_tok_t) {};
+					p = n;
+				}
+				next_macro_token (extra->macro);	// consume ##
+				e = next_macro_token (extra->macro);
+			} while (e.next && e.next->token == PRE_CONCAT);
+			if (con.token) {
+				copy_token (m, &con);
+			}
+			m->cursor = m->tokens;
+			m->next = extra->macro;
+			extra->macro = m;
+			goto rescan;
+		} else if (token == -rua_va_opt) {
+			if (!macro->params || !macro->args[~macro->num_params]
+				|| !macro->args[~macro->num_params]->tokens) {
+				goto rescan;
+			}
+			sym = symtab_lookup (macro->params, e.text);
+			auto m = sym->macro;
+			m->update (m, ctx);
+			queue_macro (extra, m);
+			goto rescan;
+		} else if (token == -rua_id && macro->params
+				   && (sym = symtab_lookup (macro->params, e.text))
+				   && !macro->args[sym->offset]->next) {
+			auto arg = macro->args[sym->offset];
+			queue_macro (extra, arg);
+			goto rescan;
+		} else if (token == -rua_id && !macro->name // in an arg
+				   && (sym = symtab_lookup (extra->macro_tab, e.text))
+				   && !sym->macro->next
+				   && !sym->macro->params) {
+			// force object-type macros in macro arguments to be expanded
+			auto m = sym->macro;
+			if (m->update) {
+				m->update (m, ctx);
+			}
+			queue_macro (extra, m);
+			goto rescan;
+#if 0	// causes preproc-1.r to fail (see XXX below)
+		} else if (token == -rua_id && !macro->name // in an arg
+				   && (sym = symtab_lookup (extra->macro_tab, e.text))
+				   && !sym->macro->next
+				   && sym->macro->params) {
+			// force function-type macros in macro arguments to be expanded
+			auto m = sym->macro;
+			auto c = macro->cursor;
+			// XXX breakage for preproc-1.r: collect_args assumes the macro
+			// is complete, but in the case of preproc-1.r, it is not. In fact,
+			// with the final ) removed from the F macro, tokens are consumed
+			// to the end of the file. Thus, nt x = F(LPAREN(), 0, <:-);
+			// expands to int x = 42 ); instead of int x = 42;
+			// However, this block is needed for the H5C(H5A()) test
+			collect_args (m, macro, scanner);
+			if (macro->cursor != c) {
+				if (m->update) {
+					m->update (m, ctx);
+				}
+				queue_macro (extra, m);
+				goto rescan;
+			}
+#endif
+		}
+		*tok = e;
+	}
+	if (extra->pending_macro) {
+		PRE_YYSTYPE lval = { .t = e };
+		auto pending_macro = extra->pending_macro;
+		if (extra->recording) {
+			token = preproc_token (extra, &lval, &e, scanner, ctx);
+			int s = pre_yypush_parse (extra->args_state, token, &lval,
+									  &e.location, ctx);
+			if (s == YYPUSH_MORE) {
+				goto rescan;
+			}
+			rua_end_args (scanner);
+			extra->pending_macro = pending_macro->next;
+			if (check_macro (pending_macro)) {
+				queue_macro (extra, pending_macro);
+			}
+			goto rescan;
+		} else if (token == -rua_space) {
+			append_token (pending_macro, &e);
+			goto rescan;
+		} else if (token == '(') {
+			extra->pending_macro = (rua_macro_t *) pending_macro->args;
+			pending_macro->args = 0;
+			rua_start_args (scanner);
+			int s = pre_yypush_parse (extra->args_state, PRE_ARGS, &lval,
+									  &e.location, scanner);
+			if (s != YYPUSH_MORE) {
+				internal_error (0, "can't start parsing macro args");
+			}
+			goto rescan;
+		}
+	}
+	symbol_t   *sym;
+	if (extra->preprocessor && extra->expand && token == PRE_ID) {
+		token = -rua_id;
+	}
+	if ((extra->expand || !(extra->preprocessor || extra->suppressed))
+		&& token == -rua_id
+		&& (sym = symtab_lookup (extra->macro_tab, e.text))
+		&& !recursive_invocation (sym->macro, extra)) {
+		auto macro = sym->macro;
+		if (macro->update) {
+			macro->update (macro, ctx);
+		}
+		if (macro->params) {
+			// function-type macro, need to check for ( so set up a temporary
+			// macro to hold the tokens before the first non-space token
+			auto pending_macro = alloc_macro (0, false);
+			pending_macro->args = (rua_macro_t **) macro;
+			pending_macro->next = extra->pending_macro;
+			extra->pending_macro = pending_macro;
+			// record the token with the macro name
+			if (e.text == extra->str_text) {
+				e.text = save_string (e.text);
+			}
+			append_token (pending_macro, &e);
+		} else {
+			// object-type macro, just expand
+			queue_macro (extra, macro);
+		}
+		goto rescan;
+	}
+	return token;
+}
+
+static yyscan_t *
+rua_init_scanner (rua_extra_t *extra, rua_parser_t *parser)
+{
+	*extra = (rua_extra_t) {
+		.parser = parser,
+		.pre_state = pre_yypstate_new (),
+		.args_state = pre_yypstate_new (),
+		.cond_stack = DARRAY_STATIC_INIT (8),
+		.include_stack = DARRAY_STATIC_INIT (8),
+		.dstr = dstring_new (),
+		.macro_tab = cpp_macros ? cpp_macros : new_symtab (0, stab_global),
+		.location = { 1, 1, 1, 1, pr.loc.file },
+	};
+	yyscan_t    scanner;
+	yylex_init_extra (extra, &scanner);
+	yylex_init (&extra->subscanner);
+	return scanner;
+}
+
+static void
+rua_destroy_scanner (yyscan_t scanner, rua_extra_t *extra)
+{
+	yylex_destroy (extra->subscanner);
+	yylex_destroy (scanner);
+	pre_yypstate_delete (extra->pre_state);
+	pre_yypstate_delete (extra->args_state);
+	free (extra->cond_stack.a);
+	free (extra->include_stack.a);
+	dstring_delete (extra->dstr);
+}
+
+static int
+rua_do_scan (yyscan_t scanner, rua_ctx_t *ctx)
+{
+	auto extra = qc_yyget_extra (scanner);
+	int         status;
+	rua_tok_t   tok = {};
+	do {
+		int token = next_token (&tok, scanner, ctx);
+		if (!token && extra->cond_stack.size) {
+			int ind = extra->cond_stack.size - 1;
+			auto cond = extra->cond_stack.a[ind];
+			error (0, "end of file in conditional started on %d", cond.line);
+		}
+		if (!token && extra->include_stack.size) {
+			//printf ("*** pop include %d\n", (int) extra->include_stack.size);
+			auto incl = DARRAY_REMOVE (&extra->include_stack);
+			extra->location = incl.location;
+			struct yyguts_t *yyg = (struct yyguts_t*) scanner;//FIXME
+			yy_delete_buffer (YY_CURRENT_BUFFER, scanner);
+			set_line_file (-1, 0, 2);
+			cpp_pop_quote_path ();
+			yy_switch_to_buffer (incl.buffer, scanner);
+			DARRAY_CLEAR (&extra->cond_stack);
+			extra->cond_stack = incl.cond_stack;
+			continue;
+		}
+		status = qc_process (extra, token, &tok, scanner, ctx);
+	} while (status == YYPUSH_MORE);
+
+	return status;
+}
+
+int
+rua_parse (FILE *in, rua_parser_t *parser, rua_ctx_t *ctx)
+{
+	rua_extra_t extra;
+
+	ctx->extra = &extra;
+	ctx->scanner = rua_init_scanner (&extra, parser);
+	yyset_in (in, ctx->scanner);
+	int status = rua_do_scan (ctx->scanner, ctx);
+	rua_destroy_scanner (ctx->scanner, &extra);
+	ctx->scanner = nullptr;
+	return status;
+}
+
+int
+rua_parse_string (const char *str, rua_parser_t *parser, rua_ctx_t *ctx)
+{
+	auto loc = pr.loc;
+	rua_extra_t extra;
+
+	ctx->extra = &extra;
+	ctx->scanner = rua_init_scanner (&extra, parser);
+	yy_scan_string (str, ctx->scanner);
+	int status = rua_do_scan (ctx->scanner, ctx);
+	rua_destroy_scanner (ctx->scanner, &extra);
+	ctx->scanner = nullptr;
+	pr.loc = loc;
+	return status;
+}
+
+rua_macro_t *
+rua_start_macro (const char *name, bool params, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return 0;
+	}
+	extra->recording = true;
+	extra->params = params;
+
+	if (name) {
+		int len = strlen (name);
+		if (name[len - 1] == '(') {
+			name = save_substring (name, len - 1);
+		} else {
+			name = save_string (name);
+		}
+	}
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (MACRO, ctx->scanner);
+
+	return alloc_macro (name, params);
+}
+
+rua_macro_t *
+rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return 0;
+	}
+	extra->params = false;
+	//macro->params->parent = extra->macro_tab;
+	return macro;
+}
+
+rua_macro_t *
+rua_macro_append (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed || !macro) {
+		return 0;
+	}
+	append_token (macro, token);
+	return macro;
+}
+
+rua_macro_t *
+rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return 0;
+	}
+	if (token->token == -rua_space) {
+		// ignore spaces
+		return macro;
+	}
+	if (token->token != -rua_id && token->token != -rua_ellipsis) {
+		error (0, "expected parameter name, found \"%s\"", token->text);
+		return macro;
+	}
+	if (macro->num_params < 0) {
+		error (0, "... must be the last parameter");
+		return macro;
+	} else if (symtab_lookup (macro->params, token->text)) {
+		error (0, "duplicate macro parameter \"%s\"", token->text);
+		return macro;
+	}
+	auto sym = new_symbol (token->text);
+	sym->sy_type = sy_offset;
+	sym->offset = macro->num_params++;
+	symtab_addsymbol (macro->params, sym);
+	if (token->token == -rua_ellipsis) {
+		macro->num_params = -macro->num_params;
+	}
+	return macro;
+}
+
+static rua_tok_t
+build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
+{
+	const char *va_opt_name = va (0, "__va_opt__.%d", va_opt_ind);
+	rua_tok_t   va_opt_tok = {
+		.next = u->next,
+		.location = t->location,
+		.textlen = strlen (va_opt_name),
+		.token = -rua_va_opt,
+		.text = save_string (va_opt_name),
+	};
+	va_opt_tok.location.last_line = u->location.last_line;
+	va_opt_tok.location.last_column = u->location.last_column;
+
+	while (t->token != '(') {
+		t = t->next;
+	}
+	auto e = u;
+	for (u = t; u->next != e; u = u->next) continue;
+	u->next = 0;
+	auto va_opt = alloc_macro (0, false);
+	*va_opt = (rua_macro_t) {
+		.tail = &va_opt->tokens,
+		.update = rua_macro_va_opt,
+		.args = malloc (sizeof (rua_macro_t *)),
+	};
+	va_opt->args[0] = alloc_macro (0, false);
+	*va_opt->args[0] = (rua_macro_t) {
+		.tokens = t->next,
+		.tail = &u->next,
+	};
+
+	auto sym = new_symbol (va_opt_name);
+	sym->sy_type = sy_macro;
+	sym->macro = va_opt;
+	symtab_addsymbol (macro->params, sym);
+	return va_opt_tok;
+}
+
+void
+rua_macro_finish (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return;
+	}
+	if (macro->tokens) {
+		while (((rua_tok_t *) macro->tail)->token == -rua_space) {
+			// space is never added as the first token, so it's guaranteed
+			// there is always at least two tokens
+			rua_tok_t  *t;
+			for (t = macro->tokens; t->next->next; t = t->next) continue;
+			free (t->next);
+			t->next = 0;
+			macro->tail = &t->next;
+			macro->num_tokens--;
+		}
+		if (macro->tokens->token == PRE_CONCAT
+			|| ((rua_tok_t *) macro->tail)->token == PRE_CONCAT) {
+			error (0, "'##' cannot appear at either end of a macro expansion");
+			return;
+		}
+		int va_opt_ind = -1;
+		for (auto t = macro->tokens; t; t = t->next) {
+			if (t->token == '#'
+				&& (!t->next
+					|| t->next->token != -rua_id
+					|| (!symtab_lookup (macro->params, t->next->text)
+						&& strcmp (t->next->text, "__VA_OPT__") != 0))) {
+				error (0, "'#' is not followed by a macro parameter");
+				return;
+			}
+			if (t->token == -rua_id && strcmp (t->text, "__VA_OPT__") == 0) {
+				auto u = t->next;
+				for (; u && u->token == -rua_space; u = u->next) continue;
+				if (!u) {
+unterminated_va_opt:
+					error (0, "unterminated __VA_OPT__");
+					return;
+				} else if (u->token != '(') {
+					error (0, "__VA_OPT__ must be followed by an open "
+						   "parenthesis");
+					return;
+				}
+				if (u->next && u->next->token == PRE_CONCAT) {
+hashhash_error:
+					error (0, "'##' cannot appear at either end of __VA_OPT__");
+					return;
+				}
+				int paren = 1;
+				for (u = u->next; u; u = u->next) {
+					if (u->token == '(') {
+						paren++;
+					} else if (u->token == ')') {
+						if (!(--paren)) {
+							*t = build_va_opt (macro, t, u, ++va_opt_ind);
+							break;
+						}
+					} else if (u->token == -rua_id
+							   && strcmp (u->text, "__VA_OPT__") == 0) {
+						error (0, "__VA_OPT__ may not appear in a __VA_OPT__");
+						return;
+					} else if (u->token == PRE_CONCAT && paren == 1
+							   && u->next && u->next->token == ')') {
+						goto hashhash_error;
+					}
+				}
+				if (!u) {
+					goto unterminated_va_opt;
+				}
+			}
+		}
+	}
+
+	auto macro_tab = extra->macro_tab;
+	auto sym = symtab_lookup (macro_tab, macro->name);
+	if (sym) {
+		auto o = sym->macro->tokens;
+		auto n = macro->tokens;
+		while (o && n && o->text == n->text) {
+			o = o->next;
+			n = n->next;
+		}
+		if (o || n) {
+			error (0, "\"%s\" redefined", macro->name);
+		}
+		return;
+	}
+	sym = new_symbol (macro->name);
+	sym->sy_type = sy_macro;
+	sym->macro = macro;
+	symtab_addsymbol (macro_tab, sym);
+}
+
+rua_macro_t *
+rua_macro_arg (const rua_tok_t *token, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	auto macro = extra->pending_macro;
+	rua_macro_t *arg;
+	if (macro->num_params < 0 && macro->num_args == -macro->num_params) {
+		arg = macro->args[macro->num_args - 1];
+		rua_macro_append (arg, token, ctx->scanner);
+	} else {
+		if (macro->num_args < macro->num_params
+			|| macro->num_args < -macro->num_params) {
+			arg = macro->args[macro->num_args++];
+		} else {
+			// count the excess args for error reporting
+			macro->num_args++;
+			arg = 0;
+		}
+	}
+	return arg;
+}
+
+void
+rua_start_pragma (rua_ctx_t *ctx)
+{
+	if (options.preprocess_output) {
+		printf ("#pragma");
+	}
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PRAGMA, ctx->scanner);
+}
+
+void
+rua_start_text (rua_ctx_t *ctx)
+{
+	yy_pop_state (ctx->scanner);
+	yy_push_state (TEXT, ctx->scanner);
+}
+
+void
+rua_start_include (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = true;
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREPROC, ctx->scanner);
+}
+
+void
+rua_start_expr (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = !extra->suppressed;
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
+}
+
+void
+rua_expand_on (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = !extra->suppressed;
+}
+
+void
+rua_expand_off (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = false;
+}
+
+void
+rua_end_directive (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->preprocessor = false;
+	extra->recording = false;
+	extra->expand = false;
+	yy_pop_state (ctx->scanner);
+}
+
+static void
+dump_debug (int act, const char *text, int start)
+{
+	if (act == 0) {
+		printf("--scanner backing up\n" );
+	} else if (act < YY_NUM_RULES) {
+		printf("--accepting rule at line %ld\n",
+			(long)yy_rule_linenum[act]);
+	} else if (act == YY_NUM_RULES) {
+		printf("--accepting default rule\n");
+	} else if (act == YY_NUM_RULES + 1 ) {
+		printf("--(end of buffer or a NUL)\n");
+	} else {
+		printf("--EOF (start condition %d)\n", start);
+	}
+}
+
+static void
+dump_state_stack (yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+	auto yyg = (struct yyguts_t *)scanner;
+	for (int i = 0; i < yyg->yy_start_stack_ptr; i++) {
+		printf ("%d ", yyg->yy_start_stack[i]);
+	}
+	printf (": %d s:%s p:%s r:%s e:%s a:%s %s:%d\n", yystart (),
+			extra ? extra->suppressed ? "true" : "false" : "n/a",
+			extra ? extra->preprocessor ? "true" : "false" : "n/a",
+			extra ? extra->recording ? "true" : "false" : "n/a",
+			extra ? extra->expand ? "true" : "false" : "n/a",
+			extra ? extra->params ? "true" : "false" : "n/a",
+			pr.strings ? GETSTR(pr.loc.file) : "", pr.loc.line);
+}
+
+static void
+dump_token (rua_tok_t *tok, rua_loc_t *loc, int state)
+{
+	printf ("start: %2d [%3d %3d] [%3d %3d] %d '%s'\n", state,
+			loc->line, loc->column,
+			loc->last_line, loc->last_column,
+			tok->token, quote_string (tok->text));
+}
+
+void
+rua_start_if (bool expand, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	rua_cond_t  cond = {
+		.saw_true = false,
+		.saw_else = false,
+		.own_state = true,
+		.enabled = false,
+		.line = pr.loc.line,
+	};
+	if (extra->cond_stack.size) {
+		auto c = extra->cond_stack.a[extra->cond_stack.size - 1];
+		cond.own_state = c.own_state & c.enabled;
+	}
+	DARRAY_APPEND (&extra->cond_stack, cond);
+	extra->expand = expand;
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
+}
+
+void
+rua_start_else (bool expand, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = expand;
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (PREEXPR, ctx->scanner);
+}
+
+void
+rua_if (bool pass, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (!extra->cond_stack.size) {
+		internal_error (0, "#if without start_if");
+		return;
+	}
+	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
+	cond->saw_true = cond->enabled = pass;
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE/PREEXPR state
+	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = true;
+	}
+	//printf ("#if on %s:%d %d\n", GETSTR(pr.loc.file),
+	//		cond->line, extra->suppressed);
+	// put PREEXPR on the stack for EOD to pop
+	//yy_push_state (PREEXPR, ctx->scanner);
+}
+
+void
+rua_else (bool pass, const char *tok, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (!extra->cond_stack.size) {
+		error (0, "#else without #if");
+		return;
+	}
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE state
+	auto cond = &extra->cond_stack.a[extra->cond_stack.size - 1];
+	if (cond->saw_else) {
+		error (0, "#%s after #else", tok);
+		return;
+	}
+	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = false;
+		//yy_pop_state (ctx->scanner);
+	}
+	pass &= !cond->saw_true;
+	cond->enabled = pass;
+	cond->saw_true |= pass;
+	cond->saw_else = strcmp (tok, "else") == 0;
+	//printf ("#else on %s:%d for %d %d\n", GETSTR(pr.loc.file),
+	//		pr.loc.line, cond->line, extra->suppressed);
+	cond->line = pr.loc.line;
+	if (cond->own_state && !cond->enabled) {
+		extra->suppressed = true;
+	}
+	// put PREEXPR on the stack for EOD to pop
+	//yy_push_state (PREEXPR, ctx->scanner);
+}
+
+void
+rua_endif (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (!extra->cond_stack.size) {
+		error (0, "#endif without #if");
+		return;
+	}
+	//yy_pop_state (ctx->scanner);	// remove DIRECTIVE state
+	auto cond = DARRAY_REMOVE (&extra->cond_stack);
+	//printf ("#endif on %s:%d for %d %d\n", GETSTR(pr.loc.file),
+	//		pr.loc.line, cond.line, extra->suppressed);
+	if (cond.own_state && !cond.enabled) {
+		extra->suppressed = false;
+		//yy_pop_state (ctx->scanner);
+	}
+	// put PREEXPR on the stack for EOD to pop
+	//yy_push_state (PREEXPR, ctx->scanner);
+}
+
+bool
+rua_defined (const char *name, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	auto macro_tab = extra->macro_tab;
+	return symtab_lookup (macro_tab, name);
+}
+
+void
+rua_undefine (const char *name, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return;
+	}
+	auto macro_tab = extra->macro_tab;
+	auto sym = symtab_lookup (macro_tab, name);
+	if (sym) {
+		symtab_removesymbol (macro_tab, sym);
+	}
+}
+
+void
+rua_include_file (const char *name, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return;
+	}
+	if (ctx->language->on_include) {
+		if (!ctx->language->on_include (name, ctx)) {
+			return;
+		}
+	}
+	struct yyguts_t * yyg = (struct yyguts_t*)ctx->scanner;//FIXME
+	int quote = *name;
+	name = make_string (name, 0);
+	bool is_system;
+	auto found = cpp_find_file (name, quote, &is_system);
+	if (!found || !(yyin = fopen (found, "rb"))) {
+		error (0, "fatal error: %s: %s", name, strerror (errno));
+		exit (1);
+	}
+	//printf ("*** push include %s\n", name);
+	set_line_file (1, found, 1);
+	cpp_push_quote_path (found);
+	DARRAY_APPEND (&extra->include_stack, ((rua_incl_t) {
+		.buffer = YY_CURRENT_BUFFER,
+		.cond_stack = extra->cond_stack,
+		.location = extra->location,
+	}));
+	extra->cond_stack = (rua_cond_stack_t) DARRAY_STATIC_INIT (8);
+	auto buffer = yy_create_buffer (yyin, YY_BUF_SIZE, ctx->scanner);
+	yy_switch_to_buffer (buffer, ctx->scanner);
+	extra->location = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+		.file = ReuseString (found),
+	};
+}
+
+void
+rua_embed_file (const char *name, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return;
+	}
+	internal_error (0, "not implemented");
+	(void)yy_top_state;
+}
+
+int
+rua_parse_define (const char *def)
+{
+	int         status;
+	rua_tok_t   tok = { .location = { 1, 1, 1, 1 }, .token = -1, };
+	rua_extra_t extra = {
+		.preprocessor = true,
+		.pre_state = pre_yypstate_new (),
+		.macro_tab = cpp_macros,
+	};
+	rua_ctx_t   ctx = {
+		.extra = &extra,
+	};
+
+	yylex_init_extra (&extra, &ctx.scanner);
+	yy_scan_string (def, ctx.scanner);
+
+	yy_push_state (PREPROC, ctx.scanner);
+
+	do {
+		if (tok.token == -1) {
+			tok.token = PRE_DEFINE;
+		} else {
+			tok.token = yylex (&tok, &tok.location, ctx.scanner);
+			if (tok.text == extra.str_text) {
+				tok.text = save_string (tok.text);
+			}
+			status = 0;
+		}
+		while (tok.token) {
+			status = qc_process (&extra, tok.token, &tok, ctx.scanner, &ctx);
+			if (status != YYPUSH_MORE || !extra.macro) {
+				break;
+			}
+			tok = *extra.macro->cursor;
+			extra.macro->cursor = extra.macro->cursor->next;
+			if (!extra.macro->cursor) {
+				extra.macro = extra.macro->next;
+			}
+		}
+	} while (status == YYPUSH_MORE);
+
+	yylex_destroy (ctx.scanner);
+	ctx.scanner = nullptr;
+	pre_yypstate_delete (extra.pre_state);
+	dstring_delete (extra.dstr);
+	return status;
+}
+
+void
+rua_line_info (const expr_t *line_expr, const char *file,
+			   const expr_t *flags_expr, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+
+	int line = expr_long (line_expr);
+	int flags = flags_expr ? expr_long (flags_expr) : 0;
+
+	if (file) {
+		if (*file != '"') {
+			error (0, "\"%s\" is not a valid filename", file);
+			return;
+		}
+		file = make_string (file, 0);
+	}
+	set_line_file (line, file, flags);
+	extra->location = pr.loc;
+}
+
+void
+rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	int         file = extra->location.file;
+	if (macro->tokens && macro->tokens->location.file == file) {
+		return;
+	}
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+	macro->num_tokens = 0;
+
+	rua_tok_t *expr = malloc (sizeof (*expr));
+	macro->num_tokens++;
+	const char *file_str = save_string (va (0, "\"%s\"",
+											quote_string (GETSTR (file))));
+	*expr = (rua_tok_t) {
+		.location = extra->location,
+		.textlen = strlen (file_str),
+		.token = -rua_string,
+		.text = file_str,
+	};
+	*macro->tail = expr;
+	macro->tail = &expr->next;
+}
+
+void
+rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	int         line = extra->location.line;
+
+	if (macro->tokens && macro->tokens->location.line == line) {
+		return;
+	}
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+	macro->num_tokens = 0;
+
+	rua_tok_t *expr = malloc (sizeof (*expr));
+	macro->num_tokens++;
+	const char *line_str = save_string (va (0, "%d", line));
+	*expr = (rua_tok_t) {
+		.location = extra->location,
+		.textlen = strlen (line_str),
+		.token = -rua_number,
+		.text = line_str,
+	};
+	*macro->tail = expr;
+	macro->tail = &expr->next;
+}
+
+static void
+expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner, rua_ctx_t *ctx)
+{
+	auto extra = qc_yyget_extra (scanner);
+	rua_extra_t arg_extra = *extra;
+	arg_extra.macro = 0;
+	arg_extra.no_lex = true;
+	queue_macro (&arg_extra, arg);
+	qc_yyset_extra (&arg_extra, scanner);
+
+	while (true) {
+		rua_tok_t   e;
+		if (next_token (&e, scanner, ctx)) {
+			if (macro->tokens
+				|| (e.token != -rua_space && e.token != -rua_ignore)) {
+				append_token (macro, &e);
+			}
+			continue;
+		}
+		break;
+	}
+
+	qc_yyset_extra (extra, scanner);
+}
+
+static bool
+macro_empty (rua_macro_t *macro, yyscan_t scanner)
+{
+	auto extra = qc_yyget_extra (scanner);
+
+	for (auto t = macro->tokens; t; t = t->next) {
+		if (t->token != -rua_id) {
+			return false;
+		}
+		symbol_t   *sym;
+		if (macro->params
+			&& (sym = symtab_lookup (macro->params, t->text))
+			&& !macro->args[sym->offset]->next) {
+			auto arg = macro->args[sym->offset];
+			arg->next = macro;
+			bool empty = macro_empty (arg, scanner);
+			arg->next = 0;
+			if (!empty) {
+				return false;
+			}
+			continue;
+		}
+		if ((sym = symtab_lookup (extra->macro_tab, t->text))
+			&& !sym->macro->next) {
+			auto m = sym->macro;
+			if (m->params) {
+				macro->cursor = t;
+				collect_args (m, macro, scanner);
+				if (t == macro->cursor) {
+					return false;
+				}
+			}
+			m->next = macro;
+			bool empty = macro_empty (m, scanner);
+			m->next = 0;
+			if (!empty) {
+				return false;
+			}
+			continue;
+		}
+		return false;
+	}
+	return true;
+}
+
+void
+rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+
+	auto extra = ctx->extra;
+	auto cur = extra->macro;
+	if (!cur || !cur->params || cur->num_params >= 0) {
+		warning (0, "__VA_OPT__ can appear only in the expansion of a "
+				 "variadic macro");
+		return;
+	}
+	if (macro_empty (cur->args[~cur->num_params], ctx->scanner)) {
+		return;
+	}
+	auto arg = macro->args[0];
+	arg->params = cur->params;
+	arg->num_params = cur->num_params;
+	arg->num_args = cur->num_args;
+	arg->args = cur->args;
+
+	expand_arg (macro, arg, ctx->scanner, ctx);
+}
+
+void
+rua_macro_va_args (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	macro->tokens = 0;
+	macro->tail = &macro->tokens;
+
+	auto extra = ctx->extra;
+	auto cur = extra->macro;
+	if (!cur || !cur->params || cur->num_params >= 0) {
+		warning (0, "__VA_ARGS__ can appear only in the expansion of a "
+				 "variadic macro");
+		return;
+	}
+	auto arg = cur->args[~cur->num_params];
+	if (arg->tokens) {
+		macro->tokens = arg->tokens;
+		macro->tail = arg->tail;
+	}
+}
+
+void
+rua_print_location (FILE *out, const rua_loc_t *loc)
+{
+	fprintf (out, "%s:[%d.%d-%d.%d]", GETSTR (loc->file),
+			 loc->line, loc->column, loc->last_line, loc->last_column);
 }

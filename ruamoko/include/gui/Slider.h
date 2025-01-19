@@ -10,7 +10,7 @@
 {
 	int index;
 	int size;
-	int dir;
+	bool dir;
 }
 
 - (id) initWithBounds: (Rect)aRect size: (int) aSize;

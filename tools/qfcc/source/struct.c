@@ -65,7 +65,7 @@
 #include "tools/qfcc/include/value.h"
 
 static symbol_t *
-find_tag (ty_meta_e meta, symbol_t *tag, const type_t *type)
+find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
@@ -73,21 +73,21 @@ find_tag (ty_meta_e meta, symbol_t *tag, const type_t *type)
 	if (tag) {
 		tag_name = va (0, "tag %s", tag->name);
 	} else {
-		const char *path = GETSTR (pr.source_file);
+		const char *path = GETSTR (pr.loc.file);
 		const char *file = strrchr (path, '/');
 		if (!file++)
 			file = path;
-		tag_name = va (0, "tag .%s.%d", file, pr.source_line);
+		tag_name = va (0, "tag .%s.%d", file, pr.loc.line);
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
 		if (sym->table == current_symtab && sym->type->meta != meta)
-			error (0, "%s defined as wrong kind of tag", tag->name);
+			error (0, "%s defined as wrong kind of tag", tag_name);
 		if (sym->type->meta == meta)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
-	type_t *t = (type_t *) type;//FIXME
+	type_t *t = type;
 	if (!t)
 		t = new_type ();
 	if (!t->name)
@@ -113,17 +113,18 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 		if (tag) {
 			tag->type = sym->type;
 		}
-		if (sym->type->meta == ty_enum
-			|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
+		if (sym->type->meta == ty_enum) {
+			error (0, "enum %s redefined", tag->name);
+		} else if (sym->type->meta == ty_struct && sym->type->symtab) {
 			error (0, "%s %s redefined",
 				   *su == 's' ? "struct" : "union", tag->name);
-		   *su = 0;
-	   } else if (sym->type->meta != ty_struct) {
-		   internal_error (0, "%s is not a struct or union",
-						   tag->name);
-	   }
-   }
-   return new_symtab (parent, stab_struct);
+			*su = 0;
+		} else if (sym->type->meta != ty_struct) {
+			internal_error (0, "%s is not a struct or union",
+							tag->name);
+		}
+	}
+	return new_symtab (parent, stab_struct);
 }
 
 symbol_t *
@@ -138,13 +139,17 @@ find_handle (symbol_t *tag, const type_t *type)
 		type_t *t = (type_t *) sym->type;//FIXME
 		t->type = type->type;
 		t->width = 1;
+		t->columns = 1;
 		t->alignment = type->alignment;
+	}
+	if (sym->type->type != type->type) {
+		error (0, "@handle %s redeclared with different base type", tag->name);
 	}
 	return sym;
 }
 
 symbol_t *
-find_struct (int su, symbol_t *tag, const type_t *type)
+find_struct (int su, symbol_t *tag, type_t *type)
 {
 	ty_meta_e   meta = ty_struct;
 
@@ -155,7 +160,7 @@ find_struct (int su, symbol_t *tag, const type_t *type)
 }
 
 symbol_t *
-build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
+build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 			  int base)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
@@ -165,21 +170,31 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
 
-	if (sym->table == current_symtab && sym->type->t.symtab) {
+	if (sym->table == current_symtab && sym->type->symtab) {
 		error (0, "%s defined as wrong kind of tag", tag->name);
 		return sym;
 	}
+	int index = 0;
+	int offset = 0;
 	for (s = symtab->symbols; s; s = s->next) {
-		if (s->sy_type != sy_var)
+		if (s->sy_type != sy_offset)
 			continue;
+		if (!s->type) {
+			if (su != 's' || strcmp (s->name, ".reset") != 0) {
+				internal_error (0, "invalid struct field");
+			}
+			index = 0;
+			offset = 0;
+			continue;
+		}
 		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
-				   s->type->t.class->name);
+				   s->type->class->name);
 		}
 		if (su == 's') {
-			symtab->size = RUP (symtab->size + base, s->type->alignment) - base;
-			s->s.offset = symtab->size;
-			symtab->size += type_size (s->type);
+			offset = RUP (offset + base, s->type->alignment) - base;
+			s->offset = offset;
+			offset += type_size (s->type);
 		} else {
 			int         size = type_size (s->type);
 			if (size > symtab->size) {
@@ -192,14 +207,15 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 		if (s->visibility == vis_anonymous) {
 			symtab_t   *anonymous;
 			symbol_t   *t = s->next;
-			int         offset = s->s.offset;
+			int         offset = s->offset;
 
 			if (!is_struct (s->type) && !is_union (s->type)) {
 				internal_error (0, "non-struct/union anonymous field");
 			}
-			anonymous = s->type->t.symtab;
+			anonymous = s->type->symtab;
 			for (as = anonymous->symbols; as; as = as->next) {
-				if (as->visibility == vis_anonymous || as->sy_type!= sy_var) {
+				if (as->visibility == vis_anonymous
+					|| as->sy_type != sy_offset) {
 					continue;
 				}
 				if (Hash_Find (symtab->tab, as->name)) {
@@ -208,24 +224,33 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, const type_t *type,
 				} else {
 					s->next = copy_symbol (as);
 					s = s->next;
-					s->s.offset += offset;
+					s->offset += offset;
 					s->table = symtab;
-					s->no_auto_init = 1;
+					s->no_auto_init = true;
+					s->id = index++;
 					Hash_Add (symtab->tab, s);
 				}
 			}
 			s->next = t;
+		} else {
+			s->id = index++;
 		}
 	}
+	if (su == 's') {
+		symtab->size = offset;
+	}
+	symtab->count = index;
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
-	((type_t *) sym->type)->t.symtab = symtab;
+	((type_t *) sym->type)->symtab = symtab;
 	if (alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = alignment;
 	}
-	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
-		((type_t *) sym->type)->type_def = qfo_encode_type (sym->type,
-															pr.type_data);
+	//FIXME should not be necessary
+	if (!type && type_encodings.a[sym->type->id]->external) {
+		unsigned id = sym->type->id;
+		type_encodings.a[id] = qfo_encode_type (sym->type, pr.type_data);
+	}
 	return sym;
 }
 
@@ -238,14 +263,15 @@ find_enum (symbol_t *tag)
 symtab_t *
 start_enum (symbol_t *sym)
 {
-	if (sym->table == current_symtab && sym->type->t.symtab) {
+	if (sym->table == current_symtab && sym->type->symtab) {
 		error (0, "%s defined as wrong kind of tag", sym->name);
 		sym = find_enum (0);
 	}
-	((type_t *) sym->type)->t.symtab = new_symtab (current_symtab, stab_enum);
+	((type_t *) sym->type)->symtab = new_symtab (current_symtab, stab_enum);
 	((type_t *) sym->type)->alignment = 1;
 	((type_t *) sym->type)->width = 1;
-	return sym->type->t.symtab;
+	((type_t *) sym->type)->columns = 1;
+	return sym->type->symtab;
 }
 
 symbol_t *
@@ -256,14 +282,14 @@ finish_enum (symbol_t *sym)
 	symtab_t   *enum_tab;
 
 	auto enum_type = sym->type = find_type (sym->type);
-	enum_tab = enum_type->t.symtab;
+	enum_tab = enum_type->symtab;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
 		name->type = sym->type;
 
 		enum_sym = new_symbol_type (name->name, enum_type);
 		enum_sym->sy_type = sy_const;
-		enum_sym->s.value = name->s.value;
+		enum_sym->value = name->value;
 		symtab_addsymbol (enum_tab->parent, enum_sym);
 	}
 	return sym;
@@ -273,7 +299,7 @@ void
 add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 {
 	auto enum_type = enm->type;
-	symtab_t   *enum_tab = enum_type->t.symtab;
+	symtab_t   *enum_tab = enum_type->symtab;
 	int         value;
 
 	if (name->table == current_symtab || name->table == enum_tab)
@@ -284,9 +310,8 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.uint_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->value->uint_val + 1;
 	if (val) {
-		val = convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
 		else if (!is_int_val (val))
@@ -294,30 +319,30 @@ add_enum (symbol_t *enm, symbol_t *name, const expr_t *val)
 		else
 			value = expr_int (val);
 	}
-	name->s.value = new_int_val (value);
+	name->value = new_int_val (value);
 	symtab_addsymbol (enum_tab, name);
 }
 
-int
+bool
 enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 {
-	symtab_t   *symtab = enm->t.symtab;
+	symtab_t   *symtab = enm->symtab;
 	symbol_t   *zero_sym = 0;
 	symbol_t   *one_sym = 0;
 	symbol_t   *sym;
 	int         val, v;
 
 	if (!symtab)
-		return 0;
+		return false;
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->s.value->v.int_val;
+		val = sym->value->int_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->s.value->v.int_val;
+				v = one_sym->value->int_val;
 				if (val * val > v * v)
 					continue;
 			}
@@ -326,15 +351,14 @@ enum_as_bool (const type_t *enm, expr_t **zero, expr_t **one)
 
 	}
 	if (!zero_sym || !one_sym)
-		return 0;
+		return false;
 	*zero = new_symbol_expr (zero_sym);
 	*one = new_symbol_expr (one_sym);
-	return 1;
+	return true;
 }
 
 symbol_t *
-make_structure (const char *name, int su, struct_def_t *defs,
-				const type_t *type)
+make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 {
 	symtab_t   *strct;
 	symbol_t   *field;
@@ -348,7 +372,7 @@ make_structure (const char *name, int su, struct_def_t *defs,
 		strct = new_symtab (0, stab_struct);
 	while (defs->name) {
 		field = new_symbol_type (defs->name, defs->type);
-		field->sy_type = sy_var;
+		field->sy_type = sy_offset;
 		if (!symtab_addsymbol (strct, field))
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;
@@ -375,7 +399,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		type = make_structure (0, su, defs, 0)->type;
 	if ((su == 's' && !is_struct (type)) || (su == 'u' && !is_union (type)))
 		internal_error (0, "structure %s type mismatch", name);
-	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+	for (i = 0, field_sym = type->symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {
 		if (!defs[i].name)
 			internal_error (0, "structure %s unexpected end of defs", name);
@@ -399,18 +423,18 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 	}
 	struct_sym = make_symbol (name, type, space, storage);
 
-	struct_def = struct_sym->s.def;
+	struct_def = struct_sym->def;
 	if (struct_def->initialized)
 		internal_error (0, "structure %s already initialized", name);
 	struct_def->initialized = struct_def->constant = 1;
 	struct_def->nosave = 1;
 
-	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
+	for (i = 0, field_sym = type->symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {
 		field_def.type = field_sym->type;
 		field_def.name = save_string (va (0, "%s.%s", name, field_sym->name));
 		field_def.space = struct_def->space;
-		field_def.offset = struct_def->offset + field_sym->s.offset;
+		field_def.offset = struct_def->offset + field_sym->offset;
 		if (!defs[i].emit) {
 			//FIXME relocs? arrays? structs?
 			pr_type_t  *val = (pr_type_t *) data;
@@ -420,7 +444,7 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		} else {
 			if (is_array (field_def.type)) {
 				auto type = dereference_type (field_def.type);
-				for (j = 0; j < field_def.type->t.array.size; j++) {
+				for (j = 0; j < field_def.type->array.count; j++) {
 					defs[i].emit (&field_def, data, j);
 					field_def.offset += type_size (type);
 				}
@@ -430,4 +454,11 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 		}
 	}
 	return struct_def;
+}
+
+symbol_t *
+make_handle (const char *name, type_t *type)
+{
+	auto tag = new_symbol (name);
+	return find_tag (ty_handle, tag, type);
 }

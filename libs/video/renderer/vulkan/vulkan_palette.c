@@ -60,7 +60,7 @@ Vulkan_Palette_Update (vulkan_ctx_t *ctx, const byte *palette)
 		.loaded = 1,
 		.data = (byte *) palette,
 	};
-	Vulkan_UpdateTex (ctx, pctx->palette, &tex, 0, 0, 0, 0);
+	Vulkan_UpdateTex (ctx, pctx->palette, &tex, 0, 0, 0, 0, true);
 }
 
 static void

@@ -40,23 +40,43 @@
 
 ALLOC_STATE (attribute_t, attributes);
 
-attribute_t *new_attribute(const char *name, const expr_t *params)
+attribute_t *
+new_attrfunc (const char *name, const expr_t *params)
 {
-	if (params && params->type != ex_list) {
-		internal_error (params, "attribute params not a list");
-	}
-	if (params) {
-		for (auto p = params->list.head; p; p = p->next) {
-			if (p->expr->type != ex_value) {
-				error (p->expr, "not a literal constant");
-				return 0;
-			}
-		}
-	}
-
 	attribute_t *attr;
 	ALLOC (16384, attribute_t, attributes, attr);
 	attr->name = save_string (name);
 	attr->params = params;
 	return attr;
+}
+
+attribute_t *
+new_attribute(const char *name, const expr_t *params)
+{
+	if (params
+		&& params->type != ex_list
+		&& params->type != ex_value) {
+		internal_error (params, "attribute params not a list");
+	}
+	bool err = false;
+	if (params && params->type == ex_list) {
+		for (auto p = params->list.head; p; p = p->next) {
+			auto e = p->expr;
+			if (e->type == ex_expr) {
+				if (e->expr.op != '='
+					|| !is_string_val (e->expr.e1)
+					|| e->expr.e2->type != ex_value) {
+					error (e, "not a key=literal constnat");
+					err = true;
+				}
+			} else if (e->type != ex_value) {
+				error (e, "not a literal constant");
+				err = true;
+			}
+		}
+	}
+	if (err) {
+		return nullptr;
+	}
+	return new_attrfunc (name, params);
 }

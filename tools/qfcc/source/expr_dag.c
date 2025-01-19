@@ -53,12 +53,12 @@ edag_flush (void)
 const expr_t *
 edag_add_expr (const expr_t *expr)
 {
-	if (!expr) {
+	if (!expr || expr->nodag) {
 		return expr;
 	}
 	for (size_t i = 0; i < expr_dag.size; i++) {
 		auto e = expr_dag.a[i];
-		if (e->type != expr->type) {
+		if (e->type != expr->type || e->paren != expr->paren) {
 			continue;
 		}
 		switch (expr->type) {
@@ -72,10 +72,21 @@ edag_add_expr (const expr_t *expr)
 			case ex_compound:
 			case ex_memset:
 			case ex_branch:
+			case ex_message:
+			case ex_inout:
 			case ex_return:
 			case ex_adjstk:
 			case ex_with:
 			case ex_args:
+			case ex_type:
+			case ex_incop:
+			case ex_decl:
+			case ex_loop:
+			case ex_select:
+			case ex_intrinsic:
+			case ex_switch:
+			case ex_caselabel:
+			case ex_process:
 				// these are never put in the dag
 				return expr;
 			case ex_list:
@@ -130,7 +141,7 @@ edag_add_expr (const expr_t *expr)
 				}
 				break;
 			case ex_value:
-				if (e->value == expr->value) {
+				if (e->value == expr->value && e->implicit == expr->implicit) {
 					return e;
 				}
 				break;
@@ -179,6 +190,37 @@ edag_add_expr (const expr_t *expr)
 				break;
 			case ex_multivec:
 				return expr;	//FIXME ?
+			case ex_cond:
+				if (e->cond.test == expr->cond.test
+					&& e->cond.true_expr == expr->cond.true_expr
+					&& e->cond.false_expr == expr->cond.false_expr) {
+					return e;
+				}
+				break;
+			case ex_field:
+				if (e->field.type == expr->field.type
+					&& e->field.object == expr->field.object
+					&& e->field.member == expr->field.member) {
+					return e;
+				}
+				break;
+			case ex_array:
+				if (e->array.type == expr->array.type
+					&& e->array.base == expr->array.base
+					&& e->array.index == expr->array.index) {
+					return e;
+				}
+				break;
+			case ex_xvalue:
+				bug (expr, "should xvalue happen here?");
+				if (e->xvalue.expr == expr->xvalue.expr
+					&& e->xvalue.lvalue == expr->xvalue.lvalue) {
+					// never dag an lvalue
+					if (!e->xvalue.lvalue) {
+						return e;
+					}
+				}
+				break;
 		}
 	}
 	DARRAY_APPEND (&expr_dag, expr);

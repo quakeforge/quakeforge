@@ -119,7 +119,7 @@ Draw_DestroyPic (qpic_t *pic)
 	free (pic);
 }
 
-qpic_t *
+qpic_t * __attribute__((const))
 Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);

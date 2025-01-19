@@ -17,7 +17,7 @@ static void
 trackCursor (Editor *self)
 {
 	unsigned    cx = [self.buffer charPos:self.line_index at:self.char_index];
-	if (self.cursor.x != cx) {
+	if ((unsigned) self.cursor.x != cx) {
 		if (self.char_index < [self.buffer getEOT]) {
 			int c = [self.buffer getChar:self.char_index];
 		}
@@ -101,7 +101,7 @@ trackCursor (Editor *self)
 	unsigned    tx = [buffer charPos:line_index at:char_index];
 
 	cursorMode &= ~cmVInsert;
-	if (tx != cursor.x) {
+	if (tx != (unsigned) cursor.x) {
 		if (char_index < [buffer getEOT]) {
 			int         c = [buffer getChar:char_index];
 

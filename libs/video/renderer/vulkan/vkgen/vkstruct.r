@@ -43,7 +43,7 @@
 {
 	qfot_struct_t *strct =&type.strct;
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
-	int         readonly = [field_dict string] == "readonly";
+	bool        readonly = [field_dict string] == "readonly";
 
 	if (readonly) {
 		return;
@@ -103,7 +103,7 @@
 -(void) writeForward
 {
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
-	int         readonly = [field_dict string] == "readonly";
+	bool        readonly = [field_dict string] == "readonly";
 	if (!readonly) {
 		fprintf (output_file, "static int %s (const plfield_t *field,"
 				 " const plitem_t *item, void *data, plitem_t *messages,"
@@ -255,7 +255,7 @@ write_type (Struct *self, PLItem *field_dict, string type)
 }
 
 static void
-write_parser (Struct *self, int have_sType, PLItem *only)
+write_parser (Struct *self, bool have_sType, PLItem *only)
 {
 	write_function_head (self);
 	if (have_sType) {
@@ -342,17 +342,17 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 			 PLItem *only, int need_parser)
 {
 	qfot_type_t *type = self.type;
-	int         have_sType = 0;
-	int         have_pNext = 0;
-	int         readonly = [field_dict string] == "readonly";
+	bool        have_sType = false;
+	bool        have_pNext = false;
+	bool        readonly = [field_dict string] == "readonly";
 
 	for (int i = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *field = &type.strct.fields[i];
 		if (field.name == "sType") {
-			have_sType = 1;
+			have_sType = true;
 		}
 		if (field.name == "pNext") {
-			have_pNext = 1;
+			have_pNext = true;
 			self.write_symtab = 1;
 		}
 	}
@@ -532,7 +532,7 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 
 	fprintf (output_file, "\tHash_DelTable (%s_symtab.tab);\n",
 			 [self outname]);
-	fprintf (output_file, "\t%s_symtab.tab = 0;\n", [self outname]);
+	fprintf (output_file, "\t%s_symtab.tab = nullptr;\n", [self outname]);
 }
 
 -(void) writeSymtabEntry

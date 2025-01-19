@@ -51,19 +51,20 @@ report_function (const expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
 	static pr_string_t last_file;
-	pr_string_t file = pr.source_file;
+	pr_string_t file = pr.loc.file;
 	srcline_t  *srcline;
 
-	if (e)
-		file = e->file;
+	if (e) {
+		file = e->loc.file;
+	}
 
 	if (file != last_file) {
 		for (srcline = pr.srcline_stack; srcline; srcline = srcline->next)
 			fprintf (stderr, "In file included from %s:%d:\n",
-					 GETSTR (srcline->source_file), srcline->source_line);
+					 GETSTR (srcline->loc.file), srcline->loc.line);
 	}
 	last_file = file;
-	if (current_func != last_func) {
+	if (!options.preprocess_only && current_func != last_func) {
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", GETSTR (file),
 					 current_func->name);
@@ -80,11 +81,11 @@ report_function (const expr_t *e)
 void
 print_srcline (int rep, const expr_t *e)
 {
-	pr_string_t file = pr.source_file;
-	int         line = pr.source_line;
+	pr_string_t file = pr.loc.file;
+	int         line = pr.loc.line;
 	if (e) {
-		file = e->file;
-		line = e->line;
+		file = e->loc.file;
+		line = e->loc.line;
 	}
 	if (rep) {
 		report_function (e);
@@ -96,13 +97,13 @@ static __attribute__((format(PRINTF, 4, 0))) void
 format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 				const char *fmt, va_list args)
 {
-	pr_string_t file = pr.source_file;
-	int         line = pr.source_line;
+	pr_string_t file = pr.loc.file;
+	int         line = pr.loc.line;
 	const char *colon = fmt ? ": " : "";
 
 	if (e) {
-		file = e->file;
-		line = e->line;
+		file = e->loc.file;
+		line = e->loc.line;
 	}
 	dsprintf (message, "%s:%d: %s%s", GETSTR (file), line, msg_type, colon);
 	if (fmt) {

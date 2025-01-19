@@ -76,7 +76,7 @@ int					gl_release_number;
 
 static int			gl_bgra_capable;
 int					gl_use_bgra;
-int					gl_va_capable;
+bool				gl_va_capable;
 static  int					driver_vaelements;
 int					vaelements;
 int					gl_filter_min = GL_LINEAR_MIPMAP_LINEAR;

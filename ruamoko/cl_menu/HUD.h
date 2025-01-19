@@ -53,7 +53,7 @@
 @interface HUDAnimation : HUDObject
 {
 	Array *frames;
-	int currentFrame;
+	unsigned currentFrame;
 	float nextFrameTime;
 	BOOL looping;
 }

@@ -43,6 +43,9 @@ main (void)
 	vec4        c = texture (Texture, vec3(st, 0));
 	vec4        e = texture (Texture, vec3(st, 1));
 	float       a = c.a * e.a * alpha;
+	if (a == 0) {
+		discard;
+	}
 	c += e;
 	c.a = a;
 	c = FogBlend (c * color, fog);

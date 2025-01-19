@@ -593,7 +593,7 @@ CL_ParseClientdata (void)
 
 	if (cl.stats[STAT_ITEMS] != i) {				// set flash times
 		for (j = 0; j < 32; j++)
-			if ((i & (1 << j)) && !(cl.stats[STAT_ITEMS] & (1 << j)))
+			if ((i & (1u << j)) && !(cl.stats[STAT_ITEMS] & (1u << j)))
 				cl.item_gettime[j] = cl.time;
 		cl.stats[STAT_ITEMS] = i;
 #define IT_POWER (IT_QUAD | IT_SUIT | IT_INVULNERABILITY | IT_INVISIBILITY)

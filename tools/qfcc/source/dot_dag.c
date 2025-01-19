@@ -195,7 +195,8 @@ dot_dump_dag (void *_dag, const char *filename)
 	dstring_t  *dstr = dstring_newstr();
 
 	dasprintf (dstr, "digraph dag_%p {\n", dag);
-	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
+	dasprintf (dstr, "  graph [label=\"%s\"];\n",
+			   filename ? quote_string (filename) : "");
 	dasprintf (dstr, "  layout=dot;\n");
 	dasprintf (dstr, "  clusterrank=local;\n");
 	dasprintf (dstr, "  rankdir=TB;\n");

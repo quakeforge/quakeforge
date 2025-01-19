@@ -132,6 +132,12 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
+AC_ARG_ENABLE(lto,
+	AS_HELP_STRING([--disable-lto], [disable link-time optimizations]),
+	use_lto=$enable_lto,
+	use_lto=yes
+)
+
 if test "x$host_cpu" = xaarch64; then
 	simd=neon
 else
@@ -172,6 +178,9 @@ AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
+	if test "x$use_lto" = xyes; then
+		QF_CC_OPTION(-flto=auto)
+	fi
 	if test "x$GCC" = xyes; then
 		saved_cflags="$CFLAGS"
 		dnl CFLAGS=""

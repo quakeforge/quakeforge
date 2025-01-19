@@ -147,7 +147,7 @@ unalias_op (operand_t *op)
 		internal_error (op->expr, "not an alias op");
 	}
 	if (op->op_type == op_alias) {
-		return op->alias;;
+		return op->alias;
 	}
 	if (op->op_type == op_temp) {
 		return op->tempop.alias;
@@ -577,8 +577,8 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 				}
 				if (op->op_type == op_value
 					&& op->value->lltype == ev_ptr
-					&& op->value->v.pointer.def) {
-					def_visit_all (op->value->v.pointer.def, 1,
+					&& op->value->pointer.def) {
+					def_visit_all (op->value->pointer.def, 1,
 								   dagnode_def_set_edges_visit, n);
 				}
 				if (op->op_type == op_def
@@ -1309,7 +1309,7 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	if (is_structural (type) || type->width > 4) {
+	if (is_structural (type) || is_matrix (type) || type->width > 4) {
 		operands[0] = fix_op_type (src, type);
 		operands[1] = short_operand (type_size (type), src->expr);
 		for ( ; var_iter; var_iter = set_next (var_iter)) {

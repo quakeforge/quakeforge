@@ -27,7 +27,7 @@
 */
 
 #ifndef EV_TYPE
-#define EV_TYPE(event)
+#define EV_TYPE(type)
 #endif
 
 EV_TYPE(void)

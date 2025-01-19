@@ -3,8 +3,12 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
-0 0111 00ts swizzle2
-0 0111 01t0 wedge2
+0 0100 dtdd matvec
+0 0101 dtdd vecmat
+0 0110 dtdd outer
+0 0111 0too matmul
+0 0111 0t11 wedge2
+0 0111 10ts swizzle2
 0 1ccc ttss compare
 0 0000 00nn
 0 0000 0000 noop
@@ -52,12 +56,23 @@ address_types = [
     "ev_void, ev_int",
 ]
 address_widths = [
-    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "2, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "3, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "4, 0", "1, 1", "1, 0", "1, 1", ],
-    [ "-1, 0", "1, 1", "1, 0", "1, 1", "-1, 0", "-1, 1"],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "2, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "3, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "4, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 1", "1, 1", "-1, 1", "-1, 1"],
 ]
+address_columns = [
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "1, 0", "1, 1", "1, 1", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 1", "1, 1", "-1, 1", "-1, 1"],
+]
+move_widths    = [ "-1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+move_columns   = [ "-1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+memset_widths  = [ "1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
+memset_columns = [ "1, 1, -1", "1, 1, 1", "1, 1, 1", None, ]
 #store, pop, lea
 store_fmt = [
     "%ga",
@@ -91,7 +106,8 @@ adjstk_formats = {
     "mnemonic": "adjstk",
     "opname": "adjstk",
     "format": "%sa, %sb",
-    "widths": "0, 0, 0",
+    "widths": "1, 1, 0",
+    "columns": "1, 1, 0",
     "types": "ev_short, ev_short, ev_invalid",
 }
 bitops_formats = {
@@ -100,6 +116,7 @@ bitops_formats = {
     "opname": "{op_bit[oo]}",
     "format": "{bit_fmt[oo]}",
     "widths": "{ss+1}, { oo < 3 and ss+1 or 0}, {ss+1}",
+    "columns": "1, { oo < 3 and ss+1 or 0}, 1",
     "types": "{bit_types[t]}, {oo < 3 and bit_types[t] or 'ev_invalid'}, {bit_types[t]}",
     "args": {
         "op_bit": ["bitand", "bitor", "bitxor", "bitnot"],
@@ -118,7 +135,8 @@ branch_formats = {
     "mnemonic": "{op_cond[c*4+cc]}",
     "opname": "{op_cond[c*4+cc]}",
     "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
-    "widths": "0, 0, 1",
+    "widths": "1, 0, 1",
+    "columns": "1, 0, 1",
     "types": "ev_short, ev_invalid, ev_int",
     "args": {
         "op_mode": "ABCD",
@@ -134,6 +152,7 @@ call_formats = {
     "opname": "call",
     "format": "{call_fmt[mm]}",
     "widths": "{call_widths[mm]}, -1",
+    "columns": "{call_columns[mm]}, -1",
     "types": "{call_types[mm]}, ev_void",
     "args": {
         "op_mode": ".BCD",
@@ -149,7 +168,8 @@ call_formats = {
             "ev_ptr, ev_short",
             "ev_ptr, ev_int",
         ],
-        "call_widths": [ None, "1, 0", "1, 0", "1, 1" ]
+        "call_widths": [ None, "1, 0", "1, 1", "1, 1" ],
+        "call_columns": [ None, "1, 0", "1, 1", "1, 1" ],
     },
 }
 compare_formats = {
@@ -157,6 +177,7 @@ compare_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "columns": "1, 1, 1",
     "types": "{cmp_types[tt]}, {cmp_types[tt]}, {res_types[tt & 2]}",
     "args": {
         "op_cmp": compare_ccc,
@@ -170,6 +191,7 @@ compare2_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[t]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "columns": "1, 1, 1",
     "types": "{cmp_types[t]}, {cmp_types[t]}, ev_int",
     "args": {
         "op_cmp": compare_ccc,
@@ -182,7 +204,8 @@ constant_formats = {
     "mnemonic": "ldconst",
     "opname": "ldconst",
     "format": "%sa, %sb, %gc",
-    "widths": "0, 0, -1",
+    "widths": "1, 1, -1",
+    "columns": "1, 1, -1",
     "types": "ev_short, ev_short, ev_void",
 }
 convert_formats = {
@@ -190,7 +213,8 @@ convert_formats = {
     "mnemonic": "conv",
     "opname": "conv",
     "format": "%Ga %Cb %gc",
-    "widths": "-1, 0, -1",
+    "widths": "-1, 1, -1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 fbitops_formats = {
@@ -199,6 +223,7 @@ fbitops_formats = {
     "opname": "{op_fbit[oo]}",
     "format": "{fbit_fmt[oo]}",
     "widths": "1, 1, 1",
+    "columns": "1, 1, 1",
     "types": "{fbit_types[0]}, {fbit_types[oo==3]}, {fbit_types[0]}",
     "args": {
         "op_fbit": ["bitand", "bitor", "bitxor", "bitnot"],
@@ -216,7 +241,8 @@ extend_formats = {
     "mnemonic": "extend",
     "opname": "extend",
     "format": "%Ga%Xb, %gc",
-    "widths": "-1, 0, -1",
+    "widths": "-1, 1, -1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 hops_formats = {
@@ -224,7 +250,8 @@ hops_formats = {
     "mnemonic": "hops",
     "opname": "hops",
     "format": "%Hb %Ga, %gc",
-    "widths": "-1, 0, 1",
+    "widths": "-1, 1, 1",
+    "columns": "1, 1, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 jump_formats = {
@@ -233,6 +260,7 @@ jump_formats = {
     "opname": "jump",
     "format": "{jump_fmt[mm]}",
     "widths": "{jump_widths[mm]}, 0",
+    "columns": "{jump_columns[mm]}, 0",
     "types": "{jump_types[mm]}",
     "args": {
         "op_mode": "ABCD",
@@ -243,7 +271,8 @@ jump_formats = {
             "ev_ptr, ev_short, ev_invalid",
             "ev_ptr, ev_int, ev_invalid",
         ],
-        "jump_widths": [ "0, 0", "1, 1", "1, 0", "1, 1" ]
+        "jump_widths": [ "1, 0", "1, 1", "1, 1", "1, 1" ],
+        "jump_columns": [ "1, 0", "1, 1", "1, 1", "1, 1" ],
     },
 }
 load64_formats = {
@@ -252,12 +281,14 @@ load64_formats = {
     "opname": "load64",
     "format": "{load_fmt[mm]}, %gc",
     "widths": "{load_widths[s+2][mm]}, {s+3}",
+    "columns": "{load_columns[s+2][mm]}, -1",
     "types": "{load_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
         "load_fmt": load_fmt,
         "load_types": address_types,
         "load_widths": address_widths,
+        "load_columns": address_columns,
     },
 }
 lea_formats = {
@@ -266,12 +297,14 @@ lea_formats = {
     "opname": "lea",
     "format": "{lea_fmt[mm]}, %gc",
     "widths": "{lea_widths[mm]}, 1",
+    "columns": "{lea_columns[mm]}, 1",
     "types": "{lea_types[mm]}, ev_ptr",
     "args": {
         "op_mode": address_mode,
         "lea_fmt": store_fmt,
         "lea_types": address_types,
         "lea_widths": address_widths[4],
+        "lea_columns": address_columns[4],
     },
 }
 lea2_formats = {
@@ -280,12 +313,14 @@ lea2_formats = {
     "opname": "lea",
     "format": "{lea_fmt[m+4]}, %gc",
     "widths": "{lea_widths[m+4]}, 1",
+    "columns": "{lea_columns[m+4]}, 1",
     "types": "{lea_types[m+4]}, ev_ptr",
     "args": {
         "op_mode": "EF",
         "lea_fmt": store_fmt,
         "lea_types": address_types,
         "lea_widths": address_widths[4],
+        "lea_columns": address_columns[4],
     },
 }
 load_formats = {
@@ -294,12 +329,14 @@ load_formats = {
     "opname": "load",
     "format": "{load_fmt[mm]}, %gc",
     "widths": "{load_widths[ss][mm]}, {ss+1}",
+    "columns": "{load_columns[ss][mm]}, -1",
     "types": "{load_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
         "load_fmt": load_fmt,
         "load_types": address_types,
         "load_widths": address_widths,
+        "load_columns": address_columns,
     },
 }
 mathops_formats = {
@@ -307,11 +344,42 @@ mathops_formats = {
     "mnemonic": "{op_math[ooo]}.{math_type[tt]}",
     "opname": "{op_math[ooo]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "columns": "1, 1, 1",
     "types": "{math_types[tt]}, {math_types[tt]}, {math_types[tt]}",
     "args": {
         "op_math": ["mul", "div", "rem", "mod", "add", "sub", None, None],
         "math_type": type_tt,
         "math_types": etype_tt,
+    },
+}
+matmul_formats = {
+    "opcode": "OP_{op_matmul[oo].upper()}_22_{mat_type[t]}",
+    "mnemonic": "{op_matmul[oo]}",
+    "opname": "{op_matmul[oo]}",
+    "widths": "2, 2, 2",
+    "columns": "{cols_matmul[oo]}",
+    "types": "{mat_types[t]}, {mat_types[t]}, {mat_types[t]}",
+    "args": {
+        "op_matmul": ["mvmul", "vmmul", "outer"],
+        "cols_matmul": ["2, 1, 1", "1, 2, 1", "1, 1, 1", None],
+        "mat_type": ['F', 'D'],
+        "mat_types": float_t,
+        "mat_dim": ((2, 3, 4, 3, 2, 3, 4, 4),
+                    (3, 3, 3, 2, 4, 4, 4, 2)),
+    },
+}
+matvec_formats = {
+    "opcode": "OP_MVMUL_{mat_dim[1][d][dd]}{mat_dim[0][d][dd]}_{mat_type[t]}",
+    "mnemonic": "mul",
+    "opname": "mul",
+    "widths": "{mat_dim[0][d][dd]}, {mat_dim[1][d][dd]}, {mat_dim[0][d][dd]}",
+    "columns": "{mat_dim[1][d][dd]}, 1, 1",
+    "types": "{mat_types[t]}, {mat_types[t]}, {mat_types[t]}",
+    "args": {
+        "mat_type": ['F', 'D'],
+        "mat_types": float_t,
+        "mat_dim": (((2, 3, 4, 3), (2, 3, 4, 4)),
+                    ((3, 3, 3, 2), (4, 4, 4, 2))),
     },
 }
 memset_formats = {
@@ -320,17 +388,14 @@ memset_formats = {
     "opname": "memset{suff_memset[oo]}",
     "format": "{memset_fmt[oo]}",
     "widths": "{memset_widths[oo]}",
+    "columns": "{memset_columns[oo]}",
     "types": "{memset_types[oo]}",
     "args": {
         "op_memset": ["i", "p", "pi", None],
         "suff_memset": ["", "p", "p", None],
         "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
-        "memset_widths": [
-            "1, 0, -1",
-            "1, 1, 1",
-            "1, 0, 1",
-            None,
-        ],
+        "memset_widths": memset_widths,
+        "memset_columns": memset_columns,
         "memset_types": [
             "ev_int, ev_short, ev_void",
             "ev_int, ev_int, ev_ptr",
@@ -344,17 +409,14 @@ move_formats = {
     "opname": "move{suff_move[oo]}",
     "format": "{move_fmt[oo]}",
     "widths": "{move_widths[oo]}",
+    "columns": "{move_columns[oo]}",
     "types": "{move_types[oo]}",
     "args": {
         "op_move": ["i", "p", "pi", None],
         "suff_move": ["", "p", "p", None],
         "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
-        "move_widths": [
-            "-1, 0, -1",
-            "1, 1, 1",
-            "1, 0, 1",
-            None,
-        ],
+        "move_widths": move_widths,
+        "move_columns": move_columns,
         "move_types": [
             "ev_void, ev_short, ev_void",
             "ev_ptr, ev_int, ev_ptr",
@@ -368,7 +430,22 @@ noop_formats = {
     "opname": "nop",
     "format": "there were plums...",
     "widths": "0, 0, 0",
+    "columns": "0, 0, 0",
     "types": "ev_invalid, ev_invalid, ev_invalid",
+}
+outer_formats = {
+    "opcode": "OP_OUTER_{mat_dim[1][d][dd]}{mat_dim[0][d][dd]}_{mat_type[t]}",
+    "mnemonic": "outer",
+    "opname": "outer",
+    "widths": "{mat_dim[0][d][dd]}, {mat_dim[1][d][dd]}, {mat_dim[0][d][dd]}",
+    "columns": "1, 1, {mat_dim[1][d][dd]}",
+    "types": "{mat_types[t]}, {mat_types[t]}, {mat_types[t]}",
+    "args": {
+        "mat_type": ['F', 'D'],
+        "mat_types": float_t,
+        "mat_dim": (((2, 3, 4, 3), (2, 3, 4, 4)),
+                    ((3, 3, 3, 2), (4, 4, 4, 2))),
+    },
 }
 push_formats = {
     "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
@@ -376,6 +453,7 @@ push_formats = {
     "opname": "push",
     "format": "{push_fmt[mm]}",
     "widths": "{ss+1}, 0, 0",
+    "columns": "1, 0, 0",
     "types": "{push_types[mm]}, ev_invalid",
     "args": {
         "op_mode": address_mode,
@@ -389,6 +467,7 @@ pop_formats = {
     "opname": "pop",
     "format": "{pop_fmt[mm]}",
     "widths": "{ss+1}, 0, 0",
+    "columns": "1, 0, 0",
     "types": "{pop_types[mm]}, ev_invalid",
     "args": {
         "op_mode": address_mode,
@@ -401,6 +480,7 @@ scale_formats = {
     "mnemonic": "scale.{scale_type[t]}",
     "opname": "scale",
     "widths": "{ss+1}, 1, {ss+1}",
+    "columns": "1, 1, 1",
     "types": "{scale_types[t]}, {scale_types[t]}, {scale_types[t]}",
     "args": {
         "scale_type": ['F', 'D'],
@@ -408,18 +488,22 @@ scale_formats = {
     },
 }
 shiftops_formats = {
-    "opcode": "OP_{mn_shift[u*2+r].upper()}_{shift_type[u*2+t]}_{ss+1}",
-    "mnemonic": "{mn_shift[u*2+r]}.{shift_type[u*2+t]}",
+    "opcode": "OP_{mn_shift[u*2+r].upper()}_{shift_type[t][u*2+r]}_{ss+1}",
+    "mnemonic": "{mn_shift[u*2+r]}.{shift_type[t][u*2+r]}",
     "opname": "{op_shift[u*2+r]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "{shift_types[t][u]}, {shift_types[t][0]}, {shift_types[t][u]}",
+    "columns": "1, 1, 1",
+    "types": "{shift_types[t][u*2+r]}, {shift_types[t][0]}, {shift_types[t][u*2+r]}",
     "args": {
         "mn_shift": ["shl", "asr", "shl", "shr"],
         "op_shift": ["shl", "shr", "shl", "shr"],
-        "shift_type": ['I', 'L', 'u', 'U'],
+        "shift_type": [
+            ['I', 'I', 'u', 'u'],
+            ['L', 'L', 'U', 'U'],
+        ],
         "shift_types": [
-            ["ev_int", "ev_uint"],
-            ["ev_long", "ev_ulong"],
+            ["ev_int", "ev_int", "ev_uint", "ev_uint"],
+            ["ev_long", "ev_long", "ev_ulong", "ev_ulong"],
         ],
     },
 }
@@ -429,6 +513,7 @@ statef_formats = {
     "opname": "state",
     "format": "{state_fmt[c]}",
     "widths": "1, 1, {c}",
+    "columns": "1, 1, {c}",
     "types": "ev_float, ev_func, {state_types[c]}",
     "args": {
         "state": ["ft", "ftt"],
@@ -442,6 +527,7 @@ stated_formats = {
     "opname": "state",
     "format": "{state_fmt[c]}",
     "widths": "1, 1, {c}",
+    "columns": "1, 1, 1",
     "types": "ev_int, ev_func, {state_types[c]}",
     "args": {
         "state": ["dt", "dtt"],
@@ -455,6 +541,7 @@ store_formats = {
     "opname": "{store_op[mm]}",
     "format": "%Gc, {store_fmt[mm]}",
     "widths": "{store_widths[ss][mm]}, {ss+1}",
+    "columns": "{store_columns[ss][mm]}, -1",
     "types": "{store_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -462,6 +549,7 @@ store_formats = {
         "store_op": ["assign", "store", "store", "store"],
         "store_types": address_types,
         "store_widths": address_widths,
+        "store_columns": address_columns,
     },
 }
 store64_formats = {
@@ -470,6 +558,7 @@ store64_formats = {
     "opname": "{store_op[mm]}64",
     "format": "%Gc, {store_fmt[mm]}",
     "widths": "{store_widths[s+2][mm]}, {s+3}",
+    "columns": "{store_columns[s+2][mm]}, -1",
     "types": "{store_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
@@ -477,6 +566,7 @@ store64_formats = {
         "store_op": ["assign", "store", "store", "store"],
         "store_types": address_types,
         "store_widths": address_widths,
+        "store_columns": address_columns,
     },
 }
 string_formats = {
@@ -485,6 +575,7 @@ string_formats = {
     "opname": "{op_str[o*4+oo]}",
     "format": "{str_fmt[o*4+oo]}",
     "widths": "1, {(o*4+oo)<7 and 1 or 0}, 1",
+    "columns": "1, {(o*4+oo)<7 and 1 or 0}, 1",
     "types": "{str_types[o*4+oo]}",
     "args": {
         "op_str": ["eq", "lt", "gt", "add", "cmp", "ge", "le", "not"],
@@ -515,7 +606,8 @@ swizzle_formats = {
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga.%Sb %gc",
-    "widths": "4, 0, 4",
+    "widths": "4, 1, 4",
+    "columns": "1, 1, 1",
     "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
@@ -527,7 +619,8 @@ swizzle2_formats = {
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga.%Sb %gc",
-    "widths": "{s+2}, 0, {s+2}",
+    "widths": "{s+2}, 1, {s+2}",
+    "columns": "1, 1, 1",
     "types": "{swizzle_types[t]}, ev_short, {swizzle_types[t]}",
     "args": {
         "swiz_type": ['F', 'D'],
@@ -540,6 +633,7 @@ wedge2_formats = {
     "opname": "wedge",
     "format": "%Ga, %Gb, %gc",
     "widths": "2, 2, 1",
+    "columns": "1, 1, 1",
     "types": "{wedge_types[t]}",
     "args": {
         "wedge_type": ['F', 'D'],
@@ -550,7 +644,8 @@ return_formats = {
     "opcode": "OP_RETURN",
     "mnemonic": "return",
     "opname": "return",
-    "widths": "-1, -1, 0",    # width specified by st->c
+    "widths": "-1, -1, -1",    # width specified by st->c
+    "columns": "-1, -1, -1",
     "format": "%Mc5",
     "types": "ev_void, ev_void, ev_void",
 }
@@ -559,6 +654,7 @@ udivops_formats = {
     "mnemonic": "{op_udiv[o]}.{udiv_type[t]}",
     "opname": "{op_udiv[o]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "columns": "1, 1, 1",
     "types": "{udiv_types[t]}, {udiv_types[t]}, {udiv_types[t]}",
     "args": {
         "op_udiv": ["div", "rem"],
@@ -566,11 +662,26 @@ udivops_formats = {
         "udiv_types": ["ev_uint", "ev_ulong"],
     },
 }
+vecmat_formats = {
+    "opcode": "OP_VMMUL_{mat_dim[1][d][dd]}{mat_dim[0][d][dd]}_{mat_type[t]}",
+    "mnemonic": "mul",
+    "opname": "mul",
+    "widths": "{mat_dim[0][d][dd]}, {mat_dim[1][d][dd]}, 0",
+    "columns": "1, {mat_dim[1][d][dd]}, 1",
+    "types": "{mat_types[t]}, {mat_types[t]}, {mat_types[t]}",
+    "args": {
+        "mat_type": ['F', 'D'],
+        "mat_types": float_t,
+        "mat_dim": (((2, 3, 4, 3), (2, 3, 4, 4)),
+                    ((3, 3, 3, 2), (4, 4, 4, 2))),
+    },
+}
 vecops_formats = {
     "opcode": "OP_{op_vop[ooo].upper()}_{vop_type[t]}",
     "mnemonic": "{op_vop[ooo]}.{vop_type[t]}",
     "opname": "{op_vop[ooo]}",
     "widths": "{vec_widths[ooo]}",
+    "columns": "1, 1, 1",
     "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
         "op_vop": ["cross", "cdot", "vdot", "qdot",
@@ -594,6 +705,7 @@ vecops2_formats = {
     "mnemonic": "{op_vop[d]}.{vop_type[t]}",
     "opname": "{op_vop[d]}",
     "widths": "4, 4, 4",
+    "columns": "1, 1, 1",
     "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
         "op_vop": ["qv4mul", "v4qmul"],
@@ -606,7 +718,8 @@ with_formats = {
     "mnemonic": "with",
     "opname": "with",
     "format": "%sa, %sb, %sc",
-    "widths": "0, -1, 0",
+    "widths": "1, -1, 1",
+    "columns": "1, -1, 1",
     "types": "ev_short, ev_void, ev_short",
 }
 
@@ -628,9 +741,12 @@ group_map = {
     "load":     load_formats,
     "load64":   load64_formats,
     "mathops":  mathops_formats,
+    "matmul":   matmul_formats,
+    "matvec":   matvec_formats,
     "memset":   memset_formats,
     "move":     move_formats,
     "noop":     noop_formats,
+    "outer":    outer_formats,
     "push":     push_formats,
     "pop":      pop_formats,
     "scale":    scale_formats,
@@ -644,6 +760,7 @@ group_map = {
     "swizzle2": swizzle2_formats,
     "return":   return_formats,
     "udivops":  udivops_formats,
+    "vecmat":   vecmat_formats,
     "vecops":   vecops_formats,
     "vecops2":  vecops2_formats,
     "wedge2":   wedge2_formats,
@@ -710,12 +827,9 @@ def process_opcode(opcode, group):
             fmt = eval(f'''f"{gm['format']}"''', params)
         else:
             fmt = None
-    if fmt is None:
-        fmt = "0"
-    else:
-        fmt = f'"{fmt}"'
-    inst["fmt"] = fmt
+    inst["fmt"] = "0" if fmt is None else f'"{fmt}"'
     inst["wd"] = "{%s}" % eval(f'''f"{gm['widths']}"''', params)
+    inst["cl"] = "{%s}" % eval(f'''f"{gm['columns']}"''', params)
     inst["ty"] = "{%s}" % eval(f'''f"{gm['types']}"''', params)
 
 import sys
@@ -759,6 +873,7 @@ elif sys.argv[1] == "table":
                        '\\t.opname = {on},\\n'
                        '\\t.mnemonic = {mn},\\n'
                        '\\t.widths = {wd},\\n'
+                       '\\t.columns = {cl},\\n'
                        '\\t.types = {ty},\\n'
                        '\\t.fmt = {fmt},\\n'
                        '}},"', group))

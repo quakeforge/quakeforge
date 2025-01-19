@@ -49,6 +49,17 @@
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/strpool.h"
 
+//This is a bit of a hack, but currently, the debug view functions do not
+//try to do anything with field/pointer/function types other than determine
+//that the def is one of those types, but it allows globals dumping to work
+//with progs that don't have qfcc's type encodings, in particular, anything
+//compiled using qcc.
+#define EV_TYPE(t) { .meta = ty_basic, .type = ev_##t },
+static qfot_type_t basic_types[] = {
+#include "QF/progs/pr_type_names.h"
+	{ .meta = ty_basic, .type = ev_invalid },
+};
+
 static int
 cmp (const void *_a, const void *_b)
 {
@@ -84,6 +95,16 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 		}
 		dstring_clearstr (value_dstr);
 		qfot_type_t *ty = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+		if (!ty) {
+			//FIXME Rather iffy for any progs with extended types, but better
+			//than segfaulting
+			etype_t t = def->type & ~DEF_SAVEGLOBAL;
+			if (t < ev_invalid) {
+				ty = &basic_types[t];
+			} else {
+				ty = &basic_types[ev_invalid];
+			}
+		}
 		comment = PR_Debug_ValueString (pr, offset, ty, value_dstr);
 	}
 	printf ("%*s %x:%d %d %s %s:%x %s\n", indent * 12, "",
@@ -446,6 +467,7 @@ static const char *ty_meta_names[] = {
 	"ty_alias",
 	"ty_handle",
 	"ty_algebra",
+	"ty_bool",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 const int vector_types =  (1 << ev_float)
@@ -497,6 +519,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			break;
 		}
 		switch ((ty_meta_e) type->meta) {
+			case ty_bool:
 			case ty_basic:
 				printf (" %-10s", get_ev_type_name (type->type));
 				if (type->type == ev_func) {
@@ -509,9 +532,13 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				} else if (type->type == ev_ptr
 						   || type->type == ev_field) {
 					printf (" %4x", type->fldptr.aux_type);
-				} else if ((1 << type->type) & vector_types
-						   && type->basic.width > 1) {
-					printf ("[%d]", type->basic.width);
+				} else if ((1 << type->type) & vector_types) {
+					if (type->basic.columns > 1) {
+						printf ("[%d]", type->basic.columns);
+					}
+					if (type->basic.width > 1) {
+						printf ("[%d]", type->basic.width);
+					}
 				}
 				printf ("\n");
 				break;
@@ -528,7 +555,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				break;
 			case ty_array:
 				printf (" %-5x %d %d\n", type->array.type,
-						type->array.base, type->array.size);
+						type->array.base, type->array.count);
 				break;
 			case ty_class:
 				printf (" %-5x\n", type->class);

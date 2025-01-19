@@ -1,4 +1,3 @@
-%{
 /*
 	qp-lex.l
 
@@ -28,6 +27,14 @@
 		Boston, MA  02111-1307, USA
 
 */
+%option bison-locations
+%option bison-bridge
+%option reentrant
+%option prefix="qp_yy"
+%option noyywrap
+%option debug
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -57,19 +64,28 @@
 #define YY_NO_UNPUT	// debian flex
 #define YY_NO_YYINPUT
 #define YY_NO_YYUNPUT
-#define YY_DECL int yylex YY_PROTO(( void ))
-YY_DECL;
 
-int yyget_lineno (void) __attribute__((pure));
-int yyget_leng (void) __attribute__((pure));
-int yywrap (void) __attribute__((const));
-char *yyget_text (void) __attribute__((pure));
-int yyget_debug (void) __attribute__((pure));
-FILE *yyget_in (void) __attribute__((pure));
-FILE *yyget_out (void) __attribute__((pure));
 
-static int keyword_or_id (const char *token);
+#define YYSTYPE QP_YYSTYPE
+#define YYLTYPE QP_YYLTYPE
+
+void *qp_yyget_extra (yyscan_t yyscanner) __attribute__((pure));
+int yyget_lineno (yyscan_t yyscanner) __attribute__((pure));
+int yyget_column (yyscan_t yyscanner) __attribute__((pure));
+YYSTYPE *yyget_lval (yyscan_t yyscanner) __attribute__((pure));
+YYLTYPE *yyget_lloc (yyscan_t yyscanner) __attribute__((pure));
+int yyget_leng (yyscan_t yyscanner) __attribute__((pure));
+char *yyget_text (yyscan_t yyscanner) __attribute__((pure));
+int yyget_debug (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_in (yyscan_t yyscanner) __attribute__((pure));
+FILE *yyget_out (yyscan_t yyscanner) __attribute__((pure));
+
+static int keyword_or_id (YYSTYPE *lval, const char *token, rua_ctx_t *ctx);
 static int convert_relop (const char *relop) __attribute__((pure));
+static void update_loc (rua_loc_t *loc, size_t textlen);
+static void next_line (rua_loc_t *loc, yyscan_t scanner);
+
+#define YY_USER_ACTION update_loc (yylloc, yyleng);
 
 %}
 
@@ -92,6 +108,7 @@ FRAMEID		{ID}(\.{ID})*
 %x			GRAB_FRAME GRAB_OTHER COMMENT
 
 %%
+					auto ctx = (rua_ctx_t *) qp_yyget_extra (yyscanner);
 					grab_frame = GRAB_FRAME;
 					grab_other = GRAB_OTHER;
 
@@ -101,13 +118,13 @@ FRAMEID		{ID}(\.{ID})*
 "(*"					{ BEGIN (COMMENT); }
 <COMMENT>"(*"		{ warning (0, "nested (* in comment"); }
 <COMMENT>"*)"		{ BEGIN (INITIAL); }
-<COMMENT>\r*\n		{ pr.source_line++; }
+<COMMENT>\r*\n		{ next_line (yylloc, yyscanner); }
 <COMMENT>.			/* nothing to do, with people like you */
 <COMMENT><<EOF>>	{ error (0, "EOF in comment"); return 0; }
 "//".*				/* nothing to do, with people like you */
 
-^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$		{ line_info (yytext + 1); }
-^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ line_info (yytext + 1); }
+^#{s}+{D}+{s}+\"(\.|[^"\n])*\".*$		{ /*line_info (yytext + 1);FIXME*/ }
+^#line{s}+{D}+{s}+\"(\.|[^"\n])*\".*$	{ /*line_info (yytext + 1);FIXME*/ }
 
 {INTEGER}			{
 						int         i;
@@ -116,21 +133,21 @@ FRAMEID		{ID}(\.{ID})*
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						qp_yylval.expr = new_int_expr (i);
+						yylval->expr = new_int_expr (i, false);
 						return VALUE;
 					}
 
 {FLOAT}				{
 						float       f = strtof (yytext, 0);
-						qp_yylval.expr = new_float_expr (f);
+						yylval->expr = new_float_expr (f, false);
 						return VALUE;
 					}
 
-{ID}				return keyword_or_id (yytext);
+{ID}				return keyword_or_id (yylval, yytext, ctx);
 
 \"(\\.|[^"\\])*\"	{
 						const char *s = make_string (yytext, 0);
-						qp_yylval.expr = new_string_expr (s);
+						yylval->expr = new_string_expr (s);
 						return VALUE;
 					}
 
@@ -138,7 +155,7 @@ FRAMEID		{ID}(\.{ID})*
 						vec3_t      v;
 						sscanf (yytext, "' %f %f %f '",
 								&v[0], &v[1], &v[2]);
-						qp_yylval.expr = new_vector_expr (v);
+						yylval->expr = new_vector_expr (v);
 						return VALUE;
 					}
 
@@ -146,20 +163,20 @@ FRAMEID		{ID}(\.{ID})*
 						quat_t      q;
 						sscanf (yytext, "' %f %f %f %f'",
 								&q[0], &q[1], &q[2], &q[3]);
-						qp_yylval.expr = new_quaternion_expr (q);
+						yylval->expr = new_quaternion_expr (q);
 						return VALUE;
 					}
 
 {RELOP}				{
-						qp_yylval.op = convert_relop (yytext);
+						yylval->op = convert_relop (yytext);
 						return RELOP;
 					}
 {ADDOP}				{
-						qp_yylval.op = yytext[0];
+						yylval->op = yytext[0];
 						return ADDOP;
 					}
 {MULOP}				{
-						qp_yylval.op = yytext[0];
+						yylval->op = yytext[0];
 						return MULOP;
 					}
 
@@ -173,7 +190,7 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qp_yylval.expr = new_int_expr (ret);
+							yylval->expr = new_int_expr (ret, false);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -184,7 +201,7 @@ FRAMEID		{ID}(\.{ID})*
 <GRAB_OTHER>[^\r\n]*	/* skip */
 
 <*>\r*\n			{
-						pr.source_line++;
+						next_line (yylloc, yyscanner);
 						BEGIN (INITIAL);
 					}
 
@@ -194,46 +211,34 @@ FRAMEID		{ID}(\.{ID})*
 
 %%
 
-int
-yywrap (void)
-{
-	return 1;
-}
-
-typedef struct {
-	const char *name;
-	int         value;
-	type_t     *type;
-} keyword_t;
-
 static keyword_t keywords[] = {
-	{"real",		TYPE,		&type_float},
-	{"string",		TYPE,		&type_string},
-	{"vector",		TYPE,		&type_vector},
-	{"entity",		TYPE,		&type_entity},
-	{"quaternion",	TYPE,		&type_quaternion},
-	{"integer",		TYPE,		&type_int},
+	{"real",		TYPE,		.spec = { .type = &type_float } },
+	{"string",		TYPE,		.spec = { .type = &type_string } },
+	{"vector",		TYPE,		.spec = { .type = &type_vector } },
+	{"entity",		TYPE,		.spec = { .type = &type_entity } },
+	{"quaternion",	TYPE,		.spec = { .type = &type_quaternion } },
+	{"integer",		TYPE,		.spec = { .type = &type_int } },
 
-	{"program",		PROGRAM,	0},
-	{"var",			VAR,		0},
-	{"array",		ARRAY,		0},
-	{"of",			OF,			0},
-	{"function",	FUNCTION,	0},
-	{"procedure",	PROCEDURE,	0},
-	{"begin",		PBEGIN,		0},
-	{"end",			END,		0},
-	{"if",			IF,			0},
-	{"then",		THEN,		0},
-	{"else",		ELSE,		0},
-	{"while",		WHILE,		0},
-	{"do",			DO,			0},
-	{"or",			ADDOP,		0},
-	{"div",			MULOP,		0},
-	{"mod",			MULOP,		0},
-	{"and",			MULOP,		0},
-	{"not",			NOT,		0},
+	{"program",		PROGRAM,	.spec = {} },
+	{"var",			VAR,		.spec = {} },
+	{"array",		ARRAY,		.spec = {} },
+	{"of",			OF,			.spec = {} },
+	{"function",	FUNCTION,	.spec = {} },
+	{"procedure",	PROCEDURE,	.spec = {} },
+	{"begin",		PBEGIN,		.spec = {} },
+	{"end",			END,		.spec = {} },
+	{"if",			IF,			.spec = {} },
+	{"then",		THEN,		.spec = {} },
+	{"else",		ELSE,		.spec = {} },
+	{"while",		WHILE,		.spec = {} },
+	{"do",			DO,			.spec = {} },
+	{"or",			ADDOP,		.spec = {} },
+	{"div",			MULOP,		.spec = {} },
+	{"mod",			MULOP,		.spec = {} },
+	{"and",			MULOP,		.spec = {} },
+	{"not",			NOT,		.spec = {} },
 
-	{"return",		RETURN,		0},
+	{"return",		RETURN,		.spec = {} },
 };
 
 static const char *
@@ -243,7 +248,7 @@ keyword_get_key (const void *kw, void *unused)
 }
 
 static int
-keyword_or_id (const char *token)
+keyword_or_id (YYSTYPE *lval, const char *token, rua_ctx_t *ctx)
 {
 	static hashtab_t *keyword_tab;
 	keyword_t  *keyword;
@@ -258,9 +263,9 @@ keyword_or_id (const char *token)
 	keyword = Hash_Find (keyword_tab, token);
 	if (keyword) {
 		if (keyword->value == ADDOP || keyword->value == MULOP) {
-			qp_yylval.op = token[0];
+			lval->op = token[0];
 		} else {
-			qp_yylval.type = keyword->type;
+			lval->type = keyword->spec.type;
 		}
 		return keyword->value;
 	}
@@ -268,10 +273,10 @@ keyword_or_id (const char *token)
 	if (!sym)
 		sym = new_symbol (token);
 	if (sym->sy_type == sy_type) {
-		qp_yylval.type = sym->type;
+		lval->type = sym->type;
 		return TYPE_NAME;
 	}
-	qp_yylval.symbol = sym;
+	lval->symbol = sym;
 	return ID;
 }
 
@@ -301,4 +306,48 @@ convert_relop (const char *relop)
 			break;
 	}
 	internal_error (0, "bad relop %s", relop);
+}
+
+static int
+qp_yyparse (FILE *in, rua_ctx_t *ctx)
+{
+	int         status;
+	qp_yypstate *ps = qp_yypstate_new ();
+
+	yylex_init_extra (ctx, &ctx->scanner);
+	yyset_in (in, ctx->scanner);
+	YYLTYPE lloc = { 1, 1, 1, 1 };
+	do {
+		YYSTYPE lval;
+		int token = yylex (&lval, &lloc, ctx->scanner);
+		status = qp_yypush_parse (ps, token, &lval, &lloc, ctx);
+	} while (status == YYPUSH_MORE);
+
+	yylex_destroy (ctx->scanner);
+	ctx->scanner = nullptr;
+	qp_yypstate_delete (ps);
+	return status;
+}
+
+language_t lang_pascal = {
+	.short_circuit = true,
+	.parse = qp_yyparse,
+};
+
+static void
+update_loc (rua_loc_t *loc, size_t textlen)
+{
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	// \n handling rules will take care of the column and line
+	loc->last_column += textlen;
+}
+
+static void
+next_line (rua_loc_t *loc, yyscan_t scanner)
+{
+	loc->line = loc->last_line;
+	loc->column = loc->last_column;
+	loc->last_column = 1;
+	loc->last_line++;
 }

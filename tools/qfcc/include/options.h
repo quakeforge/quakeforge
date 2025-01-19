@@ -43,6 +43,8 @@ typedef struct {
 	bool        vector_calls;		// use floats instead of vectors for constant function args
 	bool        local_merging;		// merge function locals into one block
 	unsigned    progsversion;		// Progs version to generate code for
+	int         max_params;			// maximum param count (-1 = unlimited)
+	bool        spirv;				// Target spir-v instead of Quake
 	bool        vector_components;	// add *_[xyz] symbols for vectors
 	bool        ifstring;			// expand if (str) to if (str != "")
 	bool        const_initializers;	// initialied globals are constant
@@ -50,8 +52,13 @@ typedef struct {
 	bool        commute_float_add;	// allow fp addition to commute
 	bool        commute_float_mul;	// allow fp multiplication to commute
 	bool        commute_float_dot;	// allow fp dot product to commute
+	bool        anticom_float_cross;// allow fp cross product to anti-commute
+	bool        anticom_float_sub;	// allow fp subtraction to anti-commute
 	bool        assoc_float_add;	// allow fp addition to be associative
 	bool        assoc_float_mul;	// allow fp multiplication to be associative
+	bool        no_double;			// double fp type is not supported
+	bool        no_int;				// int type is not supported
+	bool        no_vararg;			// variadic functions (...) not supported
 
 	bool        help;
 } code_options_t;
@@ -135,7 +142,10 @@ typedef struct {
 	bool        compile;			// serparate compilation mode
 	bool        partial_link;		// partial linking
 	bool        preprocess_only;	// run only cpp, don't compile
+	bool        preprocess_output;	// emit preprocessor output
+	bool        dependencies;		// generate dependency rules
 	bool        gzip;				// compress qfo files when writing
+	const char *output_path;
 	const char *output_file;
 	const char *debug_file;
 } options_t;

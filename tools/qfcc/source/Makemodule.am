@@ -31,14 +31,32 @@ qfcc_SOURCES = \
 	tools/qfcc/source/expr_binary.c \
 	tools/qfcc/source/expr_bool.c \
 	tools/qfcc/source/expr_cast.c \
+	tools/qfcc/source/expr_call.c \
 	tools/qfcc/source/expr_compound.c \
+	tools/qfcc/source/expr_construct.c \
 	tools/qfcc/source/expr_dag.c \
 	tools/qfcc/source/expr_obj.c \
 	tools/qfcc/source/expr_optimize.c \
+	tools/qfcc/source/expr_process.c \
+	tools/qfcc/source/expr_type.c \
+	tools/qfcc/source/expr_unary.c \
 	tools/qfcc/source/expr_vector.c \
 	tools/qfcc/source/evaluate.c \
+	tools/qfcc/source/evaluate_type.c \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
+	tools/qfcc/source/glsl-attribute.c \
+	tools/qfcc/source/glsl-block.c \
+	tools/qfcc/source/glsl-builtins.c \
+	tools/qfcc/source/glsl-declaration.c \
+	tools/qfcc/source/glsl-layout.c \
+	tools/qfcc/source/glsl-parse.y \
+	tools/qfcc/source/glsl-sub_comp.c \
+	tools/qfcc/source/glsl-sub_frag.c \
+	tools/qfcc/source/glsl-sub_geom.c \
+	tools/qfcc/source/glsl-sub_tesc.c \
+	tools/qfcc/source/glsl-sub_tese.c \
+	tools/qfcc/source/glsl-sub_vert.c \
 	tools/qfcc/source/grab.c \
 	tools/qfcc/source/idstuff.c \
 	tools/qfcc/source/linker.c \
@@ -48,21 +66,53 @@ qfcc_SOURCES = \
 	tools/qfcc/source/opcodes.c \
 	tools/qfcc/source/options.c \
 	tools/qfcc/source/pragma.c \
+	tools/qfcc/source/pre-parse.y \
 	tools/qfcc/source/qc-lex.l \
 	tools/qfcc/source/qc-parse.y \
 	tools/qfcc/source/qfcc.c \
 	tools/qfcc/source/qp-lex.l \
 	tools/qfcc/source/qp-parse.y  \
 	tools/qfcc/source/reloc.c \
+	tools/qfcc/source/rua-declaration.c \
 	tools/qfcc/source/shared.c \
+	tools/qfcc/source/spirv_grammar.c \
 	tools/qfcc/source/statements.c \
 	tools/qfcc/source/strpool.c \
 	tools/qfcc/source/struct.c \
 	tools/qfcc/source/switch.c \
 	tools/qfcc/source/symtab.c \
+	tools/qfcc/source/target.c \
+	tools/qfcc/source/target_rua.c \
+	tools/qfcc/source/target_spirv.c \
+	tools/qfcc/source/target_v6.c \
 	tools/qfcc/source/type.c \
 	tools/qfcc/source/value.c \
 	$(tracy_src)
+
+qfcc_source = $(top_builddir)/tools/qfcc/source
+
+embed_py = $(srcdir)/tools/qfcc/source/embed.py
+
+spirv_core_grammar_json = spirv/unified1/spirv.core.grammar.json
+spirv_core_grammar_jinc = $(qfcc_source)/spirv.core.grammar.jinc
+$(spirv_core_grammar_jinc): $(embed_py)
+	$(V_PY)$(PYTHON) $(embed_py) $(COMPILE) \
+		-o $@.t $(spirv_core_grammar_json) && \
+	$(am__mv) $@.t $@
+
+extinst_glsl_std_450_grammar_json = \
+	spirv/unified1/extinst.glsl.std.450.grammar.json
+extinst_glsl_std_450_grammar_jinc = \
+	$(qfcc_source)/extinst.glsl.std.450.grammar.jinc
+$(extinst_glsl_std_450_grammar_jinc): $(embed_py)
+	$(V_PY)$(PYTHON) $(embed_py) $(COMPILE) \
+		-o $@.t $(extinst_glsl_std_450_grammar_json) && \
+	$(am__mv) $@.t $@
+
+tools/qfcc/source/spirv_grammar.$(OBJEXT): \
+	tools/qfcc/source/spirv_grammar.c \
+	$(spirv_core_grammar_jinc) \
+	$(extinst_glsl_std_450_grammar_jinc)
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
@@ -83,6 +133,10 @@ qfprogs_LDADD=	$(QFCC_LIBS)
 qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 
 BUILT_SOURCES += \
+	tools/qfcc/source/glsl-parse.c \
+	tools/qfcc/source/glsl-parse.h \
+	tools/qfcc/source/pre-parse.c \
+	tools/qfcc/source/pre-parse.h \
 	tools/qfcc/source/qc-parse.c \
 	tools/qfcc/source/qc-parse.h \
 	tools/qfcc/source/qc-lex.c \
@@ -90,14 +144,18 @@ BUILT_SOURCES += \
 	tools/qfcc/source/qp-parse.h \
 	tools/qfcc/source/qp-lex.c
 
+tools/qfcc/source/glsl-parse.c: tools/qfcc/source/glsl-parse.y
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
+tools/qfcc/source/pre-parse.c: tools/qfcc/source/pre-parse.y
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qc-parse.c: tools/qfcc/source/qc-parse.y
-	$(AM_V_YACC)$(YACCCOMPILE) -Dapi.prefix={qc_yy} $< -o $@
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qc-lex.c: tools/qfcc/source/qc-lex.l
-	$(AM_V_LEX)$(LEXCOMPILE) -Pqc_yy -o$@ $<
+	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 tools/qfcc/source/qp-parse.c: tools/qfcc/source/qp-parse.y
-	$(AM_V_YACC)$(YACCCOMPILE) -Dapi.prefix={qp_yy} $< -o $@
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
 tools/qfcc/source/qp-lex.c: tools/qfcc/source/qp-lex.l
-	$(AM_V_LEX)$(LEXCOMPILE) -Pqp_yy -o$@ $<
+	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 
 EXTRA_DIST += \
 	tools/qfcc/source/qfpreqcc
