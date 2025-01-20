@@ -485,6 +485,12 @@ unary_expr (int op, const expr_t *e)
 		// unary + is a no-op
 		return e;
 	}
+	if (op == '=') {
+		// unary = is a marker for special handling by the back-end
+		auto new = new_unary_expr (op, e);
+		new->expr.type = get_type (e);
+		return edag_add_expr (new);
+	}
 	if (is_algebra (t)) {
 		unary_type = algebra_u;
 	} else if (is_enum (t)) {

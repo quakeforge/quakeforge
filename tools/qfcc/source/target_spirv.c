@@ -1080,6 +1080,14 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 	if (e->expr.op == 'C') {
 		return spirv_cast (e, ctx);
 	}
+	if (e->expr.op == '=') {
+		auto val = e->expr.e1;
+		if (!is_integral_val (val)) {
+			error (val, "not a constant integer");
+			return 0;
+		}
+		return expr_integral (val);
+	}
 	auto op_name = convert_op (e->expr.op);
 	if (!op_name) {
 		if (e->expr.op > 32 && e->expr.op < 127) {

@@ -2132,6 +2132,7 @@ unary_expr
 	| '~' cast_expr %prec UNARY	{ $$ = new_unary_expr ('~', $2); }
 	| '&' cast_expr %prec UNARY	{ $$ = new_unary_expr ('&', $2); }
 	| '*' cast_expr %prec UNARY	{ $$ = new_unary_expr ('.', $2); }
+	| '=' cast_expr %prec UNARY { $$ = new_unary_expr ('=', $2); }
 	| SIZEOF unary_expr	%prec UNARY	{ $$ = new_unary_expr ('S', $2); }
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
