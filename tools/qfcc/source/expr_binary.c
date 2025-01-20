@@ -693,8 +693,6 @@ static expr_type_t bool_ops[] = {
 	{}
 };
 
-#define countof(x) (sizeof(x)/sizeof(x[0]))
-
 static expr_type_t *expr_types[] = {
 	[QC_EQ] = equality_ops,
 	[QC_NE] = equality_ops,

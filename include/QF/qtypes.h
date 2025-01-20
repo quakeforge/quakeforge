@@ -42,6 +42,9 @@
 # undef msg_t
 #endif
 
+#undef countof
+#define countof(x) (sizeof(x)/sizeof(x[0]))
+
 #undef field_offset
 #define field_offset(type,field) ((size_t)&(((type *)0)->field))
 
