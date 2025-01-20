@@ -3278,7 +3278,6 @@ rua_init (rua_ctx_t *ctx)
 		static module_t module;		//FIXME probably not what I want
 		pr.module = &module;
 
-		spirv_add_capability (pr.module, SpvCapabilityShader);
 		//FIXME unhardcode
 		spirv_add_extension (pr.module, "SPV_KHR_multiview");
 		spirv_add_extinst_import (pr.module, "GLSL.std.450");

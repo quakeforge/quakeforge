@@ -1306,6 +1306,21 @@ bool allInvocations(bool value)
 bool allInvocationsEqual(bool value)
 #endif
 
+static SpvCapability glsl_base_capabilities[] = {
+	SpvCapabilityMatrix,
+	SpvCapabilityShader,
+	SpvCapabilityInputAttachment,
+	SpvCapabilitySampled1D,
+	SpvCapabilityImage1D,
+	SpvCapabilitySampledBuffer,
+	SpvCapabilityImageBuffer,
+	SpvCapabilityImageQuery,
+	SpvCapabilityDerivativeControl,
+	SpvCapabilityStorageImageExtendedFormats,
+	SpvCapabilityDeviceGroup,
+	SpvCapabilityShaderNonUniform,
+};
+
 void
 glsl_multiview (int behavior, void *scanner)
 {
@@ -1374,6 +1389,11 @@ glsl_init_common (rua_ctx_t *ctx)
 	qc_parse_string (glsl_atomic_functions, &rua_ctx);
 	qc_parse_string (glsl_image_functions, &rua_ctx);
 	glsl_parse_vars (glsl_system_constants, ctx);
+
+	for (size_t i = 0; i < countof (glsl_base_capabilities); i++) {
+		auto cap = glsl_base_capabilities[i];
+		spirv_add_capability (pr.module, cap);
+	}
 }
 
 void
@@ -1381,8 +1401,6 @@ glsl_init_comp (rua_ctx_t *ctx)
 {
 	glsl_init_common (ctx);
 	glsl_parse_vars (glsl_compute_vars, ctx);
-
-	spirv_add_capability (pr.module, SpvCapabilityShader);
 }
 
 void
@@ -1393,7 +1411,6 @@ glsl_init_vert (rua_ctx_t *ctx)
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
-	spirv_add_capability (pr.module, SpvCapabilityShader);
 	pr.module->default_model = SpvExecutionModelVertex;
 }
 
@@ -1443,6 +1460,5 @@ glsl_init_frag (rua_ctx_t *ctx)
 	qc_parse_string (glsl_fragment_functions, &rua_ctx);
 	qc_parse_string (glsl_frag_texture_functions, &rua_ctx);
 
-	spirv_add_capability (pr.module, SpvCapabilityShader);
 	pr.module->default_model = SpvExecutionModelFragment;
 }
