@@ -1843,11 +1843,14 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	}
 	for (int i = start; i < count; i++) {
 		op_ids[i] = spirv_emit_expr (operands[i], ctx);
+		if (intr.res_type && !is_void (intr.res_type)) {
+			start = 2;
+		}
 	}
 	unsigned tid = type_id (intr.res_type, ctx);
 	unsigned id = spirv_id (ctx);
 
-	auto insn = spirv_new_insn (op, 3 + count, ctx->code_space);
+	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	memcpy (&INSN (insn, 3), op_ids, count * sizeof (op_ids[0]));
