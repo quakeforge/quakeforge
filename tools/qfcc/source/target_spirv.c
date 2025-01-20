@@ -817,6 +817,10 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 static void
 spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 {
+	if (!entrypoint->func) {
+		error (0, "entry point %s never defined", entrypoint->name);
+		return;
+	}
 
 	unsigned func_id = spirv_function (entrypoint->func, ctx);
 	int len = strlen (entrypoint->name) + 1;
@@ -2065,8 +2069,7 @@ static void
 spirv_build_code (function_t *func, const expr_t *statements)
 {
 	func->exprs = statements;
-	if (strncmp ("main", func->o_name, 4) == 0
-		&& (!func->o_name[4] || func->o_name[4] == '|')) {
+	if (strcmp ("main", func->o_name) == 0) {
 		attribute_t *mode = nullptr;
 		if (pr.module->default_model == SpvExecutionModelFragment) {
 			mode = new_attribute ("mode",
