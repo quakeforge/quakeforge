@@ -277,6 +277,27 @@ shadows_param (symbol_t *sym, symtab_t *symtab)
 	return false;
 }
 
+static bool
+init_type_ok (const type_t *dstType, const expr_t *init)
+{
+	auto init_type = get_type (init);
+	if (init->implicit || type_promotes (dstType, init_type)) {
+		return true;
+	}
+	if (is_pointer (dstType) && is_pointer (init_type)) {
+		return true;
+	}
+	if (is_math (dstType) && !is_scalar (dstType)) {
+		// vector or matrix type
+		return true;
+	}
+	if (is_integral (dstType) && is_integral (init_type)
+		&& (type_size (dstType) == type_size (init_type))) {
+		return true;
+	}
+	return false;
+}
+
 symbol_t *
 declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				expr_t *block, rua_ctx_t *ctx)
@@ -318,6 +339,21 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			if (!shadows_param (sym, symtab)) {
 				sym->type = find_type (sym->type);
 				spec.sym = sym;
+				if (init && init->type != ex_compound && !is_auto (sym->type)) {
+					auto init_type = get_type (init);
+					if (!type_same (init_type, sym->type)
+						&& type_assignable (sym->type, init_type)) {
+						if (!init_type_ok (sym->type, init)) {
+							warning (init, "initialization of %s with %s"
+									 " (use a cast)\n)",
+									 get_type_string (spec.type),
+									 get_type_string (init_type));
+						}
+						if (init->type != ex_bool) {
+							init = cast_expr (sym->type, init);
+						}
+					}
+				}
 				current_target.declare_sym (spec, init, symtab, block);
 			}
 		}
