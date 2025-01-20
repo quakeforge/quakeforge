@@ -1235,10 +1235,11 @@ expr_int (const expr_t *e)
 	if (e->type == ex_value && e->value->lltype == ev_short) {
 		return e->value->short_val;
 	}
-	if (e->type == ex_symbol && e->symbol->sy_type == sy_const
-		&& (e->symbol->type->type == ev_int
-			|| is_enum (e->symbol->type))) {
-		return e->symbol->value->int_val;
+	if (e->type == ex_symbol && e->symbol->sy_type == sy_const) {
+		auto type = e->symbol->type;
+		if (!is_long (type) && !is_ulong (type) && is_integral (type)) {
+			return e->symbol->value->int_val;
+		}
 	}
 	if (e->type == ex_symbol && e->symbol->sy_type == sy_def
 		&& e->symbol->def->constant
