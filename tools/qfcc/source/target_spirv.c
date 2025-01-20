@@ -62,6 +62,7 @@ typedef struct spirvctx_s {
 
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) label_ids;
+	struct DARRAY_TYPE (function_t *) func_queue;
 	unsigned id;
 } spirvctx_t;
 
@@ -1214,6 +1215,9 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 			error (e, "%s called but not defined", sym->name);
 			return 0;
 		}
+		if (!func->id) {
+			DARRAY_APPEND (&ctx->func_queue, func);
+		}
 		sym->id = spirv_function_ref (func, ctx);
 	} else if (sym->sy_type == sy_var) {
 		sym->id = spirv_variable (sym, ctx);
@@ -1902,6 +1906,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.decl_space = defspace_new (ds_backed),
 		.type_ids = DARRAY_STATIC_INIT (64),
 		.label_ids = DARRAY_STATIC_INIT (64),
+		.func_queue = DARRAY_STATIC_INIT (16),
 		.id = 0,
 	};
 	auto space = defspace_new (ds_backed);
@@ -1914,6 +1919,10 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 
 	for (auto ep = pr->module->entry_points; ep; ep = ep->next) {
 		spirv_EntryPoint (ep, &ctx);
+		while (ctx.func_queue.size) {
+			auto func = DARRAY_REMOVE (&ctx.func_queue);
+			spirv_function (func, &ctx);
+		}
 	}
 
 	auto mod = pr->module;
