@@ -126,7 +126,7 @@ pointer_deref (const expr_t *e)
 	scoped_src_loc (e);
 	auto new = new_unary_expr ('.', e);
 	new->expr.type = get_type (e)->fldptr.type;
-	return new;
+	return edag_add_expr (fold_constants (new));
 }
 
 static const expr_t *
@@ -512,16 +512,18 @@ unary_expr (int op, const expr_t *e)
 		*neg = *e;
 		neg->expr.e1 = e->expr.e2;
 		neg->expr.e2 = e->expr.e1;
-		return neg;
+		return edag_add_expr (neg);
 	}
 	if (unary_type->process) {
-		return unary_type->process (e);
+		e = unary_type->process (e);
+		e = fold_constants (e);
+		return edag_add_expr (e);
 	}
 	if (is_constant (e) && !unary_type->constant) {
 		internal_error (e, "unexpected expression type");
 	}
 	if (is_constant (e) && unary_type->constant) {
-		return unary_type->constant (e);
+		return edag_add_expr (unary_type->constant (e));
 	}
 	auto result_type = t;
 	if (unary_type->result_type) {
@@ -533,5 +535,5 @@ unary_expr (int op, const expr_t *e)
 	}
 	auto new = new_unary_expr (op, e);
 	new->expr.type = result_type;
-	return new;
+	return edag_add_expr (fold_constants (new));
 }
