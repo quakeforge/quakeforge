@@ -261,16 +261,16 @@ exprtype_t cexpr_uint = {
 	.get_string = uint_get_string,
 };
 
-BINOP(size_t, shl, unsigned, <<)
-BINOP(size_t, shr, unsigned, >>)
-BINOP(size_t, add, unsigned, +)
-BINOP(size_t, sub, unsigned, -)
-BINOP(size_t, mul, unsigned, *)
-BINOP(size_t, div, unsigned, /)
-BINOP(size_t, band, unsigned, &)
-BINOP(size_t, bor, unsigned, |)
-BINOP(size_t, xor, unsigned, ^)
-BINOP(size_t, rem, unsigned, %)
+BINOP(size_t, shl,  size_t, <<)
+BINOP(size_t, shr,  size_t, >>)
+BINOP(size_t, add,  size_t, +)
+BINOP(size_t, sub,  size_t, -)
+BINOP(size_t, mul,  size_t, *)
+BINOP(size_t, div,  size_t, /)
+BINOP(size_t, band, size_t, &)
+BINOP(size_t, bor,  size_t, |)
+BINOP(size_t, xor,  size_t, ^)
+BINOP(size_t, rem,  size_t, %)
 
 static void
 size_t_cast_int (const exprval_t *val1, const exprval_t *src,
@@ -292,10 +292,10 @@ size_t_cast_uint (const exprval_t *val1, const exprval_t *src,
 	*(size_t *) result->value = *(unsigned *) src->value;
 }
 
-UNOP(size_t, pos, unsigned, +)
-UNOP(size_t, neg, unsigned, -)
-UNOP(size_t, tnot, unsigned, !)
-UNOP(size_t, bnot, unsigned, ~)
+UNOP(size_t, pos,  size_t, +)
+UNOP(size_t, neg,  size_t, -)
+UNOP(size_t, tnot, size_t, !)
+UNOP(size_t, bnot, size_t, ~)
 
 static const char *
 size_t_get_string (const exprval_t *val, va_ctx_t *va_ctx)
