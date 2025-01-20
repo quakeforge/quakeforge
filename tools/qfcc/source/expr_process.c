@@ -620,6 +620,17 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 	if (is_error (false_expr)) {
 		return false_expr;
 	}
+	auto true_type = get_type (true_expr);
+	auto false_type = get_type (false_expr);
+	if (!type_same (true_type, false_type)) {
+		if (type_promotes (true_type, false_type)) {
+			false_expr = cast_expr (true_type, false_expr);
+		} else if (type_promotes (false_type, true_type)) {
+			true_expr = cast_expr (false_type, true_expr);
+		} else {
+			return error (expr, "incompatible types in conditional expression");
+		}
+	}
 	return new_cond_expr (test, true_expr, false_expr);
 }
 
