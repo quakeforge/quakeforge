@@ -273,6 +273,9 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 		current_symtab = func->locals;
 		for (int i = 0; i < extra_count; i++) {
 			extra_args[i] = expr_process (extra_args[i], ctx);
+			if (is_reference (get_type (extra_args[i]))) {
+				extra_args[i] = pointer_deref (extra_args[i]);
+			}
 		}
 		current_symtab = scope;
 		list_gather (&call->intrinsic.operands, extra_args, extra_count);
