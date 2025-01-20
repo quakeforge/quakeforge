@@ -147,6 +147,8 @@ extern exprtype_t cexpr_uint;
 extern exprtype_t cexpr_size_t;
 extern exprtype_t cexpr_float;
 extern exprtype_t cexpr_double;
+extern exprtype_t cexpr_long;
+extern exprtype_t cexpr_ulong;
 extern exprtype_t cexpr_vector;
 extern exprtype_t cexpr_quaternion;
 extern exprtype_t cexpr_exprval;

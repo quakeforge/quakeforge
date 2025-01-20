@@ -261,6 +261,142 @@ exprtype_t cexpr_uint = {
 	.get_string = uint_get_string,
 };
 
+BINOP(long, shl, int64_t, <<)
+BINOP(long, shr, int64_t, >>)
+BINOP(long, add, int64_t, +)
+BINOP(long, sub, int64_t, -)
+BINOP(long, mul, int64_t, *)
+BINOP(long, div, int64_t, /)
+BINOP(long, band, int64_t, &)
+BINOP(long, bor, int64_t, |)
+BINOP(long, xor, int64_t, ^)
+BINOP(long, rem, int64_t, %)
+
+UNOP(long, pos, int64_t, +)
+UNOP(long, neg, int64_t, -)
+UNOP(long, tnot, int64_t, !)
+UNOP(long, bnot, int64_t, ~)
+
+static void
+long_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+		 exprctx_t *ctx)
+{
+	// implement true modulo for integers:
+	//  5 mod  3 = 2
+	// -5 mod  3 = 1
+	//  5 mod -3 = -1
+	// -5 mod -3 = -2
+	int64_t     a = *(int64_t *) val1->value;
+	int64_t     b = *(int64_t *) val2->value;
+	int64_t     c = a % b;
+	// % is really remainder and so has the same sign rules
+	// as division: -5 % 3 = -2, so need to add b (3 here)
+	// if c's sign is incorrect, but only if c is non-zero
+	int64_t     mask = (a ^ b) >> 31;
+	mask &= ~(!!c + INT64_C (0)) + 1; // +0 to convert bool to int (gcc)
+	*(int64_t *) result->value = c + (mask & b);
+}
+
+static const char *
+long_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%"PRId64, *(int64_t *) val->value);
+}
+
+binop_t long_binops[] = {
+	{ SHL, &cexpr_long, &cexpr_long, long_shl },
+	{ SHR, &cexpr_long, &cexpr_long, long_shr },
+	{ '+', &cexpr_long, &cexpr_long, long_add },
+	{ '-', &cexpr_long, &cexpr_long, long_sub },
+	{ '*', &cexpr_long, &cexpr_long, long_mul },
+	{ '/', &cexpr_long, &cexpr_long, long_div },
+	{ '&', &cexpr_long, &cexpr_long, long_band },
+	{ '|', &cexpr_long, &cexpr_long, long_bor },
+	{ '^', &cexpr_long, &cexpr_long, long_xor },
+	{ '%', &cexpr_long, &cexpr_long, long_rem },
+	{ MOD, &cexpr_long, &cexpr_long, long_mod },
+	{ '=', &cexpr_plitem, &cexpr_long, cexpr_cast_plitem },
+	{}
+};
+
+unop_t long_unops[] = {
+	{ '+', &cexpr_long, long_pos },
+	{ '-', &cexpr_long, long_neg },
+	{ '!', &cexpr_long, long_tnot },
+	{ '~', &cexpr_long, long_bnot },
+	{}
+};
+
+exprtype_t cexpr_long = {
+	.name = "long",
+	.size = sizeof (int64_t),
+	.binops = long_binops,
+	.unops = long_unops,
+	.get_string = long_get_string,
+};
+
+BINOP(ulong, shl,  uint64_t, <<)
+BINOP(ulong, shr,  uint64_t, >>)
+BINOP(ulong, add,  uint64_t, +)
+BINOP(ulong, sub,  uint64_t, -)
+BINOP(ulong, mul,  uint64_t, *)
+BINOP(ulong, div,  uint64_t, /)
+BINOP(ulong, band, uint64_t, &)
+BINOP(ulong, bor,  uint64_t, |)
+BINOP(ulong, xor,  uint64_t, ^)
+BINOP(ulong, rem,  uint64_t, %)
+
+static void
+ulong_cast_int (const exprval_t *val1, const exprval_t *src, exprval_t *result,
+			   exprctx_t *ctx)
+{
+	*(uint64_t *) result->value = *(int *) src->value;
+}
+
+UNOP(ulong, pos,  uint64_t, +)
+UNOP(ulong, neg,  uint64_t, -)
+UNOP(ulong, tnot, uint64_t, !)
+UNOP(ulong, bnot, uint64_t, ~)
+
+static const char *
+ulong_get_string (const exprval_t *val, va_ctx_t *va_ctx)
+{
+	return va (va_ctx, "%"PRIu64, *(uint64_t *) val->value);
+}
+
+binop_t ulong_binops[] = {
+	{ SHL, &cexpr_ulong, &cexpr_ulong, ulong_shl },
+	{ SHR, &cexpr_ulong, &cexpr_ulong, ulong_shr },
+	{ '+', &cexpr_ulong, &cexpr_ulong, ulong_add },
+	{ '-', &cexpr_ulong, &cexpr_ulong, ulong_sub },
+	{ '*', &cexpr_ulong, &cexpr_ulong, ulong_mul },
+	{ '/', &cexpr_ulong, &cexpr_ulong, ulong_div },
+	{ '&', &cexpr_ulong, &cexpr_ulong, ulong_band },
+	{ '|', &cexpr_ulong, &cexpr_ulong, ulong_bor },
+	{ '^', &cexpr_ulong, &cexpr_ulong, ulong_xor },
+	{ '%', &cexpr_ulong, &cexpr_ulong, ulong_rem },
+	{ MOD, &cexpr_ulong, &cexpr_ulong, ulong_rem },
+	{ '=', &cexpr_int,  &cexpr_ulong, ulong_cast_int },
+	{ '=', &cexpr_plitem, &cexpr_ulong, cexpr_cast_plitem },
+	{}
+};
+
+unop_t ulong_unops[] = {
+	{ '+', &cexpr_ulong, ulong_pos },
+	{ '-', &cexpr_ulong, ulong_neg },
+	{ '!', &cexpr_ulong, ulong_tnot },
+	{ '~', &cexpr_ulong, ulong_bnot },
+	{}
+};
+
+exprtype_t cexpr_ulong = {
+	.name = "ulong",
+	.size = sizeof (uint64_t),
+	.binops = ulong_binops,
+	.unops = ulong_unops,
+	.get_string = ulong_get_string,
+};
+
 BINOP(size_t, shl,  size_t, <<)
 BINOP(size_t, shr,  size_t, >>)
 BINOP(size_t, add,  size_t, +)
