@@ -1476,6 +1476,12 @@ bool is_##t (const type_t *type) \
 #include "QF/progs/pr_type_names.h"
 
 bool
+is_auto (const type_t *type)
+{
+	return type == &type_auto;
+}
+
+bool
 is_pointer (const type_t *type)
 {
 	type = unalias_type (type);
