@@ -1398,11 +1398,16 @@ spirv_alias (const expr_t *e, spirvctx_t *ctx)
 	if (e->alias.offset) {
 		internal_error (e, "offset alias in spir-v");
 	}
-	if (!is_integral (e->alias.type)
-		|| !is_integral (get_type (e->alias.expr))) {
-		internal_error (e, "non-integral alias in spir-v");
-	}
-	return spirv_emit_expr (e->alias.expr, ctx);
+	auto type = e->alias.type;
+	auto expr = e->alias.expr;
+	unsigned eid = spirv_emit_expr (expr, ctx);
+	int tid = type_id (type, ctx);
+	int id = spirv_id (ctx);
+	auto insn = spirv_new_insn (SpvOpBitcast, 4, ctx->code_space);
+	INSN (insn, 1) = tid;
+	INSN (insn, 2) = id;
+	INSN (insn, 3) = eid;
+	return id;
 }
 
 static unsigned
