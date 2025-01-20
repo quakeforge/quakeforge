@@ -42,7 +42,7 @@ write_parse_data (CustomField *self, string indent)
 			 struct_name, field_name);
 	for (int i = 0, count = [fields count]; i < count; i++) {
 		string field = [[fields getObjectAtIndex:i] string];
-		fprintf (output_file, "\tfield_offset (%s, %s),\n", struct_name, field);
+		fprintf (output_file, "\toffsetof (%s, %s),\n", struct_name, field);
 	}
 	fprintf (output_file, "};\n");
 
@@ -80,7 +80,7 @@ write_parse_data (CustomField *self, string indent)
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", 0/*FIXME*/, 0/*(void *) field_offset (%s, %s)*/},\n",
+			 "\t{\"%s\", 0/*FIXME*/, 0/*(void *) offsetof (%s, %s)*/},\n",
 			 field_name, struct_name, "FIXME");
 	return self;
 }

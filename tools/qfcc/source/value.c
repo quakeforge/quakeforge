@@ -72,7 +72,7 @@ typedef struct {
 		ex_pointer_t pointer;
 	};
 } immediate_t;
-#define imm_size (sizeof(immediate_t) - field_offset(immediate_t, raw_imm))
+#define imm_size (sizeof(immediate_t) - offsetof(immediate_t, raw_imm))
 
 static hashtab_t *value_table;
 ALLOC_STATE (ex_value_t, values);
@@ -303,7 +303,7 @@ new_type_value (const type_t *type, const pr_type_t *data)
 {
 	size_t      typeSize = type_size (type) * sizeof (pr_type_t);
 	ex_value_t  val = {};
-	if (typeSize > sizeof (val) - field_offset (ex_value_t, raw_value)) {
+	if (typeSize > sizeof (val) - offsetof (ex_value_t, raw_value)) {
 		internal_error (0, "value too large");
 	}
 	set_val_type (&val, type);

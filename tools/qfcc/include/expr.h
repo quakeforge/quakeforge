@@ -252,7 +252,7 @@ typedef struct ex_value_s {
 #include "tools/qfcc/include/vec_types.h"
 	};
 } ex_value_t;
-#define value_size (sizeof(ex_value_t) - field_offset(ex_value_t, raw_value))
+#define value_size (sizeof(ex_value_t) - offsetof(ex_value_t, raw_value))
 
 typedef struct {
 	const type_t *type;			///< type to view the expression

@@ -964,7 +964,7 @@ parse_task_params (const plitem_t *item, void **data,
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
 static exprsym_t qfv_renderframeset_t_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (qfv_renderframeset_t, size)},
+	{"size", &cexpr_size_t, (void *) offsetof (qfv_renderframeset_t, size)},
 	{ }
 };
 static exprtab_t qfv_renderframeset_t_symtab = {

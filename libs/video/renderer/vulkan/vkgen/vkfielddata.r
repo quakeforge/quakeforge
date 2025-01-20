@@ -23,10 +23,10 @@
 {
 	fprintf (output_file, "static parse_data_t parse_%s_%s_data = {\n",
 			 struct_name, field_name);
-	fprintf (output_file, "\tfield_offset (%s, %s),\n",
+	fprintf (output_file, "\toffsetof (%s, %s),\n",
 			 struct_name, value_field);
 	if (size_field) {
-		fprintf (output_file, "\tfield_offset (%s, %s),\n",
+		fprintf (output_file, "\toffsetof (%s, %s),\n",
 				 struct_name, size_field);
 	} else {
 		fprintf (output_file, "\tt-1,\n");

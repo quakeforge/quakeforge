@@ -114,7 +114,7 @@ SND_Memory_Init (void)
 sfxbuffer_t *
 SND_Memory_AllocBuffer (unsigned samples)
 {
-	size_t      size = field_offset (sfxbuffer_t, data[samples]);
+	size_t      size = offsetof (sfxbuffer_t, data[samples]);
 	// Z_Malloc (currently) clears memory, don't need that for the whole
 	// buffer (just the header), but Z_TagMalloc // does not
 	// +4 for sentinel

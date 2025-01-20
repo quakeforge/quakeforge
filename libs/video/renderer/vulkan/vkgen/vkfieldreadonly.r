@@ -45,7 +45,7 @@
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", %s, (void *) field_offset (%s, %s)},\n",
+			 "\t{\"%s\", %s, (void *) offsetof (%s, %s)},\n",
 			 field_name, [type exprType], struct_name, value_field);
 	return self;
 }

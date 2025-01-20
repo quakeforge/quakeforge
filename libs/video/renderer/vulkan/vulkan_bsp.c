@@ -871,16 +871,16 @@ push_fragconst (QFV_BspQueue queue, VkPipelineLayout layout,
 
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_frag_constants_t, fog),
+			offsetof (bsp_frag_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_frag_constants_t, time),
+			offsetof (bsp_frag_constants_t, time),
 			sizeof (constants.time), &constants.time },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_frag_constants_t, alpha),
+			offsetof (bsp_frag_constants_t, alpha),
 			sizeof (constants.alpha), &constants.alpha },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (bsp_frag_constants_t, turb_scale),
+			offsetof (bsp_frag_constants_t, turb_scale),
 			sizeof (constants.turb_scale), &constants.turb_scale },
 	};
 	QFV_PushConstants (device, cmd, layout, 4, push_constants);

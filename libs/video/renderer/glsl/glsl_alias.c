@@ -168,14 +168,14 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 	}
 
 	qfeglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
-							 0, sizeof (aliasvrt_t),
-							 pose_offs + field_offset (aliasvrt_t, vertex));
+							  0, sizeof (aliasvrt_t),
+							  pose_offs + offsetof (aliasvrt_t, vertex));
 	qfeglVertexAttribPointer (norm->location, 3, GL_SHORT,
-							 1, sizeof (aliasvrt_t),
-							 pose_offs + field_offset (aliasvrt_t, normal));
+							  1, sizeof (aliasvrt_t),
+							  pose_offs + offsetof (aliasvrt_t, normal));
 	qfeglVertexAttribPointer (st->location, 2, GL_SHORT,
-							 0, sizeof (aliasvrt_t),
-							 pose_offs + field_offset (aliasvrt_t, st));
+							  0, sizeof (aliasvrt_t),
+							  pose_offs + offsetof (aliasvrt_t, st));
 }
 //#define TETRAHEDRON
 void

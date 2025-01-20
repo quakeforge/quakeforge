@@ -87,7 +87,7 @@ Draw_CrosshairPic (void)
 	byte       *data;
 	int         i, j, x, y, ind;
 
-	pic = malloc (field_offset (qpic_t, data[sizeof (crosshair_data)]));
+	pic = malloc (offsetof (qpic_t, data[sizeof (crosshair_data)]));
 	pic->width = CROSSHAIR_TILEX * CROSSHAIR_WIDTH;
 	pic->height = CROSSHAIR_TILEY * CROSSHAIR_HEIGHT;
 	// re-arrange the crosshair_data bytes so they're layed out properly for

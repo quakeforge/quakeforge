@@ -644,13 +644,13 @@ SV_Punish (int mode)
 			cmd = "cuff";
 			cmd_do = "cuffed";
 			//FIXME cmd_undo = "un-cuffed";
-			field_offs = field_offset (client_t, cuff_time);
+			field_offs = offsetof (client_t, cuff_time);
 			break;
 		case 1:
 			cmd = "mute";
 			cmd_do = "muted";
 			//FIXME cmd_undo = "can speak";
-			field_offs = field_offset (client_t, lockedtill);
+			field_offs = offsetof (client_t, lockedtill);
 			break;
 	}
 

@@ -127,7 +127,7 @@ merge (ex_boollist_t *l1, ex_boollist_t *l2)
 		return l1;
 	if (!l1)
 		return l2;
-	m = malloc (field_offset (ex_boollist_t, e[l1->size + l2->size]));
+	m = malloc (offsetof (ex_boollist_t, e[l1->size + l2->size]));
 	m->size = l1->size + l2->size;
 	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
 	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (expr_t *));
@@ -139,7 +139,7 @@ make_list (const expr_t *e)
 {
 	ex_boollist_t  *m;
 
-	m = malloc (field_offset (ex_boollist_t, e[1]));
+	m = malloc (offsetof (ex_boollist_t, e[1]));
 	m->size = 1;
 	m->e[0] = (expr_t *) e;
 	return m;

@@ -88,7 +88,7 @@ Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
 			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
 
-			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
+			t = offsetof (maliasskingroup_t, skindescs[groupskins]);
 			paliasskingroup = Hunk_AllocName (0, t, alias_ctx->mod->name);
 			paliasskingroup->numskins = groupskins;
 
@@ -185,8 +185,8 @@ Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
 	frame->firstpose = (*posenum);
 	frame->numposes = numframes;
 
-	paliasgroup = Hunk_AllocName (0, field_offset (maliasgroup_t,
-												   frames[numframes]),
+	paliasgroup = Hunk_AllocName (0, offsetof (maliasgroup_t,
+											   frames[numframes]),
 								  mod->name);
 	paliasgroup->numframes = numframes;
 	frame->frame = (byte *) paliasgroup - (byte *) header;
@@ -263,7 +263,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// allocate space for a working header, plus all the data except the
 	// frame data, skin and group info
-	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
+	size = offsetof (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
 	header = Hunk_AllocName (0, size, mod->name);
 	memset (header, 0, size);
 	alias_ctx.header = header;

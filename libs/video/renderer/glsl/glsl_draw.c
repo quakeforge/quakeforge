@@ -171,7 +171,7 @@ make_glpic (const char *name, qpic_t *p)
 	qpic_t     *pic = 0;
 
 	if (p) {
-		pic = malloc (field_offset (qpic_t, data[sizeof (picdata_t)]));
+		pic = malloc (offsetof (qpic_t, data[sizeof (picdata_t)]));
 		pic->width = p->width;
 		pic->height = p->height;
 		__auto_type pd = (picdata_t *) pic->data;
@@ -227,7 +227,7 @@ pic_data (const char *name, int w, int h, const byte *data)
 	qpic_t     *pic;
 	qpic_t     *glpic;
 
-	pic = malloc (field_offset (qpic_t, data[w * h]));
+	pic = malloc (offsetof (qpic_t, data[w * h]));
 	pic->width = w;
 	pic->height = h;
 	memcpy (pic->data, data, pic->width * pic->height);

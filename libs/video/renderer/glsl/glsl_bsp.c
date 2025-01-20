@@ -489,7 +489,7 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 	int         numverts = surf->numedges;
 	int         numtris = numverts - 2;
 	int         numindices = numtris * 3;
-	glslpoly_t *poly = malloc (field_offset (glslpoly_t, indices[numindices]));
+	glslpoly_t *poly = malloc (offsetof (glslpoly_t, indices[numindices]));
 	poly->count = numindices;
 	for (int i = 0, ind = 0; i < numtris; i++) {
 		// pretend we can use a triangle fan
@@ -870,12 +870,12 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 			continue;
 		count = el->list->size / sizeof (GLushort);
 		qfeglVertexAttribPointer (vertloc, 4, GL_FLOAT,
-								 0, sizeof (bspvert_t),
-								 el->base + field_offset (bspvert_t, vertex));
+								  0, sizeof (bspvert_t),
+								  el->base + offsetof (bspvert_t, vertex));
 		if (tlstloc >= 0)
 			qfeglVertexAttribPointer (tlstloc, 4, GL_FLOAT,
-									 0, sizeof (bspvert_t),
-									 el->base + field_offset (bspvert_t,tlst));
+									  0, sizeof (bspvert_t),
+									  el->base + offsetof (bspvert_t,tlst));
 		qfeglDrawElements (GL_TRIANGLES, count,
 						  GL_UNSIGNED_SHORT, el->list->str);
 		dstring_clear (el->list);

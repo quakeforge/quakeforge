@@ -314,7 +314,7 @@ write_cexpr (Struct *self, Array *field_defs)
 			}
 			Type       *field_type = [Type findType: field.type];
 			fprintf (output_file,
-					 "\t{\"%s\", &%s, (void *) field_offset (%s, %s)},\n",
+					 "\t{\"%s\", &%s, (void *) offsetof (%s, %s)},\n",
 					 field.name, [field_type cexprType], [self outname],
 					 field.name);
 		}
@@ -373,7 +373,7 @@ write_table (Struct *self, PLItem *field_dict, Array *field_defs,
 		}
 		if (have_pNext) {
 			fprintf (output_file,
-					"\t{\"@next\", field_offset (%s, pNext), "
+					"\t{\"@next\", offsetof (%s, pNext), "
 					"QFArray, parse_next, 0},\n", [self outname]);
 		}
 		for (int i = [field_defs count]; i-- > 0; ) {

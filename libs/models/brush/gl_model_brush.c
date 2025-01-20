@@ -280,7 +280,7 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (0, field_offset (glpoly_t, verts[numverts]));
+	poly = Hunk_Alloc (0, offsetof (glpoly_t, verts[numverts]));
 	poly->next = warpface->polys;
 	warpface->polys = poly;
 	poly->numverts = numverts;

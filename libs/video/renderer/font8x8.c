@@ -312,7 +312,7 @@ Draw_Font8x8Pic (void)
 	byte       *out;
 	int         i, j, x, y, ind;
 
-	pic = calloc (1, field_offset (qpic_t, data[FONT_BYTES]));
+	pic = calloc (1, offsetof (qpic_t, data[FONT_BYTES]));
 	pic->width = FONT_HCHARS * FONT_WIDTH;
 	pic->height = FONT_VCHARS * FONT_HEIGHT;
 	// convert the bitmap data to pixel data in a 16x16 character "image"

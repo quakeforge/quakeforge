@@ -1401,13 +1401,13 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, fog),
+			offsetof (light_push_constants_t, fog),
 			sizeof (fog), &fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, CascadeDepths),
+			offsetof (light_push_constants_t, CascadeDepths),
 			sizeof (depths), &depths },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, queue),
+			offsetof (light_push_constants_t, queue),
 			sizeof (queue), &queue },
 	};
 	QFV_PushConstants (device, cmd, layout, 3, push_constants);

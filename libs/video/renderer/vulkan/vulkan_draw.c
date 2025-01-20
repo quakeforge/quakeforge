@@ -643,7 +643,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	byte       *picdata;
 
 	pic = cmemalloc (dctx->pic_memsuper,
-					 field_offset (qpic_t, data[sizeof (picdata_t)]));
+					 offsetof (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = w;
 	pic->height = h;
 	__auto_type pd = (picdata_t *) pic->data;
@@ -791,7 +791,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 
 	qpic_t *pic;
 	pic = cmemalloc (dctx->pic_memsuper,
-					 field_offset (qpic_t, data[sizeof (picdata_t)]));
+					 offsetof (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = p->width;
 	pic->height = p->height;
 	__auto_type pd = (picdata_t *) pic->data;

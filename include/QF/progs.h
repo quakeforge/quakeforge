@@ -119,9 +119,9 @@ typedef struct pr_stashed_params_s {
 */
 #define PR_SaveParams(pr) \
 	_PR_SaveParams((pr), \
-				   alloca (field_offset (pr_stashed_params_t, \
-										 params[(pr)->pr_argc \
-												* (pr)->pr_param_size])))
+				   alloca (offsetof (pr_stashed_params_t, \
+									 params[(pr)->pr_argc \
+											* (pr)->pr_param_size])))
 
 /** [INTERNAL] Save the current parameters to the provided stash.
 

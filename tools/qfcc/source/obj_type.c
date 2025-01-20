@@ -81,7 +81,7 @@ qfo_new_encoding (const type_t *type, int size, defspace_t *space)
 	qfot_type_t *enc;
 	def_t      *def;
 
-	size += field_offset (qfot_type_t, type);
+	size += offsetof (qfot_type_t, type);
 	size /= sizeof (pr_type_t);
 
 	def = new_def (type->encoding, 0, space, sc_static);
@@ -113,7 +113,7 @@ qfo_encode_func (const type_t *type, defspace_t *space)
 	return_type_def = qfo_encode_type (type->func.ret_type, space);
 	for (i = 0; i < param_count; i++)
 		param_type_defs[i] = qfo_encode_type (type->func.param_types[i], space);
-	size = field_offset (qfot_func_t, param_types[param_count]);
+	size = offsetof (qfot_func_t, param_types[param_count]);
 
 	def = qfo_new_encoding (type, size, space);
 	enc = D_POINTER (qfot_type_t, def);
@@ -187,7 +187,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		num_fields++;
 	}
 
-	size = field_offset (qfot_struct_t, fields[num_fields]);
+	size = offsetof (qfot_struct_t, fields[num_fields]);
 	def = qfo_new_encoding (type, size, space);
 	enc = D_POINTER (qfot_type_t, def);
 	strct = &enc->strct;

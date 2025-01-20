@@ -36,10 +36,10 @@
 	fprintf (output_file, "static parse_array_t parse_%s_%s_data = {\n",
 			 struct_name, field_name);
 	[type writeParseData];
-	fprintf (output_file, "\tfield_offset (%s, %s),\n",
+	fprintf (output_file, "\toffsetof (%s, %s),\n",
 			 struct_name, value_field);
 	if (size_field) {
-		fprintf (output_file, "\tfield_offset (%s, %s),\n",
+		fprintf (output_file, "\toffsetof (%s, %s),\n",
 				 struct_name, size_field);
 	} else {
 		fprintf (output_file, "\t-1,\n");

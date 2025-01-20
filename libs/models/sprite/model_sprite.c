@@ -123,7 +123,7 @@ find_group_frames (mspritegroup_t **group, dspritegroup_t *dgroup,
 				   int *frame_numbers, const char *modname)
 {
 	int         numframes = dgroup->numframes;
-	size_t      size = field_offset (mspritegroup_t, frames[numframes]);
+	size_t      size = offsetof (mspritegroup_t, frames[numframes]);
 	*group = Hunk_AllocName (0, size, modname);
 	(*group)->numframes = numframes;
 	(*group)->intervals = Hunk_AllocName (0, numframes * sizeof (float),
@@ -193,8 +193,8 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 		Sys_Error ("Mod_LoadSpriteModel: Invalid # of frames: %d", numframes);
 	}
 
-	sprite = Hunk_AllocName (0, field_offset (msprite_t,
-											  frames[dsprite->numframes]),
+	sprite = Hunk_AllocName (0, offsetof (msprite_t,
+										  frames[dsprite->numframes]),
 							 mod->name);
 	sprite->type = dsprite->type;
 	sprite->beamlength = dsprite->beamlength;
