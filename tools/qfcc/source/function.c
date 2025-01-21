@@ -980,8 +980,7 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 }
 
 static void
-build_generic_scope (symbol_t *fsym, symtab_t *parent, genfunc_t *genfunc,
-					 const type_t **ref_types)
+build_core_scope (symbol_t *fsym, symtab_t *parent, bool new_space)
 {
 	auto func = fsym->metafunc->func;
 	func->label_scope = new_symtab (0, stab_label);
@@ -994,6 +993,19 @@ build_generic_scope (symbol_t *fsym, symtab_t *parent, genfunc_t *genfunc,
 	locals->space = parent->space;
 	func->locals = locals;
 
+	if (new_space) {
+		parameters->space = defspace_new (ds_virtual);
+		locals->space = defspace_new (ds_virtual);
+	}
+}
+
+static void
+build_generic_scope (symbol_t *fsym, symtab_t *parent, genfunc_t *genfunc,
+					 const type_t **ref_types)
+{
+	build_core_scope (fsym, parent, false);
+
+	auto func = fsym->metafunc->func;
 	for (int i = 0; i < genfunc->num_types; i++) {
 		auto type = &genfunc->types[i];
 		auto sym = new_symbol (type->name);
@@ -1132,6 +1144,15 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	if (best->meta_type == mf_overload) {
 		fexpr = set_func_symbol (fexpr, best);
 	}
+	if (best->can_inline) {
+		// the call will be inlined, so a new scope is needed every
+		// time
+		auto sym = fexpr->symbol;
+		best->func = new_function (best->full_name, best->name);
+		best->func->type = sym->type;
+		best->func->sym = sym;
+		build_core_scope (sym, current_symtab, false);
+	}
 	free (funcs);
 	return fexpr;
 }
@@ -1187,20 +1208,7 @@ check_function (symbol_t *fsym)
 static void
 build_scope (symbol_t *fsym, symtab_t *parent)
 {
-	function_t *func = fsym->metafunc->func;
-	symtab_t   *parameters;
-	symtab_t   *locals;
-
-	func->label_scope = new_symtab (0, stab_label);
-
-	parameters = new_symtab (parent, stab_param);
-	parameters->space = defspace_new (ds_virtual);
-	func->parameters = parameters;
-
-	locals = new_symtab (parameters, stab_local);
-	locals->space = defspace_new (ds_virtual);
-	func->locals = locals;
-
+	build_core_scope (fsym, parent, true);
 	current_target.build_scope (fsym);
 }
 
@@ -1429,6 +1437,7 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 			return;
 		}
 		sym->metafunc->expr = intrinsic;
+		sym->metafunc->can_inline = intrinsic->intrinsic.extra;
 	}
 }
 
