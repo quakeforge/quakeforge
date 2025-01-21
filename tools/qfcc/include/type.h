@@ -238,7 +238,7 @@ const char *type_get_encoding (const type_t *type);
 #define EV_TYPE(t) bool is_##t (const type_t *type) __attribute__((pure));
 #include "QF/progs/pr_type_names.h"
 
-bool is_auto (const type_t *type) __attribute__((pure));
+bool is_auto (const type_t *type) __attribute__((const));
 bool is_pointer (const type_t *type) __attribute__((pure));
 bool is_reference (const type_t *type) __attribute__((pure));
 bool is_enum (const type_t *type) __attribute__((pure));
