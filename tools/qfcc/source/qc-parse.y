@@ -3261,7 +3261,8 @@ qc_parse_string (const char *str, rua_ctx_t *ctx)
 	return ret;
 }
 
-static int qc_finish (const char *file, rua_ctx_t *ctx)
+static int
+qc_finish (const char *file, rua_ctx_t *ctx)
 {
 	if (options.frames_files) {
 		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));

@@ -35,7 +35,9 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -52,3 +54,27 @@ glsl_sublang_t glsl_comp_sublanguage = {
 	.interface_default_names = glsl_comp_interface_default_names,
 	.model_name = "GLCompute",
 };
+
+int
+glsl_finish_comp (const char *file, rua_ctx_t *ctx)
+{
+	if (!pr.module || !pr.module->entry_points) {
+		return 1;
+	}
+	const expr_t *size = nullptr;
+	for (int i = 0; i < 3; i++) {
+		if (!pr.module->entry_points->local_size[i]) {
+			size = new_int_expr (1, false);
+			break;
+		}
+	}
+	if (size) {
+		for (int i = 0; i < 3; i++) {
+			if (!pr.module->entry_points->local_size[i]) {
+				pr.module->entry_points->local_size[i] = size;
+				break;
+			}
+		}
+	}
+	return 1;
+}

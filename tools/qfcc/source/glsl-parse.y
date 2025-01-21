@@ -1948,6 +1948,7 @@ language_t lang_glsl_comp = {
 	.default_float = true,
 	.init = glsl_init_comp,
 	.parse = glsl_yyparse,
+	.finish = glsl_finish_comp,
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,

@@ -42,6 +42,7 @@ typedef struct defspace_s defspace_t;
 typedef struct rua_ctx_s rua_ctx_t;
 
 void glsl_init_comp (rua_ctx_t *ctx);
+int glsl_finish_comp (const char *file, rua_ctx_t *ctx);
 void glsl_init_vert (rua_ctx_t *ctx);
 void glsl_init_tesc (rua_ctx_t *ctx);
 void glsl_init_tese (rua_ctx_t *ctx);
