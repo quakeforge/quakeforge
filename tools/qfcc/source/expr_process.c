@@ -761,11 +761,14 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 	if (decl_spec.type && decl_spec.type_expr) {
 		internal_error (0, "both type and type_expr set");
 	}
+	int count = list_count (&expr->decl.list);
+	if (!count) {
+		return block;
+	}
 	if (decl_spec.storage == sc_local) {
 		scoped_src_loc (expr);
 		block = new_block_expr (nullptr);
 	}
-	int count = list_count (&expr->decl.list);
 	const expr_t *decls[count];
 	list_scatter (&expr->decl.list, decls);
 	for (int i = 0; i < count; i++) {

@@ -1032,7 +1032,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 		list_scatter_rev (&params->list, args);
 	}
 
-	callparm_t call_params[num_params] = {};
+	callparm_t call_params[num_params + 1] = {};
 	for (int i = 0; i < num_params; i++) {
 		auto e = args[i];
 		if (e->type == ex_error) {
@@ -1083,7 +1083,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 		}
 	}
 
-	unsigned costs[num_funcs] = {};
+	unsigned costs[num_funcs + 1] = {};
 	for (int i = 0; i < num_funcs; i++) {
 		auto f = (metafunc_t *) funcs[i];
 		int num_params = f->type->func.num_params;
