@@ -506,8 +506,8 @@ spirv_intrinsic_symbol (const char *name, symtab_t *symtab)
 	kind = bsearch (&(spirv_kind_t) { .kind = name },
 					grammar->operand_kinds, grammar->num_operand_kinds,
 					sizeof (spirv_kind_t), spirv_kind_cmp);
-	if (kind && strcmp (kind->category, "Composite") != 0
-		&& strcmp (kind->category, "Literal") != 1) {
+	if (kind && (strcmp (kind->category, "BitEnum") == 0
+				 || strcmp (kind->category, "ValueEnum") == 0)) {
 		if (!kind->symtab) {
 			kind->symtab = new_symtab (nullptr, stab_enum);
 			kind->symtab->procsymbol = spirv_kind_symbol;
