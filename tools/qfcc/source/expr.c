@@ -2579,6 +2579,9 @@ address_expr (const expr_t *e1, const type_t *t)
 				break;
 			}
 			return error (e1, "invalid type for unary &");
+		case ex_field:
+			e = new_address_expr (e1->field.type, e1, nullptr);
+			break;
 		case ex_expr:
 			if (e1->expr.op == '.') {
 				e = new_address_expr (e1->expr.type,

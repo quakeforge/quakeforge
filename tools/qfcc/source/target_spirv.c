@@ -1572,6 +1572,22 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 }
 
 static unsigned
+spirv_address (const expr_t *e, spirvctx_t *ctx)
+{
+	auto lvalue = e->address.lvalue;
+	if (lvalue->type != ex_field && lvalue->type != ex_array) {
+		internal_error (e, "not field or array");
+	}
+	if (e->address.offset) {
+		internal_error (e, "offset on address");
+	}
+	const type_t *res_type;
+	const type_t *acc_type;
+	unsigned id = spirv_access_chain (lvalue, ctx, &res_type, &acc_type);
+	return id;
+}
+
+static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
@@ -1958,6 +1974,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_vector] = spirv_vector,
 		[ex_compound] = spirv_compound,
 		[ex_alias] = spirv_alias,
+		[ex_address] = spirv_address,
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
