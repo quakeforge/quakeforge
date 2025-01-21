@@ -137,6 +137,18 @@ tf_pointer_func (progs_t *pr, void *data)
 }
 
 static void
+tf_reference_func (progs_t *pr, void *data)
+{
+	auto ctx = *(typectx_t **) data;
+	unsigned id = P_UINT (pr, 0);
+	unsigned tag = P_UINT (pr, 1);
+	auto type = fetch_type (id, ctx);
+	type = tagged_reference_type (tag, type);
+	type = find_type (type);
+	R_UINT (pr) = type->id;
+}
+
+static void
 tf_array_func (progs_t *pr, void *data)
 {
 	auto ctx = *(typectx_t **) data;
@@ -277,6 +289,7 @@ static bfunction_t type_functions[] = {
 	TF_FUNC(tf_function),
 	TF_FUNC(tf_field),
 	TF_FUNC(tf_pointer),
+	TF_FUNC(tf_reference),
 	TF_FUNC(tf_array),
 	TF_FUNC(tf_base),
 	TF_FUNC(tf_width),

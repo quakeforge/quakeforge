@@ -1324,6 +1324,7 @@ type_func
 	: AT_FIELD					{ $$ = QC_AT_FIELD; }
 	| AT_FUNCTION				{ $$ = QC_AT_FUNCTION; }
 	| AT_POINTER				{ $$ = QC_AT_POINTER; }
+	| REFERENCE 				{ $$ = QC_REFERENCE; }
 	| AT_ARRAY					{ $$ = QC_AT_ARRAY; }
 	| AT_BASE					{ $$ = QC_AT_BASE; }
 	| AT_VECTOR					{ $$ = QC_AT_VECTOR; }

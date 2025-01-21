@@ -330,6 +330,19 @@ resolve_pointer (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 }
 
 static const type_t *
+resolve_reference (int arg_count, const expr_t **args, rua_ctx_t *ctx)
+{
+	auto type = resolve_type (args[0], ctx);
+	if (arg_count > 1) {
+		unsigned tag = expr_integral (args[1]);
+		type = tagged_reference_type (tag, type);
+	} else {
+		type = reference_type (type);
+	}
+	return type;
+}
+
+static const type_t *
 resolve_array (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
@@ -601,6 +614,21 @@ compute_pointer (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 }
 
 static def_t *
+compute_reference (int arg_count, const expr_t **args, comp_ctx_t *ctx)
+{
+	auto type = compute_type (args[0], ctx);
+	auto res = compute_tmp (ctx);
+	def_t *tag = nullptr;
+	if (arg_count > 1) {
+		tag = compute_val (args[1], ctx);
+	}
+	C (OP_STORE_A_1, ctx->args[0],             nullptr, type);
+	C (OP_STORE_A_1, ctx->args[1],             nullptr, tag);
+	C (OP_CALL_B,    ctx->funcs[tf_reference], nullptr, res);
+	return res;
+}
+
+static def_t *
 compute_base (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 {
 	auto type = compute_type (args[0], ctx);
@@ -743,6 +771,12 @@ static type_func_t type_funcs[] = {
 		.check_params = single_type_opt_int,
 		.resolve = resolve_pointer,
 		.compute = compute_pointer,
+	},
+	[QC_REFERENCE] = {
+		.name = "@reference",
+		.check_params = single_type_opt_int,
+		.resolve = resolve_reference,
+		.compute = compute_reference,
 	},
 	[QC_AT_ARRAY] = {
 		.name = "@array",
@@ -1115,7 +1149,11 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 		error (arg->typ.params, "%s for %s", msg, type_funcs[op].name);
 		Sys_longjmp (ctx->jmpbuf);
 	}
-	return type_funcs[op].compute (arg_count, args, ctx);
+	if (type_funcs[op].compute) {
+		return type_funcs[op].compute (arg_count, args, ctx);
+	} else {
+		internal_error (arg, "invalid type op: %s", type_funcs[op].name);
+	}
 }
 
 typeeval_t *

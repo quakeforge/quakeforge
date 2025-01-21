@@ -40,6 +40,7 @@ enum {
 	tf_function,
 	tf_field,
 	tf_pointer,
+	tf_reference,
 	tf_array,
 	tf_base,
 	tf_width,
