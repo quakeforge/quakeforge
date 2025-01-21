@@ -170,7 +170,7 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 					err = param_mismatch (e, i + 1, fexpr->symbol->name,
 										  t, param_type);
 				}
-			} else {
+			} else if (!is_reference (param_type)) {
 				if (!type_assignable (param_type, t)) {
 					err = param_mismatch (e, i + 1, fexpr->symbol->name,
 										  param_type, t);
@@ -236,7 +236,14 @@ build_call_scope (symbol_t *fsym, const expr_t **arguments)
 		}
 		auto psym = new_symbol (p->name);
 		psym->sy_type = sy_expr;
-		psym->expr = arguments[i];
+		auto arg_type = get_type (arguments[i]);
+		if (is_reference (p->type) && !is_reference (arg_type)) {
+			psym->expr = address_expr (arguments[i], nullptr);
+		} else if (!is_reference (p->type) && is_reference (arg_type)) {
+			psym->expr = pointer_deref (arguments[i]);
+		} else {
+			psym->expr = arguments[i];
+		}
 		symtab_addsymbol (params, psym);
 	}
 }

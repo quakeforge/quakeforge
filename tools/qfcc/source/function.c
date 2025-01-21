@@ -604,19 +604,19 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (!type) {
 		return false;
 	}
-	if (type == param.type) {
+	if (type_same (type, param.type)) {
 		return true;
 	}
 	if (is_reference (type)) {
 		// pass by references is a free conversion, but no promotion
-		return dereference_type (type) == param.type;
+		return type_same (dereference_type (type), param.type);
 	}
 	if (is_reference (param.type)) {
 		// dereferencing a reference is free so long as there's no
 		// promotion, otherwise there's the promotion cost
 		param.type = dereference_type (param.type);
 	}
-	if (type == param.type) {
+	if (type_same (type, param.type)) {
 		return true;
 	}
 	int ret = obj_types_assignable (type, param.type);
