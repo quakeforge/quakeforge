@@ -1092,6 +1092,10 @@ print_type_str (dstring_t *str, const type_t *type)
 		dasprintf (str, " (null)");
 		return;
 	}
+	if (is_auto (type)) {
+		dasprintf (str, " auto");
+		return;
+	}
 	switch (type->meta) {
 		case ty_meta_count:
 			break;
