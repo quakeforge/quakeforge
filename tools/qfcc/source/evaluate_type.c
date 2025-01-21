@@ -119,7 +119,7 @@ tf_field_func (progs_t *pr, void *data)
 	auto ctx = *(typectx_t **) data;
 	unsigned id = P_UINT (pr, 0);
 	auto type = fetch_type (id, ctx);
-	type = pointer_type (type);
+	type = field_type (type);
 	type = find_type (type);
 	R_UINT (pr) = type->id;
 }
@@ -129,8 +129,9 @@ tf_pointer_func (progs_t *pr, void *data)
 {
 	auto ctx = *(typectx_t **) data;
 	unsigned id = P_UINT (pr, 0);
+	unsigned tag = P_UINT (pr, 1);
 	auto type = fetch_type (id, ctx);
-	type = pointer_type (type);
+	type = tagged_pointer_type (tag, type);
 	type = find_type (type);
 	R_UINT (pr) = type->id;
 }

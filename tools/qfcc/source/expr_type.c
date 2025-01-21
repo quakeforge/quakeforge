@@ -320,7 +320,12 @@ static const type_t *
 resolve_pointer (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 {
 	auto type = resolve_type (args[0], ctx);
-	type = pointer_type (type);
+	if (arg_count > 1) {
+		unsigned tag = expr_integral (args[1]);
+		type = tagged_pointer_type (tag, type);
+	} else {
+		type = pointer_type (type);
+	}
 	return type;
 }
 
@@ -585,7 +590,12 @@ compute_pointer (int arg_count, const expr_t **args, comp_ctx_t *ctx)
 {
 	auto type = compute_type (args[0], ctx);
 	auto res = compute_tmp (ctx);
+	def_t *tag = nullptr;
+	if (arg_count > 1) {
+		tag = compute_val (args[1], ctx);
+	}
 	C (OP_STORE_A_1, ctx->args[0],           nullptr, type);
+	C (OP_STORE_A_1, ctx->args[1],           nullptr, tag);
 	C (OP_CALL_B,    ctx->funcs[tf_pointer], nullptr, res);
 	return res;
 }
@@ -730,7 +740,7 @@ static type_func_t type_funcs[] = {
 	},
 	[QC_AT_POINTER] = {
 		.name = "@pointer",
-		.check_params = single_type,
+		.check_params = single_type_opt_int,
 		.resolve = resolve_pointer,
 		.compute = compute_pointer,
 	},

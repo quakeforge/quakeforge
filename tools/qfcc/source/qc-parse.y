@@ -78,6 +78,7 @@
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -336,6 +337,9 @@ generic_spec (rua_ctx_t *ctx)
 		.is_generic = true,
 	};
 	generic_symtab = spec.symtab;
+	if (current_target.setup_intrinsic_symtab) {
+		current_target.setup_intrinsic_symtab (generic_symtab);
+	}
 	return spec;
 }
 
