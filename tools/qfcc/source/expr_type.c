@@ -57,6 +57,7 @@ typedef struct {
 	sys_jmpbuf  jmpbuf;
 	def_t      *args[3];
 	def_t      *funcs[tf_num_functions];
+	rua_ctx_t  *rua_ctx;
 } comp_ctx_t;
 
 typedef struct {
@@ -76,11 +77,24 @@ static type_func_t type_funcs[];
 static bool
 check_type (const expr_t *arg)
 {
-	if ((arg->type != ex_symbol || arg->symbol->sy_type != sy_type_param)
-		&& arg->type != ex_type) {
-		return false;
+	if (arg->type == ex_symbol && arg->symbol->sy_type == sy_type_param) {
+		return true;
 	}
-	return true;
+	if (arg->type == ex_symbol && arg->symbol->sy_type == sy_type) {
+		return true;
+	}
+	if (arg->type == ex_type) {
+		return true;
+	}
+	if (arg->type == ex_list) {
+		for (auto le = arg->list.head; le; le = le->next) {
+			if (!check_type (le->expr)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 static bool
@@ -1074,11 +1088,29 @@ compute_type (const expr_t *arg, comp_ctx_t *ctx)
 	int         arg_count = list_count (&arg->typ.params->list);
 	const expr_t *args[arg_count];
 	list_scatter (&arg->typ.params->list, args);
+	bool fail = false;
+	for (int i = 0; i < arg_count; i++) {
+		if (((args[i]->type == ex_expr || args[i]->type == ex_uexpr)
+			 && !args[i]->expr.type)
+			|| (args[i]->type == ex_field && !args[i]->field.type)) {
+			args[i] = expr_process (args[i], ctx->rua_ctx);
+			fail |= is_error (args[i]);
+		}
+	}
+	if (fail) {
+		Sys_longjmp (ctx->jmpbuf);
+	}
+	const char *msg = type_funcs[op].check_params (arg_count, args);
+	if (msg) {
+		error (arg->typ.params, "%s for %s", msg, type_funcs[op].name);
+		Sys_longjmp (ctx->jmpbuf);
+	}
 	return type_funcs[op].compute (arg_count, args, ctx);
 }
 
 typeeval_t *
-build_type_function (const expr_t *te, int num_types, gentype_t *types)
+build_type_function (const expr_t *te, int num_types, gentype_t *types,
+					 rua_ctx_t *rua_ctx)
 {
 	auto code = codespace_new ();
 	auto data = defspace_new (ds_backed);
@@ -1089,6 +1121,7 @@ build_type_function (const expr_t *te, int num_types, gentype_t *types)
 		.code = code,
 		.data = data,
 		.strings = strings,
+		.rua_ctx = rua_ctx,
 	};
 	compute_tmp (ctx);
 	for (int i = 0; i < 3; i++) {
@@ -1100,11 +1133,10 @@ build_type_function (const expr_t *te, int num_types, gentype_t *types)
 	}
 	C (OP_NOP, nullptr, nullptr, nullptr);
 	def_t *res = nullptr;
-	typeeval_t *func = nullptr;
+	typeeval_t *func = malloc (sizeof (typeeval_t));
 	if (!Sys_setjmp (ctx->jmpbuf)) {
 		res = compute_type (te, ctx);
 		C (OP_RETURN, res, nullptr, 0);
-		func = malloc (sizeof (typeeval_t));
 		*func = (typeeval_t) {
 			.code = code->code,
 			.data = data->data,
@@ -1113,6 +1145,8 @@ build_type_function (const expr_t *te, int num_types, gentype_t *types)
 			.data_size = data->size,
 			.string_size = strings->size,
 		};
+	} else {
+		*func = (typeeval_t) { };
 	}
 	code->code = nullptr;
 	data->data = nullptr;

@@ -338,6 +338,9 @@ const type_t *
 evaluate_type (const typeeval_t *typeeval, int num_types, const type_t **types,
 			   const expr_t *expr, rua_ctx_t *rua_ctx)
 {
+	if (!typeeval->code) {
+		return &type_void;
+	}
 	typectx_t   ctx = {
 		.types = types,
 		.num_types = num_types,

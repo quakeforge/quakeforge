@@ -294,13 +294,13 @@ find_gentype (const expr_t *expr, genfunc_t *genfunc)
 }
 
 static genparam_t
-make_genparam (param_t *param, genfunc_t *genfunc)
+make_genparam (param_t *param, genfunc_t *genfunc, rua_ctx_t *ctx)
 {
 	int gentype = find_gentype (param->type_expr, genfunc);
 	typeeval_t *compute = nullptr;
 	if (gentype < 0 && param->type_expr) {
 		compute = build_type_function (param->type_expr,
-									   genfunc->num_types, genfunc->types);
+									   genfunc->num_types, genfunc->types, ctx);
 	}
 	genparam_t genparam = {
 		.name = save_string (param->name),
@@ -390,9 +390,9 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	num_params = 0;
 	// skip return type so it can be done last to support complex expressions
 	for (auto p = ret_param.next; p; p = p->next) {
-		genfunc->params[num_params++] = make_genparam (p, genfunc);
+		genfunc->params[num_params++] = make_genparam (p, genfunc, ctx);
 	}
-	*genfunc->ret_type = make_genparam (&ret_param, genfunc);
+	*genfunc->ret_type = make_genparam (&ret_param, genfunc, ctx);
 	return genfunc;
 }
 
