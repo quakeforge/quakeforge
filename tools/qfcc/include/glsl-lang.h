@@ -115,6 +115,7 @@ extern type_t type_glsl_sampled_image;
 typedef struct glsl_sublang_s {
 	const char *name;
 	const char **interface_default_names;
+	const char *model_name;
 } glsl_sublang_t;
 extern glsl_sublang_t glsl_sublang;
 extern glsl_sublang_t glsl_comp_sublanguage;

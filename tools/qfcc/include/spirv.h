@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/expr.h"
 
 typedef struct symbol_s symbol_t;
+typedef struct expr_s expr_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -45,12 +46,22 @@ typedef struct entrypoint_s {
 	ex_list_t   interface;			///< list of symbols forming interface
 	struct DARRAY_TYPE (symbol_t *) interface_syms;
 	struct function_s *func;
+
+	const expr_t *invocations;
+	const expr_t *local_size[3];
+	const expr_t *primitive_in;
+	const expr_t *primitive_out;
+	const expr_t *max_vertices;
+	const expr_t *spacing;
+	const expr_t *order;
+	const expr_t *frag_depth;
+	bool        point_mode;
+	bool        early_fragment_tests;
 } entrypoint_t;
 
 typedef struct module_s {
 	ex_list_t   capabilities;
 	ex_list_t   extensions;
-	SpvExecutionModel default_model;
 	symtab_t   *extinst_imports;
 	const expr_t *addressing_model;
 	const expr_t *memory_model;

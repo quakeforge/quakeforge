@@ -837,6 +837,63 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	}
 
 	auto exec_modes = ctx->module->exec_modes;
+	if (entrypoint->invocations) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = SpvExecutionModeInvocations;
+		INSN (insn, 3) = expr_integral (entrypoint->invocations);
+	}
+	// assume that if 1 is set, all are set
+	if (entrypoint->local_size[0]) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 6, exec_modes);
+		INSN (insn, 1) = func_id;
+		//FIXME LocalSizeId
+		INSN (insn, 2) = SpvExecutionModeLocalSize;
+		INSN (insn, 3) = expr_integral (entrypoint->local_size[0]);
+		INSN (insn, 4) = expr_integral (entrypoint->local_size[1]);
+		INSN (insn, 5) = expr_integral (entrypoint->local_size[2]);
+	}
+	if (entrypoint->primitive_in) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (entrypoint->primitive_in);
+	}
+	if (entrypoint->primitive_out) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (entrypoint->primitive_out);
+	}
+	if (entrypoint->max_vertices) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = SpvExecutionModeOutputVertices;
+		INSN (insn, 3) = expr_integral (entrypoint->max_vertices);
+	}
+	if (entrypoint->spacing) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (entrypoint->spacing);
+	}
+	if (entrypoint->order) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (entrypoint->order);
+	}
+	if (entrypoint->frag_depth) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = expr_integral (entrypoint->frag_depth);
+	}
+	if (entrypoint->point_mode) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = SpvExecutionModePointMode;
+	}
+	if (entrypoint->early_fragment_tests) {
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		INSN (insn, 1) = func_id;
+		INSN (insn, 2) = SpvExecutionModeEarlyFragmentTests;
+	}
 	for (auto m = entrypoint->modes; m; m = m->next) {
 		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
 		INSN (insn, 1) = func_id;
@@ -2069,22 +2126,13 @@ static void
 spirv_build_code (function_t *func, const expr_t *statements)
 {
 	func->exprs = statements;
-	if (strcmp ("main", func->o_name) == 0) {
-		attribute_t *mode = nullptr;
-		if (pr.module->default_model == SpvExecutionModelFragment) {
-			mode = new_attribute ("mode",
-					new_int_expr (SpvExecutionModeOriginUpperLeft, false));
+	for (auto ep = pr.module->entry_points; ep; ep = ep->next) {
+		if (strcmp (ep->name, func->o_name) == 0) {
+			if (ep->func && ep->func != func) {
+				error (statements, "entry point %s redefined", ep->name);
+			}
+			ep->func = func;
 		}
-		entrypoint_t *ep = malloc (sizeof (entrypoint_t));
-		*(ep) = (entrypoint_t) {
-			.next = pr.module->entry_points,
-			.model = pr.module->default_model,
-			.name = "main",
-			.modes = mode,
-			.interface_syms = DARRAY_STATIC_INIT (16),
-			.func = func,
-		};
-		pr.module->entry_points = ep;
 	}
 }
 
@@ -2121,6 +2169,33 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			}
 		}
 	}
+}
+
+static bool
+spirv_create_entry_point (const char *name, const char *model_name)
+{
+	for (auto ep = pr.module->entry_points; ep; ep = ep->next) {
+		if (strcmp (ep->name, name) == 0) {
+			error (0, "entry point %s already exists", name);
+			return false;
+		}
+	}
+	attribute_t *mode = nullptr;
+	unsigned model = spirv_execution_model (model_name);
+	if (model == SpvExecutionModelFragment) {
+		mode = new_attribute ("mode",
+				new_int_expr (SpvExecutionModeOriginUpperLeft, false));
+	}
+	entrypoint_t *ep = malloc (sizeof (entrypoint_t));
+	*(ep) = (entrypoint_t) {
+		.next = pr.module->entry_points,
+		.model = model,
+		.name = save_string (name),
+		.modes = mode,
+		.interface_syms = DARRAY_STATIC_INIT (16),
+	};
+	pr.module->entry_points = ep;
+	return true;
 }
 
 static const expr_t *
@@ -2274,6 +2349,7 @@ target_t spirv_target = {
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
 	.declare_sym = spirv_declare_sym,
+	.create_entry_point = spirv_create_entry_point,
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,

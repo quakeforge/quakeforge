@@ -424,31 +424,14 @@ build_grammars (void)
 	}
 }
 
-const plitem_t *
-spirv_operand_kind (const char *set, const char *kind)
-{
-	if (!built) {
-		build_grammars ();
-		built = true;
-	}
-	return nullptr;
-}
-
-const uint32_t
-spirv_instruction_opcode (const char *set, const expr_t *opcode)
+static spirv_grammar_t *
+find_grammar (const char *set)
 {
 	if (!built) {
 		build_grammars ();
 		built = true;
 	}
 
-	if (is_integral_val (opcode)) {
-		return expr_integral (opcode);
-	}
-	if (opcode->type != ex_symbol) {
-		error (opcode, "not a an integer constant or symbol");
-		return 0;
-	}
 	spirv_grammar_t *grammar = nullptr;
 	for (int i = 0; builtin_json[i].name; i++) {
 		if (strcmp (builtin_json[i].name, set) == 0) {
@@ -456,6 +439,28 @@ spirv_instruction_opcode (const char *set, const expr_t *opcode)
 			break;
 		}
 	}
+	return grammar;
+}
+
+const plitem_t *
+spirv_operand_kind (const char *set, const char *kind)
+{
+	find_grammar (set);
+	return nullptr;
+}
+
+uint32_t
+spirv_instruction_opcode (const char *set, const expr_t *opcode)
+{
+	if (is_integral_val (opcode)) {
+		return expr_integral (opcode);
+	}
+	if (opcode->type != ex_symbol) {
+		error (opcode, "not a an integer constant or symbol");
+		return 0;
+	}
+
+	auto grammar = find_grammar (set);
 	if (!grammar) {
 		error (opcode, "unrecognized grammar set %s", set);
 		return 0;
@@ -518,18 +523,8 @@ spirv_intrinsic_symbol (const char *name, symtab_t *symtab)
 bool
 spirv_setup_intrinsic_symtab (symtab_t *symtab)
 {
-	if (!built) {
-		build_grammars ();
-		built = true;
-	}
 	const char *set = "core";
-	spirv_grammar_t *grammar = nullptr;
-	for (int i = 0; builtin_json[i].name; i++) {
-		if (strcmp (builtin_json[i].name, set) == 0) {
-			grammar = builtin_json[i].grammar;
-			break;
-		}
-	}
+	auto grammar = find_grammar (set);
 	if (!grammar) {
 		error (0, "unrecognized grammar set %s", set);
 		return false;
@@ -537,4 +532,27 @@ spirv_setup_intrinsic_symtab (symtab_t *symtab)
 	symtab->procsymbol = spirv_intrinsic_symbol;
 	symtab->procsymbol_data = grammar;
 	return true;
+}
+
+uint32_t
+spirv_execution_model (const char *model)
+{
+	const char *set = "core";
+	auto grammar = find_grammar (set);
+	if (!grammar) {
+		error (0, "unrecognized grammar set %s", set);
+		return false;
+	}
+	symtab_t    symtab = { .procsymbol_data = grammar };
+	auto model_enum = spirv_intrinsic_symbol ("ExecutionModel", &symtab);
+	if (!model_enum) {
+		error (0, "ExecutionModel not found");
+		return 0;
+	}
+	auto model_val = symtab_lookup (model_enum->namespace, model);
+	if (!model_val) {
+		error (0, "Execution model %s  not found", model);
+		return 0;
+	}
+	return model_val->value->uint_val;
 }

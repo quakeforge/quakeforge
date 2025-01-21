@@ -52,4 +52,5 @@ static const char *glsl_geom_interface_default_names[glsl_num_interfaces] = {
 glsl_sublang_t glsl_geom_sublanguage = {
 	.name = "geometry",
 	.interface_default_names = glsl_geom_interface_default_names,
+	.model_name = "Geometry",
 };

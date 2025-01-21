@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 glsl_sublang_t glsl_sublang;
@@ -1364,6 +1365,13 @@ glsl_init_common (rua_ctx_t *ctx)
 	static module_t module;		//FIXME probably not what I want
 	pr.module = &module;
 
+	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
+	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+
+	glsl_sublang = *(glsl_sublang_t *) ctx->language->sublanguage;
+
+	current_target.create_entry_point ("main", glsl_sublang.model_name);
+
 	make_structure ("@image", 's', glsl_image_struct, &type_glsl_image);
 	make_structure ("@sampled_image", 's', glsl_sampled_image_struct,
 					&type_glsl_sampled_image);
@@ -1374,10 +1382,6 @@ glsl_init_common (rua_ctx_t *ctx)
 
 	DARRAY_RESIZE (&glsl_imageset, 0);
 
-	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
-	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
-
-	glsl_sublang = *(glsl_sublang_t *) ctx->language->sublanguage;
 	ctx->language->initialized = true;
 	glsl_block_clear ();
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
@@ -1410,8 +1414,6 @@ glsl_init_vert (rua_ctx_t *ctx)
 	glsl_parse_vars (glsl_Vulkan_vertex_vars, ctx);
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
-
-	pr.module->default_model = SpvExecutionModelVertex;
 }
 
 void
@@ -1423,7 +1425,6 @@ glsl_init_tesc (rua_ctx_t *ctx)
 	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
-	pr.module->default_model = SpvExecutionModelTessellationControl;
 }
 
 void
@@ -1435,7 +1436,6 @@ glsl_init_tese (rua_ctx_t *ctx)
 	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityTessellation);
-	pr.module->default_model = SpvExecutionModelTessellationEvaluation;
 }
 
 void
@@ -1448,7 +1448,6 @@ glsl_init_geom (rua_ctx_t *ctx)
 	qc_parse_string (glsl_other_texture_functions, &rua_ctx);
 
 	spirv_add_capability (pr.module, SpvCapabilityGeometry);
-	pr.module->default_model = SpvExecutionModelGeometry;
 }
 
 void
@@ -1459,6 +1458,4 @@ glsl_init_frag (rua_ctx_t *ctx)
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_fragment_functions, &rua_ctx);
 	qc_parse_string (glsl_frag_texture_functions, &rua_ctx);
-
-	pr.module->default_model = SpvExecutionModelFragment;
 }

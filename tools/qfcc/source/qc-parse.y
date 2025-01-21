@@ -3274,7 +3274,7 @@ static void
 rua_init (rua_ctx_t *ctx)
 {
 	ctx->language->initialized = true;
-	if (options.code.spirv) {
+	if (options.code.spirv && !pr.module) {
 		static module_t module;		//FIXME probably not what I want
 		pr.module = &module;
 

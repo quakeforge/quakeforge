@@ -50,4 +50,5 @@ static const char *glsl_vert_interface_default_names[glsl_num_interfaces] = {
 glsl_sublang_t glsl_vert_sublanguage = {
 	.name = "vertex",
 	.interface_default_names = glsl_vert_interface_default_names,
+	.model_name = "Vertex",
 };

@@ -50,4 +50,5 @@ static const char *glsl_tese_interface_default_names[glsl_num_interfaces] = {
 glsl_sublang_t glsl_tese_sublanguage = {
 	.name = "tessellation evaluation",
 	.interface_default_names = glsl_tese_interface_default_names,
+	.model_name = "TessellationEvaluation",
 };

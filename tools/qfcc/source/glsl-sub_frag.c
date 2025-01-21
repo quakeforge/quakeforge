@@ -48,4 +48,5 @@ static const char *glsl_frag_interface_default_names[glsl_num_interfaces] = {
 glsl_sublang_t glsl_frag_sublanguage = {
 	.name = "fragment",
 	.interface_default_names = glsl_frag_interface_default_names,
+	.model_name = "Fragment",
 };

@@ -50,4 +50,5 @@ static const char *glsl_comp_interface_default_names[glsl_num_interfaces] = {
 glsl_sublang_t glsl_comp_sublanguage = {
 	.name = "compute",
 	.interface_default_names = glsl_comp_interface_default_names,
+	.model_name = "GLCompute",
 };

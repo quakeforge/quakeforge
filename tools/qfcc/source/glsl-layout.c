@@ -39,21 +39,57 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+typedef enum {
+	decl_var    = 1 << 0,
+	decl_qual   = 1 << 1,
+	decl_block  = 1 << 2,
+	decl_member = 1 << 3,
+} glsl_obj_t;
+
+typedef enum {
+	var_any,
+	var_opaque,
+	var_atomic,
+	var_subpass,
+	var_scalar,
+	var_image,
+	var_gl_FragCoord,
+	var_gl_FragDepth,
+} glsl_var_t;
+
+typedef struct layout_qual_s layout_qual_t;
+typedef struct layout_qual_s {
+	const char *name;
+	void      (*apply) (const layout_qual_t *qual, specifier_t spec,
+						const expr_t *qual_name);
+	void      (*apply_expr) (const layout_qual_t *qual, specifier_t spec,
+							 const expr_t *qual_name, const expr_t *val);
+	unsigned    obj_mask;
+	glsl_var_t  var_type;
+	unsigned    if_mask;
+	const char **stage_filter;
+	int         val;
+	const char *accessor;
+} layout_qual_t;
+
 static void
-glsl_layout_invalid_A (specifier_t spec, const expr_t *qual_name)
+glsl_layout_invalid_A (const layout_qual_t *qual, specifier_t spec,
+					   const expr_t *qual_name)
 {
 	error (qual_name, "not allowed for vulkan");
 }
 
 static void
-glsl_layout_invalid_E (specifier_t spec, const expr_t *qual_name,
-							  const expr_t *val)
+glsl_layout_invalid_E (const layout_qual_t *qual, specifier_t spec,
+					   const expr_t *qual_name, const expr_t *val)
 {
 	error (qual_name, "not allowed for vulkan");
 }
@@ -73,26 +109,22 @@ set_attribute (attribute_t **attributes, const char *name, const expr_t *val)
 }
 
 static void
-glsl_layout_packing (specifier_t spec, const expr_t *qual_name)
+glsl_layout_packing (const layout_qual_t *qual, specifier_t spec,
+					 const expr_t *qual_name)
 {
 }
 
 static void
-glsl_layout_location (specifier_t spec, const expr_t *qual_name,
-					  const expr_t *val)
+glsl_layout_location (const layout_qual_t *qual, specifier_t spec,
+					  const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
-glsl_layout_geom_in_primitive (specifier_t spec, const expr_t *qual_name)
-{
-}
-
-static void
-glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
-						 const expr_t *val)
+glsl_layout_constant_id (const layout_qual_t *qual, specifier_t spec,
+						 const expr_t *qual_name, const expr_t *val)
 {
 	if (spec.sym->sy_type == sy_const) {
 		auto expr = new_value_expr (spec.sym->value, false);
@@ -115,96 +147,107 @@ glsl_layout_constant_id (specifier_t spec, const expr_t *qual_name,
 }
 
 static void
-glsl_layout_binding (specifier_t spec, const expr_t *qual_name,
-					 const expr_t *val)
+glsl_layout_binding (const layout_qual_t *qual, specifier_t spec,
+					 const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
-glsl_layout_offset (specifier_t spec, const expr_t *qual_name,
-					const expr_t *val)
+glsl_layout_offset (const layout_qual_t *qual, specifier_t spec,
+					const expr_t *qual_name, const expr_t *val)
 {
 }
 
 static void
-glsl_layout_set (specifier_t spec, const expr_t *qual_name,
-				 const expr_t *val)
+glsl_layout_set (const layout_qual_t *qual, specifier_t spec,
+				 const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = expr_string (qual_name);
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
-glsl_layout_set_property (specifier_t spec, const expr_t *qual_name,
-						  const expr_t *val)
-{
-	//auto interface = glsl_iftype_from_sc (spec.storage);
-	//notice (qual_name, "%s %s %s", glsl_interface_names[interface],
-	//		expr_string (qual_name), get_value_string (val->value));
-}
-
-static void
-glsl_layout_geom_out_primitive (specifier_t spec, const expr_t *qual_name)
+glsl_layout_format (const layout_qual_t *qual, specifier_t spec,
+					const expr_t *qual_name)
 {
 }
 
 static void
-glsl_layout_geom_out_max_vertices (specifier_t spec, const expr_t *qual_name,
-								   const expr_t *val)
+glsl_layout_push_constant (const layout_qual_t *qual, specifier_t spec,
+		                   const expr_t *qual_name)
 {
 }
 
 static void
-glsl_layout_format (specifier_t spec, const expr_t *qual_name)
+glsl_layout_input_attachment_index (const layout_qual_t *qual, specifier_t spec,
+									const expr_t *qual_name, const expr_t *val)
 {
 }
 
-static void
-glsl_layout_push_constant (specifier_t spec, const expr_t *qual_name)
-{
-}
-
-static void
-glsl_layout_input_attachment_index (specifier_t spec, const expr_t *qual_name,
-									const expr_t *val)
-{
-}
-
-static void
-glsl_layout_execution_mode (specifier_t spec, const expr_t *qual_name)
-{
-}
-
-typedef enum {
-	decl_var    = 1 << 0,
-	decl_qual   = 1 << 1,
-	decl_block  = 1 << 2,
-	decl_member = 1 << 3,
-} glsl_obj_t;
-
-typedef enum {
-	var_any,
-	var_opaque,
-	var_atomic,
-	var_subpass,
-	var_scalar,
-	var_image,
-	var_gl_FragCoord,
-	var_gl_FragDepth,
-} glsl_var_t;
-
-typedef struct layout_qual_s {
+#define EP(n)  {.name = #n, .offset = offsetof (entrypoint_t, n)}
+#define EPF(n) {.name = #n, .offset = offsetof (entrypoint_t, n), .flag = true}
+static struct {
 	const char *name;
-	void      (*apply) (specifier_t spec, const expr_t *qual_name);
-	void      (*apply_expr) (specifier_t spec, const expr_t *qual_name,
-							 const expr_t *val);
-	unsigned    obj_mask;
-	glsl_var_t  var_type;
-	unsigned    if_mask;
-	const char **stage_filter;
-} layout_qual_t;
+	int         offset;
+	bool        flag;
+} entrypoint_fields[] = {
+	EP (invocations),
+	EP (local_size[0]),
+	EP (local_size[1]),
+	EP (local_size[2]),
+	EP (primitive_in),
+	EP (primitive_out),
+	EP (max_vertices),
+	EP (spacing),
+	EP (order),
+	EP (frag_depth),
+	EPF (point_mode),
+	EPF (early_fragment_tests),
+	{}
+};
+#undef EP
+
+static void
+glsl_layout_exec_mode_param (const layout_qual_t *qual, specifier_t spec,
+							 const expr_t *qual_name, const expr_t *val)
+{
+	auto entry_point = pr.module->entry_points;
+	if (!entry_point) {
+		internal_error (0, "no entry point");
+	}
+	for (auto ep = entrypoint_fields; ep->name; ep++) {
+		if (strcmp (ep->name, qual->accessor) == 0) {
+			auto val_ptr = ((byte *) entry_point + ep->offset);
+			if (ep->flag) {
+				auto flag = (bool *) val_ptr;
+				*flag = true;
+			} else {
+				auto expr = (const expr_t **) val_ptr;
+				*expr = val;
+			}
+			return;
+		}
+	}
+	internal_error (0, "invalid accessor: %s", qual->accessor);
+}
+
+static void
+glsl_layout_exec_mode (const layout_qual_t *qual, specifier_t spec,
+					   const expr_t *qual_name)
+{
+	auto val = new_int_expr (qual->val, false);
+	glsl_layout_exec_mode_param (qual, spec, qual_name, val);
+}
+
+static void
+glsl_layout_ignore (const layout_qual_t *qual, specifier_t spec,
+					const expr_t *qual_name)
+{
+	const char *name = expr_string (qual_name);
+	debug (qual_name, "ignoring %s", name);
+}
 
 #define A(a) a, nullptr
 #define E(e) nullptr, e
@@ -314,100 +357,130 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "triangles",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeTriangles,
+		.accessor = "primitive_out",
 	},
 	{	.name = "quads",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeQuads,
+		.accessor = "primitive_out",
 	},
 	{	.name = "isolines",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeIsolines,
+		.accessor = "primitive_out",
 	},
 	{	.name = "equal_spacing",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeSpacingEqual,
+		.accessor = "spacing",
 	},
 	{	.name = "fractional_even_spacing",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeSpacingFractionalEven,
+		.accessor = "spacing",
 	},
 	{	.name = "fractional_odd_spacing",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeSpacingFractionalOdd,
+		.accessor = "spacing",
 	},
 	{	.name = "cw",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeVertexOrderCw,
+		.accessor = "order",
 	},
 	{	.name = "ccw",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = SpvExecutionModeVertexOrderCcw,
+		.accessor = "order",
 	},
 	{	.name = "point_mode",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
+		.val = true,
+		.accessor = "point_mode",
 	},
 
 	{	.name = "points",
-		.apply = A(glsl_layout_geom_in_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
-		.if_mask = I(in)|I(out),
+		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeInputPoints,
+		.accessor = "primitive_in",
 	},
 	{	.name = "lines",
-		.apply = A(glsl_layout_geom_in_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeInputLines,
+		.accessor = "primitive_in",
 	},
 	{	.name = "lines_adjacency",
-		.apply = A(glsl_layout_geom_in_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeInputLinesAdjacency,
+		.accessor = "primitive_in",
 	},
 	{	.name = "triangles",
-		.apply = A(glsl_layout_geom_in_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeTriangles,
+		.accessor = "primitive_in",
 	},
 	{	.name = "triangles_adjacency",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeInputTrianglesAdjacency,
+		.accessor = "primitive_in",
 	},
 	{	.name = "invocations",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
+		.accessor = "invocations",
 	},
 
 	{	.name = "origin_upper_left",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_ignore),
 		.obj_mask = D(qual),
+		.var_type = V(gl_FragCoord),
 		.if_mask = I(in),
 		.stage_filter = C { "fragment", nullptr },
 	},
@@ -418,47 +491,55 @@ static layout_qual_t layout_qualifiers[] = {
 		.stage_filter = C { "fragment", nullptr },
 	},
 	{	.name = "early_fragment_tests",
-		.apply = A(glsl_layout_execution_mode),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "fragment", nullptr },
+		.val = true,
+		.accessor = "early_fragment_tests",
 	},
 
 	{	.name = "local_size_x",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[0]",
 	},
 	{	.name = "local_size_y",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[1]",
 	},
 	{	.name = "local_size_z",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[2]",
 	},
 	{	.name = "local_size_x_id",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[0]",
 	},
 	{	.name = "local_size_y_id",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[1]",
 	},
 	{	.name = "local_size_z_id",
-		.apply = E(glsl_layout_set_property),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
+		.accessor = "local_size[2]",
 	},
 
 	{	.name = "xfb_buffer",
@@ -502,35 +583,43 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "vertices",
-		.apply = E(nullptr),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "tessellation control", nullptr },
+		.accessor = "max_vertices",
 	},
 
 	{	.name = "points",
-		.apply = A(glsl_layout_geom_out_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeOutputPoints,
+		.accessor = "primitive_out",
 	},
 	{	.name = "line_strip",
-		.apply = A(glsl_layout_geom_out_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeOutputLineStrip,
+		.accessor = "primitive_out",
 	},
 	{	.name = "triangle_strip",
-		.apply = A(glsl_layout_geom_out_primitive),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
+		.val = SpvExecutionModeOutputTriangleStrip,
+		.accessor = "primitive_out",
 	},
 	{	.name = "max_vertices",
-		.apply = E(glsl_layout_geom_out_max_vertices),
+		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
+		.accessor = "max_vertices",
 	},
 	{	.name = "stream",
 		.apply = E(nullptr),
@@ -541,32 +630,40 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "depth_any",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(var),
-		.var_type = V(any),
+		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
+		.val = SpvExecutionModeDepthReplacing,
+		.accessor = "frag_depth",
 	},
 	{	.name = "depth_greater",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(var),
-		.var_type = V(any),
+		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
+		.val = SpvExecutionModeDepthGreater,
+		.accessor = "frag_depth",
 	},
 	{	.name = "depth_less",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(var),
-		.var_type = V(any),
+		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
+		.val = SpvExecutionModeDepthLess,
+		.accessor = "frag_depth",
 	},
 	{	.name = "depth_unchanged",
-		.apply = A(nullptr),
+		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(var),
-		.var_type = V(any),
+		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
+		.val = SpvExecutionModeDepthUnchanged,
+		.accessor = "frag_depth",
 	},
 
 	{	.name = "constant_id",
@@ -953,14 +1050,14 @@ layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 				if (!val) {
 					error (qualifier, "%s requires a value", key.name);
 				} else {
-					qual->apply_expr (spec, qualifier->expr.e1, val);
+					qual->apply_expr (qual, spec, qualifier->expr.e1, val);
 				}
 				return;
 			} else if (qual->apply) {
 				if (val) {
 					error (qualifier, "%s does not take a value", key.name);
 				} else {
-					qual->apply (spec, qualifier->expr.e1);
+					qual->apply (qual, spec, qualifier->expr.e1);
 				}
 				return;
 			} else {
