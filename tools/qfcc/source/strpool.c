@@ -49,15 +49,17 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/strpool.h"
 
+#define STR_GROW 16384
+
 static hashtab_t *saved_strings;
 
 static const char *
-strpool_get_key (const void *_str, void *_strpool)
+strpool_get_key (const void *_ind, void *_strpool)
 {
-	long        str = (intptr_t) _str;
-	strpool_t  *strpool = (strpool_t *) _strpool;
-
-	return strpool->strings + str;
+	auto ind = (size_t) _ind;
+	auto strpool = (strpool_t *) _strpool;
+	auto strid = &strpool->strids.a[ind];
+	return strpool->strings + strid->offset;
 }
 
 strpool_t *
@@ -65,28 +67,35 @@ strpool_new (void)
 {
 	strpool_t  *strpool = calloc (1, sizeof (strpool_t));
 
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
-	strpool->size = 1;
-	strpool->max_size = 16384;
-	strpool->strings = malloc (strpool->max_size);
+	*strpool = (strpool_t) {
+		.strings = malloc (STR_GROW),
+		.str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0),
+		.size = 1,
+		.max_size = STR_GROW,
+		.strids = DARRAY_STATIC_INIT (512),
+	};
 	strpool->strings[0] = 0;
+	DARRAY_APPEND (&strpool->strids, (strid_t) { });
 	return strpool;
 }
 
 strpool_t *
 strpool_build (const char *strings, int size)
 {
-	intptr_t    s;
+	uintptr_t   s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = size + (*strings != 0);
-	strpool->max_size = (strpool->size + 16383) & ~16383;
+	strpool->max_size = (strpool->size + (STR_GROW - 1)) & ~(STR_GROW - 1);
 	strpool->strings = malloc (strpool->max_size);
 	memcpy (strpool->strings + (*strings != 0), strings, strpool->size);
 	strpool->strings[0] = 0;
 	for (s = 1; s < strpool->size; s += strlen (strpool->strings + s) + 1) {
-		Hash_Add (strpool->str_tab, (void *) s);
+		size_t ind = strpool->strids.size;
+		DARRAY_APPEND (&strpool->strids, (strid_t) { .offset = s });
+		auto strid = &strpool->strids.a[ind];
+		Hash_Add (strpool->str_tab, strid);
 	}
 	return strpool;
 }
@@ -99,27 +108,38 @@ strpool_delete (strpool_t *strpool)
 	free (strpool);
 }
 
+strid_t *
+strpool_addstrid (strpool_t *strpool, const char *str)
+{
+	if (!str || !*str) {
+		return &strpool->strids.a[0];
+	}
+	auto ind = (size_t) Hash_Find (strpool->str_tab, str);
+	if (ind) {
+		return &strpool->strids.a[ind];
+	}
+	size_t len = strlen (str) + 1;
+	if (strpool->size + len > strpool->max_size) {
+		strpool->max_size += (len + (STR_GROW - 1)) & ~(STR_GROW - 1);
+		strpool->strings = realloc (strpool->strings, strpool->max_size);
+	}
+
+	size_t s = strpool->size;
+	strpool->size += len;
+	strcpy (strpool->strings + s, str);
+	ind = strpool->strids.size;
+	DARRAY_APPEND (&strpool->strids, (strid_t) { .offset = s });
+	auto strid = &strpool->strids.a[ind];
+	Hash_Add (strpool->str_tab, (void *) ind);
+
+	return strid;
+}
+
 int
 strpool_addstr (strpool_t *strpool, const char *str)
 {
-	intptr_t    s;
-	int         len;
-
-	if (!str)
-		return 0;
-	s = (intptr_t) Hash_Find (strpool->str_tab, str);
-	if (s)
-		return s;
-	len = strlen (str) + 1;
-	if (strpool->size + len > strpool->max_size) {
-		strpool->max_size += (len + 16383) & ~16383;
-		strpool->strings = realloc (strpool->strings, strpool->max_size);
-	}
-	s = strpool->size;
-	strpool->size += len;
-	strcpy (strpool->strings + s, str);
-	Hash_Add (strpool->str_tab, (void *) s);
-	return s;
+	auto strid = strpool_addstrid (strpool, str);
+	return strid->offset;
 }
 
 int
