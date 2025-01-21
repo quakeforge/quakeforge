@@ -63,6 +63,7 @@ typedef struct spirvctx_s {
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) label_ids;
 	struct DARRAY_TYPE (function_t *) func_queue;
+	strpool_t  *strpool;
 	unsigned id;
 } spirvctx_t;
 
@@ -149,7 +150,7 @@ spirv_str_insn (int op, int offs, int extra, const char *str, defspace_t *space)
 	int str_size = RUP(len, 4) / 4;
 	int size = offs + str_size + extra;
 	auto insn = spirv_new_insn (op, size, space);
-	INSN (insn, str_size - 1) = 0;
+	INSN (insn, offs + str_size - 1) = 0;
 	memcpy (&INSN (insn, offs), str, len);
 	return insn;
 }
@@ -208,11 +209,15 @@ spirv_MemoryModel (SpvAddressingModel addressing, SpvMemoryModel memory,
 static unsigned
 spirv_String (const char *name, spirvctx_t *ctx)
 {
+	auto strid = strpool_addstrid (ctx->strpool, name);
+	if (strid->id) {
+		return strid->id;
+	}
 	auto strings = ctx->module->strings;
 	auto insn = spirv_str_insn (SpvOpString, 2, 0, name, strings);
-	int id = spirv_id (ctx);
-	INSN (insn, 1) = id;
-	return id;
+	strid->id = spirv_id (ctx);
+	INSN (insn, 1) = strid->id;
+	return strid->id;
 }
 
 static void
@@ -266,6 +271,16 @@ spirv_MemberName (unsigned id, unsigned member, const char *name,
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = member;
 	memcpy (&INSN (insn, 3), name, len);
+}
+
+static void
+spirv_DebugLine (const expr_t *e, spirvctx_t *ctx)
+{
+	unsigned file_id = spirv_String (GETSTR (e->loc.file), ctx);
+	auto insn = spirv_new_insn (SpvOpLine, 4, ctx->code_space);
+	INSN (insn, 1) = file_id;
+	INSN (insn, 2) = e->loc.line;
+	INSN (insn, 3) = e->loc.column;
 }
 
 static unsigned type_id (const type_t *type, spirvctx_t *ctx);
@@ -1967,6 +1982,14 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 	}
 
 	if (!e->id) {
+		if (options.code.debug) {
+			auto cs = ctx->code_space;
+			if (cs->size >= 4 && cs->data[cs->size - 4].value == 0x40008) {
+				//back up and overwrite the previous debug line instruction
+				cs->size -= 4;
+			}
+			spirv_DebugLine (e, ctx);
+		}
 		unsigned id = funcs[e->type] (e, ctx);
 		//FIXME const cast (store elsewhere)
 		((expr_t *) e)->id = id;
@@ -1994,6 +2017,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.type_ids = DARRAY_STATIC_INIT (64),
 		.label_ids = DARRAY_STATIC_INIT (64),
 		.func_queue = DARRAY_STATIC_INIT (16),
+		.strpool = strpool_new (),
 		.id = 0,
 	};
 	auto space = defspace_new (ds_backed);
