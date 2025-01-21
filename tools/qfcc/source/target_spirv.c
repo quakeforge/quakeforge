@@ -1756,6 +1756,15 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_list (const expr_t *e, spirvctx_t *ctx)
+{
+	for (auto le = e->list.head; le; le = le->next) {
+		spirv_emit_expr (le->expr, ctx);
+	}
+	return 0;
+}
+
+static unsigned
 spirv_incop (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
@@ -1939,6 +1948,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_return] = spirv_return,
 		[ex_swizzle] = spirv_swizzle,
 		[ex_extend] = spirv_extend,
+		[ex_list] = spirv_list,
 		[ex_incop] = spirv_incop,
 		[ex_cond] = spirv_cond,
 		[ex_field] = spirv_field_array,
