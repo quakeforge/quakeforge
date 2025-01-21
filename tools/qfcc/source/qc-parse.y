@@ -996,7 +996,7 @@ notype_declarator
 	| NOT
 		{
 			$$ = $<spec>0;
-			$$.sym = new_symbol ("NOT");
+			$$.sym = new_symbol ("not");
 		}
 	;
 
