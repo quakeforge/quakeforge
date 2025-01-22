@@ -213,6 +213,10 @@ reference_param (const type_t *ptype, const expr_t *arg)
 		arg = reference_expr (arg, nullptr);
 	} else if (!is_reference (ptype) && is_reference (arg_type)) {
 		arg = pointer_deref (arg);
+	} else if (!is_reference (ptype) && !is_reference (arg_type)) {
+		if (!type_same (ptype, arg_type)) {
+			arg = cast_expr (ptype, arg);
+		}
 	}
 	return arg;
 }
