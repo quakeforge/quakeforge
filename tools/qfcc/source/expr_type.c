@@ -894,11 +894,13 @@ resolve_type (const expr_t *te, rua_ctx_t *ctx)
 {
 	if (te->type == ex_symbol) {
 		auto sym = te->symbol;
-		if (sym->type == sy_name) {
+		if (sym->sy_type == sy_name) {
 			sym = symtab_lookup (current_symtab, sym->name);
 			if (sym && sym->sy_type == sy_type_param) {
 				te = sym->expr;
 			}
+		} else if (sym->sy_type == sy_type_param) {
+			te = sym->expr;
 		} else if (sym->sy_type == sy_type) {
 			return sym->type;
 		}
