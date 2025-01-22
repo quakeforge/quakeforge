@@ -74,7 +74,7 @@ typedef struct {
 
 static type_func_t type_funcs[];
 
-static bool
+static bool __attribute__((pure))
 check_type (const expr_t *arg)
 {
 	if (arg->type == ex_symbol && arg->symbol->sy_type == sy_type_param) {
@@ -130,7 +130,7 @@ check_int (const expr_t *arg)
 	return true;
 }
 
-static const char *
+static const char * __attribute__((pure))
 single_type (int arg_count, const expr_t **args)
 {
 	if (arg_count < 1) {
@@ -145,7 +145,7 @@ single_type (int arg_count, const expr_t **args)
 	return nullptr;
 }
 
-static const char *
+static const char * __attribute__((pure))
 single_type_property (int arg_count, const expr_t **args)
 {
 	if (arg_count < 1) {
@@ -163,7 +163,7 @@ single_type_property (int arg_count, const expr_t **args)
 	return nullptr;
 }
 
-static const char *
+static const char * __attribute__((pure))
 single_type_opt_int (int arg_count, const expr_t **args)
 {
 	if (arg_count < 1) {
@@ -181,7 +181,7 @@ single_type_opt_int (int arg_count, const expr_t **args)
 	return nullptr;
 }
 
-static const char *
+static const char * __attribute__((pure))
 single_type_opt_int_pair (int arg_count, const expr_t **args)
 {
 	if (arg_count < 1) {
