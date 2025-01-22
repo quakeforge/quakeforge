@@ -205,6 +205,18 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 	return err;
 }
 
+static const expr_t *
+reference_param (const type_t *ptype, const expr_t *arg)
+{
+	auto arg_type = get_type (arg);
+	if (is_reference (ptype) && !is_reference (arg_type)) {
+		arg = reference_expr (arg, nullptr);
+	} else if (!is_reference (ptype) && is_reference (arg_type)) {
+		arg = pointer_deref (arg);
+	}
+	return arg;
+}
+
 static void
 build_call_scope (symbol_t *fsym, const expr_t **arguments)
 {
@@ -236,14 +248,7 @@ build_call_scope (symbol_t *fsym, const expr_t **arguments)
 		}
 		auto psym = new_symbol (p->name);
 		psym->sy_type = sy_expr;
-		auto arg_type = get_type (arguments[i]);
-		if (is_reference (p->type) && !is_reference (arg_type)) {
-			psym->expr = address_expr (arguments[i], nullptr);
-		} else if (!is_reference (p->type) && is_reference (arg_type)) {
-			psym->expr = pointer_deref (arguments[i]);
-		} else {
-			psym->expr = arguments[i];
-		}
+		psym->expr = reference_param (p->type, arguments[i]);
 		symtab_addsymbol (params, psym);
 	}
 }
@@ -280,23 +285,13 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 		current_symtab = func->locals;
 		for (int i = 0; i < extra_count; i++) {
 			extra_args[i] = expr_process (extra_args[i], ctx);
-			if (is_reference (get_type (extra_args[i]))) {
-				extra_args[i] = pointer_deref (extra_args[i]);
-			}
 		}
 		current_symtab = scope;
 		list_gather (&call->intrinsic.operands, extra_args, extra_count);
 	} else {
 		auto p = fsym->params;
 		for (int i = 0; i < arg_count; i++, p = p->next) {
-			auto arg_type = get_type (arguments[i]);
-			if (is_reference (p->type) && !is_reference (arg_type)) {
-				arguments[i] = address_expr (arguments[i], nullptr);
-			} else if (!is_reference (p->type) && is_reference (arg_type)) {
-				arguments[i] = pointer_deref (arguments[i]);
-			} else {
-				arguments[i] = arguments[i];
-			}
+			arguments[i] = reference_param (p->type, arguments[i]);
 		}
 		list_gather (&call->intrinsic.operands, arguments, arg_count);
 	}
@@ -416,7 +411,7 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 					if (is_reference (get_type (e))) {
 						// just copy the param, so no op
 					} else {
-						e = address_expr (e, nullptr);
+						e = reference_expr (e, nullptr);
 					}
 				} else {
 					if (is_reference (get_type (e))) {

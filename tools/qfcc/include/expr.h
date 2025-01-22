@@ -1094,6 +1094,7 @@ const expr_t *deref_pointer_expr (const expr_t *pointer);
 const expr_t *pointer_deref (const expr_t *pointer);
 const expr_t *offset_pointer_expr (const expr_t *pointer, const expr_t *offset);
 const expr_t *address_expr (const expr_t *e1, const type_t *t);
+const expr_t *reference_expr (const expr_t *e1, const type_t *t);
 const expr_t *build_if_statement (bool not, const expr_t *test,
 								  const expr_t *s1, const expr_t *els,
 								  const expr_t *s2);

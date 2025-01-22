@@ -2528,13 +2528,10 @@ offset_pointer_expr (const expr_t *pointer, const expr_t *offset)
 	return cast_expr (ptr_type, ptr);
 }
 
-const expr_t *
-address_expr (const expr_t *e1, const type_t *t)
+static expr_t *
+core_address_expr (const expr_t *e1, const type_t *t)
 {
 	expr_t     *e;
-
-	if (e1->type == ex_error)
-		return e1;
 
 	if (!t)
 		t = get_type (e1);
@@ -2553,9 +2550,9 @@ address_expr (const expr_t *e1, const type_t *t)
 				}
 				if (is_array (type)) {
 					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return new_value_expr (ptrval, false);
+					return (expr_t *) new_value_expr (ptrval, false);
 				} else {
-					return new_pointer_expr (0, t, def);
+					return (expr_t *) new_pointer_expr (0, t, def);
 				}
 			}
 			break;
@@ -2572,13 +2569,13 @@ address_expr (const expr_t *e1, const type_t *t)
 
 				if (is_array (type)) {
 					auto ptrval =  new_pointer_val (0, t, def, 0);
-					return new_value_expr (ptrval, false);
+					return (expr_t *) new_value_expr (ptrval, false);
 				} else {
-					return new_pointer_expr (0, t, def);
+					return (expr_t *) new_pointer_expr (0, t, def);
 				}
 				break;
 			}
-			return error (e1, "invalid type for unary &");
+			return (expr_t *) error (e1, "invalid type for unary &");
 		case ex_field:
 			e = new_address_expr (e1->field.type, e1, nullptr);
 			break;
@@ -2588,16 +2585,16 @@ address_expr (const expr_t *e1, const type_t *t)
 									  e1->expr.e1, e1->expr.e2);
 				break;
 			}
-			return error (e1, "invalid type for unary &");
+			return (expr_t *) error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->expr.op == '.') {
-				auto p = e1->expr.e1;
+				auto p = (expr_t *) e1->expr.e1;
 				if (p->type == ex_expr && p->expr.op == '.') {
 					p = new_address_expr (p->expr.type, p->expr.e1, p->expr.e2);
 				}
 				return p;
 			}
-			return error (e1, "invalid type for unary &");
+			return (expr_t *) error (e1, "invalid type for unary &");
 		case ex_label:
 			return new_label_ref (&e1->label);
 		case ex_temp:
@@ -2609,9 +2606,38 @@ address_expr (const expr_t *e1, const type_t *t)
 			}
 			return new_address_expr (t, e1, 0);
 		default:
-			return error (e1, "invalid type for unary &");
+			return (expr_t *) error (e1, "invalid type for unary &");
 	}
 	return e;
+}
+
+const expr_t *
+address_expr (const expr_t *e1, const type_t *t)
+{
+	if (is_error (e1)) {
+		return e1;
+	}
+	return core_address_expr (e1, t);
+}
+
+const expr_t *
+reference_expr (const expr_t *e, const type_t *t)
+{
+	if (is_error (e)) {
+		return e;
+	}
+	auto ref = core_address_expr (e, t);
+	if (is_error (ref)) {
+		return ref;
+	}
+	if (ref->type != ex_address) {
+		internal_error (ref, "expected address expression");
+	}
+	auto type = get_type (ref);
+	type = dereference_type (type);
+	type = reference_type (type);
+	ref->address.type = type;
+	return ref;
 }
 
 const expr_t *
