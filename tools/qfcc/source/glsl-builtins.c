@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
@@ -145,6 +146,18 @@ sampled_shadow_swizzle (const attribute_t *property, const char *swizzle[7][2],
 	if (strcmp (swiz, "xyzw") == 0) {
 		// no-op swizzle
 		return params[0];
+	}
+	if (!swiz[1]) {
+		auto ptype = get_type (params[0]);
+		auto member = new_name_expr (swiz);
+		auto field = get_struct_field (ptype, params[0], member);
+		if (!field) {
+			return error (params[0], "invalid shadow coord");
+		}
+		member = new_symbol_expr (field);
+		auto expr = new_field_expr (params[0], member);
+		expr->field.type = member->symbol->type;
+		return expr;
 	}
 	return new_swizzle_expr (params[0], swiz);
 }
@@ -1227,8 +1240,10 @@ SRC_LINE
 "#define _image(d,m,a,s) __image(,d,m,a,s),__image(i,d,m,a,s),__image(u,d,m,a,s)\n"
 "#define gvec4 @vector(gimage.sample_type, 4)"                          "\n"
 "#define gvec4MS @vector(gimageMS.sample_type, 4)"                      "\n"
-"#define IMAGE_PARAMS @reference(gimage) image, gimage.image_coord P"               "\n"
-"#define IMAGE_PARAMS_MS @reference(gimageMS) image, gimageMS.image_coord P, int sample" "\n"
+"#define IMAGE_PARAMS gimage image, gimage.image_coord P"               "\n"
+"#define IMAGE_PARAMS_MS gimageMS image, gimageMS.image_coord P, int sample" "\n"
+"#define PIMAGE_PARAMS @reference(gimage) image, gimage.image_coord P"               "\n"
+"#define PIMAGE_PARAMS_MS @reference(gimageMS) image, gimageMS.image_coord P, int sample" "\n"
 "@generic(gimage=[_image(1D,,,),"                                       "\n"
 "                 _image(1D,,Array,),"                                  "\n"
 "                 _image(2D,,,),"                                       "\n"
@@ -1247,14 +1262,14 @@ SRC_LINE
 "gvec4MS imageLoad(readonly IMAGE_PARAMS_MS) = " SPV(OpImageRead) ";" "\n"
 "void imageStore(writeonly IMAGE_PARAMS, gvec4 data) = " SPV(OpImageWrite) ";" "\n"
 "void imageStore(writeonly IMAGE_PARAMS_MS, gvec4MS data) = " SPV(OpImageWrite) ";" "\n"
-"@reference(gimage.sample_type, StorageClass.Image) __imageTexel(IMAGE_PARAMS, int sample) = " SPV(OpImageTexelPointer) ";" "\n"
-"@reference(gimageMS.sample_type, StorageClass.Image) __imageTexel(IMAGE_PARAMS_MS) = " SPV(OpImageTexelPointer) ";" "\n"
+"@reference(gimage.sample_type, StorageClass.Image) __imageTexel(PIMAGE_PARAMS, int sample) = " SPV(OpImageTexelPointer) ";" "\n"
+"@reference(gimageMS.sample_type, StorageClass.Image) __imageTexel(PIMAGE_PARAMS_MS) = " SPV(OpImageTexelPointer) ";" "\n"
 "#define __imageAtomic(op,type) \\"                                     "\n"
-"type imageAtomic##op(IMAGE_PARAMS, type data) \\"                      "\n"
+"type imageAtomic##op(PIMAGE_PARAMS, type data) \\"                     "\n"
 "{ \\"                                                                  "\n"
 "    return atomic##op(__imageTexel(image, P, 0), data); \\"            "\n"
 "} \\"                                                                  "\n"
-"type imageAtomic##op(IMAGE_PARAMS_MS, type data) \\"                   "\n"
+"type imageAtomic##op(PIMAGE_PARAMS_MS, type data) \\"                  "\n"
 "{ \\"                                                                  "\n"
 "    return atomic##op(__imageTexel(image, P, sample), data); \\"       "\n"
 "}"                                                                     "\n"
@@ -1271,11 +1286,11 @@ SRC_LINE
 "__imageAtomic(Exchange, uint)"                                         "\n"
 "__imageAtomic(Exchange, int)"                                          "\n"
 "#define __imageAtomicCompSwap(type) \\"                                "\n"
-"type imageAtomicCompSwap(IMAGE_PARAMS, type data) \\"                  "\n"
+"type imageAtomicCompSwap(PIMAGE_PARAMS, type data) \\"                 "\n"
 "{ \\"                                                                  "\n"
 "    return atomicCompSwap(__imageTexel(image, P, 0), data); \\"        "\n"
 "} \\"                                                                  "\n"
-"type imageAtomicCompSwap(IMAGE_PARAMS_MS, type data) \\"               "\n"
+"type imageAtomicCompSwap(PIMAGE_PARAMS_MS, type data) \\"              "\n"
 "{ \\"                                                                  "\n"
 "    return atomicCompSwap(__imageTexel(image, P, sample), data); \\"   "\n"
 "}"                                                                     "\n"
@@ -1350,13 +1365,15 @@ SRC_LINE
 "#define _subpassInput(x,m) __spI(,m),__spI(i,m),__spI(u,m)"            "\n"
 "#define gvec4 @vector(gsubpassInput.sample_type, 4)"                   "\n"
 "#define gvec4MS @vector(gsubpassInputMS.sample_type, 4)"               "\n"
-"#define IMAGE_PARAMS gsubpassInput image, gsubpassInput.image_coord P" "\n"
-"#define IMAGE_PARAMS_MS gsubpassInputMS image, gsubpassInputMS.image_coord P, int sample" "\n"
 "@generic(gsubpassInput=[_subpassInput(,)],"                            "\n"
 "         gsubpassInputMS=[_subpassInput(,MS)]) {"                      "\n"
-"gvec4 subpassLoad(gsubpassInput subpass) = " SPV(OpImageRead) "[subpass, @construct(gsubpassInput.image_coord, 0)];" "\n"
-"gvec4MS subpassLoad(gsubpassInputMS subpass) = " SPV(OpImageRead) "[subpass, @construct(gsubpassInputMS.image_coord, 0), sample];" "\n"
-"};" "\n"
+"gvec4 subpassLoad(gsubpassInput subpass)"                              "\n"
+	"= " SPV(OpImageRead)                                               "\n"
+	"[subpass, @construct(gsubpassInput.image_coord, 0)];"              "\n"
+"gvec4MS subpassLoad(gsubpassInputMS subpass)"                          "\n"
+	"= " SPV(OpImageRead)                                               "\n"
+	"[subpass, @construct(gsubpassInputMS.image_coord, 0), sample];"    "\n"
+"};"                                                                    "\n"
 "#undef uint"           "\n"
 "#undef readonly"       "\n"
 "#undef writeonly"      "\n"
