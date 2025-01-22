@@ -287,9 +287,15 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 		current_symtab = scope;
 		list_gather (&call->intrinsic.operands, extra_args, extra_count);
 	} else {
-		for (int i = 0; i < arg_count; i++) {
-			if (is_reference (get_type (arguments[i]))) {
+		auto p = fsym->params;
+		for (int i = 0; i < arg_count; i++, p = p->next) {
+			auto arg_type = get_type (arguments[i]);
+			if (is_reference (p->type) && !is_reference (arg_type)) {
+				arguments[i] = address_expr (arguments[i], nullptr);
+			} else if (!is_reference (p->type) && is_reference (arg_type)) {
 				arguments[i] = pointer_deref (arguments[i]);
+			} else {
+				arguments[i] = arguments[i];
 			}
 		}
 		list_gather (&call->intrinsic.operands, arguments, arg_count);

@@ -66,6 +66,8 @@ typedef struct genparam_s {
 	typeeval_t *compute;
 	int         gentype;	// index into function's list of types
 	param_qual_t qual;
+	bool        is_reference;
+	unsigned    tag;
 } genparam_t;
 
 typedef struct genfunc_s {

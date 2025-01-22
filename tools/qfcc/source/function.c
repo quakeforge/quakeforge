@@ -260,13 +260,41 @@ valid_type_list (const expr_t *expr, rua_ctx_t *ctx)
 	return types;
 }
 
+static symbol_t *
+get_gensym (const expr_t *type_expr, bool *is_reference, unsigned *tag,
+			rua_ctx_t *ctx)
+{
+	*is_reference = false;
+	*tag = 0;
+	if (!type_expr) {
+		return nullptr;
+	}
+	if (type_expr->type == ex_type && type_expr->typ.op == QC_REFERENCE) {
+		auto params = type_expr->typ.params;
+		if (params && params->list.head) {
+			*is_reference = true;
+			if (params->list.head->next) {
+				auto tag_expr = params->list.head->next->expr;
+				tag_expr = expr_process (tag_expr, ctx);
+				*tag = expr_integral (tag_expr);
+			}
+			type_expr = params->list.head->expr;
+		}
+	}
+	if (type_expr->type != ex_symbol
+		|| type_expr->symbol->sy_type != sy_type_param) {
+		return nullptr;
+	}
+	return type_expr->symbol;
+}
+
 static gentype_t
 make_gentype (const expr_t *expr, rua_ctx_t *ctx)
 {
-	if (expr->type != ex_symbol || expr->symbol->sy_type != sy_type_param) {
-		internal_error (expr, "expected generic type name");
-	}
-	auto sym = expr->symbol;
+	bool is_reference = false;
+	unsigned tag = 0;
+	// strip off any reference type
+	auto sym = get_gensym (expr, &is_reference, &tag, ctx);
 	gentype_t gentype = {
 		.name = save_string (sym->name),
 		.valid_types = valid_type_list (sym->expr, ctx),
@@ -278,15 +306,16 @@ make_gentype (const expr_t *expr, rua_ctx_t *ctx)
 }
 
 static int
-find_gentype (const expr_t *expr, genfunc_t *genfunc)
+find_gentype (const expr_t *expr, genfunc_t *genfunc, bool *is_reference,
+			  unsigned *tag, rua_ctx_t *ctx)
 {
-	if (!expr || expr->type != ex_symbol) {
+	auto sym = get_gensym (expr, is_reference, tag, ctx);
+	if (!sym) {
 		return -1;
 	}
-	const char *name = expr->symbol->name;
 	for (int i = 0; i < genfunc->num_types; i++) {
 		auto t = &genfunc->types[i];
-		if (strcmp (name, t->name) == 0) {
+		if (strcmp (sym->name, t->name) == 0) {
 			return i;
 		}
 	}
@@ -296,7 +325,10 @@ find_gentype (const expr_t *expr, genfunc_t *genfunc)
 static genparam_t
 make_genparam (param_t *param, genfunc_t *genfunc, rua_ctx_t *ctx)
 {
-	int gentype = find_gentype (param->type_expr, genfunc);
+	bool is_reference = false;
+	unsigned tag = 0;
+	int gentype = find_gentype (param->type_expr, genfunc, &is_reference, &tag,
+								ctx);
 	typeeval_t *compute = nullptr;
 	if (gentype < 0 && param->type_expr) {
 		compute = build_type_function (param->type_expr,
@@ -308,6 +340,8 @@ make_genparam (param_t *param, genfunc_t *genfunc, rua_ctx_t *ctx)
 		.compute = compute,
 		.gentype = gentype,
 		.qual = param->qual,
+		.is_reference = is_reference,
+		.tag = tag,
 	};
 	return genparam;
 }
@@ -335,11 +369,14 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 		bool found = false;
 		for (auto q = &ret_param; q; q = q->next) {
 			// skip complex expressions because they will be either fixed
-			// or rely on earlier parameters
-			if (!q->type_expr || q->type_expr->type != ex_symbol) {
+			// or rely on earlier parameters, but need to check references
+			bool is_reference;
+			unsigned tag;
+			auto gsym = get_gensym (q->type_expr, &is_reference, &tag, ctx);
+			if (!gsym) {
 				continue;
 			}
-			if (strcmp (q->type_expr->symbol->name, s->name) == 0) {
+			if (strcmp (gsym->name, s->name) == 0) {
 				num_gentype++;
 				found = true;
 				break;
@@ -372,12 +409,15 @@ parse_generic_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	for (auto s = generic_tab->symbols; s; s = s->next) {
 		for (auto q = &ret_param; q; q = q->next) {
 			// see complex expressions comment above
-			if (!q->type_expr || q->type_expr->type != ex_symbol) {
+			bool is_reference;
+			unsigned tag;
+			auto gsym = get_gensym (q->type_expr, &is_reference, &tag, ctx);
+			if (!gsym) {
 				continue;
 			}
-			if (strcmp (q->type_expr->symbol->name, s->name) == 0) {
-				genfunc->types[num_gentype++] = make_gentype (q->type_expr,
-															  ctx);
+			if (strcmp (gsym->name, s->name) == 0) {
+				int ind = num_gentype++;
+				genfunc->types[ind] = make_gentype (q->type_expr, ctx);
 				break;
 			}
 		}
@@ -608,8 +648,13 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 		return true;
 	}
 	if (is_reference (type)) {
-		// pass by references is a free conversion, but no promotion
-		return type_same (dereference_type (type), param.type);
+		type = dereference_type (type);
+		if (is_reference (param.type)) {
+			return type_same (type, dereference_type (param.type));
+		} else {
+			// pass by references is a free conversion, but no promotion
+			return type_same (type, param.type);
+		}
 	}
 	if (is_reference (param.type)) {
 		// dereferencing a reference is free so long as there's no
@@ -642,22 +687,8 @@ static const type_t * __attribute__((pure))
 select_type (gentype_t *gentype, callparm_t param)
 {
 	for (auto t = gentype->valid_types; t && *t; t++) {
-		if (*t == param.type) {
-			return *t;
-		}
-		if (is_reference (*t) && dereference_type (*t) == param.type) {
-			// pass value by reference: no promotion
-			return *t;
-		}
-		auto pt = param.type;
-		if (is_reference (pt)) {
-			// pass reference by value: promotion ok
-			pt = dereference_type (pt);
-		}
-		if (*t == pt) {
-			return *t;
-		}
-		if (type_promotes (*t, pt)) {
+		unsigned cost = 0;
+		if (check_type (*t, param, &cost, true)) {
 			return *t;
 		}
 	}
@@ -744,11 +775,15 @@ compute_param_type (const genparam_t *param, int param_ind,
 							  calltype->types, fexpr, ctx);
 	}
 	int ind = param->gentype;
-	if (!call_types[ind] && param_ind >= 0) {
-		call_types[ind] = select_type (&genfunc->types[ind],
-									   call_params[param_ind]);
+	auto type = call_types[ind];
+	if (!type && param_ind >= 0) {
+		type = select_type (&genfunc->types[ind], call_params[param_ind]);
+		call_types[ind] = type;
 	}
-	return call_types[ind];
+	if (param->is_reference) {
+		type = tagged_reference_type (param->tag, type);
+	}
+	return type;
 }
 
 static symbol_t *
