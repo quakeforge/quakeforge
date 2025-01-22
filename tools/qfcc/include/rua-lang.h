@@ -221,6 +221,7 @@ typedef struct rua_ctx_s {
 	void       *scanner;
 	language_t *language;
 	bool        extdecl;
+	bool        force_lookup;
 } rua_ctx_t;
 
 extern language_t lang_ruamoko;

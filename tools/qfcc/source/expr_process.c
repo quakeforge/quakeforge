@@ -939,6 +939,8 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 						expr_names[expr->type]);
 	}
 
+	bool force_lookup = ctx->force_lookup;
+	ctx->force_lookup = true;
 	auto proc = funcs[expr->type] (expr, ctx);
 	proc = edag_add_expr (proc);
 	if (proc && proc->type == ex_process) {
@@ -949,6 +951,7 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 		proc = expr_process (proc->process.expr, ctx);
 		current_func = func;
 	}
+	ctx->force_lookup = force_lookup;
 	return proc;
 }
 
