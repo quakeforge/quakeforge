@@ -838,6 +838,11 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	}
 
 	unsigned func_id = spirv_function (entrypoint->func, ctx);
+	while (ctx->func_queue.size) {
+		auto func = DARRAY_REMOVE (&ctx->func_queue);
+		spirv_function (func, ctx);
+	}
+
 	int len = strlen (entrypoint->name) + 1;
 	int iface_start = 3 + RUP(len, 4) / 4;
 	auto linkage = ctx->module->entry_point_space;
@@ -2047,10 +2052,6 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 
 	for (auto ep = pr->module->entry_points; ep; ep = ep->next) {
 		spirv_EntryPoint (ep, &ctx);
-		while (ctx.func_queue.size) {
-			auto func = DARRAY_REMOVE (&ctx.func_queue);
-			spirv_function (func, &ctx);
-		}
 	}
 
 	auto mod = pr->module;
