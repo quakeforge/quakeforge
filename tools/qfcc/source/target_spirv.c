@@ -616,6 +616,7 @@ type_id (const type_t *type, spirvctx_t *ctx)
 		internal_error (0, "can't emit type %s", str->str);
 	}
 	spirv_add_type_id (type, id, ctx);
+	spirv_decorate_id (id, type->attributes, ctx);
 	return id;
 }
 

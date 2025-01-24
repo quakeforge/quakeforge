@@ -32,6 +32,7 @@
 #include "QF/hash.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -165,6 +166,7 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		.columns = 1,
 		.meta = ty_struct,
 		.symtab = block->members,
+		.attributes = new_attribute ("Block", nullptr),
 	};
 	auto inst_type = find_type (&type);
 	specifier_t spec = {
