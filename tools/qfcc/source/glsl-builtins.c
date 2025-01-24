@@ -240,8 +240,8 @@ SRC_LINE
 "out gl_PerVertex {"                                                    "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "};"                                                                    "\n";
 
 //tesselation control
@@ -250,8 +250,8 @@ SRC_LINE
 "in gl_PerVertex {"                                                     "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "} gl_in[gl_MaxPatchVertices];"                                         "\n"
 "layout (builtin=\"PatchVertices\") in int gl_PatchVerticesIn;"         "\n"
 "layout (builtin=\"PrimitiveID\") in int gl_PrimitiveID;"               "\n"
@@ -262,8 +262,8 @@ SRC_LINE
 "out gl_PerVertex {"                                                    "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "} gl_out[];"                                                           "\n"
 "layout (builtin=\"TessLevelOuter\") patch out float gl_TessLevelOuter[4];\n"
 "layout (builtin=\"TessLevelInner\") patch out float gl_TessLevelInner[2];\n";
@@ -273,8 +273,8 @@ SRC_LINE
 "in gl_PerVertex {"                                                     "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "} gl_in[gl_MaxPatchVertices];"                                         "\n"
 "layout (builtin=\"PatchVertices\") in int gl_PatchVerticesIn;"         "\n"
 "layout (builtin=\"PrimitiveID\") in int gl_PrimitiveID;"               "\n"
@@ -287,8 +287,8 @@ SRC_LINE
 "out gl_PerVertex {"                                                    "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "};"                                                                    "\n";
 
 static const char *glsl_geometry_vars =
@@ -296,8 +296,8 @@ SRC_LINE
 "in gl_PerVertex {"                                                     "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "} gl_in[];"                                                            "\n"
 "layout (builtin=\"PrimitiveID\") in int gl_PrimitiveIDIn;"             "\n"
 "layout (builtin=\"InvocationID\") in int gl_InvocationID;"             "\n"
@@ -307,8 +307,8 @@ SRC_LINE
 "out gl_PerVertex {"                                                    "\n"
 "    layout (builtin=\"Position\") vec4 gl_Position;"                   "\n"
 "    layout (builtin=\"PointSize\") float gl_PointSize;"                "\n"
-"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[];"        "\n"
-"    layout (builtin=\"CullDistance\") float gl_CullDistance[];"        "\n"
+"    layout (builtin=\"ClipDistance\") float gl_ClipDistance[1];"        "\n"
+"    layout (builtin=\"CullDistance\") float gl_CullDistance[1];"        "\n"
 "};"                                                                    "\n"
 "layout (builtin=\"PrimitiveID\") out int gl_PrimitiveID;"              "\n"
 "layout (builtin=\"Layer\") out int gl_Layer;"                          "\n"
@@ -318,13 +318,13 @@ static const char *glsl_fragment_vars =
 SRC_LINE
 "layout (builtin=\"FragCoord\") in vec4 gl_FragCoord;"                  "\n"
 "layout (builtin=\"FrontFacing\") in bool gl_FrontFacing;"              "\n"
-"layout (builtin=\"ClipDistance\") in float gl_ClipDistance[];"         "\n"
-"layout (builtin=\"CullDistance\") in float gl_CullDistance[];"         "\n"
+"layout (builtin=\"ClipDistance\") in float gl_ClipDistance[1];"         "\n"
+"layout (builtin=\"CullDistance\") in float gl_CullDistance[1];"         "\n"
 "layout (builtin=\"PointCoord\") in vec2 gl_PointCoord;"                "\n"
 "layout (builtin=\"PrimitiveID\") in int gl_PrimitiveID;"               "\n"
 "layout (builtin=\"SampleID\") in int gl_SampleID;"                     "\n"
 "layout (builtin=\"SamplePosition\") in vec2 gl_SamplePosition;"        "\n"
-"layout (builtin=\"SampleMask\") in int gl_SampleMaskIn[];"             "\n"
+"layout (builtin=\"SampleMask\") in int gl_SampleMaskIn[1];"             "\n"
 "layout (builtin=\"Layer\") in int gl_Layer;"                           "\n"
 "layout (builtin=\"ViewportIndex\") in int gl_ViewportIndex;"           "\n"
 "layout (builtin=\"HelperInvocation\") in bool gl_HelperInvocation;"    "\n"
@@ -332,7 +332,7 @@ SRC_LINE
 "layout (builtin=\"ViewIndex\") in highp int gl_ViewIndex;"             "\n"
 "#endif"                                                                "\n"
 "layout (builtin=\"FragDepth\") out float gl_FragDepth;"                "\n"
-"layout (builtin=\"SampleMask\") out int gl_SampleMask[];"              "\n";
+"layout (builtin=\"SampleMask\") out int gl_SampleMask[1];"              "\n";
 
 static const char *glsl_compute_vars =
 SRC_LINE
