@@ -337,6 +337,7 @@ write_output (const char *filename, void *data, size_t bytes)
 		uint32_t   *words = data;
 		size_t      count = bytes / 4;//FIXME asumes bytes is multiple of 4
 		const char *src = GETSTR (pr.loc.file);
+		src = QFS_SkipPath (src);
 		char buf[strlen (src) + 1];
 		if (!name) {
 			for (char *d = buf; (*d = *src); d++, src++) {
