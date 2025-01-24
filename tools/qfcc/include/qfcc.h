@@ -108,6 +108,7 @@ extern	pr_info_t	pr;
 
 #define POINTER_OFS(s,p)	((pr_type_t *) (p) - (s)->data)
 
+bool write_output (const char *filename, void *data, size_t bytes);
 const char *file_basename (const char *filename, int keepdot) __attribute__((pure));
 
 extern int pre_yydebug;

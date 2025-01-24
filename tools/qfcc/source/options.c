@@ -228,6 +228,9 @@ code_usage (void)
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
 	printf (
+"    c-array[=name]          Generate a C file with an array instead of the\n"
+"                            default output for the target, with optional\n"
+"                            override for the array name\n"
 "    [no-]const-initializers Treat initialized globals as constants.\n"
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
@@ -572,6 +575,14 @@ parse_code_option (const char *opt)
 		return true;
 	}
 	if (OPTION(code, opt, "const-initializers", const_initializers, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "c-array", c_array, flag)) {
+		return true;
+	}
+	if (!strncasecmp (opt, "c-array=", 8)) {
+		options.code.c_array = true;
+		options.code.c_array_name = save_string (opt + 8);
 		return true;
 	}
 	return false;

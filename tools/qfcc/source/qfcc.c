@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <QF/cbuf.h>
 #include <QF/crc.h>
@@ -205,7 +206,6 @@ static int
 WriteProgs (dprograms_t *progs, int size)
 {
 	//pr_debug_header_t debug;
-	QFile      *h;
 	unsigned    i;
 
 	dstatement_t *statements;
@@ -251,13 +251,7 @@ WriteProgs (dprograms_t *progs, int size)
 	for (i = 0; i < progs->globals.count; i++)
 		globals[i].value = LittleLong (globals[i].value);
 
-	if (!(h = Qopen (options.output_file, "wb")))
-		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
-	Qwrite (h, progs, size);
-
-	Qclose (h);
-
-	return 0;
+	return write_output (options.output_file, progs, size);
 }
 
 static int
@@ -328,6 +322,52 @@ begin_compilation (void)
 	pr.func_tail = &pr.func_head;
 
 	pr.error_count = 0;
+}
+
+bool
+write_output (const char *filename, void *data, size_t bytes)
+{
+	QFile *file = Qopen (filename, "wb");
+	if (!file) {
+		Sys_Error ("%s: %s\n", filename, strerror(errno));
+		return true;
+	}
+	if (options.code.c_array) {
+		const char *name = options.code.c_array_name;
+		uint32_t   *words = data;
+		size_t      count = bytes / 4;//FIXME asumes bytes is multiple of 4
+		const char *src = GETSTR (pr.loc.file);
+		char buf[strlen (src) + 1];
+		if (!name) {
+			for (char *d = buf; (*d = *src); d++, src++) {
+				if (!isalnum ((unsigned char) *d)) {
+					*d = '_';
+				}
+			}
+			name = buf;
+		}
+		Qprintf (file, "uint32_t %s[] = {\n", name);
+		if (count) {
+			Qprintf (file, "\t");
+		}
+		for (size_t i = 0; i < count; i++) {
+			Qprintf (file, "0x%08x,", words[i]);
+			if (i + 1 < count) {
+				if ((i + 1) % 4) {
+					Qprintf (file, " ");
+				} else {
+					Qprintf (file, "\n\t");
+				}
+			} else {
+				Qprintf (file, "\n");
+			}
+		}
+		Qprintf (file, "};");
+	} else {
+		Qwrite (file, data, bytes);
+	}
+	Qclose (file);
+	return false;
 }
 
 const char *

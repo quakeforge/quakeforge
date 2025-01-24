@@ -60,6 +60,9 @@ typedef struct {
 	bool        no_int;				// int type is not supported
 	bool        no_vararg;			// variadic functions (...) not supported
 
+	bool        c_array;			// produce a C array for output
+	const char *c_array_name;       // override for array name
+
 	bool        help;
 } code_options_t;
 

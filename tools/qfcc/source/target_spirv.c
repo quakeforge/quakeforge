@@ -2113,10 +2113,8 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	ADD_DATA (space, mod->func_declarations);
 	ADD_DATA (space, mod->func_definitions);
 
-	QFile *file = Qopen (filename, "wb");
-	Qwrite (file, space->data, space->size * sizeof (pr_type_t));
-	Qclose (file);
-	return false;
+	return write_output (filename, space->data,
+					     space->size * sizeof (pr_type_t));
 }
 
 void
