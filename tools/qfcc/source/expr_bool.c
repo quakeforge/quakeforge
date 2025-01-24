@@ -89,6 +89,9 @@ test_expr (const expr_t *e)
 		}
 		return error (e, "void has no value");
 	}
+	if (is_reference (type)) {
+		e = pointer_deref (e);
+	}
 	e = current_target.test_expr (e);
 	fold_constants (e);
 	return edag_add_expr (e);

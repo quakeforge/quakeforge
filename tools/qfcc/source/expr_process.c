@@ -609,6 +609,7 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto test = expr_process (expr->cond.test, ctx);
+	test = test_expr (test);
 	auto true_expr = expr_process (expr->cond.true_expr, ctx);
 	auto false_expr = expr_process (expr->cond.false_expr, ctx);
 	if (is_error (test)) {
