@@ -716,7 +716,7 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 }
 
 static SpvStorageClass
-spirv_storage_class (unsigned storage)
+spirv_storage_class (unsigned storage, const type_t *type)
 {
 	auto interface = glsl_iftype_from_sc (storage);
 	SpvStorageClass sc = 0;
@@ -740,6 +740,15 @@ spirv_storage_class (unsigned storage)
 	if (!sc) {
 		internal_error (0, "invalid storage class: %d", storage);
 	}
+	if (sc == SpvStorageClassUniform) {
+		// tested here because SpvStorageUniformConstant is 0
+		if (is_reference (type)) {
+			type = dereference_type (type);
+		}
+		if (is_handle (type)) {
+			sc = SpvStorageClassUniformConstant;
+		}
+	}
 	return sc;
 }
 
@@ -750,7 +759,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 		internal_error (0, "unexpected variable symbol type");
 	}
 	auto space = ctx->module->globals;
-	auto storage = spirv_storage_class (sym->var.storage);
+	auto storage = spirv_storage_class (sym->var.storage, sym->type);
 	if (storage == SpvStorageClassFunction) {
 		space = ctx->decl_space;
 	} else {
@@ -2223,7 +2232,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			error (0, "%s redefined", sym->name);
 		}
 	}
-	auto storage = spirv_storage_class (spec.storage);
+	auto storage = spirv_storage_class (spec.storage, sym->type);
 	sym->type = auto_type (sym->type, init);
 	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
