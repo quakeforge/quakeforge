@@ -94,6 +94,7 @@ fail_progs_dat=
 test_build_passes=\
 	tools/qfcc/test/calluse2.r \
 	tools/qfcc/test/motor.r \
+	tools/qfcc/test/simplex.r \
 	tools/qfcc/test/typeredef1.r \
 	tools/qfcc/test/typeredef2.r
 
@@ -405,6 +406,9 @@ tools/qfcc/test/calluse2.run$(EXEEXT): tools/qfcc/test/calluse2.r $(qfcc_comp_ru
 	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools/qfcc/test/motor.run$(EXEEXT): tools/qfcc/test/motor.r $(qfcc_comp_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
+
+tools/qfcc/test/simplex.run$(EXEEXT): tools/qfcc/test/simplex.r $(qfcc_comp_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-pass-run $@ $(QFCC) $(QCFLAGS) -c $<
 
 tools/qfcc/test/typeredef1.run$(EXEEXT): tools/qfcc/test/typeredef1.r $(qfcc_comp_run_deps)

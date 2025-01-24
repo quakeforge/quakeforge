@@ -720,6 +720,7 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	auto type = spec.type; // core type (int etc)
 	if (spec.type_expr) {
 		type = resolve_type (spec.type_expr, ctx);
+		spec.type_expr = nullptr;
 	}
 	//const type_t *type = nullptr;
 	// other than fields, the type list is built up by appending types
