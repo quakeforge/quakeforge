@@ -245,8 +245,17 @@ spirv_Name (unsigned id, const char *name, spirvctx_t *ctx)
 }
 
 static void
-spirv_Decorate (unsigned id, SpvDecoration decoration, void *literal,
-				etype_t type, spirvctx_t *ctx)
+spirv_Decorate (unsigned id, SpvDecoration decoration, spirvctx_t *ctx)
+{
+	auto decorations = ctx->module->decorations;
+	auto insn = spirv_new_insn (SpvOpDecorate, 3, decorations);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = decoration;
+}
+
+static void
+spirv_DecorateLiteral (unsigned id, SpvDecoration decoration, void *literal,
+					   etype_t type, spirvctx_t *ctx)
 {
 	if (type != ev_int) {
 		internal_error (0, "unexpected type");
@@ -258,6 +267,28 @@ spirv_Decorate (unsigned id, SpvDecoration decoration, void *literal,
 	INSN (insn, 2) = decoration;
 	if (type == ev_int) {
 		INSN (insn, 3) = *(int *)literal;
+	}
+}
+
+static void
+spirv_decorate_id (unsigned id, attribute_t *attributes, spirvctx_t *ctx)
+{
+	for (auto attr = attributes; attr; attr = attr->next) {
+		unsigned decoration = spirv_enum_val ("Decoration", attr->name);
+		if (attr->params) {
+			//FIXME some decorations have more than one parameter (rare)
+			int val;
+			if (is_string_val (attr->params)) {
+				//FIXME should get kind from decoration
+				const char *name = expr_string (attr->params);
+				val = spirv_enum_val (attr->name, name);
+			} else {
+				val = expr_integral (attr->params);
+			}
+			spirv_DecorateLiteral (id, decoration, &val, ev_int, ctx);
+		} else {
+			spirv_Decorate (id, decoration, ctx);
+		}
 	}
 }
 
@@ -734,6 +765,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = storage;
 	spirv_Name (id, sym->name, ctx);
+	spirv_decorate_id (id, sym->attributes, ctx);
 	return id;
 }
 
@@ -1291,13 +1323,7 @@ spirv_symbol (const expr_t *e, spirvctx_t *ctx)
 	if (sym->sy_type == sy_expr) {
 		sym->id = spirv_emit_expr (sym->expr, ctx);
 		spirv_Name (sym->id, sym->name, ctx);
-		for (auto attr = sym->attributes; attr; attr = attr->next) {
-			if (strcmp (attr->name, "constant_id") == 0) {
-				int specid = expr_integral (attr->params);
-				spirv_Decorate (sym->id, SpvDecorationSpecId,
-								&specid, ev_int, ctx);
-			}
-		}
+		spirv_decorate_id (sym->id, sym->attributes, ctx);
 	} else if (sym->sy_type == sy_func) {
 		auto func = sym->metafunc->func;
 		if (!func) {

@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/spirv.h"
+#include "tools/qfcc/include/spirv_grammar.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -118,7 +119,7 @@ static void
 glsl_layout_location (const layout_qual_t *qual, specifier_t spec,
 					  const expr_t *qual_name, const expr_t *val)
 {
-	const char *name = expr_string (qual_name);
+	const char *name = "Location";
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
@@ -142,7 +143,7 @@ glsl_layout_constant_id (const layout_qual_t *qual, specifier_t spec,
 		return;
 	}
 	spec.sym->is_constexpr = true;
-	const char *name = expr_string (qual_name);
+	const char *name = "SpecId";
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
@@ -150,7 +151,7 @@ static void
 glsl_layout_binding (const layout_qual_t *qual, specifier_t spec,
 					 const expr_t *qual_name, const expr_t *val)
 {
-	const char *name = expr_string (qual_name);
+	const char *name = "Binding";
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
@@ -164,7 +165,7 @@ static void
 glsl_layout_set (const layout_qual_t *qual, specifier_t spec,
 				 const expr_t *qual_name, const expr_t *val)
 {
-	const char *name = expr_string (qual_name);
+	const char *name = "DescriptorSet";
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
