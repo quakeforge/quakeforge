@@ -90,6 +90,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -194,6 +195,10 @@ InitData (void)
 	clear_classes ();
 	clear_immediates ();
 	clear_selectors ();
+
+	if (current_target.init) {
+		current_target.init ();
+	}
 }
 
 static int

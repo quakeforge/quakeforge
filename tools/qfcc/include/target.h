@@ -37,6 +37,7 @@ typedef struct specifier_s specifier_t;
 typedef struct rua_ctx_s rua_ctx_t;
 
 typedef struct {
+	void      (*init) (void);
 	bool      (*value_too_large) (const type_t *val_type);
 	void      (*build_scope) (symbol_t *fsym);
 	void      (*build_code) (function_t *func, const expr_t *statements);

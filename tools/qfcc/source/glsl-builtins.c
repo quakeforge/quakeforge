@@ -1405,6 +1405,7 @@ void
 glsl_multiview (int behavior, void *scanner)
 {
 	if (behavior) {
+		spirv_add_capability (pr.module, SpvCapabilityMultiView);
 		rua_parse_define ("GL_EXT_multiview 1\n");
 	} else {
 		rua_undefine ("GL_EXT_multiview", scanner);
@@ -1441,9 +1442,6 @@ glsl_parse_vars (const char *var_src, rua_ctx_t *ctx)
 static void
 glsl_init_common (rua_ctx_t *ctx)
 {
-	static module_t module;		//FIXME probably not what I want
-	pr.module = &module;
-
 	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
 	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
 

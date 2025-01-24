@@ -2422,7 +2422,15 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
+static void
+spirv_init (void)
+{
+	static module_t module;		//FIXME probably not what I want
+	pr.module = &module;
+}
+
 target_t spirv_target = {
+	.init = spirv_init,
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
