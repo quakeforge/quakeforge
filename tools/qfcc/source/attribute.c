@@ -66,7 +66,7 @@ new_attribute(const char *name, const expr_t *params)
 				if (e->expr.op != '='
 					|| !is_string_val (e->expr.e1)
 					|| e->expr.e2->type != ex_value) {
-					error (e, "not a key=literal constnat");
+					error (e, "not a key=literal constant");
 					err = true;
 				}
 			} else if (e->type != ex_value) {

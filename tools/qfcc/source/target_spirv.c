@@ -2233,7 +2233,7 @@ spirv_create_entry_point (const char *name, const char *model_name)
 		}
 	}
 	attribute_t *mode = nullptr;
-	unsigned model = spirv_execution_model (model_name);
+	unsigned model = spirv_enum_val ("ExecutionModel", model_name);
 	if (model == SpvExecutionModelFragment) {
 		mode = new_attribute ("mode",
 				new_int_expr (SpvExecutionModeOriginUpperLeft, false));

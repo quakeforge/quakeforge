@@ -535,7 +535,7 @@ spirv_setup_intrinsic_symtab (symtab_t *symtab)
 }
 
 uint32_t
-spirv_execution_model (const char *model)
+spirv_enum_val (const char *enum_name, const char *enumerant)
 {
 	const char *set = "core";
 	auto grammar = find_grammar (set);
@@ -544,15 +544,15 @@ spirv_execution_model (const char *model)
 		return false;
 	}
 	symtab_t    symtab = { .procsymbol_data = grammar };
-	auto model_enum = spirv_intrinsic_symbol ("ExecutionModel", &symtab);
-	if (!model_enum) {
-		error (0, "ExecutionModel not found");
+	auto enum_enum = spirv_intrinsic_symbol (enum_name, &symtab);
+	if (!enum_enum) {
+		error (0, "%s not found", enum_name);
 		return 0;
 	}
-	auto model_val = symtab_lookup (model_enum->namespace, model);
-	if (!model_val) {
-		error (0, "Execution model %s  not found", model);
+	auto enum_val = symtab_lookup (enum_enum->namespace, enumerant);
+	if (!enum_val) {
+		error (0, "Builtin %s not found", enumerant);
 		return 0;
 	}
-	return model_val->value->uint_val;
+	return enum_val->value->uint_val;
 }

@@ -100,6 +100,6 @@ const plitem_t *spirv_operand_kind (const char *set, const char *kind);
 uint32_t spirv_instruction_opcode (const char *set, const expr_t *opcode);
 
 bool spirv_setup_intrinsic_symtab (symtab_t *symtab);
-uint32_t spirv_execution_model (const char *model);
+uint32_t spirv_enum_val (const char *enum_name, const char *enumerant);
 
 #endif//__spirv_grammar_h
