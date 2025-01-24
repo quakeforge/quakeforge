@@ -544,7 +544,7 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 	}
 
 	param_t *param;
-	if (spec.type_expr) {
+	if (generic_block && spec.type_expr) {
 		param = new_generic_param (spec.type_expr, spec.sym->name);
 	} else if (spec.sym) {
 		spec = spec_process (spec, ctx);
