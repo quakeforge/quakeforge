@@ -116,6 +116,14 @@ glsl_layout_packing (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
+glsl_layout_builtin (const layout_qual_t *qual, specifier_t spec,
+					 const expr_t *qual_name, const expr_t *val)
+{
+	const char *name = "BuiltIn";
+	set_attribute (&spec.sym->attributes, name, val);
+}
+
+static void
 glsl_layout_location (const layout_qual_t *qual, specifier_t spec,
 					  const expr_t *qual_name, const expr_t *val)
 {
@@ -260,6 +268,13 @@ glsl_layout_ignore (const layout_qual_t *qual, specifier_t spec,
 
 static bool sorted_layout_qualifiers;
 static layout_qual_t layout_qualifiers[] = {
+	{	.name = "builtin",
+		.apply = E(glsl_layout_builtin),
+		.obj_mask = D(var)|D(member),
+		.var_type = V(any),
+		.if_mask = I(in)|I(out),
+	},
+
 	{	.name = "shared",
 		.apply = A(glsl_layout_invalid_A),
 		.obj_mask = D(qual)|D(block),

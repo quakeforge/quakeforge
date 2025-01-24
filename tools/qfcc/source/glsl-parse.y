@@ -360,6 +360,7 @@ new_identifier
 primary_exprsssion
 	: variable_identifier	{ $$ = new_symbol_expr ($1); }
 	| VALUE
+	| STRING
 	| TRUE					{ $$ = new_bool_expr (true); }
 	| FALSE					{ $$ = new_bool_expr (false); }
 	| '(' expression ')'	{ $$ = paren_expr ($2); }
