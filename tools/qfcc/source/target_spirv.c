@@ -271,6 +271,36 @@ spirv_DecorateLiteral (unsigned id, SpvDecoration decoration, void *literal,
 }
 
 static void
+spirv_MemberDecorate (unsigned id, unsigned member,
+					  SpvDecoration decoration, spirvctx_t *ctx)
+{
+	auto decorations = ctx->module->decorations;
+	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4, decorations);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = member;
+	INSN (insn, 3) = decoration;
+}
+
+static void
+spirv_MemberDecorateLiteral (unsigned id, unsigned member,
+							 SpvDecoration decoration,
+							 void *literal, etype_t type, spirvctx_t *ctx)
+{
+	if (type != ev_int) {
+		internal_error (0, "unexpected type");
+	}
+	int size = pr_type_size[type];
+	auto decorations = ctx->module->decorations;
+	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4 + size, decorations);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = member;
+	INSN (insn, 3) = decoration;
+	if (type == ev_int) {
+		INSN (insn, 4) = *(int *)literal;
+	}
+}
+
+static void
 spirv_decorate_id (unsigned id, attribute_t *attributes, spirvctx_t *ctx)
 {
 	for (auto attr = attributes; attr; attr = attr->next) {
@@ -288,6 +318,30 @@ spirv_decorate_id (unsigned id, attribute_t *attributes, spirvctx_t *ctx)
 			spirv_DecorateLiteral (id, decoration, &val, ev_int, ctx);
 		} else {
 			spirv_Decorate (id, decoration, ctx);
+		}
+	}
+}
+
+static void
+spirv_member_decorate_id (unsigned id, int member, attribute_t *attributes,
+						  spirvctx_t *ctx)
+{
+	for (auto attr = attributes; attr; attr = attr->next) {
+		unsigned decoration = spirv_enum_val ("Decoration", attr->name);
+		if (attr->params) {
+			//FIXME some decorations have more than one parameter (rare)
+			int val;
+			if (is_string_val (attr->params)) {
+				//FIXME should get kind from decoration
+				const char *name = expr_string (attr->params);
+				val = spirv_enum_val (attr->name, name);
+			} else {
+				val = expr_integral (attr->params);
+			}
+			spirv_MemberDecorateLiteral (id, member, decoration,
+										 &val, ev_int, ctx);
+		} else {
+			spirv_MemberDecorate (id, member, decoration, ctx);
 		}
 	}
 }
@@ -408,6 +462,7 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	for (auto s = symtab->symbols; s; s = s->next) {
 		int m = num_members++;
 		spirv_MemberName (id, m, s->name, ctx);
+		spirv_member_decorate_id (id, m, s->attributes, ctx);
 	}
 	return id;
 }
