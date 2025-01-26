@@ -1947,6 +1947,13 @@ type_size (const type_t *type)
 }
 
 int
+type_align (const type_t *type)
+{
+	type = unalias_type (type);
+	return type->alignment;
+}
+
+int
 type_count (const type_t *type)
 {
 	switch (type->meta) {
@@ -2055,6 +2062,17 @@ type_aligned_size (const type_t *type)
 {
 	int         size = type_size (type);
 	return RUP (size, type->alignment);
+}
+
+symtab_t *
+type_symtab (const type_t *type)
+{
+	type = unalias_type (type);
+	if (is_struct (type) || is_union (type)
+		|| is_enum (type) || is_entity (type)) {
+		return type->symtab;
+	}
+	return nullptr;
 }
 
 static void

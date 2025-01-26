@@ -265,11 +265,13 @@ bool type_demotes (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_compares (const type_t *dst, const type_t *src) __attribute__((pure));
 bool type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
+int type_align (const type_t *type) __attribute__((pure));
 int type_count (const type_t *type) __attribute__((pure));
 int type_width (const type_t *type) __attribute__((pure));
 int type_rows (const type_t *type) __attribute__((pure));
 int type_cols (const type_t *type) __attribute__((pure));
 int type_aligned_size (const type_t *type) __attribute__((pure));
+symtab_t *type_symtab (const type_t *type) __attribute__((pure));
 
 void init_types (void);
 void chain_initial_types (void);
