@@ -437,32 +437,184 @@ spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
+spirv_type_array (unsigned tid, unsigned count, spirvctx_t *ctx)
 {
-	auto symtab = type->symtab;
+	unsigned id = spirv_id (ctx);
+	unsigned count_id = spirv_value (new_int_expr (count, false), ctx);
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpTypeArray, 4, globals);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = tid;
+	INSN (insn, 3) = count_id;
+	return id;
+}
+
+static unsigned
+spirv_type_runtime_array (unsigned tid, spirvctx_t *ctx)
+{
+	unsigned id = spirv_id (ctx);
+	auto globals = ctx->module->globals;
+	auto insn = spirv_new_insn (SpvOpTypeRuntimeArray, 3, globals);
+	INSN (insn, 1) = id;
+	INSN (insn, 2) = tid;
+	return id;
+}
+
+static unsigned spirv_BlockType (const type_t *type, int *size, int *align,
+								 spirvctx_t *ctx);
+
+static unsigned
+spirv_array (const type_t *type, int *size, int *align, spirvctx_t *ctx)
+{
+	auto etype = dereference_type (type);
+	int e_size;
+	int e_align;
+	unsigned eid = spirv_BlockType (etype, &e_size, &e_align, ctx);
+	unsigned count = type_count (type);
+
+	unsigned id;
+	if (count) {
+		id = spirv_type_array (eid, count, ctx);
+	} else {
+		id = spirv_type_runtime_array (eid, ctx);
+		count = 1;
+	}
+	e_size = RUP (e_size, e_align);
+	*size = e_size * count;
+	*align = e_align;
+	e_size *= sizeof (uint32_t);
+	spirv_DecorateLiteral (id, SpvDecorationArrayStride, &e_size, ev_int, ctx);
+	return id;
+}
+
+static void
+spirv_matrix_deco (const type_t *type, int id, int member, spirvctx_t *ctx)
+{
+	while (is_array (type)) {
+		type = dereference_type (type);
+	}
+	if (!is_matrix (type)) {
+		return;
+	}
+	int stride = type_size (column_type (type));
+	stride *= sizeof (uint32_t);
+	spirv_MemberDecorateLiteral (id, member, SpvDecorationMatrixStride,
+								 &stride, ev_int, ctx);
+	//FIXME
+	spirv_MemberDecorate (id, member, SpvDecorationColMajor, ctx);
+
+}
+
+static unsigned
+spirv_struct (const type_t *type, int *size, int *align, spirvctx_t *ctx)
+{
+	bool block = size && align;
+	auto symtab = type_symtab (type);
 	int num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
 		num_members++;
 	}
+	if (!num_members) {
+		*size = 0;
+		*align = 1;
+		error (0, "0 sized struct");
+		return 0;
+	}
 	unsigned member_types[num_members];
+	int member_sizes[num_members] = {};
+	int member_align[num_members] = {};
 	num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
-		member_types[num_members++] = spirv_Type (s->type, ctx);
+		int m = num_members++;
+		if (block) {
+			member_types[m] = spirv_BlockType (s->type, &member_sizes[m],
+											   &member_align[m], ctx);
+		} else {
+			member_sizes[m] = type_size (s->type);
+			member_align[m] = type_align (s->type);
+			member_types[m] = spirv_Type (s->type, ctx);
+		}
 	}
 
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeStruct, 2 + num_members, globals);
+	auto insn = spirv_new_insn (SpvOpTypeStruct,
+								2 + num_members, globals);
 	INSN (insn, 1) = id;
 	memcpy (&INSN (insn, 2), member_types, sizeof (member_types));
 
-	spirv_Name (id, type->name + 4, ctx);
+	spirv_Name (id, unalias_type (type)->name + 4, ctx);
 
+	unsigned offset = 0;
+	unsigned total_size = 0;
+	int alignment = 1;
+	int i = 0;
 	num_members = 0;
-	for (auto s = symtab->symbols; s; s = s->next) {
+	for (auto s = symtab->symbols; s; s = s->next, i++) {
 		int m = num_members++;
 		spirv_MemberName (id, m, s->name, ctx);
 		spirv_member_decorate_id (id, m, s->attributes, ctx);
+		if (block) {
+			if (s->offset >= 0 && symtab->type == stab_block) {
+				offset = s->offset;
+			}
+			if (member_align[i] > alignment) {
+				alignment = member_align[i];
+			}
+			offset = RUP (offset, member_align[i] * sizeof (uint32_t));
+			spirv_MemberDecorateLiteral (id, m, SpvDecorationOffset,
+										 &offset, ev_int, ctx);
+			offset += member_sizes[i] * sizeof (uint32_t);
+			if (offset > total_size) {
+				total_size = offset;
+			}
+
+			spirv_matrix_deco (s->type, id, m, ctx);
+		}
+	}
+	if (block) {
+		total_size = RUP (total_size, alignment * sizeof (uint32_t));
+		if (symtab->type != stab_block) {
+			total_size /= sizeof (uint32_t);
+		}
+		*size = total_size;
+		*align = alignment;
+	}
+	return id;
+}
+
+static unsigned
+spirv_BlockType (const type_t *type, int *size, int *align, spirvctx_t *ctx)
+{
+	if (is_structural (type)) {
+		unsigned id;
+		if (is_array (type)) {
+			id = spirv_array (type, size, align, ctx);
+		} else {
+			// struct or union, but union not allowed
+			id = spirv_struct (type, size, align, ctx);
+		}
+		return id;
+	} else {
+		// non-aggregate, non-matrix type, so no need for special handling
+		*size = type_size (type);
+		*align = type_align (type);
+		return spirv_Type (type, ctx);
+	}
+}
+
+static unsigned
+spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
+{
+	auto symtab = type_symtab (type);
+	bool block = symtab->type == stab_block;
+
+	unsigned id;
+	if (block) {
+		int size, align;
+		id = spirv_struct (type, &size, &align, ctx);
+	} else {
+		id = spirv_struct (type, nullptr, nullptr, ctx);
 	}
 	return id;
 }
@@ -474,13 +626,7 @@ spirv_TypeArray (const type_t *type, spirvctx_t *ctx)
 	auto count_expr = new_int_expr (type_count (type), false);
 	unsigned count = spirv_value (count_expr, ctx);
 	unsigned tid = spirv_Type (ele_type, ctx);
-	unsigned id = spirv_id (ctx);
-	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeArray, 4, globals);
-	INSN (insn, 1) = id;
-	INSN (insn, 2) = tid;
-	INSN (insn, 3) = count;
-	return id;
+	return spirv_type_array (tid, count, ctx);
 }
 
 static unsigned
@@ -488,12 +634,7 @@ spirv_TypeRuntimeArray (const type_t *type, spirvctx_t *ctx)
 {
 	auto ele_type = dereference_type (type);
 	unsigned tid = spirv_Type (ele_type, ctx);
-	unsigned id = spirv_id (ctx);
-	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeRuntimeArray, 3, globals);
-	INSN (insn, 1) = id;
-	INSN (insn, 2) = tid;
-	return id;
+	return spirv_type_runtime_array (tid, ctx);
 }
 
 static void

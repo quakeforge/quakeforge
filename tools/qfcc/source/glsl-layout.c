@@ -167,6 +167,7 @@ static void
 glsl_layout_offset (const layout_qual_t *qual, specifier_t spec,
 					const expr_t *qual_name, const expr_t *val)
 {
+	spec.sym->offset = expr_integral (val);
 }
 
 static void
@@ -314,7 +315,7 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 	{	.name = "offset",
 		.apply = E(glsl_layout_offset),
-		.obj_mask = D(var)|D(member),
+		.obj_mask = D(member),
 		.var_type = V(opaque),
 		.if_mask = I(uniform)|I(buffer),
 	},
