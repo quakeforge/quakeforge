@@ -36,11 +36,13 @@
 
 #include "specifier.h"
 
+typedef struct type_s type_t;
+
 typedef enum param_qual_e param_qual_t;
 typedef struct ty_func_s {
-	const struct type_s *ret_type;
+	const type_t *ret_type;
 	int         num_params;
-	const struct type_s **param_types;
+	const type_t **param_types;
 	param_qual_t *param_quals;
 	union {
 		struct {
@@ -52,20 +54,20 @@ typedef struct ty_func_s {
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
-	const struct type_s *type;
+	const type_t *type;
 	unsigned    tag;
 	bool        deref;			///< automatic dereference for pointers (C++ &)
 } ty_fldptr_t;
 
 typedef struct ty_array_s {
-	const struct type_s *type;
+	const type_t *type;
 	int         base;
 	int         count;
 } ty_array_t;
 
 typedef struct ty_alias_s {
-	const struct type_s *aux_type;	///< other aliases stripped
-	const struct type_s *full_type;	///< full alias chain
+	const type_t *aux_type;	///< other aliases stripped
+	const type_t *full_type;	///< full alias chain
 } ty_alias_t;
 
 typedef struct ty_handle_s {
@@ -98,9 +100,9 @@ typedef struct type_s {
 		ty_handle_t handle;
 	};
 	attribute_t *attributes;
-	struct type_s *next;
-	int         freeable;
-	int         allocated;
+	type_t     *next;
+	bool        freeable;
+	bool        allocated;
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
 	const expr_t *(*property) (const type_t *type, const attribute_t *attr);

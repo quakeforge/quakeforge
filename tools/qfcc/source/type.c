@@ -326,8 +326,8 @@ new_type (void)
 {
 	type_t     *type;
 	ALLOC (1024, type_t, types, type);
-	type->freeable = 1;
-	type->allocated = 1;
+	type->freeable = true;
+	type->allocated = true;
 	return type;
 }
 
