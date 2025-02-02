@@ -79,7 +79,7 @@ check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 		assignment = paren_expr (assignment);
 		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
-	return 0;
+	return nullptr;
 }
 
 bool
@@ -167,11 +167,11 @@ check_valid_lvalue (const expr_t *expr)
 	if (!is_lvalue (expr)) {
 		if (options.traditional) {
 			warning (expr, "invalid lvalue in assignment");
-			return 0;
+			return nullptr;
 		}
 		return error (expr, "invalid lvalue in assignment");
 	}
-	return 0;
+	return nullptr;
 }
 
 static const expr_t *
@@ -184,7 +184,7 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
 			return algebra_assign_expr (dst, src);
 		}
-		return 0;
+		return nullptr;
 	}
 
 	if (type_assignable (dst_type, src_type)) {
@@ -205,7 +205,7 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 		if (new != src) {
 			return assign_expr (dst, new);
 		}
-		return 0;
+		return nullptr;
 	}
 	// traditional qcc is a little sloppy
 	if (!options.traditional) {
@@ -213,7 +213,7 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 	}
 	if (is_func (dst_type) && is_func (src_type)) {
 		warning (dst, "assignment between disparate function types");
-		return 0;
+		return nullptr;
 	}
 	if (is_float (dst_type) && is_vector (src_type)) {
 		warning (dst, "assignment of vector to float");
