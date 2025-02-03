@@ -204,6 +204,9 @@ get_temp_def (operand_t *op)
 static def_t *
 get_def (operand_t *op)
 {
+	if (!op) {
+		return nullptr;
+	}
 	if (is_short (op->type)) {
 		auto def = new_def (0, &type_short, 0, sc_extern);
 		def->offset = op->value->short_val;
@@ -283,9 +286,9 @@ evaluate_constexpr (const expr_t *e)
 		auto ds = codespace_newstatement (&value_codespace);
 		*ds = (dstatement_t) {
 			.op = opcode_get (inst),
-			.a = opa->offset,
-			.b = opb->offset,
-			.c = opc->offset,
+			.a = opa ? opa->offset : 0,
+			.b = opb ? opb->offset : 0,
+			.c = opc ? opc->offset : 0,
 		};
 	}
 	options.code.progsversion = saved_version;
