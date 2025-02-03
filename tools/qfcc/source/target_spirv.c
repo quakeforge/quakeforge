@@ -2669,15 +2669,16 @@ spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
 		.typ.type = dst_type,
 	};
 	const expr_t *param_exprs[count];
-	int i = 0;
-	for (ssym = src_tab->symbols; ssym; ssym = ssym->next, i++) {
-		auto e = new_field_expr (src, new_name_expr (ssym->name));
+	int i = count - 1;// build params in reverse for constructor_expr
+	for (ssym = src_tab->symbols; ssym; ssym = ssym->next, i--) {
+		auto e = new_field_expr (src, new_symbol_expr (ssym));
 		e->field.type = ssym->type;
 		param_exprs[i] = e;
 	}
 	auto params = new_list_expr (nullptr);
 	list_gather (&params->list, param_exprs, count);
-	return constructor_expr (&type_expr, params);
+	auto cast = constructor_expr (&type_expr, params);
+	return assign_expr (dst, cast);
 }
 
 static void
