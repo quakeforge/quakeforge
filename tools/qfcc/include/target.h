@@ -56,6 +56,8 @@ typedef struct {
 	const expr_t *(*vector_compare)(int op, const expr_t *e1, const expr_t *e2);
 	const expr_t *(*shift_op)(int op, const expr_t *e1, const expr_t *e2);
 	const expr_t *(*test_expr) (const expr_t *expr);
+	const expr_t *(*check_types_compatible) (const expr_t *dst,
+											 const expr_t *src);
 
 	bool      (*setup_intrinsic_symtab) (symtab_t *symtab);
 

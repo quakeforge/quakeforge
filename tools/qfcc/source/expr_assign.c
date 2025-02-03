@@ -207,6 +207,12 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 		}
 		return nullptr;
 	}
+	if (current_target.check_types_compatible) {
+		auto expr = current_target.check_types_compatible (dst, src);
+		if (expr) {
+			return expr;
+		}
+	}
 	// traditional qcc is a little sloppy
 	if (!options.traditional) {
 		return type_mismatch (dst, src, '=');

@@ -290,6 +290,24 @@ math_constructor (const type_t *type, const expr_t *params, const expr_t *e)
 	return construct_by_components (type, params, e);
 }
 
+static const expr_t *
+struct_constructor (const type_t *type, const expr_t *params, const expr_t *e)
+{
+	scoped_src_loc (e);
+
+	int num_param = list_count (&params->list);
+	const expr_t *param_exprs[num_param + 1] = {};
+	list_scatter_rev (&params->list, param_exprs);
+
+	auto comp = new_compound_init ();
+	comp->compound.type = type;
+	for (int i = 0; i < num_param; i++) {
+		auto param = param_exprs[i];
+		append_element (comp, new_element (param, nullptr));
+	}
+	return comp;
+}
+
 const expr_t *
 constructor_expr (const expr_t *e, const expr_t *params)
 {
@@ -302,6 +320,9 @@ constructor_expr (const expr_t *e, const expr_t *params)
 	}
 	if (is_math (type)) {
 		return math_constructor (type, params, e);
+	}
+	if (is_struct (type)) {
+		return struct_constructor (type, params, e);
 	}
 	return error (e, "not implemented");
 }

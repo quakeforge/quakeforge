@@ -2626,6 +2626,46 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
+static const expr_t *
+spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
+{
+	auto dst_type = get_type (dst);
+	auto src_type = get_type (src);
+
+	if (!is_struct (dst_type) || !is_struct (src_type)) {
+		return nullptr;
+	}
+	auto dst_tab = type_symtab (dst_type);
+	auto src_tab = type_symtab (src_type);
+	auto dsym = dst_tab->symbols;
+	auto ssym = src_tab->symbols;
+	int count = 0;
+	for (; dsym && ssym; dsym = dsym->next, ssym = ssym->next, count++) {
+		if (dsym->type != ssym->type || strcmp (dsym->name, ssym->name) != 0) {
+			break;
+		}
+	}
+	// struct symtabs didn't match, or both empty
+	if (dsym || ssym || !count) {
+		return nullptr;
+	}
+	expr_t type_expr = {
+		.loc = dst->loc,
+		.type = ex_type,
+		.typ.type = dst_type,
+	};
+	const expr_t *param_exprs[count];
+	int i = 0;
+	for (ssym = src_tab->symbols; ssym; ssym = ssym->next, i++) {
+		auto e = new_field_expr (src, new_name_expr (ssym->name));
+		e->field.type = ssym->type;
+		param_exprs[i] = e;
+	}
+	auto params = new_list_expr (nullptr);
+	list_gather (&params->list, param_exprs, count);
+	return constructor_expr (&type_expr, params);
+}
+
 static void
 spirv_init (void)
 {
@@ -2648,4 +2688,5 @@ target_t spirv_target = {
 	// ruamoko and spirv are mostly compatible for bools other than lbool
 	// but that's handled by spirv_mirror_bool
 	.test_expr = ruamoko_test_expr,
+	.check_types_compatible = spirv_check_types_compatible,
 };
