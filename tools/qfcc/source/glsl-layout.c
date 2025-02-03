@@ -999,6 +999,9 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 			if (sym->table->type == stab_block) {
 				obj_mask = decl_member;
 				if_mask = get_interface_mask (sym->table->storage);
+			} else if (is_struct (type)
+					   && type_symtab (type)->type == stab_block) {
+				obj_mask = decl_block;
 			}
 		} else {
 			obj_mask = decl_block;

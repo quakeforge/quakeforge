@@ -2430,13 +2430,18 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		}
 	}
 	auto storage = spirv_storage_class (spec.storage, sym->type);
-	sym->type = auto_type (sym->type, init);
+	auto type = auto_type (sym->type, init);
+	sym->type = type;
 	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
 	sym->sy_type = sy_var;
 	sym->var.storage = spec.storage;
 	if (sym->name[0]) {
 		symtab_addsymbol (symtab, sym);
+		if (is_struct (type) && type_symtab (type)->type == stab_block) {
+			auto block = (glsl_block_t *) type_symtab (type)->data;
+			glsl_apply_attributes (block->attributes, spec);
+		}
 	}
 	if (symtab->type == stab_param || symtab->type == stab_local) {
 		if (init) {
