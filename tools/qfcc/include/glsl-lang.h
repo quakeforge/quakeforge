@@ -64,6 +64,7 @@ typedef enum glsl_interface_e : unsigned {
 	glsl_uniform,
 	glsl_buffer,
 	glsl_shared,
+	glsl_push_constant,
 
 	glsl_num_interfaces
 } glsl_interface_t;

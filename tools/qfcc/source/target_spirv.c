@@ -923,6 +923,7 @@ spirv_storage_class (unsigned storage, const type_t *type)
 			[glsl_out] = SpvStorageClassOutput,
 			[glsl_uniform] = SpvStorageClassUniform,
 			[glsl_buffer] = SpvStorageClassStorageBuffer,
+			[glsl_push_constant] = SpvStorageClassPushConstant,
 		};
 		sc = iface_storage[interface];
 	} else if (storage < sc_count) {

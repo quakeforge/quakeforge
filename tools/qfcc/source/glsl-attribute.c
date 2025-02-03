@@ -48,6 +48,7 @@ const char *glsl_interface_names[glsl_num_interfaces] = {
 	"uniform",
 	"buffer",
 	"shared",
+	"push_constant",
 };
 
 symtab_t *

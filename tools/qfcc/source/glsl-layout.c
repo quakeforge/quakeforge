@@ -188,6 +188,9 @@ static void
 glsl_layout_push_constant (const layout_qual_t *qual, specifier_t spec,
 		                   const expr_t *qual_name)
 {
+	if (spec.block) {
+		spec.block->interface = glsl_push_constant;
+	}
 }
 
 static void
@@ -335,7 +338,7 @@ static layout_qual_t layout_qualifiers[] = {
 		.apply = A(glsl_layout_push_constant),
 		.obj_mask = D(block),
 		.var_type = V(any),
-		.if_mask = I(uniform),
+		.if_mask = I(uniform)|I(push_constant),//FIXME push_constant redunant
 	},
 	{	.name = "input_attachment_index",
 		.apply = E(glsl_layout_input_attachment_index),

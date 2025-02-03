@@ -131,6 +131,7 @@ void
 glsl_finish_block (glsl_block_t *block, specifier_t spec)
 {
 	spec.sym = block->name;
+	spec.block = block;
 	int index = 0;
 	for (auto s = block->members->symbols; s; s = s->next) {
 		s->id = index++;

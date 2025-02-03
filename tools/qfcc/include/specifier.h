@@ -37,6 +37,7 @@ typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct param_s param_t;
 typedef struct attribute_s attribute_t;
+typedef struct glsl_block_s glsl_block_t;
 
 /** Specify the storage class of a def.
 */
@@ -66,6 +67,7 @@ typedef struct specifier_s {
 	param_t    *params;
 	symbol_t   *sym;
 	symtab_t   *symtab;
+	glsl_block_t *block;
 	storage_class_t storage;
 	union {
 		struct {
