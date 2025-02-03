@@ -99,12 +99,19 @@ QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(QCSYSTEM)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+QSPIRV=$(QFCC) -q -Cc-array,target=spir-v -O
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 
 qfcc_compile=\
 	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 	$(QCOMPILE) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+qfcc_spirv=\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QSPIRV) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
 
@@ -117,8 +124,11 @@ SUFFIXES=.o .r .pas
 	$(qfcc_compile)
 
 qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(basename $(basename $(1))))))
+spvcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(1))))
+spvautoc = $(addsuffix $(2).spvc,$(1))
 r_depfiles_remade=
 pas_depfiles_remade=
+spvc_depfiles_remade=
 
 V_PY = $(V_PY_@AM_V@)
 V_PY_ = $(V_PY_@AM_DEFAULT_V@)
@@ -153,6 +163,10 @@ SUFFICES += .plist .plc
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
+%.vert.spvc: %.vert
+	@$(mkdir_p) $(builddir)/`dirname $@`
+	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
+
 sharepath = @sharepath@
 shaderdir = @shaderdir@
 shader_DATA =
@@ -171,7 +185,7 @@ include qw/Makemodule.am
 include tools/Makemodule.am
 include ruamoko/Makemodule.am
 
-DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade)
+DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade) $(spvc_depfiles_remade)
 CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
@@ -182,7 +196,12 @@ $(pas_depfiles_remade):
 	$(MKDIR_P) $(@D)
 	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
-am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) $(pas_depfiles_remade)
+$(spvc_depfiles_remade):
+	$(MKDIR_P) $(@D)
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spvc: $(top_srcdir)/\1 $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) \
+		$(pas_depfiles_remade) $(spvc_depfiles_remade)
 	echo findme $(ruamoko_gui_libgui_a_dep)
 
 changelog: ChangeLog
