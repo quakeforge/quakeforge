@@ -2002,6 +2002,7 @@ language_t lang_glsl_geom = {
 	.default_float = true,
 	.init = glsl_init_geom,
 	.parse = glsl_yyparse,
+	.finish = glsl_finish_geom,
 	.extension = glsl_extension,
 	.version = glsl_version,
 	.on_include = glsl_on_include,

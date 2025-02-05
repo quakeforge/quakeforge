@@ -36,7 +36,9 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -54,3 +56,17 @@ glsl_sublang_t glsl_geom_sublanguage = {
 	.interface_default_names = glsl_geom_interface_default_names,
 	.model_name = "Geometry",
 };
+
+int
+glsl_finish_geom (const char *file, rua_ctx_t *ctx)
+{
+	if (!pr.module || !pr.module->entry_points) {
+		return 1;
+	}
+	auto invocations = pr.module->entry_points->invocations;
+	if (!invocations) {
+		invocations = new_int_expr (1, false);
+		pr.module->entry_points->invocations = invocations;
+	}
+	return 1;
+}

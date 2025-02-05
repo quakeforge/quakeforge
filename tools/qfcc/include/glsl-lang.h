@@ -47,6 +47,7 @@ void glsl_init_vert (rua_ctx_t *ctx);
 void glsl_init_tesc (rua_ctx_t *ctx);
 void glsl_init_tese (rua_ctx_t *ctx);
 void glsl_init_geom (rua_ctx_t *ctx);
+int glsl_finish_geom (const char *file, rua_ctx_t *ctx);
 void glsl_init_frag (rua_ctx_t *ctx);
 
 int glsl_parse_string (const char *str, rua_ctx_t *ctx);
