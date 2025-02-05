@@ -943,6 +943,9 @@ spirv_storage_class (unsigned storage, const type_t *type)
 		if (is_reference (type)) {
 			type = dereference_type (type);
 		}
+		if (is_array (type)) {
+			type = dereference_type (type);
+		}
 		if (is_handle (type)) {
 			sc = SpvStorageClassUniformConstant;
 		}
