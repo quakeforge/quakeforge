@@ -55,6 +55,7 @@ typedef struct entrypoint_s {
 	const expr_t *spacing;
 	const expr_t *order;
 	const expr_t *frag_depth;
+	const expr_t *gl_in_length;
 	bool        point_mode;
 	bool        early_fragment_tests;
 } entrypoint_t;

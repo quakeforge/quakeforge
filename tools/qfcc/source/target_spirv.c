@@ -2432,6 +2432,12 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	}
 	auto storage = spirv_storage_class (spec.storage, sym->type);
 	auto type = auto_type (sym->type, init);
+	auto entry_point = pr.module->entry_points;
+	if (is_array (type) && !type->array.count
+		&& storage == SpvStorageClassInput && entry_point->gl_in_length) {
+		int count = expr_integral (entry_point->gl_in_length);
+		type = array_type (type->array.type, count);
+	}
 	sym->type = type;
 	sym->type = tagged_reference_type (storage, sym->type);
 	sym->lvalue = !spec.is_const;
@@ -2444,7 +2450,8 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			glsl_apply_attributes (block->attributes, spec);
 			// FIXME this should be handled in the block code, but that
 			// needs a rethink
-			if (block->interface != glsl_out
+			if (block->interface != glsl_in
+				&& block->interface != glsl_out
 				&& block->interface != glsl_push_constant) {
 				auto attr = new_attribute ("NonWritable", nullptr);
 				attr->next = sym->attributes;

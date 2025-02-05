@@ -66,6 +66,11 @@ typedef enum {
 	var_gl_FragDepth,
 } glsl_var_t;
 
+typedef struct layout_acc_s {
+	const char *accessor;
+	int         val;
+} layout_acc_t;
+
 typedef struct layout_qual_s layout_qual_t;
 typedef struct layout_qual_s {
 	const char *name;
@@ -77,8 +82,7 @@ typedef struct layout_qual_s {
 	glsl_var_t  var_type;
 	unsigned    if_mask;
 	const char **stage_filter;
-	int         val;
-	const char *accessor;
+	const layout_acc_t *accessors;
 } layout_qual_t;
 
 static void
@@ -201,10 +205,12 @@ glsl_layout_input_attachment_index (const layout_qual_t *qual, specifier_t spec,
 
 #define EP(n)  {.name = #n, .offset = offsetof (entrypoint_t, n)}
 #define EPF(n) {.name = #n, .offset = offsetof (entrypoint_t, n), .flag = true}
+#define EPV(n) {.name = #n, .offset = offsetof (entrypoint_t, n), .val = true}
 static struct {
 	const char *name;
 	int         offset;
 	bool        flag;
+	bool        val;
 } entrypoint_fields[] = {
 	EP (invocations),
 	EP (local_size[0]),
@@ -218,6 +224,7 @@ static struct {
 	EP (frag_depth),
 	EPF (point_mode),
 	EPF (early_fragment_tests),
+	EPV (gl_in_length),
 	{}
 };
 #undef EP
@@ -230,28 +237,88 @@ glsl_layout_exec_mode_param (const layout_qual_t *qual, specifier_t spec,
 	if (!entry_point) {
 		internal_error (0, "no entry point");
 	}
-	for (auto ep = entrypoint_fields; ep->name; ep++) {
-		if (strcmp (ep->name, qual->accessor) == 0) {
-			auto val_ptr = ((byte *) entry_point + ep->offset);
-			if (ep->flag) {
-				auto flag = (bool *) val_ptr;
-				*flag = true;
-			} else {
-				auto expr = (const expr_t **) val_ptr;
-				*expr = val;
+	for (auto acc = qual->accessors; acc->accessor; acc++) {
+		bool found = false;
+		for (auto ep = entrypoint_fields; ep->name; ep++) {
+			if (strcmp (ep->name, acc->accessor) == 0) {
+				auto val_ptr = ((byte *) entry_point + ep->offset);
+				if (ep->flag) {
+					auto flag = (bool *) val_ptr;
+					*flag = true;
+				} else if (ep->val) {
+					auto expr = (const expr_t **) val_ptr;
+					*expr = new_uint_expr (acc->val);
+				} else {
+					auto expr = (const expr_t **) val_ptr;
+					*expr = val;
+				}
+				found = true;
+				break;
 			}
-			return;
+		}
+		if (!found) {
+			internal_error (0, "invalid accessor: %s", acc->accessor);
 		}
 	}
-	internal_error (0, "invalid accessor: %s", qual->accessor);
 }
 
 static void
 glsl_layout_exec_mode (const layout_qual_t *qual, specifier_t spec,
 					   const expr_t *qual_name)
 {
-	auto val = new_int_expr (qual->val, false);
+	auto val = new_uint_expr (qual->accessors[0].val);
 	glsl_layout_exec_mode_param (qual, spec, qual_name, val);
+}
+
+static void
+set_array_size (const char *name, int count, const expr_t *qual_name)
+{
+	auto sym = symtab_lookup (pr.symtab, name);
+	if (!sym || !sym->type) {
+		internal_error (qual_name, "%s not found", name);
+	}
+	auto type = sym->type;
+	bool reference = false;
+	unsigned tag = 0;
+	if (is_reference (type)) {
+		reference = true;
+		tag = type->fldptr.tag;
+		type = dereference_type (type);
+	}
+	if (!is_array (type) || !type->array.type) {
+		internal_error (qual_name, "%s not an array", name);
+	}
+	if (type->array.count) {
+		error (qual_name, "%s size already specified", name);
+		return;
+	}
+	type = array_type (type->array.type, count);
+	if (reference) {
+		type = tagged_reference_type (tag, type);
+	}
+	sym->type = type;
+}
+
+static void
+glsl_layout_tess_vertices (const layout_qual_t *qual, specifier_t spec,
+						   const expr_t *qual_name, const expr_t *val)
+{
+	glsl_layout_exec_mode_param (qual, spec, qual_name, val);
+
+	auto entry_point = pr.module->entry_points;
+	set_array_size ("gl_out", expr_integral (entry_point->max_vertices),
+					qual_name);
+}
+
+static void
+glsl_layout_geom_topo (const layout_qual_t *qual, specifier_t spec,
+					   const expr_t *qual_name)
+{
+	glsl_layout_exec_mode (qual, spec, qual_name);
+
+	auto entry_point = pr.module->entry_points;
+	set_array_size ("gl_in", expr_integral (entry_point->gl_in_length),
+					qual_name);
 }
 
 static void
@@ -269,6 +336,7 @@ glsl_layout_ignore (const layout_qual_t *qual, specifier_t spec,
 #define V(v) (var_##v)
 #define I(i) (1 << (glsl_##i))
 #define C (const char *[])
+#define ACC (const layout_acc_t [])
 
 static bool sorted_layout_qualifiers;
 static layout_qual_t layout_qualifiers[] = {
@@ -381,120 +449,160 @@ static layout_qual_t layout_qualifiers[] = {
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeTriangles,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out", .val = SpvExecutionModeTriangles },
+			{}
+		},
 	},
 	{	.name = "quads",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeQuads,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out", .val = SpvExecutionModeQuads },
+			{}
+		},
 	},
 	{	.name = "isolines",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeIsolines,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out", .val = SpvExecutionModeIsolines },
+			{}
+		},
 	},
 	{	.name = "equal_spacing",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeSpacingEqual,
-		.accessor = "spacing",
+		.accessors = ACC {
+			{ .accessor = "spacing", .val = SpvExecutionModeSpacingEqual },
+			{}
+		},
 	},
 	{	.name = "fractional_even_spacing",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeSpacingFractionalEven,
-		.accessor = "spacing",
+		.accessors = ACC {
+			{ .accessor = "spacing",
+				.val = SpvExecutionModeSpacingFractionalEven },
+			{}
+		},
 	},
 	{	.name = "fractional_odd_spacing",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeSpacingFractionalOdd,
-		.accessor = "spacing",
+		.accessors = ACC {
+			{ .accessor = "spacing",
+				.val = SpvExecutionModeSpacingFractionalOdd },
+			{}
+		},
 	},
 	{	.name = "cw",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeVertexOrderCw,
-		.accessor = "order",
+		.accessors = ACC {
+			{ .accessor = "order", .val = SpvExecutionModeVertexOrderCw },
+			{}
+		},
 	},
 	{	.name = "ccw",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = SpvExecutionModeVertexOrderCcw,
-		.accessor = "order",
+		.accessors = ACC {
+			{ .accessor = "order", .val = SpvExecutionModeVertexOrderCcw },
+			{}
+		},
 	},
 	{	.name = "point_mode",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "tessellation evaluation", nullptr },
-		.val = true,
-		.accessor = "point_mode",
+		.accessors = ACC {
+			{ .accessor = "point_mode" },
+			{}
+		},
 	},
 
 	{	.name = "points",
-		.apply = A(glsl_layout_exec_mode),
+		.apply = A(glsl_layout_geom_topo),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeInputPoints,
-		.accessor = "primitive_in",
+		.accessors = ACC {
+			{ .accessor = "primitive_in", .val = SpvExecutionModeInputPoints },
+			{ .accessor = "gl_in_length", .val = 1 },
+			{}
+		},
 	},
 	{	.name = "lines",
-		.apply = A(glsl_layout_exec_mode),
+		.apply = A(glsl_layout_geom_topo),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeInputLines,
-		.accessor = "primitive_in",
+		.accessors = ACC {
+			{ .accessor = "primitive_in", .val = SpvExecutionModeInputLines },
+			{ .accessor = "gl_in_length", .val = 2 },
+			{}
+		},
 	},
 	{	.name = "lines_adjacency",
-		.apply = A(glsl_layout_exec_mode),
+		.apply = A(glsl_layout_geom_topo),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeInputLinesAdjacency,
-		.accessor = "primitive_in",
+		.accessors = ACC {
+			{ .accessor = "primitive_in",
+				.val = SpvExecutionModeInputLinesAdjacency },
+			{ .accessor = "gl_in_length", .val = 4 },
+			{}
+		},
 	},
 	{	.name = "triangles",
-		.apply = A(glsl_layout_exec_mode),
+		.apply = A(glsl_layout_geom_topo),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeTriangles,
-		.accessor = "primitive_in",
+		.accessors = ACC {
+			{ .accessor = "primitive_in", .val = SpvExecutionModeTriangles },
+			{ .accessor = "gl_in_length", .val = 3 },
+			{}
+		},
 	},
 	{	.name = "triangles_adjacency",
-		.apply = A(glsl_layout_exec_mode),
+		.apply = A(glsl_layout_geom_topo),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeInputTrianglesAdjacency,
-		.accessor = "primitive_in",
+		.accessors = ACC {
+			{ .accessor = "primitive_in",
+				.val = SpvExecutionModeInputTrianglesAdjacency },
+			{ .accessor = "gl_in_length", .val = 6 },
+			{}
+		},
 	},
 	{	.name = "invocations",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "geometry", nullptr },
-		.accessor = "invocations",
+		.accessors = ACC {
+			{ .accessor = "invocations" },
+			{}
+		},
 	},
 
 	{	.name = "origin_upper_left",
@@ -515,8 +623,10 @@ static layout_qual_t layout_qualifiers[] = {
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "fragment", nullptr },
-		.val = true,
-		.accessor = "early_fragment_tests",
+		.accessors = ACC {
+			{ .accessor = "early_fragment_tests" },
+			{}
+		},
 	},
 
 	{	.name = "local_size_x",
@@ -524,42 +634,60 @@ static layout_qual_t layout_qualifiers[] = {
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[0]",
+		.accessors = ACC {
+			{ .accessor = "local_size[0]" },
+			{}
+		},
 	},
 	{	.name = "local_size_y",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[1]",
+		.accessors = ACC {
+			{ .accessor = "local_size[1]" },
+			{}
+		},
 	},
 	{	.name = "local_size_z",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[2]",
+		.accessors = ACC {
+			{ .accessor = "local_size[2]" },
+			{}
+		},
 	},
 	{	.name = "local_size_x_id",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[0]",
+		.accessors = ACC {
+			{ .accessor = "local_size[0]" },
+			{}
+		},
 	},
 	{	.name = "local_size_y_id",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[1]",
+		.accessors = ACC {
+			{ .accessor = "local_size[1]" },
+			{}
+		},
 	},
 	{	.name = "local_size_z_id",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(in),
 		.stage_filter = C { "compute", nullptr },
-		.accessor = "local_size[2]",
+		.accessors = ACC {
+			{ .accessor = "local_size[2]" },
+			{}
+		},
 	},
 
 	{	.name = "xfb_buffer",
@@ -603,11 +731,14 @@ static layout_qual_t layout_qualifiers[] = {
 	},
 
 	{	.name = "vertices",
-		.apply = E(glsl_layout_exec_mode_param),
+		.apply = E(glsl_layout_tess_vertices),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "tessellation control", nullptr },
-		.accessor = "max_vertices",
+		.accessors = ACC {
+			{ .accessor = "max_vertices" },
+			{}
+		},
 	},
 
 	{	.name = "points",
@@ -615,31 +746,43 @@ static layout_qual_t layout_qualifiers[] = {
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeOutputPoints,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out",
+				.val = SpvExecutionModeOutputPoints },
+			{}
+		},
 	},
 	{	.name = "line_strip",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeOutputLineStrip,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out",
+				.val = SpvExecutionModeOutputLineStrip },
+			{}
+		},
 	},
 	{	.name = "triangle_strip",
 		.apply = A(glsl_layout_exec_mode),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
-		.val = SpvExecutionModeOutputTriangleStrip,
-		.accessor = "primitive_out",
+		.accessors = ACC {
+			{ .accessor = "primitive_out",
+				.val = SpvExecutionModeOutputTriangleStrip },
+			{}
+		},
 	},
 	{	.name = "max_vertices",
 		.apply = E(glsl_layout_exec_mode_param),
 		.obj_mask = D(qual),
 		.if_mask = I(out),
 		.stage_filter = C { "geometry", nullptr },
-		.accessor = "max_vertices",
+		.accessors = ACC {
+			{ .accessor = "max_vertices" },
+			{}
+		},
 	},
 	{	.name = "stream",
 		.apply = E(nullptr),
@@ -655,8 +798,10 @@ static layout_qual_t layout_qualifiers[] = {
 		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
-		.val = SpvExecutionModeDepthReplacing,
-		.accessor = "frag_depth",
+		.accessors = ACC {
+			{ .accessor = "frag_depth", .val = SpvExecutionModeDepthReplacing },
+			{}
+		},
 	},
 	{	.name = "depth_greater",
 		.apply = A(glsl_layout_exec_mode),
@@ -664,8 +809,10 @@ static layout_qual_t layout_qualifiers[] = {
 		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
-		.val = SpvExecutionModeDepthGreater,
-		.accessor = "frag_depth",
+		.accessors = ACC {
+			{ .accessor = "frag_depth", .val = SpvExecutionModeDepthGreater },
+			{}
+		},
 	},
 	{	.name = "depth_less",
 		.apply = A(glsl_layout_exec_mode),
@@ -673,8 +820,10 @@ static layout_qual_t layout_qualifiers[] = {
 		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
-		.val = SpvExecutionModeDepthLess,
-		.accessor = "frag_depth",
+		.accessors = ACC {
+			{ .accessor = "frag_depth", .val = SpvExecutionModeDepthLess },
+			{}
+		},
 	},
 	{	.name = "depth_unchanged",
 		.apply = A(glsl_layout_exec_mode),
@@ -682,8 +831,10 @@ static layout_qual_t layout_qualifiers[] = {
 		.var_type = V(gl_FragDepth),
 		.if_mask = I(out),
 		.stage_filter = C { "fragment", nullptr },
-		.val = SpvExecutionModeDepthUnchanged,
-		.accessor = "frag_depth",
+		.accessors = ACC {
+			{ .accessor = "frag_depth", .val = SpvExecutionModeDepthUnchanged },
+			{}
+		},
 	},
 
 	{	.name = "constant_id",
