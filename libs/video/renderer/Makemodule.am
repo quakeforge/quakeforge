@@ -530,16 +530,21 @@ vkshader_src_vert = \
 	$(fstriangle_src) \
 	$(fstrianglest_src)
 
+vkshader_src_geom = \
+	$(bsp_gbufg_src) \
+	$(particleg_src)
+
 vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
-vkshader_dep = $(call spvcautodep,$(vkshader_src_vert))
+vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
+
+vkshader_dep = $(call spvcautodep,$(vkshader_src_vert) $(vkshader_src_geom))
 include $(vkshader_dep) # am--include-marker
 spvc_depfiles_remade += $(vkshader_dep)
 
-vkshader_c = $(vkshader_c_vert) \
+vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) \
 	$(linef_c) \
 	$(partphysicsc_c) \
 	$(partupdatec_c) \
-	$(particleg_c) \
 	$(particlef_c) \
 	$(spritef_c) \
 	$(sprite_gbuff_c) \
@@ -547,7 +552,6 @@ vkshader_c = $(vkshader_c_vert) \
 	$(twodf_c) \
 	$(twod_depthf_c) \
 	$(quakebspf_c) \
-	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \

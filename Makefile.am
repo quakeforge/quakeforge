@@ -167,6 +167,10 @@ SUFFICES += .plist .plc
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
 
+%.geom.spvc: %.geom
+	@$(mkdir_p) $(builddir)/`dirname $@`
+	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
+
 sharepath = @sharepath@
 shaderdir = @shaderdir@
 shader_DATA =
