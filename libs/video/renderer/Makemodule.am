@@ -534,45 +534,49 @@ vkshader_src_geom = \
 	$(bsp_gbufg_src) \
 	$(particleg_src)
 
+vkshader_src_frag = \
+	$(linef_src) \
+	$(particlef_src) \
+	$(spritef_src) \
+	$(sprite_gbuff_src) \
+	$(sprite_depthf_src) \
+	$(twodf_src) \
+	$(twod_depthf_src) \
+	$(quakebspf_src) \
+	$(bsp_gbuff_src) \
+	$(bsp_skyf_src) \
+	$(bsp_turbf_src) \
+	$(debug_src) \
+	$(entid_src) \
+	$(light_splatf_src) \
+	$(light_debug_src) \
+	$(light_oit_src) \
+	$(lighting_cascadef_src) \
+	$(lighting_cubef_src) \
+	$(lighting_nonef_src) \
+	$(lighting_planef_src) \
+	$(composef_src) \
+	$(compose_fwdf_src) \
+	$(qskin_fwdf_src) \
+	$(qskin_gbuf_src) \
+	$(output_src) \
+	$(gridplane_src) \
+	$(pushcolor_src) \
+	$(fisheye_src) \
+	$(waterwarp_src)
+
 vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
 vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
+vkshader_c_frag=$(call spvautoc,$(vkshader_src_frag))
 
-vkshader_dep = $(call spvcautodep,$(vkshader_src_vert) $(vkshader_src_geom))
+vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag)
+vkshader_dep = $(call spvcautodep, $(vkshader_src))
 include $(vkshader_dep) # am--include-marker
 spvc_depfiles_remade += $(vkshader_dep)
 
-vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) \
-	$(linef_c) \
+vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) $(vkshader_c_frag) \
 	$(partphysicsc_c) \
-	$(partupdatec_c) \
-	$(particlef_c) \
-	$(spritef_c) \
-	$(sprite_gbuff_c) \
-	$(sprite_depthf_c) \
-	$(twodf_c) \
-	$(twod_depthf_c) \
-	$(quakebspf_c) \
-	$(bsp_gbuff_c) \
-	$(bsp_skyf_c) \
-	$(bsp_turbf_c) \
-	$(debug_c) \
-	$(entid_c) \
-	$(light_splatf_c) \
-	$(light_debug_c) \
-	$(light_oit_c) \
-	$(lighting_cascadef_c) \
-	$(lighting_cubef_c) \
-	$(lighting_nonef_c) \
-	$(lighting_planef_c) \
-	$(composef_c) \
-	$(compose_fwdf_c) \
-	$(qskin_fwdf_c) \
-	$(qskin_gbuf_c) \
-	$(output_c) \
-	$(gridplane_c) \
-	$(pushcolor_c) \
-	$(fisheye_c) \
-	$(waterwarp_c)
+	$(partupdatec_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
