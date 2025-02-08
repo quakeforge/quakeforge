@@ -146,8 +146,8 @@ QFV_PerspectiveTanFar (mat4f_t proj, float fov_x, float fov_y,
 
 	proj[0] = (vec4f_t) { 1/fx,  0,     0,     0 };
 	proj[1] = (vec4f_t) {   0, 1/fy,    0,     0 };
-	proj[2] = (vec4f_t) {   0,   0, -n/(n-f),  1 };
-	proj[3] = (vec4f_t) {   0,   0, n*f/(n-f), 0 };
+	proj[2] = (vec4f_t) {   0,   0, -n/(f-n),  1 };
+	proj[3] = (vec4f_t) {   0,   0, n*f/(f-n), 0 };
 }
 
 void
