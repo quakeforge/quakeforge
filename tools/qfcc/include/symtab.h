@@ -34,7 +34,7 @@
 #include "expr.h"
 
 struct defspace_s;
-enum storage_class_e;
+enum storage_class_e : unsigned;
 
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc

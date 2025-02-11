@@ -213,7 +213,7 @@ const type_t *parse_params (const type_t *return_type, param_t *params);
 
 param_t *check_params (param_t *params);
 
-enum storage_class_e;
+enum storage_class_e : unsigned;
 struct defspace_s;
 int value_too_large (const type_t *val_type) __attribute__((pure));
 function_t *make_function (symbol_t *sym, const char *nice_name,

@@ -32,7 +32,7 @@
 #define __struct_h
 
 struct def_s;
-enum storage_class_e;
+enum storage_class_e : unsigned;
 struct symbol_s;
 struct symtab_s;
 typedef struct type_s type_t;
