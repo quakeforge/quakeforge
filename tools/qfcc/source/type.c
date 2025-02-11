@@ -1325,7 +1325,13 @@ encode_type (dstring_t *encoding, const type_t *type)
 			algebra_encode_type (encoding, type);
 			return;
 		case ty_handle:
-			dasprintf (encoding, "{%s$}", type->name);
+			if (type->handle.type) {
+				dasprintf (encoding, "{%s:", type->name);
+				encode_type (encoding, type->handle.type);
+				dasprintf (encoding, ":%u$}", type->handle.extra);
+			} else {
+				dasprintf (encoding, "{%s$}", type->name);
+			}
 			return;
 		case ty_alias:
 			dasprintf (encoding, "{%s>", type->name ? type->name : "");
