@@ -28,6 +28,7 @@
 # include "config.h"
 #endif
 
+#include <ctype.h>
 #include <strings.h>
 
 #include "QF/alloc.h"
@@ -182,10 +183,62 @@ glsl_layout_set (const layout_qual_t *qual, specifier_t spec,
 	set_attribute (&spec.sym->attributes, name, val);
 }
 
+static const type_t *
+set_image_format (const type_t *type, const char *format)
+{
+	bool reference = false;
+	unsigned tag = 0;
+	if (is_reference (type)) {
+		reference = true;
+		tag = type->fldptr.tag;
+		type = dereference_type (type);
+	}
+	bool array = false;
+	int count = 0;
+	if (is_array (type)) {
+		array = true;
+		count = type_count (type);
+		type = dereference_type (type);
+	}
+	if (is_array (type)) {
+		type = set_image_format (type, format);
+	} else {
+		if (!is_handle (type)
+			&& type->handle.type != &type_glsl_sampled_image
+			&& type->handle.type != &type_glsl_image) {
+			internal_error (0, "not an image type");
+		}
+		auto htype = type->handle.type;
+		auto image = glsl_imageset.a[type->handle.extra];
+		if (image.format == SpvImageFormatUnknown) {
+			image.format = spirv_enum_val ("ImageFormat", format);
+		} else {
+			error (0, "format already set");
+		}
+		int len = strlen (format);
+		char fmt[len + 1];
+		for (int i = 0; i < len + 1; i++) {
+			fmt[i] = tolower (format[i]);
+		}
+		auto sym = glsl_image_type (&image, htype, va (0, ".image:%s", fmt));
+		type = sym->type;
+	}
+	if (array) {
+		type = array_type (type, count);
+	}
+	if (reference) {
+		type = tagged_reference_type (tag, type);
+	}
+	return type;
+}
+
 static void
 glsl_layout_format (const layout_qual_t *qual, specifier_t spec,
 					const expr_t *qual_name)
 {
+	auto type = spec.sym->type;
+	type = set_image_format (type, qual->name);
+	spec.sym->type = type;
 }
 
 static void

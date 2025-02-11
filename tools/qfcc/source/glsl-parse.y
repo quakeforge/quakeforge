@@ -1639,6 +1639,41 @@ image_property (const type_t *type, const attribute_t *attr)
 	return type->handle.type->property (type, attr);
 }
 
+symbol_t *
+glsl_image_type (glsl_image_t *image, const type_t *htype, const char *name)
+{
+	unsigned index = 0;
+	// slot 0 is never used
+	for (unsigned i = 1; i < glsl_imageset.size; i++) {
+		if (memcmp (&glsl_imageset.a[i], image, sizeof (*image)) == 0) {
+			index = i;
+			break;
+		}
+	}
+	if (!index) {
+		if (!glsl_imageset.size) {
+			DARRAY_APPEND (&glsl_imageset, (glsl_image_t) { } );
+		}
+		index = glsl_imageset.size;
+		DARRAY_APPEND (&glsl_imageset, *image);
+	}
+
+	auto sym = new_symbol (name);
+	sym = find_handle (sym, &type_int);
+	//FIXME the type isn't chained yet and so doesn't need to be const, but
+	// symbols keep the type in a const pointer.
+	auto t = (type_t *) sym->type;
+	if (t->handle.extra) {
+		internal_error (0, "image type handle already set");
+	}
+	t->handle.type = htype;
+	t->handle.extra = index;
+	t->property = image_property;
+	sym->type = find_type (sym->type);
+
+	return sym;
+}
+
 static symbol_t *
 glsl_parse_image (const char *token, rua_ctx_t *ctx)
 {
@@ -1733,36 +1768,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 		goto invalid;
 	}
 
-	unsigned index = 0;
-	// slot 0 is never used
-	for (unsigned i = 1; i < glsl_imageset.size; i++) {
-		if (memcmp (&glsl_imageset.a[i], &image, sizeof (image)) == 0) {
-			index = i;
-			break;
-		}
-	}
-	if (!index) {
-		if (!glsl_imageset.size) {
-			DARRAY_APPEND (&glsl_imageset, (glsl_image_t) { } );
-		}
-		index = glsl_imageset.size;
-		DARRAY_APPEND (&glsl_imageset, image);
-	}
-
-	auto sym = new_symbol (token);
-	sym = find_handle (sym, &type_int);
-	sym->type = find_type (sym->type);
-	//FIXME the type isn't chained yet and so doesn't need to be const, but
-	// symbols keep the type in a const pointer.
-	auto t = (type_t *) sym->type;
-	if (t->handle.extra) {
-		internal_error (0, "image type handle already set");
-	}
-	t->handle.type = type.htype;
-	t->handle.extra = index;
-	t->property = image_property;
-
-	return sym;
+	return glsl_image_type (&image, type.htype, token);
 invalid:
 	internal_error (0, "invalid image type: %s", token);
 }

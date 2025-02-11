@@ -146,4 +146,7 @@ bool glsl_on_include (const char *name, rua_ctx_t *ctx);
 void glsl_include (int behavior, void *scanner);
 void glsl_multiview (int behavior, void *scanner);
 
+symbol_t *glsl_image_type (glsl_image_t *image, const type_t *htype,
+						   const char *name);
+
 #endif//__glsl_lang_h
