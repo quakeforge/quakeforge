@@ -538,8 +538,9 @@ spirv_setup_intrinsic_symtab (symtab_t *symtab)
 	return true;
 }
 
-uint32_t
-spirv_enum_val (const char *enum_name, const char *enumerant)
+bool
+spirv_enum_val_silent (const char *enum_name, const char *enumerant,
+					   uint32_t *val)
 {
 	const char *set = "core";
 	auto grammar = find_grammar (set);
@@ -555,8 +556,19 @@ spirv_enum_val (const char *enum_name, const char *enumerant)
 	}
 	auto enum_val = symtab_lookup (enum_enum->namespace, enumerant);
 	if (!enum_val) {
-		error (0, "Builtin %s not found", enumerant);
+		return false;
+	}
+	*val = enum_val->value->uint_val;
+	return true;
+}
+
+uint32_t
+spirv_enum_val (const char *enum_name, const char *enumerant)
+{
+	uint32_t val = 0;
+	if (!spirv_enum_val_silent (enum_name, enumerant, &val)) {
+		error (0, "%s not found", enumerant);
 		return 0;
 	}
-	return enum_val->value->uint_val;
+	return val;
 }
