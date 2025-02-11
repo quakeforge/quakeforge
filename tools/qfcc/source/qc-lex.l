@@ -1756,7 +1756,11 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
 		error (0, "duplicate macro parameter \"%s\"", token->text);
 		return macro;
 	}
-	auto sym = new_symbol (token->text);
+	auto name = token->text;
+	if (token->token == -rua_ellipsis) {
+		name = "__VA_ARGS__";
+	}
+	auto sym = new_symbol (name);
 	sym->sy_type = sy_offset;
 	sym->offset = macro->num_params++;
 	symtab_addsymbol (macro->params, sym);

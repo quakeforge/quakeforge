@@ -427,7 +427,7 @@ void cpp_define (const char *arg)
 		cpp_macros = new_symtab (0, stab_global);
 		make_magic_macro (cpp_macros, "__FILE__", rua_macro_file);
 		make_magic_macro (cpp_macros, "__LINE__", rua_macro_line);
-		make_magic_macro (cpp_macros, "__VA_ARGS__", rua_macro_va_args);
+		//make_magic_macro (cpp_macros, "__VA_ARGS__", rua_macro_va_args);
 	}
 	size_t len = strlen (arg);
 	if (len > 0x10000) {
