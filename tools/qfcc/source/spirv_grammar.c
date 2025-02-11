@@ -270,6 +270,8 @@ static plfield_t spirv_enumerant_fields[] = {
 	{"parameters", 0, QFArray, parse_array, &parse_parameter_data},
 	{"version", offsetof (spirv_enumerant_t, version), QFString, parse_string, &parse_string_array},
 	{"lastVersion", offsetof (spirv_enumerant_t, lastVersion), QFString, parse_string, &parse_string_array},
+	{"aliases", 0, QFArray, parse_ignore, nullptr},
+	{"provisional", 0, QFBool, parse_ignore, nullptr},
 	{ }
 };
 
@@ -336,6 +338,8 @@ static plfield_t spirv_instruction_fields[] = {
 	{"version", offsetof (spirv_instruction_t, version), QFString, parse_string, &parse_string_array},
 	{"lastVersion", offsetof (spirv_instruction_t, lastVersion), QFString, parse_string, &parse_string_array},
 	{"class", 0, QFString, parse_ignore, nullptr},
+	{"aliases", 0, QFArray, parse_ignore, nullptr},
+	{"provisional", 0, QFBool, parse_ignore, nullptr},
 	{ }
 };
 
