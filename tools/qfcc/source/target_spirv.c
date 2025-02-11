@@ -40,6 +40,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/spirv.h"
@@ -666,7 +667,7 @@ spirv_TypeBool (const type_t *type, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_TypeImage (glsl_image_t *image, spirvctx_t *ctx)
+spirv_TypeImage (image_t *image, spirvctx_t *ctx)
 {
 	if (image->id) {
 		return image->id;
@@ -798,11 +799,11 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
 	} else if (is_handle (type)
-			   && (type->handle.type == &type_glsl_image
-				   || type->handle.type == &type_glsl_sampled_image)) {
-		auto image = &glsl_imageset.a[type->handle.extra];
+			   && (type->handle.type == &type_image
+				   || type->handle.type == &type_sampled_image)) {
+		auto image = &imageset.a[type->handle.extra];
 		id = spirv_TypeImage (image, ctx);
-		if (type->handle.type == &type_glsl_sampled_image) {
+		if (type->handle.type == &type_sampled_image) {
 			id = spirv_TypeSampledImage (id, ctx);
 		}
 	}

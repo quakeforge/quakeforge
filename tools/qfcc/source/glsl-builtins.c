@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/spirv.h"
@@ -47,184 +48,6 @@
 #include "tools/qfcc/include/type.h"
 
 glsl_sublang_t glsl_sublang;
-glsl_imageset_t glsl_imageset = DARRAY_STATIC_INIT (16);
-
-static struct_def_t glsl_image_struct[] = {
-	{"type",        &type_ptr},
-	{"dim",         &type_uint},	//FIXME enum
-	{"depth",       &type_uint},	//FIXME enum
-	{"arrayed",     &type_bool},
-	{"multisample", &type_bool},
-	{"sampled",     &type_uint},	//FIXME enum
-	{"format",      &type_uint},	//FIXME enum
-	{}
-};
-
-static struct_def_t glsl_sampled_image_struct[] = {
-	{"image_type",  &type_ptr},
-	{}
-};
-
-static int dim_widths[7] = { 1, 2, 3, 3, 2, 1, 0 };
-static int size_widths[7] = { 1, 2, 3, 2, 2, 1, 0 };
-static int shadow_widths[7] = { 3, 3, 0, 4, 3, 0, 0 };
-static const char *shadow_swizzle[7][2] = {
-	{ "x", "xy" },
-	{ "xy", "xyz" },
-	{},
-	{ "xyz", "xyzw" },
-	{ "xy", "xyz" },
-	{},
-	{},
-};
-static const char *shadow_comp_swizzle[7][2] = {
-	{ "z", "z" },	// glsl braindeadery for 1d (non-arrayed) images
-	{ "z", "w" },
-	{},
-	{ "w", "" },	// cubemap array shadows get comp from a param
-	{ "z", "w" },
-	{},
-	{},
-};
-
-static const expr_t *
-image_property (const type_t *type, const attribute_t *property)
-{
-	auto image = &glsl_imageset.a[type->handle.extra];
-
-	if (image->dim > glid_subpassdata) {
-		internal_error (0, "image has bogus dimension");
-	}
-
-	if (strcmp (property->name, "sample_type") == 0) {
-		return new_type_expr (image->sample_type);
-	} else if (strcmp (property->name, "image_coord") == 0) {
-		int width = dim_widths[image->dim];
-		if (image->dim == glid_subpassdata) {
-			width = 2;
-		}
-		if (!width) {
-			return new_type_expr (&type_void);
-		}
-		if (image->dim < glid_3d) {
-			width += image->arrayed;
-		}
-		return new_type_expr (vector_type (&type_int, width));
-	} else if (strcmp (property->name, "size_type") == 0) {
-		int width = size_widths[image->dim];
-		if (!width) {
-			return new_type_expr (&type_void);
-		}
-		if (width < 3 && image->dim <= glid_cube) {
-			width += image->arrayed;
-		}
-		return new_type_expr (vector_type (&type_int, width));
-	}
-	return error (0, "no property %s on %s", property->name, type->name + 4);
-}
-
-static const expr_t *
-sampled_shadow_swizzle (const attribute_t *property, const char *swizzle[7][2],
-						glsl_image_t *image)
-{
-	int count = list_count (&property->params->list);
-	if (count != 1) {
-		return error (property->params, "wrong number of params");
-	}
-	const expr_t *params[count];
-	list_scatter (&property->params->list, params);
-	const char *swiz = swizzle[image->dim][image->arrayed];
-	if (!swiz) {
-		return error (property->params, "image does not support"
-					  " shadow sampling");
-	}
-	if (!swiz[0]) {
-		// cube map array
-		return error (property->params, "cube map array shadow compare is not"
-					  " in the coordinate vector");
-	}
-	if (strcmp (swiz, "xyzw") == 0) {
-		// no-op swizzle
-		return params[0];
-	}
-	if (!swiz[1]) {
-		auto ptype = get_type (params[0]);
-		auto member = new_name_expr (swiz);
-		auto field = get_struct_field (ptype, params[0], member);
-		if (!field) {
-			return error (params[0], "invalid shadow coord");
-		}
-		member = new_symbol_expr (field);
-		auto expr = new_field_expr (params[0], member);
-		expr->field.type = member->symbol->type;
-		return expr;
-	}
-	return new_swizzle_expr (params[0], swiz);
-}
-
-static const expr_t *
-sampled_image_property (const type_t *type, const attribute_t *property)
-{
-	auto image = &glsl_imageset.a[type->handle.extra];
-
-	if (image->dim > glid_subpassdata) {
-		internal_error (0, "image has bogus dimension");
-	}
-
-	if (strcmp (property->name, "tex_coord") == 0) {
-		int width = dim_widths[image->dim];
-		if (!width) {
-			return new_type_expr (&type_void);
-		}
-		if (image->dim < glid_3d) {
-			width += image->arrayed;
-		}
-		return new_type_expr (vector_type (&type_float, width));
-	} else if (strcmp (property->name, "shadow_coord") == 0) {
-		if (property->params) {
-			return sampled_shadow_swizzle (property, shadow_swizzle, image);
-		} else {
-			int width = shadow_widths[image->dim];
-			if (!image->depth || !width) {
-				return new_type_expr (&type_void);
-			}
-			if (image->dim == glid_2d) {
-				width += image->arrayed;
-			}
-			return new_type_expr (vector_type (&type_float, width));
-		}
-	} else if (strcmp (property->name, "comp") == 0) {
-		if (property->params) {
-			return sampled_shadow_swizzle (property, shadow_comp_swizzle,
-										   image);
-		} else {
-			int width = shadow_widths[image->dim];
-			if (!image->depth || !width) {
-				return new_type_expr (&type_void);
-			}
-			if (image->dim == glid_2d) {
-				width += image->arrayed;
-			}
-			return new_type_expr (vector_type (&type_float, width));
-		}
-	}
-	return image_property (type, property);
-}
-
-type_t type_glsl_image = {
-	.type = ev_invalid,
-	.meta = ty_struct,
-	.property = image_property,
-};
-type_t type_glsl_sampled_image = {
-	.type = ev_invalid,
-	.meta = ty_struct,
-	.property = sampled_image_property,
-};
-type_t type_glsl_sampler = {
-	.type = ev_int,
-	.meta = ty_handle,
-};
 
 #define SRC_LINE_EXP2(l,f) "#line " #l " " #f "\n"
 #define SRC_LINE_EXP(l,f) SRC_LINE_EXP2(l,f)
@@ -1449,15 +1272,7 @@ glsl_init_common (rua_ctx_t *ctx)
 
 	current_target.create_entry_point ("main", glsl_sublang.model_name);
 
-	make_structure ("@image", 's', glsl_image_struct, &type_glsl_image);
-	make_structure ("@sampled_image", 's', glsl_sampled_image_struct,
-					&type_glsl_sampled_image);
-	make_handle ("@sampler", &type_glsl_sampler);
-	chain_type (&type_glsl_image);
-	chain_type (&type_glsl_sampler);
-	chain_type (&type_glsl_sampled_image);
-
-	DARRAY_RESIZE (&glsl_imageset, 0);
+	image_init_types ();
 
 	ctx->language->initialized = true;
 	glsl_block_clear ();

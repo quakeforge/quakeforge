@@ -84,37 +84,6 @@ typedef struct glsl_block_s {
 	symbol_t   *instance_name;
 } glsl_block_t;
 
-typedef enum : unsigned {
-	glid_1d,
-	glid_2d,
-	glid_3d,
-	glid_cube,
-	glid_rect,
-	glid_buffer,
-	glid_subpassdata,
-} glsl_imagedim_t;
-
-typedef struct glsl_image_s {
-	const type_t *sample_type;
-	glsl_imagedim_t dim;
-	char        depth;
-	bool        arrayed;
-	bool        multisample;
-	char        sampled;
-	unsigned    format;
-	uint32_t    id;
-} glsl_image_t;
-
-typedef struct glsl_sampled_image_s {
-	const type_t *image_type;
-} glsl_sampled_image_t;
-
-typedef struct DARRAY_TYPE (glsl_image_t) glsl_imageset_t;
-extern glsl_imageset_t glsl_imageset;
-extern type_t type_glsl_image;
-extern type_t type_glsl_sampler;
-extern type_t type_glsl_sampled_image;
-
 typedef struct glsl_sublang_s {
 	const char *name;
 	const char **interface_default_names;
@@ -145,8 +114,5 @@ void glsl_layout (const ex_list_t *qualifiers, specifier_t spec);
 bool glsl_on_include (const char *name, rua_ctx_t *ctx);
 void glsl_include (int behavior, void *scanner);
 void glsl_multiview (int behavior, void *scanner);
-
-symbol_t *glsl_image_type (glsl_image_t *image, const type_t *htype,
-						   const char *name);
 
 #endif//__glsl_lang_h

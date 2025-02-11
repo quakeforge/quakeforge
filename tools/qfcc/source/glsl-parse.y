@@ -67,6 +67,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -1534,7 +1535,7 @@ static keyword_t glsl_keywords[] = {
 	{"textureBuffer",           GLSL_TYPE_SPEC},
 	{"itextureBuffer",          GLSL_TYPE_SPEC},
 	{"utextureBuffer",          GLSL_TYPE_SPEC},
-	{"sampler",         GLSL_TYPE_SPEC, .spec = {.type = &type_glsl_sampler}},
+	{"sampler",             GLSL_TYPE_SPEC, .spec = {.type = &type_sampler}},
 	{"samplerShadow",           GLSL_TYPE_SPEC},
 	{"subpassInput",            GLSL_TYPE_SPEC},
 	{"isubpassInput",           GLSL_TYPE_SPEC},
@@ -1633,86 +1634,45 @@ find_image_sub (image_sub_t *sub, const char *str)
 	return nullptr;
 }
 
-static const expr_t *
-image_property (const type_t *type, const attribute_t *attr)
-{
-	return type->handle.type->property (type, attr);
-}
-
-symbol_t *
-glsl_image_type (glsl_image_t *image, const type_t *htype, const char *name)
-{
-	unsigned index = 0;
-	// slot 0 is never used
-	for (unsigned i = 1; i < glsl_imageset.size; i++) {
-		if (memcmp (&glsl_imageset.a[i], image, sizeof (*image)) == 0) {
-			index = i;
-			break;
-		}
-	}
-	if (!index) {
-		if (!glsl_imageset.size) {
-			DARRAY_APPEND (&glsl_imageset, (glsl_image_t) { } );
-		}
-		index = glsl_imageset.size;
-		DARRAY_APPEND (&glsl_imageset, *image);
-	}
-
-	auto sym = new_symbol (name);
-	sym = find_handle (sym, &type_int);
-	//FIXME the type isn't chained yet and so doesn't need to be const, but
-	// symbols keep the type in a const pointer.
-	auto t = (type_t *) sym->type;
-	if (t->handle.extra) {
-		internal_error (0, "image type handle already set");
-	}
-	t->handle.type = htype;
-	t->handle.extra = index;
-	t->property = image_property;
-	sym->type = find_type (sym->type);
-
-	return sym;
-}
-
 static symbol_t *
 glsl_parse_image (const char *token, rua_ctx_t *ctx)
 {
-	static image_sub_t image_type[] = {
+	static image_sub_t image_sub_type[] = {
 		{ .substr = "sampler",  .val = 1, .type = &type_float,
-		  .htype = &type_glsl_sampled_image },
+		  .htype = &type_sampled_image },
 		{ .substr = "image",    .val = 2, .type = &type_float,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "texture",  .val = 1, .type = &type_float,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "isampler", .val = 1, .type = &type_int,
-		  .htype = &type_glsl_sampled_image },
+		  .htype = &type_sampled_image },
 		{ .substr = "iimage",   .val = 2, .type = &type_int,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "itexture", .val = 1, .type = &type_int,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "usampler", .val = 1, .type = &type_uint,
-		  .htype = &type_glsl_sampled_image },
+		  .htype = &type_sampled_image },
 		{ .substr = "uimage",   .val = 2, .type = &type_uint,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "utexture", .val = 1, .type = &type_uint,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		// subpassInput is dimension in spir-v
 		{ .substr = "i",        .val = 2, .type = &type_int,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "u",        .val = 2, .type = &type_uint,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{ .substr = "",         .val = 2, .type = &type_float,
-		  .htype = &type_glsl_image },
+		  .htype = &type_image },
 		{}
 	};
 	static image_sub_t image_dim[] = {
-		{ "2DRect",       glid_rect        },	// so 2D doesn't falsly match
-		{ "1D",           glid_1d          },
-		{ "2D",           glid_2d          },
-		{ "3D",           glid_3d          },
-		{ "Cube",         glid_cube        },
-		{ "Buffer",       glid_buffer      },
-		{ "subpassInput", glid_subpassdata },
+		{ "2DRect",       img_rect        },	// so 2D doesn't falsly match
+		{ "1D",           img_1d          },
+		{ "2D",           img_2d          },
+		{ "3D",           img_3d          },
+		{ "Cube",         img_cube        },
+		{ "Buffer",       img_buffer      },
+		{ "subpassInput", img_subpassdata },
 		{}
 	};
 	static image_sub_t image_ms[] = {
@@ -1732,7 +1692,8 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 	};
 
 	int offset = 0;
-	auto type = *find_image_sub (image_type, token + offset);// always succeeds
+	// always succeeds
+	auto type = *find_image_sub (image_sub_type, token + offset);
 	offset += strlen (type.substr);
 	auto dim = find_image_sub (image_dim, token + offset);
 	if (!dim) {
@@ -1742,7 +1703,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 	if (!is_float (type.type)) {
 		type.substr++;	// skip over type char
 	}
-	if (dim->val == glid_subpassdata) {
+	if (dim->val == img_subpassdata) {
 		type.substr = dim->substr;
 	}
 	auto ms = *find_image_sub (image_ms, token + offset);
@@ -1750,7 +1711,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 	auto array = *find_image_sub (image_array, token + offset);
 	offset += strlen (array.substr);
 
-	glsl_image_t image = {
+	image_t image = {
 		.sample_type = type.type,
 		.dim = dim->val,
 		.depth = 0,		//set below for shadow samplers
@@ -1768,7 +1729,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 		goto invalid;
 	}
 
-	return glsl_image_type (&image, type.htype, token);
+	return named_image_type (&image, type.htype, token);
 invalid:
 	internal_error (0, "invalid image type: %s", token);
 }

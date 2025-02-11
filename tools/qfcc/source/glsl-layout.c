@@ -40,6 +40,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/spirv.h"
@@ -204,12 +205,12 @@ set_image_format (const type_t *type, const char *format)
 		type = set_image_format (type, format);
 	} else {
 		if (!is_handle (type)
-			&& type->handle.type != &type_glsl_sampled_image
-			&& type->handle.type != &type_glsl_image) {
+			&& type->handle.type != &type_sampled_image
+			&& type->handle.type != &type_image) {
 			internal_error (0, "not an image type");
 		}
 		auto htype = type->handle.type;
-		auto image = glsl_imageset.a[type->handle.extra];
+		auto image = imageset.a[type->handle.extra];
 		if (image.format == SpvImageFormatUnknown) {
 			image.format = spirv_enum_val ("ImageFormat", format);
 		} else {
@@ -220,7 +221,7 @@ set_image_format (const type_t *type, const char *format)
 		for (int i = 0; i < len + 1; i++) {
 			fmt[i] = tolower (format[i]);
 		}
-		auto sym = glsl_image_type (&image, htype, va (0, ".image:%s", fmt));
+		auto sym = named_image_type (&image, htype, va (0, ".image:%s", fmt));
 		type = sym->type;
 	}
 	if (array) {
@@ -1183,13 +1184,13 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 				// images are opaque types, but certain qualifiers support
 				// only images and not other opaque types, but qualifiers that
 				// support opaque types in general also support images
-				glsl_image_t *image = nullptr;
-				//FIXME nicer type check (and remove glsl)
-				if (type->handle.type == &type_glsl_image) {
-					image = &glsl_imageset.a[type->handle.extra];
+				image_t *image = nullptr;
+				//FIXME nicer type check
+				if (type->handle.type == &type_image) {
+					image = &imageset.a[type->handle.extra];
 				}
 				if (qual->var_type != var_opaque && image) {
-					if (image->dim == glid_subpassdata) {
+					if (image->dim == img_subpassdata) {
 						var_type = var_subpass;
 					} else {
 						var_type = var_image;

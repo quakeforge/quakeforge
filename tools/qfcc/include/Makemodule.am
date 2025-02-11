@@ -20,6 +20,7 @@ EXTRA_DIST += \
 	tools/qfcc/include/glsl-lang.h \
 	tools/qfcc/include/grab.h \
 	tools/qfcc/include/idstuff.h \
+	tools/qfcc/include/image.h \
 	tools/qfcc/include/linker.h \
 	tools/qfcc/include/mat_types.h \
 	tools/qfcc/include/method.h \

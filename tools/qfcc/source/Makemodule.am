@@ -59,6 +59,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/glsl-sub_vert.c \
 	tools/qfcc/source/grab.c \
 	tools/qfcc/source/idstuff.c \
+	tools/qfcc/source/image.c \
 	tools/qfcc/source/linker.c \
 	tools/qfcc/source/method.c \
 	tools/qfcc/source/obj_file.c \
