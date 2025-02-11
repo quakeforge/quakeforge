@@ -42,6 +42,8 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/image.h"
+#include "tools/qfcc/include/spirv_grammar.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -278,4 +280,121 @@ named_image_type (image_t *image, const type_t *htype, const char *name)
 	sym->type = find_type (sym->type);
 
 	return sym;
+}
+
+const type_t *
+image_type (const type_t *type, const expr_t *params)
+{
+	if (!type || !(is_float (type) || is_int (type) || is_uint (type))
+		|| !is_scalar (type)) {
+		error (params, "invalid type for @image");
+		return &type_int;
+	}
+	if (is_error (params)) {
+		return &type_int;
+	}
+	if (params->type != ex_list) {
+		internal_error (params, "not a list");
+	}
+	image_t     image = {
+		.sample_type = type,
+		.dim = ~0u,
+		.format = ~0u,
+	};
+	int count = list_count (&params->list);
+	const expr_t *args[count + 1] = {};
+	list_scatter (&params->list, args);
+	bool err = false;
+	for (int i = 0; i < count; i++) {
+		uint32_t val;
+		if (args[i]->type != ex_symbol) {
+			error (args[i], "invalid argument for @image");
+			err = true;
+			continue;
+		}
+		const char *name = args[i]->symbol->name;
+		if (spirv_enum_val_silent ("Dim", name, &val)) {
+			if (image.dim != ~0u) {
+				error (args[i], "multiple spec for image dimension");
+				err = true;
+			}
+			image.dim = val;
+			continue;
+		}
+		if (spirv_enum_val_silent ("ImageFormat", name, &val)) {
+			if (image.format != ~0u) {
+				error (args[i], "multiple spec for image format");
+				err = true;
+			}
+			image.format = val;
+			continue;
+		}
+		if (strcasecmp ("Depth", name) == 0) {
+			if (image.depth) {
+				error (args[i], "multiple spec for image depth");
+				err = true;
+			}
+			image.depth = 1;
+			continue;
+		}
+		if (strcasecmp ("Array", name) == 0
+			|| strcasecmp ("Arrayed", name) == 0) {
+			if (image.arrayed) {
+				error (args[i], "multiple spec for image array");
+				err = true;
+			}
+			image.arrayed = true;
+			continue;
+		}
+		if (strcasecmp ("MS", name) == 0) {
+			if (image.multisample) {
+				error (args[i], "multiple spec for image multisample");
+				err = true;
+			}
+			image.multisample = true;
+			continue;
+		}
+		if (strcasecmp ("Sampled", name) == 0) {
+			if (image.sampled) {
+				error (args[i], "multiple spec for image sampling");
+				err = true;
+			}
+			image.sampled = 1;
+			continue;
+		}
+		if (strcasecmp ("Storage", name) == 0) {
+			if (image.sampled) {
+				error (args[i], "multiple spec for image sampling");
+				err = true;
+			}
+			image.sampled = 2;
+			continue;
+		}
+		error (args[i], "invalid argument for @image: %s", name);
+		err = true;
+	}
+	if (image.dim == img_subpassdata) {
+		if (image.sampled) {
+			error (0, "multiple spec for image sampling");
+			err = true;
+		}
+		if (image.format && image.format != ~0u) {
+			error (0, "multiple spec for image format");
+			err = true;
+		}
+		image.format = SpvImageFormatUnknown;
+		image.sampled = 2;
+	}
+	if (image.dim == ~0u) {
+		error (0, "image dimenion not specified");
+		err = true;
+	}
+	if (image.format == ~0u) {
+		image.format = SpvImageFormatUnknown;
+	}
+	if (err) {
+		return &type_int;
+	}
+	auto sym = named_image_type (&image, &type_image, nullptr);
+	return sym->type;
 }

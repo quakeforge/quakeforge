@@ -67,6 +67,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -155,7 +156,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
 %token				RETURN AT_RETURN
-%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT
 %token				HANDLE INTRINSIC
@@ -197,7 +198,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<symbol>	tag
 %type	<spec>		struct_specifier struct_list
-%type	<spec>		enum_specifier algebra_specifier
+%type	<spec>		enum_specifier algebra_specifier image_specifier
 %type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
 %type	<expr>		array_decl
@@ -724,6 +725,12 @@ pop_scope (symtab_t *current)
 	return parent;
 }
 
+static const expr_t *
+number_as_symbol (const rua_tok_t *tok, rua_ctx_t *ctx)
+{
+	return new_name_expr (tok->text);
+}
+
 %}
 
 %expect 2
@@ -1151,6 +1158,7 @@ typespec_reserved
 		{
 			$$ = type_spec (algebra_subtype ($1.type, $3));
 		}
+	| image_specifier
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should. This is not a problem
@@ -1421,6 +1429,22 @@ algebra_specifier
 		{
 			auto spec = type_spec (algebra_type ($3.type, 0));
 			$$ = spec;
+		}
+	;
+
+image_specifier
+	: IMAGE '(' TYPE_SPEC[spec] ','
+		{
+			// allow 2D to be parsed as a symbol instead of 2.0 (double/decimal)
+			$<pointer>$ = ctx->language->parse_number;
+			ctx->language->parse_number = number_as_symbol;
+		}[parse_number]
+	  expr_list ')'
+		{
+			auto type = $spec.type;
+			auto spec = type_spec (image_type (type, $expr_list));
+			$$ = spec;
+			ctx->language->parse_number = $<pointer>parse_number;
 		}
 	;
 
@@ -3067,6 +3091,8 @@ static keyword_t qf_keywords[] = {
 	{"@algebra",	QC_ALGEBRA,		},
 	{"@dual",		QC_DUAL,		},
 	{"@undual",		QC_UNDUAL,		},
+
+	{"@image",		QC_IMAGE,		},
 
 	{"@construct",	QC_CONSTRUCT,	},
 	{"@generic",	QC_GENERIC,		},

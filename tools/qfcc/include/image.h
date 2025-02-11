@@ -70,4 +70,6 @@ void image_init_types (void);
 symbol_t *named_image_type (image_t *image, const type_t *htype,
 							const char *name);
 
+const type_t *image_type (const type_t *type, const expr_t *params);
+
 #endif//__image_h
