@@ -906,7 +906,8 @@ resolve_type (const expr_t *te, rua_ctx_t *ctx)
 		}
 	}
 	if (te->type != ex_type) {
-		internal_error (te, "not a type expression");
+		error (te, "not a type expression");
+		return &type_int;
 	}
 	if (!te->typ.op) {
 		//if (!te->typ.type) {

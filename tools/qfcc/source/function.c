@@ -167,38 +167,10 @@ cmp_genparams (genfunc_t *g1, genparam_t *p1, genfunc_t *g2, genparam_t *p2)
 	return *vt1 == *vt2;
 }
 
-genfunc_t *
-add_generic_function (genfunc_t *genfunc)
+static genfunc_t *
+_add_generic_function (genfunc_t *genfunc)
 {
 	auto name = genfunc->name;
-
-	for (int i = 0; i < genfunc->num_types; i++) {
-		auto gentype = &genfunc->types[i];
-		if (!gentype->valid_types) {
-			internal_error (0, "no valid_types set in generic type");
-		}
-		for (auto type = gentype->valid_types; type && *type; type++) {
-			if (is_void (*type)) {
-				internal_error (0, "void in list of valid types");
-			}
-		}
-	}
-	int gen_params = 0;
-	for (int i = 0; i < genfunc->num_params; i++) {
-		auto param = &genfunc->params[i];
-		if (!param->fixed_type) {
-			gen_params++;
-			check_generic_param (param, genfunc);
-		}
-	}
-	if (!gen_params) {
-		internal_error (0, "%s has no generic parameters", name);
-	}
-	if (!genfunc->ret_type) {
-		internal_error (0, "%s has no return type", name);
-	}
-	check_generic_param (genfunc->ret_type, genfunc);
-
 	bool is_new = true;
 	genfunc_t *old = nullptr;
 	auto old_list = (genfunc_t **) Hash_FindList (generic_functions, name);
@@ -233,6 +205,41 @@ add_generic_function (genfunc_t *genfunc)
 		genfunc = old;
 	}
 	return genfunc;
+}
+
+genfunc_t *
+add_generic_function (genfunc_t *genfunc)
+{
+	auto name = genfunc->name;
+
+	for (int i = 0; i < genfunc->num_types; i++) {
+		auto gentype = &genfunc->types[i];
+		if (!gentype->valid_types) {
+			internal_error (0, "no valid_types set in generic type");
+		}
+		for (auto type = gentype->valid_types; type && *type; type++) {
+			if (is_void (*type)) {
+				internal_error (0, "void in list of valid types");
+			}
+		}
+	}
+	int gen_params = 0;
+	for (int i = 0; i < genfunc->num_params; i++) {
+		auto param = &genfunc->params[i];
+		if (!param->fixed_type) {
+			gen_params++;
+			check_generic_param (param, genfunc);
+		}
+	}
+	if (!gen_params) {
+		internal_error (0, "%s has no generic parameters", name);
+	}
+	if (!genfunc->ret_type) {
+		internal_error (0, "%s has no return type", name);
+	}
+	check_generic_param (genfunc->ret_type, genfunc);
+
+	return _add_generic_function (genfunc);
 }
 
 static const type_t **
@@ -300,7 +307,7 @@ make_gentype (const expr_t *expr, rua_ctx_t *ctx)
 		.valid_types = valid_type_list (sym->expr, ctx),
 	};
 	if (!gentype.valid_types) {
-		internal_error (expr, "empty generic type");
+		error (expr, "empty generic type");
 	}
 	return gentype;
 }
@@ -958,7 +965,7 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 
 	auto genfunc = parse_generic_function (name, spec, ctx);
 	if (genfunc) {
-		add_generic_function (genfunc);
+		_add_generic_function (genfunc);
 
 		func = new_metafunc ();
 		*func = (metafunc_t) {
