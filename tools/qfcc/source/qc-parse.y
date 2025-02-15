@@ -1374,6 +1374,7 @@ type_ref
 	| STRUCT tag				{ $$ = forward_decl_expr ($2, $1, nullptr); }
 	| ENUM tag					{ $$ = forward_decl_expr ($2, 'e', nullptr); }
 	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
+	| image_specifier			{ $$ = new_type_expr ($1.type); }
 	| CLASS_NAME				{ $$ = new_type_expr ($1->type); }
 	| TYPE_NAME
 		{
@@ -1441,8 +1442,8 @@ image_specifier
 		}[parse_number]
 	  expr_list ')'
 		{
-			auto type = $spec.type;
-			auto spec = type_spec (image_type (type, $expr_list));
+			auto spec = default_type ($spec, 0);
+			spec = type_spec (image_type (spec.type, $expr_list));
 			$$ = spec;
 			ctx->language->parse_number = $<pointer>parse_number;
 		}
