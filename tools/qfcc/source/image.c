@@ -400,6 +400,10 @@ sampler_type (const type_t *type)
 		return &type_int;
 	}
 	auto image = imageset.a[type->handle.extra];
+	if (image.sampled > 1) {
+		error (0, "incompatible type for sampler");
+	}
+	image.sampled = 1;
 	return create_image_type (&image, &type_sampled_image);
 }
 
@@ -412,5 +416,5 @@ bool is_image (const type_t *type)
 bool is_sampled_image (const type_t *type)
 {
 	type = unalias_type (type);
-	return is_handle (type) && type->handle.type == &type_image;
+	return is_handle (type) && type->handle.type == &type_sampled_image;
 }
