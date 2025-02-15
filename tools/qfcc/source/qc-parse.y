@@ -156,7 +156,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
 %token				RETURN AT_RETURN
-%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE SAMPLER
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
 %token	<op>		STRUCT
 %token				HANDLE INTRINSIC
@@ -198,7 +198,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<symbol>	tag
 %type	<spec>		struct_specifier struct_list
-%type	<spec>		enum_specifier algebra_specifier image_specifier
+%type	<spec>		enum_specifier algebra_specifier
+%type	<spec>		image_specifier sampler_specifier
 %type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
 %type	<expr>		array_decl
@@ -1159,6 +1160,7 @@ typespec_reserved
 			$$ = type_spec (algebra_subtype ($1.type, $3));
 		}
 	| image_specifier
+	| sampler_specifier
 	| enum_specifier
 	| struct_specifier
 	// NOTE: fields don't parse the way they should. This is not a problem
@@ -1375,6 +1377,7 @@ type_ref
 	| ENUM tag					{ $$ = forward_decl_expr ($2, 'e', nullptr); }
 	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
 	| image_specifier			{ $$ = new_type_expr ($1.type); }
+	| sampler_specifier			{ $$ = new_type_expr ($1.type); }
 	| CLASS_NAME				{ $$ = new_type_expr ($1->type); }
 	| TYPE_NAME
 		{
@@ -1449,6 +1452,14 @@ image_specifier
 		}
 	;
 
+sampler_specifier
+	: SAMPLER '(' typespec[spec] ')'
+		{
+			auto spec = default_type ($spec, 0);
+			spec = type_spec (sampler_type (spec.type));
+			$$ = spec;
+		}
+	;
 enum_specifier
 	: ENUM tag optional_enum_list
 		{
@@ -3094,6 +3105,7 @@ static keyword_t qf_keywords[] = {
 	{"@undual",		QC_UNDUAL,		},
 
 	{"@image",		QC_IMAGE,		},
+	{"@sampler",	QC_SAMPLER,		},
 
 	{"@construct",	QC_CONSTRUCT,	},
 	{"@generic",	QC_GENERIC,		},

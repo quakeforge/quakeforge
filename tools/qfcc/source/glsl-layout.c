@@ -204,9 +204,7 @@ set_image_format (const type_t *type, const char *format)
 	if (is_array (type)) {
 		type = set_image_format (type, format);
 	} else {
-		if (!is_handle (type)
-			&& type->handle.type != &type_sampled_image
-			&& type->handle.type != &type_image) {
+		if (!is_image (type) && !is_sampled_image (type)) {
 			internal_error (0, "not an image type");
 		}
 		auto htype = type->handle.type;
@@ -1185,8 +1183,7 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 				// only images and not other opaque types, but qualifiers that
 				// support opaque types in general also support images
 				image_t *image = nullptr;
-				//FIXME nicer type check
-				if (type->handle.type == &type_image) {
+				if (is_image (type)) {
 					image = &imageset.a[type->handle.extra];
 				}
 				if (qual->var_type != var_opaque && image) {

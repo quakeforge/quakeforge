@@ -398,3 +398,27 @@ image_type (const type_t *type, const expr_t *params)
 	auto sym = named_image_type (&image, &type_image, nullptr);
 	return sym->type;
 }
+
+const type_t *
+sampler_type (const type_t *type)
+{
+	if (!is_image (type)) {
+		error (0, "not an image type");
+		return &type_int;
+	}
+	auto image = imageset.a[type->handle.extra];
+	auto sym = named_image_type (&image, &type_sampled_image, nullptr);
+	return sym->type;
+}
+
+bool is_image (const type_t *type)
+{
+	type = unalias_type (type);
+	return is_handle (type) && type->handle.type == &type_image;
+}
+
+bool is_sampled_image (const type_t *type)
+{
+	type = unalias_type (type);
+	return is_handle (type) && type->handle.type == &type_image;
+}

@@ -71,5 +71,9 @@ symbol_t *named_image_type (image_t *image, const type_t *htype,
 							const char *name);
 
 const type_t *image_type (const type_t *type, const expr_t *params);
+const type_t *sampler_type (const type_t *type);
+
+bool is_image (const type_t *type) __attribute__((pure));
+bool is_sampled_image (const type_t *type) __attribute__((pure));
 
 #endif//__image_h

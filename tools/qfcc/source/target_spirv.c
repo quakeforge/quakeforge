@@ -798,9 +798,7 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		id = spirv_TypeStruct (type, ctx);
 	} else if (is_boolean (type)) {
 		id = spirv_TypeBool (type, ctx);
-	} else if (is_handle (type)
-			   && (type->handle.type == &type_image
-				   || type->handle.type == &type_sampled_image)) {
+	} else if (is_image (type) || is_sampled_image (type)) {
 		auto image = &imageset.a[type->handle.extra];
 		id = spirv_TypeImage (image, ctx);
 		if (type->handle.type == &type_sampled_image) {
