@@ -13,6 +13,7 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"
 #include "tools/qfcc/include/options.h"
@@ -72,3 +73,8 @@ void dump_dot_type (void *_t, const char *filename){}
 char *fubar;
 const char *file_basename(const char *p, int keepdot) { return fubar;}
 __attribute__((const)) const type_t *get_type (const expr_t *e) {return nullptr;}
+bool is_image (const type_t *type){return type->type;}
+bool is_sampled_image (const type_t *type){return type->type;}
+bool image_type_demotes (const type_t *dst, const type_t *src){return dst->type;}
+bool image_type_promotes (const type_t *dst, const type_t *src){return dst->type;}
+bool image_type_assignable (const type_t *dst, const type_t *src){return dst->type;}

@@ -53,6 +53,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/obj_type.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -1726,6 +1727,10 @@ type_assignable (const type_t *dst, const type_t *src)
 		if (is_algebra (dst) || is_algebra (src)) {
 			return algebra_type_assignable (dst, src);
 		}
+		if ((is_image (dst) || is_sampled_image (dst))
+			&& (is_image (src) || is_sampled_image (src))) {
+			return image_type_assignable (dst, src);
+		}
 		if (is_scalar (dst) && is_scalar (src)) {
 			return true;
 		}
@@ -1792,6 +1797,10 @@ type_promotes (const type_t *dst, const type_t *src)
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
+	if ((is_image (dst) || is_sampled_image (dst))
+		&& (is_image (src) || is_sampled_image (src))) {
+		return image_type_promotes (dst, src);
+	}
 	if (!is_math (dst) || !is_math (src)) {
 		return false;
 	}
@@ -1836,6 +1845,10 @@ type_demotes (const type_t *dst, const type_t *src)
 
 	dst = unalias_type (dst);
 	src = unalias_type (src);
+	if ((is_image (dst) || is_sampled_image (dst))
+		&& (is_image (src) || is_sampled_image (src))) {
+		return image_type_demotes (dst, src);
+	}
 	if (!is_math (dst) || !is_math (src)) {
 		return false;
 	}

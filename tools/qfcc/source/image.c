@@ -268,6 +268,9 @@ create_image_type (image_t *image, const type_t *htype)
 
 	type_t type = {
 		.type = ev_int,
+		.alignment = 1,
+		.width = 1,
+		.columns = 1,
 		.meta = ty_handle,
 		.handle.type = htype,
 		.handle.extra = index,
@@ -407,14 +410,78 @@ sampler_type (const type_t *type)
 	return create_image_type (&image, &type_sampled_image);
 }
 
-bool is_image (const type_t *type)
+bool
+is_image (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_handle (type) && type->handle.type == &type_image;
 }
 
-bool is_sampled_image (const type_t *type)
+bool
+is_sampled_image (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_handle (type) && type->handle.type == &type_sampled_image;
+}
+
+bool
+image_type_promotes (const type_t *dst, const type_t *src)
+{
+	//FIXME which is demote and which is promote?
+	if (!is_image (dst) && !is_sampled_image (dst)
+		&& !is_image (src) && !is_sampled_image (src)) {
+		return false;
+	}
+	if (dst->handle.type != src->handle.type) {
+		return false;
+	}
+	auto dst_image = imageset.a[dst->handle.extra];
+	auto src_image = imageset.a[src->handle.extra];
+	// ignore sampled, format, and id
+	dst_image.format = 0;
+	src_image.format = 0;
+	dst_image.id = 0;
+	src_image.id = 0;
+	return memcmp (&dst_image, &src_image, sizeof (dst_image)) == 0;
+}
+
+bool
+image_type_demotes (const type_t *dst, const type_t *src)
+{
+	//FIXME which is demote and which is promote?
+	if (!is_image (dst) && !is_sampled_image (dst)
+		&& !is_image (src) && !is_sampled_image (src)) {
+		return false;
+	}
+	if (dst->handle.type != src->handle.type) {
+		return false;
+	}
+	auto dst_image = imageset.a[dst->handle.extra];
+	auto src_image = imageset.a[src->handle.extra];
+	// ignore format and id
+	dst_image.format = 0;
+	src_image.format = 0;
+	dst_image.id = 0;
+	src_image.id = 0;
+	return memcmp (&dst_image, &src_image, sizeof (dst_image)) == 0;
+}
+
+bool
+image_type_assignable (const type_t *dst, const type_t *src)
+{
+	if (!is_image (dst) && !is_sampled_image (dst)
+		&& !is_image (src) && !is_sampled_image (src)) {
+		return false;
+	}
+	if (dst->handle.type != src->handle.type) {
+		return false;
+	}
+	auto dst_image = imageset.a[dst->handle.extra];
+	auto src_image = imageset.a[src->handle.extra];
+	// ignore format and id
+	dst_image.format = 0;
+	src_image.format = 0;
+	dst_image.id = 0;
+	src_image.id = 0;
+	return memcmp (&dst_image, &src_image, sizeof (dst_image)) == 0;
 }

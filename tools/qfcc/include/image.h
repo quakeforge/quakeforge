@@ -73,5 +73,8 @@ const type_t *sampler_type (const type_t *type);
 
 bool is_image (const type_t *type) __attribute__((pure));
 bool is_sampled_image (const type_t *type) __attribute__((pure));
+bool image_type_promotes (const type_t *dst, const type_t *src) __attribute__((pure));
+bool image_type_demotes (const type_t *dst, const type_t *src) __attribute__((pure));
+bool image_type_assignable (const type_t *dst, const type_t *src) __attribute__((pure));
 
 #endif//__image_h
