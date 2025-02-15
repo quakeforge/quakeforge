@@ -2329,31 +2329,6 @@ rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->tail = &expr->next;
 }
 
-static void
-expand_arg (rua_macro_t *macro, rua_macro_t *arg, yyscan_t scanner, rua_ctx_t *ctx)
-{
-	auto extra = qc_yyget_extra (scanner);
-	rua_extra_t arg_extra = *extra;
-	arg_extra.macro = 0;
-	arg_extra.no_lex = true;
-	queue_macro (&arg_extra, arg);
-	qc_yyset_extra (&arg_extra, scanner);
-
-	while (true) {
-		rua_tok_t   e;
-		if (next_token (&e, scanner, ctx)) {
-			if (macro->tokens
-				|| (e.token != -rua_space && e.token != -rua_ignore)) {
-				append_token (macro, &e);
-			}
-			continue;
-		}
-		break;
-	}
-
-	qc_yyset_extra (extra, scanner);
-}
-
 static bool
 macro_empty (rua_macro_t *macro, yyscan_t scanner)
 {
@@ -2421,7 +2396,7 @@ rua_macro_va_opt (rua_macro_t *macro, rua_ctx_t *ctx)
 	arg->num_args = cur->num_args;
 	arg->args = cur->args;
 
-	expand_arg (macro, arg, ctx->scanner, ctx);
+	queue_macro (extra, arg);
 }
 
 void
