@@ -247,8 +247,8 @@ image_handle_property (const type_t *type, const attribute_t *attr)
 	return type->handle.type->property (type, attr);
 }
 
-symbol_t *
-named_image_type (image_t *image, const type_t *htype, const char *name)
+const type_t *
+create_image_type (image_t *image, const type_t *htype)
 {
 	unsigned index = 0;
 	// slot 0 is never used
@@ -266,20 +266,14 @@ named_image_type (image_t *image, const type_t *htype, const char *name)
 		DARRAY_APPEND (&imageset, *image);
 	}
 
-	auto sym = new_symbol (name);
-	sym = find_handle (sym, &type_int);
-	//FIXME the type isn't chained yet and so doesn't need to be const, but
-	// symbols keep the type in a const pointer.
-	auto t = (type_t *) sym->type;
-	if (t->handle.extra) {
-		internal_error (0, "image type handle already set");
-	}
-	t->handle.type = htype;
-	t->handle.extra = index;
-	t->property = image_handle_property;
-	sym->type = find_type (sym->type);
-
-	return sym;
+	type_t type = {
+		.type = ev_int,
+		.meta = ty_handle,
+		.handle.type = htype,
+		.handle.extra = index,
+		.property = image_handle_property,
+	};
+	return find_type (&type);
 }
 
 const type_t *
@@ -395,8 +389,7 @@ image_type (const type_t *type, const expr_t *params)
 	if (err) {
 		return &type_int;
 	}
-	auto sym = named_image_type (&image, &type_image, nullptr);
-	return sym->type;
+	return create_image_type (&image, &type_image);
 }
 
 const type_t *
@@ -407,8 +400,7 @@ sampler_type (const type_t *type)
 		return &type_int;
 	}
 	auto image = imageset.a[type->handle.extra];
-	auto sym = named_image_type (&image, &type_sampled_image, nullptr);
-	return sym->type;
+	return create_image_type (&image, &type_sampled_image);
 }
 
 bool is_image (const type_t *type)

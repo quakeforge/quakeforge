@@ -1634,7 +1634,7 @@ find_image_sub (image_sub_t *sub, const char *str)
 	return nullptr;
 }
 
-static symbol_t *
+static const type_t *
 glsl_parse_image (const char *token, rua_ctx_t *ctx)
 {
 	static image_sub_t image_sub_type[] = {
@@ -1729,7 +1729,7 @@ glsl_parse_image (const char *token, rua_ctx_t *ctx)
 		goto invalid;
 	}
 
-	return named_image_type (&image, type.htype, token);
+	return create_image_type (&image, type.htype);
 invalid:
 	internal_error (0, "invalid image type: %s", token);
 }
@@ -1741,8 +1741,7 @@ glsl_process_keyword (rua_val_t *lval, keyword_t *keyword, const char *token,
 	if (keyword->value == GLSL_STRUCT) {
 		lval->op = token[0];
 	} else if (keyword->value == GLSL_TYPE_SPEC && !keyword->spec.type) {
-		auto sym = glsl_parse_image (token, ctx);
-		keyword->spec.type = sym->type;
+		keyword->spec.type = glsl_parse_image (token, ctx);
 		lval->spec = keyword->spec;
 	} else if (keyword->use_name) {
 		lval->string = keyword->name;

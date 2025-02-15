@@ -214,13 +214,7 @@ set_image_format (const type_t *type, const char *format)
 		} else {
 			error (0, "format already set");
 		}
-		int len = strlen (format);
-		char fmt[len + 1];
-		for (int i = 0; i < len + 1; i++) {
-			fmt[i] = tolower (format[i]);
-		}
-		auto sym = named_image_type (&image, htype, va (0, ".image:%s", fmt));
-		type = sym->type;
+		type = create_image_type (&image, htype);
 	}
 	if (array) {
 		type = array_type (type, count);

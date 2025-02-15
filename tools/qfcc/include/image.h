@@ -67,9 +67,7 @@ extern type_t type_sampled_image;
 
 void image_init_types (void);
 
-symbol_t *named_image_type (image_t *image, const type_t *htype,
-							const char *name);
-
+const type_t *create_image_type (image_t *image, const type_t *htype);
 const type_t *image_type (const type_t *type, const expr_t *params);
 const type_t *sampler_type (const type_t *type);
 
