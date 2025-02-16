@@ -122,7 +122,7 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 		auto tag = save_string (va (0, "%s.%s", pre_tag, name));
 		type_t new = {
 			.type = ev_invalid,
-			.name = tag,
+			.name = save_string (va (0, "tag %s", tag)),
 			.meta = ty_struct,
 		};
 		auto nt = find_type (&new);
@@ -135,10 +135,12 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 		for (auto s = type->symtab->symbols; s; s = s->next) {
 			auto ftype = glsl_block_type (s->type, tag);
 			auto sym = new_symbol_type (s->name, ftype);
+			sym->sy_type = sy_offset;
 			sym->offset = -1;
 			sym->id = s->id;
 			symtab_addsymbol (nt->symtab, sym);
 		}
+		nt->symtab->count = type->symtab->count;
 		return nt;
 	}
 	return type;
