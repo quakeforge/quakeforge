@@ -110,6 +110,7 @@ void glsl_parse_declaration (specifier_t spec, symbol_t *sym,
 							 expr_t *block, rua_ctx_t *ctx);
 void glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx);
 void glsl_layout (const ex_list_t *qualifiers, specifier_t spec);
+void glsl_qualifier (const char *name, specifier_t spec);
 
 bool glsl_on_include (const char *name, rua_ctx_t *ctx);
 void glsl_include (int behavior, void *scanner);

@@ -73,12 +73,12 @@ typedef struct layout_acc_s {
 	int         val;
 } layout_acc_t;
 
-typedef struct layout_qual_s layout_qual_t;
+typedef struct layout_qual_s glsl_qual_t;
 typedef struct layout_qual_s {
 	const char *name;
-	void      (*apply) (const layout_qual_t *qual, specifier_t spec,
+	void      (*apply) (const glsl_qual_t *qual, specifier_t spec,
 						const expr_t *qual_name);
-	void      (*apply_expr) (const layout_qual_t *qual, specifier_t spec,
+	void      (*apply_expr) (const glsl_qual_t *qual, specifier_t spec,
 							 const expr_t *qual_name, const expr_t *val);
 	unsigned    obj_mask;
 	glsl_var_t  var_type;
@@ -86,17 +86,17 @@ typedef struct layout_qual_s {
 	const char **stage_filter;
 	const layout_acc_t *accessors;
 	const char *real_name;
-} layout_qual_t;
+} glsl_qual_t;
 
 static void
-glsl_layout_invalid_A (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_invalid_A (const glsl_qual_t *qual, specifier_t spec,
 					   const expr_t *qual_name)
 {
 	error (qual_name, "not allowed for vulkan");
 }
 
 static void
-glsl_layout_invalid_E (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_invalid_E (const glsl_qual_t *qual, specifier_t spec,
 					   const expr_t *qual_name, const expr_t *val)
 {
 	error (qual_name, "not allowed for vulkan");
@@ -117,13 +117,13 @@ set_attribute (attribute_t **attributes, const char *name, const expr_t *val)
 }
 
 static void
-glsl_layout_packing (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_packing (const glsl_qual_t *qual, specifier_t spec,
 					 const expr_t *qual_name)
 {
 }
 
 static void
-glsl_layout_builtin (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_builtin (const glsl_qual_t *qual, specifier_t spec,
 					 const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = "BuiltIn";
@@ -131,7 +131,7 @@ glsl_layout_builtin (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_location (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_location (const glsl_qual_t *qual, specifier_t spec,
 					  const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = "Location";
@@ -139,7 +139,7 @@ glsl_layout_location (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_constant_id (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_constant_id (const glsl_qual_t *qual, specifier_t spec,
 						 const expr_t *qual_name, const expr_t *val)
 {
 	if (spec.sym->sy_type == sy_const) {
@@ -163,7 +163,7 @@ glsl_layout_constant_id (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_binding (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_binding (const glsl_qual_t *qual, specifier_t spec,
 					 const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = "Binding";
@@ -171,14 +171,14 @@ glsl_layout_binding (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_offset (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_offset (const glsl_qual_t *qual, specifier_t spec,
 					const expr_t *qual_name, const expr_t *val)
 {
 	spec.sym->offset = expr_integral (val);
 }
 
 static void
-glsl_layout_set (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_set (const glsl_qual_t *qual, specifier_t spec,
 				 const expr_t *qual_name, const expr_t *val)
 {
 	const char *name = "DescriptorSet";
@@ -227,7 +227,7 @@ set_image_format (const type_t *type, const char *format)
 }
 
 static void
-glsl_layout_format (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_format (const glsl_qual_t *qual, specifier_t spec,
 					const expr_t *qual_name)
 {
 	auto type = spec.sym->type;
@@ -236,7 +236,7 @@ glsl_layout_format (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_push_constant (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_push_constant (const glsl_qual_t *qual, specifier_t spec,
 		                   const expr_t *qual_name)
 {
 	if (spec.block) {
@@ -245,9 +245,18 @@ glsl_layout_push_constant (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_input_attachment_index (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_input_attachment_index (const glsl_qual_t *qual, specifier_t spec,
 									const expr_t *qual_name, const expr_t *val)
 {
+}
+
+static void
+glsl_general_attribute (const glsl_qual_t *qual, specifier_t spec,
+		                const expr_t *qual_name)
+{
+	if (qual->real_name) {
+		set_attribute (&spec.sym->attributes, qual->real_name, nullptr);
+	}
 }
 
 #define EP(n)  {.name = #n, .offset = offsetof (entrypoint_t, n)}
@@ -277,7 +286,7 @@ static struct {
 #undef EP
 
 static void
-glsl_layout_exec_mode_param (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_exec_mode_param (const glsl_qual_t *qual, specifier_t spec,
 							 const expr_t *qual_name, const expr_t *val)
 {
 	auto entry_point = pr.module->entry_points;
@@ -310,7 +319,7 @@ glsl_layout_exec_mode_param (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_exec_mode (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_exec_mode (const glsl_qual_t *qual, specifier_t spec,
 					   const expr_t *qual_name)
 {
 	auto val = new_uint_expr (qual->accessors[0].val);
@@ -347,7 +356,7 @@ set_array_size (const char *name, int count, const expr_t *qual_name)
 }
 
 static void
-glsl_layout_tess_vertices (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_tess_vertices (const glsl_qual_t *qual, specifier_t spec,
 						   const expr_t *qual_name, const expr_t *val)
 {
 	glsl_layout_exec_mode_param (qual, spec, qual_name, val);
@@ -358,7 +367,7 @@ glsl_layout_tess_vertices (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_geom_topo (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_geom_topo (const glsl_qual_t *qual, specifier_t spec,
 					   const expr_t *qual_name)
 {
 	glsl_layout_exec_mode (qual, spec, qual_name);
@@ -369,7 +378,7 @@ glsl_layout_geom_topo (const layout_qual_t *qual, specifier_t spec,
 }
 
 static void
-glsl_layout_ignore (const layout_qual_t *qual, specifier_t spec,
+glsl_layout_ignore (const glsl_qual_t *qual, specifier_t spec,
 					const expr_t *qual_name)
 {
 	const char *name = expr_string (qual_name);
@@ -386,7 +395,7 @@ glsl_layout_ignore (const layout_qual_t *qual, specifier_t spec,
 #define ACC (const layout_acc_t [])
 
 static bool sorted_layout_qualifiers;
-static layout_qual_t layout_qualifiers[] = {
+static glsl_qual_t layout_qualifiers[] = {
 	{	.name = "builtin",
 		.apply = E(glsl_layout_builtin),
 		.obj_mask = D(var)|D(member),
@@ -1164,6 +1173,80 @@ static layout_qual_t layout_qualifiers[] = {
 		.real_name = "R8ui",
 	},
 };
+#define num_layout_quals countof (layout_qualifiers)
+#define layout_qual_sz num_layout_quals, sizeof (glsl_qual_t)
+
+static bool sorted_general_qualifiers;
+static glsl_qual_t general_qualifiers[] = {
+	{	.name = "lowp",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "RelaxedPrecision"
+	},
+	{	.name = "mediump",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "RelaxedPrecision"
+	},
+	{	.name = "highp",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = ~0u,
+	},
+	{	.name = "precise",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(uniform)|I(buffer),
+	},
+	{	.name = "centroid",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.var_type = V(any),
+		.if_mask = I(in)|I(out),
+		.stage_filter = C {
+			"tessellation control",
+			"tessellation evaluation",
+			nullptr
+		},
+	},
+	{	.name = "patch",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(in)|I(out),
+		.stage_filter = C {
+			"tessellation control",
+			"tessellation evaluation",
+			nullptr
+		},
+	},
+	{	.name = "sample",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(in)|I(out),
+	},
+	{	.name = "flat",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(in)|I(out),
+		.real_name = "Flat"
+	},
+	{	.name = "noperspective",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(in)|I(out),
+		.real_name = "NoPerspective"
+	},
+	{	.name = "smooth",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(qual)|D(var),
+		.if_mask = I(in)|I(out),
+	},
+};
+#define num_general_quals countof (general_qualifiers)
+#define general_qual_sz num_general_quals, sizeof (glsl_qual_t)
+
 #undef A
 #undef E
 #undef D
@@ -1171,14 +1254,12 @@ static layout_qual_t layout_qualifiers[] = {
 #undef V
 #undef I
 #undef C
-#define num_quals (sizeof (layout_qualifiers) / sizeof (layout_qualifiers[0]))
-#define layout_qual_sz num_quals, sizeof (layout_qual_t)
 
 static int
-layout_qual_cmp (const void *_a, const void *_b)
+qualifier_cmp (const void *_a, const void *_b)
 {
-	auto a = (const layout_qual_t *) _a;
-	auto b = (const layout_qual_t *) _b;
+	auto a = (const glsl_qual_t *) _a;
+	auto b = (const glsl_qual_t *) _b;
 	return strcasecmp (a->name, b->name);
 }
 
@@ -1195,7 +1276,7 @@ get_interface_mask (int storage)
 }
 
 static bool __attribute__((pure))
-layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
+check_qualifier (const glsl_qual_t *qual, specifier_t spec)
 {
 	unsigned obj_mask = 0;
 	glsl_var_t var_type = var_any;
@@ -1281,7 +1362,7 @@ layout_check_qualifier (const layout_qual_t *qual, specifier_t spec)
 static void
 layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 {
-	layout_qual_t key = {
+	glsl_qual_t key = {
 		.name = qualifier->type == ex_expr
 				? expr_string (qualifier->expr.e1)
 				: expr_string (qualifier)
@@ -1290,21 +1371,21 @@ layout_apply_qualifier (const expr_t *qualifier, specifier_t spec)
 				? qualifier->expr.e2
 				: nullptr;
 
-	const layout_qual_t *qual;
-	qual = bsearch (&key, layout_qualifiers, layout_qual_sz, layout_qual_cmp);
+	const glsl_qual_t *qual;
+	qual = bsearch (&key, layout_qualifiers, layout_qual_sz, qualifier_cmp);
 	if (!qual) {
 		error (0, "invalid layout qualifier: %s", key.name);
 		return;
 	}
 	// there may be multiple entries with the same qualifier name, so find
 	// the first one
-	while (qual > layout_qualifiers && layout_qual_cmp (&key, qual - 1) == 0) {
+	while (qual > layout_qualifiers && qualifier_cmp (&key, qual - 1) == 0) {
 		qual--;
 	}
 	// check all matching entries
-	while (qual - layout_qualifiers < (ptrdiff_t) num_quals
-		   && layout_qual_cmp (&key, qual) == 0) {
-		if (layout_check_qualifier (qual, spec)) {
+	while (qual - layout_qualifiers < (ptrdiff_t) num_layout_quals
+		   && qualifier_cmp (&key, qual) == 0) {
+		if (check_qualifier (qual, spec)) {
 			if (qual->apply_expr) {
 				if (!val) {
 					error (qualifier, "%s requires a value", key.name);
@@ -1335,9 +1416,51 @@ void
 glsl_layout (const ex_list_t *qualifiers, specifier_t spec)
 {
 	if (!sorted_layout_qualifiers) {
-		heapsort (layout_qualifiers, layout_qual_sz, layout_qual_cmp);
+		heapsort (layout_qualifiers, layout_qual_sz, qualifier_cmp);
 	}
 	for (auto q = qualifiers->head; q; q = q->next) {
 		layout_apply_qualifier (q->expr, spec);
 	}
+}
+
+void
+glsl_qualifier (const char *name, specifier_t spec)
+{
+	if (!sorted_general_qualifiers) {
+		heapsort (general_qualifiers, general_qual_sz, qualifier_cmp);
+	}
+
+	glsl_qual_t key = {
+		.name = name,
+	};
+
+	const glsl_qual_t *qual;
+	qual = bsearch (&key, general_qualifiers, general_qual_sz, qualifier_cmp);
+	if (!qual) {
+		error (0, "invalid general qualifier: %s", key.name);
+		return;
+	}
+	// there may be multiple entries with the same qualifier name, so find
+	// the first one
+	while (qual > general_qualifiers && qualifier_cmp (&key, qual - 1) == 0) {
+		qual--;
+	}
+	// check all matching entries
+	while (qual - general_qualifiers < (ptrdiff_t) num_general_quals
+		   && qualifier_cmp (&key, qual) == 0) {
+		if (check_qualifier (qual, spec)) {
+			if (qual->apply_expr) {
+				internal_error (0, "qualifier expecint value");
+			} else if (qual->apply) {
+				qual->apply (qual, spec, nullptr);
+				return;
+			} else {
+				error (0, "unsupported general qualifier: %s", key.name);
+				return;
+			}
+		}
+		qual++;
+	}
+	error (0, "invalid general qualifier: %s", key.name);
+	return;
 }

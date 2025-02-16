@@ -152,7 +152,7 @@ SRC_LINE
 "layout (builtin=\"ViewportIndex\") in int gl_ViewportIndex;"           "\n"
 "layout (builtin=\"HelperInvocation\") in bool gl_HelperInvocation;"    "\n"
 "#ifdef GL_EXT_multiview"                                               "\n"
-"layout (builtin=\"ViewIndex\") in highp int gl_ViewIndex;"             "\n"
+"layout (builtin=\"ViewIndex\") in highp flat int gl_ViewIndex;"        "\n"
 "#endif"                                                                "\n"
 "layout (builtin=\"FragDepth\") out float gl_FragDepth;"                "\n"
 "layout (builtin=\"SampleMask\") out int gl_SampleMask[1];"              "\n";

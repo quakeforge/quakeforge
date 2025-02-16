@@ -104,6 +104,8 @@ glsl_apply_attributes (symtab_t *attributes, specifier_t spec)
 				internal_error (0, "bogus layout qualifier");
 			}
 			glsl_layout (&attr->list, spec);
+		} else {
+			glsl_qualifier (attr->name, spec);
 		}
 	}
 }
