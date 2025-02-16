@@ -248,6 +248,8 @@ static void
 glsl_layout_input_attachment_index (const glsl_qual_t *qual, specifier_t spec,
 									const expr_t *qual_name, const expr_t *val)
 {
+	const char *name = "InputAttachmentIndex";
+	set_attribute (&spec.sym->attributes, name, val);
 }
 
 static void
