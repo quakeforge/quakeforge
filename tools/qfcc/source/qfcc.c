@@ -460,7 +460,7 @@ compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 		err = pr.error_count;
 		if (!err) {
 			if (options.code.spirv) {
-				err = spirv_write (&pr, obj);
+				err = spirv_write (&pr, obj) || pr.error_count;
 			} else {
 				qfo = qfo_from_progs (&pr);
 				err = qfo_write (qfo, obj);
