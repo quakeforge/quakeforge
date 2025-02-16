@@ -803,7 +803,14 @@ static void
 print_compound (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	dasprintf (dstr, "%*se_%p [label=\"compound init\"];\n", indent, "", e);
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		_print_expr (dstr, ele->expr, level, id, next);
+	}
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   ele->expr);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"= { }\"];\n", indent, "", e);
 }
 
 static void
