@@ -42,6 +42,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -148,6 +149,12 @@ cast_expr (const type_t *dstType, const expr_t *e)
 			 && (is_short (srcType) || is_ushort (srcType))
 			 // [u]short is always width 0
 			 && type_width (dstType) == 1)) {
+		if (current_target.cast_expr) {
+			auto c = current_target.cast_expr (dstType, e);
+			if (c) {
+				return c;
+			}
+		}
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {

@@ -295,6 +295,10 @@ init_type_ok (const type_t *dstType, const expr_t *init)
 		&& (type_size (dstType) == type_size (init_type))) {
 		return true;
 	}
+	if (current_target.init_type_ok
+		&& current_target.init_type_ok (dstType, init_type)) {
+		return true;
+	}
 	return false;
 }
 

@@ -685,8 +685,12 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 		bool demotes = param.implicit && type_demotes (type, param.type);
 		if (demotes) {
 			*cost += 1;
+			return true;
 		}
-		return demotes;
+		// allow any final checks
+		if (!type_assignable (type, param.type)) {
+			return false;
+		}
 	}
 	*cost += 2;
 	return true;

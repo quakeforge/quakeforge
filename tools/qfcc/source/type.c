@@ -60,6 +60,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 #define EV_TYPE(t) \
@@ -1751,6 +1752,9 @@ type_assignable (const type_t *dst, const type_t *src)
 		}
 		if (is_lbool (dst) && is_bool (src)) {
 			return true;
+		}
+		if (current_target.type_assignable) {
+			return current_target.type_assignable (dst, src);
 		}
 		return false;
 	}

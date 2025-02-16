@@ -2683,6 +2683,18 @@ spirv_types_logically_match (const type_t *dst, const type_t *src)
 }
 
 static const expr_t *
+spirv_cast_expr (const type_t *dstType, const expr_t *expr)
+{
+	auto src_type = get_type (expr);
+	if (!spirv_types_logically_match (dstType, src_type)) {
+		return nullptr;
+	}
+	auto cast = new_unary_expr ('C', expr);
+	cast->expr.type = dstType;
+	return cast;
+}
+
+static const expr_t *
 spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
 {
 	auto dst_type = get_type (dst);
@@ -2691,8 +2703,7 @@ spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
 	if (!spirv_types_logically_match (dst_type, src_type)) {
 		return nullptr;
 	}
-	auto cast = new_unary_expr ('C', src);
-	cast->expr.type = dst_type;
+	auto cast = spirv_cast_expr (dst_type, src);
 	return assign_expr (dst, cast);
 }
 
@@ -2718,5 +2729,8 @@ target_t spirv_target = {
 	// ruamoko and spirv are mostly compatible for bools other than lbool
 	// but that's handled by spirv_mirror_bool
 	.test_expr = ruamoko_test_expr,
+	.cast_expr = spirv_cast_expr,
 	.check_types_compatible = spirv_check_types_compatible,
+	.type_assignable = spirv_types_logically_match,
+	.init_type_ok = spirv_types_logically_match,
 };
