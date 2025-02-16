@@ -78,7 +78,7 @@ sky_color (vec3 dir, float time)
 		vec4        c1 = sky_sheet (dir, time);
 		vec4        c2 = sky_box (dir, time);
 		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
-		return vec4 (1, 0, 1, 1);
+		//return vec4 (1, 0, 1, 1);
 	}
 }
 
