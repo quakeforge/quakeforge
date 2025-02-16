@@ -671,7 +671,7 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (type_same (type, param.type)) {
 		return true;
 	}
-	int ret = obj_types_assignable (type, param.type);
+	int ret = obj_type_assignable (type, param.type);
 	if (ret >= 0) {
 		return ret;
 	}

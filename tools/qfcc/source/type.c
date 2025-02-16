@@ -1758,8 +1758,8 @@ type_assignable (const type_t *dst, const type_t *src)
 	// pointer = pointer
 	// give the object system first shot because the pointee types might have
 	// protocols attached.
-	int ret = obj_types_assignable (dst, src);
-	// ret < 0 means obj_types_assignable can't decide
+	int ret = obj_type_assignable (dst, src);
+	// ret < 0 means obj_type_assignable can't decide
 	if (ret >= 0)
 		return ret;
 

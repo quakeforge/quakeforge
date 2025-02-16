@@ -126,7 +126,7 @@ int is_SEL (const struct type_s *type) __attribute__((const));
 int is_object (const struct type_s *type) __attribute__((const));
 int is_method (const struct type_s *type) __attribute__((const));
 int is_method_description (const struct type_s *type) __attribute__((const));
-int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
+int obj_type_assignable (const struct type_s *dst, const struct type_s *src);
 
 class_t *extract_class (class_type_t *class_type) __attribute__((pure));
 const char *get_class_name (class_type_t *class_type, int pretty);

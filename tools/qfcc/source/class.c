@@ -571,7 +571,7 @@ category_implements (category_t *cat, protocol_t *protocol)
 }
 
 int
-obj_types_assignable (const type_t *dst, const type_t *src)
+obj_type_assignable (const type_t *dst, const type_t *src)
 {
 	class_t    *dst_class, *src_class = 0;
 	category_t *cat;
