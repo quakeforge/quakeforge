@@ -141,6 +141,7 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 			symtab_addsymbol (nt->symtab, sym);
 		}
 		nt->symtab->count = type->symtab->count;
+		nt->symtab->size = type->symtab->size;
 		return nt;
 	}
 	return type;
