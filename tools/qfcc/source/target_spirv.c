@@ -1380,6 +1380,9 @@ spirv_cast (const expr_t *e, spirvctx_t *ctx)
 			!= type_size (base_type (src_type))) {
 			op = SpvOpSConvert;
 		}
+	} else if (is_structural (dst_type)) {
+		// assume set up by spirv_check_types_compatible
+		op = SpvOpCopyLogical;
 	}
 	if (!op) {
 		internal_error (e, "unexpected type combination");
@@ -2648,44 +2651,47 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
+static bool
+spirv_types_logically_match (const type_t *dst, const type_t *src)
+{
+	if (type_same (dst, src)) {
+		return true;
+	}
+	if (is_array (dst) && is_array (src)) {
+		if (type_count (dst) != type_count (src)) {
+			return false;
+		}
+		dst = dereference_type (dst);
+		src = dereference_type (src);
+		return spirv_types_logically_match (dst, src);
+	}
+	if (is_struct (dst) && is_struct (src)) {
+		if (type_count (dst) != type_count (src)) {
+			return false;
+		}
+		auto dsym = dst->symtab->symbols;
+		auto ssym = src->symtab->symbols;
+		for (; dsym && ssym; dsym = dsym->next, ssym = ssym->next) {
+			if (!spirv_types_logically_match (dsym->type, ssym->type)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 static const expr_t *
 spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
 {
 	auto dst_type = get_type (dst);
 	auto src_type = get_type (src);
 
-	if (!is_struct (dst_type) || !is_struct (src_type)) {
+	if (!spirv_types_logically_match (dst_type, src_type)) {
 		return nullptr;
 	}
-	auto dst_tab = type_symtab (dst_type);
-	auto src_tab = type_symtab (src_type);
-	auto dsym = dst_tab->symbols;
-	auto ssym = src_tab->symbols;
-	int count = 0;
-	for (; dsym && ssym; dsym = dsym->next, ssym = ssym->next, count++) {
-		if (dsym->type != ssym->type || strcmp (dsym->name, ssym->name) != 0) {
-			break;
-		}
-	}
-	// struct symtabs didn't match, or both empty
-	if (dsym || ssym || !count) {
-		return nullptr;
-	}
-	expr_t type_expr = {
-		.loc = dst->loc,
-		.type = ex_type,
-		.typ.type = dst_type,
-	};
-	const expr_t *param_exprs[count];
-	int i = count - 1;// build params in reverse for constructor_expr
-	for (ssym = src_tab->symbols; ssym; ssym = ssym->next, i--) {
-		auto e = new_field_expr (src, new_symbol_expr (ssym));
-		e->field.type = ssym->type;
-		param_exprs[i] = e;
-	}
-	auto params = new_list_expr (nullptr);
-	list_gather (&params->list, param_exprs, count);
-	auto cast = constructor_expr (&type_expr, params);
+	auto cast = new_unary_expr ('C', src);
+	cast->expr.type = dst_type;
 	return assign_expr (dst, cast);
 }
 
