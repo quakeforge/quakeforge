@@ -659,7 +659,7 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 		if (is_reference (param.type)) {
 			return type_same (type, dereference_type (param.type));
 		} else {
-			// pass by references is a free conversion, but no promotion
+			// pass by reference is a free conversion, but no promotion
 			return type_same (type, param.type);
 		}
 	}
@@ -671,6 +671,8 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (type_same (type, param.type)) {
 		return true;
 	}
+	// the class system flags any promotions it can do, but type_assignable
+	// returns true even when promotions happen
 	int ret = obj_type_assignable (type, param.type);
 	if (ret >= 0) {
 		return ret;
