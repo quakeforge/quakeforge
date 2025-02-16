@@ -99,7 +99,7 @@ QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(QCSYSTEM)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
-QSPIRV=$(QFCC) -q -Cc-array,target=spir-v -O
+QSPIRV=$(QCOMPILE) -Cc-array,target=spir-v
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 
@@ -110,7 +110,7 @@ qfcc_compile=\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
 
 qfcc_spirv=\
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.spvc$$||'`;\
 	$(QSPIRV) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
@@ -164,16 +164,16 @@ SUFFICES += .plist .plc
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
 %.vert.spvc: %.vert
-	@$(mkdir_p) $(builddir)/`dirname $@`
-	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
+	$(qfcc_spirv)
 
 %.geom.spvc: %.geom
-	@$(mkdir_p) $(builddir)/`dirname $@`
-	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
+	$(qfcc_spirv)
 
 %.frag.spvc: %.frag
-	@$(mkdir_p) $(builddir)/`dirname $@`
-	$(V_QFCC)$(QFCC) -q -c -O -Cc-array,target=spir-v -o $@ $<
+	$(qfcc_spirv)
+
+%.comp.spvc: %.comp
+	$(qfcc_spirv)
 
 sharepath = @sharepath@
 shaderdir = @shaderdir@

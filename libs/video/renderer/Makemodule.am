@@ -107,7 +107,7 @@ shader_gen = \
 	$(glslshaderpath)/quakeforge.slc \
 	$(glslshaderpath)/sgustavson.slc
 
-SUFFIXES += .frag .vert .spv .spvc .fc .vc .slc .glsl
+SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
 	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
@@ -565,18 +565,23 @@ vkshader_src_frag = \
 	$(fisheye_src) \
 	$(waterwarp_src)
 
+vkshader_src_comp = \
+	$(partphysicsc_src) \
+	$(partupdatec_src)
+
 vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
 vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
 vkshader_c_frag=$(call spvautoc,$(vkshader_src_frag))
+vkshader_c_comp=$(call spvautoc,$(vkshader_src_comp))
 
-vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag)
+vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag) \
+			   $(vkshader_src_comp)
 vkshader_dep = $(call spvcautodep, $(vkshader_src))
 include $(vkshader_dep) # am--include-marker
 spvc_depfiles_remade += $(vkshader_dep)
 
 vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) $(vkshader_c_frag) \
-	$(partphysicsc_c) \
-	$(partupdatec_c)
+			 $(vkshader_c_comp)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
