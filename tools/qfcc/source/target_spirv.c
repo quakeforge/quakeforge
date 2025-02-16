@@ -595,6 +595,7 @@ spirv_BlockType (const type_t *type, int *size, int *align, spirvctx_t *ctx)
 			// struct or union, but union not allowed
 			id = spirv_struct (type, size, align, ctx);
 		}
+		spirv_add_type_id (type, id, ctx);
 		return id;
 	} else {
 		// non-aggregate, non-matrix type, so no need for special handling
