@@ -624,8 +624,7 @@ static unsigned
 spirv_TypeArray (const type_t *type, spirvctx_t *ctx)
 {
 	auto ele_type = dereference_type (type);
-	auto count_expr = new_int_expr (type_count (type), false);
-	unsigned count = spirv_value (count_expr, ctx);
+	unsigned count = type_count (type);
 	unsigned tid = spirv_Type (ele_type, ctx);
 	return spirv_type_array (tid, count, ctx);
 }
