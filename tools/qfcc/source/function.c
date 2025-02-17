@@ -688,7 +688,7 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 			return true;
 		}
 		// allow any final checks
-		if (!type_assignable (type, param.type)) {
+		if (is_math (type) || !type_assignable (type, param.type)) {
 			return false;
 		}
 	}
