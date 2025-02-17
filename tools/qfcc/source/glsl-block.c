@@ -257,6 +257,13 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	auto interface = interface_sym->namespace;
 	bool transparent = false;
 
+	const char *tag = "blk";
+	if (block->interface == glsl_in) {
+		tag = "ibk";
+	} else if (block->interface == glsl_out) {
+		tag = "obk";
+	}
+
 	if (!instance_name) {
 		instance_name = new_symbol (va (0, ".%s", block->name->name));
 		transparent = true;
@@ -264,7 +271,7 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	block->instance_name = instance_name;
 	type_t type = {
 		.type = ev_invalid,
-		.name = save_string (va (0, "blk %s", block->name->name)),
+		.name = save_string (va (0, "%s %s", tag, block->name->name)),
 		.alignment = 4,
 		.width = 1,
 		.columns = 1,
