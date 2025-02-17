@@ -401,12 +401,9 @@ spec_merge (specifier_t spec, specifier_t new)
 			spec.multi_store = true;
 		}
 	}
-	for (auto attr = &spec.attributes; *attr; attr = &(*attr)->next) {
-		if (!(*attr)->next) {
-			(*attr)->next = new.attributes;
-			break;
-		}
-	}
+	auto attr = &spec.attributes;
+	for (; *attr; attr = &(*attr)->next) continue;
+	*attr = new.attributes;
 	spec.sym = new.sym;
 	spec.spec_bits |= new.spec_bits;
 	return spec;
