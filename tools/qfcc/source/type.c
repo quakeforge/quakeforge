@@ -728,8 +728,9 @@ find_type (const type_t *type)
 	// allocate a new one
 	auto new = new_type ();
 	*new = *type;
-	if (is_func (type)) {
+	if (new->meta != ty_alias && is_func (type)) {
 		new->func.param_types = 0;
+		new->func.param_quals = 0;
 		const type_t *t = unalias_type (type);
 		int         num_params = t->func.num_params;
 		if (num_params < 0) {
