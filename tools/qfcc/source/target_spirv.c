@@ -129,7 +129,8 @@ is_block_terminated (defspace_t *code_space)
 			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpReturnValue
 			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpUnreachable
 			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpBranchConditional
-			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpBranch)) {
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpBranch
+			|| (INSN(last_insn, 0) & SpvOpCodeMask) == SpvOpKill)) {
 		return true;
 	}
 	return false;

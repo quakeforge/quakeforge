@@ -1128,6 +1128,7 @@ SRC_LINE
 //fragment processing functions
 static const char *glsl_fragment_functions =
 SRC_LINE
+"void __discard() = " SPV(OpKill) ";"                                   "\n"
 "@generic(genFType=@vector(float)) {"                                   "\n"
 "genFType dFdx(genFType p) = " SPV(OpDPdx) ";"                          "\n"
 "genFType dFdy(genFType p) = " SPV(OpDPdy) ";"                          "\n"

@@ -1326,7 +1326,11 @@ jump_statement
 		}
 	| RETURN ';'				{ $$ = new_return_expr (nullptr); }
 	| RETURN expression ';'		{ $$ = new_return_expr ($2); }
-	| DISCARD ';'				{ $$ = nullptr; } //XXX
+	| DISCARD ';'
+		{
+			auto func = new_name_expr ("__discard");
+			$$ = new_call_expr (func, nullptr, nullptr);
+		}
 	;
 
 %%
