@@ -337,7 +337,7 @@ static builtin_t builtins[] = {
 	bi(InputLine_SetCursor,        2, p(ptr), p(int)),
 	{"InputLine_SetEnter|^{tag _inputline_t=}(v*^v)^v",
 		bi_InputLine_SetEnter_f, -1, 3, {p(ptr), p(func), p(ptr)}},
-	{"InputLine_SetEnter|^{tag _inputline_t=}^(@@:.)@:",
+	{"InputLine_SetEnter|^{tag _inputline_t=}^%(@@:.)@:",
 		bi_InputLine_SetEnter_s, -1, 4, {p(ptr), p(func), p(ptr), p(ptr)}},
 	bi(InputLine_SetWidth,         2, p(ptr), p(int)),
 	bi(InputLine_SetText,          2, p(ptr), p(string)),
