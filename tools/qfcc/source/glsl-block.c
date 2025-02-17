@@ -37,6 +37,7 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
@@ -127,6 +128,107 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 	return block;
 }
 
+static void
+add_attribute (attribute_t **attributes, attribute_t *attr)
+{
+	attr->next = *attributes;
+	*attributes = attr;
+}
+
+static const type_t *
+glsl_matrix_type (const type_t *type)
+{
+	while (is_array (type)) {
+		type = dereference_type (type);
+	}
+	if (is_matrix (type)) {
+		return type;
+	}
+	return nullptr;
+}
+
+static const type_t *
+glsl_block_type (const type_t *type, const char *pre_tag)
+{
+	unsigned uint = sizeof (uint32_t);
+	if (is_array (type)) {
+		type = unalias_type (type);
+		auto ele_type = glsl_block_type (type->array.type, pre_tag);
+		type_t new = {
+			.type = ev_invalid,
+			.meta = ty_array,
+			.alignment = type->alignment,
+			.array = {
+				.type = ele_type,
+				.base = type->array.base,
+				.count = type->array.count,
+			},
+			.attributes = type->attributes,
+		};
+		int stride = type_aligned_size (ele_type) * uint;
+		add_attribute (&new.attributes,
+					   new_attribute ("ArrayStride", new_uint_expr (stride)));
+		return find_type (&new);
+	}
+	// union not supported
+	if (is_struct (type)) {
+		type = unalias_type (type);
+		auto name = type->name + 4;	// skip over "tag "
+		auto tag = name;
+		if (pre_tag) {
+			tag = save_string (va (0, "%s.%s", pre_tag, name));
+		}
+		type_t new = {
+			.type = ev_invalid,
+			.name = save_string (va (0, "%.3s %s", type->name, tag)),
+			.meta = ty_struct,
+			.attributes = type->attributes,
+		};
+		auto nt = find_type (&new);
+		if (nt->symtab) {
+			// already exists (multiple fields of the same struct in the
+			// block)
+			return nt;
+		}
+		((type_t *)nt)->symtab = new_symtab (type->symtab->parent, stab_struct);
+		unsigned offset = 0;
+		int alignment = 1;
+		for (auto s = type->symtab->symbols; s; s = s->next) {
+			auto ftype = glsl_block_type (s->type, tag);
+			auto sym = new_symbol_type (s->name, ftype);
+			sym->sy_type = sy_offset;
+			sym->offset = -1;
+			sym->id = s->id;
+			symtab_addsymbol (nt->symtab, sym);
+			if (type_align (ftype) > alignment) {
+				alignment = type_align (ftype);
+			}
+			offset = RUP (offset, type_align (ftype) * uint);
+			add_attribute (&sym->attributes,
+						   new_attribute ("Offset", new_uint_expr (offset)));
+			offset += type_size (ftype) * uint;
+
+			auto mt = glsl_matrix_type (ftype);
+			if (mt) {
+				int stride = type_size (column_type (mt)) * uint;
+				add_attribute (&sym->attributes,
+							   new_attribute ("MatrixStride",
+											  new_uint_expr (stride)));
+				//FIXME
+				add_attribute (&sym->attributes,
+							   new_attribute ("ColMajor", nullptr));
+			}
+		}
+		nt->symtab->type = type->symtab->type;
+		nt->symtab->count = type->symtab->count;
+		nt->symtab->size = type->symtab->size;
+		nt->symtab->data = type->symtab->data;
+		((type_t *)nt)->alignment = alignment;
+		return nt;
+	}
+	return type;
+}
+
 void
 glsl_finish_block (glsl_block_t *block, specifier_t spec)
 {
@@ -169,7 +271,8 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		.symtab = block->members,
 		.attributes = new_attribute ("Block", nullptr),
 	};
-	auto inst_type = find_type (&type);
+	auto inst_type = glsl_block_type (&type, nullptr);
+	block->members = inst_type->symtab;
 	specifier_t spec = {
 		.sym = instance_name,
 		.storage = glsl_sc_from_iftype (block->interface),

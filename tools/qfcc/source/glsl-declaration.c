@@ -104,59 +104,16 @@ glsl_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 	}
 }
 
-static const type_t *
-glsl_block_type (const type_t *type, const char *pre_tag)
-{
-	if (is_array (type)) {
-		type = unalias_type (type);
-		auto ele_type = glsl_block_type (type->array.type, pre_tag);
-		int base = type->array.base;
-		int top = base + type->array.count - 1;
-		// calls find_type
-		return based_array_type (ele_type, base, top);
-	}
-	// union not supported
-	if (is_struct (type)) {
-		type = unalias_type (type);
-		auto name = type->name + 4;	// skip over "tag "
-		auto tag = save_string (va (0, "%s.%s", pre_tag, name));
-		type_t new = {
-			.type = ev_invalid,
-			.name = save_string (va (0, "tag %s", tag)),
-			.meta = ty_struct,
-		};
-		auto nt = find_type (&new);
-		if (nt->symtab) {
-			// already exists (multiple fields of the same struct in the
-			// block)
-			return nt;
-		}
-		((type_t *)nt)->symtab = new_symtab (type->symtab->parent, stab_struct);
-		for (auto s = type->symtab->symbols; s; s = s->next) {
-			auto ftype = glsl_block_type (s->type, tag);
-			auto sym = new_symbol_type (s->name, ftype);
-			sym->sy_type = sy_offset;
-			sym->offset = -1;
-			sym->id = s->id;
-			symtab_addsymbol (nt->symtab, sym);
-		}
-		nt->symtab->count = type->symtab->count;
-		nt->symtab->size = type->symtab->size;
-		return nt;
-	}
-	return type;
-}
-
 void
 glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	auto attributes = glsl_optimize_attributes (spec.attributes);
-	if (symtab->type == stab_block) {
-		spec = spec_process (spec, ctx);
-		spec.type = find_type (append_type (spec.sym->type, spec.type));
-		spec.type = glsl_block_type (spec.type, symtab->name);
-		spec.sym->type = nullptr;
-	}
+	//if (symtab->type == stab_block) {
+	//	spec = spec_process (spec, ctx);
+	//	spec.type = find_type (append_type (spec.sym->type, spec.type));
+	//	spec.type = glsl_block_type (spec.type, symtab->name);
+	//	spec.sym->type = nullptr;
+	//}
 	spec.sym = declare_field (spec, symtab, ctx);
 	spec.sym->offset = -1;
 	glsl_apply_attributes (attributes, spec);
