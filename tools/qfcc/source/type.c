@@ -708,11 +708,11 @@ find_type (const type_t *type)
 		}
 	}
 
-	const type_t *check;
+	const type_t *check = nullptr;
 	if (strchr (type->encoding, '%')) {
 		// type chain has attributes so the encoding may be aliased
 		auto list = (const type_t **) Hash_FindList (type_tab, type->encoding);
-		for (auto c = list; (check = *c); c++) {
+		for (auto c = list; c && (check = *c); c++) {
 			if (types_same (check, type)) {
 				break;
 			}
@@ -1317,7 +1317,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 {
 	if (!type)
 		return;
-	if (type->attributes && is_func (type) && type->func.attribute_bits) {
+	if (type->attributes || (is_func (type) && type->func.attribute_bits)) {
 		dstring_appendstr (encoding, "%");
 	}
 	switch (type->meta) {
