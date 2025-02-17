@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/image.h"
@@ -883,6 +884,12 @@ spirv_function_ref (function_t *func, spirvctx_t *ctx)
 static unsigned
 spirv_function (function_t *func, spirvctx_t *ctx)
 {
+	if (options.block_dot.expr && func->exprs) {
+		auto cf = current_func;
+		current_func = func;
+		dump_dot ("expr", func->exprs, dump_dot_expr);
+		current_func = cf;
+	}
 	unsigned ft_id = spirv_TypeFunction (func->sym, ctx);
 
 	defspace_reset (ctx->code_space);
