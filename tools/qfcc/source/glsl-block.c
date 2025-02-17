@@ -201,6 +201,9 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 			sym->id = s->id;
 			sym->attributes = s->attributes;
 			symtab_addsymbol (nt->symtab, sym);
+			if (s->offset >= 0 && type->symtab->type == stab_block) {
+				offset = s->offset;
+			}
 			if (type_align (ftype) > alignment) {
 				alignment = type_align (ftype);
 			}
