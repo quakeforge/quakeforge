@@ -619,19 +619,31 @@ new_metafunc (void)
 	return metafunc;
 }
 
-static void
+static const type_t *
 set_func_attrs (const type_t *func_type, attribute_t *attr_list)
 {
-	auto func = &((type_t *) func_type)->func;//FIXME
+	if (!is_func (func_type)) {
+		internal_error (0, "not a function");
+	}
+	func_type = unalias_type (func_type);
+	type_t new = {
+		.type = ev_func,
+		.alignment = 1,
+		.width = 1,
+		.columns = 1,
+		.meta = ty_basic,
+		.func = func_type->func,
+	};
 	for (auto attr = attr_list; attr; attr = attr->next) {
 		if (!strcmp (attr->name, "no_va_list")) {
-			func->no_va_list = true;
+			new.func.no_va_list = true;
 		} else if (!strcmp (attr->name, "void_return")) {
-			func->void_return = true;
+			new.func.void_return = true;
 		} else {
 			warning (0, "skipping unknown function attribute '%s'", attr->name);
 		}
 	}
+	return find_type (&new);
 }
 
 typedef struct {
@@ -861,8 +873,7 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
 	spec = spec_process (spec, ctx);
 	spec.sym->type = spec.type;
-	set_func_attrs (spec.sym->type, spec.attributes);
-	spec.sym->type = find_type (spec.sym->type);
+	spec.sym->type = set_func_attrs (spec.sym->type, spec.attributes);
 
 	auto type = unalias_type (spec.sym->type);
 	int num_params = type->func.num_params;
