@@ -1674,6 +1674,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 		if (literal_ind || direct_ind) {
 			ind_id[i] = index;
 		} else {
+			scoped_src_loc (obj);
 			auto ind = new_uint_expr (index);
 			ind_id[i] = spirv_emit_expr (ind, ctx);
 		}

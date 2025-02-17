@@ -393,6 +393,7 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 	}
 	sym = symtab_lookup (current_symtab, sym->name);
 	if (sym) {
+		scoped_src_loc (expr);
 		if (sym->is_constexpr) {
 			return new_symbol_expr (sym);
 		}
@@ -402,7 +403,6 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 		if (sym->sy_type == sy_convert) {
 			return sym->convert.conv (sym, sym->convert.data);
 		}
-		scoped_src_loc (expr);
 		return new_symbol_expr (sym);
 	}
 	return error (expr, "undefined symbol `%s`", expr->symbol->name);
