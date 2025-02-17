@@ -135,7 +135,7 @@ add_attribute (attribute_t **attributes, attribute_t *attr)
 	*attributes = attr;
 }
 
-static const type_t *
+static const type_t * __attribute__((pure))
 glsl_matrix_type (const type_t *type)
 {
 	while (is_array (type)) {

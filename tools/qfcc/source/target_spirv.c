@@ -2538,7 +2538,7 @@ spirv_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	return fold_constants (e);
 }
 
-static bool
+static bool __attribute__((pure))
 spirv_types_logically_match (const type_t *dst, const type_t *src)
 {
 	if (type_same (dst, src)) {
