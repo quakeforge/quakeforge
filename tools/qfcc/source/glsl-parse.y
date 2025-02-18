@@ -1321,7 +1321,7 @@ jump_statement
 			if (break_label) {
 				$$ = goto_expr (break_label);
 			} else {
-				error (nullptr, "continue outside of loop or switch");
+				error (nullptr, "break outside of loop or switch");
 			}
 		}
 	| RETURN ';'				{ $$ = new_return_expr (nullptr); }
