@@ -113,7 +113,6 @@ typedef struct rua_extra_s {
 		bool        params;
 		bool        expand;
 		bool        suppressed;
-		bool        no_lex;
 		bool        did_space;
 		rua_parser_t *parser;
 		pre_yypstate *pre_state;
@@ -1403,7 +1402,7 @@ rescan:
 	rua_tok_t e = {};
 	if (extra->macro) {
 		e = next_macro_token (extra->macro);
-	} else if (!extra->no_lex) {
+	} else {
 		tok->token = yylex (tok, &extra->location, scanner);
 		tok->location = extra->location;
 		if ((extra->pending_macro || extra->recording)
