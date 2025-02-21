@@ -2673,6 +2673,10 @@ statement_single (sblock_t *sblock, const expr_t *e)
 		internal_error (e, "bad expression type: %s",
 						e->type < ex_count ? expr_names[e->type] : "?");
 	}
+	// Many of the code gen functions build temporary expressions that must
+	// not be reused across statements. Anything that can safely be reused
+	// will be caught by the dags code in the optimizer.
+	edag_flush ();
 	sblock = sfuncs[e->type] (sblock, e);
 	return sblock;
 }
