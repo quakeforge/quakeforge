@@ -131,7 +131,7 @@ parse_error (rua_ctx_t *ctx)
 %token          INCLUDE EMBED
 %token          DEFINE UNDEF
 %token <t.text> TEXT ID IDp
-%token          ERROR WARNING NOTICE
+%token          ERROR WARNING NOTICE BUG
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
@@ -217,6 +217,8 @@ directive
 	| WARNING text { warning (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| NOTICE text { notice (0, "%s", $text->str); dstring_delete ($text); }
+	  eod
+	| BUG text { bug (0, "%s", $text->str); dstring_delete ($text); }
 	  eod
 	| PRAGMA expand { rua_start_pragma (ctx); }
 	  pragma_params { pragma_process (); }

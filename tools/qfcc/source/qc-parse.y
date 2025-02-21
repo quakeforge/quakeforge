@@ -2967,6 +2967,7 @@ static directive_t rua_directives[] = {
 	{"error",    PRE_ERROR},
 	{"warning",  PRE_WARNING},
 	{"notice",   PRE_NOTICE},
+	{"bug",      PRE_BUG},
 	{"pragma",   PRE_PRAGMA},
 	{"line",     PRE_LINE},
 };
