@@ -1157,7 +1157,9 @@ rua_end_args (yyscan_t scanner)
 static void __attribute__((used))
 dump_macro (rua_macro_t *macro)
 {
-	printf ("\n%s: ", macro->name);
+	printf ("\n%s:[%d,%d:%d,%d]: ", macro->name,
+			macro->loc.line, macro->loc.column,
+			macro->loc.last_line, macro->loc.last_column);
 	for (auto t = macro->tokens; t; t = t->next) {
 		printf ("%s", t->text);
 	}
@@ -1810,12 +1812,13 @@ build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 }
 
 void
-rua_macro_finish (rua_macro_t *macro, rua_ctx_t *ctx)
+rua_macro_finish (rua_macro_t *macro, rua_loc_t loc, rua_ctx_t *ctx)
 {
 	auto extra = ctx->extra;
 	if (extra->suppressed) {
 		return;
 	}
+	macro->loc = loc;
 	if (macro->tokens) {
 		while (((rua_tok_t *) macro->tail)->token == -rua_space) {
 			// space is never added as the first token, so it's guaranteed

@@ -126,6 +126,7 @@ typedef void (*rua_macro_f) (rua_macro_t *macro, rua_ctx_t *ctx);
 typedef struct rua_macro_s {
 	rua_macro_t *next;
 	const char *name;
+	rua_loc_t   loc;
 	symtab_t   *params;
 	rua_tok_t  *tokens;
 	rua_tok_t **tail;
@@ -153,7 +154,7 @@ rua_macro_t *rua_macro_param (rua_macro_t *macro, const rua_tok_t *token,
 rua_macro_t *rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx);
 rua_macro_t *rua_macro_append (rua_macro_t *macro, const rua_tok_t *token,
 							   rua_ctx_t *ctx);
-void rua_macro_finish (rua_macro_t *macro, rua_ctx_t *ctx);
+void rua_macro_finish (rua_macro_t *macro, rua_loc_t loc, rua_ctx_t *ctx);
 rua_macro_t *rua_macro_arg (const rua_tok_t *token, rua_ctx_t *ctx);
 void rua_start_pragma (rua_ctx_t *ctx);
 void rua_start_text (rua_ctx_t *ctx);

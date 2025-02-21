@@ -204,11 +204,11 @@ directive
 	: INCLUDE incexp string extra_warn { rua_include_file ($3, ctx); }
 	| EMBED incexp string extra_ignore { rua_embed_file ($3, ctx); }
 	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, ctx); }
-	  body					{ rua_macro_finish ($body, ctx); }
+	  body					{ rua_macro_finish ($body, @$, ctx); }
 	  eod
 	| DEFINE IDp	<macro> { $$ = rua_start_macro ($2, true, ctx); }
 	  opt_params ')' <macro>{ $$ = rua_end_params ($3, ctx); }
-	  body					{ rua_macro_finish ($body, ctx); }
+	  body					{ rua_macro_finish ($body, @$, ctx); }
 	  eod
 	| UNDEF ID				{ rua_undefine ($2, ctx); }
 	  extra_warn
