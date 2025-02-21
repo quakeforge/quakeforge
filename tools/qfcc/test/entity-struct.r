@@ -1,3 +1,4 @@
+#pragma bug die
 typedef struct foo_s {
 	int a, b;
 } foo_t;

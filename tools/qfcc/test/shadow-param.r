@@ -1,3 +1,4 @@
+#pragma bug die
 float func (int x)
 {
 	float x = 0;

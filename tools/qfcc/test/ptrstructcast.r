@@ -1,3 +1,4 @@
+#pragma bug die
 typedef struct Point_s {
 	int         x;
 	int         y;

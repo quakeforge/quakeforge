@@ -1,3 +1,4 @@
+#pragma bug die
 typedef struct { int x, y; } Point;
 @interface TextContext
 - (void) mvvprintf: (Point) pos, string mft, @va_list args;

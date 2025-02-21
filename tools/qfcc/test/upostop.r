@@ -1,3 +1,4 @@
+#pragma bug die
 int iter_check (unsigned count)
 {
 	unsigned i = count;

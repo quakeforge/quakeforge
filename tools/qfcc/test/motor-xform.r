@@ -1,3 +1,4 @@
+#pragma bug die
 #include "test-harness.h"
 
 typedef @algebra(float(3,0,1)) PGA;

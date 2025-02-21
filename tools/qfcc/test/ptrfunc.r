@@ -1,3 +1,4 @@
+#pragma bug die
 int func(string x) { return 1; }
 int (*funcptr)(string);
 int *(*ptrfuncptr)(string);

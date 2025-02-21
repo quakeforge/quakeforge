@@ -1,3 +1,4 @@
+#pragma bug die
 vector mins = '-16 -16 -24';
 vector maxs = '16 16 32';
 ivec4 i4 = '1 2 -3 4';

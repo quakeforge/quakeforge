@@ -1,3 +1,4 @@
+#pragma bug die
 void bar ()
 {
 }

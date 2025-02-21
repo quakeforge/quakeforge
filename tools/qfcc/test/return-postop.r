@@ -1,3 +1,4 @@
+#pragma bug die
 #pragma optimize on
 #include "test-harness.h"
 

@@ -1,3 +1,4 @@
+#pragma bug die
 #include "test-harness.h"
 
 vector t1();

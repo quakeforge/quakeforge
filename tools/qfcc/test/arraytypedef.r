@@ -1,3 +1,4 @@
+#pragma bug die
 typedef int int32_t;
 typedef int uint32_t;
 

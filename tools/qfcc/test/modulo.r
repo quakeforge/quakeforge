@@ -1,3 +1,4 @@
+#pragma bug die
 #if !defined(__RUAMOKO__) || __RUAMOKO__ < 2
 #  define test_traditional
 #endif

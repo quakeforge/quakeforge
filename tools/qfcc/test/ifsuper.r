@@ -1,3 +1,4 @@
+#pragma bug die
 #pragma advanced
 #include "test-harness.h"
 

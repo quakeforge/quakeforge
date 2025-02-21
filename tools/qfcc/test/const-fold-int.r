@@ -1,3 +1,4 @@
+#pragma bug die
 int mul_e_c_t_c (int x) { return x * 6 * 7; }
 int mul_c_e_t_c (int x) { return 6 * x * 7; }
 int mul_c_c_t_e (int x) { return 6 * 7 * x; }

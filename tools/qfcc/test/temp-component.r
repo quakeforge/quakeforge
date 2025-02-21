@@ -1,3 +1,4 @@
+#pragma bug die
 float
 gety(vector v, vector z)
 {

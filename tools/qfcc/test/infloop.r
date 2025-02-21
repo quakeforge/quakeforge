@@ -1,3 +1,4 @@
+#pragma bug die
 void exit (int code) = #0;
 
 int foo;

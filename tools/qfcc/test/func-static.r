@@ -1,3 +1,4 @@
+#pragma bug die
 int count;
 
 void foo (void)

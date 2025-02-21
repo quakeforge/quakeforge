@@ -1,3 +1,4 @@
+#pragma bug die
 #include "typelinker.h"
 
 int main ()

@@ -1,3 +1,4 @@
+#pragma bug die
 #define LPAREN() (
 #define G(Q) 42
 #define F(R, X, ...) __VA_OPT__(G R X) )

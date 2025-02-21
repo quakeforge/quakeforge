@@ -1,3 +1,4 @@
+#pragma bug die
 @attribute(no_va_list) id func (id self, SEL bar, ...)
 {
 	return (id)1;

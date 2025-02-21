@@ -1,3 +1,4 @@
+#pragma bug die
 typedef struct Extent_s {
 	int width;
 	int height;

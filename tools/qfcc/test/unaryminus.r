@@ -1,3 +1,4 @@
+#pragma bug die
 int strlen (string s) = #0;
 
 int foo (string bar)

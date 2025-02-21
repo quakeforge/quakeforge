@@ -1,3 +1,4 @@
+#pragma bug die
 float project (vector a, vector b, @out vector p)
 {
 	float d = a @dot b / b @dot b;
