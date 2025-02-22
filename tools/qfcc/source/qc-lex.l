@@ -1580,6 +1580,9 @@ rescan:
 		if (check_macro_arg (&e, ctx)) {
 			goto rescan;
 		}
+		if (check_for_macro (e, ctx)) {
+			goto rescan;
+		}
 		*tok = e;
 	}
 	if (extra->pending_macro) {
@@ -1603,6 +1606,7 @@ rescan:
 			goto rescan;
 		} else if (token == '(') {
 			extra->pending_macro = (rua_macro_t *) pending_macro->args;
+			extra->pending_macro->next = pending_macro->next;
 			pending_macro->args = 0;
 			rua_start_args (scanner);
 			int s = pre_yypush_parse (extra->args_state, PRE_ARGS, &lval,
