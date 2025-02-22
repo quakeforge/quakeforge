@@ -1203,7 +1203,7 @@ static spvop_t spv_ops[] = {
 	{"scale",  SpvOpMatrixTimesScalar,    SPV_FLOAT, SPV_FLOAT,
 		.mat1 = true, .mat2 = false },
 
-	{"cross",  GLSLstd450Cross,           SPV_FLOAT, SPV_FLOAT,
+	{"cross",  (SpvOp)GLSLstd450Cross,    SPV_FLOAT, SPV_FLOAT,
 		.extinst = &glsl_450 },
 	{"wedge",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
 		.generate = spirv_generate_wedge, .extinst = &glsl_450 },
@@ -1775,7 +1775,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 			auto psym = new_symbol ("param");
 			psym->type = tagged_reference_type (SpvStorageClassFunction, get_type (a));
 			psym->sy_type = sy_var;
-			psym->var.storage = SpvStorageClassFunction;
+			psym->var.storage = (storage_class_t) SpvStorageClassFunction;
 			psym->id = spirv_variable (psym, ctx);
 			psym->lvalue = true;
 			arg_ids[i] = psym->id;

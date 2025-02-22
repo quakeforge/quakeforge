@@ -209,7 +209,7 @@ _bug (const expr_t *e, const char *file, int line, const char *func,
 	va_end (args);
 }
 
-const void
+void
 _notice (const expr_t *e, const char *file, int line, const char *func,
 		 const char *fmt, ...)
 {
@@ -240,7 +240,7 @@ _notice (const expr_t *e, const char *file, int line, const char *func,
 	va_end (args);
 }
 
-const void
+void
 _warning (const expr_t *e, const char *file, int line, const char *func,
 		  const char *fmt, ...)
 {

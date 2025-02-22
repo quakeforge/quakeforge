@@ -37,6 +37,7 @@
 
 typedef struct symbol_s symbol_t;
 typedef struct expr_s expr_t;
+typedef struct pr_info_s pr_info_t;
 
 typedef struct entrypoint_s {
 	struct entrypoint_s *next;
@@ -87,6 +88,6 @@ void spirv_add_extension (module_t *module, const char *extension);
 void spirv_add_extinst_import (module_t *module, const char *import);
 void spirv_set_addressing_model (module_t *module, SpvAddressingModel model);
 void spirv_set_memory_model (module_t *module, SpvMemoryModel model);
-bool spirv_write (struct pr_info_s *pr, const char *filename);
+bool spirv_write (pr_info_t *pr, const char *filename);
 
 #endif//__spirv_h

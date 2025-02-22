@@ -2826,8 +2826,6 @@ hodge_dual (const expr_t *e, bool undual)
 		pr_uint_t flips = algebra_count_flips (algebra, blade.mask, d_mask);
 		if (flips & 1) {
 			dual = neg_expr (dual);
-		} else {
-			dual = dual;
 		}
 		if (undual && ((dim * algebra_get_grade (get_type (a[i]))) & 1)) {
 			dual = neg_expr (dual);
