@@ -432,8 +432,8 @@ glsl_capture_screen (capfunc_t callback, void *data)
 		tex->format = tex_rgb;
 		tex->palette = 0;
 		tex->flagbits = 0;
-		tex->loaded = 1;
-		tex->flipped = 1;
+		tex->loaded = true;
+		tex->flipped = true;
 		qfeglReadPixels (0, 0, tex->width, tex->height, GL_RGB,
 						 GL_UNSIGNED_BYTE, tex->data);
 	}

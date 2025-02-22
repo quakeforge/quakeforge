@@ -1034,7 +1034,7 @@ glsl_Draw_AddFont (font_t *rfont)
 		.width = rfont->scrap.width,
 		.height = rfont->scrap.height,
 		.format = tex_a,
-		.loaded = 1,
+		.loaded = true,
 		.data = rfont->scrap_bitmap,
 	};
 	font->texid = GLSL_LoadTex ("", 1, &tex);

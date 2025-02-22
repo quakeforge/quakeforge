@@ -895,7 +895,7 @@ write_png (image_t *image)
 		.width = image->width,
 		.height = image->height,
 		.format = tex_rgb,
-		.loaded = 1,
+		.loaded = true,
 		.data = malloc (size * 3),
 	};
 

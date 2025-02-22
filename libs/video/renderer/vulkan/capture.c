@@ -195,10 +195,10 @@ capture_finalize (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		tex->format = tex_rgb;
 		tex->palette = 0;
 		tex->flagbits = 0;
-		tex->loaded = 1;
+		tex->loaded = true;
 
 		if (is_bgr (ctx->swapchain->format)) {
-			tex->bgr = 1;
+			tex->bgr = true;
 		}
 		const byte *src = frame->data;
 		byte       *dst = tex->data;

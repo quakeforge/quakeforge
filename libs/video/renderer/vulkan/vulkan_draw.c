@@ -726,7 +726,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.width = p->width,
 		.height = p->height,
 		.format = tex_rgba,
-		.loaded = 1,
+		.loaded = true,
 		.data = p->data,
 	};
 	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
@@ -1746,7 +1746,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.width = rfont->scrap.width,
 		.height = rfont->scrap.height,
 		.format = tex_a,
-		.loaded = 1,
+		.loaded = true,
 		.data = rfont->scrap_bitmap,
 	};
 	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);

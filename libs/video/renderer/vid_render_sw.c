@@ -434,7 +434,7 @@ sw_capture_screen (capfunc_t callback, void *data)
 		tex->format = tex_rgb;
 		tex->palette = 0;
 		tex->flagbits = 0;
-		tex->loaded = 1;
+		tex->loaded = true;
 		src = ((sw_framebuffer_t *) fb->buffer)->color;
 		int rowbytes = ((sw_framebuffer_t *) fb->buffer)->rowbytes;
 		for (y = 0; y < tex->height; y++) {

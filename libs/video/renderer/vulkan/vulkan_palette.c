@@ -57,7 +57,7 @@ Vulkan_Palette_Update (vulkan_ctx_t *ctx, const byte *palette)
 		.width = 16,
 		.height = 16,
 		.format = tex_rgb,
-		.loaded = 1,
+		.loaded = true,
 		.data = (byte *) palette,
 	};
 	Vulkan_UpdateTex (ctx, pctx->palette, &tex, 0, 0, 0, 0, true);
@@ -94,7 +94,7 @@ palette_startup (exprctx_t *ectx)
 		.width = 16,
 		.height = 16,
 		.format = tex_rgb,
-		.loaded = 1,
+		.loaded = true,
 		.data = (byte *) vid.palette,
 	};
 	pctx->palette = Vulkan_LoadTex (ctx, &tex, 0, "palette");
