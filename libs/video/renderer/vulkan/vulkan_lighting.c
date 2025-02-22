@@ -601,10 +601,10 @@ static float
 light_radius (const light_t *l)
 {
 	return l->attenuation[3] > 0 ? 1 / l->attenuation[3]
-		 : l->attenuation[0] > 0 ? sqrt(abs(l->color[3]/l->attenuation[0]))
-		 : l->attenuation[1] > 0 ? abs(l->color[3]/l->attenuation[1])
+		 : l->attenuation[0] > 0 ? sqrt(fabs(l->color[3]/l->attenuation[0]))
+		 : l->attenuation[1] > 0 ? fabs(l->color[3]/l->attenuation[1])
 		 // FIXME ambient lights. not right, but at least it will render
-		 : sqrt(abs(l->color[3]));
+		 : sqrt(fabs(l->color[3]));
 }
 
 static void
