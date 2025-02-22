@@ -2339,9 +2339,8 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				{ \
 					auto a = OPA(t##vec##rows); \
 					auto b = &OPB(t##vec##rows); \
-					auto c = &OPC(t##vec##cols)[0]; \
 					for (int i = 0; i < cols; i++) { \
-						c[i] = DotProduct (a, b[i]); \
+						OPC(t##vec##cols)[i] = DotProduct (a, b[i]); \
 					} \
 				} \
 				break
@@ -2350,9 +2349,8 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				{ \
 					auto a = OPA(t##vec##rows); \
 					auto b = &OPB(t##vec##rows); \
-					auto c = &OPC(t##vec##cols); \
 					for (int i = 0; i < cols; i++) { \
-						(*c)[i] = dot##rows##t2(a, b[i])[0]; \
+						OPC(t##vec##cols)[i] = dot##rows##t2(a, b[i])[0]; \
 					} \
 				} \
 				break
