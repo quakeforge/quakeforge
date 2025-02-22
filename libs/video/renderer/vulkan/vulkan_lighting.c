@@ -1315,6 +1315,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 			}
 		}
 	}
+	if (0) printf ("%d,%d/%d visible\n", c, ci, count);
 	lighting_rewrite_ids (lframe, ctx);
 }
 
