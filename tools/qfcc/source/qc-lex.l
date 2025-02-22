@@ -1389,6 +1389,170 @@ recursive_invocation (rua_macro_t *macro, rua_extra_t *extra)
 	return false;
 }
 
+static bool
+check_macro_arg (rua_tok_t *e, rua_ctx_t *ctx)
+{
+	auto scanner = ctx->scanner;
+	auto extra = ctx->extra;
+	int token = e->token;
+
+	symbol_t   *sym;
+	auto macro = extra->macro;
+	if (token == '#') {
+		auto n = e->next;
+		rua_macro_t *arg;
+		macro->cursor = macro->cursor->next;	// consume arg
+		if (n->token == -rua_va_opt) {
+			sym = symtab_lookup (macro->params, n->text);
+			auto m = sym->macro;
+			m->update (m, ctx);
+			arg = m;
+		} else {
+			sym = symtab_lookup (macro->params, n->text);
+			arg = macro->args[sym->offset];
+		}
+		stringize_arg (e, arg, extra);
+	} else if (e->next && e->next->token == PRE_CONCAT) {
+		rua_macro_t *m = malloc (sizeof (*m));
+		*m = (rua_macro_t) {
+			.tail = &m->tokens,
+		};
+
+		auto p = get_arg_token (true, e, macro, scanner, ctx);
+		rua_tok_t   con = {};
+		do {
+			auto n = get_arg_token (false, e->next->next, macro, scanner, ctx);
+			rua_tok_t   cat;
+			if (join_tokens (&cat, p, n, extra)) {
+				con = cat;
+				p = &con;
+			} else {
+				if (p) {
+					copy_token (m, p);
+				}
+				con = (rua_tok_t) {};
+				p = n;
+			}
+			next_macro_token (extra->macro);	// consume ##
+			*e = next_macro_token (extra->macro);
+		} while (e->next && e->next->token == PRE_CONCAT);
+		if (con.token) {
+			copy_token (m, &con);
+		}
+		m->cursor = m->tokens;
+		m->next = extra->macro;
+		extra->macro = m;
+		return true;
+	} else if (token == -rua_va_opt) {
+		if (!macro->params || !macro->args[~macro->num_params]
+			|| !macro->args[~macro->num_params]->tokens) {
+			return true;
+		}
+		sym = symtab_lookup (macro->params, e->text);
+		rua_macro_va_opt (sym->macro, ctx);
+		return true;
+	} else if (token == -rua_id && macro->params
+			   && (sym = symtab_lookup (macro->params, e->text))
+			   && !macro->args[sym->offset]->next) {
+		auto arg = macro->args[sym->offset];
+		queue_macro (extra, arg);
+		return true;
+	} else if (token == -rua_id && !macro->name // in an arg
+			   && (sym = symtab_lookup (extra->macro_tab, e->text))
+			   && !sym->macro->next
+			   && !sym->macro->params) {
+		// force object-type macros in macro arguments to be expanded
+		auto m = sym->macro;
+		if (m->update) {
+			m->update (m, ctx);
+		}
+		queue_macro (extra, m);
+		return true;
+#if 0	// causes preproc-1.r to fail (see XXX below)
+	} else if (token == -rua_id && !macro->name // in an arg
+			   && (sym = symtab_lookup (extra->macro_tab, e.text))
+			   && !sym->macro->next
+			   && sym->macro->params) {
+		// force function-type macros in macro arguments to be expanded
+		auto m = sym->macro;
+		auto c = macro->cursor;
+		// XXX breakage for preproc-1.r: collect_args assumes the macro
+		// is complete, but in the case of preproc-1.r, it is not. In fact,
+		// with the final ) removed from the F macro, tokens are consumed
+		// to the end of the file. Thus, nt x = F(LPAREN(), 0, <:-);
+		// expands to int x = 42 ); instead of int x = 42;
+		// However, this block is needed for the H5C(H5A()) test
+		collect_args (m, macro, scanner);
+		if (macro->cursor != c) {
+			if (m->update) {
+				m->update (m, ctx);
+			}
+			queue_macro (extra, m);
+			return true;
+		}
+#endif
+	}
+	return false;
+}
+
+static bool
+check_for_macro (rua_tok_t e, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	int token = e.token;
+
+	symbol_t   *sym;
+	// simplify the following logic for macro expansion while processing
+	// a directive than requires macro expansion
+	if (extra->preprocessor && extra->expand && token == PRE_ID) {
+		token = -rua_id;
+	}
+	if (token == -rua_id
+		&& (sym = symtab_lookup (extra->macro_tab, e.text))
+		&& !recursive_invocation (sym->macro, extra)) {
+		auto macro = sym->macro;
+		if (macro->update) {
+			macro->update (macro, ctx);
+		}
+		if (macro->params) {
+			// function-type macro, need to check for ( so set up a temporary
+			// macro to hold the tokens before the first non-space token
+			auto pending_macro = alloc_macro (0, false);
+			pending_macro->args = (rua_macro_t **) macro;
+			pending_macro->next = extra->pending_macro;
+			extra->pending_macro = pending_macro;
+			// record the token with the macro name
+			if (e.text == extra->str_text) {
+				e.text = save_string (e.text);
+			}
+			append_token (pending_macro, &e);
+		} else {
+			// object-type macro, just expand
+			queue_macro (extra, macro);
+		}
+		return true;
+	}
+	return false;
+}
+
+static rua_tok_t
+abort_pending_macro (rua_tok_t e, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	// abort expanding the macro
+	auto pending_macro = extra->pending_macro;
+	append_token (pending_macro, &e);
+	extra->pending_macro = pending_macro->next;
+	if (extra->macro) {
+		auto macro = extra->macro;
+		pending_macro->params = macro->params;
+		pending_macro->args = macro->args;
+	}
+	queue_macro (extra, pending_macro);
+	// return the token that looked like a macro
+	return next_macro_token (extra->macro);
+}
+
 static int
 next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
 {
@@ -1412,121 +1576,9 @@ rescan:
 		e = *tok;
 	}
 	int token = e.token;
-	if (extra->pending_macro && !extra->recording) {
-		if (token != -rua_space && token != '(') {
-			auto pending_macro = extra->pending_macro;
-			append_token (pending_macro, &e);
-			extra->pending_macro = pending_macro->next;
-			if (extra->macro) {
-				auto macro = extra->macro;
-				pending_macro->params = macro->params;
-				pending_macro->args = macro->args;
-			}
-			queue_macro (extra, pending_macro);
-			// get the token that looked like a macro
-			e = next_macro_token (extra->macro);
-			*tok = e;
-			return e.token;
-		}
-	}
-	if (extra->macro) {
-		symbol_t   *sym;
-		auto macro = extra->macro;
-		if (token == '#') {
-			auto n = e.next;
-			rua_macro_t *arg;
-			macro->cursor = macro->cursor->next;	// consume arg
-			if (n->token == -rua_va_opt) {
-				sym = symtab_lookup (macro->params, n->text);
-				auto m = sym->macro;
-				m->update (m, ctx);
-				arg = m;
-			} else {
-				sym = symtab_lookup (macro->params, n->text);
-				arg = macro->args[sym->offset];
-			}
-			stringize_arg (&e, arg, extra);
-		} else if (e.next && e.next->token == PRE_CONCAT) {
-			rua_macro_t *m = malloc (sizeof (*m));
-			*m = (rua_macro_t) {
-				.tail = &m->tokens,
-			};
-
-			auto p = get_arg_token (true, &e, macro, scanner, ctx);
-			rua_tok_t   con = {};
-			do {
-				auto n = get_arg_token (false, e.next->next, macro, scanner, ctx);
-				rua_tok_t   cat;
-				if (join_tokens (&cat, p, n, extra)) {
-					con = cat;
-					p = &con;
-				} else {
-					if (p) {
-						copy_token (m, p);
-					}
-					con = (rua_tok_t) {};
-					p = n;
-				}
-				next_macro_token (extra->macro);	// consume ##
-				e = next_macro_token (extra->macro);
-			} while (e.next && e.next->token == PRE_CONCAT);
-			if (con.token) {
-				copy_token (m, &con);
-			}
-			m->cursor = m->tokens;
-			m->next = extra->macro;
-			extra->macro = m;
+	if (extra->macro) { // currently expanding a macro
+		if (check_macro_arg (&e, ctx)) {
 			goto rescan;
-		} else if (token == -rua_va_opt) {
-			if (!macro->params || !macro->args[~macro->num_params]
-				|| !macro->args[~macro->num_params]->tokens) {
-				goto rescan;
-			}
-			sym = symtab_lookup (macro->params, e.text);
-			auto m = sym->macro;
-			m->update (m, ctx);
-			queue_macro (extra, m);
-			goto rescan;
-		} else if (token == -rua_id && macro->params
-				   && (sym = symtab_lookup (macro->params, e.text))
-				   && !macro->args[sym->offset]->next) {
-			auto arg = macro->args[sym->offset];
-			queue_macro (extra, arg);
-			goto rescan;
-		} else if (token == -rua_id && !macro->name // in an arg
-				   && (sym = symtab_lookup (extra->macro_tab, e.text))
-				   && !sym->macro->next
-				   && !sym->macro->params) {
-			// force object-type macros in macro arguments to be expanded
-			auto m = sym->macro;
-			if (m->update) {
-				m->update (m, ctx);
-			}
-			queue_macro (extra, m);
-			goto rescan;
-#if 0	// causes preproc-1.r to fail (see XXX below)
-		} else if (token == -rua_id && !macro->name // in an arg
-				   && (sym = symtab_lookup (extra->macro_tab, e.text))
-				   && !sym->macro->next
-				   && sym->macro->params) {
-			// force function-type macros in macro arguments to be expanded
-			auto m = sym->macro;
-			auto c = macro->cursor;
-			// XXX breakage for preproc-1.r: collect_args assumes the macro
-			// is complete, but in the case of preproc-1.r, it is not. In fact,
-			// with the final ) removed from the F macro, tokens are consumed
-			// to the end of the file. Thus, nt x = F(LPAREN(), 0, <:-);
-			// expands to int x = 42 ); instead of int x = 42;
-			// However, this block is needed for the H5C(H5A()) test
-			collect_args (m, macro, scanner);
-			if (macro->cursor != c) {
-				if (m->update) {
-					m->update (m, ctx);
-				}
-				queue_macro (extra, m);
-				goto rescan;
-			}
-#endif
 		}
 		*tok = e;
 	}
@@ -1559,37 +1611,16 @@ rescan:
 				internal_error (0, "can't start parsing macro args");
 			}
 			goto rescan;
-		}
-	}
-	symbol_t   *sym;
-	if (extra->preprocessor && extra->expand && token == PRE_ID) {
-		token = -rua_id;
-	}
-	if ((extra->expand || !(extra->preprocessor || extra->suppressed))
-		&& token == -rua_id
-		&& (sym = symtab_lookup (extra->macro_tab, e.text))
-		&& !recursive_invocation (sym->macro, extra)) {
-		auto macro = sym->macro;
-		if (macro->update) {
-			macro->update (macro, ctx);
-		}
-		if (macro->params) {
-			// function-type macro, need to check for ( so set up a temporary
-			// macro to hold the tokens before the first non-space token
-			auto pending_macro = alloc_macro (0, false);
-			pending_macro->args = (rua_macro_t **) macro;
-			pending_macro->next = extra->pending_macro;
-			extra->pending_macro = pending_macro;
-			// record the token with the macro name
-			if (e.text == extra->str_text) {
-				e.text = save_string (e.text);
-			}
-			append_token (pending_macro, &e);
 		} else {
-			// object-type macro, just expand
-			queue_macro (extra, macro);
+			*tok = abort_pending_macro (e, ctx);
+			return tok->token;
 		}
-		goto rescan;
+	}
+
+	if (extra->expand || !(extra->preprocessor || extra->suppressed)) {
+		if (check_for_macro (e, ctx)) {
+			goto rescan;
+		}
 	}
 	return token;
 }
