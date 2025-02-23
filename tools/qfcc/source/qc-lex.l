@@ -1153,6 +1153,8 @@ rua_end_args (yyscan_t scanner)
 	}
 }
 
+#define IGRN "\e[30;42m"
+
 static void __attribute__((used))
 dump_macro (rua_macro_t *macro)
 {
@@ -1160,11 +1162,21 @@ dump_macro (rua_macro_t *macro)
 			macro->loc.line, macro->loc.column,
 			macro->loc.last_line, macro->loc.last_column);
 	for (auto t = macro->tokens; t; t = t->next) {
+		if (t == macro->cursor) {
+			printf ("%s", isspace (t->text[0]) ? IGRN : GRN);
+		}
 		printf ("%s", t->text);
+		if (t == macro->cursor) {
+			printf ("%s", DFL);
+		}
 	}
 	if (macro->args) {
 		for (int i = 0; i < macro->num_args; i++) {
-			dump_macro (macro->args[i]);
+			if (macro->args[i]) {
+				dump_macro (macro->args[i]);
+			} else {
+				printf ("\n%snull%s", RED, DFL);
+			}
 		}
 	}
 }
