@@ -135,7 +135,7 @@ parse_error (rua_ctx_t *ctx)
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
 %token          DEFINED EOD
-%token          CONCAT ARGS
+%token          CONCAT
 %token          EXTENSION VERSION
 
 %type <t.text>  string opt_profile
@@ -186,11 +186,6 @@ get_long (const expr_t *expr, const char *text, int defl)
 
 start
 	: directive_list
-	| ARGS
-		<macro>{
-			$$ = rua_macro_arg (&$<t>1, ctx);
-		}
-	  args ')' { YYACCEPT; }
 	;
 
 directive_list

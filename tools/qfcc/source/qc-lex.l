@@ -209,7 +209,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 %x		DIRECTIVE TEXT
 %x		PRAGMA VECTOR
 %s		PREPROC PREEXPR
-%s		MACRO ARGS
+%s		MACRO
 %x		CONT
 
 %%
@@ -243,7 +243,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							}
 						}
 
-<ARGS>^#				{	return '#'; }
 ^#{s}+/{D}				{
 							yy_push_state (PREPROC, yyscanner);
 							extra->preprocessor = true;
@@ -254,8 +253,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							yy_push_state (DIRECTIVE, yyscanner);
 							extra->preprocessor = true;
 						}
-<ARGS><<EOF>>			{ return 0; }
-<ARGS>^{s}*				{ return -rua_space; }
 
 <DIRECTIVE>{ID}			{ {
 							int tok = directive (yytext, yyscanner);
@@ -266,7 +263,6 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREPROC>{ID}			{ return PRE_ID; }
 <PREPROC>{ID}\(			{ return PRE_IDp; }
 
-<ARGS>\r*\n				{ next_line (yylloc, yyscanner); return -rua_space; }
 <DIRECTIVE>\r*\n		|
 <PREEXPR>\r*\n			|
 <MACRO,TEXT>\r*\n		|
@@ -282,7 +278,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
 
-<INITIAL,ARGS,MACRO>{
+<INITIAL,MACRO>{
 	{ID}				|
 	@{ID}				{ return -rua_id; }
 }
@@ -1123,21 +1119,10 @@ rua_reset_args (rua_macro_t *macro)
 }
 
 static void
-rua_start_args (yyscan_t scanner)
-{
-	auto extra = qc_yyget_extra (scanner);
-	extra->recording = true;
-
-	rua_reset_args (extra->pending_macro);
-	yy_push_state (ARGS, scanner);
-}
-
-static void
 rua_end_args (yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
 	extra->recording = false;
-	yy_pop_state (scanner);
 
 	auto macro = extra->pending_macro;
 	if (macro->num_params < 0) {
@@ -1374,8 +1359,13 @@ check_macro (rua_macro_t *macro)
 		num_args = 0;
 	}
 	if (macro->num_params >= 0) {
-		if (num_args != macro->num_params) {
+		if (num_args > macro->num_params) {
 			error (0, "macro \"%s\" passed %d arguments, but takes just %d",
+				   macro->name, num_args, macro->num_params);
+			return false;
+		}
+		if (num_args < macro->num_params) {
+			error (0, "macro \"%s\" passed %d arguments, but requires %d",
 				   macro->name, num_args, macro->num_params);
 			return false;
 		}
@@ -1530,6 +1520,7 @@ check_for_macro (rua_tok_t e, rua_ctx_t *ctx)
 			// function-type macro, need to check for ( so set up a temporary
 			// macro to hold the tokens before the first non-space token
 			auto pending_macro = alloc_macro (0, false);
+			pending_macro->temp = true;
 			pending_macro->args = (rua_macro_t **) macro;
 			pending_macro->next = extra->pending_macro;
 			extra->pending_macro = pending_macro;
@@ -1553,6 +1544,9 @@ abort_pending_macro (rua_tok_t e, rua_ctx_t *ctx)
 	auto extra = ctx->extra;
 	// abort expanding the macro
 	auto pending_macro = extra->pending_macro;
+	if (!pending_macro->temp) {
+		internal_error (0, "aborting a non-temp macro");
+	}
 	append_token (pending_macro, &e);
 	extra->pending_macro = pending_macro->next;
 	if (extra->macro) {
@@ -1565,28 +1559,68 @@ abort_pending_macro (rua_tok_t e, rua_ctx_t *ctx)
 	return next_macro_token (extra->macro);
 }
 
-static int
-next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
+static rua_tok_t
+get_token (yyscan_t scanner)
 {
 	auto extra = qc_yyget_extra (scanner);
-rescan:
 	while (extra->macro && !extra->macro->cursor) {
 		auto macro = extra->macro;
 		extra->macro = macro->next;
 		macro->next = 0;
 	}
-	rua_tok_t e = {};
 	if (extra->macro) {
-		e = next_macro_token (extra->macro);
+		//dump_macro (extra->macro); puts("");
+		return next_macro_token (extra->macro);
 	} else {
-		tok->token = yylex (tok, &extra->location, scanner);
-		tok->location = extra->location;
+		rua_tok_t e = {};
+		e.token = yylex (&e, &extra->location, scanner);
+		e.location = extra->location;
 		if ((extra->pending_macro || extra->recording)
-			&& tok->text == extra->str_text) {
-			tok->text = save_string (tok->text);
+			&& e.text == extra->str_text) {
+			e.text = save_string (e.text);
 		}
-		e = *tok;
+		return e;
 	}
+}
+
+static bool
+macro_collect_args (rua_macro_t *macro, rua_ctx_t *ctx)
+{
+	auto scanner = ctx->scanner;
+	auto extra = ctx->extra;
+
+	rua_reset_args (macro);
+	int paren = 1;
+	auto e = get_token (scanner);
+	auto a = rua_macro_arg (&e, scanner);
+	while (e.token) {
+		if (!extra->macro || !check_macro_arg (&e, ctx)) {
+			if (e.token == '(') {
+				paren++;
+			} else if (e.token == ')') {
+				if (!(--paren)) {
+					rua_end_args (scanner);
+					return true;
+				}
+			}
+			if (e.token == ',' && paren == 1) {
+				a = rua_macro_arg (&e, ctx);
+			} else {
+				rua_macro_append (a, &e, ctx);
+			}
+		}
+		e = get_token (scanner);
+	}
+	return false;
+}
+
+static int
+next_token (rua_tok_t *tok, yyscan_t scanner, rua_ctx_t *ctx)
+{
+	auto extra = qc_yyget_extra (scanner);
+rescan:
+	auto e = get_token (scanner);
+	*tok = e;
 	int token = e.token;
 	if (extra->macro) { // currently expanding a macro
 		if (check_macro_arg (&e, ctx)) {
@@ -1598,33 +1632,19 @@ rescan:
 		*tok = e;
 	}
 	if (extra->pending_macro) {
-		PRE_YYSTYPE lval = { .t = e };
 		auto pending_macro = extra->pending_macro;
-		if (extra->recording) {
-			token = preproc_token (extra, &lval, &e, scanner, ctx);
-			int s = pre_yypush_parse (extra->args_state, token, &lval,
-									  &e.location, ctx);
-			if (s == YYPUSH_MORE) {
-				goto rescan;
-			}
-			rua_end_args (scanner);
-			extra->pending_macro = pending_macro->next;
-			if (check_macro (pending_macro)) {
-				queue_macro (extra, pending_macro);
-			}
-			goto rescan;
-		} else if (token == -rua_space) {
+		if (token == -rua_space) {
 			append_token (pending_macro, &e);
 			goto rescan;
 		} else if (token == '(') {
 			extra->pending_macro = (rua_macro_t *) pending_macro->args;
-			extra->pending_macro->next = pending_macro->next;
-			pending_macro->args = 0;
-			rua_start_args (scanner);
-			int s = pre_yypush_parse (extra->args_state, PRE_ARGS, &lval,
-									  &e.location, scanner);
-			if (s != YYPUSH_MORE) {
-				internal_error (0, "can't start parsing macro args");
+			auto m = extra->pending_macro;
+			if (!macro_collect_args (m, ctx)) {
+				error (0, "EOF");
+			}
+			extra->pending_macro = pending_macro->next;
+			if (check_macro (m)) {
+				queue_macro (extra, m);
 			}
 			goto rescan;
 		} else {
@@ -2338,10 +2358,10 @@ rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->tail = &macro->tokens;
 	macro->num_tokens = 0;
 
-	rua_tok_t *expr = malloc (sizeof (*expr));
 	macro->num_tokens++;
 	const char *file_str = save_string (va (0, "\"%s\"",
 											quote_string (GETSTR (file))));
+	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
 		.location = extra->location,
 		.textlen = strlen (file_str),
@@ -2365,9 +2385,9 @@ rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->tail = &macro->tokens;
 	macro->num_tokens = 0;
 
-	rua_tok_t *expr = malloc (sizeof (*expr));
 	macro->num_tokens++;
 	const char *line_str = save_string (va (0, "%d", line));
+	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
 		.location = extra->location,
 		.textlen = strlen (line_str),

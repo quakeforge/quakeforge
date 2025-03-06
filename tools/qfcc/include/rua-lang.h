@@ -134,7 +134,7 @@ typedef struct rua_macro_s {
 	int         num_params;
 	rua_tok_t  *cursor;
 	rua_macro_f update;
-
+	bool        temp;
 	int         num_args;
 	rua_macro_t **args;
 } rua_macro_t;
