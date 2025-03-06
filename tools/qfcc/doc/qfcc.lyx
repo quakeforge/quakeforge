@@ -2730,23 +2730,12 @@ status open
 
 \begin_layout Plain Layout
 
-\family typewriter
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
+\noun on
 count
 \end_layout
 
 \end_inset
 
-
-\end_layout
-
-\end_inset
-
 ,
  
 \begin_inset Flex Code
@@ -2754,23 +2743,12 @@ status open
 
 \begin_layout Plain Layout
 
-\family typewriter
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
+\noun on
 width
 \end_layout
 
 \end_inset
 
-
-\end_layout
-
-\end_inset
-
 ,
  
 \begin_inset Flex Code
@@ -2778,23 +2756,12 @@ status open
 
 \begin_layout Plain Layout
 
-\family typewriter
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
+\noun on
 cols
 \end_layout
 
 \end_inset
 
-
-\end_layout
-
-\end_inset
-
 ,
  
 \family typewriter
@@ -2804,19 +2771,8 @@ status open
 
 \begin_layout Plain Layout
 
-\family typewriter
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
-
-\family typewriter
+\noun on
 rows
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -2838,18 +2794,10 @@ status open
 \family typewriter
 @function(
 \family default
-
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \family typewriter
+\noun default
 )
 \end_layout
 
@@ -2862,21 +2810,14 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
 \end_layout
 
 \end_inset
 
-
-\end_layout
-
-\end_inset
-
- but taking no parameters
+ but taking no parameters.
 \end_layout
 
 \begin_layout Labeling
@@ -2886,15 +2827,9 @@ status open
 
 \begin_layout Plain Layout
 @field(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -2905,16 +2840,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -2929,15 +2857,9 @@ status open
 
 \begin_layout Plain Layout
 @pointer(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -2948,16 +2870,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -2972,25 +2887,13 @@ status open
 
 \begin_layout Plain Layout
 @array(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 ,[
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 count
-\end_layout
-
-\end_inset
-
+\noun default
 ])
 \end_layout
 
@@ -3001,16 +2904,9 @@ count
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3021,16 +2917,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 count
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3045,15 +2934,9 @@ status open
 
 \begin_layout Plain Layout
 @base(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3064,16 +2947,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3119,25 +2995,13 @@ status open
 
 \begin_layout Plain Layout
 @vector(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 ,
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 width
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3148,16 +3012,9 @@ width
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3214,35 +3071,17 @@ status open
 
 \begin_layout Plain Layout
 @matrix(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 ,
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 cols
-\end_layout
-
-\end_inset
-
+\noun default
 ,
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 rows
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3253,21 +3092,205 @@ rows
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
 \end_layout
 
 \end_inset
 
+ but with the specified columns and rows.
+ If both 
+\noun on
 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+rows
 \end_layout
 
 \end_inset
 
- but with the specified columns and rows
+
+\noun default
+ and 
+\noun on
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+cols
+\end_layout
+
+\end_inset
+
+
+\noun default
+ are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+
+then resulting type is a scalar.
+ Otherwise,
+ 
+\noun on
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+rows
+\end_layout
+
+\end_inset
+
+
+\noun default
+ must be 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+
+ and 
+\noun on
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+cols
+\end_layout
+
+\end_inset
+
+
+\noun default
+ may be 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@matrix(
+\noun on
+type
+\noun default
+,
+ 1,
+ 
+\noun on
+rows
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ is equivalent to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@vector(
+\noun on
+type
+\noun default
+,
+ 
+\noun on
+rows
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ (that is,
+ a column vector).
 \end_layout
 
 \begin_layout Labeling
@@ -3277,15 +3300,9 @@ status open
 
 \begin_layout Plain Layout
 @int(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3296,16 +3313,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3341,15 +3351,9 @@ status open
 
 \begin_layout Plain Layout
 @uint(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3360,16 +3364,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3405,15 +3402,9 @@ status open
 
 \begin_layout Plain Layout
 @bool(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3424,16 +3415,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3448,15 +3432,9 @@ status open
 
 \begin_layout Plain Layout
 @float(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3467,16 +3445,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3526,15 +3497,9 @@ status open
 
 \begin_layout Plain Layout
 @width(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3545,22 +3510,15 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
 \end_layout
 
 \end_inset
 
-
-\end_layout
-
-\end_inset
-
 .
- Always 1 for scalars and matrices,
+ Always 1 for scalars,
  3 for 
 \begin_inset Flex Code
 status open
@@ -3582,6 +3540,21 @@ quaternion
 \end_inset
 
 .
+ Same as 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@rows(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ for matrices.
 \end_layout
 
 \begin_layout Labeling
@@ -3591,15 +3564,9 @@ status open
 
 \begin_layout Plain Layout
 @rows(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3610,16 +3577,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3631,15 +3591,9 @@ status open
 
 \begin_layout Plain Layout
 @width(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3655,15 +3609,9 @@ status open
 
 \begin_layout Plain Layout
 @cols(
-\begin_inset Flex Noun
-status open
-
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
+\noun default
 )
 \end_layout
 
@@ -3674,16 +3622,9 @@ type
 status open
 
 \begin_layout Plain Layout
-\begin_inset Flex Noun
-status open
 
-\begin_layout Plain Layout
+\noun on
 type
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -3691,6 +3632,172 @@ type
 .
  Always 1 for vectors and scalars:
  vectors are column matrices and scalars are essentially 1x1 matrices.
+\end_layout
+
+\begin_layout Section
+Construction
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@construct(
+\noun on
+type
+\noun default
+,
+\noun on
+args
+\noun default
+...)
+\end_layout
+
+\end_inset
+
+ For simple types,
+ this is equivalent to a 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+(
+\noun on
+type
+\noun default
+)
+\noun on
+expr
+\end_layout
+
+\end_inset
+
+ cast.
+ Equivalent to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+type
+\noun default
+(
+\noun on
+args
+\noun default
+...)
+\end_layout
+
+\end_inset
+
+ in GLSL.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+(
+\noun on
+type
+\noun default
+){
+\noun on
+members
+\noun default
+...}
+\end_layout
+
+\end_inset
+
+ Is used for assignment to compound types (structs and arrays).
+ Note that 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ is optional when the type can be inferred from the destination.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+members
+\noun default
+...
+\end_layout
+
+\end_inset
+
+ must match the types of the members of the compound 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+type
+\end_layout
+
+\end_inset
+
+.
+ Supports designated initializers (like in C and C++),
+ which can be in any order (like in C,
+ unlike C++).
+ Unspecified members are initialized to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+nil
+\end_layout
+
+\end_inset
+
+ (which is an any-type zero).
+\end_layout
+
+\begin_layout Section
+Generic Functions
+\end_layout
+
+\begin_layout Standard
+Ruamoko has (currently limited in that they must be intrinsic or inlinable.) support for generic
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+template might be more accurate
+\end_layout
+
+\end_inset
+
+ functions.
 \end_layout
 
 \begin_layout Chapter
