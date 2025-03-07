@@ -97,12 +97,10 @@ int yylex (void);
 
 // these tokens are common between qc and qp
 %left LOW
+%nonassoc ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left	COMMA
 %right  <op> '=' ASX

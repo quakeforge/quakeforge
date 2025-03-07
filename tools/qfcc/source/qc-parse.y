@@ -120,9 +120,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %precedence ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left			COMMA
 %right	<op>	'=' ASX

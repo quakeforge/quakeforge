@@ -115,13 +115,11 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %code requires { #define glsl_yypstate rua_yypstate }
 
 // these tokens are common between qc and glsl
-%left LOW
+%precedence LOW
+%precedence ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left			COMMA
 %right	<op>	'=' ASX

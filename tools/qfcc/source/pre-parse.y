@@ -91,12 +91,10 @@ parse_error (rua_ctx_t *ctx)
 %define api.location.type {rua_loc_t}
 
 %left LOW
+%nonassoc ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left	        COMMA
 %right          <op> '=' ASX
