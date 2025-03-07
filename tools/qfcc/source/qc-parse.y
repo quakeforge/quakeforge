@@ -116,11 +116,11 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %code requires { #define qc_yypstate rua_yypstate }
 
 // these tokens are common between qc and qp
-%left LOW
+%precedence LOW
+%precedence ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
 %nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
 %nonassoc STORAGEX
 
@@ -200,7 +200,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		struct_specifier struct_list
 %type	<spec>		enum_specifier algebra_specifier
 %type	<spec>		image_specifier sampler_specifier
-%type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
+%type	<symbol>	enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
 %type	<expr>		array_decl
 
@@ -731,7 +731,7 @@ number_as_symbol (const rua_tok_t *tok, rua_ctx_t *ctx)
 
 %}
 
-%expect 2
+%expect 0
 
 %%
 
@@ -870,7 +870,7 @@ qc_func_decls
 qc_func_decl_term
 	: qc_nocode_func ';'
 	| qc_code_func ';'
-	| qc_code_func %prec IFX
+	| qc_code_func %prec LOW
 	;
 
 qc_func_decl_list
@@ -1458,11 +1458,16 @@ sampler_specifier
 		}
 	;
 enum_specifier
-	: ENUM tag optional_enum_list
+	: ENUM tag enum_list
 		{
 			$$ = type_spec ($3->type);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
+		}
+	| ENUM tag %prec LOW
+		{
+			auto tag = find_enum ($tag);
+			$$ = type_spec (tag->type);
 		}
 	| ENUM enum_list
 		{
@@ -1470,11 +1475,6 @@ enum_specifier
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
 		}
-	;
-
-optional_enum_list
-	: enum_list
-	| /* empty */				{ $$ = find_enum ($<symbol>0); }
 	;
 
 enum_list
@@ -1518,7 +1518,7 @@ enumerator
 struct_specifier
 	: STRUCT tag struct_list { $$ = $3; }
 	| STRUCT {$<symbol>$ = 0;} struct_list { $$ = $3; }
-	| STRUCT tag
+	| STRUCT tag %prec LOW
 		{
 			symbol_t   *sym;
 
