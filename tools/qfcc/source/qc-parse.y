@@ -3323,6 +3323,8 @@ rua_init (rua_ctx_t *ctx)
 		spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
 		//FIXME look into Vulkan, or even configurable
 		spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+
+		spirv_add_capability (pr.module, SpvCapabilityShader);
 	}
 }
 
