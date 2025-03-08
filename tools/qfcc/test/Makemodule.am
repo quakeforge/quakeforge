@@ -20,6 +20,7 @@ test_progs_dat=\
 	tools/qfcc/test/chewed-alias.dat \
 	tools/qfcc/test/chewed-return.dat \
 	tools/qfcc/test/comma-expr.dat \
+	tools/qfcc/test/commutator.dat \
 	tools/qfcc/test/compound.dat \
 	tools/qfcc/test/compoundinit.dat \
 	tools/qfcc/test/const-fold-int.dat \
@@ -273,6 +274,16 @@ tools/qfcc/test/comma-expr.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(comma_expr_dep) # am--include-marker
 r_depfiles_remade += $(comma_expr_dep)
+
+tools_qfcc_test_commutator_dat_SOURCES=tools/qfcc/test/commutator.r
+commutator_obj=$(tools_qfcc_test_commutator_dat_SOURCES:.r=.o)
+commutator_dep=$(call qcautodep,$(tools_qfcc_test_commutator_dat_SOURCES))
+tools/qfcc/test/commutator.dat$(EXEEXT): $(commutator_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(commutator_obj)
+tools/qfcc/test/commutator.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(commutator_dep) # am--include-marker
+r_depfiles_remade += $(commutator_dep)
 
 tools_qfcc_test_compound_dat_SOURCES=tools/qfcc/test/compound.r
 compound_obj=$(tools_qfcc_test_compound_dat_SOURCES:.r=.o)
