@@ -69,6 +69,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 		int group = layout->group_map[layout->mask_map[0]][0];
 		return 1u << group;
 	} else {
+		type = unalias_type (type);
 		if (type->type == ev_invalid) {
 			return (1 << algebra->layout.count) - 1;
 		}
@@ -2906,22 +2907,57 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 {
 	auto srcType = get_type (e);
 	if (dstType->type == ev_invalid
-		|| srcType->type == ev_invalid
-		|| type_width (dstType) != type_width (srcType)) {
+		|| srcType->type == ev_invalid) {
 		return cast_error (e, srcType, dstType);
 	}
-	if (type_size (dstType) == type_size (srcType)) {
-		return edag_add_expr (new_alias_expr (dstType, e));
+
+	auto algebra = algebra_get (dstType);
+	if (type_width (dstType) == type_width (srcType)) {
+		if (type_size (dstType) == type_size (srcType)) {
+			return edag_add_expr (new_alias_expr (dstType, e));
+		}
+		if (is_algebra (srcType)) {
+			algebra = algebra_get (srcType);
+			auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
+			return edag_add_expr (cast_expr (dstType, alias));
+		} else {
+			auto cast = edag_add_expr (cast_expr (algebra->type, e));
+			return edag_add_expr (new_alias_expr (dstType, cast));
+		}
 	}
 
-	auto algebra = algebra_get (is_algebra (srcType) ? srcType : dstType);
-	if (is_algebra (srcType)) {
-		auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
-		return edag_add_expr (cast_expr (dstType, alias));
-	} else {
-		auto cast = edag_add_expr (cast_expr (algebra->type, e));
-		return edag_add_expr (new_alias_expr (dstType, cast));
+	auto srcAlgebra = algebra_get (srcType);
+	if (!algebra || !srcAlgebra) {
+		return cast_error (e, srcType, dstType);
 	}
+	if (algebra != srcAlgebra) {
+		internal_error (e, "casts between different algebras not implemented");
+	}
+	pr_uint_t dst_mask = get_group_mask (dstType, algebra);
+	pr_uint_t src_mask = get_group_mask (srcType, srcAlgebra);
+
+	if (!(src_mask & ~dst_mask)) {
+		// src is a strict subset of dst, so the cast is a no-op
+		return e;
+	}
+	if (!(src_mask & dst_mask)) {
+		// src and dst have no groups in common, so the result is 0
+		warning (e, "cast is always 0");
+		return edag_add_expr (new_zero_expr (algebra->type));
+	}
+
+	auto layout = &algebra->layout;
+	const expr_t *a[layout->count] = {};
+	auto src = mvec_expr (e, algebra);
+	mvec_scatter (a, src, algebra);
+
+	pr_uint_t group_mask = dst_mask & src_mask;
+	for (int i = 0; i < layout->count; i++) {
+		if (!(group_mask & (1u << i))) {
+			a[i] = 0;
+		}
+	}
+	return mvec_gather (a, algebra);
 }
 
 static void

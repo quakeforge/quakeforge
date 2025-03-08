@@ -683,6 +683,9 @@ algebra_scope (const type_t *type, symtab_t *curscope)
 algebra_t *
 algebra_get (const type_t *type)
 {
+	if (!is_algebra (type)) {
+		return nullptr;
+	}
 	type = unalias_type (type);
 	if (type->type == ev_invalid) {
 		return type->algebra;
