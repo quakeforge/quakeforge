@@ -3315,7 +3315,7 @@ static void
 rua_init (rua_ctx_t *ctx)
 {
 	ctx->language->initialized = true;
-	if (options.code.spirv && !pr.module) {
+	if (options.code.spirv && pr.module) {
 		//FIXME unhardcode
 		spirv_add_extension (pr.module, "SPV_KHR_multiview");
 		spirv_add_extinst_import (pr.module, "GLSL.std.450");
