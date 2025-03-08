@@ -364,7 +364,7 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	return proc;
 }
 
-static expr_t *
+static const expr_t *
 build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 			const expr_t **arguments, const type_t **arg_types,
 			int arg_count, int param_count, const type_t *ftype)
@@ -422,6 +422,9 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 						e = pointer_deref (e);
 					}
 					e = cast_expr (arg_types[i], e);
+					if (is_error (e)) {
+						return e;
+					}
 				}
 			}
 		}
@@ -485,6 +488,9 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 		const expr_t *arg_exprs[arg_count + 1][2];
 		auto arg_list = build_args (arg_exprs, &num_args, arguments, arg_types,
 									arg_count, param_count, ftype);
+		if (is_error (arg_list)) {
+			return arg_list;
+		}
 		for (int i = 0; i < num_args; i++) {
 			scoped_src_loc (arg_exprs[i][0]);
 			auto assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
