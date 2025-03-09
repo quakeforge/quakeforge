@@ -277,6 +277,13 @@ restore_storage (specifier_t st)
 }
 
 static specifier_t
+name_spec (specifier_t spec, const char *name)
+{
+	spec.sym = new_symbol (name);
+	return spec;
+}
+
+static specifier_t
 type_spec (const type_t *type)
 {
 	specifier_t spec = {
@@ -958,13 +965,11 @@ after_type_declarator
 		}
 	| TYPE_NAME
 		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1.sym->name);
+			$$ = name_spec ($<spec>0, $1.sym->name);
 		}
 	| OBJECT_NAME
 		{
-			$$ = $<spec>0;
-			$$.sym = new_symbol ($1.sym->name);
+			$$ = name_spec ($<spec>0, $1.sym->name);
 		}
 	;
 
@@ -1626,7 +1631,10 @@ component_decl
 			}
 		}
 	| declspecs_nosc_nots components_notype
-	| declspecs_nosc_nots { internal_error (0, "not implemented"); }
+	| declspecs_nosc_nots
+		{
+			warning (0, "useless type qualifier in empty declaration");
+		}
 	;
 
 components
@@ -1649,7 +1657,7 @@ components_notype
 	;
 
 component_notype_declarator
-	: notype_declarator { internal_error (0, "not implemented"); }
+	: notype_declarator { declare_field ($1, current_symtab, ctx); }
 	| notype_declarator ':' expr
 	| ':' expr
 	;
@@ -1751,24 +1759,29 @@ param_declarator
 
 param_declarator_starttypename
 	: param_declarator_starttypename function_params
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{ $$ = function_spec ($1, $2); }
 	| param_declarator_starttypename array_decl
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{
+			//$$ = array_spec ($1, $2);
+			//FIXME pointer semantics with bounds check if array size is
+			//specified
+			$$ = pointer_spec ($<spec>0, $1);
+		}
 	| TYPE_NAME
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{ $$ = name_spec ($<spec>0, $1.sym->name); }
 	| OBJECT_NAME
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{ $$ = name_spec ($<spec>0, $1.sym->name); }
 	;
 
 param_declarator_nostarttypename
 	: param_declarator_nostarttypename function_params
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{ $$ = function_spec ($1, $2); }
 	| param_declarator_nostarttypename array_decl
-		{ $$ = $1; internal_error (0, "not implemented"); }
+		{ $$ = array_spec ($1, $2); }
 	| '*' ptr_spec param_declarator_starttypename
-		{ $$ = $3; internal_error (0, "not implemented"); }
+		{ $$ = pointer_spec ($2, $3); }
 	| '*' ptr_spec param_declarator_nostarttypename
-		{ $$ = $3; internal_error (0, "not implemented"); }
+		{ $$ = pointer_spec ($2, $3); }
 	| '(' copy_spec param_declarator_nostarttypename ')'	{ $$ = $3; }
 	;
 
@@ -2684,7 +2697,10 @@ ivar_declarator
 	;
 
 notype_ivar_declarator
-	: notype_declarator { internal_error (0, "not implemented"); }
+	: notype_declarator
+		{
+			declare_field ($1, current_symtab, ctx);
+		}
 	| notype_declarator ':' expr
 	| ':' expr
 	;
