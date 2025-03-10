@@ -63,6 +63,7 @@ typedef struct specifier_s {
 	const type_t *type;
 	const expr_t *type_expr;
 	expr_t     *type_list;
+	const expr_t *state_expr;
 	attribute_t *attributes;
 	param_t    *params;
 	symbol_t   *sym;

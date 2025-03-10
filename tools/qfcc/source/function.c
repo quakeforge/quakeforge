@@ -968,6 +968,7 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	Hash_Add (metafuncs, func);
 	Hash_Add (function_map, func);
 apply_attributes:
+	func->state_expr = spec.state_expr;
 	if (current_target.function_attr) {
 		for (auto attr = spec.attributes; attr; attr = attr->next) {
 			if (!current_target.function_attr (attr, func)) {
@@ -1495,6 +1496,10 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 	auto sym = function_symbol (spec, ctx);
 	if (sym->type->func.num_params < 0) {
 		error (intrinsic, "intrinsic functions cannot be variadic");
+		return;
+	}
+	if (sym->metafunc->state_expr) {
+		error (intrinsic, "intrinsic functions cannot have a state expression");
 		return;
 	}
 	if (sym->metafunc->meta_type == mf_generic) {

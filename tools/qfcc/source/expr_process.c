@@ -649,9 +649,7 @@ decl_function (const type_t *type, const expr_t *t, const symbol_t *sym,
 	} else if (type && is_array (type)) {
 		error (t, "'%s' declared as function returning an array", sym->name);
 	}
-	// FIXME not sure I like this setup for @function
-	auto params = t->typ.params;
-	auto ftype = params->typ.type;
+	auto ftype = t->typ.type;
 	if (type) {
 		ftype = append_type (ftype, type);
 		ftype = find_type (ftype);
@@ -738,6 +736,14 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 		switch (t->typ.op) {
 			case QC_AT_FUNCTION:
 				type = decl_function (type, t, spec.sym, ctx);
+				if (t->typ.params) {
+					if (i + 1 != num_types) {
+						error (t->typ.params, "state expression must be on a "
+							   "function");
+					} else {
+						spec.state_expr = t->typ.params;
+					}
+				}
 				break;
 			case QC_AT_ARRAY:
 				type = decl_array (type, t, spec.sym, ctx);

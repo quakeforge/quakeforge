@@ -435,12 +435,32 @@ typename_spec (specifier_t spec, rua_ctx_t *ctx)
 }
 
 static specifier_t
+state_expr_spec (specifier_t spec, const expr_t *state_expr, rua_ctx_t *ctx)
+{
+	ex_listitem_t *last = nullptr;
+	if (spec.type_list && spec.type_list->type == ex_list
+		&& spec.type_list->list.head) {
+		last = (ex_listitem_t *) spec.type_list->list.tail;
+	}
+	if (last && last->expr->type == ex_type
+		&& last->expr->typ.op == QC_AT_FUNCTION) {
+		auto func = new_expr ();
+		*func = *last->expr;
+		// FIXME should be actual param list?
+		func->typ.params = build_state_expr (state_expr, ctx);
+		last->expr = func;
+	} else {
+		error (state_expr, "state expression on non-function");
+	}
+	return spec;
+}
+
+static specifier_t
 function_spec (specifier_t spec, param_t *parameters)
 {
 	// return type will be filled in when building the final type
-	// FIXME not sure I like this setup for @function
-	auto params = new_type_expr (parse_params (0, parameters));
-	auto type_expr = new_type_function (QC_AT_FUNCTION, params);
+	auto type_expr = new_type_function (QC_AT_FUNCTION, nullptr);
+	type_expr->typ.type = parse_params (0, parameters);
 	if (spec.type_list) {
 		expr_append_expr (spec.type_list, type_expr);
 	} else {
@@ -959,6 +979,10 @@ after_type_declarator
 		{
 			$$ = array_spec ($1, $2);
 		}
+	| after_type_declarator vector_expr
+		{
+			$$ = state_expr_spec ($1, $2, ctx);
+		}
 	| '*' ptr_spec after_type_declarator
 		{
 			$$ = pointer_spec ($2, $3);
@@ -994,6 +1018,10 @@ notype_declarator
 	| notype_declarator array_decl
 		{
 			$$ = array_spec ($1, $2);
+		}
+	| notype_declarator vector_expr
+		{
+			$$ = state_expr_spec ($1, $2, ctx);
 		}
 	| '*' ptr_spec notype_declarator
 		{
@@ -1224,28 +1252,25 @@ save_storage
 	;
 
 function_body
-	: method_optional_state_expr[state]
+	: save_storage[storage]
 		{
-			specifier_t spec = $<spec>0;
+			auto spec = $<spec>0;
 			spec.is_overload |= ctx->language->always_overload;
 			spec.sym = function_symbol (spec, ctx);
-			$<spec>$ = spec;
-		}
-	  save_storage[storage]
-		{
 			$<funcstate>$ = (funcstate_t) {
 				.function = current_func,
+				.spec = spec,
 			};
-			auto spec = $<spec>2;
 			current_func = begin_function (spec, nullptr, current_symtab, ctx);
 			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement_ns[body]
 		{
-			auto spec = $<spec>2;
-			auto funcstate = $<funcstate>4;
-			build_code_function (spec, $state, $body, ctx);
+			auto funcstate = $<funcstate>2;
+			auto spec = funcstate.spec;;
+			auto state = spec.sym->metafunc->state_expr;
+			build_code_function (spec, state, $body, ctx);
 			current_symtab = pop_scope (current_func->parameters);
 			current_func = funcstate.function;
 			restore_storage ($storage);

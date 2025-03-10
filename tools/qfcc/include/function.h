@@ -177,6 +177,7 @@ typedef struct metafunc_s {
 	mf_type_e   meta_type;			///< is this function overloaded
 	function_t *func;
 	genfunc_t  *genfunc;
+	const expr_t *state_expr;
 	const expr_t *expr;				///< inline or intrinsic
 	bool        can_inline;
 } metafunc_t;
