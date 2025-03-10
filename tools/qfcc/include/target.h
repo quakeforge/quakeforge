@@ -28,13 +28,15 @@
 #ifndef __target_h
 #define __target_h
 
+typedef struct attribute_s attribute_t;
+typedef struct expr_s expr_t;
+typedef struct rua_ctx_s rua_ctx_t;
+typedef struct specifier_s specifier_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct type_s type_t;
 typedef struct function_s function_t;
-typedef struct expr_s expr_t;
-typedef struct specifier_s specifier_t;
-typedef struct rua_ctx_s rua_ctx_t;
+typedef struct metafunc_s metafunc_t;
 
 typedef struct {
 	void      (*init) (void);
@@ -63,6 +65,8 @@ typedef struct {
 	bool      (*init_type_ok) (const type_t *dst, const type_t *src);
 
 	bool      (*setup_intrinsic_symtab) (symtab_t *symtab);
+
+	bool      (*function_attr) (const attribute_t *attr, metafunc_t *func);
 
 	unsigned    label_id;
 } target_t;

@@ -2601,6 +2601,32 @@ spirv_init (void)
 	pr.module = &module;
 }
 
+static bool
+spirv_function_attr (const attribute_t *attr, metafunc_t *func)
+{
+	int count = 0;
+	if (attr->params && attr->params->type == ex_list) {
+		count = list_count (&attr->params->list);
+	}
+	const expr_t *params[count + 1] = {};
+	if (attr->params) {
+		list_scatter (&attr->params->list, params);
+	}
+	if (strcmp (attr->name, "shader") == 0) {
+		if (func) {
+			const char *model_name = "Vertex";
+			if (count >= 1 && is_string_val (params[0])) {
+				model_name = expr_string (params[0]);
+			} else {
+				error (0, "shader attribute requires a string");
+			}
+			spirv_create_entry_point (func->name, model_name);
+		}
+		return true;
+	}
+	return false;
+}
+
 target_t spirv_target = {
 	.init = spirv_init,
 	.value_too_large = spirv_value_too_large,
@@ -2610,7 +2636,6 @@ target_t spirv_target = {
 	.create_entry_point = spirv_create_entry_point,
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
-	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 	.vector_compare = spirv_vector_compare,
 	.shift_op = spirv_shift_op,
 	// ruamoko and spirv are mostly compatible for bools other than lbool
@@ -2620,4 +2645,6 @@ target_t spirv_target = {
 	.check_types_compatible = spirv_check_types_compatible,
 	.type_assignable = spirv_types_logically_match,
 	.init_type_ok = spirv_types_logically_match,
+	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
+	.function_attr = spirv_function_attr,
 };

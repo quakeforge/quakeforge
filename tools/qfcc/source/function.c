@@ -620,7 +620,7 @@ new_metafunc (void)
 }
 
 static const type_t *
-set_func_attrs (const type_t *func_type, attribute_t *attr_list)
+set_func_type_attrs (const type_t *func_type, attribute_t **attr_list)
 {
 	if (!is_func (func_type)) {
 		internal_error (0, "not a function");
@@ -634,14 +634,23 @@ set_func_attrs (const type_t *func_type, attribute_t *attr_list)
 		.meta = ty_basic,
 		.func = func_type->func,
 	};
-	for (auto attr = attr_list; attr; attr = attr->next) {
+	for (auto a = attr_list; *a; ) {
+		auto attr = *a;
 		if (!strcmp (attr->name, "no_va_list")) {
 			new.func.no_va_list = true;
 		} else if (!strcmp (attr->name, "void_return")) {
 			new.func.void_return = true;
 		} else {
-			warning (0, "skipping unknown function attribute '%s'", attr->name);
+			if (!current_target.function_attr
+				|| !current_target.function_attr (attr, nullptr)) {
+				warning (0, "skipping unknown function attribute '%s'",
+						 attr->name);
+			} else {
+				a = &attr->next;
+				continue;
+			}
 		}
+		*a = attr->next;
 	}
 	return find_type (&new);
 }
@@ -873,7 +882,7 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
 	spec = spec_process (spec, ctx);
 	spec.sym->type = spec.type;
-	spec.sym->type = set_func_attrs (spec.sym->type, spec.attributes);
+	spec.sym->type = set_func_type_attrs (spec.sym->type, &spec.attributes);
 
 	auto type = unalias_type (spec.sym->type);
 	int num_params = type->func.num_params;
@@ -932,7 +941,7 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 				error (0, "can't overload on return types");
 				return func;
 			}
-			return func;
+			goto apply_attributes;
 		}
 
 		func = Hash_Find (function_map, name);
@@ -958,6 +967,14 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 
 	Hash_Add (metafuncs, func);
 	Hash_Add (function_map, func);
+apply_attributes:
+	if (current_target.function_attr) {
+		for (auto attr = spec.attributes; attr; attr = attr->next) {
+			if (!current_target.function_attr (attr, func)) {
+				break;
+			}
+		}
+	}
 	return func;
 }
 
