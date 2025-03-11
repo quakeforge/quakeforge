@@ -175,14 +175,14 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
 	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
+	arr_t       arr;
 
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
-	*value = arr->a;
+	*value = arr.a;
 	if ((void *) size >= data) {
-		*size = arr->size;
+		*size = arr.size;
 	}
 	if (array->cmp) {
 		heapsort (*value, *size, array->stride, array->cmp);

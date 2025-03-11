@@ -1668,8 +1668,6 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 	plparser_t  parser;
 	plarray_t  *plarray = (plarray_t *) array->data;
 	plelement_t *element = (plelement_t *) field->data;
-	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
 	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
 
 	if (array->type != QFArray) {
@@ -1682,16 +1680,18 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		parser = pl_default_parser;
 	}
 
-	arr = DARRAY_ALLOCFIXED_OBJ (arr_t, plarray->numvals * element->stride,
-								 element->alloc, context);
-	memset (arr->a, 0, arr->size);
-	// the array is allocated using bytes, but need the actual number of
-	// elements in the array
-	arr->size = arr->maxSize = plarray->numvals;
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	size_t size = plarray->numvals * element->stride;
+	arr_t       arr = {
+		.a = element->alloc (context, size),
+	};
+	memset (arr.a, 0, size);
+	// need the actual number of elements in the array
+	arr.size = arr.maxSize = plarray->numvals;
 
 	for (int i = 0; i < plarray->numvals; i++) {
 		plitem_t   *item = plarray->values[i];
-		void       *eledata = &arr->a[i * element->stride];
+		void       *eledata = &arr.a[i * element->stride];
 
 		f.offset = i;
 		if (!PL_CheckType (element->type, item->type)) {
@@ -1706,7 +1706,7 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 			}
 		}
 	}
-	*(arr_t **) data = arr;
+	*(arr_t *) data = arr;
 	return result;
 }
 
