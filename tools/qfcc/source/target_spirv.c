@@ -62,6 +62,8 @@ typedef struct spirvctx_s {
 	defspace_t *decl_space;
 	defspace_t *code_space;
 
+	const spirv_grammar_t *core;
+
 	struct DARRAY_TYPE (unsigned) type_ids;
 	struct DARRAY_TYPE (unsigned) label_ids;
 	struct DARRAY_TYPE (function_t *) func_queue;
@@ -2059,7 +2061,11 @@ static unsigned
 spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 {
 	auto intr = e->intrinsic;
-	unsigned op = spirv_instruction_opcode ("core", intr.opcode);
+	auto instruction = spirv_instruction (ctx->core, intr.opcode);
+	if (!instruction) {
+		return 0;
+	}
+	unsigned op = instruction->opcode;
 
 	int count = list_count (&intr.operands);
 	int start = 0;
@@ -2068,8 +2074,17 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	list_scatter (&intr.operands, operands);
 	if (op == SpvOpExtInst) {
 		auto set = expr_string (operands[0]);
+		auto extset = spirv_grammar (set);
+		if (!extset) {
+			error (operands[0], "unrecognized extension set %s", set);
+			return 0;
+		}
 		op_ids[0] = spirv_extinst_import (ctx->module, set, ctx);
-		op_ids[1] = spirv_instruction_opcode (set, operands[1]);
+		auto extinst = spirv_instruction (extset, operands[1]);
+		if (!extinst) {
+			return 0;
+		}
+		op_ids[1] = extinst->opcode;
 		start = 2;
 	}
 	for (int i = start; i < count; i++) {
@@ -2161,12 +2176,16 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.module = pr->module,
 		.code_space = defspace_new (ds_backed),
 		.decl_space = defspace_new (ds_backed),
+		.core = spirv_grammar ("core"),
 		.type_ids = DARRAY_STATIC_INIT (64),
 		.label_ids = DARRAY_STATIC_INIT (64),
 		.func_queue = DARRAY_STATIC_INIT (16),
 		.strpool = strpool_new (),
 		.id = 0,
 	};
+	if (!ctx.core) {
+		internal_error (0, "could not find core grammar");
+	}
 	auto space = defspace_new (ds_backed);
 	auto header = spirv_new_insn (0, 5, space);
 	INSN (header, 0) = SpvMagicNumber;
