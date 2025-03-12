@@ -139,7 +139,7 @@ is_block_terminated (defspace_t *code_space)
 }
 
 static def_t *
-spirv_new_insn (int op, int size, defspace_t *space)
+spirv_new_insn (int op, int size, defspace_t *space, spirvctx_t *ctx)
 {
 	auto insn = new_def (nullptr, nullptr, space, sc_static);
 	insn->offset = defspace_alloc_highwater (space, size);
@@ -149,35 +149,36 @@ spirv_new_insn (int op, int size, defspace_t *space)
 }
 
 static def_t *
-spirv_str_insn (int op, int offs, int extra, const char *str, defspace_t *space)
+spirv_str_insn (int op, int offs, int extra, const char *str,
+				defspace_t *space, spirvctx_t *ctx)
 {
 	int len = strlen (str) + 1;
 	int str_size = RUP(len, 4) / 4;
 	int size = offs + str_size + extra;
-	auto insn = spirv_new_insn (op, size, space);
+	auto insn = spirv_new_insn (op, size, space, ctx);
 	INSN (insn, offs + str_size - 1) = 0;
 	memcpy (&INSN (insn, offs), str, len);
 	return insn;
 }
 
 static void
-spirv_Capability (SpvCapability capability, defspace_t *space)
+spirv_Capability (SpvCapability capability, defspace_t *space, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpCapability, 2, space);
+	auto insn = spirv_new_insn (SpvOpCapability, 2, space, ctx);
 	INSN (insn, 1) = capability;
 }
 
 static void
-spirv_Extension (const char *ext, defspace_t *space)
+spirv_Extension (const char *ext, defspace_t *space, spirvctx_t *ctx)
 {
-	spirv_str_insn (SpvOpExtension, 1, 0, ext, space);
+	spirv_str_insn (SpvOpExtension, 1, 0, ext, space, ctx);
 }
 
 static unsigned
 spirv_ExtInstImport (const char *imp, spirvctx_t *ctx)
 {
 	auto space = ctx->module->extinst_imports->space;
-	auto insn = spirv_str_insn (SpvOpExtInstImport, 2, 0, imp, space);
+	auto insn = spirv_str_insn (SpvOpExtInstImport, 2, 0, imp, space, ctx);
 	int id = spirv_id (ctx);
 	INSN (insn, 1) = id;
 	return id;
@@ -204,9 +205,9 @@ spirv_extinst_import (module_t *module, const char *import, spirvctx_t *ctx)
 
 static void
 spirv_MemoryModel (SpvAddressingModel addressing, SpvMemoryModel memory,
-				   defspace_t *space)
+				   defspace_t *space, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpMemoryModel, 3, space);
+	auto insn = spirv_new_insn (SpvOpMemoryModel, 3, space, ctx);
 	INSN (insn, 1) = addressing;
 	INSN (insn, 2) = memory;
 }
@@ -219,7 +220,7 @@ spirv_String (const char *name, spirvctx_t *ctx)
 		return strid->id;
 	}
 	auto strings = ctx->module->strings;
-	auto insn = spirv_str_insn (SpvOpString, 2, 0, name, strings);
+	auto insn = spirv_str_insn (SpvOpString, 2, 0, name, strings, ctx);
 	strid->id = spirv_id (ctx);
 	INSN (insn, 1) = strid->id;
 	return strid->id;
@@ -230,7 +231,7 @@ spirv_Source (unsigned lang, unsigned version, unsigned srcid,
 			  const char *src_str, spirvctx_t *ctx)
 {
 	auto strings = ctx->module->strings;
-	auto insn = spirv_new_insn (SpvOpSource, 4, strings);
+	auto insn = spirv_new_insn (SpvOpSource, 4, strings, ctx);
 	INSN (insn, 1) = lang;
 	INSN (insn, 2) = version;
 	INSN (insn, 3) = srcid;
@@ -244,7 +245,7 @@ spirv_Name (unsigned id, const char *name, spirvctx_t *ctx)
 	}
 	int len = strlen (name) + 1;
 	auto names = ctx->module->names;
-	auto insn = spirv_new_insn (SpvOpName, 2 + RUP(len, 4) / 4, names);
+	auto insn = spirv_new_insn (SpvOpName, 2 + RUP(len, 4) / 4, names, ctx);
 	INSN (insn, 1) = id;
 	memcpy (&INSN (insn, 2), name, len);
 }
@@ -253,7 +254,7 @@ static void
 spirv_Decorate (unsigned id, SpvDecoration decoration, spirvctx_t *ctx)
 {
 	auto decorations = ctx->module->decorations;
-	auto insn = spirv_new_insn (SpvOpDecorate, 3, decorations);
+	auto insn = spirv_new_insn (SpvOpDecorate, 3, decorations, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = decoration;
 }
@@ -267,7 +268,7 @@ spirv_DecorateLiteral (unsigned id, SpvDecoration decoration, void *literal,
 	}
 	int size = pr_type_size[type];
 	auto decorations = ctx->module->decorations;
-	auto insn = spirv_new_insn (SpvOpDecorate, 3 + size, decorations);
+	auto insn = spirv_new_insn (SpvOpDecorate, 3 + size, decorations, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = decoration;
 	if (type == ev_int) {
@@ -280,7 +281,7 @@ spirv_MemberDecorate (unsigned id, unsigned member,
 					  SpvDecoration decoration, spirvctx_t *ctx)
 {
 	auto decorations = ctx->module->decorations;
-	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4, decorations);
+	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4, decorations, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = member;
 	INSN (insn, 3) = decoration;
@@ -296,7 +297,8 @@ spirv_MemberDecorateLiteral (unsigned id, unsigned member,
 	}
 	int size = pr_type_size[type];
 	auto decorations = ctx->module->decorations;
-	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4 + size, decorations);
+	auto insn = spirv_new_insn (SpvOpMemberDecorate, 4 + size,
+								decorations, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = member;
 	INSN (insn, 3) = decoration;
@@ -357,7 +359,8 @@ spirv_MemberName (unsigned id, unsigned member, const char *name,
 {
 	int len = strlen (name) + 1;
 	auto names = ctx->module->names;
-	auto insn = spirv_new_insn (SpvOpMemberName, 3 + RUP(len, 4) / 4, names);
+	auto insn = spirv_new_insn (SpvOpMemberName, 3 + RUP(len, 4) / 4,
+								names, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = member;
 	memcpy (&INSN (insn, 3), name, len);
@@ -367,7 +370,7 @@ static void
 spirv_DebugLine (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned file_id = spirv_String (GETSTR (e->loc.file), ctx);
-	auto insn = spirv_new_insn (SpvOpLine, 4, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpLine, 4, ctx->code_space, ctx);
 	INSN (insn, 1) = file_id;
 	INSN (insn, 2) = e->loc.line;
 	INSN (insn, 3) = e->loc.column;
@@ -379,7 +382,7 @@ static unsigned
 spirv_TypeVoid (spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeVoid, 2, globals);
+	auto insn = spirv_new_insn (SpvOpTypeVoid, 2, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	return INSN (insn, 1);
 }
@@ -388,7 +391,7 @@ static unsigned
 spirv_TypeInt (unsigned bitwidth, bool is_signed, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeInt, 4, globals);
+	auto insn = spirv_new_insn (SpvOpTypeInt, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	INSN (insn, 2) = bitwidth;
 	INSN (insn, 3) = is_signed;
@@ -399,7 +402,7 @@ static unsigned
 spirv_TypeFloat (unsigned bitwidth, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeFloat, 3, globals);
+	auto insn = spirv_new_insn (SpvOpTypeFloat, 3, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	INSN (insn, 2) = bitwidth;
 	return INSN (insn, 1);
@@ -409,7 +412,7 @@ static unsigned
 spirv_TypeVector (unsigned base, unsigned width, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeVector, 4, globals);
+	auto insn = spirv_new_insn (SpvOpTypeVector, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	INSN (insn, 2) = base;
 	INSN (insn, 3) = width;
@@ -420,7 +423,7 @@ static unsigned
 spirv_TypeMatrix (unsigned col_type, unsigned columns, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeMatrix, 4, globals);
+	auto insn = spirv_new_insn (SpvOpTypeMatrix, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	INSN (insn, 2) = col_type;
 	INSN (insn, 3) = columns;
@@ -434,7 +437,7 @@ spirv_TypePointer (const type_t *type, spirvctx_t *ctx)
 	unsigned rid = spirv_Type (rtype, ctx);
 
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypePointer, 4, globals);
+	auto insn = spirv_new_insn (SpvOpTypePointer, 4, globals, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	INSN (insn, 2) = type->fldptr.tag;
 	INSN (insn, 3) = rid;
@@ -447,7 +450,7 @@ spirv_type_array (unsigned tid, unsigned count, spirvctx_t *ctx)
 	unsigned id = spirv_id (ctx);
 	unsigned count_id = spirv_value (new_int_expr (count, false), ctx);
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeArray, 4, globals);
+	auto insn = spirv_new_insn (SpvOpTypeArray, 4, globals, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = tid;
 	INSN (insn, 3) = count_id;
@@ -459,7 +462,7 @@ spirv_type_runtime_array (unsigned tid, spirvctx_t *ctx)
 {
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeRuntimeArray, 3, globals);
+	auto insn = spirv_new_insn (SpvOpTypeRuntimeArray, 3, globals, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = tid;
 	return id;
@@ -487,7 +490,7 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
 	auto insn = spirv_new_insn (SpvOpTypeStruct,
-								2 + num_members, globals);
+								2 + num_members, globals, ctx);
 	INSN (insn, 1) = id;
 	memcpy (&INSN (insn, 2), member_types, sizeof (member_types));
 
@@ -542,7 +545,7 @@ spirv_TypeBool (const type_t *type, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpTypeBool, 2, globals);
+	auto insn = spirv_new_insn (SpvOpTypeBool, 2, globals, ctx);
 	INSN (insn, 1) = id;
 	spirv_mirror_bool (type, id, ctx);
 	return id;
@@ -557,7 +560,7 @@ spirv_TypeImage (image_t *image, spirvctx_t *ctx)
 	unsigned tid = spirv_Type (image->sample_type, ctx);
 	auto globals = ctx->module->globals;
 	image->id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpTypeImage, 9, globals);
+	auto insn = spirv_new_insn (SpvOpTypeImage, 9, globals, ctx);
 	INSN (insn, 1) = image->id;
 	INSN (insn, 2) = tid;
 	INSN (insn, 3) = image->dim;
@@ -574,7 +577,7 @@ spirv_TypeSampledImage (unsigned image_id, spirvctx_t *ctx)
 {
 	auto globals = ctx->module->globals;
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpTypeSampledImage, 3, globals);
+	auto insn = spirv_new_insn (SpvOpTypeSampledImage, 3, globals, ctx);
 	INSN (insn, 1) = id;
 	INSN (insn, 2) = image_id;
 	return id;
@@ -614,7 +617,8 @@ spirv_TypeFunction (symbol_t *fsym, spirvctx_t *ctx)
 
 	unsigned ft_id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpTypeFunction, 3 + num_params, globals);
+	auto insn = spirv_new_insn (SpvOpTypeFunction, 3 + num_params,
+								globals, ctx);
 	INSN (insn, 1) = ft_id;
 	INSN (insn, 2) = ret_type;
 	for (int i = 0; i < num_params; i++) {
@@ -701,7 +705,7 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 static unsigned
 spirv_DeclLabel (spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->decl_space);
+	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->decl_space, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	return INSN (insn, 1);
 }
@@ -709,7 +713,7 @@ spirv_DeclLabel (spirvctx_t *ctx)
 static unsigned
 spirv_Label (spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
 	INSN (insn, 1) = spirv_id (ctx);
 	return INSN (insn, 1);
 }
@@ -717,7 +721,7 @@ spirv_Label (spirvctx_t *ctx)
 static unsigned
 spirv_LabelId (unsigned id, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpLabel, 2, ctx->code_space, ctx);
 	INSN (insn, 1) = id;
 	return id;
 }
@@ -725,7 +729,7 @@ spirv_LabelId (unsigned id, spirvctx_t *ctx)
 static void
 spirv_LoopMerge (unsigned merge, unsigned cont, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpLoopMerge, 4, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpLoopMerge, 4, ctx->code_space, ctx);
 	INSN (insn, 1) = merge;
 	INSN (insn, 2) = cont;
 	INSN (insn, 3) = SpvLoopControlMaskNone;
@@ -734,7 +738,7 @@ spirv_LoopMerge (unsigned merge, unsigned cont, spirvctx_t *ctx)
 static void
 spirv_SelectionMerge (unsigned merge, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpSelectionMerge, 3, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpSelectionMerge, 3, ctx->code_space, ctx);
 	INSN (insn, 1) = merge;
 	INSN (insn, 2) = SpvSelectionControlMaskNone;
 }
@@ -742,7 +746,7 @@ spirv_SelectionMerge (unsigned merge, spirvctx_t *ctx)
 static void
 spirv_Branch (unsigned label, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpBranch, 2, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpBranch, 2, ctx->code_space, ctx);
 	INSN (insn, 1) = label;
 }
 
@@ -764,7 +768,8 @@ static void
 spirv_BranchConditional (bool not, unsigned test, unsigned true_label,
 						 unsigned false_label, spirvctx_t *ctx)
 {
-	auto insn = spirv_new_insn (SpvOpBranchConditional, 4, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpBranchConditional, 4,
+								ctx->code_space, ctx);
 	INSN (insn, 1) = test;
 	INSN (insn, 2) = not ? false_label : true_label;
 	INSN (insn, 3) = not ? true_label : false_label;
@@ -773,20 +778,21 @@ spirv_BranchConditional (bool not, unsigned test, unsigned true_label,
 static void
 spirv_Unreachable (spirvctx_t *ctx)
 {
-	spirv_new_insn (SpvOpUnreachable, 1, ctx->code_space);
+	spirv_new_insn (SpvOpUnreachable, 1, ctx->code_space, ctx);
 }
 
 static void
 spirv_FunctionEnd (spirvctx_t *ctx)
 {
-	spirv_new_insn (SpvOpFunctionEnd, 1, ctx->code_space);
+	spirv_new_insn (SpvOpFunctionEnd, 1, ctx->code_space, ctx);
 }
 
 static unsigned
 spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 {
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpFunctionParameter, 3, ctx->decl_space);
+	auto insn = spirv_new_insn (SpvOpFunctionParameter, 3,
+								ctx->decl_space, ctx);
 	INSN (insn, 1) = spirv_Type (type, ctx);
 	INSN (insn, 2) = id;
 	spirv_Name (id, name, ctx);
@@ -851,7 +857,7 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	unsigned tid = spirv_Type (type, ctx);
 	unsigned id = spirv_id (ctx);
 	//FIXME init value
-	auto insn = spirv_new_insn (SpvOpVariable, 4, space);
+	auto insn = spirv_new_insn (SpvOpVariable, 4, space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = storage;
@@ -867,7 +873,7 @@ spirv_undef (const type_t *type, spirvctx_t *ctx)
 {
 	unsigned spirv_Type = spirv_type_id (type, ctx);
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpUndef, 3, ctx->module->globals);
+	auto insn = spirv_new_insn (SpvOpUndef, 3, ctx->module->globals, ctx);
 	INSN (insn, 1) = spirv_Type;
 	INSN (insn, 2) = id;
 	return id;
@@ -901,7 +907,7 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	auto ret_type = func->type->func.ret_type;
 	unsigned func_id = spirv_function_ref (func, ctx);
 
-	auto insn = spirv_new_insn (SpvOpFunction, 5, ctx->decl_space);
+	auto insn = spirv_new_insn (SpvOpFunction, 5, ctx->decl_space, ctx);
 	INSN (insn, 1) = spirv_Type (ret_type, ctx);
 	INSN (insn, 2) = func_id;
 	INSN (insn, 3) = 0;
@@ -942,10 +948,11 @@ spirv_function (function_t *func, spirvctx_t *ctx)
 	}
 	if (!is_block_terminated (ctx->code_space)) {
 		if (is_void (ret_type)) {
-			spirv_new_insn (SpvOpReturn, 1, ctx->code_space);
+			spirv_new_insn (SpvOpReturn, 1, ctx->code_space, ctx);
 		} else {
 			unsigned ret_id = spirv_undef (ret_type, ctx);
-			auto insn = spirv_new_insn (SpvOpReturnValue, 2, ctx->code_space);
+			auto insn = spirv_new_insn (SpvOpReturnValue, 2,
+										ctx->code_space, ctx);
 			INSN (insn, 1) = ret_id;
 		}
 	}
@@ -977,7 +984,8 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 	auto linkage = ctx->module->entry_point_space;
 	auto interface_syms = &entrypoint->interface_syms;
 	int count = interface_syms->size;
-	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count, linkage);
+	auto insn = spirv_new_insn (SpvOpEntryPoint, iface_start + count,
+								linkage, ctx);
 	INSN (insn, 1) = entrypoint->model;
 	INSN (insn, 2) = func_id;
 	memcpy (&INSN (insn, 3), entrypoint->name, len);
@@ -987,14 +995,14 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 
 	auto exec_modes = ctx->module->exec_modes;
 	if (entrypoint->invocations) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = SpvExecutionModeInvocations;
 		INSN (insn, 3) = expr_integral (entrypoint->invocations);
 	}
 	// assume that if 1 is set, all are set
 	if (entrypoint->local_size[0]) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 6, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 6, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		//FIXME LocalSizeId
 		INSN (insn, 2) = SpvExecutionModeLocalSize;
@@ -1003,48 +1011,48 @@ spirv_EntryPoint (entrypoint_t *entrypoint, spirvctx_t *ctx)
 		INSN (insn, 5) = expr_integral (entrypoint->local_size[2]);
 	}
 	if (entrypoint->primitive_in) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (entrypoint->primitive_in);
 	}
 	if (entrypoint->primitive_out) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (entrypoint->primitive_out);
 	}
 	if (entrypoint->max_vertices) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 4, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = SpvExecutionModeOutputVertices;
 		INSN (insn, 3) = expr_integral (entrypoint->max_vertices);
 	}
 	if (entrypoint->spacing) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (entrypoint->spacing);
 	}
 	if (entrypoint->order) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (entrypoint->order);
 	}
 	if (entrypoint->frag_depth) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (entrypoint->frag_depth);
 	}
 	if (entrypoint->point_mode) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = SpvExecutionModePointMode;
 	}
 	if (entrypoint->early_fragment_tests) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = SpvExecutionModeEarlyFragmentTests;
 	}
 	for (auto m = entrypoint->modes; m; m = m->next) {
-		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes);
+		insn = spirv_new_insn (SpvOpExecutionMode, 3, exec_modes, ctx);
 		INSN (insn, 1) = func_id;
 		INSN (insn, 2) = expr_integral (m->params);
 	}
@@ -1116,7 +1124,7 @@ spirv_generate_matrix (const expr_t *e, spirvctx_t *ctx)
 	int tid = spirv_Type (mat_type, ctx);
 	int id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpCompositeConstruct, 3 + count,
-								ctx->code_space);
+								ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < count; i++) {
@@ -1280,7 +1288,7 @@ spirv_cast (const expr_t *e, spirvctx_t *ctx)
 	unsigned cid = spirv_emit_expr (e->expr.e1, ctx);
 	unsigned tid = spirv_Type (dst_type, ctx);
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4, ctx->code_space);
+	auto insn = spirv_new_insn (op, 4, ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = cid;
@@ -1325,13 +1333,13 @@ spirv_uexpr (const expr_t *e, spirvctx_t *ctx)
 	unsigned id;
 	if (e->expr.constant) {
 		auto globals = ctx->module->globals;
-		auto insn = spirv_new_insn (SpvOpSpecConstantOp, 5, globals);
+		auto insn = spirv_new_insn (SpvOpSpecConstantOp, 5, globals, ctx);
 		INSN (insn, 1) = tid;
 		INSN (insn, 2) = id = spirv_id (ctx);
 		INSN (insn, 3) = spv_op->op;
 		INSN (insn, 4) = uid;
 	} else {
-		auto insn = spirv_new_insn (spv_op->op, 4, ctx->code_space);
+		auto insn = spirv_new_insn (spv_op->op, 4, ctx->code_space, ctx);
 		INSN (insn, 1) = tid;
 		INSN (insn, 2) = id = spirv_id (ctx);
 		INSN (insn, 3) = uid;
@@ -1397,14 +1405,14 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 	unsigned id;
 	if (e->expr.constant) {
 		auto globals = ctx->module->globals;
-		auto insn = spirv_new_insn (SpvOpSpecConstantOp, 6, globals);
+		auto insn = spirv_new_insn (SpvOpSpecConstantOp, 6, globals, ctx);
 		INSN (insn, 1) = tid;
 		INSN (insn, 2) = id = spirv_id (ctx);
 		INSN (insn, 3) = spv_op->op;
 		INSN (insn, 4) = bid1;
 		INSN (insn, 5) = bid2;
 	} else {
-		auto insn = spirv_new_insn (spv_op->op, 5, ctx->code_space);
+		auto insn = spirv_new_insn (spv_op->op, 5, ctx->code_space, ctx);
 		INSN (insn, 1) = tid;
 		INSN (insn, 2) = id = spirv_id (ctx);
 		INSN (insn, 3) = bid1;
@@ -1475,7 +1483,7 @@ spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 	auto space = ctx->module->globals;
 	int tid = spirv_Type (value->type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + width, space);
+	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + width, space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < width; i++) {
@@ -1500,7 +1508,7 @@ spirv_matrix_value (const ex_value_t *value, spirvctx_t *ctx)
 	auto space = ctx->module->globals;
 	int tid = spirv_Type (value->type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + count, space);
+	auto insn = spirv_new_insn (SpvOpConstantComposite, 3 + count, space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < count; i++) {
@@ -1515,7 +1523,7 @@ spirv_nil (const expr_t *e, spirvctx_t *ctx)
 	unsigned tid = spirv_Type (e->nil, ctx);
 	unsigned id = spirv_id (ctx);
 	auto globals = ctx->module->globals;
-	auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals);
+	auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	return id;
@@ -1555,11 +1563,11 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 		}
 		auto globals = ctx->module->globals;
 		if (op == SpvOpConstant && !val) {
-			auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals);
+			auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals, ctx);
 			INSN (insn, 1) = tid;
 			INSN (insn, 2) = value->id = spirv_id (ctx);
 		} else {
-			auto insn = spirv_new_insn (op, 3 + val_size, globals);
+			auto insn = spirv_new_insn (op, 3 + val_size, globals, ctx);
 			INSN (insn, 1) = tid;
 			INSN (insn, 2) = value->id = spirv_id (ctx);
 			if (val_size > 0) {
@@ -1590,7 +1598,7 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 	int tid = spirv_Type (type, ctx);
 	int id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpCompositeConstruct, 3 + num_ele,
-								ctx->code_space);
+								ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < num_ele; i++) {
@@ -1610,7 +1618,7 @@ spirv_alias (const expr_t *e, spirvctx_t *ctx)
 	unsigned eid = spirv_emit_expr (expr, ctx);
 	int tid = spirv_Type (type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpBitcast, 4, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpBitcast, 4, ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = eid;
@@ -1692,7 +1700,7 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 
 	int acc_type_id = spirv_Type (*acc_type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space);
+	auto insn = spirv_new_insn (op, 4 + num_obj, ctx->code_space, ctx);
 	INSN (insn, 1) = acc_type_id;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = base_id;
@@ -1749,7 +1757,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		internal_error (e, "invalid assignment?");
 	}
 
-	auto insn = spirv_new_insn (SpvOpStore, 3, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpStore, 3, ctx->code_space, ctx);
 	INSN (insn, 1) = dst;
 	INSN (insn, 2) = src;
 	return 0;
@@ -1794,7 +1802,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 
 	unsigned id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpFunctionCall, 4 + num_args,
-								ctx->code_space);
+								ctx->code_space, ctx);
 	INSN(insn, 1) = ret_type_id;
 	INSN(insn, 2) = id;
 	INSN(insn, 3) = func_id;
@@ -1830,10 +1838,10 @@ spirv_return (const expr_t *e, spirvctx_t *ctx)
 {
 	if (e->retrn.ret_val) {
 		unsigned ret_id = spirv_emit_expr (e->retrn.ret_val, ctx);
-		auto insn = spirv_new_insn (SpvOpReturnValue, 2, ctx->code_space);
+		auto insn = spirv_new_insn (SpvOpReturnValue, 2, ctx->code_space, ctx);
 		INSN (insn, 1) = ret_id;
 	} else {
-		spirv_new_insn (SpvOpReturn, 1, ctx->code_space);
+		spirv_new_insn (SpvOpReturn, 1, ctx->code_space, ctx);
 	}
 	return 0;
 }
@@ -1845,7 +1853,8 @@ spirv_swizzle (const expr_t *e, spirvctx_t *ctx)
 	unsigned src_id = spirv_emit_expr (e->swizzle.src, ctx);
 	unsigned tid = spirv_Type (e->swizzle.type, ctx);
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpVectorShuffle, 5 + count, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpVectorShuffle, 5 + count,
+								ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = src_id;
@@ -1909,7 +1918,7 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 	int tid = spirv_Type (res_type, ctx);
 	int id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpCompositeConstruct, 3 + nids,
-								ctx->code_space);
+								ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < nids; i++) {
@@ -1960,7 +1969,7 @@ spirv_cond (const expr_t *e, spirvctx_t *ctx)
 	auto type = get_type (e);
 	unsigned tid = spirv_Type (type, ctx);
 	unsigned id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpSelect, 6, ctx->code_space);
+	auto insn = spirv_new_insn (SpvOpSelect, 6, ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = test_id;
@@ -1983,7 +1992,7 @@ spirv_field_array (const expr_t *e, spirvctx_t *ctx)
 		int res_type_id = spirv_Type (res_type, ctx);
 
 		id = spirv_id (ctx);
-		auto insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space);
+		auto insn = spirv_new_insn (SpvOpLoad, 4, ctx->code_space, ctx);
 		INSN (insn, 1) = res_type_id;
 		INSN (insn, 2) = id;
 		INSN (insn, 3) = ptr_id;
@@ -2096,7 +2105,7 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 	unsigned tid = spirv_Type (intr.res_type, ctx);
 	unsigned id = spirv_id (ctx);
 
-	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space);
+	auto insn = spirv_new_insn (op, 1 + start + count, ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	memcpy (&INSN (insn, 3), op_ids, count * sizeof (op_ids[0]));
@@ -2187,7 +2196,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		internal_error (0, "could not find core grammar");
 	}
 	auto space = defspace_new (ds_backed);
-	auto header = spirv_new_insn (0, 5, space);
+	auto header = spirv_new_insn (0, 5, space, &ctx);
 	INSN (header, 0) = SpvMagicNumber;
 	INSN (header, 1) = SpvVersion;
 	INSN (header, 2) = 0;	// FIXME get a magic number for QFCC
@@ -2200,17 +2209,17 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 
 	auto mod = pr->module;
 	for (auto cap = pr->module->capabilities.head; cap; cap = cap->next) {
-		spirv_Capability (expr_uint (cap->expr), space);
+		spirv_Capability (expr_uint (cap->expr), space, &ctx);
 	}
 	for (auto ext = pr->module->extensions.head; ext; ext = ext->next) {
-		spirv_Extension (expr_string (ext->expr), space);
+		spirv_Extension (expr_string (ext->expr), space, &ctx);
 	}
 	if (mod->extinst_imports) {
 		ADD_DATA (space, mod->extinst_imports->space);
 	}
 
 	spirv_MemoryModel (expr_uint (pr->module->addressing_model),
-					   expr_uint (pr->module->memory_model), space);
+					   expr_uint (pr->module->memory_model), space, &ctx);
 
 
 	auto srcid = spirv_String (pr->src_name, &ctx);
