@@ -37,6 +37,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
 
 ALLOC_STATE (attribute_t, attributes);
 
@@ -79,4 +80,36 @@ new_attribute(const char *name, const expr_t *params)
 		return nullptr;
 	}
 	return new_attrfunc (name, params);
+}
+
+attribute_t *
+expr_attributes (const expr_t *attrs, attribute_t *append_attrs)
+{
+	if (!attrs || attrs->type != ex_list) {
+		internal_error (attrs, "not a list expression");
+	}
+	attribute_t *attributes = nullptr;
+	attribute_t **a = &attributes;
+	for (auto l = attrs->list.head; l; l = l->next) {
+		auto e = l->expr;
+		if (e->type == ex_symbol) {
+			// simple name attribute
+			auto sym = e->symbol;
+			*a = new_attribute (sym->name, nullptr);
+		} else if (e->type == ex_branch && e->branch.type == pr_branch_call
+				   && e->branch.target
+				   && e->branch.target->type == ex_symbol) {
+			if (!e->branch.args) {
+				error (e, "function-style attributes require parameters");
+				continue;
+			}
+			auto sym = e->branch.target->symbol;
+			*a = new_attribute (sym->name, e->branch.args);
+		} else {
+			error (e, "not a simple name");
+			continue;
+		}
+		a = &(*a)->next;
+	}
+	return attributes;
 }

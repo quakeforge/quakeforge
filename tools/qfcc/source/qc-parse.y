@@ -171,8 +171,9 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
 %type	<spec>		handle
-%type	<spec>		declspecs declspecs_nosc declspecs_nots
-%type	<spec>		declspecs_ts
+%type	<mut_expr>	attr_list attr
+%type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
+%type	<spec>		declspecs declspecs_nosc declspecs_nots declspecs_ts
 %type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
 %type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
 %type	<spec>		declarator notype_declarator after_type_declarator
@@ -200,7 +201,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		image_specifier sampler_specifier
 %type	<symbol>	enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
-%type	<expr>		array_decl
+%type	<expr>		array_decl index_expr
 
 %type	<expr>		const string
 
@@ -215,11 +216,10 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type   <expr>		expr
 %type	<expr>		compound_init
 %type	<expr>		opt_cast
-%type   <mut_expr>	element_list expr_list
+%type   <mut_expr>	element_list expr_list vector_expr
 %type	<designator> designator designator_spec
 %type	<element>	element
 %type	<expr>		method_optional_state_expr optional_state_expr
-%type	<expr>		vector_expr
 %type	<expr>		intrinsic
 %type	<expr>		statement
 %type	<mut_expr>	statement_list compound_statement compound_statement_ns
@@ -274,6 +274,13 @@ restore_storage (specifier_t st)
 	}
 	generic_block = st.is_generic;
 	current_storage = st.storage;
+}
+
+static specifier_t
+attr_spec (specifier_t spec, const expr_t *attrs)
+{
+	spec.attributes = expr_attributes (attrs, spec.attributes);
+	return spec;
 }
 
 static specifier_t
@@ -801,24 +808,50 @@ external_def
 	;
 
 fndef
-	: declspecs_ts declarator function_body
-	| declspecs_nots notype_declarator function_body
+	: attr_declspecs_ts declarator function_body
+	| attr_declspecs_nots notype_declarator function_body
 	| defspecs notype_declarator function_body
 	;
 
 datadef
 	: defspecs notype_initdecls ';'			{ decl_process ($2, ctx); }
-	| declspecs_nots notype_initdecls ';'	{ decl_process ($2, ctx); }
-	| declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
-	| declspecs_ts qc_func_params
+	| attr_declspecs_nots notype_initdecls ';'	{ decl_process ($2, ctx); }
+	| attr_declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
+	| attr_declspecs_ts qc_func_params
 		{
 			$<spec>$ = qc_function_spec ($1, $2);
 		}
 	  qc_func_decls
-	| declspecs ';'
+	| attr_declspecs ';'
+	| attr_list ';'
 	| error ';'
 	| error '}'
 	| ';'
+	;
+
+attr_declspecs
+	: attr_list declspecs		{ $$ = attr_spec ($2, $1); }
+	| declspecs
+	;
+
+attr_declspecs_nots
+	: attr_list declspecs_nots	{ $$ = attr_spec ($2, $1); }
+	| declspecs_nots
+	;
+
+attr_declspecs_ts
+	: attr_list declspecs_ts	{ $$ = attr_spec ($2, $1); }
+	| declspecs_ts
+	;
+
+attr_list
+	: attr_list attr			{ $$ = expr_append_list ($1, &$2->list); }
+	| attr						{ $$ = $1; }
+	;
+
+attr
+	: index_expr				{ $$ = new_list_expr ($1); }
+	| vector_expr				{ $$ = $1; }
 	;
 
 qc_func_params
@@ -1237,10 +1270,8 @@ typespec_nonreserved
 	;
 
 defspecs
-	: /* empty */
-		{
-			$$ = (specifier_t) {};
-		}
+	: /* empty */				{ $$ = (specifier_t) {}; }
+	| attr_list					{ $$ = attr_spec ((specifier_t) {}, $1); }
 	;
 
 save_storage
@@ -1292,7 +1323,7 @@ function_body
 	;
 
 intrinsic
-	: INTRINSIC '(' expr_list ')'	{ $$ = new_intrinsic_expr ($3); }
+	: INTRINSIC '(' expr_list ')' %prec LOW { $$ = new_intrinsic_expr ($3); }
 	| INTRINSIC '(' expr_list ')' vector_expr
 		{
 			auto e = new_intrinsic_expr ($3);
@@ -1815,7 +1846,7 @@ typename
 	;
 
 array_decl
-	: '[' expr ']'				{ $$ = $expr; }
+	: index_expr
 	| '[' ']'					{ $$ = 0; }
 	;
 
@@ -1929,7 +1960,7 @@ designator
 designator_spec
 	: '.' ident_expr	{ $$ = new_designator ($2, 0); }
 	| '.' NAME			{ $$ = new_designator (new_symbol_expr ($2), 0); }
-	| '[' expr ']'      { $$ = new_designator (0, $2); }
+	| index_expr		{ $$ = new_designator (0, $1); }
 	;
 
 optional_comma
@@ -2192,7 +2223,7 @@ unary_expr
 	| const						{ $$ = $1; }
 	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = new_call_expr ($1, $3, nullptr); }
-	| unary_expr '[' expr ']'		{ $$ = new_array_expr ($1, $3); }
+	| unary_expr index_expr			{ $$ = new_array_expr ($1, $2); }
 	| unary_expr '.' ident_expr		{ $$ = new_field_expr ($1, $3); }
 	| unary_expr '.' unary_expr		{ $$ = new_field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = new_incop_expr ($1, $2, false); }
@@ -2226,6 +2257,10 @@ ident_expr
 	: OBJECT_NAME				{ $$ = new_symbol_expr ($1.sym); }
 	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
 	| TYPE_NAME					{ $$ = new_symbol_expr ($1.sym); }
+	;
+
+index_expr
+	: '[' expr ']'				{ $$ = $expr; }
 	;
 
 vector_expr

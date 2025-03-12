@@ -37,8 +37,9 @@ typedef struct attribute_s {
 	const struct expr_s *params;
 } attribute_t;
 
-struct expr_s;
-attribute_t *new_attrfunc(const char *name, const struct expr_s *params);
-attribute_t *new_attribute(const char *name, const struct expr_s *params);
+typedef struct expr_s expr_t;
+attribute_t *new_attrfunc(const char *name, const expr_t *params);
+attribute_t *new_attribute(const char *name, const expr_t *params);
+attribute_t *expr_attributes (const expr_t *attrs, attribute_t *append_attrs);
 
 #endif//attribute_h
