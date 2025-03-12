@@ -78,6 +78,9 @@ static spirv_json_t builtin_json[] = {
 		},
 	{}
 };
+static bool built;
+static strpool_t *extensions;
+static uint32_t extension_id;
 
 static void *
 spvg_alloc (void *data, size_t size)
@@ -346,7 +349,7 @@ parse_ignore (const plfield_t *field, const plitem_t *item,
 }
 
 static bool
-is_enumerant (const spirv_kind_t *kind, spirv_grammar_t *g)
+is_enumerant (const spirv_kind_t *kind, const spirv_grammar_t *g)
 {
 	auto category = g->strings->strings + kind->category;
 	if (strcmp (category, "BitEnum") == 0
@@ -561,7 +564,6 @@ static parse_array_t parse_operand_kind_data = {
 	.alloc = spvg_alloc,
 };
 
-static bool built;
 static plfield_t spirv_grammar_fields[] = {
 	{"copyright", 0, QFArray, parse_array, &parse_copyright_data},
 	{"magic_number", offsetof (spirv_grammar_t, magic_number), QFString, parse_hex, nullptr},
@@ -657,6 +659,8 @@ spirv_validx_key_cmp (const void *_a, const void *_b)
 static void
 build_grammars (void)
 {
+	spirv_grammar_t *core;
+
 	for (int i = 0; builtin_json[i].name; i++) {
 		auto plitem = PL_ParseJSON (builtin_json[i].json, nullptr);
 		if (!plitem) {
@@ -667,6 +671,12 @@ build_grammars (void)
 			internal_error (0, "could not parse grammar spec for %s",
 							builtin_json[i].name);
 		}
+		if (strcmp (builtin_json[i].name, "core") == 0) {
+			core = builtin_json[i].grammar;
+		}
+	}
+	if (!core) {
+		internal_error (0, "core grammar not found");
 	}
 	for (int i = 0; builtin_json[i].name; i++) {
 		auto parent = builtin_json[i].parent;
@@ -705,6 +715,7 @@ build_grammars (void)
 				for (uint32_t k = 0; k < kind->num; k++) {
 					uint32_t index = kind->enumerants + k;
 					auto enm = &grammar->enumerants.a[index];
+					enm->index = k;
 					DARRAY_APPEND (&grammar->enumerant_index,
 								   ((strid_t) {
 										.offset = enm->enumerant,
@@ -738,8 +749,26 @@ build_grammars (void)
 					spirv_strid_sort_cmp, grammar);
 	}
 	built = true;
+	extensions = strpool_new ();
 
 	for (int i = 0; builtin_json[i].name; i++) {
+		auto grammar = builtin_json[i].grammar;
+		for (size_t j = 0; j < grammar->capabilities.size; j++) {
+			auto cap = &grammar->capabilities.a[j];
+			auto cap_name = grammar->strings->strings + cap->offset;
+			auto enm = spirv_enumerant (core, "Capability", cap_name);
+			if (enm->version) {
+				cap->id = enm->index + 1;
+			}
+		}
+		for (size_t j = 0; j < grammar->extensions.size; j++) {
+			auto ext = &grammar->extensions.a[j];
+			auto ext_name = grammar->strings->strings + ext->offset;
+			auto regext = strpool_addstrid (extensions, ext_name);
+			if (!regext->id) {
+				regext->id = ++extension_id;
+			}
+		}
 	}
 }
 
@@ -763,13 +792,13 @@ spirv_grammar (const char *set)
 const spirv_instruction_t *
 spirv_instruction_op (const spirv_grammar_t *grammar, uint32_t op)
 {
-	uint32_t *ind = bsearch (&op, grammar->opcode_index.a,
-							 grammar->opcode_index.size, sizeof (validx_t),
-							 spirv_validx_key_cmp);
-	if (!ind) {
+	validx_t *validx = bsearch (&op, grammar->opcode_index.a,
+								grammar->opcode_index.size, sizeof (validx_t),
+								spirv_validx_key_cmp);
+	if (!validx) {
 		return nullptr;
 	}
-	return &grammar->instructions[*ind];
+	return &grammar->instructions[validx->index];
 }
 
 const spirv_instruction_t *
@@ -806,6 +835,15 @@ spirv_enumerant_strid (spirv_kind_t *kind, const char *name)
 	return bsearch_r (name, grammar->enumerant_index.a + kind->names,
 					  kind->num_names, sizeof (strid_t),
 					  spirv_strid_key_cmp, (void *) grammar);
+}
+
+static validx_t * __attribute__((pure))
+spirv_enumerant_validx (spirv_kind_t *kind, uint32_t val)
+{
+	auto grammar = kind->grammar;
+	return bsearch (&val, grammar->value_index.a + kind->enumerants,
+					kind->num, sizeof (strid_t),
+					spirv_validx_key_cmp);
 }
 
 static symbol_t *
@@ -897,6 +935,10 @@ spirv_enum_val_silent (const char *enum_name, const char *enumerant,
 		return false;
 	}
 	auto kind = grammar->operand_kinds + strid->id;
+	if (!is_enumerant (kind, grammar)) {
+		error (0, "%s not an enumerant", enum_name);
+		return false;
+	}
 	strid = spirv_enumerant_strid (kind, enumerant);
 	if (!strid) {
 		return false;
@@ -914,4 +956,54 @@ spirv_enum_val (const char *enum_name, const char *enumerant)
 		return 0;
 	}
 	return val;
+}
+
+const spirv_enumerant_t *
+spirv_enumerant (const spirv_grammar_t *grammar, const char *enum_name,
+				 const char *enumerant)
+{
+	auto strid = spirv_kind_strid (grammar, enum_name);
+	if (!strid) {
+		error (0, "%s not found", enum_name);
+		return nullptr;
+	}
+	auto kind = grammar->operand_kinds + strid->id;
+	strid = spirv_enumerant_strid (kind, enumerant);
+	if (!strid) {
+		return nullptr;
+	}
+	return &grammar->enumerants.a[strid->id];
+}
+
+const spirv_enumerant_t *
+spirv_enumerant_idx (const spirv_grammar_t *grammar, const char *enum_name,
+					 uint32_t index)
+{
+	auto strid = spirv_kind_strid (grammar, enum_name);
+	if (!strid) {
+		error (0, "%s not found", enum_name);
+		return nullptr;
+	}
+	auto kind = grammar->operand_kinds + strid->id;
+	if (!is_enumerant (kind, grammar) || index >= kind->num) {
+		return nullptr;
+	}
+	return &grammar->enumerants.a[kind->enumerants + index];
+}
+
+const spirv_enumerant_t *
+spirv_enumerant_val (const spirv_grammar_t *grammar, const char *enum_name,
+					 uint32_t val)
+{
+	auto strid = spirv_kind_strid (grammar, enum_name);
+	if (!strid) {
+		error (0, "%s not found", enum_name);
+		return nullptr;
+	}
+	auto kind = grammar->operand_kinds + strid->id;
+	auto validx = spirv_enumerant_validx (kind, val);
+	if (!validx) {
+		return nullptr;
+	}
+	return &grammar->enumerants.a[validx->index];
 }

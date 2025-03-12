@@ -71,6 +71,7 @@ typedef struct spiv_enumerant_s {
 	uint16_t    version;
 	uint16_t    lastVersion;
 
+	uint32_t    index;
 	symbol_t   *sym;
 } spirv_enumerant_t;
 
@@ -149,7 +150,7 @@ typedef struct expr_s expr_t;
 
 const spirv_grammar_t *spirv_grammar (const char *set);
 const spirv_instruction_t *spirv_instruction_op (const spirv_grammar_t *grammar,
-												 uint32_t op);
+												 uint32_t op) __attribute__((pure));
 const spirv_instruction_t *spirv_instruction (const spirv_grammar_t *grammar,
 											  const expr_t *opcode);
 
@@ -157,5 +158,14 @@ bool spirv_setup_intrinsic_symtab (symtab_t *symtab);
 bool spirv_enum_val_silent (const char *enum_name, const char *enumerant,
 							uint32_t *val);
 uint32_t spirv_enum_val (const char *enum_name, const char *enumerant);
+const spirv_enumerant_t *spirv_enumerant (const spirv_grammar_t *grammar,
+										  const char *enum_name,
+										  const char *enumerant);
+const spirv_enumerant_t *spirv_enumerant_idx (const spirv_grammar_t *grammar,
+											  const char *enum_name,
+											  uint32_t index);
+const spirv_enumerant_t *spirv_enumerant_val (const spirv_grammar_t *grammar,
+											  const char *enum_name,
+											  uint32_t val);
 
 #endif//__spirv_grammar_h
