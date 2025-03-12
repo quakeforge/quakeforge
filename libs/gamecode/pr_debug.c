@@ -1178,7 +1178,7 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 		if (name) {
 			dstring_appendstr (dstr, "(");
 		}
-		if (!type) {
+		if (!type || type->type == ev_void) {
 			if (def) {
 				if (!def->type_encoding) {
 					dummy_type.type = def->type;
@@ -1276,7 +1276,7 @@ pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		dasprintf (dstr, "<void>");
 		return;
 	}
-	int count = type->basic.width * type->basic.columns;
+	int count = 1;
 	for (int i = 0; i < count; i++, value++) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
