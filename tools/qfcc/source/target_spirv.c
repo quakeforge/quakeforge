@@ -2622,11 +2622,36 @@ spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
 	return assign_expr (dst, cast);
 }
 
+static SpvCapability spirv_base_capabilities[] = {
+	SpvCapabilityMatrix,
+	SpvCapabilityShader,
+	SpvCapabilityInputAttachment,
+	SpvCapabilitySampled1D,
+	SpvCapabilityImage1D,
+	SpvCapabilitySampledBuffer,
+	SpvCapabilityImageBuffer,
+	SpvCapabilityImageQuery,
+	SpvCapabilityDerivativeControl,
+	SpvCapabilityStorageImageExtendedFormats,
+	SpvCapabilityDeviceGroup,
+	SpvCapabilityShaderNonUniform,
+};
+
 static void
 spirv_init (void)
 {
 	static module_t module;		//FIXME probably not what I want
 	pr.module = &module;
+
+	//FIXME unhardcode
+	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
+	//FIXME look into Vulkan, or even configurable
+	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
+
+	for (size_t i = 0; i < countof (spirv_base_capabilities); i++) {
+		auto cap = spirv_base_capabilities[i];
+		spirv_add_capability (pr.module, cap);
+	}
 }
 
 static bool

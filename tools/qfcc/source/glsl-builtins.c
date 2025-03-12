@@ -1202,21 +1202,6 @@ bool allInvocations(bool value)
 bool allInvocationsEqual(bool value)
 #endif
 
-static SpvCapability glsl_base_capabilities[] = {
-	SpvCapabilityMatrix,
-	SpvCapabilityShader,
-	SpvCapabilityInputAttachment,
-	SpvCapabilitySampled1D,
-	SpvCapabilityImage1D,
-	SpvCapabilitySampledBuffer,
-	SpvCapabilityImageBuffer,
-	SpvCapabilityImageQuery,
-	SpvCapabilityDerivativeControl,
-	SpvCapabilityStorageImageExtendedFormats,
-	SpvCapabilityDeviceGroup,
-	SpvCapabilityShaderNonUniform,
-};
-
 void
 glsl_multiview (int behavior, void *scanner)
 {
@@ -1258,9 +1243,6 @@ glsl_parse_vars (const char *var_src, rua_ctx_t *ctx)
 static void
 glsl_init_common (rua_ctx_t *ctx)
 {
-	spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
-	spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
-
 	glsl_sublang = *(glsl_sublang_t *) ctx->language->sublanguage;
 
 	current_target.create_entry_point ("main", glsl_sublang.model_name);
@@ -1278,11 +1260,6 @@ glsl_init_common (rua_ctx_t *ctx)
 	qc_parse_string (glsl_atomic_functions, &rua_ctx);
 	qc_parse_string (glsl_image_functions, &rua_ctx);
 	glsl_parse_vars (glsl_system_constants, ctx);
-
-	for (size_t i = 0; i < countof (glsl_base_capabilities); i++) {
-		auto cap = glsl_base_capabilities[i];
-		spirv_add_capability (pr.module, cap);
-	}
 }
 
 void

@@ -3356,17 +3356,6 @@ static void
 rua_init (rua_ctx_t *ctx)
 {
 	ctx->language->initialized = true;
-	if (options.code.spirv && pr.module) {
-		//FIXME unhardcode
-		spirv_add_extension (pr.module, "SPV_KHR_multiview");
-		spirv_add_extinst_import (pr.module, "GLSL.std.450");
-		//FIXME sufficient? phys 32/storage?
-		spirv_set_addressing_model (pr.module, SpvAddressingModelLogical);
-		//FIXME look into Vulkan, or even configurable
-		spirv_set_memory_model (pr.module, SpvMemoryModelGLSL450);
-
-		spirv_add_capability (pr.module, SpvCapabilityShader);
-	}
 }
 
 language_t lang_ruamoko = {
