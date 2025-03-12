@@ -2672,8 +2672,8 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 1 0101
 			OP_op(SUB, -);
 			// 1 0110
-			OP_op_T (SHL, I, int, ivec2, ivec4, <<);
-			OP_op_T (SHL, L, long, lvec2, lvec4, <<);
+			OP_op_T (SHL, u, uint, ivec2, ivec4, <<);
+			OP_op_T (SHL, U, ulong, lvec2, lvec4, <<);
 			case OP_EQ_S:
 			case OP_LT_S:
 			case OP_GT_S:

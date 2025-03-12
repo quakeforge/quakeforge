@@ -333,8 +333,8 @@ static dstatement_t uint_shiftop_1_statements[] = {
 	{ OP(0, 0, 0, OP_IFAE), 2, 0, 36 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 36, 1 },
-	{ OP(1, 1, 1, OP_SHL_I_1), 0, 4, 12 },
-	{ OP(1, 1, 1, OP_SHL_I_1), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 0, 8, 16 },
 	{ OP(1, 1, 1, OP_SHR_u_1), 0, 4, 20 },
 	{ OP(1, 1, 1, OP_SHR_u_1), 0, 8, 24 },
 	{ OP(1, 1, 1, OP_ASR_I_1), 0, 4, 28 },
@@ -349,8 +349,8 @@ static dstatement_t uint_shiftop_2_statements[] = {
 	{ OP(0, 0, 0, OP_IFAE), 2, 0, 36 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 36, 1 },
-	{ OP(1, 1, 1, OP_SHL_I_2), 0, 4, 12 },
-	{ OP(1, 1, 1, OP_SHL_I_2), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_SHL_u_2), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_SHL_u_2), 0, 8, 16 },
 	{ OP(1, 1, 1, OP_SHR_u_2), 0, 4, 20 },
 	{ OP(1, 1, 1, OP_SHR_u_2), 0, 8, 24 },
 	{ OP(1, 1, 1, OP_ASR_I_2), 0, 4, 28 },
@@ -359,10 +359,10 @@ static dstatement_t uint_shiftop_2_statements[] = {
 };
 
 static dstatement_t uint_shiftop_3a_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_I_3), 0,  4, 12 },
-	{ OP(1, 1, 1, OP_SHL_I_1), 3,  7, 15 },
-	{ OP(1, 1, 1, OP_SHL_I_3), 0,  8, 16 },
-	{ OP(1, 1, 1, OP_SHL_I_1), 3, 11, 19 },
+	{ OP(1, 1, 1, OP_SHL_u_3), 0,  4, 12 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 3,  7, 15 },
+	{ OP(1, 1, 1, OP_SHL_u_3), 0,  8, 16 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 3, 11, 19 },
 	{ OP(1, 1, 1, OP_SHR_u_3), 0,  4, 20 },
 	{ OP(1, 1, 1, OP_SHR_u_1), 3,  7, 23 },
 	{ OP(1, 1, 1, OP_SHR_u_3), 0,  8, 24 },
@@ -374,10 +374,10 @@ static dstatement_t uint_shiftop_3a_statements[] = {
 };
 
 static dstatement_t uint_shiftop_3b_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_I_1), 0, 4, 12 },
-	{ OP(1, 1, 1, OP_SHL_I_3), 1, 5, 13 },
-	{ OP(1, 1, 1, OP_SHL_I_1), 0, 8, 16 },
-	{ OP(1, 1, 1, OP_SHL_I_3), 1, 9, 17 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_SHL_u_3), 1, 5, 13 },
+	{ OP(1, 1, 1, OP_SHL_u_1), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_SHL_u_3), 1, 9, 17 },
 	{ OP(1, 1, 1, OP_SHR_u_1), 0, 4, 20 },
 	{ OP(1, 1, 1, OP_SHR_u_3), 1, 5, 21 },
 	{ OP(1, 1, 1, OP_SHR_u_1), 0, 8, 24 },
@@ -389,8 +389,8 @@ static dstatement_t uint_shiftop_3b_statements[] = {
 };
 
 static dstatement_t uint_shiftop_4_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_I_4), 0, 4, 12 },
-	{ OP(1, 1, 1, OP_SHL_I_4), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_SHL_u_4), 0, 4, 12 },
+	{ OP(1, 1, 1, OP_SHL_u_4), 0, 8, 16 },
 	{ OP(1, 1, 1, OP_SHR_u_4), 0, 4, 20 },
 	{ OP(1, 1, 1, OP_SHR_u_4), 0, 8, 24 },
 	{ OP(1, 1, 1, OP_ASR_I_4), 0, 4, 28 },
@@ -436,8 +436,8 @@ static dstatement_t ulong_shiftop_1_statements[] = {
 	{ OP(0, 0, 0, OP_IFAE), 2, 0, 72 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 72, 1 },
-	{ OP(1, 1, 1, OP_SHL_L_1), 0,  8, 24 },
-	{ OP(1, 1, 1, OP_SHL_L_1), 0, 16, 32 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 0, 16, 32 },
 	{ OP(1, 1, 1, OP_SHR_U_1), 0,  8, 40 },
 	{ OP(1, 1, 1, OP_SHR_U_1), 0, 16, 48 },
 	{ OP(1, 1, 1, OP_ASR_L_1), 0,  8, 56 },
@@ -452,8 +452,8 @@ static dstatement_t ulong_shiftop_2_statements[] = {
 	{ OP(0, 0, 0, OP_IFAE), 2, 0, 72 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 72, 1 },
-	{ OP(1, 1, 1, OP_SHL_L_2), 0,  8, 24 },
-	{ OP(1, 1, 1, OP_SHL_L_2), 0, 16, 32 },
+	{ OP(1, 1, 1, OP_SHL_U_2), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_SHL_U_2), 0, 16, 32 },
 	{ OP(1, 1, 1, OP_SHR_U_2), 0,  8, 40 },
 	{ OP(1, 1, 1, OP_SHR_U_2), 0, 16, 48 },
 	{ OP(1, 1, 1, OP_ASR_L_2), 0,  8, 56 },
@@ -462,10 +462,10 @@ static dstatement_t ulong_shiftop_2_statements[] = {
 };
 
 static dstatement_t ulong_shiftop_3a_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_L_3), 0,  8, 24 },
-	{ OP(1, 1, 1, OP_SHL_L_1), 6, 14, 30 },
-	{ OP(1, 1, 1, OP_SHL_L_3), 0, 16, 32 },
-	{ OP(1, 1, 1, OP_SHL_L_1), 6, 22, 38 },
+	{ OP(1, 1, 1, OP_SHL_U_3), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 6, 14, 30 },
+	{ OP(1, 1, 1, OP_SHL_U_3), 0, 16, 32 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 6, 22, 38 },
 	{ OP(1, 1, 1, OP_SHR_U_3), 0,  8, 40 },
 	{ OP(1, 1, 1, OP_SHR_U_1), 6, 14, 46 },
 	{ OP(1, 1, 1, OP_SHR_U_3), 0, 16, 48 },
@@ -477,10 +477,10 @@ static dstatement_t ulong_shiftop_3a_statements[] = {
 };
 
 static dstatement_t ulong_shiftop_3b_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_L_1), 0,  8, 24 },
-	{ OP(1, 1, 1, OP_SHL_L_3), 2, 10, 26 },
-	{ OP(1, 1, 1, OP_SHL_L_1), 0, 16, 32 },
-	{ OP(1, 1, 1, OP_SHL_L_3), 2, 18, 34 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_SHL_U_3), 2, 10, 26 },
+	{ OP(1, 1, 1, OP_SHL_U_1), 0, 16, 32 },
+	{ OP(1, 1, 1, OP_SHL_U_3), 2, 18, 34 },
 	{ OP(1, 1, 1, OP_SHR_U_1), 0,  8, 40 },
 	{ OP(1, 1, 1, OP_SHR_U_3), 2, 10, 42 },
 	{ OP(1, 1, 1, OP_SHR_U_1), 0, 16, 48 },
@@ -492,8 +492,8 @@ static dstatement_t ulong_shiftop_3b_statements[] = {
 };
 
 static dstatement_t ulong_shiftop_4_statements[] = {
-	{ OP(1, 1, 1, OP_SHL_L_4), 0,  8, 24 },
-	{ OP(1, 1, 1, OP_SHL_L_4), 0, 16, 32 },
+	{ OP(1, 1, 1, OP_SHL_U_4), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_SHL_U_4), 0, 16, 32 },
 	{ OP(1, 1, 1, OP_SHR_U_4), 0,  8, 40 },
 	{ OP(1, 1, 1, OP_SHR_U_4), 0, 16, 48 },
 	{ OP(1, 1, 1, OP_ASR_L_4), 0,  8, 56 },

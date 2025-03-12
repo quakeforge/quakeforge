@@ -498,12 +498,12 @@ shiftops_formats = {
         "mn_shift": ["shl", "asr", "shl", "shr"],
         "op_shift": ["shl", "shr", "shl", "shr"],
         "shift_type": [
-            ['I', 'I', 'u', 'u'],
-            ['L', 'L', 'U', 'U'],
+            ['u', 'I', 'x', 'u'],
+            ['U', 'L', 'x', 'U'],
         ],
         "shift_types": [
-            ["ev_int", "ev_int", "ev_uint", "ev_uint"],
-            ["ev_long", "ev_long", "ev_ulong", "ev_ulong"],
+            ["ev_uint", "ev_int", "ev_uint", "ev_uint"],
+            ["ev_ulong", "ev_long", "ev_ulong", "ev_ulong"],
         ],
     },
 }

@@ -376,6 +376,7 @@ ruamoko_shift_op (int op, const expr_t *e1, const expr_t *e2)
 {
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
+	auto ot1 = t1;
 
 	if (is_matrix (t1) || is_matrix (t2)) {
 		return error (e1, "invalid operands for %s", get_op_string (op));
@@ -386,25 +387,21 @@ ruamoko_shift_op (int op, const expr_t *e1, const expr_t *e2)
 	if (is_real (t2)) {
 		warning (e2, "shift by floating point value");
 	}
-	if (is_double (t1)) {
-		t1 = vector_type (&type_long, type_width (t1));
-		t2 = vector_type (&type_long, type_width (t1));
-	}
-	if (is_float (t1)) {
-		t1 = vector_type (&type_int, type_width (t1));
-		t2 = vector_type (&type_int, type_width (t1));
-	}
-	if (is_uint (t1) || is_int (t1)) {
-		t2 = vector_type (&type_int, type_width (t1));
-	}
-	if (is_ulong (t1) || is_long (t1)) {
-		t2 = vector_type (&type_long, type_width (t1));
+	t2 = uint_type (t1);
+	if (op == QC_SHL) {
+		// shl has no signed counterpart
+		t1 = uint_type (t1);
 	}
 	e1 = cast_expr (t1, e1);
 	e2 = cast_expr (t2, e2);
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = t1;
-	return fold_constants (e);
+	auto f = fold_constants (e);
+	if (!is_unsigned (ot1)) {
+		f = edag_add_expr (f);
+		f = cast_expr (ot1, f);
+	}
+	return f;
 }
 
 const expr_t *
