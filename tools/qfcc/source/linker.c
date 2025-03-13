@@ -490,6 +490,9 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 	defref_t   *ref;
 	qfot_type_t *type;
 
+	if (!count) {
+		return count;
+	}
 	size = (num_work_defrefs + count) * sizeof (defref_t *);
 	work_defrefs = realloc (work_defrefs, size);
 	size = (dest_space->num_defs + count) * sizeof (qfo_def_t);
