@@ -85,6 +85,7 @@ test_progs_dat=\
 	tools/qfcc/test/vecexpr.dat \
 	tools/qfcc/test/vecconst.dat \
 	tools/qfcc/test/vecinit.dat \
+	tools/qfcc/test/vecmassign.dat \
 	tools/qfcc/test/vecops.dat \
 	tools/qfcc/test/vga3d.dat \
 	tools/qfcc/test/voidfor.dat \
@@ -988,6 +989,16 @@ tools/qfcc/test/vecinit.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(vecinit_dep) # am--include-marker
 r_depfiles_remade += $(vecinit_dep)
+
+tools_qfcc_test_vecmassign_dat_SOURCES=tools/qfcc/test/vecmassign.r
+vecmassign_obj=$(tools_qfcc_test_vecmassign_dat_SOURCES:.r=.o)
+vecmassign_dep=$(call qcautodep,$(tools_qfcc_test_vecmassign_dat_SOURCES))
+tools/qfcc/test/vecmassign.dat$(EXEEXT): $(vecmassign_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(vecmassign_obj)
+tools/qfcc/test/vecmassign.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(vecmassign_dep) # am--include-marker
+r_depfiles_remade += $(vecmassign_dep)
 
 tools_qfcc_test_vecops_dat_SOURCES=tools/qfcc/test/vecops.r
 vecops_obj=$(tools_qfcc_test_vecops_dat_SOURCES:.r=.o)
