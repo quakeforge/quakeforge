@@ -1272,11 +1272,13 @@ pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	if (!type->basic.width) {
-		dasprintf (dstr, "<void>");
-		return;
-	}
 	int count = 1;
+	if (type->basic.width > 0) {
+		count *= type->basic.width;
+	}
+	if (type->basic.columns > 0) {
+		count *= type->basic.columns;
+	}
 	for (int i = 0; i < count; i++, value++) {
 		if (i) {
 			dstring_appendstr (dstr, ", ");
