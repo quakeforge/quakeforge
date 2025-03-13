@@ -1355,6 +1355,8 @@ generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		operands[2] = var->op;
 		var_iter = set_next (var_iter);
 		dst = operands[2];
+		//FIXME var can have the wrong expression
+		//results in incorrect line number info in basisgroup.r
 		st = build_statement ("call", operands, var->expr);
 		sblock_add_statement (block, st);
 		generate_assignments (dag, block, operands[2], var_iter, type);
