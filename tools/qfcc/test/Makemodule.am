@@ -64,6 +64,7 @@ test_progs_dat=\
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/return-postop.dat \
 	tools/qfcc/test/sendv.dat \
+	tools/qfcc/test/sizeof.dat \
 	tools/qfcc/test/state.dat \
 	tools/qfcc/test/static-init.dat \
 	tools/qfcc/test/struct-init-param.dat \
@@ -777,6 +778,16 @@ tools/qfcc/test/sendv.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(sendv_dep) # am--include-marker
 r_depfiles_remade += $(sendv_dep)
+
+tools_qfcc_test_sizeof_dat_SOURCES=tools/qfcc/test/sizeof.r
+sizeof_obj=$(tools_qfcc_test_sizeof_dat_SOURCES:.r=.o)
+sizeof_dep=$(call qcautodep,$(tools_qfcc_test_sizeof_dat_SOURCES))
+tools/qfcc/test/sizeof.dat$(EXEEXT): $(sizeof_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(sizeof_obj)
+tools/qfcc/test/sizeof.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(sizeof_dep) # am--include-marker
+r_depfiles_remade += $(sizeof_dep)
 
 tools_qfcc_test_state_dat_SOURCES=tools/qfcc/test/state.r
 state_obj=$(tools_qfcc_test_state_dat_SOURCES:.r=.o)
