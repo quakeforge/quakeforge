@@ -2242,11 +2242,8 @@ unary_expr
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
 			auto spec = $3;
-			auto type_expr = spec.type_expr;
-			if (!type_expr) {
-				type_expr = new_type_expr (spec.type);
-			}
-			$$ = new_unary_expr ('S', type_expr);
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_unary_expr ('S', decl);
 		}
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
 	| vector_expr				{ $$ = new_vector_list_expr ($1); }

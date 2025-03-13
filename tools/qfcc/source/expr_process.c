@@ -104,20 +104,22 @@ proc_uexpr (const expr_t *expr, rua_ctx_t *ctx)
 	if (expr->expr.op == '&') {
 		return current_target.proc_address (expr, ctx);
 	}
-	auto e1 = expr_process (expr->expr.e1, ctx);
-	if (is_error (e1)) {
-		return e1;
+	auto e1 = expr->expr.e1;
+	if (expr->expr.op != 'S' || e1->type != ex_decl) {
+		e1 = expr_process (expr->expr.e1, ctx);
+		if (is_error (e1)) {
+			return e1;
+		}
 	}
 	if (expr->expr.op == 'S') {
 		const type_t *type;
-		if (e1->type == ex_type) {
-			type = e1->typ.type;
+		if (e1->type == ex_decl) {
+			type = proc_decl_type (e1, ctx);
 		} else {
 			type = get_type (e1);
 		}
 		return sizeof_expr (nullptr, type);
 	}
-
 	return unary_expr (expr->expr.op, e1);
 }
 
