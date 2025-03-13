@@ -289,6 +289,7 @@ ruamoko_field_array (const expr_t *e)
 		auto obj = objects[i];
 		auto base_type = get_type (e);
 		if (obj->type == ex_field) {
+			scoped_src_loc (obj->field.member);
 			if (obj->field.member->type != ex_symbol) {
 				internal_error (obj->field.member, "not a symbol");
 			}
@@ -298,7 +299,7 @@ ruamoko_field_array (const expr_t *e)
 				e = offset_pointer_expr (e, offset);
 				e = cast_expr (pointer_type (obj->field.type), e);
 				e = unary_expr ('.', e);
-			} else if (e->type == ex_uexpr && e->expr.op == '.') {
+			} else if (is_deref (e)) {
 				auto offset = new_short_expr (sym->offset);
 				e = offset_pointer_expr (e->expr.e1, offset);
 				e = cast_expr (pointer_type (obj->field.type), e);
@@ -319,21 +320,19 @@ ruamoko_field_array (const expr_t *e)
 			auto index = binary_expr ('*', obj->array.index, scale);
 			offset = binary_expr ('-', index, offset);
 			const expr_t *ptr;
-			if (is_array (base_type)) {
-				if (e->type == ex_uexpr && e->expr.op == '.') {
+			if (is_array (base_type)
+				|| is_nonscalar (base_type) || is_matrix (base_type)) {
+				if (is_deref (e)) {
 					ptr = e->expr.e1;
 				} else {
 					auto alias = new_offset_alias_expr (ele_type, e, 0);
 					ptr = new_address_expr (ele_type, alias, 0);
 				}
-			} else if (is_nonscalar (base_type) || is_matrix (base_type)) {
-				auto alias = new_offset_alias_expr (ele_type, e, 0);
-				ptr = new_address_expr (ele_type, alias, 0);
 			} else {
 				ptr = e;
 			}
 			ptr = offset_pointer_expr (ptr, offset);
-			ptr = cast_expr (pointer_type (obj->field.type), ptr);
+			ptr = cast_expr (pointer_type (ele_type), ptr);
 			e = unary_expr ('.', ptr);
 		} else {
 			internal_error (obj, "what the what?!?");
