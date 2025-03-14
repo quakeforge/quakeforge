@@ -578,7 +578,8 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 
 	param_t *param;
 	if (generic_block && spec.type_expr) {
-		param = new_generic_param (spec.type_expr, spec.sym->name);
+		auto name = spec.sym ? spec.sym->name : nullptr;
+		param = new_generic_param (spec.type_expr, name);
 	} else if (spec.sym) {
 		spec = spec_process (spec, ctx);
 		spec.type = find_type (append_type (spec.sym->type, spec.type));
@@ -612,6 +613,7 @@ make_param (specifier_t spec, rua_ctx_t *ctx)
 			param->qual = pq_in;
 		}
 	}
+	param->attributes = spec.attributes;
 	return param;
 }
 

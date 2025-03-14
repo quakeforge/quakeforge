@@ -195,6 +195,7 @@ typedef struct param_s {
 	const expr_t *type_expr;
 	const char *name;
 	param_qual_t qual;
+	attribute_t *attributes;
 } param_t;
 
 typedef struct expr_s expr_t;
