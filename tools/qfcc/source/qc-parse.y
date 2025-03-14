@@ -172,6 +172,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
 %type	<spec>		handle
 %type	<mut_expr>	attr_list attr
+%type	<expr>		binding opt_binding
+%type	<spec>		fnbinding
 %type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
 %type	<spec>		declspecs declspecs_nosc declspecs_nots declspecs_ts
 %type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
@@ -809,12 +811,18 @@ external_def
 
 fndef
 	: attr_declspecs_ts declarator function_body
+	| attr_declspecs_ts declarator fnbinding function_body
 	| attr_declspecs_nots notype_declarator function_body
+	| attr_declspecs_nots notype_declarator fnbinding function_body
 	| defspecs notype_declarator function_body
 	;
 
+fnbinding
+	: ':' binding { $$ = attr_spec ($<spec>0, $2); }
+	;
+
 datadef
-	: defspecs notype_initdecls ';'			{ decl_process ($2, ctx); }
+	: defspecs notype_initdecls ';'				{ decl_process ($2, ctx); }
 	| attr_declspecs_nots notype_initdecls ';'	{ decl_process ($2, ctx); }
 	| attr_declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
 	| attr_declspecs_ts qc_func_params
@@ -1701,10 +1709,17 @@ components
 component_declarator
 	: declarator
 		{
-			declare_field ($1, current_symtab, ctx);
+			auto spec = $1;
+			declare_field (spec, current_symtab, ctx);
 		}
 	| declarator ':' expr
+	| declarator ':' binding
+		{
+			auto spec = attr_spec ($1, $3);
+			declare_field (spec, current_symtab, ctx);
+		}
 	| ':' expr
+	| ':' binding	{ error (0, "nothing to bind here"); }
 	;
 
 components_notype
@@ -1715,7 +1730,13 @@ components_notype
 component_notype_declarator
 	: notype_declarator { declare_field ($1, current_symtab, ctx); }
 	| notype_declarator ':' expr
+	| notype_declarator ':' binding
+		{
+			auto spec = attr_spec ($1, $3);
+			declare_field (spec, current_symtab, ctx);
+		}
 	| ':' expr
+	| ':' binding	{ error (0, "nothing to bind here"); }
 	;
 
 function_params
@@ -1750,27 +1771,46 @@ parameter_list
 	;
 
 parameter
-	: declspecs_ts param_declarator
+	: declspecs_ts param_declarator opt_binding
 		{
-			$$ = make_param ($2, ctx);
+			auto spec = attr_spec ($2, $3);
+			$$ = make_param (spec, ctx);
 		}
-	| declspecs_ts notype_declarator
+	| declspecs_ts notype_declarator opt_binding
 		{
-			$$ = make_param ($2, ctx);
+			auto spec = attr_spec ($2, $3);
+			$$ = make_param (spec, ctx);
 		}
 	| declspecs_ts absdecl
 		{
-			$$ = make_param ($2, ctx);
+			auto spec = $2;
+			$$ = make_param (spec, ctx);
 		}
-	| declspecs_nosc_nots notype_declarator
+	| declspecs_nosc_nots notype_declarator opt_binding
 		{
-			$$ = make_param ($2, ctx);
+			auto spec = attr_spec ($2, $3);
+			$$ = make_param (spec, ctx);
 		}
 	| declspecs_nosc_nots absdecl
 		{
-			$$ = make_param ($2, ctx);
+			auto spec = $2;
+			$$ = make_param (spec, ctx);
 		}
 	;
+
+opt_binding
+	: /* empty */						{ $$ = nullptr; }
+	| ':' binding						{ $$ = $2; }
+	;
+
+binding
+	: '@' '(' expr ')'
+		{
+			auto attr = new_name_expr (".binding");
+			$$ = new_call_expr (attr, $3, nullptr);
+		}
+	;
+
 
 absdecl
 	: /* empty */
@@ -2750,6 +2790,8 @@ ivar_declarator
 			declare_field ($1, current_symtab, ctx);
 		}
 	| declarator ':' expr
+	| declarator ':' binding		{ error (0, "cannot bind ivars"); }
+	| ':' binding					{ error (0, "nothing to bind here"); }
 	| ':' expr
 	;
 
@@ -2759,6 +2801,8 @@ notype_ivar_declarator
 			declare_field ($1, current_symtab, ctx);
 		}
 	| notype_declarator ':' expr
+	| notype_declarator ':' binding	{ error (0, "cannot bind ivars"); }
+	| ':' binding					{ error (0, "nothing to bind here"); }
 	| ':' expr
 	;
 

@@ -54,11 +54,6 @@ new_attrfunc (const char *name, const expr_t *params)
 attribute_t *
 new_attribute(const char *name, const expr_t *params)
 {
-	if (params
-		&& params->type != ex_list
-		&& params->type != ex_value) {
-		internal_error (params, "attribute params not a list");
-	}
 	bool err = false;
 	if (params && params->type == ex_list) {
 		for (auto p = params->list.head; p; p = p->next) {
@@ -82,34 +77,47 @@ new_attribute(const char *name, const expr_t *params)
 	return new_attrfunc (name, params);
 }
 
+static attribute_t *
+expr_attr (const expr_t *attr)
+{
+	if (attr->type == ex_symbol) {
+		// simple name attribute
+		auto sym = attr->symbol;
+		return new_attribute (sym->name, nullptr);
+	} else if (attr->type == ex_branch && attr->branch.type == pr_branch_call
+			   && attr->branch.target
+			   && attr->branch.target->type == ex_symbol) {
+		if (!attr->branch.args) {
+			error (attr, "function-style attributes require parameters");
+			return nullptr;
+		}
+		auto sym = attr->branch.target->symbol;
+		return new_attribute (sym->name, attr->branch.args);
+	} else {
+		error (attr, "not a simple name");
+		return nullptr;
+	}
+}
+
 attribute_t *
 expr_attributes (const expr_t *attrs, attribute_t *append_attrs)
 {
-	if (!attrs || attrs->type != ex_list) {
-		internal_error (attrs, "not a list expression");
+	if (!attrs) {
+		return append_attrs;
 	}
 	attribute_t *attributes = nullptr;
 	attribute_t **a = &attributes;
-	for (auto l = attrs->list.head; l; l = l->next) {
-		auto e = l->expr;
-		if (e->type == ex_symbol) {
-			// simple name attribute
-			auto sym = e->symbol;
-			*a = new_attribute (sym->name, nullptr);
-		} else if (e->type == ex_branch && e->branch.type == pr_branch_call
-				   && e->branch.target
-				   && e->branch.target->type == ex_symbol) {
-			if (!e->branch.args) {
-				error (e, "function-style attributes require parameters");
-				continue;
+	if (attrs->type == ex_list) {
+		for (auto l = attrs->list.head; l; l = l->next) {
+			if ((*a = expr_attr (l->expr))) {
+				a = &(*a)->next;
 			}
-			auto sym = e->branch.target->symbol;
-			*a = new_attribute (sym->name, e->branch.args);
-		} else {
-			error (e, "not a simple name");
-			continue;
 		}
-		a = &(*a)->next;
+	} else {
+		if ((*a = expr_attr (attrs))) {
+			a = &(*a)->next;
+		}
 	}
+	*a = append_attrs;
 	return attributes;
 }
