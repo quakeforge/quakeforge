@@ -1891,11 +1891,11 @@ array_decl
 	;
 
 decl
-	: declspecs_ts local_expr initdecls seq_semi
+	: declspecs_ts local_expr initdecls ';'
 		{
 			$$ = $3;
 		}
-	| declspecs_nots local_expr notype_initdecls seq_semi
+	| declspecs_nots local_expr notype_initdecls ';'
 		{
 			$$ = $3;
 		}
@@ -2037,10 +2037,6 @@ end_scope
 				current_symtab = pop_scope (current_symtab);
 			}
 		}
-	;
-
-seq_semi
-	: ';'
 	;
 
 compound_statement
