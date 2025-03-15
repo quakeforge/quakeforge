@@ -2340,6 +2340,31 @@ spirv_build_code (function_t *func, const expr_t *statements)
 }
 
 static void
+spirv_add_attr (attribute_t **attributes, const char *name, const expr_t *val)
+{
+	for (auto a = *attributes; a; a = a->next) {
+		if (strcmp (a->name, name) == 0) {
+			a->params = val;
+			return;
+		}
+	}
+
+	auto attr = new_attribute (name, val);
+	attr->next = *attributes;
+	*attributes = attr;
+}
+
+static void
+spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val)
+{
+	if (!is_integral_val (val)) {
+		error (val, "not a constant integer");
+		return;
+	}
+	spirv_add_attr (attrs, name, val);
+}
+
+static void
 spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				   expr_t *block)
 {
@@ -2348,6 +2373,35 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		symbol_t   *check = symtab_lookup (symtab, sym->name);
 		if (check && check->table == symtab) {
 			error (0, "%s redefined", sym->name);
+		}
+	}
+	for (auto attr = spec.attributes; attr; attr = attr->next) {
+		int count = 0;
+		if (attr->params) {
+			count = list_count (&attr->params->list);
+		}
+		const expr_t *params[count + 1];
+		if (attr->params) {
+			list_scatter (&attr->params->list, params);
+		}
+		params[count] = nullptr;
+
+		if (strcmp (attr->name, "in") == 0) {
+			spec.storage = glsl_sc_from_iftype (glsl_in);//FIXME
+			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+		} else if (strcmp (attr->name, "out") == 0) {
+			spec.storage = glsl_sc_from_iftype (glsl_out);
+			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+		} else if (strcmp (attr->name, "uniform") == 0) {
+			spec.storage = glsl_sc_from_iftype (glsl_uniform);
+		} else if (strcmp (attr->name, "buffer") == 0) {
+			spec.storage = glsl_sc_from_iftype (glsl_buffer);
+		} else if (strcmp (attr->name, "shared") == 0) {
+			spec.storage = glsl_sc_from_iftype (glsl_shared);
+		} else if (strcmp (attr->name, "set") == 0) {
+			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
+		} else if (strcmp (attr->name, "binding") == 0) {
+			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
 		}
 	}
 	auto storage = spirv_storage_class (spec.storage, sym->type);
