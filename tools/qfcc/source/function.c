@@ -1045,10 +1045,16 @@ function_symbol (specifier_t spec, rua_ctx_t *ctx)
 static const expr_t *
 set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 {
-	auto sym = symtab_lookup (current_symtab, f->full_name);
-	if (!sym) {
-		internal_error (fexpr, "overloaded function %s not found",
-						f->full_name);
+	if (fexpr->type != ex_symbol) {
+		return fexpr;
+	}
+	auto sym = fexpr->symbol;
+	if (f->meta_type == mf_overload) {
+		sym = symtab_lookup (current_symtab, f->full_name);
+		if (!sym) {
+			internal_error (fexpr, "overloaded function %s not found",
+							f->full_name);
+		}
 	}
 	auto nf = new_expr ();
 	*nf = *fexpr;
@@ -1106,6 +1112,24 @@ new_function (const char *name, const char *nice_name)
 	if (!(f->name = nice_name))
 		f->name = name;
 	return f;
+}
+
+static const expr_t *
+setup_func_expr (const expr_t *fexpr, metafunc_t *func)
+{
+	if (func->meta_type == mf_overload || func->can_inline) {
+		fexpr = set_func_symbol (fexpr, func);
+	}
+	if (func->can_inline) {
+		// the call will be inlined, so a new scope is needed every
+		// time
+		auto sym = fexpr->symbol;
+		func->func = new_function (func->full_name, func->name);
+		func->func->type = sym->type;
+		func->func->sym = sym;
+		build_core_scope (sym, current_symtab, false);
+	}
+	return fexpr;
 }
 
 const expr_t *
@@ -1167,6 +1191,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	for (num_funcs = 0; funcs[num_funcs]; num_funcs++) continue;
 	if (num_funcs < 2) {
 		if (num_funcs && funcs[0]->meta_type != mf_overload) {
+			fexpr = setup_func_expr (fexpr, funcs[0]);
 			free (funcs);
 			return fexpr;
 		}
@@ -1217,19 +1242,7 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 		}
 	}
 
-	auto best = funcs[best_ind];
-	if (best->meta_type == mf_overload) {
-		fexpr = set_func_symbol (fexpr, best);
-	}
-	if (best->can_inline) {
-		// the call will be inlined, so a new scope is needed every
-		// time
-		auto sym = fexpr->symbol;
-		best->func = new_function (best->full_name, best->name);
-		best->func->type = sym->type;
-		best->func->sym = sym;
-		build_core_scope (sym, current_symtab, false);
-	}
+	fexpr = setup_func_expr (fexpr, funcs[best_ind]);
 	free (funcs);
 	return fexpr;
 }
