@@ -2667,6 +2667,16 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 	}
 	if (strcmp (attr->name, "shader") == 0) {
 		if (func) {
+			auto type = func->type;
+			if (!is_func (type)) {
+				internal_error (0, "non-function type");
+			}
+			if (!is_void (type->func.ret_type)) {
+				error (0, "shader entry point must return void");
+			}
+			if (type->func.num_params) {
+				error (0, "shader entry point must not take any parameters");
+			}
 			const char *model_name = "Vertex";
 			if (count >= 1 && is_string_val (params[0])) {
 				model_name = expr_string (params[0]);
