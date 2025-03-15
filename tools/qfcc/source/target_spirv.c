@@ -844,7 +844,7 @@ static unsigned
 spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 {
 	if (sym->sy_type != sy_var) {
-		internal_error (0, "unexpected variable symbol type");
+		internal_error (0, "unexpected non-variable symbol type");
 	}
 	auto space = ctx->module->globals;
 	auto storage = spirv_storage_class (sym->var.storage, sym->type);
