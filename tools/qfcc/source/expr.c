@@ -2207,6 +2207,12 @@ new_field_expr (const expr_t *object, const expr_t *member)
 }
 
 expr_t *
+new_field_sym_expr (const expr_t *object, symbol_t *sym)
+{
+	return new_field_expr (object, new_symbol_expr (sym));
+}
+
+expr_t *
 new_array_expr (const expr_t *base, const expr_t *index)
 {
 	auto array = new_expr ();

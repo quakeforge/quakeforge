@@ -227,7 +227,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<mut_expr>	statement_list compound_statement compound_statement_ns
 %type	<mut_expr>	new_block new_scope
 %type	<expr>		else line break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr
+%type	<expr>		unary_expr cast_expr
 %type	<mut_expr>	arg_list
 %type   <expr>		opt_arg_list arg_expr
 %type	<symbol>	identifier label
@@ -1141,7 +1141,7 @@ declspecs_nosc_nots
 	;
 
 declspecs_nosc_ts
-	: typespec
+	: typespec %prec LOW
 	| declspecs_nosc_ts TYPE_QUAL
 		{
 			$$ = spec_merge ($1, $2);
@@ -2000,9 +2000,11 @@ designator
 	;
 
 designator_spec
-	: '.' ident_expr	{ $$ = new_designator ($2, 0); }
-	| '.' NAME			{ $$ = new_designator (new_symbol_expr ($2), 0); }
-	| index_expr		{ $$ = new_designator (0, $1); }
+	: '.' OBJECT_NAME			{ $$ = new_designator ($2.sym, 0); }
+	| '.' CLASS_NAME			{ $$ = new_designator ($2, 0); }
+	| '.' TYPE_NAME %prec LOW	{ $$ = new_designator ($2.sym, 0); }
+	| '.' NAME					{ $$ = new_designator ($2, 0); }
+	| index_expr				{ $$ = new_designator (0, $1); }
 	;
 
 optional_comma
@@ -2262,7 +2264,9 @@ unary_expr
 	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = new_call_expr ($1, $3, nullptr); }
 	| unary_expr index_expr			{ $$ = new_array_expr ($1, $2); }
-	| unary_expr '.' ident_expr		{ $$ = new_field_expr ($1, $3); }
+	| unary_expr '.' OBJECT_NAME	{ $$ = new_field_sym_expr ($1, $3.sym); }
+	| unary_expr '.' CLASS_NAME		{ $$ = new_field_sym_expr ($1, $3); }
+	| unary_expr '.' TYPE_NAME		{ $$ = new_field_sym_expr ($1, $3.sym); }
 	| unary_expr '.' unary_expr		{ $$ = new_field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = new_incop_expr ($1, $2, false); }
 	| unary_expr INCOP				{ $$ = new_incop_expr ($2, $1, true); }
@@ -2288,12 +2292,6 @@ unary_expr
 	| obj_expr					{ $$ = $1; }
 	;
 
-ident_expr
-	: OBJECT_NAME				{ $$ = new_symbol_expr ($1.sym); }
-	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
-	| TYPE_NAME					{ $$ = new_symbol_expr ($1.sym); }
-	;
-
 index_expr
 	: '[' expr ']'				{ $$ = $expr; }
 	;
@@ -2312,15 +2310,17 @@ cast_expr
 			auto decl = new_decl_expr (spec, nullptr);
 			$$ = new_binary_expr ('C', decl, $4);
 		}
-	| CONSTRUCT '(' typename ',' expr_list[args] ')' //FIXME arg_expr instead?
+	| typespec '(' arg_list[args] ')'
 		{
-			auto spec = $3;
-			auto args = $args;
-			auto type_expr = spec.type_expr;
-			if (!type_expr) {
-				type_expr = new_type_expr (spec.type);
-			}
-			$$ = new_call_expr (type_expr, args, nullptr);
+			auto spec = $typespec;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_call_expr (decl, $args, nullptr);
+		}
+	| CONSTRUCT '(' typename ',' arg_list[args] ')'
+		{
+			auto spec = $typename;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_call_expr (decl, $args, nullptr);
 		}
 	| unary_expr %prec LOW
 	;

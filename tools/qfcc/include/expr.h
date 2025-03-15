@@ -615,7 +615,7 @@ expr_t *new_block_expr (const expr_t *old);
 */
 expr_t *build_block_expr (expr_t *list, bool set_result);
 
-designator_t *new_designator (const expr_t *field, const expr_t *index);
+designator_t *new_designator (symbol_t *field, const expr_t *index);
 element_t *new_element (const expr_t *expr, designator_t *designator);
 expr_t *new_compound_init (void);
 element_t *append_init_element (element_chain_t *element_chain,
@@ -1012,6 +1012,7 @@ expr_t *new_incop_expr (int op, const expr_t *e, bool postop);
 expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
 					   const expr_t *false_expr);
 expr_t *new_field_expr (const expr_t *object, const expr_t *member);
+expr_t *new_field_sym_expr (const expr_t *object, symbol_t *member);
 expr_t *new_array_expr (const expr_t *base, const expr_t *index);
 expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
 expr_t *new_decl (symbol_t *sym, const expr_t *init);

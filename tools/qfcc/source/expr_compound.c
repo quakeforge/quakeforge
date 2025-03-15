@@ -57,17 +57,14 @@ ALLOC_STATE (element_t, elements);
 ALLOC_STATE (designator_t, designators);
 
 designator_t *
-new_designator (const expr_t *field, const expr_t *index)
+new_designator (symbol_t *field, const expr_t *index)
 {
 	if ((!field && !index) || (field && index)) {
 		internal_error (0, "exactly one of field or index is required");
 	}
-	if (field && field->type != ex_symbol) {
-		internal_error (field, "invalid field designator");
-	}
 	designator_t *des;
 	ALLOC (256, designator_t, designators, des);
-	des->field = field;
+	des->field = new_symbol_expr (field);
 	des->index = index;
 	return des;
 }

@@ -514,9 +514,19 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	if (expr->branch.type == pr_branch_call) {
-		auto target = expr_process (expr->branch.target, ctx);
-		if (is_error (target)) {
-			return target;
+		auto target = expr->branch.target;
+		if (target->type == ex_decl) {
+			scoped_src_loc (target);
+			auto type = proc_decl_type (target, ctx);
+			if (!type) {
+				return new_error_expr ();
+			}
+			target = new_type_expr (type);
+		} else {
+			target = expr_process (expr->branch.target, ctx);
+			if (is_error (target)) {
+				return target;
+			}
 		}
 		auto args = (expr_t *) expr->branch.args;
 		if (expr->branch.args) {
