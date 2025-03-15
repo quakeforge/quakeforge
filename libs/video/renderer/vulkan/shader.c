@@ -239,7 +239,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 				break;
 			}
 		}
-	} else if (strncmp (shader_path, SHADER, SHADER_SIZE)) {
+	} else if (strncmp (shader_path, SHADER, SHADER_SIZE) == 0) {
 		path = dstring_new ();
 		dsprintf (path, "%s/%s", FS_SHADERPATH, shader_path + SHADER_SIZE);
 		file = Qopen (path->str, "rbz");
