@@ -214,16 +214,19 @@ sampled_image_property (const type_t *type, const attribute_t *property)
 
 type_t type_image = {
 	.type = ev_invalid,
+	.name = ".image",
 	.meta = ty_struct,
 	.property = image_property,
 };
 type_t type_sampled_image = {
 	.type = ev_invalid,
+	.name = ".sampled_image",
 	.meta = ty_struct,
 	.property = sampled_image_property,
 };
 type_t type_sampler = {
 	.type = ev_int,
+	.name = ".sampler",
 	.meta = ty_handle,
 };
 
@@ -244,6 +247,7 @@ image_init_types (void)
 static const expr_t *
 image_handle_property (const type_t *type, const attribute_t *attr)
 {
+	type = unalias_type (type);
 	return type->handle.type->property (type, attr);
 }
 
@@ -268,6 +272,7 @@ create_image_type (image_t *image, const type_t *htype)
 
 	type_t type = {
 		.type = ev_int,
+		.name = save_string (va (0, "hnd %s", htype->name)),
 		.alignment = 1,
 		.width = 1,
 		.columns = 1,
