@@ -333,7 +333,6 @@ SRC_LINE
 "#define out @out"                                                  "\n"
 "#define highp"                                                     "\n"
 "#define lowp"                                                      "\n"
-"#define uint unsigned"                                             "\n"
 "#define uvec2 uivec2"                                              "\n"
 "#define gbvec(base) @vector(bool, @width(base))"                   "\n"
 "#define gvec(base) @vector(float, @width(base))"                   "\n"
@@ -609,13 +608,11 @@ SRC_LINE
 "#undef out"                                                        "\n"
 "#undef highp"                                                      "\n"
 "#undef lowp"                                                       "\n"
-"#undef uint"                                                       "\n"
 "#undef uvec2"                                                      "\n";
 
 //texture functions
 static const char *glsl_texture_size_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define __sampler(...) @sampler(@image(__VA_ARGS__))"              "\n"
 "#define _sampler(...) __sampler(float __VA_OPT__(,) __VA_ARGS__), \\\n"
 "                      __sampler(int __VA_OPT__(,) __VA_ARGS__),   \\\n"
@@ -635,12 +632,10 @@ SRC_LINE
 "};"                                                                "\n"
 "#undef __sampler"                                                  "\n"
 "#undef _sampler"                                                   "\n"
-"#undef uint"                                                       "\n"
 ;
 
 static const char *glsl_texture_lod_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define __sampler(...) @sampler(@image(__VA_ARGS__))"              "\n"
 "#define _sampler(...) __sampler(float __VA_OPT__(,) __VA_ARGS__), \\\n"
 "                      __sampler(int __VA_OPT__(,) __VA_ARGS__),   \\\n"
@@ -656,12 +651,10 @@ SRC_LINE
 "};"                                                                "\n"
 "#undef __sampler"                                                  "\n"
 "#undef _sampler"                                                   "\n"
-"#undef uint"                                                       "\n"
 ;
 
 static const char *glsl_texture_levels_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define __sampler(...) @sampler(@image(__VA_ARGS__))"              "\n"
 "#define _sampler(...) __sampler(float __VA_OPT__(,) __VA_ARGS__), \\\n"
 "                      __sampler(int __VA_OPT__(,) __VA_ARGS__),   \\\n"
@@ -679,12 +672,10 @@ SRC_LINE
 "};"                                                                "\n"
 "#undef __sampler"                                                  "\n"
 "#undef _sampler"                                                   "\n"
-"#undef uint"                                                       "\n"
 ;
 
 static const char *glsl_other_texture_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
 "#define gtex_coord gsampler.tex_coord"                             "\n"
 "#define gshadow_coord gsamplerSh.shadow_coord"                     "\n"
@@ -721,12 +712,10 @@ SRC_LINE
 "#undef _sampler"                                                   "\n"
 "#undef gtex_coord"                                                 "\n"
 "#undef gvec4"                                                      "\n"
-"#undef uint"                                                       "\n"
 ;
 
 static const char *glsl_frag_texture_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
 "#define gtex_coord gsampler.tex_coord"                             "\n"
 "#define gshadow_coord gsamplerSh.shadow_coord"                     "\n"
@@ -769,12 +758,10 @@ SRC_LINE
 "#undef _sampler"                                                   "\n"
 "#undef gtex_coord"                                                 "\n"
 "#undef gvec4"                                                      "\n"
-"#undef uint"                                                       "\n"
 ;
 
 static const char *glsl_common_texture_functions =
 SRC_LINE
-"#define uint unsigned"                                             "\n"
 "#define gvec4 @vector(gsampler.sample_type, 4)"                    "\n"
 "#define gvec4B @vector(gsamplerB.sample_type, 4)"                  "\n"
 "#define gvec4MS @vector(gsamplerMS.sample_type, 4)"                "\n"
@@ -836,7 +823,6 @@ SRC_LINE
 "#undef gvec4MS"                                                    "\n"
 "#undef gvec4B"                                                     "\n"
 "#undef gvec4"                                                      "\n"
-"#undef uint"                                                       "\n"
 ;
 #if 0
 "gvec4 textureLod(gsampler1D sampler, float P, float lod)"          "\n"
@@ -986,7 +972,6 @@ SRC_LINE
 
 static const char *glsl_atomic_functions =
 SRC_LINE
-"#define uint unsigned"                                                 "\n"
 "#define uintr @reference(uint)"                                        "\n"
 "#define intr @reference(int)"                                          "\n"
 "#define inout @inout"                                                  "\n"
@@ -1042,12 +1027,10 @@ SRC_LINE
 									   "MemorySemantics.Relaxed, data];""\n"
 "#undef intr"      "\n"
 "#undef uintr"     "\n"
-"#undef uint"      "\n"
 "#undef inout"     "\n";
 
 static const char *glsl_image_functions =
 SRC_LINE
-"#define uint unsigned"                                                 "\n"
 "#define readonly"                                                      "\n"
 "#define writeonly"                                                     "\n"
 "#define __image(...) @image(__VA_ARGS__ __VA_OPT__(,) Storage)"        "\n"
@@ -1113,7 +1096,6 @@ SRC_LINE
 "#undef IMAGE_PARAMS_MS""\n"
 "#undef _image"         "\n"
 "#undef __image"        "\n"
-"#undef uint"           "\n"
 "#undef readonly"       "\n"
 "#undef writeonly"      "\n";
 
@@ -1169,7 +1151,6 @@ void groupMemoryBarrier()
 #endif
 //subpass-input functions
 SRC_LINE
-"#define uint unsigned"                                                 "\n"
 "#define readonly"                                                      "\n"
 "#define writeonly"                                                     "\n"
 "#define __spI(...) @image(__VA_ARGS__ __VA_OPT__(,) SubpassData)"      "\n"
@@ -1187,7 +1168,6 @@ SRC_LINE
 	"= " SPV(OpImageRead)                                               "\n"
 	"[subpass, @construct(gsubpassInputMS.image_coord, 0), sample];"    "\n"
 "};"                                                                    "\n"
-"#undef uint"           "\n"
 "#undef readonly"       "\n"
 "#undef writeonly"      "\n"
 "#undef gvec4"          "\n"

@@ -3213,6 +3213,8 @@ static keyword_t qf_keywords[] = {
 	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
 	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
 	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
+	{"uint",		QC_TYPE_SPEC, .spec = { .type = &type_uint } 	},
+	{"ulong",		QC_TYPE_SPEC, .spec = { .type = &type_ulong } 	},
 	{"bool",		QC_TYPE_SPEC, .spec = { .type = &type_bool } 	},
 	{"lbool",		QC_TYPE_SPEC, .spec = { .type = &type_lbool } 	},
 	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = true } },
