@@ -108,12 +108,6 @@ void
 glsl_declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
 	auto attributes = glsl_optimize_attributes (spec.attributes);
-	//if (symtab->type == stab_block) {
-	//	spec = spec_process (spec, ctx);
-	//	spec.type = find_type (append_type (spec.sym->type, spec.type));
-	//	spec.type = glsl_block_type (spec.type, symtab->name);
-	//	spec.sym->type = nullptr;
-	//}
 	spec.sym = declare_field (spec, symtab, ctx);
 	spec.sym->offset = -1;
 	glsl_apply_attributes (attributes, spec);

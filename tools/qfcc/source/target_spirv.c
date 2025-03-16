@@ -2419,19 +2419,6 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	sym->var.storage = spec.storage;
 	if (sym->name[0]) {
 		symtab_addsymbol (symtab, sym);
-		if (is_struct (type) && type_symtab (type)->type == stab_block) {
-			auto block = (glsl_block_t *) type_symtab (type)->data;
-			glsl_apply_attributes (block->attributes, spec);
-			// FIXME this should be handled in the block code, but that
-			// needs a rethink
-			if (block->interface != glsl_in
-				&& block->interface != glsl_out
-				&& block->interface != glsl_push_constant) {
-				auto attr = new_attribute ("NonWritable", nullptr);
-				attr->next = sym->attributes;
-				sym->attributes = attr;
-			}
-		}
 	}
 	if (symtab->type == stab_param || symtab->type == stab_local) {
 		if (init) {

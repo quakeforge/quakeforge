@@ -116,15 +116,26 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 		if (sym->type->meta == ty_enum) {
 			error (0, "enum %s redefined", tag->name);
 		} else if (sym->type->meta == ty_struct && sym->type->symtab) {
-			error (0, "%s %s redefined",
-				   *su == 's' ? "struct" : "union", tag->name);
+			static const char *su_names[] = {
+				"???",
+				"union",
+				"block",
+				"struct",
+			};
+			error (0, "%s %s redefined", su_names[*su & 3], tag->name);
 			*su = 0;
 		} else if (sym->type->meta != ty_struct) {
 			internal_error (0, "%s is not a struct or union",
 							tag->name);
 		}
 	}
-	return new_symtab (parent, stab_struct);
+	static stab_type_e stab_types[] = {
+		stab_struct,
+		stab_union,
+		stab_block,
+		stab_struct,
+	};
+	return new_symtab (parent, stab_types[*su & 3]);
 }
 
 symbol_t *

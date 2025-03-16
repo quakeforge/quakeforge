@@ -156,7 +156,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token				RETURN AT_RETURN
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE SAMPLER
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
-%token	<op>		STRUCT
+%token	<op>		STRUCT BLOCK
 %token				HANDLE INTRINSIC
 %token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
 %token	<spec>		OBJECT_NAME
@@ -175,6 +175,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		binding opt_binding
 %type	<spec>		fnbinding
 %type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
+%type	<spec>		attr_declspecs_nosc_ts attr_declspecs_nosc_nots
 %type	<spec>		declspecs declspecs_nosc declspecs_nots declspecs_ts
 %type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
 %type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
@@ -833,6 +834,15 @@ datadef
 		}
 	  qc_func_decls
 	| attr_declspecs ';'
+		{
+			auto spec = $1;
+			if (spec.type && is_struct (spec.type)
+				&& type_symtab (spec.type)
+				&& type_symtab (spec.type)->type == stab_block) {
+				// FIXME not glsl
+				notice(0,"foobar %p", spec.type);
+			}
+		}
 	| attr_list ';'
 	| error ';'
 	| error '}'
@@ -840,18 +850,28 @@ datadef
 	;
 
 attr_declspecs
-	: attr_list declspecs		{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs			{ $$ = attr_spec ($2, $1); }
 	| declspecs
 	;
 
 attr_declspecs_nots
-	: attr_list declspecs_nots	{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_nots		{ $$ = attr_spec ($2, $1); }
 	| declspecs_nots
 	;
 
 attr_declspecs_ts
-	: attr_list declspecs_ts	{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_ts		{ $$ = attr_spec ($2, $1); }
 	| declspecs_ts
+	;
+
+attr_declspecs_nosc_nots
+	: attr_list declspecs_nosc_nots	{ $$ = attr_spec ($2, $1); }
+	| declspecs_nosc_nots
+	;
+
+attr_declspecs_nosc_ts
+	: attr_list declspecs_nosc_ts	{ $$ = attr_spec ($2, $1); }
+	| declspecs_nosc_ts
 	;
 
 attr_list
@@ -1602,6 +1622,7 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
+	| BLOCK tag struct_list { $$ = $3; }
 	| handle tag
 		{
 			specifier_t spec = $1;
@@ -1627,6 +1648,12 @@ struct_list
 	: '{'
 		{
 			int         op = $<op>-1;
+			if (op == 'b' && current_symtab != pr.symtab) {
+				error (0, "blocks must be declared globally");
+				op = 's';
+			} else if (current_symtab->type == stab_block) {
+				error (0, "cannot nest struct declarations in blocks");
+			}
 			symbol_t   *sym = $<symbol>0;
 			current_symtab = start_struct (&op, sym, current_symtab);
 			$<op>1 = op;
@@ -1680,8 +1707,8 @@ component_decl_list2
 	;
 
 component_decl
-	: declspecs_nosc_ts components
-	| declspecs_nosc_ts
+	: attr_declspecs_nosc_ts components
+	| attr_declspecs_nosc_ts
 		{
 			if (is_anonymous_struct ($1)) {
 				// type->name always begins with "tag "
@@ -1696,8 +1723,8 @@ component_decl
 				}
 			}
 		}
-	| declspecs_nosc_nots components_notype
-	| declspecs_nosc_nots
+	| attr_declspecs_nosc_nots components_notype
+	| attr_declspecs_nosc_nots
 		{
 			warning (0, "useless type qualifier in empty declaration");
 		}
@@ -3217,6 +3244,7 @@ static keyword_t qf_keywords[] = {
 
 	{"@image",		QC_IMAGE,		},
 	{"@sampler",	QC_SAMPLER,		},
+	{"@block",		QC_BLOCK,		},
 
 	{"@construct",	QC_CONSTRUCT,	},
 	{"@generic",	QC_GENERIC,		},
@@ -3263,6 +3291,8 @@ qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token,
 {
 	if (keyword->value == QC_STRUCT) {
 		lval->op = token[0];
+	} else if (keyword->value == QC_BLOCK) {
+		lval->op = token[1];
 	} else if (keyword->value == QC_OBJECT_NAME) {
 		symbol_t   *sym;
 
