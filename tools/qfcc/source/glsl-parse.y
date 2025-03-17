@@ -160,10 +160,11 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %token        PRECISION
 %token <string> INVARIANT SMOOTH FLAT NOPERSPECTIVE PRECISE
 %token <string> HIGH_PRECISION MEDIUM_PRECISION LOW_PRECISION
+%token <string> COHERENT VOLATILE RESTRICT READONLY WRITEONLY
+%token <string> CENTROID PATCH SAMPLE
 %token <spec> LAYOUT SHARED
-%token <spec> CONST IN OUT INOUT CENTROID PATCH SAMPLE UNIFORM BUFFER VOLATILE
-%token <spec> RESTRICT READONLY WRITEONLY
-%token <spec> DISCARD COHERENT
+%token <spec> CONST IN OUT INOUT UNIFORM BUFFER
+%token <spec> DISCARD
 
 %type <symbol>  variable_identifier new_identifier
 %type <block>   block_declaration
@@ -201,7 +202,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <spec>    fully_specified_type type_specifier struct_specifier
 %type <spec>    type_qualifier single_type_qualifier type_specifier_nonarray
 %type <string>  precision_qualifier interpolation_qualifier invariant_qualifier
-%type <string>  precise_qualifier
+%type <string>  precise_qualifier memory_qualifier aux_storage_qualifier
 %type <spec>    storage_qualifier layout_qualifier
 
 %type <expr>    layout_qualifier_id
@@ -906,6 +907,11 @@ type_qualifier
 
 single_type_qualifier
 	: storage_qualifier
+	| aux_storage_qualifier
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	| layout_qualifier
 	| precision_qualifier
 		{
@@ -927,6 +933,11 @@ single_type_qualifier
 			auto attr = new_attribute ($1, nullptr);
 			$$ = (specifier_t) { .attributes = attr };
 		}
+	| memory_qualifier
+		{
+			auto attr = new_attribute ($1, nullptr);
+			$$ = (specifier_t) { .attributes = attr };
+		}
 	;
 
 storage_qualifier
@@ -934,13 +945,19 @@ storage_qualifier
 	| IN
 	| OUT
 	| INOUT
-	| CENTROID
-	| PATCH
-	| SAMPLE
 	| UNIFORM
 	| BUFFER
 	| SHARED
-	| COHERENT
+	;
+
+aux_storage_qualifier
+	: CENTROID
+	| PATCH
+	| SAMPLE
+	;
+
+memory_qualifier
+	: COHERENT
 	| VOLATILE
 	| RESTRICT
 	| READONLY
@@ -1347,19 +1364,19 @@ static keyword_t glsl_keywords[] = {
 	{"inout",           GLSL_INOUT,     .spec = { .storage = sc_inout }},
 	{"attribute",       GLSL_RESERVED},
 	{"varying",         GLSL_RESERVED},
-	{"coherent",        GLSL_COHERENT},
-	{"volatile",        GLSL_VOLATILE},
-	{"restrict",        GLSL_RESTRICT},
-	{"readonly",        GLSL_READONLY},
-	{"writeonly",       GLSL_WRITEONLY},
+	{"coherent",        GLSL_COHERENT,		.use_name = true},
+	{"volatile",        GLSL_VOLATILE,		.use_name = true},
+	{"restrict",        GLSL_RESTRICT,		.use_name = true},
+	{"readonly",        GLSL_READONLY,		.use_name = true},
+	{"writeonly",       GLSL_WRITEONLY,		.use_name = true},
 	{"atomic_uint",     GLSL_RESERVED},
 	{"layout",          GLSL_LAYOUT},
-	{"centroid",        GLSL_CENTROID},
+	{"centroid",        GLSL_CENTROID,		.use_name = true},
 	{"flat",            GLSL_FLAT,          .use_name = true},
 	{"smooth",          GLSL_SMOOTH,        .use_name = true},
 	{"noperspective",   GLSL_NOPERSPECTIVE, .use_name = true},
-	{"patch",           GLSL_PATCH},
-	{"sample",          GLSL_SAMPLE},
+	{"patch",           GLSL_PATCH,			.use_name = true},
+	{"sample",          GLSL_SAMPLE,		.use_name = true},
 	{"invariant",       GLSL_INVARIANT,     .use_name = true},
 	{"precise",         GLSL_PRECISE,       .use_name = true},
 	{"break",           GLSL_BREAK},

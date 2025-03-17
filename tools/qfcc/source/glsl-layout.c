@@ -1180,6 +1180,42 @@ static glsl_qual_t layout_qualifiers[] = {
 
 static bool sorted_general_qualifiers;
 static glsl_qual_t general_qualifiers[] = {
+	{	.name = "coherent",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(var)|D(block)|D(member),
+		.var_type = V(any),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "Coherent"
+	},
+	{	.name = "volatile",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(var)|D(block)|D(member),
+		.var_type = V(any),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "Volatile"
+	},
+	{	.name = "restrict",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(var)|D(block)|D(member),
+		.var_type = V(any),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "Restrict"
+	},
+	{	.name = "readonly",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(var)|D(block)|D(member),
+		.var_type = V(any),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "NonWritable"
+	},
+	{	.name = "writeonly",
+		.apply = A(glsl_general_attribute),
+		.obj_mask = D(var)|D(block)|D(member),
+		.var_type = V(any),
+		.if_mask = I(uniform)|I(buffer),
+		.real_name = "NonReadable"
+	},
+
 	{	.name = "lowp",
 		.apply = A(glsl_general_attribute),
 		.obj_mask = D(qual)|D(var),

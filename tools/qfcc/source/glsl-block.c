@@ -296,14 +296,6 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	auto symtab = current_symtab;// FIXME
 	current_target.declare_sym (spec, nullptr, symtab, nullptr);
 	glsl_apply_attributes (block->attributes, spec);
-	if (block->interface != glsl_in
-		&& block->interface != glsl_out
-		&& block->interface != glsl_buffer
-		&& block->interface != glsl_push_constant) {
-		auto attr = new_attribute ("NonWritable", nullptr);
-		attr->next = spec.sym->attributes;
-		spec.sym->attributes = attr;
-	}
 
 	auto block_sym = symtab_lookup (interface, block->name->name);
 	if (block_sym) {
