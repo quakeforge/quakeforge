@@ -213,6 +213,8 @@ typedef struct language_s {
 	void      (*parse_declaration) (specifier_t spec, symbol_t *sym,
 									const expr_t *init, symtab_t *symtab,
 									expr_t *block, rua_ctx_t *ctx);
+	void      (*field_attributes) (attribute_t *attributes, symbol_t *sym,
+								   rua_ctx_t *ctx);
 	void       *sublanguage;
 	const expr_t *(*parse_number) (const rua_tok_t *tok, rua_ctx_t *ctx);
 } language_t;

@@ -174,6 +174,8 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type <expr>    conditional_expression unary_expression postfix_expression
 %type <expr>    function_call function_call_or_method function_call_generic
 %type <mut_expr> function_call_header_with_parameters identifier_list
+%type <mut_expr> struct_declarator struct_declarator_list
+%type <mut_expr> struct_declaration struct_declaration_list
 %type <expr>    function_call_header_no_parameters
 %type <expr>    function_call_header function_identifier
 %type <expr>    logical_or_expression logical_xor_expression
@@ -623,8 +625,9 @@ declaration
 			if (current_symtab != pr.symtab) {
 				error (0, "blocks must be declared globally");
 			} else {
+				auto spec = $type_qualifier;
 				auto block = $block_declaration;
-				declare_block_instance (block, nullptr);
+				declare_block_instance (spec, block, nullptr, ctx);
 			}
 			$$ = nullptr;
 		}
@@ -633,9 +636,10 @@ declaration
 			if (current_symtab != pr.symtab) {
 				error (0, "blocks must be declared globally");
 			} else {
+				auto spec = $type_qualifier;
 				auto block = $block_declaration;
 				auto instance_name = $new_identifier;
-				declare_block_instance (block, instance_name);
+				declare_block_instance (spec, block, instance_name, ctx);
 			}
 			$$ = nullptr;
 		}
@@ -644,10 +648,11 @@ declaration
 			if (current_symtab != pr.symtab) {
 				error (0, "blocks must be declared globally");
 			} else {
+				auto spec = $type_qualifier;
 				auto block = $block_declaration;
 				auto instance_name = $new_identifier;
 				instance_name->type = $array_specifier;
-				declare_block_instance (block, instance_name);
+				declare_block_instance (spec, block, instance_name, ctx);
 			}
 			$$ = nullptr;
 		}
@@ -673,22 +678,16 @@ declaration
 block_declaration
 	: IDENTIFIER '{'
 		{
-			auto spec = $<spec>0;
 			auto sym = $IDENTIFIER;
-			auto block = create_block (spec, sym);
-			if (block) {
-				current_symtab = block->members;
-			}
+			auto block = create_block (sym);
+			current_symtab = block->members;
 			$<block>$ = block;
 		}
-	  struct_declaration_list '}'
+	  struct_declaration_list[decls] '}'
 		{
-			auto spec = $<spec>0;
 			auto block = $<block>3;
-			if (block) {
-				current_symtab = block->members->parent;
-				finish_block (block, spec);
-			}
+			current_symtab = block->members->parent;
+			block->member_decls = $decls;
 			$$ = block;
 		}
 	;
@@ -1021,11 +1020,12 @@ struct_specifier
 			int op = 's';
 			current_symtab = start_struct (&op, $2, current_symtab);
 		}
-	  struct_declaration_list '}'
+	  struct_declaration_list[decls] '}'
 		{
 			auto symtab = current_symtab;
 			current_symtab = symtab->parent;
 
+			struct_process ($decls, ctx);
 			auto sym = build_struct ('s', $2, symtab, nullptr, 0);
 			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
@@ -1058,36 +1058,47 @@ struct_specifier
 	;
 
 struct_declaration_list
-	: struct_declaration
-	| struct_declaration_list struct_declaration
+	: struct_declaration[decl]			{ $$ = new_list_expr ($decl); }
+	| struct_declaration_list[list] struct_declaration[decl]
+		{
+			$$ = expr_append_expr ($list, $decl);
+		}
 	;
 
 struct_declaration
-	: type_specifier struct_declarator_list ';'
-	| type_qualifier type_specifier		{ $<spec>$ = spec_merge ($1, $2); }
-	  struct_declarator_list ';'
+	: type_specifier[spec]
+		{
+			$<mut_expr>$ = new_decl_expr ($spec, current_symtab);
+		}
+	  struct_declarator_list[list] ';'	{ $$ = $list; }
+	| type_qualifier[qual] type_specifier[spec]
+		{
+			auto spec = spec_merge ($qual, $spec);
+			$<mut_expr>$ = new_decl_expr (spec, current_symtab);
+		}
+	  struct_declarator_list[list] ';'	{ $$ = $list; }
 	;
 
 struct_declarator_list
 	: struct_declarator
-	| struct_declarator_list ','		{ $<spec>$ = $<spec>0; }
-	  struct_declarator
+	| struct_declarator_list[list] ','	{ $<mut_expr>$ = $list; }
+	  struct_declarator[decl]			{ $$ = $decl; }
 	;
 
 struct_declarator
 	: new_identifier
 		{
-			auto spec = $<spec>0;
-			spec.sym = $1;
-			glsl_declare_field (spec, current_symtab, ctx);
+			auto decl = $<mut_expr>0;
+			append_decl (decl, $new_identifier, nullptr);
+			$$ = decl;
 		}
 	| new_identifier array_specifier
 		{
-			auto spec = $<spec>0;
-			spec.type = append_type ($2, spec.type);
-			spec.type = find_type (spec.type);
-			spec.sym = $1;
-			glsl_declare_field (spec, current_symtab, ctx);
+			auto decl = $<mut_expr>0;
+			auto sym = $new_identifier;
+			sym->type = $array_specifier;
+			append_decl (decl, $new_identifier, nullptr);
+			$$ = decl;
 		}
 	;
 
@@ -1940,6 +1951,7 @@ language_t lang_glsl_comp = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_comp_sublanguage,
 };
 
@@ -1953,6 +1965,7 @@ language_t lang_glsl_vert = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_vert_sublanguage,
 };
 
@@ -1966,6 +1979,7 @@ language_t lang_glsl_tesc = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_tesc_sublanguage,
 };
 
@@ -1979,6 +1993,7 @@ language_t lang_glsl_tese = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_tese_sublanguage,
 };
 
@@ -1993,6 +2008,7 @@ language_t lang_glsl_geom = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_geom_sublanguage,
 };
 
@@ -2006,5 +2022,6 @@ language_t lang_glsl_frag = {
 	.version = glsl_version,
 	.on_include = glsl_on_include,
 	.parse_declaration = glsl_parse_declaration,
+	.field_attributes = glsl_field_attributes,
 	.sublanguage = &glsl_frag_sublanguage,
 };

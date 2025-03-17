@@ -775,6 +775,42 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 	return spec;
 }
 
+void
+struct_process (const expr_t *declaration_list, rua_ctx_t *ctx)
+{
+	if (declaration_list->type != ex_list) {
+		internal_error (declaration_list, "not a list");
+	}
+	for (auto d = declaration_list->list.head; d; d = d->next) {
+		auto declaration = d->expr;
+		if (declaration->type != ex_decl) {
+			internal_error (declaration, "not a decl");
+		}
+		int count = list_count (&declaration->decl.list);
+		if (!count) {
+			warning (declaration, "ignoring useless empty declaration");
+			continue;
+		}
+		const expr_t *decls[count];
+		list_scatter (&declaration->decl.list, decls);
+		auto decl_spec = declaration->decl.spec;
+		for (int i = 0; i < count; i++) {
+			auto decl = decls[i];
+			symbol_t   *sym;
+			scoped_src_loc (decl);
+			if (decl->type == ex_symbol) {
+				sym = decl->symbol;
+			} else {
+				internal_error (decl, "not a symbol");
+			}
+			auto spec = decl_spec;
+			spec.sym = sym;
+			auto symtab = declaration->decl.symtab;
+			declare_field (spec, symtab, ctx);
+		}
+	}
+}
+
 static const expr_t *
 proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 {

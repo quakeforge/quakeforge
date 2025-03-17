@@ -110,31 +110,18 @@ block_alloc_loc (defspace_t *space, int size, int alignment)
 }
 
 iface_block_t *
-create_block (specifier_t spec, symbol_t *block_sym)
+create_block (symbol_t *block_sym)
 {
-	auto interface = iftype_from_sc(spec.storage);
-	hashtab_t *block_tab = nullptr;
-	if (interface < iface_num_interfaces) {
-		block_tab = interfaces[interface];
-	}
-	if (!block_tab) {
-		error (0, "invalid interface for block: %d", spec.storage);
-		return nullptr;
-	}
 	iface_block_t *block;
 	ALLOC (64, iface_block_t, iface_blocks, block);
 	*block = (iface_block_t) {
 		.name = new_symbol (block_sym->name),
-		.interface = interface,
-		.attributes = glsl_optimize_attributes (spec.attributes),
 		.members = new_symtab (current_symtab, stab_block),
 		.space = defspace_new (ds_backed),
 	};
 	block->members->name = save_string (block_sym->name);
-	block->members->storage = spec.storage;
 	block->members->data = block;
 	block->space->alloc_aligned = block_alloc_loc;
-	Hash_Add (block_tab, block);
 	return block;
 }
 
@@ -244,30 +231,43 @@ block_block_type (const type_t *type, const char *pre_tag)
 }
 
 void
-finish_block (iface_block_t *block, specifier_t spec)
+finish_block (iface_block_t *block)
 {
-	spec.sym = block->name;
-	spec.block = block;
 	int index = 0;
 	for (auto s = block->members->symbols; s; s = s->next) {
 		s->id = index++;
 	}
-	glsl_apply_attributes (block->attributes, spec);
 }
 
 void
-declare_block_instance (iface_block_t *block, symbol_t *instance_name)
+declare_block_instance (specifier_t spec, iface_block_t *block,
+						symbol_t *instance_name, rua_ctx_t *ctx)
 {
 	if (!block) {
 		// error recovery
 		return;
 	}
+	auto interface = iftype_from_sc(spec.storage);
+	hashtab_t *block_tab = nullptr;
+	if (interface < iface_num_interfaces) {
+		block_tab = interfaces[interface];
+	}
+	if (!block_tab) {
+		error (0, "invalid interface for block: %d", spec.storage);
+		return;
+	}
+	block->interface = interface,
+	block->attributes = glsl_optimize_attributes (spec.attributes),
+	block->members->storage = spec.storage;
+	struct_process (block->member_decls, ctx);
+	finish_block (block);
+
+	Hash_Add (block_tab, block);
 	auto interface_name = interface_names[block->interface];
 	auto interface_sym = symtab_lookup (current_symtab, interface_name);
 	if (!interface_sym) {
 		internal_error (0, "%s interface not defined", interface_name);
 	}
-	auto interface = interface_sym->namespace;
 	bool transparent = false;
 
 	const char *tag = "blk";
@@ -294,20 +294,23 @@ declare_block_instance (iface_block_t *block, symbol_t *instance_name)
 	};
 	auto inst_type = block_block_type (&type, nullptr);
 	block->members = inst_type->symtab;
-	specifier_t spec = {
+	spec = (specifier_t) {
 		.sym = instance_name,
 		.storage = sc_from_iftype (block->interface),
+		.block = block,
 	};
 	if (spec.sym->type) {
 		inst_type = append_type (spec.sym->type, inst_type);
 		inst_type = find_type (inst_type);
 	}
+	glsl_apply_attributes (block->attributes, spec);
+	spec.storage = sc_from_iftype (block->interface);
 	spec.sym->type = inst_type;
 	auto symtab = current_symtab;// FIXME
 	current_target.declare_sym (spec, nullptr, symtab, nullptr);
-	glsl_apply_attributes (block->attributes, spec);
 
-	auto block_sym = symtab_lookup (interface, block->name->name);
+	auto namespace = interface_sym->namespace;
+	auto block_sym = symtab_lookup (namespace, block->name->name);
 	if (block_sym) {
 		error (0, "%s block %s redeclared", interface_name,
 			   block_sym->name);
@@ -315,7 +318,7 @@ declare_block_instance (iface_block_t *block, symbol_t *instance_name)
 		block_sym = block->name;
 		block_sym->sy_type = sy_namespace;
 		block_sym->namespace = block->members;
-		symtab_addsymbol (interface, block->name);
+		symtab_addsymbol (namespace, block->name);
 	}
 	if (transparent) {
 		for (auto sym = block->members->symbols; sym; sym = sym->next) {

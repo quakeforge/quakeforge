@@ -67,6 +67,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
@@ -836,11 +837,11 @@ datadef
 	| attr_declspecs ';'
 		{
 			auto spec = $1;
-			if (spec.type && is_struct (spec.type)
-				&& type_symtab (spec.type)
-				&& type_symtab (spec.type)->type == stab_block) {
+			if (spec.block) {
 				// FIXME not glsl
-				notice(0,"foobar %p", spec.type);
+				auto block = spec.block;
+				notice(0,"foobar %p", block);
+				declare_block_instance (spec, block, nullptr, ctx);
 			}
 		}
 	| attr_list ';'
@@ -1655,7 +1656,12 @@ struct_list
 				error (0, "cannot nest struct declarations in blocks");
 			}
 			symbol_t   *sym = $<symbol>0;
-			current_symtab = start_struct (&op, sym, current_symtab);
+			if (op == 'b') {
+				auto block = create_block (sym);
+				current_symtab = block->members;
+			} else {
+				current_symtab = start_struct (&op, sym, current_symtab);
+			}
 			$<op>1 = op;
 			$<symbol>$ = sym;
 		}
@@ -1665,7 +1671,12 @@ struct_list
 			symtab_t   *symtab = current_symtab;
 			current_symtab = pop_scope (symtab);
 
-			if ($<op>1) {
+			if ($<op>1 == 'b') {
+				auto block = (iface_block_t *) symtab->data;
+				specifier_t spec = { .block = block };
+				finish_block (block);
+				$$ = spec;
+			} else if ($<op>1) {
 				sym = $<symbol>2;
 				sym = build_struct ($<op>1, sym, symtab, 0, 0);
 				$$ = type_spec (sym->type);

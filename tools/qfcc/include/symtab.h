@@ -41,7 +41,7 @@ enum storage_class_e : unsigned;
 */
 ///@{
 
-typedef enum vis_e {
+typedef enum vis_e : unsigned {
 	vis_public,
 	vis_protected,
 	vis_private,

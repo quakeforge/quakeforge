@@ -62,14 +62,16 @@ typedef struct iface_block_s {
 	interface_t interface;
 	symtab_t   *attributes;
 	symtab_t   *members;
+	const expr_t *member_decls;
 	defspace_t *space;
 	symbol_t   *instance_name;
 } iface_block_t;
 
 void block_clear (void);
-iface_block_t *create_block (specifier_t spec, symbol_t *block_sym);
-void finish_block (iface_block_t *block, specifier_t spec);
-void declare_block_instance (iface_block_t *block, symbol_t *instance_name);
+iface_block_t *create_block (symbol_t *block_sym);
+void finish_block (iface_block_t *block);
+void declare_block_instance (specifier_t spec, iface_block_t *block,
+							 symbol_t *instance_name, rua_ctx_t *ctx);
 iface_block_t *get_block (const char *name, interface_t interface);
 
 #endif//__block_h

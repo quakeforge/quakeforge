@@ -368,14 +368,18 @@ declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
 symbol_t *
 declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 {
-	symbol_t   *s = spec.sym;
+	symbol_t   *sym = spec.sym;
 	spec = spec_process (spec, ctx);
-	s->type = find_type (append_type (s->type, spec.type));
-	s->sy_type = sy_offset;
-	s->visibility = current_visibility;
-	symtab_addsymbol (current_symtab, s);
-	if (!s->table) {
-		error (0, "duplicate field `%s'", s->name);
+	sym->type = find_type (append_type (sym->type, spec.type));
+	sym->sy_type = sy_offset;
+	sym->visibility = spec.visibility;
+	symtab_addsymbol (symtab, sym);
+	if (!sym->table) {
+		error (0, "duplicate field `%s'", sym->name);
+	} else {
+		if (ctx->language->field_attributes) {
+			ctx->language->field_attributes (spec.attributes, sym, ctx);
+		}
 	}
-	return s;
+	return sym;
 }
