@@ -68,6 +68,7 @@ typedef struct module_s {
 	const expr_t *addressing_model;
 	const expr_t *memory_model;
 	entrypoint_t *entry_points;
+	struct DARRAY_TYPE (symbol_t *) global_syms;
 	defspace_t *entry_point_space;
 	defspace_t *exec_modes;
 	// debug

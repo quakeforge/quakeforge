@@ -2203,6 +2203,26 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	INSN (header, 3) = 0;	// Filled in later
 	INSN (header, 4) = 0;	// Reserved
 
+	if (pr->module->entry_points && !pr->module->entry_points->next) {
+		// only one entry point
+		// FIXME this should be optional
+		for (size_t i = 0; i < pr->module->global_syms.size; i++) {
+			auto sym = pr->module->global_syms.a[i];
+			bool no_auto = false;
+			//FIXME this is a bit of a hack for glsl symbol declaration
+			//and attribute handling order
+			for (auto attr = sym->attributes; attr; attr = attr->next) {
+				if (strcmp (attr->name, "BuiltIn") == 0) {
+					no_auto = true;
+					break;
+				}
+			}
+			if (!no_auto) {
+				sym->id = spirv_variable (sym, &ctx);
+			}
+		}
+	}
+
 	for (auto ep = pr->module->entry_points; ep; ep = ep->next) {
 		spirv_EntryPoint (ep, &ctx);
 	}
@@ -2434,6 +2454,10 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				error (init, "non-constant initializer");
 			}
 		}
+	}
+	if (storage == SpvStorageClassInput
+		|| storage == SpvStorageClassOutput) {
+		DARRAY_APPEND (&pr.module->global_syms, sym);
 	}
 }
 
@@ -2683,7 +2707,9 @@ static SpvCapability spirv_base_capabilities[] = {
 static void
 spirv_init (void)
 {
-	static module_t module;		//FIXME probably not what I want
+	static module_t module = {		//FIXME probably not what I want
+		.global_syms = DARRAY_STATIC_INIT (16),
+	};
 	pr.module = &module;
 
 	//FIXME unhardcode
