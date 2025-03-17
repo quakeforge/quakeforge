@@ -1,7 +1,7 @@
 /*
-	glsl-block.c
+	iface_block.c
 
-	GLSL specific block handling
+	Shader interface block support
 
 	Copyright (C) 2024 Bill Currie <bill@taniwha.org>
 
@@ -37,6 +37,7 @@
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
@@ -44,31 +45,40 @@
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-ALLOC_STATE (glsl_block_t, blocks);
+const char *interface_names[iface_num_interfaces] = {
+	"in",
+	"out",
+	"uniform",
+	"buffer",
+	"shared",
+	"push_constant",
+};
 
-static hashtab_t *interfaces[glsl_num_interfaces];
+ALLOC_STATE (iface_block_t, iface_blocks);
+
+static hashtab_t *interfaces[iface_num_interfaces];
 
 static const char *
 block_get_key (const void *_b, void *)
 {
-	auto b = (const glsl_block_t *) _b;
+	auto b = (const iface_block_t *) _b;
 	return b->name->name;
 }
 
 void
-glsl_block_clear (void)
+block_clear (void)
 {
-	if (interfaces[glsl_in]) {
-		for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
+	if (interfaces[iface_in]) {
+		for (auto i = iface_in; i < iface_num_interfaces; i++) {
 			Hash_FlushTable (interfaces[i]);
 		}
 	} else {
-		for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
+		for (auto i = iface_in; i < iface_num_interfaces; i++) {
 			interfaces[i] = Hash_NewTable (127, block_get_key, 0, 0, 0);
 		}
 	}
-	for (auto i = glsl_in; i < glsl_num_interfaces; i++) {
-		auto name = glsl_interface_names[i];
+	for (auto i = iface_in; i < iface_num_interfaces; i++) {
+		auto name = interface_names[i];
 		if (symtab_lookup (current_symtab, name)) {
 			internal_error (0, "%s already declared", name);
 		}
@@ -84,7 +94,7 @@ block_sym_ref (symbol_t *sym, void *data)
 {
 	// data is set to the symbol in the table (saves having to find it)
 	sym = data;
-	glsl_block_t *block = sym->table->data;
+	iface_block_t *block = sym->table->data;
 	auto block_sym = block->instance_name;
 	auto expr = new_field_expr (new_symbol_expr (block_sym),
 								new_symbol_expr (sym));
@@ -93,27 +103,27 @@ block_sym_ref (symbol_t *sym, void *data)
 }
 
 static int
-glsl_block_alloc_loc (defspace_t *space, int size, int alignment)
+block_alloc_loc (defspace_t *space, int size, int alignment)
 {
 	// XXX
 	return -1;
 }
 
-glsl_block_t *
-glsl_create_block (specifier_t spec, symbol_t *block_sym)
+iface_block_t *
+create_block (specifier_t spec, symbol_t *block_sym)
 {
-	auto interface = glsl_iftype_from_sc(spec.storage);
+	auto interface = iftype_from_sc(spec.storage);
 	hashtab_t *block_tab = nullptr;
-	if (interface < glsl_num_interfaces) {
+	if (interface < iface_num_interfaces) {
 		block_tab = interfaces[interface];
 	}
 	if (!block_tab) {
 		error (0, "invalid interface for block: %d", spec.storage);
 		return nullptr;
 	}
-	glsl_block_t *block;
-	ALLOC (64, glsl_block_t, blocks, block);
-	*block = (glsl_block_t) {
+	iface_block_t *block;
+	ALLOC (64, iface_block_t, iface_blocks, block);
+	*block = (iface_block_t) {
 		.name = new_symbol (block_sym->name),
 		.interface = interface,
 		.attributes = glsl_optimize_attributes (spec.attributes),
@@ -123,7 +133,7 @@ glsl_create_block (specifier_t spec, symbol_t *block_sym)
 	block->members->name = save_string (block_sym->name);
 	block->members->storage = spec.storage;
 	block->members->data = block;
-	block->space->alloc_aligned = glsl_block_alloc_loc;
+	block->space->alloc_aligned = block_alloc_loc;
 	Hash_Add (block_tab, block);
 	return block;
 }
@@ -136,7 +146,7 @@ add_attribute (attribute_t **attributes, attribute_t *attr)
 }
 
 static const type_t * __attribute__((pure))
-glsl_matrix_type (const type_t *type)
+block_matrix_type (const type_t *type)
 {
 	while (is_array (type)) {
 		type = dereference_type (type);
@@ -148,12 +158,12 @@ glsl_matrix_type (const type_t *type)
 }
 
 static const type_t *
-glsl_block_type (const type_t *type, const char *pre_tag)
+block_block_type (const type_t *type, const char *pre_tag)
 {
 	unsigned uint = sizeof (uint32_t);
 	if (is_array (type)) {
 		type = unalias_type (type);
-		auto ele_type = glsl_block_type (type->array.type, pre_tag);
+		auto ele_type = block_block_type (type->array.type, pre_tag);
 		type_t new = {
 			.type = ev_invalid,
 			.meta = ty_array,
@@ -194,7 +204,7 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 		unsigned offset = 0;
 		int alignment = 1;
 		for (auto s = type->symtab->symbols; s; s = s->next) {
-			auto ftype = glsl_block_type (s->type, tag);
+			auto ftype = block_block_type (s->type, tag);
 			auto sym = new_symbol_type (s->name, ftype);
 			sym->sy_type = sy_offset;
 			sym->offset = -1;
@@ -212,7 +222,7 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 						   new_attribute ("Offset", new_uint_expr (offset)));
 			offset += type_size (ftype) * uint;
 
-			auto mt = glsl_matrix_type (ftype);
+			auto mt = block_matrix_type (ftype);
 			if (mt) {
 				int stride = type_size (column_type (mt)) * uint;
 				add_attribute (&sym->attributes,
@@ -234,7 +244,7 @@ glsl_block_type (const type_t *type, const char *pre_tag)
 }
 
 void
-glsl_finish_block (glsl_block_t *block, specifier_t spec)
+finish_block (iface_block_t *block, specifier_t spec)
 {
 	spec.sym = block->name;
 	spec.block = block;
@@ -246,13 +256,13 @@ glsl_finish_block (glsl_block_t *block, specifier_t spec)
 }
 
 void
-glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
+declare_block_instance (iface_block_t *block, symbol_t *instance_name)
 {
 	if (!block) {
 		// error recovery
 		return;
 	}
-	auto interface_name = glsl_interface_names[block->interface];
+	auto interface_name = interface_names[block->interface];
 	auto interface_sym = symtab_lookup (current_symtab, interface_name);
 	if (!interface_sym) {
 		internal_error (0, "%s interface not defined", interface_name);
@@ -261,9 +271,9 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	bool transparent = false;
 
 	const char *tag = "blk";
-	if (block->interface == glsl_in) {
+	if (block->interface == iface_in) {
 		tag = "ibk";
-	} else if (block->interface == glsl_out) {
+	} else if (block->interface == iface_out) {
 		tag = "obk";
 	}
 
@@ -282,11 +292,11 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 		.symtab = block->members,
 		.attributes = new_attribute ("Block", nullptr),
 	};
-	auto inst_type = glsl_block_type (&type, nullptr);
+	auto inst_type = block_block_type (&type, nullptr);
 	block->members = inst_type->symtab;
 	specifier_t spec = {
 		.sym = instance_name,
-		.storage = glsl_sc_from_iftype (block->interface),
+		.storage = sc_from_iftype (block->interface),
 	};
 	if (spec.sym->type) {
 		inst_type = append_type (spec.sym->type, inst_type);
@@ -321,10 +331,10 @@ glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name)
 	}
 }
 
-glsl_block_t *
-glsl_get_block (const char *name, glsl_interface_t interface)
+iface_block_t *
+get_block (const char *name, interface_t interface)
 {
-	if (interface >= glsl_num_interfaces) {
+	if (interface >= iface_num_interfaces) {
 		internal_error (0, "invalid interface");
 	}
 	return Hash_Find (interfaces[interface], name);

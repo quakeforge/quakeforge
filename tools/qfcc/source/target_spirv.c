@@ -40,7 +40,7 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/function.h"
-#include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -802,15 +802,15 @@ spirv_FunctionParameter (const char *name, const type_t *type, spirvctx_t *ctx)
 static SpvStorageClass
 spirv_storage_class (unsigned storage, const type_t *type)
 {
-	auto interface = glsl_iftype_from_sc (storage);
+	auto interface = iftype_from_sc (storage);
 	SpvStorageClass sc = 0;
-	if (interface < glsl_num_interfaces) {
-		static SpvStorageClass iface_storage[glsl_num_interfaces] = {
-			[glsl_in] = SpvStorageClassInput,
-			[glsl_out] = SpvStorageClassOutput,
-			[glsl_uniform] = SpvStorageClassUniform,
-			[glsl_buffer] = SpvStorageClassStorageBuffer,
-			[glsl_push_constant] = SpvStorageClassPushConstant,
+	if (interface < iface_num_interfaces) {
+		static SpvStorageClass iface_storage[iface_num_interfaces] = {
+			[iface_in] = SpvStorageClassInput,
+			[iface_out] = SpvStorageClassOutput,
+			[iface_uniform] = SpvStorageClassUniform,
+			[iface_buffer] = SpvStorageClassStorageBuffer,
+			[iface_push_constant] = SpvStorageClassPushConstant,
 		};
 		sc = iface_storage[interface];
 	} else if (storage < sc_count) {
@@ -2387,17 +2387,19 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 		params[count] = nullptr;
 
 		if (strcmp (attr->name, "in") == 0) {
-			spec.storage = glsl_sc_from_iftype (glsl_in);//FIXME
+			spec.storage = sc_from_iftype (iface_in);
 			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
 		} else if (strcmp (attr->name, "out") == 0) {
-			spec.storage = glsl_sc_from_iftype (glsl_out);
+			spec.storage = sc_from_iftype (iface_out);
 			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
 		} else if (strcmp (attr->name, "uniform") == 0) {
-			spec.storage = glsl_sc_from_iftype (glsl_uniform);
+			spec.storage = sc_from_iftype (iface_uniform);
 		} else if (strcmp (attr->name, "buffer") == 0) {
-			spec.storage = glsl_sc_from_iftype (glsl_buffer);
+			spec.storage = sc_from_iftype (iface_buffer);
 		} else if (strcmp (attr->name, "shared") == 0) {
-			spec.storage = glsl_sc_from_iftype (glsl_shared);
+			spec.storage = sc_from_iftype (iface_shared);
+		} else if (strcmp (attr->name, "push_constant") == 0) {
+			spec.storage = sc_from_iftype (iface_push_constant);
 		} else if (strcmp (attr->name, "set") == 0) {
 			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
 		} else if (strcmp (attr->name, "binding") == 0) {

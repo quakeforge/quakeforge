@@ -42,15 +42,6 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-const char *glsl_interface_names[glsl_num_interfaces] = {
-	"in",
-	"out",
-	"uniform",
-	"buffer",
-	"shared",
-	"push_constant",
-};
-
 symtab_t *
 glsl_optimize_attributes (attribute_t *attributes)
 {

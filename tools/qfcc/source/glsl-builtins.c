@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/rua-lang.h"
@@ -1230,7 +1231,7 @@ glsl_init_common (rua_ctx_t *ctx)
 	image_init_types ();
 
 	ctx->language->initialized = true;
-	glsl_block_clear ();
+	block_clear ();
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
 	qc_parse_string (glsl_general_functions, &rua_ctx);
 	qc_parse_string (glsl_texture_size_functions, &rua_ctx);

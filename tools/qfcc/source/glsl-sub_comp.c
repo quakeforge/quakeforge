@@ -35,6 +35,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/spirv.h"
@@ -42,11 +43,11 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-static const char *glsl_comp_interface_default_names[glsl_num_interfaces] = {
-	[glsl_in] = ".control",
-	[glsl_uniform] = ".default",
-	[glsl_buffer] = ".default",
-	[glsl_shared] = ".default",
+static const char *glsl_comp_interface_default_names[iface_num_interfaces] = {
+	[iface_in] = ".control",
+	[iface_uniform] = ".default",
+	[iface_buffer] = ".default",
+	[iface_shared] = ".default",
 };
 
 glsl_sublang_t glsl_comp_sublanguage = {

@@ -46,7 +46,6 @@ qfcc_SOURCES = \
 	tools/qfcc/source/flow.c \
 	tools/qfcc/source/function.c \
 	tools/qfcc/source/glsl-attribute.c \
-	tools/qfcc/source/glsl-block.c \
 	tools/qfcc/source/glsl-builtins.c \
 	tools/qfcc/source/glsl-declaration.c \
 	tools/qfcc/source/glsl-layout.c \
@@ -59,6 +58,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/glsl-sub_vert.c \
 	tools/qfcc/source/grab.c \
 	tools/qfcc/source/idstuff.c \
+	tools/qfcc/source/iface_block.c \
 	tools/qfcc/source/image.c \
 	tools/qfcc/source/linker.c \
 	tools/qfcc/source/method.c \

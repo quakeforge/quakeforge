@@ -40,6 +40,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/shared.h"
@@ -240,7 +241,7 @@ glsl_layout_push_constant (const glsl_qual_t *qual, specifier_t spec,
 		                   const expr_t *qual_name)
 {
 	if (spec.block) {
-		spec.block->interface = glsl_push_constant;
+		spec.block->interface = iface_push_constant;
 	}
 }
 
@@ -392,7 +393,7 @@ glsl_layout_ignore (const glsl_qual_t *qual, specifier_t spec,
 #define D(d) (decl_##d)
 #define D_all D(qual)|D(var)|D(block)|D(member)
 #define V(v) (var_##v)
-#define I(i) (1 << (glsl_##i))
+#define I(i) (1 << (iface_##i))
 #define C (const char *[])
 #define ACC (const layout_acc_t [])
 
@@ -1306,8 +1307,8 @@ get_interface_mask (int storage)
 {
 	unsigned if_mask = 0;
 
-	auto interface = glsl_iftype_from_sc (storage);
-	if (interface < glsl_num_interfaces) {
+	auto interface = iftype_from_sc (storage);
+	if (interface < iface_num_interfaces) {
 		if_mask = 1 << interface;
 	}
 	return if_mask;

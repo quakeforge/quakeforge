@@ -59,31 +59,6 @@ extern language_t lang_glsl_tese;
 extern language_t lang_glsl_geom;
 extern language_t lang_glsl_frag;
 
-typedef enum glsl_interface_e : unsigned {
-	glsl_in,
-	glsl_out,
-	glsl_uniform,
-	glsl_buffer,
-	glsl_shared,
-	glsl_push_constant,
-
-	glsl_num_interfaces
-} glsl_interface_t;
-#define glsl_iftype_from_sc(sc) ((glsl_interface_t)((sc) - sc_in))
-#define glsl_sc_from_iftype(it) (((storage_class_t)(it)) + sc_in)
-
-extern const char *glsl_interface_names[glsl_num_interfaces];
-
-typedef struct glsl_block_s {
-	struct glsl_block_s *next;
-	symbol_t   *name;
-	glsl_interface_t interface;
-	symtab_t   *attributes;
-	symtab_t   *members;
-	defspace_t *space;
-	symbol_t   *instance_name;
-} glsl_block_t;
-
 typedef struct glsl_sublang_s {
 	const char *name;
 	const char **interface_default_names;
@@ -97,11 +72,6 @@ extern glsl_sublang_t glsl_tese_sublanguage;
 extern glsl_sublang_t glsl_geom_sublanguage;
 extern glsl_sublang_t glsl_frag_sublanguage;
 
-void glsl_block_clear (void);
-glsl_block_t *glsl_create_block (specifier_t spec, symbol_t *block_sym);
-void glsl_finish_block (glsl_block_t *block, specifier_t spec);
-void glsl_declare_block_instance (glsl_block_t *block, symbol_t *instance_name);
-glsl_block_t *glsl_get_block (const char *name, glsl_interface_t interface);
 symtab_t *glsl_optimize_attributes (attribute_t *attributes);
 void glsl_apply_attributes (symtab_t *attributes, specifier_t spec);
 

@@ -57,7 +57,6 @@
 #define GLSL_YYERROR_VERBOSE 1
 #undef GLSL_YYERROR_VERBOSE
 
-#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
@@ -67,6 +66,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
@@ -263,10 +263,10 @@ make_param (specifier_t spec)
 	if (spec.storage == sc_global) {
 		spec.storage = sc_param;
 	}
-	auto interface = glsl_iftype_from_sc (spec.storage);
-	if (interface == glsl_in) {
+	auto interface = iftype_from_sc (spec.storage);
+	if (interface == iface_in) {
 		spec.storage = sc_in;
-	} else if (interface == glsl_out) {
+	} else if (interface == iface_out) {
 		spec.storage = sc_out;
 	}
 
@@ -624,7 +624,7 @@ declaration
 				error (0, "blocks must be declared globally");
 			} else {
 				auto block = $block_declaration;
-				glsl_declare_block_instance (block, nullptr);
+				declare_block_instance (block, nullptr);
 			}
 			$$ = nullptr;
 		}
@@ -635,7 +635,7 @@ declaration
 			} else {
 				auto block = $block_declaration;
 				auto instance_name = $new_identifier;
-				glsl_declare_block_instance (block, instance_name);
+				declare_block_instance (block, instance_name);
 			}
 			$$ = nullptr;
 		}
@@ -647,7 +647,7 @@ declaration
 				auto block = $block_declaration;
 				auto instance_name = $new_identifier;
 				instance_name->type = $array_specifier;
-				glsl_declare_block_instance (block, instance_name);
+				declare_block_instance (block, instance_name);
 			}
 			$$ = nullptr;
 		}
@@ -675,7 +675,7 @@ block_declaration
 		{
 			auto spec = $<spec>0;
 			auto sym = $IDENTIFIER;
-			auto block = glsl_create_block (spec, sym);
+			auto block = create_block (spec, sym);
 			if (block) {
 				current_symtab = block->members;
 			}
@@ -687,7 +687,7 @@ block_declaration
 			auto block = $<block>3;
 			if (block) {
 				current_symtab = block->members->parent;
-				glsl_finish_block (block, spec);
+				finish_block (block, spec);
 			}
 			$$ = block;
 		}
@@ -1350,17 +1350,17 @@ jump_statement
 
 %%
 
-#define GLSL_INTERFACE(bt) .spec = { .storage = glsl_sc_from_iftype (bt) }
+#define GLSL_INTERFACE(bt) .spec = { .storage = sc_from_iftype (bt) }
 static keyword_t glsl_keywords[] = {
 	{"const",           GLSL_CONST,     .spec = { .is_const = true }},
-	{"uniform",         GLSL_UNIFORM,   GLSL_INTERFACE (glsl_uniform)},
-	{"buffer",          GLSL_BUFFER,    GLSL_INTERFACE (glsl_buffer)},
-	{"shared",          GLSL_SHARED,    GLSL_INTERFACE (glsl_shared)},
+	{"uniform",         GLSL_UNIFORM,   GLSL_INTERFACE (iface_uniform)},
+	{"buffer",          GLSL_BUFFER,    GLSL_INTERFACE (iface_buffer)},
+	{"shared",          GLSL_SHARED,    GLSL_INTERFACE (iface_shared)},
 	// in and out are both parameter qualifiers (sc_in and sc_out) and
-	// glsl interface types (glsl_in and glsl_out). Assume interface type
+	// interface types (iface_in and iface_out). Assume interface type
 	// here.
-	{"in",              GLSL_IN,        GLSL_INTERFACE (glsl_in )},
-	{"out",             GLSL_OUT,       GLSL_INTERFACE (glsl_out )},
+	{"in",              GLSL_IN,        GLSL_INTERFACE (iface_in )},
+	{"out",             GLSL_OUT,       GLSL_INTERFACE (iface_out )},
 	{"inout",           GLSL_INOUT,     .spec = { .storage = sc_inout }},
 	{"attribute",       GLSL_RESERVED},
 	{"varying",         GLSL_RESERVED},

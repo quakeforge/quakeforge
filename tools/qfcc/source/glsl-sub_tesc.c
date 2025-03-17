@@ -35,16 +35,17 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
+#include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-static const char *glsl_tesc_interface_default_names[glsl_num_interfaces] = {
-	[glsl_in] = "gl_PerVertex",
-	[glsl_out] = "gl_PerVertex",
-	[glsl_uniform] = ".default",
-	[glsl_buffer] = ".default",
+static const char *glsl_tesc_interface_default_names[iface_num_interfaces] = {
+	[iface_in] = "gl_PerVertex",
+	[iface_out] = "gl_PerVertex",
+	[iface_uniform] = ".default",
+	[iface_buffer] = ".default",
 };
 
 glsl_sublang_t glsl_tesc_sublanguage = {
