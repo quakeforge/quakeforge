@@ -2385,6 +2385,37 @@ spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val)
 }
 
 static void
+spirv_field_attributes (attribute_t **attributes, symbol_t *sym)
+{
+	for (auto a = attributes; *a; ) {
+		auto attr = *a;
+
+		int count = 0;
+		if (attr->params) {
+			count = list_count (&attr->params->list);
+		}
+		const expr_t *params[count + 1];
+		params[count] = nullptr;
+		if (attr->params) {
+			list_scatter (&attr->params->list, params);
+		}
+
+		if (strcmp (attr->name, "offset") == 0) {
+			auto val = params[0];
+			if (!is_integral_val (val)) {
+				error (val, "not a constant integer");
+				return;
+			}
+			sym->offset = expr_integral (val);
+		} else {
+			a = &attr->next;
+			continue;
+		}
+		*a = (*a)->next;
+	}
+}
+
+static void
 spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 {
 	symbol_t   *sym = spec->sym;
@@ -2777,6 +2808,7 @@ target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
+	.field_attributes = spirv_field_attributes,
 	.var_attributes = spirv_var_attributes,
 	.declare_sym = spirv_declare_sym,
 	.create_entry_point = spirv_create_entry_point,

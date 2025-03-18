@@ -100,6 +100,14 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 }
 
 void
+rua_field_attributes (attribute_t *attributes, symbol_t *sym, rua_ctx_t *ctx)
+{
+	if (current_target.field_attributes) {
+		current_target.field_attributes (&attributes, sym);
+	}
+}
+
+void
 rua_var_attributes (specifier_t *spec, attribute_t **attributes, rua_ctx_t *ctx)
 {
 	if (current_target.var_attributes) {

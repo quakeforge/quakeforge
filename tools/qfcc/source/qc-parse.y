@@ -3420,5 +3420,6 @@ language_t lang_ruamoko = {
 	.parse = qc_yyparse,
 	.finish = qc_finish,
 	.parse_declaration = rua_parse_declaration,
+	.field_attributes = rua_field_attributes,
 	.var_attributes = rua_var_attributes,
 };

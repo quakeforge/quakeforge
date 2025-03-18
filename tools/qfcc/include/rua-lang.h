@@ -238,6 +238,8 @@ int qc_parse_string (const char *str, rua_ctx_t *ctx);
 void rua_parse_declaration (specifier_t spec, symbol_t *sym,
 							const expr_t *init, symtab_t *symtab,
 							expr_t *block, rua_ctx_t *ctx);
+void rua_field_attributes (attribute_t *attributes, symbol_t *sym,
+						   rua_ctx_t *ctx);
 void rua_var_attributes (specifier_t *spec, attribute_t **attributes,
 						 rua_ctx_t *ctx);
 
