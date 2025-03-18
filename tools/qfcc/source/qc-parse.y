@@ -184,6 +184,10 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		param_declarator param_declarator_starttypename
 %type	<spec>		param_declarator_nostarttypename
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
+%type	<expr>		struct_defs component_decl_list
+%type	<expr>		component_declarator component_notype_declarator
+%type	<mut_expr>	component_decl_list2 components components_notype
+%type	<mut_expr>	component_decl
 %type	<spec>		qc_comma
 %type	<symbol>	generic_param
 %type	<op>		type_func type_op
@@ -1665,7 +1669,7 @@ struct_list
 			$<op>1 = op;
 			$<symbol>$ = sym;
 		}
-	  struct_defs '}'
+	  struct_defs[defs] '}'
 		{
 			symbol_t   *sym;
 			symtab_t   *symtab = current_symtab;
@@ -1677,6 +1681,7 @@ struct_list
 				finish_block (block);
 				$$ = spec;
 			} else if ($<op>1) {
+				struct_process ($defs, ctx);
 				sym = $<symbol>2;
 				sym = build_struct ($<op>1, sym, symtab, 0, 0);
 				$$ = type_spec (sym->type);
@@ -1694,6 +1699,7 @@ struct_defs
 			if (!$3->type || !is_class ($3->type)) {
 				error (0, "`%s' is not a class", $3->name);
 			} else {
+				internal_error (0, "FIXME");
 				// replace the struct symbol table with one built from
 				// the class ivars and the current struct fields. ivars
 				// will replace any fields of the same name.
@@ -1704,79 +1710,93 @@ struct_defs
 	;
 
 component_decl_list
-	: component_decl_list2
-	| component_decl_list2 component_decl
+	: component_decl_list2[list]	{ $$ = $list; }
+	| component_decl_list2[list] component_decl[decl]
 		{
 			warning (0, "no semicolon at end of struct or union");
+			$$ = expr_append_expr ($list, $decl);
 		}
 	;
 
 component_decl_list2
 	: /* empty */
-	| component_decl_list2 component_decl ';'
-	| component_decl_list2 ';'
+		{
+			$$ = new_list_expr (nullptr);
+		}
+	| component_decl_list2[list] component_decl[decl] ';'
+		{
+			if ($decl) {
+				if ($decl->type != ex_list) {
+					internal_error ($decl, "not a list");
+				}
+				$$ = expr_append_list ($list, &$decl->list);
+			}
+		}
+	| component_decl_list2[list] ';'
+		{
+			$$ = $list;
+		}
 	;
 
 component_decl
-	: attr_declspecs_nosc_ts components
-	| attr_declspecs_nosc_ts
+	: attr_declspecs_nosc_ts[spec] components[comp]	{ $$ = $comp; }
+	| attr_declspecs_nosc_ts[spec]
 		{
-			if (is_anonymous_struct ($1)) {
+			if (is_anonymous_struct ($spec)) {
 				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (0, ".anonymous.%s",
-										 $1.type->name + 4));
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_offset;
-				$1.sym->visibility = vis_anonymous;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
-				}
+				auto name = $spec.type->name + 4;
+				auto sym = new_symbol (va (0, ".anonymous.%s", name));
+				$spec.visibility = vis_anonymous;
+				auto decl = new_decl_expr ($spec, current_symtab);
+				append_decl (decl, sym, nullptr);
+				$$ = new_list_expr (decl);
 			}
 		}
-	| attr_declspecs_nosc_nots components_notype
-	| attr_declspecs_nosc_nots
+	| attr_declspecs_nosc_nots[spec] components_notype[comp]	{ $$ = $comp; }
+	| attr_declspecs_nosc_nots[spec]
 		{
 			warning (0, "useless type qualifier in empty declaration");
+			$$ = nullptr;
 		}
 	;
 
 components
-	: component_declarator
-	| components ',' { $<spec>$ = $<spec>0; } component_declarator
+	: component_declarator[decl]		{ $$ = new_list_expr ($decl); }
+	| components[list] ',' { $<spec>$ = $<spec>0; } component_declarator[decl]
+		{
+			$$ = expr_append_expr ($list, $decl);
+		}
 	;
 
 component_declarator
-	: declarator
-		{
-			auto spec = $1;
-			declare_field (spec, current_symtab, ctx);
-		}
-	| declarator ':' expr
-	| declarator ':' binding
-		{
-			auto spec = attr_spec ($1, $3);
-			declare_field (spec, current_symtab, ctx);
-		}
-	| ':' expr
-	| ':' binding	{ error (0, "nothing to bind here"); }
+	: declarator[spec]				{ $$ = decl_expr ($spec, nullptr, ctx); }
+	| declarator[spec] ':' binding	{ $$ = decl_expr ($spec, nullptr, ctx); }
+	| declarator ':' expr			{ $$ = nullptr; }
+	| ':' expr						{ $$ = nullptr; }
+	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 
 components_notype
-	: component_notype_declarator
-	| components_notype ',' component_notype_declarator
+	: component_notype_declarator[decl]	{ $$ = new_list_expr ($decl); }
+	| components_notype[list] ',' { $<spec>$ = $<spec>0; }
+	  component_notype_declarator[decl]
+		{
+			$$ = expr_append_expr ($list, $decl);
+		}
 	;
 
 component_notype_declarator
-	: notype_declarator { declare_field ($1, current_symtab, ctx); }
-	| notype_declarator ':' expr
-	| notype_declarator ':' binding
+	: notype_declarator[spec]
 		{
-			auto spec = attr_spec ($1, $3);
-			declare_field (spec, current_symtab, ctx);
+			$$ = decl_expr ($spec, nullptr, ctx);
 		}
-	| ':' expr
-	| ':' binding	{ error (0, "nothing to bind here"); }
+	| notype_declarator[spec] ':' binding
+		{
+			$$ = decl_expr ($spec, nullptr, ctx);
+		}
+	| notype_declarator ':' expr	{ $$ = nullptr; }
+	| ':' expr						{ $$ = nullptr; }
+	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 
 function_params
