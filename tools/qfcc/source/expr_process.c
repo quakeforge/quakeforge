@@ -218,6 +218,8 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 			return new_error_expr ();
 		}
 		member = new_symbol_expr (ivar);
+	} else {
+		return error (object, "invalid operand for .");
 	}
 	member = edag_add_expr (member);
 	auto e = new_field_expr (object, member);
