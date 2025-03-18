@@ -850,9 +850,7 @@ datadef
 		{
 			auto spec = $1;
 			if (spec.block) {
-				// FIXME not glsl
 				auto block = spec.block;
-				notice(0,"foobar %p", block);
 				declare_block_instance (spec, block, nullptr, ctx);
 			}
 		}
@@ -1686,7 +1684,7 @@ struct_list
 			if ($<op>1 == 'b') {
 				auto block = (iface_block_t *) symtab->data;
 				specifier_t spec = { .block = block };
-				finish_block (block);
+				block->member_decls = $defs;
 				$$ = spec;
 			} else if ($<op>1) {
 				struct_process (symtab, $defs, ctx);
@@ -3410,6 +3408,9 @@ qc_finish (const char *file, rua_ctx_t *ctx)
 static void
 rua_init (rua_ctx_t *ctx)
 {
+	if (!ctx->sub_parse) {
+		block_clear ();
+	}
 	ctx->language->initialized = true;
 }
 
@@ -3419,4 +3420,5 @@ language_t lang_ruamoko = {
 	.parse = qc_yyparse,
 	.finish = qc_finish,
 	.parse_declaration = rua_parse_declaration,
+	.var_attributes = rua_var_attributes,
 };

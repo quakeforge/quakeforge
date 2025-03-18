@@ -108,7 +108,6 @@ void
 glsl_field_attributes (attribute_t *attributes, symbol_t *sym, rua_ctx_t *ctx)
 {
 	auto attrs = glsl_optimize_attributes (attributes);
-	sym->offset = -1;
 	specifier_t spec = { .sym = sym };
 	glsl_apply_attributes (attrs, spec);
 }

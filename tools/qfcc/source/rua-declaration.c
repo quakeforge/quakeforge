@@ -39,6 +39,7 @@
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
 void
@@ -95,5 +96,13 @@ rua_parse_declaration (specifier_t spec, symbol_t *sym, const expr_t *init,
 				spec.sym = declare_symbol (spec, init, symtab, block, ctx);
 			}
 		}
+	}
+}
+
+void
+rua_var_attributes (specifier_t *spec, attribute_t **attributes, rua_ctx_t *ctx)
+{
+	if (current_target.var_attributes) {
+		current_target.var_attributes (spec, attributes);
 	}
 }

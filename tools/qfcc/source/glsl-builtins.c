@@ -1232,7 +1232,7 @@ glsl_init_common (rua_ctx_t *ctx)
 
 	ctx->language->initialized = true;
 	block_clear ();
-	rua_ctx_t rua_ctx = { .language = &lang_ruamoko };
+	rua_ctx_t rua_ctx = { .language = &lang_ruamoko, .sub_parse = true };
 	qc_parse_string (glsl_general_functions, &rua_ctx);
 	qc_parse_string (glsl_texture_size_functions, &rua_ctx);
 	qc_parse_string (glsl_texture_lod_functions, &rua_ctx);

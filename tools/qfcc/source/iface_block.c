@@ -247,6 +247,17 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 		// error recovery
 		return;
 	}
+
+	bool transparent = false;
+	if (!instance_name) {
+		instance_name = new_symbol (va (0, ".%s", block->name->name));
+		transparent = true;
+	}
+	spec.sym = instance_name;
+	if (ctx->language->var_attributes) {
+		ctx->language->var_attributes (&spec, &spec.attributes, ctx);
+	}
+
 	auto interface = iftype_from_sc(spec.storage);
 	hashtab_t *block_tab = nullptr;
 	if (interface < iface_num_interfaces) {
@@ -268,7 +279,6 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 	if (!interface_sym) {
 		internal_error (0, "%s interface not defined", interface_name);
 	}
-	bool transparent = false;
 
 	const char *tag = "blk";
 	if (block->interface == iface_in) {
@@ -277,10 +287,6 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 		tag = "obk";
 	}
 
-	if (!instance_name) {
-		instance_name = new_symbol (va (0, ".%s", block->name->name));
-		transparent = true;
-	}
 	block->instance_name = instance_name;
 	type_t type = {
 		.type = ev_invalid,

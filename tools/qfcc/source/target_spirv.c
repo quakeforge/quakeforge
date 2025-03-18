@@ -2385,6 +2385,49 @@ spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val)
 }
 
 static void
+spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
+{
+	symbol_t   *sym = spec->sym;
+	for (auto a = attributes; *a; ) {
+		auto attr = *a;
+
+		int count = 0;
+		if (attr->params) {
+			count = list_count (&attr->params->list);
+		}
+		const expr_t *params[count + 1];
+		params[count] = nullptr;
+		if (attr->params) {
+			list_scatter (&attr->params->list, params);
+		}
+
+		if (strcmp (attr->name, "in") == 0) {
+			spec->storage = sc_from_iftype (iface_in);
+			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+		} else if (strcmp (attr->name, "out") == 0) {
+			spec->storage = sc_from_iftype (iface_out);
+			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+		} else if (strcmp (attr->name, "uniform") == 0) {
+			spec->storage = sc_from_iftype (iface_uniform);
+		} else if (strcmp (attr->name, "buffer") == 0) {
+			spec->storage = sc_from_iftype (iface_buffer);
+		} else if (strcmp (attr->name, "shared") == 0) {
+			spec->storage = sc_from_iftype (iface_shared);
+		} else if (strcmp (attr->name, "push_constant") == 0) {
+			spec->storage = sc_from_iftype (iface_push_constant);
+		} else if (strcmp (attr->name, "set") == 0) {
+			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
+		} else if (strcmp (attr->name, "binding") == 0) {
+			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
+		} else {
+			a = &attr->next;
+			continue;
+		}
+		*a = (*a)->next;
+	}
+}
+
+static void
 spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				   expr_t *block)
 {
@@ -2395,37 +2438,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			error (0, "%s redefined", sym->name);
 		}
 	}
-	for (auto attr = spec.attributes; attr; attr = attr->next) {
-		int count = 0;
-		if (attr->params) {
-			count = list_count (&attr->params->list);
-		}
-		const expr_t *params[count + 1];
-		if (attr->params) {
-			list_scatter (&attr->params->list, params);
-		}
-		params[count] = nullptr;
-
-		if (strcmp (attr->name, "in") == 0) {
-			spec.storage = sc_from_iftype (iface_in);
-			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
-		} else if (strcmp (attr->name, "out") == 0) {
-			spec.storage = sc_from_iftype (iface_out);
-			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
-		} else if (strcmp (attr->name, "uniform") == 0) {
-			spec.storage = sc_from_iftype (iface_uniform);
-		} else if (strcmp (attr->name, "buffer") == 0) {
-			spec.storage = sc_from_iftype (iface_buffer);
-		} else if (strcmp (attr->name, "shared") == 0) {
-			spec.storage = sc_from_iftype (iface_shared);
-		} else if (strcmp (attr->name, "push_constant") == 0) {
-			spec.storage = sc_from_iftype (iface_push_constant);
-		} else if (strcmp (attr->name, "set") == 0) {
-			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
-		} else if (strcmp (attr->name, "binding") == 0) {
-			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
-		}
-	}
+	spirv_var_attributes (&spec, &spec.attributes);
 	auto storage = spirv_storage_class (spec.storage, sym->type);
 	auto type = auto_type (sym->type, init);
 	auto entry_point = pr.module->entry_points;
@@ -2764,6 +2777,7 @@ target_t spirv_target = {
 	.value_too_large = spirv_value_too_large,
 	.build_scope = spirv_build_scope,
 	.build_code = spirv_build_code,
+	.var_attributes = spirv_var_attributes,
 	.declare_sym = spirv_declare_sym,
 	.create_entry_point = spirv_create_entry_point,
 	.initialized_temp = spirv_initialized_temp,
