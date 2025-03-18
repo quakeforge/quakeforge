@@ -259,7 +259,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 	block->interface = interface,
 	block->attributes = glsl_optimize_attributes (spec.attributes),
 	block->members->storage = spec.storage;
-	struct_process (block->member_decls, ctx);
+	struct_process (block->members, block->member_decls, ctx);
 	finish_block (block);
 
 	Hash_Add (block_tab, block);

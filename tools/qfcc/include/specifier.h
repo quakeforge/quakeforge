@@ -38,8 +38,6 @@ typedef struct symtab_s symtab_t;
 typedef struct param_s param_t;
 typedef struct attribute_s attribute_t;
 typedef struct iface_block_s iface_block_t;
-enum vis_e : unsigned;
-typedef enum vis_e vis_t;
 
 /** Specify the storage class of a def.
 */
@@ -72,7 +70,6 @@ typedef struct specifier_s {
 	symtab_t   *symtab;
 	iface_block_t    *block;
 	storage_class_t storage;
-	vis_t       visibility;
 	union {
 		struct {
 			bool        multi_type:1;

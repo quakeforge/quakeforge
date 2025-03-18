@@ -1025,7 +1025,7 @@ struct_specifier
 			auto symtab = current_symtab;
 			current_symtab = symtab->parent;
 
-			struct_process ($decls, ctx);
+			struct_process (symtab, $decls, ctx);
 			auto sym = build_struct ('s', $2, symtab, nullptr, 0);
 			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
@@ -1068,13 +1068,13 @@ struct_declaration_list
 struct_declaration
 	: type_specifier[spec]
 		{
-			$<mut_expr>$ = new_decl_expr ($spec, current_symtab);
+			$<mut_expr>$ = new_decl_expr ($spec, nullptr);
 		}
 	  struct_declarator_list[list] ';'	{ $$ = $list; }
 	| type_qualifier[qual] type_specifier[spec]
 		{
 			auto spec = spec_merge ($qual, $spec);
-			$<mut_expr>$ = new_decl_expr (spec, current_symtab);
+			$<mut_expr>$ = new_decl_expr (spec, nullptr);
 		}
 	  struct_declarator_list[list] ';'	{ $$ = $list; }
 	;

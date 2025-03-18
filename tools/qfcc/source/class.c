@@ -1175,7 +1175,7 @@ class_access (class_type_t *class_type, class_t *class)
 }
 
 symbol_t *
-class_find_ivar (class_t *class, int vis, const char *name)
+class_find_ivar (class_t *class, ex_vis_t vis, const char *name)
 {
 	symbol_t   *ivar;
 
@@ -1188,7 +1188,7 @@ class_find_ivar (class_t *class, int vis, const char *name)
 	}
 	ivar = symtab_lookup (class->ivars, name);
 	if (ivar) {
-		if (ivar->visibility > (vis_t) vis
+		if (ivar->visibility > vis
 			|| (ivar->table->class != class
 				&& ivar->visibility > vis_protected)) {
 			goto access_error;
@@ -1349,24 +1349,50 @@ category_compare (const void *_c1, const void *_c2, void *unused)
 		&& strcmp (c1->class->name, c2->class->name) == 0;
 }
 
+static symtab_t *
+class_super_ivars (class_t *class)
+{
+	if (class->super_class) {
+		return class->super_class->ivars;
+	}
+	return nullptr;
+}
+
 symtab_t *
 class_new_ivars (class_t *class)
 {
-	symtab_t   *ivars;
-	symtab_t   *super_ivars = 0;
-
-	if (class->super_class)
-		super_ivars = class->super_class->ivars;
-	ivars = new_symtab (super_ivars, stab_ivars);
+	auto super_ivars = class_super_ivars (class);
+	auto ivars = new_symtab (super_ivars, stab_ivars);
 	ivars->class = class;
 	return ivars;
 }
 
+static void
+build_ivars (class_t *class, symtab_t *ivars, expr_t *ivar_decls,
+			 rua_ctx_t *ctx)
+{
+	expr_prepend_expr (ivar_decls, new_visibility_expr (vis_protected));
+	struct_process (ivars, ivar_decls, ctx);
+
+	int base = 0;
+	if (class->super_class) {
+		base = type_size (class->super_class->type);
+	}
+	auto parent = ivars->parent;	// preserve the ivars inheritance chain
+	build_struct ('s', 0, ivars, 0, base);
+	ivars->parent = parent;
+}
+
 void
-class_add_ivars (class_t *class, symtab_t *ivars)
+class_add_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx)
 {
 	int         base = 0;
 	symbol_t   *sym;
+
+	symtab_t *ivars = class_new_ivars (class);
+	if (ivar_decls) {
+		build_ivars (class, ivars, ivar_decls, ctx);
+	}
 
 	if (class->super_class)
 		base = type_size (class->super_class->type);
@@ -1390,10 +1416,16 @@ compare_symbols (symbol_t *s1, symbol_t *s2)
 }
 
 void
-class_check_ivars (class_t *class, symtab_t *ivars)
+class_check_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx)
 {
 	symbol_t   *civ, *iv;
 	int         missmatch = 0;
+
+	symtab_t *ivars = nullptr;
+	if (ivar_decls) {
+		ivars = class_new_ivars (class);
+		build_ivars (class, ivars, ivar_decls, ctx);
+	}
 
 	if (!class->ivars != !ivars) {
 		missmatch = 1;
@@ -1409,7 +1441,6 @@ class_check_ivars (class_t *class, symtab_t *ivars)
 	//FIXME right option?
 	if (missmatch && options.warnings.interface_check)
 		warning (0, "instance variable missmatch for %s", class->name);
-	class_add_ivars (class, ivars);
 }
 
 category_t *

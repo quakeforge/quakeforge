@@ -135,6 +135,7 @@ is_lvalue (const expr_t *expr)
 		case ex_type:
 		case ex_incop:
 		case ex_decl:
+		case ex_visibility:
 		case ex_loop:
 		case ex_select:
 		case ex_intrinsic:

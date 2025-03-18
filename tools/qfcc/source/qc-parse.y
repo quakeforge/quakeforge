@@ -184,10 +184,12 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		param_declarator param_declarator_starttypename
 %type	<spec>		param_declarator_nostarttypename
 %type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
-%type	<expr>		struct_defs component_decl_list
-%type	<expr>		component_declarator component_notype_declarator
+%type	<mut_expr>	struct_defs component_decl_list
+%type	<expr>	component_declarator component_notype_declarator
 %type	<mut_expr>	component_decl_list2 components components_notype
 %type	<mut_expr>	component_decl
+%type	<expr>		visibility_spec
+%type	<symtab>	ivar_scope
 %type	<spec>		qc_comma
 %type	<symbol>	generic_param
 %type	<op>		type_func type_op
@@ -213,9 +215,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<expr>		const string
 
-%type	<spec>		ivar_decl
 %type   <expr>		decl
-%type	<spec>		ivars
 %type	<param>		param_list parameter_list parameter
 %type	<symbol>	methoddef
 %type	<expr>		var_initializer local_def
@@ -252,7 +252,6 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<category>	category_name new_category_name
 %type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
-%type	<symtab>	ivar_decl_list
 %type	<op>		ci not
 
 %{
@@ -726,6 +725,15 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 	auto sym = spec.sym;
 	spec.sym = nullptr;
 	auto decl = new_decl_expr (spec, current_symtab);
+	return append_decl (decl, sym, init);
+}
+
+static const expr_t *
+decl_expr_ns (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
+{
+	auto sym = spec.sym;
+	spec.sym = nullptr;
+	auto decl = new_decl_expr (spec, nullptr);
 	return append_decl (decl, sym, init);
 }
 
@@ -1681,7 +1689,7 @@ struct_list
 				finish_block (block);
 				$$ = spec;
 			} else if ($<op>1) {
-				struct_process ($defs, ctx);
+				struct_process (symtab, $defs, ctx);
 				sym = $<symbol>2;
 				sym = build_struct ($<op>1, sym, symtab, 0, 0);
 				$$ = type_spec (sym->type);
@@ -1732,10 +1740,20 @@ component_decl_list2
 				$$ = expr_append_list ($list, &$decl->list);
 			}
 		}
+	| component_decl_list2[list] visibility_spec[vis]
+		{
+			$$ = expr_append_expr ($list, $vis);
+		}
 	| component_decl_list2[list] ';'
 		{
 			$$ = $list;
 		}
+	;
+
+visibility_spec
+	: PRIVATE					{ $$ = new_visibility_expr (vis_private); }
+	| PROTECTED					{ $$ = new_visibility_expr (vis_protected); }
+	| PUBLIC					{ $$ = new_visibility_expr (vis_public); }
 	;
 
 component_decl
@@ -1746,8 +1764,8 @@ component_decl
 				// type->name always begins with "tag "
 				auto name = $spec.type->name + 4;
 				auto sym = new_symbol (va (0, ".anonymous.%s", name));
-				$spec.visibility = vis_anonymous;
-				auto decl = new_decl_expr ($spec, current_symtab);
+				sym->visibility = vis_anonymous;
+				auto decl = new_decl_expr ($spec, nullptr);
 				append_decl (decl, sym, nullptr);
 				$$ = new_list_expr (decl);
 			}
@@ -1769,8 +1787,8 @@ components
 	;
 
 component_declarator
-	: declarator[spec]				{ $$ = decl_expr ($spec, nullptr, ctx); }
-	| declarator[spec] ':' binding	{ $$ = decl_expr ($spec, nullptr, ctx); }
+	: declarator[spec]				{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
+	| declarator[spec] ':' binding	{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
 	| declarator ':' expr			{ $$ = nullptr; }
 	| ':' expr						{ $$ = nullptr; }
 	| ':' binding					{ error (0, "nothing to bind here"); }
@@ -1788,11 +1806,11 @@ components_notype
 component_notype_declarator
 	: notype_declarator[spec]
 		{
-			$$ = decl_expr ($spec, nullptr, ctx);
+			$$ = decl_expr_ns ($spec, nullptr, ctx);
 		}
 	| notype_declarator[spec] ':' binding
 		{
-			$$ = decl_expr ($spec, nullptr, ctx);
+			$$ = decl_expr_ns ($spec, nullptr, ctx);
 		}
 	| notype_declarator ':' expr	{ $$ = nullptr; }
 	| ':' expr						{ $$ = nullptr; }
@@ -2639,83 +2657,85 @@ protocol_name
 	;
 
 classdef
-	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocols ($2, $3); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	: INTERFACE new_class_name[class] protocolrefs[protos]
+		{ class_add_protocols ($class, $protos); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_add_ivars ($2, $7);
-			$<class>$ = $2;
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_add_ivars ($class, $defs, ctx);
+			$<class>$ = $class;
 		}
-	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_name[class] protocolrefs[protos]
 		{
-			current_class = 0;
+			class_add_protocols ($class, $protos);
+			class_add_ivars ($class, nullptr, ctx);
+			$<class>$ = $class;
 		}
-	| INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocols ($2, $3); }
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super[class] protocolrefs[protos]
+		{ class_add_protocols ($class, $protos);}
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_add_ivars ($2, class_new_ivars ($2));
-			$<class>$ = $2;
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_add_ivars ($class, $defs, ctx);
+			$<class>$ = $class;
 		}
-	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super[class]
+	  protocolrefs[protos]
 		{
-			current_class = 0;
+			class_add_protocols ($class, $protos);
+			class_add_ivars ($class, nullptr, ctx);
+			$<class>$ = $class;
 		}
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocols ($2, $3);}
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_category_name[cat] protocolrefs[protos]
 		{
-			class_add_ivars ($2, $7);
-			$<class>$ = $2;
-		}
-	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END
-		{
-			current_class = 0;
-		}
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocols ($2, $3); }
-		{
-			class_add_ivars ($2, class_new_ivars ($2));
-			$<class>$ = $2;
-		}
-	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END
-		{
-			current_class = 0;
-		}
-	| INTERFACE new_category_name
-	  protocolrefs
-		{
-			category_add_protocols ($2, $3);
+			category_add_protocols ($cat, $protos);
 			$<class>$ = $2->class;
 		}
-	  methodprotolist					{ category_add_methods ($2, $5); }
-	  END
+	  methodprotolist[methods]	{ category_add_methods ($cat, $methods); }
+	  END						{ current_class = 0; }
+	| IMPLEMENTATION class_name[class]
+		{ class_begin (&$class->class_type); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			current_class = 0;
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_check_ivars ($class, $defs, ctx);
 		}
-	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	| IMPLEMENTATION class_name[class]
+		{ class_begin (&$class->class_type); }
+	| IMPLEMENTATION class_with_super[class]
+		{ class_begin (&$class->class_type); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_check_ivars ($2, $6);
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_check_ivars ($class, $defs, ctx);
 		}
-	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
-	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
-		{
-			class_check_ivars ($2, $6);
-		}
-	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
-	| IMPLEMENTATION category_name		{ class_begin (&$2->class_type); }
+	| IMPLEMENTATION class_with_super[class]
+		{ class_begin (&$class->class_type); }
+	| IMPLEMENTATION category_name[class]
+		{ class_begin (&$class->class_type); }
 	| REFERENCE class_reference ';'		{ }
 	| REFERENCE category_reference ';'	{ }
 	;
+
+ivar_scope
+	: /* empty */
+		{
+			auto scope = new_symtab (current_symtab, stab_local);
+			current_symtab = scope;
+			$$ = scope;
+		}
 
 protocoldecl
 	: protocol
@@ -2758,108 +2778,6 @@ protocol_list
 		{
 			$$ = add_protocol ($1, $3->name);
 		}
-	;
-
-ivar_decl_list
-	: /* empty */
-		{
-			symtab_t   *tab, *ivars;
-			ivars = class_new_ivars ($<class>0);
-			for (tab = ivars; tab->parent; tab = tab->parent)
-				;
-			if (tab == current_symtab)
-				internal_error (0, "ivars already linked to parent scope");
-			$<symtab>$ = tab;
-			tab->parent = current_symtab;
-			current_symtab = ivars;
-
-			current_visibility = vis_protected;
-		}
-	  ivar_decl_list_2
-		{
-			symtab_t   *tab = $<symtab>1;
-			$$ = current_symtab;
-			current_symtab = pop_scope (tab);
-			tab->parent = 0;
-
-			tab = $$->parent;	// preserve the ivars inheritance chain
-			int         base = 0;
-			if ($<class>0->super_class) {
-				base = type_size ($<class>0->super_class->type);
-			}
-			build_struct ('s', 0, $$, 0, base);
-			$$->parent = tab;
-			current_visibility = vis_public;
-		}
-	;
-
-ivar_decl_list_2
-	: ivar_decl_list_2 visibility_spec ivar_decls
-	| ivar_decls
-	;
-
-visibility_spec
-	: PRIVATE					{ current_visibility = vis_private; }
-	| PROTECTED					{ current_visibility = vis_protected; }
-	| PUBLIC					{ current_visibility = vis_public; }
-	;
-
-ivar_decls
-	: /* empty */
-	| ivar_decls ivar_decl ';'
-	;
-
-ivar_decl
-	: declspecs_nosc_ts ivars
-	| declspecs_nosc_ts
-		{
-			if (is_anonymous_struct ($1)) {
-				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (0, ".anonymous.%s",
-										 $1.type->name + 4));
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_offset;
-				$1.sym->visibility = vis_anonymous;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
-				}
-			}
-		}
-	| declspecs_nosc_nots notype_ivars
-	;
-
-ivars
-	: ivar_declarator { }
-	| ivars ',' { $<spec>$ = $<spec>0; } ivar_declarator
-	;
-
-notype_ivars
-	: notype_ivar_declarator { }
-	| notype_ivars ',' { $<spec>$ = $<spec>0; }
-	  notype_ivar_declarator
-	;
-
-ivar_declarator
-	: declarator
-		{
-			declare_field ($1, current_symtab, ctx);
-		}
-	| declarator ':' expr
-	| declarator ':' binding		{ error (0, "cannot bind ivars"); }
-	| ':' binding					{ error (0, "nothing to bind here"); }
-	| ':' expr
-	;
-
-notype_ivar_declarator
-	: notype_declarator
-		{
-			declare_field ($1, current_symtab, ctx);
-		}
-	| notype_declarator ':' expr
-	| notype_declarator ':' binding	{ error (0, "cannot bind ivars"); }
-	| ':' binding					{ error (0, "nothing to bind here"); }
-	| ':' expr
 	;
 
 methoddef

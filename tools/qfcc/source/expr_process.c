@@ -776,14 +776,19 @@ spec_process (specifier_t spec, rua_ctx_t *ctx)
 }
 
 void
-struct_process (const expr_t *declaration_list, rua_ctx_t *ctx)
+struct_process (symtab_t *symtab, const expr_t *declaration_list,
+				rua_ctx_t *ctx)
 {
 	if (declaration_list->type != ex_list) {
 		internal_error (declaration_list, "not a list");
 	}
+	auto visibility = vis_public;
 	for (auto d = declaration_list->list.head; d; d = d->next) {
 		auto declaration = d->expr;
-		if (declaration->type != ex_decl) {
+		if (declaration->type == ex_visibility) {
+			visibility = declaration->visibility;
+			continue;
+		} else if (declaration->type != ex_decl) {
 			internal_error (declaration, "not a decl");
 		}
 		int count = list_count (&declaration->decl.list);
@@ -803,9 +808,14 @@ struct_process (const expr_t *declaration_list, rua_ctx_t *ctx)
 			} else {
 				internal_error (decl, "not a symbol");
 			}
+			if (sym->visibility != vis_anonymous) {
+				sym->visibility = visibility;
+			}
 			auto spec = decl_spec;
 			spec.sym = sym;
-			auto symtab = declaration->decl.symtab;
+			if (declaration->decl.symtab) {
+				internal_error (declaration, "tangled symtabs");
+			}
 			declare_field (spec, symtab, ctx);
 		}
 	}

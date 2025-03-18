@@ -372,7 +372,6 @@ declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 	spec = spec_process (spec, ctx);
 	sym->type = find_type (append_type (sym->type, spec.type));
 	sym->sy_type = sy_offset;
-	sym->visibility = spec.visibility;
 	symtab_addsymbol (symtab, sym);
 	if (!sym->table) {
 		error (0, "duplicate field `%s'", sym->name);

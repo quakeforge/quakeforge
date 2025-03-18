@@ -97,6 +97,7 @@ get_type (const expr_t *e)
 			return nullptr;
 		case ex_return:
 		case ex_decl:
+		case ex_visibility:
 		case ex_loop:
 		case ex_select:
 		case ex_message:
@@ -1973,6 +1974,7 @@ has_function_call (const expr_t *e)
 		case ex_args:
 		case ex_type:
 		case ex_decl:
+		case ex_visibility:
 		case ex_loop:
 		case ex_select:
 		case ex_intrinsic:
@@ -2352,6 +2354,15 @@ new_decl (symbol_t *sym, const expr_t *init)
 	if (init) {
 		expr = new_assign_expr (expr, init);
 	}
+	return expr;
+}
+
+expr_t *
+new_visibility_expr (ex_vis_t visibility)
+{
+	auto expr = new_expr ();
+	expr->type = ex_visibility;
+	expr->visibility = visibility;
 	return expr;
 }
 
@@ -3048,6 +3059,7 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 		case ex_adjstk:
 		case ex_with:
 		case ex_args:
+		case ex_visibility:
 			return true;
 		case ex_loop://FIXME
 		case ex_state://FIXME

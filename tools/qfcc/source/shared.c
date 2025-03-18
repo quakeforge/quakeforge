@@ -57,7 +57,6 @@ language_t current_language;
 function_t *current_func;
 class_type_t *current_class;
 expr_t     *local_expr;
-vis_t       current_visibility;
 storage_class_t current_storage = sc_global;
 symtab_t   *current_symtab;
 bool        no_flush_dag;

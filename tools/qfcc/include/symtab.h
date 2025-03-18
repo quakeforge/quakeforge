@@ -41,13 +41,6 @@ enum storage_class_e : unsigned;
 */
 ///@{
 
-typedef enum vis_e : unsigned {
-	vis_public,
-	vis_protected,
-	vis_private,
-	vis_anonymous,
-} vis_t;
-
 #define SY_TYPE(type) sy_##type,
 typedef enum : unsigned {
 #include "tools/qfcc/include/sy_type_names.h"
@@ -71,7 +64,7 @@ typedef struct var_s {
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
 	struct symtab_s *table;		///< symbol table that owns this symbol
-	vis_t       visibility;		///< symbol visiblity. defaults to public
+	ex_vis_t    visibility;		///< symbol visiblity. defaults to public
 	const char *name;			///< symbol name
 	sy_type_e   sy_type;		///< symbol type
 	unsigned    id;

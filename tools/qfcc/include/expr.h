@@ -366,6 +366,13 @@ typedef struct {
 	symtab_t   *symtab;
 } ex_decl_t;
 
+typedef enum ex_vis_e {
+	vis_public,
+	vis_protected,
+	vis_private,
+	vis_anonymous,
+} ex_vis_t;
+
 typedef struct {
 	const expr_t *test;
 	const expr_t *body;
@@ -459,6 +466,7 @@ typedef struct expr_s {
 		ex_field_t field;				///< field reference expression
 		ex_array_t array;				///< array index expression
 		ex_decl_t decl;					///< variable declaration expression
+		ex_vis_t visibility;			///< set struct member visibity
 		ex_loop_t loop;					///< loop construct expression
 		ex_select_t select;				///< selection construct expression
 		ex_intrinsic_t intrinsic;		///< intrinsic intruction expression
@@ -1016,6 +1024,7 @@ expr_t *new_field_sym_expr (const expr_t *object, symbol_t *member);
 expr_t *new_array_expr (const expr_t *base, const expr_t *index);
 expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
 expr_t *new_decl (symbol_t *sym, const expr_t *init);
+expr_t *new_visibility_expr (ex_vis_t visibity);
 expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);
 expr_t *append_decl_list (expr_t *decl, const expr_t *list);
 
@@ -1167,7 +1176,8 @@ typedef struct rua_ctx_s rua_ctx_t;
 void decl_process (const expr_t *expr, rua_ctx_t *ctx);
 const expr_t *expr_process (const expr_t *expr, rua_ctx_t *ctx);
 specifier_t spec_process (specifier_t spec, rua_ctx_t *ctx);
-void struct_process (const expr_t *declaration_list, rua_ctx_t *ctx);
+void struct_process (symtab_t *symtab, const expr_t *declaration_list,
+					 rua_ctx_t *ctx);
 bool can_inline (const expr_t *expr, symbol_t *fsym);
 bool proc_do_list (ex_list_t *out, const ex_list_t *in, rua_ctx_t *ctx);
 
