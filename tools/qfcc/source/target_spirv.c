@@ -1079,25 +1079,82 @@ typedef struct {
 static unsigned
 spirv_generate_wedge (const expr_t *e, spirvctx_t *ctx)
 {
-	return 0;
+	scoped_src_loc (e);
+	auto x = edag_add_expr (new_name_expr ("x"));
+	auto y = edag_add_expr (new_name_expr ("y"));
+	auto v1 = e->expr.e1;
+	auto v2 = e->expr.e2;
+	auto v1x = new_field_expr (v1, x);
+	auto v1y = new_field_expr (v1, y);
+	auto v2x = new_field_expr (v2, x);
+	auto v2y = new_field_expr (v2, y);
+	v1x->field.type = base_type (get_type (v1));
+	v1y->field.type = base_type (get_type (v1));
+	v2x->field.type = base_type (get_type (v2));
+	v2y->field.type = base_type (get_type (v2));
+	auto w = binary_expr ('-', binary_expr ('*', v1x, v2y),
+							   binary_expr ('*', v2x, v1y));
+	return spirv_emit_expr (w, ctx);
 }
 
 static unsigned
 spirv_generate_qmul (const expr_t *e, spirvctx_t *ctx)
 {
-	return 0;
+	scoped_src_loc (e);
+	auto w = edag_add_expr (new_name_expr ("w"));
+	auto q1 = e->expr.e1;
+	auto q2 = e->expr.e2;
+	auto q1s = new_field_expr (q1, w);
+	auto q1v = cast_expr (&type_vector, new_swizzle_expr (q1, "xyz"));
+	auto q2s = new_field_expr (q2, w);
+	auto q2v = cast_expr (&type_vector, new_swizzle_expr (q2, "xyz"));
+	q1s->field.type = &type_float;
+	q2s->field.type = &type_float;
+	auto q1sq2v = binary_expr ('*', q1s, q2v);
+	auto q2sq1v = binary_expr ('*', q2s, q1v);
+	auto qs = binary_expr ('-', binary_expr ('*', q1s, q2s),
+								binary_expr (QC_DOT, q1v, q2v));
+	auto qv = binary_expr ('+', binary_expr ('+', q1sq2v, q2sq1v),
+								binary_expr (QC_CROSS, q1v, q2v));
+	const expr_t *vec[] = {qv, qs};
+	auto q = new_vector_list_gather (&type_quaternion, vec, 2);
+	return spirv_emit_expr (edag_add_expr (q), ctx);
 }
 
 static unsigned
 spirv_generate_qvmul (const expr_t *e, spirvctx_t *ctx)
 {
-	return 0;
+	scoped_src_loc (e);
+	auto w = edag_add_expr (new_name_expr ("w"));
+	auto q = e->expr.e1;
+	auto v = e->expr.e2;
+	auto q_w = new_field_expr (q, w);
+	auto q_xyz = cast_expr (&type_vector, new_swizzle_expr (q, "xyz"));
+	q_w->field.type = &type_float;
+	auto two = new_int_expr (2, true);
+	auto uv = binary_expr (QC_CROSS, q_xyz, v);
+	auto uuv = binary_expr (QC_CROSS, q_xyz, uv);
+	auto side = binary_expr ('+', uuv, binary_expr ('*', uv, q_w));
+	side = binary_expr ('*', two, side);
+	return spirv_emit_expr (binary_expr ('+', v, side), ctx);
 }
 
 static unsigned
 spirv_generate_vqmul (const expr_t *e, spirvctx_t *ctx)
 {
-	return 0;
+	scoped_src_loc (e);
+	auto w = edag_add_expr (new_name_expr ("w"));
+	auto v = e->expr.e1;
+	auto q = e->expr.e2;
+	auto q_w = new_field_expr (q, w);
+	auto q_xyz = cast_expr (&type_vector, new_swizzle_expr (q, "xyz"));
+	q_w->field.type = &type_float;
+	auto two = new_int_expr (2, true);
+	auto uv = binary_expr (QC_CROSS, q_xyz, v);
+	auto uuv = binary_expr (QC_CROSS, q_xyz, uv);
+	auto side = binary_expr ('-', uuv, binary_expr ('*', uv, q_w));
+	side = binary_expr ('*', two, side);
+	return spirv_emit_expr (binary_expr ('+', v, side), ctx);
 }
 
 static unsigned
@@ -1139,6 +1196,8 @@ spirv_generate_matrix (const expr_t *e, spirvctx_t *ctx)
 #define SPV_FLOAT (SPV_type(ev_float)|SPV_type(ev_double))
 #define SPV_INT   (SPV_SINT|SPV_UINT)
 #define SPV_PTR   (SPV_type(ev_ptr))
+#define SPV_QUAT  (SPV_type(ev_quaternion))
+#define SPV_VEC   (SPV_type(ev_vector))
 
 static extinst_t glsl_450 = {
 	.name = "GLSL.std.450"
@@ -1172,11 +1231,15 @@ static spvop_t spv_ops[] = {
 
 	{"add",    SpvOpIAdd,                 SPV_INT,   SPV_INT   },
 	{"add",    SpvOpFAdd,                 SPV_FLOAT, SPV_FLOAT },
+	{"add",    SpvOpFAdd,                 SPV_VEC,   SPV_VEC   },
+	{"add",    SpvOpFAdd,                 SPV_QUAT,  SPV_QUAT },
 	{"add",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
 			 .mat1 = true, .mat2 = true,
 			 .generate = spirv_generate_matrix },
 	{"sub",    SpvOpISub,                 SPV_INT,   SPV_INT   },
 	{"sub",    SpvOpFSub,                 SPV_FLOAT, SPV_FLOAT },
+	{"sub",    SpvOpFSub,                 SPV_VEC,   SPV_VEC },
+	{"sub",    SpvOpFSub,                 SPV_QUAT,  SPV_QUAT },
 	{"add",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
 			 .mat1 = true, .mat2 = true,
 			 .generate = spirv_generate_matrix },
@@ -1209,19 +1272,24 @@ static spvop_t spv_ops[] = {
 	{"shr",    SpvOpShiftRightArithmetic, SPV_SINT,  SPV_INT   },
 
 	{"dot",    SpvOpDot,                  SPV_FLOAT, SPV_FLOAT },
+	{"dot",    SpvOpDot,                  SPV_VEC,   SPV_VEC },
 	{"scale",  SpvOpVectorTimesScalar,    SPV_FLOAT, SPV_FLOAT },
+	{"scale",  SpvOpVectorTimesScalar,    SPV_VEC,   SPV_FLOAT },
+	{"scale",  SpvOpVectorTimesScalar,    SPV_QUAT,  SPV_FLOAT },
 	{"scale",  SpvOpMatrixTimesScalar,    SPV_FLOAT, SPV_FLOAT,
 		.mat1 = true, .mat2 = false },
 
 	{"cross",  (SpvOp)GLSLstd450Cross,    SPV_FLOAT, SPV_FLOAT,
 		.extinst = &glsl_450 },
+	{"cross",  (SpvOp)GLSLstd450Cross,    SPV_VEC,   SPV_VEC,
+		.extinst = &glsl_450 },
 	{"wedge",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
 		.generate = spirv_generate_wedge, .extinst = &glsl_450 },
-	{"qmul",   .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+	{"qmul",   .types1 = SPV_QUAT, .types2 = SPV_QUAT,
 		.generate = spirv_generate_qmul, .extinst = &glsl_450 },
-	{"qvmul",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+	{"qvmul",  .types1 = SPV_QUAT, .types2 = SPV_VEC,
 		.generate = spirv_generate_qvmul, .extinst = &glsl_450 },
-	{"vqmul",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
+	{"vqmul",  .types1 = SPV_VEC, .types2 = SPV_QUAT,
 		.generate = spirv_generate_vqmul, .extinst = &glsl_450 },
 };
 
@@ -1412,11 +1480,22 @@ spirv_expr (const expr_t *e, spirvctx_t *ctx)
 		INSN (insn, 4) = bid1;
 		INSN (insn, 5) = bid2;
 	} else {
-		auto insn = spirv_new_insn (spv_op->op, 5, ctx->code_space, ctx);
-		INSN (insn, 1) = tid;
-		INSN (insn, 2) = id = spirv_id (ctx);
-		INSN (insn, 3) = bid1;
-		INSN (insn, 4) = bid2;
+		if (spv_op->extinst) {
+			auto insn = spirv_new_insn (SpvOpExtInst, 7, ctx->code_space, ctx);
+			const char *set = spv_op->extinst->name;
+			INSN (insn, 1) = tid;
+			INSN (insn, 2) = id = spirv_id (ctx);
+			INSN (insn, 3) = spirv_extinst_import (ctx->module, set, ctx);
+			INSN (insn, 4) = spv_op->op;
+			INSN (insn, 5) = bid1;
+			INSN (insn, 6) = bid2;
+		} else {
+			auto insn = spirv_new_insn (spv_op->op, 5, ctx->code_space, ctx);
+			INSN (insn, 1) = tid;
+			INSN (insn, 2) = id = spirv_id (ctx);
+			INSN (insn, 3) = bid1;
+			INSN (insn, 4) = bid2;
+		}
 	}
 	return id;
 }
@@ -1616,8 +1695,13 @@ spirv_alias (const expr_t *e, spirvctx_t *ctx)
 	auto type = e->alias.type;
 	auto expr = e->alias.expr;
 	unsigned eid = spirv_emit_expr (expr, ctx);
-	int tid = spirv_Type (type, ctx);
-	int id = spirv_id (ctx);
+	unsigned tid = spirv_Type (type, ctx);
+	if (tid == spirv_Type (get_type (expr), ctx)) {
+		// the types differe at the high level, but are the same at the
+		// low level (eg, vector vs vec3 or quaternion vs vec4)
+		return eid;
+	}
+	unsigned id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpBitcast, 4, ctx->code_space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
@@ -2261,7 +2345,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 	ADD_DATA (space, mod->func_definitions);
 
 	return write_output (filename, space->data,
-					     space->size * sizeof (pr_type_t));
+						 space->size * sizeof (pr_type_t));
 }
 
 void
