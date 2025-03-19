@@ -148,9 +148,11 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfv_matrix_buffer_t *m = QFV_PacketExtend (packet, sizeof (*m));
 	*m = mctx->matrices;
 
-	auto bb = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	bb.dstStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	QFV_PacketCopyBuffer (packet, mframe->buffer, 0, &bb);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	db.dstStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	db.dstStages |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+	QFV_PacketCopyBuffer (packet, mframe->buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 }
 

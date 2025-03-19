@@ -60,6 +60,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -164,7 +165,7 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 symbol_t *
-method_symbol (class_type_t *class_type, method_t *method)
+method_symbol (class_type_t *class_type, method_t *method, rua_ctx_t *ctx)
 {
 	dstring_t  *str = dstring_newstr ();
 	symbol_t   *sym;
@@ -182,8 +183,9 @@ method_symbol (class_type_t *class_type, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
-	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol (sym, 0, 1);
+	sym = new_symbol (str->str);
+	sym = function_symbol ((specifier_t) { .type = method->type, .sym = sym },
+						   ctx);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -354,11 +356,11 @@ copy_keywordargs (const keywordarg_t *kwargs)
 }
 
 expr_t *
-send_message (int super)
+send_message (int super, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 	const char *sm_name = "obj_msgSend";
-	type_t     *sm_type = &type_IMP;
+	const type_t *sm_type = type_IMP.fldptr.type;
 
 	if (super) {
 		sm_name = "obj_msgSend_super";
@@ -368,8 +370,9 @@ send_message (int super)
 	if (!sym) {
 		symtab_t   *save = current_symtab;
 		current_symtab = pr.symtab;
-		sym = new_symbol_type (sm_name, sm_type);
-		sym = function_symbol (sym, 0, 1);
+		sym = new_symbol (sm_name);
+		sym = function_symbol ((specifier_t) { .type = sm_type, .sym = sym },
+							   ctx);
 		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}
@@ -496,7 +499,7 @@ get_selector (const expr_t *sel)
 		return 0;
 	}
 	_sel.index = expr_short (sel->address.offset);
-	_sel.index /= type_size (type_SEL.t.fldptr.type);
+	_sel.index /= type_size (type_SEL.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
 
@@ -512,12 +515,12 @@ emit_selectors (void)
 	if (!sel_index)
 		return 0;
 
-	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
+	sel_type = array_type (type_SEL.fldptr.type, sel_index);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", sel_type,
 						   pr.far_data, sc_static);
 	if (!sel_sym->table)
 		symtab_addsymbol (pr.symtab, sel_sym);
-	sel_def = sel_sym->s.def;
+	sel_def = sel_sym->def;
 	sel_def->initialized = sel_def->constant = 1;
 	sel_def->nosave = 1;
 
@@ -536,7 +539,7 @@ emit_selectors (void)
 static void
 emit_methods_next (def_t *def, void *data, int index)
 {
-	if (!is_ptr(def->type))
+	if (!is_pointer(def->type))
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	D_INT (def) = 0;
 }
@@ -707,25 +710,25 @@ method_check_params (method_t *method, const expr_t *args)
 	const expr_t *err = 0;
 	auto mtype = method->type;
 
-	if (mtype->t.func.num_params == -1)
+	if (mtype->func.num_params == -1)
 		return 0;
 
-	if (mtype->t.func.num_params >= 0)
-		param_count = mtype->t.func.num_params;
+	if (mtype->func.num_params >= 0)
+		param_count = mtype->func.num_params;
 	else
-		param_count = -mtype->t.func.num_params - 1;
+		param_count = -mtype->func.num_params - 1;
 
 	int count = list_count (&args->list);
 	if (count < param_count)
 		return error (args, "too few arguments");
-	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
+	if (mtype->func.num_params >= 0 && count > mtype->func.num_params)
 		return error (args, "too many arguments");
 
 	const expr_t *arg_list[count];
 	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
 		const expr_t *e = arg_list[i];
-		const type_t *arg_type = i < param_count ? mtype->t.func.param_types[i]
+		const type_t *arg_type = i < param_count ? mtype->func.param_types[i]
 												 : nullptr;
 		if (e->type == ex_compound) {
 			scoped_src_loc (e);
@@ -743,7 +746,9 @@ method_check_params (method_t *method, const expr_t *args)
 				}
 			}
 		} else {
-			vararg_integer (e);
+			if (current_target.vararg_int) {
+				current_target.vararg_int (e);
+			}
 		}
 	}
 	return err;

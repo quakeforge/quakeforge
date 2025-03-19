@@ -1,3 +1,4 @@
+#pragma bug die
 vector bar (float *v);
 vector snafu (float *v);
 

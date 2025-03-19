@@ -34,13 +34,24 @@
 struct dstring_s;
 
 void parse_cpp_name (void);
-void add_cpp_sysinc (const char *arg);
 void add_cpp_undef (const char *arg);
 void add_cpp_def (const char *arg);
+
+int cpp_depend (const char *opt, const char *arg);
+int cpp_include (const char *opt, const char *arg);
+void cpp_define (const char *arg);
+void cpp_undefine (const char *arg);
+const char *cpp_find_file (const char *name, int quote, bool *is_system);
+void cpp_push_quote_path (const char *path);
+void cpp_pop_quote_path (void);
+
 void intermediate_file (struct dstring_s *ifile, const char *filename,
 						const char *ext, int local);
 FILE *preprocess_file (const char *filename, const char *ext);
 extern const char *cpp_name;
 extern struct dstring_s *tempname;
+extern struct symtab_s *cpp_macros;
+
+void cpp_write_dependencies (const char *sourcefile, const char *outputfile);
 
 #endif//__cpp_h

@@ -1,3 +1,4 @@
+#pragma bug die
 #include "test-harness.h"
 int foo[128];
 @algebra(float) pgaf1;

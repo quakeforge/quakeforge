@@ -1,6 +1,7 @@
 #include <hash.h>
 
 #include "vkalias.h"
+#include "vkbool.h"
 #include "vkenum.h"
 #include "vkfixedarray.h"
 #include "vkgen.h"
@@ -51,6 +52,8 @@ static string get_type_key (void *type, void *unused)
 		return nil;
 	}
 	switch (type.meta) {
+		case ty_bool:
+			return [[Bool alloc] initWithType: type];
 		case ty_basic:
 			if (type.type == ev_ptr) {
 				Type       *tgt = [Type findType: type.fldptr.aux_type];

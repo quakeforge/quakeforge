@@ -151,7 +151,7 @@ cruch_snap (tex_t *snap, unsigned width, unsigned height)
 	tex->width = w;
 	tex->height = h;
 	tex->flagbits = 0;
-	tex->loaded = 1;
+	tex->loaded = true;
 	tex->flipped = snap->flipped;
 	tex->palette = r_data->vid->palette;
 

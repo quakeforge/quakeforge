@@ -42,7 +42,7 @@ extern	lumpinfo_t	*wad_lumps;
 extern	byte		*wad_base;
 
 void	W_LoadWadFile (const char *filename);
-void	*W_GetLumpName (const char *name);
+void	*W_GetLumpName (const char *name) __attribute__((const));
 
 void SwapPic (qpic_t *pic);
 

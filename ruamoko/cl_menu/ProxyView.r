@@ -13,7 +13,7 @@
 	return self;
 }
 
-- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
+- (bool) keyEvent:(int)key unicode:(int)unicode down:(bool)down
 {
 	return [view keyEvent:key unicode:unicode down:down];
 }

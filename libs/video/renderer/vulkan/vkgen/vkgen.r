@@ -53,7 +53,7 @@ next_type (qfot_type_t *type)
 	return (qfot_type_t *) ((int *) type + size);
 }
 
-int
+bool
 type_is_null (qfot_type_t *type)
 {
 	return type.size == 0;
@@ -63,6 +63,7 @@ void print_type (qfot_type_t *type)
 {
 	//printf ("type: %p %d %d %s", type, type.meta, type.size, type.encoding);
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
 			//printf (" %d", type.type);
 			switch (type.type) {

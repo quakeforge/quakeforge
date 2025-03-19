@@ -34,6 +34,9 @@
 #include "QF/progs/pr_comp.h"
 #include "QF/progs/pr_debug.h"
 
+#include "rua-lang.h"
+#include "specifier.h"
+
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
 */
@@ -90,19 +93,26 @@ typedef struct def_s {
 	struct daglabel_s *daglabel;///< daglabel for this def
 	struct flowvar_s *flowvar;	///< flowvar for this def
 
-	unsigned    offset_reloc:1;	///< use *_def_ofs relocs
-	unsigned    initialized:1;	///< the def has been initialized
-	unsigned    constant:1;		///< stores constant value
-	unsigned    global:1;		///< globally declared def
-	unsigned    external:1;		///< externally declared def
-	unsigned    local:1;		///< function local def
-	unsigned    param:1;		///< function param def
-	unsigned    argument:1;		///< function argument def
-	unsigned    system:1;		///< system def
-	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
+	union {
+		struct {
+	        bool    offset_reloc:1;	///< use *_def_ofs relocs
+	        bool    initialized:1;	///< the def has been initialized
+	        bool    constant:1;		///< stores constant value
+	        bool    readonly:1;
+	        bool    writeonly:1;
+	        bool    global:1;		///< globally declared def
+	        bool    external:1;		///< externally declared def
+	        bool    local:1;		///< function local def
+	        bool    param:1;		///< function param def
+	        bool    out_param:1;	///< function out param def
+	        bool    argument:1;		///< function argument def
+	        bool    system:1;		///< system def
+	        bool    nosave:1;		///< don't set DEF_SAVEGLOBAL
+		};
+		unsigned    storage_bits;
+	};
 
-	pr_string_t file;			///< declaring/defining source file
-	int         line;			///< declaring/defining source line
+	rua_loc_t   loc;			///< declaring/defining source location
 
 	int         qfo_def;		///< index to def in qfo defs
 
@@ -110,17 +120,20 @@ typedef struct def_s {
 	void       *free_addr;		///< who freed this
 } def_t;
 
-/** Specify the storage class of a def.
-*/
-typedef enum storage_class_e {
-	sc_global,					///< def is globally visible across units
-	sc_system,					///< def may be redefined once
-	sc_extern,					///< def is externally allocated
-	sc_static,					///< def is private to the current unit
-	sc_param,					///< def is an incoming function parameter
-	sc_local,					///< def is local to the current function
-	sc_argument,				///< def is a function argument
-} storage_class_t;
+#define D_packed(t,d,o)		(*(t *) &(d)->space->data[(d)->offset + (o)])
+#define D_PACKED(t,d)		D_packed (t, d, 0)
+#define D_var_o(t,d,o)		D_packed (pr_##t##_t, d, o)
+#define D_var(t,d)			D_var_o (t, d, 0)
+#define	D_DOUBLE(d)			D_var (double, d)
+#define	D_FLOAT(d)			D_var (float, d)
+#define	D_INT(d)			D_var (int, d)
+#define	D_VECTOR(d)			(&D_var (float, d))
+#define	D_QUAT(d)			(&D_var (float, d))
+#define	D_STRING(d)			D_var (string, d)
+#define	D_GETSTR(d)			GETSTR (D_STRING (d))
+#define	D_FUNCTION(d)		D_var (func, d)
+#define D_POINTER(t,d)		(&D_PACKED (t, d))
+#define D_STRUCT(t,d)		(*D_POINTER (t, d))
 
 /** Create a new def.
 
@@ -255,7 +268,11 @@ void init_vector_components (struct symbol_s *vector_sym, int is_field,
 */
 void initialize_def (struct symbol_s *sym,
 					 const struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage, struct symtab_s *symtab);
+					 storage_class_t storage, struct symtab_s *symtab,
+					 expr_t *block);
+
+void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				  expr_t *block);
 
 /** Convenience function for obtaining a def's actual offset.
 

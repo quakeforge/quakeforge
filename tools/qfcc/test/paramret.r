@@ -1,3 +1,4 @@
+#pragma bug die
 @param
 foo (string str)
 {

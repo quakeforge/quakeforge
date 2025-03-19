@@ -1,4 +1,5 @@
 #include "metric.h"
+#include "util.h"
 
 @implementation Metric
 +(Metric *)R:(int)p, int m, int z
@@ -13,14 +14,7 @@
 static double
 count_minus (unsigned minus)
 {
-	double      s = 1;
-	while (minus) {
-		if (minus & 1) {
-			s = -s;
-		}
-		minus >>= 1;
-	}
-	return s;
+	return count_bits (minus) & 1 ? -1 : 1;
 }
 
 -(double)apply:(unsigned) a, unsigned b

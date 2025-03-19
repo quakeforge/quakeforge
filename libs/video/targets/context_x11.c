@@ -44,17 +44,12 @@
 # include <unistd.h>
 #endif
 
-#include <stdlib.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
-#include <X11/keysym.h>
-#include <X11/extensions/XShm.h>
-
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
+#endif
+#ifdef HAVE_XSS
+# include <X11/extensions/scrnsaver.h>
 #endif
 
 #include "QF/cmd.h"
@@ -78,8 +73,9 @@ bool		oktodraw = false;
 int 		x_shmeventtype;
 
 static int	x_disp_ref_count = 0;
+static bool x_have_xss = false;
 
-Display 	*x_disp = NULL;
+Display 	*x_disp = nullptr;
 int 		x_screen;
 int			x_width;
 int			x_height;
@@ -99,8 +95,8 @@ static XF86VidModeModeInfo **vidmodes;
 static int		nummodes;
 static int		original_mode = 0;
 static vec3_t	x_gamma = {-1, -1, -1};
-static bool		vidmode_avail = false;
 #endif
+static bool		vidmode_avail = false;
 
 static bool		vidmode_active = false;
 
@@ -205,7 +201,7 @@ X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 	if (event_handlers[event] != event_handler)
 		return false;
 
-	event_handlers[event] = NULL;
+	event_handlers[event] = nullptr;
 	return true;
 }
 
@@ -252,33 +248,71 @@ X11_ProcessEvents (void)
 		X11_ProcessEvent ();
 }
 
-#ifdef HAVE_VIDMODE
-static void
+void
 X11_SetScreenSaver (void)
 {
-	XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
-					 &xss_exposures);
-	XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
+	if (x_have_xss) {
+#ifdef HAVE_XSS
+		XScreenSaverSuspend (x_disp, true);
+#endif
+	} else {
+#ifdef HAVE_VIDMODE
+		XGetScreenSaver (x_disp, &xss_timeout, &xss_interval, &xss_blanking,
+						 &xss_exposures);
+		XSetScreenSaver (x_disp, 0, xss_interval, xss_blanking, xss_exposures);
+#endif
+	}
+}
+
+void
+X11_RestoreScreenSaver (void)
+{
+	if (x_have_xss) {
+#ifdef HAVE_XSS
+		XScreenSaverSuspend (x_disp, false);
+#endif
+	} else {
+#ifdef HAVE_VIDMODE
+		XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
+						 xss_exposures);
+#endif
+	}
 }
 
 static void
-X11_RestoreScreenSaver (void)
+X11_CheckScreenSaver (void)
 {
-	XSetScreenSaver (x_disp, xss_timeout, xss_interval, xss_blanking,
-					 xss_exposures);
-}
+#ifdef HAVE_XSS
+	int ev_base, err_base;
+	int maj_ver, min_ver;
+	if (!XScreenSaverQueryExtension (x_disp, &ev_base, &err_base)) {
+		Sys_MaskPrintf (SYS_vid, "XSS not supported\n");
+		return;
+	}
+	if (!XScreenSaverQueryVersion (x_disp, &maj_ver, &min_ver)) {
+		Sys_MaskPrintf (SYS_vid, "XScreenSaver version query failed\n");
+		return;
+	}
+	Sys_MaskPrintf (SYS_vid, "XSS supperted: version %d.%d (ev:%d, err:%d)\n",
+					maj_ver, min_ver, ev_base, err_base);
+	x_have_xss = true;
+#else
+	Sys_MaskPrintf (SYS_vid, "X11: XScreenSaver support not compiled in\n");
 #endif
+}
 
 void
 X11_OpenDisplay (void)
 {
 	qfZoneScoped (true);
 	if (!x_disp) {
-		x_disp = XOpenDisplay (NULL);
+		x_disp = XOpenDisplay (nullptr);
 		if (!x_disp) {
 			Sys_Error ("X11_OpenDisplay: Could not open display [%s]",
-					   XDisplayName (NULL));
+					   XDisplayName (nullptr));
 		}
+
+		X11_CheckScreenSaver ();
 
 		x_net_state = XInternAtom (x_disp, "_NET_WM_STATE", False);
 		x_net_fullscreen = XInternAtom (x_disp, "_NET_WM_STATE_FULLSCREEN",
@@ -304,6 +338,7 @@ X11_CloseDisplay (void)
 		X11_RestoreVidMode ();
 
 		X11_RestoreGamma ();
+		X11_RestoreScreenSaver ();
 
 		if (x_nullcursor != None) {
 			XFreeCursor (x_disp, x_nullcursor);
@@ -363,11 +398,11 @@ X11_GetGamma (void)
 				(*temp)[2] = xgamma.blue;
 				return temp;
 			}
-			return NULL;
+			return nullptr;
 		}
 	}
 	vid_gamma_avail = false;
-	return NULL;
+	return nullptr;
 }
 #endif
 
@@ -393,7 +428,7 @@ X11_SetVidMode (int width, int height)
 		static int  initialized = 0;
 
 		if (!vidmode_avail)
-			vidmode_avail = VID_CheckVMode (x_disp, NULL, NULL);
+			vidmode_avail = VID_CheckVMode (x_disp, nullptr, nullptr);
 
 		if (!initialized && vidmode_avail) {
 			vec3_t	*temp;
@@ -461,7 +496,6 @@ X11_SetVidMode (int width, int height)
 										 vidmodes[best_mode]);
 				}
 				vidmode_active = true;
-				X11_SetScreenSaver ();
 			} else {
 				Sys_Printf ("VID: Mode %dx%d can't go fullscreen.\n",
 							viddef.width, viddef.height);
@@ -569,14 +603,13 @@ X11_CreateWindow (int width, int height)
 void
 X11_RestoreVidMode (void)
 {
-#ifdef HAVE_VIDMODE
 	if (vidmode_active) {
-		X11_RestoreScreenSaver ();
+#ifdef HAVE_VIDMODE
 		//XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 		vidmode_active = false;
-	}
 #endif
+	}
 }
 
 void

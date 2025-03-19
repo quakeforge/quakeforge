@@ -494,7 +494,7 @@ C_Print (const char *fmt, va_list args)
 	char *s = c_print_buffer->str;
 
 	bool quake_encoding = s[0] > 0 && s[0] <= 3;
-	bool colored = quake_encoding && s[0] < 0;
+	bool colored = quake_encoding && (s[0] & 0x80);
 	int  mask = (colored ? 128 : 0) | con_data.ormask;
 	s += quake_encoding;
 

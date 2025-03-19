@@ -490,6 +490,9 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 	defref_t   *ref;
 	qfot_type_t *type;
 
+	if (!count) {
+		return count;
+	}
 	size = (num_work_defrefs + count) * sizeof (defref_t *);
 	work_defrefs = realloc (work_defrefs, size);
 	size = (dest_space->num_defs + count) * sizeof (qfo_def_t);
@@ -1447,8 +1450,13 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	error (0, "%s", string->str);
 }
 
@@ -1465,8 +1473,13 @@ def_warning (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	warning (0, "%s", string->str);
 }
 

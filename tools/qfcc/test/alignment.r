@@ -1,3 +1,4 @@
+#pragma bug die
 int a;
 double b;
 int c;

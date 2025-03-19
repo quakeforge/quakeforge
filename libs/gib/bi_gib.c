@@ -90,11 +90,12 @@ bi_gib_builtin_f (void)
 		PR_PTR (string, &pr_list[i]) = PR_SetTempString (builtin->pr,
 														 GIB_Argv(i));
 
-	PR_RESET_PARAMS (builtin->pr);
+	auto params = PR_SaveParams (builtin->pr);
+	PR_SetupParams (builtin->pr, 2, 1);
 	P_INT (builtin->pr, 0) = GIB_Argc();
 	P_INT (builtin->pr, 1) = PR_SetPointer (builtin->pr, pr_list);
-	builtin->pr->pr_argc = 2;
 	PR_ExecuteProgram (builtin->pr, builtin->func);
+	PR_RestoreParams (builtin->pr, params);
 	PR_PopFrame (builtin->pr);
 	PR_Zone_Free (builtin->pr, pr_list);
 }

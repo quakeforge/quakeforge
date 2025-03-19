@@ -329,8 +329,7 @@ FixFaceEdges (face_t *f)
 		if (v->t < t2 - T_EPSILON) {
 			tjuncs++;
 			// insert a new vertex here
-			fp = realloc (fp, field_offset (winding_t,
-											points[fp->numpoints + 1]));
+			fp = realloc (fp, offsetof (winding_t, points[fp->numpoints + 1]));
 			for (k = fp->numpoints; k > j; k--) {
 				VectorCopy (fp->points[k - 1], fp->points[k]);
 			}

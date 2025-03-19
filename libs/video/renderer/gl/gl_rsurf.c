@@ -806,7 +806,7 @@ GL_BuildSurfaceDisplayList (mod_brush_t *brush, msurface_t *surf)
 	lnumverts = surf->numedges;
 
 	// draw texture
-	poly = Hunk_Alloc (0, field_offset (glpoly_t, verts[lnumverts]));
+	poly = Hunk_Alloc (0, offsetof (glpoly_t, verts[lnumverts]));
 	poly->next = surf->polys;
 	poly->flags = surf->flags;
 	surf->polys = poly;

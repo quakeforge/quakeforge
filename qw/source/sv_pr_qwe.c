@@ -344,7 +344,8 @@ PF_calltimeofday (progs_t *pr, void *data)
 		Sys_TimeOfDay (&date);
 
 		PR_PushFrame (&sv_pr_state);
-		PR_RESET_PARAMS (pr);
+		auto params = PR_SaveParams (pr);
+		PR_SetupParams (pr, 7, 1);
 		P_FLOAT (pr, 0) = (float) date.sec;
 		P_FLOAT (pr, 1) = (float) date.min;
 		P_FLOAT (pr, 2) = (float) date.hour;
@@ -352,9 +353,8 @@ PF_calltimeofday (progs_t *pr, void *data)
 		P_FLOAT (pr, 4) = (float) date.mon;
 		P_FLOAT (pr, 5) = (float) date.year;
 		P_STRING (pr, 6) = PR_SetReturnString (pr, date.str);
-
-		pr->pr_argc = 7;
 		PR_ExecuteProgram (pr, (pr_func_t) (f - sv_pr_state.pr_functions));
+		PR_RestoreParams (pr, params);
 		PR_PopFrame (&sv_pr_state);
 	}
 }

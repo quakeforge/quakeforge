@@ -123,6 +123,8 @@ def clip_plane(plane, clip_planes):
     poly = [o + s + t, o + s - t, o - s - t, o - s + t]     #CW
     for p in clip_planes:
         poly = clip_poly(poly, p, True)
+        if not poly:
+            break
     return poly
 
 EPSILON = 0.5**5    # 1/32 plenty for quake maps
@@ -135,6 +137,9 @@ def convert_planes(planes):
     faces = []
     for i in range(len(planes)):
         poly = clip_plane(planes[i], planes[:i] + planes[i + 1:])
+        if not poly:
+            # the plane got clipped away
+            continue
         face = []
         for v in poly:
             v = Vector((rnd(v.x), rnd(v.y), rnd(v.z)))

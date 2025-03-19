@@ -56,7 +56,7 @@ if test "x$GCC" = xyes; then
 	shift
 	args="$*"
 	AC_MSG_CHECKING(for gcc version)
-	CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*(GCC)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
+	CCVER="gcc `$CC --version | grep '[[0-9]]\.[[0-9]]' | sed -e 's/.*([[^)]]*)//' -e 's/[[^0-9]]*\([[0-9.]]*\).*/\1/'`"
 	set $CCVER
 	save_IFS="$IFS"
 	IFS="."
@@ -145,6 +145,12 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
+AC_ARG_ENABLE(lto,
+	AS_HELP_STRING([--disable-lto], [disable link-time optimizations]),
+	use_lto=$enable_lto,
+	use_lto=yes
+)
+
 if test "x$host_cpu" = xaarch64; then
 	simd=neon
 else
@@ -185,6 +191,9 @@ AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	AC_MSG_RESULT(yes)
 	BUILD_TYPE="$BUILD_TYPE Optimize"
+	if test "x$use_lto" = xyes; then
+		QF_CC_OPTION(-flto=auto)
+	fi
 	if test "x$GCC" = xyes; then
 		saved_cflags="$CFLAGS"
 		dnl CFLAGS=""
@@ -353,7 +362,7 @@ if test "x$leave_cflags_alone" != xyes; then
 			[[bool flag = true;]],
 			[[return flag ? 1 : 0]])],
 		[],
-		[QF_CC_OPTION_TEST(-std=gnu23,[],QF_CC_OPTION(-std=gnu2x))]
+		[QF_CC_OPTION_TEST(-std=gnu23,QF_CC_OPTION(-std=gnu23),QF_CC_OPTION(-std=gnu2x))]
 	)
 fi
 AC_MSG_CHECKING([for c23])

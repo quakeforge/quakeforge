@@ -88,6 +88,12 @@ Basic process to build and install QuakeForge:
 	make install
 \endverbatim
 
+Note that when building from a git repository, the default is to treat
+compiler warnings as errors. This can be changed by using the following:
+\verbatim
+	./configure --disable-Werror
+\endverbatim
+
 You may want to check <code>./configure --help</code> and select options.
 
 To build and install only the quakeworld server:

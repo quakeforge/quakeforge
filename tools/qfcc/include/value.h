@@ -43,6 +43,7 @@ struct type_s;
 struct pr_type_s;
 struct operand_s;
 
+struct ex_value_s *new_value (void);
 struct ex_value_s *new_string_val (const char *string_val);
 struct ex_value_s *new_double_val (double double_val);
 struct ex_value_s *new_float_val (float float_val);
@@ -60,6 +61,7 @@ struct ex_value_s *new_uint_val (int uint_val);
 struct ex_value_s *new_long_val (pr_long_t long_val);
 struct ex_value_s *new_ulong_val (pr_ulong_t ulong_val);
 struct ex_value_s *new_short_val (short short_val);
+struct ex_value_s *new_ushort_val (unsigned short ushort_val);
 struct ex_value_s *new_nil_val (const struct type_s *type);
 struct ex_value_s *new_type_value (const struct type_s *type,
 								   const struct pr_type_s *data);
@@ -71,6 +73,7 @@ struct ex_value_s *offset_alias_value (struct ex_value_s *value,
 									   const struct type_s *type, int offset);
 struct ex_value_s *alias_value (struct ex_value_s *value, struct type_s *type);
 struct def_s *emit_value (struct ex_value_s *value, struct def_s *def);
+struct defspace_s;
 struct def_s *emit_value_core (struct ex_value_s *value, struct def_s *def,
 							   struct defspace_s *defspace);
 

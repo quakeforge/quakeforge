@@ -430,7 +430,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
 	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
+	arr_t       arr;
 
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_array: %s %zd %d %p %p %p\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -441,10 +441,10 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
-	*value = vkparse_alloc (context, array->stride * arr->size);
-	memcpy (*value, arr->a, array->stride * arr->size);
+	*value = vkparse_alloc (context, array->stride * arr.size);
+	memcpy (*value, arr.a, array->stride * arr.size);
 	if ((void *) size >= data) {
-		*size = arr->size;
+		*size = arr.size;
 	}
 	return 1;
 }
@@ -465,14 +465,14 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
 	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
+	arr_t       arr;
 
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
 	memset (data, 0, array->stride * array->size);
-	size_t      size = min (array->size, arr->size);
-	memcpy (data, arr->a, array->stride * size);
+	size_t      size = min (array->size, arr.size);
+	memcpy (data, arr.a, array->stride * size);
 	return 1;
 }
 
@@ -921,9 +921,10 @@ parse_task_function (const plitem_t *item, void **data,
 		offs = ((offs + type->size - 1) & ~(type->size - 1));
 		offs += type->size;
 	}
-	*(exprfunc_t **) data[0] = func;
-	*(exprval_t ***) data[1] = param_ptrs;
-	*(void **) data[2] = param_data;
+	*(const char **) data[0] = vkstrdup (pctx, fname);
+	*(exprfunc_t **) data[1] = func;
+	*(exprval_t ***) data[2] = param_ptrs;
+	*(void **) data[3] = param_data;
 	return 1;
 }
 
@@ -963,7 +964,7 @@ parse_task_params (const plitem_t *item, void **data,
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
 static exprsym_t qfv_renderframeset_t_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (qfv_renderframeset_t, size)},
+	{"size", &cexpr_size_t, (void *) offsetof (qfv_renderframeset_t, size)},
 	{ }
 };
 static exprtab_t qfv_renderframeset_t_symtab = {

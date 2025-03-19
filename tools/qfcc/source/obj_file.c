@@ -137,15 +137,15 @@ qfo_encode_defs (qfo_t *qfo, def_t *defs, qfo_def_t **qfo_defs,
 		d->qfo_def = q - qfo->defs;
 		// defs in the type data space do not have types
 		if (d->type)
-			q->type = d->type->type_def->offset;
+			q->type = type_encodings.a[d->type->id]->offset;
 		q->name = ReuseString (d->name);
 		q->offset = d->offset;
 		q->relocs = *qfo_relocs - qfo->relocs;
 		q->num_relocs = qfo_encode_relocs (d->relocs, qfo_relocs,
 										   q - qfo->defs);
 		q->flags = qfo_def_flags (d);
-		q->file = d->file;
-		q->line = d->line;
+		q->file = d->loc.file;
+		q->line = d->loc.line;
 	}
 	return count;
 }
@@ -299,9 +299,9 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 
 	for (f = functions, q = qfo->funcs; f; f = f->next, q++) {
 		q->name = f->s_name;
-		q->type = f->def->type->type_def->offset;
+		q->type = type_encodings.a[f->def->type->id]->offset;
 		q->file = f->s_file;
-		q->line = f->def->line;
+		q->line = f->def->loc.line;
 		q->code = f->code;
 		if (f->builtin)		// FIXME redundant
 			q->code = -f->builtin;
@@ -560,6 +560,10 @@ qfo_read (QFile *file)
 	unsigned    i;
 
 	size = Qfilesize (file);
+	if (size < (int) sizeof (qfo_header_t)) {
+		fprintf (stderr, "not a valid qfo file\n");
+		return 0;
+	}
 	data = malloc (size);
 	Qread (file, data, size);
 
@@ -704,6 +708,7 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 		case ty_basic:
 		case ty_handle:	//XXX
 		case ty_algebra:
+		case ty_bool:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return type_def->type;
@@ -736,6 +741,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 			return get_type_size (qfo, type_def->alias.aux_type);
 		case ty_handle:	//XXX
 		case ty_basic:
+		case ty_bool:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return pr_type_size[type_def->type];
@@ -754,7 +760,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 		case ty_enum:
 			return pr_type_size[ev_int];
 		case ty_array:
-			return type_def->array.size
+			return type_def->array.count
 					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
 		case ty_algebra:
@@ -790,6 +796,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 			return get_type_alignment_log (qfo, type_def->alias.aux_type);
 		case ty_handle:	//XXX
 		case ty_basic:
+		case ty_bool:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return qfo_log2 (ev_types[type_def->type]->alignment);

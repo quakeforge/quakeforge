@@ -85,7 +85,7 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 				.width = alias_ctx->skinwidth,
 				.height = alias_ctx->skinheight,
 				.format = tex_palette,
-				.relative = 1,
+				.relative = true,
 				.palette = vid.palette,
 				.data = (byte *) (texels - (byte *) mesh),
 			};

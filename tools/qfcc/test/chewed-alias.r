@@ -1,3 +1,4 @@
+#pragma bug die
 @interface Array
 -count;
 -lastObject;

@@ -282,7 +282,7 @@ typedef struct bsp_pass_s {
 	uint32_t   *indices;			///< polygon vertex indices
 	uint32_t    index_count;		///< number of indices written to buffer
 	uint32_t   *entid_data;			///< instance id to entity id map
-	uint32_t    entid_count;		///< numer of entids written to buffer
+	uint32_t    entid_count;		///< number of entids written to buffer
 	///@}
 	/** \name Potentially Visible Sets
 	 *

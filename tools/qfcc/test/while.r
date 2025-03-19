@@ -1,3 +1,4 @@
+#pragma bug die
 int min;
 int times;
 

@@ -1,7 +1,7 @@
 /*
 	expr_optimize.c
 
-	 algebraic expression optimization
+	algebraic expression optimization
 
 	Copyright (C) 2023 Bill Currie <bill@taniwha.org>
 
@@ -36,11 +36,10 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-#include "tools/qfcc/source/qc-parse.h"
 
 static const expr_t *optimize_core (const expr_t *expr);
 static const expr_t skip;
@@ -101,7 +100,7 @@ remult_scale (const expr_t *expr, const expr_t *remove)
 	auto mult = remult (expr->expr.e2, remove);
 	auto scalee = expr->expr.e1;
 	auto type = get_type (expr);
-	auto new = typed_binary_expr (type, SCALE, scalee, mult);
+	auto new = typed_binary_expr (type, QC_SCALE, scalee, mult);
 	return edag_add_expr (new);
 }
 
@@ -205,9 +204,9 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	col = optimize_core (col);
 	const expr_t *cross;
 	if (right) {
-		cross = typed_binary_expr (type, CROSS, col, com);
+		cross = typed_binary_expr (type, QC_CROSS, col, com);
 	} else {
-		cross = typed_binary_expr (type, CROSS, com, col);
+		cross = typed_binary_expr (type, QC_CROSS, com, col);
 	}
 	cross = edag_add_expr (cross);
 	return cross;
@@ -316,7 +315,7 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	auto col = gather_terms (type, com_adds, com_subs);
 	col = optimize_core (col);
 
-	scale = typed_binary_expr (type, SCALE, col, common);
+	scale = typed_binary_expr (type, QC_SCALE, col, common);
 	scale = edag_add_expr (scale);
 	return scale;
 }
@@ -531,7 +530,8 @@ optimize_adds (const expr_t **expr_list)
 		}
 		if (same++) {
 			auto type = get_type (*scan);
-			auto mult = cast_expr (base_type (type), new_int_expr (same));
+			auto mult = cast_expr (base_type (type),
+								   new_int_expr (same, false));
 			mult = edag_add_expr (mult);
 			*scan = scale_expr (type, *scan, mult);
 		}

@@ -1,3 +1,4 @@
+#pragma bug die
 entity spawn (void) { return nil; }
 .float f;
 float time;

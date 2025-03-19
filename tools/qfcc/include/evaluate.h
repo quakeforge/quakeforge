@@ -31,10 +31,14 @@
 #ifndef __evaluate_h
 #define __evaluate_h
 
+#include "QF/progs.h"
+
 /** \defgroup qfcc_evaluate Constant evaluation.
 	\ingroup qfcc_expr
 */
 ///@{
+
+void evaluate_debug_handler (prdebug_t event, void *param, void *data);
 
 struct type_s;
 struct ex_value_s;

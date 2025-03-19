@@ -1,3 +1,4 @@
+#pragma bug die
 void printf (string fmt, ...) = #0;
 
 #if __RUAMOKO__ > 1

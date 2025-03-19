@@ -1,3 +1,4 @@
+#pragma bug die
 int foo (int i)
 {
 	return i;

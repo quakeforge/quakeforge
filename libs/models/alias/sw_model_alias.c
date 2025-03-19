@@ -64,7 +64,7 @@ sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 	int         width = alias_ctx->skinwidth;
 	int         height = alias_ctx->skinheight;
 	int         skinsize = width * height;
-	int         picsize = field_offset (qpic_t, data[width * height]);
+	int         picsize = offsetof (qpic_t, data[width * height]);
 	int         num_skins = alias_ctx->skins.size;
 	byte       *texel_block = Hunk_AllocName (0, picsize * num_skins,
 											  alias_ctx->mod->name);
@@ -148,9 +148,9 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.components = 3,
 	};
 	if (extra) {
-		attribs[0].offset += field_offset (trivertx16_t, v);
+		attribs[0].offset += offsetof (trivertx16_t, v);
 	} else {
-		attribs[0].offset += field_offset (trivertx_t, v);
+		attribs[0].offset += offsetof (trivertx_t, v);
 	}
 	attribs[1] = (qfm_attrdesc_t) {
 		.offset = (byte *) frame_verts - (byte *) mesh,
@@ -161,9 +161,9 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.components = 1,	// index into r_avertexnormals
 	};
 	if (extra) {
-		attribs[1].offset += field_offset (trivertx16_t, lightnormalindex);
+		attribs[1].offset += offsetof (trivertx16_t, lightnormalindex);
 	} else {
-		attribs[1].offset += field_offset (trivertx_t, lightnormalindex);
+		attribs[1].offset += offsetof (trivertx_t, lightnormalindex);
 	}
 	attribs[2] = (qfm_attrdesc_t) {
 		.offset = (byte *) stverts - (byte *) mesh,

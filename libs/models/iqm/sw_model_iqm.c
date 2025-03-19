@@ -58,7 +58,7 @@ static tex_t null_texture = {
 	.width = 2,
 	.height = 2,
 	.format = tex_palette,
-	.loaded = 1,
+	.loaded = true,
 	.palette =0,
 	.data = null_data
 };

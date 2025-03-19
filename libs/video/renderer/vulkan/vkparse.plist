@@ -233,7 +233,7 @@ parse = {
 		.name = qfv_taskinfo_t;
 		func = {
 			type = (custom, QFString, parse_task_function);
-			fields = (func, params, param_data);
+			fields = (name, func, params, param_data);
 		};
 		params = {
 			type = (custom,	QFArray, parse_task_params);

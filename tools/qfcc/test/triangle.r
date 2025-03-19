@@ -1,3 +1,4 @@
+#pragma bug die
 void printf (string fmt, ...) = #0;
 float (string s) stof = #0;
 @overload float (float x) sqrt = #0;

@@ -1143,6 +1143,7 @@ event_focusout (XEvent *event)
 			CDAudio_Pause ();
 		}
 		X11_RestoreGamma ();
+		X11_RestoreScreenSaver ();
 	}
 }
 
@@ -1162,6 +1163,10 @@ event_focusin (XEvent *event)
 #endif
 	}
 	VID_UpdateGamma ();
+	// The assumption is that kb+mouse will generate enough input it doesn't
+	// matter, and that if the game is in focus, then assume a controller
+	// (which does not generate X11 events) might be in use.
+	X11_SetScreenSaver ();
 }
 
 static void
@@ -1247,7 +1252,9 @@ in_x11_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 	if (*numaxes > dev->num_axes) {
 		*numaxes = dev->num_axes;
 	}
-	memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+	if (dev->num_axes) {
+		memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+	}
 }
 
 static void
@@ -1262,7 +1269,9 @@ in_x11_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	if (*numbuttons > dev->num_buttons) {
 		*numbuttons = dev->num_buttons;
 	}
-	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+	if (dev->num_buttons) {
+		memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+	}
 }
 
 static const char *

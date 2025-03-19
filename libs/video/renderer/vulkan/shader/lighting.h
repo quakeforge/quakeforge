@@ -15,22 +15,22 @@ struct LightRender {
 	uint        style;
 };
 
-layout (set = 0, binding = 0) buffer ShadowMatrices {
+layout (set = 0, binding = 0) readonly buffer ShadowMatrices {
 	mat4 shadow_mats[];
 };
-layout (set = 1, binding = 0) buffer LightIds {
+layout (set = 1, binding = 0) readonly buffer LightIds {
 	uint        lightIds[];
 };
-layout (set = 1, binding = 1) buffer Lights {
+layout (set = 1, binding = 1) readonly buffer Lights {
 	LightData   lights[];
 };
-layout (set = 1, binding = 2) buffer Renderer {
+layout (set = 1, binding = 2) readonly buffer Renderer {
 	LightRender renderer[];
 };
-layout (set = 1, binding = 3) buffer Style {
+layout (set = 1, binding = 3) readonly buffer Style {
 	vec4        style[];
 };
-layout (set = 1, binding = 4) buffer LightEntIds {
+layout (set = 1, binding = 4) readonly buffer LightEntIds {
 	uint        light_entids[];
 };
 

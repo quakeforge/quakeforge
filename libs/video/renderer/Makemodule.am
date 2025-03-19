@@ -105,7 +105,7 @@ shader_gen = \
 	$(glslshaderpath)/quakeforge.slc \
 	$(glslshaderpath)/sgustavson.slc
 
-SUFFIXES += .frag .vert .spv .spvc .fc .vc .slc .glsl
+SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
 	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
@@ -368,7 +368,7 @@ composef_c = $(vkshaderpath)/compose.frag.spvc
 compose_fwdf_src = $(vkshaderpath)/compose_fwd.frag
 compose_fwdf_c = $(vkshaderpath)/compose_fwd.frag.spvc
 infplane = $(vkshaderpath)/infplane.finc
-fog_h = $(vkshaderpath)/fog.finc
+fog = $(vkshaderpath)/fog.finc
 oit_blend = $(vkshaderpath)/oit_blend.finc
 oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
@@ -508,62 +508,81 @@ $(fisheye_c): $(fisheye_src) $(matrices_h)
 
 $(waterwarp_c): $(waterwarp_src) $(matrices_h)
 
-vkshader_c = \
-	$(slice_c) \
-	$(linev_c) \
-	$(linef_c) \
-	$(partphysicsc_c) \
-	$(partupdatec_c) \
-	$(particlev_c) \
-	$(particleg_c) \
-	$(particlef_c) \
-	$(spritef_c) \
-	$(sprite_gbufv_c) \
-	$(sprite_gbuff_c) \
-	$(sprite_depthv_c) \
-	$(sprite_depthf_c) \
-	$(twodv_c) \
-	$(twodf_c) \
-	$(twod_depthf_c) \
-	$(quakebspv_c) \
-	$(quakebspf_c) \
-	$(bsp_depth_c) \
-	$(bsp_gbufv_c) \
-	$(bsp_gbufg_c) \
-	$(bsp_gbuff_c) \
-	$(bsp_shadow_c) \
-	$(bsp_skyf_c) \
-	$(bsp_turbf_c) \
-	$(debug_c) \
-	$(entid_c) \
-	$(light_entid_c) \
-	$(light_flat_c) \
-	$(light_splatv_c) \
-	$(light_splatf_c) \
-	$(light_debug_c) \
-	$(light_oit_c) \
-	$(lighting_cascadef_c) \
-	$(lighting_cubef_c) \
-	$(lighting_nonef_c) \
-	$(lighting_planef_c) \
-	$(composef_c) \
-	$(compose_fwdf_c) \
-	$(aliasv_c) \
-	$(alias_depth_c) \
-	$(qskin_fwdf_c) \
-	$(qskin_gbuf_c) \
-	$(alias_shadow_c) \
-	$(iqmv_c) \
-	$(iqm_shadow_c) \
-	$(output_c) \
-	$(passthrough_c) \
-	$(fstriangle_c) \
-	$(fstrianglest_c) \
-	$(gridplane_c) \
-	$(pushcolor_c) \
-	$(shadow_c) \
-	$(fisheye_c) \
-	$(waterwarp_c)
+vkshader_src_vert = \
+	$(slice_src) \
+	$(linev_src) \
+	$(particlev_src) \
+	$(sprite_gbufv_src) \
+	$(sprite_depthv_src) \
+	$(twodv_src) \
+	$(quakebspv_src) \
+	$(bsp_depth_src) \
+	$(bsp_gbufv_src) \
+	$(bsp_shadow_src) \
+	$(light_entid_src) \
+	$(light_flat_src) \
+	$(light_splatv_src) \
+	$(aliasv_src) \
+	$(alias_depth_src) \
+	$(alias_shadow_src) \
+	$(iqmv_src) \
+	$(iqm_shadow_src) \
+	$(passthrough_src) \
+	$(fstriangle_src) \
+	$(fstrianglest_src)
+
+vkshader_src_geom = \
+	$(bsp_gbufg_src) \
+	$(particleg_src)
+
+vkshader_src_frag = \
+	$(linef_src) \
+	$(particlef_src) \
+	$(spritef_src) \
+	$(sprite_gbuff_src) \
+	$(sprite_depthf_src) \
+	$(twodf_src) \
+	$(twod_depthf_src) \
+	$(quakebspf_src) \
+	$(bsp_gbuff_src) \
+	$(bsp_skyf_src) \
+	$(bsp_turbf_src) \
+	$(debug_src) \
+	$(entid_src) \
+	$(light_splatf_src) \
+	$(light_debug_src) \
+	$(light_oit_src) \
+	$(lighting_cascadef_src) \
+	$(lighting_cubef_src) \
+	$(lighting_nonef_src) \
+	$(lighting_planef_src) \
+	$(composef_src) \
+	$(compose_fwdf_src) \
+	$(qskin_fwdf_src) \
+	$(qskin_gbuf_src) \
+	$(output_src) \
+	$(gridplane_src) \
+	$(pushcolor_src) \
+	$(fisheye_src) \
+	$(waterwarp_src)
+
+vkshader_src_comp = \
+	$(partphysicsc_src) \
+	$(partupdatec_src)
+
+vkshader_c_vert=$(call spvautoc,$(vkshader_src_vert))
+vkshader_c_geom=$(call spvautoc,$(vkshader_src_geom))
+vkshader_c_frag=$(call spvautoc,$(vkshader_src_frag))
+vkshader_c_comp=$(call spvautoc,$(vkshader_src_comp))
+
+vkshader_src = $(vkshader_src_vert) $(vkshader_src_geom) $(vkshader_src_frag) \
+			   $(vkshader_src_comp)
+vkshader_dep = $(call spvcautodep, $(vkshader_src))
+include $(vkshader_dep) # am--include-marker
+spvc_depfiles_remade += $(vkshader_dep)
+
+vkshader_c = $(vkshader_c_vert) $(vkshader_c_geom) $(vkshader_c_frag) \
+			 $(vkshader_c_comp)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
@@ -600,6 +619,7 @@ EXTRA_DIST += \
 	$(rp_main_def_src) \
 	$(rp_main_fwd_src) \
 	$(smp_quake_src) \
+	$(fog) \
 	$(infplane) \
 	$(oit_blend) \
 	$(oit_store) \

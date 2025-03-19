@@ -106,7 +106,7 @@ Draw_MakePic (int width, int height, const byte *data)
 	qpic_t	   *pic;
 	int         size = width * height;
 
-	pic = malloc (field_offset (qpic_t, data[size]));
+	pic = malloc (offsetof (qpic_t, data[size]));
 	pic->width = width;
 	pic->height = height;
 	memcpy (pic->data, data, size);
@@ -119,7 +119,7 @@ Draw_DestroyPic (qpic_t *pic)
 	free (pic);
 }
 
-qpic_t *
+qpic_t * __attribute__((const))
 Draw_PicFromWad (const char *name)
 {
 	return W_GetLumpName (name);

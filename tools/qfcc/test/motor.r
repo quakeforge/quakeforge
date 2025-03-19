@@ -1,3 +1,4 @@
+#pragma bug die
 typedef @algebra(float(3,0,1)) PGA;
 typedef PGA.group_mask(0xa) bivector_t;
 typedef PGA.group_mask(0x1e) motor_t;

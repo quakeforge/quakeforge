@@ -35,6 +35,27 @@ if test "x$HAVE_VIDMODE" != xno; then
 fi
 AC_SUBST(VIDMODE_LIBS)
 
+dnl Check for XScreenSaver support
+AC_ARG_ENABLE(xi2,
+	AS_HELP_STRING([--disable-xss], [do not use Xorg XScreenSaver extension]),
+	HAVE_XSS=$enable_xi2, HAVE_XSS=auto)
+if test "x$HAVE_XSS" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+	AC_CHECK_HEADER(X11/extensions/scrnsaver.h,
+		dnl Make sure the library works
+		[AC_CHECK_LIB(Xss, XScreenSaverQueryExtension,
+			AC_DEFINE(HAVE_XSS, 1, [Define if you have the Xorg XScreenSaver extension])
+			HAVE_XSS=yes
+			XSS_LIBS="-lXss",,
+			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
+		)],,
+		[#include <X11/Xlib.h>]
+	)
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(XSS_LIBS)
+
 dnl Check for XInput2 support
 AC_ARG_ENABLE(xi2,
 	AS_HELP_STRING([--disable-xi2], [do not use Xorg XInput2 extension]),

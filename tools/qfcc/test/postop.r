@@ -1,3 +1,4 @@
+#pragma bug die
 int array[3] = { -1, -1, -1 };
 
 int array_index (void)

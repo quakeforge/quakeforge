@@ -559,9 +559,9 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.components = 3,
 	};
 	if (extra) {
-		attribs[0].offset += field_offset (trivertx16_t, v);
+		attribs[0].offset += offsetof (trivertx16_t, v);
 	} else {
-		attribs[0].offset += field_offset (trivertx_t, v);
+		attribs[0].offset += offsetof (trivertx_t, v);
 	}
 	attribs[1] = (qfm_attrdesc_t) {
 		.offset = (byte *) vertices - (byte *) mesh,
@@ -572,9 +572,9 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.components = 1,	// index into r_avertexnormals
 	};
 	if (extra) {
-		attribs[1].offset += field_offset (trivertx16_t, lightnormalindex);
+		attribs[1].offset += offsetof (trivertx16_t, lightnormalindex);
 	} else {
-		attribs[1].offset += field_offset (trivertx_t, lightnormalindex);
+		attribs[1].offset += offsetof (trivertx_t, lightnormalindex);
 	}
 
 	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);

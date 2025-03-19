@@ -36,14 +36,17 @@
 #include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
 
-typedef __attribute__((aligned(64))) struct qfv_matrix_buffer_s {
+typedef struct qfv_matrix_buffer_s {
 	// projection and view matrices (model is push constant)
 	mat4f_t     Projection3d;
 	mat4f_t     View[6];
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
 	vec2f_t     ScreenSize;
+	vec2f_t     pad[7];
 } qfv_matrix_buffer_t;
+static_assert ((sizeof (qfv_matrix_buffer_t) & 63) == 0,
+			   "qfv_matrix_buffer_t size not a multiple of 64");
 
 typedef struct matrixframe_s {
 	VkBuffer    buffer;

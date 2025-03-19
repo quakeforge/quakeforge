@@ -44,13 +44,16 @@ VkResult QFV_PacketWait (qfv_packet_t *packet);
 struct qfv_bufferbarrier_s;
 void QFV_PacketCopyBuffer (qfv_packet_t *packet,
 						   VkBuffer dstBuffer, VkDeviceSize offset,
+						   const struct qfv_bufferbarrier_s *srcBarrier,
 						   const struct qfv_bufferbarrier_s *dstBarrier);
 void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  uint32_t count, qfv_scatter_t *scatter,
+							  const struct qfv_bufferbarrier_s *srcBarrier,
 							  const struct qfv_bufferbarrier_s *dstBarrier);
 struct qfv_imagebarrier_s;
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 						  int width, int height,
+						  const struct qfv_imagebarrier_s *srcBarrier,
 						  const struct qfv_imagebarrier_s *dstBarrier);
 
 #endif//__QF_Vulkan_staging_h

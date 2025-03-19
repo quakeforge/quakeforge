@@ -185,8 +185,8 @@ new_reloc (defspace_t *space, int offset, reloc_type type)
 	ref->space = space;
 	ref->offset = offset;
 	ref->type = type;
-	ref->line = pr.source_line;
-	ref->file = pr.source_file;
+	ref->line = pr.loc.line;
+	ref->file = pr.loc.file;
 	ref->return_address = __builtin_return_address (0);
 	return ref;
 }

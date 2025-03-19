@@ -107,7 +107,7 @@ DRAW_video_options =
 	return 1;
 };
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_video_options =
 {
 	return [video_options keyEvent:key unicode:unicode down:down];
@@ -154,7 +154,7 @@ DRAW_audio_options =
 	return 1;
 };
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_audio_options =
 {
 	return [audio_options keyEvent:key unicode:unicode down:down];
@@ -201,7 +201,7 @@ DRAW_control_options =
 	return 0;
 };
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_control_options =
 {
 	return [control_options keyEvent:key unicode:unicode down:down];
@@ -251,7 +251,7 @@ DRAW_feature_options =
 	return 1;
 };
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_feature_options =
 {
 	return [feature_options keyEvent:key unicode:unicode down:down];
@@ -313,7 +313,7 @@ string player_config_vals[NUM_PLAYERCONFIG_CMDS] = {
 };
 
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_player_options =
 {
 	return [player_options keyEvent:key unicode:unicode down:down];
@@ -390,7 +390,7 @@ string network_config_vals[NUM_NETWORKCONFIG_CMDS] = {
 };
 
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 KEY_network_options =
 {
 	return [network_options keyEvent:key unicode:unicode down:down];

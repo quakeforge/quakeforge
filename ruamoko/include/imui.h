@@ -95,8 +95,8 @@ void IMUI_ScrollBar (imui_ctx_t ctx, string name);
 #define UI_Label(label) \
 	IMUI_Label(IMUI_context, label)
 
-#define UI_Labelf(fmt...) \
-	IMUI_Labelf(IMUI_context, fmt)
+#define UI_Labelf(fmt, ...) \
+	IMUI_Labelf(IMUI_context, fmt __VA_OPT__(, __VA_ARGS__)
 
 #define UI_Passage(name, psg) \
 	IMUI_Passage(IMUI_context, name, psg)

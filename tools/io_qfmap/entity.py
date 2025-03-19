@@ -19,7 +19,7 @@
 
 # <pep8 compliant>
 
-import bpy, bgl, gpu
+import bpy, gpu
 from gpu_extras.batch import batch_for_shader
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
 from bpy.props import BoolVectorProperty, CollectionProperty, PointerProperty
@@ -86,11 +86,11 @@ def draw_callback(self, context):
     #FIXME horribly inefficient
     qfmap = context.scene.qfmap
     content = build_batch(qfmap)
-    shader = gpu.shader.from_builtin('3D_SMOOTH_COLOR')
+    shader = gpu.shader.from_builtin('SMOOTH_COLOR')
     batch = batch_for_shader(shader, 'LINES', content)
-    bgl.glLineWidth(3)
+    #bgl.glLineWidth(3)
     batch.draw(shader)
-    bgl.glLineWidth(1)
+    #bgl.glLineWidth(1)
 
 class VIEW3D_PT_QFEntityRelations(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'

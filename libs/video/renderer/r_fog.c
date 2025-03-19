@@ -152,7 +152,11 @@ Fog_ParseWorldspawn (plitem_t *worldspawn)
 		return; // error
 	if ((fog_item = PL_ObjectForKey (worldspawn, "fog"))
 		&& (value = PL_String (fog_item))) {
-		sscanf (value, "%f %f %f %f", &fog[3], &fog[0], &fog[1], &fog[2]);
+		union {
+			float       a[4];
+			vec4f_t     v;
+		} fogu = {};
+		sscanf (value, "%f %f %f %f", &fogu.a[3], VectorExpandAddr (fogu.a));
 	}
 }
 

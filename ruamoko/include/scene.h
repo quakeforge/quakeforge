@@ -1,11 +1,6 @@
 #ifndef __ruamoko_scene_h
 #define __ruamoko_scene_h
 
-//FIXME this should be a native type so it can be used in math
-typedef struct {
-	vec4 col[4];
-} mat4x4;
-
 typedef struct light_s {
 	vec4        color;
 	vec4        position;

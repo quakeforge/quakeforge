@@ -99,35 +99,42 @@ mipsize (size_t size)
 }
 
 static void
-transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette,
+transfer_mip_level (byte *dst, const void *src, const texture_t *tx, int level,
+					byte *palette, vprocess_t process)
+{
+	unsigned    width = tx->width >> level;
+	unsigned    height = tx->height >> level;
+	unsigned    count = width * height;
+
+	// mip offsets are relative to the texture pointer rather than the
+	// end of the texture struct
+	unsigned    offset = tx->offsets[level] - sizeof (texture_t);
+	// use the upper block of the destination as a temporary buffer for
+	// the processed pixels. Vulkan_ExpandPalette works in a linearly
+	// increasing manner thus the processed pixels will be overwritten
+	// only after they have been read
+	byte       *tmp = dst + count * 3;
+	process (tmp, src + offset, count);
+	Vulkan_ExpandPalette (dst, tmp, palette, 2, count);
+}
+
+static void
+transfer_mips (byte *dst, const void *src, const texture_t *tx, byte *palette,
 			   vprocess_t process)
 {
-	const byte *src = _src;
-	unsigned    width = tx->width;
-	unsigned    height = tx->height;
-	unsigned    count, offset;
-
 	for (int i = 0; i < MIPLEVELS; i++) {
-		// mip offsets are relative to the texture pointer rather than the
-		// end of the texture struct
-		offset = tx->offsets[i] - sizeof (texture_t);
-		count = width * height;
-		// use the upper block of the destination as a temporary buffer for
-		// the processed pixels. Vulkan_ExpandPalette works in a linearly
-		// increasing manner thus the processed pixels will be overwritten
-		// only after they have been read
-		byte       *tmp = dst + count * 3;
-		process (tmp, src + offset, count);
-		Vulkan_ExpandPalette (dst, tmp, palette, 2, count);
+		transfer_mip_level (dst, src, tx, i, palette, process);
+
+		unsigned    width = tx->width >> i;
+		unsigned    height = tx->height >> i;
+		unsigned    count = width * height;
 		dst += count * 4;
-		width >>= 1;
-		height >>= 1;
 	}
 }
 
 static void
 copy_mips (qfv_packet_t *packet, texture_t *tx, size_t offset, VkImage image,
-		   int layer, qfv_devfuncs_t *dfunc)
+		   int layer, int miplevels, qfv_devfuncs_t *dfunc)
 {
 	// base copy
 	VkBufferImageCopy copy = {
@@ -153,7 +160,7 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, size_t offset, VkImage image,
 	__auto_type copies = QFV_AllocBufferImageCopy (copy_count, alloca);
 	copies->size = 0;
 
-	for (int i = 0; i < MIPLEVELS; i++) {
+	for (int i = 0; i < miplevels; i++) {
 		__auto_type c = &copies->a[copies->size++];
 		*c = copy;
 		if (is_sky) {
@@ -179,8 +186,10 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, size_t offset, VkImage image,
 
 static void
 transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
-				  byte *palette, qfv_devfuncs_t *dfunc)
+				  byte *palette, qfv_device_t *device)
 {
+	qfv_devfuncs_t *dfunc = device->funcs;
+
 	byte       *base = packet->stage->data;
 
 	size_t      layer_size = mipsize (tx->width * tx->height * 4);
@@ -196,13 +205,18 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 
 	if (strncmp (tx->name, "sky", 3) == 0) {
 		transfer_mips (dst, tx + 1, tx, palette, (vprocess_t) memcpy);
-		copy_mips (packet, tx, dst - base, image, 0, dfunc);
+		copy_mips (packet, tx, dst - base, image, 0, MIPLEVELS, dfunc);
+	} else if (tx->name[0] == '{') {
+		transfer_mip_level (dst, tx + 1, tx, 0, palette, (vprocess_t) memcpy);
+		copy_mips (packet, tx, dst - base, image, 0, 1, dfunc);
+		QFV_GenerateMipMaps (device, packet->cmd, image, MIPLEVELS,
+							 tx->width, tx->height, 1);
 	} else {
 		transfer_mips (dst, tx + 1, tx, palette, Mod_ClearFullbright);
-		copy_mips (packet, tx, dst - base, image, 0, dfunc);
+		copy_mips (packet, tx, dst - base, image, 0, MIPLEVELS, dfunc);
 		byte       *glow = QFV_PacketExtend (packet, layer_size);
 		transfer_mips (glow, tx + 1, tx, palette, Mod_CalcFullbright);
-		copy_mips (packet, tx, glow - base, image, 1, dfunc);
+		copy_mips (packet, tx, glow - base, image, 1, MIPLEVELS, dfunc);
 	}
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
@@ -224,12 +238,16 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	mod_brush_t *brush = &mod->brush;
 	VkImage     image = 0;
 	byte        sky_palette[256 * 4];
+	byte        trans_palette[256 * 4];
 
 	memcpy (sky_palette, vid.palette32, sizeof (sky_palette));
+	memcpy (trans_palette, vid.palette32, sizeof (trans_palette));
 	// sky's black is transparent
 	// this hits both layers, but so long as the screen is cleared
 	// to black, no one should notice :)
 	sky_palette[3] = 0;
+	// transparent textures want transparent black
+	memset (trans_palette + 255*4, 0, 4);
 
 	size_t      memsize = 0;
 	for (unsigned i = 0; i < brush->numtextures; i++) {
@@ -268,19 +286,22 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		offset += QFV_GetImageSize (device, tex->image);
 
 		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-		tex->view = QFV_CreateImageView (device, tex->image,
-											  type, VK_FORMAT_R8G8B8A8_UNORM,
-											  VK_IMAGE_ASPECT_COLOR_BIT);
+		tex->view = QFV_CreateImageView (device, tex->image, type,
+										 VK_FORMAT_R8G8B8A8_UNORM,
+										 VK_IMAGE_ASPECT_COLOR_BIT);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
 							 tex->view,
 							 va (ctx->va_ctx, "iview:%s:%s:tex",
 								 mod->name, tx->name));
 
 		byte       *palette = vid.palette32;
-		if (strncmp (tx->name, "sky", 3) == 0) {
+		if (tx->name[0] == '{') {
+			printf ("%s\n", tx->name);
+			palette = trans_palette;
+		} else if (strncmp (tx->name, "sky", 3) == 0) {
 			palette = sky_palette;
 		}
-		transfer_texture (tx, tex->image, packet, palette, dfunc);
+		transfer_texture (tx, tex->image, packet, palette, device);
 	}
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
@@ -317,6 +338,9 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 		if (tx->width == 2 * tx->height) {
 			extent.width /= 2;
 		}
+	} else if (tx->name[0] == '{') {
+		// trasparent textures don't have glow color
+		layers = 1;
 	}
 
 	tex->tex->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,

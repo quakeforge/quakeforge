@@ -47,6 +47,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/type.h"
 
 typedef struct locref_s {
 	struct locref_s *next;
@@ -159,6 +160,9 @@ defspace_alloc_loc (defspace_t *space, int size)
 int
 defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
 {
+	if (space->alloc_aligned) {
+		return space->alloc_aligned (space, size, alignment);
+	}
 	int         ofs, pad;
 	locref_t   *loc;
 	locref_t  **l = &space->free_locs;
@@ -346,4 +350,30 @@ defspace_sort_defs (defspace_t *space)
 		space->def_tail = &defs[i]->next;
 	}
 	*space->def_tail = 0;
+}
+
+void
+merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
+{
+	int         offset;
+
+	for (def_t *def = src->defs; def; def = def->next) {
+		if (def->type->alignment > alignment) {
+			alignment = def->type->alignment;
+		}
+	}
+	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);
+	for (def_t *def = src->defs; def; def = def->next) {
+		def->offset += offset;
+		def->space = dst;
+	}
+
+	if (src->defs) {
+		*dst->def_tail = src->defs;
+		dst->def_tail = src->def_tail;
+		src->def_tail = &src->defs;
+		*src->def_tail = 0;
+	}
+
+	defspace_delete (src);
 }

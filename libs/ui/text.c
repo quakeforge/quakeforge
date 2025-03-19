@@ -187,7 +187,8 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 
 static void
 configure_textview (view_t textview, glyphobj_t *glyphs, glyphnode_t *node,
-					uint32_t glyphref_base, uint32_t c_glyphs)
+					uint32_t glyphref_base, uint32_t c_glyphs,
+					bool vertical, font_t *font)
 {
 	glyphref_t  glyph_ref = {
 		.start = glyphref_base,
@@ -306,9 +307,17 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
 	// paragraph flow
-	int         psg_vertical = !!(psg_script.direction & 2);
 	for (uint32_t i = 0; i < h->childCount[0]; i++) {
 		uint32_t    paragraph = h->childIndex[0] + i;
+		uint32_t    para_ent = h->ent[paragraph];
+		text_dir_e  para_direction = psg_script.direction;
+		if (Ent_HasComponent (para_ent, c_script, reg)) {
+			script_component_t *s = Ent_GetComponent (para_ent, c_script,
+													  reg);
+			para_direction = s->direction;
+		}
+		bool        para_vertical = !!(para_direction & 2);
+
 		view_t      paraview = View_AddToEntity (h->ent[paragraph], viewsys,
 												 passage_view, false);
 		View_Control (paraview)->free_x = 1;
@@ -321,22 +330,15 @@ Text_PassageView (text_system_t textsys, view_t parent,
 													 paraview, false);
 			h = Ent_GetComponent (passage->hierarchy, ecs_hierarchy, reg);
 			configure_textview (textview, glyphs, g, passage_ref.count,
-								c_glyphs);
+								c_glyphs, para_vertical, font);
 			View_SetGravity (textview, grav_flow);
 			passage_ref.count += g->count;
 		}
 		pararef.count = passage_ref.count - pararef.start;
 		Ent_SetComponent (paraview.id, c_glyphs, reg, &pararef);
 
-		uint32_t    para_ent = h->ent[paragraph];
-		text_dir_e para_direction = psg_script.direction;
-		if (Ent_HasComponent (para_ent, c_script, reg)) {
-			script_component_t *s = Ent_GetComponent (para_ent, c_script,
-													  reg);
-			para_direction = s->direction;
-		}
 		View_SetOnResize (paraview, para_flow_funcs[para_direction]);
-		View_SetResize (paraview, !psg_vertical, psg_vertical);
+		View_SetResize (paraview, !para_vertical, para_vertical);
 		View_SetGravity (paraview, grav_northwest);
 		View_Control (paraview)->flow_size = 1;
 		View_Control (paraview)->flow_parent = 1;
@@ -376,6 +378,7 @@ Text_StringView (text_system_t textsys, view_t parent,
 		.direction = sc ? sc->direction : text_right_down,
 		.language = sc ? sc->language : hb_language_from_string ("en", 2),
 	};
+	bool string_vertical = !!(script.direction & 2);
 	featureset_t text_features = DARRAY_STATIC_INIT (0);
 	shaping_t   shaping = {
 		.script = &script,
@@ -409,7 +412,8 @@ Text_StringView (text_system_t textsys, view_t parent,
 	glyphobj_t *glyphs = malloc (glyph_count * sizeof (glyphobj_t));
 	glyphnode_t *g = glyph_nodes;
 
-	configure_textview (stringview, glyphs, g, passage_ref.count, c_glyphs);
+	configure_textview (stringview, glyphs, g, passage_ref.count, c_glyphs,
+						string_vertical, font);
 	passage_ref.count += g->count;
 
 	glyphset_t glyphset = {

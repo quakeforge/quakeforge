@@ -1,3 +1,4 @@
+#pragma bug die
 int iter_check (unsigned count)
 {
 	unsigned i = count;
@@ -5,7 +6,7 @@ int iter_check (unsigned count)
 	while (i-- > 0) {
 		iters++;
 	}
-	return iters == count;
+	return (unsigned) iters == count;
 }
 
 int

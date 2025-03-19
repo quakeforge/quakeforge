@@ -172,7 +172,7 @@ gl_Draw_MakePic (int width, int height, const byte *data)
 	glpic_t	   *gl;
 	qpic_t	   *pic;
 
-	pic = malloc (field_offset (qpic_t, data[sizeof (glpic_t)]));
+	pic = malloc (offsetof (qpic_t, data[sizeof (glpic_t)]));
 	pic->width = width;
 	pic->height = height;
 	gl = (glpic_t *) pic->data;
@@ -1089,7 +1089,7 @@ gl_Draw_AddFont (font_t *rfont)
 		.width = rfont->scrap.width,
 		.height = rfont->scrap.height,
 		.format = tex_a,
-		.loaded = 1,
+		.loaded = true,
 		.data = rfont->scrap_bitmap,
 	};
 	font->texid = GL_LoadTex ("", 0, &tex);

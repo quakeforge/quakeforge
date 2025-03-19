@@ -1,3 +1,4 @@
+#pragma bug die
 #pragma warn error
 
 void __obj_exec_class (struct obj_module *msg) = #0;

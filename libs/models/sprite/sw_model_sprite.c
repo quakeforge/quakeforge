@@ -43,7 +43,7 @@ sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 	for (int i = 0; i < ctx->numframes; i++) {
 		auto        dframe = ctx->dframes[i];
 		size_t      pixels = dframe->width * dframe->height;
-		size_t      size = field_offset (qpic_t, data[pixels])
+		size_t      size = offsetof (qpic_t, data[pixels])
 							+ sizeof (mspriteframe_t);
 		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
 		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;

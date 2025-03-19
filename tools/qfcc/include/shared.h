@@ -33,11 +33,9 @@
 
 extern struct function_s *current_func;
 extern struct class_type_s *current_class;
-extern struct expr_s     *local_expr;
 extern enum vis_e       current_visibility;
 extern enum storage_class_e current_storage;
 extern struct symtab_s *current_symtab;
-extern bool no_flush_dag;
 
 struct symbol_s *check_redefined (struct symbol_s *sym);
 extern struct symbol_s *check_undefined (struct symbol_s *sym);

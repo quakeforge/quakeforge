@@ -30,7 +30,7 @@ num_textures (const void *data)
 	return va (0, " %7d", LittleLong (d->nummiptex));
 }
 
-#define O(f) field_offset (bsp_t, f)
+#define O(f) offsetof (bsp_t, f)
 static lumpinfo_t lump_info[] = {
 	{ "entities",     O(entdata),       O(entdatasize) },
 	{ "planes",       O(planes),        O(numplanes) },

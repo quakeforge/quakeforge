@@ -1,3 +1,4 @@
+#pragma bug die
 #pragma warn error
 
 @interface foo

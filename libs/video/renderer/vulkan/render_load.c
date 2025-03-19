@@ -536,7 +536,7 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	for (uint32_t i = 0; i < li->num_sets; i++) {
 		sets[i] = find_descriptorSet (&li->sets[i], s);
 	}
-	VkPushConstantRange ranges[li->num_pushconstantranges];
+	VkPushConstantRange ranges[li->num_pushconstantranges + 1];
 	uint32_t    offset = 0;
 	for (uint32_t i = 0; i < li->num_pushconstantranges; i++) {
 		offset = parse_pushconstantrange (&ranges[i],

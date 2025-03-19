@@ -1,6 +1,10 @@
 #! /bin/sh
 cd `dirname $0`
 
+if test "$1" = "version"; then
+	rm -rf autom4te.cache
+fi
+
 if test "$1" = "clean"; then
 	UNAME=`uname`
 	if test $UNAME = OpenBSD || test $UNAME = Darwin ; then

@@ -355,11 +355,12 @@ rua_listener_func (rua_in_cookie_t *cookie, const void *input)
 	qfZoneScoped (true);
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
-	PR_RESET_PARAMS (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
 	P_POINTER (pr, 0) = cookie->data;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, input);//FIXME check input
-	pr->pr_argc = 2;
 	PR_ExecuteProgram (pr, cookie->func);
+	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 }
 
@@ -369,12 +370,13 @@ rua_listener_method (rua_in_cookie_t *cookie, const void *input)
 	qfZoneScoped (true);
 	progs_t    *pr = cookie->pr;
 	PR_PushFrame (pr);
-	PR_RESET_PARAMS (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 3, 1);
 	P_POINTER (pr, 0) = cookie->data;
 	P_POINTER (pr, 1) = 0;	// don't know the method name (selector)
 	P_POINTER (pr, 2) = PR_SetPointer (pr, input);//FIXME check input
-	pr->pr_argc = 3;
 	PR_ExecuteProgram (pr, cookie->func);
+	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 }
 
@@ -561,13 +563,13 @@ static builtin_t builtins[] = {
 		rua_IN_AxisAddListener_func, -1,        3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}^(v^v^{tag in_axis_s=})^v",
 		rua_IN_AxisRemoveListener_func, -1,     3, {p(ptr), p(func), p(ptr)}},
-	{"IN_ButtonAddListener|^{tag in_button_s=}(@@:.)@",
+	{"IN_ButtonAddListener|^{tag in_button_s=}^%(@@:.)@",
 		rua_IN_ButtonAddListener_method, -1,    3, {p(ptr), p(func), p(ptr)}},
-	{"IN_ButtonRemoveListener|^{tag in_button_s=}(@@:.)@",
+	{"IN_ButtonRemoveListener|^{tag in_button_s=}^%(@@:.)@",
 		rua_IN_ButtonRemoveListener_method, -1, 3, {p(ptr), p(func), p(ptr)}},
-	{"IN_AxisAddListener|^{tag in_axis_s=}(@@:.)@",
+	{"IN_AxisAddListener|^{tag in_axis_s=}^%(@@:.)@",
 		rua_IN_AxisAddListener_method, -1,      3, {p(ptr), p(func), p(ptr)}},
-	{"IN_AxisRemoveListener|^{tag in_axis_s=}(@@:.)@",
+	{"IN_AxisRemoveListener|^{tag in_axis_s=}^%(@@:.)@",
 		rua_IN_AxisRemoveListener_method, -1,   3, {p(ptr), p(func), p(ptr)}},
 
 	bi(IMT_CreateContext,   1, p(string)),

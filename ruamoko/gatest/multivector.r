@@ -261,21 +261,21 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 -(MultiVector *) dual:(int) undual
 {
 	MultiVector *dual = [MultiVector new:algebra];
-	unsigned dual_mask = (1 << [algebra dimension]) - 1;
+	unsigned I_mask = (1 << [algebra dimension]) - 1;
 	int dim = [algebra dim];
 	for (int i = 0; i < num_components; i++) {
 		if (!components[i]) {
 			continue;
 		}
-		double lc = components[i];
-		BasisBlade *lb = [layout bladeAt:i];
-		unsigned lb_mask = [lb mask];
-		unsigned mask = lb_mask ^ dual_mask;
-		double ls = [lb scale];
-		double s = count_flips (lb_mask, mask) & 1 ? -1 : 1;
-		s *= (dim * [lb grade]) & 1 ? -1 : 1;
-		int ind = [dual.layout bladeIndex:mask];
-		dual.components[ind] += s * lc;
+		BasisBlade *blade = [layout bladeAt:i];
+		unsigned d_mask = I_mask ^ [blade mask];
+		int flips = undual ? count_flips (d_mask, [blade mask])
+						   : count_flips ([blade mask], d_mask);
+		double s = flips & 1 ? -1 : 1;
+
+		double ls = [blade scale];
+		int dual_ind = [dual.layout bladeIndex:d_mask];
+		dual.components[dual_ind] += s * components[i];
 	}
 	return dual;
 }
@@ -302,7 +302,7 @@ static MultiVector *new_mv (Algebra *algebra, BasisLayout *layout)
 		int         g = [b grade];
 		unsigned    mask = [b mask];
 		double s = g & 2 ? -1 : 1;//FIXME do in BasisBlade?
-		int ind = [layout bladeIndex:mask];
+		int ind = [reverse.layout bladeIndex:mask];
 		reverse.components[ind] += s * c;
 	}
 	return reverse;

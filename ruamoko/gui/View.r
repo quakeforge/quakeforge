@@ -61,9 +61,9 @@
 {
 }
 
-- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
+- (bool) keyEvent:(int)key unicode:(int)unicode down:(bool)down
 {
-	return 0;
+	return false;
 }
 
 @end

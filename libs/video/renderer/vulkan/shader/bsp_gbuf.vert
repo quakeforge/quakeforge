@@ -7,7 +7,7 @@ layout (set = 0, binding = 0) uniform
 #include "matrices.h"
 ;
 
-layout (set = 1, binding = 0) buffer Entities {
+layout (set = 1, binding = 0) readonly buffer Entities {
 	Entity      entities[];
 };
 

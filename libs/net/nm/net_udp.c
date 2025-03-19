@@ -220,9 +220,10 @@ get_iface_list (int sock)
 	return 0;
 no_ifaddrs:
 #endif
-	ifaces = &myAddr;
-	default_iface = &ifaces[0];
 	num_ifaces = 1;
+	ifaces = malloc (num_ifaces * sizeof (uint32_t));
+	ifaces[0] = myAddr;
+	default_iface = &ifaces[0];
 	return 0;
 }
 

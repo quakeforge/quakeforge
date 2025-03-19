@@ -242,7 +242,7 @@ edges_intersect (const vec3_t p1, const vec3_t p2,
 	return true;
 }
 
-static bool
+static bool __attribute__((pure))
 trace_hits_portal (const hull_t *hull, const trace_t *trace,
 				   clipport_t *portal, const vec3_t start, const vec3_t vel)
 {
@@ -274,7 +274,7 @@ trace_hits_portal (const hull_t *hull, const trace_t *trace,
 	return true;
 }
 
-static bool
+static bool __attribute__((pure))
 trace_enters_leaf (hull_t *hull, trace_t *trace, clipleaf_t *leaf,
 				   plane_t *plane, const vec3_t vel, const vec3_t org)
 {

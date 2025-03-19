@@ -31,6 +31,8 @@
 #ifndef __class_h
 #define __class_h
 
+#include "tools/qfcc/include/expr.h"
+
 typedef enum {
 	ct_class,
 	ct_category,
@@ -111,10 +113,11 @@ extern class_type_t *current_class;
 extern int obj_initialized;
 
 struct dstring_s;
-struct expr_s;
 struct method_s;
 struct symbol_s;
 struct selector_s;
+
+typedef struct rua_ctx_s rua_ctx_t;
 
 int is_id (const struct type_s *type) __attribute__((pure));
 int is_class (const struct type_s *type) __attribute__((pure));
@@ -124,7 +127,7 @@ int is_SEL (const struct type_s *type) __attribute__((const));
 int is_object (const struct type_s *type) __attribute__((const));
 int is_method (const struct type_s *type) __attribute__((const));
 int is_method_description (const struct type_s *type) __attribute__((const));
-int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
+int obj_type_assignable (const struct type_s *dst, const struct type_s *src);
 
 class_t *extract_class (class_type_t *class_type) __attribute__((pure));
 const char *get_class_name (class_type_t *class_type, int pretty);
@@ -134,12 +137,13 @@ class_t *get_class (struct symbol_s *sym, int create);
 void class_add_methods (class_t *class, struct methodlist_s *methods);
 void class_add_protocols (class_t *class, protocollist_t *protocols);
 struct symtab_s *class_new_ivars (class_t *class);
-void class_add_ivars (class_t *class, struct symtab_s *ivars);
-void class_check_ivars (class_t *class, struct symtab_s *ivars);
+void class_add_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx);
+void class_check_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx);
 void class_begin (class_type_t *class_type);
 void class_finish (class_type_t *class_type);
 int class_access (class_type_t *current_class, class_t *class) __attribute__((pure));
-struct symbol_s *class_find_ivar (class_t *class, int vis, const char *name);
+struct symbol_s *class_find_ivar (class_t *class, ex_vis_t vis,
+								  const char *name);
 struct symtab_s *class_ivar_scope (class_type_t *class_type,
 								   struct symtab_s *parent);
 void class_finish_ivar_scope (class_type_t *class_type,
@@ -148,14 +152,13 @@ void class_finish_ivar_scope (class_type_t *class_type,
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
 struct method_s *class_message_response (const struct type_s *clstype,
-										 int class_msg,
-										 const struct expr_s *sel);
+										 int class_msg, const expr_t *sel);
 struct symbol_s *class_pointer_symbol (class_t *class_type);
 category_t *get_category (struct symbol_s *class_name,
 						  const char *category_name, int create);
 void category_add_methods (category_t *category, struct methodlist_s *methods);
 void category_add_protocols (category_t *category, protocollist_t *protocols);
-void class_finish_module (void);
+void class_finish_module (rua_ctx_t *ctx);
 
 struct symtab_s *class_to_struct (class_t *class, struct symtab_s *symtab);
 void emit_class_ref (const char *class_name);

@@ -22,7 +22,7 @@ count_bits (unsigned v)
 {
 	int         c = 0;
 	for (; v; c++) {
-		v &= v - 1u; //XXX bug in qfcc: just 1 results in extra temp
+		v &= v - 1;
 	}
 	return c;
 }

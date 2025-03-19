@@ -601,10 +601,10 @@ static float
 light_radius (const light_t *l)
 {
 	return l->attenuation[3] > 0 ? 1 / l->attenuation[3]
-		 : l->attenuation[0] > 0 ? sqrt(abs(l->color[3]/l->attenuation[0]))
-		 : l->attenuation[1] > 0 ? abs(l->color[3]/l->attenuation[1])
+		 : l->attenuation[0] > 0 ? sqrt(fabs(l->color[3]/l->attenuation[0]))
+		 : l->attenuation[1] > 0 ? fabs(l->color[3]/l->attenuation[1])
 		 // FIXME ambient lights. not right, but at least it will render
-		 : sqrt(abs(l->color[3]));
+		 : sqrt(fabs(l->color[3]));
 }
 
 static void
@@ -623,6 +623,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		return;
 	}
 
+	auto sb = &bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 
 	uint32_t light_ids[ST_COUNT][MaxLights];
@@ -703,7 +704,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		styles[i] = (vec4f_t) { 1, 1, 1, d_lightstylevalue[i] / 65536.0};
 	}
 	QFV_PacketScatterBuffer (packet, lframe->style_buffer,
-							 1, &style_scatter, bb);
+							 1, &style_scatter, sb, bb);
 
 	if (queue[ST_CASCADE].count) {
 		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
@@ -722,7 +723,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			};
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
-								 queue[ST_CASCADE].count, scatter, bb);
+								 queue[ST_CASCADE].count, scatter, sb, bb);
 	}
 
 	if (ndlight) {
@@ -739,7 +740,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			cube_mats (&mats[i * 6], dynamic_lights[i]->origin);
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
-								 1, &mat_scatter, bb);
+								 1, &mat_scatter, sb, bb);
 
 		auto lights = (light_t *) packet_data;
 		qfv_scatter_t light_scatter = {
@@ -773,7 +774,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			lights[i] = light;
 		}
 		QFV_PacketScatterBuffer (packet, lframe->light_buffer,
-								 1, &light_scatter, bb);
+								 1, &light_scatter, sb, bb);
 
 		auto render = (qfv_light_render_t *) packet_data;
 		qfv_scatter_t render_scatter = {
@@ -789,7 +790,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			};
 		}
 		QFV_PacketScatterBuffer (packet, lframe->render_buffer,
-								 1, &render_scatter, bb);
+								 1, &render_scatter, sb, bb);
 	}
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 8,
@@ -815,6 +816,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 		QFV_PacketScatterBuffer (packet, lframe->id_buffer,
 								 1, &lid_scatter,
+					  &bufferBarriers[qfv_BB_VertexAttrRead_to_TransferWrite],
 					  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 
 		auto lradii = (float *) packet_data;
@@ -830,6 +832,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		}
 		QFV_PacketScatterBuffer (packet, lframe->radius_buffer,
 								 1, &lradius_scatter,
+					  &bufferBarriers[qfv_BB_VertexAttrRead_to_TransferWrite],
 					  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
 
 		auto eids = (uint32_t *) packet_data;
@@ -844,6 +847,17 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 					sizeof (uint32_t[queue[i].count]));
 		}
 		QFV_PacketScatterBuffer (packet, lframe->entid_buffer, 1, &eid_scatter,
+				&(qfv_bufferbarrier_t) {
+					.srcStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+					.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+					.barrier = {
+						.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+						.srcAccessMask = VK_ACCESS_SHADER_READ_BIT,
+						.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+						.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+						.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+					},
+				},
 				&(qfv_bufferbarrier_t) {
 					.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 					.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
@@ -1121,6 +1135,19 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		enqueue_map (matrix_ids, lframe, r);
 	}
 
+	static qfv_bufferbarrier_t transfer_dst = {
+		.srcStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+				   | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.barrier = {
+			.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+			.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+						   | VK_ACCESS_SHADER_READ_BIT,
+			.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		},
+	};
 	static qfv_bufferbarrier_t vtxattr_read = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
@@ -1148,11 +1175,12 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 	};
 
 	QFV_PacketScatterBuffer (packet, lframe->id_buffer, 1, &id_scatter,
-							 &vtxattr_read);
+							 &transfer_dst, &vtxattr_read);
 	QFV_PacketScatterBuffer (packet, lframe->radius_buffer, 1, &radius_scatter,
-							 &vtxattr_read);
+							 &transfer_dst, &vtxattr_read);
 	QFV_PacketScatterBuffer (packet, lframe->shadowmat_id_buffer,
-							 1, &matrix_id_scater, &storage_read);
+							 1, &matrix_id_scater,
+							 &transfer_dst, &storage_read);
 
 	QFV_PacketSubmit (packet);
 	transition_shadow_targets (lframe, ctx);
@@ -1287,6 +1315,7 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 			}
 		}
 	}
+	if (0) printf ("%d,%d/%d visible\n", c, ci, count);
 	lighting_rewrite_ids (lframe, ctx);
 }
 
@@ -1373,13 +1402,13 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, fog),
+			offsetof (light_push_constants_t, fog),
 			sizeof (fog), &fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, CascadeDepths),
+			offsetof (light_push_constants_t, CascadeDepths),
 			sizeof (depths), &depths },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			field_offset (light_push_constants_t, queue),
+			offsetof (light_push_constants_t, queue),
 			sizeof (queue), &queue },
 	};
 	QFV_PushConstants (device, cmd, layout, 3, push_constants);
@@ -1917,13 +1946,14 @@ lighting_startup (exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	make_ico (packet);
 	make_cone (packet);
-	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead]);
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto dbv = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	auto dbi = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0, &sb, &dbv);
 	QFV_PacketSubmit (packet);
 	packet = QFV_PacketAcquire (ctx->staging);
 	write_inds (packet);
-	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0,
-						  &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead]);
+	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0, &sb, &dbi);
 	QFV_PacketSubmit (packet);
 
 	qfvPopDebug (ctx);
@@ -2214,10 +2244,11 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
 	void *mat_data = QFV_PacketExtend (packet, mat_size);
 	memcpy (mat_data, lctx->light_mats.a, mat_size);
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 
@@ -2227,7 +2258,7 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	memset (id_data, -1, id_size);
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 }
@@ -2243,10 +2274,11 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	auto light_data = QFV_PacketExtend (packet, sizeof (light_t[count]));
 	memcpy (light_data, lights, sizeof (light_t[count]));
-	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->light_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->light_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 
@@ -2268,7 +2300,7 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->render_buffer, 0, bb);
+		QFV_PacketCopyBuffer (packet, lframe->render_buffer, 0, sb, db);
 	}
 	QFV_PacketSubmit (packet);
 }

@@ -491,7 +491,7 @@ static tex_t default_black_tex = {
 	.width = 1,
 	.height = 1,
 	.format = tex_rgba,
-	.loaded = 1,
+	.loaded = true,
 	.palette =0,
 	.data = black_data,
 };
@@ -499,7 +499,7 @@ static tex_t default_white_tex = {
 	.width = 1,
 	.height = 1,
 	.format = tex_rgba,
-	.loaded = 1,
+	.loaded = true,
 	.palette =0,
 	.data = white_data,
 };
@@ -507,7 +507,7 @@ static tex_t default_magenta_tex = {
 	.width = 1,
 	.height = 1,
 	.format = tex_rgba,
-	.loaded = 1,
+	.loaded = true,
 	.palette =0,
 	.data = magenta_data,
 };

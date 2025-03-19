@@ -107,7 +107,7 @@ void V_NewScene (viewstate_t *vs, struct scene_s *scene);
 void V_Init (viewstate_t *vs);
 void V_Init_Cvars (void);
 void V_RenderView (viewstate_t *vs);
-float V_CalcRoll (const vec3_t angles, vec4f_t velocity);
+float V_CalcRoll (const vec3_t angles, vec4f_t velocity) __attribute__((pure));
 void V_StartPitchDrift (viewstate_t *vs);
 void V_StopPitchDrift (viewstate_t *vs);
 void V_SetContentsColor (viewstate_t *vs, int contents);

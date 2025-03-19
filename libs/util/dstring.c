@@ -103,8 +103,22 @@ dstring_adjust (dstring_t *dstr)
 	}
 }
 
+VISIBLE void
+dstring_reserve (dstring_t *dstr, size_t delta)
+{
+	size_t newsize = dstr->size + delta;
+	if (newsize > dstr->truesize) {
+		dstr->truesize = (newsize + 1023) & ~1023;
+		dstr->str = dstr->mem->realloc (dstr->mem->data, dstr->str,
+										dstr->truesize);
+		if (!dstr->str) {
+			Sys_Error ("dstring_reserve:  Failed to reallocate memory.");
+		}
+	}
+}
+
 VISIBLE char *
-dstring_reserve (dstring_t *dstr, size_t len)
+dstring_open (dstring_t *dstr, size_t len)
 {
 	dstr->size += len;
 	dstring_adjust (dstr);
@@ -225,7 +239,7 @@ dstring_strdup (const char *str)
 }
 
 VISIBLE char *
-dstring_reservestr (dstring_t *dstr, size_t len)
+dstring_openstr (dstring_t *dstr, size_t len)
 {
 	int         pos = dstr->size;
 	if (pos && !dstr->str[pos - 1])
@@ -257,9 +271,12 @@ dstring_copysubstr (dstring_t *dstr, const char *str, size_t len)
 VISIBLE void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 	size_t      len = strlen (str);
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
 	strcpy (dstr->str + pos, str);
@@ -268,8 +285,11 @@ dstring_appendstr (dstring_t *dstr, const char *str)
 VISIBLE void
 dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	len = strnlen (str, len);
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);

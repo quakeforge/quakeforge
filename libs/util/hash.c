@@ -244,7 +244,7 @@ VISIBLE hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 			   void (*f)(void*,void*), void *ud, hashctx_t **hctx)
 {
-	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
+	hashtab_t *tab = calloc (1, offsetof (hashtab_t, tab[tsize]));
 	if (!tab)
 		return 0;
 	tab->tab_size = tsize;

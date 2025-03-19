@@ -1,3 +1,4 @@
+#pragma bug die
 string got;
 
 SEL (string name) sel_get_uid = #0;

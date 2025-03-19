@@ -22,7 +22,7 @@
 	struct {
 		qdb_state_t state;
 		int         depth;
-		int			until_function;
+		unsigned	until_function;
 	}           trace_cond;
 	struct {
 		int         onEnter;

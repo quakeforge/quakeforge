@@ -105,7 +105,7 @@
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", 0/*FIXME*/, (void *) field_offset (%s, %s)},\n",
+			 "\t{\"%s\", 0/*FIXME*/, (void *) offsetof (%s, %s)},\n",
 			 field_name, struct_name, value_field);
 	return self;
 }

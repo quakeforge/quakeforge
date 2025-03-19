@@ -164,7 +164,7 @@ NewWinding (threaddata_t *thread, int points)
 	winding_t  *winding;
 	unsigned    size;
 
-	size = field_offset (winding_t, points[points]);
+	size = offsetof (winding_t, points[points]);
 	winding = Hunk_RawAlloc (thread->hunk, size);
 	memset (winding, 0, size);
 	winding->id = thread->winding_id++;
@@ -179,7 +179,7 @@ CopyWinding (threaddata_t *thread, const winding_t *w)
 	unsigned    size;
 	winding_t  *copy;
 
-	size = field_offset (winding_t, points[w->numpoints]);
+	size = offsetof (winding_t, points[w->numpoints]);
 	copy = Hunk_RawAlloc (thread->hunk, size);
 	memcpy (copy, w, size);
 	copy->original = false;

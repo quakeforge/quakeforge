@@ -821,14 +821,15 @@ cpqw_user_cmd (void)
 		*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
 
 		PR_PushFrame (pr);
-		PR_RESET_PARAMS (pr);
+		auto params = PR_SaveParams (pr);
+		PR_SetupParams (pr, 8, 1);
 		P_FLOAT (pr, 0) = argc;
 		for (i = 1; i < argc + 1; i++)
 			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
 		for (; i < 8; i++)
 			P_STRING (pr, i) = 0;
-		pr->pr_argc = 8;
 		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
+		PR_RestoreParams (pr, params);
 		PR_PopFrame (pr);
 		return (int) R_FLOAT (pr);
 	}

@@ -186,7 +186,8 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
-	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0,
+	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0, &sb,
 		&(qfv_bufferbarrier_t) {
 			.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 			.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,

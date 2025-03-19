@@ -37,26 +37,87 @@
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
 
 ALLOC_STATE (attribute_t, attributes);
 
-attribute_t *new_attribute(const char *name, const expr_t *params)
+attribute_t *
+new_attrfunc (const char *name, const expr_t *params)
 {
-	if (params && params->type != ex_list) {
-		internal_error (params, "attribute params not a list");
-	}
-	if (params) {
-		for (auto p = params->list.head; p; p = p->next) {
-			if (p->expr->type != ex_value) {
-				error (p->expr, "not a literal constant");
-				return 0;
-			}
-		}
-	}
-
 	attribute_t *attr;
 	ALLOC (16384, attribute_t, attributes, attr);
 	attr->name = save_string (name);
 	attr->params = params;
 	return attr;
+}
+
+attribute_t *
+new_attribute(const char *name, const expr_t *params)
+{
+	bool err = false;
+	if (params && params->type == ex_list) {
+		for (auto p = params->list.head; p; p = p->next) {
+			auto e = p->expr;
+			if (e->type == ex_expr) {
+				if (e->expr.op != '='
+					|| !is_string_val (e->expr.e1)
+					|| e->expr.e2->type != ex_value) {
+					error (e, "not a key=literal constant");
+					err = true;
+				}
+			} else if (e->type != ex_value) {
+				error (e, "not a literal constant");
+				err = true;
+			}
+		}
+	}
+	if (err) {
+		return nullptr;
+	}
+	return new_attrfunc (name, params);
+}
+
+static attribute_t *
+expr_attr (const expr_t *attr)
+{
+	if (attr->type == ex_symbol) {
+		// simple name attribute
+		auto sym = attr->symbol;
+		return new_attribute (sym->name, nullptr);
+	} else if (attr->type == ex_branch && attr->branch.type == pr_branch_call
+			   && attr->branch.target
+			   && attr->branch.target->type == ex_symbol) {
+		if (!attr->branch.args) {
+			error (attr, "function-style attributes require parameters");
+			return nullptr;
+		}
+		auto sym = attr->branch.target->symbol;
+		return new_attribute (sym->name, attr->branch.args);
+	} else {
+		error (attr, "not a simple name");
+		return nullptr;
+	}
+}
+
+attribute_t *
+expr_attributes (const expr_t *attrs, attribute_t *append_attrs)
+{
+	if (!attrs) {
+		return append_attrs;
+	}
+	attribute_t *attributes = nullptr;
+	attribute_t **a = &attributes;
+	if (attrs->type == ex_list) {
+		for (auto l = attrs->list.head; l; l = l->next) {
+			if ((*a = expr_attr (l->expr))) {
+				a = &(*a)->next;
+			}
+		}
+	} else {
+		if ((*a = expr_attr (attrs))) {
+			a = &(*a)->next;
+		}
+	}
+	*a = append_attrs;
+	return attributes;
 }

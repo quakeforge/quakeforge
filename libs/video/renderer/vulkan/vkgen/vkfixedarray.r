@@ -18,7 +18,7 @@
 		return nil;
 	}
 	ele_type = [Type fromType: type.array.type];
-	ele_count = type.array.size;
+	ele_count = type.array.count;
 	return self;
 }
 

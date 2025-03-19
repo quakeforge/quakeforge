@@ -240,6 +240,12 @@ Unsupported options are ignored.
 The following options are supported by \*[qfcc]'s \fB\-\-code\fP argument:
 
 .TP
+.B c-array[=name]
+Generate a C source file with an array instead of the default binary format
+for the target. Optionally, the default name (generated from the source file
+name) can be overriden.
+
+.TP
 .B const-initializers
 Treat initialized globals as constants.
 This option is implied by \fB\-\-traditional\fP and \fB\-\-extended\fP, and is

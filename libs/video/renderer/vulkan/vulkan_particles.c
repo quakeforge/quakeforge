@@ -361,10 +361,10 @@ particle_physics (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_COMPUTE_BIT,
-			field_offset (particle_push_constants_t, gravity),
+			offsetof (particle_push_constants_t, gravity),
 			sizeof (vec4f_t), &constants.gravity },
 		{ VK_SHADER_STAGE_COMPUTE_BIT,
-			field_offset (particle_push_constants_t, dT),
+			offsetof (particle_push_constants_t, dT),
 			sizeof (float), &constants.dT },
 	};
 	QFV_PushConstants (device, cmd, layout, 2, push_constants);

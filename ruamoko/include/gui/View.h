@@ -31,7 +31,7 @@
 - (void) setBasePosFromView: (View*)view;
 - (void) draw;
 
-- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down;
+- (bool) keyEvent:(int)key unicode:(int)unicode down:(bool)down;
 @end
 
 ///@}
