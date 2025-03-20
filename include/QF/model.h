@@ -274,20 +274,20 @@ typedef struct mod_brush_s {
 
 //
 
-typedef struct framedesc_s {
+typedef struct keyframedesc_s {
 	int         firstframe;
 	int         numframes;		// 1 for single frames
-} framedesc_t;
+} keyframedesc_t;
 
-typedef struct frame_s {
+typedef struct keyframe_s {
 	float       endtime;		// 0 for single frames
 	uint32_t    data;
-} frame_t;
+} keyframe_t;
 
 typedef struct anim_s {
 	int         numdesc;
 	uint32_t    descriptors;
-	uint32_t    frames;
+	uint32_t    keyframes;
 	uint32_t    data;
 } anim_t;
 

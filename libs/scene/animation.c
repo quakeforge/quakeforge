@@ -49,13 +49,13 @@ get_frame_data (double time, const anim_t *anim, int framenum,
 		return 0;
 	}
 
-	auto fdesc = (framedesc_t *) (base + anim->descriptors);
+	auto fdesc = (keyframedesc_t *) (base + anim->descriptors);
 	fdesc += framenum;
 	if (fdesc->numframes < 1) {
 		return 0;
 	}
 
-	auto frame = (frame_t *) (base + anim->frames);
+	auto frame = (keyframe_t *) (base + anim->keyframes);
 	frame += fdesc->firstframe;
 
 	int   numframes = fdesc->numframes;

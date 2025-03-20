@@ -87,8 +87,8 @@ vulkan_alias_clear (model_t *m, void *data)
 	free (rmesh->resources);
 
 	auto skin = &mesh->skin;
-	auto skindesc = (framedesc_t *) ((byte *) mesh + skin->descriptors);
-	auto skinframe = (frame_t *) ((byte *) mesh + skin->frames);
+	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
 	int index = 0;
 
 	for (int i = 0; i < skin->numdesc; i++) {
@@ -251,7 +251,7 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 {
 	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
-	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int         i, pose;
 	// populate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)

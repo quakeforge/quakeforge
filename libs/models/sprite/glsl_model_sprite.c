@@ -56,8 +56,8 @@ glsl_sprite_clear (model_t *m, void *data)
 	m->needload = true;
 
 	auto skin = &sprite->skin;
-	auto skindesc = (framedesc_t *) ((byte *) sprite + skin->descriptors);
-	auto skinframe = (frame_t *) ((byte *) sprite + skin->frames);
+	auto skindesc = (keyframedesc_t *) ((byte *) sprite + skin->descriptors);
+	auto skinframe = (keyframe_t *) ((byte *) sprite + skin->keyframes);
 	int index = 0;
 
 	for (int i = 0; i < skin->numdesc; i++) {

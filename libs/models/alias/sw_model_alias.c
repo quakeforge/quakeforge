@@ -207,8 +207,8 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	auto desc = (framedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
-	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int  posenum = 0;
 	for (int i = 0; i < mesh->morph.numdesc; i++) {
 		for (int j = 0; j < desc[i].numframes; j++, posenum++) {

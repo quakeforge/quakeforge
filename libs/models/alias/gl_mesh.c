@@ -577,7 +577,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		attribs[1].offset += offsetof (trivertx_t, lightnormalindex);
 	}
 
-	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	if (extra) {
 		trivertx16_t *verts = vertices;
 		for (int i = 0; i < numposes; i++) {

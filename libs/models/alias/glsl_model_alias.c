@@ -70,8 +70,8 @@ glsl_alias_clear (model_t *m, void *data)
 	qfeglDeleteBuffers (2, bufs);
 
 	auto skin = &mesh->skin;
-	auto skindesc = (framedesc_t *) ((byte *) mesh + skin->descriptors);
-	auto skinframe = (frame_t *) ((byte *) mesh + skin->frames);
+	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
 	int index = 0;
 
 	for (int i = 0; i < skin->numdesc; i++) {
@@ -83,7 +83,7 @@ glsl_alias_clear (model_t *m, void *data)
 
 static void
 glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
-				   int snum, int gnum, frame_t *skinframe)
+				   int snum, int gnum, keyframe_t *skinframe)
 {
 	int         w = alias_ctx->skinwidth;
 	int         h = alias_ctx->skinheight;
@@ -154,7 +154,7 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 	auto st = alias_ctx->stverts.a;
 	auto mesh = alias_ctx->mesh;
 	auto mdl = alias_ctx->mdl;
-	auto frames = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int         i, pose;
 	// populate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)

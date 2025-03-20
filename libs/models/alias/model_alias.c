@@ -48,10 +48,10 @@
 #include "mod_internal.h"
 
 static void
-load_skin (mod_alias_ctx_t *alias_ctx, frame_t *frame, float endtime,
+load_skin (mod_alias_ctx_t *alias_ctx, keyframe_t *frame, float endtime,
 		  byte *skin)
 {
-	*frame = (frame_t) { .endtime = endtime };
+	*frame = (keyframe_t) { .endtime = endtime };
 
 	mod_alias_skin_t askin = {
 		.texels = skin,
@@ -66,14 +66,14 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 {
 	int  skinsize = mdl->skinwidth * mdl->skinheight;
 	auto mesh = alias_ctx->mesh;
-	auto desc = (framedesc_t *) ((byte *) mesh + mesh->skin.descriptors);
-	auto skinframe = (frame_t *) ((byte *) mesh + mesh->skin.frames);
+	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->skin.descriptors);
+	auto skinframe = (keyframe_t *) ((byte *) mesh + mesh->skin.keyframes);
 	int  index = 0;
 
 	for (int i = 0; i < mdl->numskins; i++) {
 		auto skin = (byte *) &type[1];
 		if (type->type == ALIAS_SKIN_SINGLE) {
-			desc[i] = (framedesc_t) {
+			desc[i] = (keyframedesc_t) {
 				.firstframe = index,
 				.numframes = 1,
 			};
@@ -81,7 +81,7 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 			skin += skinsize;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
-			desc[i] = (framedesc_t) {
+			desc[i] = (keyframedesc_t) {
 				.firstframe = index,
 				.numframes = group->numframes,
 			};
@@ -118,18 +118,18 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			 const mdl_t *mdl)
 {
 	auto mesh = alias_ctx->mesh;
-	auto desc = (framedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
-	auto frame = (frame_t *) ((byte *) mesh + mesh->morph.frames);
+	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
+	auto frame = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int  index = 0;
 
 	for (int i = 0; i < mdl->numframes; i++) {
 		trivertx_t *verts;
 		if (type->type == ALIAS_SINGLE) {
-			desc[i] = (framedesc_t) {
+			desc[i] = (keyframedesc_t) {
 				.firstframe = index,
 				.numframes = 1,
 			};
-			frame[index] = (frame_t) { };
+			frame[index] = (keyframe_t) { };
 
 			void *data = &type[1];
 			alias_ctx->dframes[index] = data;
@@ -137,14 +137,14 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			index++;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
-			desc[i] = (framedesc_t) {
+			desc[i] = (keyframedesc_t) {
 				.firstframe = index,
 				.numframes = group->numframes,
 			};
 			auto intervals = (float *) &group[1];
 			void *data = &intervals[group->numframes];
 			for (int j = 0; j < group->numframes; j++) {
-				frame[index] = (frame_t) {
+				frame[index] = (keyframe_t) {
 					.endtime = intervals[j],
 				};
 				alias_ctx->dframes[index] = data;
@@ -335,19 +335,19 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	// frame data, skin and group info
 	size_t      size = sizeof (qf_model_t)
 						+ sizeof (qf_mesh_t)
-						+ sizeof (framedesc_t[mdl->numskins])
-						+ sizeof (frame_t[alias_ctx.numskins])
-						+ sizeof (framedesc_t[mdl->numframes])
-						+ sizeof (frame_t[alias_ctx.poseverts.size])
+						+ sizeof (keyframedesc_t[mdl->numskins])
+						+ sizeof (keyframe_t[alias_ctx.numskins])
+						+ sizeof (keyframedesc_t[mdl->numframes])
+						+ sizeof (keyframe_t[alias_ctx.poseverts.size])
 						+ alias_ctx.names_size;
 	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
 	auto mesh = (qf_mesh_t *) &model[1];
 	alias_ctx.model = model;
 	alias_ctx.mesh = mesh;
-	auto skindescs = (framedesc_t *) &mesh[1];
-	auto skinframes = (frame_t *) &skindescs[mdl->numskins];
-	auto framedescs = (framedesc_t *) &skinframes[alias_ctx.numskins];
-	auto frames = (frame_t *) &framedescs[mdl->numframes];
+	auto skindescs = (keyframedesc_t *) &mesh[1];
+	auto skinframes = (keyframe_t *) &skindescs[mdl->numskins];
+	auto framedescs = (keyframedesc_t *) &skinframes[alias_ctx.numskins];
+	auto frames = (keyframe_t *) &framedescs[mdl->numframes];
 	alias_ctx.names = (char *) &frames[alias_ctx.poseverts.size];
 	alias_ctx.names[0] = 0;	// empty string
 
@@ -366,12 +366,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		.skin = {
 			.numdesc = mdl->numskins,
 			.descriptors = (byte *) skindescs - (byte *) mesh,
-			.frames = (byte *) skinframes - (byte *) mesh,
+			.keyframes = (byte *) skinframes - (byte *) mesh,
 		},
 		.morph = {
 			.numdesc = mdl->numframes,
 			.descriptors = (byte *) framedescs - (byte *) mesh,
-			.frames = (byte *) frames - (byte *) mesh,
+			.keyframes = (byte *) frames - (byte *) mesh,
 		},
 		.scale = { VectorExpand (mdl->scale) },
 		.scale_origin = { VectorExpand (mdl->scale_origin) },
