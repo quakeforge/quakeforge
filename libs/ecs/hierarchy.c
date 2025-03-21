@@ -54,6 +54,9 @@ hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
 {
 	ecs_registry_t *reg = hierarchy->reg;
+	if (!reg) {
+		return;
+	}
 	uint32_t    href = hierarchy->href_comp;
 	for (size_t i = start; i < hierarchy->num_objects; i++) {
 		if (ECS_EntValid (hierarchy->ent[i], reg)) {
@@ -68,6 +71,9 @@ hierarchy_InvalidateReferences (hierarchy_t *hierarchy, uint32_t start,
 								uint32_t count)
 {
 	ecs_registry_t *reg = hierarchy->reg;
+	if (!reg) {
+		return;
+	}
 	uint32_t    href = hierarchy->href_comp;
 	for (size_t i = start; count-- > 0; i++) {
 		if (ECS_EntValid (hierarchy->ent[i], reg)) {
@@ -84,6 +90,9 @@ hierarchy_remove_reference (hierarchy_t *hierarchy, uint32_t index)
 	uint32_t    ent = hierarchy->ent[index];
 	uint32_t    href = hierarchy->href_comp;
 	auto        reg = hierarchy->reg;
+	if (!reg) {
+		return;
+	}
 	if (ECS_EntValid (ent, reg) && Ent_HasComponent (ent, href, reg)) {
 		hierref_t  *ref = Ent_GetComponent (ent, href, reg);
 		ref->id = nullent;
@@ -227,12 +236,14 @@ hierarchy_move (hierarchy_t *dst, uint32_t dstid, const hierarchy_t *src,
 	memset (&src->ent[srcIndex], nullent, count * sizeof(dst->ent[0]));
 	memset (&src->own[srcIndex], false, count * sizeof(dst->own[0]));
 
-	for (uint32_t i = 0; i < count; i++) {
-		if (dst->ent[dstIndex + i] != nullent) {
-			uint32_t    ent = dst->ent[dstIndex + i];
-			hierref_t  *ref = Ent_GetComponent (ent, href, reg);
-			ref->id = dstid;
-			ref->index = dstIndex + i;
+	if (reg) {
+		for (uint32_t i = 0; i < count; i++) {
+			if (dst->ent[dstIndex + i] != nullent) {
+				uint32_t    ent = dst->ent[dstIndex + i];
+				hierref_t  *ref = Ent_GetComponent (ent, href, reg);
+				ref->id = dstid;
+				ref->index = dstIndex + i;
+			}
 		}
 	}
 	if (dst->type) {
@@ -461,6 +472,14 @@ hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index,
 	}
 }
 
+uint32_t
+Hierarchy_Insert (hierarchy_t *dst, uint32_t parent)
+{
+	uint32_t ind = 0;
+	auto ref = hierarchy_insertHierarchy (dst, nullent, nullptr, parent, &ind);
+	return ref.index;
+}
+
 void
 Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 						   int delEntities)
@@ -517,9 +536,11 @@ hierarchy_destroy (hierarchy_t *hierarchy)
 void
 Hierarchy_Destroy (hierarchy_t *hierarchy)
 {
-	hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
-	for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
-		ECS_DelEntity (hierarchy->reg, hierarchy->ent[i]);
+	if (hierarchy->reg) {
+		hierarchy_InvalidateReferences (hierarchy, 0, hierarchy->num_objects);
+		for (uint32_t i = 0; i < hierarchy->num_objects; i++) {
+			ECS_DelEntity (hierarchy->reg, hierarchy->ent[i]);
+		}
 	}
 	hierarchy_destroy (hierarchy);
 }
@@ -539,8 +560,11 @@ Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 		hierarchy_open (&hierarchy, 0, 1);
 		hierarchy_init (&hierarchy, 0, nullindex, 1, 1);
 	}
-	uint32_t hent = ECS_NewEntity (reg);
-	Ent_SetComponent (hent, ecs_hierarchy, reg, &hierarchy);
+	uint32_t hent = nullent;
+	if (reg) {
+		hent = ECS_NewEntity (reg);
+		Ent_SetComponent (hent, ecs_hierarchy, reg, &hierarchy);
+	}
 
 	return hent;
 }
@@ -548,9 +572,11 @@ Hierarchy_New (ecs_registry_t *reg, uint32_t href_comp,
 void
 Hierarchy_Delete (uint32_t hierarchy, ecs_registry_t *reg)
 {
-	hierarchy_t *h = Ent_GetComponent (hierarchy, ecs_hierarchy, reg);
-	hierarchy_InvalidateReferences (h, 0, h->num_objects);
-	ECS_DelEntity (reg, hierarchy);
+	if (reg) {
+		hierarchy_t *h = Ent_GetComponent (hierarchy, ecs_hierarchy, reg);
+		hierarchy_InvalidateReferences (h, 0, h->num_objects);
+		ECS_DelEntity (reg, hierarchy);
+	}
 }
 
 static uint32_t
@@ -658,10 +684,13 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 			tmp.parentIndex[tmp.childIndex[i] + j] = i;
 		}
 	}
-	auto href_comp = src->href_comp;
-	for (uint32_t i = 0; i < src->num_objects; i++) {
-		hierref_t  *ref = Ent_GetComponent (tmp.ent[i], href_comp, src->reg);
-		ref->index = i;
+	if (src->reg) {
+		auto href_comp = src->href_comp;
+		for (uint32_t i = 0; i < src->num_objects; i++) {
+			hierref_t  *ref = Ent_GetComponent (tmp.ent[i], href_comp,
+												src->reg);
+			ref->index = i;
+		}
 	}
 
 	swap_pointers (&tmp.ent, &src->ent);

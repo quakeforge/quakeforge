@@ -82,6 +82,10 @@ uint32_t Hierarchy_Copy (struct ecs_registry_s *reg, uint32_t href_comp,
 						 const hierarchy_t *src);
 void Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode);
 
+// insert a single object with default initialization
+// returns the index of the inserted object
+uint32_t Hierarchy_Insert (hierarchy_t *dst, uint32_t parent);
+
 void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index,
 								int delEntities);
 
