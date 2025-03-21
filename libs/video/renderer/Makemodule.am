@@ -62,12 +62,11 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 
 video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
-	libs/models/libmodels_gl.la
-libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_gl_la_LIBADD=\
-	$(video_renderer_gl_libs) \
+	libs/models/libmodels_gl.la \
 	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -112,12 +111,11 @@ SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc .slc .glsl
 
 video_renderer_glsl_libs= \
 	libs/video/renderer/librender_glsl.la \
-	libs/models/libmodels_glsl.la
-libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_glsl_la_LIBADD=\
-	$(video_renderer_glsl_libs) \
+	libs/models/libmodels_glsl.la \
 	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -143,12 +141,11 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 
 video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
-	libs/models/libmodels_sw.la
-libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_sw_la_LIBADD=\
-	$(video_renderer_sw_libs) \
+	libs/models/libmodels_sw.la \
 	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -209,12 +206,11 @@ smp_quake_gen = libs/video/renderer/vulkan/smp_quake.plc
 
 video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
-	libs/models/libmodels_vulkan.la
-libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
-libs_video_renderer_vid_render_vulkan_la_LIBADD=\
-	$(video_renderer_vulkan_libs) \
+	libs/models/libmodels_vulkan.la \
 	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
