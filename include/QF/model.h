@@ -275,8 +275,10 @@ typedef struct mod_brush_s {
 //
 
 typedef struct keyframedesc_s {
-	int         firstframe;
-	int         numframes;		// 1 for single frames
+	uint32_t    firstframe;
+	uint32_t    numframes;		// 1 for single frames
+	uint32_t    flags;
+	uint32_t    name;
 } keyframedesc_t;
 
 typedef struct keyframe_s {
@@ -285,7 +287,7 @@ typedef struct keyframe_s {
 } keyframe_t;
 
 typedef struct anim_s {
-	int         numdesc;
+	uint32_t    numdesc;
 	uint32_t    descriptors;
 	uint32_t    keyframes;
 	uint32_t    data;

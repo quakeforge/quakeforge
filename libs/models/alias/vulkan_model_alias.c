@@ -89,10 +89,10 @@ vulkan_alias_clear (model_t *m, void *data)
 	auto skin = &mesh->skin;
 	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
 	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
-	int index = 0;
+	uint32_t index = 0;
 
-	for (int i = 0; i < skin->numdesc; i++) {
-		for (int j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < skin->numdesc; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
 			auto skin = find_skin (skinframe[index++].data, mesh);
 			Vulkan_Skin_Clear (skin, ctx);
 		}

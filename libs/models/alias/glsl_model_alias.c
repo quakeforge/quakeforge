@@ -74,8 +74,8 @@ glsl_alias_clear (model_t *m, void *data)
 	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
 	int index = 0;
 
-	for (int i = 0; i < skin->numdesc; i++) {
-		for (int j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < skin->numdesc; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
 			GLSL_ReleaseTexture (skinframe[index++].data);
 		}
 	}

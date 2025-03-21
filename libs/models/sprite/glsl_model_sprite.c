@@ -58,10 +58,10 @@ glsl_sprite_clear (model_t *m, void *data)
 	auto skin = &sprite->skin;
 	auto skindesc = (keyframedesc_t *) ((byte *) sprite + skin->descriptors);
 	auto skinframe = (keyframe_t *) ((byte *) sprite + skin->keyframes);
-	int index = 0;
+	uint32_t index = 0;
 
-	for (int i = 0; i < skin->numdesc; i++) {
-		for (int j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < skin->numdesc; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
 			uint32_t data = skinframe[index++].data;
 			auto frame = (mspriteframe_t *) ((byte *) sprite + data);
 			auto texnum = (GLuint *) &frame[1];

@@ -40,10 +40,10 @@ R_EntityBlend (double time, animation_t *animation, int pose, float interval)
 }
 
 static uint32_t
-get_frame_data (double time, const anim_t *anim, int framenum,
+get_frame_data (double time, const anim_t *anim, uint32_t framenum,
 				const void *base)
 {
-	if ((framenum >= anim->numdesc) || (framenum < 0)) {
+	if (framenum >= anim->numdesc) {
 		Sys_MaskPrintf (SYS_dev, "R_GetFrame: no such frame # %d\n",
 						framenum);
 		return 0;

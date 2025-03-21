@@ -66,7 +66,7 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
 	auto mesh = alias_ctx->mesh;
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
-	int         num_skins = alias_ctx->skins.size;
+	uint32_t    num_skins = alias_ctx->skins.size;
 	tex_t      *tex_block = Hunk_AllocName (nullptr, sizeof (tex_t[num_skins]),
 											alias_ctx->mod->name);
 	byte       *texel_block = Hunk_AllocName (nullptr, skinsize * num_skins,
@@ -75,8 +75,8 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 	auto skinframe = (keyframe_t *) ((byte *) mesh + mesh->skin.keyframes);
 
 	int index = 0;
-	for (int i = 0; i < num_skins; i++) {
-		for (int j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < num_skins; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
 			auto skin = alias_ctx->skins.a + index;
 			auto skintex = &tex_block[index];
 			byte *texels = texel_block + index * skinsize;
@@ -162,10 +162,10 @@ gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 
 	glskin_t   *skins = Hunk_AllocName (nullptr, sizeof (glskin_t[num_skins]),
 										alias_ctx->mod->name);
-	int         index = 0;
+	uint32_t    index = 0;
 
-	for (int i = 0; i < alias_ctx->numskins; i++) {
-		for (int j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < alias_ctx->numskins; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
 			if (skindesc[i].numframes == 1) {
 				dsprintf (filename, "%s_%i", modname, i);
 			} else {

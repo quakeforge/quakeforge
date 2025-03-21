@@ -210,8 +210,8 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
 	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int  posenum = 0;
-	for (int i = 0; i < mesh->morph.numdesc; i++) {
-		for (int j = 0; j < desc[i].numframes; j++, posenum++) {
+	for (uint32_t i = 0; i < mesh->morph.numdesc; i++) {
+		for (uint32_t j = 0; j < desc[i].numframes; j++, posenum++) {
 			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) mesh;
 			process_frame (alias_ctx, &aframes[posenum],
 						   &frame_verts[posenum * numv], posenum, extra,

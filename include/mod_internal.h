@@ -33,7 +33,7 @@ typedef struct mod_alias_ctx_s {
 	int         skinheight;
 	int         names_size;
 	char       *names;
-	int         numskins;
+	uint32_t    numskins;
 	daliasframe_t **dframes;	///< array of pointers to dframes (in)
 	int         aliasbboxmins[3];
 	int         aliasbboxmaxs[3];
