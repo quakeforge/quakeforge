@@ -62,13 +62,11 @@ typedef struct qfm_joint_s {
 	int32_t     parent;
 } qfm_joint_t;
 
-typedef struct qfm_pose_s {
-	int32_t     parent;
-	uint32_t    mask;
-	float       channeloffset[10];
-	uint32_t    channelbase[10];
-	float       channelscale[10];
-} qfm_pose_t;
+typedef struct qfm_channel_s {
+	uint32_t    data;
+	float       base;
+	float       scale;
+} qfm_channel_t;
 
 typedef struct qfm_frame_s {
 	uint32_t    name;
@@ -97,8 +95,8 @@ typedef struct qf_mesh_s {
 
 typedef struct qf_model_s {
 	qfm_loc_t   meshes;
-	qfm_loc_t   joints;
-	qfm_loc_t   poses;
+	qfm_loc_t   joints;		// base joint definitions
+	qfm_loc_t   poses;		// posed joints
 	qfm_loc_t   text;
 	anim_t      anim;
 	uint16_t    crc;
