@@ -95,9 +95,9 @@ static void
 add_entity (uint32_t hent, uint32_t parent, ecs_registry_t *reg)
 {
 	hierarchy_t *h = Ent_GetComponent (hent, ecs_hierarchy, reg);
-	auto ref = Hierarchy_InsertHierarchy ((hierref_t) { hent, parent},
-										  (hierref_t) { nullent, nullindex },
-										  reg);
+	auto ref = Hierref_InsertHierarchy ((hierref_t) { hent, parent},
+										(hierref_t) { nullent, nullindex },
+										reg);
 	h->ent[ref.index] = ECS_NewEntity (reg);
 	h->own[ref.index] = true;
 	Ent_SetComponent (h->ent[ref.index], h->href_comp, reg, &ref);

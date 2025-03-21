@@ -429,18 +429,6 @@ hierarchy_insertHierarchy (hierarchy_t *dst, uint32_t dstid,
 	return (hierref_t) { .id = dstid, .index = insertIndex };
 }
 
-hierref_t
-Hierarchy_InsertHierarchy (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
-{
-	hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
-	hierarchy_t *src = 0;
-	if (ECS_EntValid (sref.id, reg)) {
-		src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
-	}
-	return hierarchy_insertHierarchy (dst, dref.id, src,
-									  dref.index, &sref.index);
-}
-
 static void
 hierarchy_remove_children (hierarchy_t *hierarchy, uint32_t index,
 						   int delEntities)
@@ -626,7 +614,7 @@ Hierarchy_SetTreeMode (hierarchy_t *hierarchy, bool tree_mode)
 	}
 	hierarchy->tree_mode = tree_mode;
 	if (tree_mode) {
-		// switching from a cononical hierarchy to tree mode, noed only to
+		// switching from a canonical hierarchy to tree mode, need only to
 		// ensure next/last indices are correct
 
 		// root node has no siblings
@@ -734,8 +722,34 @@ Hierarchy_Copy (ecs_registry_t *dstReg, uint32_t href_comp,
 	return copy;
 }
 
+void
+Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
+{
+	hierref_t   ref = *(hierref_t *) href;
+	if (ECS_EntValid (ref.id, reg)) {
+		hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
+		h->ent[ref.index] = -1;
+		Hierarchy_RemoveHierarchy (h, ref.index, 1);
+		if (!h->num_objects) {
+			Hierarchy_Delete (ref.id, reg);
+		}
+	}
+}
+
 hierref_t
-Hierarchy_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
+Hierref_InsertHierarchy (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
+{
+	hierarchy_t *dst = Ent_GetComponent (dref.id, ecs_hierarchy, reg);
+	hierarchy_t *src = 0;
+	if (ECS_EntValid (sref.id, reg)) {
+		src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
+	}
+	return hierarchy_insertHierarchy (dst, dref.id, src,
+									  dref.index, &sref.index);
+}
+
+hierref_t
+Hierref_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 {
 	hierarchy_t *src = Ent_GetComponent (sref.id, ecs_hierarchy, reg);
 	if (src->tree_mode) {
@@ -761,18 +775,4 @@ Hierarchy_SetParent (hierref_t dref, hierref_t sref, ecs_registry_t *reg)
 		Hierarchy_Delete (sref.id, reg);
 	}
 	return dref;
-}
-
-void
-Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
-{
-	hierref_t   ref = *(hierref_t *) href;
-	if (ECS_EntValid (ref.id, reg)) {
-		hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
-		h->ent[ref.index] = -1;
-		Hierarchy_RemoveHierarchy (h, ref.index, 1);
-		if (!h->num_objects) {
-			Hierarchy_Delete (ref.id, reg);
-		}
-	}
 }
