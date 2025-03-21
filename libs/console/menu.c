@@ -530,6 +530,7 @@ quit_f (void)
 static void *
 menu_allocate_progs_mem (progs_t *pr, int size)
 {
+	size = (size + 63) & ~63;
 #ifdef _WIN32
 	return _aligned_malloc (size, 64);
 #else
