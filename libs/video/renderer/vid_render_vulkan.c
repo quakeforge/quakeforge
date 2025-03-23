@@ -41,7 +41,6 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
-#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
@@ -49,6 +48,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"

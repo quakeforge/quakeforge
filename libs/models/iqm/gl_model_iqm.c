@@ -43,7 +43,7 @@
 #include "QF/image.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
-#include "QF/GL/qf_alias.h"
+#include "QF/GL/qf_mesh.h"
 #include "QF/GL/qf_textures.h"
 
 #include "mod_internal.h"
@@ -117,33 +117,33 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	size_t size = sizeof (qfm_attrdesc_t[3 * model->meshes.count])
 				+ sizeof (keyframedesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count])
-				+ sizeof (aliasvrt_t[iqm->num_vertexes])
+				+ sizeof (mesh_vrt_t[iqm->num_vertexes])
 				+ sizeof (qfm_blend_t[palette_size]);
 	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, iqm_ctx->mod->name);
 	auto skindescs = (keyframedesc_t *) &attribs[3 * model->meshes.count];
 	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
-	auto verts = (aliasvrt_t *) &skinframes[model->meshes.count];
+	auto verts = (mesh_vrt_t *) &skinframes[model->meshes.count];
 	auto blend = (qfm_blend_t *) &verts[iqm->num_vertexes];
 
 	memcpy (blend, blend_palette, sizeof (qfm_blend_t) * palette_size);
 
 	attribs[0] = (qfm_attrdesc_t) {
-		.offset = offsetof (aliasvrt_t, vertex),
-		.stride = sizeof (aliasvrt_t),
+		.offset = offsetof (mesh_vrt_t, vertex),
+		.stride = sizeof (mesh_vrt_t),
 		.attr = qfm_position,
 		.type = qfm_f32,
 		.components = 3,
 	};
 	attribs[1] = (qfm_attrdesc_t) {
-		.offset = offsetof (aliasvrt_t, normal),
-		.stride = sizeof (aliasvrt_t),
+		.offset = offsetof (mesh_vrt_t, normal),
+		.stride = sizeof (mesh_vrt_t),
 		.attr = qfm_normal,
 		.type = qfm_f32,
 		.components = 3,
 	};
 	attribs[2] = (qfm_attrdesc_t) {
-		.offset = offsetof (aliasvrt_t, st),
-		.stride = sizeof (aliasvrt_t),
+		.offset = offsetof (mesh_vrt_t, st),
+		.stride = sizeof (mesh_vrt_t),
 		.attr = qfm_texcoord,
 		.type = qfm_f32,
 		.components = 2,
@@ -190,7 +190,7 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	}
 
 	for (uint32_t i = 0; i < iqm->num_vertexes; i++) {
-		verts[i] = (aliasvrt_t) {
+		verts[i] = (mesh_vrt_t) {
 			.st = { iqm_texcoord[0], iqm_texcoord[1] },
 			.normal = { VectorExpand (iqm_normal) },
 			.vertex = { VectorExpand (iqm_position) },

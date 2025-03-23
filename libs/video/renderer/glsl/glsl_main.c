@@ -49,12 +49,12 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_fisheye.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"

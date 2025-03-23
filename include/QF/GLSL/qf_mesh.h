@@ -1,7 +1,7 @@
 /*
-	qf_alias.h
+	qf_mesh.h
 
-	GLSL specific alias model stuff
+	GLSL specific mesh rendering
 
 	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 
@@ -27,25 +27,25 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GLSL_qf_alias_h
-#define __QF_GLSL_qf_alias_h
+#ifndef __QF_GLSL_qf_mesh_h
+#define __QF_GLSL_qf_mesh_h
 
 #include "QF/GLSL/types.h"
 
-typedef struct glsl_alias_mesh_s {
+typedef struct glsl_mesh_s {
 	int         skinwidth;
 	int         skinheight;
 	uint32_t    numverts;
 	uint32_t    numtris;
 	GLuint      vertices;
 	GLuint      indices;
-} glsl_alias_mesh_t;
+} glsl_mesh_t;
 
-typedef struct aliasvrt_s {
+typedef struct mesh_vrt_s {
 	GLshort     st[2];
 	GLshort     normal[3];
 	GLushort    vertex[3];
-} aliasvrt_t;
+} mesh_vrt_t;
 
 void glsl_R_InitAlias (void);
 struct entity_s;
@@ -53,4 +53,4 @@ void glsl_R_DrawAlias (struct entity_s ent);
 void glsl_R_AliasBegin (void);
 void glsl_R_AliasEnd (void);
 
-#endif//__QF_GLSL_qf_alias_h
+#endif//__QF_GLSL_qf_mesh_h

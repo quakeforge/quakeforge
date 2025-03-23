@@ -46,14 +46,14 @@
 #include "QF/sys.h"
 
 #include "QF/Vulkan/device.h"
-#include "QF/Vulkan/qf_alias.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 
 #include "mod_internal.h"
 #include "vid_vulkan.h"
 
 void
-Vulkan_Skin_Clear (qfv_alias_skin_t *skin, vulkan_ctx_t *ctx)
+Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -82,7 +82,7 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 		.texels = tex->data,
 		.skindesc = &skindesc,
 	};
-	qfv_alias_skin_t *vskin = malloc (sizeof (*vskin));
+	qfv_skin_t *vskin = malloc (sizeof (*vskin));
 	skin->tex = (tex_t *) vskin;
 	Vulkan_Mod_LoadSkin (&alias_ctx, &askin, skinsize, vskin, ctx);
 }
@@ -90,7 +90,7 @@ Vulkan_Skin_SetupSkin (skin_t *skin, struct vulkan_ctx_s *ctx)
 void
 Vulkan_Skin_Destroy (skin_t *skin, struct vulkan_ctx_s *ctx)
 {
-	auto alias_skin = (qfv_alias_skin_t *) skin->tex;
+	auto alias_skin = (qfv_skin_t *) skin->tex;
 	Vulkan_Skin_Clear (alias_skin, ctx);
 	free (alias_skin);
 }

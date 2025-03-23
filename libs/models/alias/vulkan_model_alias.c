@@ -45,7 +45,7 @@
 
 #include "QF/modelgen.h"
 #include "QF/vid.h"
-#include "QF/Vulkan/qf_alias.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
@@ -65,10 +65,10 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 #include "anorms.h"
 };
 
-static qfv_alias_skin_t *
+static qfv_skin_t *
 find_skin (int skin_offset, qf_mesh_t *mesh)
 {
-	return (qfv_alias_skin_t *) ((byte *) mesh + skin_offset);
+	return (qfv_skin_t *) ((byte *) mesh + skin_offset);
 }
 
 static void
@@ -82,7 +82,7 @@ vulkan_alias_clear (model_t *m, void *data)
 	QFV_DeviceWaitIdle (device);
 
 	m->needload = true;	//FIXME is this right?
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) model + rmesh->resources);
 	QFV_DestroyResource (device, resources);
 
@@ -101,9 +101,9 @@ vulkan_alias_clear (model_t *m, void *data)
 
 #define SKIN_LAYERS 3
 
-qfv_alias_skin_t *
+qfv_skin_t *
 Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
-					 int skinsize, qfv_alias_skin_t *vskin, vulkan_ctx_t *ctx)
+					 int skinsize, qfv_skin_t *vskin, vulkan_ctx_t *ctx)
 {
 	const char *mod_name = alias_ctx->mod->name;
 	qfvPushDebug (ctx, va (ctx->va_ctx, "mesh.load_skin: %s", mod_name));
@@ -216,7 +216,7 @@ Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	int         skinsize = alias_ctx->skinwidth * alias_ctx->skinheight;
 	int         numskins = alias_ctx->skins.size;
 
-	qfv_alias_skin_t *vskins = Hunk_Alloc(0,sizeof(qfv_alias_skin_t[numskins]));
+	qfv_skin_t *vskins = Hunk_Alloc(0,sizeof(qfv_skin_t[numskins]));
 	for (int i = 0; i < numskins; i++) {
 		auto askin = alias_ctx->skins.a + i;
 		Vulkan_Mod_LoadSkin (alias_ctx, askin, skinsize, &vskins[i], ctx);
@@ -246,7 +246,7 @@ separate_verts (int *indexmap, int numverts, int numtris,
 }
 
 static void
-build_verts (aliasvrt_t *verts, int numposes, int numverts,
+build_verts (mesh_vrt_t *verts, int numposes, int numverts,
 			 const int *indexmap, const mod_alias_ctx_t *alias_ctx)
 {
 	auto mesh = alias_ctx->mesh;
@@ -256,7 +256,7 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 	// populate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)
 	for (i = 0, pose = 0; i < numposes; i++, pose += numverts) {
-		frames[i].data = i * numverts * sizeof (aliasvrt_t);
+		frames[i].data = i * numverts * sizeof (mesh_vrt_t);
 		for (int j = 0; j < mdl->numverts; j++) {
 			auto pv = &alias_ctx->poseverts.a[i][j];
 			vec3_t pos;
@@ -280,7 +280,7 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 }
 
 static void
-build_uvs (aliasuv_t *uv, const int *indexmap, const mod_alias_ctx_t *alias_ctx)
+build_uvs (mesh_uv_t *uv, const int *indexmap, const mod_alias_ctx_t *alias_ctx)
 {
 	auto mdl = alias_ctx->mdl;
 	// populate the uvs, duplicating and shifting any that are on the seam
@@ -352,10 +352,10 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	// animated by pose, and the same for ibuf: indices will never change for
 	// the rmesh
 	size_t      vert_count = numverts * numposes;
-	size_t      vert_size = vert_count * sizeof (aliasvrt_t);
-	size_t      uv_size = numverts * sizeof (aliasuv_t);
+	size_t      vert_size = vert_count * sizeof (mesh_vrt_t);
+	size_t      uv_size = numverts * sizeof (mesh_uv_t);
 	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) model + rmesh->resources);
 	resources[0] = (qfv_resource_t) {
 		.name = va (ctx->va_ctx, "alias:%s", alias_ctx->mod->name),
@@ -411,7 +411,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 		.dstOffset = 0,
 		.length = vert_size,
 	};
-	auto verts = (aliasvrt_t *) packet_data;
+	auto verts = (mesh_vrt_t *) packet_data;
 	packet_data += vert_scatter.length;
 	build_verts (verts, numposes, numverts, indexmap, alias_ctx);
 
@@ -420,7 +420,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 		.dstOffset = 0,
 		.length = uv_size,
 	};
-	auto uv = (aliasuv_t *) packet_data;
+	auto uv = (mesh_uv_t *) packet_data;
 	packet_data += uv_scatter.length;
 	build_uvs (uv, indexmap, alias_ctx);
 
@@ -460,14 +460,14 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	if (mdl->ident == HEADER_MDL16)
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
-	size_t size = sizeof (qfv_alias_mesh_t)
+	size_t size = sizeof (qfv_mesh_t)
 				+ sizeof (qfv_resource_t)
 				+ sizeof (qfv_resobj_t)
 				+ sizeof (qfv_resobj_t)
 				+ sizeof (qfv_resobj_t);
 
 	const char *name = alias_ctx->mod->name;
-	qfv_alias_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
 	auto resources = (qfv_resource_t *) &rmesh[1];
 
 	model->render_data = (byte *) rmesh - (byte *) model;

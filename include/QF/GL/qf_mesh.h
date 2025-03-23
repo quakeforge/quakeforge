@@ -1,7 +1,7 @@
 /*
-	qf_alias.h
+	qf_mesh.h
 
-	GL specific alias model stuff
+	GL specific mesh rendering
 
 	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 
@@ -27,18 +27,18 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_GL_qf_alias_h
-#define __QF_GL_qf_alias_h
+#ifndef __QF_GL_qf_mesh_h
+#define __QF_GL_qf_mesh_h
 
 #include "QF/GL/types.h"
 
-typedef struct aliasvrt_s {
+typedef struct mesh_vrt_s {
 	float       st[2];
 	float       normal[3];
 	float       vertex[3];
-} aliasvrt_t;
+} mesh_vrt_t;
 
 struct entity_s;
 void gl_R_DrawAliasModel (struct entity_s ent);
 
-#endif//__QF_GL_qf_alias_h
+#endif//__QF_GL_qf_mesh_h

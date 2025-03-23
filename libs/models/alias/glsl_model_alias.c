@@ -44,7 +44,7 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
@@ -59,7 +59,7 @@ static void
 glsl_alias_clear (model_t *m, void *data)
 {
 	auto model = m->model;
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
 	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 
 	m->needload = true;
@@ -148,7 +148,7 @@ separate_verts (int *indexmap, int numverts, int numtris,
 }
 
 static void
-build_verts (aliasvrt_t *verts, int numposes, int numverts,
+build_verts (mesh_vrt_t *verts, int numposes, int numverts,
 			 const int *indexmap, const mod_alias_ctx_t *alias_ctx)
 {
 	auto st = alias_ctx->stverts.a;
@@ -159,7 +159,7 @@ build_verts (aliasvrt_t *verts, int numposes, int numverts,
 	// populate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)
 	for (i = 0, pose = 0; i < numposes; i++, pose += numverts) {
-		frames[i].data = i * numverts * sizeof (aliasvrt_t);
+		frames[i].data = i * numverts * sizeof (mesh_vrt_t);
 		for (int j = 0; j < mdl->numverts; j++) {
 			auto pv = &alias_ctx->poseverts.a[i][j];
 			if (mdl->ident == HEADER_MDL16) {
@@ -226,7 +226,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	numverts = separate_verts (indexmap, numverts, numtris, alias_ctx);
 
-	aliasvrt_t  verts[numverts * numposes];
+	mesh_vrt_t  verts[numverts * numposes];
 	build_verts (verts, numposes, numverts, indexmap, alias_ctx);
 
 	// now build the indices for DrawElements
@@ -240,9 +240,9 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
-	glsl_alias_mesh_t *rmesh;
-	rmesh = Hunk_AllocName (nullptr, sizeof (*rmesh), alias_ctx->mod->name);
-	*rmesh = (glsl_alias_mesh_t) {
+	const char * name = alias_ctx->mod->name;
+	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, sizeof (*rmesh), name);
+	*rmesh = (glsl_mesh_t) {
 		.skinwidth = alias_ctx->skinwidth,
 		.skinheight = alias_ctx->skinheight,
 		.vertices = bnum[0],

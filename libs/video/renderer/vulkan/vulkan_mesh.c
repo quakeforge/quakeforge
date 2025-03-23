@@ -40,9 +40,9 @@
 
 #include "QF/scene/entity.h"
 
-#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
@@ -95,15 +95,15 @@ alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 }
 
 void
-Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
+Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
-	aliasctx_t *actx = ctx->alias_context;
+	meshctx_t *mctx = ctx->mesh_context;
 	skin->descriptor = Vulkan_CreateCombinedImageSampler (ctx, skin->view,
-														  actx->sampler);
+														  mctx->sampler);
 }
 
 void
-Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
+Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
 	Vulkan_FreeTexture (ctx, skin->descriptor);
 	skin->descriptor = 0;
@@ -235,11 +235,11 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 
 	transform_t transform = Entity_Transform (ent);
 
-	qfv_alias_skin_t *skin = nullptr;
+	qfv_skin_t *skin = nullptr;
 	if (renderer->skin) {
 		skin_t     *tskin = Skin_Get (renderer->skin);
 		if (tskin) {
-			skin = (qfv_alias_skin_t *) tskin->tex;
+			skin = (qfv_skin_t *) tskin->tex;
 		}
 	}
 	if (!skin) {
@@ -251,7 +251,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 			auto skinframe = (keyframe_t *) ((byte *) mesh + keyframe);
 			skindesc = skinframe->data;
 		}
-		skin = (qfv_alias_skin_t *) ((byte *) mesh + skindesc);
+		skin = (qfv_skin_t *) ((byte *) mesh + skindesc);
 	}
 	vec4f_t base_color;
 	QuatCopy (renderer->colormod, base_color);
@@ -270,7 +270,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 
 	VkDeviceSize offsets[] = {
 		animation->pose1,
@@ -341,18 +341,18 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	for (size_t i = 0; i < queue->ent_queues[mod_mesh].size; i++) {
 		entity_t    ent = queue->ent_queues[mod_mesh].a[i];
 		auto renderer = Entity_GetRenderer (ent);
-		if ((stage == alias_shadow && renderer->noshadows)
-			|| (stage == alias_main && renderer->onlyshadows)) {
+		if ((stage == mesh_shadow && renderer->noshadows)
+			|| (stage == mesh_main && renderer->onlyshadows)) {
 			continue;
 		}
 		// FIXME hack the depth range to prevent view model
 		// from poking into walls
-		if (stage == alias_main && renderer->depthhack) {
+		if (stage == mesh_main && renderer->depthhack) {
 			alias_depth_range (taskctx, 0.7, 1);
 		}
 		alias_draw_ent (taskctx, ent, pass, renderer);
 		// unhack in case the view_model is not the last
-		if (stage == alias_main && renderer->depthhack) {
+		if (stage == mesh_main && renderer->depthhack) {
 			alias_depth_range (taskctx, 0, 1);
 		}
 	}
@@ -365,9 +365,9 @@ alias_shutdown (exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	qfvPushDebug (ctx, "alias shutdown");
-	auto actx = ctx->alias_context;
+	auto mctx = ctx->mesh_context;
 
-	free (actx);
+	free (mctx);
 	qfvPopDebug (ctx);
 }
 
@@ -377,8 +377,8 @@ alias_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	auto actx = ctx->alias_context;
-	actx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
+	auto mctx = ctx->mesh_context;
+	mctx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
 }
 
 static void
@@ -392,8 +392,8 @@ alias_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_Render_AddShutdown (ctx, alias_shutdown);
 	QFV_Render_AddStartup (ctx, alias_startup);
 
-	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
-	ctx->alias_context = actx;
+	meshctx_t *mctx = calloc (1, sizeof (meshctx_t));
+	ctx->mesh_context = mctx;
 
 	qfvPopDebug (ctx);
 }
@@ -405,7 +405,7 @@ static exprtype_t alias_stage_type = {
 	.get_string = cexpr_enum_get_string,
 	.data = &alias_stage_enum,
 };
-static int alias_stage_values[] = { alias_main, alias_shadow, };
+static int alias_stage_values[] = { mesh_main, mesh_shadow, };
 static exprsym_t alias_stage_symbols[] = {
 	{"main", &alias_stage_type, alias_stage_values + 0},
 	{"shadow", &alias_stage_type, alias_stage_values + 1},

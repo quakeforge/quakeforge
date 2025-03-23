@@ -47,7 +47,7 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
@@ -71,7 +71,7 @@ static void
 glsl_iqm_clear (model_t *mod, void *data)
 {
 	auto model = mod->model;
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
 	GLuint      bufs[2];
 
 	mod->needload = true;
@@ -89,7 +89,7 @@ glsl_iqm_clear (model_t *mod, void *data)
 static void
 glsl_iqm_load_textures (qf_model_t *model)
 {
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
 	auto textures = (GLuint *) (&rmesh[1]);
 	auto normmaps = &textures[model->meshes.count];
 	dstring_t  *str = dstring_new ();
@@ -118,7 +118,7 @@ static void
 glsl_iqm_load_arrays (qf_model_t *model, byte *vertices, uint32_t vertex_size,
 					  void *indices, uint32_t index_size)
 {
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
 	GLuint      bufs[2];
 
 	qfeglGenBuffers (2, bufs);
@@ -200,11 +200,11 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	uint16_t num_tex = model->meshes.count * 2;
 	auto iqm = iqm_ctx->hdr;
 
-	size_t size = sizeof (glsl_alias_mesh_t)
+	size_t size = sizeof (glsl_mesh_t)
 				+ sizeof (GLuint[num_tex])
 				+ sizeof (qfm_attrdesc_t[iqm->num_vertexarrays]);
 	const char *name = iqm_ctx->mod->name;
-	glsl_alias_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
 	auto attribs = (qfm_attrdesc_t *) &((GLuint *) &rmesh[1])[num_tex];
 	model->render_data = (byte *) rmesh - (byte *) model;
 

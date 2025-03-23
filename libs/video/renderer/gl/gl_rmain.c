@@ -43,8 +43,8 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_alias.h"
 #include "QF/GL/qf_draw.h"
+#include "QF/GL/qf_mesh.h"
 #include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"

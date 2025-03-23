@@ -51,8 +51,8 @@
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/render.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_iqm.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_texture.h"
 
@@ -85,7 +85,7 @@ vulkan_iqm_clear (model_t *mod, void *data)
 	QFV_DeviceWaitIdle (device);
 
 	mod->needload = true;	//FIXME is this right?
-	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) rmesh + rmesh->resources);
 	for (int i = 0; i < 2; i++) {
 		auto res = &resources[i];
@@ -150,8 +150,8 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 }
 
 static void
-vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_alias_mesh_t *rmesh,
-						  qfv_alias_skin_t *skins, qfv_resobj_t *objects,
+vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
+						  qfv_skin_t *skins, qfv_resobj_t *objects,
 						  vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
@@ -175,7 +175,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_alias_mesh_t *rmesh,
 		uint32_t    image_ind = 2 * i;
 		auto image = &objects[image_ind].image;
 		auto view = &objects[image_ind + 1].image_view;
-		skins[i] = (qfv_alias_skin_t) {
+		skins[i] = (qfv_skin_t) {
 			.view = view->view,
 			.colors = { TOP_RANGE + 7, BOTTOM_RANGE + 7, 0, 0 },
 		};
@@ -199,7 +199,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_alias_mesh_t *rmesh,
 }
 
 static void
-vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_alias_mesh_t *rmesh,
+vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 						vulkan_ctx_t *ctx)
 {
 #if 0
@@ -312,15 +312,15 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	// when materials are added...)
 	// 2 is for image + image view
 	int         num_objects = 4 + 2 * model->meshes.count;
-	size_t size = sizeof (qfv_alias_mesh_t)
+	size_t size = sizeof (qfv_mesh_t)
 				+ sizeof (qfv_resource_t[2])
 				+ sizeof (qfv_resobj_t[num_objects])
 				+ sizeof (VkDescriptorSet[rctx->frames.size])
-				+ sizeof (qfv_alias_skin_t[model->meshes.count])
+				+ sizeof (qfv_skin_t[model->meshes.count])
 				+ sizeof (keyframedesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count]);
 	const char *name = iqm_ctx->mod->name;
-	qfv_alias_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
 	auto bones = (qfv_resource_t *) &rmesh[1];
 	auto mesh = &bones[1];
 
@@ -347,7 +347,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	uint32_t geom_size = 20;//XXX
 	uint32_t rend_size = 40;//XXX
 	mesh[0] = (qfv_resource_t) {
-		.name = "mesh",
+		.name = va (ctx->va_ctx, "%s:mesh", name),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = num_objects - 1,
@@ -391,7 +391,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	};
 
 	auto bone_descriptors = (VkDescriptorSet *) &bones[0].objects[num_objects];
-	auto skins = (qfv_alias_skin_t *) &bone_descriptors[rctx->frames.size];
+	auto skins = (qfv_skin_t *) &bone_descriptors[rctx->frames.size];
 	auto skindescs = (keyframedesc_t *) &skins[model->meshes.count];
 	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
 
@@ -436,7 +436,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	vulkan_iqm_load_arrays (iqm_ctx, rmesh, ctx);
 
 	auto resources = bones;
-	*rmesh = (qfv_alias_mesh_t) {
+	*rmesh = (qfv_mesh_t) {
 		.geom_buffer = mesh->objects[0].buffer.buffer,
 		.rend_buffer = mesh->objects[1].buffer.buffer,
 		.index_buffer = mesh->objects[2].buffer.buffer,

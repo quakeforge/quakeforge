@@ -43,7 +43,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "QF/GL/qf_alias.h"
+#include "QF/GL/qf_mesh.h"
 
 #include "mod_internal.h"
 

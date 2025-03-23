@@ -48,7 +48,7 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
@@ -153,7 +153,7 @@ glsl_R_InitAlias (void)
 
 static void
 set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
-		    const shaderparam_t *st, aliasvrt_t *pose)
+		    const shaderparam_t *st, mesh_vrt_t *pose)
 {
 	byte       *pose_offs = (byte *) pose;
 
@@ -168,21 +168,21 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 	}
 
 	qfeglVertexAttribPointer (vert->location, 3, GL_UNSIGNED_SHORT,
-							  0, sizeof (aliasvrt_t),
-							  pose_offs + offsetof (aliasvrt_t, vertex));
+							  0, sizeof (mesh_vrt_t),
+							  pose_offs + offsetof (mesh_vrt_t, vertex));
 	qfeglVertexAttribPointer (norm->location, 3, GL_SHORT,
-							  1, sizeof (aliasvrt_t),
-							  pose_offs + offsetof (aliasvrt_t, normal));
+							  1, sizeof (mesh_vrt_t),
+							  pose_offs + offsetof (mesh_vrt_t, normal));
 	qfeglVertexAttribPointer (st->location, 2, GL_SHORT,
-							  0, sizeof (aliasvrt_t),
-							  pose_offs + offsetof (aliasvrt_t, st));
+							  0, sizeof (mesh_vrt_t),
+							  pose_offs + offsetof (mesh_vrt_t, st));
 }
 //#define TETRAHEDRON
 void
 glsl_R_DrawAlias (entity_t ent)
 {
 #ifdef TETRAHEDRON
-	static aliasvrt_t debug_verts[] = {
+	static mesh_vrt_t debug_verts[] = {
 		{{  0,  0}, {-18918,-18918,-18918}, {  0,  0,  0}},
 		{{  0,300}, { 18918, 18918,-18918}, {255,255,  0}},
 		{{300,300}, {-18918, 18918, 18918}, {  0,255,255}},
@@ -209,7 +209,7 @@ glsl_R_DrawAlias (entity_t ent)
 	}
 	auto model = renderer->model->model;
 	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	auto rmesh = (glsl_alias_mesh_t *) ((byte *) model + model->render_data);
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
 
 	transform_t transform = Entity_Transform (ent);
 	Transform_GetWorldMatrix (transform, worldMatrix);

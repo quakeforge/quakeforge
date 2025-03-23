@@ -1,7 +1,7 @@
 /*
-	qf_alias.h
+	qf_mesh.h
 
-	Vulkan specific alias model stuff
+	Vulkan specific mesh rendering
 
 	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
@@ -29,8 +29,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_Vulkan_qf_alias_h
-#define __QF_Vulkan_qf_alias_h
+#ifndef __QF_Vulkan_qf_mesh_h
+#define __QF_Vulkan_qf_mesh_h
 
 #include "QF/darray.h"
 #include "QF/model.h"
@@ -39,20 +39,20 @@
 #include "QF/Vulkan/command.h"
 
 enum {
-	alias_main,
-	alias_shadow,
+	mesh_main,
+	mesh_shadow,
 };
 
-typedef struct aliasvrt_s {
+typedef struct mesh_vrt_s {
 	float       vertex[4];
 	float       normal[4];
-} aliasvrt_t;
+} mesh_vrt_t;
 
-typedef struct aliasuv_s {
+typedef struct mesh_uv_s {
 	float       u, v;
-} aliasuv_t;
+} mesh_uv_t;
 
-typedef struct qfv_alias_mesh_s {
+typedef struct qfv_mesh_s {
 	VkBuffer    geom_buffer;
 	VkBuffer    rend_buffer;
 	VkBuffer    index_buffer;
@@ -60,30 +60,30 @@ typedef struct qfv_alias_mesh_s {
 	uint32_t    resources;
 	uint32_t    numtris;
 	uint32_t    bone_descriptors;
-} qfv_alias_mesh_t;
+} qfv_mesh_t;
 
-typedef struct qfv_alias_skin_s {
+typedef struct qfv_skin_s {
 	VkDeviceMemory memory;
 	VkImage     image;
 	VkImageView view;
 	byte        colors[4];
 	VkDescriptorSet descriptor;
-} qfv_alias_skin_t;
+} qfv_skin_t;
 
 typedef enum {
-	QFV_aliasDepth,
-	QFV_aliasGBuffer,
-	QFV_aliasTranslucent,
+	QFV_meshDepth,
+	QFV_meshGBuffer,
+	QFV_meshTranslucent,
 
-	QFV_aliasNumPasses
-} QFV_AliasSubpass;
+	QFV_meshNumPasses
+} QFV_MeshSubpass;
 
-typedef struct aliasindset_s
-    DARRAY_TYPE (unsigned) aliasindset_t;
+typedef struct meshindset_s
+    DARRAY_TYPE (unsigned) meshindset_t;
 
-typedef struct aliasctx_s {
+typedef struct meshctx_s {
 	VkSampler    sampler;
-} aliasctx_t;
+} meshctx_t;
 
 struct vulkan_ctx_s;
 struct entity_s;
@@ -99,9 +99,9 @@ void Vulkan_Mod_MakeAliasModelDisplayLists (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra,
 											struct vulkan_ctx_s *ctx);
 
-void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
-void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
+void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_skin_t *skin);
+void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_skin_t *skin);
 
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
 
-#endif//__QF_Vulkan_qf_alias_h
+#endif//__QF_Vulkan_qf_mesh_h
