@@ -35,8 +35,6 @@
 typedef struct glsl_mesh_s {
 	int         skinwidth;
 	int         skinheight;
-	uint32_t    numverts;
-	uint32_t    numtris;
 	GLuint      vertices;
 	GLuint      indices;
 } glsl_mesh_t;
@@ -47,10 +45,10 @@ typedef struct mesh_vrt_s {
 	GLushort    vertex[3];
 } mesh_vrt_t;
 
-void glsl_R_InitAlias (void);
+void glsl_R_InitMesh (void);
 struct entity_s;
-void glsl_R_DrawAlias (struct entity_s ent);
-void glsl_R_AliasBegin (void);
-void glsl_R_AliasEnd (void);
+void glsl_R_DrawMesh (struct entity_s ent);
+void glsl_R_MeshBegin (void);
+void glsl_R_MeshEnd (void);
 
 #endif//__QF_GLSL_qf_mesh_h

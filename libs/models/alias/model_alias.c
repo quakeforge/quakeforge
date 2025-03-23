@@ -97,29 +97,39 @@ load_skins (mod_alias_ctx_t *alias_ctx, daliasskintype_t *type,
 }
 
 static void *
-load_frame (mod_alias_ctx_t *alias_ctx, daliasframe_t *frame, const mdl_t *mdl)
+load_frame (mod_alias_ctx_t *alias_ctx, daliasframe_t *in_frame,
+			qfm_frame_t *out_frame, const mdl_t *mdl)
 {
 	// everything is bytes...
-	size_t len = strnlen (frame->name, 16);
+	size_t len = strnlen (in_frame->name, 16);
 	char *name = alias_ctx->names + alias_ctx->names_size;
-	strncpy (name, frame->name, 16);
+	out_frame->name = alias_ctx->names_size;
+
+	strncpy (name, in_frame->name, 16);
 	name[len] = 0;
-	alias_ctx->names_size += len + 1;
-	VectorCompMin (frame->bboxmin.v, alias_ctx->aliasbboxmins,
+
+	VectorCompMultAdd (mdl->scale_origin, mdl->scale,
+					   in_frame->bboxmin.v, out_frame->bounds_min);
+	VectorCompMultAdd (mdl->scale_origin, mdl->scale,
+					   in_frame->bboxmax.v, out_frame->bounds_max);
+
+	VectorCompMin (in_frame->bboxmin.v, alias_ctx->aliasbboxmins,
 				   alias_ctx->aliasbboxmins);
-	VectorCompMax (frame->bboxmax.v, alias_ctx->aliasbboxmaxs,
+	VectorCompMax (in_frame->bboxmax.v, alias_ctx->aliasbboxmaxs,
 				   alias_ctx->aliasbboxmaxs);
-	auto verts = (trivertx_t *) &frame[1];
+
+	alias_ctx->names_size += len + 1;
+	auto verts = (trivertx_t *) &in_frame[1];
 	return verts + mdl->numverts;
 }
 
 static void
 load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
-			 const mdl_t *mdl)
+			 qfm_frame_t *frames, const mdl_t *mdl)
 {
 	auto mesh = alias_ctx->mesh;
 	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
-	auto frame = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
+	auto keyframe = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	int  index = 0;
 
 	for (int i = 0; i < mdl->numframes; i++) {
@@ -129,11 +139,11 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 				.firstframe = index,
 				.numframes = 1,
 			};
-			frame[index] = (keyframe_t) { };
+			keyframe[index] = (keyframe_t) { };
 
 			void *data = &type[1];
 			alias_ctx->dframes[index] = data;
-			verts = load_frame (alias_ctx, data, mdl);
+			verts = load_frame (alias_ctx, data, &frames[index], mdl);
 			index++;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
@@ -144,11 +154,11 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			auto intervals = (float *) &group[1];
 			void *data = &intervals[group->numframes];
 			for (int j = 0; j < group->numframes; j++) {
-				frame[index] = (keyframe_t) {
+				keyframe[index] = (keyframe_t) {
 					.endtime = intervals[j],
 				};
 				alias_ctx->dframes[index] = data;
-				verts = load_frame (alias_ctx, data, mdl);
+				verts = load_frame (alias_ctx, data, &frames[index], mdl);
 				data = verts;
 				index++;
 			}
@@ -339,6 +349,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 						+ sizeof (keyframe_t[alias_ctx.numskins])
 						+ sizeof (keyframedesc_t[mdl->numframes])
 						+ sizeof (keyframe_t[alias_ctx.poseverts.size])
+						+ sizeof (qfm_frame_t[alias_ctx.poseverts.size])
 						+ alias_ctx.names_size;
 	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
 	auto mesh = (qf_mesh_t *) &model[1];
@@ -347,7 +358,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	auto skindescs = (keyframedesc_t *) &mesh[1];
 	auto skinframes = (keyframe_t *) &skindescs[mdl->numskins];
 	auto framedescs = (keyframedesc_t *) &skinframes[alias_ctx.numskins];
-	auto frames = (keyframe_t *) &framedescs[mdl->numframes];
+	auto keyframes = (keyframe_t *) &framedescs[mdl->numframes];
+	auto frames = (qfm_frame_t *) &keyframes[alias_ctx.poseverts.size];
 	alias_ctx.names = (char *) &frames[alias_ctx.poseverts.size];
 	alias_ctx.names[0] = 0;	// empty string
 
@@ -371,7 +383,8 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		.morph = {
 			.numdesc = mdl->numframes,
 			.descriptors = (byte *) framedescs - (byte *) mesh,
-			.keyframes = (byte *) frames - (byte *) mesh,
+			.keyframes = (byte *) keyframes - (byte *) mesh,
+			.data = (byte *) frames - (byte *) mesh,
 		},
 		.scale = { VectorExpand (mdl->scale) },
 		.scale_origin = { VectorExpand (mdl->scale_origin) },
@@ -389,8 +402,12 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	VectorSet (99999, 99999, 99999, alias_ctx.aliasbboxmins);
 	VectorSet (-99999, -99999, -99999, alias_ctx.aliasbboxmaxs);
 	alias_ctx.names_size = 0;
-	load_frames (&alias_ctx, framedata, mdl);
+	load_frames (&alias_ctx, framedata, frames, mdl);
 
+	VectorCompMultAdd (mesh->scale_origin, mesh->scale,
+					   alias_ctx.aliasbboxmins, mesh->bounds_min);
+	VectorCompMultAdd (mesh->scale_origin, mesh->scale,
+					   alias_ctx.aliasbboxmaxs, mesh->bounds_max);
 	VectorCompMultAdd (mdl->scale_origin, mdl->scale,
 					   alias_ctx.aliasbboxmins, mod->mins);
 	VectorCompMultAdd (mdl->scale_origin, mdl->scale,

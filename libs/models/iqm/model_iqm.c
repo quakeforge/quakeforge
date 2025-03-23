@@ -50,6 +50,78 @@
 #include "compat.h"
 #include "mod_internal.h"
 
+static qfm_attr_t attrib_map[] = {
+	[IQM_POSITION]      = qfm_position,
+	[IQM_TEXCOORD]      = qfm_texcoord,
+	[IQM_NORMAL]        = qfm_normal,
+	[IQM_TANGENT]       = qfm_tangent,
+	[IQM_BLENDINDEXES]  = qfm_joints,
+	[IQM_BLENDWEIGHTS]  = qfm_weights,
+	[IQM_COLOR]         = qfm_color,
+	[IQM_CUSTOM]        = 0,
+};
+
+static bool attrib_norm[] = {
+	[IQM_POSITION]      = true,
+	[IQM_TEXCOORD]      = true,
+	[IQM_NORMAL]        = true,
+	[IQM_TANGENT]       = true,
+	[IQM_BLENDINDEXES]  = false,
+	[IQM_BLENDWEIGHTS]  = true,
+	[IQM_COLOR]         = true,
+	[IQM_CUSTOM]        = false,
+};
+
+static qfm_type_t type_map[] = {
+	[IQM_BYTE]   = qfm_s8,
+	[IQM_UBYTE]  = qfm_u8,
+	[IQM_SHORT]  = qfm_s16,
+	[IQM_USHORT] = qfm_u16,
+	[IQM_INT]    = qfm_s32,
+	[IQM_UINT]   = qfm_u32,
+	[IQM_HALF]   = qfm_f16,
+	[IQM_FLOAT]  = qfm_f32,
+	[IQM_DOUBLE] = qfm_f64,
+};
+
+static qfm_type_t norm_map[] = {
+	[IQM_BYTE]   = qfm_s8n,
+	[IQM_UBYTE]  = qfm_u8n,
+	[IQM_SHORT]  = qfm_s16n,
+	[IQM_USHORT] = qfm_u16n,
+	[IQM_INT]    = qfm_s32,
+	[IQM_UINT]   = qfm_u32,
+	[IQM_HALF]   = qfm_f16,
+	[IQM_FLOAT]  = qfm_f32,
+	[IQM_DOUBLE] = qfm_f64,
+};
+
+static uint32_t type_size[] = {
+	[IQM_BYTE]   = 1,
+	[IQM_UBYTE]  = 1,
+	[IQM_SHORT]  = 2,
+	[IQM_USHORT] = 2,
+	[IQM_INT]    = 4,
+	[IQM_UINT]   = 4,
+	[IQM_HALF]   = 3,
+	[IQM_FLOAT]  = 4,
+	[IQM_DOUBLE] = 8,
+};
+
+qfm_attrdesc_t
+iqm_mesh_attribute (iqmvertexarray a, uint32_t offset)
+{
+	return (qfm_attrdesc_t) {
+		.offset     = offset,
+		.stride     = a.size * type_size[a.format],
+		.attr       = attrib_map[a.type],
+		.abs        = 1,
+		.type       = attrib_norm[a.type] ? norm_map[a.format]
+										  : type_map[a.format],
+		.components = a.size,
+	};
+}
+
 static void
 swap_shorts (void *data, size_t count)
 {
@@ -125,6 +197,10 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	if (memcmp (hdr->magic, IQM_MAGIC, sizeof (IQM_MAGIC))) {
 		Sys_Error ("%s: not an IQM", mod->path);
 	}
+	uint16_t    crc;
+	CRC_Init (&crc);
+	CRC_ProcessBlock (buffer, &crc, qfs_filesize);
+
 	swap_longs (&hdr->version,
 				sizeof (iqmheader) - offsetof (iqmheader, version));
 
@@ -220,6 +296,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.keyframes = (byte *) keyframes - (byte *) model,
 			.data = (byte *) framedata - (byte *) model,
 		},
+		.crc = crc,
 	};
 	for (uint32_t i = 0; i < hdr->num_meshes; i++) {
 		auto m = &iqm.meshes[i];

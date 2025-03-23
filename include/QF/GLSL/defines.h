@@ -207,6 +207,7 @@
 #define GL_INT                            0x1404
 #define GL_UNSIGNED_INT                   0x1405
 #define GL_FLOAT                          0x1406
+#define GL_HALF_FLOAT                     0x140B
 #define GL_FIXED                          0x140C
 
 /* PixelFormat */

@@ -185,7 +185,7 @@ build_verts (mesh_vrt_t *verts, int numposes, int numverts,
 }
 
 static void
-build_inds (GLushort *indices, int numtris, const int *indexmap,
+build_inds (uint32_t *indices, int numtris, const int *indexmap,
 			const mod_alias_ctx_t *alias_ctx)
 {
 
@@ -210,6 +210,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
 	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
 	int         numverts = alias_ctx->stverts.size;
 	int         numtris = alias_ctx->triangles.size;
 	int         numposes = alias_ctx->poseverts.size;
@@ -230,7 +231,7 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	build_verts (verts, numposes, numverts, indexmap, alias_ctx);
 
 	// now build the indices for DrawElements
-	GLushort indices[3 * numtris];
+	uint32_t indices[3 * numtris];
 	build_inds (indices, numtris, indexmap, alias_ctx);
 
 	if (extra) {
@@ -240,22 +241,67 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
+
+	size_t size = sizeof (glsl_mesh_t)
+				+ sizeof (qfm_attrdesc_t[3]);
 	const char * name = alias_ctx->mod->name;
-	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, sizeof (*rmesh), name);
+	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+
 	*rmesh = (glsl_mesh_t) {
 		.skinwidth = alias_ctx->skinwidth,
 		.skinheight = alias_ctx->skinheight,
 		.vertices = bnum[0],
 		.indices = bnum[1],
-		.numverts = numverts,
-		.numtris = numtris,
 	};
 	model->render_data = (byte *) rmesh - (byte *) model;
+
+	mesh->triangle_count = numtris;
+	mesh->index_type = mesh_index_type (numverts);
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.count = numverts,
+	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	mesh->morph_attributes = mesh->attributes;
+	mesh->vertex_stride = sizeof (mesh_vrt_t);
+	mesh->morph_stride = mesh->vertex_stride;
+
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, vertex),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = qfm_u16,
+		.components = 3,
+	};
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, normal),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = qfm_s16n,
+		.components = 3,
+	};
+	attribs[2] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, st),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_texcoord,
+		.abs = 1,
+		.type = qfm_s16,
+		.components = 2,
+	};
+
+	uint32_t indices_size = pack_indices (indices, numtris * 3,
+										  mesh->index_type);
 
 	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, rmesh->indices);
 	qfeglBufferData (GL_ARRAY_BUFFER, sizeof (verts), verts, GL_STATIC_DRAW);
-	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (indices), indices,
+	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indices_size, indices,
 					 GL_STATIC_DRAW);
 
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);

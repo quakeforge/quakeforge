@@ -106,7 +106,7 @@ glsl_R_RenderEntities (entqueue_t *queue)
 			glsl_R_##Type##End (); \
 	} while (0)
 
-	RE_LOOP (mesh, Alias);
+	RE_LOOP (mesh, Mesh);
 	RE_LOOP (sprite, Sprite);
 }
 
@@ -126,9 +126,9 @@ R_DrawViewModel (void)
 
 	// hack the depth range to prevent view model from poking into walls
 	qfeglDepthRangef (0, 0.3);
-	glsl_R_AliasBegin ();
-	glsl_R_DrawAlias (ent);
-	glsl_R_AliasEnd ();
+	glsl_R_MeshBegin ();
+	glsl_R_DrawMesh (ent);
+	glsl_R_MeshEnd ();
 	qfeglDepthRangef (0, 1);
 }
 
@@ -183,7 +183,7 @@ glsl_R_Init (struct plitem_s *config)
 	glsl_Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
-	glsl_R_InitAlias ();
+	glsl_R_InitMesh ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
 	glsl_R_InitTrails ();

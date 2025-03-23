@@ -178,9 +178,11 @@ R_ClearErrors (void)
 static void
 glsl_begin_frame (void)
 {
-	if (R_TestErrors (0))
-		R_DisplayErrors ();
-	R_ClearErrors ();
+	if (0) {
+		if (R_TestErrors (0))
+			R_DisplayErrors ();
+		R_ClearErrors ();
+	}
 
 	if (glsl_ctx->begun) {
 		glsl_ctx->begun = 0;
