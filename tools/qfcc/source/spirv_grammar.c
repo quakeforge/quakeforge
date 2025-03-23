@@ -659,7 +659,7 @@ spirv_validx_key_cmp (const void *_a, const void *_b)
 static void
 build_grammars (void)
 {
-	spirv_grammar_t *core;
+	spirv_grammar_t *core = nullptr;
 
 	for (int i = 0; builtin_json[i].name; i++) {
 		auto plitem = PL_ParseJSON (builtin_json[i].json, nullptr);
