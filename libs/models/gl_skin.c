@@ -145,6 +145,12 @@ glskin_t
 gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 			 const byte *texel_base)
 {
+	if (tex->external) {
+		if (tex->relative) {
+			return *(glskin_t *) ((byte *) tex + (uintptr_t) tex->data);
+		}
+		return *(glskin_t *) tex->data;
+	}
 	byte top = colormap ? colormap->top & 0x0f : TOP_COLOR;
 	byte bot = colormap ? colormap->bottom & 0x0f : BOTTOM_COLOR;
 	int  ind = top | (bot << 4);
@@ -177,7 +183,7 @@ gl_Skin_Get (const tex_t *tex, const colormap_t *colormap,
 
 	tex_t wtex = *tex;
 	if (wtex.relative) {
-		wtex.relative = 0;
+		wtex.relative = false;
 		// discarding const :(
 		wtex.data = (byte *) (texel_base + (uintptr_t) wtex.data);
 	}

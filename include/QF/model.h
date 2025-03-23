@@ -316,7 +316,6 @@ typedef enum {
 	mod_brush,
 	mod_sprite,
 	mod_mesh,
-	mod_iqm,
 
 	mod_light,
 

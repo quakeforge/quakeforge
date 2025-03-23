@@ -28,7 +28,6 @@
 #ifndef _R_LOCAL_H
 #define _R_LOCAL_H
 
-#include "QF/iqm.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/render.h"
@@ -166,15 +165,11 @@ surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
 void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
-float R_IQMGetLerpedFrames (double time, struct animation_s *animation,
-							iqm_t *hdr);
-iqmframe_t *R_IQMBlendPoseFrames (const iqm_t *iqm, int frame1, int frame2,
-								  float blend, int extra);
-mat4f_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
+mat4f_t *R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2,
 						   float blend, int extra);
-mat4f_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
-							float blend, int extra,
-							iqmblend_t *blend_palette, int palette_size);
+mat4f_t *R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2,
+							float blend, int extra, qfm_blend_t *blend_palette,
+							uint32_t palette_size);
 float R_EntityBlend (double time, struct animation_s *animation, int pose,
 					 float interval);
 void R_BeginEdgeFrame (void);

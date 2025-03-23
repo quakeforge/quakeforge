@@ -22,7 +22,7 @@ typedef struct askinset_s DARRAY_TYPE (mod_alias_skin_t) askinset_t;
 
 typedef struct mod_alias_ctx_s {
 	qf_model_t *model;
-	qf_mesh_t *mesh;
+	qf_mesh_t  *mesh;
 	model_t    *mod;
 	mdl_t      *mdl;
 	stvertset_t stverts;
@@ -38,6 +38,25 @@ typedef struct mod_alias_ctx_s {
 	int         aliasbboxmins[3];
 	int         aliasbboxmaxs[3];
 } mod_alias_ctx_t;
+
+typedef struct mod_iqm_ctx_s {
+	qf_model_t *qf_model;
+	qf_mesh_t  *qf_meshes;
+	model_t    *mod;
+
+	iqmheader  *hdr;
+	const char *text;
+	iqmmesh    *meshes;
+	iqmvertexarray *vtxarr;
+	iqmtriangle *triangles;
+	iqmtriangle *adjacency;
+	iqmjoint   *joints;
+	iqmpose    *poses;
+	iqmanim    *anims;
+	uint16_t   *frames;
+	iqmbounds  *bounds;
+	const char *comment;
+} mod_iqm_ctx_t;
 
 typedef struct mod_sprite_ctx_s {
 	model_t    *mod;
@@ -69,20 +88,20 @@ void gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 void gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
-void gl_Mod_IQMFinish (model_t *mod);
+void gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx);
 
 void glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 										  void *_m, int _s, int extra);
 void glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
-void glsl_Mod_IQMFinish (model_t *mod);
+void glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx);
 
 void sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
 void sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx);
 void sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
-void sw_Mod_IQMFinish (model_t *mod);
+void sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);
 void gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa);
@@ -107,8 +126,8 @@ void glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 void sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 
 void Mod_LoadIQM (model_t *mod, void *buffer);
-void Mod_FreeIQM (iqm_t *iqm);
-iqmblend_t *Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size);
+qfm_blend_t *Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size);
+
 void Mod_LoadAliasModel (model_t *mod, void *buffer,
                          cache_allocator_t allocator);
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);

@@ -406,7 +406,13 @@ gl_get_skin (entity_t e, renderer_t *renderer, qf_mesh_t *mesh)
 		}
 	}
 
-	auto tex = (tex_t *) ((byte *) mesh + renderer->skindesc);
+	tex_t *tex = nullptr;
+	if (renderer->skindesc) {
+		tex = (tex_t *) ((byte *) mesh + renderer->skindesc);
+	} else {
+		auto skinframe = (keyframe_t *) ((byte *) mesh + mesh->skin.keyframes);
+		tex = (tex_t *) ((byte *) mesh + skinframe->data);
+	}
 	return gl_Skin_Get (tex, colormap, (byte *) mesh);
 }
 

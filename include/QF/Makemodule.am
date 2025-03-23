@@ -92,7 +92,6 @@ include_qf_gl = \
 	include/QF/GL/qf_draw.h \
 	include/QF/GL/qf_fisheye.h \
 	include/QF/GL/qf_funcs_list.h \
-	include/QF/GL/qf_iqm.h \
 	include/QF/GL/qf_lightmap.h \
 	include/QF/GL/qf_particles.h \
 	include/QF/GL/qf_rlight.h \
@@ -112,7 +111,6 @@ include_qf_glsl = \
 	include/QF/GLSL/qf_draw.h \
 	include/QF/GLSL/qf_fisheye.h \
 	include/QF/GLSL/qf_funcs_list.h \
-	include/QF/GLSL/qf_iqm.h \
 	include/QF/GLSL/qf_lightmap.h \
 	include/QF/GLSL/qf_main.h \
 	include/QF/GLSL/qf_particles.h \

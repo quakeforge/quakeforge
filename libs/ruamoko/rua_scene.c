@@ -348,7 +348,7 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = 0;
-
+#if 0
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 	entity_t    ent = rua_entity_get (res, ent_id);
@@ -356,12 +356,11 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 	if (!renderer || !renderer->model) {
 		return;
 	}
-	auto model = renderer->model;
-	auto iqm = (iqm_t *) model->model;
-	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
+	auto model = renderer->model->model;
+	auto frame = (qfm_joint_t *) P_GPOINTER (pr, 1);
 	double time = P_DOUBLE (pr, 2);
 
-	if (model->type != mod_iqm || !iqm->num_joints) {
+	if (renderer->model->type != mod_mesh || !model->poses.count) {
 		return;
 	}
 
@@ -371,6 +370,7 @@ bi_Entity_GetPoseFrame (progs_t *pr, void *_res)
 	memcpy (frame, f, iqm->num_joints * sizeof (frame[0]));
 
 	R_INT (pr) = 1;
+#endif
 }
 
 static void

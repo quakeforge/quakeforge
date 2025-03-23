@@ -620,7 +620,10 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 												 ent.reg);
 	R_AliasSetUpTransform (ent, visibility->trivial_accept, mesh);
 	R_AliasSetupLighting (lighting);
-	uint32_t verts_offs = R_AliasSetupFrame (ent, mesh);
+	uint32_t verts_offs = mesh->vertices.offset;
+	if (mesh->morph.numdesc) {
+		verts_offs = R_AliasSetupFrame (ent, mesh);
+	}
 
 	r_affinetridesc.drawtype = ((visibility->trivial_accept == 3)
 								&& r_recursiveaffinetriangles);

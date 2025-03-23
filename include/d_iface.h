@@ -28,7 +28,6 @@
 #ifndef _D_IFACE_H
 #define _D_IFACE_H
 
-#include "QF/iqm.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/render.h"
@@ -41,17 +40,9 @@
 
 typedef struct sw_alias_mesh_s {
 	float       size;
+	uint32_t    blend_palette;
+	uint32_t    palette_size;
 } sw_alias_mesh_t;
-
-typedef struct {
-	struct tex_s **skins;
-	iqmblend_t *blend_palette;	// includes base data from iqm
-	int         palette_size;	// includes base data from iqm
-	iqmvertexarray *position;
-	iqmvertexarray *texcoord;
-	iqmvertexarray *normal;
-	iqmvertexarray *bindices;
-} swiqm_t;
 
 typedef struct
 {

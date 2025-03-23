@@ -118,7 +118,6 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Scene_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
-	Vulkan_IQM_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Planes_Init (vulkan_ctx);
 	Vulkan_Sprite_Init (vulkan_ctx);
@@ -458,9 +457,9 @@ vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 }
 
 static void
-vulkan_Mod_IQMFinish (model_t *mod)
+vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 {
-	Vulkan_Mod_IQMFinish (mod, vulkan_ctx);
+	Vulkan_Mod_IQMFinish (iqm_ctx, vulkan_ctx);
 }
 
 static void

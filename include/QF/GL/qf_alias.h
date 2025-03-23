@@ -33,9 +33,9 @@
 #include "QF/GL/types.h"
 
 typedef struct aliasvrt_s {
-	GLshort     st[2];
-	GLshort     normal[3];
-	GLushort    vertex[3];
+	float       st[2];
+	float       normal[3];
+	float       vertex[3];
 } aliasvrt_t;
 
 struct entity_s;

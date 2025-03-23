@@ -244,7 +244,13 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	}
 	if (!skin) {
 		uint32_t skindesc;
-		skindesc = renderer->skindesc;
+		if (renderer->skindesc) {
+			skindesc = renderer->skindesc;
+		} else {
+			uint32_t keyframe = mesh->skin.keyframes;
+			auto skinframe = (keyframe_t *) ((byte *) mesh + keyframe);
+			skindesc = skinframe->data;
+		}
 		skin = (qfv_alias_skin_t *) ((byte *) mesh + skindesc);
 	}
 	vec4f_t base_color;
@@ -272,9 +278,9 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		0,
 	};
 	VkBuffer    buffers[] = {
-		rmesh->vertex_buffer,
-		rmesh->vertex_buffer,
-		rmesh->uv_buffer,
+		rmesh->geom_buffer,
+		rmesh->geom_buffer,
+		rmesh->rend_buffer,
 	};
 	int         bindingCount = skin ? 3 : 2;
 

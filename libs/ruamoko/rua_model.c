@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
-#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/progs.h"
+#include "QF/qfmodel.h"
 
 #include "rua_internal.h"
 
@@ -187,12 +187,12 @@ bi (Model_NumJoints)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
+	auto mod = h->model;
 
 	R_INT (pr) = 0;
-	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->model;
-		R_INT (pr) = iqm->num_joints;
+	if (mod->type == mod_mesh) {
+		auto model = mod->model;
+		R_INT (pr) = model->joints.count;
 	}
 }
 
@@ -201,17 +201,20 @@ bi (Model_GetJoints)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
-	auto iqm = (iqm_t *) model->model;
-	auto joints = (iqmjoint_t *) P_GPOINTER (pr, 1);
+	auto mod = h->model;
+	auto model = mod->model;
+	auto joints = (qfm_joint_t *) P_GPOINTER (pr, 1);
 
-	if (model->type != mod_iqm || !iqm->num_joints) {
+	if (mod->type != mod_mesh || !model->joints.count) {
 		R_INT (pr) = 0;
 		return;
 	}
-	memcpy (joints, iqm->joints, iqm->num_joints * sizeof (iqmjoint_t));
-	for (int i = 0; i < iqm->num_joints; i++) {
-		char *name = iqm->text + joints[i].name;
+	auto j = (qfm_joint_t *) ((byte *) model + model->joints.offset);
+
+	memcpy (joints, j, model->joints.count * sizeof (qfm_joint_t));
+	for (uint32_t i = 0; i < model->joints.count; i++) {
+		auto text = (const char *) ((byte *) model + model->text.offset);
+		auto name = text + joints[i].name;
 		joints[i].name = PR_SetString (pr, name);
 	}
 	R_INT (pr) = 1;
@@ -222,23 +225,25 @@ bi (Model_NumFrames)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto m = h->model;
+	auto mod = h->model;
 
 	R_INT (pr) = 0;
-	if (m->type == mod_iqm) {
-		auto iqm = (iqm_t *) m->model;
-		R_INT (pr) = iqm->num_frames;
-	} else if (m->type == mod_mesh) {
+	if (mod->type == mod_mesh) {
 		bool cached = false;
-		auto model = m->model;
+		auto model = mod->model;
 		if (!model) {
-			model = Cache_Get (&m->cache);
+			model = Cache_Get (&mod->cache);
 			cached = true;
 		}
-		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-		R_INT (pr) = mesh->morph.numdesc;
+		if (model->anim.numdesc) {
+			R_INT (pr) = model->anim.numdesc;
+		} else {
+			auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+			R_INT (pr) = mesh->morph.numdesc;
+		}
+
 		if (cached) {
-			Cache_Release (&m->cache);
+			Cache_Release (&mod->cache);
 		}
 	}
 }
@@ -252,15 +257,16 @@ bi_Model_GetBaseFrame (progs_t *pr, void *_res)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
-	auto iqm = (iqm_t *) model->model;
-	auto frame = (iqmframe_t *) P_GPOINTER (pr, 1);
+	auto mod = h->model;
+	auto model = mod->model;
+	auto frame = (qfm_joint_t *) P_GPOINTER (pr, 1);
 
-	if (model->type != mod_iqm || !iqm->num_joints) {
+	if (mod->type != mod_mesh || !model->joints.count) {
 		return;
 	}
 
-	memcpy (frame, iqm->basejoints, iqm->num_joints * sizeof (frame[0]));
+	auto j = (qfm_joint_t *) ((byte *) model + model->joints.offset);
+	memcpy (frame, j, model->joints.count * sizeof (frame[0]));
 
 	R_INT (pr) = 1;
 }

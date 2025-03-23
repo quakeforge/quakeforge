@@ -2,7 +2,6 @@ properties = {
 	color = {
 		bsp       = "[0.0, 0.5, 0.6, 1]";
 		alias     = "[0.6, 0.5, 0.0, 1]";
-		iqm       = "[0.6, 0.5, 0.0, 1]";
 		sprite    = "[0.6, 0.5, 0.0, 1]";
 		particles = "[0.4, 0.5, 0.8, 1]";
 		lights    = "[0.8, 0.6, 0.2, 1]";
@@ -1552,20 +1551,6 @@ renderpasses = {
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
 					};
-					iqm:depth = {
-						color = $color.iqm;
-						tasks = (
-							{ func = iqm_draw;
-							  params = (0); },
-						);
-
-						stages = (
-							$iqm.shader.depth_vertex,
-						);
-						vertexInput = $iqm.vertexInput;
-						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
-					};
 					sprite:depth = {
 						color = $color.sprite;
 						tasks = (
@@ -1750,21 +1735,6 @@ renderpasses = {
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
-					};
-					iqm:gbuffer = {
-						color = $color.iqm;
-						tasks = (
-							{ func = iqm_draw;
-							  params = (1); },
-						);
-
-						stages = (
-							$iqm.shader.gbuf_vertex,
-							$qskin.shader.fragment,
-						);
-						vertexInput = $iqm.vertexInput;
-						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
 					};
 					sprite:gbuffer = {
 						color = $color.sprite;
@@ -2283,20 +2253,6 @@ renderpasses = {
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.shadow_layout;
 					};
-					iqm:shadow = {
-						color = $color.iqm;
-						tasks = (
-							{ func = iqm_draw;
-							  params = (0); },
-						);
-
-						stages = (
-							$iqm.shader.shadow_vertex,
-						);
-						vertexInput = $iqm.vertexInput;
-						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.shadow_layout;
-					};
 				};
 			};
 			$external = {
@@ -2709,7 +2665,6 @@ init_tasks = (
 	{ func = palette_init; },
 	{ func = alias_init; },
 	{ func = bsp_init; },
-	{ func = iqm_init; },
 	{ func = matrices_init; },
 	{ func = scene_init; },
 	{ func = sprite_init; },

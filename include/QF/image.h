@@ -48,10 +48,11 @@ typedef struct tex_s {
 	QFFormat    format;
 	union {
 		struct {
-			bool loaded:1;		// 0 if size info only, otherwise data loaded
-			bool flipped:1;		// 1 if first pixel is bottom instead of top
-			bool bgr:1;			// 1 if image is bgr (for tex_rgb)
-			bool relative:1;	// 1 if data is an offset instead of a pointer
+			bool loaded:1;		// false if size info only
+			bool flipped:1;		// true if first pixel is bottom instead of top
+			bool bgr:1;			// true if image is bgr (for tex_rgb)
+			bool relative:1;	// true if pointers are offsets
+			bool external:1;	// true if data is a reference (eg, texture id)
 		};
 		int     flagbits;		// for eazy zeroing
 	};
@@ -69,6 +70,6 @@ colcache_t *ColorCache_New (void);
 void ColorCache_Delete (colcache_t *cache);
 void ColorCache_Shutdown (void);
 byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
-tex_t *ConvertImage (const tex_t *tex, const byte *pal);
+tex_t *ConvertImage (const tex_t *tex, const byte *pal, const char *name);
 
 #endif//__QF_image_h

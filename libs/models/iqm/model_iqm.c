@@ -42,6 +42,7 @@
 #include "QF/crc.h"
 #include "QF/hash.h"
 #include "QF/iqm.h"
+#include "QF/mathlib.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -49,6 +50,26 @@
 #include "compat.h"
 #include "mod_internal.h"
 
+static void
+swap_shorts (void *data, size_t count)
+{
+	// count is in bytes
+	count /= sizeof (uint16_t);
+	for (uint16_t *vals = data; count-- > 0; vals++) {
+		*vals = LittleShort (*vals);
+	}
+}
+
+static void
+swap_longs (void *data, size_t count)
+{
+	// count is in bytes
+	count /= sizeof (uint32_t);
+	for (uint16_t *vals = data; count-- > 0; vals++) {
+		*vals = LittleShort (*vals);
+	}
+}
+#if 0
 static void
 iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
 {
@@ -59,473 +80,232 @@ iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
 	};
 	*c = t;
 }
-
-static iqmvertexarray *
-get_vertex_arrays (const iqmheader *hdr, byte *buffer)
+#endif
+static uint32_t *
+build_bone_map (iqmjoint *joints, uint32_t num_joints)
 {
-	iqmvertexarray *va;
-	uint32_t    i;
-
-	if (hdr->ofs_vertexarrays + hdr->num_vertexarrays * sizeof (iqmvertexarray)
-		> hdr->filesize)
-		return 0;
-	va = (iqmvertexarray *) (buffer + hdr->ofs_vertexarrays);
-	for (i = 0; i < hdr->num_vertexarrays; i++) {
-		va[i].type = LittleLong (va[i].type);
-		va[i].flags = LittleLong (va[i].flags);
-		va[i].format = LittleLong (va[i].format);
-		va[i].size = LittleLong (va[i].size);
-		va[i].offset = LittleLong (va[i].offset);
+	hierarchy_t tmp = {};
+	Hierarchy_Reserve (&tmp, num_joints + 1);
+	Hierarchy_SetTreeMode (&tmp, true);
+	{
+		// insert a dummy root
+		uint32_t ind = Hierarchy_Insert (&tmp, -1);
+		tmp.ent[ind] = -1;
+		tmp.own[ind] = false;
 	}
-	return va;
-}
-
-static iqmtriangle *
-get_triangles (const iqmheader *hdr, byte *buffer)
-{
-	iqmtriangle *tri;
-	uint32_t    i, j;
-
-	if (hdr->ofs_triangles + hdr->num_triangles * sizeof (iqmtriangle)
-		> hdr->filesize)
-		return 0;
-	tri = (iqmtriangle *) (buffer + hdr->ofs_triangles);
-	for (i = 0; i < hdr->num_triangles; i++) {
-		for (j = 0; j < 3; j++) {
-			tri[i].vertex[j] = LittleLong (tri[i].vertex[j]);
-			if (tri[i].vertex[j] >= hdr->num_vertexes) {
-				Sys_Printf ("invalid tri vertex\n");
-				return 0;
-			}
-		}
-	}
-	return tri;
-}
-
-static iqmmesh *
-get_meshes (const iqmheader *hdr, byte *buffer)
-{
-	iqmmesh    *mesh;
-	uint32_t    i;
-
-	if (hdr->ofs_meshes + hdr->num_meshes * sizeof (iqmmesh) > hdr->filesize)
-		return 0;
-	mesh = (iqmmesh *) (buffer + hdr->ofs_meshes);
-	for (i = 0; i < hdr->num_meshes; i++) {
-		mesh[i].name = LittleLong (mesh[i].name);
-		mesh[i].material = LittleLong (mesh[i].material);
-		mesh[i].first_vertex = LittleLong (mesh[i].first_vertex);
-		mesh[i].num_vertexes = LittleLong (mesh[i].num_vertexes);
-		mesh[i].first_triangle = LittleLong (mesh[i].first_triangle);
-		mesh[i].num_triangles = LittleLong (mesh[i].num_triangles);
-	}
-	return mesh;
-}
-
-static iqmjoint *
-get_joints (const iqmheader *hdr, byte *buffer)
-{
-	iqmjoint   *joint;
-	uint32_t    i, j;
-
-	if (hdr->ofs_joints + hdr->num_joints * sizeof (iqmjoint) > hdr->filesize)
-		return 0;
-	joint = (iqmjoint *) (buffer + hdr->ofs_joints);
-	for (i = 0; i < hdr->num_joints; i++) {
-		joint[i].name = LittleLong (joint[i].name);
-		joint[i].parent = LittleLong (joint[i].parent);
-		if (joint[i].parent >= 0
-			&& (uint32_t) joint[i].parent >= hdr->num_joints) {
-			Sys_Printf ("invalid parent\n");
-			return 0;
-		}
-		for (j = 0; j < 3; j++)
-			joint[i].translate[j] = LittleFloat (joint[i].translate[j]);
-		for (j = 0; j < 4; j++)
-			joint[i].rotate[j] = LittleFloat (joint[i].rotate[j]);
-		for (j = 0; j < 3; j++)
-			joint[i].scale[j] = LittleFloat (joint[i].scale[j]);
-	}
-	return joint;
-}
-
-static bool
-load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
-{
-	iqm_t      *iqm = (iqm_t *) mod->model;
-	iqmvertexarray *vas;
-	float      *position = 0;
-	float      *normal = 0;
-	float      *tangent = 0;
-	float      *texcoord = 0;
-	byte       *blendindex = 0;
-	byte       *blendweight = 0;
-	byte       *color = 0;
-	byte       *vert;
-	iqmvertexarray *va;
-	size_t      bytes = 0;
-	uint32_t    i, j;
-
-	if (!(vas = get_vertex_arrays (hdr, buffer)))
-		return false;
-
-	for (i = 0; i < hdr->num_vertexarrays; i++) {
-		va = vas + i;
-		Sys_MaskPrintf (SYS_model, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
-		switch (va->type) {
-			case IQM_POSITION:
-				if (position)
-					return false;
-				if (va->format != IQM_FLOAT || va->size != 3)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size * sizeof (float);
-				position = (float *) (buffer + va->offset);
-				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					position[j] = LittleFloat (position[j]);
-				break;
-			case IQM_NORMAL:
-				if (normal)
-					return false;
-				if (va->format != IQM_FLOAT || va->size != 3)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size * sizeof (float);
-				normal = (float *) (buffer + va->offset);
-				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					normal[j] = LittleFloat (normal[j]);
-				break;
-			case IQM_TANGENT:
-				if (tangent)
-					return false;
-				if (va->format != IQM_FLOAT || va->size != 4)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size * sizeof (float);
-				tangent = (float *) (buffer + va->offset);
-				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					tangent[j] = LittleFloat (tangent[j]);
-				break;
-			case IQM_TEXCOORD:
-				if (texcoord)
-					return false;
-				if (va->format != IQM_FLOAT || va->size != 2)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size * sizeof (float);
-				texcoord = (float *) (buffer + va->offset);
-				for (j = 0; j < va->size * hdr->num_vertexes; j++)
-					texcoord[j] = LittleFloat (texcoord[j]);
-				break;
-			case IQM_BLENDINDEXES:
-				if (blendindex)
-					return false;
-				if (va->format != IQM_UBYTE || va->size != 4)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size;
-				blendindex = (byte *) (buffer + va->offset);
-				break;
-			case IQM_BLENDWEIGHTS:
-				if (blendweight)
-					return false;
-				if (va->format != IQM_UBYTE || va->size != 4)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size;
-				blendweight = (byte *) (buffer + va->offset);
-				break;
-			case IQM_COLOR:
-				if (color)
-					return false;
-				if (va->format != IQM_UBYTE || va->size != 4)
-					return false;
-				iqm->num_arrays++;
-				bytes += va->size;
-				color = (byte *) (buffer + va->offset);
-				break;
-			case IQM_CUSTOM:
-				break;
-		}
-	}
-	iqm->vertexarrays = calloc (iqm->num_arrays + 1, sizeof (iqmvertexarray));
-	va = iqm->vertexarrays;
-	if (position) {
-		va->type = IQM_POSITION;
-		va->format = IQM_FLOAT;
-		va->size = 3;
-		va[1].offset = va->offset + va->size * sizeof (float);
-		va++;
-	}
-	if (texcoord) {
-		va->type = IQM_TEXCOORD;
-		va->format = IQM_FLOAT;
-		va->size = 2;
-		va[1].offset = va->offset + va->size * sizeof (float);
-		va++;
-	}
-	if (normal) {
-		va->type = IQM_NORMAL;
-		va->format = IQM_FLOAT;
-		va->size = 3;
-		va[1].offset = va->offset + va->size * sizeof (float);
-		va++;
-	}
-	if (tangent) {
-		va->type = IQM_TANGENT;
-		va->format = IQM_FLOAT;
-		va->size = 4;
-		va[1].offset = va->offset + va->size * sizeof (float);
-		va++;
-	}
-	if (blendindex) {
-		va->type = IQM_BLENDINDEXES;
-		va->format = IQM_UBYTE;
-		va->size = 4;
-		va[1].offset = va->offset + va->size;
-		va++;
-	}
-	if (blendweight) {
-		va->type = IQM_BLENDWEIGHTS;
-		va->format = IQM_UBYTE;
-		va->size = 4;
-		va[1].offset = va->offset + va->size;
-		va++;
-	}
-	if (color) {
-		va->type = IQM_COLOR;
-		va->format = IQM_UBYTE;
-		va->size = 4;
-		va[1].offset = va->offset + va->size;
-		va++;
-	}
-	iqm->vertexarrays = realloc (iqm->vertexarrays,
-								 iqm->num_arrays * sizeof (iqmvertexarray));
-	iqm->num_verts = hdr->num_vertexes;
-	iqm->vertices = malloc (hdr->num_vertexes * bytes);
-	iqm->stride = bytes;
-	for (i = 0; i < hdr->num_vertexes; i++) {
-		va = iqm->vertexarrays;
-		vert = iqm->vertices + i * bytes;
-		if (position) {
-			memcpy (vert + va->offset, &position[i * 3], 3 * sizeof (float));
-			va++;
-		}
-		if (texcoord) {
-			memcpy (vert + va->offset, &texcoord[i * 2], 2 * sizeof (float));
-			va++;
-		}
-		if (normal) {
-			memcpy (vert + va->offset, &normal[i * 3], 3 * sizeof (float));
-			va++;
-		}
-		if (tangent) {
-			memcpy (vert + va->offset, &tangent[i * 4], 4 * sizeof (float));
-			va++;
-		}
-		if (blendindex) {
-			memcpy (vert + va->offset, &blendindex[i * 4], 4);
-			va++;
-		}
-		if (blendweight) {
-			memcpy (vert + va->offset, &blendweight[i * 4], 4);
-			va++;
-		}
-		if (color) {
-			memcpy (vert + va->offset, &color[i * 4], 4);
-			va++;
-		}
-	}
-	return true;
-}
-
-static bool
-load_iqm_meshes (model_t *mod, const iqmheader *hdr, byte *buffer)
-{
-	iqm_t      *iqm = (iqm_t *) mod->model;
-	iqmtriangle *tris;
-	iqmmesh    *meshes;
-	iqmjoint   *joints;
-
-	if (!load_iqm_vertex_arrays (mod, hdr, buffer))
-		return false;
-	if (!(tris = get_triangles (hdr, buffer)))
-		return false;
-	iqm->num_elements = hdr->num_triangles * 3;
-	if (iqm->num_verts > 0xfff0) {
-		iqm->elements32 = malloc (hdr->num_triangles * 3 * sizeof (uint32_t));
-		for (uint32_t i = 0; i < hdr->num_triangles; i++)
-			VectorCopy (tris[i].vertex, iqm->elements32 + i * 3);
-	} else {
-		iqm->elements16 = malloc (hdr->num_triangles * 3 * sizeof (uint16_t));
-		for (uint32_t i = 0; i < hdr->num_triangles; i++)
-			VectorCopy (tris[i].vertex, iqm->elements16 + i * 3);
-	}
-	if (!(meshes = get_meshes (hdr, buffer)))
-		return false;
-	iqm->num_meshes = hdr->num_meshes;
-	iqm->meshes = malloc (hdr->num_meshes * sizeof (iqmmesh));
-	memcpy (iqm->meshes, meshes, hdr->num_meshes * sizeof (iqmmesh));
-	if (!(joints = get_joints (hdr, buffer)))
-		return false;
-	iqm->num_joints = hdr->num_joints;
-	iqm->joints = malloc (iqm->num_joints * sizeof (iqmjoint));
-	iqm->basejoints = malloc (iqm->num_joints * sizeof (iqmframe_t));
-	iqm->inverse_basejoints = malloc (iqm->num_joints * sizeof (iqmframe_t));
-	iqm->baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
-	iqm->inverse_baseframe = malloc (iqm->num_joints * sizeof (mat4_t));
-	for (uint32_t i = 0; i < hdr->num_joints; i++) {
+	for (uint32_t i = 0; i < num_joints; i++) {
 		auto j = &joints[i];
-		iqm->joints[i] = (iqmjoint_t) {
-			.translate = { VectorExpand (j->translate) },
-			.name = j->name,
-			.rotate = { QuatExpand (j->rotate) },
-			.scale = { VectorExpand (j->scale) },
-			.parent = j->parent,
-		};
-	}
-	for (uint32_t i = 0; i < hdr->num_joints; i++) {
-		iqmjoint_t *j = &iqm->joints[i];
-		iqmframe_t *bj = &iqm->basejoints[i];
-		iqmframe_t *ibj = &iqm->inverse_basejoints[i];
-		mat4f_t    *bf = &iqm->baseframe[i];
-		mat4f_t    *ibf = &iqm->inverse_baseframe[i];
-
-		*bj = (iqmframe_t) {
-			.translate = loadvec3f (j->translate),
-			.rotate = normalf (j->rotate),
-			.scale = loadvec3f (j->scale),
-		};
-		*ibj = (iqmframe_t) {
-			.translate = vqmulf (-bj->translate, bj->rotate),
-			.rotate = qconjf (bj->rotate),
-			.scale = 1/bj->scale,
-		};
-		// the above division results in scale.w being infinite, which will
-		// leads to nan when scales are multiplied
-		ibj->scale[3] = 0;
-
-		mat4fquat (*bf, bj->rotate);
-		(*bf)[0] *= bj->scale[0];
-		(*bf)[1] *= bj->scale[1];
-		(*bf)[2] *= bj->scale[2];
-		(*bf)[3] = bj->translate + (vec4f_t) {0, 0, 0, 1};
-		mat4fquat (*ibf, ibj->rotate);
-		(*ibf)[0] *= ibj->scale[0];
-		(*ibf)[1] *= ibj->scale[1];
-		(*ibf)[2] *= ibj->scale[2];
-		(*ibf)[3] = ibj->translate + (vec4f_t) {0, 0, 0, 1};
-		if (j->parent >= 0) {
-			auto pbj = &iqm->basejoints[j->parent];
-			auto pibj = &iqm->inverse_basejoints[j->parent];
-			iqm_framemul (bj, pbj, bj);
-			iqm_framemul (ibj, ibj, pibj);
-
-			mmulf (*bf, iqm->baseframe[j->parent], *bf);
-			mmulf (*ibf, *ibf, iqm->inverse_baseframe[j->parent]);
+		// IQM models can have multiple root nodes (parent == -1)
+		uint32_t ind = Hierarchy_Insert (&tmp, j->parent + 1);
+		if (ind != i + 1) {
+			Sys_Error ("%d != %d + 1", ind, i);
 		}
+		tmp.ent[ind] = i;
+		tmp.own[ind] = false;
 	}
-	return true;
-}
-
-static bool
-load_iqm_anims (model_t *mod, const iqmheader *hdr, byte *buffer)
-{
-	iqm_t      *iqm = (iqm_t *) mod->model;
-
-	if (hdr->num_poses != hdr->num_joints) {
-		return false;
+	Hierarchy_SetTreeMode (&tmp, false);
+	tmp.nextIndex[0] = -1;
+	for (uint32_t i = 0; i < num_joints; i++) {
+		tmp.nextIndex[tmp.ent[i + 1] + 1] = i;
 	}
 
-	iqm->num_anims = hdr->num_anims;
-	iqm->anims = malloc (hdr->num_anims * sizeof (iqmanim));
-	auto anims = (iqmanim *) (buffer + hdr->ofs_anims);
-	for (uint32_t i = 0; i < hdr->num_anims; i++) {
-		iqm->anims[i].name = LittleLong (anims[i].name);
-		iqm->anims[i].first_frame = LittleLong (anims[i].first_frame);
-		iqm->anims[i].num_frames = LittleLong (anims[i].num_frames);
-		iqm->anims[i].framerate = LittleFloat (anims[i].framerate);
-		iqm->anims[i].flags = LittleLong (anims[i].flags);
-	}
+	auto bone_map = tmp.nextIndex;
+	tmp.nextIndex = nullptr;
+	Hierarchy_Destroy (&tmp);
 
-	uint32_t num_framedata = hdr->num_frames * hdr->num_framechannels;
-	iqm->framedata = malloc (num_framedata * sizeof (iqmpose_t));
-	auto framedata = (uint16_t *) (buffer + hdr->ofs_frames);
-	for (uint32_t i = 0; i < num_framedata; i++) {
-		iqm->framedata[i] = LittleShort (framedata[i]);
-	}
-	iqm->num_frames = hdr->num_frames;
-	iqm->num_framechannels = hdr->num_framechannels;
-
-	iqm->poses = malloc (hdr->num_poses * sizeof (iqmpose_t));
-	auto poses = (iqmpose *) (buffer + hdr->ofs_poses);
-	uint32_t offset = 0;
-	for (uint32_t i = 0; i < hdr->num_poses; i++) {
-		auto in = &poses[i];
-		auto out = &iqm->poses[i];
-		*out = (iqmpose_t) {
-			.parent = LittleLong (in->parent),
-			.mask = LittleLong (in->mask),
-		};
-		for (int j = 0; j < 10; j++) {
-			out->channeloffset[j] = LittleFloat (in->channeloffset[j]);
-			out->channelscale[j] = LittleFloat (in->channelscale[j]);
-			out->channelbase[j] = offset;
-			offset += (in->mask >> j) & 1;
-		}
-	}
-
-	return true;
+	return bone_map;
 }
 
 void
 Mod_LoadIQM (model_t *mod, void *buffer)
 {
-	iqmheader  *hdr = (iqmheader *) buffer;
-	iqm_t      *iqm;
-	uint32_t   *swap;
+	byte       *buf = buffer;
+	iqmheader  *hdr = buffer;
 
-	if (!strequal (hdr->magic, IQM_MAGIC))
+	if (memcmp (hdr->magic, IQM_MAGIC, sizeof (IQM_MAGIC))) {
 		Sys_Error ("%s: not an IQM", mod->path);
-	// Byte swap the header. Everything is the same type, so no problem :)
-	for (swap = &hdr->version; swap <= &hdr->ofs_extensions; swap++)
-		*swap = LittleLong (*swap);
-	//if (hdr->version < 1 || hdr->version > IQM_VERSION)
-	if (hdr->version != IQM_VERSION)
+	}
+	swap_longs (&hdr->version,
+				sizeof (iqmheader) - offsetof (iqmheader, version));
+
+	if (hdr->version != IQM_VERSION) {
 		Sys_Error ("%s: unable to handle iqm version %d", mod->path,
 				   hdr->version);
-	if (hdr->filesize != (uint32_t) qfs_filesize)
+	}
+	if (hdr->filesize != (uint32_t) qfs_filesize) {
 		Sys_Error ("%s: invalid filesize", mod->path);
-	iqm = calloc (1, sizeof (iqm_t));
-	iqm->text = malloc (hdr->num_text);
-	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
-	mod->model = (qf_model_t *) iqm;
-	mod->type = mod_iqm;
-	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading meshes", mod->path);
-	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading anims", mod->path);
-	m_funcs->Mod_IQMFinish (mod);
-}
+	}
 
-void
-Mod_FreeIQM (iqm_t *iqm)
-{
-	free (iqm->text);
-	if (iqm->vertices)
-		free (iqm->vertices);
-	free (iqm->vertexarrays);
-	if (iqm->elements16)
-		free (iqm->elements16);
-	free (iqm->meshes);
-	free (iqm->joints);
-	free (iqm->basejoints);
-	free (iqm->inverse_basejoints);
-	free (iqm->baseframe);
-	free (iqm->inverse_baseframe);
-	free (iqm->anims);
-	free (iqm->poses);
-	free (iqm);
+	mod_iqm_ctx_t iqm = {
+		.mod       = mod,
+		.hdr       = hdr,
+		.text      = (const char *)     (buf + hdr->ofs_text),
+		.meshes    = (iqmmesh *)        (buf + hdr->ofs_meshes),
+		.vtxarr    = (iqmvertexarray *) (buf + hdr->ofs_vertexarrays),
+		.triangles = (iqmtriangle *)    (buf + hdr->ofs_triangles),
+		.adjacency = (iqmtriangle *)    (buf + hdr->ofs_adjacency),
+		.joints    = (iqmjoint *)       (buf + hdr->ofs_joints),
+		.poses     = (iqmpose *)        (buf + hdr->ofs_poses),
+		.anims     = (iqmanim *)        (buf + hdr->ofs_anims),
+		.frames    = (uint16_t *)       (buf + hdr->ofs_frames),
+		.bounds    = (iqmbounds *)      (buf + hdr->ofs_bounds),
+		.comment   = (const char *)     (buf + hdr->ofs_comment),
+	};
+
+	size_t frame_data_count = hdr->num_frames * hdr->num_framechannels;
+	swap_longs (iqm.meshes, hdr->num_meshes * sizeof (iqmmesh));
+	swap_longs (iqm.vtxarr, hdr->num_vertexarrays * sizeof (iqmvertexarray));
+	swap_longs (iqm.triangles, hdr->num_triangles * sizeof (iqmtriangle));
+	swap_longs (iqm.adjacency, hdr->num_triangles * sizeof (iqmtriangle));
+	swap_longs (iqm.joints, hdr->num_joints * sizeof (iqmjoint));
+	swap_longs (iqm.poses, hdr->num_poses * sizeof (iqmpose));
+	swap_longs (iqm.anims, hdr->num_anims * sizeof (iqmanim));
+	swap_shorts (iqm.frames, frame_data_count * sizeof (uint16_t));
+	swap_longs (iqm.bounds, hdr->num_frames * sizeof (iqmbounds));
+
+	auto bone_map = build_bone_map (iqm.joints, hdr->num_joints);
+
+	uint32_t text_base = RUP (hdr->num_comment + 1, sizeof (uint32_t));
+	size_t size = sizeof (qf_model_t)
+				+ sizeof (qf_mesh_t[hdr->num_meshes])
+				+ sizeof (qfm_joint_t[hdr->num_joints])
+				+ sizeof (mat4f_t[hdr->num_joints])
+				+ sizeof (qfm_joint_t[hdr->num_joints])
+				+ sizeof (keyframedesc_t[hdr->num_anims])
+				+ sizeof (keyframe_t[hdr->num_frames])
+				+ sizeof (qfm_channel_t[hdr->num_framechannels])
+				+ sizeof (uint16_t[frame_data_count])
+				+ text_base + hdr->num_text;
+	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
+	auto meshes    = (qf_mesh_t *)     &model[1];
+	auto joints    = (qfm_joint_t *)   &meshes[hdr->num_meshes];
+	auto inverse   = (mat4f_t *)       &joints[hdr->num_joints];
+	auto poses     = (qfm_joint_t *)   &inverse[hdr->num_joints];
+	auto desc      = (keyframedesc_t *) &poses[hdr->num_joints];
+	auto keyframes = (keyframe_t *)     &desc[hdr->num_anims];
+	auto channels  = (qfm_channel_t *) &keyframes[hdr->num_frames];
+	auto framedata = (uint16_t *)      &channels[hdr->num_framechannels];
+	auto text      = (char *)          &framedata[frame_data_count];
+
+	iqm.qf_model = model;
+	iqm.qf_meshes = meshes;
+
+	memcpy (text, iqm.comment, hdr->num_comment);
+	memcpy (text + text_base, iqm.text, hdr->num_text);
+
+	*model = (qf_model_t) {
+		.meshes = {
+			.offset = (byte *) meshes - (byte *) model,
+			.count = hdr->num_meshes,
+		},
+		.joints = {
+			.offset = (byte *) joints - (byte *) model,
+			.count = hdr->num_joints,
+		},
+		.poses = {
+			.offset = (byte *) poses - (byte *) model,
+			.count = hdr->num_poses,
+		},
+		.channels = {
+			.offset = (byte *) channels - (byte *) model,
+			.count = hdr->num_framechannels,
+		},
+		.text = {
+			.offset = (byte *) text - (byte *) model,
+			.count = text_base + hdr->num_text,
+		},
+		.anim = {
+			.numdesc = hdr->num_anims,
+			.descriptors = (byte *) desc - (byte *) model,
+			.keyframes = (byte *) keyframes - (byte *) model,
+			.data = (byte *) framedata - (byte *) model,
+		},
+	};
+	for (uint32_t i = 0; i < hdr->num_meshes; i++) {
+		auto m = &iqm.meshes[i];
+		meshes[i] = (qf_mesh_t) {
+			.name = m->name + text_base,
+			.triangle_count = m->num_triangles,
+			.vertices = (qfm_loc_t) {
+				.count = iqm.meshes[i].num_vertexes,
+			},
+			.material = m->material + text_base,
+			.scale = { 1, 1, 1 },
+			.scale_origin = { 0, 0, 0 },
+		};
+	}
+	for (uint32_t i = 0; i < hdr->num_joints; i++) {
+		auto j = &iqm.joints[i];
+		joints[bone_map[i + 1]] = (qfm_joint_t) {
+			.translate = { VectorExpand (j->translate) },
+			.name = j->name + text_base,
+			.rotate = { QuatExpand (j->rotate) },
+			.scale = { VectorExpand (j->scale) },
+			.parent = bone_map[j->parent + 1],
+		};
+	}
+	for (uint32_t i = 0, j = 0; i < hdr->num_poses; i++) {
+		uint32_t id = bone_map[i + 1];
+		auto jnt = &joints[id];
+		auto p = &iqm.poses[i];
+		poses[id] = *jnt;
+		for (int k = 0; k < 3; k++) {
+			poses[id].translate[k] = p->channeloffset[k + 0];
+			if (p->mask & (1 << (k + 0))) {
+				channels[j++] = (qfm_channel_t) {
+					.data = (byte *) (jnt->translate + k) - (byte *) joints,
+					.base = p->channeloffset[k + 0],
+					.scale = p->channelscale[k + 0],
+				};
+			}
+		}
+		for (int k = 0; k < 4; k++) {
+			poses[id].rotate[k] = p->channeloffset[k + 3];
+			if (p->mask & (1 << (k + 3))) {
+				auto rotate = (float *) &jnt->rotate;
+				channels[j++] = (qfm_channel_t) {
+					.data = (byte *) (rotate + k) - (byte *) joints,
+					.base = p->channeloffset[k + 3],
+					.scale = p->channelscale[k + 3],
+				};
+			}
+		}
+		for (int k = 0; k < 3; k++) {
+			poses[id].scale[k] = p->channeloffset[k + 7];
+			if (p->mask & (1 << (k + 7))) {
+				channels[j++] = (qfm_channel_t) {
+					.data = (byte *) (jnt->scale + k) - (byte *) joints,
+					.base = p->channeloffset[k + 7],
+					.scale = p->channelscale[k + 7],
+				};
+			}
+		}
+	}
+	for (uint32_t i = 0; i < hdr->num_anims; i++) {
+		auto a = &iqm.anims[i];
+		desc[i] = (keyframedesc_t) {
+			.firstframe = a->first_frame,
+			.numframes = a->num_frames,
+			.flags = a->flags,
+			.name = a->name + text_base,
+		};
+		for (uint32_t j = 0; j < a->num_frames; j++) {
+			uint32_t abs_frame_num = a->first_frame + j;
+			auto data = &framedata[abs_frame_num * hdr->num_framechannels];
+			keyframes[abs_frame_num] = (keyframe_t) {
+				.endtime = a->framerate * (j + 1),
+				.data = (byte *) data - (byte *) model,
+			};
+		}
+	}
+
+	mod->type = mod_mesh;
+
+	m_funcs->Mod_IQMFinish (&iqm);
+	free (bone_map);
+
+	memset (&mod->cache, 0, sizeof (mod->cache));
+	mod->model = model;
 }
 
 static void
@@ -545,35 +325,31 @@ swap_bones (byte *bi, byte *bw, int b1, int b2)
 static uintptr_t
 blend_get_hash (const void *e, void *unused)
 {
-	iqmblend_t *b = (iqmblend_t *) e;
-	return CRC_Block ((byte *) b, sizeof (iqmblend_t));
+	return CRC_Block ((byte *) e, sizeof (qfm_blend_t));
 }
 
 static int
 blend_compare (const void *e1, const void *e2, void *unused)
 {
-	iqmblend_t *b1 = (iqmblend_t *) e1;
-	iqmblend_t *b2 = (iqmblend_t *) e2;
-	return !memcmp (b1, b2, sizeof (iqmblend_t));
+	return !memcmp (e1, e2, sizeof (qfm_blend_t));
 }
 
 #define MAX_BLENDS 1024
 
-iqmblend_t *
-Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
+qfm_blend_t *
+Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 {
-	int         i, j;
 	iqmvertexarray *bindices = 0;
 	iqmvertexarray *bweights = 0;
-	iqmblend_t *blend_list;
+	qfm_blend_t *blend_list;
 	int         num_blends;
 	hashtab_t  *blend_hash;
 
-	for (i = 0; i < iqm->num_arrays; i++) {
-		if (iqm->vertexarrays[i].type == IQM_BLENDINDEXES)
-			bindices = &iqm->vertexarrays[i];
-		if (iqm->vertexarrays[i].type == IQM_BLENDWEIGHTS)
-			bweights = &iqm->vertexarrays[i];
+	for (uint32_t i = 0; i < iqm->hdr->num_vertexarrays; i++) {
+		if (iqm->vtxarr[i].type == IQM_BLENDINDEXES)
+			bindices = &iqm->vtxarr[i];
+		if (iqm->vtxarr[i].type == IQM_BLENDWEIGHTS)
+			bweights = &iqm->vtxarr[i];
 	}
 	if (!bindices || !bweights) {
 		// Not necessarily an error: might be a static model with no bones
@@ -583,22 +359,22 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 		return 0;
 	}
 
-	blend_list = calloc (MAX_BLENDS, sizeof (iqmblend_t));
-	for (i = 0; i < iqm->num_joints; i++) {
+	blend_list = calloc (MAX_BLENDS, sizeof (qfm_blend_t));
+	for (uint32_t i = 0; i < iqm->hdr->num_joints; i++) {
 		blend_list[i].indices[0] = i;
 		blend_list[i].weights[0] = 255;
 	}
-	num_blends = iqm->num_joints;
+	num_blends = iqm->hdr->num_joints;
 
 	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
 	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
 
-	for (i = 0; i < iqm->num_verts; i++) {
-		byte       *vert = iqm->vertices + i * iqm->stride;
-		byte       *bi = vert + bindices->offset;
-		byte       *bw = vert + bweights->offset;
-		iqmblend_t  blend;
-		iqmblend_t *bl;
+	for (uint32_t i = 0; i < iqm->hdr->num_vertexes; i++) {
+		byte       *base = (byte *) iqm->hdr;
+		byte       *bi = base + bindices->offset + i * 4;
+		byte       *bw = base + bweights->offset + i * 4;
+		qfm_blend_t blend;
+		qfm_blend_t *bl;
 
 		// First, canonicalize vextex bone data:
 		//   bone indices are in increasing order
@@ -607,7 +383,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 
 		// if the weight is zero, ensure the index is also zero
 		// also, ensure non-zero weights never follow zero weights
-		for (j = 0; j < 4; j++) {
+		for (uint32_t j = 0; j < 4; j++) {
 			if (!bw[j]) {
 				bi[j] = 0;
 			} else {
@@ -619,7 +395,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 		}
 		// sort the bones such that the indeces are increasing (unless the
 		// weight is zero)
-		for (j = 0; j < 3; j++) {
+		for (uint32_t j = 0; j < 3; j++) {
 			if (!bw[j+1])					// zero weight == end of list
 				break;
 			if (bi[j] > bi[j+1]) {
@@ -651,5 +427,5 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 
 	Hash_DelTable (blend_hash);
 	*size = num_blends;
-	return realloc (blend_list, num_blends * sizeof (iqmblend_t));
+	return realloc (blend_list, num_blends * sizeof (qfm_blend_t));
 }

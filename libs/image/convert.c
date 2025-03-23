@@ -35,6 +35,7 @@
 #include "QF/hash.h"
 #include "QF/image.h"
 #include "QF/mathlib.h"
+#include "QF/zone.h"
 
 struct colcache_s {
 	struct colcache_s *next;
@@ -145,7 +146,7 @@ ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache)
 }
 
 tex_t *
-ConvertImage (const tex_t *tex, const byte *pal)
+ConvertImage (const tex_t *tex, const byte *pal, const char *name)
 {
 	tex_t      *new;
 	int         pixels;
@@ -154,7 +155,7 @@ ConvertImage (const tex_t *tex, const byte *pal)
 	colcache_t *cache;
 
 	pixels = tex->width * tex->height;
-	new = malloc (sizeof (tex_t) + pixels);
+	new = Hunk_AllocName (nullptr, sizeof (tex_t) + pixels, name);
 	new->data = (byte *) (new + 1);
 	new->width = tex->width;
 	new->height = tex->height;
@@ -180,5 +181,6 @@ ConvertImage (const tex_t *tex, const byte *pal)
 			ColorCache_Delete (cache);
 			break;
 	}
+	new->data = (byte *) &new[1];
 	return new;
 }

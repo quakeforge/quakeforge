@@ -74,31 +74,31 @@ get_frame_data (double time, const anim_t *anim, uint32_t framenum,
 }
 
 static void
-update_alias (double time, animation_t *anim, model_t *m)
+update_mesh (double time, animation_t *anim, model_t *m)
 {
 	auto model = m->model;
 	if (!model) {
 		model = Cache_Get (&m->cache);
 	}
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	int frame = anim->frame;
-	uint32_t data = get_frame_data (time, &mesh->morph, frame, mesh);
-	anim->blend = R_EntityBlend (time, anim, data, 0.1);
+	uint32_t frame = anim->frame;
+	if (model->anim.numdesc) {
+		uint32_t data = get_frame_data (time, &model->anim, frame, model);
+		anim->blend = R_EntityBlend (time, anim, data, 0.1);
+	} else if (model->meshes.count == 1) {//FIXME morph on more meshes
+		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		uint32_t data = get_frame_data (time, &mesh->morph, frame, mesh);
+		anim->blend = R_EntityBlend (time, anim, data, 0.1);
+	}
 	if (!m->model) {
 		Cache_Release (&m->cache);
 	}
 }
 
 static void
-update_iqm (double time, animation_t *anim, model_t *model)
-{
-}
-
-static void
 update_sprite (double time, animation_t *anim, model_t *model)
 {
 	auto sprite = (msprite_t *) model->cache.data;	//FIXME
-	int frame = anim->frame;
+	uint32_t frame = anim->frame;
 	uint32_t data = get_frame_data (time, &sprite->skin, frame, sprite);
 	anim->pose2 = anim->pose1 = data;
 }
@@ -110,9 +110,14 @@ alias_skin (double time, renderer_t *rend, model_t *m)
 	if (!model) {
 		model = Cache_Get (&m->cache);
 	}
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	int skinnum = rend->skin;
-	rend->skindesc = get_frame_data (time, &mesh->skin, skinnum, mesh);
+	if (model->meshes.count > 1) {
+		//FIXME need proper animation state
+		rend->skindesc = 0;
+	} else {
+		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		uint32_t skinnum = rend->skin;
+		rend->skindesc = get_frame_data (time, &mesh->skin, skinnum, mesh);
+	}
 	if (!m->model) {
 		Cache_Release (&m->cache);
 	}
@@ -146,11 +151,8 @@ Anim_Update (double time, const ecs_pool_t *animpool,
 				case mod_light:
 					break;
 				case mod_mesh:
-					update_alias (time + syncbase, anim, renderer->model);
+					update_mesh (time + syncbase, anim, renderer->model);
 					alias_skin (time + syncbase, renderer, renderer->model);
-					break;
-				case mod_iqm:
-					update_iqm (time + syncbase, anim, renderer->model);
 					break;
 				case mod_sprite:
 					update_sprite (time + syncbase, anim, renderer->model);

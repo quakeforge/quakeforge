@@ -316,7 +316,6 @@ R_DrawEntitiesOnList (entqueue_t *queue)
 	} while (0)
 
 	RE_LOOP (mesh);
-	RE_LOOP (iqm);
 	RE_LOOP (sprite);
 
 	R_HighFPPrecision ();

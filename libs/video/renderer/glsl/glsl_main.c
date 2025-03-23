@@ -53,7 +53,6 @@
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_fisheye.h"
-#include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_main.h"
 #include "QF/GLSL/qf_particles.h"
@@ -108,7 +107,6 @@ glsl_R_RenderEntities (entqueue_t *queue)
 	} while (0)
 
 	RE_LOOP (mesh, Alias);
-	RE_LOOP (iqm, IQM);
 	RE_LOOP (sprite, Sprite);
 }
 
@@ -186,7 +184,6 @@ glsl_R_Init (struct plitem_s *config)
 	SCR_Init ();
 	glsl_R_InitBsp ();
 	glsl_R_InitAlias ();
-	glsl_R_InitIQM ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
 	glsl_R_InitTrails ();

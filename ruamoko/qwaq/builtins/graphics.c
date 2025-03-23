@@ -424,12 +424,13 @@ generate_colormap (void)
 			memcpy (colors[i][224], colors[31][224], 32 * 3);
 		}
 	}
-	tex_t     *cmap = ConvertImage (&tex, default_palette[0]);
+	size_t mark = Hunk_LowMark (nullptr);
+	tex_t     *cmap = ConvertImage (&tex, default_palette[0], "cmap");
 	// the colormap has an extra byte indicating the number of fullbright
 	// entries, but that byte is not in the image, so don't try to copy it,
 	// thus the - 1
 	memcpy (default_colormap, cmap->data, sizeof (default_colormap) - 1);
-	free (cmap);
+	Hunk_FreeToLowMark (nullptr, mark);
 }
 
 static const char *bi_dirconf = R"(

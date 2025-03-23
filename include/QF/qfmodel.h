@@ -62,6 +62,11 @@ typedef struct qfm_joint_s {
 	int32_t     parent;
 } qfm_joint_t;
 
+typedef struct qfm_blend_s {
+	uint8_t     indices[4];
+	uint8_t		weights[4];
+} qfm_blend_t;
+
 typedef struct qfm_channel_s {
 	uint32_t    data;
 	float       base;
@@ -85,22 +90,27 @@ typedef struct qf_mesh_s {
 	qfm_loc_t   attributes;
 	qfm_loc_t   vertices;			// count is per morph
 	qfm_loc_t   morph_attributes;
+	uint32_t    vertex_stride;
+	uint32_t    morph_stride;
+	uint32_t    material;
 	anim_t      morph;
 	anim_t      skin;
 	vec3_t      scale;
 	vec3_t      scale_origin;
 	vec3_t      bounds_min;
 	vec3_t      bounds_max;
-} qf_mesh_t;
+} __attribute__((aligned (16))) qf_mesh_t;
 
 typedef struct qf_model_s {
 	qfm_loc_t   meshes;
 	qfm_loc_t   joints;		// base joint definitions
+	qfm_loc_t   inverse;	// inverse bind pose
 	qfm_loc_t   poses;		// posed joints
+	qfm_loc_t   channels;	// posed joints
 	qfm_loc_t   text;
 	anim_t      anim;
 	uint16_t    crc;
 	uint32_t    render_data;
-} qf_model_t;
+} __attribute__((aligned (16))) qf_model_t;
 
 #endif//__QF_qfmodel_h

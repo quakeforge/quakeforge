@@ -35,10 +35,10 @@
 typedef struct glsl_alias_mesh_s {
 	int         skinwidth;
 	int         skinheight;
-	GLuint      vertices;
-	GLuint      indices;
 	uint32_t    numverts;
 	uint32_t    numtris;
+	GLuint      vertices;
+	GLuint      indices;
 } glsl_alias_mesh_t;
 
 typedef struct aliasvrt_s {

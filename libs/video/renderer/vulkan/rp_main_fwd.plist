@@ -2,7 +2,6 @@ properties = {
 	color = {
 		bsp       = "[0.0, 0.5, 0.6, 1]";
 		alias     = "[0.6, 0.5, 0.0, 1]";
-		iqm       = "[0.6, 0.5, 0.0, 1]";
 		sprite    = "[0.6, 0.5, 0.0, 1]";
 		particles = "[0.4, 0.5, 0.8, 1]";
 		lights    = "[0.8, 0.6, 0.2, 1]";
@@ -1159,21 +1158,6 @@ renderpasses = {
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
 					};
-					iqm = {
-						color = $color.iqm;
-						tasks = (
-							{ func = iqm_draw;
-							  params = (2); },
-						);
-
-						stages = (
-							$iqm.shader.vertex,
-							$qskin.shader.fragment,
-						);
-						vertexInput = $iqm.vertexInput;
-						inputAssembly = $iqm.inputAssembly;
-						layout = $iqm.layout;
-					};
 					sprite:depth = {
 						color = $color.sprite;
 						tasks = (
@@ -1596,7 +1580,6 @@ init_tasks = (
 	{ func = palette_init; },
 	{ func = alias_init; },
 	{ func = bsp_init; },
-	{ func = iqm_init; },
 	{ func = matrices_init; },
 	{ func = scene_init; },
 	{ func = sprite_init; },

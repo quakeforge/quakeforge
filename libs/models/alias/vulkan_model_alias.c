@@ -83,8 +83,8 @@ vulkan_alias_clear (model_t *m, void *data)
 
 	m->needload = true;	//FIXME is this right?
 	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
-	QFV_DestroyResource (device, rmesh->resources);
-	free (rmesh->resources);
+	auto resources = (qfv_resource_t *) ((byte *) model + rmesh->resources);
+	QFV_DestroyResource (device, resources);
 
 	auto skin = &mesh->skin;
 	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
@@ -356,19 +356,16 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	size_t      uv_size = numverts * sizeof (aliasuv_t);
 	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
 	auto rmesh = (qfv_alias_mesh_t *) ((byte *) model + model->render_data);
-	rmesh->resources = malloc (sizeof (qfv_resource_t)
-							  + sizeof (qfv_resobj_t)
-							  + sizeof (qfv_resobj_t)
-							  + sizeof (qfv_resobj_t));
-	rmesh->resources[0] = (qfv_resource_t) {
+	auto resources = (qfv_resource_t *) ((byte *) model + rmesh->resources);
+	resources[0] = (qfv_resource_t) {
 		.name = va (ctx->va_ctx, "alias:%s", alias_ctx->mod->name),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 3,
-		.objects = (qfv_resobj_t *) &rmesh->resources[1],
+		.objects = (qfv_resobj_t *) &resources[1],
 	};
 	rmesh->numtris = numtris;
-	auto vert_obj = rmesh->resources->objects;
+	auto vert_obj = resources->objects;
 	auto uv_obj = &vert_obj[1];
 	auto index_obj = &uv_obj[1];
 
@@ -399,9 +396,9 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 				   | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		},
 	};
-	QFV_CreateResource (device, rmesh->resources);
-	rmesh->vertex_buffer = vert_obj->buffer.buffer;
-	rmesh->uv_buffer = uv_obj->buffer.buffer;
+	QFV_CreateResource (device, resources);
+	rmesh->geom_buffer = vert_obj->buffer.buffer;
+	rmesh->rend_buffer = uv_obj->buffer.buffer;
 	rmesh->index_buffer = index_obj->buffer.buffer;
 
 	size_t packet_size = vert_size + uv_size + ind_size;
@@ -439,9 +436,9 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto var = &bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	auto ir = &bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
-	QFV_PacketScatterBuffer (packet, rmesh->vertex_buffer, 1, &vert_scatter,
+	QFV_PacketScatterBuffer (packet, rmesh->geom_buffer, 1, &vert_scatter,
 							 sb, var);
-	QFV_PacketScatterBuffer (packet, rmesh->uv_buffer, 1, &uv_scatter,
+	QFV_PacketScatterBuffer (packet, rmesh->rend_buffer, 1, &uv_scatter,
 							 sb, var);
 	QFV_PacketScatterBuffer (packet, rmesh->index_buffer, 1, &ind_scatter,
 							 sb, ir);
@@ -463,6 +460,16 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	if (mdl->ident == HEADER_MDL16)
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
-	qfv_alias_mesh_t *rmesh = Hunk_Alloc (0, sizeof (qfv_alias_mesh_t));
+	size_t size = sizeof (qfv_alias_mesh_t)
+				+ sizeof (qfv_resource_t)
+				+ sizeof (qfv_resobj_t)
+				+ sizeof (qfv_resobj_t)
+				+ sizeof (qfv_resobj_t);
+
+	const char *name = alias_ctx->mod->name;
+	qfv_alias_mesh_t *rmesh = Hunk_AllocName (0, size, name);
+	auto resources = (qfv_resource_t *) &rmesh[1];
+
 	model->render_data = (byte *) rmesh - (byte *) model;
+	rmesh->resources = (byte *) resources - (byte *) model;
 }

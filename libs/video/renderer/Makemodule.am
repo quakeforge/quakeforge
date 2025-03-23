@@ -82,7 +82,6 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_graph.c \
 	libs/video/renderer/gl/gl_lightmap.c \
 	libs/video/renderer/gl/gl_mod_alias.c \
-	libs/video/renderer/gl/gl_mod_iqm.c \
 	libs/video/renderer/gl/gl_mod_sprite.c \
 	libs/video/renderer/gl/gl_rmain.c \
 	libs/video/renderer/gl/gl_rmisc.c \
@@ -126,7 +125,6 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_bsp.c \
 	libs/video/renderer/glsl/glsl_draw.c \
 	libs/video/renderer/glsl/glsl_fisheye.c \
-	libs/video/renderer/glsl/glsl_iqm.c \
 	libs/video/renderer/glsl/glsl_lightmap.c \
 	libs/video/renderer/glsl/glsl_main.c \
 	libs/video/renderer/glsl/glsl_particles.c \
@@ -186,7 +184,6 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/sw_rdrawa.S \
 	libs/video/renderer/sw/sw_redge.c \
 	libs/video/renderer/sw/sw_redgea.S \
-	libs/video/renderer/sw/sw_riqm.c \
 	libs/video/renderer/sw/sw_rmain.c \
 	libs/video/renderer/sw/sw_rmisc.c \
 	libs/video/renderer/sw/sw_rpart.c \
@@ -245,7 +242,6 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
 	libs/video/renderer/vulkan/vulkan_compose.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
-	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_lightmap.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \

@@ -53,11 +53,13 @@ typedef struct aliasuv_s {
 } aliasuv_t;
 
 typedef struct qfv_alias_mesh_s {
-	VkBuffer    vertex_buffer;
-	VkBuffer    uv_buffer;
+	VkBuffer    geom_buffer;
+	VkBuffer    rend_buffer;
 	VkBuffer    index_buffer;
-	struct qfv_resource_s *resources;
+	VkBuffer    bones_buffer;
+	uint32_t    resources;
 	uint32_t    numtris;
+	uint32_t    bone_descriptors;
 } qfv_alias_mesh_t;
 
 typedef struct qfv_alias_skin_s {
