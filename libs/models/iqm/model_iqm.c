@@ -251,17 +251,19 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 				+ sizeof (keyframe_t[hdr->num_frames])
 				+ sizeof (qfm_channel_t[hdr->num_framechannels])
 				+ sizeof (uint16_t[frame_data_count])
+				+ sizeof (qfm_frame_t[hdr->num_frames])
 				+ text_base + hdr->num_text;
 	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
-	auto meshes    = (qf_mesh_t *)     &model[1];
-	auto joints    = (qfm_joint_t *)   &meshes[hdr->num_meshes];
-	auto inverse   = (mat4f_t *)       &joints[hdr->num_joints];
-	auto poses     = (qfm_joint_t *)   &inverse[hdr->num_joints];
+	auto meshes    = (qf_mesh_t *)      &model[1];
+	auto joints    = (qfm_joint_t *)    &meshes[hdr->num_meshes];
+	auto inverse   = (mat4f_t *)        &joints[hdr->num_joints];
+	auto poses     = (qfm_joint_t *)    &inverse[hdr->num_joints];
 	auto desc      = (keyframedesc_t *) &poses[hdr->num_joints];
 	auto keyframes = (keyframe_t *)     &desc[hdr->num_anims];
-	auto channels  = (qfm_channel_t *) &keyframes[hdr->num_frames];
-	auto framedata = (uint16_t *)      &channels[hdr->num_framechannels];
-	auto text      = (char *)          &framedata[frame_data_count];
+	auto channels  = (qfm_channel_t *)  &keyframes[hdr->num_frames];
+	auto framedata = (uint16_t *)       &channels[hdr->num_framechannels];
+	auto bounds    = (qfm_frame_t *)    &framedata[frame_data_count];
+	auto text      = (char *)           &bounds[hdr->num_frames];
 
 	iqm.qf_model = model;
 	iqm.qf_meshes = meshes;
@@ -294,7 +296,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.numdesc = hdr->num_anims,
 			.descriptors = (byte *) desc - (byte *) model,
 			.keyframes = (byte *) keyframes - (byte *) model,
-			.data = (byte *) framedata - (byte *) model,
+			.data = (byte *) bounds - (byte *) model,
 		},
 		.crc = crc,
 	};
@@ -304,12 +306,22 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.name = m->name + text_base,
 			.triangle_count = m->num_triangles,
 			.vertices = (qfm_loc_t) {
+				.offset = iqm.meshes[i].first_vertex,
 				.count = iqm.meshes[i].num_vertexes,
 			},
 			.material = m->material + text_base,
 			.scale = { 1, 1, 1 },
 			.scale_origin = { 0, 0, 0 },
+			.bounds_min = { INFINITY, INFINITY, INFINITY },
+			.bounds_max = {-INFINITY,-INFINITY,-INFINITY },
 		};
+		auto verts = (float *) (buf + iqm.vtxarr[0].offset);
+		verts += iqm.meshes[i].first_vertex * 3;
+		for (uint32_t j = 0; j < iqm.meshes[i].num_vertexes; j++) {
+			VectorCompMin (meshes[i].bounds_min, verts, meshes[i].bounds_min);
+			VectorCompMax (meshes[i].bounds_max, verts, meshes[i].bounds_max);
+			verts += 3;
+		}
 	}
 	for (uint32_t i = 0; i < hdr->num_joints; i++) {
 		auto j = &iqm.joints[i];
@@ -375,6 +387,26 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			};
 		}
 	}
+	for (uint32_t i = 0; i < hdr->num_frames; i++) {
+		auto b = &iqm.bounds[i];
+		bounds[i] = (qfm_frame_t) {
+			.bounds_min = { VectorExpand (b->bbmin) },
+			.bounds_max = { VectorExpand (b->bbmax) },
+		};
+	}
+	double area = 0;
+	auto verts = (float *) (buf + iqm.vtxarr[0].offset);
+	for (uint32_t i = 0; i < hdr->num_triangles; i++) {
+		auto a = verts + 3 * iqm.triangles[i].vertex[0];
+		auto b = verts + 3 * iqm.triangles[i].vertex[1];
+		auto c = verts + 3 * iqm.triangles[i].vertex[2];
+		vec3_t ab, ac, n;
+		VectorSubtract (b, a, ab);
+		VectorSubtract (c, a, ac);
+		CrossProduct (ab, ac, n);
+		area += sqrt (DotProduct (n, n));
+	}
+	iqm.average_area = area / hdr->num_triangles;
 
 	mod->type = mod_mesh;
 

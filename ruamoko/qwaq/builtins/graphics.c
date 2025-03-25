@@ -425,7 +425,7 @@ generate_colormap (void)
 		}
 	}
 	size_t mark = Hunk_LowMark (nullptr);
-	tex_t     *cmap = ConvertImage (&tex, default_palette[0], "cmap");
+	auto cmap = ConvertImage (&tex, default_palette[0], "cmap");
 	// the colormap has an extra byte indicating the number of fullbright
 	// entries, but that byte is not in the image, so don't try to copy it,
 	// thus the - 1

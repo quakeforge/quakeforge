@@ -38,11 +38,12 @@
 
 #define MAX_LBM_HEIGHT	1024
 
-typedef struct sw_alias_mesh_s {
+typedef struct sw_mesh_s {
 	float       size;
+	uint32_t    numverts;
 	uint32_t    blend_palette;
 	uint32_t    palette_size;
-} sw_alias_mesh_t;
+} sw_mesh_t;
 
 typedef struct
 {

@@ -363,9 +363,9 @@ D_DrawNonSubdiv (void)
 void
 D_PolysetDraw (void)
 {
-	spanpackage_t spans[DPS_MAXSPANS + 1 +
-						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
-
+	size_t extra = (CACHE_SIZE + sizeof (spanpackage_t))
+				 / sizeof (spanpackage_t);
+	spanpackage_t spans[DPS_MAXSPANS + extra + 1];
 	// one extra because of cache line pretouching
 
 	a_spans = (spanpackage_t *) RUP ((intptr_t) &spans[0], CACHE_SIZE);
@@ -427,7 +427,6 @@ D_PolysetUpdateTables (void)
 void
 D_PolysetScanLeftEdge (int height)
 {
-
 	do {
 		d_pedgespanpackage->pdest = d_pdest;
 		d_pedgespanpackage->pz = d_pz;

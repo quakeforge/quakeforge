@@ -53,16 +53,19 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
+typedef struct {
+	float    pos[3];
+	stvert_t st;
+	float    normal[3];
+	uint32_t matind;
+} iqm_vert_t;
+
 static byte null_data[] = {15, 15, 15, 15};
-static tex_t null_texture = {
+static qpic_t null_texture = {
 	.width = 2,
 	.height = 2,
-	.format = tex_palette,
-	.loaded = true,
-	.palette =0,
-	.data = null_data,
 };
-constexpr size_t null_texture_size = sizeof (null_texture) + sizeof (null_data);
+constexpr size_t null_texture_size = offsetof (qpic_t, data[sizeof(null_data)]);
 
 static void
 sw_iqm_clear (model_t *mod, void *data)
@@ -106,16 +109,17 @@ get_texcoord (qf_mesh_t *mesh, uint32_t index)
 }
 
 static void
-sw_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx)
+sw_iqm_load_textures (qf_model_t *model)
 {
-	auto model = iqm_ctx->qf_model;
-	auto meshes = iqm_ctx->qf_meshes;
+	dstring_t  *str = dstring_new ();
+
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	auto text = (const char *) ((byte *) model + model->text.offset);
+
 	uint32_t num_verts = 0;
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		num_verts += meshes[i].vertices.count;
 	}
-	dstring_t  *str = dstring_new ();
 	set_t       done_verts = SET_STATIC_INIT (num_verts, alloca);
 	set_empty (&done_verts);
 
@@ -133,16 +137,16 @@ sw_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx)
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		auto tex = LoadImage (va (0, "textures/%s", str->str), 1);
+		qpic_t *pic;
 		if (tex) {
-			tex = ConvertImage (tex, vid.basepal, str->str);
+			pic = ConvertImage (tex, vid.basepal, str->str);
 		} else {
-			tex = Hunk_AllocName (nullptr, null_texture_size, "null texture");
-			*tex = null_texture;
-			memcpy (tex + 1, null_data, sizeof (null_data));
-			tex->data = (byte *) &tex[1];
+			pic = Hunk_AllocName (nullptr, null_texture_size, "null texture");
+			*pic = null_texture;
+			memcpy (pic->data, null_data, sizeof (null_data));
 		}
 		meshes[i].skin = (anim_t) {
-			.data = (byte *) tex - (byte *) &meshes[i],
+			.data = (byte *) pic - (byte *) &meshes[i],
 		};
 		for (j = 0; j < meshes[i].triangle_count * 3; j++) {
 			uint32_t    vind = get_vertex_index (&meshes[i], j);
@@ -153,8 +157,8 @@ sw_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx)
 			}
 			set_add (&done_verts, vind);
 
-			convert_coord (tc + 1, tex->width);
-			convert_coord (tc + 2, tex->height);
+			convert_coord (tc + 1, pic->width);
+			convert_coord (tc + 2, pic->height);
 		}
 	}
 	dstring_delete (str);
@@ -173,6 +177,44 @@ sw_iqm_convert_tris (mod_iqm_ctx_t *iqm_ctx, dtriangle_t *tris)
 	}
 }
 
+static void
+sw_iqm_transfer_verts (iqm_vert_t *verts, uint32_t num_verts,
+					   mod_iqm_ctx_t *iqm_ctx)
+{
+	float *iqm_position = nullptr;
+	int32_t *iqm_texcoord = nullptr;
+	float *iqm_normal = nullptr;
+	for (uint32_t i = 0; i < iqm_ctx->hdr->num_vertexarrays; i++) {
+		auto va = iqm_ctx->vtxarr[i];
+		if (va.type == IQM_POSITION && va.format == IQM_FLOAT
+			&& va.size == 3) {
+			iqm_position = (float *) ((byte *) iqm_ctx->hdr + va.offset);
+		}
+		if (va.type == IQM_TEXCOORD && va.format == IQM_FLOAT
+			&& va.size == 2) {
+			// will be corrected later
+			iqm_texcoord = (int32_t *) ((byte *) iqm_ctx->hdr + va.offset);
+		}
+		if (va.type == IQM_NORMAL && va.format == IQM_FLOAT
+			&& va.size == 3) {
+			iqm_normal = (float *) ((byte *) iqm_ctx->hdr + va.offset);
+		}
+	}
+	if (!iqm_position || !iqm_texcoord || !iqm_normal) {
+		Sys_Error ("unsupported IQM model");
+	}
+	for (uint32_t i = 0; i < num_verts; i++) {
+		*verts++ = (iqm_vert_t) {
+			.pos = { VectorExpand (iqm_position) },
+			.st = {	.s = iqm_texcoord[0], .t = iqm_texcoord[1] },
+			.normal = { VectorExpand (iqm_normal) },
+		};
+		iqm_position += 3;
+		iqm_normal += 3;
+		iqm_texcoord += 2;
+	}
+}
+
 void
 sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 {
@@ -187,53 +229,48 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 
 	int         numv = iqm_ctx->hdr->num_vertexes;
 	int         numt = iqm_ctx->hdr->num_triangles;
-	size_t      size = sizeof (sw_alias_mesh_t)
-						+ sizeof (qfm_blend_t[palette_size])
-						+ sizeof (qfm_attrdesc_t[4 * model->meshes.count])
-						+ sizeof (dtriangle_t[numt])
-						+ sizeof (float[numv * 9]);
+	size_t size = sizeof (sw_mesh_t)
+				+ sizeof (qfm_blend_t[palette_size])
+				+ sizeof (qfm_attrdesc_t[4 * model->meshes.count])
+				+ sizeof (dtriangle_t[numt])
+				+ sizeof (iqm_vert_t[numv]);
 
 	const char *name = iqm_ctx->mod->name;
-	sw_alias_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	sw_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
 	auto blend = (qfm_blend_t *) &rmesh[1];
 	auto attribs = (qfm_attrdesc_t *) &blend[palette_size];
 	auto tris     = (dtriangle_t *) &attribs[4 * model->meshes.count];
-	auto verts = (void *) &tris[numt];
-	auto position = (float *) verts;
-	auto texcoord = (float *) &position[3];	// converted to int32_t later
-	auto normal = (float *) &texcoord[2];
-	auto matind = (uint32_t *) &normal[3];
-	size_t stride = 9;
+	auto verts = (iqm_vert_t *) &tris[numt];
 
 	memcpy (blend, blend_palette, sizeof (qfm_blend_t) * palette_size);
 
 	attribs[0] = (qfm_attrdesc_t) {
-		.offset = (byte *) position - (byte *) position,
-		.stride = stride * sizeof (float),
+		.offset = offsetof (iqm_vert_t, pos),
+		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_position,
 		.abs = 1,
 		.type = qfm_f32,
 		.components = 3,
 	};
 	attribs[1] = (qfm_attrdesc_t) {
-		.offset = (byte *) texcoord - (byte *) position,
-		.stride = stride * sizeof (float),
-		.attr = qfm_texcoord,
-		.abs = 1,
-		.type = qfm_s32,
-		.components = 2,
-	};
-	attribs[2] = (qfm_attrdesc_t) {
-		.offset = (byte *) normal - (byte *) position,
-		.stride = stride * sizeof (float),
+		.offset = offsetof (iqm_vert_t, normal),
+		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_normal,
 		.abs = 1,
 		.type = qfm_f32,
 		.components = 3,
 	};
+	attribs[2] = (qfm_attrdesc_t) {
+		.offset = offsetof (iqm_vert_t, st),
+		.stride = sizeof (iqm_vert_t),
+		.attr = qfm_texcoord,
+		.abs = 1,
+		.type = qfm_s32,
+		.components = 3,	// stvert_t
+	};
 	attribs[3] = (qfm_attrdesc_t) {
-		.offset = (byte *) matind - (byte *) position,
-		.stride = stride * sizeof (float),
+		.offset = offsetof (iqm_vert_t, matind),
+		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_joints,
 		.abs = 1,
 		.type = qfm_u32,
@@ -250,25 +287,27 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 
 	auto walk_tris = tris;
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
-		meshes[i].indices = (byte *) walk_tris - (byte *) &meshes[i];
+		meshes[i].triangle_count = iqm_ctx->meshes[i].num_triangles;
 		meshes[i].index_type = qfm_special; // dtriangle_t
+		meshes[i].indices = (byte *) walk_tris - (byte *) &meshes[i];
 		meshes[i].attributes = (qfm_loc_t) {
-			.offset = (byte *) attribs - (byte *) &meshes[i],
+			.offset = (byte *) &attribs[i * 4] - (byte *) &meshes[i],
 			.count = 4,
 		};
-		//meshes[i].vertices.offset = (byte *) verts - (byte *) &meshes[i];
-		meshes[i].vertex_stride = stride * sizeof (float);
+		meshes[i].vertex_stride = sizeof (iqm_vert_t);
 
 		walk_tris +=  meshes[i].triangle_count;
 	}
 
-	*rmesh = (sw_alias_mesh_t) {
-		.size = 1,//FIXME what's right?
+	*rmesh = (sw_mesh_t) {
+		.size = iqm_ctx->average_area,
+		.numverts = numv,
 		.blend_palette = (byte *) blend - (byte *) model,
 		.palette_size = palette_size,
 	};
 	model->render_data = (byte *) rmesh - (byte *) model;
 
+	sw_iqm_transfer_verts (verts, numv, iqm_ctx);
 	sw_iqm_convert_tris (iqm_ctx, tris);
-	sw_iqm_load_textures (iqm_ctx);
+	sw_iqm_load_textures (model);
 }

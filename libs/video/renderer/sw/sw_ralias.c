@@ -83,44 +83,25 @@ static void R_AliasSetUpTransform (entity_t ent, int trivial_accept,
 								   qf_mesh_t *mesh);
 
 static qfm_frame_t *
-get_frame (double time, animation_t *animation, qf_mesh_t *mesh)
+get_frame (animation_t *animation, void *base)
 {
 	// pose2 points to the frame data
-	return (qfm_frame_t *) ((byte *) mesh + animation->pose2);
+	return (qfm_frame_t *) ((byte *) base + animation->pose2);
 }
 
-bool
-R_AliasCheckBBox (entity_t ent)
+static bool
+check_bounds (bool *zclipped, unsigned *anyclip, int *minz, qfm_frame_t *frame)
 {
-	int         i, flags, numv;
+	unsigned    flags;
+	int         i, numv;
 	float       zi, basepts[8][3], v0, v1, frac;
 	finalvert_t *pv0, *pv1, viewpts[16];
 	auxvert_t  *pa0, *pa1, viewaux[16];
-	bool        zclipped, zfullyclipped;
-	unsigned int anyclip, allclip;
-	int         minz;
+	bool        zfullyclipped;
+	unsigned    allclip;
 
-	// expand, rotate, and translate points into worldspace
-	visibility_t *visibility = Ent_GetComponent (ent.id,
-												 ent.base + scene_visibility,
-												 ent.reg);
-	visibility->trivial_accept = 0;
-
-	auto renderer = Entity_GetRenderer (ent);
-	pmodel = renderer->model;
-	auto model = pmodel->model;
-	if (!model) {
-		model = Cache_Get (&pmodel->cache);
-	}
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-
-	auto rmesh = (sw_alias_mesh_t *) ((byte *) model + model->render_data);
-	R_AliasSetUpTransform (ent, 0, mesh);
 
 	// construct the base bounding box for this frame
-	auto animation = Entity_GetAnimation (ent);
-	auto frame = get_frame (vr_data.realtime, animation, mesh);
-
 	// x worldspace coordinates
 	basepts[0][0] = basepts[1][0] = basepts[2][0] = basepts[3][0] =
 		frame->bounds_min[0];
@@ -139,34 +120,30 @@ R_AliasCheckBBox (entity_t ent)
 	basepts[2][2] = basepts[3][2] = basepts[6][2] = basepts[7][2] =
 		frame->bounds_max[2];
 
-	zclipped = false;
 	zfullyclipped = true;
 
-	minz = 9999;
 	for (i = 0; i < 8; i++) {
 		R_AliasTransformVector (&basepts[i][0], &viewaux[i].fv[0]);
 
 		if (viewaux[i].fv[2] < ALIAS_Z_CLIP_PLANE) {
 			// we must clip points that are closer than the near clip plane
 			viewpts[i].flags = ALIAS_Z_CLIP;
-			zclipped = true;
+			*zclipped = true;
 		} else {
-			if (viewaux[i].fv[2] < minz)
-				minz = viewaux[i].fv[2];
+			if (viewaux[i].fv[2] < *minz)
+				*minz = viewaux[i].fv[2];
 			viewpts[i].flags = 0;
 			zfullyclipped = false;
 		}
 	}
 
 	if (zfullyclipped) {
-		if (!pmodel->model)
-			Cache_Release (&pmodel->cache);
 		return false;					// everything was near-z-clipped
 	}
 
 	numv = 8;
 
-	if (zclipped) {
+	if (*zclipped) {
 		// organize points by edges, use edges to get new points (possible
 		// trivial reject)
 		for (i = 0; i < 12; i++) {
@@ -190,8 +167,8 @@ R_AliasCheckBBox (entity_t ent)
 			}
 		}
 	}
+
 	// project the vertices that remain after clipping
-	anyclip = 0;
 	allclip = ALIAS_XY_CLIP_MASK;
 
 // TODO: probably should do this loop in ASM, especially if we use floats
@@ -217,27 +194,84 @@ R_AliasCheckBBox (entity_t ent)
 		if (v1 > r_refdef.fvrectbottom)
 			flags |= ALIAS_BOTTOM_CLIP;
 
-		anyclip |= flags;
+		*anyclip |= flags;
 		allclip &= flags;
 	}
 
 	if (allclip) {
-		if (!pmodel->model)
-			Cache_Release (&pmodel->cache);
 		return false;					// trivial reject off one side
+	}
+	return true;
+}
+
+bool
+R_AliasCheckBBox (entity_t ent)
+{
+	bool        zclipped = false;
+	unsigned    anyclip = 0;
+	int         minz = 9999;
+	bool        accept = true;
+
+	// expand, rotate, and translate points into worldspace
+	visibility_t *visibility = Ent_GetComponent (ent.id,
+												 ent.base + scene_visibility,
+												 ent.reg);
+	visibility->trivial_accept = 0;
+
+	auto renderer = Entity_GetRenderer (ent);
+	pmodel = renderer->model;
+	auto model = pmodel->model;
+	if (!model) {
+		model = Cache_Get (&pmodel->cache);
+	}
+
+	auto animation = Entity_GetAnimation (ent);
+	if (model->anim.numdesc) {
+		R_AliasSetUpTransform (ent, 0, nullptr);
+		auto frame = (qfm_frame_t *) ((byte *) model + model->anim.data);
+		//auto frame = (qfm_frame_t *) ((byte *) model + model->anim.data);
+		//frame += animation->pose2;
+		if (!check_bounds (&zclipped, &anyclip, &minz, frame)) {
+			accept = false;
+			goto release;
+		}
+	} else {
+		auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		for (uint32_t i = 0; i < model->meshes.count; i++) {
+			R_AliasSetUpTransform (ent, 0, &meshes[i]);
+
+			if (meshes[i].morph.numdesc) {
+				auto frame = get_frame (animation, &meshes[i]);
+				if (!check_bounds (&zclipped, &anyclip, &minz, frame)) {
+					accept = false;
+					goto release;
+				}
+			} else {
+				qfm_frame_t frame = {
+					.bounds_min = { VectorExpand (meshes[i].bounds_min) },
+					.bounds_max = { VectorExpand (meshes[i].bounds_max) },
+				};
+				if (!check_bounds (&zclipped, &anyclip, &minz, &frame)) {
+					accept = false;
+					goto release;
+				}
+			}
+		}
 	}
 
 	visibility->trivial_accept = !anyclip & !zclipped;
 
 	if (visibility->trivial_accept) {
+		auto rmesh = (sw_mesh_t *) ((byte *) model + model->render_data);
 		if (minz > (r_aliastransition + (rmesh->size * r_resfudge))) {
 			visibility->trivial_accept |= 2;
 		}
 	}
-
-	if (!pmodel->model)
+release:
+	if (!pmodel->model) {
 		Cache_Release (&pmodel->cache);
-	return true;
+	}
+	return accept;
 }
 
 void
@@ -269,25 +303,45 @@ R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasTransformFinalVert16 (auxvert_t *av, trivertx16_t *vert)
+av_v48 (auxvert_t *av, const trivertx16_t *vert)
 {
-	vec3_t      v;
-
-	VectorScale (vert->v, 1.0f/256, v);
+	vec3_t v;
+	VectorScale (vert->v, 1.0/256, v);
 	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
 	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
 	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
 }
 
 static void
-R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
+av_v96 (auxvert_t *av, const float *v)
 {
-	av->fv[0] = DotProduct (pverts->v, aliastransform[0]) +
-		aliastransform[0][3];
-	av->fv[1] = DotProduct (pverts->v, aliastransform[1]) +
-		aliastransform[1][3];
-	av->fv[2] = DotProduct (pverts->v, aliastransform[2]) +
-		aliastransform[2][3];
+	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
+}
+
+static void
+av_v24 (auxvert_t *av, const trivertx_t *vert)
+{
+	auto v = vert->v;
+	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
+}
+
+static void R_AliasTransformFinalVert (finalvert_t *fv, const float *normal,
+									   const stvert_t *pstverts);
+
+static inline void
+fv_av_ni (finalvert_t *fv, int lightnormalindex, const stvert_t *stverts)
+{
+	R_AliasTransformFinalVert (fv, r_avertexnormals[lightnormalindex], stverts);
+}
+
+static inline void
+fv_av_n96 (finalvert_t *fv, const float *normal, const stvert_t *stverts)
+{
+	R_AliasTransformFinalVert (fv, normal, stverts);
 }
 
 /*
@@ -296,36 +350,46 @@ R_AliasTransformFinalVert8 (auxvert_t *av, trivertx_t *pverts)
 	General clipped case
 */
 static void
-R_AliasPreparePoints (qf_mesh_t *mesh, uint32_t verts_offs)
+R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
+					  uint32_t verts_offs)
 {
 	int         i;
 	stvert_t   *pstverts;
-	finalvert_t *fv;
-	auxvert_t  *av;
 	dtriangle_t *ptri;
 	finalvert_t *pfv[3];
 
 	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 	pstverts = (stvert_t *) ((byte *) mesh + attrib[2].offset);
 	r_anumverts = mesh->vertices.count;
-	fv = pfinalverts;
-	av = pauxverts;
 
 	verts_offs += attrib[0].offset;
 	if (attrib[0].type == qfm_u16) {
 		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
 		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
-			R_AliasTransformFinalVert16 (av, verts);
-			R_AliasTransformFinalVert (fv, verts->lightnormalindex, pstverts);
+			av_v48 (av, verts);
+			fv_av_ni (fv, verts->lightnormalindex, pstverts);
+			R_AliasClipAndProjectFinalVert (fv, av);
+		}
+	} else if (attrib[0].type == qfm_f32) {
+		auto verts = (float *) ((byte *) mesh + verts_offs);
+		auto norms = (float *) ((byte *) mesh + verts_offs) + 6;
+		uint32_t stride = attrib[0].stride;
+		for (i = 0; i < r_anumverts; i++, fv++, av++, pstverts++) {
+			av_v96 (av, verts);
+			fv_av_n96 (fv, norms, pstverts);
+			R_AliasClipAndProjectFinalVert (fv, av);
+			verts = (float *)((uintptr_t) verts + stride);
+			norms = (float *)((uintptr_t) norms + stride);
+		}
+	} else if (attrib[0].type == qfm_u8) {
+		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
+		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
+			av_v24 (av, verts);
+			fv_av_ni (fv, verts->lightnormalindex, pstverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	} else {
-		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
-		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
-			R_AliasTransformFinalVert8 (av, verts);
-			R_AliasTransformFinalVert (fv, verts->lightnormalindex, pstverts);
-			R_AliasClipAndProjectFinalVert (fv, av);
-		}
+		Sys_Error ("unspported position type");
 	}
 
 	// clip and draw all triangles
@@ -358,6 +422,13 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, qf_mesh_t *mesh)
 	int         i;
 	float       rotationmatrix[3][4];
 	transform_t transform = Entity_Transform (ent);
+	vec3_t      scale  = { 1, 1, 1 };
+	vec3_t      scale_origin = { 0, 0, 0 };
+
+	if (mesh) {
+		VectorCopy (mesh->scale, scale);
+		VectorCopy (mesh->scale_origin, scale_origin);
+	}
 
 	mat4f_t     mat;
 	Transform_GetWorldMatrix (transform, mat);
@@ -366,12 +437,12 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, qf_mesh_t *mesh)
 	VectorCopy (mat[2], alias_up);
 
 	for (i = 0; i < 3; i++) {
-		rotationmatrix[i][0] = mesh->scale[0] * alias_forward[i];
-		rotationmatrix[i][1] = mesh->scale[1] * alias_left[i];
-		rotationmatrix[i][2] = mesh->scale[2] * alias_up[i];
-		rotationmatrix[i][3] = mesh->scale_origin[0] * alias_forward[i]
-							 + mesh->scale_origin[1] * alias_left[i]
-							 + mesh->scale_origin[2] * alias_up[i]
+		rotationmatrix[i][0] = scale[0] * alias_forward[i];
+		rotationmatrix[i][1] = scale[1] * alias_left[i];
+		rotationmatrix[i][2] = scale[2] * alias_up[i];
+		rotationmatrix[i][3] = scale_origin[0] * alias_forward[i]
+							 + scale_origin[1] * alias_left[i]
+							 + scale_origin[2] * alias_up[i]
 							 + r_entorigin[i] - r_refdef.frame.position[i];
 	}
 
@@ -383,8 +454,7 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, qf_mesh_t *mesh)
 // correspondingly so the projected x and y come out right
 // FIXME: make this work for clipped case too?
 
-	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	if (trivial_accept && attrib[0].type != qfm_u16) {
+	if (trivial_accept) {
 		constexpr float conv = (1.0 / ((float) 0x8000 * 0x10000));
 		for (i = 0; i < 4; i++) {
 			aliastransform[0][i] *= aliasxscale * conv;
@@ -400,12 +470,12 @@ R_AliasSetUpTransform (entity_t ent, int trivial_accept, qf_mesh_t *mesh)
 	now this function just copies the texture coordinates and calculates
 	lighting actual 3D transform is done by R_AliasTransformFinalVert8/16
 	functions above */
-void
-R_AliasTransformFinalVert (finalvert_t *fv, int lightnormalindex,
-						   stvert_t *pstverts)
+static void
+R_AliasTransformFinalVert (finalvert_t *fv, const float *normal,
+						   const stvert_t *pstverts)
 {
 	int         temp;
-	float       lightcos, *plightnormal;
+	float       lightcos;
 
 	fv->v[2] = pstverts->s;
 	fv->v[3] = pstverts->t;
@@ -413,8 +483,7 @@ R_AliasTransformFinalVert (finalvert_t *fv, int lightnormalindex,
 	fv->flags = pstverts->onseam;
 
 	// lighting
-	plightnormal = r_avertexnormals[lightnormalindex];
-	lightcos = DotProduct (plightnormal, r_lightvec);
+	lightcos = DotProduct (normal, r_lightvec);
 	temp = r_ambientlight;
 
 	if (lightcos < 0) {
@@ -433,58 +502,170 @@ R_AliasTransformFinalVert (finalvert_t *fv, int lightnormalindex,
 #undef USE_INTEL_ASM //XXX asm pic hack
 #endif
 
+static void
+fv_v48_n16 (finalvert_t *fv, const trivertx16_t *verts, const stvert_t *stverts)
+{
+	int         temp;
+	float       lightcos, *plightnormal, zi;
+	float       s = 1.0/256;
+
+	for (int i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {
+		// transform and project
+		zi = 1.0 / (s * DotProduct (verts->v, aliastransform[2]) +
+					aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((s * DotProduct (verts->v, aliastransform[0]) +
+					 aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((s * DotProduct (verts->v, aliastransform[1]) +
+					 aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		plightnormal = r_avertexnormals[verts->lightnormalindex];
+		lightcos = DotProduct (plightnormal, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+	}
+}
+
+static void
+fv_v24_n8 (finalvert_t *fv, const trivertx_t *verts, const stvert_t *stverts)
+{
+	int         temp;
+	float       lightcos, *plightnormal, zi;
+
+	for (int i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {
+		// transform and project
+		zi = 1.0 / (DotProduct (verts->v, aliastransform[2]) +
+					aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((DotProduct (verts->v, aliastransform[0]) +
+					 aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((DotProduct (verts->v, aliastransform[1]) +
+					 aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		plightnormal = r_avertexnormals[verts->lightnormalindex];
+		lightcos = DotProduct (plightnormal, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+	}
+}
+
+static void
+fv_v96_n96 (finalvert_t *fv, const float *position, const float *normal,
+			uint32_t stride, const stvert_t *stverts)
+{
+	int         temp;
+	float       lightcos, zi;
+
+	for (int i = 0; i < r_anumverts; i++, fv++) {
+		// transform and project
+		zi = 1.0 / (DotProduct (position, aliastransform[2]) +
+					aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((DotProduct (position, aliastransform[0]) +
+					 aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((DotProduct (position, aliastransform[1]) +
+					 aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		lightcos = DotProduct (normal, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+		position = (float *) ((uintptr_t) position + stride);
+		normal = (float *) ((uintptr_t) normal + stride);
+		stverts = (stvert_t *) ((uintptr_t) stverts + stride);
+	}
+}
+
 //#ifndef USE_INTEL_ASM
 static void
 R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
-									  qfm_attrdesc_t *position,
-									  qfm_attrdesc_t *texcoord,
-									  void *base, uint32_t verts_offs)
+									  qfm_attrdesc_t *attr, void *base,
+									  uint32_t verts_offs)
 {
-	int         i, temp;
-	float       lightcos, *plightnormal, zi;
-
-	auto stverts = (stvert_t *) (base + texcoord->offset);
-	verts_offs += position->offset;
-	if (position->type == qfm_u16) {
-		Sys_Error ("not done yet");
-	} else {
+	if (attr[0].attr != qfm_position
+		|| attr[1].attr != qfm_normal
+		|| attr[2].attr != qfm_texcoord) {
+		Sys_Error ("unsupported layout");
+	}
+	if (attr[2].type != qfm_s32 || attr[2].components != 3) {
+		Sys_Error ("unsupported texture coords (expecting stvert_t)");
+	}
+	auto stverts = (stvert_t *) (base + attr[2].offset);
+	verts_offs += attr[0].offset;
+	if (attr[0].type == qfm_u16 && attr[0].components == 3
+	    && attr[1].type == qfm_u16 && attr[1].components == 1) {
+		auto verts = (trivertx16_t *) (base + verts_offs);
+		fv_v48_n16 (fv, verts, stverts);
+	} else if (attr[0].type == qfm_f32 && attr[0].components == 3
+			   && attr[1].type == qfm_f32 && attr[1].components == 3
+			   && attr[0].stride == attr[1].stride) {
+		int32_t diff = attr[1].offset - attr[0].offset;
+		auto position = (float *) (base + verts_offs);
+		auto normal = (float *) (base + verts_offs + diff);
+		fv_v96_n96 (fv, position, normal, attr[0].stride, stverts);
+	} else if (attr[0].type == qfm_u8 && attr[0].components == 3
+			   && attr[1].type == qfm_u8 && attr[1].components == 1) {
 		auto verts = (trivertx_t *) (base + verts_offs);
-
-		for (i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {
-			// transform and project
-			zi = 1.0 / (DotProduct (verts->v, aliastransform[2]) +
-						aliastransform[2][3]);
-
-			// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
-			// scaled up by 1/2**31, and the scaling cancels out for x and y in
-			// the projection
-			fv->v[5] = zi;
-
-			fv->v[0] = ((DotProduct (verts->v, aliastransform[0]) +
-						 aliastransform[0][3]) * zi) + aliasxcenter;
-			fv->v[1] = ((DotProduct (verts->v, aliastransform[1]) +
-						 aliastransform[1][3]) * zi) + aliasycenter;
-
-			fv->v[2] = stverts->s;
-			fv->v[3] = stverts->t;
-			fv->flags = stverts->onseam;
-
-			// lighting
-			plightnormal = r_avertexnormals[verts->lightnormalindex];
-			lightcos = DotProduct (plightnormal, r_lightvec);
-			temp = r_ambientlight;
-
-			if (lightcos < 0) {
-				temp += (int) (r_shadelight * lightcos);
-
-				// clamp; because we limited the minimum ambient and shading
-				// light, we don't have to clamp low light, just bright
-				if (temp < 0)
-					temp = 0;
-			}
-
-			fv->v[4] = temp;
-		}
+		fv_v24_n8 (fv, verts, stverts);
 	}
 }
 //#endif
@@ -504,13 +685,13 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 }
 
 static void
-R_AliasPrepareUnclippedPoints (qf_mesh_t *mesh, uint32_t verts_offs)
+R_AliasPrepareUnclippedPoints (finalvert_t *fv, qf_mesh_t *mesh,
+							   uint32_t verts_offs)
 {
 	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 	r_anumverts = mesh->vertices.count;
 
-	R_AliasTransformAndProjectFinalVerts (pfinalverts, &attrib[0], &attrib[2],
-										  mesh, verts_offs);
+	R_AliasTransformAndProjectFinalVerts (fv, attrib, mesh, verts_offs);
 
 	if (r_affinetridesc.drawtype)
 		D_PolysetDrawFinalVerts (pfinalverts, r_anumverts);
@@ -534,11 +715,17 @@ R_AliasSetupSkin (entity_t ent, qf_mesh_t *mesh)
 			tex_t      *tex = skin->tex;
 			r_affinetridesc.skin = tex->data;
 			r_affinetridesc.skinwidth = tex->width;
+			r_affinetridesc.seamfixupX16 = (tex->width >> 1) << 16;
 			r_affinetridesc.skinheight = tex->height;
 		}
 	}
 	if (!r_affinetridesc.skin) {
-		auto skinpic = (qpic_t *) ((byte *) mesh + renderer->skindesc);
+		qpic_t *skinpic;
+		if (renderer->skindesc) {
+			skinpic = (qpic_t *) ((byte *) mesh + renderer->skindesc);
+		} else {
+			skinpic = (qpic_t *) ((byte *) mesh + mesh->skin.data);
+		}
 		r_affinetridesc.skin = skinpic->data;
 		r_affinetridesc.skinwidth = skinpic->width;
 		r_affinetridesc.seamfixupX16 = (skinpic->width >> 1) << 16;
@@ -579,48 +766,21 @@ static uint32_t
 R_AliasSetupFrame (entity_t ent, qf_mesh_t *mesh)
 {
 	auto animation = Entity_GetAnimation (ent);
-	auto frame = get_frame (vr_data.realtime, animation, mesh);
+	auto frame = get_frame (animation, mesh);
 	return frame->data;
 }
 
-
-void
-R_AliasDrawModel (entity_t ent, alight_t *lighting)
+static void
+draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
+		   finalvert_t *fv, auxvert_t *av)
 {
-	int          size;
-	finalvert_t *finalverts;
-
-	r_amodels_drawn++;
-
-	auto renderer = Entity_GetRenderer (ent);
-	if (renderer->onlyshadows) {
-		return;
-	}
-	auto model = renderer->model->model;
-	if (!model) {
-		model = Cache_Get (&renderer->model->cache);
-	}
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-
-	size = (CACHE_SIZE - 1)
-		+ sizeof (finalvert_t) * (mesh->vertices.count + 1)
-		+ sizeof (auxvert_t) * mesh->vertices.count;
-	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
-	if (!finalverts)
-		Sys_Error ("R_AliasDrawModel: out of memory");
-
-	// cache align
-	pfinalverts = (finalvert_t *)
-		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-	pauxverts = (auxvert_t *) &pfinalverts[mesh->vertices.count + 1];
-
 	R_AliasSetupSkin (ent, mesh);
 	visibility_t *visibility = Ent_GetComponent (ent.id,
 												 ent.base + scene_visibility,
 												 ent.reg);
 	R_AliasSetUpTransform (ent, visibility->trivial_accept, mesh);
 	R_AliasSetupLighting (lighting);
-	uint32_t verts_offs = mesh->vertices.offset;
+	uint32_t verts_offs = mesh->vertices.offset * mesh->vertex_stride;
 	if (mesh->morph.numdesc) {
 		verts_offs = R_AliasSetupFrame (ent, mesh);
 	}
@@ -648,11 +808,48 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	if (visibility->trivial_accept && attrib[0].type != qfm_u16) {
-		R_AliasPrepareUnclippedPoints (mesh, verts_offs);
+	if (visibility->trivial_accept) {
+		R_AliasPrepareUnclippedPoints (fv, mesh, verts_offs);
 	} else {
-		R_AliasPreparePoints (mesh, verts_offs);
+		R_AliasPreparePoints (fv, av, mesh, verts_offs);
+	}
+}
+
+void
+R_AliasDrawModel (entity_t ent, alight_t *lighting)
+{
+	r_amodels_drawn++;
+
+	auto renderer = Entity_GetRenderer (ent);
+	if (renderer->onlyshadows) {
+		return;
+	}
+	auto model = renderer->model->model;
+	if (!model) {
+		model = Cache_Get (&renderer->model->cache);
+	}
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+	auto rmesh = (sw_mesh_t *) ((byte *) model + model->render_data);
+	size_t size = (CACHE_SIZE - 1)
+				+ sizeof (finalvert_t) * (rmesh->numverts + 1)
+				+ sizeof (auxvert_t) * rmesh->numverts;
+	auto finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
+	if (!finalverts) {
+		Sys_Error ("R_AliasDrawModel: out of memory");
+	}
+#if 1
+	for (size_t i = 0; i < size / 4; i++) {
+		((uint32_t*)finalverts)[i] = 0xdeadbeef;
+	}
+#endif
+	// cache align
+	pfinalverts = (finalvert_t *)RUP ((intptr_t)finalverts, CACHE_SIZE);
+	pauxverts = (auxvert_t *) &pfinalverts[rmesh->numverts + 1];
+
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		auto fv = pfinalverts + meshes[i].vertices.offset;
+		auto av = pauxverts + meshes[i].vertices.offset;
+		draw_mesh (ent, lighting, &meshes[i], fv, av);
 	}
 
 	if (!renderer->model->model) {

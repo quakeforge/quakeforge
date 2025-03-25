@@ -103,7 +103,7 @@ process_frame (mod_alias_ctx_t *alias_ctx, qfm_frame_t *frame,
 		auto verts = (trivertx16_t *) frame_verts;
 		for (int i = 0; i < mdl->numverts; i++) {
 			VectorMultAdd (lo_verts[i].v, 256, hi_verts[i].v, verts[i].v);
-			verts[i].lightnormalindex  = lo_verts[i].lightnormalindex;
+			verts[i].lightnormalindex = lo_verts[i].lightnormalindex;
 		}
 	} else {
 		memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
@@ -120,11 +120,11 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	int         numv = alias_ctx->stverts.size;
 	int         numt = alias_ctx->triangles.size;
 	int         nump = alias_ctx->poseverts.size;
-	int         size = sizeof (sw_alias_mesh_t)
-						+ sizeof (qfm_attrdesc_t[3])
-						+ sizeof (stvert_t[numv])
-						+ sizeof (dtriangle_t[numt])
-						+ sizeof (qfm_frame_t[nump]);
+	size_t size = sizeof (sw_mesh_t)
+				+ sizeof (qfm_attrdesc_t[3])
+				+ sizeof (stvert_t[numv])
+				+ sizeof (dtriangle_t[numt])
+				+ sizeof (qfm_frame_t[nump]);
 	if (extra) {
 		size += sizeof (trivertx16_t[nump * numv]);
 	} else {
@@ -132,7 +132,7 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	}
 
 	const char *name = alias_ctx->mod->name;
-	sw_alias_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	sw_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto stverts = (stvert_t *) &attribs[3];
 	auto tris = (dtriangle_t *) &stverts[numv];
@@ -184,11 +184,14 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.count = 2,
 	};
 	mesh->vertices = (qfm_loc_t) {
-		.offset = (byte *) frame_verts - (byte *) mesh,
+		.offset = 0,
 		.count = mdl->numverts,
 	};
 
-	rmesh->size = mdl->size * ALIAS_BASE_SIZE_RATIO;
+	*rmesh = (sw_mesh_t) {
+		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
+		.numverts = numv,
+	};
 	model->render_data = (byte *) rmesh - (byte *) model;
 
 	mesh->triangle_count = mdl->numtris;

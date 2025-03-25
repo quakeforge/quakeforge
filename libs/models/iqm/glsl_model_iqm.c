@@ -165,6 +165,7 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	auto index_type = mesh_index_type (iqm->num_vertexes);
 	uint32_t index_size = mesh_type_size (index_type);
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		meshes[i].triangle_count = iqm_ctx->meshes[i].num_triangles;
 		meshes[i].index_type = index_type;
 		meshes[i].indices = iqm_ctx->meshes[i].first_triangle * index_size * 3;
 		meshes[i].attributes = (qfm_loc_t) {

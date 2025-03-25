@@ -56,6 +56,7 @@ typedef struct mod_iqm_ctx_s {
 	uint16_t   *frames;
 	iqmbounds  *bounds;
 	const char *comment;
+	float       average_area;
 } mod_iqm_ctx_t;
 
 typedef struct mod_sprite_ctx_s {
