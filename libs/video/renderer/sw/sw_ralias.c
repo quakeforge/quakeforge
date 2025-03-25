@@ -237,25 +237,27 @@ R_AliasCheckBBox (entity_t ent)
 		}
 	} else {
 		auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		accept = false;
 		for (uint32_t i = 0; i < model->meshes.count; i++) {
 			R_AliasSetUpTransform (ent, 0, &meshes[i]);
 
 			if (meshes[i].morph.numdesc) {
 				auto frame = get_frame (animation, &meshes[i]);
-				if (!check_bounds (&zclipped, &anyclip, &minz, frame)) {
-					accept = false;
-					goto release;
+				if (check_bounds (&zclipped, &anyclip, &minz, frame)) {
+					accept = true;
 				}
 			} else {
 				qfm_frame_t frame = {
 					.bounds_min = { VectorExpand (meshes[i].bounds_min) },
 					.bounds_max = { VectorExpand (meshes[i].bounds_max) },
 				};
-				if (!check_bounds (&zclipped, &anyclip, &minz, &frame)) {
-					accept = false;
-					goto release;
+				if (check_bounds (&zclipped, &anyclip, &minz, &frame)) {
+					accept = true;
 				}
 			}
+		}
+		if (!accept) {
+			goto release;
 		}
 	}
 
@@ -354,38 +356,40 @@ R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
 					  uint32_t verts_offs)
 {
 	int         i;
-	stvert_t   *pstverts;
+	stvert_t   *stverts;
 	dtriangle_t *ptri;
 	finalvert_t *pfv[3];
 
 	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	pstverts = (stvert_t *) ((byte *) mesh + attrib[2].offset);
+	stverts = (stvert_t *) ((byte *) mesh + attrib[2].offset);
 	r_anumverts = mesh->vertices.count;
 
+	stverts += mesh->vertices.offset * attrib[2].stride;
 	verts_offs += attrib[0].offset;
 	if (attrib[0].type == qfm_u16) {
 		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
-		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
+		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
 			av_v48 (av, verts);
-			fv_av_ni (fv, verts->lightnormalindex, pstverts);
+			fv_av_ni (fv, verts->lightnormalindex, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	} else if (attrib[0].type == qfm_f32) {
 		auto verts = (float *) ((byte *) mesh + verts_offs);
 		auto norms = (float *) ((byte *) mesh + verts_offs) + 6;
 		uint32_t stride = attrib[0].stride;
-		for (i = 0; i < r_anumverts; i++, fv++, av++, pstverts++) {
+		for (i = 0; i < r_anumverts; i++, fv++, av++) {
 			av_v96 (av, verts);
-			fv_av_n96 (fv, norms, pstverts);
+			fv_av_n96 (fv, norms, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 			verts = (float *)((uintptr_t) verts + stride);
 			norms = (float *)((uintptr_t) norms + stride);
+			stverts = (stvert_t *)((uintptr_t) stverts + attrib[2].stride);
 		}
 	} else if (attrib[0].type == qfm_u8) {
 		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
-		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, pstverts++) {
+		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
 			av_v24 (av, verts);
-			fv_av_ni (fv, verts->lightnormalindex, pstverts);
+			fv_av_ni (fv, verts->lightnormalindex, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
 		}
 	} else {
