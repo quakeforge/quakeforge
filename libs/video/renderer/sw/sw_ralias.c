@@ -356,15 +356,14 @@ R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
 					  uint32_t verts_offs)
 {
 	int         i;
-	stvert_t   *stverts;
 	dtriangle_t *ptri;
 	finalvert_t *pfv[3];
 
 	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	stverts = (stvert_t *) ((byte *) mesh + attrib[2].offset);
+	uint32_t stoffs = mesh->vertices.offset * attrib[2].stride;
+	auto stverts = (stvert_t *) ((byte*) mesh + attrib[2].offset + stoffs);
 	r_anumverts = mesh->vertices.count;
 
-	stverts += mesh->vertices.offset * attrib[2].stride;
 	verts_offs += attrib[0].offset;
 	if (attrib[0].type == qfm_u16) {
 		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
@@ -642,7 +641,7 @@ fv_v96_n96 (finalvert_t *fv, const float *position, const float *normal,
 //#ifndef USE_INTEL_ASM
 static void
 R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
-									  qfm_attrdesc_t *attr, void *base,
+									  qfm_attrdesc_t *attr, qf_mesh_t *mesh,
 									  uint32_t verts_offs)
 {
 	if (attr[0].attr != qfm_position
@@ -653,22 +652,23 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
 	if (attr[2].type != qfm_s32 || attr[2].components != 3) {
 		Sys_Error ("unsupported texture coords (expecting stvert_t)");
 	}
-	auto stverts = (stvert_t *) (base + attr[2].offset);
+	uint32_t stoffs = mesh->vertices.offset * attr[2].stride;
+	auto stverts = (stvert_t *) ((byte*) mesh + attr[2].offset + stoffs);
 	verts_offs += attr[0].offset;
 	if (attr[0].type == qfm_u16 && attr[0].components == 3
 	    && attr[1].type == qfm_u16 && attr[1].components == 1) {
-		auto verts = (trivertx16_t *) (base + verts_offs);
+		auto verts = (trivertx16_t *) ((byte*) mesh + verts_offs);
 		fv_v48_n16 (fv, verts, stverts);
 	} else if (attr[0].type == qfm_f32 && attr[0].components == 3
 			   && attr[1].type == qfm_f32 && attr[1].components == 3
 			   && attr[0].stride == attr[1].stride) {
 		int32_t diff = attr[1].offset - attr[0].offset;
-		auto position = (float *) (base + verts_offs);
-		auto normal = (float *) (base + verts_offs + diff);
+		auto position = (float *) ((byte*) mesh + verts_offs);
+		auto normal = (float *) ((byte*) mesh + verts_offs + diff);
 		fv_v96_n96 (fv, position, normal, attr[0].stride, stverts);
 	} else if (attr[0].type == qfm_u8 && attr[0].components == 3
 			   && attr[1].type == qfm_u8 && attr[1].components == 1) {
-		auto verts = (trivertx_t *) (base + verts_offs);
+		auto verts = (trivertx_t *) ((byte*) mesh + verts_offs);
 		fv_v24_n8 (fv, verts, stverts);
 	}
 }
