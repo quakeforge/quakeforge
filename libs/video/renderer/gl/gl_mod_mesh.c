@@ -1,7 +1,7 @@
 /*
-	gl_mod_alias.c
+	gl_mod_mesh.c
 
-	Draw Alias Model
+	Draw mesh models
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -267,7 +267,57 @@ GL_DrawAliasShadow (transform_t transform, const qf_mesh_t *mesh,
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts16 (qf_mesh_t *mesh, entity_t e)
+GL_GetAliasFrameVertsFloat (qf_mesh_t *mesh, entity_t e,
+							qfm_attrdesc_t *position,
+							qfm_attrdesc_t *normal,
+							qfm_attrdesc_t *tex_coord)
+{
+	int           count, i;
+	vert_order_t *vo;
+	blended_vert_t *vo_v;
+	tex_coord_t *vo_t;
+
+	count = mesh->triangle_count * 3;
+	size_t size = sizeof (vert_order_t)
+				+ sizeof (tex_coord_t[count])
+				+ sizeof (blended_vert_t[count]);
+	vo = Hunk_TempAlloc (0, size);
+	auto texc = (tex_coord_t *) &vo[1];
+	*vo = (vert_order_t) {
+		.verts = (blended_vert_t *) &texc[count],
+		.tex_coord = texc,
+		.count = count,
+	};
+	uintptr_t pos = ((uintptr_t) mesh + position->offset);
+	uintptr_t norm = ((uintptr_t) mesh + normal->offset);
+	uintptr_t tex = ((uintptr_t) mesh + tex_coord->offset);
+
+#define VERT_LOOP(type) \
+	do { \
+		auto indices = (uint16_t *)((byte *) mesh + mesh->indices); \
+		for (i = 0, vo_v = vo->verts, vo_t = vo->tex_coord; i < count; \
+			 i++, vo_v++, vo_t++) { \
+			type index = *indices++; \
+			auto p = (float *) (pos + index * position->stride); \
+			auto n = (float *) (norm + index * normal->stride); \
+			VectorCopy (p, vo_v->vert); \
+			VectorCopy (n, vo_v->normal); \
+			*vo_t = *(tex_coord_t *) (tex + index * tex_coord->stride); \
+		} \
+	} while (0)
+
+	if (mesh->index_type == qfm_u32) {
+		VERT_LOOP(uint32_t);
+	} else if (mesh->index_type == qfm_u16) {
+		VERT_LOOP(uint16_t);
+	} else {
+		VERT_LOOP(uint8_t);
+	}
+	return vo;
+}
+
+static inline vert_order_t *
+GL_GetAliasFrameVerts16 (qf_mesh_t *mesh, entity_t e, qfm_attrdesc_t *tex_coord)
 {
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
@@ -277,13 +327,9 @@ GL_GetAliasFrameVerts16 (qf_mesh_t *mesh, entity_t e)
 
 	count = mesh->vertices.count;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	//FIXME assumes 2 is texcoord
-	auto tex_coord = &attr[2];
 	*vo = (vert_order_t) {};
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (tex_coord->type != qfm_special) {
-		//FIXME assumes 2 x float32
 		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + tex_coord->offset);
 	} else {
 		vo->order = (int *) ((byte *) mesh + tex_coord->offset);
@@ -331,7 +377,7 @@ GL_GetAliasFrameVerts16 (qf_mesh_t *mesh, entity_t e)
 }
 
 static inline vert_order_t *
-GL_GetAliasFrameVerts (qf_mesh_t *mesh, entity_t e)
+GL_GetAliasFrameVerts (qf_mesh_t *mesh, entity_t e, qfm_attrdesc_t *tex_coord)
 {
 	auto animation = Entity_GetAnimation (e);
 	float blend = animation->blend;
@@ -341,13 +387,9 @@ GL_GetAliasFrameVerts (qf_mesh_t *mesh, entity_t e)
 
 	count = mesh->vertices.count;
 	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
-	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	//FIXME assumes 2 is texcoord
-	auto tex_coord = &attr[2];
 	*vo = (vert_order_t) {};
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (tex_coord->type != qfm_special) {
-		//FIXME assumes 2 x float32
 		vo->tex_coord = (tex_coord_t *) ((byte *) mesh + tex_coord->offset);
 	} else {
 		vo->order = (int *) ((byte *) mesh + tex_coord->offset);
@@ -433,16 +475,47 @@ gl_alias_draw_mesh (qf_mesh_t *mesh, entity_t e, renderer_t *renderer,
 		glskin.fb = 0;
 	}
 
+	qfm_attrdesc_t *position = nullptr;
+	qfm_attrdesc_t *normal = nullptr;
+	qfm_attrdesc_t *texcoord = nullptr;
 	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
-	//FIXME assumes 0 is position and only u16 and u8
-	if (attr[0].type == qfm_u16) {
+	for (uint32_t i = 0; i < mesh->attributes.count; i++) {
+		if (attr[i].attr == qfm_position) {
+			position = &attr[i];
+		} else if (attr[i].attr == qfm_normal) {
+			normal = &attr[i];
+		} else if (attr[i].attr == qfm_texcoord) {
+			texcoord = &attr[i];
+		}
+	}
+	if (!position || !normal || !texcoord) {
+		Sys_Error ("missing vertex attribute");
+	}
+	if (texcoord->type != qfm_special && texcoord->type != qfm_f32) {
+		Sys_Error ("unsupported texcoord format");
+	}
+	if (position->type == qfm_u16 && position->components == 3
+		&& normal->type == qfm_u16 && normal->components == 1) {
 		// because we multipled by 256 when we loaded the verts, we have to
 		// scale by 1/256 when drawing.
+		// FIXME this should be done in the loader
 		VectorScale (mesh->scale, 1 / 256.0, scale);
-		vo = GL_GetAliasFrameVerts16 (mesh, e);
-	} else {
+		vo = GL_GetAliasFrameVerts16 (mesh, e, texcoord);
+	} else if (position->type == qfm_u8 && position->components == 3
+			   && normal->type == qfm_u8 && normal->components == 1) {
 		VectorScale (mesh->scale, 1, scale);
-		vo = GL_GetAliasFrameVerts (mesh, e);
+		vo = GL_GetAliasFrameVerts (mesh, e, texcoord);
+	} else if (position->type == qfm_f32 && position->components == 3
+			   && normal->type == qfm_f32 && normal->components == 3) {
+		if ((mesh->index_type != qfm_u32
+			 && mesh->index_type != qfm_u16
+			 && mesh->index_type != qfm_u8) || !mesh->indices) {
+			Sys_Error ("unsupported index format");
+		}
+		VectorScale (mesh->scale, 1, scale);
+		vo = GL_GetAliasFrameVertsFloat (mesh, e, position, normal, texcoord);
+	} else {
+		Sys_Error ("unsupported vertex format");
 	}
 
 	// setup the transform

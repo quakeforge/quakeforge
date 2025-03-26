@@ -62,20 +62,20 @@ gl_iqm_clear (model_t *mod, void *data)
 }
 
 static void
-gl_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx)
+gl_iqm_load_textures (qf_model_t *model, mod_iqm_ctx_t *iqm_ctx)
 {
-	auto model = iqm_ctx->qf_model;
-	auto meshes = iqm_ctx->qf_meshes;
 	dstring_t  *str = dstring_new ();
 
 	size_t size = sizeof (tex_t[model->meshes.count])
 				+ sizeof (glskin_t[model->meshes.count]);
 
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+	auto text = (const char *) model + model->text.offset;
 	auto skintex = (tex_t *) Hunk_AllocName (nullptr, size, iqm_ctx->mod->name);
 	auto glskin = (glskin_t *) &skintex[model->meshes.count];
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		auto mesh = &meshes[i];
-		dstring_copystr (str, iqm_ctx->text + mesh->material);
+		dstring_copystr (str, text + mesh->material);
 		QFS_StripExtension (str->str, str->str);
 		GLuint texid;
 		tex_t *tex;
@@ -114,18 +114,27 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	auto model = iqm_ctx->qf_model;
 	auto meshes = iqm_ctx->qf_meshes;
 
+	uint32_t index_count = iqm->num_triangles * 3;
+	auto index_type = mesh_index_type (iqm->num_vertexes);
+	uint32_t index_size = mesh_type_size (index_type);
+
 	size_t size = sizeof (qfm_attrdesc_t[3 * model->meshes.count])
 				+ sizeof (keyframedesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count])
+				+ index_size * index_count
 				+ sizeof (mesh_vrt_t[iqm->num_vertexes])
 				+ sizeof (qfm_blend_t[palette_size]);
 	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, iqm_ctx->mod->name);
 	auto skindescs = (keyframedesc_t *) &attribs[3 * model->meshes.count];
 	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
-	auto verts = (mesh_vrt_t *) &skinframes[model->meshes.count];
+	auto indices = (void *) &skinframes[model->meshes.count];
+	auto verts = (mesh_vrt_t *) ((byte *) indices + index_size * index_count);
 	auto blend = (qfm_blend_t *) &verts[iqm->num_vertexes];
 
 	memcpy (blend, blend_palette, sizeof (qfm_blend_t) * palette_size);
+	auto iqm_indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
+	auto index_bytes = pack_indices (iqm_indices, index_count, index_type);
+	memcpy (indices, iqm_indices, index_bytes);
 
 	attribs[0] = (qfm_attrdesc_t) {
 		.offset = offsetof (mesh_vrt_t, vertex),
@@ -152,9 +161,17 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		memcpy (&attribs[3 * i], attribs, sizeof (qfm_attrdesc_t[3]));
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		auto m = &iqm_ctx->meshes[i];
+		meshes[i].index_type = index_type;
+		meshes[i].indices = (byte *) indices - (byte *) &meshes[i];
+		indices = (void *)((byte *) indices + index_size * m->num_triangles*3);
 		for (int j = 0; j < 3; j++) {
 			attribs[i * 3 + j].offset += (byte *) verts - (byte *) &meshes[i];
 		}
+		meshes[i].attributes = (qfm_loc_t) {
+			.offset = (byte *) &attribs[i * 3] - (byte *) &meshes[i],
+			.count = 3,
+		};
 		meshes[i].skin = (anim_t) {
 			.numdesc = 1,
 			.descriptors = (byte *) &skindescs[i] - (byte *) &meshes[i],
@@ -200,5 +217,5 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		iqm_position += 3;
 	}
 
-	gl_iqm_load_textures (iqm_ctx);
+	gl_iqm_load_textures (model, iqm_ctx);
 }
