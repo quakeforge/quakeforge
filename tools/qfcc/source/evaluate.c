@@ -278,6 +278,11 @@ evaluate_constexpr (const expr_t *e)
 		auto opa = get_def (s->opa);
 		auto opb = get_def (s->opb);
 		auto opc = get_def (s->opc);
+		if (strcmp (s->opcode, "shl") == 0) {
+			s->opa->type = uint_type (opa->type);
+			s->opb->type = uint_type (opb->type);
+			s->opc->type = uint_type (opc->type);
+		}
 		auto inst = opcode_find (s->opcode, s->opa, s->opb, s->opc);
 		if (!inst) {
 			print_statement (s);
