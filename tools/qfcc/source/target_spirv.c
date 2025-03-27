@@ -2919,6 +2919,17 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 			spirv_create_entry_point (func->name, model_name);
 		}
 		return true;
+	} else if (strcmp (attr->name, "capability") == 0) {
+		//FIXME this should apply only to entry points
+		const char *capability_name = nullptr;
+		if (count >= 1 && is_string_val (params[0])) {
+			capability_name = expr_string (params[0]);
+		} else {
+			error (0, "capability attribute requires a string");
+		}
+		uint32_t capability = spirv_enum_val ("Capability", capability_name);
+		spirv_add_capability (pr.module, capability);
+		return true;
 	}
 	return false;
 }
