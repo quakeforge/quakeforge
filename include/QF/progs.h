@@ -2034,7 +2034,7 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
-	pr_uivec4_t bases;				///< base registers on entry to function
+	pr_uvec4_t  bases;				///< base registers on entry to function
 	pr_uint_t   staddr;				///< Return statement.
 	pr_uint_t   stack_ptr;			///< data stack on entry to function
 	bfunction_t *func;				///< Calling function.
@@ -2123,7 +2123,7 @@ struct progs_s {
 	pr_type_t  *pr_globals;
 	pr_uint_t   globals_size;
 	pr_uint_t   null_size;		///< size of block considered null page
-	pr_uivec4_t pr_bases;		///< base registers (index in opcode)
+	pr_uvec4_t  pr_bases;		///< base registers (index in opcode)
 	///@}
 
 	/// \name parameter block

@@ -410,15 +410,15 @@ get_value_string (const ex_value_t *value)
 					break;
 				case 2:
 					str = va (0, "[%"PRIu32", %"PRIi32"]",
-							  VEC2_EXP (value->uivec2_val));
+							  VEC2_EXP (value->uvec2_val));
 					break;
 				case 3:
 					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32"]",
-							  VectorExpand (value->uivec3_val));
+							  VectorExpand (value->uvec3_val));
 					break;
 				case 4:
 					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
-							  VEC4_EXP (value->uivec4_val));
+							  VEC4_EXP (value->uvec4_val));
 					break;
 			}
 			return va (0, "%s %s", type->name, str);

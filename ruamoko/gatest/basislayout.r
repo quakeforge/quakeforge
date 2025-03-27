@@ -22,7 +22,7 @@
 		group_base[i + 1] = [groups[i] count];
 		num_blades += group_base[i + 1];
 
-		uivec2      r = [groups[i] blade_range];
+		uvec2       r = [groups[i] blade_range];
 		if (r[0] < layout.range[0]) {
 			layout.range[0] = r[0];
 		}

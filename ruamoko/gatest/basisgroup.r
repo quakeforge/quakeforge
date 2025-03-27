@@ -44,7 +44,7 @@
 	return count;
 }
 
--(uivec2)blade_range
+-(uvec2)blade_range
 {
 	return range;
 }

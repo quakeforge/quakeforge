@@ -4,7 +4,7 @@ vector maxs = '16 16 32';
 ivec4 i4 = '1 2 -3 4';
 vec4 v4 = '1 2 -3 4';
 lvec4 l4 = '1 2 -3 4';
-uivec4 ui4 = '1 2 -3 4';
+uvec4 ui4 = '1 2 -3 4';
 dvec4 d4 = '1 2 -3 4';
 ulvec4 ul4 = '1 2 -3 4';
 
@@ -29,7 +29,7 @@ int check_lvec4 (lvec4 v, long x, long y, long z, long w)
 	return v.x != x || v.y != y || v.z != z || v.w != w;
 }
 
-int check_uivec4 (uivec4 v, unsigned x, unsigned y, unsigned z, unsigned w)
+int check_uvec4 (uvec4 v, unsigned x, unsigned y, unsigned z, unsigned w)
 {
 	return v.x != x || v.y != y || v.z != z || v.w != w;
 }
@@ -54,7 +54,7 @@ main ()
 	ret |= check_ivec4 (i4, 1, 2, -3, 4);
 	ret |= check_vec4 (v4, 1, 2, -3, 4);
 	ret |= check_lvec4 (l4, 1, 2, -3, 4);
-	ret |= check_uivec4 (ui4, 1, 2, -3, 4);
+	ret |= check_uvec4 (ui4, 1, 2, -3, 4);
 	ret |= check_dvec4 (d4, 1, 2, -3, 4);
 	ret |= check_ulvec4 (ul4, 1, 2, -3, 4);
 	return ret;

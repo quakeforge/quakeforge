@@ -30,7 +30,7 @@ vec_types = [
     "vec",
     "lvec",
     "dvec",
-    "uivec",
+    "uvec",
     "ivec",     # 32-bit bool
     "ulvec",
     "lvec",     # 64-bit bool

@@ -9,14 +9,14 @@
 @interface BasisGroup : Object
 {
 	int         count;
-	uivec2      range;
+	uvec2       range;
 	BasisBlade **blades;
 	int        *map;
 	Set        *set;
 }
 +(BasisGroup *) new:(int) count basis:(BasisBlade **)blades;
 -(int)count;
--(uivec2)blade_range;
+-(uvec2)blade_range;
 -(BasisBlade *) bladeAt:(int) ind;
 -(BasisBlade *) blade:(unsigned) mask;
 -(Set *) set;

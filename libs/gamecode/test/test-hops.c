@@ -2,11 +2,11 @@
 
 #include "QF/mathlib.h"
 
-static pr_uivec4_t uint_hop_init[7] = {
+static pr_uvec4_t uint_hop_init[7] = {
 	{ 0x0000ff00, 0x0000f0f0, 0x0000cccc, 0x0000aaaa },
 };
 
-static pr_uivec4_t uint_hop_expect[] = {
+static pr_uvec4_t uint_hop_expect[] = {
 	{ 0x0000ff00, 0x0000f0f0, 0x0000cccc, 0x0000aaaa },
 	{ 0x00008888, 0x0000eeee, 0x00006666, 0x00017776 },
 	{ 0xffff7777, 0xffff1111, 0xffff9999,          0 },

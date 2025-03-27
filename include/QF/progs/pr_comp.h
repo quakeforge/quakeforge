@@ -48,9 +48,9 @@ PR_VEC_TYPE (pr_int_t, pr_ivec2_t, 2);
 typedef pr_int_t pr_ivec3_t[3];
 PR_VEC_TYPE (pr_int_t, pr_ivec4_t, 4);
 
-PR_VEC_TYPE (pr_uint_t, pr_uivec2_t, 2);
-typedef pr_uint_t pr_uivec3_t[3];
-PR_VEC_TYPE (pr_uint_t, pr_uivec4_t, 4);
+PR_VEC_TYPE (pr_uint_t, pr_uvec2_t, 2);
+typedef pr_uint_t pr_uvec3_t[3];
+PR_VEC_TYPE (pr_uint_t, pr_uvec4_t, 4);
 
 PR_VEC_TYPE (float, pr_vec2_t, 2);
 typedef pr_float_t pr_vec3_t[3];

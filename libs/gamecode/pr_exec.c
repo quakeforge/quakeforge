@@ -1980,16 +1980,16 @@ pr_with (progs_t *pr, const dstatement_t *st)
 		case 8:
 			// pushregs
 			stk = pr_stack_push (pr);
-			STK(uivec4) = pr->pr_bases;
+			STK(uvec4) = pr->pr_bases;
 			return;
 		case 9:
 			// popregs
 			stk = pr_stack_pop (pr);
-			pr->pr_bases = STK(uivec4);
+			pr->pr_bases = STK(uvec4);
 			return;
 		case 10:
 			// reset
-			pr->pr_bases = (pr_uivec4_t) {};
+			pr->pr_bases = (pr_uvec4_t) {};
 			return;
 		case 11:
 			// return pointer
@@ -2519,9 +2519,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_3 (OP, T, t1, op); \
 			OP_op_4 (OP, T, t4, op)
 			// 0 1011
-			OP_op_T (DIV, u, uint, uivec2, uivec4, /);
+			OP_op_T (DIV, u, uint, uvec2, uvec4, /);
 			OP_op_T (DIV, U, ulong, ulvec2, ulvec4, /);
-			OP_op_T (REM, u, uint, uivec2, uivec4, %);
+			OP_op_T (REM, u, uint, uvec2, uvec4, %);
 			OP_op_T (REM, U, ulong, ulvec2, ulvec4, %);
 			// 0 1100
 			OP_cmp(NE, !=);
@@ -2704,7 +2704,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// 1 0111
 			OP_op_T (ASR, I, int, ivec2, ivec4, >>);
-			OP_op_T (SHR, u, uint, uivec2, uivec4, >>);
+			OP_op_T (SHR, u, uint, uvec2, uvec4, >>);
 			OP_op_T (ASR, L, long, lvec2, lvec4, >>);
 			OP_op_T (SHR, U, ulong, ulvec2, ulvec4, >>);
 			// 1 1000
@@ -2713,7 +2713,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (BITXOR, I, int, ivec2, ivec4, ^);
 			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
 			// 1 1001
-			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uivec2, uivec4);
+			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uvec2, uvec4);
 			case OP_JUMP_A:
 			case OP_JUMP_B:
 			case OP_JUMP_C:
@@ -2752,7 +2752,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			// 1 1010
-			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
+			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uvec2, uvec4);
 			case OP_SWIZZLE_F_4:
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), (pr_ushort_t) st->b);
 				break;
@@ -2859,7 +2859,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (BITXOR, L, long, lvec2, lvec4, ^);
 			OP_uop_T (BITNOT, L, long, lvec2, lvec4, ~);
 			// 1 1101
-			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uivec2, uivec4);
+			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uvec2, uvec4);
 			case OP_MOVE_I:
 				memmove (op_c, op_a, (pr_ushort_t) st->b * sizeof (pr_type_t));
 				break;
@@ -2907,7 +2907,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			// 1 1110
-			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uivec2, uivec4);
+			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uvec2, uvec4);
 			case OP_IFZ:
 				if (!OPC(int)) {
 					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
