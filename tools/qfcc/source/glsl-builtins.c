@@ -278,9 +278,9 @@ static const type_t *Itypes[] = {
 
 static const type_t *Utypes[] = {
 	&type_uint,
-	&type_uivec2,
-	&type_uivec3,
-	&type_uivec4,
+	&type_uvec2,
+	&type_uvec3,
+	&type_uvec4,
 	nullptr
 };
 
@@ -334,7 +334,6 @@ SRC_LINE
 "#define out @out"                                                  "\n"
 "#define highp"                                                     "\n"
 "#define lowp"                                                      "\n"
-"#define uvec2 uivec2"                                              "\n"
 "#define gbvec(base) @vector(bool, @width(base))"                   "\n"
 "#define gvec(base) @vector(float, @width(base))"                   "\n"
 "#define gdvec(base) @vector(double, @width(base))"                 "\n"
@@ -348,7 +347,7 @@ SRC_LINE
 "         mat=@matrix(float),"                                      "\n"
 "         vec=[vec2,vec3,vec4,dvec2,dvec3,dvec4],"                  "\n"
 "         ivec=[ivec2,ivec3,ivec4],"                                "\n"
-"         uvec=[uivec2,uivec3,uivec4],"                             "\n"
+"         uvec=[uvec2,uvec3,uvec4],"                                "\n"
 "         bvec=[bvec2,bvec3,bvec4]) {"                              "\n"
 "genFType radians(genFType degrees) = " GLSL(Radians) ";"           "\n"
 "genFType degrees(genFType radians) = " GLSL(Degrees) ";"           "\n"

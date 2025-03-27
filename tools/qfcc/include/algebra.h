@@ -42,7 +42,7 @@ typedef struct basis_blade_s {
 typedef struct basis_group_s {
 	int         count;
 	pr_uint_t   group_mask;
-	pr_uivec2_t range;
+	pr_uvec2_t  range;
 	basis_blade_t *blades;
 	int        *map;
 	set_t      *set;
@@ -50,7 +50,7 @@ typedef struct basis_group_s {
 
 typedef struct basis_layout_s {
 	int         count;
-	pr_uivec2_t range;
+	pr_uvec2_t  range;
 	basis_group_t *groups;
 	pr_ivec3_t *group_map;
 	int        *mask_map;

@@ -8,7 +8,7 @@
 @interface BasisLayout : Object
 {
 	int         count;
-	uivec2      range;
+	uvec2       range;
 	BasisGroup **groups;
 	ivec3      *group_map;
 	int        *mask_map;

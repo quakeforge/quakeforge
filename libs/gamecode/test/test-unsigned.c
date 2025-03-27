@@ -2,14 +2,14 @@
 
 #include "QF/mathlib.h"
 
-static pr_uivec4_t uint_divop_init[] = {
+static pr_uvec4_t uint_divop_init[] = {
 	{  5, -5,  5, -5},
 	{  3,  3, -3, -3},
 	{  0,  0, 0, 0},
 	{  0,  0, 0, 0},
 };
 
-static pr_uivec4_t uint_divop_expect[] = {
+static pr_uvec4_t uint_divop_expect[] = {
 	{  5,         -5,   5, -5},
 	{  3,          3,  -3, -3},
 	{  1, 0x55555553,   0,  0},
@@ -59,7 +59,7 @@ static dstatement_t uint_divop_4_statements[] = {
 	{ OP(1, 1, 1, OP_REM_u_4), 0, 4, 12 },
 };
 
-static pr_uivec4_t uint_cmpop_init[] = {
+static pr_uvec4_t uint_cmpop_init[] = {
 	{  5, -5,  5, -5},
 	{  5,  5, -5, -5},
 	{  0,  0, 0, 0},
@@ -70,7 +70,7 @@ static pr_uivec4_t uint_cmpop_init[] = {
 	{  0,  0, 0, 0},
 };
 
-static pr_uivec4_t uint_cmpop_expect[] = {
+static pr_uvec4_t uint_cmpop_expect[] = {
 	{  5, -5,  5, -5},
 	{  5,  5, -5, -5},
 	{  0,  0,  0,  0},	// no unsigned EQ (redundant)
@@ -302,7 +302,7 @@ static dstatement_t ulong_cmpop_4_statements[] = {
 	{ OP(1, 1, 1, OP_LE_U_4), 0, 8, 56 },
 };
 
-static pr_uivec4_t uint_shiftop_init[] = {
+static pr_uvec4_t uint_shiftop_init[] = {
 	{ 0x12345678, 0x9abcdef0, 0x80000001, 0xaaaa5555 },
 	{         12,         16,          9,          1 },
 	{         20,         16,         23,         31 },
@@ -314,7 +314,7 @@ static pr_uivec4_t uint_shiftop_init[] = {
 	{          0,          0,          0,          0 },
 };
 
-static pr_uivec4_t uint_shiftop_expect[] = {
+static pr_uvec4_t uint_shiftop_expect[] = {
 	{ 0x12345678, 0x9abcdef0, 0x80000001, 0xaaaa5555 },
 	{         12,         16,          9,          1 },//a
 	{         20,         16,         23,         31 },//b

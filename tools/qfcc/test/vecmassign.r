@@ -6,7 +6,7 @@ int
 main()
 {
 	struct {
-		uivec2 x;
+		uvec2 x;
 	} foo = {'1 2'};
 	auto ptr = &foo;
 	ptr.x[0] = 3;
