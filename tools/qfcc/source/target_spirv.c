@@ -2793,6 +2793,24 @@ spirv_types_logically_match (const type_t *dst, const type_t *src)
 }
 
 static const expr_t *
+spirv_test_expr (const expr_t *expr)
+{
+	// ruamoko and spirv are mostly compatible for bools other than lbool
+	// but that's handled by spirv_mirror_bool, and can't cast to bool
+	auto test = ruamoko_test_expr (expr);
+	if (test->type == ex_alias && is_bool (test->alias.type)) {
+		scoped_src_loc (expr);
+		if (test->alias.offset) {
+			internal_error (test, "unexpected offset alias expression");
+		}
+		expr = test->alias.expr;
+		test = typed_binary_expr (&type_bool, QC_NE, expr,
+								  new_zero_expr (get_type (expr)));
+	}
+	return test;
+}
+
+static const expr_t *
 spirv_cast_expr (const type_t *dstType, const expr_t *expr)
 {
 	auto src_type = get_type (expr);
@@ -2900,9 +2918,7 @@ target_t spirv_target = {
 	.assign_vector = spirv_assign_vector,
 	.vector_compare = spirv_vector_compare,
 	.shift_op = spirv_shift_op,
-	// ruamoko and spirv are mostly compatible for bools other than lbool
-	// but that's handled by spirv_mirror_bool
-	.test_expr = ruamoko_test_expr,
+	.test_expr = spirv_test_expr,
 	.cast_expr = spirv_cast_expr,
 	.check_types_compatible = spirv_check_types_compatible,
 	.type_assignable = spirv_types_logically_match,
