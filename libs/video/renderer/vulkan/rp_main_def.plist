@@ -1495,13 +1495,6 @@ renderpasses = {
 						vertexInput = $sprite.vertexInput;
 						inputAssembly = $sprite.inputAssembly;
 						layout = $sprite.layout;
-						dynamic = {
-							dynamicState = (
-								viewport,
-								scissor,
-								vertex_input_ext,
-							);
-						};
 					};
 				};
 			};
