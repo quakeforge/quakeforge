@@ -1746,6 +1746,10 @@ component_decl_list2
 		{
 			$$ = $list;
 		}
+	| error ';'
+		{
+			$$ = new_list_expr (nullptr);
+		}
 	;
 
 visibility_spec
