@@ -893,6 +893,13 @@ proc_loop (const expr_t *expr, rua_ctx_t *ctx)
 	bool do_while = expr->loop.do_while;
 	bool not = expr->loop.not;
 	test = test_expr (test);
+	//FIXME this should probably be optional
+	if (is_constant (test) && !expr_integral (test)) {
+		if (do_while) {
+			return body;
+		}
+		return nullptr;
+	}
 	scoped_src_loc (expr);
 	return new_loop_expr (not, do_while, test, body,
 						  continue_label, continue_body, break_label);
