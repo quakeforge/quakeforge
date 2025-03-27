@@ -638,10 +638,7 @@ static expr_type_t outer_ops[] = {
 };
 
 static expr_type_t cross_ops[] = {
-	{   .match_a = is_vector, .match_b = is_vector, },
-	{   .match_a = is_vector, .match_b = is_vector_compat,
-			.promote = true },
-	{   .match_a = is_vector_compat, .match_b = is_vector,
+	{   .match_a = is_vector_compat, .match_b = is_vector_compat,
 			.promote = true },
 
 	{}
