@@ -892,6 +892,7 @@ proc_loop (const expr_t *expr, rua_ctx_t *ctx)
 	auto break_label = expr->loop.break_label;
 	bool do_while = expr->loop.do_while;
 	bool not = expr->loop.not;
+	test = test_expr (test);
 	scoped_src_loc (expr);
 	return new_loop_expr (not, do_while, test, body,
 						  continue_label, continue_body, break_label);
