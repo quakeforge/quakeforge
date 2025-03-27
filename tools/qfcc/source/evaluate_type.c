@@ -94,9 +94,9 @@ tf_property_func (progs_t *pr, void *data)
 		internal_error (ctx->expr, "not implemented");
 		auto params = new_list_expr (nullptr);
 		list_gather (&params->list, param_exprs, count);
-		property = new_attribute (name, params);
+		property = new_attribute (name, params, ctx->rua_ctx);
 	} else {
-		property = new_attribute (name, nullptr);
+		property = new_attribute (name, nullptr, ctx->rua_ctx);
 	}
 	auto e = type->property (type, property);
 	if (is_error (e)) {

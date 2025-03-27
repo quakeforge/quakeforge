@@ -863,7 +863,7 @@ interpolation_qualifier
 layout_qualifier
 	: LAYOUT '(' layout_qualifier_id_list ')'
 		{
-			auto attr = new_attribute ("layout", $3);
+			auto attr = new_attribute ("layout", $3, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	;
@@ -908,33 +908,33 @@ single_type_qualifier
 	: storage_qualifier
 	| aux_storage_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	| layout_qualifier
 	| precision_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	| interpolation_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	| invariant_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	| precise_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	| memory_qualifier
 		{
-			auto attr = new_attribute ($1, nullptr);
+			auto attr = new_attribute ($1, nullptr, ctx);
 			$$ = (specifier_t) { .attributes = attr };
 		}
 	;

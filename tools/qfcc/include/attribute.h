@@ -38,8 +38,11 @@ typedef struct attribute_s {
 } attribute_t;
 
 typedef struct expr_s expr_t;
+typedef struct rua_ctx_s rua_ctx_t;
 attribute_t *new_attrfunc(const char *name, const expr_t *params);
-attribute_t *new_attribute(const char *name, const expr_t *params);
-attribute_t *expr_attributes (const expr_t *attrs, attribute_t *append_attrs);
+attribute_t *new_attribute(const char *name, const expr_t *params,
+						   rua_ctx_t *ctx);
+attribute_t *expr_attributes (const expr_t *attrs, attribute_t *append_attrs,
+							  rua_ctx_t *ctx);
 
 #endif//attribute_h
