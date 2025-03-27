@@ -2453,7 +2453,7 @@ spirv_add_attr (attribute_t **attributes, const char *name, const expr_t *val)
 		}
 	}
 
-	auto attr = new_attribute (name, val);
+	auto attr = new_attrfunc (name, val);
 	attr->next = *attributes;
 	*attributes = attr;
 }
@@ -2601,7 +2601,7 @@ spirv_create_entry_point (const char *name, const char *model_name)
 	attribute_t *mode = nullptr;
 	unsigned model = spirv_enum_val ("ExecutionModel", model_name);
 	if (model == SpvExecutionModelFragment) {
-		mode = new_attribute ("mode",
+		mode = new_attrfunc ("mode",
 				new_int_expr (SpvExecutionModeOriginUpperLeft, false));
 	}
 	entrypoint_t *ep = malloc (sizeof (entrypoint_t));

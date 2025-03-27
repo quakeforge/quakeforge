@@ -284,9 +284,9 @@ restore_storage (specifier_t st)
 }
 
 static specifier_t
-attr_spec (specifier_t spec, const expr_t *attrs)
+attr_spec (specifier_t spec, const expr_t *attrs, rua_ctx_t *ctx)
 {
-	spec.attributes = expr_attributes (attrs, spec.attributes);
+	spec.attributes = expr_attributes (attrs, spec.attributes, ctx);
 	return spec;
 }
 
@@ -834,7 +834,7 @@ fndef
 	;
 
 fnbinding
-	: ':' binding { $$ = attr_spec ($<spec>0, $2); }
+	: ':' binding { $$ = attr_spec ($<spec>0, $2, ctx); }
 	;
 
 datadef
@@ -861,27 +861,27 @@ datadef
 	;
 
 attr_declspecs
-	: attr_list declspecs			{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs			{ $$ = attr_spec ($2, $1, ctx); }
 	| declspecs
 	;
 
 attr_declspecs_nots
-	: attr_list declspecs_nots		{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_nots		{ $$ = attr_spec ($2, $1, ctx); }
 	| declspecs_nots
 	;
 
 attr_declspecs_ts
-	: attr_list declspecs_ts		{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_ts		{ $$ = attr_spec ($2, $1, ctx); }
 	| declspecs_ts
 	;
 
 attr_declspecs_nosc_nots
-	: attr_list declspecs_nosc_nots	{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_nosc_nots	{ $$ = attr_spec ($2, $1, ctx); }
 	| declspecs_nosc_nots
 	;
 
 attr_declspecs_nosc_ts
-	: attr_list declspecs_nosc_ts	{ $$ = attr_spec ($2, $1); }
+	: attr_list declspecs_nosc_ts	{ $$ = attr_spec ($2, $1, ctx); }
 	| declspecs_nosc_ts
 	;
 
@@ -1312,7 +1312,7 @@ typespec_nonreserved
 
 defspecs
 	: /* empty */				{ $$ = (specifier_t) {}; }
-	| attr_list					{ $$ = attr_spec ((specifier_t) {}, $1); }
+	| attr_list					{ $$ = attr_spec ((specifier_t) {}, $1, ctx); }
 	;
 
 save_storage
@@ -1509,8 +1509,8 @@ attribute_list
 	;
 
 attribute
-	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0); }
-	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3); }
+	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0, ctx); }
+	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3, ctx); }
 	;
 
 attrfunc
@@ -1849,12 +1849,12 @@ parameter_list
 parameter
 	: declspecs_ts param_declarator opt_binding
 		{
-			auto spec = attr_spec ($2, $3);
+			auto spec = attr_spec ($2, $3, ctx);
 			$$ = make_param (spec, ctx);
 		}
 	| declspecs_ts notype_declarator opt_binding
 		{
-			auto spec = attr_spec ($2, $3);
+			auto spec = attr_spec ($2, $3, ctx);
 			$$ = make_param (spec, ctx);
 		}
 	| declspecs_ts absdecl
@@ -1864,7 +1864,7 @@ parameter
 		}
 	| declspecs_nosc_nots notype_declarator opt_binding
 		{
-			auto spec = attr_spec ($2, $3);
+			auto spec = attr_spec ($2, $3, ctx);
 			$$ = make_param (spec, ctx);
 		}
 	| declspecs_nosc_nots absdecl

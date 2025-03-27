@@ -112,7 +112,7 @@ set_attribute (attribute_t **attributes, const char *name, const expr_t *val)
 			return;
 		}
 	}
-	auto attr = new_attribute (name, val);
+	auto attr = new_attrfunc (name, val);
 	attr->next = *attributes;
 	*attributes = attr;
 }

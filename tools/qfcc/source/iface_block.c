@@ -164,7 +164,7 @@ block_block_type (const type_t *type, const char *pre_tag)
 		};
 		int stride = type_aligned_size (ele_type) * uint;
 		add_attribute (&new.attributes,
-					   new_attribute ("ArrayStride", new_uint_expr (stride)));
+					   new_attrfunc ("ArrayStride", new_uint_expr (stride)));
 		return find_type (&new);
 	}
 	// union not supported
@@ -206,18 +206,18 @@ block_block_type (const type_t *type, const char *pre_tag)
 			}
 			offset = RUP (offset, type_align (ftype) * uint);
 			add_attribute (&sym->attributes,
-						   new_attribute ("Offset", new_uint_expr (offset)));
+						   new_attrfunc ("Offset", new_uint_expr (offset)));
 			offset += type_size (ftype) * uint;
 
 			auto mt = block_matrix_type (ftype);
 			if (mt) {
 				int stride = type_size (column_type (mt)) * uint;
 				add_attribute (&sym->attributes,
-							   new_attribute ("MatrixStride",
+							   new_attrfunc ("MatrixStride",
 											  new_uint_expr (stride)));
 				//FIXME
 				add_attribute (&sym->attributes,
-							   new_attribute ("ColMajor", nullptr));
+							   new_attrfunc ("ColMajor", nullptr));
 			}
 		}
 		nt->symtab->type = type->symtab->type;
@@ -296,7 +296,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 		.columns = 1,
 		.meta = ty_struct,
 		.symtab = block->members,
-		.attributes = new_attribute ("Block", nullptr),
+		.attributes = new_attrfunc ("Block", nullptr),
 	};
 	auto inst_type = block_block_type (&type, nullptr);
 	block->members = inst_type->symtab;
