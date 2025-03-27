@@ -175,6 +175,9 @@ SUFFICES += .plist .plc
 %.comp.spvc: %.comp
 	$(qfcc_spirv)
 
+%.r.spvc: %.r
+	$(qfcc_spirv)
+
 sharepath = @sharepath@
 shaderdir = @shaderdir@
 shader_DATA =

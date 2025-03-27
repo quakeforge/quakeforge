@@ -84,6 +84,9 @@ vulkan_iqm_clear (model_t *mod, void *data)
 
 	QFV_DeviceWaitIdle (device);
 
+	//FIXME doesn't belong here (per-instance)
+	Vulkan_MeshRemoveBones (ctx, model);
+
 	mod->needload = true;	//FIXME is this right?
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) rmesh + rmesh->resources);
@@ -200,85 +203,118 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 
 static void
 vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
+						qfm_attrdesc_t *attribs, uint32_t strides[3],
+						uint32_t *indices, uint32_t index_bytes,
 						vulkan_ctx_t *ctx)
 {
-#if 0
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	iqmctx_t   *ictx = ctx->iqm_context;
 
-	size_t      geom_size = iqm->num_verts * sizeof (iqmgvert_t);
-	size_t      rend_size = iqm->num_verts * sizeof (iqmrvert_t);
-	size_t      elem_size = iqm->num_elements * sizeof (uint16_t);
-	if (iqm->num_verts > 0xfff0) {
-		elem_size = iqm->num_elements * sizeof (uint32_t);
-	}
-	size_t      buff_size = geom_size + rend_size + elem_size + 1024;
-	auto stage = QFV_CreateStagingBuffer (device, "iqm stage" buff_size,
+	auto iqm = iqm_ctx->hdr;
+	size_t vsizes[3] = {
+		iqm->num_vertexes * strides[0],
+		0,
+		iqm->num_vertexes * strides[2],
+	};
+	size_t      buff_size = vsizes[0] + vsizes[2] + index_bytes + 1024;
+	auto stage = QFV_CreateStagingBuffer (device, "iqm stage", buff_size,
 										  ctx->cmdpool);
-	qfv_packet_t *gpacket = QFV_PacketAcquire (stage);
-	iqmgvert_t *gverts = QFV_PacketExtend (gpacket, geom_size);
-	qfv_packet_t *rpacket = QFV_PacketAcquire (stage);
-	iqmrvert_t *rverts = QFV_PacketExtend (rpacket, rend_size);
-	qfv_packet_t *epacket = QFV_PacketAcquire (stage);
-	uint16_t   *elements = QFV_PacketExtend (epacket, elem_size);
+	qfv_packet_t *vpackets[3];
+	byte *vdata[3];
+	for (int i = 0; i < 3; i++) {
+		if (i == 1) {
+			continue;
+		}
+		vpackets[i] = QFV_PacketAcquire (stage);
+		vdata[i] = QFV_PacketExtend (vpackets[i], vsizes[i]);
+	}
+	qfv_packet_t *ipacket = QFV_PacketAcquire (stage);
+	byte *idata = QFV_PacketExtend (ipacket, index_bytes);
 
-	//FIXME this whole thing is silly, but some person went and interleaved
-	memcpy (elements, iqm->elements16, elem_size);
+	auto iqm_data = (byte *) iqm;
+	auto va = (iqmvertexarray *) (iqm_data + iqm->ofs_vertexarrays);
+	for (uint32_t i = 0; i < iqm->num_vertexes; i++) {
+		for (uint32_t j = 0; j < iqm->num_vertexarrays; j++) {
+			uint32_t size = iqm_attr_size (&va[j]);
+			memcpy (vdata[attribs[j].set] + attribs[j].offset,
+					iqm_data + va[j].offset + i * size, size);
+		}
+		vdata[0] += strides[0];
+		vdata[1] += strides[2];
+	}
+	memcpy (idata, indices, index_bytes);
 
 	qfv_bufferbarrier_t bb[] = {
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 		bufferBarriers[qfv_BB_Unknown_to_TransferWrite],
 	};
-	bb[0].barrier.buffer = mesh->geom_buffer;
-	bb[0].barrier.size = geom_size;
-	bb[1].barrier.buffer = mesh->rend_buffer;
-	bb[1].barrier.size = rend_size;
-	bb[2].barrier.buffer = mesh->index_buffer;
-	bb[2].barrier.size = elem_size;
+	bb[0].barrier.buffer = rmesh->geom_buffer;
+	bb[0].barrier.size = vsizes[0];
+	bb[1].barrier.buffer = rmesh->rend_buffer;
+	bb[1].barrier.size = vsizes[2];
+	bb[2].barrier.buffer = rmesh->index_buffer;
+	bb[2].barrier.size = index_bytes;
 	VkBufferCopy copy_region[] = {
-		{ gpacket->offset, 0, geom_size },
-		{ rpacket->offset, 0, rend_size },
-		{ epacket->offset, 0, elem_size },
+		{ vpackets[0]->offset, 0, vsizes[0] },
+		{ vpackets[2]->offset, 0, vsizes[2] },
+		{ ipacket->offset, 0, index_bytes },
 	};
 
-	dfunc->vkCmdPipelineBarrier (gpacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	dfunc->vkCmdPipelineBarrier (vpackets[0]->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[0].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (rpacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	dfunc->vkCmdPipelineBarrier (vpackets[2]->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[1].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (epacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	dfunc->vkCmdPipelineBarrier (ipacket->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[2].barrier, 0, 0);
-	dfunc->vkCmdCopyBuffer (gpacket->cmd, stage->buffer,
-							mesh->geom_buffer, 1, &copy_region[0]);
-	dfunc->vkCmdCopyBuffer (rpacket->cmd, stage->buffer,
-							mesh->rend_buffer, 1, &copy_region[1]);
-	dfunc->vkCmdCopyBuffer (epacket->cmd, stage->buffer,
-							mesh->index_buffer, 1, &copy_region[2]);
+	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, stage->buffer,
+							rmesh->geom_buffer, 1, &copy_region[0]);
+	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, stage->buffer,
+							rmesh->rend_buffer, 1, &copy_region[1]);
+	dfunc->vkCmdCopyBuffer (ipacket->cmd, stage->buffer,
+							rmesh->index_buffer, 1, &copy_region[2]);
 	bb[0] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	bb[1] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	bb[2] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
-	bb[0].barrier.buffer = mesh->geom_buffer;
-	bb[0].barrier.size = geom_size;
-	bb[1].barrier.buffer = mesh->rend_buffer;
-	bb[1].barrier.size = rend_size;
-	bb[2].barrier.buffer = mesh->index_buffer;
-	bb[2].barrier.size = elem_size;
-	dfunc->vkCmdPipelineBarrier (gpacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	bb[0].barrier.buffer = rmesh->geom_buffer;
+	bb[0].barrier.size = vsizes[0];
+	bb[1].barrier.buffer = rmesh->rend_buffer;
+	bb[1].barrier.size = vsizes[2];
+	bb[2].barrier.buffer = rmesh->index_buffer;
+	bb[2].barrier.size = index_bytes;
+	dfunc->vkCmdPipelineBarrier (vpackets[0]->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[0].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (rpacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	dfunc->vkCmdPipelineBarrier (vpackets[2]->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[1].barrier, 0, 0);
-	dfunc->vkCmdPipelineBarrier (epacket->cmd, bb[0].srcStages, bb[0].dstStages,
+	dfunc->vkCmdPipelineBarrier (ipacket->cmd,
+								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[2].barrier, 0, 0);
-	QFV_PacketSubmit (gpacket);
-	QFV_PacketSubmit (rpacket);
-	QFV_PacketSubmit (epacket);
+	QFV_PacketSubmit (vpackets[0]);
+	QFV_PacketSubmit (vpackets[2]);
+	QFV_PacketSubmit (ipacket);
 	QFV_DestroyStagingBuffer (stage);
+}
+
+static void
+vulkan_iqm_init_bones (mod_iqm_ctx_t *iqm_ctx, qfv_resource_t *bones,
+					   vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+
+	auto model = iqm_ctx->qf_model;
+	auto iqm = iqm_ctx->hdr;
 
 	vec4f_t    *bone_data;
-	dfunc->vkMapMemory (device->dev, mesh->bones->memory, 0, VK_WHOLE_SIZE,
+	dfunc->vkMapMemory (device->dev, bones->memory, 0, VK_WHOLE_SIZE,
 						0, (void **)&bone_data);
-	for (size_t i = 0; i < ictx->frames.size * iqm->num_joints; i++) {
+	for (size_t i = 0; i < rctx->frames.size * iqm->num_joints; i++) {
 		vec4f_t    *bone = bone_data + i * 3;
 		bone[0] = (vec4f_t) {1, 0, 0, 0};
 		bone[1] = (vec4f_t) {0, 1, 0, 0};
@@ -286,14 +322,111 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	}
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		mesh->bones->memory, 0, VK_WHOLE_SIZE,
+		bones->memory, 0, VK_WHOLE_SIZE,
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 
-	dfunc->vkUnmapMemory (device->dev, mesh->bones->memory);
+	dfunc->vkUnmapMemory (device->dev, bones->memory);
 
-	Vulkan_IQMAddBones (ctx, iqm);	//FIXME doesn't belong here (per-instance)
-#endif
+	Vulkan_MeshAddBones (ctx, model);//FIXME doesn't belong here (per-instance)
+}
+
+static void
+setup_bone_resources (qfv_resource_t *bones, qfv_resobj_t *bone_obj,
+					  uint32_t num_frames, vulkan_ctx_t *ctx,
+					  mod_iqm_ctx_t *iqm_ctx)
+{
+	const char *name = iqm_ctx->mod->name;
+	auto model = iqm_ctx->qf_model;
+
+	bones[0] = (qfv_resource_t) {
+		.name = name,
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+		.num_objects = 1,
+		.objects = bone_obj,
+	};
+
+	size_t joint_size = 3 * sizeof (vec4f_t);
+	bone_obj[0] = (qfv_resobj_t) {
+		.name = "bones",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = num_frames * model->joints.count * joint_size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		},
+	};
+}
+
+static void
+setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
+					  uint32_t num_objects, uint32_t strides[3],
+					  uint32_t num_verts, uint32_t num_indices,
+					  uint32_t num_frames,
+					  vulkan_ctx_t *ctx, mod_iqm_ctx_t *iqm_ctx)
+{
+	const char *name = iqm_ctx->mod->name;
+	auto model = iqm_ctx->qf_model;
+	auto meshes = iqm_ctx->qf_meshes;
+	uint32_t index_size = mesh_type_size (mesh_index_type (num_verts));
+
+	mesh_res[0] = (qfv_resource_t) {
+		.name = va (ctx->va_ctx, "%s:mesh", name),
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = num_objects,
+		.objects = mesh_objs,
+	};
+	mesh_objs[0] = (qfv_resobj_t) {
+		.name = "geom",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = num_verts * strides[0],
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		},
+	};
+	mesh_objs[1] = (qfv_resobj_t) {
+		.name = "rend",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = num_verts * strides[2],
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		},
+	};
+	mesh_objs[2] = (qfv_resobj_t) {
+		.name = "index",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = index_size * num_indices,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		},
+	};
+
+	auto image_objs = &mesh_objs[3];
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		int   image_ind = 2 * i;
+		auto  image = &image_objs[image_ind];
+		vulkan_iqm_init_image (iqm_ctx->text, &meshes[i], image);
+
+		image_objs[image_ind + 1] = (qfv_resobj_t) {
+			.name = "view",
+			.type = qfv_res_image_view,
+			.image_view = {
+				.image = image_ind + image_objs - mesh_objs,
+				.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+				.format = image->image.format,
+				.subresourceRange = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.levelCount = VK_REMAINING_MIP_LEVELS,
+					.layerCount = VK_REMAINING_ARRAY_LAYERS,
+				},
+			},
+		};
+	}
 }
 
 void
@@ -307,99 +440,80 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 
 	auto model = iqm_ctx->qf_model;
 	auto meshes = iqm_ctx->qf_meshes;
+	auto iqm = iqm_ctx->hdr;
 
 	// FIXME assumes only one texture per mesh (currently the case, but
 	// when materials are added...)
 	// 2 is for image + image view
 	int         num_objects = 4 + 2 * model->meshes.count;
 	size_t size = sizeof (qfv_mesh_t)
-				+ sizeof (qfv_resource_t[2])
-				+ sizeof (qfv_resobj_t[num_objects])
-				+ sizeof (VkDescriptorSet[rctx->frames.size])
+				+ sizeof (qfm_attrdesc_t[iqm->num_vertexarrays])
 				+ sizeof (qfv_skin_t[model->meshes.count])
 				+ sizeof (keyframedesc_t[model->meshes.count])
-				+ sizeof (keyframe_t[model->meshes.count]);
+				+ sizeof (keyframe_t[model->meshes.count])
+				+ sizeof (VkDescriptorSet[rctx->frames.size])
+				+ sizeof (qfv_resource_t[2])
+				+ sizeof (qfv_resobj_t[num_objects]);
+
 	const char *name = iqm_ctx->mod->name;
 	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
-	auto bones = (qfv_resource_t *) &rmesh[1];
-	auto mesh = &bones[1];
-
-	size_t joint_size = 3 * sizeof (vec4f_t);
-
-	bones[0] = (qfv_resource_t) {
-		.name = name,
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-		.num_objects = 1,
-		.objects = (qfv_resobj_t *) &bones[2],
-	};
-	bones[0].objects[0] = (qfv_resobj_t) {
-		.name = "bones",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = rctx->frames.size * model->joints.count * joint_size,
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-		},
-	};
-
-	uint32_t num_verts = iqm_ctx->hdr->num_vertexes;
-	uint32_t geom_size = 20;//XXX
-	uint32_t rend_size = 40;//XXX
-	mesh[0] = (qfv_resource_t) {
-		.name = va (ctx->va_ctx, "%s:mesh", name),
-		.va_ctx = ctx->va_ctx,
-		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = num_objects - 1,
-		.objects = bones->objects + 1,
-	};
-	mesh[0].objects[0] = (qfv_resobj_t) {
-		.name = "geom",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = num_verts * geom_size,
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		},
-	};
-	mesh[0].objects[1] = (qfv_resobj_t) {
-		.name = "rend",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = num_verts * rend_size,
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		},
-	};
-
-	size_t      elem_size = sizeof (uint16_t);
-	if (num_verts > 0xfff0) {
-		elem_size = sizeof (uint32_t);
-	} else if (num_verts < 0xff) {
-		elem_size = sizeof (uint8_t);
-	}
-	elem_size *= iqm_ctx->hdr->num_triangles * 3;
-
-	mesh[0].objects[2] = (qfv_resobj_t) {
-		.name = "index",
-		.type = qfv_res_buffer,
-		.buffer = {
-			.size = elem_size,
-			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-					| VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-		},
-	};
-
-	auto bone_descriptors = (VkDescriptorSet *) &bones[0].objects[num_objects];
-	auto skins = (qfv_skin_t *) &bone_descriptors[rctx->frames.size];
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+	auto skins = (qfv_skin_t *) &attribs[iqm->num_vertexarrays];
 	auto skindescs = (keyframedesc_t *) &skins[model->meshes.count];
 	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
+	auto bone_descs = (VkDescriptorSet *) &skinframes[model->meshes.count];
+	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];
+	auto bones = &resources[0];
+	auto mesh = &resources[1];
+	auto resobj = (qfv_resobj_t *) &resources[2];
 
+	uint32_t offsets[3] = {};
+	for (uint32_t i = 0; i < iqm->num_vertexarrays; i++) {
+		auto a = iqm_ctx->vtxarr[i];
+		attribs[i] = iqm_mesh_attribute (a, 0);
+		if (attribs[i].attr == qfm_position
+			|| attribs[i].attr == qfm_joints
+			|| attribs[i].attr == qfm_weights) {
+			// geometry set
+			attribs[i].set = 0;
+		} else {
+			// render set
+			attribs[i].set = 2;
+		}
+		attribs[i].offset = offsets[attribs[i].set];
+		offsets[attribs[i].set] += attribs[i].stride;
+	}
+	for (uint32_t i = 0; i < iqm->num_vertexarrays; i++) {
+		attribs[i].stride = offsets[attribs[i].set];
+	}
+
+	setup_bone_resources (bones, &resobj[0], rctx->frames.size,
+						  ctx, iqm_ctx);
+	setup_mesh_resources (mesh, &resobj[1], num_objects - 1, offsets,
+						  iqm->num_vertexes, iqm->num_triangles * 3,
+						  rctx->frames.size, ctx, iqm_ctx);
+	QFV_CreateResource (device, mesh);
+	QFV_CreateResource (device, bones);
+
+	model->render_data = (byte *) rmesh - (byte *) model;
+	*rmesh = (qfv_mesh_t) {
+		.geom_buffer = mesh->objects[0].buffer.buffer,
+		.rend_buffer = mesh->objects[1].buffer.buffer,
+		.index_buffer = mesh->objects[2].buffer.buffer,
+		.bones_buffer = bones->objects[0].buffer.buffer,
+		.resources = (byte *) resources - (byte *) rmesh,
+		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
+	};
+
+	uint32_t index_type = mesh_index_type (iqm->num_vertexes);
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
-		int         image_ind = 3 + 2 * i;
-		__auto_type image = &mesh->objects[image_ind];
-		vulkan_iqm_init_image (iqm_ctx->text, &meshes[i], image);
-
+		meshes[i].triangle_count = iqm_ctx->meshes[i].num_triangles;
+		meshes[i].index_type = index_type;
+		meshes[i].indices = iqm_ctx->meshes[i].first_triangle * 3;
+		meshes[i].attributes = (qfm_loc_t) {
+			.offset = (byte *) attribs - (byte *) &meshes[i],
+			.count = iqm->num_vertexarrays,
+		};
 		meshes[i].skin = (anim_t) {
 			.numdesc = 1,
 			.descriptors = (byte *) &skindescs[i] - (byte *) &meshes[i],
@@ -412,41 +526,18 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 		skinframes[i] = (keyframe_t) {
 			.data = (byte *) &skins[i] - (byte *) &meshes[i],
 		};
-
-		mesh[0].objects[image_ind + 1] = (qfv_resobj_t) {
-			.name = "view",
-			.type = qfv_res_image_view,
-			.image_view = {
-				.image = image_ind,
-				.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-				.format = image->image.format,
-				.subresourceRange = {
-					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.levelCount = VK_REMAINING_MIP_LEVELS,
-					.layerCount = VK_REMAINING_ARRAY_LAYERS,
-				},
-			},
-		};
 	}
 
-	QFV_CreateResource (device, mesh);
-	QFV_CreateResource (device, bones);
-
+	uint32_t index_count = iqm->num_triangles * 3;
+	auto indices = (uint32_t *) ((byte *) iqm + iqm->ofs_triangles);
+	auto index_bytes = pack_indices (indices, index_count, index_type);
+	vulkan_iqm_load_arrays (iqm_ctx, rmesh, attribs, offsets,
+							indices, index_bytes, ctx);
+	vulkan_iqm_init_bones (iqm_ctx, bones, ctx);
 	vulkan_iqm_load_textures (iqm_ctx, rmesh, skins, &mesh->objects[3], ctx);
-	vulkan_iqm_load_arrays (iqm_ctx, rmesh, ctx);
 
-	auto resources = bones;
-	*rmesh = (qfv_mesh_t) {
-		.geom_buffer = mesh->objects[0].buffer.buffer,
-		.rend_buffer = mesh->objects[1].buffer.buffer,
-		.index_buffer = mesh->objects[2].buffer.buffer,
-		.bones_buffer = bones->objects[0].buffer.buffer,
-		.resources = (byte *) resources - (byte *) rmesh,
-		.bone_descriptors = (byte *) bone_descriptors - (byte *) rmesh,
-	};
 	for (int i = 0; i < 2; i++) {
 		auto res = &resources[i];
 		res->objects = (qfv_resobj_t *)((byte *) res->objects - (byte *) res);
 	}
-	model->render_data = (byte *) rmesh - (byte *) model;
 }

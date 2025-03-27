@@ -68,6 +68,7 @@ typedef struct mod_sprite_ctx_s {
 	keyframe_t **frames;
 } mod_sprite_ctx_t;
 
+uint32_t iqm_attr_size (const iqmvertexarray *a) __attribute__((const));
 qfm_attrdesc_t iqm_mesh_attribute (iqmvertexarray a, uint32_t offset) __attribute__((const));
 uint32_t mesh_type_size (qfm_type_t type) __attribute__((const));
 qfm_type_t mesh_index_type (uint32_t num_verts) __attribute__((const));

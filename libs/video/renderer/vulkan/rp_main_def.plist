@@ -367,17 +367,17 @@ properties = {
 			shadow_vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/alias_shadow.vert;
+				module = $builtin/mesh_shadow.r;
 			};
 			depth_vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/alias_depth.vert;
+				module = $builtin/mesh.r;
 			};
 			gbuf_vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/alias.vert;
+				module = $builtin/mesh.r;
 			};
 		};
 		vertexInput = {
@@ -399,17 +399,17 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                            palette      skin
-			descriptorSets = (matrix_set, texture_set, texture_set);
+			//                            palette                skin
+			descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
 			pushConstants = {
-				vertex   = { Model = mat4; blend = float; };
+				vertex   = { Model = mat4; enabled_mask = uint; blend = float; };
 				fragment = { colors = uint; base_color = vec4; fog = vec4; };
 			};
 		};
 		shadow_layout = {
-			descriptorSets = (shadowmat_set);
+			descriptorSets = (shadowmat_set, bone_set);
 			pushConstants = {
-				vertex = { Model = mat4; blend = float; MatrixBase = uint; };
+				vertex = { Model = mat4; enabled_mask = uint; blend = float; MatrixBase = uint; };
 			};
 		};
 	};
@@ -419,82 +419,6 @@ properties = {
 				stage = fragment;
 				name = main;
 				module = $builtin/qskin_gbuf.frag;
-			};
-		};
-	};
-	iqm = {
-		shader = {
-			specialization = {
-				mapEntries = (
-					// IQMDepthOnly
-					{ size = 4; offset = 0; constantID = 0; },
-				);
-			};
-			shadow_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/iqm_shadow.vert;
-				specializationInfo = {
-					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(1)";
-				};
-			};
-			depth_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/iqm.vert;
-				specializationInfo = {
-					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(1)";
-				};
-			};
-			gbuf_vertex = {
-				stage = vertex;
-				name = main;
-				module = $builtin/iqm.vert;
-				specializationInfo = {
-					@inherit = $iqm.shader.specialization;
-					// IQMDepthOnly
-					data = "array(0)";
-				};
-			};
-		};
-		vertexInput = {
-			bindings = (
-				{ binding = 0; stride = 20; inputRate = vertex; },
-				{ binding = 1; stride = 40; inputRate = vertex; },
-			);
-			attributes = (
-				{ location = 0; binding = 0; format = r32g32b32_sfloat;    offset = 0;  },	// position
-				{ location = 1; binding = 0; format = r8g8b8a8_uint;       offset = 12; },	// bonindices
-				{ location = 2; binding = 0; format = r8g8b8a8_unorm;      offset = 16; },	// boneweights
-
-				{ location = 3; binding = 1; format = r32g32_sfloat;       offset = 0;  },	// texcoord
-				{ location = 4; binding = 1; format = r32g32b32_sfloat;    offset = 8;  },	// normal
-				{ location = 5; binding = 1; format = r32g32b32a32_sfloat; offset = 20; },	// tangent
-				{ location = 6; binding = 1; format = r8g8b8a8_unorm;      offset = 36; },	// color
-
-			);
-		};
-		inputAssembly = {
-			topology = triangle_list;
-			primitiveRestartEnable = false;
-		};
-		layout = {
-			//                            palette      skin
-			descriptorSets = (matrix_set, texture_set, texture_set, bone_set);
-			pushConstants = {
-				vertex   = { Model = mat4; blend = float; };
-				fragment = { colors = uint; base_color = vec4; fog = vec4; };
-			};
-		};
-		shadow_layout = {
-			//                               palette(n/u) skin(n/u)
-			descriptorSets = (shadowmat_set, texture_set, texture_set, bone_set);
-			pushConstants = {
-				vertex   = { Model = mat4; blend = float; MatrixBase = uint; };
 			};
 		};
 	};
@@ -1550,6 +1474,13 @@ renderpasses = {
 						};
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
+						dynamic = {
+							dynamicState = (
+								viewport,
+								scissor,
+								vertex_input_ext,
+							);
+						};
 					};
 					sprite:depth = {
 						color = $color.sprite;
@@ -1564,6 +1495,13 @@ renderpasses = {
 						vertexInput = $sprite.vertexInput;
 						inputAssembly = $sprite.inputAssembly;
 						layout = $sprite.layout;
+						dynamic = {
+							dynamicState = (
+								viewport,
+								scissor,
+								vertex_input_ext,
+							);
+						};
 					};
 				};
 			};
@@ -1735,6 +1673,13 @@ renderpasses = {
 						vertexInput = $alias.vertexInput;
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.layout;
+						dynamic = {
+							dynamicState = (
+								viewport,
+								scissor,
+								vertex_input_ext,
+							);
+						};
 					};
 					sprite:gbuffer = {
 						color = $color.sprite;
@@ -2252,6 +2197,13 @@ renderpasses = {
 						};
 						inputAssembly = $alias.inputAssembly;
 						layout = $alias.shadow_layout;
+						dynamic = {
+							dynamicState = (
+								viewport,
+								scissor,
+								vertex_input_ext,
+							);
+						};
 					};
 				};
 			};

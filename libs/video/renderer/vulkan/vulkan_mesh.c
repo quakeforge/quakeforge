@@ -47,8 +47,10 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -57,6 +59,7 @@
 
 typedef struct {
 	mat4f_t     mat;
+	uint32_t    enabled_mask;
 	float       blend;
 	byte        colors[4];
 	vec4f_t     base_color;
@@ -65,6 +68,7 @@ typedef struct {
 
 typedef struct {
 	mat4f_t     mat;
+	uint32_t    enabled_mask;
 	float       blend;
 	byte        colors[4];
 	float       ambient;
@@ -76,6 +80,7 @@ typedef struct {
 
 typedef struct {
 	mat4f_t     mat;
+	uint32_t    enabled_mask;
 	float       blend;
 	uint32_t    matrix_base;
 } shadow_push_constants_t;
@@ -94,6 +99,76 @@ alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 	dfunc->vkCmdSetViewport (taskctx->cmd, 0, 1, &viewport);
 }
 
+static VkWriteDescriptorSet base_buffer_write = {
+	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+	0, 0, 1,
+	VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+	0, 0, 0
+};
+
+void
+Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model)
+{
+	qfvPushDebug (ctx, "Vulkan_MeshAddBones");
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	auto mctx = ctx->mesh_context;
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
+	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
+										   + rmesh->bone_descriptors);
+	int  num_sets = rctx->frames.size;
+
+	if (!mctx->dsmanager) {
+		mctx->dsmanager = QFV_Render_DSManager (ctx, "bone_set");
+	}
+
+	for (int i = 0; i < num_sets; i++) {
+		auto set = QFV_DSManager_AllocSet (mctx->dsmanager);
+		bone_descs[i] = set;
+	}
+
+	VkDescriptorBufferInfo bufferInfo[num_sets];
+	size_t      bones_size = sizeof (vec4f_t[model->joints.count * 3]);
+	if (!bones_size) {
+		bones_size = sizeof (vec4f_t[3]);
+	}
+	auto bones_buffer = rmesh->bones_buffer;
+	if (!bones_buffer) {
+		bones_buffer = mctx->null_bone;
+	}
+	for (int i = 0; i < num_sets; i++) {
+		bufferInfo[i].buffer = bones_buffer;
+		bufferInfo[i].offset = i * bones_size;
+		bufferInfo[i].range = bones_size;
+	};
+	VkWriteDescriptorSet write[num_sets];
+	for (int i = 0; i < num_sets; i++) {
+		write[i] = base_buffer_write;
+		write[i].dstSet = bone_descs[i];
+		write[i].pBufferInfo = &bufferInfo[i];
+	}
+	dfunc->vkUpdateDescriptorSets (device->dev, num_sets, write, 0, 0);
+
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
+{
+	auto rctx = ctx->render_context;
+	auto mctx = ctx->mesh_context;
+	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
+	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
+										   + rmesh->bone_descriptors);
+	int  num_sets = rctx->frames.size;
+
+	for (int i = 0; i < num_sets; i++) {
+		QFV_DSManager_FreeSet (mctx->dsmanager, bone_descs[i]);
+	}
+}
+
 void
 Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
@@ -110,8 +185,9 @@ Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 }
 
 static void
-push_alias_constants (const mat4f_t mat, float blend, byte *colors,
-					  vec4f_t base_color, int pass, qfv_taskctx_t *taskctx)
+push_alias_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
+					  byte *colors, vec4f_t base_color, int pass,
+					  qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -120,6 +196,7 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 
 	alias_push_constants_t constants = {
 		.blend = blend,
+		.enabled_mask = enabled_mask,
 		.colors = { VEC4_EXP (colors) },
 		.base_color = base_color,
 		.fog = Fog_Get (),
@@ -129,6 +206,9 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof (alias_push_constants_t, mat),
 			sizeof (mat4f_t), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			offsetof (alias_push_constants_t, enabled_mask),
+			sizeof (float), &constants.enabled_mask },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof (alias_push_constants_t, blend),
 			sizeof (float), &constants.blend },
@@ -146,8 +226,8 @@ push_alias_constants (const mat4f_t mat, float blend, byte *colors,
 }
 
 static void
-push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
-					vec4f_t base_color, const alight_t *lighting,
+push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
+					byte *colors, vec4f_t base_color, const alight_t *lighting,
 					int pass, qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
@@ -157,6 +237,7 @@ push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
 
 	fwd_push_constants_t constants = {
 		.blend = blend,
+		.enabled_mask = enabled_mask,
 		.colors = { VEC4_EXP (colors) },
 		.ambient = lighting->ambientlight,
 		.shadelight = lighting->shadelight,
@@ -195,8 +276,8 @@ push_fwd_constants (const mat4f_t mat, float blend, byte *colors,
 }
 
 static void
-push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
-					   qfv_taskctx_t *taskctx)
+push_shadow_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
+					   uint16_t *matrix_base, qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -205,6 +286,7 @@ push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 
 	shadow_push_constants_t constants = {
 		.blend = blend,
+		.enabled_mask = enabled_mask,
 		.matrix_base = *matrix_base,
 	};
 
@@ -220,6 +302,218 @@ push_shadow_constants (const mat4f_t mat, float blend, uint16_t *matrix_base,
 			sizeof (uint32_t), &constants.matrix_base },
 	};
 	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+}
+
+static struct {
+	VkFormat    format[4];
+	VkIndexType index_type;
+} qfv_mesh_type_map[] = {
+	[qfm_s8]   = {
+		.format = {
+			VK_FORMAT_R8_SINT,
+			VK_FORMAT_R8G8_SINT,
+			VK_FORMAT_R8G8B8_SINT,
+			VK_FORMAT_R8G8B8A8_SINT,
+		},
+	},
+	[qfm_s16]  = {
+		.format = {
+			VK_FORMAT_R16_SINT,
+			VK_FORMAT_R16G16_SINT,
+			VK_FORMAT_R16G16B16_SINT,
+			VK_FORMAT_R16G16B16A16_SINT,
+		},
+	},
+	[qfm_s32]  = {
+		.format = {
+			VK_FORMAT_R32_SINT,
+			VK_FORMAT_R32G32_SINT,
+			VK_FORMAT_R32G32B32_SINT,
+			VK_FORMAT_R32G32B32A32_SINT,
+		},
+	},
+	[qfm_s64]  = {
+		.format = {
+			VK_FORMAT_R64_SINT,
+			VK_FORMAT_R64G64_SINT,
+			VK_FORMAT_R64G64B64_SINT,
+			VK_FORMAT_R64G64B64A64_SINT,
+		},
+	},
+
+	[qfm_u8]   = {
+		.format = {
+			VK_FORMAT_R8_UINT,
+			VK_FORMAT_R8G8_UINT,
+			VK_FORMAT_R8G8B8_UINT,
+			VK_FORMAT_R8G8B8A8_UINT,
+		},
+		.index_type = VK_INDEX_TYPE_UINT8,
+	},
+	[qfm_u16]  = {
+		.format = {
+			VK_FORMAT_R16_UINT,
+			VK_FORMAT_R16G16_UINT,
+			VK_FORMAT_R16G16B16_UINT,
+			VK_FORMAT_R16G16B16A16_UINT,
+		},
+		.index_type = VK_INDEX_TYPE_UINT16,
+	},
+	[qfm_u32]  = {
+		.format = {
+			VK_FORMAT_R32_UINT,
+			VK_FORMAT_R32G32_UINT,
+			VK_FORMAT_R32G32B32_UINT,
+			VK_FORMAT_R32G32B32A32_UINT,
+		},
+		.index_type = VK_INDEX_TYPE_UINT32,
+	},
+	[qfm_u64]  = {
+		.format = {
+			VK_FORMAT_R64_UINT,
+			VK_FORMAT_R64G64_UINT,
+			VK_FORMAT_R64G64B64_UINT,
+			VK_FORMAT_R64G64B64A64_UINT,
+		},
+	},
+
+	[qfm_s8n]  = {
+		.format = {
+			VK_FORMAT_R8_SNORM,
+			VK_FORMAT_R8G8_SNORM,
+			VK_FORMAT_R8G8B8_SNORM,
+			VK_FORMAT_R8G8B8A8_SNORM,
+		},
+	},
+	[qfm_s16n] = {
+		.format = {
+			VK_FORMAT_R16_SNORM,
+			VK_FORMAT_R16G16_SNORM,
+			VK_FORMAT_R16G16B16_SNORM,
+			VK_FORMAT_R16G16B16A16_SNORM,
+		},
+	},
+	[qfm_u8n]  = {
+		.format = {
+			VK_FORMAT_R8_UNORM,
+			VK_FORMAT_R8G8_UNORM,
+			VK_FORMAT_R8G8B8_UNORM,
+			VK_FORMAT_R8G8B8A8_UNORM,
+		},
+	},
+	[qfm_u16n] = {
+		.format = {
+			VK_FORMAT_R16_UNORM,
+			VK_FORMAT_R16G16_UNORM,
+			VK_FORMAT_R16G16B16_UNORM,
+			VK_FORMAT_R16G16B16A16_UNORM,
+		},
+	},
+
+	[qfm_f16]  = {
+		.format = {
+			VK_FORMAT_R16_SFLOAT,
+			VK_FORMAT_R16G16_SFLOAT,
+			VK_FORMAT_R16G16B16_SFLOAT,
+			VK_FORMAT_R16G16B16A16_SFLOAT,
+		},
+	},
+	[qfm_f32]  = {
+		.format = {
+			VK_FORMAT_R32_SFLOAT,
+			VK_FORMAT_R32G32_SFLOAT,
+			VK_FORMAT_R32G32B32_SFLOAT,
+			VK_FORMAT_R32G32B32A32_SFLOAT,
+		},
+	},
+	[qfm_f64]  = {
+		.format = {
+			VK_FORMAT_R64_SFLOAT,
+			VK_FORMAT_R64G64_SFLOAT,
+			VK_FORMAT_R64G64B64_SFLOAT,
+			VK_FORMAT_R64G64B64A64_SFLOAT,
+		},
+	},
+};
+
+static qfm_attrdesc_t default_attributes[] = {
+	{ .type = qfm_s8n, .components = 3 },
+	{ .type = qfm_s8n, .components = 3 },
+	{ .type = qfm_s8n, .components = 4 },
+	{ .type = qfm_u8n, .components = 2 },
+	{ .type = qfm_u8n, .components = 4 },
+	{ .type = qfm_u8,  .components = 4 },
+	{ .type = qfm_u8n, .components = 4 },
+	{ .type = qfm_s8n, .components = 3 },
+	{ .type = qfm_s8n, .components = 3 },
+	{ .type = qfm_s8n, .components = 4 },
+	{ .type = qfm_u8n, .components = 2 },
+	{ .type = qfm_u8n, .components = 4 },
+};
+
+static uint32_t
+set_vertex_attributes (qf_mesh_t *mesh, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+
+	auto attribs = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	uint32_t num_bindings = 0;
+	for (uint32_t i = 0; i < mesh->attributes.count; i++) {
+		if (num_bindings < attribs[i].set + 1u) {
+			num_bindings = attribs[i].set + 1u;
+		}
+	}
+	//FIXME want VK_EXT_vertex_attribute_robustness, but it seems my 1080
+	//didn't get it
+	uint32_t num_attributes = qfm_attr_count + qfm_color + 1;
+	VkVertexInputBindingDescription2EXT bindings[num_bindings];
+	VkVertexInputAttributeDescription2EXT attributes[num_attributes];
+
+	for (uint32_t i = 0; i < num_bindings; i++) {
+		bindings[i] = (VkVertexInputBindingDescription2EXT) {
+			.sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
+			.binding = i,
+			.stride = 0,
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+			.divisor = 1,
+		};
+	}
+	for (uint32_t i = 0; i < num_attributes; i++) {
+		uint32_t attr = i < qfm_attr_count ? i : i - qfm_attr_count;
+		auto a = default_attributes[attr];
+		attributes[i] = (VkVertexInputAttributeDescription2EXT) {
+			.sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+			.location = i,
+			.format = qfv_mesh_type_map[a.type].format[a.components - 1],
+		};
+	}
+
+	uint32_t enabled_mask = 0;
+
+	for (uint32_t i = 0; i < mesh->attributes.count; i++) {
+		auto a = attribs[i];
+		uint32_t location = a.attr + a.morph * qfm_attr_count;
+		attributes[location] = (VkVertexInputAttributeDescription2EXT) {
+			.sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT,
+			.location = location,
+			.binding = a.set,
+			.format = qfv_mesh_type_map[a.type].format[a.components - 1],
+			.offset = a.offset,
+		};
+		enabled_mask |= 1 << location;
+
+		bindings[a.set] = (VkVertexInputBindingDescription2EXT) {
+			.sType = VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT,
+			.binding = a.set,
+			.stride = a.stride,
+			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+			.divisor = 1,
+		};
+	}
+	dfunc->vkCmdSetVertexInputEXT (cmd, num_bindings, bindings,
+								   num_attributes, attributes);
+	return enabled_mask;
 }
 
 static void
@@ -270,7 +564,12 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
+	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
+										   + rmesh->bone_descriptors);
+
+	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
 
 	VkDeviceSize offsets[] = {
 		animation->pose1,
@@ -286,32 +585,39 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 
 	Vulkan_BeginEntityLabel (ctx, cmd, ent);
 
+	auto index_type = qfv_mesh_type_map[meshes[0].index_type].index_type;
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, rmesh->index_buffer, 0,
-								 VK_INDEX_TYPE_UINT32);
-	if (pass && skin) {
-		VkDescriptorSet sets[] = {
-			skin->descriptor,
-		};
-		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 2, 1, sets, 0, 0);
-	}
+	dfunc->vkCmdBindIndexBuffer (cmd, rmesh->index_buffer, 0, index_type);
+	VkDescriptorSet sets[] = {
+		bone_descs[ctx->curFrame],
+		skin ? skin->descriptor : nullptr,
+	};
+	bool shadow = !!taskctx->data;
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout,
+									shadow ? 1 : 2,
+									pass && skin ? 2 : 1, sets, 0, 0);
 	if (matrix_base) {
 		push_shadow_constants (Transform_GetWorldMatrixPtr (transform),
-							   blend, matrix_base, taskctx);
+							   enabled_mask, blend, matrix_base, taskctx);
 	} else {
 		if (pass > 1) {
 			alight_t    lighting;
 			R_Setup_Lighting (ent, &lighting);
 			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
-								blend, colors, base_color, &lighting,
-								pass, taskctx);
+								enabled_mask, blend, colors, base_color,
+								&lighting, pass, taskctx);
 		} else {
 			push_alias_constants (Transform_GetWorldMatrixPtr (transform),
-								  blend, colors, base_color, pass, taskctx);
+								  enabled_mask, blend, colors, base_color,
+								  pass, taskctx);
 		}
 	}
-	dfunc->vkCmdDrawIndexed (cmd, 3 * rmesh->numtris, 1, 0, 0, 0);
+	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		uint32_t num_tris = meshes[i].triangle_count;
+		uint32_t indices = meshes[i].indices;
+		dfunc->vkCmdDrawIndexed (cmd, 3 * num_tris, 1, indices, 0, 0);
+	}
 	QFV_CmdEndLabel (device, cmd);
 }
 
@@ -364,8 +670,12 @@ alias_shutdown (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
 	qfvPushDebug (ctx, "alias shutdown");
 	auto mctx = ctx->mesh_context;
+
+	QFV_DestroyResource (device, mctx->resource);
+	free (mctx->resource);
 
 	free (mctx);
 	qfvPopDebug (ctx);
@@ -377,8 +687,30 @@ alias_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto rctx = ctx->render_context;
 	auto mctx = ctx->mesh_context;
 	mctx->sampler = QFV_Render_Sampler (ctx, "qskin_sampler");
+
+	mctx->resource = malloc (sizeof (qfv_resource_t) + sizeof (qfv_resobj_t));
+	mctx->resource[0] = (qfv_resource_t) {
+		.name = "mesh",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 1,
+		.objects = (qfv_resobj_t *) &mctx->resource[1],
+	};
+	mctx->resource[0].objects[0] = (qfv_resobj_t) {
+		.name = "null_bone",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (vec4f_t[3]) * rctx->frames.size,
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		},
+	};
+	QFV_CreateResource (device, mctx->resource);
+	mctx->null_bone = mctx->resource[0].objects[0].buffer.buffer;
 }
 
 static void

@@ -366,20 +366,16 @@ oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
 matrices_h = $(vkshaderpath)/matrices.h
 entity_h = $(vkshaderpath)/entity.h
-aliasv_src = $(vkshaderpath)/alias.vert
-aliasv_c = $(vkshaderpath)/alias.vert.spvc
 qskin_fwdf_src = $(vkshaderpath)/qskin_fwd.frag
 qskin_fwdf_c = $(vkshaderpath)/qskin_fwd.frag.spvc
-alias_depth_src = $(vkshaderpath)/alias_depth.vert
-alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
 qskin_gbuf_src = $(vkshaderpath)/qskin_gbuf.frag
 qskin_gbuf_c = $(vkshaderpath)/qskin_gbuf.frag.spvc
-alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
-alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
 iqmv_src = $(vkshaderpath)/iqm.vert
 iqmv_c = $(vkshaderpath)/iqm.vert.spvc
-iqm_shadow_src = $(vkshaderpath)/iqm_shadow.vert
-iqm_shadow_c = $(vkshaderpath)/iqm_shadow.vert.spvc
+mesh_src = $(vkshaderpath)/mesh.r
+mesh_c = $(vkshaderpath)/mesh.r.spvc
+mesh_shadow_src = $(vkshaderpath)/mesh_shadow.r
+mesh_shadow_c = $(vkshaderpath)/mesh_shadow.r.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -470,15 +466,17 @@ $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
 $(compose_fwdf_c): $(compose_fwdf_src) $(oit_blend) $(oit_h)
 
-$(aliasv_c): $(aliasv_src) $(matrices_h)
+$(mesh_c): $(mesh_src) $(matrices_h)
 
-$(alias_depth_c): $(alias_depth_src) $(matrices_h)
+$(mesh_shadow_c): $(mesh_shadow_src) $(matrices_h)
+
+$(mesh_depth_c): $(mesh_depth_src) $(matrices_h)
+
+$(mesh_shadow_c): $(mesh_shadow_src)
 
 $(qskin_fwdf_c): $(qskin_fwdf_src) $(fog_h)
 
 $(qskin_gbuf_c): $(qskin_gbuf_src)
-
-$(alias_shadow_c): $(alias_shadow_src)
 
 $(iqmv_c): $(iqmv_src) $(matrices_h)
 
@@ -514,9 +512,8 @@ vkshader_src_vert = \
 	$(light_entid_src) \
 	$(light_flat_src) \
 	$(light_splatv_src) \
-	$(aliasv_src) \
-	$(alias_depth_src) \
-	$(alias_shadow_src) \
+	$(mesh_src) \
+	$(mesh_shadow_src) \
 	$(iqmv_src) \
 	$(iqm_shadow_src) \
 	$(passthrough_src) \
@@ -659,11 +656,12 @@ EXTRA_DIST += \
 	$(lighting_h) \
 	$(composef_src) \
 	$(compose_fwdf_src) \
-	$(aliasv_src) \
+	$(mesh_src) \
+	$(mesh_shadow_src) \
 	$(qskin_fwdf_src) \
-	$(alias_depth_src) \
+	$(mesh_depth_src) \
 	$(qskin_gbuf_src) \
-	$(alias_shadow_src) \
+	$(mesh_shadow_src) \
 	$(iqmv_src) \
 	$(iqm_shadow_src) \
 	$(iqm_shadow_src) \

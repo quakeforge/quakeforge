@@ -91,15 +91,17 @@ static cvar_t vulkan_oit_fragments_cvar = {
 };
 
 static const char *instance_extensions[] = {
-	VK_KHR_SURFACE_EXTENSION_NAME,
+	"VK_KHR_surface",
 	0,
 };
 
 static const char *device_extensions[] = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
+	"VK_KHR_swapchain",
+	"VK_EXT_load_store_op_none",
+	"VK_EXT_vertex_input_dynamic_state",
+//	"VK_EXT_vertex_attribute_robustness",
 #ifdef TRACY_ENABLE
-	VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+	"VK_EXT_calibrated_timestamps",
 #endif
 	0,
 };

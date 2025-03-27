@@ -49,7 +49,7 @@ typedef struct mesh_vrt_s {
 } mesh_vrt_t;
 
 typedef struct mesh_uv_s {
-	float       u, v;
+	float       uv[2];
 } mesh_uv_t;
 
 typedef struct qfv_mesh_s {
@@ -58,7 +58,6 @@ typedef struct qfv_mesh_s {
 	VkBuffer    index_buffer;
 	VkBuffer    bones_buffer;
 	uint32_t    resources;
-	uint32_t    numtris;
 	uint32_t    bone_descriptors;
 } qfv_mesh_t;
 
@@ -83,25 +82,30 @@ typedef struct meshindset_s
 
 typedef struct meshctx_s {
 	VkSampler    sampler;
+	struct qfv_dsmanager_s *dsmanager;
+	struct qfv_resource_s *resource;
+	VkBuffer     null_bone;
 } meshctx_t;
 
-struct vulkan_ctx_s;
-struct entity_s;
-struct mod_alias_ctx_s;
+typedef struct vulkan_ctx_s vulkan_ctx_t;
+typedef struct mod_alias_ctx_s mod_alias_ctx_t;
+typedef struct qf_model_s qf_model_t;
 
-void Vulkan_Mod_LoadAllSkins (struct mod_alias_ctx_s *alias_ctx,
-							  struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_FinalizeAliasModel (struct mod_alias_ctx_s *alias_ctx,
-									struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_LoadExternalSkins (struct mod_alias_ctx_s *alias_ctx,
-								   struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_MakeAliasModelDisplayLists (struct mod_alias_ctx_s *alias_ctx,
+void Vulkan_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx);
+void Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx,
+									vulkan_ctx_t *ctx);
+void Vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx,
+								   vulkan_ctx_t *ctx);
+void Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 											void *_m, int _s, int extra,
-											struct vulkan_ctx_s *ctx);
+											vulkan_ctx_t *ctx);
 
-void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_skin_t *skin);
-void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_skin_t *skin);
+void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
+void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);
 
-void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
+void Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
+
+void Vulkan_Alias_Init (vulkan_ctx_t *ctx);
 
 #endif//__QF_Vulkan_qf_mesh_h

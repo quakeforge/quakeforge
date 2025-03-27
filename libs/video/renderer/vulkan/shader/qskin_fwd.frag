@@ -4,10 +4,10 @@
 #include "fog.finc"
 
 layout (set = 1, binding = 0) uniform sampler2D Palette;
-layout (set = 2, binding = 0) uniform sampler2DArray Skin;
+layout (set = 3, binding = 0) uniform sampler2DArray Skin;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 68)
+	layout (offset = 72)
 	uint        colors;
 	float       ambient;
 	float       shadelight;

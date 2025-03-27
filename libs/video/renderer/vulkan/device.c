@@ -151,8 +151,18 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
+		//VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT vertex_robust = {
+		//	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES,
+		//	.vertexAttributeRobustness = 1,
+		//};
+		VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
+			//.pNext = &vertex_robust,
+			.vertexInputDynamicState = 1,
+		};
 		VkPhysicalDeviceVulkan12Features features12 = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+			.pNext = &vertex_input,
 			.hostQueryReset = 1,
 		};
 		VkPhysicalDeviceVulkan11Features features11 = {

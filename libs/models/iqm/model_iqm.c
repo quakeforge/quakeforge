@@ -108,6 +108,12 @@ static uint32_t type_size[] = {
 	[IQM_DOUBLE] = 8,
 };
 
+uint32_t
+iqm_attr_size (const iqmvertexarray *a)
+{
+	return a->size * type_size[a->format];
+}
+
 qfm_attrdesc_t
 iqm_mesh_attribute (iqmvertexarray a, uint32_t offset)
 {

@@ -54,6 +54,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
@@ -97,6 +98,9 @@ vulkan_alias_clear (model_t *m, void *data)
 			Vulkan_Skin_Clear (skin, ctx);
 		}
 	}
+
+	//FIXME doesn't belong here (per-instance)
+	Vulkan_MeshRemoveBones (ctx, model);
 }
 
 #define SKIN_LAYERS 3
@@ -289,11 +293,11 @@ build_uvs (mesh_uv_t *uv, const int *indexmap, const mod_alias_ctx_t *alias_ctx)
 	// the s coordinate is shifted right by half the skin width.
 	for (int i = 0; i < mdl->numverts; i++) {
 		int         vind = indexmap[i];
-		uv[i].u = (float) alias_ctx->stverts.a[i].s / mdl->skinwidth;
-		uv[i].v = (float) alias_ctx->stverts.a[i].t / mdl->skinheight;
+		uv[i].uv[0] = (float) alias_ctx->stverts.a[i].s / mdl->skinwidth;
+		uv[i].uv[1] = (float) alias_ctx->stverts.a[i].t / mdl->skinheight;
 		if (vind != -1) {
 			uv[vind] = uv[i];
-			uv[vind].u += 0.5;
+			uv[vind].uv[0] += 0.5;
 		}
 	}
 }
@@ -328,10 +332,14 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	alias_ctx->mod->data = ctx;
 
 	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
 
 	int numverts = alias_ctx->stverts.size;
 	int numtris = alias_ctx->triangles.size;
 	int numposes = alias_ctx->poseverts.size;
+
+	mesh->triangle_count = numtris;
+	mesh->index_type = qfm_u32;
 
 	int indexmap[numverts];
 	// initialize indexmap to -1 (unduplicated). any other value indicates
@@ -364,7 +372,6 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 		.num_objects = 3,
 		.objects = (qfv_resobj_t *) &resources[1],
 	};
-	rmesh->numtris = numtris;
 	auto vert_obj = resources->objects;
 	auto uv_obj = &vert_obj[1];
 	auto index_obj = &uv_obj[1];
@@ -443,6 +450,8 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	QFV_PacketScatterBuffer (packet, rmesh->index_buffer, 1, &ind_scatter,
 							 sb, ir);
 	QFV_PacketSubmit (packet);
+
+	Vulkan_MeshAddBones (ctx, model);//FIXME doesn't belong here (per-instance)
 }
 
 void
@@ -456,20 +465,69 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 {
 	auto mdl = alias_ctx->mdl;
 	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
+	auto rctx = ctx->render_context;
 
 	if (mdl->ident == HEADER_MDL16)
 		VectorScale (mdl->scale, 1/256.0, mdl->scale);
 
 	size_t size = sizeof (qfv_mesh_t)
+				+ sizeof (qfm_attrdesc_t[5])
+				+ sizeof (VkDescriptorSet[rctx->frames.size])
 				+ sizeof (qfv_resource_t)
-				+ sizeof (qfv_resobj_t)
-				+ sizeof (qfv_resobj_t)
-				+ sizeof (qfv_resobj_t);
+				+ sizeof (qfv_resobj_t[3]);
 
 	const char *name = alias_ctx->mod->name;
 	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
-	auto resources = (qfv_resource_t *) &rmesh[1];
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+	auto bone_descs = (VkDescriptorSet *) &attribs[5];
+	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];
 
 	model->render_data = (byte *) rmesh - (byte *) model;
-	rmesh->resources = (byte *) resources - (byte *) model;
+	*rmesh = (qfv_mesh_t) {
+		.resources = (byte *) resources - (byte *) model,
+		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
+	};
+
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 5,
+	};
+
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, vertex),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.set = 0,
+		.morph = 0,
+		.type = qfm_f32,
+		.components = 3,
+	};
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, normal),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.set = 0,
+		.morph = 0,
+		.type = qfm_f32,
+		.components = 3,
+	};
+	attribs[2] = attribs[0];
+	attribs[2].set = 1;
+	attribs[2].morph = 1;
+	attribs[3] = attribs[1];
+	attribs[3].set = 1;
+	attribs[3].morph = 1;
+	attribs[4] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_uv_t, uv),
+		.stride = sizeof (mesh_uv_t),
+		.attr = qfm_texcoord,
+		.abs = 1,
+		.set = 2,
+		.morph = 0,
+		.type = qfm_f32,
+		.components = 2,
+	};
 }

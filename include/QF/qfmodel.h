@@ -18,6 +18,7 @@ typedef enum : uint32_t {
 	qfm_joints,
 	qfm_weights,
 } qfm_attr_t;
+#define qfm_attr_count (qfm_weights + 1)
 
 typedef enum : uint32_t {
 	qfm_s8,
@@ -39,15 +40,17 @@ typedef enum : uint32_t {
 	qfm_f32,
 	qfm_f64,
 
-	qfm_special
+	qfm_special,
 } qfm_type_t;
+#define qfm_type_count (qfm_special + 1)
 
 typedef struct qfm_attrdesc_s {
 	uint32_t    offset;
 	unsigned    stride:16;
 	qfm_attr_t  attr:3;
 	unsigned    abs:1;		// for morph: attrib is absolute instead of delta
-	unsigned    set:4;
+	unsigned    set:3;
+	unsigned    morph:1;
 	qfm_type_t  type:4;
 	unsigned    components:4;
 } qfm_attrdesc_t;
