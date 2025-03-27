@@ -2459,6 +2459,16 @@ spirv_add_attr (attribute_t **attributes, const char *name, const expr_t *val)
 }
 
 static void
+spirv_add_str_attr (attribute_t **attrs, const char *name, const expr_t *val)
+{
+	if (!is_string_val (val)) {
+		error (val, "not a constant integer");
+		return;
+	}
+	spirv_add_attr (attrs, name, val);
+}
+
+static void
 spirv_add_int_attr (attribute_t **attrs, const char *name, const expr_t *val)
 {
 	if (!is_integral_val (val)) {
@@ -2518,10 +2528,18 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 
 		if (strcmp (attr->name, "in") == 0) {
 			spec->storage = sc_from_iftype (iface_in);
-			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			if (is_string_val (params[0])) {
+				spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
+			} else {
+				spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			}
 		} else if (strcmp (attr->name, "out") == 0) {
 			spec->storage = sc_from_iftype (iface_out);
-			spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			if (is_string_val (params[0])) {
+				spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
+			} else {
+				spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			}
 		} else if (strcmp (attr->name, "uniform") == 0) {
 			spec->storage = sc_from_iftype (iface_uniform);
 		} else if (strcmp (attr->name, "buffer") == 0) {
