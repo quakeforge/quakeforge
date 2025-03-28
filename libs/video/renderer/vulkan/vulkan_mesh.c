@@ -522,19 +522,9 @@ set_vertex_attributes (qf_mesh_t *mesh, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	return enabled_mask;
 }
 
-static void
-alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
-				renderer_t *renderer)
+static qfv_skin_t *
+get_skin (renderer_t *renderer, qf_mesh_t *mesh)
 {
-	auto model = renderer->model->model;
-	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	uint16_t *matrix_base = taskctx->data;
-
-	auto animation = Entity_GetAnimation (ent);
-	float blend = animation->blend;
-
-	transform_t transform = Entity_Transform (ent);
-
 	qfv_skin_t *skin = nullptr;
 	if (renderer->skin) {
 		skin_t     *tskin = Skin_Get (renderer->skin);
@@ -553,6 +543,23 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 		skin = (qfv_skin_t *) ((byte *) mesh + skindesc);
 	}
+	return skin;
+}
+
+static void
+alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
+				renderer_t *renderer)
+{
+	auto model = renderer->model->model;
+	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+	uint16_t *matrix_base = taskctx->data;
+
+	auto animation = Entity_GetAnimation (ent);
+	float blend = animation->blend;
+
+	transform_t transform = Entity_Transform (ent);
+
+	auto skin = get_skin (renderer, &meshes[0]);
 	vec4f_t base_color;
 	QuatCopy (renderer->colormod, base_color);
 
@@ -570,7 +577,6 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
 										   + rmesh->bone_descriptors);
@@ -578,7 +584,8 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
 
 	VkDeviceSize offsets[] = { 0, 0, 0 };
-	if (mesh->morph.numdesc) {
+	//FIXME per mesh, also allow mixing with bones
+	if (meshes[0].morph.numdesc) {
 		offsets[0] = animation->pose1;
 		offsets[0] = animation->pose2;
 	}
@@ -598,6 +605,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		bone_descs[ctx->curFrame],
 		skin ? skin->descriptor : nullptr,
 	};
+	auto bound_skin = skin;
 	bool shadow = !!taskctx->data;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout,
@@ -620,6 +628,16 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		}
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
+		if (!shadow && pass && i) {
+			skin = get_skin (renderer, &meshes[i]);
+			if (skin && skin != bound_skin) {
+				VkDescriptorSet sets[] = { skin->descriptor };
+				bound_skin = skin;
+				dfunc->vkCmdBindDescriptorSets (cmd,
+												VK_PIPELINE_BIND_POINT_GRAPHICS,
+												layout, 3, 1, sets, 0, 0);
+			}
+		}
 		uint32_t num_tris = meshes[i].triangle_count;
 		uint32_t indices = meshes[i].indices;
 		dfunc->vkCmdDrawIndexed (cmd, 3 * num_tris, 1, indices, 0, 0);
