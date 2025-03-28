@@ -577,11 +577,11 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
 
-	VkDeviceSize offsets[] = {
-		animation->pose1,
-		animation->pose2,
-		0,
-	};
+	VkDeviceSize offsets[] = { 0, 0, 0 };
+	if (mesh->morph.numdesc) {
+		offsets[0] = animation->pose1;
+		offsets[0] = animation->pose2;
+	}
 	VkBuffer    buffers[] = {
 		rmesh->geom_buffer,
 		rmesh->geom_buffer,
