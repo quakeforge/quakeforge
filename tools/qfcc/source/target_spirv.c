@@ -1641,7 +1641,7 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 			op += SpvOpSpecConstantTrue - SpvOpConstantTrue;
 		}
 		auto globals = ctx->module->globals;
-		if (op == SpvOpConstant && !val) {
+		if (op == SpvOpConstant && !val && !is_math (value->type)) {
 			auto insn = spirv_new_insn (SpvOpConstantNull, 3, globals, ctx);
 			INSN (insn, 1) = tid;
 			INSN (insn, 2) = value->id = spirv_id (ctx);
