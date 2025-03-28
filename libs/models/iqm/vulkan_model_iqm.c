@@ -160,6 +160,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	qfv_device_t *device = ctx->device;
 	auto model = iqm_ctx->qf_model;
 	auto meshes = iqm_ctx->qf_meshes;
+	auto text = (const char *) model + model->text.offset;
 	dstring_t  *str = dstring_new ();
 	tex_t      *tex;
 	size_t      buff_size = 0;
@@ -183,7 +184,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 			.colors = { TOP_RANGE + 7, BOTTOM_RANGE + 7, 0, 0 },
 		};
 
-		dstring_copystr (str, iqm_ctx->text + meshes[i].material);
+		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		if (!(tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
 			static tex_t       null_tex = {
@@ -211,16 +212,13 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	auto iqm = iqm_ctx->hdr;
-	size_t vsizes[3] = {
-		iqm->num_vertexes * strides[0],
-		0,
-		iqm->num_vertexes * strides[2],
-	};
-	size_t      buff_size = vsizes[0] + vsizes[2] + index_bytes + 1024;
+	size_t vsizes[3] = { VectorExpand (strides) };
+	VectorScale (vsizes, iqm->num_vertexes, vsizes);
+	size_t buff_size = vsizes[0] + vsizes[2] + index_bytes + 1024;
 	auto stage = QFV_CreateStagingBuffer (device, "iqm stage", buff_size,
 										  ctx->cmdpool);
-	qfv_packet_t *vpackets[3];
-	byte *vdata[3];
+	qfv_packet_t *vpackets[3] = {};
+	byte *vdata[3] = {};
 	for (int i = 0; i < 3; i++) {
 		if (i == 1) {
 			continue;
@@ -239,8 +237,7 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 			memcpy (vdata[attribs[j].set] + attribs[j].offset,
 					iqm_data + va[j].offset + i * size, size);
 		}
-		vdata[0] += strides[0];
-		vdata[1] += strides[2];
+		VectorAdd (vdata, strides, vdata);
 	}
 	memcpy (idata, indices, index_bytes);
 
@@ -369,6 +366,7 @@ setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
 	const char *name = iqm_ctx->mod->name;
 	auto model = iqm_ctx->qf_model;
 	auto meshes = iqm_ctx->qf_meshes;
+	auto text = (const char *) model + model->text.offset;
 	uint32_t index_size = mesh_type_size (mesh_index_type (num_verts));
 
 	mesh_res[0] = (qfv_resource_t) {
@@ -410,7 +408,7 @@ setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		int   image_ind = 2 * i;
 		auto  image = &image_objs[image_ind];
-		vulkan_iqm_init_image (iqm_ctx->text, &meshes[i], image);
+		vulkan_iqm_init_image (text, &meshes[i], image);
 
 		image_objs[image_ind + 1] = (qfv_resobj_t) {
 			.name = "view",
