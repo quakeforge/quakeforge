@@ -222,7 +222,7 @@ push_alias_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (alias_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 	};
-	QFV_PushConstants (device, cmd, layout, pass ? 5 : 2, push_constants);
+	QFV_PushConstants (device, cmd, layout, pass ? 6 : 3, push_constants);
 }
 
 static void
@@ -275,7 +275,7 @@ push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (fwd_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 	};
-	QFV_PushConstants (device, cmd, layout, 8, push_constants);
+	QFV_PushConstants (device, cmd, layout, 9, push_constants);
 }
 
 static void
@@ -307,7 +307,7 @@ push_shadow_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (shadow_push_constants_t, matrix_base),
 			sizeof (uint32_t), &constants.matrix_base },
 	};
-	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+	QFV_PushConstants (device, cmd, layout, 4, push_constants);
 }
 
 static struct {

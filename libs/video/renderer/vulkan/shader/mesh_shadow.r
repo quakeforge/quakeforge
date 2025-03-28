@@ -8,6 +8,8 @@ genFType mix(genFType x, genFType y, float a) = GLSL(FMix)
 	[x, y, @construct (genFType, a)];
 };
 
+//void DebugPrintf(string fmt, ...) = @intrinsic(OpExtInst, "NonSemantic.DebugPrintf", DebugPrintf);
+
 [out("Position")] vec4 gl_Position;
 [in("ViewIndex")] int gl_ViewIndex;
 
@@ -88,6 +90,7 @@ main (void)
 #endif
 	}
 
+	//DebugPrintf ("MB:%u VI:%u\n", MatrixBase, gl_ViewIndex);
 	uint matid = shadowId[MatrixBase + gl_ViewIndex];
 	gl_Position = shadowView[matid] * (Model * vec4(position, 1));
 }
