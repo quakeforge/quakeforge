@@ -2501,6 +2501,8 @@ spirv_field_attributes (attribute_t **attributes, symbol_t *sym)
 				return;
 			}
 			sym->offset = expr_integral (val);
+		} else if (strcmp (attr->name, "builtin") == 0) {
+			spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
 		} else {
 			a = &attr->next;
 			continue;
@@ -2516,30 +2518,40 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 	for (auto a = attributes; *a; ) {
 		auto attr = *a;
 
-		int count = 0;
+		int num_params = 0;
 		if (attr->params) {
-			count = list_count (&attr->params->list);
+			num_params = list_count (&attr->params->list);
 		}
-		const expr_t *params[count + 1];
-		params[count] = nullptr;
+		const expr_t *params[num_params + 1];
+		params[num_params] = nullptr;
 		if (attr->params) {
 			list_scatter (&attr->params->list, params);
 		}
 
 		if (strcmp (attr->name, "in") == 0) {
 			spec->storage = sc_from_iftype (iface_in);
-			if (is_string_val (params[0])) {
-				spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
-			} else {
-				spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			if (num_params) {
+				if (is_string_val (params[0])) {
+					spirv_add_str_attr (&sym->attributes, "BuiltIn",
+										params[0]);
+				} else {
+					spirv_add_int_attr (&sym->attributes, "Location",
+										params[0]);
+				}
 			}
 		} else if (strcmp (attr->name, "out") == 0) {
 			spec->storage = sc_from_iftype (iface_out);
-			if (is_string_val (params[0])) {
-				spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
-			} else {
-				spirv_add_int_attr (&sym->attributes, "Location", params[0]);
+			if (num_params) {
+				if (is_string_val (params[0])) {
+					spirv_add_str_attr (&sym->attributes, "BuiltIn",
+										params[0]);
+				} else {
+					spirv_add_int_attr (&sym->attributes, "Location",
+										params[0]);
+				}
 			}
+		} else if (strcmp (attr->name, "builtin") == 0) {
+			spirv_add_str_attr (&sym->attributes, "BuiltIn", params[0]);
 		} else if (strcmp (attr->name, "uniform") == 0) {
 			spec->storage = sc_from_iftype (iface_uniform);
 		} else if (strcmp (attr->name, "buffer") == 0) {
