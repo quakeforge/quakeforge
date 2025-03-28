@@ -58,7 +58,6 @@ target_set_backend (const char *tgt)
 		options.code.progsversion = PROG_VERSION;
 		options.code.max_params = -1;
 		options.code.spirv = true;
-		options.code.no_vararg = true;
 	} else {
 		fprintf (stderr, "unknown target: %s\n", tgt);
 		exit (1);

@@ -76,6 +76,11 @@ static spirv_json_t builtin_json[] = {
 	  .json =
 #include "tools/qfcc/source/extinst.glsl.std.450.grammar.jinc"
 		},
+	{ .parent = &builtin_json[0],
+	  .name = "NonSemantic.DebugPrintf",
+	  .json =
+#include "tools/qfcc/source/extinst.nonsemantic.debugprintf.grammar.jinc"
+		},
 	{}
 };
 static bool built;

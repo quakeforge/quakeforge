@@ -110,10 +110,20 @@ $(extinst_glsl_std_450_grammar_jinc): $(embed_py)
 		-o $@.t $(extinst_glsl_std_450_grammar_json) && \
 	$(am__mv) $@.t $@
 
+extinst_nonsemantic_debugprintf_grammar_json = \
+	spirv/unified1/extinst.nonsemantic.debugprintf.grammar.json
+extinst_nonsemantic_debugprintf_grammar_jinc = \
+	$(qfcc_source)/extinst.nonsemantic.debugprintf.grammar.jinc
+$(extinst_nonsemantic_debugprintf_grammar_jinc): $(embed_py)
+	$(V_PY)$(PYTHON) $(embed_py) $(COMPILE) \
+		-o $@.t $(extinst_nonsemantic_debugprintf_grammar_json) && \
+	$(am__mv) $@.t $@
+
 tools/qfcc/source/spirv_grammar.$(OBJEXT): \
 	tools/qfcc/source/spirv_grammar.c \
 	$(spirv_core_grammar_jinc) \
-	$(extinst_glsl_std_450_grammar_jinc)
+	$(extinst_glsl_std_450_grammar_jinc) \
+	$(extinst_nonsemantic_debugprintf_grammar_jinc)
 
 qfcc_LDADD=			$(QFCC_LIBS)
 qfcc_DEPENDENCIES=	$(QFCC_DEPS)
@@ -159,6 +169,7 @@ tools/qfcc/source/qp-lex.c: tools/qfcc/source/qp-lex.l
 	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 
 CLEANFILES += \
+	$(extinst_nonsemantic_debugprintf_grammar_jinc) \
 	$(extinst_glsl_std_450_grammar_jinc) \
 	$(spirv_core_grammar_jinc)
 

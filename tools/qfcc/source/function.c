@@ -1507,10 +1507,6 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 						  rua_ctx_t *ctx)
 {
 	auto sym = function_symbol (spec, ctx);
-	if (sym->type->func.num_params < 0) {
-		error (intrinsic, "intrinsic functions cannot be variadic");
-		return;
-	}
 	if (sym->metafunc->state_expr) {
 		error (intrinsic, "intrinsic functions cannot have a state expression");
 		return;
