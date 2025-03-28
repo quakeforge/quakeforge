@@ -266,6 +266,10 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 	call->intrinsic.res_type = ftype->func.ret_type;
 	list_append_list (&call->intrinsic.operands,
 					  &expr->intrinsic.operands);
+	int num_params = ftype->func.num_params;
+	if (num_params < 0) {
+		num_params = ~num_params;
+	}
 	if (expr->intrinsic.extra) {
 		if (expr->intrinsic.extra->type != ex_list) {
 			internal_error (expr->intrinsic.extra, "not a list");
@@ -294,8 +298,14 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 		list_gather (&call->intrinsic.operands, extra_args, extra_count);
 	} else {
 		auto p = fsym->params;
-		for (int i = 0; i < arg_count; i++, p = p->next) {
+		for (int i = 0; i < arg_count && i < num_params; i++, p = p->next) {
 			arguments[i] = reference_param (p->type, arguments[i]);
+		}
+		for (int i = num_params; i < arg_count; i++) {
+			// assume reverences should always be passed by value
+			if (is_reference (get_type (arguments[i]))) {
+				arguments[i] = pointer_deref (arguments[i]);
+			}
 		}
 		list_gather (&call->intrinsic.operands, arguments, arg_count);
 	}

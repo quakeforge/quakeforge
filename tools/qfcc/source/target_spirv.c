@@ -1540,6 +1540,12 @@ spirv_temp (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_string_value (const ex_value_t *value, spirvctx_t *ctx)
+{
+	return spirv_String (value->string_val, ctx);
+}
+
+static unsigned
 spirv_vector_value (const ex_value_t *value, spirvctx_t *ctx)
 {
 	auto base = base_type (value->type);
@@ -1613,6 +1619,9 @@ spirv_value (const expr_t *e, spirvctx_t *ctx)
 {
 	auto value = e->value;
 	if (!value->id) {
+		if (is_string (value->type)) {
+			return spirv_string_value (value, ctx);
+		}
 		if (is_matrix (value->type)) {
 			return spirv_matrix_value (value, ctx);
 		}
