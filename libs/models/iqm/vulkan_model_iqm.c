@@ -81,6 +81,9 @@ vulkan_iqm_clear (model_t *mod, void *data)
 	vulkan_ctx_t *ctx = data;
 	qfv_device_t *device = ctx->device;
 	auto model = mod->model;
+	if (!model) {
+		return;
+	}
 
 	QFV_DeviceWaitIdle (device);
 

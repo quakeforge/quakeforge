@@ -341,7 +341,7 @@ bi (Entity_GetPoseMotors)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = 0;
-#if 0
+
 	rua_scene_resources_t *res = _res;
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
 	entity_t    ent = rua_entity_get (res, ent_id);
@@ -353,17 +353,16 @@ bi (Entity_GetPoseMotors)
 	auto frame = (qfm_joint_t *) P_GPOINTER (pr, 1);
 	double time = P_DOUBLE (pr, 2);
 
-	if (renderer->model->type != mod_mesh || !model->poses.count) {
+	if (renderer->model->type != mod_mesh || !model->pose.count) {
 		return;
 	}
 
 	auto anim = Entity_GetAnimation (ent);
-	float blend = R_IQMGetLerpedFrames (time, anim, iqm);
-	auto f = R_IQMBlendPoseFrames (iqm, anim->pose1, anim->pose2, blend, 0);
-	memcpy (frame, f, iqm->num_joints * sizeof (frame[0]));
+	float blend = R_IQMGetLerpedFrames (time, anim, model);
+	auto f = R_IQMBlendPoseFrames (model, anim->pose1, anim->pose2, blend, 0);
+	memcpy (frame, f, model->pose.count * sizeof (frame[0]));
 
 	R_INT (pr) = 1;
-#endif
 }
 
 bi (Transform_ChildCount)

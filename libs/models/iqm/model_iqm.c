@@ -310,6 +310,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 
 	memcpy (text, iqm.comment, hdr->num_comment);
 	memcpy (text + text_base, iqm.text, hdr->num_text);
+	memcpy (framedata, iqm.frames, sizeof (uint16_t[frame_data_count]));
 
 	*model = (qf_model_t) {
 		.meshes = {
@@ -425,7 +426,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			uint32_t abs_frame_num = a->first_frame + j;
 			auto data = &framedata[abs_frame_num * hdr->num_framechannels];
 			keyframes[abs_frame_num] = (keyframe_t) {
-				.endtime = a->framerate * (j + 1),
+				.endtime = (j + 1) / a->framerate,
 				.data = (byte *) data - (byte *) model,
 			};
 		}

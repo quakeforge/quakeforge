@@ -141,12 +141,12 @@ union refframe_s;
 void R_SetFrustum (plane_t *frustum, const union refframe_s *frame,
 				   float fov_x, float fov_y);
 
-struct entity_s;
-struct animation_s;
+typedef struct entity_s entity_t;
+typedef struct animation_s animation_t;
 
 void R_SpriteBegin (void);
 void R_SpriteEnd (void);
-void R_DrawSprite (struct entity_s ent);
+void R_DrawSprite (entity_t ent);
 void R_RenderFace (uint32_t render_id, msurface_t *fa, int clipflags);
 void R_RenderPoly (uint32_t render_id, msurface_t *fa, int clipflags);
 void R_RenderBmodelFace (uint32_t render_id, bedge_t *pedges, msurface_t *psurf);
@@ -163,14 +163,19 @@ void R_DrawSolidClippedSubmodelPolygons (uint32_t render_id, mod_brush_t *brush,
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
-void R_AliasDrawModel (struct entity_s ent, alight_t *plighting);
-void R_IQMDrawModel (struct entity_s ent, alight_t *plighting);
+void R_AliasDrawModel (entity_t ent, alight_t *plighting);
+void R_IQMDrawModel (entity_t ent, alight_t *plighting);
+
+float R_IQMGetLerpedFrames (double time, animation_t *animation,
+							qf_model_t *model);
+qfm_motor_t *R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
+								   float blend, int extra);
 mat4f_t *R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2,
 						   float blend, int extra);
 mat4f_t *R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2,
 							float blend, int extra, qfm_blend_t *blend_palette,
 							uint32_t palette_size);
-float R_EntityBlend (double time, struct animation_s *animation, int pose,
+float R_EntityBlend (double time, animation_t *animation, int pose,
 					 float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
@@ -238,7 +243,7 @@ extern auxvert_t		*pauxverts;
 extern float            ziscale;
 extern float            aliastransform[3][4];
 
-bool R_AliasCheckBBox (struct entity_s ent);
+bool R_AliasCheckBBox (entity_t ent);
 
 // turbulence stuff =======================================
 
@@ -299,7 +304,7 @@ void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
 int R_LightPoint (mod_brush_t *brush, vec4f_t p);
-void R_Setup_Lighting (struct entity_s ent, alight_t *lighting);
+void R_Setup_Lighting (entity_t ent, alight_t *lighting);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);

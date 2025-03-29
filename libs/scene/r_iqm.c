@@ -47,66 +47,101 @@
 
 #include "r_internal.h"
 #include "mod_internal.h"
-#if 0
-static vec4f_t
-iqm_translate (const iqm_t *iqm, const iqmpose_t *pose, int frame)
+
+VISIBLE float
+R_IQMGetLerpedFrames (double realtime, animation_t *animation,
+					  qf_model_t *model)
 {
-	auto data = iqm->framedata + frame * iqm->num_framechannels;
-	auto offset = &pose->channeloffset[0];
-	auto base = &pose->channelbase[0];
-	auto scale = &pose->channelscale[0];
-	vec4f_t t = { VectorExpand (offset) };
-	for (int i = 0; i < 3; i++) {
-		if (pose->mask & (1<<i)) {
-			t[i] += data[base[i]] * scale[i];
-		}
+	qfZoneScoped (true);
+	uint32_t    frame = animation->frame;
+
+	if (!model->anim.numdesc) {
+		return R_EntityBlend (realtime, animation, 0, 1.0 / 25.0);
 	}
-	return t;
+	if (frame >= model->anim.numdesc) {
+		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
+						frame);
+		frame = 0;
+	}
+	auto keyframedescs = (keyframedesc_t *) ((byte *) model
+											 + model->anim.descriptors);
+	auto keyframes = (keyframe_t *) ((byte *) model + model->anim.keyframes);
+
+	auto anim = &keyframedescs[frame];
+	uint32_t last_frame = anim->firstframe + anim->numframes - 1;
+	float fullinterval = keyframes[last_frame].endtime;
+	float framerate = anim->numframes / fullinterval;
+	double time = realtime + animation->syncbase;
+	time -= floor (time / fullinterval) * fullinterval;
+	frame = (int) (time * framerate) + anim->firstframe;
+	frame = keyframes[anim->firstframe + frame].data;
+	return R_EntityBlend (realtime, animation, frame,
+						  fullinterval / anim->numframes);
 }
 
-static vec4f_t
-iqm_rotate (const iqm_t *iqm, const iqmpose_t *pose, int frame)
-{
-	auto data = iqm->framedata + frame * iqm->num_framechannels;
-	auto offset = &pose->channeloffset[3];
-	auto base = &pose->channelbase[3];
-	auto scale = &pose->channelscale[3];
-	vec4f_t r = { QuatExpand (offset) };
-	for (int i = 0; i < 4; i++) {
-		if (pose->mask & (1<<(i + 3))) {
-			r[i] += data[base[i]] * scale[i];
-		}
-	}
-	return r;
-}
 
-static vec4f_t
-iqm_scale (const iqm_t *iqm, const iqmpose_t *pose, int frame)
-{
-	auto data = iqm->framedata + frame * iqm->num_framechannels;
-	auto offset = &pose->channeloffset[7];
-	auto base = &pose->channelbase[7];
-	auto scale = &pose->channelscale[7];
-	vec4f_t s = { VectorExpand (offset) };
-	for (int i = 0; i < 3; i++) {
-		if (pose->mask & (1<<(i + 7))) {
-			s[i] += data[base[i]] * scale[i];
-		}
-	}
-	return s;
-}
+// will use the space for the motors to hold the base joints for animation
+static_assert (sizeof (qfm_motor_t) == sizeof (qfm_joint_t));
 
 static void
-iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
+apply_channels (qfm_joint_t *joints, qf_model_t *model,
+				uint32_t frame1, uint32_t frame2, float blend)
 {
-	iqmframe_t t = {
-		.translate = qvmulf (a->rotate, b->translate) + a->translate,
-		.rotate = qmulf (a->rotate, b->rotate),
-		.scale = a->scale * b->scale,
-	};
-	*c = t;
+	auto base = (byte *) joints;
+	auto channel = (qfm_channel_t *) ((byte*) model + model->channels.offset);
+	auto data1 = (uint16_t *) ((byte *) model + frame1);
+	auto data2 = (uint16_t *) ((byte *) model + frame2);
+	for (uint32_t i = 0; i < model->channels.count; i++) {
+		auto val = (float *) (base + channel[i].data);
+		float offset1 = channel[i].scale * data1[i];
+		float offset2 = channel[i].scale * data2[i];
+		*val = channel[i].base + Blend (offset1, offset2, blend);
+	}
 }
-#endif
+
+VISIBLE qfm_motor_t *
+R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
+					  float blend, int extra)
+{
+	qfZoneScoped (true);
+
+	auto joints = (qfm_joint_t *) ((byte *) model + model->joints.offset);
+	auto pose = (qfm_joint_t *) ((byte *) model + model->pose.offset);
+	auto base_motors = (qfm_motor_t *) ((byte *) model + model->base.offset);
+	auto inv_motors = (qfm_motor_t *) ((byte *) model + model->inverse.offset);
+
+	if (!frame1) {
+		frame1 = frame2;
+	}
+
+	size_t size = sizeof (qfm_motor_t[model->joints.count]) + extra;
+	qfm_motor_t *motors = Hunk_TempAlloc (0, size);
+	if (model->channels.count && model->joints.count == model->pose.count) {
+		memcpy (motors, pose, sizeof (qfm_motor_t[model->pose.count]));
+		pose = (qfm_joint_t *) motors;
+		apply_channels (pose, model, frame1, frame2, blend);
+	} else {
+		pose = joints;
+	}
+
+	// use joints for the count in case there's no (valid) pose data, in which
+	// case pose == joints
+	for (uint32_t i = 0; i < model->joints.count; i++) {
+		// grab parent first because pose might be aliased with motors
+		int parent = pose[i].parent;
+		motors[i] = qfm_make_motor (pose[i]);
+		// Pc * Bc^-1
+		motors[i] = qfm_motor_mul (motors[i], inv_motors[i]);
+		if (parent >= 0) {
+			// Bp * Pc * Bc^-1
+			motors[i] = qfm_motor_mul (base_motors[parent], motors[i]);
+			// Pp * Bp^-1 * Bp * Pc * Bc^-1
+			motors[i] = qfm_motor_mul (motors[parent], motors[i]);
+		}
+	}
+	return motors;
+}
+
 static void
 framemat (mat4f_t mat, const qfm_joint_t *f)
 {
@@ -116,56 +151,7 @@ framemat (mat4f_t mat, const qfm_joint_t *f)
 	mat[2] *= f->scale[2];
 	mat[3] = loadvec3f (f->translate) + (vec4f_t) {0, 0, 0, 1};
 }
-#if 0
-VISIBLE iqmframe_t *
-R_IQMBlendPoseFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
-					  int extra)
-{
-	qfZoneScoped (true);
-	iqmframe_t *frame;
 
-	frame = Hunk_TempAlloc (0, iqm->num_joints * sizeof (iqmframe_t) + extra);
-	for (int i = 0; i < iqm->num_joints; i++) {
-		auto f = &frame[i];
-		int parent = -1;
-		if (iqm->num_frames) {
-			auto pose = &iqm->poses[i];
-			parent = pose->parent;
-
-			vec4f_t t1 = iqm_translate (iqm, pose, frame1);
-			vec4f_t r1 = iqm_rotate (iqm, pose, frame1);
-			vec4f_t s1 = iqm_scale (iqm, pose, frame1);
-
-			vec4f_t t2 = iqm_translate (iqm, pose, frame2);
-			vec4f_t r2 = iqm_rotate (iqm, pose, frame2);
-			vec4f_t s2 = iqm_scale (iqm, pose, frame2);
-
-			*f = (iqmframe_t) {
-				.translate = t1 * (1 - blend) + t2 * blend,
-				.rotate = normalf (r1 * (1 - blend) + r2 * blend),
-				.scale = s1 * (1 - blend) + s2 * blend,
-			};
-		} else {
-			iqmjoint_t *j = &iqm->joints[i];
-			parent = j->parent;
-			*f = (iqmframe_t) {
-				.translate = { VectorExpand (j->translate) },
-				.rotate = j->rotate,
-				.scale = { VectorExpand (j->scale)},
-			};
-		}
-		// Pc * Bc^-1
-		iqm_framemul (f, f, &iqm->inverse_basejoints[i]);
-		if (parent >= 0) {
-			// Bp * Pc * Bc^-1
-			iqm_framemul (f, &iqm->basejoints[parent], f);
-			// Pp * Bp^-1 * Bp * Pc * Bc^-1
-			iqm_framemul (f, &frame[parent], f);
-		}
-	}
-	return frame;
-}
-#endif
 mat4f_t *
 R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
 				  int extra)
@@ -177,13 +163,7 @@ R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
 
 	//FIXME separate animation state
 	if (model->pose.count) {
-		auto base = (byte *) model + model->pose.offset;
-		auto channel = (qfm_channel_t*)((byte*) model + model->channels.offset);
-		auto data = (uint16_t *) ((byte *) model + frame2);
-		for (uint32_t i = 0; i < model->channels.count; i++) {
-			auto val = (float *) (base + channel[i].data);
-			*val = channel[i].base + channel[i].scale * data[i];
-		}
+		//apply_channels (pose, model, frame1, frame2, blend);
 	}
 
 	auto basejoints = (qfm_joint_t *) ((byte *) model + model->joints.offset);
