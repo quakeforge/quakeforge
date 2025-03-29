@@ -176,8 +176,8 @@ R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
 	mat4f_t *frame = Hunk_TempAlloc (0, size);
 
 	//FIXME separate animation state
-	if (model->poses.count) {
-		auto base = (byte *) model + model->poses.offset;
+	if (model->pose.count) {
+		auto base = (byte *) model + model->pose.offset;
 		auto channel = (qfm_channel_t*)((byte*) model + model->channels.offset);
 		auto data = (uint16_t *) ((byte *) model + frame2);
 		for (uint32_t i = 0; i < model->channels.count; i++) {
@@ -190,8 +190,8 @@ R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
 	auto inverse = (mat4f_t *) model + model->inverse.offset;
 	for (uint32_t i = 0; i < model->joints.count; i++) {
 		qfm_joint_t *joint;
-		if (model->poses.count) {
-			joint = (qfm_joint_t *) ((byte *) model + model->poses.offset);
+		if (model->pose.count) {
+			joint = (qfm_joint_t *) ((byte *) model + model->pose.offset);
 		} else {
 			joint = (qfm_joint_t *) ((byte *) model + model->joints.offset);
 		}

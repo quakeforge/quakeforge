@@ -65,6 +65,13 @@ typedef struct qfm_joint_s {
 	int32_t     parent;
 } qfm_joint_t;
 
+typedef struct qfm_motor_s {
+	vec4f_t     q;		// e23 e31 e12 1
+	vec4f_t     t;		// e01 e02 e03 e0123
+	vec3_t      s;
+	uint32_t    flags;	// 1 -> uniform scale
+} qfm_motor_t;
+
 typedef struct qfm_blend_s {
 	uint8_t     indices[4];
 	uint8_t		weights[4];
@@ -106,14 +113,106 @@ typedef struct qf_mesh_s {
 
 typedef struct qf_model_s {
 	qfm_loc_t   meshes;
-	qfm_loc_t   joints;		// base joint definitions
-	qfm_loc_t   inverse;	// inverse bind pose
-	qfm_loc_t   poses;		// posed joints
-	qfm_loc_t   channels;	// posed joints
+	qfm_loc_t   joints;		// joint definitions (qfm_joint_t)
+	qfm_loc_t   base;		// base joint motors (qfm_motor_t)
+	qfm_loc_t   inverse;	// inverse joint motors (qfm_motor_t)
+	qfm_loc_t   pose;		// (qfm_joint_t)
+	qfm_loc_t   channels;
 	qfm_loc_t   text;
 	anim_t      anim;
 	uint16_t    crc;
 	uint32_t    render_data;
 } __attribute__((aligned (16))) qf_model_t;
+
+#include "QF/simd/vec4f.h"
+
+GNU89INLINE inline uint32_t qfm_uniform_scale (const vec3_t s)
+	__attribute__((const));
+GNU89INLINE inline qfm_motor_t qfm_make_motor (qfm_joint_t joint)
+	__attribute__((const));
+GNU89INLINE inline qfm_motor_t qfm_motor_invert (qfm_motor_t m)
+	__attribute__((const));
+GNU89INLINE inline qfm_motor_t qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
+	__attribute__((const));
+
+#ifndef IMPLEMENT_QFMODEL_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+uint32_t
+qfm_uniform_scale (const vec3_t s)
+{
+	return s[0] == s[1] && s[0] == s[2];
+}
+
+#ifndef IMPLEMENT_QFMODEL_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+qfm_motor_t
+qfm_make_motor (qfm_joint_t joint)
+{
+	auto q = qconjf (joint.rotate);
+	auto t = loadvec3f (joint.translate) * 0.5;
+	auto sa = loadvec3f ((vec_t*)&q);//FIXME
+	float c = q[3];
+	auto p = crossf (t, sa) - c * t;
+	p[3] = -dotf(t, sa)[3];
+	return (qfm_motor_t) {
+		.q = q,
+		.t = p,
+		.s = { VectorExpand (joint.scale) },
+		.flags = qfm_uniform_scale (joint.scale),
+	};
+}
+
+#ifndef IMPLEMENT_QFMODEL_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+qfm_motor_t
+qfm_motor_invert (qfm_motor_t m)
+{
+	auto is = 1 / loadvec3f (m.s);
+	return (qfm_motor_t) {
+		.q = qconjf (m.q),
+		.t = qconjf (m.t),
+		.s = { VectorExpand (is) },
+		.flags = m.flags,
+	};
+}
+
+#ifndef IMPLEMENT_QFMODEL_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+qfm_motor_t __attribute__((const))
+qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
+{
+	float a1 = m1.q[3];
+	auto  b1 = loadvec3f ((vec_t*)&m1.q);//FIXME
+	auto  c1 = loadvec3f ((vec_t*)&m1.t);//FIXME
+	float d1 = m1.t[3];
+	float a2 = m2.q[3];
+	auto  b2 = loadvec3f ((vec_t*)&m2.q);//FIXME
+	auto  c2 = loadvec3f ((vec_t*)&m2.t);//FIXME
+	float d2 = m2.t[3];
+
+	float a = a1*a2 - dotf (b1,b2)[3];
+	auto  b = a1*b2 + a2*b1 - crossf (b1,b2);
+	auto  c = a1*c2 + a2*c1 - crossf (b1,c2) - crossf (c1,b2) - d1*b2 - d2*b1;
+	float d = a1*d2 + a2*d1 + dotf(b1,c2)[3] + dotf(c1,b2)[3];
+	auto s = loadvec3f (m1.s) * loadvec3f (m2.s);
+	return (qfm_motor_t) {
+		.q = { VectorExpand (b), a },
+		.t = { VectorExpand (c), d },
+		.s = { VectorExpand (s) },
+		.flags = m1.flags & m2.flags,
+	};
+}
 
 #endif//__QF_qfmodel_h

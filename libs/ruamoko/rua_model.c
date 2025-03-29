@@ -212,8 +212,8 @@ bi (Model_GetJoints)
 	auto j = (qfm_joint_t *) ((byte *) model + model->joints.offset);
 
 	memcpy (joints, j, model->joints.count * sizeof (qfm_joint_t));
+	auto text = (const char *) ((byte *) model + model->text.offset);
 	for (uint32_t i = 0; i < model->joints.count; i++) {
-		auto text = (const char *) ((byte *) model + model->text.offset);
 		auto name = text + joints[i].name;
 		joints[i].name = PR_SetString (pr, name);
 	}
@@ -238,6 +238,7 @@ bi (Model_NumFrames)
 		if (model->anim.numdesc) {
 			R_INT (pr) = model->anim.numdesc;
 		} else {
+			//FIXME assumes only one mesh
 			auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 			R_INT (pr) = mesh->morph.numdesc;
 		}
@@ -248,8 +249,7 @@ bi (Model_NumFrames)
 	}
 }
 
-static void
-bi_Model_GetBaseFrame (progs_t *pr, void *_res)
+bi (Model_GetBaseFrame)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = 0;
@@ -265,8 +265,8 @@ bi_Model_GetBaseFrame (progs_t *pr, void *_res)
 		return;
 	}
 
-	auto j = (qfm_joint_t *) ((byte *) model + model->joints.offset);
-	memcpy (frame, j, model->joints.count * sizeof (frame[0]));
+	auto m = (qfm_motor_t *) ((byte *) model + model->base.offset);
+	memcpy (frame, m, model->base.count * sizeof (frame[0]));
 
 	R_INT (pr) = 1;
 }

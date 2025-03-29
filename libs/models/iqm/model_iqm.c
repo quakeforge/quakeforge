@@ -164,9 +164,13 @@ build_bone_map (iqmjoint *joints, uint32_t num_joints)
 {
 	hierarchy_t tmp = {};
 	Hierarchy_Reserve (&tmp, num_joints + 1);
+	// IQM models seem to be in depth-first order, but
+	// breadth-first works better for updates, so swizzle
+	// the hierarchy
 	Hierarchy_SetTreeMode (&tmp, true);
 	{
-		// insert a dummy root
+		// insert a dummy root that all loose roots
+		// can temporarily attach to
 		uint32_t ind = Hierarchy_Insert (&tmp, -1);
 		tmp.ent[ind] = -1;
 		tmp.own[ind] = false;
@@ -182,16 +186,44 @@ build_bone_map (iqmjoint *joints, uint32_t num_joints)
 		tmp.own[ind] = false;
 	}
 	Hierarchy_SetTreeMode (&tmp, false);
+	// Reuse nextIndex's array for the mapping from IQM joint
+	// index to breadth-first joint index
 	tmp.nextIndex[0] = -1;
 	for (uint32_t i = 0; i < num_joints; i++) {
 		tmp.nextIndex[tmp.ent[i + 1] + 1] = i;
 	}
-
 	auto bone_map = tmp.nextIndex;
+	// keep our block safe
 	tmp.nextIndex = nullptr;
 	Hierarchy_Destroy (&tmp);
 
 	return bone_map;
+}
+
+static void
+convert_joints (uint32_t num_joints, qfm_joint_t *joints,
+				qfm_motor_t *base, qfm_motor_t *inverse,
+				const uint32_t *bone_map, const iqmjoint *iqm_joints,
+				uint32_t text_base)
+{
+	for (uint32_t i = 0; i < num_joints; i++) {
+		auto j = &iqm_joints[i];
+		joints[bone_map[i + 1]] = (qfm_joint_t) {
+			.translate = { VectorExpand (j->translate) },
+			.name = j->name + text_base,
+			.rotate = { QuatExpand (j->rotate) },
+			.scale = { VectorExpand (j->scale) },
+			.parent = bone_map[j->parent + 1],
+		};
+	}
+	for (uint32_t i = 0; i < num_joints; i++) {
+		base[i] = qfm_make_motor (joints[i]);
+		inverse[i] = qfm_motor_invert (qfm_make_motor (joints[i]));
+		if (joints[i].parent >= 0) {
+			base[i] = qfm_motor_mul (base[joints[i].parent], base[i]);
+			inverse[i] = qfm_motor_mul (inverse[i], inverse[joints[i].parent]);
+		}
+	}
 }
 
 void
@@ -251,8 +283,9 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	size_t size = sizeof (qf_model_t)
 				+ sizeof (qf_mesh_t[hdr->num_meshes])
 				+ sizeof (qfm_joint_t[hdr->num_joints])
-				+ sizeof (mat4f_t[hdr->num_joints])
-				+ sizeof (qfm_joint_t[hdr->num_joints])
+				+ sizeof (qfm_motor_t[hdr->num_joints])
+				+ sizeof (qfm_motor_t[hdr->num_joints])
+				+ sizeof (qfm_joint_t[hdr->num_poses])
 				+ sizeof (keyframedesc_t[hdr->num_anims])
 				+ sizeof (keyframe_t[hdr->num_frames])
 				+ sizeof (qfm_channel_t[hdr->num_framechannels])
@@ -262,9 +295,10 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
 	auto meshes    = (qf_mesh_t *)      &model[1];
 	auto joints    = (qfm_joint_t *)    &meshes[hdr->num_meshes];
-	auto inverse   = (mat4f_t *)        &joints[hdr->num_joints];
-	auto poses     = (qfm_joint_t *)    &inverse[hdr->num_joints];
-	auto desc      = (keyframedesc_t *) &poses[hdr->num_joints];
+	auto base      = (qfm_motor_t *)    &joints[hdr->num_joints];
+	auto inverse   = (qfm_motor_t *)    &base[hdr->num_joints];
+	auto pose      = (qfm_joint_t *)    &inverse[hdr->num_joints];
+	auto desc      = (keyframedesc_t *) &pose[hdr->num_poses];
 	auto keyframes = (keyframe_t *)     &desc[hdr->num_anims];
 	auto channels  = (qfm_channel_t *)  &keyframes[hdr->num_frames];
 	auto framedata = (uint16_t *)       &channels[hdr->num_framechannels];
@@ -286,8 +320,16 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.offset = (byte *) joints - (byte *) model,
 			.count = hdr->num_joints,
 		},
-		.poses = {
-			.offset = (byte *) poses - (byte *) model,
+		.base = {
+			.offset = (byte *) base - (byte *) model,
+			.count = hdr->num_joints,
+		},
+		.inverse = {
+			.offset = (byte *) inverse - (byte *) model,
+			.count = hdr->num_joints,
+		},
+		.pose = {
+			.offset = (byte *) pose - (byte *) model,
 			.count = hdr->num_poses,
 		},
 		.channels = {
@@ -329,23 +371,17 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			verts += 3;
 		}
 	}
-	for (uint32_t i = 0; i < hdr->num_joints; i++) {
-		auto j = &iqm.joints[i];
-		joints[bone_map[i + 1]] = (qfm_joint_t) {
-			.translate = { VectorExpand (j->translate) },
-			.name = j->name + text_base,
-			.rotate = { QuatExpand (j->rotate) },
-			.scale = { VectorExpand (j->scale) },
-			.parent = bone_map[j->parent + 1],
-		};
-	}
+
+	convert_joints (hdr->num_joints, joints, base, inverse, bone_map,
+					iqm.joints, text_base);
+
 	for (uint32_t i = 0, j = 0; i < hdr->num_poses; i++) {
 		uint32_t id = bone_map[i + 1];
 		auto jnt = &joints[id];
 		auto p = &iqm.poses[i];
-		poses[id] = *jnt;
+		pose[id] = *jnt;
 		for (int k = 0; k < 3; k++) {
-			poses[id].translate[k] = p->channeloffset[k + 0];
+			pose[id].translate[k] = p->channeloffset[k + 0];
 			if (p->mask & (1 << (k + 0))) {
 				channels[j++] = (qfm_channel_t) {
 					.data = (byte *) (jnt->translate + k) - (byte *) joints,
@@ -355,7 +391,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			}
 		}
 		for (int k = 0; k < 4; k++) {
-			poses[id].rotate[k] = p->channeloffset[k + 3];
+			pose[id].rotate[k] = p->channeloffset[k + 3];
 			if (p->mask & (1 << (k + 3))) {
 				auto rotate = (float *) &jnt->rotate;
 				channels[j++] = (qfm_channel_t) {
@@ -366,7 +402,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			}
 		}
 		for (int k = 0; k < 3; k++) {
-			poses[id].scale[k] = p->channeloffset[k + 7];
+			pose[id].scale[k] = p->channeloffset[k + 7];
 			if (p->mask & (1 << (k + 7))) {
 				channels[j++] = (qfm_channel_t) {
 					.data = (byte *) (jnt->scale + k) - (byte *) joints,
@@ -376,6 +412,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			}
 		}
 	}
+
 	for (uint32_t i = 0; i < hdr->num_anims; i++) {
 		auto a = &iqm.anims[i];
 		desc[i] = (keyframedesc_t) {

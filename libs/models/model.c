@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#define IMPLEMENT_QFMODEL_Funcs
+
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/iqm.h"
