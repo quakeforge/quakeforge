@@ -249,26 +249,48 @@ bi (Model_NumFrames)
 	}
 }
 
-bi (Model_GetBaseFrame)
+static qf_model_t *
+rua_model_get_model (progs_t *pr, rua_model_resources_t *res)
 {
-	qfZoneScoped (true);
 	R_INT (pr) = 0;
 
-	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
 	auto mod = h->model;
 	auto model = mod->model;
-	auto frame = (qfm_joint_t *) P_GPOINTER (pr, 1);
 
 	if (mod->type != mod_mesh || !model->joints.count) {
-		return;
+		return nullptr;
 	}
+	return model;
+}
 
-	auto m = (qfm_motor_t *) ((byte *) model + model->base.offset);
-	memcpy (frame, m, model->base.count * sizeof (frame[0]));
+bi (Model_GetBaseMotors)
+{
+	qfZoneScoped (true);
 
-	R_INT (pr) = 1;
+	auto model = rua_model_get_model (pr, _res);
+	if (model) {
+		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
+		auto m = (qfm_motor_t *) ((byte *) model + model->base.offset);
+		memcpy (motors, m, model->base.count * sizeof (motors[0]));
+
+		R_INT (pr) = 1;
+	}
+}
+
+bi (Model_GetInverseMotors)
+{
+	qfZoneScoped (true);
+
+	auto model = rua_model_get_model (pr, _res);
+	if (model) {
+		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
+		auto m = (qfm_motor_t *) ((byte *) model + model->inverse.offset);
+		memcpy (motors, m, model->inverse.count * sizeof (motors[0]));
+
+		R_INT (pr) = 1;
+	}
 }
 
 #undef bi
@@ -276,12 +298,13 @@ bi (Model_GetBaseFrame)
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	bi(Model_Load,          1, p(string)),
-	bi(Model_Unload,        1, p(ptr)),
-	bi(Model_NumJoints,     1, p(ptr)),
-	bi(Model_GetJoints,     1, p(ptr)),
-	bi(Model_NumFrames,     1, p(ptr)),
-	bi(Model_GetBaseFrame,  2, p(ulong), p(ptr)),
+	bi(Model_Load,             1, p(string)),
+	bi(Model_Unload,           1, p(ptr)),
+	bi(Model_NumJoints,        1, p(ptr)),
+	bi(Model_GetJoints,        1, p(ptr)),
+	bi(Model_NumFrames,        1, p(ptr)),
+	bi(Model_GetBaseMotors,    2, p(ulong), p(ptr)),
+	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
 	{0}
 };
 

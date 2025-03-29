@@ -9,7 +9,7 @@ void Scene_SetCamera (scene_t scene, entity_t ent) = #0;
 
 transform_t Entity_GetTransform (entity_t ent) = #0;
 void Entity_SetModel (entity_t ent, model_t model) = #0;
-int Entity_GetPoseFrame (entity_t ent, void *frame, double time) = #0;
+int Entity_GetPoseMotors (entity_t ent, void *motors, double time) = #0;
 
 unsigned Transform_ChildCount (transform_t transform) = #0;
 transform_t Transform_GetChild (transform_t transform,
@@ -48,6 +48,7 @@ void Light_EnableSun (lightingdata_t ldata) = #0;
 model_t Model_Load (string path) = #0;
 void Model_Unload (model_t model) = #0;
 int Model_NumJoints (model_t model) = #0;
-void Model_GetJoints (model_t model, void *j) = #0;
+void Model_GetJoints (model_t model, void *joints) = #0;
 int Model_NumFrames (model_t model) = #0;
-int Model_GetBaseFrame (model_t model, void *f) = #0;
+int Model_GetBaseMotors (model_t model, void *motors) = #0;
+int Model_GetInverseMotors (model_t model, void *motors) = #0;

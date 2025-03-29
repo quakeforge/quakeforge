@@ -23,7 +23,7 @@ void Scene_SetCamera (scene_t scene, entity_t ent);
 
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
-int Entity_GetPoseFrame (entity_t ent, void *frame, double time);
+int Entity_GetPoseMotors (entity_t ent, void *motors, double time);
 
 unsigned Transform_ChildCount (transform_t transform);
 transform_t Transform_GetChild (transform_t transform,
@@ -62,8 +62,9 @@ void Light_EnableSun (lightingdata_t ldata);
 model_t Model_Load (string path);
 void Model_Unload (model_t model);
 int Model_NumJoints (model_t model);
-void Model_GetJoints (model_t model, void *j);
+void Model_GetJoints (model_t model, void *joints);
 int Model_NumFrames (model_t model);
-int Model_GetBaseFrame (model_t model, void *f);
+int Model_GetBaseMotors (model_t model, void *motors);
+int Model_GetInverseMotors (model_t model, void *motors);
 
 #endif//__ruamoko_scene_h

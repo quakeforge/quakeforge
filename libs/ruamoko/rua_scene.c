@@ -337,7 +337,7 @@ bi (Entity_SetModel)
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
 
-bi (Entity_GetPoseFrame)
+bi (Entity_GetPoseMotors)
 {
 	qfZoneScoped (true);
 	R_INT (pr) = 0;
@@ -663,7 +663,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
-	bi(Entity_GetPoseFrame,			3, p(ulong), p(ptr), p(double)),
+	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),
