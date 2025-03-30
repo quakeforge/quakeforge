@@ -502,6 +502,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 		.rend_buffer = mesh->objects[1].buffer.buffer,
 		.index_buffer = mesh->objects[2].buffer.buffer,
 		.bones_buffer = bones->objects[0].buffer.buffer,
+		.bones_memory = bones->memory,
 		.resources = (byte *) resources - (byte *) rmesh,
 		.bone_descriptors = (byte *) bone_descs - (byte *) rmesh,
 	};

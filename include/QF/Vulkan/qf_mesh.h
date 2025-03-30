@@ -57,6 +57,7 @@ typedef struct qfv_mesh_s {
 	VkBuffer    rend_buffer;
 	VkBuffer    index_buffer;
 	VkBuffer    bones_buffer;
+	VkDeviceMemory bones_memory;
 	uint32_t    resources;
 	uint32_t    bone_descriptors;
 } qfv_mesh_t;

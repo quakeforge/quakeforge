@@ -554,9 +554,6 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	uint16_t *matrix_base = taskctx->data;
 
-	auto animation = Entity_GetAnimation (ent);
-	float blend = animation->blend;
-
 	transform_t transform = Entity_Transform (ent);
 
 	auto skin = get_skin (renderer, &meshes[0]);
@@ -581,13 +578,43 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 	auto bone_descs = (VkDescriptorSet *) ((byte *) rmesh
 										   + rmesh->bone_descriptors);
 
+	auto anim = Entity_GetAnimation (ent);
+	float blend = anim->blend;
+
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
 
 	VkDeviceSize offsets[] = { 0, 0, 0 };
 	//FIXME per mesh, also allow mixing with bones
 	if (meshes[0].morph.numdesc) {
-		offsets[0] = animation->pose1;
-		offsets[0] = animation->pose2;
+		offsets[0] = anim->pose1;
+		offsets[0] = anim->pose2;
+	} else {
+		auto frame = R_IQMBlendFrames (model, anim->pose1, anim->pose2,
+									   blend, 0);
+		vec4f_t    *bone_data;
+		dfunc->vkMapMemory (device->dev, rmesh->bones_memory, 0, VK_WHOLE_SIZE,
+							0, (void **)&bone_data);
+		uint32_t num_joints = model->joints.count;
+		for (uint32_t i = 0; i < num_joints; i++) {
+			auto    b = bone_data + (ctx->curFrame * num_joints + i) * 3;
+			mat4f_t f;
+			// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v,
+			// but the shader wants a 3x4 (column x row) matrix for v * m,
+			// which is just a transpose (and drop of the 4th column) away.
+			mat4ftranspose (f, frame[i * 2]);
+			// copy only the first 3 columns
+			memcpy (b, f, 3 * sizeof (vec4f_t));
+		}
+#define a(x) ((x) & ~0x3f)
+		VkMappedMemoryRange range = {
+			VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+			rmesh->bones_memory,
+			a(3 * ctx->curFrame * num_joints * sizeof (vec4f_t)),
+			a(3 * num_joints * sizeof (vec4f_t) + 0x3f),
+		};
+#undef a
+		dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+		dfunc->vkUnmapMemory (device->dev, rmesh->bones_memory);
 	}
 	VkBuffer    buffers[] = {
 		rmesh->geom_buffer,
