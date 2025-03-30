@@ -1,7 +1,8 @@
 libs_model_tests = \
 	libs/models/test/testclip \
 	libs/models/test/testcontents \
-	libs/models/test/testportals
+	libs/models/test/testportals \
+	libs/models/test/test-motor
 
 TESTS += $(libs_model_tests)
 
@@ -37,3 +38,9 @@ libs_models_test_testportals_SOURCES= \
 	$(tracy_src)
 libs_models_test_testportals_LDADD=			$(test_libs)
 libs_models_test_testportals_DEPENDENCIES=	$(test_libs)
+
+libs_models_test_test_motor_SOURCES= \
+	libs/models/test/test-motor.c \
+	$(tracy_src)
+libs_models_test_test_motor_LDADD=			$(test_libs)
+libs_models_test_test_motor_DEPENDENCIES=	$(test_libs)

@@ -274,24 +274,7 @@ typedef struct mod_brush_s {
 
 //
 
-typedef struct keyframedesc_s {
-	uint32_t    firstframe;
-	uint32_t    numframes;		// 1 for single frames
-	uint32_t    flags;
-	uint32_t    name;
-} keyframedesc_t;
-
-typedef struct keyframe_s {
-	float       endtime;		// 0 for single frames
-	uint32_t    data;
-} keyframe_t;
-
-typedef struct anim_s {
-	uint32_t    numdesc;
-	uint32_t    descriptors;
-	uint32_t    keyframes;
-	uint32_t    data;
-} anim_t;
+#include "QF/qfmodel.h"
 
 // SPRITE MODELS ==============================================================
 
@@ -333,8 +316,6 @@ typedef enum {
 	ME_TRACER3    = 128,		// purple trail
 	ME_GLOWTRAIL  = 4096,		// glowcolor particle trail
 } modeffects_t;
-
-#include "QF/qfmodel.h"
 
 typedef struct model_s {
 	//FIXME use pointers. needs care in bsp submodel loading

@@ -1,8 +1,27 @@
 #ifndef __QF_qfmodel_h
 #define __QF_qfmodel_h
 
-#include "QF/qtypes.h"
+#include "QF/math/vector.h"
 #include "QF/simd/types.h"
+
+typedef struct keyframedesc_s {
+	uint32_t    firstframe;
+	uint32_t    numframes;		// 1 for single frames
+	uint32_t    flags;
+	uint32_t    name;
+} keyframedesc_t;
+
+typedef struct keyframe_s {
+	float       endtime;		// 0 for single frames
+	uint32_t    data;
+} keyframe_t;
+
+typedef struct anim_s {
+	uint32_t    numdesc;
+	uint32_t    descriptors;
+	uint32_t    keyframes;
+	uint32_t    data;
+} anim_t;
 
 typedef struct qfm_loc_s {
 	uint32_t    offset;
@@ -125,6 +144,7 @@ typedef struct qf_model_s {
 } __attribute__((aligned (16))) qf_model_t;
 
 #include "QF/simd/vec4f.h"
+#include "QF/simd/mat4f.h"
 
 GNU89INLINE inline uint32_t qfm_uniform_scale (const vec3_t s)
 	__attribute__((const));
@@ -134,6 +154,7 @@ GNU89INLINE inline qfm_motor_t qfm_motor_invert (qfm_motor_t m)
 	__attribute__((const));
 GNU89INLINE inline qfm_motor_t qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 	__attribute__((const));
+GNU89INLINE inline void qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m);
 
 #ifndef IMPLEMENT_QFMODEL_Funcs
 GNU89INLINE inline
@@ -190,7 +211,7 @@ GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qfm_motor_t __attribute__((const))
+qfm_motor_t
 qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 {
 	float a1 = m1.q[3];
@@ -213,6 +234,24 @@ qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 		.s = { VectorExpand (s) },
 		.flags = m1.flags & m2.flags,
 	};
+}
+
+#ifndef IMPLEMENT_QFMODEL_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m)
+{
+	auto q = qconjf (m.q);
+	auto t = -2 * qmulf (m.t, m.q);
+	t[3] = 1;
+	mat4fquat (mat, q);
+	mat[0] *= m.s[0];
+	mat[1] *= m.s[1];
+	mat[2] *= m.s[2];
+	mat[3] = t;
 }
 
 #endif//__QF_qfmodel_h
