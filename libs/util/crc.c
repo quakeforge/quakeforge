@@ -86,11 +86,12 @@ CRC_ProcessByte (uint16_t *crcvalue, byte data)
 }
 
 VISIBLE void
-CRC_ProcessBlock (const byte *start, uint16_t *crcvalue, int count)
+CRC_ProcessBlock (const void *start, uint16_t *crcvalue, int count)
 {
+	const byte *data = start;
 	uint16_t    crc = *crcvalue;
 	while (count--)
-		crc = (crc << 8) ^ crctable[(crc >> 8) ^ *start++];
+		crc = (crc << 8) ^ crctable[(crc >> 8) ^ *data++];
 	*crcvalue = crc;
 }
 
