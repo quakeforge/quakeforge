@@ -127,7 +127,11 @@ sw_iqm_load_textures (qf_model_t *model)
 		uint32_t j;
 		for (j = 0; j < i; j++) {
 			if (meshes[j].material == meshes[i].material) {
-				meshes[i].skin = meshes[j].skin;
+				uint32_t offset = meshes[j].skin.data;
+				auto pic = (qpic_t *) ((byte *) &meshes[j] + offset);
+				meshes[i].skin = (anim_t) {
+					.data = (byte *) pic - (byte *) &meshes[i],
+				};
 				break;
 			}
 		}
