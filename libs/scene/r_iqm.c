@@ -192,9 +192,9 @@ R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2, float blend,
 		auto in = &frame[blend->indices[0] * 2];
 		auto out = &frame[i * 2];
 
-		float w = 1;//blend->weights[0] / 255.0;
+		float w = blend->weights[0] / 255.0;
 		QuatScale (in[0], w, out[0]);
-		for (int j = 1; 0 && j < 4 && blend->weights[j]; j++) {
+		for (int j = 1; j < 4 && blend->weights[j]; j++) {
 			in = &frame[blend->indices[j] * 2];
 			w = blend->weights[j] / 255.0;
 			QuatMultAdd (out[0], w, in[0], out[0]);
