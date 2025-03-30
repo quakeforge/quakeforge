@@ -147,18 +147,7 @@ swap_longs (void *data, size_t count)
 		*vals = LittleShort (*vals);
 	}
 }
-#if 0
-static void
-iqm_framemul (iqmframe_t *c, const iqmframe_t *a, const iqmframe_t *b)
-{
-	iqmframe_t t = {
-		.translate = qvmulf (a->rotate, b->translate) + a->translate,
-		.rotate = qmulf (a->rotate, b->rotate),
-		.scale = a->scale * b->scale,
-	};
-	*c = t;
-}
-#endif
+
 static uint32_t *
 build_bone_map (iqmjoint *joints, uint32_t num_joints)
 {
@@ -222,6 +211,30 @@ convert_joints (uint32_t num_joints, qfm_joint_t *joints,
 		if (joints[i].parent >= 0) {
 			base[i] = qfm_motor_mul (base[joints[i].parent], base[i]);
 			inverse[i] = qfm_motor_mul (inverse[i], inverse[joints[i].parent]);
+		}
+	}
+}
+
+static void
+update_vertice_joints (mod_iqm_ctx_t *iqm_ctx, uint32_t *bone_map)
+{
+	qfm_attrdesc_t blend_indices = {};
+
+	for (uint32_t i = 0; i < iqm_ctx->hdr->num_vertexarrays; i++) {
+		auto va = &iqm_ctx->vtxarr[i];
+		if (va->type == IQM_BLENDINDEXES) {
+			blend_indices = iqm_mesh_attribute (*va, va->offset);
+		}
+	}
+	if (!blend_indices.offset) {
+		return;
+	}
+	auto data = (byte *) iqm_ctx->hdr + blend_indices.offset;
+	for (uint32_t i = 0; i < iqm_ctx->hdr->num_vertexes; i++) {
+		//FIXME assumes bytes
+		auto indices = data + i * blend_indices.stride;
+		for (int j = 0; j < blend_indices.components; j++) {
+			indices[j] = bone_map[indices[j] + 1];
 		}
 	}
 }
@@ -375,6 +388,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 
 	convert_joints (hdr->num_joints, joints, base, inverse, bone_map,
 					iqm.joints, text_base);
+	update_vertice_joints (&iqm, bone_map);
 
 	for (uint32_t i = 0, j = 0; i < hdr->num_poses; i++) {
 		uint32_t id = bone_map[i + 1];
