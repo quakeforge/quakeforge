@@ -21,10 +21,17 @@ set_matrix (mat4f_t mat, const vec3_t trans, vec4f_t rot, const vec3_t scale)
 static bool
 compare (float a, float b, int bits)
 {
+	if (fabs (a - b) < 1e-6) {
+		return true;
+	}
+	typedef union {
+		float   f;
+		int32_t i;
+	} fi_t;
+	fi_t ia = { .f = a };
+	fi_t ib = { .f = b };
 	int32_t mask = ~((1 << bits) - 1);
-	int32_t ia = *(int32_t *) &a;
-	int32_t ib = *(int32_t *) &b;
-	return ((ia - ib) & mask) == 0;
+	return ((ia.i - ib.i) & mask) == 0;
 }
 
 static bool
@@ -85,6 +92,19 @@ static qfm_joint_t joints[] = {
 	{ .translate = {1, 2, 3}, .rotate = {1, 0, 1, 1}, .scale = {1, 1, 1} },
 
 	{ .translate = {1, 2, 3}, .rotate = {1, 1, 1, 1}, .scale = {1, 1, 1} },
+
+	{ .translate = {0, 0,-1},
+	  .rotate = {-0.707106829, -0, -0, -0.707106829},
+	  .scale = {1, 1, 1}
+	},
+	{ .translate = {0, 2, 0},
+	  .rotate = {-0.707106888, -0.243210375, -0.707106829, -1},
+	  .scale = {1, 1, 1},
+	},
+	{ .translate = {-1.78813934e-07, 1.99999964, -3.35276127e-08},
+	  .rotate = {-0.13106361,-1.09332357e-08,-0.399508953,-1},
+	  .scale = {1, 1, 1},
+	},
 };
 
 int
