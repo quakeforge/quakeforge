@@ -398,8 +398,9 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		for (int k = 0; k < 3; k++) {
 			pose[id].translate[k] = p->channeloffset[k + 0];
 			if (p->mask & (1 << (k + 0))) {
+				auto translate = (float *) &pose[id].translate;
 				channels[j++] = (qfm_channel_t) {
-					.data = (byte *) (jnt->translate + k) - (byte *) joints,
+					.data = (byte *) (translate + k) - (byte *) pose,
 					.base = p->channeloffset[k + 0],
 					.scale = p->channelscale[k + 0],
 				};
@@ -408,9 +409,9 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		for (int k = 0; k < 4; k++) {
 			pose[id].rotate[k] = p->channeloffset[k + 3];
 			if (p->mask & (1 << (k + 3))) {
-				auto rotate = (float *) &jnt->rotate;
+				auto rotate = (float *) &pose[id].rotate;
 				channels[j++] = (qfm_channel_t) {
-					.data = (byte *) (rotate + k) - (byte *) joints,
+					.data = (byte *) (rotate + k) - (byte *) pose,
 					.base = p->channeloffset[k + 3],
 					.scale = p->channelscale[k + 3],
 				};
@@ -419,8 +420,9 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		for (int k = 0; k < 3; k++) {
 			pose[id].scale[k] = p->channeloffset[k + 7];
 			if (p->mask & (1 << (k + 7))) {
+				auto scale = (float *) &pose[id].scale;
 				channels[j++] = (qfm_channel_t) {
-					.data = (byte *) (jnt->scale + k) - (byte *) joints,
+					.data = (byte *) (scale + k) - (byte *) pose,
 					.base = p->channeloffset[k + 7],
 					.scale = p->channelscale[k + 7],
 				};
