@@ -213,7 +213,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		.applicationVersion = appVersion,
 		.pEngineName = PACKAGE_STRING,
 		.engineVersion = 0x000702ff, //FIXME version
-		.apiVersion = VK_API_VERSION_1_3,
+		.apiVersion = VK_API_VERSION_1_4,
 	};
 	VkValidationFeatureEnableEXT valfeat_enable[] = {
 //		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
