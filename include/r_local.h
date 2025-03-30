@@ -171,10 +171,10 @@ float R_IQMGetLerpedFrames (double time, animation_t *animation,
 qfm_motor_t *R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 								   float blend, int extra);
 mat4f_t *R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2,
-						   float blend, int extra);
+						   float blend, size_t extra);
 mat4f_t *R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2,
-							float blend, int extra, qfm_blend_t *blend_palette,
-							uint32_t palette_size);
+							float blend, size_t extra,
+							qfm_blend_t *blend_palette, uint32_t palette_size);
 float R_EntityBlend (double time, animation_t *animation, int pose,
 					 float interval);
 void R_BeginEdgeFrame (void);

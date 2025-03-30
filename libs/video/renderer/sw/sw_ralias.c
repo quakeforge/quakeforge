@@ -315,8 +315,29 @@ av_v48 (auxvert_t *av, const trivertx16_t *vert)
 }
 
 static void
+av_v48_b (auxvert_t *av, const trivertx16_t *vert, mat4f_t m)
+{
+	vec4f_t v = { 0, 0, 0, 1 };
+	VectorScale (vert->v, 1.0/256, v);
+	v = mvmulf (m, v);
+	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
+}
+
+static void
 av_v96 (auxvert_t *av, const float *v)
 {
+	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
+}
+
+static void
+av_v96_b (auxvert_t *av, const float *v3, mat4f_t m)
+{
+	auto v = loadvec3f (v3) + (vec4f_t) { 0, 0, 0, 1 };
+	v = mvmulf (m, v);
 	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
 	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
 	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
@@ -326,6 +347,16 @@ static void
 av_v24 (auxvert_t *av, const trivertx_t *vert)
 {
 	auto v = vert->v;
+	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
+	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
+	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
+}
+
+static void
+av_v24_b (auxvert_t *av, const trivertx_t *vert, mat4f_t m)
+{
+	vec4f_t v = { VectorExpand (vert->v), 1};
+	v = mvmulf (m, v);
 	av->fv[0] = DotProduct (v, aliastransform[0]) + aliastransform[0][3];
 	av->fv[1] = DotProduct (v, aliastransform[1]) + aliastransform[1][3];
 	av->fv[2] = DotProduct (v, aliastransform[2]) + aliastransform[2][3];
@@ -341,33 +372,92 @@ fv_av_ni (finalvert_t *fv, int lightnormalindex, const stvert_t *stverts)
 }
 
 static inline void
+fv_av_ni_b (finalvert_t *fv, int lightnormalindex, const stvert_t *stverts,
+			mat4f_t m)
+{
+	auto n = loadvec3f (r_avertexnormals[lightnormalindex]);
+	n = mvmulf (m, n) * m[3][0];
+	R_AliasTransformFinalVert (fv, (vec_t*)&n, stverts);//FIXME
+}
+
+static inline void
 fv_av_n96 (finalvert_t *fv, const float *normal, const stvert_t *stverts)
 {
 	R_AliasTransformFinalVert (fv, normal, stverts);
 }
 
-/*
-	R_AliasPreparePoints
-
-	General clipped case
-*/
-static void
-R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
-					  uint32_t verts_offs)
+static inline void
+fv_av_n96_b (finalvert_t *fv, const float *normal, const stvert_t *stverts,
+			 mat4f_t m)
 {
-	int         i;
-	dtriangle_t *ptri;
-	finalvert_t *pfv[3];
+	auto n = loadvec3f (normal);
+	n = mvmulf (m, n) * m[3][0];
+	R_AliasTransformFinalVert (fv, (vec_t*)&n, stverts);//FIXME
+}
 
+static void
+run_clipped_verts_bones (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
+						 uint32_t verts_offs, mat4f_t *palette)
+{
 	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 	uint32_t stoffs = mesh->vertices.offset * attrib[2].stride;
 	auto stverts = (stvert_t *) ((byte*) mesh + attrib[2].offset + stoffs);
-	r_anumverts = mesh->vertices.count;
 
-	verts_offs += attrib[0].offset;
+	if (attrib[0].type == qfm_u16) {
+		int32_t b_diff = attrib[3].offset - attrib[0].offset;
+		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		for (int i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
+			auto m = &palette[*joints * 2];
+			av_v48_b (av, verts, m[0]);
+			fv_av_ni_b (fv, verts->lightnormalindex, stverts, m[1]);
+			R_AliasClipAndProjectFinalVert (fv, av);
+			joints = (uint32_t *)((uintptr_t) joints + attrib[3].stride);
+		}
+	} else if (attrib[0].type == qfm_f32) {
+		int32_t n_diff = attrib[1].offset - attrib[0].offset;
+		int32_t b_diff = attrib[3].offset - attrib[0].offset;
+		auto verts = (float *) ((byte *) mesh + verts_offs);
+		auto norms = (float *) ((byte *) mesh + verts_offs + n_diff);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		uint32_t stride = attrib[0].stride;
+		for (int i = 0; i < r_anumverts; i++, fv++, av++) {
+			auto m = &palette[*joints * 2];
+			av_v96_b (av, verts, m[0]);
+			fv_av_n96_b (fv, norms, stverts, m[1]);
+			R_AliasClipAndProjectFinalVert (fv, av);
+			verts = (float *)((uintptr_t) verts + stride);
+			norms = (float *)((uintptr_t) norms + stride);
+			stverts = (stvert_t *)((uintptr_t) stverts + attrib[2].stride);
+			joints = (uint32_t *)((uintptr_t) joints + attrib[3].stride);
+		}
+	} else if (attrib[0].type == qfm_u8) {
+		int32_t b_diff = attrib[3].offset - attrib[0].offset;
+		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		for (int i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
+			auto m = &palette[*joints * 2];
+			av_v24_b (av, verts, m[0]);
+			fv_av_ni_b (fv, verts->lightnormalindex, stverts, m[1]);
+			R_AliasClipAndProjectFinalVert (fv, av);
+			joints = (uint32_t *)((uintptr_t) joints + attrib[3].stride);
+		}
+	} else {
+		Sys_Error ("unspported position type");
+	}
+}
+
+static void
+run_clipped_verts (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
+				   uint32_t verts_offs)
+{
+	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	uint32_t stoffs = mesh->vertices.offset * attrib[2].stride;
+	auto stverts = (stvert_t *) ((byte*) mesh + attrib[2].offset + stoffs);
+
 	if (attrib[0].type == qfm_u16) {
 		auto verts = (trivertx16_t *) ((byte *) mesh + verts_offs);
-		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
+		for (int i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
 			av_v48 (av, verts);
 			fv_av_ni (fv, verts->lightnormalindex, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
@@ -376,7 +466,7 @@ R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
 		auto verts = (float *) ((byte *) mesh + verts_offs);
 		auto norms = (float *) ((byte *) mesh + verts_offs) + 6;
 		uint32_t stride = attrib[0].stride;
-		for (i = 0; i < r_anumverts; i++, fv++, av++) {
+		for (int i = 0; i < r_anumverts; i++, fv++, av++) {
 			av_v96 (av, verts);
 			fv_av_n96 (fv, norms, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
@@ -386,7 +476,7 @@ R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
 		}
 	} else if (attrib[0].type == qfm_u8) {
 		auto verts = (trivertx_t *) ((byte *) mesh + verts_offs);
-		for (i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
+		for (int i = 0; i < r_anumverts; i++, fv++, av++, verts++, stverts++) {
 			av_v24 (av, verts);
 			fv_av_ni (fv, verts->lightnormalindex, stverts);
 			R_AliasClipAndProjectFinalVert (fv, av);
@@ -394,15 +484,44 @@ R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
 	} else {
 		Sys_Error ("unspported position type");
 	}
+}
 
+/*
+	R_AliasPreparePoints
+
+	General clipped case
+*/
+static void
+R_AliasPreparePoints (finalvert_t *fv, auxvert_t *av, qf_mesh_t *mesh,
+					  uint32_t verts_offs, mat4f_t *palette)
+{
+	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	r_anumverts = mesh->vertices.count;
+
+	verts_offs += attrib[0].offset;
+	if (palette && mesh->attributes.count > 3
+		&& attrib[3].attr == qfm_joints
+		&& attrib[3].type == qfm_u32
+		&& attrib[3].components == 1) {
+		run_clipped_verts_bones (fv, av, mesh, verts_offs, palette);
+	} else {
+		run_clipped_verts (fv, av, mesh, verts_offs);
+	}
+}
+
+static void
+draw_clipped_triangles (qf_mesh_t *mesh)
+{
 	// clip and draw all triangles
 	r_affinetridesc.numtriangles = 1;
 
-	ptri = (dtriangle_t *) ((byte *) mesh + mesh->indices);
+	auto ptri = (dtriangle_t *) ((byte *) mesh + mesh->indices);
 	for (uint32_t i = 0; i < mesh->triangle_count; i++, ptri++) {
-		pfv[0] = &pfinalverts[ptri->vertindex[0]];
-		pfv[1] = &pfinalverts[ptri->vertindex[1]];
-		pfv[2] = &pfinalverts[ptri->vertindex[2]];
+		finalvert_t *pfv[3] = {
+			&pfinalverts[ptri->vertindex[0]],
+			&pfinalverts[ptri->vertindex[1]],
+			&pfinalverts[ptri->vertindex[2]],
+		};
 
 		if (pfv[0]->flags & pfv[1]->flags & pfv[2]->flags
 			& (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))
@@ -550,6 +669,56 @@ fv_v48_n16 (finalvert_t *fv, const trivertx16_t *verts, const stvert_t *stverts)
 }
 
 static void
+fv_v48_n16_b (finalvert_t *fv, const trivertx16_t *verts,
+			  const stvert_t *stverts, const uint32_t *joints,
+			  mat4f_t *palette, qfm_attrdesc_t *attr)
+{
+	int         temp;
+	float       lightcos, zi;
+
+	for (int i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {
+		auto m = &palette[*joints * 2];
+		joints = (uint32_t *) ((uintptr_t) joints + attr[3].stride);
+		vec4f_t v = { 0, 0, 0, 1 };
+		VectorScale (verts->v, 1.0/256, v);
+		v = mvmulf (m[0], v);
+		// transform and project
+		zi = 1.0 / (DotProduct (v, aliastransform[2]) + aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((DotProduct (v, aliastransform[0]) +
+					aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((DotProduct (v, aliastransform[1]) +
+					aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		auto n = loadvec3f (r_avertexnormals[verts->lightnormalindex]);
+		n = mvmulf (m[1], n) * m[1][3][0];
+		lightcos = DotProduct (n, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+	}
+}
+
+static void
 fv_v24_n8 (finalvert_t *fv, const trivertx_t *verts, const stvert_t *stverts)
 {
 	int         temp;
@@ -577,6 +746,56 @@ fv_v24_n8 (finalvert_t *fv, const trivertx_t *verts, const stvert_t *stverts)
 		// lighting
 		plightnormal = r_avertexnormals[verts->lightnormalindex];
 		lightcos = DotProduct (plightnormal, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+	}
+}
+
+static void
+fv_v24_n8_b (finalvert_t *fv, const trivertx_t *verts, const stvert_t *stverts,
+			 uint32_t *joints, mat4f_t *palette, qfm_attrdesc_t *attr)
+{
+	int         temp;
+	float       lightcos, zi;
+
+	for (int i = 0; i < r_anumverts; i++, fv++, verts++, stverts++) {
+		auto m = &palette[*joints * 2];
+		joints = (uint32_t *) ((uintptr_t) joints + attr[3].stride);
+
+		vec4f_t v = { VectorExpand (verts->v), 1};
+		v = mvmulf (m[0], v);
+
+		// transform and project
+		zi = 1.0 / (DotProduct (v, aliastransform[2]) + aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((DotProduct (v, aliastransform[0]) +
+					aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((DotProduct (v, aliastransform[1]) +
+					aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		auto n = loadvec3f (r_avertexnormals[verts->lightnormalindex]);
+		n = mvmulf (m[1], n) * m[1][3][0];
+		lightcos = DotProduct (n, r_lightvec);
 		temp = r_ambientlight;
 
 		if (lightcos < 0) {
@@ -638,12 +857,121 @@ fv_v96_n96 (finalvert_t *fv, const float *position, const float *normal,
 	}
 }
 
+static void
+fv_v96_n96_b (finalvert_t *fv, const float *position, const float *normal,
+			  const stvert_t *stverts, const uint32_t *joints,
+			  mat4f_t *palette, qfm_attrdesc_t *attr)
+{
+	int         temp;
+	float       lightcos, zi;
+
+	for (int i = 0; i < r_anumverts; i++, fv++) {
+		auto m = &palette[*joints * 2];
+		auto v = loadvec3f (position) + (vec4f_t) { 0, 0, 0, 1 };
+		v = mvmulf (m[0], v);
+		// transform and project
+		zi = 1.0 / (DotProduct (v, aliastransform[2]) + aliastransform[2][3]);
+
+		// x, y, and z are scaled down by 1/2**31 in the transform, so 1/z is
+		// scaled up by 1/2**31, and the scaling cancels out for x and y in
+		// the projection
+		fv->v[5] = zi;
+
+		fv->v[0] = ((DotProduct (v, aliastransform[0]) +
+					aliastransform[0][3]) * zi) + aliasxcenter;
+		fv->v[1] = ((DotProduct (v, aliastransform[1]) +
+					aliastransform[1][3]) * zi) + aliasycenter;
+
+		fv->v[2] = stverts->s;
+		fv->v[3] = stverts->t;
+		fv->flags = stverts->onseam;
+
+		// lighting
+		auto n = loadvec3f (normal);
+		n = mvmulf (m[1], n) * m[3][0];
+		lightcos = DotProduct (n, r_lightvec);
+		temp = r_ambientlight;
+
+		if (lightcos < 0) {
+			temp += (int) (r_shadelight * lightcos);
+
+			// clamp; because we limited the minimum ambient and shading
+			// light, we don't have to clamp low light, just bright
+			if (temp < 0)
+				temp = 0;
+		}
+
+		fv->v[4] = temp;
+		position = (float *) ((uintptr_t) position + attr[0].stride);
+		normal = (float *) ((uintptr_t) normal + attr[1].stride);
+		stverts = (stvert_t *) ((uintptr_t) stverts + attr[2].stride);
+		joints = (uint32_t *) ((uintptr_t) joints + attr[3].stride);
+	}
+}
+
+static void
+run_unclipped_verts_bones (finalvert_t *fv, qf_mesh_t *mesh,
+						   uint32_t verts_offs, mat4f_t *palette)
+{
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	uint32_t stoffs = mesh->vertices.offset * attr[2].stride;
+	auto stverts = (stvert_t *) ((byte*) mesh + attr[2].offset + stoffs);
+
+	if (attr[0].type == qfm_u16 && attr[0].components == 3
+	    && attr[1].type == qfm_u16 && attr[1].components == 1) {
+		int32_t b_diff = attr[3].offset - attr[0].offset;
+		auto verts = (trivertx16_t *) ((byte*) mesh + verts_offs);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		fv_v48_n16_b (fv, verts, stverts, joints, palette, attr);
+	} else if (attr[0].type == qfm_f32 && attr[0].components == 3
+			   && attr[1].type == qfm_f32 && attr[1].components == 3
+			   && attr[0].stride == attr[1].stride) {
+		int32_t n_diff = attr[1].offset - attr[0].offset;
+		int32_t b_diff = attr[3].offset - attr[0].offset;
+		auto position = (float *) ((byte*) mesh + verts_offs);
+		auto normal = (float *) ((byte*) mesh + verts_offs + n_diff);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		fv_v96_n96_b (fv, position, normal, stverts, joints, palette, attr);
+	} else if (attr[0].type == qfm_u8 && attr[0].components == 3
+			   && attr[1].type == qfm_u8 && attr[1].components == 1) {
+		int32_t b_diff = attr[3].offset - attr[0].offset;
+		auto verts = (trivertx_t *) ((byte*) mesh + verts_offs);
+		auto joints = (uint32_t *) ((byte *) mesh + verts_offs + b_diff);
+		fv_v24_n8_b (fv, verts, stverts, joints, palette, attr);
+	}
+}
+
+static void
+run_unclipped_verts (finalvert_t *fv, qf_mesh_t *mesh, uint32_t verts_offs)
+{
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
+	uint32_t stoffs = mesh->vertices.offset * attr[2].stride;
+	auto stverts = (stvert_t *) ((byte*) mesh + attr[2].offset + stoffs);
+
+	if (attr[0].type == qfm_u16 && attr[0].components == 3
+	    && attr[1].type == qfm_u16 && attr[1].components == 1) {
+		auto verts = (trivertx16_t *) ((byte*) mesh + verts_offs);
+		fv_v48_n16 (fv, verts, stverts);
+	} else if (attr[0].type == qfm_f32 && attr[0].components == 3
+			   && attr[1].type == qfm_f32 && attr[1].components == 3
+			   && attr[0].stride == attr[1].stride) {
+		int32_t n_diff = attr[1].offset - attr[0].offset;
+		auto position = (float *) ((byte*) mesh + verts_offs);
+		auto normal = (float *) ((byte*) mesh + verts_offs + n_diff);
+		fv_v96_n96 (fv, position, normal, attr[0].stride, stverts);
+	} else if (attr[0].type == qfm_u8 && attr[0].components == 3
+			   && attr[1].type == qfm_u8 && attr[1].components == 1) {
+		auto verts = (trivertx_t *) ((byte*) mesh + verts_offs);
+		fv_v24_n8 (fv, verts, stverts);
+	}
+}
+
 //#ifndef USE_INTEL_ASM
 static void
-R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
-									  qfm_attrdesc_t *attr, qf_mesh_t *mesh,
-									  uint32_t verts_offs)
+R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, qf_mesh_t *mesh,
+									  uint32_t verts_offs, mat4f_t *palette)
 {
+	auto attr = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 	if (attr[0].attr != qfm_position
 		|| attr[1].attr != qfm_normal
 		|| attr[2].attr != qfm_texcoord) {
@@ -652,24 +980,15 @@ R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
 	if (attr[2].type != qfm_s32 || attr[2].components != 3) {
 		Sys_Error ("unsupported texture coords (expecting stvert_t)");
 	}
-	uint32_t stoffs = mesh->vertices.offset * attr[2].stride;
-	auto stverts = (stvert_t *) ((byte*) mesh + attr[2].offset + stoffs);
+
 	verts_offs += attr[0].offset;
-	if (attr[0].type == qfm_u16 && attr[0].components == 3
-	    && attr[1].type == qfm_u16 && attr[1].components == 1) {
-		auto verts = (trivertx16_t *) ((byte*) mesh + verts_offs);
-		fv_v48_n16 (fv, verts, stverts);
-	} else if (attr[0].type == qfm_f32 && attr[0].components == 3
-			   && attr[1].type == qfm_f32 && attr[1].components == 3
-			   && attr[0].stride == attr[1].stride) {
-		int32_t diff = attr[1].offset - attr[0].offset;
-		auto position = (float *) ((byte*) mesh + verts_offs);
-		auto normal = (float *) ((byte*) mesh + verts_offs + diff);
-		fv_v96_n96 (fv, position, normal, attr[0].stride, stverts);
-	} else if (attr[0].type == qfm_u8 && attr[0].components == 3
-			   && attr[1].type == qfm_u8 && attr[1].components == 1) {
-		auto verts = (trivertx_t *) ((byte*) mesh + verts_offs);
-		fv_v24_n8 (fv, verts, stverts);
+	if (palette && mesh->attributes.count > 3
+		&& attr[3].attr == qfm_joints
+		&& attr[3].type == qfm_u32
+		&& attr[3].components == 1) {
+		run_unclipped_verts_bones (fv, mesh, verts_offs, palette);
+	} else {
+		run_unclipped_verts (fv, mesh, verts_offs);
 	}
 }
 //#endif
@@ -690,12 +1009,11 @@ R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
 
 static void
 R_AliasPrepareUnclippedPoints (finalvert_t *fv, qf_mesh_t *mesh,
-							   uint32_t verts_offs)
+							   uint32_t verts_offs, mat4f_t *palette)
 {
-	auto attrib = (qfm_attrdesc_t *) ((byte *) mesh + mesh->attributes.offset);
 	r_anumverts = mesh->vertices.count;
 
-	R_AliasTransformAndProjectFinalVerts (fv, attrib, mesh, verts_offs);
+	R_AliasTransformAndProjectFinalVerts (fv, mesh, verts_offs, palette);
 
 	if (r_affinetridesc.drawtype)
 		D_PolysetDrawFinalVerts (pfinalverts, r_anumverts);
@@ -776,7 +1094,7 @@ R_AliasSetupFrame (entity_t ent, qf_mesh_t *mesh)
 
 static void
 draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
-		   finalvert_t *fv, auxvert_t *av)
+		   finalvert_t *fv, auxvert_t *av, mat4f_t *palette)
 {
 	R_AliasSetupSkin (ent, mesh);
 	visibility_t *visibility = Ent_GetComponent (ent.id,
@@ -813,9 +1131,10 @@ draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
 	if (visibility->trivial_accept) {
-		R_AliasPrepareUnclippedPoints (fv, mesh, verts_offs);
+		R_AliasPrepareUnclippedPoints (fv, mesh, verts_offs, palette);
 	} else {
-		R_AliasPreparePoints (fv, av, mesh, verts_offs);
+		R_AliasPreparePoints (fv, av, mesh, verts_offs, palette);
+		draw_clipped_triangles (mesh);
 	}
 }
 
@@ -834,14 +1153,30 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	}
 	auto meshes = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 	auto rmesh = (sw_mesh_t *) ((byte *) model + model->render_data);
+
 	size_t size = (CACHE_SIZE - 1)
 				+ sizeof (finalvert_t) * (rmesh->numverts + 1)
 				+ sizeof (auxvert_t) * rmesh->numverts;
-	auto finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
-	if (!finalverts) {
-		Sys_Error ("R_AliasDrawModel: out of memory");
+	finalvert_t *finalverts;
+	mat4f_t *palette = nullptr;
+	if (rmesh->palette_size) {
+		auto blend_palette = (qfm_blend_t *) ((byte *) model
+											  + rmesh->blend_palette);
+		auto anim = Entity_GetAnimation (ent);
+		float blend = R_IQMGetLerpedFrames (vr_data.realtime, anim, model);
+		palette = R_IQMBlendPalette (model, anim->pose1, anim->pose2, blend,
+									 size, blend_palette, rmesh->palette_size);
+		if (!palette) {
+			Sys_Error ("R_AliasDrawModel: out of memory");
+		}
+		finalverts = (finalvert_t *) &palette[2 * rmesh->palette_size];
+	} else {
+		finalverts = Hunk_TempAlloc (0, size);
+		if (!finalverts) {
+			Sys_Error ("R_AliasDrawModel: out of memory");
+		}
 	}
-#if 1
+#if 0
 	for (size_t i = 0; i < size / 4; i++) {
 		((uint32_t*)finalverts)[i] = 0xdeadbeef;
 	}
@@ -853,7 +1188,7 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		auto fv = pfinalverts + meshes[i].vertices.offset;
 		auto av = pauxverts + meshes[i].vertices.offset;
-		draw_mesh (ent, lighting, &meshes[i], fv, av);
+		draw_mesh (ent, lighting, &meshes[i], fv, av, palette);
 	}
 
 	if (!renderer->model->model) {

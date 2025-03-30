@@ -184,6 +184,7 @@ sw_iqm_transfer_verts (iqm_vert_t *verts, uint32_t num_verts,
 	float *iqm_position = nullptr;
 	int32_t *iqm_texcoord = nullptr;
 	float *iqm_normal = nullptr;
+	uint32_t *iqm_joints = nullptr;
 	for (uint32_t i = 0; i < iqm_ctx->hdr->num_vertexarrays; i++) {
 		auto va = iqm_ctx->vtxarr[i];
 		if (va.type == IQM_POSITION && va.format == IQM_FLOAT
@@ -199,6 +200,10 @@ sw_iqm_transfer_verts (iqm_vert_t *verts, uint32_t num_verts,
 			&& va.size == 3) {
 			iqm_normal = (float *) ((byte *) iqm_ctx->hdr + va.offset);
 		}
+		if (va.type == IQM_BLENDINDEXES && va.format == IQM_UBYTE
+			&& va.size == 4) {
+			iqm_joints = (uint32_t *) ((byte *) iqm_ctx->hdr + va.offset);
+		}
 	}
 	if (!iqm_position || !iqm_texcoord || !iqm_normal) {
 		Sys_Error ("unsupported IQM model");
@@ -208,10 +213,14 @@ sw_iqm_transfer_verts (iqm_vert_t *verts, uint32_t num_verts,
 			.pos = { VectorExpand (iqm_position) },
 			.st = {	.s = iqm_texcoord[0], .t = iqm_texcoord[1] },
 			.normal = { VectorExpand (iqm_normal) },
+			.matind = iqm_joints ? *iqm_joints : 0,
 		};
 		iqm_position += 3;
 		iqm_normal += 3;
 		iqm_texcoord += 2;
+		if (iqm_joints) {
+			iqm_joints++;
+		}
 	}
 }
 
@@ -219,7 +228,6 @@ void
 sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 {
 	iqm_ctx->mod->clear = sw_iqm_clear;
-	//sw->blend_palette = Mod_IQMBuildBlendPalette (iqm, &sw->palette_size);
 
 	auto model = iqm_ctx->qf_model;
 	auto meshes = iqm_ctx->qf_meshes;

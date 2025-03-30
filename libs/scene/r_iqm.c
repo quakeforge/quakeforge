@@ -141,7 +141,7 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 	}
 	return motors;
 }
-
+#if 0
 static void
 framemat (mat4f_t mat, const qfm_joint_t *f)
 {
@@ -151,64 +151,59 @@ framemat (mat4f_t mat, const qfm_joint_t *f)
 	mat[2] *= f->scale[2];
 	mat[3] = loadvec3f (f->translate) + (vec4f_t) {0, 0, 0, 1};
 }
-
+#endif
 mat4f_t *
 R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
-				  int extra)
+				  size_t extra)
 {
 	qfZoneScoped (true);
 
-	size_t size = model->joints.count * sizeof (mat4f_t) + extra;
-	mat4f_t *frame = Hunk_TempAlloc (0, size);
+	extra += 2 * model->joints.count * sizeof (mat4f_t);
+	auto pose = R_IQMBlendPoseFrames (model, frame1, frame2, blend, extra);
+	auto frame = (mat4f_t *) &pose[model->joints.count];
 
-	//FIXME separate animation state
-	if (model->pose.count) {
-		//apply_channels (pose, model, frame1, frame2, blend);
-	}
-
-	auto basejoints = (qfm_joint_t *) ((byte *) model + model->joints.offset);
-	auto inverse = (mat4f_t *) model + model->inverse.offset;
 	for (uint32_t i = 0; i < model->joints.count; i++) {
-		qfm_joint_t *joint;
-		if (model->pose.count) {
-			joint = (qfm_joint_t *) ((byte *) model + model->pose.offset);
-		} else {
-			joint = (qfm_joint_t *) ((byte *) model + model->joints.offset);
-		}
-		int parent = joint->parent;
-		framemat (frame[i], joint);
-		// Pc * Bc^-1
-		mmulf (frame[i], frame[i], inverse[i]);
-		if (parent >= 0) {
-			mat4f_t baseframe;
-			framemat (baseframe, &basejoints[parent]);
-			// Bp * Pc * Bc^-1
-			mmulf (frame[i], baseframe, frame[i]);
-			// Pp * Bp^-1 * Bp * Pc * Bc^-1
-			mmulf (frame[i], frame[parent], frame[i]);
-		}
+		qfm_motor_to_mat (frame[i * 2], pose[i]);
 	}
 	return frame;
 }
 
+static inline void
+cofactor_matrix (mat4f_t cf, const mat4f_t m)
+{
+	cf[0] = crossf (m[1], m[2]);
+	cf[1] = crossf (m[2], m[0]);
+	cf[2] = crossf (m[0], m[1]);
+	vec4i_t pos = dotf (m[0], cf[0]) >= 0;
+	vec4i_t neg = ~pos;
+	cf[3] = (vec4f_t)((pos & (vec4i_t)((vec4f_t) { 1, 1, 1, 1}))
+					+ (neg & (vec4i_t)((vec4f_t) {-1,-1,-1,-1})));
+}
+
 VISIBLE mat4f_t *
 R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2, float blend,
-				   int extra, qfm_blend_t *blend_palette, uint32_t palette_size)
+				   size_t extra, qfm_blend_t *blend_palette,
+				   uint32_t palette_size)
 {
-	extra += (palette_size - model->joints.count) * sizeof (qfm_joint_t);
+	extra += 2 * (palette_size - model->joints.count) * sizeof (mat4f_t);
 	auto frame = R_IQMBlendFrames (model, frame1, frame2, blend, extra);
+	for (uint32_t i = 0; i < model->joints.count; i++) {
+		auto out = &frame[i * 2];
+		cofactor_matrix (out[1], out[0]);
+	}
 	for (uint32_t i = model->joints.count; i < palette_size; i++) {
 		auto blend = &blend_palette[i];
-		auto in = &frame[blend->indices[0]];
-		auto out = &frame[i];
+		auto in = &frame[blend->indices[0] * 2];
+		auto out = &frame[i * 2];
 
 		float w = blend->weights[0] / 255.0;
-		QuatScale (*in, w, *out);
+		QuatScale (in[0], w, out[0]);
 		for (int j = 1; j < 4 && blend->weights[j]; j++) {
 			in = &frame[blend->indices[j]];
 			w = blend->weights[j] / 255.0;
-			QuatMultAdd (*out, w, *in, *out);
+			QuatMultAdd (out[0], w, in[0], out[0]);
 		}
+		cofactor_matrix (out[1], out[0]);
 	}
 	return frame;
 }
