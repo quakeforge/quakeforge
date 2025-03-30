@@ -49,14 +49,14 @@
 #include "mod_internal.h"
 
 VISIBLE float
-R_IQMGetLerpedFrames (double realtime, animation_t *animation,
+R_IQMGetLerpedFrames (double in_time, animation_t *animation,
 					  qf_model_t *model)
 {
 	qfZoneScoped (true);
 	uint32_t    frame = animation->frame;
 
 	if (!model->anim.numdesc) {
-		return R_EntityBlend (realtime, animation, 0, 1.0 / 25.0);
+		return R_EntityBlend (in_time, animation, 0, 1.0 / 25.0);
 	}
 	if (frame >= model->anim.numdesc) {
 		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
@@ -71,11 +71,11 @@ R_IQMGetLerpedFrames (double realtime, animation_t *animation,
 	uint32_t last_frame = anim->firstframe + anim->numframes - 1;
 	float fullinterval = keyframes[last_frame].endtime;
 	float framerate = anim->numframes / fullinterval;
-	double time = realtime + animation->syncbase;
+	double time = in_time + animation->syncbase;
 	time -= floor (time / fullinterval) * fullinterval;
 	frame = (int) (time * framerate) + anim->firstframe;
 	frame = keyframes[anim->firstframe + frame].data;
-	return R_EntityBlend (realtime, animation, frame,
+	return R_EntityBlend (in_time, animation, frame,
 						  fullinterval / anim->numframes);
 }
 
@@ -141,17 +141,7 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 	}
 	return motors;
 }
-#if 0
-static void
-framemat (mat4f_t mat, const qfm_joint_t *f)
-{
-	mat4fquat (mat, f->rotate);
-	mat[0] *= f->scale[0];
-	mat[1] *= f->scale[1];
-	mat[2] *= f->scale[2];
-	mat[3] = loadvec3f (f->translate) + (vec4f_t) {0, 0, 0, 1};
-}
-#endif
+
 mat4f_t *
 R_IQMBlendFrames (qf_model_t *model, int frame1, int frame2, float blend,
 				  size_t extra)
@@ -191,15 +181,21 @@ R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2, float blend,
 		auto out = &frame[i * 2];
 		cofactor_matrix (out[1], out[0]);
 	}
-	for (uint32_t i = model->joints.count; i < palette_size; i++) {
+	for (int i = 0; i < 1; i++) {
+		auto out = &frame[(model->joints.count + i) * 2];
+		mat4fidentity (out[0]);
+		mat4fidentity (out[1]);
+		out[1][3] = (vec4f_t) { 1, 1, 1, 1 };
+	}
+	for (uint32_t i = model->joints.count + 1; i < palette_size; i++) {
 		auto blend = &blend_palette[i];
 		auto in = &frame[blend->indices[0] * 2];
 		auto out = &frame[i * 2];
 
-		float w = blend->weights[0] / 255.0;
+		float w = 1;//blend->weights[0] / 255.0;
 		QuatScale (in[0], w, out[0]);
-		for (int j = 1; j < 4 && blend->weights[j]; j++) {
-			in = &frame[blend->indices[j]];
+		for (int j = 1; 0 && j < 4 && blend->weights[j]; j++) {
+			in = &frame[blend->indices[j] * 2];
 			w = blend->weights[j] / 255.0;
 			QuatMultAdd (out[0], w, in[0], out[0]);
 		}

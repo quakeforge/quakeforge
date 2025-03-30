@@ -512,15 +512,22 @@ Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 		return 0;
 	}
 
+	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
+	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
+
 	blend_list = calloc (MAX_BLENDS, sizeof (qfm_blend_t));
 	for (uint32_t i = 0; i < iqm->hdr->num_joints; i++) {
 		blend_list[i].indices[0] = i;
 		blend_list[i].weights[0] = 255;
+		Hash_AddElement (blend_hash, &blend_list[i]);
 	}
 	num_blends = iqm->hdr->num_joints;
 
-	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
-	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
+	blend_list[iqm->hdr->num_joints] = (qfm_blend_t) { };
+	if (!Hash_FindElement (blend_hash, &blend_list[num_blends])) {
+		Hash_AddElement (blend_hash, &blend_list[num_blends]);
+		num_blends++;
+	}
 
 	for (uint32_t i = 0; i < iqm->hdr->num_vertexes; i++) {
 		byte       *base = (byte *) iqm->hdr;
@@ -546,7 +553,7 @@ Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size)
 				}
 			}
 		}
-		// sort the bones such that the indeces are increasing (unless the
+		// sort the bones such that the indices are increasing (unless the
 		// weight is zero)
 		for (uint32_t j = 0; j < 3; j++) {
 			if (!bw[j+1])					// zero weight == end of list
