@@ -177,7 +177,7 @@ qfm_make_motor (qfm_joint_t joint)
 {
 	auto q = qconjf (joint.rotate);
 	auto t = loadvec3f (joint.translate) * 0.5;
-	auto sa = loadvec3f ((vec_t*)&q);//FIXME
+	auto sa = loadxyzf (q);
 	float c = q[3];
 	auto p = crossf (t, sa) - c * t;
 	p[3] = -dotf(t, sa)[3];
@@ -215,12 +215,12 @@ qfm_motor_t
 qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 {
 	float a1 = m1.q[3];
-	auto  b1 = loadvec3f ((vec_t*)&m1.q);//FIXME
-	auto  c1 = loadvec3f ((vec_t*)&m1.t);//FIXME
+	auto  b1 = loadxyzf (m1.q);
+	auto  c1 = loadxyzf (m1.t);
 	float d1 = m1.t[3];
 	float a2 = m2.q[3];
-	auto  b2 = loadvec3f ((vec_t*)&m2.q);//FIXME
-	auto  c2 = loadvec3f ((vec_t*)&m2.t);//FIXME
+	auto  b2 = loadxyzf (m2.q);
+	auto  c2 = loadxyzf (m2.t);
 	float d2 = m2.t[3];
 
 	float a = a1*a2 - dotf (b1,b2)[3];
