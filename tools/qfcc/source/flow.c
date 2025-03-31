@@ -907,6 +907,9 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 static void
 follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 {
+	if (ud.defst >= func->num_statements) {
+		return;
+	}
 	statement_t *st = func->statements[ud.defst];
 	if (set_is_member (visited, st->number)) {
 		return;
