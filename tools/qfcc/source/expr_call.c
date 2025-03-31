@@ -575,6 +575,10 @@ return_expr (function_t *f, const expr_t *e)
 		if (!e) {
 			return new_return_expr (0);
 		}
+	} else {
+		if (is_void(ret_type)) {
+			return error (e, "return with value in function returning void");
+		}
 	}
 
 	if (e->type == ex_compound || e->type == ex_multivec) {
