@@ -6,6 +6,7 @@
 struct msgbuf_s;
 typedef struct msgbuf_s msgbuf_t;
 
+@overload msgbuf_t *MsgBuf_New (void *data, int size);
 msgbuf_t *MsgBuf_New (int size);
 void MsgBuf_Delete (msgbuf_t *msgbuf);
 void MsgBuf_FromFile (msgbuf_t *msgbuf, QFile file);

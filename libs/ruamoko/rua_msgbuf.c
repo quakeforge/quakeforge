@@ -49,6 +49,7 @@ typedef struct msgbuf_s {
 	struct msgbuf_s **prev;
 	qmsg_t      msg;
 	sizebuf_t   sizebuf;
+	bool own_data;
 } msgbuf_t;
 
 typedef struct {
@@ -66,7 +67,9 @@ static void
 msgbuf_free (progs_t *pr, msgbuf_resources_t *res, msgbuf_t *msgbuf)
 {
 	qfZoneScoped (true);
-	PR_Zone_Free (pr, msgbuf->sizebuf.data);
+	if (msgbuf->own_data) {
+		PR_Zone_Free (pr, msgbuf->sizebuf.data);
+	}
 	PR_RESFREE (res->msgbuf_map, msgbuf);
 }
 
@@ -107,7 +110,7 @@ bi_msgbuf_destroy (progs_t *pr, void *_res)
 	free (_res);
 }
 
-static int
+static msgbuf_t *
 alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 {
 	qfZoneScoped (true);
@@ -116,12 +119,12 @@ alloc_msgbuf (msgbuf_resources_t *res, byte *buf, int size)
 	if (!msgbuf)
 		return 0;
 
-	memset (&msgbuf->msg, 0, sizeof (msgbuf->msg));
-	msgbuf->msg.message = &msgbuf->sizebuf;
-	memset (&msgbuf->sizebuf, 0, sizeof (msgbuf->sizebuf));
-	msgbuf->sizebuf.data = buf;
-	msgbuf->sizebuf.maxsize = size;
-	return msgbuf_index (res, msgbuf);
+	*msgbuf = (msgbuf_t) {
+		.msg.message = &msgbuf->sizebuf,
+		.sizebuf.data = buf,
+		.sizebuf.maxsize = size,
+	};
+	return msgbuf;
 }
 
 static msgbuf_t * __attribute__((pure))
@@ -136,6 +139,18 @@ get_msgbuf (progs_t *pr, msgbuf_resources_t *res, const char *name, int msgbuf)
 }
 
 static void
+bi_MsgBuf_New_buf (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = _res;
+	int         size = P_INT (pr, 1);
+	void       *buf = P_GPOINTER (pr, 2);
+	auto msgbuf = alloc_msgbuf (res, buf, size);
+	msgbuf->sizebuf.cursize = size;
+	R_INT (pr) = msgbuf_index (res, msgbuf);
+}
+
+static void
 bi_MsgBuf_New (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -144,7 +159,9 @@ bi_MsgBuf_New (progs_t *pr, void *_res)
 	byte       *buf;
 
 	buf = PR_Zone_Malloc (pr, size);
-	R_INT (pr) = alloc_msgbuf (res, buf, size);
+	auto msgbuf = alloc_msgbuf (res, buf, size);
+	msgbuf->own_data = true;
+	R_INT (pr) = msgbuf_index (res, msgbuf);
 }
 
 static void
@@ -486,7 +503,8 @@ bi_MsgBuf_ReadUTF8 (progs_t *pr, void *_res)
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	bi(MsgBuf_New,              1, p(int)),
+	{"MsgBuf_New|^vi",	bi_MsgBuf_New_buf,	-1, 2, {p(ptr), p(int)}},
+	{"MsgBuf_New|i",	bi_MsgBuf_New,		-1, 1, {p(ptr)}},
 	bi(MsgBuf_Delete,           1, p(ptr)),
 	bi(MsgBuf_FromFile,         2, p(ptr), p(ptr)),
 	bi(MsgBuf_MaxSize,          1, p(ptr)),

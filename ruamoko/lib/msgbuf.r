@@ -1,5 +1,6 @@
 #include <msgbuf.h>
 
+msgbuf_t *MsgBuf_New (void *data, int size) = #0;
 msgbuf_t *MsgBuf_New (int size) = #0;
 void MsgBuf_Delete (msgbuf_t *msgbuf) = #0;
 void MsgBuf_FromFile (msgbuf_t *msgbuf, QFile file) = #0;
