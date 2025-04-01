@@ -1199,6 +1199,27 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 }
 
 static operand_t *
+find_local_operand (dagnode_t *node)
+{
+	if (node->type != st_none || !node->value) {
+		return nullptr;
+	}
+	if (node->value->op_type != op_value || !is_ptr (node->value->type)) {
+		return nullptr;
+	}
+	auto value = node->value->value;
+	flowvar_t *var;
+	if (value->pointer.tempop) {
+		var = flow_get_var (value->pointer.tempop);
+	} else if (value->pointer.def) {
+		var = value->pointer.def->flowvar;
+	} else {
+		internal_error (node->label->expr, "invalid pointer value");
+	}
+	return var->op;
+}
+
+static operand_t *
 generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 {
 	set_iter_t *var_iter;
@@ -1211,11 +1232,15 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 
 	operands[0] = make_operand (dag, block, dagnode, 0);
 	operands[1] = make_operand (dag, block, dagnode, 1);
+	dst = find_local_operand (dagnode->children[0]);
 	if (dagnode->children[2]) {
 		operands[2] = make_operand (dag, block, dagnode, 2);
+		if (!dst) {
+			dst = find_local_operand (dagnode->children[2]);
+		}
 		st = build_statement ("movep", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
-		if ((var_iter = set_first (dagnode->identifiers))) {
+		if (!dst && (var_iter = set_first (dagnode->identifiers))) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
 			set_del_iter (var_iter);
@@ -1231,8 +1256,8 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				offset = dstDef->offset;
 				dstDef = dstDef->alias;
 			}
-			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
-										 operands[1]->expr);
+			auto ptr_val = new_pointer_val (offset, type, dstDef, 0);
+			operands[2] = value_operand (ptr_val, operands[1]->expr);
 			st = build_statement ("movep", operands, var->expr);
 			sblock_add_statement (block, st);
 		}

@@ -88,6 +88,7 @@ typedef struct multivector_s {
 
 typedef struct attribute_s attribute_t;
 bool is_algebra (const type_t *type) __attribute__((pure));
+etype_t algebra_low_level_type (const type_t *type) __attribute__((pure));
 const type_t *algebra_type (const type_t *type, const expr_t *params);
 const type_t *algebra_subtype (const type_t *type, const attribute_t *attr);
 const type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);

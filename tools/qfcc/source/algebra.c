@@ -694,6 +694,22 @@ algebra_get (const type_t *type)
 	}
 }
 
+etype_t
+algebra_low_level_type (const type_t *type)
+{
+	type = unalias_type (type);
+
+	if (type->type == ev_invalid) {
+		internal_error (0, "unexpected algebra type");
+	}
+	auto multivec = type->multivec;
+	if (multivec->num_components > 4
+		|| count_bits (multivec->group_mask) > 1) {
+		return ev_void;
+	}
+	return type->type;
+}
+
 algebra_t *
 algebra_context (const type_t *type)
 {

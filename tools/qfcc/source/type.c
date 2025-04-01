@@ -277,10 +277,14 @@ static hashtab_t *type_tab;
 etype_t
 low_level_type (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
 	if (type->type == ev_type_count)
 		internal_error (0, "found 'type count' type");
+	if (is_algebra (type)) {
+		return algebra_low_level_type (type);
+	}
 	if (type->type < ev_invalid)
 		return type->type;
 	if (is_enum (type))
