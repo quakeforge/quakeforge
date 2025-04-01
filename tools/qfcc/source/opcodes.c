@@ -385,8 +385,9 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	opcode_t   *sop;
 	void      **op_list;
 	int         i;
+	bool debug_search = false;
 
-	if (0) {
+	if (debug_search) {
 		print_search_op (&search_op);
 	}
 	op = Hash_FindElement (rua_opcode_type_table, &search_op);
@@ -408,7 +409,7 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			|| !(check_operand_wc (sop->columns[0], search_op.columns[0])
 			     && check_operand_wc (sop->columns[1], search_op.columns[1])
                  && check_operand_wc (sop->columns[2], search_op.columns[2]))) {
-			if (0) {
+			if (debug_search) {
 				printf ("    "); print_search_op (sop);
 			}
 			continue;
