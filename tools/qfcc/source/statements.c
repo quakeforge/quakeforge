@@ -1773,12 +1773,11 @@ static statement_t *
 movep_statement (operand_t *dst, operand_t *src, const type_t *type,
 				 const expr_t *e)
 {
-	operand_t  *dst_addr = operand_address (dst, e);
 	statement_t *s = new_statement (st_ptrmove, "movep", e);
 	s->opa = src;
 	//FIXME large types
 	s->opb = short_operand (type_size (type), e);
-	s->opc = dst_addr;
+	s->opc = dst;
 	return s;
 }
 
@@ -1826,11 +1825,16 @@ expr_deref (sblock_t *sblock, const expr_t *deref, operand_t **op)
 	}
 
 	if (low_level_type (load_type) == ev_void) {
+		s = lea_statement (*op, nullptr, ptr_expr);
+		sblock_add_statement (sblock, s);
+		auto op_addr = s->opc;
+
 		s = lea_statement (base, offset, ptr_expr);
 		sblock_add_statement (sblock, s);
 
-		s = movep_statement (*op, s->opc, load_type, deref);
+		s = movep_statement (op_addr, s->opc, load_type, deref);
 		sblock_add_statement (sblock, s);
+		statement_add_def (s, *op);
 	} else {
 		s = load_statement (base, offset, *op, deref);
 		sblock_add_statement (sblock, s);

@@ -1201,6 +1201,13 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 static operand_t *
 find_local_operand (dagnode_t *node)
 {
+	if (node->type == st_address && node->children[0]) {
+		if (node->children[1]) {
+			//FIXME deal with offsets
+			return nullptr;
+		}
+		return node->children[0]->value;
+	}
 	if (node->type != st_none || !node->value) {
 		return nullptr;
 	}
