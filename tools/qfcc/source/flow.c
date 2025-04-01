@@ -995,8 +995,14 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 	set_t      *ptr = set_new ();
 	set_t      *visited = set_new ();
 
-	set_add (use_ptr, flow_get_var (st->opa)->number);
-	set_add (def_ptr, flow_get_var (st->opc)->number);
+	flowvar_t  *var_a = flow_get_var (st->opa);
+	flowvar_t  *var_c = flow_get_var (st->opc);
+	if (var_a) {
+		set_add (use_ptr, var_a->number);
+	}
+	if (var_c) {
+		set_add (def_ptr, var_c->number);
+	}
 	if (use) {
 		flow_find_ptr (use, use_ptr, st, func);
 	}
