@@ -1065,15 +1065,15 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_handle:
+			raw_type_view.handle_view (type, value, data);
+			break;
 		case ty_algebra:
 			if (type->type == ev_invalid) {
 				dstring_appendstr (data->dstr, "<?""?>");
 				break;
 			}
 			// fall through
-		case ty_handle:
-			raw_type_view.handle_view (type, value, data);
-			break;
 		case ty_bool:
 			//FIXME add bool view
 		case ty_basic:
@@ -1276,7 +1276,7 @@ pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	if (type->basic.width > 0) {
 		count *= type->basic.width;
 	}
-	if (type->basic.columns > 0) {
+	if (type->meta != ty_algebra && type->basic.columns > 0) {
 		count *= type->basic.columns;
 	}
 	for (int i = 0; i < count; i++, value++) {
@@ -1335,11 +1335,15 @@ pr_debug_print_matrix (qfot_type_t *type, pr_type_t *value,
 					   void (*print) (pr_type_t *, pr_debug_data_t *))
 {
 	dstring_t  *dstr = data->dstr;
+	int         columns = 1;
 
-	if (type->basic.columns > 1) {
+	if (type->meta != ty_algebra) {
+		columns = type->basic.columns;
+	}
+	if (columns > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int j = 0; j < type->basic.columns; j++) {
+	for (int j = 0; j < columns; j++) {
 		if (type->basic.width > 1) {
 			if (j) {
 				dstring_appendstr (dstr, ", ");
@@ -1356,7 +1360,7 @@ pr_debug_print_matrix (qfot_type_t *type, pr_type_t *value,
 			dstring_appendstr (dstr, "]");
 		}
 	}
-	if (type->basic.columns > 1) {
+	if (columns > 1) {
 		dstring_appendstr (dstr, "]");
 	}
 }
