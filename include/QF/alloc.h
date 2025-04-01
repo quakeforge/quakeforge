@@ -103,7 +103,8 @@ static struct DARRAY_TYPE(t *) n##_blocks = DARRAY_STATIC_INIT(8)
 #define ALLOC(s, t, n, v)									\
 	do {													\
 		__attribute__((unused)) t **dummy = &n##_freelist;	\
-		v = (t *) calloc (1, sizeof (t));					\
+		v = (t *) malloc (sizeof (t));						\
+		memset (v, 0, sizeof (t));							\
 	} while (0)
 
 #define ALLOC_STATE(t,n) \
