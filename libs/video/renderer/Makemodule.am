@@ -370,8 +370,6 @@ qskin_fwdf_src = $(vkshaderpath)/qskin_fwd.frag
 qskin_fwdf_c = $(vkshaderpath)/qskin_fwd.frag.spvc
 qskin_gbuf_src = $(vkshaderpath)/qskin_gbuf.frag
 qskin_gbuf_c = $(vkshaderpath)/qskin_gbuf.frag.spvc
-iqmv_src = $(vkshaderpath)/iqm.vert
-iqmv_c = $(vkshaderpath)/iqm.vert.spvc
 mesh_src = $(vkshaderpath)/mesh.r
 mesh_c = $(vkshaderpath)/mesh.r.spvc
 mesh_shadow_src = $(vkshaderpath)/mesh_shadow.r
@@ -478,10 +476,6 @@ $(qskin_fwdf_c): $(qskin_fwdf_src) $(fog_h)
 
 $(qskin_gbuf_c): $(qskin_gbuf_src)
 
-$(iqmv_c): $(iqmv_src) $(matrices_h)
-
-$(iqm_shadow_c): $(iqm_shadow_src)
-
 $(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
@@ -514,8 +508,6 @@ vkshader_src_vert = \
 	$(light_splatv_src) \
 	$(mesh_src) \
 	$(mesh_shadow_src) \
-	$(iqmv_src) \
-	$(iqm_shadow_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
 	$(fstrianglest_src)
@@ -662,9 +654,6 @@ EXTRA_DIST += \
 	$(mesh_depth_src) \
 	$(qskin_gbuf_src) \
 	$(mesh_shadow_src) \
-	$(iqmv_src) \
-	$(iqm_shadow_src) \
-	$(iqm_shadow_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
