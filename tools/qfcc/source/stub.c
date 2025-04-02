@@ -46,8 +46,8 @@ __attribute__((const)) int algebra_type_size (const struct type_s *type);
 int algebra_type_size (const struct type_s *type){return 0;}
 __attribute__((const)) int algebra_type_width (const struct type_s *type);
 int algebra_type_width (const struct type_s *type){return 0;}
-__attribute__((const)) int algebra_type_assignable (const type_t *dst, const type_t *src);
-int algebra_type_assignable (const type_t *dst, const type_t *src){return 0;}
+__attribute__((const)) bool algebra_type_assignable (const type_t *dst, const type_t *src);
+bool algebra_type_assignable (const type_t *dst, const type_t *src){return 0;}
 __attribute__((const)) bool is_algebra (const type_t *type);
 bool is_algebra (const type_t *type){return 0;}
 __attribute__((const)) type_t *algebra_base_type (const type_t *type);
