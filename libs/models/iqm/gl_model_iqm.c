@@ -79,7 +79,7 @@ gl_iqm_load_textures (qf_model_t *model, mod_iqm_ctx_t *iqm_ctx)
 		QFS_StripExtension (str->str, str->str);
 		GLuint texid;
 		tex_t *tex;
-		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1))) {
 			texid = GL_LoadTexture (str->str, tex->width, tex->height,
 									tex->data, true, false,
 									tex->format > 2 ? tex->format : 1);

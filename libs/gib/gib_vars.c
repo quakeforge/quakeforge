@@ -212,7 +212,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			key->str[i] = 0;
 			if ((var = GIB_Var_Get_Very_Complex (&one, &two, key, n+1+varstartskip, &index2, create))) {
 				if (key->str[n] == '#')
-					str = va (0, "%u", var->size);
+					str = va ("%u", var->size);
 				else
 					str = var->array[index2].value->str;
 				key->str[i] = c;

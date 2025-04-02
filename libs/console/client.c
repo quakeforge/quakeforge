@@ -485,7 +485,7 @@ C_Print (const char *fmt, va_list args)
 
 	// log all messages to file
 	if (con_debuglog)
-		Sys_DebugLog (va (0, "%s/%s/qconsole.log", qfs_userpath,//FIXME
+		Sys_DebugLog (va ("%s/%s/qconsole.log", qfs_userpath,//FIXME
 					  qfs_gamedir->dir.def), "%s", c_print_buffer->str);
 
 	if (!con_initialized)
@@ -1046,7 +1046,7 @@ Condump_f (void)
 		Sys_Printf ("invalid character in filename\n");
 		return;
 	}
-	name = va (0, "%s/%s.txt", qfs_gamedir->dir.def, Cmd_Argv (1));//FIXME
+	name = va ("%s/%s.txt", qfs_gamedir->dir.def, Cmd_Argv (1));//FIXME
 
 	if (!(file = QFS_WOpen (name, 0))) {
 		Sys_Printf ("could not open %s for writing: %s\n", name,

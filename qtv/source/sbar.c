@@ -58,7 +58,7 @@ draw_clients (view_t view)
 	const char *s;
 	char       *d;
 
-	str = va (0, "[CL: %3d]", client_count);
+	str = va ("[CL: %3d]", client_count);
 	for (s = str, d = sb->text + rel.x; *s; s++)
 		*d++ = *s;
 }
@@ -73,7 +73,7 @@ draw_servers (view_t view)
 	const char *s;
 	char       *d;
 
-	str = va (0, "[SV: %2d]", server_count);
+	str = va ("[SV: %2d]", server_count);
 	for (s = str, d = sb->text + rel.x; *s; s++)
 		*d++ = *s;
 }

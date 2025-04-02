@@ -1305,7 +1305,7 @@ PF_changelevel (progs_t *pr, void *data)
 	svs.changelevel_issued = true;
 
 	s = P_GSTRING (pr, 0);
-	Cbuf_AddText (host_cbuf, va (0, "changelevel %s\n", s));
+	Cbuf_AddText (host_cbuf, va ("changelevel %s\n", s));
 }
 
 // entity (entity ent) testentitypos

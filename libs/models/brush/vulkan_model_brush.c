@@ -231,7 +231,7 @@ transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
 static void
 load_textures (model_t *mod, vulkan_ctx_t *ctx)
 {
-	qfvPushDebug (ctx, va (ctx->va_ctx, "brush.load_textures: %s", mod->name));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "brush.load_textures: %s", mod->name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	modelctx_t *mctx = mod->data;
@@ -264,13 +264,14 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	mem = QFV_AllocImageMemory (device, image,
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 								memsize, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 mem, va (ctx->va_ctx, "memory:%s:texture", mod->name));
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, mem,
+						 vac (ctx->va_ctx, "memory:%s:texture", mod->name));
 	mctx->texture_memory = mem;
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
-													 va (ctx->va_ctx,
-														 "brush:%s", mod->name),
+													 vac (ctx->va_ctx,
+														  "brush:%s",
+														  mod->name),
 													 memsize, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	size_t      offset = 0;
@@ -291,8 +292,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 										 VK_IMAGE_ASPECT_COLOR_BIT);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
 							 tex->view,
-							 va (ctx->va_ctx, "iview:%s:%s:tex",
-								 mod->name, tx->name));
+							 vac (ctx->va_ctx, "iview:%s:%s:tex",
+								  mod->name, tx->name));
 
 		byte       *palette = vid.palette32;
 		if (tx->name[0] == '{') {
@@ -351,8 +352,8 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 									   | VK_IMAGE_USAGE_SAMPLED_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
 						 tex->tex->image,
-						 va (ctx->va_ctx, "image:%s:%s:tex", mod->name,
-							 tx->name));
+						 vac (ctx->va_ctx, "image:%s:%s:tex", mod->name,
+							  tx->name));
 }
 
 void

@@ -92,7 +92,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 frame->imageAvailableSemaphore,
-							 va (ctx->va_ctx, "sc image:%d", ctx->curFrame));
+							 vac (ctx->va_ctx, "sc image:%d", ctx->curFrame));
 	}
 
 	//FIXME clean this up
@@ -110,7 +110,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			octx->framebuffers[i] = rp->beginInfo.framebuffer;
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER,
 								 octx->framebuffers[i],
-								 va (ctx->va_ctx, "sc fb:%d", i));
+								 vac (ctx->va_ctx, "sc fb:%d", i));
 		}
 		rp->beginInfo.renderArea.extent = sc->extent;
 		for (uint32_t i = 0; i < rp->subpass_count; i++) {

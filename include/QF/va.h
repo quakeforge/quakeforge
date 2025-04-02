@@ -61,9 +61,7 @@ void va_destroy_context (va_ctx_t *ctx);
 /** Does a varargs printf into a private buffer.
  *
  * \param ctx		Context used for storing the private buffer such that va
- *                  can be used in a multi-threaded environment. If null then
- *					a static context is used, in which case va is NOT
- *					thread-safe.
+ *                  can be used in a multi-threaded environment.
  * \param format	Standard printf() format string.
  * \return			Pointer to the beginning of the output string. The memory
  *					for the returned string is owned by the context pointed to
@@ -73,7 +71,23 @@ void va_destroy_context (va_ctx_t *ctx);
  *					to va sent to a 4th) with a reduced risk of strings being
  *					trampled.
  */
-const char *va(va_ctx_t *ctx, const char *format, ...) __attribute__((format(PRINTF,2,3)));
+const char *vac(va_ctx_t *ctx, const char *format, ...)
+	__attribute__((nonnull(1)))
+	__attribute__((format(PRINTF,2,3)));
+
+/** Does a varargs printf into a private buffer.
+ *
+ * \param format	Standard printf() format string.
+ * \return			Pointer to the beginning of the output string. The memory
+ *					for the returned string is owned by the context pointed to
+ *					by \a ctx.
+ * \note			The static context is created with 4 buffers, so va (0,...)
+ *					can be used to produce mildly complex output (eg, 3 calls
+ *					to va sent to a 4th) with a reduced risk of strings being
+ *					trampled.
+ */
+const char *va(const char *format, ...)
+	__attribute__((format(PRINTF,1,2)));
 
 /** Does a varargs printf into a malloced buffer.
  *

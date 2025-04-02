@@ -110,7 +110,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 					 int skinsize, qfv_skin_t *vskin, vulkan_ctx_t *ctx)
 {
 	const char *mod_name = alias_ctx->mod->name;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "mesh.load_skin: %s", mod_name));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "mesh.load_skin: %s", mod_name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	auto mesh = alias_ctx->mesh;
@@ -134,22 +134,22 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 									| VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									| VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, vskin->image,
-						 va (ctx->va_ctx, "image:%s:%d:%d",
-							 mod_name, askin->skin_num, askin->group_num));
+						 vac (ctx->va_ctx, "image:%s:%d:%d",
+							  mod_name, askin->skin_num, askin->group_num));
 	vskin->memory = QFV_AllocImageMemory (device, vskin->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, vskin->memory,
-						 va (ctx->va_ctx, "memory:%s:%d:%d",
-							 mod_name, askin->skin_num, askin->group_num));
+						 vac (ctx->va_ctx, "memory:%s:%d:%d",
+							  mod_name, askin->skin_num, askin->group_num));
 	QFV_BindImageMemory (device, vskin->image, vskin->memory, 0);
 	vskin->view = QFV_CreateImageView (device, vskin->image,
 									  VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 									  VK_FORMAT_R8G8B8A8_UNORM,
 									  VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, vskin->view,
-						 va (ctx->va_ctx, "iview:%s:%d:%d",
-							 mod_name, askin->skin_num, askin->group_num));
+						 vac (ctx->va_ctx, "iview:%s:%d:%d",
+							  mod_name, askin->skin_num, askin->group_num));
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "alias stage",
 													 SKIN_LAYERS * skinsize * 4,
@@ -366,7 +366,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	auto rmesh = (qfv_mesh_t *) ((byte *) model + model->render_data);
 	auto resources = (qfv_resource_t *) ((byte *) model + rmesh->resources);
 	resources[0] = (qfv_resource_t) {
-		.name = va (ctx->va_ctx, "alias:%s", alias_ctx->mod->name),
+		.name = vac (ctx->va_ctx, "alias:%s", alias_ctx->mod->name),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 3,

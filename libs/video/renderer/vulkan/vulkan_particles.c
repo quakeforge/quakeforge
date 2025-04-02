@@ -94,7 +94,7 @@ create_buffers (vulkan_ctx_t *ctx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		state_objs[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "states:%zd", i),
+			.name = vac (ctx->va_ctx, "states:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = mp * sizeof (qfv_particle_t),
@@ -103,7 +103,7 @@ create_buffers (vulkan_ctx_t *ctx)
 			},
 		};
 		param_objs[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "param:%zd", i),
+			.name = vac (ctx->va_ctx, "param:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = mp * sizeof (qfv_parameters_t),
@@ -111,7 +111,7 @@ create_buffers (vulkan_ctx_t *ctx)
 			},
 		};
 		system_objs[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "system:%zd", i),
+			.name = vac (ctx->va_ctx, "system:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_particle_system_t),
@@ -387,8 +387,8 @@ particle_wait_physics (const exprval_t **params, exprval_t *result,
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 va (ctx->va_ctx, "cmd:particle_wait_physics:%d",
-							 ctx->curFrame));
+						 vac (ctx->va_ctx, "cmd:particle_wait_physics:%d",
+							  ctx->curFrame));
 	QFV_AppendCmdBuffer (ctx, cmd);
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -458,10 +458,10 @@ particle_startup (exprctx_t *ectx)
 		dfunc->vkCreateEvent (device->dev, &event, 0, &pframe->updateEvent);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
 							 pframe->physicsEvent,
-							 va (ctx->va_ctx, "event:particle:physics:%zd", i));
+							 vac (ctx->va_ctx, "event:particle:physics:%zd",i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_EVENT,
 							 pframe->updateEvent,
-							 va (ctx->va_ctx, "event:particle:update:%zd", i));
+							 vac (ctx->va_ctx, "event:particle:update:%zd", i));
 	}
 	create_buffers (ctx);
 	qfvPopDebug (ctx);

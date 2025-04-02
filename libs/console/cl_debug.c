@@ -367,7 +367,7 @@ color_window (void)
 					style.background.normal = c;
 					style.foreground.normal = c == style_color ? c : ic;
 					IMUI_Style_Update (debug_imui, &style);
-					UI_Radio (&style_color, c, va (0, "##color_%x%x", y, x));
+					UI_Radio (&style_color, c, va ("##color_%x%x", y, x));
 					if (x == 15) {
 						style.background.normal = bg_save;
 						style.foreground.normal = fg_save;

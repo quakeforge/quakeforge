@@ -821,9 +821,9 @@ IN_Binding_SaveConfig (plitem_t *config)
 			PL_D_AddObject (db_cfg, "id", PL_NewString (db->id));
 		}
 		PL_D_AddObject (db_cfg, "num_axes",
-						PL_NewString (va (0, "%d", db->num_axes)));
+						PL_NewString (va ("%d", db->num_axes)));
 		PL_D_AddObject (db_cfg, "num_buttons",
-						PL_NewString (va (0, "%d", db->num_buttons)));
+						PL_NewString (va ("%d", db->num_buttons)));
 		if (db->axis_imt_id >= 0) {
 			plitem_t   *axes = PL_NewArray ();
 			PL_D_AddObject (db_cfg, "axes", axes);

@@ -212,7 +212,7 @@ function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
 	}
 	// use `@name` so `main` can be used (`.main` is reserved for the entry
 	// point)
-	auto fsym = new_symbol (va (0, "@%s", sym->name));
+	auto fsym = new_symbol (va ("@%s", sym->name));
 	auto ftype = find_type (parse_params (ret_type, params));
 	fsym = function_symbol ((specifier_t) {
 								.type = ftype,

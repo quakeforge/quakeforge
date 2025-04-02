@@ -1765,7 +1765,7 @@ component_decl
 			if (is_anonymous_struct ($spec)) {
 				// type->name always begins with "tag "
 				auto name = $spec.type->name + 4;
-				auto sym = new_symbol (va (0, ".anonymous.%s", name));
+				auto sym = new_symbol (va (".anonymous.%s", name));
 				sym->visibility = vis_anonymous;
 				auto decl = new_decl_expr ($spec, nullptr);
 				append_decl (decl, sym, nullptr);
@@ -3403,7 +3403,7 @@ static int
 qc_finish (const char *file, rua_ctx_t *ctx)
 {
 	if (options.frames_files) {
-		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
+		write_frame_macros (va ("%s.frame", file_basename (file, 0)));
 	}
 	class_finish_module (ctx);
 	return pr.error_count;

@@ -172,7 +172,7 @@ CL_WriteConfiguration (void)
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
 
-		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		const char *path = va ("%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
 
 		if (!f) {
@@ -420,11 +420,11 @@ CL_SignonReply (void)
 
 	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va (0, "name \"%s\"\n",
+		MSG_WriteString (&cls.message, va ("name \"%s\"\n",
 										   cl_name));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
-						 va (0, "color %i %i\n", (cl_color) >> 4,
+						 va ("color %i %i\n", (cl_color) >> 4,
 							 (cl_color) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "spawn");
@@ -470,7 +470,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (host_cbuf, va (0, "playdemo %s\n",
+	Cbuf_InsertText (host_cbuf, va ("playdemo %s\n",
 									cls.demos[cls.demonum]));
 	cls.demonum++;
 }
@@ -631,7 +631,7 @@ CL_SetState (cactive_t state)
 static void
 write_capture (tex_t *tex, void *data)
 {
-	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+	QFile      *file = QFS_Open (va ("%s/qfmv%06d.png",
 									 qfs_gamedir->dir.shots,
 									 cls.demo_capture++), "wb");
 	if (file) {

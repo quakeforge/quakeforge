@@ -140,7 +140,7 @@ sw_iqm_load_textures (qf_model_t *model)
 		}
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		auto tex = LoadImage (va (0, "textures/%s", str->str), 1);
+		auto tex = LoadImage (va ("textures/%s", str->str), 1);
 		qpic_t *pic;
 		if (tex) {
 			pic = ConvertImage (tex, vid.basepal, str->str);

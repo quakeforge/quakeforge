@@ -765,7 +765,7 @@ cvar_cvarList_f (void)
 
 	for (cvar_t **cvar = (cvar_t **) cvar_list; *cvar; cvar++) {
 		cvar_t     *var = *cvar;
-		const char *flags = va (0, "%c%c%c%c",
+		const char *flags = va ("%c%c%c%c",
 								var->flags & CVAR_ROM ? 'r' : ' ',
 								var->flags & CVAR_ARCHIVE ? '*' : ' ',
 								var->flags & CVAR_USERINFO ? 'u' : ' ',

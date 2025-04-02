@@ -89,7 +89,7 @@ v6p_build_scope (symbol_t *fsym)
 
 	if (args) {
 		while (i < PR_MAX_PARAMS) {
-			param = new_symbol_type (va (0, ".par%d", i), &type_param);
+			param = new_symbol_type (va (".par%d", i), &type_param);
 			initialize_def (param, nullptr, parameters->space, sc_param,
 							locals, nullptr);
 			i++;

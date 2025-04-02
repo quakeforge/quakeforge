@@ -209,9 +209,9 @@ dump_functions (progs_t *pr)
 
 		start = func->first_statement;
 		if (start > 0)
-			comment = va (0, " @ %x", start);
+			comment = va (" @ %x", start);
 		else
-			comment = va (0, " = #%d", -start);
+			comment = va (" = #%d", -start);
 
 		printf ("%-5d %s%s: %d (", i, name, comment, func->numparams);
 		if (func->numparams < 0)
@@ -509,7 +509,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			continue;
 		}
 		if ((unsigned) type->meta >= NUM_META)
-			meta = va (0, "invalid meta: %d", type->meta);
+			meta = va ("invalid meta: %d", type->meta);
 		else
 			meta = ty_meta_names[type->meta];
 		printf ("%-5x %-9s %-20s", type_ptr + base_address, meta,

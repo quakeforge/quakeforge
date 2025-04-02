@@ -147,7 +147,7 @@ locs_load (const char *filename)
 	QFile      *file;
 	dstring_t  *buffer = dstring_new ();
 
-	tmp = va (0, "maps/%s", filename);
+	tmp = va ("maps/%s", filename);
 	file = QFS_FOpenFile (tmp);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", tmp);
@@ -208,7 +208,7 @@ locs_save (const char *filename, bool gz)
 
 	if (gz) {
 		if (strcmp (QFS_FileExtension (filename), ".gz") != 0)
-			filename = va (0, "%s.gz", filename);
+			filename = va ("%s.gz", filename);
 		locfd = QFS_Open (filename, "z9w+");
 	} else
 		locfd = QFS_Open (filename, "w+");

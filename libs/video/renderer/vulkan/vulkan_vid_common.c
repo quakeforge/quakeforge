@@ -202,8 +202,8 @@ Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 	vec4f_t     color = 0.5 * dir + (vec4f_t) {0.5, 0.5, 0.5, 1 };
 
 	QFV_CmdBeginLabel (device, cmd,
-					   va (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
-						   entgen, entind, VectorExpand (pos)), color);
+					   vac (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
+							entgen, entind, VectorExpand (pos)), color);
 }
 
 void

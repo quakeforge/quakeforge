@@ -85,8 +85,8 @@ QFV_DSManager_Create (const qfv_descriptorsetlayoutinfo_t *setLayoutInfo,
 										&setManager->layout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
 						 setManager->layout,
-						 va (ctx->va_ctx, "descriptorSetLayout:%s",
-							 setLayoutInfo->name));
+						 vac (ctx->va_ctx, "descriptorSetLayout:%s",
+							  setLayoutInfo->name));
 
 	return setManager;
 }

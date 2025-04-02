@@ -202,7 +202,7 @@ mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 				break;
 		if (i == ind)
 			break;
-		tag = va (0, "~%x", num++);
+		tag = va ("~%x", num++);
 		strncpy (tx->name, name, 16);
 		tx->name[15] = 0;
 		if (strlen (name) + strlen (tag) <= 15)

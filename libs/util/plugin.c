@@ -163,9 +163,9 @@ static const char *
 pi_realname (const char *type, const char *name)
 {
 #if defined(HAVE_DLOPEN)
-	return va (0, "%s/%s_%s.so", fs_pluginpath, type, name);
+	return va ("%s/%s_%s.so", fs_pluginpath, type, name);
 #elif defined(_WIN32)
-	return va (0, "%s/%s_%s.dll", fs_pluginpath, type, name);
+	return va ("%s/%s_%s.dll", fs_pluginpath, type, name);
 #else
 	return "No shared library support. FIXME";
 #endif
@@ -175,9 +175,9 @@ static const char *
 pi_info_name (const char *type, const char *name)
 {
 	if (type && name) {
-		return va (0, "%s_%s_PluginInfo", type, name);
+		return va ("%s_%s_PluginInfo", type, name);
 	} else if (type) {
-		return va (0, "%s_PluginInfo", type);
+		return va ("%s_PluginInfo", type);
 	} else {
 		return "PluginInfo";
 	}
@@ -222,7 +222,7 @@ PI_Plugin_Unload_f (void)
 	}
 
 	// try to locate the plugin
-	plugin_name = va (0, "%s_%s", Cmd_Argv(1), Cmd_Argv(2));
+	plugin_name = va ("%s_%s", Cmd_Argv(1), Cmd_Argv(2));
 
 	lp = Hash_Find (loaded_plugins, plugin_name);
 	if (lp) {
@@ -295,7 +295,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	}
 
 	// Build the plugin name
-	plugin_name = va (0, "%s_%s", type, name);
+	plugin_name = va ("%s_%s", type, name);
 
 	// make sure we're not already loaded
 	lp = Hash_Find (loaded_plugins, plugin_name);

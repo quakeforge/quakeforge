@@ -683,7 +683,7 @@ SV_DropClient (client_t *drop)
 	// Trigger GIB event
 	if (sv_client_disconnect_e->func)
 		GIB_Event_Callback (sv_client_disconnect_e, 1,
-							va (0, "%u", drop->userid));
+							va ("%u", drop->userid));
 }
 
 int
@@ -1790,7 +1790,7 @@ SV_AddIP_f (void)
 							  bantime / 60);
 				else
 					strncpy (timestr, "permanently", sizeof (timestr));
-				text = va (0, "You are %s %s\n%s",
+				text = va ("You are %s %s\n%s",
 						   typestr, timestr, type == ft_ban ? "" :
 						   "\nReconnecting won't help...");
 				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
@@ -2210,11 +2210,9 @@ SV_CheckVars (void)
 
 	SV_Printf ("Updated needpass.\n");
 	if (!v)
-		Info_SetValueForKey (svs.info, "needpass", "",
-							 !sv_highchars);
+		Info_SetValueForKey (svs.info, "needpass", "", !sv_highchars);
 	else
-		Info_SetValueForKey (svs.info, "needpass", va (0, "%i", v),
-							 !sv_highchars);
+		Info_SetValueForKey (svs.info, "needpass", va ("%i", v), !sv_highchars);
 }
 
 void

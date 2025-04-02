@@ -78,8 +78,8 @@ vulkan_sprite_clear (model_t *m, void *data)
 void
 Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 {
-	qfvPushDebug (ctx, va (ctx->va_ctx, "sprite.load_frames: %s",
-						   sprite_ctx->mod->name));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "sprite.load_frames: %s",
+							sprite_ctx->mod->name));
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -99,15 +99,15 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 									 | VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, sprite->image,
-						 va (ctx->va_ctx, "image:%s", mod->name));
+						 vac (ctx->va_ctx, "image:%s", mod->name));
 
 	int         numverts = 4 * sprite_ctx->numframes;
 	sprite->verts = QFV_CreateBuffer (device, numverts * sizeof (spritevrt_t),
 									  VK_BUFFER_USAGE_TRANSFER_DST_BIT
 									  | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, sprite->verts,
-						 va (ctx->va_ctx, "buffer:sprite:vertex:%s",
-							 mod->name));
+						 vac (ctx->va_ctx, "buffer:sprite:vertex:%s",
+							  mod->name));
 
 	VkMemoryRequirements ireq;
 	dfunc->vkGetImageMemoryRequirements (device->dev, sprite->image, &ireq);
@@ -119,8 +119,8 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, sprite->memory,
-						 va (ctx->va_ctx, "memory:sprite:%s",
-							 sprite_ctx->mod->name));
+						 vac (ctx->va_ctx, "memory:sprite:%s",
+							  sprite_ctx->mod->name));
 
 	QFV_BindBufferMemory (device, sprite->verts, sprite->memory, 0);
 	QFV_BindImageMemory (device, sprite->image, sprite->memory,
@@ -130,12 +130,12 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										VK_FORMAT_R8G8B8A8_UNORM,
 										VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, sprite->view,
-						 va (ctx->va_ctx, "view:sprite:%s",
-							 sprite_ctx->mod->name));
+						 vac (ctx->va_ctx, "view:sprite:%s",
+							  sprite_ctx->mod->name));
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
-													 va (ctx->va_ctx,
-														 "sprite:%s",
+													 vac (ctx->va_ctx,
+														  "sprite:%s",
 														 sprite_ctx->mod->name),
 													 size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);

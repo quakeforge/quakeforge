@@ -82,7 +82,7 @@ glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 		mspriteframe_t *frame = Hunk_AllocName (nullptr, size, ctx->mod->name);
 		ctx->frames[i]->data = (byte *) frame - (byte *) sprite;
 		Mod_LoadSpriteFrame (frame, dframe);
-		const char *name = va (0, "%s_%i", ctx->mod->path, i);
+		const char *name = va ("%s_%i", ctx->mod->path, i);
 		auto texnum = (GLuint *) &frame[1];
 		*texnum = GLSL_LoadQuakeTexture (name, dframe->width, dframe->height,
 									     (const byte *)(dframe + 1));

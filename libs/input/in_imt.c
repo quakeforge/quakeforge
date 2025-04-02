@@ -633,13 +633,13 @@ process_binding (int button, int state, const char *cmd)
 
 	if (cmd[0] == '+') {
 		if (state) {
-			Cbuf_AddText (cbuf, va (0, "%s %d\n", cmd, button));
+			Cbuf_AddText (cbuf, va ("%s %d\n", cmd, button));
 		} else {
-			Cbuf_AddText (cbuf, va (0, "-%s %d\n", cmd + 1, button));
+			Cbuf_AddText (cbuf, va ("-%s %d\n", cmd + 1, button));
 		}
 	} else {
 		if (state) {
-			Cbuf_AddText (cbuf, va (0, "%s\n", cmd));
+			Cbuf_AddText (cbuf, va ("%s\n", cmd));
 		}
 	}
 }
@@ -1012,7 +1012,7 @@ IMT_SaveConfig (plitem_t *config)
 					const char *name = 0;
 					switch (input->type) {
 						case imti_button:
-							name = va (0, "+%s", input->button->name);
+							name = va ("+%s", input->button->name);
 							break;
 						case imti_cvar:
 							name = input->cvar->name;
@@ -1047,22 +1047,22 @@ IMT_SaveAxisConfig (plitem_t *axes, int axis_ind, int dev_axis)
 
 				PL_D_AddObject (axis, "imt", PL_NewString (imt->name));
 				PL_D_AddObject (axis, "num",
-								PL_NewString (va (0, "%d", dev_axis)));
+								PL_NewString (va ("%d", dev_axis)));
 				PL_D_AddObject (axis, "axis", PL_NewString (a->axis->name));
 				PL_D_AddObject (axis, "min",
-								PL_NewString (va (0, "%d", recipe->min)));
+								PL_NewString (va ("%d", recipe->min)));
 				PL_D_AddObject (axis, "max",
-								PL_NewString (va (0, "%d", recipe->max)));
+								PL_NewString (va ("%d", recipe->max)));
 				PL_D_AddObject (axis, "minzone",
-								PL_NewString (va (0, "%d", recipe->minzone)));
+								PL_NewString (va ("%d", recipe->minzone)));
 				PL_D_AddObject (axis, "maxzone",
-								PL_NewString (va (0, "%d", recipe->maxzone)));
+								PL_NewString (va ("%d", recipe->maxzone)));
 				PL_D_AddObject (axis, "deadzone",
-								PL_NewString (va (0, "%d", recipe->deadzone)));
+								PL_NewString (va ("%d", recipe->deadzone)));
 				PL_D_AddObject (axis, "curve",
-								PL_NewString (va (0, "%.9g", recipe->curve)));
+								PL_NewString (va ("%.9g", recipe->curve)));
 				PL_D_AddObject (axis, "scale",
-								PL_NewString (va (0, "%.9g", recipe->scale)));
+								PL_NewString (va ("%.9g", recipe->scale)));
 			}
 		}
 	}
@@ -1081,11 +1081,11 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 
 				PL_D_AddObject (button, "imt", PL_NewString (imt->name));
 				PL_D_AddObject (button, "num",
-								PL_NewString (va (0, "%d", dev_button)));
+								PL_NewString (va ("%d", dev_button)));
 				switch (b->type) {
 					case inb_button:
 						PL_D_AddObject (button, "binding",
-										PL_NewString (va (0, "+%s",
+										PL_NewString (va ("+%s",
 														  b->button->name)));
 						break;
 					case inb_command:

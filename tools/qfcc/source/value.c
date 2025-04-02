@@ -347,138 +347,138 @@ get_value_string (const ex_value_t *value)
 	const char *str = "";
 	switch (type->type) {
 		case ev_string:
-			return va (0, "\"%s\"", quote_string (value->string_val));
+			return va ("\"%s\"", quote_string (value->string_val));
 		case ev_vector:
 		case ev_quaternion:
 		case ev_float:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%.9g", value->float_val);
+					str = va ("%.9g", value->float_val);
 					break;
 				case 2:
-					str = va (0, VEC2F_FMT, VEC2_EXP (value->vec2_val));
+					str = va (VEC2F_FMT, VEC2_EXP (value->vec2_val));
 					break;
 				case 3:
-					str = va (0, "[%.9g, %.9g, %.9g]",
+					str = va ("[%.9g, %.9g, %.9g]",
 							  VectorExpand (value->vec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4F_FMT, VEC4_EXP (value->vec4_val));
+					str = va (VEC4F_FMT, VEC4_EXP (value->vec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_entity:
 		case ev_func:
-			return va (0, "%s %d", type->name, value->int_val);
+			return va ("%s %d", type->name, value->int_val);
 		case ev_field:
 			if (value->pointer.def) {
 				int         offset = value->pointer.val;
 				offset += value->pointer.def->offset;
-				return va (0, "field %d", offset);
+				return va ("field %d", offset);
 			} else {
-				return va (0, "field %d", value->pointer.val);
+				return va ("field %d", value->pointer.val);
 			}
 		case ev_ptr:
 			if (value->pointer.def) {
-				str = va (0, "<%s>", value->pointer.def->name);
+				str = va ("<%s>", value->pointer.def->name);
 			}
-			return va (0, "(* %s)[%d]%s",
+			return va ("(* %s)[%d]%s",
 					   value->pointer.type
 						? get_type_string (value->pointer.type) : "???",
 					   value->pointer.val, str);
 		case ev_int:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIi32, value->int_val);
+					str = va ("%"PRIi32, value->int_val);
 					break;
 				case 2:
-					str = va (0, VEC2I_FMT, VEC2_EXP (value->ivec2_val));
+					str = va (VEC2I_FMT, VEC2_EXP (value->ivec2_val));
 					break;
 				case 3:
-					str = va (0, "[%"PRIi32", %"PRIi32", %"PRIi32"]",
+					str = va ("[%"PRIi32", %"PRIi32", %"PRIi32"]",
 							  VectorExpand (value->ivec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4I_FMT, VEC4_EXP (value->ivec4_val));
+					str = va (VEC4I_FMT, VEC4_EXP (value->ivec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_uint:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIu32, value->uint_val);
+					str = va ("%"PRIu32, value->uint_val);
 					break;
 				case 2:
-					str = va (0, "[%"PRIu32", %"PRIi32"]",
+					str = va ("[%"PRIu32", %"PRIi32"]",
 							  VEC2_EXP (value->uvec2_val));
 					break;
 				case 3:
-					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32"]",
+					str = va ("[%"PRIu32", %"PRIi32", %"PRIi32"]",
 							  VectorExpand (value->uvec3_val));
 					break;
 				case 4:
-					str = va (0, "[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
+					str = va ("[%"PRIu32", %"PRIi32", %"PRIi32", %"PRIi32"]",
 							  VEC4_EXP (value->uvec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_short:
-			return va (0, "%s %"PRIi16, type->name, value->short_val);
+			return va ("%s %"PRIi16, type->name, value->short_val);
 		case ev_ushort:
-			return va (0, "%s %"PRIu16, type->name, value->ushort_val);
+			return va ("%s %"PRIu16, type->name, value->ushort_val);
 		case ev_double:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%.17g", value->double_val);
+					str = va ("%.17g", value->double_val);
 					break;
 				case 2:
-					str = va (0, VEC2D_FMT, VEC2_EXP (value->dvec2_val));
+					str = va (VEC2D_FMT, VEC2_EXP (value->dvec2_val));
 					break;
 				case 3:
-					str = va (0, "[%.17g, %.17g, %.17g]",
+					str = va ("[%.17g, %.17g, %.17g]",
 							  VectorExpand (value->dvec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4D_FMT, VEC4_EXP (value->dvec4_val));
+					str = va (VEC4D_FMT, VEC4_EXP (value->dvec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_long:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIi64, value->long_val);
+					str = va ("%"PRIi64, value->long_val);
 					break;
 				case 2:
-					str = va (0, VEC2L_FMT, VEC2_EXP (value->lvec2_val));
+					str = va (VEC2L_FMT, VEC2_EXP (value->lvec2_val));
 					break;
 				case 3:
-					str = va (0, "[%"PRIi64", %"PRIi64", %"PRIi64"]",
+					str = va ("[%"PRIi64", %"PRIi64", %"PRIi64"]",
 							  VectorExpand (value->lvec3_val));
 					break;
 				case 4:
-					str = va (0, VEC4L_FMT, VEC4_EXP (value->lvec4_val));
+					str = va (VEC4L_FMT, VEC4_EXP (value->lvec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_ulong:
 			switch (type_width (type)) {
 				case 1:
-					str = va (0, "%"PRIu64, value->ulong_val);
+					str = va ("%"PRIu64, value->ulong_val);
 					break;
 				case 2:
-					str = va (0, "[%"PRIu64", %"PRIi64"]",
+					str = va ("[%"PRIu64", %"PRIi64"]",
 							  VEC2_EXP (value->ulvec2_val));
 					break;
 				case 3:
-					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64"]",
+					str = va ("[%"PRIu64", %"PRIi64", %"PRIi64"]",
 							  VectorExpand (value->ulvec3_val));
 					break;
 				case 4:
-					str = va (0, "[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
+					str = va ("[%"PRIu64", %"PRIi64", %"PRIi64", %"PRIi64"]",
 							  VEC4_EXP (value->ulvec4_val));
 					break;
 			}
-			return va (0, "%s %s", type->name, str);
+			return va ("%s %s", type->name, str);
 		case ev_void:
 			return "<void>";
 		case ev_invalid:
@@ -676,7 +676,7 @@ emit_value (ex_value_t *value, def_t *def)
 			internal_error (0, "unexpected value type: %s",
 							val.type->type < ev_type_count
 								? pr_type_name[val.lltype]
-								: va (0, "%d", val.lltype));
+								: va ("%d", val.lltype));
 	}
 	def_t       search_def = { .type = type };
 	immediate_t search = { .def = &search_def };

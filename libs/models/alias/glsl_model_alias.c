@@ -94,9 +94,9 @@ glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
 	memcpy (tskin, texels, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 	if (gnum != -1)
-		name = va (0, "%s_%i_%i", alias_ctx->mod->path, snum, gnum);
+		name = va ("%s_%i_%i", alias_ctx->mod->path, snum, gnum);
 	else
-		name = va (0, "%s_%i", alias_ctx->mod->path, snum);
+		name = va ("%s_%i", alias_ctx->mod->path, snum);
 	skinframe->data = GLSL_LoadQuakeTexture (name, w, h, tskin);
 }
 

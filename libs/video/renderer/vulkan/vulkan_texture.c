@@ -188,17 +188,17 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 								   | VK_IMAGE_USAGE_SAMPLED_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
-						 va (ctx->va_ctx, "image:%s", name));
+						 vac (ctx->va_ctx, "image:%s", name));
 	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
-						 va (ctx->va_ctx, "memory:%s", name));
+						 vac (ctx->va_ctx, "memory:%s", name));
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
 	qtex->view = QFV_CreateImageView (device, qtex->image, vtype,
 									  format, VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
-						 va (ctx->va_ctx, "iview:%s", name));
+						 vac (ctx->va_ctx, "iview:%s", name));
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
 
@@ -259,18 +259,18 @@ create_cubetex (vulkan_ctx_t *ctx, int size, VkFormat format,
 								   VK_IMAGE_USAGE_SAMPLED_BIT
 								   | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
-						 va (ctx->va_ctx, "image:envmap:%s", name));
+						 vac (ctx->va_ctx, "image:envmap:%s", name));
 	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
-						 va (ctx->va_ctx, "memory:%s", name));
+						 vac (ctx->va_ctx, "memory:%s", name));
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
 	qtex->view = QFV_CreateImageView (device, qtex->image,
 									  VK_IMAGE_VIEW_TYPE_CUBE, format,
 									  VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
-						 va (ctx->va_ctx, "iview:envmap:%s", name));
+						 vac (ctx->va_ctx, "iview:envmap:%s", name));
 
 	return qtex;
 }

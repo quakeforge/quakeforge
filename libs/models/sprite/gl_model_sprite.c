@@ -49,7 +49,7 @@ load_texture (model_t *mod, int framenum, const dspriteframe_t *dframe)
 	tex_t      *targa;
 	const char *name;
 
-	targa = LoadImage (name = va (0, "%s_%i", mod->path, framenum), 1);
+	targa = LoadImage (name = va ("%s_%i", mod->path, framenum), 1);
 	if (targa) {
 		if (targa->format < 4) {
 			return GL_LoadTexture (name, targa->width, targa->height,

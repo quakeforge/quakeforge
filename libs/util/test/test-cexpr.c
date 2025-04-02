@@ -105,7 +105,7 @@ exprctx_t context = {
 	do {																\
 		c = -4096;														\
 		context.result = &test_result;									\
-		cexpr_eval_string (va (0, "array[%d]", ind), &context);			\
+		cexpr_eval_string (va ("array[%d]", ind), &context);			\
 		printf ("c = array[%d] -> %d = %d\n", ind, c, array[ind]);		\
 		if (c != array[ind]) {											\
 			ret |= 1;													\

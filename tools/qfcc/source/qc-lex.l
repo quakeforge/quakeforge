@@ -899,7 +899,7 @@ join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 		*out = *p1;
 		return true;
 	}
-	auto str = va (0, "%s%s", p1->text, p2->text);
+	auto str = va ("%s%s", p1->text, p2->text);
 	yy_scan_string (str, extra->subscanner);
 	rua_tok_t   tok = { .text = str, };
 	int token = yylex (&tok, &tok.location, extra->subscanner);
@@ -1841,7 +1841,7 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
 static rua_tok_t
 build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 {
-	const char *va_opt_name = va (0, "__va_opt__.%d", va_opt_ind);
+	const char *va_opt_name = va ("__va_opt__.%d", va_opt_ind);
 	rua_tok_t   va_opt_tok = {
 		.next = u->next,
 		.location = t->location,
@@ -2359,7 +2359,7 @@ rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->num_tokens = 0;
 
 	macro->num_tokens++;
-	const char *file_str = save_string (va (0, "\"%s\"",
+	const char *file_str = save_string (va ("\"%s\"",
 											quote_string (GETSTR (file))));
 	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
@@ -2386,7 +2386,7 @@ rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->num_tokens = 0;
 
 	macro->num_tokens++;
-	const char *line_str = save_string (va (0, "%d", line));
+	const char *line_str = save_string (va ("%d", line));
 	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
 		.location = extra->location,

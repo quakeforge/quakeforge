@@ -202,7 +202,7 @@ Load_Tracklist (void)
 static void
 I_OGGMus_SetPlayList (int track)
 {
-	const char *trackstring = va (0, "%i", track);
+	const char *trackstring = va ("%i", track);
 	int         i;
 
 	play_list = PL_ObjectForKey (tracklist, trackstring);
@@ -331,7 +331,7 @@ I_OGGMus_Info (void)
 
 	/* loop, and count up the Highest key number. */
 	for (iter = 1, count = 0; count < keycount && iter <= 99 ; iter++) {
-		trackstring = va (0, "%i", iter);
+		trackstring = va ("%i", iter);
 		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
 			continue;
 		}

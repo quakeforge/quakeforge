@@ -99,7 +99,7 @@ glsl_iqm_load_textures (qf_model_t *model)
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
 		uint32_t texid;
-		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1))) {
 			texid = GLSL_LoadRGBATexture (str->str, tex->width, tex->height,
 										  tex->data);
 		} else {
@@ -107,7 +107,7 @@ glsl_iqm_load_textures (qf_model_t *model)
 		}
 		skinframe[i].data = texid;
 #if 0
-		if ((tex = LoadImage (va (0, "textures/%s_norm", str->str), 1)))
+		if ((tex = LoadImage (va ("textures/%s_norm", str->str), 1)))
 			normmaps[i] = GLSL_LoadRGBATexture (str->str, tex->width,
 												tex->height, tex->data);
 		else

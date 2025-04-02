@@ -1258,7 +1258,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
-	auto state = imui_get_state (ctx, va (0, "%s#content", name),
+	auto state = imui_get_state (ctx, va ("%s#content", name),
 								 anchor_view.id);
 	DARRAY_APPEND (&ctx->scrollers, state);
 	update_hot_active (ctx, state);
@@ -1554,7 +1554,7 @@ drag_window_br (view_pos_t delta, imui_window_t *window)
 
 #define drag(c,e,sx,xv,sy,yv,n,p) \
 	drag_window_##c (IMUI_Dragable (ctx, sx, xv, sy, yv, \
-									va (0, "%s##drag_" #c #e, n)), p);
+									va ("%s##drag_" #c #e, n)), p);
 
 int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
@@ -1764,7 +1764,7 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
 
-	auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar", window->name),
+	auto tb_state = imui_get_state (ctx, va ("%s##title_bar", window->name),
 									title_bar.id);
 	int tb_mode = update_hot_active (ctx, tb_state);
 
@@ -1787,7 +1787,7 @@ void
 IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
 	char cbutton = window->is_collapsed ? '>' : 'v';
-	if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
+	if (UI_Button (va ("%c##collapse_%s", cbutton, window->name))) {
 		window->is_collapsed = !window->is_collapsed;
 	}
 }
@@ -1795,7 +1795,7 @@ IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
-	if (UI_Button (va (0, "X##close_%s", window->name))) {
+	if (UI_Button (va ("X##close_%s", window->name))) {
 		window->is_open = false;
 	}
 }
@@ -1928,9 +1928,9 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 		.active = true,
 	};
 	IMUI_PopLayout (ctx);
-	auto sb_state = imui_get_state (ctx, va (0, "scrollbar#%s", name),
+	auto sb_state = imui_get_state (ctx, va ("scrollbar#%s", name),
 									sb_view.id);
-	auto tt_state = imui_get_state (ctx, va (0, "thumbtab#%s", name),
+	auto tt_state = imui_get_state (ctx, va ("thumbtab#%s", name),
 									tt_view.id);
 	int sb_mode = update_hot_active (ctx, sb_state);
 	int tt_mode = update_hot_active (ctx, tt_state);
@@ -1940,7 +1940,7 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 	if (scroller) {
 		auto slen = scroller->len;
 		tt_state->fraction.num = vertical ? slen.y : slen.x;
-		auto content = imui_find_state (ctx, va (0, "%s#content", name));
+		auto content = imui_find_state (ctx, va ("%s#content", name));
 		if (content) {
 			auto delta = check_drag_delta (ctx, tt_state->entity);
 			auto clen = content->len;

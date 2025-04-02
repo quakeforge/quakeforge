@@ -614,7 +614,7 @@ const char *
 UDP_AddrToString (netadr_t *addr)
 {
 	//FIXME this is used very badly (strcpy)
-	return va (0, "%d.%d.%d.%d:%d", addr->ip[0],
+	return va ("%d.%d.%d.%d:%d", addr->ip[0],
 			   addr->ip[1], addr->ip[2], addr->ip[3],
 			   ntohs (addr->port));
 }

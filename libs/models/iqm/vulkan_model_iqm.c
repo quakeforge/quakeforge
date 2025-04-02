@@ -116,7 +116,7 @@ vulkan_iqm_init_image (const char *text, qf_mesh_t *mesh, qfv_resobj_t *image)
 		.format = tex_rgba,
 	};
 	tex_t      *tex;
-	if (!(tex = LoadImage (va (0, "textures/%s", str->str), 0))) {
+	if (!(tex = LoadImage (va ("textures/%s", str->str), 0))) {
 		tex = &dummy_tex;
 	}
 	QFV_ResourceInitTexImage (image, material, 1, tex);
@@ -189,7 +189,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 
 		dstring_copystr (str, text + meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if (!(tex = LoadImage (va (0, "textures/%s", str->str), 1))) {
+		if (!(tex = LoadImage (va ("textures/%s", str->str), 1))) {
 			static tex_t       null_tex = {
 				.width = 2,
 				.height = 2,
@@ -373,7 +373,7 @@ setup_mesh_resources (qfv_resource_t *mesh_res, qfv_resobj_t *mesh_objs,
 	uint32_t index_size = mesh_type_size (mesh_index_type (num_verts));
 
 	mesh_res[0] = (qfv_resource_t) {
-		.name = va (ctx->va_ctx, "%s:mesh", name),
+		.name = vac (ctx->va_ctx, "%s:mesh", name),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = num_objects,

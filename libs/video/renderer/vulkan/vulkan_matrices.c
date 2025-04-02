@@ -203,7 +203,7 @@ matrices_startup (exprctx_t *ectx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		buffers[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "%zd", i),
+			.name = vac (ctx->va_ctx, "%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_matrix_buffer_t),

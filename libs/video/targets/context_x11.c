@@ -574,7 +574,7 @@ X11_CreateWindow (int width, int height)
 	XSetWMNormalHints (x_disp, x_win, &SizeHints);
 
 	// Set window title
-	X11_SetCaption (va (0, "%s", PACKAGE_STRING));
+	X11_SetCaption (va ("%s", PACKAGE_STRING));
 
 	// Set icon name
 	XSetIconName (x_disp, x_win, PACKAGE_NAME);

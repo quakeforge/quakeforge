@@ -177,7 +177,7 @@ print_struct (dstring_t *dstr, const type_t *t, int level, set_t *seen)
 				continue;
 			}
 			val = sym->offset;
-			port = va (0, " port=\"f%d\"", pnum++);
+			port = va (" port=\"f%d\"", pnum++);
 		}
 		dasprintf (dstr, "%*s<tr><td>%s</td><td%s>%d</td></tr>\n",
 				   indent + 4, "",

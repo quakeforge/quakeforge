@@ -715,7 +715,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 
 	font->resource = malloc (sizeof (drawfontres_t));
 	font->resource->resource = (qfv_resource_t) {
-		.name = va (ctx->va_ctx, "cachepic:%d", fontid),
+		.name = vac (ctx->va_ctx, "cachepic:%d", fontid),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 2,
@@ -1712,7 +1712,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 
 	font->resource = malloc (sizeof (drawfontres_t));
 	font->resource->resource = (qfv_resource_t) {
-		.name = va (ctx->va_ctx, "glyph_data:%d", fontid),
+		.name = vac (ctx->va_ctx, "glyph_data:%d", fontid),
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		.num_objects = 4,

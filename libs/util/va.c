@@ -81,19 +81,34 @@ va_destroy_context (va_ctx_t *ctx)
 	free (ctx);
 }
 
+static dstring_t *
+get_dstring (va_ctx_t *ctx)
+{
+	return ctx->strings[ctx->str_index++ % ctx->num_strings];
+}
+
 VISIBLE const char *
-va (va_ctx_t *ctx, const char *fmt, ...)
+vac (va_ctx_t *ctx, const char *fmt, ...)
 {
 	va_list     args;
-	dstring_t  *dstr;
+	dstring_t  *dstr = get_dstring (ctx);
 
-	if (!ctx) {
-		if (!default_va_ctx) {
-			default_va_ctx = va_create_context (4);
-		}
-		ctx = default_va_ctx;
+	va_start (args, fmt);
+	dvsprintf (dstr, fmt, args);
+	va_end (args);
+
+	return dstr->str;
+}
+
+VISIBLE const char *
+va (const char *fmt, ...)
+{
+	if (!default_va_ctx) {
+		default_va_ctx = va_create_context (4);
 	}
-	dstr = ctx->strings[ctx->str_index++ % ctx->num_strings];
+
+	va_list     args;
+	dstring_t  *dstr = get_dstring (default_va_ctx);
 
 	va_start (args, fmt);
 	dvsprintf (dstr, fmt, args);

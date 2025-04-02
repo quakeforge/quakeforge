@@ -1142,7 +1142,7 @@ print_type_str (dstring_t *str, const type_t *type)
 			return;
 		case ty_bool:
 			dasprintf (str, " %s%s", is_bool (type) ? "bool" : "lbool",
-					   type->width > 1 ? va (0, "{%d}", type->width)
+					   type->width > 1 ? va ("{%d}", type->width)
 									   : "");
 			return;
 		case ty_basic:
@@ -2210,7 +2210,7 @@ build_vector_struct (type_t *type, bool extra_names)
 		fields[2 * (width + 1) - 1] = (struct_def_t) { ".reset" };
 	}
 
-	make_structure (va (0, "@%s", type->name), 's', fields, type);
+	make_structure (va ("@%s", type->name), 's', fields, type);
 	type->type = etype;
 	type->meta = meta;
 }

@@ -50,7 +50,7 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 				printf ("---\n");
 				printf ("debug: trace %05x %04x %04x %04x %04x%s\n",
 						test_pr.pr_xstatement, st->op, st->a, st->b, st->c,
-						pr->globals.stack ? va (0, " %05x", *pr->globals.stack)
+						pr->globals.stack ? va (" %05x", *pr->globals.stack)
 										  : "");
 				printf ("                        %04x %04x %04x\n",
 						st->a + PR_BASE (pr, st, A),

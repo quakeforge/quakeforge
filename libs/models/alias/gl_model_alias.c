@@ -120,7 +120,7 @@ Mod_LoadExternalSkin (glskin_t *skin, char *filename)
 
 	tex = LoadImage (filename, 1);
 	if (!tex)
-		tex = LoadImage (va (0, "textures/%s", ptr + 1), 1);
+		tex = LoadImage (va ("textures/%s", ptr + 1), 1);
 	if (tex) {
 		skin->id = GL_LoadTexture (filename, tex->width, tex->height,
 								   tex->data, true, false,
@@ -128,21 +128,21 @@ Mod_LoadExternalSkin (glskin_t *skin, char *filename)
 
 		skin->fb = 0;
 
-		glow = LoadImage (va (0, "%s_luma", filename), 1);
+		glow = LoadImage (va ("%s_luma", filename), 1);
 		if (!glow)
-			glow = LoadImage (va (0, "%s_glow", filename), 1);
+			glow = LoadImage (va ("%s_glow", filename), 1);
 		if (!glow)
-			glow = LoadImage (va (0, "textures/%s_luma", ptr + 1), 1);
+			glow = LoadImage (va ("textures/%s_luma", ptr + 1), 1);
 		if (!glow)
-			glow = LoadImage (va (0, "textures/%s_glow", ptr + 1), 1);
+			glow = LoadImage (va ("textures/%s_glow", ptr + 1), 1);
 		if (glow)
 			skin->fb =
-				GL_LoadTexture (va (0, "fb_%s", filename), glow->width,
+				GL_LoadTexture (va ("fb_%s", filename), glow->width,
 								glow->height, glow->data, true, true,
 								glow->format > 2 ? glow->format : 1);
 		else if (tex->format < 3)
 			skin->fb = Mod_Fullbright (tex->data, tex->width, tex->height,
-									   va (0, "fb_%s", filename));
+									   va ("fb_%s", filename));
 	}
 }
 

@@ -457,8 +457,8 @@ find_descriptorSet (const qfv_reference_t *ref, objstate_t *s)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &ds->setLayout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-						 ds->setLayout, va (s->ctx->va_ctx, "descriptorSet:%s",
-											ds->name));
+						 ds->setLayout, vac (s->ctx->va_ctx, "descriptorSet:%s",
+											 ds->name));
 	return ds->setLayout;
 }
 
@@ -554,7 +554,7 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &li->layout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, li->layout,
-						 va (s->ctx->va_ctx, "layout:%s", li->name));
+						 vac (s->ctx->va_ctx, "layout:%s", li->name));
 	return li;
 }
 
@@ -1358,7 +1358,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 								   &renderpasses[i]);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_RENDER_PASS,
 							 renderpasses[i],
-							 va (ctx->va_ctx, "renderpass:%s", rpName[i]));
+							 vac (ctx->va_ctx, "renderpass:%s", rpName[i]));
 		for (uint32_t j = 0; j < pl_counts[i]; j++) {
 			s.ptr.gplCreate[plInd++].renderPass = renderpasses[i];
 		}
@@ -1377,7 +1377,7 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	for (uint32_t i = 0;
 		 i < s.inds.num_graph_pipelines + s.inds.num_comp_pipelines; i++) {
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE, pipelines[i],
-							 va (ctx->va_ctx, "pipeline:%s", plName[i]));
+							 vac (ctx->va_ctx, "pipeline:%s", plName[i]));
 	}
 
 	counts->num_ds_indices = s.inds.num_ds_indices;

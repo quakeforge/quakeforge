@@ -174,7 +174,7 @@ planes_startup (exprctx_t *ectx)
 	for (size_t i = 0; i < frames; i++) {
 		auto obj = &pctx->resources->objects[i];
 		*obj = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "planes:%zd", i),
+			.name = vac (ctx->va_ctx, "planes:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_planebuf_t),
@@ -219,7 +219,7 @@ planes_startup (exprctx_t *ectx)
 		auto buffer = &pctx->resources->objects[i].buffer;
 		auto set = QFV_DSManager_AllocSet (dsmanager);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, set,
-							 va (ctx->va_ctx, "debug:planes_set:%zd", i));
+							 vac (ctx->va_ctx, "debug:planes_set:%zd", i));
 
 		pframe->descriptor = set;
 		VkDescriptorBufferInfo bufferInfo[] = {

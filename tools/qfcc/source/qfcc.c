@@ -865,7 +865,7 @@ progs_src_compile (void)
 				if (compile_file (qc_filename->str, &ctx))
 					return 1;
 				if (options.frames_files) {
-					write_frame_macros (va (0, "%s.frame",
+					write_frame_macros (va ("%s.frame",
 											file_basename (qc_filename->str,
 														   0)));
 				}

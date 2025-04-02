@@ -490,7 +490,7 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 			if (mv_names) {
 				name = mv_names[i];
 			} else {
-				name = va (0, "group_%d", i);
+				name = va ("group_%d", i);
 			}
 			fields[c] = (struct_def_t) {
 				.name = save_string (name),
@@ -530,7 +530,7 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		algebra->mvec_types[group_mask] = type;
 		*type = (type_t) {
 			.type = algebra->type->type,
-			.name = save_string (va (0, "algebra(%s(%d,%d,%d):%04x)",
+			.name = save_string (va ("algebra(%s(%d,%d,%d):%04x)",
 									 algebra->type->name,
 									 algebra->plus, algebra->minus,
 									 algebra->zero, group_mask)),

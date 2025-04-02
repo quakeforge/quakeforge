@@ -104,14 +104,14 @@ tempop_string (operand_t *tmpop)
 {
 	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->alias) {
-		return va (0, "<tmp %s %p:%d:%p:%d:%d>",
+		return va ("<tmp %s %p:%d:%p:%d:%d>",
 				   pr_type_name[tempop->type->type],
 				   tmpop, tempop->users,
 				   tempop->alias,
 				   tempop->offset,
 				   tempop->alias->tempop.users);
 	}
-	return va (0, "<tmp %s %p:%d>", pr_type_name[tempop->type->type],
+	return va ("<tmp %s %p:%d>", pr_type_name[tempop->type->type],
 			   tmpop, tempop->users);
 }
 
@@ -134,13 +134,13 @@ operand_string (operand_t *op)
 				const char *alias = operand_string (op->alias);
 				char       *buf = alloca (strlen (alias) + 1);
 				strcpy (buf, alias);
-				return va (0, "alias(%s,%s)", pr_type_name[op->type->type],
+				return va ("alias(%s,%s)", pr_type_name[op->type->type],
 						   buf);
 			}
 		case op_nil:
 			return "nil";
 		case op_pseudo:
-			return va (0, "pseudo: %s", op->pseudoop->name);
+			return va ("pseudo: %s", op->pseudoop->name);
 	}
 	return ("??");
 }
@@ -1168,7 +1168,7 @@ expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 			use = p;
 		}
 	}
-	opcode = va (0, "%scall%d", pref, count);
+	opcode = va ("%scall%d", pref, count);
 	s = new_statement (st_func, opcode, call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
@@ -1232,7 +1232,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 	int         arg_num = 0;
 	for (int i = 0; i < num_args; i++) {
 		const expr_t *a = args[i];
-		const char *arg_name = va (0, ".arg%d", arg_num++);
+		const char *arg_name = va (".arg%d", arg_num++);
 		def_t      *def = new_def (arg_name, 0, arg_space, sc_argument);
 		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
@@ -3050,11 +3050,11 @@ make_statements (const expr_t *e)
 	do {
 		did_something = thread_jumps (sblock);
 		if (options.block_dot.thread)
-			dump_dot (va (0, "thread-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
 		did_something |= remove_dead_blocks (sblock);
 		did_something |= merge_blocks (&sblock);
 		if (options.block_dot.dead)
-			dump_dot (va (0, "dead-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
 		pass++;
 	} while (did_something);
 	check_final_block (sblock);

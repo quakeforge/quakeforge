@@ -299,7 +299,7 @@ CL_GetMessage (void)
 					demo_speed = 0;
 				}
 			}
-			r_funcs->Draw_String (32, 64, va (0, "%4d", packet_count));
+			r_funcs->Draw_String (32, 64, va ("%4d", packet_count));
 		}
 
 		if (!ret && demo_timeframes_isactive && cls.td_starttime) {
@@ -374,7 +374,7 @@ CL_Record_f (void)
 
 // start up the map
 	if (c > 2)
-		Cmd_ExecuteString (va (0, "map %s", Cmd_Argv (2)), src_command);
+		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
 
 	CL_Record (Cmd_Argv (1), track);
 }
