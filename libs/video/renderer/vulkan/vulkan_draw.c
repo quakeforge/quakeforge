@@ -636,6 +636,32 @@ make_dyn_quad (int x, int y, int w, int h, qpic_t *pic, vulkan_ctx_t *ctx)
 }
 
 static qpic_t *
+pic_data_rgba (const char *name, int w, int h, const byte *data,
+			   vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	qpic_t     *pic;
+	byte       *picdata;
+
+	pic = cmemalloc (dctx->pic_memsuper,
+					 offsetof (qpic_t, data[sizeof (picdata_t)]));
+	pic->width = w;
+	pic->height = h;
+	__auto_type pd = (picdata_t *) pic->data;
+	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
+	pd->vert_index = make_static_quad (0, 0, w, h, pic, ctx);
+	pd->slice_index = ~0;
+	pd->descid = CORE_DESC;
+
+	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
+	size_t size = w * h;
+	for (size_t i = 0; i < size * 4; i++) {
+		*picdata++ = *data++;
+	}
+	return pic;
+}
+
+static qpic_t *
 pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 {
 	drawctx_t  *dctx = ctx->draw_context;
@@ -925,9 +951,9 @@ load_white_pic (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	drawctx_t  *dctx = ctx->draw_context;
-	byte        white_block = 0xfe;
+	byte        white_block[4] = { 0xff, 0xff, 0xff, 0xff };
 
-	dctx->white_pic = pic_data ("white", 1, 1, &white_block, ctx);
+	dctx->white_pic = pic_data_rgba ("white", 1, 1, white_block, ctx);
 	__auto_type pd = (picdata_t *) dctx->white_pic->data;
 	pd->slice_index = make_static_slice ((vec4i_t) {0, 0, 1, 1},
 										 (vec4i_t) {0, 0, 0, 0},
