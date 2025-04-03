@@ -293,6 +293,101 @@ bi (Model_GetInverseMotors)
 	}
 }
 
+bi (Model_GetClipInfo)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	unsigned clip = P_UINT (pr, 1);
+
+	R_var (pr, uvec4) = (vec4u_t) {};
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto text = (const char *) model + model->text.offset;
+		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
+		if (clip < model->anim.numdesc) {
+			R_var (pr, uvec4) = (vec4u_t) {
+				PR_SetReturnString(pr, text + clips[clip].name),
+				clips[clip].numframes,
+				model->channels.count,
+				qfm_u16,
+			};
+		} else {
+			// no chanels
+		}
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
+bi (Model_GetChannelInfo)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+
+	R_POINTER (pr) = 0;
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto channels = (qfm_channel_t*)((byte*)model + model->channels.offset);
+		auto data = (uint16_t *) P_GPOINTER (pr, 1);
+		memcpy (data, channels, model->channels.count * sizeof (qfm_channel_t));
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
+bi (Model_GetFrameData)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	unsigned clip = P_UINT (pr, 1);
+
+	R_POINTER (pr) = 0;
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
+		auto keyframes = (keyframe_t*)((byte*)model + model->anim.keyframes);
+		if (clip < model->anim.numdesc) {
+			uint32_t numchannels = model->channels.count;
+			uint32_t numframes = clips[clip].numframes;
+			uint32_t frame = keyframes[clips[clip].firstframe].data;
+			auto data = (uint16_t *) P_GPOINTER (pr, 2);
+			auto f = (uint16_t *) ((byte *) model + frame);
+			memcpy (data, f, numchannels * numframes * sizeof (uint16_t));
+		} else {
+			// no chanels
+		}
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -305,6 +400,9 @@ static builtin_t builtins[] = {
 	bi(Model_NumFrames,        1, p(ptr)),
 	bi(Model_GetBaseMotors,    2, p(ulong), p(ptr)),
 	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
+	bi(Model_GetClipInfo,      2, p(ulong), p(uint)),
+	bi(Model_GetChannelInfo,   2, p(ulong), p(ptr)),
+	bi(Model_GetFrameData,     3, p(ulong), p(uint), p(ptr)),
 	{0}
 };
 
