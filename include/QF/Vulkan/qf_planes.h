@@ -48,6 +48,7 @@ typedef struct planesctx_s {
 	VkSampler    sampler;
 	struct qfv_dsmanager_s *dsmanager;
 	struct qfv_resource_s *resources;
+	float grid_size;
 } planesctx_t;
 
 struct vulkan_ctx_s;

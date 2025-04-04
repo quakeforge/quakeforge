@@ -100,11 +100,12 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto layout = taskctx->pipeline->layout;
 	auto cmd = taskctx->cmd;
 
+	float gs = pctx->grid_size;
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	qfv_planebuf_t *planes = QFV_PacketExtend (packet, sizeof (qfv_planebuf_t));
-	vec4f_t x = {256, 0, 0, 0};
-	vec4f_t y = {0, 256, 0, 0};
-	vec4f_t z = {0, 0, 256, 0};
+	vec4f_t x = {gs, 0, 0, 0};
+	vec4f_t y = {0, gs, 0, 0};
+	vec4f_t z = {0, 0, gs, 0};
 	vec4f_t r = {1, 0, 0, 1 };
 	vec4f_t g = {0, 1, 0, 1 };
 	vec4f_t b = {0, 0, 1, 1 };
@@ -250,13 +251,27 @@ planes_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	planesctx_t *pctx = calloc (1, sizeof (planesctx_t));
 	ctx->planes_context = pctx;
+
+	pctx->grid_size = 256;// suitable for quake, not so suitable for others
+}
+
+static void
+planes_set_size (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->planes_context;
+
+	pctx->grid_size = *(float *) params[0]->value;
 }
 
 static exprtype_t *debug_planes_draw_params[] = {
 	&cexpr_int,
 };
 static exprfunc_t debug_planes_draw_func[] = {
-	{ .func = debug_planes_draw, .num_params = 1, .param_types = debug_planes_draw_params },
+	{ .func = debug_planes_draw, .num_params = 1,
+		.param_types = debug_planes_draw_params },
 	{}
 };
 
@@ -265,9 +280,19 @@ static exprfunc_t planes_init_func[] = {
 	{}
 };
 
+static exprtype_t *planes_set_size_params[] = {
+	&cexpr_float,
+};
+static exprfunc_t planes_set_size_func[] = {
+	{ .func = planes_set_size, .num_params = 1,
+		.param_types = planes_set_size_params },
+	{}
+};
+
 static exprsym_t debug_planes_task_syms[] = {
 	{ "debug_planes_draw", &cexpr_function, debug_planes_draw_func },
 	{ "planes_init", &cexpr_function, planes_init_func },
+	{ "planes_set_size", &cexpr_function, planes_set_size_func },
 	{}
 };
 

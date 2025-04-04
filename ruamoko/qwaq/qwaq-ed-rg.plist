@@ -2858,6 +2858,7 @@ render_graph = {
 		{ func = draw_init; },
 		{ func = particle_init; },
 		{ func = planes_init; },
+		{ func = planes_set_size; params = (1); },
 		{ func = translucent_init; },
 		{ func = lighting_init; },
 	);
