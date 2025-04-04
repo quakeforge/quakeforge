@@ -237,10 +237,6 @@ setup_bindings (void)
 	PL_Release (config);
 }
 
-uvec4 Model_GetClipInfo (model_t model, uint clip) = #0;
-void *Model_GetChannelInfo (model_t model, void *data) = #0;
-void *Model_GetFrameData (model_t model, uint clip, void *data) = #0;
-
 typedef struct qfm_channel_s {
 	uint data;
 	float base;
@@ -308,21 +304,22 @@ main (int argc, string *argv)
 	mrfixit_arm = make_armature (mrfixit);
 	Transform_SetLocalRotation (mrfixit_trans, { 0, 0, 1, 0});
 	auto clipinfo = Model_GetClipInfo (mrfixit, 0);
-	printf ("%s %u %u %u\n", *(string*)&clipinfo[0],
-			clipinfo[1], clipinfo[2], clipinfo[3]);
-	uint count = clipinfo[1] * clipinfo[2];
+	printf ("%s %u %u %u\n", clipinfo.name, clipinfo.num_frames,
+			clipinfo.num_channels, clipinfo.channel_type);
+	uint count = clipinfo.num_frames * clipinfo.num_channels;
 	uint size = (count + 1) / 2;
 	void *framedata = obj_malloc (size);
-	qfm_channel_t *channels = obj_malloc (clipinfo[2] * sizeof (qfm_channel_t));
+	qfm_channel_t *channels = obj_malloc (clipinfo.num_channels
+										  * sizeof (qfm_channel_t));
 	Model_GetChannelInfo (mrfixit, channels);
 	Model_GetFrameData (mrfixit, 0, framedata);
 	int num_joints = Model_NumJoints (mrfixit);
 	qfm_joint_t *joints = obj_malloc (num_joints * sizeof (qfm_joint_t));
 	Model_GetJoints (mrfixit, joints);
 	auto msgbuf = MsgBuf_New (framedata, (int)count * 2);
-	for (uint frame = 0; frame < clipinfo[1]; frame++) {
+	for (uint frame = 0; frame < clipinfo.num_frames; frame++) {
 		printf ("frame %d\n", frame);
-		for (uint chan = 0; chan < clipinfo[2]; chan++) {
+		for (uint chan = 0; chan < clipinfo.num_channels; chan++) {
 			int d = MsgBuf_ReadShort (msgbuf);
 			int j = channels[chan].data / 48;
 			int o = (channels[chan].data % 48) / 4;

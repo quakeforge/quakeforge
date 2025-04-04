@@ -42,6 +42,13 @@
 
 #include "rua_internal.h"
 
+typedef struct clipinfo_s {
+	pr_string_t name;
+	uint        num_frames;
+	uint        num_channels;
+	qfm_type_t  channel_type;
+} clipinfo_t;
+
 typedef struct rua_model_s {
 	struct rua_model_s *next;
 	struct rua_model_s **prev;
@@ -301,7 +308,7 @@ bi (Model_GetClipInfo)
 	auto mod = h->model;
 	unsigned clip = P_UINT (pr, 1);
 
-	R_var (pr, uvec4) = (vec4u_t) {};
+	R_PACKED (pr, clipinfo_t) = (clipinfo_t) {};
 	if (mod->type == mod_mesh) {
 		bool cached = false;
 		auto model = mod->model;
@@ -312,11 +319,11 @@ bi (Model_GetClipInfo)
 		auto text = (const char *) model + model->text.offset;
 		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
 		if (clip < model->anim.numdesc) {
-			R_var (pr, uvec4) = (vec4u_t) {
-				PR_SetReturnString(pr, text + clips[clip].name),
-				clips[clip].numframes,
-				model->channels.count,
-				qfm_u16,
+			R_PACKED (pr, clipinfo_t) = (clipinfo_t) {
+				.name = PR_SetReturnString(pr, text + clips[clip].name),
+				.num_frames = clips[clip].numframes,
+				.num_channels = model->channels.count,
+				.channel_type = qfm_u16,
 			};
 		} else {
 			// no chanels

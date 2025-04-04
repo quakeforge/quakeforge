@@ -8,6 +8,13 @@ typedef struct light_s {
 	vec4        attenuation;
 } light_t;
 
+typedef struct clipinfo_s {
+	string      name;
+	uint        num_frames;
+	uint        num_channels;
+	uint        channel_type;//FIXME use an enum
+} clipinfo_t;
+
 typedef @handle(long) scene_h scene_t;
 typedef @handle(long) entity_h entity_t;
 typedef @handle(long) transform_h transform_t;
@@ -66,5 +73,8 @@ void Model_GetJoints (model_t model, void *joints);
 int Model_NumFrames (model_t model);
 int Model_GetBaseMotors (model_t model, void *motors);
 int Model_GetInverseMotors (model_t model, void *motors);
+clipinfo_t Model_GetClipInfo (model_t model, uint clip);
+void *Model_GetChannelInfo (model_t model, void *data);
+void *Model_GetFrameData (model_t model, uint clip, void *data);
 
 #endif//__ruamoko_scene_h
