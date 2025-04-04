@@ -144,17 +144,14 @@ draw_armature (transform_t camera, armature_t *arm, transform_t ent)
 							 Transform_GetWorldRotation (ent));
 		for (int i = 0; i < arm.num_edges; i++) {
 			auto pose = &arm.pose[arm.edge_bones[i]];
-			auto pm = pose.m;
-			auto M = E * pm;
-			//auto M = E * pose.m;FIXME bug in qfcc
+			auto M = E * pose.m;
 			auto edge = arm.edges[i];
 			auto p1 = (point_t) arm.points[edge.a];
 			auto p2 = (point_t) arm.points[edge.b];
 			p1 = M * p1 * ~M;
 			p2 = M * p2 * ~M;
 			int color = arm.edge_colors[i];
-			//if (pose.m.scalar < 0) {//FIXME ditto
-			if (pm.scalar < 0) {
+			if (pose.m.scalar < 0) {
 				color = 254;
 			}
 			draw_3dline (camera, (vec4) p1, (vec4) p2, color);
