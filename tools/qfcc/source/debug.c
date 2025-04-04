@@ -90,11 +90,17 @@ pop_source_file (void)
 void
 add_source_file (const char *file)
 {
-	pr.loc.file = ReuseString (file);
 	if (!strpool_findstr (pr.comp_file_set, file)) {
 		strpool_addstr (pr.comp_file_set, file);
 		DARRAY_APPEND (&pr.comp_files, save_string (file));
 	}
+}
+
+void
+set_source_file (const char *file)
+{
+	pr.loc.file = ReuseString (file);
+	add_source_file (file);
 }
 
 void
@@ -118,7 +124,7 @@ set_line_file (int line, const char *file, int flags)
 		.file = ReuseString (file),
 	};
 	if (file) {
-		add_source_file (file);
+		set_source_file (file);
 	}
 }
 

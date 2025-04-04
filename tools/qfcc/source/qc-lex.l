@@ -2383,6 +2383,7 @@ rua_embed_file (const char *name, rua_ctx_t *ctx)
 		case S_IFREG:
 			break;
 	}
+	add_source_file (found);
 	size_t size = 0;
 	if (extra->embed_limit) {
 		size = expr_long (extra->embed_limit);

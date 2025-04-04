@@ -438,7 +438,7 @@ compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 	begin_compilation ();
 	pr.src_name = save_string (file);
 	pr.comp_dir = save_cwd ();
-	add_source_file (file);
+	set_source_file (file);
 	lang->initialized = false;
 	err = lang->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
@@ -741,7 +741,7 @@ compile_file (const char *filename, rua_ctx_t *ctx)
 		.last_line = 1,
 		.last_column = 1,
 	};
-	add_source_file (filename);
+	set_source_file (filename);
 	clear_frame_macros ();
 	err = ctx->language->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
