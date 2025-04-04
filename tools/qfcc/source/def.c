@@ -609,8 +609,11 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		init_elements (sym->def, init, block);
 		sym->def->initialized = 1;
 	} else {
-		if (init->type == ex_nil) {
+		if (is_nil (init)) {
 			init = convert_nil (init, sym->type);
+		}
+		if (is_buffer_val (init)) {
+			init = convert_buffer (init, sym->type);
 		}
 		auto init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {

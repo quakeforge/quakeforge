@@ -45,6 +45,7 @@ struct operand_s;
 
 struct ex_value_s *new_value (void);
 struct ex_value_s *new_string_val (const char *string_val);
+struct ex_value_s *new_buffer_val (const char *buffer, size_t size);
 struct ex_value_s *new_double_val (double double_val);
 struct ex_value_s *new_float_val (float float_val);
 struct ex_value_s *new_vector_val (const float *vector_val);

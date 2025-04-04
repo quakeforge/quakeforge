@@ -143,7 +143,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			HYPERUNARY
 %left			'.' '(' '['
 
-%token	<expr>		VALUE STRING TOKEN
+%token	<expr>		VALUE STRING EBUFFER TOKEN
 %token              TRUE FALSE
 %token              ELLIPSIS
 %token              RESERVED

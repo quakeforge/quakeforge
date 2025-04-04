@@ -145,7 +145,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			HYPERUNARY
 %left			'.' '(' '['
 
-%token	<expr>		VALUE STRING TOKEN
+%token	<expr>		VALUE STRING EBUFFER TOKEN
 %token              TRUE FALSE
 %token				ELLIPSIS
 %token				RESERVED
@@ -2008,6 +2008,7 @@ var_initializer
 			}
 			$$ = $1 ? $1 : new_nil_expr ();
 		}
+	| EBUFFER
 	;
 
 compound_init
@@ -2488,6 +2489,11 @@ const
 string
 	: STRING
 	| string STRING				{ $$ = binary_expr ('+', $1, $2); }
+	| string EBUFFER
+		{
+			auto str = convert_buffer ($2, &type_string);
+			$$ = binary_expr ('+', $1, str);
+		}
 	;
 
 identifier

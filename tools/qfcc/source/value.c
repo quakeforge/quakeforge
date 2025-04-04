@@ -137,6 +137,20 @@ new_string_val (const char *string_val)
 }
 
 ex_value_t *
+new_buffer_val (const char *buffer_val, size_t size)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	val.type = &type_void;
+	val.lltype = ev_invalid;
+	val.buffer = (ex_buffer_t) {
+		.data = buffer_val,
+		.size = size,
+	};
+	return find_value (&val);
+}
+
+ex_value_t *
 new_double_val (double double_val)
 {
 	ex_value_t  val;

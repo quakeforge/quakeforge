@@ -118,7 +118,7 @@ parse_error (rua_ctx_t *ctx)
 %left           HYPERUNARY
 %left           '.' '(' '['
 
-%token <expr>   VALUE STRING
+%token <expr>   VALUE STRING EBUFFER
 %token <t>      TOKEN
 %token          ELLIPSIS
 %token          RESERVED
@@ -132,7 +132,8 @@ parse_error (rua_ctx_t *ctx)
 %token          ERROR WARNING NOTICE BUG
 %token          PRAGMA LINE
 %token          IF IFDEF IFNDEF ELSE ELIF ELIFDEF ELIFNDEF ENDIF
-%token          DEFINED EOD
+%token          DEFINED EOD LIMIT
+%token <t>      SUFFIX PREFIX IF_EMPTY
 %token          CONCAT
 %token          EXTENSION VERSION
 
@@ -140,7 +141,7 @@ parse_error (rua_ctx_t *ctx)
 %type <macro>   params opt_params body arg arg_list arg_clist
 %type <dstr>    text text_text
 %type <expr>    unary_expr expr id defined defined_id line_expr
-%type <t>		body_token
+%type <t>		body_token embed_macro
 
 %{
 #define TEXPR(c,t,f) new_long_expr (expr_long (c) ? expr_long (t) \
@@ -195,7 +196,8 @@ eod : EOD { rua_end_directive (ctx); } ;
 
 directive
 	: INCLUDE incexp string extra_warn { rua_include_file ($3, ctx); }
-	| EMBED incexp string extra_ignore { rua_embed_file ($3, ctx); }
+	| EMBED incexp string { rua_start_embed_params (ctx); } opt_embed_params extra_ignore
+		{ rua_embed_file ($3, ctx); }
 	| DEFINE ID		<macro> { $$ = rua_start_macro ($2, false, ctx); }
 	  body					{ rua_macro_finish ($body, @$, ctx); }
 	  eod
@@ -263,6 +265,50 @@ directive
 	  extra_warn
 	;
 
+opt_embed_params
+	: /* empty */
+	| embed_param_list
+	;
+
+embed_param_list
+	: embed_param
+	| embed_param_list embed_param
+	;
+
+embed_param
+	: LIMIT '(' expand expr ')' { rua_embed_limit ($expr, ctx); }
+	| embed_macro '(' { $<macro>$ = rua_start_embed_macro (&$1, ctx); }
+	  balanced_token_sequence ')' { rua_start_embed_params (ctx); }
+	;
+
+embed_macro
+	: SUFFIX[tok]		{ $tok.text = save_string ($tok.text); $$ = $tok; }
+	| PREFIX[tok]		{ $tok.text = save_string ($tok.text); $$ = $tok; }
+	| IF_EMPTY[tok]		{ $tok.text = save_string ($tok.text); $$ = $tok; }
+	;
+
+balanced_token_sequence
+	: /* empty */	{ $<macro>$ = $<macro>0; }
+	| balanced_token_sequence balanced_token	{ $<macro>$ = $<macro>0; }
+	;
+
+balanced_token
+	: '('
+		{ rua_macro_append ($<macro>0, &$<t>1, ctx); $<macro>$ = $<macro>0; }
+	  balanced_token_sequence ')'
+		{ rua_macro_append ($<macro>0, &$<t>4, ctx); }
+	| '['
+		{ rua_macro_append ($<macro>0, &$<t>1, ctx); $<macro>$ = $<macro>0; }
+	  balanced_token_sequence ']'
+		{ rua_macro_append ($<macro>0, &$<t>4, ctx); }
+	| '{'
+		{ rua_macro_append ($<macro>0, &$<t>1, ctx); $<macro>$ = $<macro>0; }
+	  balanced_token_sequence '}'
+		{ rua_macro_append ($<macro>0, &$<t>4, ctx); }
+	| TOKEN		{ rua_macro_append ($<macro>0, &$1, ctx); }
+	| ','		{ rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	;
+
 opt_profile
 	: /* empty */	{ $$ = nullptr; }
 	| ID
@@ -293,6 +339,10 @@ body_token
 	| ','				{ $$ = $<t>1; }
 	| '('				{ $$ = $<t>1; }
 	| ')'				{ $$ = $<t>1; }
+	| '['				{ $$ = $<t>1; }
+	| ']'				{ $$ = $<t>1; }
+	| '{'				{ $$ = $<t>1; }
+	| '}'				{ $$ = $<t>1; }
 	;
 
 incexp
@@ -320,6 +370,10 @@ opt_params
 
 params
 	: TOKEN				{ $$ = rua_macro_param ($<macro>0, &$1, ctx); }
+	| '['				{ $$ = rua_macro_param ($<macro>0, &$<t>1, ctx); }
+	| ']'				{ $$ = rua_macro_param ($<macro>0, &$<t>1, ctx); }
+	| '{'				{ $$ = rua_macro_param ($<macro>0, &$<t>1, ctx); }
+	| '}'				{ $$ = rua_macro_param ($<macro>0, &$<t>1, ctx); }
 	| params ',' TOKEN	{ $$ = rua_macro_param ($1, &$3, ctx); }
 	;
 
@@ -342,6 +396,10 @@ arg : '('	<macro>	{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
 	| TOKEN			{ $$ = rua_macro_append ($<macro>0, &$1, ctx); }
 	| VALUE			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
 	| ID			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	| '['			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	| ']'			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	| '{'			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
+	| '}'			{ $$ = rua_macro_append ($<macro>0, &$<t>1, ctx); }
 	;
 
 arg_clist
