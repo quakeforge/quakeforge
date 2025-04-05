@@ -2440,7 +2440,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				{
 					auto s4 = loadvec3i (&OPA(int));
 					s4 = pr_swizzle_f (s4, (pr_ushort_t) st->b);
-					storevec3i (&OPA(int), s4);
+					storevec3i (&OPC(int), s4);
 				}
 				break;
 			case OP_SWIZZLE_D_2:
