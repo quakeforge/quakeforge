@@ -13,6 +13,7 @@ string IN_GetAxisName (int devid, int axis) = #0;
 string IN_GetButtonName (int devid, int button) = #0;
 int IN_GetAxisNumber (int devid, string axis) = #0;
 int IN_GetButtonNumber (int devid, string button) = #0;
+void IN_UpdateGrab (bool grab) = #0;
 void IN_ProcessEvents (void) = #0;
 float IN_UpdateAxis (in_axis_t *axis) = #0;
 void IN_ClearStates (void) = #0;
