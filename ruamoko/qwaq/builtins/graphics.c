@@ -260,9 +260,10 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 		P_POINTER (pr, 1) = qcevent_data;
 		*event = *ie_event;
 		PR_ExecuteProgram (pr, qcevent);
+		int ret = R_INT (pr);
 		PR_RestoreParams (pr, params);
 		PR_PopFrame (pr);
-		return R_INT (pr);
+		return ret;
 	}
 	return IN_Binding_HandleEvent (ie_event);
 }
