@@ -272,12 +272,12 @@ capture_mouse_event (struct IE_event_s *event)
 	static IE_mouse_event_t prev_mouse;
 
 	if (event.mouse.type == ie_mousedown
-		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (1);
 		mouse_dragging = true;
 		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
 	} else if (event.mouse.type == ie_mouseup
-			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (0);
 		mouse_dragging = false;
 	}
