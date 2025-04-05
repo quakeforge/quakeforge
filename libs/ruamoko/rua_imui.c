@@ -228,7 +228,7 @@ bi (IMUI_ProcessEvent)
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 1);
-	IMUI_ProcessEvent (bi_ctx->imui_ctx, ie_event);
+	R_INT (pr) = IMUI_ProcessEvent (bi_ctx->imui_ctx, ie_event);
 }
 
 bi (IMUI_BeginFrame)
