@@ -28,6 +28,8 @@ in_axis_t *cam_move_yaw;
 in_axis_t *cam_move_roll;
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
+vec2 mouse_start;
+bool mouse_dragging;
 
 void printf (string fmt, ...) = #0;
 
@@ -36,7 +38,7 @@ float refresh (scene_t scene) = #0;
 void refresh_2d (void (func)(void)) = #0;
 void setpalette (void *palette, void *colormap) = #0;
 void newscene (scene_t scene) = #0;
-void setevents (void (func)(struct IE_event_s *, void *), void *data) = #0;
+void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 
 imui_ctx_t imui_ctx;
@@ -92,7 +94,74 @@ camera_first_person (transform_t camera, float dt, state_t *state)
 	state.M += h * ds.M;
 	state.B += h * ds.B;
 	state.M = normalize (state.M);
-	set_transform (state.M, camera, "");
+}
+
+void traceon() = #0;
+void traceoff() = #0;
+
+static PGA.vec
+trackball_vector (vec2 xy)
+{
+	// xy is already in -1..1 order of magnitude range (ie, might be a bit
+	// over due to screen aspect)
+	// This is very similar to blender's trackball calculation (based on it,
+	// really)
+	float r = 1;
+	float t = r * r / 2;
+	float d = xy • xy;
+	vec3 vec = vec3 (xy, 0);
+	if (d < t) {
+		// less than 45 degrees around the sphere from the viewer facing
+		// pole, so map the mouse point to the sphere
+		vec.z = sqrt (r * r - d);
+	} else {
+		// beyond 45 degrees around the sphere from the veiwer facing
+		// pole, so the slope is rapidly approaching infinity or the mouse
+		// point may miss the sphere entirely, so instead map the mouse
+		// point to the hyperbolic cone pointed towards the viewer. The
+		// cone and sphere are tangential at the 45 degree latitude
+		vec.z = t / sqrt (d);
+	}
+	auto v = vec4(vec.zxy, 0);
+	auto p = (PGA.vec) v;
+	return p;
+}
+
+#define min(x,y) ((x) < (y) ? (x) : (y))
+static float trackball_sensitivity = 10.0f;
+#define sphere_scale 1.0f
+void
+camera_mouse_trackball (transform_t camera, float dt, state_t *state)
+{
+	vec2 delta = {
+		IN_UpdateAxis (mouse_x),
+		IN_UpdateAxis (mouse_y),
+	};
+	int         width = Draw_Width ();
+	int         height = Draw_Height ();
+
+	float       size = min (width, height) / 2;
+	vec2        center = vec2 (width, height) / 2;
+	vec2        m_start = mouse_start - center;
+	vec2        m_end = m_start + delta;
+	auto        start = trackball_vector (m_start / (size * sphere_scale));
+	auto        end = trackball_vector (m_end / (size * sphere_scale));
+	bivector_t  drot = (start ∧ end) * 0.5f;
+	@algebra(PGA) {
+		auto p = e123 + 5 * e032;
+#if 1 //FIXME qfcc bug
+		state.B = {
+			.bvect = ((drot • p) * p).bvect,
+			.bvecp = ((drot • p) * p).bvecp,
+		};
+#else
+		state.B = (drot • p) * p;
+#endif
+	}
+	auto ds = dState (*state);
+	state.M += ds.M;
+	state.B += ds.B;
+	state.M = normalize (state.M);
 }
 
 entity_t mrfixit_ent;
@@ -197,7 +266,27 @@ draw_2d (void)
 	IMUI_Draw (imui_ctx);
 }
 
-void
+static int
+capture_mouse_event (struct IE_event_s *event)
+{
+	static IE_mouse_event_t prev_mouse;
+
+	if (event.mouse.type == ie_mousedown
+		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (1);
+		mouse_dragging = true;
+		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
+	} else if (event.mouse.type == ie_mouseup
+			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (0);
+		mouse_dragging = false;
+	}
+
+	prev_mouse = event.mouse;
+	return !mouse_dragging;
+}
+
+int
 event_hander (struct IE_event_s *event, void *data)
 {
 	switch (event.type) {
@@ -209,11 +298,17 @@ event_hander (struct IE_event_s *event, void *data)
 			printf ("rem %d: %s\n", event.device.devid,
 					IN_GetDeviceName (event.device.devid));
 			break;
+		case ie_mouse:
+			if (!IMUI_ProcessEvent (imui_ctx, event)) {
+				return capture_mouse_event (event);
+			}
+			break;
 		default:
 			if (!IMUI_ProcessEvent (imui_ctx, event)) {
-				IN_Binding_HandleEvent (event);
+				return IN_Binding_HandleEvent (event);
 			}
 	}
+	return 0;
 }
 
 void
@@ -345,6 +440,10 @@ main (int argc, string *argv)
 		realtime += frametime;
 
 		camera_first_person (camera, frametime, &camera_state);
+		if (mouse_dragging) {
+			camera_mouse_trackball (camera, frametime, &camera_state);
+		}
+		set_transform (camera_state.M, camera, "");
 
 		in_buttoninfo_t info[2] = {};
 		IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);
