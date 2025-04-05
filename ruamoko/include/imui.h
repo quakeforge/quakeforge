@@ -59,6 +59,7 @@ void IMUI_PopStyle (imui_ctx_t ctx);
 void IMUI_Style_Update (imui_ctx_t ctx, imui_style_t *style);
 void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style);
 
+void IMUI_SetFill (imui_ctx_t ctx, uint color);
 void IMUI_Label (imui_ctx_t ctx, string label);
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...);
 void IMUI_Passage (imui_ctx_t ctx, string name, int passage);
@@ -91,6 +92,9 @@ void IMUI_ScrollBar (imui_ctx_t ctx, string name);
 	for (int _i_ = (begin); !_i_; _i_++, (end))
 
 // #define IMUI_context to an imui_ctx_t * variable
+
+#define UI_SetFill(color) \
+	IMUI_SetFill(IMUI_context, color)
 
 #define UI_Label(label) \
 	IMUI_Label(IMUI_context, label)

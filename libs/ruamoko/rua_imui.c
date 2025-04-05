@@ -313,6 +313,14 @@ bi (IMUI_Style_Fetch)
 	IMUI_Style_Fetch (bi_ctx->imui_ctx, (imui_style_t *) P_GPOINTER (pr, 1));
 }
 
+bi (IMUI_SetFill)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_SetFill (bi_ctx->imui_ctx, P_UINT (pr, 1));
+}
+
 bi (IMUI_Label)
 {
 	qfZoneScoped (true);
@@ -514,6 +522,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_PopStyle,           1, p(int)),
 	bi(IMUI_Style_Update,       2, p(int), p(ptr)),
 	bi(IMUI_Style_Fetch,        2, p(int), p(ptr)),
+	bi(IMUI_SetFill,            2, p(int), p(uint)),
 	bi(IMUI_Label,              2, p(int), p(string)),
 	bi(IMUI_Labelf,             -3, p(int), p(string)),
 	bi(IMUI_Passage,            3, p(int), p(string), p(int)),

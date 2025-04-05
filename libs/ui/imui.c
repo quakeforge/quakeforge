@@ -194,6 +194,8 @@ imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 		ctx->states->prev = &state->next;
 	}
 	ctx->states = state;
+
+	state->frame_count = ctx->frame_count;
 	return state;
 }
 
@@ -247,7 +249,6 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
-	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
 	ctx->current_state = state;
 	Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
@@ -471,8 +472,10 @@ prune_objects (imui_ctx_t *ctx)
 		if ((*s)->frame_count == ctx->frame_count) {
 			s = &(*s)->next;
 		} else {
-			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
-			free ((*s)->label);
+			if ((*s)->label) {
+				Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
+				free ((*s)->label);
+			}
 			imui_state_free (ctx, *s);
 		}
 	}
@@ -1026,6 +1029,8 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 		.semantic_y = y_size,
 		.vertical = vertical,
 	};
+	auto state = imui_state_new (ctx, view.id);
+	ctx->current_state = state;
 	View_SetLen (view, 0, 0);
 	if (x_size == imui_size_expand) {
 		Ent_SetComponent (view.id, c_fraction_x, ctx->csys.reg,
@@ -1216,6 +1221,14 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 }
 
 void
+IMUI_SetFill (imui_ctx_t *ctx, byte color)
+{
+	auto state = ctx->current_state;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	set_fill (ctx, view, color);
+}
+
+void
 IMUI_Label (imui_ctx_t *ctx, const char *label)
 {
 	auto view = View_New (ctx->vsys, ctx->current_parent);
@@ -1264,8 +1277,6 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	update_hot_active (ctx, state);
 
 	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
-
-	set_fill (ctx, anchor_view, ctx->style.background.normal);
 
 	auto psg_view = Text_PassageView (ctx->tsys, nullview,
 									  ctx->font, passage, ctx->shaper);
