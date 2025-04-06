@@ -57,6 +57,7 @@ dump_sp_ids (ecs_registry_t *reg, uint32_t comp, uint32_t t_name)
 	uint32_t   *ent = pool->dense;
 	uint32_t   *id = pool->data;
 
+	puts (GRN "dump_sp_ids" DFL);
 	for (uint32_t i = 0; i < pool->count; i++) {
 		const char **n = Ent_GetComponent (ent[i], t_name, reg);
 		printf ("ent[%d]: %2d, %2d %s\n", i, ent[i], id[i], *n);
@@ -70,6 +71,7 @@ check_subpool_ranges (ecs_subpool_t *subpool, uint32_t *expect)
 	uint32_t   *range = subpool->ranges;
 	int         ret = 0;
 
+	puts (GRN "check_subpool_ranges" DFL);
 	while (count--) {
 		uint32_t   *r = range++;
 		uint32_t    e = *expect++;
@@ -88,6 +90,7 @@ check_subpool_sorted (ecs_subpool_t *subpool)
 	uint32_t   *ranges = subpool->ranges;
 	uint32_t    count = subpool->num_ranges - subpool->available;
 
+	puts (GRN "check_subpool_sorted" DFL);
 	for (uint32_t i = 0; i < count; i++) {
 		printf ("sorted[%d]: %d %d\n", i, sorted[i], ranges[sorted[i]]);
 	}
@@ -118,6 +121,7 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect,
 	uint32_t   *val = pool->data;
 	int         fail = 0;
 
+	puts (GRN "check_obj_comps" DFL);
 	for (uint32_t i = 0; i < pool->count; i++) {
 		const char **n = Ent_GetComponent (pool->dense[i], t_name, reg);
 		printf ("val[%d]: %2d %2d %s\n", i, val[i], expect[i], *n);
@@ -134,6 +138,7 @@ main (void)
 	ecs_registry_t *reg = ECS_NewRegistry ("subpool");
 	uint32_t base = ECS_RegisterComponents (reg, test_components,
 											test_num_components);
+	puts (ONG "setup" DFL);
 	ECS_CreateComponentPools (reg);
 
 	uint32_t    sp1 = ECS_NewSubpoolRange (reg, base + test_obj);
@@ -197,6 +202,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "set test_obj" DFL);
 	uint32_t val = 0;
 	Ent_SetComponent (enta, base + test_obj, reg, &val); val++;
 	Ent_SetComponent (entb, base + test_obj, reg, &val); val++;
@@ -219,6 +225,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "remove test_obj from b" DFL);
 	Ent_RemoveComponent (entb, base + test_obj, reg);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 2, 5, 7 })) {
@@ -232,6 +239,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "remove test_obj from d" DFL);
 	Ent_RemoveComponent (entd, base + test_obj, reg);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 2, 5, 6 })) {
@@ -245,6 +253,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "remove test_obj from e" DFL);
 	Ent_RemoveComponent (ente, base + test_obj, reg);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 2, 5, 5 })) {
@@ -258,6 +267,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "add test_obj to d e" DFL);
 	Ent_SetComponent (entd, base + test_obj, reg, &val); val++;
 	Ent_SetComponent (ente, base + test_obj, reg, &val); val++;
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
@@ -272,6 +282,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "remove test_obj from c f g" DFL);
 	Ent_RemoveComponent (entc, base + test_obj, reg);
 	Ent_RemoveComponent (entf, base + test_obj, reg);
 	Ent_RemoveComponent (entg, base + test_obj, reg);
@@ -287,6 +298,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "delete sp2" DFL);
 	ECS_DelSubpoolRange (reg, base + test_obj, sp2);
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
 							  (uint32_t[]) { 2, 4 })) {
@@ -294,6 +306,7 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "new sp2" DFL);
 	sp2 = ECS_NewSubpoolRange (reg, base + test_obj);
 	printf ("sp2: %d.%d\n", prent (sp2));
 	if (check_subpool_ranges (&reg->subpools[base + test_obj],
@@ -301,6 +314,7 @@ main (void)
 		printf ("oops\n");
 		return 1;
 	}
+	puts (ONG "add c f g" DFL);
 	Ent_SetComponent (entc, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (entf, base + test_subpool, reg, &sp2);
 	Ent_SetComponent (entg, base + test_subpool, reg, &sp2);
@@ -323,6 +337,7 @@ main (void)
 		printf ("oops\n");
 		return 1;
 	}
+	puts (ONG "move sp3 last" DFL);
 	ECS_MoveSubpoolLast (reg, base + test_obj, sp3);
 	if (check_subpool_sorted (&reg->subpools[base + test_obj])) {
 		printf ("oops\n");
