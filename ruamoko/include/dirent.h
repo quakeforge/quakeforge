@@ -3,14 +3,14 @@
 
 typedef @handle _dirent_t DIR;
 
-typedef struct dirinfo_s {
+typedef struct dirent {
 	string name;
 	int type;
 	int errno;
-} dirinfo_t;
+} dirent_t;
 
 DIR opendir (string path);
 void closedir (DIR dir);
-dirinfo_t readdir (DIR dir);
+dirent_t readdir (DIR dir);
 
 #endif//__ruamoko_dirent_h

@@ -2,4 +2,4 @@
 
 DIR opendir (string path) = #0;
 void closedir (DIR dir) = #0;
-dirinfo_t readdir (DIR dir) = #0;
+dirent_t readdir (DIR dir) = #0;
