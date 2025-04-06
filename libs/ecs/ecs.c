@@ -120,7 +120,7 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 	for (uint32_t i = 0; i < count; i++) {
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
-		registry->subpools[i].next = nullent;
+		registry->subpools[i].next = Ent_Index (nullent);
 	}
 }
 
