@@ -258,6 +258,34 @@ bi_str_str (progs_t *pr, void *data)
 }
 
 static void
+bi_strchr (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *s = P_GSTRING (pr, 0);
+	int         c = P_INT (pr, 1);
+	char       *res = strchr (s, c);
+
+	R_INT (pr) = -1;
+	if (res) {
+		R_INT (pr) = res - s;
+	}
+}
+
+static void
+bi_strrchr (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *s = P_GSTRING (pr, 0);
+	int         c = P_INT (pr, 1);
+	char       *res = strrchr (s, c);
+
+	R_INT (pr) = -1;
+	if (res) {
+		R_INT (pr) = res - s;
+	}
+}
+
+static void
 bi_str_char (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
@@ -415,6 +443,8 @@ static builtin_t builtins[] = {
 	{"str_mid|*i",	bi_str_mid_2,		-1, 2, {p(string), p(int)}},
 	{"str_mid|*ii",	bi_str_mid_3,		-1, 3, {p(string), p(int), p(int)}},
 	bi(str_str,     2, p(string), p(string)),
+	bi(strchr,      2, p(string), p(int)),
+	bi(strrchr,     2, p(string), p(int)),
 	bi(str_char,    2, p(string), p(int)),
 	bi(str_quote,   1, p(string)),
 	bi(str_lower,   1, p(string)),
