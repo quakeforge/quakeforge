@@ -296,10 +296,16 @@ ECS_PrintRegistry (ecs_registry_t *registry)
 				registry->components.a[i].name);
 		auto subpool = &registry->subpools[i];
 		if (subpool->num_ranges) {
-			printf ("   ");
+			printf ("   next     : %x\n", subpool->next);
+			printf ("   available: %x\n", subpool->available);
 			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
-				uint32_t range = subpool->ranges[j];
-				printf (" %d", range);
+				uint32_t rid = subpool->rangeids[j];
+				uint32_t sind = subpool->sorted[j];
+				uint32_t end = subpool->ranges[sind];
+				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
+				printf ("   %5x: %3x.%05x %d %d-%d\n", j,
+						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
+						sind, start, end);
 			}
 			printf ("\n");
 		}

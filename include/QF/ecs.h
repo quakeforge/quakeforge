@@ -62,14 +62,14 @@ typedef struct ecs_pool_s {
 typedef struct DARRAY_TYPE(component_t) componentset_t;
 
 typedef struct ecs_range_s {
-	uint32_t    start;
-	uint32_t    end;
+	uint32_t    start;		// first item in range
+	uint32_t    end;		// one past last item in range
 } ecs_range_t;
 
 typedef struct ecs_subpool_s {
 	uint32_t   *rangeids;
-	uint32_t   *sorted;
-	uint32_t   *ranges;
+	uint32_t   *sorted;		// indexed by range id, holdes index to ranges
+	uint32_t   *ranges;		// holds one past end of range. implicit beginning
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_ranges;
