@@ -389,6 +389,21 @@ main (void)
 		return 1;
 	}
 
+	puts (ONG "delete sp1" DFL);
+	ECS_DelSubpoolRange (reg, base + test_obj, sp1);
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 5 })) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 9, 8, 10, 11, 12 },
+						 (uint32_t[]) { 4, 3,  2,  5,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
+
 	ECS_DelRegistry (reg);
 	return 0;
 }
