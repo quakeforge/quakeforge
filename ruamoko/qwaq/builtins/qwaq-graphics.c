@@ -74,7 +74,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 			app_funcs = main_app;
 		}
 		thread->progsinit = app_funcs;
-		thread->rua_security = 1;
+		thread->rua_security = 0;
 		thread->hunk = hunk;	//FIXME shared (but currently only one thread)
 	}
 	return main_ind;

@@ -1,3 +1,5 @@
+#include <Array.h>
+#include <AutoreleasePool.h>
 #include <plist.h>
 #include <string.h>
 #include <msgbuf.h>
@@ -8,6 +10,7 @@
 #include <scene.h>
 #include <input.h>
 
+#include "gui/filewindow.h"
 #include "armature.h"
 #include "pga3d.h"
 
@@ -241,6 +244,8 @@ color_window (void)
 
 transform_t camera;
 
+Array *windows;
+
 void
 draw_2d (void)
 {
@@ -262,6 +267,7 @@ draw_2d (void)
 		}
 		UI_FlexibleSpace();
 	}
+	[windows makeObjectsPerformSelector: @selector (draw)];
 	//color_window ();
 	IMUI_Draw (imui_ctx);
 }
@@ -353,9 +359,24 @@ string field_names[] = {
 	"parent",
 };
 
+static AutoreleasePool *autorelease_pool;
+static void
+arp_start (void)
+{
+	autorelease_pool = [[AutoreleasePool alloc] init];
+}
+static void
+arp_end (void)
+{
+	[autorelease_pool release];
+	autorelease_pool = nil;
+}
+
 int
 main (int argc, string *argv)
 {
+	arp_start ();
+
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
 
 	IN_LoadConfig (config);
@@ -398,6 +419,7 @@ main (int argc, string *argv)
 	Entity_SetModel (mrfixit_ent, mrfixit);
 	mrfixit_arm = make_armature (mrfixit);
 	Transform_SetLocalRotation (mrfixit_trans, { 0, 0, 1, 0});
+#if 0
 	auto clipinfo = Model_GetClipInfo (mrfixit, 0);
 	printf ("%s %u %u %u\n", clipinfo.name, clipinfo.num_frames,
 			clipinfo.num_channels, clipinfo.channel_type);
@@ -423,6 +445,7 @@ main (int argc, string *argv)
 					joints[j].name, field_names[o]);
 		}
 	}
+#endif
 
 	lightingdata_t ldata = Light_CreateLightingData (scene);
 	Light_EnableSun (ldata);
@@ -435,7 +458,14 @@ main (int argc, string *argv)
 	Scene_SetLighting (scene, ldata);
 	newscene (scene);
 
+	windows = [[Array array] retain];
+
+	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
+
 	while (true) {
+		arp_end ();
+		arp_start ();
+
 		frametime = refresh (scene);
 		realtime += frametime;
 
@@ -452,5 +482,7 @@ main (int argc, string *argv)
 			break;
 		}
 	}
+	[windows release];
+	arp_end ();
 	return 0;
 }
