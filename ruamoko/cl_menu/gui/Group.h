@@ -1,7 +1,7 @@
-#ifndef __ruamoko_gui_Group_h
-#define __ruamoko_gui_Group_h
+#ifndef __ruamoko_cl_menu_gui_Group_h
+#define __ruamoko_cl_menu_gui_Group_h
 
-#include <gui/View.h>
+#include "View.h"
 
 /**	\addtogroup gui */
 ///@{
@@ -43,4 +43,4 @@
 
 ///@}
 
-#endif//__ruamoko_gui_Group_h
+#endif//__ruamoko_cl_menu_gui_Group_h

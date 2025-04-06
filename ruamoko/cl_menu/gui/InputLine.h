@@ -1,7 +1,7 @@
-#ifndef __ruamoko_gui_InputLine_h
-#define __ruamoko_gui_InputLine_h
+#ifndef __ruamoko_cl_menu_gui_InputLine_h
+#define __ruamoko_cl_menu_gui_InputLine_h
 
-#include <gui/View.h>
+#include "View.h"
 
 /**	\defgroup inputline Low level intputline interface.
 	\ingroup gui
@@ -254,4 +254,4 @@ typedef void (il_enterfunc)(string, void*);
 
 ///@}
 
-#endif //__ruamoko_gui_InputLine_h
+#endif //__ruamoko_cl_menu_gui_InputLine_h

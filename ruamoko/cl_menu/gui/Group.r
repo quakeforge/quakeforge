@@ -1,5 +1,5 @@
-#include <gui/Group.h>
-#include <gui/Point.h>
+#include "Group.h"
+#include "Point.h"
 #include <Array.h>
 
 @implementation Group

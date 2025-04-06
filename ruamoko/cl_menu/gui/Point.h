@@ -1,5 +1,5 @@
-#ifndef __ruamoko_gui_Point_h
-#define __ruamoko_gui_Point_h
+#ifndef __ruamoko_cl_menu_gui_Point_h
+#define __ruamoko_cl_menu_gui_Point_h
 
 /**	\addtogroup gui */
 ///@{
@@ -17,4 +17,4 @@ typedef struct Point Point;
 
 ///@}
 
-#endif //__ruamoko_gui_Point_h
+#endif //__ruamoko_cl_menu_gui_Point_h

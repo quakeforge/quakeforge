@@ -1,8 +1,8 @@
-#ifndef __ruamoko_gui_View_h
-#define __ruamoko_gui_View_h
+#ifndef __ruamoko_cl_menu_gui_View_h
+#define __ruamoko_cl_menu_gui_View_h
 
 #include <Object.h>
-#include <gui/Rect.h>
+#include "Rect.h"
 
 /**	\defgroup gui GUI goo for gooey chewing
 */
@@ -36,4 +36,4 @@
 
 ///@}
 
-#endif //__ruamoko_gui_View_h
+#endif //__ruamoko_cl_menu_gui_View_h

@@ -1,5 +1,5 @@
-#ifndef __ruamoko_gui_Size_h
-#define __ruamoko_gui_Size_h
+#ifndef __ruamoko_cl_menu_gui_Size_h
+#define __ruamoko_cl_menu_gui_Size_h
 
 /**	\addtogroup gui */
 ///@{
@@ -17,4 +17,4 @@ typedef struct Size Size;
 
 ///@}
 
-#endif //__ruamoko_gui_Size_h
+#endif //__ruamoko_cl_menu_gui_Size_h

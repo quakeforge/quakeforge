@@ -1,7 +1,7 @@
 #include <Object.h>
-#include <gui/Point.h>
-#include <gui/Size.h>
-#include <gui/Rect.h>
+#include "Point.h"
+#include "Size.h"
+#include "Rect.h"
 
 Rect makeRect (int x, int y, int w, int h)
 {

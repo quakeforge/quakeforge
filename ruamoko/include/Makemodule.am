@@ -42,19 +42,6 @@ ruamoko_include = \
 	ruamoko/include/PropertyList.h \
 	ruamoko/include/Set.h
 
-ruamoko_gui_include = \
-	ruamoko/include/gui/Group.h \
-	ruamoko/include/gui/InputLine.h \
-	ruamoko/include/gui/Pic.h \
-	ruamoko/include/gui/Point.h \
-	ruamoko/include/gui/Rect.h \
-	ruamoko/include/gui/Size.h \
-	ruamoko/include/gui/Slider.h \
-	ruamoko/include/gui/Text.h \
-	ruamoko/include/gui/View.h
-
 ruamoko_includedir = $(datarootdir)/qfcc/include
-ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
 
 ruamoko_include_HEADERS = $(ruamoko_include)
-ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)

@@ -1,4 +1,4 @@
-#include <gui/Size.h>
+#include "Size.h"
 
 Size makeSize (int width, int height)
 {

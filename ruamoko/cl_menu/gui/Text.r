@@ -1,4 +1,4 @@
-#include <gui/Text.h>
+#include "Text.h"
 #include <string.h>
 #include <draw.h>
 

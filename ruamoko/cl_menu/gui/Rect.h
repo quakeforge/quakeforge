@@ -1,8 +1,8 @@
-#ifndef __ruamoko_gui_Rect_h
-#define __ruamoko_gui_Rect_h
+#ifndef __ruamoko_cl_menu_gui_Rect_h
+#define __ruamoko_cl_menu_gui_Rect_h
 
-#include <gui/Point.h>
-#include <gui/Size.h>
+#include "Point.h"
+#include "Size.h"
 
 /**	\addtogroup gui */
 ///@{
@@ -32,4 +32,4 @@ typedef struct Rect Rect;
 
 ///@}
 
-#endif //__ruamoko_gui_Rect_h
+#endif //__ruamoko_cl_menu_gui_Rect_h

@@ -1,7 +1,7 @@
-#include <gui/Size.h>
-#include <gui/Point.h>
-#include <gui/Rect.h>
-#include <gui/View.h>
+#include "Size.h"
+#include "Point.h"
+#include "Rect.h"
+#include "View.h"
 
 @implementation View
 
