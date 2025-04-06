@@ -95,10 +95,10 @@ typedef struct imui_window_s {
 	int         ylen;
 	int         group_offset;
 	int         mode;
-	bool        is_open;
-	bool        is_collapsed;
-	bool        no_collapse;
-	bool        auto_fit;
+	bool        is_open;			// window/panel/menu
+	bool        is_collapsed;		// for windows
+	bool        no_collapse;		// for menus
+	bool        auto_fit;			// for windows
 
 	const char *reference;
 	grav_t      reference_gravity;
