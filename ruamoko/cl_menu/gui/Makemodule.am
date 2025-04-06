@@ -3,7 +3,7 @@ ruamoko_cl_menu_gui_gui_libs=ruamoko/cl_menu/gui/libgui.a
 noinst_LIBRARIES += $(ruamoko_cl_menu_gui_gui_libs)
 EXTRA_LIBRARIES += $(ruamoko_cl_menu_gui_gui_libs)
 
-ruamoko_menu_gui_include = \
+ruamoko_cl_menu_gui_include = \
 	ruamoko/cl_menu/gui/Group.h \
 	ruamoko/cl_menu/gui/InputLine.h \
 	ruamoko/cl_menu/gui/Pic.h \

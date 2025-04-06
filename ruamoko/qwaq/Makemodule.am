@@ -238,7 +238,11 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/textcontext.h \
 	ruamoko/qwaq/ui/titlebar.h \
 	ruamoko/qwaq/ui/view.h \
-	ruamoko/qwaq/ui/window.h
+	ruamoko/qwaq/ui/window.h \
+	ruamoko/qwaq/armature.h \
+	ruamoko/qwaq/pga3d.h \
+	ruamoko/qwaq/qwaq-ed-in.cfg \
+	ruamoko/qwaq/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \
