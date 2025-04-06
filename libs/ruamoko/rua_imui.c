@@ -505,7 +505,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_DeleteWindow,           1, p(ptr)),
 	bi(IMUI_Window_IsOpen,          1, p(ptr)),
 	bi(IMUI_Window_IsCollapsed,     1, p(ptr)),
-	bi(IMUI_Window_SetSize    ,     3, p(ptr), p(int), p(int)),
+	bi(IMUI_Window_SetSize,         3, p(ptr), p(int), p(int)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),
