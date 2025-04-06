@@ -14,6 +14,7 @@ libs_ruamoko_libQFruamoko_la_SOURCES= \
 	libs/ruamoko/rua_cbuf.c \
 	libs/ruamoko/rua_cmd.c \
 	libs/ruamoko/rua_cvar.c \
+	libs/ruamoko/rua_dirent.c \
 	libs/ruamoko/rua_hash.c \
 	libs/ruamoko/rua_init.c \
 	libs/ruamoko/rua_math.c \
