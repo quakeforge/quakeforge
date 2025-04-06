@@ -1818,7 +1818,9 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 
 	UI_Horizontal {
-		IMUI_CollapseButton (ctx, window);
+		if (window->auto_fit) {
+			IMUI_CollapseButton (ctx, window);
+		}
 		IMUI_TitleBar (ctx, window);
 		IMUI_CloseButton (ctx, window);
 	}
