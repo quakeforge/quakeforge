@@ -186,7 +186,6 @@ EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-x11
 
 EXTRA_DIST += \
-	$(qwaq_dat_src) \
 	ruamoko/qwaq/debugger/debug.h \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
