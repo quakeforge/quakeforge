@@ -120,7 +120,7 @@ check_obj_comps (ecs_registry_t *reg, uint32_t comp, uint32_t *expect,
 	ecs_pool_t *pool = &reg->comp_pools[comp];
 	uint32_t   *val = pool->data;
 	uint32_t   *dense = pool->dense;
-	uint32_t   *sparse = pool->dense;
+	uint32_t   *sparse = pool->sparse;
 	int         fail = 0;
 
 	puts (GRN "check_obj_comps" DFL);
