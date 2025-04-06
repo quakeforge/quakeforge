@@ -1271,8 +1271,7 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
-	auto state = imui_get_state (ctx, va ("%s#content", name),
-								 anchor_view.id);
+	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	DARRAY_APPEND (&ctx->scrollers, state);
 	update_hot_active (ctx, state);
 
@@ -1283,8 +1282,6 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));
-	// FIXME this shouldn't be necessary and is a sign of bigger problems
-	Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
 	*View_Control (psg_view) = (viewcont_t) {
