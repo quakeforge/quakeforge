@@ -117,4 +117,33 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	}
 	subpool->sorted[ind] = last_range;
 	Component_RotateElements (c, pool->data, dstIndex, srcIndex, count);
+
+	if (dstIndex == srcIndex) {
+		// didn't move
+	} else if (dstIndex < srcIndex) {
+		// not expected to happen
+		for (uint32_t i = dstIndex; i < srcIndex; i++) {
+			pool->sparse[pool->dense[i]] += count;
+		}
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= srcIndex - dstIndex;
+		}
+	} else if (dstIndex < srcIndex + count) {
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] += dstIndex - srcIndex;
+		}
+		for (uint32_t i = srcIndex + count; i < dstIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= count;
+		}
+	} else {
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] += dstIndex - srcIndex;
+		}
+		for (uint32_t i = srcIndex + count; i < dstIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= count;
+		}
+	}
+
+	component_t dc = { .size = sizeof (uint32_t) };
+	Component_RotateElements (&dc, pool->dense, dstIndex, srcIndex, count);
 }

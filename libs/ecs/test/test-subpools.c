@@ -370,6 +370,24 @@ main (void)
 		printf ("oops\n");
 		return 1;
 	}
+	puts (ONG "move sp2 last" DFL);
+	ECS_MoveSubpoolLast (reg, base + test_obj, sp2);
+	if (check_subpool_sorted (&reg->subpools[base + test_obj])) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_subpool_ranges (&reg->subpools[base + test_obj],
+							  (uint32_t[]) { 2, 4, 7})) {
+		printf ("oops\n");
+		return 1;
+	}
+	if (check_obj_comps (reg, base + test_obj,
+						 (uint32_t[]) { 0, 7, 9, 8, 10, 11, 12 },
+						 (uint32_t[]) { 0, 7, 4, 3,  2,  5,  6 },
+						 base + test_name)) {
+		printf ("oops\n");
+		return 1;
+	}
 
 	ECS_DelRegistry (reg);
 	return 0;
