@@ -521,16 +521,9 @@ bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
 	IN_Binding_HandleEvent (ie_event);
 }
 
-static void
-secured (progs_t *pr, void *_res)
-{
-	qfZoneScoped (true);
-	PR_RunError (pr, "Secured function called");
-}
-
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
-#define bi(x,np,params...) {#x, secured, -1, np, {params}}
+#define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
 static builtin_t secure_builtins[] = {
 	bi(IN_CreateButton, 2, p(string), p(string)),
 	bi(IN_CreateAxis,   2, p(string), p(string)),

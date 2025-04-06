@@ -142,13 +142,6 @@ QFile_AllocHandle (progs_t *pr, QFile *file)
 }
 
 static void
-secured (progs_t *pr, void *_res)
-{
-	qfZoneScoped (true);
-	PR_RunError (pr, "Secured function called");
-}
-
-static void
 bi_Qrename (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -401,7 +394,7 @@ bi_Qfilesize (progs_t *pr, void *_res)
 	R_INT (pr) = Qfilesize (h->file);
 }
 
-#define bi(x,np,params...) {#x, secured, -1, np, {params}}
+#define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t secure_builtins[] = {

@@ -52,6 +52,13 @@ static void (*init_funcs[])(progs_t *, int) = {
 	RUA_String_Init,
 };
 
+void
+RUA_Secured (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	PR_RunError (pr, "Secured function called");
+}
+
 VISIBLE void
 RUA_Init (progs_t *pr, int secure)
 {
