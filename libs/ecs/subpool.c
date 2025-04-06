@@ -52,7 +52,7 @@ ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
 		if (subpool->num_ranges == subpool->max_ranges) {
 			subpool->max_ranges += RANGE_GROW;
 			size_t      idsize = subpool->max_ranges * sizeof (uint32_t);
-			size_t      rsize = subpool->max_ranges * sizeof (ecs_range_t);
+			size_t      rsize = subpool->max_ranges * sizeof (uint32_t);
 			subpool->rangeids = realloc (subpool->rangeids, idsize);
 			subpool->sorted = realloc (subpool->sorted, idsize);
 			subpool->ranges = realloc (subpool->ranges, rsize);
@@ -82,7 +82,7 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	subpool->next = ind;
 	subpool->available++;
 	memmove (subpool->ranges + range, subpool->ranges + range + 1,
-			 (subpool->num_ranges - 1 - range) * sizeof (ecs_range_t));
+			 (subpool->num_ranges - 1 - range) * sizeof (uint32_t));
 	for (uint32_t i = 0; i < count; i++) {
 		if (subpool->sorted[i] > range) {
 			subpool->sorted[i]--;
