@@ -334,6 +334,7 @@ bi (IMUI_Labelf)
 	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	dstring_clearstr (res->dstr);
 	RUA_Sprintf (pr, res->dstr, "IMUI_Labelf", 1);
 	IMUI_Label (bi_ctx->imui_ctx, res->dstr->str);
 }
