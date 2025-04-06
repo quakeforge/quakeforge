@@ -12,11 +12,11 @@
 #include "pga3d.h"
 
 static string render_graph_cfg =
-#embed "qwaq-ed-rg.plist"
+#embed "config/qwaq-ed-rg.plist"
 ;
 
 static string input_cfg =
-#embed "qwaq-ed-in.cfg"
+#embed "config/qwaq-ed-in.cfg"
 ;
 
 int in_context;

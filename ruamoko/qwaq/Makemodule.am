@@ -241,8 +241,8 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/window.h \
 	ruamoko/qwaq/armature.h \
 	ruamoko/qwaq/pga3d.h \
-	ruamoko/qwaq/qwaq-ed-in.cfg \
-	ruamoko/qwaq/qwaq-ed-rg.plist
+	ruamoko/qwaq/config/qwaq-ed-in.cfg \
+	ruamoko/qwaq/config/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \
