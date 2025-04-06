@@ -67,6 +67,9 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 			uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
 			while (rind-- > rangeind) {
 				if (subpool->ranges[rind] == ind) {
+					// the range ends at the index, so just grow the range
+					// to include the index (will automatically shrink the
+					// next range as its start is implict)
 					subpool->ranges[rind]++;
 					continue;
 				}
