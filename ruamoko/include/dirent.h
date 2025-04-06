@@ -12,5 +12,6 @@ typedef struct dirent {
 DIR opendir (string path);
 void closedir (DIR dir);
 dirent_t readdir (DIR dir);
+bool isdir (string path);
 
 #endif//__ruamoko_dirent_h

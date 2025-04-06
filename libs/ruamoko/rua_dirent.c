@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -196,6 +197,16 @@ bi(readdir)
 	}
 }
 
+bi(isdir)
+{
+	R_INT (pr) = 0;
+
+	struct stat statbuf;
+	if (stat (P_GSTRING (pr, 0), &statbuf) >= 0) {
+		R_INT (pr) = -((statbuf.st_mode & S_IFMT) == S_IFDIR);
+	}
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -204,6 +215,7 @@ static builtin_t secure_builtins[] = {
 	bi(opendir,    1, p(string)),
 	bi(closedir,   1, p(int)),
 	bi(readdir,    1, p(int)),
+	bi(isdir,      1, p(string)),
 	{0}
 };
 
@@ -213,6 +225,7 @@ static builtin_t insecure_builtins[] = {
 	bi(opendir,    1, p(string)),
 	bi(closedir,   1, p(int)),
 	bi(readdir,    1, p(int)),
+	bi(isdir,      1, p(string)),
 	{0}
 };
 
