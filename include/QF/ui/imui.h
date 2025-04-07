@@ -106,6 +106,25 @@ typedef struct imui_window_s {
 	struct imui_window_s *parent;	// for submenus
 } imui_window_t;
 
+typedef struct imui_state_s {
+	char       *label;
+	uint32_t    label_len;
+	int         key_offset;
+	imui_window_t *menu;
+	int32_t		draw_order;	// for window canvases
+	int32_t     draw_group;
+	uint32_t    first_link;
+	uint32_t    num_links;
+	uint32_t    frame_count;
+	uint32_t    old_entity;
+	uint32_t    entity;
+	uint32_t    content;
+	view_pos_t  pos;
+	view_pos_t  len;
+	imui_frac_t fraction;
+	bool        auto_fit;
+} imui_state_t;
+
 typedef struct imui_io_s {
 	view_pos_t  mouse;
 	uint32_t    buttons;

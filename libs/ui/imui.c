@@ -69,26 +69,11 @@
 #define imui_ontop imui_draw_order((1 << 15) - 1)
 #define imui_onbottom imui_draw_order(-(1 << 15) + 1)
 
-typedef struct imui_state_s {
-	struct imui_state_s *next;
-	struct imui_state_s **prev;
-	char       *label;
-	uint32_t    label_len;
-	int         key_offset;
-	imui_window_t *menu;
-	int32_t		draw_order;	// for window canvases
-	int32_t     draw_group;
-	uint32_t    first_link;
-	uint32_t    num_links;
-	uint32_t    frame_count;
-	uint32_t    old_entity;
-	uint32_t    entity;
-	uint32_t    content;
-	view_pos_t  pos;
-	view_pos_t  len;
-	imui_frac_t fraction;
-	bool        auto_fit;
-} imui_state_t;
+typedef struct imui_state_map_s {
+	struct imui_state_map_s *next;
+	struct imui_state_map_s **prev;
+	imui_state_t state;
+} imui_state_map_t;
 
 struct imui_ctx_s {
 	canvas_system_t csys;
@@ -100,8 +85,8 @@ struct imui_ctx_s {
 
 	hashctx_t  *hashctx;
 	hashtab_t  *tab;
-	PR_RESMAP (imui_state_t) state_map;
-	imui_state_t *states;
+	PR_RESMAP (imui_state_map_t) state_map;
+	imui_state_map_t *state_wrappers;
 	font_t     *font;
 
 	int64_t     frame_start;
@@ -183,24 +168,26 @@ imui_next_window (imui_ctx_t *ctx)
 static imui_state_t *
 imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
-	imui_state_t *state = PR_RESNEW (ctx->state_map);
-	*state = (imui_state_t) {
-		.next = ctx->states,
-		.prev = &ctx->states,
-		.old_entity = nullent,
-		.entity = entity,
+	auto state = PR_RESNEW (ctx->state_map);
+	*state = (imui_state_map_t) {
+		.next = ctx->state_wrappers,
+		.prev = &ctx->state_wrappers,
+		.state = {
+			.old_entity = nullent,
+			.entity = entity,
+		},
 	};
-	if (ctx->states) {
-		ctx->states->prev = &state->next;
+	if (ctx->state_wrappers) {
+		ctx->state_wrappers->prev = &state->next;
 	}
-	ctx->states = state;
+	ctx->state_wrappers = state;
 
-	state->frame_count = ctx->frame_count;
-	return state;
+	state->state.frame_count = ctx->frame_count;
+	return &state->state;
 }
 
 static void
-imui_state_free (imui_ctx_t *ctx, imui_state_t *state)
+imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 {
 	if (state->next) {
 		state->next->prev = state->prev;
@@ -341,8 +328,8 @@ void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
 	clear_items (ctx);
-	for (auto s = ctx->states; s; s = s->next) {
-		free (s->label);
+	for (auto s = ctx->state_wrappers; s; s = s->next) {
+		free (s->state.label);
 	}
 	PR_RESDELMAP (ctx->state_map);
 
@@ -468,13 +455,13 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 static void
 prune_objects (imui_ctx_t *ctx)
 {
-	for (auto s = &ctx->states; *s; ) {
-		if ((*s)->frame_count == ctx->frame_count) {
+	for (auto s = &ctx->state_wrappers; *s; ) {
+		if ((*s)->state.frame_count == ctx->frame_count) {
 			s = &(*s)->next;
 		} else {
-			if ((*s)->label) {
-				Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
-				free ((*s)->label);
+			if ((*s)->state.label) {
+				Hash_Del (ctx->tab, (*s)->state.label + (*s)->state.key_offset);
+				free ((*s)->state.label);
 			}
 			imui_state_free (ctx, *s);
 		}
