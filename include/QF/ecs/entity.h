@@ -85,7 +85,7 @@ ENTINLINE int
 ECS_EntValid (uint32_t id, ecs_registry_t *reg)
 {
 	uint32_t    ind = Ent_Index (id);
-	return ind < reg->num_entities && reg->entities[ind] == id;
+	return ind < reg->entities.num_ids && reg->entities.ids[ind] == id;
 }
 
 ENTINLINE int

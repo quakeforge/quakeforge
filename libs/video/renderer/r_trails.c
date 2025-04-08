@@ -186,8 +186,8 @@ void
 R_ClearTrails (void)
 {
 	auto reg = trails_system.reg;
-	for (uint32_t i = 0; i < reg->num_entities; i++) {
-		uint32_t    ent = reg->entities[i];
+	for (uint32_t i = 0; i < reg->entities.num_ids; i++) {
+		uint32_t    ent = reg->entities.ids[i];
 		uint32_t    ind = Ent_Index (ent);
 		if (ind == i) {
 			ECS_DelEntity (reg, ent);
