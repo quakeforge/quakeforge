@@ -32,7 +32,8 @@ in_axis_t *cam_move_roll;
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
 vec2 mouse_start;
-bool mouse_dragging;
+bool mouse_dragging_mmb;
+bool mouse_dragging_rmb;
 
 void printf (string fmt, ...) = #0;
 
@@ -71,7 +72,7 @@ double realtime = double (1ul<<32);
 float frametime;
 
 void
-camera_first_person (transform_t camera, float dt, state_t *state)
+camera_first_person (transform_t camera, state_t *state)
 {
 	vector dpos = {};
 	dpos.x -= IN_UpdateAxis (cam_move_forward);
@@ -89,7 +90,6 @@ camera_first_person (transform_t camera, float dt, state_t *state)
 		.bvect = (PGA.bvect) drot,
 		.bvecp = (PGA.bvecp) dpos,
 	};
-	//float h = dt;
 	//use a constant dt instead of actual frame time because the input
 	//values accumulate over time and thus already include frame time.
 	float h = 0.02f;
@@ -99,8 +99,28 @@ camera_first_person (transform_t camera, float dt, state_t *state)
 	state.M = normalize (state.M);
 }
 
-void traceon() = #0;
-void traceoff() = #0;
+void
+camera_mouse_first_person (transform_t camera, state_t *state)
+{
+	vector dpos = {};
+	vector drot = {};
+	drot.y -= IN_UpdateAxis (mouse_y);
+	drot.z -= IN_UpdateAxis (mouse_x);
+
+	dpos *= 0.1;
+	drot *= ((float)M_PI / 36);
+	state.B = {
+		.bvect = (PGA.bvect) drot,
+		.bvecp = (PGA.bvecp) dpos,
+	};
+	//use a constant dt instead of actual frame time because the input
+	//values accumulate over time and thus already include frame time.
+	float h = 0.02f;
+	auto ds = dState (*state);
+	state.M += h * ds.M;
+	state.B += h * ds.B;
+	state.M = normalize (state.M);
+}
 
 static PGA.vec
 trackball_vector (vec2 xy)
@@ -134,7 +154,7 @@ trackball_vector (vec2 xy)
 static float trackball_sensitivity = 10.0f;
 #define sphere_scale 1.0f
 void
-camera_mouse_trackball (transform_t camera, float dt, state_t *state)
+camera_mouse_trackball (transform_t camera, state_t *state)
 {
 	vec2 delta = {
 		IN_UpdateAxis (mouse_x),
@@ -280,16 +300,27 @@ capture_mouse_event (struct IE_event_s *event)
 	if (event.mouse.type == ie_mousedown
 		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (1);
-		mouse_dragging = true;
+		mouse_dragging_mmb = true;
 		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
 	} else if (event.mouse.type == ie_mouseup
 			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 2)) {
 		IN_UpdateGrab (0);
-		mouse_dragging = false;
+		mouse_dragging_mmb = false;
+	}
+
+	if (event.mouse.type == ie_mousedown
+		&& ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (1);
+		mouse_dragging_rmb = true;
+		mouse_start = vec2 ( event.mouse.x, event.mouse.y);
+	} else if (event.mouse.type == ie_mouseup
+			   && ((event.mouse.buttons ^ prev_mouse.buttons) & 4)) {
+		IN_UpdateGrab (0);
+		mouse_dragging_rmb = false;
 	}
 
 	prev_mouse = event.mouse;
-	return !mouse_dragging;
+	return !(mouse_dragging_mmb | mouse_dragging_rmb);
 }
 
 int
@@ -469,9 +500,12 @@ main (int argc, string *argv)
 		frametime = refresh (scene);
 		realtime += frametime;
 
-		camera_first_person (camera, frametime, &camera_state);
-		if (mouse_dragging) {
-			camera_mouse_trackball (camera, frametime, &camera_state);
+		camera_first_person (camera, &camera_state);
+		if (mouse_dragging_mmb) {
+			camera_mouse_trackball (camera, &camera_state);
+		}
+		if (mouse_dragging_rmb) {
+			camera_mouse_first_person (camera, &camera_state);
 		}
 		set_transform (camera_state.M, camera, "");
 
