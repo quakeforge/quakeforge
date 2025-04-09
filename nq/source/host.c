@@ -913,7 +913,9 @@ void
 Host_Init (void)
 {
 	qfZoneScoped (true);
+#ifdef HAVE_BACKTRACE
 	BT_Init (com_argv[0]);
+#endif
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_Printf ("Host_Init\n");
 

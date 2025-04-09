@@ -258,7 +258,9 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 		auto end = Sys_LongTime ();
 		if (end - start > 500) {
 			dstring_t  *str = dstring_newstr ();
+#ifdef HAVE_BACKTRACE
 			BT_pcInfo (str, (intptr_t) packet->owner);
+#endif
 			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
 						(int) (end - start), stage, str->str);
 			dstring_delete (str);

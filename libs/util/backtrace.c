@@ -27,15 +27,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <inttypes.h>
-#include <string.h>
-#include <backtrace.h>
-
 #include "QF/backtrace.h"
+#ifdef HAVE_BACKTRACE
 #include "QF/dstring.h"
 #include "QF/sys.h"
 
@@ -74,3 +67,4 @@ BT_pcInfo (dstring_t *str, uintptr_t pc)
 		dasprintf (str, "(%"PRIxPTR")", pc);
 	}
 }
+#endif

@@ -30,11 +30,21 @@
 #ifndef __QF_backtrace_h
 #define __QF_backtrace_h
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_BACKTRACE
+
 #include <stdint.h>
+#include <inttypes.h>
+#include <string.h>
+#include <backtrace.h>
 
 typedef struct dstring_s dstring_t;
 
 void BT_Init (const char *filename);
 void BT_pcInfo (dstring_t *str, uintptr_t pc);
+#endif
 
 #endif// __QF_backtrace_h
