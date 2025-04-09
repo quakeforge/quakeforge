@@ -410,6 +410,9 @@ QFV_Render_UI (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 			.ent_windows = DARRAY_STATIC_INIT (4),
 			.ent_window_ids = DARRAY_STATIC_INIT (4),
 		};
+		IMUI_RegisterWindow (imui_ctx, &rctx->debug->job_timings_window);
+		IMUI_RegisterWindow (imui_ctx, &rctx->debug->job_control_window);
+		IMUI_RegisterWindow (imui_ctx, &rctx->debug->entid_window);
 		memset (rctx->debug->picked_enties, 0xff,
 				sizeof (rctx->debug->picked_enties));
 	}

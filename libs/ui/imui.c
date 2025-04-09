@@ -100,9 +100,13 @@ struct imui_ctx_s {
 	struct DARRAY_TYPE(imui_state_t *) windows;
 	struct DARRAY_TYPE(imui_state_t *) links;
 	struct DARRAY_TYPE(imui_state_t *) scrollers;
+	struct DARRAY_TYPE(imui_window_t *) registered_windows;
 	int32_t     draw_order;
 	imui_window_t *current_menu;
 	imui_state_t *current_state;
+
+	ecs_idpool_t window_ids;
+	ecs_idpool_t state_ids;
 
 	dstring_t  *dstr;
 
@@ -173,6 +177,7 @@ imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 		.next = ctx->state_wrappers,
 		.prev = &ctx->state_wrappers,
 		.state = {
+			.self = ECS_NewId (&ctx->state_ids),
 			.old_entity = nullent,
 			.entity = entity,
 		},
@@ -189,6 +194,7 @@ imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 static void
 imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 {
+	ECS_DelId (&ctx->state_ids, state->state.self);
 	if (state->next) {
 		state->next->prev = state->prev;
 	}
@@ -266,6 +272,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.windows = DARRAY_STATIC_INIT (8),
 		.links = DARRAY_STATIC_INIT (8),
 		.scrollers = DARRAY_STATIC_INIT (8),
+		.registered_windows = DARRAY_STATIC_INIT (8),
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
@@ -289,6 +296,10 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 			},
 		},
 	};
+	// "allocate" window and state id 0 so 0 can be treated as invalid
+	ECS_NewId (&ctx->window_ids);
+	ECS_NewId (&ctx->state_ids);
+
 	*Canvas_DrawGroup (ctx->csys, ctx->canvas) = imui_draw_group;
 	ctx->tab = Hash_NewTable (511, imui_state_getkey, 0, ctx, &ctx->hashctx);
 	ctx->current_parent = ctx->root_view;
@@ -357,6 +368,41 @@ IMUI_DestroyContext (imui_ctx_t *ctx)
 		}
 	}
 	free (ctx);
+}
+
+uint32_t
+IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	uint32_t    wid = ECS_NewId (&ctx->window_ids);
+
+	if (ctx->registered_windows.size != ctx->window_ids.max_ids) {
+		size_t old_size = ctx->registered_windows.size;
+		size_t delta = ctx->window_ids.max_ids - old_size;
+		DARRAY_RESIZE (&ctx->registered_windows, ctx->window_ids.max_ids);
+		memset (ctx->registered_windows.a + old_size, 0,
+				delta * sizeof (imui_window_t *));
+	}
+	ctx->registered_windows.a[Ent_Index (wid)] = window;
+	window->self = wid;
+	return wid;
+}
+
+void
+IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window)
+{
+	if (window->self && ECS_DelId (&ctx->window_ids, window->self)) {
+		ctx->registered_windows.a[Ent_Index (window->self)] = nullptr;
+	}
+	window->self = 0;
+}
+
+imui_window_t *
+IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid)
+{
+	if (wid && ECS_IdValid (&ctx->window_ids, wid)) {
+		return ctx->registered_windows.a[Ent_Index (wid)];
+	}
+	return nullptr;
 }
 
 void
@@ -1694,16 +1740,17 @@ IMUI_EndPanel (imui_ctx_t *ctx)
 int
 IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 {
-	menu->parent = ctx->current_menu;
+	menu->parent = ctx->current_menu ? ctx->current_menu->self : 0;
 	ctx->current_menu = menu;
 
 	if (menu->parent) {
+		auto parent = IMUI_GetWindow (ctx, menu->parent);
 		if (!menu->reference) {
 			menu->reference = nva ("%s##item:%s", menu->name,
-								   menu->parent->name);
+								   parent->name);
 		}
-		if (menu->parent->is_open) {
-			UI_ExtendPanel (menu->parent->name) {
+		if (parent->is_open) {
+			UI_ExtendPanel (parent->name) {
 				if (IMUI_MenuItem (ctx, menu->reference, false)) {
 					menu->is_open = true;
 				}
@@ -1711,14 +1758,14 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 		}
 	}
 	if (!menu->is_open) {
-		ctx->current_menu = menu->parent;
+		ctx->current_menu = IMUI_GetWindow (ctx, menu->parent);
 		return 1;
 	}
 
 	IMUI_StartPanel (ctx, menu);
 
 	auto state = ctx->windows.a[ctx->windows.size - 1];
-	state->menu = menu;
+	state->menu = menu->self;
 
 	auto menu_view = ctx->current_parent;
 	if (vertical) {
@@ -1746,7 +1793,8 @@ IMUI_MenuItem (imui_ctx_t *ctx, const char *label, bool collapse)
 	auto res = IMUI_Button (ctx, label);
 	//auto state = ctx->current_state;
 	if (res && collapse) {
-		for (auto m = ctx->current_menu; m && !m->no_collapse; m = m->parent) {
+		for (auto m = ctx->current_menu; m && !m->no_collapse;
+			 m = IMUI_GetWindow (ctx, m->parent)) {
 			m->is_open = false;
 		}
 	}

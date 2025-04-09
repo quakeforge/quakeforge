@@ -89,6 +89,7 @@ typedef struct imui_frac_s {
 
 typedef struct imui_window_s {
 	const char *name;
+	uint32_t    self;
 	int         xpos;
 	int         ypos;
 	int         xlen;
@@ -103,14 +104,15 @@ typedef struct imui_window_s {
 	const char *reference;
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
-	struct imui_window_s *parent;	// for submenus
+	uint32_t    parent;	// for submenus
 } imui_window_t;
 
 typedef struct imui_state_s {
 	char       *label;
+	uint32_t    self;
 	uint32_t    label_len;
 	int         key_offset;
-	imui_window_t *menu;
+	uint32_t    menu;
 	int32_t		draw_order;	// for window canvases
 	int32_t     draw_group;
 	uint32_t    first_link;
@@ -137,6 +139,10 @@ typedef struct imui_io_s {
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t *ctx);
+
+uint32_t IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window);
+void IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window);
+imui_window_t *IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid) __attribute__((pure));
 
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);

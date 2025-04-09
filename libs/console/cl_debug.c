@@ -173,6 +173,22 @@ static int deb_xlen = -1;
 static int deb_ylen = -1;
 static vec4f_t mouse_start;
 
+static imui_window_t debug_menu = {
+	.name = "Debug##menu",
+	.group_offset = 0,
+	.is_open = true,
+	.no_collapse = true,
+	.auto_fit = true,
+};
+
+static imui_window_t renderer_menu = {
+	.name = "Renderer##menu",
+	.group_offset = 1,
+	.reference_gravity = grav_northwest,
+	.anchor_gravity = grav_southwest,
+	.auto_fit = true,
+};
+
 static void
 con_debug_f (void *data, const cvar_t *cvar)
 {
@@ -292,6 +308,8 @@ Con_Debug_Init (void)
 	debug_context = IMT_CreateContext ("debug.context");
 	debug_imui = IMUI_NewContext (*con_data.canvas_sys,
 								  deb_fontname, deb_fontsize);
+	IMUI_RegisterWindow (debug_imui, &debug_menu);
+	IMUI_RegisterWindow (debug_imui, &renderer_menu);
 	IMUI_SetVisible (debug_imui, con_debug);
 	IMUI_Style_Fetch (debug_imui, &current_style);
 
@@ -503,22 +521,6 @@ static imui_window_t inp_window = {
 	.name = "Debug Input",
 	.xpos = 50,
 	.ypos = 50,
-	.auto_fit = true,
-};
-
-static imui_window_t debug_menu = {
-	.name = "Debug##menu",
-	.group_offset = 0,
-	.is_open = true,
-	.no_collapse = true,
-	.auto_fit = true,
-};
-
-static imui_window_t renderer_menu = {
-	.name = "Renderer##menu",
-	.group_offset = 1,
-	.reference_gravity = grav_northwest,
-	.anchor_gravity = grav_southwest,
 	.auto_fit = true,
 };
 
