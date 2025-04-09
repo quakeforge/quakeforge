@@ -140,6 +140,7 @@ m4_include(config.d/paths.m4)
 
 m4_include(config.d/build_control.m4)
 m4_include(config.d/qfcc.m4)
+
 m4_include(config.d/tracy.m4)
 m4_include(config.d/backtrace.m4)
 
@@ -178,7 +179,6 @@ case "${host}" in
 			[fontconfig, HAVE_FONTCONFIG],
 			[freetype, HAVE_FREETYPE],
 			[harfbuzz, HAVE_HARFBUZZ],
-			[backtrace, HAVE_BACKTRACE],
 		])
 	;;
 	*linux*)
@@ -203,7 +203,6 @@ case "${host}" in
 			[libfontconfig-dev, HAVE_FONTCONFIG],
 			[libfreetype-dev, HAVE_FREETYPE],
 			[libharfbuzz-dev, HAVE_HARFBUZZ],
-			[backtrace, HAVE_BACKTRACE],
 		])
 	;;
 esac
