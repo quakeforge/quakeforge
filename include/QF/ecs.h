@@ -115,6 +115,7 @@ typedef struct ecs_system_s {
 
 uint32_t ECS_NewId (ecs_idpool_t *idpool);
 bool ECS_DelId (ecs_idpool_t *idpool, uint32_t id);
+ECSINLINE int ECS_IdValid (ecs_idpool_t *idpool, uint32_t id);
 ECSINLINE uint32_t Ent_Index (uint32_t id);
 ECSINLINE uint32_t Ent_Generation (uint32_t id);
 ECSINLINE uint32_t Ent_NextGen (uint32_t id);
@@ -168,6 +169,13 @@ ECSINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
 #define ECSINLINE VISIBLE
 #endif
 
+ECSINLINE int
+ECS_IdValid (ecs_idpool_t *idpool, uint32_t id)
+{
+	uint32_t    ind = Ent_Index (id);
+	return ind < idpool->num_ids && idpool->ids[ind] == id;
+}
+
 ECSINLINE uint32_t
 Ent_Index (uint32_t id)
 {
@@ -202,8 +210,7 @@ ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 ECSINLINE int
 ECS_EntValid (uint32_t id, ecs_registry_t *reg)
 {
-	uint32_t    ind = Ent_Index (id);
-	return ind < reg->entities.num_ids && reg->entities.ids[ind] == id;
+	return ECS_IdValid (&reg->entities, id);
 }
 
 ECSINLINE int
