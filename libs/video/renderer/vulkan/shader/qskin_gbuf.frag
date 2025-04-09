@@ -25,7 +25,7 @@ main (void)
 	vec4        c;
 	vec4        e;
 	c = texture (Skin, vec3 (st, 0)) * base_color;
-	e = texture (Skin, vec3 (st, 1));
+	e = texture (Skin, vec3 (st, 1)) * 2;	//FIXME
 	vec4        rows = unpackUnorm4x8(colors);
 	vec4        cmap = texture (Skin, vec3 (st, 2));
 	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
