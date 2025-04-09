@@ -102,6 +102,7 @@ static const char		*cvar_null_string = "";
 static hashtab_t		*cvar_hash;
 static hashtab_t		*user_cvar_hash;
 static hashtab_t		*calias_hash;
+static va_ctx_t			*cvar_va_ctx;//FIXME
 
 static cvar_t *
 cvar_create (const char *name, const char *value)
@@ -235,7 +236,7 @@ cvar_string (const cvar_t *var)
 	if (!var->value.type) {
 		return *(char **)var->value.value;
 	} else if (var->value.type->get_string) {
-		return var->value.type->get_string (&var->value, 0);
+		return var->value.type->get_string (&var->value, cvar_va_ctx);
 	}
 	return cvar_null_string;
 }
@@ -859,6 +860,7 @@ Cvar_Init_Hash (void)
 VISIBLE void
 Cvar_Init (void)
 {
+	cvar_va_ctx = va_create_context (8);
 	Cvar_Register (&developer_cvar, 0, 0);
 
 	Cmd_AddCommand ("set", cvar_set_f, "Set the selected variable, useful on "
