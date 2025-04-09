@@ -1,3 +1,4 @@
+#pragma bug die
 typedef struct bar {
 	float x, y, z, w;
 } bar;

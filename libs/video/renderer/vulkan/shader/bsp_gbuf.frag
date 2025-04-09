@@ -1,17 +1,18 @@
 #version 450
 
-layout (set = 1, binding = 0) uniform sampler2DArray Texture;
+layout (set = 3, binding = 0) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
 	vec4        fog;
 	float       time;
+	float       alpha;
 };
 
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec3 normal;
 layout (location = 3) in vec4 position;
+layout (location = 4) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
@@ -37,10 +38,10 @@ main (void)
 	vec3        e_st = vec3 (tl_st.xy, 1);
 	vec2        l_st = vec2 (tl_st.zw);
 
-	c = texture (Texture, t_st);
-	e = texture (Texture, e_st);
+	c = texture (Texture, t_st) * color;
+	e = texture (Texture, e_st) * 2;//FIXME
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
 	frag_normal = vec4 (normal, 0);
-	frag_position = position;
+	frag_position = vec4 (position.xyz, gl_FragCoord.z);
 }

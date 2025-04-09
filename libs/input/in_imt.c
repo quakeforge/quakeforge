@@ -3,7 +3,7 @@
 
 	Input Mapping Table management
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2001 Zephaniah E. Hull <warp@babylon.d2dc.net>
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
 	Author: Bill Currie <bill@taniwha.org>
@@ -233,6 +233,7 @@ IMT_GetButtonBlock (int num_buttons)
 int
 IMT_CreateContext (const char *name)
 {
+	qfZoneScoped (true);
 	in_context_t *ctx = DARRAY_OPEN_AT (&in_contexts, in_contexts.size, 1);
 	memset (ctx, 0, sizeof (*ctx));
 	ctx->imt_tail = &ctx->imts;
@@ -267,7 +268,8 @@ imt_switcher_update (imt_switcher_t *switcher)
 				val = !!(input->button->state & inb_down);
 				break;
 			case imti_cvar:
-				val = !!input->cvar->int_val;
+				//FIXME check cvar type
+				val = !!*(int *) input->cvar->value.value;
 				break;
 		}
 		state |= val << i;
@@ -497,6 +499,7 @@ IMT_CreateSwitcher (const char *switcher_name, int context, imt_t *default_imt,
 								  switcher);
 		} else {
 			input->type = imti_cvar;
+			//FIXME check cvar type
 			input->cvar = Cvar_FindVar (input_name);
 			Cvar_AddListener (input->cvar, imt_switcher_cvar_update, switcher);
 		}
@@ -551,7 +554,7 @@ IMT_BindButton (imt_t *imt, int button, const char *binding)
 	}
 }
 
-qboolean
+bool
 IMT_ProcessAxis (int axis, int value)
 {
 	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
@@ -630,18 +633,18 @@ process_binding (int button, int state, const char *cmd)
 
 	if (cmd[0] == '+') {
 		if (state) {
-			Cbuf_AddText (cbuf, va (0, "%s %d\n", cmd, button));
+			Cbuf_AddText (cbuf, va ("%s %d\n", cmd, button));
 		} else {
-			Cbuf_AddText (cbuf, va (0, "-%s %d\n", cmd + 1, button));
+			Cbuf_AddText (cbuf, va ("-%s %d\n", cmd + 1, button));
 		}
 	} else {
 		if (state) {
-			Cbuf_AddText (cbuf, va (0, "%s\n", cmd));
+			Cbuf_AddText (cbuf, va ("%s\n", cmd));
 		}
 	}
 }
 
-qboolean
+bool
 IMT_ProcessButton (int button, int state)
 {
 	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
@@ -833,6 +836,8 @@ imt_drop_all_f (void)
 			for (size_t i = 0; i < imt->button_bindings.size; i++) {
 				free_button_binding (imt->button_bindings.a[i]);
 			}
+			DARRAY_CLEAR (&imt->axis_bindings);
+			DARRAY_CLEAR (&imt->button_bindings);
 			free ((char *) imt->name);
 			free (imt);
 		}
@@ -875,13 +880,14 @@ static imtcmd_t imt_commands[] = {
 		"Set the active imt of the specified context"
 	},
 	{	"imt_list", imt_list_f,
-		"List the available input mapping tables"
+		"List the available input mapping tables."
 	},
 	{	"imt_create", imt_create_f,
 		"create a new imt table:\n"
 		"    imt_create <context> <imt_name> [chain_name]\n"
 		"\n"
-		"The new table will be attached to the specified context\n"
+		"The new table will be attached to the specified context.\n"
+		"\n"
 		"imt_name must not already exist.\n"
 		"If given, chain_name must already exist and be in the context.\n"
 	},
@@ -890,15 +896,18 @@ static imtcmd_t imt_commands[] = {
 		"    imt_switcher_create <name> <context> <default_imt> <input0>"
 			" [..<inputN>]\n"
 		"name is the name of the switcher and must be unique across all\n"
-		"contexts\n"
+		"contexts.\n"
+		"\n"
 		"The new switcher will be attached to the specified context\n"
+		"\n"
 		"default_imt specifies the default imt to be used for all possible\n"
-		"states and must axis and be in the context.\n"
+		"states and must exist and be in the context.\n"
+		"\n"
 		"input0..inputN specify the inputs (cvar or button) used to set the\n"
 		"switcher's state. As each input forms a bit in the state index,\n"
 		"there will be 2**(N+1) states (so 4 inputs will result in 16\n"
 		"states, and 16 inputs will result in 65536 states). Up to 16 inputs\n"
-		"are allowed\n"
+		"are allowed.\n"
 		"\n"
 		"Buttons are spefied as +buttonname (eg, +mlook, +strafe).\n"
 		"Cvars are just the cvar name (eg, freelook, lookstrafe).\n"
@@ -916,20 +925,36 @@ static imtcmd_t imt_commands[] = {
 		"state_index is the state index formed by the binary number\n"
 		"interpretation of the inputs with input0 being bit 0 and inputN\n"
 		"being bit N.\n"
+		"\n"
 		"imt is the name of the imt to be assigned to the state and must\n"
 		"exist and be in the same context as the switcher.\n"
 		"\n"
 		"Any number of state_index imt pairs can be specified.\n"
 	},
 	{	"imt_drop_all", imt_drop_all_f,
-		"delete all imt tables\n"
+		"Delete all imt tables.\n"
 	},
 	{},
 };
 
+static void
+IMT_Shutdown (void *data)
+{
+	Sys_MaskPrintf (SYS_input, "IMT_Shutdown\n");
+	imt_drop_all_f ();
+	Hash_DelTable (recipe_tab);
+
+	delete_memsuper (binding_mem);
+	binding_mem = 0;
+	DARRAY_CLEAR (&axis_blocks);
+	DARRAY_CLEAR (&button_blocks);
+	DARRAY_CLEAR (&in_contexts);
+}
+
 void
 IMT_Init (void)
 {
+	Sys_RegisterShutdown (IMT_Shutdown, 0);
 	binding_mem = new_memsuper ();
 	recipe_tab = Hash_NewTable (61, 0, recipe_free, 0, 0);
 	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
@@ -945,14 +970,14 @@ IMT_SaveConfig (plitem_t *config)
 	PL_D_AddObject (config, "contexts", ctx_list);
 	for (size_t i = 0; i < in_contexts.size; i++) {
 		in_context_t *context = &in_contexts.a[i];
-		plitem_t   *ctx = PL_NewDictionary (0); //FIXME hashlinks
+		plitem_t   *ctx = PL_NewDictionary (0);
 		PL_A_AddObject (ctx_list, ctx);
 		PL_D_AddObject (ctx, "name", PL_NewString (context->name));
 		if (context->imts) {
 			plitem_t   *imt_list = PL_NewArray ();
 			PL_D_AddObject (ctx, "imts", imt_list);
 			for (imt_t *imt = context->imts; imt; imt = imt->next) {
-				plitem_t   *imt_cfg = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *imt_cfg = PL_NewDictionary (0);
 				PL_D_AddObject (imt_cfg, "name", PL_NewString (imt->name));
 				if (imt->chain) {
 					PL_D_AddObject (imt_cfg, "chain",
@@ -974,7 +999,6 @@ IMT_SaveConfig (plitem_t *config)
 			PL_D_AddObject (ctx, "switchers", switcher_list);
 			for (imt_switcher_t *switcher = context->switchers; switcher;
 				 switcher = switcher->next) {
-				//FIXME hashlinks
 				plitem_t   *switcher_cfg = PL_NewDictionary (0);
 				PL_A_AddObject (switcher_list, switcher_cfg);
 
@@ -988,7 +1012,7 @@ IMT_SaveConfig (plitem_t *config)
 					const char *name = 0;
 					switch (input->type) {
 						case imti_button:
-							name = va (0, "+%s", input->button->name);
+							name = va ("+%s", input->button->name);
 							break;
 						case imti_cvar:
 							name = input->cvar->name;
@@ -1018,27 +1042,27 @@ IMT_SaveAxisConfig (plitem_t *axes, int axis_ind, int dev_axis)
 			in_axisbinding_t *a = imt->axis_bindings.a[axis_ind];
 			if (a) {
 				in_recipe_t *recipe = a->recipe;
-				plitem_t   *axis = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *axis = PL_NewDictionary (0);
 				PL_A_AddObject (axes, axis);
 
 				PL_D_AddObject (axis, "imt", PL_NewString (imt->name));
 				PL_D_AddObject (axis, "num",
-								PL_NewString (va (0, "%d", dev_axis)));
+								PL_NewString (va ("%d", dev_axis)));
 				PL_D_AddObject (axis, "axis", PL_NewString (a->axis->name));
 				PL_D_AddObject (axis, "min",
-								PL_NewString (va (0, "%d", recipe->min)));
+								PL_NewString (va ("%d", recipe->min)));
 				PL_D_AddObject (axis, "max",
-								PL_NewString (va (0, "%d", recipe->max)));
+								PL_NewString (va ("%d", recipe->max)));
 				PL_D_AddObject (axis, "minzone",
-								PL_NewString (va (0, "%d", recipe->minzone)));
+								PL_NewString (va ("%d", recipe->minzone)));
 				PL_D_AddObject (axis, "maxzone",
-								PL_NewString (va (0, "%d", recipe->maxzone)));
+								PL_NewString (va ("%d", recipe->maxzone)));
 				PL_D_AddObject (axis, "deadzone",
-								PL_NewString (va (0, "%d", recipe->deadzone)));
+								PL_NewString (va ("%d", recipe->deadzone)));
 				PL_D_AddObject (axis, "curve",
-								PL_NewString (va (0, "%.9g", recipe->curve)));
+								PL_NewString (va ("%.9g", recipe->curve)));
 				PL_D_AddObject (axis, "scale",
-								PL_NewString (va (0, "%.9g", recipe->scale)));
+								PL_NewString (va ("%.9g", recipe->scale)));
 			}
 		}
 	}
@@ -1052,16 +1076,16 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 		for (imt_t *imt = context->imts; imt; imt = imt->next) {
 			in_buttonbinding_t *b = imt->button_bindings.a[button_ind];
 			if (b) {
-				plitem_t   *button = PL_NewDictionary (0); //FIXME hashlinks
+				plitem_t   *button = PL_NewDictionary (0);
 				PL_A_AddObject (buttons, button);
 
 				PL_D_AddObject (button, "imt", PL_NewString (imt->name));
 				PL_D_AddObject (button, "num",
-								PL_NewString (va (0, "%d", dev_button)));
+								PL_NewString (va ("%d", dev_button)));
 				switch (b->type) {
 					case inb_button:
 						PL_D_AddObject (button, "binding",
-										PL_NewString (va (0, "+%s",
+										PL_NewString (va ("+%s",
 														  b->button->name)));
 						break;
 					case inb_command:
@@ -1077,8 +1101,8 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 void
 IMT_LoadConfig (plitem_t *config)
 {
-	imt_reset_blocks ();
 	imt_drop_all_f ();
+	imt_reset_blocks ();
 
 	plitem_t   *ctx_list = PL_ObjectForKey (config, "contexts");
 	if (PL_Type (ctx_list) != QFArray) {

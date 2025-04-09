@@ -48,8 +48,11 @@
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/simd/vec4f.h"
 
 #include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
@@ -177,9 +180,9 @@ cl_prespawn_f (client_t *cl, void *unused)
 	if (buf >= sv->num_signon_buffers)
 		buf = 0;
 	if (buf == sv->num_signon_buffers - 1)
-		cmd = va (0, "cmd spawn %i 0\n", cl->server->spawncount);
+		cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
 	else
-		cmd = va (0, "cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
+		cmd = va ("cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
 	size = sv->signon_buffer_size[buf] + 1 + strlen (cmd) + 1;
 	msg = MSG_ReliableCheckBlock (&cl->backbuf, size);
 	SZ_Write (msg, sv->signon_buffers[buf], sv->signon_buffer_size[buf]);
@@ -526,7 +529,7 @@ client_parse_message (client_t *cl)
 	usercmd_t   oldest, oldcmd, newcmd;
 	byte        checksum, calculatedChecksum;
 	int         checksumIndex, seq_hash;
-	qboolean    move_issued = false;
+	bool        move_issued = false;
 
 	// make sure the reply sequence number matches the incoming
 	// sequence number
@@ -682,7 +685,7 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 	MSG_WriteByte (msg, num);
 	MSG_WriteShort (msg, pflags);
 
-	MSG_WriteCoordV (msg, &pl->es.origin[0]);//FIXME
+	MSG_WriteCoordV (msg, (vec_t*)&pl->es.origin);//FIXME
 	pl->es.origin[3] = 1;
 
 	MSG_WriteByte (msg, pl->es.frame);
@@ -739,7 +742,7 @@ int         numnails;
 int         nailcount;
 
 static void
-emit_nails (sizebuf_t *msg, qboolean recorder)
+emit_nails (sizebuf_t *msg, bool recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
@@ -781,7 +784,7 @@ emit_nails (sizebuf_t *msg, qboolean recorder)
 #endif
 static void
 write_delta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			 qboolean force)//, int stdver)
+			 bool force)//, int stdver)
 {
 	int			bits, i;
 	float		miss;
@@ -922,7 +925,7 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
 	int         newindex, oldindex, newnum, oldnum, oldmax;
 	entity_state_t *ent;
-	frame_t    *fromframe;
+	qtv_frame_t *fromframe;
 	packet_entities_t *from;
 	server_t   *sv = client->server;
 
@@ -977,14 +980,54 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 }
 
 static void
+add_to_fat_pvs (vec4f_t org, int node_id, server_t *sv)
+{
+	auto brush = &sv->worldmodel->brush;
+	while (1) {
+		// if this is a leaf, accumulate the pvs bits
+		if (node_id < 0) {
+			mleaf_t    *leaf = sv->worldmodel->brush.leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				Mod_LeafPVS_mix (leaf, brush, 0xff, sv->fatpvs);
+			}
+			return;
+		}
+
+		mnode_t    *node = brush->nodes + node_id;
+		float       d = dotf (node->plane, org)[0];
+		if (d > 8)
+			node_id = node->children[0];
+		else if (d < -8)
+			node_id = node->children[1];
+		else {							// go down both
+			add_to_fat_pvs (org, node->children[0], sv);
+			node_id = node->children[1];
+		}
+	}
+}
+
+static set_t *
+fat_pvs (vec4f_t org, server_t *sv)
+{
+	if (!sv->fatpvs) {
+		sv->fatpvs = set_new_size (sv->worldmodel->brush.visleafs);
+	}
+	set_expand (sv->fatpvs, sv->worldmodel->brush.visleafs);
+	set_empty (sv->fatpvs);
+
+	add_to_fat_pvs (org, 0, sv);
+	return sv->fatpvs;
+}
+
+static void
 write_entities (client_t *client, sizebuf_t *msg)
 {
-	//byte       *pvs = 0;
-	//int         i;
+	set_t      *pvs = 0;
 	int         e;
-	//vec3_t      org;
-	frame_t    *frame;
-	entity_state_t *ent;
+	vec4f_t     org;
+	qtv_frame_t *frame;
+	qtv_entity_t *ent;
+	qtv_leaf_t *el;
 	entity_state_t *state;
 	packet_entities_t *pack;
 	server_t   *sv = client->server;
@@ -993,9 +1036,9 @@ write_entities (client_t *client, sizebuf_t *msg)
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
 
 	// find the client's PVS
-	//clent = client->edict;
-	//VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
-	//pvs = SV_FatPVS (org);
+	org = client->state.es.origin;
+	org[2] += 22;	//XXX standard spectator view offset
+	pvs = fat_pvs (org, sv);
 
 	// put other visible entities into either a packet_entities or a nails
 	// message
@@ -1008,19 +1051,18 @@ write_entities (client_t *client, sizebuf_t *msg)
 		 e++, ent++) {
 		if (!sv->ent_valid[e])
 			continue;
-		if (ent->number && ent->number != e)
-			qtv_printf ("%d %d\n", e, ent->number);
-#if 0
+		if (ent->e.number && ent->e.number != e)
+			qtv_printf ("%d %d\n", e, ent->e.number);
 		if (pvs) {
 			// ignore if not touching a PV leaf
-			for (i = 0; i < ent->num_leafs; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+			for (el = ent->leafs; el; el = el->next) {
+				if (set_is_member (pvs, el->num))
 					break;
+			}
 
-			if (i == ent->num_leafs)
+			if (!el)
 				continue;					// not visible
 		}
-#endif
 //		if (SV_AddNailUpdate (ent))
 //			continue;					// added to the special update list
 
@@ -1032,7 +1074,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 
 		state = &pack->entities[pack->num_entities];
 		pack->num_entities++;
-		*state = *ent;
+		*state = ent->e;
 		state->flags = 0;
 	}
 	// encode the packet entities as a delta from the
@@ -1235,7 +1277,7 @@ Client_New (client_t *cl)
 	MSG_WriteByte (&cl->netchan.message, sv->cdtrack);
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message,
-					 va (0, "fullserverinfo \"%s\"\n",
+					 va ("fullserverinfo \"%s\"\n",
 						 Info_MakeString (sv->info, 0)));
 }
 

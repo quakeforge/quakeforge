@@ -11,6 +11,7 @@
 - (int) numKeys;
 - (PLItem *) getObjectForKey:(string) key;
 - (PLItem *) allKeys;
+- (string) keyAtIndex:(int) index;
 - addKey:(string) key value:(PLItem *) value;
 @end
 
@@ -29,7 +30,6 @@
 @interface PLItem: Object <PLDictionary, PLArray, PLString>
 {
 	plitem_t   *item;
-	int     own;
 }
 + (PLItem *) newDictionary;
 + (PLItem *) newArray;
@@ -39,7 +39,6 @@
 + (PLItem *) fromFile:(QFile) file;
 
 - initWithItem:(plitem_t *) item;
-- initWithOwnItem:(plitem_t *) item;
 - (plitem_t *) item;
 - (string) write;
 - (pltype_t) type;
@@ -48,10 +47,14 @@
 
 @interface PLDictionary: PLItem <PLDictionary>
 + (PLDictionary *) new;
++ (PLItem *) fromString:(string) str;
++ (PLItem *) fromFile:(QFile) file;
 @end
 
 @interface PLArray: PLItem <PLArray>
 + (PLArray *) new;
++ (PLItem *) fromString:(string) str;
++ (PLItem *) fromFile:(QFile) file;
 @end
 
 @interface PLData: PLItem

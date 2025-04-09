@@ -44,30 +44,27 @@
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 
-static symtab_t *symtabs_freelist;
-static symbol_t *symbols_freelist;
+ALLOC_STATE (symtab_t, symtabs);
+ALLOC_STATE (symbol_t, symbols);
 
-static const char *sy_type_names[] = {
-	"sy_name",
-	"sy_var",
-	"sy_const",
-	"sy_type",
-	"sy_expr",
-	"sy_func",
-	"sy_class",
-	"sy_convert",
+#define SY_TYPE(type) #type,
+static const char * const sy_type_names[sy_num_types] = {
+#include "tools/qfcc/include/sy_type_names.h"
 };
 
 const char *
 symtype_str (sy_type_e type)
 {
-	if (type > sy_class)
-		return "<invalid sy_type>";
-	return sy_type_names[type];
+	if (type < sy_num_types) {
+		return sy_type_names[type];
+	}
+	return "<invalid sy_type>";
 }
 
 symbol_t *
@@ -75,16 +72,20 @@ new_symbol (const char *name)
 {
 	symbol_t   *symbol;
 	ALLOC (256, symbol_t, symbols, symbol);
-	symbol->name = save_string (name);
+	if (name) {
+		symbol->name = save_string (name);
+	}
+	symbol->return_addr = __builtin_return_address (0);
 	return symbol;
 }
 
 symbol_t *
-new_symbol_type (const char *name, type_t *type)
+new_symbol_type (const char *name, const type_t *type)
 {
 	symbol_t   *symbol;
 	symbol = new_symbol (name);
 	symbol->type = type;
+	symbol->return_addr = __builtin_return_address (0);
 	return symbol;
 }
 
@@ -116,11 +117,32 @@ symtab_lookup (symtab_t *symtab, const char *name)
 {
 	symbol_t   *symbol;
 	do {
-		if ((symbol = Hash_Find (symtab->tab, name)))
+		if ((symbol = Hash_Find (symtab->tab, name))) {
 			return symbol;
+		}
+		if (symtab->procsymbol
+			&& (symbol = symtab->procsymbol (name, symtab))) {
+			return symbol;
+		}
 		symtab = symtab->parent;
 	} while (symtab);
 	return 0;
+}
+
+symbol_t *
+symtab_appendsymbol (symtab_t *symtab, symbol_t *symbol)
+{
+	if (symbol->table)
+		internal_error (0, "symbol '%s' is already in another symbol table",
+						symbol->name);
+
+	symbol->next = *symtab->symtail;
+	*symtab->symtail = symbol;
+	symtab->symtail = &symbol->next;
+
+	symbol->table = symtab;
+
+	return symbol;
 }
 
 symbol_t *
@@ -130,17 +152,17 @@ symtab_addsymbol (symtab_t *symtab, symbol_t *symbol)
 	if (symbol->table)
 		internal_error (0, "symbol '%s' is already in another symbol table",
 						symbol->name);
+	if (symtab->type == stab_bypass) {
+		if (!symtab->parent) {
+			internal_error (0, "bypass symbol table with no parent");
+		}
+		symtab = symtab->parent;
+	}
 	if ((s = Hash_Find (symtab->tab, symbol->name)))
 		return s;
 	Hash_Add (symtab->tab, symbol);
 
-	symbol->next = *symtab->symtail;
-	*symtab->symtail = symbol;
-	symtab->symtail = &symbol->next;
-
-	symbol->table = symtab;
-
-	return symbol;
+	return symtab_appendsymbol (symtab, symbol);
 }
 
 symbol_t *
@@ -166,22 +188,21 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
-	sym->visibility = symbol->visibility;
-	sym->type = symbol->type;
+	*sym = *symbol;
+	sym->next = nullptr;
+	sym->table = nullptr;
 	sym->params = copy_params (symbol->params);
-	sym->sy_type = symbol->sy_type;
-	sym->s = symbol->s;
 	return sym;
 }
 
 symtab_t *
-symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
+symtab_flat_copy (symtab_t *symtab, symtab_t *parent, stab_type_e type)
 {
 	symtab_t   *newtab;
 	symbol_t   *newsym;
 	symbol_t   *symbol;
 
-	newtab = new_symtab (parent, stab_local);
+	newtab = new_symtab (parent, type);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
 			if (symbol->visibility == vis_anonymous
@@ -205,7 +226,7 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 }
 
 symbol_t *
-make_symbol (const char *name, type_t *type, defspace_t *space,
+make_symbol (const char *name, const type_t *type, defspace_t *space,
 			 storage_class_t storage)
 {
 	symbol_t   *sym;
@@ -221,23 +242,144 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 	}
 	if (sym->type != type) {
 		if (is_array (sym->type) && is_array (type)
-			&& !sym->type->t.array.size) {
+			&& !sym->type->array.count) {
 			sym->type = type;
 		} else {
 			error (0, "%s redefined", name);
 			sym = new_symbol_type (name, type);
 		}
 	}
-	if (sym->s.def && sym->s.def->external && storage != sc_extern) {
+	if (sym->def && sym->def->external && storage != sc_extern) {
 		//FIXME this really is not the right way
-		relocs = sym->s.def->relocs;
-		free_def (sym->s.def);
-		sym->s.def = 0;
+		relocs = sym->def->relocs;
+		free_def (sym->def);
+		sym->def = 0;
 	}
-	if (!sym->s.def) {
-		sym->s.def = new_def (name, type, space, storage);
-		reloc_attach_relocs (relocs, &sym->s.def->relocs);
+	if (!sym->def) {
+		sym->def = new_def (name, type, space, storage);
+		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
-	sym->sy_type = sy_var;
+	sym->sy_type = sy_def;
+	sym->lvalue = !sym->def->readonly;
+	return sym;
+}
+
+static bool
+shadows_param (symbol_t *sym, symtab_t *symtab)
+{
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
+
+	if (check && check->table == symtab->parent
+		&& symtab->parent->type == stab_param) {
+		error (0, "%s shadows a parameter", sym->name);
+		return true;
+	}
+	return false;
+}
+
+static bool
+init_type_ok (const type_t *dstType, const expr_t *init)
+{
+	auto init_type = get_type (init);
+	if (init->implicit || type_promotes (dstType, init_type)) {
+		return true;
+	}
+	if (is_pointer (dstType) && is_pointer (init_type)) {
+		return true;
+	}
+	if (is_math (dstType) && !is_scalar (dstType)) {
+		// vector or matrix type
+		return true;
+	}
+	if (is_integral (dstType) && is_integral (init_type)
+		&& (type_size (dstType) == type_size (init_type))) {
+		return true;
+	}
+	if (current_target.init_type_ok
+		&& current_target.init_type_ok (dstType, init_type)) {
+		return true;
+	}
+	return false;
+}
+
+symbol_t *
+declare_symbol (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				expr_t *block, rua_ctx_t *ctx)
+{
+	symbol_t   *sym = spec.sym;
+
+	if (sym->table) {
+		// due to the way declarations work, we need a new symbol at all times.
+		// redelcarations will be checked later
+		sym = new_symbol (sym->name);
+		*sym = *spec.sym;
+		sym->table = nullptr;
+	}
+
+	if (spec.is_typedef || !spec.is_function) {
+		spec = spec_process (spec, ctx);
+	}
+	if (!spec.storage) {
+		spec.storage = current_storage;
+	}
+
+	sym->type = spec.type;
+
+	if (spec.is_typedef) {
+		if (init) {
+			error (0, "typedef %s is initialized", sym->name);
+		}
+		sym->sy_type = sy_type;
+		sym->type = find_type (sym->type);
+		sym->type = find_type (alias_type (sym->type, sym->type, sym->name));
+		symtab_addsymbol (symtab, sym);
+	} else {
+		if (spec.is_function) {
+			if (init) {
+				error (0, "function %s is initialized", sym->name);
+			}
+			sym = function_symbol (spec, ctx);
+		} else {
+			if (!shadows_param (sym, symtab)) {
+				sym->type = find_type (sym->type);
+				spec.sym = sym;
+				if (init && init->type != ex_compound && !is_auto (sym->type)) {
+					auto init_type = get_type (init);
+					if (!type_same (init_type, sym->type)
+						&& type_assignable (sym->type, init_type)) {
+						if (!init_type_ok (sym->type, init)) {
+							warning (init, "initialization of %s with %s"
+									 " (use a cast)\n)",
+									 get_type_string (spec.type),
+									 get_type_string (init_type));
+						}
+						if (init->type != ex_bool) {
+							init = cast_expr (sym->type, init);
+						}
+					}
+				}
+				current_target.declare_sym (spec, init, symtab, block);
+			}
+		}
+	}
+	return sym;
+}
+
+symbol_t *
+declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
+{
+	symbol_t   *sym = spec.sym;
+	spec = spec_process (spec, ctx);
+	sym->type = find_type (append_type (sym->type, spec.type));
+	sym->sy_type = sy_offset;
+	sym->offset = -1;
+	symtab_addsymbol (symtab, sym);
+	if (!sym->table) {
+		error (0, "duplicate field `%s'", sym->name);
+	} else {
+		if (ctx->language->field_attributes) {
+			ctx->language->field_attributes (spec.attributes, sym, ctx);
+		}
+	}
 	return sym;
 }

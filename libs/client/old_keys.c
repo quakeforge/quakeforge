@@ -176,13 +176,18 @@ ok_get_key (const void *_ok, void *unused)
 	return ok->old_name;
 }
 
+static void
+ok_shutdown (void *data)
+{
+	Hash_DelTable (old_key_table);
+}
+
 void
 OK_Init (void)
 {
-	old_keyname_t *ok;
-
+	Sys_RegisterShutdown (ok_shutdown, 0);
 	old_key_table = Hash_NewTable (1021, ok_get_key, 0, 0, 0);
-	for (ok = old_keynames; ok->old_name; ok++)
+	for (old_keyname_t *ok = old_keynames; ok->old_name; ok++)
 		Hash_Add (old_key_table, ok);
 }
 

@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -228,23 +230,21 @@ norm_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderb
 }
 
 void
-norm_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-}
-
-void
 norm_glGenBuffers (GLsizei n, GLuint* buffers)
 {
+	memset (buffers, 0, n * sizeof (GLuint));
 }
 
 void
 norm_glGenFramebuffers (GLsizei n, GLuint* framebuffers)
 {
+	memset (framebuffers, 0, n * sizeof (GLuint));
 }
 
 void
 norm_glGenRenderbuffers (GLsizei n, GLuint* renderbuffers)
 {
+	memset (renderbuffers, 0, n * sizeof (GLuint));
 }
 
 void
@@ -286,11 +286,15 @@ norm_glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GL
 void
 norm_glGetProgramInfoLog (GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
 norm_glGetProgramiv (GLuint program, GLenum pname, GLint* params)
 {
+	*params = 0;
 }
 
 void
@@ -301,6 +305,9 @@ norm_glGetRenderbufferParameteriv (GLuint shader, GLenum pname, GLint* params)
 void
 norm_glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
@@ -316,6 +323,7 @@ norm_glGetShaderSource (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar*
 void
 norm_glGetShaderiv (GLuint shader, GLenum pname, GLint* params)
 {
+	*params = 0;
 }
 
 int
@@ -1116,6 +1124,7 @@ norm_glGenLists (GLsizei range)
 void
 norm_glGenTextures (GLsizei n, GLuint * textures)
 {
+	memset (textures, 0, n * sizeof (GLuint));
 }
 
 void
@@ -1196,7 +1205,7 @@ norm_glGetIntegerv (GLenum pname, GLint * params)
 {
 	switch (pname) {
 		case GL_MAX_TEXTURE_SIZE:
-			*params = 512;
+			*params = 2048;
 			break;
 		case GL_UNPACK_ALIGNMENT:
 		case GL_PACK_ALIGNMENT:
@@ -2464,5 +2473,45 @@ norm_glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
 
 void
 norm_glPNTrianglesiATI (GLint x, GLint y)
+{
+}
+
+void
+norm_glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer)
+{
+}
+
+void
+norm_glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glNamedFramebufferTexture (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glCreateVertexArrays (GLsizei n, GLuint *arrays)
+{
+}
+
+void
+norm_glBindVertexArray (GLuint array)
+{
+}
+
+void
+norm_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
 {
 }

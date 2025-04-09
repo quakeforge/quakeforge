@@ -11,7 +11,8 @@ qfvis_SOURCES = \
 	tools/qfvis/source/flow.c \
 	tools/qfvis/source/options.c \
 	tools/qfvis/source/qfvis.c \
-	tools/qfvis/source/soundphs.c
+	tools/qfvis/source/soundphs.c \
+	$(tracy_src)
 
 qfvis_LDFLAGS=		$(PTHREAD_LDFLAGS)
 qfvis_LDADD=		$(QFVIS_LIBS)

@@ -44,10 +44,19 @@ typedef struct flowvar_s {
 	struct flowvar_s *next;		///< for ALLOC
 	struct set_s *use;			///< set of statements that use this var
 	struct set_s *define;		///< set of statements that define this var
+	struct set_s *udchains;		///< set of ud-chains for this var
+	struct set_s *duchains;		///< set of du-chains for this var
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
 	int         flowaddr;		///< psuedo address for local and temp vars
+	int         minsize;		///< minimum size (via memset/move)
 } flowvar_t;
+
+typedef struct udchain_s {
+	int         var;
+	int         usest;
+	int         defst;
+} udchain_t;
 
 typedef struct flowloop_s {
 	struct flowloop_s *next;
@@ -84,6 +93,8 @@ typedef struct flownode_s {
 		struct set_s *in;
 		struct set_s *out;
 	}           live_vars;
+	int         first_statement;///< first statement in function's list
+	int         num_statements;	///< number of statements in this block
 	struct sblock_s *sblock;	///< original statement block
 	struct dag_s *dag;			///< dag for this node
 } flownode_t;
@@ -109,11 +120,11 @@ void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 
 void flow_data_flow (struct function_s *func);
 
-void dump_dot_flow (void *g, const char *filename);
-void dump_dot_flow_dags (void *g, const char *filename);
-void dump_dot_flow_live (void *g, const char *filename);
-void dump_dot_flow_reaching (void *g, const char *filename);
-void dump_dot_flow_statements (void *g, const char *filename);
+void dump_dot_flow (const void *g, const char *filename);
+void dump_dot_flow_dags (const void *g, const char *filename);
+void dump_dot_flow_live (const void *g, const char *filename);
+void dump_dot_flow_reaching (const void *g, const char *filename);
+void dump_dot_flow_statements (const void *g, const char *filename);
 
 ///@}
 

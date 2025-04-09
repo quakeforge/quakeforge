@@ -8,7 +8,7 @@ bin_PROGRAMS +=	@QFLMP_TARGETS@
 #mans=qflmp.1
 man_MANS +=	$(mans)
 
-qflmp_SOURCES=	tools/qflmp/lmp.c
+qflmp_SOURCES=	tools/qflmp/lmp.c $(tracy_src)
 qflmp_LDADD=	$(QFLMP_LIBS)
 qflmp_DEPENDENCIES= $(QFLMP_DEPS)
 

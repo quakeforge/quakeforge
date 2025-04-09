@@ -39,62 +39,65 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "r_internal.h"
 
-mvertex_t  *r_pcurrentvertbase;
-mleaf_t    *r_viewleaf;
-static mleaf_t *r_oldviewleaf;
-static set_t *solid;
-
 void
-R_MarkLeaves (void)
+R_MarkLeavesPVS (visstate_t *visstate, const set_t *pvs)
 {
-	set_t       *vis;
-	int			 c;
-	mleaf_t     *leaf;
-	mnode_t     *node;
-	msurface_t **mark;
-	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
-
-	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
-		return;
-
-	r_visframecount++;
-	r_oldviewleaf = r_viewleaf;
-	if (!r_viewleaf)
-		return;
-
-	if (r_novis->int_val) {
-		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
-							// turned off
-		if (!solid) {
-			solid = set_new ();
-			set_everything (solid);
+	int visframecount = ++visstate->visframecount;
+	auto brush = visstate->brush;
+	auto node_visframes = visstate->node_visframes;
+	auto leaf_visframes = visstate->leaf_visframes;
+	auto face_visframes = visstate->face_visframes;
+	// If you're looking for the bug with the easy teleporter in the start map,
+	// you're looking in the wrong place: it's in either qfvis or qfbsp when
+	// doing water vis (though not specific to water vis, it's either the
+	// portal generation or the vising of the map).
+	for (auto li = set_first (pvs); li; li = set_next (li)) {
+		unsigned i = li->element;
+		auto leaf = &brush->leafs[i + 1];
+		int c;
+		if ((c = leaf->nummarksurfaces)) {
+			auto mark = brush->marksurfaces + leaf->firstmarksurface;
+			do {
+				face_visframes[*mark - brush->surfaces] = visframecount;
+				mark++;
+			} while (--c);
 		}
-		vis = solid;
-	} else
-		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.renderer.model);
-
-	for (unsigned i = 0; i < brush->visleafs; i++) {
-		if (set_is_member (vis, i)) {
-			leaf = &brush->leafs[i + 1];
-			if ((c = leaf->nummarksurfaces)) {
-				mark = leaf->firstmarksurface;
-				do {
-					(*mark)->visframe = r_visframecount;
-					mark++;
-				} while (--c);
-			}
-			leaf->visframe = r_visframecount;
-			node = brush->leaf_parents[leaf - brush->leafs];
-			while (node) {
-				if (node->visframe == r_visframecount)
-					break;
-				node->visframe = r_visframecount;
-				node = brush->node_parents[node - brush->nodes];
-			}
+		leaf_visframes[i + 1] = visframecount;
+		int         node_id = brush->leaf_parents[leaf - brush->leafs];
+		while (node_id >= 0) {
+			if (node_visframes[node_id] == visframecount)
+				break;
+			node_visframes[node_id] = visframecount;
+			node_id = brush->node_parents[node_id];
 		}
 	}
+}
+
+void
+R_MarkLeaves (visstate_t *visstate, const mleaf_t *viewleaf)
+{
+	auto brush = visstate->brush;
+	set_t        vis = SET_STATIC_INIT (brush->visleafs, alloca);
+
+	if (visstate->viewleaf == viewleaf && !r_novis)
+		return;
+
+	visstate->viewleaf = viewleaf;
+	if (!viewleaf)
+		return;
+
+	if (r_novis) {
+		// so vis will be recalculated when novis gets turned off
+		visstate->viewleaf = 0;
+		// force use of default vis (full visibility)
+		viewleaf = brush->leafs;
+	}
+	Mod_LeafPVS_set (viewleaf, brush, 0xff, &vis);
+	R_MarkLeavesPVS (visstate, &vis);
 }
 
 /*
@@ -103,12 +106,12 @@ R_MarkLeaves (void)
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (const entity_t *entity, msurface_t *surf)
+R_TextureAnimation (int frame, msurface_t *surf)
 {
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (entity->animation.frame) {
+	if (frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}
@@ -116,7 +119,7 @@ R_TextureAnimation (const entity_t *entity, msurface_t *surf)
 	if (!base->anim_total)
 		return base;
 
-	relative = (int) (vr_data.realtime * 10) % base->anim_total;
+	relative = (int) (r_data->realtime * 10) % base->anim_total;
 
 	count = 0;
 	while (base->anim_min > relative || base->anim_max <= relative) {

@@ -124,7 +124,7 @@ usage (int status)
 }
 
 
-static qboolean
+static bool
 exportFile (const char *inpath)
 {
 	char 		*outpath = replaceExtension (inpath, "pcx");
@@ -136,7 +136,7 @@ exportFile (const char *inpath)
 	int32_t		width;
 	int32_t		height;
 	void		*data;
-	qboolean	ret = false;
+	bool		ret = false;
 
 	if (options.verbosity > 1)
 		Sys_Printf ("file size: %d\n", fsize);
@@ -200,7 +200,7 @@ die:
 }
 
 
-static qboolean
+static bool
 importFile (const char *inpath)
 {
 	char 		*outpath = replaceExtension (inpath, "lmp");
@@ -208,7 +208,7 @@ importFile (const char *inpath)
 	QFile		*outfile = Qopen (outpath, "wb");
 	int			fsize = Qfilesize (infile);
 	tex_t		*lmp;
-	qboolean	ret = false;
+	bool		ret = false;
 
 	if (options.verbosity > 1)
 		Sys_Printf ("PCX file size: %d\n", fsize);

@@ -9,20 +9,20 @@ typedef struct qwaq_devinfo_s {
 	string      name;
 	string      id;
 #else
-	string_t    name;
-	string_t    id;
+	pr_string_t name;
+	pr_string_t id;
 #endif
 	int         numaxes;
 #ifdef __QFCC__
 	in_axisinfo_t *axes;
 #else
-	pointer_t   axes;
+	pr_ptr_t    axes;
 #endif
 	int         numbuttons;
 #ifdef __QFCC__
 	in_axisinfo_t *buttons;
 #else
-	pointer_t   buttons;
+	pr_ptr_t    buttons;
 #endif
 } qwaq_devinfo_t;
 

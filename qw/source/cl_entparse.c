@@ -41,10 +41,13 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "compat.h"
 
 #include "client/temp_entities.h"
 #include "client/view.h"
+#include "client/world.h"
 
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
@@ -59,7 +62,7 @@
 
 static struct predicted_player {
 	int         flags;
-	qboolean    active;
+	bool        active;
 	vec3_t      origin;					// predicted origin
 } predicted_players[MAX_CLIENTS];
 
@@ -201,12 +204,12 @@ copy_state (packet_entities_t *newp, packet_entities_t *oldp, int newindex,
 }
 
 void
-CL_ParsePacketEntities (qboolean delta)
+CL_ParsePacketEntities (bool delta)
 {
 	byte        from;
 	int         oldindex, newindex, newnum, oldnum, oldpacket, word;
 	packet_entities_t *oldp, *newp, dummy;
-	qboolean    full;
+	bool        full;
 
 	cl.prev_sequence = cl.link_sequence;
 	cl.link_sequence = cls.netchan.incoming_sequence;
@@ -429,7 +432,7 @@ CL_ParsePlayerinfo (void)
 	flags = state->pls.es.flags = MSG_ReadShort (net_message);
 
 	state->messagenum = cl.parsecount;
-	MSG_ReadCoordV (net_message, &state->pls.es.origin[0]);//FIXME
+	MSG_ReadCoordV (net_message, (vec_t*)&state->pls.es.origin);//FIXME
 	state->pls.es.origin[3] = 1;
 
 	state->pls.es.frame = MSG_ReadByte (net_message);
@@ -479,13 +482,14 @@ CL_ParsePlayerinfo (void)
 		// QSG2
 		int         bits;
 		byte        val;
-		entity_t   *ent;
+		entity_t    ent;
 
-		ent = &cl_player_ents[num];
+		ent = CL_GetEntity (num + 1);
+		auto renderer = Entity_GetRenderer (ent);
 		bits = MSG_ReadByte (net_message);
 		if (bits & PF_ALPHA) {
 			val = MSG_ReadByte (net_message);
-			ent->renderer.colormod[3] = val / 255.0;
+			renderer->colormod[3] = val / 255.0;
 		}
 		if (bits & PF_SCALE) {
 			val = MSG_ReadByte (net_message);
@@ -508,7 +512,7 @@ CL_ParsePlayerinfo (void)
 				g = (float) ((val >> 2) & 7) * (1.0 / 7.0);
 				b = (float) (val & 3) * (1.0 / 3.0);
 			}
-			VectorSet (r, g, b, ent->renderer.colormod);
+			VectorSet (r, g, b, renderer->colormod);
 		}
 		if (bits & PF_FRAME2) {
 			state->pls.es.frame |= MSG_ReadByte (net_message) << 8;
@@ -526,10 +530,10 @@ CL_SetSolidEntities (void)
 {
 	int					i;
 	entity_state_t	   *state;
-	frame_t			   *frame;
+	cl_frame_t		   *frame;
 	packet_entities_t  *pak;
 
-	pmove.physents[0].model = cl.worldmodel;
+	pmove.physents[0].model = cl_world.scene->worldmodel;
 	VectorZero (pmove.physents[0].origin);
 	VectorZero (pmove.physents[0].angles);
 	pmove.physents[0].info = 0;
@@ -543,17 +547,16 @@ CL_SetSolidEntities (void)
 
 		if (!state->modelindex)
 			continue;
-		if (!cl.model_precache[state->modelindex])
+		if (!cl_world.models.a[state->modelindex])
 			continue;
-		if (cl.model_precache[state->modelindex]->brush.hulls[1].firstclipnode
-			|| cl.model_precache[state->modelindex]->clipbox) {
+		if (cl_world.models.a[state->modelindex]->brush.hulls[1].firstclipnode){
 			if (pmove.numphysent == MAX_PHYSENTS) {
 				Sys_Printf ("WARNING: entity physent overflow, email "
 							"quakeforge-devel@lists.quakeforge.net\n");
 				break;
 			}
 			pmove.physents[pmove.numphysent].model =
-				cl.model_precache[state->modelindex];
+				cl_world.models.a[state->modelindex];
 			VectorCopy (state->origin,
 						pmove.physents[pmove.numphysent].origin);
 			VectorCopy (state->angles,
@@ -579,10 +582,10 @@ CL_ClearPredict (void)
 	This sets up the first phase.
 */
 void
-CL_SetUpPlayerPrediction (qboolean dopred)
+CL_SetUpPlayerPrediction (bool dopred)
 {
 	double			playertime;
-	frame_t		   *frame;
+	cl_frame_t	   *frame;
 	int				msec, j;
 	player_state_t	exact;
 	player_state_t *state;
@@ -647,7 +650,7 @@ CL_SetSolidPlayers (int playernum)
 	physent_t  *pent;
 	struct predicted_player *pplayer;
 
-	if (!cl_solid_players->int_val)
+	if (!cl_solid_players)
 		return;
 
 	pent = pmove.physents + pmove.numphysent;

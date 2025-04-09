@@ -1,3 +1,30 @@
+quakeforge.glsl
+
+Builtin QuakeForge GLSL shaders.
+
+Copyright (C) 2013 Bill Currie <bill@taniwha.org>
+
+Author: Bill Currie <bill@taniwha.org>
+Date: 2013/05/12
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to:
+
+	Free Software Foundation, Inc.
+	59 Temple Place - Suite 330
+	Boston, MA  02111-1307, USA
+
 -- Math.const
 
 const float PI = 3.14159265;
@@ -23,6 +50,100 @@ dqtrans (vec4 q0, vec4 qe)
 	return 2.0 * (Ts * qv + qs * Tv + cross (Tv, qv));
 }
 
+-- Vertex.transform.mvp
+uniform mat4 mvp_mat;
+
+-- Vertex.transform.view_projection
+uniform mat4 projection_mat, view_mat;
+
+-- Screen.viewport
+uniform vec2 viewport;
+
+-- Vertex.ScreenSpace.curve.width
+
+vec2
+project (vec4 coord)
+{
+	vec3        device = coord.xyz / coord.w;
+	vec2        clip = (device * 0.5 + 0.5).xy;
+	return clip * viewport;
+}
+
+vec4
+unproject (vec2 screen, float z, float w)
+{
+	vec2        clip = screen / viewport;
+	vec2        device = clip * 2.0 - 1.0;
+	return vec4 (device * w, z, w);
+}
+
+vec2
+direction (vec2 from, vec2 to)
+{
+	vec2        t = to - from;
+	vec2        d = vec2 (0.0, 0.0);
+
+	if (dot (t, t) > 0.001) {
+		d = normalize (t);
+	}
+	return d;
+}
+
+vec2
+shared_direction (vec2 a, vec2 b)
+{
+	vec2        d = a + b;
+
+	if (dot (d, d) > 0.001) {
+		d = normalize (d);
+	} else if (dot (a, a) > 0.001) {
+		d = normalize (a);
+	} else if (dot (b, b) > 0.001) {
+		d = normalize (b);
+	} else {
+		d = vec2 (0.0);
+	}
+	return d;
+}
+
+float
+estimateScale (vec3 position, vec2 sPosition, float width)
+{
+	vec4        view_pos = view_mat * vec4 (position, 1.0);
+	vec4        scale_pos = view_pos - vec4 (normalize (view_pos.xy) * width,
+											 0.0, 0.0);
+	vec2        screen_scale_pos = project (projection_mat * scale_pos);
+	return distance (sPosition, screen_scale_pos);
+}
+
+vec4
+transform (vec4 coord)
+{
+	return projection_mat * view_mat * vec4 (coord.xyz, 1.0);
+}
+
+vec4
+curve_offset_vertex (vec4 last, vec4 current, vec4 next, float width)
+{
+	float       offset = current.w;
+
+	vec2        sLast = project (transform (last));
+	vec2        sNext = project (transform (next));
+	vec4        dCurrent = transform (current);
+	vec2        sCurrent = project (dCurrent);
+
+	vec2       n1 = direction (sCurrent, sLast);
+	vec2       n2 = direction (sNext, sCurrent);
+	vec2       n = shared_direction (n1, n2);
+
+	// rotate the normal by 90 degrees and scale by the desired offset
+	vec2       dir = vec2(n.y, -n.x) * offset;
+	float      scale = estimateScale (vec3(current), sCurrent, width);
+	vec2       pos = sCurrent + dir * scale;
+
+	return     unproject (pos, dCurrent.z, dCurrent.w);
+}
+
 -- Fragment.fog
 
 uniform vec4 fog;
@@ -34,7 +155,7 @@ fogBlend (vec4 color)
 	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
 	vec4        fog_color = vec4 (fog.rgb, 1.0);
 
-	fog_factor = exp (-az * az);
+	fog_factor = exp (-az);
 	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
 }
 
@@ -342,49 +463,38 @@ main (void)
 -- Vertex.sprite
 
 uniform mat4 mvp_mat;
-attribute vec3 vertexa, vertexb;
-attribute vec4 uvab;	///< ua va ub vb
-attribute float vblend;	//FIXME why is this not a uniform?
-attribute vec4 vcolora, vcolorb;
+attribute vec3 vertex;
+attribute vec2 uv;
+attribute vec4 vcolor;
 
-varying float blend;
-varying vec4 colora, colorb;
-varying vec2 sta, stb;
+varying vec4 color;
+varying vec2 st;
 
 void
 main (void)
 {
-	gl_Position = mvp_mat * vec4 (mix (vertexa, vertexb, vblend), 1.0);
-	blend = vblend;
-	colora = vcolora;
-	colorb = vcolorb;
-	sta = uvab.xy;
-	stb = uvab.zw;
+	gl_Position = mvp_mat * vec4 (vertex, 1.0);
+	color = vcolor;
+	st = uv;
 }
 
 -- Fragment.sprite
 
-uniform sampler2D spritea;
-uniform sampler2D spriteb;
+uniform sampler2D sprite;
 
-varying float blend;
-varying vec4 colora, colorb;
-varying vec2 sta, stb;
+varying vec4 color;
+varying vec2 st;
 
 void
 main (void)
 {
-	float       pixa, pixb;
-	vec4        cola, colb;
+	float       pix;
 	vec4        col;
 
-	pixa = texture2D (spritea, sta).r;
-	pixb = texture2D (spriteb, stb).r;
-	if (pixa == 1.0 && pixb == 1.0)
+	pix = texture2D (sprite, st).r;
+	if (pix == 1.0)
 		discard;
-	cola = palettedColor (pixa) * colora;
-	colb = palettedColor (pixb) * colorb;
-	col = mix (cola, colb, blend);
+	col = palettedColor (pix) * color;
 	if (col.a == 0.0)
 		discard;
 	gl_FragColor = fogBlend (col);
@@ -432,6 +542,23 @@ main (void)
 	gl_FragColor = palettedColor (pix) * color;
 }
 
+-- Fragment.2d.alpha
+
+uniform sampler2D   texture;
+varying vec4 color;
+varying vec2 st;
+
+void
+main (void)
+{
+	float       alpha;
+
+	alpha = texture2D (texture, st).r;
+	if (alpha == 0.0)
+		discard;
+	gl_FragColor = alpha * color;
+}
+
 -- Vertex.iqm
 
 uniform mat4 mvp_mat;
@@ -463,6 +590,10 @@ main (void)
 	m += bonemats[int (vbones.y)] * vweights.y;
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
+	m += mat4(1,0,0,0,
+			  0,1,0,0,
+			  0,0,1,0,
+			  0,0,0,1) * (1 - dot(vweights, vec4(1,1,1,1)));
 #if 0
 	q0 = m[0];
 	qe = m[1];
@@ -550,4 +681,128 @@ main (void)
 	l += calc_light (norm, 7);
 	col = texture2D (texture, st) * color * vec4 (l, 1.0);
 	gl_FragColor = fogBlend (col);
+}
+
+-- Vertex.particle.trail
+
+attribute vec4 last, current, next;
+attribute vec3 barycentric;
+attribute float texoff;
+attribute vec4 vcolora;
+attribute vec4 vcolorb;
+
+uniform float width;
+
+varying vec2 texcoord;
+varying vec3 vbarycentric;
+varying vec4 colora;
+varying vec4 colorb;
+
+void
+main (void)
+{
+	colora = vcolora;
+	colorb = vcolorb;
+	texcoord = vec2 (texoff * 0.7, current.w);// * 0.5 + 0.5);
+	vbarycentric = barycentric;
+
+	gl_Position = curve_offset_vertex (last, current, next, width);
+}
+
+-- Fragment.particle.trail
+
+varying vec2 texcoord;
+varying vec4 colora;
+varying vec4 colorb;
+
+void
+main (void)
+{
+	vec3 tex3 = vec3 (texcoord, 0.5);
+	float n = abs(snoise(tex3));
+	n += 0.5 * abs(snoise(tex3 * 2.0));
+	n += 0.25 * abs(snoise(tex3 * 4.0));
+	n += 0.125 * abs(snoise(tex3 * 8.0));
+	vec4 c = mix (colora, colorb, n);
+	c.a *= exp (-4.0 * abs(texcoord.y));
+	gl_FragColor = c;
+}
+
+-- Fragment.barycentric
+
+varying vec3 vbarycentric;
+varying vec2 texcoord;
+
+float
+edgeFactor (void)
+{
+	vec3        d = fwidth (vbarycentric);
+	vec3        a3 = smoothstep (vec3 (0.0), d * 1.5, vbarycentric);
+	return min (min (a3.x, a3.y), a3.z);
+}
+
+void
+main (void)
+{
+	//gl_FragColor = vec4 (vec3 (edgeFactor ()), 0.5);
+	vec4 c = vec4 (vec3 (edgeFactor ()), 0.5);
+	c.a *= 1.0 - exp (-4.0 * (1.0 - texcoord.y * texcoord.y));
+	gl_FragColor = c;
+}
+-- version.130
+#version 130
+-- Vertex.fstri
+
+out vec2 uv;
+
+void
+main ()
+{
+	// quake uses clockwise triangle order
+	float       x = (gl_VertexID & 2);
+	float       y = (gl_VertexID & 1);
+	uv = vec2(x, y*2);
+	gl_Position = vec4 (2, 4, 0, 0) * vec4 (x, y, 0, 0) - vec4 (1, 1, 0, -1);
+}
+
+-- Fragment.screen.warp
+
+uniform sampler2D screenTex;
+uniform float time;
+
+in vec2 uv;
+
+const float S = 0.15625;
+const float F = 2.5;
+const float A = 0.01;
+const vec2 B = vec2 (1, 1);
+
+void
+main ()
+{
+	vec2 st;
+	st = uv * (1.0 - 2.0*A) + A * (B + sin ((time * S + F * uv.yx) * 2.0*PI));
+	vec4        c = texture2D (screenTex, st);
+	gl_FragColor = c;//vec4(uv, c.x, 1);
+}
+
+-- Fragment.screen.fisheye
+
+uniform samplerCube screenTex;
+uniform float fov;
+uniform float aspect;
+
+in vec2 uv;
+
+void
+main ()
+{
+	// slight offset on y is to avoid the singularity straight ahead
+	vec2        xy = (2.0 * uv - vec2 (1, 1.00002)) * (vec2(1, -aspect));
+	float       r = sqrt (dot (xy, xy));
+	vec2        cs = vec2 (cos (r * fov), sin (r * fov));
+	vec3        dir = vec3 (cs.y * xy / r, cs.x);
+
+	vec4        c = textureCube(screenTex, dir);
+	gl_FragColor = c;// * 0.001 + vec4(dir, 1);
 }

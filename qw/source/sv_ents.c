@@ -40,6 +40,8 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "compat.h"
 
 #include "qw/msg_ucmd.h"
@@ -59,30 +61,30 @@ static set_t *fatpvs;
 
 
 static void
-SV_AddToFatPVS (vec3_t org, mnode_t *node)
+SV_AddToFatPVS (vec4f_t org, int node_id)
 {
 	float       d;
-	plane_t    *plane;
+	auto brush = &sv.worldmodel->brush;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
-		if (node->contents < 0) {
-			if (node->contents != CONTENTS_SOLID) {
-				set_union (fatpvs, Mod_LeafPVS ((mleaf_t *) node,
-												sv.worldmodel));
+		if (node_id < 0) {
+			mleaf_t    *leaf = brush->leafs + ~node_id;
+			if (leaf->contents != CONTENTS_SOLID) {
+				Mod_LeafPVS_mix (leaf, brush, 0xff, fatpvs);
 			}
 			return;
 		}
 
-		plane = node->plane;
-		d = DotProduct (org, plane->normal) - plane->dist;
+		mnode_t    *node = brush->nodes + node_id;
+		d = dotf (org, node->plane)[0];
 		if (d > 8)
-			node = node->children[0];
+			node_id = node->children[0];
 		else if (d < -8)
-			node = node->children[1];
+			node_id = node->children[1];
 		else {							// go down both
 			SV_AddToFatPVS (org, node->children[0]);
-			node = node->children[1];
+			node_id = node->children[1];
 		}
 	}
 }
@@ -94,14 +96,14 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	of the given point.
 */
 static set_t *
-SV_FatPVS (vec3_t org)
+SV_FatPVS (vec4f_t org)
 {
 	if (!fatpvs) {
 		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
 	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
 	set_empty (fatpvs);
-	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
+	SV_AddToFatPVS (org, 0);
 	return fatpvs;
 }
 
@@ -112,7 +114,7 @@ int			numnails;
 int         nailcount;
 
 
-static qboolean
+static bool
 SV_AddNailUpdate (edict_t *ent)
 {
 	if (SVfloat (ent, modelindex) != sv_nailmodel
@@ -126,7 +128,7 @@ SV_AddNailUpdate (edict_t *ent)
 }
 
 static void
-SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
+SV_EmitNailUpdate (sizebuf_t *msg, bool recorder)
 {
 	byte	   *buf;				// [48 bits] xyzpy 12 12 12 4 8
 	int			n, p, x, y, z, yaw;
@@ -174,7 +176,7 @@ SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 */
 static void
 SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg,
-			   qboolean force, int stdver)
+			   bool force, int stdver)
 {
 	int			bits, i;
 	float		miss;
@@ -509,7 +511,7 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 	MSG_WriteByte (msg, to->es.number);
 	MSG_WriteShort (msg, flags);
 
-	MSG_WriteCoordV (msg, &to->es.origin[0]);//FIXME
+	MSG_WriteCoordV (msg, (vec_t*)&to->es.origin);//FIXME
 
 	MSG_WriteByte (msg, to->es.frame);
 
@@ -710,12 +712,13 @@ static inline set_t *
 calc_pvs (delta_t *delta)
 {
 	set_t      *pvs = 0;
-	vec3_t      org;
+	vec4f_t     org = {};
 
 	// find the client's PVS
 	if (delta->pvs == dt_pvs_normal) {
 		edict_t *clent = delta->client->edict;
 		VectorAdd (SVvector (clent, origin), SVvector (clent, view_ofs), org);
+		org[3] = 1;
 		pvs = SV_FatPVS (org);
 	} else if (delta->pvs == dt_pvs_fat) {
 		// when recording a demo, send only entities that can be seen. Can help
@@ -735,10 +738,11 @@ calc_pvs (delta_t *delta)
 
 			VectorAdd (SVvector (cl->edict, origin),
 					   SVvector (cl->edict, view_ofs), org);
+			org[3] = 1;
 			if (pvs == NULL) {
 				pvs = SV_FatPVS (org);
 			} else {
-				SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
+				SV_AddToFatPVS (org, 0);
 			}
 		}
 	}

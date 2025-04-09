@@ -41,8 +41,9 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/pr_obj.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "tools/qfcc/include/qfcc.h"
 
@@ -59,6 +60,7 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -81,7 +83,7 @@ method_free (void *_meth, void *unused)
 }
 
 method_t *
-new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
+new_method (const type_t *ret_type, param_t *selector, param_t *opt_params)
 {
 	method_t   *meth = malloc (sizeof (method_t));
 	param_t    *cmd = new_param (0, &type_SEL, "_cmd");
@@ -163,7 +165,7 @@ add_method (methodlist_t *methodlist, method_t *method)
 }
 
 symbol_t *
-method_symbol (class_type_t *class_type, method_t *method)
+method_symbol (class_type_t *class_type, method_t *method, rua_ctx_t *ctx)
 {
 	dstring_t  *str = dstring_newstr ();
 	symbol_t   *sym;
@@ -181,8 +183,9 @@ method_symbol (class_type_t *class_type, method_t *method)
 			*s = '_';
 	//printf ("%s %s %s %ld\n", method->name, method->types, str->str,
 	//		str->size);
-	sym = new_symbol_type (str->str, method->type);
-	sym = function_symbol (sym, 0, 1);
+	sym = new_symbol (str->str);
+	sym = function_symbol ((specifier_t) { .type = method->type, .sym = sym },
+						   ctx);
 	sym->params = method->params;
 	dstring_delete (str);
 	return sym;
@@ -278,7 +281,10 @@ merge_method_lists (methodlist_t *dst, methodlist_t *src)
 		s->next = 0;
 		if (method_in_list (dst, s)) {
 			debug (0, "dropping duplicate method: %s", s->name);
-			free (s);
+			//FIXME this free is currently erroneous as it remains in
+			//known_methods, but it may also be a leak, thus only
+			//commented out for now.
+			//free (s);
 		} else {
 			// add_method does the duplicate check
 			*dst->tail = s;
@@ -350,11 +356,11 @@ copy_keywordargs (const keywordarg_t *kwargs)
 }
 
 expr_t *
-send_message (int super)
+send_message (int super, rua_ctx_t *ctx)
 {
 	symbol_t   *sym;
 	const char *sm_name = "obj_msgSend";
-	type_t     *sm_type = &type_IMP;
+	const type_t *sm_type = type_IMP.fldptr.type;
 
 	if (super) {
 		sm_name = "obj_msgSend_super";
@@ -364,8 +370,9 @@ send_message (int super)
 	if (!sym) {
 		symtab_t   *save = current_symtab;
 		current_symtab = pr.symtab;
-		sym = new_symbol_type (sm_name, sm_type);
-		sym = function_symbol (sym, 0, 1);
+		sym = new_symbol (sm_name);
+		sym = function_symbol ((specifier_t) { .type = sm_type, .sym = sym },
+							   ctx);
 		make_function (sym, 0, sym->table->space, sc_extern);
 		current_symtab = save;
 	}
@@ -479,20 +486,20 @@ selector_index (const char *sel_id)
 }
 
 selector_t *
-get_selector (expr_t *sel)
+get_selector (const expr_t *sel)
 {
 	selector_t  _sel = {0, 0, 0};
 
 	if (sel->type == ex_selector) {
-		return sel->e.selector.sel;
+		return sel->selector.sel;
 	}
-	if (sel->type != ex_expr && sel->e.expr.op != '&'
-		&& !is_SEL(sel->e.expr.type)) {
+	if (sel->type != ex_address && !sel->address.offset
+		&& !is_SEL(sel->address.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}
-	_sel.index = expr_short (sel->e.expr.e2);
-	_sel.index /= type_size (type_SEL.t.fldptr.type);
+	_sel.index = expr_short (sel->address.offset);
+	_sel.index /= type_size (type_SEL.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }
 
@@ -501,19 +508,19 @@ emit_selectors (void)
 {
 	symbol_t   *sel_sym;
 	def_t      *sel_def;
-	type_t     *sel_type;
+	const type_t *sel_type;
 	pr_sel_t   *sel;
 	selector_t **selectors, **s;
 
 	if (!sel_index)
 		return 0;
 
-	sel_type = array_type (type_SEL.t.fldptr.type, sel_index);
+	sel_type = array_type (type_SEL.fldptr.type, sel_index);
 	sel_sym = make_symbol ("_OBJ_SELECTOR_TABLE", sel_type,
 						   pr.far_data, sc_static);
 	if (!sel_sym->table)
 		symtab_addsymbol (pr.symtab, sel_sym);
-	sel_def = sel_sym->s.def;
+	sel_def = sel_sym->def;
 	sel_def->initialized = sel_def->constant = 1;
 	sel_def->nosave = 1;
 
@@ -542,8 +549,8 @@ emit_methods_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -554,7 +561,7 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (!is_array (def->type) || !is_method(def->type->t.array.type))
+	if (!is_array (def->type) || !is_method(dereference_type (def->type)))
 		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -584,9 +591,9 @@ def_t *
 emit_methods (methodlist_t *methods, const char *name, int instance)
 {
 	static struct_def_t methods_struct[] = {
-		{"method_next",		&type_pointer, emit_methods_next},
-		{"method_count",	&type_integer, emit_methods_count},
-		{"method_list",		0,             emit_methods_list_item},
+		{"method_next",		&type_ptr, emit_methods_next},
+		{"method_count",	&type_int, emit_methods_count},
+		{"method_list",		0,         emit_methods_list_item},
 		{0, 0}
 	};
 	const char *type = instance ? "INSTANCE" : "CLASS";
@@ -612,7 +619,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	methods->instance = instance;
 
 	methods_struct[2].type = array_type (&type_method, count);
-	return emit_structure (va (0, "_OBJ_%s_METHODS_%s", type, name), 's',
+	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   methods_struct, 0, methods, 0, sc_static);
 }
 
@@ -621,8 +628,8 @@ emit_method_list_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -634,7 +641,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	pr_method_description_t *desc;
 
 	if (!is_array (def->type)
-		|| !is_method_description(def->type->t.array.type)) {
+		|| !is_method_description(dereference_type (def->type))) {
 		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
 	}
@@ -659,7 +666,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 						  int instance)
 {
 	static struct_def_t method_list_struct[] = {
-		{"count",       &type_integer, emit_method_list_count},
+		{"count",       &type_int,     emit_method_list_count},
 		{"method_list", 0,             emit_method_list_item},
 		{0, 0}
 	};
@@ -680,7 +687,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 	methods->instance = instance;
 
 	method_list_struct[1].type = array_type (&type_method_description, count);
-	return emit_structure (va (0, "_OBJ_%s_METHODS_%s", type, name), 's',
+	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   method_list_struct, 0, methods, 0, sc_static);
 }
 
@@ -696,44 +703,38 @@ clear_selectors (void)
 		Hash_FlushTable (known_methods);
 }
 
-expr_t *
-method_check_params (method_t *method, expr_t *args)
+const expr_t *
+method_check_params (method_t *method, const expr_t *args)
 {
-	int         i, count, param_count;
-	expr_t     *a, **arg_list, *err = 0;
-	type_t     *mtype = method->type;
+	int         i, param_count;
+	const expr_t *err = 0;
+	auto mtype = method->type;
 
-	if (mtype->t.func.num_params == -1)
+	if (mtype->func.num_params == -1)
 		return 0;
 
-	for (count = 0, a = args; a; a = a->next)
-		count++;
-
-	if (count > MAX_PARMS)
-		return error (args, "more than %d parameters", MAX_PARMS);
-
-	if (mtype->t.func.num_params >= 0)
-		param_count = mtype->t.func.num_params;
+	if (mtype->func.num_params >= 0)
+		param_count = mtype->func.num_params;
 	else
-		param_count = -mtype->t.func.num_params - 1;
+		param_count = -mtype->func.num_params - 1;
 
+	int count = list_count (&args->list);
 	if (count < param_count)
 		return error (args, "too few arguments");
-	if (mtype->t.func.num_params >= 0 && count > mtype->t.func.num_params)
+	if (mtype->func.num_params >= 0 && count > mtype->func.num_params)
 		return error (args, "too many arguments");
 
-	arg_list = malloc (count * sizeof (expr_t *));
-	for (i = count - 1, a = args; a; a = a->next)
-		arg_list[i--] = a;
+	const expr_t *arg_list[count];
+	list_scatter_rev (&args->list, arg_list);
 	for (i = 2; i < count; i++) {
-		expr_t     *e = arg_list[i];
-		type_t     *arg_type = mtype->t.func.param_types[i];
-		type_t     *t;
-
+		const expr_t *e = arg_list[i];
+		const type_t *arg_type = i < param_count ? mtype->func.param_types[i]
+												 : nullptr;
 		if (e->type == ex_compound) {
-			e = expr_file_line (initialized_temp_expr (arg_type, e), e);
+			scoped_src_loc (e);
+			e = initialized_temp_expr (arg_type, e);
 		}
-		t = get_type (e);
+		auto t = get_type (e);
 		if (!t) {
 			return e;
 		}
@@ -745,11 +746,10 @@ method_check_params (method_t *method, expr_t *args)
 				}
 			}
 		} else {
-			if (is_integer_val (e) && options.warnings.vararg_integer) {
-				warning (e, "passing integer consant into ... function");
+			if (current_target.vararg_int) {
+				current_target.vararg_int (e);
 			}
 		}
 	}
-	free (arg_list);
 	return err;
 }

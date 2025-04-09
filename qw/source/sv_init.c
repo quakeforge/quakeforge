@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/cbuf.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/info.h"
@@ -122,11 +123,8 @@ SV_FlushSignon (void)
 static void
 SV_CreateBaseline (void)
 {
-	int			entnum;
-	edict_t    *svent;
-
-	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
-		svent = EDICT_NUM (&sv_pr_state, entnum);
+	for (unsigned entnum = 0; entnum < sv.num_edicts; entnum++) {
+		edict_t    *svent = EDICT_NUM (&sv_pr_state, entnum);
 		if (svent->free)
 			continue;
 		// create baselines for all player slots,
@@ -168,8 +166,9 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.colormap);
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, &SVdata (svent)->state.origin[0],
-							  SVdata (svent)->state.angles);//FIXME
+		MSG_WriteCoordAngleV (&sv.signon,
+							  (vec_t*)&SVdata (svent)->state.origin,//FIXME
+							  SVdata (svent)->state.angles);
 	}
 }
 
@@ -256,12 +255,12 @@ SV_CalcPHS (void)
 
 	SV_Printf ("Building PHS...\n");
 
-	num = sv.worldmodel->brush.modleafs;
+	auto brush = &sv.worldmodel->brush;
+	num = brush->modleafs;
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
 	for (i = 0; i < num; i++) {
-		Mod_LeafPVS_set (sv.worldmodel->brush.leafs + i, sv.worldmodel, 0xff,
-						 &sv.pvs[i]);
+		Mod_LeafPVS_set (brush->leafs + i, brush, 0xff, &sv.pvs[i]);
 		if (i == 0)
 			continue;
 		vcount += set_count (&sv.pvs[i]);
@@ -378,8 +377,8 @@ SV_SpawnServer (const char *server)
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 	SV_SetupUserCommands ();
-	Info_SetValueForStarKey (svs.info, "*progs", va (0, "%i", sv_pr_state.crc),
-							 !sv_highchars->int_val);
+	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
+							 !sv_highchars);
 
 	// leave slots at start for only clients
 	sv.num_edicts = MAX_CLIENTS + 1;
@@ -441,7 +440,7 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
@@ -470,7 +469,7 @@ SV_SpawnServer (const char *server)
 	SV_CreateBaseline ();
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
-	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
+	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars);
 	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	if (sv_map_e->func)
 		GIB_Event_Callback (sv_map_e, 1, server);
@@ -479,14 +478,14 @@ SV_SpawnServer (const char *server)
 void
 SV_SetMoveVars (void)
 {
-	movevars.gravity = sv_gravity->value;
-	movevars.stopspeed = sv_stopspeed->value;
-	movevars.maxspeed = sv_maxspeed->value;
-	movevars.spectatormaxspeed = sv_spectatormaxspeed->value;
-	movevars.accelerate = sv_accelerate->value;
-	movevars.airaccelerate = sv_airaccelerate->value;
-	movevars.wateraccelerate = sv_wateraccelerate->value;
-	movevars.friction = sv_friction->value;
-	movevars.waterfriction = sv_waterfriction->value;
+	movevars.gravity = sv_gravity;
+	movevars.stopspeed = sv_stopspeed;
+	movevars.maxspeed = sv_maxspeed;
+	movevars.spectatormaxspeed = sv_spectatormaxspeed;
+	movevars.accelerate = sv_accelerate;
+	movevars.airaccelerate = sv_airaccelerate;
+	movevars.wateraccelerate = sv_wateraccelerate;
+	movevars.friction = sv_friction;
+	movevars.waterfriction = sv_waterfriction;
 	movevars.entgravity = 1.0;
 }

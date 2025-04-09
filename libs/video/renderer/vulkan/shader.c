@@ -28,32 +28,22 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 
-#include "QF/alloc.h"
-#include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/Vulkan/qf_vid.h"
+
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
-#include "QF/Vulkan/image.h"
-#include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/shader.h"
 
-#include "vid_vulkan.h"
-
+static
+#include "libs/video/renderer/vulkan/shader/slice.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/line.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
 static
@@ -65,6 +55,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/sprite.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
@@ -72,6 +64,8 @@ static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/twod_depth.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
@@ -95,25 +89,57 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/debug.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/entid.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_entid.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_flat.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_splat.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_splat.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/light_oit.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_cascade.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_cube.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_none.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/lighting_plane.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/compose_fwd.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias_depth.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/mesh.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/mesh_shadow.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias_gbuf.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/alias_shadow.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/qskin_gbuf.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/output.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/gridplane.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/shadow.geom.spvc"
+#include "libs/video/renderer/vulkan/shader/fisheye.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/waterwarp.frag.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -122,15 +148,20 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "slice.vert", slice_vert, sizeof (slice_vert) },
+	{ "line.vert", line_vert, sizeof (line_vert) },
+	{ "line.frag", line_frag, sizeof (line_frag) },
 	{ "particle.vert", particle_vert, sizeof (particle_vert) },
 	{ "particle.geom", particle_geom, sizeof (particle_geom) },
 	{ "particle.frag", particle_frag, sizeof (particle_frag) },
 	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
 	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
+	{ "sprite.frag", sprite_frag, sizeof (sprite_frag) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
 	{ "sprite_depth.frag", sprite_depth_frag, sizeof (sprite_depth_frag) },
+	{ "twod_depth.frag", twod_depth_frag, sizeof (twod_depth_frag) },
 	{ "twod.vert", twod_vert, sizeof (twod_vert) },
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
@@ -142,16 +173,34 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
-	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
+	{ "debug.frag", debug_frag, sizeof (debug_frag) },
+	{ "entid.frag", entid_frag, sizeof (entid_frag) },
+	{ "light_entid.vert", light_entid_vert, sizeof (light_entid_vert) },
+	{ "light_flat.vert", light_flat_vert, sizeof (light_flat_vert) },
+	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
+	{ "light_splat.frag", light_splat_frag, sizeof (light_splat_frag) },
+	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
+	{ "light_oit.frag", light_oit_frag, sizeof (light_oit_frag) },
+	{ "lighting_cascade.frag", lighting_cascade_frag,
+		sizeof (lighting_cascade_frag) },
+	{ "lighting_cube.frag", lighting_cube_frag, sizeof (lighting_cube_frag) },
+	{ "lighting_none.frag", lighting_none_frag, sizeof (lighting_none_frag) },
+	{ "lighting_plane.frag", lighting_plane_frag,
+		sizeof (lighting_plane_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
-	{ "alias.vert", alias_vert, sizeof (alias_vert) },
-	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
-	{ "alias.frag", alias_frag, sizeof (alias_frag) },
-	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
-	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
+	{ "compose_fwd.frag", compose_fwd_frag, sizeof (compose_fwd_frag) },
+	{ "mesh.r", mesh_r, sizeof (mesh_r) },
+	{ "mesh_shadow.r", mesh_shadow_r, sizeof (mesh_shadow_r) },
+	{ "qskin_fwd.frag", qskin_fwd_frag, sizeof (qskin_fwd_frag) },
+	{ "qskin_gbuf.frag", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
+	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
+	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
+	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },
+	{ "gridplane.frag", gridplane_frag, sizeof (gridplane_frag) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
-	{ "shadow.geom", shadow_geom, sizeof (shadow_geom) },
+	{ "fisheye.frag", fisheye_frag, sizeof (fisheye_frag) },
+	{ "waterwarp.frag", waterwarp_frag, sizeof (waterwarp_frag) },
 	{}
 };
 
@@ -181,7 +230,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 				break;
 			}
 		}
-	} else if (strncmp (shader_path, SHADER, SHADER_SIZE)) {
+	} else if (strncmp (shader_path, SHADER, SHADER_SIZE) == 0) {
 		path = dstring_new ();
 		dsprintf (path, "%s/%s", FS_SHADERPATH, shader_path + SHADER_SIZE);
 		file = Qopen (path->str, "rbz");

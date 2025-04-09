@@ -31,16 +31,28 @@
 #ifndef __strpool_h
 #define __strpool_h
 
+#include "QF/darray.h"
+
+typedef struct strid_s {
+	uint32_t    offset;
+	uint32_t    id;		// external (to strpool) id (eg, for spir-v)
+} strid_t;
+
+typedef struct DARRAY_TYPE (strid_t) strid_set_t;
+
 typedef struct strpool_s {
 	char       *strings;
 	struct hashtab_s *str_tab;
-	int         size, max_size;
+	size_t      size, max_size;
 	int         qfo_space;
+	strid_set_t strids;
 } strpool_t;
 
 strpool_t *strpool_new (void);
 strpool_t *strpool_build (const char *strings, int size);
 void strpool_delete (strpool_t *strpool);
+//XXX NOTE: not pointer-stable, do not hold onto the pointer!!!
+strid_t *strpool_addstrid (strpool_t *strpool, const char *str);
 int strpool_addstr (strpool_t *strpool, const char *str);
 int strpool_findstr (strpool_t *strpool, const char *str);
 
@@ -53,10 +65,11 @@ int strpool_findstr (strpool_t *strpool, const char *str);
 	\return			The unique copy of the string.
 */
 const char *save_string (const char *str);
+const char *save_substring (const char *str, int len);
 
 const char *save_cwd (void);
 
-const char *make_string (char *token, char **end);
+const char *make_string (const char *token, char **end);
 
 const char *html_string (const char *str);
 const char *quote_string (const char *str);

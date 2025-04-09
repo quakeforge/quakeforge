@@ -31,12 +31,12 @@
 #ifndef __obj_type_h
 #define __obj_type_h
 
-#include "QF/pr_type.h"
+#include "QF/progs/pr_type.h"
 
 #include "type.h"
 
-struct defspace_s;
-struct type_s;
-struct def_s *qfo_encode_type (struct type_s *type, struct defspace_s *space);
+typedef struct defspace_s defspace_t;
+typedef struct type_s type_t;
+struct def_s *qfo_encode_type (const type_t *type, defspace_t *space);
 
 #endif//__obj_type_h

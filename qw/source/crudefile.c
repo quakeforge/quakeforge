@@ -66,7 +66,16 @@ typedef struct cf_file_s {
 } cf_file_t;
 
 cf_file_t *cf_filep;
-cvar_t    *crudefile_quota;
+int crudefile_quota;
+static cvar_t crudefile_quota_cvar = {
+	.name = "crudefile_quota",
+	.description =
+		"Maximum space available to the Crude File system, -1 to totally "
+		"disable file writing",
+	.default_value = "-1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &crudefile_quota },
+};
 int        cf_filepcount; // elements in array
 int        cf_openfiles; // used elements
 
@@ -150,7 +159,7 @@ CF_BuildQuota (void)
 	cf_cursize = 0;
 
 	while ((i = readdir (dir))) {
-		cf_cursize += CF_GetFileSize (va (0, "%s/%s", path->str, i->d_name));
+		cf_cursize += CF_GetFileSize (va ("%s/%s", path->str, i->d_name));
 	}
 	closedir (dir);
 }
@@ -164,10 +173,8 @@ void
 CF_Init (void)
 {
 	CF_BuildQuota ();
-	crudefile_quota = Cvar_Get ("crudefile_quota", "-1", CVAR_ROM, NULL,
-								"Maximum space available to the Crude File "
-								"system, -1 to totally disable file writing");
-	cf_maxsize = crudefile_quota->int_val;
+	Cvar_Register (&crudefile_quota_cvar, 0, 0);
+	cf_maxsize = crudefile_quota;
 }
 
 /*

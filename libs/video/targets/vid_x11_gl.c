@@ -61,13 +61,32 @@
 #define GLX_RED_SIZE			8		// number of red component bits
 #define GLX_GREEN_SIZE			9		// number of green component bits
 #define GLX_BLUE_SIZE			10		// number of blue component bits
+#define GLX_ALPHA_SIZE			11		// number of alpha component bits
 #define GLX_DEPTH_SIZE			12		// number of depth bits
+#define GLX_STENCIL_SIZE		13		// number of stencil bits
+#define GLX_CONTEXT_MAJOR_VERSION_ARB   0x2091
+#define GLX_CONTEXT_MINOR_VERSION_ARB   0x2092
+#define GLX_CONTEXT_FLAGS_ARB           0x2094
+#define GLX_CONTEXT_PROFILE_MASK_ARB    0x9126
+#define GLX_CONTEXT_DEBUG_BIT_ARB               0x0001
+#define GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+#define GLX_CONTEXT_CORE_PROFILE_BIT_ARB            0x00000001
+#define GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB   0x00000002
+
+#define GLX_X_RENDERABLE  0x8012
+#define GLX_DRAWABLE_TYPE 0x8010
+#define GLX_WINDOW_BIT    0x00000001
+#define GLX_RENDER_TYPE   0x8011
+#define GLX_RGBA_BIT      0x00000001
+#define GLX_X_VISUAL_TYPE 0x22
+#define GLX_TRUE_COLOR    0x8002
+
 
 typedef XID GLXDrawable;
 
 // GLXContext is a pointer to opaque data
 typedef struct __GLXcontextRec *GLXContext;
-
+typedef struct __GLXFBConfigRec *GLXFBConfig;
 
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY
@@ -79,17 +98,34 @@ typedef struct __GLXcontextRec *GLXContext;
 #endif
 static void    *libgl_handle;
 static void (*qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
-static XVisualInfo* (*qfglXChooseVisual) (Display *dpy, int screen,
-										  int *attribList);
-static GLXContext (*qfglXCreateContext) (Display *dpy, XVisualInfo *vis,
-										 GLXContext shareList, Bool direct);
+static GLXContext (*qfglXCreateContextAttribsARB) (Display *dpy,
+												   GLXFBConfig cfg,
+												   GLXContext ctx,
+												   Bool direct,
+												   const int *attribs);
+static void (*qfglXDestroyContext) ( Display *dpy, GLXContext ctx );
+static GLXFBConfig *(*qfglXChooseFBConfig) (Display *dpy, int screen,
+											const int *attribs, int *nitems);
+static XVisualInfo *(*qfglXGetVisualFromFBConfig) (Display *dpy,
+												   GLXFBConfig config);
+static int (*qfglXGetFBConfigAttrib) (Display *dpy, GLXFBConfig config,
+									  int attribute, int *value);
 static Bool (*qfglXMakeCurrent) (Display *dpy, GLXDrawable drawable,
 								 GLXContext ctx);
 static void (GLAPIENTRY *qfglFinish) (void);
 static void *(*glGetProcAddress) (const char *symbol) = NULL;
 static int use_gl_procaddress = 0;
 
-static cvar_t  *gl_driver;
+static GLXFBConfig glx_cfg;
+static char *gl_driver;
+static cvar_t gl_driver_cvar = {
+	.name = "gl_driver",
+	.description =
+		"The OpenGL library to use. (path optional)",
+	.default_value = GL_DRIVER,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &gl_driver },
+};
 
 static void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -104,7 +140,7 @@ QFGL_GetProcAddress (void *handle, const char *name)
 }
 
 static void *
-QFGL_ProcAddress (const char *name, qboolean crit)
+QFGL_ProcAddress (const char *name, bool crit)
 {
 	void    *glfunc = NULL;
 
@@ -132,17 +168,33 @@ QFGL_ProcAddress (const char *name, qboolean crit)
 static void
 glx_choose_visual (gl_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	int         attrib[] = {
-		GLX_RGBA,
-		GLX_RED_SIZE, 1,
-		GLX_GREEN_SIZE, 1,
-		GLX_BLUE_SIZE, 1,
-		GLX_DOUBLEBUFFER,
-		GLX_DEPTH_SIZE, 1,
+		GLX_X_RENDERABLE,     True,
+		GLX_DRAWABLE_TYPE,    GLX_WINDOW_BIT,
+		GLX_RENDER_TYPE,      GLX_RGBA_BIT,
+		GLX_X_VISUAL_TYPE,    GLX_TRUE_COLOR,
+		GLX_RED_SIZE,         8,
+		GLX_GREEN_SIZE,       8,
+		GLX_BLUE_SIZE,        8,
+		GLX_ALPHA_SIZE,       8,
+		GLX_DEPTH_SIZE,       24,
+		//I can't tell if this makes any difference to performance, but it's
+		//currently not needed
+		//GLX_STENCIL_SIZE,     8,
+		GLX_DOUBLEBUFFER,     True,
 		None
 	};
+	int         fbcount;
+	GLXFBConfig *fbc = qfglXChooseFBConfig (x_disp, x_screen, attrib, &fbcount);
 
-	x_visinfo = qfglXChooseVisual (x_disp, x_screen, attrib);
+	if (!fbc) {
+		Sys_Error ("Failed to retrieve a framebuffer config");
+	}
+	Sys_MaskPrintf (SYS_vid, "Found %d matching FB configs.\n", fbcount);
+	glx_cfg = fbc[0];
+	x_visinfo = qfglXGetVisualFromFBConfig (x_disp, glx_cfg);
+	XFree (fbc);
 	if (!x_visinfo) {
 		Sys_Error ("Error couldn't get an RGB, Double-buffered, Depth visual");
 	}
@@ -150,11 +202,19 @@ glx_choose_visual (gl_ctx_t *ctx)
 }
 
 static void
-glx_create_context (gl_ctx_t *ctx)
+glx_create_context (gl_ctx_t *ctx, int core)
 {
+	int         attribs[] = {
+		GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+		GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+		GLX_CONTEXT_PROFILE_MASK_ARB,
+			core ? GLX_CONTEXT_CORE_PROFILE_BIT_ARB
+				 : GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+		None
+	};
 	XSync (x_disp, 0);
-	ctx->context = (GL_context) qfglXCreateContext (x_disp, x_visinfo, NULL,
-													True);
+	ctx->context = (GL_context) qfglXCreateContextAttribsARB (x_disp, glx_cfg,
+													0, True, attribs);
 	qfglXMakeCurrent (x_disp, x_win, (GLXContext) ctx->context);
 	ctx->init_gl ();
 }
@@ -167,11 +227,11 @@ glx_end_rendering (void)
 }
 
 static void
-glx_load_gl (void)
+glx_load_gl (gl_ctx_t *ctx)
 {
-	libgl_handle = dlopen (gl_driver->string, RTLD_NOW);
+	libgl_handle = dlopen (gl_driver, RTLD_NOW);
 	if (!libgl_handle) {
-		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver->string,
+		Sys_Error ("Couldn't load OpenGL library %s: %s", gl_driver,
 				   dlerror ());
 	}
 	glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddress");
@@ -179,8 +239,11 @@ glx_load_gl (void)
 		glGetProcAddress = dlsym (libgl_handle, "glXGetProcAddressARB");
 
 	qfglXSwapBuffers = QFGL_ProcAddress ("glXSwapBuffers", true);
-	qfglXChooseVisual = QFGL_ProcAddress ("glXChooseVisual", true);
-	qfglXCreateContext = QFGL_ProcAddress ("glXCreateContext", true);
+	qfglXChooseFBConfig = QFGL_ProcAddress ("glXChooseFBConfig", true);
+	qfglXGetVisualFromFBConfig = QFGL_ProcAddress ("glXGetVisualFromFBConfig", true);
+	qfglXGetFBConfigAttrib = QFGL_ProcAddress ("glXGetFBConfigAttrib", true);
+	qfglXCreateContextAttribsARB = QFGL_ProcAddress ("glXCreateContextAttribsARB", true);
+	qfglXDestroyContext = QFGL_ProcAddress ("glXDestroyContext", true);
 	qfglXMakeCurrent = QFGL_ProcAddress ("glXMakeCurrent", true);
 
 	use_gl_procaddress = 1;
@@ -188,8 +251,19 @@ glx_load_gl (void)
 	qfglFinish = QFGL_ProcAddress ("glFinish", true);
 }
 
+static void
+glx_unload_gl (void *_ctx)
+{
+	gl_ctx_t   *ctx = _ctx;
+	if (libgl_handle) {
+		dlclose (libgl_handle);
+		libgl_handle = 0;
+	}
+	free (ctx);
+}
+
 gl_ctx_t *
-X11_GL_Context (void)
+X11_GL_Context (vid_internal_t *vi)
 {
 	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
 	ctx->load_gl = glx_load_gl;
@@ -197,12 +271,14 @@ X11_GL_Context (void)
 	ctx->create_context = glx_create_context;
 	ctx->get_proc_address = QFGL_ProcAddress;
 	ctx->end_rendering = glx_end_rendering;
+
+	vi->unload = glx_unload_gl;
+	vi->ctx = ctx;
 	return ctx;
 }
 
 void
 X11_GL_Init_Cvars (void)
 {
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
+	Cvar_Register (&gl_driver_cvar, 0, 0);
 }

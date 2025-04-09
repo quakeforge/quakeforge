@@ -65,7 +65,15 @@ typedef struct cmd_provider_s
 
 static cmdalias_t *cmd_alias;
 
-VISIBLE cvar_t     *cmd_warncmd;
+VISIBLE int cmd_warncmd;
+static cvar_t cmd_warncmd_cvar = {
+	.name = "cmd_warncmd",
+	.description =
+		"Toggles the display of error messages for unknown commands",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cmd_warncmd },
+};
 
 static hashtab_t  *cmd_alias_hash;
 static hashtab_t  *cmd_hash;
@@ -130,7 +138,7 @@ Cmd_Command (cbuf_args_t *args)
 		return 0;
 	if (cbuf_active->strict)
 		return -1;
-	else if (cmd_warncmd->int_val || developer->int_val & SYS_dev)
+	else if (cmd_warncmd || developer & SYS_dev)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 	return 0;
 }
@@ -201,7 +209,7 @@ Cmd_RemoveCommand (const char *name)
 }
 
 /* Checks for the existance of a command */
-VISIBLE qboolean
+VISIBLE bool
 Cmd_Exists (const char *cmd_name)
 {
 	cmd_function_t *cmd;
@@ -302,6 +310,13 @@ Cmd_CompleteBuildList (const char *partial)
 }
 
 /* Hash table functions for aliases and commands */
+static void
+cmd_free (void *_c, void *unused)
+{
+	cmd_function_t *cmd = _c;
+	free (cmd);
+}
+
 static void
 cmd_alias_free (void *_a, void *unused)
 {
@@ -501,6 +516,7 @@ Cmd_Help_f (void)
 static void
 Cmd_Exec_f (void)
 {
+	qfZoneScoped (true);
 	char       *f;
 	size_t      mark;
 
@@ -515,9 +531,7 @@ Cmd_Exec_f (void)
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
 	}
-	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val
-			|| (developer && developer->int_val & SYS_dev)))
+	if (!Cvar_Command () && (cmd_warncmd || (developer & SYS_dev)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	Cbuf_InsertText (cbuf_active, f);
 	Hunk_FreeToLowMark (0, mark);
@@ -561,6 +575,7 @@ Cmd_Sleep_f (void)
 VISIBLE void
 Cmd_StuffCmds (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	int         i, j;
 	dstring_t  *build;
 
@@ -600,10 +615,20 @@ Cmd_StuffCmds_f (void)
 	Cmd_StuffCmds (cbuf_active);
 }
 
+static void
+cmd_shutdown (void *data)
+{
+	Cbuf_Delete (cmd_cbuf);
+	Hash_DelTable (cmd_hash);
+	Hash_DelTable (cmd_alias_hash);
+	Hash_DelTable (cmd_provider_hash);
+}
+
 VISIBLE void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0, 0);
+	Sys_RegisterShutdown (cmd_shutdown, 0);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, cmd_free, 0, 0);
 	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key,
 									cmd_alias_free, 0, 0);
 	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key,
@@ -629,8 +654,7 @@ Cmd_Init (void)
 	Cmd_AddCommand ("echo", Cmd_Echo_f, "Print text to console");
 	Cmd_AddCommand ("wait", Cmd_Wait_f, "Wait a game tic");
 	Cmd_AddCommand ("sleep", Cmd_Sleep_f, "Wait for a certain number of seconds.");
-	cmd_warncmd = Cvar_Get ("cmd_warncmd", "0", CVAR_NONE, NULL, "Toggles the "
-							"display of error messages for unknown commands");
+	Cvar_Register (&cmd_warncmd_cvar, 0, 0);
 	cmd_cbuf = Cbuf_New (&id_interp);
 
 	Cmd_AddProvider("id", &id_interp);

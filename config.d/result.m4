@@ -24,9 +24,3 @@ AC_MSG_RESULT([
 	libWildMidi Support         : $HAVE_WILDMIDI
 	XDG support                 : $HAVE_XDG
 ])
-
-if test -d $srcdir/.git; then
-	echo "WARNING: Hackers at work, watch for falling bits of code."
-	echo "(This is from a development git tree. Expect problems)"
-	echo
-fi

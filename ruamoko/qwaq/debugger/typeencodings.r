@@ -36,6 +36,7 @@ static void type_free (void *t, void *unused)
 	qfot_type_t *type = (qfot_type_t *) t;
 	str_free (type.encoding);
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
 		case ty_array:
 			break;
@@ -52,6 +53,13 @@ static void type_free (void *t, void *unused)
 			break;
 		case ty_alias:
 			str_free (type.alias.name);
+			break;
+		case ty_handle:
+			str_free (type.handle.tag);
+			break;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+			}
 			break;
 	}
 	obj_free (t);
@@ -105,8 +113,9 @@ static void type_free (void *t, void *unused)
 		goto error;
 	}
 	switch (type.meta) {
+		case ty_bool:
 		case ty_basic:
-			if (type.type == ev_pointer || type.type == ev_field) {
+			if (type.type == ev_ptr || type.type == ev_field) {
 				t = [TypeEncodings getType:(unsigned)type.fldptr.aux_type
 								fromTarget:target];
 				if (!t) {
@@ -179,10 +188,22 @@ static void type_free (void *t, void *unused)
 			}
 			type.alias.full_type = t;
 			goto hash_type;
+		case ty_handle:
+			if (!(type.handle.tag = qdb_get_string (target, type.handle.tag))) {
+				goto error;
+			}
+			goto hash_type;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+				// full algebra
+			} else {
+				goto hash_type;
+			}
+			break;
 	}
 	goto error;
 hash_type:
-	printf ("fetched type %s\n", type.encoding);
+	//printf ("fetched type %s\n", type.encoding);
 	Hash_Add (dynamic_encodings, type);
 	return type;
 	// not a valid type
@@ -197,12 +218,17 @@ error:
 	int         size = 0;
 
 	switch (type.meta) {
-		case ty_basic:
+		case ty_handle:
 			size = pr_type_size[type.type];
+			break;
+		case ty_bool:
+		case ty_basic:
+			size = pr_type_size[type.type] * type.basic.width
+					* type.basic.columns;
 			break;
 		case ty_array:
 			aux_type = type.array.type;
-			size = type.array.size * [TypeEncodings typeSize:aux_type];
+			size = type.array.count * [TypeEncodings typeSize:aux_type];
 			break;
 		case ty_struct:
 			for (int i = 0; i < type.strct.num_fields; i++) {
@@ -221,7 +247,7 @@ error:
 			break;
 		case ty_enum:
 			// enums are ints
-			size = pr_type_size[ev_integer];
+			size = pr_type_size[ev_int];
 			break;
 		case ty_class:
 			//FIXME
@@ -230,6 +256,13 @@ error:
 		case ty_alias:
 			aux_type = type.alias.aux_type;
 			size = [TypeEncodings typeSize:aux_type];
+			break;
+		case ty_algebra:
+			if (type.type == ev_invalid) {
+				// full algebra
+			} else {
+				size = pr_type_size[type.type] * type.basic.width;
+			}
 			break;
 	}
 	return size;

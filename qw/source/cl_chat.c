@@ -44,9 +44,10 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "client/input.h"
+
 #include "qw/include/client.h"
 #include "qw/include/cl_chat.h"
-#include "qw/include/cl_input.h"
 
 llist_t *ignore_list, *dead_ignore_list;
 
@@ -59,13 +60,13 @@ CL_Ignore_Free (void *ele, void *unused)
 	free (ig);
 }
 
-static qboolean
+static bool
 CL_Ignore_Compare (const void *ele, const void *cmp, void *unused)
 {
 	return *(int *)cmp == ((ignore_t *) ele)->uid;
 }
 
-static qboolean
+static bool
 isc_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (cl.players[ig->slot].userid != ig->uid) // We got out of sync somehow
@@ -79,16 +80,16 @@ CL_Ignore_Sanity_Check (void)
 	llist_iterate (ignore_list, LLIST_ICAST (isc_iterator));
 }
 
-static qboolean live_iterator (ignore_t *ig, llist_node_t *node)
+static bool live_iterator (ignore_t *ig, llist_node_t *node)
 {
-	Sys_Printf ("%5i - %s\n", ig->uid,
+	Sys_Printf ("%c%5i - %s\n", 3, ig->uid,
 				Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
 	return true;
 }
 
-static qboolean dead_iterator (ignore_t *ig, llist_node_t *node)
+static bool dead_iterator (ignore_t *ig, llist_node_t *node)
 {
-	Sys_Printf ("%s\n", ig->lastname);
+	Sys_Printf ("%c%s\n", 3, ig->lastname);
 	return true;
 }
 
@@ -117,7 +118,7 @@ CL_Ignore_f (void)
 				new->slot = i;
 				new->uid = uid;
 				llist_append (ignore_list, new);
-				Sys_Printf ("User %i (%s) is now ignored.\n", uid,
+				Sys_Printf ("%cUser %i (%s) is now ignored.\n", 3, uid,
 							Info_ValueForKey (cl.players[i].userinfo, "name"));
 				return;
 			}
@@ -140,7 +141,7 @@ CL_Unignore_f (void)
 		uid = atoi (Cmd_Argv (1));
 		if ((node = llist_findnode (ignore_list, &uid))) {
 			int         slot = LLIST_DATA (node, ignore_t)->slot;
-			Sys_Printf ("User %i (%s) is no longer ignored.\n", uid,
+			Sys_Printf ("%cUser %i (%s) is no longer ignored.\n", 3, uid,
 						Info_ValueForKey (cl.players[slot].userinfo, "name"));
 			CL_Ignore_Free (llist_remove (node), 0);
 			return;
@@ -157,9 +158,9 @@ CL_Unignore_f (void)
 */
 static const char *g_cam_str;
 static dstring_t *g_cam_test;
-static qboolean g_cam_allowed;
+static bool g_cam_allowed;
 
-static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
+static bool cam_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (cl.players[ig->slot].userid != ig->uid) { // We got out of sync somehow
 		llist_remove (node);
@@ -173,7 +174,7 @@ static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
 		return true;
 }
 
-qboolean
+bool
 CL_Chat_Allow_Message (const char *str)
 {
 	g_cam_str = str;
@@ -197,15 +198,15 @@ CL_Chat_User_Disconnected (int uid)
 		ig->lastname = strdup (Info_ValueForKey (cl.players[ig->slot].userinfo,
 												 "name"));
 		llist_append (dead_ignore_list, ig);
-		Sys_Printf ("Ignored user %i (%s) left the server.  "
-					"Now ignoring by name...\n", ig->uid, ig->lastname);
+		Sys_Printf ("%cIgnored user %i (%s) left the server.  "
+					"Now ignoring by name...\n", 3, ig->uid, ig->lastname);
 	}
 }
 
 static const char *g_ccn_name;
 static ignore_t *g_ccn_found;
 
-static qboolean ccn_iterator (ignore_t *ig, llist_node_t *node)
+static bool ccn_iterator (ignore_t *ig, llist_node_t *node)
 {
 	if (!strcmp (ig->lastname, g_ccn_name)) {
 		g_ccn_found = ig;
@@ -227,8 +228,8 @@ CL_Chat_Check_Name (const char *name, int slot)
 		llist_append (ignore_list,
 					  llist_remove (llist_getnode (dead_ignore_list,
 												   g_ccn_found)));
-		Sys_Printf ("User %i (%s) is using an ignored name.  "
-					"Now ignoring by user id...\n", g_ccn_found->uid,
+		Sys_Printf ("%cUser %i (%s) is using an ignored name.  "
+					"Now ignoring by user id...\n", 3, g_ccn_found->uid,
 					g_ccn_found->lastname);
 	}
 }
@@ -246,7 +247,7 @@ CL_ChatInfo (int val)
 		val = 0;
 	if (cls.chat != val) {
 		cls.chat = val;
-		Cbuf_AddText(cl_cbuf, va (0, "setinfo chat \"%d\"\n", val));
+		Cbuf_AddText(cl_cbuf, va ("setinfo chat \"%d\"\n", val));
 	}
 }
 
@@ -254,7 +255,7 @@ static void
 cl_chat_on_focus_change (int game)
 {
 	//FIXME afk mode
-	CL_ChatInfo (!!game);
+	CL_ChatInfo (!game);
 }
 
 

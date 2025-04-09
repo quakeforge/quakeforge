@@ -116,7 +116,7 @@ GIB_Builtin_Remove (const char *name)
 		Hash_Free (gib_builtins, del);
 }
 
-VISIBLE qboolean
+VISIBLE bool
 GIB_Builtin_Exists (const char *name)
 {
 	return Hash_Find (gib_builtins, name) ? true : false;
@@ -823,7 +823,7 @@ GIB_File_Write_f (void)
 	}
 
 	path = GIB_Argv (1);
-	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, path),
+	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, path),
 				   GIB_Argv(2), GIB_Argd(2)->size-1);
 }
 
@@ -1039,9 +1039,16 @@ GIB_bp4_f (void)
 {
 }
 
-void
-GIB_Builtin_Init (qboolean sandbox)
+static void
+gib_builtin_shutdown (void *data)
 {
+	Hash_DelTable (gib_builtins);
+}
+
+void
+GIB_Builtin_Init (bool sandbox)
+{
+	qfZoneScoped (true);
 
 	if (sandbox)
 		GIB_File_Transform_Path = GIB_File_Transform_Path_Secure;
@@ -1090,4 +1097,6 @@ GIB_Builtin_Init (qboolean sandbox)
 	GIB_Builtin_Add ("bp2", GIB_bp2_f);
 	GIB_Builtin_Add ("bp3", GIB_bp3_f);
 	GIB_Builtin_Add ("bp4", GIB_bp4_f);
+
+	Sys_RegisterShutdown (gib_builtin_shutdown, 0);
 }

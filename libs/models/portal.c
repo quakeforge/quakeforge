@@ -111,7 +111,7 @@ add_portal (clipport_t *portal, clipleaf_t *front, clipleaf_t *back)
 static clipleaf_t *
 carve_leaf (hull_t *hull, nodeleaf_t *nodeleafs, clipleaf_t *leaf, int num)
 {
-	mclipnode_t *node;
+	dclipnode_t *node;
 	plane_t    *plane;
 	winding_t  *winding, *fw, *bw;
 	clipport_t *portal;

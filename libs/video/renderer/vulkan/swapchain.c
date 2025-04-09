@@ -3,26 +3,20 @@
 #endif
 
 #ifdef HAVE_MATH_H
-# include <math.h>
+//# include <math.h>
 #endif
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"
-#include "QF/sys.h"
-#include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/cvars.h"
-#include "QF/Vulkan/command.h"
+#include "QF/va.h"
+
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
-#include "compat.h"
-#include "d_iface.h"
-#include "r_internal.h"
 #include "vid_vulkan.h"
-
-#include "util.h"
 
 qfv_swapchain_t *
 QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
@@ -52,12 +46,12 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 													   ctx->surface,
 													   &numModes, modes);
 	for (uint32_t i = 0; i < numModes; i++) {
-		if ((int) modes[i] == vulkan_presentation_mode->int_val) {
+		if ((int) modes[i] == vulkan_presentation_mode) {
 			useMode = modes[i];
 		}
 	}
 	Sys_MaskPrintf (SYS_vulkan, "presentation mode: %d (%d)\n", useMode,
-					vulkan_presentation_mode->int_val);
+					vulkan_presentation_mode);
 
 	VkSurfaceCapabilitiesKHR surfCaps;
 	ifuncs->vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physDev,
@@ -68,7 +62,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 		numImages = surfCaps.maxImageCount;
 	}
 
-	VkExtent2D imageSize = {viddef.width, viddef.height};
+	VkExtent2D imageSize = {ctx->window_width, ctx->window_height};
 	if (surfCaps.currentExtent.width == ~0u) {
 		imageSize.width = bound (surfCaps.minImageExtent.width,
 								 imageSize.width,
@@ -79,13 +73,13 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	} else {
 		imageSize = surfCaps.currentExtent;
 	}
-	Sys_MaskPrintf (SYS_vulkan, "%d [%d, %d]\n", numImages,
+	Sys_MaskPrintf (SYS_vulkan, "swapchain: %d [%d, %d]\n", numImages,
 					imageSize.width, imageSize.height);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
-	Sys_MaskPrintf (SYS_vulkan, "%x %x\n", imageUsage,
+	Sys_MaskPrintf (SYS_vulkan, "    usage:%x supported:%x\n", imageUsage,
 					surfCaps.supportedUsageFlags);
 
 	VkSurfaceTransformFlagBitsKHR surfTransform
@@ -99,7 +93,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (physDev,
 												  ctx->surface,
 												  &numFormats, formats);
-	VkSurfaceFormatKHR useFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+	VkSurfaceFormatKHR useFormat = {VK_FORMAT_B8G8R8A8_UNORM,
 									VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 	if (numFormats > 1) {
 		uint32_t i;
@@ -154,10 +148,16 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	sc->imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc);
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, sc->images->a);
 	for (uint32_t i = 0; i < numImages; i++) {
+		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE,
+							 sc->images->a[i],
+							 vac (ctx->va_ctx, "image:swapchain:%d", i));
 		sc->imageViews->a[i]
 			= QFV_CreateImageView (ctx->device, sc->images->a[i],
 								   VK_IMAGE_VIEW_TYPE_2D, sc->format,
 								   VK_IMAGE_ASPECT_COLOR_BIT);
+		QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE_VIEW,
+							 sc->imageViews->a[i],
+							 vac (ctx->va_ctx, "iview:swapchain:%d", i));
 	}
 	return sc;
 }

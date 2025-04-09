@@ -47,7 +47,7 @@ D_DrawParticle (particle_t *pparticle)
 	int         i, izi, pix, count, u, v;
 
 	// transform point
-	VectorSubtract (pparticle->pos, r_origin, local);
+	VectorSubtract (pparticle->pos, r_porigin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
 	transformed[1] = DotProduct (local, r_pup);
@@ -67,7 +67,7 @@ D_DrawParticle (particle_t *pparticle)
 		return;
 	}
 
-	pz = d_pzbuffer + (d_zwidth * v) + u;
+	pz = d_zbuffer + (d_zwidth * v) + u;
 	pdest = d_viewbuffer + d_scantable[v] + u;
 	izi = (int) (zi * 0x8000);
 
@@ -81,7 +81,7 @@ D_DrawParticle (particle_t *pparticle)
 	switch (pix) {
 	case 1:
 		count = 1 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -91,7 +91,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 2:
 		count = 2 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -106,7 +106,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 3:
 		count = 3 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -126,7 +126,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	case 4:
 		count = 4 << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
 				pdest[0] = pparticle->icolor;
@@ -151,7 +151,7 @@ D_DrawParticle (particle_t *pparticle)
 
 	default:
 		count = pix << d_y_aspect_shift;
-		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
+		for (; count; count--, pz += d_zwidth, pdest += d_rowbytes) {
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
 					pz[i] = izi;

@@ -56,22 +56,31 @@ static U inputline_t *(*const create)(int, int, char) = Con_CreateInputLine;
 static U void (*const display)(const char **, int) = Con_DisplayList;
 #undef U
 
-static cvar_t *con_interpreter;
+static char *con_interpreter;
+static cvar_t con_interpreter_cvar = {
+	.name = "con_interpreter",
+	.description =
+		"Interpreter for the interactive console",
+	.default_value = "id",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &con_interpreter },
+};
+static sys_printf_t saved_sys_printf;
 
 static void
-Con_Interp_f (cvar_t *var)
+Con_Interp_f (void *data, const cvar_t *cvar)
 {
 	cbuf_interpreter_t *interp;
 
 	if (!con_module)
 		return;
 
-	interp = Cmd_GetProvider(var->string);
+	interp = Cmd_GetProvider(con_interpreter);
 
 	if (interp) {
 		cbuf_t *new;
 
-		Sys_Printf ("Switching to interpreter '%s'\n", var->string);
+		Sys_Printf ("Switching to interpreter '%s'\n", con_interpreter);
 
 		new = Cbuf_New (interp);
 
@@ -82,33 +91,43 @@ Con_Interp_f (cvar_t *var)
 		}
 		con_module->data->console->cbuf = new;
 	} else {
-		Sys_Printf ("Unknown interpreter '%s'\n", var->string);
+		Sys_Printf ("Unknown interpreter '%s'\n", con_interpreter);
 	}
 }
 
 static void
 Con_shutdown (void *data)
 {
+	if (saved_sys_printf) {
+		Sys_SetStdPrintf (saved_sys_printf);
+	}
 	if (con_module) {
-		con_module->functions->general->shutdown ();
 		PI_UnloadPlugin (con_module);
 	}
 }
 
 VISIBLE void
-Con_Init (const char *plugin_name)
+Con_Load (const char *plugin_name)
 {
+	qfZoneScoped (true);
 	Sys_RegisterShutdown (Con_shutdown, 0);
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
-	if (con_module) {
-		Sys_SetStdPrintf (con_module->functions->console->print);
-	} else {
+	if (!con_module) {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
-	con_interpreter =
-		Cvar_Get("con_interpreter", "id", CVAR_NONE, Con_Interp_f,
-				 "Interpreter for the interactive console");
+}
+
+VISIBLE void
+Con_Init (void)
+{
+	qfZoneScoped (true);
+	if (con_module) {
+		__auto_type funcs = con_module->functions->console;
+		funcs->init ();
+		saved_sys_printf = Sys_SetStdPrintf (funcs->print);
+	}
+	Cvar_Register (&con_interpreter_cvar, Con_Interp_f, 0);
 }
 
 VISIBLE void
@@ -158,10 +177,10 @@ Con_Print (const char *fmt, va_list args)
 }
 
 VISIBLE void
-Con_SetState (con_state_t state)
+Con_SetState (con_state_t state, bool hide_mouse)
 {
 	if (con_module) {
-		con_module->functions->console->set_state (state);
+		con_module->functions->console->set_state (state, hide_mouse);
 	}
 }
 
@@ -169,7 +188,9 @@ VISIBLE void
 Con_ProcessInput (void)
 {
 	if (con_module) {
-		con_module->functions->console->process_input ();
+		if (con_module->functions->console->process_input) {
+			con_module->functions->console->process_input ();
+		}
 	} else {
 		static int  been_there_done_that = 0;
 
@@ -192,13 +213,6 @@ Con_DrawConsole (void)
 {
 	if (con_module)
 		con_module->functions->console->draw_console ();
-}
-
-VISIBLE void
-Con_CheckResize (void)
-{
-	if (con_module)
-		con_module->functions->console->check_resize ();
 }
 
 VISIBLE void

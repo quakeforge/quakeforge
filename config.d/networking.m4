@@ -64,10 +64,25 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <winsock.h>
 ]], [[
 connect(0, NULL, 42);
-]])],[NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
+]])],[NET_LIBS="$NET_LIBS -lwsock32"
 	ac_cv_func_connect=yes
 	ac_cv_func_gethostbyname=yes
 	HAVE_WSOCK=yes
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
+LIBS="$SAVELIBS"
+
+AC_MSG_CHECKING([for WSAPoll in -lws2_32])
+SAVELIBS="$LIBS"
+LIBS="$LIBS -lws2_32"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <winsock.h>
+]], [[
+WSAPoll(NULL, 0, 42);
+]])],[NET_LIBS="$NET_LIBS -lws2_32 -lwinmm"
+	ac_cv_func_connect=yes
+	ac_cv_func_gethostbyname=yes
+	HAVE_WS2=yes
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
 ])
 LIBS="$SAVELIBS"

@@ -36,53 +36,106 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 
 #include "def.h"
 
-/** Represent an overloading of a function.
+// The maximum size of a temp def, return value, or parameter value
+#define MAX_DEF_SIZE 32
 
-	Every function, whether overloaded or not, has an entry in the overloaded
-	function database.
-*/
-typedef struct overloaded_function_s {
-	struct overloaded_function_s *next;
-	const char *name;				///< source level name of function
-	const char *full_name;			///< progs name of function, with type
-									///< encoding
-	const struct type_s *type;		///< type of this function
-	int         overloaded;			///< is this function overloaded
-	string_t    file;				///< source file of the function
-	int         line;				///< source line of this function
-} overloaded_function_t;
+typedef enum param_qual_e {
+	pq_const,
+	pq_in,
+	pq_out,
+	pq_inout,
+} param_qual_t;
+
+typedef struct function_s function_t;
+typedef struct typeeval_s typeeval_t;
+
+typedef struct gentype_s {
+	const char *name;
+	// earlier types have priority over later types. null if compute valid
+	const type_t **valid_types;
+} gentype_t;
+
+typedef struct genparam_s {
+	const char *name;
+	const type_t *fixed_type;
+	typeeval_t *compute;
+	int         gentype;	// index into function's list of types
+	param_qual_t qual;
+	bool        is_reference;
+	unsigned    tag;
+} genparam_t;
+
+typedef struct genfunc_s {
+	struct genfunc_s *next;
+	const char *name;
+	gentype_t  *types;
+	int         num_types;
+	int         num_params;
+	genparam_t *params;
+	genparam_t *ret_type;
+	const expr_t *expr;				///< inline or intrinsic
+	bool        can_inline;
+} genfunc_t;
+
+typedef enum {
+	mf_simple,
+	mf_overload,
+	mf_generic,
+} mf_type_e;
 
 /** Internal representation of a function.
 */
 typedef struct function_s {
 	struct function_s  *next;
+	const char         *o_name;
 	int                 builtin;	///< if non 0, call an internal function
 	int                 code;		///< first statement
+	int                 id;
 	int                 function_num;
 	int                 line_info;
-	int                 local_defs;
-	string_t            s_file;		///< source file with definition
-	string_t            s_name;		///< name of function in output
-	const struct type_s *type;		///< function's type without aliases
+	int                 params_start;///< relative to locals space. 0 for v6p
+	pr_string_t         s_file;		///< source file with definition
+	pr_string_t         s_name;		///< name of function in output
+	const type_t       *type;		///< function's type without aliases
+	int                 temp_reg;	///< base register to use for temp defs
 	int                 temp_num;	///< number for next temp var
-	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
+	struct def_s       *temp_defs[MAX_DEF_SIZE];///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
-	struct symbol_s    *sym;		///< internal symbol for this function
-	/** Root scope symbol table of the function.
+	symbol_t           *sym;		///< internal symbol for this function
+	/** \name Local data space
 
-		Sub-scope symbol tables are not directly accessible, but all defs
-		created in the function's local data space are recorded in the root
-		scope symbol table's defspace.
+		The function parameters form the root scope for the function. Its
+		defspace is separate from the locals defspace so that it can be moved
+		to the beginning of locals space for v6 progs, and too the end (just
+		above the stack pointer on entry to the function) for Ruamoko progs.
+
+		The locals scope is a direct child of the parameters scope, and any
+		sub-scope symbol tables are not directly accessible, but all defs
+		other than function call arugments created in the function's local
+		data space are recorded in the root local scope symbol table's
+		defspace.
+
+		The arguments defspace is not used for v6 progs. It is used as a
+		highwater allocator for the arguments to all calls made by the
+		funciton, with the arguments to separate functions overlapping each
+		other.
+
+		Afther the function has been emitted, locals, arguments and possibly
+		parameters will be merged into the one defspace.
 	*/
-	struct symtab_s    *symtab;
-	struct symtab_s    *label_scope;
+	///@{
+	symtab_t           *parameters;	///< Root scope symbol table
+	symtab_t           *locals;		///< Actual local variables
+	struct defspace_s  *arguments;	///< Space for called function arguments
+	///@}
+	symtab_t           *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
-	struct expr_s      *var_init;
+	expr_t             *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
 	struct sblock_s    *sblock;		///< initial node of function's code
 	struct flowgraph_s *graph;		///< the function's flow graph
@@ -94,11 +147,40 @@ typedef struct function_s {
 	struct flowvar_s  **vars;
 	int                 num_vars;	///< total number of variables referenced
 	struct set_s       *global_vars;///< set indicating which vars are global
+	struct set_s       *param_vars;	///< set indicating which vars are params
+	struct set_s       *real_statements;///< actual statements for ud-chaining
 	struct statement_s **statements;
 	int                 num_statements;
+	int                 num_ud_chains;
+	struct udchain_s   *ud_chains;
+	struct udchain_s   *du_chains;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
+	const expr_t       *exprs;
+
+	const expr_t     *(*return_imp) (function_t *func, const expr_t *val);
+	const expr_t       *return_val;
+	const expr_t       *return_label;
 } function_t;
+
+/** Represent an overloading of a function.
+
+	Every function, whether overloaded or not, has a meta-function
+*/
+typedef struct metafunc_s {
+	struct metafunc_s *next;
+	const char *name;				///< source level name of function
+	const char *full_name;			///< progs name of function, with type
+									///< encoding
+	const type_t *type;				///< type of this function
+	rua_loc_t   loc;				///< source location of the function
+	mf_type_e   meta_type;			///< is this function overloaded
+	function_t *func;
+	genfunc_t  *genfunc;
+	const expr_t *state_expr;
+	const expr_t *expr;				///< inline or intrinsic
+	bool        can_inline;
+} metafunc_t;
 
 extern function_t *current_func;
 
@@ -109,47 +191,52 @@ extern function_t *current_func;
 typedef struct param_s {
 	struct param_s *next;
 	const char *selector;
-	struct type_s *type;
+	const type_t *type;
+	const expr_t *type_expr;
 	const char *name;
-	struct symbol_s *symbol;	//FIXME what is this for?
+	param_qual_t qual;
+	attribute_t *attributes;
 } param_t;
 
-struct expr_s;
-struct symbol_s;
-struct symtab_s;
+typedef struct expr_s expr_t;
+typedef struct symbol_s symbol_t;
+typedef struct symtab_s symtab_t;
 
-param_t *new_param (const char *selector, struct type_s *type,
-					const char *name);
+genfunc_t *add_generic_function (genfunc_t *genfunc);
+
+param_t *new_param (const char *selector, const type_t *type, const char *name);
+param_t *new_generic_param (const expr_t *type_expr, const char *name);
 param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
-								   struct type_s *type);
+								   const type_t *type);
 param_t *reverse_params (param_t *params);
 param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
-struct type_s *parse_params (struct type_s *type, param_t *params);
+const type_t *parse_params (const type_t *return_type, param_t *params);
+
 param_t *check_params (param_t *params);
 
-enum storage_class_e;
+enum storage_class_e : unsigned;
 struct defspace_s;
-void make_function (struct symbol_s *sym, const char *nice_name,
-					struct defspace_s *space, enum storage_class_e storage);
-struct symbol_s *function_symbol (struct symbol_s *sym,
-								  int overload, int create);
-struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
-function_t *new_function (const char *name, const char *nice_name);
-void add_function (function_t *f);
-function_t *begin_function (struct symbol_s *sym, const char *nicename,
-							struct symtab_s *parent, int far,
-							enum storage_class_e storage);
-function_t *build_code_function (struct symbol_s *fsym,
-								 struct expr_s *state_expr,
-								 struct expr_s *statements);
-function_t *build_builtin_function (struct symbol_s *sym,
-									struct expr_s *bi_val, int far,
-									enum storage_class_e storage);
-void finish_function (function_t *f);
-void emit_function (function_t *f, struct expr_s *e);
-int function_parms (function_t *f, byte *parm_size);
+int value_too_large (const type_t *val_type) __attribute__((pure));
+function_t *make_function (symbol_t *sym, const char *nice_name,
+						struct defspace_s *space,
+						enum storage_class_e storage);
+symbol_t *function_symbol (specifier_t spec, rua_ctx_t *ctx);
+const expr_t *find_function (const expr_t *fexpr, const expr_t *params,
+							 rua_ctx_t *ctx);
+function_t *begin_function (specifier_t spec, const char *nicename,
+							symtab_t *parent, rua_ctx_t *ctx);
+void build_code_function (specifier_t spec, const expr_t *state_expr,
+						  expr_t *statements, rua_ctx_t *ctx);
+void build_builtin_function (specifier_t spec, const char *ext_name,
+							 const expr_t *bi_val);
+void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
+							   rua_ctx_t *ctx);
+void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);
+
+void add_ctor_expr (const expr_t *expr);
+void emit_ctor (rua_ctx_t *ctx);
 
 ///@}
 

@@ -88,7 +88,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	// Set video width, height and flags
 	sdl_flags = (SDL_SWSURFACE | SDL_HWPALETTE);
-	if (vid_fullscreen->int_val) {
+	if (vid_fullscreen) {
 		sdl_flags |= SDL_FULLSCREEN;
 #ifndef _WIN32      // Don't annoy Mesa/3dfx folks
 		// doesn't hurt if not using a gl renderer
@@ -155,14 +155,4 @@ D_EndDirectRect (int x, int y, int width, int height)
 	if (x < 0)
 		x = sdl_screen->w + x - 1;
 	SDL_UpdateRect (sdl_screen, x, y, width, height);
-}
-
-void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
 }

@@ -1,7 +1,6 @@
 int fence;
 
 #include <AutoreleasePool.h>
-#include <key.h>
 #include <string.h>
 
 #include "ruamoko/qwaq/ui/color.h"

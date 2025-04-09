@@ -43,49 +43,58 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/msg.h"
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/strpool.h"
 
+#define STR_GROW 16384
+
 static hashtab_t *saved_strings;
 
 static const char *
-strpool_get_key (const void *_str, void *_strpool)
+strpool_get_key (const void *_ind, void *_strpool)
 {
-	long        str = (intptr_t) _str;
-	strpool_t  *strpool = (strpool_t *) _strpool;
-
-	return strpool->strings + str;
+	auto ind = (size_t) _ind;
+	auto strpool = (strpool_t *) _strpool;
+	auto strid = &strpool->strids.a[ind];
+	return strpool->strings + strid->offset;
 }
 
 strpool_t *
 strpool_new (void)
 {
-	strpool_t  *strpool = calloc (1, sizeof (strpool_t));
-
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
-	strpool->size = 1;
-	strpool->max_size = 16384;
-	strpool->strings = malloc (strpool->max_size);
+	strpool_t  *strpool = malloc (sizeof (strpool_t));
+	*strpool = (strpool_t) {
+		.strings = malloc (STR_GROW),
+		.str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0),
+		.size = 1,
+		.max_size = STR_GROW,
+		.strids = DARRAY_STATIC_INIT (512),
+	};
 	strpool->strings[0] = 0;
+	DARRAY_APPEND (&strpool->strids, (strid_t) { });
 	return strpool;
 }
 
 strpool_t *
 strpool_build (const char *strings, int size)
 {
-	intptr_t    s;
+	uintptr_t   s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
 	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = size + (*strings != 0);
-	strpool->max_size = (strpool->size + 16383) & ~16383;
+	strpool->max_size = (strpool->size + (STR_GROW - 1)) & ~(STR_GROW - 1);
 	strpool->strings = malloc (strpool->max_size);
 	memcpy (strpool->strings + (*strings != 0), strings, strpool->size);
 	strpool->strings[0] = 0;
 	for (s = 1; s < strpool->size; s += strlen (strpool->strings + s) + 1) {
-		Hash_Add (strpool->str_tab, (void *) s);
+		size_t ind = strpool->strids.size;
+		DARRAY_APPEND (&strpool->strids, (strid_t) { .offset = s });
+		auto strid = &strpool->strids.a[ind];
+		Hash_Add (strpool->str_tab, strid);
 	}
 	return strpool;
 }
@@ -98,27 +107,38 @@ strpool_delete (strpool_t *strpool)
 	free (strpool);
 }
 
+strid_t *
+strpool_addstrid (strpool_t *strpool, const char *str)
+{
+	if (!str || !*str) {
+		return &strpool->strids.a[0];
+	}
+	auto ind = (size_t) Hash_Find (strpool->str_tab, str);
+	if (ind) {
+		return &strpool->strids.a[ind];
+	}
+	size_t len = strlen (str) + 1;
+	if (strpool->size + len > strpool->max_size) {
+		strpool->max_size += (len + (STR_GROW - 1)) & ~(STR_GROW - 1);
+		strpool->strings = realloc (strpool->strings, strpool->max_size);
+	}
+
+	size_t s = strpool->size;
+	strpool->size += len;
+	strcpy (strpool->strings + s, str);
+	ind = strpool->strids.size;
+	DARRAY_APPEND (&strpool->strids, (strid_t) { .offset = s });
+	auto strid = &strpool->strids.a[ind];
+	Hash_Add (strpool->str_tab, (void *) ind);
+
+	return strid;
+}
+
 int
 strpool_addstr (strpool_t *strpool, const char *str)
 {
-	intptr_t    s;
-	int         len;
-
-	if (!str)
-		return 0;
-	s = (intptr_t) Hash_Find (strpool->str_tab, str);
-	if (s)
-		return s;
-	len = strlen (str) + 1;
-	if (strpool->size + len > strpool->max_size) {
-		strpool->max_size += (len + 16383) & ~16383;
-		strpool->strings = realloc (strpool->strings, strpool->max_size);
-	}
-	s = strpool->size;
-	strpool->size += len;
-	strcpy (strpool->strings + s, str);
-	Hash_Add (strpool->str_tab, (void *) s);
-	return s;
+	auto strid = strpool_addstrid (strpool, str);
+	return strid->offset;
 }
 
 int
@@ -138,15 +158,28 @@ ss_get_key (const void *s, void *unused)
 const char *
 save_string (const char *str)
 {
-	char       *s;
-	if (!saved_strings)
+	if (!str) {
+		return nullptr;
+	}
+	if (!saved_strings) {
 		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0, 0);
-	s = Hash_Find (saved_strings, str);
-	if (s)
+	}
+	char *s = Hash_Find (saved_strings, str);
+	if (s) {
 		return s;
+	}
 	s = strdup (str);
 	Hash_Add (saved_strings, s);
 	return s;
+}
+
+const char *
+save_substring (const char *str, int len)
+{
+	char        substr[len + 1];
+	strncpy (substr, str, len);
+	substr[len] = 0;
+	return save_string (substr);
 }
 
 const char *
@@ -159,13 +192,18 @@ save_cwd (void)
 }
 
 const char *
-make_string (char *token, char **end)
+make_string (const char *token, char **end)
 {
-	char        s[2];
+	char        s[7];	// utf8 needs 6 + nul
+	sizebuf_t   utf8str = {
+		.maxsize = sizeof (s),
+		.data = (byte *) s,
+	};
 	int         c;
 	int         i;
 	int         mask;
 	int         boldnext;
+	int         unicount;
 	int         quote;
 	static dstring_t *str;
 
@@ -177,8 +215,12 @@ make_string (char *token, char **end)
 
 	mask = 0x00;
 	boldnext = 0;
+	unicount = 0;
 
 	quote = *token++;
+	if (quote == '<') {
+		quote = '>';		// #include <file>
+	}
 	do {
 		c = *token++;
 		if (!c)
@@ -252,7 +294,33 @@ make_string (char *token, char **end)
 					}
 					if (!*token)
 						error (0, "EOF inside quote");
-					c ^= mask;
+					c ^= mask;	// cancel mask below
+					break;
+				case 'U':
+					unicount += 4;
+				case 'u':
+					unicount += 4;
+					boldnext = 0;
+					c = 0;
+					while (unicount && *token
+						   && isxdigit ((unsigned char)*token)) {
+						c *= 16;
+						if (*token <= '9')
+							c += *token - '0';
+						else if (*token <= 'F')
+							c += *token - 'A' + 10;
+						else
+							c += *token - 'a' + 10;
+						token++;
+						--unicount;
+					}
+					if (!*token) {
+						error (0, "EOF inside quote");
+					} else if (unicount) {
+						error (0, "incomplete unicode sequence: %x %d", c, unicount);
+					}
+					unicount = 1;	// signal need to encode to utf8
+					c ^= mask;	// cancel mask below
 					break;
 				case 'a':
 					boldnext = 0;
@@ -371,12 +439,20 @@ make_string (char *token, char **end)
 			c = c ^ 0x80;
 		boldnext = 0;
 		c = c ^ mask;
-		s[0] = c;
+		if (unicount) {
+			SZ_Clear (&utf8str);
+			MSG_WriteUTF8 (&utf8str, c);
+			MSG_WriteByte (&utf8str, 0);	// nul-terminate string
+			unicount = 0;
+		} else {
+			s[0] = c;
+			s[1] = 0;
+		}
 		dstring_appendstr (str, s);
 	} while (1);
 
 	if (end)
-		*end = token;
+		*end = (char *) token;
 
 	return save_string (str->str);
 }

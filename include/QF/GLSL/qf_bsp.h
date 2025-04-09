@@ -30,6 +30,7 @@
 #ifndef __QF_GLSL_qf_bsp_h
 #define __QF_GLSL_qf_bsp_h
 
+#include "QF/simd/types.h"
 #include "QF/GLSL/types.h"
 
 typedef struct glsltex_s {
@@ -59,7 +60,7 @@ typedef struct elechain_s {
 	struct elechain_s *next;
 	int         model_index;
 	elements_t *elements;
-	vec_t      *transform;
+	const vec4f_t *transform;
 	float      *color;
 } elechain_t;
 
@@ -68,8 +69,11 @@ struct model_s;
 void glsl_R_ClearElements (void);
 void glsl_R_DrawWorld (void);
 void glsl_R_DrawSky (void);
+void glsl_R_DrawWaterSurfaces (void);
 void glsl_R_RegisterTextures (struct model_s **models, int num_models);
 void glsl_R_BuildDisplayLists (struct model_s **models, int num_models);
 void glsl_R_InitBsp (void);
+void glsl_R_ShutdownBsp (void);
+void glsl_R_LoadSkys (const char *sky);
 
 #endif//__QF_GLSL_qf_bsp_h

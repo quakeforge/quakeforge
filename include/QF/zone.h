@@ -94,23 +94,31 @@
 
 typedef struct memzone_s memzone_t;
 typedef struct memhunk_s memhunk_t;
+typedef void (*zone_err_f) (void *data, const char *msg, ...) __attribute__((format(PRINTF,2,3)));
 
 memhunk_t *Memory_Init (void *buf, size_t size);
 
 void Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset,
 				  size_t ele_size);
+void Z_MemInfo (const memzone_t *zone, size_t *used, size_t *size);
 void Z_Free (memzone_t *zone, void *ptr);
 void *Z_Malloc (memzone_t *zone, size_t size);		// returns 0 filled memory
 void *Z_TagMalloc (memzone_t *zone, size_t size, int tag);
 void *Z_Realloc (memzone_t *zone, void *ptr, size_t size);
 void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
-void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
-				 void *data);
+void Z_SetError (memzone_t *zone, zone_err_f err, void *data);
 void Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size);
+int Z_IncRetainCount (memzone_t *zone, void *ptr);
+int Z_DecRetainCount (memzone_t *zone, void *ptr);
+int Z_GetRetainCount (memzone_t *zone, void *ptr) __attribute__((pure));
+int Z_GetTag (memzone_t *zone, void *ptr) __attribute__((pure));
+void Z_SetTag (memzone_t *zone, void *ptr, int tag);
+
+
 
 memhunk_t *Hunk_Init (void *buf, size_t size);
-void Hunk_Print (memhunk_t *hunk, qboolean all);
+void Hunk_Print (memhunk_t *hunk, bool all);
 void Hunk_Check (memhunk_t *hunk);
 void *Hunk_RawAlloc (memhunk_t *hunk, size_t size) __attribute__((nonnull(1)));
 void *Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name) __attribute__((nonnull(1)));

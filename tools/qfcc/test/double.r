@@ -1,3 +1,4 @@
+#pragma bug die
 void printf (string fmt, ...) = #0;
 # define M_PI 3.14159265358979323846
 
@@ -6,21 +7,21 @@ union {
 	int    i[2];
 } type_pun;
 
-int
+bool
 test_format ()
 {
-	int         fail = 0;
+	bool        fail;
 	type_pun.d = M_PI;
-	printf ("%g %08x%08x\n", type_pun.d, type_pun.i[1], type_pun.i[0]);
+	printf ("%.17g %08x%08x\n", type_pun.d, type_pun.i[1], type_pun.i[0]);
 	// this will fail on big-endian systems
 	fail = type_pun.i[0] != 0x54442d18 || type_pun.i[1] != 0x400921fb;
 	return fail;
 }
 
-int
+lbool
 test_constant ()
 {
-	int         fail = 0;
+	lbool       fail = false;
 	double      a, b, c, d, e;
 	a = 1;
 	b = 2.0;
@@ -40,10 +41,10 @@ double greater_equal = 3;
 double less_equal = 5;
 double greater = 5;
 
-int
+long
 test_copare ()
 {
-	int fail = 0;
+	lbool fail = 0;
 
 	fail |= !(less < greater);
 	fail |= (less > greater);
@@ -75,10 +76,10 @@ test_copare ()
 	return fail;
 }
 
-int
+lbool
 test_ops ()
 {
-	int         fail = 0;
+	lbool       fail = 0;
 	double      a = 6.25, b = 2.375;
 	double      c;
 
@@ -98,8 +99,8 @@ test_ops ()
 int
 main ()
 {
-	int         fail = 0;
-	fail |= test_format ();
+	lbool       fail = false;
+	fail |= (lbool) test_format ();
 	fail |= test_constant ();
 	fail |= test_ops ();
 	return fail;

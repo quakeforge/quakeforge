@@ -26,12 +26,6 @@ if test "x$enable_samplerate" != "xno"; then
 	fi
 fi
 AC_SUBST(SAMPLERATE_LIBS)
-dnl AM_CONDITIONAL(HAVE_SAMPLERATE, test "$HAVE_SAMPLERATE" = "yes")
-if test "x$HAVE_SAMPLERATE" = "xno"; then
-	AC_MSG_WARN([libsamplerate is required but was not found.]
-				[Sound will be disabled.])
-	enable_sound=no
-fi
 
 if test "x$enable_sound" != "xno"; then
 	AC_CHECK_LIB(mme, waveOutOpen, HAVE_LIBMME=yes)
@@ -238,26 +232,28 @@ QF_maGiC_VALUE
 	fi
 
 	dnl Win32
-	if test "x$ac_cv_header_windows_h" = "xyes"; then
-		SOUND_TYPES="$SOUND_TYPES Win32"
-		QF_NEED(snd_output, [win])
-		QF_NEED(snd_render, [default])
-		WINSND_LIBS="-lwinmm"
-		if test "x$ac_cv_header_dsound_h" = "xyes"; then
-		AC_EGREP_CPP([QF_maGiC_VALUE],
-			[
-#include <windows.h>
-#include <dsound.h>
-#ifdef GMEM_MOVEABLE
-# ifdef DirectSoundEnumerate
-QF_maGiC_VALUE
-# endif
-#endif
-			],
-			SOUND_TYPES="$SOUND_TYPES DirectX"
-			QF_NEED(snd_output, [dx])
+	if test "x$SYSTYPE" = xWIN32; then
+		if test "x$ac_cv_header_windows_h" = "xyes"; then
+			SOUND_TYPES="$SOUND_TYPES Win32"
+			QF_NEED(snd_output, [win])
 			QF_NEED(snd_render, [default])
-		)
+			WINSND_LIBS="-lwinmm"
+			if test "x$ac_cv_header_dsound_h" = "xyes"; then
+			AC_EGREP_CPP([QF_maGiC_VALUE],
+				[
+	#include <windows.h>
+	#include <dsound.h>
+	#ifdef GMEM_MOVEABLE
+	# ifdef DirectSoundEnumerate
+	QF_maGiC_VALUE
+	# endif
+	#endif
+				],
+				SOUND_TYPES="$SOUND_TYPES DirectX"
+				QF_NEED(snd_output, [dx])
+				QF_NEED(snd_render, [default])
+			)
+			fi
 		fi
 	fi
 	AC_SUBST(WINSND_LIBS)

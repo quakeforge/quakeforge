@@ -14,47 +14,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[int foo = _SC_PAGE
 ])
 fi
 
-AC_MSG_CHECKING(for __attribute__)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[static __attribute__ ((unused)) const char *foo = "bar";]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__)
-	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-])
-AH_VERBATIM([HAVE___ATTRIBUTE__],
-[/* Define this if the GCC __attribute__ keyword is available */
-#undef HAVE___ATTRIBUTE__
-#ifndef HAVE___ATTRIBUTE__
-# define __attribute__(x)
-#endif])
-
-AC_MSG_CHECKING(for __attribute__ ((visibility)))
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[void foo (void);
-	__attribute__ ((sivibility ("default"))) void foo (void) {}]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__VISIBILITY)
-	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-])
-AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
-[/* Define this if the GCC visibility __attribute__ is available */
-#undef HAVE___ATTRIBUTE__VISIBILITY
-#ifdef HAVE___ATTRIBUTE__VISIBILITY
-# define VISIBLE __attribute__((visibility ("default")))
-#else
-# define VISIBLE
-#endif])
-
-if test "x$SYSTYPE" = "xWIN32"; then
-	AC_MSG_CHECKING(for __attribute__ ((gcc_struct)))
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[typedef struct { int foo; }
-		__attribute__ ((gcc_struct)) gcc_struct_test;]], [[]])],[AC_DEFINE(HAVE___ATTRIBUTE__GCC_STRUCT)
-		AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-	])
-fi
-AH_VERBATIM([HAVE___ATTRIBUTE__GCC_STRUCT],
-[/* Define this if the GCC gcc_struct __attribute__ is available */
-#undef HAVE___ATTRIBUTE__GCC_STRUCT
-#ifdef HAVE___ATTRIBUTE__GCC_STRUCT
-# define GCC_STRUCT __attribute__((gcc_struct))
-#else
-# define GCC_STRUCT
-#endif])
-
 AC_MSG_CHECKING(for __builtin_expect)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[int x;]], [[if (__builtin_expect(!x, 1)) {}]])],[AC_DEFINE(HAVE___BUILTIN_EXPECT)
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)

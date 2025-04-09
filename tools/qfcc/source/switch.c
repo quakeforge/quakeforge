@@ -49,28 +49,28 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-#include "tools/qfcc/source/qc-parse.h"
-
 typedef struct case_node_s {
-	expr_t     *low;
-	expr_t     *high;
-	expr_t    **labels;
-	expr_t     *_label;
+	const expr_t *low;
+	const expr_t *high;
+	const expr_t **labels;
+	const expr_t *_label;
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static __attribute__((pure)) ex_value_t *
-get_value (expr_t *e)
+static ex_value_t * __attribute__((pure))
+get_value (const expr_t *e)
 {
 	if (e->type == ex_symbol)
-		return e->e.symbol->s.value;
+		return e->symbol->value;
 	if (e->type != ex_value)
 		internal_error (e, "bogus case label");
-	return e->e.value;
+	return e->value;
 }
 
 static __attribute__((pure)) uintptr_t
@@ -82,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
+	return Hash_Buffer (&val->raw_value, value_size) + val->lltype;
 }
 
 static int
@@ -90,8 +90,8 @@ compare (const void *_cla, const void *_clb, void *unused)
 {
 	case_label_t *cla = (case_label_t *) _cla;
 	case_label_t *clb = (case_label_t *) _clb;
-	expr_t     *v1 = cla->value;
-	expr_t     *v2 = clb->value;
+	const expr_t *v1 = cla->value;
+	const expr_t *v2 = clb->value;
 	ex_value_t *val1, *val2;
 
 	if (v1 == v2)
@@ -104,18 +104,16 @@ compare (const void *_cla, const void *_clb, void *unused)
 	val2 = get_value (v2);
 	if (val1->type != val2->type)
 		return 0;
-	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
+	return memcmp (&val1->raw_value, &val2->raw_value, value_size) == 0;
 }
 
-struct expr_s *
-case_label_expr (switch_block_t *switch_block, expr_t *value)
+const expr_t *
+case_label_expr (switch_block_t *switch_block, const expr_t *value)
 {
 	case_label_t *cl = malloc (sizeof (case_label_t));
 
 	SYS_CHECKMEM (cl);
 
-	if (value)
-		convert_name (value);
 	if (value && !is_constant (value)) {
 		error (value, "non-constant case value");
 		free (cl);
@@ -129,23 +127,23 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 	if (!switch_block->test)
 		internal_error (value, "broken switch block");
 	if (value) {
-		type_t     *type = get_type (switch_block->test);
-		type_t     *val_type = get_type (value);
+		auto type = get_type (switch_block->test);
+		auto val_type = get_type (value);
 		if (!type)
 			return 0;
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
-			value = new_integer_expr (expr_integer (value));
+			value = new_int_expr (expr_int (value), false);
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
-			value = new_integer_expr (expr_float (value));
+			value = new_int_expr (expr_float (value), false);
 		} else if (is_float (type) && is_integral (val_type)) {
 			debug (value, "integeral label used in float switch");
-			value = new_float_expr (expr_integer (value));
+			value = new_float_expr (expr_int (value), false);
 		} else if (is_float (type) && is_float (val_type)) {
-			value = new_float_expr (expr_float (value));
+			value = new_float_expr (expr_float (value), false);
 			debug (value, "float label used in float switch");
 		}
 	}
@@ -189,14 +187,14 @@ label_compare (const void *_a, const void *_b)
 		return strcmp (s1, s2);
 	} else if (is_float_val ((*a)->value)) {
 		return expr_float ((*a)->value) - expr_float ((*b)->value);
-	} else if (is_integer_val ((*a)->value)) {
-		return expr_integer ((*a)->value) - expr_integer ((*b)->value);
+	} else if (is_int_val ((*a)->value)) {
+		return expr_int ((*a)->value) - expr_int ((*b)->value);
 	}
 	internal_error (0, "in switch");
 }
 
 static case_node_t *
-new_case_node (expr_t *low, expr_t *high)
+new_case_node (const expr_t *low, const expr_t *high)
 {
 	case_node_t *node = malloc (sizeof (case_node_t));
 
@@ -210,10 +208,10 @@ new_case_node (expr_t *low, expr_t *high)
 	} else {
 		int         size;
 
-		if (!is_integer_val (low))
+		if (!is_int_val (low))
 			internal_error (low, "switch");
-		size = expr_integer (high) - expr_integer (low) + 1;
-		node->labels = calloc (size, sizeof (expr_t *));
+		size = expr_int (high) - expr_int (low) + 1;
+		node->labels = calloc (size, sizeof (const expr_t *));
 	}
 	node->left = node->right = 0;
 	return node;
@@ -253,18 +251,18 @@ build_case_tree (case_label_t **labels, int count, int range)
 	if (!nodes)
 		Sys_Error ("out of memory");
 
-	if (range && is_integer_val (labels[0]->value)) {
+	if (range && is_int_val (labels[0]->value)) {
 		for (i = 0; i < count - 1; i = j, num_nodes++) {
 			for (j = i + 1; j < count; j++) {
-				if (expr_integer (labels[j]->value)
-					- expr_integer (labels[j - 1]->value) > 1)
+				if (expr_int (labels[j]->value)
+					- expr_int (labels[j - 1]->value) > 1)
 					break;
 			}
 			nodes[num_nodes] = new_case_node (labels[i]->value,
 											  labels[j - 1]->value);
 			for (k = i; k < j; k++)
-				nodes[num_nodes]->labels[expr_integer (labels[k]->value)
-										 - expr_integer (labels[i]->value)]
+				nodes[num_nodes]->labels[expr_int (labels[k]->value)
+										 - expr_int (labels[i]->value)]
 					= labels[k]->label;
 		}
 		if (i < count) {
@@ -284,13 +282,13 @@ build_case_tree (case_label_t **labels, int count, int range)
 }
 
 static void
-build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
-			  expr_t *temp, expr_t *default_label)
+build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
+			  const expr_t *temp, const expr_t *default_label)
 {
-	expr_t     *test;
-	expr_t     *branch;
-	expr_t     *high_label = default_label;
-	expr_t     *low_label = default_label;
+	const expr_t *test;
+	const expr_t *branch;
+	const expr_t *high_label = default_label;
+	const expr_t *low_label = default_label;
 
 	if (!tree) {
 		branch = goto_expr (default_label);
@@ -311,12 +309,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr ('n', new_alias_expr (&type_integer, temp),
+		branch = branch_expr (QC_EQ, new_alias_expr (&type_int, temp),
 							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (IFA, new_alias_expr (&type_integer, temp),
+			branch = branch_expr (QC_GT, new_alias_expr (&type_int, temp),
 								  high_label);
 			append_expr (sw, branch);
 
@@ -329,37 +327,38 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 	} else {
-		int         low = expr_integer (tree->low);
-		int         high = expr_integer (tree->high);
+		int         low = expr_int (tree->low);
+		int         high = expr_int (tree->high);
 		symbol_t   *table_sym;
-		expr_t     *table_expr;
+		const expr_t *table_expr;
 		expr_t     *table_init;
 		const char *table_name = new_label_name ();
 		int         i;
-		expr_t     *range = binary_expr ('-', tree->high, tree->low);
-		expr_t     *label;
+		const expr_t *range = binary_expr ('-', tree->high, tree->low);
+		const expr_t *label;
 
 		table_init = new_compound_init ();
 		for (i = 0; i <= high - low; i++) {
-			tree->labels[i]->e.label.used++;
-			label = address_expr (tree->labels[i], 0, 0);
+			((expr_t *) tree->labels[i])->label.used++;
+			label = address_expr (tree->labels[i], 0);
 			append_element (table_init, new_element (label, 0));
 		}
 		table_sym = new_symbol_type (table_name,
-									 array_type (&type_integer,
+									 array_type (&type_int,
 												 high - low + 1));
-		initialize_def (table_sym, table_init, pr.near_data, sc_static);
+		initialize_def (table_sym, table_init, pr.near_data, sc_static,
+						current_symtab, nullptr);
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {
-			branch = branch_expr (IFB, temp, low_label);
+			branch = branch_expr (QC_LT, temp, low_label);
 			append_expr (sw, branch);
 		}
-		test = binary_expr (GT, cast_expr (&type_uinteger, temp),
-							cast_expr (&type_uinteger, range));
-		branch = branch_expr ('i', test, high_label);
+		test = binary_expr (QC_GT, cast_expr (&type_uint, temp),
+							cast_expr (&type_uint, range));
+		branch = branch_expr (QC_NE, test, high_label);
 		append_expr (sw, branch);
-		branch = new_binary_expr ('g', table_expr, temp);
+		branch = jump_table_expr (table_expr, temp);
 		append_expr (sw, branch);
 		debug (sw, "switch using jump table");
 		if (tree->left) {
@@ -378,11 +377,11 @@ check_enum_switch (switch_block_t *switch_block)
 {
 	case_label_t cl;
 	symbol_t   *enum_val;
-	type_t     *type = get_type (switch_block->test);
+	auto type = get_type (switch_block->test);
 
-	for (enum_val = type->t.symtab->symbols; enum_val;
+	for (enum_val = type->symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_integer_expr (enum_val->s.value->v.integer_val);
+		cl.value = new_int_expr (enum_val->value->int_val, false);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",
@@ -391,27 +390,25 @@ check_enum_switch (switch_block_t *switch_block)
 	}
 }
 
-struct expr_s *
-switch_expr (switch_block_t *switch_block, expr_t *break_label,
-			 expr_t *statements)
+const expr_t *
+switch_expr (switch_block_t *switch_block, const expr_t *break_label,
+			 const expr_t *statements)
 {
-	case_label_t **labels, **l;
-	case_label_t _default_label;
-	case_label_t *default_label = &_default_label;
-	expr_t     *sw = new_block_expr ();
-	type_t     *type = get_type (switch_block->test);
-	expr_t     *sw_val = new_temp_def_expr (type);
-	expr_t     *default_expr;
-	int         num_labels = 0;
-	int         saved_line = pr.source_line;
-	string_t    saved_file = pr.source_file;
-
 	if (switch_block->test->type == ex_error) {
 		return switch_block->test;
 	}
 
-	pr.source_line = sw_val->line = switch_block->test->line;
-	pr.source_file = sw_val->file = switch_block->test->file;
+	auto        saved_loc = pr.loc;
+	pr.loc = switch_block->test->loc;
+
+	case_label_t **labels, **l;
+	case_label_t _default_label;
+	case_label_t *default_label = &_default_label;
+	expr_t     *sw = new_block_expr (0);
+	auto type = get_type (switch_block->test);
+	const expr_t *sw_val = new_temp_def_expr (type);
+	const expr_t *default_expr;
+	int         num_labels = 0;
 
 	default_label->value = 0;
 	default_label = Hash_DelElement (switch_block->labels, default_label);
@@ -432,31 +429,30 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
-			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			expr_t     *test = branch_expr ('i', test_expr (cmp),
-											(*l)->label);
+			const expr_t *cmp = binary_expr (QC_EQ, sw_val, (*l)->value);
+			const expr_t *test = branch_expr (QC_NE, test_expr (cmp),
+											  (*l)->label);
 
 			append_expr (sw, test);
 		}
 		default_expr = goto_expr (default_label->label);
 		append_expr (sw, default_expr);
 	} else {
-		expr_t     *temp;
+		const expr_t *temp;
 		int         op;
 		case_node_t *case_tree;
 
 		if (is_string(type))
-			temp = new_temp_def_expr (&type_integer);
+			temp = new_temp_def_expr (&type_bool);
 		else
 			temp = new_temp_def_expr (type);
 		case_tree = build_case_tree (labels, num_labels, is_integral (type));
 		op = '-';
 		if (type->type == ev_string)
-			op = NE;
+			op = QC_NE;
 		build_switch (sw, case_tree, op, sw_val, temp, default_label->label);
 	}
-	pr.source_line = saved_line;
-	pr.source_file = saved_file;
+	pr.loc = saved_loc;
 	append_expr (sw, statements);
 	append_expr (sw, break_label);
 	return sw;

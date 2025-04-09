@@ -52,11 +52,15 @@
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 
 static const char quakeforge_effect[] =
 #include "libs/video/renderer/glsl/quakeforge.slc"
+"--\n"	// ensure the last block of the previous file doesn't merge with
+		// the first block of the next file
+// Include Stefan Gustavson's noise functions in the QuakeForge shader
+// effect "file".
+#include "libs/video/renderer/glsl/sgustavson.slc"
 ;
 
 int					glsl_palette;
@@ -143,15 +147,51 @@ GLSL_SetPalette (void *data, const byte *palette)
 }
 
 void
+GLSL_Shutdown_Common (void)
+{
+	GLSL_ShaderShutdown ();
+}
+
+static void
+debug_breakpoint (GLenum type)
+{
+	exit (1);
+}
+
+static void
+MessageCallback (GLenum source, GLenum type, GLuint id, GLenum severity,
+				 GLsizei length, const GLchar *message, const void *uparam)
+{
+	if (type == GL_DEBUG_TYPE_OTHER
+		&& severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+			return;
+	}
+	if (type != GL_DEBUG_TYPE_PERFORMANCE) {
+		fprintf (stderr,
+				 "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+				 ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
+			     type, severity, message );
+	}
+	if (type == GL_DEBUG_TYPE_ERROR) {
+		debug_breakpoint (type);
+	}
+}
+
+void
 GLSL_Init_Common (void)
 {
 	EGLF_FindFunctions ();
 
 	GLSL_Common_Init_Cvars ();
 
+	if (0) {
+		qfeglEnable (GL_DEBUG_OUTPUT);
+		qfeglDebugMessageCallback (MessageCallback, nullptr);
+	}
+
 	GLSL_TextureInit ();
 
-	if (developer->int_val & SYS_glsl) {
+	if (developer & SYS_glsl) {
 		GLint       max;
 
 		qfeglGetIntegerv (GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
@@ -198,7 +238,7 @@ GLSL_CompileShader (const char *name, const shader_t *shader, int type)
 	qfeglShaderSource (sid, shader->num_strings, shader->strings, 0);
 	qfeglCompileShader (sid);
 	qfeglGetShaderiv (sid, GL_COMPILE_STATUS, &compiled);
-	if (!compiled || (developer->int_val & SYS_glsl)) {
+	if (!compiled || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetShaderiv (sid, GL_INFO_LOG_LENGTH, &size);
@@ -267,7 +307,7 @@ type_name (GLenum type)
 		case GL_FIXED:
 			return "fixed";
 	}
-	return va (0, "%x", type);
+	return va ("%x", type);
 }
 
 static void
@@ -321,7 +361,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 	qfeglLinkProgram (program);
 
 	qfeglGetProgramiv (program, GL_LINK_STATUS, &linked);
-	if (!linked || (developer->int_val & SYS_glsl)) {
+	if (!linked || (developer & SYS_glsl)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
 		qfeglGetProgramiv (program, GL_INFO_LOG_LENGTH, &size);
@@ -336,7 +376,7 @@ GLSL_LinkProgram (const char *name, int vert, int frag)
 		if (!linked)
 			return 0;
 	}
-	if (developer->int_val & SYS_glsl)
+	if (developer & SYS_glsl)
 		dump_program (name, program);
 	return program;
 }

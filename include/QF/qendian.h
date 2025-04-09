@@ -73,7 +73,7 @@
 #define LittleFloat FloatSwap
 #endif
 
-extern qboolean		bigendien;
+extern bool bigendien;
 
 uint16_t	_ShortSwap (uint16_t l) __attribute__((const));
 uint16_t	_ShortNoSwap (uint16_t l) __attribute__((const));

@@ -44,36 +44,58 @@
 
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/scene.h"
 
 #include "compat.h"
 
 #include "client/effects.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
-#include "nq/include/chase.h"
+#include "client/chase.h"
+
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
-entity_t        cl_entities[MAX_EDICTS];
-double          cl_msgtime[MAX_EDICTS];
-byte            cl_forcelink[MAX_EDICTS];
+entity_t    cl_entities[MAX_EDICTS];
+double      cl_msgtime[MAX_EDICTS];
+static byte forcelink_bytes[SET_SIZE(MAX_EDICTS)];
+#define alloc_forcelink(s) (set_bits_t *)forcelink_bytes
+set_t       cl_forcelink = SET_STATIC_INIT (MAX_EDICTS, alloc_forcelink);
+#undef alloc_forcelink
 
 void
 CL_ClearEnts (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 
 	for (i = 0; i < MAX_EDICTS; i++) {
-		CL_Init_Entity (cl_entities + i);
+		cl_entities[i] = nullentity;
+		cl_msgtime[i] = -1;
 	}
 
-	// clear other arrays
 	i = nq_entstates.num_frames * nq_entstates.num_entities;
 	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
-	memset (cl_msgtime, 0, sizeof (cl_msgtime));
-	memset (cl_forcelink, 0, sizeof (cl_forcelink));
+	set_empty (&cl_forcelink);
+}
+
+static entity_t
+CL_GetInvalidEntity (int num)
+{
+	return cl_entities[num];
+}
+
+entity_t
+CL_GetEntity (int num)
+{
+	if (!Entity_Valid (cl_entities[num])) {
+		cl_entities[num] = Scene_CreateEntity (cl_world.scene);
+		CL_Init_Entity (cl_entities[num]);
+	}
+	return cl_entities[num];
 }
 
 /*
@@ -89,7 +111,7 @@ CL_LerpPoint (void)
 
 	f = cl.mtime[0] - cl.mtime[1];
 
-	if (!f || cl_nolerp->int_val || cls.timedemo || sv.active) {
+	if (!f || cl_nolerp || cls.timedemo || sv.active) {
 		cl.time = cl.mtime[0];
 		return 1;
 	}
@@ -114,12 +136,12 @@ CL_LerpPoint (void)
 }
 
 static void
-set_entity_model (entity_t *ent, int modelindex)
+set_entity_model (int ent_ind, int modelindex)
 {
-	int         i = ent - cl_entities;
-	renderer_t *renderer = &ent->renderer;
-	animation_t *animation = &ent->animation;
-	renderer->model = cl.model_precache[modelindex];
+	entity_t    ent = cl_entities[ent_ind];
+	auto renderer = Entity_GetRenderer (ent);
+	auto animation = Entity_GetAnimation (ent);
+	renderer->model = cl_world.models.a[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
 	if (renderer->model) {
@@ -128,28 +150,23 @@ set_entity_model (entity_t *ent, int modelindex)
 		} else {
 			animation->syncbase = 0.0;
 		}
-	} else {
-		cl_forcelink[i] = true;	// hack to make null model players work
+		renderer->noshadows = renderer->model->shadow_alpha < 0.5;
 	}
+	// Changing the model can change the visibility of the entity and even
+	// the model type
+	SET_ADD (&cl_forcelink, ent_ind);
 	animation->nolerp = 1; // don't try to lerp when the model has changed
-	if (i <= cl.maxclients) {
-		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, i);
-	}
 }
 
 void
 CL_RelinkEntities (void)
 {
-	entity_t   *ent;
+	qfZoneNamedN (re_zzone, "CL_RelinkEntities", true);
+	entity_t    ent;
 	entity_state_t *new, *old;
-	renderer_t *renderer;
-	animation_t *animation;
 	float       bobjrotate, frac, f;
 	int         i, j;
-	int         entvalid;
-	int         model_flags;
-
-	r_data->player_entity = &cl_entities[cl.viewentity];
+	int         model_effects;
 
 	// determine partial update time
 	frac = CL_LerpPoint ();
@@ -169,7 +186,8 @@ CL_RelinkEntities (void)
 				d[j] += 360;
 			}
 		}
-		VectorMultAdd (cl.frameViewAngles[1], frac, d, cl.viewstate.angles);
+		VectorMultAdd (cl.frameViewAngles[1], frac, d,
+					   cl.viewstate.player_angles);
 	}
 
 	bobjrotate = anglemod (100 * cl.time);
@@ -178,77 +196,79 @@ CL_RelinkEntities (void)
 	for (i = 1; i < cl.num_entities; i++) {
 		new = &nq_entstates.frame[0 + cl.frameIndex][i];
 		old = &nq_entstates.frame[1 - cl.frameIndex][i];
-		ent = &cl_entities[i];
-		renderer = &ent->renderer;
-		animation = &ent->animation;
 
-		// if the object wasn't included in the last packet, remove it
-		entvalid = cl_msgtime[i] == cl.mtime[0];
-		if (entvalid && !new->modelindex) {
-			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
-								new->origin);
-			entvalid = 0;
-		}
-		if (!entvalid) {
-			renderer->model = NULL;
-			animation->pose1 = animation->pose2 = -1;
-			if (ent->visibility.efrag) {
-				r_funcs->R_RemoveEfrags (ent);	// just became empty
+		ent = CL_GetInvalidEntity (i);
+		// if the object wasn't included in the last packet, or the model
+		// has been removed, remove the entity
+		if (cl_msgtime[i] != cl.mtime[0] || !new->modelindex) {
+			// don't delete the player entity
+			if (i != cl.viewentity) {
+				if (Entity_Valid (ent)) {
+					Scene_DestroyEntity (cl_world.scene, ent);
+				}
+				continue;
 			}
-			continue;
 		}
 
-		if (cl_forcelink[i])
-			*old = *new;
+		if (!Entity_Valid (ent)) {
+			ent = CL_GetEntity (i);
+			SET_ADD (&cl_forcelink, i);
+		}
+		transform_t transform = Entity_Transform (ent);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
+		vec4f_t    *old_origin = Ent_GetComponent (ent.id, ent.base + scene_old_origin, ent.reg);
 
-		if (cl_forcelink[i] || new->modelindex != old->modelindex) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
+			*old = *new;
+		}
+
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->modelindex != old->modelindex) {
 			old->modelindex = new->modelindex;
-			set_entity_model (ent, new->modelindex);
+			set_entity_model (i, new->modelindex);
 		}
 		animation->frame = new->frame;
-		if (cl_forcelink[i] || new->colormap != old->colormap) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->colormap != old->colormap) {
 			old->colormap = new->colormap;
-			renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-														  new->colormap);
 		}
-		if (cl_forcelink[i] || new->skinnum != old->skinnum) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)
+			|| new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
 			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
-				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
-															  i);
-				mod_funcs->Skin_SetTranslation (i, cl.players[i - 1].topcolor,
-												cl.players[i - 1].bottomcolor);
+				Entity_SetColormap (ent, &(colormap_t) {
+					.top = cl.players[i - 1].topcolor,
+					.bottom = cl.players[i - 1].bottomcolor,
+				});
 			}
 		}
 
 		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
 		renderer->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
-		model_flags = 0;
+		model_effects = 0;
 		if (renderer->model) {
-			model_flags = renderer->model->flags;
+			model_effects = renderer->model->effects;
 		}
 
-		if (cl_forcelink[i]) {
+		if (SET_TEST_MEMBER (&cl_forcelink, i)) {
 			// The entity was not updated in the last message so move to the
 			// final spot
 			animation->pose1 = animation->pose2 = -1;
 			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
 								new->origin);
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->visibility.efrag) {
-					r_funcs->R_RemoveEfrags (ent);
-				}
-				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
+				R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 			}
-			ent->old_origin = new->origin;
+			*old_origin = new->origin;
 		} else {
 			vec4f_t     delta = new->origin - old->origin;
 			f = frac;
-			ent->old_origin = Transform_GetWorldPosition (ent->transform);
+			*old_origin = Transform_GetWorldPosition (transform);
 			// If the delta is large, assume a teleport and don't lerp
-			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
+			if (fabs (delta[0]) > 100 || fabs (delta[1]) > 100
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				CL_TransformEntity (ent, new->scale / 16.0, new->angles,
@@ -258,7 +278,7 @@ CL_RelinkEntities (void)
 				// interpolate the origin and angles
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
-				if (!(model_flags & EF_ROTATE)) {
+				if (!(model_effects & ME_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
@@ -270,39 +290,52 @@ CL_RelinkEntities (void)
 				}
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
-			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->visibility.efrag) {
-					vec4f_t     org
-						= Transform_GetWorldPosition (ent->transform);
-					if (!VectorCompare (org, ent->old_origin)) {//FIXME
-						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
-					}
-				} else {
-					r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+			if (i != cl.viewentity || chase_active || cl_player_shadows) {
+				vec4f_t     org = Transform_GetWorldPosition (transform);
+				if (!VectorCompare (org, *old_origin)) {//FIXME
+					R_AddEfrags (&cl_world.scene->worldmodel->brush, ent);
 				}
 			}
 		}
+		renderer->onlyshadows = (cl_player_shadows && i == cl.viewentity
+								 && !chase_active);
 
 		// rotate binary objects locally
-		if (model_flags & EF_ROTATE) {
+		if (model_effects & ME_ROTATE) {
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
 			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
-		CL_EntityEffects (i, ent, new, cl.time);
-		vec4f_t org = Transform_GetWorldPosition (ent->transform);
-		CL_NewDlight (i, org, new->effects, new->glow_size,
+		CL_EntityEffects (ent, new, cl.time);
+		vec4f_t org = Transform_GetWorldPosition (transform);
+		int effects = new->effects;
+		if (cl.maxclients == 1 && effects) {
+			// Enable blue and red lights for quad and invulnerability,
+			// but only for single-player as such information isn't provided
+			// by the server for other players and thus it would probably be
+			// confusing if the player could see the colored effects but not
+			// for others.
+			int         it = cl.stats[STAT_ITEMS];
+			effects |= (it & IT_QUAD)
+				>> (BITOP_LOG2(IT_QUAD) - BITOP_LOG2 (EF_BLUE));
+			effects |= (it & IT_INVULNERABILITY)
+				>> (BITOP_LOG2(IT_INVULNERABILITY) - BITOP_LOG2 (EF_RED));
+		}
+		CL_NewDlight (ent, org, effects, new->glow_size,
 					  new->glow_color, cl.time);
 		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
 			old->origin = org;
 		}
-		if (model_flags & ~EF_ROTATE)
-			CL_ModelEffects (ent, i, new->glow_color, cl.time);
+		if (model_effects & ~ME_ROTATE)
+			CL_ModelEffects (ent, new->glow_color, cl.time);
 
-		cl_forcelink[i] = false;
+		SET_REMOVE (&cl_forcelink, i);
 	}
-	cl.viewstate.origin
-		= Transform_GetWorldPosition (cl_entities[cl.viewentity].transform);
+	{
+		entity_t    player_entity = CL_GetEntity (cl.viewentity);
+		transform_t transform = Entity_Transform (player_entity);
+		cl.viewstate.player_entity = player_entity;
+		cl.viewstate.player_origin = Transform_GetWorldPosition (transform);
+	}
 }

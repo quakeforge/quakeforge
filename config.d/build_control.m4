@@ -95,8 +95,8 @@ if test "x$HAVE_X" = xyes; then
 			QF_NEED(iqm, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
-		QF_NEED(vid_render, [sw sw32 gl glsl])
-		QF_NEED(render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
+		QF_NEED(render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -120,8 +120,8 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA desktop/quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl])
-		QF_NEED(render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
+		QF_NEED(render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -175,7 +175,7 @@ if test "x$mingw" = xyes; then
 			QF_NEED(iqm, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
-		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -246,7 +246,7 @@ if test "x$ENABLE_tools_qfbsp" = xyes; then
 	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
-	QFCC_TARGETS="qfcc qfprogs\$(EXEEXT)"
+	QFCC_TARGETS="qfcc\$(EXEEXT) qfprogs\$(EXEEXT)"
 	QF_NEED(tools,[qfcc])
 	QF_NEED(libs,[gamecode util])
 fi
@@ -316,9 +316,11 @@ if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
 	qfac_qfcc_include_qf="\$(qfcc_include_qf)"
 	qfac_qfcc_include_qf_input="\$(qfcc_include_qf_input)"
+	qfac_qfcc_include_qf_progs="\$(qfcc_include_qf_progs)"
 fi
 QF_SUBST(qfac_qfcc_include_qf)
 QF_SUBST(qfac_qfcc_include_qf_input)
+QF_SUBST(qfac_qfcc_include_qf_progs)
 
 if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf="\$(include_qf)"
@@ -327,6 +329,7 @@ if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf_input="\$(include_qf_input)"
 	qfac_include_qf_math="\$(include_qf_math)"
 	qfac_include_qf_plugin="\$(include_qf_plugin)"
+	qfac_include_qf_progs="\$(include_qf_progs) \$(include_qf_progs_gen)"
 	qfac_include_qf_scene="\$(include_qf_scene)"
 	qfac_include_qf_simd="\$(include_qf_simd)"
 	qfac_include_qf_ui="\$(include_qf_ui)"
@@ -338,6 +341,7 @@ QF_SUBST(qfac_include_qf_glsl)
 QF_SUBST(qfac_include_qf_input)
 QF_SUBST(qfac_include_qf_math)
 QF_SUBST(qfac_include_qf_plugin)
+QF_SUBST(qfac_include_qf_progs)
 QF_SUBST(qfac_include_qf_scene)
 QF_SUBST(qfac_include_qf_simd)
 QF_SUBST(qfac_include_qf_ui)
@@ -352,8 +356,8 @@ QF_SUBST(progs_gz)
 QF_PROCESS_NEED_LIST(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
-QF_PROCESS_NEED_LIBS(render, [gl glsl sw sw32 vulkan], [libs/video/renderer])
-QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw sw32 vulkan])
+QF_PROCESS_NEED_LIBS(render, [gl glsl sw vulkan], [libs/video/renderer])
+QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw vulkan])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
@@ -403,7 +407,7 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
-	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw sw32 glsl gl vulkan], [libs/video/renderer])
+	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [libs/console], [client])
 
@@ -418,7 +422,7 @@ if test "x$static_plugins" = xyes; then
 		CDTYPE="$CDTYPE (static)"
 	fi
 else
-	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 glsl gl vulkan], [libs/video/renderer])
+	QF_PROCESS_NEED_PLUGINS(vid_render, [sw glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [libs/console], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa], [libs/audio/targets])

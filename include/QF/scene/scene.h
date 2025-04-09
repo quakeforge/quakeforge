@@ -40,21 +40,56 @@
 */
 ///@{
 
-typedef struct hierarchyset_s DARRAY_TYPE (struct hierarchy_s *)
-	hierarchyset_t;
-typedef struct visibilityset_s DARRAY_TYPE (struct visibility_s *)
-	visibilityset_t;
+enum scene_components {
+	scene_href,			//hierarchical transform
+	scene_animation,
+	scene_visibility,
+	scene_renderer,
+	scene_active,
+	scene_old_origin,	//XXX FIXME XXX should not be here
+	scene_colormap,
+
+	scene_dynlight,
+
+	scene_light,
+	scene_efrags,
+	scene_lightstyle,
+	scene_lightleaf,
+	scene_lightid,
+
+	//FIXME these should probably be private to the sw renderer (and in a
+	//group, which needs to be implemented), but need to sort out a good
+	//scheme for semi-dynamic components
+	scene_sw_matrix,	// world transform matrix
+	scene_sw_frame,		// animation frame
+	scene_sw_brush,		// brush model data pointer
+
+	scene_comp_count
+};
 
 typedef struct scene_s {
-	struct scene_resources_s *const resources;
-	hierarchyset_t  roots;
-	xformset_t  transforms;
-	entityset_t entities;
-	visibilityset_t visibility;
+	struct ecs_registry_s *reg;
+	uint32_t base;
+
+	struct model_s *worldmodel;
+	int         num_models;
+	struct model_s **models;
+	struct mleaf_s *viewleaf;
+	struct lightingdata_s *lights;
+
+	uint32_t    camera;
 } scene_t;
 
-scene_t *Scene_NewScene (void);
-struct entity_s *Scene_CreateEntity (scene_t *scene);
+typedef struct scene_system_s {
+	struct ecs_system_s *system;
+	const struct component_s *components;
+	uint32_t    component_count;
+} scene_system_t;
+
+scene_t *Scene_NewScene (scene_system_t *extra_systems);
+void Scene_DeleteScene (scene_t *scene);
+struct entity_s Scene_CreateEntity (scene_t *scene);
+void Scene_DestroyEntity (scene_t *scene, struct entity_s entity);
 void Scene_FreeAllEntities (scene_t *scene);
 
 

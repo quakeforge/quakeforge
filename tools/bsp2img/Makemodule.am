@@ -5,6 +5,6 @@ BSP2IMG_INCS=@BSP2IMG_INCS@
 EXTRA_PROGRAMS +=		bsp2img
 bin_PROGRAMS += @BSP2IMG_TARGETS@
 
-bsp2img_SOURCES= tools/bsp2img/bsp2img.c
+bsp2img_SOURCES= tools/bsp2img/bsp2img.c $(tracy_src)
 bsp2img_LDADD= $(BSP2IMG_LIBS)
 bsp2img_DEPENDENCIES= $(BSP2IMG_DEPS)

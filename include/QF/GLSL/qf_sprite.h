@@ -31,6 +31,9 @@
 #define __QF_GLSL_qf_sprite_h
 
 struct entity_s;
-void glsl_R_DrawSprite (struct entity_s *ent);
+void glsl_R_DrawSprite (struct entity_s ent);
+void glsl_R_SpriteBegin (void);
+void glsl_R_SpriteEnd (void);
+void glsl_R_InitSprites (void);
 
 #endif//__QF_GLSL_qf_sprite_h

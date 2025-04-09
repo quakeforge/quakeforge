@@ -1,3 +1,9 @@
+quakeforge (0.9.0) frozen unstable; urgency=low
+
+  * 4200+ changes
+
+ -- Bill Currie <bill@taniwha.org>  Sat, 18 Nov 2023 00:12:45 +0900
+
 quakeforge (0.7.1-1) frozen unstable; urgency=low
 
   * version 0.7.1 :)

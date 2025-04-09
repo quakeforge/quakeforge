@@ -42,14 +42,45 @@
 
 #include <getopt.h>
 
-#include "QF/pr_comp.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/linker.h"
 #include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/target.h"
+#include "tools/qfcc/include/type.h"
+
+options_t   options = {
+	.code = {
+		.fast_float = true,
+		.promote_float = true,
+		.commute_float_add = true,
+		.commute_float_mul = true,
+		.commute_float_dot = true,
+		.anticom_float_cross = true,
+		.anticom_float_sub = true,
+	},
+	.warnings = {
+		.uninited_variable = true,
+		.unused = true,
+		.executable = true,
+		.traditional = true,
+		.precedence = true,
+		.initializer = true,
+		.unimplemented = true,
+		.redeclared = true,
+		.enum_switch = true,
+	},
+	.single_cpp = true,
+	.save_temps = false,
+	.verbosity = 0,
+};
+static options_t   options_user_set;
 
 const char *this_program;
 const char **source_files;
@@ -68,6 +99,7 @@ enum {
 	OPT_NO_DEFAULT_PATHS,
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
+	OPT_RUAMOKO,
 	OPT_TRADITIONAL,
 	OPT_BUG,
 };
@@ -91,7 +123,9 @@ static struct option const long_options[] = {
 	{"progs-src", required_argument, 0, 'P'},
 	{"qccx-escapes", no_argument, 0, OPT_QCCX_ESCAPES},
 	{"quiet", no_argument, 0, 'q'},
+	{"raumoko", no_argument, 0, OPT_RUAMOKO},
 	{"relocatable", no_argument, 0, 'r'},
+	{"ruamoko", no_argument, 0, OPT_RUAMOKO},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
 	{"traditional", no_argument, 0, OPT_TRADITIONAL},
@@ -111,6 +145,7 @@ static const char *short_options =
 	"F"		// generate files.dat
 	"g"		// debug
 	"h"		// help
+	"i::"	// set includes
 	"I:"	// set includes
 	"L:"	// lib path
 	"l:"	// lib file
@@ -138,7 +173,6 @@ usage (int status)
 	printf (
 "Options:\n"
 "        --advanced            Advanced Ruamoko mode\n"
-"                              default for separate compilation mode\n"
 "        --bug OPTION,...      Set bug options\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -c                        Only compile, don't link\n"
@@ -168,9 +202,13 @@ usage (int status)
 "                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
 "    -r, --relocatable         Incremental linking\n"
+"        --raumoko             Use both Ruamoko language features and the\n"
+"        --ruamoko             Ruamoko ISA, providing access to SIMD types\n"
+"                              and a stack for locals.\n"
+"                              default for separate compilation mode\n"
 "    -S, --save-temps          Do not delete temporary files\n"
 "    -s, --source DIR          Look for progs.src in DIR instead of \".\"\n"
-"        --traditional         Traditional QuakeC mode: implies v6only\n"
+"        --traditional         Traditional QuakeC mode: implies target=v6\n"
 "                              default when using progs.src\n"
 "    -U, --undefine SYMBOL     Undefine preprocessor symbols\n"
 "    -V, --version             Output version information and exit\n"
@@ -184,12 +222,15 @@ usage (int status)
 	exit (status);
 }
 
-static void
+static bool
 code_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
 	printf (
+"    c-array[=name]          Generate a C file with an array instead of the\n"
+"                            default output for the target, with optional\n"
+"                            override for the array name\n"
 "    [no-]const-initializers Treat initialized globals as constants.\n"
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
@@ -207,15 +248,18 @@ code_usage (void)
 "                            passing\n"
 "                            vectors to functiosn.\n"
 "    [no-]vector-components  Create *_[xyz] symbols for vector variables.\n"
-"    [no-]v6only             Restrict output code to version 6 progs\n"
-"                            features.\n"
+"    target=v6|v6p|ruamoko   Generate code for the specified target VM\n"
+"                                v6       Standard Quake VM (qcc compatible)\n"
+"                                v6p     *QuakeForge extended v6 instructions\n"
+"                                ruamoko  QuakeForge SIMD instructions\n"
 "\n"
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 warning_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -248,9 +292,10 @@ warning_usage (void)
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 notice_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -263,9 +308,10 @@ notice_usage (void)
 "For details, see the qfcc(1) manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
-static void
+static bool
 bug_usage (void)
 {
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
@@ -278,6 +324,7 @@ bug_usage (void)
 "This is a developer feature and thus not in the manual page\n"
 	);
 	exit (0);
+	return false;
 }
 
 static void
@@ -291,6 +338,272 @@ add_file (const char *file)
 	source_files[num_files] = 0;
 }
 
+#define OPTION(type, opt, str, field, flag) \
+	({ \
+		bool match = false; \
+		if (strcasecmp (opt, str) == 0) { \
+			options.type.field = flag; \
+			options_user_set.type.field = true; \
+			match = true; \
+		} \
+		match; \
+	})
+
+static bool
+parse_block_dot_option (const char *opt)
+{
+	bool        flag = true;
+
+	if (!strncasecmp (opt, "no-", 3)) {
+		flag = false;
+		opt += 3;
+	}
+	if (OPTION (block_dot, opt, "initial", initial, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "thread", thread, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "dead", dead, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "final", final, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "dags", dags, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "expr", expr, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "flow", flow, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "reaching", reaching, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "statements", statements, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "live", live, flag)) {
+		return true;
+	}
+	if (OPTION (block_dot, opt, "post", post, flag)) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+parse_bug_option (const char *opt)
+{
+	if (OPTION (bug, opt, "help", help, bug_usage ())) {
+		return true;
+	}
+	if (OPTION (bug, opt, "none", silent, true)) {
+		return true;
+	}
+	if (OPTION (bug, opt, "warn", promote, true)) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+parse_notice_option (const char *opt)
+{
+	if (OPTION (notices, opt, "help", help, notice_usage ())) {
+		return true;
+	}
+	if (OPTION (notices, opt, "none", silent, true)) {
+		return true;
+	}
+	if (OPTION (notices, opt, "warn", promote, true)) {
+		return true;
+	}
+	return false;
+}
+
+bool
+parse_warning_option (const char *opt)
+{
+	if (!(strcasecmp (opt, "all"))) {
+		OPTION(warnings, "", "", cow, true);
+		OPTION(warnings, "", "", undefined_function, true);
+		OPTION(warnings, "", "", uninited_variable, true);
+		OPTION(warnings, "", "", vararg_integer, true);
+		OPTION(warnings, "", "", integer_divide, true);
+		OPTION(warnings, "", "", interface_check, true);
+		OPTION(warnings, "", "", unused, true);
+		OPTION(warnings, "", "", executable, true);
+		OPTION(warnings, "", "", traditional, true);
+		OPTION(warnings, "", "", precedence, true);
+		OPTION(warnings, "", "", initializer, true);
+		OPTION(warnings, "", "", unimplemented, true);
+		OPTION(warnings, "", "", redeclared, true);
+		OPTION(warnings, "", "", enum_switch, true);
+		return true;
+	} else if (!(strcasecmp (opt, "none"))) {
+		OPTION(warnings, "", "", cow, false);
+		OPTION(warnings, "", "", undefined_function, false);
+		OPTION(warnings, "", "", uninited_variable, false);
+		OPTION(warnings, "", "", vararg_integer, false);
+		OPTION(warnings, "", "", integer_divide, false);
+		OPTION(warnings, "", "", interface_check, false);
+		OPTION(warnings, "", "", unused, false);
+		OPTION(warnings, "", "", executable, false);
+		OPTION(warnings, "", "", traditional, false);
+		OPTION(warnings, "", "", precedence, false);
+		OPTION(warnings, "", "", initializer, false);
+		OPTION(warnings, "", "", unimplemented, false);
+		OPTION(warnings, "", "", redeclared, false);
+		OPTION(warnings, "", "", enum_switch, false);
+		return true;
+	} else {
+		bool        flag = true;
+
+		if (!strncasecmp (opt, "no-", 3)) {
+			flag = false;
+			opt += 3;
+		}
+		if (OPTION(warnings, opt, "cow", cow, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "error", promote, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "executable", executable, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "help", help, warning_usage())) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "initializer", initializer, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "integer-divide", integer_divide, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "interface-check", interface_check, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "precedence", precedence, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "redeclared", redeclared, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "switch", enum_switch, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "traditional", traditional, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "undef-function", undefined_function, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "unimplemented", unimplemented, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "unused", unused, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "uninited-var", uninited_variable, flag)) {
+			return true;
+		}
+		if (OPTION(warnings, opt, "vararg-integer", vararg_integer, flag)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool
+parse_code_option (const char *opt)
+{
+	bool        flag = true;
+
+	if (!(strncasecmp (opt, "target=", 7))) {
+		return target_set_backend (opt + 7);
+	}
+	if (!strncasecmp (opt, "no-", 3)) {
+		flag = false;
+		opt += 3;
+	}
+	if (!strcasecmp (opt, "cpp")) {
+		cpp_name = flag ? CPP_NAME : 0;
+		return true;
+	}
+	if (!strcasecmp (opt, "single-cpp")) {
+		options.single_cpp = flag;
+		return true;
+	}
+	if (OPTION(code, opt, "cow", cow, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "crc", crc, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "debug", debug, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "fast-float", fast_float, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "promote-float", promote_float, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "help", help, code_usage ())) {
+		return true;
+	}
+	if (OPTION(code, opt, "local-merging", local_merging, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "optimize", optimize, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "short-circuit", short_circuit, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "ifstring", ifstring, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "vector-calls", vector_calls, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "vector-components", vector_components, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "const-initializers", const_initializers, flag)) {
+		return true;
+	}
+	if (OPTION(code, opt, "c-array", c_array, flag)) {
+		return true;
+	}
+	if (!strncasecmp (opt, "c-array=", 8)) {
+		options.code.c_array = true;
+		options.code.c_array_name = save_string (opt + 8);
+		return true;
+	}
+	return false;
+}
+
+static int
+parse_args_string (const char *args, bool (*parse) (const char *))
+{
+	void free_opts (char **o) { free (*o); }
+	__attribute__((cleanup(free_opts))) char *opts = strdup (optarg);
+
+	char       *temp = strtok (opts, ",");
+	while (temp) {
+		if (!parse (temp)) {
+			return false;
+		}
+		temp = strtok (NULL, ",");
+	}
+	return true;
+}
+
 int
 DecodeArgs (int argc, char **argv)
 {
@@ -299,28 +612,10 @@ DecodeArgs (int argc, char **argv)
 
 	add_cpp_undef ("-undef");
 	add_cpp_undef ("-nostdinc");
-	add_cpp_def ("-D__QFCC__=1");
-	add_cpp_def ("-D__QUAKEC__=1");
+	add_cpp_undef ("-fno-extended-identifiers");
 
-	options.code.short_circuit = -1;
-	options.code.local_merging = -1;
-	options.code.vector_components = -1;
-	options.code.crc = -1;
-	options.code.fast_float = true;
-	options.code.promote_float = true;
-	options.warnings.uninited_variable = true;
-	options.warnings.unused = true;
-	options.warnings.executable = true;
-	options.warnings.traditional = true;
-	options.warnings.precedence = true;
-	options.warnings.initializer = true;
-	options.warnings.unimplemented = true;
-	options.warnings.redeclared = true;
-	options.warnings.enum_switch = true;
-
-	options.single_cpp = true;
-	options.save_temps = false;
-	options.verbosity = 0;
+	cpp_define ("__QFCC__");
+	cpp_define ("__QUAKEC__");
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -337,11 +632,19 @@ DecodeArgs (int argc, char **argv)
 							 this_program);
 					exit (1);
 				} else {
-					options.output_file = save_string (NORMALIZE (optarg));
+					const char *file = save_string (NORMALIZE (optarg));
+					options.output_file = file;
+					const char *dir = strrchr (file, '/');
+					if (dir) {
+						dir += 1; // keep / from path
+						options.output_path = save_substring (file, dir - file);
+					} else {
+						options.output_path = "";
+					}
 				}
 				break;
 			case 'l':					// lib file
-				add_file (va (0, "-l%s", NORMALIZE (optarg)));
+				add_file (va ("-l%s", NORMALIZE (optarg)));
 				break;
 			case 'L':
 				linker_add_path (NORMALIZE (optarg));
@@ -386,59 +689,30 @@ DecodeArgs (int argc, char **argv)
 			case OPT_EXTENDED:
 				options.traditional = 1;
 				options.advanced = false;
-				options.code.progsversion = PROG_ID_VERSION;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
-				options.advanced = false;
-				options.code.progsversion = PROG_ID_VERSION;
+				options.advanced = 0;
+				target_set_backend ("v6");
 				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
-				options.advanced = true;
-				options.code.progsversion = PROG_VERSION;
+				options.advanced = 1;
+				target_set_backend ("v6p");
+				options.code.const_initializers = false;
+				break;
+			case OPT_RUAMOKO:
+				options.traditional = 0;
+				options.advanced = 2;
+				target_set_backend ("ruamoko");
 				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
 				if (optarg) {
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						qboolean    flag = true;
-
-						if (!strncasecmp (temp, "no-", 3)) {
-							flag = false;
-							temp += 3;
-						}
-						if (!strcasecmp (temp, "initial")) {
-							options.block_dot.initial = flag;
-						} else if (!(strcasecmp (temp, "thread"))) {
-							options.block_dot.thread = flag;
-						} else if (!(strcasecmp (temp, "dead"))) {
-							options.block_dot.dead = flag;
-						} else if (!(strcasecmp (temp, "final"))) {
-							options.block_dot.final = flag;
-						} else if (!(strcasecmp (temp, "dags"))) {
-							options.block_dot.dags = flag;
-						} else if (!(strcasecmp (temp, "expr"))) {
-							options.block_dot.expr = flag;
-						} else if (!(strcasecmp (temp, "flow"))) {
-							options.block_dot.flow = flag;
-						} else if (!(strcasecmp (temp, "reaching"))) {
-							options.block_dot.reaching = flag;
-						} else if (!(strcasecmp (temp, "statements"))) {
-							options.block_dot.statements = flag;
-						} else if (!(strcasecmp (temp, "live"))) {
-							options.block_dot.live = flag;
-						} else if (!(strcasecmp (temp, "post"))) {
-							options.block_dot.post = flag;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
+					parse_args_string (optarg, parse_block_dot_option);
 			    } else {
 					options.block_dot.initial = true;
 					options.block_dot.thread = true;
@@ -462,172 +736,17 @@ DecodeArgs (int argc, char **argv)
 			case 'z':
 				options.gzip = true;
 				break;
-			case 'C':{					// code options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						qboolean    flag = true;
-
-						if (!strncasecmp (temp, "no-", 3)) {
-							flag = false;
-							temp += 3;
-						}
-						if (!strcasecmp (temp, "cow")) {
-							options.code.cow = flag;
-						} else if (!(strcasecmp (temp, "cpp"))) {
-							cpp_name = flag ? CPP_NAME : 0;
-						} else if (!(strcasecmp (temp, "crc"))) {
-							options.code.crc = flag;
-						} else if (!(strcasecmp (temp, "debug"))) {
-							options.code.debug = flag;
-						} else if (!(strcasecmp (temp, "fast-float"))) {
-							options.code.fast_float = flag;
-						} else if (!(strcasecmp (temp, "promote-float"))) {
-							options.code.promote_float = flag;
-						} else if (!strcasecmp (temp, "help")) {
-							code_usage ();
-						} else if (!(strcasecmp (temp, "local-merging"))) {
-							options.code.local_merging = flag;
-						} else if (!(strcasecmp (temp, "optimize"))) {
-							options.code.optimize = flag;
-						} else if (!(strcasecmp (temp, "short-circuit"))) {
-							options.code.short_circuit = flag;
-						} else if (!(strcasecmp (temp, "ifstring"))) {
-							options.code.ifstring = flag;
-						} else if (!(strcasecmp (temp, "single-cpp"))) {
-							options.single_cpp = flag;
-						} else if (!(strcasecmp (temp, "vector-calls"))) {
-							options.code.vector_calls = flag;
-						} else if (!(strcasecmp (temp, "vector-components"))) {
-							options.code.vector_components = flag;
-						} else if (!(strcasecmp (temp, "v6only"))) {
-							if (flag)
-								options.code.progsversion = PROG_ID_VERSION;
-							else
-								options.code.progsversion = PROG_VERSION;
-						} else if (!(strcasecmp (temp, "const-initializers"))) {
-							options.code.const_initializers = flag;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'C':
+				parse_args_string (optarg, parse_code_option);
 				break;
-			case 'W':{					// warning options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						if (!(strcasecmp (temp, "all"))) {
-							options.warnings.cow = true;
-							options.warnings.undefined_function = true;
-							options.warnings.uninited_variable = true;
-							options.warnings.vararg_integer = true;
-							options.warnings.integer_divide = true;
-							options.warnings.interface_check = true;
-							options.warnings.unused = true;
-							options.warnings.executable = true;
-							options.warnings.traditional = true;
-							options.warnings.precedence = true;
-							options.warnings.initializer = true;
-							options.warnings.unimplemented = true;
-							options.warnings.redeclared = true;
-							options.warnings.enum_switch = true;
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.warnings.cow = false;
-							options.warnings.undefined_function = false;
-							options.warnings.uninited_variable = false;
-							options.warnings.vararg_integer = false;
-							options.warnings.integer_divide = false;
-							options.warnings.interface_check = false;
-							options.warnings.unused = false;
-							options.warnings.executable = false;
-							options.warnings.traditional = false;
-							options.warnings.precedence = false;
-							options.warnings.initializer = false;
-							options.warnings.unimplemented = false;
-							options.warnings.redeclared = false;
-							options.warnings.enum_switch = false;
-						} else {
-							qboolean    flag = true;
-
-							if (!strncasecmp (temp, "no-", 3)) {
-								flag = false;
-								temp += 3;
-							}
-							if (!(strcasecmp (temp, "cow"))) {
-								options.warnings.cow = flag;
-							} else if (!strcasecmp (temp, "error")) {
-								options.warnings.promote = flag;
-							} else if (!strcasecmp (temp, "executable")) {
-								options.warnings.executable = flag;
-							} else if (!strcasecmp (temp, "help")) {
-								warning_usage ();
-							} else if (!strcasecmp (temp, "initializer")) {
-								options.warnings.initializer = flag;
-							} else if (!strcasecmp (temp, "integer-divide")) {
-								options.warnings.integer_divide = flag;
-							} else if (!strcasecmp (temp, "interface-check")) {
-								options.warnings.interface_check = flag;
-							} else if (!strcasecmp (temp, "precedence")) {
-								options.warnings.precedence = flag;
-							} else if (!strcasecmp (temp, "redeclared")) {
-								options.warnings.redeclared = flag;
-							} else if (!strcasecmp (temp, "switch")) {
-								options.warnings.enum_switch = flag;
-							} else if (!strcasecmp (temp, "traditional")) {
-								options.warnings.traditional = flag;
-							} else if (!strcasecmp (temp, "undef-function")) {
-								options.warnings.undefined_function = flag;
-							} else if (!strcasecmp (temp, "unimplemented")) {
-								options.warnings.unimplemented = flag;
-							} else if (!strcasecmp (temp, "unused")) {
-								options.warnings.unused = flag;
-							} else if (!strcasecmp (temp, "uninited-var")) {
-								options.warnings.uninited_variable = flag;
-							} else if (!strcasecmp (temp, "vararg-integer")) {
-								options.warnings.vararg_integer = flag;
-							}
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'W':
+				parse_args_string (optarg, parse_warning_option);
 				break;
-			case 'N':{					// notice options
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						if (!strcasecmp (temp, "help")) {
-							notice_usage ();
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.notices.silent = true;
-						} else if (!(strcasecmp (temp, "warn"))) {
-							options.notices.promote = true;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case 'N':
+				parse_args_string (optarg, parse_notice_option);
 				break;
-			case OPT_BUG:{
-					char       *opts = strdup (optarg);
-					char       *temp = strtok (opts, ",");
-
-					while (temp) {
-						if (!strcasecmp (temp, "help")) {
-							bug_usage ();
-						} else if (!(strcasecmp (temp, "none"))) {
-							options.bug.silent = true;
-						} else if (!(strcasecmp (temp, "die"))) {
-							options.bug.promote = true;
-						}
-						temp = strtok (NULL, ",");
-					}
-					free (opts);
-				}
+			case OPT_BUG:
+				parse_args_string (optarg, parse_bug_option);
 				break;
 			case OPT_CPP:				// --cpp=
 				cpp_name = save_string (optarg);
@@ -636,7 +755,7 @@ DecodeArgs (int argc, char **argv)
 				options.save_temps = true;
 				break;
 			case 'D':					// defines for cpp
-				add_cpp_def (nva ("%s%s", "-D", optarg));
+				cpp_define (optarg);
 				break;
 			case 'E':					// defines for cpp
 				saw_E = 1;
@@ -647,23 +766,33 @@ DecodeArgs (int argc, char **argv)
 				add_cpp_def (nva ("%s", "-include"));
 				add_cpp_def (nva ("%s", optarg));
 				break;
+			case 'i':					// includes
+				{
+					int o = cpp_include (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
+				}
+				break;
 			case 'I':					// includes
-				add_cpp_def (nva ("%s%s", "-I", optarg));
+				cpp_include ("I", optarg);
 				break;
 			case 'U':					// undefines
-				add_cpp_def (nva ("%s%s", "-U", optarg));
+				cpp_undefine (optarg);
 				break;
 			case 'M':
-				options.preprocess_only = 1;
-				if (optarg) {
-					add_cpp_def (nva ("-M%s", optarg));
-					if (strchr (optarg, 'D'))
+				{
+					if (optarg && strchr (optarg, 'D')) {
 						saw_MD = 1;
-					if (strchr ("FQT", optarg[0]))
-						add_cpp_def (argv[optind++]);
-				} else {
-					options.preprocess_only = 1;
-					add_cpp_def (nva ("-M"));
+					}
+					int o = cpp_depend (optarg, argv[optind]);
+					if (o < 0) {
+						usage (1);
+					} else {
+						optind += o;
+					}
 				}
 				break;
 			case OPT_NO_DEFAULT_PATHS:
@@ -679,62 +808,95 @@ DecodeArgs (int argc, char **argv)
 		fprintf (stderr, "%s: cannot use -E and -MD together\n", this_program);
 		exit (1);
 	}
-	if (saw_MD)
+	if (saw_MD) {
 		options.preprocess_only = 0;
+	}
+	options.preprocess_output = saw_E;
 	if (!source_files && !options.advanced) {
-		// progs.src mode without --advanced implies --traditional
+		// progs.src mode without --advanced or --ruamoko implies --traditional
 		// but --extended overrides
 		if (!options.traditional)
 			options.traditional = 2;
 		options.advanced = false;
-		if (!options.code.progsversion)
-			options.code.progsversion = PROG_ID_VERSION;
-		if (options.code.ifstring == (qboolean) -1)
+		if (!options.code.progsversion) {
+			target_set_backend ("v6");
+		}
+		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (qboolean) -1)
+		}
+		if (!options_user_set.code.short_circuit) {
 			options.code.short_circuit = false;
-		if (options.code.local_merging == (qboolean) -1)
+		}
+		if (!options_user_set.code.local_merging) {
 			options.code.local_merging = false;
-		if (options.code.vector_components == (qboolean) -1)
+		}
+		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = true;
+		}
+		if (!options_user_set.math.vector_mult) {
+			options.math.vector_mult = QC_DOT;
+		}
 	}
-	if (!options.code.progsversion)
-		options.code.progsversion = PROG_VERSION;
+	if (!options.code.progsversion) {
+		target_set_backend ("ruamoko");
+	}
 	if (!options.traditional) {
-		options.advanced = true;
-		add_cpp_def ("-D__RUAMOKO__=1");
-		add_cpp_def ("-D__RAUMOKO__=1");
-		if (options.code.ifstring == (qboolean) -1)
+		// avanced=2 requires the Ruamoko ISA
+		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
+		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
+		cpp_define (ruamoko);
+		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
-		if (options.code.short_circuit == (qboolean) -1)
+		}
+		if (!options_user_set.code.short_circuit) {
 			options.code.short_circuit = true;
-		if (options.code.local_merging == (qboolean) -1)
+		}
+		if (!options_user_set.code.local_merging) {
 			options.code.local_merging = true;
-		if (options.code.vector_components == (qboolean) -1)
+		}
+		if (!options_user_set.code.vector_components) {
 			options.code.vector_components = false;
+		}
+		if (!options_user_set.math.vector_mult) {
+			options.math.vector_mult = options.advanced == 1 ? QC_DOT
+															 : QC_HADAMARD;
+		}
 	} else {
-		options.code.promote_float = 0;
+		options.code.promote_float = false;
+		options.math.vector_mult = QC_DOT;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
-		options.code.promote_float = 0;
-		add_cpp_def ("-D__VERSION6__=1");
-		if (options.code.crc == (qboolean) -1)
+		options.code.promote_float = false;
+		options.code.no_double = true;
+		options.code.no_int = true;
+		cpp_define ("__VERSION6__=1");
+		if (!options_user_set.code.crc) {
 			options.code.crc = true;
+		}
 	} else {
-		if (options.code.crc == (qboolean) -1)
+		if (!options_user_set.code.crc) {
 			options.code.crc = false;
+		}
+	}
+
+	if (options.traditional && options.advanced) {
+		fprintf (stderr,
+				 "%s: internal error: traditional and advanced twisted\n",
+				 this_program);
+		abort ();
 	}
 
 	// add the default paths
 	if (!options.no_default_paths) {
-		add_cpp_sysinc ("-isystem");
-		add_cpp_sysinc (QFCC_INCLUDE_PATH);
+		cpp_include ("system", QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 
 	if (options.verbosity >= 3) {
+		pre_yydebug = 1;
 		qc_yydebug = 1;
 		qp_yydebug = 1;
+		glsl_yydebug = 1;
 	}
 	return optind;
 }

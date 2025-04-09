@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 
+#include "QF/darray.h"
 #include "QF/mathlib.h"
 
 #include "QF/ui/vrect.h"
@@ -42,6 +43,7 @@
 #define RECT_BLOCK 128
 #ifndef TEST_MEMORY
 static vrect_t *free_rects;
+static struct DARRAY_TYPE(vrect_t *) rect_sets = DARRAY_STATIC_INIT (32);
 #endif
 
 VISIBLE vrect_t *
@@ -56,6 +58,7 @@ VRect_New (int x, int y, int width, int height)
 		for (i = 0; i < RECT_BLOCK - 1; i++)
 			free_rects[i].next = &free_rects[i + 1];
 		free_rects[i].next = 0;
+		DARRAY_APPEND (&rect_sets, free_rects);
 	}
 	r = free_rects;
 	free_rects = free_rects->next;
@@ -258,3 +261,81 @@ cleanup:
 	}
 	return 0;
 }
+
+VISIBLE vrect_t *
+VRect_SubRect (const vrect_t *rect, int width, int height)
+{
+	if (width > rect->width) {
+		width = rect->width;
+	}
+	if (height > rect->height) {
+		height = rect->height;
+	}
+	// First check for exact fits as no heuristics are necessary
+	if (width == rect->width) {
+		if (height == rect->height) {
+			// Exact fit, return a new rect of the same size
+			return VRect_New (rect->x, rect->y, rect->width, rect->height);
+		}
+
+		vrect_t    *r = VRect_HSplit (rect, rect->y + height);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		return r;
+	} else if (height == rect->height) {
+		// Because rect's width ks known to be greater than the requested
+		// width, the split is guaranteed to produce two non-empty rectangles.
+		return VRect_VSplit (rect, rect->x + width);
+	}
+
+	int         a = rect->height - height;
+	int         b = rect->width - width;
+	vrect_t    *r, *s;
+	if (b * height <= a * width || 16 * a > 15 * rect->height) {
+		// horizontal cuts produce better memory locality so favor them
+		r = VRect_HSplit (rect, rect->y + height);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		s = VRect_VSplit (r, r->x + width);
+	} else {
+		// a horizontal cut produces a larger off-cut rectangle than a vertical
+		// cut, so do a vertical cut first so the off-cut is as small as
+		// possible
+		r = VRect_VSplit (rect, rect->x + width);
+		if (VRect_IsEmpty (r->next)) {
+			VRect_Delete (r->next);
+			r->next = 0;
+		}
+		s = VRect_HSplit (r, r->y + height);
+	}
+
+	if (VRect_IsEmpty (s->next)) {
+		VRect_Delete (s->next);
+		s->next = r->next;
+	} else {
+		s->next->next = r->next;
+	}
+	VRect_Delete (r);
+	return s;
+}
+
+#ifndef TEST_MEMORY
+static void
+vrect_shutdown (void *data)
+{
+	for (size_t i = 0; i < rect_sets.size; i++) {
+		free (rect_sets.a[i]);
+	}
+	DARRAY_CLEAR (&rect_sets);
+}
+
+static void __attribute__((constructor))
+vrect_init (void)
+{
+	Sys_RegisterShutdown (vrect_shutdown, 0);
+}
+#endif

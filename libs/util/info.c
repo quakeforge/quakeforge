@@ -56,7 +56,7 @@ struct info_s {
 
 	Searches for key in the "client-needed" info string list
 */
-VISIBLE qboolean
+VISIBLE bool
 Info_FilterForKey (const char *key, const char **filter_list)
 {
 	const char  **s;

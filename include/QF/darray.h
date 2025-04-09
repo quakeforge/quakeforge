@@ -179,21 +179,21 @@
 */
 #define DARRAY_RESIZE(array, newSize)									\
 	do {																\
-		__auto_type ar = (array);										\
+		__auto_type ar_r = (array);										\
 		size_t ns = (newSize);											\
-		if (__builtin_expect (ns > ar->maxSize, 0)) {					\
-			if (__builtin_expect (!ar->grow, 0)) {						\
+		if (__builtin_expect (ns > ar_r->maxSize, 0)) {					\
+			if (__builtin_expect (!ar_r->grow, 0)) {					\
 				Sys_Error ("Attempt to grow fixed-size darray: %s:%d",	\
 						   __FILE__, __LINE__);							\
 			}															\
-			ar->maxSize = ar->grow * ((ns + ar->grow - 1) / ar->grow);	\
-			ar->a = realloc (ar->a, ar->maxSize * sizeof (*ar->a));		\
-			if (__builtin_expect (!ar->a, 0)) {							\
+			ar_r->maxSize = ar_r->grow * ((ns + ar_r->grow - 1) / ar_r->grow);\
+			ar_r->a = realloc (ar_r->a, ar_r->maxSize * sizeof (*ar_r->a));	\
+			if (__builtin_expect (!ar_r->a, 0)) {						\
 				Sys_Error ("failed to realloc darray: %s:%d",			\
 						   __FILE__, __LINE__);							\
 			}															\
 		}																\
-		ar->size = ns;													\
+		ar_r->size = ns;												\
 	} while (0)
 
 /**	Append a value to the end of the array.
@@ -250,17 +250,17 @@
 */
 #define DARRAY_OPEN_AT(array, index, space)								\
 	({																	\
-		__auto_type ar = (array);										\
+		__auto_type ar_o = (array);										\
 		size_t po = (index);											\
 		size_t sp = (space);											\
-		if (__builtin_expect (po > ar->size, 0)) {						\
+		if (__builtin_expect (po > ar_o->size, 0)) {					\
 			Sys_Error ("Attempt to insert elements outside darray: "	\
 					   "%s:%d", __FILE__, __LINE__);					\
 		}																\
-		DARRAY_RESIZE (ar, ar->size + sp);								\
-		memmove (&ar->a[po + sp], &ar->a[po],							\
-				 (ar->size - po - sp) * sizeof (*ar->a));				\
-		&ar->a[po];														\
+		DARRAY_RESIZE (ar_o, ar_o->size + sp);							\
+		memmove (&ar_o->a[po + sp], &ar_o->a[po],						\
+				 (ar_o->size - po - sp) * sizeof (*ar_o->a));			\
+		&ar_o->a[po];													\
 	})
 
 /**	Insert a value into the array at the specified index.
@@ -314,18 +314,18 @@
 */
 #define DARRAY_CLOSE_AT(array, index, count)							\
 	({																	\
-		__auto_type ar = (array);										\
+		__auto_type ar_c = (array);										\
 		size_t po = (index);											\
 		size_t co = (count);											\
-		if (__builtin_expect (po + co > ar->size						\
-							  || po >= ar->size, 0)) {					\
+		if (__builtin_expect (po + co > ar_c->size						\
+							  || po >= ar_c->size, 0)) {				\
 			Sys_Error ("Attempt to remove elements outside darray: "	\
 					   "%s:%d", __FILE__, __LINE__);					\
 		}																\
-		__auto_type ob = ar->a[po];										\
-		memmove (&ar->a[po], &ar->a[po + co],							\
-				 (ar->size - po - co) * sizeof (ob));					\
-		ar->size -= co;													\
+		__auto_type ob = ar_c->a[po];									\
+		memmove (&ar_c->a[po], &ar_c->a[po + co],						\
+				 (ar_c->size - po - co) * sizeof (ob));					\
+		ar_c->size -= co;												\
 		ob;																\
 	})
 

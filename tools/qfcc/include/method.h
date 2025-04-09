@@ -38,7 +38,7 @@ typedef struct method_s {
 	int         instance;
 	param_t    *selector;
 	param_t    *params;
-	struct type_s *type;
+	const struct type_s *type;
 	struct def_s *def;
 	struct function_s *func;
 	char       *name;
@@ -74,13 +74,15 @@ struct class_s;
 struct expr_s;
 struct dstring_s;
 
-method_t *new_method (struct type_s *ret_type, param_t *selector,
+typedef struct rua_ctx_s rua_ctx_t;
+
+method_t *new_method (const struct type_s *ret_type, param_t *selector,
 					  param_t *opt_parms);
 const char *method_name (method_t *method);
 method_t *copy_method (method_t *method);
 void add_method (methodlist_t *methodlist, method_t *method);
 struct symbol_s *method_symbol (struct class_type_s *class_type,
-								method_t *method);
+								method_t *method, rua_ctx_t *ctx);
 void method_set_param_names (method_t *dst, method_t *src);
 
 methodlist_t *new_methodlist (void);
@@ -95,7 +97,7 @@ int method_compare (method_t *m1, method_t *m2);
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
 keywordarg_t *copy_keywordargs (const keywordarg_t *kwargs);
 
-struct expr_s *send_message (int super);
+struct expr_s *send_message (int super, rua_ctx_t *ctx);
 
 method_t *find_method (const char *sel_name);
 method_t *methodlist_find_method (methodlist_t *methodlist,
@@ -105,7 +107,7 @@ method_t *methodlist_find_method (methodlist_t *methodlist,
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void method_types (struct dstring_s *sel_types, method_t *method);
 int selector_index (const char *sel_id);
-selector_t *get_selector (struct expr_s *sel);
+selector_t *get_selector (const struct expr_s *sel);
 struct def_s *emit_selectors(void);
 
 struct def_s *emit_methods (methodlist_t *methods, const char *name,
@@ -115,6 +117,7 @@ struct def_s *emit_method_descriptions (methodlist_t *_methods,
 
 void clear_selectors (void);
 
-struct expr_s *method_check_params (method_t *method, struct expr_s *args);
+const struct expr_s *method_check_params (method_t *method,
+										  const struct expr_s *args);
 
 #endif//__method_h

@@ -48,12 +48,12 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
-static qboolean cdValid = false;
-static qboolean playing = false;
-static qboolean wasPlaying = false;
-static qboolean initialized = false;
-static qboolean enabled = false;
-static qboolean playLooping = false;
+static bool cdValid = false;
+static bool playing = false;
+static bool wasPlaying = false;
+static bool initialized = false;
+static bool enabled = false;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
@@ -61,10 +61,18 @@ static byte maxTrack;
 
 static UINT        wDeviceID;
 
-static void I_CDAudio_Play (int track, qboolean looping);
+static void I_CDAudio_Play (int track, bool looping);
 static void I_CDAudio_Stop (void);
 
-static cvar_t *bgmvolume;
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 
 static void
@@ -133,9 +141,8 @@ I_CDAudio_GetAudioDiskInfo (void)
 	return 0;
 }
 
-#if 0
 LONG
-static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (lParam != wDeviceID)
 		return 1;
@@ -161,13 +168,12 @@ static I_CDAudio_MessageHandler (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 		default:
 			Sys_MaskPrintf (SYS_snd, "Unexpected MM_MCINOTIFY type (%i)\n",
-							wParam);
+							(int) wParam);
 			return 1;
 	}
 
 	return 0;
 }
-#endif
 
 static void
 I_CDAudio_Pause (void)
@@ -193,7 +199,7 @@ I_CDAudio_Pause (void)
 }
 
 static void
-I_CDAudio_Play (int track, qboolean looping)
+I_CDAudio_Play (int track, bool looping)
 {
 	DWORD       dwReturn;
 	MCI_PLAY_PARMS mciPlayParms;
@@ -302,6 +308,7 @@ I_CDAudio_Shutdown (void)
 	if (!initialized)
 		return;
 	I_CDAudio_Stop ();
+	Win_RemoveEvent (MM_MCINOTIFY);
 	if (mciSendCommand (wDeviceID, MCI_CLOSE, MCI_WAIT, (DWORD_PTR) NULL))
 		Sys_MaskPrintf (SYS_snd, "CDAudio_Shutdown: MCI_CLOSE failed\n");
 }
@@ -331,14 +338,14 @@ I_CDAudio_Update (void)
 	if (!enabled)
 		return;
 
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 0.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 1.0;
+			cdvolume = bgmvolume;
 			I_CDAudio_Resume ();
 		}
 	}
@@ -457,6 +464,8 @@ I_CDAudio_Init (void)
 	MCI_SET_PARMS mciSetParms;
 	int         n;
 
+	Win_AddEvent (MM_MCINOTIFY, CDAudio_MessageHandler);
+
 	mciOpenParms.lpstrDeviceType = "cdaudio";
 	dwReturn =
 		mciSendCommand (0, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_SHAREABLE,
@@ -483,8 +492,7 @@ I_CDAudio_Init (void)
 	initialized = true;
 	enabled = true;
 
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 
 	if (I_CDAudio_GetAudioDiskInfo ()) {
 		Sys_Printf ("CDAudio_Init: No CD in player.\n");

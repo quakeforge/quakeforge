@@ -1,0 +1,37 @@
+ruamoko_cl_menu_gui_gui_libs=ruamoko/cl_menu/gui/libgui.a
+
+noinst_LIBRARIES += $(ruamoko_cl_menu_gui_gui_libs)
+EXTRA_LIBRARIES += $(ruamoko_cl_menu_gui_gui_libs)
+
+ruamoko_cl_menu_gui_include = \
+	ruamoko/cl_menu/gui/Group.h \
+	ruamoko/cl_menu/gui/InputLine.h \
+	ruamoko/cl_menu/gui/Pic.h \
+	ruamoko/cl_menu/gui/Point.h \
+	ruamoko/cl_menu/gui/Rect.h \
+	ruamoko/cl_menu/gui/Size.h \
+	ruamoko/cl_menu/gui/Slider.h \
+	ruamoko/cl_menu/gui/Text.h \
+	ruamoko/cl_menu/gui/View.h
+EXTRA_DIST += $(ruamoko_cl_menu_gui_include)
+
+ruamoko_cl_menu_gui_libgui_a_SOURCES= \
+	ruamoko/cl_menu/gui/Group.r \
+	ruamoko/cl_menu/gui/InputLine.r \
+	ruamoko/cl_menu/gui/Pic.r \
+	ruamoko/cl_menu/gui/Point.r \
+	ruamoko/cl_menu/gui/Rect.r \
+	ruamoko/cl_menu/gui/Size.r \
+	ruamoko/cl_menu/gui/Slider.r \
+	ruamoko/cl_menu/gui/Text.r \
+	ruamoko/cl_menu/gui/View.r
+ruamoko_cl_menu_gui_libgui_a_dep=$(call qcautodep,$(ruamoko_cl_menu_gui_libgui_a_SOURCES))
+ruamoko_cl_menu_gui_libgui_a_AR=	$(PAK) -cf
+EXTRA_ruamoko_cl_menu_gui_libgui_a_DEPENDENCIES=$(PAK)
+include $(ruamoko_cl_menu_gui_libgui_a_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_cl_menu_gui_libgui_a_dep)
+
+CLEANFILES += \
+	ruamoko/gui/*.dat \
+	ruamoko/gui/*.sym
+DISTCLEANFILES += $(ruamoko_cl_menu_gui_libgui_a_dep)

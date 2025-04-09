@@ -1,4 +1,4 @@
-#include "key.h"
+#include <QF/keys.h>
 #include "sound.h"
 
 #include "Array.h"
@@ -14,7 +14,7 @@
 	return self;
 }
 
--(void)setBase:(int)b
+-(void)setBase:(unsigned)b
 {
 	if (b >= [views count])
 		b = [views count] - 1;
@@ -23,20 +23,20 @@
 	current = base = b;
 }
 
-- (int) keyEvent:(int)key unicode:(int)unicode down:(int)down
+- (bool) keyEvent:(int)key unicode:(int)unicode down:(bool)down
 {
 	View *cur = [views objectAtIndex: current];
-	int   ret = [cur keyEvent: key unicode: unicode down: down];
+	bool  ret = [cur keyEvent: key unicode: unicode down: down];
 	if (!ret) {
 		switch (key) {
 			case QFK_DOWN:
 			//case QFM_WHEEL_DOWN:
 				[self next];
-				return 1;
+				return true;
 			case QFK_UP:
 			//case QFM_WHEEL_UP:
 				[self prev];
-				return 1;
+				return true;
 		}
 	}
 	return ret;
@@ -51,7 +51,7 @@
 
 -(void) prev
 {
-	if (--current < base)
+	if (current-- == base)
 		current = [views count] - 1;
 	S_LocalSound ("misc/menu1.wav");
 }

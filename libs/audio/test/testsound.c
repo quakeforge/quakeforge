@@ -46,6 +46,7 @@
 #include "QF/zone.h"
 
 #include "QF/sound.h"
+#include "QF/scene/transform.h"
 
 #ifdef _WIN32
 # include "winquake.h"
@@ -66,7 +67,7 @@ init (void)
 
 	Sys_Init ();
 	COM_ParseConfig (testsound_cbuf);
-	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
+	cmd_warncmd = 1;
 
 	memhunk_t *hunk = Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
@@ -88,7 +89,7 @@ main (int argc, const char *argv[])
 	while (1) {
 		Cbuf_Execute_Stack (testsound_cbuf);
 
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin, 0);
+		S_Update (nulltransform, 0);
 		usleep(20 * 1000);
 	}
 	Sys_Quit ();

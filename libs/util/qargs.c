@@ -44,6 +44,7 @@
 #include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/idparse.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -51,8 +52,24 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-cvar_t     *fs_globalcfg;
-cvar_t     *fs_usercfg;
+char *fs_globalcfg;
+static cvar_t fs_globalcfg_cvar = {
+	.name = "fs_globalcfg",
+	.description =
+		"global configuration file",
+	.default_value = FS_GLOBALCFG,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_globalcfg },
+};
+char *fs_usercfg;
+static cvar_t fs_usercfg_cvar = {
+	.name = "fs_usercfg",
+	.description =
+		"user configuration file",
+	.default_value = FS_USERCFG,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_usercfg },
+};
 
 static const char **largv;
 static const char *argvdummy = " ";
@@ -67,7 +84,7 @@ VISIBLE int         com_argc;
 VISIBLE const char **com_argv;
 const char *com_cmdline;
 
-VISIBLE qboolean    nouse = false;		// 1999-10-29 +USE fix by Maddes
+VISIBLE bool        nouse = false;		// 1999-10-29 +USE fix by Maddes
 
 
 /*
@@ -95,7 +112,7 @@ COM_CheckParm (const char *parm)
 VISIBLE void
 COM_InitArgv (int argc, const char **argv)
 {
-	qboolean    safe;
+	bool        safe;
 	int         i, len;
 	char       *cmdline;
 
@@ -155,14 +172,14 @@ COM_AddParm (const char *parm)
 void
 COM_ParseConfig (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	// execute +set as early as possible
 	Cmd_StuffCmds (cbuf);
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute set commands in the global configuration file if it exists
-	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
-							 "global configuration file");
-	Cmd_Exec_File (cbuf, fs_globalcfg->string, 0);
+	Cvar_Register (&fs_globalcfg_cvar, 0, 0);
+	Cmd_Exec_File (cbuf, fs_globalcfg, 0);
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute +set again to override the config file
@@ -170,9 +187,8 @@ COM_ParseConfig (cbuf_t *cbuf)
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute set commands in the user configuration file if it exists
-	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
-						   "user configuration file");
-	Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+	Cvar_Register (&fs_usercfg_cvar, 0, 0);
+	Cmd_Exec_File (cbuf, fs_usercfg, 0);
 	Cbuf_Execute_Sets (cbuf);
 
 	// execute +set again to override the config file
@@ -187,8 +203,9 @@ COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
 	int ret = 0;
 	QFile *f;
 
+	dstring_t  *buffer = dstring_new ();
 	f = QFS_FOpenFile ("quake.rc");
-	while (f && (l = Qgetline (f))) {
+	while (f && (l = Qgetline (f, buffer))) {
 		if ((p = strstr (l, cmd))) {
 			if (p == l) {
 				if (cbuf) {
@@ -200,6 +217,7 @@ COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
 		}
 	}
 	Qclose (f);
+	dstring_delete (buffer);
 	return ret;
 }
 
@@ -212,14 +230,14 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 	// should be used to set up defaults on the assumption that the user has
 	// things set up to work with another (hopefully compatible) client
 	if (Cmd_Exec_File (cbuf, "quakeforge.cfg", 1)) {
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		Cmd_StuffCmds (cbuf);
 		COM_Check_quakerc ("startdemos", cbuf);
 	} else {
 		if (!skip_quakerc) {
 			Cbuf_InsertText (cbuf, "exec quake.rc\n");
 		}
-		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_Exec_File (cbuf, fs_usercfg, 0);
 		// Reparse the command line for + commands.
 		// (sets still done, but it doesn't matter)
 		// (Note, no non-base commands exist yet)
@@ -227,4 +245,17 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 			Cmd_StuffCmds (cbuf);
 		}
 	}
+}
+
+static void
+qargs_shutdown (void *data)
+{
+	free (largv);
+	free ((char *) com_cmdline);
+}
+
+static void __attribute__((constructor))
+qargs_init (void)
+{
+	Sys_RegisterShutdown (qargs_shutdown, 0);
 }

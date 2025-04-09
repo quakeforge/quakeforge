@@ -38,6 +38,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/sys.h"
+#include "QF/heapsort.h"
 #include "QF/keys.h"
 #include "QF/qendian.h"
 #include "QF/msg.h"
@@ -46,9 +47,10 @@
 
 #include "netmain.h"
 
+//FIXME these should not be here!!!
+#include "client/screen.h"
 #include "../nq/include/client.h"
 #include "../nq/include/server.h"
-#include "../nq/include/game.h"
 
 // This is enables a simple IP banning mechanism
 #define BAN_TEST
@@ -100,7 +102,7 @@ static qmsg_t dgrm_message = {
 // FIXME: MENUCODE
 //extern int  m_return_state;
 //extern int  m_state;
-//extern qboolean m_return_onerror;
+//extern bool m_return_onerror;
 //extern char m_return_reason[32];
 
 
@@ -269,7 +271,7 @@ ReSendMessage (qsocket_t *sock)
 }
 
 
-qboolean
+bool
 Datagram_CanSendMessage (qsocket_t *sock)
 {
 	if (sock->sendNext) {
@@ -280,7 +282,7 @@ Datagram_CanSendMessage (qsocket_t *sock)
 }
 
 
-__attribute__((const)) qboolean
+__attribute__((const)) bool
 Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
 	return true;
@@ -519,6 +521,7 @@ NET_Stats_f (void)
 int
 Datagram_Init (void)
 {
+	qfZoneScoped (true);
 	int         i;
 	int         csock;
 
@@ -571,7 +574,7 @@ Datagram_Close (qsocket_t *sock)
 
 
 void
-Datagram_Listen (qboolean state)
+Datagram_Listen (bool state)
 {
 	int         i;
 
@@ -582,6 +585,26 @@ Datagram_Listen (qboolean state)
 	}
 }
 
+static const cvar_t **cvar_list;
+static int num_cvars;
+
+static int
+dg_cvar_cmp (const void *_a, const void *_b)
+{
+	const cvar_t * const *a = _a;
+	const cvar_t * const *b = _b;
+	return strcmp ((*a)->name, (*b)->name);
+}
+
+static int
+dg_cvar_select (const cvar_t *cvar, void *data)
+{
+	if (cvar->flags & CVAR_SERVERINFO) {
+		*(int *)data += 1;
+		return 1;
+	}
+	return 0;
+}
 
 static qsocket_t *
 _Datagram_CheckNewConnections (void)
@@ -636,7 +659,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_SERVER_INFO);
 		dfunc.GetSocketAddr (acceptsock, &newaddr);
 		MSG_WriteString (net_message->message, dfunc.AddrToString (&newaddr));
-		MSG_WriteString (net_message->message, hostname->string);
+		MSG_WriteString (net_message->message, hostname);
 		MSG_WriteString (net_message->message, sv.name);
 		MSG_WriteByte (net_message->message, net_activeconnections);
 		MSG_WriteByte (net_message->message, svs.maxclients);
@@ -652,7 +675,7 @@ _Datagram_CheckNewConnections (void)
 	if (command == CCREQ_PLAYER_INFO) {
 		int         playerNumber;
 		int         activeNumber;
-		int         clientNumber;
+		unsigned    clientNumber;
 		client_t   *client;
 
 		playerNumber = MSG_ReadByte (net_message);
@@ -692,25 +715,25 @@ _Datagram_CheckNewConnections (void)
 
 	if (command == CCREQ_RULE_INFO) {
 		const char *prevCvarName;
-		cvar_t     *var;
+		const cvar_t *var;
 
 		// find the search start location
 		prevCvarName = MSG_ReadString (net_message);
 		if (*prevCvarName) {
-			var = Cvar_FindVar (prevCvarName);
+			cvar_t      key = { .name = prevCvarName };
+			var = bsearch (&key, cvar_list, num_cvars, sizeof (cvar_t *),
+						   dg_cvar_cmp);
 			if (!var)
-				return NULL;
-			var = var->next;
+				return 0;
+			var++;
 		} else {
-			var = cvar_vars;
-		}
-
-		// search for the next server cvar
-		while (var) {
-			if (var->flags & CVAR_SERVERINFO) {
-				break;
+			if (cvar_list) {
+				free (cvar_list);
 			}
-			var = var->next;
+			num_cvars = 0;
+			cvar_list = Cvar_Select (dg_cvar_select, &num_cvars);
+			heapsort (cvar_list, num_cvars, sizeof (cvar_t *), dg_cvar_cmp);
+			var = cvar_list[0];
 		}
 
 		// send the response
@@ -721,7 +744,7 @@ _Datagram_CheckNewConnections (void)
 		MSG_WriteByte (net_message->message, CCREP_RULE_INFO);
 		if (var) {
 			MSG_WriteString (net_message->message, var->name);
-			MSG_WriteString (net_message->message, var->string);
+			MSG_WriteString (net_message->message, Cvar_VarString (var));
 		}
 		MSG_PokeLongBE (net_message->message, 0,
 						NETFLAG_CTL | net_message->message->cursize);
@@ -877,7 +900,7 @@ Datagram_CheckNewConnections (void)
 
 
 static void
-_Datagram_SearchForHosts (qboolean xmit)
+_Datagram_SearchForHosts (bool xmit)
 {
 	int         ret;
 	netadr_t    readaddr;
@@ -951,7 +974,7 @@ _Datagram_SearchForHosts (qboolean xmit)
 }
 
 void
-Datagram_SearchForHosts (qboolean xmit)
+Datagram_SearchForHosts (bool xmit)
 {
 	for (net_landriverlevel = 0; net_landriverlevel < net_numlandrivers;
 		 net_landriverlevel++) {
@@ -999,7 +1022,8 @@ _Datagram_Connect (const char *host)
 
 	// send the connection request
 	Sys_Printf ("trying...\n");
-	CL_UpdateScreen (cl.time);
+	cl.viewstate.time = cl.time;
+	CL_UpdateScreen (&cl.viewstate);
 	start_time = net_time;
 
 	for (reps = 0; reps < 3; reps++) {
@@ -1060,7 +1084,8 @@ _Datagram_Connect (const char *host)
 			break;
 		}
 		Sys_Printf ("still trying...\n");
-		CL_UpdateScreen (cl.time);
+		cl.viewstate.time = cl.time;
+		CL_UpdateScreen (&cl.viewstate);
 		start_time = SetNetTime ();
 	}
 

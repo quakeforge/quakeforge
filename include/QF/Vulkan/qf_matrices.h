@@ -39,18 +39,16 @@
 typedef struct qfv_matrix_buffer_s {
 	// projection and view matrices (model is push constant)
 	mat4f_t     Projection3d;
-	mat4f_t     View;
+	mat4f_t     View[6];
 	mat4f_t     Sky;
 	mat4f_t     Projection2d;
+	vec2f_t     ScreenSize;
+	vec2f_t     pad[7];
 } qfv_matrix_buffer_t;
-
-#define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_ATTACH_INFOS 5
-#define LIGHTING_SHADOW_INFOS MaxLights
-#define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
+static_assert ((sizeof (qfv_matrix_buffer_t) & 63) == 0,
+			   "qfv_matrix_buffer_t size not a multiple of 64");
 
 typedef struct matrixframe_s {
-	//VkCommandBuffer cmd;
 	VkBuffer    buffer;
 	VkDescriptorSet descriptors;
 } matrixframe_t;
@@ -59,29 +57,30 @@ typedef struct matrixframeset_s
     DARRAY_TYPE (matrixframe_t) matrixframeset_t;
 
 typedef struct matrixctx_s {
-	matrixframeset_t frames;
-	VkPipeline   pipeline;
-	VkPipelineLayout layout;
-	VkDeviceMemory memory;
 	qfv_matrix_buffer_t matrices;
+	vec4f_t      sky_rotation[2];
+	vec4f_t      sky_velocity;
+	vec4f_t      sky_fix;
+	double       sky_time;
 	int             dirty;
+
+	float        fov_x, fov_y;
+
+	matrixframeset_t frames;
+
+	struct qfv_resource_s *resource;
 	struct qfv_stagebuf_s *stage;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
 } matrixctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;
 
-void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx);
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
-void Vulkan_SetViewMatrix (struct vulkan_ctx_s *ctx, mat4f_t view);
+void Vulkan_SetViewMatrices (struct vulkan_ctx_s *ctx, mat4f_t views[],
+							 int count);
+void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 void Vulkan_SetSkyMatrix (struct vulkan_ctx_s *ctx, mat4f_t sky);
 
 void Vulkan_Matrix_Init (struct vulkan_ctx_s *ctx);
-void Vulkan_Matrix_Shutdown (struct vulkan_ctx_s *ctx);
-// "Draw" :)
-void Vulkan_Matrix_Draw (struct qfv_renderframe_s *rFrame);
 VkDescriptorSet Vulkan_Matrix_Descriptors (struct vulkan_ctx_s *ctx, int frame)
 	__attribute__((pure));
 

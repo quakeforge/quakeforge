@@ -71,11 +71,11 @@ typedef struct vpath_s vpath_t;
 
 typedef struct findfile_s {
 	const vpath_t *vpath;		///< vpath in which file was found
-	qboolean    in_pak;			///< if true, path refers to a pak file rather
-								///< than a directory
 	const char *realname;		///< the name of the file as found (may have
 								///< .gz appended, or .ogg substituded for
 								///< .wav) does not include the path
+	bool        in_pak;			///< if true, path refers to a pak file rather
+								///< than a directory
 } findfile_t;
 
 /**	Cached information about the current game directory. \see \ref dirconf.
@@ -84,8 +84,9 @@ extern gamedir_t *qfs_gamedir;
 
 /** Function type of callback called on gamedir change.
 	\param phase	0 = before Cache_Flush(), 1 = after Cache_Flush()
+	\param data		data pointer passed on to the callback
 */
-typedef void gamedir_callback_t (int phase);
+typedef void gamedir_callback_t (int phase, void *data);
 
 /**	Base of the QFS user directory tree. The QFS functions, except for
 	QFS_FOpenFile() and _QFS_FOpenFile(),  will never access a file outside of
@@ -108,6 +109,7 @@ extern int qfs_filesize;
 struct cache_user_s;
 struct dstring_s;
 struct memhunk_s;
+struct plitem_s;
 
 /**	Initialize the Quake Filesystem.
 
@@ -123,6 +125,17 @@ struct memhunk_s;
 					clients and servers.
 */
 void QFS_Init (struct memhunk_s *hunk, const char *game);
+
+/**	Set the directory configuration prior to initialization
+
+	This allows the default configuration to be overriden at build time. Must
+	be called before QFS_Init is called. fs_dirconf will still allow the
+	configuration to be overridden.
+
+	\param config	Property list specifity the directory layout used by the
+					engine. The list will be 'retained'.
+*/
+void QFS_SetConfig (struct plitem_s *config);
 
 /** Change the current game directory.
 
@@ -251,6 +264,10 @@ QFile *QFS_FOpenFile (const char *filename);
 					data. Use 0.
 	\return			Pointer to the file's data, or NULL on error.
 	\todo remove \a usehunk
+
+	\note The file is closed on return as any error is either file not found
+	(\a file is null) or there was a memory allocation error (bigger
+	problems).
 */
 byte *QFS_LoadFile (QFile *file, int usehunk);
 
@@ -290,17 +307,20 @@ int QFS_Remove (const char *path);
 /**	Find available filename.
 
 	The filename will be of the form \c prefixXXXX.ext where \c XXXX
-	is a zero padded number from 0 to 9999.
+	is a zero padded number from 0 to 9999. Should there already be 10000
+	files of such a pattern, then extra digits will be added.
 
 	\param filename	This will be set to the available filename.
 	\param prefix	The part of the filename preceeding the numers.
 	\param ext		The extension to add to the filename.
-	\return			1 for success, 0 for failure.
+	\return			NULL for failure (with an error message in \a filename)
+					or a quakeio file handle.
 
-	\note \a prefix is relative to \c qfc_userpath.
+	\note \a prefix is relative to \c qfc_userpath, as is the generated
+	filename.
 */
-int QFS_NextFilename (struct dstring_s *filename, const char *prefix,
-					  const char *ext);
+QFile *QFS_NextFile (struct dstring_s *filename, const char *prefix,
+					 const char *ext);
 
 /** Extract the non-extension part of the file name from the path.
 
@@ -378,8 +398,9 @@ const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 	\param func		The function to call every time the gamedir changes via
 					QFS_Gamedir().
+	\param data		Opaque data pointer passed to the callback.
 */
-void QFS_GamedirCallback (gamedir_callback_t *func);
+void QFS_GamedirCallback (gamedir_callback_t *func, void *data);
 
 /**	Create a new file list.
 

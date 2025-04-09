@@ -52,16 +52,17 @@ spritedesc_t r_spritedesc;
 
 
 static void
-R_RotateSprite (float beamlength)
+R_RotateSprite (vec4f_t relvieworg, float beamlength, vec3_t org)
 {
 	vec3_t      vec;
 
+	VectorCopy (relvieworg, org);
 	if (beamlength == 0.0)
 		return;
 
-	VectorScale (r_spritedesc.vpn, -beamlength, vec);
+	VectorScale (r_spritedesc.vfwd, -beamlength, vec);
 	VectorAdd (r_entorigin, vec, r_entorigin);
-	VectorSubtract (modelorg, vec, modelorg);
+	VectorSubtract (relvieworg, vec, org);
 }
 
 
@@ -147,7 +148,7 @@ R_ClipSpriteFace (int nump, clipplane_t *pclipplane)
 
 
 static void
-R_SetupAndDrawSprite (void)
+R_SetupAndDrawSprite (const vec3_t relvieworg, mspriteframe_t *spriteframe)
 {
 	int         i, nump;
 	float       dot, scale, *pv;
@@ -155,17 +156,17 @@ R_SetupAndDrawSprite (void)
 	vec3_t      left, up, right, down, transformed, local;
 	emitpoint_t outverts[MAXWORKINGVERTS + 1], *pout;
 
-	dot = DotProduct (r_spritedesc.vpn, modelorg);
+	dot = DotProduct (r_spritedesc.vfwd, relvieworg);
 
 	// backface cull
 	if (dot >= 0)
 		return;
 
 	// build the sprite poster in worldspace
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->right, right);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->up, up);
-	VectorScale (r_spritedesc.vright, r_spritedesc.pspriteframe->left, left);
-	VectorScale (r_spritedesc.vup, r_spritedesc.pspriteframe->down, down);
+	VectorScale (r_spritedesc.vright, spriteframe->right, right);
+	VectorScale (r_spritedesc.vup, spriteframe->up, up);
+	VectorScale (r_spritedesc.vright, spriteframe->left, left);
+	VectorScale (r_spritedesc.vup, spriteframe->down, down);
 
 	pverts = clip_verts[0];
 
@@ -210,7 +211,7 @@ R_SetupAndDrawSprite (void)
 	r_spritedesc.nearzi = -999999;
 
 	for (i = 0; i < nump; i++) {
-		VectorSubtract (pv, r_origin, local);
+		VectorSubtract (pv, r_refdef.frame.position, local);
 		TransformVector (local, transformed);
 
 		if (transformed[2] < NEAR_CLIP)
@@ -236,29 +237,37 @@ R_SetupAndDrawSprite (void)
 	// draw it
 	r_spritedesc.nump = nump;
 	r_spritedesc.pverts = outverts;
-	D_DrawSprite ();
+	D_DrawSprite (relvieworg);
 }
 
 void
-R_DrawSprite (void)
+R_DrawSprite (entity_t ent)
 {
-	msprite_t  *sprite = currententity->renderer.model->cache.data;
+	auto renderer = Entity_GetRenderer (ent);
+	msprite_t  *sprite = renderer->model->cache.data;
 
-	r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite,
-												  &currententity->animation);
+	auto animation = Entity_GetAnimation (ent);
+	auto spriteframe = (mspriteframe_t *) ((byte *) sprite + animation->pose2);
 
-	sprite_width = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
+	r_spritedesc.spriteframe = (qpic_t *) &spriteframe[1];
 
-	if (!R_BillboardFrame (currententity, sprite->type, modelorg,
-						   r_spritedesc.vup,
-						   r_spritedesc.vright,
-						   r_spritedesc.vpn)) {
+	sprite_width = r_spritedesc.spriteframe->width;
+	sprite_height = r_spritedesc.spriteframe->height;
+
+	vec4f_t     up = {}, right = {}, fwd = {};
+	vec4f_t     cameravec = r_refdef.frame.position - r_entorigin;
+	transform_t transform = Entity_Transform (ent);
+	if (!R_BillboardFrame (transform, sprite->type, cameravec,
+						   &up, &right, &fwd)) {
 		// the orientation is undefined so can't draw the sprite
 		return;
 	}
+	VectorCopy (up, r_spritedesc.vup);//FIXME
+	VectorCopy (right, r_spritedesc.vright);
+	VectorCopy (fwd, r_spritedesc.vfwd);
 
-	R_RotateSprite (sprite->beamlength);
+	vec3_t      org;
+	R_RotateSprite (cameravec, sprite->beamlength, org);
 
-	R_SetupAndDrawSprite ();
+	R_SetupAndDrawSprite (org, spriteframe);
 }

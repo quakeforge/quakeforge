@@ -35,6 +35,7 @@
 
 static int         iskyspeed = 8;
 static int         iskyspeed2 = 2;
+static float r_skyperiod;
 float       r_skyspeed;
 
 float       r_skytime;
@@ -63,6 +64,13 @@ R_InitSky (texture_t *mt)
 {
 	int         i, j;
 	byte       *src;
+
+	int         g = GreatestCommonDivisor (iskyspeed, iskyspeed2);
+	int         s1 = iskyspeed / g;
+	int         s2 = iskyspeed2 / g;
+	r_skyperiod = SKYSIZE * s1 * s2;
+
+	r_skyspeed = iskyspeed;
 
 	src = (byte *) mt + mt->offsets[0];
 
@@ -94,7 +102,7 @@ R_MakeSky (void)
 	int         x, y;
 	int         ofs, baseofs;
 	int         xshift, yshift;
-	unsigned int *pnewsky;
+	byte       *pnewsky;
 	static int  xlast = -1, ylast = -1;
 
 	xshift = r_skytime * r_skyspeed;
@@ -106,19 +114,17 @@ R_MakeSky (void)
 	xlast = xshift;
 	ylast = yshift;
 
-	pnewsky = (unsigned int *) &newsky[0];
+	pnewsky = &newsky[0];
 
 	for (y = 0; y < SKYSIZE; y++) {
 		baseofs = ((y + yshift) & SKYMASK) * 131;
 		for (x = 0; x < SKYSIZE; x++) {
 			ofs = baseofs + ((x + xshift) & SKYMASK);
 
-			*(byte *) pnewsky = (*((byte *) pnewsky + 128) &
-								 *(byte *) & bottommask[ofs]) |
-				*(byte *) & bottomsky[ofs];
-			pnewsky = (unsigned int *) ((byte *) pnewsky + 1);
+			*pnewsky = (*(pnewsky + 128) & bottommask[ofs]) | bottomsky[ofs];
+			pnewsky = pnewsky + 1;
 		}
-		pnewsky += 128 / sizeof (unsigned int);
+		pnewsky += 128;
 	}
 
 	r_skymade = 1;
@@ -176,17 +182,8 @@ R_GenSkyTile (void *pdest)
 void
 R_SetSkyFrame (void)
 {
-	int         g, s1, s2;
-	float       temp;
-
-	r_skyspeed = iskyspeed;
-
-	g = GreatestCommonDivisor (iskyspeed, iskyspeed2);
-	s1 = iskyspeed / g;
-	s2 = iskyspeed2 / g;
-	temp = SKYSIZE * s1 * s2;
-
-	r_skytime = vr_data.realtime - ((int) (vr_data.realtime / temp) * temp);
+	r_skytime = vr_data.realtime;
+	r_skytime -= trunc (vr_data.realtime / r_skyperiod) * r_skyperiod;
 
 	r_skymade = 0;
 }

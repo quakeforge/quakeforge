@@ -1,3 +1,4 @@
+#pragma bug die
 typedef enum {
 	NO = 0,
 	YES

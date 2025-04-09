@@ -48,6 +48,7 @@
 #include "QF/zone.h"
 
 #include "compat.h"
+#include "qfalloca.h"
 
 
 /* Qread wrapper for libpng */
@@ -121,7 +122,6 @@ LoadPNG (QFile *infile, int load)
 	png_structp		png_ptr = NULL;
 	png_infop		info_ptr = NULL;
 	png_uint_32		height, width, rowbytes, i;
-	png_bytepp		row_pointers = NULL;
 	int				bit_depth, color_type;
 	tex_t		   *tex;
 
@@ -130,6 +130,10 @@ LoadPNG (QFile *infile, int load)
 
 	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 				  NULL, NULL, NULL);
+
+	if (width > 32768 || height > 32768) {
+		return nullptr;
+	}
 
 	if (load) {
 		if (color_type == PNG_COLOR_TYPE_PALETTE)
@@ -163,10 +167,12 @@ LoadPNG (QFile *infile, int load)
 		/* Allocate tex_t structure */
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 		tex = Hunk_TempAlloc (0, sizeof (tex_t) + height * rowbytes);
-		tex->data = (byte *) (tex + 1);
+		*tex = (tex_t) {
+			.data = (byte *) (tex + 1),
+		};
 	} else {
 		tex = Hunk_TempAlloc (0, sizeof (tex_t));
-		tex->data = 0;
+		*tex = (tex_t) { };
 	}
 
 	tex->width = width;
@@ -183,20 +189,13 @@ LoadPNG (QFile *infile, int load)
 		return tex;
 	}
 
-	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
-		== NULL) {
-		png_destroy_read_struct (&png_ptr, &info_ptr, NULL);
-		return (NULL); /* Out of memory */
-	}
-
-	for (i = 0; i < height; ++i)
+	png_bytep row_pointers[height];
+	for (i = 0; i < height; ++i) {
 		row_pointers[i] = tex->data + (i * rowbytes);
+	}
 
 	/* Now we can go ahead and read the whole image */
 	png_read_image (png_ptr, row_pointers);
-
-	free (row_pointers);
-	row_pointers = NULL;
 
 	png_read_end (png_ptr, NULL);
 
@@ -205,8 +204,8 @@ LoadPNG (QFile *infile, int load)
 
 #define WRITEPNG_BIT_DEPTH 8
 
-static int
-write_png (QFile *outfile, const byte *data, int width, int height)
+VISIBLE int
+WritePNG (QFile *outfile, const tex_t *tex)
 {
 	int         i;
 	png_structp png_ptr;
@@ -240,27 +239,32 @@ write_png (QFile *outfile, const byte *data, int width, int height)
 		return 0;
 	}
 
-	png_set_IHDR (png_ptr, info_ptr, width, height, WRITEPNG_BIT_DEPTH,
+	png_set_IHDR (png_ptr, info_ptr, tex->width, tex->height,
+				  WRITEPNG_BIT_DEPTH,
 				  PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
 				  PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 	/* NOTE: Write gamma support? */
 	/* png_set_gAMA (png_ptr, info_ptr, gamma); */
 
-	png_set_bgr(png_ptr);
+	if (tex->bgr) {
+		png_set_bgr(png_ptr);
+	}
 
 	png_write_info (png_ptr, info_ptr);
 
 	/* Setup row pointers */
-	row_pointers = (png_bytepp)malloc(height * sizeof(png_bytep));
-	if (row_pointers == NULL) {
-		png_destroy_write_struct (&png_ptr, &info_ptr);
-		return 0; /* Out of memory */
-	}
+	row_pointers = (png_bytepp)alloca(tex->height * sizeof(png_bytep));
 
-	for (i = 0; i < height; i++) {
-		//FIXME stupid png types :P
-		row_pointers[height - i - 1] = (byte *) data + (i * width * 3);
+	int         rowbytes = tex->width * 3;
+	if (tex->flipped) {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[tex->height - i - 1] = tex->data + (i * rowbytes);
+		}
+	} else {
+		for (i = 0; i < tex->height; i++) {
+			row_pointers[i] = tex->data + (i * rowbytes);
+		}
 	}
 
 
@@ -282,36 +286,6 @@ write_png (QFile *outfile, const byte *data, int width, int height)
 	return 1;
 }
 
-VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = Qopen (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		Qremove (fileName);
-	Qclose (outfile);
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
-{
-	QFile      *outfile;
-
-	outfile = QFS_Open (fileName, "wb");
-	if (!outfile) {
-		Sys_Printf ("Couldn't open %s\n", fileName);
-		return; /* Can't open file */
-	}
-	if (!write_png (outfile, data, width, height))
-		QFS_Remove (fileName);
-	Qclose (outfile);
-}
-
 #else
 
 #include "QF/image.h"
@@ -323,14 +297,10 @@ LoadPNG (QFile *infile, int load)
 	return 0;
 }
 
-VISIBLE void
-WritePNG (const char *fileName, const byte *data, int width, int height)
+VISIBLE int
+WritePNG (QFile *outfile, const tex_t *tex)
 {
-}
-
-VISIBLE void
-WritePNGqfs (const char *fileName, const byte *data, int width, int height)
-{
+	return 0;
 }
 
 #endif

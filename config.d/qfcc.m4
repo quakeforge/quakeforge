@@ -43,3 +43,8 @@ AC_DEFINE_UNQUOTED(QFCC_INCLUDE_PATH, "${expanded_datarootdir}/qfcc/include",
 	[Define this to where qfcc should look for header files])
 AC_DEFINE_UNQUOTED(QFCC_LIB_PATH, "${expanded_datarootdir}/qfcc/lib",
 	[Define this to where qfcc should look for lib files])
+
+PKG_CHECK_MODULES([spirv], [SPIRV-Headers], HAVE_SPIRV=yes, HAVE_SPIRV=no)
+if test "x$HAVE_SPIRV" = "xyes"; then
+	AC_DEFINE(HAVE_SPIRV, 1, [Define if you have SPIRV-Headers])
+fi

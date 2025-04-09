@@ -3,7 +3,6 @@
 
 	Vulkan image functions
 
-	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2020      Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
@@ -29,37 +28,12 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#include "QF/cvar.h"
-#include "QF/dstring.h"
 #include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vid.h"
-#include "QF/Vulkan/qf_vid.h"
+
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/memory.h"
-
-#include "compat.h"
-#include "d_iface.h"
-#include "r_internal.h"
-#include "vid_vulkan.h"
-
-#include "util.h"
 
 VkImage
 QFV_CreateImage (qfv_device_t *device, int cubemap,
@@ -289,4 +263,25 @@ int
 QFV_MipLevels (int width, int height)
 {
 	return ilog2 (max (width, height)) + 1;
+}
+
+VkFormat
+QFV_ImageFormat (QFFormat format, int srgb)
+{
+	switch (format) {
+		case tex_palette:
+			return VK_FORMAT_R8_UINT;
+		case tex_l:
+		case tex_a:
+			return srgb ? VK_FORMAT_R8_SRGB : VK_FORMAT_R8_UNORM;
+		case tex_la:
+			return srgb ? VK_FORMAT_R8G8_SRGB : VK_FORMAT_R8G8_UNORM;
+		case tex_rgb:
+			return srgb ? VK_FORMAT_R8G8B8_SRGB : VK_FORMAT_R8G8B8_UNORM;
+		case tex_rgba:
+			return srgb ? VK_FORMAT_R8G8B8A8_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+		case tex_frgba:
+			return VK_FORMAT_R32G32B32A32_SFLOAT;
+	}
+	return VK_FORMAT_R8_SRGB;
 }

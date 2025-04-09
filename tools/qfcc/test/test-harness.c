@@ -75,8 +75,8 @@ static const char *short_options =
 static edict_t test_edicts[MAX_EDICTS];
 
 static edict_t *edicts;
-static int num_edicts;
-static int reserved_edicts;
+static pr_uint_t num_edicts;
+static pr_uint_t reserved_edicts;
 static progs_t test_pr;
 static const char *this_program;
 
@@ -108,7 +108,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va (0, "%s.gz", name), &size);
+		file = open_file (va ("%s.gz", name), &size);
 		if (!file) {
 			return 0;
 		}
@@ -120,10 +120,14 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 	return sym;
 }
 
+#define ALIGN 32
+
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+	intptr_t    mem = (intptr_t) malloc (size + ALIGN);
+	mem = (mem + ALIGN - 1) & ~(ALIGN - 1);
+	return (void *) mem;
 }
 
 static void
@@ -151,17 +155,9 @@ static void
 init_qf (void)
 {
 	Sys_Init ();
-	Cvar_Get ("developer", va (0, "%d", options.developer), 0, 0, 0);
+	developer = options.developer;
 
 	Memory_Init (Sys_Alloc (1024 * 1024), 1024 * 1024);
-
-	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
-	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
-	Cvar_Get ("pr_deadbeef_locals", "1", 0, 0, 0);
-
-	if (options.trace > 1) {
-		Cvar_SetValue (debug, 4);
-	}
 
 	test_pr.pr_edicts = &edicts;
 	test_pr.num_edicts = &num_edicts;
@@ -172,6 +168,10 @@ init_qf (void)
 	test_pr.no_exec_limit = 0;	// absolutely want a limit!
 
 	PR_Init_Cvars ();
+
+	pr_debug = options.trace > 1 ? 4 : 2;
+	pr_boundscheck = 2;
+	pr_deadbeef_locals = 1;
 
 	PR_AddLoadFunc (&test_pr, init_edicts);
 	PR_Init (&test_pr);
@@ -259,9 +259,9 @@ int
 main (int argc, char **argv)
 {
 	dfunction_t *dfunc;
-	func_t      main_func = 0;
+	pr_func_t   main_func = 0;
 	const char *name = "progs.dat";
-	string_t   *pr_argv;
+	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;
 
 	i = parse_options (argc, argv);
@@ -276,24 +276,28 @@ main (int argc, char **argv)
 	if (!load_progs (name))
 		Sys_Error ("couldn't load %s", name);
 
+	if ((dfunc = PR_FindFunction (&test_pr, ".main"))
+		|| (dfunc = PR_FindFunction (&test_pr, "main"))) {
+		main_func = dfunc - test_pr.pr_functions;
+	} else {
+		PR_Undefined (&test_pr, "function", "main");
+	}
+
 	PR_PushFrame (&test_pr);
-	if (argc > 2)
+	if (argc) {
 		pr_argc = argc;
+	}
 	pr_argv = PR_Zone_Malloc (&test_pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (&test_pr, name);
-	for (i = 1; i < pr_argc; i++)
+	for (i = 1; i < pr_argc; i++) {
 		pr_argv[i] = PR_SetTempString (&test_pr, argv[i]);
+	}
 	pr_argv[i] = 0;
 
-	if ((dfunc = PR_FindFunction (&test_pr, ".main"))
-		|| (dfunc = PR_FindFunction (&test_pr, "main")))
-		main_func = dfunc - test_pr.pr_functions;
-	else
-		PR_Undefined (&test_pr, "function", "main");
-	PR_RESET_PARAMS (&test_pr);
+	PR_SetupParams (&test_pr, 2, 0);
 	P_INT (&test_pr, 0) = pr_argc;
 	P_POINTER (&test_pr, 1) = PR_SetPointer (&test_pr, pr_argv);
-	test_pr.pr_argc = 2;
+
 	PR_ExecuteProgram (&test_pr, main_func);
 	PR_PopFrame (&test_pr);
 	if (options.flote)

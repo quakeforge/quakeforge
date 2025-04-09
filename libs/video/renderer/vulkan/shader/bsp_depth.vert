@@ -1,20 +1,23 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
-layout (set = 0, binding = 0) uniform Matrices {
-	mat4 Projection3d;
-	mat4 View;
-	mat4 Sky;
-	mat4 Projection2d;
-};
+#include "entity.h"
 
-layout (push_constant) uniform PushConstants {
-	mat4 Model;
+layout (set = 0, binding = 0) uniform
+#include "matrices.h"
+;
+
+layout (set = 1, binding = 0) readonly buffer Entities {
+	Entity      entities[];
 };
 
 layout (location = 0) in vec4 vertex;
+layout (location = 2) in uint entind;
 
 void
 main (void)
 {
-	gl_Position = Projection3d * (View * (Model * vertex));
+	vec3        vert = vertex * entities[entind].transform;
+	gl_Position = Projection3d * (View[gl_ViewIndex] * vec4 (vert, 1));
 }

@@ -101,7 +101,7 @@
 	This function must be called multiple times to get multiple results.
 	Stupid, but functional.
 */
-@extern entity find (entity start, ...);
+@extern @attribute(no_va_list) entity find (entity start, ...);
 #endif
 
 /**

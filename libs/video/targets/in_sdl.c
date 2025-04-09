@@ -43,7 +43,15 @@
 
 #include "compat.h"
 
-cvar_t *in_snd_block;
+int in_snd_block;
+static cvar_t in_snd_block_cvar = {
+	.name = "in_snd_block",
+	.description =
+		"block sound output on window focus loss",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &in_snd_block },
+};
 
 static int have_focus = 1;
 
@@ -53,7 +61,7 @@ event_focusout (void)
 {
 	if (have_focus) {
 		have_focus = 0;
-		if (in_snd_block->int_val) {
+		if (in_snd_block) {
 			S_BlockSound ();
 			CDAudio_Pause ();
 		}
@@ -64,7 +72,7 @@ static void
 event_focusin (void)
 {
 	have_focus = 1;
-	if (in_snd_block->int_val) {
+	if (in_snd_block) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
 	}
@@ -599,8 +607,7 @@ IN_LL_Init (void)
 void
 IN_LL_Init_Cvars (void)
 {
-	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
-							 "block sound output on window focus loss");
+	Cvar_Register (&in_snd_block_cvar, 0, 0);
 }
 
 void

@@ -1,4 +1,3 @@
-%{
 /*
 	qp-parse.y
 
@@ -28,6 +27,15 @@
 		Boston, MA  02111-1307, USA
 
 */
+%define api.prefix {qp_yy}
+%define api.pure full
+%define api.push-pull push
+%locations
+%parse-param {struct rua_ctx_s *ctx}
+%define api.value.type {rua_val_t}
+%define api.location.type {rua_loc_t}
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -40,6 +48,7 @@
 #endif
 
 #include "QF/dstring.h"
+#include "QF/va.h"
 
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -47,6 +56,7 @@
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -55,10 +65,13 @@
 #define YYERROR_VERBOSE 1
 #undef YYERROR_VERBOSE
 
-extern char *qp_yytext;
+#include "tools/qfcc/source/qp-parse.h"
+
+#define qp_yytext qp_yyget_text (ctx->scanner)
+char *qp_yyget_text (void *scanner);
 
 static void
-yyerror (const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
 #ifdef YYERROR_VERBOSE
 	error (0, "%s %s\n", qp_yytext, s);
@@ -68,52 +81,39 @@ yyerror (const char *s)
 }
 
 static void
-parse_error (void)
+parse_error (rua_ctx_t *ctx)
 {
 	error (0, "parse error before %s", qp_yytext);
 }
 
-#define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (ctx); YYERROR; } while (0)
+
+#define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
+#define YYLOCATION_PRINT rua_print_location
 
 int yylex (void);
 
 %}
 
-%union {
-	int			op;
-	struct def_s *def;
-	struct hashtab_s *def_list;
-	struct type_s	*type;
-	struct typedef_s *typename;
-	struct expr_s	*expr;
-	struct function_s *function;
-	struct switch_block_s *switch_block;
-	struct param_s	*param;
-	struct struct_s *strct;
-	struct symtab_s *symtab;
-	struct symbol_s *symbol;
-	int              storage;
-}
-
 // these tokens are common between qc and qp
 %left LOW
+%nonassoc ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left	COMMA
 %right  <op> '=' ASX
 %right  '?' ':'
 %left   OR
+%left   XOR
 %left   AND
 %left   '|'
 %left   '^'
 %left   '&'
 %left   EQ NE
-%left   LE GE LT GT
+%left	LT GT GE LE
+%token	NAND NOR XNOR
 // end of tokens common between qc and qp
 
 %left	<op>		RELOP
@@ -124,43 +124,151 @@ int yylex (void);
 %token	<type>		TYPE TYPE_NAME
 %token	<symbol>	ID
 %token	<expr>		VALUE
+%token              TRUE FALSE
+%token				ELLIPSIS
+%token				RESERVED
 
 %token	PROGRAM VAR ARRAY OF FUNCTION PROCEDURE PBEGIN END IF THEN ELSE
-%token	WHILE DO RANGE ASSIGNOP NOT ELLIPSIS
+%token	WHILE DO RANGE ASSIGNOP NOT
 %token	RETURN
 
 %type	<type>		type standard_type
 %type	<symbol>	program_head identifier_list subprogram_head
 %type	<symtab>	param_scope
 %type	<param>		arguments parameter_list
-%type	<expr>		compound_statement else optional_statements statement_list
+%type	<mut_expr>	compound_statement optional_statements statement_list
+%type	<expr>		else
 %type	<expr>		statement procedure_statement
-%type	<expr>		expression_list expression unary_expr primary variable name
+%type	<mut_expr>	expression_list
+%type	<expr>		expression unary_expr primary variable name
 %type	<op>		sign
 
 %{
 
 static void
-build_dotmain (symbol_t *program)
+build_dotmain (symbol_t *program, rua_ctx_t *ctx)
 {
 	symbol_t   *dotmain = new_symbol (".main");
 	expr_t     *code;
 	expr_t     *exitcode;
 
-	dotmain->params = 0;
-	dotmain->type = parse_params (&type_integer, 0);
-	dotmain->type = find_type (dotmain->type);
-	dotmain = function_symbol (dotmain, 0, 1);
+	auto dmtype = find_type (parse_params (&type_int, 0));
+	dotmain = function_symbol ((specifier_t) {
+								.type = dmtype,
+								.sym = dotmain,
+							   }, ctx);
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
-	current_func = begin_function (dotmain, 0, current_symtab, 0,
-								   current_storage);
-	current_symtab = current_func->symtab;
-	code = new_block_expr ();
-	append_expr (code, function_expr (new_symbol_expr (program), 0));
-	append_expr (code, return_expr (current_func, exitcode));
-	build_code_function (dotmain, 0, code);
+	auto spec = (specifier_t) {
+		.sym = dotmain,
+		.storage = current_storage,
+	};
+	current_func = begin_function (spec, nullptr, current_symtab, ctx);
+	code = new_block_expr (0);
+	code->block.scope = current_func->locals;
+	auto call = new_call_expr (new_symbol_expr (program), nullptr, nullptr);
+	append_expr (code, call);
+	append_expr (code, new_return_expr (exitcode));
+	build_code_function (spec, 0, code, ctx);
+}
+
+static const expr_t *
+lvalue_expr (const expr_t *expr)
+{
+	if (expr->type == ex_xvalue) {
+		if (expr->xvalue.lvalue) {
+			// already an lvalue
+			return expr;
+		}
+		// convert rvalue to lvalue (validity checked later)
+		expr = expr->xvalue.expr;
+	}
+	return new_xvalue_expr (expr, true);
+}
+
+static const expr_t *
+rvalue_expr (const expr_t *expr)
+{
+	if (expr->type == ex_xvalue) {
+		if (!expr->xvalue.lvalue) {
+			// already an rvalue
+			return expr;
+		}
+		// convert lvalue to rvalue
+		bug (expr, "lvalue in rvalue?");
+		expr = expr->xvalue.expr;
+	}
+	return new_xvalue_expr (expr, false);
+}
+
+static symbol_t *
+function_decl (symbol_t *sym, param_t *params, const type_t *ret_type,
+			   rua_ctx_t *ctx)
+{
+	if (sym->table == current_symtab) {
+		error (0, "%s redefined", sym->name);
+		sym = new_symbol (sym->name);
+	}
+	// use `@name` so `main` can be used (`.main` is reserved for the entry
+	// point)
+	auto fsym = new_symbol (va ("@%s", sym->name));
+	auto ftype = find_type (parse_params (ret_type, params));
+	fsym = function_symbol ((specifier_t) {
+								.type = ftype,
+								.sym = fsym,
+								.params = params
+							}, ctx);
+	auto fsym_expr = new_symbol_expr (fsym);
+	if (!params) {
+		fsym_expr = new_call_expr (fsym_expr, nullptr, nullptr);
+	}
+
+	auto csym = new_symbol (sym->name);
+	csym->sy_type = sy_xvalue;
+	csym->xvalue = (sy_xvalue_t) {
+		.lvalue = nullptr,
+		.rvalue = fsym_expr,
+	};
+	symtab_addsymbol (current_symtab, csym);
+
+	// return both symbols:
+	//    lvalue has the language-level symbol
+	//    rvalue has the internal function symbol
+	// XXX NOTE: not a valid symbol
+	sym->sy_type = sy_xvalue;
+	sym->xvalue = (sy_xvalue_t) {
+		.lvalue = (expr_t *) csym,
+		.rvalue = (expr_t *) fsym,
+	};
+
+	return sym;
+}
+
+static symbol_t *
+function_value (function_t *func)
+{
+	symbol_t   *ret = 0;
+	if (!is_void (func->type->func.ret_type)) {
+		ret = symtab_lookup (func->locals, ".ret");
+		if (!ret || ret->table != func->locals) {
+			ret = new_symbol_type (".ret", func->type->func.ret_type);
+			initialize_def (ret, 0, func->locals->space, sc_local,
+							func->locals, nullptr);
+		}
+	}
+	return ret;
+}
+
+static expr_t *
+function_return (function_t *func)
+{
+	symbol_t   *ret = function_value (func);
+	expr_t     *ret_val = 0;
+	if (ret) {
+		ret_val = new_symbol_expr (ret);
+	}
+	return ret_val;
 }
 
 %}
@@ -178,13 +286,16 @@ program
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
 
-			current_func = begin_function ($1, 0, current_symtab, 0,
-										   current_storage);
-			current_symtab = current_func->symtab;
-			build_code_function ($1, 0, $4);
+			auto spec = (specifier_t) {
+				.sym = $1,
+				.storage = current_storage,
+			};
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
+			current_symtab = current_func->locals;
+			build_code_function (spec, 0, $4, ctx);
 			current_symtab = st;
 
-			build_dotmain ($1);
+			build_dotmain ($1, ctx);
 			current_symtab = st;
 		}
 	;
@@ -198,15 +309,18 @@ program_head
 			// FIXME need units and standard units
 			{
 				symbol_t   *sym = new_symbol ("ExitCode");
-				sym->type = &type_integer;
-				initialize_def (sym, 0, current_symtab->space, sc_global);
-				if (sym->s.def) {
-					sym->s.def->nosave = 1;
+				sym->type = &type_int;
+				initialize_def (sym, 0, current_symtab->space, sc_global,
+								current_symtab, nullptr);
+				if (sym->def) {
+					sym->def->nosave = 1;
 				}
 			}
-			$$->type = parse_params (&type_void, 0);
-			$$->type = find_type ($$->type);
-			$$ = function_symbol ($$, 0, 1);
+			auto ftype = find_type (parse_params (&type_void, 0));
+			$$ = function_symbol ((specifier_t) {
+									.type = ftype,
+									.sym = $$,
+								  }, ctx);
 		}
 	;
 
@@ -234,7 +348,8 @@ declarations
 			while ($3) {
 				symbol_t   *next = $3->next;
 				$3->type = $5;
-				initialize_def ($3, 0, current_symtab->space, current_storage);
+				initialize_def ($3, 0, current_symtab->space, current_storage,
+								current_symtab, nullptr);
 				$3 = next;
 			}
 		}
@@ -245,7 +360,7 @@ type
 	: standard_type
 	| ARRAY '[' VALUE RANGE VALUE ']' OF standard_type
 		{
-			$$ = based_array_type ($8, expr_integer ($3), expr_integer ($5));
+			$$ = based_array_type ($8, expr_int ($3), expr_int ($5));
 		}
 	;
 
@@ -262,49 +377,58 @@ subprogram_declarations
 subprogram_declaration
 	: subprogram_head ';'
 		{
-			$<storage>$ = current_storage;
-			current_func = begin_function ($1, 0, current_symtab, 0,
-										   current_storage);
-			current_symtab = current_func->symtab;
+			auto sym = $1;
+			// always an sy_xvalue with callable symbol in lvalue and
+			// actual function symbol in rvalue
+			auto csym = (symbol_t *) sym->xvalue.lvalue;
+			auto fsym = (symbol_t *) sym->xvalue.rvalue;
+			auto spec = (specifier_t) {
+				.sym = fsym,
+				.storage = current_storage,
+			};
+			current_func = begin_function (spec, sym->name, current_symtab,
+										   ctx);
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
+			// null for procedures, valid symbol expression for functions
+			csym->xvalue.lvalue = function_return (current_func);
+			$<spec>$ = spec;
 		}
 	  declarations compound_statement ';'
 		{
-			append_expr ($5, new_unary_expr ('r', 0));
-			build_code_function ($1, 0, $5);
-			current_symtab = current_symtab->parent;
-			current_storage = $<storage>3;
+			auto spec = $<spec>3;
+			auto statements = $5;
+			if (!statements) {
+				statements = new_block_expr (0);
+				statements->block.scope = current_symtab;
+			}
+			auto ret_expr = new_return_expr (function_return (current_func));
+			append_expr (statements, ret_expr);
+			build_code_function (spec, 0, statements, ctx);
+			current_symtab = current_func->parameters->parent;
+			current_storage = spec.storage;
 		}
 	| subprogram_head ASSIGNOP '#' VALUE ';'
 		{
-			build_builtin_function ($1, $4, 0, current_storage);
+			auto sym = $1;
+			// always an sy_xvalue with callable symbol in lvalue and
+			// actual function symbol in rvalue
+			auto spec = (specifier_t) {
+				.sym = (symbol_t *) sym->xvalue.rvalue,
+				.storage = current_storage,
+			};
+			build_builtin_function (spec, sym->name, $4);
 		}
 	;
 
 subprogram_head
 	: FUNCTION ID arguments ':' standard_type
 		{
-			$$ = $2;
-			if ($$->table == current_symtab) {
-				error (0, "%s redefined", $$->name);
-			} else {
-				$$->params = $3;
-				$$->type = parse_params ($5, $3);
-				$$->type = find_type ($$->type);
-				$$ = function_symbol ($$, 0, 1);
-			}
+			$$ = function_decl ($2, $3, $5, ctx);
 		}
 	| PROCEDURE ID arguments
 		{
-			$$ = $2;
-			if ($$->table == current_symtab) {
-				error (0, "%s redefined", $$->name);
-			} else {
-				$$->params = $3;
-				$$->type = parse_params (&type_void, $3);
-				$$->type = find_type ($$->type);
-				$$ = function_symbol ($$, 0, 1);
-			}
+			$$ = function_decl ($2, $3, &type_void, ctx);
 		}
 	;
 
@@ -359,7 +483,8 @@ opt_semi
 statement_list
 	: statement
 		{
-			$$ = new_block_expr ();
+			$$ = new_block_expr (0);
+			$$->block.scope = current_symtab;
 			append_expr ($$, $1);
 		}
 	| statement_list ';' statement
@@ -372,30 +497,30 @@ statement_list
 statement
 	: variable ASSIGNOP expression
 		{
-			$$ = $1;
-			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
-				$$ = new_ret_expr ($$->e.symbol->type->t.func.type);
-			$$ = assign_expr ($$, $3);
+			auto lvalue = lvalue_expr ($variable);
+			$$ = new_assign_expr (lvalue, $expression);
 		}
 	| procedure_statement
 	| compound_statement
-	| IF expression THEN statement else statement
 		{
-			$$ = build_if_statement (0, $2, $4, $5, $6);
+			$$ = $1;
 		}
-	| IF expression THEN statement %prec IFX
+	| IF expression[test] THEN statement[true] else statement[false]
 		{
-			$$ = build_if_statement (0, $2, $4, 0, 0);
+			$$ = new_select_expr (false, $test, $true, $else, $false);
 		}
-	| WHILE expression DO statement
+	| IF expression[test] THEN statement[true] %prec IFX
 		{
-			$$ = build_while_statement (0, $2, $4,
-										new_label_expr (),
-										new_label_expr ());
+			$$ = new_select_expr (false, $test, $true, nullptr, nullptr);
+		}
+	| WHILE expression[test] DO statement[body]
+		{
+			$$ = new_loop_expr (false, false, $test, $body, nullptr,
+								nullptr, nullptr);
 		}
 	| RETURN
 		{
-			$$ = return_expr (current_func, 0);
+			$$ = new_return_expr (function_return (current_func));
 		}
 	;
 
@@ -408,22 +533,25 @@ else
 	;
 
 variable
-	: name
-	| name '[' expression ']'				{ $$ = array_expr ($1, $3); }
+	: name									{ $$ = rvalue_expr ($1); }
+	| name '[' expression ']'				{ $$ = new_array_expr ($1, $3); }
 	;
 
+//FIXME calling a procedure that takes no parameters with parameters
+// results in "Called object is not a function", which I'm sure will be
+// very confusing (especially for prececures) as the called object sure looks
+// like a function/procedure.
 procedure_statement
-	: name									{ $$ = function_expr ($1, 0); }
-	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
+	: name									{ $$ = rvalue_expr ($1); }
+	| name '(' expression_list ')'
+		{
+			$$ = new_call_expr (rvalue_expr ($1), $3, nullptr);
+		}
 	;
 
 expression_list
-	: expression
-	| expression_list ',' expression
-		{
-			$$ = $3;
-			$$->next = $1;
-		}
+	: expression							{ $$ = new_list_expr ($1); }
+	| expression_list ',' expression		{ $$ = expr_prepend_expr ($1, $3); }
 	;
 
 unary_expr
@@ -433,58 +561,54 @@ unary_expr
 	;
 
 primary
-	: variable
-		{
-			$$ = $1;
-			if ($$->type == ex_symbol && extract_type ($$) == ev_func)
-				$$ = function_expr ($$, 0);
-		}
+	: variable						{ $$ = rvalue_expr ($1); }
 	| VALUE
-	| name '(' expression_list ')'			{ $$ = function_expr ($1, $3); }
-	| '(' expression ')'					{ $$ = $2; }
+	| name '(' expression_list ')'
+		{
+			//FIXME see procedure_statement
+			$$ = new_call_expr (rvalue_expr ($1), $3, nullptr);
+		}
+	| '(' expression ')'			{ $$ = $2; }
 	;
 
 expression
 	: unary_expr
-	| expression RELOP expression			{ $$ = binary_expr ($2, $1, $3); }
+	| expression RELOP expression		{ $$ = new_binary_expr ($2, $1, $3); }
 	| expression ADDOP expression
 		{
-			if ($2 == 'o')
-				$$ = bool_expr (OR, new_label_expr (), $1, $3);
-			else
-				$$ = binary_expr ($2, $1, $3);
+			int op = $2;
+			if (op == 'o') {
+				op = OR;
+			}
+			$$ = new_binary_expr (op, $1, $3);
 		}
 	| expression MULOP expression
 		{
-			if ($2 == 'd')
-				$2 = '/';
-			else if ($2 == 'm')
-				$2 = '%';
-			if ($2 == 'a')
-				$$ = bool_expr (AND, new_label_expr (), $1, $3);
-			else
-				$$ = binary_expr ($2, $1, $3);
+			int op = $2;
+			if (op == 'd') {
+				op = '/';
+			} else if (op == 'm') {
+				op = '%';
+			} else if (op == 'a') {
+				op = AND;
+			}
+			$$ = new_binary_expr (op, $1, $3);
 		}
 	;
 
 sign
 	: ADDOP
 		{
-			if ($$ == 'o')
+			if ($$ == 'o') {
+				// no unary `or`
 				PARSE_ERROR;
+			}
+			$$ = $1;
 		}
 	;
 
 name
-	: ID
-		{
-			if (!$1->table) {
-				error (0, "%s undefined", $1->name);
-				$1->type = &type_integer;
-				symtab_addsymbol (current_symtab, $1);
-			}
-			$$ = new_symbol_expr ($1);
-		}
+	: ID						{ $$ = new_symbol_expr ($1); }
 	;
 
 %%

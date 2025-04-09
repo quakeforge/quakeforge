@@ -62,19 +62,17 @@ extern	netadr_t	net_loopback_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
 extern	struct msg_s *net_message;
 
-extern	struct cvar_s	*qport;
+extern int qport;
 
-int Net_Log_Init (const char **sound_precache);
+int Net_Log_Init (const char **sound_precache, int server);
 void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
-void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
-						  int is_server);
-void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
-						  int is_server);
+void Log_Incoming_Packet (const byte *p, int len, int has_sequence);
+void Log_Outgoing_Packet (const byte *p, int len, int has_sequence);
 void Net_LogStop (void *data);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
-extern struct cvar_s *net_packetlog;
+extern int net_packetlog;
 ///@}
 
 /** \defgroup qw-udp QuakeWorld udp support.
@@ -94,7 +92,7 @@ void NET_Init (int port);
 
 	\return			True if successfully read, otherwise false.
 */
-qboolean NET_GetPacket (void);
+bool NET_GetPacket (void);
 
 /**	Send a data packet out to the network.
 
@@ -112,7 +110,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
+bool NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Compare two network addresses.
 
@@ -122,7 +120,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
+bool NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Convert an address to a string.
 
@@ -159,7 +157,7 @@ const char *NET_BaseAdrToString (netadr_t a);
 	\param[out] a	The resulting address of the conversion.
 	\return			True if the conversion is successful, otherwise false.
 */
-qboolean NET_StringToAdr (const char *s, netadr_t *a);
+bool NET_StringToAdr (const char *s, netadr_t *a);
 
 ///@}
 
@@ -227,9 +225,9 @@ typedef enum {
 } ncqport_e;
 
 typedef struct netchan_s {
-	qboolean	fatal_error;	///< True if the message overflowed
+	bool		fatal_error;	///< True if the message overflowed
 
-	float		last_received;	///< Time the last packet was received.
+	double      last_received;	///< Time the last packet was received.
 
 	/// \name statistics
 	/// the statistics are cleared at each client begin, because
@@ -297,6 +295,10 @@ extern	int net_blocksend;
 */
 extern	double *net_realtime;
 
+/** Callback to log outgoing packets
+*/
+extern void (*net_log_packet) (int length, const void *data, netadr_t to);
+
 /** Initialize the netchan system.
 
 	Currently only sets the qport cvar default to a random value.
@@ -341,7 +343,7 @@ void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 
 	\param chan		The netchan representing the connection.
 */
-qboolean Netchan_Process (netchan_t *chan);
+bool Netchan_Process (netchan_t *chan);
 
 /** Initialize a new connection.
 
@@ -358,7 +360,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 	\param chan     The netchan representing the connection.
 	\return			True if the connection isn't chocked.
 */
-qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
+bool Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 
 /** Check if a reliable packet can be sent to the connection.
 
@@ -366,7 +368,7 @@ qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 	\return			True if there is no outstanding reliable packet and the
 					connection isn't chocked.
 */
-qboolean Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
+bool Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 
 /** Send a packet.
 

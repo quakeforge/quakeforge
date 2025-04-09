@@ -44,7 +44,6 @@
 #include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/set.h"
-#include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -186,7 +185,7 @@ SV_Print (const char *fmt, va_list args)
 
 	time_t      mytime = 0;
 	struct tm  *local = NULL;
-	qboolean    timestamps = false;
+	bool        timestamps = false;
 
 	char        *in;
 
@@ -226,14 +225,13 @@ SV_Print (const char *fmt, va_list args)
 	}
 	if (*msg->str && !con_printf_no_log) {
 		// We want to output to console and maybe logfile
-		if (sv_timestamps && sv_timefmt && sv_timefmt->string
-			&& sv_timestamps->int_val && !pending)
+		if (sv_timefmt && sv_timestamps && !pending)
 			timestamps = true;
 
 		if (timestamps) {
 			mytime = time (NULL);
 			local = localtime (&mytime);
-			hstrftime (msg3, sizeof (msg3), sv_timefmt->string, local);
+			hstrftime (msg3, sizeof (msg3), sv_timefmt, local);
 
 			dsprintf (msg2, "%s%s", msg3, msg->str);
 		} else {
@@ -300,10 +298,11 @@ SV_Multicast (const vec3_t origin, int to)
 	client_t   *client;
 	int         leafnum, j;
 	mleaf_t    *leaf;
-	qboolean    reliable;
+	bool        reliable;
 	mod_brush_t *brush = &sv.worldmodel->brush;
 
-	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
+	vec4f_t     org = { VectorExpand (origin), 1 };
+	leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
 	if (!leaf)
 		leafnum = 0;
 	else
@@ -347,8 +346,8 @@ SV_Multicast (const vec3_t origin, int to)
 				goto inrange;
 		}
 
-		leaf = Mod_PointInLeaf (SVvector (client->edict, origin),
-								sv.worldmodel);
+		org = (vec4f_t) {VectorExpand (SVvector (client->edict, origin)), 1};
+		leaf = Mod_PointInLeaf (org, &sv.worldmodel->brush);
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - brush->leafs - 1;
@@ -397,8 +396,8 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 			   float attenuation)
 {
 	int         ent, sound_num, i;
-	qboolean    use_phs;
-	qboolean    reliable = false;
+	bool        use_phs;
+	bool        reliable = false;
 	vec3_t      origin;
 
 	if (volume < 0 || volume > 255)
@@ -423,7 +422,7 @@ SV_StartSound (edict_t *entity, int channel, const char *sample, int volume,
 
 	ent = NUM_FOR_EDICT (&sv_pr_state, entity);
 
-	if ((channel & 8) || !sv_phs->int_val)	// no PHS flag
+	if ((channel & 8) || !sv_phs)	// no PHS flag
 	{
 		if (channel & 8)
 			reliable = true;			// sounds that break the phs are
@@ -614,7 +613,7 @@ SV_UpdateClientStats (client_t *client)
 		}
 }
 
-static qboolean
+static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];

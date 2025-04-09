@@ -56,11 +56,11 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	set_iter_t *id_iter;
 	daglabel_t *id;
 
-	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d)", node,
+	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d:%d)", node,
 			   node->type != st_none ? "" : "shape=box,",
 			   daglabel_string (node->label),
 			   node->killed ? " k" : "",
-			   node->topo);
+			   node->number, node->topo);
 	for (id_iter = set_first (node->identifiers); id_iter;
 		 id_iter = set_next (id_iter)) {
 		id = dag->labels[id_iter->element];
@@ -78,8 +78,11 @@ print_root_nodes (dstring_t *dstr, dag_t *dag)
 	for (node_iter = set_first (dag->roots); node_iter;
 		 node_iter = set_next (node_iter)) {
 		dagnode_t  *node = dag->nodes[node_iter->element];
+		//if (set_is_empty (node->edges)) {
+		//	continue;
+		//}
 		print_node_def (dstr, dag, node);
-		dasprintf (dstr, "      dag_enter_%p ->dagnode_%p [style=invis];\n",
+		dasprintf (dstr, "      dag_enter_%p -> dagnode_%p [style=invis];\n",
 				   dag, node);
 	}
 //	dasprintf (dstr, "    }\n");
@@ -119,9 +122,12 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	}
 	for (edge_iter = set_first (edges); edge_iter;
 		 edge_iter = set_next (edge_iter)) {
-		dasprintf (dstr,
-				   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
-				   node, dag->nodes[edge_iter->element]);
+		auto n = dag->nodes[edge_iter->element];
+		if (n->type != st_none) {
+			dasprintf (dstr,
+					   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
+					   node, n);
+		}
 	}
 	set_delete (edges);
 	if (0) {
@@ -170,8 +176,13 @@ print_dag (dstring_t *dstr, dag_t *dag, const char *label)
 	dasprintf (dstr, "    dag_enter_%p [label=\"\", style=invis];\n", dag);
 	print_root_nodes (dstr, dag);
 	print_child_nodes (dstr, dag);
-	for (i = 0; i < dag->num_nodes; i++)
-		print_node (dstr, dag, dag->nodes[i]);
+	for (i = 0; i < dag->num_nodes; i++) {
+		auto node = dag->nodes[i];
+		//if (set_is_empty (node->parents) && set_is_empty (node->edges)) {
+		//	continue;
+		//}
+		print_node (dstr, dag, node);
+	}
 	dasprintf (dstr, "    dag_leave_%p [label=\"\", style=invis];\n", dag);
 	if (label)
 		dasprintf (dstr, "  }\n");
@@ -184,7 +195,8 @@ dot_dump_dag (void *_dag, const char *filename)
 	dstring_t  *dstr = dstring_newstr();
 
 	dasprintf (dstr, "digraph dag_%p {\n", dag);
-	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
+	dasprintf (dstr, "  graph [label=\"%s\"];\n",
+			   filename ? quote_string (filename) : "");
 	dasprintf (dstr, "  layout=dot;\n");
 	dasprintf (dstr, "  clusterrank=local;\n");
 	dasprintf (dstr, "  rankdir=TB;\n");

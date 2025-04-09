@@ -58,19 +58,27 @@
 #include "qw/include/sv_qtv.h"
 #include "qw/include/sv_recorder.h"
 
-qboolean    sv_allow_cheats;
+bool        sv_allow_cheats;
 
 int         fp_messages = 4, fp_persecond = 4, fp_secondsdead = 10;
 char        fp_msg[255] = { 0 };
-cvar_t     *sv_leetnickmatch;
+int sv_leetnickmatch;
+static cvar_t sv_leetnickmatch_cvar = {
+	.name = "sv_3133735_7h4n_7h0u",
+	.description =
+		"Match '1' as 'i' and such in nicks",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_leetnickmatch },
+};
 
-static qboolean
+static bool
 match_char (char a, char b)
 {
 	a = tolower ((byte) sys_char_map[(byte) a]);
 	b = tolower ((byte) sys_char_map[(byte) b]);
 
-	if (a == b || (sv_leetnickmatch->int_val
+	if (a == b || (sv_leetnickmatch
 		&& (   (a == '1' && b == 'i') || (a == 'i' && b == '1')
 			|| (a == '1' && b == 'l') || (a == 'l' && b == '1')
 			|| (a == '3' && b == 'e') || (a == 'e' && b == '3')
@@ -249,13 +257,12 @@ SV_Fraglogfile_f (void)
 		return;
 	}
 	name = dstring_new ();
-	if (!QFS_NextFilename (name,
-						   va (0, "%s/frag_", qfs_gamedir->dir.def), ".log")) {
-		SV_Printf ("Can't open any logfiles.\n");
-		sv_fraglogfile = NULL;
+	if (!(sv_fraglogfile = QFS_NextFile (name,
+										 va ("%s/frag_",
+											 qfs_gamedir->dir.def), ".log"))) {
+		SV_Printf ("Can't open any logfiles.\n%s\n", name->str);
 	} else {
 		SV_Printf ("Logging frags to %s.\n", name->str);
-		sv_fraglogfile = QFS_WOpen (name->str, 0);
 	}
 	dstring_delete (name);
 }
@@ -265,7 +272,7 @@ SV_Fraglogfile_f (void)
 
 	Sets host_client and sv_player to the player with idnum Cmd_Argv (1)
 */
-static qboolean
+static bool
 SV_SetPlayer (void)
 {
 	client_t   *cl;
@@ -396,29 +403,29 @@ nice_time (double time)
 
 #if 0 //FIXME ditch or cvar?
 	if (t < 60) {
-		return va (0, "%ds", t);
+		return va ("%ds", t);
 	} else if (t < 600) {
-		return va (0, "%dm%02ds", t / 60, t % 60);
+		return va ("%dm%02ds", t / 60, t % 60);
 	} else if (t < 3600) {
-		return va (0, "%dm", t / 60);
+		return va ("%dm", t / 60);
 	} else if (t < 36000) {
 		t /= 60;
-		return va (0, "%dh%02dm", t / 60, t % 60);
+		return va ("%dh%02dm", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va (0, "%dh", t / 3600);
+		return va ("%dh", t / 3600);
 	} else {
 		t /= 3600;
-		return va (0, "%dd%02dh", t / 24, t % 24);
+		return va ("%dd%02dh", t / 24, t % 24);
 	}
 #endif
 	if (t < 60) {
-		return va (0, "%ds", t);
+		return va ("%ds", t);
 	} else if (t < 3600) {
-		return va (0, "%dm%02ds", t / 60, t % 60);
+		return va ("%dm%02ds", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va (0, "%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
 	} else {
-		return va (0, "%dd%02dh%02dm%02ds",
+		return va ("%dd%02dh%02dm%02ds",
 				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
 	}
 }
@@ -624,7 +631,7 @@ SV_Punish (int mode)
 {
 	int         i;
 	double      mins = 0.5;
-	qboolean    all = false, done = false;
+	bool        all = false, done = false;
 	client_t    *cl = 0;
 	dstring_t  *text = dstring_new();
 	const char *cmd = 0;
@@ -637,13 +644,13 @@ SV_Punish (int mode)
 			cmd = "cuff";
 			cmd_do = "cuffed";
 			//FIXME cmd_undo = "un-cuffed";
-			field_offs = field_offset (client_t, cuff_time);
+			field_offs = offsetof (client_t, cuff_time);
 			break;
 		case 1:
 			cmd = "mute";
 			cmd_do = "muted";
 			//FIXME cmd_undo = "can speak";
-			field_offs = field_offset (client_t, lockedtill);
+			field_offs = offsetof (client_t, lockedtill);
 			break;
 	}
 
@@ -743,15 +750,15 @@ SV_Ban_f (void)
 	if (argc > argr) {
 		reason = Cmd_Args (argr);
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s: %s\n",
-							cl->name, mins ? va (0, "for %.1f minutes", mins)
+							cl->name, mins ? va ("for %.1f minutes", mins)
 										   : "permanently", reason);
 	} else {
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-							cl->name, mins ? va (0, "for %.1f minutes", mins)
+							cl->name, mins ? va ("for %.1f minutes", mins)
 										   : "permanently");
 	}
 	SV_DropClient (cl);
-	Cmd_ExecuteString (va (0, "addip %s %f",
+	Cmd_ExecuteString (va ("addip %s %f",
 						   NET_BaseAdrToString (cl->netchan.remote_address),
 						   mins), src_command);
 }
@@ -813,7 +820,7 @@ SV_ConSay (const char *prefix, client_t *client)
 			dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 7);
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_HIGH);
-			MSG_WriteString (dbuf, va (0, "%s\n", text->str));
+			MSG_WriteString (dbuf, va ("%s\n", text->str));
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_CHAT);
 			MSG_WriteString (dbuf, "");
@@ -872,13 +879,12 @@ SV_SendServerInfoChange (const char *key, const char *value)
 }
 
 void
-Cvar_Info (cvar_t *var)
+Cvar_Info (void *data, const cvar_t *cvar)
 {
-	if (var->flags & CVAR_SERVERINFO) {
-		Info_SetValueForKey (svs.info, var->name, var->string,
-							 (!sv_highchars || !sv_highchars->int_val));
-
-		SV_SendServerInfoChange (var->name, var->string);
+	if (cvar->flags & CVAR_SERVERINFO) {
+		const char *cvar_str = Cvar_VarString (cvar);
+		Info_SetValueForKey (svs.info, cvar->name, cvar_str, !sv_highchars);
+		SV_SendServerInfoChange (cvar->name, cvar_str);
 	}
 }
 
@@ -924,9 +930,9 @@ SV_Serverinfo_f (void)
 	// if this is a cvar, change it too
 	var = Cvar_FindVar (key);
 	if (var && (var->flags & CVAR_SERVERINFO)) {
-		Cvar_Set (var, value);
+		Cvar_SetVar (var, value);
 	} else {
-		Info_SetValueForKey (svs.info, key, value, !sv_highchars->int_val);
+		Info_SetValueForKey (svs.info, key, value, !sv_highchars);
 		SV_SendServerInfoChange (key, value);
 	}
 }
@@ -940,7 +946,7 @@ SV_SetLocalinfo (const char *key, const char *value)
 		oldvalue = strdup (Info_ValueForKey (localinfo, key));
 
 	if (*value)
-		Info_SetValueForKey (localinfo, key, value, !sv_highchars->int_val);
+		Info_SetValueForKey (localinfo, key, value, !sv_highchars);
 	else
 		Info_RemoveKey (localinfo, key);
 
@@ -948,12 +954,13 @@ SV_SetLocalinfo (const char *key, const char *value)
 		*sv_globals.time = sv.time;
 		*sv_globals.self = 0;
 		PR_PushFrame (&sv_pr_state);
-		PR_RESET_PARAMS (&sv_pr_state);
+		auto params = PR_SaveParams (&sv_pr_state);
+		PR_SetupParams (&sv_pr_state, 3, 1);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
-		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
+		PR_RestoreParams (&sv_pr_state, params);
 		PR_PopFrame (&sv_pr_state);
 	}
 
@@ -1050,7 +1057,7 @@ SV_Gamedir (void)
 	}
 
 	Info_SetValueForStarKey (svs.info, "*gamedir", dir,
-							 !sv_highchars->int_val);
+							 !sv_highchars);
 }
 
 /*
@@ -1136,14 +1143,16 @@ SV_Snap (int uid)
 	if (!cl->uploadfn)
 		cl->uploadfn = dstring_new ();
 
-	if (!QFS_NextFilename (cl->uploadfn,
-						   va (0, "%s/snap/%d-", qfs_gamedir->dir.def, uid),
-						   ".pcx")) {
-		SV_Printf ("Snap: Couldn't create a file, clean some out.\n");
+	if (!(cl->upload = QFS_NextFile (cl->uploadfn,
+									 va ("%s/snap/%d-",
+										 qfs_gamedir->dir.def, uid), ".pcx"))) {
+		SV_Printf ("Snap: Couldn't create a file, clean some out.\n%s\n",
+				   cl->uploadfn->str);
 		dstring_delete (cl->uploadfn);
 		cl->uploadfn = 0;
 		return;
 	}
+	cl->upload_started = 0;
 
 	memcpy (&cl->snap_from, &net_from, sizeof (net_from));
 	if (sv_redirected != RD_NONE)
@@ -1303,6 +1312,5 @@ SV_InitOperatorCommands (void)
 					"commands do, so you can check safely");
 
 	// poor description
-	sv_leetnickmatch = Cvar_Get ("sv_3133735_7h4n_7h0u", "1", CVAR_NONE, NULL,
-								 "Match '1' as 'i' and such in nicks");
+	Cvar_Register (&sv_leetnickmatch_cvar, 0, 0);
 }

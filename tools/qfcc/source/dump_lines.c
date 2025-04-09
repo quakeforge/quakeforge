@@ -41,7 +41,8 @@
 #include <stdlib.h>
 
 #include "QF/progs.h"
-#include "QF/pr_type.h"
+
+#include "QF/progs/pr_type.h"
 
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/qfprogs.h"
@@ -51,7 +52,7 @@ typedef struct {
 	const char *source_file;
 	pr_uint_t   source_line;
 	pr_int_t    first_statement;
-	pointer_t   return_type;
+	pr_ptr_t    return_type;
 	pr_uint_t   local_defs;
 	pr_uint_t   num_locals;
 	pr_uint_t   line_info;
@@ -77,10 +78,10 @@ progs_get_func_data (unsigned func_index, void *data)
 		func_data.local_defs = aux_func->local_defs;
 		func_data.line_info = aux_func->line_info;
 		func_data.function = aux_func->function;
-		if (aux_func->function < (unsigned int) pr->progs->numfunctions) {
+		if (aux_func->function < (unsigned int) pr->progs->functions.count) {
 			func = pr->pr_functions + aux_func->function;
-			func_data.source_file = pr->pr_strings + func->s_file;
-			func_data.source_name = pr->pr_strings + func->s_name;
+			func_data.source_file = pr->pr_strings + func->file;
+			func_data.source_name = pr->pr_strings + func->name;
 			func_data.first_statement = func->first_statement;
 		}
 		return &func_data;

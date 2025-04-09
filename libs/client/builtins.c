@@ -128,7 +128,7 @@ static csqc_def_t csqc_fields[] = {
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } csqc_func_list[] = {
 	{"CSQC_Init",				&cl_funcs.Init},
 	{"CSQC_Shutdown",			&cl_funcs.Shutdown},
@@ -146,16 +146,15 @@ static struct {
 
 progs_t csqc_pr_state;
 
+#define bi(x) static void CSQC_##x (progs_t *pr, void *_res)
 
-static void
-CSQC_makevectors (progs_t *pr)
+bi(makevectors)
 {
 	AngleVectors (P_VECTOR (pr, 0), *cl_globals.v_forward,
 				  *cl_globals.v_right, *cl_globals.v_up);
 }
 
-static void
-CSQC_setorigin (progs_t *pr)
+bi(setorigin)
 {
 	edict_t    *e;
 	vec_t      *org;
@@ -167,188 +166,151 @@ CSQC_setorigin (progs_t *pr)
 	//XXX CS_LinkEdict (e, false);
 }
 
-static void
-CSQC_setmodel (progs_t *pr)
+bi(setmodel)
 {
 }
 
-static void
-CSQC_setsize (progs_t *pr)
+bi(setsize)
 {
 }
 
-static void
-CSQC_sound (progs_t *pr)
+bi(sound)
 {
 }
 
-static void
-CSQC_error (progs_t *pr)
+bi(error)
 {
 }
 
-static void
-CSQC_objerror (progs_t *pr)
+bi(objerror)
 {
 }
 
-static void
-CSQC_spawn (progs_t *pr)
+bi(spawn)
 {
 }
 
-static void
-CSQC_remove (progs_t *pr)
+bi(remove)
 {
 }
 
-static void
-CSQC_traceline (progs_t *pr)
+bi(traceline)
 {
 }
 
-static void
-CSQC_precache_sound (progs_t *pr)
+bi(precache_sound)
 {
 }
 
-static void
-CSQC_precache_model (progs_t *pr)
+bi(precache_model)
 {
 }
 
-static void
-CSQC_findradius (progs_t *pr)
+bi(findradius)
 {
 }
 
-static void
-CSQC_walkmove (progs_t *pr)
+bi(walkmove)
 {
 }
 
-static void
-CSQC_droptofloor (progs_t *pr)
+bi(droptofloor)
 {
 }
 
-static void
-CSQC_lightstyle (progs_t *pr)
+bi(lightstyle)
 {
 }
 
-static void
-CSQC_checkbottom (progs_t *pr)
+bi(checkbottom)
 {
 }
 
-static void
-CSQC_pointcontents (progs_t *pr)
+bi(pointcontents)
 {
 }
 
-static void
-CSQC_localcmd (progs_t *pr)
+bi(localcmd)
 {
 }
 
-static void
-CSQC_changeyaw (progs_t *pr)
+bi(changeyaw)
 {
 }
 
-static void
-CSQC_makestatic (progs_t *pr)
+bi(makestatic)
 {
 }
 
-static void
-CSQC_ambientsound (progs_t *pr)
+bi(ambientsound)
 {
 }
 
-static void
-CSQC_clearscene (progs_t *pr)
+bi(clearscene)
 {
 }
 
-static void
-CSQC_addentities (progs_t *pr)
+bi(addentities)
 {
 }
 
-static void
-CSQC_addentity (progs_t *pr)
+bi(addentity)
 {
 }
 
-static void
-CSQC_setviewprop (progs_t *pr)
+bi(setviewprop)
 {
 }
 
-static void
-CSQC_getviewprop (progs_t *pr)
+bi(getviewprop)
 {
 }
 
-static void
-CSQC_adddynamiclight (progs_t *pr)
+bi(adddynamiclight)
 {
 }
 
-static void
-CSQC_renderscene (progs_t *pr)
+bi(renderscene)
 {
 }
 
-static void
-CSQC_unproject (progs_t *pr)
+bi(unproject)
 {
 }
 
-static void
-CSQC_project (progs_t *pr)
+bi(project)
 {
 }
 
-static void
-CSQC_is_cached_pic (progs_t *pr)
+bi(is_cached_pic)
 {
 }
 
-static void
-CSQC_precache_pic (progs_t *pr)
+bi(precache_pic)
 {
 }
 
-static void
-CSQC_drawgetimagesize (progs_t *pr)
+bi(drawgetimagesize)
 {
 }
 
-static void
-CSQC_free_pic (progs_t *pr)
+bi(free_pic)
 {
 }
 
-static void
-CSQC_drawcharacter (progs_t *pr)
+bi(drawcharacter)
 {
 }
 
-static void
-CSQC_drawrawstring (progs_t *pr)
+bi(drawrawstring)
 {
 }
 
-static void
-CSQC_drawpic (progs_t *pr)
+bi(drawpic)
 {
 }
 
-static void
-CSQC_drawfill (progs_t *pr)
+bi(drawfill)
 {
 	float      *pos = P_VECTOR (pr, 0);
 	float      *size = P_VECTOR (pr, 1);
@@ -361,185 +323,149 @@ CSQC_drawfill (progs_t *pr)
 	R_FLOAT (pr) = 1;
 }
 
-static void
-CSQC_drawcolorocodedstring (progs_t *pr)
+bi(drawcolorocodedstring)
 {
 }
 
-static void
-CSQC_setmodelindex (progs_t *pr)
+bi(setmodelindex)
 {
 }
 
-static void
-CSQC_modelnameforindex (progs_t *pr)
+bi(modelnameforindex)
 {
 }
 
-static void
-CSQC_setsensitivityscaler (progs_t *pr)
+bi(setsensitivityscaler)
 {
 }
 
-static void
-CSQC_cprint (progs_t *pr)
+bi(cprint)
 {
 }
 
-static void
-CSQC_print (progs_t *pr)
+bi(print)
 {
 }
 
-static void
-CSQC_pointparticles (progs_t *pr)
+bi(pointparticles)
 {
 }
 
-static void
-CSQC_trailparticles (progs_t *pr)
+bi(trailparticles)
 {
 }
 
-static void
-CSQC_particleeffectnum (progs_t *pr)
+bi(particleeffectnum)
 {
 }
 
-static void
-CSQC_getinputstate (progs_t *pr)
+bi(getinputstate)
 {
 }
 
-static void
-CSQC_runplayerphysics (progs_t *pr)
+bi(runplayerphysics)
 {
 }
 
-static void
-CSQC_isdemo (progs_t *pr)
+bi(isdemo)
 {
 }
 
-static void
-CSQC_isserver (progs_t *pr)
+bi(isserver)
 {
 }
 
-static void
-CSQC_keynumtostring (progs_t *pr)
+bi(keynumtostring)
 {
 }
 
-static void
-CSQC_stringtokeynum (progs_t *pr)
+bi(stringtokeynum)
 {
 }
 
-static void
-CSQC_getkeybind (progs_t *pr)
+bi(getkeybind)
 {
 }
 
-static void
-CSQC_setlistener (progs_t *pr)
+bi(setlistener)
 {
 }
 
-static void
-CSQC_deltalisten (progs_t *pr)
+bi(deltalisten)
 {
 }
 
-static void
-CSQC_readbyte (progs_t *pr)
+bi(readbyte)
 {
 }
 
-static void
-CSQC_readchar (progs_t *pr)
+bi(readchar)
 {
 }
 
-static void
-CSQC_readshort (progs_t *pr)
+bi(readshort)
 {
 }
 
-static void
-CSQC_readlong (progs_t *pr)
+bi(readlong)
 {
 }
 
-static void
-CSQC_readcoord (progs_t *pr)
+bi(readcoord)
 {
 }
 
-static void
-CSQC_readangle (progs_t *pr)
+bi(readangle)
 {
 }
 
-static void
-CSQC_readstring (progs_t *pr)
+bi(readstring)
 {
 }
 
-static void
-CSQC_readfloat (progs_t *pr)
+bi(readfloat)
 {
 }
 
-static void
-CSQC_readentitynum (progs_t *pr)
+bi(readentitynum)
 {
 }
 
-static void
-CSQC_getstatf (progs_t *pr)
+bi(getstatf)
 {
 }
 
-static void
-CSQC_getstati (progs_t *pr)
+bi(getstati)
 {
 }
 
-static void
-CSQC_getstats (progs_t *pr)
+bi(getstats)
 {
 }
 
-static void
-CSQC_getplayerkey (progs_t *pr)
+bi(getplayerkey)
 {
 }
 
-static void
-CSQC_serverkey (progs_t *pr)
+bi(serverkey)
 {
 }
 
-static void
-CSQC_getentitytoken (progs_t *pr)
+bi(getentitytoken)
 {
 }
 
-static void
-CSQC_registercommand (progs_t *pr)
+bi(registercommand)
 {
 }
 
-static void
-CSQC_wasfreed (progs_t *pr)
+bi(wasfreed)
 {
 	edict_t    *ed = P_EDICT (pr, 0);
 	R_FLOAT (pr) = ed->free;
 }
 
-static void
-CSQC_sendevent (progs_t *pr)
+bi(sendevent)
 {
 }
 
@@ -720,12 +646,13 @@ set_address (const csqc_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_ushort:
 		case ev_invalid:
 		case ev_type_count:
 			break;
 		case ev_float:
 		case ev_vector:
-		case ev_quat:
+		case ev_quaternion:
 			*(float **)def->field = (float *) address;
 			break;
 		case ev_double:
@@ -735,10 +662,14 @@ set_address (const csqc_def_t *def, void *address)
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_pointer:
-		case ev_integer:
-		case ev_uinteger:
+		case ev_ptr:
+		case ev_int:
+		case ev_uint:
 			*(int **)def->field = (int *) address;
+			break;
+		case ev_long:
+		case ev_ulong:
+			*(pr_long_t **)def->field = (pr_long_t *) address;
 			break;
 	}
 }
@@ -795,15 +726,19 @@ csqc_load (progs_t *pr)
 
 		*csqc_func_list[i].field = 0;
 		if (f)
-			*csqc_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*csqc_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 	if (cl_funcs.Init) {
-		PR_RESET_PARAMS (&csqc_pr_state);
+		auto params = PR_SaveParams (pr);
+		PR_SetupParams (pr, 3, 1);
+
 		P_FLOAT (&csqc_pr_state, 0) = CSQC_API_VERSION;
 		P_STRING (&csqc_pr_state, 1) = PR_SetTempString (&csqc_pr_state,
 														 PACKAGE_NAME);
 		P_FLOAT (&csqc_pr_state, 2) = version_number ();
 		PR_ExecuteProgram (&csqc_pr_state, cl_funcs.Init);
+
+		PR_RestoreParams (pr, params);
 	}
 	return 1;
 }
@@ -813,6 +748,6 @@ CSQC_Cmds_Init (void)
 {
 	version_number();
 	PR_Cmds_Init (&csqc_pr_state);
-	PR_RegisterBuiltins (&csqc_pr_state, builtins);
+	PR_RegisterBuiltins (&csqc_pr_state, builtins, nullptr);
 	PR_AddLoadFunc (&csqc_pr_state, csqc_load);
 }

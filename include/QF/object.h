@@ -81,7 +81,7 @@ typedef struct Object_s {
 	struct Object_s *next;
 	struct String_s * methodDecl(Object, toString);
 	ObjRefs_t * methodDecl(Object, allRefs);
-	qboolean methodDecl(Object, finalize);
+	bool methodDecl(Object, finalize);
 	void *data;
 
 } Object;
@@ -103,11 +103,11 @@ classDecl (Class, Object,
 );
 #define CLASS(o) ((Class *)(o))
 
-Object *Object_Create (Class *cl, qboolean perm);
+Object *Object_Create (Class *cl, bool perm);
 void Object_Delete (Object *obj);
 Object *Object_Retain (Object *obj);
 Object *Object_Release (Object *obj);
-qboolean Object_InstanceOf (Object *obj, Class *cl);
+bool Object_InstanceOf (Object *obj, Class *cl);
 void Object_AddToRoot (Object *obj);
 void Object_RemoveFromRoot (Object *obj);
 void Object_Init (void);

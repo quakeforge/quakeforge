@@ -52,8 +52,6 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static gltex_t gl_notexture = { };
-
 static tex_t *
 Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 {
@@ -64,17 +62,17 @@ Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 
 	if (rname[0] == '*') rname[0] = '#';
 
-	image = LoadImage (va (0, "textures/%.*s/%s", (int) strlen (mname + 5) - 4,
+	image = LoadImage (va ("textures/%.*s/%s", (int) strlen (mname + 5) - 4,
 						   mname + 5, rname), 1);
 	if (!image)
-		image = LoadImage (va (0, "maps/%.*s/%s", (int) strlen (mname + 5) - 4,
+		image = LoadImage (va ("maps/%.*s/%s", (int) strlen (mname + 5) - 4,
 							   mname + 5, rname), 1);
 //	if (!image)
-//			image = LoadImage (va (0, "textures/bmodels/%s", rname));
+//			image = LoadImage (va ("textures/bmodels/%s", rname));
 	if (!image)
-			image = LoadImage (va (0, "textures/%s", rname), 1);
+			image = LoadImage (va ("textures/%s", rname), 1);
 	if (!image)
-			image = LoadImage (va (0, "maps/%s", rname), 1);
+			image = LoadImage (va ("maps/%s", rname), 1);
 
 	return image;
 }
@@ -94,23 +92,23 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 							base->data, true, false,
 							base->format > 2 ? base->format : 1);
 
-		luma = Mod_LoadAnExternalTexture (va (0, "%s_luma", tx->name),
+		luma = Mod_LoadAnExternalTexture (va ("%s_luma", tx->name),
 										  mod->path);
 		if (!luma)
-			luma = Mod_LoadAnExternalTexture (va (0, "%s_glow", tx->name),
+			luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
 											  mod->path);
 
 		gltx->gl_fb_texturenum = 0;
 
 		if (luma) {
 			gltx->gl_fb_texturenum =
-				GL_LoadTexture (va (0, "fb_%s", tx->name), luma->width,
+				GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
 								luma->height, luma->data, true, true,
 								luma->format > 2 ? luma->format : 1);
 		} else if (base->format < 3) {
 			gltx->gl_fb_texturenum =
 				Mod_Fullbright (base->data, base->width, base->height,
-								va (0, "fb_%s", tx->name));
+								va ("fb_%s", tx->name));
 		}
 	}
 	return external;
@@ -122,10 +120,9 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 	const char *name;
 
 	if (!tx) {
-		r_notexture_mip->render = &gl_notexture;
 		return;
 	}
-	if (gl_textures_external && gl_textures_external->int_val) {
+	if (gl_textures_external) {
 		if (Mod_LoadExternalTextures (mod, tx)) {
 			return;
 		}
@@ -134,7 +131,7 @@ gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 		return;
 	}
 	gltex_t    *gltex = tx->render;
-	name = va (0, "fb_%s", tx->name);
+	name = va ("fb_%s", tx->name);
 	gltex->gl_fb_texturenum =
 		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
 	gltex->gl_texturenum =
@@ -239,8 +236,7 @@ SubdividePolygon (int numverts, float *verts)
 
 	for (i = 0; i < 3; i++) {
 		m = (mins[i] + maxs[i]) * 0.5;
-		m = gl_subdivide_size->value * floor (m / gl_subdivide_size->value +
-											  0.5);
+		m = gl_subdivide_size * floor (m / gl_subdivide_size + 0.5);
 		if (maxs[i] - m < 8)
 			continue;
 		if (m - mins[i] < 8)
@@ -284,17 +280,16 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
-					   sizeof (float));
+	poly = Hunk_Alloc (0, offsetof (glpoly_t, verts[numverts]));
 	poly->next = warpface->polys;
 	warpface->polys = poly;
 	poly->numverts = numverts;
 	for (i = 0; i < numverts; i++, verts += 3) {
-		VectorCopy (verts, poly->verts[i]);
+		VectorCopy (verts, poly->verts[i].pos);
 		s = DotProduct (verts, warpface->texinfo->vecs[0]);
 		t = DotProduct (verts, warpface->texinfo->vecs[1]);
-		poly->verts[i][3] = s;
-		poly->verts[i][4] = t;
+		poly->verts[i].tex_uv[0] = s;
+		poly->verts[i].tex_uv[1] = t;
 	}
 }
 

@@ -225,4 +225,13 @@
 
 #include "client/entities.h"	// for entity_state_t
 
+typedef struct usercmd_s {
+	vec3_t	viewangles;
+
+// intended velocities
+	float	forwardmove;
+	float	sidemove;
+	float	upmove;
+} usercmd_t;
+
 #endif // __protocol_h

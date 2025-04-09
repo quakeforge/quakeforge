@@ -11,8 +11,10 @@
 	Type       *ele_type;
 	int         ele_count;
 }
+-(void) writeForward;
 -(void) writeTable;
 -(void) writeSymtabInit;
+-(void) writeSymtabShutdown;
 -(void) writeSymtabEntry;
 @end
 

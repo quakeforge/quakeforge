@@ -34,92 +34,129 @@
 #include "QF/qtypes.h"
 
 typedef struct {
-	qboolean	cow;				// Turn constants into variables if written to
-	qboolean	crc;				// Write progsdef.h crc to progs.dat
-	qboolean	debug;				// Generate debug info for the engine
-	qboolean	short_circuit;		// short circuit logic for && and ||
-	qboolean    optimize;			// perform optimizations
-	qboolean	fast_float;			// use floats directly in ifs
-	qboolean    vector_calls;		// use floats instead of vectors for constant function args
-	qboolean    local_merging;		// merge function locals into one block
+	bool        cow;				// Turn constants into variables if written to
+	bool        crc;				// Write progsdef.h crc to progs.dat
+	bool        debug;				// Generate debug info for the engine
+	bool        short_circuit;		// short circuit logic for && and ||
+	bool        optimize;			// perform optimizations
+	bool        fast_float;			// use floats directly in ifs
+	bool        vector_calls;		// use floats instead of vectors for constant function args
+	bool        local_merging;		// merge function locals into one block
 	unsigned    progsversion;		// Progs version to generate code for
-	qboolean    vector_components;	// add *_[xyz] symbols for vectors
-	qboolean    ifstring;			// expand if (str) to if (str != "")
-	qboolean    const_initializers;	// initialied globals are constant
-	qboolean    promote_float;		// promote float through ...
+	int         max_params;			// maximum param count (-1 = unlimited)
+	bool        spirv;				// Target spir-v instead of Quake
+	bool        vector_components;	// add *_[xyz] symbols for vectors
+	bool        ifstring;			// expand if (str) to if (str != "")
+	bool        const_initializers;	// initialied globals are constant
+	bool        promote_float;		// promote float through ...
+	bool        commute_float_add;	// allow fp addition to commute
+	bool        commute_float_mul;	// allow fp multiplication to commute
+	bool        commute_float_dot;	// allow fp dot product to commute
+	bool        anticom_float_cross;// allow fp cross product to anti-commute
+	bool        anticom_float_sub;	// allow fp subtraction to anti-commute
+	bool        assoc_float_add;	// allow fp addition to be associative
+	bool        assoc_float_mul;	// allow fp multiplication to be associative
+	bool        no_double;			// double fp type is not supported
+	bool        no_int;				// int type is not supported
+	bool        no_vararg;			// variadic functions (...) not supported
+
+	bool        c_array;			// produce a C array for output
+	const char *c_array_name;       // override for array name
+
+	bool        help;
 } code_options_t;
 
 typedef struct {
-	qboolean	promote;			// Promote warnings to errors
-	qboolean	cow;				// Warn on copy-on-write detection
-	qboolean	undefined_function;	// Warn on undefined function use
-	qboolean	uninited_variable;	// Warn on use of uninitialized vars
-	qboolean	vararg_integer;		// Warn on passing an integer to vararg func
-	qboolean	integer_divide;		// Warn on integer constant division
-	qboolean	interface_check;	// Warn for methods not in interface
-	qboolean	unused;				// Warn on unused local variables
-	qboolean	executable;			// Warn on expressions with no effect
-	qboolean	traditional;		// Warn on bogus constructs allowed by qcc
-	qboolean	precedence;			// Warn on precedence issues
-	qboolean	initializer;		// Warn on excessive initializer elements
-	qboolean	unimplemented;		// Warn on unimplemented class methods
-	qboolean	redeclared;			// Warn on redeclared local variables
-	qboolean	enum_switch;		// Warn on unhandled enum values in switch
+	int         vector_mult;		// operation for vector * vector
+
+	bool        help;
+} math_options_t;
+
+typedef struct {
+	bool        promote;			// Promote warnings to errors
+	bool        cow;				// Warn on copy-on-write detection
+	bool        undefined_function;	// Warn on undefined function use
+	bool        uninited_variable;	// Warn on use of uninitialized vars
+	bool        vararg_integer;		// Warn on passing an integer to vararg func
+	bool        integer_divide;		// Warn on integer constant division
+	bool        interface_check;	// Warn for methods not in interface
+	bool        unused;				// Warn on unused local variables
+	bool        executable;			// Warn on expressions with no effect
+	bool        traditional;		// Warn on bogus constructs allowed by qcc
+	bool        precedence;			// Warn on precedence issues
+	bool        initializer;		// Warn on excessive initializer elements
+	bool        unimplemented;		// Warn on unimplemented class methods
+	bool        redeclared;			// Warn on redeclared local variables
+	bool        enum_switch;		// Warn on unhandled enum values in switch
+
+	bool        help;
 } warn_options_t;
 
 typedef struct {
-	qboolean	promote;			// Promote notices to warnings
-	qboolean	silent;				// don't even bother (overrides promote)
+	bool        promote;			// Promote notices to warnings
+	bool        silent;				// don't even bother (overrides promote)
+
+	bool        help;
 } notice_options_t;
 
 typedef struct {
-	qboolean	promote;			// Promote bugs to internal errors
-	qboolean	silent;				// don't even bother (overrides promote)
+	bool        promote;			// Promote bugs to internal errors
+	bool        silent;				// don't even bother (overrides promote)
+
+	bool        help;
 } bug_options_t;
 
 typedef struct {
-	qboolean    initial;
-	qboolean    thread;
-	qboolean    dead;
-	qboolean    final;
-	qboolean    dags;
-	qboolean    expr;
-	qboolean    statements;
-	qboolean    reaching;
-	qboolean    live;
-	qboolean    flow;
-	qboolean    post;
+	bool        initial;
+	bool        thread;
+	bool        dead;
+	bool        final;
+	bool        dags;
+	bool        expr;
+	bool        statements;
+	bool        reaching;
+	bool        live;
+	bool        flow;
+	bool        post;
+
+	bool        help;
 } blockdot_options_t;
 
 typedef struct {
-	code_options_t	code;			// Code generation options
-	warn_options_t	warnings;		// Warning options
+	code_options_t code;			// Code generation options
+	math_options_t math;			// Various math options
+	warn_options_t warnings;		// Warning options
 	notice_options_t notices;		// Notice options
-	bug_options_t   bug;			// Bug options
+	bug_options_t bug;				// Bug options
 	blockdot_options_t block_dot;	// Statement block flow diagrams
 
-	int				verbosity;		// 0=silent, goes up to 2 currently
-	qboolean		single_cpp;		// process progs.src into a series of
+	int         verbosity;			// 0=silent, goes up to 2 currently
+	bool        single_cpp;			// process progs.src into a series of
 									// #include directives and then compile
 									// that
-	qboolean		no_default_paths;	// no default -I or -L
-	qboolean		save_temps;		// save temporary files
-	qboolean		files_dat;		// generate files.dat
-	qboolean		frames_files;	// generate <basename>.frame files
-	qboolean		progdefs_h;		// generate progdefs.h
-	qboolean		qccx_escapes;	// use qccx escapes instead of standard C
-	int				traditional;	// behave more like qcc
-	qboolean		advanced;		// behold the power of Ruamoko
-	qboolean		compile;		// serparate compilation mode
-	qboolean		partial_link;	// partial linking
-	qboolean		preprocess_only;// run only cpp, don't compile
-	qboolean		gzip;			// compress qfo files when writing
-	const char     *output_file;
-	const char     *debug_file;
+	bool        no_default_paths;	// no default -I or -L
+	bool        save_temps;			// save temporary files
+	bool        files_dat;			// generate files.dat
+	bool        frames_files;		// generate <basename>.frame files
+	bool        progdefs_h;			// generate progdefs.h
+	bool        qccx_escapes;		// use qccx escapes instead of standard C
+	int         traditional;		// behave more like qcc
+	int         advanced;			// behold the power of Ruamoko
+	bool        compile;			// serparate compilation mode
+	bool        partial_link;		// partial linking
+	bool        preprocess_only;	// run only cpp, don't compile
+	bool        preprocess_output;	// emit preprocessor output
+	bool        dependencies;		// generate dependency rules
+	bool        gzip;				// compress qfo files when writing
+	const char *output_path;
+	const char *output_file;
+	const char *debug_file;
 } options_t;
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
+bool parse_warning_option (const char *opt);
+bool parse_code_option (const char *opt);
 extern const char *progs_src;
 extern const char **source_files;
 extern const char *this_program;

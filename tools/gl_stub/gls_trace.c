@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -257,27 +259,24 @@ trace_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum render
 }
 
 void
-trace_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-	TRACE;
-}
-
-void
 trace_glGenBuffers (GLsizei n, GLuint* buffers)
 {
 	TRACE;
+	memset (buffers, 0, n * sizeof (GLuint));
 }
 
 void
 trace_glGenFramebuffers (GLsizei n, GLuint* framebuffers)
 {
 	TRACE;
+	memset (framebuffers, 0, n * sizeof (GLuint));
 }
 
 void
 trace_glGenRenderbuffers (GLsizei n, GLuint* renderbuffers)
 {
 	TRACE;
+	memset (renderbuffers, 0, n * sizeof (GLuint));
 }
 
 void
@@ -327,12 +326,16 @@ void
 trace_glGetProgramInfoLog (GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
 	TRACE;
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
 trace_glGetProgramiv (GLuint program, GLenum pname, GLint* params)
 {
 	TRACE;
+	*params = 0;
 }
 
 void
@@ -345,6 +348,9 @@ void
 trace_glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)
 {
 	TRACE;
+	if (bufsize > 0) {
+		*infolog = 0;
+	}
 }
 
 void
@@ -363,6 +369,7 @@ void
 trace_glGetShaderiv (GLuint shader, GLenum pname, GLint* params)
 {
 	TRACE;
+	*params = 0;
 }
 
 int
@@ -1318,6 +1325,7 @@ void
 trace_glGenTextures (GLsizei n, GLuint * textures)
 {
 	TRACE;
+	memset (textures, 0, n * sizeof (GLuint));
 }
 
 void
@@ -1413,7 +1421,7 @@ trace_glGetIntegerv (GLenum pname, GLint * params)
 	TRACE;
 	switch (pname) {
 		case GL_MAX_TEXTURE_SIZE:
-			*params = 512;
+			*params = 2048;
 			break;
 		case GL_UNPACK_ALIGNMENT:
 		case GL_PACK_ALIGNMENT:
@@ -2925,4 +2933,44 @@ void
 trace_glPNTrianglesiATI (GLint x, GLint y)
 {
 	TRACE;
+}
+
+void
+trace_glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint layer)
+{
+}
+
+void
+trace_glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glNamedFramebufferTexture (GLuint framebuffer, GLenum attachment, GLuint texture, GLint level)
+{
+}
+
+void
+trace_glCreateVertexArrays (GLsizei n, GLuint *arrays)
+{
+}
+
+void
+trace_glBindVertexArray (GLuint array)
+{
+}
+
+void
+trace_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
+{
 }

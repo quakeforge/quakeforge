@@ -30,6 +30,9 @@
 #endif
 
 SYS_DEVELOPER (warn)
+SYS_DEVELOPER (cache)
+SYS_DEVELOPER (hunk)
+SYS_DEVELOPER (zone)
 SYS_DEVELOPER (vid)
 SYS_DEVELOPER (input)
 SYS_DEVELOPER (fs_nf)
@@ -44,6 +47,7 @@ SYS_DEVELOPER (glt)
 SYS_DEVELOPER (glsl)
 SYS_DEVELOPER (skin)
 SYS_DEVELOPER (model)
+SYS_DEVELOPER (lighting)
 SYS_DEVELOPER (vulkan)
 SYS_DEVELOPER (vulkan_parse)
 SYS_DEVELOPER (csqc)

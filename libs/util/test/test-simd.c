@@ -48,7 +48,6 @@
 
 #define s05 0.70710678118654757
 
-#ifdef __AVX2__
 typedef  struct {
 	int         line;
 	vec4d_t   (*op) (vec4d_t a, vec4d_t b);
@@ -57,7 +56,6 @@ typedef  struct {
 	vec4d_t     expect;
 	vec4d_t     ulp_errors;
 } vec4d_test_t;
-#endif
 
 typedef  struct {
 	int         line;
@@ -94,41 +92,39 @@ typedef  struct {
 	mat4f_t     ulp_errors;
 } mq4f_test_t;
 
-#ifdef __AVX2__
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
-	return vtruncd (v);
+	return vtrunc4d (v);
 }
 
 static vec4d_t tvceild (vec4d_t v, vec4d_t ignore)
 {
-	return vceild (v);
+	return vceil4d (v);
 }
 
 static vec4d_t tvfloord (vec4d_t v, vec4d_t ignore)
 {
-	return vfloord (v);
+	return vfloor4d (v);
 }
 
 static vec4d_t tqconjd (vec4d_t v, vec4d_t ignore)
 {
 	return qconjd (v);
 }
-#endif
 
 static vec4f_t tvtruncf (vec4f_t v, vec4f_t ignore)
 {
-	return vtruncf (v);
+	return vtrunc4f (v);
 }
 
 static vec4f_t tvceilf (vec4f_t v, vec4f_t ignore)
 {
-	return vceilf (v);
+	return vceil4f (v);
 }
 
 static vec4f_t tvfloorf (vec4f_t v, vec4f_t ignore)
 {
-	return vfloorf (v);
+	return vfloor4f (v);
 }
 
 static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
@@ -138,12 +134,12 @@ static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
 
 static vec4f_t tvabsf (vec4f_t v, vec4f_t ignore)
 {
-	return vabsf (v);
+	return vabs4f (v);
 }
 
 static vec4f_t tvsqrtf (vec4f_t v, vec4f_t ignore)
 {
-	return vsqrtf (v);
+	return vsqrt4f (v);
 }
 
 static vec4f_t tmagnitudef (vec4f_t v, vec4f_t ignore)
@@ -158,7 +154,6 @@ static vec4f_t tmagnitude3f (vec4f_t v, vec4f_t ignore)
 
 #define T(t...) { __LINE__, t }
 
-#ifdef __AVX2__
 static vec4d_test_t vec4d_tests[] = {
 	// 3D dot products
 	T(dotd, right,   right,   one  ),
@@ -196,7 +191,13 @@ static vec4d_test_t vec4d_tests[] = {
 	T(crossd, one,     up,      { 1, -1,  0} ),
 	// This one fails when optimizing with -mfma (which is why fma is not
 	// used): ulp errors in z and w
-	T(crossd, qtest,   qtest,   {0, 0, 0, 0} ),
+	T(crossd, qtest,   qtest,   {0, 0, 0, 0},
+#if defined(__aarch64__)
+# ifdef __OPTIMIZE__
+		   {0, 0, -2.1938006966593093e-17, 1.3322676295501878e-17},
+# endif
+#endif
+	),
 
 	T(qmuld, qident,  qident,   qident  ),
 	T(qmuld, qident,  right,    right   ),
@@ -218,7 +219,13 @@ static vec4d_test_t vec4d_tests[] = {
 	T(qmuld, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	// This one fails when optimizing with -mfma (which is why fma is not
 	// used): ulp error in z
-	T(qmuld, qtest,   qtest,   {0.768, 0.576, 0, -0.28} ),
+	T(qmuld, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
+#if defined(__aarch64__)
+# ifdef __OPTIMIZE__
+		   {0, 0, -2.1938006966593093e-17, 0},
+# endif
+#endif
+	),
 
 	// The one vector is not unit (magnitude 2), so using it as a rotation
 	// quaternion results in scaling by 4. However, it still has the effect
@@ -285,7 +292,6 @@ static vec4d_test_t vec4d_tests[] = {
 	T(tqconjd,  one, {}, { -1, -1, -1, 1 } ),
 };
 #define num_vec4d_tests (sizeof (vec4d_tests) / (sizeof (vec4d_tests[0])))
-#endif
 
 static vec4f_test_t vec4f_tests[] = {
 	// 3D dot products
@@ -322,12 +328,20 @@ static vec4f_test_t vec4f_tests[] = {
 	T(crossf, one,     right,   { 0,  1, -1} ),
 	T(crossf, one,     forward, {-1,  0,  1} ),
 	T(crossf, one,     up,      { 1, -1,  0} ),
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#ifdef __aarch64__
+# ifdef __OPTIMIZE__
+	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, -1.43051153e-08} ),
+# else
+	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
+# endif
+#else
+# if !defined(__SSE__) && !defined(__OPTIMIZE__)
 	// when not optimizing and SSE is not available (but ok when
 	// optimizing)
 	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, 0} ),
-#else
+# else
 	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
+# endif
 #endif
 
 	T(qmulf, qident,  qident,   qident  ),
@@ -349,14 +363,22 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qmulf, one,     one,     { 2, 2, 2, -2 } ),
 	T(qmulf, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	T(qmulf, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#ifdef __aarch64__
+# ifdef __OPTIMIZE__
+				   {0, 6e-8, -1.47819534e-09, 2.98023224e-08}
+# else
+				   {0, 5.96046448e-08, 0, 2.98023224e-08}
+# endif
+#else
+# if !defined(__SSE__) && !defined(__OPTIMIZE__)
 	// when not optimizing and SSE is not available (but ok when
 	// optimizing)
 	                           {0, 6e-8, -1.47819534e-09, 3e-8}
-#elif !defined( __SSE__)
+# elif  !defined(__SSE__)
 	                           {0, 6e-8, 0, 6e-8}
-#else
+# else
 	                           {0, 6e-8, 0, 3e-8}
+#endif
 #endif
 	),
 
@@ -379,18 +401,18 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qvmulf, qtest,  right,     {0.5392, 0.6144, -0.576, 0},
 	                             {0, -5.9e-8, -6e-8, 0} ),
 	T(qvmulf, qtest,  forward,   {0.6144, 0.1808, 0.768, 0},
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#if !(defined(__SSE__) || defined(__aarch64__)) && !defined(__OPTIMIZE__)
 	                             {-5.9e-8, 0, 0, 0}
-#elif  !defined(__SSE__)
+#elif  !(defined(__SSE__) || defined(__aarch64__))
 	                             {-5.9e-8, 3e-8, 0, 0}
 #else
 	                             {-5.9e-8, 1.5e-8, 0, 0}
 #endif
 	),
 	T(qvmulf, qtest,  up,        {0.576, -0.768, -0.28, 0},
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#if !(defined(__SSE__) || defined(__aarch64__)) && !defined(__OPTIMIZE__)
 	                             {6e-8, 0, 3e-8, 0}
-#elif  !defined(__SSE__)
+#elif  !(defined(__SSE__) || defined(__aarch64__))
 	                             {6e-8, 0, 6e-8, 0}
 #else
 	                             {6e-8, 0, 3e-8, 0}
@@ -399,18 +421,18 @@ static vec4f_test_t vec4f_tests[] = {
 	T(vqmulf, right,     qtest,  {0.5392, 0.6144, 0.576, 0},
 	                             {0, -5.9e-8, 5.9e-8, 0} ),
 	T(vqmulf, forward,   qtest,  {0.6144, 0.1808, -0.768, 0},
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#if !(defined(__SSE__) || defined(__aarch64__)) && !defined(__OPTIMIZE__)
 	                             {-5.9e-8, 0, 0, 0}
-#elif  !defined(__SSE__)
+#elif  !(defined(__SSE__) || defined(__aarch64__))
 	                             {-5.9e-8, 3e-8, 0, 0}
 #else
 	                             {-5.9e-8, 1.5e-8, 0, 0}
 #endif
 	),
 	T(vqmulf, up,        qtest,  {-0.576, 0.768, -0.28, 0},
-#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+#if !(defined(__SSE__) || defined(__aarch64__)) && !defined(__OPTIMIZE__)
 	                             {-5.9e-8, 0, 3e-8, 0}
-#elif  !defined(__SSE__)
+#elif  !(defined(__SSE__) || defined(__aarch64__))
 	                             {-5.9e-8, 0, 6e-8, 0}
 #else
 	                             {-5.9e-8, 0, 3e-8, 0}
@@ -487,7 +509,6 @@ static mq4f_test_t mq4f_tests[] = {
 };
 #define num_mq4f_tests (sizeof (mq4f_tests) / (sizeof (mq4f_tests[0])))
 
-#ifdef __AVX2__
 static int
 run_vec4d_tests (void)
 {
@@ -508,11 +529,11 @@ run_vec4d_tests (void)
 			printf ("E: " VEC4D_FMT "\n", VEC4_EXP(expect));
 			printf ("e: " VEC4D_FMT "\n", VEC4_EXP(test->expect));
 			printf ("u: " VEC4D_FMT "\n", VEC4_EXP(test->ulp_errors));
+			printf ("U: " VEC4D_FMT "\n", VEC4_EXP(result - test->expect));
 		}
 	}
 	return ret;
 }
-#endif
 
 static int
 run_vec4f_tests (void)
@@ -534,6 +555,7 @@ run_vec4f_tests (void)
 			printf ("E: " VEC4F_FMT "\n", VEC4_EXP(expect));
 			printf ("e: " VEC4F_FMT "\n", VEC4_EXP(test->expect));
 			printf ("u: " VEC4F_FMT "\n", VEC4_EXP(test->ulp_errors));
+			printf ("U: " VEC4F_FMT "\n", VEC4_EXP(result - test->expect));
 		}
 	}
 	return ret;
@@ -684,9 +706,7 @@ int
 main (void)
 {
 	int         ret = 0;
-#ifdef __AVX2__
 	ret |= run_vec4d_tests ();
-#endif
 	ret |= run_vec4f_tests ();
 	ret |= run_mat4f_tests ();
 	ret |= run_mv4f_tests ();

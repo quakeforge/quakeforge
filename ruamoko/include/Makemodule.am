@@ -1,7 +1,9 @@
 ruamoko_include = \
 	ruamoko/include/crudefile.h \
 	ruamoko/include/debug.h \
+	ruamoko/include/dirent.h \
 	ruamoko/include/entities.h \
+	ruamoko/include/imui.h \
 	ruamoko/include/infokey.h \
 	ruamoko/include/input.h \
 	ruamoko/include/math.h \
@@ -16,8 +18,9 @@ ruamoko_include = \
 	ruamoko/include/qw_physics.h \
 	ruamoko/include/qw_sys.h \
 	ruamoko/include/server.h \
-	ruamoko/include/sound.h \
+	ruamoko/include/scene.h \
 	ruamoko/include/script.h \
+	ruamoko/include/sound.h \
 	ruamoko/include/stdlib.h \
 	ruamoko/include/string.h \
 	ruamoko/include/sv_sound.h \
@@ -40,22 +43,6 @@ ruamoko_include = \
 	ruamoko/include/PropertyList.h \
 	ruamoko/include/Set.h
 
-ruamoko_gui_include = \
-	ruamoko/include/gui/Group.h \
-	ruamoko/include/gui/InputLine.h \
-	ruamoko/include/gui/Pic.h \
-	ruamoko/include/gui/Point.h \
-	ruamoko/include/gui/Rect.h \
-	ruamoko/include/gui/Size.h \
-	ruamoko/include/gui/Slider.h \
-	ruamoko/include/gui/Text.h \
-	ruamoko/include/gui/View.h
-
 ruamoko_includedir = $(datarootdir)/qfcc/include
-ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
 
 ruamoko_include_HEADERS = $(ruamoko_include)
-ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)
-
-EXTRA_DIST += \
-	ruamoko/include/key.h

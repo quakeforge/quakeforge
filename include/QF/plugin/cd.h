@@ -34,7 +34,7 @@ typedef struct cd_funcs_s {
 	void      (*init) (void);
 	void      (*cd_f) (void); //
 	void      (*pause) (void);
-	void      (*play) (int, qboolean);
+	void      (*play) (int, bool);
 	void      (*resume) (void);
 	void      (*update) (void);
 } cd_funcs_t;

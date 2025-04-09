@@ -39,7 +39,7 @@ typedef struct mface_s {
 typedef struct mbrush_s {
 	struct mbrush_s *next;
 	mface_t    *faces;
-	qboolean    detail;			///< true if brush is detail brush
+	bool        detail;			///< true if brush is detail brush
 } mbrush_t;
 
 typedef struct epair_s {

@@ -36,4 +36,4 @@ typedef struct gib_builtin_s {
 } gib_builtin_t;
 
 gib_builtin_t *GIB_Builtin_Find (const char *name);
-void GIB_Builtin_Init (qboolean sandbox);
+void GIB_Builtin_Init (bool sandbox);

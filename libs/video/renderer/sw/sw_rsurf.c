@@ -35,6 +35,8 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 #ifdef PIC
 # undef USE_INTEL_ASM //XXX asm pic hack
 #endif
@@ -50,15 +52,15 @@ int         lightdelta, lightdeltastep;
 int         lightright, lightleftstep, lightrightstep, blockdivshift;
 static unsigned int blockdivmask;
 void       *prowdestbase;
-unsigned char *pbasesource;
+byte       *pbasesource;
 int         surfrowbytes;				// used by ASM files
 unsigned int *r_lightptr;
 int         r_stepback;
 int         r_lightwidth;
 static int         r_numhblocks;
 int         r_numvblocks;
-static unsigned char *r_source;
-unsigned char *r_sourcemax;
+static byte *r_source;
+byte       *r_sourcemax;
 
 void R_DrawSurfaceBlock_mip0 (void);
 void R_DrawSurfaceBlock_mip1 (void);
@@ -73,16 +75,14 @@ static unsigned int blocklights[34 * 34];	//FIXME make dynamic
 
 
 static void
-R_AddDynamicLights (void)
+R_AddDynamicLights (uint32_t render_id)
 {
 	msurface_t *surf;
-	unsigned int lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
 	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	int         s, t;
-	int         i;
 	int         smax, tmax;
 	mtexinfo_t *tex;
 
@@ -91,26 +91,31 @@ R_AddDynamicLights (void)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
-	if (currententity->transform) {
+	if (render_id) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		vec4f_t    *transform = SW_COMP (scene_sw_matrix, render_id);
+		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t k = 0; k < dlight_pool->count; k++) {
+		auto dlight = &dlight_data[k];
+		//FIXME
+		if (!(surf->dlightbits[k / 32] & (1 << (k % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
-		rad = r_dlights[lnum].radius;
+		VectorSubtract (dlight->origin, entorigin, lightorigin);
+		rad = dlight->radius;
 		dist = DotProduct (lightorigin, surf->plane->normal) -
 			surf->plane->dist;
 		rad -= fabs (dist);
-		minlight = r_dlights[lnum].minlight;
+		minlight = dlight->minlight;
 		if (rad < minlight)
 			continue;
 		minlight = rad - minlight;
 
-		for (i = 0; i < 3; i++)
+		for (int i = 0; i < 3; i++)
 			impact[i] = lightorigin[i] - surf->plane->normal[i] * dist;
 
 		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3];
@@ -144,7 +149,7 @@ R_AddDynamicLights (void)
 	Combine and scale multiple lightmaps into the 8.8 format in blocklights
 */
 static void
-R_BuildLightMap (void)
+R_BuildLightMap (uint32_t render_id)
 {
 	int         smax, tmax;
 	int         t;
@@ -161,7 +166,7 @@ R_BuildLightMap (void)
 	size = smax * tmax;
 	lightmap = surf->samples;
 
-	if (!r_worldentity.renderer.model->brush.lightdata) {
+	if (!r_refdef.worldmodel->brush.lightdata) {
 		for (i = 0; i < size; i++)
 			blocklights[i] = 0;
 		return;
@@ -180,7 +185,7 @@ R_BuildLightMap (void)
 		}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights ();
+		R_AddDynamicLights (render_id);
 
 	// bound, invert, and shift
 	for (i = 0; i < size; i++) {
@@ -194,7 +199,7 @@ R_BuildLightMap (void)
 }
 
 void
-R_DrawSurface (void)
+R_DrawSurface (uint32_t render_id)
 {
 	byte       *basetptr;
 	int         smax, tmax, twidth;
@@ -206,7 +211,7 @@ R_DrawSurface (void)
 	texture_t  *mt;
 
 	// calculate the lightings
-	R_BuildLightMap ();
+	R_BuildLightMap (render_id);
 
 	surfrowbytes = r_drawsurf.rowbytes;
 
@@ -275,7 +280,7 @@ void
 R_DrawSurfaceBlock_mip0 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -297,8 +302,7 @@ R_DrawSurfaceBlock_mip0 (void)
 
 			for (b = 15; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -317,7 +321,7 @@ void
 R_DrawSurfaceBlock_mip1 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -339,8 +343,7 @@ R_DrawSurfaceBlock_mip1 (void)
 
 			for (b = 7; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -359,7 +362,7 @@ void
 R_DrawSurfaceBlock_mip2 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -381,8 +384,7 @@ R_DrawSurfaceBlock_mip2 (void)
 
 			for (b = 3; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -401,7 +403,7 @@ void
 R_DrawSurfaceBlock_mip3 (void)
 {
 	int         v, i, b, lightstep, lighttemp, light;
-	unsigned char pix, *psource, *prowdest;
+	byte        pix, *psource, *prowdest;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -423,8 +425,7 @@ R_DrawSurfaceBlock_mip3 (void)
 
 			for (b = 1; b >= 0; b--) {
 				pix = psource[b];
-				prowdest[b] = ((unsigned char *) vid.colormap8)
-					[(light & 0xFF00) + pix];
+				prowdest[b] = r_colormap[(light & 0xFF00) + pix];
 				light += lightstep;
 			}
 
@@ -461,13 +462,13 @@ R_GenTurbTile (byte *pbasetex, void *pdest)
 }
 
 void
-R_GenTile (msurface_t *psurf, void *pdest)
+R_GenTile (msurface_t *surf, void *dest)
 {
-	if (psurf->flags & SURF_DRAWTURB) {
-		R_GenTurbTile (((byte *) psurf->texinfo->texture +
-						psurf->texinfo->texture->offsets[0]), pdest);
-	} else if (psurf->flags & SURF_DRAWSKY) {
-		R_GenSkyTile (pdest);
+	if (surf->flags & SURF_DRAWTURB) {
+		R_GenTurbTile (((byte *) surf->texinfo->texture +
+						surf->texinfo->texture->offsets[0]), dest);
+	} else if (surf->flags & SURF_DRAWSKY) {
+		R_GenSkyTile (dest);
 	} else {
 		Sys_Error ("Unknown tile type");
 	}

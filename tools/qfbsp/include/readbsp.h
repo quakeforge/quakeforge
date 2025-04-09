@@ -47,6 +47,10 @@ void extract_entities (void);
 */
 void extract_hull (void);
 
+/**	Write a brush from the map's bsp to a C file.
+*/
+void extract_model (void);
+
 ///@}
 
 #endif//qfbsp_readbsp_h

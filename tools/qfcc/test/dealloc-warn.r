@@ -1,3 +1,6 @@
+#pragma bug die
+#pragma warn error
+
 @interface Object
 {
 	Class		isa;

@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#define IMPLEMENT_QFMODEL_Funcs
+
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/iqm.h"
@@ -51,27 +53,137 @@
 #include "compat.h"
 #include "mod_internal.h"
 
+static uint32_t qfm_type_size[] = {
+	[qfm_s8]      = 1,
+	[qfm_s16]     = 2,
+	[qfm_s32]     = 4,
+	[qfm_s64]     = 8,
+
+	[qfm_u8]      = 1,
+	[qfm_u16]     = 2,
+	[qfm_u32]     = 4,
+	[qfm_u64]     = 8,
+
+	[qfm_s8n]     = 1,
+	[qfm_u8n]     = 1,
+	[qfm_s16n]    = 2,
+	[qfm_u16n]    = 2,
+
+	[qfm_f16]     = 3,
+	[qfm_f32]     = 4,
+	[qfm_f64]     = 8,
+
+	[qfm_special] = 0, // unknown
+};
+
+uint32_t mesh_type_size (qfm_type_t type)
+{
+	return qfm_type_size[type];
+}
+
+qfm_type_t
+mesh_index_type (uint32_t num_verts)
+{
+	if (num_verts < 0xff) {
+		return qfm_u8;
+	} else if (num_verts < 0xffff) {
+		return qfm_u16;
+	} else {
+		return qfm_u32;
+	}
+}
+
+uint32_t
+pack_indices (uint32_t *indices, uint32_t num_inds, qfm_type_t index_type)
+{
+	if (index_type == qfm_u32) {
+		return num_inds * sizeof (uint32_t);
+	} else if (index_type == qfm_u16) {
+		auto inds = (uint16_t *) indices;
+		for (uint32_t i = 0; i < num_inds; i++) {
+			inds[i] = indices[i];
+		}
+		return num_inds * sizeof (*inds);
+	} else if (index_type == qfm_u8) {
+		auto inds = (uint8_t *) indices;
+		for (uint32_t i = 0; i < num_inds; i++) {
+			inds[i] = indices[i];
+		}
+		return num_inds * sizeof (*inds);
+	}
+	Sys_Error ("invalid index type: %d", index_type);
+}
+
 vid_model_funcs_t *mod_funcs;
 
 #define	MOD_BLOCK	16					// allocate 16 models at a time
 static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static struct DARRAY_TYPE (model_t *) mod_blocks = {0, 0, MOD_BLOCK};
 static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
-cvar_t     *gl_mesh_cache;
-cvar_t     *gl_subdivide_size;
-cvar_t     *gl_alias_render_tri;
-cvar_t     *gl_textures_external;
+int gl_mesh_cache;
+static cvar_t gl_mesh_cache_cvar = {
+	.name = "gl_mesh_cache",
+	.description =
+		"minimum triangle count in a model for its mesh to be cached. 0 to "
+		"disable caching",
+	.default_value = "256",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_mesh_cache },
+};
+float gl_subdivide_size;
+static cvar_t gl_subdivide_size_cvar = {
+	.name = "gl_subdivide_size",
+	.description =
+		"Sets the division value for the sky brushes.",
+	.default_value = "128",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &gl_subdivide_size },
+};
+int gl_alias_render_tri;
+static cvar_t gl_alias_render_tri_cvar = {
+	.name = "gl_alias_render_tri",
+	.description =
+		"When loading alias models mesh for pure triangle rendering",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_alias_render_tri },
+};
+int gl_textures_external;
+static cvar_t gl_textures_external_cvar = {
+	.name = "gl_textures_external",
+	.description =
+		"Use external textures to replace BSP textures",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &gl_textures_external },
+};
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
+
+static void
+mod_shutdown (void *data)
+{
+	qfZoneScoped (true);
+	Mod_ClearAll ();
+	for (size_t i = 0; i < mod_blocks.size; i++) {
+		free (mod_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&mod_known);
+	DARRAY_CLEAR (&mod_blocks);
+}
 
 VISIBLE void
 Mod_Init (void)
 {
+	qfZoneScoped (true);
 	byte   *dest;
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
+
+	Sys_RegisterShutdown (mod_shutdown, 0);
 
 	r_notexture_mip = Hunk_AllocName (0,
 									  sizeof (texture_t) + mip0size + mip1size
@@ -99,42 +211,49 @@ Mod_Init (void)
 VISIBLE void
 Mod_Init_Cvars (void)
 {
-	gl_subdivide_size =
-		Cvar_Get ("gl_subdivide_size", "128", CVAR_ARCHIVE, NULL,
-				  "Sets the division value for the sky brushes.");
-	gl_mesh_cache = Cvar_Get ("gl_mesh_cache", "256", CVAR_ARCHIVE, NULL,
-							  "minimum triangle count in a model for its mesh"
-							  " to be cached. 0 to disable caching");
-	gl_alias_render_tri =
-		Cvar_Get ("gl_alias_render_tri", "0", CVAR_ARCHIVE, NULL, "When "
-				  "loading alias models mesh for pure triangle rendering");
-	gl_textures_external =
-		Cvar_Get ("gl_textures_external", "1", CVAR_ARCHIVE, NULL,
-				  "Use external textures to replace BSP textures");
+	qfZoneScoped (true);
+	Cvar_Register (&gl_subdivide_size_cvar, 0, 0);
+	Cvar_Register (&gl_mesh_cache_cvar, 0, 0);
+	Cvar_Register (&gl_alias_render_tri_cvar, 0, 0);
+	Cvar_Register (&gl_textures_external_cvar, 0, 0);
+}
+
+static void
+mod_unload_model (size_t ind)
+{
+	qfZoneScoped (true);
+	model_t    *mod = mod_known.a[ind];
+
+	//FIXME this seems to be correct but need to double check the behavior
+	//with alias models
+	if (!mod->needload && mod->clear) {
+		mod->clear (mod, mod->data);
+		mod->clear = 0;
+	}
+	if (mod->type != mod_mesh) {
+		mod->needload = true;
+	}
+	if (mod->type == mod_sprite) {
+		mod->cache.data = 0;
+	}
 }
 
 VISIBLE void
 Mod_ClearAll (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
-	model_t   **mod;
 
-	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
-		//FIXME this seems to be correct but need to double check the behavior
-		//with alias models
-		if (!(*mod)->needload && (*mod)->clear) {
-			(*mod)->clear (*mod, (*mod)->data);
-		}
-		if ((*mod)->type != mod_alias)
-			(*mod)->needload = true;
-		if ((*mod)->type == mod_sprite)
-			(*mod)->cache.data = 0;
+	for (i = 0; i < mod_numknown; i++) {
+		mod_unload_model (i);
 	}
+	mod_numknown = 0;
 }
 
 model_t *
 Mod_FindName (const char *name)
 {
+	qfZoneScoped (true);
 	size_t      i;
 	model_t   **mod;
 
@@ -153,6 +272,7 @@ Mod_FindName (const char *name)
 				DARRAY_APPEND (&mod_known, &block[i]);
 			}
 			mod = &mod_known.a[mod_numknown];
+			DARRAY_APPEND (&mod_blocks, block);
 		}
 		memset ((*mod), 0, sizeof (model_t));
 		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
@@ -165,8 +285,9 @@ Mod_FindName (const char *name)
 }
 
 static model_t *
-Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
+Mod_RealLoadModel (model_t *mod, bool crash, cache_allocator_t allocator)
 {
+	qfZoneScoped (true);
 	uint32_t   *buf;
 
 	// load the file
@@ -178,7 +299,7 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	}
 
 	char *name = QFS_FileBase (mod->path);
-	strncpy (mod->name, name, sizeof (mod->name - 1));
+	strncpy (mod->name, name, sizeof (mod->name) - 1);
 	mod->name[sizeof (mod->name) - 1] = 0;
 	free (name);
 
@@ -190,7 +311,6 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 
 	// call the apropriate loader
 	mod->needload = false;
-	mod->hasfullbrights = false;
 
 	switch (LittleLong (*buf)) {
 		case IQM_SMAGIC:
@@ -243,10 +363,11 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	Loads a model into the cache
 */
 static model_t *
-Mod_LoadModel (model_t *mod, qboolean crash)
+Mod_LoadModel (model_t *mod, bool crash)
 {
+	qfZoneScoped (true);
 	if (!mod->needload) {
-		if (mod->type == mod_alias && !mod->aliashdr) {
+		if (mod->type == mod_mesh && !mod->model) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
@@ -263,7 +384,8 @@ Mod_LoadModel (model_t *mod, qboolean crash)
 static void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
-	if (((model_t *)object)->type != mod_alias)
+	qfZoneScoped (true);
+	if (((model_t *)object)->type != mod_mesh)
 		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
 	// FIXME: do we want crash set to true?
 	Mod_RealLoadModel (object, true, allocator);
@@ -275,8 +397,9 @@ Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 	Loads in a model for the given name
 */
 VISIBLE model_t *
-Mod_ForName (const char *name, qboolean crash)
+Mod_ForName (const char *name, bool crash)
 {
+	qfZoneScoped (true);
 	model_t    *mod;
 
 	mod = Mod_FindName (name);
@@ -288,19 +411,32 @@ Mod_ForName (const char *name, qboolean crash)
 VISIBLE void
 Mod_TouchModel (const char *name)
 {
+	qfZoneScoped (true);
 	model_t    *mod;
 
 	mod = Mod_FindName (name);
 
 	if (!mod->needload) {
-		if (mod->type == mod_alias)
+		if (mod->type == mod_mesh)
 			Cache_Check (&mod->cache);
+	}
+}
+
+VISIBLE void
+Mod_UnloadModel (model_t *model)
+{
+	qfZoneScoped (true);
+	for (size_t i = 0; i < mod_numknown; i++) {
+		if (mod_known.a[i] == model) {
+			mod_unload_model (i);
+		}
 	}
 }
 
 VISIBLE void
 Mod_Print (void)
 {
+	qfZoneScoped (true);
 	size_t      i;
 	model_t	  **mod;
 
@@ -313,6 +449,7 @@ Mod_Print (void)
 float
 RadiusFromBounds (const vec3_t mins, const vec3_t maxs)
 {
+	qfZoneScoped (true);
 	int		i;
 	vec3_t	corner;
 

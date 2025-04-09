@@ -59,7 +59,7 @@ void MSG_PokeLongBE (sizebuf_t *sb, unsigned offset, int c);
 
 typedef struct msg_s {
 	unsigned    readcount;
-	qboolean    badread;		// set if a read goes beyond end of message
+	bool        badread;		// set if a read goes beyond end of message
 	sizebuf_t  *message;
 	size_t      badread_string_size;
 	char       *badread_string;
@@ -278,6 +278,9 @@ void MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles);
 	\return			The 31-bit value, or -1 on error.
 */
 int MSG_ReadUTF8 (qmsg_t *msg);
+
+uint64_t MSG_ReadUleb128 (qmsg_t *msg);
+int64_t MSG_ReadSleb128 (qmsg_t *msg);
 
 ///@}
 

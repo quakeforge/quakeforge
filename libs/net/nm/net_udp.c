@@ -58,12 +58,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#ifdef HAVE_WINDOWS_H
-# include <windows.h>
-#endif
-#ifdef HAVE_WINSOCK_H
-# include <winsock.h>
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -166,6 +160,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 static void
 SockadrToNetadr (AF_address_t *s, netadr_t *a)
 {
+	qfZoneScoped (true);
 	memcpy (&a->ip, &s->s4.sin_addr, ADDR_SIZE);
 	a->port = s->s4.sin_port;
 	a->family = s->s4.sin_family;
@@ -187,6 +182,7 @@ uint32_t *last_iface;
 static int
 get_iface_list (int sock)
 {
+	qfZoneScoped (true);
 #ifdef HAVE_GETIFADDRS
 	struct ifaddrs *ifa_head;
 	struct ifaddrs *ifa;
@@ -195,7 +191,7 @@ get_iface_list (int sock)
 	if (getifaddrs (&ifa_head) < 0)
 		goto no_ifaddrs;
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
@@ -208,7 +204,7 @@ get_iface_list (int sock)
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
 		struct sockaddr_in *sa;
 
-		if (!ifa->ifa_flags & IFF_UP)
+		if (!(ifa->ifa_flags & IFF_UP))
 			continue;
 		if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET)
 			continue;
@@ -224,15 +220,17 @@ get_iface_list (int sock)
 	return 0;
 no_ifaddrs:
 #endif
-	ifaces = &myAddr;
-	default_iface = &ifaces[0];
 	num_ifaces = 1;
+	ifaces = malloc (num_ifaces * sizeof (uint32_t));
+	ifaces[0] = myAddr;
+	default_iface = &ifaces[0];
 	return 0;
 }
 
 int
 UDP_Init (void)
 {
+	qfZoneScoped (true);
 	struct hostent *local = 0;
 	char        buff[MAXHOSTNAMELEN];
 	netadr_t    addr;
@@ -259,9 +257,9 @@ UDP_Init (void)
 		myAddr = 0;
 
 	// if the quake hostname isn't set, set it to the machine name
-	if (strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname, "UNNAMED") == 0) {
 		buff[15] = 0;
-		Cvar_Set (hostname, buff);
+		Cvar_Set ("hostname", buff);
 	}
 
 	if ((net_controlsocket = UDP_OpenSocket (0)) == -1)
@@ -292,13 +290,15 @@ UDP_Init (void)
 void
 UDP_Shutdown (void)
 {
+	qfZoneScoped (true);
 	UDP_Listen (false);
 
 	UDP_CloseSocket (net_controlsocket);
+	free (ifaces);
 }
 
 void
-UDP_Listen (qboolean state)
+UDP_Listen (bool state)
 {
 	// enable listening
 	if (state) {
@@ -318,6 +318,7 @@ UDP_Listen (qboolean state)
 int
 UDP_OpenSocket (int port)
 {
+	qfZoneScoped (true);
 	int         newsocket;
 	struct sockaddr_in address;
 #ifdef _WIN32
@@ -537,7 +538,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	}
 	SockadrToNetadr (&addr, from);
 	Sys_MaskPrintf (SYS_net, "got %d bytes from %s on iface %d (%s)\n", ret,
-					UDP_AddrToString (from), info ? info->ipi_ifindex - 1 : -1,
+					UDP_AddrToString (from), info ? (int) info->ipi_ifindex - 1 : -1,
 					last_iface ? inet_ntoa (info->ipi_addr) : "?");
 #else
 	socklen_t   addrlen = sizeof (AF_address_t);
@@ -552,7 +553,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
-	if (developer->int_val & SYS_net) {
+	if (developer & SYS_net) {
 		hex_dump_buf (buf, ret);
 	}
 	return ret;
@@ -603,7 +604,7 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 		return 0;
 	Sys_MaskPrintf (SYS_net, "sent %d bytes to %s\n", ret,
 					UDP_AddrToString (to));
-	if (developer->int_val & SYS_net) {
+	if (developer & SYS_net) {
 		hex_dump_buf (buf, len);
 	}
 	return ret;
@@ -612,20 +613,16 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 const char *
 UDP_AddrToString (netadr_t *addr)
 {
-	static dstring_t *buffer;
-
-	if (!buffer)
-		buffer = dstring_new ();
-
-	dsprintf (buffer, "%d.%d.%d.%d:%d", addr->ip[0],
-			  addr->ip[1], addr->ip[2], addr->ip[3],
-			  ntohs (addr->port));
-	return buffer->str;
+	//FIXME this is used very badly (strcpy)
+	return va ("%d.%d.%d.%d:%d", addr->ip[0],
+			   addr->ip[1], addr->ip[2], addr->ip[3],
+			   ntohs (addr->port));
 }
 
 int
 UDP_GetSocketAddr (int socket, netadr_t *na)
 {
+	qfZoneScoped (true);
 	unsigned int a;
 	socklen_t    addrlen = sizeof (AF_address_t);
 	AF_address_t addr;

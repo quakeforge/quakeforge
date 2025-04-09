@@ -7,7 +7,7 @@ bin_PROGRAMS +=	@WAD_TARGETS@
 
 man_MANS += tools/wad/wad.1
 
-wad_SOURCES=	tools/wad/grab.c tools/wad/script.c tools/wad/wad.c
+wad_SOURCES=	tools/wad/grab.c tools/wad/script.c tools/wad/wad.c $(tracy_src)
 wad_LDADD=	$(WAD_LIBS)
 wad_DEPENDENCIES= $(WAD_DEPS)
 

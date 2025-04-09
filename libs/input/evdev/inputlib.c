@@ -8,6 +8,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -191,9 +192,8 @@ check_device (const char *path)
 {
 	device_t   *dev;
 	int         fd;
-	dstring_t  *buff = dstring_newstr ();
 
-	fd = open (path, O_RDWR);
+	fd = open (path, O_RDWR | O_NONBLOCK);
 	if (fd == -1)
 		return -1;
 
@@ -208,14 +208,21 @@ check_device (const char *path)
 	dev->path = strdup (path);
 	dev->fd = fd;
 
+	dstring_t  *buff = dstring_newstr ();
 	dev->name = strdup (get_string (fd, EVIOCGNAME, buff));
 	dev->phys = strdup (get_string (fd, EVIOCGPHYS, buff));
 	dev->uniq = strdup (get_string (fd, EVIOCGUNIQ, buff));
+	dstring_delete (buff);
 
 	setup_buttons(dev);
 	setup_axes(dev);
 
 	dev->event_count = 0;
+
+	dev->data = 0;
+	dev->axis_event = 0;
+	dev->button_event = 0;
+
 
 	//Sys_Printf ("%s:\n", path);
 	//Sys_Printf ("\tname: %s\n", dev->name);
@@ -229,7 +236,7 @@ check_device (const char *path)
 	return fd;
 }
 
-/*static const char *event_codes[] = {
+static const char *event_codes[] = {
 	"EV_SYN",
 	"EV_KEY",
 	"EV_REL",
@@ -244,7 +251,7 @@ check_device (const char *path)
 	"EV_FF",
 	"EV_PWR",
 	"EV_FF_STATUS",
-};*/
+};
 
 static void
 read_device_input (device_t *dev)
@@ -261,16 +268,21 @@ read_device_input (device_t *dev)
 
 	while (1) {
 		if (read (dev->fd, &event, sizeof (event)) < 0) {
-			perror(dev->name);
-			dev->fd = -1;
+			if (errno != EWOULDBLOCK) {
+				perror(dev->name);
+				dev->fd = -1;
+			}
 			return;
 		}
-		//const char *ev = event_codes[event.type];
-		//Sys_Printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?", event.code, event.value);
+		if (0) {
+			const char *ev = event_codes[event.type];
+			Sys_Printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?",
+						event.code, event.value);
+		}
 		switch (event.type) {
 			case EV_SYN:
 				dev->event_count++;
-				return;
+				break;
 			case EV_KEY:
 				button = &dev->buttons[dev->button_map[event.code]];
 				button->state = event.value;

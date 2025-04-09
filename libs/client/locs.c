@@ -41,6 +41,7 @@
 
 #include <limits.h>
 
+#include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/qtypes.h"
@@ -144,14 +145,15 @@ locs_load (const char *filename)
 	const char *line;
 	vec4f_t     loc = { 0, 0, 0, 1 };
 	QFile      *file;
+	dstring_t  *buffer = dstring_new ();
 
-	tmp = va (0, "maps/%s", filename);
+	tmp = va ("maps/%s", filename);
 	file = QFS_FOpenFile (tmp);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;
 	}
-	while ((line = Qgetline (file))) {
+	while ((line = Qgetline (file, buffer))) {
 		if (line[0] == '#')
 			continue;
 
@@ -178,6 +180,7 @@ locs_load (const char *filename)
 		locs_add (loc, t1);
 	}
 	Qclose (file);
+	dstring_delete (buffer);
 }
 
 void
@@ -198,14 +201,14 @@ locs_reset (void)
 }
 
 void
-locs_save (const char *filename, qboolean gz)
+locs_save (const char *filename, bool gz)
 {
 	int i;
 	QFile *locfd;
 
 	if (gz) {
 		if (strcmp (QFS_FileExtension (filename), ".gz") != 0)
-			filename = va (0, "%s.gz", filename);
+			filename = va ("%s.gz", filename);
 		locfd = QFS_Open (filename, "z9w+");
 	} else
 		locfd = QFS_Open (filename, "w+");
@@ -287,10 +290,9 @@ map_to_loc (const char *mapname, char *filename)
 }
 
 void
-locs_draw (vec4f_t simorg)
+locs_draw (double time, vec4f_t simorg)
 {
 	//FIXME custom ent rendering code would be nice
-	dlight_t   *dl;
 	location_t *nearloc;
 	vec4f_t     trueloc;
 	vec4f_t     zero = {};
@@ -298,23 +300,22 @@ locs_draw (vec4f_t simorg)
 
 	nearloc = locs_find (simorg);
 	if (nearloc) {
-		dl = r_funcs->R_AllocDlight (4096);
-		if (dl) {
-			VectorCopy (nearloc->loc, dl->origin);
-			dl->radius = 200;
-			dl->die = r_data->realtime + 0.1;
-			dl->color[0] = 0;
-			dl->color[1] = 1;
-			dl->color[2] = 0;
-			dl->color[3] = 0.7;
-		}
+#if 0//FIXME
+		Ent_SetComponent (ent.id, scene_dynlight, ent.reg, &(dlight_t) {
+			.origin = nearloc->loc,
+			.color = { 0, 1, 0, 0.7 },
+			.radius = 200,
+			.die = time + 0.1,
+		});
+		Light_LinkLight (cl_world.scene->lights, ent.id);
+#endif
 		trueloc = nearloc->loc;
 		clp_funcs->Particle_New (pt_smokecloud, part_tex_smoke, trueloc, 2.0,
-				zero, r_data->realtime + 9.0, 254,
+				zero, time + 9.0, 254,
 				0.25 + qfrandom (0.125), 0.0);
 		for (i = 0; i < 15; i++)
 			clp_funcs->Particle_NewRandom (pt_fallfade, part_tex_dot, trueloc,
-					12, 0.7, 96, r_data->realtime + 5.0,
+					12, 0.7, 96, time + 5.0,
 					104 + (rand () & 7), 1.0, 0.0);
 	}
 }

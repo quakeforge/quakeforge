@@ -28,8 +28,6 @@
 #ifndef __QF_simd_mat4f_h
 #define __QF_simd_mat4f_h
 
-#include <immintrin.h>
-
 #include "QF/simd/types.h"
 
 GNU89INLINE inline void maddf (mat4f_t c, const mat4f_t a, const mat4f_t b);
@@ -159,9 +157,9 @@ mat4fquat (mat4f_t m, vec4f_t q)
 	vec4f_t zq = q[2] * q;
 	vec4f_t wq = q[3] * q;
 
-	static const vec4i_t shuff103 = { 1, 0, 3, 2 };
-	static const vec4i_t shuff230 = { 2, 3, 0, 1 };
-	static const vec4i_t shuff321 = { 3, 2, 1, 0 };
+#define shuff103(v) (vec4f_t) {v[1], v[0], v[3], v[2]}
+#define shuff230(v) (vec4f_t) {v[2], v[3], v[0], v[1]}
+#define shuff321(v) (vec4f_t) {v[3], v[2], v[1], v[0]}
 #define p (0)
 #define m (1u << 31)
 	static const vec4i_t mpm = { m, p, m, 0 };
@@ -172,25 +170,27 @@ mat4fquat (mat4f_t m, vec4f_t q)
 #undef m
 	{
 		vec4f_t a = xq;
-		vec4f_t b = _mm_xor_ps (__builtin_shuffle (yq, shuff103), (__m128) mpm);
-		vec4f_t c = _mm_xor_ps (__builtin_shuffle (zq, shuff230), (__m128) pmm);
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff321), (__m128) mmp);
-
-		m[0] = _mm_and_ps (a + b - c - d, (__m128) mask);
+		vec4f_t b = (vec4f_t) ((vec4i_t) shuff103 (yq) ^ mpm);
+		vec4f_t c = (vec4f_t) ((vec4i_t) shuff230 (zq) ^ pmm);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff321 (wq) ^ mmp);
+		// column: ww + xx - yy - zz // 2xy + 2wz // 2zx - 2wy // 0
+		m[0] = (vec4f_t) ((vec4i_t) (a + b - c - d) & mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (__builtin_shuffle (xq, shuff103), (__m128) mpm);
+		vec4f_t a = (vec4f_t) ((vec4i_t) shuff103 (xq) ^ mpm);
 		vec4f_t b = yq;
-		vec4f_t c = _mm_xor_ps (__builtin_shuffle (zq, shuff321), (__m128) mmp);
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff230), (__m128) pmm);
-		m[1] = _mm_and_ps (b + c - a - d, (__m128) mask);
+		vec4f_t c = (vec4f_t) ((vec4i_t) shuff321 (zq) ^ mmp);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff230 (wq) ^ pmm);
+		// column: 2xy - 2wz // ww - xx + yy - zz // 2yz + 2wx // 0
+		m[1] = (vec4f_t) ((vec4i_t) (b + c - a - d) & mask);
 	}
 	{
-		vec4f_t a = _mm_xor_ps (__builtin_shuffle (xq, shuff230), (__m128) pmm);
-		vec4f_t b = _mm_xor_ps (__builtin_shuffle (yq, shuff321), (__m128) mmp);
+		vec4f_t a = (vec4f_t) ((vec4i_t) shuff230 (xq) ^ pmm);
+		vec4f_t b = (vec4f_t) ((vec4i_t) shuff321 (yq) ^ mmp);
 		vec4f_t c = zq;
-		vec4f_t d = _mm_xor_ps (__builtin_shuffle (wq, shuff103), (__m128) mpm);
-		m[2] = _mm_and_ps (a - b + c - d, (__m128) mask);
+		vec4f_t d = (vec4f_t) ((vec4i_t) shuff103 (wq) ^ mpm);
+		// column: 2xz + 2wy // 2yz - 2wx // ww - xx - yy + zz // 0
+		m[2] = (vec4f_t) ((vec4i_t) (a - b + c - d) & mask);
 	}
 	m[3] = (vec4f_t) { 0, 0, 0, 1 };
 }

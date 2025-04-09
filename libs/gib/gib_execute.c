@@ -203,7 +203,7 @@ GIB_Execute (cbuf_t * cbuf)
 	unsigned int index;
 	gib_var_t *var;
 	int i;
-	qboolean super;
+	bool super;
 
 	static const char **mesg = NULL;
 	static int maxmesg = 0;

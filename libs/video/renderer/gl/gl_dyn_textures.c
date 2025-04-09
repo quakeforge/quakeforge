@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -49,7 +46,7 @@
 
 #include "r_internal.h"
 
-int			gl_part_tex;
+GLuint      gl_part_tex;
 static GLint part_tex_internal_format = 2;
 
 
@@ -60,7 +57,7 @@ GDT_InitParticleTexture (void)
 
 	memset (data, 0, sizeof (data));
 
-	gl_part_tex = gl_texture_number++;
+	qfglGenTextures (1, &gl_part_tex);
 	qfglBindTexture (GL_TEXTURE_2D, gl_part_tex);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	qfglTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

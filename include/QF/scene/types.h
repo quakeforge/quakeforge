@@ -47,7 +47,6 @@ typedef struct uint32set_s DARRAY_TYPE (uint32_t) uint32set_t;
 typedef struct byteset_s DARRAY_TYPE (byte) byteset_t;
 typedef struct stringset_s DARRAY_TYPE (char *) stringset_t;
 typedef struct xformset_s DARRAY_TYPE (struct transform_s *) xformset_t;
-typedef struct entityset_s DARRAY_TYPE (struct entity_s *) entityset_t;
 
 ///@}
 

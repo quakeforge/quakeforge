@@ -33,7 +33,7 @@ typedef struct script_s {
 	/// The current (or next when unget is true) token
 	struct dstring_s  *token;
 	/// True if the last token has been pushed back.
-	qboolean    unget;
+	bool        unget;
 	/// current position within the script
 	const char *p;
 	/// name of the file being processed. used only for error reporting
@@ -44,8 +44,10 @@ typedef struct script_s {
 	/// contains last error message or null if no error
 	/// if set, no tokens will be parsed.
 	const char *error;
-	/// if set, multi line quoted tokens will be treated as errors
-	int         no_quote_lines;
+	/// if true, multi line quoted tokens will be treated as errors
+	bool        no_quote_lines;
+	/// if true, quotes do not delimit strips
+	bool        no_quotes;
 	/// if set, characters in this string will always be lexed as single
 	/// character tokens. If not set, defaults to "{}()':". Set to ""
 	/// (empty string) to disable. Not set by default.
@@ -79,7 +81,7 @@ void Script_Start (script_t *script, const char *file, const char *data);
 	\return True if a token is available, false if end of file
 	        or end of line (if crossline is false) has been hit
 */
-qboolean Script_TokenAvailable (script_t *script, qboolean crossline);
+bool Script_TokenAvailable (script_t *script, bool crossline);
 
 /** Get the next token. Generates an error and exits the program if no token
 	is available and crossline is false.
@@ -87,7 +89,17 @@ qboolean Script_TokenAvailable (script_t *script, qboolean crossline);
 	\param crossline True to allow passing \n
 	\return True on success, false on failure (no token available)
 */
-qboolean Script_GetToken (script_t *script, qboolean crossline);
+bool Script_GetToken (script_t *script, bool crossline);
+
+/** Get the remainder of the current line as a token
+
+	Parses the rest of the line (minus // style comments) as the token.
+	Trailing whitespace is not stripped.
+	If a token has been pushed back, it will be included in the new token.
+	\param script The script_t object being parsed
+	\return true if there is more to parse (EOF not hit)
+*/
+bool Script_GetLine (script_t *script);
 
 /** Unget the current token. Only one level of unget is supported.
 	\param script The script_t object being parsed

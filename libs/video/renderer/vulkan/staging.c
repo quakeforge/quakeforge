@@ -28,23 +28,10 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#include "QF/alloc.h"
-#include "QF/cvar.h"
+#include "QF/backtrace.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
-#include "QF/Vulkan/qf_vid.h"
+
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
@@ -52,13 +39,11 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
 
-#include "vid_vulkan.h"
-
 qfv_stagebuf_t *
 QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 						 VkCommandPool cmdPool)
 {
-	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dstring_t  *str = dstring_new ();
 
@@ -66,12 +51,15 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 	stage->atom_mask = atom - 1;
 	size = (size + stage->atom_mask) & ~stage->atom_mask;
 	stage->device = device;
+	stage->cmdPool = cmdPool;
 	stage->buffer = QFV_CreateBuffer (device, size,
-									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+									  //FIXME make a param
+									  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
 						 dsprintf (str, "staging:buffer:%s", name));
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
-										   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+										   VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 										   size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, stage->memory,
 						 dsprintf (str, "staging:memory:%s", name));
@@ -108,23 +96,41 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 void
 QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 {
+	if (!stage) {
+		return;
+	}
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	int         count = RB_buffer_size (&stage->packets);
 	__auto_type fences = QFV_AllocFenceSet (count, alloca);
+	__auto_type cmdBuf = QFV_AllocCommandBufferSet (count, alloca);
 	for (int i = 0; i < count; i++) {
 		fences->a[i] = stage->packets.buffer[i].fence;
+		cmdBuf->a[i] = stage->packets.buffer[i].cmd;
+#if 0
+		auto stat = dfunc->vkGetFenceStatus (device->dev, fences->a[i]);
+		if (stat != VK_SUCCESS) {
+			dstring_t  *str = dstring_newstr ();
+			auto packet = &stage->packets.buffer[i];
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_DestroyStagingBuffer: %d live packet in %p:%s\n",
+						stat, stage, str->str);
+			dstring_delete (str);
+		}
+#endif
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
 							5000000000ull);
 	for (int i = 0; i < count; i++) {
 		dfunc->vkDestroyFence (device->dev, fences->a[i], 0);
 	}
+	dfunc->vkFreeCommandBuffers (device->dev, stage->cmdPool,
+								 cmdBuf->size, cmdBuf->a);
 
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
-	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	dfunc->vkDestroyBuffer (device->dev, stage->buffer, 0);
+	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
 	free (stage);
 }
 
@@ -143,6 +149,12 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 }
 
+static size_t
+align (size_t x, size_t a)
+{
+	return (x + a - 1) & ~(a - 1);
+}
+
 static void
 release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 {
@@ -155,7 +167,7 @@ release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 		stage->space_end = 0;
 		stage->end = stage->size;
 	}
-	stage->space_end += length;
+	stage->space_end += align (length, 16);
 }
 
 static void *
@@ -230,6 +242,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 qfv_packet_t *
 QFV_PacketAcquire (qfv_stagebuf_t *stage)
 {
+	qfZoneNamed (zone, true);
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -237,15 +250,28 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	if (!RB_SPACE_AVAILABLE (stage->packets)) {
 		// need to wait for a packet to become available
 		packet = RB_PEEK_DATA (stage->packets, 0);
+		auto start = Sys_LongTime ();
+		qfMessageL ("waiting on fence");
 		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
 								~0ull);
+		qfMessageL ("got fence");
+		auto end = Sys_LongTime ();
+		if (end - start > 500) {
+			dstring_t  *str = dstring_newstr ();
+			BT_pcInfo (str, (intptr_t) packet->owner);
+			Sys_Printf ("QFV_PacketAcquire: long acquire %'d for %p:%s\n",
+						(int) (end - start), stage, str->str);
+			dstring_delete (str);
+		}
 		release_space (stage, packet->offset, packet->length);
 		RB_RELEASE (stage->packets, 1);
 	}
 	packet = RB_ACQUIRE (stage->packets, 1);
 
+	stage->space_start = align (stage->space_start, 16);
 	packet->offset = stage->space_start;
 	packet->length = 0;
+	packet->owner = __builtin_return_address (0);
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
 	dfunc->vkResetCommandBuffer (packet->cmd, 0);
@@ -261,6 +287,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 void *
 QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 {
+	qfZoneNamed (zone, true);
 	void       *data = acquire_space (packet, size);
 	if (data) {
 		packet->length += size;
@@ -271,6 +298,7 @@ QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 void
 QFV_PacketSubmit (qfv_packet_t *packet)
 {
+	qfZoneNamed (zone, true);
 	qfv_stagebuf_t *stage = packet->stage;
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -290,4 +318,117 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 	};
 	// The fence was reset when the packet was acquired
 	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, packet->fence);
+}
+
+VkResult
+QFV_PacketWait (qfv_packet_t *packet)
+{
+	auto stage = packet->stage;
+	auto device = stage->device;
+	auto dfunc = device->funcs;
+	VkResult res = dfunc->vkWaitForFences (device->dev, 1, &packet->fence,
+										   VK_TRUE, ~0ull);
+	if (res != VK_SUCCESS) {
+		printf ("QFV_PacketWait: %d\n", res);
+	}
+	return res;
+}
+
+void
+QFV_PacketCopyBuffer (qfv_packet_t *packet,
+					  VkBuffer dstBuffer, VkDeviceSize offset,
+					  const qfv_bufferbarrier_t *srcBarrier,
+					  const qfv_bufferbarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_bufferbarrier_t bb = *srcBarrier;
+	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
+	bb.barrier.size = packet->length;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+	VkBufferCopy copy_region = {
+		.srcOffset = packet->offset,
+		.dstOffset = offset,
+		.size = packet->length,
+	};
+	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
+							1, &copy_region);
+	bb = *dstBarrier;
+	bb.barrier.buffer = dstBuffer;
+	bb.barrier.offset = offset;
+	bb.barrier.size = packet->length;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+}
+
+void
+QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
+						 uint32_t count, qfv_scatter_t *scatter,
+						 const qfv_bufferbarrier_t *srcBarrier,
+						 const qfv_bufferbarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_bufferbarrier_t bb = *srcBarrier;
+	VkBufferCopy copy_regions[count];
+	VkBufferMemoryBarrier barriers[count] = {};//FIXME arm gcc sees as uninit
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+
+		copy_regions[i] = (VkBufferCopy) {
+			.srcOffset = packet->offset + scatter[i].srcOffset,
+			.dstOffset = scatter[i].dstOffset,
+			.size = scatter[i].length,
+		};
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
+	dfunc->vkCmdCopyBuffer (packet->cmd, packet->stage->buffer, dstBuffer,
+							count, copy_regions);
+	bb = *dstBarrier;
+	for (uint32_t i = 0; i < count; i++) {
+		barriers[i] = bb.barrier;
+		barriers[i].buffer = dstBuffer;
+		barriers[i].offset = scatter[i].dstOffset;
+		barriers[i].size = scatter[i].length;
+	}
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, count, barriers, 0, 0);
+}
+
+void
+QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
+					 int width, int height,
+					 const qfv_imagebarrier_t *srcBarrier,
+					 const qfv_imagebarrier_t *dstBarrier)
+{
+	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
+	qfv_imagebarrier_t ib = *srcBarrier;
+	ib.barrier.image = dstImage;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0, 1, &ib.barrier);
+	VkBufferImageCopy copy_region = {
+		.bufferOffset = packet->offset,
+		.bufferRowLength = 0,
+		.bufferImageHeight = 0,
+		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{0, 0, 0}, {width, height, 1},
+	};
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   dstImage,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &copy_region);
+	if (dstBarrier) {
+		ib = *dstBarrier;
+		ib.barrier.image = dstImage;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+									 0, 0, 0, 0, 0, 1, &ib.barrier);
+	}
 }

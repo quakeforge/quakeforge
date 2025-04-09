@@ -28,15 +28,12 @@
 #ifndef _CL_INPUT_H
 #define _CL_INPUT_H
 
-#include "QF/input.h"
-
 #include "qw/protocol.h"
 
-void CL_OnFocusChange (void (*func) (int game));
+struct cbuf_s;
 
-void CL_Input_Activate (void);
-void CL_Input_Init (void);
-void CL_Input_Init_Cvars (void);
+void CL_Init_Input (struct cbuf_s *cbuf);
+void CL_Init_Input_Cvars (void);
 void CL_ClearStates (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
@@ -49,11 +46,6 @@ int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
 
-extern in_button_t  in_left, in_right, in_forward, in_back;
-extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern in_button_t  in_use, in_jump, in_attack;
-extern in_button_t  in_up, in_down;
-extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
 extern int          in_impulse;
 
 #endif

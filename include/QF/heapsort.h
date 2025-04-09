@@ -40,22 +40,35 @@ typedef int (*__compar_fn_t)(const void *, const void *);
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 
+#ifndef __swap_d_fn_t_defined
+#define __swap_d_fn_t_defined
+typedef void (*__swap_d_fn_t)(void *, void *, void *);
+#endif
+
 void heap_sink (void *base, size_t ind, size_t nmemb, size_t size,
 				__compar_fn_t cmp);
 void heap_sink_r (void *base, size_t ind, size_t nmemb, size_t size,
 				  __compar_d_fn_t cmp, void *arg);
+void heap_sink_s (void *base, size_t ind, size_t nmemb, size_t size,
+				  __compar_d_fn_t cmp, __swap_d_fn_t swp, void *arg);
 
 void heap_swim (void *base, size_t ind, size_t nmemb, size_t size,
 				__compar_fn_t cmp);
 void heap_swim_r (void *base, size_t ind, size_t nmemb, size_t size,
 				  __compar_d_fn_t cmp, void *arg);
+void heap_swim_s (void *base, size_t ind, size_t nmemb, size_t size,
+				  __compar_d_fn_t cmp, __swap_d_fn_t swp, void *arg);
 
 void heap_build (void *base, size_t nmemb, size_t size, __compar_fn_t cmp);
 void heap_build_r (void *base, size_t nmemb, size_t size,
 				   __compar_d_fn_t cmp, void *arg);
+void heap_build_s (void *base, size_t nmemb, size_t size,
+				   __compar_d_fn_t cmp, __swap_d_fn_t swp, void *arg);
 
 void heapsort (void *base, size_t nmemb, size_t size, __compar_fn_t cmp);
 void heapsort_r (void *base, size_t nmemb, size_t size,
 				 __compar_d_fn_t cmp, void *arg);
+void heapsort_s (void *base, size_t nmemb, size_t size,
+				 __compar_d_fn_t cmp, __swap_d_fn_t swp, void *arg);
 
 #endif//__QF_heapsort_h

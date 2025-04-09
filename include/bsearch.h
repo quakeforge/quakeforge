@@ -35,7 +35,7 @@
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 
-void *_bsearch(const void *key, const void *base, size_t nmemb, size_t size,
-			   __compar_d_fn_t cmp, void *arg);
+void *QF_bsearch_r(const void *key, const void *base, size_t nmemb, size_t size,
+				   __compar_d_fn_t cmp, void *arg);
 
 #endif// quicksort_h

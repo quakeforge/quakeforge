@@ -31,8 +31,11 @@
 #ifndef __def_h
 #define __def_h
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
+
+#include "rua-lang.h"
+#include "specifier.h"
 
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
@@ -40,6 +43,7 @@
 ///@{
 
 struct symbol_s;
+struct symtab_s;
 struct expr_s;
 
 /** Represent a memory location that holds a QuakeC/Ruamoko object.
@@ -56,10 +60,11 @@ typedef struct def_s {
 	struct def_s *next;			///< general purpose linking
 	struct def_s *temp_next;	///< linked list of "free" temp defs
 
-	struct type_s *type;		///< QC type of this def
+	const struct type_s *type;	///< QC type of this def
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
+	int         reg;			///< base register index to access def
 
 	/** \name Def aliasing.
 		Aliasing a def provides a different view of the def providing access
@@ -84,22 +89,30 @@ typedef struct def_s {
 	struct def_s   *alias;		///< real def which this def aliases
 	//@}
 	struct reloc_s *relocs;		///< for relocations
-	struct expr_s  *initializer;///< initialer expression
+	const struct expr_s *initializer;///< initialer expression
 	struct daglabel_s *daglabel;///< daglabel for this def
 	struct flowvar_s *flowvar;	///< flowvar for this def
 
-	unsigned    offset_reloc:1;	///< use *_def_ofs relocs
-	unsigned    initialized:1;	///< the def has been initialized
-	unsigned    constant:1;		///< stores constant value
-	unsigned    global:1;		///< globally declared def
-	unsigned    external:1;		///< externally declared def
-	unsigned    local:1;		///< function local def
-	unsigned    param:1;		///< function param def
-	unsigned    system:1;		///< system def
-	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
+	union {
+		struct {
+	        bool    offset_reloc:1;	///< use *_def_ofs relocs
+	        bool    initialized:1;	///< the def has been initialized
+	        bool    constant:1;		///< stores constant value
+	        bool    readonly:1;
+	        bool    writeonly:1;
+	        bool    global:1;		///< globally declared def
+	        bool    external:1;		///< externally declared def
+	        bool    local:1;		///< function local def
+	        bool    param:1;		///< function param def
+	        bool    out_param:1;	///< function out param def
+	        bool    argument:1;		///< function argument def
+	        bool    system:1;		///< system def
+	        bool    nosave:1;		///< don't set DEF_SAVEGLOBAL
+		};
+		unsigned    storage_bits;
+	};
 
-	string_t    file;			///< declaring/defining source file
-	int         line;			///< declaring/defining source line
+	rua_loc_t   loc;			///< declaring/defining source location
 
 	int         qfo_def;		///< index to def in qfo defs
 
@@ -107,16 +120,20 @@ typedef struct def_s {
 	void       *free_addr;		///< who freed this
 } def_t;
 
-/** Specify the storage class of a def.
-*/
-typedef enum storage_class_e {
-	sc_global,					///< def is globally visible across units
-	sc_system,					///< def may be redefined once
-	sc_extern,					///< def is externally allocated
-	sc_static,					///< def is private to the current unit
-	sc_param,					///< def is an incoming function parameter
-	sc_local					///< def is local to the current function
-} storage_class_t;
+#define D_packed(t,d,o)		(*(t *) &(d)->space->data[(d)->offset + (o)])
+#define D_PACKED(t,d)		D_packed (t, d, 0)
+#define D_var_o(t,d,o)		D_packed (pr_##t##_t, d, o)
+#define D_var(t,d)			D_var_o (t, d, 0)
+#define	D_DOUBLE(d)			D_var (double, d)
+#define	D_FLOAT(d)			D_var (float, d)
+#define	D_INT(d)			D_var (int, d)
+#define	D_VECTOR(d)			(&D_var (float, d))
+#define	D_QUAT(d)			(&D_var (float, d))
+#define	D_STRING(d)			D_var (string, d)
+#define	D_GETSTR(d)			GETSTR (D_STRING (d))
+#define	D_FUNCTION(d)		D_var (func, d)
+#define D_POINTER(t,d)		(&D_PACKED (t, d))
+#define D_STRUCT(t,d)		(*D_POINTER (t, d))
 
 /** Create a new def.
 
@@ -135,7 +152,7 @@ typedef enum storage_class_e {
 	\param storage	The storage class for the def.
 	\return			The new def.
 */
-def_t *new_def (const char *name, struct type_s *type,
+def_t *new_def (const char *name, const struct type_s *type,
 				struct defspace_s *space, storage_class_t storage);
 
 /** Create a def that aliases another def.
@@ -160,7 +177,10 @@ def_t *new_def (const char *name, struct type_s *type,
 
 	\todo Make aliasing to the same type a no-op?
 */
-def_t *alias_def (def_t *def, struct type_s *type, int offset);
+def_t *alias_def (def_t *def, const struct type_s *type, int offset);
+//FIXME this probably shouldn't exist (it's for swizzles, so doing proper
+//multi-width swizzles will remove the need for it)
+def_t *cover_alias_def (def_t *def, const struct type_s *type, int offset);
 
 /** Free a def.
 
@@ -196,7 +216,7 @@ void free_def (def_t *def);
 	\bug size of type must be 1 to 4.
 	\todo support arbitrary sizes
 */
-def_t *temp_def (struct type_s *type);
+def_t *temp_def (const struct type_s *type);
 
 /** Free a tempary def so it may be recycled.
 
@@ -218,6 +238,9 @@ void free_temp_def (def_t *temp);
 	\bug The def is not verified to be a field def when \a aux is true.
 */
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
+
+void init_vector_components (struct symbol_s *vector_sym, int is_field,
+							 struct symtab_s *symtab);
 
 /** Initialize a def referenced by the given symbol.
 
@@ -241,19 +264,15 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 	\param init		If not null, the expressions to use to initialize the def.
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
+	\param symtab   The symbol table into which the def will be placed.
 */
 void initialize_def (struct symbol_s *sym,
-					 struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage);
+					 const struct expr_s *init, struct defspace_s *space,
+					 storage_class_t storage, struct symtab_s *symtab,
+					 expr_t *block);
 
-/** Determine if two defs overlap.
-
-	\param d1		The first def to check. May be an alias def.
-	\param d2		The second def to check. May be an alias def.
-	\return			1 if the defs overlap, 2 if \a d1 fully overlaps \a d2,
-					otherwise 0.
-*/
-int def_overlap (def_t *d1, def_t *d2) __attribute__((pure));
+void declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
+				  expr_t *block);
 
 /** Convenience function for obtaining a def's actual offset.
 
@@ -306,6 +325,11 @@ int def_size (def_t *def) __attribute__((pure));
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);
+
+int def_visit_overlaps (def_t *def, int offset, int size, int overlap,
+						def_t *skip,
+						int (*visit) (def_t *, void *), void *data);
+
 ///@}
 
 #endif//__def_h

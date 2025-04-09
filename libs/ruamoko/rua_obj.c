@@ -45,57 +45,112 @@
 #include "qfalloca.h"
 
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/sys.h"
+
+#include "QF/progs/pr_obj.h"
+#include "QF/progs/pr_type.h"
 
 #include "compat.h"
 #include "rua_internal.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 
+/* Macros to help with setting up to call a function, and cleaning up
+ * afterwards. The problem is that PR_CallFunction saves the CURRENT stack
+ * pointer, which has been adjusted by PR_SetupParams in order to push
+ * the function arguments.
+ *
+ * RUA_CALL_BEGIN and RUA_CALL_END must be used in pairs and this is enforced
+ * by the unbalanced {}s in the macros.
+ */
+#define RUA_CALL_BEGIN(pr, argc) \
+	{ \
+		pr_ptr_t    saved_stack = 0; \
+		int         call_depth = (pr)->pr_depth; \
+		if ((pr)->globals.stack) { \
+			saved_stack = *(pr)->globals.stack; \
+		} \
+		PR_SetupParams (pr, argc, 1); \
+		(pr)->pr_argc = argc;
+
+#define RUA_CALL_END(pr, imp) \
+		if (PR_CallFunction ((pr), (imp), (pr)->pr_return)) { \
+			/* the call is to a progs function so a frame was pushed,   */ \
+			/* ensure the stack pointer is restored on return           */ \
+			/* if there's no stack, then the following is effectively a */ \
+			/* noop                                                     */ \
+			(pr)->pr_stack[call_depth].stack_ptr = saved_stack; \
+		} else if ((pr)->globals.stack) { \
+			/* the call was to a builtin, restore the stack             */ \
+			*(pr)->globals.stack = saved_stack; \
+		} \
+	}
+
+// number of selectors to allocate at once (to minimize memory waste)
+#define SELECTOR_BLOCK 64
+
 typedef struct obj_list_s {
 	struct obj_list_s *next;
 	void       *data;
 } obj_list;
 
+typedef struct listset_s DARRAY_TYPE (obj_list *) listset_t;
+
 typedef struct dtable_s {
 	struct dtable_s *next;
 	struct dtable_s **prev;
 	size_t      size;
-	func_t     *imp;
+	pr_func_t  *imp;
 } dtable_t;
+
+typedef struct class_tree {
+	pr_class_t *class;
+	obj_list   *subclasses;
+} class_tree;
+
+typedef struct treeset_s DARRAY_TYPE (class_tree *) treeset_t;
 
 typedef struct probj_resources_s {
 	progs_t    *pr;
 	unsigned    selector_index;
 	unsigned    selector_index_max;
+	pr_sel_t   *selector_block;
+	int         available_selectors;
 	obj_list  **selector_sels;
-	string_t   *selector_names;
+	pr_string_t *selector_names;
+	pr_int_t   *selector_argc;
 	PR_RESMAP (dtable_t) dtables;
 	dtable_t   *dtable_list;
-	func_t      obj_forward;
+	pr_func_t   obj_forward;
 	pr_sel_t   *forward_selector;
 	dstring_t  *msg;
 	hashtab_t  *selector_hash;
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
 	hashtab_t  *load_methods;
+	listset_t   obj_list_sets;
+	obj_list   *obj_list_free_list;
 	obj_list   *unresolved_classes;
 	obj_list   *unclaimed_categories;
 	obj_list   *uninitialized_statics;
 	obj_list   *unclaimed_proto_list;
 	obj_list   *module_list;
 	obj_list   *class_tree_list;
+
+	class_tree *class_tree_free_list;
+	treeset_t   class_tree_sets;
 } probj_t;
 
 static dtable_t *
 dtable_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	dtable_t   *dtable = PR_RESNEW (probj->dtables);
 	dtable->next = probj->dtable_list;
 	dtable->prev = &probj->dtable_list;
@@ -109,24 +164,29 @@ dtable_new (probj_t *probj)
 static void
 dtable_reset (probj_t *probj)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (probj->dtables);
+	probj->dtable_list = 0;
 }
 
 static inline dtable_t *
 dtable_get (probj_t *probj, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET (probj->dtables, index);
 }
 
 static inline int __attribute__((pure))
 dtable_index (probj_t *probj, dtable_t *dtable)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX (probj->dtables, dtable);
 }
 
 static always_inline dtable_t * __attribute__((pure))
 get_dtable (probj_t *probj, const char *name, int index)
 {
+	qfZoneScoped (true);
 	dtable_t   *dtable = dtable_get (probj, index);
 
 	if (!dtable) {
@@ -135,28 +195,31 @@ get_dtable (probj_t *probj, const char *name, int index)
 	return dtable;
 }
 
-static obj_list *obj_list_free_list;
-
 static obj_list *
-obj_list_new (void)
+obj_list_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	int         i;
 	obj_list   *l;
 
-	if (!obj_list_free_list) {
-		obj_list_free_list = calloc (128, sizeof (obj_list));
-		for (i = 0; i < 127; i++)
-			obj_list_free_list[i].next = &obj_list_free_list[i + 1];
+	if (!probj->obj_list_free_list) {
+		probj->obj_list_free_list = calloc (128, sizeof (obj_list));
+		for (i = 0; i < 127; i++) {
+			__auto_type next = &probj->obj_list_free_list[i + 1];
+			probj->obj_list_free_list[i].next = next;
+		}
+		DARRAY_APPEND (&probj->obj_list_sets, probj->obj_list_free_list);
 	}
-	l = obj_list_free_list;
-	obj_list_free_list = l->next;
+	l = probj->obj_list_free_list;
+	probj->obj_list_free_list = l->next;
 	l->next = 0;
 	return l;
 }
 
 static void
-obj_list_free (obj_list *l)
+obj_list_free (probj_t *probj, obj_list *l)
 {
+	qfZoneScoped (true);
 	obj_list   *e;
 
 	if (!l)
@@ -164,55 +227,52 @@ obj_list_free (obj_list *l)
 
 	for (e = l; e->next; e = e->next)
 		;
-	e->next = obj_list_free_list;
-	obj_list_free_list = l;
+	e->next = probj->obj_list_free_list;
+	probj->obj_list_free_list = l;
 }
 
 static inline obj_list *
-list_cons (void *data, obj_list *next)
+list_cons (probj_t *probj, void *data, obj_list *next)
 {
-	obj_list   *l = obj_list_new ();
+	qfZoneScoped (true);
+	obj_list   *l = obj_list_new (probj);
 	l->data = data;
 	l->next = next;
 	return l;
 }
 
 static inline void
-list_remove (obj_list **list)
+list_remove (probj_t *probj, obj_list **list)
 {
+	qfZoneScoped (true);
 	if ((*list)->next) {
 		obj_list   *l = *list;
 		*list = (*list)->next;
 		l->next = 0;
-		obj_list_free (l);
+		obj_list_free (probj, l);
 	} else {
-		obj_list_free (*list);
+		obj_list_free (probj, *list);
 		*list = 0;
 	}
 }
 
-typedef struct class_tree {
-	pr_class_t *class;
-	obj_list   *subclasses;
-} class_tree;
-
-class_tree *class_tree_free_list;
-
 static class_tree *
-class_tree_new (void)
+class_tree_new (probj_t *probj)
 {
+	qfZoneScoped (true);
 	int         i;
 	class_tree *t;
 
-	if (!class_tree_free_list) {
-		class_tree_free_list = calloc (128, sizeof (class_tree));
+	if (!probj->class_tree_free_list) {
+		probj->class_tree_free_list = calloc (128, sizeof (class_tree));
 		for (i = 0; i < 127; i++) {
-			class_tree *x = &class_tree_free_list[i];
+			class_tree *x = &probj->class_tree_free_list[i];
 			x->subclasses = (obj_list *) (x + 1);
 		}
+		DARRAY_APPEND (&probj->class_tree_sets, probj->class_tree_free_list);
 	}
-	t = class_tree_free_list;
-	class_tree_free_list = (class_tree *) t->subclasses;
+	t = probj->class_tree_free_list;
+	probj->class_tree_free_list = (class_tree *) t->subclasses;
 	t->subclasses = 0;
 	return t;
 }
@@ -221,6 +281,7 @@ static int
 class_is_subclass_of_class (probj_t *probj, pr_class_t *class,
 							pr_class_t *superclass)
 {
+	qfZoneScoped (true);
 	while (class) {
 		if (class == superclass)
 			return 1;
@@ -236,6 +297,7 @@ static class_tree *
 create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 										  pr_class_t *upper)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	const char *super_class = PR_GetString (pr, bottom->super_class);
 	pr_class_t *superclass;
@@ -243,12 +305,12 @@ create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 
 	superclass = bottom->super_class ? Hash_Find (probj->classes, super_class)
 									 : 0;
-	tree = prev = class_tree_new ();
+	tree = prev = class_tree_new (probj);
 	prev->class = bottom;
 	while (superclass != upper) {
-		tree = class_tree_new ();
+		tree = class_tree_new (probj);
 		tree->class = superclass;
-		tree->subclasses = list_cons (prev, tree->subclasses);
+		tree->subclasses = list_cons (probj, prev, tree->subclasses);
 		super_class = PR_GetString (pr, superclass->super_class);
 		superclass = (superclass->super_class ? Hash_Find (probj->classes,
 														   super_class)
@@ -261,6 +323,7 @@ create_tree_of_subclasses_inherited_from (probj_t *probj, pr_class_t *bottom,
 static class_tree *
 _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list   *subclasses;
 	class_tree *new_tree;
@@ -281,9 +344,9 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 				return tree;
 			list = list->next;
 		}
-		node = class_tree_new ();
+		node = class_tree_new (probj);
 		node->class = class;
-		tree->subclasses = list_cons (node, tree->subclasses);
+		tree->subclasses = list_cons (probj, node, tree->subclasses);
 		return tree;
 	}
 	if (!class_is_subclass_of_class (probj, class, tree->class))
@@ -299,13 +362,14 @@ _obj_tree_insert_class (probj_t *probj, class_tree *tree, pr_class_t *class)
 	}
 	new_tree = create_tree_of_subclasses_inherited_from (probj, class,
 														 tree->class);
-	tree->subclasses = list_cons (new_tree, tree->subclasses);
+	tree->subclasses = list_cons (probj, new_tree, tree->subclasses);
 	return tree;
 }
 
 static void
 obj_tree_insert_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	obj_list   *list_node;
 	class_tree *tree;
 
@@ -321,13 +385,15 @@ obj_tree_insert_class (probj_t *probj, pr_class_t *class)
 	}
 	if (!list_node) {
 		tree = _obj_tree_insert_class (probj, 0, class);
-		probj->class_tree_list = list_cons (tree, probj->class_tree_list);
+		probj->class_tree_list = list_cons (probj, tree,
+											probj->class_tree_list);
 	}
 }
 
 static void
 obj_create_classes_tree (probj_t *probj, pr_module_t *module)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	int         i;
@@ -341,14 +407,16 @@ obj_create_classes_tree (probj_t *probj, pr_module_t *module)
 static void
 obj_destroy_class_tree_node (probj_t *probj, class_tree *tree, int level)
 {
-	tree->subclasses = (obj_list *) class_tree_free_list;
-	class_tree_free_list = tree;
+	qfZoneScoped (true);
+	tree->subclasses = (obj_list *) probj->class_tree_free_list;
+	probj->class_tree_free_list = tree;
 }
 
 static void
 obj_preorder_traverse (probj_t *probj, class_tree *tree, int level,
 					   void (*func) (probj_t *, class_tree *, int))
 {
+	qfZoneScoped (true);
 	obj_list   *node;
 
 	func (probj, tree, level);
@@ -360,6 +428,7 @@ static void
 obj_postorder_traverse (probj_t *probj, class_tree *tree, int level,
 						void (*func) (probj_t *, class_tree *, int))
 {
+	qfZoneScoped (true);
 	obj_list   *node;
 
 	for (node = tree->subclasses; node; node = node->next)
@@ -370,6 +439,7 @@ obj_postorder_traverse (probj_t *probj, class_tree *tree, int level,
 static const char *
 selector_get_key (const void *s, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, probj->selector_names[(intptr_t) s]);
 }
@@ -377,6 +447,7 @@ selector_get_key (const void *s, void *_probj)
 static const char *
 class_get_key (const void *c, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, ((pr_class_t *)c)->name);
 }
@@ -384,6 +455,7 @@ class_get_key (const void *c, void *_probj)
 static const char *
 protocol_get_key (const void *p, void *_probj)
 {
+	qfZoneScoped (true);
 	__auto_type probj = (probj_t *) _probj;
 	return PR_GetString (probj->pr, ((pr_protocol_t *)p)->protocol_name);
 }
@@ -391,18 +463,21 @@ protocol_get_key (const void *p, void *_probj)
 static uintptr_t
 load_methods_get_hash (const void *m, void *_probj)
 {
+	qfZoneScoped (true);
 	return (uintptr_t) m;
 }
 
 static int
 load_methods_compare (const void *m1, const void *m2, void *_probj)
 {
+	qfZoneScoped (true);
 	return m1 == m2;
 }
 
 static inline int
 sel_eq (pr_sel_t *s1, pr_sel_t *s2)
 {
+	qfZoneScoped (true);
 	if (!s1 || !s2)
 		return s1 == s2;
 	return s1->sel_id == s2->sel_id;
@@ -411,6 +486,7 @@ sel_eq (pr_sel_t *s1, pr_sel_t *s2)
 static int
 object_is_instance (probj_t *probj, pr_id_t *object)
 {
+	qfZoneScoped (true);
 	progs_t *pr = probj->pr;
 	pr_class_t *class;
 
@@ -421,9 +497,10 @@ object_is_instance (probj_t *probj, pr_id_t *object)
 	return 0;
 }
 
-static string_t
+static pr_string_t
 object_get_class_name (probj_t *probj, pr_id_t *object)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 
@@ -444,8 +521,9 @@ object_get_class_name (probj_t *probj, pr_id_t *object)
 //====================================================================
 
 static void
-finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
+finish_class (probj_t *probj, pr_class_t *class, pr_ptr_t object_ptr)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 	pr_class_t *val;
@@ -461,7 +539,7 @@ finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
 		meta->super_class = val->class_pointer;
 		class->super_class = PR_SetPointer (pr, val);
 	} else {
-		pointer_t  *ml = &meta->methods;
+		pr_ptr_t   *ml = &meta->methods;
 		while (*ml)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
@@ -475,6 +553,7 @@ finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
 static int
 add_sel_name (probj_t *probj, const char *name)
 {
+	qfZoneScoped (true);
 	int         ind = ++probj->selector_index;
 	int         size, i;
 
@@ -483,10 +562,13 @@ add_sel_name (probj_t *probj, const char *name)
 		probj->selector_sels = realloc (probj->selector_sels,
 										size * sizeof (obj_list *));
 		probj->selector_names = realloc (probj->selector_names,
-										 size * sizeof (string_t));
+										 size * sizeof (pr_string_t));
+		probj->selector_argc = realloc (probj->selector_argc,
+										size * sizeof (pr_int_t));
 		for (i = probj->selector_index_max; i < size; i++) {
 			probj->selector_sels[i] = 0;
 			probj->selector_names[i] = 0;
+			probj->selector_argc[i] = 0;
 		}
 		probj->selector_index_max = size;
 	}
@@ -498,6 +580,7 @@ static pr_sel_t *
 sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 						 pr_sel_t *sel)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	intptr_t	index;
 	int			is_new = 0;
@@ -529,16 +612,31 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 		index = add_sel_name (probj, name);
 		is_new = 1;
 	}
-	if (!sel)
-		sel = PR_Zone_Malloc (pr, sizeof (pr_sel_t));
+	if (!sel) {
+		if (!probj->available_selectors) {
+			probj->available_selectors = SELECTOR_BLOCK;
+			sel = PR_Zone_Malloc (pr, SELECTOR_BLOCK*sizeof (pr_sel_t));
+			probj->selector_block = sel;
+		}
+		sel = &probj->selector_block[--probj->available_selectors];
+	}
 
 	sel->sel_id = index;
 	sel->sel_types = PR_SetString (pr, types);
 
-	l = obj_list_new ();
+	l = obj_list_new (probj);
 	l->data = sel;
 	l->next = probj->selector_sels[index];
 	probj->selector_sels[index] = l;
+
+	if (sel->sel_types && pr->type_encodings) {
+		const char *enc = PR_GetString (pr, sel->sel_types);
+		__auto_type type = (qfot_type_t *) Hash_Find (pr->type_hash, enc);
+		if (type->meta != ty_basic || type->type != ev_func) {
+			PR_RunError (pr, "selector type encoing is not a function");
+		}
+		probj->selector_argc[index] = type->func.num_params;
+	}
 
 	if (is_new)
 		Hash_Add (probj->selector_hash, (void *) index);
@@ -551,6 +649,7 @@ done:
 static pr_sel_t *
 sel_register_name (probj_t *probj, const char *name)
 {
+	qfZoneScoped (true);
 	return sel_register_typed_name (probj, name, "", 0);
 }
 
@@ -558,6 +657,7 @@ static void
 obj_register_selectors_from_description_list (probj_t *probj,
 		pr_method_description_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -577,6 +677,7 @@ static void
 obj_register_selectors_from_list (probj_t *probj,
 								  pr_method_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -592,6 +693,7 @@ obj_register_selectors_from_list (probj_t *probj,
 static void
 obj_register_selectors_from_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list = &G_STRUCT (pr, pr_method_list_t,
 											   class->methods);
@@ -608,6 +710,7 @@ static void
 obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
 				   pr_protocol_t *proto)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 
 	if (!proto->class_pointer) {
@@ -633,6 +736,7 @@ obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
 static void
 obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *proto_class;
 	pr_protocol_t *proto;
@@ -642,7 +746,7 @@ obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 		return;
 
 	if (!(proto_class = Hash_Find (probj->classes, "Protocol"))) {
-		probj->unclaimed_proto_list = list_cons (protos,
+		probj->unclaimed_proto_list = list_cons (probj, protos,
 												 probj->unclaimed_proto_list);
 		return;
 	}
@@ -657,6 +761,7 @@ static void
 class_add_method_list (probj_t *probj, pr_class_t *class,
 					   pr_method_list_t *list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -678,6 +783,7 @@ static void
 obj_class_add_protocols (probj_t *probj, pr_class_t *class,
 						 pr_protocol_list_t *protos)
 {
+	qfZoneScoped (true);
 	if (!protos)
 		return;
 
@@ -688,6 +794,7 @@ obj_class_add_protocols (probj_t *probj, pr_class_t *class,
 static void
 finish_category (probj_t *probj, pr_category_t *category, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list;
 	pr_protocol_list_t *protocol_list;
@@ -715,6 +822,7 @@ static void
 obj_send_message_in_list (probj_t *probj, pr_method_list_t *method_list,
 						  pr_class_t *class, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	int         i;
 
@@ -743,6 +851,7 @@ obj_send_message_in_list (probj_t *probj, pr_method_list_t *method_list,
 static void
 send_load (probj_t *probj, class_tree *tree, int level)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_sel_t   *load_sel = sel_register_name (probj, "load");
 	pr_class_t *class = tree->class;
@@ -756,6 +865,7 @@ send_load (probj_t *probj, class_tree *tree, int level)
 static void
 obj_send_load (probj_t *probj)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list   *m;
 
@@ -763,7 +873,7 @@ obj_send_load (probj_t *probj)
 		pr_class_t *class = probj->unresolved_classes->data;
 		const char *super_class = PR_GetString (pr, class->super_class);
 		while (Hash_Find (probj->classes, super_class)) {
-			list_remove (&probj->unresolved_classes);
+			list_remove (probj, &probj->unresolved_classes);
 			if (probj->unresolved_classes) {
 				class = probj->unresolved_classes->data;
 				super_class = PR_GetString (pr, class->super_class);
@@ -784,26 +894,27 @@ obj_send_load (probj_t *probj)
 							   send_load);
 		obj_postorder_traverse (probj, probj->class_tree_list->data, 0,
 								obj_destroy_class_tree_node);
-		list_remove (&probj->class_tree_list);
+		list_remove (probj, &probj->class_tree_list);
 	}
 	//XXX callback
 	//for (m = probj->module_list; m; m = m->next)
 	//	obj_create_classes_tree (probj, m->data);
-	obj_list_free (probj->module_list);
+	obj_list_free (probj, probj->module_list);
 	probj->module_list = 0;
 }
 
 static pr_method_t *
 obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *c = class;
 	pr_method_list_t *method_list;
 	pr_method_t *method;
 	pr_sel_t   *sel;
 	int         i;
-	int         dev = developer->int_val;
-	string_t   *names;
+	int         dev = developer;
+	pr_string_t *names;
 
 	if (dev & SYS_rua_msg) {
 		names = probj->selector_names;
@@ -824,7 +935,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
 				sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
-				if (developer->int_val & SYS_rua_msg) {
+				if (developer & SYS_rua_msg) {
 					names = probj->selector_names;
 					Sys_Printf ("  %s\n",
 								PR_GetString (pr, names[sel->sel_id]));
@@ -850,6 +961,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 static void
 obj_send_initialize (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_method_list_t *method_list;
 	pr_method_t *method;
@@ -893,6 +1005,7 @@ static void
 obj_install_methods_in_dtable (probj_t *probj, pr_class_t *class,
 							   pr_method_list_t *method_list)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	dtable_t   *dtable;
 
@@ -918,6 +1031,7 @@ obj_install_methods_in_dtable (probj_t *probj, pr_class_t *class,
 static void
 obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *super = &G_STRUCT (pr, pr_class_t, class->super_class);
 	dtable_t   *dtable;
@@ -934,7 +1048,7 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 	dtable = dtable_new (probj);
 	class->dtable = dtable_index (probj, dtable);
 	dtable->size = probj->selector_index + 1;
-	dtable->imp = calloc (dtable->size, sizeof (func_t));
+	dtable->imp = calloc (dtable->size, sizeof (pr_func_t));
 	if (super) {
 		dtable_t   *super_dtable = get_dtable (probj, __FUNCTION__,
 											   super->dtable);
@@ -949,16 +1063,18 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 static inline dtable_t *
 obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
 {
+	qfZoneScoped (true);
 	if (!class->dtable) {
 		obj_install_dispatch_table_for_class (probj, class);
 	}
 	return get_dtable (probj, __FUNCTION__, class->dtable);
 }
 
-static func_t
+static pr_func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
-	func_t     imp = 0;
+	qfZoneScoped (true);
+	pr_func_t  imp = 0;
 
 	if (class->dtable) {
 		dtable_t   *dtable = get_dtable (probj, __FUNCTION__, class->dtable);
@@ -980,10 +1096,11 @@ get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 static int
 obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	dtable_t   *dtable;
-	func_t      imp = 0;
+	pr_func_t   imp = 0;
 
 	class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
 	dtable = obj_check_dtable_installed (probj, class);
@@ -994,9 +1111,10 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 	return imp != 0;
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	if (!receiver)
@@ -1013,9 +1131,10 @@ obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 	return get_imp (probj, class, op);
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup_super (probj_t *probj, pr_super_t *super, pr_sel_t *op)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 
@@ -1030,17 +1149,22 @@ static void
 obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int count,
 			pr_type_t **args)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
-	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
-	dstring_t  *dstr = dstring_newstr ();
+	const char *name = "nil";
+	if (object) {
+		__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
+		name = PR_GetString (pr, class->name);
+	}
 
-	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), dstr->str);
+	PR_Sprintf (pr, probj->msg, "obj_verror", fmt, count, args);
+	PR_RunError (pr, "%s: %s", name, probj->msg->str);
 }
 
 static void
-dump_ivars (probj_t *probj, pointer_t _ivars)
+dump_ivars (probj_t *probj, pr_ptr_t _ivars)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	pr_ivar_list_t *ivars;
 	int         i;
@@ -1059,10 +1183,11 @@ dump_ivars (probj_t *probj, pointer_t _ivars)
 static void
 obj_init_statics (probj_t *probj)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 	obj_list  **cell = &probj->uninitialized_statics;
-	pointer_t  *ptr;
-	pointer_t  *inst;
+	pr_ptr_t   *ptr;
+	pr_ptr_t   *inst;
 
 	Sys_MaskPrintf (SYS_rua_obj, "Initializing statics\n");
 	while (*cell) {
@@ -1094,7 +1219,7 @@ obj_init_statics (probj_t *probj)
 		}
 
 		if (initialized) {
-			list_remove (cell);
+			list_remove (probj, cell);
 		} else {
 			cell = &(*cell)->next;
 		}
@@ -1102,13 +1227,14 @@ obj_init_statics (probj_t *probj)
 }
 
 static void
-rua___obj_exec_class (progs_t *pr)
+rua___obj_exec_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
 	pr_sel_t   *sel;
-	pointer_t  *ptr;
+	pr_ptr_t   *ptr;
 	int         i;
 	obj_list  **cell;
 
@@ -1130,7 +1256,7 @@ rua___obj_exec_class (progs_t *pr)
 					symtab->defs[symtab->cls_def_cnt
 								 + symtab->cat_def_cnt] ? "yes" : "no");
 
-	probj->module_list = list_cons (module, probj->module_list);
+	probj->module_list = list_cons (probj, module, probj->module_list);
 
 	sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
 	for (i = 0; i < symtab->sel_ref_cnt; i++) {
@@ -1156,7 +1282,7 @@ rua___obj_exec_class (progs_t *pr)
 		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						class->instance_size,
 						class->ivars);
-		if (developer->int_val & SYS_rua_obj)
+		if (developer & SYS_rua_obj)
 			dump_ivars (probj, class->ivars);
 		Sys_MaskPrintf (SYS_rua_obj, "    instance methods: %x\n",
 						class->methods);
@@ -1166,7 +1292,7 @@ rua___obj_exec_class (progs_t *pr)
 		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						meta->instance_size,
 						meta->ivars);
-		if (developer->int_val & SYS_rua_obj)
+		if (developer & SYS_rua_obj)
 			dump_ivars (probj, meta->ivars);
 
 		class->subclass_list = 0;
@@ -1184,7 +1310,7 @@ rua___obj_exec_class (progs_t *pr)
 		}
 
 		if (class->super_class && !Hash_Find (probj->classes, super_class))
-			probj->unresolved_classes = list_cons (class,
+			probj->unresolved_classes = list_cons (probj, class,
 												   probj->unresolved_classes);
 	}
 
@@ -1207,14 +1333,14 @@ rua___obj_exec_class (progs_t *pr)
 			finish_category (probj, category, class);
 		} else {
 			probj->unclaimed_categories
-				= list_cons (category, probj->unclaimed_categories);
+				= list_cons (probj, category, probj->unclaimed_categories);
 		}
 	}
 
 	if (*ptr) {
 		Sys_MaskPrintf (SYS_rua_obj, "Static instances lists: %x\n", *ptr);
 		probj->uninitialized_statics
-			= list_cons (&G_STRUCT (pr, pointer_t, *ptr),
+			= list_cons (probj, &G_STRUCT (pr, pr_ptr_t, *ptr),
 						 probj->uninitialized_statics);
 	}
 	if (probj->uninitialized_statics) {
@@ -1227,7 +1353,7 @@ rua___obj_exec_class (progs_t *pr)
 		pr_class_t *class = Hash_Find (probj->classes, class_name);
 
 		if (class) {
-			list_remove (cell);
+			list_remove (probj, cell);
 			finish_category (probj, category, class);
 		} else {
 			cell = &(*cell)->next;
@@ -1238,7 +1364,7 @@ rua___obj_exec_class (progs_t *pr)
 		&& Hash_Find (probj->classes, "Protocol")) {
 		for (cell = &probj->unclaimed_proto_list; *cell; ) {
 			obj_init_protocols (probj, (*cell)->data);
-			list_remove (cell);
+			list_remove (probj, cell);
 		}
 	}
 
@@ -1250,15 +1376,16 @@ rua___obj_exec_class (progs_t *pr)
 }
 
 static void
-rua___obj_forward (progs_t *pr)
+rua___obj_forward (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
 	pr_sel_t   *fwd_sel = probj->forward_selector;
 	pr_sel_t   *err_sel;
-	pr_class_t *class =&G_STRUCT (pr, pr_class_t, obj->class_pointer);
-	func_t      imp;
+	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	pr_func_t   imp;
 
 	if (!fwd_sel) {
 		//FIXME sel_register_typed_name is really not the way to go about
@@ -1269,57 +1396,70 @@ rua___obj_forward (progs_t *pr)
 	if (obj_reponds_to (probj, obj, fwd_sel)) {
 		imp = get_imp (probj, class, fwd_sel);
 		// forward:(SEL) sel :(@va_list) args
-		// args is full param list
-		//FIXME oh for a stack
-		size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
-		size_t      size = pr->pr_argc * parm_size;
-		string_t    args_block = PR_AllocTempBlock (pr, size);
+		// args is full param list as a va_list
+		pr_string_t args_block = 0;
+		int         argc;
+		pr_type_t  *argv;
+		if (pr->globals.stack) {
+			argv = pr->pr_params[0];
+			argc = probj->selector_argc[sel->sel_id];
+			if (argc < 0) {
+				// -ve values indicate varargs functions and is the ones
+				// complement of the number of real parameters before the
+				// ellipsis. However, Ruamoko ISA progs pass va_list through
+				// ... so in the end, a -ve value indicates the total number
+				// of arguments (including va_list) passed to the function.
+				argc = -argc;
+			}
+		} else {
+			size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
+			size_t      size = pr->pr_argc * parm_size;
+			args_block = PR_AllocTempBlock (pr, size);
 
-		int         argc = pr->pr_argc;
-		__auto_type argv = (pr_type_t *) PR_GetString (pr, args_block);
-		// can't memcpy all params because 0 and 1 could be anywhere
-		memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
-		memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
-		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+			argc = pr->pr_argc;
+			argv = (pr_type_t *) PR_GetString (pr, args_block);
+			// can't memcpy all params because 0 and 1 could be anywhere
+			memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
+			memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
+			memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
+		}
 
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 4);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, fwd_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
 		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
 		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
-		PR_PushTempString (pr, args_block);
-		PR_CallFunction (pr, imp);
+		if (args_block) {
+			PR_PushTempString (pr, args_block);
+		}
+		RUA_CALL_END (pr, imp);
 		return;
 	}
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "doesNotRecognize:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 3)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
-	dsprintf (probj->msg, "(%s) %s does not recognize %s",
+	dsprintf (probj->msg, "(%s) %s does not recognize %s\n",
 			  PR_CLS_ISMETA (class) ? "class" : "instance",
 			  PR_GetString (pr, class->name),
 			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
 
-	//FIXME ditto
 	err_sel = sel_register_typed_name (probj, "error:", "", 0);
 	if (obj_reponds_to (probj, obj, err_sel)) {
-		imp = get_imp (probj, class, err_sel);
-		PR_RESET_PARAMS (pr);
+		RUA_CALL_BEGIN (pr, 4)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
-		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		P_PACKED  (pr, pr_va_list_t, 3).count = 0;
+		P_PACKED  (pr, pr_va_list_t, 3).list = 0;
+		RUA_CALL_END (pr, get_imp (probj, class, err_sel))
 		return;
 	}
 
@@ -1327,8 +1467,9 @@ rua___obj_forward (progs_t *pr)
 }
 
 static void
-rua___obj_responds_to (progs_t *pr)
+rua___obj_responds_to (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1337,8 +1478,9 @@ rua___obj_responds_to (progs_t *pr)
 }
 
 static void
-rua_obj_error (progs_t *pr)
+rua_obj_error (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -1346,12 +1488,25 @@ rua_obj_error (progs_t *pr)
 	int         count = pr->pr_argc - 3;
 	pr_type_t **args = &pr->pr_params[3];
 
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 3);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
 	obj_verror (probj, object, code, fmt, count, args);
 }
 
 static void
-rua_obj_verror (progs_t *pr)
+rua_obj_verror (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	int         code = P_INT (pr, 1);
@@ -1367,18 +1522,47 @@ rua_obj_verror (progs_t *pr)
 }
 
 static void
-rua_obj_set_error_handler (progs_t *pr)
+rua_obj_set_error_handler (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
-	//func_t      func = P_INT (pr, 0);
+	//pr_func_t   func = P_INT (pr, 0);
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
-static void
-rua_obj_msg_lookup (progs_t *pr)
+static const char *
+rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 {
+	qfZoneScoped (true);
+	if (!at_param) {
+		return "nil";
+	}
+	probj_t    *probj = _probj;
+	pr_id_t    *obj = &G_STRUCT (pr, pr_id_t, at_param);
+	pr_class_t *class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	//FIXME sel_register_typed_name is really not the way to go about
+	//looking for a selector by name
+	pr_sel_t   *describe_sel=sel_register_typed_name (probj, "describe", "", 0);
+	pr_func_t   imp = get_imp (probj, class, describe_sel);
+
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_POINTER (pr, 0) = at_param;
+	P_POINTER (pr, 1) = PR_SetPointer (pr, describe_sel);
+	PR_ExecuteProgram (pr, imp);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+	//FIXME the lifetime of the string may be a problem
+	return PR_GetString (pr, R_STRING (pr));
+}
+
+static void
+rua_obj_msg_lookup (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1387,8 +1571,9 @@ rua_obj_msg_lookup (progs_t *pr)
 }
 
 static void
-rua_obj_msg_lookup_super (progs_t *pr)
+rua_obj_msg_lookup_super (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1397,23 +1582,24 @@ rua_obj_msg_lookup_super (progs_t *pr)
 }
 
 static void
-rua_obj_msg_sendv (progs_t *pr)
+rua_obj_msg_sendv (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
-	pointer_t   obj = P_POINTER (pr, 0);
+	pr_ptr_t    obj = P_POINTER (pr, 0);
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	pointer_t   sel = P_POINTER (pr, 1);
+	pr_ptr_t    sel = P_POINTER (pr, 1);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp = obj_msg_lookup (probj, receiver, op);
+	pr_func_t   imp = obj_msg_lookup (probj, receiver, op);
 
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 2);
 	int         count = args->count;
 	pr_type_t  *params = G_GPOINTER (pr, args->list);
 
-	if (count < 2 || count > MAX_PARMS) {
+	if (count < 2 || count > PR_MAX_PARAMS) {
 		PR_RunError (pr, "bad args count in obj_msg_sendv: %d", count);
 	}
-	if (pr_boundscheck->int_val) {
+	if (pr_boundscheck) {
 		PR_BoundsCheckSize (pr, args->list, count * pr->pr_param_size);
 	}
 
@@ -1423,45 +1609,51 @@ rua_obj_msg_sendv (progs_t *pr)
 					 PR_GetString (pr, probj->selector_names[op->sel_id]));
 	}
 
-	pr->pr_argc = count;
+	RUA_CALL_BEGIN (pr, count)
 	// skip over the first two parameters because receiver and op will
 	// replace them
 	count -= 2;
 	params += 2 * pr->pr_param_size;
-	PR_RESET_PARAMS (pr);
+
 	P_POINTER (pr, 0) = obj;
 	P_POINTER (pr, 1) = sel;
 	if (count) {
 		memcpy (&P_INT (pr, 2), params,
 				count * sizeof (pr_type_t) * pr->pr_param_size);
 	}
-	PR_CallFunction (pr, imp);
+	RUA_CALL_END (pr, imp)
 }
 
+#define RETAIN_COUNT(obj) PR_PTR (int, &(obj)[-1])
+
 static void
-rua_obj_increment_retaincount (progs_t *pr)
+rua_obj_increment_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = ++(*--obj).integer_var;
+	R_INT (pr) = ++RETAIN_COUNT (obj);
 }
 
 static void
-rua_obj_decrement_retaincount (progs_t *pr)
+rua_obj_decrement_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = --(*--obj).integer_var;
+	R_INT (pr) = --RETAIN_COUNT (obj);
 }
 
 static void
-rua_obj_get_retaincount (progs_t *pr)
+rua_obj_get_retaincount (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = (*--obj).integer_var;
+	R_INT (pr) = RETAIN_COUNT (obj);
 }
 
 static void
-rua_obj_malloc (progs_t *pr)
+rua_obj_malloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1469,8 +1661,9 @@ rua_obj_malloc (progs_t *pr)
 }
 
 static void
-rua_obj_atomic_malloc (progs_t *pr)
+rua_obj_atomic_malloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1478,8 +1671,9 @@ rua_obj_atomic_malloc (progs_t *pr)
 }
 
 static void
-rua_obj_valloc (progs_t *pr)
+rua_obj_valloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1487,8 +1681,9 @@ rua_obj_valloc (progs_t *pr)
 }
 
 static void
-rua_obj_realloc (progs_t *pr)
+rua_obj_realloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 	int         size = P_INT (pr, 1) * sizeof (pr_type_t);
 
@@ -1497,8 +1692,9 @@ rua_obj_realloc (progs_t *pr)
 }
 
 static void
-rua_obj_calloc (progs_t *pr)
+rua_obj_calloc (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
@@ -1507,32 +1703,38 @@ rua_obj_calloc (progs_t *pr)
 }
 
 static void
-rua_obj_free (progs_t *pr)
+rua_obj_free (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	void       *mem = (void*)P_GPOINTER (pr, 0);
 
 	PR_Zone_Free (pr, mem);
 }
 
 static void
-rua_obj_get_uninstalled_dtable (progs_t *pr)
+rua_obj_get_uninstalled_dtable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
 }
 
 static void
-rua_obj_msgSend (progs_t *pr)
+rua_obj_msgSend (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self) {
 		R_INT (pr) = P_INT (pr, 0);
 		return;
+	}
+	if (P_UINT (pr, 0) >= pr->globals_size) {
+		PR_RunError (pr, "invalid self: %x", P_UINT (pr, 0));
 	}
 	if (!_cmd)
 		PR_RunError (pr, "null selector");
@@ -1542,16 +1744,17 @@ rua_obj_msgSend (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
-rua_obj_msgSend_super (progs_t *pr)
+rua_obj_msgSend_super (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	imp = obj_msg_lookup_super (probj, super, _cmd);
 	if (!imp) {
@@ -1560,14 +1763,17 @@ rua_obj_msgSend_super (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 	}
-	pr->pr_params[0] = pr->pr_real_params[0];
+	if (pr->progs->version < PROG_VERSION) {
+		pr->pr_params[0] = pr->pr_real_params[0];
+	}
 	P_POINTER (pr, 0) = super->self;
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
-rua_obj_get_class (progs_t *pr)
+rua_obj_get_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -1579,8 +1785,9 @@ rua_obj_get_class (progs_t *pr)
 }
 
 static void
-rua_obj_lookup_class (progs_t *pr)
+rua_obj_lookup_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 	pr_class_t *class;
@@ -1590,8 +1797,9 @@ rua_obj_lookup_class (progs_t *pr)
 }
 
 static void
-rua_obj_next_class (progs_t *pr)
+rua_obj_next_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -1600,8 +1808,9 @@ rua_obj_next_class (progs_t *pr)
 //====================================================================
 
 static void
-rua_sel_get_name (progs_t *pr)
+rua_sel_get_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
@@ -1612,16 +1821,18 @@ rua_sel_get_name (progs_t *pr)
 }
 
 static void
-rua_sel_get_type (progs_t *pr)
+rua_sel_get_type (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
 
 	R_INT (pr) = sel->sel_types;
 }
 
 static void
-rua_sel_get_uid (progs_t *pr)
+rua_sel_get_uid (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 
@@ -1629,8 +1840,9 @@ rua_sel_get_uid (progs_t *pr)
 }
 
 static void
-rua_sel_register_name (progs_t *pr)
+rua_sel_register_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	const char *name = P_GSTRING (pr, 0);
 
@@ -1638,8 +1850,9 @@ rua_sel_register_name (progs_t *pr)
 }
 
 static void
-rua_sel_is_mapped (progs_t *pr)
+rua_sel_is_mapped (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	// FIXME might correspond to a string
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 0);
@@ -1649,8 +1862,9 @@ rua_sel_is_mapped (progs_t *pr)
 //====================================================================
 
 static void
-rua_class_get_class_method (progs_t *pr)
+rua_class_get_class_method (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1661,8 +1875,9 @@ rua_class_get_class_method (progs_t *pr)
 }
 
 static void
-rua_class_get_instance_method (progs_t *pr)
+rua_class_get_instance_method (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *aSel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1673,16 +1888,17 @@ rua_class_get_instance_method (progs_t *pr)
 #define CLASSOF(x) (&G_STRUCT (pr, pr_class_t, (x)->class_pointer))
 
 static void
-rua_class_pose_as (progs_t *pr)
+rua_class_pose_as (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
-	pointer_t  *subclass;
+	pr_ptr_t   *subclass;
 
 	subclass = &superclass->subclass_list;
 	while (*subclass) {
 		pr_class_t *sub = &P_STRUCT (pr, pr_class_t, *subclass);
-		pointer_t   nextSub = sub->sibling_class;
+		pr_ptr_t    nextSub = sub->sibling_class;
 		if (sub != impostor) {
 			sub->sibling_class = impostor->subclass_list;
 			sub->super_class = P_POINTER (pr, 0);	// impostor
@@ -1708,22 +1924,24 @@ rua_class_pose_as (progs_t *pr)
 static inline pr_id_t *
 class_create_instance (progs_t *pr, pr_class_t *class)
 {
-	int         size = (class->instance_size + 1) * sizeof (pr_type_t);
+	qfZoneScoped (true);
+	int         size = class->instance_size * sizeof (pr_type_t);
 	pr_type_t  *mem;
 	pr_id_t    *id = 0;
 
 	mem = PR_Zone_TagMalloc (pr, size, class->name);
 	if (mem) {
 		memset (mem, 0, size);
-		id = (pr_id_t *) (mem + 1);
+		id = (pr_id_t *) mem;
 		id->class_pointer = PR_SetPointer (pr, class);
 	}
 	return id;
 }
 
 static void
-rua_class_create_instance (progs_t *pr)
+rua_class_create_instance (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_id_t    *id = class_create_instance (pr, class);
 
@@ -1731,73 +1949,83 @@ rua_class_create_instance (progs_t *pr)
 }
 
 static void
-rua_class_get_class_name (progs_t *pr)
+rua_class_get_class_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->name
 										: PR_SetString (pr, "Nil");
 }
 
 static void
-rua_class_get_instance_size (progs_t *pr)
+rua_class_get_instance_size (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->instance_size : 0;
 }
 
 static void
-rua_class_get_meta_class (progs_t *pr)
+rua_class_get_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->class_pointer : 0;
 }
 
 static void
-rua_class_get_super_class (progs_t *pr)
+rua_class_get_super_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->super_class : 0;
 }
 
 static void
-rua_class_get_version (progs_t *pr)
+rua_class_get_version (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->version : -1;
 }
 
 static void
-rua_class_is_class (progs_t *pr)
+rua_class_is_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class);
 }
 
 static void
-rua_class_is_meta_class (progs_t *pr)
+rua_class_is_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISMETA (class);
 }
 
 static void
-rua_class_set_version (progs_t *pr)
+rua_class_set_version (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	if (PR_CLS_ISCLASS (class))
 		class->version = P_INT (pr, 1);
 }
 
 static void
-rua_class_get_gc_object_type (progs_t *pr)
+rua_class_get_gc_object_type (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	R_INT (pr) = PR_CLS_ISCLASS (class) ? class->gc_object_type : 0;
 }
 
 static void
-rua_class_ivar_set_gcinvisible (progs_t *pr)
+rua_class_ivar_set_gcinvisible (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	//probj_t    *probj = pr->pr_objective_resources;
 	//pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	//const char *ivarname = P_GSTRING (pr, 1);
@@ -1809,16 +2037,18 @@ rua_class_ivar_set_gcinvisible (progs_t *pr)
 //====================================================================
 
 static void
-rua_method_get_imp (progs_t *pr)
+rua_method_get_imp (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
 	R_INT (pr) = method ? method->method_imp : 0;
 }
 
 static void
-rua_get_imp (progs_t *pr)
+rua_get_imp (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
 	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
@@ -1829,16 +2059,18 @@ rua_get_imp (progs_t *pr)
 //====================================================================
 
 static void
-rua_object_dispose (progs_t *pr)
+rua_object_dispose (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_type_t  *mem = (pr_type_t *) object;
-	PR_Zone_Free (pr, mem - 1);
+	PR_Zone_Free (pr, mem);
 }
 
 static void
-rua_object_copy (progs_t *pr)
+rua_object_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 	pr_id_t    *id;
@@ -1853,8 +2085,9 @@ rua_object_copy (progs_t *pr)
 }
 
 static void
-rua_object_get_class (progs_t *pr)
+rua_object_get_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -1873,8 +2106,9 @@ rua_object_get_class (progs_t *pr)
 }
 
 static void
-rua_object_get_super_class (progs_t *pr)
+rua_object_get_super_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -1893,8 +2127,9 @@ rua_object_get_super_class (progs_t *pr)
 }
 
 static void
-rua_object_get_meta_class (progs_t *pr)
+rua_object_get_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 	pr_class_t *class;
 
@@ -1913,8 +2148,9 @@ rua_object_get_meta_class (progs_t *pr)
 }
 
 static void
-rua_object_get_class_name (progs_t *pr)
+rua_object_get_class_name (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -1922,8 +2158,9 @@ rua_object_get_class_name (progs_t *pr)
 }
 
 static void
-rua_object_is_class (progs_t *pr)
+rua_object_is_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
 	if (object) {
@@ -1934,8 +2171,9 @@ rua_object_is_class (progs_t *pr)
 }
 
 static void
-rua_object_is_instance (progs_t *pr)
+rua_object_is_instance (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
@@ -1943,8 +2181,9 @@ rua_object_is_instance (progs_t *pr)
 }
 
 static void
-rua_object_is_meta_class (progs_t *pr)
+rua_object_is_meta_class (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
 
 	if (object) {
@@ -1957,31 +2196,45 @@ rua_object_is_meta_class (progs_t *pr)
 //====================================================================
 
 static void
-rua__i_Object__hash (progs_t *pr)
+rua__i_Object__hash (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = P_INT (pr, 0);
 }
 
 static void
-rua__i_Object_error_error_ (progs_t *pr)
+rua__i_Object_error_error_ (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	const char *fmt = P_GSTRING (pr, 2);
-	dstring_t  *dstr = dstring_new ();
 	int         count = pr->pr_argc - 3;
 	pr_type_t **args = &pr->pr_params[3];
 
-	dsprintf (dstr, "error: %s (%s)\n%s",
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, 3);
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
+	dsprintf (probj->msg, "error: %s (%s)\n%s",
 			  PR_GetString (pr, object_get_class_name (probj, self)),
 			  object_is_instance (probj, self) ? "instance" : "class", fmt);
-	obj_verror (probj, self, 0, dstr->str, count, args);
+	obj_verror (probj, self, 0, probj->msg->str, count, args);
 }
 
 static int
 obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 								 pr_protocol_t *protocol)
 {
+	qfZoneScoped (true);
 	progs_t    *pr = probj->pr;
 
 	pr_protocol_list_t *proto_list;
@@ -2016,8 +2269,9 @@ obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 }
 
 static void
-rua__c_Object__conformsToProtocol_ (progs_t *pr)
+rua__c_Object__conformsToProtocol_ (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	// class points to _OBJ_CLASS_foo, and class->class_pointer points to
 	// _OBJ_METACLASS_foo
@@ -2063,8 +2317,9 @@ conforms:
 }
 
 static void
-rua_PR_FindGlobal (progs_t *pr)
+rua_PR_FindGlobal (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	pr_def_t   *def;
 
@@ -2076,86 +2331,90 @@ rua_PR_FindGlobal (progs_t *pr)
 
 //====================================================================
 
+#define bi(x,np,params...) {#x, rua_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t obj_methods [] = {
-	{"__obj_exec_class",			rua___obj_exec_class,			-1},
-	{"__obj_forward",				rua___obj_forward,				-1},
-	{"__obj_responds_to",			rua___obj_responds_to,			-1},
+	bi(__obj_exec_class,               1, p(ptr)),
+	bi(__obj_forward,                  -3, p(ptr), p(ptr)),
+	bi(__obj_responds_to,              2, p(ptr), p(ptr)),
 
-	{"obj_error",					rua_obj_error,					-1},
-	{"obj_verror",					rua_obj_verror,					-1},
-	{"obj_set_error_handler",		rua_obj_set_error_handler,		-1},
-	{"obj_msg_lookup",				rua_obj_msg_lookup,				-1},
-	{"obj_msg_lookup_super",		rua_obj_msg_lookup_super,		-1},
-	{"obj_msg_sendv",				rua_obj_msg_sendv,				-1},
-	{"obj_increment_retaincount",	rua_obj_increment_retaincount,	-1},
-	{"obj_decrement_retaincount",	rua_obj_decrement_retaincount,	-1},
-	{"obj_get_retaincount",			rua_obj_get_retaincount,		-1},
-	{"obj_malloc",					rua_obj_malloc,					-1},
-	{"obj_atomic_malloc",			rua_obj_atomic_malloc,			-1},
-	{"obj_valloc",					rua_obj_valloc,					-1},
-	{"obj_realloc",					rua_obj_realloc,				-1},
-	{"obj_calloc",					rua_obj_calloc,					-1},
-	{"obj_free",					rua_obj_free,					-1},
-	{"obj_get_uninstalled_dtable",	rua_obj_get_uninstalled_dtable,	-1},
-	{"obj_msgSend",					rua_obj_msgSend,				-1},
-	{"obj_msgSend_super",			rua_obj_msgSend_super,			-1},
+	bi(obj_error,                      -4, p(ptr), p(int), p(string)),
+	bi(obj_verror,                     4, p(ptr), p(int), p(string), P(1, 2)),
+	bi(obj_set_error_handler,          1, p(func)),
+	bi(obj_msg_lookup,                 2, p(ptr), p(ptr)),
+	bi(obj_msg_lookup_super,           2, p(ptr), p(ptr)),
+	bi(obj_msg_sendv,                  3, p(ptr), p(ptr), P(1, 2)),
+	bi(obj_increment_retaincount,      1, p(ptr)),
+	bi(obj_decrement_retaincount,      1, p(ptr)),
+	bi(obj_get_retaincount,            1, p(ptr)),
+	bi(obj_malloc,                     1, p(int)),
+	bi(obj_atomic_malloc,              1, p(int)),
+	bi(obj_valloc,                     1, p(int)),
+	bi(obj_realloc,                    2, p(ptr), p(int)),
+	bi(obj_calloc,                     2, p(int), p(int)),
+	bi(obj_free,                       1, p(ptr)),
+	bi(obj_get_uninstalled_dtable,     0),
+	bi(obj_msgSend,                    2, p(ptr), p(ptr)),//magic
+	bi(obj_msgSend_super,              2, p(ptr), p(ptr)),//magic
 
-	{"obj_get_class",				rua_obj_get_class,				-1},
-	{"obj_lookup_class",			rua_obj_lookup_class,			-1},
-	{"obj_next_class",				rua_obj_next_class,				-1},
+	bi(obj_get_class,                  1, p(string)),
+	bi(obj_lookup_class,               1, p(string)),
+	bi(obj_next_class,                 1, p(ptr)),
 
-	{"sel_get_name",				rua_sel_get_name,				-1},
-	{"sel_get_type",				rua_sel_get_type,				-1},
-	{"sel_get_uid",					rua_sel_get_uid,				-1},
-	{"sel_register_name",			rua_sel_register_name,			-1},
-	{"sel_is_mapped",				rua_sel_is_mapped,				-1},
+	bi(sel_get_name,                   1, p(ptr)),
+	bi(sel_get_type,                   1, p(ptr)),
+	bi(sel_get_uid,                    1, p(string)),
+	bi(sel_register_name,              1, p(string)),
+	bi(sel_is_mapped,                  1, p(ptr)),
 
-	{"class_get_class_method",		rua_class_get_class_method,		-1},
-	{"class_get_instance_method",	rua_class_get_instance_method,	-1},
-	{"class_pose_as",				rua_class_pose_as,				-1},
-	{"class_create_instance",		rua_class_create_instance,		-1},
-	{"class_get_class_name",		rua_class_get_class_name,		-1},
-	{"class_get_instance_size",		rua_class_get_instance_size,	-1},
-	{"class_get_meta_class",		rua_class_get_meta_class,		-1},
-	{"class_get_super_class",		rua_class_get_super_class,		-1},
-	{"class_get_version",			rua_class_get_version,			-1},
-	{"class_is_class",				rua_class_is_class,				-1},
-	{"class_is_meta_class",			rua_class_is_meta_class,		-1},
-	{"class_set_version",			rua_class_set_version,			-1},
-	{"class_get_gc_object_type",	rua_class_get_gc_object_type,	-1},
-	{"class_ivar_set_gcinvisible",	rua_class_ivar_set_gcinvisible,	-1},
+	bi(class_get_class_method,         2, p(ptr), p(ptr)),
+	bi(class_get_instance_method,      2, p(ptr), p(ptr)),
+	bi(class_pose_as,                  2, p(ptr), p(ptr)),
+	bi(class_create_instance,          1, p(ptr)),
+	bi(class_get_class_name,           1, p(ptr)),
+	bi(class_get_instance_size,        1, p(ptr)),
+	bi(class_get_meta_class,           1, p(ptr)),
+	bi(class_get_super_class,          1, p(ptr)),
+	bi(class_get_version,              1, p(ptr)),
+	bi(class_is_class,                 1, p(ptr)),
+	bi(class_is_meta_class,            1, p(ptr)),
+	bi(class_set_version,              2, p(ptr), p(int)),
+	bi(class_get_gc_object_type,       1, p(ptr)),
+	bi(class_ivar_set_gcinvisible,     3, p(ptr), p(string), p(int)),
 
-	{"method_get_imp",				rua_method_get_imp,				-1},
-	{"get_imp",						rua_get_imp,					-1},
+	bi(method_get_imp,                 1, p(ptr)),
+	bi(get_imp,                        1, p(ptr), p(ptr)),
 
-	{"object_copy",					rua_object_copy,				-1},
-	{"object_dispose",				rua_object_dispose,				-1},
-	{"object_get_class",			rua_object_get_class,			-1},
-	{"object_get_class_name",		rua_object_get_class_name,		-1},
-	{"object_get_meta_class",		rua_object_get_meta_class,		-1},
-	{"object_get_super_class",		rua_object_get_super_class,		-1},
-	{"object_is_class",				rua_object_is_class,			-1},
-	{"object_is_instance",			rua_object_is_instance,			-1},
-	{"object_is_meta_class",		rua_object_is_meta_class,		-1},
+	bi(object_copy,                    1, p(ptr)),
+	bi(object_dispose,                 1, p(ptr)),
+	bi(object_get_class,               1, p(ptr)),
+	bi(object_get_class_name,          1, p(ptr)),
+	bi(object_get_meta_class,          1, p(ptr)),
+	bi(object_get_super_class,         1, p(ptr)),
+	bi(object_is_class,                1, p(ptr)),
+	bi(object_is_instance,             1, p(ptr)),
+	bi(object_is_meta_class,           1, p(ptr)),
 
-	{"_i_Object__hash",				rua__i_Object__hash,			-1},
-	{"_i_Object_error_error_",		rua__i_Object_error_error_,		-1},
-	{"_c_Object__conformsToProtocol_", rua__c_Object__conformsToProtocol_, -1},
+	bi(_i_Object__hash,                2, p(ptr), p(ptr)),
+	bi(_i_Object_error_error_,         -4, p(ptr), p(ptr), p(string)),
+	bi(_c_Object__conformsToProtocol_, 3, p(ptr), p(ptr), p(ptr)),
 
-	{"PR_FindGlobal",				rua_PR_FindGlobal,				-1},//FIXME
+	bi(PR_FindGlobal,                  1, p(string)),//FIXME
 	{0}
 };
 
 static int
 rua_init_finish (progs_t *pr)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_class_t **class_list, **class;
 
 	class_list = (pr_class_t **) Hash_GetList (probj->classes);
 	if (*class_list) {
 		pr_class_t *object_class;
-		pointer_t   object_ptr;
+		pr_ptr_t    object_ptr;
 
 		object_class = Hash_Find (probj->classes, "Object");
 		if (object_class && !object_class->super_class)
@@ -2173,6 +2432,7 @@ rua_init_finish (progs_t *pr)
 static int
 rua_obj_init_runtime (progs_t *pr)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_def_t   *def;
 	dfunction_t *obj_forward;
@@ -2192,6 +2452,7 @@ rua_obj_init_runtime (progs_t *pr)
 static void
 rua_obj_cleanup (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	unsigned    i;
 
 	__auto_type probj = (probj_t *) data;
@@ -2199,8 +2460,10 @@ rua_obj_cleanup (progs_t *pr, void *data)
 
 	Hash_FlushTable (probj->selector_hash);
 	probj->selector_index = 0;
+	probj->available_selectors = 0;
+	probj->selector_block = 0;
 	for (i = 0; i < probj->selector_index_max; i++) {
-		obj_list_free (probj->selector_sels[i]);
+		obj_list_free (probj, probj->selector_sels[i]);
 		probj->selector_sels[i] = 0;
 		probj->selector_names[i] = 0;
 	}
@@ -2221,38 +2484,73 @@ rua_obj_cleanup (progs_t *pr, void *data)
 	probj->class_tree_list = 0;
 }
 
+static void
+rua_obj_destroy (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	probj_t    *probj = _res;
+
+	dstring_delete (probj->msg);
+	Hash_DelTable (probj->selector_hash);
+	Hash_DelTable (probj->classes);
+	Hash_DelTable (probj->protocols);
+	Hash_DelTable (probj->load_methods);
+
+	free (probj->selector_sels);
+	free (probj->selector_names);
+	free (probj->selector_argc);
+
+	for (size_t i = 0; i < probj->obj_list_sets.size; i++) {
+		free (probj->obj_list_sets.a[i]);
+	}
+	DARRAY_CLEAR (&probj->obj_list_sets);
+
+	for (size_t i = 0; i < probj->class_tree_sets.size; i++) {
+		free (probj->class_tree_sets.a[i]);
+	}
+	DARRAY_CLEAR (&probj->class_tree_sets);
+
+	PR_RESDELMAP (probj->dtables);
+
+	free (probj);
+}
+
 void
 RUA_Obj_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = calloc (1, sizeof (*probj));
 
 	probj->pr = pr;
 	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj,
-										  pr->hashlink_freelist);
-	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj,
-									pr->hashlink_freelist);
+										  pr->hashctx);
+	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj, pr->hashctx);
 	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj,
-									  pr->hashlink_freelist);
-	probj->load_methods = Hash_NewTable (1021, 0, 0, probj,
-										 pr->hashlink_freelist);
-	probj->msg = dstring_newstr();
+									  pr->hashctx);
+	probj->load_methods = Hash_NewTable (1021, 0, 0, probj, pr->hashctx);
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
+	probj->msg = dstring_newstr();
+	DARRAY_INIT (&probj->obj_list_sets, 32);
+	DARRAY_INIT (&probj->class_tree_sets, 32);
 
-	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup);
+	PR_Sprintf_SetAtHandler (pr, rua_at_handler, probj);
 
-	PR_RegisterBuiltins (pr, obj_methods);
+	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup,
+						   rua_obj_destroy);
+	PR_RegisterBuiltins (pr, obj_methods, probj);
 
 	PR_AddLoadFunc (pr, rua_obj_init_runtime);
 }
 
-func_t
-RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
+pr_func_t
+RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 {
+	qfZoneScoped (true);
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);
 	pr_sel_t   *_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self)
 		return 0;
@@ -2268,15 +2566,17 @@ RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
 }
 
 int
-RUA_obj_increment_retaincount (progs_t *pr)
+RUA_obj_increment_retaincount (progs_t *pr, void *data)
 {
-	rua_obj_increment_retaincount (pr);
+	qfZoneScoped (true);
+	rua_obj_increment_retaincount (pr, data);
 	return R_INT (pr);
 }
 
 int
-RUA_obj_decrement_retaincount (progs_t *pr)
+RUA_obj_decrement_retaincount (progs_t *pr, void *data)
 {
-	rua_obj_decrement_retaincount (pr);
+	qfZoneScoped (true);
+	rua_obj_decrement_retaincount (pr, data);
 	return R_INT (pr);
 }

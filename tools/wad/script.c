@@ -52,7 +52,7 @@
 #include "wad.h"
 
 static dstring_t destfile = {&dstring_default_mem};
-static qboolean savesingle = false;
+static bool savesingle = false;
 static wad_t *wadfile;
 dstring_t  *lumpname;
 tex_t      *image;
@@ -159,7 +159,7 @@ write_file (void)
 	QFile      *file;
 	const char *name;
 
-	name = va (0, "%s/%s.lmp", destfile.str, lumpname->str);
+	name = va ("%s/%s.lmp", destfile.str, lumpname->str);
 	if (!(file = Qopen (name, "wb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
 	Qwrite (file, lumpbuffer, lump_p - lumpbuffer);

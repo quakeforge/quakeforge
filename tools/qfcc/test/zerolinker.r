@@ -1,3 +1,4 @@
+#pragma bug die
 #include <types.h>
 
 // can't link against libr.a (may not be built)

@@ -38,7 +38,9 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
@@ -60,10 +62,12 @@ typedef struct fmt_item_s {
 	int         precision;
 	union {
 		const char *string_var;
-		int         integer_var;
-		unsigned    uinteger_var;
+		pr_int_t    int_var;
+		pr_uint_t   uint_var;
 		float       float_var;
 		double      double_var;
+		pr_long_t   long_var;
+		pr_ulong_t  ulong_var;
 	}           data;
 	struct fmt_item_s *next;
 } fmt_item_t;
@@ -85,8 +89,11 @@ typedef struct prstr_resources_s {
 	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int         num_strings;
+	struct DARRAY_TYPE (fmt_item_t *) fmt_item_blocks;
 	fmt_item_t *free_fmt_items;
 	dstring_t  *print_str;
+	prstr_at_handler_t at_handler;
+	void       *at_handler_data;
 } prstr_resources_t;
 
 typedef enum {
@@ -164,7 +171,7 @@ free_string_ref (prstr_resources_t *res, strref_t *sr)
 	res->free_string_refs = sr;
 }
 
-static __attribute__((pure)) string_t
+static __attribute__((pure)) pr_string_t
 string_index (prstr_resources_t *res, strref_t *sr)
 {
 	long        o = (long) (sr - res->static_strings);
@@ -226,8 +233,30 @@ pr_strings_clear (progs_t *pr, void *data)
 		res->rs_slot = rs;
 	}
 
-	pr->pr_string_resources = res;
 	pr->pr_xtstr = 0;
+}
+
+static void
+pr_strings_destroy (progs_t *pr, void *_res)
+{
+	__auto_type res = (prstr_resources_t *) _res;
+	dstring_delete (res->print_str);
+	Hash_DelTable (res->strref_hash);
+	free (res->static_strings);
+	res->static_strings = 0;
+
+	for (unsigned i = 0; i < res->dyn_str_size; i++) {
+		free (res->string_map[i]);
+	}
+	free (res->string_map);
+
+	for (size_t i = 0; i < res->fmt_item_blocks.size; i++) {
+		free (res->fmt_item_blocks.a[i]);
+	}
+	DARRAY_CLEAR (&res->fmt_item_blocks);
+
+	pr->pr_string_resources = 0;
+	free (res);
 }
 
 VISIBLE int
@@ -235,7 +264,7 @@ PR_LoadStrings (progs_t *pr)
 {
 	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");
 
-	char   *end = pr->pr_strings + pr->progs->numstrings;
+	char   *end = pr->pr_strings + pr->progs->strings.count;
 	char   *str = pr->pr_strings;
 	int		count = 0;
 
@@ -243,12 +272,15 @@ PR_LoadStrings (progs_t *pr)
 
 	while (str < end) {
 		count++;
-		if (*str == '@' && pr->progs->version == PROG_VERSION) {
+		if (*str == '@' && pr->progs->version == PROG_V6P_VERSION) {
 			if (!strcmp (str, "@float_promoted@")) {
 				pr->float_promoted = 1;
 			}
 		}
 		str += strlen (str) + 1;
+	}
+	if (pr->progs->version == PROG_VERSION) {
+		pr->float_promoted = 1;
 	}
 
 	res->ds_mem.alloc = pr_strings_alloc;
@@ -256,15 +288,7 @@ PR_LoadStrings (progs_t *pr)
 	res->ds_mem.realloc = pr_strings_realloc;
 	res->ds_mem.data = pr;
 
-	if (res->strref_hash) {
-		Hash_FlushTable (res->strref_hash);
-	} else {
-		res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
-										  res, pr->hashlink_freelist);
-		res->string_map = 0;
-		res->free_string_refs = 0;
-		res->dyn_str_size = 0;
-	}
+	Hash_FlushTable (res->strref_hash);
 
 	if (res->static_strings)
 		free (res->static_strings);
@@ -307,7 +331,7 @@ requeue_strref (prstr_resources_t *res, strref_t *sr)
 }
 
 static inline strref_t *
-get_strref (prstr_resources_t *res, string_t num)
+get_strref (prstr_resources_t *res, pr_string_t num)
 {
 	if (num < 0) {
 		strref_t   *ref;
@@ -326,7 +350,7 @@ get_strref (prstr_resources_t *res, string_t num)
 }
 
 static inline __attribute__((pure)) const char *
-get_string (progs_t *pr, string_t num)
+get_string (progs_t *pr, pr_string_t num)
 {
 	__auto_type res = pr->pr_string_resources;
 	if (num < 0) {
@@ -353,8 +377,8 @@ get_string (progs_t *pr, string_t num)
 	}
 }
 
-VISIBLE qboolean
-PR_StringValid (progs_t *pr, string_t num)
+VISIBLE bool
+PR_StringValid (progs_t *pr, pr_string_t num)
 {
 	if (num >= 0) {
 		return num < pr->pr_stringsize;
@@ -362,8 +386,8 @@ PR_StringValid (progs_t *pr, string_t num)
 	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
-VISIBLE qboolean
-PR_StringMutable (progs_t *pr, string_t num)
+VISIBLE bool
+PR_StringMutable (progs_t *pr, pr_string_t num)
 {
 	strref_t   *sr;
 	if (num >= 0) {
@@ -374,7 +398,7 @@ PR_StringMutable (progs_t *pr, string_t num)
 }
 
 VISIBLE const char *
-PR_GetString (progs_t *pr, string_t num)
+PR_GetString (progs_t *pr, pr_string_t num)
 {
 	const char *str;
 
@@ -385,7 +409,7 @@ PR_GetString (progs_t *pr, string_t num)
 }
 
 VISIBLE dstring_t *
-PR_GetMutableString (progs_t *pr, string_t num)
+PR_GetMutableString (progs_t *pr, pr_string_t num)
 {
 	strref_t   *ref = get_strref (pr->pr_string_resources, num);
 	if (ref) {
@@ -422,7 +446,7 @@ pr_strdup (progs_t *pr, const char *s)
 	return new;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -441,7 +465,7 @@ PR_SetString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_FindString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -457,7 +481,7 @@ PR_FindString (progs_t *pr, const char *s)
 	return 0;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -497,7 +521,7 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-static inline string_t
+static inline pr_string_t
 pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 {
 	strref_t   *sr;
@@ -510,7 +534,7 @@ pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 	return string_index (res, sr);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_CatStrings (progs_t *pr, const char *a, const char *b)
 {
 	size_t      lena;
@@ -526,7 +550,7 @@ PR_CatStrings (progs_t *pr, const char *a, const char *b)
 	return pr_settempstring (pr, pr->pr_string_resources, c);
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetTempString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -542,7 +566,7 @@ PR_SetTempString (progs_t *pr, const char *s)
 	return pr_settempstring (pr, res, pr_strdup (pr, s));
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_AllocTempBlock (progs_t *pr, size_t size)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -550,7 +574,7 @@ PR_AllocTempBlock (progs_t *pr, size_t size)
 }
 
 VISIBLE void
-PR_PushTempString (progs_t *pr, string_t num)
+PR_PushTempString (progs_t *pr, pr_string_t num)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *ref = get_strref (res, num);
@@ -570,7 +594,7 @@ PR_PushTempString (progs_t *pr, string_t num)
 	PR_Error (pr, "attempt to push stale temp string");
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_SetDynamicString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -590,7 +614,7 @@ PR_SetDynamicString (progs_t *pr, const char *s)
 }
 
 VISIBLE void
-PR_MakeTempString (progs_t *pr, string_t str)
+PR_MakeTempString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);
@@ -611,7 +635,7 @@ PR_MakeTempString (progs_t *pr, string_t str)
 	pr->pr_xtstr = sr;
 }
 
-VISIBLE string_t
+VISIBLE pr_string_t
 PR_NewMutableString (progs_t *pr)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -622,7 +646,7 @@ PR_NewMutableString (progs_t *pr)
 }
 
 VISIBLE void
-PR_HoldString (progs_t *pr, string_t str)
+PR_HoldString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);
@@ -652,7 +676,7 @@ PR_HoldString (progs_t *pr, string_t str)
 }
 
 VISIBLE void
-PR_FreeString (progs_t *pr, string_t str)
+PR_FreeString (progs_t *pr, pr_string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr = get_strref (res, str);
@@ -746,7 +770,7 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 	fmt_item_t		*current = formatting;
 
 	while (current) {
-		qboolean	doPrecision, doWidth;
+		bool        doPrecision, doWidth;
 
 		doPrecision = -1 != current->precision;
 		doWidth = 0 != (current->flags & FMT_WIDTH);
@@ -767,23 +791,35 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 				break;
 			case 'c':
 				dstring_appendstr (tmp, "c");
-				PRINT (integer);
+				PRINT (int);
 				break;
 			case 'i':
 			case 'd':
-				dstring_appendstr (tmp, "d");
-				PRINT (integer);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRId64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRId32);
+					PRINT (uint);
+				}
 				break;
 			case 'x':
-				dstring_appendstr (tmp, "x");
-				PRINT (integer);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRIx64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRIx32);
+					PRINT (uint);
+				}
 				break;
 			case 'u':
-				if (current->flags & FMT_HEX)
-					dstring_appendstr (tmp, "x");
-				else
-					dstring_appendstr (tmp, "u");
-				PRINT (uinteger);
+				if (current->flags & FMT_LONG) {
+					dstring_appendstr (tmp, PRIu64);
+					PRINT (ulong);
+				} else {
+					dstring_appendstr (tmp, PRIu32);
+					PRINT (uint);
+				}
 				break;
 			case 'f':
 				dstring_appendstr (tmp, "f");
@@ -819,6 +855,7 @@ new_fmt_item (prstr_resources_t *res)
 		for (i = 0; i < 15; i++)
 			res->free_fmt_items[i].next = res->free_fmt_items + i + 1;
 		res->free_fmt_items[i].next = 0;
+		DARRAY_APPEND (&res->fmt_item_blocks, res->free_fmt_items);
 	}
 
 	fi = res->free_fmt_items;
@@ -848,6 +885,8 @@ typedef struct fmt_state_s {
 	fmt_item_t *fmt_items;
 	fmt_item_t **fi;
 	int         fmt_count;
+	prstr_at_handler_t at_handler;
+	void       *at_handler_data;
 } fmt_state_t;
 
 static inline void
@@ -858,9 +897,7 @@ fmt_append_item (fmt_state_t *state)
 }
 
 #undef P_var
-#define P_var(p,n,t) (state->args[n]->t##_var)
-#undef P_DOUBLE
-#define P_DOUBLE(p,n) (*(double *) (state->args[n]))
+#define P_var(p,n,t) PR_PTR (t, state->args[n])
 
 /**	State machine for PR_Sprintf
  *
@@ -1019,6 +1056,13 @@ static void
 fmt_state_modifiers (fmt_state_t *state)
 {
 	// no modifiers supported
+	if (state->c[0] == 'l'
+		&& (state->c[1] == 'i' || state->c[1] == 'd' || state->c[1] == 'x'
+			|| state->c[1] == 'u'
+			|| state->c[1] == 'v' || state->c[1] == 'q')) {
+		(*state->fi)->flags |= FMT_LONG;
+		state->c++;
+	}
 	state->state = fmt_state_conversion;
 }
 
@@ -1027,17 +1071,36 @@ fmt_state_conversion (fmt_state_t *state)
 {
 	progs_t    *pr = state->pr;
 	char        conv;
+	pr_ptr_t    at_param;
 	switch ((conv = *state->c++)) {
 		case '@':
 			// object
+			at_param = P_UINT (pr, state->fmt_count);
+			if (state->at_handler) {
+				const char *at_str = state->at_handler (pr, at_param,
+														state->at_handler_data);
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = at_str;
+			} else {
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = "[";
+				fmt_append_item (state);
+
+				(*state->fi)->flags |= FMT_ALTFORM;
+				(*state->fi)->type = 'x';
+				(*state->fi)->data.uint_var = at_param;
+				fmt_append_item (state);
+
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = "]";
+			}
 			state->fmt_count++;
 			fmt_append_item (state);
 			break;
 		case 'e':
 			// entity
 			(*state->fi)->type = 'i';
-			(*state->fi)->data.integer_var =
-				P_EDICTNUM (pr, state->fmt_count);
+			(*state->fi)->data.int_var = P_EDICTNUM (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1045,9 +1108,13 @@ fmt_state_conversion (fmt_state_t *state)
 		case 'i':
 		case 'd':
 		case 'c':
-			// integer
+			// int
 			(*state->fi)->type = conv;
-			(*state->fi)->data.integer_var = P_INT (pr, state->fmt_count);
+			if ((*state->fi)->flags & FMT_LONG) {
+				(*state->fi)->data.long_var = P_LONG (pr, state->fmt_count);
+			} else {
+				(*state->fi)->data.int_var = P_INT (pr, state->fmt_count);
+			}
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1074,7 +1141,7 @@ fmt_state_conversion (fmt_state_t *state)
 			// pointer
 			(*state->fi)->flags |= FMT_ALTFORM;
 			(*state->fi)->type = 'x';
-			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+			(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1117,8 +1184,13 @@ fmt_state_conversion (fmt_state_t *state)
 					(*state->fi)->precision = precision;
 					(*state->fi)->minFieldWidth = minWidth;
 					(*state->fi)->type = 'g';
-					(*state->fi)->data.float_var =
-						P_VECTOR (pr, state->fmt_count)[i];
+					if (flags & FMT_LONG) {
+						(*state->fi)->data.double_var
+							= (&P_var (pr, state->fmt_count, double))[i];
+					} else {
+						(*state->fi)->data.float_var =
+							P_VECTOR (pr, state->fmt_count)[i];
+					}
 
 					fmt_append_item (state);
 				}
@@ -1130,10 +1202,15 @@ fmt_state_conversion (fmt_state_t *state)
 			state->fmt_count++;
 			fmt_append_item (state);
 			break;
+		case 'u':
 		case 'x':
-			// integer, hex notation
+			// int, unsigned or hex notation
 			(*state->fi)->type = conv;
-			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+			if ((*state->fi)->flags & FMT_LONG) {
+				(*state->fi)->data.ulong_var = P_ULONG (pr, state->fmt_count);
+			} else {
+				(*state->fi)->data.uint_var = P_UINT (pr, state->fmt_count);
+			}
 
 			state->fmt_count++;
 			fmt_append_item (state);
@@ -1171,6 +1248,15 @@ fmt_state_format (fmt_state_t *state)
 ///@}
 
 VISIBLE void
+PR_Sprintf_SetAtHandler (progs_t *pr, prstr_at_handler_t at_handler,
+						 void *data)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	res->at_handler = at_handler;
+	res->at_handler_data = data;
+}
+
+VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {
@@ -1184,6 +1270,8 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	*state.fi = new_fmt_item (res);
 	state.c = format;
 	state.state = fmt_state_format;
+	state.at_handler = res->at_handler;
+	state.at_handler_data = res->at_handler_data;
 
 	if (!name)
 		name = "PR_Sprintf";
@@ -1225,6 +1313,11 @@ PR_Strings_Init (progs_t *pr)
 	prstr_resources_t *res = calloc (1, sizeof (*res));
 	res->pr = pr;
 	res->print_str = dstring_new ();
+	res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
+									  res, pr->hashctx);
+	DARRAY_INIT (&res->fmt_item_blocks, 8);
 
-	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
+	PR_Resources_Register (pr, "Strings", res, pr_strings_clear,
+						   pr_strings_destroy);
+	pr->pr_string_resources = res;
 }

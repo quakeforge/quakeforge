@@ -1,6 +1,0 @@
-#!/bin/sh -e
-
-update-alternatives --remove quakeforge-audio-default /usr/lib/quakeforge/plugins/snd_output_oss.so
-
-#DEBHELPER#
-exit 0

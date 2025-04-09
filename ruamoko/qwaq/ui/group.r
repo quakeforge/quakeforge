@@ -144,7 +144,7 @@ trySetFocus (Group *self, int viewIndex)
 
 -selectNext
 {
-	for (int i = focused + 1; i < [views count]; i++) {
+	for (unsigned i = focused + 1; i < [views count]; i++) {
 		if (trySetFocus (self, i)) {
 			return self;
 		}

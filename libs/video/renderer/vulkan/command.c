@@ -3,7 +3,6 @@
 
 	Common Vulkan video driver functions
 
-	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2019      Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
@@ -28,40 +27,97 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#include "QF/cvar.h"
-#include "QF/dstring.h"
-#include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vid.h"
-#include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/buffer.h"
-#include "QF/Vulkan/image.h"
-#include "QF/Vulkan/renderpass.h"
-#include "QF/Vulkan/pipeline.h"
+#include "QF/qtypes.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
-#include "QF/Vulkan/instance.h"
 
-#include "compat.h"
-#include "d_iface.h"
-#include "r_internal.h"
-#include "vid_vulkan.h"
+qfv_cmdpoolmgr_t *
+QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device,
+						 const char *name)
+{
+	*manager = (qfv_cmdpoolmgr_t) {
+		.primary = DARRAY_STATIC_INIT (16),
+		.secondary = DARRAY_STATIC_INIT (16),
+		.device = device,
+	};
+	auto dfunc = device->funcs;
 
-#include "util.h"
+	VkCommandPoolCreateInfo poolCInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+		.queueFamilyIndex = device->queue.queueFamily,
+	};
+	dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0, &manager->pool);
+	return manager;
+}
+
+qfv_cmdpoolmgr_t *
+QFV_CmdPoolManager_New (qfv_device_t *device, const char *name)
+{
+	return QFV_CmdPoolManager_Init (malloc (sizeof (qfv_cmdpoolmgr_t)), device,
+									name);
+}
+
+void
+QFV_CmdPoolManager_Shutdown (qfv_cmdpoolmgr_t *manager)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+	dfunc->vkDestroyCommandPool (device->dev, manager->pool, 0);
+	DARRAY_CLEAR (&manager->primary);
+	DARRAY_CLEAR (&manager->secondary);
+}
+
+void
+QFV_CmdPoolManager_Delete (qfv_cmdpoolmgr_t *manager)
+{
+	QFV_CmdPoolManager_Shutdown (manager);
+	free (manager);
+}
+
+void
+QFV_CmdPoolManager_Reset (qfv_cmdpoolmgr_t *manager)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+	dfunc->vkResetCommandPool (device->dev, manager->pool, 0);
+	manager->active_primary = 0;
+	manager->active_secondary = 0;
+}
+
+VkCommandBuffer
+QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager, bool secondary)
+{
+	auto device = manager->device;
+	auto dfunc = device->funcs;
+
+	if (secondary) {
+		if (manager->active_secondary < manager->secondary.size) {
+			return manager->secondary.a[manager->active_secondary++];
+		}
+	} else {
+		if (manager->active_primary < manager->primary.size) {
+			return manager->primary.a[manager->active_primary++];
+		}
+	}
+	VkCommandBufferAllocateInfo cinfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.commandPool = manager->pool,
+		.level = secondary ? VK_COMMAND_BUFFER_LEVEL_SECONDARY
+						   : VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+	};
+	VkCommandBuffer cmd;
+	dfunc->vkAllocateCommandBuffers (device->dev, &cinfo, &cmd);
+	if (secondary) {
+		DARRAY_APPEND (&manager->secondary, cmd);
+		manager->active_secondary++;
+	} else {
+		DARRAY_APPEND (&manager->primary, cmd);
+		manager->active_primary++;
+	}
+	return cmd;
+}
 
 VkCommandPool
 QFV_CreateCommandPool (qfv_device_t *device, uint32_t queueFamily,

@@ -37,11 +37,13 @@
 #include <ctype.h>
 #include <sys/types.h>
 
-#include "regex.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "gib_regex.h"
 #include "QF/qtypes.h"
+#include "QF/sys.h"
+
+#include "regex.h"
+#include "gib_regex.h"
 
 hashtab_t  *gib_regexs;
 static char errstr[1024];
@@ -60,9 +62,17 @@ GIB_Regex_Free (void *ele, void *ptr)
 	free (ele);
 }
 
+static void
+gib_regex_shutdown (void *data)
+{
+	Hash_DelTable (gib_regexs);
+}
+
 void
 GIB_Regex_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_regex_shutdown, 0);
 	gib_regexs = Hash_NewTable (512, GIB_Regex_Get_Key, GIB_Regex_Free, 0, 0);
 }
 

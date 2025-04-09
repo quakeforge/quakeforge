@@ -95,11 +95,11 @@ extern vec3_t bsp_origin;
 extern vec3_t bsp_xvector;
 extern vec3_t bsp_yvector;
 
-extern qboolean extrasamples;
+extern bool extrasamples;
 
 void LoadNodes (const char *file);
-qboolean TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
-qboolean TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+bool TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+bool TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
 
 void LightFace (lightinfo_t *l, int surfnum);
 void LightLeaf (dleaf_t *leaf);

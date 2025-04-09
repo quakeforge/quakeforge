@@ -38,9 +38,9 @@
 classDecl (Collection, Object,
 	unsigned int count;
 	Class *type;
-	qboolean methodDecl (Collection, add, Object *o);
+	bool methodDecl (Collection, add, Object *o);
 	Object * methodDecl (Collection, remove, Object *o);
-	qboolean methodDecl (Collection, contains, Object *o);
+	bool methodDecl (Collection, contains, Object *o);
 	Iterator * methodDecl (Collection, iterator);
 );
 #define COLLECTION(o) ((Collection *)(o))

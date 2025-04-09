@@ -164,7 +164,7 @@ NewWinding (threaddata_t *thread, int points)
 	winding_t  *winding;
 	unsigned    size;
 
-	size = field_offset (winding_t, points[points]);
+	size = offsetof (winding_t, points[points]);
 	winding = Hunk_RawAlloc (thread->hunk, size);
 	memset (winding, 0, size);
 	winding->id = thread->winding_id++;
@@ -179,7 +179,7 @@ CopyWinding (threaddata_t *thread, const winding_t *w)
 	unsigned    size;
 	winding_t  *copy;
 
-	size = field_offset (winding_t, points[w->numpoints]);
+	size = offsetof (winding_t, points[w->numpoints]);
 	copy = Hunk_RawAlloc (thread->hunk, size);
 	memcpy (copy, w, size);
 	copy->original = false;
@@ -240,18 +240,17 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	// component to the split-plane's distance when the split-plane's
 	// normal is signed-canonical.
 	// "nan" because 0x7fffffff is nan when viewed as a float
-	static const vec4f_t onenan = { 1, 1, 1, ~0u >> 1 };
+	static const vec4i_t onenan = {0x3f800000,0x3f800000,0x3f800000,~0u >> 1};
 	static const vec4i_t nan = { ~0u >> 1, ~0u >> 1, ~0u >> 1, ~0u >> 1};
-	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == onenan;
+	vec4i_t     x = ((vec4i_t) split & nan) == onenan;
 	// plane vector has -dist in w
-	vec4f_t     y = _mm_and_ps (split, (__m128) x) * -split[3];
+	vec4f_t     y = (vec4f_t) ((vec4i_t) split & x) * -split[3];
 #ifdef __SSE3__
 	mid = _mm_blendv_ps (mid, y, (__m128) x);
 #else
-	mid = (vec4f_t) ((vec4i_t) _mm_and_ps (y, (__m128) x) |
-					 (vec4i_t) _mm_and_ps (mid, (__m128) ~x));
+	mid = (vec4f_t) (((vec4i_t) y & x) | ((vec4i_t) mid & ~x));
 #endif
-	if (isnan (mid[0])) *(int *) 0 = 0;
+//	if (isnan (mid[0])) *(int *) 0 = 0;
 	return mid;
 }
 
@@ -326,7 +325,7 @@ test_point (vec4f_t split, const vec4f_t *points, int index, vec4f_t *dists,
 */
 winding_t *
 ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
-			 qboolean keepon)
+			 bool keepon)
 {
 	unsigned    maxpts = 0;
 	unsigned    i;
@@ -372,8 +371,8 @@ ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
 		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
 			continue;
 		}
-		vec4f_t     mid = split_edge (in->points, dists, i,
-									  (i + 1) % in->numpoints, split);
+		unsigned    j = (i + 1) == in->numpoints ? 0 : i + 1;
+		vec4f_t     mid = split_edge (in->points, dists, i, j, split);
 		neww->points[neww->numpoints++] = mid;
 	}
 
@@ -1113,7 +1112,7 @@ CalcClusterSpheres (void)
 }
 
 #if 0
-static qboolean
+static bool
 PlaneCompare (plane_t *p1, plane_t *p2)
 {
 	int         i;
@@ -1136,7 +1135,7 @@ FindPassages (winding_t *source, winding_t *pass)
 	int         i, j, k, l;
 	int         counts[3];
 	plane_t     plane;
-	qboolean    fliptest;
+	bool        fliptest;
 	sep_t      *sep, *list;
 	vec3_t      v1, v2;
 
@@ -1351,38 +1350,39 @@ LoadPortals (char *name)
 		}
 	}
 
-	line = Qgetline (f);
+	dstring_t  *buffer = dstring_new ();
+	line = Qgetline (f, buffer);
 
 	if (line && (!strcmp (line, PORTALFILE "\n")
 				 || !strcmp (line, PORTALFILE "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		numrealleafs = portalclusters;
 	} else if (line && (!strcmp (line, PORTALFILE_AM "\n")
 						|| !strcmp (line, PORTALFILE_AM "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
 	} else if (line && (!strcmp (line, PORTALFILE2 "\n")
 						|| !strcmp (line, PORTALFILE2 "\r\n"))) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
@@ -1423,7 +1423,7 @@ LoadPortals (char *name)
 	clusternums = calloc (numportals, sizeof (clusterpair_t));
 	winding_t **windings = malloc (numportals * sizeof (winding_t *));
 	for (unsigned i = 0; i < numportals; i++) {
-		line = Qgetline (f);
+		line = Qgetline (f, buffer);
 		if (!line)
 			Sys_Error ("LoadPortals: reading portal %u", i);
 
@@ -1495,7 +1495,7 @@ LoadPortals (char *name)
 	leafcluster = calloc (numrealleafs, sizeof (uint32_t));
 	if (read_leafs) {
 		for (unsigned i = 0; i < numrealleafs; i++) {
-			line = Qgetline (f);
+			line = Qgetline (f, buffer);
 			if (sscanf (line, "%i\n", &leafcluster[i]) != 1)
 				Sys_Error ("LoadPortals: parse error in leaf->cluster "
 						   "mappings");
@@ -1504,6 +1504,7 @@ LoadPortals (char *name)
 		for (unsigned i = 0; i < numrealleafs; i++)
 			leafcluster[i] = i;
 	}
+	dstring_delete (buffer);
 	Qclose (f);
 }
 

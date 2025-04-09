@@ -30,7 +30,7 @@
 #ifndef statement_h
 #define statement_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef enum {
 	op_def,
@@ -47,7 +47,7 @@ struct expr_s;
 typedef struct tempop_s {
 	struct def_s   *def;
 	int             offset;
-	struct type_s *type;
+	const struct type_s *type;
 	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;
 	struct operand_s *alias;
@@ -60,15 +60,18 @@ typedef struct pseudoop_s {
 	struct pseudoop_s *next;
 	const char *name;
 	struct flowvar_s *flowvar;
-	void      (*uninitialized) (struct expr_s *expr, struct pseudoop_s *op);
+	void      (*uninitialized) (const struct expr_s *expr,
+								struct pseudoop_s *op);
 } pseudoop_t;
 
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	struct type_s *type;		///< possibly override def's/nil's type
+	const struct type_s *type;	///< possibly override def's/nil's type
 	int         size;			///< for structures
-	struct expr_s *expr;		///< expression generating this operand
+	int         width;			///< for SIMD selection
+	int         columns;		///< for matrix selection
+	const struct expr_s *expr;	///< expression generating this operand
 	void       *return_addr;	///< who created this operand
 	union {
 		struct def_s *def;
@@ -91,6 +94,7 @@ typedef struct operand_s {
 */
 typedef enum {
 	st_none,		///< not a (valid) statement. Used in dags.
+	st_alias,		///< not a (valid) statement. Used in dags.
 	st_expr,		///< c = a op b; or c = op a;
 	st_assign,		///< b = a
 	st_ptrassign,	///< *b = a; or *(b + c) = a;
@@ -101,20 +105,25 @@ typedef enum {
 	st_state,		///< state (a, b); or state (a, b, c)
 	st_func,		///< call, rcall or return/done
 	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
+	st_address,		///< lea
 } st_type_t;
 
 typedef struct statement_s {
 	struct statement_s *next;
 	st_type_t   type;
+	int         number;			///< number of this statement in function
 	const char *opcode;
 	operand_t  *opa;
 	operand_t  *opb;
 	operand_t  *opc;
-	struct expr_s *expr;		///< source expression for this statement
-	int         number;			///< number of this statement in function
-	operand_t  *use;			///< list of pseudo operands used
-	operand_t  *def;			///< list of pseudo operands defined
-	operand_t  *kill;			///< list of pseudo operands killed
+	const struct expr_s *expr;	///< source expression for this statement
+	operand_t  *use;			///< list of auxiliary operands used
+	operand_t  *def;			///< list of auxiliary operands defined
+	operand_t  *kill;			///< list of auxiliary operands killed
+	int         first_use;
+	int         num_use;
+	int         first_def;
+	int         num_def;
 } statement_t;
 
 typedef struct sblock_s {
@@ -125,6 +134,7 @@ typedef struct sblock_s {
 	int         offset;			///< offset of first statement of block
 	int         reachable;
 	int         number;			///< number of this block in flow graph
+	unsigned    id;				///< label id for this block (spir-v)
 	statement_t *statements;
 	statement_t **tail;
 } sblock_t;
@@ -133,28 +143,35 @@ struct expr_s;
 struct type_s;
 struct dstring_s;
 
-extern const char *op_type_names[];
-extern const char *st_type_names[];
+extern const char * const op_type_names[];
+extern const char * const st_type_names[];
 
 const char *optype_str (op_type_e type) __attribute__((const));
 
-operand_t *nil_operand (struct type_s *type, struct expr_s *expr);
-operand_t *def_operand (struct def_s *def, struct type_s *type,
-						struct expr_s *expr);
-operand_t *return_operand (struct type_s *type, struct expr_s *expr);
-operand_t *value_operand (struct ex_value_s *value, struct expr_s *expr);
+operand_t *nil_operand (const struct type_s *type, const struct expr_s *expr);
+operand_t *def_operand (struct def_s *def, const struct type_s *type,
+						const struct expr_s *expr);
+operand_t *return_operand (const struct type_s *type,
+						   const struct expr_s *expr);
+operand_t *value_operand (struct ex_value_s *value, const struct expr_s *expr);
 int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
-operand_t *temp_operand (struct type_s *type, struct expr_s *expr);
+operand_t *temp_operand (const struct type_s *type, const struct expr_s *expr);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
-operand_t *alias_operand (struct type_s *type, operand_t *op,
-						  struct expr_s *expr);
-operand_t *label_operand (struct expr_s *label);
+operand_t *offset_alias_operand (const struct type_s *type, int offset,
+								 operand_t *aop, const struct expr_s *expr);
+operand_t *alias_operand (const struct type_s *type, operand_t *op,
+						  const struct expr_s *expr);
+operand_t *label_operand (const struct expr_s *label);
+operand_t *short_operand (short short_val, const struct expr_s *expr);
+const char *convert_op (int op) __attribute__((const));
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);
+void free_sblock (sblock_t *sblock);
+
 statement_t *new_statement (st_type_t type, const char *opcode,
-							struct expr_s *expr);
+							const struct expr_s *expr);
 int statement_is_cond (statement_t *s) __attribute__((pure));
 int statement_is_goto (statement_t *s) __attribute__((pure));
 int statement_is_jumpb (statement_t *s) __attribute__((pure));
@@ -163,12 +180,14 @@ int statement_is_return (statement_t *s) __attribute__((pure));
 sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
-sblock_t *make_statements (struct expr_s *expr);
+sblock_t *make_statements (const struct expr_s *expr);
+struct ex_list_s;
+sblock_t *statement_slist (sblock_t *sblock, const struct ex_list_s *slist);
 void statements_count_temps (sblock_t *sblock);
 
 void print_operand (operand_t *op);
 void print_statement (statement_t *s);
-void dump_dot_sblock (void *data, const char *fname);
+void dump_dot_sblock (const void *data, const char *fname);
 void dot_sblock (struct dstring_s *dstr, sblock_t *sblock, int blockno);
 void print_sblock (sblock_t *sblock, const char *filename);
 const char *operand_string (operand_t *op);

@@ -57,6 +57,8 @@ QFGL_NEED (void, glDepthMask, (GLboolean flag))
 QFGL_NEED (void, glDepthRangef, (GLclampf zNear, GLclampf zFar))
 QFGL_NEED (void, glDetachShader, (GLuint program, GLuint shader))
 QFGL_NEED (void, glDisable, (GLenum cap))
+QFGL_NEED (void, glCreateVertexArrays, (GLsizei n, GLuint *arrays))
+QFGL_NEED (void, glBindVertexArray, (GLuint array))
 QFGL_NEED (void, glDisableVertexAttribArray, (GLuint index))
 QFGL_NEED (void, glDrawArrays, (GLenum mode, GLint first, GLsizei count))
 QFGL_NEED (void, glDrawElements, (GLenum mode, GLsizei count, GLenum type, const GLvoid* indices))
@@ -160,6 +162,10 @@ QFGL_NEED (void, glVertexAttrib4f, (GLuint indx, GLfloat x, GLfloat y, GLfloat z
 QFGL_NEED (void, glVertexAttrib4fv, (GLuint indx, const GLfloat* values))
 QFGL_NEED (void, glVertexAttribPointer, (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr))
 QFGL_NEED (void, glViewport, (GLint x, GLint y, GLsizei width, GLsizei height))
+
+QFGL_NEED (void, glDebugMessageCallback, (GLDEBUGPROC callback, const void *userParam))
+QFGL_NEED (void, glPushDebugGroup, (GLenum source, GLuint id, GLsizei length, const GLchar *message))
+QFGL_NEED (void, glPopDebugGroup, (void))
 
 #ifdef UNDEF_QFGL_DONT_NEED
 #undef QFGL_DONT_NEED

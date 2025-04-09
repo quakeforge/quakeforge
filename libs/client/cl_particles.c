@@ -52,16 +52,31 @@
 #include "compat.h"
 
 #include "client/particles.h"
+#include "client/world.h"
 
-float cl_frametime;
-float cl_realtime;
 cl_particle_funcs_t *clp_funcs;
 
 static mtstate_t mt;	// private PRNG state
 static psystem_t *cl_psystem;
 
-static cvar_t *easter_eggs;
-static cvar_t *particles_style;
+static int easter_eggs;
+static cvar_t easter_eggs_cvar = {
+	.name = "easter_eggs",
+	.description =
+		"Enables easter eggs.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &easter_eggs },
+};
+static int particles_style;
+static cvar_t particles_style_cvar = {
+	.name = "particles_style",
+	.description =
+		"Sets particle style. 0 for Id, 1 for QF.",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &particles_style },
+};
 
 static int  ramp[] = {
 	/*ramp1*/ 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61,
@@ -235,7 +250,7 @@ CL_LoadPointFile (const model_t *model)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va (0, "%s.pts", mapname);
+	name = va ("%s.pts", mapname);
 	free (mapname);
 
 	f = QFS_FOpenFile (name);
@@ -249,15 +264,19 @@ CL_LoadPointFile (const model_t *model)
 	vec4f_t     zero = {};
 	for (;;) {
 		char        buf[64];
-		vec4f_t     org = { 0, 0, 0, 1 };
+		union {
+			vec4f_t     org;
+			vec3_t      org3;
+		} o = { .org = { 0, 0, 0, 1 }};
 
 		Qgets (f, buf, sizeof (buf));
-		int         r = sscanf (buf, "%f %f %f\n", &org[0], &org[1], &org[2]);
+		int         r = sscanf (buf, "%f %f %f\n",
+								&o.org3[0], &o.org3[1], &o.org3[2]);
 		if (r != 3)
 			break;
 		c++;
 
-		if (!particle_new (pt_static, part_tex_dot, org, 1.5, zero,
+		if (!particle_new (pt_static, part_tex_dot, o.org, 1.5, zero,
 						   99999, (-c) & 15, 1.0, 0.0)) {
 			Sys_MaskPrintf (SYS_dev, "Not enough free particles\n");
 			break;
@@ -1234,48 +1253,49 @@ static cl_particle_funcs_t particles_ID_egg = {
 };
 
 static void
-easter_eggs_f (cvar_t *var)
+set_particle_funcs (void)
 {
 	if (easter_eggs) {
-		if (easter_eggs->int_val) {
-			if (particles_style->int_val) {
-				clp_funcs = &particles_QF_egg;
-			} else {
-				clp_funcs = &particles_ID_egg;
-			}
-		} else if (particles_style) {
-			if (particles_style->int_val) {
-				clp_funcs = &particles_QF;
-			} else {
-				clp_funcs = &particles_ID;
-			}
+		if (particles_style) {
+			clp_funcs = &particles_QF_egg;
+		} else {
+			clp_funcs = &particles_ID_egg;
+		}
+	} else {
+		if (particles_style) {
+			clp_funcs = &particles_QF;
+		} else {
+			clp_funcs = &particles_ID;
 		}
 	}
 }
 
 static void
-particles_style_f (cvar_t *var)
+easter_eggs_f (void *data, const cvar_t *cvar)
 {
-	easter_eggs_f (easter_eggs);
-	cl_psystem->points_only = !var->int_val;
+	set_particle_funcs ();
 }
 
 static void
-CL_ParticleFunctionInit (void)
+particles_style_f (void *data, const cvar_t *cvar)
 {
-	particles_style_f (particles_style);
-	easter_eggs_f (easter_eggs);
+	set_particle_funcs ();
+	cl_psystem->points_only = !particles_style;
 }
 
 void
 CL_Particles_Init (void)
 {
+	qfZoneScoped (true);
 	mtwist_seed (&mt, 0xdeadbeef);
 	cl_psystem = r_funcs->ParticleSystem ();
-	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, easter_eggs_f,
-							"Enables easter eggs.");
-	particles_style = Cvar_Get ("particles_style", "1", CVAR_ARCHIVE,
-								particles_style_f,
-								"Sets particle style. 0 for Id, 1 for QF.");
-	CL_ParticleFunctionInit ();
+	Cvar_Register (&easter_eggs_cvar, easter_eggs_f, 0);
+	Cvar_Register (&particles_style_cvar, particles_style_f, 0);
+	set_particle_funcs ();
+}
+
+void
+CL_ParticlesGravity (float gravity)
+{
+	cl_psystem->gravity = (vec4f_t) { 0, 0, -gravity, 0 };
 }

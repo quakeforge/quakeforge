@@ -12,6 +12,7 @@ EXTRA_DIST += \
 	include/block8.h \
 	include/bsearch.h \
 	include/buildnum.h \
+	include/cl_console.h \
 	include/compat.h \
 	include/context_sdl.h \
 	include/context_win.h \
@@ -22,6 +23,7 @@ EXTRA_DIST += \
 	include/dga_check.h \
 	include/exp.h \
 	include/fbset.h \
+	include/gamedefs.h \
 	include/garbage.h \
 	include/getopt.h \
 	include/gib_buffer.h \
@@ -56,6 +58,7 @@ EXTRA_DIST += \
 	include/pstdint.h \
 	include/qfalloca.h \
 	include/qfselect.h \
+	include/qftracy.h \
 	include/qstring.h \
 	include/quakeasm.h \
 	include/quicksort.h \
@@ -64,11 +67,9 @@ EXTRA_DIST += \
 	include/r_internal.h \
 	include/r_local.h \
 	include/r_scrap.h \
-	include/r_screen.h \
 	include/r_shared.h \
 	include/regex.h \
 	include/rua_internal.h \
-	include/sbar.h \
 	include/skin_stencil.h \
 	include/snd_internal.h \
 	include/sv_console.h \
@@ -81,14 +82,18 @@ EXTRA_DIST += \
 	include/vregset.h \
 	include/winquake.h \
 	include/world.h \
+	include/client/chase.h \
 	include/client/effects.h \
 	include/client/entities.h \
+	include/client/hud.h \
 	include/client/input.h \
-	include/client/temp_entities.h \
 	include/client/locs.h \
 	include/client/particles.h \
+	include/client/screen.h \
 	include/client/state.h \
+	include/client/temp_entities.h \
 	include/client/view.h \
+	include/client/world.h \
 	include/evdev/hotplug.h \
 	include/evdev/inputlib.h \
 	include/qw/bothdefs.h \

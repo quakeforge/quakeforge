@@ -114,7 +114,7 @@ test_transform (const vec3_t angles, const vec3_t scale,
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 	VectorAdd (x, translation, x);
 
@@ -148,7 +148,7 @@ test_transform2 (const vec3_t angles, const vec3_t scale,
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
-	VectorCompMult (scale, x, x);
+	VectorCompMult (x, scale, x);
 	QuatMultVec (rotation, x, x);
 	VectorAdd (translation, x, x);
 
@@ -158,7 +158,7 @@ test_transform2 (const vec3_t angles, const vec3_t scale,
 	VectorCopy (v, y);
 	QuatMultVec (rot, y, y);
 	VectorShear (sh, y, y);
-	VectorCompMult (sc, y, y);//scale
+	VectorCompMult (y, sc, y);//scale
 	VectorAdd (tr, y, y);
 
 	for (i = 0; i < 3; i++)

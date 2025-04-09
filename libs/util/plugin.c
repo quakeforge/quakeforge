@@ -71,7 +71,15 @@ typedef struct loaded_plugin_s {
 	plugin_t		*plugin;
 } loaded_plugin_t;
 
-cvar_t     *fs_pluginpath;
+char *fs_pluginpath;
+static cvar_t fs_pluginpath_cvar = {
+	.name = "fs_pluginpath",
+	.description =
+		"Location of your plugin directory",
+	.default_value = FS_PLUGINPATH,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &fs_pluginpath },
+};
 
 hashtab_t  *registered_plugins, *loaded_plugins;
 
@@ -155,9 +163,9 @@ static const char *
 pi_realname (const char *type, const char *name)
 {
 #if defined(HAVE_DLOPEN)
-	return va (0, "%s/%s_%s.so", fs_pluginpath->string, type, name);
+	return va ("%s/%s_%s.so", fs_pluginpath, type, name);
 #elif defined(_WIN32)
-	return va (0, "%s/%s_%s.dll", fs_pluginpath->string, type, name);
+	return va ("%s/%s_%s.dll", fs_pluginpath, type, name);
 #else
 	return "No shared library support. FIXME";
 #endif
@@ -167,9 +175,9 @@ static const char *
 pi_info_name (const char *type, const char *name)
 {
 	if (type && name) {
-		return va (0, "%s_%s_PluginInfo", type, name);
+		return va ("%s_%s_PluginInfo", type, name);
 	} else if (type) {
-		return va (0, "%s_PluginInfo", type);
+		return va ("%s_PluginInfo", type);
 	} else {
 		return "PluginInfo";
 	}
@@ -178,8 +186,7 @@ pi_info_name (const char *type, const char *name)
 static void
 PI_InitCvars (void)
 {
-	fs_pluginpath = Cvar_Get ("fs_pluginpath", FS_PLUGINPATH, CVAR_ROM, NULL,
-							"Location of your plugin directory");
+	Cvar_Register (&fs_pluginpath_cvar, 0, 0);
 }
 
 static void
@@ -215,7 +222,7 @@ PI_Plugin_Unload_f (void)
 	}
 
 	// try to locate the plugin
-	plugin_name = va (0, "%s_%s", Cmd_Argv(1), Cmd_Argv(2));
+	plugin_name = va ("%s_%s", Cmd_Argv(1), Cmd_Argv(2));
 
 	lp = Hash_Find (loaded_plugins, plugin_name);
 	if (lp) {
@@ -228,27 +235,8 @@ PI_Plugin_Unload_f (void)
 	PI_UnloadPlugin (pi);
 }
 
-/*
-	PI_Init
-
-	Eventually this function will likely initialize libltdl. It doesn't, yet,
-	since we aren't using libltdl yet.
-*/
-VISIBLE void
-PI_Init (void)
-{
-	PI_InitCvars ();
-	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
-	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
-								   loaded_plugin_delete, 0, 0);
-	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
-				   "load the plugin of the given type name and name");
-	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
-				   "unload the plugin of the given type name and name");
-}
-
-void
-PI_Shutdown (void)
+static void
+PI_Shutdown (void *data)
 {
 	void **elems, **cur;
 
@@ -259,7 +247,29 @@ PI_Shutdown (void)
 	free (elems);
 
 	Hash_DelTable (loaded_plugins);
+	Hash_DelTable (registered_plugins);
+}
 
+/*
+	PI_Init
+
+	Eventually this function will likely initialize libltdl. It doesn't, yet,
+	since we aren't using libltdl yet.
+*/
+VISIBLE void
+PI_Init (void)
+{
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (PI_Shutdown, 0);
+
+	PI_InitCvars ();
+	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
+	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
+								   loaded_plugin_delete, 0, 0);
+	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
+				   "load the plugin of the given type name and name");
+	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,
+				   "unload the plugin of the given type name and name");
 }
 
 VISIBLE plugin_t *
@@ -285,7 +295,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	}
 
 	// Build the plugin name
-	plugin_name = va (0, "%s_%s", type, name);
+	plugin_name = va ("%s_%s", type, name);
 
 	// make sure we're not already loaded
 	lp = Hash_Find (loaded_plugins, plugin_name);
@@ -384,9 +394,14 @@ PI_LoadPlugin (const char *type, const char *name)
 	return plugin;
 }
 
-VISIBLE qboolean
+VISIBLE bool
 PI_UnloadPlugin (plugin_t *plugin)
 {
+	// Remove the plugin from the set of loaded plugins to ensure that a
+	// shutdown triggered by an error in the unload process doesn't try to
+	// unload the plugin a second time
+	loaded_plugin_t *lp = Hash_Del (loaded_plugins, plugin->full_name);
+
 	if (plugin && plugin->functions && plugin->functions->general
 		&& plugin->functions->general->shutdown) {
 		plugin->functions->general->shutdown ();
@@ -396,8 +411,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 						plugin->type);
 	}
 
-	// remove from the table of loaded plugins
-	Hash_Free (loaded_plugins, Hash_Del (loaded_plugins, plugin->full_name));
+	Hash_Free (loaded_plugins, lp);
 
 	if (!plugin->handle) // we didn't load it
 		return true;
@@ -407,6 +421,7 @@ PI_UnloadPlugin (plugin_t *plugin)
 VISIBLE void
 PI_RegisterPlugins (plugin_list_t *plugins)
 {
+	qfZoneScoped (true);
 	while (plugins->name)
 		Hash_Add (registered_plugins, plugins++);
 }

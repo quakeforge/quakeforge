@@ -20,6 +20,7 @@ ChangeLog
 Makefile
 Makefile.in
 core
+\#*\#
 
 # /
 /.version
@@ -40,9 +41,11 @@ core
 /ltmain.sh
 /missing
 /mkinstalldirs
+/py-compile
 /quakeforge-config
 /quakeforge.lsm
 /test-driver
+/tracy
 /ylwrap
 
 # /RPM/

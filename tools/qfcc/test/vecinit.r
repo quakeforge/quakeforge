@@ -1,3 +1,4 @@
+#pragma bug die
 vector
 foo (float x, float y, float z)
 {

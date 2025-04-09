@@ -7,6 +7,6 @@ bin_PROGRAMS += @WAV_TARGETS@
 
 #man_MANS +=	tools/wav/qfwavinfo.1
 
-qfwavinfo_SOURCES=	tools/wav/qfwavinfo.c
+qfwavinfo_SOURCES=	tools/wav/qfwavinfo.c $(tracy_src)
 qfwavinfo_LDADD=	$(WAV_LIBS)
 qfwavinfo_DEPENDENCIES= $(WAV_DEPS)

@@ -51,8 +51,6 @@
 
 #include "QF/cexpr.h"
 
-static exprval_t *assign_expr (exprval_t *dst, const exprval_t *src,
-							   exprctx_t *context);
 static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
@@ -109,19 +107,19 @@ yyerror (void *scanner, exprctx_t *context, const char *s)
 %%
 
 start
-	: expr				{ assign_expr (context->result, $1, context); }
+	: expr				{ cexpr_assign_value (context->result, $1, context); }
 	;
 
 uexpr
 	: NAME
 		{
-			if ($1) {
+			if ($1->value) {
 				$$ = (exprval_t *) cmemalloc (context->memsuper, sizeof (*$$));
 				$$->type = $1->type;
 				$$->value = $1->value;
 			} else {
-				cexpr_error (context, "undefined identifier %s",
-							 cexpr_yyget_text (scanner));
+				cexpr_error (context, "undefined identifier %s", $1->name);
+				$$ = 0;
 			}
 		}
 	| VALUE
@@ -138,7 +136,7 @@ uexpr
 
 expr
 	: uexpr
-	| expr '=' expr		{ $$ = assign_expr ($1, $3, context); }
+	| expr '=' expr		{ $$ = cexpr_assign_value ($1, $3, context); }
 	| expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
 	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
 	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
@@ -185,10 +183,10 @@ arg_expr
 
 %%
 
-static exprval_t *
-assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
+exprval_t *
+cexpr_assign_value (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 {
-	binop_t    *binop;
+	binop_t    *binop = 0;
 	if (!dst || !src) {
 		return 0;
 	}
@@ -196,17 +194,24 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 		*(exprval_t **) dst->value = (exprval_t *) src;
 		return dst;
 	}
-	binop = cexpr_find_cast (dst->type, src->type);
+	if (dst->type) {
+		binop = cexpr_find_cast (dst->type, src->type);
+	}
 	if (binop && binop->op) {
 		binop->func (dst, src, dst, context);
 	} else {
-		if (dst->type != src->type) {
-			cexpr_error (context,
-						 "type mismatch in expression result: %s = %s",
-						 dst->type->name, src->type->name);
-			return dst;
+		if (!dst->type) {
+			dst->type = src->type;
+			dst->value = src->value;
+		} else {
+			if (dst->type != src->type) {
+				cexpr_error (context,
+							 "type mismatch in expression result: %s = %s",
+							 dst->type->name, src->type->name);
+				return dst;
+			}
+			memcpy (dst->value, src->value, dst->type->size);
 		}
-		memcpy (dst->value, src->value, dst->type->size);
 	}
 	return dst;
 }
@@ -385,7 +390,10 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		*(int *) result->value = 0;
 		return result;
 	}
-	for (exprfunc_t *f = fsym->value; f->result; f++) {
+	for (exprfunc_t *f = fsym->value; f->func; f++) {
+		if (!f->result) {
+			continue;
+		}
 		int         num_params = f->num_params;
 		if (num_params >= 0 && num_args == num_params) {
 		} else if (num_params < 0 && num_args >= ~num_params) {

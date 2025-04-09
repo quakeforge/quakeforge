@@ -36,7 +36,8 @@ typedef enum TE_Effect {
 	TE_NoEffect,		// for invalid nq/qw -> qf mapping
 	TE_Beam,			// grappling hook beam
 	TE_Blood,			// bullet hitting body
-	TE_Explosion,		// rocket explosion
+	TE_Explosion,		// rocket explosion (nq)
+	TE_Explosion1,		// rocket explosion (qw)
 	TE_Explosion2,		// color mapped explosion
 	TE_Explosion3,		// Nehahra colored light explosion
 	TE_Gunshot1,		// NQ gunshot (20 particles)
@@ -96,7 +97,6 @@ typedef enum TE_qwEffect {
 //FIXME find a better way to get this info from the parser
 typedef struct TEntContext_s {
 	vec4f_t     simorg;
-	struct model_s *worldModel;
 	int         playerEntity;
 } TEntContext_t;
 
@@ -104,7 +104,8 @@ struct msg_s;
 struct entity_s;
 
 void CL_TEnts_Init (void);
-void CL_Init_Entity (struct entity_s *ent);
+void CL_TEnts_Precache (void);
+void CL_Init_Entity (struct entity_s ent);
 void CL_ClearTEnts (void);
 void CL_UpdateTEnts (double time, TEntContext_t *ctx);
 void CL_ParseTEnt_nq (struct msg_s *net_message, double time,
@@ -113,7 +114,7 @@ void CL_ParseTEnt_qw (struct msg_s *net_message, double time,
 					  TEntContext_t *ctx);
 void CL_ParseParticleEffect (struct msg_s *net_message);
 void CL_ClearProjectiles (void);
-void CL_ParseProjectiles (struct msg_s *net_message, qboolean nail2,
+void CL_ParseProjectiles (struct msg_s *net_message, bool nail2,
 						  TEntContext_t *ctx);
 
 #endif//__client_temp_entities_h

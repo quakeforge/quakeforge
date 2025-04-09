@@ -46,7 +46,7 @@ dump_string_block (const char *strblock, size_t size)
 
 	printf ("%x \"", 0);
 	while ((size_t) (s - strblock) < size) {
-		char        c = *s++;
+		byte        c = *s++;
 		switch (c) {
 			case 0:
 				fputs ("\"\n", stdout);
@@ -69,7 +69,12 @@ dump_string_block (const char *strblock, size_t size)
 				fputs ("\\\\", stdout);
 				break;
 			default:
-				fputc (sys_char_map[(unsigned char)c], stdout);
+				if (c < 32 || c > 126) {
+					printf ("\\x%02x", c);
+				} else {
+					fputc (c, stdout);
+				}
+				//fputc (sys_char_map[c], stdout);
 				break;
 		}
 	}
@@ -78,7 +83,7 @@ dump_string_block (const char *strblock, size_t size)
 void
 dump_strings (progs_t *pr)
 {
-	dump_string_block (pr->pr_strings, pr->progs->numstrings);
+	dump_string_block (pr->pr_strings, pr->progs->strings.count);
 }
 
 void
@@ -94,5 +99,5 @@ qfo_strings (qfo_t *qfo)
 		printf ("no strings\n");
 		return;
 	}
-	dump_string_block (space->d.strings, space->data_size);
+	dump_string_block (space->strings, space->data_size);
 }

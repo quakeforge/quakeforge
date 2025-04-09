@@ -28,37 +28,22 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 
-#include "QF/alloc.h"
-#include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/image.h"
-#include "QF/quakefs.h"
 #include "QF/render.h"
-#include "QF/sys.h"
-#include "QF/Vulkan/qf_vid.h"
+#include "QF/ui/vrect.h"
+
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
-#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
 #include "r_scrap.h"
-#include "vid_vulkan.h"
 
 struct scrap_s {
 	rscrap_t    rscrap;
@@ -79,6 +64,7 @@ scrap_t *
 QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 				 QFFormat format, qfv_stagebuf_t *stage)
 {
+	qfZoneScoped (true);
 	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp = 0;
 	VkFormat    fmt = VK_FORMAT_UNDEFINED;
@@ -151,7 +137,7 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 	VkClearColorValue color = {
-		float32:{0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
+		.float32 = {0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
 	};
 	VkImageSubresourceRange range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	dfunc->vkCmdClearColorImage (packet->cmd, scrap->image,
@@ -187,6 +173,9 @@ QFV_ScrapClear (scrap_t *scrap)
 void
 QFV_DestroyScrap (scrap_t *scrap)
 {
+	if (!scrap) {
+		return;
+	}
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -255,6 +244,7 @@ QFV_SubpicDelete (subpic_t *subpic)
 void *
 QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 {
+	qfZoneScoped (true);
 	scrap_t    *scrap = (scrap_t *) subpic->scrap;
 	vrect_t    *rect = (vrect_t *) subpic->rect;
 	vrect_t    *batch;
@@ -298,6 +288,7 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 void
 QFV_ScrapFlush (scrap_t *scrap)
 {
+	qfZoneScoped (true);
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -323,11 +314,14 @@ QFV_ScrapFlush (scrap_t *scrap)
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 
-	size_t      offset = packet->offset, size;
+	auto sb = imageBarriers[qfv_LT_TransferDst_to_TransferDst];
+	sb.barrier.image = scrap->image;
+
+	size_t      offset = packet->offset;
 	vrect_t    *batch = scrap->batch;
 	while (scrap->batch_count) {
 		for (i = 0; i < scrap->batch_count && i < 128; i++) {
-			size = batch->width * batch->height * scrap->bpp;
+			size_t      size = batch->width * batch->height * scrap->bpp;
 
 			copy->a[i].bufferOffset = offset;
 			copy->a[i].imageOffset.x = batch->x;
@@ -342,6 +336,12 @@ QFV_ScrapFlush (scrap_t *scrap)
 									   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									   i, copy->a);
 		scrap->batch_count -= i;
+		if (scrap->batch_count) {
+			dfunc->vkCmdPipelineBarrier (packet->cmd,
+										 sb.srcStages, sb.dstStages,
+										 0, 0, 0, 0, 0,
+										 1, &sb.barrier);
+		}
 	}
 
 	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];

@@ -8,7 +8,8 @@ bin_PROGRAMS += @QFMODELGEN_TARGETS@
 qfmodelgen_SOURCES = \
 	tools/qfmodelgen/source/lbmlib.c \
 	tools/qfmodelgen/source/modelgen.c \
-	tools/qfmodelgen/source/trilib.c
+	tools/qfmodelgen/source/trilib.c \
+	$(tracy_src)
 
 qfmodelgen_LDADD=		$(QFMODELGEN_LIBS)
 qfmodelgen_DEPENDENCIES=	$(QFMODELGEN_DEPS)

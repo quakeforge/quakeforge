@@ -340,7 +340,7 @@ CreateBrushFaces (void)
 			GetVectorForKey (FoundEntity, "origin", offset);
 
 		SetKeyValue (CurrentEntity, "origin",
-					 va (0, "%g %g %g", VectorExpand (offset)));
+					 va ("%g %g %g", VectorExpand (offset)));
 	}
 
 	for (i = 0; i < numbrushfaces; i++) {

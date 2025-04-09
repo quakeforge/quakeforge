@@ -37,8 +37,8 @@
 
 typedef struct sizebuf_s
 {
-	qboolean    allowoverflow;	// if false, do a Sys_Error
-	qboolean    overflowed;		// set to true if the buffer size failed
+	bool        allowoverflow;	// if false, do a Sys_Error
+	bool        overflowed;		// set to true if the buffer size failed
 	byte       *data;
 	unsigned    maxsize;
 	unsigned    cursize;

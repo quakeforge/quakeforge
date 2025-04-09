@@ -165,4 +165,27 @@ vrect_t *VRect_Union (const vrect_t *r1, const vrect_t *r2);
 */
 vrect_t *VRect_Merge (const vrect_t *r1, const vrect_t *r2);
 
+/** Return up to three rectangles resulting from carving out the upper-left
+	rectangle of the specified width and height.
+
+	The first rectangle in the list will be the part of the supplied rectangle
+	that is covered by \a width and \a height (if either parameter is larger
+	than the supplied rectangle, then the returned rectangle will have the same
+	size as the supplied rectangle in that dimension). The other rectangles,
+	if there are any, will be the remainder of the supplied rectangle such that
+	the areas are min-max (to avoid creating long narrow rectangles).
+
+	\param rect		The rectangle to carve.
+	\param width	Width of the sub-rectangle carved from \a rect.
+	\param height   Height of the sub-rectangle carved from \a rect.
+	\return			The carved-out sub-rectangle, plus up to two rectangles
+					representing the remainder of \a rect, with splits such
+					that the two rectangles are both minimum and maximum area.
+					The larger of the two remainder rectangles will allways be
+					last.
+	\note	It is the caller's responsibility to delete the returned
+			rectangles.
+*/
+vrect_t *VRect_SubRect (const vrect_t *rect, int width, int height);
+
 #endif//__QF_ui_vrect_h

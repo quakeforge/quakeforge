@@ -3,7 +3,7 @@
 
 	vulkan vid stuff from the renderer.
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2019 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -35,13 +35,25 @@
 #endif
 #include <vulkan/vulkan.h>
 
+/** \defgroup vulkan Vulkan Renderer
+*/
+
+enum {
+	QFV_rp_particles,
+	QFV_rp_shadowmap,
+	QFV_rp_preoutput,
+	QFV_rp_translucent,
+	QFV_rp_main,
+	QFV_rp_output,
+};
+
 //FIXME location
 typedef enum {
-	QFV_passDepth,			// geometry
-	QFV_passTranslucent,	// geometry
-	QFV_passGBuffer,		// geometry
-	QFV_passLighting,		// single quad
-	QFV_passCompose,		// single quad
+	QFV_passDepth,				// geometry
+	QFV_passTranslucentFrag,	// geometry
+	QFV_passGBuffer,			// geometry
+	QFV_passLighting,			// single triangle
+	QFV_passCompose,			// single triangle
 
 	QFV_NumPasses
 } QFV_Subpass;
@@ -52,33 +64,31 @@ enum {
 	QFV_attachEmission,
 	QFV_attachNormal,
 	QFV_attachPosition,
-	QFV_attachOpaque,
-	QFV_attachTranslucent,
+	QFV_attachLight,
 	QFV_attachSwapchain,
 };
 
 struct vulkan_ctx_s;
-void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
-void Vulkan_DestroyRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateStagingBuffers (struct vulkan_ctx_s *ctx);
 
-VkPipeline Vulkan_CreateComputePipeline (struct vulkan_ctx_s *ctx,
-										 const char *name);
-VkPipeline Vulkan_CreateGraphicsPipeline (struct vulkan_ctx_s *ctx,
-										  const char *name);
-VkDescriptorPool Vulkan_CreateDescriptorPool (struct vulkan_ctx_s *ctx,
-											  const char *name);
-VkPipelineLayout Vulkan_CreatePipelineLayout (struct vulkan_ctx_s *ctx,
-											  const char *name);
+struct qfv_output_s;
+void Vulkan_ConfigOutput (struct vulkan_ctx_s *ctx,
+						  struct qfv_output_s *output);
+
 VkSampler Vulkan_CreateSampler (struct vulkan_ctx_s *ctx, const char *name);
-VkDescriptorSetLayout Vulkan_CreateDescriptorSetLayout(struct vulkan_ctx_s*ctx,
-													   const char *name);
+
+struct entity_s;
+void Vulkan_BeginEntityLabel (struct vulkan_ctx_s *ctx, VkCommandBuffer cmd,
+							  struct entity_s ent);
+
+struct plitem_s *Vulkan_GetConfig (struct vulkan_ctx_s *ctx, const char *name);
+
+extern int vulkan_frame_width;
+extern int vulkan_frame_height;
+extern int vulkan_oit_fragments;
 
 #endif // __QF_Vulkan_vid_h

@@ -5,6 +5,7 @@
 #include <qfile.h>
 #include <types.h>
 #include <Array.h>
+#include <PropertyList.h>
 
 typedef void varfunc (qfot_var_t *var);
 

@@ -44,10 +44,11 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
+#include "qfalloca.h"
 #include "r_shared.h"
 
 static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
@@ -57,70 +58,65 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 glsl_alias_clear (model_t *m, void *data)
 {
-	int         i, j;
-	aliashdr_t *header;
-	GLuint      bufs[2];
-	maliasskindesc_t *skins;
-	maliasskingroup_t *group;
+	auto model = m->model;
+	auto rmesh = (glsl_mesh_t *) ((byte *) model + model->render_data);
+	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
 
 	m->needload = true;
 
-	if (!(header = m->aliashdr))
-		header = Cache_Get (&m->cache);
-
-	bufs[0] = header->posedata;
-	bufs[1] = header->commands;
+	GLuint      bufs[2];
+	bufs[0] = rmesh->vertices;
+	bufs[1] = rmesh->indices;
 	qfeglDeleteBuffers (2, bufs);
 
-	skins = ((maliasskindesc_t *) ((byte *) header + header->skindesc));
-	for (i = 0; i < header->mdl.numskins; i++) {
-		if (skins[i].type == ALIAS_SKIN_GROUP) {
-			group = (maliasskingroup_t *) ((byte *) header + skins[i].skin);
-			for (j = 0; j < group->numskins; j++) {
-				GLSL_ReleaseTexture (group->skindescs[j].texnum);
-			}
-		} else {
-			GLSL_ReleaseTexture (skins[i].texnum);
-		}
-	}
+	auto skin = &mesh->skin;
+	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
+	int index = 0;
 
-	if (!m->aliashdr) {
-		Cache_Release (&m->cache);
-		Cache_Free (&m->cache);
+	for (uint32_t i = 0; i < skin->numdesc; i++) {
+		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
+			GLSL_ReleaseTexture (skinframe[index++].data);
+		}
 	}
 }
 
-void *
-glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
-				   int snum, int gnum, qboolean group,
-				   maliasskindesc_t *skindesc)
+static void
+glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *texels,
+				   int snum, int gnum, keyframe_t *skinframe)
 {
-	aliashdr_t *header = alias_ctx->header;
-	byte       *tskin;
+	int         w = alias_ctx->skinwidth;
+	int         h = alias_ctx->skinheight;
+	size_t      skinsize = w * h;
+	byte       *tskin = alloca (skinsize);
 	const char *name;
-	int         w, h;
 
-	w = header->mdl.skinwidth;
-	h = header->mdl.skinheight;
-	tskin = malloc (skinsize);
-	memcpy (tskin, skin, skinsize);
+	memcpy (tskin, texels, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
-	if (group)
-		name = va (0, "%s_%i_%i", alias_ctx->mod->path, snum, gnum);
+	if (gnum != -1)
+		name = va ("%s_%i_%i", alias_ctx->mod->path, snum, gnum);
 	else
-		name = va (0, "%s_%i", alias_ctx->mod->path, snum);
-	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
-	free (tskin);
-	return skin + skinsize;
+		name = va ("%s_%i", alias_ctx->mod->path, snum);
+	skinframe->data = GLSL_LoadQuakeTexture (name, w, h, tskin);
+}
+
+void
+glsl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
+{
+	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
+		__auto_type skin = alias_ctx->skins.a + i;
+		glsl_Mod_LoadSkin (alias_ctx, skin->texels,
+						   skin->skin_num, skin->group_num, skin->skindesc);
+	}
 }
 
 void
 glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
+	//mesh_t     *mesh = alias_ctx->mesh;
 
-	if (header->mdl.ident == HEADER_MDL16)
-		VectorScale (header->mdl.scale, 1/256.0, header->mdl.scale);
+	//if (mesh->mdl.ident == HEADER_MDL16)
+	//	VectorScale (mesh->mdl.scale, 1/256.0, mesh->mdl.scale);
 	alias_ctx->mod->clear = glsl_alias_clear;
 }
 
@@ -129,67 +125,45 @@ glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 }
 
-void
-glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
-									 int _s, int extra)
+static int
+separate_verts (int *indexmap, int numverts, int numtris,
+				const mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
-	mtriangle_t *tris;
-	stvert_t   *st;
-	aliasvrt_t *verts;
-	trivertx_t *pv;
-	int        *indexmap;
-	GLushort   *indices;
-	GLuint      bnum[2];
-	int         vertexsize, indexsize;
-	int         numverts;
-	int         numtris;
-	int         i, j;
-	int         pose;
-
-	numverts = header->mdl.numverts;
-	numtris = header->mdl.numtris;
-
-	// copy triangles before editing them
-	tris = malloc (numtris * sizeof (mtriangle_t));
-	memcpy (tris, alias_ctx->triangles.a, numtris * sizeof (mtriangle_t));
-
-	// initialize indexmap to -1 (unduplicated). any other value indicates
-	// both that the vertex has been duplicated and the index of the
-	// duplicate vertex.
-	indexmap = malloc (numverts * sizeof (int));
-	memset (indexmap, -1, numverts * sizeof (int));
-
-	// copy stverts. need space for duplicates
-	st = malloc (2 * numverts * sizeof (stvert_t));
-	memcpy (st, alias_ctx->stverts.a, numverts * sizeof (stvert_t));
-
 	// check for onseam verts, and duplicate any that are associated with
-	// back-facing triangles. the s coordinate is shifted right by half
-	// the skin width.
-	for (i = 0; i < numtris; i++) {
-		for (j = 0; j < 3; j++) {
-			int         vind = tris[i].vertindex[j];
-			if (st[vind].onseam && !tris[i].facesfront) {
+	// back-facing triangles
+	for (int i = 0; i < numtris; i++) {
+		for (int j = 0; j < 3; j++) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
+				// duplicate the vertex if it has not alreaddy been
+				// duplicated
 				if (indexmap[vind] == -1) {
-					st[numverts] = st[vind];
-					st[numverts].s += header->mdl.skinwidth / 2;
 					indexmap[vind] = numverts++;
 				}
-				tris[i].vertindex[j] = indexmap[vind];
 			}
 		}
 	}
+	return numverts;
+}
 
-	// we now know exactly how many vertices we need, so built the vertex
-	// array
-	vertexsize = header->numposes * numverts * sizeof (aliasvrt_t);
-	verts = malloc (vertexsize);
-	for (i = 0, pose = 0; i < header->numposes; i++, pose += numverts) {
-		for (j = 0; j < header->mdl.numverts; j++) {
-			pv = &alias_ctx->poseverts.a[i][j];
-			if (extra) {
-				VectorMultAdd (pv[header->mdl.numverts].v, 256, pv->v,
+static void
+build_verts (mesh_vrt_t *verts, int numposes, int numverts,
+			 const int *indexmap, const mod_alias_ctx_t *alias_ctx)
+{
+	auto st = alias_ctx->stverts.a;
+	auto mesh = alias_ctx->mesh;
+	auto mdl = alias_ctx->mdl;
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
+	int         i, pose;
+	// populate the vertex position and normal data, duplicating for
+	// back-facing on-seam verts (indicated by non-negative indexmap entry)
+	for (i = 0, pose = 0; i < numposes; i++, pose += numverts) {
+		frames[i].data = i * numverts * sizeof (mesh_vrt_t);
+		for (int j = 0; j < mdl->numverts; j++) {
+			auto pv = &alias_ctx->poseverts.a[i][j];
+			if (mdl->ident == HEADER_MDL16) {
+				VectorMultAdd (pv[mdl->numverts].v, 256, pv->v,
 							   verts[pose + j].vertex);
 			} else {
 				VectorCopy (pv->v, verts[pose + j].vertex);
@@ -202,42 +176,134 @@ glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			// stvert setup, using the modified st coordinates
 			if (indexmap[j] != -1) {
 				// the vertex position and normal are duplicated, only s and t
-				// are not (and really, only s, but this feels cleaner)
+				// are not (and really, only s)
 				verts[pose + indexmap[j]] = verts[pose + j];
-				verts[pose + indexmap[j]].st[0] = st[indexmap[j]].s;
-				verts[pose + indexmap[j]].st[1] = st[indexmap[j]].t;
+				verts[pose + indexmap[j]].st[0] += mdl->skinwidth / 2;
 			}
 		}
 	}
+}
 
-	// finished with st and indexmap
-	free (st);
-	free (indexmap);
+static void
+build_inds (uint32_t *indices, int numtris, const int *indexmap,
+			const mod_alias_ctx_t *alias_ctx)
+{
 
 	// now build the indices for DrawElements
-	indexsize = 3 * numtris * sizeof (GLushort);
-	indices = malloc (indexsize);
-	for (i = 0; i < numtris; i++)
-		VectorCopy (tris[i].vertindex, indices + 3 * i);
+	for (int i = 0; i < numtris; i++) {
+		for (int j = 0; j < 3; j++) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			// can't use indexmap to do the test because it indicates only
+			// that the vertex has been duplicated, not whether or not
+			// the vertex is the original or the duplicate
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
+				vind = indexmap[vind];
+			}
+			indices[3 * i + j] = vind;
+		}
+	}
+}
 
-	// finished with tris
-	free (tris);
+void
+glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
+									 int _s, int extra)
+{
+	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
+	int         numverts = alias_ctx->stverts.size;
+	int         numtris = alias_ctx->triangles.size;
+	int         numposes = alias_ctx->poseverts.size;
 
-	header->poseverts = numverts;
+	// copy triangles before editing them
+	dtriangle_t tris[numtris];
+	memcpy (tris, alias_ctx->triangles.a, sizeof (tris));
 
-	// load the vertex data and indices into GL
+	// initialize indexmap to -1 (unduplicated). any other value indicates
+	// both that the vertex has been duplicated and the index of the
+	// duplicate vertex.
+	int indexmap[numverts];
+	memset (indexmap, -1, sizeof (indexmap));
+
+	numverts = separate_verts (indexmap, numverts, numtris, alias_ctx);
+
+	mesh_vrt_t  verts[numverts * numposes];
+	build_verts (verts, numposes, numverts, indexmap, alias_ctx);
+
+	// now build the indices for DrawElements
+	uint32_t indices[3 * numtris];
+	build_inds (indices, numtris, indexmap, alias_ctx);
+
+	if (extra) {
+		auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+		VectorScale (mesh->scale, 1.0f/256, mesh->scale);
+	}
+
+	GLuint      bnum[2];
 	qfeglGenBuffers (2, bnum);
-	header->posedata = bnum[0];
-	header->commands = bnum[1];
-	qfeglBindBuffer (GL_ARRAY_BUFFER, header->posedata);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, header->commands);
-	qfeglBufferData (GL_ARRAY_BUFFER, vertexsize, verts, GL_STATIC_DRAW);
-	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indexsize, indices,
-					GL_STATIC_DRAW);
 
-	// all done
+	size_t size = sizeof (glsl_mesh_t)
+				+ sizeof (qfm_attrdesc_t[3]);
+	const char * name = alias_ctx->mod->name;
+	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+
+	*rmesh = (glsl_mesh_t) {
+		.skinwidth = alias_ctx->skinwidth,
+		.skinheight = alias_ctx->skinheight,
+		.vertices = bnum[0],
+		.indices = bnum[1],
+	};
+	model->render_data = (byte *) rmesh - (byte *) model;
+
+	mesh->triangle_count = numtris;
+	mesh->index_type = mesh_index_type (numverts);
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.count = numverts,
+	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	mesh->morph_attributes = mesh->attributes;
+	mesh->vertex_stride = sizeof (mesh_vrt_t);
+	mesh->morph_stride = mesh->vertex_stride;
+
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, vertex),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = qfm_u16,
+		.components = 3,
+	};
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, normal),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = qfm_s16n,
+		.components = 3,
+	};
+	attribs[2] = (qfm_attrdesc_t) {
+		.offset = offsetof (mesh_vrt_t, st),
+		.stride = sizeof (mesh_vrt_t),
+		.attr = qfm_texcoord,
+		.abs = 1,
+		.type = qfm_s16,
+		.components = 2,
+	};
+
+	uint32_t indices_size = pack_indices (indices, numtris * 3,
+										  mesh->index_type);
+
+	qfeglBindBuffer (GL_ARRAY_BUFFER, rmesh->vertices);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, rmesh->indices);
+	qfeglBufferData (GL_ARRAY_BUFFER, sizeof (verts), verts, GL_STATIC_DRAW);
+	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indices_size, indices,
+					 GL_STATIC_DRAW);
+
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
-	free (verts);
-	free (indices);
 }

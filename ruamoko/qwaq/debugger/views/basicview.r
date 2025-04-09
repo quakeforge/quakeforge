@@ -31,7 +31,7 @@ static string type_views[] = {
 +(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
 	string typename = nil;
-	if (type.type == ty_alias) {
+	if (type.meta == ty_alias) {
 		type = type.alias.aux_type;
 	}
 	if (type.type >= 0

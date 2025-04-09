@@ -77,7 +77,9 @@
 
 	current_file = [self find_file: state.file];
 	file_proxy = [ProxyView withView: current_file];
-	[[current_file gotoLine:state.line - 1] highlightLine];
+	if (state.line) {
+		[[current_file gotoLine:state.line - 1] highlightLine];
+	}
 	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
 	[current_file setVerticalScrollBar:source_scrollbar];
 	[current_file setStatusView:source_status];
@@ -119,7 +121,9 @@
 		[source_window setTitle:[file filename]];
 		current_file = file;
 	}
-	[[current_file gotoLine:state.line - 1] highlightLine];
+	if (state.line) {
+		[[current_file gotoLine:state.line - 1] highlightLine];
+	}
 	[source_window redraw];
 }
 

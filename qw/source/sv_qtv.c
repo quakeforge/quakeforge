@@ -58,7 +58,7 @@ typedef struct {
 	backbuf_t   backbuf;
 	info_t     *info;
 	info_key_t *name_key;
-	qboolean    packet;
+	bool        packet;
 	recorder_t *recorder;
 	sizebuf_t   datagram;
 	byte        datagram_buf[MAX_DATAGRAM];
@@ -194,9 +194,9 @@ qtv_prespawn_f (sv_qtv_t *proxy)
 		buf = 0;
 
 	if (buf == sv.num_signon_buffers - 1)
-		command = va (0, "cmd spawn %i 0\n", svs.spawncount);
+		command = va ("cmd spawn %i 0\n", svs.spawncount);
 	else
-		command = va (0, "cmd prespawn %i %i\n", svs.spawncount, buf + 1);
+		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 	size = (3 + sv.signon_buffer_size[buf]) + (1 + strlen (command) + 1);
 
 	msg = MSG_ReliableCheckBlock (&proxy->backbuf, size);
@@ -381,6 +381,7 @@ qtv_reliable_send (sv_qtv_t *proxy)
 	byte       *buf = 0;
 
 	SV_Printf ("proxy->begun: %d\n", proxy->begun);
+	SZ_Clear (&proxy->netchan.message);
 	if (!proxy->begun) {
 		MSG_WriteByte (&proxy->netchan.message, qtv_packet);
 		pos = proxy->netchan.message.cursize;
@@ -404,7 +405,7 @@ SV_qtvConnect (int qport, info_t *info)
 
 	if (!(proxy = alloc_proxy ())) {
 		SV_Printf ("%s:full proxy connect\n", NET_AdrToString (net_from));
-		Netchan_OutOfBandPrint (net_from, "%c\nserver is full\n\n", A2C_PRINT);
+		SV_OutOfBandPrint (net_from, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
 	proxy->info = info;
@@ -418,7 +419,7 @@ SV_qtvConnect (int qport, info_t *info)
 	proxy->datagram.maxsize = sizeof (proxy->datagram_buf);
 	proxy->begun = 0;
 
-	Netchan_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
+	SV_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
 }
 
 int
@@ -455,7 +456,7 @@ SV_qtvCheckTimeouts (void)
 	float       droptime;
 	sv_qtv_t   *proxy;
 
-	droptime = realtime - sv_timeout->value;
+	droptime = realtime - sv_timeout;
 
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;
@@ -534,7 +535,7 @@ SV_qtvChanging (void)
 	int         i, len;
 	const char *msg;
 
-	msg = va (0, "%cchanging", qtv_stringcmd);
+	msg = va ("%cchanging", qtv_stringcmd);
 	len = strlen (msg) + 1;
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;
@@ -555,7 +556,7 @@ SV_qtvReconnect (void)
 	int         i, len;
 	const char *msg;
 
-	msg = va (0, "%creconnect", qtv_stringcmd);
+	msg = va ("%creconnect", qtv_stringcmd);
 	len = strlen (msg) + 1;
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;

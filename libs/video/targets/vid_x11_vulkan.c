@@ -61,7 +61,15 @@
 #include "vid_internal.h"
 #include "vid_vulkan.h"
 
-static cvar_t *vulkan_library_name;
+static char *vulkan_library_name;
+static cvar_t vulkan_library_name_cvar = {
+	.name = "vulkan_library",
+	.description =
+		"the name of the vulkan shared library",
+	.default_value = "libvulkan.so.1",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &vulkan_library_name },
+};
 
 typedef struct vulkan_presentation_s {
 #define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
@@ -84,11 +92,10 @@ static void *vulkan_library;
 static void
 load_vulkan_library (vulkan_ctx_t *ctx)
 {
-	vulkan_library = dlopen (vulkan_library_name->string,
-							 RTLD_DEEPBIND | RTLD_NOW);
+	vulkan_library = dlopen (vulkan_library_name, RTLD_DEEPBIND | RTLD_NOW);
 	if (!vulkan_library) {
 		Sys_Error ("Couldn't load vulkan library %s: %s",
-				   vulkan_library_name->name, dlerror ());
+				   vulkan_library_name, dlerror ());
 	}
 
 	#define EXPORTED_VULKAN_FUNCTION(name) \
@@ -116,6 +123,7 @@ unload_vulkan_library (vulkan_ctx_t *ctx)
 static void
 x11_vulkan_init_presentation (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	ctx->presentation = calloc (1, sizeof (vulkan_presentation_t));
 	vulkan_presentation_t *pres = ctx->presentation;
 	qfv_instance_t *instance = ctx->instance;
@@ -145,6 +153,7 @@ x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 									 VkPhysicalDevice physicalDevice,
 									 uint32_t queueFamilyIndex)
 {
+	qfZoneScoped (true);
 	if (!ctx->presentation) {
 		x11_vulkan_init_presentation (ctx);
 	}
@@ -165,6 +174,7 @@ x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 static void
 x11_vulkan_choose_visual (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	set_iter_t *first = set_first (pres->usable_visuals);
 	if (first) {
@@ -177,6 +187,7 @@ x11_vulkan_choose_visual (vulkan_ctx_t *ctx)
 static void
 x11_vulkan_create_window (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	pres->window = x_win;
 }
@@ -184,6 +195,7 @@ x11_vulkan_create_window (vulkan_ctx_t *ctx)
 static VkSurfaceKHR
 x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	vulkan_presentation_t *pres = ctx->presentation;
 	VkInstance inst = ctx->instance->instance;
 	VkSurfaceKHR surface;
@@ -194,10 +206,8 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 		.window = pres->window
 	};
 
-	int         width = viddef.width;
-	int         height = viddef.height;
-	ctx->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
-	ctx->scissor = (VkRect2D) { {0, 0}, {width, height} };
+	ctx->window_width = viddef.width;
+	ctx->window_height = viddef.height;
 
 	if (pres->vkCreateXlibSurfaceKHR (inst, &createInfo, 0, &surface)
 		!= VK_SUCCESS) {
@@ -206,25 +216,40 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 	return surface;
 }
 
-vulkan_ctx_t *
-X11_Vulkan_Context (void)
+static void
+delete_vulkan_context (vulkan_ctx_t *ctx)
 {
-	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
-	ctx->load_vulkan = load_vulkan_library;
-	ctx->unload_vulkan = unload_vulkan_library;
-	ctx->get_presentation_support = x11_vulkan_get_presentation_support;
-	ctx->choose_visual = x11_vulkan_choose_visual;
-	ctx->create_window = x11_vulkan_create_window;
-	ctx->create_surface = x11_vulkan_create_surface;
-	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (32);
+	if (ctx->presentation) {
+		set_delete (ctx->presentation->usable_visuals);
+		free (ctx->presentation);
+	}
+	va_destroy_context (ctx->va_ctx);
+	free (ctx);
+}
+
+vulkan_ctx_t *
+X11_Vulkan_Context (vid_internal_t *vi)
+{
+	vulkan_ctx_t *ctx = malloc (sizeof (vulkan_ctx_t));
+	*ctx = (vulkan_ctx_t) {
+		.delete = delete_vulkan_context,
+		.load_vulkan = load_vulkan_library,
+		.unload_vulkan = unload_vulkan_library,
+		.get_presentation_support = x11_vulkan_get_presentation_support,
+		.choose_visual = x11_vulkan_choose_visual,
+		.create_window = x11_vulkan_create_window,
+		.create_surface = x11_vulkan_create_surface,
+		.required_extensions = required_extensions,
+		.va_ctx = va_create_context (VA_CTX_COUNT),
+		.twod_scale = 1,
+	};
+
+	vi->ctx = ctx;
 	return ctx;
 }
 
 void
 X11_Vulkan_Init_Cvars (void)
 {
-	vulkan_library_name = Cvar_Get ("vulkan_library", "libvulkan.so.1",
-									CVAR_ROM, 0,
-									"the name of the vulkan shared library");
+	Cvar_Register (&vulkan_library_name_cvar, 0, 0);
 }

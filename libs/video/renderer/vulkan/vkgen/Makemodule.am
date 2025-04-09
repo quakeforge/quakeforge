@@ -5,29 +5,34 @@ EXTRA_PROGRAMS += vkgen.dat$(EXEEXT)
 
 vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkalias.r \
+	libs/video/renderer/vulkan/vkgen/vkbool.r \
 	libs/video/renderer/vulkan/vkgen/vkenum.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldcustom.r \
 	libs/video/renderer/vulkan/vkgen/vkfielddata.r \
 	libs/video/renderer/vulkan/vkgen/vkfielddef.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldignore.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldsingle.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldstring.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldtype.r \
 	libs/video/renderer/vulkan/vkgen/vkfixedarray.r \
 	libs/video/renderer/vulkan/vkgen/vkgen.r \
+	libs/video/renderer/vulkan/vkgen/vkstring.r \
 	libs/video/renderer/vulkan/vkgen/vkstruct.r \
 	libs/video/renderer/vulkan/vkgen/vktype.r \
 	libs/video/renderer/vulkan/vkgen/vulkan.r
 
-VKGENUSRINC = /usr/include
-VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen -I$(VKGENUSRINC)
+VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen $(VULKAN_QCFLAGS)
 
 vkgen_dat_SOURCES=$(vkgen_dat_src)
 vkgen_obj=$(vkgen_dat_SOURCES:.r=.o)
 vkgen_dep=$(call qcautodep,$(vkgen_dat_SOURCES:.o=.Qo))
-vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lcsqc -lr
+vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lr
 include $(vkgen_dep) # am--include-marker
 r_depfiles_remade += $(vkgen_dep)
 
@@ -47,17 +52,23 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/stddef.h \
 	libs/video/renderer/vulkan/vkgen/stdint.h \
 	libs/video/renderer/vulkan/vkgen/vkalias.h \
+	libs/video/renderer/vulkan/vkgen/vkbool.h \
 	libs/video/renderer/vulkan/vkgen/vkenum.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldcustom.h \
 	libs/video/renderer/vulkan/vkgen/vkfielddata.h \
 	libs/video/renderer/vulkan/vkgen/vkfielddef.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldignore.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledarray.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldlabeledsingle.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldreadonly.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldsingle.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldstring.h \
 	libs/video/renderer/vulkan/vkgen/vkfieldtype.h \
 	libs/video/renderer/vulkan/vkgen/vkfixedarray.h \
 	libs/video/renderer/vulkan/vkgen/vkgen.h \
+	libs/video/renderer/vulkan/vkgen/vkstring.h \
 	libs/video/renderer/vulkan/vkgen/vkstruct.h \
 	libs/video/renderer/vulkan/vkgen/vktype.h
 

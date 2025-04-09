@@ -56,15 +56,23 @@ static general_data_t	plugin_info_general_data;
 static general_funcs_t	plugin_info_general_funcs;
 static cd_funcs_t		plugin_info_cd_funcs;
 
-static qboolean cdValid = false;
-static qboolean initialized = false;
-static qboolean enabled = true;
-static qboolean playLooping = false;
+static bool cdValid = false;
+static bool initialized = false;
+static bool enabled = true;
+static bool playLooping = false;
 
 static SDL_CD  *cd_id;
 static float	cdvolume = 1.0;
 
-static cvar_t *bgmvolume;
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 
 static void
@@ -105,7 +113,7 @@ I_CDAudio_Stop (void)
 }
 
 static void
-I_CDAudio_Play (int track, qboolean looping)
+I_CDAudio_Play (int track, bool looping)
 {
 	/* Initialize cd_stat to avoid warning */
 	/* XXX - Does this default value make sense? */
@@ -168,15 +176,15 @@ I_CDAudio_Update (void)
 {
 	if (!cd_id || !enabled)
 		return;
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
+			bgmvolume = 0.0;
 			I_CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
+			bgmvolume = 1.0;
 			I_CDAudio_Resume ();
 		}
-		cdvolume = bgmvolume->value;
+		cdvolume = bgmvolume;
 		return;
 	}
 	if (playLooping && (SDL_CDStatus (cd_id) != CD_PLAYING)
@@ -276,8 +284,7 @@ I_CDAudio_Init (void)
 		cdValid = false;
 	}
 
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 
 	Sys_Printf ("CD Audio Initialized.\n");
 }

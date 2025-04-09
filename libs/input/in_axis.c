@@ -60,6 +60,7 @@ axis_free (void *a, void *data)
 VISIBLE int
 IN_RegisterAxis (in_axis_t *axis)
 {
+	qfZoneScoped (true);
 	const char *name = axis->name;
 	if (Hash_Find (axis_tab, name)) {
 		return 0;
@@ -69,10 +70,34 @@ IN_RegisterAxis (in_axis_t *axis)
 	return 1;
 }
 
+VISIBLE int
+IN_UnregisterAxis (in_axis_t *axis)
+{
+	const char *name = axis->name;
+	if (!Hash_Find (axis_tab, name)) {
+		return 0;
+	}
+
+	Hash_Free (axis_tab, Hash_Del (axis_tab, name));
+	return 1;
+}
+
 VISIBLE in_axis_t *
 IN_FindAxis (const char *name)
 {
 	return Hash_Find (axis_tab, name);
+}
+
+static void
+axis_clear_state (void *_a, void *data)
+{
+	//FIXME what to do here?
+}
+
+void
+IN_AxisClearStates (void)
+{
+	Hash_ForEach (axis_tab, axis_clear_state, 0);
 }
 
 void
@@ -93,9 +118,16 @@ IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener, void *data)
 	}
 }
 
+static void
+in_axis_shutdown (void *data)
+{
+	Sys_MaskPrintf (SYS_input, "in_axis_shutdown\n");
+	Hash_DelTable (axis_tab);
+}
 
-static void __attribute__((constructor))
-in_axis_init (void)
+void
+IN_AxisInit (void)
 {
 	axis_tab = Hash_NewTable (127, axis_get_key, axis_free, 0, 0);
+	Sys_RegisterShutdown (in_axis_shutdown, 0);
 }

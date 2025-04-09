@@ -40,7 +40,7 @@ void CL_Record (const char *argv1, int track);	// track ignored
 
 void CL_Demo_Init (void);
 
-extern struct cvar_s *demo_speed;
-extern struct cvar_s *demo_gzip;
+extern float demo_speed;
+extern int demo_gzip;
 
 #endif

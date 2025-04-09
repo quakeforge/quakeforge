@@ -54,7 +54,7 @@ extern double realtime;
 
 extern struct cbuf_s *qtv_cbuf;
 extern struct cbuf_args_s *qtv_args;
-extern struct cvar_s *sv_timeout;
+extern float sv_timeout;
 
 struct client_s;
 

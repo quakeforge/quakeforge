@@ -46,12 +46,14 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/evaluate.h"
 #include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
@@ -62,64 +64,67 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static def_t *defs_freelist;
+ALLOC_STATE (def_t, defs);
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
 {
+	def->storage_bits = 0;
 	switch (storage) {
 		case sc_system:
-			def->system = 1;
+			def->system = true;
 			// fall through
 		case sc_global:
-			def->global = 1;
-			def->external = 0;
-			def->local = 0;
-			def->param = 0;
+			def->global = true;
 			break;
 		case sc_extern:
-			def->global = 1;
-			def->external = 1;
-			def->local = 0;
-			def->param = 0;
+			def->global = true;
+			def->external = true;
 			break;
 		case sc_static:
-			def->external = 0;
-			def->global = 0;
-			def->local = 0;
-			def->param = 0;
 			break;
 		case sc_local:
-			def->external = 0;
-			def->global = 0;
-			def->local = 1;
-			def->param = 0;
+			def->local = true;
 			break;
+		case sc_inout:
+		case sc_in:
+		case sc_out:
 		case sc_param:
-			def->external = 0;
-			def->global = 0;
-			def->local = 1;
-			def->param = 1;
+			def->local = true;
+			def->param = true;
+			break;
+		case sc_argument:
+			def->local = true;
+			def->argument = true;
+			break;
+		case sc_count:
 			break;
 	}
-	def->initialized = 0;
+}
+
+static bool
+deferred_size (storage_class_t storage)
+{
+	if (storage >= sc_in) {
+		return true;
+	}
+	return false;
 }
 
 def_t *
-new_def (const char *name, type_t *type, defspace_t *space,
+new_def (const char *name, const type_t *type, defspace_t *space,
 		 storage_class_t storage)
 {
 	def_t      *def;
 
 	ALLOC (16384, def_t, defs, def);
 
-	def->return_addr = __builtin_return_address (0);
-
-	def->name = name ? save_string (name) : 0;
-	def->type = type;
-
-	def->file = pr.source_file;
-	def->line = pr.source_line;
+	*def = (def_t) {
+		.type = type,
+		.name = name ? save_string (name) : 0,
+		.loc = pr.loc,
+		.return_addr = __builtin_return_address (0),
+	};
 
 	set_storage_bits (def, storage);
 
@@ -140,9 +145,10 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
+	if (is_class (type)
+		|| (is_array (type) && is_class(dereference_type (type)))) {
 		error (0, "statically allocated instance of class %s",
-			   type->t.class->name);
+			   type->class->name);
 		return def;
 	}
 
@@ -150,7 +156,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 		int         size = type_size (type);
 		int         alignment = type->alignment;
 
-		if (!size) {
+		if (!size && is_array (type) && !deferred_size (storage)) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
 			alignment = 1;
@@ -159,56 +165,64 @@ new_def (const char *name, type_t *type, defspace_t *space,
 			print_type (type);
 			internal_error (0, "type has no alignment");
 		}
-		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
+		if (size) {
+			def->offset = defspace_alloc_aligned_loc (space, size, alignment);
+		}
 	}
 
 	return def;
 }
 
 def_t *
-alias_def (def_t *def, type_t *type, int offset)
+cover_alias_def (def_t *def, const type_t *type, int offset)
 {
 	def_t      *alias;
 
+	if (offset + type_size (type) <= 0 || offset >= type_size (def->type))
+		internal_error (0, "invalid cover offset");
+	for (alias = def->alias_defs; alias; alias = alias->next) {
+		if (alias->type == type && alias->offset == offset)
+			return alias;
+	}
+	ALLOC (16384, def_t, defs, alias);
+	alias->name = save_string (va ("[%s:%d]", def->name, offset));
+	alias->return_addr = __builtin_return_address (0);
+	alias->offset = offset;
+	alias->offset_reloc = 1;
+	alias->type = type;
+	alias->alias = def;
+	alias->loc = pr.loc;
+	alias->next = def->alias_defs;
+	alias->reg = def->reg;
+	def->alias_defs = alias;
+	return alias;
+}
+
+def_t *
+alias_def (def_t *def, const type_t *type, int offset)
+{
 	if (def->alias) {
-		expr_t      e;
-		e.file = def->file;
-		e.line = def->line;
+		expr_t      e = {
+			.loc = def->loc,
+		};
 		internal_error (&e, "aliasing an alias def");
 	}
 	if (type_size (type) > type_size (def->type))
 		internal_error (0, "aliasing a def to a larger type");
 	if (offset < 0 || offset + type_size (type) > type_size (def->type))
 		internal_error (0, "invalid alias offset");
-	if (type == def->type)
-		return def;
-	for (alias = def->alias_defs; alias; alias = alias->next) {
-		if (alias->type == type && alias->offset == offset)
-			return alias;
-	}
-	ALLOC (16384, def_t, defs, alias);
-	alias->name = save_string (va (0, "[%s:%d]", def->name, offset));
-	alias->return_addr = __builtin_return_address (0);
-	alias->offset = offset;
-	alias->offset_reloc = 1;
-	alias->type = type;
-	alias->alias = def;
-	alias->line = pr.source_line;
-	alias->file = pr.source_file;
-	alias->next = def->alias_defs;
-	def->alias_defs = alias;
-	return alias;
+	return cover_alias_def (def, type, offset);
 }
 
 def_t *
-temp_def (type_t *type)
+temp_def (const type_t *type)
 {
 	def_t      *temp;
-	defspace_t *space = current_func->symtab->space;
+	defspace_t *space = current_func->locals->space;
 	int         size = type_size (type);
 	int         alignment = type->alignment;
 
-	if (size < 1 || size > 4) {
+	if (size < 1 || size > MAX_DEF_SIZE) {
 		internal_error (0, "%d invalid size for temp def", size);
 	}
 	if (alignment < 1) {
@@ -222,14 +236,14 @@ temp_def (type_t *type)
 		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
 		space->def_tail = &temp->next;
-		temp->name = save_string (va (0, ".tmp%d", current_func->temp_num++));
+		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
 	}
 	temp->return_addr = __builtin_return_address (0);
 	temp->type = type;
-	temp->file = pr.source_file;
-	temp->line = pr.source_line;
+	temp->loc = pr.loc;
 	set_storage_bits (temp, sc_local);
 	temp->space = space;
+	temp->reg = current_func->temp_reg;
 	return temp;
 }
 
@@ -281,73 +295,72 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	const type_t *type = unalias_type (def->type);
 
 	if (aux)
-		type = type->t.fldptr.type;	// aux is true only for fields
+		type = type->fldptr.type;	// aux is true only for fields
 	ddef->type = type->type;
 	ddef->ofs = def->offset;
-	ddef->s_name = ReuseString (def->name);
+	ddef->name = ReuseString (def->name);
 }
 
 static int
-zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
+zero_memory (expr_t *block, def_t *def, type_t *zero_type,
 			 int init_size, int init_offset)
 {
 	int         zero_size = type_size (zero_type);
-	expr_t     *zero = convert_nil (new_nil_expr (), zero_type);
-	expr_t     *dst;
+	const expr_t *zero = convert_nil (new_nil_expr (), zero_type);
+	const expr_t *dst;
 
 	for (; init_offset < init_size + 1 - zero_size; init_offset += zero_size) {
 		dst = new_def_expr (def);
 		dst = new_offset_alias_expr (zero_type, dst, init_offset);
-		append_expr (local_expr, assign_expr (dst, zero));
+		append_expr (block, assign_expr (dst, zero));
 	}
 	return init_offset;
 }
 
 static void
-init_elements_nil (def_t *def)
+init_elements_nil (def_t *def, expr_t *block)
 {
-	if (def->local && local_expr) {
+	if (def->local && block) {
 		// memset to 0
 		int         init_size = type_size (def->type);
 		int         init_offset = 0;
 
 		if (options.code.progsversion != PROG_ID_VERSION) {
-			init_offset = zero_memory (local_expr, def, &type_zero,
+			init_offset = zero_memory (block, def, &type_zero,
 									   init_size, init_offset);
 		}
 		// probably won't happen any time soon, but who knows...
 		if (options.code.progsversion != PROG_ID_VERSION
 			&& init_size - init_offset >= type_size (&type_quaternion)) {
-			init_offset = zero_memory (local_expr, def, &type_quaternion,
+			init_offset = zero_memory (block, def, &type_quaternion,
 									   init_size, init_offset);
 		}
 		if (init_size - init_offset >= type_size (&type_vector)) {
-			init_offset = zero_memory (local_expr, def, &type_vector,
+			init_offset = zero_memory (block, def, &type_vector,
 									   init_size, init_offset);
 		}
 		if (options.code.progsversion != PROG_ID_VERSION
 			&& init_size - init_offset >= type_size (&type_double)) {
-			init_offset = zero_memory (local_expr, def, &type_double,
+			init_offset = zero_memory (block, def, &type_double,
 									   init_size, init_offset);
 		}
 		if (init_size - init_offset >= type_size (type_default)) {
-			zero_memory (local_expr, def, type_default,
-						 init_size, init_offset);
+			zero_memory (block, def, type_default, init_size, init_offset);
 		}
 	}
 	// it's a global, so already initialized to 0
 }
 
 static void
-init_elements (struct def_s *def, expr_t *eles)
+init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
 {
-	expr_t     *c;
+	const expr_t *c;
 	pr_type_t  *g;
 	element_chain_t element_chain;
 	element_t  *element;
 
 	if (eles->type == ex_nil) {
-		init_elements_nil (def);
+		init_elements_nil (def, block);
 		return;
 	}
 
@@ -355,9 +368,9 @@ init_elements (struct def_s *def, expr_t *eles)
 	element_chain.tail = &element_chain.head;
 	build_element_chain (&element_chain, def->type, eles, 0);
 
-	if (def->local && local_expr) {
+	if (def->local && block) {
 		expr_t     *dst = new_def_expr (def);
-		assign_elements (local_expr, dst, &element_chain);
+		assign_elements (block, dst, &element_chain);
 	} else {
 		def_t       dummy = *def;
 		for (element = element_chain.head; element; element = element->next) {
@@ -375,23 +388,27 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (c->type == ex_labelref) {
 				// reloc_def_* use only the def's offset and space, so dummy
 				// is ok
-				reloc_def_op (c->e.labelref.label, &dummy);
+				reloc_def_op (c->labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				if (c->e.value->lltype == ev_integer
-					&& is_float (element->type)) {
-					convert_int (c);
-				}
-				if (is_double (get_type (c)) && is_float (element->type)
-					&& c->implicit) {
-					convert_double (c);
+				auto ctype = get_type (c);
+				if (ctype != element->type
+					&& type_assignable (element->type, ctype)) {
+					if (!c->implicit
+						&& !type_promotes (element->type, ctype)) {
+						warning (c, "initialization of %s with %s"
+								 " (use a cast)\n)",
+								 get_type_string (element->type),
+								 get_type_string (ctype));
+					}
+					c = cast_expr (element->type, c);
 				}
 				if (get_type (c) != element->type) {
 					error (c, "type mismatch in initializer");
 					continue;
 				}
 			} else {
-				if (!def->local || !local_expr) {
+				if (!def->local || !block) {
 					error (c, "non-constant initializer");
 					continue;
 				}
@@ -399,11 +416,11 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (c->type != ex_value) {
 				internal_error (c, "bogus expression type in init_elements()");
 			}
-			if (c->e.value->lltype == ev_string) {
-				EMIT_STRING (def->space, g->string_var,
-							 c->e.value->v.string_val);
+			if (c->value->lltype == ev_string) {
+				EMIT_STRING (def->space, *(pr_string_t *) g,
+							 c->value->string_val);
 			} else {
-				memcpy (g, &c->e.value->v, type_size (get_type (c)) * 4);
+				memcpy (g, &c->value->raw_value, type_size (get_type (c)) * 4);
 			}
 		}
 	}
@@ -411,8 +428,8 @@ init_elements (struct def_s *def, expr_t *eles)
 	free_element_chain (&element_chain);
 }
 
-static void
-init_vector_components (symbol_t *vector_sym, int is_field)
+void
+init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 {
 	expr_t     *vector_expr;
 	int         i;
@@ -420,27 +437,27 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 
 	vector_expr = new_symbol_expr (vector_sym);
 	for (i = 0; i < 3; i++) {
-		expr_t     *expr = 0;
+		const expr_t *expr = 0;
 		symbol_t   *sym;
 		const char *name;
 
-		name = va (0, "%s_%s", vector_sym->name, fields[i]);
-		sym = symtab_lookup (current_symtab, name);
+		name = va ("%s_%s", vector_sym->name, fields[i]);
+		sym = symtab_lookup (symtab, name);
 		if (sym) {
-			if (sym->table == current_symtab) {
+			if (sym->table == symtab) {
 				if (sym->sy_type != sy_expr) {
 					error (0, "%s redefined", name);
 					sym = 0;
 				} else {
-					expr = sym->s.expr;
+					expr = sym->expr;
 					if (is_field) {
 						if (expr->type != ex_value
-							|| expr->e.value->lltype != ev_field) {
+							|| expr->value->lltype != ev_field) {
 							error (0, "%s redefined", name);
 							sym = 0;
 						} else {
-							expr->e.value->v.pointer.def = vector_sym->s.def;
-							expr->e.value->v.pointer.val = i;
+							expr->value->pointer.def = vector_sym->def;
+							expr->value->pointer.val = i;
 						}
 					}
 				}
@@ -452,23 +469,24 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 			sym = new_symbol (name);
 		if (!expr) {
 			if (is_field) {
-				expr = new_field_expr (i, &type_float, vector_sym->s.def);
+				expr = new_deffield_expr (i, &type_float, vector_sym->def);
 			} else {
 				expr = field_expr (vector_expr,
 								   new_symbol_expr (new_symbol (fields[i])));
 			}
 		}
 		sym->sy_type = sy_expr;
-		sym->s.expr = expr;
+		sym->expr = expr;
 		if (!sym->table)
-			symtab_addsymbol (current_symtab, sym);
+			symtab_addsymbol (symtab, sym);
 	}
 }
 
-static void
-init_field_def (def_t *def, expr_t *init, storage_class_t storage)
+static const expr_t *
+init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
+				symtab_t *symtab)
 {
-	type_t     *type = (type_t *) dereference_type (def->type);//FIXME cast
+	const type_t *type = dereference_type (def->type);
 	def_t      *field_def;
 	symbol_t   *field_sym;
 	reloc_t    *relocs = 0;
@@ -477,18 +495,18 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 		field_sym = symtab_lookup (pr.entity_fields, def->name);
 		if (!field_sym)
 			field_sym = new_symbol_type (def->name, type);
-		if (field_sym->s.def && field_sym->s.def->external) {
+		if (field_sym->def && field_sym->def->external) {
 			//FIXME this really is not the right way
-			relocs = field_sym->s.def->relocs;
-			free_def (field_sym->s.def);
-			field_sym->s.def = 0;
+			relocs = field_sym->def->relocs;
+			free_def (field_sym->def);
+			field_sym->def = 0;
 		}
-		if (!field_sym->s.def) {
-			field_sym->s.def = new_def (def->name, type, pr.entity_data, storage);
-			reloc_attach_relocs (relocs, &field_sym->s.def->relocs);
-			field_sym->s.def->nosave = 1;
+		if (!field_sym->def) {
+			field_sym->def = new_def (def->name, type, pr.entity_data, storage);
+			reloc_attach_relocs (relocs, &field_sym->def->relocs);
+			field_sym->def->nosave = 1;
 		}
-		field_def = field_sym->s.def;
+		field_def = field_sym->def;
 		if (!field_sym->table)
 			symtab_addsymbol (pr.entity_fields, field_sym);
 		if (storage != sc_extern) {
@@ -499,78 +517,84 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 		}
 		// no support for initialized field vector componets (yet?)
 		if (is_vector(type) && options.code.vector_components)
-			init_vector_components (field_sym, 1);
+			init_vector_components (field_sym, 1, symtab);
 	} else if (init->type == ex_symbol) {
-		symbol_t   *sym = init->e.symbol;
+		symbol_t   *sym = init->symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
 		if (field) {
-			expr_t     *new = new_field_expr (0, field->type, field->s.def);
-			init->type = new->type;
-			init->e = new->e;
+			scoped_src_loc (init);
+			auto new = new_deffield_expr (0, field->type, field->def);
+			if (new->type != ex_value) {
+				internal_error (init, "expected value expression");
+			}
+			init = new;
 		}
 	}
+	return init;
 }
 
 static int
-num_elements (expr_t *e)
+num_elements (const expr_t *e)
 {
 	int         count = 0;
-	for (e = e->e.block.head; e; e = e->next) {
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
 		count++;
 	}
 	return count;
 }
 
 void
-initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
-				storage_class_t storage)
+initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
+				storage_class_t storage, symtab_t *symtab, expr_t *block)
 {
-	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
 
-	if (check && check->table == current_symtab) {
-		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
+	if (check && check->table == symtab) {
+		if (check->sy_type != sy_def || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
-			if (!check->s.def)
+			if (!check->def)
 				internal_error (0, "half defined var");
 			if (storage == sc_extern) {
 				if (init)
 					error (0, "initializing external variable");
 				return;
 			}
-			if (init && check->s.def->initialized) {
+			if (init && check->def->initialized) {
 				error (0, "%s redefined", sym->name);
 				return;
 			}
 			sym = check;
 		}
 	}
-	sym->sy_type = sy_var;
+	sym->sy_type = sy_def;
 	if (!sym->table)
-		symtab_addsymbol (current_symtab, sym);
+		symtab_addsymbol (symtab, sym);
 
-	if (sym->s.def && sym->s.def->external) {
+	if (sym->def && sym->def->external) {
 		//FIXME this really is not the right way
-		relocs = sym->s.def->relocs;
-		free_def (sym->s.def);
-		sym->s.def = 0;
+		relocs = sym->def->relocs;
+		free_def (sym->def);
+		sym->def = 0;
 	}
-	if (!sym->s.def) {
+	if (!sym->def) {
 		if (is_array (sym->type) && !type_size (sym->type)
 			&& init && init->type == ex_compound) {
-			sym->type = array_type (sym->type->t.array.type,
-									num_elements (init));
+			auto ele_type = dereference_type (sym->type);
+			sym->type = array_type (ele_type, num_elements (init));
 		}
-		sym->s.def = new_def (sym->name, sym->type, space, storage);
-		reloc_attach_relocs (relocs, &sym->s.def->relocs);
+		sym->type = auto_type (sym->type, init);
+		sym->def = new_def (sym->name, sym->type, space, storage);
+		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}
+	sym->lvalue = !sym->def->readonly;
 	if (is_vector(sym->type) && options.code.vector_components)
-		init_vector_components (sym, 0);
+		init_vector_components (sym, 0, symtab);
 	if (sym->type->type == ev_field && storage != sc_local
 		&& storage != sc_param)
-		init_field_def (sym->s.def, init, storage);
+		init = init_field_def (sym->def, init, storage, symtab);
 	if (storage == sc_extern) {
 		if (init)
 			error (0, "initializing external variable");
@@ -578,111 +602,116 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	if (!init)
 		return;
-	convert_name (init);
 	if (init->type == ex_error)
 		return;
-	if ((is_array (sym->type) || is_struct (sym->type)
-		 || is_vector(sym->type) || is_quaternion(sym->type))
-		&& ((init->type == ex_compound)
-			|| init->type == ex_nil)) {
-		init_elements (sym->s.def, init);
-		sym->s.def->initialized = 1;
+	if ((is_structural (sym->type) || is_nonscalar (sym->type))
+		&& (init->type == ex_compound || init->type == ex_nil)) {
+		init_elements (sym->def, init, block);
+		sym->def->initialized = 1;
 	} else {
-		type_t     *init_type;
-		if (init->type == ex_nil) {
-			convert_nil (init, sym->type);
+		if (is_nil (init)) {
+			init = convert_nil (init, sym->type);
 		}
-		init_type = get_type (init);
+		if (is_buffer_val (init)) {
+			init = convert_buffer (init, sym->type);
+		}
+		auto init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
-			error (init, "type mismatch in initializer");
+			error (init, "type mismatch in initializer: %s = %s",
+				   get_type_string (sym->type), get_type_string (init_type));
 			return;
 		}
-		if (storage == sc_local && local_expr) {
-			sym->s.def->initialized = 1;
+		if (storage == sc_local && block) {
+			sym->def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
-			append_expr (local_expr, fold_constants (init));
+			append_expr (block, fold_constants (init));
+		} else if (!options.code.const_initializers && is_constexpr (init)) {
+			init = assign_expr (new_symbol_expr (sym), init);
+			add_ctor_expr (init);
 		} else {
-			int         offset = 0;
 			if (!is_constant (init)) {
 				error (init, "non-constant initializier");
 				return;
 			}
-			while ((init->type == ex_uexpr || init->type == ex_expr)
-				   && init->e.expr.op == 'A') {
-				if (init->type == ex_expr) {
-					offset += expr_integer (init->e.expr.e2);
-				}
-				init = init->e.expr.e1;
+			while (init->type == ex_alias) {
+				init = init->alias.expr;
 			}
 			if (init->type != ex_value) {	//FIXME enum etc
 				internal_error (0, "initializier not a value");
 				return;
 			}
-			if (init->e.value->lltype == ev_pointer
-				|| init->e.value->lltype == ev_field) {
+			if (init->value->lltype == ev_ptr
+				|| init->value->lltype == ev_field) {
 				// FIXME offset pointers
-				D_INT (sym->s.def) = init->e.value->v.pointer.val;
-				if (init->e.value->v.pointer.def)
-					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
+				D_INT (sym->def) = init->value->pointer.val;
+				if (init->value->pointer.def)
+					reloc_def_field (init->value->pointer.def, sym->def);
 			} else {
-				ex_value_t *v = init->e.value;
+				ex_value_t *v = init->value;
 				if (!init->implicit
 					&& is_double (init_type)
 					&& (is_integral (sym->type) || is_float (sym->type))) {
 					warning (init, "assigning double to %s in initializer "
 							 "(use a cast)", sym->type->name);
 				}
-				if (is_scalar (sym->type))
+				if (!type_same (sym->type, init_type))
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {
-					EMIT_STRING (sym->s.def->space, D_STRING (sym->s.def),
-								 v->v.string_val);
+					EMIT_STRING (sym->def->space, D_STRING (sym->def),
+								 v->string_val);
 				} else {
-					memcpy (D_POINTER (void, sym->s.def), &v->v,
+					memcpy (D_POINTER (pr_type_t, sym->def), &v->raw_value,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}
-			sym->s.def->initialized = 1;
+			sym->def->initialized = 1;
 			if (options.code.const_initializers) {
-				sym->s.def->constant = 1;
-				sym->s.def->nosave = 1;
+				sym->def->constant = 1;
+				sym->def->nosave = 1;
 			}
 		}
 	}
-	sym->s.def->initializer = init;
+	sym->def->initializer = init;
 }
 
-int
-def_overlap (def_t *d1, def_t *d2)
+static void
+set_def_attributes (def_t *def, attribute_t *attr_list)
 {
-	int         offs1, size1;
-	int         offs2, size2;
-	defspace_t *s1 = d1->space;
-	defspace_t *s2 = d2->space;
+	for (attribute_t *attr = attr_list; attr; attr = attr->next) {
+		if (!strcmp (attr->name, "nosave")) {
+			def->nosave = true;
+		} else {
+			warning (0, "skipping unknown attribute '%s'", attr->name);
+		}
+	}
+}
 
-	if (d1->alias)
-		s1 = d1->alias->space;
-	if (d2->alias)
-		s2 = d2->alias->space;
-	/// Defs in different spaces never overlap.
-	if (s1 != s2)
-		return 0;
+void
+declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
+			 expr_t *block)
+{
+	symbol_t   *sym = spec.sym;
+	defspace_t *space = symtab->space;
 
-	offs1 = d1->offset;
-	if (d1->alias)
-		offs1 += d1->alias->offset;
-	size1 = type_size (d1->type);
+	if (spec.storage == sc_static) {
+		space = pr.near_data;
+	}
 
-	offs2 = d2->offset;
-	if (d2->alias)
-		offs2 += d2->alias->offset;
-	size2 = type_size (d2->type);
+	initialize_def (sym, init, space, spec.storage, symtab, block);
+	set_def_attributes (sym->def, spec.attributes);
+}
 
-	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
-		return 2;	// d1 fully overlaps d2
-	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
-		return 1;	// d1 and d2 at least partially overlap
+static int
+def_overlap (def_t *d, int offset, int size)
+{
+	int         d_offset = d->offset;
+	int         d_size = type_size (d->type);
+
+	if (d_offset >= offset && d_offset + d_size <= offset + size)
+		return 2;	// d is fully overlapped by the range
+	if (d_offset < offset + size && offset < d_offset + d_size)
+		return 1;	// d is partially overlapped by the range range
 	return 0;
 }
 
@@ -702,6 +731,23 @@ def_size (def_t *def)
 }
 
 int
+def_visit_overlaps (def_t *def, int offset, int size, int overlap, def_t *skip,
+					int (*visit) (def_t *, void *), void *data)
+{
+	int         ret;
+
+	for (def = def->alias_defs; def; def = def->next) {
+		if (def == skip)
+			continue;
+		if (overlap && def_overlap (def, offset, size) < overlap)
+			continue;
+		if ((ret = visit (def, data)))
+			return ret;
+	}
+	return 0;
+}
+
+int
 def_visit_all (def_t *def, int overlap,
 			   int (*visit) (def_t *, void *), void *data)
 {
@@ -712,18 +758,14 @@ def_visit_all (def_t *def, int overlap,
 		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if ((ret = visit (def, data)))
+		if (!(overlap & 4) && (ret = visit (def, data)))
 			return ret;
+		overlap &= ~4;
 	} else {
 		overlap = 0;
 	}
-	for (def = def->alias_defs; def; def = def->next) {
-		if (def == start_def)
-			continue;
-		if (overlap && def_overlap (def, start_def) < overlap)
-			continue;
-		if ((ret = visit (def, data)))
-			return ret;
-	}
-	return 0;
+	int         offset = start_def->offset;
+	int         size = start_def->type ? type_size (start_def->type) : 0;
+	return def_visit_overlaps (def, offset, size, overlap, start_def,
+							   visit, data);
 }

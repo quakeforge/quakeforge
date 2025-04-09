@@ -60,11 +60,104 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static daglabel_t *labels_freelist;
-static dagnode_t *nodes_freelist;
-static dag_t *dags_freelist;
+ALLOC_STATE (daglabel_t, labels);
+ALLOC_STATE (dagnode_t, nodes);
+ALLOC_STATE (dag_t, dags);
 
 static daglabel_t *daglabel_chain;
+
+static void dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s);
+static void dag_live_aliases(operand_t *op);
+
+static int
+op_is_identifier (operand_t *op)
+{
+	if (!op)
+		return 0;
+	if (op->op_type == op_label)
+		return 0;
+	if (op->op_type == op_value)
+		return 0;
+	if (op->op_type == op_temp)
+		return 1;
+	if (op->op_type != op_def)
+		return 0;
+	return 1;
+}
+
+static int
+op_is_constant (operand_t *op)
+{
+	if (!op)
+		return 0;
+	if (op->op_type == op_label)
+		return 1;
+	if (op->op_type == op_value)
+		return 1;
+	if (op->op_type == op_label)
+		return op->def->constant;
+	return 0;
+}
+
+static int
+op_is_temp (operand_t *op)
+{
+	if (!op)
+		return 0;
+	return op->op_type == op_temp;
+}
+
+static bool
+op_is_alias (operand_t *op)
+{
+	if (!op) {
+		return false;
+	}
+	if (op->op_type == op_alias) {
+		return true;
+	}
+	if (op->op_type == op_temp) {
+		return !!op->tempop.alias;
+	}
+	if (op->op_type == op_def) {
+		return !!op->def->alias;
+	}
+	return false;
+}
+
+static int __attribute__((pure))
+op_alias_offset (operand_t *op)
+{
+	if (!op_is_alias (op)) {
+		internal_error (op->expr, "not an alias op");
+	}
+	if (op->op_type == op_temp) {
+		return op->tempop.offset;
+	}
+	if (op->op_type == op_def) {
+		return op->def->offset;
+	}
+	internal_error (op->expr, "eh? how?");
+}
+
+static operand_t * __attribute__((pure))
+unalias_op (operand_t *op)
+{
+	if (!op_is_alias (op)) {
+		internal_error (op->expr, "not an alias op");
+	}
+	if (op->op_type == op_alias) {
+		return op->alias;
+	}
+	if (op->op_type == op_temp) {
+		return op->tempop.alias;
+	}
+	if (op->op_type == op_def) {
+		auto def = op->def;
+		return def_operand (def->alias, def->alias->type, op->expr);
+	}
+	internal_error (op->expr, "eh? how?");
+}
 
 static void
 flush_daglabels (void)
@@ -145,7 +238,7 @@ daglabel_string (daglabel_t *label)
 }
 
 static daglabel_t *
-opcode_label (dag_t *dag, const char *opcode, expr_t *expr)
+opcode_label (dag_t *dag, const char *opcode, const expr_t *expr)
 {
 	daglabel_t *label;
 
@@ -154,6 +247,33 @@ opcode_label (dag_t *dag, const char *opcode, expr_t *expr)
 	label->expr = expr;
 	return label;
 }
+
+static __attribute__((pure)) dagnode_t *
+dag_node (operand_t *op)
+{
+	def_t      *def;
+	dagnode_t  *node = 0;
+
+	if (!op)
+		return 0;
+	if (op->op_type == op_def) {
+		def = op->def;
+		if (def->daglabel)
+			node = def->daglabel->dagnode;
+	} else if (op->op_type == op_temp) {
+		if (op->tempop.daglabel)
+			node = op->tempop.daglabel->dagnode;
+	} else if (op->op_type == op_value) {
+		if (op->value->daglabel)
+			node = op->value->daglabel->dagnode;
+	} else if (op->op_type == op_label) {
+		if (op->label->daglabel)
+			node = op->label->daglabel->dagnode;
+	}
+	return node;
+}
+
+static dagnode_t *leaf_node (dag_t *dag, operand_t *op, const expr_t *expr);
 
 static daglabel_t *
 operand_label (dag_t *dag, operand_t *op)
@@ -173,6 +293,11 @@ operand_label (dag_t *dag, operand_t *op)
 		label = new_label (dag);
 		label->op = op;
 		op->tempop.daglabel = label;
+		if (op->tempop.alias) {
+			if (!dag_node (op->tempop.alias)) {
+				leaf_node (dag, op->tempop.alias, op->expr);
+			}
+		}
 	} else if (op->op_type == op_def) {
 		def = op->def;
 		if (def->daglabel)
@@ -194,13 +319,13 @@ operand_label (dag_t *dag, operand_t *op)
 		label->op = op;
 		op->label->daglabel = label;
 	} else {
-		internal_error (op->expr, "unexpected operand type: %d", op->op_type);
+		internal_error (op->expr, "unexpected operand type: %s", op_type_names[op->op_type]);
 	}
 	return label;
 }
 
 static dagnode_t *
-leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
+leaf_node (dag_t *dag, operand_t *op, const expr_t *expr)
 {
 	daglabel_t *label;
 	dagnode_t  *node;
@@ -208,7 +333,7 @@ leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 	if (!op)
 		return 0;
 	node = new_node (dag);
-	node->tl = op->type;
+	node->vtype = op->type;
 	label = operand_label (dag, op);
 	label->dagnode = node;
 	label->expr = expr;
@@ -216,44 +341,57 @@ leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 	return node;
 }
 
-static __attribute__((pure)) dagnode_t *
-dag_node (operand_t *op)
+static int
+dagnode_deref_match (const dagnode_t *n, const dagnode_t *search)
 {
-	def_t      *def;
-	dagnode_t  *node = 0;
+	int         i;
+	auto children = search->children;
 
-	if (!op)
-		return 0;
-	if (op->op_type == op_def) {
-		def = op->def;
-		if (def->daglabel)
-			node = def->daglabel->dagnode;
-	} else if (op->op_type == op_temp) {
-		while (op->tempop.alias)
-			op = op->tempop.alias;
-		if (op->tempop.daglabel)
-			node = op->tempop.daglabel->dagnode;
-	} else if (op->op_type == op_value) {
-		if (op->value->daglabel)
-			node = op->value->daglabel->dagnode;
-	} else if (op->op_type == op_label) {
-		if (op->label->daglabel)
-			node = op->label->daglabel->dagnode;
+	for (i = 0; i < 2; i++) {
+		if (n->children[i] != children[i + 1])
+			return 0;
 	}
-	return node;
+	return 1;
 }
 
-static void
-dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
+static int
+dagnode_match (const dagnode_t *n, const dagnode_t *search)
+{
+	int         i;
+	auto op = search->label;
+
+	if (n->killed)
+		return 0;
+	if (!strcmp (op->opcode, "load")
+		&& n->label->opcode && !strcmp (n->label->opcode, "store"))
+		return dagnode_deref_match (n, search);
+	if (n->label->opcode != op->opcode)
+		return 0;
+	for (i = 0; i < 3; i++) {
+		if (n->children[i] != search->children[i]) {
+			return 0;
+		}
+		if (n->type == st_alias) {
+			if (n->types[i] != search->types[i]) {
+				return 0;
+			}
+			if (n->offset != search->offset) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static dagnode_t *
+dagnode_search (dag_t *dag, const dagnode_t *search)
 {
 	int         i;
 
-	flow_analyze_statement (s, 0, 0, 0, operands);
-	for (i = 1; i < FLOW_OPERANDS; i++) {
-		if (!dag_node (operands[i])) {
-			leaf_node (dag, operands[i], s->expr);
-		}
-	}
+	for (i = 0; i < dag->num_nodes; i++)
+		if (dagnode_match (dag->nodes[i], search))
+			return dag->nodes[i];
+	return 0;
 }
 
 static void
@@ -270,6 +408,72 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 	}
 }
 
+static dagnode_t *
+dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
+{
+	dagnode_t  *node = dag_node (op);
+	dagnode_t  *killer = 0;
+
+	if (node && (node->killed || s->type == st_address)) {
+		// If the node has been killed, then a new node is needed
+		// taking the address of a variable effectively kills the node it's
+		// attached to. FIXME should this be for only when the variable is
+		// in the attached identifiers list and is not the node's label?
+		killer = node->killed;
+		node = 0;
+	}
+
+	if (!node && op_is_temp (op) && op_is_alias (op)) {
+		operand_t  *uop = unalias_op (op);
+		if (uop != op) {
+			if (!(node = dag_node (uop))) {
+				node = leaf_node (dag, uop, s->expr);
+			}
+			node->label->live = 1;
+			dagnode_t *n;
+			dagnode_t search = {
+				.type = st_alias,
+				.label = opcode_label (dag, save_string ("alias"), s->expr),
+				.children = { node },
+				.types = { op->type },
+				.offset = op_alias_offset (op),
+			};
+			if (!(n = dagnode_search (dag, &search))) {
+				n = new_node (dag);
+				n->type = st_alias;
+				n->label = search.label;
+				n->children[0] = node;
+				n->types[0] = op->type;
+				n->offset = search.offset;
+				set_remove (dag->roots, node->number);
+				set_add (node->parents, n->number);
+				dagnode_set_edges (dag, n, s);
+				dagnode_set_reachable (dag, n);
+			}
+			node = n;
+		}
+	}
+
+	if (!node) {
+		// No valid node found (either first reference to the value,
+		// or the value's node was killed).
+		node = leaf_node (dag, op, s->expr);
+		if (node && dag->killer_node >= 0) {
+			set_add (node->edges, dag->killer_node);
+		}
+	}
+	if (killer) {
+		// When an operand refers to a killed node, it must be
+		// evaluated AFTER the killing node has been evaluated.
+		set_add (node->edges, killer->number);
+		// If killer is set, then node is guaranteed to be a new node
+		// and thus does not have any parents, so no need to worry about
+		// updating the reachable sets of any parent nodes.
+		dagnode_set_reachable (dag, node);
+	}
+	return node;
+}
+
 static void
 dag_make_children (dag_t *dag, statement_t *s,
 				   operand_t *operands[FLOW_OPERANDS],
@@ -278,76 +482,18 @@ dag_make_children (dag_t *dag, statement_t *s,
 	int         i;
 
 	flow_analyze_statement (s, 0, 0, 0, operands);
+	if (!operands[0] && s->def) {
+		auto op = s->def;
+		while (op && op->op_type == op_pseudo) {
+			op = op->next;
+		}
+		//FIXME hopefully only one non-pseudo op
+		operands[0] = op;
+	}
 	for (i = 0; i < 3; i++) {
-		dagnode_t  *node = dag_node (operands[i + 1]);
-		dagnode_t  *killer = 0;
-
-		if (node && node->killed) {
-			// If the node has been killed, then a new node is needed
-			killer = node->killed;
-			node = 0;
-		}
-
-		if (!node) {
-			// No valid node found (either first reference to the value,
-			// or the value's node was killed).
-			node = leaf_node (dag, operands[i + 1], s->expr);
-		}
-		if (killer) {
-			// When an operand refers to a killed node, it must be
-			// evaluated AFTER the killing node has been evaluated.
-			set_add (node->edges, killer->number);
-			// If killer is set, then node is guaranteed to be a new node
-			// and thus does not have any parents, so no need to worry about
-			// updating the reachable sets of any parent nodes.
-			dagnode_set_reachable (dag, node);
-		}
-		children[i] = node;
+		operand_t  *op = operands[i + 1];
+		children[i] = dag_make_child (dag, op, s);
 	}
-}
-
-static int
-dagnode_deref_match (const dagnode_t *n, const daglabel_t *op,
-				     dagnode_t *children[3])
-{
-	int         i;
-
-	for (i = 0; i < 2; i++) {
-		if (n->children[i] != children[i + 1])
-			return 0;
-	}
-	return 1;
-}
-
-static int
-dagnode_match (const dagnode_t *n, const daglabel_t *op,
-			   dagnode_t *children[3])
-{
-	int         i;
-
-	if (n->killed)
-		return 0;
-	if (!strcmp (op->opcode, ".")
-		&& n->label->opcode && !strcmp (n->label->opcode, ".="))
-		return dagnode_deref_match (n, op, children);
-	if (n->label->opcode != op->opcode)
-		return 0;
-	for (i = 0; i < 3; i++) {
-		if (n->children[i] != children[i])
-			return 0;
-	}
-	return 1;
-}
-
-static dagnode_t *
-dagnode_search (dag_t *dag, daglabel_t *op, dagnode_t *children[3])
-{
-	int         i;
-
-	for (i = 0; i < dag->num_nodes; i++)
-		if (dagnode_match (dag->nodes[i], op, children))
-			return dag->nodes[i];
-	return 0;
 }
 
 static void
@@ -363,6 +509,9 @@ dagnode_add_children (dag_t *dag, dagnode_t *n, operand_t *operands[4],
 			set_remove (dag->roots, child->number);
 			set_add (child->parents, n->number);
 		}
+	}
+	if (operands[0]) {
+		n->vtype = operands[0]->type;
 	}
 }
 
@@ -406,7 +555,7 @@ dag_find_node (def_t *def, void *_daglabel)
 }
 
 static void
-dagnode_set_edges (dag_t *dag, dagnode_t *n)
+dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 {
 	int         i;
 
@@ -427,9 +576,9 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 					set_add (node->edges, n->number);
 				}
 				if (op->op_type == op_value
-					&& op->value->lltype == ev_pointer
-					&& op->value->v.pointer.def) {
-					def_visit_all (op->value->v.pointer.def, 1,
+					&& op->value->lltype == ev_ptr
+					&& op->value->pointer.def) {
+					def_visit_all (op->value->pointer.def, 1,
 								   dagnode_def_set_edges_visit, n);
 				}
 				if (op->op_type == op_def
@@ -447,17 +596,29 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				set_add (n->edges, child->number);
 		}
 	}
+	for (operand_t *use = s->use; use; use = use->next) {
+		if (use->op_type == op_pseudo) {
+			continue;
+		}
+		auto u = dag_make_child (dag, use, s);
+		u->label->live = 1;
+		dag_live_aliases (use);
+		set_add (n->edges, u->number);
+	}
 	if (n->type == st_func) {
 		const char *num_params = 0;
 		int         first_param = 0;
-		flowvar_t **flowvars = dag->flownode->graph->func->vars;
+		function_t *func = dag->flownode->graph->func;
+		flowvar_t **flowvars = func->vars;
 
-		if (!strncmp (n->label->opcode, "<RCALL", 6)) {
+		if (!strcmp (n->label->opcode, "call")) {
+			// nothing to do
+		} else if (!strncmp (n->label->opcode, "rcall", 5)) {
 			num_params = n->label->opcode + 6;
 			first_param = 2;
-		} else if (!strncmp (n->label->opcode, "<CALL", 5)) {
+		} else if (!strncmp (n->label->opcode, "call", 4)) {
 			num_params = n->label->opcode + 5;
-		} else if (!strcmp (n->label->opcode, "<RETURN>")) {
+		} else if (!strcmp (n->label->opcode, "return") && n->children[0]) {
 			daglabel_t *label = n->children[0]->label;
 			if (!label->op) {
 				set_iter_t *lab_i;
@@ -468,7 +629,29 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 			}
 			label->live = 1;
 		}
-		if (num_params && isdigit (*num_params)) {
+		for (int i = 0; i < s->num_use; i++) {
+			udchain_t   ud = func->ud_chains[s->first_use + i];
+			flowvar_t  *var = func->vars[ud.var];
+			if (var->op->op_type == op_pseudo) {
+				continue;
+			}
+			daglabel_t *l = operand_label (dag, var->op);
+			if (l) {
+				l->live = 1;
+			}
+		}
+		// ensure all operations on global variables are completed before
+		// the st_func statement executes
+		for (set_iter_t *g = set_first (func->global_vars); g;
+			 g = set_next (g)) {
+			flowvar_t  *var = flowvars[g->element];
+			dagnode_t  *gn = dag_node (var->op);
+			if (gn) {
+				set_add (n->edges, gn->number);
+				set_remove (gn->edges, n->number);
+			}
+		}
+		if (num_params && isdigit ((byte) *num_params)) {
 			for (i = first_param; i < *num_params - '0'; i++) {
 				flowvar_t  *var = flowvars[i + 1];
 				def_t      *param_def = var->op->def;
@@ -488,44 +671,6 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 			}
 		}
 	}
-}
-
-static int
-op_is_identifier (operand_t *op)
-{
-	if (!op)
-		return 0;
-	if (op->op_type == op_label)
-		return 0;
-	if (op->op_type == op_value)
-		return 0;
-	if (op->op_type == op_temp)
-		return 1;
-	if (op->op_type != op_def)
-		return 0;
-	return 1;
-}
-
-static int
-op_is_constant (operand_t *op)
-{
-	if (!op)
-		return 0;
-	if (op->op_type == op_label)
-		return 1;
-	if (op->op_type == op_value)
-		return 1;
-	if (op->op_type == op_label)
-		return op->def->constant;
-	return 0;
-}
-
-static int
-op_is_temp (operand_t *op)
-{
-	if (!op)
-		return 0;
-	return op->op_type == op_temp;
 }
 
 static int
@@ -616,19 +761,6 @@ dag_live_aliases(operand_t *op)
 	}
 }
 
-static void
-dag_make_var_live (set_t *live_vars, operand_t *op)
-{
-	flowvar_t  *var = 0;
-
-	if (op) {
-		dag_live_aliases (op);
-		var = flow_get_var (op);
-	}
-	if (var)
-		set_add (live_vars, var->number);
-}
-
 static int
 dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 {
@@ -642,10 +774,30 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 	if (l->dagnode) {
 		dagnode_t  *node = l->dagnode;
 		set_remove (node->identifiers, l->number);
-		if (set_is_member (node->reachable, n->number)) {
+
+		// If the target node (n) is reachable by the label's node or its
+		// parents, then attaching the label's node to the target node would
+		// cause the label's node to be written before it used.
+		set_t      *reachable = set_new ();
+		set_assign (reachable, node->reachable);
+		for (set_iter_t *node_iter = set_first (node->parents); node_iter;
+			 node_iter = set_next (node_iter)) {
+			dagnode_t  *p = dag->nodes[node_iter->element];
+			set_union (reachable, p->reachable);
+		}
+		int         is_reachable = set_is_member (reachable, n->number);
+		set_delete (reachable);
+		if (is_reachable) {
 			return 0;
 		}
+
+		// this assignment to the variable must come after any previous uses,
+		// which includes itself and its parents
 		set_add (n->edges, node->number);
+		set_union (n->edges, node->parents);
+		// nodes never need edges to themselves, but n might be one of node's
+		// parents
+		set_remove (n->edges, n->number);
 		dagnode_set_reachable (dag, n);
 	}
 	l->live = 0;	// remove live forcing on assignment
@@ -745,7 +897,7 @@ dag_sort_nodes (dag_t *dag)
 }
 
 static void
-dag_kill_nodes (dag_t *dag, dagnode_t *n)
+dag_kill_nodes (dag_t *dag, dagnode_t *n, bool is_call)
 {
 	int         i;
 	dagnode_t  *node;
@@ -762,14 +914,14 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 			// point to itself (the required type is recursive).
 			continue;
 		}
-		if (op_is_constant (node->label->op)) {
+		if (!is_call && op_is_constant (node->label->op)) {
 			// While constants in the Quake VM can be changed via a pointer,
 			// doing so would cause much more fun than a simple
 			// mis-optimization would, so consider them safe from pointer
 			// operations.
 			continue;
 		}
-		if (op_is_temp (node->label->op)) {
+		if (!is_call && op_is_temp (node->label->op)) {
 			// Assume that the pointer cannot point to a temporary variable.
 			//  This is reasonable as there is no programmer access to temps.
 			continue;
@@ -777,6 +929,61 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 		node->killed = n;
 	}
 	n->killed = 0;
+	dag->killer_node = n->number;
+}
+
+static __attribute__((pure)) int
+dag_count_ops (operand_t *op)
+{
+	int count = 0;
+	for (; op; op = op->next) {
+		if (op->op_type == op_pseudo) {
+			continue;
+		}
+		count++;
+	}
+	return count;
+}
+
+static void
+dag_free_set (set_t **set)
+{
+	set_delete (*set);
+}
+
+static bool
+dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
+				   flownode_t *flownode)
+{
+	int start = s->number + 1;
+	int end = flownode->first_statement + flownode->num_statements;
+
+	auto nvar = flow_get_var (node->label->op);
+	__attribute__((cleanup(dag_free_set))) set_t *def = set_new ();
+	set_add_range (def, start, end - start);
+	set_intersection (def, nvar->define);
+
+	auto d = set_first (def);
+	if (!d) {
+		// not set in this flow node
+		return false;
+	}
+
+	auto lvar = flow_get_var (label->op);
+	__attribute__((cleanup(dag_free_set))) set_t *use = set_new ();
+	set_add_range (use, start, end - start);
+	set_intersection (use, lvar->use);
+
+	bool overlap = false;
+	for (auto u = set_first (use); u; u = set_next (u)) {
+		if (u->element > d->element) {
+			overlap = true;
+			set_del_iter (u);
+			break;
+		}
+	}
+	set_del_iter (d);
+	return overlap;
 }
 
 dag_t *
@@ -788,6 +995,7 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
+	int         num_aux = 0;
 	int         num_nodes;
 	int         num_lables;
 	set_t      *live_vars = set_new ();
@@ -796,56 +1004,48 @@ dag_create (flownode_t *flownode)
 
 	// count the number of statements so the number of nodes and labels can be
 	// guessed
-	for (s = block->statements; s; s = s->next)
+	for (s = block->statements; s; s = s->next) {
 		num_statements++;
+		num_aux += dag_count_ops (s->use);
+		num_aux += dag_count_ops (s->def);
+		num_aux += op_is_alias (s->opa);
+		num_aux += op_is_alias (s->opb);
+		num_aux += op_is_alias (s->opc);
+	}
 
 	set_assign (live_vars, flownode->live_vars.out);
 
 	dag = new_dag ();
 	dag->flownode = flownode;
-	// at most FLOW_OPERANDS per statement
-	num_nodes = num_statements * FLOW_OPERANDS;
+	// at most FLOW_OPERANDS per statement + aux
+	num_nodes = num_statements * FLOW_OPERANDS + num_aux;
 	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
-	// at most FLOW_OPERANDS per statement, + return + params
-	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8);
+	// at most FLOW_OPERANDS per statement, + return + params + aux
+	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_aux;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
+	dag->killer_node = -1;
 
-	// do a first pass to ensure all operands have an "x_0" leaf node
-	// prior do actual dag creation
-	for (s = block->statements; s; s = s->next) {
-		operand_t  *operands[FLOW_OPERANDS];
-		dag_make_leafs (dag, s, operands);
-	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
 		daglabel_t *op, *lx;
-		int         i;
 
 		dag_make_children (dag, s, operands, children);
-		if (s->type == st_flow || s->type == st_func) {
-			for (i = 0; i < 3; i++) {
-				if (children[i]) {
-					dag_make_var_live (live_vars, operands[i + 1]);
-				}
-			}
-		}
-		if (operands[4]) {
-			// a movep instruction knew what it was reading, so mark that
-			// as live
-			dag_make_var_live (live_vars, operands[4]);
-		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
-		if (s->type != st_assign) {
-			if (!(n = dagnode_search (dag, op, children))) {
+		if (s->type != st_assign && s->type != st_move) {
+			dagnode_t search = {
+				.label = op,
+				.children = { children[0], children[1], children[2] },
+			};
+			if (!(n = dagnode_search (dag, &search))) {
 				n = new_node (dag);
 				n->type = s->type;
 				n->label = op;
 				dagnode_add_children (dag, n, operands, children);
-				dagnode_set_edges (dag, n);
+				dagnode_set_edges (dag, n, s);
 				dagnode_set_reachable (dag, n);
 			}
 		}
@@ -864,9 +1064,21 @@ dag_create (flownode_t *flownode)
 									" label to node");
 				}
 			}
+			if (n->type == st_none && op_is_identifier (n->label->op)) {
+				// if the attached variable has a use after the variable in
+				// the leaf node has a define in the block, then force the
+				// attached variable to be live. Takes care of code similar
+				// to `while (count--) {...}`.
+				if (dag_check_overlap (s, n, lx, flownode)) {
+					lx->live = 1;
+				}
+			}
 		}
 		if (n->type == st_ptrassign) {
-			dag_kill_nodes (dag, n);
+			dag_kill_nodes (dag, n, false);
+		}
+		if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
+			dag_kill_nodes (dag, n, true);
 		}
 	}
 
@@ -889,7 +1101,7 @@ dag_create (flownode_t *flownode)
 }
 
 static statement_t *
-build_statement (const char *opcode, operand_t **operands, expr_t *expr)
+build_statement (const char *opcode, operand_t **operands, const expr_t *expr)
 {
 	int         i;
 	operand_t  *op;
@@ -946,7 +1158,7 @@ dag_calc_node_costs (dagnode_t *dagnode)
 }
 #endif
 static operand_t *
-fix_op_type (operand_t *op, type_t *type)
+fix_op_type (operand_t *op, const type_t *type)
 {
 	if (op && op->op_type != op_label && op->type != type)
 		op = alias_operand (type, op, op->expr);
@@ -980,10 +1192,38 @@ generate_moves (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		var = dag->labels[var_iter->element];
 		operands[2] = var->op;
 		dst = operands[2];
-		st = build_statement ("<MOVE>", operands, var->expr);
+		st = build_statement ("move", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
+}
+
+static operand_t *
+find_local_operand (dagnode_t *node)
+{
+	if (node->type == st_address && node->children[0]) {
+		if (node->children[1]) {
+			//FIXME deal with offsets
+			return nullptr;
+		}
+		return node->children[0]->value;
+	}
+	if (node->type != st_none || !node->value) {
+		return nullptr;
+	}
+	if (node->value->op_type != op_value || !is_ptr (node->value->type)) {
+		return nullptr;
+	}
+	auto value = node->value->value;
+	flowvar_t *var;
+	if (value->pointer.tempop) {
+		var = flow_get_var (value->pointer.tempop);
+	} else if (value->pointer.def) {
+		var = value->pointer.def->flowvar;
+	} else {
+		internal_error (node->label->expr, "invalid pointer value");
+	}
+	return var->op;
 }
 
 static operand_t *
@@ -994,17 +1234,20 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *operands[3] = {0, 0, 0};
 	statement_t *st;
 	operand_t   *dst = 0;
-	type_t      *type;
 	int          offset = 0;
 	def_t       *dstDef;
 
 	operands[0] = make_operand (dag, block, dagnode, 0);
 	operands[1] = make_operand (dag, block, dagnode, 1);
+	dst = find_local_operand (dagnode->children[0]);
 	if (dagnode->children[2]) {
 		operands[2] = make_operand (dag, block, dagnode, 2);
-		st = build_statement ("<MOVEP>", operands, dagnode->label->expr);
+		if (!dst) {
+			dst = find_local_operand (dagnode->children[2]);
+		}
+		st = build_statement ("movep", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
-		if ((var_iter = set_first (dagnode->identifiers))) {
+		if (!dst && (var_iter = set_first (dagnode->identifiers))) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
 			set_del_iter (var_iter);
@@ -1014,15 +1257,15 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			 var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
-			type = dst->def->type;
+			auto type = dst->def->type;
 			dstDef = dst->def;
 			if (dstDef->alias) {
 				offset = dstDef->offset;
 				dstDef = dstDef->alias;
 			}
-			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
-										 operands[1]->expr);
-			st = build_statement ("<MOVEP>", operands, var->expr);
+			auto ptr_val = new_pointer_val (offset, type, dstDef, 0);
+			operands[2] = value_operand (ptr_val, operands[1]->expr);
+			st = build_statement ("movep", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
 	}
@@ -1046,7 +1289,7 @@ generate_memsets (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		var = dag->labels[var_iter->element];
 		operands[2] = var->op;
 		dst = operands[2];
-		st = build_statement ("<MEMSET>", operands, var->expr);
+		st = build_statement ("memset", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
@@ -1060,7 +1303,6 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *operands[3] = {0, 0, 0};
 	statement_t *st;
 	operand_t   *dst = 0;
-	type_t      *type;
 	int          offset = 0;
 	def_t       *dstDef;
 
@@ -1068,14 +1310,14 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operands[1] = make_operand (dag, block, dagnode, 1);
 	if (dagnode->children[2]) {
 		operands[2] = make_operand (dag, block, dagnode, 2);
-		st = build_statement ("<MEMSETP>", operands, dagnode->label->expr);
+		st = build_statement ("memsetp", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
 	} else {
 		for (var_iter = set_first (dagnode->identifiers); var_iter;
 			 var_iter = set_next (var_iter)) {
 			var = dag->labels[var_iter->element];
 			dst = var->op;
-			type = dst->def->type;
+			auto type = dst->def->type;
 			dstDef = dst->def;
 			if (dstDef->alias) {
 				offset = dstDef->offset;
@@ -1083,7 +1325,7 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			}
 			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
 										 operands[1]->expr);
-			st = build_statement ("<MEMSETP>", operands, var->expr);
+			st = build_statement ("memsetp", operands, var->expr);
 			sblock_add_statement (block, st);
 		}
 	}
@@ -1092,21 +1334,74 @@ generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
-					  set_iter_t *var_iter, type_t *type)
+					  set_iter_t *var_iter, const type_t *type)
 {
 	statement_t *st;
 	operand_t   *dst = 0;
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[0] = fix_op_type (src, type);
-	for ( ; var_iter; var_iter = set_next (var_iter)) {
-		var = dag->labels[var_iter->element];
-		operands[1] = fix_op_type (var->op, type);
-		if (!dst)
-			dst = operands[1];
+	if (is_structural (type) || is_matrix (type) || type->width > 4) {
+		operands[0] = fix_op_type (src, type);
+		operands[1] = short_operand (type_size (type), src->expr);
+		for ( ; var_iter; var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			operands[2] = fix_op_type (var->op, type);
+			if (!dst)
+				dst = operands[2];
 
-		st = build_statement ("=", operands, var->expr);
+			st = build_statement ("move", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
+	} else {
+		operands[2] = fix_op_type (src, type);
+		for ( ; var_iter; var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			operands[0] = fix_op_type (var->op, type);
+			if (!dst)
+				dst = operands[0];
+
+			st = build_statement ("assign", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
+	}
+	return dst;
+}
+
+static operand_t *
+generate_call (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var = 0;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst = nullptr;
+	const type_t *type = dagnode->vtype;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	if (dagnode->children[1]) {
+		operands[1] = make_operand (dag, block, dagnode, 1);
+	}
+	if ((var_iter = set_first (dagnode->identifiers))) {
+		var = dag->labels[var_iter->element];
+		operands[2] = var->op;
+		var_iter = set_next (var_iter);
+		dst = operands[2];
+		//FIXME var can have the wrong expression
+		//results in incorrect line number info in basisgroup.r
+		st = build_statement ("call", operands, var->expr);
+		sblock_add_statement (block, st);
+		generate_assignments (dag, block, operands[2], var_iter, type);
+	}
+	if (!var) {
+		if (dagnode->children[2]) {
+			// void call or return value ignored, still have to call
+			operands[2] = make_operand (dag, block, dagnode, 2);
+		} else {
+			operands[2] = temp_operand (type, dagnode->label->expr);
+			dst = operands[2];
+		}
+		st = build_statement ("call", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
 	}
 	return dst;
@@ -1120,26 +1415,51 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	statement_t *st;
 	set_iter_t *var_iter;
 	int         i;
-	type_t     *type;
+	const type_t *type;
 
 	switch (dagnode->type) {
 		case st_none:
 			if (!dagnode->label->op)
-				internal_error (0, "non-leaf label in leaf node");
+				internal_error (dagnode->label->expr,
+								"non-leaf label in leaf node");
 			dst = dagnode->label->op;
 			if ((var_iter = set_first (dagnode->identifiers))) {
 				type = dst->type;
 				dst = generate_assignments (dag, block, dst, var_iter, type);
 			}
 			break;
+		case st_alias:
+			if (!dagnode->children[0] || !dagnode->children[0]->value
+				|| !dagnode->types[0]
+				|| dagnode->children[1] || dagnode->children[2]) {
+				internal_error (dagnode->label->expr, "invalid alias node");
+			}
+			auto value = dagnode->children[0]->value;
+			int offset = 0;
+			if (op_is_alias (value)) {
+				//FIXME? this check shouldn't be necessary, but aliased defs
+				//stay as aliased defs in the dag. I'm not sure this is the
+				//right fix, or even in the right direction
+				if (value->op_type == op_def) {
+					offset = op_alias_offset (value);
+				}
+				value = unalias_op (value);
+			}
+			dst = offset_alias_operand (dagnode->types[0], dagnode->offset + offset,
+										value, dagnode->label->expr);
+			if ((var_iter = set_first (dagnode->identifiers))) {
+				type = dst->type;
+				dst = generate_assignments (dag, block, dst, var_iter, type);
+			}
+			break;
+		case st_address:
 		case st_expr:
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
-			type = get_type (dagnode->label->expr);
+			type = dagnode->vtype;
 			if (!(var_iter = set_first (dagnode->identifiers))) {
-				operands[2] = temp_operand (get_type (dagnode->label->expr),
-											dagnode->label->expr);
+				operands[2] = temp_operand (type, dagnode->label->expr);
 			} else {
 				daglabel_t *var = dag->labels[var_iter->element];
 
@@ -1153,17 +1473,17 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			generate_assignments (dag, block, operands[2], var_iter, type);
 			break;
 		case st_assign:
-			internal_error (0, "unexpected assignment node");
+			internal_error (dagnode->label->expr, "unexpected assignment node");
 		case st_ptrassign:
-			operands[0] = make_operand (dag, block, dagnode, 0);
-			operands[1] = make_operand (dag, block, dagnode, 1);
-			if (dagnode->children[2])
-				operands[2] = make_operand (dag, block, dagnode, 2);
+			operands[2] = make_operand (dag, block, dagnode, 0);
+			operands[0] = make_operand (dag, block, dagnode, 2);
+			if (dagnode->children[1])
+				operands[1] = make_operand (dag, block, dagnode, 1);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			// the source location is suitable for use in other nodes
-			dst = operands[0];
+			dst = operands[2];
 			break;
 		case st_move:
 			dst = generate_moves (dag, block, dagnode);
@@ -1177,8 +1497,13 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		case st_ptrmemset:
 			dst = generate_memsetps (dag, block, dagnode);
 			break;
-		case st_state:
 		case st_func:
+			if (!strcmp (dagnode->label->opcode, "call")) {
+				dst = generate_call (dag, block, dagnode);
+				break;
+			}
+			// fallthrough
+		case st_state:
 			for (i = 0; i < 3; i++)
 				if (dagnode->children[i])
 					operands[i] = make_operand (dag, block, dagnode, i);
@@ -1190,6 +1515,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
+			if (dagnode->children[2])
+				operands[2] = make_operand (dag, block, dagnode, 2);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);

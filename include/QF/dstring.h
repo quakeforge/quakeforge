@@ -66,13 +66,17 @@ void dstring_delete (dstring_t *dstr);
 	large enough to hold size bytes (rounded up to the next 1kB boundary)
 */
 void dstring_adjust (dstring_t *dstr);
+/** Ensure the string buffer is large enough to hold the requested additional
+	bytes (total size will be rounded up to the next 1kB boundary).
+*/
+void dstring_reserve (dstring_t *dstr, size_t delta);
 /** Open up a hole in the string buffer. The contents of the opened hole
 	are undefined.
 	\param dstr		the dstring in which to open the hole.
 	\param len		the size of the hole to open.
 	\return			pointer to the beginning of the opened hole.
 */
-char *dstring_reserve (dstring_t *dstr, size_t len);
+char *dstring_open (dstring_t *dstr, size_t len);
 /** Copy len bytes from data into the dstring, replacing any existing data.
 */
 void dstring_copy (dstring_t *dstr, const char *data, size_t len);
@@ -123,7 +127,7 @@ dstring_t *dstring_strdup (const char *str);
 	\return			pointer to the current null terminator or beginning of the
 					opened hole if there was no terminator.
 */
-char *dstring_reservestr (dstring_t *dstr, size_t len);
+char *dstring_openstr (dstring_t *dstr, size_t len);
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.
@@ -136,12 +140,12 @@ void dstring_copystr (dstring_t *dstr, const char *str);
 void dstring_copysubstr (dstring_t *dstr, const char *str, size_t len);
 /** Append the null terminated string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
-	However, any embedded nulls will be treated as the end of the dstring.
+	\note any embedded nulls will be ignored.
 */
 void dstring_appendstr (dstring_t *dstr, const char *str);
 /** Append up to len bytes from the string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
-	However, any embedded nulls will be treated as the end of the dstring.
+	\note any embedded nulls will be ignored.
 */
 void dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len);
 /** Insert the null terminated string into the dstring at pos. The dstring

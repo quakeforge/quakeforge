@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -48,6 +45,8 @@
 #include "QF/GL/qf_rlight.h"
 
 #include "r_internal.h"
+
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
 
 float       gl_bubble_sintable[33], gl_bubble_costable[33];
 
@@ -81,15 +80,14 @@ R_RenderDlight (dlight_t *light)
 	bub_cos = gl_bubble_costable;
 	rad = light->radius * 0.35;
 
-	VectorSubtract (light->origin, r_origin, v);
+	VectorSubtract (r_refdef.frame.position, light->origin, v);
 	if (VectorLength (v) < rad)				// view is inside the dlight
 		return;
 
 	qfglBegin (GL_TRIANGLE_FAN);
 
-	qfglColor4fv (light->color);
+	qfglColor4fv ((vec_t*)&light->color);
 
-	VectorSubtract (r_origin, light->origin, v);
 	VectorNormalize (v);
 
 	for (i = 0; i < 3; i++)
@@ -100,8 +98,8 @@ R_RenderDlight (dlight_t *light)
 
 	for (i = 16; i >= 0; i--) {
 		for (j = 0; j < 3; j++)
-			v[j] = light->origin[j] + (vright[j] * (*bub_cos) +
-						   vup[j] * (*bub_sin)) * rad;
+			v[j] = light->origin[j] + (r_refdef.frame.right[j] * (*bub_cos) +
+						   r_refdef.frame.up[j] * (*bub_sin)) * rad;
 		bub_sin += 2;
 		bub_cos += 2;
 		qfglVertex3fv (v);
@@ -113,10 +111,7 @@ R_RenderDlight (dlight_t *light)
 void
 gl_R_RenderDlights (void)
 {
-	unsigned int i;
-	dlight_t   *l;
-
-	if (!gl_dlight_polyblend->int_val)
+	if (!gl_dlight_polyblend)
 		return;
 
 	qfglDepthMask (GL_FALSE);
@@ -124,14 +119,14 @@ gl_R_RenderDlights (void)
 	qfglBlendFunc (GL_ONE, GL_ONE);
 	qfglShadeModel (GL_SMOOTH);
 
-	l = r_dlights;
-	for (i = 0; i < r_maxdlights; i++, l++) {
-		if (l->die < vr_data.realtime || !l->radius)
-			continue;
-		R_RenderDlight (l);
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		R_RenderDlight (dlight);
 	}
 
-	if (!gl_dlight_smooth->int_val)
+	if (!gl_dlight_smooth)
 		qfglShadeModel (GL_FLAT);
 	qfglColor3ubv (color_white);
 	qfglEnable (GL_TEXTURE_2D);

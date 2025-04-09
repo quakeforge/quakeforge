@@ -50,32 +50,37 @@
 #include "rua_internal.h"
 
 static void
-bi_va_copy (progs_t *pr)
+bi_va_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	__auto_type src_args = (pr_va_list_t *) &P_POINTER (pr, 0);
 	__auto_type src_list = &G_STRUCT (pr, pr_type_t, src_args->list);
 	size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
 	size_t      size = src_args->count * parm_size;
-	string_t    dst_list_block = 0;
+	pr_string_t dst_list_block = 0;
 	pr_type_t  *dst_list = 0;
 
 	if (size) {
 		dst_list_block = PR_AllocTempBlock (pr, size);
 		dst_list = (pr_type_t *) PR_GetString (pr, dst_list_block);
+		memcpy (dst_list, src_list, size);
 	}
 
-	memcpy (dst_list, src_list, size);
 	R_PACKED (pr, pr_va_list_t).count = src_args->count;
 	R_PACKED (pr, pr_va_list_t).list = PR_SetPointer (pr, dst_list);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"va_copy",		bi_va_copy,		-1},
+	bi(va_copy, 1, P(1, 2)),
 	{0}
 };
 
 void
 RUA_Runtime_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	qfZoneScoped (true);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

@@ -112,6 +112,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	startup ();
 
 	memset (&host_parms, 0, sizeof (host_parms));
@@ -139,7 +143,7 @@ main (int argc, const char **argv)
 		SV_Frame (time);
 
 		// extrasleep is just a way to generate a bad connection on purpose
-		if (sys_extrasleep->int_val)
-			usleep (sys_extrasleep->int_val);
+		if (sys_extrasleep)
+			usleep (sys_extrasleep);
 	}
 }

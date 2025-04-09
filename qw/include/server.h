@@ -59,7 +59,7 @@ typedef enum {
 // initializing (precache commands, static sounds / objects, etc)
 
 typedef struct {
-	qboolean	active;				// false when server is going down
+	bool		active;				// false when server is going down
 	server_state_t	state;			// precache commands are valid only during load
 
 	double		time;
@@ -67,7 +67,7 @@ typedef struct {
 	int			lastcheck;			// used by PF_checkclient
 	double		lastchecktime;		// for monster ai
 
-	qboolean	paused;				// are we paused?
+	bool		paused;				// are we paused?
 
 	//check player/eyes models for hacks
 	unsigned int	model_player_checksum;
@@ -81,7 +81,7 @@ typedef struct {
 	const char	*lightstyles[MAX_LIGHTSTYLES];
 	struct model_s		*models[MAX_MODELS];
 
-	int			num_edicts;			// increases towards MAX_EDICTS
+	unsigned    num_edicts;			// increases towards MAX_EDICTS
 	struct edict_s		*edicts;			// can NOT be array indexed, because
 									// struct edict_s is variable sized, but can
 									// be used to reference the world ent
@@ -142,7 +142,7 @@ typedef struct {
 	double				senttime;
 	float				ping_time;
 	vec3_t              playerpositions[MAX_CLIENTS];
-	qboolean            playerpresent[MAX_CLIENTS];
+	bool                playerpresent[MAX_CLIENTS];
 	packet_entities_t	entities;
 	packet_players_t	players;
 } client_frame_t;
@@ -183,17 +183,17 @@ typedef enum {
 typedef struct client_s {
 	sv_client_state_t	state;
 	int				ping;				// fake ping for server clients
-	qboolean		prespawned;
-	qboolean		spawned;
+	bool			prespawned;
+	bool			spawned;
 
 	int				spectator;			// non-interactive
 
-	qboolean		sendinfo;			// at end of frame, send info to all
+	bool			sendinfo;			// at end of frame, send info to all
 										// this prevents malicious multiple
 										// broadcasts
 	float			lastnametime;		// time of last name change
 	int				lastnamecount;		// time of last name change
-	qboolean		drop;				// lose this guy next opportunity
+	bool			drop;				// lose this guy next opportunity
 	int				lossage;			// loss percentage
 
 	int				userid;				// identifying number
@@ -223,7 +223,7 @@ typedef struct client_s {
 	char			stufftext_buf[MAX_STUFFTEXT];
 
 	double			connection_started;	// or time of disconnect for zombies
-	qboolean		send_message;		// set on frames a datagram arived on
+	bool			send_message;		// set on frames a datagram arived on
 
 	//antilag stuff
 	laggedentinfo_t laggedents[MAX_CLIENTS];
@@ -252,8 +252,9 @@ typedef struct client_s {
 
 	QFile			*upload;
 	struct dstring_s *uploadfn;
+	int             upload_started;
 	netadr_t		snap_from;
-	qboolean		remote_snap;
+	bool			remote_snap;
 
 //===== NETWORK ============
 	int				chokecount;
@@ -270,7 +271,7 @@ typedef struct client_s {
 // getting kicked off by the server operator
 // a program error, like an overflowed reliable buffer
 
-extern qboolean rcon_from_user;			// current command is a from a user
+extern bool rcon_from_user;			// current command is a from a user
 
 //============================================================================
 
@@ -304,8 +305,8 @@ typedef struct {
 	int			spawncount;			// number of servers spawned since start,
 									// used to check late spawns
 	client_t	clients[MAX_CLIENTS];
-	int			maxclients;
-	int			num_clients;
+	unsigned    maxclients;
+	unsigned    num_clients;
 	int			serverflags;		// episode completion information
 	void		(*phys_client) (struct edict_s *ent, int num);
 
@@ -425,21 +426,20 @@ typedef enum {
 //============================================================================
 // FIXME: declare exported variables in their own relevant .h
 
-extern	struct cvar_s	*sv_hide_version_info;
-extern	struct cvar_s	*sv_highchars;
+extern int sv_hide_version_info;
+extern int sv_highchars;
 
-extern	struct cvar_s	*sv_mintic, *sv_maxtic;
-extern	struct cvar_s	*sv_maxspeed;
+extern float sv_mintic;
+extern float sv_maxtic;
+extern float sv_maxspeed;
 
-extern	struct cvar_s	*sv_timeout;
+extern float sv_timeout;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 
-extern	struct cvar_s	*spawn;
-extern	struct cvar_s	*teamplay;
-extern	struct cvar_s	*deathmatch;
-extern	struct cvar_s	*fraglimit;
-extern	struct cvar_s	*timelimit;
+extern int teamplay;
+extern int deathmatch;
+extern int timelimit;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -483,6 +483,11 @@ extern struct clip_hull_s *pf_hull_list[];
 // sv_main.c
 //
 
+void SV_OutOfBand (netadr_t adr, unsigned length, byte *data);
+void SV_OutOfBandPrint (netadr_t adr, const char *format, ...)
+		__attribute__ ((format (PRINTF,2,3)));
+
+
 client_t *SV_AllocClient (int spectator, int server);
 
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
@@ -498,21 +503,20 @@ void SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf);
 
 int SV_ModelIndex (const char *name) __attribute__((pure));
 
-qboolean SV_CheckBottom (struct edict_s *ent);
-qboolean SV_movestep (struct edict_s *ent, const vec3_t move,
-					  qboolean relink);
+bool SV_CheckBottom (struct edict_s *ent);
+bool SV_movestep (struct edict_s *ent, const vec3_t move, bool relink);
 
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 struct progs_s;
-void SV_MoveToGoal (struct progs_s *pr);
+void SV_MoveToGoal (struct progs_s *pr, void *data);
 
 void SV_SaveSpawnparms (void);
 
 void SV_Physics_Client (struct edict_s	*ent);
 
 void SV_PreRunCmd (void);
-void SV_RunCmd (usercmd_t *ucmd, qboolean inside);
+void SV_RunCmd (usercmd_t *ucmd, bool inside);
 void SV_PostRunCmd (void);
 void SV_SetupUserCommands (void);
 void SV_ExecuteUserCommand (const char *s);
@@ -538,10 +542,11 @@ void SV_FlushSignon (void);
 //
 void SV_ProgStartFrame (void);
 void SV_Physics (void);
+void SV_Physics_Init_Cvars (void);
 void SV_CheckVelocity (struct edict_s *ent);
 void SV_AddGravity (struct edict_s *ent);
 void SV_FinishGravity (struct edict_s *ent, vec3_t move);
-qboolean SV_RunThink (struct edict_s *ent);
+bool SV_RunThink (struct edict_s *ent);
 void SV_Physics_Toss (struct edict_s *ent);
 void SV_RunNewmis (void);
 void SV_SetMoveVars(void);
@@ -624,39 +629,40 @@ void SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg);
 // sv_nchan.c
 //
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct cvar_s *sv_antilag;
-extern struct cvar_s *sv_antilag_frac;
-extern struct cvar_s *sv_timecheck_fuzz;
-extern struct cvar_s *sv_timecheck_decay;
-extern struct cvar_s *sv_maxrate;
-extern struct cvar_s *sv_timestamps;
-extern struct cvar_s *sv_timefmt;
-extern struct cvar_s *sv_phs;
-extern struct cvar_s *sv_maxvelocity;
-extern struct cvar_s *sv_gravity;
-extern struct cvar_s *sv_jump_any;
-extern struct cvar_s *sv_aim;
-extern struct cvar_s *sv_stopspeed;
-extern struct cvar_s *sv_spectatormaxspeed;
-extern struct cvar_s *sv_accelerate;
-extern struct cvar_s *sv_airaccelerate;
-extern struct cvar_s *sv_wateraccelerate;
-extern struct cvar_s *sv_friction;
-extern struct cvar_s *sv_waterfriction;
-extern struct cvar_s *pr_double_remove;
-extern struct cvar_s *allow_download;
-extern struct cvar_s *allow_download_skins;
-extern struct cvar_s *allow_download_models;
-extern struct cvar_s *allow_download_sounds;
-extern struct cvar_s *allow_download_maps;
+extern int sv_antilag;
+extern float sv_antilag_frac;
+extern int sv_timecheck_fuzz;
+extern int sv_timecheck_decay;
+extern int sv_maxrate;
+extern int sv_timestamps;
+extern char *sv_timefmt;
+extern int sv_phs;
+extern float sv_maxvelocity;
+extern float sv_gravity;
+extern int sv_jump_any;
+extern float sv_aim;
+extern float sv_stopspeed;
+extern float sv_spectatormaxspeed;
+extern float sv_accelerate;
+extern float sv_airaccelerate;
+extern float sv_wateraccelerate;
+extern float sv_friction;
+extern float sv_waterfriction;
+extern int pr_double_remove;
+extern int allow_download;
+extern int allow_download_skins;
+extern int allow_download_models;
+extern int allow_download_sounds;
+extern int allow_download_maps;
 
 extern int fp_messages;
 extern int fp_persecond;
 extern int fp_secondsdead;
-extern struct cvar_s *pausable;
-extern qboolean nouse;
+extern int pausable;
+extern bool nouse;
 
 extern char fp_msg[255];
 

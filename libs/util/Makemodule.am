@@ -37,9 +37,10 @@ getopt=
 endif
 
 libs_util_libQFutil_la_LDFLAGS=		$(lib_ldflags)
-libs_util_libQFutil_la_LIBADD=		$(util_asm) $(Z_LIBS) $(DL_LIBS) $(WIN32_LIBS)
+libs_util_libQFutil_la_LIBADD=		$(util_asm) $(Z_LIBS) $(BACKTRACE_LIBS) $(DL_LIBS) $(WIN32_LIBS)
 libs_util_libQFutil_la_DEPENDENCIES=	$(util_asm)
 libs_util_libQFutil_la_SOURCES= \
+	libs/util/backtrace.c \
 	libs/util/bsearch.c \
 	libs/util/bspfile.c \
 	libs/util/buildnum.c \
@@ -82,6 +83,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/sizebuf.c \
 	libs/util/string.c \
 	libs/util/sys.c \
+	libs/util/sys_mem.c \
 	libs/util/va.c \
 	libs/util/ver_check.c \
 	libs/util/wad.c \

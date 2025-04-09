@@ -50,9 +50,10 @@
 #include "QF/va.h"
 #include "QF/quakefs.h"
 
+#include "QF/scene/transform.h"
+
 #include "snd_internal.h"
 
-static qboolean snd_initialized = false;
 static int      snd_blocked = 0;
 
 static unsigned soundtime;					// sample PAIRS
@@ -60,10 +61,52 @@ static unsigned soundtime;					// sample PAIRS
 static int      sound_started = 0;
 
 
-static cvar_t  *nosound;
-static cvar_t  *snd_mixahead;
-static cvar_t  *snd_noextraupdate;
-static cvar_t  *snd_show;
+float snd_volume;
+static cvar_t snd_volume_cvar = {
+	.name = "volume",
+	.description =
+		"Set the volume for sound playback",
+	.default_value = "0.7",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_volume },
+};
+static int nosound;
+static cvar_t nosound_cvar = {
+	.name = "nosound",
+	.description =
+		"Set to turn sound off",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &nosound },
+};
+static float snd_mixahead;
+static cvar_t snd_mixahead_cvar = {
+	.name = "snd_mixahead",
+	.description =
+		"Delay time for sounds",
+	.default_value = "0.1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &snd_mixahead },
+};
+static int snd_noextraupdate;
+static cvar_t snd_noextraupdate_cvar = {
+	.name = "snd_noextraupdate",
+	.description =
+		"Toggles the correct value display in host_speeds. Usually messes up "
+		"sound playback when in effect",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &snd_noextraupdate },
+};
+static int snd_show;
+static cvar_t snd_show_cvar = {
+	.name = "snd_show",
+	.description =
+		"Toggles display of sounds currently being played",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &snd_show },
+};
 
 static general_data_t plugin_info_general_data;
 
@@ -145,7 +188,7 @@ static void
 s_stop_all_sounds (void)
 {
 	SND_StopAllSounds (&snd);
-	SND_ScanChannels (&snd, 0);
+	SND_ScanChannels (&snd, snd.threaded);
 	s_clear_buffer (&snd);
 }
 
@@ -196,7 +239,7 @@ s_update_ (void)
 		snd.paintedtime = soundtime;
 	}
 	// mix ahead of current position
-	endtime = soundtime + snd_mixahead->value * snd.speed;
+	endtime = soundtime + snd_mixahead * snd.speed;
 	samps = snd.frames;
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
@@ -211,8 +254,7 @@ s_update_ (void)
 	Called once each time through the main loop
 */
 static void
-s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-			const vec3_t up, const byte *ambient_sound_level)
+s_update (transform_t ear, const byte *ambient_sound_level)
 {
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -221,7 +263,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		snd_output_funcs->on_update (&snd);
 	}
 
-	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
+	SND_SetListener (&snd, ear, ambient_sound_level);
 
 	if (snd_output_data->model == som_push) {
 		// mix some sound
@@ -234,7 +276,7 @@ static void
 s_extra_update (void)
 {
 	if (snd_output_data->model == som_push) {
-		if (!sound_started || snd_noextraupdate->int_val)
+		if (!sound_started || snd_noextraupdate)
 			return;							// don't pollute timings
 		s_update_ ();
 	}
@@ -292,12 +334,11 @@ s_stop_all_sounds_f (void)
 static void
 s_startup (void)
 {
-	if (!snd_initialized)
+	if (!SND_Memory_Init ()) {
 		return;
-
+	}
 	if (!snd_output_funcs->init (&snd)) {
-		Sys_Printf ("S_Startup: S_O_Init failed.\n");
-		sound_started = 0;
+		Sys_Printf ("S_Startup: output init failed.\n");
 		return;
 	}
 	if (!snd.xfer)
@@ -316,18 +357,13 @@ s_snd_force_unblock (void)
 static void
 s_init_cvars (void)
 {
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
-						"Set to turn sound off");
-	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-						   "Set the volume for sound playback");
-	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
-							  "Delay time for sounds");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
-								  "Toggles the correct value display in "
-								  "host_speeds. Usually messes up sound "
-								  "playback when in effect");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
-						 "Toggles display of sounds currently being played");
+	Cvar_Register (&nosound_cvar, 0, 0);
+	Cvar_Register (&snd_volume_cvar, 0, 0);
+	Cvar_Register (&snd_mixahead_cvar, 0, 0);
+	Cvar_Register (&snd_noextraupdate_cvar, 0, 0);
+	Cvar_Register (&snd_show_cvar, 0, 0);
+
+	SND_Memory_Init_Cvars ();
 }
 
 static void
@@ -344,14 +380,6 @@ s_init (void)
 					"Report information on the sound system");
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
-
-// FIXME
-//	if (host_parms.memsize < 0x800000) {
-//		Cvar_Set (snd_loadas8bit, "1");
-//		Sys_Printf ("loading all sounds as 8bit\n");
-//	}
-
-	snd_initialized = true;
 
 	s_startup ();
 
@@ -373,6 +401,7 @@ s_shutdown (void)
 	sound_started = 0;
 	snd_shutdown = 1;
 
+	SND_SFX_Shutdown (&snd);
 	snd_output_funcs->shutdown (&snd);
 }
 
@@ -393,7 +422,15 @@ s_ambient_on (void)
 }
 
 static void
-s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
+s_set_ambient (int amb_channel, sfx_t *sfx)
+{
+	if (!sound_started)
+		return;
+	SND_SetAmbient (&snd, amb_channel, sfx);
+}
+
+static void
+s_static_sound (sfx_t *sfx, vec4f_t origin, float vol,
 				float attenuation)
 {
 	if (!sound_started)
@@ -402,7 +439,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 }
 
 static void
-s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
+s_start_sound (int entnum, int entchannel, sfx_t *sfx, vec4f_t origin,
 			   float vol, float attenuation)
 {
 	if (!sound_started)
@@ -437,11 +474,64 @@ s_load_sound (const char *name)
 }
 
 static void
-s_channel_stop (channel_t *chan)
+s_channel_free (channel_t *chan)
 {
 	if (!sound_started)
 		return;
 	SND_ChannelStop (&snd, chan);
+}
+
+static int
+s_channel_set_sfx (channel_t *chan, sfx_t *sfx)
+{
+	sfxbuffer_t *buffer = sfx->open (sfx);
+	if (!buffer) {
+		return 0;
+	}
+	chan->buffer = buffer;
+	return 1;
+}
+
+static void
+s_channel_set_paused (channel_t *chan, int paused)
+{
+	chan->pause = paused != 0;
+}
+
+static void
+s_channel_set_looping (channel_t *chan, int looping)
+{
+	// FIXME implement
+}
+
+static chan_state
+s_channel_get_state (channel_t *chan)
+{
+	// stop means the channel has been "freed" and is waiting for the mixer
+	// thread to be done with it, thus putting the channel in an invalid state
+	// from the user's point of view. ie, don't touch (user should set channel
+	// pointer to null).
+	if (!chan->stop) {
+		if (chan->done) {
+			// The mixer has finished mixing the channel (come to the end).
+			return chan_done;
+		}
+		if (!chan->buffer) {
+			// channel has not been started yet
+			return chan_pending;
+		}
+		if (chan->pause) {
+			return chan_paused;
+		}
+		return chan_playing;
+	}
+	return chan_invalid;
+}
+
+static void
+s_channel_set_volume (channel_t *chan, float volume)
+{
+	SND_ChannelSetVolume (chan, volume);
 }
 
 static void
@@ -472,13 +562,19 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 	.init = s_init,
 	.ambient_off     = s_ambient_off,
 	.ambient_on      = s_ambient_on,
+	.set_ambient     = s_set_ambient,
 	.static_sound    = s_static_sound,
 	.start_sound     = s_start_sound,
 	.local_sound     = s_local_sound,
 	.stop_sound      = s_stop_sound,
 
 	.alloc_channel   = s_alloc_channel,
-	.channel_stop    = s_channel_stop,
+	.channel_free    = s_channel_free,
+	.channel_set_sfx = s_channel_set_sfx,
+	.channel_set_paused  = s_channel_set_paused,
+	.channel_set_looping = s_channel_set_looping,
+	.channel_get_state   = s_channel_get_state,
+	.channel_set_volume  = s_channel_set_volume,
 
 	.precache_sound  = s_precache_sound,
 	.load_sound      = s_load_sound,

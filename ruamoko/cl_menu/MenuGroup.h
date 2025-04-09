@@ -10,15 +10,15 @@
 */
 @interface MenuGroup : Group
 {
-	int base;				///< The index of the first menu item.
-	int current;			///< The currently selected menu item.
+	unsigned base;				///< The index of the first menu item.
+	unsigned current;			///< The currently selected menu item.
 }
 
 /**	Set the index of the first menu item.
 
 	\param	b	The index of the first menu item.
 */
--(void) setBase: (int) b;
+-(void) setBase: (unsigned) b;
 
 /**	Select the next menu item.
 

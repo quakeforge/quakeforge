@@ -44,7 +44,7 @@
 										// minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
-qboolean    ActiveApp, Minimized, WinNT;
+bool        ActiveApp, Minimized, WinNT;
 
 HWND        hwnd_dialog;				// startup dialog box
 
@@ -127,6 +127,10 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (hPrevInstance)
 		return 0;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	startup ();
 
 	global_hInstance = hInstance;
@@ -181,8 +185,6 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
-	Sys_RegisterShutdown (Net_LogStop, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

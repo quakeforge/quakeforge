@@ -1,33 +1,32 @@
 #version 450
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_multiview : enable
 
-layout (constant_id = 1) const bool doSkyBox = false;
-layout (constant_id = 2) const bool doSkySheet = false;
+#include "fog.finc"
 
-layout (set = 1, binding = 0) uniform sampler2DArray SkySheet;
-layout (set = 2, binding = 0) uniform samplerCube SkyBox;
+#include "oit_store.finc"
+
+layout (constant_id = 0) const bool doSkyBox = false;
+layout (constant_id = 1) const bool doSkySheet = false;
+
+layout (set = 3, binding = 0) uniform sampler2DArray SkySheet;
+layout (set = 4, binding = 0) uniform samplerCube SkyBox;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 64)
 	vec4        fog;
 	float       time;
+	float       alpha;
+	float       turb_scale;
 };
 
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
+layout (location = 2) in vec4 color;
 
-layout (location = 0) out vec4 frag_color;
+layout(early_fragment_tests) in;
+//layout (location = 0) out vec4 frag_color;
 
 const float SCALE = 189.0 / 64.0;
-
-vec4
-fogBlend (vec4 color)
-{
-	float       az = fog.a * gl_FragCoord.z / gl_FragCoord.w;
-	vec3        fog_color = fog.rgb;
-	float       fog_factor = exp (-az * az);
-
-	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
-}
 
 vec4
 sky_sheet (vec3 dir, float time)
@@ -79,7 +78,7 @@ sky_color (vec3 dir, float time)
 		vec4        c1 = sky_sheet (dir, time);
 		vec4        c2 = sky_box (dir, time);
 		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
-		return vec4 (1, 0, 1, 1);
+		//return vec4 (1, 0, 1, 1);
 	}
 }
 
@@ -93,5 +92,6 @@ main (void)
 	} else {
 		c = vec4 (0, 0, 0, 1);
 	}
-	frag_color = c;//fogBlend (c);
+	c = FogBlend (c, fog);
+	StoreFrag (c, gl_FragCoord.z);
 }

@@ -46,28 +46,34 @@ typedef struct tex_s {
 	int         width;
 	int         height;
 	QFFormat    format;
-	int         loaded;			// 0 if size info only, otherwise data loaded
+	union {
+		struct {
+			bool loaded:1;		// false if size info only
+			bool flipped:1;		// true if first pixel is bottom instead of top
+			bool bgr:1;			// true if image is bgr (for tex_rgb)
+			bool relative:1;	// true if pointers are offsets
+			bool external:1;	// true if data is a reference (eg, texture id)
+		};
+		int     flagbits;		// for eazy zeroing
+	};
 	const byte *palette;		// 0 = 32 bit, otherwise 8
 	byte       *data;
 } tex_t;
 
-
 typedef struct colcache_s colcache_t;
 
 tex_t *LoadImage (const char *imageFile, int load);
-colcache_t *ColorCache_New (void);
-void ColorCache_Delete (colcache_t *cache);
-byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
-byte ConvertFloatColor (const float *rgb, const byte *pal, colcache_t *cache);
-tex_t *ConvertImage (const tex_t *tex, const byte *pal);
 
 size_t ImageSize (const tex_t *tex, int incl_struct) __attribute__((pure));
 
 typedef struct colcache_s colcache_t;
+typedef struct qpic_s qpic_t;
 
 colcache_t *ColorCache_New (void);
 void ColorCache_Delete (colcache_t *cache);
+void ColorCache_Shutdown (void);
 byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
-tex_t *ConvertImage (const tex_t *tex, const byte *pal);
+byte ConvertFloatColor (const float *rgb, const byte *pal, colcache_t *cache);
+qpic_t *ConvertImage (const tex_t *tex, const byte *pal, const char *name);
 
 #endif//__QF_image_h

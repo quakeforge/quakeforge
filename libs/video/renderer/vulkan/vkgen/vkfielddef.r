@@ -6,6 +6,10 @@
 #include "vkfieldcustom.h"
 #include "vkfielddata.h"
 #include "vkfielddef.h"
+#include "vkfieldignore.h"
+#include "vkfieldlabeledarray.h"
+#include "vkfieldlabeledsingle.h"
+#include "vkfieldreadonly.h"
 #include "vkfieldsingle.h"
 #include "vkfieldstring.h"
 #include "vkstruct.h"
@@ -42,6 +46,14 @@
 			return [[[SingleField alloc] init:item struct:strct field:fname] autorelease];
 		case "array":
 			return [[[ArrayField alloc] init:item struct:strct field:fname] autorelease];
+		case "labeledarray":
+			return [[[LabeledArrayField alloc] init:item struct:strct field:fname] autorelease];
+		case "labeledsingle":
+			return [[[LabeledSingleField alloc] init:item struct:strct field:fname] autorelease];
+		case "readonly":
+			return [[[ReadOnlyField alloc] init:item struct:strct field:fname] autorelease];
+		case "ignore":
+			return [[[IgnoreField alloc] init:item struct:strct field:fname] autorelease];
 	}
 	return nil;
 }
@@ -73,20 +85,27 @@
 
 -writeParseData
 {
-	fprintf (output_file, "undefined record type parse: %d\n", line);
+	fprintf (output_file, "%@ undefined record type parse data: %d\n",
+			 self, line);
+	return self;
+}
+
+-writeParse
+{
+	fprintf (output_file, "%@ undefined record type parse: %d\n", self, line);
 	return self;
 }
 
 -writeField
 {
-	fprintf (output_file, "undefined record type field: %d\n", line);
+	fprintf (output_file, "%@ undefined record type field: %d\n", self, line);
 	return self;
 }
 
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", 0/*FIXME*/, (void *) field_offset (%s, %s)},\n",
+			 "\t{\"%s\", 0/*FIXME*/, (void *) offsetof (%s, %s)},\n",
 			 field_name, struct_name, value_field);
 	return self;
 }

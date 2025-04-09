@@ -56,7 +56,7 @@ TryMerge (const face_t *f1, const face_t *f2)
 	face_t     *newf;
 	int         i, j, k, l;
 	plane_t    *plane;
-	qboolean    keep1, keep2;
+	bool        keep1, keep2;
 	vec3_t      normal, delta, planenormal;
 	vec_t       dot;
 	vec_t      *p1, *p2, *p3, *p4, *back;
@@ -151,7 +151,7 @@ found_edge:
 	return newf;
 }
 
-qboolean    mergedebug;
+bool        mergedebug;
 face_t *
 MergeFaceToList (face_t *face, face_t *list)
 {

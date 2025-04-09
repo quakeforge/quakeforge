@@ -121,6 +121,9 @@ devid_cmp (const void *a, const void *b)
 static int * __attribute__ ((pure))
 in_find_devid (int devid)
 {
+	if (!known_devices.size) {
+		return nullptr;
+	}
 	return bsearch (&devid, known_devices.a, known_devices.size,
 					sizeof (int), devid_cmp);
 }
@@ -250,7 +253,7 @@ in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 		[ie_add_device] = in_binding_add_device,
 		[ie_remove_device] = in_binding_remove_device,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
@@ -265,7 +268,7 @@ IN_Binding_HandleEvent (const IE_event_t *ie_event)
 		[ie_axis] = in_binding_axis,
 		[ie_button] = in_binding_button,
 	};
-	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+	if ((unsigned) ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
@@ -365,7 +368,7 @@ in_bind_f (void)
 		Sys_Printf ("in_bind imt device type number binding...\n");
 		Sys_Printf ("    imt: the name of the input mapping table in which the"
 					" intput will be bound\n");
-		Sys_Printf ("    device: the nickname or id of the devise owning"
+		Sys_Printf ("    device: the nickname or id of the device owning"
 					" the input to be bound\n");
 		Sys_Printf ("    type: the type of input to be bound (axis or"
 					" button)\n");
@@ -462,7 +465,7 @@ in_bind_f (void)
 			IMT_BindAxis (imt, dev->axis_imt_id + num, axis, &recipe);
 		}
 		Hash_DelTable (vars_tab.tab);
-		PL_Free (exprctx.messages);
+		PL_Release (exprctx.messages);
 		delete_memsuper (exprctx.memsuper);
 	} else {
 		// the rest of the command line is the binding
@@ -728,17 +731,17 @@ static bindcmd_t in_binding_commands[] = {
 		"commands in quotes and separate with semi-colons."
 	},
 	{	"in_unbind", in_unbind_f,
-		"Remove the bind from the the selected key"
+		"Remove the bind from the the selected key."
 	},
 	{	"in_clear", in_clear_f,
-		"Remove all binds from the specified imts"
+		"Remove all binds from the specified imts."
 	},
 	{	"in_devices", in_devices_f,
 		"List the known devices and their status."
 	},
 	{	"in_connect", in_connect_f,
-		"Create a device binding connection. Supports hot-plug in that the "
-		"device will be automatically reconnected when plugged in or"
+		"Create a device binding connection. Supports hot-plug: the "
+		"device will be automatically reconnected when plugged in or "
 		PACKAGE_NAME " is restarted."
 	},
 	{	"in_connections", in_connections_f,
@@ -746,10 +749,11 @@ static bindcmd_t in_binding_commands[] = {
 	},
 	{	"keyhelp", keyhelp_f,
 		"Identify the next active input axis or button.\n"
+		"\n"
 		"The identification includes the device binding name, axis or button "
 		"number, and (if known) the name of the axis or button. Axes and "
 		"buttons can always be bound by number, so even those for which a "
-		"name is not known, but" PACKAGE_NAME " sees, can be bound."
+		"name is not known, but " PACKAGE_NAME " sees, can be bound."
 	},
 	{ }
 #if 0
@@ -777,9 +781,24 @@ IN_Binding_Activate (void)
 	IE_Set_Focus (in_binding_handler);
 }
 
+static void
+IN_Binding_Shutdown (void *data)
+{
+	Sys_MaskPrintf (SYS_input, "IN_Binding_Shutdown\n");
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		clear_connection (db);
+	}
+	for (unsigned i = 0; i < devbindings._size; i++) {
+		free (devbindings._map[i]);
+	}
+	free (devbindings._map);
+	DARRAY_CLEAR (&known_devices);
+}
+
 void
 IN_Binding_Init (void)
 {
+	Sys_RegisterShutdown (IN_Binding_Shutdown, 0);
 	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
 	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);
 
@@ -794,7 +813,7 @@ IN_Binding_SaveConfig (plitem_t *config)
 	plitem_t   *devices = PL_NewArray ();
 	PL_D_AddObject (config, "devices", devices);
 	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
-		plitem_t   *db_cfg = PL_NewDictionary (0); //FIXME hashlinks
+		plitem_t   *db_cfg = PL_NewDictionary (0);
 		PL_A_AddObject (devices, db_cfg);
 		PL_D_AddObject (db_cfg, "name", PL_NewString (db->name));
 		PL_D_AddObject (db_cfg, "devname", PL_NewString (db->devname));
@@ -802,9 +821,9 @@ IN_Binding_SaveConfig (plitem_t *config)
 			PL_D_AddObject (db_cfg, "id", PL_NewString (db->id));
 		}
 		PL_D_AddObject (db_cfg, "num_axes",
-						PL_NewString (va (0, "%d", db->num_axes)));
+						PL_NewString (va ("%d", db->num_axes)));
 		PL_D_AddObject (db_cfg, "num_buttons",
-						PL_NewString (va (0, "%d", db->num_buttons)));
+						PL_NewString (va ("%d", db->num_buttons)));
 		if (db->axis_imt_id >= 0) {
 			plitem_t   *axes = PL_NewArray ();
 			PL_D_AddObject (db_cfg, "axes", axes);

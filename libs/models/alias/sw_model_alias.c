@@ -43,89 +43,182 @@
 
 #include "compat.h"
 #include "d_iface.h"
+#include "r_local.h"
 #include "mod_internal.h"
+
+static void
+sw_alias_clear (model_t *m, void *data)
+{
+	m->needload = true;
+
+	Cache_Free (&m->cache);
+}
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
 
-
-void *
-sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin,
-				 int skinsize, int snum, int gnum,
-				 qboolean group, maliasskindesc_t *skindesc)
+void
+sw_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 {
-	byte		*pskin;
+	auto mesh = alias_ctx->mesh;
+	int         width = alias_ctx->skinwidth;
+	int         height = alias_ctx->skinheight;
+	int         skinsize = width * height;
+	int         picsize = offsetof (qpic_t, data[width * height]);
+	int         num_skins = alias_ctx->skins.size;
+	byte       *texel_block = Hunk_AllocName (0, picsize * num_skins,
+											  alias_ctx->mod->name);
 
-	pskin = Hunk_AllocName (0, skinsize, alias_ctx->mod->name);
-	skindesc->skin = (byte *) pskin - (byte *) alias_ctx->header;
+	for (size_t i = 0; i < alias_ctx->skins.size; i++) {
+		auto skin = alias_ctx->skins.a + i;
+		auto pic = (qpic_t *) (texel_block + i * picsize);
 
-	memcpy (pskin, skin, skinsize);
+		pic->width = width;
+		pic->height = height;
+		skin->skindesc->data = (byte *) pic - (byte *) mesh;
+		memcpy (pic->data, skin->texels, skinsize);
+	}
+}
 
-	return skin + skinsize;
+void
+sw_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
+{
+	alias_ctx->mod->clear = sw_alias_clear;
 }
 
 static void
-process_frame (mod_alias_ctx_t *alias_ctx, maliasframedesc_t *frame,
-			   int posenum, int extra)
+process_frame (mod_alias_ctx_t *alias_ctx, qfm_frame_t *frame,
+			   trivertx_t *frame_verts, int posenum, int extra, void *base)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int         size = header->mdl.numverts * sizeof (trivertx_t);
-	trivertx_t *frame_verts;
+	auto mdl = alias_ctx->mdl;
+	int         size = mdl->numverts * sizeof (trivertx_t);
 
-	if (extra)
-		size *= 2;
+	VectorCopy (alias_ctx->dframes[posenum]->bboxmin.v, frame->bounds_min);
+	VectorCopy (alias_ctx->dframes[posenum]->bboxmax.v, frame->bounds_max);
 
-	frame_verts = Hunk_AllocName (0, size, alias_ctx->mod->name);
-	frame->frame = (byte *) frame_verts - (byte *) header;
-
-	// The low-order 8 bits (actually, fractional) are completely separate
-	// from the high-order bits (see R_AliasTransformFinalVert16 in
-	// sw_ralias.c), but in adjacant arrays. This means we can get away with
-	// just one memcpy as there are no endian issues.
-	memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
+	frame->data = (void *) frame_verts - base;
+	if (extra) {
+		auto hi_verts = alias_ctx->poseverts.a[posenum];
+		auto lo_verts = hi_verts + mdl->numverts;
+		auto verts = (trivertx16_t *) frame_verts;
+		for (int i = 0; i < mdl->numverts; i++) {
+			VectorMultAdd (lo_verts[i].v, 256, hi_verts[i].v, verts[i].v);
+			verts[i].lightnormalindex = lo_verts[i].lightnormalindex;
+		}
+	} else {
+		memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
+	}
 }
 
 void
 sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
-	aliashdr_t *header = alias_ctx->header;
-	int			 i, j;
-	int          posenum = 0;
-	int			 numv = header->mdl.numverts, numt = header->mdl.numtris;
-	stvert_t	*stverts;
-	mtriangle_t *tris;
+	auto mdl = alias_ctx->mdl;
+	auto model = alias_ctx->model;
+	auto mesh = alias_ctx->mesh;
+	int         numv = alias_ctx->stverts.size;
+	int         numt = alias_ctx->triangles.size;
+	int         nump = alias_ctx->poseverts.size;
+	size_t size = sizeof (sw_mesh_t)
+				+ sizeof (qfm_attrdesc_t[3])
+				+ sizeof (stvert_t[numv])
+				+ sizeof (dtriangle_t[numt])
+				+ sizeof (qfm_frame_t[nump]);
+	if (extra) {
+		size += sizeof (trivertx16_t[nump * numv]);
+	} else {
+		size += sizeof (trivertx_t[nump * numv]);
+	}
 
-	stverts = (stvert_t *) Hunk_AllocName (0, numv * sizeof (stvert_t),
-										   alias_ctx->mod->name);
-	tris = (mtriangle_t *) Hunk_AllocName (0, numt * sizeof (mtriangle_t),
-										   alias_ctx->mod->name);
+	const char *name = alias_ctx->mod->name;
+	sw_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
+	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
+	auto stverts = (stvert_t *) &attribs[3];
+	auto tris = (dtriangle_t *) &stverts[numv];
+	auto aframes = (qfm_frame_t *) &tris[numt];
+	auto frame_verts = (trivertx_t *) &aframes[nump];
 
-	header->stverts = (byte *) stverts - (byte *) header;
-	header->triangles = (byte *) tris - (byte *) header;
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = (byte *) frame_verts - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 3,
+	};
+	if (extra) {
+		attribs[0].offset += offsetof (trivertx16_t, v);
+	} else {
+		attribs[0].offset += offsetof (trivertx_t, v);
+	}
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = (byte *) frame_verts - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 1,	// index into r_avertexnormals
+	};
+	if (extra) {
+		attribs[1].offset += offsetof (trivertx16_t, lightnormalindex);
+	} else {
+		attribs[1].offset += offsetof (trivertx_t, lightnormalindex);
+	}
+	attribs[2] = (qfm_attrdesc_t) {
+		.offset = (byte *) stverts - (byte *) mesh,
+		.stride = sizeof (stvert_t),
+		.attr = qfm_texcoord,
+		.type = qfm_s32,
+		.components = 3,	// onseam, s, t
+	};
 
-	for (i = 0; i < numv; i++) {
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	// except texcoords
+	mesh->morph_attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 2,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.offset = 0,
+		.count = mdl->numverts,
+	};
+
+	*rmesh = (sw_mesh_t) {
+		.size = mdl->size * ALIAS_BASE_SIZE_RATIO,
+		.numverts = numv,
+	};
+	model->render_data = (byte *) rmesh - (byte *) model;
+
+	mesh->triangle_count = mdl->numtris;
+	mesh->index_type = qfm_special;	// dtriangle_t
+	mesh->indices = (byte *) tris - (byte *) mesh;
+	mesh->morph.data = (byte *) aframes - (byte *) mesh;
+
+	for (int i = 0; i < numv; i++) {
 		stverts[i].onseam = alias_ctx->stverts.a[i].onseam;
 		stverts[i].s = alias_ctx->stverts.a[i].s << 16;
 		stverts[i].t = alias_ctx->stverts.a[i].t << 16;
 	}
 
-	for (i = 0; i < numt; i++) {
+	for (int i = 0; i < numt; i++) {
 		tris[i].facesfront = alias_ctx->triangles.a[i].facesfront;
 		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	for (i = 0; i < header->mdl.numframes; i++) {
-		maliasframedesc_t *frame = header->frames + i;
-		if (frame->type) {
-			maliasgroup_t *group;
-			group = (maliasgroup_t *) ((byte *) header + frame->frame);
-			for (j = 0; j < group->numframes; j++) {
-				__auto_type frame = (maliasframedesc_t *) &group->frames[j];
-				process_frame (alias_ctx, frame, posenum++, extra);
-			}
-		} else {
-			process_frame (alias_ctx, frame, posenum++, extra);
+	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
+	int  posenum = 0;
+	for (uint32_t i = 0; i < mesh->morph.numdesc; i++) {
+		for (uint32_t j = 0; j < desc[i].numframes; j++, posenum++) {
+			frames[posenum].data = (byte *) &aframes[posenum] - (byte *) mesh;
+			process_frame (alias_ctx, &aframes[posenum],
+						   &frame_verts[posenum * numv], posenum, extra,
+						   frame_verts);
 		}
 	}
 }

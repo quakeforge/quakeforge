@@ -47,7 +47,7 @@
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
+LoadPCX (QFile *f, bool convert, const byte *pal, int load)
 {
 	pcx_t      *pcx;
 	size_t      pcx_mark;
@@ -94,17 +94,18 @@ LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
 	count = load ? (pcx->xmax + 1) * (pcx->ymax + 1) : 0;
 	if (convert) {
 		tex = Hunk_TempAlloc (0, sizeof (tex_t) + count * 3);
-		tex->data = (byte *) (tex + 1);
-		tex->format = tex_rgb;
-		tex->palette = 0;
+		*tex = (tex_t) {
+			.data = (byte *) (tex + 1),
+			.format = tex_rgb,
+			.palette = 0,
+		};
 	} else {
 		tex = Hunk_TempAlloc (0, sizeof (tex_t) + count);
-		tex->data = (byte *) (tex + 1);
-		tex->format = tex_palette;
-		if (pal)
-			tex->palette = pal;
-		else
-			tex->palette = palette;
+		*tex = (tex_t) {
+			.data = (byte *) (tex + 1),
+			.format = tex_palette,
+			.palette = pal ? pal : palette,
+		};
 	}
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
@@ -154,7 +155,7 @@ LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
 
 VISIBLE pcx_t *
 EncodePCX (const byte *data, int width, int height,
-		   int rowbytes, const byte *palette, qboolean flip, int *length)
+		   int rowbytes, const byte *palette, bool flip, int *length)
 {
 	int         i, run, pix, size;
 	pcx_t      *pcx;

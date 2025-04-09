@@ -28,9 +28,6 @@
 # include "config.h"
 #endif
 
-#include "QF/render.h"
-#include "QF/sound.h"
-
 #include "d_ifacea.h"
 #include "r_internal.h"
 #include "vid_internal.h"
@@ -83,9 +80,6 @@ static void
 R_DrawCulledPolys (void)
 {
 	surf_t     *s;
-	msurface_t *pface;
-
-	currententity = &r_worldentity;
 
 	if (r_worldpolysbacktofront) {
 		for (s = surface_p - 1; s > &surfaces[1]; s--) {
@@ -93,8 +87,8 @@ R_DrawCulledPolys (void)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
-				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				auto face = (msurface_t *) s->data;
+				R_RenderPoly (s->render_id, face, 15);
 			}
 		}
 	} else {
@@ -103,8 +97,8 @@ R_DrawCulledPolys (void)
 				continue;
 
 			if (!(s->flags & SURF_DRAWBACKGROUND)) {
-				pface = (msurface_t *) s->data;
-				R_RenderPoly (pface, 15);
+				auto face = (msurface_t *) s->data;
+				R_RenderPoly (s->render_id, face, 15);
 			}
 		}
 	}
@@ -522,10 +516,6 @@ R_ScanEdges (void)
 		// flush the span list if we can't be sure we have enough spans left
 		// for the next scan
 		if (span_p > max_span_p) {
-			VID_UnlockBuffer ();
-			S_ExtraUpdate ();	// don't let sound get messed up if going slow
-			VID_LockBuffer ();
-
 			if (r_drawculledpolys)
 				R_DrawCulledPolys ();
 			else

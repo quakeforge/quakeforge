@@ -81,7 +81,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 
 	pix = (color << 24) | (color << 16) | (color << 8) | color;
 	for (span = surf->spans; span; span = span->pnext) {
-		pdest = (byte *) d_viewbuffer + screenwidth * span->v;
+		pdest = d_viewbuffer + d_rowbytes * span->v;
 		u = span->u;
 		u2 = span->u + span->count - 1;
 		((byte *) pdest)[u] = pix;
@@ -105,15 +105,15 @@ D_DrawSolidSurface (surf_t *surf, int color)
 
 
 static void
-D_CalcGradients (msurface_t *pface)
+D_CalcGradients (msurface_t *face)
 {
 	float       mipscale, t;
 	vec3_t      p_temp1, p_saxis, p_taxis;
 
 	mipscale = 1.0 / (float) (1 << miplevel);
 
-	TransformVector (pface->texinfo->vecs[0], p_saxis);
-	TransformVector (pface->texinfo->vecs[1], p_taxis);
+	TransformVector ((vec_t*)&face->texinfo->vecs[0], p_saxis);//FIXME
+	TransformVector ((vec_t*)&face->texinfo->vecs[1], p_taxis);//FIXME
 
 	t = xscaleinv * mipscale;
 	d_sdivzstepu = p_saxis[0] * t;
@@ -132,33 +132,43 @@ D_CalcGradients (msurface_t *pface)
 
 	t = 0x10000 * mipscale;
 	sadjust = ((fixed16_t) (DotProduct (p_temp1, p_saxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[0] << 16) >> miplevel)
-		 + pface->texinfo->vecs[0][3] * t;
+		((face->texturemins[0] << 16) >> miplevel)
+		 + face->texinfo->vecs[0][3] * t;
 	tadjust = ((fixed16_t) (DotProduct (p_temp1, p_taxis) * 0x10000 + 0.5)) -
-		((pface->texturemins[1] << 16) >> miplevel)
-		 + pface->texinfo->vecs[1][3] * t;
+		((face->texturemins[1] << 16) >> miplevel)
+		 + face->texinfo->vecs[1][3] * t;
 
 	// -1 (-epsilon) so we never wander off the edge of the texture
-	bbextents = ((pface->extents[0] << 16) >> miplevel) - 1;
-	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
+	bbextents = ((face->extents[0] << 16) >> miplevel) - 1;
+	bbextentt = ((face->extents[1] << 16) >> miplevel) - 1;
 }
 
+static void
+transform_submodel_poly (surf_t *s)
+{
+	// FIXME: we don't want to do all this for every polygon!
+	// TODO: store once at start of frame
+	vec4f_t    *transform = SW_COMP(scene_sw_matrix, s->render_id);
+	vec4f_t     local_modelorg = r_refdef.frame.position - transform[3];
+	TransformVector ((vec_t*)&local_modelorg, transformed_modelorg);//FIXME
+
+	R_RotateBmodel (transform);		// FIXME: don't mess with the
+								// frustum, make entity passed in
+}
 
 void
 D_DrawSurfaces (void)
 {
 	surf_t     *s;
-	msurface_t *pface;
+	msurface_t *face;
 	surfcache_t *pcurrentcache;
 	vec3_t      world_transformed_modelorg;
-	vec3_t      local_modelorg;
 
-	currententity = &r_worldentity;
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
 	// TODO: could preset a lot of this at mode set time
-	if (r_drawflat->int_val) {
+	if (r_refdef.drawflat) {
 		for (s = &surfaces[1]; s < surface_p; s++) {
 			if (!s->spans)
 				continue;
@@ -195,30 +205,20 @@ D_DrawSurfaces (void)
 				d_zistepv = 0;
 				d_ziorigin = -0.9;
 
-				D_DrawSolidSurface (s, r_clearcolor->int_val & 0xFF);
+				D_DrawSolidSurface (s, r_clearcolor & 0xFF);
 				D_DrawZSpans (s->spans);
 			} else if (s->flags & SURF_DRAWTURB) {
-				pface = s->data;
+				face = s->data;
 				miplevel = 0;
-				cacheblock = ((byte *) pface->texinfo->texture +
-							  pface->texinfo->texture->offsets[0]);
+				cacheblock = ((byte *) face->texinfo->texture +
+							  face->texinfo->texture->offsets[0]);
 				cachewidth = 64;
 
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in
-												// to R_RotateBmodel ()
-					VectorSubtract (r_origin,
-						Transform_GetWorldPosition (currententity->transform),
-									local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
-
-					R_RotateBmodel ();	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
-				D_CalcGradients (pface);
+				D_CalcGradients (face);
 
 				Turbulent (s->spans);
 				D_DrawZSpans (s->spans);
@@ -228,10 +228,9 @@ D_DrawSurfaces (void)
 					// FIXME: we don't want to do this every time!
 					// TODO: speed up
 
-					currententity = &r_worldentity;
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
-					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vfwd, vfwd);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
@@ -239,30 +238,20 @@ D_DrawSurfaces (void)
 				}
 			} else {
 				if (s->insubmodel) {
-					// FIXME: we don't want to do all this for every polygon!
-					// TODO: store once at start of frame
-					currententity = s->entity;	// FIXME: make this passed in
-												// to R_RotateBmodel ()
-					VectorSubtract (r_origin,
-						Transform_GetWorldPosition (currententity->transform),
-									local_modelorg);
-					TransformVector (local_modelorg, transformed_modelorg);
-
-					R_RotateBmodel ();	// FIXME: don't mess with the
-										// frustum, make entity passed in
+					transform_submodel_poly (s);
 				}
 
-				pface = s->data;
+				face = s->data;
 				miplevel = D_MipLevelForScale (s->nearzi * scale_for_mip
-											   * pface->texinfo->mipadjust);
+											   * face->texinfo->mipadjust);
 
 				// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (pface, miplevel);
+				pcurrentcache = D_CacheSurface (s->render_id, face, miplevel);
 
 				cacheblock = (byte *) pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
 
-				D_CalcGradients (pface);
+				D_CalcGradients (face);
 
 				(*d_drawspans) (s->spans);
 
@@ -275,12 +264,11 @@ D_DrawSurfaces (void)
 
 					VectorCopy (world_transformed_modelorg,
 								transformed_modelorg);
-					VectorCopy (base_vpn, vpn);
+					VectorCopy (base_vfwd, vfwd);
 					VectorCopy (base_vup, vup);
 					VectorCopy (base_vright, vright);
 					VectorCopy (base_modelorg, modelorg);
 					R_TransformFrustum ();
-					currententity = &r_worldentity;
 				}
 			}
 		}

@@ -83,6 +83,9 @@ dstring_new (void)
 VISIBLE void
 dstring_delete (dstring_t *dstr)
 {
+	if (!dstr) {
+		return;
+	}
 	if (dstr->str)
 		dstr->mem->free (dstr->mem->data, dstr->str);
 	dstr->mem->free (dstr->mem->data, dstr);
@@ -100,8 +103,22 @@ dstring_adjust (dstring_t *dstr)
 	}
 }
 
+VISIBLE void
+dstring_reserve (dstring_t *dstr, size_t delta)
+{
+	size_t newsize = dstr->size + delta;
+	if (newsize > dstr->truesize) {
+		dstr->truesize = (newsize + 1023) & ~1023;
+		dstr->str = dstr->mem->realloc (dstr->mem->data, dstr->str,
+										dstr->truesize);
+		if (!dstr->str) {
+			Sys_Error ("dstring_reserve:  Failed to reallocate memory.");
+		}
+	}
+}
+
 VISIBLE char *
-dstring_reserve (dstring_t *dstr, size_t len)
+dstring_open (dstring_t *dstr, size_t len)
 {
 	dstr->size += len;
 	dstring_adjust (dstr);
@@ -222,7 +239,7 @@ dstring_strdup (const char *str)
 }
 
 VISIBLE char *
-dstring_reservestr (dstring_t *dstr, size_t len)
+dstring_openstr (dstring_t *dstr, size_t len)
 {
 	int         pos = dstr->size;
 	if (pos && !dstr->str[pos - 1])
@@ -254,9 +271,12 @@ dstring_copysubstr (dstring_t *dstr, const char *str, size_t len)
 VISIBLE void
 dstring_appendstr (dstring_t *dstr, const char *str)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 	size_t      len = strlen (str);
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
 	strcpy (dstr->str + pos, str);
@@ -265,8 +285,11 @@ dstring_appendstr (dstring_t *dstr, const char *str)
 VISIBLE void
 dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len)
 {
-	size_t      pos = strnlen (dstr->str, dstr->size);
+	size_t      pos = dstr->size;
 
+	if (pos && !dstr->str[pos - 1]) {
+		pos--;
+	}
 	len = strnlen (str, len);
 	dstr->size = pos + len + 1;
 	dstring_adjust (dstr);
@@ -298,12 +321,12 @@ dstring_clearstr (dstring_t *dstr)
 }
 
 static __attribute__((format(PRINTF, 3, 0))) char *
-_dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
+_dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list srcargs)
 {
 	int         size;
 
-	va_list     tmp_args;
-	va_copy (tmp_args, args);
+	va_list     args;
+	va_copy (args, srcargs);
 
 	if (!dstr->truesize)
 		dstring_clearstr (dstr); // Make it a string
@@ -312,15 +335,18 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 							  args)) == -1) {
 		dstr->size = (dstr->truesize & ~1023) + 1024;
 		dstring_adjust (dstr);
-		va_copy (args, tmp_args);
+		va_end (args);
+		va_copy (args, srcargs);
 	}
 	dstr->size = size + offs + 2;
 	// "Proper" implementations return the required size
 	if (dstr->size > dstr->truesize) {
 		dstring_adjust (dstr);
-		va_copy (args, tmp_args);
+		va_end (args);
+		va_copy (args, srcargs);
 		vsnprintf (dstr->str + offs, dstr->truesize - offs - 1, fmt, args);
 	}
+	va_end (args);
 	dstr->size = size + offs + 1;
 	dstr->str[dstr->size - 1] = 0;
 	return dstr->str;

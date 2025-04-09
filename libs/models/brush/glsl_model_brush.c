@@ -60,8 +60,6 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static glsltex_t glsl_notexture = { };
-
 static void
 glsl_brush_clear (model_t *m, void *data)
 {
@@ -105,7 +103,6 @@ void
 glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 {
 	if (!tx) {
-		r_notexture_mip->render = &glsl_notexture;
 		return;
 	}
 	glsltex_t  *tex = tx->render;

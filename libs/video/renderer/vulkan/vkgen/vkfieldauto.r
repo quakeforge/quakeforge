@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "vkfieldauto.h"
 #include "vkgen.h"
 #include "vkstruct.h"
@@ -10,7 +12,8 @@
 	if (!self) {
 		return self;
 	}
-	field = [strct findField:field_name];
+	string real_name = [[item getObjectForKey:"field"] string];
+	field = [strct findField:real_name ? real_name : field_name];
 
 	return self;
 }
@@ -24,8 +27,8 @@
 -writeField
 {
 	Type       *field_type = [Type findType: field.type];
-	fprintf (output_file, "\t{\"%s\", field_offset (%s, %s), %s, %s, %s},\n",
-			 field_name, struct_name, field_name,
+	fprintf (output_file, "\t{\"%s\", offsetof (%s, %s), %s, %s, %s},\n",
+			 field_name, struct_name, field.name,
 			 [field_type parseType], [field_type parseFunc],
 			 [field_type parseData]);
 	return self;
@@ -35,8 +38,8 @@
 {
 	Type       *field_type = [Type findType: field.type];
 	fprintf (output_file,
-			 "\t{\"%s\", &%s, (void *) field_offset (%s, %s)},\n",
-			 field_name, [field_type cexprType], struct_name, field_name);
+			 "\t{\"%s\", &%s, (void *) offsetof (%s, %s)},\n",
+			 field_name, [field_type cexprType], struct_name, field.name);
 	return self;
 }
 

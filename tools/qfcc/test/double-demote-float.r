@@ -1,3 +1,6 @@
+#pragma bug die
+#pragma warn error
+
 double a;
 float b;
 int main ()

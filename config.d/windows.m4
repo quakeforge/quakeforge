@@ -8,7 +8,7 @@ case "$host_os" in
 		if test "x$host" != "x$build"; then
 			case "$build_os" in
 				cygwin*)
-					CFLAGS="$CFLAGS -mno-cygwin -mconsole -D__USE_MINGW_ANSI_STDIO"
+					CFLAGS="$CFLAGS -mconsole -D__USE_MINGW_ANSI_STDIO"
 					CPPFLAGS="$CPPFLAGS $CFLAGS"
 					;;
 			esac
@@ -19,6 +19,7 @@ case "$host_os" in
 		;;
 	cygwin*)
 		cygwin=yes
+		AC_DEFINE(NEED_GNUPRINTF)
 		if test "x$host" != "x$build"; then
 			CC="$host_cpu-$host_os-gcc"
 			AS="$CC"

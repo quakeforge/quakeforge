@@ -43,7 +43,7 @@ void R_ScrapDelete (rscrap_t *scrap);
 struct vrect_s *R_ScrapAlloc (rscrap_t *scrap, int width, int height);
 void R_ScrapFree (rscrap_t *scrap, struct vrect_s *rect);
 void R_ScrapClear (rscrap_t *scrap);
-size_t R_ScrapArea (rscrap_t *scrap) __attribute__((pure));
+size_t R_ScrapArea (rscrap_t *scrap, int *count) __attribute__((pure));
 void R_ScrapDump (rscrap_t *scrap);
 
 #endif//__r_scrap_h

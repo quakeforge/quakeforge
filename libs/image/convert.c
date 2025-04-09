@@ -35,6 +35,8 @@
 #include "QF/hash.h"
 #include "QF/image.h"
 #include "QF/mathlib.h"
+#include "QF/wadfile.h"
+#include "QF/zone.h"
 
 struct colcache_s {
 	struct colcache_s *next;
@@ -47,8 +49,8 @@ typedef struct colcache_color_s {
 	byte        col;
 } colcache_color_t;
 
-static colcache_t *colcache_freelist;
-static colcache_color_t *colcache_color_freelist;
+ALLOC_STATE (colcache_t, colcache);
+ALLOC_STATE (colcache_color_t, colcache_color);
 
 static colcache_color_t *
 colcache_new_color (const byte *rgb, byte ind)
@@ -103,6 +105,13 @@ ColorCache_Delete (colcache_t *cache)
 {
 	Hash_DelTable (cache->tab);
 	FREE (colcache, cache);
+}
+
+void
+ColorCache_Shutdown (void)
+{
+	ALLOC_FREE_BLOCKS (colcache);
+	ALLOC_FREE_BLOCKS (colcache_color);
 }
 
 byte
@@ -171,22 +180,19 @@ ConvertFloatColor (const float *frgb, const byte *pal, colcache_t *cache)
 	return bestc;
 }
 
-tex_t *
-ConvertImage (const tex_t *tex, const byte *pal)
+qpic_t *
+ConvertImage (const tex_t *tex, const byte *pal, const char *name)
 {
-	tex_t      *new;
+	qpic_t     *new;
 	int         pixels;
 	int         bpp = 3;
 	int         i;
 	colcache_t *cache;
 
 	pixels = tex->width * tex->height;
-	new = malloc (sizeof (tex_t) + pixels);
-	new->data = (byte *) (new + 1);
+	new = Hunk_AllocName (nullptr, offsetof (qpic_t, data[pixels]), name);
 	new->width = tex->width;
 	new->height = tex->height;
-	new->format = tex_palette;
-	new->palette = pal;
 	switch (tex->format) {
 		case tex_palette:
 		case tex_l:			// will not work as expected FIXME

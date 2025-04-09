@@ -42,31 +42,14 @@
 # undef msg_t
 #endif
 
-#undef field_offset
-#define field_offset(type,field) ((size_t)&(((type *)0)->field))
+#undef countof
+#define countof(x) (sizeof(x)/sizeof(x[0]))
 
 #define MAX_QPATH	64
 
 #ifndef _DEF_BYTE_
 # define _DEF_BYTE_
 typedef uint8_t byte;
-#endif
-
-#ifndef _DEF_BOOL_
-# define _DEF_BOOL_
-// KJB Undefined true and false defined in SciTech's DEBUG.H header
-#ifdef __cplusplus
-# define __bool_true_false_are_defined
-#endif
-# ifdef __bool_true_false_are_defined
-typedef enum    {q_false = false, q_true = true} qboolean;
-//#define true q_true;
-//#define false q_false;
-# else
-#undef true
-#undef false
-typedef	enum	{false, true} qboolean;
-# endif
 #endif
 
 // From mathlib...

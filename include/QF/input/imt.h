@@ -29,6 +29,11 @@
 #ifndef __QF_input_imt_h
 #define __QF_input_imt_h
 
+/** \defgroup input_imt Input Mapping Tables
+	\ingroup input
+*/
+///@{
+
 #ifndef __QFCC__
 
 #include "QF/darray.h"
@@ -122,8 +127,8 @@ int IMT_CreateSwitcher (const char *switcher_name,
 void IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,
 				   const in_recipe_t *recipe);
 void IMT_BindButton (imt_t *imt, int button, const char *binding);
-qboolean IMT_ProcessAxis (int axis, int value);
-qboolean IMT_ProcessButton (int button, int state);
+bool IMT_ProcessAxis (int axis, int value);
+bool IMT_ProcessButton (int button, int state);
 void IMT_Init (void);
 struct plitem_s;
 void IMT_SaveConfig (struct plitem_s *config);
@@ -133,5 +138,7 @@ void IMT_SaveButtonConfig (struct plitem_s *buttons, int button_ind,
 void IMT_LoadConfig (struct plitem_s *config);
 
 #endif
+
+///@}
 
 #endif//__QF_input_imt_h

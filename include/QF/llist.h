@@ -50,12 +50,12 @@ typedef struct llist_s {
 	/// \param element	The item being deleted.
 	///	\param userdata	Pointer to user data supplied to llist_new().
 	void (*freedata)(void *element, void *userdata);
-	qboolean (*cmpdata)(const void *element, const void *comparison,
+	bool (*cmpdata)(const void *element, const void *comparison,
 						void *userdata);
 	void *userdata;
 } llist_t;
 
-typedef qboolean (*llist_iterator_t)(void *element, llist_node_t *node);
+typedef bool (*llist_iterator_t)(void *element, llist_node_t *node);
 
 #define LLIST_ICAST(x) (llist_iterator_t)(x)
 #define LLIST_DATA(node, type) ((type *)((node)->data))
@@ -73,7 +73,7 @@ typedef qboolean (*llist_iterator_t)(void *element, llist_node_t *node);
 					passed to the other functions accessing the list.
 */
 llist_t *llist_new (void (*freedata)(void *element, void *userdata),
-					qboolean (*cmpdata)(const void *element,
+					bool (*cmpdata)(const void *element,
 										const void *comparison,
 										void *userdata),
 					void *userdata);

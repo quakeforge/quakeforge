@@ -82,7 +82,7 @@ Lloop:
 	movb	1(%esi),%dl
 	movb	%dl,Lcoords+4
 	fildl	Lcoords+4			// v[1] | v[0]
-	movb	2(%esi),%dl	
+	movb	2(%esi),%dl
 	movb	%dl,Lcoords+8
 	fildl	Lcoords+8			// v[2] | v[1] | v[0]
 
@@ -124,13 +124,13 @@ Lloop:
 
 	fxch	%st(3)				// v[0] | v[2] | v[1] | zi
 
-//		lightcos = DotProduct (plightnormal, r_plightvec);
+//		lightcos = DotProduct (plightnormal, r_lightvec);
 	flds	C(r_avertexnormals)(,%eax,4)
-	fmuls	C(r_plightvec)
+	fmuls	C(r_lightvec)
 	flds	C(r_avertexnormals)+4(,%eax,4)
-	fmuls	C(r_plightvec)+4
+	fmuls	C(r_lightvec)+4
 	flds	C(r_avertexnormals)+8(,%eax,4)
-	fmuls	C(r_plightvec)+8
+	fmuls	C(r_lightvec)+8
 	fxch	%st(1)
 	faddp	%st(0),%st(2)
 	fld		%st(2)				 // v[0] | laccum | laccum2 | v[0] | v[2] |

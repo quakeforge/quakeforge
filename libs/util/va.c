@@ -38,6 +38,7 @@
 #include <stdarg.h>
 
 #include "QF/dstring.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 struct va_ctx_s {
@@ -45,6 +46,8 @@ struct va_ctx_s {
 	int         num_strings;
 	int         str_index;
 };
+
+static va_ctx_t *default_va_ctx;
 
 VISIBLE va_ctx_t *
 va_create_context (int buffers)
@@ -65,26 +68,47 @@ va_create_context (int buffers)
 VISIBLE void
 va_destroy_context (va_ctx_t *ctx)
 {
+	if (!ctx) {
+		ctx = default_va_ctx;
+		default_va_ctx = 0;
+		if (!ctx) {
+			return;
+		}
+	}
 	for (int i = 0; i < ctx->num_strings; i++) {
 		dstring_delete (ctx->strings[i]);
 	}
 	free (ctx);
 }
 
-VISIBLE const char *
-va (va_ctx_t *ctx, const char *fmt, ...)
+static dstring_t *
+get_dstring (va_ctx_t *ctx)
 {
-	static va_ctx_t *_ctx;
-	va_list     args;
-	dstring_t  *dstr;
+	return ctx->strings[ctx->str_index++ % ctx->num_strings];
+}
 
-	if (!ctx) {
-		if (!_ctx) {
-			_ctx = va_create_context (4);
-		}
-		ctx = _ctx;
+VISIBLE const char *
+vac (va_ctx_t *ctx, const char *fmt, ...)
+{
+	va_list     args;
+	dstring_t  *dstr = get_dstring (ctx);
+
+	va_start (args, fmt);
+	dvsprintf (dstr, fmt, args);
+	va_end (args);
+
+	return dstr->str;
+}
+
+VISIBLE const char *
+va (const char *fmt, ...)
+{
+	if (!default_va_ctx) {
+		default_va_ctx = va_create_context (4);
 	}
-	dstr = ctx->strings[ctx->str_index++ % ctx->num_strings];
+
+	va_list     args;
+	dstring_t  *dstr = get_dstring (default_va_ctx);
 
 	va_start (args, fmt);
 	dvsprintf (dstr, fmt, args);
@@ -106,4 +130,18 @@ nva (const char *fmt, ...)
 	va_end (args);
 
 	return dstring_freeze (string);
+}
+
+static void
+va_shutdown (void *data)
+{
+	if (default_va_ctx) {
+		va_destroy_context (default_va_ctx);
+	}
+}
+
+static void __attribute__((constructor))
+va_init (void)
+{
+	Sys_RegisterShutdown (va_shutdown, 0);
 }

@@ -1,4 +1,6 @@
 EXTRA_DIST += \
+	tools/qfcc/include/algebra.h \
+	tools/qfcc/include/attribute.h \
 	tools/qfcc/include/class.h \
 	tools/qfcc/include/codespace.h \
 	tools/qfcc/include/cpp.h \
@@ -9,12 +11,19 @@ EXTRA_DIST += \
 	tools/qfcc/include/diagnostic.h \
 	tools/qfcc/include/dot.h \
 	tools/qfcc/include/emit.h \
+	tools/qfcc/include/evaluate.h \
+	tools/qfcc/include/evaluate_type.h \
 	tools/qfcc/include/expr.h \
+	tools/qfcc/include/expr_names.h \
 	tools/qfcc/include/flow.h \
 	tools/qfcc/include/function.h \
+	tools/qfcc/include/glsl-lang.h \
 	tools/qfcc/include/grab.h \
 	tools/qfcc/include/idstuff.h \
+	tools/qfcc/include/iface_block.h \
+	tools/qfcc/include/image.h \
 	tools/qfcc/include/linker.h \
+	tools/qfcc/include/mat_types.h \
 	tools/qfcc/include/method.h \
 	tools/qfcc/include/obj_file.h \
 	tools/qfcc/include/obj_type.h \
@@ -24,11 +33,18 @@ EXTRA_DIST += \
 	tools/qfcc/include/qfcc.h \
 	tools/qfcc/include/qfprogs.h \
 	tools/qfcc/include/reloc.h \
+	tools/qfcc/include/rua-lang.h \
 	tools/qfcc/include/shared.h \
+	tools/qfcc/include/specifier.h \
+	tools/qfcc/include/spirv.h \
+	tools/qfcc/include/spirv_grammar.h \
 	tools/qfcc/include/statements.h \
 	tools/qfcc/include/strpool.h \
 	tools/qfcc/include/struct.h \
 	tools/qfcc/include/switch.h \
+	tools/qfcc/include/sy_type_names.h \
 	tools/qfcc/include/symtab.h \
+	tools/qfcc/include/target.h \
 	tools/qfcc/include/type.h \
-	tools/qfcc/include/value.h
+	tools/qfcc/include/value.h \
+	tools/qfcc/include/vec_types.h

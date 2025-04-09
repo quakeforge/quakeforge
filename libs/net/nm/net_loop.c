@@ -35,17 +35,17 @@
 #include "netmain.h"
 #include "net_loop.h"
 
-#include "../nq/include/client.h"
 #include "../nq/include/server.h"
 
-qboolean    localconnectpending = false;
+bool        localconnectpending = false;
 qsocket_t  *loop_client = NULL;
 qsocket_t  *loop_server = NULL;
 
 __attribute__((pure)) int
 Loop_Init (void)
 {
-	if (cls.state == ca_dedicated)
+	qfZoneScoped (true);
+	if (net_is_dedicated)
 		return -1;
 	return 0;
 }
@@ -58,20 +58,20 @@ Loop_Shutdown (void)
 
 
 void
-Loop_Listen (qboolean state)
+Loop_Listen (bool state)
 {
 }
 
 
 void
-Loop_SearchForHosts (qboolean xmit)
+Loop_SearchForHosts (bool xmit)
 {
 	if (!sv.active)
 		return;
 
 	const char *name = "local";
-	if (strcmp (hostname->string, "UNNAMED") != 0) {
-		name = hostname->string;
+	if (strcmp (hostname, "UNNAMED") != 0) {
+		name = hostname;
 	}
 	const char *map = sv.name;
 	int         users = net_activeconnections;
@@ -240,7 +240,7 @@ Loop_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-__attribute__((pure)) qboolean
+__attribute__((pure)) bool
 Loop_CanSendMessage (qsocket_t * sock)
 {
 	if (!sock->driverdata)
@@ -249,7 +249,7 @@ Loop_CanSendMessage (qsocket_t * sock)
 }
 
 
-__attribute__((const)) qboolean
+__attribute__((const)) bool
 Loop_CanSendUnreliableMessage (qsocket_t * sock)
 {
 	return true;

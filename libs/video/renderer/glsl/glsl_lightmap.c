@@ -33,9 +33,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -57,19 +54,20 @@
 
 #include "r_internal.h"
 
+#define s_dynlight (r_refdef.scene->base + scene_dynlight)
+
 #define BLOCK_SIZE (BLOCK_WIDTH * BLOCK_HEIGHT)
 
 static scrap_t *light_scrap;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*glsl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+void (*glsl_R_BuildLightMap) (const vec4f_t *transform, mod_brush_t *brush,
 							  msurface_t *surf);
 
 static void
-R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
+R_AddDynamicLights_1 (const vec4f_t *transform, msurface_t *surf)
 {
-	unsigned    lnum;
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
@@ -84,19 +82,22 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 
 	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (transform);
+		entorigin = transform[3];
 	}
 
-	for (lnum = 0; lnum < r_maxdlights; lnum++) {
-		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
+	auto dlight_pool = &r_refdef.registry->comp_pools[s_dynlight];
+	auto dlight_data = (dlight_t *) dlight_pool->data;
+	for (uint32_t i = 0; i < dlight_pool->count; i++) {
+		auto dlight = &dlight_data[i];
+		if (!(surf->dlightbits[i / 32] & (1 << (i % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
-		rad = r_dlights[lnum].radius;
+		VectorSubtract (dlight->origin, entorigin, lightorigin);
+		rad = dlight->radius;
 		dist = DotProduct (lightorigin, surf->plane->normal)
 				- surf->plane->dist;
 		rad -= fabs (dist);
-		minlight = r_dlights[lnum].minlight;
+		minlight = dlight->minlight;
 		if (rad < minlight)
 			continue;
 		minlight = rad - minlight;
@@ -129,7 +130,7 @@ R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+R_BuildLightMap_1 (const vec4f_t *transform, mod_brush_t *brush,
 				   msurface_t *surf)
 {
 	int         smax, tmax, size;
@@ -209,7 +210,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 
 	//FIXME RGB support
 	if (!light_scrap) {
-		light_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 1);
+		light_scrap = GLSL_CreateScrap (4096, GL_LUMINANCE, 1);
 	} else {
 		GLSL_ScrapClear (light_scrap);
 	}
@@ -266,4 +267,13 @@ void
 glsl_R_FlushLightmaps (void)
 {
 	GLSL_ScrapFlush (light_scrap);
+}
+
+void
+glsl_Lightmap_Shutdown (void)
+{
+	if (light_scrap) {
+		GLSL_DestroyScrap (light_scrap);
+	}
+	free (blocklights);
 }

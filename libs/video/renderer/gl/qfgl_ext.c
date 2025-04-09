@@ -72,7 +72,7 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean
+bool
 GLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \
@@ -92,7 +92,7 @@ GLF_FindFunctions (void)
   It takes a bit of care to be fool-proof about parsing an OpenGL extensions
   string. Don't be fooled by sub-strings, etc.
 */
-static __attribute__((pure)) qboolean
+static __attribute__((pure)) bool
 QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 {
 	const char *start;
@@ -120,7 +120,7 @@ QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 	return 0;
 }
 
-qboolean
+bool
 QFGL_ExtensionPresent (const char *name)
 {
 	static const GLubyte *gl_extensions = NULL;

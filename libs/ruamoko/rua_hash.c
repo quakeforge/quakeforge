@@ -49,11 +49,11 @@ typedef struct bi_hashtab_s {
 	struct bi_hashtab_s **prev;
 	progs_t    *pr;
 	hashtab_t  *tab;
-	func_t      gk;
-	func_t      gh;
-	func_t      cmp;
-	func_t      f;
-	pointer_t   ud;
+	pr_func_t   gk;
+	pr_func_t   gh;
+	pr_func_t   cmp;
+	pr_func_t   f;
+	pr_ptr_t    ud;
 } bi_hashtab_t;
 
 typedef struct {
@@ -64,85 +64,114 @@ typedef struct {
 static bi_hashtab_t *
 table_new (hash_resources_t *res)
 {
+	qfZoneScoped (true);
 	return PR_RESNEW (res->table_map);
 }
 
 static void
 table_free (hash_resources_t *res, bi_hashtab_t *table)
 {
+	qfZoneScoped (true);
 	PR_RESFREE (res->table_map, table);
 }
 
 static void
 table_reset (hash_resources_t *res)
 {
+	qfZoneScoped (true);
 	PR_RESRESET (res->table_map);
 }
 
 static inline bi_hashtab_t *
 table_get (hash_resources_t *res, int index)
 {
+	qfZoneScoped (true);
 	return PR_RESGET(res->table_map, index);
 }
 
 static inline int __attribute__((pure))
 table_index (hash_resources_t *res, bi_hashtab_t *table)
 {
+	qfZoneScoped (true);
 	return PR_RESINDEX(res->table_map, table);
 }
 
 static const char *
 bi_get_key (const void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->gk);
-	return PR_GetString (ht->pr, R_STRING (ht->pr));
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->gk);
+	pr_string_t string = R_STRING (ht->pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+	return PR_GetString (pr, string);
 }
 
 static uintptr_t
 bi_get_hash (const void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->gh);
-	return R_INT (ht->pr);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->gh);
+	int         hash = R_INT (pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+	return hash;
 }
 
 static int
 bi_compare (const void *key1, const void *key2, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key1);
-	P_INT (ht->pr, 1) = (intptr_t) (key2);
-	P_INT (ht->pr, 2) = ht->ud;
-	ht->pr->pr_argc = 3;
-	PR_ExecuteProgram (ht->pr, ht->cmp);
-	return R_INT (ht->pr);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 3, 1);
+	P_INT (pr, 0) = (intptr_t) (key1);
+	P_INT (pr, 1) = (intptr_t) (key2);
+	P_INT (pr, 2) = ht->ud;
+	PR_ExecuteProgram (pr, ht->cmp);
+	int         cmp = R_INT (pr);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
+	return cmp;
 }
 
 static void
 bi_free (void *key, void *_ht)
 {
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = (bi_hashtab_t *)_ht;
-	PR_RESET_PARAMS (ht->pr);
-	P_INT (ht->pr, 0) = (intptr_t) (key);
-	P_INT (ht->pr, 1) = ht->ud;
-	ht->pr->pr_argc = 2;
-	PR_ExecuteProgram (ht->pr, ht->f);
+	progs_t    *pr = ht->pr;
+	PR_PushFrame (pr);
+	auto params = PR_SaveParams (pr);
+	PR_SetupParams (pr, 2, 1);
+	P_INT (pr, 0) = (intptr_t) (key);
+	P_INT (pr, 1) = ht->ud;
+	PR_ExecuteProgram (pr, ht->f);
+	PR_RestoreParams (pr, params);
+	PR_PopFrame (pr);
 }
 
 static void
-bi_Hash_NewTable (progs_t *pr)
+bi_Hash_NewTable (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
 	int         tsize = P_INT (pr, 0);
 	const char *(*gk)(const void*,void*);
 	void        (*f)(void*,void*);
@@ -162,14 +191,14 @@ bi_Hash_NewTable (progs_t *pr)
 
 	gk = ht->gk ? bi_get_key : 0;
 	f = ht->f ? bi_free : 0;
-	ht->tab = Hash_NewTable (tsize, gk, f, ht, pr->hashlink_freelist);
+	ht->tab = Hash_NewTable (tsize, gk, f, ht, pr->hashctx);
 	R_INT (pr) = table_index (res, ht);
 }
 
-static bi_hashtab_t *
-get_table (progs_t *pr, const char *name, int index)
+static bi_hashtab_t * __attribute__((pure))
+get_table (progs_t *pr, hash_resources_t *res, const char *name, int index)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
+	qfZoneScoped (true);
 	bi_hashtab_t *ht = table_get (res, index);
 
 	if (!ht)
@@ -178,9 +207,11 @@ get_table (progs_t *pr, const char *name, int index)
 }
 
 static void
-bi_Hash_SetHashCompare (progs_t *pr)
+bi_Hash_SetHashCompare (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	uintptr_t   (*gh)(const void*,void*);
 	int         (*cmp)(const void*,const void*,void*);
 
@@ -192,10 +223,11 @@ bi_Hash_SetHashCompare (progs_t *pr)
 }
 
 static void
-bi_Hash_DelTable (progs_t *pr)
+bi_Hash_DelTable (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = PR_Resources_Find (pr, "Hash");
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_DelTable (ht->tab);
 	*ht->prev = ht->next;
@@ -205,50 +237,62 @@ bi_Hash_DelTable (progs_t *pr)
 }
 
 static void
-bi_Hash_FlushTable (progs_t *pr)
+bi_Hash_FlushTable (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_FlushTable (ht->tab);
 }
 
 static void
-bi_Hash_Add (progs_t *pr)
+bi_Hash_Add (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = Hash_Add (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_AddElement (progs_t *pr)
+bi_Hash_AddElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = Hash_AddElement (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_Find (progs_t *pr)
+bi_Hash_Find (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_Find (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
-bi_Hash_FindElement (progs_t *pr)
+bi_Hash_FindElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_FindElement (ht->tab,
 										  (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_FindList (progs_t *pr)
+bi_Hash_FindList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -259,15 +303,17 @@ bi_Hash_FindList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		PR_PTR (ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
 
 static void
-bi_Hash_FindElementList (progs_t *pr)
+bi_Hash_FindElementList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -278,52 +324,62 @@ bi_Hash_FindElementList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		PR_PTR (ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
 
 static void
-bi_Hash_Del (progs_t *pr)
+bi_Hash_Del (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_Del (ht->tab, P_GSTRING (pr, 1));
 }
 
 static void
-bi_Hash_DelElement (progs_t *pr)
+bi_Hash_DelElement (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	R_INT (pr) = (intptr_t) Hash_DelElement (ht->tab,
 										 (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_Free (progs_t *pr)
+bi_Hash_Free (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_Free (ht->tab, (void *) (intptr_t) P_INT (pr, 1));
 }
 
 static void
-bi_Hash_String (progs_t *pr)
+bi_Hash_String (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = Hash_String (P_GSTRING (pr, 0));
 }
 
 static void
-bi_Hash_Buffer (progs_t *pr)
+bi_Hash_Buffer (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = Hash_Buffer (P_GPOINTER (pr, 0), P_INT (pr, 1));
 }
 
 static void
-bi_Hash_GetList (progs_t *pr)
+bi_Hash_GetList (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 	void      **list, **l;
 	pr_type_t  *pr_list;
 	int         count;
@@ -334,23 +390,26 @@ bi_Hash_GetList (progs_t *pr)
 	pr_list = PR_Zone_Malloc (pr, count * sizeof (pr_type_t));
 	// the hash tables stores progs pointers...
 	for (count = 0, l = list; *l; l++)
-		pr_list[count++].integer_var = (intptr_t) *l;
+		PR_PTR(ptr, &pr_list[count++]) = (intptr_t) *l;
 	free (list);
 	RETURN_POINTER (pr, pr_list);
 }
 
 static void
-bi_Hash_Stats (progs_t *pr)
+bi_Hash_Stats (progs_t *pr, void *_res)
 {
-	bi_hashtab_t *ht = get_table (pr, __FUNCTION__, P_INT (pr, 0));
+	qfZoneScoped (true);
+	__auto_type res = (hash_resources_t *) _res;
+	bi_hashtab_t *ht = get_table (pr, res, __FUNCTION__, P_INT (pr, 0));
 
 	Hash_Stats (ht->tab);
 }
 
 static void
-bi_hash_clear (progs_t *pr, void *data)
+bi_hash_clear (progs_t *pr, void *_res)
 {
-	hash_resources_t *res = (hash_resources_t *) data;
+	qfZoneScoped (true);
+	hash_resources_t *res = (hash_resources_t *) _res;
 	bi_hashtab_t *ht;
 
 	for (ht = res->tabs; ht; ht = ht->next)
@@ -359,33 +418,47 @@ bi_hash_clear (progs_t *pr, void *data)
 	table_reset (res);
 }
 
+static void
+bi_hash_destroy (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	hash_resources_t *res = _res;
+
+	PR_RESDELMAP (res->table_map);
+
+	free (res);
+}
+
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Hash_NewTable",			bi_Hash_NewTable,			-1},
-	{"Hash_SetHashCompare",		bi_Hash_SetHashCompare,		-1},
-	{"Hash_DelTable",			bi_Hash_DelTable,			-1},
-	{"Hash_FlushTable",			bi_Hash_FlushTable,			-1},
-	{"Hash_Add",				bi_Hash_Add,				-1},
-	{"Hash_AddElement",			bi_Hash_AddElement,			-1},
-	{"Hash_Find",				bi_Hash_Find,				-1},
-	{"Hash_FindElement",		bi_Hash_FindElement,		-1},
-	{"Hash_FindList",			bi_Hash_FindList,			-1},
-	{"Hash_FindElementList",	bi_Hash_FindElementList,	-1},
-	{"Hash_Del",				bi_Hash_Del,				-1},
-	{"Hash_DelElement",			bi_Hash_DelElement,			-1},
-	{"Hash_Free",				bi_Hash_Free,				-1},
-	{"Hash_String",				bi_Hash_String,				-1},
-	{"Hash_Buffer",				bi_Hash_Buffer,				-1},
-	{"Hash_GetList",			bi_Hash_GetList,			-1},
-	{"Hash_Stats",				bi_Hash_Stats,				-1},
+	bi(Hash_NewTable,        4, p(int), p(func), p(func), p(ptr)),
+	bi(Hash_SetHashCompare,  3, p(ptr), p(func), p(func)),
+	bi(Hash_DelTable,        1, p(ptr)),
+	bi(Hash_FlushTable,      1, p(ptr)),
+	bi(Hash_Add,             2, p(ptr), p(ptr)),
+	bi(Hash_AddElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Find,            2, p(ptr), p(string)),
+	bi(Hash_FindElement,     2, p(ptr), p(ptr)),
+	bi(Hash_FindList,        2, p(ptr), p(string)),
+	bi(Hash_FindElementList, 2, p(ptr), p(ptr)),
+	bi(Hash_Del,             2, p(ptr), p(string)),
+	bi(Hash_DelElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Free,            2, p(ptr), p(ptr)),
+	bi(Hash_String,          1, p(string)),
+	bi(Hash_Buffer,          2, p(ptr), p(int)),
+	bi(Hash_GetList,         1, p(ptr)),
+	bi(Hash_Stats,           1, p(ptr)),
 	{0}
 };
 
 void
 RUA_Hash_Init (progs_t *pr, int secure)
 {
+	qfZoneScoped (true);
 	hash_resources_t *res = calloc (1, sizeof (hash_resources_t));
 	res->tabs = 0;
 
-	PR_Resources_Register (pr, "Hash", res, bi_hash_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_Resources_Register (pr, "Hash", res, bi_hash_clear, bi_hash_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

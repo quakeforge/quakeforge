@@ -47,9 +47,6 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
-VISIBLE int nanmask = 255 << 23;
-static plane_t _frustum[4];
-VISIBLE plane_t   *const frustum = _frustum;
 static vec3_t _vec3_origin = { 0, 0, 0 };
 VISIBLE const vec_t * const vec3_origin = _vec3_origin;
 static quat_t _quat_origin = { 0, 0, 0, 0 };
@@ -393,7 +390,7 @@ BOPS_Error (void)
 	Returns 1, 2, or 1 + 2
 */
 VISIBLE int
-BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
+BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, const plane_t *p)
 {
 	float       dist1, dist2;
 	int         sides;
@@ -489,9 +486,9 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 	sides = 0;
-	if (dist1 >= p->dist)
+	if (dist1 >= -p->dist)
 		sides = 1;
-	if (dist2 < p->dist)
+	if (dist2 < -p->dist)
 		sides |= 2;
 
 #ifdef PARANOID
@@ -504,15 +501,20 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
-	FIXME these comments are a confused mess (the code is fine)
+	angles is a left handed system: 'pitch yaw roll' with x (pitch) axis to
+	the right, y (yaw) axis up and z (roll) axis forward. However, the
+	rotations themselves are right-handed in that they follow the right-hand
+	rule for the world axes: pitch around +y, yaw around +z, and roll around
+	+x.
 
-	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
-	the right, y (yaw) axis up and z (roll) axis forward.
+	This results in the entity frame having forward pointed along the world +x
+	axis, right along the world -y axis, and up along the world +z axis.
+	Whether this means the entity frame is left-handed depends on whether
+	forward is local X and right is local Y (left handed), or forward is local
+	Y and right is local X (right handed).
 
-	the math in AngleVectors has the entity frame as left handed with x
-	(forward) axis forward, y (right) axis to the right and z (up) up. However,
-	the world is a right handed system with x to the right, y forward and
-	z up.
+	NOTE: the matrices in this coment are transposed so the vector names
+	can be written naturally.
 
 	pitch =
 		cp 0 -sp
@@ -529,6 +531,8 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 		0  cr sr
 		0 -sr cr
 
+	// NOTE: as these matrices are transposed, this is the reverse of the
+	// actual operation
 	final = roll * (pitch * yaw)
 	final =
 		[forward]
@@ -553,11 +557,10 @@ AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	forward[0] = cp * cy;
 	forward[1] = cp * sy;
 	forward[2] = -sp;
-	// need to flip right because it's a left handed system in a right handed
-	// world
-	right[0] = -1 * (sr * sp * cy + cr * -sy);
-	right[1] = -1 * (sr * sp * sy + cr * cy);
-	right[2] = -1 * (sr * cp);
+	// need to flip right because the trig produces +Y but right is -Y
+	right[0] = -(sr * sp * cy + cr * -sy);
+	right[1] = -(sr * sp * sy + cr * cy);
+	right[2] = -(sr * cp);
 	up[0] = (cr * sp * cy + -sr * -sy);
 	up[1] = (cr * sp * sy + -sr * cy);
 	up[2] = cr * cp;

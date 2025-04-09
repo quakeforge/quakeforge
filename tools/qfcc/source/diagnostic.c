@@ -50,20 +50,21 @@ static void
 report_function (const expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
-	static string_t last_file;
-	string_t    file = pr.source_file;
+	static pr_string_t last_file;
+	pr_string_t file = pr.loc.file;
 	srcline_t  *srcline;
 
-	if (e)
-		file = e->file;
+	if (e) {
+		file = e->loc.file;
+	}
 
 	if (file != last_file) {
 		for (srcline = pr.srcline_stack; srcline; srcline = srcline->next)
 			fprintf (stderr, "In file included from %s:%d:\n",
-					 GETSTR (srcline->source_file), srcline->source_line);
+					 GETSTR (srcline->loc.file), srcline->loc.line);
 	}
 	last_file = file;
-	if (current_func != last_func) {
+	if (!options.preprocess_only && current_func != last_func) {
 		if (current_func) {
 			fprintf (stderr, "%s: In function `%s':\n", GETSTR (file),
 					 current_func->name);
@@ -77,17 +78,32 @@ report_function (const expr_t *e)
 	last_func = current_func;
 }
 
+void
+print_srcline (int rep, const expr_t *e)
+{
+	pr_string_t file = pr.loc.file;
+	int         line = pr.loc.line;
+	if (e) {
+		file = e->loc.file;
+		line = e->loc.line;
+	}
+	if (rep) {
+		report_function (e);
+	}
+	printf ("%s:%d\n", GETSTR (file), line);
+}
+
 static __attribute__((format(PRINTF, 4, 0))) void
 format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 				const char *fmt, va_list args)
 {
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
+	pr_string_t file = pr.loc.file;
+	int         line = pr.loc.line;
 	const char *colon = fmt ? ": " : "";
 
 	if (e) {
-		file = e->file;
-		line = e->line;
+		file = e->loc.file;
+		line = e->loc.line;
 	}
 	dsprintf (message, "%s:%d: %s%s", GETSTR (file), line, msg_type, colon);
 	if (fmt) {
@@ -95,8 +111,8 @@ format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 	}
 }
 
-static __attribute__((format(PRINTF, 4, 0))) void
-__warning (expr_t *e, const char *file, int line,
+static __attribute__((format(PRINTF, 5, 0))) void
+__warning (const expr_t *e, const char *file, int line, const char *func,
 		   const char *fmt, va_list args)
 {
 	static int  promoted = 0;
@@ -115,7 +131,7 @@ __warning (expr_t *e, const char *file, int line,
 	}
 
 	if (options.verbosity > 0) {
-		dasprintf (message, " (%s:%d)", file, line);
+		dasprintf (message, " (%s:%d in %s)", file, line, func);
 	}
 	if (warning_hook) {
 		warning_hook (message->str);
@@ -126,7 +142,8 @@ __warning (expr_t *e, const char *file, int line,
 }
 
 void
-_debug (expr_t *e, const char *file, int line, const char *fmt, ...)
+_debug (const expr_t *e, const char *file, int line, const char *func,
+		const char *fmt, ...)
 {
 	va_list     args;
 
@@ -139,30 +156,31 @@ _debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "debug", e, fmt, args);
-		dasprintf (message, " (%s:%d)", file, line);
+		dasprintf (message, " (%s:%d in %s)", file, line, func);
 		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
 	va_end (args);
 }
 
-static __attribute__((noreturn, format(PRINTF, 4, 0))) void
+static __attribute__((noreturn, format(PRINTF, 5, 0))) void
 __internal_error (const expr_t *e, const char *file, int line,
-				  const char *fmt, va_list args)
+				  const char *func, const char *fmt, va_list args)
 {
 	dstring_t  *message = dstring_new ();
 
 	report_function (e);
 
 	format_message (message, "internal error", e, fmt, args);
-	dasprintf (message, " (%s:%d)", file, line);
+	dasprintf (message, " (%s:%d in %s)", file, line, func);
 	fprintf (stderr, "%s\n", message->str);
 	dstring_delete (message);
 	abort ();
 }
 
 void
-_bug (expr_t *e, const char *file, int line, const char *fmt, ...)
+_bug (const expr_t *e, const char *file, int line, const char *func,
+	  const char *fmt, ...)
 {
 	va_list     args;
 
@@ -171,7 +189,7 @@ _bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 
 	va_start (args, fmt);
 	if (options.bug.promote) {
-		__internal_error (e, file, line, fmt, args);
+		__internal_error (e, file, line, func, fmt, args);
 	}
 
 	{
@@ -180,7 +198,7 @@ _bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 		report_function (e);
 
 		format_message (message, "BUG", e, fmt, args);
-		dasprintf (message, " (%s:%d)", file, line);
+		dasprintf (message, " (%s:%d in %s)", file, line, func);
 		if (bug_hook) {
 			bug_hook (message->str);
 		} else {
@@ -191,17 +209,18 @@ _bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 	va_end (args);
 }
 
-expr_t *
-_notice (expr_t *e, const char *file, int line, const char *fmt, ...)
+void
+_notice (const expr_t *e, const char *file, int line, const char *func,
+		 const char *fmt, ...)
 {
 	va_list     args;
 
 	if (options.notices.silent)
-		return e;
+		return;
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
-		__warning (e, file, line, fmt, args);
+		__warning (e, file, line, func, fmt, args);
 	} else {
 		dstring_t  *message = dstring_new ();
 
@@ -209,7 +228,7 @@ _notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 
 		format_message (message, "notice", e, fmt, args);
 		if (options.verbosity > 0) {
-			dasprintf (message, " (%s:%d)", file, line);
+			dasprintf (message, " (%s:%d in %s)", file, line, func);
 		}
 		if (notice_hook) {
 			notice_hook (message->str);
@@ -219,33 +238,32 @@ _notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 		dstring_delete (message);
 	}
 	va_end (args);
-	return e;
 }
 
-expr_t *
-_warning (expr_t *e, const char *file, int line, const char *fmt, ...)
+void
+_warning (const expr_t *e, const char *file, int line, const char *func,
+		  const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
-	__warning (e, file, line, fmt, args);
+	__warning (e, file, line, func, fmt, args);
 	va_end (args);
-	return e;
 }
 
 void
 _internal_error (const expr_t *e, const char *file, int line,
-				 const char *fmt, ...)
+				 const char *func, const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
-	__internal_error (e, file, line, fmt, args);
-	va_end (args);
+	__internal_error (e, file, line, func, fmt, args);
 }
 
-expr_t *
-_error (expr_t *e, const char *file, int line, const char *fmt, ...)
+const expr_t *
+_error (const expr_t *e, const char *file, int line, const char *func,
+		const char *fmt, ...)
 {
 	va_list     args;
 
@@ -259,7 +277,7 @@ _error (expr_t *e, const char *file, int line, const char *fmt, ...)
 
 		format_message (message, "error", e, fmt, args);
 		if (options.verbosity > 0) {
-			dasprintf (message, " (%s:%d)", file, line);
+			dasprintf (message, " (%s:%d in %s)", file, line, func);
 		}
 		if (error_hook) {
 			error_hook (message->str);
@@ -270,8 +288,7 @@ _error (expr_t *e, const char *file, int line, const char *fmt, ...)
 	}
 	va_end (args);
 
-	if (!e)
-		e = new_expr ();
-	e->type = ex_error;
-	return e;
+	expr_t *err = new_expr ();
+	err->type = ex_error;
+	return err;
 }

@@ -207,6 +207,7 @@
 #define GL_INT                            0x1404
 #define GL_UNSIGNED_INT                   0x1405
 #define GL_FLOAT                          0x1406
+#define GL_HALF_FLOAT                     0x140B
 #define GL_FIXED                          0x140C
 
 /* PixelFormat */
@@ -434,5 +435,19 @@
 #define GL_MAX_RENDERBUFFER_SIZE          0x84E8
 
 #define GL_INVALID_FRAMEBUFFER_OPERATION  0x0506
+
+#define GL_DEBUG_SOURCE_APPLICATION 0x824A
+#define GL_DEBUG_TYPE_ERROR 0x824C
+#define GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR 0x824D
+#define GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR 0x824E
+#define GL_DEBUG_TYPE_PORTABILITY 0x824F
+#define GL_DEBUG_TYPE_PERFORMANCE 0x8250
+#define GL_DEBUG_TYPE_OTHER 0x8251
+#define GL_DEBUG_SEVERITY_HIGH 0x9146
+#define GL_DEBUG_SEVERITY_MEDIUM 0x9147
+#define GL_DEBUG_SEVERITY_LOW 0x9148
+#define GL_DEBUG_SEVERITY_NOTIFICATION 0x826B
+#define GL_DEBUG_OUTPUT 0x92E0
+
 
 #endif//__glsl_defines_h

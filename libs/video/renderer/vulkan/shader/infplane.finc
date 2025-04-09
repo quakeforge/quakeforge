@@ -1,0 +1,5 @@
+vec4 plane_st (mat3 plane, mat3 cam, vec3 vec)
+{
+	vec3 i = plane * (cam * vec);
+	return vec4 (i/i.z, i.z);
+}

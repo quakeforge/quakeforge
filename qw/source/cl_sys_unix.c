@@ -65,6 +65,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);
@@ -74,8 +78,6 @@ main (int argc, const char **argv)
 	if (!COM_CheckParm ("-noconinput"))
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
-	Sys_RegisterShutdown (Net_LogStop, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

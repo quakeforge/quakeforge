@@ -59,162 +59,35 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
-#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
-#include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/render.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char * __attribute__((used)) sprite_pass_names[] = {
-	"depth",
-	"g-buffer",
-	"translucent",
-};
-
-static QFV_Subpass subpass_map[] = {
-	QFV_passDepth,			// QFV_spriteDepth
-	QFV_passGBuffer,		// QFV_spriteGBuffer
-	QFV_passTranslucent,	// QFV_spriteTranslucent
-};
-
 static void
 emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 			   int numPC, qfv_push_constants_t *constants,
-			   qfv_renderframe_t *rFrame)
+			   qfv_taskctx_t *taskctx, entity_t ent)
 {
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	spritectx_t *sctx = ctx->sprite_context;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto layout = taskctx->pipeline->layout;
 
-	QFV_PushConstants (device, cmd, sctx->layout, numPC, constants);
+	Vulkan_BeginEntityLabel (ctx, cmd, ent);
+
+	QFV_PushConstants (device, cmd, layout, numPC, constants);
 	VkDescriptorSet sets[] = {
 		sprite->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									sctx->layout, 1, 1, sets, 0, 0);
+									layout, 1, 1, sets, 0, 0);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
-}
 
-void
-Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-	model_t    *model = ent->renderer.model;
-	msprite_t  *sprite = model->cache.data;
-	animation_t *animation = &ent->animation;
-
-	mat4f_t     mat;
-	uint32_t    frame;
-	qfv_push_constants_t push_constants[] = {
-		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
-		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			64, sizeof (frame), &frame },
-	};
-
-	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
-
-	mat[3] = Transform_GetWorldPosition (ent->transform);
-	vec4f_t     cameravec = {r_origin[0], r_origin[1], r_origin[2], 0 };
-	vec4f_t     svpn = {}, svright = {}, svup = {};
-	cameravec -= mat[3];
-	R_BillboardFrame (ent, sprite->type, &cameravec[0],
-					  &svup[0], &svright[0], &svpn[0]);
-	mat[2] = svup;
-	mat[1] = svright;
-	mat[0] = -svpn;
-
-	emit_commands (sframe->cmdSet.a[QFV_spriteDepth],
-				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
-				   2, push_constants, rFrame);
-	emit_commands (sframe->cmdSet.a[QFV_spriteGBuffer],
-				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
-				   2, push_constants, rFrame);
-}
-
-static void
-sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
-					 qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	spritectx_t *sctx = ctx->sprite_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
-	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = sframe->cmdSet.a[subpass];
-
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		rFrame->renderpass->renderpass, subpass_map[subpass],
-		cframe->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "sprite:%s",
-										  sprite_pass_names[subpass]),
-						 { 0.6, 0.5, 0, 1});
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									sctx->layout, 0, 1, sets, 0, 0);
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
-
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
-}
-
-static void
-sprite_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	QFV_duCmdEndLabel (device, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-}
-
-void
-Vulkan_SpriteBegin (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-
-	//XXX quat_t      fog;
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
-				   sframe->cmdSet.a[QFV_spriteDepth]);
-	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
-				   sframe->cmdSet.a[QFV_spriteGBuffer]);
-
-	sprite_begin_subpass (QFV_spriteDepth, sctx->depth, rFrame);
-	sprite_begin_subpass (QFV_spriteGBuffer, sctx->gbuf, rFrame);
-}
-
-void
-Vulkan_SpriteEnd (qfv_renderframe_t *rFrame)
-{
-	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
-
-	sprite_end_subpass (sframe->cmdSet.a[QFV_spriteDepth], ctx);
-	sprite_end_subpass (sframe->cmdSet.a[QFV_spriteGBuffer], ctx);
+	QFV_CmdEndLabel (device, cmd);
 }
 
 static VkDescriptorBufferInfo base_buffer_info = {
@@ -243,14 +116,10 @@ Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
 
-	//FIXME kinda dumb
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = sctx->setLayout;
+	if (!sctx->dsmanager) {
+		sctx->dsmanager = QFV_Render_DSManager (ctx, "sprite_set");
 	}
-	__auto_type sets = QFV_AllocateDescriptorSet (device, sctx->pool, layouts);
-	sprite->descriptors = sets->a[0];
-	free (sets);
+	sprite->descriptors = QFV_DSManager_AllocSet (sctx->dsmanager);
 
 	VkDescriptorBufferInfo bufferInfo[1];
 	bufferInfo[0] = base_buffer_info;
@@ -272,61 +141,125 @@ Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 }
 
 void
-Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
+Vulkan_Sprite_FreeDescriptors (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
 {
-	qfv_device_t *device = ctx->device;
-
-	qfvPushDebug (ctx, "sprite init");
-
-	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
-	ctx->sprite_context = sctx;
-
-	size_t      frames = ctx->frames.size;
-	DARRAY_INIT (&sctx->frames, frames);
-	DARRAY_RESIZE (&sctx->frames, frames);
-	sctx->frames.grow = 0;
-
-	sctx->depth = Vulkan_CreateGraphicsPipeline (ctx, "sprite_depth");
-	sctx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "sprite_gbuf");
-	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
-	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
-
-	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "sprite_pool");
-	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "sprite_set");
-
-	for (size_t i = 0; i < frames; i++) {
-		__auto_type sframe = &sctx->frames.a[i];
-
-		DARRAY_INIT (&sframe->cmdSet, QFV_spriteNumPasses);
-		DARRAY_RESIZE (&sframe->cmdSet, QFV_spriteNumPasses);
-		sframe->cmdSet.grow = 0;
-
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &sframe->cmdSet);
-
-		for (int j = 0; j < QFV_spriteNumPasses; j++) {
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 sframe->cmdSet.a[j],
-								 va (ctx->va_ctx, "cmd:sprite:%zd:%s", i,
-									 sprite_pass_names[j]));
-		}
-	}
-	qfvPopDebug (ctx);
+	spritectx_t *sctx = ctx->sprite_context;
+	QFV_DSManager_FreeSet (sctx->dsmanager, sprite->descriptors);
 }
 
-void
-Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
+static void
+sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	auto renderer = Entity_GetRenderer (ent);
+	auto model = renderer->model;
+	msprite_t *sprite = model->cache.data;
+
+	mat4f_t     mat = {};
+	uint32_t    frame;
+	vec4f_t     fog = Fog_Get ();
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			64, sizeof (frame), &frame },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT, 72, sizeof (fog), &fog },
+	};
+
+	auto animation = Entity_GetAnimation (ent);
+	frame = animation->pose2;
+
+	transform_t transform = Entity_Transform (ent);
+	mat[3] = Transform_GetWorldPosition (transform);
+	vec4f_t     cameravec = r_refdef.frame.position - mat[3];
+	R_BillboardFrame (transform, sprite->type, cameravec,
+					  &mat[2], &mat[1], &mat[0]);
+	mat[0] = -mat[0];
+
+	emit_commands (taskctx->cmd,
+				   (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data),
+				   2, push_constants, taskctx, ent);
+}
+
+static void
+sprite_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto layout = taskctx->pipeline->layout;
+	auto cmd = taskctx->cmd;
+
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 1, sets, 0, 0);
+
+	auto queue = r_ent_queue;	//FIXME fetch from scene
+	for (size_t i = 0; i < queue->ent_queues[mod_sprite].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_sprite].a[i];
+		sprite_draw_ent (taskctx, ent);
+	}
+}
+
+static void
+sprite_shutdown (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
 	spritectx_t *sctx = ctx->sprite_context;
 
-	for (size_t i = 0; i < sctx->frames.size; i++) {
-		__auto_type sframe = &sctx->frames.a[i];
-		free (sframe->cmdSet.a);
-	}
-
-	dfunc->vkDestroyPipeline (device->dev, sctx->depth, 0);
-	dfunc->vkDestroyPipeline (device->dev, sctx->gbuf, 0);
-	free (sctx->frames.a);
 	free (sctx);
+}
+
+static void
+sprite_startup (exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto sctx = ctx->sprite_context;
+	sctx->sampler = QFV_Render_Sampler (ctx, "sprite_sampler");
+}
+
+static void
+sprite_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	QFV_Render_AddShutdown (ctx, sprite_shutdown);
+	QFV_Render_AddStartup (ctx, sprite_startup);
+	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
+	ctx->sprite_context = sctx;
+}
+
+static exprfunc_t sprite_draw_func[] = {
+	{ .func = sprite_draw },
+	{}
+};
+
+static exprfunc_t sprite_init_func[] = {
+	{ .func = sprite_init },
+	{}
+};
+
+static exprsym_t sprite_task_syms[] = {
+	{ "sprite_draw", &cexpr_function, sprite_draw_func },
+	{ "sprite_init", &cexpr_function, sprite_init_func },
+	{}
+};
+
+void
+Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	qfvPushDebug (ctx, "sprite init");
+	QFV_Render_AddTasks (ctx, sprite_task_syms);
+
+	qfvPopDebug (ctx);
 }

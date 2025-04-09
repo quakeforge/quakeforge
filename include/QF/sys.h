@@ -38,14 +38,16 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-extern	struct cvar_s	*sys_nostdout;
-extern	struct cvar_s	*sys_extrasleep;
-extern	struct cvar_s	*sys_dead_sleep;
-extern	struct cvar_s	*sys_sleep;
+struct dstring_s;
 
-extern struct cvar_s *developer;
+extern int sys_nostdout;
+extern int sys_extrasleep;
+extern int sys_dead_sleep;
+extern int sys_sleep;
 
+extern int developer;
 
+extern bool sys_quake_encoding;
 extern const char sys_char_map[256];
 
 typedef struct date_s {
@@ -71,6 +73,16 @@ sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
+#define DFL "\e[39;49m"
+#define BLK "\e[30;40m"
+#define RED "\e[31;40m"
+#define GRN "\e[32;40m"
+#define ONG "\e[33;40m"
+#define BLU "\e[34;40m"
+#define MAG "\e[35;40m"
+#define CYN "\e[36;40m"
+#define WHT "\e[37;40m"
+
 void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(PRINTF, 2, 0)));
 void Sys_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
@@ -78,14 +90,12 @@ void Sys_FatalError (const char *error, ...) __attribute__((format(PRINTF,1,2), 
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void *), void *data);
-int64_t Sys_StartTime (void) __attribute__ ((const));
+int64_t Sys_StartTime (void) __attribute__ ((pure));
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
 int64_t Sys_TimeBase (void) __attribute__ ((const));
 double Sys_DoubleTimeBase (void) __attribute__ ((const));
 void Sys_TimeOfDay(date_t *date);
-
-void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 #define SYS_DEVELOPER(developer) SYS_DeveloperID_##developer,
 enum {
@@ -95,10 +105,12 @@ enum {
 // bit 0 so developer 1 will pick it up
 #define SYS_DEVELOPER(developer) \
 	SYS_##developer = (SYS_dev | (1 << (SYS_DeveloperID_##developer + 1))),
-enum {
+typedef enum {
 	SYS_dev = 1,
 #include "QF/sys_developer.h"
-};
+} sys_developer_e;
+
+void Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 struct qf_fd_set;
 int Sys_Select (int maxfd, struct qf_fd_set *fdset, int64_t usec);
@@ -128,6 +140,9 @@ void Sys_PageIn (void *ptr, size_t size);
 size_t Sys_PageSize (void);
 void *Sys_Alloc (size_t size);
 void Sys_Free (void *mem, size_t size);
+int Sys_LockMemory (void *mem, size_t size);
+size_t Sys_PeakRSS (void);
+size_t Sys_CurrentRSS (void);
 
 int Sys_ProcessorCount (void);
 
@@ -165,6 +180,43 @@ int Sys_CreatePath (const char *path);
 	\note It is the caller's responsibility to free the returned string.
 */
 char *Sys_ExpandSquiggle (const char *path);
+
+/** Open a newly created file with a guaranteed unique name.
+
+	Uniqueness is guaranteed by adding a numeric sequence between the \a
+	prefix and \a suffix, with a minium of \a mindigits numeric characters
+	(with any required leading 0s to expand the number to \a mindigits).
+
+	The created file has read and write permissions as modified by the OS,
+	and the handle can be bothe written and read.
+
+	\param name     dstring into which the name will be generated. Any
+					existing contents will be lost. If an error occurs,
+					\a name will be set to the error string.
+	\param prefix	This includes the path to the file and any file name
+					prefix. The numeric sequence will be appended directly
+					to the prefix with no directory separator.
+	\param suffix	Optional tail to be appended after the numeric sequence,
+					usually the file extension. A dot is not added
+					automatically, it is up to the caller to supply one. NULL
+					and an empty string are equivalent.
+	\param mindigits	The minimum number of digits to include in the
+					generated file name. The sequence number will be padded
+					with 0s in order to meet this menimum. Overflow will
+					simply produce longer numeric sequence sub-strings.
+	\return			File handle to the newly created file, or a negative
+					value if an error occured (the negative error code).
+					Suitable for use with read, write, fdopen, Qdopen, etc.
+	\note	It is the caller's responsibility to close the file.
+*/
+int Sys_UniqueFile (struct dstring_s *name, const char *prefix,
+					const char *suffix, int mindigits);
+
+typedef intptr_t sys_jmpbuf[5];
+#define Sys_setjmp(jmpbuf) __builtin_setjmp(jmpbuf)
+void Sys_longjmp (sys_jmpbuf jmpbuf) __attribute__((noreturn));
+
+extern sys_jmpbuf sys_exit_jmpbuf;
 
 ///@}
 

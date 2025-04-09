@@ -166,9 +166,9 @@ typedef struct qsocket_s {
 
 	/// \name socket status
 	//@{
-	qboolean		disconnected;		///< Socket is not in use.
-	qboolean		canSend;			///< Socket can send a message.
-	qboolean		sendNext;
+	bool			disconnected;		///< Socket is not in use.
+	bool			canSend;			///< Socket can send a message.
+	bool			sendNext;
 	//@}
 
 	/// \name socket drivers
@@ -268,11 +268,13 @@ void NET_AddCachedHost (const char *name, const char *map, const char *cname,
 
 extern	double		net_time;
 extern	struct msg_s *net_message;
-extern	int			net_activeconnections;
+extern	unsigned	net_activeconnections;
+
+struct cbuf_s;
 
 /** Initialize the networking sub-system.
 */
-void		NET_Init (void);
+void		NET_Init (struct cbuf_s *cbuf);
 
 /** Check for new connections.
 
@@ -294,7 +296,7 @@ struct qsocket_s	*NET_Connect (const char *host);
 	\param sock		The qsocket representing the connection.
 	\return			True if the message can be sent.
 */
-qboolean NET_CanSendMessage (qsocket_t *sock);
+bool NET_CanSendMessage (qsocket_t *sock);
 
 /** Read a single message from the connection into net_message.
 
@@ -376,14 +378,14 @@ typedef struct _PollProcedure {
 */
 void SchedulePollProcedure(PollProcedure *pp, double timeOffset);
 
-extern	qboolean	tcpipAvailable;
-extern	char		my_tcpip_address[NET_NAMELEN];
+extern	bool	tcpipAvailable;
+extern	char	my_tcpip_address[NET_NAMELEN];
 
-extern	qboolean	slistInProgress;
-extern	qboolean	slistSilent;
-extern	qboolean	slistLocal;
+extern	bool	slistInProgress;
+extern	bool	slistSilent;
+extern	bool	slistLocal;
 
-extern struct cvar_s	*hostname;
+extern char *hostname;
 
 extern QFile *vcrFile;
 
@@ -396,11 +398,11 @@ extern QFile *vcrFile;
 
 typedef struct {
 	const char		*name;
-	qboolean	initialized;
+	bool		initialized;
 	int			controlSock;
 	int			(*Init) (void);
 	void		(*Shutdown) (void);
-	void		(*Listen) (qboolean state);
+	void		(*Listen) (bool state);
 	int 		(*OpenSocket) (int port);
 	int 		(*CloseSocket) (int socket);
 	int 		(*Connect) (int socket, netadr_t *addr);
@@ -429,17 +431,17 @@ extern net_landriver_t	net_landrivers[MAX_NET_DRIVERS];
 
 typedef struct {
 	const char		*name;
-	qboolean	initialized;
+	bool		initialized;
 	int			(*Init) (void);
-	void		(*Listen) (qboolean state);
-	void		(*SearchForHosts) (qboolean xmit);
+	void		(*Listen) (bool state);
+	void		(*SearchForHosts) (bool xmit);
 	qsocket_t	*(*Connect) (const char *host);
 	qsocket_t 	*(*CheckNewConnections) (void);
 	int			(*QGetMessage) (qsocket_t *sock);
 	int			(*QSendMessage) (qsocket_t *sock, sizebuf_t *data);
 	int			(*SendUnreliableMessage) (qsocket_t *sock, sizebuf_t *data);
-	qboolean	(*CanSendMessage) (qsocket_t *sock);
-	qboolean	(*CanSendUnreliableMessage) (qsocket_t *sock);
+	bool		(*CanSendMessage) (qsocket_t *sock);
+	bool		(*CanSendUnreliableMessage) (qsocket_t *sock);
 	void		(*Close) (qsocket_t *sock);
 	void		(*Shutdown) (void);
 	int			controlSock;
@@ -447,6 +449,7 @@ typedef struct {
 
 extern int			net_numdrivers;
 extern net_driver_t	net_drivers[MAX_NET_DRIVERS];
+extern int net_is_dedicated;
 
 ///@}
 

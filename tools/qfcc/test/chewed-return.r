@@ -1,3 +1,4 @@
+#pragma bug die
 #pragma traditional
 
 entity spawn (void) {return @nil;}

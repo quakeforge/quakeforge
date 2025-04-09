@@ -70,7 +70,7 @@ int         valid;
 
 char       *argv0;						// changed after fork();
 
-qboolean    worldmodel;
+bool        worldmodel;
 
 int         hullnum;
 
@@ -414,6 +414,8 @@ ProcessFile (void)
 			extract_entities ();
 		if (options.extract_hull)
 			extract_hull ();
+		if (options.extract_model)
+			extract_model ();
 		BSP_Free (bsp);
 		return;
 	}

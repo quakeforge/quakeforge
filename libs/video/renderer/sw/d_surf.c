@@ -33,6 +33,7 @@
 #include "QF/qargs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "d_local.h"
@@ -54,7 +55,7 @@ D_SurfaceCacheAddress (void)
 }
 
 int
-D_SurfaceCacheForRes (void *data, int width, int height)
+D_SurfaceCacheForRes (int width, int height)
 {
 	int         size, pix;
 
@@ -96,9 +97,9 @@ D_ClearCacheGuard (void)
 }
 
 void
-D_InitCaches (void *data, void *buffer, int size)
+D_InitCaches (void *buffer, int size)
 {
-	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
+	Sys_MaskPrintf (SYS_vid, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
@@ -107,8 +108,6 @@ D_InitCaches (void *data, void *buffer, int size)
 	sc_base->next = NULL;
 	sc_base->owner = NULL;
 	sc_base->size = sc_size;
-
-	d_pzbuffer = vid.zbuffer;
 
 	D_ClearCacheGuard ();
 }
@@ -136,7 +135,7 @@ static surfcache_t *
 D_SCAlloc (int width, int size)
 {
 	surfcache_t *new;
-	qboolean    wrapped_this_time;
+	bool        wrapped_this_time;
 
 	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);
@@ -145,7 +144,7 @@ D_SCAlloc (int width, int size)
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	// This adds the offset of data[0] in the surfcache_t struct.
-	size += field_offset (surfcache_t, data);
+	size += offsetof (surfcache_t, data);
 
 #define SIZE_ALIGN	(sizeof (surfcache_t *) - 1)
 	size = (size + SIZE_ALIGN) & ~SIZE_ALIGN;
@@ -226,12 +225,13 @@ D_SCDump (void)
 #endif
 
 surfcache_t *
-D_CacheSurface (msurface_t *surface, int miplevel)
+D_CacheSurface (uint32_t render_id, msurface_t *surface, int miplevel)
 {
 	surfcache_t *cache;
+	byte frame = *(byte *) SW_COMP (scene_sw_frame, render_id);
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (currententity, surface);
+	r_drawsurf.texture = R_TextureAnimation (frame, surface);
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
@@ -282,7 +282,7 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
-	R_DrawSurface ();
+	R_DrawSurface (render_id);
 
 	return surface->cachespots[miplevel];
 }

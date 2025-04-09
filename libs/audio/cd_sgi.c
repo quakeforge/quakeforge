@@ -53,9 +53,9 @@ static general_funcs_t plugin_info_general_funcs;
 
 static cd_funcs_t plugin_info_cd_funcs;
 
-static qboolean initialized = false;
-static qboolean enabled = true;
-static qboolean playLooping = false;
+static bool initialized = false;
+static bool enabled = true;
+static bool playLooping = false;
 static float cdvolume;
 static byte remap[100];
 static byte playTrack;
@@ -63,7 +63,15 @@ static byte playTrack;
 static char cd_dev[] = "/dev/cdrom";
 
 static CDPLAYER *cdp = NULL;
-static cvar_t *bgmvolume;
+static float bgmvolume;
+static cvar_t bgmvolume_cvar = {
+	.name = "bgmvolume",
+	.description =
+		"Volume of CD music",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_float, .value = &bgmvolume },
+};
 
 static void
 I_SGI_Eject (void)
@@ -118,7 +126,7 @@ I_SGI_Pause (void)
 }
 
 void
-I_SGI_Play (int track, qboolean looping)
+I_SGI_Play (int track, bool looping)
 {
 	int			maxtrack = I_SGI_MaxTrack ();
 
@@ -219,14 +227,14 @@ I_SGI_Update (void)
 	if (!initialized || !enabled)
 		return;
 
-	if (bgmvolume->value != cdvolume) {
+	if (bgmvolume != cdvolume) {
 		if (cdvolume) {
-			Cvar_SetValue (bgmvolume, 0.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 0.0;
+			cdvolume = bgmvolume;
 			CDAudio_Pause ();
 		} else {
-			Cvar_SetValue (bgmvolume, 1.0);
-			cdvolume = bgmvolume->value;
+			bgmvolume = 1.0;
+			cdvolume = bgmvolume;
 			CDAudio_Resume ();
 		}
 	}
@@ -334,8 +342,7 @@ I_SGI_Init (void)
 {
 	int         i;
 
-	bgmvolume = Cvar_Get ("bgmvolume", "1", CVAR_ARCHIVE, NULL,
-						  "Volume of CD music");
+	Cvar_Register (&bgmvolume_cvar, 0, 0);
 	if ((i = COM_CheckParm ("-cddev")) != 0 && i < com_argc - 1) {
 		strncpy (cd_dev, com_argv[i + 1], sizeof (cd_dev));
 		cd_dev[sizeof (cd_dev) - 1] = 0;

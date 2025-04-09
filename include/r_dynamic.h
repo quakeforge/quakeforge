@@ -45,18 +45,14 @@ typedef enum {
 
 struct entity_s;
 
-void R_PushDlights (const vec3_t entorigin);
-struct cvar_s;
-void R_MaxDlightsCheck (struct cvar_s *var);
-void R_Particles_Init_Cvars (void);
-void R_InitBubble (void);
+void R_Trails_Init (void);
+void R_Trails_Init_Cvars (void);
+void R_ClearTrails (void);
+void R_RunTrails (float dT);
 
-void R_InitParticles (void);
+void R_RunParticles (float dT);
+void R_Particles_Init_Cvars (void);
 void R_ClearParticles (void);
-void R_DrawParticles (void);
-struct cvar_s;
-void R_MaxParticlesCheck (struct cvar_s *r_particles,
-						  struct cvar_s *r_particles_max);
 void R_InitSprites (void);
 
 #endif // _R_DYNAMIC_H

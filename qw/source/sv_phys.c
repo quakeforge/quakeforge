@@ -53,11 +53,52 @@
 	solid_edge items clip against only bsp models.
 */
 
-cvar_t     *sv_friction;
-cvar_t     *sv_gravity;
-cvar_t     *sv_jump_any;
-cvar_t     *sv_maxvelocity;
-cvar_t     *sv_stopspeed;
+float sv_friction;
+static cvar_t sv_friction_cvar = {
+	.name = "sv_friction",
+	.description =
+		"Sets the friction value for the players",
+	.default_value = "4",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &sv_friction },
+};
+float sv_gravity;
+static cvar_t sv_gravity_cvar = {
+	.name = "sv_gravity",
+	.description =
+		"Sets the global value for the amount of gravity",
+	.default_value = "800",
+	.flags = CVAR_SERVERINFO,
+	.value = { .type = &cexpr_float, .value = &sv_gravity },
+};
+int sv_jump_any;
+static cvar_t sv_jump_any_cvar = {
+	.name = "sv_jump_any",
+	.description =
+		"None",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sv_jump_any },
+};
+float sv_maxvelocity;
+static cvar_t sv_maxvelocity_cvar = {
+	.name = "sv_maxvelocity",
+	.description =
+		"Sets the maximum velocity an object can travel",
+	.default_value = "2000",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_maxvelocity },
+};
+float sv_stopspeed;
+static cvar_t sv_stopspeed_cvar = {
+	.name = "sv_stopspeed",
+	.description =
+		"Sets the value that determines how fast the player should come to a "
+		"complete stop",
+	.default_value = "100",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &sv_stopspeed },
+};
 
 #define	MOVE_EPSILON	0.01
 #if 0
@@ -87,18 +128,17 @@ void
 SV_CheckVelocity (edict_t *ent)
 {
 	float       wishspeed;
-//	int         i;
 
 	// bound velocity
 #if 0
-	for (i = 0; i < 3; i++) {
-		if (IS_NAN (SVvector (ent, velocity)[i])) {
+	for (int i = 0; i < 3; i++) {
+		if (isnan (SVvector (ent, velocity)[i])) {
 			Sys_Printf ("Got a NaN velocity on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));
 			SVvector (ent, velocity)[i] = 0;
 		}
-		if (IS_NAN (SVvector (ent, origin)[i])) {
+		if (isnan (SVvector (ent, origin)[i])) {
 			Sys_Printf ("Got a NaN origin on %s\n",
 						PR_GetString (&sv_pr_state, SVstring (ent,
 															  classname)));
@@ -107,8 +147,8 @@ SV_CheckVelocity (edict_t *ent)
 	}
 #endif
 	wishspeed = VectorLength (SVvector (ent, velocity));
-	if (wishspeed > sv_maxvelocity->value) {
-		VectorScale (SVvector (ent, velocity), sv_maxvelocity->value /
+	if (wishspeed > sv_maxvelocity) {
+		VectorScale (SVvector (ent, velocity), sv_maxvelocity /
 					 wishspeed, SVvector (ent, velocity));
 	}
 }
@@ -121,7 +161,7 @@ SV_CheckVelocity (edict_t *ent)
 	in a frame.  Not used for pushmove objects, because they must be exact.
 	Returns false if the entity removed itself.
 */
-qboolean
+bool
 SV_RunThink (edict_t *ent)
 {
 	float       thinktime;
@@ -208,7 +248,7 @@ SV_EntCanSupportJump (edict_t *ent)
 	int         solid = SVfloat (ent, solid);
 	if (solid == SOLID_BSP)
 		return 1;
-	if (!sv_jump_any->int_val)
+	if (!sv_jump_any)
 		return 0;
 	if (solid == SOLID_NOT || solid == SOLID_SLIDEBOX)
 		return 0;
@@ -352,7 +392,7 @@ SV_AddGravity (edict_t *ent)
 		ent_grav = SVfloat (ent, gravity);
 	else
 		ent_grav = 1.0;
-	SVvector (ent, velocity)[2] -= ent_grav * sv_gravity->value * sv_frametime;
+	SVvector (ent, velocity)[2] -= ent_grav * sv_gravity * sv_frametime;
 	SVdata (ent)->add_grav = true;
 }
 
@@ -365,7 +405,7 @@ SV_FinishGravity (edict_t *ent, vec3_t move)
 		ent_grav = SVfloat (ent, gravity);
 	else
 		ent_grav = 1.0;
-	ent_grav *= sv_gravity->value;
+	ent_grav *= sv_gravity;
 	move[2] += ent_grav * sv_frametime * sv_frametime / 2;
 }
 
@@ -413,11 +453,11 @@ SV_PushEntity (edict_t *ent, vec3_t push, unsigned traceflags)
 	return trace;
 }
 
-static qboolean
+static bool
 SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 {
 	float       solid_save;
-	int         num_moved, i, e;
+	int         num_moved, i;
 	edict_t    *check, *block;
 	edict_t   **moved_edict;
 	vec3_t      move, org, org2;
@@ -458,7 +498,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	// see if any solid entities are inside the final position
 	num_moved = 0;
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts;
+	for (unsigned e = 1; e < sv.num_edicts;
 		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
@@ -487,8 +527,8 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			// entity?
 			c_absmin = SVvector (check, absmin);
 			c_absmax = SVvector (check, absmax);
-			if (VectorCompCompare (c_absmin, >=, maxs)
-				|| VectorCompCompare (c_absmax, <=, mins))
+			if (VectorCompCompareAll (c_absmin, >=, maxs)
+				|| VectorCompCompareAll (c_absmax, <=, mins))
 				continue;
 
 			if (!SV_TestEntityPosition (check))
@@ -727,7 +767,7 @@ SV_Physics_Toss (edict_t *ent)
 	}
 
 	fl = 0;
-	if (sv_antilag->int_val == 2)
+	if (sv_antilag == 2)
 		fl |= MOVE_LAGGED;
 	trace = SV_PushEntity (ent, move, fl);
 	if (trace.fraction == 1)
@@ -773,11 +813,11 @@ SV_Physics_Toss (edict_t *ent)
 static void
 SV_Physics_Step (edict_t *ent)
 {
-	qboolean    hitsound;
+	bool        hitsound;
 
 	// freefall if not on ground
 	if (!((int) SVfloat (ent, flags) & (FL_ONGROUND | FL_FLY | FL_SWIM))) {
-		if (SVvector (ent, velocity)[2] < sv_gravity->value * -0.1)
+		if (SVvector (ent, velocity)[2] < sv_gravity * -0.1)
 			hitsound = true;
 		else
 			hitsound = false;
@@ -862,14 +902,14 @@ void
 SV_Physics (void)
 {
 	edict_t    *ent;
-	int         i;
 
 	SV_ProgStartFrame ();
 
 	// treat each object in turn
 	// even the world gets a chance to think
 	ent = sv.edicts;
-	for (i = 0; i < sv.num_edicts; i++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+	for (unsigned i = 0; i < sv.num_edicts;
+		 i++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		if (ent->free)
 			continue;
 
@@ -897,4 +937,14 @@ SV_Physics (void)
 		*sv_globals.time = sv.time;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.EndFrame);
 	}
+}
+
+void
+SV_Physics_Init_Cvars (void)
+{
+	Cvar_Register (&sv_friction_cvar, Cvar_Info, &sv_friction);
+	Cvar_Register (&sv_gravity_cvar, Cvar_Info, &sv_gravity);
+	Cvar_Register (&sv_jump_any_cvar, 0, 0);
+	Cvar_Register (&sv_maxvelocity_cvar, 0, 0);
+	Cvar_Register (&sv_stopspeed_cvar, 0, 0);
 }

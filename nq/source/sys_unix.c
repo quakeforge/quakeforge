@@ -44,6 +44,7 @@
 #else
 # include <sys/fcntl.h>
 #endif
+#include <locale.h>
 
 #include "QF/cvar.h"
 #include "QF/qargs.h"
@@ -52,7 +53,7 @@
 #include "nq/include/client.h"
 #include "nq/include/host.h"
 
-qboolean    isDedicated = false;
+bool        isDedicated = false;
 
 static void
 shutdown_f (void *data)
@@ -67,6 +68,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	memset (&host_parms, 0, sizeof (host_parms));
 
 	COM_InitArgv (argc, argv);
@@ -75,31 +80,32 @@ main (int argc, const char **argv)
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
-	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 
-	if (!sys_nostdout->int_val) {
+	if (!sys_nostdout) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
 	}
+	setlocale (LC_ALL, "");
 
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1) {							// Main message loop
+		qfFrameMark;
 		// find time spent rendering last frame
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 
-		if (cls.state == ca_dedicated) {	// play vcrfiles at max speed
-			if (time < sys_ticrate->value && (!vcrFile || recording)) {
+		if (net_is_dedicated) {	// play vcrfiles at max speed
+			if (time < sys_ticrate && (!vcrFile || recording)) {
 				usleep (1);
 				continue;			// not time to run a server-only tic yet
 			}
-			time = sys_ticrate->value;
+			time = sys_ticrate;
 		}
 
-		if (time > sys_ticrate->value * 2)
+		if (time > sys_ticrate * 2)
 			oldtime = newtime;
 		else
 			oldtime += time;

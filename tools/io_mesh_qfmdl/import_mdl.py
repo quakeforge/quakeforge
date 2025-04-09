@@ -31,15 +31,13 @@ def make_verts(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
     if frame.type:
         frame = frame.frames[subframenum]
-    verts = []
     s = Vector(mdl.scale)
     o = Vector(mdl.scale_origin)
     m = Matrix(((s.x,  0,  0,o.x),
                 (  0,s.y,  0,o.y),
                 (  0,  0,s.z,o.z),
                 (  0,  0,  0,  1)))
-    for v in frame.verts:
-        verts.append(m @ Vector(v.r))
+    verts = [m @ Vector(v.r) for v in frame.verts]
     return verts
 
 def make_faces(mdl):
@@ -228,7 +226,7 @@ def build_actions(mdl):
     ad = sk.animation_data_create()
     track = ad.nla_tracks.new();
     track.name = mdl.name
-    start_frame = 1.0
+    start_frame = 1
     for frame in mdl.frames:
         act = bpy.data.actions.new(frame.name)
         data = []
@@ -262,7 +260,7 @@ def build_actions(mdl):
                 data.append((k, co))
         set_keys(act, data)
         track.strips.new(act.name, start_frame, act)
-        start_frame += act.frame_range[1]
+        start_frame += int(act.frame_range[1])
 
 def merge_frames(mdl):
     def get_base(name):

@@ -54,7 +54,6 @@
 #endif
 
 #include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/qendian.h"
 #include "QF/screen.h"
@@ -63,30 +62,40 @@
 
 #include "compat.h"
 #include "context_x11.h"
-#include "d_iface.h"
 #include "vid_internal.h"
 
 static vid_internal_t vid_internal;
 
 int 		VID_options_items = 1;
 
-void
-D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
+static void
+X11_VID_Shutdown (void)
 {
-// direct drawing of the "accessing disk" icon isn't supported
-}
-
-void
-D_EndDirectRect (int x, int y, int width, int height)
-{
-// direct drawing of the "accessing disk" icon isn't supported
+	Sys_MaskPrintf (SYS_vid, "X11_VID_shutdown\n");
+	X11_CloseDisplay ();
+	if (vid_internal.unload) {
+		vid_internal.unload (vid_internal.ctx);
+	}
 }
 
 static void
-VID_shutdown (void *data)
+X11_VID_SetPalette (byte *palette, byte *colormap)
 {
-	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
-	X11_CloseDisplay ();
+	qfZoneScoped (true);
+	viddef.colormap8 = colormap;
+	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
+	if (vid_internal.set_colormap) {
+		vid_internal.set_colormap (vid_internal.ctx, colormap);
+	}
+
+	VID_InitGamma (palette);
+	vid_internal.set_palette (vid_internal.ctx, viddef.palette);
+}
+
+static void
+X11_VID_SetCursor (bool visible)
+{
+	XDefineCursor (x_disp, x_win, visible ? None : x_nullcursor);
 }
 
 /*
@@ -94,14 +103,12 @@ VID_shutdown (void *data)
 	palette.  Palette data will go away after the call, so copy it if you'll
 	need it later.
 */
-void
-VID_Init (byte *palette, byte *colormap)
+static void
+X11_VID_Init (byte *palette, byte *colormap)
 {
-	Sys_RegisterShutdown (VID_shutdown, 0);
-
+	qfZoneScoped (true);
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
-	vid_internal.sw32_context = X11_SW32_Context;
 #ifdef HAVE_VULKAN
 	vid_internal.vulkan_context = X11_Vulkan_Context;
 #endif
@@ -109,21 +116,18 @@ VID_Init (byte *palette, byte *colormap)
 	R_LoadModule (&vid_internal);
 
 	viddef.numpages = 2;
-	viddef.colormap8 = colormap;
-	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	srandom (getpid ());
 
 	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
-	vid_internal.choose_visual (vid_internal.data);
+	vid_internal.choose_visual (vid_internal.ctx);
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	vid_internal.create_context (vid_internal.data);
+	vid_internal.create_context (vid_internal.ctx);
 
-	VID_InitGamma (palette);
-	vid_internal.set_palette (vid_internal.data, viddef.palette);
+	X11_VID_SetPalette (palette, colormap);
 
 	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
@@ -132,8 +136,8 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.recalc_refdef = 1;			// force a surface cache flush
 }
 
-void
-VID_Init_Cvars ()
+static void
+X11_VID_Init_Cvars (void)
 {
 	X11_Init_Cvars ();
 #ifdef HAVE_VULKAN
@@ -142,6 +146,15 @@ VID_Init_Cvars ()
 	X11_GL_Init_Cvars ();
 	X11_SW_Init_Cvars ();
 }
+
+vid_system_t vid_system = {
+	.init = X11_VID_Init,
+	.shutdown = X11_VID_Shutdown,
+	.init_cvars = X11_VID_Init_Cvars,
+	.update_fullscreen = X11_UpdateFullscreen,
+	.set_palette = X11_VID_SetPalette,
+	.set_cursor = X11_VID_SetCursor,
+};
 
 #if 0
 static int  config_notify = 0;
@@ -168,29 +181,19 @@ update ()
 #endif
 
 void
-VID_LockBuffer (void)
-{
-}
-
-void
-VID_UnlockBuffer (void)
-{
-}
-
-void
 VID_SetCaption (const char *text)
 {
 	if (text && *text) {
 		char       *temp = strdup (text);
 
-		X11_SetCaption (va (0, "%s: %s", PACKAGE_STRING, temp));
+		X11_SetCaption (va ("%s: %s", PACKAGE_STRING, temp));
 		free (temp);
 	} else {
-		X11_SetCaption (va (0, "%s", PACKAGE_STRING));
+		X11_SetCaption (va ("%s", PACKAGE_STRING));
 	}
 }
 
-qboolean
+bool
 VID_SetGamma (double gamma)
 {
 	return X11_SetGamma (gamma);

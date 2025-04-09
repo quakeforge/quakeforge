@@ -62,7 +62,16 @@ button_get_key (const void *b, void *data)
 static void
 button_free (void *b, void *data)
 {
-	free (b);
+	regbutton_t *rb = b;
+
+	Cmd_RemoveCommand (rb->release_cmd);
+	Cmd_RemoveCommand (rb->press_cmd);
+	if (rb->button->listeners) {
+		DARRAY_CLEAR (rb->button->listeners);
+		free (rb->button->listeners);
+		rb->button->listeners = 0;
+	}
+	free (rb);
 }
 
 static void
@@ -168,6 +177,7 @@ button_release_cmd (void *_b)
 VISIBLE int
 IN_RegisterButton (in_button_t *button)
 {
+	qfZoneScoped (true);
 	const char *name = button->name;
 	if (Hash_Find (button_tab, name)) {
 		return 0;
@@ -189,6 +199,19 @@ IN_RegisterButton (in_button_t *button)
 						"Set the button's state to off/released.");
 
 	Hash_Add (button_tab, regbutton);
+	return 1;
+}
+
+VISIBLE int
+IN_UnregisterButton (in_button_t *button)
+{
+	const char *name = button->name;
+	regbutton_t *regbutton = Hash_Find (button_tab, name);
+	if (!regbutton) {
+		return 0;
+	}
+
+	Hash_Free (button_tab, Hash_Del (button_tab, name));
 	return 1;
 }
 
@@ -222,8 +245,29 @@ IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
 	}
 }
 
-static void __attribute__((constructor))
-in_button_init (void)
+static void
+button_clear_state (void *_rb, void *data)
+{
+	regbutton_t *rb = _rb;
+	button_release_cmd (rb->button);
+}
+
+void
+IN_ButtonClearStates (void)
+{
+	Hash_ForEach (button_tab, button_clear_state, 0);
+}
+
+static void
+in_button_shutdown (void *data)
+{
+	Sys_MaskPrintf (SYS_input, "in_button_shutdown\n");
+	Hash_DelTable (button_tab);
+}
+
+void
+IN_ButtonInit (void)
 {
 	button_tab = Hash_NewTable (127, button_get_key, button_free, 0, 0);
+	Sys_RegisterShutdown (in_button_shutdown, 0);
 }

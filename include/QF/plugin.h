@@ -98,18 +98,15 @@ typedef struct plugin_list_s {
 /*
 	Plugin system variables
 */
-extern struct cvar_s	*fs_pluginpath;
+extern char *fs_pluginpath;
 
 /*
 	Function prototypes
 */
 plugin_t *PI_LoadPlugin (const char *, const char *);
-qboolean PI_UnloadPlugin (plugin_t *);
+bool PI_UnloadPlugin (plugin_t *);
 void PI_RegisterPlugins (plugin_list_t *);
 void PI_Init (void);
-void PI_Shutdown (void);
-
-// FIXME: we need a generic function to initialize unused fields
 
 ///@}
 

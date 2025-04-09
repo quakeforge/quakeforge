@@ -37,6 +37,7 @@
 
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
+#include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/cmd.h"
 #include "QF/sys.h"
@@ -76,8 +77,8 @@ GIB_Exec_Override_f (void)
 		return;
 	}
 	if (!Cvar_Command ()
-		&& (cmd_warncmd->int_val
-			|| (developer && developer->int_val & SYS_dev)))
+		&& (cmd_warncmd
+			|| (developer && developer & SYS_dev)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	if ((strlen (Cmd_Argv (1)) >= 4
 	     && !strcmp (Cmd_Argv (1) + strlen (Cmd_Argv (1)) - 4, ".gib"))
@@ -99,8 +100,9 @@ GIB_Exec_Override_f (void)
 }
 
 VISIBLE void
-GIB_Init (qboolean sandbox)
+GIB_Init (bool sandbox)
 {
+	qfZoneScoped (true);
 	// Override the exec command with a GIB-aware one
 	if (Cmd_Exists ("exec")) {
 		Cmd_RemoveCommand ("exec");

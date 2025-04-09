@@ -50,12 +50,9 @@
 # define M_PI	    3.14159265358979323846  // matches value in gcc v2 math.h
 #endif
 
-extern int		nanmask;
-
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
-
-#define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 
 #define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
 
@@ -140,21 +137,23 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 				   vec3_t up);
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
+// NOTE expects plane distance is -p.n
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct plane_s *plane) __attribute__((pure));
+					const plane_t *plane) __attribute__((pure));
 float anglemod (float a) __attribute__((const));
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
 
+// NOTE expects plane distance is -p.n
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)				\
 	(((p)->type < 3)?									\
 	(													\
-		((p)->dist <= (emins)[(p)->type])?				\
+		(-(p)->dist <= (emins)[(p)->type])?				\
 		1												\
 		:												\
 		(												\
-			((p)->dist >= (emaxs)[(p)->type])?			\
+			(-(p)->dist >= (emaxs)[(p)->type])?			\
 			2											\
 			:											\
 			3											\
@@ -175,21 +174,21 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 		VectorNegate ((sp)->normal, (dp)->normal);	\
 	} while (0)
 
-extern plane_t * const frustum;
-GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
-GNU89INLINE inline qboolean R_CullSphere (const vec3_t origin, const float radius);
+GNU89INLINE inline bool R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs) __attribute__((pure));
+GNU89INLINE inline bool R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull
 GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
-R_CullBox (const vec3_t mins, const vec3_t maxs)
+bool
+R_CullBox (const plane_t *frustum, const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
 
 	for (i=0 ; i < 4 ; i++) {
+		// NOTE frustum distance is -p.n
 		if (BOX_ON_PLANE_SIDE (mins, maxs, &frustum[i]) == 2) {
 			return true;
 		}
@@ -202,15 +201,16 @@ GNU89INLINE inline
 #else
 VISIBLE
 #endif
-qboolean
-R_CullSphere (const vec3_t origin, const float radius)
+bool
+R_CullSphere (const plane_t *frustum, const vec3_t origin, const float radius)
 {
 	int		i;
 	float	r;
 
 	for (i = 0; i < 4; i++)
 	{
-		r = DotProduct (origin, frustum[i].normal) - frustum[i].dist;
+		// NOTE frustum distance is -p.n
+		r = DotProduct (origin, frustum[i].normal) + frustum[i].dist;
 		if (r <= -radius)
 			return true;
 	}

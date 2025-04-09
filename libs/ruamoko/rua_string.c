@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "qfalloca.h"
 
@@ -51,83 +52,121 @@
 
 #include "rua_internal.h"
 
+typedef struct str_resources_s {
+	dstring_t  *printbuf;
+} str_resources_t;
+
 static void
-bi_strlen (progs_t *pr)
+bi_strlen (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char	*s;
 
 	s = P_GSTRING (pr, 0);
 	R_INT (pr) = strlen(s);
 }
 
-static void
-bi_sprintf (progs_t *pr)
+void
+RUA_Sprintf (progs_t *pr, dstring_t *dstr, const char *func, int fmt_arg)
 {
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
-	dstring_t  *dstr;
+	qfZoneScoped (true);
+	const char *fmt = P_GSTRING (pr, fmt_arg);
+	int         count = pr->pr_argc - (fmt_arg + 1);
+	pr_type_t **args = pr->pr_params + (fmt_arg + 1);
 
-	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "bi_sprintf", fmt, count, args);
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	if (pr->progs->version == PROG_VERSION) {
+		__auto_type va_list = &P_PACKED (pr, pr_va_list_t, (fmt_arg + 1));
+		count = va_list->count;
+		if (count) {
+			args = alloca (count * sizeof (pr_type_t *));
+			for (int i = 0; i < count; i++) {
+				args[i] = &pr->pr_globals[va_list->list + i * 4];
+			}
+		} else {
+			args = 0;
+		}
+	}
+
+	PR_Sprintf (pr, dstr, func, fmt, count, args);
 }
 
 static void
-bi_vsprintf (progs_t *pr)
+bi_sprintf (progs_t *pr, void *_res)
 {
+	qfZoneScoped (true);
+	str_resources_t *res = _res;
+	dstring_clearstr (res->printbuf);
+	RUA_Sprintf (pr, res->printbuf, "sprintf", 0);
+	RETURN_STRING (pr, res->printbuf->str);
+}
+
+static void
+bi_vsprintf (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	str_resources_t *res = _res;
 	const char *fmt = P_GSTRING (pr, 0);
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
-	dstring_t  *dstr;
 
 	for (int i = 0; i < args->count; i++) {
 		list[i] = list_start + i * pr->pr_param_size;
 	}
 
-	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "bi_vsprintf", fmt, args->count, list);
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	dstring_clearstr (res->printbuf);
+	PR_Sprintf (pr, res->printbuf, "bi_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, res->printbuf->str);
 }
 
 static void
-bi_str_new (progs_t *pr)
+bi_str_new (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_STRING (pr) = PR_NewMutableString (pr);
 }
 
 static void
-bi_str_free (progs_t *pr)
+bi_str_unmutable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
+	RETURN_STRING (pr, P_GSTRING (pr, 0));
+}
+
+static void
+bi_str_free (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
 	PR_FreeString (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_hold (progs_t *pr)
+bi_str_hold (progs_t *pr, void *data)
 {
-	string_t    str = P_STRING (pr, 0);
+	qfZoneScoped (true);
+	pr_string_t str = P_STRING (pr, 0);
 	PR_HoldString (pr, str);
 	R_STRING (pr) = str;
 }
 
 static void
-bi_str_valid (progs_t *pr)
+bi_str_valid (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = PR_StringValid (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_mutable (progs_t *pr)
+bi_str_mutable (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = PR_StringMutable (pr, P_STRING (pr, 0));
 }
 
 static void
-bi_str_copy (progs_t *pr)
+bi_str_copy (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
 
@@ -136,8 +175,9 @@ bi_str_copy (progs_t *pr)
 }
 
 static void
-bi_str_cat (progs_t *pr)
+bi_str_cat (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *dst = P_DSTRING (pr, 0);
 	const char *src = P_GSTRING (pr, 1);
 
@@ -146,8 +186,9 @@ bi_str_cat (progs_t *pr)
 }
 
 static void
-bi_str_clear (progs_t *pr)
+bi_str_clear (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	dstring_t  *str = P_DSTRING (pr, 0);
 
 	dstring_clearstr (str);
@@ -155,16 +196,10 @@ bi_str_clear (progs_t *pr)
 }
 
 static void
-bi_str_mid (progs_t *pr)
+str_mid (progs_t *pr, const char *str, int pos, int end, int size)
 {
-	const char *str = P_GSTRING (pr, 0);
-	int         pos = P_INT (pr, 1);
-	int         end = P_INT (pr, 2);
-	int         size = strlen (str);
+	qfZoneScoped (true);
 	char       *temp;
-
-	if (pr->pr_argc == 2)
-		end = size;
 
 	R_STRING (pr) = 0;
 	if (pos < 0)
@@ -186,8 +221,32 @@ bi_str_mid (progs_t *pr)
 }
 
 static void
-bi_str_str (progs_t *pr)
+bi_str_mid_2 (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, size, size);
+}
+
+static void
+bi_str_mid_3 (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	int         pos = P_INT (pr, 1);
+	int         end = P_INT (pr, 2);
+	int         size = strlen (str);
+
+	str_mid (pr, str, pos, end, size);
+}
+
+static void
+bi_str_str (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
 	const char *haystack = P_GSTRING (pr, 0);
 	const char *needle = P_GSTRING (pr, 1);
 	char       *res = strstr (haystack, needle);
@@ -199,8 +258,37 @@ bi_str_str (progs_t *pr)
 }
 
 static void
-bi_str_char (progs_t *pr)
+bi_strchr (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
+	const char *s = P_GSTRING (pr, 0);
+	int         c = P_INT (pr, 1);
+	char       *res = strchr (s, c);
+
+	R_INT (pr) = -1;
+	if (res) {
+		R_INT (pr) = res - s;
+	}
+}
+
+static void
+bi_strrchr (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *s = P_GSTRING (pr, 0);
+	int         c = P_INT (pr, 1);
+	char       *res = strrchr (s, c);
+
+	R_INT (pr) = -1;
+	if (res) {
+		R_INT (pr) = res - s;
+	}
+}
+
+static void
+bi_str_char (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	int         ind = P_INT (pr, 1);
 
@@ -211,8 +299,9 @@ bi_str_char (progs_t *pr)
 }
 
 static void
-bi_str_quote (progs_t *pr)
+bi_str_quote (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	// can have up to 4 chars per char (a -> \x61)
 	char       *quote = alloca (strlen (str) * 4 + 1);
@@ -250,8 +339,9 @@ bi_str_quote (progs_t *pr)
 }
 
 static void
-bi_str_lower (progs_t *pr)
+bi_str_lower (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	char       *lower = alloca (strlen (str) + 1);
 	char       *l = lower;
@@ -266,8 +356,9 @@ bi_str_lower (progs_t *pr)
 }
 
 static void
-bi_str_upper (progs_t *pr)
+bi_str_upper (progs_t *pr, void *data)
 {
+	qfZoneScoped (true);
 	const char *str = P_GSTRING (pr, 0);
 	char       *upper = alloca (strlen (str) + 1);
 	char       *l = upper;
@@ -281,30 +372,113 @@ bi_str_upper (progs_t *pr)
 	RETURN_STRING (pr, upper);
 }
 
+static void
+bi_strtod (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_DOUBLE (pr) = strtod (str, &end_ptr);
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtof (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_FLOAT (pr) = strtof (str, &end_ptr);
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtol (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_LONG (pr) = strtol (str, &end_ptr, P_INT (pr, 2));
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+static void
+bi_strtoul (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *str = P_GSTRING (pr, 0);
+	pr_type_t  *end = P_GPOINTER (pr, 1);
+	char       *end_ptr;
+	R_ULONG (pr) = strtoul (str, &end_ptr, P_INT (pr, 2));
+	if (end) {
+		end->value = end_ptr - str;
+	}
+}
+
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"strlen",		bi_strlen,		-1},
-	{"sprintf",		bi_sprintf,		-1},
-	{"vsprintf",	bi_vsprintf,	-1},
-	{"str_new",		bi_str_new,		-1},
-	{"str_free",	bi_str_free,	-1},
-	{"str_hold",	bi_str_hold,	-1},
-	{"str_valid",	bi_str_valid,	-1},
-	{"str_mutable",	bi_str_mutable,	-1},
-	{"str_copy",	bi_str_copy,	-1},
-	{"str_cat",		bi_str_cat,		-1},
-	{"str_clear",	bi_str_clear,	-1},
-	{"str_mid|*i",	bi_str_mid,		-1},
-	{"str_mid|*ii",	bi_str_mid,		-1},
-	{"str_str",		bi_str_str,		-1},
-	{"str_char",	bi_str_char,	-1},
-	{"str_quote",	bi_str_quote,	-1},
-	{"str_lower",	bi_str_lower,	-1},
-	{"str_upper",	bi_str_upper,	-1},
+	bi(strlen,      1, p(string)),
+	bi(sprintf,     -2, p(string)),
+	bi(vsprintf,    2, p(string), P(1, 2)),
+	bi(str_new,     0),
+	bi(str_unmutable,   1, p(string)),
+	bi(str_free,    1, p(string)),
+	bi(str_hold,    1, p(string)),
+	bi(str_valid,   1, p(string)),
+	bi(str_mutable, 1, p(string)),
+	bi(str_copy,    2, p(string), p(string)),
+	bi(str_cat,     2, p(string), p(string)),
+	bi(str_clear,   1, p(string)),
+	{"str_mid|*i",	bi_str_mid_2,		-1, 2, {p(string), p(int)}},
+	{"str_mid|*ii",	bi_str_mid_3,		-1, 3, {p(string), p(int), p(int)}},
+	bi(str_str,     2, p(string), p(string)),
+	bi(strchr,      2, p(string), p(int)),
+	bi(strrchr,     2, p(string), p(int)),
+	bi(str_char,    2, p(string), p(int)),
+	bi(str_quote,   1, p(string)),
+	bi(str_lower,   1, p(string)),
+	bi(str_upper,   1, p(string)),
+	bi(strtod,      1, p(string)),
+	bi(strtof,      1, p(string)),
+	bi(strtol,      1, p(string)),
+	bi(strtoul,     1, p(string)),
 	{0}
 };
+
+static void
+rua_string_clear (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+}
+
+static void
+rua_string_destroy (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	str_resources_t *res = _res;
+	dstring_delete (res->printbuf);
+	free (res);
+}
 
 void
 RUA_String_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	qfZoneScoped (true);
+	str_resources_t *res = malloc (sizeof (str_resources_t));
+	res->printbuf = dstring_newstr ();
+
+	PR_Resources_Register (pr, "string", res, rua_string_clear,
+						   rua_string_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

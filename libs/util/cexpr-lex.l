@@ -55,8 +55,10 @@
 #include "QF/cexpr.h"
 #include "libs/util/cexpr-parse.h"
 
-#define YY_NO_INPUT
-#define YY_NO_UNPUT
+#define YY_NO_INPUT	// debian flex
+#define YY_NO_UNPUT	// debian flex
+#define YY_NO_YYINPUT
+#define YY_NO_YYUNPUT
 
 #define YYSTYPE CEXPR_YYSTYPE
 #define YY_EXTRA_TYPE exprctx_t *
@@ -76,6 +78,7 @@ static exprval_t *parse_uint (const char *str, exprctx_t *context);
 static exprval_t *parse_size_t (const char *str, exprctx_t *context);
 static exprval_t *parse_float (const char *str, exprctx_t *context);
 static exprval_t *parse_double (const char *str, exprctx_t *context);
+static exprval_t *parse_string (const char *str, exprctx_t *context);
 static exprsym_t *parse_name (const char *str, exprctx_t *context);
 static exprval_t *parse_variable (const char *str, exprctx_t *context);
 
@@ -94,9 +97,18 @@ cexpr_error(exprctx_t *ctx, const char *fmt, ...)
 	va_end (args);
 
 	if (ctx->messages) {
-		PL_Message (ctx->messages, ctx->item, "%s", string->str);
+		if (ctx->msg_prefix) {
+			PL_Message (ctx->messages, ctx->item, "%s:%s",
+						ctx->msg_prefix, string->str);
+		} else {
+			PL_Message (ctx->messages, ctx->item, "%s", string->str);
+		}
 	} else {
-		Sys_Printf ("%s\n", string->str);
+		if (ctx->msg_prefix) {
+			Sys_Printf ("%s:%s\n", ctx->msg_prefix, string->str);
+		} else {
+			Sys_Printf ("%s\n", string->str);
+		}
 	}
 	dstring_delete (string);
 }
@@ -165,6 +177,8 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 {STRING}			{
+						yylval->value = parse_string (yytext, context);
+						return VALUE;
 					}
 @					return '@';
 
@@ -283,6 +297,19 @@ static exprval_t *parse_double (const char *str, exprctx_t *context)
 	return val;
 }
 
+static exprval_t *parse_string (const char *str, exprctx_t *context)
+{
+	exprval_t  *val = cexpr_value (&cexpr_string, context);
+	// str includes the quotes, which add 2 to the length of the string, but
+	// only one byte is needed for the terminating nul
+	size_t      size = strlen (str) - 1;
+	char       *dup = cmemalloc (context->memsuper, size);
+	strncpy (dup, str + 1, size - 1);
+	dup[size - 1] = 0;
+	*(char **) val->value = dup;
+	return val;
+}
+
 static exprsym_t *
 parse_name (const char *name, exprctx_t *context)
 {
@@ -301,7 +328,23 @@ parse_name (const char *name, exprctx_t *context)
 		}
 		prev_tab = symtab;
 
-		sym = Hash_Find (symtab->tab, name);
+		if (symtab->tab) {
+			sym = Hash_Find (symtab->tab, name);
+		} else {
+			for (exprsym_t *s = symtab->symbols; s->name; s++) {
+				if (!strcmp (s->name, name)) {
+					sym = s;
+					break;
+				}
+			}
+		}
+	}
+	if (!sym) {
+		sym = cmemalloc (context->memsuper, sizeof (exprsym_t));
+		size_t      size = strlen (name) + 1;
+		char       *sym_name = cmemalloc (context->memsuper, size);
+		memcpy (sym_name, name, size);
+		*sym = (exprsym_t) { .name = sym_name };
 	}
 	return sym;
 }

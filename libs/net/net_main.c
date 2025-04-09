@@ -47,25 +47,26 @@
 #include "netmain.h"
 #include "net_vcr.h"
 
-#include "../nq/include/host.h"
 #include "../nq/include/server.h"
+
+int net_is_dedicated = 0;
 
 qsocket_t  *net_activeSockets = NULL;
 qsocket_t  *net_freeSockets = NULL;
 int         net_numsockets = 0;
 
-qboolean    tcpipAvailable = false;
+bool        tcpipAvailable = false;
 
 int         net_hostport;
 int         DEFAULTnet_hostport = 26000;
 
 char        my_tcpip_address[NET_NAMELEN];
 
-static qboolean listening = false;
+static bool listening = false;
 
-qboolean    slistInProgress = false;
-qboolean    slistSilent = false;
-qboolean    slistLocal = true;
+bool        slistInProgress = false;
+bool        slistSilent = false;
+bool        slistLocal = true;
 static double slistStartTime;
 static int  slistLastShown;
 
@@ -78,18 +79,34 @@ PollProcedure slistPollProcedure = { NULL, 0.0, Slist_Poll };
 static sizebuf_t _net_message_message;
 static qmsg_t _net_message = { 0, 0, &_net_message_message };
 qmsg_t     *net_message = &_net_message;
-int         net_activeconnections = 0;
+unsigned    net_activeconnections = 0;
 
 int         messagesSent = 0;
 int         messagesReceived = 0;
 int         unreliableMessagesSent = 0;
 int         unreliableMessagesReceived = 0;
 
-cvar_t     *net_messagetimeout;
-cvar_t     *hostname;
+float net_messagetimeout;
+static cvar_t net_messagetimeout_cvar = {
+	.name = "net_messagetimeout",
+	.description =
+		"None",
+	.default_value = "300",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_float, .value = &net_messagetimeout },
+};
+char *hostname;
+static cvar_t hostname_cvar = {
+	.name = "hostname",
+	.description =
+		"None",
+	.default_value = "UNNAMED",
+	.flags = CVAR_NONE,
+	.value = { .type = 0, .value = &hostname },
+};
 
 QFile      *vcrFile;
-qboolean    recording = false;
+bool        recording = false;
 
 // these two macros are to make the code more readable
 #define sfunc	net_drivers[sock->driver]
@@ -101,6 +118,8 @@ double      net_time;
 
 static int         hostCacheCount = 0;
 static hostcache_t hostcache[HOSTCACHESIZE];
+
+static cbuf_t *net_cbuf;
 
 double
 SetNetTime (void)
@@ -197,7 +216,7 @@ NET_Listen_f (void)
 static void
 MaxPlayers_f (void)
 {
-	int         n;
+	unsigned    n;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("\"maxplayers\" is \"%u\"\n", svs.maxclients);
@@ -219,16 +238,16 @@ MaxPlayers_f (void)
 	}
 
 	if ((n == 1) && listening)
-		Cbuf_AddText (host_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
 
 	if ((n > 1) && (!listening))
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 
 	svs.maxclients = n;
 	if (n == 1)
-		Cvar_Set (deathmatch, "0");
+		Cvar_Set ("deathmatch", "0");
 	else
-		Cvar_Set (deathmatch, "1");
+		Cvar_Set ("deathmatch", "1");
 }
 
 
@@ -253,8 +272,8 @@ NET_Port_f (void)
 
 	if (listening) {
 		// force a change to the new port
-		Cbuf_AddText (host_cbuf, "listen 0\n");
-		Cbuf_AddText (host_cbuf, "listen 1\n");
+		Cbuf_AddText (net_cbuf, "listen 0\n");
+		Cbuf_AddText (net_cbuf, "listen 1\n");
 	}
 }
 
@@ -571,7 +590,7 @@ NET_GetMessage (qsocket_t *sock)
 
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
-		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
+		if (net_time - sock->lastMessageTime > net_messagetimeout) {
 			Sys_MaskPrintf (SYS_net, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
@@ -679,7 +698,7 @@ NET_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 }
 
 
-qboolean
+bool
 NET_CanSendMessage (qsocket_t *sock)
 {
 	int         r;
@@ -710,10 +729,10 @@ int
 NET_SendToAll (sizebuf_t *data, double blocktime)
 {
 	double      start;
-	int         i;
+	unsigned    i;
 	int         count = 0;
-	qboolean    state1[MAX_SCOREBOARD];	/* can we send */
-	qboolean    state2[MAX_SCOREBOARD];	/* did we send */
+	bool        state1[MAX_SCOREBOARD];	/* can we send */
+	bool        state2[MAX_SCOREBOARD];	/* did we send */
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {
@@ -796,11 +815,14 @@ NET_shutdown (void *data)
 }
 
 void
-NET_Init (void)
+NET_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	int         i;
 	int         controlSocket;
 	qsocket_t  *s;
+
+	net_cbuf = cbuf;
 
 	Sys_RegisterShutdown (NET_shutdown, 0);
 
@@ -826,10 +848,10 @@ NET_Init (void)
 	}
 	net_hostport = DEFAULTnet_hostport;
 
-	if (COM_CheckParm ("-listen") || cls.state == ca_dedicated)
+	if (COM_CheckParm ("-listen") || net_is_dedicated)
 		listening = true;
 	net_numsockets = svs.maxclientslimit;
-	if (cls.state != ca_dedicated)
+	if (!net_is_dedicated)
 		net_numsockets++;
 
 	SetNetTime ();
@@ -844,9 +866,8 @@ NET_Init (void)
 	// allocate space for network message buffer
 	SZ_Alloc (&_net_message_message, NET_MAXMESSAGE);
 
-	net_messagetimeout =
-		Cvar_Get ("net_messagetimeout", "300", CVAR_NONE, NULL, "None");
-	hostname = Cvar_Get ("hostname", "UNNAMED", CVAR_NONE, NULL, "None");
+	Cvar_Register (&net_messagetimeout_cvar, 0, 0);
+	Cvar_Register (&hostname_cvar, 0, 0);
 
 	Cmd_AddCommand ("slist", NET_Slist_f, "No Description");
 	Cmd_AddCommand ("listen", NET_Listen_f, "No Description");

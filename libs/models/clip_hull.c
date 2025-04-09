@@ -45,7 +45,7 @@ MOD_Alloc_Hull (int nodes, int planes)
 	int			 size, i;
 
 	size = sizeof (hull_t);
-	size += sizeof (mclipnode_t) * nodes + sizeof (plane_t) * planes;
+	size += sizeof (dclipnode_t) * nodes + sizeof (plane_t) * planes;
 	size *= MAX_MAP_HULLS;
 	size += sizeof (clip_hull_t);
 
@@ -55,11 +55,11 @@ MOD_Alloc_Hull (int nodes, int planes)
 	ch->hulls[0] = (hull_t *) &ch[1];
 	for (i = 1; i < MAX_MAP_HULLS; i++)
 		ch->hulls[i] = &ch->hulls[i - 1][1];
-	ch->hulls[0]->clipnodes = (mclipnode_t *) &ch->hulls[i - 1][1];
+	ch->hulls[0]->clipnodes = (dclipnode_t *) &ch->hulls[i - 1][1];
 	ch->hulls[0]->planes = (plane_t *) &ch->hulls[0]->clipnodes[nodes];
 	for (i = 1; i < MAX_MAP_HULLS; i++) {
 		ch->hulls[i]->clipnodes =
-			(mclipnode_t *) &ch->hulls[i - 1]->planes[planes];
+			(dclipnode_t *) &ch->hulls[i - 1]->planes[planes];
 		ch->hulls[i]->planes = (plane_t *) &ch->hulls[i]->clipnodes[nodes];
 	}
 	return ch;
@@ -74,7 +74,7 @@ MOD_Free_Hull (clip_hull_t *ch)
 static void
 recurse_clip_tree (hull_t *hull, int num, int depth)
 {
-	mclipnode_t *node;
+	dclipnode_t *node;
 
 	if (num < 0) {
 		if (depth > hull->depth)

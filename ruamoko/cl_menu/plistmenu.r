@@ -84,7 +84,7 @@ class_from_plist (PLDictionary *pldict)
 					if (str_str (paramstr, ".") >= 0)
 						va_list.list[j].float_val = stof (paramstr);
 					else
-						va_list.list[j].integer_val = stoi (paramstr);
+						va_list.list[j].int_val = stoi (paramstr);
 					break;
 			}
 		}

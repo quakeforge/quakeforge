@@ -60,6 +60,7 @@
 # include <pwd.h>
 #endif
 
+#include <inttypes.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -72,6 +73,7 @@
 #include <sys/time.h>
 #endif
 #include <sys/types.h>
+#include <unwind.h>
 
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
@@ -84,6 +86,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
@@ -95,15 +98,50 @@
 static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 
-VISIBLE cvar_t *sys_nostdout;
-VISIBLE cvar_t *sys_extrasleep;
-cvar_t     *sys_dead_sleep;
-cvar_t     *sys_sleep;
+VISIBLE int sys_nostdout;
+static cvar_t sys_nostdout_cvar = {
+	.name = "sys_nostdout",
+	.description =
+		"Set to disable std out",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_nostdout },
+};
+VISIBLE int sys_extrasleep;
+static cvar_t sys_extrasleep_cvar = {
+	.name = "sys_extrasleep",
+	.description =
+		"Set to cause whatever amount delay in microseconds you want. Mostly "
+		"useful to generate simulated bad connections.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_extrasleep },
+};
+int sys_dead_sleep;
+static cvar_t sys_dead_sleep_cvar = {
+	.name = "sys_dead_sleep",
+	.description =
+		"When set, the server gets NO cpu if no clients are connected and "
+		"there's no other activity. *MIGHT* cause problems with some mods.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_dead_sleep },
+};
+int sys_sleep;
+static cvar_t sys_sleep_cvar = {
+	.name = "sys_sleep",
+	.description =
+		"Sleep how long in seconds between checking for connections. Minimum "
+		"is 0, maximum is 13",
+	.default_value = "8",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &sys_sleep },
+};
 
 int         sys_checksum;
 
-static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
-static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
+static __thread sys_printf_t sys_std_printf_function = Sys_StdPrintf;
+static __thread sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
@@ -117,17 +155,18 @@ typedef struct error_handler_s {
 	void       *data;
 } error_handler_t;
 
-static shutdown_list_t *shutdown_list;
+static __thread shutdown_list_t *shutdown_list;
 
-static error_handler_t *error_handler_freelist;
-static error_handler_t *error_handler;
+static __thread error_handler_t *error_handler_freelist;
+static __thread error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
-qboolean    stdin_ready;
+bool        stdin_ready;
 #endif
 
 /* The translation table between the graphical font and plain ASCII  --KB */
+VISIBLE bool sys_quake_encoding;
 VISIBLE const char sys_char_map[256] = {
       0, '#', '#', '#', '#', '.', '#', '#',
 	'#',   9,  10, '#', ' ',  13, '.', '.',
@@ -163,9 +202,6 @@ VISIBLE const char sys_char_map[256] = {
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
 	'x', 'y', 'z', '{', '|', '}', '~', '<'
 };
-
-#define MAXPRINTMSG 4096
-
 
 #ifndef USE_INTEL_ASM
 void
@@ -247,6 +283,9 @@ VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
 	sys_printf_t prev = sys_std_printf_function;
+	if (!func) {
+		func = Sys_StdPrintf;
+	}
 	sys_std_printf_function = func;
 	return prev;
 }
@@ -255,31 +294,38 @@ VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
 	sys_printf_t prev = sys_err_printf_function;
+	if (!func) {
+		func = Sys_ErrPrintf;
+	}
 	sys_err_printf_function = func;
 	return prev;
 }
 
+static __thread dstring_t *sys_print_msg;
 void
 Sys_Print (FILE *stream, const char *fmt, va_list args)
 {
-	static dstring_t *msg;
 	unsigned char *p;
 
-	if (!msg)
-		msg = dstring_new ();
+	if (!sys_print_msg)
+		sys_print_msg = dstring_new ();
 
-	dvsprintf (msg, fmt, args);
+	dvsprintf (sys_print_msg, fmt, args);
 
 	if (stream == stderr) {
 #ifdef _WIN32
-		MessageBox (NULL, msg->str, "Fatal Error", 0 /* MB_OK */ );
+		MessageBox (NULL, sys_print_msg->str, "Fatal Error", 0 /* MB_OK */ );
 #endif
 		fputs ("Fatal Error: ", stream);
 	}
 
-	/* translate to ASCII instead of printing [xx]  --KB */
-	for (p = (unsigned char *) msg->str; *p; p++)
-		putc (sys_char_map[*p], stream);
+	if (sys_quake_encoding) {
+		/* translate to ASCII instead of printing [xx]  --KB */
+		for (p = (unsigned char *) sys_print_msg->str; *p; p++)
+			putc (sys_char_map[*p], stream);
+	} else {
+		fputs (sys_print_msg->str, stream);
+	}
 
 	if (stream == stderr) {
 		fputs ("\n", stream);
@@ -290,7 +336,7 @@ Sys_Print (FILE *stream, const char *fmt, va_list args)
 static void
 Sys_StdPrintf (const char *fmt, va_list args)
 {
-	if (sys_nostdout && sys_nostdout->int_val)
+	if (sys_nostdout)
 		return;
 	Sys_Print (stdout, fmt, args);
 }
@@ -311,11 +357,11 @@ Sys_Printf (const char *fmt, ...)
 }
 
 VISIBLE void
-Sys_MaskPrintf (int mask, const char *fmt, ...)
+Sys_MaskPrintf (sys_developer_e mask, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (!developer || !(developer->int_val & mask))
+	if (!(developer & mask))
 		return;
 	va_start (args, fmt);
 	sys_std_printf_function (fmt, args);
@@ -333,7 +379,7 @@ Sys_StartTime (void)
 VISIBLE int64_t
 Sys_LongTime (void)
 {
-	static qboolean first = true;
+	static bool first = true;
 #ifdef _WIN32
 # if 0
 	static DWORD starttime;
@@ -425,7 +471,7 @@ Sys_LongTime (void)
 VISIBLE int64_t
 Sys_TimeBase (void)
 {
-	return __INT64_C (4294967296000000);
+	return INT64_C (4294967296000000);
 }
 
 VISIBLE double
@@ -488,44 +534,22 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 VISIBLE void
 Sys_Init_Cvars (void)
 {
-	sys_nostdout = Cvar_Get ("sys_nostdout", "0", CVAR_NONE, NULL,
-							 "Set to disable std out");
-	sys_extrasleep = Cvar_Get ("sys_extrasleep", "0", CVAR_NONE, NULL,
-							   "Set to cause whatever amount delay in "
-							   "microseconds you want. Mostly "
-							   "useful to generate simulated bad "
-							   "connections.");
-	sys_dead_sleep = Cvar_Get ("sys_dead_sleep", "0", CVAR_NONE, NULL,
-							   "When set, the server gets NO cpu if no "
-							   "clients are connected and there's no other "
-							   "activity. *MIGHT* cause problems with some "
-							   "mods.");
-	sys_sleep = Cvar_Get ("sys_sleep", "8", CVAR_NONE, NULL, "Sleep how long "
-						  "in seconds between checking for connections. "
-						  "Minimum is 0, maximum is 13");
+	Cvar_Register (&sys_nostdout_cvar, 0, 0);
+	Cvar_Register (&sys_extrasleep_cvar, 0, 0);
+	Cvar_Register (&sys_dead_sleep_cvar, 0, 0);
+	Cvar_Register (&sys_sleep_cvar, 0, 0);
 }
 
-void
-Sys_Shutdown (void)
-{
-	shutdown_list_t *t;
-
-	while (shutdown_list) {
-		void      (*func) (void *) = shutdown_list->func;
-		void       *data = shutdown_list->data;
-		t = shutdown_list;
-		shutdown_list = shutdown_list->next;
-		free (t);
-
-		func (data);
-	}
-}
-
+static sys_jmpbuf sys_exit_cmpbuf;
+sys_jmpbuf sys_exit_jmpbuf;
 VISIBLE void
 Sys_Quit (void)
 {
 	Sys_Shutdown ();
 
+	if (memcmp (sys_exit_cmpbuf, sys_exit_jmpbuf, sizeof (sys_exit_cmpbuf))) {
+		Sys_longjmp (sys_exit_jmpbuf);
+	}
 	exit (0);
 }
 
@@ -533,9 +557,15 @@ VISIBLE void
 Sys_PushErrorHandler (sys_error_t func, void *data)
 {
 	error_handler_t *eh;
-	ALLOC (16, error_handler_t, error_handler, eh);
+	if (error_handler_freelist) {
+		eh = error_handler_freelist;
+	} else {
+		eh = malloc (sizeof (error_handler_t));
+		eh->next = 0;
+	}
 	eh->func = func;
 	eh->data = data;
+	error_handler_freelist = eh->next;
 	eh->next = error_handler;
 	error_handler = eh;
 }
@@ -550,7 +580,8 @@ Sys_PopErrorHandler (void)
 	}
 	eh = error_handler;
 	error_handler = eh->next;
-	FREE (error_handler, eh);
+	eh->next = error_handler_freelist;
+	error_handler_freelist = eh;
 }
 
 
@@ -558,7 +589,6 @@ VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
-	va_list     tmp_args;
 	static int  in_sys_error = 0;
 
 	if (in_sys_error) {
@@ -572,7 +602,6 @@ Sys_Error (const char *error, ...)
 	in_sys_error = 1;
 
 	va_start (args, error);
-	va_copy (tmp_args, args);
 	sys_err_printf_function (error, args);
 	va_end (args);
 
@@ -585,8 +614,9 @@ Sys_Error (const char *error, ...)
 	if (sys_err_printf_function != Sys_ErrPrintf) {
 		// print the message again using the default error printer to increase
 		// the chances of the error being seen.
-		va_copy (args, tmp_args);
+		va_start (args, error);
 		Sys_ErrPrintf (error, args);
+		va_end (args);
 	}
 
 	exit (1);
@@ -595,6 +625,7 @@ Sys_Error (const char *error, ...)
 VISIBLE void
 Sys_RegisterShutdown (void (*func) (void *), void *data)
 {
+	qfZoneScoped (true);
 	shutdown_list_t *p;
 	if (!func)
 		return;
@@ -639,6 +670,48 @@ Sys_PageIn (void *ptr, size_t size)
 	}
 //#endif
 }
+
+#if defined(_WIN32) && !defined(_WIN64)
+// this is a hack to make memory allocations 16-byte aligned on 32-bit
+// systems (in particular for this case, windows) as vectors and
+// matrices require 16-byte alignment but system malloc (etc) provide only
+// 8-byte alignment.
+void *__cdecl
+calloc (size_t nume, size_t sizee)
+{
+	size_t size = nume * sizee;
+	void *mem = _aligned_malloc (size, 16);
+	memset (mem, 0, size);
+	return mem;
+}
+
+void __cdecl
+free (void *mem)
+{
+	_aligned_free (mem);
+}
+
+void *__cdecl
+malloc (size_t size)
+{
+	return _aligned_malloc (size, 16);
+}
+
+void *__cdecl
+realloc (void *mem, size_t size)
+{
+	return _aligned_realloc (mem, size, 16);
+}
+
+char *__cdecl
+strdup(const char *src)
+{
+	size_t      len = strlen (src);
+	char       *dup = malloc (len + 1);
+	strcpy (dup, src);
+	return dup;
+}
+#endif
 
 VISIBLE size_t
 Sys_PageSize (void)
@@ -686,6 +759,19 @@ Sys_Free (void *mem, size_t size)
 }
 
 VISIBLE int
+Sys_LockMemory (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	return VirtualLock (mem, size) != 0;
+#else
+	return mlock (mem, size) == 0;
+#endif
+}
+
+VISIBLE int
 Sys_ProcessorCount (void)
 {
 	int         cpus = 1;
@@ -702,21 +788,22 @@ Sys_ProcessorCount (void)
 	return cpus;
 }
 
+static __thread dstring_t *sys_debuglog_data;
 VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *data;
 	int         fd;
 
-	if (!data)
-		data = dstring_newstr ();
+	if (!sys_debuglog_data)
+		sys_debuglog_data = dstring_newstr ();
 
 	va_start (args, fmt);
-	dvsprintf (data, fmt, args);
+	dvsprintf (sys_debuglog_data, fmt, args);
 	va_end (args);
 	if ((fd = open (file, O_WRONLY | O_CREAT | O_APPEND, 0644)) >= 0) {
-		if (write (fd, data->str, data->size - 1) != (ssize_t) (data->size - 1))
+		if (write (fd, sys_debuglog_data->str, sys_debuglog_data->size - 1)
+			!= (ssize_t) (sys_debuglog_data->size - 1))
 			Sys_Printf ("Error writing %s: %s\n", file, strerror(errno));
 		close (fd);
 	}
@@ -753,7 +840,7 @@ Sys_CheckInput (int idle, int net_socket)
 	int         sleep_msec;
 	// Now we want to give some processing time to other applications,
 	// such as qw_client, running on this machine.
-	sleep_msec = sys_sleep->int_val;
+	sleep_msec = sys_sleep;
 	if (sleep_msec > 0) {
 		if (sleep_msec > 13)
 			sleep_msec = 13;
@@ -776,7 +863,7 @@ Sys_CheckInput (int idle, int net_socket)
 	if (net_socket >= 0)
 		QF_FD_SET (((unsigned) net_socket), &fdset);// cast needed for windows
 
-	if (idle && sys_dead_sleep->int_val)
+	if (idle && sys_dead_sleep)
 		usec = -1;
 
 	res = Sys_Select (max (net_socket, 0), &fdset, usec);
@@ -854,7 +941,11 @@ Sys_ConsoleInput (void)
 #endif
 }
 
-static jmp_buf  aiee_abort;
+#ifdef _WIN32
+static __thread jmp_buf  aiee_abort;
+#else
+static __thread sigjmp_buf aiee_abort;
+#endif
 
 typedef struct sh_stack_s {
 	struct sh_stack_s *next;
@@ -862,10 +953,10 @@ typedef struct sh_stack_s {
 	void *data;
 } sh_stack_t;
 
-static sh_stack_t *sh_stack;
-static sh_stack_t *free_sh;
-static int (*signal_hook)(int,void*);
-static void *signal_hook_data;
+static __thread sh_stack_t *sh_stack;
+static __thread sh_stack_t *free_sh;
+static __thread int (*signal_hook)(int,void*);
+static __thread void *signal_hook_data;
 
 VISIBLE void
 Sys_PushSignalHook (int (*hook)(int, void *), void *data)
@@ -949,7 +1040,7 @@ signal_handler (int sig)
 }
 
 static void
-hook_signlas (void)
+hook_signals (void)
 {
 	// catch signals
 	signal (SIGINT,  signal_handler);
@@ -960,16 +1051,16 @@ hook_signlas (void)
 }
 #else
 
-static struct sigaction save_hup;
-static struct sigaction save_quit;
-static struct sigaction save_trap;
-static struct sigaction save_iot;
-static struct sigaction save_bus;
-static struct sigaction save_int;
-static struct sigaction save_ill;
-static struct sigaction save_segv;
-static struct sigaction save_term;
-static struct sigaction save_fpe;
+static __thread struct sigaction save_hup;
+static __thread struct sigaction save_quit;
+static __thread struct sigaction save_trap;
+static __thread struct sigaction save_iot;
+static __thread struct sigaction save_bus;
+static __thread struct sigaction save_int;
+static __thread struct sigaction save_ill;
+static __thread struct sigaction save_segv;
+static __thread struct sigaction save_term;
+static __thread struct sigaction save_fpe;
 
 static void
 signal_handler (int sig, siginfo_t *info, void *ucontext)
@@ -1011,7 +1102,7 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 }
 
 static void
-hook_signlas (void)
+hook_signals (void)
 {
 	// catch signals
 	struct sigaction action = {};
@@ -1035,7 +1126,8 @@ hook_signlas (void)
 VISIBLE void
 Sys_Init (void)
 {
-	hook_signlas ();
+	qfZoneScoped (true);
+	hook_signals ();
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
@@ -1106,4 +1198,241 @@ Sys_ExpandSquiggle (const char *path)
 	if (!home)
 		home = ".";
 	return nva ("%s%s", home, path + 1);	// skip leading ~
+}
+
+VISIBLE int
+Sys_UniqueFile (dstring_t *name, const char *prefix, const char *suffix,
+				int mindigits)
+{
+	const int   flags = O_CREAT | O_EXCL | O_RDWR;
+	const int   mode = 0644;
+	int64_t     seq = 0;	// it should take a while to run out
+
+	if (!suffix) {
+		suffix = "";
+	}
+	while (1) {
+		dsprintf (name, "%s%0*"PRIi64"%s", prefix, mindigits, seq, suffix);
+		int         fd = open (name->str, flags, mode);
+		if (fd >= 0) {
+			return fd;
+		}
+		int         err = errno;
+		if (err != EEXIST) {
+			dsprintf (name, "%s", strerror (err));
+			return -err;
+		}
+		seq++;
+	}
+}
+
+void
+Sys_Shutdown (void)
+{
+	shutdown_list_t *t;
+
+	while (shutdown_list) {
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
+		t = shutdown_list;
+		shutdown_list = shutdown_list->next;
+		free (t);
+
+		func (data);
+	}
+	while (free_sh) {
+		__auto_type t = free_sh->next;
+		free (free_sh);
+		free_sh = t;
+	}
+	while (sh_stack) {
+		__auto_type t = sh_stack->next;
+		free (sh_stack);
+		sh_stack = t;
+	}
+	while (error_handler_freelist) {
+		__auto_type t = error_handler_freelist->next;
+		free (error_handler_freelist);
+		error_handler_freelist = t;
+	}
+	while (error_handler) {
+		__auto_type t = error_handler->next;
+		free (error_handler);
+		error_handler = t;
+	}
+	if (sys_print_msg) {
+		dstring_delete (sys_print_msg);
+		sys_print_msg = 0;
+	}
+	if (sys_debuglog_data) {
+		dstring_delete (sys_debuglog_data);
+		sys_debuglog_data = 0;
+	}
+}
+
+#ifndef _WIN32
+#define DW_EH_PE_absptr         0x00
+#define DW_EH_PE_omit           0xff
+
+#define DW_EH_PE_uleb128        0x01
+#define DW_EH_PE_udata2         0x02
+#define DW_EH_PE_udata4         0x03
+#define DW_EH_PE_udata8         0x04
+#define DW_EH_PE_sleb128        0x09
+#define DW_EH_PE_sdata2         0x0A
+#define DW_EH_PE_sdata4         0x0B
+#define DW_EH_PE_sdata8         0x0C
+#define DW_EH_PE_signed         0x08
+
+#define DW_EH_PE_pcrel          0x10
+#define DW_EH_PE_textrel        0x20
+#define DW_EH_PE_datarel        0x30
+#define DW_EH_PE_funcrel        0x40
+#define DW_EH_PE_aligned        0x50
+
+
+typedef struct {
+	uintptr_t   start;
+	uintptr_t   lpstart;
+	uintptr_t   ttype_base;
+	const byte *ttype;
+	const byte *action_table;
+	byte        ttype_encoding;
+	byte        cs_encoding;
+} lsd_header_t;
+
+static uintptr_t
+read_value (byte enc, qmsg_t *msg)
+{
+	if (enc == DW_EH_PE_aligned) {
+		Sys_Error ("unexpected DW_EH_PE_aligned\n");
+	}
+	uintptr_t res = 0;
+	switch (enc & 0x0f) {
+		case DW_EH_PE_uleb128:
+			res = MSG_ReadUleb128 (msg);
+			break;
+		case DW_EH_PE_sleb128:
+			res = MSG_ReadSleb128 (msg);
+			break;
+		default:
+			Sys_Error ("unexpected dwarf encoding: %d\n", enc);
+			break;
+	}
+	if (res && enc & 0xf0) {
+		Sys_Error ("unexpected dwarf encoding: %d\n", enc);
+	}
+	return res;
+}
+
+static lsd_header_t
+read_lsd_header (qmsg_t *msg, uintptr_t start)
+{
+	lsd_header_t hdr;
+	uintptr_t   tmp;
+	byte        enc = MSG_ReadByte (msg);
+	hdr.start = start;
+	if (enc == DW_EH_PE_omit) {
+		hdr.lpstart = start;
+	} else {
+		hdr.lpstart = read_value (enc, msg);
+	}
+	hdr.ttype_encoding = MSG_ReadByte (msg);
+	if (hdr.ttype_encoding == DW_EH_PE_omit) {
+		hdr.ttype = 0;
+	} else {
+		tmp = MSG_ReadUleb128 (msg);
+		hdr.ttype = msg->message->data + msg->readcount + tmp;
+	}
+	hdr.cs_encoding = MSG_ReadByte (msg);;
+	tmp = MSG_ReadUleb128 (msg);
+	hdr.action_table = msg->message->data + msg->readcount + tmp;
+	return hdr;
+}
+
+#endif
+
+static _Unwind_Reason_Code
+sys_stop (int version, _Unwind_Action actions,
+		  _Unwind_Exception_Class excls,
+		  struct _Unwind_Exception *exobj,
+		  struct _Unwind_Context *context, void *_jmpbuf)
+{
+	if (version != 1) {
+		Sys_Error ("unknown unwind version");
+	}
+	intptr_t   *jmpbuf = _jmpbuf;
+#ifdef _WIN32
+	if (!context) {
+		// if we get here, then attempting to delete the exception contextuuu
+		// can fail
+		__builtin_longjmp (jmpbuf, 1);
+	}
+	uintptr_t   target_cfa = jmpbuf[2];
+	uintptr_t   cfa = _Unwind_GetCFA (context);
+	if (target_cfa < cfa) {
+		// we've gone past the target frame (there were no intervening
+		// cleanup points) so just jump out to avoid cleaning up something
+		// we shouldn't touch
+		__builtin_longjmp (jmpbuf, 1);
+	}
+	// These are not meant to be read, let alone written, but this is
+	// the only way to communicate the target frame/ip to RtlUnwindEx
+	exobj->private_[1] = target_cfa;
+	exobj->private_[2] = jmpbuf[1];	// target ip
+	return _URC_NO_REASON;
+#else
+	if ((actions & _UA_END_OF_STACK)) {
+		Sys_Error ("Sys_longjmp called outside a Sys_setjmp context");
+	}
+	uintptr_t   target_cfa = jmpbuf[2];
+	uintptr_t   cfa = _Unwind_GetCFA (context);
+	int         no_dec_ip;
+	uintptr_t   ip = _Unwind_GetIPInfo (context, &no_dec_ip);
+	if (!ip) {
+		Sys_Error ("null ip\n");
+	}
+	if (cfa != target_cfa) {
+		return _URC_NO_REASON;
+	}
+	ip -= !no_dec_ip;
+	byte       *lsd = _Unwind_GetLanguageSpecificData (context);
+	if (lsd) {
+		sizebuf_t   message = { .data = lsd, .cursize = -1 };
+		qmsg_t      msg = { .message = &message };
+		auto        region_start = _Unwind_GetRegionStart (context);
+		lsd_header_t hdr = read_lsd_header (&msg, region_start);
+		message.cursize = hdr.action_table - message.data;
+		bool match = false;
+		bool cleanup = false;
+		while (!match && msg.readcount < message.cursize) {
+			auto cs_start = read_value (hdr.cs_encoding, &msg);
+			auto cs_len = read_value (hdr.cs_encoding, &msg);
+			auto cs_lp = read_value (hdr.cs_encoding, &msg);
+			/*auto cs_action =*/ read_value (hdr.cs_encoding, &msg);
+			cs_start += hdr.start;
+			match = ip >= cs_start && ip < cs_start + cs_len;
+			cleanup = cs_lp;
+		}
+		if (!match) {
+			Sys_Error ("could not find ip in call site list");
+		}
+		if (cleanup) {
+			// the call site has cleanup associated with it, so return to
+			// let the unwind system deal with the cleanup (we'll get called
+			// again with the same cfa)
+			return _URC_NO_REASON;
+		}
+	}
+	_Unwind_DeleteException (exobj);
+	__builtin_longjmp (jmpbuf, 1);
+#endif
+}
+
+void
+Sys_longjmp (sys_jmpbuf jmpbuf)
+{
+	static struct _Unwind_Exception sys_exception;
+	auto res = _Unwind_ForcedUnwind (&sys_exception, sys_stop, jmpbuf);
+	Sys_Error ("_Unwind_ForcedUnwind returned %d", res);
 }

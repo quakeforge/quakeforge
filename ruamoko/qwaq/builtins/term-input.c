@@ -587,7 +587,7 @@ qwaq_input_init (qwaq_input_resources_t *res)
 		Hash_FlushTable (res->key_sequences);
 	} else {
 		res->key_sequences = Hash_NewTable (127, key_sequence_getkey, 0, 0,
-											res->pr->hashlink_freelist);
+											res->pr->hashctx);
 	}
 	for (size_t i = 0; i < sizeof (default_keys) / sizeof (default_keys[0]);
 		 i++) {
@@ -639,9 +639,9 @@ qwaq_input_shutdown (qwaq_input_resources_t *res)
 }
 
 static void
-bi_send_connected_devices (progs_t *pr)
+bi_send_connected_devices (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 
 	int         command[] = {
 					qwaq_cmd_send_connected_devices, 0,
@@ -652,9 +652,9 @@ bi_send_connected_devices (progs_t *pr)
 }
 
 static void
-bi_get_device_info (progs_t *pr)
+bi_get_device_info (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	int         devid = P_INT (pr, 0);
 
 	int         command[] = {
@@ -737,9 +737,9 @@ get_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 }
 
 static void
-bi_get_event (progs_t *pr)
+bi_get_event (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	qwaq_event_t *event = &P_STRUCT (pr, qwaq_event_t, 0);
 
 	R_INT (pr) = get_event (res, event);
@@ -854,27 +854,35 @@ qwaq_input_thread (qwaq_thread_t *thread)
 }
 
 static void
-bi_init_input (progs_t *pr)
+bi_init_input (progs_t *pr, void *_res)
 {
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_resources_t *res = _res;
 	qwaq_input_init (res);
 	res->initialized = 1;
 	create_thread (qwaq_input_thread, res);
+
+	IE_event_t  event = {
+		.type = ie_app_gain_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"send_connected_devices",	bi_send_connected_devices,	-1},
-	{"get_device_info",			bi_get_device_info,			-1},
-	{"get_event",				bi_get_event,				-1},
-	{"init_input",				bi_init_input,				-1},
+	bi(send_connected_devices, -1, 0),
+	bi(get_device_info,        -1, 1, p(int)),
+	bi(get_event,              -1, 1, p(ptr)),
+	bi(init_input,             -1, 0),
 
 	{0}
 };
 
 static void
-bi_input_clear (progs_t *pr, void *data)
+bi_input_clear (progs_t *pr, void *_res)
 {
-	__auto_type res = (qwaq_input_resources_t *) data;
+	__auto_type res = (qwaq_input_resources_t *) _res;
 
 	if (res->initialized) {
 		qwaq_input_shutdown (res);
@@ -882,12 +890,9 @@ bi_input_clear (progs_t *pr, void *data)
 }
 
 static void
-bi_input_shutdown (void *_pr)
+bi_input_destroy (progs_t *pr, void *_res)
 {
-	__auto_type pr = (progs_t *) _pr;
-	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
-
-	qwaq_input_shutdown (res);
+	free (_res);
 }
 
 void
@@ -907,7 +912,6 @@ BI_TermInput_Init (progs_t *pr)
 
 	qwaq_init_cond (&res->events.cond);
 
-	PR_Resources_Register (pr, "input", res, bi_input_clear);
-	PR_RegisterBuiltins (pr, builtins);
-	Sys_RegisterShutdown (bi_input_shutdown, pr);
+	PR_Resources_Register (pr, "input", res, bi_input_clear, bi_input_destroy);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

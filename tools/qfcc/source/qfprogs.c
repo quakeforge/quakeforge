@@ -56,12 +56,13 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"
@@ -101,6 +102,7 @@ static const struct option long_options[] = {
 	{"modules", no_argument, 0, 'M'},
 	{"numeric", no_argument, 0, 'n'},
 	{"path", required_argument, 0, 'P'},
+	{"quake", no_argument, 0, 'Q'},
 	{"relocs", no_argument, 0, 'r'},
 	{"strings", no_argument, 0, 's'},
 	{"types", no_argument, 0, 't'},
@@ -118,6 +120,7 @@ static const char *short_options =
 	"M"		// modules
 	"n"		// numeric
 	"P:"	// path
+	"Q"		// quake
 	"r"		// relocs
 	"s"		// strings
 	"t"		// types
@@ -125,8 +128,8 @@ static const char *short_options =
 	;
 
 static edict_t *edicts;
-static int      num_edicts;
-static int      reserved_edicts = 1;
+static pr_uint_t num_edicts;
+static pr_uint_t reserved_edicts = 1;
 static progs_t  pr;
 static qfo_t   *qfo;
 
@@ -149,6 +152,7 @@ usage (int status)
 "    -M, --modules       Dump Objective-QuakeC data.\n"
 "    -n, --numeric       Sort globals by address.\n"
 "    -P, --path DIR      Source path.\n"
+"    -Q, --quake         Expect quake encoding instead of utf-8.\n"
 "    -r, --relocs        Dump reloc information.\n"
 "    -s, --strings       Dump static strings.\n"
 "    -t, --types         Dump type encodings.\n"
@@ -183,7 +187,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va (0, "%s.gz", name), &size);
+		file = open_file (va ("%s.gz", name), &size);
 		if (!file)
 			return 0;
 	}
@@ -233,9 +237,10 @@ init_qf (void)
 {
 	Sys_Init ();
 
-	Cvar_Get ("pr_debug", va (0, "%d", 1+verbosity), 0, 0, "");
-	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
+
+	pr_debug = 1 + verbosity;
+	Cvar_Set ("pr_source_path", source_path);
 
 	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
@@ -282,6 +287,7 @@ load_progs (const char *name)
 		pr.progs_name = name;
 		pr.max_edicts = 1;
 		pr.zone_size = 0;
+		pr.stack_size = 64*1024;
 		PR_LoadProgsFile (&pr, file, size);
 		Qclose (file);
 
@@ -292,10 +298,26 @@ load_progs (const char *name)
 		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
-	for (i = 0; i < pr.progs->numfunctions; i++) {
+	pr_uint_t   max_locals = 0;
+	for (i = 0; i < pr.progs->functions.count; i++) {
 		// don't bother with builtins
-		if (pr.pr_functions[i].first_statement > 0)
+		if (pr.pr_functions[i].first_statement > 0) {
 			Hash_AddElement (func_tab, &pr.pr_functions[i]);
+			if (pr.pr_functions[i].locals > max_locals) {
+				max_locals = pr.pr_functions[i].locals;
+			}
+		}
+	}
+	if (pr.stack && pr.globals.stack) {
+		printf ("stack: %x %x %x %d\n", (pr_uint_t)(pr.stack - pr.pr_globals),
+				*pr.globals.stack, pr.stack_bottom, pr.stack_size);
+		*pr.globals.stack -= max_locals;
+		pr.pr_depth = 1;
+		pr.pr_stack[0] = (prstack_t) {
+			.stack_ptr = *pr.globals.stack,
+			.return_ptr = pr.pr_return_buffer,
+		};
+		*pr.globals.stack -= max_locals;
 	}
 	return 1;
 }
@@ -351,6 +373,9 @@ main (int argc, char **argv)
 				break;
 			case 'P':
 				source_path = strdup (optarg);
+				break;
+			case 'Q':
+				sys_quake_encoding = true;
 				break;
 			case 'r':
 				func = &operations[7];

@@ -28,7 +28,7 @@
 #ifndef __QF_plist_h
 #define __QF_plist_h
 
-struct hashlink_s;
+struct hashctx_s;
 
 /** \defgroup plist Property lists
 	\ingroup utils
@@ -43,10 +43,16 @@ struct hashlink_s;
 */
 typedef enum {
 	QFDictionary,	///< The property list item represents a dictionary.
+					///< JSON object.
 	QFArray,		///< The property list item represents an array.
+					///< JSON array.
 	QFBinary,		///< The property list item represents arbitrary binary
 					///< data.
 	QFString,		///< The property list item represents a C string.
+					///< JSON string.
+	QFNumber,		///< JSON number
+	QFBool,			///< JSON bool value (true/false)
+	QFNull,			///< JSON null value
 
 	QFMultiType = (1 << 31)	///< if bit 31 is set, the type indicates a mask
 					///< of allowed types for plfield_t
@@ -67,12 +73,12 @@ struct plfield_s;
 	dictionary objects.
 
 	If null, then the default parser for the object type is used:
-	  * QFString: the  point to the actual string. The string continues
-		to be owned by the string object.
+	  * QFString: pointer to the actual string. The string continues to
+		be owned by the string object.
 	  * QFBinary: pointer to fixed-size DARRAY_TYPE(byte) (so size isn't
 		lost)
 	  * QFArray: pointer to fixed-size DARRAY_TYPE(plitem_t *) with the
-		indivisual objects. The individual objects continue to be owned
+		individual objects. The individual objects continue to be owned
 		by the array object.
 	  * QFDictionary: pointer to the hashtab_t hash table used for the
 		dictionary object. The hash table continues to be owned by the
@@ -86,7 +92,9 @@ struct plfield_s;
 					checking is done: it is up to the top-level caller to
 					parse out the messages.
 	\param context	Additional context data passed to the parser.
-	\return			0 for error, 1 for success. See \a PL_ParseDictionary.
+	\return			0 for error, 1 for success. See \a PL_ParseStruct,
+					\a PL_ParseArray, \a PL_ParseLabeledArray, and
+					\a PL_ParseSymtab.
 */
 typedef int (*plparser_t) (const struct plfield_s *field,
 						   const struct plitem_s *item,
@@ -96,7 +104,25 @@ typedef int (*plparser_t) (const struct plfield_s *field,
 
 /** A field to be parsed from a dictionary item.
 
-	something
+	\a PL_ParseStruct uses an array (terminated by an element with \a name
+	set to null) of these to describe the fields in the structure being
+	parsed.
+
+	\a PL_ParseArray, \a PL_ParseLabeledArray, and \a PL_ParseSymtab use only
+	a single \a plfield_t object, and then only the \a data field, which must
+	point to a \a plelement_t object. This allows all the parse functions to
+	be used directly as either a \a plfield_t or \a plelement_t object's
+	\a parser.
+
+	\a PL_ParseLabeledArray and \a PL_ParseSymtab pass to the parser a field
+	with \a name set to the key of the current item and \a offset set to 0.
+	For \a PL_ParseArray, \a name is set to null and \a offset is set to the
+	current index. \a PL_ParseLabeledArray also sets \a offset to the current
+	index. \a type, \a parser, and \a data are taken from the \a plelement_t
+	passed in to them.
+
+	\a PL_ParseStruct passes the currently parsed field without any
+	modifications.
 */
 typedef struct plfield_s {
 	const char *name;		///< matched by dictionary key
@@ -116,15 +142,61 @@ typedef struct plelement_s {
 
 /** Create an in-memory representation of the contents of a property list.
 
+	The string is parsed as per the old NextStep property lists, with a few
+	extensions.
+
+	\note Does not create number, bool or null items.
+
 	\param string	the saved plist, as read from a file.
-	\param hashlinks Hashlink chain to use when creating dictionaries (see
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
 					Hash_NewTable()). May be null.
 
 	\return Returns an object equivalent to the passed-in string.
 	\note You are responsible for freeing the returned object.
 */
-plitem_t *PL_GetPropertyList (const char *string,
-							  struct hashlink_s **hashlinks);
+plitem_t *PL_GetPropertyList (const char *string, struct hashctx_s **hashctx);
+
+/** Create an in-memory representation of the contents of a JSON object.
+
+	The string is parsed as standard JSON (rfc7159)
+
+	\note does not create binary items.
+
+	\param string	the saved JSON, as read from a file.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns an object equivalent to the passed-in string.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_ParseJSON (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare dictionary list.
+
+	The input is treated as a list of dictionary key-value pairs without the
+	enclosing { or }.
+
+	\param string	dicitionary list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns a dictionary object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetDictionary (const char *string, struct hashctx_s **hashctx);
+
+/** Create a property list from a bare array list.
+
+	The input is treated as a list of array values without the enclosing ( or ).
+
+	\param string	array list string.
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
+					Hash_NewTable()). May be null.
+
+	\return Returns an array object.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_GetArray (const char *string, struct hashctx_s **hashctx);
 
 /** Create a property list string from the in-memory representation.
 
@@ -133,6 +205,14 @@ plitem_t *PL_GetPropertyList (const char *string,
 	\note You are responsible for freeing the returned string.
 */
 char *PL_WritePropertyList (const plitem_t *pl);
+
+/** Create a JSON list string from the in-memory representation.
+
+	\param pl the in-memory representation
+	\return the text representation of the property list
+	\note You are responsible for freeing the returned string.
+*/
+char *PL_WriteJSON (const plitem_t *pl);
 
 /** Retrieve the type of an object.
 
@@ -177,6 +257,10 @@ const void *PL_BinaryData (const plitem_t *binary) __attribute__((pure));
 */
 const char *PL_String (const plitem_t *string) __attribute__((pure));
 
+double PL_Number (const plitem_t *number) __attribute__((pure));
+
+bool PL_Bool (const plitem_t *boolean) __attribute__((pure));
+
 /** Retrieve a value from a dictionary object.
 
 	\param dict	The dictionary to retrieve a value from
@@ -192,11 +276,8 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 
 	\param dict	The Dictionary to remove the value from
 	\param key	The unique key associated with the value to be removed
-	\return the value associated with the key, or NULL if not found or \a dict
-	isn't a dictionary (includes if \a dict is null).
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
+void PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a key from a dictionary object.
 
@@ -214,7 +295,7 @@ const char *PL_KeyAtIndex (const plitem_t *dict, int index) __attribute__((pure)
 	\param array	The array to get the value from
 	\param index	The index within the array to retrieve
 	\return the value at the specified index, or NULL if \a index is out of
-	range or \a array is not an array (includes in \a array is null).
+	range or \a array is not an array (includes if \a array is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
@@ -249,7 +330,21 @@ int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 
 	\note the dictionary becomes the owner of the value.
 */
-qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
+bool PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
+
+/** Copy contents of one dictionary into another.
+
+	The contents of \a srcDict are added to \a dstDict without affecting
+	\a srcDict. Any collisions in \a dstDict result in those values in
+	\a dstDict being replaced by the the values from \a srcDict: the new
+	key-value pairs override the old.
+
+	\param dstDict  The dictionary to extend
+	\param srcDict  The dictionary from which key-value pairs will be copied
+	\return true if values were copied, false if nothing was copied (either
+	dictionary is null, or not a dictionary, or if \a srcDict was empty)
+*/
+bool PL_D_Extend (plitem_t *dstDict, plitem_t *srcDict);
 
 /** Add an item to an array.
 
@@ -261,7 +356,19 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
+bool PL_A_AddObject (plitem_t *array, plitem_t *item);
+
+/** Append contents of one array to another.
+
+	The contents of \a srcArray are added to \a dstArray without affecting
+	\a srcArray. Those values are appended to the destination array values.
+
+	\param dstArray The array to extend
+	\param srcArray The array from which values will be copied
+	\return true if values were copied, false if nothing was copied (either
+	array is null, or not an array, or if \a srcArray was empty)
+*/
+bool PL_A_Extend (plitem_t *dstArray, plitem_t *srcArray);
 
 /** Retrieve the number of items in an array.
 
@@ -283,26 +390,23 @@ int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 
 	\note the array becomes the owner of the added item.
 */
-qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
+bool PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 
 /** Remove a value from an array object.
-	The array items will be shuffled to fill the resulting hole.
+	The array items will be shifted to fill the resulting hole.
 
 	\param array	The array from which to remove the value
 	\param index	The index within the array to remove
-	\return the value associated with the index, or NULL if not found or array
-	is noll or an array.
-	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
+void PL_RemoveObjectAtIndex (plitem_t *array, int index);
 
 /** Create a new dictionary object.
 	The dictionary will be empty.
-	\param hashlinks Hashlink chain to use when creating dictionaries (see
+	\param hashctx	Hashlink chain to use when creating dictionaries (see
 					Hash_NewTable()). May be null.
 	\return the new dictionary object
 */
-plitem_t *PL_NewDictionary (struct hashlink_s **hashlinks);
+plitem_t *PL_NewDictionary (struct hashctx_s **hashctx);
 
 /** Create a new array object.
 	The array will be empty.
@@ -326,14 +430,32 @@ plitem_t *PL_NewData (void *data, size_t size);
 */
 plitem_t *PL_NewString (const char *str);
 
-/** Free a property list object.
+/** Retain ownership of a property list object.
 
-	This function takes care of freeing any referenced property list data, so
-	call it only on top-level objects. Safe to call with a null argument.
+	Use prior to removal to ensure the property list object is not freed when
+	removed from an array or dictionary. Adding an object to a dictionary or
+	array automatically retains the object.
 
-	\param item the property list object to be freed
+	\param item the property list object to be retained
+	\return the item
+	\note item may be null, in which case nothing is done but to return null
 */
-void PL_Free (plitem_t *item);
+plitem_t *PL_Retain (plitem_t *item);
+
+/** Release ownership of a property list object.
+
+	If the number of owners is reduced to 0 (or is already 0) then the object
+	will be freed. If the object contains other objects, then those objects
+	will be released.
+
+	\param item the property list object to be released
+	\return the item if it is still valid, otherwise null
+	\note item may be null, in which case nothing is done but to return null
+*/
+plitem_t *PL_Release (plitem_t *item);
+
+void PL_SetUserData (plitem_t *item, void *data);
+void *PL_GetUserData (plitem_t *item) __attribute__((pure));
 
 int PL_CheckType (pltype_t field_type, pltype_t item_type) __attribute__((const));
 void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,

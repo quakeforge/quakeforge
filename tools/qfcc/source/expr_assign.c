@@ -46,6 +46,7 @@
 #include "QF/va.h"
 
 #include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -61,69 +62,54 @@
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-static expr_t *
-check_assign_logic_precedence (expr_t *dst, expr_t *src)
+static const expr_t *
+check_assign_logic_precedence (const expr_t *dst, const expr_t *src)
 {
-	if (src->type == ex_expr && !src->paren && is_logic (src->e.expr.op)) {
+	if (src->type == ex_expr && !src->paren && is_logic (src->expr.op)) {
 		// traditional QuakeC gives = higher precedence than && and ||
-		expr_t     *assignment;
 		notice (src, "precedence of `=' and `%s' inverted for "
-					 "traditional code", get_op_string (src->e.expr.op));
+					 "traditional code", get_op_string (src->expr.op));
 		// change {a = (b logic c)} to {(a = b) logic c}
-		assignment = assign_expr (dst, src->e.expr.e1);
-		assignment->paren = 1;	// protect assignment from binary_expr
-		return binary_expr (src->e.expr.op, assignment, src->e.expr.e2);
+		auto assignment = assign_expr (dst, src->expr.e1);
+		// protect assignment from binary_expr
+		assignment = paren_expr (assignment);
+		return binary_expr (src->expr.op, assignment, src->expr.e2);
 	}
-	return 0;
+	return nullptr;
 }
 
-int
+bool
 is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
 		case ex_def:
-			return !expr->e.def->constant;
+			return !expr->def->constant;
 		case ex_symbol:
-			switch (expr->e.symbol->sy_type) {
-				case sy_name:
-					break;
-				case sy_var:
-					return 1;
-				case sy_const:
-					break;
-				case sy_type:
-					break;
-				case sy_expr:
-					break;
-				case sy_func:
-					break;
-				case sy_class:
-					break;
-				case sy_convert:
-					break;
-			}
-			break;
+			return expr->symbol->lvalue;
 		case ex_temp:
-			return 1;
+			return true;
 		case ex_expr:
-			if (expr->e.expr.op == '.') {
-				return 1;
-			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
+			if (expr->expr.op == '.') {
+				return true;
 			}
 			break;
+		case ex_alias:
+			return is_lvalue (expr->alias.expr);
+		case ex_address:
+			return false;
+		case ex_assign:
+			return false;
 		case ex_uexpr:
-			if (expr->e.expr.op == '.') {
-				return 1;
-			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
+			if (expr->expr.op == '.') {
+				return true;
 			}
 			break;
+		case ex_branch:
+		case ex_inout:
 		case ex_memset:
 		case ex_compound:
 		case ex_state:
@@ -136,53 +122,97 @@ is_lvalue (const expr_t *expr)
 		case ex_value:
 		case ex_error:
 		case ex_selector:
+		case ex_message:
+		case ex_return:
+		case ex_adjstk:
+		case ex_with:
+		case ex_args:
+		case ex_horizontal:
+		case ex_swizzle:
+		case ex_extend:
+		case ex_multivec:
+		case ex_list:
+		case ex_type:
+		case ex_incop:
+		case ex_decl:
+		case ex_visibility:
+		case ex_loop:
+		case ex_select:
+		case ex_intrinsic:
+		case ex_switch:
+		case ex_caselabel:
+		case ex_process:
 			break;
+		case ex_cond:
+			return (is_lvalue (expr->cond.true_expr)
+					&& is_lvalue (expr->cond.false_expr));
+		case ex_field:
+			return true;
+		case ex_array:
+			return true;
+		case ex_xvalue:
+			bug (expr, "should xvalue happen here?");
+			if (expr->xvalue.lvalue) {
+				return is_lvalue (expr->xvalue.expr);
+			}
+			return false;
 		case ex_count:
 			internal_error (expr, "invalid expression");
 	}
-	return 0;
+	return false;
 }
 
-static expr_t *
-check_valid_lvalue (expr_t *expr)
+static const expr_t *
+check_valid_lvalue (const expr_t *expr)
 {
 	if (!is_lvalue (expr)) {
 		if (options.traditional) {
 			warning (expr, "invalid lvalue in assignment");
-			return 0;
+			return nullptr;
 		}
 		return error (expr, "invalid lvalue in assignment");
 	}
-	return 0;
+	return nullptr;
 }
 
-static expr_t *
-check_types_compatible (expr_t *dst, expr_t *src)
+static const expr_t *
+check_types_compatible (const expr_t *dst, const expr_t *src)
 {
-	type_t     *dst_type = get_type (dst);
-	type_t     *src_type = get_type (src);
+	auto dst_type = get_type (dst);
+	auto src_type = get_type (src);
 
 	if (dst_type == src_type) {
-		return 0;
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
+		return nullptr;
 	}
 
 	if (type_assignable (dst_type, src_type)) {
-		if (is_scalar (dst_type) && is_scalar (src_type)) {
-			if (!src->implicit) {
-				if (is_double (src_type)) {
-					warning (dst, "assignment of double to %s (use a cast)\n",
-							 dst_type->name);
-				}
-			}
-			// the types are different but cast-compatible
-			expr_t     *new = cast_expr (dst_type, src);
-			// the cast was a no-op, so the types are compatible at the
-			// low level (very true for default type <-> enum)
-			if (new != src) {
-				return assign_expr (dst, new);
+		if (is_algebra (dst_type) || is_algebra (src_type)) {
+			return algebra_assign_expr (dst, src);
+		}
+		debug (dst, "casting %s to %s", src_type->name, dst_type->name);
+		if (!src->implicit && !type_promotes (dst_type, src_type)) {
+			if (is_double (src_type)) {
+				warning (dst, "assignment of %s to %s (use a cast)\n",
+						 src_type->name, dst_type->name);
 			}
 		}
-		return 0;
+		// the types are different but cast-compatible
+		auto new = cast_expr (dst_type, src);
+		// the cast was a no-op, so the types are compatible at the
+		// low level (very true for default type <-> enum)
+		if (new != src) {
+			return assign_expr (dst, new);
+		}
+		return nullptr;
+	}
+	if (current_target.check_types_compatible) {
+		auto expr = current_target.check_types_compatible (dst, src);
+		if (expr) {
+			return expr;
+		}
 	}
 	// traditional qcc is a little sloppy
 	if (!options.traditional) {
@@ -190,7 +220,7 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	}
 	if (is_func (dst_type) && is_func (src_type)) {
 		warning (dst, "assignment between disparate function types");
-		return 0;
+		return nullptr;
 	}
 	if (is_float (dst_type) && is_vector (src_type)) {
 		warning (dst, "assignment of vector to float");
@@ -205,96 +235,29 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	return type_mismatch (dst, src, '=');
 }
 
-static expr_t *
-assign_vector_expr (expr_t *dst, expr_t *src)
-{
-	expr_t     *dx, *sx;
-	expr_t     *dy, *sy;
-	expr_t     *dz, *sz;
-	expr_t     *dw, *sw;
-	expr_t     *ds, *ss;
-	expr_t     *dv, *sv;
-	expr_t     *block;
-
-	if (src->type == ex_vector) {
-		src = convert_vector (src);
-		if (src->type != ex_vector) {
-			// src was constant and thus converted
-			return assign_expr (dst, src);
-		}
-	}
-	if (src->type == ex_vector && dst->type != ex_vector) {
-		if (is_vector(src->e.vector.type)) {
-			// guaranteed to have three elements
-			sx = src->e.vector.list;
-			sy = sx->next;
-			sz = sy->next;
-			dx = field_expr (dst, new_name_expr ("x"));
-			dy = field_expr (dst, new_name_expr ("y"));
-			dz = field_expr (dst, new_name_expr ("z"));
-			block = new_block_expr ();
-			append_expr (block, assign_expr (dx, sx));
-			append_expr (block, assign_expr (dy, sy));
-			append_expr (block, assign_expr (dz, sz));
-			block->e.block.result = dst;
-			return block;
-		}
-		if (is_quaternion(src->e.vector.type)) {
-			// guaranteed to have two or four elements
-			if (src->e.vector.list->next->next) {
-				// four vals: x, y, z, w
-				sx = src->e.vector.list;
-				sy = sx->next;
-				sz = sy->next;
-				sw = sz->next;
-				dx = field_expr (dst, new_name_expr ("x"));
-				dy = field_expr (dst, new_name_expr ("y"));
-				dz = field_expr (dst, new_name_expr ("z"));
-				dw = field_expr (dst, new_name_expr ("w"));
-				block = new_block_expr ();
-				append_expr (block, assign_expr (dx, sx));
-				append_expr (block, assign_expr (dy, sy));
-				append_expr (block, assign_expr (dz, sz));
-				append_expr (block, assign_expr (dw, sw));
-				block->e.block.result = dst;
-				return block;
-			} else {
-				// v, s
-				sv = src->e.vector.list;
-				ss = sv->next;
-				dv = field_expr (dst, new_name_expr ("v"));
-				ds = field_expr (dst, new_name_expr ("s"));
-				block = new_block_expr ();
-				append_expr (block, assign_expr (dv, sv));
-				append_expr (block, assign_expr (ds, ss));
-				block->e.block.result = dst;
-				return block;
-			}
-		}
-		internal_error (src, "bogus vector expression");
-	}
-	return 0;
-}
-
-static __attribute__((pure)) int
-is_memset (expr_t *e)
+static int __attribute__((pure))
+is_memset (const expr_t *e)
 {
 	return e->type == ex_memset;
 }
 
-expr_t *
-assign_expr (expr_t *dst, expr_t *src)
+const expr_t *
+assign_expr (const expr_t *dst, const expr_t *src)
 {
-	int         op = '=';
-	expr_t     *expr;
-	type_t     *dst_type, *src_type;
+	const expr_t *expr;
+	const type_t *dst_type, *src_type;
 
-	convert_name (dst);
-	if (dst->type == ex_error) {
+	if (is_error (dst)) {
 		return dst;
 	}
-	if ((expr = check_valid_lvalue (dst))) {
-		return expr;
+
+	const expr_t *err;
+	if ((err = check_valid_lvalue (dst))) {
+		return err;
+	}
+
+	if (is_reference (get_type (dst))) {
+		dst = pointer_deref (dst);
 	}
 	dst_type = get_type (dst);
 	if (!dst_type) {
@@ -302,8 +265,7 @@ assign_expr (expr_t *dst, expr_t *src)
 	}
 
 	if (src && !is_memset (src)) {
-		convert_name (src);
-		if (src->type == ex_error) {
+		if (is_error (src)) {
 			return src;
 		}
 
@@ -318,10 +280,13 @@ assign_expr (expr_t *dst, expr_t *src)
 		src = new_nil_expr ();
 	}
 	if (src->type == ex_compound) {
-		src = initialized_temp_expr (dst_type, src);
-		if (src->type == ex_error) {
+		src = current_target.initialized_temp (dst_type, src);
+		if (is_error (src)) {
 			return src;
 		}
+	}
+	if (is_reference (get_type (src))) {
+		src = pointer_deref (src);
 	}
 	src_type = get_type (src);
 	if (!src_type) {
@@ -331,14 +296,14 @@ assign_expr (expr_t *dst, expr_t *src)
 	if (is_pointer (dst_type) && is_array (src_type)) {
 		// assigning an array to a pointer is the same as taking the address of
 		// the array but using the type of the array elements
-		src = address_expr (src, 0, src_type->t.fldptr.type);
+		src = address_expr (src, src_type->fldptr.type);
 		src_type = get_type (src);
 	}
 	if (src->type == ex_bool) {
 		// boolean expressions are chains of tests, so extract the result
 		// of the tests
 		src = convert_from_bool (src, dst_type);
-		if (src->type == ex_error) {
+		if (is_error (src)) {
 			return src;
 		}
 		src_type = get_type (src);
@@ -350,14 +315,13 @@ assign_expr (expr_t *dst, expr_t *src)
 			// check_types_compatible will take care of everything
 			return expr;
 		}
-		if ((expr = assign_vector_expr (dst, src))) {
-			return expr;
+		if (src->type == ex_vector) {
+			return current_target.assign_vector (dst, src);
 		}
 	} else {
-		convert_nil (src, dst_type);
+		src = convert_nil (src, dst_type);
 	}
 
-	expr = new_binary_expr (op, dst, src);
-	expr->e.expr.type = dst_type;
+	expr = new_assign_expr (dst, src);
 	return expr;
 }

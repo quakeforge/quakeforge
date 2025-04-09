@@ -44,7 +44,15 @@
 #include "vid_internal.h"
 #include "vid_vulkan.h"
 
-static cvar_t *vulkan_library_name;
+static char *vulkan_library_name;
+static cvar_t vulkan_library_name_cvar = {
+	.name = "vulkan_library",
+	.description =
+		"the name of the vulkan shared library",
+	.default_value = "vulkan-1.dll",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &vulkan_library_name },
+};
 
 typedef struct vulkan_presentation_s {
 #define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
@@ -65,11 +73,11 @@ static HMODULE vulkan_library;
 static void
 load_vulkan_library (vulkan_ctx_t *ctx)
 {
-	vulkan_library = LoadLibrary (vulkan_library_name->string);
+	vulkan_library = LoadLibrary (vulkan_library_name);
 	if (!vulkan_library) {
 		DWORD       errcode = GetLastError ();
 		Sys_Error ("Couldn't load vulkan library %s: %ld",
-				   vulkan_library_name->string, errcode);
+				   vulkan_library_name, errcode);
 	}
 
 	#define EXPORTED_VULKAN_FUNCTION(name) \
@@ -155,10 +163,8 @@ win_vulkan_create_surface (vulkan_ctx_t *ctx)
 		.hwnd = pres->window,
 	};
 
-	int         width = viddef.width;
-	int         height = viddef.height;
-	ctx->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
-	ctx->scissor = (VkRect2D) { {0, 0}, {width, height} };
+	ctx->window_width = viddef.width;
+	ctx->window_height = viddef.height;
 
 	if (pres->vkCreateWin32SurfaceKHR (inst, &createInfo, 0, &surface)
 		!= VK_SUCCESS) {
@@ -167,25 +173,39 @@ win_vulkan_create_surface (vulkan_ctx_t *ctx)
 	return surface;
 }
 
+static void
+delete_vulkan_context (vulkan_ctx_t *ctx)
+{
+	if (ctx->presentation) {
+		free (ctx->presentation);
+	}
+	va_destroy_context (ctx->va_ctx);
+	free (ctx);
+}
+
 vulkan_ctx_t *
-Win_Vulkan_Context (void)
+Win_Vulkan_Context (vid_internal_t *vi)
 {
 	vulkan_ctx_t *ctx = calloc (1, sizeof (vulkan_ctx_t));
-	ctx->load_vulkan = load_vulkan_library;
-	ctx->unload_vulkan = unload_vulkan_library;
-	ctx->get_presentation_support = win_vulkan_get_presentation_support;
-	ctx->choose_visual = win_vulkan_choose_visual;
-	ctx->create_window = win_vulkan_create_window;
-	ctx->create_surface = win_vulkan_create_surface;
-	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (4);
+	*ctx = (vulkan_ctx_t) {
+		.delete = delete_vulkan_context,
+		.load_vulkan = load_vulkan_library,
+		.unload_vulkan = unload_vulkan_library,
+		.get_presentation_support = win_vulkan_get_presentation_support,
+		.choose_visual = win_vulkan_choose_visual,
+		.create_window = win_vulkan_create_window,
+		.create_surface = win_vulkan_create_surface,
+		.required_extensions = required_extensions,
+		.va_ctx = va_create_context (VA_CTX_COUNT),
+		.twod_scale = 1,
+	};
+
+	vi->ctx = ctx;
 	return ctx;
 }
 
 void
 Win_Vulkan_Init_Cvars (void)
 {
-	vulkan_library_name = Cvar_Get ("vulkan_library", "vulkan-1.dll",
-									CVAR_ROM, 0,
-									"the name of the vulkan shared library");
+	Cvar_Register (&vulkan_library_name_cvar, 0, 0);
 }

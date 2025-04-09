@@ -44,7 +44,7 @@ classDecl (ArrayListIterator, Iterator,
 	ArrayList *list;
 	unsigned int pos;
 	unsigned int smods;
-	qboolean alive;
+	bool alive;
 	ObjRefs_t allrefs;
 );
 #define ARRAYLISTITERATOR(o) ((ArrayListIterator *)(o))

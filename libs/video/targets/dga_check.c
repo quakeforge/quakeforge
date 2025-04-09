@@ -69,7 +69,7 @@
 
   Check for the presence of the XFree86-DGA X server extension
 */
-qboolean
+bool
 VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 {
 #ifdef HAVE_DGA
@@ -125,7 +125,7 @@ VID_CheckDGA (Display * dpy, int *maj_ver, int *min_ver, int *hasvideo)
 
   Check for the presence of the XFree86-VidMode X server extension
 */
-qboolean
+bool
 VID_CheckVMode (Display * dpy, int *maj_ver, int *min_ver)
 {
 #ifdef HAVE_VIDMODE

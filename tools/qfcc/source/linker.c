@@ -131,7 +131,7 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 static const unsigned num_builtins = sizeof (builtin_symbols)
 									 / sizeof (builtin_symbols[0]);
 
-static defref_t *defrefs_freelist;
+ALLOC_STATE (defref_t, defrefs);
 
 static hashtab_t *extern_data_defs;
 static hashtab_t *defined_data_defs;
@@ -172,7 +172,7 @@ static dstring_t *linker_current_file;
 #define QFOSTR(q,s)		QFO_GETSTR (q, s)
 #define WORKSTR(s)		QFOSTR (work, s)
 #define QFOTYPE(t)		((qfot_type_t *) (char *) \
-						 (qfo_type_defs->d.data + (t)))
+						 (qfo_type_defs->data + (t)))
 #define WORKTYPE(t)		((qfot_type_t *) (char *) \
 						 (work_type_data->data + (t)))
 
@@ -245,9 +245,9 @@ defs_get_key (const void *_r, void *unused)
 int
 linker_add_string (const char *str)
 {
-	string_t    new;
+	pr_string_t new;
 	new = strpool_addstr (work_strings, str);
-	work->spaces[qfo_strings_space].d.strings = work_strings->strings;
+	work->spaces[qfo_strings_space].strings = work_strings->strings;
 	work->spaces[qfo_strings_space].data_size = work_strings->size;
 	return new;
 }
@@ -268,7 +268,7 @@ alloc_data (int space, int size)
 	if (size <= 0)
 		linker_internal_error ("bad size for alloc_data (): %d", space);
 	offset = defspace_alloc_loc (*work_spaces[space], size);
-	work->spaces[space].d.data = (*work_spaces[space])->data;
+	work->spaces[space].data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 	return offset;
 }
@@ -490,6 +490,9 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 	defref_t   *ref;
 	qfot_type_t *type;
 
+	if (!count) {
+		return count;
+	}
 	size = (num_work_defrefs + count) * sizeof (defref_t *);
 	work_defrefs = realloc (work_defrefs, size);
 	size = (dest_space->num_defs + count) * sizeof (qfo_def_t);
@@ -502,7 +505,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		idef->file = -1;					// mark def as copied
 		idef->line = num_work_defrefs;		// so def can be found
-		// In the first passs, process_type_def sets the type meta to -1 and
+		// In the first pass, process_type_def sets the type meta to -1 and
 		// class to the offset of the copied type, but the null type encodiing
 		// is not modified. Other defs are processed in the second pass.
 		type = QFOTYPE(idef->type);
@@ -536,11 +539,11 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 static void
 add_qfo_strings (qfo_mspace_t *strings)
 {
-	const char *str = strings->d.strings;
+	const char *str = strings->strings;
 
-	while ((pr_uint_t) (str - strings->d.strings) < strings->data_size) {
+	while ((pr_uint_t) (str - strings->strings) < strings->data_size) {
 		linker_add_string (str);
-		while ((pr_uint_t) (str - strings->d.strings) < strings->data_size
+		while ((pr_uint_t) (str - strings->strings) < strings->data_size
 			   && *str)
 			str++;
 		str++;		// advance past the terminating nul
@@ -554,9 +557,20 @@ add_qfo_strings (qfo_mspace_t *strings)
 static void
 add_code (qfo_mspace_t *code)
 {
-	codespace_addcode (work_code, code->d.code, code->data_size);
-	work->spaces[qfo_code_space].d.code = work_code->code;
+	codespace_addcode (work_code, code->code, code->data_size);
+	work->spaces[qfo_code_space].code = work_code->code;
 	work->spaces[qfo_code_space].data_size = work_code->size;
+}
+
+static void
+align_data (int space, qfo_mspace_t *data)
+{
+	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
+		linker_internal_error ("bad space for align_data (): %d", space);
+	defspace_alloc_aligned_highwater (*work_spaces[space], 0,
+									  1 << data->alignment);
+	work->spaces[space].data = (*work_spaces[space])->data;
+	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
 
 /**	Add the data in a data space to the working qfo.
@@ -570,8 +584,8 @@ add_data (int space, qfo_mspace_t *data)
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
 		linker_internal_error ("bad space for add_data (): %d", space);
 	if (data->data_size)
-		defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
-	work->spaces[space].d.data = (*work_spaces[space])->data;
+		defspace_add_data (*work_spaces[space], data->data, data->data_size);
+	work->spaces[space].data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
 
@@ -596,17 +610,19 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 	ws->type = space->type;
 	if (space->num_defs)
 		add_defs (qfo, space, ws, process_data_def);
-	if (space->d.data) {
+	if (space->data) {
 		int         size = space->data_size * sizeof (pr_type_t);
-		ws->d.data = malloc (size);
-		memcpy (ws->d.data, space->d.data, size);
+		ws->data = malloc (size);
+		memcpy (ws->data, space->data, size);
 	}
 	ws->data_size = space->data_size;
 	ws->id = space->id;
+	ws->alignment = space->alignment;
 }
 
 static defref_t *
-make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
+make_def (int s, const char *name, const type_t *type, unsigned flags,
+		  void *val)
 {
 	qfo_def_t  *def;
 	defref_t   *ref;
@@ -630,7 +646,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 	if (val)
 		memcpy (&def_space->data[def->offset], val,
 				type_size (type) * sizeof (pr_type_t));
-	space->d.data = def_space->data;
+	space->data = def_space->data;
 	space->data_size = def_space->size;
 
 	ref = get_defref (def, space);
@@ -647,7 +663,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 }
 
 void
-linker_add_def (const char *name, type_t *type, unsigned flags, void *val)
+linker_add_def (const char *name, const type_t *type, unsigned flags, void *val)
 {
 	make_def (qfo_near_data_space, name, type, flags, val);
 }
@@ -695,25 +711,25 @@ linker_begin (void)
 	work->num_spaces = qfo_num_spaces;
 	work->spaces[qfo_null_space].type = qfos_null;
 	work->spaces[qfo_strings_space].type = qfos_string;
-	work->spaces[qfo_strings_space].d.strings = work_strings->strings;
+	work->spaces[qfo_strings_space].strings = work_strings->strings;
 	work->spaces[qfo_strings_space].data_size = work_strings->size;
 	work->spaces[qfo_code_space].type = qfos_code;
-	work->spaces[qfo_code_space].d.code = work_code->code;
+	work->spaces[qfo_code_space].code = work_code->code;
 	work->spaces[qfo_code_space].data_size = work_code->size;
 	work->spaces[qfo_near_data_space].type = qfos_data;
-	work->spaces[qfo_near_data_space].d.data = work_near_data->data;
+	work->spaces[qfo_near_data_space].data = work_near_data->data;
 	work->spaces[qfo_near_data_space].data_size = work_near_data->size;
 	work->spaces[qfo_far_data_space].type = qfos_data;
-	work->spaces[qfo_far_data_space].d.data = work_far_data->data;
+	work->spaces[qfo_far_data_space].data = work_far_data->data;
 	work->spaces[qfo_far_data_space].data_size = work_far_data->size;
 	work->spaces[qfo_entity_space].type = qfos_entity;
-	work->spaces[qfo_entity_space].d.data = work_entity_data->data;
+	work->spaces[qfo_entity_space].data = work_entity_data->data;
 	work->spaces[qfo_entity_space].data_size = work_entity_data->size;
 	work->spaces[qfo_type_space].type = qfos_type;
-	work->spaces[qfo_type_space].d.data = work_type_data->data;
+	work->spaces[qfo_type_space].data = work_type_data->data;
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
 	work->spaces[qfo_debug_space].type = qfos_debug;
-	work->spaces[qfo_debug_space].d.data = work_type_data->data;
+	work->spaces[qfo_debug_space].data = work_type_data->data;
 	work->spaces[qfo_debug_space].data_size = work_type_data->size;
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
@@ -739,7 +755,7 @@ process_null_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass != 0)
 		return 0;
-	if (space->defs || space->num_defs || space->d.data || space->data_size
+	if (space->defs || space->num_defs || space->data || space->data_size
 		|| space->id) {
 		linker_error ("non-null null space");
 		return 1;
@@ -765,18 +781,25 @@ process_code_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
-	if (space->id == qfo_near_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_near_data_space,
-				  process_data_def);
-		add_data (qfo_near_data_space, space);
-	} else if (space->id == qfo_far_data_space) {
-		add_defs (qfo, space, work->spaces + qfo_far_data_space,
-				  process_data_def);
-		add_data (qfo_far_data_space, space);
-	} else {
-		add_data_space (qfo, space);
+	if (pass == 0) {
+		if (space->id == qfo_near_data_space) {
+			align_data (qfo_near_data_space, space);
+		} else if (space->id == qfo_far_data_space) {
+			align_data (qfo_far_data_space, space);
+		} else {
+		}
+	} else if (pass == 1) {
+		if (space->id == qfo_near_data_space) {
+			add_defs (qfo, space, work->spaces + qfo_near_data_space,
+					  process_data_def);
+			add_data (qfo_near_data_space, space);
+		} else if (space->id == qfo_far_data_space) {
+			add_defs (qfo, space, work->spaces + qfo_far_data_space,
+					  process_data_def);
+			add_data (qfo_far_data_space, space);
+		} else {
+			add_data_space (qfo, space);
+		}
 	}
 	return 0;
 }
@@ -797,10 +820,12 @@ process_strings_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
-	add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
-	add_data (qfo_entity_space, space);
+	if (pass == 0) {
+		align_data (qfo_entity_space, space);
+	} else if (pass == 1) {
+		add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
+		add_data (qfo_entity_space, space);
+	}
 	return 0;
 }
 
@@ -875,7 +900,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		// while we're at it, relocate all references in the type encoding
 		// space so the type encodings are always correct.
 		if (reloc->type == rel_def_string) {
-			string_t     str;
+			pr_string_t str;
 			str = linker_add_string (QFOSTR (qfo, reloc->target));
 			QFO_STRING (work, reloc->space, reloc->offset) = str;
 		} else if (reloc->type == rel_def_def || reloc->type == -1) {
@@ -915,14 +940,16 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_debug_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
-		return 0;
 	if (space->type != qfos_debug) {
-		linker_internal_error ("bad space type for add_data_space (): %d",
+		linker_internal_error ("bad space type for process_debug_space (): %d",
 							   space->type);
 	}
-	add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
-	add_data (qfo_debug_space, space);
+	if (pass == 0) {
+		align_data (qfo_debug_space, space);
+	} else if (pass == 1) {
+		add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
+		add_data (qfo_debug_space, space);
+	}
 	return 0;
 }
 
@@ -1032,9 +1059,6 @@ linker_add_qfo (qfo_t *qfo)
 	qfo_mspace_t *space;
 
 	qfo_type_defs = 0;
-	for (i = 0; i < qfo_num_spaces; i++) {
-		work_base[i] = work->spaces[i].data_size;
-	}
 	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
@@ -1044,6 +1068,11 @@ linker_add_qfo (qfo_t *qfo)
 			}
 			if (funcs[space->type] (qfo, space, pass))
 				return 1;
+		}
+		for (i = 0; i < qfo_num_spaces; i++) {
+			if (pass == 0) {
+				work_base[i] = work->spaces[i].data_size;
+			}
 		}
 	}
 	process_funcs (qfo);
@@ -1106,7 +1135,7 @@ linker_add_lib (const char *libname)
 
 	if (strncmp (libname, "-l", 2) == 0) {
 		while (path) {
-			path_name = va (0, "%s/lib%s.a", path->path, libname + 2);
+			path_name = va ("%s/lib%s.a", path->path, libname + 2);
 			pack = pack_open (path_name);
 			if (pack)
 				break;
@@ -1146,6 +1175,10 @@ linker_add_lib (const char *libname)
 
 			if (!qfo) {
 				linker_error ("error opening");
+				return 1;
+			}
+			if (qfo->progs_version != options.code.progsversion) {
+				linker_error ("qfo progs version does not match target");
 				return 1;
 			}
 
@@ -1241,7 +1274,6 @@ check_defs (void)
 			linker_add_def (".self", &type_entity, QFOD_GLOBAL, 0);
 			did_self = 1;
 		} else if (strcmp (name, ".this") == 0 && !did_this) {
-			type_t     *type;
 			int         flags;
 			defref_t   *this_ref;
 
@@ -1250,7 +1282,7 @@ check_defs (void)
 			flags = QFOD_GLOBAL | QFOD_NOSAVE;
 			this_ref = make_def (qfo_entity_space, name, &type_id, flags, 0);
 			flags |= QFOD_CONSTANT | QFOD_INITIALIZED;
-			type = field_type (&type_id);
+			auto type = field_type (&type_id);
 			linker_add_def (".this", type, flags, &REF (this_ref)->offset);
 			did_this = 1;
 		}
@@ -1262,6 +1294,19 @@ check_defs (void)
 		undefined_def (def);
 	}
 	free (undef_defs);
+}
+
+static void
+sort_defs (qfo_mspace_t *space)
+{
+	qfo_def_t  *defs = space->defs;
+	for (pr_uint_t i = 1; i < space->num_defs; i++) {
+		qfo_def_t   d = defs[i];
+		for (pr_uint_t j = i; j-- > 0 && d.offset < defs[j].offset; ) {
+			defs[j + 1] = defs[j];
+			defs[j] = d;
+		}
+	}
 }
 
 static qfo_t *
@@ -1276,10 +1321,13 @@ build_qfo (void)
 	qfo = qfo_new ();
 	qfo->spaces = calloc (work->num_spaces, sizeof (qfo_mspace_t));
 	qfo->num_spaces = work->num_spaces;
+	for (i = qfo_near_data_space; i <= qfo_entity_space; i++) {
+		sort_defs (&qfo->spaces[i]);
+	}
 	for (i = 0; i < work->num_spaces; i++) {
 		qfo->spaces[i].type = work->spaces[i].type;
 		qfo->spaces[i].id = work->spaces[i].id;
-		qfo->spaces[i].d = work->spaces[i].d;
+		qfo->spaces[i].data = work->spaces[i].data;
 		qfo->spaces[i].data_size = work->spaces[i].data_size;
 	}
 	// allocate space for all relocs and copy in the loose relocs. bound
@@ -1402,8 +1450,13 @@ def_error (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	error (0, "%s", string->str);
 }
 
@@ -1420,8 +1473,13 @@ def_warning (qfo_def_t *def, const char *fmt, ...)
 	dvsprintf (string, fmt, args);
 	va_end (args);
 
-	pr.source_file = def->file;
-	pr.source_line = def->line;
+	pr.loc = (rua_loc_t) {
+		.line = def->line,
+		.column = 1,
+		.last_line = def->line,
+		.last_column = 1,
+		.file = def->file,
+	};
 	warning (0, "%s", string->str);
 }
 

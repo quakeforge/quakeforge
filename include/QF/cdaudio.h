@@ -31,7 +31,7 @@
 #include "QF/qtypes.h"
 
 int CDAudio_Init(void);
-void CDAudio_Play(int track, qboolean looping);
+void CDAudio_Play(int track, bool looping);
 void CDAudio_Stop(void);
 void CDAudio_Pause(void);
 void CDAudio_Resume(void);

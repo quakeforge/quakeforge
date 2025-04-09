@@ -42,6 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/gib.h"
+#include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
@@ -53,6 +54,7 @@
 #include "QF/zone.h"
 
 #include "compat.h"
+#include "rua_internal.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/debugger/debug.h"
@@ -104,7 +106,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va (0, "%s.gz", name), &size);
+		file = open_file (va ("%s.gz", name), &size);
 		if (!file) {
 			return 0;
 		}
@@ -112,6 +114,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	Qclose (file);
 	*_size = size;
 	return sym;
 }
@@ -119,13 +122,22 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return malloc (size);
+	size = (size + 63) & ~63;
+#ifdef _WIN32
+	return _aligned_malloc (size, 64);
+#else
+	return aligned_alloc (64, size);
+#endif
 }
 
 static void
 free_progs_mem (progs_t *pr, void *mem)
 {
+#ifdef _WIN32
+	_aligned_free (mem);
+#else
 	free (mem);
+#endif
 }
 
 static void
@@ -138,25 +150,16 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
-
-	Cvar_Get ("pr_debug", "2", 0, 0, 0);
-	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
-
-	// Normally, this is done by PR_Init, but PR_Init is not called in the main
-	// thread. However, PR_Opcode_Init() is idempotent.
-	PR_Opcode_Init ();
+	Memory_Init (Sys_Alloc (32 * 1024 * 1024), 32 * 1024 * 1024);
+	PR_Init_Cvars ();
 }
 
 static void
-bi_printf (progs_t *pr)
+bi_printf (progs_t *pr, void *_res)
 {
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
 	dstring_t  *dstr = dstring_new ();
 
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
+	RUA_Sprintf (pr, dstr, "printf", 0);
 	if (dstr->str) {
 		Sys_Printf ("%s", dstr->str);
 	}
@@ -164,34 +167,42 @@ bi_printf (progs_t *pr)
 }
 
 static void
-bi_traceon (progs_t *pr)
+bi_traceon (progs_t *pr, void *_res)
 {
 	pr->pr_trace = true;
 	pr->pr_trace_depth = pr->pr_depth;
 }
 
 static void
-bi_traceoff (progs_t *pr)
+bi_traceoff (progs_t *pr, void *_res)
 {
 	pr->pr_trace = false;
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t common_builtins[] = {
-	{"printf",			bi_printf,		-1},
-	{"traceon",			bi_traceon,		-1},
-	{"traceoff",		bi_traceoff,	-1},
+	bi(printf,   -1, -2, p(string)),
+	bi(traceon,  -1, 0),
+	bi(traceoff, -1, 0),
 	{},
 };
 
 static void
 common_builtins_init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, common_builtins);
+	PR_RegisterBuiltins (pr, common_builtins, 0);
 }
 
 static void
 qwaq_thread_clear (progs_t *pr, void *_thread)
 {
+}
+
+static void
+qwaq_thread_destroy (progs_t *pr, void *_res)
+{
+	// resource block is the thread data: don't own it
 }
 
 static progs_t *
@@ -204,11 +215,13 @@ create_progs (qwaq_thread_t *thread)
 	pr->allocate_progs_mem = allocate_progs_mem;
 	pr->free_progs_mem = free_progs_mem;
 	pr->no_exec_limit = 1;
-	pr->hashlink_freelist = &thread->hashlink_freelist;
+	pr->hashctx = &thread->hashctx;
 
-	PR_Init_Cvars ();
+	pr_debug = 2;
+	pr_boundscheck = 0;
 	PR_Init (pr);
-	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear);
+	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear,
+						   qwaq_thread_destroy);
 	RUA_Init (pr, thread->rua_security);
 	common_builtins_init (pr);
 	while (*funcs) {
@@ -230,7 +243,8 @@ load_progs (progs_t *pr, const char *name)
 	}
 	pr->progs_name = name;
 	pr->max_edicts = 1;
-	pr->zone_size = 1024*1024;
+	pr->zone_size = 8*1024*1024;
+	pr->stack_size = 64*1024;
 	PR_LoadProgsFile (pr, file, size);
 	Qclose (file);
 	if (!PR_RunLoadFuncs (pr))
@@ -243,7 +257,7 @@ spawn_progs (qwaq_thread_t *thread)
 {
 	dfunction_t *dfunc;
 	const char *name = 0;
-	string_t   *pr_argv;
+	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;
 	progs_t    *pr;
 
@@ -284,10 +298,9 @@ spawn_progs (qwaq_thread_t *thread)
 	}
 	pr_argv[i] = 0;
 
-	PR_RESET_PARAMS (pr);
+	PR_SetupParams (pr, 2, 1);
 	P_INT (pr, 0) = pr_argc;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
-	pr->pr_argc = 2;
 }
 
 static void *
@@ -305,6 +318,12 @@ run_progs (void *data)
 		thread->pr->debug_handler (prd_terminate, &thread->return_code,
 								   thread->pr->debug_data);
 	}
+	PR_Shutdown (thread->pr);
+	free (thread->pr);
+	thread->pr = 0;
+	Hash_DelContext (thread->hashctx);
+	thread->hashctx = 0;
+	Sys_Shutdown ();
 	return thread;
 }
 
@@ -429,10 +448,8 @@ main (int argc, char **argv)
 		COM_InitArgv (qargs->args.size, qargs->args.a);
 		num_sys++;
 	} else {
-		qwaq_thread_t qargs = {};
-		DARRAY_INIT (&qargs.args, 2);
-		DARRAY_APPEND (&qargs.args, this_program);
-		COM_InitArgv (qargs.args.size, qargs.args.a);
+		const char *args[] = { this_program, 0 };
+		COM_InitArgv (1, args);
 	}
 
 	init_qf ();
@@ -461,6 +478,13 @@ main (int argc, char **argv)
 		ret = thread_data.a[main_ind]->return_code;
 	}
 
+	for (size_t i = 0; i < thread_data.size; i++) {
+		qwaq_thread_t *thread = thread_data.a[i];
+		DARRAY_CLEAR (&thread->args);
+		free (thread_data.a[i]);
+	}
+	DARRAY_CLEAR (&thread_data);
+	Cbuf_DeleteStackReverse (qwaq_cbuf);
 	Sys_Shutdown ();
 	return ret;
 }

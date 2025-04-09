@@ -68,11 +68,17 @@ The following is the list of relevant package names in debian.
 \li libxext-dev
 \li libxxf86dga-dev
 \li libxxf86vm-dev
+\li libxi-dev
+\li libxfixes-dev
 
 \li libvulkan-dev
 \li vulkan-tools
 \li vulkan-validationlayers
 \li glslang-tools
+
+\li libfreetype-dev
+\li libfontconfig-dev
+\li libharfbuzz-dev
 
 \section building-and-installing Build and Install Procedure
 Basic process to build and install QuakeForge:
@@ -80,6 +86,12 @@ Basic process to build and install QuakeForge:
 	./bootstrap
 	./configure
 	make install
+\endverbatim
+
+Note that when building from a git repository, the default is to treat
+compiler warnings as errors. This can be changed by using the following:
+\verbatim
+	./configure --disable-Werror
 \endverbatim
 
 You may want to check <code>./configure --help</code> and select options.

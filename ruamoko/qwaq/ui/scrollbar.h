@@ -10,7 +10,7 @@
 
 @interface ScrollBar : View
 {
-	int         vertical;
+	bool        vertical;
 	int         bgchar;
 	double      mouseTime;
 	Point       mouseStart;

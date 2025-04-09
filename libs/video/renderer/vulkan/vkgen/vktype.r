@@ -1,9 +1,11 @@
 #include <hash.h>
 
 #include "vkalias.h"
+#include "vkbool.h"
 #include "vkenum.h"
 #include "vkfixedarray.h"
 #include "vkgen.h"
+#include "vkstring.h"
 #include "vkstruct.h"
 #include "vktype.h"
 
@@ -50,7 +52,20 @@ static string get_type_key (void *type, void *unused)
 		return nil;
 	}
 	switch (type.meta) {
+		case ty_bool:
+			return [[Bool alloc] initWithType: type];
 		case ty_basic:
+			if (type.type == ev_ptr) {
+				Type       *tgt = [Type findType: type.fldptr.aux_type];
+
+				if (tgt.type.meta == ty_alias
+					&& tgt.type.alias.name == "char") {
+					return [[String alloc] initWithType: type];
+				}
+			}
+			// fallthrough
+		case ty_algebra:
+		case ty_handle:
 		case ty_class:
 			return [[Type alloc] initWithType: type];
 		case ty_array:
@@ -77,7 +92,7 @@ static string get_type_key (void *type, void *unused)
 -(string) name
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "int";
 		}
 		return pr_type_name[type.type];
@@ -86,12 +101,23 @@ static string get_type_key (void *type, void *unused)
 	return type.encoding;
 }
 
+-(void) setAlias: (Type *) alias
+{
+	if (!self.alias) {
+		self.alias = alias;
+	}
+}
+
 -(void) addToQueue
 {
 	string name = [self name];
-	if (type.meta == ty_basic && type.type == ev_pointer) {
+	if (type.meta == ty_basic && type.type == ev_ptr) {
 		[[Type findType: type.fldptr.aux_type] addToQueue];
 	}
+}
+
+-(void) initParse:(PLItem *)parse
+{
 }
 
 -(Type *) resolveType
@@ -123,7 +149,7 @@ static string get_type_key (void *type, void *unused)
 -(string) parseData
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "&cexpr_int";
 		}
 		return "&cexpr_" + pr_type_name[type.type];
@@ -131,10 +157,15 @@ static string get_type_key (void *type, void *unused)
 	return "0";
 }
 
+-(FieldDef *)fielddef:(Struct *)strct field:(string)fname
+{
+	return nil;
+}
+
 -(int) isPointer
 {
 	if ((type.meta == ty_basic || type.meta == ty_alias)
-		&& type.type == ev_pointer) {
+		&& type.type == ev_ptr) {
 		return 1;
 	}
 	return 0;
@@ -143,10 +174,10 @@ static string get_type_key (void *type, void *unused)
 -(Type *) dereference
 {
 	qfot_type_t *t = type;
-	if (t.meta == ty_alias && t.type == ev_pointer) {
+	if (t.meta == ty_alias && t.type == ev_ptr) {
 		t = type.alias.full_type;
 	}
-	if (t.meta == ty_basic && t.type == ev_pointer) {
+	if (t.meta == ty_basic && t.type == ev_ptr) {
 		t = type.fldptr.aux_type;
 	}
 	return [Type findType:t];

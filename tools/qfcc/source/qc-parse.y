@@ -1,4 +1,3 @@
-%{
 /*
 	qc-parse.y
 
@@ -28,6 +27,16 @@
 		Boston, MA  02111-1307, USA
 
 */
+%define api.prefix {qc_yy}
+%define api.pure full
+%define api.push-pull push
+%define api.token.prefix {QC_}
+%locations
+%parse-param {struct rua_ctx_s *ctx}
+%define api.value.type {rua_val_t}
+%define api.location.type {rua_loc_t}
+
+%{
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -44,6 +53,12 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#define QC_YYDEBUG 1
+#define QC_YYERROR_VERBOSE 1
+#undef QC_YYERROR_VERBOSE
+
+#include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
@@ -51,28 +66,33 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/iface_block.h"
+#include "tools/qfcc/include/image.h"
 #include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-#define YYDEBUG 1
-#define YYERROR_VERBOSE 1
-#undef YYERROR_VERBOSE
+#include "tools/qfcc/source/qc-parse.h"
 
-extern char *qc_yytext;
+#define qc_yytext qc_yyget_text (ctx->scanner)
+char *qc_yyget_text (rua_ctx_t *ctx);
 
 static void
-yyerror (const char *s)
+yyerror (YYLTYPE *yylloc, rua_ctx_t *ctx, const char *s)
 {
-#ifdef YYERROR_VERBOSE
+#ifdef QC_YYERROR_VERBOSE
 	error (0, "%s %s\n", qc_yytext, s);
 #else
 	error (0, "%s before %s", s, qc_yytext);
@@ -80,123 +100,145 @@ yyerror (const char *s)
 }
 
 static void
-parse_error (void)
+parse_error (rua_ctx_t *ctx)
 {
 	error (0, "parse error before %s", qc_yytext);
 }
 
-#define PARSE_ERROR do { parse_error (); YYERROR; } while (0)
+#define PARSE_ERROR do { parse_error (ctx); YYERROR; } while (0)
 
-int yylex (void);
+#define YYLLOC_DEFAULT(Current, Rhs, N) RUA_LOC_DEFAULT(Current, Rhs, N)
+#define YYLOCATION_PRINT rua_print_location
+
+int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %}
 
-%union {
-	int			op;
-	int         size;
-	specifier_t spec;
-	void       *pointer;			// for ensuring pointer values are null
-	struct type_s	*type;
-	struct expr_s	*expr;
-	struct element_s *element;
-	struct function_s *function;
-	struct switch_block_s *switch_block;
-	struct param_s	*param;
-	struct method_s	*method;
-	struct class_s	*class;
-	struct category_s *category;
-	struct class_type_s	*class_type;
-	struct protocol_s *protocol;
-	struct protocollist_s *protocol_list;
-	struct keywordarg_s *keywordarg;
-	struct methodlist_s *methodlist;
-	struct symbol_s *symbol;
-	struct symtab_s *symtab;
-}
+%code requires { #define qc_yypstate rua_yypstate }
 
 // these tokens are common between qc and qp
-%left LOW
+%precedence LOW
+%precedence ';' '{'
 %nonassoc IFX
 %nonassoc ELSE
-%nonassoc BREAK_PRIMARY
-%nonassoc ';'
 %nonassoc CLASS_NOT_CATEGORY
-%nonassoc STORAGEX
 
 %left			COMMA
 %right	<op>	'=' ASX
 %right			'?' ':'
 %left			OR
+%left			XOR
 %left			AND
 %left			'|'
 %left			'^'
 %left			'&'
 %left			EQ NE
-%left			LE GE LT GT
+%left			LT GT GE LE
+%token			NAND NOR XNOR
 // end of tokens common between qc and qp
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%' MOD
-%right	<op>	SIZEOF UNARY INCOP
+%left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
+%left           HADAMARD CROSS DOT OUTER WEDGE REGRESSIVE
+%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
-%token	<symbol>	CLASS_NAME NAME
-%token	<expr>		VALUE STRING
+%token	<expr>		VALUE STRING EBUFFER TOKEN
+%token              TRUE FALSE
+%token				ELLIPSIS
+%token				RESERVED
+// end of common tokens
 
-%token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
-%token				NIL IFBE IFB IFAE IFA GOTO SWITCH CASE DEFAULT ENUM
-%token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
-%token	<op>		STRUCT
-%token	<type>		TYPE
-%token	<symbol>	OBJECT TYPE_NAME
+%token	<symbol>	CLASS_NAME NAME
+
+%token				LOCAL WHILE DO IF ELSE FOR BREAK CONTINUE
+%token				RETURN AT_RETURN
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM ALGEBRA IMAGE SAMPLER
+%token				ARGS TYPEDEF EXTERN STATIC SYSTEM OVERLOAD NOT ATTRIBUTE
+%token	<op>		STRUCT BLOCK
+%token				HANDLE INTRINSIC
+%token	<spec>		TYPE_SPEC TYPE_NAME TYPE_QUAL
+%token	<spec>		OBJECT_NAME
 %token				CLASS DEFS ENCODE END IMPLEMENTATION INTERFACE PRIVATE
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
-%type	<spec>		optional_specifiers specifiers local_specifiers
-%type	<spec>		storage_class save_storage set_spec_storage
-%type	<spec>		type_specifier type_specifier_or_storage_class
-%type	<spec>		type
+%token				GENERIC CONSTRUCT
+%token				AT_FUNCTION AT_FIELD AT_POINTER AT_ARRAY
+%token				AT_BASE AT_WIDTH AT_VECTOR AT_ROWS AT_COLS AT_MATRIX
+%token				AT_INT AT_UINT AT_BOOL AT_FLOAT
 
-%type	<param>		function_params var_list param_declaration
-%type	<param>		qc_func_params qc_var_list qc_param_decl
-%type	<symbol>	new_name
-%type	<symbol>	var_decl function_decl
-%type	<symbol>	abstract_decl abs_decl
+%type	<spec>		storage_class save_storage
+%type	<spec>		typespec typespec_reserved typespec_nonreserved
+%type	<spec>		handle
+%type	<mut_expr>	attr_list attr
+%type	<expr>		binding opt_binding
+%type	<spec>		fnbinding
+%type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
+%type	<spec>		attr_declspecs_nosc_ts attr_declspecs_nosc_nots
+%type	<spec>		declspecs declspecs_nosc declspecs_nots declspecs_ts
+%type	<spec>		declspecs_nosc_ts declspecs_nosc_nots
+%type	<spec>		declspecs_sc_ts declspecs_sc_nots defspecs
+%type	<spec>		declarator notype_declarator after_type_declarator
+%type	<spec>		param_declarator param_declarator_starttypename
+%type	<spec>		param_declarator_nostarttypename
+%type	<spec>		absdecl absdecl1 direct_absdecl typename ptr_spec copy_spec
+%type	<mut_expr>	struct_defs component_decl_list
+%type	<expr>	component_declarator component_notype_declarator
+%type	<mut_expr>	component_decl_list2 components components_notype
+%type	<mut_expr>	component_decl
+%type	<expr>		visibility_spec
+%type	<symtab>	ivar_scope
+%type	<spec>		qc_comma
+%type	<symbol>	generic_param
+%type	<op>		type_func type_op
+%type	<expr>		type_function type_param type_ref
+%type	<spec>		type_ref_spec
+%type	<expr>		generic_type
+%type	<mut_expr>	type_list type_param_list
+%type	<expr>		initdecl notype_initdecl
+%type	<mut_expr>	initdecls notype_initdecls
 
-%type	<symbol>	tag optional_tag
-%type	<spec>		struct_specifier struct_def struct_decl
-%type	<spec>		enum_specifier
-%type	<symbol>	optional_enum_list enum_list enumerator_list enumerator
+%type	<attribute>	attribute_list attribute attrfunc
+
+%type	<param>		function_params
+%type   <param>		qc_func_params qc_param_list qc_first_param qc_param
+
+%type	<symbol>	tag
+%type	<spec>		struct_specifier struct_list
+%type	<spec>		enum_specifier algebra_specifier
+%type	<spec>		image_specifier sampler_specifier
+%type	<symbol>	enum_list enumerator_list enumerator
 %type	<symbol>	enum_init
-%type	<size>		array_decl
-
-%type	<spec>		func_def_list comma
+%type	<expr>		array_decl index_expr
 
 %type	<expr>		const string
 
-%type	<spec>		ivar_decl decl decl_list
-%type	<spec>		ivars
-%type	<param>		param param_list
+%type   <expr>		decl
+%type	<param>		param_list parameter_list parameter
 %type	<symbol>	methoddef
-%type	<expr>		opt_initializer var_initializer local_def
+%type	<expr>		var_initializer local_def
 
-%type	<expr>		opt_init opt_expr comma_expr expr
-%type	<expr>		compound_init element_list
+%type	<expr>		opt_init_semi opt_expr comma_expr
+%type   <expr>		expr
+%type	<expr>		compound_init
+%type	<expr>		opt_cast
+%type   <mut_expr>	element_list expr_list vector_expr
+%type	<designator> designator designator_spec
 %type	<element>	element
-%type	<expr>		optional_state_expr texpr vector_expr
-%type	<expr>		statement statements compound_statement
-%type	<expr>		else bool_label break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr expr_list
-%type	<expr>		opt_arg_list arg_list arg_expr
-%type	<expr>		init_var_decl_list init_var_decl
-%type	<switch_block> switch_block
+%type	<expr>		method_optional_state_expr optional_state_expr
+%type	<expr>		intrinsic
+%type	<expr>		statement
+%type	<mut_expr>	statement_list compound_statement compound_statement_ns
+%type	<mut_expr>	new_block new_scope
+%type	<expr>		else line break_label continue_label
+%type	<expr>		unary_expr cast_expr
+%type	<mut_expr>	arg_list
+%type   <expr>		opt_arg_list arg_expr
 %type	<symbol>	identifier label
 
-%type	<symbol>	overloaded_identifier
-
-%type	<expr>		identifier_list
+%type	<mut_expr>	identifier_list
 %type	<symbol>	protocol_name_list selector reserved_word
 %type	<param>		optional_param_list unaryselector keyworddecl
 %type	<param>		keywordselector
@@ -210,63 +252,399 @@ int yylex (void);
 %type	<category>	category_name new_category_name
 %type	<protocol>	protocol_name
 %type	<methodlist> methodprotolist methodprotolist2
-%type	<symtab>	ivar_decl_list
 %type	<op>		ci not
 
 %{
 
-static switch_block_t *switch_block;
-static expr_t *break_label;
-static expr_t *continue_label;
+static const expr_t *break_label;
+static const expr_t *continue_label;
+static bool generic_scope, generic_block;
+static symtab_t *generic_symtab;
+static expr_t *local_expr;
+
+static void
+end_generic_scope (void)
+{
+	if (generic_symtab != current_symtab || !generic_symtab->parent) {
+		internal_error (0, "scope stack tangled?");
+	}
+	current_symtab = generic_symtab->parent;
+	generic_symtab = nullptr;
+	generic_scope = false;
+}
+
+static void
+restore_storage (specifier_t st)
+{
+	if (generic_block && !st.is_generic) {
+		end_generic_scope ();
+	}
+	generic_block = st.is_generic;
+	current_storage = st.storage;
+}
 
 static specifier_t
-make_spec (type_t *type, storage_class_t storage, int is_typedef,
-		   int is_overload)
+attr_spec (specifier_t spec, const expr_t *attrs, rua_ctx_t *ctx)
 {
-	specifier_t spec;
-
-	memset (&spec, 0, sizeof (spec));
-	spec.type = type;
-	spec.storage = storage;
-	spec.is_typedef = is_typedef;
-	spec.is_overload = is_overload;
-	if (spec.storage && spec.is_typedef)
-		internal_error (0, "setting both storage and is_typedef");
+	spec.attributes = expr_attributes (attrs, spec.attributes, ctx);
 	return spec;
+}
+
+static specifier_t
+name_spec (specifier_t spec, const char *name)
+{
+	spec.sym = new_symbol (name);
+	return spec;
+}
+
+static specifier_t
+type_spec (const type_t *type)
+{
+	specifier_t spec = {
+		.type = type,
+	};
+	return spec;
+}
+
+static const expr_t *
+type_property (specifier_t spec, const attribute_t *property)
+{
+	auto type_expr = spec.type_expr;
+	if (!type_expr) {
+		type_expr = new_type_expr (spec.type);
+	}
+	auto params = new_list_expr (type_expr);
+	auto prop = new_type_expr (nullptr);
+	prop->typ.property = property;
+	expr_append_expr (params, prop);
+	return new_type_function (QC_ATTRIBUTE, params);
+}
+
+static specifier_t
+storage_spec (storage_class_t storage)
+{
+	specifier_t spec = {
+		.storage = storage,
+	};
+	return spec;
+}
+
+static specifier_t
+typedef_spec (void)
+{
+	specifier_t spec = {
+		.storage = sc_global,
+		.is_typedef = true,
+	};
+	return spec;
+}
+
+static specifier_t
+overload_spec (void)
+{
+	specifier_t spec = {
+		.storage = current_storage,
+		.is_overload = true,
+	};
+	return spec;
+}
+
+static specifier_t
+generic_spec (rua_ctx_t *ctx)
+{
+	specifier_t spec = {
+		.storage = current_storage,
+		.symtab = new_symtab (current_symtab, stab_local),
+		.is_generic = true,
+	};
+	generic_symtab = spec.symtab;
+	if (current_target.setup_intrinsic_symtab) {
+		current_target.setup_intrinsic_symtab (generic_symtab);
+	}
+	return spec;
+}
+
+static int
+storage_auto (specifier_t spec)
+{
+	return spec.storage == sc_global || spec.storage == sc_local;
+}
+
+static bool
+spec_type (specifier_t spec)
+{
+	return spec.type || spec.type_expr;
 }
 
 static specifier_t
 spec_merge (specifier_t spec, specifier_t new)
 {
-	if (new.type) {
-		if (spec.type && !spec.multi_type) {
+	if (spec_type (new)) {
+		// deal with "type <type_name>"
+		if (!spec_type (spec) || new.sym) {
+			spec.sym = new.sym;
+			if (!spec_type (spec)) {
+				spec.type = new.type;
+				spec.type_expr = new.type_expr;
+			}
+		} else if (!spec.multi_type) {
 			error (0, "two or more data types in declaration specifiers");
-			spec.multi_type = 1;
+			spec.multi_type = true;
 		}
-		spec.type = new.type;
 	}
-	if (new.is_typedef || new.storage) {
-		if ((spec.is_typedef || spec.storage) && !spec.multi_store) {
+	spec.type_list = new.type_list;
+	if (new.is_typedef || !storage_auto (new)) {
+		if ((spec.is_typedef || !storage_auto (spec)) && !spec.multi_store) {
 			error (0, "multiple storage classes in declaration specifiers");
-			spec.multi_store = 1;
+			spec.multi_store = true;
 		}
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
 	}
-	spec.is_overload |= new.is_overload;
-	spec.nosave |= new.nosave;
+	if (new.is_generic) {
+		if (spec.is_generic && !spec.multi_generic) {
+			error (0, "multiple @generic in declaration");
+			spec.multi_generic = true;
+		}
+	}
+	if ((new.is_unsigned && spec.is_signed)
+		|| (new.is_signed && spec.is_unsigned)) {
+		if (!spec.multi_type) {
+			error (0, "both signed and unsigned in declaration specifiers");
+			spec.multi_type = true;
+		}
+	}
+	if ((new.is_long && spec.is_short) || (new.is_short && spec.is_long)) {
+		if (!spec.multi_store) {
+			error (0, "both long and short in declaration specifiers");
+			spec.multi_store = true;
+		}
+	}
+	auto attr = &spec.attributes;
+	for (; *attr; attr = &(*attr)->next) continue;
+	*attr = new.attributes;
+	spec.sym = new.sym;
+	spec.spec_bits |= new.spec_bits;
 	return spec;
 }
 
 static specifier_t
-default_type (specifier_t spec, symbol_t *sym)
+resolve_type_spec (specifier_t spec, rua_ctx_t *ctx)
 {
-	if (!spec.type) {
-		spec.type = type_default;
-		warning (0, "type defaults to '%s' in declaration of '%s'",
-				 type_default->name, sym->name);
+	spec = spec_process (spec, ctx);
+	auto type = spec.type;
+	if (spec.type_expr) {
+		type = resolve_type (spec.type_expr, ctx);
+		spec.type_expr = nullptr;
+	}
+	spec.type = find_type (type);
+	return spec;
+}
+
+static specifier_t
+typename_spec (specifier_t spec, rua_ctx_t *ctx)
+{
+	spec = default_type (spec, 0);
+	return spec;
+}
+
+static specifier_t
+state_expr_spec (specifier_t spec, const expr_t *state_expr, rua_ctx_t *ctx)
+{
+	ex_listitem_t *last = nullptr;
+	if (spec.type_list && spec.type_list->type == ex_list
+		&& spec.type_list->list.head) {
+		last = (ex_listitem_t *) spec.type_list->list.tail;
+	}
+	if (last && last->expr->type == ex_type
+		&& last->expr->typ.op == QC_AT_FUNCTION) {
+		auto func = new_expr ();
+		*func = *last->expr;
+		// FIXME should be actual param list?
+		func->typ.params = build_state_expr (state_expr, ctx);
+		last->expr = func;
+	} else {
+		error (state_expr, "state expression on non-function");
 	}
 	return spec;
+}
+
+static specifier_t
+function_spec (specifier_t spec, param_t *parameters)
+{
+	// return type will be filled in when building the final type
+	auto type_expr = new_type_function (QC_AT_FUNCTION, nullptr);
+	type_expr->typ.type = parse_params (0, parameters);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.is_function = true;
+		spec.type_list = new_list_expr (type_expr);
+	}
+
+	spec.params = parameters;
+	spec.is_generic = generic_scope;
+	spec.is_generic_block = generic_block;
+	spec.symtab = generic_symtab;
+	return spec;
+}
+
+static specifier_t
+array_spec (specifier_t spec, const expr_t *size)
+{
+	// element type will be filled in when building the final type
+	auto params = new_list_expr (size);
+	auto type_expr = new_type_function (QC_AT_ARRAY, params);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
+	}
+	return spec;
+}
+
+static specifier_t
+pointer_spec (specifier_t quals, specifier_t spec)
+{
+	// referenced type will be filled in when building the final type
+	auto type_expr = new_type_function (QC_AT_POINTER, nullptr);
+	if (spec.type_list) {
+		expr_append_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
+	}
+	return spec;
+}
+
+static specifier_t
+field_spec (specifier_t spec)
+{
+	// referenced type will be filled in when building the final type
+	auto type_expr = new_type_function (QC_AT_FIELD, nullptr);
+	if (spec.type_list) {
+		expr_prepend_expr (spec.type_list, type_expr);
+	} else {
+		spec.type_list = new_list_expr (type_expr);
+	}
+	return spec;
+}
+
+static specifier_t
+qc_function_spec (specifier_t spec, param_t *params)
+{
+#if 0
+	//FIXME this is borked
+	// .float () foo; is a field holding a function variable rather
+	// than a function that returns a float field.
+	// FIXME I think this breaks fields holding functions that return fields
+	// but that would require some messy ()s to get parsing anyway, and it can
+	// wait until such is needed (if ever).
+	const type_t *field_chain = nullptr;
+	const type_t *ret_type = spec.type;
+	while (ret_type && is_field (ret_type)) {
+		field_chain = field_type (field_chain);
+		ret_type = ret_type->fldptr.type;
+	}
+
+	// qc-style functions are known to be functions before the symbol is seen,
+	// so provide an unnamed symbol to hold any field type information
+	spec.sym = new_symbol (0);
+	spec.sym->type = field_chain;
+	spec.type = ret_type;
+#endif
+
+	spec = function_spec (spec, params);
+	return spec;
+}
+
+static specifier_t
+qc_set_symbol (specifier_t spec, symbol_t *sym, rua_ctx_t *ctx)
+{
+	spec = spec_process (spec, ctx);
+	sym->type = spec.type;
+	spec.sym = sym;
+	return spec;
+}
+
+static param_t *
+make_ellipsis (void)
+{
+	return new_param (0, 0, 0);
+}
+
+static param_t *
+make_param (specifier_t spec, rua_ctx_t *ctx)
+{
+	//FIXME should not be sc_global
+	//FIXME if (spec.storage == sc_global || spec.storage == sc_extern) {
+	if (spec.storage < sc_inout) {
+		spec.storage = sc_param;
+	}
+
+	param_t *param;
+	if (generic_block && spec.type_expr) {
+		auto name = spec.sym ? spec.sym->name : nullptr;
+		param = new_generic_param (spec.type_expr, name);
+	} else if (spec.sym) {
+		spec = spec_process (spec, ctx);
+		spec.type = find_type (append_type (spec.sym->type, spec.type));
+		param = new_param (nullptr, spec.type, spec.sym->name);
+	} else {
+		spec = spec_process (spec, ctx);
+		param = new_param (nullptr, spec.type, nullptr);
+	}
+	if (spec.is_const) {
+		if (spec.storage == sc_out) {
+			error (0, "cannot use const with @out");
+		} else if (spec.storage == sc_inout) {
+			error (0, "cannot use const with @inout");
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+		}
+		param->qual = pq_const;
+	} else {
+		if (spec.storage == sc_out) {
+			param->qual = pq_out;
+		} else if (spec.storage == sc_inout) {
+			param->qual = pq_inout;
+		} else {
+			if (spec.storage != sc_in && spec.storage != sc_param) {
+				internal_error (0, "unexpected parameter storage: %d",
+								spec.storage);
+			}
+			param->qual = pq_in;
+		}
+	}
+	param->attributes = spec.attributes;
+	return param;
+}
+
+static param_t *
+make_selector (const char *selector, const type_t *type, const char *name)
+{
+	param_t    *param = new_param (selector, type, name);
+	return param;
+}
+
+static param_t *
+make_qc_param (specifier_t spec, symbol_t *sym, rua_ctx_t *ctx)
+{
+	sym->type = nullptr;
+	spec.sym = sym;
+	return make_param (spec, ctx);
+}
+
+static param_t *
+make_qc_func_param (specifier_t spec, param_t *params, symbol_t *sym,
+					rua_ctx_t *ctx)
+{
+	spec = qc_function_spec (spec, params);
+	spec = spec_process (spec, ctx);
+	param_t   *param = new_param (0, spec.type, sym->name);
+	return param;
 }
 
 static int
@@ -275,10 +653,10 @@ is_anonymous_struct (specifier_t spec)
 	if (spec.sym) {
 		return 0;
 	}
-	if (!is_struct (spec.type)) {
+	if (!is_struct (spec.type) && !is_union (spec.type)) {
 		return 0;
 	}
-	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
+	if (!spec.type->symtab || spec.type->symtab->parent) {
 		return 0;
 	}
 	// struct and union type names always begin with "tag ". Untagged s/u
@@ -294,6 +672,111 @@ is_null_spec (specifier_t spec)
 {
 	static specifier_t null_spec;
 	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
+}
+
+static int
+use_type_name (specifier_t spec, rua_ctx_t *ctx)
+{
+	spec.sym = new_symbol (spec.sym->name);
+	spec.sym->type = spec.type;
+	spec.sym->sy_type = sy_name;
+	symbol_t   *s = symtab_addsymbol (current_symtab, spec.sym);
+	// a different symbol being returned means that this is a redefinition
+	// of that symbol in the same scope. However, typedefs to the same type
+	// are allowed.
+	if (s != spec.sym && spec.is_typedef && s->sy_type == sy_type
+		&& type_same (s->type, spec.type)) {
+		spec.sym = s;
+	}
+	return !!spec.sym->table;
+}
+
+static void __attribute__((used))
+check_specifiers (specifier_t spec, rua_ctx_t *ctx)
+{
+	if (!is_null_spec (spec)) {
+		if (!spec.type && !spec.sym) {
+			warning (0, "useless specifiers");
+		} else if (spec.type && !spec.sym) {
+			if (is_anonymous_struct (spec)){
+				warning (0, "unnamed struct/union that defines "
+						 "no instances");
+			} else if (!is_enum (spec.type)
+					   && !is_struct (spec.type) && !is_union (spec.type)) {
+				warning (0, "useless type name in empty declaration");
+			}
+		} else if (!spec.type && spec.sym) {
+			bug (0, "wha? %p %p", spec.type, spec.sym);
+		} else {
+			// a type name (id, typedef, etc) was used as a variable name.
+			// this is allowed in C, so long as it's in a different scope,
+			// or the types are the same
+			if (!use_type_name (spec, ctx)) {
+				error (0, "%s redeclared as different kind of symbol",
+					   spec.sym->name);
+			}
+		}
+	}
+}
+
+static const expr_t *
+decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
+{
+	auto sym = spec.sym;
+	spec.sym = nullptr;
+	auto decl = new_decl_expr (spec, current_symtab);
+	return append_decl (decl, sym, init);
+}
+
+static const expr_t *
+decl_expr_ns (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
+{
+	auto sym = spec.sym;
+	spec.sym = nullptr;
+	auto decl = new_decl_expr (spec, nullptr);
+	return append_decl (decl, sym, init);
+}
+
+static const expr_t *
+forward_decl_expr (symbol_t *tag, int sueh, const type_t *base_type)
+{
+	symbol_t *sym;
+
+	if (sueh == 's' || sueh == 'u') {
+		sym = find_struct (sueh, tag, nullptr);
+		sym->type = find_type (sym->type);
+	} else if (sueh == 'e') {
+		sym = find_enum (tag);
+	} else if (sueh == 'h') {
+		sym = find_handle (tag, base_type);
+		sym->type = find_type (sym->type);
+	} else {
+		internal_error (0, "invalude decl thing");
+	}
+	return new_symbol_expr (sym);
+}
+
+static symtab_t *
+pop_scope (symtab_t *current)
+{
+	auto parent = current->parent;
+	if (!parent) {
+		internal_error (0, "scope stack underflow");
+	}
+	if (parent->type == stab_bypass) {
+		if (!parent->parent) {
+			internal_error (0, "bypass scope with no parent");
+		}
+		// reconnect the current scope to the parent of the bypassed scope
+		current->parent = parent->parent;
+	}
+	return parent;
+}
+
+static const expr_t *
+number_as_symbol (const rua_tok_t *tok, rua_ctx_t *ctx)
+{
+	return new_name_expr (tok->text);
 }
 
 %}
@@ -315,265 +798,498 @@ program
 external_def_list
 	: /* empty */
 		{
-			current_symtab = pr.symtab;
+			if (!current_symtab) {
+				current_symtab = pr.symtab;
+			}
 		}
 	| external_def_list external_def
+		{
+			if (generic_scope && !generic_block) {
+				end_generic_scope ();
+			}
+		}
 	| external_def_list obj_def
-	| error END
-		{
-			yyerrok;
-			current_class = 0;
-			current_symtab = pr.symtab;
-			current_storage = sc_global;
-		}
-	| error ';'
-		{
-			yyerrok;
-			current_class = 0;
-			current_symtab = pr.symtab;
-			current_storage = sc_global;
-		}
-	| error '}'
-		{
-			yyerrok;
-			current_class = 0;
-			current_symtab = pr.symtab;
-			current_storage = sc_global;
-		}
 	;
 
 external_def
-	: optional_specifiers external_decl_list ';' { }
-	| optional_specifiers ';'
-		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
-		}
-	| optional_specifiers qc_func_params
-		{
-			type_t    **type;
-			type_t     *ret_type;
-			$<spec>$ = $1;		// copy spec bits and storage
-			// .float () foo; is a field holding a function variable rather
-			// than a function that returns a float field.
-			for (type = &$1.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type) {
-			}
-			ret_type = *type;
-			*type = 0;
-			*type = parse_params (0, $2);
-			$<spec>$.type = find_type (append_type ($1.type, ret_type));
-			if ($<spec>$.type->type != ev_field)
-				$<spec>$.params = $2;
-		}
-	  function_def_list
-		{
-			(void) ($<spec>3);
-		}
-	| optional_specifiers function_decl function_body
+	: fndef
+	| datadef
 	| storage_class '{' save_storage
 		{
 			current_storage = $1.storage;
+			generic_block = generic_scope;
 		}
 	  external_def_list '}' ';'
 		{
-			current_storage = $3.storage;
+			restore_storage ($3);
 		}
 	;
 
-save_storage
-	: /* emtpy */
+fndef
+	: attr_declspecs_ts declarator function_body
+	| attr_declspecs_ts declarator fnbinding function_body
+	| attr_declspecs_nots notype_declarator function_body
+	| attr_declspecs_nots notype_declarator fnbinding function_body
+	| defspecs notype_declarator function_body
+	;
+
+fnbinding
+	: ':' binding { $$ = attr_spec ($<spec>0, $2, ctx); }
+	;
+
+datadef
+	: defspecs notype_initdecls ';'				{ decl_process ($2, ctx); }
+	| attr_declspecs_nots notype_initdecls ';'	{ decl_process ($2, ctx); }
+	| attr_declspecs_ts initdecls ';'			{ decl_process ($2, ctx); }
+	| attr_declspecs_ts qc_func_params
 		{
-			$$.storage = current_storage;
+			$<spec>$ = qc_function_spec ($1, $2);
+		}
+	  qc_func_decls
+	| attr_declspecs ';'
+		{
+			auto spec = $1;
+			if (spec.block) {
+				auto block = spec.block;
+				declare_block_instance (spec, block, nullptr, ctx);
+			}
+		}
+	| attr_list ';'
+	| error ';'
+	| error '}'
+	| ';'
+	;
+
+attr_declspecs
+	: attr_list declspecs			{ $$ = attr_spec ($2, $1, ctx); }
+	| declspecs
+	;
+
+attr_declspecs_nots
+	: attr_list declspecs_nots		{ $$ = attr_spec ($2, $1, ctx); }
+	| declspecs_nots
+	;
+
+attr_declspecs_ts
+	: attr_list declspecs_ts		{ $$ = attr_spec ($2, $1, ctx); }
+	| declspecs_ts
+	;
+
+attr_declspecs_nosc_nots
+	: attr_list declspecs_nosc_nots	{ $$ = attr_spec ($2, $1, ctx); }
+	| declspecs_nosc_nots
+	;
+
+attr_declspecs_nosc_ts
+	: attr_list declspecs_nosc_ts	{ $$ = attr_spec ($2, $1, ctx); }
+	| declspecs_nosc_ts
+	;
+
+attr_list
+	: attr_list attr			{ $$ = expr_append_list ($1, &$2->list); }
+	| attr						{ $$ = $1; }
+	;
+
+attr
+	: index_expr				{ $$ = new_list_expr ($1); }
+	| vector_expr				{ $$ = $1; }
+	;
+
+qc_func_params
+	: '(' copy_spec qc_param_list ')'	{ $$ = check_params ($3); }
+	| '(' copy_spec typespec_reserved ')'
+		{
+			if (!is_void ($3.type)) {
+				PARSE_ERROR;
+			}
+			$$ = 0;
+		}
+	| '(' copy_spec ')'					{ $$ = 0; }
+	;
+
+qc_param_list
+	: qc_first_param
+	| qc_param_list ',' qc_param
+		{
+			$$ = append_params ($1, $3);
+		}
+	;
+// quakec function parameters cannot use a typedef as the return type
+// in the first parameter (really, they should't use any as standard quakec
+// doesn't support typedef, but that seems overly restrictive), however,
+// they can stil use a typedef first parameter. This is due to grammar issues
+qc_first_param
+	: typespec identifier
+		{
+			$$ = make_qc_param ($1, $2, ctx);
+		}
+	| typespec_reserved qc_func_params identifier
+		{
+			$$ = make_qc_func_param ($1, $2, $3, ctx);
+		}
+	| ELLIPSIS
+		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = make_ellipsis ();
 		}
 	;
 
-set_spec_storage
-	: /* emtpy */
+qc_param
+	: typespec identifier
 		{
-			$$ = $<spec>0;
-			$$.storage = current_storage;
+			$$ = make_qc_param ($1, $2, ctx);
+		}
+	| typespec qc_func_params identifier
+		{
+			$$ = make_qc_func_param ($1, $2, $3, ctx);
+		}
+	| ELLIPSIS
+		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = make_ellipsis ();
 		}
 	;
 
-function_body
-	: optional_state_expr
-		{
-			symbol_t   *sym = $<symbol>0;
+/*	This rule is used only to get an action before both qc_func_decl and
+	qc_func_decl_term so that the function spec can be inherited.
+*/
+qc_comma
+	: ',' { $$ = $<spec>0; }
+	;
 
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
+qc_func_decls
+	: qc_func_decl_list qc_comma qc_func_decl_term
+	| qc_func_decl_term
+	;
+
+qc_func_decl_term
+	: qc_nocode_func ';'
+	| qc_code_func ';'
+	| qc_code_func %prec LOW
+	;
+
+qc_func_decl_list
+	: qc_func_decl_list qc_comma qc_func_decl
+	| qc_func_decl
+	;
+
+qc_func_decl
+	: qc_nocode_func
+	| qc_code_func
+	;
+
+qc_nocode_func
+	: identifier '=' '#' expr
+		{
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
+			const expr_t *bi_val = expr_process ($4, ctx);
+
+			spec.is_overload |= ctx->language->always_overload;
+			spec.sym = function_symbol (spec, ctx);
+			build_builtin_function (spec, nullptr, bi_val);
 		}
+	| identifier '=' intrinsic
+		{
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
+			build_intrinsic_function (spec, $3, ctx);
+		}
+	| identifier '=' expr
+		{
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
+			const expr_t *expr = $3;
+
+			declare_symbol (spec, expr, current_symtab, local_expr, ctx);
+		}
+	| identifier
+		{
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
+			declare_symbol (spec, nullptr, current_symtab, local_expr, ctx);
+		}
+	;
+
+qc_code_func
+	: identifier '=' optional_state_expr
 	  save_storage
 		{
-			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
-										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
+			specifier_t spec = qc_set_symbol ($<spec>0, $1, ctx);
+			auto fs = (funcstate_t) {
+				.function = current_func,
+			};
+			spec.is_overload |= ctx->language->always_overload;
+			spec.sym = function_symbol (spec, ctx);
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
+			fs.spec = spec;
+			$<funcstate>$ = fs;
 		}
-	  compound_statement
+	  compound_statement_ns
 		{
-			build_code_function ($<symbol>2, $1, $5);
-			current_symtab = $<symtab>4;
-			current_storage = $3.storage;
-			current_func = 0;
-		}
-	| '=' '#' expr ';'
-		{
-			symbol_t   *sym = $<symbol>0;
-
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
-			build_builtin_function (sym, $3, 0, $<spec>-1.storage);
+			auto fs = $<funcstate>5;
+			build_code_function (fs.spec, $3, $6, ctx);
+			current_symtab = pop_scope (current_func->parameters);
+			current_func = fs.function;
+			restore_storage ($4);
 		}
 	;
 
-external_decl_list
-	: external_decl
-	| external_decl_list ',' { $<spec>$ = $<spec>0; }
-	  external_decl { (void) ($<spec>3); }
+declarator
+	: after_type_declarator
+	| notype_declarator
 	;
 
-external_decl
-	: var_decl
+// reuses typedef or class name
+after_type_declarator
+	: '(' copy_spec after_type_declarator ')' { $$ = $3; }
+	| after_type_declarator function_params
 		{
-			specifier_t spec = default_type ($<spec>0, $1);
-			$1->type = find_type (append_type ($1->type, spec.type));
-			if (spec.is_typedef) {
-				$1->sy_type = sy_type;
-				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
-				symtab_addsymbol (current_symtab, $1);
-			} else {
-				initialize_def ($1, 0, current_symtab->space, spec.storage);
-				if ($1->s.def)
-					$1->s.def->nosave |= spec.nosave;
-			}
+			$$ = function_spec ($1, $2);
 		}
-	| var_decl var_initializer
+	| after_type_declarator array_decl
 		{
-			specifier_t spec = default_type ($<spec>0, $1);
-
-			$1->type = find_type (append_type ($1->type, spec.type));
-			if (spec.is_typedef) {
-				error (0, "typedef %s is initialized", $1->name);
-				$1->sy_type = sy_type;
-				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
-				symtab_addsymbol (current_symtab, $1);
-			} else {
-				initialize_def ($1, $2, current_symtab->space, spec.storage);
-				if ($1->s.def)
-					$1->s.def->nosave |= spec.nosave;
-			}
+			$$ = array_spec ($1, $2);
 		}
-	| function_decl
+	| after_type_declarator vector_expr
 		{
-			specifier_t spec = default_type ($<spec>0, $1);
-			$1->type = find_type (append_type ($1->type, spec.type));
-			if (spec.is_typedef) {
-				$1->sy_type = sy_type;
-				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
-				symtab_addsymbol (current_symtab, $1);
-			} else {
-				$1 = function_symbol ($1, spec.is_overload, 1);
-			}
+			$$ = state_expr_spec ($1, $2, ctx);
+		}
+	| '*' ptr_spec after_type_declarator
+		{
+			$$ = pointer_spec ($2, $3);
+		}
+	| TYPE_NAME
+		{
+			$$ = name_spec ($<spec>0, $1.sym->name);
+		}
+	| OBJECT_NAME
+		{
+			$$ = name_spec ($<spec>0, $1.sym->name);
 		}
 	;
 
-storage_class
-	: EXTERN					{ $$ = make_spec (0, sc_extern, 0, 0); }
-	| STATIC					{ $$ = make_spec (0, sc_static, 0, 0); }
-	| SYSTEM					{ $$ = make_spec (0, sc_system, 0, 0); }
-	| TYPEDEF					{ $$ = make_spec (0, sc_global, 1, 0); }
-	| OVERLOAD					{ $$ = make_spec (0, current_storage, 0, 1); }
-	| NOSAVE
+copy_spec
+	: /* empty */
 		{
-			$$ = make_spec (0, current_storage, 0, 0);
-			$$.nosave = 1;
+			$<spec>$ = $<spec>-1;
 		}
 	;
 
-optional_specifiers
-	: specifiers
+ptr_spec
+	: copy_spec	// for when no qualifiers are present
+	;
+
+// does not reuse a typedef or class name
+notype_declarator
+	: '(' copy_spec notype_declarator ')' { $$ = $3; }
+	| notype_declarator function_params
 		{
-			$$ = $1;
-			if (!$$.storage)
-				$$.storage = current_storage;
+			$$ = function_spec ($1, $2);
 		}
-	| /* empty */
+	| notype_declarator array_decl
 		{
-			$$ = make_spec (0, current_storage, 0, 0);
+			$$ = array_spec ($1, $2);
+		}
+	| notype_declarator vector_expr
+		{
+			$$ = state_expr_spec ($1, $2, ctx);
+		}
+	| '*' ptr_spec notype_declarator
+		{
+			$$ = pointer_spec ($2, $3);
+		}
+	| NAME
+		{
+			auto spec = $<spec>0;
+			spec.sym = new_symbol ($1->name);
+			$$ = spec;
+		}
+	| NOT
+		{
+			$$ = $<spec>0;
+			$$.sym = new_symbol ("not");
 		}
 	;
 
-specifiers
-	: type_specifier_or_storage_class
-	| specifiers type_specifier_or_storage_class
+initdecls
+	: initdecl								{ $$ = new_list_expr ($1); }
+	| initdecls ',' { $<spec>$ = $<spec>0; } initdecl
+		{
+			$$ = expr_append_expr ($1, $4);
+		}
+	;
+
+initdecl
+	: declarator '=' var_initializer	{ $$ = decl_expr ($1, $3, ctx); }
+	| declarator						{ $$ = decl_expr ($1, nullptr, ctx); }
+	;
+
+notype_initdecls
+	: notype_initdecl						{ $$ = new_list_expr ($1); }
+	| notype_initdecls ',' { $<spec>$ = $<spec>0; } notype_initdecl
+		{
+			$$ = expr_append_expr ($1, $4);
+		}
+	;
+
+notype_initdecl
+	: notype_declarator '=' var_initializer	{ $$ = decl_expr ($1, $3, ctx); }
+	| notype_declarator					{ $$ = decl_expr ($1, nullptr, ctx); }
+	;
+
+/* various lists of type specifiers, storage class etc */
+declspecs_ts
+	: declspecs_nosc_ts
+	| declspecs_sc_ts
+	;
+
+declspecs_nots
+	: declspecs_nosc_nots
+	| declspecs_sc_nots
+	;
+
+declspecs_nosc
+	: declspecs_nosc_nots
+	| declspecs_nosc_ts
+	;
+
+declspecs
+	: declspecs_nosc_nots
+	| declspecs_nosc_ts
+	| declspecs_sc_nots
+	| declspecs_sc_ts
+	;
+
+declspecs_nosc_nots
+	: TYPE_QUAL
+	| declspecs_nosc_nots TYPE_QUAL
 		{
 			$$ = spec_merge ($1, $2);
 		}
 	;
 
-type
-	: type_specifier
-	| type type_specifier
+declspecs_nosc_ts
+	: typespec %prec LOW
+	| declspecs_nosc_ts TYPE_QUAL
 		{
-			// deal with eg "int id"
-			$1.sym = $2.sym;
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_nosc_ts typespec_reserved
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_nosc_nots typespec
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	;
 
-			if (!$1.sym) {
-				error (0, "two or more data types in declaration specifiers");
-			}
+declspecs_sc_nots
+	: storage_class
+	| declspecs_sc_nots TYPE_QUAL
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_nosc_nots storage_class
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_sc_nots storage_class
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	;
+
+declspecs_sc_ts
+	: declspecs_sc_ts TYPE_QUAL
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_sc_ts typespec_reserved
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_sc_nots typespec
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_nosc_ts storage_class
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	| declspecs_sc_ts storage_class
+		{
+			$$ = spec_merge ($1, $2);
+		}
+	;
+
+typespec
+	: typespec_reserved
+		{
 			$$ = $1;
+			if (!$$.storage) {
+				$$.storage = current_storage;
+			}
 		}
-	;
-
-type_specifier_or_storage_class
-	: type_specifier
-	| storage_class
-	;
-
-type_specifier
-	: TYPE
+	| typespec_nonreserved
 		{
-			$$ = make_spec ($1, 0, 0, 0);
+			$$ = $1;
+			if (!$$.storage) {
+				$$.storage = current_storage;
+			}
 		}
+	;
+
+typespec_reserved
+	: TYPE_SPEC
+	| type_function
+		{
+			if (generic_scope) {
+				$$ = (specifier_t) {
+					.type_expr = $1,
+				};
+			} else {
+				auto type = resolve_type ($1, ctx);
+				$$ = type_spec (type);
+			}
+		}
+	| algebra_specifier %prec LOW
+	| algebra_specifier '.' attribute
+		{
+			$$ = type_spec (algebra_subtype ($1.type, $3));
+		}
+	| image_specifier
+	| sampler_specifier
 	| enum_specifier
 	| struct_specifier
-	| TYPE_NAME
+	// NOTE: fields don't parse the way they should. This is not a problem
+	// for basic types, but functions need special treatment
+	| '.' typespec_reserved
 		{
-			$$ = make_spec ($1->type, 0, 0, 0);
-			$$.sym = $1;
+			$$ = field_spec ($2);
 		}
-	| OBJECT protocolrefs
+	;
+
+typespec_nonreserved
+	: TYPE_NAME %prec LOW
+	| TYPE_NAME[spec] '.' attribute
+		{
+			auto te = type_property ($spec, $attribute);
+			$$ = (specifier_t) { .type_expr = te };
+		}
+	| OBJECT_NAME protocolrefs
 		{
 			if ($2) {
-				type_t      type = *type_id.t.fldptr.type;
+				type_t      type = *type_id.fldptr.type;
 				type.next = 0;
 				type.protos = $2;
-				$$ = make_spec (pointer_type (find_type (&type)), 0, 0, 0);
+				$$ = type_spec (pointer_type (find_type (&type)));
 			} else {
-				$$ = make_spec (&type_id, 0, 0, 0);
+				$$ = type_spec (&type_id);
 			}
-			$$.sym = $1;
 		}
 	| CLASS_NAME protocolrefs
 		{
@@ -581,53 +1297,290 @@ type_specifier
 				type_t      type = *$1->type;
 				type.next = 0;
 				type.protos = $2;
-				$$ = make_spec (find_type (&type), 0, 0, 0);
+				$$ = type_spec (find_type (&type));
 			} else {
-				$$ = make_spec ($1->type, 0, 0, 0);
+				$$ = type_spec ($1->type);
 			}
-			$$.sym = $1;
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment
-	| '.' type_specifier
+	| '.' typespec_nonreserved
 		{
-			// avoid find_type()
-			$$ = make_spec (field_type (0), 0, 0, 0);
-			$$.type = append_type ($$.type, $2.type);
+			$$ = field_spec ($2);
 		}
 	;
 
-optional_tag
-	: tag
-	| /* empty */				{ $$ = 0; }
+defspecs
+	: /* empty */				{ $$ = (specifier_t) {}; }
+	| attr_list					{ $$ = attr_spec ((specifier_t) {}, $1, ctx); }
+	;
+
+save_storage
+	: /* emtpy */
+		{
+			$$.storage = current_storage;
+			$$.is_generic = generic_block;
+		}
+	;
+
+function_body
+	: save_storage[storage]
+		{
+			auto spec = $<spec>0;
+			spec.is_overload |= ctx->language->always_overload;
+			spec.sym = function_symbol (spec, ctx);
+			$<funcstate>$ = (funcstate_t) {
+				.function = current_func,
+				.spec = spec,
+			};
+			current_func = begin_function (spec, nullptr, current_symtab, ctx);
+			current_symtab = current_func->locals;
+			current_storage = sc_local;
+		}
+	  compound_statement_ns[body]
+		{
+			auto funcstate = $<funcstate>2;
+			auto spec = funcstate.spec;;
+			auto state = spec.sym->metafunc->state_expr;
+			build_code_function (spec, state, $body, ctx);
+			current_symtab = pop_scope (current_func->parameters);
+			current_func = funcstate.function;
+			restore_storage ($storage);
+		}
+	| '=' '#' expr ';'
+		{
+			specifier_t spec = $<spec>0;
+			const expr_t *bi_val = expr_process ($3, ctx);
+
+			spec.is_overload |= ctx->language->always_overload;
+			spec.sym = function_symbol (spec, ctx);
+			build_builtin_function (spec, nullptr, bi_val);
+		}
+	| '=' intrinsic
+		{
+			specifier_t spec = $<spec>0;
+			build_intrinsic_function (spec, $2, ctx);
+		}
+	;
+
+intrinsic
+	: INTRINSIC '(' expr_list ')' %prec LOW { $$ = new_intrinsic_expr ($3); }
+	| INTRINSIC '(' expr_list ')' vector_expr
+		{
+			auto e = new_intrinsic_expr ($3);
+			e->intrinsic.extra = $5;
+			$$ = e;
+		}
+	;
+
+storage_class
+	: EXTERN					{ $$ = storage_spec (sc_extern); }
+	| STATIC					{ $$ = storage_spec (sc_static); }
+	| SYSTEM					{ $$ = storage_spec (sc_system); }
+	| TYPEDEF					{ $$ = typedef_spec (); }
+	| OVERLOAD					{ $$ = overload_spec (); }
+	| GENERIC '('				{ $<spec>$ = generic_spec (ctx); }
+	  generic_param_list ')'
+		{
+			$$ = $<spec>3;
+
+			if (generic_scope) {
+				error (0, "multiple @generic in declaration");
+				$$.multi_generic = true;
+			} else {
+				generic_scope = true;
+			}
+			generic_symtab->type = stab_bypass;
+			generic_symtab->parent = current_symtab;
+			current_symtab = generic_symtab;
+		}
+	| ATTRIBUTE '(' attribute_list ')'
+		{
+			$$ = (specifier_t) { .attributes = $3 };
+		}
+	;
+
+generic_param_list
+	: generic_param
+		{
+			auto spec = $<spec>0;
+			symtab_addsymbol (spec.symtab, $1);
+		}
+	| generic_param_list ',' generic_param
+		{
+			auto spec = $<spec>0;
+			symtab_addsymbol (spec.symtab, $3);
+		}
+	;
+
+generic_param
+	: NAME						{ $$ = type_parameter ($1, nullptr); }
+	| NAME '=' generic_type		{ $$ = type_parameter ($1, $3); }
+	;
+
+generic_type
+	: type_function				{ $$ = $1; }
+	| '[' type_list ']'			{ $$ = $2; }
+	;
+
+type_function
+	: type_func '(' type_param_list ')'	{ $$ = new_type_function ($1, $3); }
+	;
+
+type_func
+	: AT_FIELD					{ $$ = QC_AT_FIELD; }
+	| AT_FUNCTION				{ $$ = QC_AT_FUNCTION; }
+	| AT_POINTER				{ $$ = QC_AT_POINTER; }
+	| REFERENCE 				{ $$ = QC_REFERENCE; }
+	| AT_ARRAY					{ $$ = QC_AT_ARRAY; }
+	| AT_BASE					{ $$ = QC_AT_BASE; }
+	| AT_VECTOR					{ $$ = QC_AT_VECTOR; }
+	| AT_MATRIX					{ $$ = QC_AT_MATRIX; }
+	| AT_INT					{ $$ = QC_AT_INT; }
+	| AT_UINT					{ $$ = QC_AT_UINT; }
+	| AT_BOOL					{ $$ = QC_AT_BOOL; }
+	| AT_FLOAT					{ $$ = QC_AT_FLOAT; }
+	;
+
+type_op
+	: AT_WIDTH					{ $$ = QC_AT_WIDTH; }
+	| AT_ROWS					{ $$ = QC_AT_ROWS; }
+	| AT_COLS					{ $$ = QC_AT_COLS; }
+	;
+
+type_param_list
+	: type_param						{ $$ = new_list_expr ($1); }
+	| type_param_list ',' type_param	{ $$ = expr_append_expr ($1, $3); }
+	;
+
+type_param
+	: type_function
+	| type_ref
+	| expr
+	;
+
+type_list
+	: type_ref							{ $$ = new_list_expr ($1); }
+	| type_list ',' type_ref			{ $$ = expr_append_expr ($1, $3); }
+	;
+
+type_ref
+	: type_ref_spec
+		{
+			specifier_t spec = default_type ($1, 0);
+			$$ = new_type_expr (spec.type);
+		}
+	| STRUCT tag				{ $$ = forward_decl_expr ($2, $1, nullptr); }
+	| ENUM tag					{ $$ = forward_decl_expr ($2, 'e', nullptr); }
+	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
+	| image_specifier			{ $$ = new_type_expr ($1.type); }
+	| sampler_specifier			{ $$ = new_type_expr ($1.type); }
+	| CLASS_NAME				{ $$ = new_type_expr ($1->type); }
+	| TYPE_NAME
+		{
+			if ($1.type_expr) {
+				$$ = $1.type_expr;
+			} else {
+				$$ = new_type_expr ($1.type);
+			}
+		}
+	| TYPE_NAME[spec] '.' attribute
+		{
+			$$ = type_property ($spec, $attribute);
+		}
+	;
+
+type_ref_spec
+	: TYPE_SPEC
+	| type_ref_spec TYPE_SPEC			{ $$ = spec_merge ($1, $2); }
+	;
+
+attribute_list
+	: attribute
+	| attribute_list ',' attribute
+		{
+			if ($3) {
+				$3->next = $1;
+				$$ = $3;
+			} else {
+				$$ = $1;
+			}
+		}
+	;
+
+attribute
+	: NAME %prec LOW			{ $$ = new_attribute ($1->name, 0, ctx); }
+	| NAME '(' expr_list ')'	{ $$ = new_attribute ($1->name, $3, ctx); }
+	;
+
+attrfunc
+	: NAME %prec LOW			{ $$ = new_attrfunc ($1->name, 0); }
+	| NAME '(' expr_list ')'	{ $$ = new_attrfunc ($1->name, $3); }
 	;
 
 tag : NAME ;
 
-enum_specifier
-	: ENUM tag optional_enum_list
+algebra_specifier
+	: ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
 		{
-			$$ = make_spec ($3->type, 0, 0, 0);
+			auto spec = type_spec (algebra_type ($3.type, $5));
+			$$ = spec;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto spec = type_spec (algebra_type ($3.type, 0));
+			$$ = spec;
+		}
+	;
+
+image_specifier
+	: IMAGE '(' TYPE_SPEC[spec] ','
+		{
+			// allow 2D to be parsed as a symbol instead of 2.0 (double/decimal)
+			$<pointer>$ = ctx->language->parse_number;
+			ctx->language->parse_number = number_as_symbol;
+		}[parse_number]
+	  expr_list ')'
+		{
+			auto spec = default_type ($spec, 0);
+			spec = type_spec (image_type (spec.type, $expr_list));
+			$$ = spec;
+			ctx->language->parse_number = $<pointer>parse_number;
+		}
+	;
+
+sampler_specifier
+	: SAMPLER '(' typespec[spec] ')'
+		{
+			auto spec = default_type ($spec, 0);
+			spec = type_spec (sampler_type (spec.type));
+			$$ = spec;
+		}
+	;
+enum_specifier
+	: ENUM tag enum_list
+		{
+			$$ = type_spec ($3->type);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
 		}
+	| ENUM tag %prec LOW
+		{
+			auto tag = find_enum ($tag);
+			$$ = type_spec (tag->type);
+		}
 	| ENUM enum_list
 		{
-			$$ = make_spec ($2->type, 0, 0, 0);
+			$$ = type_spec ($2->type);
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
 		}
 	;
 
-optional_enum_list
-	: enum_list
-	| /* empty */				{ $$ = find_enum ($<symbol>0); }
-	;
-
 enum_list
 	: '{' enum_init enumerator_list optional_comma '}'
 		{
-			current_symtab = current_symtab->parent;
+			current_symtab = pop_scope (current_symtab);
 			$$ = finish_enum ($3);
 		}
 	;
@@ -637,7 +1590,7 @@ enum_init
 		{
 			$$ = find_enum ($<symbol>-1);
 			start_enum ($$);
-			current_symtab = $$->type->t.symtab;
+			current_symtab = $$->type->symtab;
 		}
 	;
 
@@ -647,533 +1600,450 @@ enumerator_list
 	  enumerator
 		{
 			$$ = $<symbol>0;
-			(void) ($<symbol>3);
 		}
 	;
 
 enumerator
-	: identifier				{ add_enum ($<symbol>0, $1, 0); }
-	| identifier '=' expr		{ add_enum ($<symbol>0, $1, $3); }
+	: identifier
+		{
+			add_enum ($<symbol>0, $identifier, nullptr);
+		}
+	| identifier '=' expr
+		{
+			$expr = expr_process ($expr, ctx);
+			add_enum ($<symbol>0, $identifier, $expr);
+		}
 	;
 
 struct_specifier
-	: STRUCT optional_tag '{'
+	: STRUCT tag struct_list { $$ = $3; }
+	| STRUCT {$<symbol>$ = 0;} struct_list { $$ = $3; }
+	| STRUCT tag %prec LOW
 		{
 			symbol_t   *sym;
+
 			sym = find_struct ($1, $2, 0);
+			sym->type = find_type (sym->type);
+			$$ = type_spec (sym->type);
 			if (!sym->table) {
-				symtab_addsymbol (current_symtab, sym);
-			} else {
-				if (!sym->type) {
-					internal_error (0, "broken structure symbol?");
+				symtab_t   *tab = current_symtab;
+				while (tab->parent && tab->type == stab_struct) {
+					tab = tab->parent;
 				}
-				if (sym->type->meta == ty_enum
-					|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
-					error (0, "%s %s redefined",
-						   $1 == 's' ? "struct" : "union", $2->name);
-					$1 = 0;
-				} else if (sym->type->meta != ty_struct) {
-					internal_error (0, "%s is not a struct or union",
-									$2->name);
-				}
+				symtab_addsymbol (tab, sym);
 			}
-			current_symtab = new_symtab (current_symtab, stab_local);
 		}
-	  struct_defs '}'
+	| BLOCK tag struct_list { $$ = $3; }
+	| handle tag
+		{
+			specifier_t spec = $1;
+			symbol_t   *sym = find_handle ($2, spec.type);
+			sym->type = find_type (sym->type);
+			$$ = type_spec (sym->type);
+			if (!sym->table) {
+				symtab_t   *tab = current_symtab;
+				while (tab->parent && tab->type == stab_struct) {
+					tab = tab->parent;
+				}
+				symtab_addsymbol (tab, sym);
+			}
+		}
+	;
+
+handle
+	: HANDLE					{ $$ = type_spec (&type_int); }
+	| HANDLE '(' typename ')'	{ $$ = $3; }
+	;
+
+struct_list
+	: '{'
+		{
+			int         op = $<op>-1;
+			if (op == 'b' && current_symtab != pr.symtab) {
+				error (0, "blocks must be declared globally");
+				op = 's';
+			} else if (current_symtab->type == stab_block) {
+				error (0, "cannot nest struct declarations in blocks");
+			}
+			symbol_t   *sym = $<symbol>0;
+			if (op == 'b') {
+				auto block = create_block (sym);
+				current_symtab = block->members;
+			} else {
+				current_symtab = start_struct (&op, sym, current_symtab);
+			}
+			$<op>1 = op;
+			$<symbol>$ = sym;
+		}
+	  struct_defs[defs] '}'
 		{
 			symbol_t   *sym;
 			symtab_t   *symtab = current_symtab;
-			current_symtab = symtab->parent;
+			current_symtab = pop_scope (symtab);
 
-			if ($1) {
-				sym = build_struct ($1, $2, symtab, 0);
-				$$ = make_spec (sym->type, 0, 0, 0);
+			if ($<op>1 == 'b') {
+				auto block = (iface_block_t *) symtab->data;
+				specifier_t spec = { .block = block };
+				block->member_decls = $defs;
+				$$ = spec;
+			} else if ($<op>1) {
+				struct_process (symtab, $defs, ctx);
+				sym = $<symbol>2;
+				sym = build_struct ($<op>1, sym, symtab, 0, 0);
+				$$ = type_spec (sym->type);
 				if (!sym->table)
 					symtab_addsymbol (current_symtab, sym);
 			}
 		}
-	| STRUCT tag
-		{
-			symbol_t   *sym;
-
-			sym = find_struct ($1, $2, 0);
-			$$ = make_spec (sym->type, 0, 0, 0);
-			if (!sym->table)
-				symtab_addsymbol (current_symtab, sym);
-		}
 	;
 
 struct_defs
-	: struct_def_list ';'
+	: component_decl_list
 	| DEFS '(' identifier ')'
 		{
 			$3 = check_undefined ($3);
 			if (!$3->type || !is_class ($3->type)) {
 				error (0, "`%s' is not a class", $3->name);
 			} else {
+				internal_error (0, "FIXME");
 				// replace the struct symbol table with one built from
 				// the class ivars and the current struct fields. ivars
 				// will replace any fields of the same name.
-				current_symtab = class_to_struct ($3->type->t.class,
+				current_symtab = class_to_struct ($3->type->class,
 												  current_symtab);
 			}
 		}
 	;
 
-struct_def_list
-	: struct_def
-	| struct_def_list ';' struct_def
+component_decl_list
+	: component_decl_list2[list]	{ $$ = $list; }
+	| component_decl_list2[list] component_decl[decl]
+		{
+			warning (0, "no semicolon at end of struct or union");
+			$$ = expr_append_expr ($list, $decl);
+		}
 	;
 
-struct_def
-	: type struct_decl_list
-	| type
+component_decl_list2
+	: /* empty */
 		{
-			if ($1.sym && $1.sym->type != $1.type) {
-				// a type name (id, typedef, etc) was used as a field name.
-				// this is allowed in C
-				$1.sym = new_symbol ($1.sym->name);
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
+			$$ = new_list_expr (nullptr);
+		}
+	| component_decl_list2[list] component_decl[decl] ';'
+		{
+			if ($decl) {
+				if ($decl->type != ex_list) {
+					internal_error ($decl, "not a list");
 				}
-			} else if (is_anonymous_struct ($1)) {
-				// anonymous struct/union
+				$$ = expr_append_list ($list, &$decl->list);
+			}
+		}
+	| component_decl_list2[list] visibility_spec[vis]
+		{
+			$$ = expr_append_expr ($list, $vis);
+		}
+	| component_decl_list2[list] ';'
+		{
+			$$ = $list;
+		}
+	| error ';'
+		{
+			$$ = new_list_expr (nullptr);
+		}
+	;
+
+visibility_spec
+	: PRIVATE					{ $$ = new_visibility_expr (vis_private); }
+	| PROTECTED					{ $$ = new_visibility_expr (vis_protected); }
+	| PUBLIC					{ $$ = new_visibility_expr (vis_public); }
+	;
+
+component_decl
+	: attr_declspecs_nosc_ts[spec] components[comp]	{ $$ = $comp; }
+	| attr_declspecs_nosc_ts[spec]
+		{
+			if (is_anonymous_struct ($spec)) {
 				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (0, ".anonymous.%s",
-										 $1.type->name + 4));
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				$1.sym->visibility = vis_anonymous;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
-				}
-			} else {
-				// bare type
-				warning (0, "declaration does not declare anything");
-			}
-			$$ = $1;
-		}
-	;
-
-struct_decl_list
-	: struct_decl_list ',' { $<spec>$ = $<spec>0; }
-	  struct_decl { (void) ($<spec>3); }
-	| struct_decl
-	;
-
-struct_decl
-	: function_decl
-		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
-			$1->type = find_type (append_type ($1->type, $<spec>0.type));
-			$1->sy_type = sy_var;
-			$1->visibility = current_visibility;
-			symtab_addsymbol (current_symtab, $1);
-			if (!$1->table) {
-				error (0, "duplicate field `%s'", $1->name);
+				auto name = $spec.type->name + 4;
+				auto sym = new_symbol (va (".anonymous.%s", name));
+				sym->visibility = vis_anonymous;
+				auto decl = new_decl_expr ($spec, nullptr);
+				append_decl (decl, sym, nullptr);
+				$$ = new_list_expr (decl);
 			}
 		}
-	| var_decl
+	| attr_declspecs_nosc_nots[spec] components_notype[comp]	{ $$ = $comp; }
+	| attr_declspecs_nosc_nots[spec]
 		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
-			$1->type = find_type (append_type ($1->type, $<spec>0.type));
-			$1->sy_type = sy_var;
-			$1->visibility = current_visibility;
-			symtab_addsymbol (current_symtab, $1);
-			if (!$1->table) {
-				error (0, "duplicate field `%s'", $1->name);
-			}
-		}
-	| var_decl ':' expr		%prec COMMA		{}
-	| ':' expr				%prec COMMA		{}
-	;
-
-new_name
-	: NAME					%prec COMMA
-		{
-			$$ = $1;
-			// due to the way declarations work, we need a new symbol at all
-			// times. redelcarations will be checked later
-			if ($$->table)
-				$$ = new_symbol ($1->name);
+			warning (0, "useless type qualifier in empty declaration");
+			$$ = nullptr;
 		}
 	;
 
-var_decl
-	: new_name
+components
+	: component_declarator[decl]		{ $$ = new_list_expr ($decl); }
+	| components[list] ',' { $<spec>$ = $<spec>0; } component_declarator[decl]
 		{
-			$$ = $1;
-			$$->type = 0;
+			$$ = expr_append_expr ($list, $decl);
 		}
-	| var_decl function_params
-		{
-			$$->type = append_type ($$->type, parse_params (0, $2));
-		}
-	| var_decl array_decl
-		{
-			$$->type = append_type ($$->type, array_type (0, $2));
-		}
-	| '*' var_decl	%prec UNARY
-		{
-			$$ = $2;
-			$$->type = append_type ($$->type, pointer_type (0));
-		}
-	| '(' var_decl ')'						{ $$ = $2; }
 	;
 
-function_decl
-	: '*' function_decl
+component_declarator
+	: declarator[spec]				{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
+	| declarator[spec] ':' binding	{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
+	| declarator ':' expr			{ $$ = nullptr; }
+	| ':' expr						{ $$ = nullptr; }
+	| ':' binding					{ error (0, "nothing to bind here"); }
+	;
+
+components_notype
+	: component_notype_declarator[decl]	{ $$ = new_list_expr ($decl); }
+	| components_notype[list] ',' { $<spec>$ = $<spec>0; }
+	  component_notype_declarator[decl]
 		{
-			$$ = $2;
-			$$->type = append_type ($$->type, pointer_type (0));
+			$$ = expr_append_expr ($list, $decl);
 		}
-	| function_decl array_decl
+	;
+
+component_notype_declarator
+	: notype_declarator[spec]
 		{
-			$$ = $1;
-			$$->type = append_type ($$->type, array_type (0, $2));
+			$$ = decl_expr_ns ($spec, nullptr, ctx);
 		}
-	| '(' function_decl ')'					{ $$ = $2; }
-	| function_decl function_params
+	| notype_declarator[spec] ':' binding
 		{
-			$$ = $1;
-			$$->params = $2;
-			$$->type = append_type ($$->type, parse_params (0, $2));
+			$$ = decl_expr_ns ($spec, nullptr, ctx);
 		}
-	| NAME function_params
-		{
-			$$ = $1;
-			$$->params = $2;
-			$$->type = parse_params (0, $2);
-		}
+	| notype_declarator ':' expr	{ $$ = nullptr; }
+	| ':' expr						{ $$ = nullptr; }
+	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 
 function_params
-	: '(' ')'								{ $$ = 0; }
-	| '(' ps var_list ')'					{ $$ = check_params ($3); }
-	;
-
-qc_func_params
-	: '(' ')'								{ $$ = 0; }
-	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
-	| '(' ps TYPE ')'
-		{
-			if (!is_void ($3))
-				PARSE_ERROR;
-			$$ = 0;
-		}
-	;
-
-ps : ;
-
-var_list
-	: param_declaration
-	| var_list ',' param_declaration
-		{
-			param_t    *p;
-
-			for (p = $1; p->next; p = p->next)
-				;
-			p->next = $3;
-			$$ = $1;
-		}
-	;
-
-qc_var_list
-	: qc_param_decl
-	| qc_var_list ',' qc_param_decl
-		{
-			param_t    *p;
-
-			for (p = $1; p->next; p = p->next)
-				;
-			p->next = $3;
-			$$ = $1;
-		}
-	;
-
-param_declaration
-	: type var_decl
-		{
-			if (!$1.type)
-				$1.type = type_default;
-			$2->type = find_type (append_type ($2->type, $1.type));
-			$$ = new_param (0, $2->type, $2->name);
-		}
-	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
-	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
-	;
-
-abstract_decl
-	: type abs_decl
-		{
-			$$ = $2;
-			if (!$1.type)
-				$1.type = type_default;
-			$$->type = find_type (append_type ($$->type, $1.type));
-		}
-	| error		{ $$ = new_symbol (""); }
-	;
-
-qc_param_decl
-	: type new_name
-		{
-			$2->type = find_type ($1.type);
-			$$ = new_param (0, $2->type, $2->name);
-		}
-	| type qc_func_params new_name
-		{
-			type_t    **type;
-			// .float () foo; is a field holding a function variable rather
-			// than a function that returns a float field.
-			for (type = &$1.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type)
-				 ;
-			*type = parse_params (*type, $2);
-			$3->type = find_type ($1.type);
-			if ($3->type->type != ev_field)
-				$3->params = $2;
-			$$ = new_param (0, $3->type, $3->name);
-		}
-	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
-	;
-
-abs_decl
-	: /* empty */			{ $$ = new_symbol (""); }
-	| '(' abs_decl ')' function_params
-		{
-			$$ = $2;
-			$$->type = append_type ($$->type, parse_params (0, $4));
-		}
-	| '*' abs_decl
-		{
-			$$ = $2;
-			$$->type = append_type ($$->type, pointer_type (0));
-		}
-	| abs_decl array_decl
-		{
-			$$ = $1;
-			$$->type = append_type ($$->type, array_type (0, $2));
-		}
-	| '(' abs_decl ')'
-		{
-			$$ = $2;
-		}
-	;
-
-array_decl
-	: '[' expr ']'
-		{
-			if (!is_integer_val ($2) || expr_integer ($2) < 1) {
-				error (0, "invalid array size");
-				$$ = 0;
-			} else {
-				$$ = expr_integer ($2);
-			}
-		}
-	| '[' ']'					{ $$ = 0; }
-	;
-
-local_specifiers
-	: LOCAL specifiers			{  $$ = $2; }
-	| specifiers				{  $$ = $1; }
+	: '(' copy_spec param_list ')'			{ $$ = check_params ($3); }
 	;
 
 param_list
-	: param						{ $$ = $1; }
-	| param_list ',' { $<param>$ = $<param>1; } param
+	: /* empty */							{ $$ =  0; }
+	| parameter_list
+	| parameter_list ',' ELLIPSIS
 		{
-			$$ = $4;
-			(void) ($<symbol>3);
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = param_append_identifiers ($1, 0, 0);
+		}
+	| ELLIPSIS
+		{
+			if (options.code.no_vararg) {
+				PARSE_ERROR;
+			}
+			$$ = make_ellipsis ();
 		}
 	;
 
-param
-	: type identifier
+parameter_list
+	: parameter
+	| parameter_list ',' parameter
 		{
-			$2 = check_redefined ($2);
-			$$ = param_append_identifiers ($<param>0, $2, $1.type);
+			$$ = append_params ($1, $3);
 		}
 	;
 
-local_decl_list
-	: decl_list
-	| qc_func_params
+parameter
+	: declspecs_ts param_declarator opt_binding
 		{
-			type_t    **type;
-			specifier_t spec = $<spec>0;	// copy spec bits and storage
-			// .float () foo; is a field holding a function variable rather
-			// than a function that returns a float field.
-			for (type = &spec.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type)
-				 ;
-			*type = parse_params (*type, $1);
-			spec.type = find_type (spec.type);
-			$<spec>$ = spec;
+			auto spec = attr_spec ($2, $3, ctx);
+			$$ = make_param (spec, ctx);
 		}
-	  func_def_list
+	| declspecs_ts notype_declarator opt_binding
 		{
-			(void) ($<spec>2);
+			auto spec = attr_spec ($2, $3, ctx);
+			$$ = make_param (spec, ctx);
+		}
+	| declspecs_ts absdecl
+		{
+			auto spec = $2;
+			$$ = make_param (spec, ctx);
+		}
+	| declspecs_nosc_nots notype_declarator opt_binding
+		{
+			auto spec = attr_spec ($2, $3, ctx);
+			$$ = make_param (spec, ctx);
+		}
+	| declspecs_nosc_nots absdecl
+		{
+			auto spec = $2;
+			$$ = make_param (spec, ctx);
 		}
 	;
 
-decl_list
-	: decl_list ',' { $<spec>$ = $<spec>0; } decl { (void) ($<spec>3); }
-	| decl
+opt_binding
+	: /* empty */						{ $$ = nullptr; }
+	| ':' binding						{ $$ = $2; }
+	;
+
+binding
+	: '@' '(' expr ')'
+		{
+			auto attr = new_name_expr (".binding");
+			$$ = new_call_expr (attr, $3, nullptr);
+		}
+	;
+
+
+absdecl
+	: /* empty */
+		{
+			$$ = $<spec>0;
+		}
+	| absdecl1
+	;
+
+absdecl1
+	: direct_absdecl
+	| '*' ptr_spec absdecl
+		{
+			$$ = pointer_spec ($2, $3);
+		}
+	;
+
+direct_absdecl
+	: '(' copy_spec absdecl1 ')' { $$ = $3; }
+	| direct_absdecl function_params
+		{
+			$$ = function_spec ($1, $2);
+		}
+	| direct_absdecl array_decl
+		{
+			$$ = array_spec ($1, $2);
+		}
+	| function_params
+		{
+			$$ = function_spec ($<spec>0, $1);
+		}
+	| array_decl
+		{
+			$$ = array_spec ($<spec>0, $1);
+		}
+	;
+
+param_declarator
+	: param_declarator_starttypename
+	| param_declarator_nostarttypename
+	;
+
+param_declarator_starttypename
+	: param_declarator_starttypename function_params
+		{ $$ = function_spec ($1, $2); }
+	| param_declarator_starttypename array_decl
+		{
+			//$$ = array_spec ($1, $2);
+			//FIXME pointer semantics with bounds check if array size is
+			//specified
+			$$ = pointer_spec ($<spec>0, $1);
+		}
+	| TYPE_NAME
+		{ $$ = name_spec ($<spec>0, $1.sym->name); }
+	| OBJECT_NAME
+		{ $$ = name_spec ($<spec>0, $1.sym->name); }
+	;
+
+param_declarator_nostarttypename
+	: param_declarator_nostarttypename function_params
+		{ $$ = function_spec ($1, $2); }
+	| param_declarator_nostarttypename array_decl
+		{ $$ = array_spec ($1, $2); }
+	| '*' ptr_spec param_declarator_starttypename
+		{ $$ = pointer_spec ($2, $3); }
+	| '*' ptr_spec param_declarator_nostarttypename
+		{ $$ = pointer_spec ($2, $3); }
+	| '(' copy_spec param_declarator_nostarttypename ')'	{ $$ = $3; }
+	;
+
+typename
+	: declspecs_nosc absdecl	{ $$ = typename_spec ($2, ctx); }
+	;
+
+array_decl
+	: index_expr
+	| '[' ']'					{ $$ = 0; }
 	;
 
 decl
-	: function_decl							{}
-	| var_decl opt_initializer
+	: declspecs_ts local_expr initdecls ';'
 		{
-			specifier_t spec = default_type ($<spec>0, $1);
-			storage_class_t sc = spec.storage;
-			struct defspace_s *space = current_symtab->space;
-
-			if (sc == sc_static)
-				space = pr.near_data;
-			$1->type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, $2, space, sc);
-			if ($1->s.def)
-				$1->s.def->nosave |= spec.nosave;
+			$$ = $3;
 		}
-	;
-
-function_def_list
-	: func_def_list comma func_def_list_term
-	| func_def_list_term
-	;
-
-func_def_list
-	: func_def_list comma func_def			{ $$ = $2; }
-	| func_def								{ $$ = $<spec>0; }
-	;
-
-/*	This rule is used only to get an action before both func_def and
-	func_def_list_term so that the function spec can be inherited.
-*/
-comma: ','		{ $$ = $<spec>0; }
-
-func_def_list_term
-	: non_code_funcion ';'
-	| code_function ';'
-	| code_function %prec IFX
-	;
-
-func_def
-	: non_code_funcion
-	| code_function
-	;
-
-code_function
-	: overloaded_identifier code_func
-	;
-
-non_code_funcion
-	: overloaded_identifier non_code_func
-	;
-
-overloaded_identifier
-	: identifier
+	| declspecs_nots local_expr notype_initdecls ';'
 		{
-			$$ = $1;
-			$$->type = $<spec>0.type;
-			if (!local_expr && $$->type->type != ev_field) {
-				$$ = function_symbol ($$, $<spec>0.is_overload, 1);
-				$$->params = $<spec>0.params;
-			}
+			$$ = $3;
 		}
+	| declspecs_ts local_expr qc_func_params
+		{
+			$<spec>$ = qc_function_spec ($1, $3);
+		}
+	  qc_func_decls
+		{
+			$$ = local_expr;
+			local_expr = 0;
+		}
+	| declspecs ';' { $$ = 0; }
 	;
 
-non_code_func
-	: '=' '#' expr
+local_expr
+	: /* emtpy */
 		{
-			if ($<spec>-1.storage == sc_extern) {
-				error (0, "initializing external variable");
-			}
-			build_builtin_function ($<symbol>0, $3, 0, $<spec>-1.storage);
+			$<spec>$ = $<spec>0;
+			local_expr = new_block_expr (0);
 		}
-	| '=' expr
-		{
-			if (local_expr) {
-				symbol_t   *sym = $<symbol>0;
-				specifier_t spec = $<spec>-1;
-				initialize_def (sym, $2, current_symtab->space, spec.storage);
-				if (sym->s.def)
-					sym->s.def->nosave |= spec.nosave;
-			} else {
-				if (is_integer_val ($2) || is_float_val ($2)) {
-					error (0, "invalid function initializer."
-						   " did you forget #?");
-				} else {
-					error (0, "cannot create global function variables");
-				}
-			}
-		}
-	| /* emtpy */
-		{
-			symbol_t   *sym = $<symbol>0;
-			specifier_t spec = $<spec>-1;
-			if (!local_expr && sym->type->type != ev_field) {
-				// things might be a confused mess from earlier errors
-				if (sym->sy_type == sy_func)
-					make_function (sym, 0, sym->table->space, spec.storage);
-			} else {
-				initialize_def (sym, 0, current_symtab->space, spec.storage);
-				if (sym->s.def)
-					sym->s.def->nosave |= spec.nosave;
-			}
-		}
-	;
-
-code_func
-	: '=' optional_state_expr
-	  save_storage
-		{
-			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>0, 0, current_symtab, 0,
-										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
-			current_storage = sc_local;
-		}
-	  compound_statement
-		{
-			build_code_function ($<symbol>0, $2, $5);
-			current_symtab = $<symtab>4;
-			current_storage = $3.storage;
-			current_func = 0;
-		}
-	;
-
-opt_initializer
-	: /*empty*/									{ $$ = 0; }
-	| var_initializer							{ $$ = $1; }
 	;
 
 var_initializer
-	: '=' expr									{ $$ = $2; }
-	| '=' compound_init
+	: expr									{ $$ = $1; }
+	| compound_init
 		{
-			if (!$2 && is_scalar ($<spec>-1.type)) {
+			if (!$1 && is_scalar ($<spec>-1.type)) {
 				error (0, "empty scalar initializer");
 			}
-			$$ = $2 ? $2 : new_nil_expr ();
+			$$ = $1 ? $1 : new_nil_expr ();
 		}
+	| EBUFFER
 	;
 
 compound_init
-	: '{' element_list optional_comma '}'		{ $$ = $2; }
-	| '{' '}'									{ $$ = 0; }
+	: opt_cast '{' element_list optional_comma '}'
+		{
+			auto cast = $1;
+			$3->compound.type_expr = cast;
+			$$ = $3;
+		}
+	| opt_cast '{' '}'
+		{
+			auto cast = $1;
+			if (cast) {
+				auto elements = new_compound_init ();
+				elements->compound.type_expr = cast;
+				$$ = elements;
+			} else {
+				$$ = nullptr;
+			}
+		}
+	;
+
+opt_cast
+	: '(' typename ')'					{ $$ = new_decl_expr ($2, nullptr); }
+	| /*empty*/							{ $$ = nullptr; }
+	;
+
+method_optional_state_expr
+	: /* emtpy */						{ $$ = 0; }
+	| SHR vector_expr					{ $$ = build_state_expr ($2, ctx); }
 	;
 
 optional_state_expr
 	: /* emtpy */						{ $$ = 0; }
-	| vector_expr						{ $$ = build_state_expr ($1); }
+	| vector_expr						{ $$ = build_state_expr ($1, ctx); }
 	;
 
 element_list
@@ -1182,15 +2052,38 @@ element_list
 			$$ = new_compound_init ();
 			append_element ($$, $1);
 		}
-	| element_list ','  element
+	| element_list ',' element
 		{
 			append_element ($$, $3);
 		}
 	;
 
 element
-	: compound_init								{ $$ = new_element ($1, 0); }
+	: designator '=' compound_init				{ $$ = new_element ($3, $1); }
+	| designator '=' expr 						{ $$ = new_element ($3, $1); }
+	| compound_init								{ $$ = new_element ($1, 0); }
 	| expr										{ $$ = new_element ($1, 0); }
+	;
+
+designator
+	: designator_spec
+	| designator designator_spec
+		{
+			designator_t *des = $1;
+			while (des->next) {
+				des = des->next;
+			}
+			des->next = $2;
+			$$ = $1;
+		}
+	;
+
+designator_spec
+	: '.' OBJECT_NAME			{ $$ = new_designator ($2.sym, 0); }
+	| '.' CLASS_NAME			{ $$ = new_designator ($2, 0); }
+	| '.' TYPE_NAME %prec LOW	{ $$ = new_designator ($2.sym, 0); }
+	| '.' NAME					{ $$ = new_designator ($2, 0); }
+	| index_expr				{ $$ = new_designator (0, $1); }
 	;
 
 optional_comma
@@ -1198,73 +2091,63 @@ optional_comma
 	| ','
 	;
 
-push_scope
+new_block
 	: /* empty */
 		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
+			$$ = block;
+		}
+
+new_scope
+	: /* empty */
+		{
+			auto block = new_block_expr (nullptr);
+			block->block.scope = current_symtab;
 			if (!options.traditional) {
-				current_symtab = new_symtab (current_symtab, stab_local);
-				current_symtab->space = current_symtab->parent->space;
+				block->block.scope = new_symtab (current_symtab, stab_local);
+				block->block.scope->space = current_symtab->space;
+				current_symtab = block->block.scope;
 			}
+			$$ = block;
 		}
 	;
 
-pop_scope
+end_scope
 	: /* empty */
 		{
-			if (!options.traditional)
-				current_symtab = current_symtab->parent;
+			if (!options.traditional) {
+				current_symtab = pop_scope (current_symtab);
+			}
 		}
 	;
 
 compound_statement
-	: '{' push_scope statements '}' pop_scope { $$ = $3; }
+	: '{' '}'										{ $$ = new_block_expr (0); }
+	| '{' new_scope statement_list '}' end_scope	{ $$ = $3; }
 	;
 
-statements
-	: /*empty*/
+compound_statement_ns
+	: '{' '}'										{ $$ = new_block_expr (0); }
+	| '{' new_block statement_list '}'				{ $$ = $3; }
+	;
+
+statement_list
+	: statement
 		{
-			$$ = new_block_expr ();
+			auto list = $<mut_expr>0;
+			$$ = append_expr (list, $1);
 		}
-	| statements statement
+	| statement_list statement
 		{
-			$$ = append_expr ($1, $2);
+			auto list = $1;
+			$$ = append_expr (list, $2);
 		}
 	;
 
 local_def
-	: local_specifiers
-		{
-			if (!$1.storage)
-				$1.storage = sc_local;
-			$<spec>$ = $1;
-			local_expr = new_block_expr ();
-		}
-	  local_decl_list ';'
-		{
-			$$ = local_expr;
-			local_expr = 0;
-			(void) ($<spec>2);
-		}
-	| specifiers ';'
-		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
-			$$ = 0;
-		}
+	: LOCAL decl { $$ = $2; }
+	| decl
 	;
 
 statement
@@ -1272,8 +2155,14 @@ statement
 	| error ';'					{ $$ = 0; yyerrok; }
 	| compound_statement		{ $$ = $1; }
 	| local_def					{ $$ = $1; }
-	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
-	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
+	| RETURN opt_expr ';'		{ $$ = new_return_expr ($2); }
+	| RETURN compound_init ';'	{ $$ = new_return_expr ($2); }
+	| AT_RETURN	expr ';'
+		{
+			auto at = new_return_expr ($2);
+			at->retrn.at_return = true;
+			$$ = at;
+		}
 	| BREAK ';'
 		{
 			$$ = 0;
@@ -1296,55 +2185,95 @@ statement
 		}
 	| CASE expr ':'
 		{
-			$$ = case_label_expr (switch_block, $2);
+			$$ = new_caselabel_expr ($2, nullptr);
 		}
 	| DEFAULT ':'
 		{
-			$$ = case_label_expr (switch_block, 0);
+			$$ = new_caselabel_expr (nullptr, nullptr);
 		}
-	| SWITCH break_label '(' expr switch_block ')' compound_statement
+	| SWITCH break_label line '(' comma_expr[test] ')' compound_statement[body]
 		{
-			$$ = switch_expr (switch_block, break_label, $7);
-			switch_block = $5;
-			break_label = $2;
+			scoped_src_loc ($line);
+			$$ = new_switch_expr ($test, $body, break_label);
+			break_label = $break_label;
 		}
 	| GOTO NAME
 		{
-			expr_t     *label = named_label_expr ($2);
+			const expr_t *label = named_label_expr ($2);
 			$$ = goto_expr (label);
 		}
-	| IF not '(' texpr ')' statement %prec IFX
+	| IF not line '(' expr[test] ')' statement[true] %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, $6, 0, 0);
+			scoped_src_loc ($line);
+			$$ = new_select_expr ($not, $test, $true, nullptr, nullptr);
 		}
-	| IF not '(' texpr ')' statement else statement
+	| IF not line '(' expr[test]')' statement[true]
+			else statement[false]
 		{
-			$$ = build_if_statement ($2, $4, $6, $7, $8);
+			scoped_src_loc ($line);
+			$$ = new_select_expr ($not, $test, $true, $else, $false);
 		}
-	| FOR push_scope break_label continue_label
-			'(' opt_init ';' opt_expr ';' opt_expr ')' statement pop_scope
+	| FOR new_scope break_label continue_label
+			'(' opt_init_semi[init] opt_expr[test] ';' opt_expr[cont] ')'
+			statement[body] end_scope
 		{
-			if ($6) {
-				$6 = build_block_expr ($6);
+			auto test = $test;
+			if (!test) {
+				test = new_bool_expr (true);
 			}
-			$$ = build_for_statement ($6, $8, $10, $12,
-									  break_label, continue_label);
-			break_label = $3;
-			continue_label = $4;
+			auto loop = new_loop_expr (false, false, test, $body,
+									   continue_label, $cont, break_label);
+			auto block = $new_scope;
+			append_expr (block, $init);
+			$$ = append_expr (block, loop);
+			break_label = $break_label;
+			continue_label = $continue_label;
 		}
-	| WHILE break_label continue_label not '(' texpr ')' statement
+	| WHILE break_label continue_label not '(' expr[test] ')'
+			statement[body]
 		{
-			$$ = build_while_statement ($4, $6, $8, break_label,
-										continue_label);
-			break_label = $2;
-			continue_label = $3;
+			$$ = new_loop_expr ($not, false, $test, $body,
+								continue_label, nullptr, break_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
 		}
-	| DO break_label continue_label statement WHILE not '(' texpr ')' ';'
+	| DO break_label continue_label statement[body]
+			WHILE not '(' expr[test] ')' ';'
 		{
-			$$ = build_do_while_statement ($4, $6, $8,
-										   break_label, continue_label);
-			break_label = $2;
-			continue_label = $3;
+			$$ = new_loop_expr ($not, true, $test, $body,
+								continue_label, nullptr, break_label);
+			break_label = $break_label;
+			continue_label = $continue_label;
+		}
+	| ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+		{
+			auto algebra = algebra_type ($3.type, $5);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = pop_scope (current_symtab);
+			$$ = $9;
+		}
+	| ALGEBRA '(' TYPE_SPEC ')'
+		{
+			auto algebra = algebra_type ($3.type, 0);
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = pop_scope (current_symtab);
+			$$ = $6;
+		}
+	| ALGEBRA '(' TYPE_NAME ')'
+		{
+			auto algebra = $3.type;
+			current_symtab = algebra_scope (algebra, current_symtab);
+		}
+	  compound_statement
+		{
+			current_symtab = pop_scope (current_symtab);
+			$$ = $6;
 		}
 	| comma_expr ';'
 		{
@@ -1357,23 +2286,19 @@ not
 	| /* empty */				{ $$ = 0; }
 	;
 
-else
-	: ELSE
+line
+	: /* empty */
 		{
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
+
+else
+	: ELSE line				{ $$ = $line; }
 	;
 
 label
 	: NAME ':'
-	;
-
-bool_label
-	: /* empty */
-		{
-			$$ = new_label_expr ();
-		}
 	;
 
 break_label
@@ -1392,44 +2317,12 @@ continue_label
 		}
 	;
 
-switch_block
-	: /* empty */
-		{
-			$$ = switch_block;
-			switch_block = new_switch_block ();
-			switch_block->test = $<expr>0;
-		}
-	;
-
-opt_init
-	: comma_expr
-	| type set_spec_storage init_var_decl_list { $$ = $3; }
-	| /* empty */
+opt_init_semi
+	: comma_expr ';'
+	| decl /* contains ; */		{ $$ = (expr_t *) $1; }
+	| ';'
 		{
 			$$ = 0;
-		}
-	;
-
-init_var_decl_list
-	: init_var_decl
-		{
-			$$ = $1;
-		}
-	| init_var_decl_list ',' { $<spec>$ = $<spec>0; } init_var_decl
-		{
-			$4->next = $1;
-			$$ = $4;
-		}
-	;
-
-init_var_decl
-	: var_decl opt_initializer
-		{
-			specifier_t spec = $<spec>0;
-			$1->type = find_type (append_type ($1->type, spec.type));
-			$1->sy_type = sy_var;
-			initialize_def ($1, 0, current_symtab->space, spec.storage);
-			$$ = assign_expr (new_symbol_expr ($1), $2);
 		}
 	;
 
@@ -1447,103 +2340,127 @@ unary_expr
 	| SELF						{ $$ = new_self_expr (); }
 	| THIS						{ $$ = new_this_expr (); }
 	| const						{ $$ = $1; }
-	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
-	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
-	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
-	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
-	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
-	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
-	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
+	| '(' expr ')'				{ $$ = $2; ((expr_t *) $$)->paren = 1; }
+	| unary_expr '(' opt_arg_list ')' { $$ = new_call_expr ($1, $3, nullptr); }
+	| unary_expr index_expr			{ $$ = new_array_expr ($1, $2); }
+	| unary_expr '.' OBJECT_NAME	{ $$ = new_field_sym_expr ($1, $3.sym); }
+	| unary_expr '.' CLASS_NAME		{ $$ = new_field_sym_expr ($1, $3); }
+	| unary_expr '.' TYPE_NAME		{ $$ = new_field_sym_expr ($1, $3.sym); }
+	| unary_expr '.' unary_expr		{ $$ = new_field_expr ($1, $3); }
+	| INCOP unary_expr				{ $$ = new_incop_expr ($1, $2, false); }
+	| unary_expr INCOP				{ $$ = new_incop_expr ($2, $1, true); }
+	| unary_expr REVERSE			{ $$ = new_unary_expr (QC_REVERSE, $1); }
+	| DUAL cast_expr %prec UNARY	{ $$ = new_unary_expr (QC_DUAL, $2); }
+	| UNDUAL cast_expr %prec UNARY	{ $$ = new_unary_expr (QC_UNDUAL, $2); }
 	| '+' cast_expr %prec UNARY	{ $$ = $2; }
-	| '-' cast_expr %prec UNARY	{ $$ = unary_expr ('-', $2); }
-	| '!' cast_expr %prec UNARY	{ $$ = unary_expr ('!', $2); }
-	| '~' cast_expr %prec UNARY	{ $$ = unary_expr ('~', $2); }
-	| '&' cast_expr %prec UNARY	{ $$ = address_expr ($2, 0, 0); }
-	| '*' cast_expr %prec UNARY	{ $$ = pointer_expr ($2); }
-	| SIZEOF unary_expr	%prec UNARY	{ $$ = sizeof_expr ($2, 0); }
-	| SIZEOF '(' abstract_decl ')'	%prec HYPERUNARY
+	| '-' cast_expr %prec UNARY	{ $$ = new_unary_expr ('-', $2); }
+	| '!' cast_expr %prec UNARY	{ $$ = new_unary_expr ('!', $2); }
+	| '~' cast_expr %prec UNARY	{ $$ = new_unary_expr ('~', $2); }
+	| '&' cast_expr %prec UNARY	{ $$ = new_unary_expr ('&', $2); }
+	| '*' cast_expr %prec UNARY	{ $$ = new_unary_expr ('.', $2); }
+	| '=' cast_expr %prec UNARY { $$ = new_unary_expr ('=', $2); }
+	| SIZEOF unary_expr	%prec UNARY	{ $$ = new_unary_expr ('S', $2); }
+	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
-			$$ = sizeof_expr (0, $3->type);
+			auto spec = $3;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_unary_expr ('S', decl);
 		}
-	| vector_expr				{ $$ = new_vector_list ($1); }
+	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
+	| vector_expr				{ $$ = new_vector_list_expr ($1); }
 	| obj_expr					{ $$ = $1; }
 	;
 
-ident_expr
-	: OBJECT					{ $$ = new_symbol_expr ($1); }
-	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
-	| TYPE_NAME					{ $$ = new_symbol_expr ($1); }
+index_expr
+	: '[' expr ']'				{ $$ = $expr; }
 	;
 
 vector_expr
 	: '[' expr ',' expr_list ']'
 		{
-			expr_t     *t = $4;
-			while (t->next)
-				t = t->next;
-			t->next = $2;
-			$$ = $4;
+			$$ = expr_prepend_expr ($4, $2);
 		}
 	;
 
 cast_expr
-	: '(' abstract_decl ')' cast_expr
+	: '(' typename ')' cast_expr
 		{
-			$$ = cast_expr ($2->type, $4);
+			auto spec = $2;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_binary_expr ('C', decl, $4);
+		}
+	| typespec '(' arg_list[args] ')'
+		{
+			auto spec = $typespec;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_call_expr (decl, $args, nullptr);
+		}
+	| CONSTRUCT '(' typename ',' arg_list[args] ')'
+		{
+			auto spec = $typename;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_call_expr (decl, $args, nullptr);
 		}
 	| unary_expr %prec LOW
 	;
 
 expr
 	: cast_expr
-	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
-	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
-	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
-	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
-	| expr OR bool_label expr	{ $$ = bool_expr (OR,  $3, $1, $4); }
-	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
-	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
-	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
-	| expr GE expr				{ $$ = binary_expr (GE,  $1, $3); }
-	| expr LT expr				{ $$ = binary_expr (LT,  $1, $3); }
-	| expr GT expr				{ $$ = binary_expr (GT,  $1, $3); }
-	| expr SHL expr				{ $$ = binary_expr (SHL, $1, $3); }
-	| expr SHR expr				{ $$ = binary_expr (SHR, $1, $3); }
-	| expr '+' expr				{ $$ = binary_expr ('+', $1, $3); }
-	| expr '-' expr				{ $$ = binary_expr ('-', $1, $3); }
-	| expr '*' expr				{ $$ = binary_expr ('*', $1, $3); }
-	| expr '/' expr				{ $$ = binary_expr ('/', $1, $3); }
-	| expr '&' expr				{ $$ = binary_expr ('&', $1, $3); }
-	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
-	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
-	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
-	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
-	;
-
-texpr
-	: expr						{ $$ = convert_bool ($1, 1); }
+	| expr '=' expr				{ $$ = new_assign_expr ($1, $3); }
+	| expr '=' compound_init	{ $$ = new_assign_expr ($1, $3); }
+	| expr ASX expr
+		{
+			scoped_src_loc ($1);
+			auto expr = $3;
+			expr = paren_expr (expr);
+			expr = new_binary_expr ($2, $1, expr);
+			$$ = new_assign_expr ($1, expr);
+		}
+	| expr '?' expr ':' expr 	{ $$ = new_cond_expr ($1, $3, $5); }
+	| expr AND expr				{ $$ = new_binary_expr (QC_AND, $1, $3); }
+	| expr OR expr				{ $$ = new_binary_expr (QC_OR,  $1, $3); }
+	| expr EQ expr				{ $$ = new_binary_expr (QC_EQ,  $1, $3); }
+	| expr NE expr				{ $$ = new_binary_expr (QC_NE,  $1, $3); }
+	| expr LE expr				{ $$ = new_binary_expr (QC_LE,  $1, $3); }
+	| expr GE expr				{ $$ = new_binary_expr (QC_GE,  $1, $3); }
+	| expr LT expr				{ $$ = new_binary_expr (QC_LT,  $1, $3); }
+	| expr GT expr				{ $$ = new_binary_expr (QC_GT,  $1, $3); }
+	| expr SHL expr				{ $$ = new_binary_expr (QC_SHL, $1, $3); }
+	| expr SHR expr				{ $$ = new_binary_expr (QC_SHR, $1, $3); }
+	| expr '+' expr				{ $$ = new_binary_expr ('+', $1, $3); }
+	| expr '-' expr				{ $$ = new_binary_expr ('-', $1, $3); }
+	| expr '*' expr				{ $$ = new_binary_expr ('*', $1, $3); }
+	| expr '/' expr				{ $$ = new_binary_expr ('/', $1, $3); }
+	| expr '&' expr				{ $$ = new_binary_expr ('&', $1, $3); }
+	| expr '|' expr				{ $$ = new_binary_expr ('|', $1, $3); }
+	| expr '^' expr				{ $$ = new_binary_expr ('^', $1, $3); }
+	| expr '%' expr				{ $$ = new_binary_expr ('%', $1, $3); }
+	| expr MOD expr				{ $$ = new_binary_expr (QC_MOD, $1, $3); }
+	| expr GEOMETRIC expr		{ $$ = new_binary_expr (QC_GEOMETRIC, $1, $3); }
+	| expr HADAMARD expr		{ $$ = new_binary_expr (QC_HADAMARD, $1, $3); }
+	| expr CROSS expr			{ $$ = new_binary_expr (QC_CROSS, $1, $3); }
+	| expr DOT expr				{ $$ = new_binary_expr (QC_DOT, $1, $3); }
+	| expr OUTER expr			{ $$ = new_binary_expr (QC_OUTER, $1, $3); }
+	| expr WEDGE expr			{ $$ = new_binary_expr (QC_WEDGE, $1, $3); }
+	| expr REGRESSIVE expr		{ $$ = new_binary_expr (QC_REGRESSIVE, $1, $3); }
 	;
 
 comma_expr
 	: expr_list
 		{
-			if ($1->next) {
-				expr_t     *res = $1;
-				$1 = build_block_expr ($1);
-				$1->e.block.result = res;
+			if ($1->list.head->next) {
+				auto b = build_block_expr ($1, true);
+				b->block.scope = current_symtab;
+				$$ = b;
+			} else {
+				$$ = (expr_t *) $1->list.head->expr;
 			}
-			$$ = $1;
 		}
 	;
 
 expr_list
-	: expr
-	| expr_list ',' expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: expr						{ $$ = new_list_expr ($1); }
+	| expr_list ',' expr		{ $$ = expr_append_expr ($1, $3); }
 	;
 
 opt_arg_list
@@ -1552,12 +2469,8 @@ opt_arg_list
 	;
 
 arg_list
-	: arg_expr
-	| arg_list ',' arg_expr
-		{
-			$3->next = $1;
-			$$ = $3;
-		}
+	: arg_expr					{ $$ = new_list_expr ($1); }
+	| arg_list ',' arg_expr		{ $$ = expr_prepend_expr ($1, $3); }
 	;
 
 arg_expr
@@ -1567,6 +2480,8 @@ arg_expr
 
 const
 	: VALUE
+	| TRUE						{ $$ = new_bool_expr (true); }
+	| FALSE						{ $$ = new_bool_expr (false); }
 	| NIL						{ $$ = new_nil_expr (); }
 	| string
 	;
@@ -1574,13 +2489,19 @@ const
 string
 	: STRING
 	| string STRING				{ $$ = binary_expr ('+', $1, $2); }
+	| string EBUFFER
+		{
+			auto str = convert_buffer ($2, &type_string);
+			$$ = binary_expr ('+', $1, str);
+		}
 	;
 
 identifier
 	: NAME
-	| OBJECT
+	| OBJECT_NAME { $$ = $1.sym; }
 	| CLASS_NAME
-	| TYPE_NAME
+	| TYPE_NAME { $$ = $1.sym; }
+	| NOT { $$ = new_symbol ("not"); }
 	;
 
 // Objective-QC stuff
@@ -1604,7 +2525,7 @@ obj_def
 identifier_list
 	: identifier
 		{
-			$$ = append_expr (new_block_expr (), new_symbol_expr ($1));
+			$$ = append_expr (new_block_expr (0), new_symbol_expr ($1));
 		}
 	| identifier_list ',' identifier
 		{
@@ -1615,11 +2536,11 @@ identifier_list
 classdecl
 	: CLASS identifier_list ';'
 		{
-			expr_t     *e;
-			for (e = $2->e.block.head; e; e = e->next) {
-				get_class (e->e.symbol, 1);
-				if (!e->e.symbol->table)
-					symtab_addsymbol (current_symtab, e->e.symbol);
+			for (auto li = $2->block.list.head; li; li = li->next) {
+				auto e = li->expr;
+				get_class (e->symbol, 1);
+				if (!e->symbol->table)
+					symtab_addsymbol (current_symtab, e->symbol);
 			}
 		}
 	;
@@ -1636,7 +2557,7 @@ class_name
 				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {
-				$$ = $1->type->t.class;
+				$$ = $1->type->class;
 			}
 		}
 	;
@@ -1744,92 +2665,85 @@ protocol_name
 	;
 
 classdef
-	: INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocols ($2, $3); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	: INTERFACE new_class_name[class] protocolrefs[protos]
+		{ class_add_protocols ($class, $protos); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_add_ivars ($2, $7);
-			$<class>$ = $2;
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_add_ivars ($class, $defs, ctx);
+			$<class>$ = $class;
 		}
-	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_name[class] protocolrefs[protos]
 		{
-			current_class = 0;
-			(void) ($<class>6);
-			(void) ($<class>9);
+			class_add_protocols ($class, $protos);
+			class_add_ivars ($class, nullptr, ctx);
+			$<class>$ = $class;
 		}
-	| INTERFACE new_class_name
-	  protocolrefs						{ class_add_protocols ($2, $3); }
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super[class] protocolrefs[protos]
+		{ class_add_protocols ($class, $protos);}
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_add_ivars ($2, class_new_ivars ($2));
-			$<class>$ = $2;
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_add_ivars ($class, $defs, ctx);
+			$<class>$ = $class;
 		}
-	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_class_with_super[class]
+	  protocolrefs[protos]
 		{
-			current_class = 0;
-			(void) ($<class>5);
+			class_add_protocols ($class, $protos);
+			class_add_ivars ($class, nullptr, ctx);
+			$<class>$ = $class;
 		}
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocols ($2, $3);}
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	  methodprotolist[methods]	{ class_add_methods ($class, $methods); }
+	  END						{ current_class = 0; }
+	| INTERFACE new_category_name[cat] protocolrefs[protos]
 		{
-			class_add_ivars ($2, $7);
-			$<class>$ = $2;
-		}
-	  methodprotolist					{ class_add_methods ($2, $10); }
-	  END
-		{
-			current_class = 0;
-			(void) ($<class>6);
-			(void) ($<class>9);
-		}
-	| INTERFACE new_class_with_super
-	  protocolrefs						{ class_add_protocols ($2, $3); }
-		{
-			class_add_ivars ($2, class_new_ivars ($2));
-			$<class>$ = $2;
-		}
-	  methodprotolist					{ class_add_methods ($2, $6); }
-	  END
-		{
-			current_class = 0;
-			(void) ($<class>5);
-		}
-	| INTERFACE new_category_name
-	  protocolrefs
-		{
-			category_add_protocols ($2, $3);
+			category_add_protocols ($cat, $protos);
 			$<class>$ = $2->class;
 		}
-	  methodprotolist					{ category_add_methods ($2, $5); }
-	  END
+	  methodprotolist[methods]	{ category_add_methods ($cat, $methods); }
+	  END						{ current_class = 0; }
+	| IMPLEMENTATION class_name[class]
+		{ class_begin (&$class->class_type); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			current_class = 0;
-			(void) ($<class>4);
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_check_ivars ($class, $defs, ctx);
 		}
-	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
+	| IMPLEMENTATION class_name[class]
+		{ class_begin (&$class->class_type); }
+	| IMPLEMENTATION class_with_super[class]
+		{ class_begin (&$class->class_type); }
+	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
-			class_check_ivars ($2, $6);
-			(void) ($<class>5);
+			current_symtab = pop_scope ($tab);
+			$tab->parent = nullptr;
+			class_check_ivars ($class, $defs, ctx);
 		}
-	| IMPLEMENTATION class_name			{ class_begin (&$2->class_type); }
-	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
-	  '{'								{ $<class>$ = $2; }
-	  ivar_decl_list '}'
-		{
-			class_check_ivars ($2, $6);
-			(void) ($<class>5);
-		}
-	| IMPLEMENTATION class_with_super	{ class_begin (&$2->class_type); }
-	| IMPLEMENTATION category_name		{ class_begin (&$2->class_type); }
+	| IMPLEMENTATION class_with_super[class]
+		{ class_begin (&$class->class_type); }
+	| IMPLEMENTATION category_name[class]
+		{ class_begin (&$class->class_type); }
 	| REFERENCE class_reference ';'		{ }
 	| REFERENCE category_reference ';'	{ }
 	;
+
+ivar_scope
+	: /* empty */
+		{
+			auto scope = new_symtab (current_symtab, stab_local);
+			current_symtab = scope;
+			$$ = scope;
+		}
 
 protocoldecl
 	: protocol
@@ -1850,7 +2764,6 @@ protocoldef
 	  END
 		{
 			current_class = $<class_type>1;
-			(void) ($<class>4);
 		}
 	;
 
@@ -1861,7 +2774,7 @@ protocol
 protocolrefs
 	: /* emtpy */				{ $$ = 0; }
 	| LT 						{ $<protocol_list>$ = new_protocol_list (); }
-	  protocol_list GT			{ $$ = $3; (void) ($<protocol_list>2); }
+	  protocol_list GT			{ $$ = $3; }
 	;
 
 protocol_list
@@ -1875,87 +2788,14 @@ protocol_list
 		}
 	;
 
-ivar_decl_list
-	: /* empty */
-		{
-			symtab_t   *tab, *ivars;
-			ivars = class_new_ivars ($<class>0);
-			for (tab = ivars; tab->parent; tab = tab->parent)
-				;
-			if (tab == current_symtab)
-				internal_error (0, "ivars already linked to parent scope");
-			$<symtab>$ = tab;
-			tab->parent = current_symtab;
-			current_symtab = ivars;
-
-			current_visibility = vis_protected;
-		}
-	  ivar_decl_list_2
-		{
-			symtab_t   *tab = $<symtab>1;
-			$$ = current_symtab;
-			current_symtab = tab->parent;
-			tab->parent = 0;
-
-			tab = $$->parent;	// preserve the ivars inheritance chain
-			build_struct ('s', 0, $$, 0);
-			$$->parent = tab;
-			current_visibility = vis_public;
-		}
-	;
-
-ivar_decl_list_2
-	: ivar_decl_list_2 visibility_spec ivar_decls
-	| ivar_decls
-	;
-
-visibility_spec
-	: PRIVATE					{ current_visibility = vis_private; }
-	| PROTECTED					{ current_visibility = vis_protected; }
-	| PUBLIC					{ current_visibility = vis_public; }
-	;
-
-ivar_decls
-	: /* empty */
-	| ivar_decls ivar_decl ';'
-	;
-
-ivar_decl
-	: type ivars
-	| type
-		{
-			if (is_anonymous_struct ($1)) {
-				// anonymous struct/union
-				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (0, ".anonymous.%s",
-										 $1.type->name + 4));
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				$1.sym->visibility = vis_anonymous;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
-					error (0, "duplicate field `%s'", $1.sym->name);
-				}
-			} else {
-				// bare type
-				warning (0, "declaration does not declare anything");
-			}
-		}
-	;
-
-ivars
-	: struct_decl
-	| ivars ',' { $<spec>$ = $<spec>0; } struct_decl { (void) ($<spec>3); }
-	;
-
 methoddef
-	: ci methoddecl optional_state_expr
+	: ci methoddecl method_optional_state_expr
 		{
 			method_t   *method = $2;
 
 			method->instance = $1;
 			$2 = method = class_find_method (current_class, method);
-			$<symbol>$ = method_symbol (current_class, method);
+			$<symbol>$ = method_symbol (current_class, method, ctx);
 		}
 	  save_storage
 		{
@@ -1964,36 +2804,51 @@ methoddef
 			symbol_t   *sym = $<symbol>4;
 			symtab_t   *ivar_scope;
 
-			$<symtab>$ = current_symtab;
+			auto spec = (specifier_t) {
+				.sym = sym,
+				.storage = sc_static,
+				.is_far = true,
+			};
 
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
-			current_func = begin_function (sym, nicename, ivar_scope, 1,
-										   sc_static);
+			$<funcstate>$ = (funcstate_t) {
+				.symtab = ivar_scope,
+				.function = current_func,
+			};
+			current_func = begin_function (spec, nicename, ivar_scope, ctx);
 			class_finish_ivar_scope (current_class, ivar_scope,
-									 current_func->symtab);
-			method->func = sym->s.func;
-			method->def = sym->s.func->def;
-			current_symtab = current_func->symtab;
+									 current_func->locals);
+			method->func = sym->metafunc->func;
+			method->def = method->func->def;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
-	  compound_statement
+	  compound_statement_ns
 		{
-			build_code_function ($<symbol>4, $3, $7);
-			current_symtab = $<symtab>6;
-			current_storage = $5.storage;
-			current_func = 0;
+			auto fs = $<funcstate>6;
+			auto fsym = $<symbol>4;
+			fs.spec.sym = fsym;
+			build_code_function (fs.spec, $3, $7, ctx);
+			current_symtab = pop_scope (fs.symtab);
+			current_func = fs.function;
+			restore_storage ($5);
 		}
 	| ci methoddecl '=' '#' const ';'
 		{
-			symbol_t   *sym;
 			method_t   *method = $2;
+			const expr_t *bi_val = expr_process ($5, ctx);
 
 			method->instance = $1;
 			method = class_find_method (current_class, method);
-			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, $5, 1, sc_static);
-			method->func = sym->s.func;
-			method->def = sym->s.func->def;
+
+			auto spec = (specifier_t) {
+				.sym = method_symbol (current_class, method, ctx),
+				.storage = sc_static,
+				.is_far = true,
+			};
+			build_builtin_function (spec, nullptr, bi_val);
+			method->func = spec.sym->metafunc->func;
+			method->def = method->func->def;
 		}
 	;
 
@@ -2021,45 +2876,39 @@ methodprotolist2
 	;
 
 methodproto
-	: '+' methoddecl ';'
+	: ci methoddecl ';'
 		{
-			$2->instance = 0;
+			$2->instance = $1;
 			$$ = $2;
 		}
-	| '-' error ';'
-		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
-	| '+' error ';'
-		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
-	| '-' methoddecl ';'
-		{
-			$2->instance = 1;
-			$$ = $2;
-		}
+	| ci error ';'
+		{ $$ = new_method (&type_id, make_selector ("", 0, 0), 0); }
 	;
 
 methoddecl
-	: '(' abstract_decl ')' unaryselector
-		{ $$ = new_method ($2->type, $4, 0); }
+	: '(' typename ')' unaryselector
+		{
+			auto spec = resolve_type_spec ($2, ctx);
+			$$ = new_method (spec.type, $4, 0);
+		}
 	| unaryselector
 		{ $$ = new_method (&type_id, $1, 0); }
-	| '(' abstract_decl ')' keywordselector optional_param_list
-		{ $$ = new_method ($2->type, $4, $5); }
+	| '(' typename ')' keywordselector optional_param_list
+		{
+			auto spec = resolve_type_spec ($2, ctx);
+			$$ = new_method (spec.type, $4, $5);
+		}
 	| keywordselector optional_param_list
 		{ $$ = new_method (&type_id, $1, $2); }
 	;
 
 optional_param_list
 	: /* empty */				{ $$ = 0; }
-	| ',' ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	| ',' param_list			{ $$ = $2; }
-	| ',' param_list ',' ELLIPSIS
-		{
-			$$ = param_append_identifiers ($2, 0, 0);
-		}
 	;
 
 unaryselector
-	: selector					{ $$ = new_param ($1->name, 0, 0); }
+	: selector					{ $$ = make_selector ($1->name, 0, 0); }
 	;
 
 keywordselector
@@ -2074,9 +2923,9 @@ protocol_name_list
 selector
 	: NAME						{ $$ = $1; }
 	| CLASS_NAME				{ $$ = $1; }
-	| OBJECT					{ $$ = new_symbol (qc_yytext); }
-	| TYPE						{ $$ = new_symbol (qc_yytext); }
-	| TYPE_NAME					{ $$ = $1; }
+	| OBJECT_NAME				{ $$ = new_symbol (qc_yytext); }
+	| TYPE_SPEC					{ $$ = new_symbol (qc_yytext); }
+	| TYPE_NAME					{ $$ = $1.sym; }
 	| reserved_word
 	;
 
@@ -2100,26 +2949,48 @@ reserved_word
 	;
 
 keyworddecl
-	: selector ':' '(' abstract_decl ')' identifier
-		{ $$ = new_param ($1->name, $4->type, $6->name); }
+	: selector ':' '(' typename ')' identifier
+		{
+			auto spec = resolve_type_spec ($4, ctx);
+			$$ = make_selector ($1->name, spec.type, $6->name);
+		}
 	| selector ':' identifier
-		{ $$ = new_param ($1->name, &type_id, $3->name); }
-	| ':' '(' abstract_decl ')' identifier
-		{ $$ = new_param ("", $3->type, $5->name); }
+		{
+			$$ = make_selector ($1->name, &type_id, $3->name);
+		}
+	| ':' '(' typename ')' identifier
+		{
+			auto spec = resolve_type_spec ($3, ctx);
+			$$ = make_selector ("", spec.type, $5->name);
+		}
 	| ':' identifier
-		{ $$ = new_param ("", &type_id, $2->name); }
+		{
+			$$ = make_selector ("", &type_id, $2->name);
+		}
 	;
 
 obj_expr
 	: obj_messageexpr
 	| SELECTOR '(' selectorarg ')'	{ $$ = selector_expr ($3); }
 	| PROTOCOL '(' identifier ')'	{ $$ = protocol_expr ($3->name); }
-	| ENCODE '(' abstract_decl ')'	{ $$ = encode_expr ($3->type); }
+	| ENCODE '(' typename ')'
+		{
+			auto spec = resolve_type_spec ($3, ctx);
+			$$ = encode_expr (spec.type);
+		}
 	| obj_string /* FIXME string object? */
 	;
 
 obj_messageexpr
-	: '[' receiver messageargs ']'	{ $$ = message_expr ($2, $3); }
+	: '[' receiver messageargs ']'
+		{
+			scoped_src_loc ($receiver);
+			$$ = new_message_expr ($receiver, $messageargs);
+		}
+	| '[' TYPE_NAME[spec] attrfunc ']'
+		{
+			$$ = type_property ($spec, $attrfunc);
+		}
 	;
 
 receiver
@@ -2177,3 +3048,388 @@ obj_string
 	;
 
 %%
+
+static void __attribute__((used))
+qc_dump_stack(yypstate *yyps)
+{
+	yy_stack_print (yyps->yyss, yyps->yyssp);
+}
+
+// preprocessor directives in ruamoko and quakec
+static directive_t rua_directives[] = {
+	{"include",  PRE_INCLUDE},
+	{"embed",    PRE_EMBED},
+	{"define",   PRE_DEFINE},
+	{"undef",    PRE_UNDEF},
+	{"error",    PRE_ERROR},
+	{"warning",  PRE_WARNING},
+	{"notice",   PRE_NOTICE},
+	{"bug",      PRE_BUG},
+	{"pragma",   PRE_PRAGMA},
+	{"line",     PRE_LINE},
+};
+
+static directive_t *
+qc_directive (const char *token)
+{
+	static hashtab_t *directive_tab;
+
+	if (!directive_tab) {
+		directive_tab = Hash_NewTable (253, rua_directive_get_key, 0, 0, 0);
+		for (size_t i = 0; i < ARRCOUNT(rua_directives); i++) {
+			Hash_Add (directive_tab, &rua_directives[i]);
+		}
+	}
+	directive_t *directive = Hash_Find (directive_tab, token);
+	return directive;
+}
+
+// These keywords are part of the Ruamoko language and require the QuakeForge
+// Ruamoko VM.
+static keyword_t rua_keywords[] = {
+#define VEC_TYPE(type_name, base_type) \
+	{ #type_name, QC_TYPE_SPEC, .spec = { .type = &type_##type_name } },
+#include "tools/qfcc/include/vec_types.h"
+
+	{"bvec2", QC_TYPE_SPEC, .spec = {.type = &type_bvec2}},
+	{"bvec3", QC_TYPE_SPEC, .spec = {.type = &type_bvec3}},
+	{"bvec4", QC_TYPE_SPEC, .spec = {.type = &type_bvec4}},
+
+#define MAT_TYPE(type_name, base_type, cols, align_as) \
+	{ #type_name, QC_TYPE_SPEC, .spec = { . type = &type_##type_name } },
+#include "tools/qfcc/include/mat_types.h"
+	{ "mat2", QC_TYPE_SPEC, .spec = { . type = &type_mat2x2 } },
+	{ "mat3", QC_TYPE_SPEC, .spec = { . type = &type_mat3x3 } },
+	{ "mat4", QC_TYPE_SPEC, .spec = { . type = &type_mat4x4 } },
+};
+
+// These keywords are all part of the Ruamoko (Objective-QC) language.
+// The first time any one of them is encountered, the class system will be
+// initialized.
+// If not compiling for the QuakeForge VM, or if Ruamoko has been disabled,
+// then they will be unavailable as keywords.
+static keyword_t obj_keywords[] = {
+	{"id",				QC_OBJECT_NAME, .spec = { .type = &type_id } 		},
+	{"Class",			QC_TYPE_SPEC, .spec = { .type = &type_Class } 		},
+	{"Method",			QC_TYPE_SPEC, .spec = { .type = &type_method } 	},
+	{"Super",			QC_TYPE_SPEC, .spec = { .type = &type_super } 		},
+	{"SEL",				QC_TYPE_SPEC, .spec = { .type = &type_SEL } 		},
+	{"IMP",				QC_TYPE_SPEC, .spec = { .type = &type_IMP } 		},
+
+	{"@class",			QC_CLASS					},
+	{"@defs",			QC_DEFS					},
+	{"@encode",			QC_ENCODE					},
+	{"@end",			QC_END						},
+	{"@implementation",	QC_IMPLEMENTATION			},
+	{"@interface",		QC_INTERFACE				},
+	{"@private",		QC_PRIVATE					},
+	{"@protected",		QC_PROTECTED				},
+	{"@protocol",		QC_PROTOCOL				},
+	{"@public",			QC_PUBLIC					},
+	{"@reference",		QC_REFERENCE				},
+	{"@selector",		QC_SELECTOR				},
+	{"@self",			QC_SELF					},
+	{"@this",			QC_THIS					},
+
+	// This is a hack to trigger the initialization of the class
+	// sytem if it is seen before any other Objective-QC symbol. Otherwise,
+	// it is just an identifier, though it does reference a built-in type
+	// created by the class system.
+	{"obj_module",		0						},
+};
+
+// These keywords are extensions to QC and thus available only in advanced
+// or extended code. However, if they are preceeded by an @ (eg, @for), then
+// they are always available. This is to prevent them from causing trouble
+// for traditional code that might use these words as identifiers, but still
+// make the language features available to traditional code.
+static keyword_t at_keywords[] = {
+	{"for",			QC_FOR		},
+	{"goto",		QC_GOTO	},
+	{"break",		QC_BREAK	},
+	{"continue",	QC_CONTINUE},
+	{"switch",		QC_SWITCH	},
+	{"case",		QC_CASE	},
+	{"default",		QC_DEFAULT	},
+	{"nil",			QC_NIL		},
+	{"struct",		QC_STRUCT	},
+	{"union",		QC_STRUCT	},
+	{"enum",		QC_ENUM	},
+	{"typedef",		QC_TYPEDEF	},
+	{"extern",		QC_EXTERN	},
+	{"static",		QC_STATIC	},
+	{"sizeof",		QC_SIZEOF	},
+	{"not",			QC_NOT		},
+	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
+	{"const",		QC_TYPE_QUAL, .spec = { .is_const = true } },
+};
+
+// These keywords require the QuakeForge VM to be of any use. ie, they cannot
+// be supported (sanely) by v6 progs.
+static keyword_t qf_keywords[] = {
+	{"quaternion",	QC_TYPE_SPEC, .spec = { .type = &type_quaternion } },
+	{"double",		QC_TYPE_SPEC, .spec = { .type = &type_double } },
+	{"int",			QC_TYPE_SPEC, .spec = { .type = &type_int } 	},
+	{"uint",		QC_TYPE_SPEC, .spec = { .type = &type_uint } 	},
+	{"ulong",		QC_TYPE_SPEC, .spec = { .type = &type_ulong } 	},
+	{"bool",		QC_TYPE_SPEC, .spec = { .type = &type_bool } 	},
+	{"lbool",		QC_TYPE_SPEC, .spec = { .type = &type_lbool } 	},
+	{"unsigned",	QC_TYPE_SPEC, .spec = { .is_unsigned = true } },
+	{"signed",		QC_TYPE_SPEC, .spec = { .is_signed = true } },
+	{"long",		QC_TYPE_SPEC, .spec = { .is_long = true } },
+	{"short",		QC_TYPE_SPEC, .spec = { .is_short = true } },
+
+	{"true",        QC_TRUE },
+	{"false",       QC_FALSE},
+
+	{"@args",		QC_ARGS,				},
+	{"@va_list",	QC_TYPE_SPEC, .spec = { .type = &type_va_list } 	},
+	{"@param",		QC_TYPE_SPEC, .spec = { .type = &type_param } 		},
+	{"@return",     QC_AT_RETURN,		},
+	{"@in",			QC_TYPE_QUAL, .spec = { .storage = sc_in } },
+	{"@out",		QC_TYPE_QUAL, .spec = { .storage = sc_out } },
+	{"@inout",		QC_TYPE_QUAL, .spec = { .storage = sc_inout } },
+
+	{"@hadamard",	QC_HADAMARD,	},
+	{"@cross",		QC_CROSS,		},
+	{"@dot",		QC_DOT,			},
+	{"@outer",		QC_OUTER,		},
+	{"@wedge",		QC_WEDGE,		},
+	{"@regressive",	QC_REGRESSIVE,	},
+	{"@geometric",	QC_GEOMETRIC,	},
+	{"@algebra",	QC_ALGEBRA,		},
+	{"@dual",		QC_DUAL,		},
+	{"@undual",		QC_UNDUAL,		},
+
+	{"@image",		QC_IMAGE,		},
+	{"@sampler",	QC_SAMPLER,		},
+	{"@block",		QC_BLOCK,		},
+
+	{"@construct",	QC_CONSTRUCT,	},
+	{"@generic",	QC_GENERIC,		},
+	{"@function",	QC_AT_FUNCTION,	},
+	{"@field",		QC_AT_FIELD,	},
+	{"@pointer",	QC_AT_POINTER,	},
+	{"@array",		QC_AT_ARRAY,	},
+	{"@base",		QC_AT_BASE,		},
+	{"@width",		QC_AT_WIDTH,	},
+	{"@vector",		QC_AT_VECTOR,	},
+	{"@rows",		QC_AT_ROWS,		},
+	{"@cols",		QC_AT_COLS,		},
+	{"@matrix",		QC_AT_MATRIX,	},
+	{"@int",		QC_AT_INT,		},
+	{"@uint",		QC_AT_UINT,		},
+	{"@bool",		QC_AT_BOOL,		},
+	{"@float",		QC_AT_FLOAT,	},
+};
+
+// These keywors are always available. Other than the @ keywords, they
+// form traditional QuakeC.
+static keyword_t keywords[] = {
+	{"void",		QC_TYPE_SPEC, .spec = { .type = &type_void } 	},
+	{"float",		QC_TYPE_SPEC, .spec = { .type = &type_float } 	},
+	{"string",		QC_TYPE_SPEC, .spec = { .type = &type_string } },
+	{"vector",		QC_TYPE_SPEC, .spec = { .type = &type_vector } },
+	{"entity",		QC_TYPE_SPEC, .spec = { .type = &type_entity } },
+	{"local",		QC_LOCAL,					},
+	{"return",		QC_RETURN,					},
+	{"while",		QC_WHILE,					},
+	{"do",			QC_DO,						},
+	{"if",			QC_IF,						},
+	{"else",		QC_ELSE,					},
+	{"@system",		QC_SYSTEM,					},
+	{"@overload",	QC_OVERLOAD,				},
+	{"@attribute",  QC_ATTRIBUTE,				},
+	{"@handle",     QC_HANDLE,					},
+	{"@intrinsic",  QC_INTRINSIC,				},
+};
+
+static int
+qc_process_keyword (QC_YYSTYPE *lval, keyword_t *keyword, const char *token,
+					rua_ctx_t *ctx)
+{
+	if (keyword->value == QC_STRUCT) {
+		lval->op = token[0];
+	} else if (keyword->value == QC_BLOCK) {
+		lval->op = token[1];
+	} else if (keyword->value == QC_OBJECT_NAME) {
+		symbol_t   *sym;
+
+		sym = symtab_lookup (current_symtab, token);
+		lval->symbol = sym;
+		// the global id symbol is always just a name so attempts to redefine
+		// it globally can be caught and treated as an error, but it needs to
+		// be redefinable when in an enclosing scope.
+		if (sym->sy_type == sy_name) {
+			// this is the global id (object)
+			lval->spec = (specifier_t) {
+				.type = sym->type,
+				.sym = sym,
+			};
+			return QC_OBJECT_NAME;
+		} else if (sym->sy_type == sy_type_param) {
+			// id has been redeclared via a generic type param
+			lval->spec = (specifier_t) {
+				.type_expr = new_symbol_expr (sym),
+				.sym = sym,
+			};
+			return QC_TYPE_NAME;
+		} else if (sym->sy_type == sy_type) {
+			// id has been redeclared via a typedef
+			lval->spec = (specifier_t) {
+				.type = sym->type,
+				.sym = sym,
+			};
+			return QC_TYPE_NAME;
+		}
+		// id has been redeclared as a variable (hopefully)
+		return QC_NAME;
+	} else {
+		lval->spec = keyword->spec;
+	}
+	return keyword->value;
+}
+
+static int
+qc_keyword_or_id (QC_YYSTYPE *lval, const char *token, rua_ctx_t *ctx)
+{
+	static hashtab_t *keyword_tab;
+	static hashtab_t *qf_keyword_tab;
+	static hashtab_t *at_keyword_tab;
+	static hashtab_t *obj_keyword_tab;
+	static hashtab_t *rua_keyword_tab;
+
+	keyword_t  *keyword = 0;
+
+	if (!keyword_tab) {
+		size_t      i;
+
+		keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+		qf_keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+		at_keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+		obj_keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+		rua_keyword_tab = Hash_NewTable (253, rua_keyword_get_key, 0, 0, 0);
+
+		for (i = 0; i < ARRCOUNT(keywords); i++)
+			Hash_Add (keyword_tab, &keywords[i]);
+		for (i = 0; i < ARRCOUNT(qf_keywords); i++)
+			Hash_Add (qf_keyword_tab, &qf_keywords[i]);
+		for (i = 0; i < ARRCOUNT(at_keywords); i++)
+			Hash_Add (at_keyword_tab, &at_keywords[i]);
+		for (i = 0; i < ARRCOUNT(obj_keywords); i++)
+			Hash_Add (obj_keyword_tab, &obj_keywords[i]);
+		for (i = 0; i < ARRCOUNT(rua_keywords); i++)
+			Hash_Add (rua_keyword_tab, &rua_keywords[i]);
+	}
+	if (options.traditional < 1) {
+		if (options.code.progsversion == PROG_VERSION) {
+			keyword = Hash_Find (rua_keyword_tab, token);
+		}
+		if (!keyword) {
+			keyword = Hash_Find (obj_keyword_tab, token);
+			if (keyword) {
+				if (!obj_initialized)
+					class_init ();
+			}
+		}
+		if (!keyword)
+			keyword = Hash_Find (qf_keyword_tab, token);
+	}
+	if (!keyword && options.traditional < 2)
+		keyword = Hash_Find (at_keyword_tab, token);
+	if (!keyword && token[0] == '@') {
+		keyword = Hash_Find (at_keyword_tab, token + 1);
+		if (keyword)
+			token += 1;
+	}
+	if (!keyword)
+		keyword = Hash_Find (keyword_tab, token);
+	if (keyword && keyword->value)
+		return qc_process_keyword (lval, keyword, token, ctx);
+	if (token[0] == '@') {
+		return '@';
+	}
+
+	symbol_t   *sym = nullptr;
+	if (!sym) {
+		sym = symtab_lookup (current_symtab, token);
+	}
+	if (!sym) {
+		sym = new_symbol (token);
+	}
+	lval->symbol = sym;
+	if (sym->sy_type == sy_type) {
+		lval->spec = (specifier_t) {
+			.type = sym->type,
+			.sym = sym,
+		};
+		return QC_TYPE_NAME;
+	} else if (sym->sy_type == sy_type_param) {
+		lval->spec = (specifier_t) {
+			.type_expr = new_symbol_expr (sym),
+			.sym = sym,
+		};
+		return QC_TYPE_NAME;
+	}
+	if (sym->sy_type == sy_class)
+		return QC_CLASS_NAME;
+	return QC_NAME;
+}
+
+static int
+qc_yyparse (FILE *in, rua_ctx_t *ctx)
+{
+	rua_parser_t parser = {
+		.parse = qc_yypush_parse,
+		.state = qc_yypstate_new (),
+		.directive = qc_directive,
+		.keyword_or_id = qc_keyword_or_id,
+	};
+	int ret = rua_parse (in, &parser, ctx);
+	qc_yypstate_delete (parser.state);
+	return ret;
+}
+
+int
+qc_parse_string (const char *str, rua_ctx_t *ctx)
+{
+	rua_parser_t parser = {
+		.parse = qc_yypush_parse,
+		.state = qc_yypstate_new (),
+		.directive = qc_directive,
+		.keyword_or_id = qc_keyword_or_id,
+	};
+	auto qc_ctx = *ctx;
+	int ret = rua_parse_string (str, &parser, &qc_ctx);
+	glsl_yypstate_delete (parser.state);
+	return ret;
+}
+
+static int
+qc_finish (const char *file, rua_ctx_t *ctx)
+{
+	if (options.frames_files) {
+		write_frame_macros (va ("%s.frame", file_basename (file, 0)));
+	}
+	class_finish_module (ctx);
+	return pr.error_count;
+}
+
+static void
+rua_init (rua_ctx_t *ctx)
+{
+	if (!ctx->sub_parse) {
+		block_clear ();
+	}
+	ctx->language->initialized = true;
+}
+
+language_t lang_ruamoko = {
+	.short_circuit = true,
+	.init = rua_init,
+	.parse = qc_yyparse,
+	.finish = qc_finish,
+	.parse_declaration = rua_parse_declaration,
+	.field_attributes = rua_field_attributes,
+	.var_attributes = rua_var_attributes,
+};

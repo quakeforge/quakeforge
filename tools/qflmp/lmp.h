@@ -44,7 +44,7 @@ typedef struct {
 	lmpmode_t	mode;		// see above
 	int			verbosity;	// 0=silent
 	char		*palette;	// palette file to read
-	qboolean	raw;		// don't read / write header
+	bool		raw;		// don't read / write header
 	short		width;		// width of images
 	short		height;		// height " "
 } options_t;

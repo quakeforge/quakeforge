@@ -34,31 +34,41 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/dstring.h"
+#include "QF/gib.h"
 #include "QF/input.h"
+#include "QF/image.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
+#include "QF/png.h"
 #include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
+#include "QF/scene/scene.h"
+#include "QF/ui/font.h"//FIXME
 
 #include "compat.h"
-#include "sbar.h"
 
+#include "client/chase.h"
+#include "client/effects.h"
 #include "client/particles.h"
+#include "client/hud.h"
+#include "client/screen.h"
 #include "client/temp_entities.h"
+#include "client/world.h"
 
-#include "nq/include/chase.h"
 #include "nq/include/cl_skin.h"
 #include "nq/include/client.h"
-#include "nq/include/host.h"
 #include "nq/include/host.h"
 #include "nq/include/server.h"
 
@@ -68,30 +78,81 @@ static plugin_list_t client_plugin_list[] = {
 };
 
 // these two are not intended to be set directly
-cvar_t     *cl_name;
-cvar_t     *cl_color;
+char *cl_name;
+static cvar_t cl_name_cvar = {
+	.name = "_cl_name",
+	.description =
+		"Player name",
+	.default_value = "player",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = 0, .value = &cl_name },
+};
+int cl_color;
+static cvar_t cl_color_cvar = {
+	.name = "_cl_color",
+	.description =
+		"Player color",
+	.default_value = "0",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_color },
+};
 
-cvar_t     *cl_writecfg;
+int cl_writecfg;
+static cvar_t cl_writecfg_cvar = {
+	.name = "cl_writecfg",
+	.description =
+		"write config files?",
+	.default_value = "1",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_writecfg },
+};
 
-cvar_t     *cl_shownet;
-cvar_t     *cl_nolerp;
+int cl_shownet;
+static cvar_t cl_shownet_cvar = {
+	.name = "cl_shownet",
+	.description =
+		"show network packets. 0=off, 1=basic, 2=verbose",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_shownet },
+};
+int cl_nolerp;
+static cvar_t cl_nolerp_cvar = {
+	.name = "cl_nolerp",
+	.description =
+		"linear motion interpolation",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &cl_nolerp },
+};
+int cl_player_shadows;
+static cvar_t cl_player_shadows_cvar = {
+	.name = "cl_player_shadows",
+	.description =
+		"Show player shadows instead of weapon shadows",
+	.default_value = "1",
+	.flags = CVAR_ARCHIVE,
+	.value = { .type = &cexpr_int, .value = &cl_player_shadows },
+};
 
-cvar_t     *cl_cshift_bonus;
-cvar_t     *cl_cshift_contents;
-cvar_t     *cl_cshift_damage;
-cvar_t     *cl_cshift_powerup;
-
-cvar_t     *lookspring;
-
-cvar_t     *m_pitch;
-cvar_t     *m_yaw;
-cvar_t     *m_forward;
-cvar_t     *m_side;
-
-cvar_t     *hud_fps;
-cvar_t     *hud_time;
-
-int         fps_count;
+static int r_ambient;
+static cvar_t r_ambient_cvar = {
+	.name = "r_ambient",
+	.description =
+		"Determines the ambient lighting for a level",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &r_ambient },
+};
+static int r_drawflat;
+static cvar_t r_drawflat_cvar = {
+	.name = "r_drawflat",
+	.description =
+		"Toggles the drawing of textures",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &r_drawflat },
+};
 
 client_static_t cls;
 client_state_t cl;
@@ -106,12 +167,12 @@ CL_WriteConfiguration (void)
 {
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
-	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+	if (host_initialized && !isDedicated && cl_writecfg) {
+		plitem_t   *config = PL_NewDictionary (0);
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
 
-		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		const char *path = va ("%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
 
 		if (!f) {
@@ -122,13 +183,14 @@ CL_WriteConfiguration (void)
 			free (cfg);
 			Qclose (f);
 		}
-		PL_Free (config);
+		PL_Release (config);
 	}
 }
 
 int
 CL_ReadConfiguration (const char *cfg_name)
 {
+	qfZoneScoped (true);
 	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
 	if (!cfg_file) {
 		return 0;
@@ -139,7 +201,9 @@ CL_ReadConfiguration (const char *cfg_name)
 	cfg[len] = 0;
 	Qclose (cfg_file);
 
-	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);
+	free (cfg);
+
 	if (!config) {
 		return 0;
 	}
@@ -147,7 +211,7 @@ CL_ReadConfiguration (const char *cfg_name)
 	Cvar_LoadConfig (config);
 	IN_LoadConfig (config);
 
-	PL_Free (config);
+	PL_Release (config);
 	return 1;
 }
 
@@ -155,111 +219,93 @@ static void
 CL_Shutdown (void *data)
 {
 	CL_WriteConfiguration ();
+
+	Mod_ClearAll ();
+	dstring_delete (cl_stuffbuff);
 }
 
 void
 CL_ClearMemory (void)
 {
+	qfZoneScoped (true);
 	VID_ClearMemory ();
-	if (r_data)
-		r_data->force_fullscreen = 0;
-}
+	SCR_SetFullscreen (0);
 
-void
-CL_InitCvars (void)
-{
-	VID_Init_Cvars ();
-	IN_Init_Cvars ();
-	Mod_Init_Cvars ();
-	S_Init_Cvars ();
+	cls.signon = 0;
+	SZ_Clear (&cls.message);
 
-	CL_Demo_Init ();
-	Chase_Init_Cvars ();
-	V_Init_Cvars ();
-
-	cl_cshift_bonus = Cvar_Get ("cl_cshift_bonus", "1", CVAR_ARCHIVE, NULL,
-								"Show bonus flash on item pickup");
-	cl_cshift_contents = Cvar_Get ("cl_cshift_content", "1", CVAR_ARCHIVE,
-								   NULL, "Shift view colors for contents "
-								   "(water, slime, etc)");
-	cl_cshift_damage = Cvar_Get ("cl_cshift_damage", "1", CVAR_ARCHIVE, NULL,
-								 "Shift view colors on damage");
-	cl_cshift_powerup = Cvar_Get ("cl_cshift_powerup", "1", CVAR_ARCHIVE, NULL,                             "Shift view colors for powerups");
-	cl_name = Cvar_Get ("_cl_name", "player", CVAR_ARCHIVE, NULL,
-						"Player name");
-	cl_color = Cvar_Get ("_cl_color", "0", CVAR_ARCHIVE, NULL, "Player color");
-	cl_anglespeedkey = Cvar_Get ("cl_anglespeedkey", "1.5", CVAR_NONE, NULL,
-								 "turn `run' speed multiplier");
-	cl_backspeed = Cvar_Get ("cl_backspeed", "200", CVAR_ARCHIVE, NULL,
-							 "backward speed");
-	cl_forwardspeed = Cvar_Get ("cl_forwardspeed", "200", CVAR_ARCHIVE, NULL,
-								"forward speed");
-	cl_movespeedkey = Cvar_Get ("cl_movespeedkey", "2.0", CVAR_NONE, NULL,
-								"move `run' speed multiplier");
-	cl_pitchspeed = Cvar_Get ("cl_pitchspeed", "150", CVAR_NONE, NULL,
-							  "look up/down speed");
-	cl_sidespeed = Cvar_Get ("cl_sidespeed", "350", CVAR_NONE, NULL,
-							 "strafe speed");
-	cl_upspeed = Cvar_Get ("cl_upspeed", "200", CVAR_NONE, NULL,
-						   "swim/fly up/down speed");
-	cl_yawspeed = Cvar_Get ("cl_yawspeed", "140", CVAR_NONE, NULL,
-							"turning speed");
-	cl_writecfg = Cvar_Get ("cl_writecfg", "1", CVAR_NONE, NULL,
-							"write config files?");
-	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_NONE, NULL,
-						   "show network packets. 0=off, 1=basic, 2=verbose");
-	cl_nolerp = Cvar_Get ("cl_nolerp", "0", CVAR_NONE, NULL,
-						  "linear motion interpolation");
-	lookspring = Cvar_Get ("lookspring", "0", CVAR_ARCHIVE, NULL, "Snap view "
-						   "to center when moving and no mlook/klook");
-	m_pitch = Cvar_Get ("m_pitch", "0.022", CVAR_ARCHIVE, NULL,
-						"mouse pitch (up/down) multipier");
-	m_yaw =	Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE, NULL,
-					  "mouse yaw (left/right) multipiler");
-	m_forward = Cvar_Get ("m_forward", "1", CVAR_ARCHIVE, NULL,
-						  "mouse forward/back speed");
-	m_side = Cvar_Get ("m_side", "0.8", CVAR_ARCHIVE, NULL,
-					   "mouse strafe speed");
-	hud_fps = Cvar_Get ("hud_fps", "0", CVAR_ARCHIVE, NULL,
-						"display realtime frames per second");
-	Cvar_MakeAlias ("show_fps", hud_fps);
-	hud_time = Cvar_Get ("hud_time", "0", CVAR_ARCHIVE, NULL,
-						 "display the current time");
-}
-
-void
-CL_ClearState (void)
-{
-	if (!sv.active)
-		Host_ClearMemory ();
-
-	if (cl.edicts)
-		PL_Free (cl.edicts);
-
+	if (Entity_Valid (cl.viewstate.weapon_entity)) {
+		Scene_DestroyEntity (cl_world.scene, cl.viewstate.weapon_entity);
+		cl.viewstate.weapon_entity = nullentity;
+	}
 	if (cl.players) {
 		int         i;
 
 		for (i = 0; i < cl.maxclients; i++)
 			Info_Destroy (cl.players[i].userinfo);
 	}
-
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof (cl));
-	cl.chase = 1;
-	cl.watervis = 1;
-	r_data->force_fullscreen = 0;
+	Sbar_Intermission (cl.intermission = 0, cl.time);
+	cl.viewstate.demoplayback = cls.demoplayback;
+
+	CL_World_Clear ();
+	CL_ClearEnts ();
+
+	SCR_NewScene (0);
+}
+
+void
+CL_InitCvars (void)
+{
+	qfZoneScoped (true);
+	VID_Init_Cvars ();
+	IN_Init_Cvars ();
+	Mod_Init_Cvars ();
+	S_Init_Cvars ();
+
+	CL_Demo_Init ();
+	CL_Init_Input_Cvars ();
+	Chase_Init_Cvars ();
+	V_Init_Cvars ();
+
+	Cvar_Register (&cl_name_cvar, 0, 0);
+	Cvar_Register (&cl_color_cvar, 0, 0);
+	Cvar_Register (&cl_writecfg_cvar, 0, 0);
+	Cvar_Register (&cl_shownet_cvar, 0, 0);
+	Cvar_Register (&cl_nolerp_cvar, 0, 0);
+	Cvar_Register (&cl_player_shadows_cvar, 0, 0);
+
+	//FIXME not hooked up (don't do anything), but should not work in
+	//multi-player
+	Cvar_Register (&r_ambient_cvar, 0, 0);
+	Cvar_Register (&r_drawflat_cvar, 0, 0);
+}
+
+void
+CL_ClearState (void)
+{
+	qfZoneScoped (true);
+	CL_ClearMemory ();
+	if (!sv.active)
+		Host_ClearMemory ();
+
+	cl.viewstate.player_origin = (vec4f_t) {0, 0, 0, 1};
+	cl.viewstate.chase = 1;
+	cl.viewstate.chasestate = &cl.chasestate;
+	cl.chasestate.viewstate = &cl.viewstate;
+	cl.viewstate.watervis = 1;
+	SCR_SetFullscreen (0);
 	r_data->lightstyle = cl.lightstyle;
 
-	CL_Init_Entity (&cl.viewent);
-	r_data->view_model = &cl.viewent;
+	cl.viewstate.weapon_entity = Scene_CreateEntity (cl_world.scene);
+	CL_Init_Entity (cl.viewstate.weapon_entity);
+	auto renderer = Entity_GetRenderer (cl.viewstate.weapon_entity);
+	renderer->depthhack = 1;
+	renderer->noshadows = cl_player_shadows;
+	r_data->view_model = cl.viewstate.weapon_entity;
 
-	SZ_Clear (&cls.message);
-
-	CL_ClearTEnts ();
-
-	r_funcs->R_ClearState ();
-
-	CL_ClearEnts ();
+	CL_TEnts_Precache ();
 }
 
 /*
@@ -273,7 +319,7 @@ CL_StopCshifts (void)
 	int i;
 
 	for (i = 0; i < NUM_CSHIFTS; i++)
-		cl.cshifts[i].percent = 0;
+		cl.viewstate.cshifts[i].percent = 0;
 	for (i = 0; i < MAX_CL_STATS; i++)
 		cl.stats[i] = 0;
 }
@@ -287,14 +333,14 @@ CL_StopCshifts (void)
 void
 CL_Disconnect (void)
 {
+	if (net_is_dedicated) {
+		return;
+	}
 	// stop sounds (especially looping!)
 	S_StopAllSounds ();
 
 	// Clean the Cshifts
 	CL_StopCshifts ();
-
-	// bring the console down and fade the colors back to normal
-//	SCR_BringDownConsole ();
 
 	// if running a local server, shut it down
 	if (cls.demoplayback)
@@ -315,8 +361,9 @@ CL_Disconnect (void)
 			Host_ShutdownServer (false);
 	}
 
-	cl.worldmodel = NULL;
-	cl.intermission = 0;
+	cl_world.scene->worldmodel = NULL;
+	Sbar_Intermission (cl.intermission = 0, cl.time);
+	cl.viewstate.intermission = 0;
 }
 
 void
@@ -335,7 +382,7 @@ CL_Disconnect_f (void)
 void
 CL_EstablishConnection (const char *host)
 {
-	if (cls.state == ca_dedicated)
+	if (net_is_dedicated)
 		return;
 
 	if (cls.demoplayback)
@@ -373,12 +420,12 @@ CL_SignonReply (void)
 
 	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va (0, "name \"%s\"\n",
-										   cl_name->string));
+		MSG_WriteString (&cls.message, va ("name \"%s\"\n",
+										   cl_name));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
-						 va (0, "color %i %i\n", (cl_color->int_val) >> 4,
-							 (cl_color->int_val) & 15));
+						 va ("color %i %i\n", (cl_color) >> 4,
+							 (cl_color) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "spawn");
 		break;
@@ -390,7 +437,7 @@ CL_SignonReply (void)
 		break;
 
 	case so_active:
-		cl.loading = false;
+		cl.viewstate.loading = false;
 		CL_SetState (ca_active);
 		break;
 	}
@@ -407,8 +454,12 @@ CL_NextDemo (void)
 	if (cls.demonum == -1)
 		return;							// don't play demos
 
-	cl.loading = true;
-	CL_UpdateScreen(cl.time);
+	cl.viewstate.loading = true;
+	cl.viewstate.time = cl.time;
+	cl.viewstate.realtime = realtime;
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
+	CL_UpdateScreen(&cl.viewstate);
 
 	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS) {
 		cls.demonum = 0;
@@ -419,7 +470,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (host_cbuf, va (0, "playdemo %s\n",
+	Cbuf_InsertText (host_cbuf, va ("playdemo %s\n",
 									cls.demos[cls.demonum]));
 	cls.demonum++;
 }
@@ -427,25 +478,28 @@ CL_NextDemo (void)
 static void
 pointfile_f (void)
 {
-	CL_LoadPointFile (cl.worldmodel);
+	CL_LoadPointFile (cl_world.scene->worldmodel);
 }
 
 static void
 CL_PrintEntities_f (void)
 {
-	entity_t   *ent;
 	int         i;
 
-	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
+	for (i = 0; i < cl.num_entities; i++) {
+		entity_t    ent = cl_entities[i];
+		transform_t transform = Entity_Transform (ent);
+		auto renderer = Entity_GetRenderer (ent);
+		auto animation = Entity_GetAnimation (ent);
 		Sys_Printf ("%3i:", i);
-		if (!ent->renderer.model) {
+		if (!Entity_Valid (ent) || !renderer->model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		vec4f_t     org = Transform_GetWorldPosition (ent->transform);
-		vec4f_t     rot = Transform_GetWorldRotation (ent->transform);
+		vec4f_t     org = Transform_GetWorldPosition (transform);
+		vec4f_t     rot = Transform_GetWorldRotation (transform);
 		Sys_Printf ("%s:%2i  "VEC4F_FMT" "VEC4F_FMT"\n",
-					ent->renderer.model->path, ent->animation.frame,
+					renderer->model->path, animation->frame,
 					VEC4_EXP (org), VEC4_EXP (rot));
 	}
 }
@@ -458,15 +512,17 @@ CL_PrintEntities_f (void)
 int
 CL_ReadFromServer (void)
 {
+	qfZoneNamedN (rfzzone, "CL_ReadFromServer", true);
 	int         ret;
 	TEntContext_t tentCtx = {
-		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
-		cl.worldmodel, cl.viewentity
+		cl.viewstate.player_origin,
+		cl.viewentity
 	};
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
 	cl.viewstate.frametime = host_frametime;
+	cl.viewstate.time = cl.time;
 
 	do {
 		ret = CL_GetMessage ();
@@ -478,7 +534,7 @@ CL_ReadFromServer (void)
 		CL_ParseServerMessage ();
 	} while (ret && cls.state >= ca_connected);
 
-	if (cl_shownet->int_val)
+	if (cl_shownet)
 		Sys_Printf ("\n");
 
 	CL_RelinkEntities ();
@@ -528,58 +584,149 @@ CL_SetState (cactive_t state)
 {
 	cactive_t   old_state = cls.state;
 	cls.state = state;
+	cl.viewstate.active = cls.state == ca_active;
+	cl.viewstate.drift_enabled = !cls.demoplayback;
 	Sys_MaskPrintf (SYS_net, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
-		if (old_state == ca_active) {
+		if (old_state == ca_active && state != ca_disconnected) {
 			// leaving active state
 			S_AmbientOff ();
-			r_funcs->R_ClearState ();
+			SCR_NewScene (0);
 		}
 		switch (state) {
-			case ca_dedicated:
-				break;
 			case ca_disconnected:
 				CL_ClearState ();
 				cls.signon = so_none;
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				VID_SetCaption ("Disconnected");
 				break;
 			case ca_connected:
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
-				cl.loading = true;
+				cl.viewstate.loading = true;
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
-				cl.loading = false;
+				cl.viewstate.loading = false;
 				IN_ClearStates ();
 				VID_SetCaption ("");
 				S_AmbientOn ();
 				break;
 		}
-		CL_UpdateScreen (cl.time);
+		Sbar_SetActive (state == ca_active);
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
+		CL_UpdateScreen (&cl.viewstate);
 	}
 	host_in_game = 0;
-	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen,
+				  state == ca_active && !cls.demoplayback);
 	if (state != old_state && state == ca_active) {
-		CL_Input_Activate ();
+		CL_Input_Activate (host_in_game = !cls.demoplayback);
+	}
+}
+
+static void
+write_capture (tex_t *tex, void *data)
+{
+	QFile      *file = QFS_Open (va ("%s/qfmv%06d.png",
+									 qfs_gamedir->dir.shots,
+									 cls.demo_capture++), "wb");
+	if (file) {
+		WritePNG (file, tex);
+		Qclose (file);
+	}
+	free (tex);
+}
+
+void
+CL_PreFrame (void)
+{
+	qfZoneNamedN (pfzone, "CL_PreFrame", true);
+	IN_ProcessEvents ();
+
+	qfMessageL ("scripts");
+	GIB_Thread_Execute ();
+	cmd_source = src_command;
+	Cbuf_Execute_Stack (host_cbuf);
+
+	qfMessageL ("send");
+	CL_SendCmd ();
+}
+
+void
+CL_Frame (void)
+{
+	qfZoneNamedN (fzone, "CL_Frame", true);
+	static double time1 = 0, time2 = 0, time3 = 0;
+	int         pass1, pass2, pass3;
+
+	// fetch results from server
+	if (cls.state >= ca_connected)
+		CL_ReadFromServer ();
+
+	// update video
+	if (host_speeds)
+		time1 = Sys_DoubleTime ();
+
+	r_data->inhibit_viewmodel = (chase_active
+								 || (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+								 || cl.stats[STAT_HEALTH] <= 0);
+	r_data->frametime = host_frametime;
+
+	cl.viewstate.intermission = cl.intermission != 0;
+	Sbar_Update (cl.time);
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
+	CL_UpdateScreen (&cl.viewstate);
+
+	if (host_speeds)
+		time2 = Sys_DoubleTime ();
+
+	// update audio
+	if (cls.state == ca_active) {
+		mleaf_t    *l;
+		byte       *asl = 0;
+		vec4f_t     origin;
+
+		origin = Transform_GetWorldPosition (cl.viewstate.camera_transform);
+		l = Mod_PointInLeaf (origin, &cl_world.scene->worldmodel->brush);
+		if (l)
+			asl = l->ambient_sound_level;
+		S_Update (cl.viewstate.camera_transform, asl);
+		Light_DecayLights (cl_world.scene->lights, host_frametime, cl.time);
+	} else
+		S_Update (nulltransform, 0);
+
+	CDAudio_Update ();
+
+	if (host_speeds) {
+		pass1 = (time1 - time3) * 1000;
+		time3 = Sys_DoubleTime ();
+		pass2 = (time2 - time1) * 1000;
+		pass3 = (time3 - time2) * 1000;
+		Sys_Printf ("%3i tot %3i server %3i gfx %3i snd\n",
+					pass1 + pass2 + pass3, pass1, pass2, pass3);
+	}
+
+	if (cls.demo_capture) {
+		r_funcs->capture_screen (write_capture, 0);
 	}
 }
 
 static void
 Force_CenterView_f (void)
 {
-	cl.viewstate.angles[PITCH] = 0;
+	cl.viewstate.player_angles[PITCH] = 0;
 }
 
 void
 CL_Init (cbuf_t *cbuf)
 {
+	qfZoneScoped (true);
 	byte       *basepal, *colormap;
-
-	Sys_RegisterShutdown (CL_Shutdown, 0);
 
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)
@@ -588,27 +735,35 @@ CL_Init (cbuf_t *cbuf)
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 
+	Host_OnServerSpawn (CL_ClearMemory);
+
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
 	IN_Init ();
-	R_Init ();
+	GIB_Key_Init ();
+	R_Init (nullptr);
 	r_data->lightstyle = cl.lightstyle;
-
 	S_Init (&cl.viewentity, &host_frametime);
+	Font_Init ();	//FIXME not here
 
 	PI_RegisterPlugins (client_plugin_list);
-	Con_Init ("client");
+	CL_Init_Screen ();
+	Con_Init ();
 
 	CDAudio_Init ();
 
-	Sbar_Init ();
+	Sbar_Init (cl.stats, cl.item_gettime);
 
-	CL_Input_Init (cbuf);
+	CL_Init_Input (cbuf);
 	CL_Particles_Init ();
+	CL_Effects_Init ();
 	CL_TEnts_Init ();
+	CL_World_Init ();
 	CL_ClearState ();
 
-	V_Init ();
+	VID_SendSize ();
+
+	V_Init (&cl.viewstate);
 
 	Cmd_AddCommand ("pointfile", pointfile_f,
 					"Load a pointfile to determine map leaks.");
@@ -620,6 +775,9 @@ CL_Init (cbuf_t *cbuf)
 	Cmd_AddCommand ("force_centerview", Force_CenterView_f, "force the view "
 					"to be level");
 
+	Sys_RegisterShutdown (CL_Shutdown, 0);
+
+	cl_stuffbuff = dstring_newstr ();
 	SZ_Alloc (&cls.message, 1024);
 	CL_SetState (ca_disconnected);
 }

@@ -1,7 +1,14 @@
 #ifndef __QF_Vulkan_debug_h
 #define __QF_Vulkan_debug_h
 
-#if (defined(_WIN32) && !defined(_WIN64)) || (__WORDSIZE < 64)
+#ifndef VK_NO_PROTOTYPES
+#define VK_NO_PROTOTYPES
+#endif
+#include <vulkan/vulkan.h>
+
+#include "QF/simd/types.h"
+
+#if (defined(_WIN32) && !defined(_WIN64)) || (!defined(_WIN32) && __WORDSIZE < 64)
 #define QFV_duCmdBeginLabel(device, cmd, name...)
 #define QFV_duCmdEndLabel(device, cmd)
 #define QFV_duCmdInsertLabel(device, cmd, name...)
@@ -10,7 +17,7 @@
 #define QFV_duQueueBeginLabel(device, queue, name...)
 #define QFV_duQueueEndLabel(device, queue)
 #define QFV_duQueueInsertLabel(device, queue, name...)
-#define QFV_duSetObjectName(device, type, handle, name)
+#define QFV_duSetObjectName(device, type, handle, name) ((void)device, (void)type, (void)handle)
 #define QFV_duSetObjectTag(device, type, handle, name, size, tag)
 #define QFV_duSubmitMessage(inst, severity, types, data)
 #else
@@ -18,10 +25,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkCmdBeginDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkCmdBeginDebugUtilsLabelEXT (cmd, &label); \
+			dfunc->vkCmdBeginDebugUtilsLabelEXT (cmd, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -37,10 +44,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkCmdInsertDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkCmdInsertDebugUtilsLabelEXT (cmd, &label); \
+			dfunc->vkCmdInsertDebugUtilsLabelEXT (cmd, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -67,10 +74,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkQueueBeginDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkQueueBeginDebugUtilsLabelEXT (queue, &label); \
+			dfunc->vkQueueBeginDebugUtilsLabelEXT (queue, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -86,10 +93,10 @@
 	do { \
 		qfv_devfuncs_t *dfunc = device->funcs; \
 		if (dfunc->vkQueueInsertDebugUtilsLabelEXT) { \
-			VkDebugUtilsLabelEXT label = { \
+			VkDebugUtilsLabelEXT qfv_du_label = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, 0, name \
 			}; \
-			dfunc->vkQueueInsertDebugUtilsLabelEXT (queue, &label); \
+			dfunc->vkQueueInsertDebugUtilsLabelEXT (queue, &qfv_du_label); \
 		} \
 	} while (0)
 
@@ -125,5 +132,13 @@
 		} \
 	} while (0)
 #endif
+
+struct qfv_device_s;
+
+void QFV_CmdBeginLabel (struct qfv_device_s *device, VkCommandBuffer cmd,
+						const char *name, vec4f_t color);
+void QFV_CmdEndLabel (struct qfv_device_s *device, VkCommandBuffer cmd);
+void QFV_CmdInsertLabel (struct qfv_device_s *device, VkCommandBuffer cmd,
+						 const char *name, vec4f_t color);
 
 #endif//__QF_Vulkan_debug_h

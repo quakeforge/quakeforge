@@ -77,7 +77,7 @@ typedef struct reloc_s {
 								///< adjustment
 	reloc_type	type;			///< type type of relocation to perform
 	int			line;			///< current source line when creating reloc
-	string_t	file;			///< current source file when creating reloc
+	pr_string_t file;			///< current source file when creating reloc
 	const void *return_address;	///< for debugging
 } reloc_t;
 
@@ -241,6 +241,8 @@ void reloc_def_op (const struct ex_label_s *label,
 				   const struct def_s *location);
 
 void reloc_attach_relocs (reloc_t *relocs, reloc_t **location);
+
+extern const char * const reloc_name[];
 
 ///@}
 

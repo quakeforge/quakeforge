@@ -3,7 +3,8 @@ Section: contrib/games
 Priority: optional
 Maintainer: Jeff Teunissen <deek@debian.org>
 Standards-Version: 3.1.1
-Build-Depends: automake (>= 1.8) | automake1.8, autoconf, libtool, bison, flex, debhelper, libsdl1.2-dev, zlib1g-dev, libncurses5-dev, libx11-dev, libxext-dev, libxxf86dga-dev, libxxf86vm-dev, libcurl-dev, libasound2-dev, libvorbis-dev, libflac-dev, libjack-dev, libpng12-dev, libsamplerate0-dev, libwildmidi-dev, git-core
+Build-Depends: automake (>= 1.16), autoconf (>= 2.71), libtool, bison, flex, debhelper-compat (= 13), git-core, python3, libasound2-dev, libjack-jackd2-dev, libsamplerate0-dev, libflac-dev, libogg-dev, libvorbis-dev, libpng-dev, zlib1g-dev, libcurl4-openssl-dev, libncurses5-dev, libxext-dev, libxxf86dga-dev, libxxf86vm-dev, libxi-dev, libxfixes-dev, libvulkan-dev, glslang-tools, libfontconfig-dev, libfreetype-dev, libharfbuzz-dev
+
 
 Package: quakeforge
 Architecture: any
@@ -53,22 +54,6 @@ Description: 3D first-person shooter engine - development files
  This package contains headers and static libraries for the development of
  utilities and applications for QuakeForge.
 
-Package: quakeforge-sdl
-Architecture: any
-Conflicts: quake-sdl
-Depends: quake-game, ${misc:Depends}, ${shlibs:Depends}
-Provides: quakeforge-client
-Suggests: joystick
-Description: 3D first-person shooter engine - SDL client
- QuakeForge is a source port of Quake and QuakeWorld, the successors to id
- Software's very popular DOOM series. Its primary development goal is to
- remain compatible with the original games released by id Software while
- adding portability and optional extensions to enhance gameplay.
- .
- This package contains the SDL versions of the QuakeWorld client and
- standalone engine, as well as CD audio and sound output plugins that use SDL to
- do their work.
-
 Package: quakeforge-x11
 Architecture: any
 Conflicts: quake-x11
@@ -111,7 +96,7 @@ Description: 3D first-person shooter engine - Software renderer libraries
  This package contains the shared libraries needed to use the software
  renderer.
 
-Package: quakeforge-sw32
+Package: quakeforge-vulkan
 Architecture: any
 Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
 Section: contrib/libs
@@ -121,8 +106,8 @@ Description: 3D first-person shooter engine - Software renderer libraries
  remain compatible with the original games released by id Software while
  adding portability and optional extensions to enhance gameplay.
  .
- This package contains the shared libraries needed to use the 32bppi
- software renderer.
+ This package contains the shared libraries needed to use the Vulkan
+ renderer.
 
 Package: quakeforge-gl
 Architecture: any
@@ -149,17 +134,6 @@ Description: 3D first-person shooter engine - OpenGL renderer libraries
  .
  This package contains the shared libraries needed to use the OpenGL GLSL
  renderer.
-
-Package: quakeforge-oss
-Architecture: any
-Depends: quakeforge-common, ${misc:Depends}, ${shlibs:Depends}
-Description: OSS digital audio output plugin for QuakeForge
- The OSS plugin for QuakeForge provides digital audio output (using OSS/Linux,
- OSS/Free, or kernel sound) for QuakeForge targets that contain clients.
- .
- NOTE: This plugin does not work on all systems, since it uses memory-mapped
- I/O for the output device. If you have trouble, try the quakeforge-alsa
- package.
 
 Package: quakeforge-alsa
 Architecture: any

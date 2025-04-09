@@ -52,10 +52,9 @@
 
 + (id) arrayWithObjects: (id *) objs count: (unsigned)cnt
 {
-	local int i;
 	id	newArray = [self array];
 
-	for (i = 0; i < cnt; i++) {
+	for (unsigned i = 0; i < cnt; i++) {
 		[newArray addObject: (id) objs[i]];
 	}
 	return newArray;
@@ -138,12 +137,10 @@
 
 - (id) initWithObjects: (id *) objs count: (unsigned)cnt
 {
-	local int i;
-
 	if (!(self = [self initWithCapacity: cnt]))
 		return nil;
 
-	for (i = 0; i < cnt; i++) {
+	for (unsigned i = 0; i < cnt; i++) {
 		[self addObject: (id) objs[i]];
 	}
 	return self;
@@ -355,7 +352,6 @@
 
 - (void) removeObjectAtIndex: (unsigned)index
 {
-	local int	i;
 	local id		temp;
 
 	if (index >= count) // FIXME: need exceptions
@@ -363,7 +359,7 @@
 
 	temp = _objs[index];
 	count--;
-	for (i = index; i < count; i++) {	// reassign all objs >= index
+	for (unsigned i = index; i < count; i++) {	// reassign all objs >= index
 		_objs[i] = _objs[i+1];
 	}
 
@@ -393,9 +389,7 @@
 
 - (void) makeObjectsPerformSelector: (SEL)selector
 {
-	local int	i;
-
-	for (i = 0; i < [self count]; i++) {
+	for (unsigned i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector];
 	}
 }
@@ -403,9 +397,7 @@
 - (void) makeObjectsPerformSelector: (SEL)selector
                          withObject: (void *)anObject
 {
-	local int	i;
-
-	for (i = 0; i < [self count]; i++) {
+	for (unsigned i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector withObject: anObject];
 	}
 }
@@ -414,9 +406,7 @@
                          withObject: (void *)anObject
                          withObject: (void *)anotherObject
 {
-	local int	i;
-
-	for (i = 0; i < [self count]; i++) {
+	for (unsigned i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector
 									  withObject: anObject
 									  withObject: anotherObject];

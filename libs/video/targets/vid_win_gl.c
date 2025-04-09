@@ -54,7 +54,15 @@ static void (GLAPIENTRY *qfglFinish) (void);
 static void *(WINAPI * glGetProcAddress) (const char *symbol) = NULL;
 static int use_gl_proceaddress = 0;
 
-static cvar_t *gl_driver;
+static char *gl_driver;
+static cvar_t gl_driver_cvar = {
+	.name = "gl_driver",
+	.description =
+		"The OpenGL library to use. (path optional)",
+	.default_value = GL_DRIVER,
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &gl_driver },
+};
 static HGLRC   baseRC;//FIXME should be in gl_ctx_t, but that's GLXContext...
 static void *
 QFGL_GetProcAddress (void *handle, const char *name)
@@ -69,7 +77,7 @@ QFGL_GetProcAddress (void *handle, const char *name)
 }
 
 static void *
-QFGL_ProcAddress (const char *name, qboolean crit)
+QFGL_ProcAddress (const char *name, bool crit)
 {
 	void       *glfunc = NULL;
 
@@ -117,7 +125,7 @@ wgl_set_pixel_format (void)
 }
 
 static void
-wgl_create_context (gl_ctx_t *ctx)
+wgl_create_context (gl_ctx_t *ctx, int core)
 {
 	DWORD       lasterror;
 
@@ -155,8 +163,8 @@ wgl_end_rendering (void)
 		SwapBuffers (win_maindc);
 	}
 	// handle the mouse state when windowed if that's changed
-	if (!vid_fullscreen->int_val) {
-//FIXME		if (!in_grab->int_val) {
+	if (!vid_fullscreen) {
+//FIXME		if (!in_grab) {
 //FIXME         if (windowed_mouse) {
 //FIXME             IN_DeactivateMouse ();
 //FIXME             IN_ShowMouse ();
@@ -169,11 +177,11 @@ wgl_end_rendering (void)
 }
 
 static void
-wgl_load_gl (void)
+wgl_load_gl (gl_ctx_t *ctx)
 {
-	libgl_handle = LoadLibrary (gl_driver->string);
+	libgl_handle = LoadLibrary (gl_driver);
 	if (!libgl_handle) {
-		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver->string);
+		Sys_Error ("Couldn't load OpenGL library %s!", gl_driver);
 	}
 	glGetProcAddress =
 		(void *) GetProcAddress (libgl_handle, "wglGetProcAddress");
@@ -190,7 +198,7 @@ wgl_load_gl (void)
 }
 
 gl_ctx_t *
-Win_GL_Context (void)
+Win_GL_Context (vid_internal_t *vi)
 {
 	gl_ctx_t *ctx = calloc (1, sizeof (gl_ctx_t));
 	ctx->load_gl = wgl_load_gl;
@@ -198,12 +206,13 @@ Win_GL_Context (void)
 	ctx->create_context = wgl_create_context;
 	ctx->get_proc_address = QFGL_ProcAddress;
 	ctx->end_rendering = wgl_end_rendering;
+
+	vi->ctx = ctx;
 	return ctx;
 }
 
 void
 Win_GL_Init_Cvars (void)
 {
-	gl_driver = Cvar_Get ("gl_driver", GL_DRIVER, CVAR_ROM, NULL,
-						  "The OpenGL library to use. (path optional)");
+	Cvar_Register (&gl_driver_cvar, 0, 0);
 }

@@ -71,7 +71,7 @@
 #undef QFGL_NEED
 #undef QFGL_WANT
 
-qboolean
+bool
 EGLF_FindFunctions (void)
 {
 #define QFGL_WANT(ret, name, args) \

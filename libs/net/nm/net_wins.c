@@ -1,4 +1,3 @@
-
 /*
 	net_wins.c
 
@@ -74,7 +73,7 @@ static netadr_t broadcastaddr;
 
 static unsigned long myAddr;
 
-qboolean    winsock_lib_initialized;
+bool        winsock_lib_initialized;
 
 int         (PASCAL FAR * pWSAStartup) (WORD wVersionRequired,
 
@@ -189,6 +188,7 @@ WINS_GetLocalAddress (void)
 int
 WINS_Init (void)
 {
+	qfZoneScoped (true);
 	int         i;
 	char        buff[MAXHOSTNAMELEN];
 	char       *p;
@@ -253,7 +253,7 @@ WINS_Init (void)
 		return -1;
 	}
 	// if the quake hostname isn't set, set it to the machine name
-	if (strcmp (hostname->string, "UNNAMED") == 0) {
+	if (strcmp (hostname, "UNNAMED") == 0) {
 		// see if it's a text IP address (well, close enough)
 		for (p = buff; *p; p++)
 			if ((*p < '0' || *p > '9') && *p != '.')
@@ -266,7 +266,7 @@ WINS_Init (void)
 					break;
 			buff[i] = 0;
 		}
-		Cvar_Set (hostname, buff);
+		Cvar_Set ("hostname", buff);
 	}
 
 	i = COM_CheckParm ("-ip");
@@ -319,7 +319,7 @@ WINS_Shutdown (void)
 //=============================================================================
 
 void
-WINS_Listen (qboolean state)
+WINS_Listen (bool state)
 {
 	// enable listening
 	if (state) {

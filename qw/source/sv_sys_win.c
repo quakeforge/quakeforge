@@ -38,7 +38,7 @@
 
 #include "qw/include/server.h"
 
-qboolean    WinNT;
+bool        WinNT;
 server_static_t svs;
 
 static void
@@ -70,6 +70,10 @@ main (int argc, const char **argv)
 {
 	double      time, oldtime, newtime;
 
+	if (Sys_setjmp (sys_exit_jmpbuf)) {
+		exit (0);
+	}
+
 	startup ();
 
 	memset (&host_parms, 0, sizeof (host_parms));
@@ -81,7 +85,7 @@ main (int argc, const char **argv)
 	SV_Init ();
 
 	if (COM_CheckParm ("-nopriority")) {
-		Cvar_Set (sys_sleep, "0");
+		Cvar_Set ("sys_sleep", "0");
 	} else {
 		if (!SetPriorityClass (GetCurrentProcess (), HIGH_PRIORITY_CLASS))
 			SV_Printf ("SetPriorityClass() failed\n");
@@ -91,7 +95,7 @@ main (int argc, const char **argv)
 
 	// sys_sleep > 0 seems to cause packet loss on WinNT (why?)
 	if (WinNT)
-		Cvar_Set (sys_sleep, "0");
+		Cvar_Set ("sys_sleep", "0");
 
 	Sys_RegisterShutdown (Net_LogStop, 0);
 

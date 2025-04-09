@@ -1,9 +1,9 @@
+#include <QF/keys.h>
 #include "AutoreleasePool.h"
 #include "menu.h"
 #include "cmd.h"
 #include "gib.h"
 #include "draw.h"
-#include "key.h"
 #include "string.h"
 #include "cbuf.h"
 #include "options.h"
@@ -42,7 +42,7 @@ menu_leave_sound =
 	S_LocalSound ("misc/menu2.wav");
 }
 
-int (int key, int unicode, int down)
+bool (int key, int unicode, bool down)
 menu_key_sound =
 {
 	switch (key) {
@@ -55,7 +55,7 @@ menu_key_sound =
 			S_LocalSound ("misc/menu1.wav");
 			break;
 	}
-	return 0;
+	return false;
 }
 
 void (int x, int y) spinner =
@@ -227,7 +227,7 @@ int (int x, int y) save_draw =
 	return 1;
 };
 
-int (int key, int unicode, int down) load_quickbup_keyevent =
+bool (int key, int unicode, bool down) load_quickbup_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
@@ -235,27 +235,27 @@ int (int key, int unicode, int down) load_quickbup_keyevent =
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
 			load_cursor %= MAX_QUICK;
-			return 1;
+			return true;
 		case QFK_UP:
 		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor += MAX_QUICK - 1;
 			load_cursor %= MAX_QUICK;
-			return 1;
+			return true;
 		case QFK_RETURN:
 		//case QFM_BUTTON1:
 			if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
-				Cbuf_AddText (sprintf ("load quick%i.sav\n", load_cursor));
+				Cbuf_AddText (nil, sprintf ("load quick%i.sav\n", load_cursor));
 				load_cursor = MAX_SAVEGAMES;
 			}
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 };
 
-int (int key, int unicode, int down) load_keyevent =
+bool (int key, int unicode, bool down) load_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
@@ -263,13 +263,13 @@ int (int key, int unicode, int down) load_keyevent =
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
 			load_cursor %= MAX_SAVEGAMES + 1;
-			return 1;
+			return true;
 		case QFK_UP:
 		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor += MAX_SAVEGAMES;
 			load_cursor %= MAX_SAVEGAMES + 1;
-			return 1;
+			return true;
 		case QFK_RETURN:
 		//case QFM_BUTTON1:
 			if (load_cursor == MAX_SAVEGAMES) {
@@ -279,14 +279,14 @@ int (int key, int unicode, int down) load_keyevent =
 			} else if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
-				Cbuf_AddText (sprintf ("load s%i.sav\n", load_cursor));
+				Cbuf_AddText (nil, sprintf ("load s%i.sav\n", load_cursor));
 			}
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 };
 
-int (int key, int unicode, int down) save_keyevent =
+bool (int key, int unicode, bool down) save_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
@@ -294,20 +294,20 @@ int (int key, int unicode, int down) save_keyevent =
 			S_LocalSound ("misc/menu1.wav");
 			save_cursor++;
 			save_cursor %= MAX_SAVEGAMES;
-			return 1;
+			return true;
 		case QFK_UP:
 		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			save_cursor += MAX_SAVEGAMES - 1;
 			save_cursor %= MAX_SAVEGAMES;
-			return 1;
+			return true;
 		case QFK_RETURN:
 		//case QFM_BUTTON1:
 			Menu_SelectMenu (nil);
-			Cbuf_AddText (sprintf ("save s%i.sav\n", save_cursor));
-			return 1;
+			Cbuf_AddText (nil, sprintf ("save s%i.sav\n", save_cursor));
+			return true;
 	}
-	return 0;
+	return false;
 };
 
 void () load_quickbup_menu =
@@ -361,17 +361,17 @@ int (string text, int key) quit_f =
 	return 0;
 };
 
-int (int key, int unicode, int down) quit_keyevent =
+bool (int key, int unicode, bool down) quit_keyevent =
 {
 	if (key == 'y') {
 		Menu_Quit ();
-		return 1;
+		return true;
 	}
 	if (key == 'n') {
 		Menu_SelectMenu (nil);
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 };
 
 int (int x, int y) quit_draw =
@@ -398,15 +398,15 @@ void () quit_menu =
 int (string text, int key) sp_start =
 {
 	Menu_SelectMenu (nil);
-	Cbuf_AddText ("disconnect\n");
-	Cbuf_AddText ("maxplayers 1\n");
-	Cbuf_AddText ("coop 0\n");
-	Cbuf_AddText ("deathmatch 0\n");
-	Cbuf_AddText ("teamplay 0\n");
-	Cbuf_AddText ("listen 0\n");
-	Cbuf_AddText ("noexit 0\n");
-	Cbuf_AddText ("samelevel 0\n");
-	Cbuf_AddText ("map start\n");
+	Cbuf_AddText (nil, "disconnect\n");
+	Cbuf_AddText (nil, "maxplayers 1\n");
+	Cbuf_AddText (nil, "coop 0\n");
+	Cbuf_AddText (nil, "deathmatch 0\n");
+	Cbuf_AddText (nil, "teamplay 0\n");
+	Cbuf_AddText (nil, "listen 0\n");
+	Cbuf_AddText (nil, "noexit 0\n");
+	Cbuf_AddText (nil, "samelevel 0\n");
+	Cbuf_AddText (nil, "map start\n");
 	return 0;
 };
 
@@ -429,7 +429,7 @@ void () single_player_menu =
 
 // ********* MULTIPLAYER
 
-int JoiningGame;
+bool JoiningGame;
 int lanConfig_cursor;
 string my_tcpip_address;
 string lanConfig_portname;
@@ -488,7 +488,7 @@ int (int x, int y) lanconfig_draw =
 	return 0;
 };
 
-int (int key, int unicode, int down) lanconfig_keyevent =
+bool (int key, int unicode, bool down) lanconfig_keyevent =
 {
 	if (input_active)
 		[input_active processInput:(key >= 256 ? key : unicode)];
@@ -500,7 +500,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 				lanConfig_cursor ++;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
-			return 1;
+			return true;
 		case QFK_UP:
 		//case QFM_WHEEL_UP:
 			if (!input_active) {
@@ -508,7 +508,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 				lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;
 				lanConfig_cursor %= NUM_LANCONFIG_CMDS;
 			}
-			return 1;
+			return true;
 		case QFK_RETURN:
 			if (input_active) {
 				input_active = nil;
@@ -521,9 +521,9 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 					}
 				}
 			}
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 };
 
 void () lanconfig_menu =
@@ -558,12 +558,12 @@ void () join_menu =
 	Menu_End ();
 };
 
-int (int key, int unicode, int down) multi_player_keyevent =
+bool (int key, int unicode, bool down) multi_player_keyevent =
 {
 	if (key == QFK_RETURN) {
 		JoiningGame = (Menu_GetIndex () == 0);
 	}
-	return 0;
+	return false;
 };
 
 void () multi_player_menu =
@@ -598,12 +598,12 @@ void () main_menu =
 	Menu_LeaveHook (menu_leave_sound);
 	Menu_KeyEvent (menu_key_sound);
 	Menu_FadeScreen (1);
-	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_CenterPic (160, 4, "gfx/ttl_main.lmp");
 	if (do_single_player)
 		Menu_Pic (71,32, "gfx/mainmenu.lmp");
 	else
 		Menu_SubPic (71,52, "gfx/mainmenu.lmp", 0, 20, 240, 92);
+	Menu_Pic (16, 4, "gfx/qplaque.lmp");
 	Menu_Cursor (spinner);
 	if (do_single_player)
 		single_player_menu ();

@@ -1,3 +1,4 @@
+#pragma bug die
 void printf (string fmt, ...) = #0;
 void *obj_malloc (int size) = #0;
 

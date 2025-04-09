@@ -54,14 +54,13 @@ extern void	R_DrawLine (polyvert_t *polyvert0, polyvert_t *polyvert1);
 
 extern int		cachewidth;
 extern byte    *cacheblock;
-extern int		screenwidth;
 extern int      	r_init;
 
 extern float	pixelAspect;
 
 extern int		r_drawnpolycount;
 
-extern struct cvar_s	*r_clearcolor;
+extern int r_clearcolor;
 
 extern int	sintable[SIN_BUFFER_SIZE];
 extern int	intsintable[SIN_BUFFER_SIZE];
@@ -70,9 +69,9 @@ extern byte color_white[4];
 extern byte color_black[4];
 
 extern	vec3_t	vup, base_vup;
-extern	vec3_t	vpn, base_vpn;
+extern	vec3_t	vfwd, base_vfwd;
 extern	vec3_t	vright, base_vright;
-extern	struct entity_s		*currententity;
+extern float r_viewmatrix[3][4];
 
 #define NUMSTACKEDGES		2400 //2000
 #define	MINEDGES			NUMSTACKEDGES
@@ -100,12 +99,12 @@ typedef struct surf_s {
 									//  start)
 	int			flags;				// currentface flags
 	void		*data;				// associated data like msurface_t
-	struct entity_s	*entity;
+	uint32_t    render_id;
 	float		nearzi;				// nearest 1/z on surface, for mipmapping
-	qboolean	insubmodel;
+	bool		insubmodel;
 	float		d_ziorigin, d_zistepu, d_zistepv;
 
-	int			pad[2];				// to 64 bytes
+	int			pad[2];				// to 64 bytes (FIXME not for 64-bit)
 } surf_t;
 
 extern	surf_t	*surfaces, *surface_p, *surf_max;
@@ -128,7 +127,7 @@ extern	float	xscale, yscale;
 extern	float	xscaleinv, yscaleinv;
 extern	float	xscaleshrink, yscaleshrink;
 
-extern	int d_lightstylevalue[256]; // 8.8 frac of base light value
+extern int16_t d_lightstylevalue[256]; // 8.8 frac of base light value
 
 extern void TransformVector (const vec3_t in, vec3_t out);
 extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
@@ -136,9 +135,6 @@ extern void SetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 
 extern int r_skymade;
 extern void R_MakeSky (void);
-
-extern int gl_solidskytexture;
-extern int gl_alphaskytexture;
 
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP				0x0001
@@ -166,5 +162,8 @@ typedef struct edge_s
 #define NUMVERTEXNORMALS        162
 extern float       r_avertexnormals[NUMVERTEXNORMALS][3];
 extern vec3_t ambientcolor;
+
+struct entity_s;
+uint32_t SW_AddEntity (struct entity_s ent);
 
 #endif	// _R_SHARED_H

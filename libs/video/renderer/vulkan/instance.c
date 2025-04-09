@@ -26,28 +26,18 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 
 #include "QF/cvar.h"
-#include "QF/dstring.h"
 #include "QF/mathlib.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
-#include "QF/va.h"
-#include "QF/vid.h"
+
 #include "QF/Vulkan/instance.h"
 
 #include "vid_vulkan.h"
 
 #include "util.h"
 
-cvar_t *vulkan_use_validation;
+int vulkan_use_validation;
 
 static uint32_t numLayers;
 static VkLayerProperties *instanceLayerProperties;
@@ -63,13 +53,14 @@ const char * const vulkanValidationLayers[] = {
 };
 
 static const char * const debugExtensions[] = {
-	VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+	"VK_EXT_debug_utils",
 	0,
 };
 
 static void
 get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 {
+	qfZoneScoped (true);
 	uint32_t    i;
 	VkLayerProperties *layers;
 	VkExtensionProperties *extensions;
@@ -91,7 +82,7 @@ get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 		strset_add (instanceExtensions, extensions[i].extensionName);
 	}
 
-	if (developer->int_val & SYS_vulkan) {
+	if (developer & SYS_vulkan) {
 		for (i = 0; i < numLayers; i++) {
 			Sys_Printf ("%s %x %u %s\n",
 						layers[i].layerName,
@@ -128,6 +119,9 @@ static int message_types =
 static void
 debug_breakpoint (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity)
 {
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		exit(1);
+	}
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -137,7 +131,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				void *data)
 {
 	qfv_instance_t *instance = data;
-	if (!(messageSeverity & vulkan_use_validation->int_val)) {
+	if (!(messageSeverity & vulkan_use_validation)) {
 		return 0;
 	}
 	const char *msgSev = "";
@@ -165,6 +159,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 static void
 setup_debug_callback (qfv_instance_t *instance)
 {
+	qfZoneScoped (true);
 	VkDebugUtilsMessengerEXT debug_handle;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -211,17 +206,31 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 					const char *appName, uint32_t appVersion,
 					const char **layers, const char **extensions)
 {
+	qfZoneScoped (true);
 	VkApplicationInfo appInfo = {
-		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
-		appName, appVersion,
-		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_1,
+		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		.pApplicationName = appName,
+		.applicationVersion = appVersion,
+		.pEngineName = PACKAGE_STRING,
+		.engineVersion = 0x000702ff, //FIXME version
+		.apiVersion = VK_API_VERSION_1_4,
+	};
+	VkValidationFeatureEnableEXT valfeat_enable[] = {
+//		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+	};
+#define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
+	VkValidationFeaturesEXT validation_features= {
+		.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
+		.enabledValidationFeatureCount = valfeat_count,
+		.pEnabledValidationFeatures = valfeat_enable,
 	};
 	VkInstanceCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,
-		&appInfo,
-		0, 0,
-		0, 0,
+		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		.pNext = &validation_features,
+		.pApplicationInfo = &appInfo,
 	};
 	VkResult    res;
 	VkInstance  instance;
@@ -233,7 +242,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	uint32_t nlay = count_strings (layers) + 1;
 	uint32_t next = count_strings (extensions)
 					+ count_strings (ctx->required_extensions) + 1;
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		nlay += count_strings (vulkanValidationLayers);
 		next += count_strings (debugExtensions);
 	}
@@ -245,7 +254,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	memset (ext, 0, next-- * sizeof (const char *));
 	merge_strings (lay, layers, 0);
 	merge_strings (ext, extensions, ctx->required_extensions);
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		merge_strings (lay, lay, vulkanValidationLayers);
 		merge_strings (ext, ext, debugExtensions);
 	}
@@ -272,7 +281,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	ctx->instance = inst;
 	load_instance_funcs (ctx);
 
-	if (vulkan_use_validation->int_val) {
+	if (vulkan_use_validation) {
 		setup_debug_callback (inst);
 	}
 
@@ -286,7 +295,22 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		qfv_physdev_t *dev = &inst->devices[i];
 		dev->instance = inst;
 		dev->dev = physDev;
-		ifunc->vkGetPhysicalDeviceProperties (physDev, &dev->properties);
+		dev->p = (VkPhysicalDeviceProperties2) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+			.pNext = &dev->v11Properties,
+		};
+		dev->v11Properties = (VkPhysicalDeviceVulkan11Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES,
+			.pNext = &dev->v12Properties,
+		};
+		dev->v12Properties = (VkPhysicalDeviceVulkan12Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES,
+			.pNext = &dev->v13Properties,
+		};
+		dev->v13Properties = (VkPhysicalDeviceVulkan13Properties) {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES,
+		};
+		ifunc->vkGetPhysicalDeviceProperties2 (physDev, &dev->p);
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
 													&dev->memory_properties);
 	}
@@ -306,6 +330,11 @@ QFV_DestroyInstance (qfv_instance_t *instance)
 	del_strset (instance->enabled_extensions);
 	free (instance->devices);
 	free (instance);
+
+	free (instanceLayerProperties);
+	free (instanceLayers);
+	free (instanceExtensionProperties);
+	free (instanceExtensions);
 }
 
 VkSampleCountFlagBits
@@ -313,8 +342,8 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 {
 	VkSampleCountFlagBits maxSamples = VK_SAMPLE_COUNT_64_BIT;
 	VkSampleCountFlagBits counts;
-	counts = min (physdev->properties.limits.framebufferColorSampleCounts,
-				  physdev->properties.limits.framebufferDepthSampleCounts);
+	counts = min (physdev->p.properties.limits.framebufferColorSampleCounts,
+				  physdev->p.properties.limits.framebufferDepthSampleCounts);
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}

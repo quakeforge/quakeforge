@@ -36,7 +36,9 @@
 #include "QF/plugin/vid_render.h"
 #include "QF/scene/entity.h"
 
+#include "client/chase.h"
 #include "client/entities.h"
+#include "client/input.h"
 #include "client/state.h"
 #include "client/view.h"
 
@@ -63,6 +65,7 @@ typedef struct player_state_s {
 	int         oldbuttons;
 	int         oldonground;
 
+	bool        muzzle_flash;
 } player_state_t;
 
 typedef struct {
@@ -77,8 +80,8 @@ typedef struct {
 												// reflects performing the
 												// usercmd
 	packet_entities_t packet_entities;
-	qboolean    invalid;		// true if the packet_entities delta was invalid
-} frame_t;
+	bool        invalid;		// true if the packet_entities delta was invalid
+} cl_frame_t;
 
 #define	MAX_DEMOS		8
 #define	MAX_DEMONAME	16
@@ -133,16 +136,16 @@ typedef struct {
 	char        demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
 
 	QFile      *demofile;
-	qboolean    demorecording;
-	qboolean    demo_capture;
-	qboolean    demoplayback;
-	qboolean    demoplayback2;
-	qboolean    findtrack;
+	bool        demorecording;
+	int         demo_capture;
+	bool        demoplayback;
+	bool        demoplayback2;
+	bool        findtrack;
 	int         lastto;
 	int         lasttype;
 	int         prevtime;
 	double      basetime;
-	qboolean    timedemo;
+	bool        timedemo;
 	double      td_lastframe;		// to meter out one message a frame
 	int         td_startframe;		// host_framecount at start
 	double      td_starttime;		// realtime at second frame of timedemo
@@ -174,13 +177,11 @@ extern client_static_t	cls;
   the client_state_t structure is wiped completely at every server signon
 */
 typedef struct client_state_s {
-	qboolean    loading;
-
 	int         movemessages;	// Since connecting to this server throw out
 								// the first couple, so the player doesn't
 								// accidentally do something the first frame
 	// sentcmds[cl.netchan.outgoing_sequence & UPDATE_MASK] = cmd
-	frame_t     frames[UPDATE_BACKUP];
+	cl_frame_t  frames[UPDATE_BACKUP];
 	int         link_sequence;
 	int         prev_sequence;
 
@@ -189,26 +190,18 @@ typedef struct client_state_s {
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
 
-	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
-	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
-
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
 // the client maintains its own idea of view angles, which are sent to the
 // server each frame.  And reset only at level change and teleport times
 	viewstate_t viewstate;
-// pitch drifting vars
-	float       idealpitch;
-	float       pitchvel;
-	qboolean    nodrift;
-	float       driftmove;
-	double      laststop;
+	movestate_t movestate;
+	chasestate_t chasestate;
 
-	qboolean    paused;			// Sent over by server
-	float       viewheight;
+	bool        paused;			// Sent over by server
 	float       crouch;			// Local amount for smoothing stepups
-	qboolean    inwater;
+	bool        inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
 	int         completed_time;	// Latched from time at intermission start
@@ -221,20 +214,15 @@ typedef struct client_state_s {
 								// can't render a frame yet
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
 	char        model_name[MAX_MODELS][MAX_QPATH];
 	char        sound_name[MAX_SOUNDS][MAX_QPATH];
 
-	struct model_s *model_precache[MAX_MODELS];
 	struct sfx_s *sound_precache[MAX_SOUNDS];
 	int         nummodels;
 	int         numsounds;
-
-	struct plitem_s *edicts;
-	struct plitem_s *worldspawn;
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
@@ -245,18 +233,14 @@ typedef struct client_state_s {
 	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
-	int         chase;
 	int         sv_cshifts;
 	int         no_pogo_stick;
 	int         teamplay;
-	int         watervis;
 	int         fpd;
 	int         fbskins;
 
 // refresh related state
-	struct model_s *worldmodel;	// cl_entitites[0].model
 	int         num_entities;	// held in cl_entities array
-	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
@@ -270,59 +254,33 @@ typedef struct client_state_s {
 /*
   cvars
 */
-extern	struct cvar_s	*cl_netgraph;
-extern	struct cvar_s	*cl_netgraph_height;
-extern	struct cvar_s	*cl_netgraph_alpha;
-extern	struct cvar_s	*cl_netgraph_box;
+extern int cl_netgraph;
+extern int cl_netgraph_height;
+extern float cl_netgraph_alpha;
+extern int cl_netgraph_box;
 
-extern	struct cvar_s	*cl_upspeed;
-extern	struct cvar_s	*cl_forwardspeed;
-extern	struct cvar_s	*cl_backspeed;
-extern	struct cvar_s	*cl_sidespeed;
+extern int cl_draw_locs;
+extern int cl_shownet;
+extern int cl_player_shadows;
 
-extern	struct cvar_s	*cl_movespeedkey;
+extern char *cl_name;
 
-extern	struct cvar_s	*cl_yawspeed;
-extern	struct cvar_s	*cl_pitchspeed;
+extern int cl_model_crcs;
 
-extern	struct cvar_s	*cl_anglespeedkey;
+extern float rate;
 
-extern	struct cvar_s	*cl_draw_locs;
-extern	struct cvar_s	*cl_shownet;
-extern	struct cvar_s	*hud_sbar;
-extern	struct cvar_s	*hud_sbar_separator;
-extern	struct cvar_s	*hud_swap;
+extern char *skin;
 
-extern	struct cvar_s	*cl_pitchdriftspeed;
-extern	struct cvar_s	*lookspring;
+extern float cl_fb_players;
 
-extern	struct cvar_s	*m_pitch;
-extern	struct cvar_s	*m_yaw;
-extern	struct cvar_s	*m_forward;
-extern	struct cvar_s	*m_side;
-
-extern	struct cvar_s	*cl_name;
-
-extern	struct cvar_s	*cl_model_crcs;
-
-extern	struct cvar_s	*rate;
-
-extern	struct cvar_s	*hud_ping;
-extern	struct cvar_s	*hud_pl;
-
-extern	struct cvar_s	*skin;
-
-extern	struct cvar_s	*cl_fb_players;
+extern int hud_scoreboard_uid;
 
 extern	client_state_t	cl;
 
-typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
-		entitystateset_t;
-extern	entitystateset_t cl_static_entities;
-extern	entity_t		cl_entities[512];
-extern	byte			cl_entity_valid[2][512];
+extern entity_t cl_entities[512];
+extern byte cl_entity_valid[2][512];
 
-extern	qboolean	nomaster;
+extern bool nomaster;
 extern char	*server_version;	// version of server we connected to
 
 extern	double		realtime;
@@ -331,19 +289,14 @@ extern	int			fps_count;
 extern struct cbuf_s *cl_cbuf;
 extern struct cbuf_s *cl_stbuf;
 
-void Cvar_Info (struct cvar_s *var);
+struct cvar_s;
+void Cvar_Info (void *data, const struct cvar_s *cvar);
 
-extern struct view_s *cl_netgraph_view;
-void CL_NetGraph (struct view_s *view);
+void CL_NetGraph_Init (void);
 void CL_NetGraph_Init_Cvars (void);
-
-void CL_UpdateScreen (double realtime);
+void CL_NetUpdate (void);
 
 void CL_SetState (cactive_t state);
-
-void V_ParseDamage (void);
-
-void V_PrepBlend (void);
 
 void CL_Cmd_ForwardToServer (void);
 void CL_Cmd_Init (void);
@@ -352,7 +305,5 @@ void CL_RSShot_f (void);
 
 #define RSSHOT_WIDTH 320
 #define RSSHOT_HEIGHT 200
-
-extern struct dstring_s *centerprint;
 
 #endif // _CLIENT_H

@@ -1,3 +1,6 @@
+#pragma bug die
+#pragma warn error
+
 double a;
 int b[] = {1.0d};
 int main ()

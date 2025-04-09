@@ -1,5 +1,5 @@
+#include <QF/keys.h>
 #include "draw.h"
-#include "key.h"
 #include "sound.h"
 
 #include "CvarColorView.h"

@@ -31,7 +31,7 @@
 #ifndef dot_h
 #define dot_h
 
-void dump_dot (const char *stage, void *data,
-			   void (*dump_func) (void *data, const char *fname));
+void dump_dot (const char *stage, const void *data,
+			   void (*dump_func) (const void *data, const char *fname));
 
 #endif//dot_h

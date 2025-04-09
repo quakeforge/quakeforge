@@ -54,6 +54,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <QF/cbuf.h>
 #include <QF/crc.h>
@@ -76,6 +77,7 @@
 #include "tools/qfcc/include/emit.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/grab.h"
 #include "tools/qfcc/include/idstuff.h"
 #include "tools/qfcc/include/linker.h"
@@ -85,28 +87,22 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/reloc.h"
 #include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/spirv.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/struct.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
-
-options_t   options;
 
 const char *sourcedir;
 const char *progs_src;
 
 pr_info_t   pr;
 
-typedef enum {
-	lang_object,
-	lang_ruamoko,
-	lang_pascal,
-} lang_t;
-
 typedef struct ext_lang_s {
 	const char *ext;
-	lang_t      lang;
+	language_t *lang;
 } ext_lang_t;
 
 #ifdef _WIN32
@@ -131,7 +127,6 @@ InitData (void)
 	for (type = pr.types; type; type = ntype) {
 		ntype = type->next;
 		free_type (type);
-		type->type_def = 0;
 	}
 
 	if (pr.code) {
@@ -154,7 +149,12 @@ InitData (void)
 	}
 
 	memset (&pr, 0, sizeof (pr));
-	pr.source_line = 1;
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
 	pr.error_count = 0;
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
@@ -196,13 +196,16 @@ InitData (void)
 	clear_classes ();
 	clear_immediates ();
 	clear_selectors ();
+
+	if (current_target.init) {
+		current_target.init ();
+	}
 }
 
 static int
 WriteProgs (dprograms_t *progs, int size)
 {
 	//pr_debug_header_t debug;
-	QFile      *h;
 	unsigned    i;
 
 	dstatement_t *statements;
@@ -212,49 +215,43 @@ WriteProgs (dprograms_t *progs, int size)
 	pr_type_t  *globals;
 
 #define P(t,o) ((t *)((char *)progs + progs->o))
-	statements = P (dstatement_t, ofs_statements);
-	functions = P (dfunction_t, ofs_functions);
-	globaldefs = P (ddef_t, ofs_globaldefs);
-	fielddefs = P (ddef_t, ofs_fielddefs);
-	globals = P (pr_type_t, ofs_globals);
+	statements = P (dstatement_t, statements.offset);
+	functions = P (dfunction_t, functions.offset);
+	globaldefs = P (ddef_t, globaldefs.offset);
+	fielddefs = P (ddef_t, fielddefs.offset);
+	globals = P (pr_type_t, globals.offset);
 #undef P
 
-	for (i = 0; i < progs->numstatements; i++) {
+	for (i = 0; i < progs->statements.count; i++) {
 		statements[i].op = LittleShort (statements[i].op);
 		statements[i].a = LittleShort (statements[i].a);
 		statements[i].b = LittleShort (statements[i].b);
 		statements[i].c = LittleShort (statements[i].c);
 	}
-	for (i = 0; i < (unsigned) progs->numfunctions; i++) {
+	for (i = 0; i < (unsigned) progs->functions.count; i++) {
 		dfunction_t *func = functions + i;
 		func->first_statement = LittleLong (func->first_statement);
-		func->parm_start = LittleLong (func->parm_start);
+		func->params_start = LittleLong (func->params_start);
 		func->locals = LittleLong (func->locals);
 		func->profile = LittleLong (func->profile);
-		func->s_name = LittleLong (func->s_name);
-		func->s_file = LittleLong (func->s_file);
-		func->numparms = LittleLong (func->numparms);
+		func->name = LittleLong (func->name);
+		func->file = LittleLong (func->file);
+		func->numparams = LittleLong (func->numparams);
 	}
-	for (i = 0; i < progs->numglobaldefs; i++) {
+	for (i = 0; i < progs->globaldefs.count; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
 		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
-		globaldefs[i].s_name = LittleLong (globaldefs[i].s_name);
+		globaldefs[i].name = LittleLong (globaldefs[i].name);
 	}
-	for (i = 0; i < progs->numfielddefs; i++) {
+	for (i = 0; i < progs->fielddefs.count; i++) {
 		fielddefs[i].type = LittleShort (fielddefs[i].type);
 		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
-		fielddefs[i].s_name = LittleLong (fielddefs[i].s_name);
+		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
-	for (i = 0; i < progs->numglobals; i++)
-		globals[i].integer_var = LittleLong (globals[i].integer_var);
+	for (i = 0; i < progs->globals.count; i++)
+		globals[i].value = LittleLong (globals[i].value);
 
-	if (!(h = Qopen (options.output_file, "wb")))
-		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
-	Qwrite (h, progs, size);
-
-	Qclose (h);
-
-	return 0;
+	return write_output (options.output_file, progs, size);
 }
 
 static int
@@ -307,7 +304,7 @@ WriteSym (pr_debug_header_t *sym, int size)
 		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
 	}
 	for (i = 0; i < sym->debug_data_size; i++) {
-		debug_data[i].integer_var = LittleLong (debug_data[i].integer_var);
+		debug_data[i].value = LittleLong (debug_data[i].value);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))
@@ -325,6 +322,53 @@ begin_compilation (void)
 	pr.func_tail = &pr.func_head;
 
 	pr.error_count = 0;
+}
+
+bool
+write_output (const char *filename, void *data, size_t bytes)
+{
+	QFile *file = Qopen (filename, "wb");
+	if (!file) {
+		Sys_Error ("%s: %s\n", filename, strerror(errno));
+		return true;
+	}
+	if (options.code.c_array) {
+		const char *name = options.code.c_array_name;
+		uint32_t   *words = data;
+		size_t      count = bytes / 4;//FIXME asumes bytes is multiple of 4
+		const char *src = GETSTR (pr.loc.file);
+		src = QFS_SkipPath (src);
+		char buf[strlen (src) + 1];
+		if (!name) {
+			for (char *d = buf; (*d = *src); d++, src++) {
+				if (!isalnum ((unsigned char) *d)) {
+					*d = '_';
+				}
+			}
+			name = buf;
+		}
+		Qprintf (file, "uint32_t %s[] = {\n", name);
+		if (count) {
+			Qprintf (file, "\t");
+		}
+		for (size_t i = 0; i < count; i++) {
+			Qprintf (file, "0x%08x,", words[i]);
+			if (i + 1 < count) {
+				if ((i + 1) % 4) {
+					Qprintf (file, " ");
+				} else {
+					Qprintf (file, "\n\t");
+				}
+			} else {
+				Qprintf (file, "\n");
+			}
+		}
+		Qprintf (file, "};");
+	} else {
+		Qwrite (file, data, bytes);
+	}
+	Qclose (file);
+	return false;
 }
 
 const char *
@@ -370,59 +414,59 @@ setup_sym_file (const char *output_file)
 		options.debug_file = save_string (str->str);
 		if (options.verbosity >= 1)
 			printf ("debug file: %s\n", options.debug_file);
+		dstring_delete (str);
 	}
 }
 
 static int
-compile_to_obj (const char *file, const char *obj, lang_t lang)
+compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 {
 	int         err;
-	FILE      **yyin;
-	int       (*yyparse) (void);
+	FILE       *yyin;
+	auto        lang = ctx->language;
 
-	switch (lang) {
-		case lang_ruamoko:
-			yyin = &qc_yyin;
-			yyparse = qc_yyparse;
-			break;
-		case lang_pascal:
-			yyin = &qp_yyin;
-			yyparse = qp_yyparse;
-			break;
-		default:
-			internal_error (0, "unknown language enum");
-	}
-
-	*yyin = preprocess_file (file, 0);
-	if (!*yyin)
+	yyin = preprocess_file (file, 0);
+	if (options.preprocess_only || !yyin) {
+		if (yyin) {
+			return lang->parse (yyin, ctx);
+		}
 		return !options.preprocess_only;
+	}
 
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
+	pr.src_name = save_string (file);
 	pr.comp_dir = save_cwd ();
-	add_source_file (file);
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	set_source_file (file);
+	lang->initialized = false;
+	err = lang->parse (yyin, ctx) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && !options.save_temps) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
 			exit (1);
 		}
 	}
-	if (options.frames_files) {
-		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
-	}
 	if (!err) {
 		qfo_t      *qfo;
 
-		class_finish_module ();
+		if (lang->finish) {
+			err = lang->finish (file, ctx);
+		}
+		if (!err) {
+			emit_ctor (ctx);
+			debug_finish_module (obj);
+		}
 		err = pr.error_count;
 		if (!err) {
-			debug_finish_module (obj);
-			qfo = qfo_from_progs (&pr);
-			err = qfo_write (qfo, obj);
-			qfo_delete (qfo);
+			if (options.code.spirv) {
+				err = spirv_write (&pr, obj) || pr.error_count;
+			} else {
+				qfo = qfo_from_progs (&pr);
+				err = qfo_write (qfo, obj);
+				qfo_delete (qfo);
+			}
 		}
 	}
 	return err;
@@ -441,11 +485,15 @@ finish_link (void)
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		pr_int_t    param_size = type_size (&type_param);
 		pr_int_t    param_alignment = qfo_log2 (type_param.alignment);
-		linker_add_def (".param_size", &type_integer, flags,
+		linker_add_def (".param_size", &type_int, flags,
 						&param_size);
-		linker_add_def (".param_alignment", &type_integer, flags,
+		linker_add_def (".param_alignment", &type_int, flags,
 						&param_alignment);
 		linker_add_def (".xdefs", &type_xdefs, flags, 0);
+	}
+	if (options.code.progsversion == PROG_VERSION) {
+		int stk = (QFOD_GLOBAL | QFOD_INITIALIZED | QFOD_NOSAVE);
+		linker_add_def (".stack", &type_uint, stk, 0);
 	}
 
 	if (options.code.debug) {
@@ -491,22 +539,28 @@ finish_link (void)
 	return 0;
 }
 
-static __attribute__((pure)) lang_t
+static __attribute__((pure)) language_t *
 file_language (const char *file, const char *ext)
 {
 	static ext_lang_t ext_lang[] = {
-		{".r",		lang_ruamoko},
-		{".c",		lang_ruamoko},
-		{".m",		lang_ruamoko},
-		{".qc",		lang_ruamoko},
-		{".pas",	lang_pascal},
-		{".p",		lang_pascal},
-		{0,			lang_object},	// unrecognized extension = object file
+		{".r",		&lang_ruamoko},
+		{".c",		&lang_ruamoko},
+		{".m",		&lang_ruamoko},
+		{".qc",		&lang_ruamoko},
+		{".comp",	&lang_glsl_comp},
+		{".vert",	&lang_glsl_vert},
+		{".tesc",	&lang_glsl_tesc},
+		{".tese",	&lang_glsl_tese},
+		{".geom",	&lang_glsl_geom},
+		{".frag",	&lang_glsl_frag},
+		{".pas",	&lang_pascal},
+		{".p",		&lang_pascal},
+		{nullptr,	nullptr},		// unrecognized extension = object file
 	};
 	ext_lang_t *el;
 
 	if (strncmp (file, "-l", 2) == 0)
-		return lang_object;
+		return nullptr;
 	for (el = ext_lang; el->ext; el++)
 		if (strcmp (ext, el->ext) == 0)
 			break;
@@ -518,7 +572,6 @@ separate_compile (void)
 {
 	const char **file, *ext;
 	const char **temp_files;
-	lang_t      lang;
 	dstring_t  *output_file;
 	dstring_t  *extension;
 	int         err = 0;
@@ -540,21 +593,41 @@ separate_compile (void)
 
 	for (file = source_files, i = 0; *file; file++) {
 		ext = QFS_FileExtension (*file);
-		dstring_copysubstr (output_file, *file, ext - *file);
 		dstring_copystr (extension, ext);
 
 		if (options.compile && options.output_file) {
 			dstring_clearstr (output_file);
-			dstring_appendstr (output_file, options.output_file);
+			dstring_copystr (output_file, options.output_file);
 		} else {
-			dstring_appendstr (output_file, ".qfo");
+			const char *base = strrchr (*file, '/');
+			base = base ? base + 1 : *file;
+			if (options.output_path) {
+				dstring_copystr (output_file, options.output_path);
+				dstring_appendsubstr (output_file, base, ext - base);
+			} else {
+				dstring_copysubstr (output_file, base, ext - base);
+			}
+			if (options.code.spirv) {
+				dstring_appendstr (output_file, ".spv");
+			} else {
+				dstring_appendstr (output_file, ".qfo");
+			}
 		}
-		if ((lang = file_language (*file, extension->str)) != lang_object) {
-			if (options.verbosity >= 2)
+		// need *file for checking -lfoo
+		auto lang = file_language (*file, extension->str);
+		if (lang) {
+			rua_ctx_t ctx = {
+				.language = lang,
+			};
+
+			if (options.verbosity >= 1)
 				printf ("%s %s\n", *file, output_file->str);
 			temp_files[i++] = save_string (output_file->str);
-			err = compile_to_obj (*file, output_file->str, lang) || err;
+			err = compile_to_obj (*file, output_file->str, &ctx) || err;
 
+			if (!err) {
+				cpp_write_dependencies (*file, output_file->str);
+			}
 			*file = save_string (output_file->str);
 		} else {
 			if (options.compile)
@@ -564,7 +637,7 @@ separate_compile (void)
 	}
 	dstring_delete (output_file);
 	dstring_delete (extension);
-	if (!err && !options.compile) {
+	if (!err && !options.compile && !options.preprocess_only) {
 		InitData ();
 		chain_initial_types ();
 		linker_begin ();
@@ -585,9 +658,14 @@ separate_compile (void)
 			}
 		}
 		err = finish_link ();
-		if (!options.save_temps)
-			for (file = temp_files; *file; file++)
+		if (!options.save_temps) {
+			for (file = temp_files; *file; file++) {
+				if (options.verbosity >= 1) {
+					printf ("unlink %s\n", *file);
+				}
 				unlink (*file);
+			}
+		}
 	}
 	free (temp_files);
 	return err;
@@ -648,21 +726,25 @@ parse_cpp_line (script_t *script, dstring_t *filename)
 }
 
 static int
-compile_file (const char *filename)
+compile_file (const char *filename, rua_ctx_t *ctx)
 {
 	int         err;
-	FILE      **yyin = &qc_yyin;
-	int       (*yyparse) (void) = qc_yyparse;
+	FILE       *yyin;
 
-	*yyin = preprocess_file (filename, 0);
-	if (!*yyin)
+	yyin = preprocess_file (filename, 0);
+	if (options.preprocess_only || !yyin)
 		return !options.preprocess_only;
 
-	add_source_file (filename);
-	pr.source_line = 1;
+	pr.loc = (rua_loc_t) {
+		.line = 1,
+		.column = 1,
+		.last_line = 1,
+		.last_column = 1,
+	};
+	set_source_file (filename);
 	clear_frame_macros ();
-	err = yyparse () || pr.error_count;
-	fclose (*yyin);
+	err = ctx->language->parse (yyin, ctx) || pr.error_count;
+	fclose (yyin);
 	if (cpp_name && (!options.save_temps)) {
 		if (unlink (tempname->str)) {
 			perror ("unlink");
@@ -713,6 +795,9 @@ progs_src_compile (void)
 			exit (1);
 		}
 	}
+	if (options.preprocess_only) {
+		return 0;
+	}
 
 	src = load_file (filename->str);
 	if (!src) {
@@ -743,6 +828,9 @@ progs_src_compile (void)
 	}
 	setup_sym_file (options.output_file);
 
+	rua_ctx_t   ctx = {
+		.language = &lang_ruamoko,
+	};
 	InitData ();
 	chain_initial_types ();
 
@@ -774,10 +862,10 @@ progs_src_compile (void)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
 							 file_basename (qc_filename->str, 0));
 			} else {
-				if (compile_file (qc_filename->str))
+				if (compile_file (qc_filename->str, &ctx))
 					return 1;
 				if (options.frames_files) {
-					write_frame_macros (va (0, "%s.frame",
+					write_frame_macros (va ("%s.frame",
 											file_basename (qc_filename->str,
 														   0)));
 				}
@@ -790,7 +878,7 @@ progs_src_compile (void)
 	if (single) {
 		int         err;
 		fclose (single);
-		err = compile_file (single_name->str);
+		err = compile_file (single_name->str, &ctx);
 		if (!options.save_temps) {
 			if (unlink (single_name->str)) {
 				perror ("unlink");
@@ -801,7 +889,8 @@ progs_src_compile (void)
 			return 1;
 	}
 
-	class_finish_module ();
+	class_finish_module (&ctx);
+	emit_ctor (&ctx);
 	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {
@@ -819,6 +908,7 @@ progs_src_compile (void)
 				return 1;
 	}
 	qfo_delete (qfo);
+	cpp_write_dependencies (progs_src, options.output_file);
 
 	return 0;
 }

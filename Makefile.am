@@ -25,10 +25,11 @@ NOCONV_DIST= \
 	$(distdir)/include/win32/resources/icon1XP.ico
 
 BUILT_SOURCES = $(top_srcdir)/.version
-#AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS)
+AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
+AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
+AM_CPPFLAGS= -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
-common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
+common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
 SUFFICES =
 TESTS =
@@ -42,6 +43,7 @@ noinst_LTLIBRARIES =
 noinst_LIBRARIES =
 noinst_PROGRAMS =
 noinst_HEADERS =
+noinst_PYTHON =
 plugin_LTLIBRARIES =
 
 RANLIB=touch
@@ -58,6 +60,14 @@ DISTCLEANFILES =
 YFLAGS = -v -d -Wno-yacc -Werror
 PTHREAD_LDFLAGS=@PTHREAD_LDFLAGS@
 PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+
+if HAVE_TRACY
+tracy_src=tools/tracy/qftracy.cc tools/tracy/qftracy_mem.c
+tracyvk_src=tools/tracy/qftracyvk.cc
+else
+tracy_src=
+tracyvk_src=
+endif
 
 lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
 			-rpath $(libdir) -no-undefined
@@ -89,26 +99,41 @@ QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(QCSYSTEM)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+QSPIRV=$(QCOMPILE) -Cc-array,target=spir-v
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
+
+qfcc_compile=\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+qfcc_spirv=\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.spvc$$||'`;\
+	$(QSPIRV) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
 
 am__mv = mv -f
 
 SUFFIXES=.o .r .pas
 .r.o:
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
-	$(am__mv) $$depbase.Tqo $$depbase.Qo
+	$(qfcc_compile)
 .pas.o:
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
-	$(am__mv) $$depbase.Tqo $$depbase.Qo
+	$(qfcc_compile)
 
-qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix .Qo,$(notdir $(basename $(basename $(1))))))
+qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(basename $(basename $(1))))))
+spvcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(1))))
+spvautoc = $(addsuffix $(2).spvc,$(1))
 r_depfiles_remade=
 pas_depfiles_remade=
+spvc_depfiles_remade=
+
+V_PY = $(V_PY_@AM_V@)
+V_PY_ = $(V_PY_@AM_DEFAULT_V@)
+V_PY_0 = @echo "  PY      " $@;
+V_PY_1 =
 
 V_GLSLANG = $(V_GLSLANG_@AM_V@)
 V_GLSLANG_ = $(V_GLSLANG_@AM_DEFAULT_V@)
@@ -127,7 +152,7 @@ V_SED_1 =
 
 SUFFICES += .plist .plc
 .plist.plc:
-	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(V_SED)sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
 
 %.spv: %
@@ -138,6 +163,22 @@ SUFFICES += .plist .plc
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
+%.vert.spvc: %.vert
+	$(qfcc_spirv)
+
+%.geom.spvc: %.geom
+	$(qfcc_spirv)
+
+%.frag.spvc: %.frag
+	$(qfcc_spirv)
+
+%.comp.spvc: %.comp
+	$(qfcc_spirv)
+
+%.r.spvc: %.r
+	$(qfcc_spirv)
+
+sharepath = @sharepath@
 shaderdir = @shaderdir@
 shader_DATA =
 
@@ -155,18 +196,23 @@ include qw/Makemodule.am
 include tools/Makemodule.am
 include ruamoko/Makemodule.am
 
-DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade)
+DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade) $(spvc_depfiles_remade)
 CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r qfcc@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
 $(pas_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas qfcc@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
-am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) $(pas_depfiles_remade)
+$(spvc_depfiles_remade):
+	$(MKDIR_P) $(@D)
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spvc: $(top_srcdir)/\1 $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) \
+		$(pas_depfiles_remade) $(spvc_depfiles_remade)
 	echo findme $(ruamoko_gui_libgui_a_dep)
 
 changelog: ChangeLog

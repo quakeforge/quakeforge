@@ -81,11 +81,51 @@ static const char  *snd_dev = "/dev/dsp";
 
 static int			tryrates[] = { 44100, 48000, 11025, 22050, 22051, 44100, 8000 };
 
-static cvar_t	   *snd_stereo;
-static cvar_t	   *snd_rate;
-static cvar_t	   *snd_device;
-static cvar_t	   *snd_bits;
-static cvar_t	   *snd_oss_mmaped;
+static int snd_stereo;
+static cvar_t snd_stereo_cvar = {
+	.name = "snd_stereo",
+	.description =
+		"sound stereo output",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_stereo },
+};
+static int snd_rate;
+static cvar_t snd_rate_cvar = {
+	.name = "snd_rate",
+	.description =
+		"sound playback rate. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_rate },
+};
+static char *snd_device;
+static cvar_t snd_device_cvar = {
+	.name = "snd_device",
+	.description =
+		"sound device. \"\" is system default",
+	.default_value = "",
+	.flags = CVAR_ROM,
+	.value = { .type = 0, .value = &snd_device },
+};
+static int snd_bits;
+static cvar_t snd_bits_cvar = {
+	.name = "snd_bits",
+	.description =
+		"sound sample depth. 0 is system default",
+	.default_value = "0",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_bits },
+};
+static int snd_oss_mmaped;
+static cvar_t snd_oss_mmaped_cvar = {
+	.name = "snd_oss_mmaped",
+	.description =
+		"mmaped io",
+	.default_value = "1",
+	.flags = CVAR_ROM,
+	.value = { .type = &cexpr_int, .value = &snd_oss_mmaped },
+};
 
 static plugin_t           plugin_info;
 static plugin_data_t      plugin_info_data;
@@ -99,16 +139,11 @@ static snd_output_funcs_t      plugin_info_snd_output_funcs;
 static void
 SNDDMA_Init_Cvars (void)
 {
-	snd_stereo = Cvar_Get ("snd_stereo", "1", CVAR_ROM, NULL,
-						   "sound stereo output");
-	snd_rate = Cvar_Get ("snd_rate", "0", CVAR_ROM, NULL,
-						 "sound playback rate. 0 is system default");
-	snd_device = Cvar_Get ("snd_device", "", CVAR_ROM, NULL,
-						   "sound device. \"\" is system default");
-	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
-						 "sound sample depth. 0 is system default");
-	snd_oss_mmaped = Cvar_Get ("snd_oss_mmaped", "1", CVAR_ROM, NULL,
-							   "mmaped io");
+	Cvar_Register (&snd_stereo_cvar, 0, 0);
+	Cvar_Register (&snd_rate_cvar, 0, 0);
+	Cvar_Register (&snd_device_cvar, 0, 0);
+	Cvar_Register (&snd_bits_cvar, 0, 0);
+	Cvar_Register (&snd_oss_mmaped_cvar, 0, 0);
 }
 
 static int
@@ -122,11 +157,11 @@ try_open (snd_t *snd, int rw)
 	struct audio_buf_info info;
 
 	snd_inited = 0;
-	mmaped_io = snd_oss_mmaped->int_val;
+	mmaped_io = snd_oss_mmaped;
 
 	// open snd_dev, confirm capability to mmap, and get size of dma buffer
-	if (snd_device->string[0])
-		snd_dev = snd_device->string;
+	if (snd_device[0])
+		snd_dev = snd_device;
 
 	if (rw) {
 		omode = O_RDWR;
@@ -168,7 +203,7 @@ try_open (snd_t *snd, int rw)
 	}
 
 	// set sample bits & speed
-	snd->samplebits = snd_bits->int_val;
+	snd->samplebits = snd_bits;
 
 	if (snd->samplebits != 16 && snd->samplebits != 8) {
 		ioctl (audio_fd, SNDCTL_DSP_GETFMTS, &fmt);
@@ -216,8 +251,8 @@ try_open (snd_t *snd, int rw)
 		return 0;
 	}
 
-	if (snd_rate->int_val) {
-		snd->speed = snd_rate->int_val;
+	if (snd_rate) {
+		snd->speed = snd_rate;
 	} else {
 		for (i = 0; i < ((int) sizeof (tryrates) / 4); i++)
 			if (!ioctl (audio_fd, SNDCTL_DSP_SPEED, &tryrates[i]))
@@ -225,7 +260,7 @@ try_open (snd_t *snd, int rw)
 		snd->speed = tryrates[i];
 	}
 
-	if (!snd_stereo->int_val) {
+	if (!snd_stereo) {
 		snd->channels = 1;
 	} else {
 		snd->channels = 2;

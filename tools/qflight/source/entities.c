@@ -76,7 +76,7 @@ const char *lighttargets[32];
 
 
 static int
-LightStyleForTargetname (const char *targetname, qboolean alloc)
+LightStyleForTargetname (const char *targetname, bool alloc)
 {
 	int		i;
 
@@ -125,8 +125,7 @@ MatchTargets (void)
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
 			entities[i].style = entities[j].style;
-			SetKeyValue (&entities[i], "style", va (0, "%i",
-													entities[i].style));
+			SetKeyValue (&entities[i], "style", va ("%d", entities[i].style));
 		}
 
 		if (entities[i].spotcone >= 0) {
@@ -241,7 +240,7 @@ LoadEntities (void)
 		}
 
 		if (options.verbosity > 1 && entity->targetname)
-			printf ("%s %d %d\n", entity->targetname, entity->light,
+			printf ("%s %g %d\n", entity->targetname, entity->light,
 					entity->style);
 
 		// all fields have been parsed
@@ -274,7 +273,7 @@ LoadEntities (void)
 					entity->persistence = 1;
 			}
 		}
-		PL_Free (dict);
+		PL_Release (dict);
 
 		if (entity->light) {
 			// convert to subtraction to the brightness for the whole light,
@@ -334,12 +333,9 @@ LoadEntities (void)
 		if (entity->classname && !strcmp (entity->classname, "light")) {
 			if (entity->targetname && entity->targetname[0]
 				&& !entity->style) {
-				char s[16];
-
 				entity->style = LightStyleForTargetname (entity->targetname,
 														 true);
-				sprintf (s, "%i", entity->style);
-				SetKeyValue (entity, "style", s);
+				SetKeyValue (entity, "style", va ("%d", entity->style));
 			}
 		}
 	}

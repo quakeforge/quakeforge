@@ -28,51 +28,44 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_MATH_H
-# include <math.h>
-#endif
-#ifdef HAVE_STRING_H
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 
-#include "QF/cexpr.h"
 #include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/plist.h"
-#include "QF/qargs.h"
-#include "QF/quakefs.h"
-#include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vid.h"
-#include "QF/simd/vec4f.h"
-#include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/descriptor.h"
+
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
-#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/pipeline.h"
-#include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/render.h"
 #include "QF/Vulkan/shader.h"
-#include "QF/Vulkan/swapchain.h"
 
-#include "compat.h"
-#include "d_iface.h"
-#include "r_internal.h"
 #include "vid_vulkan.h"
 
-#include "util.h"
-
-#define vkparse_internal
 #include "vkparse.h"
-#undef vkparse_internal
+#include "libs/video/renderer/vulkan/vkparse.hinc"
+
+typedef struct parseres_s {
+	const char *name;
+	plfield_t  *field;
+	size_t      offset;
+} parseres_t;
+
+typedef struct parseref_s {
+	const char *name;
+	plparser_t  parse;
+	size_t      size;
+} parserref_t;
+
+typedef struct handleref_s {
+	char       *name;
+	uint64_t    handle;
+} handleref_t;
 
 static void flag_or (const exprval_t *val1, const exprval_t *val2,
 					 exprval_t *result, exprctx_t *ctx)
@@ -120,6 +113,7 @@ typedef struct parse_single_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      value_offset;
 } parse_single_t;
 
@@ -127,6 +121,7 @@ typedef struct parse_array_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      value_offset;
 	size_t      size_offset;
 } parse_array_t;
@@ -135,6 +130,7 @@ typedef struct parse_fixed_array_s {
 	pltype_t    type;
 	size_t      stride;
 	plparser_t  parser;
+	void       *data;
 	size_t      size;
 } parse_fixed_array_t;
 
@@ -154,15 +150,30 @@ typedef struct parse_custom_s {
 	size_t      num_offsets;
 } parse_custom_t;
 
+static plfield_t *__attribute__((used))
+find_field (plfield_t *fields, const char *field_name,
+			const plitem_t *item, plitem_t *messages)
+{
+	for (plfield_t *f = fields; f->name; f++) {
+		if (strcmp (f->name, field_name) == 0) {
+			return f;
+		}
+	}
+	PL_Message (messages, item, "error: unknown field '%s'", field_name);
+	return 0;
+}
+
 static int
 parse_basic (const plfield_t *field, const plitem_t *item,
 			 void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
+	parsectx_t *pctx = context;
 	__auto_type etype = (exprtype_t *) field->data;
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { etype, data };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_basic: %s %zd %d %p %p: %s\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -183,6 +194,33 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 }
 
 static int
+parse_int32_t (const plfield_t *field, const plitem_t *item,
+				void *data, plitem_t *messages, void *context)
+{
+	int         ret = 1;
+	int         val = 0;
+	parsectx_t *pctx = context;
+	exprval_t   result = { &cexpr_int, &val };
+	exprctx_t   ectx = *pctx->ectx;
+	ectx.result = &result;
+	ectx.item = item;
+	const char *valstr = PL_String (item);
+	//Sys_MaskPrintf (SYS_vulkan_parse,
+	//				"parse_int32_t: %s %zd %d %p %p %s\n",
+	//				field->name, field->offset, field->type, field->parser,
+	//				field->data, valstr);
+	ret = !cexpr_eval_string (valstr, &ectx);
+	if (!ret) {
+		PL_Message (messages, item, "error parsing %s: %s",
+					field->name, valstr);
+	}
+	*(int32_t *) data = val;
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    %d\n", *(int32_t *)data);
+
+	return ret;
+}
+
+static int
 parse_uint32_t (const plfield_t *field, const plitem_t *item,
 				void *data, plitem_t *messages, void *context)
 {
@@ -190,9 +228,11 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 	// use size_t (and cexpr_size_t) for val so references to array sizes
 	// can be used
 	size_t      val = 0;
+	parsectx_t *pctx = context;
 	exprval_t   result = { &cexpr_size_t, &val };
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_uint32_t: %s %zd %d %p %p: %s\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -223,9 +263,10 @@ parse_enum (const plfield_t *field, const plitem_t *item,
 {
 	int         ret = 1;
 	__auto_type enm = (exprenum_t *) field->data;
-	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { enm->type, data };
-	ectx.parent = ((parsectx_t *)context)->ectx;
+	ectx.parent = pctx->ectx;
 	ectx.symtab = enm->symtab;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
@@ -248,6 +289,7 @@ parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
 	plitem_t   *refItem = 0;
 	exprval_t   result = { &cexpr_plitem, &refItem };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *name = PL_String (item);
 	if (cexpr_eval_string (name, &ectx)) {
 		PL_Message (messages, item, "not a %s reference", type);
@@ -261,6 +303,48 @@ vkparse_alloc (void *context, size_t size)
 {
 	parsectx_t *pctx = context;
 	return cmemalloc (pctx->ectx->memsuper, size);
+}
+
+static int
+parse_ignore (const plfield_t *field, const plitem_t *item,
+			  void *data, plitem_t *messages, void *context)
+{
+	return 1;
+}
+
+static int __attribute__((used))
+parse_labeledsingle (const plfield_t *field, const plitem_t *item,
+					 void *data, plitem_t *messages, void *context)
+{
+	__auto_type single = (parse_single_t *) field->data;
+	void       *flddata = (byte *)data + single->value_offset;
+
+	//Sys_MaskPrintf (SYS_vulkan_parse,"parse_labeledsingle: %s %zd %d %p %p\n",
+	//				field->name, field->offset,
+	//				field->type, field->parser, field->data);
+
+	const char *key = PL_KeyAtIndex (item, 0);
+	if (!key) {
+		PL_Message (messages, item, "missing item");
+		return 0;
+	}
+	item = PL_ObjectForKey (item, key);
+
+	if (!PL_CheckType (single->type, PL_Type (item))) {
+		PL_TypeMismatch (messages, item, field->name, single->type,
+						 PL_Type (item));
+		return 0;
+	}
+
+	plfield_t   f = { key, 0, single->type, single->parser, 0 };
+	void       *value = vkparse_alloc (context, single->stride);
+	memset (value, 0, single->stride);
+	if (!single->parser (&f, item, value, messages, context)) {
+		return 0;
+	}
+
+	*(void **) flddata = value;
+	return 1;
 }
 
 static int
@@ -280,7 +364,7 @@ parse_single (const plfield_t *field, const plitem_t *item,
 		return 0;
 	}
 
-	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
+	plfield_t   f = { field->name, 0, single->type, single->parser, 0 };
 	void       *value = vkparse_alloc (context, single->stride);
 	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {
@@ -288,6 +372,43 @@ parse_single (const plfield_t *field, const plitem_t *item,
 	}
 
 	*(void **) flddata = value;
+	return 1;
+}
+
+static int __attribute__((used))
+parse_labeledarray (const plfield_t *field, const plitem_t *item,
+					void *data, plitem_t *messages, void *context)
+{
+	__auto_type array = (parse_array_t *) field->data;
+	__auto_type value = (void **) ((byte *)data + array->value_offset);
+	__auto_type size = (uint32_t *) ((byte *)data + array->size_offset);
+
+	plelement_t element = {
+		array->type,
+		array->stride,
+		vkparse_alloc,
+		array->parser,
+		array->data,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_array: %s %zd %d %p %p %p\n",
+	//				field->name, field->offset, field->type, field->parser,
+	//				field->data, data);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    %d %zd %p %zd %zd\n", array->type,
+	//				array->stride, array->parser, array->value_offset,
+	//				array->size_offset);
+	if (!PL_ParseLabeledArray (&f, item, &arr, messages, context)) {
+		return 0;
+	}
+	*value = vkparse_alloc (context, array->stride * arr->size);
+	memcpy (*value, arr->a, array->stride * arr->size);
+	if ((void *) size >= data) {
+		*size = arr->size;
+	}
 	return 1;
 }
 
@@ -304,12 +425,12 @@ parse_array (const plfield_t *field, const plitem_t *item,
 		array->stride,
 		vkparse_alloc,
 		array->parser,
-		0,
+		array->data,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
 	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
+	arr_t       arr;
 
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_array: %s %zd %d %p %p %p\n",
 	//				field->name, field->offset, field->type, field->parser,
@@ -320,15 +441,15 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
-	*value = vkparse_alloc (context, array->stride * arr->size);
-	memcpy (*value, arr->a, array->stride * arr->size);
+	*value = vkparse_alloc (context, array->stride * arr.size);
+	memcpy (*value, arr.a, array->stride * arr.size);
 	if ((void *) size >= data) {
-		*size = arr->size;
+		*size = arr.size;
 	}
 	return 1;
 }
 
-static int
+static int __attribute__((used))
 parse_fixed_array (const plfield_t *field, const plitem_t *item,
 				   void *data, plitem_t *messages, void *context)
 {
@@ -339,21 +460,32 @@ parse_fixed_array (const plfield_t *field, const plitem_t *item,
 		array->stride,
 		vkparse_alloc,
 		array->parser,
-		0,
+		array->data,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
 	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr;
+	arr_t       arr;
 
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
 	memset (data, 0, array->stride * array->size);
-	size_t      size = min (array->size, arr->size);
-	memcpy (data, arr->a, array->stride * size);
+	size_t      size = min (array->size, arr.size);
+	memcpy (data, arr.a, array->stride * size);
 	return 1;
 }
+
+static char *
+vkstrdup (parsectx_t *context, const char *str)
+{
+	size_t      len = strlen (str) + 1;
+	char       *dup = vkparse_alloc (context, len);
+	memcpy (dup, str, len);
+	return dup;
+}
+
+static __attribute__((used)) parse_string_t parse_string_array = { 0 };
 
 static int
 parse_string (const plfield_t *field, const plitem_t *item,
@@ -370,9 +502,7 @@ parse_string (const plfield_t *field, const plitem_t *item,
 	//Sys_MaskPrintf (SYS_vulkan_parse, "    %zd\n", string->value_offset);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "    %s\n", str);
 
-	size_t      len = strlen (str) + 1;
-	*value = vkparse_alloc (context, len);
-	memcpy (*value, str, len);
+	*value = vkstrdup (context, str);
 	return 1;
 }
 
@@ -389,6 +519,53 @@ parse_custom (const plfield_t *field, const plitem_t *item,
 }
 
 static int
+parse_inherit (const plfield_t *field, const plitem_t *item,
+			   void *data, plitem_t *messages, void *context)
+{
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
+	plitem_t   *inheritItem = 0;
+	exprval_t   result = { &cexpr_plitem, &inheritItem };
+	ectx.result = &result;
+	ectx.item = item;
+	const char *inheritstr = PL_String (item);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_inherit: %s\n", inheritstr);
+	int         ret = !cexpr_eval_string (inheritstr, &ectx);
+	if (ret) {
+		ret = PL_ParseStruct (field->data, inheritItem, data, messages,
+							  context);
+	}
+	return ret;
+}
+
+static hashtab_t *parser_table;
+
+static int
+parse_next (const plfield_t *field, const plitem_t *item, void *data,
+			plitem_t *messages, void *context)
+{
+	const char *type_name = PL_String (PL_ObjectAtIndex (item, 0));
+	plitem_t   *next_def = PL_ObjectAtIndex (item, 1);
+
+	if (!type_name || PL_Type (next_def) != QFDictionary) {
+		PL_Message (messages, item, "invalid @next");
+		return 0;
+	}
+	parserref_t *parser = Hash_Find (parser_table, type_name);
+	if (!parser) {
+		PL_Message (messages, item, "Invalid type for @next: %s", type_name);
+		return 0;
+	}
+	void       *data_ptr = vkparse_alloc (context, parser->size);
+	memset (data_ptr, 0, parser->size);
+	if (!parser->parse (field, next_def, data_ptr, messages, context)) {
+		return 0;
+	}
+	*(void **) data = data_ptr;
+	return 1;
+}
+
+static int
 parse_RGBA (const plitem_t *item, void **data,
 			plitem_t *messages, parsectx_t *context)
 {
@@ -396,11 +573,12 @@ parse_RGBA (const plitem_t *item, void **data,
 	exprctx_t   ectx = *context->ectx;
 	exprval_t   result = { &cexpr_vector, data[0] };
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
+	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
 	ret = !cexpr_eval_string (valstr, &ectx);
-	Sys_MaskPrintf (SYS_vulkan_parse, "    "VEC4F_FMT"\n",
-					VEC4_EXP (*(vec4f_t *)data[0]));
+	//Sys_MaskPrintf (SYS_vulkan_parse, "    "VEC4F_FMT"\n",
+	//				VEC4_EXP (*(vec4f_t *)data[0]));
 	return ret;
 }
 
@@ -423,232 +601,47 @@ QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 	Hash_Add (tab, hr);
 }
 
-static const char *
-resource_path (vulkan_ctx_t *ctx, const char *prefix, const char *name)
-{
-	if (name[0] != '$') {
-		if (prefix) {
-			name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s.%s", prefix, name);
-		} else {
-			name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
-		}
-	}
-	return name;
-}
-
-static int
-parse_VkRenderPass (const plitem_t *item, void **data,
-					plitem_t *messages, parsectx_t *context)
-{
-	__auto_type handle = (VkRenderPass *) data[0];
-	int         ret = 1;
-	parsectx_t *pctx = context;
-	exprctx_t   ectx = *pctx->ectx;
-	vulkan_ctx_t *ctx = pctx->vctx;
-
-	const char *name = PL_String (item);
-	const char *path = resource_path (ctx, 0, name);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkRenderPass: %s\n", path);
-
-	*handle = (VkRenderPass) QFV_GetHandle (ctx->renderpasses, path);
-	if (*handle) {
-		return 1;
-	}
-
-	plitem_t   *setItem = 0;
-	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.result = &result;
-	ret = !cexpr_eval_string (path, &ectx);
-	if (ret) {
-		VkRenderPass setLayout;
-		setLayout = QFV_ParseRenderPass (ctx, setItem, pctx->properties);
-		*handle = (VkRenderPass) setLayout;
-
-		// path not guaranteed to survive cexpr_eval_string due to va
-		path = resource_path (ctx, 0, name);
-		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
-	}
-	return ret;
-}
-
 static int
 parse_VkShaderModule (const plitem_t *item, void **data,
-					  plitem_t *messages, parsectx_t *context)
+					  plitem_t *messages, parsectx_t *pctx)
 {
 	__auto_type handle = (VkShaderModule *) data[0];
-	vulkan_ctx_t *ctx = context->vctx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 	qfv_device_t *device = ctx->device;
+	scriptctx_t *sctx = ctx->script_context;
 
 	const char *name = PL_String (item);
-	*handle = (VkShaderModule) QFV_GetHandle (ctx->shaderModules, name);
+	*handle = (VkShaderModule) QFV_GetHandle (sctx->shaderModules, name);
 	if (*handle) {
 		return 1;
 	}
-	qfvPushDebug (ctx, va (ctx->va_ctx, "parse_VkShaderModule: %d", PL_Line (item)));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "parse_VkShaderModule: %d",
+							PL_Line (item)));
 	*handle = QFV_CreateShaderModule (device, name);
 	qfvPopDebug (ctx);
 	if (!*handle) {
 		PL_Message (messages, item, "could not find shader %s", name);
 		return 0;
 	}
-	QFV_AddHandle (ctx->shaderModules, name, (uint64_t) *handle);
+	QFV_AddHandle (sctx->shaderModules, name, (uint64_t) *handle);
 	return 1;
 }
 
-static int
-parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
-							 void *data, plitem_t *messages, void *context)
-{
-	__auto_type handle = (VkDescriptorSetLayout *) data;
-	int         ret = 1;
-	parsectx_t *pctx = context;
-	exprctx_t   ectx = *pctx->ectx;
-	vulkan_ctx_t *ctx = pctx->vctx;
-
-	const char *name = PL_String (item);
-	const char *path = resource_path (ctx, "setLayouts", name);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkDescriptorSetLayout: %s\n",
-					path);
-
-	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, path);
-	if (*handle) {
-		return 1;
-	}
-
-	plitem_t   *setItem = 0;
-	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.result = &result;
-	ret = !cexpr_eval_string (path, &ectx);
-	if (ret) {
-		VkDescriptorSetLayout setLayout;
-		setLayout = QFV_ParseDescriptorSetLayout (ctx, setItem,
-												  pctx->properties);
-		*handle = (VkDescriptorSetLayout) setLayout;
-
-		// path not guaranteed to survive cexpr_eval_string due to va
-		path = resource_path (ctx, "setLayouts", name);
-		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
-	}
-	return ret;
-}
-
-static int
-parse_VkPipelineLayout (const plitem_t *item, void **data,
-						plitem_t *messages, parsectx_t *context)
-{
-	__auto_type handle = (VkPipelineLayout *) data[0];
-	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
-
-	const char *name = PL_String (item);
-	const char *path = resource_path (ctx, "pipelineLayouts", name);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkPipelineLayout: %s\n", path);
-
-	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, path);
-	if (*handle) {
-		return 1;
-	}
-
-	plitem_t   *setItem = 0;
-	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.result = &result;
-	ret = !cexpr_eval_string (path, &ectx);
-	if (ret) {
-		VkPipelineLayout layout;
-		layout = QFV_ParsePipelineLayout (ctx, setItem, context->properties);
-		*handle = (VkPipelineLayout) layout;
-
-		// path not guaranteed to survive cexpr_eval_string due to va
-		path = resource_path (ctx, "pipelineLayouts", name);
-		QFV_AddHandle (ctx->pipelineLayouts, path, (uint64_t) layout);
-	}
-	return ret;
-}
-
-static int
-parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
-			   parsectx_t *context)
-{
-	__auto_type handle = (VkImage *) data[0];
-	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
-
-	const char *name = PL_String (item);
-	const char *path = resource_path (ctx, "images", name);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImage: %s\n", path);
-
-	*handle = (VkImage) QFV_GetHandle (ctx->images, path);
-	if (*handle) {
-		return 1;
-	}
-
-	plitem_t   *imageItem = 0;
-	exprval_t   result = { &cexpr_plitem, &imageItem };
-	ectx.result = &result;
-	ret = !cexpr_eval_string (path, &ectx);
-	if (ret) {
-		VkImage image;
-		image = QFV_ParseImage (ctx, imageItem, context->properties);
-		*handle = (VkImage) image;
-
-		// path not guaranteed to survive cexpr_eval_string due to va
-		path = resource_path (ctx, "images", name);
-		QFV_AddHandle (ctx->images, path, (uint64_t) image);
-	}
-	return ret;
-}
-
-static exprtype_t imageview_type = {
-	"VkImageView",
-	sizeof (VkImageView),
-	0, 0, 0
+exprtype_t VkImage_type = {
+	.name = "VkImage",
+	.size = sizeof (VkImage),
+	.binops = 0,
+	.unops = 0,
+	.data = 0
 };
 
-static int
-parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
-				   plitem_t *messages, void *_context)
-{
-	parsectx_t *context = _context;
-	__auto_type handle = (VkImageView *) data;
-	int         ret = 1;
-	exprctx_t   ectx = *context->ectx;
-	vulkan_ctx_t *ctx = context->vctx;
-
-	const char *name = PL_String (item);
-	const char *path = resource_path (ctx, "imageViews", name);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImageView: %s\n", path);
-
-	*handle = (VkImageView) QFV_GetHandle (ctx->imageViews, path);
-	if (*handle) {
-		return 1;
-	}
-
-	exprval_t  *value = 0;
-	exprval_t   result = { &cexpr_exprval, &value };
-	ectx.result = &result;
-	ret = !cexpr_eval_string (path, &ectx);
-
-	plitem_t   *imageViewItem = 0;
-	if (ret) {
-		VkImageView imageView;
-		if (value->type == &imageview_type) {
-			imageView = *(VkImageView *) value->value;
-		} else if (value->type == &cexpr_plitem) {
-			imageView = QFV_ParseImageView (ctx, imageViewItem,
-											context->properties);
-			// path not guaranteed to survive cexpr_eval_string due to va
-			path = resource_path (ctx, "imageViews", name);
-			QFV_AddHandle (ctx->imageViews, path, (uint64_t) imageView);
-		} else {
-			PL_Message (messages, item, "not a VkImageView");
-			return 0;
-		}
-		*handle = (VkImageView) imageView;
-	}
-	return ret;
-}
+exprtype_t VkImageView_type = {
+	.name = "VkImageView",
+	.size = sizeof (VkImageView),
+	.binops = 0,
+	.unops = 0,
+	.data = 0
+};
 
 static const char *
 handleref_getkey (const void *hr, void *unused)
@@ -667,9 +660,10 @@ handleref_free (void *hr, void *_ctx)
 static void
 setLayout_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type layout = (VkDescriptorSetLayout) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -682,9 +676,10 @@ setLayout_free (void *hr, void *_ctx)
 static void
 shaderModule_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type module = (VkShaderModule) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -697,9 +692,10 @@ shaderModule_free (void *hr, void *_ctx)
 static void
 pipelineLayout_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type layout = (VkPipelineLayout) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -712,9 +708,10 @@ pipelineLayout_free (void *hr, void *_ctx)
 static void
 descriptorPool_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type pool = (VkDescriptorPool) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -727,9 +724,10 @@ descriptorPool_free (void *hr, void *_ctx)
 static void
 sampler_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type sampler = (VkSampler) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -742,9 +740,10 @@ sampler_free (void *hr, void *_ctx)
 static void
 image_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type image = (VkImage) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -757,9 +756,10 @@ image_free (void *hr, void *_ctx)
 static void
 imageView_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type imageView = (VkImageView) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -772,9 +772,10 @@ imageView_free (void *hr, void *_ctx)
 static void
 renderpass_free (void *hr, void *_ctx)
 {
+	scriptctx_t *sctx = _ctx;
 	__auto_type handleref = (handleref_t *) hr;
 	__auto_type renderpass = (VkRenderPass) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	__auto_type ctx = sctx->vctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
@@ -785,15 +786,6 @@ renderpass_free (void *hr, void *_ctx)
 }
 
 static hashtab_t *enum_symtab;
-
-static int
-parse_BasePipeline (const plitem_t *item, void **data,
-					plitem_t *messages, parsectx_t *context)
-{
-	*(VkPipeline *) data = 0;
-	PL_Message (messages, item, "not implemented");
-	return 0;
-}
 
 typedef struct data_array_s DARRAY_TYPE(byte) data_array_t;
 static void
@@ -817,10 +809,10 @@ data_array (const exprval_t **params, exprval_t *result, exprctx_t *context)
 }
 
 static exprtype_t data_array_type = {
-	"array",
-	sizeof (data_array_t *),
-	0,
-	0,
+	.name = "array",
+	.size = sizeof (data_array_t *),
+	.binops = 0,
+	.unops = 0,
 };
 static exprfunc_t data_array_func[] = {
 	{ &data_array_type, -1, 0, data_array },
@@ -836,7 +828,7 @@ static exprtab_t data_array_symtab = {
 
 static int
 parse_specialization_data (const plitem_t *item, void **data,
-						   plitem_t *messages, parsectx_t *context)
+						   plitem_t *messages, parsectx_t *pctx)
 {
 	size_t     *size_ptr = (size_t *) data[0];
 	void      **data_ptr = (void **) data[1];
@@ -845,18 +837,19 @@ parse_specialization_data (const plitem_t *item, void **data,
 		const void *bindata = PL_BinaryData (item);
 		size_t      binsize = PL_BinarySize (item);
 
-		*data_ptr = vkparse_alloc (context, binsize);
+		*data_ptr = vkparse_alloc (pctx, binsize);
 		memcpy (*data_ptr, bindata, binsize);
 		*size_ptr = binsize;
 		return 1;
 	}
 
 	data_array_t *da= 0;
-	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	exprctx_t   ectx = *pctx->ectx;
 	exprval_t   result = { &data_array_type, &da };
-	ectx.parent = ((parsectx_t *)context)->ectx;
+	ectx.parent = pctx->ectx;
 	ectx.symtab = &data_array_symtab;
 	ectx.result = &result;
+	ectx.item = item;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse,
 	//				"parse_specialization_data: %s %zd %d %p %p %s\n",
@@ -877,146 +870,120 @@ parse_specialization_data (const plitem_t *item, void **data,
 	return ret;
 }
 
+static int
+parse_task_function (const plitem_t *item, void **data,
+					 plitem_t *messages, parsectx_t *pctx)
+{
+	qfv_renderctx_t *rctx = pctx->data;
+	const char *fname = PL_String (item);
+	exprsym_t  *fsym = Hash_Find (rctx->task_functions.tab, fname);
+
+	if (!fsym) {
+		PL_Message (messages, item, "undefined task function %s", fname);
+		return 0;
+	}
+	if (fsym->type != &cexpr_function) {
+		PL_Message (messages, item, "not a function type %s", fname);
+		return 0;
+	}
+	exprfunc_t *func;
+	for (func = fsym->value; func->func; func++) {
+		if (!func->result) {
+			break;
+		}
+	}
+	if (!func->func) {
+		PL_Message (messages, item, "%s does not have a void implementation",
+					fname);
+		return 0;
+	}
+	size_t      size = func->num_params * sizeof (exprval_t);
+	size += func->num_params * sizeof (exprval_t *);
+	size_t      base = size;
+	for (int i = 0; i < func->num_params; i++) {
+		exprtype_t *type = func->param_types[i];
+		size = ((size + type->size - 1) & ~(type->size - 1));
+		if (i == 0) {
+			base = size;
+		}
+	}
+	exprval_t **param_ptrs = vkparse_alloc (pctx, size);
+	exprval_t  *params = (exprval_t *) &param_ptrs[func->num_params];
+	byte       *param_data = (byte *) param_ptrs + base;
+	memset (params, 0, size);
+	size_t      offs = 0;
+	for (int i = 0; i < func->num_params; i++) {
+		exprtype_t *type = func->param_types[i];
+		param_ptrs[i] = &params[i];
+		params[i] = (exprval_t) {
+			.type = type,
+			.value = param_data + offs,
+		};
+		offs = ((offs + type->size - 1) & ~(type->size - 1));
+		offs += type->size;
+	}
+	*(const char **) data[0] = vkstrdup (pctx, fname);
+	*(exprfunc_t **) data[1] = func;
+	*(exprval_t ***) data[2] = param_ptrs;
+	*(void **) data[3] = param_data;
+	return 1;
+}
+
+static int
+parse_task_params (const plitem_t *item, void **data,
+				   plitem_t *messages, parsectx_t *pctx)
+{
+	exprfunc_t *func = *(exprfunc_t **) data[0];
+	exprval_t **params = *(exprval_t ***) data[1];
+	if (!func) {
+		PL_Message (messages, item, "task function not set");
+		return 0;
+	}
+	if (PL_A_NumObjects (item) != func->num_params) {
+		PL_Message (messages, item, "incorrect number of parameters");
+		return 0;
+	}
+	for (int i = 0; i < func->num_params; i++) {
+		const char *paramstr = PL_String (PL_ObjectAtIndex (item, i));
+		exprval_t  *param = params[func->num_params - i - 1];
+		exprctx_t   ectx = *pctx->ectx;
+		if (param->type->data) {
+			ectx.parent = pctx->ectx;
+			ectx.symtab = ((exprenum_t *) param->type->data)->symtab;
+		}
+		// cexpr params are in reverse order
+		ectx.result = param;
+
+		if (cexpr_eval_string (paramstr, &ectx)) {
+			PL_Message (messages, item, "error parsing param %d", i);
+			return 0;
+		}
+	}
+	return 1;
+}
+
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
-static void
-imageviewset_index (const exprval_t *a, size_t index, exprval_t *c,
-					exprctx_t *ctx)
-{
-	__auto_type set = *(qfv_imageviewset_t **) a->value;
-	exprval_t  *val = 0;
-	if (index >= set->size) {
-		cexpr_error (ctx, "invalid index: %zd", index);
-	} else {
-		val = cexpr_value (&imageview_type, ctx);
-		*(VkImageView *) val->value = set->a[index];
-	}
-	*(exprval_t **) c->value = val;
-}
-
-static void
-imageviewset_int (const exprval_t *a, const exprval_t *b, exprval_t *c,
-				  exprctx_t *ctx)
-{
-	size_t      index = *(int *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-static void
-imageviewset_uint (const exprval_t *a, const exprval_t *b, exprval_t *c,
-				   exprctx_t *ctx)
-{
-	size_t      index = *(unsigned *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-static void
-imageviewset_size_t (const exprval_t *a, const exprval_t *b, exprval_t *c,
-					 exprctx_t *ctx)
-{
-	size_t      index = *(size_t *) b->value;
-	imageviewset_index (a, index, c, ctx);
-}
-
-binop_t imageviewset_binops[] = {
-	{ '.', &cexpr_field, &cexpr_exprval, cexpr_struct_pointer_getfield },
-	{ '[', &cexpr_int, &imageview_type, imageviewset_int },
-	{ '[', &cexpr_uint, &imageview_type, imageviewset_uint },
-	{ '[', &cexpr_size_t, &imageview_type, imageviewset_size_t },
-	{}
-};
-
-static exprsym_t imageviewset_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (qfv_imageviewset_t, size)},
+static exprsym_t qfv_renderframeset_t_symbols[] = {
+	{"size", &cexpr_size_t, (void *) offsetof (qfv_renderframeset_t, size)},
 	{ }
 };
-static exprtab_t imageviewset_symtab = {
-	imageviewset_symbols,
+static exprtab_t qfv_renderframeset_t_symtab = {
+	qfv_renderframeset_t_symbols,
 };
-exprtype_t imageviewset_type = {
-	"imageviewset",
-	sizeof (qfv_imageviewset_t *),
-	imageviewset_binops,
-	0,
-	&imageviewset_symtab,
-};
-static exprsym_t qfv_swapchain_t_symbols[] = {
-	{"format", &VkFormat_type, (void *)field_offset (qfv_swapchain_t, format)},
-	{"extent", &VkExtent2D_type, (void *)field_offset (qfv_swapchain_t, extent)},
-	{"views", &imageviewset_type, (void *)field_offset (qfv_swapchain_t, imageViews)},
-	{ }
-};
-static exprtab_t qfv_swapchain_t_symtab = {
-	qfv_swapchain_t_symbols,
-};
-exprtype_t qfv_swapchain_t_type = {
-	"qfv_swapchain_t",
-	sizeof (qfv_swapchain_t),
-	cexpr_struct_binops,
-	0,
-	&qfv_swapchain_t_symtab,
-};
-
-static exprsym_t vulkan_frameset_t_symbols[] = {
-	{"size", &cexpr_size_t, (void *)field_offset (vulkan_frameset_t, size)},
-	{ }
-};
-static exprtab_t vulkan_frameset_t_symtab = {
-	vulkan_frameset_t_symbols,
-};
-exprtype_t vulkan_frameset_t_type = {
-	"frameset",
-	sizeof (vulkan_frameset_t *),
-	cexpr_struct_binops,
-	0,
-	&vulkan_frameset_t_symtab,
-};
-
-typedef struct {
-	qfv_attachmentdescription_t *attachments;
-	qfv_subpassparametersset_t *subpasses;
-	qfv_subpassdependency_t *dependencies;
-} vkparse_renderpass_t;
-
-static plelement_t parse_qfv_renderpass_attachments_data = {
-	QFDictionary,
-	sizeof (VkAttachmentDescription),
-	vkparse_alloc,
-	parse_VkAttachmentDescription,
-	0,
-};
-
-static plelement_t parse_qfv_renderpass_subpasses_data = {
-	QFDictionary,
-	sizeof (VkSubpassDescription),
-	vkparse_alloc,
-	parse_VkSubpassDescription,
-	0,
-};
-
-static plelement_t parse_qfv_renderpass_dependencies_data = {
-	QFDictionary,
-	sizeof (VkSubpassDependency),
-	vkparse_alloc,
-	parse_VkSubpassDependency,
-	0,
-};
-
-static plfield_t renderpass_fields[] = {
-	{ "attachments", field_offset(vkparse_renderpass_t,attachments), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_attachments_data },
-	{ "subpasses", field_offset(vkparse_renderpass_t,subpasses), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_subpasses_data },
-	{ "dependencies", field_offset(vkparse_renderpass_t,dependencies), QFArray,
-		PL_ParseArray, &parse_qfv_renderpass_dependencies_data },
-	{}
+exprtype_t qfv_renderframeset_t_type = {
+	.name = "frameset",
+	.size = sizeof (qfv_renderframeset_t *),
+	.binops = cexpr_struct_binops,
+	.unops = 0,
+	.data = &qfv_renderframeset_t_symtab,
 };
 
 static hashtab_t *
-handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
+handlref_symtab (void (*free_func)(void*,void*), scriptctx_t *sctx)
 {
-	return Hash_NewTable (23, handleref_getkey, free_func,
-						  ctx, &ctx->hashlinks);
+	return Hash_NewTable (23, handleref_getkey, free_func, sctx,
+						  &sctx->hashctx);
 }
 
 static const char *
@@ -1026,41 +993,31 @@ enum_symtab_getkey (const void *e, void *unused)
 	return enm->type->name;
 }
 
+static const char *
+parser_getkey (const void *e, void *unused)
+{
+	__auto_type parser = (const parserref_t *) e;
+	return parser->name;
+}
+
 static exprtab_t root_symtab = {
 	.symbols = cexpr_lib_symbols,
 };
+
+static void
+root_symtab_shutdown (void *data)
+{
+	Hash_DelTable (root_symtab.tab);
+}
+
 static void __attribute__((constructor))
 root_symtab_init (void)
 {
-	// using a null hashlinks here is safe because this function is run before
+	// using a null hashctx here is safe because this function is run before
 	// main and thus before any possibility of threading.
 	exprctx_t root_context = { .symtab = &root_symtab };
 	cexpr_init_symtab (&root_symtab, &root_context);
-}
-
-void
-QFV_InitParse (vulkan_ctx_t *ctx)
-{
-	exprctx_t   context = {};
-	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0,
-								 &ctx->hashlinks);
-	context.hashlinks = &ctx->hashlinks;
-	vkgen_init_symtabs (&context);
-	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
-	cexpr_init_symtab (&vulkan_frameset_t_symtab, &context);
-	cexpr_init_symtab (&imageviewset_symtab, &context);
-	cexpr_init_symtab (&data_array_symtab, &context);
-
-	if (!ctx->setLayouts) {
-		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
-		ctx->setLayouts = handlref_symtab (setLayout_free, ctx);
-		ctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, ctx);
-		ctx->descriptorPools = handlref_symtab (descriptorPool_free, ctx);
-		ctx->samplers = handlref_symtab (sampler_free, ctx);
-		ctx->images = handlref_symtab (image_free, ctx);
-		ctx->imageViews = handlref_symtab (imageView_free, ctx);
-		ctx->renderpasses = handlref_symtab (renderpass_free, ctx);
-	}
+	Sys_RegisterShutdown (root_symtab_shutdown, 0);
 }
 
 exprenum_t *
@@ -1073,16 +1030,17 @@ static int
 parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 			  plparser_t parser, void *object, plitem_t *properties)
 {
+	scriptctx_t *sctx = ctx->script_context;
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
+	auto rctx = ctx->render_context;
 	exprsym_t   var_syms[] = {
-		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
-		{"frames", &vulkan_frameset_t_type, &ctx->frames},
+		{"output", &qfv_output_t_type, &sctx->output},
+		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{"swapImageIndex", &cexpr_uint, &ctx->swapImageIndex},
 		{"physDevLimits", &VkPhysicalDeviceLimits_type,
-			&ctx->device->physDev->properties.limits },
+			&ctx->device->physDev->p.properties.limits },
 		{QFV_PROPERTIES, &cexpr_plitem, &parsectx.properties},
 		{}
 	};
@@ -1090,7 +1048,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 
 	exprctx.external_variables = &vars_tab;
 	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
+	exprctx.hashctx = &sctx->hashctx;
 	exprctx.memsuper = memsuper;
 
 	cexpr_init_symtab (&vars_tab, &exprctx);
@@ -1103,250 +1061,9 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 		return 0;
 	}
 	Hash_DelTable (vars_tab.tab);
-	PL_Free (messages);
+	PL_Release (messages);
 
 	return 1;
-}
-
-static int
-parse_qfv_renderpass (const plfield_t *field, const plitem_t *item, void *data,
-					  plitem_t *messages, void *context)
-{
-	return PL_ParseStruct (renderpass_fields, item, data, messages, context);
-}
-
-VkRenderPass
-QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	memsuper_t *memsuper = new_memsuper ();
-	qfv_device_t *device = ctx->device;
-
-	vkparse_renderpass_t renderpass_data = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_qfv_renderpass,
-					   &renderpass_data, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkRenderPass renderpass;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseRenderPass: %d", PL_Line (plist)));
-	renderpass = QFV_CreateRenderPass (device,
-									   renderpass_data.attachments,
-									   renderpass_data.subpasses,
-									   renderpass_data.dependencies);
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return renderpass;
-}
-
-VkPipeline
-QFV_ParseComputePipeline (vulkan_ctx_t *ctx, plitem_t *plist,
-						  plitem_t *properties)
-{
-	memsuper_t *memsuper = new_memsuper ();
-	qfv_device_t *device = ctx->device;
-
-	__auto_type cInfo = QFV_AllocComputePipelineCreateInfoSet (1, alloca);
-	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkComputePipelineCreateInfo,
-					   &cInfo->a[0], properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	qfvPushDebug (ctx, va (ctx->va_ctx,
-						   "QFV_ParseComputePipeline: %d", PL_Line (plist)));
-
-	__auto_type plSet = QFV_CreateComputePipelines (device, 0, cInfo);
-	qfvPopDebug (ctx);
-	VkPipeline pipeline = plSet->a[0];
-	free (plSet);
-	delete_memsuper (memsuper);
-	return pipeline;
-}
-
-VkPipeline
-QFV_ParseGraphicsPipeline (vulkan_ctx_t *ctx, plitem_t *plist,
-						   plitem_t *properties)
-{
-	memsuper_t *memsuper = new_memsuper ();
-	qfv_device_t *device = ctx->device;
-
-	__auto_type cInfo = QFV_AllocGraphicsPipelineCreateInfoSet (1, alloca);
-	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkGraphicsPipelineCreateInfo,
-					   &cInfo->a[0], properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	qfvPushDebug (ctx, va (ctx->va_ctx,
-						   "QFV_ParsePipeline: %d", PL_Line (plist)));
-
-	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
-	qfvPopDebug (ctx);
-	VkPipeline pipeline = plSet->a[0];
-	free (plSet);
-	delete_memsuper (memsuper);
-	return pipeline;
-}
-
-VkDescriptorPool
-QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist,
-						 plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkDescriptorPoolCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkDescriptorPoolCreateInfo,
-					   &cInfo, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkDescriptorPool pool;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseDescriptorPool: %d", PL_Line (plist)));
-	dfunc->vkCreateDescriptorPool (device->dev, &cInfo, 0, &pool);
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return pool;
-}
-
-VkDescriptorSetLayout
-QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx, plitem_t *plist,
-							  plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkDescriptorSetLayoutCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist,
-					   parse_VkDescriptorSetLayoutCreateInfo,
-					   &cInfo, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkDescriptorSetLayout setLayout;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseDescriptorSetLayout: %d", PL_Line (plist)));
-	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &setLayout);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-						 setLayout, va (ctx->va_ctx, "descriptorSetLayout:%d",
-										PL_Line (plist)));
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return setLayout;
-}
-
-VkPipelineLayout
-QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist,
-						 plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkPipelineLayoutCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkPipelineLayoutCreateInfo,
-					   &cInfo, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkPipelineLayout layout;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParsePipelineLayout: %d", PL_Line (plist)));
-	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &layout);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-						 layout, va (ctx->va_ctx, "pipelineLayout:%d",
-										PL_Line (plist)));
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return layout;
-}
-
-VkSampler
-QFV_ParseSampler (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkSamplerCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkSamplerCreateInfo, &cInfo,
-					   properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkSampler sampler;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseSampler: %d", PL_Line (plist)));
-	dfunc->vkCreateSampler (device->dev, &cInfo, 0, &sampler);
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return sampler;
-}
-
-VkImage
-QFV_ParseImage (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkImageCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkImageCreateInfo, &cInfo,
-					   properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkImage image;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImage: %d", PL_Line (plist)));
-	dfunc->vkCreateImage (device->dev, &cInfo, 0, &image);
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return image;
-}
-
-VkImageView
-QFV_ParseImageView (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkImageViewCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkImageViewCreateInfo,
-					   &cInfo, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkImageView imageView;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageView: %d", PL_Line (plist)));
-	dfunc->vkCreateImageView (device->dev, &cInfo, 0, &imageView);
-	qfvPopDebug (ctx);
-
-	delete_memsuper (memsuper);
-	return imageView;
 }
 
 typedef struct {
@@ -1359,198 +1076,497 @@ typedef struct {
 	VkImageViewCreateInfo *info;
 } imageviewcreate_t;
 
-static plelement_t qfv_imagecreate_dict = {
-	QFDictionary,
-	sizeof (VkImageCreateInfo),
-	vkparse_alloc,
-	parse_VkImageCreateInfo,
-};
-
-static plelement_t qfv_imageviewcreate_dict = {
-	QFDictionary,
-	sizeof (VkImageViewCreateInfo),
-	vkparse_alloc,
-	parse_VkImageViewCreateInfo,
-};
-
-static int
-parse_imagecreate_dict (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages, void *context)
+int
+QFV_ParseOutput (vulkan_ctx_t *ctx, qfv_output_t *output, plitem_t *plist,
+				 plitem_t *properties)
 {
-	plfield_t   f = { "images", 0, QFArray, parse_array,
-					  &qfv_imagecreate_dict };
-	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr = 0;
-	int         ret;
-
-	if ((ret = PL_ParseLabeledArray (&f, item, &arr, messages, context))) {
-		imagecreate_t  *imagecreate = data;
-		imagecreate->count = arr->size;
-		imagecreate->info = (VkImageCreateInfo *) arr->a;
-	}
-	return ret;
-}
-
-static int
-parse_imageviewcreate_dict (const plfield_t *field, const plitem_t *item,
-							void *data, plitem_t *messages, void *context)
-{
-	plfield_t   f = { "images", 0, QFArray, parse_array,
-					  &qfv_imageviewcreate_dict };
-	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
-	arr_t      *arr = 0;
-	int         ret;
-
-	if ((ret = PL_ParseLabeledArray (&f, item, &arr, messages, context))) {
-		imageviewcreate_t  *imageviewcreate = data;
-		imageviewcreate->count = arr->size;
-		imageviewcreate->info = (VkImageViewCreateInfo *) arr->a;
-	} else {
-		//FIXME leaky boat when succeeds
-		if (arr) {
-			free (arr);
-		}
-	}
-	return ret;
-}
-
-qfv_imageset_t *
-QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	memsuper_t *memsuper = new_memsuper ();
+	int         ret = 0;
+	qfv_output_t op = {};
 
-	imagecreate_t create = {};
-
-	pltype_t    type = PL_Type (item);
-
-	if (type == QFDictionary) {
-		if (!parse_object (ctx, memsuper, item, parse_imagecreate_dict,
-						   &create, properties)) {
-			delete_memsuper (memsuper);
-			return 0;
-		}
-	} else {
-		Sys_MaskPrintf (SYS_vulkan_parse, "Neither array nor dictionary: %d\n",
-						PL_Line (item));
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	__auto_type set = QFV_AllocImages (create.count, malloc);
-	for (uint32_t i = 0; i < create.count; i++) {
-		qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageSet: %d", PL_Line (item)));
-		dfunc->vkCreateImage (device->dev, &create.info[i], 0, &set->a[i]);
-
-		const char *name = PL_KeyAtIndex (item, i);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, set->a[i],
-							 va (ctx->va_ctx, "image:%s", name));
-		qfvPopDebug (ctx);
-		name = resource_path (ctx, "images", name);
-		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
-	}
-
-	delete_memsuper (memsuper);
-	return set;
-}
-
-qfv_imageviewset_t *
-QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
-					   plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	imageviewcreate_t create = {};
-
-	pltype_t    type = PL_Type (item);
-
-	if (type == QFDictionary) {
-		if (!parse_object (ctx, memsuper, item, parse_imageviewcreate_dict,
-						   &create, properties)) {
-			delete_memsuper (memsuper);
-			return 0;
-		}
-	} else {
-		Sys_Printf ("Neither array nor dictionary: %d\n", PL_Line (item));
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	__auto_type set = QFV_AllocImageViews (create.count, malloc);
-	for (uint32_t i = 0; i < create.count; i++) {
-		qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageViewSet: %d", PL_Line (item)));
-		dfunc->vkCreateImageView (device->dev, &create.info[i], 0, &set->a[i]);
-		qfvPopDebug (ctx);
-
-		const char *name = PL_KeyAtIndex (item, i);
-		name = resource_path (ctx, "imageViews", name);
-		QFV_AddHandle (ctx->imageViews, name, (uint64_t) set->a[i]);
-	}
-
-	delete_memsuper (memsuper);
-	return set;
-}
-
-VkFramebuffer
-QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	memsuper_t *memsuper = new_memsuper ();
-
-	VkFramebufferCreateInfo cInfo = {};
-
-	if (!parse_object (ctx, memsuper, plist, parse_VkFramebufferCreateInfo,
-					   &cInfo, properties)) {
-		delete_memsuper (memsuper);
-		return 0;
-	}
-
-	VkFramebuffer framebuffer;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseFramebuffer: %d", PL_Line (plist)));
-	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
-	qfvPopDebug (ctx);
-	Sys_MaskPrintf (SYS_vulkan_parse, "framebuffer, renderPass: %#zx, %#zx\n",
-					(size_t) framebuffer, (size_t) cInfo.renderPass);
-
-	delete_memsuper (memsuper);
-	return framebuffer;
-}
-
-static int
-parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
-					 plitem_t *messages, void *context)
-{
-	plelement_t element = {
-		QFDictionary,
-		sizeof (VkClearValue),
-		vkparse_alloc,
-		parse_VkClearValue,
-		0,
-	};
-	plfield_t   f = { 0, 0, 0, 0, &element };
-
-	if (!PL_ParseArray (&f, item, data, messages, context)) {
-		return 0;
-	}
-	return 1;
-}
-
-clearvalueset_t *
-QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
-{
-	clearvalueset_t *cv = 0;
-	memsuper_t *memsuper = new_memsuper ();
-	clearvalueset_t *clearValues = 0;
-
-	if (parse_object (ctx, memsuper, plist, parse_clearvalueset, &clearValues,
+	if (parse_object (ctx, memsuper, plist, parse_qfv_output_t, &op,
 					  properties)) {
-		cv = DARRAY_ALLOCFIXED (clearvalueset_t, clearValues->size, malloc);
-		memcpy (cv->a, clearValues->a, cv->size * sizeof (cv->a[0]));
+		memcpy (output, &op, sizeof (*output));
+		ret = 1;
 	}
 	delete_memsuper (memsuper);
-	return cv;
+	return ret;
+}
+
+int vulkan_frame_count;
+static cvar_t vulkan_frame_count_cvar = {
+	.name = "vulkan_frame_count",
+	.description =
+		"Number of frames to render in the background. More frames can "
+		"increase performance, but at the cost of latency. The default of 2 is"
+		" recommended.",
+	.default_value = "2",
+	.flags = CVAR_NONE,
+	.value = { .type = &cexpr_int, .value = &vulkan_frame_count },
+};
+int vulkan_presentation_mode;
+static cvar_t vulkan_presentation_mode_cvar = {
+	.name = "vulkan_presentation_mode",
+	.description =
+		"desired presentation mode (may fall back to fifo).",
+	.default_value = "mailbox",
+	.flags = CVAR_NONE,
+	.value = {
+		.type = &VkPresentModeKHR_type,
+		.value = &vulkan_presentation_mode,
+	},
+};
+int msaaSamples;
+static cvar_t msaaSamples_cvar = {
+	.name = "msaaSamples",
+	.description =
+		"desired MSAA sample size.",
+	.default_value = "VK_SAMPLE_COUNT_1_BIT",
+	.flags = CVAR_NONE,
+	.value = { .type = &VkSampleCountFlagBits_type, .value = &msaaSamples },
+};
+static exprenum_t validation_enum;
+static exprtype_t validation_type = {
+	.name = "vulkan_use_validation",
+	.size = sizeof (int),
+	.binops = cexpr_flag_binops,
+	.unops = cexpr_flag_unops,
+	.data = &validation_enum,
+	.get_string = cexpr_flags_get_string,
+};
+
+static int validation_values[] = {
+	0,
+	VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
+};
+static exprsym_t validation_symbols[] = {
+	{"none", &validation_type, validation_values + 0},
+	{"all", &validation_type, validation_values + 1},
+	{}
+};
+static exprtab_t validation_symtab = {
+	validation_symbols,
+};
+static exprenum_t validation_enum = {
+	&validation_type,
+	&validation_symtab,
+};
+static cvar_t vulkan_use_validation_cvar = {
+	.name = "vulkan_use_validation",
+	.description =
+		"enable KRONOS Validation Layer if available (requires instance "
+		"restart).",
+	.default_value = "error|warning",
+	.flags = CVAR_NONE,
+	.value = { .type = &validation_type, .value = &vulkan_use_validation },
+};
+
+static void
+vulkan_frame_count_f (void *data, const cvar_t *cvar)
+{
+	if (vulkan_frame_count < 1) {
+		Sys_Printf ("Invalid frame count: %d. Setting to 1\n",
+					vulkan_frame_count);
+		vulkan_frame_count = 1;
+	}
+}
+
+void
+Vulkan_Init_Cvars (void)
+{
+	qfZoneScoped (true);
+	int         num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+	}
+	validation_symtab.symbols = calloc (num_syms + 1, sizeof (exprsym_t));
+	num_syms = 0;
+	for (exprsym_t *sym = VkDebugUtilsMessageSeverityFlagBitsEXT_symbols;
+		 sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+		validation_symtab.symbols[num_syms].type = &validation_type;
+	}
+	for (exprsym_t *sym = validation_symbols; sym->name; sym++, num_syms++) {
+		validation_symtab.symbols[num_syms] = *sym;
+	}
+	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
+	// FIXME implement fallback choices (instead of just fifo)
+	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
+	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);
+	Cvar_Register (&msaaSamples_cvar, 0, 0);
+}
+
+static exprsym_t builtin_plist_syms[] = {
+	{ .name = "main_def",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_main_def.plc"
+		},
+	{ .name = "main_fwd",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/rp_main_fwd.plc"
+		},
+	{ .name = "smp_quake",
+	  .value = (void *)
+#include "libs/video/renderer/vulkan/smp_quake.plc"
+		},
+	{}
+};
+static plitem_t **builtin_plists;
+static exprtab_t builtin_configs = { .symbols = builtin_plist_syms };
+
+static void
+build_configs (scriptctx_t *sctx)
+{
+	qfZoneScoped (true);
+	int         num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		num_plists++;
+	}
+	builtin_plists = malloc (num_plists * sizeof (plitem_t *));
+	num_plists = 0;
+	for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+		plitem_t   *item = PL_GetDictionary (sym->value, &sctx->hashctx);
+		if (!item) {
+			// Syntax errors in the compiled-in plists are unrecoverable
+			Sys_Error ("Error parsing plist for %s", sym->name);
+		}
+		builtin_plists[num_plists] = item;
+		sym->value = &builtin_plists[num_plists];
+		sym->type = &cexpr_plitem;
+		num_plists++;
+	}
+	exprctx_t   ectx = { .hashctx = &sctx->hashctx };
+	cexpr_init_symtab (&builtin_configs, &ectx);
+}
+
+static void
+delete_configs (void)
+{
+	int         num_plists = 0;
+	if (builtin_plists) {
+		for (exprsym_t *sym = builtin_plist_syms; sym->name; sym++) {
+			PL_Release (builtin_plists[num_plists]);
+			num_plists++;
+		}
+		free (builtin_plists);
+	}
+	Hash_DelTable (builtin_configs.tab);
+}
+
+plitem_t *
+Vulkan_GetConfig (vulkan_ctx_t *ctx, const char *name)
+{
+	qfZoneScoped (true);
+	scriptctx_t *sctx = ctx->script_context;
+	if (!builtin_configs.tab) {
+		build_configs (sctx);
+	}
+
+	plitem_t   *config = 0;
+	exprval_t   result = { .type = &cexpr_plitem, .value = &config };
+	exprctx_t   ectx = {
+		.result = &result,
+		.symtab = &builtin_configs,
+		.memsuper = new_memsuper (),
+		.hashctx = &sctx->hashctx,
+		.messages = PL_NewArray (),
+	};
+	if (cexpr_eval_string (name, &ectx)) {
+		dstring_t  *msg = dstring_newstr ();
+
+		for (int i = 0; i < PL_A_NumObjects (ectx.messages); i++) {
+			dasprintf (msg, "%s\n",
+					   PL_String (PL_ObjectAtIndex (ectx.messages, i)));
+		}
+		Sys_Printf ("%s", msg->str);
+		dstring_delete (msg);
+		config = 0;
+	}
+	PL_Release (ectx.messages);
+	delete_memsuper (ectx.memsuper);
+	return config;
+}
+
+void Vulkan_Script_Init (vulkan_ctx_t *ctx)
+{
+	qfZoneScoped (true);
+	scriptctx_t *sctx = calloc (1, sizeof (scriptctx_t));
+	sctx->vctx = ctx;
+	ctx->script_context = sctx;
+
+	exprctx_t   ectx = {};
+	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0, &sctx->hashctx);
+	parser_table = Hash_NewTable (61, parser_getkey, 0, 0, &sctx->hashctx);
+	//FIXME using the script context's hashctx causes the cvar system to access
+	//freed hash links due to shutdown order issues. The proper fix would be to
+	//create a symtabs shutdown (for thread safety), but this works for now.
+	ectx.hashctx = 0;//&sctx->hashctx;
+	vkgen_init_symtabs (&ectx);
+	cexpr_init_symtab (&qfv_renderframeset_t_symtab, &ectx);
+	cexpr_init_symtab (&data_array_symtab, &ectx);
+
+	sctx->shaderModules = handlref_symtab (shaderModule_free, sctx);
+	sctx->setLayouts = handlref_symtab (setLayout_free, sctx);
+	sctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, sctx);
+	sctx->descriptorPools = handlref_symtab (descriptorPool_free, sctx);
+	sctx->samplers = handlref_symtab (sampler_free, sctx);
+	sctx->images = handlref_symtab (image_free, sctx);
+	sctx->imageViews = handlref_symtab (imageView_free, sctx);
+	sctx->renderpasses = handlref_symtab (renderpass_free, sctx);
+}
+
+static void
+clear_table (hashtab_t **table)
+{
+	if (*table) {
+		hashtab_t  *tab = *table;
+		*table = 0;
+		Hash_DelTable (tab);
+	}
+}
+
+void Vulkan_Script_Shutdown (vulkan_ctx_t *ctx)
+{
+	scriptctx_t *sctx = ctx->script_context;
+
+	clear_table (&sctx->pipelineLayouts);
+	clear_table (&sctx->setLayouts);
+	clear_table (&sctx->shaderModules);
+	clear_table (&sctx->descriptorPools);
+	clear_table (&sctx->samplers);
+	clear_table (&sctx->images);
+	clear_table (&sctx->imageViews);
+	clear_table (&sctx->renderpasses);
+
+	delete_configs ();
+
+	exprctx_t   ectx = {};
+	vkgen_shutdown_symtabs (&ectx);
+
+	Hash_DelTable (qfv_renderframeset_t_symtab.tab);
+	Hash_DelTable (data_array_symtab.tab);
+
+	free (validation_symtab.symbols);
+
+	Hash_DelTable (enum_symtab);
+	Hash_DelTable (parser_table);
+
+	Hash_DelContext (sctx->hashctx);
+
+	free (sctx);
+}
+
+void Vulkan_Script_SetOutput (vulkan_ctx_t *ctx, qfv_output_t *output)
+{
+	scriptctx_t *sctx = ctx->script_context;
+	sctx->output = *output;
+}
+
+exprtab_t *
+QFV_CreateSymtab (plitem_t *dict, const char *properties,
+				  const char **extra_items, exprsym_t *extra_syms,
+				  exprctx_t *ectx)
+{
+	qfZoneScoped (true);
+	plitem_t   *props = PL_ObjectForKey (dict, properties);
+	int         num_keys = PL_D_NumKeys (props);
+	int         num_extra = 0;
+	int         num_syms = 0;
+
+	if (extra_items) {
+		for (const char **e = extra_items; *e; e++) {
+			if (PL_ObjectForKey (dict, *e)) {
+				num_extra++;
+			}
+		}
+	}
+	if (extra_syms) {
+		for (exprsym_t *sym = extra_syms; sym->name; sym++, num_syms++) { }
+	}
+
+	int         total_items = num_keys + num_extra;
+	int         total_syms = total_items + num_syms;
+	size_t      size = (sizeof (exprtab_t)
+						+ (total_syms + 1) * sizeof (exprsym_t)
+						+ total_items * sizeof (plitem_t *));
+	exprtab_t  *symtab = malloc (size);
+	*symtab = (exprtab_t) {
+		.symbols = (exprsym_t *) &symtab[1],
+	};
+	plitem_t  **items = (plitem_t **) &symtab->symbols[total_syms + 1];
+	for (int i = 0; i < num_keys; i++) {
+		symtab->symbols[i] = (exprsym_t) {
+			.name = PL_KeyAtIndex (props, i),
+			.type = &cexpr_plitem,
+			.value = items + i,
+		};
+		items[i] = PL_ObjectForKey (props, symtab->symbols[i].name);
+	}
+	for (int i = 0, j = 0; num_extra && extra_items[i]; i++) {
+		plitem_t   *val = PL_ObjectForKey (dict, extra_items[i]);
+		if (val) {
+			symtab->symbols[num_keys + j] = (exprsym_t) {
+				.name = extra_items[i],
+				.type = &cexpr_plitem,
+				.value = items + num_keys + j,
+			};
+			items[num_keys + j] = val;
+			j++;
+		}
+	}
+	for (int i = 0; i < num_syms; i++) {
+		symtab->symbols[total_items + i] = extra_syms[i];
+	}
+	symtab->symbols[total_syms] = (exprsym_t) { };
+
+	cexpr_init_symtab (symtab, ectx);
+	return symtab;
+}
+
+void
+QFV_DestroySymtab (exprtab_t *tab)
+{
+	Hash_DelTable (tab->tab);
+	free (tab);
+}
+
+struct qfv_jobinfo_s *
+QFV_ParseJobInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	qfZoneScoped (true);
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_jobinfo_t *ji = cmemalloc (memsuper, sizeof (qfv_jobinfo_t));
+	*ji = (qfv_jobinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	static const char *extra_items[] = {
+		"images",
+		"imageviews",
+		"renderpasses",
+		0
+	};
+	exprsym_t   var_syms[] = {
+		{"render_output", &qfv_output_t_type, &sctx->output},
+		{"frames", &qfv_renderframeset_t_type, &rctx->frames},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{"physDevLimits", &VkPhysicalDeviceLimits_type,
+			&ctx->device->physDev->p.properties.limits },
+		{}
+	};
+	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
+												   extra_items, var_syms,
+												   &exprctx);
+
+	int         ret;
+	if (!(ret = parse_qfv_jobinfo_t (0, item, ji, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		ji = 0;
+	}
+
+	return ji;
+}
+
+struct qfv_samplerinfo_s *
+QFV_ParseSamplerInfo (vulkan_ctx_t *ctx, plitem_t *item, qfv_renderctx_t *rctx)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_samplerinfo_t *si = cmemalloc (memsuper, sizeof (qfv_samplerinfo_t));
+	*si = (qfv_samplerinfo_t) { .memsuper = memsuper };
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+		.data = rctx,
+	};
+
+	exprsym_t   var_syms[] = {
+		{"physDevLimits", &VkPhysicalDeviceLimits_type,
+			&ctx->device->physDev->p.properties.limits },
+		{}
+	};
+	exprctx.external_variables = QFV_CreateSymtab (item, "properties",
+												   0, var_syms, &exprctx);
+
+	int         ret;
+	if (!(ret = parse_qfv_samplerinfo_t (0, item, si, messages, &parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	QFV_DestroySymtab (exprctx.external_variables);
+	PL_Release (messages);
+	if (!ret) {
+		delete_memsuper (memsuper);
+		si = 0;
+	}
+
+	return si;
+}
+
+int
+QFV_ParseLayoutInfo (vulkan_ctx_t *ctx, memsuper_t *memsuper,
+					 exprtab_t *symtab, const char *ref,
+					 qfv_layoutinfo_t *layout)
+{
+	*layout = (qfv_layoutinfo_t) {};
+
+	scriptctx_t *sctx = ctx->script_context;
+	plitem_t   *messages = PL_NewArray ();
+
+	exprctx_t   exprctx = {
+		.symtab = &root_symtab,
+		.messages = messages,
+		.hashctx = &sctx->hashctx,
+		.memsuper = memsuper,
+		.external_variables = symtab,
+	};
+	parsectx_t  parsectx = {
+		.ectx = &exprctx,
+		.vctx = ctx,
+	};
+
+	plitem_t   *item = PL_NewString (ref);
+	int         ret;
+	if (!(ret = parse_qfv_layoutinfo_t (0, item, layout, messages,
+										&parsectx))) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	PL_Release (messages);
+	PL_Release (item);
+
+	return ret;
 }

@@ -39,6 +39,7 @@
 #include "QF/va.h"
 #include "QF/hash.h"
 #include "QF/cvar.h"
+#include "QF/sys.h"
 
 #include "gib_parse.h"
 #include "gib_vars.h"
@@ -95,7 +96,7 @@ GIB_Var_Get (hashtab_t * first, hashtab_t * second, const char *key)
 /* Alters key, but restores it */
 gib_var_t *
 GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
-					 unsigned int *ind, qboolean create)
+					 unsigned int *ind, bool create)
 {
 	static hashtab_t *zero = 0;
 	unsigned int i, n, index = 0, len, start;
@@ -155,7 +156,7 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 /* Mangles the hell out of key */
 gib_var_t *
 GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *key, unsigned int start,
-					 unsigned int *ind, qboolean create)
+					 unsigned int *ind, bool create)
 {
 	static hashtab_t *zero = 0;
 	hashtab_t *one = *first, *two = *second;
@@ -164,7 +165,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 	cvar_t *cvar;
 	char c;
 	const char *str;
-	qboolean done = false;
+	bool done = false;
 
 	for (i = start, protect = 0; !done; i++) {
 		if (key->str[i] == '.' || key->str[i] == 0) {
@@ -211,7 +212,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 			key->str[i] = 0;
 			if ((var = GIB_Var_Get_Very_Complex (&one, &two, key, n+1+varstartskip, &index2, create))) {
 				if (key->str[n] == '#')
-					str = va (0, "%u", var->size);
+					str = va ("%u", var->size);
 				else
 					str = var->array[index2].value->str;
 				key->str[i] = c;
@@ -222,9 +223,11 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 				dstring_replace (key, n, i-n+varstartskip, "0", 1);
 				protect = n+1;
 			} else if ((cvar = Cvar_FindVar (key->str+n+1+varstartskip))) {
+				const char *cvar_str = Cvar_VarString (cvar);
 				key->str[i] = c;
-				dstring_replace (key, n, i-n+varstartskip, cvar->string, strlen (cvar->string));
-				protect = n+strlen(cvar->string);
+				dstring_replace (key, n, i-n+varstartskip, cvar_str,
+								 strlen (cvar_str));
+				protect = n+strlen(cvar_str);
 			} else  {
 				key->str[i] = c;
 				dstring_snip (key, n, n-i+varstartskip);
@@ -242,7 +245,7 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 
 void
 GIB_Var_Assign (gib_var_t * var, unsigned int index, dstring_t ** values,
-				unsigned int numv, qboolean shrink)
+				unsigned int numv, bool shrink)
 {
 	unsigned int i, len;
 
@@ -308,9 +311,18 @@ GIB_Var_Hash_New (void)
 	return Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 }
 
+static void
+gib_var_shutdown (void *data)
+{
+	Hash_DelTable (gib_domains);
+	Hash_DelTable (gib_globals);
+}
+
 void
 GIB_Var_Init (void)
 {
+	qfZoneScoped (true);
+	Sys_RegisterShutdown (gib_var_shutdown, 0);
 	gib_globals = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 	gib_domains = Hash_NewTable (1024, GIB_Domain_Get_Key,
 								 GIB_Domain_Free, 0, 0);

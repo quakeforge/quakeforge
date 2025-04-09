@@ -124,8 +124,6 @@ SDL_main (int argc, char *argv[])
 		return 1;
 	}
 #endif
-	Sys_RegisterShutdown (Host_Shutdown, 0);
-	Sys_RegisterShutdown (Net_LogStop, 0);
 	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();

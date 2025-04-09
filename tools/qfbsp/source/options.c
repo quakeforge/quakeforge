@@ -48,6 +48,16 @@
 
 const char *this_program;
 
+enum {
+	long_opt_base = 255,
+
+	extract_textures,
+	extract_entities,
+	extract_hull,
+	extract_model,
+	smart_leak,
+};
+
 static struct option const long_options[] = {
 	{"quiet",				no_argument,		0, 'q'},
 	{"verbose",				no_argument,		0, 'v'},
@@ -60,10 +70,11 @@ static struct option const long_options[] = {
 	{"onlyents",			no_argument,		0, 'e'},
 	{"portal",				no_argument,		0, 'p'},
 	{"info",				no_argument,		0, 'i'},
-	{"extract-textures",	no_argument,		0, 256},
-	{"extract-entities",	no_argument,		0, 257},
-	{"extract-hull",		no_argument,		0, 258},
-	{"smart-leak",			no_argument,		0, 259},
+	{"extract-textures",	no_argument,		0, extract_textures},
+	{"extract-entities",	no_argument,		0, extract_entities},
+	{"extract-hull",		no_argument,		0, extract_hull},
+	{"extract-model",		no_argument,		0, extract_model},
+	{"smart-leak",			no_argument,		0, smart_leak},
 	{"usehulls",			no_argument,		0, 'u'},
 	{"hullnum",				required_argument,	0, 'H'},
 	{"subdivide",			required_argument,	0, 's'},
@@ -174,19 +185,23 @@ DecodeArgs (int argc, char **argv)
 				options.extract = true;
 				options.portal = true;
 				break;
-			case 256:					// extract-textures
+			case extract_textures:
 				options.extract = true;
 				options.extract_textures = true;
 				break;
-			case 257:					// extract-entities
+			case extract_entities:
 				options.extract = true;
 				options.extract_entities = true;
 				break;
-			case 258:					// extract-hull
+			case extract_hull:
 				options.extract = true;
 				options.extract_hull = true;
 				break;
-			case 259:					// smart-leak
+			case extract_model:
+				options.extract = true;
+				options.extract_model = true;
+				break;
+			case smart_leak:
 				options.smart_leak = true;
 				break;
 			case 'u':					// usehulls

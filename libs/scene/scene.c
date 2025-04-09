@@ -35,55 +35,289 @@
 # include <strings.h>
 #endif
 
-#include "QF/progs.h"	// for PR_RESMAP
+#include "QF/mathlib.h"
+#include "QF/model.h"
+#include "QF/skin.h"
+#include "QF/sys.h"
+
+#include "QF/plugin/vid_render.h"
 
 #include "QF/scene/entity.h"
+#include "QF/scene/light.h"
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
-typedef struct scene_resources_s {
-	PR_RESMAP (entity_t) entities;
-} scene_resources_t;
+static void
+create_active (void *_active)
+{
+	byte       *active = _active;
+	*active = 1;
+}
+
+static void
+create_old_origin (void *_old_origin)
+{
+	vec4f_t    *old_origin = _old_origin;
+	*old_origin = (vec4f_t) {0, 0, 0, 1};
+}
+
+static void
+create_colormap (void *_colormap)
+{
+	colormap_t *colormap = _colormap;
+	*colormap = (colormap_t) {1, 6};
+}
+
+static void
+destroy_visibility (void *_visibility, ecs_registry_t *reg)
+{
+	visibility_t *visibility = _visibility;
+	if (visibility->efrag) {
+		R_ClearEfragChain (visibility->efrag);
+	}
+}
+
+static void
+destroy_renderer (void *_renderer, ecs_registry_t *reg)
+{
+}
+
+static void
+destroy_efrags (void *_efrags, ecs_registry_t *reg)
+{
+	efrag_t **efrags = _efrags;
+	R_ClearEfragChain (*efrags);
+}
+
+static void
+sw_identity_matrix (void *_mat)
+{
+	mat4f_t    *mat = _mat;
+	mat4fidentity (*mat);
+}
+
+static void
+sw_frame_0 (void *_frame)
+{
+	byte       *frame = _frame;
+	*frame = 0;
+}
+
+static void
+sw_null_brush (void *_brush)
+{
+	struct mod_brush_s **brush = _brush;
+	*brush = 0;
+}
+
+static const component_t scene_components[scene_comp_count] = {
+	[scene_href] = {
+		.size = sizeof (hierref_t),
+		.create = 0,//create_href,
+		.name = "href",
+		.destroy = Hierref_DestroyComponent,
+	},
+	[scene_animation] = {
+		.size = sizeof (animation_t),
+		.create = 0,//create_animation,
+		.name = "animation",
+	},
+	[scene_visibility] = {
+		.size = sizeof (visibility_t),
+		.create = 0,//create_visibility,
+		.destroy = destroy_visibility,
+		.name = "visibility",
+	},
+	[scene_renderer] = {
+		.size = sizeof (renderer_t),
+		.create = 0,//create_renderer,
+		.destroy = destroy_renderer,
+		.name = "renderer",
+	},
+	[scene_active] = {
+		.size = sizeof (byte),
+		.create = create_active,
+		.name = "active",
+	},
+	[scene_old_origin] = {
+		.size = sizeof (vec4f_t),
+		.create = create_old_origin,
+		.name = "old_origin",
+	},
+	[scene_colormap] = {
+		.size = sizeof (colormap_t),
+		.create = create_colormap,
+		.name = "colormap",
+	},
+
+	[scene_dynlight] = {
+		.size = sizeof (dlight_t),
+		.name = "dyn_light",
+//		.ui = Light_dyn_light_ui,
+	},
+
+	[scene_light] = {
+		.size = sizeof (light_t),
+		.name = "light",
+//		.ui = Light_light_ui,
+	},
+	[scene_efrags] = {
+		.size = sizeof (efrag_t *),
+		.destroy = destroy_efrags,
+		.name = "efrags",
+	},
+	[scene_lightstyle] = {
+		.size = sizeof (uint32_t),
+		.name = "lightstyle",
+	},
+	[scene_lightleaf] = {
+		.size = sizeof (uint32_t),
+		.name = "lightleaf",
+	},
+	[scene_lightid] = {
+		.size = sizeof (uint32_t),
+		.name = "lightid",
+	},
+
+	[scene_sw_matrix] = {
+		.size = sizeof (mat4f_t),
+		.create = sw_identity_matrix,
+		.name = "sw world transform",
+	},
+	[scene_sw_frame] = {
+		.size = sizeof (byte),
+		.create = sw_frame_0,
+		.name = "sw brush model animation frame",
+	},
+	[scene_sw_brush] = {
+		.size = sizeof (struct mod_brush_s *),
+		.create = sw_null_brush,
+		.name = "sw brush model data pointer",
+	},
+};
+
+static byte empty_visdata[] = { 0x01 };
+
+static mleaf_t empty_leafs[] = {
+	[1] = {
+		.contents = CONTENTS_EMPTY,
+		.mins = {-INFINITY, -INFINITY, -INFINITY},
+		.maxs = { INFINITY,  INFINITY,  INFINITY},
+		.compressed_vis = empty_visdata,
+	},
+};
+
+static mnode_t empty_nodes[] = {
+	[0] = {
+		.plane = { 0, 0, 0, -1 },
+		.type = 3,
+		.children = { ~0, ~1 },
+		.minmaxs = {-INFINITY, -INFINITY, -INFINITY,
+					INFINITY,  INFINITY,  INFINITY},
+	},
+};
+
+static int empty_node_parents[] = {
+	[0] = -1,
+};
+
+static int empty_leaf_parents[] = {
+	[0] = 0,
+	[1] = 0,
+};
+
+static int empty_leaf_flags[] = {
+	[1] = SURF_DRAWSKY,
+};
+
+static char empty_entities[] = { 0 };
+
+static model_t empty_world = {
+	.type = mod_brush,
+	.radius = INFINITY,
+	.mins = {-INFINITY, -INFINITY, -INFINITY},
+	.maxs = { INFINITY,  INFINITY,  INFINITY},
+	.brush = {
+		.modleafs = 2,
+		.visleafs = 1,
+		.numnodes = 1,
+		.nodes = empty_nodes,
+		.leafs = empty_leafs,
+		.entities = empty_entities,
+		.visdata = empty_visdata,
+		.node_parents = empty_node_parents,
+		.leaf_parents = empty_leaf_parents,
+		.leaf_flags = empty_leaf_flags,
+	},
+};
 
 scene_t *
-Scene_NewScene (void)
+Scene_NewScene (scene_system_t *extra_systems)
 {
-	scene_t    *scene;
-	scene_resources_t *res;
+	scene_t    *scene = calloc (1, sizeof (scene_t));
 
-	scene = calloc (1, sizeof (scene_t));
-	res = calloc (1, sizeof (scene_resources_t));
-	*(scene_resources_t **)&scene->resources = res;
+	scene->reg = ECS_NewRegistry ("scene");
+	scene->base = ECS_RegisterComponents (scene->reg, scene_components,
+										  scene_comp_count);
+	for (auto extra = extra_systems; extra && extra->system; extra++) {
+		uint32_t base = ECS_RegisterComponents (scene->reg,
+												extra->components,
+												extra->component_count);
+		extra->system->reg = scene->reg;
+		extra->system->base = base;
+	}
+	ECS_CreateComponentPools (scene->reg);
 
-	DARRAY_INIT (&scene->roots, 16);
-	DARRAY_INIT (&scene->transforms, 16);
-	DARRAY_INIT (&scene->entities, 16);
-	DARRAY_INIT (&scene->visibility, 16);
+	scene->worldmodel = &empty_world;
+	scene->camera = nullent;
 
 	return scene;
 }
 
-entity_t *
+void
+Scene_DeleteScene (scene_t *scene)
+{
+	ECS_DelRegistry (scene->reg);
+
+	free (scene);
+}
+
+entity_t
 Scene_CreateEntity (scene_t *scene)
 {
-	scene_resources_t *res = scene->resources;
+	// Transform_New creates an entity and adds a scene_href component to the
+	// entity
+	ecs_system_t ssys = { .reg = scene->reg, .base = scene->base };
+	transform_t trans = Transform_New (ssys, nulltransform);
+	uint32_t    id = trans.id;
 
-	entity_t   *ent = PR_RESNEW_NC (res->entities);
-	ent->transform = 0;
-	DARRAY_APPEND (&scene->entities, ent);
-	return ent;
+	Ent_SetComponent (id, scene->base + scene_animation, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_renderer, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_active, scene->reg, 0);
+	Ent_SetComponent (id, scene->base + scene_old_origin, scene->reg, 0);
+
+	renderer_t *renderer = Ent_GetComponent (id, scene->base + scene_renderer, scene->reg);
+	QuatSet (1, 1, 1, 1, renderer->colormod);
+
+	return (entity_t) { .reg = scene->reg, .id = id, .base = scene->base };
+}
+
+void
+Scene_DestroyEntity (scene_t *scene, entity_t ent)
+{
+	qfZoneScoped (true);
+	ECS_DelEntity (scene->reg, ent.id);
 }
 
 void
 Scene_FreeAllEntities (scene_t *scene)
 {
-	scene_resources_t *res = scene->resources;
-	for (size_t i = 0; i < scene->entities.size; i++) {
-		entity_t   *ent = scene->entities.a[i];
-		if (ent->transform) {
-			Transform_Delete (ent->transform);
-			ent->transform = 0;
+	auto reg = scene->reg;
+	for (uint32_t i = 0; i < reg->entities.num_ids; i++) {
+		uint32_t    ent = reg->entities.ids[i];
+		uint32_t    ind = Ent_Index (ent);
+		if (ind == i) {
+			ECS_DelEntity (reg, ent);
 		}
 	}
-	PR_RESRESET (res->entities);
 }

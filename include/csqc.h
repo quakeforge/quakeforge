@@ -44,7 +44,7 @@ typedef struct {
 	float      *maxclients;
 	float      *clientcommandframe;
 	float      *servercommandframe;
-	string_t   *mapname;
+	pr_string_t*mapname;
 	float      *intermission;
 	vec3_t     *v_forward;
 	vec3_t     *v_up;
@@ -106,18 +106,18 @@ typedef struct {
 } cl_fields_t;
 
 typedef struct {
-	func_t      Init;
-	func_t      Shutdown;
-	func_t      UpdateView;
-	func_t      WorldLoaded;
-	func_t      Parse_StuffCmd;
-	func_t      Parse_CenterPrint;
-	func_t      Parse_Print;
-	func_t      InputEvent;
-	func_t      ConsoleCommand;
-	func_t      Ent_Update;
-	func_t      Event_Sound;
-	func_t      Remove;
+	pr_func_t   Init;
+	pr_func_t   Shutdown;
+	pr_func_t   UpdateView;
+	pr_func_t   WorldLoaded;
+	pr_func_t   Parse_StuffCmd;
+	pr_func_t   Parse_CenterPrint;
+	pr_func_t   Parse_Print;
+	pr_func_t   InputEvent;
+	pr_func_t   ConsoleCommand;
+	pr_func_t   Ent_Update;
+	pr_func_t   Event_Sound;
+	pr_func_t   Remove;
 } cl_funcs_t;
 
 #if TYPECHECK_PROGS
@@ -130,7 +130,7 @@ typedef struct {
 #define CSQCstring(e,f)     CSQCFIELD (e, f, string)
 #define CSQCfunc(e,f)       CSQCFIELD (e, f, func)
 #define CSQCentity(e,f)     CSQCFIELD (e, f, entity)
-#define CSQCvector(e,f)     (&CSQCFIELD (e, f, vector))
+#define CSQCvector(e,f)     CSQCFIELD (e, f, vector)
 #define CSQCinteger(e,f)    CSQCFIELD (e, f, integer)
 
 extern progs_t csqc_pr_state;

@@ -9,21 +9,21 @@ typedef enum {
 
 #ifdef __QFCC__
 
-#include <QF/pr_debug.h>
+#include <QF/progs/pr_debug.h>
 
 //FIXME finish unsigned in qfcc
 #ifndef umax
 #define umax 0x7fffffff
 #endif
 
-typedef string string_t;
+typedef string pr_string_t;
 
 #endif
 
 typedef struct qdb_event_s {
 	prdebug_t   what;
 	union {
-		string_t    message;
+		pr_string_t message;
 		unsigned    function;
 		int         exit_code;
 	};
@@ -32,7 +32,7 @@ typedef struct qdb_event_s {
 typedef struct qdb_state_s {
 	unsigned    staddr;
 	unsigned    func;
-	string_t    file;
+	pr_string_t file;
 	unsigned    line;
 } qdb_state_t;
 
@@ -70,7 +70,7 @@ typedef struct qdb_auxfunction_s {
 
 #ifdef __QFCC__
 
-typedef struct qdb_target_s { int handle; } qdb_target_t;
+typedef @handle qdb_target_s qdb_target_t;
 
 void qdb_set_trace (qdb_target_t target, int state);
 int qdb_set_breakpoint (qdb_target_t target, unsigned staddr);
@@ -98,6 +98,8 @@ qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target, unsigned fnum);
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
 unsigned qdb_get_source_line_addr(qdb_target_t target, string file,
 								  unsigned line);
+int qdb_has_data_stack (qdb_target_t target);
+unsigned qdb_get_frame_addr (qdb_target_t target);
 void traceon();
 void traceoff();
 

@@ -22,8 +22,8 @@
 
 	while (i-- > 0) {
 		if (_objs[i] == anObject) {
-			for (tmp = i; tmp < count - 1; tmp++) {
-				_objs[tmp] = _objs[tmp + 1];
+			for (tmp = i + 1; tmp < count; tmp++) {
+				_objs[tmp + 1] = _objs[tmp];
 			}
 			count--;
 		}

@@ -1,4 +1,4 @@
-#include "key.h"
+#include <QF/keys.h>
 #include "sound.h"
 #include "legacy_string.h"
 #include "string.h"

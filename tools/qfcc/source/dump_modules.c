@@ -40,9 +40,10 @@
 
 #include <stdlib.h>
 
-#include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "tools/qfcc/include/qfprogs.h"
 
@@ -129,7 +130,7 @@ dump_protocol (progs_t *pr, pr_protocol_t *proto)
 {
 	const char *protocol_name = "<invalid string>";
 	printf ("                %x %x ",
-			(pointer_t) ((pr_int_t *) proto - (pr_int_t *) pr->pr_globals),
+			(pr_ptr_t) ((pr_int_t *) proto - (pr_int_t *) pr->pr_globals),
 			proto->class_pointer);
 	if (PR_StringValid (pr, proto->protocol_name))
 		protocol_name = PR_GetString (pr, proto->protocol_name);
@@ -215,9 +216,9 @@ dump_category (progs_t *pr, pr_category_t *category)
 }
 
 static void
-dump_static_instance_lists (progs_t *pr, pointer_t instance_lists)
+dump_static_instance_lists (progs_t *pr, pr_ptr_t instance_lists)
 {
-	pointer_t  *ptr = &G_STRUCT (pr, pointer_t, instance_lists);
+	pr_ptr_t   *ptr = &G_STRUCT (pr, pr_ptr_t, instance_lists);
 
 	printf ("    static instance lists @ %x\n", instance_lists);
 	while (*ptr) {
@@ -244,7 +245,7 @@ static void
 dump_module (progs_t *pr, pr_module_t *module)
 {
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
-	pointer_t  *ptr = symtab->defs;
+	pr_ptr_t   *ptr = symtab->defs;
 	pr_sel_t   *sel = &G_STRUCT (pr, pr_sel_t, symtab->refs);
 	int         i;
 	const char *module_name = "<invalid string>";
@@ -276,7 +277,7 @@ dump_modules (progs_t *pr)
 {
 	unsigned int i;
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+	for (i = 0; i < pr->progs->globaldefs.count; i++) {
 		pr_def_t   *def = &pr->pr_globaldefs[i];
 		const char *name = "<invalid_string>";
 
