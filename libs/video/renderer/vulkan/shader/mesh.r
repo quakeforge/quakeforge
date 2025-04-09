@@ -121,13 +121,14 @@ main (void)
 			}
 		}
 #endif
+	} else {
+		// FIXME assumes Model has uniform scale/no shear
+		normal = vec3 (Model * vec4 (normal, 0));
 	}
 
 	auto pos = Model * vec4(position, 1);
 	gl_Position = Projection3d * (View[gl_ViewIndex] * pos);
 	out_position = pos;
-	// FIXME assumes Model has uniform scale/no shear
-	normal = vec3 (Model * vec4 (normal, 0));
 	out_normal = normalize (normal);
 	out_texcoord = texcoord;
 }
