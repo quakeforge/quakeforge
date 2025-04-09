@@ -57,7 +57,6 @@
 typedef enum {ST_SYNC=0, ST_RAND } synctype_t;
 #endif
 
-// TODO: shorten these?
 typedef struct {
 	int			ident;
 	int			version;

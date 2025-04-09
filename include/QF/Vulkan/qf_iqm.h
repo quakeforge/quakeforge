@@ -36,76 +36,14 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
-// geometry attributes
-typedef struct iqmgvert_s {
-	float       vertex[3];
-	byte        bones[4];	// uint
-	byte        weights[4];	// unorm
-} iqmgvert_t;
-
-// rendering attributes
-typedef struct iqmrvert_s {
-	float       uv[2];
-	float       normal[3];
-	float       tangent[4];
-	byte        color[4];	// unorm
-} iqmrvert_t;
-
-typedef struct qfv_iqm_skin_s {
-	VkImageView view;
-	byte        colora[4];
-	byte        colorb[4];
-	VkDescriptorSet descriptor;
-} qfv_iqm_skin_t;
-
-typedef struct qfv_iqm_s {
-	VkBuffer    geom_buffer;
-	VkBuffer    rend_buffer;
-	VkBuffer    index_buffer;
-	qfv_iqm_skin_t *skins;
-	struct qfv_resource_s *mesh;
-	struct qfv_resource_s *bones;
-	VkBuffer     bones_buffer;
-	VkDescriptorSet *bones_descriptors;	// one per frame FIXME per instance!!!
-} qfv_iqm_t;
-
-typedef enum {
-	QFV_iqmDepth,
-	QFV_iqmGBuffer,
-	QFV_iqmTranslucent,
-
-	QFV_iqmNumPasses
-} QFV_IQMSubpass;
-
-typedef struct iqm_frame_s {
-	qfv_cmdbufferset_t cmdSet;
-} iqm_frame_t;
-
-typedef struct iqm_frameset_s
-    DARRAY_TYPE (iqm_frame_t) iqm_frameset_t;
-
-typedef struct iqmindset_s
-    DARRAY_TYPE (unsigned) iqmindset_t;
-
-typedef struct iqmctx_s {
-	iqm_frameset_t frames;
-	VkSampler    sampler;
-	struct qfv_dsmanager_s *dsmanager;
-} iqmctx_t;
-
-struct vulkan_ctx_s;
-struct entity_s;
 struct mod_iqm_ctx_s;
-struct iqm_s;
+void Vulkan_Mod_IQMFinish (struct mod_iqm_ctx_s *iqm_ctx,
+						   struct vulkan_ctx_s *ctx);
 
-void Vulkan_Mod_IQMFinish (struct model_s *mod, struct vulkan_ctx_s *ctx);
+//void Vulkan_IQMAddBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
+//void Vulkan_IQMRemoveBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
 
-void Vulkan_IQMAddBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
-void Vulkan_IQMRemoveBones (struct vulkan_ctx_s *ctx, struct iqm_s *iqm);
-
-void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
-void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
-
-void Vulkan_IQM_Init (struct vulkan_ctx_s *ctx);
+//void Vulkan_IQMAddSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
+//void Vulkan_IQMRemoveSkin (struct vulkan_ctx_s *ctx, qfv_iqm_skin_t *skin);
 
 #endif//__QF_Vulkan_qf_iqm_h

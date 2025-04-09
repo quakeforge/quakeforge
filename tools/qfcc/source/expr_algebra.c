@@ -3053,13 +3053,9 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_alias = new_offset_alias_expr (sym->type, dst, sym->offset);
-		if (summed_extend (c[i])) {
-			assign_extend (block, dst_alias, c[i]);
-		} else {
-			append_expr (block,
-						 edag_add_expr (new_assign_expr (dst_alias, c[i])));
-		}
+		auto dst_alias = new_field_expr (dst, new_symbol_expr (sym));
+		dst_alias->field.type = sym->type;
+		append_expr (block, edag_add_expr (new_assign_expr (dst_alias, c[i])));
 		memset_base = sym->offset + type_size (sym->type);
 	}
 	if (type_size (dstType) - memset_base) {

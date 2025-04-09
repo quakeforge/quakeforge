@@ -124,6 +124,19 @@ if test "x$ubsan" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
 	])
 fi
+AC_ARG_ENABLE(asan,
+	AS_HELP_STRING([--enable-asan],
+		[compile with asan (for development)]),
+	asan=$enable_asan,
+	asan=no
+)
+if test "x$asan" = xyes -a "x$leave_cflags_alone" != "xyes"; then
+	QF_CC_OPTION(-fsanitize=address)
+	QF_CC_OPTION_TEST([-fsanitize=address], [
+		CFLAGS="$CFLAGS -fsanitize=address"
+		CXXFLAGS="$CXXFLAGS -fsanitize=address"
+	])
+fi
 
 AC_ARG_ENABLE(optimize,
 	AS_HELP_STRING([--disable-optimize],

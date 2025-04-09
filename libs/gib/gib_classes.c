@@ -613,9 +613,9 @@ static const char *g_gcbs_name;
 static const char *gcbs_fname (const char *str)
 {
 	if (g_gcbs_mode == INSTANCE)
-		return va (0, "__%s_%s__", g_gcbs_name, str);
+		return va ("__%s_%s__", g_gcbs_name, str);
 	else
-		return va (0, "%s::%s", g_gcbs_name, str);
+		return va ("%s::%s", g_gcbs_name, str);
 }
 
 void

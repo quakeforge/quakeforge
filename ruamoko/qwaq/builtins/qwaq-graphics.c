@@ -51,7 +51,7 @@ int
 qwaq_init_threads (qwaq_thread_set_t *thread_data)
 {
 	int         main_ind = -1;
-	size_t      memsize = 8 * 1024 * 1024;
+	size_t      memsize = 64 * 1024 * 1024;
 	memhunk_t  *hunk = Memory_Init (Sys_Alloc (memsize), memsize);
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
@@ -74,7 +74,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 			app_funcs = main_app;
 		}
 		thread->progsinit = app_funcs;
-		thread->rua_security = 1;
+		thread->rua_security = 0;
 		thread->hunk = hunk;	//FIXME shared (but currently only one thread)
 	}
 	return main_ind;

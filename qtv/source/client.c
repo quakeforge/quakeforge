@@ -180,9 +180,9 @@ cl_prespawn_f (client_t *cl, void *unused)
 	if (buf >= sv->num_signon_buffers)
 		buf = 0;
 	if (buf == sv->num_signon_buffers - 1)
-		cmd = va (0, "cmd spawn %i 0\n", cl->server->spawncount);
+		cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
 	else
-		cmd = va (0, "cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
+		cmd = va ("cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
 	size = sv->signon_buffer_size[buf] + 1 + strlen (cmd) + 1;
 	msg = MSG_ReliableCheckBlock (&cl->backbuf, size);
 	SZ_Write (msg, sv->signon_buffers[buf], sv->signon_buffer_size[buf]);
@@ -925,7 +925,7 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
 	int         newindex, oldindex, newnum, oldnum, oldmax;
 	entity_state_t *ent;
-	frame_t    *fromframe;
+	qtv_frame_t *fromframe;
 	packet_entities_t *from;
 	server_t   *sv = client->server;
 
@@ -1025,7 +1025,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 	set_t      *pvs = 0;
 	int         e;
 	vec4f_t     org;
-	frame_t    *frame;
+	qtv_frame_t *frame;
 	qtv_entity_t *ent;
 	qtv_leaf_t *el;
 	entity_state_t *state;
@@ -1277,7 +1277,7 @@ Client_New (client_t *cl)
 	MSG_WriteByte (&cl->netchan.message, sv->cdtrack);
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message,
-					 va (0, "fullserverinfo \"%s\"\n",
+					 va ("fullserverinfo \"%s\"\n",
 						 Info_MakeString (sv->info, 0)));
 }
 

@@ -402,7 +402,7 @@ CL_LinkPlayers (void)
 	double			playertime;
 	int				msec, oldphysent, j;
 	entity_t	    ent;
-	frame_t		   *frame;
+	cl_frame_t	   *frame;
 	player_info_t  *player;
 	player_state_t	exact;
 	player_state_t *state;

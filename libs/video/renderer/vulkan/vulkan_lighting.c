@@ -794,7 +794,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	}
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 8,
-							va (ctx->va_ctx, "%3d", light_count),
+							vac (ctx->va_ctx, "%3d", light_count),
 							ctx);
 	}
 
@@ -1187,7 +1187,7 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 
 	if (developer & SYS_lighting) {
 		Vulkan_Draw_String (vid.width - 32, 16,
-							va (ctx->va_ctx, "%3d", light_count),
+							vac (ctx->va_ctx, "%3d", light_count),
 							ctx);
 	}
 }
@@ -1723,7 +1723,7 @@ lighting_startup (exprctx_t *ectx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		light_entids[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "entids:%zd", i),
+			.name = vac (ctx->va_ctx, "entids:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = MaxLights * sizeof (uint32_t),
@@ -1733,7 +1733,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_ids[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "ids:%zd", i),
+			.name = vac (ctx->va_ctx, "ids:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = MaxLights * sizeof (uint32_t),
@@ -1743,7 +1743,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_radii[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "radii:%zd", i),
+			.name = vac (ctx->va_ctx, "radii:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = MaxLights * sizeof (float),
@@ -1752,7 +1752,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_data[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "lights:%zd", i),
+			.name = vac (ctx->va_ctx, "lights:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (light_t[MaxLights]),
@@ -1761,7 +1761,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_render[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "render:%zd", i),
+			.name = vac (ctx->va_ctx, "render:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (qfv_light_render_t[MaxLights]),
@@ -1770,7 +1770,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_styles[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "styles:%zd", i),
+			.name = vac (ctx->va_ctx, "styles:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (vec4f_t[NumStyles]),
@@ -1779,7 +1779,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_mats[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "matrices:%zd", i),
+			.name = vac (ctx->va_ctx, "matrices:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				// never need more than 6 matrices per light
@@ -1789,7 +1789,7 @@ lighting_startup (exprctx_t *ectx)
 			},
 		};
 		light_mat_ids[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "matrix ids:%zd", i),
+			.name = vac (ctx->va_ctx, "matrix ids:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				// never need more than 6 matrices per light
@@ -1838,13 +1838,13 @@ lighting_startup (exprctx_t *ectx)
 
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 lframe->attach_set,
-							 va (ctx->va_ctx, "lighting:attach_set:%zd", i));
+							 vac (ctx->va_ctx, "lighting:attach_set:%zd", i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 lframe->lights_set,
-							 va (ctx->va_ctx, "lighting:lights_set:%zd", i));
+							 vac (ctx->va_ctx, "lighting:lights_set:%zd", i));
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 lframe->shadowmat_set,
-							 va (ctx->va_ctx, "lighting:shadowmat_set:%zd", i));
+							 vac (ctx->va_ctx, "lighting:shadowmat_set:%zd",i));
 
 		VkDescriptorBufferInfo bufferInfo[] = {
 			{	.buffer = lframe->shadowmat_buffer,
@@ -1915,7 +1915,7 @@ lighting_startup (exprctx_t *ectx)
 			.queryCount = MaxLights * 6,	// 6 for cube maps
 		}, 0, &lframe->query);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_QUERY_POOL, lframe->query,
-							 va (ctx->va_ctx, "light_cull:%zd", i));
+							 vac (ctx->va_ctx, "light_cull:%zd", i));
 		lframe->fence = QFV_CreateFence (device, 1);
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
@@ -2570,7 +2570,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			int         cube = maps[i].cube;
 			lctx->map_cube[i] = cube;
 			images[i] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "map:image:%02d:%d", i, maps[i].size),
+				.name = vac (ctx->va_ctx, "map:image:%02d:%d", i, maps[i].size),
 				.type = qfv_res_image,
 				.image = {
 					.flags = cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0,
@@ -2586,7 +2586,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				},
 			};
 			views[i] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "map:view:%02d:%d", i, maps[i].size),
+				.name = vac (ctx->va_ctx, "map:view:%02d:%d", i, maps[i].size),
 				.type = qfv_res_image_view,
 				.image_view = {
 					.image = i,
@@ -2607,7 +2607,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 			}
 			int size = (i + 1) * shadow_quanta;
 			stage_images[ind] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "stage_map:image:%02d:%d", ind, size),
+				.name = vac (ctx->va_ctx, "stage_map:image:%02d:%d", ind, size),
 				.type = qfv_res_image,
 				.image = {
 					.type = VK_IMAGE_TYPE_2D,
@@ -2621,7 +2621,7 @@ build_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 				},
 			};
 			stage_views[ind] = (qfv_resobj_t) {
-				.name = va (ctx->va_ctx, "stage_map:view:%02d:%d", ind, size),
+				.name = vac (ctx->va_ctx, "stage_map:view:%02d:%d", ind, size),
 				.type = qfv_res_image_view,
 				.image_view = {
 					.image = mctx.numMaps + ind,
@@ -2883,7 +2883,7 @@ scene_efrags_ui (void *comp, imui_ctx_t *imui_ctx,
 		valid &= e->entity.id == ent;
 	}
 	UI_Horizontal {
-		if (UI_Button (va (ctx->va_ctx, "Show##lightefrags_ui.%08x", ent))) {
+		if (UI_Button (vac (ctx->va_ctx, "Show##lightefrags_ui.%08x", ent))) {
 			show_leaves (ctx, 0, efrags);
 		}
 		UI_FlexibleSpace ();
@@ -2898,7 +2898,7 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 	vulkan_ctx_t *ctx = data;
 	auto leaf = *(uint32_t *) comp;
 	UI_Horizontal {
-		if (UI_Button (va (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
+		if (UI_Button (vac (ctx->va_ctx, "Show##lightleaf_ui.%08x", ent))) {
 			show_leaves (ctx, leaf, 0);
 		}
 		UI_FlexibleSpace ();
@@ -2910,7 +2910,7 @@ scene_lightleaf_ui (void *comp, imui_ctx_t *imui_ctx,
 		Mod_LeafPVS_set (brush->leafs + leaf, brush, 0, &pvs);
 
 		UI_FlexibleSpace ();
-		if (UI_Button (va (ctx->va_ctx, "Vis##lightleaf_ui.%08x", ent))) {
+		if (UI_Button (vac (ctx->va_ctx, "Vis##lightleaf_ui.%08x", ent))) {
 			mark_leaves (pass, &pvs);
 		}
 		UI_FlexibleSpace ();

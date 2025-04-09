@@ -65,7 +65,7 @@ ECS_NewRegistry (const char *name)
 	ecs_registry_t *reg = calloc (1, sizeof (ecs_registry_t));
 	reg->name = name;
 	reg->components = (componentset_t) DARRAY_STATIC_INIT (32);
-	reg->next = Ent_Index (nullent);
+	reg->entities.next = Ent_Index (nullent);
 	ECS_RegisterComponents (reg, ecs_components, ecs_comp_count);
 	return reg;
 }
@@ -83,7 +83,7 @@ ECS_DelRegistry (ecs_registry_t *registry)
 		Component_DestroyElements (comp, pool->data, 0, pool->count, registry);
 		pool->count = 0;
 	}
-	free (registry->entities);
+	free (registry->entities.ids);
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		free (registry->comp_pools[i].sparse);
 		free (registry->comp_pools[i].dense);
@@ -116,11 +116,11 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 	uint32_t    count = registry->components.size;
 	registry->comp_pools = calloc (count, sizeof (ecs_pool_t));
 	registry->subpools = calloc (count, sizeof (ecs_subpool_t));
-	size_t      size = registry->max_entities * sizeof (uint32_t);
+	size_t      size = registry->entities.max_ids * sizeof (uint32_t);
 	for (uint32_t i = 0; i < count; i++) {
 		registry->comp_pools[i].sparse = malloc (size);
 		memset (registry->comp_pools[i].sparse, nullent, size);
-		registry->subpools[i].next = nullent;
+		registry->subpools[i].next = Ent_Index (nullent);
 	}
 }
 
@@ -198,34 +198,63 @@ ECS_SortComponentPool (ecs_registry_t *registry, uint32_t component,
 }
 
 VISIBLE uint32_t
-ECS_NewEntity (ecs_registry_t *registry)
+ECS_NewId (ecs_idpool_t *idpool)
 {
-	uint32_t    ent;
-	if (registry->available) {
-		registry->available--;
-		uint32_t    next = registry->next;
-		ent = next | Ent_Generation (registry->entities[next]);
-		registry->next = Ent_Index (registry->entities[next]);
-		registry->entities[next] = ent;
+	uint32_t    id;
+
+	if (idpool->available) {
+		idpool->available--;
+		uint32_t    next = idpool->next;
+		id = next | Ent_Generation (idpool->ids[next]);
+		idpool->next = Ent_Index (idpool->ids[next]);
+		idpool->ids[next] = id;
 	} else {
-		if (registry->num_entities == Ent_Index (nullent)) {
+		if (idpool->num_ids == Ent_Index (nullent)) {
 			Sys_Error ("ECS_NewEntity: out of entities");
 		}
-		if (registry->num_entities == registry->max_entities) {
-			registry->max_entities += ENT_GROW;
-			size_t      size = registry->max_entities * sizeof (uint32_t);
-			registry->entities = realloc (registry->entities, size);
-			for (uint32_t i = 0; i < registry->components.size; i++) {
-				uint32_t   *sparse = registry->comp_pools[i].sparse;
-				sparse = realloc (sparse, size);
-				memset (sparse + registry->max_entities - ENT_GROW, nullent,
-						ENT_GROW * sizeof (uint32_t));
-				registry->comp_pools[i].sparse = sparse;
-			}
+		if (idpool->num_ids == idpool->max_ids) {
+			idpool->max_ids += ENT_GROW;
+			size_t      size = idpool->max_ids * sizeof (uint32_t);
+			idpool->ids = realloc (idpool->ids, size);
 		}
-		ent = registry->num_entities++;
-		// ent starts out with generation 0
-		registry->entities[ent] = ent;
+		id = idpool->num_ids++;
+		// id starts out with generation 0
+		idpool->ids[id] = id;
+	}
+	return id;
+}
+
+VISIBLE bool
+ECS_DelId (ecs_idpool_t *idpool, uint32_t id)
+{
+	uint32_t    ind = Ent_Index (id);
+	if (ind >= idpool->num_ids || idpool->ids[ind] != id) {
+		return false;
+	}
+
+	uint32_t    next = idpool->next | Ent_NextGen (Ent_Generation (id));
+	idpool->ids[ind] = next;
+	idpool->next = ind;
+	idpool->available++;
+	return true;
+}
+
+VISIBLE uint32_t
+ECS_NewEntity (ecs_registry_t *registry)
+{
+	uint32_t    old_max_ids = registry->entities.max_ids;
+	uint32_t    ent = ECS_NewId (&registry->entities);
+	// The id pool grew, so grow the sparse arrays in the component pools
+	// to match
+	if (old_max_ids != registry->entities.max_ids) {
+		size_t      size = registry->entities.max_ids * sizeof (uint32_t);
+		for (uint32_t i = 0; i < registry->components.size; i++) {
+			uint32_t   *sparse = registry->comp_pools[i].sparse;
+			sparse = realloc (sparse, size);
+			memset (sparse + registry->entities.max_ids - ENT_GROW, nullent,
+					ENT_GROW * sizeof (uint32_t));
+			registry->comp_pools[i].sparse = sparse;
+		}
 	}
 	return ent;
 }
@@ -233,19 +262,14 @@ ECS_NewEntity (ecs_registry_t *registry)
 VISIBLE void
 ECS_DelEntity (ecs_registry_t *registry, uint32_t ent)
 {
-	if (!ECS_EntValid (ent, registry)) {
-		return;
-	}
 	if (registry->locked) {
 		// the registry is being deleted and mass entity and component
 		// deletions are going on
 		return;
 	}
-	uint32_t    next = registry->next | Ent_NextGen (Ent_Generation (ent));
-	uint32_t    id = Ent_Index (ent);
-	registry->entities[id] = next;
-	registry->next = id;
-	registry->available++;
+	if (!ECS_DelId (&registry->entities, ent)) {
+		return;
+	}
 
 	for (uint32_t i = 0; i < registry->components.size; i++) {
 		Ent_RemoveComponent (ent, i, registry);
@@ -273,7 +297,7 @@ ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
 	bool valid = ECS_EntValid (ent, registry);
 	printf ("%08x %s\n", ent,
 			valid ? "valid"
-			      : ent < registry->num_entities ? "deleted"
+			      : ent < registry->entities.num_ids ? "deleted"
 				  : ent == nullent ? "null"
 				  : "invalid");
 	if (!valid) {
@@ -290,16 +314,22 @@ ECS_PrintEntity (ecs_registry_t *registry, uint32_t ent)
 VISIBLE void
 ECS_PrintRegistry (ecs_registry_t *registry)
 {
-	printf ("%s %d\n", registry->name, registry->num_entities);
+	printf ("%s %d\n", registry->name, registry->entities.num_ids);
 	for (size_t i = 0; i < registry->components.size; i++) {
 		printf ("%3zd %7d %s\n", i, registry->comp_pools[i].count,
 				registry->components.a[i].name);
 		auto subpool = &registry->subpools[i];
 		if (subpool->num_ranges) {
-			printf ("   ");
+			printf ("   next     : %x\n", subpool->next);
+			printf ("   available: %x\n", subpool->available);
 			for (uint32_t j = 0; j < subpool->num_ranges; j++) {
-				uint32_t range = subpool->ranges[j];
-				printf (" %d", range);
+				uint32_t rid = subpool->rangeids[j];
+				uint32_t sind = subpool->sorted[j];
+				uint32_t end = subpool->ranges[sind];
+				uint32_t start = sind ? subpool->ranges[sind - 1] : 0;
+				printf ("   %5x: %3x.%05x %d %d-%d\n", j,
+						Ent_Generation (rid) >> ENT_IDBITS, Ent_Index (rid),
+						sind, start, end);
 			}
 			printf ("\n");
 		}

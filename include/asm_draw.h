@@ -136,11 +136,11 @@
 #define rd_fvrectbottom				60
 #define rd_size						64	// sizeof (refdef_t) FIXME make true
 
-// mtriangle_t structure
+// dtriangle_t structure
 // !!! if this is changed, it must be changed in model.h too !!!
-#define mtri_facesfront		0
-#define mtri_vertindex		4
-#define mtri_size			16	// !!! if this changes, array indexing in !!!
+#define dtri_facesfront		0
+#define dtri_vertindex		4
+#define dtri_size			16	// !!! if this changes, array indexing in !!!
 								// !!! d_polysa.s must be changed to match !!!
-#define mtri_shift			4
+#define dtri_shift			4
 

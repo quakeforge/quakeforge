@@ -91,15 +91,18 @@ static cvar_t vulkan_oit_fragments_cvar = {
 };
 
 static const char *instance_extensions[] = {
-	VK_KHR_SURFACE_EXTENSION_NAME,
+	"VK_KHR_surface",
 	0,
 };
 
 static const char *device_extensions[] = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
+	"VK_KHR_swapchain",
+	"VK_EXT_load_store_op_none",
+	"VK_EXT_vertex_input_dynamic_state",
+//	"VK_KHR_shader_non_semantic_info",
+//	"VK_EXT_vertex_attribute_robustness",
 #ifdef TRACY_ENABLE
-	VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+	"VK_EXT_calibrated_timestamps",
 #endif
 	0,
 };
@@ -199,8 +202,8 @@ Vulkan_BeginEntityLabel (vulkan_ctx_t *ctx, VkCommandBuffer cmd, entity_t ent)
 	vec4f_t     color = 0.5 * dir + (vec4f_t) {0.5, 0.5, 0.5, 1 };
 
 	QFV_CmdBeginLabel (device, cmd,
-					   va (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
-						   entgen, entind, VectorExpand (pos)), color);
+					   vac (ctx->va_ctx, "ent %03x.%05x [%g, %g, %g]",
+							entgen, entind, VectorExpand (pos)), color);
 }
 
 void

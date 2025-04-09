@@ -54,6 +54,9 @@
 #include "client/temp_entities.h"
 #include "client/world.h"
 
+float cl_frametime;
+float cl_realtime;
+
 worldscene_t cl_world = {
 	.models = DARRAY_STATIC_INIT (32),
 };

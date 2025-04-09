@@ -146,7 +146,7 @@ FindFaceOffsets (void)
 	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
 
 	for (size_t i = 1; i < bsp->nummodels; i++) {
-		ent = FindEntityWithKeyPair ("model", name = va (0, "*%zd", i));
+		ent = FindEntityWithKeyPair ("model", name = va ("*%zd", i));
 		VectorZero (org);
 		if (!ent)
 			Sys_Error ("FindFaceOffsets: Couldn't find entity for model %s.\n",

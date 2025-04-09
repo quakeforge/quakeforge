@@ -96,8 +96,6 @@ void GLSL_SetPalette (void *data, const byte *palette);
 int R_BillboardFrame (struct transform_s transform, int orientation,
 					  vec4f_t cameravec,
 					  vec4f_t *bbup, vec4f_t *bbright, vec4f_t *bbfwd);
-mspriteframe_t *R_GetSpriteFrame (const msprite_t *sprite,
-								  const struct animation_s *animation);
 
 // These correspond to the standard box sides for OpenGL cube maps but with
 // TOP and BOTTOM swapped due to lelt/right handed systems (quake/gl are right,

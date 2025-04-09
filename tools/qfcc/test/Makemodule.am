@@ -51,6 +51,7 @@ test_progs_dat=\
 	tools/qfcc/test/paramret.dat \
 	tools/qfcc/test/pga2d.dat \
 	tools/qfcc/test/pga3d.dat \
+	tools/qfcc/test/pgaptr.dat \
 	tools/qfcc/test/postop.dat \
 	tools/qfcc/test/preproc-1.dat \
 	tools/qfcc/test/ptraliasenc.dat \
@@ -649,6 +650,16 @@ tools/qfcc/test/pga3d.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(pga3d_dep) # am--include-marker
 r_depfiles_remade += $(pga3d_dep)
+
+tools_qfcc_test_pgaptr_dat_SOURCES=tools/qfcc/test/pgaptr.r
+pgaptr_obj=$(tools_qfcc_test_pgaptr_dat_SOURCES:.r=.o)
+pgaptr_dep=$(call qcautodep,$(tools_qfcc_test_pgaptr_dat_SOURCES))
+tools/qfcc/test/pgaptr.dat$(EXEEXT): $(pgaptr_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(pgaptr_obj)
+tools/qfcc/test/pgaptr.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(pgaptr_dep) # am--include-marker
+r_depfiles_remade += $(pgaptr_dep)
 
 tools_qfcc_test_postop_dat_SOURCES=tools/qfcc/test/postop.r
 postop_obj=$(tools_qfcc_test_postop_dat_SOURCES:.r=.o)

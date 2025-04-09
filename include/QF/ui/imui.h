@@ -95,16 +95,35 @@ typedef struct imui_window_s {
 	int         ylen;
 	int         group_offset;
 	int         mode;
-	bool        is_open;
-	bool        is_collapsed;
-	bool        no_collapse;
-	bool        auto_fit;
+	bool        is_open;			// window/panel/menu
+	bool        is_collapsed;		// for windows
+	bool        no_collapse;		// for menus
+	bool        auto_fit;			// for windows
 
 	const char *reference;
 	grav_t      reference_gravity;
 	grav_t      anchor_gravity;
 	struct imui_window_s *parent;	// for submenus
 } imui_window_t;
+
+typedef struct imui_state_s {
+	char       *label;
+	uint32_t    label_len;
+	int         key_offset;
+	imui_window_t *menu;
+	int32_t		draw_order;	// for window canvases
+	int32_t     draw_group;
+	uint32_t    first_link;
+	uint32_t    num_links;
+	uint32_t    frame_count;
+	uint32_t    old_entity;
+	uint32_t    entity;
+	uint32_t    content;
+	view_pos_t  pos;
+	view_pos_t  len;
+	imui_frac_t fraction;
+	bool        auto_fit;
+} imui_state_t;
 
 typedef struct imui_io_s {
 	view_pos_t  mouse;
@@ -136,6 +155,7 @@ void IMUI_PopStyle (imui_ctx_t *ctx);
 void IMUI_Style_Update (imui_ctx_t *ctx, const imui_style_t *style);
 void IMUI_Style_Fetch (const imui_ctx_t *ctx, imui_style_t *style);
 
+void IMUI_SetFill (imui_ctx_t *ctx, byte color);
 void IMUI_Label (imui_ctx_t *ctx, const char *label);
 void IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)__attribute__((format(PRINTF,2,3)));
 void IMUI_Passage (imui_ctx_t *ctx, const char *name,
@@ -176,6 +196,9 @@ void IMUI_ScrollBar (imui_ctx_t *ctx, const char *name);
 	for (int _i_ = (begin); !_i_; _i_++, (end))
 
 // #define IMUI_context to an imui_ctx_t * variable
+
+#define UI_SetFill(color) \
+	IMUI_SetFill(IMUI_context, color)
 
 #define UI_Label(label) \
 	IMUI_Label(IMUI_context, label)

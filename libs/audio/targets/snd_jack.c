@@ -262,7 +262,7 @@ s_jack_connect (snd_t *snd)
 	jack_set_process_callback (jack_handle, snd_jack_process, snd);
 	jack_on_shutdown (jack_handle, snd_jack_shutdown, snd);
 	for (i = 0; i < 2; i++)
-		jack_out[i] = jack_port_register (jack_handle, va (0, "out_%d", i + 1),
+		jack_out[i] = jack_port_register (jack_handle, va ("out_%d", i + 1),
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
 	snd->speed = jack_get_sample_rate (jack_handle);

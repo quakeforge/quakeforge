@@ -164,7 +164,7 @@ int_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 static const char *
 int_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%d", *(int *) val->value);
+	return vac (va_ctx, "%d", *(int *) val->value);
 }
 
 binop_t int_binops[] = {
@@ -225,7 +225,7 @@ UNOP(uint, bnot, unsigned, ~)
 static const char *
 uint_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%u", *(unsigned *) val->value);
+	return vac (va_ctx, "%u", *(unsigned *) val->value);
 }
 
 binop_t uint_binops[] = {
@@ -300,7 +300,7 @@ long_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 static const char *
 long_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%"PRId64, *(int64_t *) val->value);
+	return vac (va_ctx, "%"PRId64, *(int64_t *) val->value);
 }
 
 binop_t long_binops[] = {
@@ -361,7 +361,7 @@ UNOP(ulong, bnot, uint64_t, ~)
 static const char *
 ulong_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%"PRIu64, *(uint64_t *) val->value);
+	return vac (va_ctx, "%"PRIu64, *(uint64_t *) val->value);
 }
 
 binop_t ulong_binops[] = {
@@ -436,7 +436,7 @@ UNOP(size_t, bnot, size_t, ~)
 static const char *
 size_t_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%zd", *(size_t *) val->value);
+	return vac (va_ctx, "%zd", *(size_t *) val->value);
 }
 
 binop_t size_t_binops[] = {
@@ -532,7 +532,7 @@ UNOP(float, tnot, float, !)
 static const char *
 float_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%.9g", *(float *) val->value);
+	return vac (va_ctx, "%.9g", *(float *) val->value);
 }
 
 binop_t float_binops[] = {
@@ -606,7 +606,7 @@ UNOP(double, tnot, double, !)
 static const char *
 double_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
-	return va (va_ctx, "%.17g", *(double *) val->value);
+	return vac (va_ctx, "%.17g", *(double *) val->value);
 }
 
 binop_t double_binops[] = {
@@ -757,7 +757,7 @@ static const char *
 vector_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
 	vec4f_t     vec = *(vec4f_t *) val->value;
-	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+	return vac (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
 }
 
 static void
@@ -820,7 +820,7 @@ static const char *
 quaternion_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 {
 	vec4f_t     vec = *(vec4f_t *) val->value;
-	return va (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
+	return vac (va_ctx, VEC4F_FMT, VEC4_EXP (vec));
 }
 
 binop_t quaternion_binops[] = {
@@ -1062,7 +1062,7 @@ cexpr_flags_get_string (const exprval_t *val, va_ctx_t *va_ctx)
 		}
 		if ((flags & sym_flags) && !(sym_flags & ~flags)) {
 			if (val_str) {
-				val_str = va (va_ctx, "%s | %s", val_str, sym->name);
+				val_str = vac (va_ctx, "%s | %s", val_str, sym->name);
 			} else {
 				val_str = sym->name;
 			}

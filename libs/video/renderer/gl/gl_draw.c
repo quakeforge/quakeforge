@@ -243,7 +243,7 @@ gl_Draw_CachePic (const char *path, bool alpha)
 
 	// Its not cached, lets make sure we have space in the cache..
 	if (numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+		return nullptr;
 
 	gl = (glpic_t *) pic->pic.data;
 
@@ -251,7 +251,7 @@ gl_Draw_CachePic (const char *path, bool alpha)
 		// Load the picture..
 		qpic_t     *dat = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0);
 		if (!dat)
-			Sys_Error ("Draw_CachePic: failed to load %s", path);
+			return nullptr;
 
 		// Adjust for endian..
 		SwapPic (dat);
@@ -274,7 +274,7 @@ gl_Draw_CachePic (const char *path, bool alpha)
 			memcpy (menuplyr_pixels, dat->data, dat->width * dat->height);
 		free (dat);
 	} else
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
+		return nullptr;
 
 	memset (pic->name, 0, sizeof (pic->name));
 	strncpy (pic->name, path, sizeof (pic->name) - 1);

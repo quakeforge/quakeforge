@@ -173,7 +173,7 @@ Skin_Set (const char *skinname)
 	Ent_SetComponent (skinent, skinsys.base + skin_name, skinsys.reg, &sname);
 	Hash_Add (skin_hash, (void *) (uintptr_t) skinent);
 
-	QFile      *file = QFS_FOpenFile (va (0, "skins/%s.pcx", name));
+	QFile      *file = QFS_FOpenFile (va ("skins/%s.pcx", name));
 	if (!file) {
 		Sys_Printf ("Couldn't load skin %s\n", name);
 		return skinent;

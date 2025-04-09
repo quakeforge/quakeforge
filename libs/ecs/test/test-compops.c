@@ -58,6 +58,7 @@ test_rotation (const component_t *comp, int *array, uint32_t array_count,
 	return 0;
 }
 
+// NOTE: the array is reset to sequential for every test
 static int expect1[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 static int expect2[] = { 0, 1, 6, 7, 8, 2, 3, 4, 5, 9 };
 static int expect3[] = { 0, 1, 4, 5, 6, 7, 8, 2, 3, 9 };

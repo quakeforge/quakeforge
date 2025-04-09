@@ -228,7 +228,7 @@ bi (IMUI_ProcessEvent)
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto ie_event = (struct IE_event_s *) P_GPOINTER (pr, 1);
-	IMUI_ProcessEvent (bi_ctx->imui_ctx, ie_event);
+	R_INT (pr) = IMUI_ProcessEvent (bi_ctx->imui_ctx, ie_event);
 }
 
 bi (IMUI_BeginFrame)
@@ -313,6 +313,14 @@ bi (IMUI_Style_Fetch)
 	IMUI_Style_Fetch (bi_ctx->imui_ctx, (imui_style_t *) P_GPOINTER (pr, 1));
 }
 
+bi (IMUI_SetFill)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_SetFill (bi_ctx->imui_ctx, P_UINT (pr, 1));
+}
+
 bi (IMUI_Label)
 {
 	qfZoneScoped (true);
@@ -326,6 +334,7 @@ bi (IMUI_Labelf)
 	qfZoneScoped (true);
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	dstring_clearstr (res->dstr);
 	RUA_Sprintf (pr, res->dstr, "IMUI_Labelf", 1);
 	IMUI_Label (bi_ctx->imui_ctx, res->dstr->str);
 }
@@ -497,7 +506,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_DeleteWindow,           1, p(ptr)),
 	bi(IMUI_Window_IsOpen,          1, p(ptr)),
 	bi(IMUI_Window_IsCollapsed,     1, p(ptr)),
-	bi(IMUI_Window_SetSize    ,     3, p(ptr), p(int), p(int)),
+	bi(IMUI_Window_SetSize,         3, p(ptr), p(int), p(int)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),
@@ -514,6 +523,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_PopStyle,           1, p(int)),
 	bi(IMUI_Style_Update,       2, p(int), p(ptr)),
 	bi(IMUI_Style_Fetch,        2, p(int), p(ptr)),
+	bi(IMUI_SetFill,            2, p(int), p(uint)),
 	bi(IMUI_Label,              2, p(int), p(string)),
 	bi(IMUI_Labelf,             -3, p(int), p(string)),
 	bi(IMUI_Passage,            3, p(int), p(string), p(int)),

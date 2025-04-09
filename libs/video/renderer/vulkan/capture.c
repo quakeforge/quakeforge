@@ -274,7 +274,7 @@ QFV_Capture_Init (vulkan_ctx_t *ctx)
 	};
 	for (size_t i = 0; i < frames; i++) {
 		buffers[i] = (qfv_resobj_t) {
-			.name = va (ctx->va_ctx, "capture:%zd", i),
+			.name = vac (ctx->va_ctx, "capture:%zd", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,

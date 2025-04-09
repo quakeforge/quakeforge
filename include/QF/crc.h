@@ -37,7 +37,7 @@
 
 void CRC_Init(uint16_t *crcvalue);
 void CRC_ProcessByte(uint16_t *crcvalue, byte data);
-void CRC_ProcessBlock (const byte *start, uint16_t *crcvalue, int count);
+void CRC_ProcessBlock (const void *start, uint16_t *crcvalue, int count);
 uint16_t CRC_Value(uint16_t crcvalue) __attribute__((const));
 uint16_t CRC_Block (const byte *start, int count) __attribute__((pure));
 

@@ -52,7 +52,6 @@
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 
 static const char quakeforge_effect[] =
@@ -308,7 +307,7 @@ type_name (GLenum type)
 		case GL_FIXED:
 			return "fixed";
 	}
-	return va (0, "%x", type);
+	return va ("%x", type);
 }
 
 static void

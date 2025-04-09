@@ -192,7 +192,8 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.data = data,
 		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
-							 va (ctx->va_ctx, "renderpass:%s", rp->label.name));
+							 vac (ctx->va_ctx, "renderpass:%s",
+								  rp->label.name));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		QFV_duCmdEndLabel (device, cmd);
@@ -228,7 +229,7 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 va (ctx->va_ctx, "cmd:render:%s", rp->label.name));
+						 vac (ctx->va_ctx, "cmd:render:%s", rp->label.name));
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -281,7 +282,7 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 va (ctx->va_ctx, "cmd:compute:%s", step->label.name));
+						 vac (ctx->va_ctx, "cmd:compute:%s", step->label.name));
 	QFV_duCmdBeginLabel (device, cmd, step->label.name,
 						 {VEC4_EXP (step->label.color)});
 
@@ -325,7 +326,7 @@ run_collect (vulkan_ctx_t *ctx)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 va (ctx->va_ctx, "cmd:render:%s", "tracy"));
+						 vac (ctx->va_ctx, "cmd:render:%s", "tracy"));
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -498,7 +499,7 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 	VkFramebuffer framebuffer;
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER, framebuffer,
-						 va (ctx->va_ctx, "framebuffer:%s", rp->label.name));
+						 vac (ctx->va_ctx, "framebuffer:%s", rp->label.name));
 
 	rp->beginInfo.framebuffer = framebuffer;
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
@@ -601,10 +602,10 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 frame->imageAvailableSemaphore,
-							 va (ctx->va_ctx, "sc image:%zd", i));
+							 vac (ctx->va_ctx, "sc image:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
-								 va (ctx->va_ctx, "render pool:%zd", i));
+								 vac (ctx->va_ctx, "render pool:%zd", i));
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
 		auto physdev = ctx->device->physDev->dev;
@@ -901,7 +902,7 @@ create_sampler (vulkan_ctx_t *ctx, qfv_samplercreateinfo_t *sampler)
 	auto dfunc = device->funcs;
 	dfunc->vkCreateSampler (device->dev, &create, 0, &sampler->sampler);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, sampler->sampler,
-						 va (ctx->va_ctx, "sampler:%s", sampler->name));
+						 vac (ctx->va_ctx, "sampler:%s", sampler->name));
 }
 
 VkSampler

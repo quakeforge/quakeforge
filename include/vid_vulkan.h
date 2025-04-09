@@ -90,9 +90,8 @@ typedef struct vulkan_ctx_s {
 	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct translucentctx_s *translucent_context;
-	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
-	struct iqmctx_s *iqm_context;
+	struct meshctx_s *mesh_context;
 	struct scenectx_s *scene_context;
 	struct palettectx_s *palette_context;
 	struct particlectx_s *particle_context;

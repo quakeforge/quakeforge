@@ -27,7 +27,7 @@ static const char *
 num_textures (const void *data)
 {
 	__auto_type d = (const dmiptexlump_t *)data;
-	return va (0, " %7d", LittleLong (d->nummiptex));
+	return va (" %7d", LittleLong (d->nummiptex));
 }
 
 #define O(f) offsetof (bsp_t, f)

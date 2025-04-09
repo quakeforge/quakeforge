@@ -111,7 +111,6 @@ Component_RotateElements (const component_t *component,
 						  uint32_t count)
 {
 	if (dstIndex == srcIndex) {
-		puts ("a");
 		return;
 	}
 	auto dst = (byte *) array + dstIndex * component->size;

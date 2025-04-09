@@ -39,7 +39,7 @@ main (void)
 	vec2        l_st = vec2 (tl_st.zw);
 
 	c = texture (Texture, t_st) * color;
-	e = texture (Texture, e_st);
+	e = texture (Texture, e_st) * 2;//FIXME
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
 	frag_normal = vec4 (normal, 0);

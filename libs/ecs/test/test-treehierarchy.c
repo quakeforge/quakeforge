@@ -393,7 +393,7 @@ create_ent (uint32_t parent, const char *name)
 
 	if (parent != nullindex) {
 		auto pref = *(hierref_t *) Ent_GetComponent (parent, t_href, test_reg);
-		*ref = Hierarchy_InsertHierarchy (pref, nullhref, test_reg);
+		*ref = Hierref_InsertHierarchy (pref, nullhref, test_reg);
 	} else {
 		ref->id = Hierarchy_New (test_reg, t_href, 0, 1);
 		ref->index = 0;
@@ -423,11 +423,11 @@ set_parent (uint32_t child, uint32_t parent)
 	if (parent != nullindex) {
 		hierref_t  *pref = Ent_GetComponent (parent, t_href, test_reg);
 		hierref_t  *cref = Ent_GetComponent (child, t_href, test_reg);
-		Hierarchy_SetParent (pref->hierarchy, pref->index,
-							 cref->hierarchy, cref->index);
+		Hierref_SetParent (pref->hierarchy, pref->index,
+						   cref->hierarchy, cref->index);
 	} else {
 		hierref_t  *cref = Ent_GetComponent (child, t_href, test_reg);
-		Hierarchy_SetParent (0, nullindex, cref->hierarchy, cref->index);
+		Hierref_SetParent (0, nullindex, cref->hierarchy, cref->index);
 	}
 }
 #endif

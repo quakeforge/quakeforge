@@ -116,8 +116,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 													   buffer->usage);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
 										 buffer->buffer,
-										 va (resource->va_ctx, "buffer:%s:%s",
-											 resource->name, obj->name));
+										 vac (resource->va_ctx, "buffer:%s:%s",
+											  resource->name, obj->name));
 					dfunc->vkGetBufferMemoryRequirements (device->dev,
 														  buffer->buffer, &req);
 				}
@@ -139,8 +139,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					__auto_type image = &obj->image;
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
 										 image->image,
-										 va (resource->va_ctx, "image:%s:%s",
-											 resource->name, obj->name));
+										 vac (resource->va_ctx, "image:%s:%s",
+											  resource->name, obj->name));
 					dfunc->vkGetImageMemoryRequirements (device->dev,
 														 image->image, &req);
 				}
@@ -186,8 +186,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 	}
 	resource->size = size;
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 resource->memory, va (resource->va_ctx, "memory:%s",
-											   resource->name));
+						 resource->memory, vac (resource->va_ctx, "memory:%s",
+												resource->name));
 
 	VkDeviceSize offset = 0;
 	for (unsigned i = 0; i < resource->num_objects; i++) {
@@ -258,8 +258,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 														   buffview->size);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER_VIEW,
 										 buffview->view,
-										 va (resource->va_ctx, "bview:%s:%s",
-											 resource->name, obj->name));
+										 vac (resource->va_ctx, "bview:%s:%s",
+											  resource->name, obj->name));
 				}
 				break;
 			case qfv_res_image_view:
@@ -269,8 +269,8 @@ QFV_CreateResource (qfv_device_t *device, qfv_resource_t *resource)
 					create_image_view (device, obj, imgobj);
 					QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
 										 imgview->view,
-										 va (resource->va_ctx, "iview:%s:%s",
-											 resource->name, obj->name));
+										 vac (resource->va_ctx, "iview:%s:%s",
+											  resource->name, obj->name));
 				}
 				break;
 		}

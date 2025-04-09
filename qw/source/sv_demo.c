@@ -303,7 +303,7 @@ SV_Stop (int reason)
 
 		sv_redirected = RD_NONE;		// onrecord script is called always
 										// from the console
-		Cmd_TokenizeString (va (0, "script %s \"%s\" \"%s\" \"%s\" %s",
+		Cmd_TokenizeString (va ("script %s \"%s\" \"%s\" \"%s\" %s",
 								sv_onrecordfinish, demo.path->str,
 								serverdemo,
 								path, p != NULL ? p + 1 : ""));
@@ -560,7 +560,7 @@ SV_Record (char *name)
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va (0, "fullserverinfo \"%s\"\n",
+	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
 							   Info_MakeString (svs.info, 0)));
 
 	// flush packet
@@ -630,7 +630,7 @@ SV_Record (char *name)
 	}
 
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va (0, "cmd spawn %i 0\n", svs.spawncount));
+	MSG_WriteString (&buf, va ("cmd spawn %i 0\n", svs.spawncount));
 
 	if (buf.cursize) {
 		SV_WriteRecordDemoMessage (&buf);
@@ -682,7 +682,7 @@ SV_Record (char *name)
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va (0, "skins\n"));
+	MSG_WriteString (&buf, va ("skins\n"));
 
 	SV_WriteRecordDemoMessage (&buf);
 

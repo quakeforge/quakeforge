@@ -216,7 +216,7 @@ sv_serverdata (server_t *sv, qmsg_t *msg)
 
 	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 	MSG_WriteString (&sv->netchan.message,
-					 va (0, "soundlist %i %i", sv->spawncount, 0));
+					 va ("soundlist %i %i", sv->spawncount, 0));
 	sv->next_run = realtime;
 }
 
@@ -245,11 +245,11 @@ sv_soundlist (server_t *sv, qmsg_t *msg)
 	if (n) {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va (0, "soundlist %d %d", sv->spawncount, n));
+						 va ("soundlist %d %d", sv->spawncount, n));
 	} else {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va (0, "modellist %d %d", sv->spawncount, 0));
+						 va ("modellist %d %d", sv->spawncount, 0));
 	}
 	sv->next_run = realtime;
 }
@@ -281,11 +281,11 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 	if (n) {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va (0, "modellist %d %d", sv->spawncount, n));
+						 va ("modellist %d %d", sv->spawncount, n));
 	} else {
 		MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 		MSG_WriteString (&sv->netchan.message,
-						 va (0, "prespawn %d 0 0", sv->spawncount));
+						 va ("prespawn %d 0 0", sv->spawncount));
 		sv->signon = 1;
 	}
 	sv->next_run = realtime;
@@ -311,7 +311,7 @@ sv_skins_f (server_t *sv)
 	// to get everything ready at the last miniute before we start getting
 	// actual in-game update messages
 	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
-	MSG_WriteString (&sv->netchan.message, va (0, "begin %d", sv->spawncount));
+	MSG_WriteString (&sv->netchan.message, va ("begin %d", sv->spawncount));
 	sv->next_run = realtime;
 	sv->connected = 2;
 	sv->delta = -1;

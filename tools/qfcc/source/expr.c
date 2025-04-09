@@ -441,7 +441,7 @@ new_label_name (void)
 	const char *fname = current_func->sym->name;
 	const char *lname;
 
-	lname = save_string (va (0, "$%s_%d", fname, lnum));
+	lname = save_string (va ("$%s_%d", fname, lnum));
 	return lname;
 }
 
@@ -507,7 +507,7 @@ named_label_expr (symbol_t *label)
 		return sym->expr;
 	}
 	l = new_label_expr ();
-	l->label.name = save_string (va (0, "%s_%s", l->label.name,
+	l->label.name = save_string (va ("%s_%s", l->label.name,
 									   label->name));
 	l->label.symbol = label;
 	label->sy_type = sy_expr;
@@ -1070,6 +1070,15 @@ is_string_val (const expr_t *e)
 	return false;
 }
 
+bool
+is_buffer_val (const expr_t *e)
+{
+	if (e->type == ex_value && e->value->lltype == ev_invalid) {
+		return true;
+	}
+	return false;
+}
+
 const char *
 expr_string (const expr_t *e)
 {
@@ -1078,6 +1087,15 @@ expr_string (const expr_t *e)
 	if (e->type == ex_value && e->value->lltype == ev_string)
 		return e->value->string_val;
 	internal_error (e, "not a string constant");
+}
+
+const ex_buffer_t *
+expr_buffer (const expr_t *e)
+{
+	if (e->type == ex_value && e->value->lltype == ev_invalid) {
+		return &e->value->buffer;
+	}
+	internal_error (e, "not an embed buffer");
 }
 
 bool
@@ -1575,7 +1593,7 @@ new_ret_expr (type_t *type)
 const expr_t *
 new_param_expr (const type_t *type, int num)
 {
-	return param_expr (va (0, ".param_%d", num), type);
+	return param_expr (va (".param_%d", num), type);
 }
 
 expr_t *
@@ -1852,6 +1870,24 @@ convert_nil (const expr_t *e, const type_t *t)
 	nil->type = ex_nil;
 	nil->nil = t;
 	return nil;
+}
+
+const expr_t *
+convert_buffer (const expr_t *e, const type_t *t)
+{
+	auto buffer = expr_buffer (e);
+	ex_value_t *val;
+	if (is_string (t)) {
+		return new_string_expr (buffer->data);
+	} else if (buffer->size < type_size (t) * sizeof (pr_type_t)) {
+		pr_type_t data[type_size (t)];
+		memcpy (data, buffer->data, buffer->size);
+		memset ((byte *) data + buffer->size, 0, sizeof (data) - buffer->size);
+		val = new_type_value (t, data);
+	} else {
+		val = new_type_value (t, (pr_type_t *) buffer->data);
+	}
+	return new_value_expr (val, false);
 }
 
 bool

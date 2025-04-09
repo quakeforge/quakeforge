@@ -44,6 +44,7 @@
 #include "QF/va.h"
 
 #include "client/screen.h"
+#include "client/world.h"
 #include "compat.h"
 
 #include "qw/include/cl_parse.h"
@@ -102,6 +103,8 @@ Skin_NextDownload (void)
 		Sys_Printf ("Checking skins...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 	}
 	cls.downloadtype = dl_skin;
@@ -113,7 +116,7 @@ Skin_NextDownload (void)
 		//XXX Skin_Find (sc);
 		if (noskins) //XXX FIXME
 			continue;
-		//XXX if (!CL_CheckOrDownloadFile (va (0, "skins/%s.pcx",
+		//XXX if (!CL_CheckOrDownloadFile (va ("skins/%s.pcx",
 		//									   sc->skin->name)))
 			//XXX return;						// started a download
 	}
@@ -135,7 +138,7 @@ Skin_NextDownload (void)
 			// get next signon phase
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va (0, "begin %i", cl.servercount));
+							 va ("begin %i", cl.servercount));
 			Cache_Report ();				// print remaining memory
 		}
 		CL_SetState (ca_active);

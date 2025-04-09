@@ -463,49 +463,38 @@ main (void)
 -- Vertex.sprite
 
 uniform mat4 mvp_mat;
-attribute vec3 vertexa, vertexb;
-attribute vec4 uvab;	///< ua va ub vb
-attribute float vblend;	//FIXME why is this not a uniform?
-attribute vec4 vcolora, vcolorb;
+attribute vec3 vertex;
+attribute vec2 uv;
+attribute vec4 vcolor;
 
-varying float blend;
-varying vec4 colora, colorb;
-varying vec2 sta, stb;
+varying vec4 color;
+varying vec2 st;
 
 void
 main (void)
 {
-	gl_Position = mvp_mat * vec4 (mix (vertexa, vertexb, vblend), 1.0);
-	blend = vblend;
-	colora = vcolora;
-	colorb = vcolorb;
-	sta = uvab.xy;
-	stb = uvab.zw;
+	gl_Position = mvp_mat * vec4 (vertex, 1.0);
+	color = vcolor;
+	st = uv;
 }
 
 -- Fragment.sprite
 
-uniform sampler2D spritea;
-uniform sampler2D spriteb;
+uniform sampler2D sprite;
 
-varying float blend;
-varying vec4 colora, colorb;
-varying vec2 sta, stb;
+varying vec4 color;
+varying vec2 st;
 
 void
 main (void)
 {
-	float       pixa, pixb;
-	vec4        cola, colb;
+	float       pix;
 	vec4        col;
 
-	pixa = texture2D (spritea, sta).r;
-	pixb = texture2D (spriteb, stb).r;
-	if (pixa == 1.0 && pixb == 1.0)
+	pix = texture2D (sprite, st).r;
+	if (pix == 1.0)
 		discard;
-	cola = palettedColor (pixa) * colora;
-	colb = palettedColor (pixb) * colorb;
-	col = mix (cola, colb, blend);
+	col = palettedColor (pix) * color;
 	if (col.a == 0.0)
 		discard;
 	gl_FragColor = fogBlend (col);

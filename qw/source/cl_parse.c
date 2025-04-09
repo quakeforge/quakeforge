@@ -176,7 +176,7 @@ int
 CL_CalcNet (void)
 {
 	int			lost, a, i;
-	frame_t	   *frame;
+	cl_frame_t *frame;
 
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
@@ -251,7 +251,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va (0, "download \"%s\"", cls.downloadname->str));
+					 va ("download \"%s\"", cls.downloadname->str));
 
 	cls.downloadnumber++;
 
@@ -287,6 +287,8 @@ Model_NextDownload (void)
 		Sys_Printf ("Checking models...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
@@ -322,26 +324,26 @@ Model_NextDownload (void)
 		}
 
 		if (strequal (cl.model_name[i], "progs/player.mdl")
-			&& cl_world.models.a[i]->type == mod_alias) {
+			&& cl_world.models.a[i]->type == mod_mesh) {
 			info_key = pmodel_name;
 		}
 		if (strequal (cl.model_name[i], "progs/eyes.mdl")
-			&& cl_world.models.a[i]->type == mod_alias)
+			&& cl_world.models.a[i]->type == mod_mesh)
 			info_key = emodel_name;
 
 		if (info_key && cl_model_crcs) {
-			aliashdr_t *ahdr = cl_world.models.a[i]->aliashdr;
-			if (!ahdr)
-				ahdr = Cache_Get (&cl_world.models.a[i]->cache);
-			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
-															 ahdr->crc),
+			auto model = cl_world.models.a[i]->model;
+			if (!model)
+				model = Cache_Get (&cl_world.models.a[i]->cache);
+			Info_SetValueForKey (cls.userinfo, info_key, va ("%d",
+															 model->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
-													info_key, ahdr->crc));
+				SZ_Print (&cls.netchan.message, va ("setinfo %s %d",
+													info_key, model->crc));
 			}
-			if (!cl_world.models.a[i]->aliashdr)
+			if (!cl_world.models.a[i]->model)
 				Cache_Release (&cl_world.models.a[i]->cache);
 		}
 	}
@@ -362,7 +364,7 @@ Model_NextDownload (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (0, prespawn_name, cl.servercount,
+						 va (prespawn_name, cl.servercount,
 							 cl_world.scene->worldmodel->brush.checksum2));
 	}
 }
@@ -377,6 +379,8 @@ Sound_NextDownload (void)
 		Sys_Printf ("Checking sounds...\n");
 		cl.viewstate.time = realtime;
 		cl.viewstate.realtime = realtime;
+		cl_realtime = realtime;
+		cl_frametime = host_frametime;
 		CL_UpdateScreen (&cl.viewstate);
 		cls.downloadnumber = 1;
 	}
@@ -385,7 +389,7 @@ Sound_NextDownload (void)
 	for (; cl.sound_name[cls.downloadnumber][0];
 		 cls.downloadnumber++) {
 		s = cl.sound_name[cls.downloadnumber];
-		if (!CL_CheckOrDownloadFile (va (0, "sound/%s", s)))
+		if (!CL_CheckOrDownloadFile (va ("sound/%s", s)))
 			return;						// started a download
 	}
 
@@ -405,7 +409,7 @@ Sound_NextDownload (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (0, modellist_name, cl.servercount, 0));
+						 va (modellist_name, cl.servercount, 0));
 	}
 }
 
@@ -434,7 +438,7 @@ void
 CL_FinishDownload (void)
 {
 	Qclose (cls.download);
-	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
+	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
 
 	// rename the temp file to it's final name
 	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {
@@ -624,7 +628,7 @@ CL_ParseDownload (void)
 	if (percent != 100) {
 		// request next block
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va (0, "Downloading %s %d%%",
+			VID_SetCaption (va ("Downloading %s %d%%",
 								cls.downloadname->str, percent));
 		cls.downloadpercent = percent;
 
@@ -809,7 +813,7 @@ CL_ParseServerData (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (0, soundlist_name, cl.servercount, 0));
+						 va (soundlist_name, cl.servercount, 0));
 	}
 
 	// now waiting for downloads, etc
@@ -845,7 +849,7 @@ CL_ParseSoundlist (void)
 	if (n && !cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (0, soundlist_name, cl.servercount, n));
+						 va (soundlist_name, cl.servercount, n));
 		return;
 	}
 
@@ -894,7 +898,7 @@ CL_ParseModellist (void)
 		if (!cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va (0, modellist_name, cl.servercount, n));
+							 va (modellist_name, cl.servercount, n));
 		}
 		return;
 	}
@@ -963,7 +967,7 @@ void
 CL_ParseClientdata (void)
 {
 	float		latency;
-	frame_t	   *frame;
+	cl_frame_t *frame;
 	int			i;
 
 	// calculate simulated time of message
@@ -999,7 +1003,7 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
 		const char *name = "";
 		if (player->userid) {
-			name = va (0, "user-%i [exploit]", player->userid);
+			name = va ("user-%i [exploit]", player->userid);
 		}
 		Info_SetValueForKey (player->userinfo, "name", name, 1);
 	}
@@ -1150,7 +1154,7 @@ CL_SetStat (int stat, int value)
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
 				GIB_Event_Callback (cl_player_health_e, 1,
-									va (0, "%i", value));
+									va ("%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
@@ -1225,7 +1229,7 @@ CL_ParseServerMessage (void)
 			break;						// end of message
 		}
 
-		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {

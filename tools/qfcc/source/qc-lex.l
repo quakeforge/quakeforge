@@ -48,6 +48,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include <QF/dstring.h>
 #include <QF/hash.h>
@@ -123,6 +124,10 @@ typedef struct rua_extra_s {
 		symtab_t   *macro_tab;
 		rua_macro_t *pending_macro;	// function-type waiting for args
 		rua_macro_t *macro;			// macro being expanded
+		const expr_t *embed_limit;
+		rua_macro_t *embed_suffix;
+		rua_macro_t *embed_prefix;
+		rua_macro_t *embed_if_empty;
 		yyscan_t    subscanner;
 		rua_loc_t   location;
 		char        str_text[8];	// EPHEMERAL! for short token strings
@@ -157,6 +162,7 @@ typedef enum {
 	rua_number,
 	rua_vector,
 	rua_string,
+	rua_buffer,
 	rua_char,
 	rua_space,
 	rua_ellipsis,
@@ -208,7 +214,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 %x		COMMENT LCOMMENT
 %x		DIRECTIVE TEXT
 %x		PRAGMA VECTOR
-%s		PREPROC PREEXPR
+%s		PREPROC PREEXPR EMBED
 %s		MACRO
 %x		CONT
 
@@ -238,6 +244,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 							yy_pop_state (yyscanner);
 							int state = yystart ();
 							if (state == PREEXPR || state == PREPROC
+								|| state == EMBED
 								|| state == DIRECTIVE || state == MACRO) {
 								return PRE_EOD;
 							}
@@ -265,6 +272,7 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 
 <DIRECTIVE>\r*\n		|
 <PREEXPR>\r*\n			|
+<EMBED>\r*\n			|
 <MACRO,TEXT>\r*\n		|
 <PREPROC>\r*\n			{ next_line (yylloc, yyscanner); return PRE_EOD; }
 
@@ -277,6 +285,10 @@ pp_vnumber	'({s}*{m}?{pp_number}){2,4}{s}*'{ULFD}?
 <PREEXPR>{q_string}		{ return PRE_QSTRING; }
 <PREEXPR>defined		{ return PRE_DEFINED; }
 <PREEXPR>{ID}			{ return PRE_ID; }
+<EMBED>limit			{ return PRE_LIMIT; }
+<EMBED>suffix			{ return PRE_SUFFIX; }
+<EMBED>prefix			{ return PRE_PREFIX; }
+<EMBED>if_empty			{ return PRE_IF_EMPTY; }
 
 <INITIAL,MACRO>{
 	{ID}				|
@@ -899,7 +911,7 @@ join_tokens (rua_tok_t *out, const rua_tok_t *p1, const rua_tok_t *p2,
 		*out = *p1;
 		return true;
 	}
-	auto str = va (0, "%s%s", p1->text, p2->text);
+	auto str = va ("%s%s", p1->text, p2->text);
 	yy_scan_string (str, extra->subscanner);
 	rua_tok_t   tok = { .text = str, };
 	int token = yylex (&tok, &tok.location, extra->subscanner);
@@ -972,6 +984,7 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 				}
 				break;
 			case rua_string:
+			case rua_buffer:
 			case rua_char:
 				break;
 			case rua_space:
@@ -986,7 +999,8 @@ preproc_token (rua_extra_t *extra, PRE_YYSTYPE *lval, const rua_tok_t *tok,
 			token = -rua_id;
 		}
 		lval->t.token = token;
-		if (token != PRE_EOD && token != ',' && token != '(' && token != ')') {
+		if (token != PRE_EOD && token != ',' && token != '(' && token != ')'
+			&& token != '[' && token != ']' && token != '{' && token != '}') {
 			token = PRE_TOKEN;
 		}
 	}
@@ -1067,6 +1081,10 @@ qc_token (rua_extra_t *extra, rua_val_t *lval, const rua_tok_t *tok,
 			case rua_string:
 			case rua_char:
 				token = parse_string (lval, tok, -token, scanner);
+				break;
+			case rua_buffer:
+				token = QC_EBUFFER;
+				lval->expr = new_value_expr (tok->value, false);
 				break;
 			case rua_space:
 				if (options.preprocess_output) {
@@ -1779,6 +1797,64 @@ rua_start_macro (const char *name, bool params, rua_ctx_t *ctx)
 	return alloc_macro (name, params);
 }
 
+void
+rua_start_embed_params (rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	extra->expand = true;
+	extra->recording = false;
+
+	yy_pop_state (ctx->scanner);
+	yy_push_state (EMBED, ctx->scanner);
+}
+
+void
+rua_embed_limit (const expr_t *expr, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->embed_limit) {
+		error (0, "limit already specified");
+	}
+	extra->embed_limit = expr;
+	//reset back to EMBED state
+	rua_start_embed_params (ctx);
+}
+
+rua_macro_t *
+rua_start_embed_macro (const rua_tok_t *name, rua_ctx_t *ctx)
+{
+	auto extra = ctx->extra;
+	if (extra->suppressed) {
+		return nullptr;
+	}
+	if (!name) {
+		internal_error (0, "null 'name' for embed macro");
+	}
+	rua_macro_t **macro = nullptr;
+	if (name->token == PRE_SUFFIX) {
+		macro = &extra->embed_suffix;
+	} else if (name->token == PRE_PREFIX) {
+		macro = &extra->embed_prefix;
+	} else if (name->token == PRE_IF_EMPTY) {
+		macro = &extra->embed_if_empty;
+	}
+	if (!macro) {
+		internal_error (0, "invalid embad macro name: %s", name->text);
+	}
+	if (*macro) {
+		error (0, "%s already specified", name->text);
+		return nullptr;
+	}
+
+	extra->expand = true;
+	extra->recording = true;
+	yy_pop_state (ctx->scanner);
+	yy_push_state (EMBED, ctx->scanner);
+
+	*macro = alloc_macro (name->text, false);
+	return *macro;
+}
+
 rua_macro_t *
 rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx)
 {
@@ -1841,7 +1917,7 @@ rua_macro_param (rua_macro_t *macro, const rua_tok_t *token, rua_ctx_t *ctx)
 static rua_tok_t
 build_va_opt (rua_macro_t *macro, rua_tok_t *t, rua_tok_t *u, int va_opt_ind)
 {
-	const char *va_opt_name = va (0, "__va_opt__.%d", va_opt_ind);
+	const char *va_opt_name = va ("__va_opt__.%d", va_opt_ind);
 	rua_tok_t   va_opt_tok = {
 		.next = u->next,
 		.location = t->location,
@@ -2237,7 +2313,7 @@ rua_include_file (const char *name, rua_ctx_t *ctx)
 			return;
 		}
 	}
-	struct yyguts_t * yyg = (struct yyguts_t*)ctx->scanner;//FIXME
+	struct yyguts_t *yyg = (struct yyguts_t*)ctx->scanner;//FIXME
 	int quote = *name;
 	name = make_string (name, 0);
 	bool is_system;
@@ -2273,8 +2349,74 @@ rua_embed_file (const char *name, rua_ctx_t *ctx)
 	if (extra->suppressed) {
 		return;
 	}
-	internal_error (0, "not implemented");
-	(void)yy_top_state;
+	if (strcmp (name, ".") == 0) {
+		// file is pre-embeded
+		internal_error (0, "\".\" not implemented");
+		(void)yy_top_state;
+	}
+	struct stat statbuf;
+
+	int quote = *name;
+	name = make_string (name, 0);
+	bool is_system;
+	auto found = cpp_find_file (name, quote, &is_system);
+	FILE *file;
+	if (!found
+		|| stat (found, &statbuf) < 0
+		|| !(file = fopen (found, "rb"))) {
+		error (0, "fatal error: %s: %s", name, strerror (errno));
+		exit (1);
+	}
+	switch (statbuf.st_mode & S_IFMT) {
+		case S_IFBLK:
+		case S_IFCHR:
+		case S_IFIFO:
+		case S_IFLNK:
+		case S_IFSOCK:
+			if (!extra->embed_limit) {
+				error (0, "#embed of potentially unlimited file with no limit");
+				fclose (file);
+				return;
+			}
+			break;
+		case S_IFDIR:
+		case S_IFREG:
+			break;
+	}
+	add_source_file (found);
+	size_t size = 0;
+	if (extra->embed_limit) {
+		size = expr_long (extra->embed_limit);
+	} else {
+		size = statbuf.st_size;
+	}
+	char *buf = nullptr;
+	buf = malloc (size + 1);
+	size_t bytes = size;
+	bytes = fread (buf, 1, size, file);
+	buf[size] = 0;
+	buf[bytes] = 0;
+	fclose (file);
+	if (!bytes) {
+		if (extra->embed_if_empty) {
+			queue_macro (extra, extra->embed_if_empty);
+		}
+	} else {
+		if (extra->embed_suffix) {
+			queue_macro (extra, extra->embed_suffix);
+		}
+		rua_tok_t tok = {
+			.location = extra->location,
+			.token = -rua_buffer,
+			.value = new_buffer_val (buf, bytes),
+		};
+		auto macro = alloc_macro ("#embed", false);
+		copy_token (macro, &tok);
+		queue_macro (extra, macro);
+		if (extra->embed_prefix) {
+			queue_macro (extra, extra->embed_prefix);
+		}
+	}
 }
 
 int
@@ -2359,7 +2501,7 @@ rua_macro_file (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->num_tokens = 0;
 
 	macro->num_tokens++;
-	const char *file_str = save_string (va (0, "\"%s\"",
+	const char *file_str = save_string (va ("\"%s\"",
 											quote_string (GETSTR (file))));
 	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
@@ -2386,7 +2528,7 @@ rua_macro_line (rua_macro_t *macro, rua_ctx_t *ctx)
 	macro->num_tokens = 0;
 
 	macro->num_tokens++;
-	const char *line_str = save_string (va (0, "%d", line));
+	const char *line_str = save_string (va ("%d", line));
 	rua_tok_t *expr = malloc (sizeof (*expr));
 	*expr = (rua_tok_t) {
 		.location = extra->location,

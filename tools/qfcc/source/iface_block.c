@@ -173,11 +173,11 @@ block_block_type (const type_t *type, const char *pre_tag)
 		auto name = type->name + 4;	// skip over "tag "
 		auto tag = name;
 		if (pre_tag) {
-			tag = save_string (va (0, "%s.%s", pre_tag, name));
+			tag = save_string (va ("%s.%s", pre_tag, name));
 		}
 		type_t new = {
 			.type = ev_invalid,
-			.name = save_string (va (0, "%.3s %s", type->name, tag)),
+			.name = save_string (va ("%.3s %s", type->name, tag)),
 			.meta = ty_struct,
 			.attributes = type->attributes,
 		};
@@ -250,7 +250,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 
 	bool transparent = false;
 	if (!instance_name) {
-		instance_name = new_symbol (va (0, ".%s", block->name->name));
+		instance_name = new_symbol (va (".%s", block->name->name));
 		transparent = true;
 	}
 	spec.sym = instance_name;
@@ -290,7 +290,7 @@ declare_block_instance (specifier_t spec, iface_block_t *block,
 	block->instance_name = instance_name;
 	type_t type = {
 		.type = ev_invalid,
-		.name = save_string (va (0, "%s %s", tag, block->name->name)),
+		.name = save_string (va ("%s %s", tag, block->name->name)),
 		.alignment = 4,
 		.width = 1,
 		.columns = 1,

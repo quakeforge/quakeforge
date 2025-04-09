@@ -414,6 +414,7 @@ setup_sym_file (const char *output_file)
 		options.debug_file = save_string (str->str);
 		if (options.verbosity >= 1)
 			printf ("debug file: %s\n", options.debug_file);
+		dstring_delete (str);
 	}
 }
 
@@ -437,7 +438,7 @@ compile_to_obj (const char *file, const char *obj, rua_ctx_t *ctx)
 	begin_compilation ();
 	pr.src_name = save_string (file);
 	pr.comp_dir = save_cwd ();
-	add_source_file (file);
+	set_source_file (file);
 	lang->initialized = false;
 	err = lang->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
@@ -740,7 +741,7 @@ compile_file (const char *filename, rua_ctx_t *ctx)
 		.last_line = 1,
 		.last_column = 1,
 	};
-	add_source_file (filename);
+	set_source_file (filename);
 	clear_frame_macros ();
 	err = ctx->language->parse (yyin, ctx) || pr.error_count;
 	fclose (yyin);
@@ -864,7 +865,7 @@ progs_src_compile (void)
 				if (compile_file (qc_filename->str, &ctx))
 					return 1;
 				if (options.frames_files) {
-					write_frame_macros (va (0, "%s.frame",
+					write_frame_macros (va ("%s.frame",
 											file_basename (qc_filename->str,
 														   0)));
 				}

@@ -49,13 +49,12 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
-#include "QF/GLSL/qf_alias.h"
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_fisheye.h"
-#include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
 #include "QF/GLSL/qf_main.h"
+#include "QF/GLSL/qf_mesh.h"
 #include "QF/GLSL/qf_particles.h"
 #include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
@@ -107,8 +106,7 @@ glsl_R_RenderEntities (entqueue_t *queue)
 			glsl_R_##Type##End (); \
 	} while (0)
 
-	RE_LOOP (alias, Alias);
-	RE_LOOP (iqm, IQM);
+	RE_LOOP (mesh, Mesh);
 	RE_LOOP (sprite, Sprite);
 }
 
@@ -128,9 +126,9 @@ R_DrawViewModel (void)
 
 	// hack the depth range to prevent view model from poking into walls
 	qfeglDepthRangef (0, 0.3);
-	glsl_R_AliasBegin ();
-	glsl_R_DrawAlias (ent);
-	glsl_R_AliasEnd ();
+	glsl_R_MeshBegin ();
+	glsl_R_DrawMesh (ent);
+	glsl_R_MeshEnd ();
 	qfeglDepthRangef (0, 1);
 }
 
@@ -185,8 +183,7 @@ glsl_R_Init (struct plitem_s *config)
 	glsl_Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
-	glsl_R_InitAlias ();
-	glsl_R_InitIQM ();
+	glsl_R_InitMesh ();
 	glsl_R_InitSprites ();
 	glsl_R_InitParticles ();
 	glsl_R_InitTrails ();

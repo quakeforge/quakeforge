@@ -126,6 +126,13 @@ cast_expr (const type_t *dstType, const expr_t *e)
 			return conditional_expr (e, enum_one, enum_zero);
 		}
 	}
+	if ((is_handle (dstType) && is_integral (srcType))
+		|| (is_integral (dstType) && is_handle (srcType))) {
+		if (type_size (dstType) == type_size (srcType)) {
+			return new_alias_expr (dstType, e);
+		}
+		return error (e, "cast to handle of different size");
+	}
 	if (is_boolean (srcType) && srcType->type == dstType->type) {
 		e = new_alias_expr (dstType, e);
 		return e;

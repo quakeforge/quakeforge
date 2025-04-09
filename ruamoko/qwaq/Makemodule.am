@@ -2,7 +2,12 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT) ruamoko/qwaq/input-app.dat$(EXEEXT) ruamoko/qwaq/z-transform.dat$(EXEEXT)
+noinst_PROGRAMS += @QWAQ_TARGETS@ \
+	ruamoko/qwaq/qwaq-app.dat$(EXEEXT) \
+	ruamoko/qwaq/qwaq-ed.dat$(EXEEXT) \
+	ruamoko/qwaq/gcd.dat$(EXEEXT) \
+	ruamoko/qwaq/input-app.dat$(EXEEXT) \
+	ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
 libui=ruamoko/qwaq/libui.a
 noinst_LIBRARIES += $(libui)
@@ -57,6 +62,12 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/editor/editbuffer.r	\
 	ruamoko/qwaq/editor/editor.r	\
 	ruamoko/qwaq/editor/status.r
+
+qwaq_ed_dat_src= \
+	ruamoko/qwaq/gui/filewindow.r \
+	ruamoko/qwaq/armature.r \
+	ruamoko/qwaq/pga3d.r \
+	ruamoko/qwaq/qwaq-ed.r
 
 qwaq_input_app_dat_src= \
 	ruamoko/qwaq/device/axisdata.r \
@@ -127,7 +138,7 @@ ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 		$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(XSS_LIBS)\
 		$(X_LIBS) -lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(PTHREAD_LDFLAGS) \
 		$(DL_LIBS)
-ruamoko_qwaq_qwaq_x11_LDFLAGS=
+ruamoko_qwaq_qwaq_x11_LDFLAGS= $(common_ldflags)
 ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
@@ -137,6 +148,14 @@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(l
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
+
+ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_ed_dat_src)
+ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
+ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.o=.Qo))
+ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libui) -lcsqc -lr
+include $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
 
 ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
 ruamoko_qwaq_input_app_obj=$(ruamoko_qwaq_input_app_dat_SOURCES:.r=.o)
@@ -168,7 +187,6 @@ EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-x11
 
 EXTRA_DIST += \
-	$(qwaq_dat_src) \
 	ruamoko/qwaq/debugger/debug.h \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
@@ -221,7 +239,11 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/textcontext.h \
 	ruamoko/qwaq/ui/titlebar.h \
 	ruamoko/qwaq/ui/view.h \
-	ruamoko/qwaq/ui/window.h
+	ruamoko/qwaq/ui/window.h \
+	ruamoko/qwaq/armature.h \
+	ruamoko/qwaq/pga3d.h \
+	ruamoko/qwaq/config/qwaq-ed-in.cfg \
+	ruamoko/qwaq/config/qwaq-ed-rg.plist
 CLEANFILES += \
 	ruamoko/qwaq/qwaq-curses.log \
 	ruamoko/qwaq/*.dat \

@@ -125,8 +125,7 @@ MatchTargets (void)
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
 			entities[i].style = entities[j].style;
-			SetKeyValue (&entities[i], "style", va (0, "%d",
-													entities[i].style));
+			SetKeyValue (&entities[i], "style", va ("%d", entities[i].style));
 		}
 
 		if (entities[i].spotcone >= 0) {
@@ -336,7 +335,7 @@ LoadEntities (void)
 				&& !entity->style) {
 				entity->style = LightStyleForTargetname (entity->targetname,
 														 true);
-				SetKeyValue (entity, "style", va (0, "%d", entity->style));
+				SetKeyValue (entity, "style", va ("%d", entity->style));
 			}
 		}
 	}

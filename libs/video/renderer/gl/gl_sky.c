@@ -128,11 +128,11 @@ gl_R_LoadSkys (const char *skyname)
 
 		qfglBindTexture (GL_TEXTURE_2D, SKY_TEX + i);
 
-		targa = LoadImage (name = va (0, "env/%s%s", skyname, suf[i]), 1);
+		targa = LoadImage (name = va ("env/%s%s", skyname, suf[i]), 1);
 		if (!targa || targa->format < 3) {	// FIXME Can't do PCX right now
 			Sys_MaskPrintf (SYS_dev, "Couldn't load %s\n", name);
 			// also look in gfx/env, where Darkplaces looks for skies
-			targa = LoadImage (name = va (0, "gfx/env/%s%s", skyname,
+			targa = LoadImage (name = va ("gfx/env/%s%s", skyname,
 										  suf[i]), 1);
 			if (!targa) {
 				Sys_MaskPrintf (SYS_dev, "Couldn't load %s\n", name);

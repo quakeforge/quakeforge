@@ -74,7 +74,7 @@ check_ent_components (const uint32_t *ents, uint32_t count, uint32_t comp,
 		return 0;
 	}
 	uint32_t    num_entities = 0;
-	for (uint32_t i = 0; i < reg->max_entities; i++) {
+	for (uint32_t i = 0; i < reg->entities.max_ids; i++) {
 		if (pool->sparse[i] == nullent) {
 			continue;
 		}

@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#define IMPLEMENT_QFMODEL_Funcs
+
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/iqm.h"
@@ -50,6 +52,67 @@
 
 #include "compat.h"
 #include "mod_internal.h"
+
+static uint32_t qfm_type_size[] = {
+	[qfm_s8]      = 1,
+	[qfm_s16]     = 2,
+	[qfm_s32]     = 4,
+	[qfm_s64]     = 8,
+
+	[qfm_u8]      = 1,
+	[qfm_u16]     = 2,
+	[qfm_u32]     = 4,
+	[qfm_u64]     = 8,
+
+	[qfm_s8n]     = 1,
+	[qfm_u8n]     = 1,
+	[qfm_s16n]    = 2,
+	[qfm_u16n]    = 2,
+
+	[qfm_f16]     = 3,
+	[qfm_f32]     = 4,
+	[qfm_f64]     = 8,
+
+	[qfm_special] = 0, // unknown
+};
+
+uint32_t mesh_type_size (qfm_type_t type)
+{
+	return qfm_type_size[type];
+}
+
+qfm_type_t
+mesh_index_type (uint32_t num_verts)
+{
+	if (num_verts < 0xff) {
+		return qfm_u8;
+	} else if (num_verts < 0xffff) {
+		return qfm_u16;
+	} else {
+		return qfm_u32;
+	}
+}
+
+uint32_t
+pack_indices (uint32_t *indices, uint32_t num_inds, qfm_type_t index_type)
+{
+	if (index_type == qfm_u32) {
+		return num_inds * sizeof (uint32_t);
+	} else if (index_type == qfm_u16) {
+		auto inds = (uint16_t *) indices;
+		for (uint32_t i = 0; i < num_inds; i++) {
+			inds[i] = indices[i];
+		}
+		return num_inds * sizeof (*inds);
+	} else if (index_type == qfm_u8) {
+		auto inds = (uint8_t *) indices;
+		for (uint32_t i = 0; i < num_inds; i++) {
+			inds[i] = indices[i];
+		}
+		return num_inds * sizeof (*inds);
+	}
+	Sys_Error ("invalid index type: %d", index_type);
+}
 
 vid_model_funcs_t *mod_funcs;
 
@@ -167,7 +230,7 @@ mod_unload_model (size_t ind)
 		mod->clear (mod, mod->data);
 		mod->clear = 0;
 	}
-	if (mod->type != mod_alias) {
+	if (mod->type != mod_mesh) {
 		mod->needload = true;
 	}
 	if (mod->type == mod_sprite) {
@@ -304,7 +367,7 @@ Mod_LoadModel (model_t *mod, bool crash)
 {
 	qfZoneScoped (true);
 	if (!mod->needload) {
-		if (mod->type == mod_alias && !mod->aliashdr) {
+		if (mod->type == mod_mesh && !mod->model) {
 			if (Cache_Check (&mod->cache))
 				return mod;
 		} else
@@ -322,7 +385,7 @@ static void
 Mod_CallbackLoad (void *object, cache_allocator_t allocator)
 {
 	qfZoneScoped (true);
-	if (((model_t *)object)->type != mod_alias)
+	if (((model_t *)object)->type != mod_mesh)
 		Sys_Error ("Mod_CallbackLoad for non-alias model?  FIXME!");
 	// FIXME: do we want crash set to true?
 	Mod_RealLoadModel (object, true, allocator);
@@ -354,7 +417,7 @@ Mod_TouchModel (const char *name)
 	mod = Mod_FindName (name);
 
 	if (!mod->needload) {
-		if (mod->type == mod_alias)
+		if (mod->type == mod_mesh)
 			Cache_Check (&mod->cache);
 	}
 }

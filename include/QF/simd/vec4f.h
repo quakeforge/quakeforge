@@ -99,6 +99,7 @@ GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
 GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
 GNU89INLINE inline vec4f_t qexpf (vec4f_t q) __attribute__((const));
 GNU89INLINE inline vec4f_t loadvec3f (const float *v3) __attribute__((pure));
+GNU89INLINE inline vec4f_t loadxyzf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
@@ -347,6 +348,20 @@ loadvec3f (const float *v3)
 	vec4f_t v4;
 
 	v4 = (vec4f_t) { v3[0], v3[1], v3[2], 0 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+loadxyzf (vec4f_t v)
+{
+	vec4f_t v4;
+
+	v4 = (vec4f_t) { v[0], v[1], v[2], 0 };
 	return v4;
 }
 

@@ -36,11 +36,18 @@
 # include <strings.h>
 #endif
 
-#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/progs.h"
+#include "QF/qfmodel.h"
 
 #include "rua_internal.h"
+
+typedef struct clipinfo_s {
+	pr_string_t name;
+	uint        num_frames;
+	uint        num_channels;
+	qfm_type_t  channel_type;
+} clipinfo_t;
 
 typedef struct rua_model_s {
 	struct rua_model_s *next;
@@ -187,12 +194,12 @@ bi (Model_NumJoints)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
+	auto mod = h->model;
 
 	R_INT (pr) = 0;
-	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->aliashdr;
-		R_INT (pr) = iqm->num_joints;
+	if (mod->type == mod_mesh) {
+		auto model = mod->model;
+		R_INT (pr) = model->joints.count;
 	}
 }
 
@@ -201,17 +208,20 @@ bi (Model_GetJoints)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
-	auto iqm = (iqm_t *) model->aliashdr;
-	auto joints = (iqmjoint *) P_GPOINTER (pr, 1);
+	auto mod = h->model;
+	auto model = mod->model;
+	auto joints = (qfm_joint_t *) P_GPOINTER (pr, 1);
 
-	if (model->type != mod_iqm || !iqm->num_joints) {
+	if (mod->type != mod_mesh || !model->joints.count) {
 		R_INT (pr) = 0;
 		return;
 	}
-	memcpy (joints, iqm->joints, iqm->num_joints * sizeof (iqmjoint));
-	for (int i = 0; i < iqm->num_joints; i++) {
-		char *name = iqm->text + joints[i].name;
+	auto j = (qfm_joint_t *) ((byte *) model + model->joints.offset);
+
+	memcpy (joints, j, model->joints.count * sizeof (qfm_joint_t));
+	auto text = (const char *) ((byte *) model + model->text.offset);
+	for (uint32_t i = 0; i < model->joints.count; i++) {
+		auto name = text + joints[i].name;
 		joints[i].name = PR_SetString (pr, name);
 	}
 	R_INT (pr) = 1;
@@ -222,18 +232,166 @@ bi (Model_NumFrames)
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
-	auto model = h->model;
+	auto mod = h->model;
 
 	R_INT (pr) = 0;
-	if (model->type == mod_iqm) {
-		auto iqm = (iqm_t *) model->aliashdr;
-		R_INT (pr) = iqm->num_frames;
-	} else if (model->type == mod_alias) {
-		auto hdr = model->aliashdr;
-		if (!hdr) {
-			hdr = Cache_Get (&model->cache);
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
 		}
-		R_INT (pr) = hdr->mdl.numframes;
+		if (model->anim.numdesc) {
+			R_INT (pr) = model->anim.numdesc;
+		} else {
+			//FIXME assumes only one mesh
+			auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+			R_INT (pr) = mesh->morph.numdesc;
+		}
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
+static qf_model_t *
+rua_model_get_model (progs_t *pr, rua_model_resources_t *res)
+{
+	R_INT (pr) = 0;
+
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	auto model = mod->model;
+
+	if (mod->type != mod_mesh || !model->joints.count) {
+		return nullptr;
+	}
+	return model;
+}
+
+bi (Model_GetBaseMotors)
+{
+	qfZoneScoped (true);
+
+	auto model = rua_model_get_model (pr, _res);
+	if (model) {
+		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
+		auto m = (qfm_motor_t *) ((byte *) model + model->base.offset);
+		memcpy (motors, m, model->base.count * sizeof (motors[0]));
+
+		R_INT (pr) = 1;
+	}
+}
+
+bi (Model_GetInverseMotors)
+{
+	qfZoneScoped (true);
+
+	auto model = rua_model_get_model (pr, _res);
+	if (model) {
+		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
+		auto m = (qfm_motor_t *) ((byte *) model + model->inverse.offset);
+		memcpy (motors, m, model->inverse.count * sizeof (motors[0]));
+
+		R_INT (pr) = 1;
+	}
+}
+
+bi (Model_GetClipInfo)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	unsigned clip = P_UINT (pr, 1);
+
+	R_PACKED (pr, clipinfo_t) = (clipinfo_t) {};
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto text = (const char *) model + model->text.offset;
+		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
+		if (clip < model->anim.numdesc) {
+			R_PACKED (pr, clipinfo_t) = (clipinfo_t) {
+				.name = PR_SetReturnString(pr, text + clips[clip].name),
+				.num_frames = clips[clip].numframes,
+				.num_channels = model->channels.count,
+				.channel_type = qfm_u16,
+			};
+		} else {
+			// no chanels
+		}
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
+bi (Model_GetChannelInfo)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+
+	R_POINTER (pr) = 0;
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto channels = (qfm_channel_t*)((byte*)model + model->channels.offset);
+		auto data = (uint16_t *) P_GPOINTER (pr, 1);
+		memcpy (data, channels, model->channels.count * sizeof (qfm_channel_t));
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
+	}
+}
+
+bi (Model_GetFrameData)
+{
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	unsigned clip = P_UINT (pr, 1);
+
+	R_POINTER (pr) = 0;
+	if (mod->type == mod_mesh) {
+		bool cached = false;
+		auto model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
+		auto keyframes = (keyframe_t*)((byte*)model + model->anim.keyframes);
+		if (clip < model->anim.numdesc) {
+			uint32_t numchannels = model->channels.count;
+			uint32_t numframes = clips[clip].numframes;
+			uint32_t frame = keyframes[clips[clip].firstframe].data;
+			auto data = (uint16_t *) P_GPOINTER (pr, 2);
+			auto f = (uint16_t *) ((byte *) model + frame);
+			memcpy (data, f, numchannels * numframes * sizeof (uint16_t));
+		} else {
+			// no chanels
+		}
+
+		if (cached) {
+			Cache_Release (&mod->cache);
+		}
 	}
 }
 
@@ -242,11 +400,16 @@ bi (Model_NumFrames)
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	bi(Model_Load,      1, p(string)),
-	bi(Model_Unload,    1, p(ptr)),
-	bi(Model_NumJoints, 1, p(ptr)),
-	bi(Model_GetJoints, 1, p(ptr)),
-	bi(Model_NumFrames, 1, p(ptr)),
+	bi(Model_Load,             1, p(string)),
+	bi(Model_Unload,           1, p(ptr)),
+	bi(Model_NumJoints,        1, p(ptr)),
+	bi(Model_GetJoints,        1, p(ptr)),
+	bi(Model_NumFrames,        1, p(ptr)),
+	bi(Model_GetBaseMotors,    2, p(ulong), p(ptr)),
+	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
+	bi(Model_GetClipInfo,      2, p(ulong), p(uint)),
+	bi(Model_GetChannelInfo,   2, p(ulong), p(ptr)),
+	bi(Model_GetFrameData,     3, p(ulong), p(uint), p(ptr)),
 	{0}
 };
 

@@ -46,7 +46,7 @@
 {
 	[super setTarget:target];
 	for (int i = 0; i < type.strct.num_fields; i++) {
-		if (target.handle) {
+		if (target) {
 			// the field name is already in local space because the same type
 			// may be defined in both progs
 			string name = type.strct.fields[i].name;

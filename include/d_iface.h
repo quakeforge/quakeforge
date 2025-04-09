@@ -28,7 +28,6 @@
 #ifndef _D_IFACE_H
 #define _D_IFACE_H
 
-#include "QF/iqm.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/render.h"
@@ -39,15 +38,12 @@
 
 #define MAX_LBM_HEIGHT	1024
 
-typedef struct {
-	struct tex_s **skins;
-	iqmblend_t *blend_palette;	// includes base data from iqm
-	int         palette_size;	// includes base data from iqm
-	iqmvertexarray *position;
-	iqmvertexarray *texcoord;
-	iqmvertexarray *normal;
-	iqmvertexarray *bindices;
-} swiqm_t;
+typedef struct sw_mesh_s {
+	float       size;
+	uint32_t    numverts;
+	uint32_t    blend_palette;
+	uint32_t    palette_size;
+} sw_mesh_t;
 
 typedef struct
 {
@@ -90,11 +86,11 @@ typedef struct finalvert_s {
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct
 {
-	void				*pskin;
+	void				*skin;
 	int					skinwidth;
 	int					skinheight;
-	mtriangle_t			*ptriangles;
-	finalvert_t			*pfinalverts;
+	dtriangle_t			*triangles;
+	finalvert_t			*finalverts;
 	int					numtriangles;
 	int					drawtype;
 	int					seamfixupX16;
@@ -111,9 +107,9 @@ typedef struct
 	emitpoint_t	*pverts;	// there's room for an extra element at [nump],
 							//  if the driver wants to duplicate element [0] at
 							//  element [nump] to avoid dealing with wrapping
-	mspriteframe_t	*pspriteframe;
-	vec3_t			vup, vright, vfwd;	// in worldspace
-	float			nearzi;
+	struct qpic_s *spriteframe;
+	vec3_t       vup, vright, vfwd;	// in worldspace
+	float        nearzi;
 } spritedesc_t;
 
 typedef struct

@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/render.h"
+#include "QF/wadfile.h"	//FIXME qpic_t
 
 #include "d_local.h"
 #include "r_internal.h"
@@ -391,9 +392,9 @@ D_DrawSprite (const vec3_t relvieworg)
 	if (ymin >= ymax)
 		return;							// doesn't cross any scans at all
 
-	cachewidth = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
-	cacheblock = &r_spritedesc.pspriteframe->pixels[0];
+	cachewidth = r_spritedesc.spriteframe->width;
+	sprite_height = r_spritedesc.spriteframe->height;
+	cacheblock = &r_spritedesc.spriteframe->data[0];
 
 	// copy the first vertex to the last vertex, so we don't have to deal with
 	// wrapping

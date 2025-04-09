@@ -41,7 +41,6 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
-#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
@@ -49,6 +48,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_output.h"
 #include "QF/Vulkan/qf_palette.h"
@@ -118,7 +118,6 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Scene_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
-	Vulkan_IQM_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Planes_Init (vulkan_ctx);
 	Vulkan_Sprite_Init (vulkan_ctx);
@@ -458,9 +457,9 @@ vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 }
 
 static void
-vulkan_Mod_IQMFinish (model_t *mod)
+vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 {
-	Vulkan_Mod_IQMFinish (mod, vulkan_ctx);
+	Vulkan_Mod_IQMFinish (iqm_ctx, vulkan_ctx);
 }
 
 static void

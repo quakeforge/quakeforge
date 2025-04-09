@@ -122,7 +122,7 @@ CL_PredictMove (void)
 {
 	float       f;
 	int         oldphysent, i;
-	frame_t    *from, *to = NULL;
+	cl_frame_t *from, *to = NULL;
 	entity_state_t *fromes;
 	entity_state_t *toes;
 

@@ -33,6 +33,8 @@
 */
 ///@{
 
+#include <math.h>
+
 #include "QF/qtypes.h"
 
 extern const vec_t *const vec3_origin;

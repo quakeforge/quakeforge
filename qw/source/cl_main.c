@@ -520,7 +520,7 @@ CL_SendConnectPacket (void)
 
 	cls.qport = qport;
 
-	const char *data = va (0, "%c%c%c%cconnect %i %i %i \"%s\"\n",
+	const char *data = va ("%c%c%c%cconnect %i %i %i \"%s\"\n",
 						   255, 255, 255, 255, PROTOCOL_VERSION,
 						   cls.qport, cls.challenge,
 						   Info_MakeString (cls.userinfo, 0));
@@ -558,7 +558,7 @@ CL_CheckForResend (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
+	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
 	Sys_Printf ("Connecting to %s...\n", cls.servername->str);
 	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
 						cls.server_addr);
@@ -616,7 +616,7 @@ CL_Rcon_f (void)
 
 
 	const char *message;
-	message = va (0, "\377\377\377\377rcon %s %s", rcon_password, Cmd_Args (1));
+	message = va ("\377\377\377\377rcon %s %s", rcon_password, Cmd_Args (1));
 	Netchan_SendPacket (strlen (message) + 1, message, to);
 }
 
@@ -1034,7 +1034,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (cl_cbuf, va (0, "playdemo %s\n", cls.demos[cls.demonum]));
+	Cbuf_InsertText (cl_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
@@ -1342,7 +1342,7 @@ CL_Download_f (void)
 		cls.downloadtype = dl_single;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, va (0, "download %s\n", Cmd_Argv (1)));
+		SZ_Print (&cls.netchan.message, va ("download %s\n", Cmd_Argv (1)));
 	} else {
 		Sys_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
 					strerror (errno));
@@ -1727,11 +1727,11 @@ Host_Error (const char *error, ...)
 	inerror = false;
 
 	if (host_initialized) {
+		dstring_delete (str);
 		Sys_longjmp (host_abort);
 	} else {
 		Sys_Error ("Host_Error: %s", str->str);
 	}
-	dstring_delete (str);
 }
 
 void
@@ -1742,7 +1742,7 @@ Host_WriteConfiguration (void)
 		Cvar_SaveConfig (config);
 		IN_SaveConfig (config);
 
-		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		const char *path = va ("%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
 
 		if (!f) {
@@ -1851,7 +1851,7 @@ Host_SimulationTime (float time)
 static void
 write_capture (tex_t *tex, void *data)
 {
-	QFile      *file = QFS_Open (va (0, "%s/qfmv%06d.png",
+	QFile      *file = QFS_Open (va ("%s/qfmv%06d.png",
 									 qfs_gamedir->dir.shots,
 									 cls.demo_capture++), "wb");
 	if (file) {
@@ -1969,6 +1969,8 @@ Host_Frame (float time)
 		CL_NetUpdate ();
 	}
 	Sbar_Update (cl.time);
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen (&cl.viewstate);
 
 	if (host_speeds)
@@ -2053,7 +2055,7 @@ CL_Autoexec (int phase, void *data)
 		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
 		Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
 
-		Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
+		Cbuf_AddText (cl_cbuf, va ("cmd_warncmd %d\n", cmd_warncmd_val));
 	}
 
 	if (cl_autoexec) {
@@ -2112,6 +2114,8 @@ Host_Init (void)
 
 	cl.viewstate.time = realtime;
 	cl.viewstate.realtime = realtime;
+	cl_realtime = realtime;
+	cl_frametime = host_frametime;
 	CL_UpdateScreen (&cl.viewstate);
 	CL_UpdateScreen (&cl.viewstate);
 

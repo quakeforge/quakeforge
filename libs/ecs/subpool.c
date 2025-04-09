@@ -52,7 +52,7 @@ ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
 		if (subpool->num_ranges == subpool->max_ranges) {
 			subpool->max_ranges += RANGE_GROW;
 			size_t      idsize = subpool->max_ranges * sizeof (uint32_t);
-			size_t      rsize = subpool->max_ranges * sizeof (ecs_range_t);
+			size_t      rsize = subpool->max_ranges * sizeof (uint32_t);
 			subpool->rangeids = realloc (subpool->rangeids, idsize);
 			subpool->sorted = realloc (subpool->sorted, idsize);
 			subpool->ranges = realloc (subpool->ranges, rsize);
@@ -76,18 +76,35 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	ecs_subpool_t *subpool = &registry->subpools[component];
 	uint32_t    next = subpool->next | Ent_NextGen (Ent_Generation (id));
 	uint32_t    ind = Ent_Index (id);
-	uint32_t    count = subpool->num_ranges - subpool->available;
+	//uint32_t    count = subpool->num_ranges - subpool->available;
 	uint32_t    range = subpool->sorted[ind];
+	uint32_t    start = range ? subpool->ranges[range - 1] : 0;
+	uint32_t    end = subpool->ranges[range];
+	uint32_t    delta = end - start;
 	subpool->rangeids[ind] = next;
 	subpool->next = ind;
 	subpool->available++;
-	memmove (subpool->ranges + range, subpool->ranges + range + 1,
-			 (subpool->num_ranges - 1 - range) * sizeof (ecs_range_t));
-	for (uint32_t i = 0; i < count; i++) {
+	for (uint32_t i = range; i < subpool->num_ranges - 1; i++) {
+		subpool->ranges[i] = subpool->ranges[i + 1] - delta;
+	}
+	for (uint32_t i = 0; i < subpool->num_ranges; i++) {
 		if (subpool->sorted[i] > range) {
 			subpool->sorted[i]--;
 		}
 	}
+
+	ecs_pool_t *pool = &registry->comp_pools[component];
+	for (uint32_t i = start; i < end; i++) {
+		pool->sparse[Ent_Index (pool->dense[i])] = nullent;
+	}
+	for (uint32_t i = end; i < pool->count; i++) {
+		pool->sparse[Ent_Index (pool->dense[i])] -= delta;
+	}
+	component_t dc = { .size = sizeof (uint32_t) };
+	Component_MoveElements (&dc, pool->dense, start, end, pool->count - end);
+	component_t *c = &registry->components.a[component];
+	Component_MoveElements (c, pool->data, start, end, pool->count - end);
+	pool->count -= delta;
 }
 
 VISIBLE void
@@ -117,4 +134,33 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	}
 	subpool->sorted[ind] = last_range;
 	Component_RotateElements (c, pool->data, dstIndex, srcIndex, count);
+
+	if (dstIndex == srcIndex) {
+		// didn't move
+	} else if (dstIndex < srcIndex) {
+		// not expected to happen
+		for (uint32_t i = dstIndex; i < srcIndex; i++) {
+			pool->sparse[pool->dense[i]] += count;
+		}
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= srcIndex - dstIndex;
+		}
+	} else if (dstIndex < srcIndex + count) {
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] += dstIndex - srcIndex;
+		}
+		for (uint32_t i = srcIndex + count; i < dstIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= count;
+		}
+	} else {
+		for (uint32_t i = srcIndex; i < srcIndex + count; i++) {
+			pool->sparse[pool->dense[i]] += dstIndex - srcIndex;
+		}
+		for (uint32_t i = srcIndex + count; i < dstIndex + count; i++) {
+			pool->sparse[pool->dense[i]] -= count;
+		}
+	}
+
+	component_t dc = { .size = sizeof (uint32_t) };
+	Component_RotateElements (&dc, pool->dense, dstIndex, srcIndex, count);
 }

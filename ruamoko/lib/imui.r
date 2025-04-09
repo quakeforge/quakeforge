@@ -25,6 +25,7 @@ void IMUI_PopStyle (imui_ctx_t ctx) = #0;
 void IMUI_Style_Update (imui_ctx_t ctx, imui_style_t *style) = #0;
 void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style) = #0;
 
+void IMUI_SetFill (imui_ctx_t ctx, uint color) = #0;
 void IMUI_Label (imui_ctx_t ctx, string label) = #0;
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...) = #0;
 void IMUI_Passage (imui_ctx_t ctx, string name, int passage) = #0;

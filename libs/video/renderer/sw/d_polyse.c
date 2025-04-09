@@ -251,13 +251,13 @@ D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 static void
 D_DrawSubdiv (void)
 {
-	mtriangle_t *ptri;
+	dtriangle_t *ptri;
 	finalvert_t *pfv, *index0, *index1, *index2;
 	int         i;
 	int         lnumtriangles;
 
-	pfv = r_affinetridesc.pfinalverts;
-	ptri = r_affinetridesc.ptriangles;
+	pfv = r_affinetridesc.finalverts;
+	ptri = r_affinetridesc.triangles;
 	lnumtriangles = r_affinetridesc.numtriangles;
 
 	for (i = 0; i < lnumtriangles; i++) {
@@ -303,13 +303,13 @@ D_DrawSubdiv (void)
 static void
 D_DrawNonSubdiv (void)
 {
-	mtriangle_t *ptri;
+	dtriangle_t *ptri;
 	finalvert_t *pfv, *index0, *index1, *index2;
 	int         i;
 	int         lnumtriangles;
 
-	pfv = r_affinetridesc.pfinalverts;
-	ptri = r_affinetridesc.ptriangles;
+	pfv = r_affinetridesc.finalverts;
+	ptri = r_affinetridesc.triangles;
 	lnumtriangles = r_affinetridesc.numtriangles;
 
 	for (i = 0; i < lnumtriangles; i++, ptri++) {
@@ -363,13 +363,12 @@ D_DrawNonSubdiv (void)
 void
 D_PolysetDraw (void)
 {
-	spanpackage_t spans[DPS_MAXSPANS + 1 +
-						((CACHE_SIZE - 1) / sizeof (spanpackage_t)) + 1];
-
+	size_t extra = (CACHE_SIZE + sizeof (spanpackage_t))
+				 / sizeof (spanpackage_t);
+	spanpackage_t spans[DPS_MAXSPANS + extra + 1];
 	// one extra because of cache line pretouching
 
-	a_spans = (spanpackage_t *)
-		(((intptr_t) &spans[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+	a_spans = (spanpackage_t *) RUP ((intptr_t) &spans[0], CACHE_SIZE);
 
 	if (r_affinetridesc.drawtype) {
 		D_DrawSubdiv ();
@@ -414,9 +413,9 @@ D_PolysetUpdateTables (void)
 	byte       *s;
 
 	if (r_affinetridesc.skinwidth != skinwidth ||
-		r_affinetridesc.pskin != skinstart) {
+		r_affinetridesc.skin != skinstart) {
 		skinwidth = r_affinetridesc.skinwidth;
-		skinstart = r_affinetridesc.pskin;
+		skinstart = r_affinetridesc.skin;
 		s = skinstart;
 		for (i = 0; i < MAX_LBM_HEIGHT; i++, s += skinwidth)
 			skintable[i] = s;
@@ -428,7 +427,6 @@ D_PolysetUpdateTables (void)
 void
 D_PolysetScanLeftEdge (int height)
 {
-
 	do {
 		d_pedgespanpackage->pdest = d_pdest;
 		d_pedgespanpackage->pz = d_pz;
@@ -683,7 +681,7 @@ D_RasterizeAliasPolySmooth (void)
 	ystart = plefttop[1];
 	d_aspancount = plefttop[0] - prighttop[0];
 
-	d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
+	d_ptex = (byte *) r_affinetridesc.skin + (plefttop[2] >> 16) +
 		(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
 #ifdef USE_INTEL_ASM
 	d_sfrac = (plefttop[2] & 0xFFFF) << 16;
@@ -758,7 +756,7 @@ D_RasterizeAliasPolySmooth (void)
 
 		ystart = plefttop[1];
 		d_aspancount = plefttop[0] - prighttop[0];
-		d_ptex = (byte *) r_affinetridesc.pskin + (plefttop[2] >> 16) +
+		d_ptex = (byte *) r_affinetridesc.skin + (plefttop[2] >> 16) +
 			(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
 		d_sfrac = 0;
 		d_tfrac = 0;

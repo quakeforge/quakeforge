@@ -185,7 +185,7 @@ cover_alias_def (def_t *def, const type_t *type, int offset)
 			return alias;
 	}
 	ALLOC (16384, def_t, defs, alias);
-	alias->name = save_string (va (0, "[%s:%d]", def->name, offset));
+	alias->name = save_string (va ("[%s:%d]", def->name, offset));
 	alias->return_addr = __builtin_return_address (0);
 	alias->offset = offset;
 	alias->offset_reloc = 1;
@@ -236,7 +236,7 @@ temp_def (const type_t *type)
 		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
 		space->def_tail = &temp->next;
-		temp->name = save_string (va (0, ".tmp%d", current_func->temp_num++));
+		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
 	}
 	temp->return_addr = __builtin_return_address (0);
 	temp->type = type;
@@ -441,7 +441,7 @@ init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 		symbol_t   *sym;
 		const char *name;
 
-		name = va (0, "%s_%s", vector_sym->name, fields[i]);
+		name = va ("%s_%s", vector_sym->name, fields[i]);
 		sym = symtab_lookup (symtab, name);
 		if (sym) {
 			if (sym->table == symtab) {
@@ -609,8 +609,11 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 		init_elements (sym->def, init, block);
 		sym->def->initialized = 1;
 	} else {
-		if (init->type == ex_nil) {
+		if (is_nil (init)) {
 			init = convert_nil (init, sym->type);
+		}
+		if (is_buffer_val (init)) {
+			init = convert_buffer (init, sym->type);
 		}
 		auto init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {

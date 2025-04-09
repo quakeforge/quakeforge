@@ -16,6 +16,8 @@
 @extern @overload string str_mid (string str, int start);
 @extern @overload string str_mid (string str, int start, int len);
 int str_str (string haystack, string needle);
+int strchr (string s, int c);
+int strrchr (string s, int c);
 @extern int str_char (string str, int ind);
 string str_quote (string str);
 string str_lower (string str);

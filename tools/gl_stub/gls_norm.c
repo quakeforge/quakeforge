@@ -2510,3 +2510,8 @@ void
 norm_glBindVertexArray (GLuint array)
 {
 }
+
+void
+norm_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
+{
+}

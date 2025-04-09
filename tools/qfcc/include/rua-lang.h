@@ -72,13 +72,17 @@ typedef struct expr_s expr_t;
 typedef struct symbol_s symbol_t;
 typedef struct symtab_s symtab_t;
 typedef struct function_s function_t;
+typedef struct ex_value_s ex_value_t;
 
 typedef struct rua_tok_s {
 	struct rua_tok_s *next;
 	rua_loc_t   location;
 	int         textlen;
 	int         token;
-	const char *text;
+	union {
+		const char *text;
+		ex_value_t *value;
+	};
 } rua_tok_t;
 
 typedef struct {
@@ -149,6 +153,9 @@ typedef struct rua_preval_s {
 } rua_preval_t;
 
 rua_macro_t *rua_start_macro (const char *name, bool params, rua_ctx_t *ctx);
+void rua_start_embed_params (rua_ctx_t *ctx);
+void rua_embed_limit (const expr_t *expr, rua_ctx_t *ctx);
+rua_macro_t *rua_start_embed_macro (const rua_tok_t *name, rua_ctx_t *ctx);
 rua_macro_t *rua_macro_param (rua_macro_t *macro, const rua_tok_t *token,
 							  rua_ctx_t *ctx);
 rua_macro_t *rua_end_params (rua_macro_t *macro, rua_ctx_t *ctx);

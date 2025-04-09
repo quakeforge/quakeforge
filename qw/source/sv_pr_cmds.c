@@ -1426,7 +1426,7 @@ PF_changelevel (progs_t *pr, void *data)
 	last_spawncount = svs.spawncount;
 
 	s = P_GSTRING (pr, 0);
-	Cbuf_AddText (sv_cbuf, va (0, "map %s\n", s));
+	Cbuf_AddText (sv_cbuf, va ("map %s\n", s));
 }
 
 /*
@@ -1475,13 +1475,13 @@ PF_logfrag (progs_t *pr, void *data)
 
 		snprintf(buf, sizeof(buf), "%d", u2);
 
-		GIB_Event_Callback (sv_frag_e, 4, type1, va (0, "%d", u1), type2, buf);
+		GIB_Event_Callback (sv_frag_e, 4, type1, va ("%d", u1), type2, buf);
 	}
 
 	if (e1 < 1 || e1 > MAX_CLIENTS || e2 < 1 || e2 > MAX_CLIENTS)
 		return;
 
-	s = va (0, "\\%s\\%s\\\n", svs.clients[e1 - 1].name,
+	s = va ("\\%s\\%s\\\n", svs.clients[e1 - 1].name,
 			svs.clients[e2 - 1].name);
 
 	SZ_Print (&svs.log[svs.logsequence & 1], s);
@@ -1526,7 +1526,7 @@ PF_infokey (progs_t *pr, void *data)
 		else if (!strcmp (key, "ping")) {
 			int         ping = SV_CalcPing (&svs.clients[e1 - 1]);
 
-			value = va (0, "%d", ping);
+			value = va ("%d", ping);
 		} else
 			value = Info_ValueForKey (svs.clients[e1 - 1].userinfo, key);
 	} else
@@ -1893,7 +1893,7 @@ PF_SV_FreeClient (progs_t *pr, void *data)
 	cl->state = cs_free;
 
 	//if (sv_client_disconnect_e->func)
-	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va (0, "%u", cl->userid),
+	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va ("%u", cl->userid),
 	//						"server");
 }
 

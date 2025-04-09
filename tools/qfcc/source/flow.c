@@ -907,6 +907,9 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 static void
 follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 {
+	if (ud.defst >= func->num_statements) {
+		return;
+	}
 	statement_t *st = func->statements[ud.defst];
 	if (set_is_member (visited, st->number)) {
 		return;
@@ -992,8 +995,14 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 	set_t      *ptr = set_new ();
 	set_t      *visited = set_new ();
 
-	set_add (use_ptr, flow_get_var (st->opa)->number);
-	set_add (def_ptr, flow_get_var (st->opc)->number);
+	flowvar_t  *var_a = flow_get_var (st->opa);
+	flowvar_t  *var_c = flow_get_var (st->opc);
+	if (var_a) {
+		set_add (use_ptr, var_a->number);
+	}
+	if (var_c) {
+		set_add (def_ptr, var_c->number);
+	}
 	if (use) {
 		flow_find_ptr (use, use_ptr, st, func);
 	}
@@ -2168,7 +2177,7 @@ flow_build_graph (function_t *func)
 		flow_make_edges (graph);
 		flow_build_dfst (graph);
 		if (options.block_dot.flow)
-			dump_dot (va (0, "flow-%d", pass), graph, dump_dot_flow);
+			dump_dot (va ("flow-%d", pass), graph, dump_dot_flow);
 		pass++;
 	} while (flow_remove_unreachable_nodes (graph));
 	flow_find_predecessors (graph);

@@ -357,7 +357,7 @@ cpp_include_withprefix (const char *opt, const char *arg)
 	if (!arg) {
 		return -1;
 	}
-	arg = va (0, "%s%s", cpp_prefix, arg);
+	arg = va ("%s%s", cpp_prefix, arg);
 	CPP_ADD (after, arg);
 	add_cpp_def (save_string ("-iwithprefix"));
 	add_cpp_def (save_string (arg));
@@ -370,7 +370,7 @@ cpp_include_withprefixbefore (const char *opt, const char *arg)
 	if (!arg) {
 		return -1;
 	}
-	arg = va (0, "%s%s", cpp_prefix, arg);
+	arg = va ("%s%s", cpp_prefix, arg);
 	CPP_ADD (include, arg);
 	add_cpp_def (save_string ("-iwithprefixbefore"));
 	add_cpp_def (save_string (arg));
@@ -446,7 +446,7 @@ void cpp_define (const char *arg)
 	}
 	rua_parse_define (argstr);
 
-	arg = va (0, "-D%s", arg);
+	arg = va ("-D%s", arg);
 	CPP_ADD (def, arg);
 	cpp_argc++;
 }
@@ -459,7 +459,7 @@ void cpp_undefine (const char *arg)
 			symtab_removesymbol (cpp_macros, sym);
 		}
 	}
-	arg = va (0, "-D%s", arg);
+	arg = va ("-D%s", arg);
 	CPP_ADD (undef, arg);
 }
 
@@ -803,7 +803,7 @@ cpp_write_dependencies (const char *sourcefile, const char *outputfile)
 		if (!dot) {
 			dot = outputfile + strlen (outputfile);
 		}
-		const char *tgt = va (0, "%.*s.qfo", (int) (dot - out), out);
+		const char *tgt = va ("%.*s.qfo", (int) (dot - out), out);
 		cpp_dep_target = save_string (tgt);
 		cpp_dep_quote = 1;//FIXME implement
 	}

@@ -311,7 +311,7 @@ EXP_ParseString (char *str)
 				} else {
 					EXP_DestroyTokens (chain);
 					EXP_Error (EXP_E_INVOP,
-							   va (0, "Unknown operator or function '%s'.", buf));
+							   va ("Unknown operator or function '%s'.", buf));
 					return 0;
 				}
 			}
@@ -347,7 +347,7 @@ EXP_SimplifyTokens (token * chain)
 				cur = cur->generic.prev;
 				if (EXP_DoFunction (cur))
 					return EXP_Error (EXP_E_SYNTAX,
-									  va (0, "Invalid number of arguments to function '%s'.",
+									  va ("Invalid number of arguments to function '%s'.",
 									   cur->func.func->str));
 			} else {
 				if (EXP_ContainsCommas (cur))
@@ -373,7 +373,7 @@ EXP_SimplifyTokens (token * chain)
 				if (cur->generic.next->generic.type == TOKEN_OP)
 					if (EXP_DoUnary (cur->generic.next))
 						return EXP_Error (EXP_E_SYNTAX,
-										  va (0, "Unary operator '%s' not followed by a unary operator or numerical value.",
+										  va ("Unary operator '%s' not followed by a unary operator or numerical value.",
 										   cur->generic.next->op.op->str));
 				if (optable[i].operands == 1
 					&& cur->generic.next->generic.type == TOKEN_NUM) {
@@ -480,12 +480,12 @@ EXP_Validate (token * chain)
 				cur->generic.next->op.op = EXP_FindOpByStr ("neg");
 			else if (cur->generic.next->op.op->operands == 2)
 				return EXP_Error (EXP_E_SYNTAX,
-								  va (0, "Operator '%s' does not follow a number or numerical value.",
+								  va ("Operator '%s' does not follow a number or numerical value.",
 								   cur->generic.next->op.op->str));
 		} else if (cur->generic.type == TOKEN_FUNC
 				   && cur->generic.next->generic.type != TOKEN_OPAREN)
 			return EXP_Error (EXP_E_SYNTAX,
-							  va (0, "Function '%s' called without an argument list.",
+							  va ("Function '%s' called without an argument list.",
 							   cur->func.func->str));
 		else if (cur->generic.type == TOKEN_COMMA
 				 &&
@@ -497,7 +497,7 @@ EXP_Validate (token * chain)
 		else if (cur->generic.type == TOKEN_OP
 				 && cur->generic.next->generic.type == TOKEN_CPAREN)
 			return EXP_Error (EXP_E_SYNTAX,
-							  va (0, "Operator '%s' is missing an operand.",
+							  va ("Operator '%s' is missing an operand.",
 								  cur->op.op->str));
 		else if (cur->generic.type == TOKEN_NUM
 				 && cur->generic.next->generic.type == TOKEN_NUM)

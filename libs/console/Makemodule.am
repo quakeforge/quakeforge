@@ -27,10 +27,10 @@ console_deps=\
 client_deps= \
 	libs/console/libQFconsole.la \
 	libs/audio/libQFsound.la \
-	libs/ruamoko/libQFruamoko.la \
-	libs/gib/libQFgib.la \
 	libs/ruamoko/libQFruamoko_client.la \
 	libs/ruamoko/libQFruamoko.la \
+	libs/scene/libQFscene.la \
+	libs/gib/libQFgib.la \
 	$(console_deps)
 server_deps= libs/console/libQFconsole.la $(console_deps)
 

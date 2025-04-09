@@ -34,8 +34,6 @@
 struct cvar_s;
 struct entity_s;
 
-extern int c_brush_polys, c_alias_polys;
-
 extern float gl_modelalpha;
 //extern vec3_t shadecolor;
 

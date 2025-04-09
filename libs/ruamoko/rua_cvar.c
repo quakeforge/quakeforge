@@ -155,7 +155,7 @@ bi_Cvar_SetInteger (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_SetVar (var, va (0, "%d", val));
+		Cvar_SetVar (var, va ("%d", val));
 }
 
 static void
@@ -169,7 +169,7 @@ bi_Cvar_SetFloat (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_SetVar (var, va (0, "%g", val));
+		Cvar_SetVar (var, va ("%g", val));
 }
 
 static void
@@ -183,7 +183,7 @@ bi_Cvar_SetVector (progs_t *pr, void *_res)
 	if (!var)
 		var = Cvar_FindAlias (varname);
 	if (var)
-		Cvar_SetVar (var, va (0, "%g %g %g", val[0], val[1], val[2]));
+		Cvar_SetVar (var, va ("%g %g %g", val[0], val[1], val[2]));
 }
 
 static void

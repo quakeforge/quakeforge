@@ -46,6 +46,9 @@ typedef struct worldscene_s {
 	modelset_t  models;
 } worldscene_t;
 
+extern float cl_frametime;
+extern float cl_realtime;
+
 extern worldscene_t cl_world;
 
 struct msg_s;

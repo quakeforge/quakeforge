@@ -53,7 +53,7 @@ const char * const vulkanValidationLayers[] = {
 };
 
 static const char * const debugExtensions[] = {
-	VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+	"VK_EXT_debug_utils",
 	0,
 };
 
@@ -213,11 +213,13 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		.applicationVersion = appVersion,
 		.pEngineName = PACKAGE_STRING,
 		.engineVersion = 0x000702ff, //FIXME version
-		.apiVersion = VK_API_VERSION_1_3,
+		.apiVersion = VK_API_VERSION_1_4,
 	};
 	VkValidationFeatureEnableEXT valfeat_enable[] = {
 //		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+//		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
 	};
 #define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
 	VkValidationFeaturesEXT validation_features= {

@@ -258,7 +258,7 @@ SV_Fraglogfile_f (void)
 	}
 	name = dstring_new ();
 	if (!(sv_fraglogfile = QFS_NextFile (name,
-										 va (0, "%s/frag_",
+										 va ("%s/frag_",
 											 qfs_gamedir->dir.def), ".log"))) {
 		SV_Printf ("Can't open any logfiles.\n%s\n", name->str);
 	} else {
@@ -403,29 +403,29 @@ nice_time (double time)
 
 #if 0 //FIXME ditch or cvar?
 	if (t < 60) {
-		return va (0, "%ds", t);
+		return va ("%ds", t);
 	} else if (t < 600) {
-		return va (0, "%dm%02ds", t / 60, t % 60);
+		return va ("%dm%02ds", t / 60, t % 60);
 	} else if (t < 3600) {
-		return va (0, "%dm", t / 60);
+		return va ("%dm", t / 60);
 	} else if (t < 36000) {
 		t /= 60;
-		return va (0, "%dh%02dm", t / 60, t % 60);
+		return va ("%dh%02dm", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va (0, "%dh", t / 3600);
+		return va ("%dh", t / 3600);
 	} else {
 		t /= 3600;
-		return va (0, "%dd%02dh", t / 24, t % 24);
+		return va ("%dd%02dh", t / 24, t % 24);
 	}
 #endif
 	if (t < 60) {
-		return va (0, "%ds", t);
+		return va ("%ds", t);
 	} else if (t < 3600) {
-		return va (0, "%dm%02ds", t / 60, t % 60);
+		return va ("%dm%02ds", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va (0, "%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
 	} else {
-		return va (0, "%dd%02dh%02dm%02ds",
+		return va ("%dd%02dh%02dm%02ds",
 				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
 	}
 }
@@ -750,15 +750,15 @@ SV_Ban_f (void)
 	if (argc > argr) {
 		reason = Cmd_Args (argr);
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s: %s\n",
-							cl->name, mins ? va (0, "for %.1f minutes", mins)
+							cl->name, mins ? va ("for %.1f minutes", mins)
 										   : "permanently", reason);
 	} else {
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-							cl->name, mins ? va (0, "for %.1f minutes", mins)
+							cl->name, mins ? va ("for %.1f minutes", mins)
 										   : "permanently");
 	}
 	SV_DropClient (cl);
-	Cmd_ExecuteString (va (0, "addip %s %f",
+	Cmd_ExecuteString (va ("addip %s %f",
 						   NET_BaseAdrToString (cl->netchan.remote_address),
 						   mins), src_command);
 }
@@ -820,7 +820,7 @@ SV_ConSay (const char *prefix, client_t *client)
 			dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 7);
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_HIGH);
-			MSG_WriteString (dbuf, va (0, "%s\n", text->str));
+			MSG_WriteString (dbuf, va ("%s\n", text->str));
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_CHAT);
 			MSG_WriteString (dbuf, "");
@@ -1144,7 +1144,7 @@ SV_Snap (int uid)
 		cl->uploadfn = dstring_new ();
 
 	if (!(cl->upload = QFS_NextFile (cl->uploadfn,
-									 va (0, "%s/snap/%d-",
+									 va ("%s/snap/%d-",
 										 qfs_gamedir->dir.def, uid), ".pcx"))) {
 		SV_Printf ("Snap: Couldn't create a file, clean some out.\n%s\n",
 				   cl->uploadfn->str);

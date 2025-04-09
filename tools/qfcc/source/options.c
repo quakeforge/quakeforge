@@ -644,7 +644,7 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 			case 'l':					// lib file
-				add_file (va (0, "-l%s", NORMALIZE (optarg)));
+				add_file (va ("-l%s", NORMALIZE (optarg)));
 				break;
 			case 'L':
 				linker_add_path (NORMALIZE (optarg));
@@ -843,7 +843,7 @@ DecodeArgs (int argc, char **argv)
 	if (!options.traditional) {
 		// avanced=2 requires the Ruamoko ISA
 		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
-		const char *ruamoko = va (0, "__RUAMOKO__=%d", options.advanced);
+		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
 		cpp_define (ruamoko);
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;

@@ -62,14 +62,14 @@ typedef struct ecs_pool_s {
 typedef struct DARRAY_TYPE(component_t) componentset_t;
 
 typedef struct ecs_range_s {
-	uint32_t    start;
-	uint32_t    end;
+	uint32_t    start;		// first item in range
+	uint32_t    end;		// one past last item in range
 } ecs_range_t;
 
 typedef struct ecs_subpool_s {
 	uint32_t   *rangeids;
-	uint32_t   *sorted;
-	uint32_t   *ranges;
+	uint32_t   *sorted;		// indexed by range id, holdes index to ranges
+	uint32_t   *ranges;		// holds one past end of range. implicit beginning
 	uint32_t    next;
 	uint32_t    available;
 	uint32_t    num_ranges;
@@ -84,15 +84,19 @@ enum {
 	ecs_comp_count
 };
 
-typedef struct ecs_registry_s {
-	const char *name;
-	ecs_pool_t *comp_pools;
-	uint32_t   *entities;
-	ecs_subpool_t *subpools;
+typedef struct ecs_idpool_s {
+	uint32_t   *ids;
 	uint32_t    next;
 	uint32_t    available;
-	uint32_t    num_entities;
-	uint32_t    max_entities;
+	uint32_t    num_ids;
+	uint32_t    max_ids;
+} ecs_idpool_t;
+
+typedef struct ecs_registry_s {
+	const char *name;
+	ecs_idpool_t entities;
+	ecs_pool_t *comp_pools;
+	ecs_subpool_t *subpools;
 	componentset_t components;
 	int         locked;
 } ecs_registry_t;
@@ -107,9 +111,14 @@ typedef struct ecs_system_s {
 	uint32_t    base;
 } ecs_system_t;
 
-#include "QF/ecs/entity.h"
-
 #define ECSINLINE GNU89INLINE inline
+
+uint32_t ECS_NewId (ecs_idpool_t *idpool);
+bool ECS_DelId (ecs_idpool_t *idpool, uint32_t id);
+ECSINLINE int ECS_IdValid (ecs_idpool_t *idpool, uint32_t id);
+ECSINLINE uint32_t Ent_Index (uint32_t id);
+ECSINLINE uint32_t Ent_Generation (uint32_t id);
+ECSINLINE uint32_t Ent_NextGen (uint32_t id);
 
 ecs_registry_t *ECS_NewRegistry (const char *name);
 void ECS_DelRegistry (ecs_registry_t *registry);
@@ -143,12 +152,47 @@ ECSINLINE ecs_range_t ECS_GetSubpoolRange (ecs_registry_t *registry,
 void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
 
+ECSINLINE int ECS_EntValid (uint32_t id, ecs_registry_t *reg);
+ECSINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
+								ecs_registry_t *reg);
+ECSINLINE void *Ent_GetComponent (uint32_t ent, uint32_t comp,
+								  ecs_registry_t *reg);
+ECSINLINE void *Ent_SafeGetComponent (uint32_t ent, uint32_t comp,
+									  ecs_registry_t *reg);
+ECSINLINE void *Ent_SetComponent (uint32_t ent, uint32_t comp,
+								  ecs_registry_t *registry, const void *data);
+
 #undef ECSINLINE
 #ifndef IMPLEMENT_ECS_Funcs
 #define ECSINLINE GNU89INLINE inline
 #else
 #define ECSINLINE VISIBLE
 #endif
+
+ECSINLINE int
+ECS_IdValid (ecs_idpool_t *idpool, uint32_t id)
+{
+	uint32_t    ind = Ent_Index (id);
+	return ind < idpool->num_ids && idpool->ids[ind] == id;
+}
+
+ECSINLINE uint32_t
+Ent_Index (uint32_t id)
+{
+	return id & ((1 << ENT_IDBITS) - 1);
+}
+
+ECSINLINE uint32_t
+Ent_Generation (uint32_t id)
+{
+	return id & ~((1 << ENT_IDBITS) - 1);
+}
+
+ECSINLINE uint32_t
+Ent_NextGen(uint32_t id)
+{
+	return id + (1 << ENT_IDBITS);
+}
 
 ECSINLINE
 ecs_range_t
@@ -161,6 +205,59 @@ ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 		.end = subpool->ranges[ind],
 	};
 	return range;
+}
+
+ECSINLINE int
+ECS_EntValid (uint32_t id, ecs_registry_t *reg)
+{
+	return ECS_IdValid (&reg->entities, id);
+}
+
+ECSINLINE int
+Ent_HasComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	ecs_pool_t *pool = &reg->comp_pools[comp];
+	uint32_t    ind = pool->sparse[Ent_Index (ent)];
+	return ind < pool->count && pool->dense[ind] == ent;
+}
+
+ECSINLINE void *
+Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	const component_t *component = &reg->components.a[comp];
+	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
+	byte       *data = reg->comp_pools[comp].data;
+	return data + ind * component->size;
+}
+
+ECSINLINE void *
+Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
+{
+	if (!ECS_EntValid (ent, reg) || !Ent_HasComponent (ent, comp, reg)) {
+		return 0;
+	}
+	const component_t *component = &reg->components.a[comp];
+	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
+	byte       *data = reg->comp_pools[comp].data;
+	return data + ind * component->size;
+}
+
+void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
+void Ent_RemoveComponent (uint32_t ent, uint32_t comp,
+						  ecs_registry_t *registry);
+
+ECSINLINE void *
+Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
+				  const void *data)
+{
+	void       *dst = Ent_AddComponent (ent, comp, registry);
+	if (data) {
+		return Component_CopyElements (&registry->components.a[comp],
+									   dst, 0, data, 0, 1);
+	} else {
+		return Component_CreateElements (&registry->components.a[comp],
+										 dst, 0, 1);
+	}
 }
 
 #undef ECSINLINE

@@ -216,10 +216,10 @@ R_AliasClip (finalvert_t *in, finalvert_t *out, int flag, int count,
 
 
 void
-R_AliasClipTriangle (mtriangle_t *ptri)
+R_AliasClipTriangle (dtriangle_t *ptri)
 {
 	int         i, k, pingpong;
-	mtriangle_t mtri;
+	dtriangle_t mtri;
 	unsigned int clipflags;
 
 	// copy vertexes and fix seam texture coordinates
@@ -306,8 +306,8 @@ R_AliasClipTriangle (mtriangle_t *ptri)
 
 	// draw triangles
 	mtri.facesfront = ptri->facesfront;
-	r_affinetridesc.ptriangles = &mtri;
-	r_affinetridesc.pfinalverts = fv[pingpong];
+	r_affinetridesc.triangles = &mtri;
+	r_affinetridesc.finalverts = fv[pingpong];
 
 	// FIXME: do all at once as trifan?
 	mtri.vertindex[0] = 0;

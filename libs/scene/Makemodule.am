@@ -11,6 +11,8 @@ libs_scene_libQFscene_la_LDFLAGS=		$(lib_ldflags)
 libs_scene_libQFscene_la_LIBADD=		$(scene_deps)
 libs_scene_libQFscene_la_DEPENDENCIES=	$(scene_deps)
 libs_scene_libQFscene_la_SOURCES= \
+	libs/scene/animation.c \
+	libs/scene/r_iqm.c \
 	libs/scene/camera.c \
 	libs/scene/efrag.c \
 	libs/scene/entity.c \

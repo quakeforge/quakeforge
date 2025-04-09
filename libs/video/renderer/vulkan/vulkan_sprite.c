@@ -167,7 +167,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 	};
 
 	auto animation = Entity_GetAnimation (ent);
-	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
+	frame = animation->pose2;
 
 	transform_t transform = Entity_Transform (ent);
 	mat[3] = Transform_GetWorldPosition (transform);
@@ -177,7 +177,7 @@ sprite_draw_ent (qfv_taskctx_t *taskctx, entity_t ent)
 	mat[0] = -mat[0];
 
 	emit_commands (taskctx->cmd,
-				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
+				   (qfv_sprite_t *) ((byte *) sprite + sprite->skin.data),
 				   2, push_constants, taskctx, ent);
 }
 

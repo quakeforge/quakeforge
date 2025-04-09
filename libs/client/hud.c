@@ -858,10 +858,10 @@ Sbar_SortTeams (void)
 			pavg = 999;
 
 		write_charbuff (sb_team_stats[i], 0, 0,
-						va (0, "%3i/%3i/%3i", plow, pavg, phigh));
+						va ("%3i/%3i/%3i", plow, pavg, phigh));
 		write_charbuff (sb_team[i], 0, 0, tm->team);
-		write_charbuff (sb_team_frags[i], 0, 0, va (0, "%5d", tm->frags));
-		write_charbuff (sb_team_players[i], 0, 0, va (0, "%5d", tm->players));
+		write_charbuff (sb_team_frags[i], 0, 0, va ("%5d", tm->frags));
+		write_charbuff (sb_team_players[i], 0, 0, va ("%5d", tm->players));
 	}
 
 	// sort
@@ -886,7 +886,7 @@ draw_solo_time (void)
 	int         minutes = sbar_time / 60;
 	int         seconds = sbar_time - 60 * minutes;
 	write_charbuff (solo_time, 0, 0,
-					va (0, "Time :%3i:%02i", minutes, seconds));
+					va ("Time :%3i:%02i", minutes, seconds));
 }
 
 static void
@@ -1086,7 +1086,7 @@ draw_miniteam (view_t view, void *data)
 		}
 		set_miniteam_bar (bar, sb_team[k], sb_team_frags[k], func);
 		write_charbuff_cl (sb_team[k], 0, 0, s->team->value);
-		write_charbuff (sb_team_frags[k], 0, 0, va (0, "%5d", tm->frags));
+		write_charbuff (sb_team_frags[k], 0, 0, va ("%5d", tm->frags));
 	}
 	for (; i < numbars; i++) {
 		clear_miniteam_bar (View_GetChild (view, i));
@@ -1155,7 +1155,7 @@ draw_spectator (view_t view, void *data)
 		sbar_remcomponent (notrack[1], canvas_charbuff);
 		if (sbar_players[sbar_autotrack].name) {
 			write_charbuff_cl (spec_buff[3], 0, 0,
-							   va (0, "Tracking %.13s, [JUMP] for next",
+							   va ("Tracking %.13s, [JUMP] for next",
 								   sbar_players[sbar_autotrack].name->value));
 			sbar_setcomponent (tracking, canvas_charbuff, &spec_buff[3]);
 		} else {
@@ -1480,9 +1480,9 @@ draw_deathmatch (view_t view, void *data)
 			sb_views[k] = make_dmo_line (view, k, line_type);
 		}
 		int         total = cur_time - p->entertime;
-		write_charbuff (sb_fph[k], 0, 0, va (0, "%3d",
+		write_charbuff (sb_fph[k], 0, 0, va ("%3d",
 											 calc_fph (p->frags, total)));
-		write_charbuff (sb_time[k], 0, 0, va (0, "%4d", total / 60));
+		write_charbuff (sb_time[k], 0, 0, va ("%4d", total / 60));
 		View_SetPos (sb_views[k], 0, y);
 	}
 	for (; i < MAX_PLAYERS; i++) {
@@ -1889,24 +1889,24 @@ Sbar_UpdatePings (void)
 		if (!p->name || !p->name->value) {
 			continue;
 		}
-		write_charbuff (sb_ping[i], 0, 0, va (0, "%3d", p->ping));
-		write_charbuff (sb_pl[i], 0, 0, va (0, "%3d", p->pl));
+		write_charbuff (sb_ping[i], 0, 0, va ("%3d", p->ping));
+		write_charbuff (sb_pl[i], 0, 0, va ("%3d", p->pl));
 	}
 	write_charbuff (ping_buff, 0, 0,
-					va (0, "%3d ms", sbar_players[sbar_playernum].ping));
+					va ("%3d ms", sbar_players[sbar_playernum].ping));
 }
 
 void
 Sbar_UpdatePL (int pl)
 {
-	write_charbuff (pl_buff, 0, 0, va (0, "%3d pl", pl));
+	write_charbuff (pl_buff, 0, 0, va ("%3d pl", pl));
 }
 
 void
 Sbar_UpdateFrags (int playernum)
 {
 	player_info_t *p = &sbar_players[playernum];
-	write_charbuff (sb_frags[playernum], 0, 0, va (0, "%3d", p->frags));
+	write_charbuff (sb_frags[playernum], 0, 0, va ("%3d", p->frags));
 }
 
 void
@@ -1914,7 +1914,7 @@ Sbar_UpdateInfo (int playernum)
 {
 	player_info_t *p = &sbar_players[playernum];
 	//FIXME update top/bottom color
-	write_charbuff (sb_uid[playernum], 0, 0, va (0, "%4d", p->userid));
+	write_charbuff (sb_uid[playernum], 0, 0, va ("%4d", p->userid));
 	write_charbuff_cl (sb_name[playernum], 0, 0, p->name->value);
 	if (sbar_teamplay && p->team) {
 		write_charbuff_cl (sb_team[playernum], 0, 0, p->team->value);
@@ -1941,7 +1941,7 @@ static void
 update_frags (int stat)
 {
 	write_charbuff (sb_frags[sbar_playernum], 0, 0,
-					va (0, "%3d", sbar_stats[stat]));
+					va ("%3d", sbar_stats[stat]));
 	set_update (sbar_frags, draw_frags);//FIXME
 	set_update (hud_minifrags, draw_minifrags);//FIXME
 	set_update (deathmatch_view, draw_deathmatch);//FIXME
@@ -1991,28 +1991,28 @@ static void
 update_totalsecrets (int stat)
 {
 	write_charbuff (solo_secrets, 14, 0,
-					va (0, "%3i", sbar_stats[STAT_TOTALSECRETS]));
+					va ("%3i", sbar_stats[STAT_TOTALSECRETS]));
 }
 
 static void
 update_secrets (int stat)
 {
 	write_charbuff (solo_secrets, 9, 0,
-					va (0, "%3i", sbar_stats[STAT_SECRETS]));
+					va ("%3i", sbar_stats[STAT_SECRETS]));
 }
 
 static void
 update_totalmonsters (int stat)
 {
 	write_charbuff (solo_monsters, 14, 0,
-					va (0, "%3i", sbar_stats[STAT_TOTALMONSTERS]));
+					va ("%3i", sbar_stats[STAT_TOTALMONSTERS]));
 }
 
 static void
 update_monsters (int stat)
 {
 	write_charbuff (solo_monsters, 9, 0,
-					va (0, "%3i", sbar_stats[STAT_MONSTERS]));
+					va ("%3i", sbar_stats[STAT_MONSTERS]));
 }
 
 static void
@@ -2460,8 +2460,8 @@ load_pics (void)
 {
 	qfZoneScoped (true);
 	for (int i = 0; i < 10; i++) {
-		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
-		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va (0, "anum_%i", i));
+		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));
+		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va ("anum_%i", i));
 	}
 
 	sb_nums[0][10] = r_funcs->Draw_PicFromWad ("num_minus");
@@ -2488,19 +2488,19 @@ load_pics (void)
 
 	for (int i = 0; i < 5; i++) {
 		sb_weapons[2 + i][0].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_shotgun", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_shotgun", i + 1));
 		sb_weapons[2 + i][1].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_sshotgun", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_sshotgun", i + 1));
 		sb_weapons[2 + i][2].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_nailgun", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_nailgun", i + 1));
 		sb_weapons[2 + i][3].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_snailgun", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_snailgun", i + 1));
 		sb_weapons[2 + i][4].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_rlaunch", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_rlaunch", i + 1));
 		sb_weapons[2 + i][5].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_srlaunch", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_srlaunch", i + 1));
 		sb_weapons[2 + i][6].pic =
-			r_funcs->Draw_PicFromWad (va (0, "inva%i_lightng", i + 1));
+			r_funcs->Draw_PicFromWad (va ("inva%i_lightng", i + 1));
 	}
 
 	sb_ammo[0] = r_funcs->Draw_PicFromWad ("sb_shells");
@@ -2519,12 +2519,12 @@ load_pics (void)
 	sb_items[0][4] = r_funcs->Draw_PicFromWad ("sb_suit");
 	sb_items[0][5] = r_funcs->Draw_PicFromWad ("sb_quad");
 	for (int i = 1; i < 6; i++) {
-		sb_items[i][0] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key1", i));
-		sb_items[i][1] = r_funcs->Draw_PicFromWad (va (0, "sba%d_key2", i));
-		sb_items[i][2] = r_funcs->Draw_PicFromWad (va (0, "sba%d_invis", i));
-		sb_items[i][3] = r_funcs->Draw_PicFromWad (va (0, "sba%d_invul", i));
-		sb_items[i][4] = r_funcs->Draw_PicFromWad (va (0, "sba%d_suit", i));
-		sb_items[i][5] = r_funcs->Draw_PicFromWad (va (0, "sba%d_quad", i));
+		sb_items[i][0] = r_funcs->Draw_PicFromWad (va ("sba%d_key1", i));
+		sb_items[i][1] = r_funcs->Draw_PicFromWad (va ("sba%d_key2", i));
+		sb_items[i][2] = r_funcs->Draw_PicFromWad (va ("sba%d_invis", i));
+		sb_items[i][3] = r_funcs->Draw_PicFromWad (va ("sba%d_invul", i));
+		sb_items[i][4] = r_funcs->Draw_PicFromWad (va ("sba%d_suit", i));
+		sb_items[i][5] = r_funcs->Draw_PicFromWad (va ("sba%d_quad", i));
 	}
 
 	sb_sigil[0] = r_funcs->Draw_PicFromWad ("sb_sigil1");
@@ -2573,15 +2573,15 @@ load_pics (void)
 
 		for (int i = 0; i < 5; i++) {
 			sb_weapons[2 + i][7].pic =
-				r_funcs->Draw_PicFromWad (va (0, "inva%i_laser", i + 1));
+				r_funcs->Draw_PicFromWad (va ("inva%i_laser", i + 1));
 			sb_weapons[2 + i][8].pic =
-				r_funcs->Draw_PicFromWad (va (0, "inva%i_mjolnir", i + 1));
+				r_funcs->Draw_PicFromWad (va ("inva%i_mjolnir", i + 1));
 			sb_weapons[2 + i][9].pic =
-				r_funcs->Draw_PicFromWad (va (0, "inva%i_prox_gren", i + 1));
+				r_funcs->Draw_PicFromWad (va ("inva%i_prox_gren", i + 1));
 			//sb_weapons[2 + i][2] =
-			//	r_funcs->Draw_PicFromWad (va (0, "inva%i_gren_prox", i + 1));
+			//	r_funcs->Draw_PicFromWad (va ("inva%i_gren_prox", i + 1));
 			//sb_weapons[2 + i][4] =
-			//	r_funcs->Draw_PicFromWad (va (0, "inva%i_prox", i + 1));
+			//	r_funcs->Draw_PicFromWad (va ("inva%i_prox", i + 1));
 		}
 
 		sb_items[0][6] = r_funcs->Draw_PicFromWad ("sb_wsuit");

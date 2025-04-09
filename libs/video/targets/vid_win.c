@@ -33,7 +33,6 @@
 #include "QF/vid.h"
 
 #include "context_win.h"
-#include "d_iface.h"
 #include "vid_internal.h"
 #include "vid_sw.h"
 
@@ -120,10 +119,10 @@ VID_SetCaption (const char *text)
 	if (text && *text) {
 		char       *temp = strdup (text);
 
-		Win_SetCaption (va (0, "%s: %s", PACKAGE_STRING, temp));
+		Win_SetCaption (va ("%s: %s", PACKAGE_STRING, temp));
 		free (temp);
 	} else {
-		Win_SetCaption (va (0, "%s", PACKAGE_STRING));
+		Win_SetCaption (va ("%s", PACKAGE_STRING));
 	}
 }
 

@@ -92,13 +92,13 @@ job_timings_window (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 				UI_Labelf ("%s##%p.job.step.%d", step->label.name, rctx, i);
 				UI_FlexibleSpace ();
 				show_time (&step->time, imui_ctx,
-						   va (ctx->va_ctx, "##%p.job.step.%d.time", rctx, i));
+						   vac (ctx->va_ctx, "##%p.job.step.%d.time", rctx, i));
 			}
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
 			show_time (&job->time, imui_ctx,
-					   va (ctx->va_ctx, "##%p.job.time", rctx));
+					   vac (ctx->va_ctx, "##%p.job.time", rctx));
 		}
 		UI_Horizontal {
 			UI_FlexibleSpace ();
@@ -130,7 +130,7 @@ show_pipeline (const char *type, qfv_pipeline_t *pipeline,
 				   pipeline->label.name, rctx, pipeline, type);
 		UI_FlexibleSpace ();
 		UI_Checkbox (&pipeline->disabled,
-					 va (ctx->va_ctx, "##pipeline.disabled.%p", pipeline));
+					 vac (ctx->va_ctx, "##pipeline.disabled.%p", pipeline));
 	}
 }
 
@@ -302,7 +302,7 @@ entid_button (uint32_t entid, vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 
 	UI_Horizontal {
 		hs (imui_ctx, 1);
-		UI_Checkbox (&open, va (ctx->va_ctx, "%08x##%p.entity", entid, rctx));
+		UI_Checkbox (&open, vac (ctx->va_ctx, "%08x##%p.entity", entid, rctx));
 	}
 	if (weid) {
 		debug->ent_windows.a[weid - e_w_ids->a].is_open = open;
@@ -441,13 +441,13 @@ void
 QFV_Render_Menu (vulkan_ctx_t *ctx, imui_ctx_t *imui_ctx)
 {
 	auto rctx = ctx->render_context;
-	if (UI_MenuItem (va (ctx->va_ctx, "Job Timings##%p", rctx))) {
+	if (UI_MenuItem (vac (ctx->va_ctx, "Job Timings##%p", rctx))) {
 		rctx->debug->job_timings_window.is_open = true;
 	}
-	if (UI_MenuItem (va (ctx->va_ctx, "Job Control##%p", rctx))) {
+	if (UI_MenuItem (vac (ctx->va_ctx, "Job Control##%p", rctx))) {
 		rctx->debug->job_control_window.is_open = true;
 	}
-	if (UI_MenuItem (va (ctx->va_ctx, "Entities##%p", rctx))) {
+	if (UI_MenuItem (vac (ctx->va_ctx, "Entities##%p", rctx))) {
 		rctx->debug->entid_window.is_open = true;
 	}
 }

@@ -145,7 +145,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			HYPERUNARY
 %left			'.' '(' '['
 
-%token	<expr>		VALUE STRING TOKEN
+%token	<expr>		VALUE STRING EBUFFER TOKEN
 %token              TRUE FALSE
 %token				ELLIPSIS
 %token				RESERVED
@@ -1765,7 +1765,7 @@ component_decl
 			if (is_anonymous_struct ($spec)) {
 				// type->name always begins with "tag "
 				auto name = $spec.type->name + 4;
-				auto sym = new_symbol (va (0, ".anonymous.%s", name));
+				auto sym = new_symbol (va (".anonymous.%s", name));
 				sym->visibility = vis_anonymous;
 				auto decl = new_decl_expr ($spec, nullptr);
 				append_decl (decl, sym, nullptr);
@@ -2008,6 +2008,7 @@ var_initializer
 			}
 			$$ = $1 ? $1 : new_nil_expr ();
 		}
+	| EBUFFER
 	;
 
 compound_init
@@ -2488,6 +2489,11 @@ const
 string
 	: STRING
 	| string STRING				{ $$ = binary_expr ('+', $1, $2); }
+	| string EBUFFER
+		{
+			auto str = convert_buffer ($2, &type_string);
+			$$ = binary_expr ('+', $1, str);
+		}
 	;
 
 identifier
@@ -3403,7 +3409,7 @@ static int
 qc_finish (const char *file, rua_ctx_t *ctx)
 {
 	if (options.frames_files) {
-		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
+		write_frame_macros (va ("%s.frame", file_basename (file, 0)));
 	}
 	class_finish_module (ctx);
 	return pr.error_count;

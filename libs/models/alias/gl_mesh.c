@@ -43,6 +43,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
+#include "QF/GL/qf_mesh.h"
+
 #include "mod_internal.h"
 
 #include "compat.h"
@@ -125,9 +127,9 @@ add_strip (int vert, int tri)
 static int
 StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	aliashdr_t *header = alias_ctx->header;
+	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
-	mtriangle_t *last, *check;
+	dtriangle_t *last, *check;
 
 	used[starttri] = 2;
 
@@ -144,7 +146,7 @@ StripLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
 nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < header->mdl.numtris; j++, check++) {
+		 j < mdl->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -174,7 +176,7 @@ nexttri:
 done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < header->mdl.numtris; j++)
+	for (j = starttri + 1; j < mdl->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -184,9 +186,9 @@ done:
 static int
 FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 {
-	aliashdr_t *header = alias_ctx->header;
+	auto mdl = alias_ctx->mdl;
 	int         m1, m2, j, k;
-	mtriangle_t *last, *check;
+	dtriangle_t *last, *check;
 
 	used[starttri] = 2;
 
@@ -204,7 +206,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 	// look for a matching triangle
   nexttri:
 	for (j = starttri + 1, check = &alias_ctx->triangles.a[starttri + 1];
-		 j < header->mdl.numtris; j++, check++) {
+		 j < mdl->numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
 		for (k = 0; k < 3; k++) {
@@ -231,7 +233,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
   done:
 
 	// clear the temp used flags
-	for (j = starttri + 1; j < header->mdl.numtris; j++)
+	for (j = starttri + 1; j < mdl->numtris; j++)
 		if (used[j] == 2)
 			used[j] = 0;
 
@@ -247,7 +249,7 @@ FanLength (mod_alias_ctx_t *alias_ctx, int starttri, int startv)
 static void
 BuildTris (mod_alias_ctx_t *alias_ctx)
 {
-	aliashdr_t *header = alias_ctx->header;
+	auto mdl = alias_ctx->mdl;
 	float		s, t;
 	int			bestlen, len, startv, type, i, j, k;
 	int			besttype = 0;
@@ -257,10 +259,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	numorder = 0;
 	numcommands = 0;
 	stripcount = 0;
-	alloc_used (header->mdl.numtris);
+	alloc_used (mdl->numtris);
 	memset (used, 0, used_size * sizeof (used[0]));
 
-	for (i = 0; i < header->mdl.numtris; i++) {
+	for (i = 0; i < mdl->numtris; i++) {
 		// pick an unused triangle and start the trifan
 		if (used[i])
 			continue;
@@ -308,9 +310,9 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[besttris[0]].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += header->mdl.skinwidth / 2;	// on back side
-			s = (s + 0.5) / header->mdl.skinwidth;
-			t = (t + 0.5) / header->mdl.skinheight;
+				s += mdl->skinwidth / 2;	// on back side
+			s = (s + 0.5) / mdl->skinwidth;
+			t = (t + 0.5) / mdl->skinheight;
 
 			memcpy (&tmp, &s, 4);
 			add_command (tmp);
@@ -322,10 +324,10 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 	add_command (0);					// end of list marker
 
 	Sys_MaskPrintf (SYS_dev, "%3i tri %3i vert %3i cmd\n",
-					header->mdl.numtris, numorder, numcommands);
+					mdl->numtris, numorder, numcommands);
 
 	allverts += numorder;
-	alltris += header->mdl.numtris;
+	alltris += mdl->numtris;
 
 	if (bestverts)
 		free (bestverts);
@@ -333,165 +335,206 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 		free (besttris);
 }
 
-void
-gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
-								   int _s, int extra)
+static void
+gl_build_lists (mod_alias_ctx_t *alias_ctx, void *_m, int _s)
 {
-	aliashdr_t *header = alias_ctx->header;
-	dstring_t  *cache, *fullpath;
-	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
-	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
-	int         i, j;
-	int        *cmds;
-	QFile      *f;
+	auto mdl = alias_ctx->mdl;
 	bool        remesh = true;
 	bool        do_cache = false;
+	dstring_t  *cache = dstring_new ();
+	dstring_t  *fullpath = dstring_new ();
 
-	cache = dstring_new ();
-	fullpath = dstring_new ();
+	unsigned char model_digest[MDFOUR_DIGEST_BYTES];
+	unsigned char mesh_digest[MDFOUR_DIGEST_BYTES];
 
-	if (!gl_alias_render_tri) {
+	if (gl_mesh_cache && gl_mesh_cache <= mdl->numtris) {
+		do_cache = true;
 
-		if (gl_mesh_cache && gl_mesh_cache <= header->mdl.numtris) {
-			do_cache = true;
+		mdfour (model_digest, (unsigned char *) _m, _s);
 
-			mdfour (model_digest, (unsigned char *) _m, _s);
+		// look for a cached version
+		dstring_copystr (cache, "glquake/");
+		dstring_appendstr (cache, alias_ctx->mod->path);
+		QFS_StripExtension (alias_ctx->mod->path + strlen ("progs/"),
+						cache->str + strlen ("glquake/"));
+		dstring_appendstr (cache, ".qfms");
 
-			// look for a cached version
-			dstring_copystr (cache, "glquake/");
-			dstring_appendstr (cache, alias_ctx->mod->path);
-			QFS_StripExtension (alias_ctx->mod->path + strlen ("progs/"),
-							cache->str + strlen ("glquake/"));
-			dstring_appendstr (cache, ".qfms");
+		QFile *f = QFS_FOpenFile (cache->str);
+		if (f) {
+			unsigned char d1[MDFOUR_DIGEST_BYTES];
+			unsigned char d2[MDFOUR_DIGEST_BYTES];
+			struct mdfour md;
+			int			len, vers;
+			int         nc = 0, no = 0;
+			int        *c = 0, *vo = 0;
 
-			f = QFS_FOpenFile (cache->str);
-			if (f) {
-				unsigned char d1[MDFOUR_DIGEST_BYTES];
-				unsigned char d2[MDFOUR_DIGEST_BYTES];
-				struct mdfour md;
-				int			len, vers;
-				int         nc = 0, no = 0;
-				int        *c = 0, *vo = 0;
+			memset (d1, 0, sizeof (d1));
+			memset (d2, 0, sizeof (d2));
 
-				memset (d1, 0, sizeof (d1));
-				memset (d2, 0, sizeof (d2));
+			Qread (f, &vers, sizeof (int));
+			Qread (f, &len, sizeof (int));
+			Qread (f, &nc, sizeof (int));
+			Qread (f, &no, sizeof (int));
 
-				Qread (f, &vers, sizeof (int));
-				Qread (f, &len, sizeof (int));
-				Qread (f, &nc, sizeof (int));
-				Qread (f, &no, sizeof (int));
+			if (vers == 1 && (nc + no) == len) {
+				c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
+				vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
+				if (!c || !vo)
+					Sys_Error ("gl_mesh.c: out of memory");
+				Qread (f, c, nc * sizeof (c[0]));
+				Qread (f, vo, no * sizeof (vo[0]));
+				Qread (f, d1, MDFOUR_DIGEST_BYTES);
+				Qread (f, d2, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
 
-				if (vers == 1 && (nc + no) == len) {
-					c = malloc (((nc + 1023) & ~1023) * sizeof (c[0]));
-					vo = malloc (((no + 1023) & ~1023) * sizeof (vo[0]));
-					if (!c || !vo)
-						Sys_Error ("gl_mesh.c: out of memory");
-					Qread (f, c, nc * sizeof (c[0]));
-					Qread (f, vo, no * sizeof (vo[0]));
-					Qread (f, d1, MDFOUR_DIGEST_BYTES);
-					Qread (f, d2, MDFOUR_DIGEST_BYTES);
-					Qclose (f);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
+				mdfour_update (&md, (unsigned char *) &no, sizeof(int));
+				mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
+				mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
+				mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
 
-					mdfour_begin (&md);
-					mdfour_update (&md, (unsigned char *) &vers, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &len, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &nc, sizeof(int));
-					mdfour_update (&md, (unsigned char *) &no, sizeof(int));
-					mdfour_update (&md, (unsigned char *) c, nc * sizeof (c[0]));
-					mdfour_update (&md, (unsigned char *) vo, no * sizeof (vo[0]));
-					mdfour_update (&md, d1, MDFOUR_DIGEST_BYTES);
-					mdfour_result (&md, mesh_digest);
-
-					if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
-						&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
-						remesh = false;
-						numcommands = nc;
-						numorder = no;
-						if (numcommands > commands_size) {
-							if (commands)
-								free (commands);
-							commands_size = (numcommands + 1023) & ~1023;
-							commands = c;
-						} else {
-							memcpy (commands, c, numcommands * sizeof (c[0]));
-							free(c);
-						}
-						if (numorder > vertexorder_size) {
-							if (vertexorder)
-								free (vertexorder);
-							vertexorder_size = (numorder + 1023) & ~1023;
-							vertexorder = vo;
-						} else {
-							memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
-							free (vo);
-						}
+				if (memcmp (d2, mesh_digest, MDFOUR_DIGEST_BYTES) == 0
+					&& memcmp (d1, model_digest, MDFOUR_DIGEST_BYTES) == 0) {
+					remesh = false;
+					numcommands = nc;
+					numorder = no;
+					if (numcommands > commands_size) {
+						if (commands)
+							free (commands);
+						commands_size = (numcommands + 1023) & ~1023;
+						commands = c;
+					} else {
+						memcpy (commands, c, numcommands * sizeof (c[0]));
+						free(c);
+					}
+					if (numorder > vertexorder_size) {
+						if (vertexorder)
+							free (vertexorder);
+						vertexorder_size = (numorder + 1023) & ~1023;
+						vertexorder = vo;
+					} else {
+						memcpy (vertexorder, vo, numorder * sizeof (vo[0]));
+						free (vo);
 					}
 				}
 			}
 		}
-		if (remesh) {
-			// build it from scratch
-			Sys_MaskPrintf (SYS_dev, "meshing %s...\n", alias_ctx->mod->path);
+	}
+	if (remesh) {
+		// build it from scratch
+		Sys_MaskPrintf (SYS_dev, "meshing %s...\n", alias_ctx->mod->path);
 
-			BuildTris (alias_ctx);					// trifans or lists
+		BuildTris (alias_ctx);					// trifans or lists
 
-			if (do_cache) {
-				// save out the cached version
-				dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
-				f = QFS_WOpen (fullpath->str, 9);
+		if (do_cache) {
+			// save out the cached version
+			dsprintf (fullpath, "%s/%s", qfs_gamedir->dir.def, cache->str);
+			QFile *f = QFS_WOpen (fullpath->str, 9);
 
-				if (f) {
-					struct mdfour md;
-					int         vers = 1;
-					int         len = numcommands + numorder;
+			if (f) {
+				struct mdfour md;
+				int         vers = 1;
+				int         len = numcommands + numorder;
 
-					mdfour_begin (&md);
-					mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
-					mdfour_update (&md, (unsigned char *) &len, sizeof (int));
-					mdfour_update (&md, (unsigned char *) &numcommands,
-								   sizeof (int));
-					mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
-					mdfour_update (&md, (unsigned char *) commands,
-								   numcommands * sizeof (commands[0]));
-					mdfour_update (&md, (unsigned char *) vertexorder,
-								   numorder * sizeof (vertexorder[0]));
-					mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
-					mdfour_result (&md, mesh_digest);
+				mdfour_begin (&md);
+				mdfour_update (&md, (unsigned char *) &vers, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &len, sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numcommands,
+							   sizeof (int));
+				mdfour_update (&md, (unsigned char *) &numorder, sizeof (int));
+				mdfour_update (&md, (unsigned char *) commands,
+							   numcommands * sizeof (commands[0]));
+				mdfour_update (&md, (unsigned char *) vertexorder,
+							   numorder * sizeof (vertexorder[0]));
+				mdfour_update (&md, model_digest, MDFOUR_DIGEST_BYTES);
+				mdfour_result (&md, mesh_digest);
 
-					Qwrite (f, &vers, sizeof (int));
-					Qwrite (f, &len, sizeof (int));
-					Qwrite (f, &numcommands, sizeof (int));
-					Qwrite (f, &numorder, sizeof (int));
-					Qwrite (f, commands, numcommands * sizeof (commands[0]));
-					Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
-					Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
-					Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
-					Qclose (f);
-				}
+				Qwrite (f, &vers, sizeof (int));
+				Qwrite (f, &len, sizeof (int));
+				Qwrite (f, &numcommands, sizeof (int));
+				Qwrite (f, &numorder, sizeof (int));
+				Qwrite (f, commands, numcommands * sizeof (commands[0]));
+				Qwrite (f, vertexorder, numorder * sizeof (vertexorder[0]));
+				Qwrite (f, model_digest, MDFOUR_DIGEST_BYTES);
+				Qwrite (f, mesh_digest, MDFOUR_DIGEST_BYTES);
+				Qclose (f);
 			}
 		}
+	}
 
-		// save the data out
-		header->poseverts = numorder;
+	dstring_delete (cache);
+	dstring_delete (fullpath);
+}
 
-		cmds = Hunk_Alloc (0, numcommands * sizeof (int));
-		header->commands = (byte *) cmds - (byte *) header;
-		memcpy (cmds, commands, numcommands * sizeof (int));
+static void
+gl_build_tris (mod_alias_ctx_t *alias_ctx)
+{
+	auto mdl = alias_ctx->mdl;
 
+	numorder = 0;
+	for (int i = 0; i < mdl->numtris; i++) {
+		add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
+		add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
+		add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
+	}
+}
+
+void
+gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
+								   int _s, int extra)
+{
+	auto mesh = alias_ctx->mesh;
+	auto mdl = alias_ctx->mdl;
+	int numposes = alias_ctx->poseverts.size;
+
+	int size = sizeof (qfm_attrdesc_t[3])
+			 + sizeof (qfm_frame_t[numposes]);
+	if (!gl_alias_render_tri) {
+		gl_build_lists (alias_ctx, _m, _s);
+		size += sizeof (int[numcommands]);
 	} else {
-		tex_coord_t *tex_coord;
+		gl_build_tris (alias_ctx);
+		size += sizeof (tex_coord_t[numorder]);
+	}
+	if (extra) {
+		size += sizeof (trivertx16_t[numposes * numorder]);
+	} else {
+		size += sizeof (trivertx_t[numposes * numorder]);
+	}
 
-		numorder = 0;
-		for (i=0; i < header->mdl.numtris; i++) {
-			add_vertex(alias_ctx->triangles.a[i].vertindex[0]);
-			add_vertex(alias_ctx->triangles.a[i].vertindex[1]);
-			add_vertex(alias_ctx->triangles.a[i].vertindex[2]);
-		}
-		header->poseverts = numorder;
+	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, alias_ctx->mod->name);
+	auto aframes = (qfm_frame_t *) &attribs[3];
+	void *vertices = nullptr;
 
-		tex_coord = Hunk_Alloc (0, numorder * sizeof(tex_coord_t));
-		header->tex_coord = (byte *) tex_coord - (byte *) header;
-		for (i=0; i < numorder; i++) {
+	if (!gl_alias_render_tri) {
+		auto cmds = (int *) &aframes[numposes];
+		vertices = &cmds[numcommands];
+
+		attribs[2] = (qfm_attrdesc_t) {
+			.offset = (byte *) cmds - (byte *) mesh,
+			.stride = 0,			// see .type
+			.attr = qfm_texcoord,
+			.type = qfm_special,	// [cmd, (s, t) * abs(cmd)] until cmd 0
+			.components = 0,		// see .type
+		};
+		memcpy (cmds, commands, sizeof (int[numcommands]));
+	} else {
+		auto tex_coord = (tex_coord_t *) &aframes[numposes];
+		vertices = &tex_coord[numorder];
+
+		attribs[2] = (qfm_attrdesc_t) {
+			.offset = (byte *) tex_coord - (byte *) mesh,
+			.stride = sizeof (tex_coord),
+			.attr = qfm_texcoord,
+			.type = qfm_f32,
+			.components = 2,
+		};
+
+		for (int i = 0; i < numorder; i++) {
 			float s, t;
 			int k;
 			k = vertexorder[i];
@@ -499,22 +542,48 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			t = alias_ctx->stverts.a[k].t;
 			if (!alias_ctx->triangles.a[i/3].facesfront
 				&& alias_ctx->stverts.a[k].onseam)
-				s += header->mdl.skinwidth / 2;	// on back side
-			s = (s + 0.5) / header->mdl.skinwidth;
-			t = (t + 0.5) / header->mdl.skinheight;
+				s += mdl->skinwidth / 2;	// on back side
+			s = (s + 0.5) / mdl->skinwidth;
+			t = (t + 0.5) / mdl->skinheight;
 			tex_coord[i].st[0] = s;
 			tex_coord[i].st[1] = t;
 		}
 	}
 
+	attribs[0] = (qfm_attrdesc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_position,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 3,
+	};
 	if (extra) {
-		trivertx16_t *verts;
-		verts = Hunk_Alloc (0, header->numposes * header->poseverts
-							* sizeof (trivertx16_t));
-		header->posedata = (byte *) verts - (byte *) header;
-		for (i = 0; i < header->numposes; i++) {
+		attribs[0].offset += offsetof (trivertx16_t, v);
+	} else {
+		attribs[0].offset += offsetof (trivertx_t, v);
+	}
+	attribs[1] = (qfm_attrdesc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
+		.attr = qfm_normal,
+		.abs = 1,
+		.type = extra ? qfm_u16 : qfm_u8,
+		.components = 1,	// index into r_avertexnormals
+	};
+	if (extra) {
+		attribs[1].offset += offsetof (trivertx16_t, lightnormalindex);
+	} else {
+		attribs[1].offset += offsetof (trivertx_t, lightnormalindex);
+	}
+
+	auto frames = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
+	if (extra) {
+		trivertx16_t *verts = vertices;
+		for (int i = 0; i < numposes; i++) {
 			trivertx_t *pv = alias_ctx->poseverts.a[i];
-			for (j = 0; j < numorder; j++) {
+			frames[i].data = (byte *) verts - (byte *) mesh;
+			for (int j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
 				// saner. The first chunk of vertices is fully compatible with
@@ -522,7 +591,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 				// fractional bits of the vertex, giving 8.8. However, it's
 				// easier for us to multiply everything by 256 and adjust the
 				// model scale appropriately
-				VectorMultAdd (pv[vertexorder[j] + header->mdl.numverts].v,
+				VectorMultAdd (pv[vertexorder[j] + mdl->numverts].v,
 							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
 					alias_ctx->poseverts.a[i][vertexorder[j]].lightnormalindex;
@@ -530,15 +599,32 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 			}
 		}
 	} else {
-		trivertx_t *verts;
-		verts = Hunk_Alloc (0, header->numposes * header->poseverts
-							* sizeof (trivertx_t));
-		header->posedata = (byte *) verts - (byte *) header;
-		for (i = 0; i < header->numposes; i++) {
-			for (j = 0; j < numorder; j++)
+		trivertx_t *verts = vertices;
+		for (int i = 0; i < numposes; i++) {
+			frames[i].data = (byte *) verts - (byte *) mesh;
+			for (int j = 0; j < numorder; j++) {
 				*verts++ = alias_ctx->poseverts.a[i][vertexorder[j]];
+			}
 		}
 	}
-	dstring_delete (cache);
-	dstring_delete (fullpath);
+
+	mesh->attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 3,
+	};
+	// alias model morphing is absolute so just copy the base vertex attributes
+	// except texcoords
+	mesh->morph_attributes = (qfm_loc_t) {
+		.offset = (byte *) attribs - (byte *) mesh,
+		.count = 2,
+	};
+	mesh->vertices = (qfm_loc_t) {
+		.offset = (byte *) vertices - (byte *) mesh,
+		.count = numorder,
+	};
+
+	mesh->triangle_count = mdl->numtris;
+	mesh->index_type = qfm_special;	// none
+	mesh->indices = 0;
+	mesh->morph.data = (byte *) aframes - (byte *) mesh;
 }

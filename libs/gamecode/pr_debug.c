@@ -1065,15 +1065,15 @@ static void
 value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
+		case ty_handle:
+			raw_type_view.handle_view (type, value, data);
+			break;
 		case ty_algebra:
 			if (type->type == ev_invalid) {
 				dstring_appendstr (data->dstr, "<?""?>");
 				break;
 			}
 			// fall through
-		case ty_handle:
-			raw_type_view.handle_view (type, value, data);
-			break;
 		case ty_bool:
 			//FIXME add bool view
 		case ty_basic:
@@ -1211,11 +1211,11 @@ extend_string (pr_debug_data_t *data, pr_uint_t ext)
 	static const char *extend_string[] = {
 		"0", "1", "c", "-1",
 	};
-	return va (res->va, "[%s%s:%s]%d",
-			   extend_range[ext & 7],
-			   ext & 0100 ? ":r" : "",
-			   extend_string[(ext >> 3) & 2],
-			   32 << ((ext >> 5) & 1));
+	return vac (res->va, "[%s%s:%s]%d",
+				extend_range[ext & 7],
+				ext & 0100 ? ":r" : "",
+				extend_string[(ext >> 3) & 2],
+				32 << ((ext >> 5) & 1));
 }
 
 static const char *
@@ -1231,7 +1231,7 @@ hop_string (pr_debug_data_t *data, pr_uint_t hop)
 		{"I", "I", "I", "I", "I", "I", "I", "F"},
 		{"L", "L", "L", "L", "L", "L", "L", "D"},
 	};
-	return va (res->va, "%s.%s{%d}",
+	return vac (res->va, "%s.%s{%d}",
 			   hop_string[hop & 7],
 			   type_string[(hop >> 5) & 1][hop & 7],
 			   ((hop >> 3) & 3) + 1);
@@ -1247,11 +1247,11 @@ swizzle_string (pr_debug_data_t *data, pr_uint_t swiz)
 
 	for (int i = 0; i < 4; i++) {
 		if (swiz & (0x1000 << i)) {
-			swizzle = va (res->va, "%s0", swizzle);
+			swizzle = vac (res->va, "%s0", swizzle);
 		} else {
-			swizzle = va (res->va, "%s%s%c", swizzle,
-						  swiz & (0x100 << i) ? "-" : "",
-						  swizzle_components[(swiz >> 2 * i) & 3]);
+			swizzle = vac (res->va, "%s%s%c", swizzle,
+						   swiz & (0x100 << i) ? "-" : "",
+						   swizzle_components[(swiz >> 2 * i) & 3]);
 		}
 	}
 	return swizzle;
@@ -1276,7 +1276,7 @@ pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	if (type->basic.width > 0) {
 		count *= type->basic.width;
 	}
-	if (type->basic.columns > 0) {
+	if (type->meta != ty_algebra && type->basic.columns > 0) {
 		count *= type->basic.columns;
 	}
 	for (int i = 0; i < count; i++, value++) {
@@ -1335,11 +1335,15 @@ pr_debug_print_matrix (qfot_type_t *type, pr_type_t *value,
 					   void (*print) (pr_type_t *, pr_debug_data_t *))
 {
 	dstring_t  *dstr = data->dstr;
+	int         columns = 1;
 
-	if (type->basic.columns > 1) {
+	if (type->meta != ty_algebra) {
+		columns = type->basic.columns;
+	}
+	if (columns > 1) {
 		dstring_appendstr (dstr, "[");
 	}
-	for (int j = 0; j < type->basic.columns; j++) {
+	for (int j = 0; j < columns; j++) {
 		if (type->basic.width > 1) {
 			if (j) {
 				dstring_appendstr (dstr, ", ");
@@ -1356,7 +1360,7 @@ pr_debug_print_matrix (qfot_type_t *type, pr_type_t *value,
 			dstring_appendstr (dstr, "]");
 		}
 	}
-	if (type->basic.columns > 1) {
+	if (columns > 1) {
 		dstring_appendstr (dstr, "]");
 	}
 }
@@ -1696,12 +1700,12 @@ print_raw_op (progs_t *pr, pr_short_t op, pr_ushort_t base_ind,
 			  etype_t op_type, int op_width, int op_columns)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	const char *width = va (res->va, "%d", op_width);
+	const char *width = vac (res->va, "%d", op_width);
 	const char *columns = "";
 	if (op_columns > 1) {
-		columns = va (res->va, ",%d", op_columns);
+		columns = vac (res->va, ",%d", op_columns);
 	}
-	return va (res->va, "%d:%04hx<%08x>%s%s:%-8s",
+	return vac (res->va, "%d:%04hx<%08x>%s%s:%-8s",
 				base_ind, op, op + pr->pr_bases[base_ind],
 				op_width > 0 ? width : op_width < 0 ? "X" : "?", columns,
 				pr_type_name[op_type]);
@@ -1801,7 +1805,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 									  op_type[2], op_width[2], op_columns[2]));
 		}
 	} else if (op_width[0] > 1 || op_width[1] > 1 || op_width[2] > 1) {
-		width = va (res->va, "{%d,%d,%d}", VectorExpand (op_width));
+		width = vac (res->va, "{%d,%d,%d}", VectorExpand (op_width));
 	}
 
 	dasprintf (res->line, "%s%s ", mnemonic, width);

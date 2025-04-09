@@ -85,8 +85,6 @@ typedef struct cl_particle_funcs_s {
 } cl_particle_funcs_t;
 
 extern cl_particle_funcs_t *clp_funcs;
-extern float cl_frametime;
-extern float cl_realtime;
 
 void CL_Particles_Init (void);
 void CL_ParticlesGravity (float gravity);

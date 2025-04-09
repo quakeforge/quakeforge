@@ -52,9 +52,8 @@
 #include "compat.h"
 
 #include "client/particles.h"
+#include "client/world.h"
 
-float cl_frametime;
-float cl_realtime;
 cl_particle_funcs_t *clp_funcs;
 
 static mtstate_t mt;	// private PRNG state
@@ -251,7 +250,7 @@ CL_LoadPointFile (const model_t *model)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va (0, "%s.pts", mapname);
+	name = va ("%s.pts", mapname);
 	free (mapname);
 
 	f = QFS_FOpenFile (name);

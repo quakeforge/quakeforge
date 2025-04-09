@@ -43,9 +43,8 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
-#include "QF/GL/qf_alias.h"
 #include "QF/GL/qf_draw.h"
-#include "QF/GL/qf_iqm.h"
+#include "QF/GL/qf_mesh.h"
 #include "QF/GL/qf_particles.h"
 #include "QF/GL/qf_rlight.h"
 #include "QF/GL/qf_rmain.h"
@@ -110,8 +109,8 @@ gl_R_RenderEntities (entqueue_t *queue)
 		qfglEnable (GL_NORMALIZE);
 	}
 
-	for (size_t i = 0; i < queue->ent_queues[mod_alias].size; i++) {
-		entity_t    ent = queue->ent_queues[mod_alias].a[i];
+	for (size_t i = 0; i < queue->ent_queues[mod_mesh].size; i++) {
+		entity_t    ent = queue->ent_queues[mod_mesh].a[i];
 		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
@@ -139,10 +138,6 @@ gl_R_RenderEntities (entqueue_t *queue)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	for (size_t i = 0; i < queue->ent_queues[mod_iqm].size; i++) { \
-		entity_t    ent = queue->ent_queues[mod_iqm].a[i]; \
-		gl_R_DrawIQMModel (ent);
-	}
 	qfglColor3ubv (color_white);
 
 	qfglDisable (GL_CULL_FACE);

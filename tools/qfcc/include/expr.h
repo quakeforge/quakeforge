@@ -224,17 +224,23 @@ typedef struct {
 	const expr_t *step;			///< time step until the next state
 } ex_state_t;
 
+typedef struct ex_buffer_s {
+	const char *data;
+	size_t      size;
+} ex_buffer_t;
+
 typedef struct ex_value_s {
 	struct ex_value_s *next;
 	struct daglabel_s *daglabel;///< dag label for this value
 	const type_t *type;
-	etype_t     lltype;
+	etype_t     lltype;					///< ev_invalid -> buffer
 	unsigned    id;
 	bool        is_constexpr;
 	union {
 		pr_type_t   raw_value;			///< for memcpy
 		pr_dvec4_t  raw_matrix[4];		///< so ex_vector_t is big enough
 		const char *string_val;			///< string constant
+		ex_buffer_t buffer;				///< #embed buffer (ev_invalid)
 		double      double_val;			///< double constant
 		int64_t     long_val;			///< signed 64-bit constant
 		uint64_t    ulong_val;			///< unsigned 64-bit constant
@@ -758,6 +764,7 @@ struct symbol_s *get_name (const expr_t *e) __attribute__((pure));
 */
 const expr_t *new_string_expr (const char *string_val);
 const char *expr_string (const expr_t *e) __attribute__((pure));
+const ex_buffer_t *expr_buffer (const expr_t *e) __attribute__((pure));
 
 /** Create a new double constant expression node.
 
@@ -971,6 +978,7 @@ bool is_function_call (const expr_t *e) __attribute__((pure));
 
 bool is_nil (const expr_t *e) __attribute__((pure));
 bool is_string_val (const expr_t *e) __attribute__((pure));
+bool is_buffer_val (const expr_t *e) __attribute__((pure));
 bool is_float_val (const expr_t *e) __attribute__((pure));
 bool is_vector_val (const expr_t *e) __attribute__((pure));
 bool is_quaternion_val (const expr_t *e) __attribute__((pure));
@@ -1073,6 +1081,7 @@ void print_expr (const expr_t *e);
 void dump_dot_expr (const void *e, const char *filename);
 
 const expr_t *convert_nil (const expr_t *e, const type_t *t) __attribute__((warn_unused_result));
+const expr_t *convert_buffer (const expr_t *e, const type_t *t) __attribute__((warn_unused_result));
 
 const expr_t *test_expr (const expr_t *e);
 void backpatch (ex_boollist_t *list, const expr_t *label);

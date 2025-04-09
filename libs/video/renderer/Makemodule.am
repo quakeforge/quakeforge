@@ -29,9 +29,6 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_alias.c \
 	libs/video/renderer/r_billboard.c \
 	libs/video/renderer/r_dyn_textures.c \
-	libs/video/renderer/r_ent.c \
-	libs/video/renderer/r_iqm.c \
-	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
@@ -65,11 +62,11 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 
 video_renderer_gl_libs= \
 	libs/video/renderer/librender_gl.la \
-	libs/models/libmodels_gl.la
-libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_gl_la_LIBADD=\
-	$(video_renderer_gl_libs) \
+	libs/models/libmodels_gl.la \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -84,8 +81,7 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_fog.c \
 	libs/video/renderer/gl/gl_graph.c \
 	libs/video/renderer/gl/gl_lightmap.c \
-	libs/video/renderer/gl/gl_mod_alias.c \
-	libs/video/renderer/gl/gl_mod_iqm.c \
+	libs/video/renderer/gl/gl_mod_mesh.c \
 	libs/video/renderer/gl/gl_mod_sprite.c \
 	libs/video/renderer/gl/gl_rmain.c \
 	libs/video/renderer/gl/gl_rmisc.c \
@@ -114,24 +110,23 @@ SUFFIXES += .geom .comp .frag .vert .spv .spvc .fc .vc .slc .glsl
 
 video_renderer_glsl_libs= \
 	libs/video/renderer/librender_glsl.la \
-	libs/models/libmodels_glsl.la
-libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_glsl_la_LIBADD=\
-	$(video_renderer_glsl_libs) \
+	libs/models/libmodels_glsl.la \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
 	libs/video/renderer/vid_render_glsl.c
 
 libs_video_renderer_librender_glsl_la_SOURCES = \
-	libs/video/renderer/glsl/glsl_alias.c \
 	libs/video/renderer/glsl/glsl_bsp.c \
 	libs/video/renderer/glsl/glsl_draw.c \
 	libs/video/renderer/glsl/glsl_fisheye.c \
-	libs/video/renderer/glsl/glsl_iqm.c \
 	libs/video/renderer/glsl/glsl_lightmap.c \
 	libs/video/renderer/glsl/glsl_main.c \
+	libs/video/renderer/glsl/glsl_mesh.c \
 	libs/video/renderer/glsl/glsl_particles.c \
 	libs/video/renderer/glsl/glsl_shader.c \
 	libs/video/renderer/glsl/glsl_sprite.c \
@@ -144,11 +139,11 @@ libs_video_renderer_librender_glsl_la_SOURCES = \
 
 video_renderer_sw_libs= \
 	libs/video/renderer/librender_sw.la \
-	libs/models/libmodels_sw.la
-libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
-libs_video_renderer_vid_render_sw_la_LIBADD=\
-	$(video_renderer_sw_libs) \
+	libs/models/libmodels_sw.la \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
@@ -189,7 +184,6 @@ libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/sw_rdrawa.S \
 	libs/video/renderer/sw/sw_redge.c \
 	libs/video/renderer/sw/sw_redgea.S \
-	libs/video/renderer/sw/sw_riqm.c \
 	libs/video/renderer/sw/sw_rmain.c \
 	libs/video/renderer/sw/sw_rmisc.c \
 	libs/video/renderer/sw/sw_rpart.c \
@@ -209,11 +203,11 @@ smp_quake_gen = libs/video/renderer/vulkan/smp_quake.plc
 
 video_renderer_vulkan_libs = \
 	libs/video/renderer/librender_vulkan.la \
-	libs/models/libmodels_vulkan.la
-libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
-libs_video_renderer_vid_render_vulkan_la_LIBADD=\
-	$(video_renderer_vulkan_libs) \
+	libs/models/libmodels_vulkan.la \
+	libs/scene/libQFscene.la \
 	$(renderer_libadd)
+libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
@@ -244,14 +238,13 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/util.c \
 	libs/video/renderer/vulkan/util.h \
 	libs/video/renderer/vulkan/vkparse.c \
-	libs/video/renderer/vulkan/vulkan_alias.c \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
 	libs/video/renderer/vulkan/vulkan_compose.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
-	libs/video/renderer/vulkan/vulkan_iqm.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_lightmap.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
+	libs/video/renderer/vulkan/vulkan_mesh.c \
 	libs/video/renderer/vulkan/vulkan_output.c \
 	libs/video/renderer/vulkan/vulkan_palette.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
@@ -373,20 +366,14 @@ oit_store = $(vkshaderpath)/oit_store.finc
 oit_h = $(vkshaderpath)/oit.h
 matrices_h = $(vkshaderpath)/matrices.h
 entity_h = $(vkshaderpath)/entity.h
-aliasv_src = $(vkshaderpath)/alias.vert
-aliasv_c = $(vkshaderpath)/alias.vert.spvc
 qskin_fwdf_src = $(vkshaderpath)/qskin_fwd.frag
 qskin_fwdf_c = $(vkshaderpath)/qskin_fwd.frag.spvc
-alias_depth_src = $(vkshaderpath)/alias_depth.vert
-alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
 qskin_gbuf_src = $(vkshaderpath)/qskin_gbuf.frag
 qskin_gbuf_c = $(vkshaderpath)/qskin_gbuf.frag.spvc
-alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
-alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
-iqmv_src = $(vkshaderpath)/iqm.vert
-iqmv_c = $(vkshaderpath)/iqm.vert.spvc
-iqm_shadow_src = $(vkshaderpath)/iqm_shadow.vert
-iqm_shadow_c = $(vkshaderpath)/iqm_shadow.vert.spvc
+mesh_src = $(vkshaderpath)/mesh.r
+mesh_c = $(vkshaderpath)/mesh.r.spvc
+mesh_shadow_src = $(vkshaderpath)/mesh_shadow.r
+mesh_shadow_c = $(vkshaderpath)/mesh_shadow.r.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -477,19 +464,17 @@ $(composef_c): $(composef_src) $(oit_blend) $(oit_h)
 
 $(compose_fwdf_c): $(compose_fwdf_src) $(oit_blend) $(oit_h)
 
-$(aliasv_c): $(aliasv_src) $(matrices_h)
+$(mesh_c): $(mesh_src) $(matrices_h)
 
-$(alias_depth_c): $(alias_depth_src) $(matrices_h)
+$(mesh_shadow_c): $(mesh_shadow_src) $(matrices_h)
+
+$(mesh_depth_c): $(mesh_depth_src) $(matrices_h)
+
+$(mesh_shadow_c): $(mesh_shadow_src)
 
 $(qskin_fwdf_c): $(qskin_fwdf_src) $(fog_h)
 
 $(qskin_gbuf_c): $(qskin_gbuf_src)
-
-$(alias_shadow_c): $(alias_shadow_src)
-
-$(iqmv_c): $(iqmv_src) $(matrices_h)
-
-$(iqm_shadow_c): $(iqm_shadow_src)
 
 $(output_c): $(output_src) $(matrices_h)
 
@@ -521,11 +506,8 @@ vkshader_src_vert = \
 	$(light_entid_src) \
 	$(light_flat_src) \
 	$(light_splatv_src) \
-	$(aliasv_src) \
-	$(alias_depth_src) \
-	$(alias_shadow_src) \
-	$(iqmv_src) \
-	$(iqm_shadow_src) \
+	$(mesh_src) \
+	$(mesh_shadow_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \
 	$(fstrianglest_src)
@@ -666,14 +648,12 @@ EXTRA_DIST += \
 	$(lighting_h) \
 	$(composef_src) \
 	$(compose_fwdf_src) \
-	$(aliasv_src) \
+	$(mesh_src) \
+	$(mesh_shadow_src) \
 	$(qskin_fwdf_src) \
-	$(alias_depth_src) \
+	$(mesh_depth_src) \
 	$(qskin_gbuf_src) \
-	$(alias_shadow_src) \
-	$(iqmv_src) \
-	$(iqm_shadow_src) \
-	$(iqm_shadow_src) \
+	$(mesh_shadow_src) \
 	$(output_src) \
 	$(passthrough_src) \
 	$(fstriangle_src) \

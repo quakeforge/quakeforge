@@ -148,6 +148,13 @@ bi_IN_GetButtonNumber (progs_t *pr, void *_res)
 }
 
 static void
+bi_IN_UpdateGrab (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	IN_UpdateGrab (P_INT (pr, 0));
+}
+
+static void
 bi_IN_ProcessEvents (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -514,16 +521,9 @@ bi_IN_Binding_HandleEvent (progs_t *pr, void *_res)
 	IN_Binding_HandleEvent (ie_event);
 }
 
-static void
-secured (progs_t *pr, void *_res)
-{
-	qfZoneScoped (true);
-	PR_RunError (pr, "Secured function called");
-}
-
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
-#define bi(x,np,params...) {#x, secured, -1, np, {params}}
+#define bi(x,np,params...) {#x, RUA_Secured, -1, np, {params}}
 static builtin_t secure_builtins[] = {
 	bi(IN_CreateButton, 2, p(string), p(string)),
 	bi(IN_CreateAxis,   2, p(string), p(string)),
@@ -550,6 +550,7 @@ static builtin_t builtins[] = {
 	bi(IN_GetButtonName,    2, p(int), p(int)),
 	bi(IN_GetAxisNumber,    2, p(int), p(string)),
 	bi(IN_GetButtonNumber,  2, p(int), p(string)),
+	bi(IN_UpdateGrab,       1, p(int)),
 	bi(IN_ProcessEvents,    0),
 	bi(IN_UpdateAxis,       1, p(ptr)),
 	bi(IN_ClearStates,      0),

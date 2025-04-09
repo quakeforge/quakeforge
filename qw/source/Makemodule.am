@@ -87,16 +87,16 @@ qw_cl_plugin_LIBS= \
 qw_client_LIBS= \
 		libs/qw/libqw.a \
 		libs/gib/libQFgib_client.la \
+		libs/input/libQFinput.la \
+		libs/audio/libQFcd.la \
+		libs/audio/libQFsound.la \
 		libs/net/libnet_chan.la \
 		libs/scene/libQFscene.la \
 		libs/console/libQFconsole.la \
-		libs/audio/libQFcd.la \
-		libs/audio/libQFsound.la \
 		libs/image/libQFimage.la \
 		libs/gib/libQFgib.la \
 		libs/ruamoko/libQFruamoko.la \
 		libs/ui/libQFui.la \
-		libs/input/libQFinput.la \
 		libs/ecs/libQFecs.la \
 		libs/util/libQFutil.la
 qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \

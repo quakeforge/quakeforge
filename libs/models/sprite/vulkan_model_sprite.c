@@ -65,7 +65,7 @@ vulkan_sprite_clear (model_t *m, void *data)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	msprite_t  *msprite = m->cache.data;
-	__auto_type sprite = (qfv_sprite_t *) ((byte *) msprite + msprite->data);
+	auto sprite = (qfv_sprite_t *) ((byte *) msprite + msprite->skin.data);
 
 	Vulkan_Sprite_FreeDescriptors (ctx, sprite);
 
@@ -78,8 +78,8 @@ vulkan_sprite_clear (model_t *m, void *data)
 void
 Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 {
-	qfvPushDebug (ctx, va (ctx->va_ctx, "sprite.load_frames: %s",
-						   sprite_ctx->mod->name));
+	qfvPushDebug (ctx, vac (ctx->va_ctx, "sprite.load_frames: %s",
+							sprite_ctx->mod->name));
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -99,15 +99,15 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 									 | VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									 | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, sprite->image,
-						 va (ctx->va_ctx, "image:%s", mod->name));
+						 vac (ctx->va_ctx, "image:%s", mod->name));
 
 	int         numverts = 4 * sprite_ctx->numframes;
 	sprite->verts = QFV_CreateBuffer (device, numverts * sizeof (spritevrt_t),
 									  VK_BUFFER_USAGE_TRANSFER_DST_BIT
 									  | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, sprite->verts,
-						 va (ctx->va_ctx, "buffer:sprite:vertex:%s",
-							 mod->name));
+						 vac (ctx->va_ctx, "buffer:sprite:vertex:%s",
+							  mod->name));
 
 	VkMemoryRequirements ireq;
 	dfunc->vkGetImageMemoryRequirements (device->dev, sprite->image, &ireq);
@@ -119,8 +119,8 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, sprite->memory,
-						 va (ctx->va_ctx, "memory:sprite:%s",
-							 sprite_ctx->mod->name));
+						 vac (ctx->va_ctx, "memory:sprite:%s",
+							  sprite_ctx->mod->name));
 
 	QFV_BindBufferMemory (device, sprite->verts, sprite->memory, 0);
 	QFV_BindImageMemory (device, sprite->image, sprite->memory,
@@ -130,12 +130,12 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										VK_FORMAT_R8G8B8A8_UNORM,
 										VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, sprite->view,
-						 va (ctx->va_ctx, "view:sprite:%s",
-							 sprite_ctx->mod->name));
+						 vac (ctx->va_ctx, "view:sprite:%s",
+							  sprite_ctx->mod->name));
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
-													 va (ctx->va_ctx,
-														 "sprite:%s",
+													 vac (ctx->va_ctx,
+														  "sprite:%s",
 														 sprite_ctx->mod->name),
 													 size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
@@ -146,7 +146,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 										   sprite_ctx->numframes * texsize);
 
 	for (int i = 0; i < sprite_ctx->numframes; i++) {
-		__auto_type dframe = sprite_ctx->dframes[i];
+		auto dframe = sprite_ctx->dframes[i];
 		mspriteframe_t f;
 		Mod_LoadSpriteFrame (&f, dframe);
 		verts[i * 4 + 0] = (spritevrt_t) { f.left, f.up, 0, 0 };
@@ -155,7 +155,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 		verts[i * 4 + 3] = (spritevrt_t) { f.right, f.down, 1, 1 };
 		Vulkan_ExpandPalette (pixels + i * texsize, (const byte *)(dframe + 1),
 							  vid.palette32, 2, texsize / 4);
-		*sprite_ctx->frames[i] = (mspriteframe_t *) (ptrdiff_t) i;
+		sprite_ctx->frames[i]->data = i;
 	}
 
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -200,7 +200,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 
 	Vulkan_Sprite_DescriptorSet (ctx, sprite);
 
-	sprite_ctx->sprite->data = (byte *) sprite - (byte *) sprite_ctx->sprite;
+	sprite_ctx->sprite->skin.data = (byte *)sprite - (byte *)sprite_ctx->sprite;
 
 	qfvPopDebug (ctx);
 }

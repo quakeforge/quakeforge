@@ -50,12 +50,12 @@ typedef struct player_s {
 	plent_state_t ent;
 } player_t;
 
-typedef struct frame_s {
+typedef struct qtv_frame_s {
 	int         delta_sequence;
 	bool        invalid;
 	packet_players_t players;
 	packet_entities_t entities;
-} frame_t;
+} qtv_frame_t;
 
 typedef struct qtv_leaf_s {
 	struct qtv_leaf_s *next;
@@ -108,7 +108,7 @@ typedef struct server_s {
 	int         delta;
 	int         validsequence;
 
-	frame_t     frames[UPDATE_BACKUP];
+	qtv_frame_t frames[UPDATE_BACKUP];
 	qtv_entity_t  entities[MAX_SV_ENTITIES];
 	byte        ent_valid[MAX_SV_ENTITIES];
 	entity_state_t baselines[MAX_SV_ENTITIES];

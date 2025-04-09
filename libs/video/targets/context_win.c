@@ -40,7 +40,6 @@
 #include "QF/vid.h"
 
 #include "context_win.h"
-#include "r_shared.h"
 #include "in_win.h"
 #include "vid_internal.h"
 #include "vid_sw.h"

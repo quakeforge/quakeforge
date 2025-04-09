@@ -771,7 +771,7 @@ CL_ParseServerMessage (void)
 			continue;
 		}
 
-		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {

@@ -151,7 +151,7 @@ View_AddToEntity (uint32_t ent, ecs_system_t viewsys, view_t parent, bool own)
 
 	if (parent.reg && parent.id != nullent) {
 		hierref_t   pref = View_GetRef (parent);
-		ref = Hierarchy_InsertHierarchy (pref, nullhref, viewsys.reg);
+		ref = Hierref_InsertHierarchy (pref, nullhref, viewsys.reg);
 	} else {
 		ref.id = Hierarchy_New (viewsys.reg, href_comp, &view_type, 1);
 	}
@@ -286,7 +286,7 @@ View_SetParent (view_t view, view_t parent)
 	if (View_Valid (parent)) {
 		dref = View_GetRef (parent);
 	}
-	Hierarchy_SetParent (dref, sref, view.reg);
+	Hierref_SetParent (dref, sref, view.reg);
 
 	auto ref = View_GetRef (view);
 	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, view.reg);

@@ -148,7 +148,7 @@ compose_startup (exprctx_t *ectx)
 		auto cframe = &cctx->frames.a[i];
 		auto set = QFV_DSManager_AllocSet (dsmanager);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET, set,
-							 va (ctx->va_ctx, "compose:attach_set:%zd", i));
+							 vac (ctx->va_ctx, "compose:attach_set:%zd", i));
 
 		for (int j = 0; j < COMPOSE_IMAGE_INFOS; j++) {
 			cframe->imageInfo[j] = base_image_info;

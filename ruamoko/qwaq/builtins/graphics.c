@@ -192,6 +192,14 @@ bi_refresh (progs_t *pr, void *_res)
 			camera = Entity_Transform (ent);
 		}
 	}
+	if (scene) {
+		uint32_t c_animation = scene->base + scene_animation;
+		uint32_t c_renderer = scene->base + scene_renderer;
+		auto reg = scene->reg;
+		auto animpool = reg->comp_pools + c_animation;
+		auto rendpool = reg->comp_pools + c_renderer;
+		Anim_Update (con_realtime, animpool, rendpool);
+	}
 	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
@@ -252,9 +260,10 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 		P_POINTER (pr, 1) = qcevent_data;
 		*event = *ie_event;
 		PR_ExecuteProgram (pr, qcevent);
+		int ret = R_INT (pr);
 		PR_RestoreParams (pr, params);
 		PR_PopFrame (pr);
-		return R_INT (pr);
+		return ret;
 	}
 	return IN_Binding_HandleEvent (ie_event);
 }
@@ -416,12 +425,13 @@ generate_colormap (void)
 			memcpy (colors[i][224], colors[31][224], 32 * 3);
 		}
 	}
-	tex_t     *cmap = ConvertImage (&tex, default_palette[0]);
+	size_t mark = Hunk_LowMark (nullptr);
+	auto cmap = ConvertImage (&tex, default_palette[0], "cmap");
 	// the colormap has an extra byte indicating the number of fullbright
 	// entries, but that byte is not in the image, so don't try to copy it,
 	// thus the - 1
 	memcpy (default_colormap, cmap->data, sizeof (default_colormap) - 1);
-	free (cmap);
+	Hunk_FreeToLowMark (nullptr, mark);
 }
 
 static const char *bi_dirconf = R"(

@@ -1361,7 +1361,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	pass->entid_data = bframe->entid_data;
 	pass->entid_count = bframe->entid_count;
 
-	bctx->anim_index = r_data->realtime * 5;
+	bctx->anim_index = vr_data.realtime * 5;
 
 	entity_t    worldent = nullentity;
 
@@ -1739,7 +1739,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	name = va (ctx->va_ctx, "env/%s_map", sky);
+	name = vac (ctx->va_ctx, "env/%s_map", sky);
 	tex = LoadImage (name, 1);
 	if (tex) {
 		bctx->skybox_tex = Vulkan_LoadEnvMap (ctx, tex, sky);
@@ -1749,12 +1749,12 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 		tex_t      *sides[6] = { };
 
 		for (i = 0; i < 6; i++) {
-			name = va (ctx->va_ctx, "env/%s%s", sky, sky_suffix[i]);
+			name = vac (ctx->va_ctx, "env/%s%s", sky, sky_suffix[i]);
 			tex = LoadImage (name, 1);
 			if (!tex) {
 				Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
-				name = va (ctx->va_ctx, "gfx/env/%s%s", sky, sky_suffix[i]);
+				name = vac (ctx->va_ctx, "gfx/env/%s%s", sky, sky_suffix[i]);
 				tex = LoadImage (name, 1);
 				if (!tex) {
 					Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);

@@ -38,6 +38,7 @@
 
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/render.h"
@@ -49,6 +50,7 @@
 #include "QF/scene/scene.h"
 #include "QF/scene/transform.h"
 
+#include "r_local.h"
 #include "rua_internal.h"
 
 typedef struct rua_scene_s {
@@ -207,8 +209,9 @@ rua_lighting_index (rua_scene_resources_t *res, rua_lighting_t *ldata)
 #define MAKE_ID(id, sc_id) ((((pr_ulong_t) (id)) << 32) \
 							| ((sc_id) & 0xffffffff))
 
-static void
-bi_Scene_NewScene (progs_t *pr, void *_res)
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
+
+bi (Scene_NewScene)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -237,8 +240,7 @@ rua_delete_scene (rua_scene_resources_t *res, rua_scene_t *scene)
 	rua_scene_free (res, scene);
 }
 
-static void
-bi_Scene_DeleteScene (progs_t *pr, void *_res)
+bi (Scene_DeleteScene)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -259,8 +261,7 @@ Scene_GetScene (progs_t *pr, pr_ulong_t handle)
 	return scene->scene;
 }
 
-static void
-bi_Scene_CreateEntity (progs_t *pr, void *_res)
+bi (Scene_CreateEntity)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -270,8 +271,7 @@ bi_Scene_CreateEntity (progs_t *pr, void *_res)
 	R_ULONG (pr) = MAKE_ID (ent.id, scene_id);
 }
 
-static void
-bi_Scene_DestroyEntity (progs_t *pr, void *_res)
+bi (Scene_DestroyEntity)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -284,8 +284,7 @@ bi_Scene_DestroyEntity (progs_t *pr, void *_res)
 	Scene_DestroyEntity (scene->scene, ent);
 }
 
-static void
-bi_Scene_SetLighting (progs_t *pr, void *_res)
+bi (Scene_SetLighting)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -301,8 +300,7 @@ bi_Scene_SetLighting (progs_t *pr, void *_res)
 	scene->scene->lights = ldata->ldata;
 }
 
-static void
-bi_Scene_SetCamera (progs_t *pr, void *_res)
+bi (Scene_SetCamera)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -313,8 +311,7 @@ bi_Scene_SetCamera (progs_t *pr, void *_res)
 	scene->scene->camera = ent.id;
 }
 
-static void
-bi_Entity_GetTransform (progs_t *pr, void *_res)
+bi (Entity_GetTransform)
 {
 	qfZoneScoped (true);
 	pr_ulong_t  ent_id = P_ULONG (pr, 0);
@@ -323,8 +320,7 @@ bi_Entity_GetTransform (progs_t *pr, void *_res)
 	R_ULONG (pr) = ent_id;
 }
 
-static void
-bi_Entity_SetModel (progs_t *pr, void *_res)
+bi (Entity_SetModel)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -341,8 +337,35 @@ bi_Entity_SetModel (progs_t *pr, void *_res)
 	R_AddEfrags (&scene->scene->worldmodel->brush, ent);
 }
 
-static void
-bi_Transform_ChildCount (progs_t *pr, void *_res)
+bi (Entity_GetPoseMotors)
+{
+	qfZoneScoped (true);
+	R_INT (pr) = 0;
+
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	auto renderer = Entity_GetRenderer (ent);
+	if (!renderer || !renderer->model) {
+		return;
+	}
+	auto model = renderer->model->model;
+	auto frame = (qfm_joint_t *) P_GPOINTER (pr, 1);
+	double time = P_DOUBLE (pr, 2);
+
+	if (renderer->model->type != mod_mesh || !model->pose.count) {
+		return;
+	}
+
+	auto anim = Entity_GetAnimation (ent);
+	float blend = R_IQMGetLerpedFrames (time, anim, model);
+	auto f = R_IQMBlendPoseFrames (model, anim->pose1, anim->pose2, blend, 0);
+	memcpy (frame, f, model->pose.count * sizeof (frame[0]));
+
+	R_INT (pr) = 1;
+}
+
+bi (Transform_ChildCount)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -351,8 +374,7 @@ bi_Transform_ChildCount (progs_t *pr, void *_res)
 	R_UINT (pr) = Transform_ChildCount (transform);
 }
 
-static void
-bi_Transform_GetChild (progs_t *pr, void *_res)
+bi (Transform_GetChild)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -363,8 +385,7 @@ bi_Transform_GetChild (progs_t *pr, void *_res)
 										   : 0;
 }
 
-static void
-bi_Transform_SetParent (progs_t *pr, void *_res)
+bi (Transform_SetParent)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -374,8 +395,7 @@ bi_Transform_SetParent (progs_t *pr, void *_res)
 	Transform_SetParent (transform, parent);
 }
 
-static void
-bi_Transform_GetParent (progs_t *pr, void *_res)
+bi (Transform_GetParent)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -388,8 +408,7 @@ bi_Transform_GetParent (progs_t *pr, void *_res)
 											: 0;
 }
 
-static void
-bi_Transform_SetTag (progs_t *pr, void *_res)
+bi (Transform_SetTag)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -398,8 +417,7 @@ bi_Transform_SetTag (progs_t *pr, void *_res)
 	Transform_SetTag (transform, tag);
 }
 
-static void
-bi_Transform_GetTag (progs_t *pr, void *_res)
+bi (Transform_GetTag)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -408,8 +426,7 @@ bi_Transform_GetTag (progs_t *pr, void *_res)
 	R_UINT (pr) = Transform_GetTag (transform);
 }
 
-static void
-bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
+bi (Transform_GetLocalMatrix)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -417,8 +434,7 @@ bi_Transform_GetLocalMatrix (progs_t *pr, void *_res)
 	Transform_GetLocalMatrix (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
-static void
-bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
+bi (Transform_GetLocalInverse)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -426,8 +442,7 @@ bi_Transform_GetLocalInverse (progs_t *pr, void *_res)
 	Transform_GetLocalInverse (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
-static void
-bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
+bi (Transform_GetWorldMatrix)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -435,8 +450,7 @@ bi_Transform_GetWorldMatrix (progs_t *pr, void *_res)
 	Transform_GetWorldMatrix (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
-static void
-bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
+bi (Transform_GetWorldInverse)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -444,8 +458,7 @@ bi_Transform_GetWorldInverse (progs_t *pr, void *_res)
 	Transform_GetWorldInverse (transform, &R_PACKED (pr, pr_vec4_t));
 }
 
-static void
-bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
+bi (Transform_SetLocalPosition)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -453,8 +466,7 @@ bi_Transform_SetLocalPosition (progs_t *pr, void *_res)
 	Transform_SetLocalPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
-static void
-bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
+bi (Transform_GetLocalPosition)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -462,8 +474,7 @@ bi_Transform_GetLocalPosition (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalPosition (transform);
 }
 
-static void
-bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
+bi (Transform_SetLocalRotation)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -471,8 +482,7 @@ bi_Transform_SetLocalRotation (progs_t *pr, void *_res)
 	Transform_SetLocalRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
-static void
-bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
+bi (Transform_GetLocalRotation)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -480,8 +490,7 @@ bi_Transform_GetLocalRotation (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalRotation (transform);
 }
 
-static void
-bi_Transform_SetLocalScale (progs_t *pr, void *_res)
+bi (Transform_SetLocalScale)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -489,8 +498,7 @@ bi_Transform_SetLocalScale (progs_t *pr, void *_res)
 	Transform_SetLocalScale (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
-static void
-bi_Transform_GetLocalScale (progs_t *pr, void *_res)
+bi (Transform_GetLocalScale)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -498,8 +506,7 @@ bi_Transform_GetLocalScale (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetLocalScale (transform);
 }
 
-static void
-bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
+bi (Transform_SetWorldPosition)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -507,8 +514,7 @@ bi_Transform_SetWorldPosition (progs_t *pr, void *_res)
 	Transform_SetWorldPosition (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
-static void
-bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
+bi (Transform_GetWorldPosition)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -516,8 +522,7 @@ bi_Transform_GetWorldPosition (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldPosition (transform);
 }
 
-static void
-bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
+bi (Transform_SetWorldRotation)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -525,8 +530,7 @@ bi_Transform_SetWorldRotation (progs_t *pr, void *_res)
 	Transform_SetWorldRotation (transform, P_PACKED (pr, pr_vec4_t, 1));
 }
 
-static void
-bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
+bi (Transform_GetWorldRotation)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -534,8 +538,7 @@ bi_Transform_GetWorldRotation (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldRotation (transform);
 }
 
-static void
-bi_Transform_GetWorldScale (progs_t *pr, void *_res)
+bi (Transform_GetWorldScale)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -543,8 +546,7 @@ bi_Transform_GetWorldScale (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_GetWorldScale (transform);
 }
 
-static void
-bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
+bi (Transform_SetLocalTransform)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -553,8 +555,7 @@ bi_Transform_SetLocalTransform (progs_t *pr, void *_res)
 			P_PACKED (pr, pr_vec4_t, 2), P_PACKED (pr, pr_vec4_t, 3));
 }
 
-static void
-bi_Transform_Forward (progs_t *pr, void *_res)
+bi (Transform_Forward)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -562,8 +563,7 @@ bi_Transform_Forward (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_Forward (transform);
 }
 
-static void
-bi_Transform_Right (progs_t *pr, void *_res)
+bi (Transform_Right)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -571,8 +571,7 @@ bi_Transform_Right (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_Right (transform);
 }
 
-static void
-bi_Transform_Up (progs_t *pr, void *_res)
+bi (Transform_Up)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -580,8 +579,7 @@ bi_Transform_Up (progs_t *pr, void *_res)
 	R_PACKED (pr, pr_vec4_t) = Transform_Up (transform);
 }
 
-static void
-bi_Light_CreateLightingData (progs_t *pr, void *_res)
+bi (Light_CreateLightingData)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -612,8 +610,7 @@ rua_delete_lighting (rua_scene_resources_t *res, rua_lighting_t *ldata)
 	rua_lighting_free (res, ldata);
 }
 
-static void
-bi_Light_DestroyLightingData (progs_t *pr, void *_res)
+bi (Light_DestroyLightingData)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -622,8 +619,7 @@ bi_Light_DestroyLightingData (progs_t *pr, void *_res)
 	rua_delete_lighting (res, ldata);
 }
 
-static void
-bi_Light_ClearLights (progs_t *pr, void *_res)
+bi (Light_ClearLights)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -632,8 +628,7 @@ bi_Light_ClearLights (progs_t *pr, void *_res)
 	Light_ClearLights (ldata->ldata);
 }
 
-static void
-bi_Light_AddLight (progs_t *pr, void *_res)
+bi (Light_AddLight)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -644,8 +639,7 @@ bi_Light_AddLight (progs_t *pr, void *_res)
 	Light_AddLight (ldata->ldata, light, style);
 }
 
-static void
-bi_Light_EnableSun (progs_t *pr, void *_res)
+bi (Light_EnableSun)
 {
 	qfZoneScoped (true);
 	rua_scene_resources_t *res = _res;
@@ -654,6 +648,7 @@ bi_Light_EnableSun (progs_t *pr, void *_res)
 	Light_EnableSun (ldata->ldata);
 }
 
+#undef bi
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
@@ -667,6 +662,7 @@ static builtin_t builtins[] = {
 
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
+	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),

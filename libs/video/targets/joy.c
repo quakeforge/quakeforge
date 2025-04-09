@@ -215,7 +215,7 @@ JOY_Init (void)
 static void
 joyamp_f (void *data, const cvar_t *cvar)
 {
-	Cvar_SetVar (cvar, va (0, "%g", max (0.0001, *(float *)data)));
+	Cvar_SetVar (cvar, va ("%g", max (0.0001, *(float *)data)));
 }
 
 typedef struct {

@@ -451,7 +451,7 @@ PF_log (progs_t *pr, void *data)
 	char       *text;
 	QFile      *file;
 
-	name = va (0, "%s/%s.log", qfs_gamedir->dir.def, P_GSTRING (pr, 0));
+	name = va ("%s/%s.log", qfs_gamedir->dir.def, P_GSTRING (pr, 0));
 	file = QFS_Open (name, "a");
 
 	text = PF_VarString (pr, 2, pr->pr_argc);

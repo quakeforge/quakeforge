@@ -122,7 +122,6 @@ LoadPNG (QFile *infile, int load)
 	png_structp		png_ptr = NULL;
 	png_infop		info_ptr = NULL;
 	png_uint_32		height, width, rowbytes, i;
-	png_bytepp		row_pointers = NULL;
 	int				bit_depth, color_type;
 	tex_t		   *tex;
 
@@ -131,6 +130,10 @@ LoadPNG (QFile *infile, int load)
 
 	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 				  NULL, NULL, NULL);
+
+	if (width > 32768 || height > 32768) {
+		return nullptr;
+	}
 
 	if (load) {
 		if (color_type == PNG_COLOR_TYPE_PALETTE)
@@ -186,20 +189,13 @@ LoadPNG (QFile *infile, int load)
 		return tex;
 	}
 
-	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
-		== NULL) {
-		png_destroy_read_struct (&png_ptr, &info_ptr, NULL);
-		return (NULL); /* Out of memory */
-	}
-
-	for (i = 0; i < height; ++i)
+	png_bytep row_pointers[height];
+	for (i = 0; i < height; ++i) {
 		row_pointers[i] = tex->data + (i * rowbytes);
+	}
 
 	/* Now we can go ahead and read the whole image */
 	png_read_image (png_ptr, row_pointers);
-
-	free (row_pointers);
-	row_pointers = NULL;
 
 	png_read_end (png_ptr, NULL);
 

@@ -2969,3 +2969,8 @@ void
 trace_glBindVertexArray (GLuint array)
 {
 }
+
+void
+trace_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
+{
+}

@@ -188,13 +188,13 @@ print_bool (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 	for ( ; i < tl_count; i++)
 		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>%s</tr>\n",
 				   indent, "", i,
-				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
+				   i == count ? va ("<td rowspan=\"%d\"></td>",
 									boolean->true_list->size - count)
 							  : "");
 	for ( ; i < fl_count; i++)
 		dasprintf (dstr, "%*s<tr>%s<td port=\"f%d\">f</td></tr>\n",
 				   indent, "",
-				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
+				   i == count ? va ("<td rowspan=\"%d\"></td>",
 									boolean->false_list->size - count)
 							  : "",
 				   i);
@@ -881,9 +881,9 @@ print_swizzle (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 
 	for (int i = 0; i < count; i++) {
 		if (swiz.zero & (1 << i)) {
-			swizzle = va (0, "%s0", swizzle);
+			swizzle = va ("%s0", swizzle);
 		} else {
-			swizzle = va (0, "%s%s%c", swizzle,
+			swizzle = va ("%s%s%c", swizzle,
 						  swiz.neg & (1 << i) ? "-" : "",
 						  swizzle_components[swiz.source[i]]);
 		}
@@ -1017,7 +1017,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 	((expr_t *) e)->printid = id;
 
 	if ((int) e->type < 0 || e->type >= ex_count || !print_funcs[e->type]) {
-		const char *type = va (0, "%d", e->type);
+		const char *type = va ("%d", e->type);
 		if ((unsigned) e->type < ex_count) {
 			type = expr_names[e->type];
 		}

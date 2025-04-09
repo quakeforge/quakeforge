@@ -69,26 +69,11 @@
 #define imui_ontop imui_draw_order((1 << 15) - 1)
 #define imui_onbottom imui_draw_order(-(1 << 15) + 1)
 
-typedef struct imui_state_s {
-	struct imui_state_s *next;
-	struct imui_state_s **prev;
-	char       *label;
-	uint32_t    label_len;
-	int         key_offset;
-	imui_window_t *menu;
-	int32_t		draw_order;	// for window canvases
-	int32_t     draw_group;
-	uint32_t    first_link;
-	uint32_t    num_links;
-	uint32_t    frame_count;
-	uint32_t    old_entity;
-	uint32_t    entity;
-	uint32_t    content;
-	view_pos_t  pos;
-	view_pos_t  len;
-	imui_frac_t fraction;
-	bool        auto_fit;
-} imui_state_t;
+typedef struct imui_state_map_s {
+	struct imui_state_map_s *next;
+	struct imui_state_map_s **prev;
+	imui_state_t state;
+} imui_state_map_t;
 
 struct imui_ctx_s {
 	canvas_system_t csys;
@@ -100,8 +85,8 @@ struct imui_ctx_s {
 
 	hashctx_t  *hashctx;
 	hashtab_t  *tab;
-	PR_RESMAP (imui_state_t) state_map;
-	imui_state_t *states;
+	PR_RESMAP (imui_state_map_t) state_map;
+	imui_state_map_t *state_wrappers;
 	font_t     *font;
 
 	int64_t     frame_start;
@@ -183,22 +168,26 @@ imui_next_window (imui_ctx_t *ctx)
 static imui_state_t *
 imui_state_new (imui_ctx_t *ctx, uint32_t entity)
 {
-	imui_state_t *state = PR_RESNEW (ctx->state_map);
-	*state = (imui_state_t) {
-		.next = ctx->states,
-		.prev = &ctx->states,
-		.old_entity = nullent,
-		.entity = entity,
+	auto state = PR_RESNEW (ctx->state_map);
+	*state = (imui_state_map_t) {
+		.next = ctx->state_wrappers,
+		.prev = &ctx->state_wrappers,
+		.state = {
+			.old_entity = nullent,
+			.entity = entity,
+		},
 	};
-	if (ctx->states) {
-		ctx->states->prev = &state->next;
+	if (ctx->state_wrappers) {
+		ctx->state_wrappers->prev = &state->next;
 	}
-	ctx->states = state;
-	return state;
+	ctx->state_wrappers = state;
+
+	state->state.frame_count = ctx->frame_count;
+	return &state->state;
 }
 
 static void
-imui_state_free (imui_ctx_t *ctx, imui_state_t *state)
+imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 {
 	if (state->next) {
 		state->next->prev = state->prev;
@@ -247,7 +236,6 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 	state->label = strdup (label);
 	state->label_len = label_len == ~0u ? strlen (label) : label_len;
 	state->key_offset = key_offset;
-	state->frame_count = ctx->frame_count;
 	Hash_Add (ctx->tab, state);
 	ctx->current_state = state;
 	Ent_SetComponent (entity, ecs_name, ctx->csys.reg, &state->label);
@@ -340,8 +328,8 @@ void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
 	clear_items (ctx);
-	for (auto s = ctx->states; s; s = s->next) {
-		free (s->label);
+	for (auto s = ctx->state_wrappers; s; s = s->next) {
+		free (s->state.label);
 	}
 	PR_RESDELMAP (ctx->state_map);
 
@@ -467,12 +455,14 @@ IMUI_BeginFrame (imui_ctx_t *ctx)
 static void
 prune_objects (imui_ctx_t *ctx)
 {
-	for (auto s = &ctx->states; *s; ) {
-		if ((*s)->frame_count == ctx->frame_count) {
+	for (auto s = &ctx->state_wrappers; *s; ) {
+		if ((*s)->state.frame_count == ctx->frame_count) {
 			s = &(*s)->next;
 		} else {
-			Hash_Del (ctx->tab, (*s)->label + (*s)->key_offset);
-			free ((*s)->label);
+			if ((*s)->state.label) {
+				Hash_Del (ctx->tab, (*s)->state.label + (*s)->state.key_offset);
+				free ((*s)->state.label);
+			}
 			imui_state_free (ctx, *s);
 		}
 	}
@@ -1026,6 +1016,8 @@ IMUI_PushLayout (imui_ctx_t *ctx, bool vertical)
 		.semantic_y = y_size,
 		.vertical = vertical,
 	};
+	auto state = imui_state_new (ctx, view.id);
+	ctx->current_state = state;
 	View_SetLen (view, 0, 0);
 	if (x_size == imui_size_expand) {
 		Ent_SetComponent (view.id, c_fraction_x, ctx->csys.reg,
@@ -1216,6 +1208,14 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 }
 
 void
+IMUI_SetFill (imui_ctx_t *ctx, byte color)
+{
+	auto state = ctx->current_state;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	set_fill (ctx, view, color);
+}
+
+void
 IMUI_Label (imui_ctx_t *ctx, const char *label)
 {
 	auto view = View_New (ctx->vsys, ctx->current_parent);
@@ -1258,22 +1258,17 @@ IMUI_Passage (imui_ctx_t *ctx, const char *name, struct passage_s *passage)
 	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
 		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
 	}
-	auto state = imui_get_state (ctx, va (0, "%s#content", name),
-								 anchor_view.id);
+	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
 	DARRAY_APPEND (&ctx->scrollers, state);
 	update_hot_active (ctx, state);
 
 	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
-
-	set_fill (ctx, anchor_view, ctx->style.background.normal);
 
 	auto psg_view = Text_PassageView (ctx->tsys, nullview,
 									  ctx->font, passage, ctx->shaper);
 	Canvas_SetReference (ctx->csys, psg_view.id,
 						 Canvas_Entity (ctx->csys,
 										View_GetRoot (anchor_view).id));
-	// FIXME this shouldn't be necessary and is a sign of bigger problems
-	Ent_RemoveComponent (psg_view.id, c_passage_glyphs, reg);
 	Ent_SetComponent (psg_view.id, c_passage_glyphs, reg,
 					  Ent_GetComponent (psg_view.id, t_passage_glyphs, reg));
 	*View_Control (psg_view) = (viewcont_t) {
@@ -1554,7 +1549,7 @@ drag_window_br (view_pos_t delta, imui_window_t *window)
 
 #define drag(c,e,sx,xv,sy,yv,n,p) \
 	drag_window_##c (IMUI_Dragable (ctx, sx, xv, sy, yv, \
-									va (0, "%s##drag_" #c #e, n)), p);
+									va ("%s##drag_" #c #e, n)), p);
 
 int
 IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
@@ -1764,7 +1759,7 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
 
-	auto tb_state = imui_get_state (ctx, va (0, "%s##title_bar", window->name),
+	auto tb_state = imui_get_state (ctx, va ("%s##title_bar", window->name),
 									title_bar.id);
 	int tb_mode = update_hot_active (ctx, tb_state);
 
@@ -1787,7 +1782,7 @@ void
 IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
 	char cbutton = window->is_collapsed ? '>' : 'v';
-	if (UI_Button (va (0, "%c##collapse_%s", cbutton, window->name))) {
+	if (UI_Button (va ("%c##collapse_%s", cbutton, window->name))) {
 		window->is_collapsed = !window->is_collapsed;
 	}
 }
@@ -1795,7 +1790,7 @@ IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
-	if (UI_Button (va (0, "X##close_%s", window->name))) {
+	if (UI_Button (va ("X##close_%s", window->name))) {
 		window->is_open = false;
 	}
 }
@@ -1810,7 +1805,9 @@ IMUI_StartWindow (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 
 	UI_Horizontal {
-		IMUI_CollapseButton (ctx, window);
+		if (window->auto_fit) {
+			IMUI_CollapseButton (ctx, window);
+		}
 		IMUI_TitleBar (ctx, window);
 		IMUI_CloseButton (ctx, window);
 	}
@@ -1928,9 +1925,9 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 		.active = true,
 	};
 	IMUI_PopLayout (ctx);
-	auto sb_state = imui_get_state (ctx, va (0, "scrollbar#%s", name),
+	auto sb_state = imui_get_state (ctx, va ("scrollbar#%s", name),
 									sb_view.id);
-	auto tt_state = imui_get_state (ctx, va (0, "thumbtab#%s", name),
+	auto tt_state = imui_get_state (ctx, va ("thumbtab#%s", name),
 									tt_view.id);
 	int sb_mode = update_hot_active (ctx, sb_state);
 	int tt_mode = update_hot_active (ctx, tt_state);
@@ -1940,7 +1937,7 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 	if (scroller) {
 		auto slen = scroller->len;
 		tt_state->fraction.num = vertical ? slen.y : slen.x;
-		auto content = imui_find_state (ctx, va (0, "%s#content", name));
+		auto content = imui_find_state (ctx, va ("%s#content", name));
 		if (content) {
 			auto delta = check_drag_delta (ctx, tt_state->entity);
 			auto clen = content->len;

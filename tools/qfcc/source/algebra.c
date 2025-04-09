@@ -94,14 +94,14 @@ count_minus (uint32_t minus)
 static const char *mvec_1d_names[] = {
 	"vec",
 	"scalar",
-	0
+	nullptr
 };
 
 static const char *mvec_2d_names[] = {
 	"vec",
 	"scalar",
 	"bvec",
-	0
+	nullptr
 };
 
 static const char *mvec_3d_names[] = {
@@ -109,7 +109,7 @@ static const char *mvec_3d_names[] = {
 	"tvec",
 	"bvec",
 	"scalar",
-	0
+	nullptr
 };
 
 static const char *mvec_4d_names[] = {
@@ -119,7 +119,7 @@ static const char *mvec_4d_names[] = {
 	"bvecp",	// positional (in PGA)
 	"qvec",
 	"tvec",
-	0
+	nullptr
 };
 
 static const char **mvec_names[] = {
@@ -237,7 +237,7 @@ algebra_init (algebra_t *a)
 	int z = a->zero;
 	int d = p + m + z;
 	if (d > MAX_SIGNATURE) {
-		internal_error (0, "algebra too large");
+		internal_error (nullptr, "algebra too large");
 	}
 	metric_init (&a->metric, p, m, z);
 	a->dimension = d;
@@ -353,7 +353,7 @@ const type_t *
 algebra_type (const type_t *type, const expr_t *params)
 {
 	if (!is_float (type) && !is_double (type)) {
-		error (0, "algebra type must be float or double");
+		error (nullptr, "algebra type must be float or double");
 		return type_default;
 	}
 	int param_count = params ? list_count (&params->list) : 0;
@@ -428,22 +428,23 @@ const type_t *
 algebra_subtype (const type_t *type, const attribute_t *attr)
 {
 	if (!is_algebra (type)) {
-		internal_error (0, "unexpected type");
+		internal_error (nullptr, "unexpected type");
 	}
 	auto algebra = algebra_get (type);
 	if (strcmp (attr->name, "group_mask") == 0) {
 		if (!attr->params || attr->params->list.head->next) {
-			error (0, "incorrect number of parameters to 'group_mask'");
+			error (nullptr, "incorrect number of parameters to 'group_mask'");
 			return type;
 		}
 		auto param = attr->params->list.head->expr;
 		if (!is_integral_val (param)) {
-			error (0, "'group_mask' parameter must be an integer constant");
+			error (nullptr,
+				   "'group_mask' parameter must be an integer constant");
 			return type;
 		}
 		pr_uint_t mask = expr_integral (param);
 		if (!mask || mask > ((1u << algebra->layout.count) - 1)) {
-			error (0, "invalid group_mask");
+			error (nullptr, "invalid group_mask");
 			return type;
 		}
 		return algebra_mvec_type (algebra, mask);
@@ -453,7 +454,7 @@ algebra_subtype (const type_t *type, const attribute_t *attr)
 	if (field) {
 		return field->type;
 	}
-	error (0, "invalid subtype %s", attr->name);
+	error (nullptr, "invalid subtype %s", attr->name);
 	return type;
 }
 
@@ -471,14 +472,9 @@ algebra_alignment (const type_t *type, int width)
 static symbol_t *
 mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 {
-	int count = 0;
-	for (int i = 0; i < algebra->layout.count; i++) {
-		if (group_mask & (1 << i)) {
-			count++;
-		}
-	}
+	int count = count_bits (group_mask);
 
-	const char **mv_names = 0;
+	const char **mv_names = nullptr;
 	if (algebra->dimension < 5) {
 		mv_names = mvec_names[algebra->dimension];
 	}
@@ -490,7 +486,7 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 			if (mv_names) {
 				name = mv_names[i];
 			} else {
-				name = va (0, "group_%d", i);
+				name = va ("group_%d", i);
 			}
 			fields[c] = (struct_def_t) {
 				.name = save_string (name),
@@ -499,14 +495,14 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 			c++;
 		};
 	};
-	return make_structure (0, 's', fields, 0);
+	return make_structure (nullptr, 's', fields, nullptr);
 }
 
 const type_t *
 algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 {
 	if (!group_mask || group_mask > ((1u << algebra->layout.count) - 1)) {
-		internal_error (0, "invalid group_mask");
+		internal_error (nullptr, "invalid group_mask");
 	}
 	if (!algebra->mvec_types[group_mask]) {
 		int components = 0;
@@ -515,9 +511,9 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 				components += algebra->layout.groups[i].count;
 			}
 		}
-		symbol_t   *mvec_sym = 0;
+		symbol_t   *mvec_sym = nullptr;
 		if (group_mask & (group_mask - 1)) {
-			mvec_sym = mvec_struct (algebra, group_mask, 0);
+			mvec_sym = mvec_struct (algebra, group_mask, nullptr);
 		}
 		multivector_t *mvec = malloc (sizeof (multivector_t));
 		*mvec = (multivector_t) {
@@ -530,7 +526,7 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 		algebra->mvec_types[group_mask] = type;
 		*type = (type_t) {
 			.type = algebra->type->type,
-			.name = save_string (va (0, "algebra(%s(%d,%d,%d):%04x)",
+			.name = save_string (va ("algebra(%s(%d,%d,%d):%04x)",
 									 algebra->type->name,
 									 algebra->plus, algebra->minus,
 									 algebra->zero, group_mask)),
@@ -600,7 +596,7 @@ algebra_blade_value (algebra_t *alg, const char *name)
 		}
 		if (name[ind]) {
 			// not a valid basis blade name
-			return 0;
+			return nullptr;
 		}
 		char indices[ind--];
 		strcpy (indices, name + 1);
@@ -610,13 +606,13 @@ algebra_blade_value (algebra_t *alg, const char *name)
 			uint32_t c = indices[i] - '0';
 			c -= alg->zero != 1;
 			if (c >= dimension) {
-				error (0, "basis %c not in algebra(%d,%d,%d)", indices[i],
-					   alg->plus, alg->minus, alg->zero);
+				error (nullptr, "basis %c not in algebra(%d,%d,%d)",
+					   indices[i], alg->plus, alg->minus, alg->zero);
 				continue;
 			}
 			uint32_t mask = 1u << c;
 			if (blade & mask) {
-				warning (0, "duplicate index in basis blade");
+				warning (nullptr, "duplicate index in basis blade");
 			}
 			swaps += count_flips (blade, mask);
 			blade |= mask;
@@ -634,7 +630,7 @@ algebra_blade_value (algebra_t *alg, const char *name)
 		auto g = alg->layout.group_map[alg->layout.mask_map[blade]];
 		auto group = &alg->layout.groups[g[0]];
 		auto group_type = alg->mvec_types[group->group_mask];
-		ex_value_t *blade_val = 0;
+		ex_value_t *blade_val = nullptr;
 		if (is_float (alg->type)) {
 			float components[group->count] = {};
 			components[g[1]] = sign;
@@ -646,14 +642,14 @@ algebra_blade_value (algebra_t *alg, const char *name)
 		}
 		return blade_val;
 	}
-	return 0;
+	return nullptr;
 }
 
 static symbol_t *
 algebra_symbol (const char *name, symtab_t *symtab)
 {
 	algebra_t *alg = symtab->procsymbol_data;
-	symbol_t *sym = 0;
+	symbol_t *sym = nullptr;
 
 	auto blade_val = algebra_blade_value (alg, name);
 	if (blade_val) {
@@ -672,7 +668,7 @@ algebra_scope (const type_t *type, symtab_t *curscope)
 	scope->space = curscope->space;
 
 	if (!is_algebra (type)) {
-		error (0, "algebra type required for algebra scope");
+		error (nullptr, "algebra type required for algebra scope");
 		return scope;
 	}
 	scope->procsymbol = algebra_symbol;
@@ -692,6 +688,22 @@ algebra_get (const type_t *type)
 	} else {
 		return type->multivec->algebra;
 	}
+}
+
+etype_t
+algebra_low_level_type (const type_t *type)
+{
+	type = unalias_type (type);
+
+	if (type->type == ev_invalid) {
+		internal_error (nullptr, "unexpected algebra type");
+	}
+	auto multivec = type->multivec;
+	if (multivec->num_components > 4
+		|| count_bits (multivec->group_mask) > 1) {
+		return ev_void;
+	}
+	return type->type;
 }
 
 algebra_t *
@@ -726,7 +738,7 @@ algebra_print_type_str (dstring_t *str, const type_t *type)
 		dasprintf (str, " algebra(%s(%d,%d,%d):%04x)", a->type->name,
 				   a->plus, a->minus, a->zero, m->group_mask);
 	} else {
-		internal_error (0, "invalid algebra type");
+		internal_error (nullptr, "invalid algebra type");
 	}
 }
 
@@ -746,7 +758,7 @@ algebra_encode_type (dstring_t *encoding, const type_t *type)
 		dasprintf (encoding, "(%d,%d,%d):%04x}", a->plus, a->minus, a->zero,
 				   m->group_mask);
 	} else {
-		internal_error (0, "invalid algebra type");
+		internal_error (nullptr, "invalid algebra type");
 	}
 }
 
@@ -761,7 +773,7 @@ algebra_type_size (const type_t *type)
 		int  size = 0;
 		if (m->group_mask & (m->group_mask - 1)) {
 			if (!m->mvec_sym) {
-				internal_error (0, "multi group multivec missing struct");
+				internal_error (nullptr, "multi group multivec missing struct");
 			}
 			size = type_size (m->mvec_sym->type);
 		} else {
@@ -769,7 +781,7 @@ algebra_type_size (const type_t *type)
 		}
 		return size;
 	} else {
-		internal_error (0, "invalid algebra type");
+		internal_error (nullptr, "invalid algebra type");
 	}
 }
 
@@ -782,11 +794,11 @@ algebra_type_width (const type_t *type)
 		auto m = type->multivec;
 		return m->num_components;
 	} else {
-		internal_error (0, "invalid algebra type");
+		internal_error (nullptr, "invalid algebra type");
 	}
 }
 
-int
+bool
 algebra_type_assignable (const type_t *dst, const type_t *src)
 {
 	if (src->meta == ty_algebra && src->type == ev_invalid) {
@@ -795,26 +807,26 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 		// types are fundametally different), and cannot be assigned to
 		// elements of even the same algebra (to get here, the two types
 		// had to be different)
-		return 0;
+		return false;
 	}
 	if (!is_algebra (dst)) {
 		// no implicit casts from multi-vectors to scalars
-		return 0;
+		return false;
 	}
 	if (dst->type == ev_invalid) {
 		if (is_scalar (src)) {
 			// scalars can always be assigned to a full algebra type (sets
 			// the scalar element and zeros the other elements)
-			return 1;
+			return true;
 		}
 		if (src->meta != ty_algebra) {
-			return 0;
+			return false;
 		}
 		if (src->multivec->algebra != dst->algebra) {
-			return 0;
+			return false;
 		}
 		// the multivec is a member of the destination algebra
-		return 1;
+		return true;
 	}
 	if (!is_algebra (src)) {
 		if (is_scalar (src)) {
@@ -824,19 +836,19 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 			if (dst->multivec->group_mask & (1u << group)) {
 				// the source scalar is a member of the destination
 				// multi-vector
-				return 1;
+				return true;
 			}
 		}
-		return 0;
+		return false;
 	}
 	if (dst->multivec->algebra != src->multivec->algebra) {
-		return 0;
+		return false;
 	}
 	if (src->multivec->group_mask & ~dst->multivec->group_mask) {
-		return 0;
+		return false;
 	}
 	// the source multi-vector is a subset of the destinatin multi-vector
-	return 1;
+	return true;
 }
 
 const type_t *
@@ -851,14 +863,14 @@ algebra_base_type (const type_t *type)
 const type_t *
 algebra_struct_type (const type_t *type)
 {
-	symbol_t   *sym = 0;
+	symbol_t   *sym = nullptr;
 
 	if (type->type == ev_invalid) {
 		sym = type->algebra->mvec_sym;
 	} else {
 		sym = type->multivec->mvec_sym;
 	}
-	return sym ? sym->type : 0;
+	return sym ? sym->type : nullptr;
 }
 
 int

@@ -859,7 +859,7 @@ create_generic_sym (genfunc_t *g, const expr_t *fexpr, calltype_t *calltype,
 	};
 	auto type = find_type (&ftype);
 	auto name = g->name;
-	auto full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
+	auto full_name = save_string (va ("%s|%s", name, encode_params (type)));
 
 	auto fsym = fexpr->symbol;
 	auto sym = symtab_lookup (fsym->table, full_name);
@@ -930,7 +930,7 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 	}
 
 	const char *full_name;
-	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
+	full_name = save_string (va ("%s|%s", name, encode_params (type)));
 
 	if (!func || func->meta_type != mf_generic) {
 		// check if the exact function signature already exists, in which case
@@ -1434,7 +1434,9 @@ build_code_function (specifier_t spec, const expr_t *state_expr,
 	if (state_expr) {
 		prepend_expr (statements, state_expr);
 	}
-	current_target.build_code (func, statements);
+	if (!pr.error_count) {
+		current_target.build_code (func, statements);
+	}
 }
 
 void

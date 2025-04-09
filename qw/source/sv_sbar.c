@@ -62,7 +62,7 @@ draw_cpu (view_t view)
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 	cpu = 100 * svs.stats.latched_active / cpu;
 
-	cpu_str = va (0, "[CPU: %3d%%]", (int) cpu);
+	cpu_str = va ("[CPU: %3d%%]", (int) cpu);
 	for (s = cpu_str, d = sb->text + rel.x; *s; s++)
 		*d++ = *s;
 	if (cpu > 70.0) {
@@ -82,7 +82,7 @@ draw_rec (view_t view)
 	const char *s;
 	char       *d;
 
-	str = va (0, "[REC: %d]", SVR_NumRecorders ());
+	str = va ("[REC: %d]", SVR_NumRecorders ());
 	for (s = str, d = sb->text + rel.x; *s; s++)
 		*d++ = *s;
 }
@@ -100,7 +100,7 @@ draw_mem (view_t view)
 	byte        mask = 0;
 
 	Z_MemInfo (sv_pr_state.zone, &used, &size);
-	str = va (0, "[mem: %4zd / %-4zd]", used / 1024, size / 1024);
+	str = va ("[mem: %4zd / %-4zd]", used / 1024, size / 1024);
 	if (used / (size / 256) >= 192) {
 		mask = 0x80;
 	}

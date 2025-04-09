@@ -36,9 +36,11 @@
 struct progs_s;
 struct dstring_s;
 
+void RUA_Secured (progs_t *pr, void *_res)__attribute__((noreturn));
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
 void RUA_Cmd_Init (struct progs_s *pr, int secure);
 void RUA_Cvar_Init (struct progs_s *pr, int secure);
+void RUA_Dirent_Init (progs_t *pr, int secure);
 void RUA_Hash_Init (struct progs_s *pr, int secure);
 void RUA_Math_Init (struct progs_s *pr, int secure);
 void RUA_MsgBuf_Init (struct progs_s *pr, int secure);

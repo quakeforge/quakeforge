@@ -464,7 +464,7 @@ Locs_Init (void)
 static const char *
 Team_F_Version (char *args)
 {
-	return va (0, "say %s", PACKAGE_STRING);
+	return va ("say %s", PACKAGE_STRING);
 }
 
 static const char *
@@ -486,7 +486,7 @@ Team_F_Skins (char *args)
 	if (l == 0) {
 		//XXXtotalfb = Skin_FbPercent (0);
 		totalfb = 0;
-		return va (0, "say Player models have %f%% brightness\n"
+		return va ("say Player models have %f%% brightness\n"
 			   "say Average percent fullbright for all loaded skins is "
 			   "%d.%d%%", allfb * 100, totalfb / 10, totalfb % 10);
 	}
@@ -495,7 +495,7 @@ Team_F_Skins (char *args)
 	totalfb = 0;
 
 	if (totalfb >= 0)
-		return va (0, "say \"Skin %s is %d.%d%% fullbright\"",
+		return va ("say \"Skin %s is %d.%d%% fullbright\"",
 				   args, totalfb / 10, totalfb % 10);
 	else
 		return ("say \"Skin not currently loaded.\"");

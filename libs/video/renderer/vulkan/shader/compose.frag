@@ -26,6 +26,7 @@ main (void)
 	vec3        l = subpassLoad (light).rgb;
 	vec3        e = subpassLoad (emission).rgb;
 	vec4        p = subpassLoad (position);
+	l = l / (l + 1);
 	vec3        o = max(BlendFrags (vec4 (c * l + e, 1)).xyz, vec3(0));
 
 	float d = p.w > 0 ? length (p.xyz - camera.xyz) : 1e36;

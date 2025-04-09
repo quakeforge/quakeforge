@@ -52,6 +52,7 @@
 
 #define EQUAL_EPSILON 0.001
 #define RINT(x) (floor ((x) + 0.5))
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 
 #define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
 

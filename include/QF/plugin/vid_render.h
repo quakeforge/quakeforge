@@ -41,6 +41,7 @@ struct scene_s;
 struct particle_s;
 
 struct mod_alias_ctx_s;
+struct mod_iqm_ctx_s;
 struct mod_sprite_ctx_s;
 typedef struct skin_s skin_t;
 struct entqueue_s;
@@ -66,7 +67,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadAllSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_FinalizeAliasModel) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
-	void (*Mod_IQMFinish) (model_t *mod);
+	void (*Mod_IQMFinish) (struct mod_iqm_ctx_s *iqm_ctx);
 	int alias_cache;
 	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 

@@ -10,6 +10,7 @@ ruamoko_lib_libr_a_SOURCES=\
 	ruamoko/lib/cbuf.r \
 	ruamoko/lib/cmd.r \
 	ruamoko/lib/cvar.r \
+	ruamoko/lib/dirent.r \
 	ruamoko/lib/hash.r \
 	ruamoko/lib/msgbuf.r \
 	ruamoko/lib/plist.r \

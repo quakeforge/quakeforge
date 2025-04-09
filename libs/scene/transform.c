@@ -210,7 +210,7 @@ Transform_New (ecs_system_t ssys, transform_t parent)
 
 	if (parent.reg && parent.id != nullent) {
 		hierref_t   pref = Transform_GetRef (parent);
-		*ref = Hierarchy_InsertHierarchy (pref, nullhref, ssys.reg);
+		*ref = Hierref_InsertHierarchy (pref, nullhref, ssys.reg);
 	} else {
 		ref->id = Hierarchy_New (ssys.reg, ssys.base + scene_href,
 								 &transform_type, 1);
@@ -255,7 +255,7 @@ Transform_SetParent (transform_t transform, transform_t parent)
 	if (Transform_Valid (parent)) {
 		dref = Transform_GetRef (parent);
 	}
-	Hierarchy_SetParent (dref, sref, transform.reg);
+	Hierref_SetParent (dref, sref, transform.reg);
 
 	auto ref = Transform_GetRef (transform);
 	hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, transform.reg);
