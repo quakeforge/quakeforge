@@ -1462,6 +1462,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 ///@{
 
 /** Initialize the string management subsystem.
+	Called automatically during progs initialization.
 
 	\param pr		The VM of which the string management subsystem will be
 					initialized;

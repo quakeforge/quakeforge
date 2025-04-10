@@ -99,6 +99,7 @@ typedef struct prstr_resources_s {
 typedef enum {
 	str_free,
 	str_static,
+	str_engine,
 	str_dynamic,
 	str_mutable,
 	str_temp,
@@ -361,6 +362,7 @@ get_string (progs_t *pr, pr_string_t num)
 			case str_return:
 				requeue_strref (res, ref);
 			case str_static:
+			case str_engine:
 			case str_temp:
 			case str_dynamic:
 				return ref->s.string;
@@ -458,7 +460,7 @@ PR_SetString (progs_t *pr, const char *s)
 
 	if (__builtin_expect (!sr, 1)) {
 		sr = new_string_ref (res);
-		sr->type = str_static;
+		sr->type = str_engine;
 		sr->s.string = pr_strdup(pr, s);
 		Hash_Add (res->strref_hash, sr);
 	}
@@ -660,6 +662,7 @@ PR_HoldString (progs_t *pr, pr_string_t str)
 				sr->rs_slot = 0;
 				break;
 			case str_static:
+			case str_engine:
 			case str_mutable:
 			case str_dynamic:
 				// non-ephemeral string, no-op
@@ -684,6 +687,7 @@ PR_FreeString (progs_t *pr, pr_string_t str)
 	if (sr) {
 		switch (sr->type) {
 			case str_static:
+			case str_engine:
 			case str_temp:
 			case str_return:
 				return;
