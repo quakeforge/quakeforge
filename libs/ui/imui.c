@@ -202,8 +202,14 @@ imui_state_free (imui_ctx_t *ctx, imui_state_map_t *state)
 	PR_RESFREE (ctx->state_map, state);
 }
 
-static imui_state_t *
-imui_find_state (imui_ctx_t *ctx, const char *label)
+imui_state_t *
+IMUI_CurrentState (imui_ctx_t *ctx)
+{
+	return ctx->current_state;
+}
+
+imui_state_t *
+IMUI_FindState (imui_ctx_t *ctx, const char *label)
 {
 	int         key_offset = 0;
 	const char *key = strstr (label, "##");
@@ -229,7 +235,7 @@ imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 			key_offset = (key += 3) - label;
 		}
 	}
-	auto state = imui_find_state (ctx, label);
+	auto state = IMUI_FindState (ctx, label);
 	if (state) {
 		state->old_entity = state->entity;
 		state->entity = entity;
@@ -1477,7 +1483,7 @@ IMUI_Spacer (imui_ctx_t *ctx,
 static void
 create_reference_anchor (imui_ctx_t *ctx, uint32_t ent, imui_window_t *panel)
 {
-	auto state = imui_find_state (ctx, panel->reference);
+	auto state = IMUI_FindState (ctx, panel->reference);
 	if (!state) {
 		Sys_Printf ("IMUI: unknown widget '%s' for '%s'\n", panel->reference,
 					panel->name);
@@ -1722,7 +1728,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 int
 IMUI_ExtendPanel (imui_ctx_t *ctx, const char *panel_name)
 {
-	auto state = imui_find_state (ctx, panel_name);
+	auto state = IMUI_FindState (ctx, panel_name);
 	if (!state || !ECS_EntValid (state->entity, ctx->vsys.reg)) {
 		return 1;
 	}
@@ -1981,11 +1987,11 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 	int tt_mode = update_hot_active (ctx, tt_state);
 	set_fill (ctx, sb_view, ctx->style.background.color[sb_mode]);
 	set_fill (ctx, tt_view, ctx->style.foreground.color[tt_mode]);
-	auto scroller = imui_find_state (ctx, name);
+	auto scroller = IMUI_FindState (ctx, name);
 	if (scroller) {
 		auto slen = scroller->len;
 		tt_state->fraction.num = vertical ? slen.y : slen.x;
-		auto content = imui_find_state (ctx, va ("%s#content", name));
+		auto content = IMUI_FindState (ctx, va ("%s#content", name));
 		if (content) {
 			auto delta = check_drag_delta (ctx, tt_state->entity);
 			auto clen = content->len;

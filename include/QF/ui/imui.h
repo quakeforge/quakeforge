@@ -144,6 +144,9 @@ uint32_t IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window);
 imui_window_t *IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid) __attribute__((pure));
 
+imui_state_t *IMUI_CurrentState (imui_ctx_t *ctx);
+imui_state_t *IMUI_FindState (imui_ctx_t *ctx, const char *label);
+
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
 bool IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
