@@ -335,7 +335,7 @@ bi(IMUI_State_SetPos)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto label = P_GSTRING (pr, 1);
 	imui_state_t *state;
-	if (label) {
+	if (label && *label) {
 		state = IMUI_FindState (bi_ctx->imui_ctx, label);
 	} else {
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
@@ -352,7 +352,7 @@ bi(IMUI_State_SetLen)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto label = P_GSTRING (pr, 1);
 	imui_state_t *state;
-	if (label) {
+	if (label && *label) {
 		state = IMUI_FindState (bi_ctx->imui_ctx, label);
 	} else {
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
@@ -369,13 +369,13 @@ bi(IMUI_State_GetPos)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto label = P_GSTRING (pr, 1);
 	imui_state_t *state;
-	if (label) {
+	if (label && *label) {
 		state = IMUI_FindState (bi_ctx->imui_ctx, label);
 	} else {
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
 	}
 	if (state) {
-		R_var (pr, ivec2) = (pr_ivec2_t) { state->pos.x, state->pos.x };
+		R_var (pr, ivec2) = (pr_ivec2_t) { state->pos.x, state->pos.y };
 	}
 }
 
@@ -386,13 +386,13 @@ bi(IMUI_State_GetLen)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto label = P_GSTRING (pr, 1);
 	imui_state_t *state;
-	if (label) {
+	if (label && *label) {
 		state = IMUI_FindState (bi_ctx->imui_ctx, label);
 	} else {
 		state = IMUI_CurrentState (bi_ctx->imui_ctx);
 	}
 	if (state) {
-		R_var (pr, ivec2) = (pr_ivec2_t) { state->len.x, state->len.x };
+		R_var (pr, ivec2) = (pr_ivec2_t) { state->len.x, state->len.y };
 	}
 }
 
