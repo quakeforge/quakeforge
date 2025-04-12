@@ -73,6 +73,11 @@ grav_t IMUI_Window_GetReferenceGravity (imui_window_t *window);
 grav_t IMUI_Window_GetAnchorGravity (imui_window_t *window);
 uint IMUI_Window_GetParent (imui_window_t *window);
 
+void IMUI_State_SetPos (imui_ctx_t ctx, string state, ivec2 pos);
+void IMUI_State_SetLen (imui_ctx_t ctx, string state, ivec2 pos);
+ivec2 IMUI_State_GetPos (imui_ctx_t ctx, string state);
+ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state);
+
 imui_ctx_t IMUI_NewContext (string font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t ctx);
 

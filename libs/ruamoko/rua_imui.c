@@ -33,6 +33,7 @@
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
+#include "QF/simd/types.h"
 
 #include "QF/ui/canvas.h"
 #include "QF/ui/imui.h"
@@ -325,6 +326,74 @@ bi(IMUI_DestroyContext)
 		bi_ctx->next->prev = bi_ctx->prev;
 	}
 	imui_ctx_free (res, bi_ctx);
+}
+
+bi(IMUI_State_SetPos)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto label = P_GSTRING (pr, 1);
+	imui_state_t *state;
+	if (label) {
+		state = IMUI_FindState (bi_ctx->imui_ctx, label);
+	} else {
+		state = IMUI_CurrentState (bi_ctx->imui_ctx);
+	}
+	if (state) {
+		state->pos = (view_pos_t) { VEC2_EXP (P_var (pr, 2, ivec2)) };
+	}
+}
+
+bi(IMUI_State_SetLen)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto label = P_GSTRING (pr, 1);
+	imui_state_t *state;
+	if (label) {
+		state = IMUI_FindState (bi_ctx->imui_ctx, label);
+	} else {
+		state = IMUI_CurrentState (bi_ctx->imui_ctx);
+	}
+	if (state) {
+		state->len = (view_pos_t) { VEC2_EXP (P_var (pr, 2, ivec2)) };
+	}
+}
+
+bi(IMUI_State_GetPos)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto label = P_GSTRING (pr, 1);
+	imui_state_t *state;
+	if (label) {
+		state = IMUI_FindState (bi_ctx->imui_ctx, label);
+	} else {
+		state = IMUI_CurrentState (bi_ctx->imui_ctx);
+	}
+	if (state) {
+		R_var (pr, ivec2) = (pr_ivec2_t) { state->pos.x, state->pos.x };
+	}
+}
+
+bi(IMUI_State_GetLen)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto label = P_GSTRING (pr, 1);
+	imui_state_t *state;
+	if (label) {
+		state = IMUI_FindState (bi_ctx->imui_ctx, label);
+	} else {
+		state = IMUI_CurrentState (bi_ctx->imui_ctx);
+	}
+	if (state) {
+		R_var (pr, ivec2) = (pr_ivec2_t) { state->len.x, state->len.x };
+	}
 }
 
 bi (IMUI_SetVisible)
@@ -647,6 +716,11 @@ static builtin_t builtins[] = {
 	bi(IMUI_Window_GetReferenceGravity, 1, p(ptr)),
 	bi(IMUI_Window_GetAnchorGravity, 1, p(ptr)),
 	bi(IMUI_Window_GetParent,       1, p(ptr)),
+
+	bi(IMUI_State_SetPos,       3, p(int), p(string), p(ivec2)),
+	bi(IMUI_State_SetLen,       3, p(int), p(string), p(ivec2)),
+	bi(IMUI_State_GetPos,       2, p(int), p(string)),
+	bi(IMUI_State_GetLen,       2, p(int), p(string)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),
