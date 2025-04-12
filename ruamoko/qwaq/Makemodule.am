@@ -152,7 +152,7 @@ r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
 ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
+ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libui) -lcsqc -lr
 include $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
