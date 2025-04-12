@@ -422,7 +422,7 @@ main (int argc, string *argv)
 	imui_ctx = IMUI_NewContext ("Consolas", 22);
 
 	main_window = IMUI_NewWindow ("main");
-	IMUI_Window_SetSize (main_window, 300, 100);
+	IMUI_Window_SetSize (main_window, {300, 100});
 
 	refresh_2d (draw_2d);
 	setevents (event_hander, nil);

@@ -76,7 +76,7 @@
 
 	window = IMUI_NewWindow (forSave ? "Save a File##FileWindow"
 									 : "Open a File##FileWindow");
-	IMUI_Window_SetSize (window, 400, 300);
+	IMUI_Window_SetSize (window, {400, 300});
 	return self;
 }
 

@@ -3,11 +3,30 @@
 imui_window_t *IMUI_NewWindow (string name) = #0;
 void IMUI_DeleteWindow (imui_window_t *window) = #0;
 
+void IMUI_Window_SetPos (imui_window_t *window, ivec2 pos) = #0;
+void IMUI_Window_SetSize (imui_window_t *window, ivec2 size) = #0;
+void IMUI_Window_SetOpen (imui_window_t *window, bool isopen) = #0;
+void IMUI_Window_SetCollapsed (imui_window_t *window, bool iscollapsed) = #0;
+void IMUI_Window_SetNoCollapse (imui_window_t *window, bool nocollapse) = #0;
+void IMUI_Window_SetAutoFit (imui_window_t *window, bool autofit) = #0;
+void IMUI_Window_SetReference (imui_window_t *window, string reference) = #0;
+void IMUI_Window_SetReferenceGravity (imui_window_t *window, grav_t gravity) = #0;
+void IMUI_Window_SetAnchorGravity (imui_window_t *window, grav_t gravity) = #0;
+void IMUI_Window_SetParent (imui_window_t *window, uint parent) = #0;
+
+ivec2 IMUI_Window_GetPos (imui_window_t *window) = #0;
+ivec2 IMUI_Window_GetSize (imui_window_t *window) = #0;
+bool IMUI_Window_IsOpen (imui_window_t *window) = #0;
+bool IMUI_Window_IsCollapsed (imui_window_t *window) = #0;
+bool IMUI_Window_GetNoCollapse (imui_window_t *window) = #0;
+bool IMUI_Window_GetAutoFit (imui_window_t *window) = #0;
+string IMUI_Window_GetReference (imui_window_t *window) = #0;
+grav_t IMUI_Window_GetReferenceGravity (imui_window_t *window) = #0;
+grav_t IMUI_Window_GetAnchorGravity (imui_window_t *window) = #0;
+uint IMUI_Window_GetParent (imui_window_t *window) = #0;
+
 imui_ctx_t IMUI_NewContext (string font, float fontsize) = #0;
 void IMUI_DestroyContext (imui_ctx_t ctx) = #0;
-int IMUI_Window_IsOpen (imui_window_t *window) = #0;
-int IMUI_Window_IsCollapsed (imui_window_t *window) = #0;
-void IMUI_Window_SetSize (imui_window_t *window, int xlen, int ylen) = #0;
 
 void IMUI_SetVisible (imui_ctx_t ctx, int visible) = #0;
 void IMUI_SetSize (imui_ctx_t ctx, int xlen, int ylen) = #0;

@@ -136,6 +136,94 @@ bi(IMUI_DeleteWindow)
 	PR_Zone_Free (pr, window);
 }
 
+bi(IMUI_Window_SetPos)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->auto_fit = false;
+	window->xpos = P_var (pr, 1, ivec2)[0];
+	window->ypos = P_var (pr, 1, ivec2)[1];
+}
+
+bi(IMUI_Window_SetSize)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->auto_fit = false;
+	window->xlen = P_var (pr, 1, ivec2)[0];
+	window->ylen = P_var (pr, 1, ivec2)[1];
+}
+
+bi(IMUI_Window_SetOpen)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_INT (pr) = window->is_open;
+}
+
+bi(IMUI_Window_SetCollapsed)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->is_collapsed = P_INT (pr, 1);
+}
+
+bi(IMUI_Window_SetNoCollapse)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->no_collapse = P_INT (pr, 1);
+}
+
+bi(IMUI_Window_SetAutoFit)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->auto_fit = P_INT (pr, 1);
+}
+
+bi(IMUI_Window_SetReference)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->reference = P_GSTRING (pr, 1);
+}
+
+bi(IMUI_Window_SetReferenceGravity)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->reference_gravity = P_INT (pr, 1);
+}
+
+bi(IMUI_Window_SetAnchorGravity)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->anchor_gravity = P_INT (pr, 1);
+}
+
+bi(IMUI_Window_SetParent)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	window->parent = P_UINT (pr, 1);
+}
+
+bi(IMUI_Window_GetPos)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_var (pr, ivec2) = (pr_ivec2_t) { window->xpos, window->ypos };
+}
+
+bi(IMUI_Window_GetSize)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_var (pr, ivec2) = (pr_ivec2_t) { window->xlen, window->ylen };
+}
+
 bi(IMUI_Window_IsOpen)
 {
 	qfZoneScoped (true);
@@ -150,13 +238,46 @@ bi(IMUI_Window_IsCollapsed)
 	R_INT (pr) = window->is_collapsed;
 }
 
-bi(IMUI_Window_SetSize)
+bi(IMUI_Window_GetNoCollapse)
 {
 	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
-	window->auto_fit = false;
-	window->xlen = P_INT (pr, 1);
-	window->ylen = P_INT (pr, 2);
+	R_INT (pr) = window->no_collapse;
+}
+
+bi(IMUI_Window_GetAutoFit)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_INT (pr) = window->auto_fit;
+}
+
+bi(IMUI_Window_GetReference)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	RETURN_STRING (pr, window->reference);
+}
+
+bi(IMUI_Window_GetReferenceGravity)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_INT (pr) = window->reference_gravity;
+}
+
+bi(IMUI_Window_GetAnchorGravity)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_INT (pr) = window->anchor_gravity;
+}
+
+bi(IMUI_Window_GetParent)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	R_UINT (pr) = window->parent;
 }
 
 bi(IMUI_NewContext)
@@ -504,9 +625,28 @@ bi (IMUI_ScrollBar)
 static builtin_t builtins[] = {
 	bi(IMUI_NewWindow,              1, p(string)),
 	bi(IMUI_DeleteWindow,           1, p(ptr)),
+
+	bi(IMUI_Window_SetPos,          2, p(ptr), p(ivec2)),
+	bi(IMUI_Window_SetSize,         2, p(ptr), p(ivec2)),
+	bi(IMUI_Window_SetOpen,         2, p(ptr), p(int)),
+	bi(IMUI_Window_SetCollapsed,    2, p(ptr), p(int)),
+	bi(IMUI_Window_SetNoCollapse,   2, p(ptr), p(int)),
+	bi(IMUI_Window_SetAutoFit,      2, p(ptr), p(int)),
+	bi(IMUI_Window_SetReference,    2, p(ptr), p(string)),
+	bi(IMUI_Window_SetReferenceGravity, 2, p(ptr), p(int)),
+	bi(IMUI_Window_SetAnchorGravity, 2, p(ptr), p(int)),
+	bi(IMUI_Window_SetParent,       2, p(ptr), p(uint)),
+
+	bi(IMUI_Window_GetPos,          1, p(ptr)),
+	bi(IMUI_Window_GetSize,         1, p(ptr)),
 	bi(IMUI_Window_IsOpen,          1, p(ptr)),
 	bi(IMUI_Window_IsCollapsed,     1, p(ptr)),
-	bi(IMUI_Window_SetSize,         3, p(ptr), p(int), p(int)),
+	bi(IMUI_Window_GetNoCollapse,   1, p(ptr)),
+	bi(IMUI_Window_GetAutoFit,      1, p(ptr)),
+	bi(IMUI_Window_GetReference,    1, p(ptr)),
+	bi(IMUI_Window_GetReferenceGravity, 1, p(ptr)),
+	bi(IMUI_Window_GetAnchorGravity, 1, p(ptr)),
+	bi(IMUI_Window_GetParent,       1, p(ptr)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),

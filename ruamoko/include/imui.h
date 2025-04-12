@@ -3,6 +3,20 @@
 
 typedef @handle imui_ctx_h imui_ctx_t;
 
+//FIXME should be in view.h but I need to create it
+typedef enum {
+	grav_center,	///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_north,		///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_northeast,	///< +ve X left,  +ve Y down, -X right, -ve Y up
+	grav_east,		///< +ve X left,  +ve Y down, -X right, -ve Y up
+	grav_southeast,	///< +ve X left,  +ve Y up,   -X right, -ve Y down
+	grav_south,		///< +ve X right, +ve Y up,   -X left,  -ve Y down
+	grav_southwest,	///< +ve X right, +ve Y up,   -X left,  -ve Y down
+	grav_west,		///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_northwest,	///< +ve X right, +ve Y down, -X left,  -ve Y up
+	grav_flow,		///< controlled by view_flow
+} grav_t;
+
 typedef enum {
 	imui_size_none,
 	imui_size_pixels,
@@ -36,9 +50,28 @@ typedef struct imui_window_s imui_window_t;
 
 imui_window_t *IMUI_NewWindow (string name);
 void IMUI_DeleteWindow (imui_window_t *window);
-int IMUI_Window_IsOpen (imui_window_t *window);
-int IMUI_Window_IsCollapsed (imui_window_t *window);
-void IMUI_Window_SetSize (imui_window_t *window, int xlen, int ylen);
+
+void IMUI_Window_SetPos (imui_window_t *window, ivec2 pos);
+void IMUI_Window_SetSize (imui_window_t *window, ivec2 size);
+void IMUI_Window_SetOpen (imui_window_t *window, bool isopen);
+void IMUI_Window_SetCollapsed (imui_window_t *window, bool iscollapsed);
+void IMUI_Window_SetNoCollapse (imui_window_t *window, bool nocollapse);
+void IMUI_Window_SetAutoFit (imui_window_t *window, bool autofit);
+void IMUI_Window_SetReference (imui_window_t *window, string reference);
+void IMUI_Window_SetReferenceGravity (imui_window_t *window, grav_t gravity);
+void IMUI_Window_SetAnchorGravity (imui_window_t *window, grav_t gravity);
+void IMUI_Window_SetParent (imui_window_t *window, uint parent);
+
+ivec2 IMUI_Window_GetPos (imui_window_t *window);
+ivec2 IMUI_Window_GetSize (imui_window_t *window);
+bool IMUI_Window_IsOpen (imui_window_t *window);
+bool IMUI_Window_IsCollapsed (imui_window_t *window);
+bool IMUI_Window_GetNoCollapse (imui_window_t *window);
+bool IMUI_Window_GetAutoFit (imui_window_t *window);
+string IMUI_Window_GetReference (imui_window_t *window);
+grav_t IMUI_Window_GetReferenceGravity (imui_window_t *window);
+grav_t IMUI_Window_GetAnchorGravity (imui_window_t *window);
+uint IMUI_Window_GetParent (imui_window_t *window);
 
 imui_ctx_t IMUI_NewContext (string font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t ctx);
