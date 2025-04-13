@@ -1277,6 +1277,8 @@ IMUI_Label (imui_ctx_t *ctx, const char *label)
 
 	set_fill (ctx, view, ctx->style.background.normal);
 	add_text (ctx, view, state, 0);
+	auto len = View_GetLen (view);
+	state->len = len;
 }
 
 void
@@ -2025,4 +2027,85 @@ IMUI_ScrollBar (imui_ctx_t *ctx, const char *name)
 					  vertical ? &efrac : &tfrac);
 	Ent_SetComponent (tt_view.id, c_fraction_y, ctx->csys.reg,
 					  vertical ? &tfrac : &efrac);
+}
+
+int
+IMUI_StartScroller (imui_ctx_t *ctx)
+{
+	auto anchor_view = View_New (ctx->vsys, ctx->current_parent);
+	*View_Control (anchor_view) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.semantic_x = imui_size_expand,
+		.semantic_y = imui_size_fitchildren,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+	auto reg = ctx->csys.reg;
+	Ent_SetComponent (anchor_view.id, c_fraction_x, reg,
+					  &(imui_frac_t) { 100, 100 });
+
+	uint32_t    parent = ctx->current_parent.id;
+	const char *name = nullptr;
+	if (Ent_HasComponent (parent, ecs_name, ctx->csys.reg)) {
+		name = *(char **) Ent_GetComponent (parent, ecs_name, ctx->csys.reg);
+	}
+	auto state = imui_get_state (ctx, va ("%s#content", name), anchor_view.id);
+	DARRAY_APPEND (&ctx->scrollers, state);
+	update_hot_active (ctx, state);
+
+	View_SetPos (anchor_view, -state->pos.x, -state->pos.y);
+
+	auto scroller = View_New (ctx->vsys, nullview);
+	Canvas_SetReference (ctx->csys, scroller.id,
+						 Canvas_Entity (ctx->csys,
+										View_GetRoot (anchor_view).id));
+	*View_Control (scroller) = (viewcont_t) {
+		.gravity = grav_northwest,
+		.visible = 1,
+		.free_x = 1,
+		.free_y = 1,
+		.vertical = true,
+		.active = 1,
+	};
+
+	View_Control (anchor_view)->is_link = 1;
+	imui_reference_t link = {
+		.ref_id = scroller.id,
+		.update = true,
+		.ctx = ctx,
+	};
+	Ent_SetComponent (anchor_view.id, c_reference, anchor_view.reg, &link);
+
+	imui_reference_t anchor = {
+		.ref_id = anchor_view.id,
+	};
+	Ent_SetComponent (scroller.id, c_reference, scroller.reg, &anchor);
+
+	DARRAY_APPEND (&ctx->parent_stack, ctx->current_parent);
+	ctx->current_parent = scroller;
+	return 0;
+}
+
+void
+IMUI_EndScroller (imui_ctx_t *ctx)
+{
+	IMUI_PopLayout (ctx);
+}
+
+void
+IMUI_SetViewPos (imui_ctx_t *ctx, view_pos_t pos)
+{
+	uint32_t id = ctx->current_state->entity;
+	auto view = View_FromEntity (ctx->vsys, id);
+	View_SetPos (view, pos.x, pos.y);
+}
+
+void
+IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len)
+{
+	uint32_t id = ctx->current_state->entity;
+	auto view = View_FromEntity (ctx->vsys, id);
+	View_SetLen (view, len.x, len.y);
 }

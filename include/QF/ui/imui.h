@@ -200,6 +200,11 @@ int IMUI_StartScrollBox (imui_ctx_t *ctx, const char *name);
 void IMUI_EndScrollBox (imui_ctx_t *ctx);
 
 void IMUI_ScrollBar (imui_ctx_t *ctx, const char *name);
+int IMUI_StartScroller (imui_ctx_t *ctx);
+void IMUI_EndScroller (imui_ctx_t *ctx);
+
+void IMUI_SetViewPos (imui_ctx_t *ctx, view_pos_t pos);
+void IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len);
 
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = (begin); !_i_; _i_++, (end))
@@ -265,6 +270,9 @@ void IMUI_ScrollBar (imui_ctx_t *ctx, const char *name);
 					IMUI_EndScrollBox (IMUI_context))
 #define UI_ScrollBar(name) \
 	IMUI_ScrollBar (IMUI_context, name)
+#define UI_Scroller() \
+	IMUI_DeferLoop (IMUI_StartScroller (IMUI_context), \
+					IMUI_EndScroller (IMUI_context))
 
 #define UI_Style(style) \
 	IMUI_DeferLoop (IMUI_PushStyle (IMUI_context, style), \

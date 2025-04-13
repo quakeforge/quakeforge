@@ -12,6 +12,7 @@ typedef struct imui_window_s imui_window_t;
 	string name;
 	bool   isdir;
 	imui_ctx_t IMUI_context;
+	ivec2  item_size;
 }
 +(FileItem *) fromDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx;
 -draw;

@@ -687,6 +687,40 @@ bi (IMUI_ScrollBar)
 	IMUI_ScrollBar (bi_ctx->imui_ctx, name);
 }
 
+bi (IMUI_StartScroller)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	R_INT (pr) = IMUI_StartScroller (bi_ctx->imui_ctx);
+}
+
+bi (IMUI_EndScroller)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	IMUI_EndScroller (bi_ctx->imui_ctx);
+}
+
+bi (IMUI_SetViewPos)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto pos = (view_pos_t) { VEC2_EXP (P_var (pr, 1, ivec2)) };
+	IMUI_SetViewPos (bi_ctx->imui_ctx, pos);
+}
+
+bi (IMUI_SetViewLen)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto len = (view_pos_t) { VEC2_EXP (P_var (pr, 1, ivec2)) };
+	IMUI_SetViewLen (bi_ctx->imui_ctx, len);
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
@@ -758,6 +792,11 @@ static builtin_t builtins[] = {
 	bi(IMUI_StartScrollBox,     2, p(int), p(string)),
 	bi(IMUI_EndScrollBox,       1, p(int)),
 	bi(IMUI_ScrollBar,          2, p(int), p(string)),
+	bi(IMUI_StartScroller,      1, p(int)),
+	bi(IMUI_EndScroller,        1, p(int)),
+
+	bi(IMUI_SetViewPos,         2, p(int), p(ivec2)),
+	bi(IMUI_SetViewLen,         2, p(int), p(ivec2)),
 
 	{0}
 };

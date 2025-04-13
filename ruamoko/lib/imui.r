@@ -77,3 +77,8 @@ int IMUI_StartScrollBox (imui_ctx_t ctx, string name) = #0;
 void IMUI_EndScrollBox (imui_ctx_t ctx) = #0;
 
 void IMUI_ScrollBar (imui_ctx_t ctx, string name) = #0;
+int IMUI_StartScroller (imui_ctx_t ctx) = #0;
+void IMUI_EndScroller (imui_ctx_t ctx) = #0;
+
+void IMUI_SetViewPos (imui_ctx_t ctx, ivec2 pos) = #0;
+void IMUI_SetViewLen (imui_ctx_t ctx, ivec2 len) = #0;
