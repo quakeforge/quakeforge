@@ -216,7 +216,7 @@ convert_joints (uint32_t num_joints, qfm_joint_t *joints,
 }
 
 static void
-update_vertice_joints (mod_iqm_ctx_t *iqm_ctx, uint32_t *bone_map)
+update_vertex_joints (mod_iqm_ctx_t *iqm_ctx, uint32_t *bone_map)
 {
 	qfm_attrdesc_t blend_indices = {};
 
@@ -231,10 +231,23 @@ update_vertice_joints (mod_iqm_ctx_t *iqm_ctx, uint32_t *bone_map)
 	}
 	auto data = (byte *) iqm_ctx->hdr + blend_indices.offset;
 	for (uint32_t i = 0; i < iqm_ctx->hdr->num_vertexes; i++) {
-		//FIXME assumes bytes
-		auto indices = data + i * blend_indices.stride;
-		for (int j = 0; j < blend_indices.components; j++) {
-			indices[j] = bone_map[indices[j] + 1];
+		//FIXME assumes bytes or ushorts
+		if (blend_indices.type == qfm_u16) {
+			auto indices = (uint16_t *) (data + i * blend_indices.stride);
+			for (int j = 0; j < blend_indices.components; j++) {
+				if (indices[j] >= iqm_ctx->hdr->num_joints) {
+					indices[j] = 0;
+				}
+				indices[j] = bone_map[indices[j] + 1];
+			}
+		} else {
+			auto indices = data + i * blend_indices.stride;
+			for (int j = 0; j < blend_indices.components; j++) {
+				if (indices[j] >= iqm_ctx->hdr->num_joints) {
+					indices[j] = 0;
+				}
+				indices[j] = bone_map[indices[j] + 1];
+			}
 		}
 	}
 }
@@ -388,7 +401,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 
 	convert_joints (hdr->num_joints, joints, base, inverse, bone_map,
 					iqm.joints, text_base);
-	update_vertice_joints (&iqm, bone_map);
+	update_vertex_joints (&iqm, bone_map);
 
 	for (uint32_t i = 0, j = 0; i < hdr->num_poses; i++) {
 		uint32_t id = bone_map[i + 1];
