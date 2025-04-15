@@ -1275,6 +1275,20 @@ set_expand_x (imui_ctx_t *ctx, view_t view, int weight)
 					  &(imui_frac_t) { weight, 100 });
 }
 
+int
+IMUI_CheckButtonState (imui_ctx_t *ctx)
+{
+	auto state = ctx->current_state;
+	return check_button_state (ctx, state->entity);
+}
+
+int
+IMUI_UpdateHotActive (imui_ctx_t *ctx)
+{
+	auto state = ctx->current_state;
+	return update_hot_active (ctx, state);
+}
+
 void
 IMUI_SetFill (imui_ctx_t *ctx, byte color)
 {
