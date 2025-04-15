@@ -20,6 +20,10 @@ typedef struct imui_window_s imui_window_t;
 
 @class Array;
 
+@interface Array (FileItem)
+-sort_file_items;
+@end
+
 @interface FileWindow : Object
 {
 	string fileSpec;

@@ -1,5 +1,6 @@
 #include <Array.h>
 
+#include <stdlib.h>
 #include <dirent.h>
 #include <imui.h>
 #include <string.h>
@@ -50,6 +51,25 @@ void printf(string, ...);
 	return item_size.y;
 }
 
+-(int) cmp: (FileItem *) other
+{
+	return name != other.name;
+}
+
+@end
+
+@implementation Array (FileItem)
+
+int file_item_cmp (void *a, void *b)
+{
+	return [*(FileItem **) a cmp: *(FileItem **) b];
+}
+
+-sort_file_items
+{
+	qsort (_objs, count, sizeof (FileItem *), file_item_cmp);
+	return self;
+}
 @end
 
 @implementation FileWindow
@@ -69,6 +89,7 @@ void printf(string, ...);
 				dirent = readdir (dir);
 			}
 			closedir (dir);
+			[items sort_file_items];
 		}
 	}
 	return self;
