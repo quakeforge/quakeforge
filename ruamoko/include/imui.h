@@ -97,6 +97,8 @@ void IMUI_PopStyle (imui_ctx_t ctx);
 void IMUI_Style_Update (imui_ctx_t ctx, imui_style_t *style);
 void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style);
 
+int IMUI_CheckButtonState (imui_ctx_t ctx);
+int IMUI_UpdateHotActive (imui_ctx_t ctx);
 void IMUI_SetFill (imui_ctx_t ctx, uint color);
 void IMUI_Label (imui_ctx_t ctx, string label);
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...);
