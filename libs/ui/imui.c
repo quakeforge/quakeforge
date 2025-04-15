@@ -952,6 +952,13 @@ layout_objects (imui_ctx_t *ctx, view_t root_view)
 	//dump_tree (href, 0, ctx);
 }
 
+static bool
+is_inside (view_pos_t mp, view_pos_t abs, view_pos_t len)
+{
+	return (mp.x >= abs.x && mp.y >= abs.y
+			&& mp.x < abs.x + len.x && mp.y < abs.y + len.y);
+}
+
 static void
 check_inside (imui_ctx_t *ctx, view_t root_view)
 {
@@ -966,9 +973,18 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 	auto mp = ctx->mouse_position;
 
 	for (uint32_t i = 0; i < h->num_objects; i++) {
-		if (cont[i].active
-			&& mp.x >= abs[i].x && mp.y >= abs[i].y
-			&& mp.x < abs[i].x + len[i].x && mp.y < abs[i].y + len[i].y) {
+		// links might have zero size but should still be followed (FIXME
+		// this is probably a design issue with scrollers and automatic sizing
+		// but it works for now because scrollers have two links and the outer
+		// one is correctly sized)
+		if (cont[i].is_link
+			&& (!len[i].x || !len[i].y || is_inside (mp, abs[i], len[i]))) {
+			imui_reference_t *sub = Ent_GetComponent (ent[i], c_reference, reg);
+			auto sub_view = View_FromEntity (ctx->vsys, sub->ref_id);
+			check_inside (ctx, sub_view);
+			continue;
+		}
+		if (cont[i].active && is_inside (mp, abs[i], len[i])) {
 			if (ctx->active == ent[i] || ctx->active == nullent) {
 				ctx->hot = ent[i];
 				ctx->hot_position = abs[i];
