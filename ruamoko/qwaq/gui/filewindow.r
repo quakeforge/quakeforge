@@ -5,6 +5,8 @@
 #include <string.h>
 #include "filewindow.h"
 
+void printf(string, ...);
+
 @implementation FileItem
 
 -initWithDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx
@@ -32,6 +34,13 @@
 -draw
 {
 	UI_Labelf ("%s%s", name, name != ".." && isdir ? "/" : "");
+	int mode = IMUI_UpdateHotActive (IMUI_context);
+	int but = IMUI_CheckButtonState (IMUI_context);
+	if (mode == 2) {
+		UI_SetFill (0);
+	} else if (mode == 1) {
+		UI_SetFill (1 + but);
+	}
 	item_size = IMUI_State_GetLen (IMUI_context, nil);
 	return self;
 }
