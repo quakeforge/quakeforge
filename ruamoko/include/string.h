@@ -27,4 +27,10 @@ float strtof (string str, int *end);
 long strtol (string str, int *end, int base);
 unsigned long strtoul (string str, int *end, int base);
 
+//FIXME fill in the rest
+#define FNM_PATHNAME (1 << 0)
+#define FNM_NOESCAPE (1 << 1)
+#define FNM_PERIOD (1 << 2)
+bool fnmatch (string pattern, string str, int flags);
+
 #endif//__ruamoko_string_h

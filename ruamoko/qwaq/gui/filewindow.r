@@ -84,41 +84,7 @@ void printf(string, ...);
 
 -(bool) match:(string)wildcard
 {
-	int card_len = strlen (wildcard);
-	int name_pos = 0;
-	int card_pos = 0;
-	bool match = true;
-	bool match_any = false;
-	while (name_pos < name_len) {
-		if (!match_any) {
-			while (card_pos < card_len
-				   && str_char (wildcard, card_pos) == '*') {
-				card_pos++;
-				match_any = true;
-			}
-		}
-		if (card_pos >= card_len) {
-			break;
-		}
-		if (match_any) {
-			if (str_char (name, name_pos) == str_char (wildcard, card_pos)) {
-				match_any = false;
-				card_pos++;
-			}
-			name_pos++;
-		} else {
-			if (str_char (name, name_pos) != str_char (wildcard, card_pos)) {
-				match = false;
-				break;
-			}
-			name_pos++;
-			card_pos++;
-		}
-	}
-	if (card_pos < card_len) {
-		match = false;
-	}
-	return match;
+	return fnmatch (wildcard, name, FNM_PATHNAME);
 }
 
 -selected:(bool)selected

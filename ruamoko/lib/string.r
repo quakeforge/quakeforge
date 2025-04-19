@@ -25,3 +25,5 @@ double strtod (string str, int *end) = #0;
 float strtof (string str, int *end) = #0;
 long strtol (string str, int *end, int base) = #0;
 unsigned long strtoul (string str, int *end, int base) = #0;
+
+bool fnmatch (string pattern, string str, int flags) = #0;

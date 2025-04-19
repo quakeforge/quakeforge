@@ -41,6 +41,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "fnmatch.h"
 #include "qfalloca.h"
 
 #if defined(_WIN32) && defined(HAVE_MALLOC_H)
@@ -424,6 +425,22 @@ bi_strtoul (progs_t *pr, void *data)
 	}
 }
 
+static void
+bi_fnmatch (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	const char *pattern = P_GSTRING (pr, 0);
+	const char *string = P_GSTRING (pr, 1);
+	int         flags = P_INT (pr, 2);
+
+	int ret = fnmatch (pattern, string, flags);
+	if (ret == 0 || ret == FNM_NOMATCH) {
+		R_INT (pr) = -!ret;
+	} else {
+		PR_RunError (pr, "fnmatch failed: %d", ret);
+	}
+}
+
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -453,6 +470,7 @@ static builtin_t builtins[] = {
 	bi(strtof,      1, p(string)),
 	bi(strtol,      1, p(string)),
 	bi(strtoul,     1, p(string)),
+	bi(fnmatch,     3, p(string), p(string), p(int)),
 	{0}
 };
 
