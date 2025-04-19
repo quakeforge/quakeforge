@@ -145,7 +145,7 @@ void printf(string, ...);
 			}
 		}
 	}
-	UI_ScrollBar ("ListView:scroller");
+	UI_ScrollBar (name + "##ListView:scroller");
 	return self;
 }
 
