@@ -10,12 +10,11 @@ void printf(string, ...);
 
 @implementation FileItem
 
--initWithDirent:(dirent_t)dirent owner:(FileWindow *)owner ctx:(imui_ctx_t)ctx
+-initWithDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithName:dirent.name ctx:ctx])) {
 		return nil;
 	}
-	name = str_hold (dirent.name);
 	ext = name != ".." ? strrchr (name, '.') : -1;
 	name_len = strlen (name);
 	if (ext == 0) {
@@ -23,48 +22,19 @@ void printf(string, ...);
 		ext = -1;
 	}
 	isdir = dirent.type == 1;
-	self.owner = owner;
-	isselected = false;
-	IMUI_context = ctx;
 	return self;
 }
 
-+(FileItem *) fromDirent:(dirent_t)dirent owner:(FileWindow *)owner ctx:(imui_ctx_t)ctx
++(FileItem *) fromDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx
 {
-	return [[[self alloc] initWithDirent:dirent owner:owner ctx:ctx] autorelease];
-}
-
--(void)dealloc
-{
-	str_free (name);
-	[super dealloc];
+	return [[[self alloc] initWithDirent:dirent ctx:ctx] autorelease];
 }
 
 -draw
 {
 	UI_Labelf ("%s%s", name, name != ".." && isdir ? "/" : "");
-	int mode = IMUI_UpdateHotActive (IMUI_context);
-	int but = IMUI_CheckButtonState (IMUI_context);
-	if (isselected) {
-		UI_SetFill (1);
-	}
 	item_size = IMUI_State_GetLen (IMUI_context, nil);
-
-	if (but) {
-		[owner itemClicked:self];
-	}
-	return self;
-}
-
--select:(bool) select
-{
-	isselected = select;
-	return self;
-}
-
--(int) height
-{
-	return item_size.y;
+	return [super checkInput];
 }
 
 -(int) cmp:(FileItem *) other
@@ -85,17 +55,6 @@ void printf(string, ...);
 -(bool) match:(string)wildcard
 {
 	return fnmatch (wildcard, name, FNM_PATHNAME);
-}
-
--selected:(bool)selected
-{
-	isselected = selected;
-	return self;
-}
-
--(string)name
-{
-	return name;
 }
 
 @end
@@ -125,7 +84,7 @@ int file_item_cmp (void *a, void *b)
 			auto dirent = readdir (dir);
 			while (dirent.name) {
 				if (dirent.type < 2 && dirent.name != ".") {
-					FileItem *item = [FileItem fromDirent:dirent owner:self
+					FileItem *item = [FileItem fromDirent:dirent
 													  ctx:IMUI_context];
 					if (![item hidden]
 						&& ([item isdir] || [item match:fileSpec])) {
@@ -138,6 +97,7 @@ int file_item_cmp (void *a, void *b)
 			[items sort_file_items];
 		}
 	}
+	[listView setItems:items];
 	return self;
 }
 
@@ -151,9 +111,9 @@ int file_item_cmp (void *a, void *b)
 	self.filePath = str_hold (filePath);
 	self.forSave = forSave;
 	IMUI_context = ctx;
-	selected_item = -1;
 
 	items = [[Array array] retain];
+	listView = [[ListView list:"FileWindow:files" ctx:ctx] retain];
 
 	[self readdir];
 
@@ -191,43 +151,8 @@ int file_item_cmp (void *a, void *b)
 		UI_Horizontal {
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
 			UI_SetFill (style.background.normal);
-			UI_ScrollBox("FileWindow:scroller") {
-				auto sblen = IMUI_State_GetLen (IMUI_context, nil);
-				UI_Scroller () {
-					ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
-					ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
-					int height = [[items objectAtIndex:0] height];
-					len.y = [items count] * height;
-					IMUI_State_SetLen (IMUI_context, nil, len);
-					if (!height) {
-						height = 1;
-					}
-					IMUI_SetViewPos (IMUI_context, { 0, -pos.y % height });
-					len = sblen;
-					len.y = (len.y + height - 1) / height + 1;
-					for (uint i = pos.y / height;
-						 len.y-- > 0 && i < [items count]; i++) {
-						[[items objectAtIndex:i] draw];
-					}
-				}
-			}
-			UI_ScrollBar ("FileWindow:scroller");
+			[listView draw];
 		}
-	}
-	return self;
-}
-
--itemClicked:(FileItem *)item
-{
-	if (selected_item >= 0 && [items objectAtIndex:selected_item] == item) {
-		printf ("item accepted:%s\n", [item name]);
-	} else {
-		if (selected_item >= 0) {
-			[[items objectAtIndex:selected_item] select:false];
-		}
-		[item select:true];
-		selected_item = [items indexOfObject:item];
-		printf ("item selected:%d:%s\n", selected_item, [item name]);
 	}
 	return self;
 }

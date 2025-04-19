@@ -65,6 +65,7 @@ qwaq_app_dat_src= \
 
 qwaq_ed_dat_src= \
 	ruamoko/qwaq/gui/filewindow.r \
+	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/pga3d.r \
 	ruamoko/qwaq/qwaq-ed.r
@@ -218,6 +219,8 @@ EXTRA_DIST += \
 	ruamoko/qwaq/editor/editbuffer.h \
 	ruamoko/qwaq/editor/editor.h \
 	ruamoko/qwaq/editor/status.h \
+	ruamoko/qwaq/gui/filewindow.h \
+	ruamoko/qwaq/gui/listview.h \
 	ruamoko/qwaq/input-app.h \
 	ruamoko/qwaq/qwaq-app.h \
 	ruamoko/qwaq/qwaq-input.h \
