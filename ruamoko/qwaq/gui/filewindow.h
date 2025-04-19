@@ -13,6 +13,8 @@ typedef struct imui_window_s imui_window_t;
 {
 	string name;
 	bool   isdir;
+	int    ext;
+	int    name_len;
 	imui_ctx_t IMUI_context;
 	ivec2  item_size;
 	FileWindow *owner;
@@ -23,6 +25,9 @@ typedef struct imui_window_s imui_window_t;
 -draw;
 -selected:(bool)selected;
 -(string)name;
+-(bool)isdir;
+-(bool)hidden;
+-(bool)match:(string)wildcard;
 @end
 
 @class Array;

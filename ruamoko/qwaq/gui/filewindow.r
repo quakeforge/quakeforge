@@ -16,6 +16,12 @@ void printf(string, ...);
 		return nil;
 	}
 	name = str_hold (dirent.name);
+	ext = name != ".." ? strrchr (name, '.') : -1;
+	name_len = strlen (name);
+	if (ext == 0) {
+		// dot-file with no extension
+		ext = -1;
+	}
 	isdir = dirent.type == 1;
 	self.owner = owner;
 	isselected = false;
@@ -66,6 +72,55 @@ void printf(string, ...);
 	return name != other.name;
 }
 
+-(bool) isdir
+{
+	return isdir;
+}
+
+-(bool) hidden
+{
+	return name != ".." && str_char (name, 0) == '.';
+}
+
+-(bool) match:(string)wildcard
+{
+	int card_len = strlen (wildcard);
+	int name_pos = 0;
+	int card_pos = 0;
+	bool match = true;
+	bool match_any = false;
+	while (name_pos < name_len) {
+		if (!match_any) {
+			while (card_pos < card_len
+				   && str_char (wildcard, card_pos) == '*') {
+				card_pos++;
+				match_any = true;
+			}
+		}
+		if (card_pos >= card_len) {
+			break;
+		}
+		if (match_any) {
+			if (str_char (name, name_pos) == str_char (wildcard, card_pos)) {
+				match_any = false;
+				card_pos++;
+			}
+			name_pos++;
+		} else {
+			if (str_char (name, name_pos) != str_char (wildcard, card_pos)) {
+				match = false;
+				break;
+			}
+			name_pos++;
+			card_pos++;
+		}
+	}
+	if (card_pos < card_len) {
+		match = false;
+	}
+	return match;
+}
+
 -selected:(bool)selected
 {
 	isselected = selected;
@@ -104,8 +159,12 @@ int file_item_cmp (void *a, void *b)
 			auto dirent = readdir (dir);
 			while (dirent.name) {
 				if (dirent.type < 2 && dirent.name != ".") {
-					[items addObject:[FileItem fromDirent:dirent owner:self
-													  ctx:IMUI_context]];
+					FileItem *item = [FileItem fromDirent:dirent owner:self
+													  ctx:IMUI_context];
+					if (![item hidden]
+						&& ([item isdir] || [item match:fileSpec])) {
+						[items addObject: item];
+					}
 				}
 				dirent = readdir (dir);
 			}
