@@ -19,6 +19,7 @@ layout (push_constant) uniform PushConstants {
 layout (location = 0) in vec2 st;
 layout (location = 1) in vec4 position;
 layout (location = 2) in vec3 normal;
+layout (location = 3) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 
@@ -38,6 +39,7 @@ main (void)
 	light -= d * shadelight;
 	light = max (light, 0.0) / 255;
 
+	c *= color;
 	c = vec4 (light * c.rgb, c.w);
 	frag_color = FogBlend (c + e, fog);
 }

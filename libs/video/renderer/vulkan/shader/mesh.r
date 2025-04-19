@@ -58,6 +58,7 @@ typedef enum {
 [out(0)] vec2 out_texcoord;
 [out(1)] vec4 out_position;
 [out(2)] vec3 out_normal;
+[out(3)] vec4 out_color;
 
 [shader("Vertex")]
 [capability("MultiView")]
@@ -131,4 +132,5 @@ main (void)
 	out_position = pos;
 	out_normal = normalize (normal);
 	out_texcoord = texcoord;
+	out_color = color;
 }

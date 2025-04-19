@@ -13,6 +13,7 @@ layout (push_constant) uniform PushConstants {
 layout (location = 0) in vec2 st;
 layout (location = 1) in vec4 position;
 layout (location = 2) in vec3 normal;
+layout (location = 3) in vec4 color;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_emission;
@@ -31,7 +32,7 @@ main (void)
 	c += texture (Palette, vec2 (cmap.x, rows.x)) * cmap.y;
 	c += texture (Palette, vec2 (cmap.z, rows.y)) * cmap.w;
 
-	frag_color = c;
+	frag_color = c * color;
 	frag_emission = e;
 	frag_normal = vec4(normalize(normal), 1);
 	frag_position = vec4 (position.xyz, gl_FragCoord.z);
