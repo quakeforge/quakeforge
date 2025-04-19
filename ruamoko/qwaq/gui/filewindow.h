@@ -7,15 +7,22 @@
 typedef @handle imui_ctx_h imui_ctx_t;
 typedef struct imui_window_s imui_window_t;
 
+@class FileWindow;
+
 @interface FileItem : Object
 {
 	string name;
 	bool   isdir;
 	imui_ctx_t IMUI_context;
 	ivec2  item_size;
+	FileWindow *owner;
+
+	bool   isselected;
 }
-+(FileItem *) fromDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx;
++(FileItem *) fromDirent:(dirent_t)dirent owner:(FileWindow *) owner ctx:(imui_ctx_t)ctx;
 -draw;
+-selected:(bool)selected;
+-(string)name;
 @end
 
 @class Array;
@@ -34,10 +41,14 @@ typedef struct imui_window_s imui_window_t;
 
 	imui_ctx_t IMUI_context;
 	struct imui_window_s *window;
+
+	int    selected_item;
 }
 +(FileWindow *) openFile:(string)fileSpec at:(string)filePath
 					 ctx:(imui_ctx_t)ctx;
 -draw;
+
+-itemClicked:(FileItem *) item;
 @end
 
 #endif//__qwaq_gui_filewindow_h

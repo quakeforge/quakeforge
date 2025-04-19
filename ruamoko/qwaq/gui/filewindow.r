@@ -10,20 +10,22 @@ void printf(string, ...);
 
 @implementation FileItem
 
--initWithDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx
+-initWithDirent:(dirent_t)dirent owner:(FileWindow *)owner ctx:(imui_ctx_t)ctx
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
-	self.name = str_hold (dirent.name);
-	self.isdir = dirent.type == 1;
+	name = str_hold (dirent.name);
+	isdir = dirent.type == 1;
+	self.owner = owner;
+	isselected = false;
 	IMUI_context = ctx;
 	return self;
 }
 
-+(FileItem *) fromDirent:(dirent_t)dirent ctx:(imui_ctx_t)ctx
++(FileItem *) fromDirent:(dirent_t)dirent owner:(FileWindow *)owner ctx:(imui_ctx_t)ctx
 {
-	return [[[self alloc] initWithDirent:dirent ctx:ctx] autorelease];
+	return [[[self alloc] initWithDirent:dirent owner:owner ctx:ctx] autorelease];
 }
 
 -(void)dealloc
@@ -37,12 +39,20 @@ void printf(string, ...);
 	UI_Labelf ("%s%s", name, name != ".." && isdir ? "/" : "");
 	int mode = IMUI_UpdateHotActive (IMUI_context);
 	int but = IMUI_CheckButtonState (IMUI_context);
-	if (mode == 2) {
-		UI_SetFill (0);
-	} else if (mode == 1) {
-		UI_SetFill (1 + but);
+	if (isselected) {
+		UI_SetFill (1);
 	}
 	item_size = IMUI_State_GetLen (IMUI_context, nil);
+
+	if (but) {
+		[owner itemClicked:self];
+	}
+	return self;
+}
+
+-select:(bool) select
+{
+	isselected = select;
 	return self;
 }
 
@@ -51,9 +61,20 @@ void printf(string, ...);
 	return item_size.y;
 }
 
--(int) cmp: (FileItem *) other
+-(int) cmp:(FileItem *) other
 {
 	return name != other.name;
+}
+
+-selected:(bool)selected
+{
+	isselected = selected;
+	return self;
+}
+
+-(string)name
+{
+	return name;
 }
 
 @end
@@ -83,8 +104,8 @@ int file_item_cmp (void *a, void *b)
 			auto dirent = readdir (dir);
 			while (dirent.name) {
 				if (dirent.type < 2 && dirent.name != ".") {
-					[items addObject: [FileItem fromDirent:dirent
-													   ctx:IMUI_context]];
+					[items addObject:[FileItem fromDirent:dirent owner:self
+													  ctx:IMUI_context]];
 				}
 				dirent = readdir (dir);
 			}
@@ -105,6 +126,7 @@ int file_item_cmp (void *a, void *b)
 	self.filePath = str_hold (filePath);
 	self.forSave = forSave;
 	IMUI_context = ctx;
+	selected_item = -1;
 
 	items = [[Array array] retain];
 
@@ -166,6 +188,21 @@ int file_item_cmp (void *a, void *b)
 			}
 			UI_ScrollBar ("FileWindow:scroller");
 		}
+	}
+	return self;
+}
+
+-itemClicked:(FileItem *)item
+{
+	if (selected_item >= 0 && [items objectAtIndex:selected_item] == item) {
+		printf ("item accepted:%s\n", [item name]);
+	} else {
+		if (selected_item >= 0) {
+			[[items objectAtIndex:selected_item] select:false];
+		}
+		[item select:true];
+		selected_item = [items indexOfObject:item];
+		printf ("item selected:%d:%s\n", selected_item, [item name]);
 	}
 	return self;
 }
