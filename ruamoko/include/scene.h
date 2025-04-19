@@ -15,6 +15,17 @@ typedef struct clipinfo_s {
 	uint        channel_type;//FIXME use an enum
 } clipinfo_t;
 
+typedef struct animation_s {
+	int         frame;
+	float       syncbase;	// randomize time base for local animations
+	float       frame_start_time;
+	float       frame_interval;
+	int         pose1;
+	int         pose2;
+	float       blend;
+	int         nolerp;		// don't lerp this frame (pose data invalid)
+} animation_t;
+
 typedef @handle(long) scene_h scene_t;
 typedef @handle(long) entity_h entity_t;
 typedef @handle(long) transform_h transform_t;
@@ -31,6 +42,8 @@ void Scene_SetCamera (scene_t scene, entity_t ent);
 transform_t Entity_GetTransform (entity_t ent);
 void Entity_SetModel (entity_t ent, model_t model);
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time);
+animation_t *Entity_GetAnimation (entity_t ent);// NOTE: pointer is ephemeral
+void Entity_SetAnimation (entity_t ent, animation_t *anim);
 
 unsigned Transform_ChildCount (transform_t transform);
 transform_t Transform_GetChild (transform_t transform,

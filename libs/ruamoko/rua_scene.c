@@ -365,6 +365,36 @@ bi (Entity_GetPoseMotors)
 	R_INT (pr) = 1;
 }
 
+bi (Entity_GetAnimation)
+{
+	qfZoneScoped (true);
+
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+
+	R_POINTER (pr) = 0;
+	auto anim = Entity_GetAnimation (ent);
+	if (anim) {
+		pr_string_t anim_blk = PR_AllocTempBlock (pr, sizeof (*anim));
+		auto anim_ptr = (animation_t *) PR_GetString (pr, anim_blk);
+		*anim_ptr = *anim;
+
+		RETURN_POINTER (pr, anim_ptr);
+	}
+}
+
+bi (Entity_SetAnimation)
+{
+	qfZoneScoped (true);
+
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	auto anim = (animation_t *) P_GPOINTER (pr, 1);
+	Entity_SetAnimation (ent, anim);
+}
+
 bi (Transform_ChildCount)
 {
 	qfZoneScoped (true);
@@ -663,6 +693,8 @@ static builtin_t builtins[] = {
 	bi(Entity_GetTransform,         1, p(ulong)),
 	bi(Entity_SetModel,             2, p(ulong), p(int)),
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
+	bi(Entity_GetAnimation,         1, p(ulong)),
+	bi(Entity_SetAnimation,         1, p(ulong), p(ptr)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),
