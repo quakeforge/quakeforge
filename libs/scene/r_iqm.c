@@ -53,29 +53,29 @@ R_IQMGetLerpedFrames (double in_time, animation_t *animation,
 					  qf_model_t *model)
 {
 	qfZoneScoped (true);
-	uint32_t    frame = animation->frame;
+	uint32_t    clip = animation->frame;
 
 	if (!model->anim.numdesc) {
 		return R_EntityBlend (in_time, animation, 0, 1.0 / 25.0);
 	}
-	if (frame >= model->anim.numdesc) {
-		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
-						frame);
-		frame = 0;
+	if (clip >= model->anim.numdesc) {
+		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such clip %d\n",
+						clip);
+		clip = 0;
 	}
 	auto keyframedescs = (keyframedesc_t *) ((byte *) model
 											 + model->anim.descriptors);
 	auto keyframes = (keyframe_t *) ((byte *) model + model->anim.keyframes);
 
-	auto anim = &keyframedescs[frame];
+	auto anim = &keyframedescs[clip];
 	uint32_t last_frame = anim->firstframe + anim->numframes - 1;
 	float fullinterval = keyframes[last_frame].endtime;
 	float framerate = anim->numframes / fullinterval;
 	double time = in_time + animation->syncbase;
 	time -= floor (time / fullinterval) * fullinterval;
-	frame = (int) (time * framerate) + anim->firstframe;
-	frame = keyframes[anim->firstframe + frame].data;
-	return R_EntityBlend (in_time, animation, frame,
+	int frame = (int) (time * framerate);
+	uint32_t data = keyframes[anim->firstframe + frame].data;
+	return R_EntityBlend (in_time, animation, data,
 						  fullinterval / anim->numframes);
 }
 
