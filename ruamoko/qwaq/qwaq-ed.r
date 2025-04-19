@@ -403,6 +403,14 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
+static void
+set_anim_clip (entity_t ent, int clip_num)
+{
+	auto anim = Entity_GetAnimation (mrfixit_ent);
+	anim.frame = clip_num;
+	Entity_SetAnimation (mrfixit_ent, anim);
+}
+
 int
 main (int argc, string *argv)
 {
@@ -450,6 +458,7 @@ main (int argc, string *argv)
 	Entity_SetModel (mrfixit_ent, mrfixit);
 	mrfixit_arm = make_armature (mrfixit);
 	Transform_SetLocalRotation (mrfixit_trans, { 0, 0, 1, 0});
+	int num_clips = Model_NumFrames (mrfixit);
 #if 0
 	auto clipinfo = Model_GetClipInfo (mrfixit, 0);
 	printf ("%s %u %u %u\n", clipinfo.name, clipinfo.num_frames,
@@ -493,12 +502,24 @@ main (int argc, string *argv)
 
 	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
 
+	float timer = 5;
+	int clip_num = 0;
 	while (true) {
 		arp_end ();
 		arp_start ();
 
 		frametime = refresh (scene);
 		realtime += frametime;
+
+		timer -= frametime;
+		if (timer <= 0) {
+			timer = 5;
+			clip_num += 1;
+			if (clip_num >= num_clips) {
+				clip_num = 0;
+			}
+			set_anim_clip (mrfixit_ent, clip_num);
+		}
 
 		camera_first_person (camera, &camera_state);
 		if (mouse_dragging_mmb) {
