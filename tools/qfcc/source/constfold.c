@@ -1564,6 +1564,9 @@ uop_compound (int op, const expr_t *e, const expr_t *e1)
 			return uop_int (op, e, e1);
 		}
 	}
+	if (is_handle (t1) && op == '!') {
+		return e;
+	}
 	return error (e1, "invalid operand for unary %s", get_op_string (op));
 }
 
