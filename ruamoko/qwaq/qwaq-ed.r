@@ -11,6 +11,7 @@
 #include <input.h>
 
 #include "gui/filewindow.h"
+#include "gui/listview.h"
 #include "armature.h"
 #include "pga3d.h"
 
@@ -47,7 +48,6 @@ void setctxcbuf (int ctx) = #0;
 
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
-imui_window_t *main_window;
 imui_window_t *style_editor;
 
 imui_style_t current_style = {
@@ -70,6 +70,193 @@ imui_style_t current_style = {
 
 double realtime = double (1ul<<32);
 float frametime;
+
+@interface MainWindow : Object
+{
+	Array *clips;
+	ListView *clipsView;
+	Array *bones;
+	ListView *bonesView;
+
+	imui_ctx_t IMUI_context;
+	imui_window_t *window;
+
+	scene_t scene;
+	transform_t camera;
+
+	int show_armature;
+
+	entity_t ent;
+	transform_t trans;
+	armature_t *arm;
+	model_t model;
+	int num_clips;
+	int clip_num;
+	float timer;
+}
++(MainWindow *) window:(imui_ctx_t)ctx;
+-draw;
+-setModel:(model_t) model;
+-nextClip:(float)frametime;
+-(scene_t) scene;
+-(transform_t) camera;
+@end
+
+@implementation MainWindow
+
+-initWithContext:(imui_ctx_t)ctx
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	IMUI_context = ctx;
+
+	clips = [[Array array] retain];
+	clipsView = [[ListView list:"MainWindow:clips" ctx:ctx] retain];
+
+	bones = [[Array array] retain];
+	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
+
+	window = IMUI_NewWindow ("MainWindow");
+	IMUI_Window_SetSize (window, {400, 300});
+
+	scene = Scene_NewScene ();
+
+	lightingdata_t ldata = Light_CreateLightingData (scene);
+	Light_EnableSun (ldata);
+	// sun light
+	Light_AddLight (ldata, {
+		{ 1, 1, 1, 500 },
+		{ -0.48, -0.64, 0.6, 0 },
+		{ 0, -0.8, 0.6, 1 },
+		{ 0, 0, 1, 0 },
+	}, 0);
+	// ambient light
+	Light_AddLight (ldata, {
+		{ 1, 1, 1, 50 },
+		{ 0, 0, 0, 0 },
+		{ 0, 0, 0, 1 },
+		{ 0, 0, 1, 0 },
+	}, 0);
+	Scene_SetLighting (scene, ldata);
+
+	entity_t camera_ent = Scene_CreateEntity (scene);
+	camera = Entity_GetTransform (camera_ent);
+	Scene_SetCamera (scene, camera_ent);
+	newscene (scene);
+
+	show_armature = 1;
+
+	return self;
+}
+
++(MainWindow *) window:(imui_ctx_t)ctx
+{
+	return [[[MainWindow alloc] initWithContext:ctx] autorelease];
+}
+
+-(void)dealloc
+{
+	free_armature (arm);
+	[bonesView release];
+	[bones release];
+	[clipsView release];
+	[clips release];
+	[super dealloc];
+}
+
+-draw
+{
+	if (ent && arm && show_armature) {
+		Entity_GetPoseMotors (ent, arm.pose, realtime);
+		draw_armature (camera, arm, trans);
+	}
+
+	imui_style_t style = {};//FIXME qfcc bug
+	IMUI_Style_Fetch (IMUI_context, &style);
+	UI_Window (window) {
+		if (IMUI_Window_IsCollapsed (window)) {
+			continue;
+		}
+		UI_Checkbox (&show_armature, "Show Armature");
+		UI_Horizontal {
+			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
+			UI_SetFill (style.background.normal);
+			[bonesView draw];
+			[clipsView draw];
+		}
+	}
+	return self;
+}
+
+-setModel:(model_t) model
+{
+	self.model = model;
+
+	printf ("model: %p %d\n", model, Model_NumFrames (model));
+	if (!ent) {
+		ent = Scene_CreateEntity (scene);
+		trans = Entity_GetTransform (ent);
+	}
+	Entity_SetModel (ent, model);
+	free_armature (arm);
+	arm = make_armature (model);
+	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});
+	num_clips = Model_NumFrames (model);
+	clip_num = -1;
+	timer = 0;
+
+	[bones removeAllObjects];
+	for (int i = 0; i < arm.num_joints; i++) {
+		[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
+	}
+	[bonesView setItems:bones];
+
+	[clips removeAllObjects];
+	for (int i = 0; i < num_clips; i++) {
+		auto clipinfo = Model_GetClipInfo (model, i);
+		[clips addObject:[ListItem item:clipinfo.name ctx:IMUI_context]];
+	}
+	[clipsView setItems:clips];
+
+	return self;
+}
+
+-nextClip:(float)frametime
+{
+	if (!ent) {
+		return self;
+	}
+	int selected = [clipsView selected];
+	if (selected >= 0) {
+		clip_num = selected;
+	} else {
+		timer -= frametime;
+		if (timer <= 0) {
+			timer = 5;
+			clip_num += 1;
+			if (clip_num >= num_clips) {
+				clip_num = 0;
+			}
+		}
+	}
+
+	auto anim = Entity_GetAnimation (ent);
+	anim.frame = clip_num;
+	Entity_SetAnimation (ent, anim);
+	return self;
+}
+
+-(scene_t) scene
+{
+	return scene;
+}
+
+-(transform_t) camera
+{
+	return camera;
+}
+@end
 
 void
 camera_first_person (transform_t camera, state_t *state)
@@ -187,10 +374,6 @@ camera_mouse_trackball (transform_t camera, state_t *state)
 	state.M = normalize (state.M);
 }
 
-entity_t mrfixit_ent;
-transform_t mrfixit_trans;
-armature_t *mrfixit_arm;
-
 static void
 color_window (void)
 {
@@ -262,8 +445,6 @@ color_window (void)
 	}
 }
 
-transform_t camera;
-
 Array *windows;
 
 void
@@ -274,19 +455,10 @@ draw_2d (void)
 	Draw_String (8, height - 8,
 				 sprintf ("%5.2f\xd0\xd2\xc0\xc2", frametime*1000));
 
-	Entity_GetPoseMotors (mrfixit_ent, mrfixit_arm.pose, realtime);
-	draw_armature (camera, mrfixit_arm, mrfixit_trans);
-
 	IMUI_SetSize (imui_ctx, Draw_Width (), Draw_Height ());
 	IMUI_BeginFrame (imui_ctx);
 	IMUI_Style_Update (imui_ctx, &current_style);
 
-	UI_Window (main_window) {
-		if (IMUI_Window_IsCollapsed (main_window)) {
-			continue;
-		}
-		UI_FlexibleSpace();
-	}
 	[windows makeObjectsPerformSelector: @selector (draw)];
 	//color_window ();
 	IMUI_Draw (imui_ctx);
@@ -403,14 +575,6 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
-static void
-set_anim_clip (entity_t ent, int clip_num)
-{
-	auto anim = Entity_GetAnimation (mrfixit_ent);
-	anim.frame = clip_num;
-	Entity_SetAnimation (mrfixit_ent, anim);
-}
-
 int
 main (int argc, string *argv)
 {
@@ -429,17 +593,8 @@ main (int argc, string *argv)
 	//Draw_SetScale (1);
 	imui_ctx = IMUI_NewContext ("Consolas", 22);
 
-	main_window = IMUI_NewWindow ("main");
-	IMUI_Window_SetSize (main_window, {300, 100});
-
 	refresh_2d (draw_2d);
 	setevents (event_hander, nil);
-
-	scene_t scene = Scene_NewScene ();
-
-	entity_t camera_ent = Scene_CreateEntity (scene);
-	camera = Entity_GetTransform (camera_ent);
-	Scene_SetCamera (scene, camera_ent);
 
 	int key_devid = IN_FindDeviceId ("core:keyboard");
 	int lctrl_key = IN_GetButtonNumber (key_devid, "Control_L");
@@ -451,18 +606,7 @@ main (int argc, string *argv)
 		.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
 	};
 
-	model_t mrfixit = Model_Load ("progs/mrfixit.iqm");
-	printf ("mrfixit: %p\n", mrfixit);
-	mrfixit_ent = Scene_CreateEntity (scene);
-	mrfixit_trans = Entity_GetTransform (mrfixit_ent);
-	Entity_SetModel (mrfixit_ent, mrfixit);
-	mrfixit_arm = make_armature (mrfixit);
-	Transform_SetLocalRotation (mrfixit_trans, { 0, 0, 1, 0});
-	int num_clips = Model_NumFrames (mrfixit);
 #if 0
-	auto clipinfo = Model_GetClipInfo (mrfixit, 0);
-	printf ("%s %u %u %u\n", clipinfo.name, clipinfo.num_frames,
-			clipinfo.num_channels, clipinfo.channel_type);
 	uint count = clipinfo.num_frames * clipinfo.num_channels;
 	uint size = (count + 1) / 2;
 	void *framedata = obj_malloc (size);
@@ -487,40 +631,24 @@ main (int argc, string *argv)
 	}
 #endif
 
-	lightingdata_t ldata = Light_CreateLightingData (scene);
-	Light_EnableSun (ldata);
-	Light_AddLight (ldata, {
-		{ 1, 1, 1, 500 },
-		{ -0.48, -0.64, 0.6, 0 },
-		{ 0, -0.8, 0.6, 1 },
-		{ 0, 0, 1, 0 },
-	}, 0);
-	Scene_SetLighting (scene, ldata);
-	newscene (scene);
-
 	windows = [[Array array] retain];
 
+	auto main_window = [MainWindow window:imui_ctx];
+	[windows addObject:main_window];
 	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
 
-	float timer = 5;
-	int clip_num = 0;
+	[main_window setModel:Model_Load ("progs/girl14a.iqm")];
+
 	while (true) {
 		arp_end ();
 		arp_start ();
 
-		frametime = refresh (scene);
+		frametime = refresh ([main_window scene]);
 		realtime += frametime;
 
-		timer -= frametime;
-		if (timer <= 0) {
-			timer = 5;
-			clip_num += 1;
-			if (clip_num >= num_clips) {
-				clip_num = 0;
-			}
-			set_anim_clip (mrfixit_ent, clip_num);
-		}
+		[main_window nextClip:frametime];
 
+		auto camera = [main_window camera];
 		camera_first_person (camera, &camera_state);
 		if (mouse_dragging_mmb) {
 			camera_mouse_trackball (camera, &camera_state);

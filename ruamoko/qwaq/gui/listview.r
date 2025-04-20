@@ -164,4 +164,9 @@ void printf(string, ...);
 	return self;
 }
 
+-(int)selected
+{
+	return selected_item;
+}
+
 @end

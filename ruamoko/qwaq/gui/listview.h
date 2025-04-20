@@ -38,6 +38,7 @@ typedef struct imui_window_s imui_window_t;
 -setItems:(Array *)items;
 -draw;
 -itemClicked:(ListItem *) item;
+-(int)selected;
 @end
 
 #endif//__qwaq_gui_listview_h

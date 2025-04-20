@@ -121,8 +121,8 @@ make_armature (model_t model)
 				}
 			}
 		}
-		if (!best_child || best_dist < 0.2) {
-			best_dist = 0.2;
+		if (!best_child) {
+			best_dist = 0.05;
 		}
 		best_dist /= 4;
 		vec4 scale = { best_dist, best_dist, best_dist, 1 };
@@ -137,6 +137,27 @@ make_armature (model_t model)
 }
 
 void
+free_armature (armature_t *arm)
+{
+	if (!arm) {
+		return;
+	}
+	obj_free (arm.joints);
+	obj_free (arm.basepose);
+	obj_free (arm.pose);
+	obj_free (arm.points);
+	obj_free (arm.edges);
+	obj_free (arm.edge_colors);
+	obj_free (arm.edge_bones);
+	obj_free (arm);
+}
+
+vec4 do_scale (vec4 p, vec3 s)
+{
+	return p * vec4(s, 1);
+}
+
+void
 draw_armature (transform_t camera, armature_t *arm, transform_t ent)
 {
 	@algebra (PGA) {
@@ -146,8 +167,8 @@ draw_armature (transform_t camera, armature_t *arm, transform_t ent)
 			auto pose = &arm.pose[arm.edge_bones[i]];
 			auto M = E * pose.m;
 			auto edge = arm.edges[i];
-			auto p1 = (point_t) arm.points[edge.a];
-			auto p2 = (point_t) arm.points[edge.b];
+			auto p1 = (point_t) do_scale (arm.points[edge.a], pose.scale);
+			auto p2 = (point_t) do_scale (arm.points[edge.b], pose.scale);
 			p1 = M * p1 * ~M;
 			p2 = M * p2 * ~M;
 			int color = arm.edge_colors[i];
