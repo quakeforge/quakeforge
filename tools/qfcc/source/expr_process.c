@@ -30,7 +30,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "QF/fbsearch.h"
 #include "QF/heapsort.h"
 #include "QF/math/bitop.h"
 

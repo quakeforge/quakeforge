@@ -29,7 +29,6 @@
 #endif
 #include <string.h>
 
-#include "QF/fbsearch.h"
 #include "QF/heapsort.h"
 #include "QF/math/bitop.h"
 
