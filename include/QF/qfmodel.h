@@ -84,11 +84,16 @@ typedef struct qfm_joint_s {
 	int32_t     parent;
 } qfm_joint_t;
 
+typedef enum : uint32_t {
+	qfm_nonuniform = 1,
+	qfm_nonleaf = 2,
+} qfm_mflag_t;
+
 typedef struct qfm_motor_s {
 	vec4f_t     q;		// e23 e31 e12 1
 	vec4f_t     t;		// e01 e02 e03 e0123
 	vec3_t      s;
-	uint32_t    flags;	// 1 -> uniform scale
+	qfm_mflag_t flags;
 } qfm_motor_t;
 
 typedef struct qfm_blend_s {
@@ -164,7 +169,7 @@ VISIBLE
 uint32_t
 qfm_uniform_scale (const vec3_t s)
 {
-	return s[0] == s[1] && s[0] == s[2];
+	return s[0] == s[1] && s[0] == s[2] ? 0 : qfm_nonuniform;
 }
 
 #ifndef IMPLEMENT_QFMODEL_Funcs
@@ -232,7 +237,7 @@ qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 		.q = { VectorExpand (b), a },
 		.t = { VectorExpand (c), d },
 		.s = { VectorExpand (s) },
-		.flags = m1.flags & m2.flags,
+		.flags = m1.flags | m2.flags,
 	};
 }
 

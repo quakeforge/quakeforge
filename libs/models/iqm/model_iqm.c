@@ -211,6 +211,8 @@ convert_joints (uint32_t num_joints, qfm_joint_t *joints,
 		if (joints[i].parent >= 0) {
 			base[i] = qfm_motor_mul (base[joints[i].parent], base[i]);
 			inverse[i] = qfm_motor_mul (inverse[i], inverse[joints[i].parent]);
+			base[joints[i].parent].flags |= qfm_nonleaf;
+			inverse[joints[i].parent].flags |= qfm_nonleaf;
 		}
 	}
 }

@@ -132,6 +132,11 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 		motors[i] = qfm_make_motor (pose[i]);
 		// Pc * Bc^-1
 		motors[i] = qfm_motor_mul (motors[i], inv_motors[i]);
+		if (motors[i].flags & qfm_nonleaf) {
+			float *s = motors[i].s;
+			float scale = (s[0] + s[1] + s[2]) / 3;
+			s[2] = s[1] = s[0] = scale;
+		}
 		if (parent >= 0) {
 			// Bp * Pc * Bc^-1
 			motors[i] = qfm_motor_mul (base_motors[parent], motors[i]);
