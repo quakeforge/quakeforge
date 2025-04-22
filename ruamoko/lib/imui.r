@@ -51,6 +51,9 @@ void IMUI_Style_Fetch (imui_ctx_t ctx, imui_style_t *style) = #0;
 
 int IMUI_CheckButtonState (imui_ctx_t ctx) = #0;
 int IMUI_UpdateHotActive (imui_ctx_t ctx) = #0;
+
+ivec2 IMUI_TextSize (imui_ctx_t ctx, string str) = #0;
+
 void IMUI_SetFill (imui_ctx_t ctx, uint color) = #0;
 void IMUI_Label (imui_ctx_t ctx, string label) = #0;
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...) = #0;

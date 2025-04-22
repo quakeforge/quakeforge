@@ -360,6 +360,57 @@ Text_PassageView (text_system_t textsys, view_t parent,
 	return passage_view;
 }
 
+view_pos_t
+Text_Size (struct font_s *font, const char *str, uint32_t len,
+		   script_component_t *sc, featureset_t *fs,
+		   text_shaper_t *shaper)
+{
+	glyphnode_t *glyph_nodes = 0;
+	glyphnode_t **head = &glyph_nodes;
+
+	script_component_t script = {
+		.script = sc ? sc->script : HB_SCRIPT_LATIN,
+		.direction = sc ? sc->direction : text_right_down,
+		.language = sc ? sc->language : hb_language_from_string ("en", 2),
+	};
+	bool string_vertical = !!(script.direction & 2);
+	featureset_t text_features = DARRAY_STATIC_INIT (0);
+	shaping_t   shaping = {
+		.script = &script,
+		.features = fs ? fs : &text_features,
+		.font = font,
+	};
+
+	uint32_t    glyph_count = 0;
+
+	auto shaped_glyphs = Shaper_ShapeText (shaper, &shaping, str, len);
+	unsigned    c = shaped_glyphs.count;
+	auto glyphInfo = shaped_glyphs.glyphInfo;
+	auto glyphPos = shaped_glyphs.glyphPos;
+
+	*head = alloca (sizeof (glyphnode_t));
+	**head = (glyphnode_t) {
+		.ent = nullent,
+		.count = c,
+		.glyphs = alloca (c * sizeof (glyphobj_t)),
+		.mins = { 0, 0 },
+		.maxs = { INT32_MIN, INT32_MIN },
+	};
+	glyph_count += c;
+	layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+
+	view_pos_t size = {
+		.x = (*head)->maxs[0] - (*head)->mins[0],
+		.y = (*head)->maxs[1] - (*head)->mins[1],
+	};
+	if (!string_vertical) {
+		int ascender = font->face->size->metrics.ascender / 64;
+		int descender = font->face->size->metrics.descender / 64;
+		size.y = ascender - descender;
+	}
+	return size;
+}
+
 view_t
 Text_StringView (text_system_t textsys, view_t parent,
 				 font_t *font, const char *str, uint32_t len,

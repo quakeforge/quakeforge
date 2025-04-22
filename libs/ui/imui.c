@@ -1289,6 +1289,14 @@ IMUI_UpdateHotActive (imui_ctx_t *ctx)
 	return update_hot_active (ctx, state);
 }
 
+view_pos_t
+IMUI_TextSize (imui_ctx_t *ctx, const char *str)
+{
+	return Text_Size (ctx->font, str, strlen (str), nullptr, nullptr,
+					  ctx->shaper);
+
+}
+
 void
 IMUI_SetFill (imui_ctx_t *ctx, byte color)
 {

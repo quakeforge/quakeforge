@@ -519,6 +519,16 @@ bi (IMUI_UpdateHotActive)
 	R_INT (pr) = IMUI_UpdateHotActive (bi_ctx->imui_ctx);
 }
 
+bi (IMUI_TextSize)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	const char *str = P_GSTRING (pr, 1);
+	auto size = IMUI_TextSize (bi_ctx->imui_ctx, str);
+	R_var (pr, ivec2) = (pr_ivec2_t) { size.x, size.y };
+}
+
 bi (IMUI_SetFill)
 {
 	qfZoneScoped (true);
@@ -789,6 +799,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_Style_Fetch,        2, p(int), p(ptr)),
 	bi(IMUI_CheckButtonState,   1, p(int)),
 	bi(IMUI_UpdateHotActive,    1, p(int)),
+	bi(IMUI_TextSize,           2, p(int), p(string)),
 	bi(IMUI_SetFill,            2, p(int), p(uint)),
 	bi(IMUI_Label,              2, p(int), p(string)),
 	bi(IMUI_Labelf,             -3, p(int), p(string)),
