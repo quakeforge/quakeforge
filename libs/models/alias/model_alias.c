@@ -103,7 +103,7 @@ load_frame (mod_alias_ctx_t *alias_ctx, daliasframe_t *in_frame,
 	// everything is bytes...
 	size_t len = strnlen (in_frame->name, 16);
 	char *name = alias_ctx->names + alias_ctx->names_size;
-	out_frame->name = alias_ctx->names_size;
+	out_frame->name = alias_ctx->names_base + alias_ctx->names_size;
 
 	strncpy (name, in_frame->name, 16);
 	name[len] = 0;
@@ -144,6 +144,7 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 			void *data = &type[1];
 			alias_ctx->dframes[index] = data;
 			verts = load_frame (alias_ctx, data, &frames[index], mdl);
+			clips[i].name = frames[index].name;
 			index++;
 		} else {
 			auto group = (daliasgroup_t *) &type[1];
@@ -159,7 +160,9 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 				};
 				alias_ctx->dframes[index] = data;
 				verts = load_frame (alias_ctx, data, &frames[index], mdl);
-				data = verts;
+				if (i == 0) {
+					clips[i].name = frames[index].name;
+				}
 				index++;
 			}
 		}
@@ -401,7 +404,9 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	VectorSet (99999, 99999, 99999, alias_ctx.aliasbboxmins);
 	VectorSet (-99999, -99999, -99999, alias_ctx.aliasbboxmaxs);
-	alias_ctx.names_size = 0;
+
+	alias_ctx.names_base = alias_ctx.names - (char *) model;
+	alias_ctx.names_size = 1;
 	load_frames (&alias_ctx, framedata, frames, mdl);
 
 	VectorCompMultAdd (mesh->scale_origin, mesh->scale,
