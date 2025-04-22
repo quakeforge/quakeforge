@@ -83,7 +83,7 @@ model_t Model_Load (string path);
 void Model_Unload (model_t model);
 int Model_NumJoints (model_t model);
 void Model_GetJoints (model_t model, void *joints);
-int Model_NumFrames (model_t model);
+int Model_NumClips (model_t model);
 int Model_GetBaseMotors (model_t model, void *motors);
 int Model_GetInverseMotors (model_t model, void *motors);
 clipinfo_t Model_GetClipInfo (model_t model, uint clip);

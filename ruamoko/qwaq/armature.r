@@ -21,7 +21,7 @@ dump_model (model_t model, string name)
 	for (int i = 0; i < num_joints; i++) {
 		joints[i] = {};
 	}
-	printf ("%s frames: %d\n", name, Model_NumFrames (model));
+	printf ("%s clips: %d\n", name, Model_NumClips (model));
 	printf ("bones: %d %d\n", num_joints, sizeof (qfm_joint_t));
 	Model_GetJoints (model, joints);
 	for (int i = 0; i < num_joints; i++) {

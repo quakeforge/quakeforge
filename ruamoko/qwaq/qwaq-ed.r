@@ -193,7 +193,7 @@ float frametime;
 {
 	self.model = model;
 
-	printf ("model: %p %d\n", model, Model_NumFrames (model));
+	printf ("model: %p %d\n", model, Model_NumClips (model));
 	if (!ent) {
 		ent = Scene_CreateEntity (scene);
 		trans = Entity_GetTransform (ent);
@@ -202,7 +202,7 @@ float frametime;
 	free_armature (arm);
 	arm = make_armature (model);
 	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});
-	num_clips = Model_NumFrames (model);
+	num_clips = Model_NumClips (model);
 	clip_num = -1;
 	timer = 0;
 

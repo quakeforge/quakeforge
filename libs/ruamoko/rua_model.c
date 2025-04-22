@@ -227,7 +227,7 @@ bi (Model_GetJoints)
 	R_INT (pr) = 1;
 }
 
-bi (Model_NumFrames)
+bi (Model_NumClips)
 {
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
@@ -404,7 +404,7 @@ static builtin_t builtins[] = {
 	bi(Model_Unload,           1, p(ptr)),
 	bi(Model_NumJoints,        1, p(ptr)),
 	bi(Model_GetJoints,        1, p(ptr)),
-	bi(Model_NumFrames,        1, p(ptr)),
+	bi(Model_NumClips,         1, p(ptr)),
 	bi(Model_GetBaseMotors,    2, p(ulong), p(ptr)),
 	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
 	bi(Model_GetClipInfo,      2, p(ulong), p(uint)),
