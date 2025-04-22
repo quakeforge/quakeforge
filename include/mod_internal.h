@@ -31,7 +31,6 @@ typedef struct mod_alias_ctx_s {
 	askinset_t  skins;
 	int         skinwidth;
 	int         skinheight;
-	uint32_t    names_base;
 	uint32_t    names_size;
 	char       *names;
 	uint32_t    numskins;
