@@ -234,7 +234,7 @@ bi (Model_NumClips)
 	auto h = rua_model_handle_get (res, handle);
 	auto mod = h->model;
 
-	R_INT (pr) = 0;
+	uint32_t numclips = 0;
 	if (mod->type == mod_mesh) {
 		bool cached = false;
 		auto model = mod->model;
@@ -242,18 +242,18 @@ bi (Model_NumClips)
 			model = Cache_Get (&mod->cache);
 			cached = true;
 		}
-		if (model->anim.numclips) {
-			R_INT (pr) = model->anim.numclips;
-		} else {
-			//FIXME assumes only one mesh
+
+		numclips = model->anim.numclips;
+		for (uint32_t i = 0; i < model->meshes.count; i++) {
 			auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-			R_INT (pr) = mesh->morph.numclips;
+			numclips += mesh->morph.numclips;
 		}
 
 		if (cached) {
 			Cache_Release (&mod->cache);
 		}
 	}
+	R_UINT (pr) = numclips;
 }
 
 static qf_model_t *
@@ -317,8 +317,8 @@ bi (Model_GetClipInfo)
 			cached = true;
 		}
 		auto text = (const char *) model + model->text.offset;
-		auto clips = (clipdesc_t *) ((byte *) model + model->anim.clips);
 		if (clip < model->anim.numclips) {
+			auto clips = (clipdesc_t *) ((byte *) model + model->anim.clips);
 			R_PACKED (pr, clipinfo_t) = (clipinfo_t) {
 				.name = PR_SetReturnString (pr, text + clips[clip].name),
 				.num_frames = clips[clip].numframes,
@@ -326,7 +326,21 @@ bi (Model_GetClipInfo)
 				.channel_type = qfm_u16,
 			};
 		} else {
-			// no chanels
+			clip -= model->anim.numclips;
+			bool found = false;
+			for (uint32_t i = 0; !found && i < model->meshes.count; i++) {
+				auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
+				if (clip < mesh->morph.numclips) {
+					auto clips = (clipdesc_t *) ((byte *) mesh + mesh->morph.clips);
+					R_PACKED (pr, clipinfo_t) = (clipinfo_t) {
+						.name = PR_SetReturnString (pr, text + clips[clip].name),
+						.num_frames = clips[clip].numframes,
+						.channel_type = qfm_special,
+					};
+					found = true;
+				}
+				clip -= mesh->morph.numclips;
+			}
 		}
 
 		if (cached) {
