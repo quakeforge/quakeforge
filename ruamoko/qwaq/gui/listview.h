@@ -13,7 +13,6 @@ typedef struct imui_window_s imui_window_t;
 {
 	string name;
 	imui_ctx_t IMUI_context;
-	ivec2  item_size;
 	ListView *owner;
 
 	bool   isselected;

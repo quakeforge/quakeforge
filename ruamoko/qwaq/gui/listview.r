@@ -41,7 +41,6 @@ void printf(string, ...);
 -draw
 {
 	UI_Label (name);
-	item_size = IMUI_State_GetLen (IMUI_context, nil);
 	return [self checkInput];
 }
 
@@ -63,11 +62,6 @@ void printf(string, ...);
 {
 	isselected = select;
 	return self;
-}
-
--(int) height
-{
-	return item_size.y;
 }
 
 -(int) cmp:(ListItem *) other
@@ -128,20 +122,19 @@ void printf(string, ...);
 	UI_ScrollBox(name + "##ListView:scroller") {
 		auto sblen = IMUI_State_GetLen (IMUI_context, nil);
 		UI_Scroller () {
-			ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
-			ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
-			int height = [[items objectAtIndex:0] height];
-			len.y = [items count] * height;
-			IMUI_State_SetLen (IMUI_context, nil, len);
-			if (!height) {
-				height = 1;
-			}
-			IMUI_SetViewPos (IMUI_context, { 0, -pos.y % height });
-			len = sblen;
-			len.y = (len.y + height - 1) / height + 1;
-			for (uint i = pos.y / height;
-				 len.y-- > 0 && i < [items count]; i++) {
-				[[items objectAtIndex:i] draw];
+			uint count = [items count];
+			if (count) {
+				ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
+				ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
+				int height = IMUI_TextSize (IMUI_context, "X").y;
+				len.y = count * height;
+				IMUI_State_SetLen (IMUI_context, nil, len);
+				IMUI_SetViewPos (IMUI_context, { 0, -pos.y % height });
+				len = sblen;
+				len.y = (len.y + height - 1) / height + 1;
+				for (uint i = pos.y / height; len.y-- > 0 && i < count; i++) {
+					[[items objectAtIndex:i] draw];
+				}
 			}
 		}
 	}

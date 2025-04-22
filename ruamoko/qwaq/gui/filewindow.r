@@ -33,7 +33,6 @@ void printf(string, ...);
 -draw
 {
 	UI_Labelf ("%s%s", name, name != ".." && isdir ? "/" : "");
-	item_size = IMUI_State_GetLen (IMUI_context, nil);
 	return [super checkInput];
 }
 
