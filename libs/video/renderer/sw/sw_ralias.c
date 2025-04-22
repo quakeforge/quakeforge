@@ -226,7 +226,7 @@ R_AliasCheckBBox (entity_t ent)
 	}
 
 	auto animation = Entity_GetAnimation (ent);
-	if (model->anim.numdesc) {
+	if (model->anim.numclips) {
 		R_AliasSetUpTransform (ent, 0, nullptr);
 		auto frame = (qfm_frame_t *) ((byte *) model + model->anim.data);
 		//auto frame = (qfm_frame_t *) ((byte *) model + model->anim.data);
@@ -241,7 +241,7 @@ R_AliasCheckBBox (entity_t ent)
 		for (uint32_t i = 0; i < model->meshes.count; i++) {
 			R_AliasSetUpTransform (ent, 0, &meshes[i]);
 
-			if (meshes[i].morph.numdesc) {
+			if (meshes[i].morph.numclips) {
 				auto frame = get_frame (animation, &meshes[i]);
 				if (check_bounds (&zclipped, &anyclip, &minz, frame)) {
 					accept = true;
@@ -1103,7 +1103,7 @@ draw_mesh (entity_t ent, alight_t *lighting, qf_mesh_t *mesh,
 	R_AliasSetUpTransform (ent, visibility->trivial_accept, mesh);
 	R_AliasSetupLighting (lighting);
 	uint32_t verts_offs = mesh->vertices.offset * mesh->vertex_stride;
-	if (mesh->morph.numdesc) {
+	if (mesh->morph.numclips) {
 		verts_offs = R_AliasSetupFrame (ent, mesh);
 	}
 

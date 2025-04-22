@@ -450,7 +450,7 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	size_t size = sizeof (qfv_mesh_t)
 				+ sizeof (qfm_attrdesc_t[iqm->num_vertexarrays])
 				+ sizeof (qfv_skin_t[model->meshes.count])
-				+ sizeof (keyframedesc_t[model->meshes.count])
+				+ sizeof (clipdesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count])
 				+ sizeof (VkDescriptorSet[rctx->frames.size])
 				+ sizeof (qfv_resource_t[2])
@@ -460,8 +460,8 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 	qfv_mesh_t *rmesh = Hunk_AllocName (0, size, name);
 	auto attribs = (qfm_attrdesc_t *) &rmesh[1];
 	auto skins = (qfv_skin_t *) &attribs[iqm->num_vertexarrays];
-	auto skindescs = (keyframedesc_t *) &skins[model->meshes.count];
-	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
+	auto skinclips = (clipdesc_t *) &skins[model->meshes.count];
+	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
 	auto bone_descs = (VkDescriptorSet *) &skinframes[model->meshes.count];
 	auto resources = (qfv_resource_t *) &bone_descs[rctx->frames.size];
 	auto bones = &resources[0];
@@ -517,11 +517,11 @@ Vulkan_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx, vulkan_ctx_t *ctx)
 			.count = iqm->num_vertexarrays,
 		};
 		meshes[i].skin = (anim_t) {
-			.numdesc = 1,
-			.descriptors = (byte *) &skindescs[i] - (byte *) &meshes[i],
+			.numclips = 1,
+			.clips = (byte *) &skinclips[i] - (byte *) &meshes[i],
 			.keyframes = (byte *) &skinframes[i] - (byte *) &meshes[i],
 		};
-		skindescs[i] = (keyframedesc_t) {
+		skinclips[i] = (clipdesc_t) {
 			.firstframe = 0,
 			.numframes = 1,
 		};

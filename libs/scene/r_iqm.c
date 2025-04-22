@@ -55,19 +55,18 @@ R_IQMGetLerpedFrames (double in_time, animation_t *animation,
 	qfZoneScoped (true);
 	uint32_t    clip = animation->frame;
 
-	if (!model->anim.numdesc) {
+	if (!model->anim.numclips) {
 		return R_EntityBlend (in_time, animation, 0, 1.0 / 25.0);
 	}
-	if (clip >= model->anim.numdesc) {
+	if (clip >= model->anim.numclips) {
 		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such clip %d\n",
 						clip);
 		clip = 0;
 	}
-	auto keyframedescs = (keyframedesc_t *) ((byte *) model
-											 + model->anim.descriptors);
+	auto clips = (clipdesc_t *) ((byte *) model + model->anim.clips);
 	auto keyframes = (keyframe_t *) ((byte *) model + model->anim.keyframes);
 
-	auto anim = &keyframedescs[clip];
+	auto anim = &clips[clip];
 	uint32_t last_frame = anim->firstframe + anim->numframes - 1;
 	float fullinterval = keyframes[last_frame].endtime;
 	float framerate = anim->numframes / fullinterval;

@@ -147,13 +147,13 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 
 	size_t size = sizeof (glsl_mesh_t)
 				+ sizeof (qfm_attrdesc_t[iqm->num_vertexarrays])
-				+ sizeof (keyframedesc_t[model->meshes.count])
+				+ sizeof (clipdesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count]);
 	const char *name = iqm_ctx->mod->name;
 	glsl_mesh_t *rmesh = Hunk_AllocName (nullptr, size, name);
 	auto attribs = (qfm_attrdesc_t *) &((GLuint *) &rmesh[1])[num_tex];
-	auto skindescs = (keyframedesc_t *) &attribs[iqm->num_vertexarrays];
-	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
+	auto skinclips = (clipdesc_t *) &attribs[iqm->num_vertexarrays];
+	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
 
 	model->render_data = (byte *) rmesh - (byte *) model;
 	*rmesh = (glsl_mesh_t) {
@@ -173,11 +173,11 @@ glsl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 			.count = 4,
 		};
 		meshes[i].skin = (anim_t) {
-			.numdesc = 1,
-			.descriptors = (byte *) skindescs - (byte *) &meshes[i],
+			.numclips = 1,
+			.clips = (byte *) skinclips - (byte *) &meshes[i],
 			.keyframes = (byte *) skinframes - (byte *) &meshes[i],
 		};
-		skindescs[i] = (keyframedesc_t) {
+		skinclips[i] = (clipdesc_t) {
 			.numframes = 1,
 		};
 	}

@@ -125,14 +125,14 @@ static void
 find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 {
 	auto sprite = sprite_ctx->sprite;
-	auto desc = (keyframedesc_t *) ((byte *) sprite + sprite->skin.descriptors);
+	auto clips = (clipdesc_t *) ((byte *) sprite + sprite->skin.clips);
 	auto frame = (keyframe_t *) ((byte *) sprite + sprite->skin.keyframes);
 
 	int frame_index = 0;
 	auto type = (dspriteframetype_t *) (dsprite + 1);
 	for (int i = 0; i < dsprite->numframes; i++) {
 		if (type->type == SPR_SINGLE) {
-			desc[i] = (keyframedesc_t) {
+			clips[i] = (clipdesc_t) {
 				.firstframe = frame_index,
 				.numframes = 1,
 			};
@@ -145,7 +145,7 @@ find_frames (mod_sprite_ctx_t *sprite_ctx, dsprite_t *dsprite)
 			type = skip_frame (dframe);
 		} else {
 			auto group = (dspritegroup_t *) (type + 1);
-			desc[i] = (keyframedesc_t) {
+			clips[i] = (clipdesc_t) {
 				.firstframe = frame_index,
 				.numframes = group->numframes,
 			};
@@ -182,17 +182,17 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 	}
 
 	size_t      size = sizeof (msprite_t)
-						+ sizeof (keyframedesc_t[dsprite->numframes])
+						+ sizeof (clipdesc_t[dsprite->numframes])
 						+ sizeof (keyframe_t[numframes]);
 	sprite = Hunk_AllocName (0, size, mod->name);
-	auto descriptors = (keyframedesc_t *) &sprite[1];
-	auto frames = (keyframe_t *) &descriptors[dsprite->numframes];
+	auto clips = (clipdesc_t *) &sprite[1];
+	auto frames = (keyframe_t *) &clips[dsprite->numframes];
 	*sprite = (msprite_t) {
 		.type = dsprite->type,
 		.beamlength = dsprite->beamlength,
 		.skin = {
-			.numdesc = dsprite->numframes,
-			.descriptors = (byte *) descriptors - (byte *) sprite,
+			.numclips = dsprite->numframes,
+			.clips = (byte *) clips - (byte *) sprite,
 			.keyframes = (byte *) frames - (byte *) sprite,
 		},
 	};

@@ -242,12 +242,12 @@ bi (Model_NumFrames)
 			model = Cache_Get (&mod->cache);
 			cached = true;
 		}
-		if (model->anim.numdesc) {
-			R_INT (pr) = model->anim.numdesc;
+		if (model->anim.numclips) {
+			R_INT (pr) = model->anim.numclips;
 		} else {
 			//FIXME assumes only one mesh
 			auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-			R_INT (pr) = mesh->morph.numdesc;
+			R_INT (pr) = mesh->morph.numclips;
 		}
 
 		if (cached) {
@@ -317,10 +317,10 @@ bi (Model_GetClipInfo)
 			cached = true;
 		}
 		auto text = (const char *) model + model->text.offset;
-		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
-		if (clip < model->anim.numdesc) {
+		auto clips = (clipdesc_t *) ((byte *) model + model->anim.clips);
+		if (clip < model->anim.numclips) {
 			R_PACKED (pr, clipinfo_t) = (clipinfo_t) {
-				.name = PR_SetReturnString(pr, text + clips[clip].name),
+				.name = PR_SetReturnString (pr, text + clips[clip].name),
 				.num_frames = clips[clip].numframes,
 				.num_channels = model->channels.count,
 				.channel_type = qfm_u16,
@@ -376,9 +376,9 @@ bi (Model_GetFrameData)
 			model = Cache_Get (&mod->cache);
 			cached = true;
 		}
-		auto clips = (keyframedesc_t*)((byte*)model + model->anim.descriptors);
+		auto clips = (clipdesc_t*)((byte*)model + model->anim.clips);
 		auto keyframes = (keyframe_t*)((byte*)model + model->anim.keyframes);
-		if (clip < model->anim.numdesc) {
+		if (clip < model->anim.numclips) {
 			uint32_t numchannels = model->channels.count;
 			uint32_t numframes = clips[clip].numframes;
 			uint32_t frame = keyframes[clips[clip].firstframe].data;

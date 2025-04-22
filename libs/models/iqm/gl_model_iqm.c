@@ -119,14 +119,14 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 	uint32_t index_size = mesh_type_size (index_type);
 
 	size_t size = sizeof (qfm_attrdesc_t[3 * model->meshes.count])
-				+ sizeof (keyframedesc_t[model->meshes.count])
+				+ sizeof (clipdesc_t[model->meshes.count])
 				+ sizeof (keyframe_t[model->meshes.count])
 				+ index_size * index_count
 				+ sizeof (mesh_vrt_t[iqm->num_vertexes])
 				+ sizeof (qfm_blend_t[palette_size]);
 	qfm_attrdesc_t *attribs = Hunk_AllocName (0, size, iqm_ctx->mod->name);
-	auto skindescs = (keyframedesc_t *) &attribs[3 * model->meshes.count];
-	auto skinframes = (keyframe_t *) &skindescs[model->meshes.count];
+	auto skinclips = (clipdesc_t *) &attribs[3 * model->meshes.count];
+	auto skinframes = (keyframe_t *) &skinclips[model->meshes.count];
 	auto indices = (void *) &skinframes[model->meshes.count];
 	auto verts = (mesh_vrt_t *) ((byte *) indices + index_size * index_count);
 	auto blend = (qfm_blend_t *) &verts[iqm->num_vertexes];
@@ -173,11 +173,11 @@ gl_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 			.count = 3,
 		};
 		meshes[i].skin = (anim_t) {
-			.numdesc = 1,
-			.descriptors = (byte *) &skindescs[i] - (byte *) &meshes[i],
+			.numclips = 1,
+			.clips = (byte *) &skinclips[i] - (byte *) &meshes[i],
 			.keyframes = (byte *) &skinframes[i] - (byte *) &meshes[i],
 		};
-		skindescs[i] = (keyframedesc_t) {
+		skinclips[i] = (clipdesc_t) {
 			.firstframe = 0,
 			.numframes = 1,
 		};

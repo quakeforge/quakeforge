@@ -585,7 +585,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 
 	VkDeviceSize offsets[] = { 0, 0, 0 };
 	//FIXME per mesh, also allow mixing with bones
-	if (meshes[0].morph.numdesc) {
+	if (meshes[0].morph.numclips) {
 		offsets[0] = anim->pose1;
 		offsets[1] = anim->pose2;
 	} else {

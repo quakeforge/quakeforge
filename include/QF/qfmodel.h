@@ -4,12 +4,12 @@
 #include "QF/math/vector.h"
 #include "QF/simd/types.h"
 
-typedef struct keyframedesc_s {
+typedef struct clipdesc_s {
 	uint32_t    firstframe;
 	uint32_t    numframes;		// 1 for single frames
 	uint32_t    flags;
 	uint32_t    name;
-} keyframedesc_t;
+} clipdesc_t;
 
 typedef struct keyframe_s {
 	float       endtime;		// 0 for single frames
@@ -17,8 +17,8 @@ typedef struct keyframe_s {
 } keyframe_t;
 
 typedef struct anim_s {
-	uint32_t    numdesc;
-	uint32_t    descriptors;
+	uint32_t    numclips;
+	uint32_t    clips;
 	uint32_t    keyframes;
 	uint32_t    data;
 } anim_t;

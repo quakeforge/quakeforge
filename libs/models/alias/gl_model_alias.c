@@ -71,7 +71,7 @@ gl_Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx)
 											alias_ctx->mod->name);
 	byte       *texel_block = Hunk_AllocName (nullptr, skinsize * num_skins,
 											  alias_ctx->mod->name);
-	auto skindesc = (keyframedesc_t *) ((byte *) mesh + mesh->skin.descriptors);
+	auto skindesc = (clipdesc_t *) ((byte *) mesh + mesh->skin.clips);
 	auto skinframe = (keyframe_t *) ((byte *) mesh + mesh->skin.keyframes);
 
 	int index = 0;
@@ -153,7 +153,7 @@ gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 	auto mesh = alias_ctx->mesh;
 	auto skin = &mesh->skin;
 	int         num_skins = alias_ctx->skins.size;
-	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skindesc = (clipdesc_t *) ((byte *) mesh + skin->clips);
 	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
 	dstring_t  *filename = dstring_new ();
 

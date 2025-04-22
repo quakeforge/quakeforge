@@ -43,22 +43,22 @@ static uint32_t
 get_frame_data (double time, const anim_t *anim, uint32_t framenum,
 				const void *base)
 {
-	if (framenum >= anim->numdesc) {
+	if (framenum >= anim->numclips) {
 		Sys_MaskPrintf (SYS_dev, "R_GetFrame: no such frame # %d\n",
 						framenum);
 		return 0;
 	}
 
-	auto fdesc = (keyframedesc_t *) (base + anim->descriptors);
-	fdesc += framenum;
-	if (fdesc->numframes < 1) {
+	auto clip = (clipdesc_t *) (base + anim->clips);
+	clip += framenum;
+	if (clip->numframes < 1) {
 		return 0;
 	}
 
 	auto frame = (keyframe_t *) (base + anim->keyframes);
-	frame += fdesc->firstframe;
+	frame += clip->firstframe;
 
-	int   numframes = fdesc->numframes;
+	int   numframes = clip->numframes;
 	float fullinterval = frame[numframes - 1].endtime;
 	// when loading in Mod_LoadAliasSkinGroup, we guaranteed all endtime
 	// values are positive, so we don't have to worry about division by 0
@@ -81,7 +81,7 @@ update_mesh (double time, animation_t *anim, model_t *m)
 		model = Cache_Get (&m->cache);
 	}
 	uint32_t frame = anim->frame;
-	if (model->anim.numdesc) {
+	if (model->anim.numclips) {
 		uint32_t data = get_frame_data (time, &model->anim, frame, model);
 		anim->blend = R_EntityBlend (time, anim, data, 0.1);
 	} else if (model->meshes.count == 1) {//FIXME morph on more meshes

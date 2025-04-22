@@ -314,7 +314,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 				+ sizeof (qfm_motor_t[hdr->num_joints])
 				+ sizeof (qfm_motor_t[hdr->num_joints])
 				+ sizeof (qfm_joint_t[hdr->num_poses])
-				+ sizeof (keyframedesc_t[hdr->num_anims])
+				+ sizeof (clipdesc_t[hdr->num_anims])
 				+ sizeof (keyframe_t[hdr->num_frames])
 				+ sizeof (qfm_channel_t[hdr->num_framechannels])
 				+ sizeof (uint16_t[frame_data_count])
@@ -326,8 +326,8 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	auto base      = (qfm_motor_t *)    &joints[hdr->num_joints];
 	auto inverse   = (qfm_motor_t *)    &base[hdr->num_joints];
 	auto pose      = (qfm_joint_t *)    &inverse[hdr->num_joints];
-	auto desc      = (keyframedesc_t *) &pose[hdr->num_poses];
-	auto keyframes = (keyframe_t *)     &desc[hdr->num_anims];
+	auto clips     = (clipdesc_t *) &pose[hdr->num_poses];
+	auto keyframes = (keyframe_t *)     &clips[hdr->num_anims];
 	auto channels  = (qfm_channel_t *)  &keyframes[hdr->num_frames];
 	auto framedata = (uint16_t *)       &channels[hdr->num_framechannels];
 	auto bounds    = (qfm_frame_t *)    &framedata[frame_data_count];
@@ -370,8 +370,8 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.count = text_base + hdr->num_text,
 		},
 		.anim = {
-			.numdesc = hdr->num_anims,
-			.descriptors = (byte *) desc - (byte *) model,
+			.numclips = hdr->num_anims,
+			.clips = (byte *) clips - (byte *) model,
 			.keyframes = (byte *) keyframes - (byte *) model,
 			.data = (byte *) bounds - (byte *) model,
 		},
@@ -447,7 +447,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 
 	for (uint32_t i = 0; i < hdr->num_anims; i++) {
 		auto a = &iqm.anims[i];
-		desc[i] = (keyframedesc_t) {
+		clips[i] = (clipdesc_t) {
 			.firstframe = a->first_frame,
 			.numframes = a->num_frames,
 			.flags = a->flags,

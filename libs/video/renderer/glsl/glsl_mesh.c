@@ -312,7 +312,7 @@ glsl_R_DrawMesh (entity_t ent)
 		void *pose1 = nullptr;
 		void *pose2 = nullptr;
 
-		if (meshes[i].morph.numdesc) {
+		if (meshes[i].morph.numclips) {
 			pose1 = (void *) (intptr_t) animation->pose1;
 			pose2 = (void *) (intptr_t) animation->pose2;
 		}

@@ -70,12 +70,12 @@ glsl_alias_clear (model_t *m, void *data)
 	qfeglDeleteBuffers (2, bufs);
 
 	auto skin = &mesh->skin;
-	auto skindesc = (keyframedesc_t *) ((byte *) mesh + skin->descriptors);
+	auto skinclips = (clipdesc_t *) ((byte *) mesh + skin->clips);
 	auto skinframe = (keyframe_t *) ((byte *) mesh + skin->keyframes);
 	int index = 0;
 
-	for (uint32_t i = 0; i < skin->numdesc; i++) {
-		for (uint32_t j = 0; j < skindesc[i].numframes; j++) {
+	for (uint32_t i = 0; i < skin->numclips; i++) {
+		for (uint32_t j = 0; j < skinclips[i].numframes; j++) {
 			GLSL_ReleaseTexture (skinframe[index++].data);
 		}
 	}

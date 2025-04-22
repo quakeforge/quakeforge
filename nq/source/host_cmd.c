@@ -1365,8 +1365,8 @@ PrintFrameName (model_t *m, int frame)
 		cached = true;
 	}
 	auto mesh = (qf_mesh_t *) ((byte *) model + model->meshes.offset);
-	auto desc = (keyframedesc_t *) ((byte *) mesh + mesh->morph.descriptors);
-	frame = desc[frame].firstframe;
+	auto clips = (clipdesc_t *) ((byte *) mesh + mesh->morph.clips);
+	frame = clips[frame].firstframe;
 	auto f = (keyframe_t *) ((byte *) mesh + mesh->morph.keyframes);
 	auto framedata = (qfm_frame_t *) ((byte *) mesh + f[frame].data);
 
