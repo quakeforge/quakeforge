@@ -2974,3 +2974,13 @@ void
 trace_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
 {
 }
+
+void
+trace_glPushDebugGroup (GLenum source, GLuint id, GLsizei length, const GLchar *message)
+{
+}
+
+void
+trace_glPopDebugGroup (void)
+{
+}

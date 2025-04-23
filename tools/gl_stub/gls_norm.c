@@ -2515,3 +2515,13 @@ void
 norm_glDebugMessageCallback (GLDEBUGPROC callback, const void *userParam)
 {
 }
+
+void
+norm_glPushDebugGroup (GLenum source, GLuint id, GLsizei length, const GLchar *message)
+{
+}
+
+void
+norm_glPopDebugGroup (void)
+{
+}
