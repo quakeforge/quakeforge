@@ -149,8 +149,10 @@ get_designated_offset (const type_t *type, const designator_t *des)
 
 	if (is_struct (type) || is_union (type)) {
 		field = designator_field (des, type);
-		offset = field->offset;
-		ele_type = field->type;
+		if (field) {
+			offset = field->offset;
+			ele_type = field->type;
+		}
 	} else if (is_array (type)) {
 		int         array_count = type->array.count;
 		ele_type = dereference_type (type);
@@ -159,7 +161,11 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = ev_types[type->type];
 		if (type->symtab && des->field) {
 			field = designator_field (des, type);
-			offset = field->offset;
+			if (field) {
+				offset = field->offset;
+			} else {
+				ele_type = nullptr;
+			}
 		} else {
 			int         vec_width = type_width (type);
 			offset = designator_index (des, type_size (ele_type), vec_width);
