@@ -13,6 +13,7 @@ EXTRA_LTLIBRARIES += \
 	libs/models/libmodels_vulkan.la
 
 models_sources = \
+	libs/models/animation.c \
 	libs/models/clip_hull.c \
 	libs/models/model.c \
 	libs/models/portal.c \
