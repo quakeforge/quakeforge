@@ -272,20 +272,6 @@ rua_model_get_model (progs_t *pr, rua_model_resources_t *res)
 	return model;
 }
 
-bi (Model_GetBaseMotors)
-{
-	qfZoneScoped (true);
-
-	auto model = rua_model_get_model (pr, _res);
-	if (model) {
-		auto motors = (qfm_motor_t *) P_GPOINTER (pr, 1);
-		auto m = (qfm_motor_t *) ((byte *) model + model->base.offset);
-		memcpy (motors, m, model->base.count * sizeof (motors[0]));
-
-		R_INT (pr) = 1;
-	}
-}
-
 bi (Model_GetInverseMotors)
 {
 	qfZoneScoped (true);
@@ -419,7 +405,6 @@ static builtin_t builtins[] = {
 	bi(Model_NumJoints,        1, p(ptr)),
 	bi(Model_GetJoints,        1, p(ptr)),
 	bi(Model_NumClips,         1, p(ptr)),
-	bi(Model_GetBaseMotors,    2, p(ulong), p(ptr)),
 	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
 	bi(Model_GetClipInfo,      2, p(ulong), p(uint)),
 	bi(Model_GetChannelInfo,   2, p(ulong), p(ptr)),

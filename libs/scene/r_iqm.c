@@ -106,7 +106,6 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 
 	auto joints = (qfm_joint_t *) ((byte *) model + model->joints.offset);
 	auto pose = (qfm_joint_t *) ((byte *) model + model->pose.offset);
-	auto base_motors = (qfm_motor_t *) ((byte *) model + model->base.offset);
 	auto inv_motors = (qfm_motor_t *) ((byte *) model + model->inverse.offset);
 
 	if (!frame1) {
@@ -129,19 +128,19 @@ R_IQMBlendPoseFrames (qf_model_t *model, int frame1, int frame2,
 		// grab parent first because pose might be aliased with motors
 		int parent = pose[i].parent;
 		motors[i] = qfm_make_motor (pose[i]);
-		// Pc * Bc^-1
-		motors[i] = qfm_motor_mul (motors[i], inv_motors[i]);
-		if (motors[i].flags & qfm_nonleaf) {
+		if (inv_motors[i].flags & qfm_nonleaf) {
+			motors[i].flags &= ~qfm_nonuniform;
+			motors[i].flags |= qfm_nonleaf;
 			float *s = motors[i].s;
 			float scale = (s[0] + s[1] + s[2]) / 3;
 			s[2] = s[1] = s[0] = scale;
 		}
 		if (parent >= 0) {
-			// Bp * Pc * Bc^-1
-			motors[i] = qfm_motor_mul (base_motors[parent], motors[i]);
-			// Pp * Bp^-1 * Bp * Pc * Bc^-1
 			motors[i] = qfm_motor_mul (motors[parent], motors[i]);
 		}
+	}
+	for (uint32_t i = 0; i < model->joints.count; i++) {
+		motors[i] = qfm_motor_mul (motors[i], inv_motors[i]);
 	}
 	return motors;
 }

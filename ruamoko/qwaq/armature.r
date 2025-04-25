@@ -72,7 +72,6 @@ make_armature (model_t model)
 	*arm = {
 		.num_joints  = num_joints,
 		.joints      = obj_malloc (num_joints * sizeof (qfm_joint_t)),
-		.basepose    = obj_malloc (num_joints * sizeof (qfm_motor_t)),
 		.pose        = obj_malloc (num_joints * sizeof (qfm_motor_t)),
 		.points      = obj_malloc (num_points * sizeof (vec4)),
 		.num_edges   = num_edges,
@@ -81,10 +80,13 @@ make_armature (model_t model)
 		.edge_bones  = obj_malloc (num_edges * sizeof (int)),
 	};
 	Model_GetJoints (model, arm.joints);
-	Model_GetBaseMotors (model, arm.basepose);
-	Model_GetBaseMotors (model, arm.pose);
 
 	for (int i = 0; i < num_joints; i++) {
+		arm.pose[i].m = make_motor (vec4(arm.joints[i].translate, 0),
+									arm.joints[i].rotate);
+		if (arm.joints[i].parent >= 0) {
+			arm.pose[i].m = arm.pose[arm.joints[i].parent].m * arm.pose[i].m;
+		}
 		bool IK = str_str (arm.joints[i].name, "IK") >= 0;
 		bool Null = str_str (arm.joints[i].name, "Null") >= 0;
 		bool Goal = str_str (arm.joints[i].name, "Goal") >= 0;
@@ -126,7 +128,7 @@ make_armature (model_t model)
 		}
 		best_dist /= 4;
 		vec4 scale = { best_dist, best_dist, best_dist, 1 };
-		auto M = arm.basepose[i].m;
+		auto M = arm.pose[i].m;
 		for (int j = 0; j < JOINT_POINTS; j++) {
 			auto p = (point_t) (points[j] * scale);
 			p = M * p * ~M;
@@ -143,7 +145,6 @@ free_armature (armature_t *arm)
 		return;
 	}
 	obj_free (arm.joints);
-	obj_free (arm.basepose);
 	obj_free (arm.pose);
 	obj_free (arm.points);
 	obj_free (arm.edges);

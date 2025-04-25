@@ -138,9 +138,8 @@ typedef struct qf_mesh_s {
 typedef struct qf_model_s {
 	qfm_loc_t   meshes;
 	qfm_loc_t   joints;		// joint definitions (qfm_joint_t)
-	qfm_loc_t   base;		// base joint motors (qfm_motor_t)
 	qfm_loc_t   inverse;	// inverse joint motors (qfm_motor_t)
-	qfm_loc_t   pose;		// (qfm_joint_t)
+	qfm_loc_t   pose;		// (qfm_joint_t) base pose for animation
 	qfm_loc_t   channels;
 	qfm_loc_t   text;
 	anim_t      anim;

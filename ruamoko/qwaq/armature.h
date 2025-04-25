@@ -35,7 +35,6 @@ typedef struct edge_s {
 typedef struct {
 	int         num_joints;
 	qfm_joint_t *joints;
-	qfm_motor_t *basepose;
 	qfm_motor_t *pose;
 	vec4       *points;
 	int         num_edges;

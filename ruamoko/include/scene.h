@@ -84,7 +84,6 @@ void Model_Unload (model_t model);
 int Model_NumJoints (model_t model);
 void Model_GetJoints (model_t model, void *joints);
 int Model_NumClips (model_t model);
-int Model_GetBaseMotors (model_t model, void *motors);
 int Model_GetInverseMotors (model_t model, void *motors);
 clipinfo_t Model_GetClipInfo (model_t model, uint clip);
 void *Model_GetChannelInfo (model_t model, void *data);

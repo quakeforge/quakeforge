@@ -190,8 +190,7 @@ build_bone_map (iqmjoint *joints, uint32_t num_joints)
 }
 
 static void
-convert_joints (uint32_t num_joints, qfm_joint_t *joints,
-				qfm_motor_t *base, qfm_motor_t *inverse,
+convert_joints (uint32_t num_joints, qfm_joint_t *joints, qfm_motor_t *inverse,
 				const uint32_t *bone_map, const iqmjoint *iqm_joints,
 				uint32_t text_base)
 {
@@ -206,12 +205,9 @@ convert_joints (uint32_t num_joints, qfm_joint_t *joints,
 		};
 	}
 	for (uint32_t i = 0; i < num_joints; i++) {
-		base[i] = qfm_make_motor (joints[i]);
 		inverse[i] = qfm_motor_invert (qfm_make_motor (joints[i]));
 		if (joints[i].parent >= 0) {
-			base[i] = qfm_motor_mul (base[joints[i].parent], base[i]);
 			inverse[i] = qfm_motor_mul (inverse[i], inverse[joints[i].parent]);
-			base[joints[i].parent].flags |= qfm_nonleaf;
 			inverse[joints[i].parent].flags |= qfm_nonleaf;
 		}
 	}
@@ -349,10 +345,6 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.offset = (byte *) joints - (byte *) model,
 			.count = hdr->num_joints,
 		},
-		.base = {
-			.offset = (byte *) base - (byte *) model,
-			.count = hdr->num_joints,
-		},
 		.inverse = {
 			.offset = (byte *) inverse - (byte *) model,
 			.count = hdr->num_joints,
@@ -401,7 +393,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		}
 	}
 
-	convert_joints (hdr->num_joints, joints, base, inverse, bone_map,
+	convert_joints (hdr->num_joints, joints, inverse, bone_map,
 					iqm.joints, text_base);
 	update_vertex_joints (&iqm, bone_map);
 
