@@ -1,9 +1,9 @@
 /*
-	bi_model.c
+	resmap_template.c
 
-	Ruamkoko model builtins
+	Template for using PR_RESMAP
 
-	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2025 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
