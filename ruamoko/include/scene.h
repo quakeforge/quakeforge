@@ -31,6 +31,9 @@ typedef @handle(long) entity_h entity_t;
 typedef @handle(long) transform_h transform_t;
 typedef @handle(long) lightingdata_h lightingdata_t;
 typedef @handle(int) model_h model_t;
+typedef @handle(int) cliphandle_h cliphandle_t;
+typedef @handle(int) armhandle_h armhandle_t;
+typedef @handle(int) animstate_h animstate_t;
 
 scene_t Scene_NewScene (void);
 void Scene_DeleteScene (scene_t scene);
@@ -88,5 +91,17 @@ int Model_GetInverseMotors (model_t model, void *motors);
 clipinfo_t Model_GetClipInfo (model_t model, uint clip);
 void *Model_GetChannelInfo (model_t model, void *data);
 void *Model_GetFrameData (model_t model, uint clip, void *data);
+
+cliphandle_t qfa_find_clip (string name);
+armhandle_t qfa_find_armature (string name);
+animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
+								  armhandle_t armature, model_t model);
+void qfa_free_animation (animstate_t anim);
+void qfa_update_anim (animstate_t anim, float dt);
+void qfa_reset_anim (animstate_t anim);
+void qfa_set_clip_weight (animstate_t anim, uint clip, float weight);
+void qfa_set_clip_loop (animstate_t anim, uint clip, bool loop);
+void qfa_set_clip_disabled (animstate_t anim, uint clip, bool disabled);
+void qfa_get_pose_motors (animstate_t anim, void *motors);
 
 #endif//__ruamoko_scene_h

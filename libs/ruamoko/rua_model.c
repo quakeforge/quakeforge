@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/animation.h"
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/qfmodel.h"
@@ -55,68 +56,59 @@ typedef struct rua_model_s {
 	model_t    *model;
 } rua_model_t;
 
+typedef struct rua_animstate_s {
+	struct rua_animstate_s *next;
+	struct rua_animstate_s **prev;
+	animstate_t    *animstate;
+} rua_animstate_t;
+
 typedef struct {
 	PR_RESMAP (rua_model_t) model_map;
 	rua_model_t *handles;
+
+	PR_RESMAP (rua_animstate_t) animstate_map;
+	rua_animstate_t *anims;
+
 	progs_t    *pr;
 } rua_model_resources_t;
 
-static rua_model_t *
-rua_model_handle_new (rua_model_resources_t *res)
-{
-	qfZoneScoped (true);
-	return PR_RESNEW (res->model_map);
-}
+#define RESMAP_OBJ_TYPE rua_model_t
+#define RESMAP_PREFIX rua_model_handle
+#define RESMAP_MAP_PARAM rua_model_resources_t *res
+#define RESMAP_MAP res->model_map
+#define RESMAP_ERROR(msg, ...) \
+	PR_RunError (res->pr, msg __VA_OPT__(,) __VA_ARGS__)
+#include "resmap_template.cinc"
+#define rua_model_handle_get(reg,index) \
+	_rua_model_handle_get(reg,index,__FUNCTION__)
 
-static void
-rua_model_handle_free (rua_model_resources_t *res, rua_model_t *handle)
-{
-	qfZoneScoped (true);
-	PR_RESFREE (res->model_map, handle);
-}
-
-static void
-rua_model_handle_reset (rua_model_resources_t *res)
-{
-	qfZoneScoped (true);
-	PR_RESRESET (res->model_map);
-}
-
-static inline rua_model_t * __attribute__((pure))
-rua__model_handle_get (rua_model_resources_t *res, int index, const char *name)
-{
-	qfZoneScoped (true);
-	rua_model_t *handle = 0;
-
-	if (index) {
-		handle = PR_RESGET(res->model_map, index);
-	}
-	if (!handle) {
-		PR_RunError (res->pr, "invalid model handle passed to %s", name + 3);
-	}
-	return handle;
-}
-#define rua_model_handle_get(res, index) \
-	rua__model_handle_get (res, index, __FUNCTION__)
-
-static inline int __attribute__((pure))
-rua_model_handle_index (rua_model_resources_t *res, rua_model_t *handle)
-{
-	qfZoneScoped (true);
-	return PR_RESINDEX(res->model_map, handle);
-}
+#define RESMAP_OBJ_TYPE rua_animstate_t
+#define RESMAP_PREFIX rua_animstate
+#define RESMAP_MAP_PARAM rua_model_resources_t *res
+#define RESMAP_MAP res->animstate_map
+#define RESMAP_ERROR(msg, ...) \
+	PR_RunError (res->pr, msg __VA_OPT__(,) __VA_ARGS__)
+#include "resmap_template.cinc"
+#define rua_animstate_get(reg,index) \
+	_rua_animstate_get(reg,index,__FUNCTION__)
 
 static void
 bi_rua_model_clear (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	rua_model_resources_t *res = (rua_model_resources_t *) _res;
-	rua_model_t    *handle;
 
-	for (handle = res->handles; handle; handle = handle->next)
+	for (auto handle = res->handles; handle; handle = handle->next) {
 		Mod_UnloadModel (handle->model);
+	}
 	res->handles = 0;
 	rua_model_handle_reset (res);
+
+	for (auto anim = res->anims; anim; anim = anim->next) {
+		qfa_free_animation (anim->animstate);
+	}
+	res->anims = 0;
+	rua_animstate_reset (res);
 }
 
 static void
@@ -125,6 +117,7 @@ bi_rua_model_destroy (progs_t *pr, void *_res)
 	qfZoneScoped (true);
 	rua_model_resources_t *res = _res;
 	PR_RESDELMAP (res->model_map);
+	PR_RESDELMAP (res->animstate_map);
 	free (res);
 }
 
@@ -144,6 +137,26 @@ alloc_handle (rua_model_resources_t *res, model_t *model)
 	res->handles = handle;
 	handle->model = model;
 	return rua_model_handle_index (res, handle);
+}
+
+static int
+alloc_animstate (rua_model_resources_t *res, animstate_t *anim)
+{
+	qfZoneScoped (true);
+	auto rua_anim = rua_animstate_new (res);
+
+	if (!rua_anim) {
+		return 0;
+	}
+
+	rua_anim->next = res->anims;
+	rua_anim->prev = &res->anims;
+	if (res->anims) {
+		res->anims->prev = &rua_anim->next;
+	}
+	res->anims = rua_anim;
+	rua_anim->animstate = anim;
+	return rua_animstate_index (res, rua_anim);
 }
 
 #define bi(x) static void bi_##x (progs_t *pr, void *_res)
@@ -395,20 +408,158 @@ bi (Model_GetFrameData)
 	}
 }
 
+bi (qfa_find_clip)
+{
+	const char *name = P_GSTRING (pr, 0);
+	R_INT (pr) = qfa_find_clip (name);
+}
+
+bi (qfa_find_armature)
+{
+	const char *name = P_GSTRING (pr, 0);
+	R_INT (pr) = qfa_find_armature (name);
+}
+
+bi (qfa_create_animation)
+{
+	auto res = (rua_model_resources_t *) _res;
+	uint32_t   *clips = &P_STRUCT (pr, uint32_t, 0);
+	uint32_t    num_clips = P_UINT (pr, 1);
+	uint32_t    armature = P_UINT (pr, 2);
+	int         model_handle = P_INT (pr, 3);
+	model_t    *mod = nullptr;
+	qf_model_t *model = nullptr;
+	bool        cached = false;
+
+	if (model_handle) {
+		auto h = rua_model_handle_get (res, model_handle);
+		mod = h->model;
+	}
+	if (mod) {
+		model = mod->model;
+		if (!model) {
+			model = Cache_Get (&mod->cache);
+			cached = true;
+		}
+	}
+
+	auto anim = qfa_create_animation (clips, num_clips, armature, model);
+	R_INT (pr) = alloc_animstate (res, anim);
+
+	if (cached) {
+		Cache_Release (&mod->cache);
+	}
+}
+
+bi (qfa_free_animation)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+
+	qfa_free_animation (rua_anim->animstate);
+	*rua_anim->prev = rua_anim->next;
+	if (rua_anim->next) {
+		rua_anim->next->prev = rua_anim->prev;
+	}
+	rua_animstate_free (res, rua_anim);
+}
+
+bi (qfa_update_anim)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	qfa_update_anim (rua_anim->animstate, P_FLOAT (pr, 1));
+}
+
+bi (qfa_reset_anim)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	qfa_reset_anim (rua_anim->animstate);
+}
+
+bi (qfa_set_clip_weight)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	uint32_t clip = P_UINT (pr, 1);
+	float weight = P_FLOAT (pr, 2);
+
+	auto clip_states = qfa_clip_states (rua_anim->animstate);
+	if (clip < rua_anim->animstate->clip_states.count) {
+		clip_states[clip].weight = weight;
+	}
+}
+
+bi (qfa_set_clip_loop)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	uint32_t clip = P_UINT (pr, 1);
+	bool loop = P_INT (pr, 2);
+
+	auto clip_states = qfa_clip_states (rua_anim->animstate);
+	if (clip < rua_anim->animstate->clip_states.count) {
+		clip_states[clip].flags &= ~qfc_loop;
+		if (loop) {
+			clip_states[clip].flags |= qfc_loop;
+		}
+	}
+}
+
+bi (qfa_set_clip_disabled)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	uint32_t clip = P_UINT (pr, 1);
+	bool disabled = P_INT (pr, 2);
+
+	auto clip_states = qfa_clip_states (rua_anim->animstate);
+	if (clip < rua_anim->animstate->clip_states.count) {
+		clip_states[clip].flags &= ~qfc_disabled;
+		if (disabled) {
+			clip_states[clip].flags |= qfc_disabled;
+		}
+	}
+}
+
+bi (qfa_get_pose_motors)
+{
+	auto res = (rua_model_resources_t *) _res;
+	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
+	auto anim = rua_anim->animstate;
+
+	auto pose = (qfm_motor_t *) P_GPOINTER (pr, 1);
+	auto motors = qfa_matrix_palette (anim);
+	memcpy (pose, motors, anim->num_joints * sizeof (pose[0]));
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
 	bi(Model_Load,             1, p(string)),
-	bi(Model_Unload,           1, p(ptr)),
-	bi(Model_NumJoints,        1, p(ptr)),
-	bi(Model_GetJoints,        1, p(ptr)),
-	bi(Model_NumClips,         1, p(ptr)),
-	bi(Model_GetInverseMotors, 2, p(ulong), p(ptr)),
-	bi(Model_GetClipInfo,      2, p(ulong), p(uint)),
-	bi(Model_GetChannelInfo,   2, p(ulong), p(ptr)),
-	bi(Model_GetFrameData,     3, p(ulong), p(uint), p(ptr)),
+	bi(Model_Unload,           1, p(int)),
+	bi(Model_NumJoints,        1, p(int)),
+	bi(Model_GetJoints,        2, p(int), p(ptr)),
+	bi(Model_NumClips,         1, p(int)),
+	bi(Model_GetInverseMotors, 2, p(int), p(ptr)),
+	bi(Model_GetClipInfo,      2, p(int), p(uint)),
+	bi(Model_GetChannelInfo,   2, p(int), p(ptr)),
+	bi(Model_GetFrameData,     3, p(int), p(uint), p(ptr)),
+
+	bi(qfa_find_clip,          1, p(string)),
+	bi(qfa_find_armature,      1, p(string)),
+	bi(qfa_create_animation,   4, p(ptr), p(uint), p(uint), p(int)),
+	bi(qfa_free_animation,     1, p(int)),
+	bi(qfa_update_anim,        2, p(int), p(float)),
+	bi(qfa_reset_anim,         2, p(int)),
+	bi(qfa_set_clip_weight,    2, p(int), p(float)),
+	bi(qfa_set_clip_loop,      2, p(int), p(int)),
+	bi(qfa_set_clip_disabled,  2, p(int), p(int)),
+	bi(qfa_get_pose_motors,    2, p(int), p(ptr)),
+
 	{0}
 };
 

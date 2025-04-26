@@ -86,6 +86,7 @@ float frametime;
 
 	int show_armature;
 
+	animstate_t anim;
 	entity_t ent;
 	transform_t trans;
 	armature_t *arm;
@@ -114,8 +115,8 @@ float frametime;
 	clips = [[Array array] retain];
 	clipsView = [[ListView list:"MainWindow:clips" ctx:ctx] retain];
 
-	bones = [[Array array] retain];
-	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
+	//bones = [[Array array] retain];
+	//bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
 
 	window = IMUI_NewWindow ("MainWindow");
 	IMUI_Window_SetSize (window, {400, 300});
@@ -167,8 +168,9 @@ float frametime;
 
 -draw
 {
-	if (ent && arm && show_armature) {
-		Entity_GetPoseMotors (ent, arm.pose, realtime);
+	if (ent && anim && arm && show_armature) {
+		qfa_update_anim (anim, frametime * 0.1);
+		qfa_get_pose_motors (anim, arm.pose);
 		draw_armature (camera, arm, trans);
 	}
 
@@ -189,6 +191,12 @@ float frametime;
 	return self;
 }
 
+-setAnim:(animstate_t) anim
+{
+	self.anim = anim;
+	return self;
+}
+
 -setModel:(model_t) model
 {
 	self.model = model;
@@ -206,11 +214,11 @@ float frametime;
 	clip_num = -1;
 	timer = 0;
 
-	[bones removeAllObjects];
-	for (int i = 0; i < arm.num_joints; i++) {
-		[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
-	}
-	[bonesView setItems:bones];
+	//[bones removeAllObjects];
+	//for (int i = 0; i < arm.num_joints; i++) {
+	//	[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
+	//}
+	//[bonesView setItems:bones];
 
 	[clips removeAllObjects];
 	for (int i = 0; i < num_clips; i++) {
@@ -637,7 +645,18 @@ main (int argc, string *argv)
 	[windows addObject:main_window];
 	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
 
-	[main_window setModel:Model_Load ("progs/girl14a.iqm")];
+	[main_window setModel:Model_Load ("progs/girl14.iqm")];
+
+	cliphandle_t clips[2] = {
+		qfa_find_clip ("girl14:rig|standing walk right_RM"),
+		qfa_find_clip ("girl14:rig|standing taunt chest thump_RM"),
+	};
+	armhandle_t arma = qfa_find_armature ("girl14");
+	animstate_t anim = qfa_create_animation (clips, 2, arma, nil);
+	qfa_set_clip_loop (anim, 0, true);
+	qfa_set_clip_loop (anim, 1, true);
+	qfa_reset_anim (anim);
+	[main_window setAnim:anim];
 
 	while (true) {
 		arp_end ();
