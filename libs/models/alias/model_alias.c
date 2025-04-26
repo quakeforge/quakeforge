@@ -160,6 +160,7 @@ load_frames (mod_alias_ctx_t *alias_ctx, daliasframetype_t *type,
 				};
 				alias_ctx->dframes[index] = data;
 				verts = load_frame (alias_ctx, data, &frames[index], mdl);
+				data = verts;
 				if (i == 0) {
 					clips[i].name = frames[index].name;
 				}
