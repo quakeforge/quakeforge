@@ -49,11 +49,19 @@ typedef enum : uint32_t {
 	qfc_event,		// keyframe_t.data is event id, endtime is when triggered
 } qfc_type_t;
 
+typedef enum : uint32_t {
+	qfc_loop,
+	qfc_disabled,
+} qfc_flags_t;
+
 typedef struct clipstate_s {
 	qfc_type_t  type;
 	float       end_time;
 	uint32_t    frame;
 	uint32_t    clip_id;
+	float       frac;
+	float       weight;
+	qfc_flags_t flags;
 } clipstate_t;
 
 typedef struct animstate_s {
@@ -61,7 +69,9 @@ typedef struct animstate_s {
 	qfm_loc_t   morph_states;
 	//qfm_loc_t   blend_spec;
 	//qfm_loc_t   joint_weights;
+	uint32_t    armature_id;
 	uint32_t    num_joints;
+	uint32_t    raw_pose;
 	uint32_t    local_pose;
 	uint32_t    global_pose;
 	uint32_t    matrix_palette;
@@ -76,6 +86,7 @@ ANIMINLINE clipstate_t *qfa_clip_states (animstate_t *anim);
 ANIMINLINE clipstate_t *qfa_morph_states (animstate_t *anim);
 //ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
 //ANIMINLINE float *qfa_jointweights (animstate_t *anim);
+ANIMINLINE qfm_joint_t *qfa_raw_pose (animstate_t *anim);
 ANIMINLINE qfm_joint_t *qfa_local_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_global_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_matrix_palette (animstate_t *anim);
@@ -109,6 +120,12 @@ qfa_morph_states (animstate_t *anim)
 //}
 
 ANIMINLINE qfm_joint_t *
+qfa_raw_pose (animstate_t *anim)
+{
+	return (qfm_joint_t *) ((byte *) anim + anim->raw_pose);
+}
+
+ANIMINLINE qfm_joint_t *
 qfa_local_pose (animstate_t *anim)
 {
 	return (qfm_joint_t *) ((byte *) anim + anim->local_pose);
@@ -134,9 +151,14 @@ void qfa_shutdown (void);
 void qfa_register (model_t *mod);
 void qfa_deregister (model_t *mod);
 
-animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
-								   qf_model_t *model);
+int qfa_find_clip (const char *name);
+int qfa_find_armature (const char *name);
 
+animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
+								   uint32_t armature, qf_model_t *model);
+void qfa_free_animation (animstate_t *anim);
+void qfa_update_anim (animstate_t *anim, float dt);
+void qfa_reset_anim (animstate_t *anim);
 ///@}
 
 #endif//__QF_scene_animation_h

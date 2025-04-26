@@ -29,7 +29,7 @@
 #define RESMAP_new(pref) __RESMAP_EXP(,pref,_new)
 #define RESMAP_free(pref) __RESMAP_EXP(,pref,_free)
 #define RESMAP_reset(pref) __RESMAP_EXP(,pref,_reset)
-#define RESMAP_get(pref) __RESMAP_EXP(_,pref,_index)
+#define RESMAP_get(pref) __RESMAP_EXP(_,pref,_get)
 #define RESMAP_index(pref) __RESMAP_EXP(,pref,_index)
 
 static RESMAP_OBJ_TYPE *
@@ -63,7 +63,7 @@ RESMAP_get(RESMAP_PREFIX) (RESMAP_MAP_PARAM, int index, const char *name)
 		obj = PR_RESGET(RESMAP_MAP, index);
 	}
 	if (!obj) {
-		RESMAP_ERROR ("invalid index passed to %s", name);
+		RESMAP_ERROR ("invalid index %d passed to %s", index, name);
 	}
 	return obj;
 }
