@@ -150,33 +150,47 @@ typedef struct qf_model_s {
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
-GNU89INLINE inline uint32_t qfm_uniform_scale (const vec3_t s)
-	__attribute__((const));
-GNU89INLINE inline qfm_motor_t qfm_make_motor (qfm_joint_t joint)
-	__attribute__((const));
-GNU89INLINE inline qfm_motor_t qfm_motor_invert (qfm_motor_t m)
-	__attribute__((const));
-GNU89INLINE inline qfm_motor_t qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
-	__attribute__((const));
-GNU89INLINE inline void qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m);
+#define QFMINLINE GNU89INLINE inline
 
+QFMINLINE clipdesc_t *qfm_clipdesc (qf_model_t *model, uint32_t clip);
+QFMINLINE keyframe_t *qfm_keyframe (qf_model_t *model, uint32_t frame);
+
+QFMINLINE uint32_t qfm_uniform_scale (const vec3_t s)
+	__attribute__((const));
+QFMINLINE qfm_motor_t qfm_make_motor (qfm_joint_t joint)
+	__attribute__((const));
+QFMINLINE qfm_motor_t qfm_motor_invert (qfm_motor_t m)
+	__attribute__((const));
+QFMINLINE qfm_motor_t qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
+	__attribute__((const));
+QFMINLINE void qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m);
+
+#undef QFMINLINE
 #ifndef IMPLEMENT_QFMODEL_Funcs
-GNU89INLINE inline
+#define QFMINLINE GNU89INLINE inline
 #else
-VISIBLE
+#define QFMINLINE VISIBLE
 #endif
-uint32_t
+
+QFMINLINE clipdesc_t *
+qfm_clipdesc (qf_model_t *model, uint32_t clip)
+{
+	return &((clipdesc_t *) ((byte *) model + model->anim.clips))[clip];
+}
+
+QFMINLINE keyframe_t *
+qfm_keyframe (qf_model_t *model, uint32_t frame)
+{
+	return &((keyframe_t *) ((byte *) model + model->anim.keyframes))[frame];
+}
+
+QFMINLINE uint32_t
 qfm_uniform_scale (const vec3_t s)
 {
 	return s[0] == s[1] && s[0] == s[2] ? 0 : qfm_nonuniform;
 }
 
-#ifndef IMPLEMENT_QFMODEL_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-qfm_motor_t
+QFMINLINE qfm_motor_t
 qfm_make_motor (qfm_joint_t joint)
 {
 	auto q = qconjf (joint.rotate);
@@ -193,12 +207,7 @@ qfm_make_motor (qfm_joint_t joint)
 	};
 }
 
-#ifndef IMPLEMENT_QFMODEL_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-qfm_motor_t
+QFMINLINE qfm_motor_t
 qfm_motor_invert (qfm_motor_t m)
 {
 	auto is = 1 / loadvec3f (m.s);
@@ -210,12 +219,7 @@ qfm_motor_invert (qfm_motor_t m)
 	};
 }
 
-#ifndef IMPLEMENT_QFMODEL_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-qfm_motor_t
+QFMINLINE qfm_motor_t
 qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 {
 	float a1 = m1.q[3];
@@ -240,12 +244,7 @@ qfm_motor_mul (qfm_motor_t m1, qfm_motor_t m2)
 	};
 }
 
-#ifndef IMPLEMENT_QFMODEL_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-void
+QFMINLINE void
 qfm_motor_to_mat (mat4f_t mat, qfm_motor_t m)
 {
 	auto q = qconjf (m.q);
