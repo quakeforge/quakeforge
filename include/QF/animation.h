@@ -68,18 +68,18 @@ typedef struct animstate_s {
 	uint32_t    materials;
 	float       play_rate;
 	double      time;
-} animation_t;
+} animstate_t;
 
 #define ANIMINLINE GNU89INLINE inline
 
-ANIMINLINE clipstate_t *qfa_clip_states (animation_t *anim);
-ANIMINLINE clipstate_t *qfa_morph_states (animation_t *anim);
-//ANIMINLINE void *qfa_blend_spec (animation_t *anim);
-//ANIMINLINE float *qfa_jointweights (animation_t *anim);
-ANIMINLINE qfm_joint_t *qfa_local_pose (animation_t *anim);
-ANIMINLINE qfm_motor_t *qfa_global_pose (animation_t *anim);
-ANIMINLINE qfm_motor_t *qfa_matrix_palette (animation_t *anim);
-//ANIMINLINE void *qfa_materials (animation_t *anim);
+ANIMINLINE clipstate_t *qfa_clip_states (animstate_t *anim);
+ANIMINLINE clipstate_t *qfa_morph_states (animstate_t *anim);
+//ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
+//ANIMINLINE float *qfa_jointweights (animstate_t *anim);
+ANIMINLINE qfm_joint_t *qfa_local_pose (animstate_t *anim);
+ANIMINLINE qfm_motor_t *qfa_global_pose (animstate_t *anim);
+ANIMINLINE qfm_motor_t *qfa_matrix_palette (animstate_t *anim);
+//ANIMINLINE void *qfa_materials (animstate_t *anim);
 
 #undef ANIMINLINE
 #ifndef IMPLEMENT_ENTITY_Funcs
@@ -89,49 +89,53 @@ ANIMINLINE qfm_motor_t *qfa_matrix_palette (animation_t *anim);
 #endif
 
 ANIMINLINE clipstate_t *
-qfa_clip_states (animation_t *anim)
+qfa_clip_states (animstate_t *anim)
 {
 	return (clipstate_t *) ((byte *) anim + anim->clip_states.offset);
 }
 
 ANIMINLINE clipstate_t *
-qfa_morph_states (animation_t *anim)
+qfa_morph_states (animstate_t *anim)
 {
 	return (clipstate_t *) ((byte *) anim + anim->morph_states.offset);
 }
 
-//ANIMINLINE void *qfa_blend_spec (animation_t *anim);
+//ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
 
 //ANIMINLINE float *
-//qfa_jointweights (animation_t *anim)
+//qfa_jointweights (animstate_t *anim)
 //{
 //	return (float *) ((byte *) anim + anim->joint_weights.offset);
 //}
 
 ANIMINLINE qfm_joint_t *
-qfa_local_pose (animation_t *anim)
+qfa_local_pose (animstate_t *anim)
 {
 	return (qfm_joint_t *) ((byte *) anim + anim->local_pose);
 }
 
 ANIMINLINE qfm_motor_t *
-qfa_global_pose (animation_t *anim)
+qfa_global_pose (animstate_t *anim)
 {
 	return (qfm_motor_t *) ((byte *) anim + anim->global_pose);
 }
 
 ANIMINLINE qfm_motor_t *
-qfa_matrix_palette (animation_t *anim)
+qfa_matrix_palette (animstate_t *anim)
 {
 	return (qfm_motor_t *) ((byte *) anim + anim->matrix_palette);
 }
 
-//ANIMINLINE void *qfa_materials (animation_t *anim);
+//ANIMINLINE void *qfa_materials (animstate_t *anim);
 
-animation_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
-								   qf_model_t *model);
+void qfa_init (void);
+void qfa_shutdown (void);
 
 void qfa_register (model_t *mod);
+void qfa_deregister (model_t *mod);
+
+animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
+								   qf_model_t *model);
 
 ///@}
 

@@ -69,6 +69,7 @@ EXTRA_DIST += \
 	include/r_scrap.h \
 	include/r_shared.h \
 	include/regex.h \
+	include/resmap_template.h \
 	include/rua_internal.h \
 	include/skin_stencil.h \
 	include/snd_internal.h \

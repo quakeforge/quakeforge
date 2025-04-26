@@ -1,0 +1,82 @@
+/*
+	bi_model.c
+
+	Ruamkoko model builtins
+
+	Copyright (C) 2022 Bill Currie <bill@taniwha.org>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+
+#define __RESMAP_EXP(a,b,c) a##b##c
+#define RESMAP_new(pref) __RESMAP_EXP(,pref,_new)
+#define RESMAP_free(pref) __RESMAP_EXP(,pref,_free)
+#define RESMAP_reset(pref) __RESMAP_EXP(,pref,_reset)
+#define RESMAP_get(pref) __RESMAP_EXP(_,pref,_index)
+#define RESMAP_index(pref) __RESMAP_EXP(,pref,_index)
+
+static RESMAP_OBJ_TYPE *
+RESMAP_new(RESMAP_PREFIX) (RESMAP_MAP_PARAM)
+{
+	qfZoneScoped (true);
+	return PR_RESNEW (RESMAP_MAP);
+}
+
+static void
+RESMAP_free(RESMAP_PREFIX) (RESMAP_MAP_PARAM, RESMAP_OBJ_TYPE *obj)
+{
+	qfZoneScoped (true);
+	PR_RESFREE (RESMAP_MAP, obj);
+}
+
+static void
+RESMAP_reset(RESMAP_PREFIX) (RESMAP_MAP_PARAM)
+{
+	qfZoneScoped (true);
+	PR_RESRESET (RESMAP_MAP);
+}
+
+static inline RESMAP_OBJ_TYPE * __attribute__((pure))
+RESMAP_get(RESMAP_PREFIX) (RESMAP_MAP_PARAM, int index, const char *name)
+{
+	qfZoneScoped (true);
+	RESMAP_OBJ_TYPE *obj = 0;
+
+	if (index) {
+		obj = PR_RESGET(RESMAP_MAP, index);
+	}
+	if (!obj) {
+		RESMAP_ERROR ("invalid index passed to %s", name);
+	}
+	return obj;
+}
+
+static inline int __attribute__((pure))
+RESMAP_index(RESMAP_PREFIX) (RESMAP_MAP_PARAM, RESMAP_OBJ_TYPE *obj)
+{
+	qfZoneScoped (true);
+	return PR_RESINDEX(RESMAP_MAP, obj);
+}
+
+#undef RESMAP_OBJ_TYPE
+#undef RESMAP_PREFIX
+#undef RESMAP_MAP_PARAM
+#undef RESMAP_MAP
+#undef RESMAP_ERROR

@@ -40,6 +40,7 @@
 
 #define IMPLEMENT_QFMODEL_Funcs
 
+#include "QF/animation.h"
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/iqm.h"
@@ -173,6 +174,8 @@ mod_shutdown (void *data)
 	}
 	DARRAY_CLEAR (&mod_known);
 	DARRAY_CLEAR (&mod_blocks);
+
+	qfa_shutdown ();
 }
 
 VISIBLE void
@@ -206,6 +209,8 @@ Mod_Init (void)
 					*dest++ = 0xff;
 			}
 	}
+
+	qfa_init ();
 }
 
 VISIBLE void
@@ -223,6 +228,8 @@ mod_unload_model (size_t ind)
 {
 	qfZoneScoped (true);
 	model_t    *mod = mod_known.a[ind];
+
+	qfa_deregister (mod);
 
 	//FIXME this seems to be correct but need to double check the behavior
 	//with alias models
@@ -405,7 +412,9 @@ Mod_ForName (const char *name, bool crash)
 	mod = Mod_FindName (name);
 
 	Sys_MaskPrintf (SYS_dev, "Mod_ForName: %s, %p\n", name, mod);
-	return Mod_LoadModel (mod, crash);
+	Mod_LoadModel (mod, crash);
+	qfa_register (mod);
+	return mod;
 }
 
 VISIBLE void
