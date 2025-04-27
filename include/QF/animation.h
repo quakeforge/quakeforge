@@ -50,8 +50,8 @@ typedef enum : uint32_t {
 } qfc_type_t;
 
 typedef enum : uint32_t {
-	qfc_loop,
-	qfc_disabled,
+	qfc_loop = 1,
+	qfc_disabled = 2,
 } qfc_flags_t;
 
 typedef struct clipstate_s {
@@ -62,6 +62,7 @@ typedef struct clipstate_s {
 	float       frac;
 	float       weight;
 	qfc_flags_t flags;
+	float       pad;
 } clipstate_t;
 
 typedef struct animstate_s {
@@ -78,7 +79,7 @@ typedef struct animstate_s {
 	uint32_t    materials;
 	float       play_rate;
 	double      time;
-} animstate_t;
+} __attribute__((aligned (16))) animstate_t;
 
 #define ANIMINLINE GNU89INLINE inline
 

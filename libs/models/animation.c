@@ -412,13 +412,13 @@ static void
 qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 				 keyframe_t *keyframes, float time)
 {
-	auto last_frame = &keyframes[clipdesc->numframes];
+	auto last_frame = &keyframes[clipdesc->numframes - 1];
 	auto first_frame = &keyframes[0];
 	float duration = last_frame->endtime;
 
 	if (time >= clipstate->end_time || time < clipstate->end_time - duration) {
 		if (!clipstate->end_time || (clipstate->flags & qfc_loop)) {
-			int cycles = (time - clipstate->end_time) / duration;
+			int cycles = time / duration;
 			clipstate->end_time = (cycles + 1) * duration;
 		}
 	}
