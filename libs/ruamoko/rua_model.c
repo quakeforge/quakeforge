@@ -204,6 +204,7 @@ bi (Model_Unload)
 
 bi (Model_NumJoints)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -218,6 +219,7 @@ bi (Model_NumJoints)
 
 bi (Model_GetJoints)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -242,6 +244,7 @@ bi (Model_GetJoints)
 
 bi (Model_NumClips)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -272,6 +275,7 @@ bi (Model_NumClips)
 static qf_model_t *
 rua_model_get_model (progs_t *pr, rua_model_resources_t *res)
 {
+	qfZoneScoped (true);
 	R_INT (pr) = 0;
 
 	int  handle = P_INT (pr, 0);
@@ -301,6 +305,7 @@ bi (Model_GetInverseMotors)
 
 bi (Model_GetClipInfo)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -350,6 +355,7 @@ bi (Model_GetClipInfo)
 
 bi (Model_GetChannelInfo)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -375,6 +381,7 @@ bi (Model_GetChannelInfo)
 
 bi (Model_GetFrameData)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	int  handle = P_INT (pr, 0);
 	auto h = rua_model_handle_get (res, handle);
@@ -410,18 +417,21 @@ bi (Model_GetFrameData)
 
 bi (qfa_find_clip)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	R_INT (pr) = qfa_find_clip (name);
 }
 
 bi (qfa_find_armature)
 {
+	qfZoneScoped (true);
 	const char *name = P_GSTRING (pr, 0);
 	R_INT (pr) = qfa_find_armature (name);
 }
 
 bi (qfa_create_animation)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	uint32_t   *clips = &P_STRUCT (pr, uint32_t, 0);
 	uint32_t    num_clips = P_UINT (pr, 1);
@@ -453,6 +463,7 @@ bi (qfa_create_animation)
 
 bi (qfa_free_animation)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 
@@ -466,6 +477,7 @@ bi (qfa_free_animation)
 
 bi (qfa_update_anim)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	qfa_update_anim (rua_anim->animstate, P_FLOAT (pr, 1));
@@ -473,6 +485,7 @@ bi (qfa_update_anim)
 
 bi (qfa_reset_anim)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	qfa_reset_anim (rua_anim->animstate);
@@ -480,6 +493,7 @@ bi (qfa_reset_anim)
 
 bi (qfa_set_clip_weight)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	uint32_t clip = P_UINT (pr, 1);
@@ -493,6 +507,7 @@ bi (qfa_set_clip_weight)
 
 bi (qfa_set_clip_loop)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	uint32_t clip = P_UINT (pr, 1);
@@ -509,6 +524,7 @@ bi (qfa_set_clip_loop)
 
 bi (qfa_set_clip_disabled)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	uint32_t clip = P_UINT (pr, 1);
@@ -525,6 +541,7 @@ bi (qfa_set_clip_disabled)
 
 bi (qfa_get_pose_motors)
 {
+	qfZoneScoped (true);
 	auto res = (rua_model_resources_t *) _res;
 	auto rua_anim = rua_animstate_get (res, P_INT (pr, 0));
 	auto anim = rua_anim->animstate;
