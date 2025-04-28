@@ -513,14 +513,15 @@ qfa_update_anim (animstate_t *anim, float dt)
 	auto matrix_palette = qfa_matrix_palette (anim);
 	auto arm = models[anim->clip_states.count];
 	auto inv_motors = (qfm_motor_t *) ((byte *) arm + arm->inverse.offset);
+	auto pose_joints = (qfm_joint_t *) ((byte *) arm + arm->pose.offset);
+	size_t pose_size = sizeof (qfm_joint_t[anim->num_joints]);
 
 	memset (local_pose, 0, sizeof (qfm_joint_t[anim->num_joints]));
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 		auto clipdesc = qfm_clipdesc (models[i], items[i]->id);
 		auto keyframes = qfm_keyframe (models[i], clipdesc->firstframe);
 		qfa_update_clip (&clipstates[i], clipdesc, keyframes, anim->time);
-		memcpy (raw_pose, (byte *) arm + arm->pose.offset,
-				sizeof (qfm_joint_t[anim->num_joints]));
+		memcpy (raw_pose, pose_joints, pose_size);
 
 		uint32_t frame1 = clipstates[i].frame;
 		uint32_t frame2 = clipstates[i].frame;
@@ -531,19 +532,17 @@ qfa_update_anim (animstate_t *anim, float dt)
 		frame2 = keyframes[frame2].data;
 		float blend = clipstates[i].frac;
 		qfa_apply_channels (raw_pose, models[i], frame1, frame2, blend);
-
+		auto weight = ((vec4f_t) { 1, 1, 1, 1 }) * clipstates[i].weight;
 		for (uint32_t j = 0; j < anim->num_joints; j++) {
-			VectorMultAdd (local_pose[j].translate,
-						   clipstates[i].weight, raw_pose[j].translate,
-						   local_pose[j].translate);
-			QuatMultAdd (local_pose[j].rotate,
-						 clipstates[i].weight, raw_pose[j].rotate,
-						 local_pose[j].rotate);
-			VectorMultAdd (local_pose[j].scale,
-						   clipstates[i].weight, raw_pose[j].scale,
-						   local_pose[j].scale);
-			local_pose[j].parent = raw_pose[j].parent;
+			auto rp = (vec4f_t *) &raw_pose[j];
+			auto lp = (vec4f_t *) &local_pose[j];
+			lp[0] += weight * loadxyzf (rp[0]);
+			lp[1] += weight * rp[1];
+			lp[2] += weight * loadxyzf (rp[2]);
 		}
+	}
+	for (uint32_t j = 0; j < anim->num_joints; j++) {
+		local_pose[j].parent = raw_pose[j].parent;
 	}
 	for (uint32_t i = 0; i < anim->num_joints; i++) {
 		int parent = local_pose[i].parent;

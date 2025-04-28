@@ -359,10 +359,9 @@ VISIBLE
 vec4f_t
 loadxyzf (vec4f_t v)
 {
-	vec4f_t v4;
-
-	v4 = (vec4f_t) { v[0], v[1], v[2], 0 };
-	return v4;
+	constexpr int32_t nan = -1;
+	constexpr vec4i_t xyz = { nan, nan, nan, 0 };
+	return (vec4f_t) ((vec4i_t) v & xyz);
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
