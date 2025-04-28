@@ -543,6 +543,7 @@ qfa_update_anim (animstate_t *anim, float dt)
 	}
 	for (uint32_t j = 0; j < anim->num_joints; j++) {
 		local_pose[j].parent = raw_pose[j].parent;
+		local_pose[j].rotate = normalf (local_pose[j].rotate);
 	}
 	for (uint32_t i = 0; i < anim->num_joints; i++) {
 		int parent = local_pose[i].parent;
