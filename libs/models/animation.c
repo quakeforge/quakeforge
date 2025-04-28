@@ -79,6 +79,7 @@ static anim_registry_t *anim_registry;
 static qfa_item_t *
 alloc_clip_item (anim_registry_t *reg)
 {
+	qfZoneScoped (true);
 	auto clip = qfa_clip_new (reg);
 	if (reg->clips) {
 		reg->clips->prev = &clip->next;
@@ -93,6 +94,7 @@ alloc_clip_item (anim_registry_t *reg)
 static void
 free_clip_item (anim_registry_t *reg, qfa_item_t *clip)
 {
+	qfZoneScoped (true);
 	if (clip->next) {
 		clip->next->prev = clip->prev;
 	}
@@ -104,6 +106,7 @@ free_clip_item (anim_registry_t *reg, qfa_item_t *clip)
 static qfa_item_t *
 alloc_armature_item (anim_registry_t *reg)
 {
+	qfZoneScoped (true);
 	auto armature = qfa_armature_new (reg);
 	if (reg->armatures) {
 		reg->armatures->prev = &armature->next;
@@ -118,6 +121,7 @@ alloc_armature_item (anim_registry_t *reg)
 static void
 free_armature_item (anim_registry_t *reg, qfa_item_t *armature)
 {
+	qfZoneScoped (true);
 	if (armature->next) {
 		armature->next->prev = armature->prev;
 	}
@@ -128,6 +132,7 @@ free_armature_item (anim_registry_t *reg, qfa_item_t *armature)
 static uintptr_t
 qfa_item_get_hash (const void *_item, void *data)
 {
+	qfZoneScoped (true);
 	const qfa_item_t *item = _item;
 	uintptr_t hash = Hash_String (item->mod_name);
 	if (item->name) {
@@ -139,6 +144,7 @@ qfa_item_get_hash (const void *_item, void *data)
 static int
 qfa_item_cmp (const void *_a, const void *_b, void *data)
 {
+	qfZoneScoped (true);
 	const qfa_item_t *a = _a;
 	const qfa_item_t *b = _b;
 	int cmp = strcmp (a->mod->name, b->mod_name) == 0;
@@ -151,6 +157,7 @@ qfa_item_cmp (const void *_a, const void *_b, void *data)
 void
 qfa_init (void)
 {
+	qfZoneScoped (true);
 	anim_registry = malloc (sizeof (anim_registry_t));
 	*anim_registry = (anim_registry_t) {
 	};
@@ -169,6 +176,7 @@ qfa_init (void)
 void
 qfa_shutdown (void)
 {
+	qfZoneScoped (true);
 	qfa_clip_reset (anim_registry);
 	qfa_armature_reset (anim_registry);
 
@@ -182,6 +190,7 @@ qfa_shutdown (void)
 void
 qfa_register (model_t *mod)
 {
+	qfZoneScoped (true);
 	if (mod->type != mod_mesh) {
 		return;
 	}
@@ -222,6 +231,7 @@ qfa_register (model_t *mod)
 void
 qfa_deregister (model_t *mod)
 {
+	qfZoneScoped (true);
 	if (mod->type != mod_mesh) {
 		return;
 	}
@@ -267,6 +277,7 @@ qfa_deregister (model_t *mod)
 int
 qfa_find_clip (const char *name)
 {
+	qfZoneScoped (true);
 	const char *sep = strchr (name, ':');
 	if (!sep) {
 		return 0;
@@ -289,6 +300,7 @@ qfa_find_clip (const char *name)
 int
 qfa_find_armature (const char *name)
 {
+	qfZoneScoped (true);
 	qfa_item_t search = {
 		.mod_name = name,
 	};
@@ -303,6 +315,7 @@ qfa_find_armature (const char *name)
 static qf_model_t *
 get_clip (uint32_t clip_id)
 {
+	qfZoneScoped (true);
 	auto clip_item = qfa_clip_get (anim_registry, clip_id);
 	if (!clip_item->mod->model) {
 		return Cache_Get (&clip_item->mod->cache);
@@ -314,6 +327,7 @@ get_clip (uint32_t clip_id)
 static void
 release_clip (uint32_t clip_id)
 {
+	qfZoneScoped (true);
 	auto clip_item = qfa_clip_get (anim_registry, clip_id);
 	if (!clip_item->mod->model) {
 		Cache_Release (&clip_item->mod->cache);
@@ -323,6 +337,7 @@ release_clip (uint32_t clip_id)
 static qf_model_t *
 get_armature (uint32_t armature_id)
 {
+	qfZoneScoped (true);
 	auto armature_item = qfa_armature_get (anim_registry, armature_id);
 	if (!armature_item->mod->model) {
 		return Cache_Get (&armature_item->mod->cache);
@@ -334,6 +349,7 @@ get_armature (uint32_t armature_id)
 static void
 release_armature (uint32_t armature_id)
 {
+	qfZoneScoped (true);
 	auto armature_item = qfa_armature_get (anim_registry, armature_id);
 	if (!armature_item->mod->model) {
 		Cache_Release (&armature_item->mod->cache);
@@ -344,6 +360,7 @@ animstate_t *
 qfa_create_animation (uint32_t *clips, uint32_t num_clips, uint32_t armature,
 					  qf_model_t *model)
 {
+	qfZoneScoped (true);
 	auto arm = get_armature (armature);
 
 	size_t size = sizeof (animstate_t)
@@ -389,12 +406,14 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, uint32_t armature,
 void
 qfa_free_animation (animstate_t *anim)
 {
+	qfZoneScoped (true);
 	free (anim);
 }
 
 static float
 calc_t (float end, float len, float time)
 {
+	qfZoneScoped (true);
 	float ago = end - time;
 	return (len - ago) / len;
 }
@@ -402,6 +421,7 @@ calc_t (float end, float len, float time)
 static int
 qfa_keyframe_cmp (const void *_a, const void *_b)
 {
+	qfZoneScoped (true);
 	const float *a = _a;
 	const keyframe_t *b = _b;
 	float diff = *a - b->endtime;
@@ -412,6 +432,7 @@ static void
 qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 				 keyframe_t *keyframes, float time)
 {
+	qfZoneScoped (true);
 	auto last_frame = &keyframes[clipdesc->numframes - 1];
 	auto first_frame = &keyframes[0];
 	float duration = last_frame->endtime;
@@ -423,13 +444,13 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 		}
 	}
 	float t = calc_t (clipstate->end_time, duration, time);
-	if (time >= 1) {
+	if (__builtin_expect (t >= 1, 0)) {
 		clipstate->frame = clipdesc->numframes;
 		clipstate->frac = 1;
 		return;
 	}
 	float clip_time = t * duration;
-	if (clip_time < first_frame->endtime) {
+	if (__builtin_expect (clip_time < first_frame->endtime, 0)) {
 		clipstate->frame = 0;
 	} else {
 		keyframe_t *kf = fbsearch (&clip_time, keyframes, clipdesc->numframes,
@@ -448,6 +469,7 @@ static void
 qfa_apply_channels (qfm_joint_t *pose, qf_model_t *model,
 					uint32_t frame1, uint32_t frame2, float blend)
 {
+	qfZoneScoped (true);
 	auto base = (byte *) pose;
 	auto channel = (qfm_channel_t *) ((byte*) model + model->channels.offset);
 	auto data1 = (uint16_t *) ((byte *) model + frame1);
@@ -463,6 +485,7 @@ qfa_apply_channels (qfm_joint_t *pose, qf_model_t *model,
 void
 qfa_update_anim (animstate_t *anim, float dt)
 {
+	qfZoneScoped (true);
 	anim->time += anim->play_rate * dt;
 
 	qfa_item_t *items[anim->clip_states.count + 1];
@@ -551,6 +574,7 @@ qfa_update_anim (animstate_t *anim, float dt)
 void
 qfa_reset_anim (animstate_t *anim)
 {
+	qfZoneScoped (true);
 	auto clipstates = (clipstate_t *)((byte *) anim + anim->clip_states.offset);
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 		clipstates[i].end_time = 0;
