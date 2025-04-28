@@ -2959,6 +2959,19 @@ sizeof_expr (const expr_t *expr, const type_t *type)
 	return expr;
 }
 
+const expr_t *
+countof_expr (const expr_t *expr, const type_t *type)
+{
+	if (!((!expr) ^ (!type)))
+		internal_error (0, 0);
+	if (!type)
+		type = get_type (expr);
+	if (type) {
+		expr = new_int_expr (type_count (type), false);
+	}
+	return expr;
+}
+
 static bool
 can_inline_list (const ex_list_t *list, symbol_t *fsym)
 {

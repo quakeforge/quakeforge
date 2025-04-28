@@ -1149,6 +1149,7 @@ const expr_t *message_expr (const expr_t *receiver,
 const expr_t *new_message_expr (const expr_t *receiver,
 								struct keywordarg_s *message);
 const expr_t *sizeof_expr (const expr_t *expr, const type_t *type);
+const expr_t *countof_expr (const expr_t *expr, const type_t *type);
 
 const expr_t *fold_constants (const expr_t *e);
 

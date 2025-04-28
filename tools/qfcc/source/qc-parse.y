@@ -141,7 +141,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			'+' '-'
 %left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT OUTER WEDGE REGRESSIVE
-%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
+%right	<op>	SIZEOF COUNTOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
@@ -2366,6 +2366,13 @@ unary_expr
 			auto decl = new_decl_expr (spec, nullptr);
 			$$ = new_unary_expr ('S', decl);
 		}
+	| COUNTOF unary_expr %prec UNARY { $$ = new_unary_expr ('#', $2); }
+	| COUNTOF '(' typename ')'	%prec HYPERUNARY
+		{
+			auto spec = $3;
+			auto decl = new_decl_expr (spec, nullptr);
+			$$ = new_unary_expr ('#', decl);
+		}
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
 	| vector_expr				{ $$ = new_vector_list_expr ($1); }
 	| obj_expr					{ $$ = $1; }
@@ -3159,6 +3166,7 @@ static keyword_t at_keywords[] = {
 	{"extern",		QC_EXTERN	},
 	{"static",		QC_STATIC	},
 	{"sizeof",		QC_SIZEOF	},
+	{"countof",		QC_COUNTOF	},
 	{"not",			QC_NOT		},
 	{"auto",		QC_TYPE_SPEC, .spec = { .type = &type_auto } },
 	{"const",		QC_TYPE_QUAL, .spec = { .is_const = true } },

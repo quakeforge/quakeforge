@@ -139,7 +139,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %left			'+' '-'
 %left			'*' '/' '%' MOD SCALE GEOMETRIC QMUL QVMUL VQMUL
 %left           HADAMARD CROSS DOT OUTER WEDGE REGRESSIVE
-%right	<op>	SIZEOF UNARY INCOP REVERSE STAR DUAL UNDUAL
+%right	<op>	SIZEOF COUNTOF UNARY INCOP REVERSE STAR DUAL UNDUAL
 %left			HYPERUNARY
 %left			'.' '(' '['
 
