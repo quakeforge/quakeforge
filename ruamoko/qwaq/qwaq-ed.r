@@ -169,7 +169,7 @@ float frametime;
 -draw
 {
 	if (ent && anim && arm && show_armature) {
-		qfa_update_anim (anim, frametime * 0.1);
+		qfa_update_anim (anim, frametime * 0.02);
 		qfa_get_pose_motors (anim, arm.pose);
 		draw_armature (camera, arm, trans);
 	}
@@ -206,7 +206,7 @@ float frametime;
 		ent = Scene_CreateEntity (scene);
 		trans = Entity_GetTransform (ent);
 	}
-	Entity_SetModel (ent, model);
+	//Entity_SetModel (ent, model);
 	free_armature (arm);
 	arm = make_armature (model);
 	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});
@@ -279,7 +279,7 @@ camera_first_person (transform_t camera, state_t *state)
 	drot.y -= IN_UpdateAxis (cam_move_pitch);
 	drot.z -= IN_UpdateAxis (cam_move_yaw);
 
-	dpos *= 0.1;
+	dpos *= 0.01;
 	drot *= ((float)M_PI / 360);
 	state.B = {
 		.bvect = (PGA.bvect) drot,
@@ -647,14 +647,17 @@ main (int argc, string *argv)
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
-	cliphandle_t clips[2] = {
+	cliphandle_t clips[] = {
 		qfa_find_clip ("girl14:rig|standing walk right_RM"),
+		qfa_find_clip ("girl14:rig|standing taunt battlecry_RM"),
 		qfa_find_clip ("girl14:rig|standing taunt chest thump_RM"),
 	};
+	int num_clips = countof (clips);
 	armhandle_t arma = qfa_find_armature ("girl14");
-	animstate_t anim = qfa_create_animation (clips, 2, arma, nil);
-	qfa_set_clip_loop (anim, 0, true);
-	qfa_set_clip_loop (anim, 1, true);
+	animstate_t anim = qfa_create_animation (clips, num_clips, arma, nil);
+	for (int i = 0; i < num_clips; i++) {
+		qfa_set_clip_loop (anim, i, true);
+	}
 	qfa_reset_anim (anim);
 	[main_window setAnim:anim];
 
