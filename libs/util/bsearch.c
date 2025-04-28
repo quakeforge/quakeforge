@@ -7,6 +7,7 @@
 void *fbsearch (const void *key, const void *_base, size_t nmemb, size_t size,
 				__compar_fn_t cmp)
 {
+	qfZoneScoped (true);
 	// fuzzy bsearh
 	const char *base = (const char *) _base;
 	unsigned    left = 0;
@@ -36,6 +37,7 @@ void *fbsearch (const void *key, const void *_base, size_t nmemb, size_t size,
 void *fbsearch_r (const void *key, const void *_base, size_t nmemb, size_t size,
 				  __compar_d_fn_t cmp, void *arg)
 {
+	qfZoneScoped (true);
 	// fuzzy bsearh
 	const char *base = (const char *) _base;
 	unsigned    left = 0;
@@ -66,6 +68,7 @@ void *
 QF_bsearch_r(const void *key, const void *_base, size_t nmemb, size_t size,
 			 __compar_d_fn_t cmp, void *arg)
 {
+	qfZoneScoped (true);
 	const char *base = (const char *) _base;
 	unsigned    left = 0;
 	unsigned    right = nmemb - 1;
