@@ -67,9 +67,8 @@ typedef struct qfm_attrdesc_s {
 	uint32_t    offset;
 	unsigned    stride:16;
 	qfm_attr_t  attr:3;
-	unsigned    abs:1;		// for morph: attrib is absolute instead of delta
 	unsigned    set:3;
-	unsigned    morph:1;
+	unsigned    morph:2;		// up to 4 sets of morph attributes
 	qfm_type_t  type:4;
 	unsigned    components:4;
 } qfm_attrdesc_t;

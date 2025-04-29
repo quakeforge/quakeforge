@@ -121,7 +121,6 @@ iqm_mesh_attribute (iqmvertexarray a, uint32_t offset)
 		.offset     = offset,
 		.stride     = a.size * type_size[a.format],
 		.attr       = attrib_map[a.type],
-		.abs        = 1,
 		.type       = attrib_norm[a.type] ? norm_map[a.format]
 										  : type_map[a.format],
 		.components = a.size,

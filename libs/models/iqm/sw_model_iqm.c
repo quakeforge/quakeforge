@@ -260,7 +260,6 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.offset = offsetof (iqm_vert_t, pos),
 		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_position,
-		.abs = 1,
 		.type = qfm_f32,
 		.components = 3,
 	};
@@ -268,7 +267,6 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.offset = offsetof (iqm_vert_t, normal),
 		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_normal,
-		.abs = 1,
 		.type = qfm_f32,
 		.components = 3,
 	};
@@ -276,7 +274,6 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.offset = offsetof (iqm_vert_t, st),
 		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_texcoord,
-		.abs = 1,
 		.type = qfm_s32,
 		.components = 3,	// stvert_t
 	};
@@ -284,7 +281,6 @@ sw_Mod_IQMFinish (mod_iqm_ctx_t *iqm_ctx)
 		.offset = offsetof (iqm_vert_t, matind),
 		.stride = sizeof (iqm_vert_t),
 		.attr = qfm_joints,
-		.abs = 1,
 		.type = qfm_u32,
 		.components = 1,
 	};

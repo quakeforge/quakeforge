@@ -143,7 +143,6 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.offset = (byte *) frame_verts - (byte *) mesh,
 		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
 		.attr = qfm_position,
-		.abs = 1,
 		.type = extra ? qfm_u16 : qfm_u8,
 		.components = 3,
 	};
@@ -156,7 +155,6 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		.offset = (byte *) frame_verts - (byte *) mesh,
 		.stride = extra ? sizeof (trivertx16_t) : sizeof (trivertx_t),
 		.attr = qfm_normal,
-		.abs = 1,
 		.type = extra ? qfm_u16 : qfm_u8,
 		.components = 1,	// index into r_avertexnormals
 	};
