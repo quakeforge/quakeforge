@@ -53,6 +53,25 @@ typedef struct entity_s {
 
 #define nullentity ((entity_t) { .id = nullent })
 
+// simple binary mesh lerp (for alias models)
+// not compatible with skeletal meshes (for simplicity)
+typedef struct mesh_lerp_s {
+	uint32_t    pose1;
+	uint32_t    pose2;
+	float       alpha;
+} mesh_lerp_t;
+
+// Multi-target mesh morph. Weights do not need to add to 1, thus
+// both blended targets (add to 1) and additive targets are supported.
+typedef struct mesh_morph_s {
+	uint32_t    morphs[4];
+	float       weights[4];
+} mesh_morph_t;
+
+typedef struct mesh_skel_s {
+	uint32_t    skeleton;
+} mesh_skel_t;
+
 typedef struct animation_s {
 	int         frame;
 	float       syncbase;	// randomize time base for local animations

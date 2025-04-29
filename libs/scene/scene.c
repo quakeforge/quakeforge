@@ -117,6 +117,21 @@ static const component_t scene_components[scene_comp_count] = {
 		.name = "href",
 		.destroy = Hierref_DestroyComponent,
 	},
+	[scene_mesh_lerp] = {
+		.size = sizeof (mesh_lerp_t),
+		.create = 0,//create_mesh_lerp,
+		.name = "mesh_lerp",
+	},
+	[scene_mesh_morph] = {
+		.size = sizeof (mesh_morph_t),
+		.create = 0,//create_mesh_morph,
+		.name = "mesh_morph",
+	},
+	[scene_mesh_skel] = {
+		.size = sizeof (mesh_skel_t),
+		.create = 0,//create_mesh_skel,
+		.name = "mesh_skel",
+	},
 	[scene_animation] = {
 		.size = sizeof (animation_t),
 		.create = 0,//create_animation,

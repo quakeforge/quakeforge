@@ -42,6 +42,9 @@
 
 enum scene_components {
 	scene_href,			//hierarchical transform
+	scene_mesh_lerp,
+	scene_mesh_morph,
+	scene_mesh_skel,
 	scene_animation,
 	scene_visibility,
 	scene_renderer,
