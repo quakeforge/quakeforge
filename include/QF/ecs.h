@@ -92,13 +92,26 @@ typedef struct ecs_idpool_s {
 	uint32_t    max_ids;
 } ecs_idpool_t;
 
+typedef struct ecs_grpcomp_s {
+	uint32_t    component;
+	uint32_t    rangeid;
+} ecs_grpcomp_t;
+
+typedef struct ecs_groups_s {
+	ecs_subpool_t groups;
+	ecs_subpool_t components;
+	ecs_pool_t  group_components;
+	ecs_pool_t  component_groups;
+} ecs_groups_t;
+
 typedef struct ecs_registry_s {
 	const char *name;
+	int         locked;
 	ecs_idpool_t entities;
 	ecs_pool_t *comp_pools;
 	ecs_subpool_t *subpools;
 	componentset_t components;
-	int         locked;
+	ecs_groups_t groups;
 } ecs_registry_t;
 
 /** Tie an ECS system to a registry.
@@ -151,6 +164,9 @@ ECSINLINE ecs_range_t ECS_GetSubpoolRange (ecs_registry_t *registry,
 										   uint32_t component, uint32_t id);
 void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
+
+uint32_t ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
+						  uint32_t num_components);
 
 ECSINLINE int ECS_EntValid (uint32_t id, ecs_registry_t *reg);
 ECSINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,
@@ -241,6 +257,9 @@ Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 	byte       *data = reg->comp_pools[comp].data;
 	return data + ind * component->size;
 }
+
+uint32_t ecs_expand_pool (ecs_pool_t *pool, uint32_t count,
+						  const component_t *comp);
 
 void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,

@@ -36,6 +36,20 @@
 
 #include "compat.h"
 
+uint32_t
+ecs_expand_pool (ecs_pool_t *pool, uint32_t count, const component_t *comp)
+{
+	if (pool->count + count > pool->max_count) {
+		pool->max_count += COMP_GROW;
+		pool->dense = realloc (pool->dense,
+							   pool->max_count * sizeof (uint32_t));
+		Component_ResizeArray (comp, &pool->data, pool->max_count);
+	}
+	uint32_t    ind = pool->count;
+	pool->count += count;
+	return ind;
+}
+
 static void swap_inds (uint32_t *a, uint32_t *b)
 {
 	uint32_t    t = *a;
@@ -52,13 +66,7 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 	uint32_t    id = Ent_Index (ent);
 	uint32_t    ind = pool->sparse[id];
 	if (ind >= pool->count || pool->dense[ind] != ent) {
-		if (pool->count == pool->max_count) {
-			pool->max_count += COMP_GROW;
-			pool->dense = realloc (pool->dense,
-								   pool->max_count * sizeof (uint32_t));
-			Component_ResizeArray (c, &pool->data, pool->max_count);
-		}
-		uint32_t    ind = pool->count++;
+		uint32_t    ind = ecs_expand_pool (pool, 1, c);
 		pool->sparse[id] = ind;
 		pool->dense[ind] = ent;
 		uint32_t    rind = subpool->num_ranges - subpool->available;

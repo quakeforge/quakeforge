@@ -32,10 +32,9 @@
 
 #include "QF/ecs.h"
 
-VISIBLE uint32_t
-ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
+static uint32_t
+ecs_new_subpool_range (ecs_subpool_t *subpool)
 {
-	ecs_subpool_t *subpool = &registry->subpools[component];
 	uint32_t    id;
 	uint32_t    num_ranges = subpool->num_ranges - subpool->available;
 	if (subpool->available) {
@@ -68,6 +67,13 @@ ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
 	}
 	subpool->ranges[subpool->sorted[Ent_Index (id)]] = end;
 	return id;
+}
+
+VISIBLE uint32_t
+ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component)
+{
+	ecs_subpool_t *subpool = &registry->subpools[component];
+	return ecs_new_subpool_range (subpool);
 }
 
 VISIBLE void
@@ -163,4 +169,37 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 
 	component_t dc = { .size = sizeof (uint32_t) };
 	Component_RotateElements (&dc, pool->dense, dstIndex, srcIndex, count);
+}
+
+static const component_t group_component = {
+	.size = sizeof (ecs_grpcomp_t),
+	.name = "components in group",
+};
+
+//static const component_t component_groups = {
+//	.size = sizeof (uint32_t),
+//	.name = "groups component is in",
+//};
+
+uint32_t
+ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
+				 uint32_t num_components)
+{
+	uint32_t gid = ecs_new_subpool_range (&reg->groups.groups);
+	uint32_t ind = ecs_expand_pool (&reg->groups.group_components,
+									num_components, &group_component);
+	for (uint32_t i = 0; i < num_components; i++) {
+		if (reg->components.a[components[i]].rangeid) {
+			Sys_Error ("adding component with subpools to group");
+		}
+		ecs_grpcomp_t grpcomp = {
+			.component = components[i],
+			.rangeid = ECS_NewSubpoolRange (reg, components[i]),
+		};
+		Component_CopyElements (&group_component,
+								reg->groups.group_components.data, ind + i,
+								&grpcomp, 0, 1);
+	}
+
+	return gid;
 }
