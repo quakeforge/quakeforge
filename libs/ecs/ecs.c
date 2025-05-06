@@ -122,6 +122,14 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 		memset (registry->comp_pools[i].sparse, nullent, size);
 		registry->subpools[i].next = Ent_Index (nullent);
 	}
+	registry->groups.component_groups.sparse
+		= &registry->component_groups_sparse_hack;
+	for (uint32_t i = 0; i < count; i++) {
+		uint32_t id = ecs_new_subpool_range (&registry->groups.components);
+		if (id != i) {
+			Sys_Error ("components rangeid != component: %d != %d", id, i);
+		}
+	}
 }
 
 typedef struct {

@@ -57,6 +57,30 @@ static void swap_inds (uint32_t *a, uint32_t *b)
 	*b = t;
 }
 
+uint32_t
+ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool, uint32_t rangeid,
+					uint32_t ind, const component_t *c)
+{
+	uint32_t    rind = subpool->num_ranges - subpool->available;
+	uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
+	while (rind-- > rangeind) {
+		if (subpool->ranges[rind] == ind) {
+			// the range ends at the index, so just grow the range
+			// to include the index (will automatically shrink the
+			// next range as its start is implict)
+			subpool->ranges[rind]++;
+			continue;
+		}
+		uint32_t    end = subpool->ranges[rind]++;
+		Component_MoveElements (c, pool->data, ind, end, 1);
+		swap_inds (&pool->sparse[Ent_Index (pool->dense[end])],
+				   &pool->sparse[Ent_Index (pool->dense[ind])]);
+		swap_inds (&pool->dense[ind], &pool->dense[end]);
+		ind = end;
+	}
+	return ind;
+}
+
 VISIBLE void *
 Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
@@ -72,22 +96,7 @@ Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		uint32_t    rind = subpool->num_ranges - subpool->available;
 		if (rind && c->rangeid) {
 			uint32_t    rangeid = c->rangeid (registry, ent, comp);
-			uint32_t    rangeind = subpool->sorted[Ent_Index (rangeid)];
-			while (rind-- > rangeind) {
-				if (subpool->ranges[rind] == ind) {
-					// the range ends at the index, so just grow the range
-					// to include the index (will automatically shrink the
-					// next range as its start is implict)
-					subpool->ranges[rind]++;
-					continue;
-				}
-				uint32_t    end = subpool->ranges[rind]++;
-				Component_MoveElements (c, pool->data, ind, end, 1);
-				swap_inds (&pool->sparse[Ent_Index (pool->dense[end])],
-						   &pool->sparse[Ent_Index (pool->dense[ind])]);
-				swap_inds (&pool->dense[ind], &pool->dense[end]);
-				ind = end;
-			}
+			ecs_move_component (pool, subpool, rangeid, ind, c);
 		}
 	}
 	return Ent_GetComponent (ent, comp, registry);

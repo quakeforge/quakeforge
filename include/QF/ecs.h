@@ -107,6 +107,7 @@ typedef struct ecs_groups_s {
 typedef struct ecs_registry_s {
 	const char *name;
 	int         locked;
+	uint32_t    component_groups_sparse_hack;
 	ecs_idpool_t entities;
 	ecs_pool_t *comp_pools;
 	ecs_subpool_t *subpools;
@@ -260,6 +261,10 @@ Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 
 uint32_t ecs_expand_pool (ecs_pool_t *pool, uint32_t count,
 						  const component_t *comp);
+uint32_t ecs_move_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
+							 uint32_t rangeid, uint32_t ind,
+							 const component_t *c);
+uint32_t ecs_new_subpool_range (ecs_subpool_t *subpool);
 
 void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,

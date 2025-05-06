@@ -32,7 +32,7 @@
 
 #include "QF/ecs.h"
 
-static uint32_t
+uint32_t
 ecs_new_subpool_range (ecs_subpool_t *subpool)
 {
 	uint32_t    id;
@@ -176,10 +176,10 @@ static const component_t group_component = {
 	.name = "components in group",
 };
 
-//static const component_t component_groups = {
-//	.size = sizeof (uint32_t),
-//	.name = "groups component is in",
-//};
+static const component_t component_groups = {
+	.size = sizeof (uint32_t),
+	.name = "groups component is in",
+};
 
 uint32_t
 ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
@@ -199,6 +199,17 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 		Component_CopyElements (&group_component,
 								reg->groups.group_components.data, ind + i,
 								&grpcomp, 0, 1);
+	}
+	for (uint32_t i = 0; i < num_components; i++) {
+		uint32_t ind = ecs_expand_pool (&reg->groups.component_groups,
+										1, &component_groups);
+		reg->groups.component_groups.dense[ind] = 0;//FIXME see commit message
+		ind = ecs_move_component (&reg->groups.component_groups,
+								  &reg->groups.components, components[i], ind,
+								  &component_groups);
+		Component_CopyElements (&component_groups,
+								reg->groups.component_groups.data, ind,
+								&gid, 0, 1);
 	}
 
 	return gid;
