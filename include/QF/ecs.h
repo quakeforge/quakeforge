@@ -278,6 +278,12 @@ void *Ent_AddComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry);
 void Ent_RemoveComponent (uint32_t ent, uint32_t comp,
 						  ecs_registry_t *registry);
 
+// NOTE: adds components as needed. Existing components must not be actively
+// in another group (use Ent_RemoveGroup first if changing groups)
+void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg);
+// NOTE: does not remove the components in the group
+void Ent_RemoveGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg);
+
 ECSINLINE void *
 Ent_SetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry,
 				  const void *data)

@@ -127,6 +127,35 @@ find_range (ecs_subpool_t *subpool, uint32_t ind)
 					  sizeof (uint32_t), range_cmp, subpool);
 }
 
+static void
+ent_remove_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
+					  uint32_t id, uint32_t ind, const component_t *c)
+{
+	uint32_t    range_count = subpool->num_ranges - subpool->available;
+	// if ind >= the last range, then it is outside the subpools
+	if (range_count && ind < subpool->ranges[range_count - 1]) {
+		uint32_t   *range = find_range (subpool, ind);
+		while ((size_t) (range - subpool->ranges) < range_count) {
+			uint32_t    end = --*range;
+			range++;
+			if (ind < end) {
+				pool->sparse[Ent_Index (pool->dense[end])] = ind;
+				pool->dense[ind] = pool->dense[end];
+				Component_MoveElements (c, pool->data, ind, end, 1);
+				ind = end;
+			}
+		}
+	}
+	uint32_t    last = pool->count - 1;
+	if (last > ind) {
+		pool->sparse[Ent_Index (pool->dense[last])] = ind;
+		pool->dense[ind] = pool->dense[last];
+		Component_MoveElements (c, pool->data, ind, last, 1);
+	}
+	pool->count--;
+	pool->sparse[id] = nullent;
+}
+
 VISIBLE void
 Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
@@ -144,32 +173,69 @@ Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 		byte        tmp_comp[c->size];
 		Component_CopyElements (c, tmp_comp, 0, pool->data, ind, 1);
 
-		uint32_t    range_count = subpool->num_ranges - subpool->available;
-		// if ind >= the last range, then it is outside the subpools
-		if (range_count && ind < subpool->ranges[range_count - 1]) {
-			uint32_t   *range = find_range (subpool, ind);
-			while ((size_t) (range - subpool->ranges) < range_count) {
-				uint32_t    end = --*range;
-				range++;
-				if (ind < end) {
-					pool->sparse[Ent_Index (pool->dense[end])] = ind;
-					pool->dense[ind] = pool->dense[end];
-					Component_MoveElements (c, pool->data, ind, end, 1);
-					ind = end;
-				}
-			}
-		}
-		uint32_t    last = pool->count - 1;
-		if (last > ind) {
-			pool->sparse[Ent_Index (pool->dense[last])] = ind;
-			pool->dense[ind] = pool->dense[last];
-			Component_MoveElements (c, pool->data, ind, last, 1);
-		}
-		pool->count--;
-		pool->sparse[id] = nullent;
+		ent_remove_component (pool, subpool, id, ind, c);
 
 		// the component has been fully removed from the pool so it is now
 		// safe to destroy it
 		Component_DestroyElements (c, tmp_comp, 0, 1, registry);
+	}
+}
+
+void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
+{
+	auto range = ecs_get_subpool_range (&reg->groups.groups, group);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   reg->groups.group_components.data,
+										   range.start);
+	uint32_t count = range.end - range.start;
+	for (uint32_t i = 0; i < count; i++) {
+		uint32_t comp = gc[i].component;
+		auto c = &reg->components.a[comp];
+		auto pool = &reg->comp_pools[comp];
+		auto subpool = &reg->subpools[comp];
+		uint32_t ind;
+		if (Ent_HasComponent (ent, comp, reg)) {
+			ind = pool->sparse[Ent_Index (ent)];
+			uint32_t range_count = subpool->num_ranges - subpool->available;
+			if (ind <= subpool->ranges[range_count - 1]) {
+				Sys_Error ("component %d (%s) in overlapping group", comp,
+						   c->name);
+			}
+		} else {
+			ind = ecs_expand_pool (pool, 1, c);
+			// FIXME: optionally supply data?
+			Component_CreateElements (c, pool->data, ind, 1);
+		}
+		ecs_move_component (pool, subpool, gc[i].rangeid, ind, c);
+	}
+}
+
+void
+Ent_RemoveGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
+{
+	if (ent != nullent) Sys_Error ("not implemented");
+	auto range = ecs_get_subpool_range (&reg->groups.groups, group);
+	ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+										   reg->groups.group_components.data,
+										   range.start);
+	uint32_t count = range.end - range.start;
+	for (uint32_t i = 0; i < count; i++) {
+		uint32_t comp = gc[i].component;
+		auto c = &reg->components.a[comp];
+		auto pool = &reg->comp_pools[comp];
+		auto subpool = &reg->subpools[comp];
+		uint32_t id = Ent_Index (ent);
+		uint32_t ind;
+		if (!Ent_HasComponent (ent, comp, reg)) {
+			Sys_Error ("component %d (%s) not on entity", comp, c->name);
+		} else {
+			ind = pool->sparse[Ent_Index (ent)];
+		}
+		byte        tmp_comp[c->size];
+		Component_CopyElements (c, tmp_comp, 0, pool->data, ind, 1);
+
+		ent_remove_component (pool, subpool, id, ind, c);
+		ind = ecs_expand_pool (pool, 1, c);
+		Component_CopyElements (c, pool->data, ind, tmp_comp, 0, 1);
 	}
 }
