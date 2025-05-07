@@ -122,6 +122,8 @@ ECS_CreateComponentPools (ecs_registry_t *registry)
 		memset (registry->comp_pools[i].sparse, nullent, size);
 		registry->subpools[i].next = Ent_Index (nullent);
 	}
+	registry->groups.group_components.sparse
+		= &registry->component_groups_sparse_hack;
 	registry->groups.component_groups.sparse
 		= &registry->component_groups_sparse_hack;
 	for (uint32_t i = 0; i < count; i++) {

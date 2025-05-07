@@ -171,12 +171,12 @@ ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	Component_RotateElements (&dc, pool->dense, dstIndex, srcIndex, count);
 }
 
-static const component_t group_component = {
+const component_t ecs_group_components = {
 	.size = sizeof (ecs_grpcomp_t),
 	.name = "components in group",
 };
 
-static const component_t component_groups = {
+const component_t ecs_component_groups = {
 	.size = sizeof (uint32_t),
 	.name = "groups component is in",
 };
@@ -186,28 +186,32 @@ ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
 				 uint32_t num_components)
 {
 	uint32_t gid = ecs_new_subpool_range (&reg->groups.groups);
-	uint32_t ind = ecs_expand_pool (&reg->groups.group_components,
-									num_components, &group_component);
 	for (uint32_t i = 0; i < num_components; i++) {
 		if (reg->components.a[components[i]].rangeid) {
 			Sys_Error ("adding component with subpools to group");
 		}
+		uint32_t ind = ecs_expand_pool (&reg->groups.group_components,
+										1, &ecs_group_components);
+		reg->groups.group_components.dense[ind] = 0;//FIXME see below
+		ind = ecs_move_component (&reg->groups.group_components,
+								  &reg->groups.groups, gid, ind,
+								  &ecs_group_components);
 		ecs_grpcomp_t grpcomp = {
 			.component = components[i],
 			.rangeid = ECS_NewSubpoolRange (reg, components[i]),
 		};
-		Component_CopyElements (&group_component,
-								reg->groups.group_components.data, ind + i,
+		Component_CopyElements (&ecs_group_components,
+								reg->groups.group_components.data, ind,
 								&grpcomp, 0, 1);
 	}
 	for (uint32_t i = 0; i < num_components; i++) {
 		uint32_t ind = ecs_expand_pool (&reg->groups.component_groups,
-										1, &component_groups);
+										1, &ecs_component_groups);
 		reg->groups.component_groups.dense[ind] = 0;//FIXME see commit message
 		ind = ecs_move_component (&reg->groups.component_groups,
 								  &reg->groups.components, components[i], ind,
-								  &component_groups);
-		Component_CopyElements (&component_groups,
+								  &ecs_component_groups);
+		Component_CopyElements (&ecs_component_groups,
 								reg->groups.component_groups.data, ind,
 								&gid, 0, 1);
 	}

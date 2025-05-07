@@ -125,6 +125,9 @@ typedef struct ecs_system_s {
 	uint32_t    base;
 } ecs_system_t;
 
+extern const component_t ecs_group_components;
+extern const component_t ecs_component_groups;
+
 #define ECSINLINE GNU89INLINE inline
 
 uint32_t ECS_NewId (ecs_idpool_t *idpool);
@@ -161,6 +164,8 @@ void ECS_PrintRegistry (ecs_registry_t *registry);
 uint32_t ECS_NewSubpoolRange (ecs_registry_t *registry, uint32_t component);
 void ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
+ECSINLINE ecs_range_t ecs_get_subpool_range (ecs_subpool_t *subpool,
+											 uint32_t id);
 ECSINLINE ecs_range_t ECS_GetSubpoolRange (ecs_registry_t *registry,
 										   uint32_t component, uint32_t id);
 void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
@@ -211,17 +216,23 @@ Ent_NextGen(uint32_t id)
 	return id + (1 << ENT_IDBITS);
 }
 
-ECSINLINE
-ecs_range_t
-ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
+ECSINLINE ecs_range_t
+ecs_get_subpool_range (ecs_subpool_t *subpool, uint32_t id)
 {
-	ecs_subpool_t *subpool = &registry->subpools[component];
 	uint32_t    ind = subpool->sorted[Ent_Index (id)];
 	ecs_range_t range = {
 		.start = ind ? subpool->ranges[ind - 1] : 0,
 		.end = subpool->ranges[ind],
 	};
 	return range;
+}
+
+ECSINLINE
+ecs_range_t
+ECS_GetSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
+{
+	ecs_subpool_t *subpool = &registry->subpools[component];
+	return ecs_get_subpool_range (subpool, id);
 }
 
 ECSINLINE int
