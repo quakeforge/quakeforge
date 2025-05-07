@@ -244,7 +244,7 @@ Ent_GetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 	const component_t *component = &reg->components.a[comp];
 	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
 	byte       *data = reg->comp_pools[comp].data;
-	return data + ind * component->size;
+	return Component_Address (component, data, ind);
 }
 
 ECSINLINE void *
@@ -253,10 +253,7 @@ Ent_SafeGetComponent (uint32_t ent, uint32_t comp, ecs_registry_t *reg)
 	if (!ECS_EntValid (ent, reg) || !Ent_HasComponent (ent, comp, reg)) {
 		return 0;
 	}
-	const component_t *component = &reg->components.a[comp];
-	uint32_t    ind = reg->comp_pools[comp].sparse[Ent_Index (ent)];
-	byte       *data = reg->comp_pools[comp].data;
-	return data + ind * component->size;
+	return Ent_GetComponent (ent, comp, reg);
 }
 
 uint32_t ecs_expand_pool (ecs_pool_t *pool, uint32_t count,

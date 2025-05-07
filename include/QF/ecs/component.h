@@ -60,6 +60,8 @@ typedef struct component_s {
 
 COMPINLINE void Component_ResizeArray (const component_t *component,
 									   void **array, uint32_t count);
+COMPINLINE void *Component_Address (const component_t *component,
+									void *array, uint32_t index);
 COMPINLINE void *Component_MoveElements (const component_t *component,
 										 void *array, uint32_t dstIndex,
 										 uint32_t srcIndex, uint32_t count);
@@ -96,12 +98,18 @@ Component_ResizeArray (const component_t *component,
 }
 
 COMPINLINE void *
+Component_Address (const component_t *component, void *array, uint32_t index)
+{
+	return (byte *) array + index * component->size;
+}
+
+COMPINLINE void *
 Component_MoveElements (const component_t *component,
 						void *array, uint32_t dstIndex, uint32_t srcIndex,
 						uint32_t count)
 {
-	__auto_type dst = (byte *) array + dstIndex * component->size;
-	__auto_type src = (byte *) array + srcIndex * component->size;
+	auto dst = Component_Address (component, array, dstIndex);
+	auto src = Component_Address (component, array, srcIndex);
 	return memmove (dst, src, count * component->size);
 }
 
@@ -113,8 +121,8 @@ Component_RotateElements (const component_t *component,
 	if (dstIndex == srcIndex) {
 		return;
 	}
-	auto dst = (byte *) array + dstIndex * component->size;
-	auto src = (byte *) array + srcIndex * component->size;
+	auto dst = Component_Address (component, array, dstIndex);
+	auto src = Component_Address (component, array, srcIndex);
 	size_t countSize = count * component->size;
 	if (dstIndex < srcIndex) {
 		uint32_t bcount = srcIndex - dstIndex;
@@ -163,8 +171,8 @@ Component_CopyElements (const component_t *component,
 						const void *srcArray, uint32_t srcIndex,
 						uint32_t count)
 {
-	__auto_type dst = (byte *) dstArray + dstIndex * component->size;
-	__auto_type src = (byte *) srcArray + srcIndex * component->size;
+	auto dst = Component_Address (component, dstArray, dstIndex);
+	auto src = Component_Address (component, (void *) srcArray, srcIndex);
 	return memcpy (dst, src, count * component->size);
 }
 
@@ -174,11 +182,11 @@ Component_CreateElements (const component_t *component, void *array,
 {
 	if (component->create) {
 		for (uint32_t i = index; count-- > 0; i++) {
-			__auto_type dst = (byte *) array + i * component->size;
+			auto dst = Component_Address (component, array, i);
 			component->create (dst);
 		}
 	} else {
-		__auto_type dst = (byte *) array + index * component->size;
+		auto dst = Component_Address (component, array, index);
 		memset (dst, 0, count * component->size);
 	}
 	return (byte *) array + index * component->size;
@@ -191,7 +199,7 @@ Component_DestroyElements (const component_t *component, void *array,
 {
 	if (component->destroy) {
 		for (uint32_t i = index; count-- > 0; i++) {
-			__auto_type dst = (byte *) array + i * component->size;
+			auto dst = Component_Address (component, array, i);
 			component->destroy (dst, reg);
 		}
 	}
