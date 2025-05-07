@@ -187,9 +187,9 @@ main (void)
 	};
 	uint32_t comp_group_counts[] = { 3, 2, 1, 1, 1, 1 };
 	for (uint32_t i = 0; i < reg->components.size; i++) {
-		check_component_groups (reg, i,
-								i < base ? nullptr : comp_groups[i - base],
-								i < base ? 0 : comp_group_counts[i - base]);
+		uint32_t *cg = i < base ? nullptr : comp_groups[i - base];
+		uint32_t cgc = i < base ? 0 : comp_group_counts[i - base];
+		ok &= check_component_groups (reg, i, cg, cgc);
 	}
 
 	ECS_DelRegistry (reg);
