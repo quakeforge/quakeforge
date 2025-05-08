@@ -197,12 +197,15 @@ void Ent_AddGroup (uint32_t ent, uint32_t group, ecs_registry_t *reg)
 		if (Ent_HasComponent (ent, comp, reg)) {
 			ind = pool->sparse[Ent_Index (ent)];
 			uint32_t range_count = subpool->num_ranges - subpool->available;
-			if (ind <= subpool->ranges[range_count - 1]) {
+			if (ind < subpool->ranges[range_count - 1]) {
 				Sys_Error ("component %d (%s) in overlapping group", comp,
 						   c->name);
 			}
 		} else {
+			uint32_t id = Ent_Index (ent);
 			ind = ecs_expand_pool (pool, 1, c);
+			pool->sparse[id] = ind;
+			pool->dense[ind] = ent;
 			// FIXME: optionally supply data?
 			Component_CreateElements (c, pool->data, ind, 1);
 		}

@@ -191,6 +191,15 @@ main (void)
 		uint32_t cgc = i < base ? 0 : comp_group_counts[i - base];
 		ok &= check_component_groups (reg, i, cg, cgc);
 	}
+	uint32_t ent1 = ECS_NewEntity (reg);
+	uint32_t ent2 = ECS_NewEntity (reg);
+	uint32_t ent3 = ECS_NewEntity (reg);
+
+	Ent_AddGroup (ent1, g1, reg);
+	Ent_AddGroup (ent2, g2, reg);
+	Ent_AddGroup (ent1, g4, reg);
+	Ent_SetComponent (ent3, base + test_a1, reg, nullptr);
+	Ent_AddGroup (ent3, g3, reg);
 
 	ECS_DelRegistry (reg);
 	return !ok;
