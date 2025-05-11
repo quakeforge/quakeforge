@@ -618,7 +618,7 @@ set_test_i_i (const set_t *s1, const set_t *s2)
 			| ((notsubset == 0) << 2) | ((notsuperset == 0) << 3);
 }
 
-static __attribute__((pure)) int
+__attribute__((pure)) set_flags_t
 set_test (const set_t *s1, const set_t *s2)
 {
 	if (s1->inverted && s2->inverted)
@@ -634,31 +634,31 @@ set_test (const set_t *s1, const set_t *s2)
 int
 set_is_disjoint (const set_t *s1, const set_t *s2)
 {
-	return !(set_test (s1, s2) & 2);
+	return !(set_test (s1, s2) & set_intersect);
 }
 
 int
 set_is_intersecting (const set_t *s1, const set_t *s2)
 {
-	return !!(set_test (s1, s2) & 2);
+	return !!(set_test (s1, s2) & set_intersect);
 }
 
 int
 set_is_equivalent (const set_t *s1, const set_t *s2)
 {
-	return !(set_test (s1, s2) & 1);
+	return !(set_test (s1, s2) & set_differ);
 }
 
 int
 set_is_subset (const set_t *set, const set_t *sub)
 {
-	return !!(set_test (set, sub) & 4);
+	return !!(set_test (set, sub) & set_subset);
 }
 
 int
 set_is_superset (const set_t *set, const set_t *sup)
 {
-	return !!(set_test (set, sup) & 8);
+	return !!(set_test (set, sup) & set_superset);
 }
 
 static inline int

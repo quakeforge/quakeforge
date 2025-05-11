@@ -338,6 +338,15 @@ int set_is_empty (const set_t *set) __attribute__((pure));
 */
 int set_is_everything (const set_t *set) __attribute__((pure));
 
+typedef enum {
+	set_differ = 1,
+	set_intersect = 2,
+	set_subset = 4,
+	set_superset = 8,
+} set_flags_t;
+
+set_flags_t set_test (const set_t *s1, const set_t *s2) __attribute__((pure));
+
 /** Test if two sets are disjoint.
 
 	\param s1		The first set to test.
