@@ -225,18 +225,22 @@ struct {
 	{make_SIZE,              0, expand_3xSIZEp1, check_size,
 		3 * SIZE + SET_BITS, "{64}"},
 	{make_everything, make_empty, 0, set_is_subset,      1, 0},
+	{make_everything, make_empty, 0, set_is_superset,    0, 0},
 	{make_everything, make_empty, 0, set_is_equivalent,   0, 0},
 	{make_everything, make_empty, 0, set_is_intersecting, 0, 0},
 	{make_everything, make_empty, 0, set_is_disjoint,     1, 0},
 	{make_empty, make_everything, 0, set_is_subset,       0, 0},
+	{make_empty, make_everything, 0, set_is_superset,     1, 0},
 	{make_empty, make_everything, 0, set_is_equivalent,   0, 0},
 	{make_empty, make_everything, 0, set_is_intersecting, 0, 0},
 	{make_empty, make_everything, 0, set_is_disjoint,     1, 0},
 	{make_everything, make_everything, 0, set_is_subset,       1, 0},
+	{make_everything, make_everything, 0, set_is_superset,     1, 0},
 	{make_everything, make_everything, 0, set_is_equivalent,   1, 0},
 	{make_everything, make_everything, 0, set_is_intersecting, 1, 0},
 	{make_everything, make_everything, 0, set_is_disjoint,     0, 0},
 	{make_empty, make_empty, 0, set_is_subset,       1, 0},
+	{make_empty, make_empty, 0, set_is_superset,     1, 0},
 	{make_empty, make_empty, 0, set_is_equivalent,   1, 0},
 	{make_empty, make_empty, 0, set_is_intersecting, 0, 0},
 	{make_empty, make_empty, 0, set_is_disjoint,     1, 0},
@@ -348,6 +352,14 @@ struct {
 		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
 		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63}"
 	},
+	{make_not_SIZE, make_everything, 0, set_is_subset,   0, 0},
+	{make_not_SIZE, make_everything, 0, set_is_superset, 1, 0},
+	{make_SIZE, make_everything, 0, set_is_subset,   0, 0},
+	{make_SIZE, make_everything, 0, set_is_superset, 1, 0},
+	{make_everything, make_not_SIZE, 0, set_is_subset,   1, 0},
+	{make_everything, make_not_SIZE, 0, set_is_superset, 0, 0},
+	{make_everything, make_SIZE, 0, set_is_subset,   1, 0},
+	{make_everything, make_SIZE, 0, set_is_superset, 0, 0},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -367,8 +379,8 @@ main (int argc, const char **argv)
 	tests[9].str_expect = tests[5].str_expect;
 	tests[10].str_expect = tests[5].str_expect;
 	tests[11].str_expect = tests[5].str_expect;
-	tests[78].str_expect = tests[5].str_expect;
 	tests[82].str_expect = tests[5].str_expect;
+	tests[86].str_expect = tests[5].str_expect;
 
 	str = dstring_new ();
 	for (i = 0; i < SIZE; i++) {
@@ -383,8 +395,8 @@ main (int argc, const char **argv)
 		dasprintf (str, " %zd", i);
 	}
 	dasprintf (str, " %zd ...}", SIZE + 1);
-	tests[80].str_expect = dstring_freeze (str);
-	tests[83].str_expect = tests[80].str_expect;
+	tests[84].str_expect = dstring_freeze (str);
+	tests[87].str_expect = tests[84].str_expect;
 
 	for (i = 0; i < num_tests; i++) {
 		set_t      *s1, *s2 = 0;

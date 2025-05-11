@@ -372,10 +372,21 @@ int set_is_equivalent (const set_t *s1, const set_t *s2) __attribute__((pure));
 
 	\param set		The potential super-set.
 	\param sub		The potential subset.
-	\return			1 if \a sub is a subset of \a set, or if the sets are
+	\return			1 if \a sup is a superset of \a set, or if the sets are
 					equivalent.
 */
 int set_is_subset (const set_t *set, const set_t *sub) __attribute__((pure));
+
+/** Test if a set is a superset of another set.
+
+	An equivalent set is considered to be a superset.
+
+	\param set		The potential subset.
+	\param sup		The potential super-set.
+	\return			1 if \a sub is a subset of \a set, or if the sets are
+					equivalent.
+*/
+int set_is_superset (const set_t *set, const set_t *sup) __attribute__((pure));
 
 /** Test an element for membership in a set.
 

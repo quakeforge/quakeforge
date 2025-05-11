@@ -502,6 +502,8 @@ set_test_n_n (const set_t *s1, const set_t *s2)
 	unsigned    i, end;
 	set_bits_t  intersection = 0;
 	set_bits_t  difference = 0;
+	set_bits_t  notsubset = 0;
+	set_bits_t  notsuperset = 0;
 
 	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
@@ -510,14 +512,19 @@ set_test_n_n (const set_t *s1, const set_t *s2)
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
+		notsubset |= ~m1 & m2;
+		notsuperset |= m1 & ~m2;
 	}
 	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= s1->map[i];
+		notsuperset |= s2->map[i];
 	}
 	for ( ; i < SET_WORDS (s2); i++) {
 		difference |= s2->map[i];
+		notsubset |= s2->map[i];
 	}
-	return (difference != 0) | ((intersection != 0) << 1);
+	return (difference != 0) | ((intersection != 0) << 1)
+			| ((notsubset == 0) << 2) | ((notsuperset == 0) << 3);
 }
 
 static __attribute__((pure)) int
@@ -526,6 +533,9 @@ set_test_n_i (const set_t *s1, const set_t *s2)
 	unsigned    i, end;
 	set_bits_t  intersection = 0;
 	set_bits_t  difference = 0;
+	// an inverted set cannot be a subset of a set that is not inverted
+	set_bits_t  notsubset = 1;
+	set_bits_t  notsuperset = 0;
 
 	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
@@ -534,6 +544,7 @@ set_test_n_i (const set_t *s1, const set_t *s2)
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
+		notsuperset |= m1 & ~m2;
 	}
 	for ( ; i < SET_WORDS (s1); i++) {
 		intersection |= s1->map[i];
@@ -542,7 +553,8 @@ set_test_n_i (const set_t *s1, const set_t *s2)
 	for ( ; i < SET_WORDS (s2); i++) {
 		difference |= ~s2->map[i];
 	}
-	return (difference != 0) | ((intersection != 0) << 1);
+	return (difference != 0) | ((intersection != 0) << 1)
+			| ((notsubset == 0) << 2) | ((notsuperset == 0) << 3);
 }
 
 static __attribute__((pure)) int
@@ -551,6 +563,9 @@ set_test_i_n (const set_t *s1, const set_t *s2)
 	unsigned    i, end;
 	set_bits_t  intersection = 0;
 	set_bits_t  difference = 0;
+	set_bits_t  notsubset = 0;
+	// an non-inverted set cannot be a superset of an inverted set
+	set_bits_t  notsuperset = 1;
 
 	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
@@ -559,6 +574,7 @@ set_test_i_n (const set_t *s1, const set_t *s2)
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
+		notsubset |= ~m1 & m2;
 	}
 	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= ~s1->map[i];
@@ -567,7 +583,8 @@ set_test_i_n (const set_t *s1, const set_t *s2)
 		intersection |= s2->map[i];
 		difference |= ~s2->map[i];
 	}
-	return (difference != 0) | ((intersection != 0) << 1);
+	return (difference != 0) | ((intersection != 0) << 1)
+			| ((notsubset == 0) << 2) | ((notsuperset == 0) << 3);
 }
 
 static __attribute__((pure)) int
@@ -576,24 +593,29 @@ set_test_i_i (const set_t *s1, const set_t *s2)
 	unsigned    i, end;
 	set_bits_t  intersection = 0;
 	set_bits_t  difference = 0;
+	set_bits_t  notsubset = 0;
+	set_bits_t  notsuperset = 0;
 
 	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
 		set_bits_t  m1 = ~s1->map[i];
 		set_bits_t  m2 = ~s2->map[i];
 
-		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
+		notsubset |= ~m1 & m2;
+		notsuperset |= m1 & ~m2;
 	}
 	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= ~s1->map[i];
+		notsubset |= s1->map[i];
 	}
 	for ( ; i < SET_WORDS (s2); i++) {
-		intersection |= s2->map[i];
 		difference |= ~s2->map[i];
+		notsuperset |= s2->map[i];
 	}
 	intersection |= ~0;		// two inverted sets can never be disjoint
-	return (difference != 0) | ((intersection != 0) << 1);
+	return (difference != 0) | ((intersection != 0) << 1)
+			| ((notsubset == 0) << 2) | ((notsuperset == 0) << 3);
 }
 
 static __attribute__((pure)) int
@@ -630,35 +652,13 @@ set_is_equivalent (const set_t *s1, const set_t *s2)
 int
 set_is_subset (const set_t *set, const set_t *sub)
 {
-	unsigned    i, end;
+	return !!(set_test (set, sub) & 4);
+}
 
-	end = min (set->size, sub->size) / SET_BITS;
-	if (set->inverted && sub->inverted) {
-		for (i = 0; i < end; i++) {
-			if (~sub->map[i] & set->map[i])
-				return 0;
-		}
-		for ( ; i < SET_WORDS (set); i++)
-			if (set->map[i])
-				return 0;
-	} else if (set->inverted) {
-		for (i = 0; i < end; i++) {
-			if (sub->map[i] & set->map[i])
-				return 0;
-		}
-	} else if (sub->inverted) {
-		// an inverted set cannot be a subset of a set that is not inverted
-		return 0;
-	} else {
-		for (i = 0; i < end; i++) {
-			if (sub->map[i] & ~set->map[i])
-				return 0;
-		}
-		for ( ; i < SET_WORDS (sub); i++)
-			if (sub->map[i])
-				return 0;
-	}
-	return 1;
+int
+set_is_superset (const set_t *set, const set_t *sup)
+{
+	return !!(set_test (set, sup) & 8);
 }
 
 static inline int
