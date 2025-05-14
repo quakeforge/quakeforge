@@ -63,6 +63,7 @@ Light_ClearLights (lightingdata_t *ldata)
 static bool
 test_light_leaf (const light_t *light, const mleaf_t *leaf)
 {
+	qfZoneScoped (true);
 	// FIXME directional lights should check the direction against the
 	// leaf's portals (need to find the portals first, though)
 	if (!light->position[3] || !light->attenuation[3]) {
@@ -94,6 +95,7 @@ test_light_leaf (const light_t *light, const mleaf_t *leaf)
 static void
 link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 {
+	qfZoneScoped (true);
 	scene_t    *scene = ldata->scene;
 	model_t    *model = scene->worldmodel;
 
@@ -117,6 +119,10 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 
 	efrag_t *efrags = 0;
 	efrag_t **lastlink = &efrags;
+	//FIXME this costs about 8us on demo1 test_light_leaf itself is cheap
+	//enough per call, but at around 200 tests, that adds up. There might
+	//be a better way of knowing which leaf nodes to test, or even a better
+	//way to cull lights.
 	for (auto li = set_first (pvs); li; li = set_next (li)) {
 		mleaf_t    *leaf = model->brush.leafs + li->element + 1;
 		if (test_light_leaf (light, leaf)) {
@@ -149,6 +155,7 @@ Light_AddLight (lightingdata_t *ldata, const light_t *light, uint32_t style)
 void
 Light_LinkLight (lightingdata_t *ldata, uint32_t entid)
 {
+	qfZoneScoped (true);
 	scene_t    *scene = ldata->scene;
 
 	entity_t    ent = {
