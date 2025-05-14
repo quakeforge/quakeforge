@@ -91,7 +91,7 @@ typedef struct texmip_s {
  * texture is not animated, `count` is 1, otherwise `count` is the number of
  * frames in the group, thus every texture has at least one frame.
  *
- * Each texture in a particular groupp shares the same `base` frame, with
+ * Each texture in a particular group shares the same `base` frame, with
  * `offset` giving the texture's relative frame number within the group.
  * The current frame is given by `base + (anim_index + offset) % count` where
  * `anim_index` is the global time-based texture animation frame.
