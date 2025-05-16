@@ -172,37 +172,3 @@ cofactor_matrix (mat4f_t cf, const mat4f_t m)
 	cf[3] = (vec4f_t)((pos & (vec4i_t)((vec4f_t) { 1, 1, 1, 1}))
 					+ (neg & (vec4i_t)((vec4f_t) {-1,-1,-1,-1})));
 }
-
-VISIBLE mat4f_t *
-R_IQMBlendPalette (qf_model_t *model, int frame1, int frame2, float blend,
-				   size_t extra, qfm_blend_t *blend_palette,
-				   uint32_t palette_size)
-{
-	extra += 2 * (palette_size - model->joints.count) * sizeof (mat4f_t);
-	auto frame = R_IQMBlendFrames (model, frame1, frame2, blend, extra);
-	for (uint32_t i = 0; i < model->joints.count; i++) {
-		auto out = &frame[i * 2];
-		cofactor_matrix (out[1], out[0]);
-	}
-	for (int i = 0; i < 1; i++) {
-		auto out = &frame[(model->joints.count + i) * 2];
-		mat4fidentity (out[0]);
-		mat4fidentity (out[1]);
-		out[1][3] = (vec4f_t) { 1, 1, 1, 1 };
-	}
-	for (uint32_t i = model->joints.count + 1; i < palette_size; i++) {
-		auto blend = &blend_palette[i];
-		auto in = &frame[blend->indices[0] * 2];
-		auto out = &frame[i * 2];
-
-		float w = blend->weights[0] / 255.0;
-		QuatScale (in[0], w, out[0]);
-		for (int j = 1; j < 4 && blend->weights[j]; j++) {
-			in = &frame[blend->indices[j] * 2];
-			w = blend->weights[j] / 255.0;
-			QuatMultAdd (out[0], w, in[0], out[0]);
-		}
-		cofactor_matrix (out[1], out[0]);
-	}
-	return frame;
-}

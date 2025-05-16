@@ -551,6 +551,14 @@ bi (qfa_get_pose_motors)
 	memcpy (pose, motors, anim->num_joints * sizeof (pose[0]));
 }
 
+animstate_t *
+Model_GetAnimstate (progs_t *pr, pr_int_t handle)
+{
+	rua_model_resources_t *res = PR_Resources_Find (pr, "Model");
+	auto rua_anim = rua_animstate_get (res, handle);
+	return rua_anim->animstate;
+}
+
 #undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)

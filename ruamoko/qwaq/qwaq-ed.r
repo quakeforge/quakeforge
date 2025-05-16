@@ -194,6 +194,7 @@ float frametime;
 -setAnim:(animstate_t) anim
 {
 	self.anim = anim;
+	Entity_SetAnimstate (ent, anim);
 	return self;
 }
 
@@ -206,7 +207,7 @@ float frametime;
 		ent = Scene_CreateEntity (scene);
 		trans = Entity_GetTransform (ent);
 	}
-	//Entity_SetModel (ent, model);
+	Entity_SetModel (ent, model);
 	free_armature (arm);
 	arm = make_armature (model);
 	//Transform_SetLocalRotation (trans, { 0, 0, 1, 0});

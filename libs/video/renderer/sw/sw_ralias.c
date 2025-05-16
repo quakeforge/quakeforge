@@ -1159,13 +1159,15 @@ R_AliasDrawModel (entity_t ent, alight_t *lighting)
 				+ sizeof (auxvert_t) * rmesh->numverts;
 	finalvert_t *finalverts;
 	mat4f_t *palette = nullptr;
-	if (rmesh->palette_size) {
+	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
+	if (rmesh->palette_size
+		&& Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
+		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
+													  ent.reg);
 		auto blend_palette = (qfm_blend_t *) ((byte *) model
 											  + rmesh->blend_palette);
-		auto anim = Entity_GetAnimation (ent);
-		float blend = R_IQMGetLerpedFrames (vr_data.realtime, anim, model);
-		palette = R_IQMBlendPalette (model, anim->pose1, anim->pose2, blend,
-									 size, blend_palette, rmesh->palette_size);
+		palette = Mod_BlendPalette (blend_palette, rmesh->palette_size,
+									mp, model->joints.count, size);
 		if (!palette) {
 			Sys_Error ("R_AliasDrawModel: out of memory");
 		}

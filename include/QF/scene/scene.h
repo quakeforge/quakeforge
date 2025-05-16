@@ -45,6 +45,8 @@ enum scene_components {
 	scene_mesh_lerp,
 	scene_mesh_morph,
 	scene_mesh_skel,
+	scene_animstate,
+	scene_matrix_palette,
 	scene_animation,
 	scene_visibility,
 	scene_renderer,

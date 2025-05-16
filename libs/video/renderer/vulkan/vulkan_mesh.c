@@ -470,8 +470,8 @@ set_vertex_attributes (qf_mesh_t *mesh, VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 			num_bindings = attribs[i].set + 1u;
 		}
 	}
-	//FIXME want VK_EXT_vertex_attribute_robustness, but it seems my 1080
-	//didn't get it
+	//FIXME want VK_EXT_vertex_attribute_robustness, but renderdoc doesn't
+	//like it
 	uint32_t num_attributes = qfm_attr_count + qfm_color + 1;
 	VkVertexInputBindingDescription2EXT bindings[num_bindings];
 	VkVertexInputAttributeDescription2EXT attributes[num_attributes];
@@ -579,18 +579,13 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 										   + rmesh->bone_descriptors);
 
 	auto anim = Entity_GetAnimation (ent);
-	float blend = anim->blend;
+	float blend = anim ? anim->blend : 0;
 
 	uint32_t enabled_mask = set_vertex_attributes (meshes, cmd, ctx);
-
-	VkDeviceSize offsets[] = { 0, 0, 0 };
-	//FIXME per mesh, also allow mixing with bones
-	if (meshes[0].morph.numclips) {
-		offsets[0] = anim->pose1;
-		offsets[1] = anim->pose2;
-	} else {
-		auto frame = R_IQMBlendFrames (model, anim->pose1, anim->pose2,
-									   blend, 0);
+	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
+	if (Ent_HasComponent (ent.id, c_matrix_palette, ent.reg)) {
+		auto mp = *(qfm_motor_t **) Ent_GetComponent (ent.id, c_matrix_palette,
+													  ent.reg);
 		vec4f_t    *bone_data;
 		dfunc->vkMapMemory (device->dev, rmesh->bones_memory, 0, VK_WHOLE_SIZE,
 							0, (void **)&bone_data);
@@ -598,10 +593,11 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 		for (uint32_t i = 0; i < num_joints; i++) {
 			auto    b = bone_data + (ctx->curFrame * num_joints + i) * 3;
 			mat4f_t f;
+			qfm_motor_to_mat (f, mp[i]);
 			// R_IQMBlendFrames sets up the frame as a 4x4 matrix for m * v,
 			// but the shader wants a 3x4 (column x row) matrix for v * m,
 			// which is just a transpose (and drop of the 4th column) away.
-			mat4ftranspose (f, frame[i * 2]);
+			mat4ftranspose (f, f);
 			// copy only the first 3 columns
 			memcpy (b, f, 3 * sizeof (vec4f_t));
 		}
@@ -615,6 +611,15 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 #undef a
 		dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 		dfunc->vkUnmapMemory (device->dev, rmesh->bones_memory);
+	} else {
+		enabled_mask &= ~((1 << qfm_joints) | (1 << qfm_weights));
+	}
+
+	VkDeviceSize offsets[] = { 0, 0, 0 };
+	//FIXME per mesh, also allow mixing with bones
+	if (meshes[0].morph.numclips) {
+		offsets[0] = anim->pose1;
+		offsets[1] = anim->pose2;
 	}
 	VkBuffer    buffers[] = {
 		rmesh->geom_buffer,

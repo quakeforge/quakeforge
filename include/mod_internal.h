@@ -136,6 +136,9 @@ void sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 
 void Mod_LoadIQM (model_t *mod, void *buffer);
 qfm_blend_t *Mod_IQMBuildBlendPalette (mod_iqm_ctx_t *iqm, uint32_t *size);
+mat4f_t *Mod_BlendPalette (qfm_blend_t *blend_palette, uint32_t palette_size,
+						   qfm_motor_t *motors, uint32_t num_motors,
+						   size_t extra);
 
 void Mod_LoadAliasModel (model_t *mod, void *buffer,
                          cache_allocator_t allocator);

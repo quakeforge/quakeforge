@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/animation.h"
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/skin.h"
@@ -131,6 +132,16 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (mesh_skel_t),
 		.create = 0,//create_mesh_skel,
 		.name = "mesh_skel",
+	},
+	[scene_animstate] = {
+		.size = sizeof (animstate_t *),
+		.create = 0,//create_animstate,
+		.name = "animstate",
+	},
+	[scene_matrix_palette] = {
+		.size = sizeof (qfm_motor_t *),
+		.create = 0,//create_matrix_palette,
+		.name = "matrix_palette",
 	},
 	[scene_animation] = {
 		.size = sizeof (animation_t),

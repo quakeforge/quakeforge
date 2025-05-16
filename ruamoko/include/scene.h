@@ -47,6 +47,7 @@ void Entity_SetModel (entity_t ent, model_t model);
 int Entity_GetPoseMotors (entity_t ent, void *motors, double time);
 animation_t *Entity_GetAnimation (entity_t ent);// NOTE: pointer is ephemeral
 void Entity_SetAnimation (entity_t ent, animation_t *anim);
+void Entity_SetAnimstate (entity_t ent, animstate_t anim);
 
 unsigned Transform_ChildCount (transform_t transform);
 transform_t Transform_GetChild (transform_t transform,

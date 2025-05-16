@@ -36,9 +36,9 @@
 # include <strings.h>
 #endif
 
+#include "QF/animation.h"
 #include "QF/cmem.h"
 #include "QF/hash.h"
-#include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/progs.h"
 #include "QF/render.h"
@@ -395,6 +395,21 @@ bi (Entity_SetAnimation)
 	Entity_SetAnimation (ent, anim);
 }
 
+bi (Entity_SetAnimstate)
+{
+	qfZoneScoped (true);
+
+	rua_scene_resources_t *res = _res;
+	pr_ulong_t  ent_id = P_ULONG (pr, 0);
+	entity_t    ent = rua_entity_get (res, ent_id);
+	auto animstate = Model_GetAnimstate (pr, P_INT (pr, 1));
+	uint32_t c_matrix_palette = ent.base + scene_matrix_palette;
+	uint32_t c_animstate = ent.base + scene_animstate;
+	Ent_SetComponent (ent.id, c_animstate, ent.reg, &animstate);
+	auto motors = qfa_matrix_palette (animstate);
+	Ent_SetComponent (ent.id, c_matrix_palette, ent.reg, &motors);
+}
+
 bi (Transform_ChildCount)
 {
 	qfZoneScoped (true);
@@ -695,6 +710,7 @@ static builtin_t builtins[] = {
 	bi(Entity_GetPoseMotors,		3, p(ulong), p(ptr), p(double)),
 	bi(Entity_GetAnimation,         1, p(ulong)),
 	bi(Entity_SetAnimation,         1, p(ulong), p(ptr)),
+	bi(Entity_SetAnimstate,         1, p(ulong), p(ptr)),
 
 	bi(Transform_ChildCount,        1, p(ulong)),
 	bi(Transform_GetChild,          2, p(ulong), p(int)),

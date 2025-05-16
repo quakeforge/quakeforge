@@ -70,6 +70,7 @@ void RUA_Input_Init (struct progs_s *pr, int secure);
 void RUA_Mersenne_Init (struct progs_s *pr, int secure);
 void RUA_Model_Init (struct progs_s *pr, int secure);
 struct model_s *Model_GetModel (progs_t *pr, int handle);
+struct animstate_s *Model_GetAnimstate (progs_t *pr, pr_int_t handle);
 void RUA_Scene_Init (struct progs_s *pr, int secure);
 struct scene_s *Scene_GetScene (struct progs_s *pr, pr_ulong_t handle);
 
