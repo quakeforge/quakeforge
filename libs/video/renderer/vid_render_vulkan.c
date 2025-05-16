@@ -116,7 +116,7 @@ vulkan_R_Init (struct plitem_s *config)
 
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Scene_Init (vulkan_ctx);
-	Vulkan_Alias_Init (vulkan_ctx);
+	Vulkan_Mesh_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Planes_Init (vulkan_ctx);

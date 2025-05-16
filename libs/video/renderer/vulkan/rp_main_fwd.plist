@@ -1,7 +1,7 @@
 properties = {
 	color = {
 		bsp       = "[0.0, 0.5, 0.6, 1]";
-		alias     = "[0.6, 0.5, 0.0, 1]";
+		mesh      = "[0.6, 0.5, 0.0, 1]";
 		sprite    = "[0.6, 0.5, 0.0, 1]";
 		particles = "[0.4, 0.5, 0.8, 1]";
 		lights    = "[0.8, 0.6, 0.2, 1]";
@@ -331,12 +331,12 @@ properties = {
 			};
 		};
 	};
-	alias = {
+	mesh = {
 		shader = {
 			vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/alias.vert;
+				module = $builtin/mesh.vert;
 			};
 		};
 		vertexInput = {
@@ -1143,20 +1143,20 @@ renderpasses = {
 						inputAssembly = $brush.inputAssembly;
 						layout = $brush.layout;
 					};
-					alias = {
-						color = $color.alias;
+					mesh = {
+						color = $color.mesh;
 						tasks = (
-							{ func = alias_draw;
+							{ func = mesh_draw;
 							  params = (main, 2); },
 						);
 
 						stages = (
-							$alias.shader.vertex,
+							$mesh.shader.vertex,
 							$qskin.shader.fragment,
 						);
-						vertexInput = $alias.vertexInput;
-						inputAssembly = $alias.inputAssembly;
-						layout = $alias.layout;
+						vertexInput = $mesh.vertexInput;
+						inputAssembly = $mesh.inputAssembly;
+						layout = $mesh.layout;
 					};
 					sprite:depth = {
 						color = $color.sprite;
@@ -1578,7 +1578,7 @@ newscene_tasks = (
 init_tasks = (
 	{ func = texture_init; },
 	{ func = palette_init; },
-	{ func = alias_init; },
+	{ func = mesh_init; },
 	{ func = bsp_init; },
 	{ func = matrices_init; },
 	{ func = scene_init; },

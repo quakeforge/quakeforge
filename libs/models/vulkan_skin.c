@@ -58,7 +58,7 @@ Vulkan_Skin_Clear (qfv_skin_t *skin, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	Vulkan_AliasRemoveSkin (ctx, skin);
+	Vulkan_MeshRemoveSkin (ctx, skin);
 	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
 	dfunc->vkDestroyImage (device->dev, skin->image, 0);
 	dfunc->vkFreeMemory (device->dev, skin->memory, 0);

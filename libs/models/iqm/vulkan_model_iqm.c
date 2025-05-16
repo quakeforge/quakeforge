@@ -199,7 +199,7 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 			tex = &null_tex;
 		}
 		iqm_transfer_texture (tex, image->image, stage, device);
-		Vulkan_AliasAddSkin (ctx, &skins[i]);
+		Vulkan_MeshAddSkin (ctx, &skins[i]);
 	}
 	dstring_delete (str);
 	QFV_DestroyStagingBuffer (stage);

@@ -208,7 +208,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 
 	free (tskin);
 
-	Vulkan_AliasAddSkin (ctx, vskin);
+	Vulkan_MeshAddSkin (ctx, vskin);
 
 	qfvPopDebug (ctx);
 	return vskin;

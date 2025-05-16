@@ -104,9 +104,9 @@ void Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 void Vulkan_MeshAddBones (vulkan_ctx_t *ctx, qf_model_t *model);
 void Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model);
 
-void Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
-void Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
+void Vulkan_MeshAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
+void Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin);
 
-void Vulkan_Alias_Init (vulkan_ctx_t *ctx);
+void Vulkan_Mesh_Init (vulkan_ctx_t *ctx);
 
 #endif//__QF_Vulkan_qf_mesh_h

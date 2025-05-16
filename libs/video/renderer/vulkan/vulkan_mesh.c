@@ -1,7 +1,7 @@
 /*
-	vulkan_alias.c
+	vulkan_mesh.c
 
-	Vulkan alias model pipeline
+	Vulkan mesh model pipeline
 
 	Copyright (C) 2012       Bill Currie <bill@taniwha.org>
 	Copyright (C) 2021       Bill Currie <bill@taniwha.org>
@@ -64,7 +64,7 @@ typedef struct {
 	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
-} alias_push_constants_t;
+} mesh_push_constants_t;
 
 typedef struct {
 	mat4f_t     mat;
@@ -86,7 +86,7 @@ typedef struct {
 } shadow_push_constants_t;
 
 static void
-alias_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
+mesh_depth_range (qfv_taskctx_t *taskctx, float minDepth, float maxDepth)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -170,7 +170,7 @@ Vulkan_MeshRemoveBones (vulkan_ctx_t *ctx, qf_model_t *model)
 }
 
 void
-Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
+Vulkan_MeshAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
 	meshctx_t *mctx = ctx->mesh_context;
 	skin->descriptor = Vulkan_CreateCombinedImageSampler (ctx, skin->view,
@@ -178,14 +178,14 @@ Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 }
 
 void
-Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
+Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 {
 	Vulkan_FreeTexture (ctx, skin->descriptor);
 	skin->descriptor = 0;
 }
 
 static void
-push_alias_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
+push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 					  byte *colors, vec4f_t base_color, int pass,
 					  qfv_taskctx_t *taskctx)
 {
@@ -194,7 +194,7 @@ push_alias_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 	auto cmd = taskctx->cmd;
 	auto layout = taskctx->pipeline->layout;
 
-	alias_push_constants_t constants = {
+	mesh_push_constants_t constants = {
 		.blend = blend,
 		.enabled_mask = enabled_mask,
 		.colors = { VEC4_EXP (colors) },
@@ -204,22 +204,22 @@ push_alias_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (alias_push_constants_t, mat),
+			offsetof (mesh_push_constants_t, mat),
 			sizeof (mat4f_t), mat },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (alias_push_constants_t, enabled_mask),
+			offsetof (mesh_push_constants_t, enabled_mask),
 			sizeof (uint32_t), &constants.enabled_mask },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (alias_push_constants_t, blend),
+			offsetof (mesh_push_constants_t, blend),
 			sizeof (float), &constants.blend },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (alias_push_constants_t, colors),
+			offsetof (mesh_push_constants_t, colors),
 			sizeof (constants.colors), constants.colors },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (alias_push_constants_t, base_color),
+			offsetof (mesh_push_constants_t, base_color),
 			sizeof (constants.base_color), &constants.base_color },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (alias_push_constants_t, fog),
+			offsetof (mesh_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 	};
 	QFV_PushConstants (device, cmd, layout, pass ? 6 : 3, push_constants);
@@ -251,7 +251,7 @@ push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (fwd_push_constants_t, mat),
 			sizeof (mat4f_t), mat },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
-			offsetof (alias_push_constants_t, enabled_mask),
+			offsetof (mesh_push_constants_t, enabled_mask),
 			sizeof (uint32_t), &constants.enabled_mask },
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof (fwd_push_constants_t, blend),
@@ -547,7 +547,7 @@ get_skin (renderer_t *renderer, qf_mesh_t *mesh)
 }
 
 static void
-alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
+mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 				renderer_t *renderer)
 {
 	auto model = renderer->model->model;
@@ -649,7 +649,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 								enabled_mask, blend, colors, base_color,
 								&lighting, pass, taskctx);
 		} else {
-			push_alias_constants (Transform_GetWorldMatrixPtr (transform),
+			push_mesh_constants (Transform_GetWorldMatrixPtr (transform),
 								  enabled_mask, blend, colors, base_color,
 								  pass, taskctx);
 		}
@@ -673,7 +673,7 @@ alias_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 }
 
 static void
-alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+mesh_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -705,24 +705,24 @@ alias_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		// FIXME hack the depth range to prevent view model
 		// from poking into walls
 		if (stage == mesh_main && renderer->depthhack) {
-			alias_depth_range (taskctx, 0.7, 1);
+			mesh_depth_range (taskctx, 0.7, 1);
 		}
-		alias_draw_ent (taskctx, ent, pass, renderer);
+		mesh_draw_ent (taskctx, ent, pass, renderer);
 		// unhack in case the view_model is not the last
 		if (stage == mesh_main && renderer->depthhack) {
-			alias_depth_range (taskctx, 0, 1);
+			mesh_depth_range (taskctx, 0, 1);
 		}
 	}
 }
 
 static void
-alias_shutdown (exprctx_t *ectx)
+mesh_shutdown (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
-	qfvPushDebug (ctx, "alias shutdown");
+	qfvPushDebug (ctx, "mesh shutdown");
 	auto mctx = ctx->mesh_context;
 
 	QFV_DestroyResource (device, mctx->resource);
@@ -733,7 +733,7 @@ alias_shutdown (exprctx_t *ectx)
 }
 
 static void
-alias_startup (exprctx_t *ectx)
+mesh_startup (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
@@ -765,15 +765,15 @@ alias_startup (exprctx_t *ectx)
 }
 
 static void
-alias_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+mesh_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	qfvPushDebug (ctx, "alias init");
+	qfvPushDebug (ctx, "mesh init");
 
-	QFV_Render_AddShutdown (ctx, alias_shutdown);
-	QFV_Render_AddStartup (ctx, alias_startup);
+	QFV_Render_AddShutdown (ctx, mesh_shutdown);
+	QFV_Render_AddStartup (ctx, mesh_startup);
 
 	meshctx_t *mctx = calloc (1, sizeof (meshctx_t));
 	ctx->mesh_context = mctx;
@@ -781,51 +781,51 @@ alias_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfvPopDebug (ctx);
 }
 
-static exprenum_t alias_stage_enum;
-static exprtype_t alias_stage_type = {
-	.name = "alias_stage",
+static exprenum_t mesh_stage_enum;
+static exprtype_t mesh_stage_type = {
+	.name = "mesh_stage",
 	.size = sizeof (int),
 	.get_string = cexpr_enum_get_string,
-	.data = &alias_stage_enum,
+	.data = &mesh_stage_enum,
 };
-static int alias_stage_values[] = { mesh_main, mesh_shadow, };
-static exprsym_t alias_stage_symbols[] = {
-	{"main", &alias_stage_type, alias_stage_values + 0},
-	{"shadow", &alias_stage_type, alias_stage_values + 1},
+static int mesh_stage_values[] = { mesh_main, mesh_shadow, };
+static exprsym_t mesh_stage_symbols[] = {
+	{"main", &mesh_stage_type, mesh_stage_values + 0},
+	{"shadow", &mesh_stage_type, mesh_stage_values + 1},
 	{}
 };
-static exprtab_t alias_stage_symtab = { .symbols = alias_stage_symbols };
-static exprenum_t alias_stage_enum = {
-	&alias_stage_type,
-	&alias_stage_symtab,
+static exprtab_t mesh_stage_symtab = { .symbols = mesh_stage_symbols };
+static exprenum_t mesh_stage_enum = {
+	&mesh_stage_type,
+	&mesh_stage_symtab,
 };
 
-static exprtype_t *alias_draw_params[] = {
+static exprtype_t *mesh_draw_params[] = {
 	&cexpr_int,
-	&alias_stage_type,
+	&mesh_stage_type,
 };
-static exprfunc_t alias_draw_func[] = {
-	{ .func = alias_draw, .num_params = 2, .param_types = alias_draw_params },
+static exprfunc_t mesh_draw_func[] = {
+	{ .func = mesh_draw, .num_params = 2, .param_types = mesh_draw_params },
 	{}
 };
 
-static exprfunc_t alias_init_func[] = {
-	{ .func = alias_init },
+static exprfunc_t mesh_init_func[] = {
+	{ .func = mesh_init },
 	{}
 };
 
-static exprsym_t alias_task_syms[] = {
-	{ "alias_draw", &cexpr_function, alias_draw_func },
-	{ "alias_init", &cexpr_function, alias_init_func },
+static exprsym_t mesh_task_syms[] = {
+	{ "mesh_draw", &cexpr_function, mesh_draw_func },
+	{ "mesh_init", &cexpr_function, mesh_init_func },
 	{}
 };
 
 void
-Vulkan_Alias_Init (vulkan_ctx_t *ctx)
+Vulkan_Mesh_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	qfvPushDebug (ctx, "alias init");
-	QFV_Render_AddTasks (ctx, alias_task_syms);
+	qfvPushDebug (ctx, "mesh init");
+	QFV_Render_AddTasks (ctx, mesh_task_syms);
 
 	qfvPopDebug (ctx);
 }

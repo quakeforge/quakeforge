@@ -143,7 +143,7 @@ render_graph = {
 	properties = {
 		color = {
 			bsp       = "[0.0, 0.5, 0.6, 1]";
-			alias     = "[0.6, 0.5, 0.0, 1]";
+			mesh      = "[0.6, 0.5, 0.0, 1]";
 			sprite    = "[0.6, 0.5, 0.0, 1]";
 			particles = "[0.4, 0.5, 0.8, 1]";
 			lights    = "[0.8, 0.6, 0.2, 1]";
@@ -504,7 +504,7 @@ render_graph = {
 				};
 			};
 		};
-		alias = {
+		mesh = {
 			shader = {
 				shadow_vertex = {
 					stage = vertex;
@@ -1689,31 +1689,31 @@ render_graph = {
 							inputAssembly = $brush.inputAssembly;
 							layout = $brush.layout;
 						};
-						alias:depth = {
-							color = $color.alias;
+						mesh:depth = {
+							color = $color.mesh;
 							tasks = (
-								{ func = alias_draw;
+								{ func = mesh_draw;
 								  params = (main, 0); },
 							);
 
 							stages = (
-								$alias.shader.depth_vertex,
+								$mesh.shader.depth_vertex,
 							);
 							vertexInput = {
 								// depth pass doesn't use UVs
 								bindings = (
-									"$alias.vertexInput.bindings[0]",
-									"$alias.vertexInput.bindings[1]",
+									"$mesh.vertexInput.bindings[0]",
+									"$mesh.vertexInput.bindings[1]",
 								);
 								attributes = (
-									"$alias.vertexInput.attributes[0]",
-									"$alias.vertexInput.attributes[1]",
-									"$alias.vertexInput.attributes[2]",
-									"$alias.vertexInput.attributes[3]",
+									"$mesh.vertexInput.attributes[0]",
+									"$mesh.vertexInput.attributes[1]",
+									"$mesh.vertexInput.attributes[2]",
+									"$mesh.vertexInput.attributes[3]",
 								);
 							};
-							inputAssembly = $alias.inputAssembly;
-							layout = $alias.layout;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.layout;
 							dynamic = {
 								dynamicState = (
 									viewport,
@@ -1892,20 +1892,20 @@ render_graph = {
 							inputAssembly = $brush.inputAssembly;
 							layout = $brush.layout;
 						};
-						alias:gbuffer = {
-							color = $color.alias;
+						mesh:gbuffer = {
+							color = $color.mesh;
 							tasks = (
-								{ func = alias_draw;
+								{ func = mesh_draw;
 								  params = (main, 1); },
 							);
 
 							stages = (
-								$alias.shader.gbuf_vertex,
+								$mesh.shader.gbuf_vertex,
 								$qskin.shader.fragment,
 							);
-							vertexInput = $alias.vertexInput;
-							inputAssembly = $alias.inputAssembly;
-							layout = $alias.layout;
+							vertexInput = $mesh.vertexInput;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.layout;
 							dynamic = {
 								dynamicState = (
 									viewport,
@@ -2405,31 +2405,31 @@ render_graph = {
 							inputAssembly = $brush.inputAssembly;
 							layout = $brush.shadow_layout;
 						};
-						alias:shadow = {
-							color = $color.alias;
+						mesh:shadow = {
+							color = $color.mesh;
 							tasks = (
-								{ func = alias_draw;
+								{ func = mesh_draw;
 								  params = (shadow, 0); },
 							);
 
 							stages = (
-								$alias.shader.shadow_vertex,
+								$mesh.shader.shadow_vertex,
 							);
 							vertexInput = {
 								// depth/shadow pass doesn't use UVs
 								bindings = (
-									"$alias.vertexInput.bindings[0]",
-									"$alias.vertexInput.bindings[1]",
+									"$mesh.vertexInput.bindings[0]",
+									"$mesh.vertexInput.bindings[1]",
 								);
 								attributes = (
-									"$alias.vertexInput.attributes[0]",
-									"$alias.vertexInput.attributes[1]",
-									"$alias.vertexInput.attributes[2]",
-									"$alias.vertexInput.attributes[3]",
+									"$mesh.vertexInput.attributes[0]",
+									"$mesh.vertexInput.attributes[1]",
+									"$mesh.vertexInput.attributes[2]",
+									"$mesh.vertexInput.attributes[3]",
 								);
 							};
-							inputAssembly = $alias.inputAssembly;
-							layout = $alias.shadow_layout;
+							inputAssembly = $mesh.inputAssembly;
+							layout = $mesh.shadow_layout;
 							dynamic = {
 								dynamicState = (
 									viewport,
@@ -2848,7 +2848,7 @@ render_graph = {
 	init_tasks = (
 		{ func = texture_init; },
 		{ func = palette_init; },
-		{ func = alias_init; },
+		{ func = mesh_init; },
 		{ func = bsp_init; },
 		{ func = matrices_init; },
 		{ func = scene_init; },
