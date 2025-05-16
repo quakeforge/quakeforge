@@ -84,6 +84,12 @@ enum {
 	ecs_comp_count
 };
 
+typedef enum {
+	ecs_fullown,
+	ecs_partown,
+	ecs_nonown,
+} ecs_grpown_t;
+
 typedef struct ecs_idpool_s {
 	uint32_t   *ids;
 	uint32_t    next;
@@ -102,6 +108,9 @@ typedef struct ecs_groups_s {
 	ecs_subpool_t components;
 	ecs_pool_t  group_components;
 	ecs_pool_t  component_groups;
+
+	ecs_subpool_t nonown_groups;
+	ecs_pool_t  nonown_entities;;
 } ecs_groups_t;
 
 typedef struct ecs_registry_s {
@@ -172,7 +181,7 @@ void ECS_MoveSubpoolLast (ecs_registry_t *registry, uint32_t component,
 						  uint32_t id);
 
 uint32_t ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
-						  uint32_t num_components);
+						  uint32_t num_components, ecs_grpown_t ownership);
 
 ECSINLINE int ECS_EntValid (uint32_t id, ecs_registry_t *reg);
 ECSINLINE int Ent_HasComponent (uint32_t ent, uint32_t comp,

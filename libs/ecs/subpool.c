@@ -28,9 +28,9 @@
 # include "config.h"
 #endif
 
-#include "QF/sys.h"
-
 #include "QF/ecs.h"
+#include "QF/set.h"
+#include "QF/sys.h"
 
 uint32_t
 ecs_new_subpool_range (ecs_subpool_t *subpool)
@@ -181,10 +181,63 @@ const component_t ecs_component_groups = {
 	.name = "groups component is in",
 };
 
+static set_flags_t
+ecs_test_groups (uint32_t *components, uint32_t num_components,
+				 ecs_grpcomp_t *grpcomps, uint32_t num_grpcomps,
+				 ecs_registry_t *reg)
+{
+	set_t a = SET_STATIC_INIT (reg->components.size, alloca);
+	set_t b = SET_STATIC_INIT (reg->components.size, alloca);
+	set_empty (&a);
+	set_empty (&b);
+	for (uint32_t i = 0; i < num_components; i++) {
+		set_add (&a, components[i]);
+	}
+	for (uint32_t i = 0; i < num_grpcomps; i++) {
+		set_add (&b, grpcomps[i].component);
+	}
+	return set_test (&a, &b);
+}
+
+static int
+ecs_group_type (ecs_registry_t *reg, uint32_t *components,
+				uint32_t num_components)
+{
+	auto grps = &reg->groups.groups;
+	uint32_t num_groups = grps->num_ranges - grps->available;
+	set_t groups = SET_STATIC_INIT (num_groups, alloca);
+	set_empty (&groups);
+
+	for (uint32_t i = 0; i < num_components; i++) {
+		auto range = ecs_get_subpool_range (&reg->groups.components,
+											components[i]);
+		auto cgrp = &reg->groups.component_groups;
+		uint32_t *g = Component_Address (&ecs_component_groups, cgrp->data,
+										 range.start);
+		uint32_t count = range.end - range.start;
+		while (count-- > 0) {
+			set_add (&groups, *g++);
+		}
+	}
+	printf ("groups: %s\n", set_as_string (&groups));
+	for (auto g = set_first (&groups); g; g = set_next (g)) {
+		auto range = ecs_get_subpool_range (&reg->groups.groups, g->element);
+		auto gcmp = &reg->groups.group_components;
+		ecs_grpcomp_t *gc = Component_Address (&ecs_group_components,
+											   gcmp->data, range.start);
+		uint32_t count = range.end - range.start;
+		auto test = ecs_test_groups (components, num_components,
+									 gc, count, reg);
+		printf ("group: %d, %d\n", g->element, test);
+	}
+	return 0;
+}
+
 uint32_t
 ECS_DefineGroup (ecs_registry_t *reg, uint32_t *components,
-				 uint32_t num_components)
+				 uint32_t num_components, ecs_grpown_t ownership)
 {
+	ecs_group_type (reg, components, num_components);
 	uint32_t gid = ecs_new_subpool_range (&reg->groups.groups);
 	for (uint32_t i = 0; i < num_components; i++) {
 		if (reg->components.a[components[i]].rangeid) {

@@ -139,20 +139,20 @@ main (void)
 	uint32_t g1 = ECS_DefineGroup (reg, (uint32_t[]) {
 			base + test_a1,
 			base + test_a2,
-		}, 2);
+		}, 2, ecs_fullown);
 	uint32_t g2 = ECS_DefineGroup (reg, (uint32_t[]) {
 			base + test_a1,
 			base + test_a2,
 			base + test_a3,
-		}, 3);
+		}, 3, ecs_fullown);
 	uint32_t g3 = ECS_DefineGroup (reg, (uint32_t[]) {
 			base + test_a1,
 			base + test_c1,
-		}, 2);
+		}, 2, ecs_partown);
 	uint32_t g4 = ECS_DefineGroup (reg, (uint32_t[]) {
 			base + test_b1,
 			base + test_b2,
-		}, 2);
+		}, 2, ecs_fullown);
 
 	ecs_grpcomp_t g1_grpcomps[] = {
 		{ base + test_a1, 0 },
