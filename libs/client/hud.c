@@ -134,6 +134,7 @@ static view_t     sbar_tile[2];
 static view_t     sbar_tile[2];
 static view_t spectator_view;
 static view_t deathmatch_view;
+static view_t centerprint_view;
 
 typedef struct view_def_s {
 	view_t     *view;
@@ -250,6 +251,8 @@ static view_def_t sbar_defs[] = {
 	{0, { 0, 12, 112, 8}, grav_north,    &spectator_view, 1, 0, 0},
 	{0, { 0, 20, 232, 8}, grav_north,    &spectator_view, 1, 0, 0},
 	{&deathmatch_view,    {  0, 0,320, 200}, grav_center,   &hud_canvas_view},
+
+	{&centerprint_view,   {  0, 0,320, 200}, grav_center,	&hud_canvas_view},
 
 	{}
 };
@@ -1694,6 +1697,7 @@ Sbar_CenterPrint (const char *str)
 
 	centertime_off = scr_centertime;
 	centertime_start = sbar_time;
+	View_SetVisible (centerprint_view, 1);
 
 	if (center_string.str && !strcmp (str, center_string.str)) {
 		// same string as last time, no need to lay out the text again
@@ -1848,9 +1852,10 @@ Sbar_DrawCenterPrint (void)
 
 	centertime_off -= r_data->frametime;
 	if (!center_passage.hierarchy
-		|| (centertime_off <= 0 && !sbar_intermission))
+		|| (centertime_off <= 0 && !sbar_intermission)) {
+		View_SetVisible (centerprint_view, 0);
 		return;
-
+	}
 
 	int         remaining = -1;
 	if (sbar_intermission) {
@@ -2323,6 +2328,12 @@ hud_debug_f (void *data, const cvar_t *cvar)
 }
 
 static void
+draw_centerprint (view_pos_t abs, view_pos_t len, void *data)
+{
+	Sbar_DrawCenterPrint ();
+}
+
+static void
 create_views (view_def_t *view_defs, view_t parent)
 {
 	for (int i = 0; view_defs[i].view || view_defs[i].parent; i++) {
@@ -2400,6 +2411,10 @@ init_sbar_views (void)
 	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
 		sb_item_count = 8;
 	}
+
+	sbar_setcomponent (centerprint_view, canvas_func,
+					   &(canvas_func_t) { .func = draw_centerprint });
+	View_SetVisible (centerprint_view, 0);
 }
 
 static void

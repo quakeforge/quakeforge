@@ -100,7 +100,6 @@ static view_t turtle_view;
 static view_t pause_view;
 static view_t crosshair_view;
 static view_t cshift_view;
-static view_t centerprint_view;
 
 static viewstate_t *_vs;//FIXME ick
 
@@ -142,12 +141,6 @@ static void
 cl_draw_crosshair (view_pos_t abs, view_pos_t len, void *data)
 {
 	r_funcs->Draw_Crosshair ();
-}
-
-static void
-cl_draw_centerprint (view_pos_t abs, view_pos_t len, void *data)
-{
-	Sbar_DrawCenterPrint ();
 }
 
 static void
@@ -285,10 +278,6 @@ cl_create_views (void)
 	cshift_view = clscr_view (0, 0, vid->width, vid->height, grav_northwest);
 	clscr_set_canvas_func (cshift_view, SCR_CShift);
 	View_SetVisible (cshift_view, 1);
-
-	centerprint_view = clscr_view (0, 0, vid->width, vid->height,
-								   grav_northwest);
-	clscr_set_canvas_func (centerprint_view, cl_draw_centerprint);
 }
 
 static void
