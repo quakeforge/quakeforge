@@ -376,6 +376,8 @@ mesh_shadow_src = $(vkshaderpath)/mesh_shadow.r
 mesh_shadow_c = $(vkshaderpath)/mesh_shadow.r.spvc
 output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
+painter_src = $(vkshaderpath)/painter.r
+painter_c = $(vkshaderpath)/painter.r.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
@@ -480,6 +482,8 @@ $(output_c): $(output_src) $(matrices_h)
 
 $(passthrough_c): $(passthrough_src)
 
+$(painter_c): $(painter_src)
+
 $(fstriangle_c): $(fstriangle_src)
 
 $(fstrianglest_c): $(fstrianglest_src)
@@ -519,6 +523,7 @@ vkshader_src_geom = \
 vkshader_src_frag = \
 	$(linef_src) \
 	$(particlef_src) \
+	$(painter_src) \
 	$(spritef_src) \
 	$(sprite_gbuff_src) \
 	$(sprite_depthf_src) \

@@ -152,6 +152,7 @@ render_graph = {
 			output    = "[0.0, 0.7, 0.7, 1]";
 			waterwarp = "[0.0, 0.7, 0.7, 1]";
 			fisheye   = "[0.0, 0.7, 0.7, 1]";
+			painter   = "[0.8, 0.7, 0.2, 1]";
 			slice     = "[0.8, 0.7, 0.2, 1]";
 			lines     = "[0.8, 0.7, 0.4, 1]";
 		};
@@ -935,6 +936,18 @@ render_graph = {
 				};
 			};
 		};
+		painter = {
+			shader = {
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = $builtin/painter.r;
+				};
+			};
+			layout = {
+				descriptorSets = (painter_set);
+			};
+		};
 		slice = {
 			shader = {
 				vertex = {
@@ -1026,6 +1039,22 @@ render_graph = {
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = vertex;
+				},
+			);
+		};
+		painter_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
 				},
 			);
 		};
@@ -2322,6 +2351,20 @@ render_graph = {
 								$fisheye.shader.fragment,
 							);
 							layout = $fisheye.layout;
+						};
+						painter = {
+							@inherit = $compose_base;
+
+							color = $color.painter;
+							tasks = (
+								{ func = painter_draw; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertex,
+								$painter.shader.fragment,
+							);
+							layout = $painter.layout;
 						};
 						slice = {
 							@inherit = $compose_base;
