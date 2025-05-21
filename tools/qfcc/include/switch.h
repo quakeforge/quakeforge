@@ -47,5 +47,6 @@ switch_block_t *new_switch_block (void);
 const struct expr_s *switch_expr (switch_block_t *switch_block,
 								  const struct expr_s *break_label,
 								  const struct expr_s *statements);
+void check_enum_switch (switch_block_t *switch_block);
 
 #endif//__switch_h

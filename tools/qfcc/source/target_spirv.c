@@ -32,6 +32,7 @@
 
 #include <spirv/unified1/GLSL.std.450.h>
 
+#include "QF/hash.h"
 #include "QF/quakeio.h"
 
 #include "tools/qfcc/include/attribute.h"
@@ -48,6 +49,7 @@
 #include "tools/qfcc/include/spirv_grammar.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
@@ -2206,6 +2208,12 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_switch (const expr_t *e, spirvctx_t *ctx)
+{
+	return 0;
+}
+
+static unsigned
 spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 {
 	static spirv_expr_f funcs[ex_count] = {
@@ -2235,6 +2243,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_loop] = spirv_loop,
 		[ex_select] = spirv_select,
 		[ex_intrinsic] = spirv_intrinsic,
+		[ex_switch] = spirv_switch,
 	};
 
 	if (e->type >= ex_count) {
@@ -2762,6 +2771,48 @@ spirv_assign_vector (const expr_t *dst, const expr_t *src)
 }
 
 static const expr_t *
+spirv_proc_switch (const expr_t *expr, rua_ctx_t *ctx)
+{
+	scoped_src_loc (expr);
+	auto test = expr_process (expr->switchblock.test, ctx);
+	if (is_error (test)) {
+		return test;
+	}
+	auto type = get_type (test);
+	if (is_reference (type)) {
+		type = dereference_type (type);
+	}
+	if (!is_integral (type)) {
+		//FIXME ? it would be nice to support switch on float ranges
+		return error (test, "switch expression must have integral type");
+	}
+	auto sb = ctx->switch_block;
+	ctx->switch_block = new_switch_block ();
+	ctx->switch_block->test = test;
+	auto body = expr_process (expr->switchblock.body, ctx);
+	auto break_label = expr->switchblock.break_label;
+
+	case_label_t _default_label = {};
+	auto default_label = &_default_label;
+	// fetch and remove the default case if it exists
+	default_label = Hash_DelElement (ctx->switch_block->labels, default_label);
+	auto labels = (case_label_t **) Hash_GetList (ctx->switch_block->labels);
+
+	if (!default_label) {
+		if (options.warnings.enum_switch && is_enum (type)) {
+			check_enum_switch (ctx->switch_block);
+		}
+	}
+	ctx->switch_block = sb;
+
+	auto swtch = new_switch_expr (test, body, break_label);
+	swtch->switchblock.default_label = default_label;
+	swtch->switchblock.labels = labels;
+
+	return swtch;
+}
+
+static const expr_t *
 spirv_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	// both e1 and e2 should have the same types here
@@ -2966,6 +3017,8 @@ target_t spirv_target = {
 	.create_entry_point = spirv_create_entry_point,
 	.initialized_temp = spirv_initialized_temp,
 	.assign_vector = spirv_assign_vector,
+	.proc_switch = spirv_proc_switch,
+	.proc_caselabel = ruamoko_proc_caselabel,
 	.vector_compare = spirv_vector_compare,
 	.shift_op = spirv_shift_op,
 	.test_expr = spirv_test_expr,

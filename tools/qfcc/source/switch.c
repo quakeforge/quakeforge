@@ -128,13 +128,21 @@ case_label_expr (switch_block_t *switch_block, const expr_t *value)
 		internal_error (value, "broken switch block");
 	if (value) {
 		auto type = get_type (switch_block->test);
+		if (is_reference (type)) {
+			type = dereference_type (type);
+		}
 		auto val_type = get_type (value);
 		if (!type)
 			return 0;
-		if (!type_assignable (type, get_type (value)))
+		if (!type_assignable (type, val_type)) {
 			return error (value, "type mismatch in case label");
+		}
 		if (is_integral (type) && is_integral (val_type)) {
-			value = new_int_expr (expr_int (value), false);
+			if (is_signed (type) || is_enum (type)) {
+				value = new_int_expr (expr_int (value), false);
+			} else {
+				value = new_uint_expr (expr_int (value));
+			}
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
@@ -372,7 +380,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 	}
 }
 
-static void
+void
 check_enum_switch (switch_block_t *switch_block)
 {
 	case_label_t cl;

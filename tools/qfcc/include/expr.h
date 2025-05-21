@@ -39,6 +39,7 @@ typedef struct type_s type_t;
 typedef struct expr_s expr_t;
 typedef struct algebra_s algebra_t;
 typedef struct function_s function_t;
+typedef struct case_label_s case_label_t;
 
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc
@@ -408,6 +409,8 @@ typedef struct {
 	const expr_t *test;
 	const expr_t *body;
 	const expr_t *break_label;
+	case_label_t *default_label;
+	case_label_t **labels;
 } ex_switch_t;
 
 typedef struct {
