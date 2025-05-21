@@ -235,21 +235,20 @@ ruamoko_assign_vector (const expr_t *dst, const expr_t *src)
 	return block;
 }
 
-static switch_block_t *switch_block;
 const expr_t *
 ruamoko_proc_switch (const expr_t *expr, rua_ctx_t *ctx)
 {
 	scoped_src_loc (expr);
 	auto test = expr_process (expr->switchblock.test, ctx);
 
-	auto sb = switch_block;
-	switch_block = new_switch_block ();
-	switch_block->test = test;
+	auto sb = ctx->switch_block;
+	ctx->switch_block = new_switch_block ();
+	ctx->switch_block->test = test;
 	auto body = expr_process (expr->switchblock.body, ctx);
 
 	auto break_label = expr->switchblock.break_label;
-	auto swtch = switch_expr (switch_block, break_label, body);
-	switch_block = sb;
+	auto swtch = switch_expr (ctx->switch_block, break_label, body);
+	ctx->switch_block = sb;
 	return swtch;
 }
 
@@ -264,7 +263,7 @@ ruamoko_proc_caselabel (const expr_t *expr, rua_ctx_t *ctx)
 	if (is_error (value)) {
 		return value;
 	}
-	return case_label_expr (switch_block, value);
+	return case_label_expr (ctx->switch_block, value);
 }
 
 const expr_t *

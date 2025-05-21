@@ -232,6 +232,7 @@ typedef struct rua_ctx_s {
 	struct rua_extra_s *extra;
 	void       *scanner;
 	language_t *language;
+	struct switch_block_s *switch_block;
 	bool        extdecl;
 	bool        force_lookup;
 	bool        sub_parse;
