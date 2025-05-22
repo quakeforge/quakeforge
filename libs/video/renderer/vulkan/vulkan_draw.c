@@ -1136,12 +1136,6 @@ flush_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-painter_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
-{
-	qfZoneNamed (zone, true);
-}
-
-static void
 slice_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
@@ -1247,10 +1241,6 @@ static exprfunc_t flush_draw_func[] = {
 	{ .func = flush_draw },
 	{}
 };
-static exprfunc_t painter_draw_func[] = {
-	{ .func = painter_draw },
-	{}
-};
 static exprfunc_t slice_draw_func[] = {
 	{ .func = slice_draw },
 	{}
@@ -1271,7 +1261,6 @@ static exprfunc_t draw_init_func[] = {
 
 static exprsym_t draw_task_syms[] = {
 	{ "flush_draw", &cexpr_function, flush_draw_func },
-	{ "painter_draw", &cexpr_function, painter_draw_func },
 	{ "slice_draw", &cexpr_function, slice_draw_func },
 	{ "line_draw", &cexpr_function, line_draw_func },
 	{ "draw_scr_funcs", &cexpr_function, draw_scr_funcs_func },

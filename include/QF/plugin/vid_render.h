@@ -32,6 +32,7 @@
 #include <QF/qtypes.h>
 #include <QF/render.h>
 #include <QF/screen.h>
+#include <QF/simd/types.h>
 
 #include "QF/scene/entity.h"//FIXME
 
@@ -39,6 +40,7 @@ struct plitem_s;
 struct cvar_s;
 struct scene_s;
 struct particle_s;
+typedef struct progs_s progs_t;
 
 struct mod_alias_ctx_s;
 struct mod_iqm_ctx_s;
@@ -115,10 +117,16 @@ typedef struct vid_draw_s {
 	void (*Flush) (void);
 } vid_draw_t;
 
+typedef struct vid_painter_s {
+	void (*AddLine) (vec2f_t p1, vec2f_t p2, float r, const quat_t color);
+	void (*AddCircle) (vec2f_t c, float r, const quat_t color);
+} vid_painter_t;
+
 typedef struct vid_render_funcs_s {
 	void      (*init) (void);
 	void (*UpdateScreen) (SCR_Func *scr_funcs);
 	vid_draw_t  draw;
+	vid_painter_t painter;
 
 	struct psystem_s *(*ParticleSystem) (void);
 	struct psystem_s *(*TrailSystem) (void);

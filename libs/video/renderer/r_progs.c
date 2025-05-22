@@ -181,6 +181,8 @@ get_charbuff (progs_t *pr, draw_resources_t *res, const char *name, int charbuff
 	return cbuff;
 }
 
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
+
 static void
 bi_Draw_FreePic (progs_t *pr, void *_res)
 {
@@ -494,6 +496,29 @@ bi_Draw_SetScale (progs_t *pr, void *_res)
 	Draw_SetScale (P_INT (pr, 0));
 }
 
+bi(Painter_AddLine)
+{
+	qfZoneScoped (true);
+	if (r_funcs->painter.AddLine) {
+		auto p1 = P_var (pr, 0, vec2);
+		auto p2 = P_var (pr, 1, vec2);
+		float r = P_FLOAT (pr, 2);
+		auto color = P_QUAT (pr, 3);
+		r_funcs->painter.AddLine (p1, p2, r, color);
+	}
+}
+
+bi(Painter_AddCircle)
+{
+	qfZoneScoped (true);
+	if (r_funcs->painter.AddCircle) {
+		auto c = P_var (pr, 0, vec2);
+		float r = P_FLOAT (pr, 1);
+		auto color = P_QUAT (pr, 2);
+		r_funcs->painter.AddCircle (c, r, color);
+	}
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -536,6 +561,7 @@ bi_draw_destroy (progs_t *pr, void *_res)
 	free (res);
 }
 
+#undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -566,6 +592,9 @@ static builtin_t builtins[] = {
 	bi(Draw_PrintBuffer,    2, p(ptr), p(string)),
 
 	bi(Draw_SetScale,   1, p(int)),
+
+	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),
+	bi(Painter_AddCircle, 4, p(vec2), p(float), p(vec4)),
 
 	{0}
 };

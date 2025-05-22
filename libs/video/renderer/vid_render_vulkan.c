@@ -51,6 +51,7 @@
 #include "QF/Vulkan/qf_mesh.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_output.h"
+#include "QF/Vulkan/qf_painter.h"
 #include "QF/Vulkan/qf_palette.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_planes.h"
@@ -122,6 +123,7 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Planes_Init (vulkan_ctx);
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
+	Vulkan_Painter_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
@@ -353,6 +355,18 @@ static void
 vulkan_Draw_Flush (void)
 {
 	Vulkan_Draw_Flush (vulkan_ctx);
+}
+
+static void
+vulkan_Painter_AddLine (vec2f_t p1, vec2f_t p2, float r, const quat_t color)
+{
+	Vulkan_Painter_AddLine (p1, p2, r, color, vulkan_ctx);
+}
+
+static void
+vulkan_Painter_AddCircle (vec2f_t c, float r, const quat_t color)
+{
+	Vulkan_Painter_AddCircle (c, r, color, vulkan_ctx);
 }
 
 static void
@@ -627,6 +641,11 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 		.SetClip           = vulkan_Draw_SetClip,
 		.ResetClip         = vulkan_Draw_ResetClip,
 		.Flush             = vulkan_Draw_Flush,
+	},
+
+	.painter = {
+		.AddLine           = vulkan_Painter_AddLine,
+		.AddCircle         = vulkan_Painter_AddCircle,
 	},
 
 	.ParticleSystem   = vulkan_ParticleSystem,
