@@ -2210,6 +2210,34 @@ spirv_intrinsic (const expr_t *e, spirvctx_t *ctx)
 static unsigned
 spirv_switch (const expr_t *e, spirvctx_t *ctx)
 {
+	int num_labels = 0;
+	auto test = e->switchblock.test;
+	auto body = e->switchblock.body;
+	auto break_label = e->switchblock.break_label;
+	case_label_t _default_label = { .label = break_label };
+	auto default_label = &_default_label;
+	if (e->switchblock.default_label) {
+		default_label = e->switchblock.default_label;
+	}
+	auto labels = e->switchblock.labels;
+	for (auto l = labels; *l; l++) {
+		num_labels++;
+	}
+	unsigned merge = spirv_label_id (&break_label->label, ctx);
+	unsigned sel = spirv_emit_expr (test, ctx);
+	unsigned dfl = spirv_label_id (&default_label->label->label, ctx);
+	spirv_SelectionMerge (merge, ctx);
+	auto insn = spirv_new_insn (SpvOpSwitch, 3 + 2 * num_labels,
+								ctx->code_space, ctx);
+	INSN (insn, 1) = sel;
+	INSN (insn, 2) = dfl;
+	for (int i = 0; i < num_labels; i++) {
+		INSN (insn, 3 + i * 2) = expr_integral (labels[i]->value);
+		auto label = &labels[i]->label->label;
+		INSN (insn, 4 + i * 2) = spirv_label_id (label, ctx);
+	}
+	spirv_emit_expr (body, ctx);
+	spirv_label (break_label, ctx);
 	return 0;
 }
 
@@ -2781,6 +2809,7 @@ spirv_proc_switch (const expr_t *expr, rua_ctx_t *ctx)
 	auto type = get_type (test);
 	if (is_reference (type)) {
 		type = dereference_type (type);
+		test = pointer_deref (test);
 	}
 	if (!is_integral (type)) {
 		//FIXME ? it would be nice to support switch on float ranges
