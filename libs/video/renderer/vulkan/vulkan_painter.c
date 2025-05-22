@@ -47,6 +47,7 @@
 
 #include "compat.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/render.h"
@@ -54,6 +55,8 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
+
+#define MAX_QUEUE_BUFFER (8*1024*1024)
 
 typedef struct uip_cmd_s {
 	uint32_t    cmd;
@@ -76,6 +79,10 @@ typedef struct uip_circle_s {
 } uip_circle_t;
 
 typedef struct painterframe_s {
+	VkImage     cmd_heads_image;
+	VkImageView cmd_heads_view;
+	VkBuffer    cmd_queue;
+	VkDescriptorSet set;
 } painterframe_t;
 
 typedef struct painterframeset_s
@@ -85,6 +92,7 @@ typedef struct uip_queue_s
 	DARRAY_TYPE (uint32_t) uip_queue_t;
 
 typedef struct painterctx_s {
+	qfv_dsmanager_t *dsmanager;
 	qfv_resource_t *resource;
 	painterframeset_t frames;
 	uint32_t    cmd_width;
@@ -98,6 +106,15 @@ typedef struct painterctx_s {
 static void
 painter_shutdown (exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->painter_context;
+	qfvPushDebug (ctx, "painter shutdown");
+
+	auto device = ctx->device;
+	QFV_DestroyResource (device, pctx->resource);
+
+	qfvPopDebug (ctx);
 }
 
 static void
@@ -109,8 +126,8 @@ painter_startup (exprctx_t *ectx)
 	auto pctx = ctx->painter_context;
 	qfvPushDebug (ctx, "painter startup");
 
-	//auto device = ctx->device;
-	//auto dfunc = device->funcs;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
 
 	auto rctx = ctx->render_context;
 	size_t      frames = rctx->frames.size;
@@ -118,6 +135,108 @@ painter_startup (exprctx_t *ectx)
 	DARRAY_RESIZE (&pctx->frames, frames);
 	pctx->frames.grow = 0;
 	memset (pctx->frames.a, 0, pctx->frames.size * sizeof (painterframe_t));
+
+	pctx->dsmanager = QFV_Render_DSManager (ctx, "painter_set");
+
+	pctx->resource = malloc (sizeof (qfv_resource_t)
+							 // cmd_heads image
+							 + frames * sizeof (qfv_resobj_t)
+							 // cmd_heads view
+							 + frames * sizeof (qfv_resobj_t)
+							 // cmd_queue buffer
+							 + frames * sizeof (qfv_resobj_t));
+	auto cmd_heads_image = (qfv_resobj_t *) &pctx->resource[1];
+	auto cmd_heads_view = &cmd_heads_image[frames];
+	auto cmd_queue = &cmd_heads_view[frames];
+	*pctx->resource = (qfv_resource_t) {
+		.name = "painter",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = frames + frames + frames,
+		.objects = cmd_heads_image,
+	};
+	for (uint32_t i = 0; i < frames; i++) {
+		cmd_heads_image[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "cmd_heads_image[%d]", i),
+			.type = qfv_res_image,
+			.image = {
+				.type = VK_IMAGE_TYPE_2D,
+				.format = VK_FORMAT_R32_UINT,
+				.extent = {
+					.width = pctx->cmd_width,
+					.height = pctx->cmd_height,
+					.depth = 1,
+				},
+				.num_mipmaps = 1,
+				.num_layers = 1,
+				.samples = VK_SAMPLE_COUNT_1_BIT,
+				.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+						| VK_IMAGE_USAGE_STORAGE_BIT,
+			},
+		};
+		cmd_heads_view[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "cmd_heads_view[%d]", i),
+			.type = qfv_res_image_view,
+			.image_view = {
+				.image = i,
+				.type = VK_IMAGE_VIEW_TYPE_2D,
+				.format = cmd_heads_image[i].image.format,
+				.subresourceRange = {
+					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+					.levelCount = VK_REMAINING_MIP_LEVELS,
+					.layerCount = VK_REMAINING_ARRAY_LAYERS,
+				},
+				.components = {
+					.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+					.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+				},
+			},
+		};
+		cmd_queue[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "cmd_heads[%d]", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (uint32_t) * MAX_QUEUE_BUFFER,
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			},
+		};
+	}
+	QFV_CreateResource (device, pctx->resource);
+	for (uint32_t i = 0; i < frames; i++) {
+		auto frame = &pctx->frames.a[i];
+		*frame = (painterframe_t) {
+			.cmd_heads_image = cmd_heads_image[i].image.image,
+			.cmd_heads_view = cmd_heads_view[i].image_view.view,
+			.cmd_queue = cmd_queue[i].buffer.buffer,
+			.set = QFV_DSManager_AllocSet (pctx->dsmanager),
+		};
+
+		VkDescriptorImageInfo imageInfo[] = {
+			{ .imageView = frame->cmd_heads_view,
+			  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
+		};
+		VkDescriptorBufferInfo bufferInfo[] = {
+			{ .buffer = frame->cmd_queue, .offset = 0, .range = VK_WHOLE_SIZE },
+		};
+		VkWriteDescriptorSet write[] = {
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = frame->set,
+				.dstBinding = 0,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+				.pImageInfo = &imageInfo[0], },
+			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = frame->set,
+				.dstBinding = 1,
+				.descriptorCount = 1, 
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[0], },
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+	}
 
 	qfvPopDebug (ctx);
 }
@@ -148,11 +267,21 @@ painter_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
+painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+}
+
+static void
 painter_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
 }
 
+static exprfunc_t painter_flush_func[] = {
+	{ .func = painter_flush },
+	{}
+};
 static exprfunc_t painter_draw_func[] = {
 	{ .func = painter_draw },
 	{}
@@ -163,6 +292,7 @@ static exprfunc_t painter_init_func[] = {
 };
 
 static exprsym_t painter_task_syms[] = {
+	{ "painter_flush", &cexpr_function, painter_flush_func },
 	{ "painter_draw", &cexpr_function, painter_draw_func },
 	{ "painter_init", &cexpr_function, painter_init_func },
 	{}

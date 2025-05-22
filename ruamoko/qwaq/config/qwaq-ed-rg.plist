@@ -2899,6 +2899,7 @@ render_graph = {
 		{ func = output_init; },
 		{ func = compose_init; },
 		{ func = draw_init; },
+		{ func = painter_init; },
 		{ func = particle_init; },
 		{ func = planes_init; },
 		{ func = planes_set_size; params = (1); },
