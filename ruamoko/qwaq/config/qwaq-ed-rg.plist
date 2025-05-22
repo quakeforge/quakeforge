@@ -2852,6 +2852,7 @@ render_graph = {
 					{ func = output_select_pipeline;
 					  params = ("\"output\""); },
 					{ func = flush_draw; },
+					{ func = painter_flush; },
 				);
 			};
 		};

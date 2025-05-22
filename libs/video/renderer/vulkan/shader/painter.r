@@ -85,7 +85,7 @@ __imageAtomicCompSwap(int)
 #undef readonly
 #undef writeonly
 
-[uniform, set(0), binding(0)] @image(uint, 2D, Storage, R32i) cmd_heads;
+[uniform, set(0), binding(0)] @image(uint, 2D, Storage, R32ui) cmd_heads;
 [buffer, set(0), binding(1)] @block Commands {
 	uint cmd_queue[];
 };
@@ -93,21 +93,22 @@ __imageAtomicCompSwap(int)
 float asfloat (uint x) = SPV(OpBitcast);
 vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
 
-void
+vec4//FIXME bug in qfcc
 draw_line (uint ind, vec2 p, @inout vec4 color)
 {
 	auto a = vec2 (asfloat (cmd_queue[ind + 0]),
 				   asfloat (cmd_queue[ind + 1]));
 	auto b = vec2 (asfloat (cmd_queue[ind + 2]),
 				   asfloat (cmd_queue[ind + 3]));
-	auto r = asfloat (cmd_queue[ind + 5]);
+	auto r = asfloat (cmd_queue[ind + 4]);
 	auto col = asrgba (cmd_queue[ind + 5]);
 	float h = min (1, max (0, (p - a) • (b - a) / (b - a) • (b - a)));
 	float d = length (p - a - h * (b - a)) - r;
-	color = lerp (color, col, clamp (1f - d, 0f, 1f));
+	color = lerp (color, col, clamp (1 - d, 0, 1));
+	return color;
 }
 
-void
+vec4//FIXME bug in qfcc
 draw_circle (uint ind, vec2 p, @inout vec4 color)
 {
 	auto c = vec2 (asfloat (cmd_queue[ind + 0]),
@@ -116,6 +117,7 @@ draw_circle (uint ind, vec2 p, @inout vec4 color)
 	auto col = asrgba (cmd_queue[ind + 3]);
 	float d = length (p - c) - r;
 	color = lerp (color, col, clamp (1 - d, 0, 1));
+	return color;
 }
 
 [out(0)] vec4 frag_color;
@@ -128,17 +130,17 @@ main (void)
 	auto cmd_coord = ivec2 (gl_FragCoord.xy) / 8;
 	uint cmd_ind = imageLoad (cmd_heads, cmd_coord).r;
 
-	auto color = vec4 (0, 0, 0, 1);
+	auto color = vec4 (0, 0, 0, 0);
 	while (cmd_ind != ~0u) {
 		//FIXME might be a good time to look into BDA
 		uint cmd = cmd_queue[cmd_ind + 0];
 		uint next = cmd_queue[cmd_ind + 1];
 		switch (cmd) {
 		case 0:
-			draw_line (cmd_ind + 2, gl_FragCoord.xy, color);
+			color = draw_line (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		case 1:
-			draw_circle (cmd_ind + 2, gl_FragCoord.xy, color);
+			color = draw_circle (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		}
 		cmd_ind = next;

@@ -46,11 +46,13 @@
 #include "QF/vid.h"
 
 #include "compat.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/staging.h"
 #include "QF/Vulkan/qf_painter.h"
 
 #include "r_internal.h"
@@ -195,7 +197,7 @@ painter_startup (exprctx_t *ectx)
 			},
 		};
 		cmd_queue[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_heads[%d]", i),
+			.name = vac (ctx->va_ctx, "cmd_queue[%d]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
 				.size = sizeof (uint32_t) * MAX_QUEUE_BUFFER,
@@ -270,12 +272,54 @@ static void
 painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->painter_context;
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto frame = &pctx->frames.a[ctx->curFrame];
+
+	uint32_t size = pctx->cmd_width * pctx->cmd_height * sizeof (uint32_t);
+	auto data = QFV_PacketExtend (packet, size);
+	memcpy (data, pctx->cmd_heads, size);
+	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
+						 pctx->cmd_width, pctx->cmd_height,
+						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
+						 &imageBarriers[qfv_LT_TransferDst_to_General]);
+	QFV_PacketSubmit (packet);
+
+	if (pctx->cmd_queue.size) {
+		packet = QFV_PacketAcquire (ctx->staging);
+		size = pctx->cmd_queue.size * sizeof (uint32_t);
+		data = QFV_PacketExtend (packet, size);
+		memcpy (data, pctx->cmd_queue.a, size);
+		auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+		auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+		QFV_PacketCopyBuffer (packet, frame->cmd_queue, 0, &sb, &db);
+		QFV_PacketSubmit (packet);
+	}
+	memset (pctx->cmd_heads, 0xff, pctx->max_queues * 2 * sizeof (uint32_t));
+	pctx->cmd_queue.size = 0;
 }
 
 static void
 painter_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
 	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto pctx = ctx->painter_context;
+	auto frame = &pctx->frames.a[ctx->curFrame];
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto layout = taskctx->pipeline->layout;
+	auto cmd = taskctx->cmd;
+
+	VkDescriptorSet sets[] = {
+		frame->set,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 1, sets, 0, 0);
+	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
 static exprfunc_t painter_flush_func[] = {
@@ -331,10 +375,10 @@ static void
 painter_add_command (vec2f_t tl, vec2f_t br, uip_cmd_t *cmd, uint32_t size,
 					 painterctx_t *pctx)
 {
-	int x1 = tl[0] / 8;
-	int y1 = tl[1] / 8;
-	int x2 = br[0] / 8 + 1;
-	int y2 = br[1] / 8 + 1;
+	int x1 = (tl[0] - 1) / 8;
+	int y1 = (tl[1] - 1) / 8;
+	int x2 = (br[0] + 1) / 8 + 1;
+	int y2 = (br[1] + 1) / 8 + 1;
 
 	if (x1 < 0) x1 = 0;
 	if (y1 < 0) y1 = 0;
