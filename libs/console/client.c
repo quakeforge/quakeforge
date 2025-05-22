@@ -326,7 +326,7 @@ load_conback (const char *path)
 		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
 		return;
 	}
-	conback = r_funcs->Draw_MakePic (p->width, p->height, p->data);
+	conback = r_funcs->draw.MakePic (p->width, p->height, p->data);
 	free (p);
 }
 
@@ -549,20 +549,20 @@ DrawInputLine (int x, int y, inputline_t *il)
 	const char *s = il->lines[il->edit_line] + il->scroll;
 
 	if (il->scroll) {
-		r_funcs->Draw_Character (x, y, '<' | 0x80);
-		r_funcs->Draw_nString (x + 8, y, s + 1, il->width - 2);
+		r_funcs->draw.Character (x, y, '<' | 0x80);
+		r_funcs->draw.nString (x + 8, y, s + 1, il->width - 2);
 	} else {
-		r_funcs->Draw_nString (x, y, s, il->width - 1);
+		r_funcs->draw.nString (x, y, s, il->width - 1);
 	}
 	if (strlen (s) >= il->width)
-		r_funcs->Draw_Character (x + ((il->width - 1) * 8), y, '>' | 0x80);
+		r_funcs->draw.Character (x + ((il->width - 1) * 8), y, '>' | 0x80);
 
 	if (il->cursor) {
 		float       t = *con_data.realtime * con_cursorspeed;
 		int         ch = 10 + ((int) (t) & 1);
 
 		int         cx = (il->linepos - il->scroll) * 8;
-		r_funcs->Draw_Character (x + cx, y, ch);
+		r_funcs->draw.Character (x + cx, y, ch);
 	}
 }
 
@@ -725,7 +725,7 @@ draw_cursor (view_t view, void *data)
 	}
 	view_pos_t  pos = View_GetAbs (view);
 	int         x = (buff->cursx + il->linepos - il->scroll) * 8;
-	r_funcs->Draw_Character (pos.x + x, pos.y, ch);
+	r_funcs->draw.Character (pos.x + x, pos.y, ch);
 }
 
 static void
@@ -1241,7 +1241,7 @@ C_shutdown (void)
 {
 	Con_Debug_Shutdown ();
 
-	r_funcs->Draw_DestroyPic (conback);
+	r_funcs->draw.DestroyPic (conback);
 	IE_Remove_Handler (con_event_id);
 	Menu_Shutdown ();
 

@@ -299,7 +299,7 @@ CL_GetMessage (void)
 					demo_speed = 0;
 				}
 			}
-			r_funcs->Draw_String (32, 64, va ("%4d", packet_count));
+			r_funcs->draw.String (32, 64, va ("%4d", packet_count));
 		}
 
 		if (!ret && demo_timeframes_isactive && cls.td_starttime) {

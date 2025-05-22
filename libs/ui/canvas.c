@@ -201,7 +201,7 @@ draw_tile_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
-			r_funcs->Draw_TileClear (pos.x, pos.y, len.x, len.y);
+			r_funcs->draw.TileClear (pos.x, pos.y, len.x, len.y);
 		}
 	}
 }
@@ -219,7 +219,7 @@ draw_pic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
-			r_funcs->Draw_Pic (pos.x, pos.y, *pic);
+			r_funcs->draw.Pic (pos.x, pos.y, *pic);
 		}
 		pic++;
 	}
@@ -239,7 +239,7 @@ draw_fitpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
-			r_funcs->Draw_FitPic (pos.x, pos.y, len.x, len.y, *pic);
+			r_funcs->draw.FitPic (pos.x, pos.y, len.x, len.y, *pic);
 		}
 		pic++;
 	}
@@ -258,7 +258,7 @@ draw_subpic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
-			r_funcs->Draw_SubPic (pos.x, pos.y, subpic->pic,
+			r_funcs->draw.SubPic (pos.x, pos.y, subpic->pic,
 								  subpic->x, subpic->y, subpic->w, subpic->h);
 		}
 		subpic++;
@@ -278,8 +278,8 @@ draw_cachepic_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
-			qpic_t     *pic = r_funcs->Draw_CachePic (*name, 1);
-			r_funcs->Draw_Pic (pos.x, pos.y, pic);
+			qpic_t     *pic = r_funcs->draw.CachePic (*name, 1);
+			r_funcs->draw.Pic (pos.x, pos.y, pic);
 		}
 		name++;
 	}
@@ -299,7 +299,7 @@ draw_fill_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
 			view_pos_t  len = View_GetLen (view);
-			r_funcs->Draw_Fill (pos.x, pos.y, len.x, len.y, *fill);
+			r_funcs->draw.Fill (pos.x, pos.y, len.x, len.y, *fill);
 		}
 		fill++;
 	}
@@ -318,7 +318,7 @@ draw_charbuff_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		if (View_GetVisible (view)) {
 			view_pos_t  pos = View_GetAbs (view);
-			r_funcs->Draw_CharBuffer (pos.x, pos.y, *charbuff);
+			r_funcs->draw.CharBuffer (pos.x, pos.y, *charbuff);
 		}
 		charbuff++;
 	}
@@ -353,7 +353,7 @@ draw_outline_views (canvas_system_t *canvas_sys, ecs_pool_t *pool,
 	uint32_t    count = range.end - range.start;
 	uint32_t   *ent = pool->dense + range.start;
 	__auto_type col = (byte *) pool->data + range.start;
-	__auto_type line = r_funcs->Draw_Line;
+	__auto_type line = r_funcs->draw.Line;
 	while (count-- > 0) {
 		view_t      view = View_FromEntity (viewsys, *ent++);
 		byte        c = *col++;
@@ -378,7 +378,7 @@ draw_glyph_refs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref,
 
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
-		r_funcs->Draw_Glyph (abs->x + g->x, abs->y + g->y,
+		r_funcs->draw.Glyph (abs->x + g->x, abs->y + g->y,
 							 g->fontid, g->glyphid, color);
 	}
 }
@@ -390,10 +390,10 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 	int y = abs[ind].y;
 	int w = len[ind].x;
 	int h = len[ind].y;
-	r_funcs->Draw_Line (x, y, x + w, y, c);
-	r_funcs->Draw_Line (x, y + h, x + w, y + h, c);
-	r_funcs->Draw_Line (x, y, x, y + h, c);
-	r_funcs->Draw_Line (x + w, y, x + w, y + h, c);
+	r_funcs->draw.Line (x, y, x + w, y, c);
+	r_funcs->draw.Line (x, y + h, x + w, y + h, c);
+	r_funcs->draw.Line (x, y, x, y + h, c);
+	r_funcs->draw.Line (x + w, y, x + w, y + h, c);
 }
 
 static void
@@ -497,7 +497,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 		view_t      canvas_view = Canvas_GetRootView (canvas_sys, ent);
 		view_pos_t  pos = View_GetAbs (canvas_view);
 		view_pos_t  len = View_GetLen (canvas_view);
-		r_funcs->Draw_SetClip (pos.x, pos.y, len.x, len.y);
+		r_funcs->draw.SetClip (pos.x, pos.y, len.x, len.y);
 
 		for (int i = 0; i < canvas_comp_count; i++) {
 			if (draw_func[i]) {
@@ -511,7 +511,7 @@ Canvas_Draw (canvas_system_t canvas_sys)
 			}
 		}
 	}
-	r_funcs->Draw_ResetClip ();
+	r_funcs->draw.ResetClip ();
 	{
 		uint32_t    comp = canvas_sys.base + canvas_updateonce;
 		ecs_pool_t *pool = &reg->comp_pools[comp];

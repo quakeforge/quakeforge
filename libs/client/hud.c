@@ -965,8 +965,8 @@ set_minifrags_bar (view_t view, byte top, byte bottom, draw_charbuffer_t *buff,
 static void
 frags_marker (view_pos_t pos, view_pos_t len, void *data)
 {
-	r_funcs->Draw_Character (pos.x, pos.y, 16);
-	r_funcs->Draw_Character (pos.x + len.x - 8, pos.y, 17);
+	r_funcs->draw.Character (pos.x, pos.y, 16);
+	r_funcs->draw.Character (pos.x + len.x - 8, pos.y, 17);
 }
 
 static void
@@ -1737,7 +1737,7 @@ Sbar_DrawCenterString (view_t view, unsigned remaining)
 		x = abs.x + (len.x - count * 8) / 2;
 		count = min (count, remaining);
 		remaining -= count;
-		r_funcs->Draw_nString (x, y, text, count);
+		r_funcs->draw.nString (x, y, text, count);
 		y += 8;
 	}
 }
@@ -2475,97 +2475,97 @@ load_pics (void)
 {
 	qfZoneScoped (true);
 	for (int i = 0; i < 10; i++) {
-		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));
-		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va ("anum_%i", i));
+		sb_nums[0][i] = r_funcs->draw.PicFromWad (va ("num_%i", i));
+		sb_nums[1][i] = r_funcs->draw.PicFromWad (va ("anum_%i", i));
 	}
 
-	sb_nums[0][10] = r_funcs->Draw_PicFromWad ("num_minus");
-	sb_nums[1][10] = r_funcs->Draw_PicFromWad ("anum_minus");
+	sb_nums[0][10] = r_funcs->draw.PicFromWad ("num_minus");
+	sb_nums[1][10] = r_funcs->draw.PicFromWad ("anum_minus");
 
-	sb_colon = r_funcs->Draw_PicFromWad ("num_colon");
-	sb_slash = r_funcs->Draw_PicFromWad ("num_slash");
+	sb_colon = r_funcs->draw.PicFromWad ("num_colon");
+	sb_slash = r_funcs->draw.PicFromWad ("num_slash");
 
-	sb_weapons[0][0].pic = r_funcs->Draw_PicFromWad ("inv_shotgun");
-	sb_weapons[0][1].pic = r_funcs->Draw_PicFromWad ("inv_sshotgun");
-	sb_weapons[0][2].pic = r_funcs->Draw_PicFromWad ("inv_nailgun");
-	sb_weapons[0][3].pic = r_funcs->Draw_PicFromWad ("inv_snailgun");
-	sb_weapons[0][4].pic = r_funcs->Draw_PicFromWad ("inv_rlaunch");
-	sb_weapons[0][5].pic = r_funcs->Draw_PicFromWad ("inv_srlaunch");
-	sb_weapons[0][6].pic = r_funcs->Draw_PicFromWad ("inv_lightng");
+	sb_weapons[0][0].pic = r_funcs->draw.PicFromWad ("inv_shotgun");
+	sb_weapons[0][1].pic = r_funcs->draw.PicFromWad ("inv_sshotgun");
+	sb_weapons[0][2].pic = r_funcs->draw.PicFromWad ("inv_nailgun");
+	sb_weapons[0][3].pic = r_funcs->draw.PicFromWad ("inv_snailgun");
+	sb_weapons[0][4].pic = r_funcs->draw.PicFromWad ("inv_rlaunch");
+	sb_weapons[0][5].pic = r_funcs->draw.PicFromWad ("inv_srlaunch");
+	sb_weapons[0][6].pic = r_funcs->draw.PicFromWad ("inv_lightng");
 
-	sb_weapons[1][0].pic = r_funcs->Draw_PicFromWad ("inv2_shotgun");
-	sb_weapons[1][1].pic = r_funcs->Draw_PicFromWad ("inv2_sshotgun");
-	sb_weapons[1][2].pic = r_funcs->Draw_PicFromWad ("inv2_nailgun");
-	sb_weapons[1][3].pic = r_funcs->Draw_PicFromWad ("inv2_snailgun");
-	sb_weapons[1][4].pic = r_funcs->Draw_PicFromWad ("inv2_rlaunch");
-	sb_weapons[1][5].pic = r_funcs->Draw_PicFromWad ("inv2_srlaunch");
-	sb_weapons[1][6].pic = r_funcs->Draw_PicFromWad ("inv2_lightng");
+	sb_weapons[1][0].pic = r_funcs->draw.PicFromWad ("inv2_shotgun");
+	sb_weapons[1][1].pic = r_funcs->draw.PicFromWad ("inv2_sshotgun");
+	sb_weapons[1][2].pic = r_funcs->draw.PicFromWad ("inv2_nailgun");
+	sb_weapons[1][3].pic = r_funcs->draw.PicFromWad ("inv2_snailgun");
+	sb_weapons[1][4].pic = r_funcs->draw.PicFromWad ("inv2_rlaunch");
+	sb_weapons[1][5].pic = r_funcs->draw.PicFromWad ("inv2_srlaunch");
+	sb_weapons[1][6].pic = r_funcs->draw.PicFromWad ("inv2_lightng");
 
 	for (int i = 0; i < 5; i++) {
 		sb_weapons[2 + i][0].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_shotgun", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_shotgun", i + 1));
 		sb_weapons[2 + i][1].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_sshotgun", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_sshotgun", i + 1));
 		sb_weapons[2 + i][2].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_nailgun", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_nailgun", i + 1));
 		sb_weapons[2 + i][3].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_snailgun", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_snailgun", i + 1));
 		sb_weapons[2 + i][4].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_rlaunch", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_rlaunch", i + 1));
 		sb_weapons[2 + i][5].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_srlaunch", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_srlaunch", i + 1));
 		sb_weapons[2 + i][6].pic =
-			r_funcs->Draw_PicFromWad (va ("inva%i_lightng", i + 1));
+			r_funcs->draw.PicFromWad (va ("inva%i_lightng", i + 1));
 	}
 
-	sb_ammo[0] = r_funcs->Draw_PicFromWad ("sb_shells");
-	sb_ammo[1] = r_funcs->Draw_PicFromWad ("sb_nails");
-	sb_ammo[2] = r_funcs->Draw_PicFromWad ("sb_rocket");
-	sb_ammo[3] = r_funcs->Draw_PicFromWad ("sb_cells");
+	sb_ammo[0] = r_funcs->draw.PicFromWad ("sb_shells");
+	sb_ammo[1] = r_funcs->draw.PicFromWad ("sb_nails");
+	sb_ammo[2] = r_funcs->draw.PicFromWad ("sb_rocket");
+	sb_ammo[3] = r_funcs->draw.PicFromWad ("sb_cells");
 
-	sb_armor[0] = r_funcs->Draw_PicFromWad ("sb_armor1");
-	sb_armor[1] = r_funcs->Draw_PicFromWad ("sb_armor2");
-	sb_armor[2] = r_funcs->Draw_PicFromWad ("sb_armor3");
+	sb_armor[0] = r_funcs->draw.PicFromWad ("sb_armor1");
+	sb_armor[1] = r_funcs->draw.PicFromWad ("sb_armor2");
+	sb_armor[2] = r_funcs->draw.PicFromWad ("sb_armor3");
 
-	sb_items[0][0] = r_funcs->Draw_PicFromWad ("sb_key1");
-	sb_items[0][1] = r_funcs->Draw_PicFromWad ("sb_key2");
-	sb_items[0][2] = r_funcs->Draw_PicFromWad ("sb_invis");
-	sb_items[0][3] = r_funcs->Draw_PicFromWad ("sb_invuln");
-	sb_items[0][4] = r_funcs->Draw_PicFromWad ("sb_suit");
-	sb_items[0][5] = r_funcs->Draw_PicFromWad ("sb_quad");
+	sb_items[0][0] = r_funcs->draw.PicFromWad ("sb_key1");
+	sb_items[0][1] = r_funcs->draw.PicFromWad ("sb_key2");
+	sb_items[0][2] = r_funcs->draw.PicFromWad ("sb_invis");
+	sb_items[0][3] = r_funcs->draw.PicFromWad ("sb_invuln");
+	sb_items[0][4] = r_funcs->draw.PicFromWad ("sb_suit");
+	sb_items[0][5] = r_funcs->draw.PicFromWad ("sb_quad");
 	for (int i = 1; i < 6; i++) {
-		sb_items[i][0] = r_funcs->Draw_PicFromWad (va ("sba%d_key1", i));
-		sb_items[i][1] = r_funcs->Draw_PicFromWad (va ("sba%d_key2", i));
-		sb_items[i][2] = r_funcs->Draw_PicFromWad (va ("sba%d_invis", i));
-		sb_items[i][3] = r_funcs->Draw_PicFromWad (va ("sba%d_invul", i));
-		sb_items[i][4] = r_funcs->Draw_PicFromWad (va ("sba%d_suit", i));
-		sb_items[i][5] = r_funcs->Draw_PicFromWad (va ("sba%d_quad", i));
+		sb_items[i][0] = r_funcs->draw.PicFromWad (va ("sba%d_key1", i));
+		sb_items[i][1] = r_funcs->draw.PicFromWad (va ("sba%d_key2", i));
+		sb_items[i][2] = r_funcs->draw.PicFromWad (va ("sba%d_invis", i));
+		sb_items[i][3] = r_funcs->draw.PicFromWad (va ("sba%d_invul", i));
+		sb_items[i][4] = r_funcs->draw.PicFromWad (va ("sba%d_suit", i));
+		sb_items[i][5] = r_funcs->draw.PicFromWad (va ("sba%d_quad", i));
 	}
 
-	sb_sigil[0] = r_funcs->Draw_PicFromWad ("sb_sigil1");
-	sb_sigil[1] = r_funcs->Draw_PicFromWad ("sb_sigil2");
-	sb_sigil[2] = r_funcs->Draw_PicFromWad ("sb_sigil3");
-	sb_sigil[3] = r_funcs->Draw_PicFromWad ("sb_sigil4");
+	sb_sigil[0] = r_funcs->draw.PicFromWad ("sb_sigil1");
+	sb_sigil[1] = r_funcs->draw.PicFromWad ("sb_sigil2");
+	sb_sigil[2] = r_funcs->draw.PicFromWad ("sb_sigil3");
+	sb_sigil[3] = r_funcs->draw.PicFromWad ("sb_sigil4");
 
-	sb_faces[4][0] = r_funcs->Draw_PicFromWad ("face1");
-	sb_faces[4][1] = r_funcs->Draw_PicFromWad ("face_p1");
-	sb_faces[3][0] = r_funcs->Draw_PicFromWad ("face2");
-	sb_faces[3][1] = r_funcs->Draw_PicFromWad ("face_p2");
-	sb_faces[2][0] = r_funcs->Draw_PicFromWad ("face3");
-	sb_faces[2][1] = r_funcs->Draw_PicFromWad ("face_p3");
-	sb_faces[1][0] = r_funcs->Draw_PicFromWad ("face4");
-	sb_faces[1][1] = r_funcs->Draw_PicFromWad ("face_p4");
-	sb_faces[0][0] = r_funcs->Draw_PicFromWad ("face5");
-	sb_faces[0][1] = r_funcs->Draw_PicFromWad ("face_p5");
+	sb_faces[4][0] = r_funcs->draw.PicFromWad ("face1");
+	sb_faces[4][1] = r_funcs->draw.PicFromWad ("face_p1");
+	sb_faces[3][0] = r_funcs->draw.PicFromWad ("face2");
+	sb_faces[3][1] = r_funcs->draw.PicFromWad ("face_p2");
+	sb_faces[2][0] = r_funcs->draw.PicFromWad ("face3");
+	sb_faces[2][1] = r_funcs->draw.PicFromWad ("face_p3");
+	sb_faces[1][0] = r_funcs->draw.PicFromWad ("face4");
+	sb_faces[1][1] = r_funcs->draw.PicFromWad ("face_p4");
+	sb_faces[0][0] = r_funcs->draw.PicFromWad ("face5");
+	sb_faces[0][1] = r_funcs->draw.PicFromWad ("face_p5");
 
-	sb_face_invis = r_funcs->Draw_PicFromWad ("face_invis");
-	sb_face_invuln = r_funcs->Draw_PicFromWad ("face_invul2");
-	sb_face_invis_invuln = r_funcs->Draw_PicFromWad ("face_inv2");
-	sb_face_quad = r_funcs->Draw_PicFromWad ("face_quad");
+	sb_face_invis = r_funcs->draw.PicFromWad ("face_invis");
+	sb_face_invuln = r_funcs->draw.PicFromWad ("face_invul2");
+	sb_face_invis_invuln = r_funcs->draw.PicFromWad ("face_inv2");
+	sb_face_quad = r_funcs->draw.PicFromWad ("face_quad");
 
-	sb_sbar = r_funcs->Draw_PicFromWad ("sbar");
-	sb_ibar[0] = r_funcs->Draw_PicFromWad ("ibar");
-	sb_scorebar = r_funcs->Draw_PicFromWad ("scorebar");
+	sb_sbar = r_funcs->draw.PicFromWad ("sbar");
+	sb_ibar[0] = r_funcs->draw.PicFromWad ("ibar");
+	sb_scorebar = r_funcs->draw.PicFromWad ("scorebar");
 	sb_weapon_count = 7;
 	sb_weapon_view_count = 7;
 	sb_game = 0;
@@ -2574,47 +2574,47 @@ load_pics (void)
 	if (!strcmp (qfs_gamedir->hudtype, "hipnotic")) {
 		sb_weapon_count = 10;
 		sb_weapon_view_count = 9;
-		sb_weapons[0][7].pic = r_funcs->Draw_PicFromWad ("inv_laser");
-		sb_weapons[0][8].pic = r_funcs->Draw_PicFromWad ("inv_mjolnir");
-		sb_weapons[0][9].pic = r_funcs->Draw_PicFromWad ("inv_prox_gren");
-		//sb_weapons[0][3].pic = r_funcs->Draw_PicFromWad ("inv_gren_prox");
-		//sb_weapons[0][4] = r_funcs->Draw_PicFromWad ("inv_prox");
+		sb_weapons[0][7].pic = r_funcs->draw.PicFromWad ("inv_laser");
+		sb_weapons[0][8].pic = r_funcs->draw.PicFromWad ("inv_mjolnir");
+		sb_weapons[0][9].pic = r_funcs->draw.PicFromWad ("inv_prox_gren");
+		//sb_weapons[0][3].pic = r_funcs->draw.PicFromWad ("inv_gren_prox");
+		//sb_weapons[0][4] = r_funcs->draw.PicFromWad ("inv_prox");
 
-		sb_weapons[1][7].pic = r_funcs->Draw_PicFromWad ("inv2_laser");
-		sb_weapons[1][8].pic = r_funcs->Draw_PicFromWad ("inv2_mjolnir");
-		sb_weapons[1][9].pic = r_funcs->Draw_PicFromWad ("inv2_prox_gren");
-		//sb_weapons[1][3].pic = r_funcs->Draw_PicFromWad ("inv2_gren_prox");
-		//sb_weapons[1][4] = r_funcs->Draw_PicFromWad ("inv2_prox");
+		sb_weapons[1][7].pic = r_funcs->draw.PicFromWad ("inv2_laser");
+		sb_weapons[1][8].pic = r_funcs->draw.PicFromWad ("inv2_mjolnir");
+		sb_weapons[1][9].pic = r_funcs->draw.PicFromWad ("inv2_prox_gren");
+		//sb_weapons[1][3].pic = r_funcs->draw.PicFromWad ("inv2_gren_prox");
+		//sb_weapons[1][4] = r_funcs->draw.PicFromWad ("inv2_prox");
 
 		for (int i = 0; i < 5; i++) {
 			sb_weapons[2 + i][7].pic =
-				r_funcs->Draw_PicFromWad (va ("inva%i_laser", i + 1));
+				r_funcs->draw.PicFromWad (va ("inva%i_laser", i + 1));
 			sb_weapons[2 + i][8].pic =
-				r_funcs->Draw_PicFromWad (va ("inva%i_mjolnir", i + 1));
+				r_funcs->draw.PicFromWad (va ("inva%i_mjolnir", i + 1));
 			sb_weapons[2 + i][9].pic =
-				r_funcs->Draw_PicFromWad (va ("inva%i_prox_gren", i + 1));
+				r_funcs->draw.PicFromWad (va ("inva%i_prox_gren", i + 1));
 			//sb_weapons[2 + i][2] =
-			//	r_funcs->Draw_PicFromWad (va ("inva%i_gren_prox", i + 1));
+			//	r_funcs->draw.PicFromWad (va ("inva%i_gren_prox", i + 1));
 			//sb_weapons[2 + i][4] =
-			//	r_funcs->Draw_PicFromWad (va ("inva%i_prox", i + 1));
+			//	r_funcs->draw.PicFromWad (va ("inva%i_prox", i + 1));
 		}
 
-		sb_items[0][6] = r_funcs->Draw_PicFromWad ("sb_wsuit");
-		sb_items[0][7] = r_funcs->Draw_PicFromWad ("sb_eshld");
+		sb_items[0][6] = r_funcs->draw.PicFromWad ("sb_wsuit");
+		sb_items[0][7] = r_funcs->draw.PicFromWad ("sb_eshld");
 	}
 
 	// FIXME: MISSIONHUD
 	if (!strcmp (qfs_gamedir->hudtype, "rogue")) {
 		sb_weapon_count = 12;
 		sb_game = 1;
-		sb_ibar[0] = r_funcs->Draw_PicFromWad ("r_invbar1");
-		sb_ibar[1] = r_funcs->Draw_PicFromWad ("r_invbar2");
+		sb_ibar[0] = r_funcs->draw.PicFromWad ("r_invbar1");
+		sb_ibar[1] = r_funcs->draw.PicFromWad ("r_invbar2");
 
-		sb_weapons[0][7].pic = r_funcs->Draw_PicFromWad ("r_lava");
-		sb_weapons[0][8].pic = r_funcs->Draw_PicFromWad ("r_superlava");
-		sb_weapons[0][9].pic = r_funcs->Draw_PicFromWad ("r_gren");
-		sb_weapons[0][10].pic = r_funcs->Draw_PicFromWad ("r_multirock");
-		sb_weapons[0][11].pic = r_funcs->Draw_PicFromWad ("r_plasma");
+		sb_weapons[0][7].pic = r_funcs->draw.PicFromWad ("r_lava");
+		sb_weapons[0][8].pic = r_funcs->draw.PicFromWad ("r_superlava");
+		sb_weapons[0][9].pic = r_funcs->draw.PicFromWad ("r_gren");
+		sb_weapons[0][10].pic = r_funcs->draw.PicFromWad ("r_multirock");
+		sb_weapons[0][11].pic = r_funcs->draw.PicFromWad ("r_plasma");
 		for (int i = 1; i < 7; i++) {
 			sb_weapons[i][7].pic = sb_weapons[0][7].pic;
 			sb_weapons[i][8].pic = sb_weapons[0][8].pic;
@@ -2623,17 +2623,17 @@ load_pics (void)
 			sb_weapons[i][11].pic = sb_weapons[0][11].pic;
 		}
 
-		sb_items[0][6] = r_funcs->Draw_PicFromWad ("r_shield1");
-		sb_items[0][7] = r_funcs->Draw_PicFromWad ("r_agrav1");
+		sb_items[0][6] = r_funcs->draw.PicFromWad ("r_shield1");
+		sb_items[0][7] = r_funcs->draw.PicFromWad ("r_agrav1");
 
 		// PGM 01/19/97 - team color border
-		rsb_teambord = r_funcs->Draw_PicFromWad ("r_teambord");
+		rsb_teambord = r_funcs->draw.PicFromWad ("r_teambord");
 		// PGM 01/19/97 - team color border
 
 		// It seems the pics for plasma and multi-rockets are swapped
-		sb_ammo[4] = r_funcs->Draw_PicFromWad ("r_ammolava");
-		sb_ammo[5] = r_funcs->Draw_PicFromWad ("r_ammoplasma");
-		sb_ammo[6] = r_funcs->Draw_PicFromWad ("r_ammomulti");
+		sb_ammo[4] = r_funcs->draw.PicFromWad ("r_ammolava");
+		sb_ammo[5] = r_funcs->draw.PicFromWad ("r_ammoplasma");
+		sb_ammo[6] = r_funcs->draw.PicFromWad ("r_ammomulti");
 	}
 
 	for (int i = 0; i < 7; i++) {

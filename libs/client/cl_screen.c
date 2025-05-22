@@ -140,7 +140,7 @@ clscr_set_canvas_func (view_t view, canvas_func_f func)
 static void
 cl_draw_crosshair (view_pos_t abs, view_pos_t len, void *data)
 {
-	r_funcs->Draw_Crosshair ();
+	r_funcs->draw.Crosshair ();
 }
 
 static void
@@ -156,7 +156,7 @@ SCR_CShift (view_pos_t abs, view_pos_t len, void *data)
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (_vs, contents);
-	r_funcs->Draw_BlendScreen (_vs->cshift_color);
+	r_funcs->draw.BlendScreen (_vs->cshift_color);
 }
 
 static void
@@ -242,15 +242,15 @@ cl_create_views (void)
 	const char *name;
 	auto vid = r_data->vid;
 
-	pic = r_funcs->Draw_PicFromWad ("ram");
+	pic = r_funcs->draw.PicFromWad ("ram");
 	ram_view = clscr_view (32, 0, pic->width, pic->height, grav_northwest);
 	clscr_set_pic (ram_view, pic);
 
-	pic = r_funcs->Draw_PicFromWad ("turtle");
+	pic = r_funcs->draw.PicFromWad ("turtle");
 	turtle_view = clscr_view (32, 0, pic->width, pic->height, grav_northwest);
 	clscr_set_pic (turtle_view, pic);
 
-	pic = r_funcs->Draw_PicFromWad ("net");
+	pic = r_funcs->draw.PicFromWad ("net");
 	net_view = clscr_view (64, 0, pic->width, pic->height, grav_northwest);
 	clscr_set_pic (net_view, pic);
 
@@ -263,12 +263,12 @@ cl_create_views (void)
 	View_SetVisible (zgraph_view, r_zgraph);
 
 	name = "gfx/loading.lmp";
-	pic = r_funcs->Draw_CachePic (name, 1);
+	pic = r_funcs->draw.CachePic (name, 1);
 	loading_view = clscr_view (0, -24, pic->width, pic->height, grav_center);
 	clscr_set_cachepic (loading_view, name);
 
 	name = "gfx/pause.lmp";
-	pic = r_funcs->Draw_CachePic (name, 1);
+	pic = r_funcs->draw.CachePic (name, 1);
 	pause_view = clscr_view (0, -24, pic->width, pic->height, grav_center);
 	clscr_set_cachepic (pause_view, name);
 

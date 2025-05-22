@@ -143,7 +143,7 @@ Font_Load (QFile *font_file, int size)
 
 		copy_glyph (rect, slot, font);
 	}
-	font->fontid = r_funcs->Draw_AddFont (font);
+	font->fontid = r_funcs->draw.AddFont (font);
 
 	return font;
 }

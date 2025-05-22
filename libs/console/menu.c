@@ -304,7 +304,7 @@ bi_Menu_CenterPic (progs_t *pr, void *data)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
-	qpic_t     *qpic = r_funcs->Draw_CachePic (name, 1);
+	qpic_t     *qpic = r_funcs->draw.CachePic (name, 1);
 
 	if (!qpic)
 		return;
@@ -319,7 +319,7 @@ bi_Menu_CenterSubPic (progs_t *pr, void *data)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *name = P_GSTRING (pr, 2);
-	qpic_t     *qpic = r_funcs->Draw_CachePic (name, 1);
+	qpic_t     *qpic = r_funcs->draw.CachePic (name, 1);
 	int         srcx = P_INT (pr, 3);
 	int         srcy = P_INT (pr, 4);
 	int         width = P_INT (pr, 5);
@@ -726,7 +726,7 @@ Menu_Draw (view_t view)
 	y = abs.y;
 
 	if (menu->fadescreen)
-		r_funcs->Draw_FadeScreen ();
+		r_funcs->draw.FadeScreen ();
 
 	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time
 
@@ -748,19 +748,19 @@ Menu_Draw (view_t view)
 
 
 	for (m_pic = menu->pics; m_pic; m_pic = m_pic->next) {
-		qpic_t     *pic = r_funcs->Draw_CachePic (m_pic->name, 1);
+		qpic_t     *pic = r_funcs->draw.CachePic (m_pic->name, 1);
 		if (!pic)
 			continue;
 		if (m_pic->width > 0 && m_pic->height > 0)
-			r_funcs->Draw_SubPic (x + m_pic->x, y + m_pic->y, pic,
+			r_funcs->draw.SubPic (x + m_pic->x, y + m_pic->y, pic,
 						 m_pic->srcx, m_pic->srcy,
 						 m_pic->width, m_pic->height);
 		else
-			r_funcs->Draw_Pic (x + m_pic->x, y + m_pic->y, pic);
+			r_funcs->draw.Pic (x + m_pic->x, y + m_pic->y, pic);
 	}
 	for (i = 0; i < menu->num_items; i++) {
 		if (menu->items[i]->text) {
-			r_funcs->Draw_String (x + menu->items[i]->x + 8,
+			r_funcs->draw.String (x + menu->items[i]->x + 8,
 								  y + menu->items[i]->y,
 						 menu->items[i]->text);
 		}
@@ -778,7 +778,7 @@ Menu_Draw (view_t view)
 		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
 	} else {
-		r_funcs->Draw_Character (x + item->x, y + item->y,
+		r_funcs->draw.Character (x + item->x, y + item->y,
 								 12 + ((int) (*con_data.realtime * 4) & 1));
 	}
 }

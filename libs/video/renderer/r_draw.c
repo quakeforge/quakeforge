@@ -87,7 +87,7 @@ Draw_ScrollBuffer (draw_charbuffer_t *buffer, int lines)
 VISIBLE void
 Draw_CharBuffer (int x, int y, draw_charbuffer_t *buffer)
 {
-	r_funcs->Draw_CharBuffer (x, y, buffer);
+	r_funcs->draw.CharBuffer (x, y, buffer);
 }
 
 #define TAB 8
@@ -146,21 +146,21 @@ Draw_PrintBuffer (draw_charbuffer_t *buffer, const char *str)
 void
 Draw_SetScale (int scale)
 {
-	if (r_funcs->Draw_SetScale) {
-		r_funcs->Draw_SetScale (scale);
+	if (r_funcs->draw.SetScale) {
+		r_funcs->draw.SetScale (scale);
 	}
 }
 
 int
 Draw_MaxScale (void)
 {
-	return r_funcs->Draw_SetScale ? 20 : 1;
+	return r_funcs->draw.SetScale ? 20 : 1;
 }
 
 void
 Draw_Flush (void)
 {
-	if (r_funcs->Draw_Flush) {
-		r_funcs->Draw_Flush ();
+	if (r_funcs->draw.Flush) {
+		r_funcs->draw.Flush ();
 	}
 }

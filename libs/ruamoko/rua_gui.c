@@ -359,7 +359,7 @@ draw_glyphs (view_pos_t *abs, glyphset_t *glyphset, glyphref_t *gref)
 
 	while (count-- > 0) {
 		glyphobj_t *g = glyph++;
-		r_funcs->Draw_Glyph (abs->x + g->x, abs->y + g->y,
+		r_funcs->draw.Glyph (abs->x + g->x, abs->y + g->y,
 							 g->fontid, g->glyphid, 254);
 	}
 }
@@ -372,10 +372,10 @@ draw_box (view_pos_t *abs, view_pos_t *len, uint32_t ind, int c)
 	int y = abs[ind].y;
 	int w = len[ind].x;
 	int h = len[ind].y;
-	r_funcs->Draw_Line (x, y, x + w, y, c);
-	r_funcs->Draw_Line (x, y + h, x + w, y + h, c);
-	r_funcs->Draw_Line (x, y, x, y + h, c);
-	r_funcs->Draw_Line (x + w, y, x + w, y + h, c);
+	r_funcs->draw.Line (x, y, x + w, y, c);
+	r_funcs->draw.Line (x, y + h, x + w, y + h, c);
+	r_funcs->draw.Line (x, y, x, y + h, c);
+	r_funcs->draw.Line (x + w, y, x + w, y + h, c);
 }
 
 bi (Text_Draw)

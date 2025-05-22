@@ -87,9 +87,9 @@ bi_draw_free_qpic (qpic_res_t *qp)
 {
 	qfZoneScoped (true);
 	if (qp->cached)
-		r_funcs->Draw_UncachePic (qp->name);
+		r_funcs->draw.UncachePic (qp->name);
 	else
-		r_funcs->Draw_DestroyPic (qp->pic);
+		r_funcs->draw.DestroyPic (qp->pic);
 	if (qp->name)
 		free (qp->name);
 }
@@ -205,7 +205,7 @@ bi_Draw_MakePic (progs_t *pr, void *_res)
 	qpic_res_t *qp;
 	bi_qpic_t  *bq;
 
-	pic = r_funcs->Draw_MakePic (width, height, data);
+	pic = r_funcs->draw.MakePic (width, height, data);
 	qp = qpic_new (res);
 	qp->name = 0;
 	qp->pic = pic;
@@ -229,7 +229,7 @@ bi_Draw_CachePic (progs_t *pr, void *_res)
 	qpic_res_t *qp;
 	bi_qpic_t  *bq;
 
-	pic = r_funcs->Draw_CachePic (name, alpha);
+	pic = r_funcs->draw.CachePic (name, alpha);
 	qp = Hash_Find (res->pic_hash, name);
 	if (qp) {
 		RETURN_POINTER (pr, qp->bq);
@@ -259,7 +259,7 @@ bi_Draw_Pic (progs_t *pr, void *_res)
 	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
-	r_funcs->Draw_Pic (x, y, pic);
+	r_funcs->draw.Pic (x, y, pic);
 }
 
 static void
@@ -273,7 +273,7 @@ bi_Draw_Picf (progs_t *pr, void *_res)
 	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
-	r_funcs->Draw_Picf (x, y, pic);
+	r_funcs->draw.Picf (x, y, pic);
 }
 
 static void
@@ -291,7 +291,7 @@ bi_Draw_SubPic (progs_t *pr, void *_res)
 	int         width = P_INT (pr, 5);
 	int         height = P_INT (pr, 6);
 
-	r_funcs->Draw_SubPic (x, y, pic, srcx, srcy, width, height);
+	r_funcs->draw.SubPic (x, y, pic, srcx, srcy, width, height);
 }
 
 static void
@@ -305,7 +305,7 @@ bi_Draw_CenterPic (progs_t *pr, void *_res)
 	qpic_res_t *qp = get_qpic (pr, res, __FUNCTION__, bq->pic_handle);
 	qpic_t     *pic = qp->pic;
 
-	r_funcs->Draw_Pic (x - pic->width / 2, y, pic);
+	r_funcs->draw.Pic (x - pic->width / 2, y, pic);
 }
 
 static void
@@ -316,7 +316,7 @@ bi_Draw_Character (progs_t *pr, void *_res)
 	int         y = P_INT (pr, 1);
 	int         c = P_INT (pr, 2);
 
-	r_funcs->Draw_Character (x, y, c);
+	r_funcs->draw.Character (x, y, c);
 }
 
 static void
@@ -327,7 +327,7 @@ bi_Draw_String (progs_t *pr, void *_res)
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
 
-	r_funcs->Draw_String (x, y, text);
+	r_funcs->draw.String (x, y, text);
 }
 
 static void
@@ -339,7 +339,7 @@ bi_Draw_nString (progs_t *pr, void *_res)
 	const char *text = P_GSTRING (pr, 2);
 	int         n = P_INT (pr, 3);
 
-	r_funcs->Draw_nString (x, y, text, n);
+	r_funcs->draw.nString (x, y, text, n);
 }
 
 static void
@@ -350,7 +350,7 @@ bi_Draw_AltString (progs_t *pr, void *_res)
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
 
-	r_funcs->Draw_AltString (x, y, text);
+	r_funcs->draw.AltString (x, y, text);
 }
 
 /*
@@ -369,7 +369,7 @@ bi_Draw_Fill (progs_t *pr, void *_res)
 	int         h = P_INT (pr, 3);
 	int         color = P_INT (pr, 4);
 
-	r_funcs->Draw_Fill (x, y, w, h, color);
+	r_funcs->draw.Fill (x, y, w, h, color);
 }
 
 static void
@@ -382,7 +382,7 @@ bi_Draw_Line (progs_t *pr, void *_res)
 	int         y1 = P_INT (pr, 3);
 	int         color = P_INT (pr, 4);
 
-	r_funcs->Draw_Line (x0, y0, x1, y1, color);
+	r_funcs->draw.Line (x0, y0, x1, y1, color);
 }
 
 static void
@@ -393,7 +393,7 @@ bi_Draw_Crosshair (progs_t *pr, void *_res)
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
 
-	r_funcs->Draw_CrosshairAt (ch, x, y);
+	r_funcs->draw.CrosshairAt (ch, x, y);
 }
 
 static void

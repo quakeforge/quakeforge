@@ -117,7 +117,7 @@ CL_NetGraph (view_pos_t abs, view_pos_t len, void *data)
 	int         timings[NET_TIMINGS];
 
 	if (cl_netgraph_box) {
-		r_funcs->Draw_TextBox (abs.x, abs.y, NET_TIMINGS / 8,
+		r_funcs->draw.TextBox (abs.x, abs.y, NET_TIMINGS / 8,
 							   cl_netgraph_height / 8 + 1,
 							   cl_netgraph_alpha * 255);
 	}
@@ -145,7 +145,7 @@ CL_NetGraph (view_pos_t abs, view_pos_t len, void *data)
 
 	x = abs.x + 8;
 	y = abs.y + 8;
-	r_funcs->Draw_String (x, y, va ("%3i%% packet loss", lost));
+	r_funcs->draw.String (x, y, va ("%3i%% packet loss", lost));
 /*
 	//FIXME don't do every frame
 	view_move (cl_netgraph_view, cl_netgraph_view->xpos, hud_sb_lines);
