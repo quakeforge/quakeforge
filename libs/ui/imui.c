@@ -1352,7 +1352,6 @@ IMUI_Label (imui_ctx_t *ctx, const char *label)
 
 	auto state = imui_get_state (ctx, label, view.id);
 
-	set_fill (ctx, view, ctx->style.background.normal);
 	add_text (ctx, view, state, 0);
 	auto len = View_GetLen (view);
 	state->len = len;
