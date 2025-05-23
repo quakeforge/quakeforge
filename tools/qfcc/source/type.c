@@ -2328,6 +2328,9 @@ init_types (void)
 #define VEC_TYPE(type_name, base_type) \
 	build_vector_struct (&type_##type_name, true);
 #include "tools/qfcc/include/vec_types.h"
+	build_vector_struct (&type_bvec2, true);
+	build_vector_struct (&type_bvec3, true);
+	build_vector_struct (&type_bvec4, true);
 
 	chain_structural_types ();
 }
