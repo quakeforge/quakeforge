@@ -80,6 +80,14 @@ typedef struct uip_circle_s {
 	byte        col[4];
 } uip_circle_t;
 
+typedef struct uip_box_s {
+	uip_cmd_t   cmd;
+	float       c[2];
+	float       e[2];
+	float       r;
+	byte        col[4];
+} uip_box_t;
+
 typedef struct painterframe_s {
 	VkImage     cmd_heads_image;
 	VkImageView cmd_heads_view;
@@ -436,4 +444,22 @@ Vulkan_Painter_AddCircle (vec2f_t c, float r, const quat_t color,
 	QuatScale (color, 255, circle.col);
 	//FIXME use filled circle?
 	painter_add_command (c - r, c + r, &circle.cmd, sizeof (circle), pctx);
+}
+
+void
+Vulkan_Painter_AddBox (vec2f_t c, vec2f_t e, float r, const quat_t color,
+					   vulkan_ctx_t *ctx)
+{
+	auto pctx = ctx->painter_context;
+	uip_box_t box = {
+		.cmd = {
+			.cmd = 2,
+			.next = ~0u,
+		},
+		.c = { VEC2_EXP (c) },
+		.e = { VEC2_EXP (e) },
+		.r = r,
+	};
+	QuatScale (color, 255, box.col);
+	painter_add_command (c - e - r, c + e + r, &box.cmd, sizeof (box), pctx);
 }

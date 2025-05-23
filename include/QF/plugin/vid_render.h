@@ -120,6 +120,7 @@ typedef struct vid_draw_s {
 typedef struct vid_painter_s {
 	void (*AddLine) (vec2f_t p1, vec2f_t p2, float r, const quat_t color);
 	void (*AddCircle) (vec2f_t c, float r, const quat_t color);
+	void (*AddBox) (vec2f_t c, vec2f_t e, float r, const quat_t color);
 } vid_painter_t;
 
 typedef struct vid_render_funcs_s {

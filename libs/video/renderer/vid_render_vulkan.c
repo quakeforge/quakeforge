@@ -370,6 +370,12 @@ vulkan_Painter_AddCircle (vec2f_t c, float r, const quat_t color)
 }
 
 static void
+vulkan_Painter_AddBox (vec2f_t c, vec2f_t e, float r, const quat_t color)
+{
+	Vulkan_Painter_AddBox (c, e, r, color, vulkan_ctx);
+}
+
+static void
 vulkan_set_2d (int scaled)
 {
 	//FIXME this should not be done every frame
@@ -646,6 +652,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.painter = {
 		.AddLine           = vulkan_Painter_AddLine,
 		.AddCircle         = vulkan_Painter_AddCircle,
+		.AddBox            = vulkan_Painter_AddBox,
 	},
 
 	.ParticleSystem   = vulkan_ParticleSystem,

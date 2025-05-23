@@ -4,8 +4,10 @@
 #define GLSL(op) @intrinsic(OpExtInst,"GLSL.std.450",op)
 
 @generic(genFType = @vector(float)) {
+genFType abs(genFType x) = GLSL(FAbs);
 genFType min(genFType x, genFType y) = GLSL(FMin);
 genFType max(genFType x, genFType y) = GLSL(FMax);
+genFType max(genFType x, float y) = GLSL(FMax) [x, @construct (genFType, y)];
 float length(genFType x) = GLSL(Length);
 genFType lerp(genFType x, genFType y, genFType a) = GLSL(FMix);
 genFType lerp(genFType x, genFType y, float a)
@@ -120,6 +122,21 @@ draw_circle (uint ind, vec2 p, @inout vec4 color)
 	return color;
 }
 
+vec4//FIXME bug in qfcc
+draw_box (uint ind, vec2 p, @inout vec4 color)
+{
+	auto c = vec2 (asfloat (cmd_queue[ind + 0]),
+				   asfloat (cmd_queue[ind + 1]));
+	auto e = vec2 (asfloat (cmd_queue[ind + 2]),
+				   asfloat (cmd_queue[ind + 3]));
+	auto r = asfloat (cmd_queue[ind + 4]);
+	auto col = asrgba (cmd_queue[ind + 5]);
+	auto q = abs (p - c) - e;
+	float d = length (max (q, 0f)) + min (max (q.x, q.y), 0) - r;
+	color = lerp (color, col, clamp (1 - d, 0, 1));
+	return color;
+}
+
 [out(0)] vec4 frag_color;
 
 [shader("Fragment")]
@@ -141,6 +158,9 @@ main (void)
 			break;
 		case 1:
 			color = draw_circle (cmd_ind + 2, gl_FragCoord.xy, color);
+			break;
+		case 2:
+			color = draw_box (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		}
 		cmd_ind = next;

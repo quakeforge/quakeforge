@@ -37,6 +37,8 @@ void Vulkan_Painter_AddLine (vec2f_t p1, vec2f_t p2, float r,
 							 const quat_t color, vulkan_ctx_t *ctx);
 void Vulkan_Painter_AddCircle (vec2f_t c, float r, const quat_t color,
 							   vulkan_ctx_t *ctx);
+void Vulkan_Painter_AddBox (vec2f_t c, vec2f_t e, float r, const quat_t color,
+							vulkan_ctx_t *ctx);
 
 
 #endif//__QF_Vulkan_qf_painter_h

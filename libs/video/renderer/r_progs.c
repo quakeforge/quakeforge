@@ -519,6 +519,18 @@ bi(Painter_AddCircle)
 	}
 }
 
+bi(Painter_AddBox)
+{
+	qfZoneScoped (true);
+	if (r_funcs->painter.AddBox) {
+		auto c = P_var (pr, 0, vec2);
+		auto e = P_var (pr, 1, vec2);
+		auto r = P_FLOAT (pr, 2);
+		auto color = P_QUAT (pr, 3);
+		r_funcs->painter.AddBox (c, e, r, color);
+	}
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -594,7 +606,8 @@ static builtin_t builtins[] = {
 	bi(Draw_SetScale,   1, p(int)),
 
 	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),
-	bi(Painter_AddCircle, 4, p(vec2), p(float), p(vec4)),
+	bi(Painter_AddCircle, 3, p(vec2), p(float), p(vec4)),
+	bi(Painter_AddBox,    4, p(vec2), p(vec2), p(float), p(vec4)),
 
 	{0}
 };
