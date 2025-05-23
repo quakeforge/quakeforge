@@ -105,6 +105,7 @@ ivec2 IMUI_TextSize (imui_ctx_t ctx, string str);
 void IMUI_SetFill (imui_ctx_t ctx, uint color);
 void IMUI_Label (imui_ctx_t ctx, string label);
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...);
+void IMUI_IntLabel (imui_ctx_t ctx, int *istr, int len);
 void IMUI_Passage (imui_ctx_t ctx, string name, int passage);
 int IMUI_Button (imui_ctx_t ctx, string label);
 int IMUI_Checkbox (imui_ctx_t ctx, int *flag, string label);

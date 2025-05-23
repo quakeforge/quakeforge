@@ -555,6 +555,22 @@ bi (IMUI_Labelf)
 	IMUI_Label (bi_ctx->imui_ctx, res->dstr->str);
 }
 
+bi (IMUI_IntLabel)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	auto istr = (int *) P_GPOINTER (pr, 1);
+	int len = P_INT (pr, 2);
+	char buf[len + 1];
+	for (int i = 0; i < len; i++) {
+		buf[i] = istr[i];
+	}
+	istr[len] = 0;
+	dstring_clearstr (res->dstr);
+	IMUI_Label (bi_ctx->imui_ctx, buf);
+}
+
 bi (IMUI_Passage)
 {
 	qfZoneScoped (true);
@@ -802,7 +818,8 @@ static builtin_t builtins[] = {
 	bi(IMUI_TextSize,           2, p(int), p(string)),
 	bi(IMUI_SetFill,            2, p(int), p(uint)),
 	bi(IMUI_Label,              2, p(int), p(string)),
-	bi(IMUI_Labelf,             -3, p(int), p(string)),
+	bi(IMUI_Labelf,            -3, p(int), p(string)),
+	bi(IMUI_IntLabel,           3, p(int), p(ptr), p(int)),
 	bi(IMUI_Passage,            3, p(int), p(string), p(int)),
 	bi(IMUI_Button,             2, p(int), p(string)),
 	bi(IMUI_Checkbox,           3, p(int), p(ptr), p(string)),
