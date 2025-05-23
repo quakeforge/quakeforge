@@ -445,7 +445,7 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			ctx->mouse_released = (old ^ new) & ~new;
 			ctx->mouse_buttons = m->buttons;
 		}
-	} else {
+	} else if (ie_event->type == ie_key) {
 		auto k = &ie_event->key;
 		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
 		ctx->shift = k->shift;
