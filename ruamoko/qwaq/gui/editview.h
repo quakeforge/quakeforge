@@ -19,6 +19,9 @@ typedef struct imui_window_s imui_window_t;
 	string      filename;
 	string      filepath;
 
+	bvec2       override_scroll;
+	uvec2       size;
+	uvec2       cursor;
 	uvec2       base;			// top left corner (cell)
 	uint        base_index;		// top left corner
 	uint        line_index;		// current line

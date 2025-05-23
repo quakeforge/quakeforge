@@ -513,7 +513,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -moveBOT
 {
-	line_index = base_index = char_index = 0;;
+	line_index = base_index = char_index = 0;
 	cursor = nil;
 	base.x = 0;
 	[vScrollBar setIndex:0];
