@@ -15,9 +15,14 @@ typedef struct imui_window_s imui_window_t;
 	imui_ctx_t IMUI_context;
 
 	EditBuffer *buffer;
-	unsigned    line_count;
+	uint        line_count;
 	string      filename;
 	string      filepath;
+
+	uvec2       base;			// top left corner (cell)
+	uint        base_index;		// top left corner
+	uint        line_index;		// current line
+	uint        char_index;		// current character
 }
 +(EditView *) edit:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx;
 -draw;
