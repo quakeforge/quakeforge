@@ -429,7 +429,7 @@ build_surf_displist (const faceref_t *faceref, buildctx_t *build)
 			verts[i].tlst[3] = st[1];
 		} else {
 			// no lightmap for this surface (probably sky or water), so
-			// make the lightmap texture polygone degenerate
+			// make the lightmap texture polygon degenerate
 			verts[i].tlst[2] = 0;
 			verts[i].tlst[3] = 0;
 		}

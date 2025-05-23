@@ -38,7 +38,6 @@
 # include "strings.h"
 #endif
 
-#include "QF/cvar.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
