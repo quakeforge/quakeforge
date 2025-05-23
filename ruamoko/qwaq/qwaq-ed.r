@@ -10,6 +10,7 @@
 #include <scene.h>
 #include <input.h>
 
+#include "gui/editwindow.h"
 #include "gui/filewindow.h"
 #include "gui/listview.h"
 #include "armature.h"
@@ -654,6 +655,7 @@ main (int argc, string *argv)
 	auto main_window = [MainWindow window:imui_ctx];
 	[windows addObject:main_window];
 	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
+	[windows addObject:[EditWindow openFile:"gizmo.r" ctx:imui_ctx]];
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 

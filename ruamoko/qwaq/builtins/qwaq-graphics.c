@@ -39,6 +39,7 @@
 
 static progsinit_f main_app[] = {
 	BI_Graphics_Init,
+	QWAQ_EditBuffer_Init,
 	0
 };
 #if 0// FIXME no multi-thread support yet

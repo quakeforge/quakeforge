@@ -1,0 +1,26 @@
+#ifndef __qwaq_gui_editview_h
+#define __qwaq_gui_editview_h
+
+#include <Object.h>
+#include <dirent.h>
+
+#include "../editor/editbuffer.h"
+
+typedef @handle imui_ctx_h imui_ctx_t;
+typedef struct imui_window_s imui_window_t;
+
+@interface EditView : Object
+{
+	string name;
+	imui_ctx_t IMUI_context;
+
+	EditBuffer *buffer;
+	unsigned    line_count;
+	string      filename;
+	string      filepath;
+}
++(EditView *) edit:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx;
+-draw;
+@end
+
+#endif//__qwaq_gui_editview_h

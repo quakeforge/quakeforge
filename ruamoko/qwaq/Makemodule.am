@@ -10,7 +10,8 @@ noinst_PROGRAMS += @QWAQ_TARGETS@ \
 	ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
 libui=ruamoko/qwaq/libui.a
-noinst_LIBRARIES += $(libui)
+libedit=ruamoko/qwaq/libedit.a
+noinst_LIBRARIES += $(libui) $(libedit)
 
 ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/button.r	\
@@ -32,6 +33,14 @@ ruamoko_qwaq_libui_a_AR=$(PAK) -cf
 EXTRA_ruamoko_qwaq_libui_a_DEPENDENCIES=$(PAK)
 include $(ruamoko_qwaq_libui_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_libui_a_dep)
+
+ruamoko_qwaq_libedit_a_SOURCES= \
+	ruamoko/qwaq/editor/editbuffer.r
+ruamoko_qwaq_libedit_a_dep=$(call qcautodep,$(ruamoko_qwaq_libedit_a_SOURCES))
+ruamoko_qwaq_libedit_a_AR=$(PAK) -cf
+EXTRA_ruamoko_qwaq_libedit_a_DEPENDENCIES=$(PAK)
+include $(ruamoko_qwaq_libedit_a_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_libedit_a_dep)
 
 qwaq_app_dat_src= \
 	ruamoko/qwaq/qwaq-app.r	\
@@ -59,11 +68,12 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/debugger.r	\
 	ruamoko/qwaq/debugger/localsdata.r	\
 	ruamoko/qwaq/debugger/typeencodings.r	\
-	ruamoko/qwaq/editor/editbuffer.r	\
 	ruamoko/qwaq/editor/editor.r	\
 	ruamoko/qwaq/editor/status.r
 
 qwaq_ed_dat_src= \
+	ruamoko/qwaq/gui/editview.r \
+	ruamoko/qwaq/gui/editwindow.r \
 	ruamoko/qwaq/gui/filewindow.r \
 	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/armature.r \
@@ -132,6 +142,7 @@ qwaq_x11_libs= \
 	$(top_builddir)/libs/video/targets/libQFx11.la \
 	$(qwaq_client_libs)
 ruamoko_qwaq_qwaq_x11_SOURCES= \
+	ruamoko/qwaq/builtins/editbuffer.c \
 	ruamoko/qwaq/builtins/main.c \
 	ruamoko/qwaq/builtins/qwaq-graphics.c \
 	ruamoko/qwaq/builtins/graphics.c $(tracy_src) $(tracyvk_src)
@@ -145,16 +156,16 @@ ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lr
+ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libedit) $(libui) ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libedit) $(libui) -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
 
 ruamoko_qwaq_qwaq_ed_dat_SOURCES=$(qwaq_ed_dat_src)
 ruamoko_qwaq_qwaq_ed_obj=$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_ed_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_ed_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libui) -lcsqc -lr
+ruamoko/qwaq/qwaq-ed.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_ed_obj) $(QFCC_DEP) $(libedit) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_ed_obj) $(libedit) -lcsqc -lr
 include $(ruamoko_qwaq_qwaq_ed_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_ed_dep)
 
