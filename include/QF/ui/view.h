@@ -90,6 +90,7 @@ typedef struct viewcont_s {
 	unsigned free_y:1;			///< don't set position automatically
 	unsigned vertical:1;		///< true: layout is vertical, else horizontal
 	unsigned active:1;			///< can respond to the mouse
+	unsigned focus:1;			///< can respond to the keyboard
 	unsigned is_link:1;			///< has non-root reference component
 } viewcont_t;
 

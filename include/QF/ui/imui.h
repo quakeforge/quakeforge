@@ -134,7 +134,14 @@ typedef struct imui_io_s {
 	uint32_t    released;
 	uint32_t    hot;
 	uint32_t    active;
+	uint32_t    shift;
 } imui_io_t;
+
+typedef struct imui_key_s {
+	int32_t     code;
+	int32_t     unicode;
+	uint32_t    shift;
+} imui_key_t;
 
 imui_ctx_t *IMUI_NewContext (struct canvas_system_s canvas_sys,
 							 const char *font, float fontsize);
@@ -151,6 +158,7 @@ void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
 bool IMUI_ProcessEvent (imui_ctx_t *ctx, const struct IE_event_s *ie_event);
 imui_io_t IMUI_GetIO (imui_ctx_t *ctx) __attribute__((pure));
+bool IMUI_GetKey (imui_ctx_t *ctx, imui_key_t *key);
 void IMUI_BeginFrame (imui_ctx_t *ctx);
 void IMUI_Draw (imui_ctx_t *ctx);
 
@@ -169,6 +177,7 @@ int IMUI_UpdateHotActive (imui_ctx_t *ctx);
 
 view_pos_t IMUI_TextSize (imui_ctx_t *ctx, const char *str);
 
+void IMUI_SetFocus (imui_ctx_t *ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t *ctx, byte color);
 void IMUI_Label (imui_ctx_t *ctx, const char *label);
 void IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)__attribute__((format(PRINTF,2,3)));

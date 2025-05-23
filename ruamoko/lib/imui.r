@@ -30,6 +30,8 @@ void IMUI_State_SetLen (imui_ctx_t ctx, string state, ivec2 pos) = #0;
 ivec2 IMUI_State_GetPos (imui_ctx_t ctx, string state) = #0;
 ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state) = #0;
 
+bool IMUI_GetKey (imui_ctx_t ctx, imui_key_t *key) = #0;
+
 imui_ctx_t IMUI_NewContext (string font, float fontsize) = #0;
 void IMUI_DestroyContext (imui_ctx_t ctx) = #0;
 
@@ -54,6 +56,7 @@ int IMUI_UpdateHotActive (imui_ctx_t ctx) = #0;
 
 ivec2 IMUI_TextSize (imui_ctx_t ctx, string str) = #0;
 
+void IMUI_SetFocus (imui_ctx_t ctx, bool focus) = #0;
 void IMUI_SetFill (imui_ctx_t ctx, uint color) = #0;
 void IMUI_Label (imui_ctx_t ctx, string label) = #0;
 void IMUI_Labelf (imui_ctx_t ctx, string fmt, ...) = #0;

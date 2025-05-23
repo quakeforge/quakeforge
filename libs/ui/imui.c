@@ -112,6 +112,7 @@ struct imui_ctx_s {
 
 	uint32_t    hot;
 	uint32_t    active;
+	uint32_t    focused;
 	view_pos_t  hot_position;
 	view_pos_t  active_position;
 	view_pos_t  mouse_active;
@@ -120,8 +121,7 @@ struct imui_ctx_s {
 	uint32_t    mouse_buttons;
 	view_pos_t  mouse_position;
 	uint32_t    shift;
-	int         key_code;
-	int         unicode;
+	imui_key_t  key;
 
 	imui_style_t style;
 	struct DARRAY_TYPE(imui_style_t) style_stack;
@@ -282,6 +282,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.dstr = dstring_newstr (),
 		.hot = nullent,
 		.active = nullent,
+		.focused = nullent,
 		.mouse_position = {-1, -1},
 		.style_stack = DARRAY_STATIC_INIT (8),
 		.style = {
@@ -448,8 +449,11 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 		auto k = &ie_event->key;
 		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
 		ctx->shift = k->shift;
-		ctx->key_code = k->code;
-		ctx->unicode = k->unicode;
+		ctx->key = (imui_key_t) {
+			.code = k->code,
+			.unicode = k->unicode,
+			.shift = k->shift,
+		};
 	}
 	return ctx->hot != nullent || ctx->active != nullent;
 }
@@ -464,7 +468,22 @@ IMUI_GetIO (imui_ctx_t *ctx)
 		.released = ctx->mouse_released,
 		.hot = ctx->hot,
 		.active = ctx->active,
+		.shift = ctx->shift,
 	};
+}
+
+bool
+IMUI_GetKey (imui_ctx_t *ctx, imui_key_t *key)
+{
+	auto state = ctx->current_state;
+	if (ctx->focused == state->old_entity) {
+		*key = ctx->key;
+		ctx->key = (imui_key_t) { };
+		return true;
+	} else {
+		*key = (imui_key_t) { };
+		return false;
+	}
 }
 
 static void
@@ -526,6 +545,10 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 	auto reg = h->reg;
 	uint32_t e = h->ent[ind];
 	viewcont_t *cont = h->components[view_control];
+
+	if (cont[ind].focus) {
+		return CYN;
+	}
 
 	auto semantic = (imui_size_t) cont[ind].semantic_x;
 	if (for_y) {
@@ -984,10 +1007,16 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 			check_inside (ctx, sub_view);
 			continue;
 		}
-		if (cont[i].active && is_inside (mp, abs[i], len[i])) {
-			if (ctx->active == ent[i] || ctx->active == nullent) {
-				ctx->hot = ent[i];
-				ctx->hot_position = abs[i];
+		if ((cont[i].active | cont[i].focus)
+			&& is_inside (mp, abs[i], len[i])) {
+			if (cont[i].active) {
+				if (ctx->active == ent[i] || ctx->active == nullent) {
+					ctx->hot = ent[i];
+					ctx->hot_position = abs[i];
+				}
+			}
+			if (cont[i].focus) {
+				ctx->focused = ent[i];
 			}
 		}
 		if (ent[i] == ctx->active) {
@@ -1051,6 +1080,7 @@ IMUI_Draw (imui_ctx_t *ctx)
 		layout_objects (ctx, window);
 	}
 	ctx->hot = nullent;
+	ctx->focused = nullent;
 	check_inside (ctx, ctx->root_view);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
@@ -1295,6 +1325,15 @@ IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 	return Text_Size (ctx->font, str, strlen (str), nullptr, nullptr,
 					  ctx->shaper);
 
+}
+
+void
+IMUI_SetFocus (imui_ctx_t *ctx, bool focus)
+{
+	auto state = ctx->current_state;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	auto control = View_Control (view);
+	control->focus = focus;
 }
 
 void
