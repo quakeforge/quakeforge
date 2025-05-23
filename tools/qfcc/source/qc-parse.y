@@ -2719,7 +2719,7 @@ classdef
 	  methodprotolist[methods]	{ category_add_methods ($cat, $methods); }
 	  END						{ current_class = 0; }
 	| IMPLEMENTATION class_name[class]
-		{ class_begin (&$class->class_type); }
+		{ class_begin (&$class->class_type, ctx); }
 	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
 			current_symtab = pop_scope ($tab);
@@ -2727,9 +2727,9 @@ classdef
 			class_check_ivars ($class, $defs, ctx);
 		}
 	| IMPLEMENTATION class_name[class]
-		{ class_begin (&$class->class_type); }
+		{ class_begin (&$class->class_type, ctx); }
 	| IMPLEMENTATION class_with_super[class]
-		{ class_begin (&$class->class_type); }
+		{ class_begin (&$class->class_type, ctx); }
 	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
 			current_symtab = pop_scope ($tab);
@@ -2737,9 +2737,9 @@ classdef
 			class_check_ivars ($class, $defs, ctx);
 		}
 	| IMPLEMENTATION class_with_super[class]
-		{ class_begin (&$class->class_type); }
+		{ class_begin (&$class->class_type, ctx); }
 	| IMPLEMENTATION category_name[class]
-		{ class_begin (&$class->class_type); }
+		{ class_begin (&$class->class_type, ctx); }
 	| REFERENCE class_reference ';'		{ }
 	| REFERENCE category_reference ';'	{ }
 	;

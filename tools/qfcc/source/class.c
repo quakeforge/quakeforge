@@ -916,7 +916,7 @@ emit_ivars (symtab_t *ivars, const char *name)
 }
 
 static void
-begin_class (class_t *class)
+begin_class (class_t *class, rua_ctx_t *ctx)
 {
 	def_t      *meta_def;
 	pr_class_t *meta;
@@ -924,6 +924,11 @@ begin_class (class_t *class)
 	symbol_t   *sym;
 	def_t      *def;
 	defspace_t *space;
+
+	if (!class->ivars) {
+		warning (0, "cannot find interface delcaration for %s", class->name);
+		class_add_ivars (class, nullptr, ctx);
+	}
 
 	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
 					   &type_class, pr.far_data, sc_static);
@@ -967,7 +972,7 @@ begin_class (class_t *class)
 }
 
 void
-class_begin (class_type_t *class_type)
+class_begin (class_type_t *class_type, rua_ctx_t *ctx)
 {
 	if (current_class) {
 		warning (0, "‘@end’ missing in implementation context");
@@ -979,7 +984,7 @@ class_begin (class_type_t *class_type)
 			begin_category (class_type->c.category);
 			break;
 		case ct_class:
-			begin_class (class_type->c.class);
+			begin_class (class_type->c.class, ctx);
 			break;
 		case ct_protocol:
 			return;			// probably error recovery

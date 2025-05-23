@@ -139,7 +139,7 @@ void class_add_protocols (class_t *class, protocollist_t *protocols);
 struct symtab_s *class_new_ivars (class_t *class);
 void class_add_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx);
 void class_check_ivars (class_t *class, expr_t *ivar_decls, rua_ctx_t *ctx);
-void class_begin (class_type_t *class_type);
+void class_begin (class_type_t *class_type, rua_ctx_t *ctx);
 void class_finish (class_type_t *class_type);
 int class_access (class_type_t *current_class, class_t *class) __attribute__((pure));
 struct symbol_s *class_find_ivar (class_t *class, ex_vis_t vis,
