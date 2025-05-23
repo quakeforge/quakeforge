@@ -145,6 +145,7 @@ void IMUI_EndScroller (imui_ctx_t ctx);
 
 void IMUI_SetViewPos (imui_ctx_t ctx, ivec2 pos);
 void IMUI_SetViewLen (imui_ctx_t ctx, ivec2 len);
+void IMUI_SetViewFree (imui_ctx_t ctx, bvec2 free);
 
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = (begin); !_i_; _i_++, (end))

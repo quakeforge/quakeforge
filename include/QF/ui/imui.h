@@ -219,6 +219,7 @@ void IMUI_EndScroller (imui_ctx_t *ctx);
 
 void IMUI_SetViewPos (imui_ctx_t *ctx, view_pos_t pos);
 void IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len);
+void IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy);
 
 #define IMUI_DeferLoop(begin, end) \
 	for (int _i_ = (begin); !_i_; _i_++, (end))

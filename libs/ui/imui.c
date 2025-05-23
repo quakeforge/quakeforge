@@ -2186,3 +2186,13 @@ IMUI_SetViewLen (imui_ctx_t *ctx, view_pos_t len)
 	auto view = View_FromEntity (ctx->vsys, id);
 	View_SetLen (view, len.x, len.y);
 }
+
+void
+IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy)
+{
+	uint32_t id = ctx->current_state->entity;
+	auto view = View_FromEntity (ctx->vsys, id);
+	auto control = View_Control (view);
+	control->free_x = fx;
+	control->free_y = fy;
+}
