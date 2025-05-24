@@ -2726,7 +2726,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				ret_size = (st->c & 0x1f) + 1;	// up to 32 words
 				if ((pr_ushort_t) st->c != 0xffff) {
 					mm = pr_address_mode (pr, st, ((pr_ushort_t) st->c) >> 5);
-					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
+					if ((pr_int_t *) mm != &R_INT (pr)) {
+						memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
+					}
 				}
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
