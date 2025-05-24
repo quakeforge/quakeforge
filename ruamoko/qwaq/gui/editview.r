@@ -271,8 +271,13 @@ center (uint v, uint len)
 	if (cursor.x < 1) {
 		return self;
 	}
-	cursor.x--;
-	char_index = [buffer charPtr:line_index at:cursor.x];
+	if (true) {
+		char_index = [buffer prevChar:char_index];
+		cursor.x = [buffer charPos:line_index at:char_index];
+	} else {
+		cursor.x--;
+		char_index = [buffer charPtr:line_index at:cursor.x];
+	}
 
 	if (base.x > cursor.x) {
 		base.x = cursor.x;
@@ -287,8 +292,13 @@ center (uint v, uint len)
 	if (char_index == [buffer getEOL:line_index]) {
 		return self;
 	}
-	cursor.x++;
-	char_index = [buffer charPtr:line_index at:cursor.x];
+	if (true) {
+		char_index = [buffer nextChar:char_index];
+		cursor.x = [buffer charPos:line_index at:char_index];
+	} else {
+		cursor.x++;
+		char_index = [buffer charPtr:line_index at:cursor.x];
+	}
 	if (base.x + size.x - 1 < cursor.x) {
 		base.x = cursor.x - size.x + 1;
 		override_scroll.x = true;
@@ -330,6 +340,86 @@ center (uint v, uint len)
 	char_index = [buffer getEOL:line_index];
 	cursor.x = [buffer charPos:line_index at:char_index];
 	[self recenter:0];
+	return self;
+}
+
+-typeChar:(int)chr
+{
+	[self recenter:false];
+	if (false) {//typeover
+	} else {
+		[buffer insertChar:chr at:char_index];
+		char_index++;
+		if (chr == '\n') {
+			cursor.y++;
+			line_count++;
+			line_index = [buffer nextLine:line_index];
+		}
+		cursor.x = [buffer charPos:line_index at:char_index];
+	}
+	return self;
+}
+
+-deleteChar
+{
+	if (char_index >= [buffer getEOT]) {
+		return self;
+	}
+	uint lines = [buffer countLines:{char_index, 1}];
+	line_count -= lines;
+	override_scroll.y = lines;
+	[buffer deleteText:{char_index, 1}];
+	return self;
+}
+
+-backspace
+{
+	bool nodelete = false;
+	uint len = 1;
+	if (cursor.x > 0) {
+		uint lind = line_index;
+		uint ptr = [buffer nextNonSpace:lind];
+		if (ptr == char_index) {
+			uint x = cursor.x;
+			if (lind > 0) {
+				do {
+					lind = [buffer prevLine:lind];
+					ptr = [buffer nextNonSpace:lind];
+					x = [buffer charPos:lind at:ptr];
+				} while (lind > 0 && (ptr == [buffer getEOL:ptr]
+									  || cursor.x < x));
+			}
+			len = [buffer charPtr:line_index at:cursor.x];
+			if (cursor.x <= x) {
+				x = 0;
+			}
+			cursor.x = x;
+		} else {
+			cursor.x--;
+			len = char_index;
+		}
+		char_index = [buffer charPtr:line_index at:cursor.x];
+		len -= char_index;
+		// if char_index points at a new-line, then the cursor is beyond the
+		// end of the line thus there is nothing to delete
+		if (char_index >= [buffer getEOT]
+			|| [buffer getChar:char_index] == '\n') {
+			nodelete = true;
+		}
+	} else if (cursor.y > 0) {
+		cursor.y--;
+		line_index = [buffer prevLine:line_index];
+		char_index = [buffer getEOL:line_index];
+	} else {
+		return self;
+	}
+	cursor.x = [buffer charPos:line_index at:char_index];
+	if (!nodelete) {
+		uint lines = [buffer countLines:{char_index, len}];
+		line_count -= lines;
+		override_scroll.y = lines;
+		[buffer deleteText:{char_index, len}];
+	}
 	return self;
 }
 
@@ -392,6 +482,24 @@ center (uint v, uint len)
 			[self moveEOL];
 		}
 		break;
+	case QFK_BACKSPACE:
+		[self backspace];
+		break;
+	case QFK_DELETE:
+		[self deleteChar];
+		break;
+	case QFK_RETURN:
+		[self typeChar:'\n'];
+		break;
+	case QFK_TAB:
+		[self typeChar:'\t'];
+		break;
+	default:
+		if (!(key.shift & (ies_control | ies_alt))
+			&& key.unicode && key.unicode >= ' ') {
+			[self typeChar:key.unicode];
+		}
+		break;
 	}
 	return self;
 }
@@ -428,7 +536,7 @@ center (uint v, uint len)
 				highlight:{0,0} colors:{ 15, 0 }];
 		IMUI_IntLabel (IMUI_context, buf, width);
 	}
-	if (cursor.y >= base.y && cursor.y <= base.y + size.y) {
+	if (cursor.y >= base.y && cursor.y <= base.y + size.y + 1) {
 		UI_Layout(false) {
 			IMUI_Layout_SetXSize (IMUI_context, imui_size_none, 0);
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_none, 0);

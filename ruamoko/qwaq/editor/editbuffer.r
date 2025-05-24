@@ -42,6 +42,7 @@
 - (int) getChar: (unsigned) charPtr = #0;
 - (void) putChar: (int) char at:(unsigned) charPtr = #0;
 - (void) insertChar: (int) char at:(unsigned) charPtr = #0;
+- (void) deleteText: (eb_sel_t) selection = #0;
 
 - (unsigned) countLines: (eb_sel_t) selection = #0;
 - (eb_sel_t) search: (eb_sel_t) selection

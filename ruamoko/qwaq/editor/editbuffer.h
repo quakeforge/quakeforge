@@ -56,6 +56,7 @@ typedef struct eb_color_s {
 - (int) getChar: (unsigned) charPtr;
 - (void) putChar: (int) char at:(unsigned) charPtr;
 - (void) insertChar: (int) char at:(unsigned) charPtr;
+- (void) deleteText: (eb_sel_t) selection;
 
 - (unsigned) countLines: (eb_sel_t) selection;
 - (eb_sel_t) search: (eb_sel_t) selection

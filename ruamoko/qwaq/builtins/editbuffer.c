@@ -914,6 +914,20 @@ bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 }
 
 static void
+bi__i_EditBuffer__deleteText_ (progs_t *pr, void *_res)
+{
+	qwaq_ebresources_t *res = _res;
+	int  buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	auto buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	auto sel = &P_PACKED (pr, eb_sel_t, 2);
+
+	if (sel->start > buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	TextBuffer_DeleteAt (buffer->txtbuffer, sel->start, sel->length);
+}
+
+static void
 bi__i_EditBuffer__countLines_ (progs_t *pr, void *_res)
 {
 	qwaq_ebresources_t *res = _res;
@@ -1053,6 +1067,7 @@ static builtin_t builtins[] = {
 	bi(_i_EditBuffer__getChar_,       -1, 3, p(ptr), p(ptr), p(uint)),
 	bi(_i_EditBuffer__putChar_at_,    -1, 4, p(ptr), p(ptr), p(int), p(uint)),
 	bi(_i_EditBuffer__insertChar_at_, -1, 4, p(ptr), p(ptr), p(int), p(uint)),
+	bi(_i_EditBuffer__deleteText_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
 	bi(_i_EditBuffer__countLines_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
 	bi(_i_EditBuffer__search_for_direction_,	-1,
 						5, p(ptr), p(ptr), P(1, 2), p(string), p(int)),
