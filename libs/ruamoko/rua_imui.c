@@ -583,7 +583,7 @@ bi (IMUI_IntLabel)
 	for (int i = 0; i < len; i++) {
 		buf[i] = istr[i];
 	}
-	istr[len] = 0;
+	buf[len] = 0;
 	dstring_clearstr (res->dstr);
 	IMUI_Label (bi_ctx->imui_ctx, buf);
 }
