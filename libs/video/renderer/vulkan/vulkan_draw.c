@@ -1076,6 +1076,9 @@ draw_quads (qfv_taskctx_t *taskctx)
 	uint32_t    inst_start = 0;
 	for (size_t i = 0; i < dframe->clip_range.size; i++) {
 		auto cr = &dframe->clip_range.a[i];
+		QFV_duCmdBeginLabel (device, cmd,
+							 vac (ctx->va_ctx, "cliprange[%zd]", i),
+							 {0.2, 0.8, 0.3, 1});
 		dfunc->vkCmdSetScissor (cmd, 0, 1, &cr->clip);
 		for (uint32_t j = 0; j < cr->count; j++) {
 			int         fontid = dframe->quad_batch.a[cr->start + j].descid;
@@ -1095,6 +1098,7 @@ draw_quads (qfv_taskctx_t *taskctx)
 									 inst_start);
 			inst_start += inst_count;
 		}
+		QFV_duCmdEndLabel (device, cmd);
 	}
 	VkRect2D scissor = {
 		.extent = { .width = vid.width, .height = vid.height },
@@ -1284,8 +1288,11 @@ get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 	// gets initialized if it's not already (ie, if a is null) then the
 	// pointer is recalculated. Thus while not quite a false-positive, it's
 	// a non-issue
-	descbatch_t *batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
-	if (!frame->quad_batch.size || batch->descid != descid
+	auto cr = &frame->clip_range.a[frame->clip_range.size - 1];
+	bool force = !cr->count;
+	cr->count = 1;
+	auto batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
+	if (!frame->quad_batch.size || force || batch->descid != descid
 		|| ((batch->count & (0xffu << 24)) != (ind_count << 24))) {
 		DARRAY_APPEND(&frame->quad_batch, ((descbatch_t) { .descid = descid }));
 		batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
@@ -1900,6 +1907,8 @@ Vulkan_Draw_SetClip (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 	y *= ctx->twod_scale;
 	w *= ctx->twod_scale;
 	h *= ctx->twod_scale;
+	// A full-screen clip-range is pushed at the beginning of the frame, so
+	// clip_range.size is guaranteed to be > 0
 	auto cr = &dframe->clip_range.a[dframe->clip_range.size - 1];
 	if (x != cr->clip.offset.x || y != cr->clip.offset.y
 		|| (uint32_t) w != cr->clip.extent.width
