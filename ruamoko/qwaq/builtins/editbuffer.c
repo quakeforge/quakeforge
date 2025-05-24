@@ -380,7 +380,7 @@ countLines (txtbuffer_t *buffer, unsigned start, unsigned len)
 								len - (buffer->gapOffset - start));
 		}
 	} else {
-		return _countLines (buffer, start + buffer->gapOffset, len);
+		return _countLines (buffer, start + buffer->gapSize, len);
 	}
 }
 
