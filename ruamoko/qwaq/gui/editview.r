@@ -524,8 +524,9 @@ center (uint v, uint len)
 {
 	if (io.pressed & 1) {
 		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
-		ivec2 d = c / X_size;//FIXME bug in qfcc
-		[self jumpTo:d];
+		//ivec2 d = c / X_size;//FIXME bug in qfcc when X_size is uvec2
+		c /= X_size;
+		[self jumpTo:c];
 	}
 	return self;
 }
