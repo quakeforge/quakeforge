@@ -129,9 +129,11 @@ typedef struct imui_state_s {
 
 typedef struct imui_io_s {
 	view_pos_t  mouse;
+	view_pos_t  mouse_hot;
 	uint32_t    buttons;
 	uint32_t    pressed;
 	uint32_t    released;
+	uint32_t    self;
 	uint32_t    hot;
 	uint32_t    active;
 	uint32_t    shift;
@@ -177,6 +179,7 @@ int IMUI_UpdateHotActive (imui_ctx_t *ctx);
 
 view_pos_t IMUI_TextSize (imui_ctx_t *ctx, const char *str);
 
+void IMUI_SetActive (imui_ctx_t *ctx, bool active);
 void IMUI_SetFocus (imui_ctx_t *ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t *ctx, byte color);
 void IMUI_Label (imui_ctx_t *ctx, const char *label);

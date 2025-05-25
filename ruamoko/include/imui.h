@@ -45,6 +45,18 @@ typedef struct imui_reference_s {
 	unsigned    ref_id;
 } imui_reference_t;
 
+typedef struct imui_io_s {
+	ivec2       mouse;
+	ivec2       mouse_hot;
+	uint        buttons;
+	uint        pressed;
+	uint        released;
+	uint        self;
+	uint        hot;
+	uint        active;
+	uint        shift;
+} imui_io_t;
+
 typedef struct imui_key_s {
 	int         code;
 	int         unicode;
@@ -84,6 +96,7 @@ void IMUI_State_SetLen (imui_ctx_t ctx, string state, ivec2 pos);
 ivec2 IMUI_State_GetPos (imui_ctx_t ctx, string state);
 ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state);
 
+imui_io_t IMUI_GetIO (imui_ctx_t ctx);
 bool IMUI_GetKey (imui_ctx_t ctx, imui_key_t *key);
 
 imui_ctx_t IMUI_NewContext (string font, float fontsize);
@@ -110,6 +123,7 @@ int IMUI_UpdateHotActive (imui_ctx_t ctx);
 
 ivec2 IMUI_TextSize (imui_ctx_t ctx, string str);
 
+void IMUI_SetActive (imui_ctx_t ctx, bool active);
 void IMUI_SetFocus (imui_ctx_t ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t ctx, uint color);
 void IMUI_Label (imui_ctx_t ctx, string label);

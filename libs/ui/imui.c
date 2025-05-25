@@ -461,11 +461,14 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 imui_io_t
 IMUI_GetIO (imui_ctx_t *ctx)
 {
+	auto state = ctx->current_state;
 	return (imui_io_t) {
 		.mouse = ctx->mouse_position,
+		.mouse_hot = VP_sub (ctx->mouse_position, ctx->hot_position),
 		.buttons = ctx->mouse_buttons,
 		.pressed = ctx->mouse_pressed,
 		.released = ctx->mouse_released,
+		.self = state->entity,
 		.hot = ctx->hot,
 		.active = ctx->active,
 		.shift = ctx->shift,
@@ -546,10 +549,6 @@ view_color (hierarchy_t *h, uint32_t ind, imui_ctx_t *ctx, bool for_y)
 	uint32_t e = h->ent[ind];
 	viewcont_t *cont = h->components[view_control];
 
-	if (cont[ind].focus) {
-		return CYN;
-	}
-
 	auto semantic = (imui_size_t) cont[ind].semantic_x;
 	if (for_y) {
 		semantic = cont[ind].semantic_y;
@@ -582,7 +581,8 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 	view_move_f *move = h->components[view_onmove];
 	auto c = ((viewcont_t *)h->components[view_control])[ind];
 	uint32_t e = h->ent[ind];
-	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] %c%s%s %s%d %s%d"DFL,
+	printf ("%3d:%08x %*s[%s%d %s%d"DFL"] [%s%d %s%d"DFL"] "
+			"%c%s%s%s%s %s%d %s%d"DFL,
 			ind, e,
 			level * 3, "",
 			view_color (h, ind, ctx, false), abs[ind].x,
@@ -590,6 +590,8 @@ dump_tree (hierref_t href, int level, imui_ctx_t *ctx)
 			view_color (h, ind, ctx, false), len[ind].x,
 			view_color (h, ind, ctx, true),  len[ind].y,
 			c.vertical ? 'v' : 'h',
+			c.active ? ONG "a" DFL : "",
+			c.focus ? CYN "f" DFL : "",
 			resize[ind] ? "R" : "",
 			move[ind] ? "M" : "",
 			view_color (h, ind, ctx, false), c.semantic_x,
@@ -1022,6 +1024,9 @@ check_inside (imui_ctx_t *ctx, view_t root_view)
 		if (ent[i] == ctx->active) {
 			ctx->active_position = abs[i];
 		}
+		if (ent[i] == ctx->hot) {
+			ctx->hot_position = abs[i];
+		}
 	}
 	//printf ("check_inside: %8x %8x\n", ctx->hot, ctx->active);
 }
@@ -1325,6 +1330,15 @@ IMUI_TextSize (imui_ctx_t *ctx, const char *str)
 	return Text_Size (ctx->font, str, strlen (str), nullptr, nullptr,
 					  ctx->shaper);
 
+}
+
+void
+IMUI_SetActive (imui_ctx_t *ctx, bool active)
+{
+	auto state = ctx->current_state;
+	auto view = View_FromEntity (ctx->vsys, state->entity);
+	auto control = View_Control (view);
+	control->active = active;
 }
 
 void
