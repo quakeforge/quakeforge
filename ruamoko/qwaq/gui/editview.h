@@ -14,6 +14,9 @@ typedef struct imui_window_s imui_window_t;
 	string name;
 	imui_ctx_t IMUI_context;
 
+	uvec2       X_size;
+	ivec2       scroll_pos;
+
 	EditBuffer *buffer;
 	uint        line_count;
 	string      filename;

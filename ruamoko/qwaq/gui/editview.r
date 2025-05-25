@@ -423,6 +423,22 @@ center (uint v, uint len)
 	return self;
 }
 
+-jumpTo:(uvec2)pos
+{
+	if (pos.y > line_count) {
+		pos.y = line_count;
+	}
+	if (cursor.y < pos.y) {
+		line_index = [buffer nextLine:line_index :pos.y - cursor.y];
+	} else if (cursor.y > pos.y) {
+		line_index = [buffer prevLine:line_index :cursor.y - pos.y];
+	}
+	char_index = [buffer charPtr:line_index at:pos.x];
+	cursor = pos;
+	[self recenter:false];
+	return self;
+}
+
 -handleKey:(imui_key_t)key
 {
 	switch (key.code) {
@@ -504,49 +520,57 @@ center (uint v, uint len)
 	return self;
 }
 
+-handleMouse:(imui_io_t)io
+{
+	if (io.pressed & 1) {
+		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
+		ivec2 d = c / X_size;//FIXME bug in qfcc
+		[self jumpTo:d];
+	}
+	return self;
+}
+
 -draw_text:(ivec2)sblen
 {
-	//FIXME assumes fixed-width
-	ivec2 ts = IMUI_TextSize (IMUI_context, "X");
-
 	uint count = line_count + 1;
-	ivec2 pos = IMUI_State_GetPos (IMUI_context, nil);
+	ivec2 pos = scroll_pos;
 	if (override_scroll.x) {
-		pos.x = base.x * ts.x;
+		pos.x = base.x * X_size.x;
 	}
 	if (override_scroll.y) {
-		pos.y = base.y * ts.y;
+		pos.y = base.y * X_size.y;
 	}
 	IMUI_State_SetPos (IMUI_context, nil, pos);
 	override_scroll = nil;
 	ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
-	len.y = count * ts.y;
+	len.y = count * X_size.y;
 	IMUI_State_SetLen (IMUI_context, nil, len);
-	IMUI_SetViewPos (IMUI_context, { 0, -pos.y % ts.y });
+	IMUI_SetViewPos (IMUI_context, { 0, -pos.y % X_size.y });
 	len = sblen;
-	size = len / ts;
-	len.y = (len.y + ts.y - 1) / ts.y + 1;
+	size = len / X_size;
+	len.y = (len.y + X_size.y - 1) / X_size.y + 1;
 	//FIXME utf-8
-	int width = len.x / ts.x + 2;
-	[self scrollTo:pos.y / ts.y];
+	int width = len.x / X_size.x + 2;
+	[self scrollTo:pos.y / X_size.y];
 	uint lind = base_index;
 	for (uint i = base.y; len.y-- > 0 && i < count; i++) {
 		int buf[1024];
 		lind = [buffer formatLine:lind from:base.x into:buf width:width
 				highlight:{0,0} colors:{ 15, 0 }];
 		IMUI_IntLabel (IMUI_context, buf, width);
+		IMUI_SetActive (IMUI_context, false);
 	}
 	if (cursor.y >= base.y && cursor.y <= base.y + size.y + 1) {
 		UI_Layout(false) {
 			IMUI_Layout_SetXSize (IMUI_context, imui_size_none, 0);
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_none, 0);
-			ivec2 cpos = (cursor - base) * ts - ivec2(1,0);
+			ivec2 cpos = (cursor - base) * X_size - ivec2(1,0);
 			//FIXME with this call *before* IMUI_SetViewPos (use of cpos)
 			//qfcc ices
 			//printf ("%d,%d %d,%d %d,%d\n", cursor.x, cursor.y, base.x, base.y,
 			//		cpos.x, cpos.y);
 			IMUI_SetViewPos (IMUI_context, cpos);
-			IMUI_SetViewLen (IMUI_context, {3, ts.y});
+			IMUI_SetViewLen (IMUI_context, {3, X_size.y});
 			IMUI_SetViewFree (IMUI_context, {true, true});
 			IMUI_SetFill (IMUI_context, 0x0e);
 		}
@@ -556,14 +580,25 @@ center (uint v, uint len)
 
 -draw
 {
+	//FIXME assumes fixed-width
+	X_size = IMUI_TextSize (IMUI_context, "X");
+
 	UI_ScrollBox(name + "##EditView:scroller") {
+		IMUI_SetActive (IMUI_context, true);
 		IMUI_SetFocus (IMUI_context, true);
+		int mode = IMUI_UpdateHotActive (IMUI_context);
+		int but = IMUI_CheckButtonState (IMUI_context);
+		auto io = IMUI_GetIO (IMUI_context);
 		imui_key_t key = {};
 		if (IMUI_GetKey (IMUI_context, &key)) {
 			[self handleKey:key];
 		}
 		auto sblen = IMUI_State_GetLen (IMUI_context, nil);
 		UI_Scroller () {
+			scroll_pos = IMUI_State_GetPos (IMUI_context, nil);
+			if (io.active == io.self || io.hot == io.self) {
+				[self handleMouse:io];
+			}
 			[self draw_text:sblen];
 		}
 	}
