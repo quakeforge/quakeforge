@@ -185,7 +185,10 @@ float frametime;
 		if (IMUI_Window_IsCollapsed (window)) {
 			continue;
 		}
-		UI_Checkbox (&show_armature, "Show Armature");
+		UI_Horizontal {
+			UI_Checkbox (&show_armature, "Show Armature");
+			UI_FlexibleSpace ();
+		}
 		UI_Horizontal {
 			IMUI_Layout_SetYSize (IMUI_context, imui_size_expand, 100);
 			UI_SetFill (style.background.normal);
