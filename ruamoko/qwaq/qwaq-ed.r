@@ -527,7 +527,8 @@ event_hander (struct IE_event_s *event, void *data)
 					IN_GetDeviceName (event.device.devid));
 			break;
 		case ie_mouse:
-			if (!IMUI_ProcessEvent (imui_ctx, event)) {
+			if ((mouse_dragging_mmb | mouse_dragging_rmb)
+				|| !IMUI_ProcessEvent (imui_ctx, event)) {
 				return capture_mouse_event (event);
 			}
 			break;
