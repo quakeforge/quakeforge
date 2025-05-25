@@ -230,45 +230,33 @@ shaper_find_font (text_shaper_t *shaper, const font_t *font)
 	return nf.hb_font;
 }
 
-shaped_glyphs_t
-Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
-				  const char *text, size_t text_len)
+static shaped_glyphs_t
+shaper_shape_text (text_shaper_t *shaper, shaper_cache_t *search_cache)
 {
-	shaper_cache_t search_cache = {
-		.script = *control->script,
-		.features.size = control->features->size,
-		.features.a = control->features->a,
-		.font = control->font,
-		.text = (char *) text,
-		.text_len = text_len,
-	};
-	if (!control->features->size) {
-		search_cache.features.a = 0;
+	if (!search_cache->features.size) {
+		search_cache->features.a = 0;
 	}
-	shaper_cache_t *cache = Hash_FindElement (shaper->tab, &search_cache);
+	shaper_cache_t *cache = Hash_FindElement (shaper->tab, search_cache);
 	if (!cache) {
 		cache = shaper_cache_new (shaper);
-		cache->script = *control->script;
-		cache->features.size = control->features->size;
-		if (control->features->size) {
-			size_t feat_size = sizeof (hb_feature_t[control->features->size]);
+		*cache = *search_cache;
+		if (cache->features.size) {
+			auto features = &search_cache->features;
+			size_t feat_size = sizeof (hb_feature_t[features->size]);
 			cache->features.a = malloc (feat_size);
-			memcpy (cache->features.a, control->features->a, feat_size);
-		} else {
-			cache->features.a = 0;
+			memcpy (cache->features.a, features->a, feat_size);
 		}
-		cache->font = control->font;
-		cache->text_len = text_len;
 		cache->text = malloc (cache->text_len + 1);
-		strncpy (cache->text, text, text_len);
-		cache->text[text_len] = 0;
+		strncpy (cache->text, search_cache->text, cache->text_len);
+		cache->text[cache->text_len] = 0;
+
 		cache->buffer = hb_buffer_create ();
 		hb_buffer_allocation_successful (cache->buffer);
 
 		Hash_AddElement (shaper->tab, cache);
 
 		auto buffer = cache->buffer;
-		auto hb_font = shaper_find_font (shaper, control->font);
+		auto hb_font = shaper_find_font (shaper, cache->font);
 		auto direction = cache->script.direction;
 		auto script = cache->script.script;
 		auto language = cache->script.language;
@@ -277,7 +265,8 @@ Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
 		hb_buffer_set_direction (buffer, direction | HB_DIRECTION_LTR);
 		hb_buffer_set_script (buffer, script);
 		hb_buffer_set_language (buffer, language);
-		hb_buffer_add_utf8 (buffer, text, cache->text_len, 0, cache->text_len);
+		hb_buffer_add_utf8 (buffer, cache->text, cache->text_len,
+							0, cache->text_len);
 		hb_shape (hb_font, buffer, features->a, features->size);
 	} else {
 		// remove from the unused buffers list if there, else move to head
@@ -292,4 +281,19 @@ Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
 	};
 	glyphs.count = c;
 	return glyphs;
+}
+
+shaped_glyphs_t
+Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
+				  const char *text, size_t text_len)
+{
+	shaper_cache_t search_cache = {
+		.script = *control->script,
+		.features.size = control->features->size,
+		.features.a = control->features->a,
+		.font = control->font,
+		.text = (char *) text,
+		.text_len = text_len,
+	};
+	return shaper_shape_text (shaper, &search_cache);
 }
