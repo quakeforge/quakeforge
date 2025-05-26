@@ -126,6 +126,8 @@ struct imui_ctx_s {
 
 	imui_style_t style;
 	struct DARRAY_TYPE(imui_style_t) style_stack;
+	uint32_t    fg_palette[64];
+	uint32_t    bg_palette[64];
 };
 
 static void
@@ -304,6 +306,11 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 			},
 		},
 	};
+	for (int i = 0; i < 64; i++) {
+		uint32_t c = (i * 4 - 1) & 255;;
+		ctx->fg_palette[i] = c;
+		ctx->bg_palette[i] = (c & ~15) | (~c & 15);
+	}
 	// "allocate" window and state id 0 so 0 can be treated as invalid
 	ECS_NewId (&ctx->window_ids);
 	ECS_NewId (&ctx->state_ids);
@@ -1419,11 +1426,11 @@ IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
 		View_SetPos (text, tpos.x, tpos.y);
 		View_SetLen (view, tpos.x + tlen.x, tlen.y);
 
-		uint32_t color = attr[ind] & 077;
+		uint32_t color = ctx->fg_palette [attr[ind] & 077];
 		Ent_SetComponent (text.id, c_color, ctx->tsys.reg, &color);
 		//Ent_SetComponent (text.id, c_outline, ctx->tsys.reg, &color);
 		if (attr[ind] & 0100) {
-			set_fill (ctx, text, ctx->style.foreground.color[0]);
+			set_fill (ctx, text, ctx->bg_palette[0]);
 		}
 	}
 }
