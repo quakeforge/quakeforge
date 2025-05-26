@@ -595,13 +595,16 @@ bi (IMUI_IntLabel)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto istr = (int *) P_GPOINTER (pr, 1);
 	int len = P_INT (pr, 2);
-	char buf[len + 1];
+	uint32_t text[len + 1];
+	uint32_t attr[len + 1];
 	for (int i = 0; i < len; i++) {
-		buf[i] = istr[i];
+		//unicode is expected to never go beyond 0x10ffff
+		text[i] = istr[i] & 0x1fffff;
+		attr[i] = istr[i] >> 25;
 	}
-	buf[len] = 0;
-	dstring_clearstr (res->dstr);
-	IMUI_Label (bi_ctx->imui_ctx, buf);
+	text[len] = 0;
+	attr[len] = 0;
+	IMUI_Label32Attr (bi_ctx->imui_ctx, text, attr, len);
 }
 
 bi (IMUI_Passage)
