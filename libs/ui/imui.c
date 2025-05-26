@@ -307,7 +307,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		},
 	};
 	for (int i = 0; i < 64; i++) {
-		uint32_t c = (i * 4 - 1) & 255;;
+		uint32_t c = i < 32 ? i : 192 + i;
 		ctx->fg_palette[i] = c;
 		ctx->bg_palette[i] = (c & ~15) | (~c & 15);
 	}
