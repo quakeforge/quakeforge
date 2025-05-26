@@ -63,6 +63,7 @@
 #define c_color (ctx->tsys.text_base + text_color)
 #define c_fill  (ctx->csys.base + canvas_fill)
 #define c_updateonce  (ctx->csys.base + canvas_updateonce)
+#define c_outline  (ctx->csys.base + canvas_outline)
 
 #define imui_draw_group ((1 << 30) - 1)
 #define imui_draw_order(x) ((x) << 16)
@@ -1231,15 +1232,10 @@ check_drag_delta (imui_ctx_t *ctx, uint32_t entity)
 	return delta;
 }
 
-static view_t
-add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
+static void
+setup_text (imui_ctx_t *ctx, view_t text)
 {
-	auto     reg = ctx->csys.reg;
-
-	auto text = Text_StringView (ctx->tsys, view, ctx->font,
-								 state->label, state->label_len, 0, 0,
-								 ctx->shaper);
-
+	auto reg = ctx->csys.reg;
 	int ascender = ctx->font->face->size->metrics.ascender / 64;
 	int descender = ctx->font->face->size->metrics.descender / 64;
 	auto len = View_GetLen (text);
@@ -1257,8 +1253,17 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 	View_SetVisible (text, 1);
 	Ent_SetComponent (text.id, c_glyphs, reg,
 					  Ent_GetComponent (text.id, t_passage_glyphs, reg));
+}
 
-	len = View_GetLen (text);
+static view_t
+add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
+{
+	auto text = Text_StringView (ctx->tsys, view, ctx->font,
+								 state->label, state->label_len, 0, 0,
+								 ctx->shaper);
+	setup_text (ctx, text);
+
+	auto len = View_GetLen (text);
 	View_SetLen (view, len.x, len.y);
 
 	uint32_t color = ctx->style.text.color[mode];
@@ -1379,6 +1384,48 @@ IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)
 	dvsprintf (ctx->dstr, fmt, args);
 	va_end (args);
 	IMUI_Label (ctx, ctx->dstr->str);
+}
+
+void
+IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str, const uint32_t *attr,
+				  uint32_t len)
+{
+	uint32_t num_counts = 0;
+	uint32_t counts[len + 1];
+	counts[0] = 0;
+	for (uint32_t i = 0, a = ~attr[0]; i < len; i++) {
+		if (a == attr[i]) {
+			counts[num_counts - 1]++;
+		} else {
+			counts[num_counts++] = 1;
+			a = attr[i];
+		}
+	}
+
+	auto view = View_New (ctx->vsys, ctx->current_parent);
+	set_control (ctx, view, false);
+
+	for (uint32_t i = 0, ind = 0; i < num_counts; ind += counts[i++]) {
+		auto text = Text_String32View (ctx->tsys, view, ctx->font,
+									   &str[ind], counts[i], 0, 0,
+									   ctx->shaper);
+
+		setup_text (ctx, text);
+
+		auto tpos = View_GetPos (text);
+		auto tlen = View_GetLen (text);
+		auto vlen = View_GetLen (view);
+		tpos.x = vlen.x;
+		View_SetPos (text, tpos.x, tpos.y);
+		View_SetLen (view, tpos.x + tlen.x, tlen.y);
+
+		uint32_t color = attr[ind] & 077;
+		Ent_SetComponent (text.id, c_color, ctx->tsys.reg, &color);
+		//Ent_SetComponent (text.id, c_outline, ctx->tsys.reg, &color);
+		if (attr[ind] & 0100) {
+			set_fill (ctx, text, ctx->style.foreground.color[0]);
+		}
+	}
 }
 
 void

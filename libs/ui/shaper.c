@@ -54,6 +54,7 @@ typedef struct shaper_cache_s {
 	featureset_t features;
 	const font_t *font;
 	char       *text;
+	uint32_t   *text32;
 	size_t      text_len;
 	hb_buffer_t *buffer;
 } shaper_cache_t;
@@ -83,7 +84,13 @@ shaper_get_hash (const void *obj, void *data)
 		features = Hash_Buffer (f->a, sizeof (hb_feature_t[f->size]));
 	}
 	uintptr_t font = cache->font->fontid;
-	uintptr_t text = Hash_nString (cache->text, cache->text_len);
+	uintptr_t text;
+	if (cache->text) {
+		text = Hash_nString (cache->text, cache->text_len);
+	} else {
+		size_t size = sizeof (uint32_t[cache->text_len]);
+		text = Hash_Buffer (cache->text32, size);
+	}
 	return script + features + font + text;
 }
 
@@ -106,8 +113,21 @@ shaper_compare (const void *a, const void *b, void *data)
 	if (memcmp (&cachea->script, &cacheb->script, sizeof (cachea->script))) {
 		return 0;
 	}
-	return (cachea->text_len == cacheb->text_len
-			&& !strncmp (cachea->text, cacheb->text, cachea->text_len));
+	if (cachea->text_len != cacheb->text_len) {
+		return 0;
+	}
+	if (cachea->text && !cacheb->text) {
+		return 0;
+	}
+	if (!cachea->text && cacheb->text) {
+		return 0;
+	}
+	if (cachea->text) {
+		return !strncmp (cachea->text, cacheb->text, cachea->text_len);
+	} else {
+		size_t size = sizeof (uint32_t[cachea->text_len]);
+		return !memcmp (cachea->text32, cacheb->text32, size);
+	}
 }
 
 static void
@@ -246,9 +266,17 @@ shaper_shape_text (text_shaper_t *shaper, shaper_cache_t *search_cache)
 			cache->features.a = malloc (feat_size);
 			memcpy (cache->features.a, features->a, feat_size);
 		}
-		cache->text = malloc (cache->text_len + 1);
-		strncpy (cache->text, search_cache->text, cache->text_len);
-		cache->text[cache->text_len] = 0;
+		if (cache->text) {
+			size_t size = sizeof (char[cache->text_len + 1]);
+			cache->text = malloc (size);
+			strncpy (cache->text, search_cache->text, size);
+			cache->text[cache->text_len] = 0;
+		} else {
+			size_t size = sizeof (uint32_t[cache->text_len + 1]);
+			cache->text32 = malloc (size);
+			memcpy (cache->text32, search_cache->text32, size);
+			cache->text32[cache->text_len] = 0;
+		}
 
 		cache->buffer = hb_buffer_create ();
 		hb_buffer_allocation_successful (cache->buffer);
@@ -265,8 +293,13 @@ shaper_shape_text (text_shaper_t *shaper, shaper_cache_t *search_cache)
 		hb_buffer_set_direction (buffer, direction | HB_DIRECTION_LTR);
 		hb_buffer_set_script (buffer, script);
 		hb_buffer_set_language (buffer, language);
-		hb_buffer_add_utf8 (buffer, cache->text, cache->text_len,
-							0, cache->text_len);
+		if (cache->text) {
+			hb_buffer_add_utf8 (buffer, cache->text, cache->text_len,
+								0, cache->text_len);
+		} else {
+			hb_buffer_add_utf32 (buffer, cache->text32, cache->text_len,
+								 0, cache->text_len);
+		}
 		hb_shape (hb_font, buffer, features->a, features->size);
 	} else {
 		// remove from the unused buffers list if there, else move to head
@@ -293,6 +326,21 @@ Shaper_ShapeText (text_shaper_t *shaper, const shaping_t *control,
 		.features.a = control->features->a,
 		.font = control->font,
 		.text = (char *) text,
+		.text_len = text_len,
+	};
+	return shaper_shape_text (shaper, &search_cache);
+}
+
+shaped_glyphs_t
+Shaper_ShapeText32 (text_shaper_t *shaper, const shaping_t *control,
+				    const uint32_t *text, size_t text_len)
+{
+	shaper_cache_t search_cache = {
+		.script = *control->script,
+		.features.size = control->features->size,
+		.features.a = control->features->a,
+		.font = control->font,
+		.text32 = (uint32_t *) text,
 		.text_len = text_len,
 	};
 	return shaper_shape_text (shaper, &search_cache);

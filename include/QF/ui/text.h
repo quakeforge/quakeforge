@@ -122,6 +122,11 @@ struct view_s Text_StringView (text_system_t textsys, struct view_s parent,
 							   const char *str, uint32_t len,
 							   script_component_t *sc, featureset_t *fs,
 							   struct text_shaper_s *shaper);
+struct view_s Text_String32View (text_system_t textsys, struct view_s parent,
+								 struct font_s *font,
+								 const uint32_t *str, uint32_t len,
+								 script_component_t *sc, featureset_t *fs,
+								 struct text_shaper_s *shaper);
 struct view_pos_s Text_Size (struct font_s *font,
 							 const char *str, uint32_t len,
 							 script_component_t *sc, featureset_t *fs,

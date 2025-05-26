@@ -184,6 +184,8 @@ void IMUI_SetFocus (imui_ctx_t *ctx, bool focus);
 void IMUI_SetFill (imui_ctx_t *ctx, byte color);
 void IMUI_Label (imui_ctx_t *ctx, const char *label);
 void IMUI_Labelf (imui_ctx_t *ctx, const char *fmt, ...)__attribute__((format(PRINTF,2,3)));
+void IMUI_Label32Attr (imui_ctx_t *ctx, const uint32_t *str,
+					   const uint32_t *attr, uint32_t len);
 void IMUI_Passage (imui_ctx_t *ctx, const char *name,
 				   struct passage_s *passage);
 bool IMUI_Button (imui_ctx_t *ctx, const char *label);

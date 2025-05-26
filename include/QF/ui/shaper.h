@@ -54,5 +54,8 @@ void Shaper_FlushUnused (text_shaper_t *shaper);
 shaped_glyphs_t Shaper_ShapeText (text_shaper_t *shaper,
 								  const shaping_t *control,
 								  const char *text, size_t text_len);
+shaped_glyphs_t Shaper_ShapeText32 (text_shaper_t *shaper,
+									const shaping_t *control,
+									const uint32_t *text, size_t text_len);
 
 #endif//__QF_ui_shaper_h
