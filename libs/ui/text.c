@@ -163,7 +163,7 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		int         xm = xp + font->glyph_rects[glyphid].width;
 		int         ym = yp - font->glyph_rects[glyphid].height;
 
-		if (xm - xp == 0) {
+		if (xm < xa) {
 			xm = xa;
 		}
 		if (ym - yp == 0) {
