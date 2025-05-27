@@ -144,7 +144,7 @@ static view_resize_f text_flow_funcs[] = {
 	[text_up_left]      = text_flow_horizontal,
 };
 
-static void
+static view_pos_t
 layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 			   const hb_glyph_info_t *glyphInfo,
 			   const hb_glyph_position_t *glyphPos)
@@ -163,7 +163,7 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		int         xm = xp + font->glyph_rects[glyphid].width;
 		int         ym = yp - font->glyph_rects[glyphid].height;
 
-		if (xm < xa) {
+		if (xm - xp == 0) {
 			xm = xa;
 		}
 		if (ym - yp == 0) {
@@ -183,6 +183,7 @@ layout_glyphs (glyphnode_t *node, font_t *font, unsigned glpyhCount,
 		x += xa;
 		y += ya;
 	}
+	return (view_pos_t) { .x = x, .y = y };
 }
 
 static void
@@ -397,12 +398,13 @@ Text_Size (struct font_s *font, const char *str, uint32_t len,
 		.maxs = { INT32_MIN, INT32_MIN },
 	};
 	glyph_count += c;
-	layout_glyphs (*head, font, c, glyphInfo, glyphPos);
-
-	view_pos_t size = {
-		.x = (*head)->maxs[0] - (*head)->mins[0],
-		.y = (*head)->maxs[1] - (*head)->mins[1],
-	};
+	auto size = layout_glyphs (*head, font, c, glyphInfo, glyphPos);
+	if (!size.x) {
+		size.x = (*head)->maxs[0] - (*head)->mins[0];
+	}
+	if (!size.y) {
+		size.y = (*head)->maxs[1] - (*head)->mins[1];
+	}
 	if (!string_vertical) {
 		int ascender = font->face->size->metrics.ascender / 64;
 		int descender = font->face->size->metrics.descender / 64;
