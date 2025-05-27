@@ -559,7 +559,7 @@ center (uint v, uint len)
 	for (uint i = base.y; len.y-- > 0 && i < count; i++) {
 		int buf[1024];
 		lind = [buffer formatLine:lind from:base.x into:buf width:width
-				highlight:{0,0} colors:{ 61 << 25, 0 }];
+				highlight:{0,0} colors:{ 61 << 21, 0 }];
 		IMUI_IntLabel (IMUI_context, buf, width);
 		IMUI_SetActive (IMUI_context, false);
 	}
