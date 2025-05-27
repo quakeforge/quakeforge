@@ -31,10 +31,11 @@
 # include "config.h"
 #endif
 
-#include <ctype.h>
+#include <wctype.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/msg.h"
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/quakeio.h"
@@ -45,6 +46,11 @@
 #include "ruamoko/qwaq/editor/editbuffer.h"
 
 #define always_inline inline __attribute__((__always_inline__))
+
+typedef struct unipair_s {
+	int         unicode;	// value read
+	int         count;		// number of bytes read
+} unipair_t;
 
 typedef struct editbuffer_s {
 	struct editbuffer_s *next;
@@ -113,9 +119,9 @@ get_editbuffer (qwaq_ebresources_t *res, const char *name, int handle)
 }
 
 static always_inline int
-isword (unsigned char c)
+isword (int c)
 {
-	return c >= 128 || c == '_' || isalnum(c);
+	return c >= 128 || c == '_' || iswalnum(c);
 }
 
 static always_inline unsigned
@@ -124,17 +130,40 @@ spanGap (txtbuffer_t *buffer, unsigned ptr)
 	return ptr < buffer->gapOffset ? ptr : ptr + buffer->gapSize;
 }
 
-static always_inline char
-getChar (txtbuffer_t *buffer, unsigned ptr)
+static always_inline byte
+getCharRaw (txtbuffer_t *buffer, unsigned ptr)
 {
 	return buffer->text[spanGap (buffer, ptr)];
+}
+
+static always_inline unipair_t
+getChar (txtbuffer_t *buffer, unsigned ptr)
+{
+	char *ch = &buffer->text[spanGap (buffer, ptr)];
+	if (!(*ch & 0x80)) {
+		return (unipair_t) {*ch, 1};
+	}
+	//NOTE: if the multi-byte char spans the gap, this will break, but it is
+	//assumed that such will never happen
+	sizebuf_t utf8_sz = {
+		.data = (byte *) ch,
+		.cursize = buffer->textSize - ptr,
+	};
+	qmsg_t utf8_msg = {
+		.message = &utf8_sz,
+	};
+	int val = MSG_ReadUTF8 (&utf8_msg);
+	return utf8_msg.badread ? (unipair_t) {*ch, 1}
+							: (unipair_t) {val, utf8_msg.readcount};
 }
 
 static always_inline unsigned
 nextChar (txtbuffer_t *buffer, unsigned ptr)
 {
-	if (ptr < buffer->textSize && getChar (buffer, ptr) != '\n') {
-		return ptr + 1;
+	unipair_t up;
+	if (ptr < buffer->textSize
+		&& (up = getChar (buffer, ptr)).unicode != '\n') {
+		return ptr + up.count;
 	}
 	return ptr;
 }
@@ -142,7 +171,13 @@ nextChar (txtbuffer_t *buffer, unsigned ptr)
 static always_inline unsigned
 prevChar (txtbuffer_t *buffer, unsigned ptr)
 {
-	if (ptr > 0 && getChar (buffer, ptr - 1) != '\n') {
+	byte c;
+	while (ptr > 0
+		   && ((c = getCharRaw (buffer, ptr - 1)) & 0xc0) == 0x80
+		   && c != '\n') {
+		ptr--;
+	}
+	if (ptr > 0 && getCharRaw (buffer, ptr - 1) != '\n') {
 		return ptr - 1;
 	}
 	return ptr;
@@ -152,11 +187,11 @@ static always_inline unsigned __attribute__((pure))
 nextNonSpace (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr < buffer->textSize) {
-		char    c = getChar (buffer, ptr);
-		if (!isspace (c) || c == '\n') {
+		auto up = getChar (buffer, ptr);
+		if (!iswspace (up.unicode) || up.unicode == '\n') {
 			break;
 		}
-		ptr++;
+		ptr += up.count;
 	}
 	return ptr;
 }
@@ -165,11 +200,12 @@ static always_inline unsigned
 prevNonSpace (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr > 0) {
-		char    c = getChar (buffer, ptr - 1);
-		if (!isspace (c) || c == '\n') {
+		unsigned prev = prevChar (buffer, ptr);
+		auto up = getChar (buffer, prev);
+		if (!iswspace (up.unicode) || up.unicode == '\n') {
 			break;
 		}
-		ptr--;
+		ptr = prev;
 	}
 	return ptr;
 }
@@ -179,21 +215,21 @@ nextWord (txtbuffer_t *buffer, unsigned ptr)
 {
 	if (buffer->textSize && ptr < buffer->textSize - 1) {
 		while (ptr < buffer->textSize) {
-			char        c = getChar (buffer, ptr);
-			if (!isword (c)) {
+			auto up = getChar (buffer, ptr);
+			if (!isword (up.unicode)) {
 				break;
 			}
-			ptr++;
+			ptr += up.count;
 		}
 		while (ptr < buffer->textSize) {
-			char        c = getChar (buffer, ptr);
-			if (c == '\n') {
+			auto up = getChar (buffer, ptr);
+			if (up.unicode == '\n') {
 				return ptr;
 			}
-			if (isword (c)) {
+			if (isword (up.unicode)) {
 				break;
 			}
-			ptr++;
+			ptr += up.count;
 		}
 	}
 	return ptr;
@@ -204,24 +240,26 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 {
 	if (ptr > 0) {
 		while (ptr > 0) {
-			char        c = getChar (buffer, ptr - 1);
-			if (c == '\n') {
+			unsigned prev = prevChar (buffer, ptr);
+			auto up = getChar (buffer, prev);
+			if (up.unicode == '\n') {
 				return ptr;
 			}
-			if (isword (c)) {
+			if (isword (up.unicode)) {
 				break;
 			}
-			ptr--;
+			ptr = prev;
 		}
 		while (ptr > 0) {
-			char        c = getChar (buffer, ptr - 1);
-			if (c == '\n') {
+			unsigned prev = prevChar (buffer, ptr);
+			auto up = getChar (buffer, prev);
+			if (up.unicode == '\n') {
 				return ptr;
 			}
-			if (!isword (c)) {
+			if (!isword (up.unicode)) {
 				break;
 			}
-			ptr--;
+			ptr = prev;
 		}
 	}
 	return ptr;
@@ -231,10 +269,10 @@ static always_inline unsigned __attribute__((pure))
 nextLine (txtbuffer_t *buffer, unsigned ptr)
 {
 	unsigned    oldptr = ptr;
-	while (ptr < buffer->textSize && getChar (buffer, ptr++) != '\n') {
+	while (ptr < buffer->textSize && getChar (buffer, ptr++).unicode != '\n') {
 	}
 	if (ptr == buffer->textSize && ptr > 0
-		&& getChar (buffer, ptr - 1) != '\n') {
+		&& getChar (buffer, ptr - 1).unicode != '\n') {
 		return oldptr;
 	}
 	return ptr;
@@ -245,7 +283,7 @@ prevLine (txtbuffer_t *buffer, unsigned ptr)
 {
 	if (ptr) {
 		ptr--;
-		while (ptr > 0 && getChar (buffer, ptr - 1) != '\n') {
+		while (ptr > 0 && getCharRaw (buffer, ptr - 1) != '\n') {
 			ptr--;
 		}
 	}
@@ -258,11 +296,12 @@ charPos (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 	unsigned    pos = 0;
 
 	while (ptr < target) {
-		if (getChar (buffer, ptr) == '\t') {
+		auto up = getChar (buffer, ptr);
+		if (up.unicode == '\t') {
 			pos += tabSize - (pos % tabSize) - 1;	// -1 for ++
 		}
 		pos++;
-		ptr++;
+		ptr += up.count;
 	}
 	return pos;
 }
@@ -272,12 +311,13 @@ charPtr (txtbuffer_t *buffer, unsigned ptr, unsigned target, int tabSize)
 {
 	unsigned    pos = 0;
 	while (pos < target && ptr < buffer->textSize
-		   && getChar (buffer, ptr) != '\n') {
-		if (getChar (buffer, ptr) == '\t') {
+		   && getChar (buffer, ptr).unicode != '\n') {
+		auto up = getChar (buffer, ptr);
+		if (up.unicode == '\t') {
 			pos += tabSize - (pos % tabSize) - 1;	// -1 for ++
 		}
 		pos++;
-		ptr++;
+		ptr += up.count;
 	}
 	if (pos > target) {
 		ptr--;
@@ -289,11 +329,11 @@ static always_inline unsigned __attribute__((pure))
 getEOW (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr < buffer->textSize) {
-		char        c = getChar (buffer, ptr);
-		if (!isword (c)) {
+		auto up = getChar (buffer, ptr);
+		if (!isword (up.unicode)) {
 			break;
 		}
-		ptr++;
+		ptr += up.count;
 	}
 	return ptr;
 }
@@ -302,11 +342,12 @@ static always_inline unsigned
 getBOW (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr > 0) {
-		char        c = getChar (buffer, ptr - 1);
-		if (!isword (c)) {
+		unsigned prev = prevChar (buffer, ptr);
+		auto up = getChar (buffer, prev);
+		if (!isword (up.unicode)) {
 			break;
 		}
-		ptr--;
+		ptr = prev;
 	}
 	return ptr;
 }
@@ -315,11 +356,11 @@ static always_inline unsigned __attribute__((pure))
 getEOL (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr < buffer->textSize) {
-		char        c = getChar (buffer, ptr);
-		if (c == '\n') {
+		auto up = getChar (buffer, ptr);
+		if (up.unicode == '\n') {
 			break;
 		}
-		ptr++;
+		ptr += up.count;
 	}
 	return ptr;
 }
@@ -347,7 +388,7 @@ static always_inline unsigned
 getBOL (txtbuffer_t *buffer, unsigned ptr)
 {
 	while (ptr > 0) {
-		char        c = getChar (buffer, ptr - 1);
+		char        c = getCharRaw (buffer, ptr - 1);
 		if (c == '\n') {
 			break;
 		}
@@ -520,21 +561,21 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	int         coln = (colors->normal & ~0xff);
 	int         cols = (colors->selected & ~0xff);
 	int         col;
-	byte        c = 0;
+	int         c = 0;
 	int         count;
 	int        *startdst = dst;
 	int         startlen = length;
 
 	while (pos < xpos && ptr < buffer->textSize) {
-		c = getChar (buffer, ptr);
-		if (c == '\n') {
+		auto up = getChar (buffer, ptr);
+		if (up.unicode == '\n') {
 			break;
 		}
-		if (c == '\t') {
+		if (up.unicode == '\t') {
 			pos += tabSize - (pos % tabSize) - 1;	// -1 for ++
 		}
 		pos++;
-		ptr++;
+		ptr += up.count;
 	}
 	col = ptr >= sels && ptr < sele ? cols : coln;
 	while (xpos < pos && length > 0) {
@@ -544,7 +585,9 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	}
 	while (length > 0 && ptr < buffer->textSize) {
 		col = ptr >= sels && ptr < sele ? cols : coln;
-		c = getChar (buffer, ptr++);
+		auto up = getChar (buffer, ptr);
+		ptr += up.count;
+		c = up.unicode;
 		if (c == '\n') {
 			break;
 		}
@@ -560,7 +603,9 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 		}
 	}
 	while (c != '\n' && ptr < buffer->textSize) {
-		c = getChar (buffer, ptr++);
+		auto up = getChar (buffer, ptr);
+		ptr += up.count;
+		c = up.unicode;
 	}
 	while (length-- > 0) {
 		*dst++ = col | ' ';
@@ -675,7 +720,7 @@ bi__i_EditBuffer__isWord_ (progs_t *pr, void *_res)
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 	unsigned    ptr = P_UINT (pr, 2);
 
-	R_INT (pr) = isword (getChar (buffer->txtbuffer, ptr));
+	R_INT (pr) = isword (getChar (buffer->txtbuffer, ptr).unicode);
 }
 
 static void
@@ -735,7 +780,7 @@ bi__i_EditBuffer__nextLine__ (progs_t *pr, void *_res)
 		unsigned    oldptr = ptr;
 		ptr = nextLine (buffer->txtbuffer, ptr);
 		if (ptr == buffer->txtbuffer->textSize && ptr > 0
-			&& getChar (buffer->txtbuffer, ptr - 1) != '\n') {
+			&& getChar (buffer->txtbuffer, ptr - 1).unicode != '\n') {
 			ptr = oldptr;
 			break;
 		}
@@ -880,7 +925,7 @@ bi__i_EditBuffer__getChar_ (progs_t *pr, void *_res)
 	if (ptr >= buffer->txtbuffer->textSize) {
 		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
 	}
-	R_INT (pr) = (byte) getChar (buffer->txtbuffer, ptr);
+	R_INT (pr) = getChar (buffer->txtbuffer, ptr).unicode;
 }
 
 static void
