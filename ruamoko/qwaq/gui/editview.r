@@ -349,11 +349,13 @@ center (uint v, uint len)
 	if (false) {//typeover
 	} else {
 		[buffer insertChar:chr at:char_index];
-		char_index++;
 		if (chr == '\n') {
 			cursor.y++;
 			line_count++;
 			line_index = [buffer nextLine:line_index];
+			char_index = line_index;
+		} else {
+			char_index = [buffer nextChar:char_index];
 		}
 		cursor.x = [buffer charPos:line_index at:char_index];
 	}
