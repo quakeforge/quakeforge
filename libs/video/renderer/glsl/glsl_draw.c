@@ -91,8 +91,18 @@ typedef struct glslbatch_s {
 typedef struct glbatchset_s
     DARRAY_TYPE (glslbatch_t) glslbatchset_t;
 
+typedef struct glsldrawclip_s {
+	uint32_t    start;
+	uint32_t    count;	// number of batches in glslbatchset
+	int         x, y, w, h;
+} glsldrawclip_t;
+
+typedef struct glsldrawclipset_t
+    DARRAY_TYPE (glsldrawclip_t) glsldrawclipset_t;
+
 static glslfontset_t glsl_fonts = DARRAY_STATIC_INIT (16);
 
+static glsldrawclipset_t glsl_clip_range = DARRAY_STATIC_INIT (16);
 static glslbatchset_t glsl_batches = DARRAY_STATIC_INIT (16);
 static dstring_t *glsl_queue;
 
@@ -239,8 +249,11 @@ pic_data (const char *name, int w, int h, const byte *data)
 static void
 queue_verts (int shader, GLenum mode, GLuint texid, uint32_t count)
 {
+	auto cr = &glsl_clip_range.a[glsl_clip_range.size - 1];
+	bool force = !cr->count;
+	cr->count = 1;
 	auto batch = &glsl_batches.a[glsl_batches.size - 1];
-	if (!glsl_batches.size
+	if (!glsl_batches.size || force
 		|| batch->shader != shader
 		|| batch->mode != mode
 		|| batch->texid != texid) {
@@ -539,6 +552,7 @@ glsl_Draw_Shutdown (void)
 	GLSL_DestroyScrap (draw_scrap);
 	DARRAY_CLEAR (&glsl_fonts);
 	DARRAY_CLEAR (&glsl_batches);
+	DARRAY_CLEAR (&glsl_clip_range);
 }
 
 static inline void
@@ -604,34 +618,43 @@ flush_2d (void)
 	GLuint vertex_location = 0;
 	GLuint color_location = 0;
 
-	for (size_t i = 0; i < glsl_batches.size; i++) {
-		auto batch = &glsl_batches.a[i];
-		if (shader != batch->shader) {
-			if (batch->shader == quake_2d.program) {
-				bind_quake_2d (batch->texid);
-				vertex_location = quake_2d.vertex.location;
-				color_location = quake_2d.color.location;
-			} else {
-				bind_alpha_2d (batch->texid);
-				vertex_location = alpha_2d.vertex.location;
-				color_location = alpha_2d.color.location;
+	auto cr = &glsl_clip_range.a[glsl_clip_range.size - 1];
+	cr->count = glsl_batches.size - cr->start;
+
+	for (size_t i = 0; i < glsl_clip_range.size; i++) {
+		auto cr = &glsl_clip_range.a[i];
+		qfeglScissor (cr->x, cr->y, cr->w, cr->h);
+		for (uint32_t j = 0; j < cr->count; j++) {
+			auto batch = &glsl_batches.a[cr->start + j];
+			if (shader != batch->shader) {
+				if (batch->shader == quake_2d.program) {
+					bind_quake_2d (batch->texid);
+					vertex_location = quake_2d.vertex.location;
+					color_location = quake_2d.color.location;
+				} else {
+					bind_alpha_2d (batch->texid);
+					vertex_location = alpha_2d.vertex.location;
+					color_location = alpha_2d.color.location;
+				}
+				shader = batch->shader;
 			}
-			shader = batch->shader;
-			texid = batch->texid;
-		} else if (texid != batch->texid) {
-			qfeglBindTexture (GL_TEXTURE_2D, batch->texid);
-			texid = batch->texid;
+			if (texid != batch->texid) {
+				texid = batch->texid;
+				qfeglBindTexture (GL_TEXTURE_2D, batch->texid);
+			}
+
+			auto vdata = glsl_queue->str + batch->start;
+			auto cdata = glsl_queue->str + batch->start + 16;
+			qfeglVertexAttribPointer (vertex_location, 4, GL_FLOAT, 0, 32, vdata);
+			qfeglVertexAttribPointer (color_location, 4, GL_FLOAT, 0, 32, cdata);
+
+			qfeglDrawArrays (batch->mode, 0, batch->count);
 		}
-
-		auto vdata = glsl_queue->str + batch->start;
-		auto cdata = glsl_queue->str + batch->start + 16;
-		qfeglVertexAttribPointer (vertex_location, 4, GL_FLOAT, 0, 32, vdata);
-		qfeglVertexAttribPointer (color_location, 4, GL_FLOAT, 0, 32, cdata);
-
-		qfeglDrawArrays (batch->mode, 0, batch->count);
 	}
 	glsl_queue->size = 0;
 	DARRAY_RESIZE (&glsl_batches, 0);
+
+	qfeglScissor (0, 0, vid.width, vid.height);
 
 	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -969,6 +992,7 @@ set_2d (int width, int height)
 	qfeglViewport (0, 0, vid.width, vid.height);
 
 	qfeglDisable (GL_DEPTH_TEST);
+	qfeglEnable (GL_SCISSOR_TEST);
 	qfeglDisable (GL_CULL_FACE);
 
 	ortho_mat (proj_matrix, 0, width, height, 0, -99999, 99999);
@@ -977,6 +1001,11 @@ set_2d (int width, int height)
 void
 GLSL_Set2D (void)
 {
+	//FIXME this is brittle as it requires unscaled 2d to be set first
+	DARRAY_RESIZE (&glsl_clip_range, 0);
+	DARRAY_APPEND (&glsl_clip_range, ((glsldrawclip_t) {
+		.x = 0, .y = 0, .w = vid.width, .h = vid.height,
+	}));
     set_2d (vid.width, vid.height);
 }
 
@@ -995,6 +1024,7 @@ glsl_Draw_SetScale (int scale)
 void
 GLSL_End2D (void)
 {
+	qfeglDisable (GL_SCISSOR_TEST);
 	qfeglDisableVertexAttribArray (quake_2d.vertex.location);
 	qfeglDisableVertexAttribArray (quake_2d.color.location);
 }
@@ -1114,6 +1144,28 @@ glsl_Draw_Glyph (int x, int y, int fontid, int glyphid, int c)
 void
 glsl_Draw_SetClip (int x, int y, int w, int h)
 {
+	if (x < 0) {
+		w += x;
+		x = 0;
+	}
+	if (y < 0) {
+		h += y;
+		y = 0;
+	}
+	x *= glsl_2d_scale;
+	y *= glsl_2d_scale;
+	w *= glsl_2d_scale;
+	h *= glsl_2d_scale;
+	// A full-screen clip-range is pushed at the beginning of the frame, so
+	// clip_range.size is guaranteed to be > 0
+	auto cr = &glsl_clip_range.a[glsl_clip_range.size - 1];
+	if (x != cr->x || y != cr->y || w != cr->w || h != cr->h) {
+		cr->count = glsl_batches.size - cr->start;
+		DARRAY_APPEND (&glsl_clip_range, ((glsldrawclip_t) {
+			.start = glsl_batches.size,
+			.x = x, .y = vid.height - y - h, .w = w, .h = h,
+		}));
+	}
 }
 
 void
