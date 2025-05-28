@@ -19,4 +19,12 @@ typedef struct _qfslist_t *QFSlist;
 @extern void  QFS_FilelistFree (QFSlist list);
 @extern string QFS_GetDirectory (void);
 
+string QFS_FileBase (string path);
+string QFS_FileExtension (string path);
+string QFS_DefaultExtension (string path, string ext);
+string QFS_SetExtension (string path, string ext);
+string QFS_StripExtension (string path);
+string QFS_CompressPath (string path);
+string QFS_SkipPath (string path);
+
 #endif//__ruamoko_qfs_h

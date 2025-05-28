@@ -36,6 +36,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/va.h"
@@ -59,6 +60,7 @@ check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
 		PR_RunError (pr, "%s: bad buffer", name);
 }
 
+#define bi(x) static void bi_##x (progs_t *pr, void *_res)
 
 static void
 bi_QFS_Open (progs_t *pr, void *data)
@@ -197,6 +199,64 @@ bi_QFS_GetDirectory (progs_t *pr, void *data)
 	RETURN_STRING (pr, qfs_gamedir->dir.def);
 }
 
+bi (QFS_FileBase)
+{
+	qfZoneScoped (true);
+	char *base = QFS_FileBase (P_GSTRING (pr, 0));
+	RETURN_STRING (pr, base);
+	free (base);
+}
+
+bi (QFS_FileExtension)
+{
+	qfZoneScoped (true);
+	RETURN_STRING (pr, QFS_FileExtension (P_GSTRING (pr, 0)));
+}
+
+bi (QFS_DefaultExtension)
+{
+	qfZoneScoped (true);
+	dstring_t *dstr = dstring_new ();
+	dstring_copystr (dstr, P_GSTRING (pr, 0));
+	QFS_DefaultExtension (dstr, P_GSTRING (pr, 1));
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
+bi (QFS_SetExtension)
+{
+	qfZoneScoped (true);
+	dstring_t *dstr = dstring_new ();
+	dstring_copystr (dstr, P_GSTRING (pr, 0));
+	QFS_SetExtension (dstr, P_GSTRING (pr, 1));
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
+bi (QFS_StripExtension)
+{
+	const char *path = P_GSTRING (pr, 0);
+	char stripped[strlen (path) + 1];
+	strcpy (stripped, path);
+	QFS_StripExtension (path, stripped);
+	RETURN_STRING (pr, stripped);
+}
+
+bi (QFS_CompressPath)
+{
+	qfZoneScoped (true);
+	char *path = QFS_CompressPath (P_GSTRING (pr, 0));
+	RETURN_STRING (pr, path);
+	free (path);
+}
+
+bi (QFS_SkipPath)
+{
+	qfZoneScoped (true);
+	RETURN_STRING (pr, QFS_SkipPath (P_GSTRING (pr, 0)));
+}
+
+#undef bi
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -209,6 +269,14 @@ static builtin_t builtins[] = {
 	bi(QFS_Filelist,     3, p(string), p(string), p(int)),
 	bi(QFS_FilelistFree, 1, p(ptr)),
 	bi(QFS_GetDirectory, 0),
+
+	bi(QFS_FileBase,         1, p(string)),
+	bi(QFS_FileExtension,    1, p(string)),
+	bi(QFS_DefaultExtension, 2, p(string), p(string)),
+	bi(QFS_SetExtension,     2, p(string), p(string)),
+	bi(QFS_StripExtension,   1, p(string)),
+	bi(QFS_CompressPath,     1, p(string)),
+	bi(QFS_SkipPath,         1, p(string)),
 	{0}
 };
 
