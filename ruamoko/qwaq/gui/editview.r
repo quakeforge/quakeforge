@@ -370,7 +370,14 @@ center (uint v, uint len)
 	uint lines = [buffer countLines:{char_index, 1}];
 	line_count -= lines;
 	override_scroll.y = lines;
-	[buffer deleteText:{char_index, 1}];
+	//FIXME this prevents breaking a utf-8 encoded char by deleting its first
+	//byte, but it would be better to more effectively hide such details
+	uint next = [buffer nextChar:char_index];
+	uint count = next - char_index;
+	if (count < 1) {
+		count = 1;
+	}
+	[buffer deleteText:{char_index, count}];
 	return self;
 }
 
