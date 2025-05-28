@@ -105,6 +105,7 @@ void printf(string, ...);
 	[items retain];
 	[self.items release];
 	self.items = items;
+	selected_item = -1;
 
 	[items makeObjectsPerformSelector:@selector(setOwner:) withObject:self];
 	return self;

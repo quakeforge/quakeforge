@@ -35,6 +35,7 @@ typedef struct imui_window_s imui_window_t;
 	string fileSpec;
 	string filePath;
 	bool forSave;
+	FileItem *accepted_item;
 
 	Array *items;
 	ListView *listView;

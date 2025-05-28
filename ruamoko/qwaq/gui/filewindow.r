@@ -154,17 +154,28 @@ int file_item_cmp (void *a, void *b)
 			[listView draw];
 		}
 	}
+	if (accepted_item) {
+		if ([accepted_item isdir]) {
+			string path = filePath + "/" + [accepted_item name];
+			str_free (filePath);
+			filePath = str_hold (path);
+			[self readdir];
+		} else {
+			printf ("item accepted:%s\n", [accepted_item name]);
+		}
+		accepted_item = nil;
+	}
 	return self;
 }
 
 -(void)itemSelected:(int)item
 {
-	printf ("item selected:%s\n", [[items objectAtIndex:item] name]);
+	//printf ("item selected:%s\n", [[items objectAtIndex:item] name]);
 }
 
 -(void)itemAccepted:(int)item
 {
-	printf ("item accepted:%s\n", [[items objectAtIndex:item] name]);
+	accepted_item = [items objectAtIndex:item];
 }
 
 @end
