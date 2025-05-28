@@ -110,6 +110,12 @@ void printf(string, ...);
 	return self;
 }
 
+-setTarget:(id<ListView>) target
+{
+	self.target = target;
+	return self;
+}
+
 -(void)dealloc
 {
 	str_free (name);
@@ -145,14 +151,14 @@ void printf(string, ...);
 -itemClicked:(ListItem *)item
 {
 	if (selected_item >= 0 && [items objectAtIndex:selected_item] == item) {
-		printf ("item accepted:%s\n", [item name]);
+		[target itemAccepted:selected_item];
 	} else {
 		if (selected_item >= 0) {
 			[[items objectAtIndex:selected_item] select:false];
 		}
 		[item select:true];
 		selected_item = [items indexOfObject:item];
-		printf ("item selected:%d:%s\n", selected_item, [item name]);
+		[target itemSelected:selected_item];
 	}
 	return self;
 }

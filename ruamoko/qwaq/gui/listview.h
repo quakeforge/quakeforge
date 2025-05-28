@@ -25,6 +25,11 @@ typedef struct imui_window_s imui_window_t;
 -(string)name;
 @end
 
+@protocol ListView
+-(void)itemSelected:(int)item;
+-(void)itemAccepted:(int)item;
+@end
+
 @interface ListView : Object
 {
 	Array *items;
@@ -32,9 +37,11 @@ typedef struct imui_window_s imui_window_t;
 
 	imui_ctx_t IMUI_context;
 	int    selected_item;
+	id<ListView> target;
 }
 +(ListView *) list:(string)name ctx:(imui_ctx_t)ctx;
 -setItems:(Array *)items;
+-setTarget:(id<ListView>) target;
 -draw;
 -itemClicked:(ListItem *) item;
 -(int)selected;

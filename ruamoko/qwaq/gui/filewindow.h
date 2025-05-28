@@ -30,7 +30,7 @@ typedef struct imui_window_s imui_window_t;
 -sort_file_items;
 @end
 
-@interface FileWindow : Object
+@interface FileWindow : Object <ListView>
 {
 	string fileSpec;
 	string filePath;

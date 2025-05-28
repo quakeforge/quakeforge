@@ -113,6 +113,7 @@ int file_item_cmp (void *a, void *b)
 
 	items = [[Array array] retain];
 	listView = [[ListView list:"FileWindow:files" ctx:ctx] retain];
+	[listView setTarget:self];
 
 	[self readdir];
 
@@ -154,6 +155,16 @@ int file_item_cmp (void *a, void *b)
 		}
 	}
 	return self;
+}
+
+-(void)itemSelected:(int)item
+{
+	printf ("item selected:%s\n", [[items objectAtIndex:item] name]);
+}
+
+-(void)itemAccepted:(int)item
+{
+	printf ("item accepted:%s\n", [[items objectAtIndex:item] name]);
 }
 
 @end
