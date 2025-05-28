@@ -16,11 +16,12 @@ void printf(string, ...);
 		return nil;
 	}
 	IMUI_context = ctx;
-
-	editView = [[EditView edit:"EditWindow" file:filePath ctx:ctx] retain];
-
 	window_name = str_hold (filePath + "##EditWindow");
 	window = IMUI_NewWindow (window_name);
+
+	string evname = sprintf ("EditView:%0x8", window);
+	editView = [[EditView edit:evname file:filePath ctx:ctx] retain];
+
 	IMUI_Window_SetSize (window, {400, 300});
 	return self;
 }
