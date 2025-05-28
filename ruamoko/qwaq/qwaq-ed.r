@@ -614,7 +614,9 @@ main (int argc, string *argv)
 	setup_bindings ();
 
 	//Draw_SetScale (1);
-	imui_ctx = IMUI_NewContext ("Consolas", 22);
+	//FIXME need a way to specify font sets (and use them!) because finding
+	//nice fonts with all the desired symbols can be quite a chore.
+	imui_ctx = IMUI_NewContext ("FreeMono", 22);
 
 	refresh_2d (draw_2d);
 	setevents (event_hander, nil);
