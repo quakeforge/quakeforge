@@ -76,7 +76,9 @@ imui_style_t current_style = {
 double realtime = double (1ul<<32);
 float frametime;
 
-@interface MainWindow : Object
+Array *windows;
+
+@interface MainWindow : Object <FileWindow>
 {
 	Array *clips;
 	ListView *clipsView;
@@ -169,6 +171,14 @@ float frametime;
 	[clipsView release];
 	[clips release];
 	[super dealloc];
+}
+
+-(void)openFile:(string)path forSave:(bool)forSave
+{
+	if (forSave) {
+	} else {
+		[windows addObject:[EditWindow openFile:path ctx:imui_ctx]];
+	}
 }
 
 -draw
@@ -467,8 +477,6 @@ color_window (void)
 	}
 }
 
-Array *windows;
-
 void
 draw_2d (void)
 {
@@ -659,9 +667,10 @@ main (int argc, string *argv)
 	windows = [[Array array] retain];
 
 	auto main_window = [MainWindow window:imui_ctx];
+	auto file_window = [FileWindow openFile:"*.r" at:"." ctx:imui_ctx];
+	[file_window setTarget:main_window];
 	[windows addObject:main_window];
-	[windows addObject:[FileWindow openFile:"*.r" at:"." ctx:imui_ctx]];
-	[windows addObject:[EditWindow openFile:"gizmo.r" ctx:imui_ctx]];
+	[windows addObject:file_window];
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 

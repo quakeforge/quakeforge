@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <imui.h>
+#include <qfs.h>
 #include <string.h>
 #include "filewindow.h"
 
@@ -140,6 +141,12 @@ int file_item_cmp (void *a, void *b)
 	[super dealloc];
 }
 
+-setTarget:(id<FileWindow>)target
+{
+	self.target = target;
+	return self;
+}
+
 -draw
 {
 	imui_style_t style = {};//FIXME qfcc bug
@@ -158,10 +165,14 @@ int file_item_cmp (void *a, void *b)
 		if ([accepted_item isdir]) {
 			string path = filePath + "/" + [accepted_item name];
 			str_free (filePath);
+			path = QFS_CompressPath (path);
 			filePath = str_hold (path);
 			[self readdir];
 		} else {
 			printf ("item accepted:%s\n", [accepted_item name]);
+			string path = filePath + "/" + [accepted_item name];
+			path = QFS_CompressPath (path);
+			[target openFile:path forSave:forSave];
 		}
 		accepted_item = nil;
 	}

@@ -30,12 +30,17 @@ typedef struct imui_window_s imui_window_t;
 -sort_file_items;
 @end
 
+@protocol FileWindow
+-(void)openFile:(string) path forSave:(bool)forSave;
+@end
+
 @interface FileWindow : Object <ListView>
 {
 	string fileSpec;
 	string filePath;
 	bool forSave;
 	FileItem *accepted_item;
+	id<FileWindow> target;
 
 	Array *items;
 	ListView *listView;
@@ -45,6 +50,7 @@ typedef struct imui_window_s imui_window_t;
 }
 +(FileWindow *) openFile:(string)fileSpec at:(string)filePath
 					 ctx:(imui_ctx_t)ctx;
+-setTarget:(id<FileWindow>)target;
 -draw;
 @end
 
