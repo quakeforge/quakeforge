@@ -1282,6 +1282,23 @@ encode_params (const type_t *type)
 }
 
 static void
+encode_protocols (dstring_t *encoding, const type_t *type)
+{
+	auto protos = type->protos;
+	if (!protos) {
+		return;
+	}
+	if (!protos->count) {
+		internal_error (0, "empty protocol");
+	}
+	dasprintf (encoding, "<%s", protos->list[0]->name);
+	for (int i = 1; i < protos->count; i++) {
+		dasprintf (encoding, ",%s", protos->list[i]->name);
+	}
+	dasprintf (encoding, ">");
+}
+
+static void
 encode_class (dstring_t *encoding, const type_t *type)
 {
 	class_t    *class = type->class;
@@ -1289,22 +1306,26 @@ encode_class (dstring_t *encoding, const type_t *type)
 
 	if (class->name)
 		name = class->name;
-	dasprintf (encoding, "{%s@}", name);
+	dasprintf (encoding, "{%s@", name);
+	encode_protocols (encoding, type);
+	dasprintf (encoding, "}");
 }
 
 static void
 encode_struct (dstring_t *encoding, const type_t *type)
 {
 	const char *name ="?";
-	char        su = ' ';
 
-	if (type->name)
+	if (type->name) {
 		name = type->name;
-	if (type->meta == ty_union)
-		su = '-';
-	else
-		su = '=';
-	dasprintf (encoding, "{%s%c}", name, su);
+	}
+	if (type->meta == ty_union) {
+		dasprintf (encoding, "{%s-}", name);
+	} else {
+		dasprintf (encoding, "{%s=", name);
+		encode_protocols (encoding, type);
+		dasprintf (encoding, "}");
+	}
 }
 
 static void
@@ -1418,6 +1439,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 				case ev_ptr:
 					if (is_id(type)) {
 						dasprintf (encoding, "@");
+						encode_protocols (encoding, type->fldptr.type);
 						return;
 					}
 					if (is_SEL(type)) {
@@ -1426,6 +1448,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 					}
 					if (is_Class(type)) {
 						dasprintf (encoding, "#");
+						encode_protocols (encoding, type->fldptr.type);
 						return;
 					}
 					dasprintf (encoding, type->fldptr.deref ? "&" : "^");

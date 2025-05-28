@@ -1285,6 +1285,8 @@ typespec_nonreserved
 			if ($2) {
 				type_t      type = *type_id.fldptr.type;
 				type.next = 0;
+				type.encoding = 0;
+				type.id = 0;
 				type.protos = $2;
 				$$ = type_spec (pointer_type (find_type (&type)));
 			} else {

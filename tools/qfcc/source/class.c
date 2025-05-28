@@ -611,7 +611,7 @@ obj_type_assignable (const type_t *dst, const type_t *src)
 				cat = obj_get_categories (src);
 				if (cat && category_implements (cat, dst_protos->list[i]))
 					continue;
-				warning (0, "class %s does not implement to the %s protocol",
+				warning (0, "class %s does not implement the %s protocol",
 						 obj_classname (src), dst_protos->list[i]->name);
 				return 1;
 			}
