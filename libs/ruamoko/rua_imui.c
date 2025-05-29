@@ -728,6 +728,9 @@ bi (IMUI_StartWindow)
 	auto res = (imui_resources_t *) _res;
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 1);
+	if (!window->self) {
+		IMUI_RegisterWindow (bi_ctx->imui_ctx, window);
+	}
 	R_INT (pr) = IMUI_StartWindow (bi_ctx->imui_ctx, window);
 }
 
