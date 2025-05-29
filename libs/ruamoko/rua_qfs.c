@@ -35,6 +35,8 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
+#include <unistd.h>
+#include <errno.h>
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
@@ -48,6 +50,10 @@ typedef struct {
 	int         count;
 	pr_ptr_t    list;
 } qfslist_t;
+
+typedef struct {
+	dstring_t  *dstr;
+} qfs_resources_t;
 
 static void
 check_buffer (progs_t *pr, pr_type_t *buf, int count, const char *name)
@@ -216,21 +222,19 @@ bi (QFS_FileExtension)
 bi (QFS_DefaultExtension)
 {
 	qfZoneScoped (true);
-	dstring_t *dstr = dstring_new ();
-	dstring_copystr (dstr, P_GSTRING (pr, 0));
-	QFS_DefaultExtension (dstr, P_GSTRING (pr, 1));
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	qfs_resources_t *res = _res;
+	dstring_copystr (res->dstr, P_GSTRING (pr, 0));
+	QFS_DefaultExtension (res->dstr, P_GSTRING (pr, 1));
+	RETURN_STRING (pr, res->dstr->str);
 }
 
 bi (QFS_SetExtension)
 {
 	qfZoneScoped (true);
-	dstring_t *dstr = dstring_new ();
-	dstring_copystr (dstr, P_GSTRING (pr, 0));
-	QFS_SetExtension (dstr, P_GSTRING (pr, 1));
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
+	qfs_resources_t *res = _res;
+	dstring_copystr (res->dstr, P_GSTRING (pr, 0));
+	QFS_SetExtension (res->dstr, P_GSTRING (pr, 1));
+	RETURN_STRING (pr, res->dstr->str);
 }
 
 bi (QFS_StripExtension)
@@ -256,8 +260,22 @@ bi (QFS_SkipPath)
 	RETURN_STRING (pr, QFS_SkipPath (P_GSTRING (pr, 0)));
 }
 
+static void
+bi_qfs_clear (progs_t * pr, void *_res)
+{
+	qfZoneScoped (true);
+}
+
+static void
+bi_qfs_destroy (progs_t * pr, void *_res)
+{
+	qfZoneScoped (true);
+	qfs_resources_t *res = _res;
+	dstring_delete (res->dstr);
+}
+
 #undef bi
-#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define bi(x,np,...) {#x, bi_##x, -1, np __VA_OPT__(,{__VA_ARGS__})}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
 	bi(QFS_Open,         2, p(string), p(string)),
@@ -284,5 +302,10 @@ void
 RUA_QFS_Init (progs_t *pr, int secure)
 {
 	qfZoneScoped (true);
+	qfs_resources_t *res = malloc (sizeof (qfs_resources_t));
+	PR_Resources_Register (pr, "QFS", res, bi_qfs_clear, bi_qfs_destroy);
+	*res = (qfs_resources_t) {
+		.dstr = dstring_newstr (),
+	};
 	PR_RegisterBuiltins (pr, builtins, 0);
 }
