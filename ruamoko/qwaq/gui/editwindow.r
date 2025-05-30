@@ -16,7 +16,7 @@ void printf(string, ...);
 		return nil;
 	}
 	IMUI_context = ctx;
-	window_name = str_hold (filePath + "##EditWindow");
+	window_name = str_hold (filePath);
 	window = IMUI_NewWindow (window_name);
 
 	string evname = sprintf ("EditView:%0x8", window);

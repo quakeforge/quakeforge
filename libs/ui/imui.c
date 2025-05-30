@@ -1760,7 +1760,11 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 
-	auto state = imui_get_state (ctx, panel->name, panel_view.id);
+	//FIXME IMUI_TitleBar depends on the window name being in state
+	auto panel_name = va ("%s###panel_%08x", panel->name, panel->self);
+	auto state = imui_get_state (ctx, panel_name, panel_view.id);
+	//fetch the stable string (va's result is ephemeral)
+	panel_name = state->label;
 	state->draw_group = draw_group;
 	panel->mode = update_hot_active (ctx, state);
 
@@ -1803,11 +1807,11 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 			IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
 			UI_Horizontal {
 				drag (tl,t, imui_size_pixels, 12,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 				drag (tc, , imui_size_expand, 100,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 				drag (tr,t, imui_size_pixels, 12,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 			}
 		} else {
 			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
@@ -1817,11 +1821,11 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 				IMUI_Layout_SetYSize (ctx, imui_size_expand, 100);
 				UI_Vertical {
 					drag (tl,s, imui_size_pixels, 4,
-								imui_size_pixels, 8, panel->name, panel);
+								imui_size_pixels, 8, panel_name, panel);
 					drag (cl, , imui_size_pixels, 4,
-								imui_size_expand, 100, panel->name, panel);
+								imui_size_expand, 100, panel_name, panel);
 					drag (bl,s, imui_size_pixels, 4,
-								imui_size_pixels, 8, panel->name, panel);
+								imui_size_pixels, 8, panel_name, panel);
 				}
 			} else {
 				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
@@ -1833,11 +1837,11 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 			if (!panel->auto_fit) {
 				UI_Vertical {
 					drag (tr,s, imui_size_pixels, 4,
-								imui_size_pixels, 8, panel->name, panel);
+								imui_size_pixels, 8, panel_name, panel);
 					drag (cr, , imui_size_pixels, 4,
-								imui_size_expand, 100, panel->name, panel);
+								imui_size_expand, 100, panel_name, panel);
 					drag (br,s, imui_size_pixels, 4,
-								imui_size_pixels, 8, panel->name, panel);
+								imui_size_pixels, 8, panel_name, panel);
 				}
 			} else {
 				IMUI_Spacer (ctx, imui_size_pixels, 2, imui_size_expand, 100);
@@ -1846,11 +1850,11 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 		if (!panel->auto_fit) {
 			UI_Horizontal {
 				drag (bl,b, imui_size_pixels, 12,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 				drag (bc, , imui_size_expand, 100,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 				drag (br,b, imui_size_pixels, 12,
-							imui_size_pixels, 4, panel->name, panel);
+							imui_size_pixels, 4, panel_name, panel);
 			}
 		} else {
 			IMUI_Spacer (ctx, imui_size_expand, 100, imui_size_pixels, 2);
@@ -1959,7 +1963,8 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 	auto state = ctx->windows.a[ctx->windows.size - 1];
 	auto title_bar = View_New (ctx->vsys, ctx->current_parent);
 
-	auto tb_state = imui_get_state (ctx, va ("%s##title_bar", window->name),
+	auto tb_state = imui_get_state (ctx, va ("###title_bar:%08x",
+											 window->self),
 									title_bar.id);
 	int tb_mode = update_hot_active (ctx, tb_state);
 
@@ -1982,7 +1987,7 @@ void
 IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
 	char cbutton = window->is_collapsed ? '>' : 'v';
-	if (UI_Button (va ("%c##collapse_%s", cbutton, window->name))) {
+	if (UI_Button (va ("%c###collapse_%08x", cbutton, window->self))) {
 		window->is_collapsed = !window->is_collapsed;
 	}
 }
@@ -1990,7 +1995,7 @@ IMUI_CollapseButton (imui_ctx_t *ctx, imui_window_t *window)
 void
 IMUI_CloseButton (imui_ctx_t *ctx, imui_window_t *window)
 {
-	if (UI_Button (va ("X##close_%s", window->name))) {
+	if (UI_Button (va ("X###close_%08x", window->self))) {
 		window->is_open = false;
 	}
 }

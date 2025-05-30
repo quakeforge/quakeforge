@@ -118,8 +118,7 @@ int file_item_cmp (void *a, void *b)
 
 	[self readdir];
 
-	window = IMUI_NewWindow (forSave ? "Save a File##FileWindow"
-									 : "Open a File##FileWindow");
+	window = IMUI_NewWindow (forSave ? "Save a File" : "Open a File");
 	IMUI_Window_SetSize (window, {400, 300});
 	return self;
 }
