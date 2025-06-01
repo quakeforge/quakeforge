@@ -70,6 +70,7 @@ typedef struct imui_window_s imui_window_t;
 imui_window_t *IMUI_NewWindow (string name);
 void IMUI_DeleteWindow (imui_window_t *window);
 
+void IMUI_Window_SetName (imui_window_t *window, string name);
 void IMUI_Window_SetPos (imui_window_t *window, ivec2 pos);
 void IMUI_Window_SetSize (imui_window_t *window, ivec2 size);
 void IMUI_Window_SetOpen (imui_window_t *window, bool isopen);

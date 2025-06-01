@@ -125,6 +125,7 @@ bi(IMUI_NewWindow)
 
 	imui_window_t *window = PR_Zone_Malloc (pr, sizeof (imui_window_t));
 	*window = (imui_window_t) {
+		// The name string is owned by the caller
 		.name = name,
 		.is_open = true,
 		.auto_fit = true,
@@ -137,6 +138,15 @@ bi(IMUI_DeleteWindow)
 	qfZoneScoped (true);
 	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
 	PR_Zone_Free (pr, window);
+}
+
+bi(IMUI_Window_SetName)
+{
+	qfZoneScoped (true);
+	auto window =  (imui_window_t *) P_GPOINTER (pr, 0);
+	const char *name = P_GSTRING (pr, 1);
+	// The name string is owned by the caller
+	window->name = name;
 }
 
 bi(IMUI_Window_SetPos)
@@ -837,6 +847,7 @@ static builtin_t builtins[] = {
 	bi(IMUI_NewWindow,              1, p(string)),
 	bi(IMUI_DeleteWindow,           1, p(ptr)),
 
+	bi(IMUI_Window_SetName,         2, p(ptr), p(string)),
 	bi(IMUI_Window_SetPos,          2, p(ptr), p(ivec2)),
 	bi(IMUI_Window_SetSize,         2, p(ptr), p(ivec2)),
 	bi(IMUI_Window_SetOpen,         2, p(ptr), p(int)),

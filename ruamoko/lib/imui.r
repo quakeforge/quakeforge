@@ -3,6 +3,7 @@
 imui_window_t *IMUI_NewWindow (string name) = #0;
 void IMUI_DeleteWindow (imui_window_t *window) = #0;
 
+void IMUI_Window_SetName (imui_window_t *window, string name) = #0;
 void IMUI_Window_SetPos (imui_window_t *window, ivec2 pos) = #0;
 void IMUI_Window_SetSize (imui_window_t *window, ivec2 size) = #0;
 void IMUI_Window_SetOpen (imui_window_t *window, bool isopen) = #0;
