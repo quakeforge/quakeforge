@@ -35,6 +35,7 @@
 
 struct progs_s;
 struct dstring_s;
+typedef struct sizebuf_s sizebuf_t;
 
 void RUA_Secured (progs_t *pr, void *_res)__attribute__((noreturn));
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
@@ -53,6 +54,9 @@ void RUA_Stdlib_Init (struct progs_s *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
 void RUA_QFile_Init (struct progs_s *pr, int secure);
 void RUA_QFS_Init (struct progs_s *pr, int secure);
+
+int MsgBuf_New (struct progs_s *pr);
+sizebuf_t *MsgBuf_GetSizebuf (struct progs_s *pr, int msgbuf);
 
 // the variable args are assumed to come immediately after fmt_arg
 void RUA_Sprintf (struct progs_s *pr, struct dstring_s *dstr, const char *func,

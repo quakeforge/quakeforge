@@ -138,6 +138,24 @@ get_msgbuf (progs_t *pr, msgbuf_resources_t *res, const char *name, int msgbuf)
 	return mb;
 }
 
+int
+MsgBuf_New (progs_t *pr)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = PR_Resources_Find (pr, "MsgBuf");
+	auto msgbuf = alloc_msgbuf (res, nullptr, 0);
+	return msgbuf_index (res, msgbuf);
+}
+
+sizebuf_t *
+MsgBuf_GetSizebuf (progs_t *pr, int msgbuf)
+{
+	qfZoneScoped (true);
+	msgbuf_resources_t *res = PR_Resources_Find (pr, "MsgBuf");
+	msgbuf_t   *mb = get_msgbuf (pr, res, __FUNCTION__, msgbuf);
+	return &mb->sizebuf;
+}
+
 static void
 bi_MsgBuf_New_buf (progs_t *pr, void *_res)
 {
