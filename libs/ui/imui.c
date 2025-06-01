@@ -38,12 +38,14 @@
 #include "QF/ecs.h"
 #include "QF/hash.h"
 #include "QF/heapsort.h"
+#include "QF/keys.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/input.h"
 #include "QF/input/event.h"
 
 #include "QF/ui/canvas.h"
@@ -123,6 +125,7 @@ struct imui_ctx_s {
 	view_pos_t  mouse_position;
 	uint32_t    shift;
 	imui_key_t  key;
+	dstring_t  *key_utf8;
 
 	imui_style_t style;
 	struct DARRAY_TYPE(imui_style_t) style_stack;
@@ -225,6 +228,12 @@ IMUI_FindState (imui_ctx_t *ctx, const char *label)
 	return Hash_Find (ctx->tab, label + key_offset);
 }
 
+dstring_t *
+IMUI_GetKeyString (imui_ctx_t *ctx)
+{
+	return ctx->key_utf8;
+}
+
 static imui_state_t *
 imui_get_state (imui_ctx_t *ctx, const char *label, uint32_t entity)
 {
@@ -287,6 +296,7 @@ IMUI_NewContext (canvas_system_t canvas_sys, const char *font, float fontsize)
 		.active = nullent,
 		.focused = nullent,
 		.mouse_position = {-1, -1},
+		.key_utf8 = dstring_newstr (),
 		.style_stack = DARRAY_STATIC_INIT (8),
 		.style = {
 			.background = {
@@ -462,6 +472,11 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			.unicode = k->unicode,
 			.shift = k->shift,
 		};
+		if (k->code == QFK_STRING) {
+			dstring_copy (ctx->key_utf8, k->utf8->str, k->utf8->size);
+		} else {
+			ctx->key_utf8->size = 0;
+		}
 	}
 	return ctx->hot != nullent || ctx->active != nullent;
 }
@@ -1093,11 +1108,16 @@ IMUI_Draw (imui_ctx_t *ctx)
 		layout_objects (ctx, window);
 	}
 	ctx->hot = nullent;
+	bool was_focused = ctx->focused != nullent;
 	ctx->focused = nullent;
 	check_inside (ctx, ctx->root_view);
 	for (uint32_t i = 0; i < ctx->windows.size; i++) {
 		auto window = View_FromEntity (ctx->vsys, ctx->windows.a[i]->entity);
 		check_inside (ctx, window);
+	}
+	bool is_focused = ctx->focused != nullent;
+	if (was_focused != is_focused) {
+		IN_UpdateFocus (is_focused);
 	}
 
 	for (uint32_t i = 0; i < ctx->scrollers.size; i++) {

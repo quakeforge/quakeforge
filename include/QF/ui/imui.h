@@ -33,6 +33,7 @@
 
 #include "QF/ui/view.h"
 
+typedef struct dstring_s dstring_t;
 typedef struct imui_ctx_s imui_ctx_t;
 struct canvas_system_s;
 struct IE_event_s;
@@ -155,6 +156,8 @@ imui_window_t *IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid) __attribute__((pur
 
 imui_state_t *IMUI_CurrentState (imui_ctx_t *ctx) __attribute__((pure));
 imui_state_t *IMUI_FindState (imui_ctx_t *ctx, const char *label);
+
+dstring_t *IMUI_GetKeyString (imui_ctx_t *ctx) __attribute__((pure));
 
 void IMUI_SetVisible (imui_ctx_t *ctx, bool visible);
 void IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen);
