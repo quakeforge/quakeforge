@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <imui.h>
+#include <msgbuf.h>
 #include <string.h>
 #include "editview.h"
 
@@ -362,6 +363,23 @@ center (uint v, uint len)
 	return self;
 }
 
+-insertMsgBuf:(msgbuf_t)buf
+{
+	uint len = MsgBuf_CurSize (buf);
+	// FIXME assumes a nul-terminated string
+	if (len-- < 2) {
+		printf ("too short\n");
+		return self;
+	}
+	uint lines = [buffer insertMsgBuf:buf at:char_index];
+	cursor.y += lines;
+	line_count += lines;
+	line_index = [buffer nextLine:line_index :lines];
+	char_index += len;
+	cursor.x = [buffer charPos:line_index at:char_index];
+	return self;
+}
+
 -deleteChar
 {
 	if (char_index >= [buffer getEOT]) {
@@ -451,6 +469,9 @@ center (uint v, uint len)
 -handleKey:(imui_key_t)key
 {
 	switch (key.code) {
+	case QFK_STRING:
+		[self insertMsgBuf:IMUI_GetKeyString (IMUI_context)];
+		break;
 	case QFK_PAGEUP:
 		if (key.shift & ies_control) {
 			[self moveBOT];
