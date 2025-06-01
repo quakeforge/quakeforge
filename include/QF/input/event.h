@@ -33,6 +33,8 @@
 
 #ifndef __QFCC__	// FIXME make more compatible with Ruamoko
 #include "QF/qtypes.h"
+
+typedef struct dstring_s dstring_t;
 #endif
 
 /** \defgroup input_events Input Events
@@ -73,6 +75,11 @@ typedef struct {
 	int         code;
 	int         unicode;
 	unsigned    shift;	///< ored bit pattern of IE_shift
+#ifdef __QFCC__
+	long        utf8;
+#else
+	dstring_t  *utf8;	///< composed input string from IME
+#endif
 } IE_key_event_t;
 
 typedef struct {
