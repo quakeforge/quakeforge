@@ -1283,11 +1283,11 @@ setup_text (imui_ctx_t *ctx, view_t text)
 }
 
 static view_t
-add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
+add_text_str_len (imui_ctx_t *ctx, view_t view, const char *str, int length,
+				  int mode)
 {
 	auto text = Text_StringView (ctx->tsys, view, ctx->font,
-								 state->label, state->label_len, 0, 0,
-								 ctx->shaper);
+								 str, length, 0, 0, ctx->shaper);
 	setup_text (ctx, text);
 
 	auto len = View_GetLen (text);
@@ -1297,6 +1297,13 @@ add_text (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
 	*(uint32_t *) Ent_AddComponent (text.id, c_color, ctx->tsys.reg) = color;
 
 	return text;
+}
+
+static view_t
+add_text_state (imui_ctx_t *ctx, view_t view, imui_state_t *state, int mode)
+{
+	return add_text_str_len (ctx, view, state->label, state->label_len,
+							 mode);
 }
 
 static int
@@ -1398,7 +1405,7 @@ IMUI_Label (imui_ctx_t *ctx, const char *label)
 
 	auto state = imui_get_state (ctx, label, view.id);
 
-	add_text (ctx, view, state, 0);
+	add_text_state (ctx, view, state, 0);
 	auto len = View_GetLen (view);
 	state->len = len;
 }
@@ -1521,7 +1528,7 @@ IMUI_Button (imui_ctx_t *ctx, const char *label)
 	int mode = update_hot_active (ctx, state);
 
 	set_fill (ctx, view, ctx->style.foreground.color[mode]);
-	add_text (ctx, view, state, mode);
+	add_text_state (ctx, view, state, mode);
 
 	return check_button_state (ctx, state->entity);
 }
@@ -1554,7 +1561,7 @@ IMUI_Checkbox (imui_ctx_t *ctx, bool *flag, const char *label)
 	if (state->label_len) {
 		auto text = View_New (ctx->vsys, view);
 		set_control (ctx, text, false);
-		add_text (ctx, text, state, mode);
+		add_text_state (ctx, text, state, mode);
 	}
 
 	if (check_button_state (ctx, state->entity)) {
@@ -1591,7 +1598,7 @@ IMUI_Radio (imui_ctx_t *ctx, int *curvalue, int value, const char *label)
 	if (state->label_len) {
 		auto text = View_New (ctx->vsys, view);
 		set_control (ctx, text, false);
-		add_text (ctx, text, state, mode);
+		add_text_state (ctx, text, state, mode);
 	}
 
 	if (check_button_state (ctx, state->entity)) {
@@ -1780,8 +1787,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 
-	//FIXME IMUI_TitleBar depends on the window name being in state
-	auto panel_name = va ("%s###panel_%08x", panel->name, panel->self);
+	auto panel_name = va ("###panel_%08x", panel->self);
 	auto state = imui_get_state (ctx, panel_name, panel_view.id);
 	//fetch the stable string (va's result is ephemeral)
 	panel_name = state->label;
@@ -1999,7 +2005,9 @@ IMUI_TitleBar (imui_ctx_t *ctx, imui_window_t *window)
 	set_expand_x (ctx, title_bar, 100);
 	set_fill (ctx, title_bar, ctx->style.foreground.color[tb_mode]);
 
-	auto title = add_text (ctx, title_bar, state, window->mode);
+	const char *name = window->name;
+	int len = strlen (name);
+	auto title = add_text_str_len (ctx, title_bar, name, len, window->mode);
 	View_Control (title)->gravity = grav_center;
 }
 
