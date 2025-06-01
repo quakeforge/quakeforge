@@ -1,6 +1,7 @@
 #ifndef __ruamoko_imui_h
 #define __ruamoko_imui_h
 
+typedef @handle msgbuf_h msgbuf_t;
 typedef @handle imui_ctx_h imui_ctx_t;
 
 //FIXME should be in view.h but I need to create it
@@ -98,6 +99,7 @@ ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state);
 
 imui_io_t IMUI_GetIO (imui_ctx_t ctx);
 bool IMUI_GetKey (imui_ctx_t ctx, imui_key_t *key);
+msgbuf_t IMUI_GetKeyString (imui_ctx_t ctx);
 
 imui_ctx_t IMUI_NewContext (string font, float fontsize);
 void IMUI_DestroyContext (imui_ctx_t ctx);

@@ -32,6 +32,7 @@ ivec2 IMUI_State_GetLen (imui_ctx_t ctx, string state) = #0;
 
 imui_io_t IMUI_GetIO (imui_ctx_t ctx) = #0;
 bool IMUI_GetKey (imui_ctx_t ctx, imui_key_t *key) = #0;
+msgbuf_t IMUI_GetKeyString (imui_ctx_t ctx) = #0;
 
 imui_ctx_t IMUI_NewContext (string font, float fontsize) = #0;
 void IMUI_DestroyContext (imui_ctx_t ctx) = #0;

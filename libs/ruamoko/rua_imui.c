@@ -33,6 +33,7 @@
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
+#include "QF/sizebuf.h"
 #include "QF/simd/types.h"
 
 #include "QF/ui/canvas.h"
@@ -45,6 +46,7 @@ typedef struct bi_imui_ctx_s {
 	struct bi_imui_ctx_s *next;
 	struct bi_imui_ctx_s **prev;
 	imui_ctx_t *imui_ctx;
+	int         msgbuf;
 } bi_imui_ctx_t;
 
 typedef struct {
@@ -411,6 +413,22 @@ bi (IMUI_GetKey)
 	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
 	auto key = &P_STRUCT (pr, imui_key_t, 1);
 	R_INT (pr) = IMUI_GetKey (bi_ctx->imui_ctx, key);
+}
+
+bi (IMUI_GetKeyString)
+{
+	qfZoneScoped (true);
+	auto res = (imui_resources_t *) _res;
+	auto bi_ctx = get_imui_ctx (P_INT (pr, 0));
+	if (!bi_ctx->msgbuf) {
+		bi_ctx->msgbuf = MsgBuf_New (pr);
+	}
+	auto keystring = IMUI_GetKeyString (bi_ctx->imui_ctx);
+	auto sizebuf = MsgBuf_GetSizebuf (pr, bi_ctx->msgbuf);
+	sizebuf->data = (byte *) keystring->str;
+	sizebuf->maxsize = keystring->truesize;
+	sizebuf->cursize = keystring->size;
+	R_INT (pr) = bi_ctx->msgbuf;
 }
 
 bi (IMUI_SetVisible)
@@ -848,6 +866,7 @@ static builtin_t builtins[] = {
 
 	bi(IMUI_GetIO,              1, p(int)),
 	bi(IMUI_GetKey,             2, p(int), p(ptr)),
+	bi(IMUI_GetKeyString,       1, p(ptr)),
 
 	bi(IMUI_NewContext,         2, p(string), p(float)),
 	bi(IMUI_DestroyContext,     2, p(int)),
