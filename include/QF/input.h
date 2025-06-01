@@ -72,6 +72,9 @@ typedef struct in_driver_s {
 
 	void (*clear_states) (void *data);
 	void (*grab_input) (void *data, int grab);
+	// Used for setting specialized text input handling (eg, enabling XIM
+	// in x11).
+	void (*set_focus) (void *data, bool focus);
 
 	void (*axis_info) (void *data, void *device, in_axisinfo_t *axes,
 					   int *numaxes);
@@ -128,6 +131,7 @@ int IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info);
 void IN_ProcessEvents (void);
 
 void IN_UpdateGrab (int grab);
+void IN_UpdateFocus (bool focus);
 
 void IN_ClearStates (void);
 

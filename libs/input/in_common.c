@@ -470,6 +470,17 @@ IN_UpdateGrab (int grab)
 	}
 }
 
+void
+IN_UpdateFocus (bool focus)
+{
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.set_focus) {
+			rd->driver.set_focus (rd->data, focus);
+		}
+	}
+}
+
 static void
 in_grab_f (void *data, const cvar_t *cvar)
 {
