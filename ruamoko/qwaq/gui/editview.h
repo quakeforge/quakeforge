@@ -22,6 +22,7 @@ typedef struct imui_window_s imui_window_t;
 	string      filename;
 	string      filepath;
 
+	uvec2       sel;
 	bvec2       override_scroll;
 	uvec2       size;
 	uvec2       cursor;
@@ -29,6 +30,7 @@ typedef struct imui_window_s imui_window_t;
 	uint        base_index;		// top left corner
 	uint        line_index;		// current line
 	uint        char_index;		// current character
+	uint        old_char_index;
 }
 +(EditView *) edit:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx;
 -draw;

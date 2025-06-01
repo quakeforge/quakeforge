@@ -69,16 +69,43 @@ center (uint v, uint len)
 	return self;
 }
 
--moveBOT
+-selection:(int)sel_mode dir:(bool)dir
+{
+	if (!sel_mode) {
+		sel = { char_index, char_index };
+		old_char_index = char_index;
+		return self;
+	}
+	if (old_char_index != char_index) {
+		old_char_index = char_index;
+		if (dir) {
+			if (sel.y < char_index) {
+				sel.y = char_index;
+			} else {
+				sel.x = char_index;
+			}
+		} else {
+			if (sel.x > char_index) {
+				sel.x = char_index;
+			} else {
+				sel.y = char_index;
+			}
+		}
+	}
+	return self;
+}
+
+-moveBOT:(int)sel_mode
 {
 	line_index = base_index = char_index = 0;
 	cursor = nil;
 	base = nil;
 	override_scroll = { true, true };
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--moveEOT
+-moveEOT:(int)sel_mode
 {
 	char_index = [buffer getEOT];
 	line_index = [buffer getBOL:char_index];
@@ -88,10 +115,11 @@ center (uint v, uint len)
 		[self scrollTo: cursor.y - size.y + 1];
 	}
 	override_scroll = { true, true };
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--pageUp
+-pageUp:(int)sel_mode
 {
 	[self recenter:false];
 	uint count = cursor.y;
@@ -107,10 +135,11 @@ center (uint v, uint len)
 		[self scrollTo:cursor.y];
 		override_scroll.y = true;
 	}
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--pageDown
+-pageDown:(int)sel_mode
 {
 	[self recenter:false];
 	uint count = line_count - cursor.y;
@@ -126,10 +155,11 @@ center (uint v, uint len)
 		[self scrollTo:cursor.y - size.y + 1];
 		override_scroll.y = true;
 	}
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--linesUp
+-linesUp:(int)sel_mode
 {
 	while (line_index > 0) {
 		line_index = [buffer prevLine:line_index];
@@ -145,10 +175,11 @@ center (uint v, uint len)
 	}
 	char_index = [buffer charPtr:line_index at:cursor.x];
 	[self recenter:false];
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--linesDown
+-linesDown:(int)sel_mode
 {
 	uint end = [buffer getEOT];
 	uint last = [buffer getBOL:end];
@@ -166,10 +197,11 @@ center (uint v, uint len)
 	}
 	char_index = [buffer charPtr:line_index at:cursor.x];
 	[self recenter:false];
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--charUp
+-charUp:(int)sel_mode
 {
 	[self recenter:false];
 	if (cursor.y < 1) {
@@ -182,10 +214,11 @@ center (uint v, uint len)
 		[self scrollTo:cursor.y];
 		override_scroll.y = true;
 	}
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--charDown
+-charDown:(int)sel_mode
 {
 	[self recenter:false];
 	if (cursor.y >= line_count) {
@@ -198,10 +231,11 @@ center (uint v, uint len)
 		[self scrollTo:cursor.y - size.y + 1];
 		override_scroll.y = true;
 	}
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--wordLeft
+-wordLeft:(int)sel_mode
 {
 	[self recenter:false];
 	auto b = base;
@@ -226,11 +260,12 @@ center (uint v, uint len)
 	[self scrollTo:b.y];
 	base = b;
 	override_scroll = { true, true };
+	[self selection:sel_mode dir:false];
 
 	return self;
 }
 
--wordRight
+-wordRight:(int)sel_mode
 {
 	[self recenter:0];
 	auto b = base;
@@ -264,11 +299,12 @@ center (uint v, uint len)
 	[self scrollTo:b.y];
 	base = b;
 	override_scroll = { true, true };
+	[self selection:sel_mode dir:true];
 
 	return self;
 }
 
--charLeft
+-charLeft:(int)sel_mode
 {
 	[self recenter:false];
 	if (cursor.x < 1) {
@@ -286,10 +322,11 @@ center (uint v, uint len)
 		base.x = cursor.x;
 		override_scroll.x = true;
 	}
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--charRight
+-charRight:(int)sel_mode
 {
 	[self recenter:false];
 	if (char_index == [buffer getEOL:line_index]) {
@@ -306,18 +343,20 @@ center (uint v, uint len)
 		base.x = cursor.x - size.x + 1;
 		override_scroll.x = true;
 	}
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--moveBOS
+-moveBOS:(int)sel_mode
 {
 	line_index = base_index;
 	cursor.y = base.y;
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--moveEOS
+-moveEOS:(int)sel_mode
 {
 	uint count = line_count - base.y;
 	if (count > size.y - 1) {
@@ -326,23 +365,26 @@ center (uint v, uint len)
 	line_index = [buffer nextLine:base_index :count];
 	cursor.y = base.y + count;
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
--moveBOL
+-moveBOL:(int)sel_mode
 {
 	char_index = line_index;
 	cursor.x = 0;
 	base.x = 0;
 	override_scroll.x = true;
+	[self selection:sel_mode dir:false];
 	return self;
 }
 
--moveEOL
+-moveEOL:(int)sel_mode
 {
 	char_index = [buffer getEOL:line_index];
 	cursor.x = [buffer charPos:line_index at:char_index];
 	[self recenter:0];
+	[self selection:sel_mode dir:true];
 	return self;
 }
 
@@ -360,6 +402,7 @@ center (uint v, uint len)
 		} else {
 			char_index = [buffer nextChar:char_index];
 		}
+		old_char_index = char_index;
 		cursor.x = [buffer charPos:line_index at:char_index];
 	}
 	return self;
@@ -378,6 +421,7 @@ center (uint v, uint len)
 	line_count += lines;
 	line_index = [buffer nextLine:line_index :lines];
 	char_index += len;
+	old_char_index = char_index;
 	cursor.x = [buffer charPos:line_index at:char_index];
 	return self;
 }
@@ -442,6 +486,7 @@ center (uint v, uint len)
 	} else {
 		return self;
 	}
+	old_char_index = char_index;
 	cursor.x = [buffer charPos:line_index at:char_index];
 	if (!nodelete) {
 		uint lines = [buffer countLines:{char_index, len}];
@@ -452,8 +497,9 @@ center (uint v, uint len)
 	return self;
 }
 
--jumpTo:(uvec2)pos
+-jumpTo:(uvec2)pos mode:(int)sel_mode
 {
+	uint oci = char_index;
 	if (pos.y > line_count) {
 		pos.y = line_count;
 	}
@@ -465,6 +511,7 @@ center (uint v, uint len)
 	char_index = [buffer charPtr:line_index at:pos.x];
 	cursor = pos;
 	[self recenter:false];
+	[self selection:sel_mode dir:char_index > oci];
 	return self;
 }
 
@@ -479,58 +526,58 @@ center (uint v, uint len)
 		break;
 	case QFK_PAGEUP:
 		if (key.shift & ies_control) {
-			[self moveBOT];
+			[self moveBOT:key.shift & ies_shift];
 		} else {
-			[self pageUp];
+			[self pageUp:key.shift & ies_shift];
 		};
 		break;
 	case QFK_PAGEDOWN:
 		if (key.shift & ies_control) {
-			[self moveEOT];
+			[self moveEOT:key.shift & ies_shift];
 		} else {
-			[self pageDown];
+			[self pageDown:key.shift & ies_shift];
 		};
 		break;
 	case QFK_UP:
 		if (key.shift & ies_control) {
-			[self linesUp];
+			[self linesUp:key.shift & ies_shift];
 		} else {
-			[self charUp];
+			[self charUp:key.shift & ies_shift];
 		};
 		break;
 	case QFK_DOWN:
 		if (key.shift & ies_control) {
-			[self linesDown];
+			[self linesDown:key.shift & ies_shift];
 		} else {
-			[self charDown];
+			[self charDown:key.shift & ies_shift];
 		};
 		break;
 	case QFK_LEFT:
 		if (key.shift & ies_control) {
-			[self wordLeft];
+			[self wordLeft:key.shift & ies_shift];
 		} else {
-			[self charLeft];
+			[self charLeft:key.shift & ies_shift];
 		};
 		break;
 	case QFK_RIGHT:
 		if (key.shift & ies_control) {
-			[self wordRight];
+			[self wordRight:key.shift & ies_shift];
 		} else {
-			[self charRight];
+			[self charRight:key.shift & ies_shift];
 		};
 		break;
 	case QFK_HOME:
 		if (key.shift & ies_control) {
-			[self moveBOS];
+			[self moveBOS:key.shift & ies_shift];
 		} else {
-			[self moveBOL];
+			[self moveBOL:key.shift & ies_shift];
 		}
 		break;
 	case QFK_END:
 		if (key.shift & ies_control) {
-			[self moveEOS];
+			[self moveEOS:key.shift & ies_shift];
 		} else {
-			[self moveEOL];
+			[self moveEOL:key.shift & ies_shift];
 		}
 		break;
 	case QFK_BACKSPACE:
@@ -561,7 +608,12 @@ center (uint v, uint len)
 		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
 		//ivec2 d = c / X_size;//FIXME bug in qfcc when X_size is uvec2
 		c /= X_size;
-		[self jumpTo:c];
+		[self jumpTo:c mode:0];
+	} else if (io.buttons & 1) {
+		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
+		//ivec2 d = c / X_size;//FIXME bug in qfcc when X_size is uvec2
+		c /= X_size;
+		[self jumpTo:c mode:1];
 	}
 	return self;
 }
@@ -592,7 +644,8 @@ center (uint v, uint len)
 	for (uint i = base.y; len.y-- > 0 && i < count; i++) {
 		int buf[1024];
 		lind = [buffer formatLine:lind from:base.x into:buf width:width
-				highlight:{0,0} colors:{ 61 << 21, 0 }];
+						highlight:{sel.x, sel.y - sel.x}
+						   colors:{ 61 << 21, 0100 << 21 }];
 		IMUI_IntLabel (IMUI_context, buf, width);
 		IMUI_SetActive (IMUI_context, false);
 	}
