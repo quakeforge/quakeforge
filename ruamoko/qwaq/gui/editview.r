@@ -642,4 +642,9 @@ center (uint v, uint len)
 	return self;
 }
 
+-(bool)modified
+{
+	return [buffer modified];
+}
+
 @end

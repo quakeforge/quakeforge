@@ -32,6 +32,7 @@ typedef struct imui_window_s imui_window_t;
 }
 +(EditView *) edit:(string)name file:(string)filepath ctx:(imui_ctx_t)ctx;
 -draw;
+-(bool)modified;
 @end
 
 #endif//__qwaq_gui_editview_h

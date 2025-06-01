@@ -16,8 +16,8 @@ void printf(string, ...);
 		return nil;
 	}
 	IMUI_context = ctx;
-	window_name = str_hold (filePath);
-	window = IMUI_NewWindow (window_name);
+	window_name = str_hold ("*" + filePath);
+	window = IMUI_NewWindow (str_mid (window_name, 1));
 
 	string evname = sprintf ("EditView:%0x8", window);
 	editView = [[EditView edit:evname file:filePath ctx:ctx] retain];
@@ -44,6 +44,8 @@ void printf(string, ...);
 {
 	imui_style_t style = {};//FIXME qfcc bug
 	IMUI_Style_Fetch (IMUI_context, &style);
+	string name = str_mid (window_name, [editView modified] ? 0 : 1);
+	IMUI_Window_SetName (window, name);
 	UI_Window (window) {
 		if (IMUI_Window_IsCollapsed (window)) {
 			continue;
