@@ -25,6 +25,8 @@ center (uint v, uint len)
 		return nil;
 	}
 	self.name = str_hold (name);
+	//filepath is owned by the window
+	self.filepath = filepath;
 	IMUI_context = ctx;
 
 	buffer = [[EditBuffer withFile:filepath] retain];
@@ -469,6 +471,9 @@ center (uint v, uint len)
 -handleKey:(imui_key_t)key
 {
 	switch (key.code) {
+	case QFK_F2:
+		[buffer saveFile:filepath];
+		break;
 	case QFK_STRING:
 		[self insertMsgBuf:IMUI_GetKeyString (IMUI_context)];
 		break;
