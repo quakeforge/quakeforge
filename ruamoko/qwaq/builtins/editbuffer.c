@@ -518,9 +518,14 @@ saveFile (txtbuffer_t *buffer, const char *filename)
 	QFile       *file = Qopen (filename, "wt");
 
 	if (file) {
-		unsigned offset = buffer->gapOffset + buffer->gapSize;
-		Qwrite (file, buffer->text, buffer->gapOffset);
-		Qwrite (file, buffer->text + offset, buffer->textSize - offset);
+		if (buffer->textSize <= buffer->gapOffset) {
+			Qwrite (file, buffer->text, buffer->textSize);
+		} else {
+			unsigned offset = buffer->gapOffset + buffer->gapSize;
+			unsigned len = buffer->textSize - buffer->gapOffset;
+			Qwrite (file, buffer->text, buffer->gapOffset);
+			Qwrite (file, buffer->text + offset, len);
+		}
 		Qclose (file);
 		return 1;
 	}
