@@ -658,6 +658,7 @@ bi__i_EditBuffer__initWithFile_ (progs_t *pr, void *_res)
 	buffer->tabSize = 4; // FIXME
 
 	loadFile (buffer->txtbuffer, filename);
+	buffer->modified = 0;
 
 	self->buffer = editbuffer_index (res, buffer);
 	R_INT (pr) = PR_SetPointer (pr, self);
@@ -963,6 +964,7 @@ bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
 	}
 	TextBuffer_InsertAt (buffer->txtbuffer, ptr, &chr, 1);
+	buffer->modified = 1;
 }
 
 static void
@@ -981,6 +983,7 @@ bi__i_EditBuffer__insertMsgBuf_at_ (progs_t *pr, void *_res)
 	auto data = (char *) sizebuf->data;
 	unsigned len = sizebuf->cursize - 1;
 	TextBuffer_InsertAt (buffer->txtbuffer, ptr, data, len);
+	buffer->modified = 1;
 	R_UINT (pr) = countLines (buffer->txtbuffer, ptr, len);
 }
 
@@ -996,6 +999,7 @@ bi__i_EditBuffer__deleteText_ (progs_t *pr, void *_res)
 		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
 	}
 	TextBuffer_DeleteAt (buffer->txtbuffer, sel->start, sel->length);
+	buffer->modified = 1;
 }
 
 static void
