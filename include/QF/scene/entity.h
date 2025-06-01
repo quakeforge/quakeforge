@@ -86,6 +86,7 @@ typedef struct animation_s {
 	int         pose2;
 	float       blend;
 	int         nolerp;		// don't lerp this frame (pose data invalid)
+	int         debug_bone;
 } animation_t;
 
 typedef struct visibility_s {

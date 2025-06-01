@@ -4,7 +4,7 @@ layout (set = 1, binding = 0) uniform sampler2D Palette;
 layout (set = 3, binding = 0) uniform sampler2DArray Skin;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 72)
+	layout (offset = 76)
 	uint        colors;
 	vec4        base_color;
 	vec4        fog;

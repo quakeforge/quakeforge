@@ -122,8 +122,8 @@ Array *windows;
 	clips = [[Array array] retain];
 	clipsView = [[ListView list:"MainWindow:clips" ctx:ctx] retain];
 
-	//bones = [[Array array] retain];
-	//bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
+	bones = [[Array array] retain];
+	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
 
 	window = IMUI_NewWindow ("MainWindow");
 	IMUI_Window_SetSize (window, {400, 300});
@@ -238,11 +238,11 @@ Array *windows;
 	clip_num = -1;
 	timer = 0;
 
-	//[bones removeAllObjects];
-	//for (int i = 0; i < arm.num_joints; i++) {
-	//	[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
-	//}
-	//[bonesView setItems:bones];
+	[bones removeAllObjects];
+	for (int i = 0; i < arm.num_joints; i++) {
+		[bones addObject:[ListItem item:arm.joints[i].name ctx:IMUI_context]];
+	}
+	[bonesView setItems:bones];
 
 	[clips removeAllObjects];
 	for (int i = 0; i < num_clips; i++) {
@@ -275,6 +275,7 @@ Array *windows;
 
 	auto anim = Entity_GetAnimation (ent);
 	anim.frame = clip_num;
+	anim.debug_bone = [bonesView selected];
 	Entity_SetAnimation (ent, anim);
 	return self;
 }

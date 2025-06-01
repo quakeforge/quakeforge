@@ -61,6 +61,7 @@ typedef struct {
 	mat4f_t     mat;
 	uint32_t    enabled_mask;
 	float       blend;
+	uint32_t    debug_bone;
 	byte        colors[4];
 	vec4f_t     base_color;
 	vec4f_t     fog;
@@ -186,8 +187,9 @@ Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 
 static void
 push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					  byte *colors, vec4f_t base_color, int pass,
-					  qfv_taskctx_t *taskctx)
+					 int debug_bone,
+					 byte *colors, vec4f_t base_color, int pass,
+					 qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -195,8 +197,9 @@ push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 	auto layout = taskctx->pipeline->layout;
 
 	mesh_push_constants_t constants = {
-		.blend = blend,
 		.enabled_mask = enabled_mask,
+		.blend = blend,
+		.debug_bone = debug_bone,
 		.colors = { VEC4_EXP (colors) },
 		.base_color = base_color,
 		.fog = Fog_Get (),
@@ -212,6 +215,9 @@ push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof (mesh_push_constants_t, blend),
 			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			offsetof (mesh_push_constants_t, debug_bone),
+			sizeof (float), &constants.debug_bone },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (mesh_push_constants_t, colors),
 			sizeof (constants.colors), constants.colors },
@@ -222,7 +228,7 @@ push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (mesh_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 	};
-	QFV_PushConstants (device, cmd, layout, pass ? 6 : 3, push_constants);
+	QFV_PushConstants (device, cmd, layout, pass ? 7 : 3, push_constants);
 }
 
 static void
@@ -655,8 +661,9 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 								&lighting, pass, taskctx);
 		} else {
 			push_mesh_constants (Transform_GetWorldMatrixPtr (transform),
-								  enabled_mask, blend, colors, base_color,
-								  pass, taskctx);
+								 enabled_mask, blend, anim->debug_bone,
+								 colors, base_color,
+								 pass, taskctx);
 		}
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {

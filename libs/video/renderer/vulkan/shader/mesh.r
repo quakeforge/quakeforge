@@ -1,11 +1,14 @@
 //#extension GL_EXT_multiview : enable
 
 #define GLSL(op) @intrinsic(OpExtInst, "GLSL.std.450", op)
-@generic(genFType=@vector(float)) {
+#define SPV(op) @intrinsic(op)
+@generic(genFType=@vector(float),genBType=@vector(bool)) {
 genFType normalize(genFType x) = GLSL(Normalize);
+genFType clamp(genFType x, genFType minVal, genFType maxVal) = GLSL(FClamp);
 genFType mix(genFType x, genFType y, genFType a) = GLSL(FMix);
 genFType mix(genFType x, genFType y, float a) = GLSL(FMix)
 	[x, y, @construct (genFType, a)];
+genFType mix(genFType x, genFType y, genBType a) = SPV(OpSelect) [a, y, x];
 };
 
 [out("Position")] vec4 gl_Position;
@@ -39,6 +42,7 @@ typedef enum {
 	mat4 Model;
 	uint  enabled_mask;
 	float blend;
+	uint  debug_bone;
 };
 
 [in(qfm_position)] vec3 vert_position;
@@ -91,6 +95,12 @@ main (void)
 		m += bones[joints.y] * weights.y;
 		m += bones[joints.z] * weights.z;
 		m += bones[joints.w] * weights.w;
+		if (debug_bone != ~0u) {
+			bvec4 foo = uvec4(debug_bone) == joints;
+			float w = mix(vec4(0), weights, foo) • vec4(1,1,1,1);
+			auto c1 = mix(vec4(0,0,1,1), vec4(0,1,0,1), clamp(w, 0, 0.5) * 2);
+			color = mix(c1, vec4(1,0,0,1), clamp(w-0.5, 0, 0.5) * 2);
+		}
 #if 1
 		m += mat3x4(1,0,0,0, 0,1,0,0, 0,0,1,0) * (1 - weights • vec4(1,1,1,1));
 		position = vec4(position, 1) * m;
