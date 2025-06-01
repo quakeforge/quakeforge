@@ -71,6 +71,7 @@
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -117,6 +118,9 @@ static const char *x11_mouse_button_names[] = {
 	"M_BUTTON25",   "M_BUTTON26", "M_BUTTON27", "M_BUTTON28",
 	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
 };
+static XIM x11_xim;
+static XIC x11_ic;
+static dstring_t *x11_utf8;
 
 #define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
@@ -280,14 +284,41 @@ static void
 XLateKey (XKeyEvent *ev, int *k, int *u)
 {
 	char        buffer[4];
-	int         unicode;
+	int         unicode = 0;
 	int         key = 0;
 	KeySym      keysym, shifted_keysym;
 	XComposeStatus compose;
 
-	keysym = XLookupKeysym (ev, 0);
-	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
-	unicode = (byte) buffer[0];
+	if (x_filter_events && x11_ic) {
+		int c;
+		Status status;
+		keysym = 0;
+		while ((c = Xutf8LookupString (x11_ic, ev,
+									   x11_utf8->str, x11_utf8->truesize - 1,
+									   &keysym, &status))
+			   && status == XBufferOverflow) {
+			x11_utf8->size = c + 1;
+			dstring_adjust (x11_utf8);
+		}
+		x11_utf8->size = c + 1;
+		x11_utf8->str[c] = 0;
+		if (c == 1) {
+			unicode = (byte) x11_utf8->str[0];
+		}
+		if (status == XLookupChars
+			|| (status == XLookupBoth && (x11_utf8->str[0] & 0x80))) {
+			keysym = 0;
+			key = QFK_STRING;
+			x11_key.utf8 = x11_utf8;
+		} else {
+			x11_key.utf8 = nullptr;
+		}
+	} else {
+		keysym = XLookupKeysym (ev, 0);
+		XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
+		unicode = (byte) buffer[0];
+		x11_key.utf8 = nullptr;
+	}
 
 	switch (keysym) {
 		case XK_KP_Page_Up:
@@ -666,7 +697,7 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 			break;
 
 		default:
-			if (keysym < 128) {								// ASCII keys
+			if (keysym && keysym < 128) {					// ASCII keys
 				key = keysym;
 				if ((key >= 'A') && (key <= 'Z')) {
 					key = key + ('a' - 'A');
@@ -887,7 +918,9 @@ event_key (XEvent *event)
 									     event->type == KeyPress);
 	}
 	x11_key.shift = event->xmotion.state & 0xff;
-	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
+	if (event->type == KeyPress) {
+		XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
+	}
 	if (!(event->type == KeyPress && in_x11_send_key_event ())
 		&& !x11_have_xi) {
 		in_x11_send_button_event (x11_keyboard_device.devid,
@@ -1216,6 +1249,20 @@ in_x11_grab_input (void *data, int grab)
 		in_dga_f (0, &in_dga_cvar);
 	}
 }
+
+static void
+in_x11_set_focus (void *data, bool focus)
+{
+	x_filter_events = focus;
+	if (x11_ic) {
+		if (x_filter_events) {
+			XSetICFocus (x11_ic);
+		} else {
+			XUnsetICFocus (x11_ic);
+		}
+	}
+}
+
 #ifdef X11_USE_SELECT
 static void
 in_x11_add_select (qf_fd_set *fdset, int *maxfd, void *data)
@@ -1386,6 +1433,12 @@ static void
 in_x11_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
+	if (x11_ic) {
+		dstring_delete (x11_utf8);
+		XDestroyIC (x11_ic);
+		// if x11_ic is not null, then x11_xim also is not null
+		XCloseIM (x11_xim);
+	}
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
 		dga_off ();
@@ -1585,7 +1638,7 @@ IN_X11_Preinit (void)
 }
 
 void
-IN_X11_Postinit (void)
+IN_X11_Postinit (long event_mask)
 {
 	if (!x_disp)
 		Sys_Error ("IN: No display!!");
@@ -1601,6 +1654,21 @@ IN_X11_Postinit (void)
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
 		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
 						dga_avail);
+	}
+
+	x11_xim = XOpenIM (x_disp, nullptr, nullptr, nullptr);
+	if (x11_xim) {
+		x11_utf8 = dstring_newstr ();
+		x11_ic = XCreateIC (x11_xim,
+							XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+							XNClientWindow, x_win,
+							nullptr);
+		if (x11_ic) {
+			unsigned long mask;
+			if (!XGetICValues (x11_ic, XNFilterEvents, &mask, nullptr)) {
+				XSelectInput (x_disp, x_win, event_mask | mask);
+			}
+		}
 	}
 }
 
@@ -1632,6 +1700,7 @@ static in_driver_t in_x11_driver = {
 #endif
 	.clear_states = in_x11_clear_states,
 	.grab_input = in_x11_grab_input,
+	.set_focus = in_x11_set_focus,
 
 	.axis_info = in_x11_axis_info,
 	.button_info = in_x11_button_info,

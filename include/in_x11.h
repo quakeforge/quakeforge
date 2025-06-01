@@ -32,6 +32,6 @@
 #define __in_x11_h
 
 long IN_X11_Preinit (void);
-void IN_X11_Postinit (void);
+void IN_X11_Postinit (long event_mask);
 
 #endif//__in_x11_h

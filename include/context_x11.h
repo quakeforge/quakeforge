@@ -60,6 +60,7 @@ extern Time		x_mouse_time;
 extern Cursor   x_nullcursor;
 extern bool     oktodraw;
 extern bool     x_have_focus;
+extern bool     x_filter_events;
 
 bool X11_AddEvent (int event, void (*event_handler)(XEvent *));
 bool X11_RemoveEvent (int event, void (*event_handler)(XEvent *));

@@ -43,6 +43,7 @@
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
+#include <locale.h>
 
 #include <X11/Xlib.h>
 #ifdef HAVE_VIDMODE
@@ -89,6 +90,7 @@ Time		x_mouse_time;
 Cursor      x_nullcursor = None;
 
 bool        x_have_focus = false;
+bool        x_filter_events = false;
 
 #ifdef HAVE_VIDMODE
 static XF86VidModeModeInfo **vidmodes;
@@ -208,6 +210,9 @@ X11_RemoveEvent (int event, void (*event_handler) (XEvent *))
 static inline void
 X11_ProcessEventProxy(XEvent *x_event)
 {
+	if (x_filter_events && XFilterEvent (x_event, None)) {
+		return;
+	}
 	if (x_event->type >= LASTEvent) {
 		if (x_event->type == x_shmeventtype)
 			oktodraw = 1;
@@ -306,6 +311,8 @@ X11_OpenDisplay (void)
 {
 	qfZoneScoped (true);
 	if (!x_disp) {
+		setlocale(LC_CTYPE, "");
+		XSetLocaleModifiers("");
 		x_disp = XOpenDisplay (nullptr);
 		if (!x_disp) {
 			Sys_Error ("X11_OpenDisplay: Could not open display [%s]",
@@ -563,7 +570,7 @@ X11_CreateWindow (int width, int height)
 
 	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,
 						   x_visinfo->depth, InputOutput, x_vis, mask, &attr);
-	IN_X11_Postinit ();
+	IN_X11_Postinit (attr.event_mask);
 
 	// Set window size hints
 	XSizeHints	    SizeHints = {
