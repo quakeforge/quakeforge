@@ -64,10 +64,10 @@ typedef struct in_driver_s {
 	void *(*get_device_event_data) (void *device, void *data);
 
 	// The driver must provide either both or none of add_select and
-	// chec_select.
+	// check_select.
 	void (*add_select) (struct qf_fd_set *fdset, int *maxfd, void *data);
 	void (*check_select) (struct qf_fd_set *fdset, void *data);
-	// Generally musually exclusive with add_select/check_select
+	// Generally usually exclusive with add_select/check_select
 	void (*process_events) (void *data);
 
 	void (*clear_states) (void *data);
