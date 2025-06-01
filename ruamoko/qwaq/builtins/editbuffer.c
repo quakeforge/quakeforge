@@ -42,6 +42,8 @@
 
 #include "QF/ui/txtbuffer.h"
 
+#include "rua_internal.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/editor/editbuffer.h"
 
@@ -959,6 +961,25 @@ bi__i_EditBuffer__insertChar_at_ (progs_t *pr, void *_res)
 }
 
 static void
+bi__i_EditBuffer__insertMsgBuf_at_ (progs_t *pr, void *_res)
+{
+	qwaq_ebresources_t *res = _res;
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	int         msgbuf = P_INT (pr, 2);
+	unsigned    ptr = P_UINT (pr, 3);
+	auto        sizebuf = MsgBuf_GetSizebuf (pr, msgbuf);
+
+	if (ptr > buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	auto data = (char *) sizebuf->data;
+	unsigned len = sizebuf->cursize - 1;
+	TextBuffer_InsertAt (buffer->txtbuffer, ptr, data, len);
+	R_UINT (pr) = countLines (buffer->txtbuffer, ptr, len);
+}
+
+static void
 bi__i_EditBuffer__deleteText_ (progs_t *pr, void *_res)
 {
 	qwaq_ebresources_t *res = _res;
@@ -1112,6 +1133,7 @@ static builtin_t builtins[] = {
 	bi(_i_EditBuffer__getChar_,       -1, 3, p(ptr), p(ptr), p(uint)),
 	bi(_i_EditBuffer__putChar_at_,    -1, 4, p(ptr), p(ptr), p(int), p(uint)),
 	bi(_i_EditBuffer__insertChar_at_, -1, 4, p(ptr), p(ptr), p(int), p(uint)),
+	bi(_i_EditBuffer__insertMsgBuf_at_, -1, 4, p(ptr), p(ptr), p(int), p(uint)),
 	bi(_i_EditBuffer__deleteText_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
 	bi(_i_EditBuffer__countLines_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
 	bi(_i_EditBuffer__search_for_direction_,	-1,

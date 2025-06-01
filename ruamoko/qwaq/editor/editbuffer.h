@@ -22,6 +22,8 @@ typedef struct eb_color_s {
 } eb_color_t;
 
 #ifdef __QFCC__
+typedef @handle msgbuf_h msgbuf_t;
+
 @interface EditBuffer : Object
 {
 	struct edit_buffer_s *buffer;
@@ -56,6 +58,7 @@ typedef struct eb_color_s {
 - (int) getChar: (unsigned) charPtr;
 - (void) putChar: (int) char at:(unsigned) charPtr;
 - (void) insertChar: (int) char at:(unsigned) charPtr;
+- (unsigned) insertMsgBuf: (msgbuf_t) char at:(unsigned) charPtr;
 - (void) deleteText: (eb_sel_t) selection;
 
 - (unsigned) countLines: (eb_sel_t) selection;
