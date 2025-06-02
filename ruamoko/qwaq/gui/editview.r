@@ -613,6 +613,8 @@ center (uint v, uint len)
 		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
 		//ivec2 d = c / X_size;//FIXME bug in qfcc when X_size is uvec2
 		c /= X_size;
+		if (c.x < 0) c.x = 0;
+		if (c.y < 0) c.y = 0;
 		[self jumpTo:c mode:1];
 	}
 	return self;
