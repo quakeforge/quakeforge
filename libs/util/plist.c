@@ -208,10 +208,44 @@ new_string (const char *str, size_t len, pldata_t *pl)
 	return item;
 }
 
+static plitem_t *
+new_number (double val)
+{
+	auto item = pl_newitem (QFNumber);
+	item->number = val;
+	return item;
+}
+
+static plitem_t *
+new_bool (bool val)
+{
+	auto item = pl_newitem (QFBool);
+	item->boolean = val;
+	return item;
+}
+
 VISIBLE plitem_t *
 PL_NewString (const char *str)
 {
 	return new_string (str, strlen (str), 0);
+}
+
+VISIBLE plitem_t *
+PL_NewNumber (double val)
+{
+	return new_number (val);
+}
+
+VISIBLE plitem_t *
+PL_NewBool (bool val)
+{
+	return new_bool (val);
+}
+
+VISIBLE plitem_t *
+PL_NewNull (void)
+{
+	return pl_newitem (QFNull);
 }
 
 VISIBLE plitem_t *
@@ -1144,13 +1178,9 @@ pl_parsejson_bool (pldata_t *pl)
 	unsigned    start = pl->pos;
 	unsigned    len = pl_parsejson_literal (pl);
 	if (len == 4 && strncmp ("true", pl->ptr + start, len) == 0) {
-		auto item = pl_newitem (QFBool);
-		item->boolean = true;
-		return item;
+		return new_bool (true);
 	} else if (len == 5 && strncmp ("false", pl->ptr + start, len) == 0) {
-		auto item = pl_newitem (QFBool);
-		item->boolean = false;
-		return item;
+		return new_bool (false);
 	} else {
 		return pl_error (pl, "Invalid literal: %.*s", len, pl->ptr + start);
 	}
@@ -1171,9 +1201,7 @@ pl_parsejson_number (pldata_t *pl)
 	if (*end) {
 		return pl_error (pl, "Invalid literal: %.*s", len, pl->ptr + start);
 	}
-	auto item = pl_newitem (QFNumber);
-	item->number = val;
-	return item;
+	return new_number (val);
 }
 
 static plitem_t *

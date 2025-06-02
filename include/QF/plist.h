@@ -430,6 +430,10 @@ plitem_t *PL_NewData (void *data, size_t size);
 */
 plitem_t *PL_NewString (const char *str);
 
+plitem_t *PL_NewNumber (double val);
+plitem_t *PL_NewBool (bool val);
+plitem_t *PL_NewNull (void);
+
 /** Retain ownership of a property list object.
 
 	Use prior to removal to ensure the property list object is not freed when
