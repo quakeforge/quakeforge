@@ -2584,7 +2584,6 @@ new_class_name
 				$1 = check_redefined ($1);
 				$$ = get_class ($1, 1);
 			}
-			$$->interface_declared = 1;
 			current_class = &$$->class_type;
 			if (!$1->table)
 				symtab_addsymbol (current_symtab, $1);
@@ -2608,7 +2607,6 @@ new_class_with_super
 				error (0, "cannot find interface declaration for `%s', "
 					   "superclass of `%s'", $3->name, $1->name);
 			}
-			$1->interface_declared = 1;
 			$1->super_class = $3;
 			$$ = $1;
 		}
@@ -2678,6 +2676,7 @@ classdef
 		{ class_add_protocols ($class, $protos); }
 	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
+			$class->interface_declared = 1;
 			current_symtab = pop_scope ($tab);
 			$tab->parent = nullptr;
 			class_add_ivars ($class, $defs, ctx);
@@ -2687,6 +2686,7 @@ classdef
 	  END						{ current_class = 0; }
 	| INTERFACE new_class_name[class] protocolrefs[protos]
 		{
+			$class->interface_declared = 1;
 			class_add_protocols ($class, $protos);
 			class_add_ivars ($class, nullptr, ctx);
 			$<class>$ = $class;
@@ -2697,6 +2697,7 @@ classdef
 		{ class_add_protocols ($class, $protos);}
 	  '{' ivar_scope[tab] struct_defs[defs] '}'
 		{
+			$class->interface_declared = 1;
 			current_symtab = pop_scope ($tab);
 			$tab->parent = nullptr;
 			class_add_ivars ($class, $defs, ctx);
@@ -2707,6 +2708,7 @@ classdef
 	| INTERFACE new_class_with_super[class]
 	  protocolrefs[protos]
 		{
+			$class->interface_declared = 1;
 			class_add_protocols ($class, $protos);
 			class_add_ivars ($class, nullptr, ctx);
 			$<class>$ = $class;
