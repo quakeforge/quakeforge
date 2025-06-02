@@ -27,7 +27,15 @@
 - (string) string;
 @end
 
-@interface PLItem: Object <PLDictionary, PLArray, PLString>
+@protocol PLNumber
+- (double) number;
+@end
+
+@protocol PLBool
+- (bool) bool;
+@end
+
+@interface PLItem: Object <PLDictionary, PLArray, PLString, PLNumber, PLBool>
 {
 	plitem_t   *item;
 }
@@ -63,6 +71,18 @@
 
 @interface PLString: PLItem <PLString>
 + (PLString *) new:(string) str;
+@end
+
+@interface PLNumber: PLItem <PLNumber>
++ (PLNumber *) new:(double) val;
+@end
+
+@interface PLBool: PLItem <PLBool>
++ (PLBool *) new:(bool) val;
+@end
+
+@interface PLNull: PLItem
++ (PLNull *) new;
 @end
 
 #endif//__ruamoko_PropertyList_h

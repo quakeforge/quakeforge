@@ -156,6 +156,16 @@
 	return PL_String (item);
 }
 
+- (double) number
+{
+	return PL_Number (item);
+}
+
+- (bool) bool
+{
+	return PL_Bool (item);
+}
+
 @end
 
 
@@ -271,4 +281,35 @@
 	return PL_String (item);
 }
 
+@end
+
+@implementation PLNumber
++ (PLNumber *) new:(double) val
+{
+	return [[PLNumber alloc] initWithItem: PL_NewNumber (val)];
+}
+
+- (double) number
+{
+	return PL_Number (item);
+}
+@end
+
+@implementation PLBool
++ (PLBool *) new:(bool) val
+{
+	return [[PLNumber alloc] initWithItem: PL_NewBool (val)];
+}
+
+- (bool) bool
+{
+	return PL_Bool (item);
+}
+@end
+
+@implementation PLNull
++ (PLNull *) new
+{
+	return [[PLNull alloc] initWithItem: PL_NewNull ()];
+}
 @end

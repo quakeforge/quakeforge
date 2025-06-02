@@ -290,6 +290,35 @@ bi_PL_WritePropertyList (progs_t *pr, void *_res)
 }
 
 static void
+bi_PL_JSON (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	bi_pl_get (pr, res, PL_ParseJSON);
+}
+
+static void
+bi_PL_JSONFromFile (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	bi_pl_getfromfile (pr, res, PL_ParseJSON);
+}
+
+static void
+bi_PL_WriteJSON (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
+	char       *pl = PL_WriteJSON (plist->plitem);
+
+	R_STRING (pr) = PR_SetDynamicString (pr, pl);
+	free (pl);
+}
+
+static void
 bi_PL_Type (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -321,6 +350,26 @@ bi_PL_String (progs_t *pr, void *_res)
 	const char *str = PL_String (plist->plitem);
 
 	RETURN_STRING (pr, str);
+}
+
+static void
+bi_PL_Number (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
+	R_DOUBLE (pr) = PL_Number (plist->plitem);
+}
+
+static void
+bi_PL_Bool (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, res, __FUNCTION__, handle);
+	R_INT (pr) = -!!PL_Bool (plist->plitem);
 }
 
 static void
@@ -507,6 +556,36 @@ bi_PL_NewString (progs_t *pr, void *_res)
 }
 
 static void
+bi_PL_NewNumber (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	plitem_t   *plitem = PL_NewNumber (P_DOUBLE (pr, 0));
+
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
+bi_PL_NewBool (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	plitem_t   *plitem = PL_NewBool (P_INT (pr, 0));
+
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
+bi_PL_NewNull (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	plist_resources_t *res = _res;
+	plitem_t   *plitem = PL_NewNull ();
+
+	R_INT (pr) = plist_retain (res, plitem);
+}
+
+static void
 bi_PL_Release (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
@@ -548,13 +627,18 @@ static builtin_t builtins[] = {
 	bi(PL_GetFromFile,           1, p(ptr)),
 	bi(PL_GetPropertyList,       1, p(string)),
 	bi(PL_GetDictionary,         1, p(string)),
-	bi(PL_GetDictionaryFromFile, 1, p(string)),
+	bi(PL_GetDictionaryFromFile, 1, p(ptr)),
 	bi(PL_GetArray,              1, p(string)),
-	bi(PL_GetArrayFromFile,      1, p(string)),
+	bi(PL_GetArrayFromFile,      1, p(ptr)),
 	bi(PL_WritePropertyList,     1, p(ptr)),
+	bi(PL_JSON,                  1, p(string)),
+	bi(PL_JSONFromFile,          1, p(ptr)),
+	bi(PL_WriteJSON,             1, p(ptr)),
 	bi(PL_Type,                  1, p(ptr)),
 	bi(PL_Line,                  1, p(ptr)),
 	bi(PL_String,                1, p(ptr)),
+	bi(PL_Number,                1, p(ptr)),
+	bi(PL_Bool,                  1, p(ptr)),
 	bi(PL_ObjectForKey,          2, p(ptr), p(string)),
 	bi(PL_RemoveObjectForKey,    2, p(ptr), p(string)),
 	bi(PL_ObjectAtIndex,         2, p(ptr), p(int)),
@@ -570,6 +654,9 @@ static builtin_t builtins[] = {
 	bi(PL_NewArray,              0),
 	bi(PL_NewData,               2, p(ptr), p(int)),
 	bi(PL_NewString,             1, p(string)),
+	bi(PL_NewNumber,             1, p(double)),
+	bi(PL_NewBool,               1, p(int)),
+	bi(PL_NewNull,               1, p(int)),
 	bi(PL_Release,               1, p(ptr)),
 	bi(PL_Retain,                1, p(ptr)),
 	{0}

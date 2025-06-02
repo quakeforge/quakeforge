@@ -13,9 +13,14 @@ typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible t
 @extern plitem_t *PL_GetArrayFromFile (QFile file);
 @extern plitem_t *PL_GetArray (string str);
 @extern string PL_WritePropertyList (plitem_t *pl);
+@extern plitem_t *PL_JSON (string str);
+@extern plitem_t *PL_JSONFromFile (QFile file);
+@extern string PL_WriteJSON (plitem_t *pl);
 @extern pltype_t PL_Type (plitem_t *str);
 @extern int PL_Line (plitem_t *str);
 @extern string PL_String (plitem_t *str);
+@extern double PL_Number (plitem_t *str);
+@extern bool PL_Bool (plitem_t *str);
 @extern plitem_t *PL_ObjectForKey (plitem_t *item, string key);
 @extern void PL_RemoveObjectForKey (plitem_t *item, string key);
 @extern plitem_t *PL_ObjectAtIndex (plitem_t *item, int index);
@@ -31,6 +36,9 @@ typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible t
 @extern plitem_t *PL_NewArray ();
 @extern plitem_t *PL_NewData (void *data, int len);
 @extern plitem_t *PL_NewString (string str);
+@extern plitem_t *PL_NewNumber (double val);
+@extern plitem_t *PL_NewBool (bool val);
+@extern plitem_t *PL_NewNull (void);
 @extern plitem_t *PL_Retain (plitem_t *pl);
 @extern plitem_t *PL_Release (plitem_t *pl);
 
