@@ -64,6 +64,17 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+static const char *
+get_file_name (void)
+{
+	const char *path = GETSTR (pr.loc.file);
+	const char *file = strrchr (path, '/');
+	if (!file++) {
+		file = path;
+	}
+	return file;
+}
+
 static symbol_t *
 find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 {
@@ -73,11 +84,7 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	if (tag) {
 		tag_name = va ("tag %s", tag->name);
 	} else {
-		const char *path = GETSTR (pr.loc.file);
-		const char *file = strrchr (path, '/');
-		if (!file++)
-			file = path;
-		tag_name = va ("tag .%s.%d", file, pr.loc.line);
+		tag_name = va ("tag .%s.%d", get_file_name (), pr.loc.line);
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
@@ -407,8 +414,10 @@ emit_structure (const char *name, int su, struct_def_t *defs,
 	def_t       field_def;
 
 	name = save_string (name);
-	if (!type)
-		type = make_structure (0, su, defs, 0)->type;
+	if (!type) {
+		const char *tag = va ("%s:.%s.%d", name, get_file_name (), pr.loc.line);
+		type = make_structure (tag, su, defs, 0)->type;
+	}
 	if ((su == 's' && !is_struct (type)) || (su == 'u' && !is_union (type)))
 		internal_error (0, "structure %s type mismatch", name);
 	for (i = 0, field_sym = type->symtab->symbols; field_sym;
