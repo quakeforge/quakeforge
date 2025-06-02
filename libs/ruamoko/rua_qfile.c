@@ -28,6 +28,13 @@
 # include "config.h"
 #endif
 
+#define _GNU_SOURCE		//FIXME should be elsewhere for portability
+
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
+
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -42,6 +49,13 @@
 
 #include "rua_internal.h"
 
+typedef struct {
+	int         pid;
+	int         stdin;	// from the child's perspective
+	int         stdout;	// from the child's perspective
+	int         stderr;	// from the child's perspective
+} qpipe_t;
+
 typedef struct qfile_s {
 	struct qfile_s *next;
 	struct qfile_s **prev;
@@ -52,6 +66,7 @@ typedef struct {
 	PR_RESMAP (qfile_t) handle_map;
 	qfile_t    *handles;
 	dstring_t  *buffer;
+	progs_t    *pr;
 } qfile_resources_t;
 
 static qfile_t *
@@ -132,6 +147,20 @@ alloc_handle (qfile_resources_t *res, QFile *file)
 	return handle_index (res, handle);
 }
 
+static void
+close_handle (qfile_resources_t *res, int handle)
+{
+	qfile_t    *h = handle_get (res, handle);
+
+	if (!h)
+		PR_RunError (res->pr, "invalid file handle passed to Qclose");
+	Qclose (h->file);
+	*h->prev = h->next;
+	if (h->next)
+		h->next->prev = h->prev;
+	handle_free (res, h);
+}
+
 int
 QFile_AllocHandle (progs_t *pr, QFile *file)
 {
@@ -176,6 +205,117 @@ bi_Qopen (progs_t *pr, void *_res)
 		Qclose (file);
 }
 
+static void
+bi_Qpipe (progs_t *pr, void *_res)
+{
+	qfZoneScoped (true);
+	auto res = (qfile_resources_t *) _res;
+	auto arg_list = &P_STRUCT (pr, pr_string_t, 0);
+	int  argc = P_INT (pr, 1);
+	int  do_stdin = P_INT (pr, 2);
+	int  do_stdout = P_INT (pr, 3);
+	int  do_stderr = P_INT (pr, 4);
+
+	char *argv[argc + 1];
+	for (int i = 0; i < argc; i++) {
+		argv[i] = (char *) PR_GetString (pr, arg_list[i]);
+	}
+	argv[argc] = nullptr;
+
+	//FIXME should probably be elsewhere for portability
+	int pipefd_stdin[2] = {-1, -1};
+	int pipefd_stdout[2] = {-1, -1};
+	int pipefd_stderr[2] = {-1, -1};
+	if (do_stdin) {
+		if (pipe2 (pipefd_stdin, O_CLOEXEC) == -1) {
+			goto pipe_error;
+		}
+	}
+	if (do_stdout) {
+		if (pipe2 (pipefd_stdout, O_CLOEXEC) == -1) {
+			goto pipe_error;
+		}
+	}
+	if (do_stderr) {
+		if (pipe2 (pipefd_stderr, O_CLOEXEC) == -1) {
+			goto pipe_error;
+		}
+	}
+
+	auto ret = &R_PACKED (pr, qpipe_t);
+	*ret = (qpipe_t) {};
+	if (do_stdin) {
+		auto qf = Qdopen (pipefd_stdin[1], "wb");
+		if (!(ret->stdin = alloc_handle (res, qf))) {
+			Qclose (qf);
+			goto fd_error;
+		}
+	}
+	if (do_stdout) {
+		auto qf = Qdopen (pipefd_stdout[0], "rb");
+		if (!(ret->stdout = alloc_handle (res, qf))) {
+			Qclose (qf);
+			goto fd_error;
+		}
+	}
+	if (do_stderr) {
+		auto qf = Qdopen (pipefd_stderr[0], "wb");
+		if (!(ret->stderr = alloc_handle (res, qf))) {
+			Qclose (qf);
+			goto fd_error;
+		}
+	}
+
+	pid_t child_pid = fork ();
+	if (child_pid == -1) {
+		goto pipe_error;
+	}
+	if (child_pid == 0) {
+		if (do_stdin) {
+			dup2 (pipefd_stdin[0], STDIN_FILENO);
+		}
+		if (do_stdout) {
+			dup2 (pipefd_stdout[1], STDOUT_FILENO);
+		}
+		if (do_stderr) {
+			dup2 (pipefd_stderr[1], STDERR_FILENO);
+		}
+		close_range (3, ~0u, CLOSE_RANGE_UNSHARE);
+		execvp (argv[0], argv);
+		exit (errno);
+	}
+	ret->pid = child_pid;
+	return;
+fd_error:
+	if (ret->stdin) {
+		close_handle (res, ret->stdin);
+	}
+	if (ret->stdout) {
+		close_handle (res, ret->stdout);
+	}
+	if (ret->stderr) {
+		close_handle (res, ret->stderr);
+	}
+	*ret = (qpipe_t) {};
+	return;
+pipe_error:
+	close (pipefd_stdin[0]);
+	close (pipefd_stdin[1]);
+	close (pipefd_stdout[0]);
+	close (pipefd_stdout[1]);
+	close (pipefd_stderr[0]);
+	close (pipefd_stderr[1]);
+	R_var (pr, ivec4) = (pr_ivec4_t) {};
+	return;
+}
+
+static void
+bi_Qwait (progs_t *pr, void *_res)
+{
+	int pid = P_INT (pr, 0);
+	waitpid (pid, &R_INT (pr), 0);
+}
+
 static qfile_t * __attribute__((pure))
 get_handle (progs_t *pr, qfile_resources_t *res, const char *name, int handle)
 {
@@ -203,15 +343,7 @@ bi_Qclose (progs_t *pr, void *_res)
 	qfZoneScoped (true);
 	__auto_type res = (qfile_resources_t *) _res;
 	int         handle = P_INT (pr, 0);
-	qfile_t    *h = handle_get (res, handle);
-
-	if (!h)
-		PR_RunError (pr, "invalid file handle passed to Qclose");
-	Qclose (h->file);
-	*h->prev = h->next;
-	if (h->next)
-		h->next->prev = h->prev;
-	handle_free (res, h);
+	close_handle (res, handle);
 }
 
 static void
@@ -401,6 +533,8 @@ static builtin_t secure_builtins[] = {
 	bi(Qrename, 2, p(string), p(string)),
 	bi(Qremove, 1, p(string)),
 	bi(Qopen,   2, p(string), p(string)),
+	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
+	bi(Qwait,   1, p(int)),
 	{0}
 };
 
@@ -410,6 +544,8 @@ static builtin_t insecure_builtins[] = {
 	bi(Qrename, 2, p(string), p(string)),
 	bi(Qremove, 1, p(string)),
 	bi(Qopen,   2, p(string), p(string)),
+	bi(Qpipe,   5, p(ptr), p(int), p(int), p(int), p(int)),
+	bi(Qwait,   1, p(int)),
 	{0}
 };
 
@@ -437,6 +573,7 @@ RUA_QFile_Init (progs_t *pr, int secure)
 	qfZoneScoped (true);
 	qfile_resources_t *res = calloc (sizeof (qfile_resources_t), 1);
 	res->buffer = dstring_new ();
+	res->pr = pr;
 
 	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear, bi_qfile_destroy);
 	if (secure) {

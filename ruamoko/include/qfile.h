@@ -3,6 +3,17 @@
 
 typedef @handle _qfile_t QFile;
 
+typedef struct qpipe_s {
+	int   pid;			// child pid
+	QFile stdin;		// from the child's perspective
+	QFile stdout;		// from the child's perspective
+	QFile stderr;		// from the child's perspective
+} qpipe_t;
+
+qpipe_t Qpipe (string *argv, int argc,
+			   bool do_stdin, bool do_stdout, bool do_stderr);
+int Qwait (int pid);
+
 @extern int Qrename (string old, string new);
 @extern int Qremove (string path);
 @extern QFile Qopen (string path, string mode);
