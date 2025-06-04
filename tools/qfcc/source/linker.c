@@ -1204,7 +1204,7 @@ linker_add_lib (const char *libname)
 	return 0;
 }
 
-static __attribute__ ((used)) void
+static void
 undefined_def (qfo_def_t *def)
 {
 	qfo_def_t   line_def;
