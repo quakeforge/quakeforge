@@ -505,9 +505,9 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		idef->file = -1;					// mark def as copied
 		idef->line = num_work_defrefs;		// so def can be found
-		// In the first pass, process_type_def sets the type meta to -1 and
+		// In the second pass, process_type_def sets the type meta to -1 and
 		// class to the offset of the copied type, but the null type encodiing
-		// is not modified. Other defs are processed in the second pass.
+		// is not modified. Other defs are processed in the third pass.
 		type = QFOTYPE(idef->type);
 		if (idef->type && (int) type->meta != -1) {
 			linker_internal_error ("reference to type that has not been "
@@ -766,7 +766,7 @@ process_null_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static int
 process_code_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	if (pass != 1)
+	if (pass != 2)
 		return 0;
 	if (space->defs || space->num_defs) {
 		linker_error ("defs in code space");
@@ -788,7 +788,7 @@ process_data_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 			align_data (qfo_far_data_space, space);
 		} else {
 		}
-	} else if (pass == 1) {
+	} else if (pass == 2) {
 		if (space->id == qfo_near_data_space) {
 			add_defs (qfo, space, work->spaces + qfo_near_data_space,
 					  process_data_def);
@@ -822,7 +822,7 @@ process_entity_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass == 0) {
 		align_data (qfo_entity_space, space);
-	} else if (pass == 1) {
+	} else if (pass == 2) {
 		add_defs (qfo, space, work->spaces + qfo_entity_space, process_field_def);
 		add_data (qfo_entity_space, space);
 	}
@@ -873,7 +873,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	unsigned    i;
 
-	if (pass != 0)
+	if (pass != 1)
 		return 0;
 	if (qfo_type_defs) {
 		linker_error ("type space already defined");
@@ -946,7 +946,7 @@ process_debug_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	}
 	if (pass == 0) {
 		align_data (qfo_debug_space, space);
-	} else if (pass == 1) {
+	} else if (pass == 2) {
 		add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
 		add_data (qfo_debug_space, space);
 	}
@@ -1060,7 +1060,7 @@ linker_add_qfo (qfo_t *qfo)
 
 	qfo_type_defs = 0;
 	work_func_base = work->num_funcs;
-	for (pass = 0; pass < 2; pass++) {
+	for (pass = 0; pass < 3; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
 			if ((int) space->type < 0 || space->type > qfos_debug) {
 				linker_error ("bad space type");
