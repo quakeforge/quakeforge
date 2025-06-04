@@ -519,7 +519,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		// don't add unused (no attached relocs) external defs to the work
 		// defref list so they will not cause unused object files to be
 		// pulled in from libraries
-		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
+		if ((odef->flags & QFOD_EXTERNAL) && !odef->num_relocs)
 			continue;
 		ref = get_defref (odef, dest_space);
 		work_defrefs[num_work_defrefs++] = ref;
