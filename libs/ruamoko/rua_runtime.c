@@ -93,6 +93,17 @@ bi_PR_FindFunction (progs_t *pr, void *data)
 		R_FUNCTION (pr) = func - pr->pr_functions;
 }
 
+static void
+bi_PR_FunctionName (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	pr_func_t func = P_FUNCTION (pr, 0);
+	R_STRING (pr) = 0;
+	if (func < pr->progs->functions.count) {
+		R_STRING (pr) = pr->pr_functions[func].name;
+	}
+}
+
 #define bi(x,np,...) {#x, bi_##x, -1, np __VA_OPT__(,{__VA_ARGS__})}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
@@ -101,6 +112,7 @@ static builtin_t builtins[] = {
 
 	bi(PR_SetField,     3, p(entity), p(string), p(string)),
 	bi(PR_FindFunction, 1, p(string)),
+	bi(PR_FunctionName, 1, p(func)),
 	{0}
 };
 
