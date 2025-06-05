@@ -135,7 +135,7 @@ designator_index (const designator_t *des, int ele_size, int array_count)
 		return -1;
 	}
 	int         index = expr_integral (des->index);
-	if (index <= 0 || index >= array_count) {
+	if (index < 0 || index >= array_count) {
 		error (des->index, "designator index out of bounds");
 		return -1;
 	}
