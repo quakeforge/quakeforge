@@ -390,6 +390,13 @@ init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
 				// is ok
 				reloc_def_op (c->labelref.label, &dummy);
 				continue;
+			} else if (c->type == ex_symbol
+					   && c->symbol->sy_type == sy_func
+					   && c->symbol->metafunc
+					   && c->symbol->metafunc->func) {
+				auto func = c->symbol->metafunc->func;
+				reloc_def_func (func, &dummy);
+				continue;
 			} else if (c->type == ex_value) {
 				auto ctype = get_type (c);
 				if (ctype != element->type
