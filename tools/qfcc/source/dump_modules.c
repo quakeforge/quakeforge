@@ -44,6 +44,7 @@
 #include "QF/va.h"
 
 #include "QF/progs/pr_obj.h"
+#include "QF/progs/pr_type.h"
 
 #include "tools/qfcc/include/qfprogs.h"
 
@@ -56,16 +57,18 @@ dump_ivars (progs_t *pr, pr_ivar_list_t *ivars)
 	}
 	puts ("        {");
 	for (int i = 0; i < ivars->ivar_count; i++) {
+		auto ivar = &ivars->ivar_list[i];
 		const char *name = "<invalid string>";
-		const char *type = "<invalid string>";
-		if (PR_StringValid (pr, ivars->ivar_list[i].ivar_name)) {
-			name = PR_GetString (pr, ivars->ivar_list[i].ivar_name);
+		const char *type_enc = "<invalid string>";
+		auto type = &G_STRUCT (pr, qfot_type_t, ivar->ivar_type);
+		if (PR_StringValid (pr, ivar->ivar_name)) {
+			name = PR_GetString (pr, ivar->ivar_name);
 		}
-		if (PR_StringValid (pr, ivars->ivar_list[i].ivar_type)) {
-			type = PR_GetString (pr, ivars->ivar_list[i].ivar_type);
+		if (PR_StringValid (pr, type->encoding)) {
+			type_enc = PR_GetString (pr, type->encoding);
 		}
-		printf ("            %d %s %s\n", ivars->ivar_list[i].ivar_offset,
-				name, type);
+		printf ("            %d %s %x %s\n", ivar->ivar_offset,
+				name, ivar->ivar_type, type_enc);
 	}
 	puts ("        }");
 }

@@ -249,7 +249,7 @@ static struct_def_t category_struct[] = {
 
 static struct_def_t ivar_struct[] = {
 	{"ivar_name",   &type_string},
-	{"ivar_type",   &type_string},
+	{"ivar_type",   &type_ptr},
 	{"ivar_offset", &type_int},
 	{0, 0}
 };
@@ -882,8 +882,8 @@ emit_ivar_list_item (def_t *def, void *data, int index)
 	dstring_clearstr (ivar_data->encoding);
 
 	EMIT_STRING (space, ivar->ivar_name, ivar_sym->name);
-	encode_type (ivar_data->encoding, ivar_sym->type);
-	EMIT_STRING (space, ivar->ivar_type, ivar_data->encoding->str);
+	auto type = type_encodings.a[ivar_sym->type->id];
+	EMIT_DEF (space, ivar->ivar_type, type);
 	ivar->ivar_offset = ivar_sym->offset;
 }
 
