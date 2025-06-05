@@ -533,11 +533,15 @@ init_field_def (def_t *def, const expr_t *init, storage_class_t storage,
 	return init;
 }
 
-static int
+static int __attribute__((pure))
 num_elements (const expr_t *e)
 {
 	int         count = 0;
 	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		auto des = ele->designator;
+		if (des && des->index && is_integral_val (des->index)) {
+			count = expr_integral (des->index);
+		}
 		count++;
 	}
 	return count;
