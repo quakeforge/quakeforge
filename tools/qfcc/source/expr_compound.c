@@ -64,7 +64,9 @@ new_designator (symbol_t *field, const expr_t *index)
 	}
 	designator_t *des;
 	ALLOC (256, designator_t, designators, des);
-	des->field = new_symbol_expr (field);
+	if (field) {
+		des->field = new_symbol_expr (field);
+	}
 	des->index = index;
 	return des;
 }
