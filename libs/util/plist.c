@@ -1431,6 +1431,8 @@ write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 	pldict_t    *dict;
 	plbinary_t	*binary;
 
+	bool simple = false;
+
 	switch (item->type) {
 		case QFDictionary:
 			write_string_len (dstr, "{\n", 2);
@@ -1454,16 +1456,39 @@ write_item (dstring_t *dstr, const plitem_t *item, int level, bool json)
 			write_string_len (dstr, "}", 1);
 			break;
 		case QFArray:
-			write_string_len (dstr, json ? "[\n" : "(\n", 2);
 			array = (plarray_t *) item->data;
-			for (int i = 0; i < array->numvals; i++) {
-				write_tabs (dstr, level + 1);
-				write_item (dstr, array->values[i], level + 1, json);
-				if (i < array->numvals - 1)
-					write_string_len (dstr, ",\n", 2);
+			if (array->numvals < 5) {
+				simple = true;
+				for (int i = 0; i < array->numvals; i++) {
+					if (array->values[i]->type == QFDictionary
+						|| array->values[i]->type == QFArray
+						|| array->values[i]->type == QFBinary) {
+						simple = false;
+						break;
+					}
+				}
 			}
-			write_string_len (dstr, "\n", 1);
-			write_tabs (dstr, level);
+			write_string_len (dstr, json ? "[" : "(", 1);
+			if (!simple) {
+				write_string_len (dstr, "\n", 1);
+			}
+			for (int i = 0; i < array->numvals; i++) {
+				if (!simple) {
+					write_tabs (dstr, level + 1);
+				}
+				write_item (dstr, array->values[i], level + 1, json);
+				if (i < array->numvals - 1) {
+					if (simple) {
+						write_string_len (dstr, ", ", 2);
+					} else {
+						write_string_len (dstr, ",\n", 2);
+					}
+				}
+			}
+			if (!simple) {
+				write_string_len (dstr, "\n", 1);
+				write_tabs (dstr, level);
+			}
 			write_string_len (dstr, json ? "]\n" : ")", 1);
 			break;
 		case QFBinary:
