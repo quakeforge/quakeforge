@@ -587,29 +587,6 @@ PF_gametype (progs_t *pr, void *data)
 	RETURN_STRING (pr, pr_gametype);
 }
 
-static void
-PF_PR_SetField (progs_t *pr, void *data)
-{
-	qfZoneScoped (true);
-	edict_t    *ent = P_EDICT (pr, 0);
-	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
-	const char *value = P_GSTRING (pr, 2);
-
-	R_INT (pr) = 0;
-	if (field)
-		R_INT (pr) = ED_ParseEpair (pr, &E_fld (ent, 0), field, value);
-}
-
-static void
-PF_PR_FindFunction (progs_t *pr, void *data)
-{
-	qfZoneScoped (true);
-	dfunction_t *func = PR_FindFunction (pr, P_GSTRING (pr, 0));
-	R_FUNCTION (pr) = 0;
-	if (func)
-		R_FUNCTION (pr) = func - pr->pr_functions;
-}
-
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
 #define bi(x,n,np,params...) {#x, PF_##x, n, np, {params}}
@@ -647,8 +624,6 @@ static builtin_t builtins[] = {
 	bi(stov,        QF 114, 1, p(string)),
 	bi(gametype,    QF 115, 0),
 
-	bi(PR_SetField,     -1, 3, p(entity), p(string), p(string)),
-	bi(PR_FindFunction, -1, 1, p(string)),
 	{0}
 };
 

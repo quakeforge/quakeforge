@@ -70,11 +70,37 @@ bi_va_copy (progs_t *pr, void *data)
 	R_PACKED (pr, pr_va_list_t).list = PR_SetPointer (pr, dst_list);
 }
 
-#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+static void
+bi_PR_SetField (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	edict_t    *ent = P_EDICT (pr, 0);
+	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
+	const char *value = P_GSTRING (pr, 2);
+
+	R_INT (pr) = 0;
+	if (field)
+		R_INT (pr) = ED_ParseEpair (pr, &E_fld (ent, 0), field, value);
+}
+
+static void
+bi_PR_FindFunction (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	dfunction_t *func = PR_FindFunction (pr, P_GSTRING (pr, 0));
+	R_FUNCTION (pr) = 0;
+	if (func)
+		R_FUNCTION (pr) = func - pr->pr_functions;
+}
+
+#define bi(x,np,...) {#x, bi_##x, -1, np __VA_OPT__(,{__VA_ARGS__})}
 #define p(type) PR_PARAM(type)
 #define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
 	bi(va_copy, 1, P(1, 2)),
+
+	bi(PR_SetField,     3, p(entity), p(string), p(string)),
+	bi(PR_FindFunction, 1, p(string)),
 	{0}
 };
 
