@@ -1255,7 +1255,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 				args_params = def_expr;
 			}
 			if (args_va_list) {
-				num_params++;
+				num_params += (size + 3) / 4;
 			}
 			auto src = a;
 			if (a->type == ex_inout) {
