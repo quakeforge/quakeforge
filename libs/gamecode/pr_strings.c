@@ -1198,6 +1198,9 @@ fmt_state_conversion (fmt_state_t *state)
 
 					fmt_append_item (state);
 				}
+				if (flags & FMT_LONG) {
+					state->fmt_count++;
+				}
 			}
 
 			(*state->fi)->type = 's';
