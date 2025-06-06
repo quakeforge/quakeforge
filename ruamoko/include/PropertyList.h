@@ -85,4 +85,9 @@
 + (PLNull *) new;
 @end
 
+@interface Object (PLItem)
++(id)fromPropertyList:(plitem_t *)plitem;
+-(plitem_t *)serialize;
+@end
+
 #endif//__ruamoko_PropertyList_h
