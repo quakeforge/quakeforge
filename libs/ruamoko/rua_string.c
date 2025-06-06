@@ -48,14 +48,36 @@
 #include <malloc.h>
 #endif
 
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/progs.h"
 
 #include "rua_internal.h"
 
+typedef struct dstringset_s DARRAY_TYPE (dstring_t *) dstringset_t;
+
 typedef struct str_resources_s {
-	dstring_t  *printbuf;
+	dstringset_t printbuf_stack;
+	size_t      stack_ptr;
 } str_resources_t;
+
+static dstring_t *
+bi_str_get_printbuf (progs_t *pr, str_resources_t *res)
+{
+	if (res->stack_ptr == res->printbuf_stack.size) {
+		DARRAY_APPEND (&res->printbuf_stack, dstring_newstr ());
+	}
+	return res->printbuf_stack.a[res->stack_ptr++];
+}
+
+static void
+bi_str_release_printbuf (progs_t *pr, str_resources_t *res)
+{
+	if (!res->stack_ptr) {
+		PR_RunError (pr, "printbuf stack underflow");
+	}
+	res->stack_ptr--;
+}
 
 static void
 bi_strlen (progs_t *pr, void *data)
@@ -96,9 +118,12 @@ bi_sprintf (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	str_resources_t *res = _res;
-	dstring_clearstr (res->printbuf);
-	RUA_Sprintf (pr, res->printbuf, "sprintf", 0);
-	RETURN_STRING (pr, res->printbuf->str);
+
+	auto printbuf = bi_str_get_printbuf (pr, res);
+	dstring_clearstr (printbuf);
+	RUA_Sprintf (pr, printbuf, "sprintf", 0);
+	RETURN_STRING (pr, printbuf->str);
+	bi_str_release_printbuf (pr, res);
 }
 
 static void
@@ -115,9 +140,11 @@ bi_vsprintf (progs_t *pr, void *_res)
 		list[i] = list_start + i * pr->pr_param_size;
 	}
 
-	dstring_clearstr (res->printbuf);
-	PR_Sprintf (pr, res->printbuf, "bi_vsprintf", fmt, args->count, list);
-	RETURN_STRING (pr, res->printbuf->str);
+	auto printbuf = bi_str_get_printbuf (pr, res);
+	dstring_clearstr (printbuf);
+	PR_Sprintf (pr, printbuf, "bi_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, printbuf->str);
+	bi_str_release_printbuf (pr, res);
 }
 
 static void
@@ -485,7 +512,10 @@ rua_string_destroy (progs_t *pr, void *_res)
 {
 	qfZoneScoped (true);
 	str_resources_t *res = _res;
-	dstring_delete (res->printbuf);
+	for (size_t i = 0; i < res->printbuf_stack.size; i++) {
+		dstring_delete (res->printbuf_stack.a[i]);
+	}
+	DARRAY_CLEAR (&res->printbuf_stack);
 	free (res);
 }
 
@@ -494,7 +524,9 @@ RUA_String_Init (progs_t *pr, int secure)
 {
 	qfZoneScoped (true);
 	str_resources_t *res = malloc (sizeof (str_resources_t));
-	res->printbuf = dstring_newstr ();
+	*res = (str_resources_t) {
+		.printbuf_stack = DARRAY_STATIC_INIT (16),
+	};
 
 	PR_Resources_Register (pr, "string", res, rua_string_clear,
 						   rua_string_destroy);
