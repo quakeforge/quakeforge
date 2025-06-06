@@ -1553,10 +1553,11 @@ rua_at_handler (progs_t *pr, pr_ptr_t at_param, void *_probj)
 	P_POINTER (pr, 0) = at_param;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, describe_sel);
 	PR_ExecuteProgram (pr, imp);
+	auto at_str = R_STRING (pr);
 	PR_RestoreParams (pr, params);
 	PR_PopFrame (pr);
 	//FIXME the lifetime of the string may be a problem
-	return PR_GetString (pr, R_STRING (pr));
+	return PR_GetString (pr, at_str);
 }
 
 static void
