@@ -62,13 +62,12 @@ void
 disassemble_progs (progs_t *pr)
 {
 	unsigned int i;
+	bfunction_t func = {};
 
 	for (i = 0; i < pr->progs->statements.count; i++) {
 		dfunction_t *desc = func_find (i);
 
 		if (desc) {
-			bfunction_t func;
-
 			func.first_statement = desc->first_statement;
 			func.params_start = desc->params_start;
 			func.locals = desc->locals;
