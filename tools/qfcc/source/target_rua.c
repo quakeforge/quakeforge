@@ -163,7 +163,7 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 	}
 
 	func->code = pr.code->size;
-	lineno_base = func->def->loc.line;
+	base_loc = func->def->loc;
 	func->sblock = make_statements (statements);
 	if (options.code.optimize) {
 		flow_data_flow (func);

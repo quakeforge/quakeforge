@@ -229,13 +229,15 @@ emit_statement (statement_t *statement)
 	if (options.code.debug) {
 		const expr_t *e = statement->expr;
 		auto loc = e ? e->loc : pr.loc;
-		pr_uint_t   line = loc.line - lineno_base;
+		if (loc.file == base_loc.file && loc.line >= base_loc.line) {
+			pr_uint_t   line = loc.line - base_loc.line;
 
-		if (line != pr.linenos[pr.num_linenos - 1].line) {
-			pr_lineno_t *lineno = new_lineno ();
+			if (line != pr.linenos[pr.num_linenos - 1].line) {
+				pr_lineno_t *lineno = new_lineno ();
 
-			lineno->line = line;
-			lineno->fa.addr = pr.code->size;
+				lineno->line = line;
+				lineno->fa.addr = pr.code->size;
+			}
 		}
 	}
 	s = codespace_newstatement (pr.code);

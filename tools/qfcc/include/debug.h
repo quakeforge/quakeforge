@@ -41,6 +41,6 @@ void add_source_file (const char *file);
 void set_source_file (const char *file);
 void debug_finish_module (const char *modname);
 
-extern int lineno_base;
+extern struct rua_loc_s base_loc;
 
 #endif//__debug_h

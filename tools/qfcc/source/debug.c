@@ -57,7 +57,7 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
-int         lineno_base;
+rua_loc_t   base_loc;
 
 ALLOC_STATE (srcline_t, srclines);
 
