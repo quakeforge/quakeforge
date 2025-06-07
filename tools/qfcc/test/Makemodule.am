@@ -56,6 +56,7 @@ test_progs_dat=\
 	tools/qfcc/test/preproc-1.dat \
 	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/ptrfunc.dat \
+	tools/qfcc/test/ptrincinout.dat \
 	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/ptrstructinit.dat \
 	tools/qfcc/test/motor-point.dat \
@@ -700,6 +701,16 @@ tools/qfcc/test/ptrfunc.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ptrfunc_dep) # am--include-marker
 r_depfiles_remade += $(ptrfunc_dep)
+
+tools_qfcc_test_ptrincinout_dat_SOURCES=tools/qfcc/test/ptrincinout.r
+ptrincinout_obj=$(tools_qfcc_test_ptrincinout_dat_SOURCES:.r=.o)
+ptrincinout_dep=$(call qcautodep,$(tools_qfcc_test_ptrincinout_dat_SOURCES))
+tools/qfcc/test/ptrincinout.dat$(EXEEXT): $(ptrincinout_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(ptrincinout_obj)
+tools/qfcc/test/ptrincinout.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ptrincinout_dep) # am--include-marker
+r_depfiles_remade += $(ptrincinout_dep)
 
 tools_qfcc_test_ptrstructcast_dat_SOURCES=tools/qfcc/test/ptrstructcast.r
 ptrstructcast_obj=$(tools_qfcc_test_ptrstructcast_dat_SOURCES:.r=.o)
