@@ -284,8 +284,14 @@ init_type_ok (const type_t *dstType, const expr_t *init)
 	if (init->implicit || type_promotes (dstType, init_type)) {
 		return true;
 	}
-	if (is_pointer (dstType) && is_pointer (init_type)) {
-		return true;
+	if (is_pointer (dstType) && (is_pointer (init_type)
+								 || is_array (init_type))) {
+		if (type_assignable (dstType, init_type)) {
+			return true;
+		}
+		auto dt = dereference_type (dstType);
+		auto it = dereference_type (init_type);
+		return is_void (dt) || type_same (dt, it);
 	}
 	if (is_math (dstType) && !is_scalar (dstType)) {
 		// vector or matrix type
