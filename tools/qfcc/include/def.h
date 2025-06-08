@@ -314,7 +314,8 @@ int def_size (def_t *def) __attribute__((pure));
 	\param def		The def representing the alias cluster to visit.
 	\param overlap  If non-zero, then only defs that overlap \a def will
 					be visited. If 2, then the given def must fully overlap
-					the visited def.
+					the visited def. If bit-2 is set (overlap & 4), then the
+					main def is not visited for an alias def.
 	\param visit	The function to call when visiting a def. The first
 					parameter is the def being visited, and the second
 					parameter is \a data passed on. If non-zero is returned,
