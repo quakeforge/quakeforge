@@ -189,7 +189,7 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 	int         super = 0, class_msg = 0;
 	const type_t *rec_type = nullptr;
 	const type_t *return_type;
-	const type_t *method_type = &type_IMP;
+	const type_t *method_type = dereference_type (&type_IMP);
 	method_t   *method;
 	const expr_t *send_msg;
 
