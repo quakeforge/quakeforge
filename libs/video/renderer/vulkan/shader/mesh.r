@@ -75,7 +75,7 @@ main (void)
 	vec2        texcoord;
 	vec4        color = vec4(1,1,1,1);
 
-#define morhed_attr(attr) \
+#define morphed_attr(attr) \
 	do { \
 		if (enabled_mask & attrmask(qfm_##attr)) { \
 			attr = vert_##attr; \
@@ -84,11 +84,11 @@ main (void)
 			} \
 		} \
 	} while (0)
-	morhed_attr (position);
-	morhed_attr (normal);
-	morhed_attr (tangent);
-	morhed_attr (texcoord);
-	morhed_attr (color);
+	morphed_attr (position);
+	morphed_attr (normal);
+	morphed_attr (tangent);
+	morphed_attr (texcoord);
+	morphed_attr (color);
 
 	if ((enabled_mask & qfm_bones) == qfm_bones) {
 		mat3x4      m = bones[joints.x] * weights.x;
