@@ -426,10 +426,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 	if (!node && op_is_alias (op)) {
 		operand_t  *uop = unalias_op (op);
 		if (uop != op) {
-			if (!(node = dag_node (uop))) {
-				node = leaf_node (dag, uop, s->expr);
-			}
-			node->label->live = 1;
+			node = dag_make_child (dag, uop, s);
 			dagnode_t *n;
 			dagnode_t search = {
 				.type = st_alias,
