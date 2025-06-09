@@ -423,7 +423,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 		node = 0;
 	}
 
-	if (!node && op_is_temp (op) && op_is_alias (op)) {
+	if (!node && op_is_alias (op)) {
 		operand_t  *uop = unalias_op (op);
 		if (uop != op) {
 			if (!(node = dag_node (uop))) {
