@@ -124,6 +124,7 @@ typedef struct statement_s {
 	int         num_use;
 	int         first_def;
 	int         num_def;
+	int         dag_node;		///< dag node for this statement
 } statement_t;
 
 typedef struct sblock_s {

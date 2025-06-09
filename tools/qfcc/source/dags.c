@@ -1005,6 +1005,7 @@ dag_create (flownode_t *flownode)
 	// count the number of statements so the number of nodes and labels can be
 	// guessed
 	for (s = block->statements; s; s = s->next) {
+		s->dag_node = -1;
 		num_statements++;
 		num_aux += dag_count_ops (s->use);
 		num_aux += dag_count_ops (s->def);
@@ -1017,6 +1018,7 @@ dag_create (flownode_t *flownode)
 
 	dag = new_dag ();
 	dag->flownode = flownode;
+	flownode->dag = dag;
 	// at most FLOW_OPERANDS per statement + aux
 	num_nodes = num_statements * FLOW_OPERANDS + num_aux;
 	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
@@ -1074,12 +1076,18 @@ dag_create (flownode_t *flownode)
 				}
 			}
 		}
+		s->dag_node = n->number;
 		if (n->type == st_ptrassign) {
 			dag_kill_nodes (dag, n, false);
 		}
 		if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
 			dag_kill_nodes (dag, n, true);
 		}
+#if 0
+		if (options.block_dot.dags) {
+			dump_dot ("raw-dags", flownode->graph, dump_dot_flow_dags);
+		}
+#endif
 	}
 
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));
@@ -1088,12 +1096,6 @@ dag_create (flownode_t *flownode)
 	labels = malloc (dag->num_labels * sizeof (daglabel_t *));
 	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
 	dag->labels = labels;
-#if 0
-	if (options.block_dot.dags) {
-		flownode->dag = dag;
-		dump_dot ("raw-dags", flownode->graph, dump_dot_flow_dags);
-	}
-#endif
 	dag_remove_dead_vars (dag, live_vars);
 	dag_sort_nodes (dag);
 	set_delete (live_vars);
