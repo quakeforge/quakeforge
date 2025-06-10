@@ -9,6 +9,8 @@
 
 typedef void varfunc (qfot_var_t *var);
 
+void traceon();
+void traceoff();
 void printf (string fmt, ...);
 void fprintf (QFile file, string format, ...);
 extern Array *queue;

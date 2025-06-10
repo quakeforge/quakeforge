@@ -27,6 +27,8 @@ arp_end (void)
 }
 
 void printf (string fmt, ...) = #0;
+void traceon()=#0;
+void traceoff()=#0;
 
 void fprintf (QFile file, string format, ...)
 {
