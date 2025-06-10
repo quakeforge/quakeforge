@@ -91,6 +91,96 @@ const char * const st_type_names[] = {
 	"st_address",
 };
 
+int
+op_is_identifier (operand_t *op)
+{
+	if (!op)
+		return 0;
+	if (op->op_type == op_label)
+		return 0;
+	if (op->op_type == op_value)
+		return 0;
+	if (op->op_type == op_temp)
+		return 1;
+	if (op->op_type != op_def)
+		return 0;
+	return 1;
+}
+
+int
+op_is_constant (operand_t *op)
+{
+	if (!op)
+		return 0;
+	if (op->op_type == op_label)
+		return 1;
+	if (op->op_type == op_value)
+		return 1;
+	if (op->op_type == op_label)
+		return op->def->constant;
+	return 0;
+}
+
+int
+op_is_temp (operand_t *op)
+{
+	if (!op)
+		return 0;
+	return op->op_type == op_temp;
+}
+
+bool
+op_is_alias (operand_t *op)
+{
+	if (!op) {
+		return false;
+	}
+	if (op->op_type == op_alias) {
+		return true;
+	}
+	if (op->op_type == op_temp) {
+		return !!op->tempop.alias;
+	}
+	if (op->op_type == op_def) {
+		return !!op->def->alias;
+	}
+	return false;
+}
+
+int
+op_alias_offset (operand_t *op)
+{
+	if (!op_is_alias (op)) {
+		internal_error (op->expr, "not an alias op");
+	}
+	if (op->op_type == op_temp) {
+		return op->tempop.offset;
+	}
+	if (op->op_type == op_def) {
+		return op->def->offset;
+	}
+	internal_error (op->expr, "eh? how?");
+}
+
+operand_t *
+unalias_op (operand_t *op)
+{
+	if (!op_is_alias (op)) {
+		internal_error (op->expr, "not an alias op");
+	}
+	if (op->op_type == op_alias) {
+		return op->alias;
+	}
+	if (op->op_type == op_temp) {
+		return op->tempop.alias;
+	}
+	if (op->op_type == op_def) {
+		auto def = op->def;
+		return def_operand (def->alias, def->alias->type, op->expr);
+	}
+	internal_error (op->expr, "eh? how?");
+}
+
 const char *
 optype_str (op_type_e type)
 {
