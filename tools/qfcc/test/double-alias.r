@@ -6,6 +6,10 @@ union {
 	double d;
 	int    i[2];
 } type_pun;
+int padding[8] = {
+	0, 1, 0xdeadbeef, 3,
+	4, 5, 0x0badc0de, 7,
+};
 
 int alias_printf (string fmt, ...);
 
