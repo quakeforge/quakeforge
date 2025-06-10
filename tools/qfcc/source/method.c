@@ -486,10 +486,17 @@ selector_index (const char *sel_id)
 }
 
 selector_t *
+get_selector_offset (int offset)
+{
+	selector_t  _sel = {
+		.index = offset / type_size (type_SEL.fldptr.type),
+	};
+	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
+}
+
+selector_t *
 get_selector (const expr_t *sel)
 {
-	selector_t  _sel = {0, 0, 0};
-
 	if (sel->type == ex_selector) {
 		return sel->selector.sel;
 	}
@@ -498,9 +505,7 @@ get_selector (const expr_t *sel)
 		error (sel, "not a selector");
 		return 0;
 	}
-	_sel.index = expr_short (sel->address.offset);
-	_sel.index /= type_size (type_SEL.fldptr.type);
-	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
+	return get_selector_offset (expr_short (sel->address.offset));
 }
 
 def_t *

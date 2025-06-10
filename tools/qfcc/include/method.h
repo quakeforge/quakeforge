@@ -108,6 +108,7 @@ void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void method_types (struct dstring_s *sel_types, method_t *method);
 int selector_index (const char *sel_id);
 selector_t *get_selector (const struct expr_s *sel);
+selector_t *get_selector_offset (int offset);
 struct def_s *emit_selectors(void);
 
 struct def_s *emit_methods (methodlist_t *methods, const char *name,

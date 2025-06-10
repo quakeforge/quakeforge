@@ -44,7 +44,10 @@
 #include "QF/set.h"
 #include "QF/va.h"
 
+#include "QF/progs/pr_obj.h"
+
 #include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/strpool.h"
 #include "tools/qfcc/include/symtab.h"
@@ -65,6 +68,14 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 		 id_iter = set_next (id_iter)) {
 		id = dag->labels[id_iter->element];
 		dasprintf (dstr, "\\n%s", daglabel_string(id));
+	}
+	if (strcmp (daglabel_string (node->label), "lea") == 0
+		&& strcmp (daglabel_string (node->children[0]->label),
+				   "_OBJ_SELECTOR_TABLE_PTR") == 0
+		&& op_is_constant (node->children[1]->label->op)) {
+		int offset = node->children[1]->label->op->value->int_val;
+		auto sel = get_selector_offset (offset);
+		dasprintf (dstr, "\\n<%s>", sel->name);
 	}
 	dasprintf (dstr, "\"];\n");
 }
