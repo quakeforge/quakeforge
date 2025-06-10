@@ -123,11 +123,8 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	for (edge_iter = set_first (edges); edge_iter;
 		 edge_iter = set_next (edge_iter)) {
 		auto n = dag->nodes[edge_iter->element];
-		if (n->type != st_none) {
-			dasprintf (dstr,
-					   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dashed];\n",
-					   node, n);
-		}
+		dasprintf (dstr, "  \"dagnode_%p\" -> \"dagnode_%p\" [style=%s];\n",
+				   node, n, n->type == st_none ? "invis" : "dashed");
 	}
 	set_delete (edges);
 	if (0) {
