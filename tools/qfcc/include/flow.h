@@ -50,6 +50,7 @@ typedef struct flowvar_s {
 	int         number;			///< number of variable in func's ref list
 	int         flowaddr;		///< psuedo address for local and temp vars
 	int         minsize;		///< minimum size (via memset/move)
+	bool        kill_barred;	///< must not cross a killer barrier
 } flowvar_t;
 
 typedef struct udchain_s {

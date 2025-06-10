@@ -158,6 +158,15 @@ opcode_label (dag_t *dag, const char *opcode, const expr_t *expr)
 	return label;
 }
 
+static bool
+label_is_call (daglabel_t *l)
+{
+	if (!l->opcode) {
+		return false;
+	}
+	return strcmp (l->opcode, "call") == 0;
+}
+
 static __attribute__((pure)) dagnode_t *
 dag_node (operand_t *op)
 {
@@ -319,7 +328,7 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 }
 
 static dagnode_t *
-dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
+dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 {
 	dagnode_t  *node = dag_node (op);
 	dagnode_t  *killer = 0;
@@ -336,7 +345,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 	if (!node && op_is_alias (op)) {
 		operand_t  *uop = unalias_op (op);
 		if (uop != op) {
-			node = dag_make_child (dag, uop, s);
+			node = dag_make_child (dag, uop, s, barred);
 			dagnode_t *n;
 			dagnode_t search = {
 				.type = st_alias,
@@ -361,12 +370,17 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 		}
 	}
 
+	if (node && barred && node->number < dag->killer_node) {
+		killer = dag->nodes[dag->killer_node];
+		node = nullptr;
+	}
+
 	if (!node) {
 		// No valid node found (either first reference to the value,
 		// or the value's node was killed).
 		node = leaf_node (dag, op, s->expr);
 		if (node && dag->killer_node >= 0) {
-			set_add (node->edges, dag->killer_node);
+			killer = dag->nodes[dag->killer_node];
 		}
 	}
 	if (killer) {
@@ -397,9 +411,11 @@ dag_make_children (dag_t *dag, statement_t *s,
 		//FIXME hopefully only one non-pseudo op
 		operands[0] = op;
 	}
+	auto var = flow_get_var (operands[0]);
+	bool barred = var && var->kill_barred;
 	for (i = 0; i < 3; i++) {
 		operand_t  *op = operands[i + 1];
-		children[i] = dag_make_child (dag, op, s);
+		children[i] = dag_make_child (dag, op, s, barred);
 	}
 }
 
@@ -507,7 +523,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		if (use->op_type == op_pseudo) {
 			continue;
 		}
-		auto u = dag_make_child (dag, use, s);
+		auto u = dag_make_child (dag, use, s, false);
 		u->label->live = 1;
 		dag_live_aliases (use);
 		set_add (n->edges, u->number);
@@ -554,6 +570,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 			flowvar_t  *var = flowvars[g->element];
 			dagnode_t  *gn = dag_node (var->op);
 			if (gn) {
+				gn->killed = n;
 				set_add (n->edges, gn->number);
 				set_remove (gn->edges, n->number);
 			}
@@ -806,34 +823,42 @@ dag_sort_nodes (dag_t *dag)
 static void
 dag_kill_nodes (dag_t *dag, dagnode_t *n, bool is_call)
 {
-	int         i;
-	dagnode_t  *node;
-
-	for (i = 0; i < dag->num_nodes; i++) {
-		node = dag->nodes[i];
+	auto func = dag->flownode->graph->func;
+	for (int i = 0; i < dag->num_nodes; i++) {
+		auto node = dag->nodes[i];
 		if (node->killed) {
 			//the node is already killed
 			continue;
 		}
-		if (node == n->children[1])	{
-			// assume the pointer does not point to itself. This should be
-			// reasonable because without casting, only a void pointer can
-			// point to itself (the required type is recursive).
-			continue;
+		if (is_call) {
+			auto var = flow_get_var (node->label->op);
+			if (op_is_constant (node->label->op)
+				|| (node->type == st_func && label_is_call (node->label))
+				|| (var && set_is_member (func->global_vars, var->number))) {
+				node->killed = n;
+			}
+		} else {
+			if (node == n->children[1])	{
+				// assume the pointer does not point to itself. This should be
+				// reasonable because without casting, only a void pointer can
+				// point to itself (the required type is recursive).
+				continue;
+			}
+			if (op_is_constant (node->label->op)) {
+				// While constants in the Quake VM can be changed via a pointer,
+				// doing so would cause much more fun than a simple
+				// mis-optimization would, so consider them safe from pointer
+				// operations.
+				continue;
+			}
+			if (op_is_temp (node->label->op)) {
+				// Assume that the pointer cannot point to a temporary variable.
+				// This is reasonable as there is no programmer access to temps.
+				continue;
+			}
+			// otherwise, kill all nodes (FIXME be smarter)
+			node->killed = n;
 		}
-		if (!is_call && op_is_constant (node->label->op)) {
-			// While constants in the Quake VM can be changed via a pointer,
-			// doing so would cause much more fun than a simple
-			// mis-optimization would, so consider them safe from pointer
-			// operations.
-			continue;
-		}
-		if (!is_call && op_is_temp (node->label->op)) {
-			// Assume that the pointer cannot point to a temporary variable.
-			//  This is reasonable as there is no programmer access to temps.
-			continue;
-		}
-		node->killed = n;
 	}
 	n->killed = 0;
 	dag->killer_node = n->number;
@@ -984,6 +1009,12 @@ dag_create (flownode_t *flownode)
 			}
 		}
 		s->dag_node = n->number;
+		for (auto kill = s->kill; kill; kill = kill->next) {
+			auto l = operand_label (dag, kill);
+			if (l->dagnode && !l->dagnode->killed) {
+				l->dagnode->killed = n;
+			}
+		}
 		if (n->type == st_ptrassign) {
 			dag_kill_nodes (dag, n, false);
 		}

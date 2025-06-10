@@ -341,8 +341,14 @@ flow_get_var (operand_t *op)
 		return op->tempop.flowvar;
 	}
 	if (op->op_type == op_def) {
-		if (!op->def->flowvar)
-			op->def->flowvar = new_flowvar ();
+		if (!op->def->flowvar) {
+			auto var = new_flowvar ();
+			op->def->flowvar = var;
+			if (strncmp (op->def->name, ".arg", 4) == 0
+				|| strncmp (op->def->name, ".param", 6) == 0) {
+				var->kill_barred = true;
+			}
+		}
 		return op->def->flowvar;
 	}
 	if (op->op_type == op_pseudo) {
