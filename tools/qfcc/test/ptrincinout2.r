@@ -25,11 +25,11 @@ main ()
 	for (int i = 0; i < countof (data); i++) {
 		set_dest(i, func(ptr));
 	}
-	//printf ("ptr - data: %d\n", ptr - data);
+	printf ("ptr - data: %d\n", ptr - data);
 	bool fail = false;
-	//if (ptr - data != countof (data)) {
-	//	fail = true;
-	//}
+	if (ptr - data != countof (data)) {
+		fail = true;
+	}
 	for (int i = 0; i < countof (data); i++) {
 		printf ("%d %d %d\n", i, data[i], dest[i]);
 		if (dest[i] != data[i] + 1) {
