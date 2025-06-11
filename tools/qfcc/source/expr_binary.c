@@ -107,6 +107,15 @@ pointer_arithmetic (int op, const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
+pointer_array (int op, const expr_t *ptr, const expr_t *arr)
+{
+	scoped_src_loc (arr);
+	auto arr_type = get_type (arr);
+	arr = address_expr (ptr, dereference_type (arr_type));
+	return pointer_arithmetic (op, ptr, arr);
+}
+
+static const expr_t *
 pointer_compare (int op, const expr_t *e1, const expr_t *e2)
 {
 	auto t1 = get_type (e1);
@@ -502,6 +511,13 @@ shape_always (const type_t *a, const type_t *b)
 	return true;
 }
 
+static bool
+shape_ptr_array (const type_t *ptr_type, const type_t *array_type)
+{
+	return type_same (dereference_type (ptr_type),
+					  dereference_type (array_type));
+}
+
 static expr_type_t equality_ops[] = {
 	{	.match_a = is_string,  .match_b = is_string,
 			.res_type = bool_result },
@@ -562,6 +578,9 @@ static expr_type_t add_ops[] = {
 };
 
 static expr_type_t sub_ops[] = {
+	{   .match_a = is_ptr,      .match_b = is_array,
+			.match_shape = shape_ptr_array,
+			.process = pointer_array, },
 	{   .match_a = is_ptr,      .match_b = is_integral,
 			.process = pointer_arithmetic, },
 	{   .match_a = is_ptr,      .match_b = is_ptr,
