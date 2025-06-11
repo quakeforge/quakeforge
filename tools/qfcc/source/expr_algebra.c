@@ -2913,16 +2913,19 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 
 	auto algebra = algebra_get (dstType);
 	if (type_width (dstType) == type_width (srcType)) {
-		if (type_size (dstType) == type_size (srcType)) {
-			return edag_add_expr (new_alias_expr (dstType, e));
+		if (type_same (base_type (dstType), base_type (srcType))) {
+			auto alias = new_alias_expr (dstType, e);
+			return edag_add_expr (fold_constants (alias));
 		}
 		if (is_algebra (srcType)) {
 			algebra = algebra_get (srcType);
 			auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
 			return edag_add_expr (cast_expr (dstType, alias));
 		} else {
-			auto cast = edag_add_expr (cast_expr (algebra->type, e));
-			return edag_add_expr (new_alias_expr (dstType, cast));
+			auto type = vector_type (algebra->type, type_width (dstType));
+			auto cast = edag_add_expr (cast_expr (type, e));
+			cast = fold_constants (new_alias_expr (dstType, cast));
+			return edag_add_expr (cast);
 		}
 	}
 

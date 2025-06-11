@@ -1850,6 +1850,11 @@ type_promotes (const type_t *dst, const type_t *src)
 	if (is_enum (src)) {
 		return is_integral (dst) && !is_enum (dst);
 	}
+	if (is_algebra (dst) && !is_algebra (src)) {
+		if (type_same (base_type (dst), base_type (src))) {
+			return true;
+		}
+	}
 
 	dst = base_type (dst);
 	src = base_type (src);

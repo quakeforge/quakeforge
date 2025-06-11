@@ -400,7 +400,8 @@ init_elements (struct def_s *def, const expr_t *eles, expr_t *block)
 			} else if (c->type == ex_value) {
 				auto ctype = get_type (c);
 				if (ctype != element->type
-					&& type_assignable (element->type, ctype)) {
+					&& (type_promotes (element->type, ctype)
+						|| type_demotes (element->type, ctype))) {
 					if (!c->implicit
 						&& !type_promotes (element->type, ctype)) {
 						warning (c, "initialization of %s with %s"

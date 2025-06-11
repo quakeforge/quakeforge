@@ -1633,6 +1633,10 @@ fold_constants (const expr_t *e)
 			return e;
 		}
 		return do_op[t1][t2] (op, e, e1, e2);
+	} else if (e->type == ex_alias) {
+		if (options.code.progsversion == PROG_VERSION) {
+			return evaluate_constexpr (e);
+		}
 	}
 	return e;
 }
