@@ -1397,19 +1397,6 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		}
 		assign = assign_expr (args_list, list);
 		sblock = statement_single (sblock, assign);
-		if (args_params) {
-			// This relies on assign_expr not terminating the block for the
-			// list pointer assignment, and the lea instruction being the
-			// second last
-			auto as = (statement_t *) sblock->statements;
-			while (as->next && as->next->next) {
-				as = as->next;
-			}
-			auto param_def = as->opa->def;
-			auto k = def_operand (param_def, param_def->type, list);
-			k->next = as->kill;
-			as->kill = k;
-		}
 	}
 	statement_t *s = new_statement (st_func, "call", call);
 	sblock = statement_subexpr (sblock, func, &s->opa);

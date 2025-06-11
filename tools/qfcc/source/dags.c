@@ -330,18 +330,14 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 static dagnode_t *
 dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 {
+	if (s->type == st_address) {
+		// always return a fresh node
+		return leaf_node (dag, op, s->expr);
+	}
 	dagnode_t  *node = dag_node (op);
 	dagnode_t  *killer = 0;
-	bool        self_kill = false;
 
-	for (auto k = s->kill; k; k = k->next) {
-		if ((op == s->opa || op == s->opb)
-			&& flow_get_var (k) == flow_get_var (op)) {
-			self_kill = true;
-			break;
-		}
-	}
-	if (node && (node->killed || self_kill)) {
+	if (node && node->killed) {
 		// If the node has been killed, then a new node is needed
 		killer = node->killed;
 		node = 0;
