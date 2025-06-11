@@ -296,7 +296,7 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	if (is_pointer (dst_type) && is_array (src_type)) {
 		// assigning an array to a pointer is the same as taking the address of
 		// the array but using the type of the array elements
-		src = address_expr (src, src_type->fldptr.type);
+		src = address_expr (src, dereference_type (src_type));
 		src_type = get_type (src);
 	}
 	if (src->type == ex_bool) {
