@@ -111,7 +111,7 @@ pointer_array (int op, const expr_t *ptr, const expr_t *arr)
 {
 	scoped_src_loc (arr);
 	auto arr_type = get_type (arr);
-	arr = address_expr (ptr, dereference_type (arr_type));
+	arr = address_expr (arr, dereference_type (arr_type));
 	return pointer_arithmetic (op, ptr, arr);
 }
 
