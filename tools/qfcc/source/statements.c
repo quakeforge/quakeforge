@@ -1362,15 +1362,15 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		// them
 		// need two ops for the one def because there's two lists
 		if (a->type != ex_inout || a->inout.in) {
+			// out params do not use the argument
 			auto u = def_operand (def, arg_type, call);
 			u->next = use;
 			use = u;
 		}
-		if (a->type != ex_inout) {
-			auto k = def_operand (def, arg_type, call);
-			k->next = kill;
-			kill = k;
-		} else {
+		auto k = def_operand (def, arg_type, call);
+		k->next = kill;
+		kill = k;
+		if (a->type == ex_inout) {
 			// inout and out params define the argument
 			auto d = def_operand (def, arg_type, call);
 			d->next = define;
