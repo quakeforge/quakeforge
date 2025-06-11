@@ -1027,6 +1027,15 @@ typedef struct {
 	set_t      *stdef;
 	set_t      *uninit;
 	flowvar_t **vars;
+
+	set_t      *stuse;
+	set_t      *tmp;
+	set_t      *st_update;
+	set_t     **udchains;
+	int        *first_use;
+	int        *num_use;
+	udchain_t  *ud_chains;
+	int         num_ud_chains;
 } reaching_t;
 
 static void
@@ -1177,100 +1186,130 @@ duchain_cmp (const void *_a, const void *_b)
 }
 
 static void
+flow_count_record (statement_t *st, int var, reaching_t *r)
+{
+	r->num_ud_chains += set_count (r->tmp);
+}
+
+static void
+flow_record_start (statement_t *st, reaching_t *r)
+{
+	r->first_use[st->number] = r->num_ud_chains;
+	r->num_use[st->number] = 0;
+	set_add (r->st_update, st->number);
+}
+
+static void
+flow_record_record (statement_t *st, int var, reaching_t *r)
+{
+	for (set_iter_t *ud = set_first (r->tmp); ud;
+		 ud = set_next (ud)) {
+		set_add (r->udchains[var], r->num_ud_chains);
+		udchain_t  *udc = &r->ud_chains[r->num_ud_chains++];
+		udc->var = var;
+		udc->usest = st->number;
+		udc->defst = ud->element;
+	}
+}
+
+static void
+flow_record_end (statement_t *st, reaching_t *r)
+{
+	r->num_use[st->number] = r->num_ud_chains - r->first_use[st->number];
+}
+
+static void
+flow_chain_core (flowgraph_t *graph, reaching_t *reach,
+				 void (*start) (statement_t *st, reaching_t *r),
+				 void (*record) (statement_t *st, int var, reaching_t *r),
+				 void (*end) (statement_t *st, reaching_t *r))
+{
+	for (int i = 0; i < graph->num_nodes; i++) {
+		flownode_t *node = graph->nodes[i];
+		set_empty (reach->kill);
+		set_assign (reach->gen, node->reaching_defs.in);
+		for (auto st = node->sblock->statements; st; st = st->next) {
+			flow_analyze_statement (st, reach->stuse, reach->stdef, 0, 0);
+			if (st->type == st_func && statement_is_call (st)) {
+				// set def later?
+				flow_check_params (st, reach->stuse, 0, graph->func);
+			} else if (st->type == st_ptrmove) {
+				flow_check_move (st, reach->stuse, 0, graph->func);
+			}
+			set_empty (reach->tmp);
+
+			if (start) {
+				start (st, reach);
+			}
+
+			for (set_iter_t *vi = set_first (reach->stuse); vi;
+				 vi = set_next (vi)) {
+				flowvar_t *var = reach->vars[vi->element];
+				set_assign (reach->tmp, var->define);
+				set_intersection (reach->tmp, reach->gen);
+
+				if (record) {
+					record (st, vi->element, reach);
+				}
+			}
+
+			if (end) {
+				end (st, reach);
+			}
+
+			flow_statement_reaching (st, reach);
+		}
+	}
+}
+
+static void
 flow_build_chains (flowgraph_t *graph)
 {
+	set_t *udchains[graph->func->num_vars];
+	int    first_use[graph->func->num_statements];
+	int    num_use[graph->func->num_statements];
 	reaching_t  reach = {
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
 		.vars = graph->func->vars,
+
+		.stuse = set_new (),
+		.tmp = set_new (),
+		.st_update = set_new (),
+		.udchains = udchains,
+		.first_use = first_use,
+		.num_use = num_use,
 	};
 	statement_t *st;
 
 	reach.gen = set_new ();
 	reach.kill = set_new ();
-	set_t *stuse = set_new ();
-	set_t *tmp = set_new ();
-	set_t *st_update = set_new ();
-	set_t *udchains[graph->func->num_vars];
-	int    first_use[graph->func->num_statements];
-	int    num_use[graph->func->num_statements];
 	for (int i = 0; i < graph->func->num_vars; i++) {
 		udchains[i] = set_new ();
 	}
-	int num_ud_chains;
 	while (1) {
-		udchain_t  *ud_chains = 0;
-		num_ud_chains = 0;
+		reach.ud_chains = 0;
+		reach.num_ud_chains = 0;
 
 		// count use-def chain elements
-		for (int i = 0; i < graph->num_nodes; i++) {
-			flownode_t *node = graph->nodes[i];
-			set_empty (reach.kill);
-			set_assign (reach.gen, node->reaching_defs.in);
-			for (st = node->sblock->statements; st; st = st->next) {
-				flow_analyze_statement (st, stuse, reach.stdef, 0, 0);
-				if (st->type == st_func && statement_is_call (st)) {
-					// set def later?
-					flow_check_params (st, stuse, 0, graph->func);
-				} else if (st->type == st_ptrmove) {
-					flow_check_move (st, stuse, 0, graph->func);
-				}
-				set_empty (tmp);
-				for (set_iter_t *vi = set_first (stuse); vi;
-					 vi = set_next (vi)) {
-					flowvar_t *var = reach.vars[vi->element];
-					set_assign (tmp, var->define);
-					set_intersection (tmp, reach.gen);
-					num_ud_chains += set_count (tmp);
-				}
-				flow_statement_reaching (st, &reach);
-			}
-		}
-		if (num_ud_chains == graph->func->num_ud_chains) {
+		flow_chain_core (graph, &reach, nullptr, flow_count_record, nullptr);
+		if (reach.num_ud_chains == graph->func->num_ud_chains) {
 			break;
 		}
-		ud_chains = malloc (num_ud_chains * sizeof (udchain_t));
-		num_ud_chains = 0;
+
+		reach.ud_chains = malloc (sizeof (udchain_t[reach.num_ud_chains]));
+		reach.num_ud_chains = 0;
 		for (int i = 0; i < graph->func->num_vars; i++) {
-			set_empty (udchains[i]);
+			set_empty (reach.udchains[i]);
 		}
-		set_empty (st_update);
-		for (int i = 0; i < graph->num_nodes; i++) {
-			flownode_t *node = graph->nodes[i];
-			set_empty (reach.kill);
-			set_assign (reach.gen, node->reaching_defs.in);
-			for (st = node->sblock->statements; st; st = st->next) {
-				flow_analyze_statement (st, stuse, reach.stdef, 0, 0);
-				if (st->type == st_func && statement_is_call (st)) {
-					// set def later?
-					flow_check_params (st, stuse, 0, graph->func);
-				} else if (st->type == st_ptrmove) {
-					flow_check_move (st, stuse, 0, graph->func);
-				}
-				set_empty (tmp);
-				first_use[st->number] = num_ud_chains;
-				num_use[st->number] = 0;
-				set_add (st_update, st->number);
-				for (set_iter_t *vi = set_first (stuse); vi;
-					 vi = set_next (vi)) {
-					flowvar_t *var = reach.vars[vi->element];
-					set_assign (tmp, var->define);
-					set_intersection (tmp, reach.gen);
-					for (set_iter_t *ud = set_first (tmp); ud;
-						 ud = set_next (ud)) {
-						set_add (udchains[vi->element], num_ud_chains);
-						udchain_t  *udc = &ud_chains[num_ud_chains++];
-						udc->var = vi->element;
-						udc->usest = st->number;
-						udc->defst = ud->element;
-					}
-				}
-				num_use[st->number] = num_ud_chains - first_use[st->number];
-				flow_statement_reaching (st, &reach);
-			}
-		}
-		for (set_iter_t *si = set_first (st_update); si; si = set_next (si)) {
+		// record use-def chain elements
+		set_empty (reach.st_update);
+		flow_chain_core (graph, &reach, flow_record_start,
+						 flow_record_record, flow_record_end);
+
+		for (set_iter_t *si = set_first (reach.st_update); si;
+			 si = set_next (si)) {
 			st = graph->func->statements[si->element];
 			st->first_use = first_use[si->element];
 			st->num_use = num_use[si->element];
@@ -1280,27 +1319,27 @@ flow_build_chains (flowgraph_t *graph)
 			set_assign (var->udchains, udchains[i]);
 		}
 		free (graph->func->ud_chains);
-		graph->func->ud_chains = ud_chains;
-		graph->func->num_ud_chains = num_ud_chains;
+		graph->func->ud_chains = reach.ud_chains;
+		graph->func->num_ud_chains = reach.num_ud_chains;
 	}
 
 	for (int i = 0; i < graph->func->num_vars; i++) {
 		set_delete (udchains[i]);
 	}
-	set_delete (stuse);
-	set_delete (tmp);
+	set_delete (reach.stuse);
+	set_delete (reach.tmp);
 	set_delete (reach.gen);
 	set_delete (reach.kill);
 	set_delete (reach.stdef);
 
-	graph->func->du_chains = malloc (num_ud_chains * sizeof (udchain_t));
-	if (num_ud_chains) {
+	graph->func->du_chains = malloc (sizeof (udchain_t[reach.num_ud_chains]));
+	if (reach.num_ud_chains) {
 		memcpy (graph->func->du_chains, graph->func->ud_chains,
-				num_ud_chains * sizeof (udchain_t));
-		heapsort (graph->func->du_chains, num_ud_chains, sizeof (udchain_t),
-				  duchain_cmp);
+				sizeof (udchain_t[reach.num_ud_chains]));
+		heapsort (graph->func->du_chains, reach.num_ud_chains,
+				  sizeof (udchain_t), duchain_cmp);
 	}
-	for (int i = 0; i < num_ud_chains; i++) {
+	for (int i = 0; i < reach.num_ud_chains; i++) {
 		udchain_t   du = graph->func->du_chains[i];
 
 		flowvar_t  *var = graph->func->vars[du.var];
