@@ -332,12 +332,17 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 {
 	dagnode_t  *node = dag_node (op);
 	dagnode_t  *killer = 0;
+	bool        self_kill = false;
 
-	if (node && (node->killed || s->type == st_address)) {
+	for (auto k = s->kill; k; k = k->next) {
+		if ((op == s->opa || op == s->opb)
+			&& flow_get_var (k) == flow_get_var (op)) {
+			self_kill = true;
+			break;
+		}
+	}
+	if (node && (node->killed || self_kill)) {
 		// If the node has been killed, then a new node is needed
-		// taking the address of a variable effectively kills the node it's
-		// attached to. FIXME should this be for only when the variable is
-		// in the attached identifiers list and is not the node's label?
 		killer = node->killed;
 		node = 0;
 	}
