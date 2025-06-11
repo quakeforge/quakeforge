@@ -1027,10 +1027,10 @@ typedef struct {
 	set_t      *stdef;
 	set_t      *uninit;
 	flowvar_t **vars;
-} reachint_t;
+} reaching_t;
 
 static void
-flow_statement_reaching (statement_t *st, reachint_t *r)
+flow_statement_reaching (statement_t *st, reaching_t *r)
 {
 	set_empty (r->stgen);
 	set_empty (r->stkill);
@@ -1059,7 +1059,7 @@ flow_reaching_defs (flowgraph_t *graph)
 	int         changed;
 	flownode_t *node;
 	statement_t *st;
-	reachint_t  reach = {
+	reaching_t  reach = {
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
@@ -1179,7 +1179,7 @@ duchain_cmp (const void *_a, const void *_b)
 static void
 flow_build_chains (flowgraph_t *graph)
 {
-	reachint_t  reach = {
+	reaching_t  reach = {
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
