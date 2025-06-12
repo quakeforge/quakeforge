@@ -939,7 +939,9 @@ follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 }
 
 static void
-flow_find_ptr (set_t *use, set_t *use_ptr, statement_t *st, function_t *func)
+flow_find_ptr (set_t *access, set_t *access_ptr,
+			   statement_t *st, function_t *func,
+			   void (*add_access) (flowvar_t *var, statement_t *st))
 {
 	set_t      *ptr = set_new ();
 	set_t      *visited = set_new ();
@@ -947,13 +949,13 @@ flow_find_ptr (set_t *use, set_t *use_ptr, statement_t *st, function_t *func)
 		udchain_t   ud = func->ud_chains[i + st->first_use];
 		set_empty (visited);
 		set_add (visited, st->number);
-		if (set_is_member (use_ptr, ud.var)) {
+		if (set_is_member (access_ptr, ud.var)) {
 			set_empty (ptr);
 			follow_ud_chain (ud, func, ptr, visited);
 			for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
 				flowvar_t  *var = func->vars[p->element];
-				flow_add_op_var (use, var->op, 0);
-				flowvar_add_use (var, st);
+				flow_add_op_var (access, var->op, 0);
+				add_access (var, st);
 			}
 		}
 	}
@@ -970,12 +972,12 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 	set_t      *use_ptr = set_new ();
 	set_t      *def_ptr = set_new ();
 
-	int         have_use = 0;
+	bool        have_use = false;
 	for (operand_t *op = st->use; op; op = op->next) {
 		if (op->op_type == op_def && is_ptr (op->type)) {
 			flowvar_t  *var = flow_get_var (op);
 			set_add (use_ptr, var->number);
-			have_use = 1;
+			have_use = true;
 			const char *name = op->def->name;
 			if (!strncmp (name,".arg", 4) || !strncmp (name, ".param_", 7)) {
 				set_add (def_ptr, var->number);
@@ -983,7 +985,7 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 		}
 	}
 	if (have_use) {
-		flow_find_ptr (use, use_ptr, st, func);
+		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 
 	set_delete (use_ptr);
@@ -1010,7 +1012,7 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 		set_add (def_ptr, var_c->number);
 	}
 	if (use) {
-		flow_find_ptr (use, use_ptr, st, func);
+		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 
 	set_delete (visited);
