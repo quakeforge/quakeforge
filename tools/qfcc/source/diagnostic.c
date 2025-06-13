@@ -169,6 +169,8 @@ __internal_error (const expr_t *e, const char *file, int line,
 {
 	dstring_t  *message = dstring_new ();
 
+	fflush (stdout);
+
 	report_function (e);
 
 	format_message (message, "internal error", e, fmt, args);
