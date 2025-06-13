@@ -44,6 +44,7 @@
 
 #include "QF/alloc.h"
 #include "QF/mathlib.h"
+#include "QF/sys.h"
 #include "QF/va.h"
 
 #include "tools/qfcc/include/class.h"
@@ -294,16 +295,16 @@ print_operand_chain (const char *name, operand_t *op)
 void
 print_statement (statement_t *s)
 {
-	printf ("(%s, ", s->opcode);
+	printf ("(" GRN "%s" DFL ", " MAG, s->opcode);
 	if (s->opa)
 		_print_operand (s->opa);
-	printf (", ");
+	printf (DFL ", " ONG);
 	if (s->opb)
 		_print_operand (s->opb);
-	printf (", ");
+	printf (DFL ", " CYN);
 	if (s->opc)
 		_print_operand (s->opc);
-	printf (")\n");
+	printf (DFL ")\n");
 	print_operand_chain ("use", s->use);
 	print_operand_chain ("def", s->def);
 	print_operand_chain ("kill", s->kill);
