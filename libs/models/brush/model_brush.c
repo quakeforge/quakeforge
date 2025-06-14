@@ -190,12 +190,13 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const mod_brush_t *brush, byte defvis,
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
-	char        name[17];
+	constexpr const int maxlen = sizeof (tx->name) - 1;
+	char        name[maxlen + 1];
 	int         num = 0, i;
 	const char *tag;
 
-	strncpy (name, tx->name, 16);
-	name[16] = 0;
+	strncpy (name, tx->name, maxlen);
+	name[maxlen] = 0;
 	do {
 		for (i = 0; i < ind; i++)
 			if (textures[i] && !strcmp (textures[i]->name, tx->name))
@@ -203,12 +204,13 @@ mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 		if (i == ind)
 			break;
 		tag = va ("~%x", num++);
-		strncpy (tx->name, name, 16);
-		tx->name[15] = 0;
-		if (strlen (name) + strlen (tag) <= 15)
+		// safe because name is known to be truncated and no bigger than
+		// tx->name
+		strcpy (tx->name, name);
+		if (strlen (name) + strlen (tag) <= maxlen)
 			strcat (tx->name, tag);
 		else
-			strcpy (tx->name + 15 - strlen (tag), tag);
+			strcpy (tx->name + maxlen - strlen (tag), tag);
 	} while (1);
 }
 
