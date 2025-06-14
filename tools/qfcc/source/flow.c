@@ -910,6 +910,31 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 	}
 }
 
+static int
+flowvar_def_add_define (def_t *def, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = def->flowvar;
+	if (var) {
+		set_add (var->define, st->number);
+	}
+	return 0;
+}
+
+static void
+flowvar_add_define (flowvar_t *var, statement_t *st)
+{
+	set_add (var->define, st->number);
+
+	if (var->op->op_type != op_def) {
+		return;
+	}
+	def_t      *def = var->op->def;
+	if (def) {
+		def_visit_all (def, 2, flowvar_def_add_define, st);
+	}
+}
+
 static void
 follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 {
@@ -922,6 +947,11 @@ follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 	}
 	set_add (visited, st->number);
 	if (st->type == st_address) {
+		//FIXME assumes &foo
+		//int *foo; &foo[0]; vs int *foo; &foo;
+		// so a little buggy for the former.
+		// also, lea is ambiguious in instruction lookup (which affects fixing
+		// this, thus mention here).
 		flowvar_t  *var = flow_get_var (st->opa);
 		set_add (ptr, var->number);
 		return;
@@ -973,6 +1003,7 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 	set_t      *def_ptr = set_new ();
 
 	bool        have_use = false;
+	bool        have_def = false;
 	for (operand_t *op = st->use; op; op = op->next) {
 		if (op->op_type == op_def && is_ptr (op->type)) {
 			flowvar_t  *var = flow_get_var (op);
@@ -981,11 +1012,15 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 			const char *name = op->def->name;
 			if (!strncmp (name,".arg", 4) || !strncmp (name, ".param_", 7)) {
 				set_add (def_ptr, var->number);
+				have_def = true;
 			}
 		}
 	}
 	if (have_use) {
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
+	}
+	if (have_def) {
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_define);
 	}
 
 	set_delete (use_ptr);
@@ -1014,6 +1049,9 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 	if (use) {
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
+	if (def) {
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_define);
+	}
 
 	set_delete (visited);
 	set_delete (use_ptr);
@@ -1027,6 +1065,7 @@ typedef struct {
 	set_t      *stgen;
 	set_t      *stkill;
 	set_t      *stdef;
+	set_t      *stamb;
 	set_t      *uninit;
 	flowvar_t **vars;
 
@@ -1038,6 +1077,9 @@ typedef struct {
 	int        *num_use;
 	udchain_t  *ud_chains;
 	int         num_ud_chains;
+	int         max_ud_chains;
+	int         iters;
+	function_t *func;
 } reaching_t;
 
 static void
@@ -1046,12 +1088,22 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 	set_empty (r->stgen);
 	set_empty (r->stkill);
 
-	set_iter_t *var_i;
-	for (var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
+	for (auto var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
 		flowvar_t  *var = r->vars[var_i->element];
 		flow_kill_aliases (r->stkill, var, r->uninit);
 		set_remove (r->stkill, st->number);
 		set_add (r->stgen, st->number);
+	}
+	if (r->stamb && !set_is_empty (r->stamb)) {
+		for (auto vi = set_first (r->stamb); vi; vi = set_next (vi)) {
+			auto var = *r->vars[vi->element];
+			set_assign (r->tmp, var.define);
+			set_difference (r->tmp, r->func->real_statements);
+			var.define = r->tmp;
+			flow_kill_aliases (r->stkill, &var, r->func->real_statements);
+			set_remove (r->stkill, st->number);
+			set_add (r->stgen, st->number);
+		}
 	}
 
 	set_difference (r->gen, r->stkill);
@@ -1232,21 +1284,22 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 		set_assign (reach->gen, node->reaching_defs.in);
 		for (auto st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, reach->stuse, reach->stdef, 0, 0);
+			set_empty (reach->stamb);
 			if (st->type == st_func && statement_is_call (st)) {
-				// set def later?
-				flow_check_params (st, reach->stuse, 0, graph->func);
+				flow_check_params (st, reach->stuse, reach->stamb, graph->func);
 			} else if (st->type == st_ptrmove) {
-				flow_check_move (st, reach->stuse, 0, graph->func);
+				flow_check_move (st, reach->stuse, reach->stamb, graph->func);
 			}
-			set_empty (reach->tmp);
 
 			if (start) {
 				start (st, reach);
 			}
 
+			//printf ("gen: %s\n", set_as_string (reach->gen));
 			for (set_iter_t *vi = set_first (reach->stuse); vi;
 				 vi = set_next (vi)) {
 				flowvar_t *var = reach->vars[vi->element];
+				//printf ("var: %s\n", set_as_string (var->define));
 				set_assign (reach->tmp, var->define);
 				set_intersection (reach->tmp, reach->gen);
 
@@ -1274,6 +1327,7 @@ flow_build_chains (flowgraph_t *graph)
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
+		.stamb = set_new (),
 		.vars = graph->func->vars,
 
 		.stuse = set_new (),
@@ -1282,6 +1336,7 @@ flow_build_chains (flowgraph_t *graph)
 		.udchains = udchains,
 		.first_use = first_use,
 		.num_use = num_use,
+		.func = graph->func,
 	};
 	statement_t *st;
 
@@ -1292,15 +1347,25 @@ flow_build_chains (flowgraph_t *graph)
 	}
 	while (1) {
 		reach.ud_chains = 0;
+		int old_num_ud_chains;
 		reach.num_ud_chains = 0;
+		// pointer analysis can cause ud-chain count to increase, so need
+		// to iterate until the count stabilizes
+		do {
+			old_num_ud_chains = reach.num_ud_chains;
+			reach.num_ud_chains = 0;
+			reach.iters++;
+			// count use-def chain elements
+			flow_chain_core (graph, &reach, nullptr, flow_count_record,
+							 nullptr);
+		} while (old_num_ud_chains != reach.num_ud_chains);
 
-		// count use-def chain elements
-		flow_chain_core (graph, &reach, nullptr, flow_count_record, nullptr);
 		if (reach.num_ud_chains == graph->func->num_ud_chains) {
 			break;
 		}
 
 		reach.ud_chains = malloc (sizeof (udchain_t[reach.num_ud_chains]));
+		reach.max_ud_chains = reach.num_ud_chains;
 		reach.num_ud_chains = 0;
 		for (int i = 0; i < graph->func->num_vars; i++) {
 			set_empty (reach.udchains[i]);
@@ -1309,6 +1374,10 @@ flow_build_chains (flowgraph_t *graph)
 		set_empty (reach.st_update);
 		flow_chain_core (graph, &reach, flow_record_start,
 						 flow_record_record, flow_record_end);
+		if (reach.num_ud_chains != reach.max_ud_chains) {
+			internal_error (0, "miscounted ud chains: %d >= %d",
+							reach.num_ud_chains, reach.max_ud_chains);
+		}
 
 		for (set_iter_t *si = set_first (reach.st_update); si;
 			 si = set_next (si)) {
@@ -1333,6 +1402,7 @@ flow_build_chains (flowgraph_t *graph)
 	set_delete (reach.gen);
 	set_delete (reach.kill);
 	set_delete (reach.stdef);
+	set_delete (reach.stamb);
 
 	graph->func->du_chains = malloc (sizeof (udchain_t[reach.num_ud_chains]));
 	if (reach.num_ud_chains) {
