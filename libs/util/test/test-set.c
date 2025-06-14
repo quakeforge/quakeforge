@@ -360,6 +360,10 @@ struct {
 	{make_everything, make_not_SIZE, 0, set_is_superset, 0, 0},
 	{make_everything, make_SIZE, 0, set_is_subset,   1, 0},
 	{make_everything, make_SIZE, 0, set_is_superset, 0, 0},
+	{make_SIZE, make_empty, 0, set_is_subset,   1, 0},
+	{make_SIZE, make_empty, 0, set_is_superset, 0, 0},
+	{make_empty, make_SIZE, 0, set_is_subset,   0, 0},
+	{make_empty, make_SIZE, 0, set_is_superset, 1, 0},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
