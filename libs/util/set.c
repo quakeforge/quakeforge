@@ -517,7 +517,7 @@ set_test_n_n (const set_t *s1, const set_t *s2)
 	}
 	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= s1->map[i];
-		notsuperset |= s2->map[i];
+		notsuperset |= s1->map[i];
 	}
 	for ( ; i < SET_WORDS (s2); i++) {
 		difference |= s2->map[i];
