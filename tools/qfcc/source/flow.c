@@ -96,6 +96,7 @@ new_flowvar (void)
 	ALLOC (256, flowvar_t, vars, var);
 	var->use = set_new ();
 	var->define = set_new ();
+	var->ambiguous = set_new ();
 	var->udchains = set_new ();
 	var->duchains = set_new ();
 	return var;
@@ -911,27 +912,27 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 }
 
 static int
-flowvar_def_add_define (def_t *def, void *data)
+flowvar_def_add_ambiguous (def_t *def, void *data)
 {
 	statement_t *st = data;
 	flowvar_t  *var = def->flowvar;
 	if (var) {
-		set_add (var->define, st->number);
+		set_add (var->ambiguous, st->number);
 	}
 	return 0;
 }
 
 static void
-flowvar_add_define (flowvar_t *var, statement_t *st)
+flowvar_add_ambiguous (flowvar_t *var, statement_t *st)
 {
-	set_add (var->define, st->number);
+	set_add (var->ambiguous, st->number);
 
 	if (var->op->op_type != op_def) {
 		return;
 	}
 	def_t      *def = var->op->def;
 	if (def) {
-		def_visit_all (def, 2, flowvar_def_add_define, st);
+		def_visit_all (def, 2, flowvar_def_add_ambiguous, st);
 	}
 }
 
@@ -950,7 +951,7 @@ follow_ud_chain (udchain_t ud, function_t *func, set_t *ptr, set_t *visited)
 		//FIXME assumes &foo
 		//int *foo; &foo[0]; vs int *foo; &foo;
 		// so a little buggy for the former.
-		// also, lea is ambiguious in instruction lookup (which affects fixing
+		// also, lea is ambiguous in instruction lookup (which affects fixing
 		// this, thus mention here).
 		flowvar_t  *var = flow_get_var (st->opa);
 		set_add (ptr, var->number);
@@ -1020,7 +1021,7 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 	if (have_def) {
-		flow_find_ptr (def, def_ptr, st, func, flowvar_add_define);
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_ambiguous);
 	}
 
 	set_delete (use_ptr);
@@ -1050,7 +1051,7 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 	if (def) {
-		flow_find_ptr (def, def_ptr, st, func, flowvar_add_define);
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_ambiguous);
 	}
 
 	set_delete (visited);
@@ -1088,6 +1089,17 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 	set_empty (r->stgen);
 	set_empty (r->stkill);
 
+	if (r->func->ud_chains && r->stamb) {
+		set_empty (r->stamb);
+		if (st->type == st_func && statement_is_call (st)) {
+			flow_check_params (st, r->stuse, r->stamb, r->func);
+		} else if (st->type == st_ptrmove) {
+			flow_check_move (st, r->stuse, r->stamb, r->func);
+		}
+		// separate ambiguous and unambiguous defs
+		set_difference (r->stamb, r->stdef);
+	}
+
 	for (auto var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
 		flowvar_t  *var = r->vars[var_i->element];
 		flow_kill_aliases (r->stkill, var, r->uninit);
@@ -1097,7 +1109,7 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 	if (r->stamb && !set_is_empty (r->stamb)) {
 		for (auto vi = set_first (r->stamb); vi; vi = set_next (vi)) {
 			auto var = *r->vars[vi->element];
-			set_assign (r->tmp, var.define);
+			set_assign (r->tmp, var.ambiguous);
 			set_difference (r->tmp, r->func->real_statements);
 			var.define = r->tmp;
 			flow_kill_aliases (r->stkill, &var, r->func->real_statements);
@@ -1126,7 +1138,11 @@ flow_reaching_defs (flowgraph_t *graph)
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
+		.stamb = set_new (),
+		.tmp = set_new (),
 		.vars = graph->func->vars,
+		.stuse = set_new (),
+		.func = graph->func,
 	};
 	set_t      *in, *out, *uninit;
 	set_iter_t *pred_i;
@@ -1172,7 +1188,7 @@ flow_reaching_defs (flowgraph_t *graph)
 		reach.gen = set_new ();
 		reach.kill = set_new ();
 		for (st = node->sblock->statements; st; st = st->next) {
-			flow_analyze_statement (st, 0, reach.stdef, 0, 0);
+			flow_analyze_statement (st, reach.stuse, reach.stdef, 0, 0);
 			flow_statement_reaching (st, &reach);
 		}
 		node->reaching_defs.gen = reach.gen;
@@ -1206,6 +1222,9 @@ flow_reaching_defs (flowgraph_t *graph)
 	}
 	set_delete (oldout);
 
+	set_delete (reach.stuse);
+	set_delete (reach.tmp);
+	set_delete (reach.stamb);
 	set_delete (reach.stdef);
 	set_delete (reach.stgen);
 	set_delete (reach.stkill);
@@ -1286,21 +1305,20 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 			flow_analyze_statement (st, reach->stuse, reach->stdef, 0, 0);
 			set_empty (reach->stamb);
 			if (st->type == st_func && statement_is_call (st)) {
-				flow_check_params (st, reach->stuse, reach->stamb, graph->func);
+				flow_check_params (st, reach->stuse, nullptr, graph->func);
 			} else if (st->type == st_ptrmove) {
-				flow_check_move (st, reach->stuse, reach->stamb, graph->func);
+				flow_check_move (st, reach->stuse, nullptr, graph->func);
 			}
 
 			if (start) {
 				start (st, reach);
 			}
 
-			//printf ("gen: %s\n", set_as_string (reach->gen));
 			for (set_iter_t *vi = set_first (reach->stuse); vi;
 				 vi = set_next (vi)) {
 				flowvar_t *var = reach->vars[vi->element];
-				//printf ("var: %s\n", set_as_string (var->define));
 				set_assign (reach->tmp, var->define);
+				set_union (reach->tmp, var->ambiguous);
 				set_intersection (reach->tmp, reach->gen);
 
 				if (record) {
@@ -1411,6 +1429,12 @@ flow_build_chains (flowgraph_t *graph)
 		heapsort (graph->func->du_chains, reach.num_ud_chains,
 				  sizeof (udchain_t), duchain_cmp);
 	}
+	//Since flow_reaching_defs is called iteratively, need to ensure num_def
+	//is 0 before building the du-chains
+	for (int i = 0; i < graph->func->num_statements; i++) {
+		auto st = graph->func->statements[i];
+		st->num_def = 0;
+	}
 	for (int i = 0; i < reach.num_ud_chains; i++) {
 		udchain_t   du = graph->func->du_chains[i];
 
@@ -1424,6 +1448,29 @@ flow_build_chains (flowgraph_t *graph)
 			}
 		}
 	}
+}
+
+static bool
+flow_find_ambiguous_defs (flowgraph_t *graph)
+{
+	bool have_ambiguous = false;
+	auto stamb = set_new ();
+
+	for (int i = 0; i < graph->num_nodes; i++) {
+		flownode_t *node = graph->nodes[i];
+		for (auto st = node->sblock->statements; st; st = st->next) {
+			set_empty (stamb);
+			if (st->type == st_func && statement_is_call (st)) {
+				flow_check_params (st, nullptr, stamb, graph->func);
+			} else if (st->type == st_ptrmove) {
+				flow_check_move (st, nullptr, stamb, graph->func);
+			}
+			have_ambiguous |= !set_is_empty (stamb);
+		}
+	}
+	set_delete (stamb);
+
+	return have_ambiguous;
 }
 
 static void
@@ -1461,6 +1508,10 @@ flow_live_vars (flowgraph_t *graph)
 				}
 			}
 			for (int i = 0; i < st->num_def; i++) {
+				if (st->first_def + i >= graph->func->num_ud_chains) {
+					internal_error (st->expr, "invalid st def: %d %d %d\n",
+									st->first_def, i, graph->func->num_ud_chains);
+				}
 				udchain_t   du = graph->func->du_chains[st->first_def + i];
 				if (!set_is_member (node_statements, du.usest)) {
 					set_add (stdef, du.var);
@@ -2277,8 +2328,19 @@ flow_data_flow (function_t *func)
 		dump_dot ("statements", graph, dump_dot_flow_statements);
 	flow_reaching_defs (graph);
 	flow_build_chains (graph);
-	if (options.block_dot.reaching)
+	if (options.block_dot.reaching) {
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);
+	}
+	if (flow_find_ambiguous_defs (graph)) {
+		flow_reaching_defs (graph);
+		if (options.block_dot.reaching) {
+			dump_dot ("reaching", graph, dump_dot_flow_reaching);
+		}
+		flow_build_chains (graph);
+	}
+	if (options.block_dot.reaching) {
+		dump_dot ("reaching", graph, dump_dot_flow_reaching);
+	}
 	flow_live_vars (graph);
 	if (options.block_dot.live)
 		dump_dot ("live", graph, dump_dot_flow_live);

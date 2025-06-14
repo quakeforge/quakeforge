@@ -44,6 +44,7 @@ typedef struct flowvar_s {
 	struct flowvar_s *next;		///< for ALLOC
 	struct set_s *use;			///< set of statements that use this var
 	struct set_s *define;		///< set of statements that define this var
+	struct set_s *ambiguous;	///< ambiguous definition statements
 	struct set_s *udchains;		///< set of ud-chains for this var
 	struct set_s *duchains;		///< set of du-chains for this var
 	struct operand_s *op;		///< an operand using this var
