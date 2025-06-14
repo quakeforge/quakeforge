@@ -230,7 +230,7 @@ pack_add (pack_t *pack, const char *filename)
 		fprintf (stderr, "removing leading /");
 		filename++;
 	}
-	strncpy (pf->name, filename, sizeof (pf->name));
+	strncpy (pf->name, filename, sizeof (pf->name) - 1);
 	pf->name[sizeof (pf->name) - 1] = 0;
 
 	Qseek (pack->handle, 0, SEEK_END);

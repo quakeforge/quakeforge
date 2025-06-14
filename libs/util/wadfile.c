@@ -250,7 +250,7 @@ wad_add (wad_t *wad, const char *filename, const char *lumpname, byte type)
 
 	pf = &wad->lumps[wad->numlumps++];
 
-	strncpy (pf->name, lumpname, sizeof (pf->name));
+	strncpy (pf->name, lumpname, sizeof (pf->name) - 1);
 	pf->name[sizeof (pf->name) - 1] = 0;
 
 	Qseek (wad->handle, 0, SEEK_END);
@@ -299,7 +299,7 @@ wad_add_data (wad_t *wad, const char *lumpname, byte type, const void *data,
 
 	pf = &wad->lumps[wad->numlumps++];
 
-	strncpy (pf->name, lumpname, sizeof (pf->name));
+	strncpy (pf->name, lumpname, sizeof (pf->name) - 1);
 	pf->name[sizeof (pf->name) - 1] = 0;
 
 	Qseek (wad->handle, 0, SEEK_END);
