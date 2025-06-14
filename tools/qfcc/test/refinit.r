@@ -19,11 +19,16 @@ typedef struct imui_style_s {
 
 void get_style (imui_style_t *s) = #0;
 
-int do_something ()
+int do_something (bool x)
 {
+	int y;
 	imui_style_t style;
 	get_style (&style);
-	return style.background.normal;
+	y = style.background.normal;
+	if (x) {
+		return style.foreground.normal;
+	}
+	return y;
 }
 
 int main()
