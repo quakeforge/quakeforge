@@ -246,7 +246,7 @@ draw_cube ()
 		//instead of the camera (projection of camera point on the plane)
 		static point_t c = e123 - 6*e032 + 0*e021 + 0*e013;
 
-		point_t a[10] = {};//FIXME
+		point_t a[10];
 		for (int i = 0; i < 10; i++) {
 			auto p = cur_points[i];
 			a[i] = (p ∨ c) ∧ s;

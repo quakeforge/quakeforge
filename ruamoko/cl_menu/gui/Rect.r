@@ -5,10 +5,7 @@
 
 Rect makeRect (int x, int y, int w, int h)
 {
-	//FIXME Rect r = {{x, y}, {w, h}};
-	Rect r;
-	r.origin = makePoint (x, y);
-	r.size = makeSize (w, h);
+	Rect r = {{x, y}, {w, h}};
 	return r;
 }
 
