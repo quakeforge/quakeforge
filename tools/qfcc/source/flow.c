@@ -1510,25 +1510,25 @@ flow_live_vars (flowgraph_t *graph)
 }
 
 static void
-flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
+flow_uninit_scan_statements (flownode_t *node, set_t *uninitialized)
 {
 	set_t      *stuse;
 	set_t      *stdef;
 	statement_t *st;
-	set_iter_t *var_i;
-	flowvar_t  *var;
-	operand_t  *op;
 
-	// defs holds only reaching definitions. make it hold only reaching
-	// uninitialized definitions
-	set_intersection (defs, uninit);
+	auto func = node->graph->func;
+	auto uninit = set_new ();
+	set_assign (uninit, uninitialized);
+
 	stuse = set_new ();
 	stdef = set_new ();
 	for (st = node->sblock->statements; st; st = st->next) {
 		flow_analyze_statement (st, stuse, stdef, 0, 0);
-		for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
-			var = node->graph->func->vars[var_i->element];
-			if (set_is_intersecting (defs, var->define)) {
+		for (int i = 0; i < st->num_use; i++) {
+			auto ud = func->ud_chains[st->first_use + i];
+			if (set_is_member (stuse, ud.var)//unambiguous use
+				&& set_is_member (uninit, ud.defst)) {
+				auto var = func->vars[ud.var];
 				if (var->op->op_type == op_pseudo) {
 					pseudoop_t *op = var->op->pseudoop;
 					if (op->uninitialized) {
@@ -1550,26 +1550,8 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 							 st->number, operand_string (var->op));
 					}
 				}
-			}
-			// avoid repeat warnings in this node
-			set_difference (defs, var->define);
-		}
-		for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
-			var = node->graph->func->vars[var_i->element];
-			// kill any reaching uninitialized definitions for this variable
-			set_difference (defs, var->define);
-			if (var->op->op_type == op_temp) {
-				op = var->op;
-				if (op->tempop.alias) {
-					var = op->tempop.alias->tempop.flowvar;
-					if (var)
-						set_difference (defs, var->define);
-				}
-				for (op = op->tempop.alias_ops; op; op = op->next) {
-					var = op->tempop.flowvar;
-					if (var)
-						set_difference (defs, var->define);
-				}
+				// avoid repeat warnings in this node
+				set_difference (uninit, var->define);
 			}
 		}
 	}
@@ -1582,9 +1564,6 @@ flow_uninitialized (flowgraph_t *graph)
 {
 	int         i;
 	flownode_t *node;
-	flowvar_t  *var;
-	set_iter_t *var_i;
-	set_t      *defs;
 	set_t      *uninitialized;
 
 	uninitialized = set_new ();
@@ -1592,28 +1571,11 @@ flow_uninitialized (flowgraph_t *graph)
 	set_assign (uninitialized, node->reaching_defs.out);
 	// parameters are, by definition, initialized
 	set_difference (uninitialized, graph->func->param_vars);
-	defs = set_new ();
 
 	for (i = 0; i < graph->num_nodes; i++) {
 		node = graph->nodes[graph->depth_first[i]];
-		set_empty (defs);
-		// collect definitions of all variables "used" in this node. use from
-		// the live vars analysis is perfect for the job
-		for (var_i = set_first (node->live_vars.use); var_i;
-			 var_i = set_next (var_i)) {
-			var = graph->func->vars[var_i->element];
-			set_union (defs, var->define);
-		}
-		// interested in only those defintions that actually reach this node
-		set_intersection (defs, node->reaching_defs.in);
-		// if any of the definitions come from the entry dummy block, then
-		// the statements need to be scanned in case an aliasing definition
-		// kills the dummy definition before the usage, and also so the line
-		// number information can be obtained from the statement.
-		if (set_is_intersecting (defs, uninitialized))
-			flow_uninit_scan_statements (node, defs, uninitialized);
+		flow_uninit_scan_statements (node, uninitialized);
 	}
-	set_delete (defs);
 	set_delete (uninitialized);
 }
 
