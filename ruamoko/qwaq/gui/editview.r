@@ -606,7 +606,7 @@ center (uint v, uint len)
 {
 	if ((io.pressed | io.buttons) & 1) {
 		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
-		c /= X_size;//FIXME bug in qfcc when X_size is uvec2
+		c /= X_size;
 		c = (c > ivec2(0, 0)) & c;
 		[self jumpTo:c mode:(io.pressed & 1) ^ 1];
 	}

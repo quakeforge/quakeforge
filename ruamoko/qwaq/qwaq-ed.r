@@ -392,14 +392,7 @@ camera_mouse_trackball (transform_t camera, state_t *state)
 	bivector_t  drot = (start ∧ end) * 0.5f;
 	@algebra(PGA) {
 		auto p = e123 + 5 * e032;
-#if 1 //FIXME qfcc bug
-		state.B = {
-			.bvect = ((drot • p) * p).bvect,
-			.bvecp = ((drot • p) * p).bvecp,
-		};
-#else
 		state.B = (drot • p) * p;
-#endif
 	}
 	auto ds = dState (*state);
 	state.M += ds.M;
