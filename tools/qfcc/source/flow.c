@@ -1110,6 +1110,7 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 		for (auto vi = set_first (r->stamb); vi; vi = set_next (vi)) {
 			auto var = *r->vars[vi->element];
 			set_assign (r->tmp, var.ambiguous);
+			set_union (r->tmp, var.define);
 			set_difference (r->tmp, r->func->real_statements);
 			var.define = r->tmp;
 			flow_kill_aliases (r->stkill, &var, r->func->real_statements);
