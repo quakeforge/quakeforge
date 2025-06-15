@@ -42,7 +42,7 @@ void printf(string, ...);
 
 -draw
 {
-	imui_style_t style = {};//FIXME qfcc bug
+	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
 	string name = str_mid (window_name, [editView modified] ? 0 : 1);
 	IMUI_Window_SetName (window, name);

@@ -148,7 +148,7 @@ int file_item_cmp (void *a, void *b)
 
 -draw
 {
-	imui_style_t style = {};//FIXME qfcc bug
+	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
 	UI_Window (window) {
 		if (IMUI_Window_IsCollapsed (window)) {

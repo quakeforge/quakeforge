@@ -189,7 +189,7 @@ Array *windows;
 		draw_armature (camera, arm, trans);
 	}
 
-	imui_style_t style = {};//FIXME qfcc bug
+	imui_style_t style;
 	IMUI_Style_Fetch (IMUI_context, &style);
 	UI_Window (window) {
 		if (IMUI_Window_IsCollapsed (window)) {
@@ -446,7 +446,7 @@ color_window (void)
 			} else if (style_selection == 2) {
 				style_color = current_style.text.color[style_mode];
 			}
-			imui_style_t style = {};//FIXME qfcc bug
+			imui_style_t style;
 			IMUI_Style_Fetch (imui_ctx, &style);
 			auto bg_save = style.background.normal;
 			auto fg_save = style.foreground.normal;
