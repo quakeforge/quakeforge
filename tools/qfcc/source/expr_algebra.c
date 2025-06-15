@@ -2033,10 +2033,13 @@ pga3_x_y_z_w_geom_wzy_wxz_wyx_xyz (const expr_t **c,
 	auto geom_type = algebra_mvec_type (alg, 0x10);
 	auto va = offset_cast (vtype, a, 0);
 	auto vb = offset_cast (vtype, b, 0);
+	auto sa = offset_cast (stype, a, 3);
 	auto sb = offset_cast (stype, b, 3);
 	c[1] = scale_expr (algebra_mvec_type (alg, 0x02), va, sb);
 	c[3] = cross_expr (algebra_mvec_type (alg, 0x08), vb, va);
-	c[4] = dot_expr (geom_type, a, b);
+	c[4] = sum_expr (geom_type,
+					 dot_expr (stype, va, vb),
+					 do_mult (stype, sa, sb));
 }
 
 static void
