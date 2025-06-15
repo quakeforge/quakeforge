@@ -1364,6 +1364,11 @@ flow_build_chains (flowgraph_t *graph)
 	for (int i = 0; i < graph->func->num_vars; i++) {
 		udchains[i] = set_new ();
 	}
+	// used to check if the number of ud-chains has stabilized, so need
+	// to ensure it's 0 before starting as this may be the second pass
+	// FIXME should probably separate the check so the number correctly
+	// reflects the array (which may not be null)
+	graph->func->num_ud_chains = 0;
 	while (1) {
 		reach.ud_chains = 0;
 		int old_num_ud_chains;
