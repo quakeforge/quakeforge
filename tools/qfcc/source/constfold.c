@@ -67,18 +67,6 @@ cmp_result_expr (int result)
 	}
 }
 
-static int
-is_addsub (int op)
-{
-	return op == '+' || op == '-';
-}
-
-static int
-inv_addsub (int op)
-{
-	return op == '+' ? '-' : '+';
-}
-
 static const expr_t *
 do_op_string (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
@@ -170,6 +158,48 @@ get_rep_double (const expr_t *e)
 	pr_double_t val = components[0];
 	for (int i = 0; i < type_size (type); i++) {
 		if (components[i] != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
+static pr_int_t
+get_rep_int (const expr_t *e)
+{
+	if (!is_integral_val (e)) {
+		return -1;
+	}
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_integral (e);
+	}
+	pr_type_t components[type_size (type)];
+	value_store (components, type, e);
+	pr_int_t val = components[0].value;
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i].value != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
+static pr_uint_t
+get_rep_uint (const expr_t *e)
+{
+	if (!is_integral_val (e)) {
+		return -1;
+	}
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_integral (e);
+	}
+	pr_type_t components[type_size (type)];
+	value_store (components, type, e);
+	pr_uint_t val = components[0].uint_value;
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i].uint_value != val) {
 			return -1;
 		}
 	}
@@ -423,208 +453,71 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	int         isval1 = 0, isval2 = 0;
-	int         val1 = 0, val2 = 0;
+	int         val1 = -1, val2 = -1;
 
-	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
-		return e;
+	if (is_constant (e1)) {
+		val1 = get_rep_int (e1);
 	}
-
-	if (is_short_val (e1)) {
-		isval1 = 1;
-		val1 = expr_short (e1);
-	}
-	if (is_int_val (e1)) {
-		isval1 = 1;
-		val1 = expr_int (e1);
+	if (is_constant (e2)) {
+		val2 = get_rep_int (e2);
 	}
 
-	if (is_short_val (e2)) {
-		isval2 = 1;
-		val2 = expr_short (e2);
-	}
-	if (is_int_val (e2)) {
-		isval2 = 1;
-		val2 = expr_int (e2);
-	}
-
-	if (op == '*' && isval1 && val1 == 1)
+	if (op == '*' && val1 == 1)
 		return e2;
-	if (op == '*' && isval2 && val2 == 1)
+	if (op == '*' && val2 == 1)
 		return e1;
-	if (op == '*' && isval1 && val1 == 0)
+	if (op == '*' && val1 == 0)
 		return e1;
-	if (op == '*' && isval2 && val2 == 0)
+	if (op == '*' && val2 == 0)
 		return e2;
-	if (op == '/' && isval2 && val2 == 1)
+	if (op == '/' && val2 == 1)
 		return e1;
-	if (op == '/' && isval2 && val2 == 0)
+	if (op == '/' && val2 == 0)
 		return error (e, "division by zero");
-	if (op == '/' && isval1 && val1 == 0)
+	if (op == '/' && val1 == 0)
 		return e1;
-	if (op == '+' && isval1 && val1 == 0)
+	if (op == '+' && val1 == 0)
 		return e2;
-	if (op == '+' && isval2 && val2 == 0)
+	if (op == '+' && val2 == 0)
 		return e1;
-	if (op == '-' && isval2 && val2 == 0)
+	if (op == '-' && val2 == 0)
 		return e1;
-
-	if (!isval1) {
-		if (e1->type == ex_expr) {
-			// at most one of the two sub-expressions is constant otherwise
-			// e1 would be a constant
-			if (is_constant (e1->expr.e1)) {
-				if ((op == '*' && e1->expr.op == '*')
-					|| (is_addsub (op) && is_addsub (e1->expr.op))) {
-					auto c = binary_expr (op, e1->expr.e1, e2);
-					e = binary_expr (e1->expr.op, c, e1->expr.e2);
-				}
-			} else if (is_constant (e1->expr.e2)) {
-				if ((op == '*' && e1->expr.op == '*')
-					|| (is_addsub (op) && e1->expr.op == '+')) {
-					auto c = binary_expr (op, e1->expr.e2, e2);
-					e = binary_expr (e1->expr.op, e1->expr.e1, c);
-				} else if (is_addsub (op) && e1->expr.op == '-') {
-					// must ivert op
-					auto c = binary_expr (inv_addsub (op), e1->expr.e2, e2);
-					e = binary_expr (e1->expr.op, e1->expr.e1, c);
-				}
-			}
-		}
-		return e;
-	} else if (!isval2) {
-		if (e2->type == ex_expr) {
-			// at most one of the two sub-expressions is constant otherwise
-			// e2 would be a constant
-			if (is_constant (e2->expr.e1)) {
-				if ((op == '*' && e2->expr.op == '*')
-					|| (op == '+' && is_addsub (e2->expr.op))) {
-					auto c = binary_expr (op, e1, e2->expr.e1);
-					e = binary_expr (e2->expr.op, c, e2->expr.e2);
-				} else if (op == '-' && is_addsub (e2->expr.op)) {
-					auto c = binary_expr (op, e1, e2->expr.e1);
-					e = fold_constants (c);
-					e = binary_expr (inv_addsub (e2->expr.op),
-									 e, e2->expr.e2);
-				}
-			} else if (is_constant (e2->expr.e2)) {
-				if ((op == '*' && e2->expr.op == '*')
-					|| (op == '+' && is_addsub (e2->expr.op))) {
-					auto c = binary_expr (e2->expr.op, e1, e2->expr.e2);
-					e = binary_expr (op, c, e2->expr.e1);
-				} else if (op == '-' && is_addsub (e2->expr.op)) {
-					auto c = binary_expr (inv_addsub (e2->expr.op),
-										  e1, e2->expr.e2);
-					e = binary_expr (op, c, e2->expr.e1);
-				}
-			}
-		}
-		return e;
-	}
 	return e;
 }
 
 static const expr_t *
 do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	bool        isval1 = false, isval2 = false;
-	unsigned    val1 = 0, val2 = 0;
+	unsigned    val1 = -1, val2 = -1;
 
-	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
-		return e;
+	if (is_constant (e1)) {
+		val1 = get_rep_uint (e1);
 	}
-
-	if (is_short_val (e1)) {
-		isval1 = true;
-		val1 = expr_short (e1);
-	}
-	if (is_uint_val (e1)) {
-		isval1 = true;
-		val1 = expr_uint (e1);
+	if (is_constant (e2)) {
+		val2 = get_rep_uint (e2);
 	}
 
-	if (is_short_val (e2)) {
-		isval2 = true;
-		val2 = expr_short (e2);
-	}
-	if (is_uint_val (e2)) {
-		isval2 = true;
-		val2 = expr_uint (e2);
-	}
-
-	if (op == '*' && isval1 && val1 == 1)
+	if (op == '*' && val1 == 1)
 		return e2;
-	if (op == '*' && isval2 && val2 == 1)
+	if (op == '*' && val2 == 1)
 		return e1;
-	if (op == '*' && isval1 && val1 == 0)
+	if (op == '*' && val1 == 0)
 		return e1;
-	if (op == '*' && isval2 && val2 == 0)
+	if (op == '*' && val2 == 0)
 		return e2;
-	if (op == '/' && isval2 && val2 == 1)
+	if (op == '/' && val2 == 1)
 		return e1;
-	if (op == '/' && isval2 && val2 == 0)
+	if (op == '/' && val2 == 0)
 		return error (e, "division by zero");
-	if (op == '/' && isval1 && val1 == 0)
+	if (op == '/' && val1 == 0)
 		return e1;
-	if (op == '+' && isval1 && val1 == 0)
+	if (op == '+' && val1 == 0)
 		return e2;
-	if (op == '+' && isval2 && val2 == 0)
+	if (op == '+' && val2 == 0)
 		return e1;
-	if (op == '-' && isval2 && val2 == 0)
+	if (op == '-' && val2 == 0)
 		return e1;
 
-	if (!isval1) {
-		if (e1->type == ex_expr) {
-			// at most one of the two sub-expressions is constant otherwise
-			// e1 would be a constant
-			if (is_constant (e1->expr.e1)) {
-				if ((op == '*' && e1->expr.op == '*')
-					|| (is_addsub (op) && is_addsub (e1->expr.op))) {
-					auto c = binary_expr (op, e1->expr.e1, e2);
-					e = binary_expr (e1->expr.op, c, e1->expr.e2);
-				}
-			} else if (is_constant (e1->expr.e2)) {
-				if ((op == '*' && e1->expr.op == '*')
-					|| (is_addsub (op) && e1->expr.op == '+')) {
-					auto c = binary_expr (op, e1->expr.e2, e2);
-					e = binary_expr (e1->expr.op, e1->expr.e1, c);
-				} else if (is_addsub (op) && e1->expr.op == '-') {
-					// must ivert op
-					auto c = binary_expr (inv_addsub (op), e1->expr.e2, e2);
-					e = binary_expr (e1->expr.op, e1->expr.e1, c);
-				}
-			}
-		}
-		return e;
-	} else if (!isval2) {
-		if (e2->type == ex_expr) {
-			// at most one of the two sub-expressions is constant otherwise
-			// e2 would be a constant
-			if (is_constant (e2->expr.e1)) {
-				if ((op == '*' && e2->expr.op == '*')
-					|| (op == '+' && is_addsub (e2->expr.op))) {
-					auto c = binary_expr (op, e1, e2->expr.e1);
-					e = binary_expr (e2->expr.op, c, e2->expr.e2);
-				} else if (op == '-' && is_addsub (e2->expr.op)) {
-					auto c = binary_expr (op, e1, e2->expr.e1);
-					e = fold_constants (c);
-					e = binary_expr (inv_addsub (e2->expr.op),
-									 e, e2->expr.e2);
-				}
-			} else if (is_constant (e2->expr.e2)) {
-				if ((op == '*' && e2->expr.op == '*')
-					|| (op == '+' && is_addsub (e2->expr.op))) {
-					auto c = binary_expr (e2->expr.op, e1, e2->expr.e2);
-					e = binary_expr (op, c, e2->expr.e1);
-				} else if (op == '-' && is_addsub (e2->expr.op)) {
-					auto c = binary_expr (inv_addsub (e2->expr.op),
-										  e1, e2->expr.e2);
-					e = binary_expr (op, c, e2->expr.e1);
-				}
-			}
-		}
-		return e;
-	}
 	return e;
 }
 
