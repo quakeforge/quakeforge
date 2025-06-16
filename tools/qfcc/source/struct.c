@@ -76,7 +76,7 @@ get_file_name (void)
 }
 
 static symbol_t *
-find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
+find_tag (const type_t *tag_type, symbol_t *tag, type_t *type)
 {
 	const char *tag_name;
 	symbol_t   *sym;
@@ -88,20 +88,21 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
-		if (sym->table == current_symtab && sym->type->meta != meta)
+		if (sym->table == current_symtab && sym->type->meta != tag_type->meta)
 			error (0, "%s defined as wrong kind of tag", tag_name);
-		if (sym->type->meta == meta)
+		if (sym->type->meta == tag_type->meta)
 			return sym;
 	}
 	sym = new_symbol (tag_name);
-	type_t *t = type;
-	if (!t)
-		t = new_type ();
-	if (!t->name)
-		t->name = sym->name;
-	t->type = ev_invalid;
-	t->meta = meta;
-	sym->type = t;
+	if (type) {
+		type->type = tag_type->type;
+		type->meta = tag_type->meta;
+	} else {
+		type = copy_type (tag_type);
+	}
+	if (!type->name)
+		type->name = sym->name;
+	sym->type = type;
 	sym->sy_type = sy_type;
 	return sym;
 }
@@ -152,14 +153,10 @@ find_handle (symbol_t *tag, const type_t *type)
 		error (0, "@handle type must be int or long");
 		type = &type_int;
 	}
-	symbol_t   *sym = find_tag (ty_handle, tag, 0);
-	if (sym->type->type == ev_invalid) {
-		type_t *t = (type_t *) sym->type;//FIXME
-		t->type = type->type;
-		t->width = 1;
-		t->columns = 1;
-		t->alignment = type->alignment;
-	}
+	auto handle_type = copy_type (type);
+	handle_type->meta = ty_handle;
+	symbol_t   *sym = find_tag (handle_type, tag, 0);
+	free_type (handle_type);
 	if (sym->type->type != type->type) {
 		error (0, "@handle %s redeclared with different base type", tag->name);
 	}
@@ -169,12 +166,14 @@ find_handle (symbol_t *tag, const type_t *type)
 symbol_t *
 find_struct (int su, symbol_t *tag, type_t *type)
 {
-	ty_meta_e   meta = ty_struct;
+	auto struct_type = copy_type (type);
+	struct_type->type = ev_invalid;
+	struct_type->meta = su == 'u' ? ty_union : ty_struct;
 
-	if (su == 'u')
-		meta = ty_union;
+	auto sym = find_tag (struct_type, tag, type);
+	free_type (struct_type);
 
-	return find_tag (meta, tag, type);
+	return sym;
 }
 
 symbol_t *
@@ -276,7 +275,12 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 symbol_t *
 find_enum (symbol_t *tag)
 {
-	return find_tag (ty_enum, tag, 0);
+	auto enum_type = copy_type (&type_int);
+	enum_type->type = ev_invalid;
+	enum_type->meta = ty_enum;
+	auto sym = find_tag (enum_type, tag, 0);
+	free_type (enum_type);
+	return sym;
 }
 
 symtab_t *
@@ -481,5 +485,9 @@ symbol_t *
 make_handle (const char *name, type_t *type)
 {
 	auto tag = new_symbol (name);
-	return find_tag (ty_handle, tag, type);
+	auto handle_type = copy_type (type);
+	handle_type->meta = ty_handle;
+	symbol_t   *sym = find_tag (handle_type, tag, 0);
+	free_type (handle_type);
+	return sym;
 }

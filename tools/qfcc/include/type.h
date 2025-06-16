@@ -150,6 +150,7 @@ struct dstring_s;
 
 etype_t low_level_type (const type_t *type) __attribute__((pure));
 type_t *new_type (void);
+type_t *copy_type (const type_t *type);
 void free_type (type_t *type);
 void chain_type (type_t *type);
 

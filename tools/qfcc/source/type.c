@@ -337,6 +337,22 @@ new_type (void)
 	return type;
 }
 
+type_t *
+copy_type (const type_t *copy)
+{
+	auto type = new_type ();
+	if (copy) {
+		*type = *copy;
+		type->id = 0;
+		type->name = nullptr;
+		type->next = nullptr;
+		type->encoding = nullptr;
+		type->freeable = true;
+		type->allocated = true;
+	}
+	return type;
+}
+
 void
 free_type (type_t *type)
 {
