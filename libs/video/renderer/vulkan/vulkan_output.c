@@ -77,9 +77,11 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  0, &imageIndex)) {
 		QFV_DeviceWaitIdle (device);
-		for (uint32_t i = 0; i < sc->imageViews->size; i++) {
-			dfunc->vkDestroyFramebuffer (device->dev,
-										 octx->framebuffers[i], 0);
+		if (octx->framebuffers) {
+			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
+				dfunc->vkDestroyFramebuffer (device->dev,
+											 octx->framebuffers[i], 0);
+			}
 		}
 		octx->framebuffers = 0;
 		Vulkan_CreateSwapchain (ctx);
