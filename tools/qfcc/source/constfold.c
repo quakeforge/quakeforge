@@ -57,14 +57,6 @@ typedef const expr_t *(*operation_t) (int op, const expr_t *e,
 typedef const expr_t *(*unaryop_t) (int op, const expr_t *e,
 									const expr_t *e1);
 
-static __attribute__((pure)) int
-valid_op (int op, int *valid_ops)
-{
-	while (*valid_ops && op != *valid_ops)
-		valid_ops++;
-	return *valid_ops == op;
-}
-
 static const expr_t *
 cmp_result_expr (int result)
 {
@@ -92,10 +84,6 @@ do_op_string (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	const char *s1, *s2;
 	static dstring_t *temp_str;
-	static int  valid[] = {'+', QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0};
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operand for string");
 
 	if (!is_constant (e1) || !is_constant (e2))
 		return e;
@@ -154,18 +142,11 @@ convert_to_float (const expr_t *e)
 static const expr_t *
 do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	static int  valid[] = {
-		'+', '-', '*', '/', '&', '|', '^', '%',
-		QC_SHL, QC_SHR, QC_AND, QC_OR,
-		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
-	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
 		return e;
 	}
 
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for float");
 	if (op == '*' && is_constant (e1) && expr_float (e1) == 1)
 		return e2;
 	if (op == '*' && is_constant (e2) && expr_float (e2) == 1)
@@ -194,19 +175,10 @@ static const expr_t *
 do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	double      d1, d2;
-	//expr_t     *conv;
-	//type_t     *type = &type_double;
-	static int  valid[] = {
-		'+', '-', '*', '/', '%',
-		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
-	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
 		return e;
 	}
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for double");
 
 	if (op == '*' && is_constant (e1) && expr_double (e1) == 1)
 		return e2;
@@ -282,14 +254,7 @@ do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	static int  vv_valid[] = {'+', '-', QC_DOT, QC_HADAMARD, QC_EQ, QC_NE, 0};
-	static int  vs_valid[] = {QC_SCALE, 0};
-	static int  sv_valid[] = {QC_SCALE, '/', 0};
-
 	if (!is_vector(get_type (e1))) {
-
-		if (!valid_op (op, sv_valid))
-			return error (e1, "invalid operator for scalar-vector");
 		scoped_src_loc (e);
 		auto t = new_binary_expr (op, e2, e1);
 		t->expr.type = e->expr.type;
@@ -303,11 +268,7 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 			ne->expr.type = e->expr.type;
 			e = edag_add_expr (ne);
 		}
-		if (!valid_op (op, vs_valid))
-			return error (e1, "invalid operator for vector");
 	} else {
-		if (!valid_op (op, vv_valid))
-			return error (e1, "invalid operator for vector");
 	}
 	if (is_compare (op) || is_logic (op)) {
 		//if (options.code.progsversion > PROG_ID_VERSION)
@@ -411,18 +372,10 @@ do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	int         isval1 = 0, isval2 = 0;
 	int         val1 = 0, val2 = 0;
-	static int  valid[] = {
-		'+', '-', '*', '/', '&', '|', '^', '%',
-		QC_SHL, QC_SHR, QC_AND, QC_OR,
-		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
-	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
 		return e;
 	}
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for int");
 
 	if (is_short_val (e1)) {
 		isval1 = 1;
@@ -587,18 +540,10 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	bool        isval1 = false, isval2 = false;
 	unsigned    val1 = 0, val2 = 0;
-	static int  valid[] = {
-		'+', '-', '*', '/', '&', '|', '^', '%',
-		QC_SHL, QC_SHR, QC_AND, QC_OR,
-		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
-	};
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
 		return e;
 	}
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for uint");
 
 	if (is_short_val (e1)) {
 		isval1 = true;
@@ -759,15 +704,6 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	static int  valid[] = {
-		'+', '-', '*', '/', '&', '|', '^', '%',
-		QC_SHL, QC_SHR, QC_AND, QC_OR,
-		QC_LT, QC_GT, QC_LE, QC_GE, QC_EQ, QC_NE, 0
-	};
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for short");
-
 	return e;
 }
 
@@ -1151,156 +1087,72 @@ uop_invalid (int op, const expr_t *e, const expr_t *e1)
 static const expr_t *
 uop_string (int op, const expr_t *e, const expr_t *e1)
 {
-	// + - ! ~ *
-	static int  valid[] = { '!', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for string: %s",
-					  get_op_string (op));
-
 	return e;
 }
 
 static const expr_t *
 uop_float (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for float: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
-	auto type = get_type (e);
-	if (op == 'C' && !is_int(type) && !is_double(type))
-		return error (e1, "invalid cast of float");
 	return e;
 }
 
 static const expr_t *
 uop_vector (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for vector: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
 	return e;
 }
 
 static const expr_t *
 uop_entity (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '!', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for entity: %s",
-					  get_op_string (op));
 	return e;
 }
 
 static const expr_t *
 uop_field (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '!', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for field: %s",
-					  get_op_string (op));
 	return e;
 }
 
 static const expr_t *
 uop_func (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '!', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for func: %s",
-					  get_op_string (op));
 	return e;
 }
 
 static const expr_t *
 uop_pointer (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '!', '.', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for pointer: %s",
-					  get_op_string (op));
 	return e;
 }
 
 static const expr_t *
 uop_quaternion (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', '~', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for quaternion: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
 	return e;
 }
 
 static const expr_t *
 uop_int (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for int: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
-	if (op == 'C' && !is_float(get_type (e)))
-		return error (e1, "invalid cast of int");
 	return e;
 }
 
 static const expr_t *
 uop_uint (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', '~', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for uint: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
 	return e;
 }
 
 static const expr_t *
 uop_short (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', '~', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for short: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
 	return e;
 }
 
 static const expr_t *
 uop_double (int op, const expr_t *e, const expr_t *e1)
 {
-	static int  valid[] = { '+', '-', '!', 'C', 0 };
-
-	if (!valid_op (op, valid))
-		return error (e1, "invalid unary operator for double: %s",
-					  get_op_string (op));
-	if (op == '+')
-		return e1;
-	auto type = get_type (e);
-	if (op == 'C' && !is_int(type) && !is_float(type))
-		return error (e1, "invalid cast of double");
 	return e;
 }
 
