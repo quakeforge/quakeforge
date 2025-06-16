@@ -139,36 +139,80 @@ convert_to_float (const expr_t *e)
 	return cast_expr (&type_float, e);
 }
 
+static float
+get_rep_float (const expr_t *e)
+{
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_float (e);
+	}
+	pr_type_t components[type_size (type)];
+	value_store (components, type, e);
+	float val = components[0].float_value;
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i].float_value != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
+static pr_double_t
+get_rep_double (const expr_t *e)
+{
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_double (e);
+	}
+	pr_type_t c[type_size (type)];
+	value_store (c, type, e);
+	pr_double_t *components = (pr_double_t *) &c[0];
+	pr_double_t val = components[0];
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i] != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
 static const expr_t *
 do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
+	float       f1 = -1, f2 = -1;
 
-	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
-		return e;
+	if (is_constant (e1)) {
+		f1 = get_rep_float (e1);
+	}
+	if (is_constant (e2)) {
+		f2 = get_rep_float (e2);
 	}
 
-	if (op == '*' && is_constant (e1) && expr_float (e1) == 1)
+	if (op == QC_SCALE && is_constant (e2) && f2 == 1)
+		return e1;
+	if (op == QC_SCALE && is_constant (e2) && f2 == 0)
+		return new_zero_expr (get_type (e1));
+	if (op == '*' && is_constant (e1) && f1 == 1)
 		return e2;
-	if (op == '*' && is_constant (e2) && expr_float (e2) == 1)
+	if (op == '*' && is_constant (e2) && f2 == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && expr_float (e1) == 0)
+	if (op == '*' && is_constant (e1) && f1 == 0)
 		return e1;
-	if (op == '*' && is_constant (e2) && expr_float (e2) == 0)
+	if (op == '*' && is_constant (e2) && f2 == 0)
 		return e2;
-	if (op == '/' && is_constant (e2) && expr_float (e2) == 1)
+	if (op == '/' && is_constant (e2) && f2 == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && expr_float (e2) == 0)
-		return error (e, "division by zero");
-	if (op == '/' && is_constant (e2) && expr_float (e2) == 0) {
+	if (op == '/' && is_constant (e2) && f2 == 0) {
 		warning (e, "division by zero");
 		return e;
 	}
+	if (op == '/' && is_constant (e1) && f1 == 0)
 		return e1;
-	if (op == '+' && is_constant (e1) && expr_float (e1) == 0)
+	if (op == '+' && is_constant (e1) && f1 == 0)
 		return e2;
-	if (op == '+' && is_constant (e2) && expr_float (e2) == 0)
+	if (op == '+' && is_constant (e2) && f2 == 0)
 		return e1;
-	if (op == '-' && is_constant (e2) && expr_float (e2) == 0)
+	if (op == '-' && is_constant (e2) && f2 == 0)
 		return e1;
 
 	return e;
@@ -177,33 +221,40 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-	double      d1, d2;
+	double      d1 = -1, d2 = -1;
+
+	if (is_constant (e1)) {
+		d1 = get_rep_double (e1);
+	}
+	if (is_constant (e2)) {
+		d2 = get_rep_double (e2);
+	}
 
 	if (!is_scalar (get_type (e1)) || !is_scalar (get_type (e2))) {
 		return e;
 	}
 
-	if (op == '*' && is_constant (e1) && expr_double (e1) == 1)
+	if (op == '*' && d1 == 1)
 		return e2;
-	if (op == '*' && is_constant (e2) && expr_double (e2) == 1)
+	if (op == '*' && d2 == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && expr_double (e1) == 0)
+	if (op == '*' && d1 == 0)
 		return e1;
-	if (op == '*' && is_constant (e2) && expr_double (e2) == 0)
+	if (op == '*' && d2 == 0)
 		return e2;
-	if (op == '/' && is_constant (e2) && expr_double (e2) == 1)
+	if (op == '/' && d2 == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && expr_double (e2) == 0) {
+	if (op == '/' && d2 == 0) {
 		warning (e, "division by zero");
 		return e;
 	}
-	if (op == '/' && is_constant (e1) && expr_double (e1) == 0)
+	if (op == '/' && d1 == 0)
 		return e1;
-	if (op == '+' && is_constant (e1) && expr_double (e1) == 0)
+	if (op == '+' && d1 == 0)
 		return e2;
-	if (op == '+' && is_constant (e2) && expr_double (e2) == 0)
+	if (op == '+' && d2 == 0)
 		return e1;
-	if (op == '-' && is_constant (e2) && expr_double (e2) == 0)
+	if (op == '-' && d2 == 0)
 		return e1;
 
 	if (!is_constant (e1) || !is_constant (e2))
