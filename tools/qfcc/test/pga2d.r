@@ -188,12 +188,12 @@ main (void)
 	oddgrades_t e;
 	e.mvec = vec * bvec;
 	if ((dvec3)e.vec != '4 6 1'd || (scalar_t)e.tvec != 20) {
-		error ("vec • bvec != '4 6 1' + 20: %lv + %g\n", e.vec, e.tvec);
+		error ("vec * bvec != '4 6 1' + 20: %lv + %g\n", e.vec, e.tvec);
 	}
 	oddgrades_t f;
 	f.mvec = bvec * vec;
 	if ((dvec3)f.vec != '-4 -6 -1'd || (scalar_t)f.tvec != 20) {
-		error ("bvec • vec != '-4 -6 -1' + 20: %lv %g\n", f.vec, f.tvec);
+		error ("bvec * vec != '-4 -6 -1' + 20: %lv %g\n", f.vec, f.tvec);
 	}
 	if (vec ∧ tvec || tvec ∧ vec) {
 		error ("didn't get 0: %g %g", vec ∧ tvec, tvec ∧ vec);
