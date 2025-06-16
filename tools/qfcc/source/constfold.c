@@ -527,71 +527,7 @@ do_op_int (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		}
 		return e;
 	}
-	if (!isval1 || !isval2)
-		return e;
-
-	const expr_t *new = 0;
-	switch (op) {
-		case '+':
-			new = new_int_expr (val1 + val2, false);
-			break;
-		case '-':
-			new = new_int_expr (val1 - val2, false);
-			break;
-		case '*':
-			new = new_int_expr (val1 * val2, false);
-			break;
-		case '/':
-			if (options.warnings.integer_divide)
-				warning (e2, "%d / %d == %d", val1, val2, val1 / val2);
-			new = new_int_expr (val1 / val2, false);
-			break;
-		case '&':
-			new = new_int_expr (val1 & val2, false);
-			break;
-		case '|':
-			new = new_int_expr (val1 | val2, false);
-			break;
-		case '^':
-			new = new_int_expr (val1 ^ val2, false);
-			break;
-		case '%':
-			new = new_int_expr (val1 % val2, false);
-			break;
-		case QC_SHL:
-			new = new_int_expr (val1 << val2, false);
-			break;
-		case QC_SHR:
-			new = new_int_expr (val1 >> val2, false);
-			break;
-		case QC_AND:
-			new = cmp_result_expr (val1 && val2);
-			break;
-		case QC_OR:
-			new = cmp_result_expr (val1 || val2);
-			break;
-		case QC_LT:
-			new = cmp_result_expr (val1 < val2);
-			break;
-		case QC_GT:
-			new = cmp_result_expr (val1 > val2);
-			break;
-		case QC_LE:
-			new = cmp_result_expr (val1 <= val2);
-			break;
-		case QC_GE:
-			new = cmp_result_expr (val1 >= val2);
-			break;
-		case QC_EQ:
-			new = cmp_result_expr (val1 == val2);
-			break;
-		case QC_NE:
-			new = cmp_result_expr (val1 != val2);
-			break;
-		default:
-			internal_error (e1, 0);
-	}
-	return new;
+	return e;
 }
 
 static const expr_t *
@@ -695,69 +631,7 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		}
 		return e;
 	}
-	if (!isval1 || !isval2)
-		return e;
-
-	const expr_t *new = 0;
-	switch (op) {
-		case '+':
-			new = new_uint_expr (val1 + val2);
-			break;
-		case '-':
-			new = new_uint_expr (val1 - val2);
-			break;
-		case '*':
-			new = new_uint_expr (val1 * val2);
-			break;
-		case '/':
-			new = new_uint_expr (val1 / val2);
-			break;
-		case '&':
-			new = new_uint_expr (val1 & val2);
-			break;
-		case '|':
-			new = new_uint_expr (val1 | val2);
-			break;
-		case '^':
-			new = new_uint_expr (val1 ^ val2);
-			break;
-		case '%':
-			new = new_uint_expr (val1 % val2);
-			break;
-		case QC_SHL:
-			new = new_uint_expr (val1 << val2);
-			break;
-		case QC_SHR:
-			new = new_uint_expr (val1 >> val2);
-			break;
-		case QC_AND:
-			new = cmp_result_expr (val1 && val2);
-			break;
-		case QC_OR:
-			new = cmp_result_expr (val1 || val2);
-			break;
-		case QC_LT:
-			new = cmp_result_expr (val1 < val2);
-			break;
-		case QC_GT:
-			new = cmp_result_expr (val1 > val2);
-			break;
-		case QC_LE:
-			new = cmp_result_expr (val1 <= val2);
-			break;
-		case QC_GE:
-			new = cmp_result_expr (val1 >= val2);
-			break;
-		case QC_EQ:
-			new = cmp_result_expr (val1 == val2);
-			break;
-		case QC_NE:
-			new = cmp_result_expr (val1 != val2);
-			break;
-		default:
-			internal_error (e1, 0);
-	}
-	return new;
+	return e;
 }
 
 static const expr_t *
