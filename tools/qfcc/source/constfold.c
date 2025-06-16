@@ -150,23 +150,11 @@ convert_to_float (const expr_t *e)
 	scoped_src_loc (e);
 	return cast_expr (&type_float, e);
 }
-#if 0
-static const expr_t *
-convert_to_double (const expr_t *e)
-{
-	if (is_double(get_type (e)))
-		return e;
 
-	scoped_src_loc (e);
-	expr_t     *n = cast_expr (&type_double, e);
-}
-#endif
 static const expr_t *
 do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	float       f1, f2;
-	//const expr_t *conv;
-	//type_t     *type = &type_float;
 	static int  valid[] = {
 		'+', '-', '*', '/', '&', '|', '^', '%',
 		QC_SHL, QC_SHR, QC_AND, QC_OR,
@@ -179,21 +167,6 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for float");
-#if 0
-	if ((conv = convert_to_float (e1)) != e1) {
-		e->expr.e1 = e1 = conv;
-	}
-	if ((conv = convert_to_float (e2)) != e2) {
-		e->expr.e2 = e2 = conv;
-	}
-	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion > PROG_ID_VERSION)
-			type = &type_int;
-		else
-			type = &type_float;
-	}
-	e->expr.type = type;
-#endif
 	if (op == '*' && is_constant (e1) && expr_float (e1) == 1)
 		return e2;
 	if (op == '*' && is_constant (e2) && expr_float (e2) == 1)
@@ -534,39 +507,7 @@ do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	const float *q1, *q2;
 	quat_t      q, float_quat;
-	//static int  valid[] = {'+', '-', '*', QC_EQ, QC_NE, 0};
-#if 0
-	if (!is_quaternion(get_type (e1))) {
 
-		if (op != '*' && op != '/')
-			return error (e1, "invalid operator for quaternion");
-
-		if (op == '*') {
-			t = e1;
-			e->expr.e1 = e1 = e2;
-			e2 = t;
-		}
-	}
-	if (!is_quaternion(get_type (e2))) {
-		e->expr.e2 = e2 = convert_to_float (e2);
-		if (op != '*' && op != '/')
-			return error (e1, "invalid operator for quaternion");
-	} else {
-		if (!valid_op (op, valid))
-			return error (e1, "invalid operator for quaternion");
-	}
-	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion > PROG_ID_VERSION)
-			e->expr.type = &type_int;
-		else
-			e->expr.type = &type_float;
-	} else if (op == '/' && !is_constant (e1)) {
-		e2 = fold_constants (binary_expr ('/', new_float_expr (1, false), e2));
-		e = fold_constants (binary_expr ('*', e1, e2));
-	} else {
-		e->expr.type = &type_quaternion;
-	}
-#endif
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 0)
