@@ -998,6 +998,10 @@ array_type (const type_t *aux, int size)
 	type_t      _new;
 	type_t     *new = &_new;
 
+	if (size < 0) {
+		internal_error (0, "negative array size");
+	}
+
 	if (aux)
 		memset (&_new, 0, sizeof (_new));
 	else

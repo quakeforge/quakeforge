@@ -1599,6 +1599,9 @@ new_param_expr (const type_t *type, int num)
 expr_t *
 new_memset_expr (const expr_t *dst, const expr_t *val, const expr_t *count)
 {
+	if (is_constant (count) && expr_integral (count) < 0) {
+		internal_error (0, "negative count to memset");
+	}
 	expr_t     *e = new_expr ();
 	e->type = ex_memset;
 	e->memset.dst = dst;
