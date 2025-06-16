@@ -292,7 +292,7 @@ Array *windows;
 @end
 
 void
-camera_first_person (transform_t camera, state_t *state)
+camera_first_person (state_t *state)
 {
 	vector dpos = {};
 	dpos.x -= IN_UpdateAxis (cam_move_forward);
@@ -320,7 +320,7 @@ camera_first_person (transform_t camera, state_t *state)
 }
 
 void
-camera_mouse_first_person (transform_t camera, state_t *state)
+camera_mouse_first_person (state_t *state)
 {
 	vector dpos = {};
 	vector drot = {};
@@ -374,7 +374,7 @@ trackball_vector (vec2 xy)
 static float trackball_sensitivity = 10.0f;
 #define sphere_scale 1.0f
 void
-camera_mouse_trackball (transform_t camera, state_t *state)
+camera_mouse_trackball (state_t *state)
 {
 	vec2 delta = {
 		IN_UpdateAxis (mouse_x),
@@ -692,12 +692,12 @@ main (int argc, string *argv)
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];
-		camera_first_person (camera, &camera_state);
+		camera_first_person (&camera_state);
 		if (mouse_dragging_mmb) {
-			camera_mouse_trackball (camera, &camera_state);
+			camera_mouse_trackball (&camera_state);
 		}
 		if (mouse_dragging_rmb) {
-			camera_mouse_first_person (camera, &camera_state);
+			camera_mouse_first_person (&camera_state);
 		}
 		set_transform (camera_state.M, camera, "");
 
