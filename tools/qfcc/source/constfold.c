@@ -206,6 +206,44 @@ get_rep_uint (const expr_t *e)
 	return val;
 }
 
+static pr_long_t
+get_rep_long (const expr_t *e)
+{
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_long (e);
+	}
+	pr_type_t c[type_size (type)];
+	value_store (c, type, e);
+	pr_long_t *components = (pr_long_t *) &c[0];
+	pr_long_t val = components[0];
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i] != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
+static pr_ulong_t
+get_rep_ulong (const expr_t *e)
+{
+	auto type = get_type (e);
+	if (is_scalar (type)) {
+		return expr_ulong (e);
+	}
+	pr_type_t c[type_size (type)];
+	value_store (c, type, e);
+	pr_ulong_t *components = (pr_ulong_t *) &c[0];
+	pr_ulong_t val = components[0];
+	for (int i = 0; i < type_size (type); i++) {
+		if (components[i] != val) {
+			return -1;
+		}
+	}
+	return val;
+}
+
 static const expr_t *
 do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
@@ -522,6 +560,77 @@ do_op_uint (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
+do_op_long (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
+{
+	pr_long_t   val1 = -1, val2 = -1;
+
+	if (is_constant (e1)) {
+		val1 = get_rep_long (e1);
+	}
+	if (is_constant (e2)) {
+		val2 = get_rep_long (e2);
+	}
+
+	if (op == '*' && val1 == 1)
+		return e2;
+	if (op == '*' && val2 == 1)
+		return e1;
+	if (op == '*' && val1 == 0)
+		return e1;
+	if (op == '*' && val2 == 0)
+		return e2;
+	if (op == '/' && val2 == 1)
+		return e1;
+	if (op == '/' && val2 == 0)
+		return error (e, "division by zero");
+	if (op == '/' && val1 == 0)
+		return e1;
+	if (op == '+' && val1 == 0)
+		return e2;
+	if (op == '+' && val2 == 0)
+		return e1;
+	if (op == '-' && val2 == 0)
+		return e1;
+	return e;
+}
+
+static const expr_t *
+do_op_ulong (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
+{
+	pr_ulong_t  val1 = -1, val2 = -1;
+
+	if (is_constant (e1)) {
+		val1 = get_rep_ulong (e1);
+	}
+	if (is_constant (e2)) {
+		val2 = get_rep_ulong (e2);
+	}
+
+	if (op == '*' && val1 == 1)
+		return e2;
+	if (op == '*' && val2 == 1)
+		return e1;
+	if (op == '*' && val1 == 0)
+		return e1;
+	if (op == '*' && val2 == 0)
+		return e2;
+	if (op == '/' && val2 == 1)
+		return e1;
+	if (op == '/' && val2 == 0)
+		return error (e, "division by zero");
+	if (op == '/' && val1 == 0)
+		return e1;
+	if (op == '+' && val1 == 0)
+		return e2;
+	if (op == '+' && val2 == 0)
+		return e1;
+	if (op == '-' && val2 == 0)
+		return e1;
+
+	return e;
+}
+
+static const expr_t *
 do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	return e;
@@ -605,6 +714,16 @@ static operation_t op_double[ev_type_count] = {
     [ev_double]     = do_op_double,
 };
 
+static operation_t op_long[ev_type_count] = {
+    [ev_long]       = do_op_long,
+    [ev_ulong]      = do_op_long,
+};
+
+static operation_t op_ulong[ev_type_count] = {
+    [ev_long]       = do_op_ulong,
+    [ev_ulong]      = do_op_ulong,
+};
+
 static operation_t op_compound[ev_type_count] = {
 };
 
@@ -622,8 +741,8 @@ static operation_t *do_op[ev_type_count] = {
     [ev_uint]       = op_uint,
     [ev_short]      = op_short,
     [ev_double]     = op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
+    [ev_long]       = op_long,
+    [ev_ulong]      = op_ulong,
     [ev_invalid]    = op_compound,
 };
 
