@@ -1156,6 +1156,8 @@ const expr_t *countof_expr (const expr_t *expr, const type_t *type);
 
 const expr_t *fold_constants (const expr_t *e);
 
+void edag_push_state (void);
+void edag_pop_state (void);
 void edag_flush (void);
 const expr_t *edag_add_expr (const expr_t *e);
 

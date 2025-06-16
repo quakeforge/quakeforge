@@ -254,6 +254,8 @@ evaluate_constexpr (const expr_t *e)
 		return e;
 	}
 
+	edag_push_state ();
+
 	defspace_reset (&value_defspace);
 	auto saved_version = options.code.progsversion;
 	auto saved_func = current_func;
@@ -272,6 +274,8 @@ evaluate_constexpr (const expr_t *e)
 	}
 	free_sblock (sb);
 	sblock.next = 0;
+
+	edag_pop_state ();
 
 	value_codespace.size = vf_foldconst * 16;
 	for (auto s = sblock.statements; s; s = s->next) {

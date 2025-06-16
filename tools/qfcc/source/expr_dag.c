@@ -41,8 +41,26 @@
 #include "tools/qfcc/include/type.h"
 
 typedef struct DARRAY_TYPE (const expr_t *) exprset_t;
+typedef struct DARRAY_TYPE (exprset_t) dagstack_t;
 
 static exprset_t expr_dag = DARRAY_STATIC_INIT(32);
+static dagstack_t expr_dag_stack = DARRAY_STATIC_INIT(4);
+
+void
+edag_push_state (void)
+{
+	DARRAY_APPEND (&expr_dag_stack, expr_dag);
+	expr_dag = (exprset_t) DARRAY_STATIC_INIT(32);
+}
+
+void
+edag_pop_state (void)
+{
+	if (!expr_dag_stack.size) {
+		internal_error (0, "popped too many dag states");
+	}
+	expr_dag = DARRAY_REMOVE (&expr_dag_stack);
+}
 
 void
 edag_flush (void)
