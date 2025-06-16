@@ -398,12 +398,6 @@ do_op_pointer (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 }
 
 static const expr_t *
-do_op_quatvect (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
-{
-	return e;
-}
-
-static const expr_t *
 do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
@@ -640,40 +634,6 @@ do_op_short (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	return e;
 }
 
-static const expr_t *
-do_op_struct (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
-{
-	return error (e1, "invalid operator for struct");
-}
-
-static const expr_t *
-do_op_compound (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
-{
-	auto t1 = get_type (e1);
-	auto t2 = get_type (e2);
-	if (is_struct (t1) && is_struct (t2))
-		return do_op_struct (op, e, e1, e2);
-	if (is_union (t1) && is_union (t2))
-		return do_op_struct (op, e, e1, e2);
-	if (is_scalar (t1) && is_scalar (t2)) {
-		if (is_enum (t1)) {
-			if (t2->type == ev_double)
-				return do_op_float (op, e, e1, e2);
-			if (t2->type == ev_double)
-				return do_op_float (op, e, e1, e2);
-			return do_op_int (op, e, e1, e2);
-		}
-		if (is_enum (t2)) {
-			if (t1->type == ev_double)
-				return do_op_double (op, e, e1, e2);
-			if (t1->type == ev_float)
-				return do_op_float (op, e, e1, e2);
-			return do_op_int (op, e, e1, e2);
-		}
-	}
-	return error (e1, "invalid operator for compound");
-}
-
 static operation_t *do_op[ev_type_count];
 static const expr_t *
 do_op_invalid (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
@@ -681,298 +641,78 @@ do_op_invalid (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 	auto t1 = get_type (e1);
 	auto t2 = get_type (e2);
 
-	if (is_scalar (t1) && is_scalar (t2)) {
-		// one or both expressions are an enum, and the other is one of
-		// int, float or short. Treat the enum as the other type, or as
-		// the default type if both are enum.
-		etype_t     t;
-		if (!is_enum (t1))
-			t = t1->type;
-		else if (!is_enum (t2))
-			t = t2->type;
-		else
-			t = type_default->type;
-		return do_op[t][t] (op, e, e1, e2);
-	} else {
-		dstring_t  *enc1 = dstring_newstr ();
-		dstring_t  *enc2 = dstring_newstr ();
+	dstring_t  *enc1 = dstring_newstr ();
+	dstring_t  *enc2 = dstring_newstr ();
 
-		print_type_str (enc1, t1);
-		print_type_str (enc2, t2);
+	print_type_str (enc1, t1);
+	print_type_str (enc2, t2);
 
-		//print_expr (e);
-		e1 = error (e1, "invalid operands for binary %s: %s %s",
-					get_op_string (op), enc1->str, enc2->str);
-		dstring_delete (enc1);
-		dstring_delete (enc2);
-		return e1;
-	}
+	//print_expr (e);
+	e1 = error (e1, "invalid operands for binary %s: %s %s",
+				get_op_string (op), enc1->str, enc2->str);
+	dstring_delete (enc1);
+	dstring_delete (enc2);
+	return e1;
 }
 
 static operation_t op_void[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_invalid,
-    [ev_vector]     = do_op_invalid,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_invalid,
-    [ev_uint]       = do_op_invalid,
-    [ev_short]      = do_op_invalid,
-    [ev_double]     = do_op_invalid,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_string[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
     [ev_string]     = do_op_string,
-    [ev_float]      = do_op_invalid,
-    [ev_vector]     = do_op_invalid,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_invalid,
-    [ev_uint]       = do_op_invalid,
-    [ev_short]      = do_op_invalid,
-    [ev_double]     = do_op_invalid,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_float[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
     [ev_float]      = do_op_float,
-    [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_quaternion,
-    [ev_int]        = do_op_float,
-    [ev_uint]       = do_op_float,
-    [ev_short]      = do_op_float,
-    [ev_double]     = do_op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_vector[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
     [ev_float]      = do_op_vector,
     [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_vector,
-    [ev_uint]       = do_op_vector,
-    [ev_short]      = do_op_vector,
-    [ev_double]     = do_op_vector,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_entity[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_invalid,
-    [ev_vector]     = do_op_invalid,
     [ev_entity]     = do_op_entity,
     [ev_field]      = do_op_entity,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_invalid,
-    [ev_uint]       = do_op_invalid,
-    [ev_short]      = do_op_invalid,
-    [ev_double]     = do_op_invalid,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_field[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_invalid,
-    [ev_vector]     = do_op_invalid,
-    [ev_entity]     = do_op_invalid,
     [ev_field]      = do_op_field,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_invalid,
-    [ev_uint]       = do_op_invalid,
-    [ev_short]      = do_op_invalid,
-    [ev_double]     = do_op_invalid,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_func[ev_type_count] = {
-    [ev_void]       = do_op_func,
-    [ev_string]     = do_op_func,
-    [ev_float]      = do_op_func,
-    [ev_vector]     = do_op_func,
-    [ev_entity]     = do_op_func,
-    [ev_field]      = do_op_func,
     [ev_func]       = do_op_func,
-    [ev_ptr]        = do_op_func,
-    [ev_quaternion] = do_op_func,
-    [ev_int]        = do_op_func,
-    [ev_uint]       = do_op_func,
-    [ev_short]      = do_op_func,
-    [ev_double]     = do_op_func,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_func,
 };
 
 static operation_t op_pointer[ev_type_count] = {
-    [ev_void]       = do_op_pointer,
-    [ev_string]     = do_op_pointer,
-    [ev_float]      = do_op_pointer,
-    [ev_vector]     = do_op_pointer,
-    [ev_entity]     = do_op_pointer,
-    [ev_field]      = do_op_pointer,
-    [ev_func]       = do_op_pointer,
     [ev_ptr]        = do_op_pointer,
-    [ev_quaternion] = do_op_pointer,
     [ev_int]        = do_op_pointer,
     [ev_uint]       = do_op_pointer,
-    [ev_short]      = do_op_pointer,
-    [ev_double]     = do_op_pointer,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_pointer,
 };
 
 static operation_t op_quaternion[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_quaternion,
-    [ev_vector]     = do_op_quatvect,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
     [ev_quaternion] = do_op_quaternion,
-    [ev_int]        = do_op_quaternion,
-    [ev_uint]       = do_op_quaternion,
-    [ev_short]      = do_op_quaternion,
-    [ev_double]     = do_op_quaternion,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_int[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_float,
-    [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_quaternion,
     [ev_int]        = do_op_int,
-    [ev_uint]       = do_op_uint,
-    [ev_short]      = do_op_int,
-    [ev_double]     = do_op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
+    [ev_uint]       = do_op_int,
 };
 
 static operation_t op_uint[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_float,
-    [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_quaternion,
     [ev_int]        = do_op_uint,
     [ev_uint]       = do_op_uint,
-    [ev_short]      = do_op_uint,
-    [ev_double]     = do_op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_short[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_float,
-    [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_quaternion,
-    [ev_int]        = do_op_int,
-    [ev_uint]       = do_op_uint,
     [ev_short]      = do_op_short,
-    [ev_double]     = do_op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_double[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_float,
-    [ev_vector]     = do_op_vector,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_quaternion,
-    [ev_int]        = do_op_int,
-    [ev_uint]       = do_op_uint,
-    [ev_short]      = do_op_short,
     [ev_double]     = do_op_double,
-    [ev_long]       = 0,
-    [ev_ulong]      = 0,
-    [ev_invalid]    = do_op_invalid,
 };
 
 static operation_t op_compound[ev_type_count] = {
-    [ev_void]       = do_op_invalid,
-    [ev_string]     = do_op_invalid,
-    [ev_float]      = do_op_compound,
-    [ev_vector]     = do_op_invalid,
-    [ev_entity]     = do_op_invalid,
-    [ev_field]      = do_op_invalid,
-    [ev_func]       = do_op_invalid,
-    [ev_ptr]        = do_op_invalid,
-    [ev_quaternion] = do_op_invalid,
-    [ev_int]        = do_op_compound,
-    [ev_uint]       = do_op_compound,
-    [ev_short]      = do_op_compound,
-    [ev_double]     = do_op_compound,
-    [ev_long]       = do_op_compound,
-    [ev_ulong]      = do_op_compound,
-    [ev_invalid]    = do_op_compound,
 };
 
 static operation_t *do_op[ev_type_count] = {
@@ -1164,8 +904,7 @@ fold_constants (const expr_t *e)
 
 		if (t1 >= ev_type_count || t2 >= ev_type_count
 			|| !do_op[t1] || !do_op[t1][t2]) {
-			debug (e, "unhandled type %d %d", t1, t2);
-			return e;
+			return do_op_invalid (op, e, e1, e2);
 		}
 		return do_op[t1][t2] (op, e, e1, e2);
 	} else if (e->type == ex_alias) {
