@@ -111,20 +111,20 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	}
 
 	VkSwapchainCreateInfoKHR createInfo = {
-		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, 0, 0,
-		ctx->surface,
-		numImages,
-		useFormat.format, useFormat.colorSpace,
-		imageSize,
-		1, // array layers
-		imageUsage,
-		VK_SHARING_MODE_EXCLUSIVE,
-		0, 0,
-		surfTransform,
-		VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		useMode,
-		VK_TRUE,
-		old_swapchain
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.surface = ctx->surface,
+		.minImageCount = numImages,
+		.imageFormat = useFormat.format,
+		.imageColorSpace = useFormat.colorSpace,
+		.imageExtent = imageSize,
+		.imageArrayLayers = 1,
+		.imageUsage = imageUsage,
+		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.preTransform = surfTransform,
+		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		.presentMode = useMode,
+		.clipped = VK_TRUE,
+		.oldSwapchain = old_swapchain
 	};
 
 	VkDevice dev = ctx->device->dev;
