@@ -1559,8 +1559,11 @@ bool
 is_enum (const type_t *type)
 {
 	type = unalias_type (type);
-	if (type->type == ev_invalid && type->meta == ty_enum)
+	if ((type->type == ev_int || type->type == ev_uint
+		 || type->type == ev_long || type->type == ev_ulong)
+		&& type->meta == ty_enum) {
 		return true;
+	}
 	return false;
 }
 

@@ -52,7 +52,7 @@ struct symbol_s *find_struct (int su, struct symbol_s *tag,
 struct symbol_s *build_struct (int su, struct symbol_s *tag,
 							   struct symtab_s *symtab, type_t *type,
 							   int base);
-struct symbol_s *find_enum (struct symbol_s *tag);
+struct symbol_s *find_enum (struct symbol_s *tag, const type_t *type);
 struct symtab_s *start_enum (struct symbol_s *enm);
 struct symbol_s *finish_enum (struct symbol_s *sym);
 void add_enum (struct symbol_s *enm, struct symbol_s *name,

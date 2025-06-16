@@ -273,10 +273,14 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 }
 
 symbol_t *
-find_enum (symbol_t *tag)
+find_enum (symbol_t *tag, const type_t *type)
 {
+	if (type != &type_int && type != &type_long
+		&& type != &type_uint && type != &type_ulong) {
+		error (0, "enum type must be int, uint, long, or ulong");
+		type = &type_int;
+	}
 	auto enum_type = copy_type (&type_int);
-	enum_type->type = ev_invalid;
 	enum_type->meta = ty_enum;
 	auto sym = find_tag (enum_type, tag, 0);
 	free_type (enum_type);
@@ -288,7 +292,7 @@ start_enum (symbol_t *sym)
 {
 	if (sym->table == current_symtab && sym->type->symtab) {
 		error (0, "%s defined as wrong kind of tag", sym->name);
-		sym = find_enum (0);
+		sym = find_enum (nullptr, nullptr);
 	}
 	((type_t *) sym->type)->symtab = new_symtab (current_symtab, stab_enum);
 	((type_t *) sym->type)->alignment = 1;

@@ -171,7 +171,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
-%type	<spec>		handle
+%type	<spec>		enum enum_tag handle
 %type	<mut_expr>	attr_list attr
 %type	<expr>		binding opt_binding
 %type	<spec>		fnbinding
@@ -746,7 +746,7 @@ forward_decl_expr (symbol_t *tag, int sueh, const type_t *base_type)
 		sym = find_struct (sueh, tag, nullptr);
 		sym->type = find_type (sym->type);
 	} else if (sueh == 'e') {
-		sym = find_enum (tag);
+		sym = find_enum (tag, base_type);
 	} else if (sueh == 'h') {
 		sym = find_handle (tag, base_type);
 		sym->type = find_type (sym->type);
@@ -1473,7 +1473,7 @@ type_ref
 			$$ = new_type_expr (spec.type);
 		}
 	| STRUCT tag				{ $$ = forward_decl_expr ($2, $1, nullptr); }
-	| ENUM tag					{ $$ = forward_decl_expr ($2, 'e', nullptr); }
+	| enum tag					{ $$ = forward_decl_expr ($2, 'e', $1.type); }
 	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
 	| image_specifier			{ $$ = new_type_expr ($1.type); }
 	| sampler_specifier			{ $$ = new_type_expr ($1.type); }
@@ -1560,22 +1560,31 @@ sampler_specifier
 		}
 	;
 enum_specifier
-	: ENUM tag enum_list
+	: enum enum_tag enum_list
 		{
 			$$ = type_spec ($3->type);
 			if (!$3->table)
 				symtab_addsymbol (current_symtab, $3);
 		}
-	| ENUM tag %prec LOW
+	| enum enum_tag %prec LOW
 		{
-			auto tag = find_enum ($tag);
+			auto tag = find_enum ($enum_tag.sym, $1.type);
 			$$ = type_spec (tag->type);
 		}
-	| ENUM enum_list
+	| enum enum_list
 		{
 			$$ = type_spec ($2->type);
 			if (!$2->table)
 				symtab_addsymbol (current_symtab, $2);
+		}
+	;
+
+enum_tag
+	: tag
+		{
+			auto spec = $<spec>0;
+			spec.sym = $tag;
+			$$ = spec;
 		}
 	;
 
@@ -1590,7 +1599,8 @@ enum_list
 enum_init
 	: /* empty */
 		{
-			$$ = find_enum ($<symbol>-1);
+			auto enum_tag = $<spec>-1;
+			$$ = find_enum (enum_tag.sym, enum_tag.type);
 			start_enum ($$);
 			current_symtab = $$->type->symtab;
 		}
@@ -1650,6 +1660,11 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
+	;
+
+enum
+	: ENUM	%prec LOW			{ $$ = type_spec (&type_int); }
+	| ENUM ':' typename			{ $$ = $3; }
 	;
 
 handle
