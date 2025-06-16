@@ -159,7 +159,10 @@ do_op_float (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		return e1;
 	if (op == '/' && is_constant (e2) && expr_float (e2) == 0)
 		return error (e, "division by zero");
-	if (op == '/' && is_constant (e1) && expr_float (e1) == 0)
+	if (op == '/' && is_constant (e2) && expr_float (e2) == 0) {
+		warning (e, "division by zero");
+		return e;
+	}
 		return e1;
 	if (op == '+' && is_constant (e1) && expr_float (e1) == 0)
 		return e2;
@@ -190,8 +193,10 @@ do_op_double (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		return e2;
 	if (op == '/' && is_constant (e2) && expr_double (e2) == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && expr_double (e2) == 0)
-		return error (e, "division by zero");
+	if (op == '/' && is_constant (e2) && expr_double (e2) == 0) {
+		warning (e, "division by zero");
+		return e;
+	}
 	if (op == '/' && is_constant (e1) && expr_double (e1) == 0)
 		return e1;
 	if (op == '+' && is_constant (e1) && expr_double (e1) == 0)
@@ -290,8 +295,10 @@ do_op_vector (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 		return new_vector_expr (vec3_origin);
 	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0)
-		return error (e, "division by zero");
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0) {
+		warning (e, "division by zero");
+		return e;
+	}
 	if (op == '+' && is_constant (e1) && VectorIsZero (expr_vector (e1)))
 		return e2;
 	if (op == '+' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
@@ -348,15 +355,16 @@ do_op_quatvect (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 static const expr_t *
 do_op_quaternion (int op, const expr_t *e, const expr_t *e1, const expr_t *e2)
 {
-
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
 	if (op == '*' && is_float_val (e2) && expr_float (e2) == 0)
 		return new_quaternion_expr (quat_origin);
 	if (op == '/' && is_float_val (e2) && expr_float (e2) == 1)
 		return e1;
-	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0)
-		return error (e, "division by zero");
+	if (op == '/' && is_float_val (e2) && expr_float (e2) == 0) {
+		warning (e, "division by zero");
+		return e;
+	}
 	if (op == '+' && is_constant (e1) && QuatIsZero (expr_quaternion (e1)))
 		return e2;
 	if (op == '+' && is_constant (e2) && QuatIsZero (expr_quaternion (e2)))
