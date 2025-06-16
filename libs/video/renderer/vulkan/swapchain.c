@@ -46,6 +46,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 													   ctx->surface,
 													   &numModes, modes);
 	for (uint32_t i = 0; i < numModes; i++) {
+		Sys_MaskPrintf (SYS_vulkan, "modes:%d %d\n", i, modes[i]);
 		if ((int) modes[i] == vulkan_presentation_mode) {
 			useMode = modes[i];
 		}

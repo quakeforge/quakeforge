@@ -155,9 +155,14 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		//	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES,
 		//	.vertexAttributeRobustness = 1,
 		//};
+		//VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT fifoLatest = {
+		//	.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT,
+		//	//.pNext = &vertex_robust,
+		//	.presentModeFifoLatestReady = 1,
+		//};
 		VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
-			//.pNext = &vertex_robust,
+			//.pNext = &fifoLatest,
 			.vertexInputDynamicState = 1,
 		};
 		VkPhysicalDeviceIndexTypeUint8Features vertex_index_8bit = {
