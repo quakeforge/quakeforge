@@ -577,25 +577,25 @@ void
 QFV_Render_Init (vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	qfv_renderctx_t *rctx = calloc (1, sizeof (*rctx));
+	qfv_renderctx_t *rctx = malloc (sizeof (qfv_renderctx_t));
 	ctx->render_context = rctx;
-	rctx->size_time = -1000*1000*1000;
 
-	exprctx_t   ectx = { .hashctx = &rctx->hashctx };
-	exprsym_t   syms[] = { {} };
-	rctx->task_functions.symbols = syms;
-	cexpr_init_symtab (&rctx->task_functions, &ectx);
-	rctx->task_functions.symbols = 0;
+	*rctx = (qfv_renderctx_t) {
+		.task_functions = { .symbols = &(exprsym_t) {} },
+		.external_attachments = DARRAY_STATIC_INIT (4),
+		.frames = DARRAY_STATIC_INIT (vulkan_frame_count),
+		.size_time = -1000*1000*1000,
+	};
+	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
 
-	rctx->external_attachments =
-		(qfv_attachmentinfoset_t) DARRAY_STATIC_INIT (4);
+	cexpr_init_symtab (&rctx->task_functions,
+					   &(exprctx_t) { .hashctx = &rctx->hashctx });
+	// clear temporary symbol list pointer
+	rctx->task_functions.symbols = nullptr;
 
 	QFV_Render_AddTasks (ctx, render_task_syms);
 
 	auto device = ctx->device;
-	size_t      frames = vulkan_frame_count;
-	DARRAY_INIT (&rctx->frames, frames);
-	DARRAY_RESIZE (&rctx->frames, frames);
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
 		frame->fence = QFV_CreateFence (device, 1);
