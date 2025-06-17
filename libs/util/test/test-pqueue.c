@@ -50,9 +50,11 @@ rev (const int *a, const int *b, void *arg)
 
 static int queue_array[7];
 static struct PQUEUE_TYPE (int) pqueue = {
-	.maxSize = SIZEOF (queue_array),
+	.q = {
+		.maxSize = SIZEOF (queue_array),
+		.a = queue_array,
+	},
 	.compare = compare,
-	.a = queue_array,
 	.data = 0,
 };
 
@@ -126,7 +128,7 @@ static int
 test_adjust (const int *data, size_t count)
 {
 	//printf ("adjust start\n");
-	pqueue.a[count] = *data;
+	pqueue.q.a[count] = *data;
 	pq_adjust (count);
 	//printf ("adjust end\n");
 	return 1;
@@ -141,7 +143,7 @@ test_peek (const int *data, size_t count)
 static int
 test_size (const int *data, size_t count)
 {
-	return pqueue.size == count;
+	return pqueue.q.size == count;
 }
 
 static int
@@ -160,7 +162,7 @@ static int
 dump_queue (const int *data, size_t count)
 {
 	if (0) {
-		dump_array (pqueue.a, pqueue.size);
+		dump_array (pqueue.q.a, pqueue.q.size);
 	}
 	return 1;
 }
