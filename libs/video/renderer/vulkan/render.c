@@ -428,6 +428,7 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 
 	qfMessageL ("update_time");
+	ctx->frameNumber++;
 	if (++ctx->curFrame >= rctx->frames.size) {
 		ctx->curFrame = 0;
 	}
