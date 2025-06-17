@@ -352,6 +352,26 @@ QFV_RunRenderPass (vulkan_ctx_t *ctx, qfv_renderpass_t *renderpass,
 	run_renderpass (renderpass, ctx, data);
 }
 
+static void
+run_deletion_queue (vulkan_ctx_t *ctx)
+{
+	qfZoneNamed (zone, true);
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto rctx = ctx->render_context;
+	uint64_t frame = ctx->frameNumber;
+	while (!PQUEUE_IS_EMPTY (&rctx->deletion_queue)) {
+		if (frame < PQUEUE_PEEK (&rctx->deletion_queue).deletion_frame) {
+			break;
+		}
+		auto del = PQUEUE_REMOVE (&rctx->deletion_queue);
+		QFV_DestroyResource (device, del.resources);
+		if (del.framebuffer) {
+			dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
+		}
+	}
+}
+
 void
 QFV_RunRenderJob (vulkan_ctx_t *ctx)
 {
@@ -359,6 +379,8 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 	auto rctx = ctx->render_context;
 	auto job = rctx->job;
 	int64_t start = Sys_LongTime ();
+
+	run_deletion_queue (ctx);
 
 	for (uint32_t i = 0; i < job->num_steps; i++) {
 		int64_t step_start = Sys_LongTime ();
@@ -435,16 +457,21 @@ find_imageview (qfv_reference_t *ref, qfv_renderpass_t *rp,
 void
 QFV_DestroyFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp)
 {
-	if (rp->beginInfo.framebuffer) {
-		auto device = ctx->device;
-		auto dfunc = device->funcs;
-		auto bi = &rp->beginInfo;
-		dfunc->vkDestroyFramebuffer (device->dev, bi->framebuffer, 0);
-		bi->framebuffer = 0;
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.resources = &rp->resource_array[rp->active_resources],
+		.framebuffer = rp->beginInfo.framebuffer,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	if (del.resources) {
+		rp->active_resources++;
+		if (rp->active_resources >= rp->num_resources) {
+			rp->active_resources = 0;
+		}
 	}
-	if (rp->resources && rp->resources->memory) {
-		QFV_DestroyResource (ctx->device, rp->resources);
-	}
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
+	rp->beginInfo.framebuffer = 0;
 }
 
 void
@@ -453,15 +480,17 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 {
 	auto rctx = ctx->render_context;
 
-	if (rp->resources && !rp->resources->memory) {
-		for (uint32_t i = 0; i < rp->resources->num_objects; i++) {
-			auto obj = &rp->resources->objects[i];
+	auto resources = &rp->resource_array[rp->active_resources];
+
+	if (resources && !resources->memory) {
+		for (uint32_t i = 0; i < resources->num_objects; i++) {
+			auto obj = &resources->objects[i];
 			if (obj->type == qfv_res_image) {
 				obj->image.extent.width = extent.width;
 				obj->image.extent.height = extent.height;
 			}
 		}
-		QFV_CreateResource (ctx->device, rp->resources);
+		QFV_CreateResource (ctx->device, resources);
 	}
 
 	auto fb = rp->framebufferinfo;
@@ -485,11 +514,12 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 				cInfo.height = sc->extent.height;
 			}
 		} else {
+			auto objects = resources->objects;
 			auto viewinfo = find_imageview (&fb->attachments[i].view, rp, rctx);
-			attachments[i] = viewinfo->object->image_view.view;
+			attachments[i] = objects[viewinfo->object].image_view.view;
 			if (rp->outputref.name) {
 				viewinfo = find_imageview (&rp->outputref, rp, rctx);
-				rp->output = viewinfo->object->image_view.view;
+				rp->output = objects[viewinfo->object].image_view.view;
 			}
 		}
 	}
@@ -506,6 +536,18 @@ QFV_CreateFramebuffer (vulkan_ctx_t *ctx, qfv_renderpass_t *rp,
 		__auto_type sp = &rp->subpasses[i];
 		sp->inherit.framebuffer = framebuffer;
 	}
+}
+
+void
+QFV_QueueResourceDelete (vulkan_ctx_t *ctx, qfv_resource_t *res)
+{
+	auto rctx = ctx->render_context;
+	uint32_t frames = rctx->frames.size;
+	qfv_delete_t del = {
+		.resources = res,
+		.deletion_frame = ctx->frameNumber + frames,
+	};
+	PQUEUE_INSERT (&rctx->deletion_queue, del);
 }
 
 static void
@@ -573,6 +615,13 @@ static exprsym_t render_task_syms[] = {
 	{}
 };
 
+static int
+qfv_deletion_compare (const qfv_delete_t *a, const qfv_delete_t *b, void *data)
+{
+	uint64_t diff = a->deletion_frame - b->deletion_frame;
+	return (diff >> 32) | !!diff;
+}
+
 void
 QFV_Render_Init (vulkan_ctx_t *ctx)
 {
@@ -584,6 +633,10 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		.task_functions = { .symbols = &(exprsym_t) {} },
 		.external_attachments = DARRAY_STATIC_INIT (4),
 		.frames = DARRAY_STATIC_INIT (vulkan_frame_count),
+		.deletion_queue = {
+			.q = DARRAY_STATIC_INIT (8),
+			.compare = qfv_deletion_compare,
+		},
 		.size_time = -1000*1000*1000,
 	};
 	DARRAY_RESIZE (&rctx->frames, vulkan_frame_count);
@@ -703,10 +756,13 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 				auto render = job->steps[i].render;
 				for (uint32_t j = 0; j < render->num_renderpasses; j++) {
 					auto rp = &render->renderpasses[j];
-					if (rp->resources && rp->resources->memory) {
-						QFV_DestroyResource (ctx->device, rp->resources);
+					for (uint32_t k = 0; k < rp->num_resources; k++) {
+						auto resources = &rp->resource_array[k];
+						if (resources && resources->memory) {
+							QFV_DestroyResource (ctx->device, resources);
+						}
 					}
-					free (rp->resources);
+					free (rp->resource_array);
 					auto bi = &rp->beginInfo;
 					if (bi->framebuffer) {
 						dfunc->vkDestroyFramebuffer (device->dev,
@@ -817,11 +873,12 @@ QFV_Render_AddAttachments (vulkan_ctx_t *ctx, uint32_t num_attachments,
 qfv_resobj_t *
 QFV_FindResource (const char *name, qfv_renderpass_t *rp)
 {
-	if (!rp->resources) {
+	if (!rp->resource_array) {
 		return 0;
 	}
-	for (uint32_t i = 0; i < rp->resources->num_objects; i++) {
-		auto obj = &rp->resources->objects[i];
+	auto resources = &rp->resource_array[rp->active_resources];
+	for (uint32_t i = 0; i < resources->num_objects; i++) {
+		auto obj = &resources->objects[i];
 		if (!strcmp (obj->name, name)) {
 			return obj;
 		}

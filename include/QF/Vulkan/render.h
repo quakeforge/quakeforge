@@ -11,6 +11,7 @@
 
 #ifndef __QFCC__
 #include "QF/darray.h"
+#include "QF/pqueue.h"
 #include "QF/Vulkan/command.h"
 #endif
 
@@ -92,7 +93,7 @@ typedef struct qfv_imageviewinfo_s {
 	VkFormat    format;
 	VkComponentMapping components;
 	VkImageSubresourceRange subresourceRange;
-	struct qfv_resobj_s *object;
+	uint32_t    object;
 } qfv_imageviewinfo_t;
 
 typedef struct qfv_bufferinfo_s {
@@ -372,7 +373,9 @@ typedef struct qfv_renderpass_s {
 	VkImageView output;
 	qfv_reference_t outputref;
 
-	struct qfv_resource_s *resources;
+	struct qfv_resource_s *resource_array;
+	uint32_t active_resources;
+	uint32_t num_resources;
 } qfv_renderpass_t;
 
 typedef struct qfv_render_s {
@@ -440,10 +443,18 @@ typedef struct qfv_renderframe_s {
 	qftVkCtx_t *qftVkCtx;
 } qfv_renderframe_t;
 
+typedef struct qfv_delete_s {
+	struct qfv_resource_s *resources;
+	VkFramebuffer framebuffer;
+	uint64_t    deletion_frame;
+} qfv_delete_t;
+
 typedef struct qfv_renderframeset_s
 	DARRAY_TYPE (qfv_renderframe_t) qfv_renderframeset_t;
 typedef struct qfv_attachmentinfoset_s
 	DARRAY_TYPE (qfv_attachmentinfo_t *) qfv_attachmentinfoset_t;
+typedef struct qfv_deleteset_s
+	PQUEUE_TYPE (qfv_delete_t) qfv_deletequeue_t;
 
 typedef struct qfv_renderctx_s {
 	struct hashctx_s *hashctx;
@@ -453,6 +464,7 @@ typedef struct qfv_renderctx_s {
 	qfv_samplerinfo_t *samplerinfo;
 	qfv_job_t  *job;
 	qfv_renderframeset_t frames;
+	qfv_deletequeue_t deletion_queue;
 	int64_t     size_time;
 	struct qfv_renderdebug_s *debug;
 } qfv_renderctx_t;
@@ -494,6 +506,9 @@ void QFV_Render_AddAttachments (struct vulkan_ctx_s *ctx,
 void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,
 							VkExtent2D extent);
+
+void QFV_QueueResourceDelete (struct vulkan_ctx_s *ctx,
+							  struct qfv_resource_s *res);
 
 struct qfv_dsmanager_s *
 QFV_Render_DSManager (struct vulkan_ctx_s *ctx,

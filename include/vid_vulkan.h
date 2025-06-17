@@ -106,6 +106,7 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	struct qfv_stagebuf_s *staging;
 	uint32_t    curFrame;
+	uint64_t    frameNumber;
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

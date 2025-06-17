@@ -61,19 +61,30 @@
 #include "vid_vulkan.h"
 
 static void
+trans_delete_buffers (vulkan_ctx_t *ctx)
+{
+	auto tctx = ctx->translucent_context;
+
+	auto resources = &tctx->resource_array[tctx->active_resources];
+	if (resources->memory) {
+		QFV_QueueResourceDelete (ctx, resources);
+		if (++tctx->active_resources >= tctx->num_resources) {
+			tctx->active_resources = 0;
+		}
+	}
+}
+
+static void
 trans_create_buffers (vulkan_ctx_t *ctx)
 {
 	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto  tctx = ctx->translucent_context;
+	auto tctx = ctx->translucent_context;
 	size_t frames = tctx->frames.size;
 
-	if (tctx->resources->memory) {
-		QFV_DestroyResource (device, tctx->resources);
-	}
+	auto resources = &tctx->resource_array[tctx->active_resources];
 
-	for (uint32_t i = 0; i < tctx->resources->num_objects; i++) {
-		auto obj = &tctx->resources->objects[i];
+	for (uint32_t i = 0; i < resources->num_objects; i++) {
+		auto obj = &resources->objects[i];
 		if (obj->type == qfv_res_image) {
 			auto img = &obj->image;
 			if (img->num_layers == 6) {
@@ -86,45 +97,60 @@ trans_create_buffers (vulkan_ctx_t *ctx)
 			}
 		}
 	}
-	QFV_CreateResource (device, tctx->resources);
+	QFV_CreateResource (device, resources);
 
 	for (size_t i = 0; i < frames; i++) {
-		auto tframe = &tctx->frames.a[i];
-		auto heads_view = tframe->heads_view->image_view.view;
-		auto cube_heads_view = tframe->cube_heads_view->image_view.view;
-		auto state = tframe->state->buffer.buffer;
-		auto frags = tframe->frags->buffer.buffer;
-
-		VkDescriptorImageInfo flat_imageInfo[] = {
-			{ 0, heads_view, VK_IMAGE_LAYOUT_GENERAL },
-		};
-		VkDescriptorImageInfo cube_imageInfo[] = {
-			{ 0, cube_heads_view, VK_IMAGE_LAYOUT_GENERAL },
-		};
-		VkDescriptorBufferInfo bufferInfo[] = {
-			{ state, 0, VK_WHOLE_SIZE },
-			{ frags, 0, VK_WHOLE_SIZE },
-		};
-		VkWriteDescriptorSet write[] = {
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->flat, 2, 0, 1,
-				VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = flat_imageInfo },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->flat, 0, 0, 2,
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = bufferInfo },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->cube, 2, 0, 1,
-				VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = cube_imageInfo },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-				tframe->cube, 0, 0, 2,
-				VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = bufferInfo },
-		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 4, write, 0, 0);
+		tctx->frames.a[i].need_update = true;
 	}
+}
+
+static void
+trans_update_descriptors (vulkan_ctx_t *ctx, int i)
+{
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto tctx = ctx->translucent_context;
+
+	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto obj = resources->objects;
+
+	auto tframe = &tctx->frames.a[i];
+	auto heads_view = obj[tframe->heads_view].image_view.view;
+	auto cube_heads_view = obj[tframe->cube_heads_view].image_view.view;
+	auto state = obj[tframe->state].buffer.buffer;
+	auto frags = obj[tframe->frags].buffer.buffer;
+
+	VkDescriptorImageInfo flat_imageInfo[] = {
+		{ 0, heads_view, VK_IMAGE_LAYOUT_GENERAL },
+	};
+	VkDescriptorImageInfo cube_imageInfo[] = {
+		{ 0, cube_heads_view, VK_IMAGE_LAYOUT_GENERAL },
+	};
+	VkDescriptorBufferInfo bufferInfo[] = {
+		{ state, 0, VK_WHOLE_SIZE },
+		{ frags, 0, VK_WHOLE_SIZE },
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			tframe->flat, 2, 0, 1,
+			VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+			.pImageInfo = flat_imageInfo },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			tframe->flat, 0, 0, 2,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = bufferInfo },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			tframe->cube, 2, 0, 1,
+			VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+			.pImageInfo = cube_imageInfo },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			tframe->cube, 0, 0, 2,
+			VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+			.pBufferInfo = bufferInfo },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 4, write, 0, 0);
+
+	tframe->need_update = false;
 }
 
 static void
@@ -145,7 +171,11 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		|| tctx->extent.height != render->output.extent.height) {
 
 		tctx->extent = render->output.extent;
+		trans_delete_buffers (ctx);
 		trans_create_buffers (ctx);
+	}
+	if (tframe->need_update) {
+		trans_update_descriptors (ctx, ctx->curFrame);
 	}
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
@@ -156,7 +186,9 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	auto img = scr_fisheye ? tframe->cube_heads : tframe->heads;
+	auto resources = &tctx->resource_array[tctx->active_resources];
+	auto obj = resources->objects;
+	auto img = scr_fisheye ? &obj[tframe->cube_heads] : &obj[tframe->heads];
 	auto image = img->image.image;
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = image;
@@ -187,7 +219,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-	QFV_PacketCopyBuffer (packet, tframe->state->buffer.buffer, 0, &sb,
+	QFV_PacketCopyBuffer (packet, obj[tframe->state].buffer.buffer, 0, &sb,
 		&(qfv_bufferbarrier_t) {
 			.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 			.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -204,27 +236,18 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 }
 
 static void
-trans_create_resources (vulkan_ctx_t *ctx)
+trans_setup_resources (vulkan_ctx_t *ctx, qfv_resource_t *resources,
+					   qfv_resobj_t *heads_objs,
+					   qfv_resobj_t *cube_heads_objs,
+					   qfv_resobj_t *head_views_objs,
+					   qfv_resobj_t *cube_head_views_objs,
+					   qfv_resobj_t *buffer_objs,
+					   qfv_resobj_t *count_objs)
 {
 	auto  tctx = ctx->translucent_context;
 	size_t frames = tctx->frames.size;
 
-	tctx->resources = calloc (1, sizeof (qfv_resource_t)
-							  // heads images (flat + cube)
-							  + sizeof (qfv_resobj_t[frames]) * 2
-							  // heads image views (flat + cube)
-							  + sizeof (qfv_resobj_t[frames]) * 2
-							  // fragment buffer
-							  + sizeof (qfv_resobj_t[frames])
-							  // fragment count
-							  + sizeof (qfv_resobj_t[frames]));
-	auto heads_objs = (qfv_resobj_t *) &tctx->resources[1];
-	auto cube_heads_objs = &heads_objs[frames];
-	auto head_views_objs = &cube_heads_objs[frames];
-	auto cube_head_views_objs = &head_views_objs[frames];
-	auto buffer_objs = &cube_head_views_objs[frames];
-	auto count_objs = &buffer_objs[frames];
-	tctx->resources[0] = (qfv_resource_t) {
+	resources[0] = (qfv_resource_t) {
 		.name = "oit",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -285,15 +308,52 @@ trans_create_resources (vulkan_ctx_t *ctx)
 			},
 		};
 	}
+}
 
-	for (size_t i = 0; i < frames; i++) {
-		auto tframe = &tctx->frames.a[i];
-		tframe->heads = &heads_objs[i];
-		tframe->cube_heads = &cube_heads_objs[i];
-		tframe->heads_view = &head_views_objs[i];
-		tframe->cube_heads_view = &cube_head_views_objs[i];
-		tframe->state = &count_objs[i];
-		tframe->frags = &buffer_objs[i];
+static void
+trans_create_resources (vulkan_ctx_t *ctx)
+{
+	auto  tctx = ctx->translucent_context;
+	size_t frames = tctx->frames.size;
+
+	size_t size = sizeof (qfv_resource_t)
+				// heads images (flat + cube)
+				+ sizeof (qfv_resobj_t[frames]) * 2
+				// heads image views (flat + cube)
+				+ sizeof (qfv_resobj_t[frames]) * 2
+				// fragment buffer
+				+ sizeof (qfv_resobj_t[frames])
+				// fragment count
+				+ sizeof (qfv_resobj_t[frames]);
+
+	tctx->resource_array = malloc (frames * size);
+	tctx->active_resources = 0;
+	tctx->num_resources = frames;
+	void *res = &tctx->resource_array[frames];
+	for (uint32_t j = 0; j < frames; j++) {
+		auto heads_objs = (qfv_resobj_t *) res;
+		auto cube_heads_objs = &heads_objs[frames];
+		auto head_views_objs = &cube_heads_objs[frames];
+		auto cube_head_views_objs = &head_views_objs[frames];
+		auto buffer_objs = &cube_head_views_objs[frames];
+		auto count_objs = &buffer_objs[frames];
+		res = &count_objs[frames];
+
+		trans_setup_resources (ctx, &tctx->resource_array[j],
+							   heads_objs, cube_heads_objs,
+							   head_views_objs, cube_head_views_objs,
+							   buffer_objs, count_objs);
+
+		for (size_t i = 0; i < frames; i++) {
+			auto objects = tctx->resource_array[j].objects;
+			auto tframe = &tctx->frames.a[i];
+			tframe->heads = &heads_objs[i] - objects;
+			tframe->cube_heads = &cube_heads_objs[i] - objects;
+			tframe->heads_view = &head_views_objs[i] - objects;
+			tframe->cube_heads_view = &cube_head_views_objs[i] - objects;
+			tframe->state = &count_objs[i] - objects;
+			tframe->frags = &buffer_objs[i] - objects;
+		}
 	}
 }
 
@@ -306,16 +366,17 @@ translucent_shutdown (exprctx_t *ectx)
 	qfv_device_t *device = ctx->device;
 	translucentctx_t *tctx = ctx->translucent_context;
 
-	if (tctx->resources) {
-		if (tctx->resources->memory) {
-			QFV_DestroyResource (device, tctx->resources);
-		}
-		for (uint32_t i = 0; i < tctx->resources->num_objects; i++) {
-			auto obj = &tctx->resources->objects[i];
-			free ((char *) obj->name);
+	if (tctx->resource_array) {
+		for (uint32_t j = 0; j < tctx->num_resources; j++) {
+			auto resources = &tctx->resource_array[j];
+			QFV_DestroyResource (device, resources);
+			for (uint32_t i = 0; i < resources->num_objects; i++) {
+				auto obj = &resources->objects[i];
+				free ((char *) obj->name);
+			}
 		}
 	}
-	free (tctx->resources);
+	free (tctx->resource_array);
 	free (tctx->frames.a);
 	free (tctx);
 }
