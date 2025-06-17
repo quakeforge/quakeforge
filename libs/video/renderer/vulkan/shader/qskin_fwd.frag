@@ -7,13 +7,13 @@ layout (set = 1, binding = 0) uniform sampler2D Palette;
 layout (set = 3, binding = 0) uniform sampler2DArray Skin;
 
 layout (push_constant) uniform PushConstants {
-	layout (offset = 72)
+	layout (offset = 76)
 	uint        colors;
-	float       ambient;
-	float       shadelight;
-	vec4        lightvec;
 	vec4        base_color;
 	vec4        fog;
+	vec4        lightvec;
+	float       ambient;
+	float       shadelight;
 };
 
 layout (location = 0) in vec2 st;

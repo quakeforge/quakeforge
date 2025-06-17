@@ -71,12 +71,13 @@ typedef struct {
 	mat4f_t     mat;
 	uint32_t    enabled_mask;
 	float       blend;
+	uint32_t    debug_bone;
 	byte        colors[4];
-	float       ambient;
-	float       shadelight;
-	vec4f_t     lightvec;
 	vec4f_t     base_color;
 	vec4f_t     fog;
+	vec4f_t     lightvec;
+	float       ambient;
+	float       shadelight;
 } fwd_push_constants_t;
 
 typedef struct {
@@ -187,9 +188,8 @@ Vulkan_MeshRemoveSkin (vulkan_ctx_t *ctx, qfv_skin_t *skin)
 
 static void
 push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					 int debug_bone,
-					 byte *colors, vec4f_t base_color, int pass,
-					 qfv_taskctx_t *taskctx)
+					 int debug_bone, byte *colors, vec4f_t base_color,
+					 int pass, qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -233,8 +233,8 @@ push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 
 static void
 push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
-					byte *colors, vec4f_t base_color, const alight_t *lighting,
-					int pass, qfv_taskctx_t *taskctx)
+					int debug_bone, byte *colors, vec4f_t base_color,
+					const alight_t *lighting, int pass, qfv_taskctx_t *taskctx)
 {
 	auto ctx = taskctx->ctx;
 	auto device = ctx->device;
@@ -244,12 +244,13 @@ push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 	fwd_push_constants_t constants = {
 		.blend = blend,
 		.enabled_mask = enabled_mask,
+		.debug_bone = debug_bone,
 		.colors = { VEC4_EXP (colors) },
-		.ambient = lighting->ambientlight,
-		.shadelight = lighting->shadelight,
-		.lightvec = { VectorExpand (lighting->lightvec) },
 		.base_color = base_color,
 		.fog = Fog_Get (),
+		.lightvec = { VectorExpand (lighting->lightvec) },
+		.ambient = lighting->ambientlight,
+		.shadelight = lighting->shadelight,
 	};
 
 	qfv_push_constants_t push_constants[] = {
@@ -262,24 +263,27 @@ push_fwd_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 		{ VK_SHADER_STAGE_VERTEX_BIT,
 			offsetof (fwd_push_constants_t, blend),
 			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			offsetof (mesh_push_constants_t, debug_bone),
+			sizeof (uint32_t), &constants.debug_bone },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (fwd_push_constants_t, colors),
 			sizeof (constants.colors), constants.colors },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (fwd_push_constants_t, ambient),
-			sizeof (constants.ambient), &constants.ambient },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (fwd_push_constants_t, shadelight),
-			sizeof (constants.shadelight), &constants.shadelight },
-		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (fwd_push_constants_t, lightvec),
-			sizeof (constants.lightvec), &constants.lightvec },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (fwd_push_constants_t, base_color),
 			sizeof (constants.base_color), &constants.base_color },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (fwd_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			offsetof (fwd_push_constants_t, lightvec),
+			sizeof (constants.lightvec), &constants.lightvec },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			offsetof (fwd_push_constants_t, ambient),
+			sizeof (constants.ambient), &constants.ambient },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			offsetof (fwd_push_constants_t, shadelight),
+			sizeof (constants.shadelight), &constants.shadelight },
 	};
 	QFV_PushConstants (device, cmd, layout, 9, push_constants);
 }
@@ -657,13 +661,12 @@ mesh_draw_ent (qfv_taskctx_t *taskctx, entity_t ent, int pass,
 			alight_t    lighting;
 			R_Setup_Lighting (ent, &lighting);
 			push_fwd_constants (Transform_GetWorldMatrixPtr (transform),
-								enabled_mask, blend, colors, base_color,
-								&lighting, pass, taskctx);
+								enabled_mask, blend, anim->debug_bone,
+								colors, base_color, &lighting, pass, taskctx);
 		} else {
 			push_mesh_constants (Transform_GetWorldMatrixPtr (transform),
 								 enabled_mask, blend, anim->debug_bone,
-								 colors, base_color,
-								 pass, taskctx);
+								 colors, base_color, pass, taskctx);
 		}
 	}
 	for (uint32_t i = 0; i < model->meshes.count; i++) {

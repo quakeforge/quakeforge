@@ -336,7 +336,7 @@ properties = {
 			vertex = {
 				stage = vertex;
 				name = main;
-				module = $builtin/mesh.vert;
+				module = $builtin/mesh.r;
 			};
 		};
 		vertexInput = {
@@ -358,17 +358,22 @@ properties = {
 			primitiveRestartEnable = false;
 		};
 		layout = {
-			//                            palette      skin
-			descriptorSets = (matrix_set, texture_set, texture_set);
+			//                            palette                skin
+			descriptorSets = (matrix_set, texture_set, bone_set, texture_set);
 			pushConstants = {
-				vertex   = { Model = mat4; blend = float; };
+				vertex   = {
+					Model = mat4;
+					enabled_mask = uint;
+					blend = float;
+					debug_bone = uint;
+				};
 				fragment = {
 					colors = uint;
-					ambient = float;
-					shadelight = float;
-					lightvec = vec4;
 					base_color = vec4;
 					fog = vec4;
+					lightvec = vec4;
+					ambient = float;
+					shadelight = float;
 				};
 			};
 		};
@@ -1157,8 +1162,15 @@ renderpasses = {
 						vertexInput = $mesh.vertexInput;
 						inputAssembly = $mesh.inputAssembly;
 						layout = $mesh.layout;
+						dynamic = {
+							dynamicState = (
+								viewport,
+								scissor,
+								vertex_input_ext,
+							);
+						};
 					};
-					sprite:depth = {
+					sprite = {
 						color = $color.sprite;
 						tasks = (
 							{ func = sprite_draw; },
