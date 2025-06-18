@@ -626,12 +626,20 @@ gl_alias_draw_mesh (qf_mesh_t *mesh, entity_t e, renderer_t *renderer,
 	if (r_shadows && renderer->model->shadow_alpha) {
 		mat4f_t     shadow_mat;
 
+		//FIXME There's something weird with using Transform_GetWorldMatrix,
+		//Transform_GetWorldMatrixPtr, and maybe mat4ftranspose and m3vmulf:
+		//gcc-15 complaines about shadow_mat being uninitialized but gcc-14
+		//is silent. Moving the shadevector code into its own function makes
+		//both versions of gcc complain. code marked with XXX are the relevant
+		//lines for checking (this version gets past both versions of gcc).
+		Transform_GetWorldMatrix (transform, shadow_mat);//XXX
 		qfglPushMatrix ();
-		gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
+		gl_R_RotateForEntity (shadow_mat);//XXX
+		//XXX gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
 		//FIXME fully vectorize
 		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
-		Transform_GetWorldMatrix (transform, shadow_mat);
+		//XXX Transform_GetWorldMatrix (transform, shadow_mat);
 		mat4ftranspose (shadow_mat, shadow_mat);
 		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
