@@ -629,6 +629,13 @@ gl_alias_draw_mesh (qf_mesh_t *mesh, entity_t e, renderer_t *renderer,
 		qfglPushMatrix ();
 		gl_R_RotateForEntity (Transform_GetWorldMatrixPtr (transform));
 
+		//FIXME fully vectorize
+		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
+		Transform_GetWorldMatrix (transform, shadow_mat);
+		mat4ftranspose (shadow_mat, shadow_mat);
+		vec = m3vmulf (shadow_mat, vec);
+		VectorCopy (vec, shadevector);
+
 		if (!gl_tess)
 			qfglDisable (GL_NORMALIZE);
 		qfglDisable (GL_LIGHTING);
@@ -643,12 +650,6 @@ gl_alias_draw_mesh (qf_mesh_t *mesh, entity_t e, renderer_t *renderer,
 			color_black[3] = renderer->model->shadow_alpha;
 			qfglColor4ubv (color_black);
 		}
-		//FIXME fully vectorize
-		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
-		Transform_GetWorldMatrix (transform, shadow_mat);
-		mat4ftranspose (shadow_mat, shadow_mat);
-		vec = m3vmulf (shadow_mat, vec);
-		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
 			GL_DrawAliasShadowTri (transform, mesh, vo);
 		else
