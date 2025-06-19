@@ -676,7 +676,7 @@ in_connect_f (void)
 in_connect_usage:
 	Sys_Printf ("in_connect bindname device_id [fullid]\n");
 	Sys_Printf ("   Create a new device binding connection.\n");
-	Sys_Printf ("   bindname: Connection name used for binding inputs\n.");
+	Sys_Printf ("   bindname: Connection name used for binding inputs.\n");
 	Sys_Printf ("   device_id: Specify the device to be connected.\n");
 	Sys_Printf ("      May be the numeric device number (#N), the device\n");
 	Sys_Printf ("      name or device id as shown by in_devices.\n");
