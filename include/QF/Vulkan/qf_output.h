@@ -38,6 +38,9 @@
 typedef struct outputframe_s {
 	VkImageView input;
 	VkDescriptorSet set;
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore outputDoneSemaphore;
+	VkFence     fence;
 } outputframe_t;
 
 typedef struct outputframeset_s

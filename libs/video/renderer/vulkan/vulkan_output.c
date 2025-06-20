@@ -69,13 +69,15 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
-	auto frame = &rctx->frames.a[ctx->curFrame];
 	auto octx = ctx->output_context;
+	auto frame = &octx->frames.a[ctx->curFrame];
 	auto sc = ctx->swapchain;
 
+	dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE, 2000000000);
+	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
-								  0, &imageIndex)) {
+								  frame->fence, &imageIndex)) {
 		QFV_DeviceWaitIdle (device);
 		if (octx->framebuffers) {
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
@@ -274,6 +276,66 @@ output_draw_fisheye (const exprval_t **params, exprval_t *result, exprctx_t *ect
 }
 
 static void
+submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto octx = ctx->output_context;
+	auto job = rctx->job;
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto queue = &device->queue;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+	auto oframe = &octx->frames.a[ctx->curFrame];
+	VkSemaphore waitSemaphores[2] = {
+		oframe->imageAvailableSemaphore,
+		frame->renderDoneSemaphore,
+	};
+	VkPipelineStageFlags waitStages[2] = {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+	};
+	VkSubmitInfo submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.waitSemaphoreCount = 2,
+		.pWaitSemaphores = waitSemaphores,
+		.pWaitDstStageMask = waitStages,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
+		.signalSemaphoreCount = 1,
+		.pSignalSemaphores = &oframe->outputDoneSemaphore,
+	};
+	dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+	DARRAY_RESIZE (&job->commands, 0);
+}
+
+static void
+present_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto octx = ctx->output_context;
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto queue = &device->queue;
+	auto frame = &octx->frames.a[ctx->curFrame];
+
+	VkPresentInfoKHR presentInfo = {
+		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
+		1, &frame->outputDoneSemaphore,
+		1, &ctx->swapchain->swapchain, &ctx->swapImageIndex,
+		0
+	};
+	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
+}
+
+static void
 output_shutdown (exprctx_t *ectx)
 {
 	qfZoneScoped (true);
@@ -294,6 +356,15 @@ output_shutdown (exprctx_t *ectx)
 	auto rp = &render->renderpasses[0];
 	rp->beginInfo.framebuffer = 0;
 
+	for (uint32_t i = 0; i < octx->frames.size; i++) {
+		auto dev = device->dev;
+		auto df = dfunc;
+		auto frame = &octx->frames.a[i];
+		df->vkDestroyFence (dev, frame->fence, 0);
+		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
+		df->vkDestroySemaphore (dev, frame->outputDoneSemaphore, 0);
+	}
+
 	free (octx->frames.a);
 	free (octx);
 }
@@ -304,6 +375,7 @@ output_startup (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
 	qfvPushDebug (ctx, "output init");
 	auto octx = ctx->output_context;
 
@@ -321,6 +393,16 @@ output_startup (exprctx_t *ectx)
 		auto oframe = &octx->frames.a[i];
 		oframe->input = 0;
 		oframe->set = QFV_DSManager_AllocSet (dsmanager);
+
+		oframe->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 oframe->imageAvailableSemaphore,
+							 vac (ctx->va_ctx, "sc image:%zd", i));
+		oframe->outputDoneSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 oframe->outputDoneSemaphore,
+							 vac (ctx->va_ctx, "output done:%zd", i));
+		oframe->fence = QFV_CreateFence (device, 1);
 	}
 
 	qfvPopDebug (ctx);
@@ -390,6 +472,16 @@ static exprfunc_t output_draw_fisheye_func[] = {
 	{}
 };
 
+static exprfunc_t submit_output_func[] = {
+	{ .func = submit_output },
+	{}
+};
+
+static exprfunc_t present_output_func[] = {
+	{ .func = present_output },
+	{}
+};
+
 static exprfunc_t output_init_func[] = {
 	{ .func = output_init },
 	{}
@@ -404,6 +496,8 @@ static exprsym_t output_task_syms[] = {
 	{ "output_draw_flat", &cexpr_function, output_draw_flat_func },
 	{ "output_draw_waterwarp", &cexpr_function, output_draw_waterwarp_func },
 	{ "output_draw_fisheye", &cexpr_function, output_draw_fisheye_func },
+	{ "submit_output", &cexpr_function, submit_output_func },
+	{ "present_output", &cexpr_function, present_output_func },
 	{ "output_init", &cexpr_function, output_init_func },
 	{}
 };

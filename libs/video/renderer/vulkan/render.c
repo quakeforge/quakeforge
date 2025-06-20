@@ -402,31 +402,6 @@ QFV_RunRenderJob (vulkan_ctx_t *ctx)
 		update_time (&step->time, step_start, Sys_LongTime ());
 	}
 
-	qfMessageL ("submit");
-	auto device = ctx->device;
-	auto dfunc = device->funcs;
-	auto queue = &device->queue;
-	auto frame = &rctx->frames.a[ctx->curFrame];
-	VkPipelineStageFlags waitStage
-		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		1, &frame->imageAvailableSemaphore, &waitStage,
-		job->commands.size, job->commands.a,
-		1, &frame->renderDoneSemaphore,
-	};
-	dfunc->vkResetFences (device->dev, 1, &frame->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
-
-	qfMessageL ("present");
-	VkPresentInfoKHR presentInfo = {
-		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frame->renderDoneSemaphore,
-		1, &ctx->swapchain->swapchain, &ctx->swapImageIndex,
-		0
-	};
-	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
-
 	qfMessageL ("update_time");
 	ctx->frameNumber++;
 	if (++ctx->curFrame >= rctx->frames.size) {
@@ -566,8 +541,6 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
 
 	QFV_CmdPoolManager_Reset (&frame->cmdpool);
-	auto job = ctx->render_context->job;
-	DARRAY_RESIZE (&job->commands, 0);
 	run_collect (ctx);
 }
 
@@ -598,6 +571,31 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 	}
 }
 
+static void
+submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto rctx = ctx->render_context;
+	auto job = rctx->job;
+
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto queue = &device->queue;
+	auto frame = &rctx->frames.a[ctx->curFrame];
+	VkSubmitInfo submitInfo = {
+		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.commandBufferCount = job->commands.size,
+		.pCommandBuffers = job->commands.a,
+		.signalSemaphoreCount = 1,
+		.pSignalSemaphores = &frame->renderDoneSemaphore,
+	};
+	//dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, 0/*frame->fence*/);
+	DARRAY_RESIZE (&job->commands, 0);
+}
+
 static exprfunc_t wait_on_fence_func[] = {
 	{ .func = wait_on_fence },
 	{}
@@ -610,9 +608,16 @@ static exprfunc_t update_framebuffer_func[] = {
 	{ .func = update_framebuffer, .num_params = 1, update_framebuffer_params },
 	{}
 };
+
+static exprfunc_t submit_render_func[] = {
+	{ .func = submit_render },
+	{}
+};
+
 static exprsym_t render_task_syms[] = {
 	{ "wait_on_fence", &cexpr_function, wait_on_fence_func },
 	{ "update_framebuffer", &cexpr_function, update_framebuffer_func },
+	{ "submit_render", &cexpr_function, submit_render_func },
 	{}
 };
 
@@ -653,10 +658,6 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
 		frame->fence = QFV_CreateFence (device, 1);
-		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 frame->imageAvailableSemaphore,
-							 vac (ctx->va_ctx, "sc image:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
 								 vac (ctx->va_ctx, "render pool:%zd", i));
@@ -784,7 +785,6 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		auto df = dfunc;
 		auto frame = &rctx->frames.a[i];
 		df->vkDestroyFence (dev, frame->fence, 0);
-		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
 		QFV_CmdPoolManager_Shutdown (&frame->cmdpool);
 		qftCVkContextDestroy (frame->qftVkCtx);

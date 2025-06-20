@@ -2655,7 +2655,7 @@ render_graph = {
 		};
 		world = {
 			color = "[0.3, 0.4, 0.0]";
-			dependencies = (wait_on_fence);
+			dependencies = (start_frame);
 			process = {
 				tasks = (
 					{ func = bsp_reset_queues; },
@@ -2739,7 +2739,7 @@ render_graph = {
 		};
 		setup_main = {
 			color = "[0.3, 0.8, 0.3]";
-			dependencies = (wait_on_fence);
+			dependencies = (start_frame);
 			process = {
 				tasks = (
 					{ func = output_select_renderpass;
@@ -2756,7 +2756,7 @@ render_graph = {
 		};
 		main = {
 			color = "[0.3, 0.8, 0.0]";
-			dependencies = (setup_main, particles, shadow, world);
+			dependencies = (setup_main, particles, shadow);
 			render = {
 				renderpasses = {
 					deferred = $renderpasses.deferred;
@@ -2766,9 +2766,12 @@ render_graph = {
 		};
 		preoutput = {
 			color = "[0.8, 0.8, 0.0]";
-			dependencies = (wait_on_fence);
+			dependencies = (main);
 			process = {
 				tasks = (
+					{ func = mousepick_initiate; },
+					{ func = submit_render; },
+
 					{ func = acquire_output;
 					  params = ("\"output\""); },
 					{ func = update_input;
@@ -2789,21 +2792,14 @@ render_graph = {
 				};
 			};
 		};
-		capture = {
+		end_frame = {
 			color = "[0.0, 0.8, 0.4]";
 			dependencies = (output);
 			process = {
 				tasks = (
 					{ func = capture_initiate; },
-				);
-			};
-		};
-		mouse_pick = {
-			color = "[0.0, 0.0, 0.8]";
-			dependencies = (main);
-			process = {
-				tasks = (
-					{ func = mousepick_initiate; },
+					{ func = submit_output; },
+					{ func = present_output; },
 				);
 			};
 		};

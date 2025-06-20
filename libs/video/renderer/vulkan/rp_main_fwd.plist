@@ -1478,7 +1478,7 @@ renderpasses = {
 	};
 };
 steps = {
-	wait_on_fence = {
+	start_frame = {
 		process = {
 			tasks = (
 				{ func = wait_on_fence; },
@@ -1489,7 +1489,7 @@ steps = {
 		};
 	};
 	particles = {
-		dependencies = (wait_on_fence);
+		dependencies = (start_frame);
 		compute = {
 			pipelines = {
 				part:update = {
@@ -1518,7 +1518,7 @@ steps = {
 		};
 	};
 	world = {
-		dependencies = (wait_on_fence);
+		dependencies = (start_frame);
 		process = {
 			tasks = (
 				{ func = bsp_reset_queues; },
@@ -1529,7 +1529,7 @@ steps = {
 		};
 	};
 	setup_main = {
-		dependencies = (wait_on_fence);
+		dependencies = (start_frame);
 		process = {
 			tasks = (
 				{ func = output_select_renderpass;
@@ -1552,9 +1552,11 @@ steps = {
 		};
 	};
 	preoutput = {
-		dependencies = (wait_on_fence);
+		dependencies = (main);
 		process = {
 			tasks = (
+				{ func = submit_render; },
+
 				{ func = acquire_output;
 				  params = ("\"output\""); },
 				{ func = update_input;
@@ -1573,11 +1575,13 @@ steps = {
 			};
 		};
 	};
-	capture = {
+	end_frame = {
 		dependencies = (output);
 		process = {
 			tasks = (
 				{ func = capture_initiate; },
+				{ func = submit_output; },
+				{ func = present_output; },
 			);
 		};
 	};

@@ -437,7 +437,6 @@ typedef struct qfv_job_s {
 
 typedef struct qfv_renderframe_s {
 	VkFence     fence;
-	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	qfv_cmdpoolmgr_t cmdpool;
 	qftVkCtx_t *qftVkCtx;
