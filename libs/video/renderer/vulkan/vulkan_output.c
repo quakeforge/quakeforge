@@ -78,7 +78,6 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  frame->fence, &imageIndex)) {
-		QFV_DeviceWaitIdle (device);
 		if (octx->framebuffers) {
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
 				dfunc->vkDestroyFramebuffer (device->dev,
