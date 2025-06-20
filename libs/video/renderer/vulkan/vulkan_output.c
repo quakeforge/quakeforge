@@ -84,6 +84,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 											 octx->framebuffers[i], 0);
 			}
 		}
+		free (octx->framebuffers);
 		octx->framebuffers = 0;
 		Vulkan_CreateSwapchain (ctx);
 		sc = ctx->swapchain;
