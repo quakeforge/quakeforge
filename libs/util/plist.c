@@ -678,7 +678,8 @@ pl_skipspace (pldata_t *pl, bool end_ok)
 			byte	c = pl->ptr[pl->pos];
 
 			if (c > ' ') {
-				if (c == '/' && pl->pos < pl->end - 1) {	// check for comments
+				// check for comments
+				if (c == '/' && pl->pos < pl->end - 1) {
 					if (pl->ptr[pl->pos + 1] == '/') {
 						pl->pos += 2;
 
@@ -900,7 +901,7 @@ pl_parsearray (pldata_t *pl, plitem_t *(*parse_item) (pldata_t *pl))
 		PL_Release (array);
 		return nullptr;
 	}
-	pl->pos++;	// skip over opening )
+	pl->pos++;	// skip over closing )
 
 	return array;
 }
@@ -1157,7 +1158,7 @@ pl_parsejson_array (pldata_t *pl, plitem_t *(*parse_item) (pldata_t *pl))
 		PL_Release (array);
 		return nullptr;
 	}
-	pl->pos++;	// skip over opening )
+	pl->pos++;	// skip over closing )
 
 	return array;
 }
