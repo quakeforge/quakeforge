@@ -79,13 +79,16 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  frame->fence, &imageIndex)) {
 		if (octx->framebuffers) {
+			auto dev = device->dev;
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
-				dfunc->vkDestroyFramebuffer (device->dev,
-											 octx->framebuffers[i], 0);
+				dfunc->vkDestroyFramebuffer (dev, octx->framebuffers[i], 0);
+				dfunc->vkDestroySemaphore (dev, octx->outputSemaphores[i], 0);
 			}
 		}
 		free (octx->framebuffers);
+		free (octx->outputSemaphores);
 		octx->framebuffers = 0;
+		octx->outputSemaphores = 0;
 		Vulkan_CreateSwapchain (ctx);
 		sc = ctx->swapchain;
 		QFV_Capture_Renew (ctx);
@@ -105,6 +108,7 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	if (!octx->framebuffers) {
 		uint32_t    count = ctx->swapchain->imageViews->size;
 		octx->framebuffers = malloc (sizeof (VkFramebuffer [count]));
+		octx->outputSemaphores = malloc (sizeof (VkSemaphore [count]));
 		for (uint32_t i = 0; i < count; i++) {
 			rp->beginInfo.framebuffer = 0;
 			//FIXME come up with a better mechanism
@@ -114,6 +118,10 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_FRAMEBUFFER,
 								 octx->framebuffers[i],
 								 vac (ctx->va_ctx, "sc fb:%d", i));
+			octx->outputSemaphores[i] = QFV_CreateSemaphore (device);
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+								 octx->outputSemaphores[i],
+								 vac (ctx->va_ctx, "output done:%d", i));
 		}
 		rp->beginInfo.renderArea.extent = sc->extent;
 		for (uint32_t i = 0; i < rp->subpass_count; i++) {
@@ -306,7 +314,7 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.commandBufferCount = job->commands.size,
 		.pCommandBuffers = job->commands.a,
 		.signalSemaphoreCount = 1,
-		.pSignalSemaphores = &oframe->outputDoneSemaphore,
+		.pSignalSemaphores = &octx->outputSemaphores[ctx->swapImageIndex],
 	};
 	dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
@@ -324,11 +332,10 @@ present_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	auto queue = &device->queue;
-	auto frame = &octx->frames.a[ctx->curFrame];
 
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frame->outputDoneSemaphore,
+		1, &octx->outputSemaphores[ctx->swapImageIndex],
 		1, &ctx->swapchain->swapchain, &ctx->swapImageIndex,
 		0
 	};
@@ -346,10 +353,18 @@ output_shutdown (exprctx_t *ectx)
 	outputctx_t *octx = ctx->output_context;
 
 	if (octx->framebuffers) {
+		auto dev = device->dev;
 		for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
-			dfunc->vkDestroyFramebuffer (device->dev, octx->framebuffers[i], 0);
+			dfunc->vkDestroyFramebuffer (dev, octx->framebuffers[i], 0);
 		}
 		free (octx->framebuffers);
+	}
+	if (octx->outputSemaphores) {
+		auto dev = device->dev;
+		for (uint32_t i = 0; i < ctx->swapchain->imageViews->size; i++) {
+			dfunc->vkDestroySemaphore (dev, octx->outputSemaphores[i], 0);
+		}
+		free (octx->outputSemaphores);
 	}
 	auto step = QFV_FindStep ("output", ctx->render_context->job);
 	auto render = step->render;
@@ -362,7 +377,6 @@ output_shutdown (exprctx_t *ectx)
 		auto frame = &octx->frames.a[i];
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
-		df->vkDestroySemaphore (dev, frame->outputDoneSemaphore, 0);
 	}
 
 	free (octx->frames.a);
@@ -398,10 +412,6 @@ output_startup (exprctx_t *ectx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
 							 oframe->imageAvailableSemaphore,
 							 vac (ctx->va_ctx, "sc image:%zd", i));
-		oframe->outputDoneSemaphore = QFV_CreateSemaphore (device);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 oframe->outputDoneSemaphore,
-							 vac (ctx->va_ctx, "output done:%zd", i));
 		oframe->fence = QFV_CreateFence (device, 1);
 	}
 

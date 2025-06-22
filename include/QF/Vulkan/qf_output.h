@@ -39,7 +39,6 @@ typedef struct outputframe_s {
 	VkImageView input;
 	VkDescriptorSet set;
 	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore outputDoneSemaphore;
 	VkFence     fence;
 } outputframe_t;
 
@@ -50,7 +49,8 @@ typedef struct outputctx_s {
 	outputframeset_t frames;
 	VkSampler    sampler;
 	VkImageView  input;
-	VkFramebuffer *framebuffers;	// one per swapchain image
+	VkFramebuffer *framebuffers;		// one per swapchain image
+	VkSemaphore *outputSemaphores;		// one per swapchain image
 	qfv_attachmentinfo_t swapchain_info;
 } outputctx_t;
 
