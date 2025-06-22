@@ -1409,6 +1409,32 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	init_job (ctx, counts, jp, &s);
 }
 
+static void
+dump_job (vulkan_ctx_t *ctx)
+{
+	auto rctx = ctx->render_context;
+	auto job = rctx->jobinfo;
+	printf ("digraph expr_%p {\n", job);
+	printf ("  graph [label=\"%s\"];\n", "render graph");
+	printf ("  layout=dot; rankdir=TB; compound=true;\n");
+	for (uint32_t i = 0; i < job->num_steps; i++) {
+		auto step = &job->steps[i];
+		printf ("    s_%p [label=\"%s\"];\n", step, step->name);
+		for (uint32_t j = 0; j < step->num_dependencies; j++) {
+			auto dep = &step->dependencies[j];
+			qfv_stepinfo_t *dep_step = nullptr;
+			for (uint32_t k = 0; k < job->num_steps; k++) {
+				if (!strcmp (job->steps[k].name, dep->name)) {
+					dep_step = &job->steps[k];
+					break;
+				}
+			}
+			printf ("    s_%p -> \"s_%p\";\n", step, dep_step);
+		}
+	}
+	printf ("}\n");
+}
+
 void
 QFV_BuildRender (vulkan_ctx_t *ctx)
 {
@@ -1419,5 +1445,8 @@ QFV_BuildRender (vulkan_ctx_t *ctx)
 	count_stuff (rctx->jobinfo, &counts);
 
 	create_objects (ctx, &counts);
+	if (developer & SYS_vulkan) {
+		dump_job (ctx);
+	}
 	QFV_Render_Run_Startup (ctx);
 }
