@@ -12,7 +12,7 @@ if test "x${CFLAGS-unset}" = xunset; then
 fi
 saved_CFLAGS="$CFLAGS"
 dnl LT_INIT([win32-dll])
-LT_INIT
+LT_INIT([disable-shared])
 CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
