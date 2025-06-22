@@ -146,9 +146,9 @@ AC_ARG_ENABLE(optimize,
 )
 
 AC_ARG_ENABLE(lto,
-	AS_HELP_STRING([--disable-lto], [disable link-time optimizations]),
+	AS_HELP_STRING([--enable-lto], [enable link-time optimizations]),
 	use_lto=$enable_lto,
-	use_lto=yes
+	use_lto=no
 )
 
 if test "x$host_cpu" = xaarch64; then
