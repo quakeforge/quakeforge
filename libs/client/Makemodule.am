@@ -1,7 +1,6 @@
 noinst_LTLIBRARIES += libs/client/libQFclient.la
 
 particles_src= libs/client/particles.part
-particles_gen= libs/client/particles.pc
 
 SUFFICES += .part .pc
 .part.pc:
@@ -39,5 +38,4 @@ CLEANFILES += \
 	libs/client/*.pc
 
 BUILT_SOURCES += \
-	$(default_input_gen) \
-	$(particles_gen)
+	$(default_input_gen)
