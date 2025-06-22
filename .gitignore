@@ -2,6 +2,8 @@
 *.swp
 *.la
 *.lo
+*.log
+*.trs
 *.obj
 *.a
 *.o
@@ -9,6 +11,11 @@
 *.slc
 *.dat
 *.sym
+*.spvc
+*.cinc
+*.hinc
+*.jinc
+*.plc
 *~
 __pycache__/
 autom4te.cache/
@@ -137,16 +144,55 @@ core
 # /libs/audio/cd/
 
 # /libs/audio/renderer/
+/libs/video/renderer/vulkan/test/test-staging
 
 # /libs/audio/targets/
 
 # /libs/console/
+/libs/console/test/test-buffer
+
+/libs/ecs/test/test-components
+/libs/ecs/test/test-compops
+/libs/ecs/test/test-groups
+/libs/ecs/test/test-hierarchy
+/libs/ecs/test/test-registry
+/libs/ecs/test/test-subpools
+/libs/ecs/test/test-treehierarchy
 
 # /libs/gamecode/
 
-# /libs/gamecode/builtins/
-
-# /libs/gamecode/engine/
+/libs/gamecode/test/test-bitops
+/libs/gamecode/test/test-branch
+/libs/gamecode/test/test-callret
+/libs/gamecode/test/test-conv0
+/libs/gamecode/test/test-conv1
+/libs/gamecode/test/test-conv2
+/libs/gamecode/test/test-conv3
+/libs/gamecode/test/test-conv4
+/libs/gamecode/test/test-conv5
+/libs/gamecode/test/test-conv6
+/libs/gamecode/test/test-conv7
+/libs/gamecode/test/test-double
+/libs/gamecode/test/test-extend
+/libs/gamecode/test/test-float
+/libs/gamecode/test/test-hops
+/libs/gamecode/test/test-int
+/libs/gamecode/test/test-jump
+/libs/gamecode/test/test-lea
+/libs/gamecode/test/test-load
+/libs/gamecode/test/test-load64
+/libs/gamecode/test/test-long
+/libs/gamecode/test/test-mem
+/libs/gamecode/test/test-scale
+/libs/gamecode/test/test-stack
+/libs/gamecode/test/test-state
+/libs/gamecode/test/test-store
+/libs/gamecode/test/test-store64
+/libs/gamecode/test/test-string
+/libs/gamecode/test/test-swizzle
+/libs/gamecode/test/test-unsigned
+/libs/gamecode/test/test-vector
+/libs/gamecode/test/test-with
 
 # /libs/gib/
 
@@ -158,6 +204,7 @@ core
 /libs/models/test/testclip
 /libs/models/test/testcontents
 /libs/models/test/testportals
+/libs/models/test/test-motor
 
 # /libs/models/alias/
 
@@ -178,12 +225,49 @@ core
 
 # /libs/ruamoko/
 
+/libs/scene/test/test-transform
+
+/libs/ui/test/test-flow
+/libs/ui/test/test-flow-size
+/libs/ui/test/test-passage
+/libs/ui/test/test-txtbuffer
+/libs/ui/test/test-vrect
+
 # /libs/util/
+/libs/util/cexpr-lex.c
+/libs/util/cexpr-parse.c
+/libs/util/cexpr-parse.h
 
 # /libs/util/test
+/libs/util/test/test-bary
+/libs/util/test/test-baryvf
+/libs/util/test/test-bitop
+/libs/util/test/test-bsearch
+/libs/util/test/test-cexpr
+/libs/util/test/test-cmem
+/libs/util/test/test-cs
+/libs/util/test/test-csv
+/libs/util/test/test-csvf
+/libs/util/test/test-darray
+/libs/util/test/test-dq
+/libs/util/test/test-half
+/libs/util/test/test-heapsort
+/libs/util/test/test-json
+/libs/util/test/test-listener
+/libs/util/test/test-mat3
+/libs/util/test/test-mat4
+/libs/util/test/test-plist
+/libs/util/test/test-pqueue
 /libs/util/test/test-qfs
 /libs/util/test/test-quat
-
+/libs/util/test/test-ringbuffer
+/libs/util/test/test-seb
+/libs/util/test/test-sebvf
+/libs/util/test/test-seg
+/libs/util/test/test-set
+/libs/util/test/test-simd
+/libs/util/test/test-utf8
+/libs/util/test/test-zone
 # /libs/video/
 
 # /libs/video/renderer/
@@ -275,9 +359,9 @@ core
 /ruamoko/*.sym
 /ruamoko/Doxyfile
 /ruamoko/doxygen/
+/ruamoko/qwaq/qwaq-cmd
 /ruamoko/qwaq/qwaq-curses
 /ruamoko/qwaq/qwaq-x11
-
 
 # /ruamoko/cl_menu/
 /ruamoko/cl_menu/*.dat
@@ -285,6 +369,7 @@ core
 /ruamoko/cl_menu/*.qfo
 /ruamoko/cl_menu/*.src
 /ruamoko/cl_menu/*.sym
+/ruamoko/cl_menu/menu_dat
 
 # /ruamoko/game/
 /ruamoko/game/*.d
@@ -397,6 +482,10 @@ core
 /tools/qfcc/include/stamp-*
 
 # /tools/qfcc/source/
+/tools/qfcc/source/glsl-parse.c
+/tools/qfcc/source/glsl-parse.h
+/tools/qfcc/source/pre-parse.c
+/tools/qfcc/source/pre-parse.h
 /tools/qfcc/source/qc-lex.c
 /tools/qfcc/source/qc-parse.c
 /tools/qfcc/source/qc-parse.h
@@ -409,6 +498,9 @@ core
 # /tools/qfcc/test/
 /tools/qfcc/test/*.dat
 /tools/qfcc/test/*.sym
+/tools/qfcc/test/*.run
+/tools/qfcc/test/test-defspace
+/tools/qfcc/test/test-harness
 
 # /tools/qflight/
 
@@ -440,13 +532,6 @@ core
 # /tools/quaketoascii/
 /tools/quaketoascii/quaketoascii
 ! /tools/quaketoascii/Makefile
-
-# /tools/qwaq/
-/tools/qwaq/*.dat
-/tools/qwaq/*.src
-/tools/qwaq/*.sym
-/tools/qwaq/qwaq
-/tools/qwaq/qwaq-x11
 
 # /tools/texpaint/
 /tools/texpaint/aclocal.m4
