@@ -171,6 +171,21 @@ plitem_t *PL_GetPropertyList (const char *string, struct hashctx_s **hashctx);
 */
 plitem_t *PL_ParseJSON (const char *string, struct hashctx_s **hashctx);
 
+/** Parse a CSV string into an array object.
+
+	The elements of the CSV string are assumed to be simple strings: no
+	further parsing is done. This is because the format of the CSV elements
+	is highly context-dependent.
+
+	\param string	The single-line string to be parsed as an array
+
+	\return Returns an array object with one string element per
+			comma-separated element in the string. The array may be empty.
+			Individual elements in the array may be empty strings.
+	\note You are responsible for freeing the returned object.
+*/
+plitem_t *PL_ParseCSV (const char *string);
+
 /** Create a property list from a bare dictionary list.
 
 	The input is treated as a list of dictionary key-value pairs without the

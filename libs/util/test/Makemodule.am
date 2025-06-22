@@ -6,6 +6,7 @@ libs_util_tests = \
 	libs/util/test/test-cexpr \
 	libs/util/test/test-cmem \
 	libs/util/test/test-cs \
+	libs/util/test/test-csv \
 	libs/util/test/test-csvf \
 	libs/util/test/test-darray \
 	libs/util/test/test-dq \
@@ -59,6 +60,10 @@ libs_util_test_test_cmem_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_cs_SOURCES=libs/util/test/test-cs.c $(tracy_src)
 libs_util_test_test_cs_LDADD=libs/util/libQFutil.la
 libs_util_test_test_cs_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_csv_SOURCES=libs/util/test/test-csv.c $(tracy_src)
+libs_util_test_test_csv_LDADD=libs/util/libQFutil.la
+libs_util_test_test_csv_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_csvf_SOURCES=libs/util/test/test-csvf.c $(tracy_src)
 libs_util_test_test_csvf_LDADD=libs/util/libQFutil.la

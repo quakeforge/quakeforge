@@ -102,6 +102,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    line;
 	unsigned    line_start;
 	bool        json;
+	bool        no_comments;
 	dstring_t  *errmsg;
 	hashctx_t **hashctx;
 } pldata_t;
@@ -655,7 +656,7 @@ pl_error (pldata_t *pl, const char *fmt, ...)
 static bool
 pl_skipspace (pldata_t *pl, bool end_ok)
 {
-	if (pl->json) {
+	if (pl->json || pl->no_comments) {
 		while (pl->pos < pl->end) {
 			byte	c = pl->ptr[pl->pos];
 
@@ -1107,6 +1108,21 @@ pl_parseunquotedstring (pldata_t *pl)
 }
 
 static plitem_t *
+pl_parsecommadelimitedstring (pldata_t *pl)
+{
+	unsigned int	start = pl->pos;
+
+	while (pl->pos < pl->end) {
+		if (pl->ptr[pl->pos] == ','
+			|| pl->ptr[pl->pos] == '\r' || pl->ptr[pl->pos] == '\n') {
+			break;
+		}
+		pl->pos++;
+	}
+	return new_string (&pl->ptr[start], pl->pos - start, pl);
+}
+
+static plitem_t *
 pl_parsepropertylistitem (pldata_t *pl)
 {
 	if (!pl_skipspace (pl, false)) {
@@ -1233,8 +1249,24 @@ pl_parsejson_element (pldata_t *pl)
 }
 
 static plitem_t *
+pl_parsecsv (pldata_t *pl)
+{
+	plitem_t   *array = PL_NewArray ();
+	array->line = pl->line;
+
+	while (pl_skipspace (pl, true) && pl->ptr[pl->pos] != '\n') {
+		if (!pl_parsevalue (pl, array, pl_parsecommadelimitedstring, false)) {
+			PL_Release (array);
+			return nullptr;
+		}
+	}
+
+	return array;
+}
+
+static plitem_t *
 pl_parseitem (const char *string, hashctx_t **hashctx,
-			  plitem_t *(*parse) (pldata_t *), bool json)
+			  plitem_t *(*parse) (pldata_t *), bool json, bool no_comments)
 {
 	plitem_t	*newpl = nullptr;
 
@@ -1246,6 +1278,7 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 		.end = strlen (string),
 		.line = 1,
 		.json = json,
+		.no_comments = no_comments,
 		.hashctx = hashctx,
 	};
 
@@ -1263,15 +1296,21 @@ pl_parseitem (const char *string, hashctx_t **hashctx,
 VISIBLE plitem_t *
 PL_GetPropertyList (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsepropertylistitem, false);
+	return pl_parseitem (string, hashctx, pl_parsepropertylistitem,
+						 false, false);
 }
 
 VISIBLE plitem_t *
 PL_ParseJSON (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_parsejson_element, true);
+	return pl_parseitem (string, hashctx, pl_parsejson_element, true, true);
 }
 
+VISIBLE plitem_t *
+PL_ParseCSV (const char *string)
+{
+	return pl_parseitem (string, nullptr, pl_parsecsv, false, true);
+}
 
 static plitem_t *
 pl_getdictionary (pldata_t *pl)
@@ -1292,7 +1331,7 @@ pl_getdictionary (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetDictionary (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getdictionary, false);
+	return pl_parseitem (string, hashctx, pl_getdictionary, false, false);
 }
 
 static plitem_t *
@@ -1314,7 +1353,7 @@ pl_getarray (pldata_t *pl)
 VISIBLE plitem_t *
 PL_GetArray (const char *string, hashctx_t **hashctx)
 {
-	return pl_parseitem (string, hashctx, pl_getarray, false);
+	return pl_parseitem (string, hashctx, pl_getarray, false, false);
 }
 
 static void
