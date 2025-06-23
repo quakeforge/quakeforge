@@ -111,7 +111,7 @@ typedef void (*axis_listener_t) (void *data, const in_axis_t *axis);
 
 	Captures the current state and any transitions during the last frame.
 	Not all combinations are valid (inb_edge_up|inb_down and inb_edge_down
-	(no inb_down) are not valid states), but inb_edge_up|inb_edge_down )with
+	(no inb_down) are not valid states), but inb_edge_up|inb_edge_down (with
 	or without inb_down) is valid as it represents a double transition during
 	the frame.
 */
@@ -171,7 +171,7 @@ typedef struct in_buttonbinding_s {
 		steady off (up)
 		steady on (down)
 		off to on (up to down) transition
-		on to off )down to up) transition
+		on to off (down to up) transition
 		pulse on (off-on-off or up-down-up)
 		pulse off (on-off-on or down-up-down)
 	Any additional transitions are treated as a pulse appropriate for the

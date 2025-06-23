@@ -44,7 +44,7 @@
 /**	Input Mapping Table
 */
 typedef struct imt_s {
-	struct imt_s *next;				///< list of tables attached to key_dest
+	struct imt_s *next;				///< list of tables attached to context
 	struct imt_s *chain;			///< fallback table if input not bound
 	const char *name;				///< for user interaction
 	int         written;
