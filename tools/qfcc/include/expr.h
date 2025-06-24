@@ -241,7 +241,7 @@ typedef struct ex_value_s {
 		pr_type_t   raw_value;			///< for memcpy
 		pr_dvec4_t  raw_matrix[4];		///< so ex_vector_t is big enough
 		const char *string_val;			///< string constant
-		ex_buffer_t buffer;				///< #embed buffer (ev_invalid)
+		ex_buffer_t buffer;				///< \#embed buffer (ev_invalid)
 		double      double_val;			///< double constant
 		int64_t     long_val;			///< signed 64-bit constant
 		uint64_t    ulong_val;			///< unsigned 64-bit constant

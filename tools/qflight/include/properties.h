@@ -129,13 +129,13 @@ int parse_noise (const char *arg);
 	ignored.
 
 	Supported properties:
-	\arg \c sunlight		see \ref parse_light
-	\arg \c sunlight2		see \ref parse_light
-	\arg \c sunlight3		see \ref parse_light
-	\arg \c sunlight_color	see \ref parse_color
-	\arg \c sunlight_color2	see \ref parse_color
-	\arg \c sunlight_color3	see \ref parse_color
-	\arg \c sun_mangle		see \ref parse_vector
+	\arg \c sunlight		see parse_light()
+	\arg \c sunlight2		see parse_light()
+	\arg \c sunlight3		see parse_light()
+	\arg \c sunlight_color	see parse_color()
+	\arg \c sunlight_color2	see parse_color()
+	\arg \c sunlight_color3	see parse_color()
+	\arg \c sun_mangle		see parse_vector()
 
 	\param ent		The entity for which to set the lighting values.
 	\param dict		A dictionary property list item representing the fields
@@ -161,7 +161,7 @@ void set_sun_properties (entity_t *ent, struct plitem_s *dict);
 	will be ignored.
 
 	Supported properties:
-	\arg \c light			see \ref parse_light
+	\arg \c light			see parse_light()
 	\arg \c style			light style: 0-254
 	\arg \c angle			spotlight cone angle in degress. defaults to 20
 	\arg \c wait			light "falloff". defaults to 1.0

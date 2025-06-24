@@ -265,6 +265,7 @@ void init_vector_components (struct symbol_s *vector_sym, int is_field,
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
 	\param symtab   The symbol table into which the def will be placed.
+	\param block	Local expression block for run-time initialization.
 */
 void initialize_def (struct symbol_s *sym,
 					 const struct expr_s *init, struct defspace_s *space,
