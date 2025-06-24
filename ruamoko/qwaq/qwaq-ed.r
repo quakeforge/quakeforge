@@ -50,6 +50,8 @@ void setctxcbuf (int ctx) = #0;
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;
 void Painter_AddBox (vec2 c, vec2 e, float r, vec4 color) = #0;
+void Painter_AddBezier (vec2 p0, vec2 p1, vec2 p2, vec2 p3, float r,
+						vec4 color) = #0;
 
 imui_ctx_t imui_ctx;
 #define IMUI_context imui_ctx
@@ -211,6 +213,9 @@ Array *windows;
 	Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
 	Painter_AddBox ({300, 300}, {25, 5}, 5, {1, .8, 0, 1});
 	Painter_AddLine ({300, 300}, {400, 450}, 30 * s * s, {0.8, 0.4, 0.3, 1});
+	Painter_AddBezier ({300, 300}, {400 + 150 * c, 300 + 150 * s},
+					   {300 + 100 * (c * c - s * s), 450 + 100 * 2 * c * s},
+					   {400, 450}, 10 + 10 * s, {0.85, 0.5, 0.77, 1});
 	return self;
 }
 

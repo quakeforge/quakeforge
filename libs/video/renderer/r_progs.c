@@ -43,6 +43,8 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "QF/simd/vec2f.h"
+
 #include "QF/ui/view.h"
 
 #include "r_internal.h"
@@ -531,6 +533,50 @@ bi(Painter_AddBox)
 	}
 }
 
+static void
+painter_bezier (vec2f_t p0, vec2f_t p1, vec2f_t p2, vec2f_t p3, float r,
+				float color[4])
+{
+	auto d0 = p1 - p0;
+	auto d1 = p2 - p1;
+	auto d2 = p3 - p2;
+	float dist = (dot2f (d0, d0) + dot2f (d1, d1) + dot2f (d2, d2))[0];
+	if (dist < 12 * r * r || dist < 2) {
+		r_funcs->painter.AddLine (p0, p1, r, color);
+		r_funcs->painter.AddLine (p1, p2, r, color);
+		r_funcs->painter.AddLine (p2, p3, r, color);
+		return;
+	}
+	auto t = (p1 + p2) / 2;
+
+	auto q0 = p0;
+	auto q1 = (p0 + p1) / 2;
+	auto q2 = (q1 + t) / 2;
+
+	auto r3 = p3;
+	auto r2 = (p2 + p3) / 2;
+	auto r1 = (r2 + t) / 2;
+
+	auto q3 = (q2 + r1) / 2;
+	auto r0 = (q2 + r1) / 2;
+	painter_bezier (q0, q1, q2, q3, r, color);
+	painter_bezier (r0, r1, r2, r3, r, color);
+}
+
+bi(Painter_AddBezier)
+{
+	qfZoneScoped (true);
+	if (r_funcs->painter.AddLine) {
+		auto p0 = P_var (pr, 0, vec2);
+		auto p1 = P_var (pr, 1, vec2);
+		auto p2 = P_var (pr, 2, vec2);
+		auto p3 = P_var (pr, 3, vec2);
+		auto r = P_FLOAT (pr, 4);
+		auto color = P_QUAT (pr, 5);
+		painter_bezier (p0, p1, p2, p3, r, color);
+	}
+}
+
 static const char *
 bi_draw_get_key (const void *p, void *unused)
 {
@@ -608,6 +654,8 @@ static builtin_t builtins[] = {
 	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),
 	bi(Painter_AddCircle, 3, p(vec2), p(float), p(vec4)),
 	bi(Painter_AddBox,    4, p(vec2), p(vec2), p(float), p(vec4)),
+	bi(Painter_AddBezier, 6, p(vec2), p(vec2), p(vec2), p(vec2),
+							 p(float), p(vec4)),
 
 	{0}
 };
