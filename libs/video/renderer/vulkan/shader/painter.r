@@ -95,7 +95,7 @@ __imageAtomicCompSwap(int)
 float asfloat (uint x) = SPV(OpBitcast);
 vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
 
-vec4//FIXME bug in qfcc
+void
 draw_line (uint ind, vec2 p, @inout vec4 color)
 {
 	auto a = vec2 (asfloat (cmd_queue[ind + 0]),
@@ -107,10 +107,9 @@ draw_line (uint ind, vec2 p, @inout vec4 color)
 	float h = min (1, max (0, (p - a) • (b - a) / (b - a) • (b - a)));
 	float d = length (p - a - h * (b - a)) - r;
 	color = lerp (color, col, clamp (1 - d, 0, 1));
-	return color;
 }
 
-vec4//FIXME bug in qfcc
+void
 draw_circle (uint ind, vec2 p, @inout vec4 color)
 {
 	auto c = vec2 (asfloat (cmd_queue[ind + 0]),
@@ -119,10 +118,9 @@ draw_circle (uint ind, vec2 p, @inout vec4 color)
 	auto col = asrgba (cmd_queue[ind + 3]);
 	float d = length (p - c) - r;
 	color = lerp (color, col, clamp (1 - d, 0, 1));
-	return color;
 }
 
-vec4//FIXME bug in qfcc
+void
 draw_box (uint ind, vec2 p, @inout vec4 color)
 {
 	auto c = vec2 (asfloat (cmd_queue[ind + 0]),
@@ -134,7 +132,6 @@ draw_box (uint ind, vec2 p, @inout vec4 color)
 	auto q = abs (p - c) - e;
 	float d = length (max (q, 0f)) + min (max (q.x, q.y), 0) - r;
 	color = lerp (color, col, clamp (1 - d, 0, 1));
-	return color;
 }
 
 [out(0)] vec4 frag_color;
@@ -154,13 +151,13 @@ main (void)
 		uint next = cmd_queue[cmd_ind + 1];
 		switch (cmd) {
 		case 0:
-			color = draw_line (cmd_ind + 2, gl_FragCoord.xy, color);
+			draw_line (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		case 1:
-			color = draw_circle (cmd_ind + 2, gl_FragCoord.xy, color);
+			draw_circle (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		case 2:
-			color = draw_box (cmd_ind + 2, gl_FragCoord.xy, color);
+			draw_box (cmd_ind + 2, gl_FragCoord.xy, color);
 			break;
 		}
 		cmd_ind = next;

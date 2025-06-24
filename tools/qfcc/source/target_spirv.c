@@ -1863,6 +1863,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 {
 	int num_args = list_count (&call->branch.args->list);
 	const expr_t *args[num_args + 1];
+	const expr_t *params[num_args + 1];
 	unsigned arg_ids[num_args + 1];
 	auto func = call->branch.target;
 	auto func_type = get_type (func);
@@ -1884,12 +1885,12 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 			psym->id = spirv_variable (psym, ctx);
 			psym->lvalue = true;
 			arg_ids[i] = psym->id;
+			params[i] = new_symbol_expr (psym);
 			if (func_type->func.param_quals[i] != pq_out) {
 				if (a->type == ex_inout) {
 					a = a->inout.in;
 				}
-				auto pexpr = new_symbol_expr (psym);
-				auto assign = assign_expr (pexpr, a);
+				auto assign = assign_expr (params[i], a);
 				spirv_emit_expr (assign, ctx);
 			}
 		}
@@ -1903,6 +1904,18 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 	INSN(insn, 3) = func_id;
 	for (int i = 0; i < num_args; i++) {
 		INSN(insn, 4 + i) = arg_ids[i];
+	}
+	for (int i = 0; i < num_args; i++) {
+		auto a = args[i];
+		auto qual = func_type->func.param_quals[i];
+		if (qual == pq_out || qual == pq_inout) {
+			if (a->type != ex_inout) {
+				internal_error (a, "non-inout expr for inout or out param");
+			}
+			a = a->inout.out;
+			auto assign = assign_expr (a, params[i]);
+			spirv_emit_expr (assign, ctx);
+		}
 	}
 	return id;
 }
