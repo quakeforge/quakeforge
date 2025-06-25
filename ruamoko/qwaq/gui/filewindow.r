@@ -178,12 +178,12 @@ int file_item_cmp (void *a, void *b)
 	return self;
 }
 
--(void)itemSelected:(int)item
+-(void)itemSelected:(int)item in:(Array *) items
 {
 	//printf ("item selected:%s\n", [[items objectAtIndex:item] name]);
 }
 
--(void)itemAccepted:(int)item
+-(void)itemAccepted:(int)item in:(Array *) items
 {
 	accepted_item = [items objectAtIndex:item];
 }

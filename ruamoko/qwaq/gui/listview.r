@@ -152,14 +152,14 @@ void printf(string, ...);
 -itemClicked:(ListItem *)item
 {
 	if (selected_item >= 0 && [items objectAtIndex:selected_item] == item) {
-		[target itemAccepted:selected_item];
+		[target itemAccepted:selected_item in:items];
 	} else {
 		if (selected_item >= 0) {
 			[[items objectAtIndex:selected_item] select:false];
 		}
 		[item select:true];
 		selected_item = [items indexOfObject:item];
-		[target itemSelected:selected_item];
+		[target itemSelected:selected_item in:items];
 	}
 	return self;
 }

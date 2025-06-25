@@ -26,8 +26,8 @@ typedef struct imui_window_s imui_window_t;
 @end
 
 @protocol ListView
--(void)itemSelected:(int)item;
--(void)itemAccepted:(int)item;
+-(void)itemSelected:(int)item in:(Array *)items;
+-(void)itemAccepted:(int)item in:(Array *)items;
 @end
 
 @interface ListView : Object
