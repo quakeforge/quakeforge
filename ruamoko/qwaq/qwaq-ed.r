@@ -80,7 +80,7 @@ float frametime;
 
 Array *windows;
 
-@interface MainWindow : Object <FileWindow>
+@interface MainWindow : Object <FileWindow, ListView>
 {
 	Array *clips;
 	ListView *clipsView;
@@ -123,6 +123,7 @@ Array *windows;
 
 	clips = [[Array array] retain];
 	clipsView = [[ListView list:"MainWindow:clips" ctx:ctx] retain];
+	[clipsView setTarget:self];
 
 	bones = [[Array array] retain];
 	bonesView = [[ListView list:"MainWindow:bones" ctx:ctx] retain];
@@ -186,7 +187,7 @@ Array *windows;
 -draw
 {
 	if (ent && anim && arm && show_armature) {
-		qfa_update_anim (anim, frametime * 0.02);
+		qfa_update_anim (anim, frametime);
 		qfa_get_pose_motors (anim, arm.pose);
 		draw_armature (camera, arm, trans);
 	}
@@ -256,6 +257,19 @@ Array *windows;
 	}
 	[clipsView setItems:clips];
 
+	auto clipinfo = Model_GetClipInfo (model, 0);
+	cliphandle_t clips[] = {
+		qfa_find_clip ("girl14:" + clipinfo.name),
+	};
+	int num_clips = countof (clips);
+	armhandle_t arma = qfa_find_armature ("girl14");
+	animstate_t anim = qfa_create_animation (clips, num_clips, arma, nil);
+	for (int i = 0; i < num_clips; i++) {
+		qfa_set_clip_loop (anim, i, true);
+	}
+	qfa_reset_anim (anim);
+	[self setAnim:anim];
+
 	return self;
 }
 
@@ -293,6 +307,20 @@ Array *windows;
 -(transform_t) camera
 {
 	return camera;
+}
+
+-(void)itemSelected:(int) item in:(Array *)items
+{
+	if (items == clips) {
+		string name = [[clips objectAtIndex:item] name];
+		name = Model_Name (model) + ":" + name;
+		qfa_set_anim_clip (anim, 0, qfa_find_clip (name));
+		qfa_reset_anim (anim);
+	}
+}
+
+-(void)itemAccepted:(int) item in:(Array *)items
+{
 }
 @end
 
@@ -672,20 +700,6 @@ main (int argc, string *argv)
 	[windows addObject:file_window];
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
-
-	cliphandle_t clips[] = {
-		qfa_find_clip ("girl14:rig|standing walk right_RM"),
-		qfa_find_clip ("girl14:rig|standing taunt battlecry_RM"),
-		qfa_find_clip ("girl14:rig|standing taunt chest thump_RM"),
-	};
-	int num_clips = countof (clips);
-	armhandle_t arma = qfa_find_armature ("girl14");
-	animstate_t anim = qfa_create_animation (clips, num_clips, arma, nil);
-	for (int i = 0; i < num_clips; i++) {
-		qfa_set_clip_loop (anim, i, true);
-	}
-	qfa_reset_anim (anim);
-	[main_window setAnim:anim];
 
 	while (true) {
 		arp_end ();
