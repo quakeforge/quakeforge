@@ -160,6 +160,7 @@ animstate_t *qfa_create_animation (uint32_t *clips, uint32_t num_clips,
 void qfa_free_animation (animstate_t *anim);
 void qfa_update_anim (animstate_t *anim, float dt);
 void qfa_reset_anim (animstate_t *anim);
+void qfa_set_anim_clip (animstate_t *anim, uint32_t slot, uint32_t clip);
 ///@}
 
 #endif//__QF_scene_animation_h

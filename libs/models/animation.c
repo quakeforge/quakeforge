@@ -582,3 +582,21 @@ qfa_reset_anim (animstate_t *anim)
 	anim->time = -1;
 	qfa_update_anim (anim, 1);
 }
+
+void
+qfa_set_anim_clip (animstate_t *anim, uint32_t slot, uint32_t clip)
+{
+	qfZoneScoped (true);
+	if (slot >= anim->clip_states.count) {
+		Sys_Error ("invalid clip slot: %u", slot);
+	}
+
+	auto cm = get_clip (clip);
+	auto clip_states = qfa_clip_states (anim);
+	clip_states[slot] = (clipstate_t) {
+		.type = clip < cm->anim.numclips ? qfc_channel : qfc_morph,
+		.clip_id = clip,
+		.weight = 1.0 / anim->clip_states.count,
+	};
+	release_clip (clip);
+}
