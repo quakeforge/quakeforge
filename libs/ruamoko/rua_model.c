@@ -202,6 +202,17 @@ bi (Model_Unload)
 	rua_model_handle_free (res, h);
 }
 
+bi (Model_Name)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+
+	RETURN_STRING (pr, mod->name);
+}
+
 bi (Model_NumJoints)
 {
 	qfZoneScoped (true);
@@ -566,6 +577,7 @@ Model_GetAnimstate (progs_t *pr, pr_int_t handle)
 static builtin_t builtins[] = {
 	bi(Model_Load,             1, p(string)),
 	bi(Model_Unload,           1, p(int)),
+	bi(Model_Name,             1, p(int)),
 	bi(Model_NumJoints,        1, p(int)),
 	bi(Model_GetJoints,        2, p(int), p(ptr)),
 	bi(Model_NumClips,         1, p(int)),

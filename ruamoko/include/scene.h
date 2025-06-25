@@ -86,6 +86,7 @@ void Light_EnableSun (lightingdata_t ldata);
 
 model_t Model_Load (string path);
 void Model_Unload (model_t model);
+string Model_Name (model_t model);
 int Model_NumJoints (model_t model);
 void Model_GetJoints (model_t model, void *joints);
 int Model_NumClips (model_t model);
