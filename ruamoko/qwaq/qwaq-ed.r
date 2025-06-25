@@ -315,12 +315,12 @@ Array *windows;
 		string name = [[clips objectAtIndex:item] name];
 		name = Model_Name (model) + ":" + name;
 		qfa_set_anim_clip (anim, 0, qfa_find_clip (name));
-		qfa_reset_anim (anim);
 	}
 }
 
 -(void)itemAccepted:(int) item in:(Array *)items
 {
+	[self itemSelected:item in:items];
 }
 @end
 
