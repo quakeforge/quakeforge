@@ -438,9 +438,17 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 	float duration = last_frame->endtime;
 
 	if (time >= clipstate->end_time || time < clipstate->end_time - duration) {
-		if (!clipstate->end_time || (clipstate->flags & qfc_loop)) {
-			int cycles = time / duration;
-			clipstate->end_time = (cycles + 1) * duration;
+		if (!clipstate->end_time) {
+			// first run through the clip so start it now
+			clipstate->end_time = time + duration;
+		} else if (clipstate->flags & qfc_loop) {
+			if (time < clipstate->end_time - duration) {
+				clipstate->end_time = time + duration;
+			} else {
+				// the clip is looping, so try to keep it smooth
+				int cycles = (time - clipstate->end_time) / duration;
+				clipstate->end_time += (cycles + 1) * duration;
+			}
 		}
 	}
 	float t = calc_t (clipstate->end_time, duration, time);
@@ -579,7 +587,7 @@ qfa_reset_anim (animstate_t *anim)
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
 		clipstates[i].end_time = 0;
 	}
-	anim->time = -1;
+	anim->time = -anim->play_rate;
 	qfa_update_anim (anim, 1);
 }
 
