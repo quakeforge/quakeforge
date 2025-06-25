@@ -66,6 +66,7 @@ animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
 void qfa_free_animation (animstate_t anim) = #0;
 void qfa_update_anim (animstate_t anim, float dt) = #0;
 void qfa_reset_anim (animstate_t anim) = #0;
+void qfa_set_anim_clip (animstate_t anim, uint slot, cliphandle_t clip) = #0;
 void qfa_set_clip_weight (animstate_t anim, uint clip, float weight) = #0;
 void qfa_set_clip_loop (animstate_t anim, uint clip, bool loop) = #0;
 void qfa_set_clip_disabled (animstate_t anim, uint clip, bool disabled) = #0;
