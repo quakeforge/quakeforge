@@ -445,7 +445,7 @@ qfa_update_clip (clipstate_t *clipstate, clipdesc_t *clipdesc,
 	}
 	float t = calc_t (clipstate->end_time, duration, time);
 	if (__builtin_expect (t >= 1, 0)) {
-		clipstate->frame = clipdesc->numframes;
+		clipstate->frame = clipdesc->numframes - 1;
 		clipstate->frac = 1;
 		return;
 	}
