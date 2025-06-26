@@ -321,7 +321,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	auto base      = (qfm_motor_t *)    &joints[hdr->num_joints];
 	auto inverse   = (qfm_motor_t *)    &base[hdr->num_joints];
 	auto pose      = (qfm_joint_t *)    &inverse[hdr->num_joints];
-	auto clips     = (clipdesc_t *) &pose[hdr->num_poses];
+	auto clips     = (clipdesc_t *)     &pose[hdr->num_poses];
 	auto keyframes = (keyframe_t *)     &clips[hdr->num_anims];
 	auto channels  = (qfm_channel_t *)  &keyframes[hdr->num_frames];
 	auto framedata = (uint16_t *)       &channels[hdr->num_framechannels];
