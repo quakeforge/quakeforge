@@ -176,6 +176,18 @@ typedef struct {
 
 static model_registry_t *model_registry;
 
+model_t *
+qfm_alloc_model (void)
+{
+	return qfm_model_new (model_registry);
+}
+
+void
+qfm_free_model (model_t *mod)
+{
+	qfm_model_free (model_registry, mod);
+}
+
 static void
 mod_shutdown (void *data)
 {
@@ -184,6 +196,8 @@ mod_shutdown (void *data)
 
 	qfm_model_reset (model_registry);
 	Hash_DelTable (model_registry->model_tab);
+	free (model_registry);
+	model_registry = nullptr;
 
 	qfa_shutdown ();
 }
@@ -281,7 +295,9 @@ VISIBLE void
 Mod_ClearAll (void)
 {
 	qfZoneScoped (true);
-	Hash_FlushTable (model_registry->model_tab);
+	if (model_registry) {
+		Hash_FlushTable (model_registry->model_tab);
+	}
 }
 
 model_t *
