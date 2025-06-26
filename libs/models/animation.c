@@ -34,6 +34,7 @@
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qfmodel.h"
+#include "QF/va.h"
 
 #define IMPLEMENT_ENTITY_Funcs
 #include "QF/animation.h"
@@ -272,6 +273,179 @@ qfa_deregister (model_t *mod)
 	if (cached) {
 		Cache_Release (&mod->cache);
 	}
+}
+
+static void
+qfa_clear_model (model_t *m, void *data)
+{
+	free (m->model);
+}
+
+static uint32_t
+copy_str (char *dst, const char *src)
+{
+	auto start = dst;
+	while ((*dst++ = *src++)) continue;
+	return dst - start;
+}
+
+bool
+qfa_extract_root_motion (model_t *mod)
+{
+	if (!mod || mod->type != mod_mesh) {
+		return false;
+	}
+
+	bool extracted = false;
+	bool cached = false;
+	auto model = mod->model;
+	if (!model) {
+		model = Cache_Get (&mod->cache);
+		cached = true;
+	}
+	if (!model->anim.numclips || !model->channels.count
+		|| !model->joints.count) {
+		goto no_extract;
+	}
+
+	auto joints = (qfm_joint_t *) ((byte*) model + model->joints.offset);
+	if (joints[0].parent != -1) {
+		Sys_Error ("Invalid hierarchy: joint 0 is not root. %s", mod->path);
+	}
+	for (uint32_t i = 1; i < model->joints.count; i++) {
+		if (joints[i].parent == -1) {
+			Sys_Printf ("%s has multiple roots, not extracting\n", mod->path);
+			goto no_extract;
+		}
+	}
+
+	uint32_t num_channels = 0;
+	auto clips = (clipdesc_t *) ((byte*) model + model->anim.clips);
+	auto channels = (qfm_channel_t *) ((byte*) model + model->channels.offset);
+	auto keyframes = (keyframe_t *) ((byte*) model + model->anim.keyframes);
+	auto text = ((char *) model + model->text.offset);
+	uint16_t last_joint = channels[0].data / sizeof (qfm_joint_t);
+	if (last_joint != 0) {
+		Sys_Printf ("%s: first channel doesn't affect root", mod->name);
+		goto no_extract;
+	}
+	for (uint32_t i = 0; i < model->channels.count; i++) {
+		uint32_t j = channels[i].data / sizeof (qfm_joint_t);
+		if (j == 0) {
+			if (last_joint != 0) {
+				Sys_Printf ("%s: root channels dispersed", mod->name);
+				goto no_extract;
+			}
+			num_channels++;
+		}
+		last_joint = j;
+	}
+	printf ("num_channels: %d\n", num_channels);
+	if (!num_channels) {
+		Sys_Printf ("%s: root is not animated, nothing to extract.\n",
+					mod->path);
+		goto no_extract;
+	}
+
+	//Modify the original animation to remove the root bone's animation
+	//and pose
+	// "strip" off the root bone's channels
+	model->channels.offset += sizeof (qfm_channel_t[num_channels]);
+	model->channels.count -= num_channels;
+	auto pose = (qfm_joint_t *) ((byte*) model + model->pose.offset);
+	// force the root bone's transform to identity
+	pose[0] = (qfm_joint_t) {
+		.translate = {0, 0, 0},
+		.name = pose[0].name,
+		.rotate = {0, 0, 0, 1},
+		.scale = {1, 1, 1},
+		.parent = pose[0].parent,
+	};
+
+	uint32_t num_anims = model->anim.numclips;
+	uint32_t num_frames = 0;
+	uint32_t num_text = 1;
+	for (uint32_t i = 0; i < num_anims; i++) {
+		num_frames += clips[i].numframes;
+		num_text += strlen (text + clips[i].name) + 1;
+	}
+
+	uint32_t frame_data_count = num_channels * num_frames;
+	printf ("%d %d %d\n", num_anims, num_frames, frame_data_count);
+
+	size_t size = sizeof (qf_model_t)
+				+ sizeof (clipdesc_t[num_anims])
+				+ sizeof (keyframe_t[num_frames])
+				+ sizeof (qfm_channel_t[num_channels])
+				+ sizeof (uint16_t[frame_data_count])
+				+ num_text;
+	qf_model_t *root_model = malloc (size);
+	auto root_clips     = (clipdesc_t *)    &root_model[1];
+	auto root_keyframes = (keyframe_t *)    &root_clips[num_anims];
+	auto root_channels  = (qfm_channel_t *) &root_keyframes[num_frames];
+	auto root_framedata = (uint16_t *)      &root_channels[num_channels];
+	auto root_text      = (char *)          &root_framedata[frame_data_count];
+
+	auto root_mod = qfm_alloc_model ();
+	*root_mod = (model_t) {
+		.model = root_model,
+		.type = mod_mesh,
+		.clear = qfa_clear_model,
+	};
+	strcpy (root_mod->name, va ("rm:%.*s", (int) (sizeof (root_mod->name) - 4),
+								mod->name));
+
+	*root_model = (qf_model_t) {
+		.channels = {
+			.offset = (byte *) root_channels - (byte *) root_model,
+			.count = num_channels,
+		},
+		.text = {
+			.offset = (byte *) root_text - (byte *) root_model,
+			.count = num_text,
+		},
+		.anim = {
+			.numclips = num_anims,
+			.clips = (byte *) root_clips - (byte *) root_model,
+			.keyframes = (byte *) root_keyframes - (byte *) root_model,
+		},
+	};
+	num_frames = 0;
+	num_text = 1;
+	for (uint32_t i = 0; i < num_anims; i++) {
+		auto c = &clips[i];
+		char *name = root_text + num_text;
+		num_text += copy_str (name, text + c->name);
+		root_clips[i] = (clipdesc_t) {
+			.firstframe = num_frames,
+			.numframes = c->numframes,
+			.flags = c->flags,
+			.name = name - root_text,
+		};
+		for (uint32_t j = 0; j < c->numframes; j++) {
+			uint32_t abs_frame_num = c->firstframe + j;
+			root_keyframes[abs_frame_num] = (keyframe_t) {
+				.endtime = keyframes[abs_frame_num].endtime,
+				.data = (byte *) root_framedata - (byte *) root_model,
+			};
+			uint32_t frame = keyframes[abs_frame_num].data;
+			auto data = (uint16_t *) ((byte *) model + frame);
+			memcpy (root_framedata, data, sizeof (uint16_t[num_channels]));
+			root_framedata += num_channels;
+
+			// "strip" off the root bone frame data
+			keyframes[abs_frame_num].data += sizeof (uint16_t[num_channels]);
+		}
+		num_frames += c->numframes;
+	}
+	memcpy (root_channels, channels, sizeof (qfm_channel_t[num_channels]));
+
+	qfa_register (root_mod);
+no_extract:
+	if (cached) {
+		Cache_Release (&mod->cache);
+	}
+	return extracted;
 }
 
 int

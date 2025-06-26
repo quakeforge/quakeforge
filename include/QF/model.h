@@ -355,6 +355,9 @@ typedef struct model_s {
 
 // ============================================================================
 
+model_t *qfm_alloc_model (void);
+void qfm_free_model (model_t *mod);
+
 void Mod_Init (void);
 void Mod_Init_Cvars (void);
 void Mod_ClearAll (void);

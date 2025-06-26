@@ -426,6 +426,16 @@ bi (Model_GetFrameData)
 	}
 }
 
+bi (qfa_extract_root_motion)
+{
+	qfZoneScoped (true);
+	auto res = (rua_model_resources_t *) _res;
+	int  handle = P_INT (pr, 0);
+	auto h = rua_model_handle_get (res, handle);
+	auto mod = h->model;
+	R_INT (pr) = qfa_extract_root_motion (mod);
+}
+
 bi (qfa_find_clip)
 {
 	qfZoneScoped (true);
@@ -596,6 +606,7 @@ static builtin_t builtins[] = {
 	bi(Model_GetChannelInfo,   2, p(int), p(ptr)),
 	bi(Model_GetFrameData,     3, p(int), p(uint), p(ptr)),
 
+	bi(qfa_extract_root_motion, 1, p(int)),
 	bi(qfa_find_clip,          1, p(string)),
 	bi(qfa_find_armature,      1, p(string)),
 	bi(qfa_create_animation,   4, p(ptr), p(uint), p(uint), p(int)),

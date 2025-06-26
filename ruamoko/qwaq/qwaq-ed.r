@@ -230,6 +230,7 @@ Array *windows;
 -setModel:(model_t) model
 {
 	self.model = model;
+	qfa_extract_root_motion (model);
 
 	printf ("model: %p %d\n", model, Model_NumClips (model));
 	if (!ent) {

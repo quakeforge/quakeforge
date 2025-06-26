@@ -152,6 +152,8 @@ void qfa_shutdown (void);
 void qfa_register (model_t *mod);
 void qfa_deregister (model_t *mod);
 
+bool qfa_extract_root_motion (model_t *mod);
+
 int qfa_find_clip (const char *name);
 int qfa_find_armature (const char *name);
 

@@ -95,6 +95,7 @@ clipinfo_t Model_GetClipInfo (model_t model, uint clip);
 void *Model_GetChannelInfo (model_t model, void *data);
 void *Model_GetFrameData (model_t model, uint clip, void *data);
 
+bool qfa_extract_root_motion (model_t model);
 cliphandle_t qfa_find_clip (string name);
 armhandle_t qfa_find_armature (string name);
 animstate_t qfa_create_animation (cliphandle_t *clips, uint num_clips,
