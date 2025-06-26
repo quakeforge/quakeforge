@@ -1080,6 +1080,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 			model_t    *m = Mod_FindName (name);
 			*m = *mod;
 			strcpy (m->path, name);
+			strcpy (m->name, name);
 			mod = m;
 			// make sure clear is called only for the main model
 			m->clear = 0;

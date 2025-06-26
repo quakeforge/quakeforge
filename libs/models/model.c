@@ -43,8 +43,10 @@
 #include "QF/animation.h"
 #include "QF/cvar.h"
 #include "QF/darray.h"
+#include "QF/hash.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
+#include "QF/progs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -116,12 +118,6 @@ pack_indices (uint32_t *indices, uint32_t num_inds, qfm_type_t index_type)
 }
 
 vid_model_funcs_t *mod_funcs;
-
-#define	MOD_BLOCK	16					// allocate 16 models at a time
-static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
-static struct DARRAY_TYPE (model_t *) mod_blocks = {0, 0, MOD_BLOCK};
-static size_t mod_numknown;
-
 VISIBLE texture_t  *r_notexture_mip;
 
 int gl_mesh_cache;
@@ -164,18 +160,68 @@ static cvar_t gl_textures_external_cvar = {
 
 static void Mod_CallbackLoad (void *object, cache_allocator_t allocator);
 
+typedef struct {
+	hashctx_t  *hashctx;
+	hashtab_t  *model_tab;
+	PR_RESMAP (model_t) model_map;
+} model_registry_t;
+
+#define RESMAP_OBJ_TYPE model_t
+#define RESMAP_PREFIX qfm_model
+#define RESMAP_MAP_PARAM model_registry_t *reg
+#define RESMAP_MAP reg->model_map
+#define RESMAP_ERROR(msg, ...) Sys_Error(msg __VA_OPT__(,) __VA_ARGS__)
+#include "resmap_template.cinc"
+#define qfm_model_get(reg,index) _qfm_model_get(reg,index,__FUNCTION__)
+
+static model_registry_t *model_registry;
+
 static void
 mod_shutdown (void *data)
 {
 	qfZoneScoped (true);
 	Mod_ClearAll ();
-	for (size_t i = 0; i < mod_blocks.size; i++) {
-		free (mod_blocks.a[i]);
-	}
-	DARRAY_CLEAR (&mod_known);
-	DARRAY_CLEAR (&mod_blocks);
+
+	qfm_model_reset (model_registry);
+	Hash_DelTable (model_registry->model_tab);
 
 	qfa_shutdown ();
+}
+
+static void
+mod_unload_model (model_t *mod)
+{
+	qfZoneScoped (true);
+
+	qfa_deregister (mod);
+
+	//FIXME this seems to be correct but need to double check the behavior
+	//with alias models
+	if (!mod->needload && mod->clear) {
+		mod->clear (mod, mod->data);
+		mod->clear = 0;
+	}
+	if (mod->type != mod_mesh) {
+		mod->needload = true;
+	}
+	if (mod->type == mod_sprite) {
+		mod->cache.data = 0;
+	}
+}
+
+static const char *
+qfm_model_get_key (const void *m, void *data)
+{
+	const model_t *mod = m;
+	return mod->path;
+}
+
+static void
+qfm_model_free_model (void *m, void *data)
+{
+	model_t *mod = m;
+	mod_unload_model (mod);
+	qfm_model_free (model_registry, mod);
 }
 
 VISIBLE void
@@ -210,6 +256,14 @@ Mod_Init (void)
 			}
 	}
 
+	model_registry = malloc (sizeof (model_registry_t));
+	*model_registry = (model_registry_t) {
+	};
+	model_registry->model_tab = Hash_NewTable (1021, qfm_model_get_key,
+											   qfm_model_free_model,
+											   model_registry,
+											   &model_registry->hashctx);
+
 	qfa_init ();
 }
 
@@ -223,72 +277,32 @@ Mod_Init_Cvars (void)
 	Cvar_Register (&gl_textures_external_cvar, 0, 0);
 }
 
-static void
-mod_unload_model (size_t ind)
-{
-	qfZoneScoped (true);
-	model_t    *mod = mod_known.a[ind];
-
-	qfa_deregister (mod);
-
-	//FIXME this seems to be correct but need to double check the behavior
-	//with alias models
-	if (!mod->needload && mod->clear) {
-		mod->clear (mod, mod->data);
-		mod->clear = 0;
-	}
-	if (mod->type != mod_mesh) {
-		mod->needload = true;
-	}
-	if (mod->type == mod_sprite) {
-		mod->cache.data = 0;
-	}
-}
-
 VISIBLE void
 Mod_ClearAll (void)
 {
 	qfZoneScoped (true);
-	size_t      i;
-
-	for (i = 0; i < mod_numknown; i++) {
-		mod_unload_model (i);
-	}
-	mod_numknown = 0;
+	Hash_FlushTable (model_registry->model_tab);
 }
 
 model_t *
 Mod_FindName (const char *name)
 {
 	qfZoneScoped (true);
-	size_t      i;
-	model_t   **mod;
 
 	if (!name[0])
 		Sys_Error ("Mod_FindName: empty name");
 
-	// search the currently loaded models
-	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++)
-		if (!strcmp ((*mod)->path, name))
-			break;
-
-	if (i == mod_numknown) {
-		if (mod_numknown == mod_known.size) {
-			model_t    *block = calloc (MOD_BLOCK, sizeof (model_t));
-			for (i = 0; i < MOD_BLOCK; i++) {
-				DARRAY_APPEND (&mod_known, &block[i]);
-			}
-			mod = &mod_known.a[mod_numknown];
-			DARRAY_APPEND (&mod_blocks, block);
-		}
-		memset ((*mod), 0, sizeof (model_t));
-		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
-		(*mod)->needload = true;
-		mod_numknown++;
-		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
+	model_t *mod = Hash_Find (model_registry->model_tab, name);
+	if (!mod) {
+		mod = qfm_model_new (model_registry);
+		memset (mod, 0, sizeof (model_t));
+		strncpy (mod->path, name, sizeof (mod->path) - 1);
+		mod->needload = true;
+		Hash_Add (model_registry->model_tab, mod);
+		Cache_Add (&mod->cache, mod, Mod_CallbackLoad);
 	}
 
-	return *mod;
+	return mod;
 }
 
 static model_t *
@@ -435,24 +449,27 @@ VISIBLE void
 Mod_UnloadModel (model_t *model)
 {
 	qfZoneScoped (true);
-	for (size_t i = 0; i < mod_numknown; i++) {
-		if (mod_known.a[i] == model) {
-			mod_unload_model (i);
-		}
+	model_t *mod = Hash_Find (model_registry->model_tab, model->name);
+	if (mod == model) {
+		mod_unload_model (mod);
+		Hash_Del (model_registry->model_tab, model->name);
 	}
+}
+
+static void
+qfm_print_model (void *ele, void *data)
+{
+	model_t *mod = ele;
+	Sys_Printf ("%8p : %s\n", mod->cache.data, mod->path);
 }
 
 VISIBLE void
 Mod_Print (void)
 {
 	qfZoneScoped (true);
-	size_t      i;
-	model_t	  **mod;
 
 	Sys_Printf ("Cached models:\n");
-	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
-		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->path);
-	}
+	Hash_ForEach (model_registry->model_tab, qfm_print_model, nullptr);
 }
 
 float
