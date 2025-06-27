@@ -96,6 +96,7 @@ Array *windows;
 	int show_armature;
 
 	animstate_t anim;
+	animstate_t root_anim;
 	entity_t ent;
 	transform_t trans;
 	armature_t *arm;
@@ -188,8 +189,15 @@ Array *windows;
 {
 	if (ent && anim && arm && show_armature) {
 		qfa_update_anim (anim, frametime);
+		qfa_update_anim (root_anim, frametime);
 		qfa_get_pose_motors (anim, arm.pose);
-		draw_armature (camera, arm, trans);
+
+		auto E = make_motor (Transform_GetWorldPosition (trans),
+							 Transform_GetWorldRotation (trans));
+		qfm_motor_t M;
+		qfa_get_pose_motors (root_anim, &M);
+		M.m = E * M.m;
+		draw_armature (camera, arm, M);
 	}
 
 	imui_style_t style;
@@ -224,6 +232,12 @@ Array *windows;
 {
 	self.anim = anim;
 	Entity_SetAnimstate (ent, anim);
+	return self;
+}
+
+-setRootAnim:(animstate_t) anim
+{
+	self.root_anim = anim;
 	return self;
 }
 
@@ -271,6 +285,18 @@ Array *windows;
 	qfa_reset_anim (anim);
 	[self setAnim:anim];
 
+	cliphandle_t root_clips[] = {
+		qfa_find_clip ("rm|girl14:" + clipinfo.name),
+	};
+	armhandle_t root_arma = qfa_find_armature ("rm|girl14");
+	animstate_t root_anim = qfa_create_animation (root_clips, num_clips,
+												  root_arma, nil);
+	for (int i = 0; i < num_clips; i++) {
+		qfa_set_clip_loop (root_anim, i, true);
+	}
+	qfa_reset_anim (root_anim);
+	[self setRootAnim:root_anim];
+
 	return self;
 }
 
@@ -316,6 +342,7 @@ Array *windows;
 		string name = [[clips objectAtIndex:item] name];
 		name = Model_Name (model) + ":" + name;
 		qfa_set_anim_clip (anim, 0, qfa_find_clip (name));
+		qfa_set_anim_clip (root_anim, 0, qfa_find_clip ("rm|" + name));
 	}
 }
 

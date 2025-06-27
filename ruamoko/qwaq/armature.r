@@ -159,11 +159,10 @@ vec4 do_scale (vec4 p, vec3 s)
 }
 
 void
-draw_armature (transform_t camera, armature_t *arm, transform_t ent)
+draw_armature (transform_t camera, armature_t *arm, qfm_motor_t ent_motor)
 {
 	@algebra (PGA) {
-		auto E = make_motor (Transform_GetWorldPosition (ent),
-							 Transform_GetWorldRotation (ent));
+		auto E = ent_motor.m;
 		for (int i = 0; i < arm.num_edges; i++) {
 			auto pose = &arm.pose[arm.edge_bones[i]];
 			auto M = E * pose.m;

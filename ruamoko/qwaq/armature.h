@@ -45,6 +45,6 @@ typedef struct {
 
 armature_t *make_armature (model_t model);
 void free_armature (armature_t *arm);
-void draw_armature (transform_t camera, armature_t *arm, transform_t ent);
+void draw_armature (transform_t camera, armature_t *arm, qfm_motor_t ent_motor);
 
 #endif//__armature_h
