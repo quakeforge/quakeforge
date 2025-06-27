@@ -188,6 +188,25 @@ qfa_shutdown (void)
 	anim_registry = nullptr;
 }
 
+static void
+qfa_item_print (void *ele, void *data)
+{
+	qfa_item_t *item = ele;
+	printf ("%s:%s\n", item->mod_name, item->name);
+}
+
+static void __attribute__((used))
+qfa_dump_clips (void)
+{
+	Hash_ForEach (anim_registry->clip_tab, qfa_item_print, nullptr);
+}
+
+static void __attribute__((used))
+qfa_dump_armatures (void)
+{
+	Hash_ForEach (anim_registry->armature_tab, qfa_item_print, nullptr);
+}
+
 void
 qfa_register (model_t *mod)
 {
@@ -346,21 +365,8 @@ qfa_extract_root_motion (model_t *mod)
 					mod->path);
 		goto no_extract;
 	}
-
-	//Modify the original animation to remove the root bone's animation
-	//and pose
-	// "strip" off the root bone's channels
-	model->channels.offset += sizeof (qfm_channel_t[num_channels]);
-	model->channels.count -= num_channels;
+	auto inverse = (qfm_motor_t *) ((byte*) model + model->inverse.offset);
 	auto pose = (qfm_joint_t *) ((byte*) model + model->pose.offset);
-	// force the root bone's transform to identity
-	pose[0] = (qfm_joint_t) {
-		.translate = {0, 0, 0},
-		.name = pose[0].name,
-		.rotate = {0, 0, 0, 1},
-		.scale = {1, 1, 1},
-		.parent = pose[0].parent,
-	};
 
 	uint32_t num_anims = model->anim.numclips;
 	uint32_t num_frames = 0;
@@ -374,13 +380,19 @@ qfa_extract_root_motion (model_t *mod)
 	printf ("%d %d %d\n", num_anims, num_frames, frame_data_count);
 
 	size_t size = sizeof (qf_model_t)
+				+ sizeof (qfm_joint_t[1])
+				+ sizeof (qfm_motor_t[1])
+				+ sizeof (qfm_joint_t[1])
 				+ sizeof (clipdesc_t[num_anims])
 				+ sizeof (keyframe_t[num_frames])
 				+ sizeof (qfm_channel_t[num_channels])
 				+ sizeof (uint16_t[frame_data_count])
 				+ num_text;
 	qf_model_t *root_model = malloc (size);
-	auto root_clips     = (clipdesc_t *)    &root_model[1];
+	auto root_joints    = (qfm_joint_t *)   &root_model[1];
+	auto root_inverse   = (qfm_motor_t *)   &root_joints[1];
+	auto root_pose      = (qfm_joint_t *)   &root_inverse[1];
+	auto root_clips     = (clipdesc_t *)    &root_pose[1];
 	auto root_keyframes = (keyframe_t *)    &root_clips[num_anims];
 	auto root_channels  = (qfm_channel_t *) &root_keyframes[num_frames];
 	auto root_framedata = (uint16_t *)      &root_channels[num_channels];
@@ -392,10 +404,22 @@ qfa_extract_root_motion (model_t *mod)
 		.type = mod_mesh,
 		.clear = qfa_clear_model,
 	};
-	strcpy (root_mod->name, va ("rm:%.*s", (int) (sizeof (root_mod->name) - 4),
+	strcpy (root_mod->name, va ("rm|%.*s", (int) (sizeof (root_mod->name) - 4),
 								mod->name));
 
 	*root_model = (qf_model_t) {
+		.joints = {
+			.offset = (byte *) root_joints - (byte *) root_model,
+			.count = 1,
+		},
+		.inverse = {
+			.offset = (byte *) root_inverse - (byte *) root_model,
+			.count = 1,
+		},
+		.pose = {
+			.offset = (byte *) root_pose - (byte *) root_model,
+			.count = 1,
+		},
 		.channels = {
 			.offset = (byte *) root_channels - (byte *) root_model,
 			.count = num_channels,
@@ -410,6 +434,9 @@ qfa_extract_root_motion (model_t *mod)
 			.keyframes = (byte *) root_keyframes - (byte *) root_model,
 		},
 	};
+	root_joints[0] = joints[0];
+	root_inverse[0] = inverse[0];
+	root_pose[0] = pose[0];
 	num_frames = 0;
 	num_text = 1;
 	for (uint32_t i = 0; i < num_anims; i++) {
@@ -439,6 +466,20 @@ qfa_extract_root_motion (model_t *mod)
 		num_frames += c->numframes;
 	}
 	memcpy (root_channels, channels, sizeof (qfm_channel_t[num_channels]));
+
+	//Modify the original animation to remove the root bone's animation
+	//and pose
+	// "strip" off the root bone's channels
+	model->channels.offset += sizeof (qfm_channel_t[num_channels]);
+	model->channels.count -= num_channels;
+	// force the root bone's transform to identity
+	pose[0] = (qfm_joint_t) {
+		.translate = {0, 0, 0},
+		.name = pose[0].name,
+		.rotate = {0, 0, 0, 1},
+		.scale = {1, 1, 1},
+		.parent = pose[0].parent,
+	};
 
 	qfa_register (root_mod);
 no_extract:
