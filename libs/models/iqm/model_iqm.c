@@ -307,7 +307,6 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 				+ sizeof (qf_mesh_t[hdr->num_meshes])
 				+ sizeof (qfm_joint_t[hdr->num_joints])
 				+ sizeof (qfm_motor_t[hdr->num_joints])
-				+ sizeof (qfm_motor_t[hdr->num_joints])
 				+ sizeof (qfm_joint_t[hdr->num_poses])
 				+ sizeof (clipdesc_t[hdr->num_anims])
 				+ sizeof (keyframe_t[hdr->num_frames])
@@ -318,8 +317,7 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	qf_model_t *model = Hunk_AllocName (nullptr, size, mod->name);
 	auto meshes    = (qf_mesh_t *)      &model[1];
 	auto joints    = (qfm_joint_t *)    &meshes[hdr->num_meshes];
-	auto base      = (qfm_motor_t *)    &joints[hdr->num_joints];
-	auto inverse   = (qfm_motor_t *)    &base[hdr->num_joints];
+	auto inverse   = (qfm_motor_t *)    &joints[hdr->num_joints];
 	auto pose      = (qfm_joint_t *)    &inverse[hdr->num_joints];
 	auto clips     = (clipdesc_t *)     &pose[hdr->num_poses];
 	auto keyframes = (keyframe_t *)     &clips[hdr->num_anims];
