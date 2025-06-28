@@ -65,6 +65,15 @@ typedef struct clipstate_s {
 	float       pad;
 } clipstate_t;
 
+typedef enum : uint32_t {
+	qfa_op_clip,
+	qfa_op_clip_weighted,
+	qfa_op_mask,
+	qfa_op_blerp,
+	qfa_op_add,
+	qfa_op_difference,
+} qfa_op_code_t;
+
 typedef struct animstate_s {
 	qfm_loc_t   clip_states;
 	qfm_loc_t   morph_states;
@@ -72,7 +81,6 @@ typedef struct animstate_s {
 	//qfm_loc_t   joint_weights;
 	uint32_t    armature_id;
 	uint32_t    num_joints;
-	uint32_t    raw_pose;
 	uint32_t    local_pose;
 	uint32_t    global_pose;
 	uint32_t    matrix_palette;
@@ -87,7 +95,6 @@ ANIMINLINE clipstate_t *qfa_clip_states (animstate_t *anim);
 ANIMINLINE clipstate_t *qfa_morph_states (animstate_t *anim);
 //ANIMINLINE void *qfa_blend_spec (animstate_t *anim);
 //ANIMINLINE float *qfa_jointweights (animstate_t *anim);
-ANIMINLINE qfm_joint_t *qfa_raw_pose (animstate_t *anim);
 ANIMINLINE qfm_joint_t *qfa_local_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_global_pose (animstate_t *anim);
 ANIMINLINE qfm_motor_t *qfa_matrix_palette (animstate_t *anim);
@@ -119,12 +126,6 @@ qfa_morph_states (animstate_t *anim)
 //{
 //	return (float *) ((byte *) anim + anim->joint_weights.offset);
 //}
-
-ANIMINLINE qfm_joint_t *
-qfa_raw_pose (animstate_t *anim)
-{
-	return (qfm_joint_t *) ((byte *) anim + anim->raw_pose);
-}
 
 ANIMINLINE qfm_joint_t *
 qfa_local_pose (animstate_t *anim)

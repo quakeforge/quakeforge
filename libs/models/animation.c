@@ -586,8 +586,7 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, uint32_t armature,
 				+ sizeof (qfm_motor_t[arm->joints.count]);
 	animstate_t *anim = malloc (size);
 	auto clip_states = (clipstate_t *) &anim[1];
-	auto raw_pose = (qfm_joint_t *) &clip_states[num_clips];
-	auto local_pose = (qfm_joint_t *) &raw_pose[arm->joints.count];
+	auto local_pose = (qfm_joint_t *) &clip_states[arm->joints.count];
 	auto global_pose = (qfm_motor_t *) &local_pose[arm->joints.count];
 	auto matrix_palette = (qfm_motor_t *) &global_pose[arm->joints.count];
 	*anim = (animstate_t) {
@@ -597,7 +596,6 @@ qfa_create_animation (uint32_t *clips, uint32_t num_clips, uint32_t armature,
 		},
 		.armature_id = armature,
 		.num_joints = arm->joints.count,
-		.raw_pose = (byte *) raw_pose - (byte *) anim,
 		.local_pose = (byte *) local_pose - (byte *) anim,
 		.global_pose = (byte *) global_pose - (byte *) anim,
 		.matrix_palette = (byte *) matrix_palette - (byte *) anim,
@@ -705,67 +703,109 @@ qfa_apply_channels (qfm_joint_t *pose, qf_model_t *model,
 	}
 }
 
+typedef struct {
+	animstate_t *anim;
+	qfa_item_t **items;
+	clipstate_t *clip_states;
+
+	qfm_joint_t *pose_joints;
+	qfm_joint_t *raw_pose;
+	qfm_joint_t *local_pose;
+} qfa_ctx_t;
+
+static void
+qfa_do_clip (qfa_ctx_t *ctx, int i)
+{
+	qfZoneScoped (true);
+	auto item = ctx->items[i];
+	bool cached = false;
+	auto model = item->mod->model;
+	if (!model) {
+		model = Cache_Get (&item->mod->cache);
+		cached = true;
+	}
+
+	auto clip_state = &ctx->clip_states[i];
+	auto clipdesc = qfm_clipdesc (model, item->id);
+	auto keyframes = qfm_keyframe (model, clipdesc->firstframe);
+	qfa_update_clip (clip_state, clipdesc, keyframes, ctx->anim->time);
+	size_t pose_size = sizeof (qfm_joint_t[ctx->anim->num_joints]);
+	memcpy (ctx->raw_pose, ctx->pose_joints, pose_size);
+
+	uint32_t frame1 = clip_state->frame;
+	uint32_t frame2 = clip_state->frame;
+	if (frame1 > 0) {
+		frame1 -= 1;
+	}
+	frame1 = keyframes[frame1].data;
+	frame2 = keyframes[frame2].data;
+	float blend = clip_state->frac;
+	qfa_apply_channels (ctx->raw_pose, model, frame1, frame2, blend);
+
+	if (cached) {
+		Cache_Release (&item->mod->cache);
+	}
+}
+
+static void
+qfa_do_clip_weighted (qfa_ctx_t *ctx, int i)
+{
+	qfZoneScoped (true);
+	qfm_joint_t raw_pose[ctx->anim->num_joints];
+	ctx->raw_pose = raw_pose;
+	qfa_do_clip (ctx, i);
+	auto weight = ((vec4f_t) { 1, 1, 1, 1 }) * ctx->clip_states[i].weight;
+	for (uint32_t j = 0; j < ctx->anim->num_joints; j++) {
+		auto rp = (vec4f_t *) &ctx->raw_pose[j];
+		auto lp = (vec4f_t *) &ctx->local_pose[j];
+		lp[0] += weight * loadxyzf (rp[0]);
+		lp[1] += weight * rp[1];
+		lp[2] += weight * loadxyzf (rp[2]);
+		ctx->local_pose[j].parent = ctx->raw_pose[j].parent;
+	}
+}
+
 void
 qfa_update_anim (animstate_t *anim, float dt)
 {
 	qfZoneScoped (true);
 	anim->time += anim->play_rate * dt;
 
-	qfa_item_t *items[anim->clip_states.count + 1];
-	model_t *mods[anim->clip_states.count + 1] = {};
-	qf_model_t *models[anim->clip_states.count + 1] = {};
-	auto clipstates = (clipstate_t *)((byte *) anim + anim->clip_states.offset);
+	qfa_item_t *items[anim->clip_states.count];
+	auto clip_states = qfa_clip_states (anim);
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
-		items[i] = qfa_clip_get (anim_registry, clipstates[i].clip_id);
-	}
-	items[anim->clip_states.count] = qfa_armature_get (anim_registry,
-													   anim->armature_id);
-
-	for (uint32_t i = 0; i < anim->clip_states.count + 1; i++) {
-		mods[i] = items[i]->mod;
-		if (!mods[i]->model) {
-			models[i] = Cache_Get (&mods[i]->cache);
-		} else {
-			models[i] = mods[i]->model;
-		}
+		items[i] = qfa_clip_get (anim_registry, clip_states[i].clip_id);
 	}
 
-	auto raw_pose = qfa_raw_pose (anim);
+	auto arm_item = qfa_armature_get (anim_registry, anim->armature_id);
+	bool arm_cached = false;
+	auto arm_model = arm_item->mod->model;
+	if (!arm_model) {
+		arm_model = Cache_Get (&arm_item->mod->cache);
+		arm_cached = true;
+	}
+
 	auto local_pose = qfa_local_pose (anim);
 	auto global_pose = qfa_global_pose (anim);
 	auto matrix_palette = qfa_matrix_palette (anim);
-	auto arm = models[anim->clip_states.count];
+	auto arm = arm_model;
 	auto inv_motors = (qfm_motor_t *) ((byte *) arm + arm->inverse.offset);
 	auto pose_joints = (qfm_joint_t *) ((byte *) arm + arm->pose.offset);
-	size_t pose_size = sizeof (qfm_joint_t[anim->num_joints]);
+
+	qfa_ctx_t   ctx = {
+		.anim = anim,
+		.items = items,
+		.clip_states = clip_states,
+
+		.pose_joints = pose_joints,
+		.local_pose = local_pose,
+	};
 
 	memset (local_pose, 0, sizeof (qfm_joint_t[anim->num_joints]));
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
-		auto clipdesc = qfm_clipdesc (models[i], items[i]->id);
-		auto keyframes = qfm_keyframe (models[i], clipdesc->firstframe);
-		qfa_update_clip (&clipstates[i], clipdesc, keyframes, anim->time);
-		memcpy (raw_pose, pose_joints, pose_size);
-
-		uint32_t frame1 = clipstates[i].frame;
-		uint32_t frame2 = clipstates[i].frame;
-		if (frame1 > 0) {
-			frame1 -= 1;
-		}
-		frame1 = keyframes[frame1].data;
-		frame2 = keyframes[frame2].data;
-		float blend = clipstates[i].frac;
-		qfa_apply_channels (raw_pose, models[i], frame1, frame2, blend);
-		auto weight = ((vec4f_t) { 1, 1, 1, 1 }) * clipstates[i].weight;
-		for (uint32_t j = 0; j < anim->num_joints; j++) {
-			auto rp = (vec4f_t *) &raw_pose[j];
-			auto lp = (vec4f_t *) &local_pose[j];
-			lp[0] += weight * loadxyzf (rp[0]);
-			lp[1] += weight * rp[1];
-			lp[2] += weight * loadxyzf (rp[2]);
-		}
+		qfa_do_clip_weighted (&ctx, i);
 	}
 	for (uint32_t j = 0; j < anim->num_joints; j++) {
-		local_pose[j].parent = raw_pose[j].parent;
 		local_pose[j].rotate = normalf (local_pose[j].rotate);
 	}
 	for (uint32_t i = 0; i < anim->num_joints; i++) {
@@ -787,10 +827,8 @@ qfa_update_anim (animstate_t *anim, float dt)
 		matrix_palette[i] = qfm_motor_mul (global_pose[i], inv_motors[i]);
 	}
 
-	for (uint32_t i = 0; i < anim->clip_states.count + 1; i++) {
-		if (!mods[i]->model) {
-			Cache_Release (&mods[i]->cache);
-		}
+	if (arm_cached) {
+		Cache_Release (&arm_item->mod->cache);
 	}
 }
 
@@ -798,9 +836,9 @@ void
 qfa_reset_anim (animstate_t *anim)
 {
 	qfZoneScoped (true);
-	auto clipstates = (clipstate_t *)((byte *) anim + anim->clip_states.offset);
+	auto clip_states = qfa_clip_states (anim);
 	for (uint32_t i = 0; i < anim->clip_states.count; i++) {
-		clipstates[i].end_time = 0;
+		clip_states[i].end_time = 0;
 	}
 	anim->time = -anim->play_rate;
 	qfa_update_anim (anim, 1);
