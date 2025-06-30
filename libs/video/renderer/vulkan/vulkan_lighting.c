@@ -1223,6 +1223,9 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	auto queue = lframe->light_queue;
 	uint32_t count = queue[ST_CUBE].count + queue[ST_PLANE].count;
 	if (!count) {
+		//FIXME ids shouldn't need rewriting, but lighting_rewrite_ids also
+		//builds the stage queue
+		lighting_rewrite_ids (lframe, ctx);
 		return;
 	}
 	if (scr_fisheye) {
