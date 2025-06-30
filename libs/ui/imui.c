@@ -451,6 +451,7 @@ IMUI_SetSize (imui_ctx_t *ctx, int xlen, int ylen)
 bool
 IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 {
+	bool handled = false;
 	if (ie_event->type == ie_mouse) {
 		auto m = &ie_event->mouse;
 		ctx->mouse_position = (view_pos_t) { m->x, m->y };
@@ -463,6 +464,7 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 			ctx->mouse_released = (old ^ new) & ~new;
 			ctx->mouse_buttons = m->buttons;
 		}
+		handled = true;
 	} else if (ie_event->type == ie_key) {
 		auto k = &ie_event->key;
 		//printf ("imui: %d %d %x\n", k->code, k->unicode, k->shift);
@@ -477,8 +479,9 @@ IMUI_ProcessEvent (imui_ctx_t *ctx, const IE_event_t *ie_event)
 		} else {
 			ctx->key_utf8->size = 0;
 		}
+		handled = true;
 	}
-	return ctx->hot != nullent || ctx->active != nullent;
+	return handled && (ctx->hot != nullent || ctx->active != nullent);
 }
 
 imui_io_t
