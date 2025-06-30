@@ -2706,7 +2706,6 @@ render_graph = {
 					shadow4 = $renderpasses.shadow4;
 					shadow5 = $renderpasses.shadow5;
 					shadow6 = $renderpasses.shadow6;
-	/* FIXME dynamic limit
 					shadow7 = $renderpasses.shadow7;
 					shadow8 = $renderpasses.shadow8;
 					shadow9 = $renderpasses.shadow9;
@@ -2718,6 +2717,7 @@ render_graph = {
 					shadow15 = $renderpasses.shadow15;
 					shadow16 = $renderpasses.shadow16;
 					shadow17 = $renderpasses.shadow17;
+	/* FIXME dynamic limit
 					shadow18 = $renderpasses.shadow18;
 					shadow19 = $renderpasses.shadow19;
 					shadow20 = $renderpasses.shadow20;
