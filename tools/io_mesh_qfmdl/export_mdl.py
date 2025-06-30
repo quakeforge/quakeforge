@@ -205,7 +205,7 @@ def scale_verts(mdl):
     rsqr = tuple(map(lambda a, b: max(abs(a), abs(b)) ** 2, tf.mins, tf.maxs))
     mdl.boundingradius = (rsqr[0] + rsqr[1] + rsqr[2]) ** 0.5
     mdl.scale_origin = tf.mins
-    mdl.scale = tuple(map(lambda x: x / 255.0, size))
+    mdl.scale = tuple(map(lambda x: x / 255.0 if x else 255.0, size))
     for f in mdl.frames:
         f.scale(mdl)
 
