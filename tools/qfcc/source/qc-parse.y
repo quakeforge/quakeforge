@@ -1571,6 +1571,8 @@ enum_specifier
 		{
 			auto tag = find_enum ($enum.sym, $enum.type);
 			$$ = type_spec (tag->type);
+			if (!tag->table)
+				symtab_addsymbol (current_symtab, tag);
 		}
 	| enum enum_list[list]
 		{
