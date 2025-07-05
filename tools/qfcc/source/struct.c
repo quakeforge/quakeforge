@@ -280,7 +280,7 @@ find_enum (symbol_t *tag, const type_t *type)
 		error (0, "enum type must be int, uint, long, or ulong");
 		type = &type_int;
 	}
-	auto enum_type = copy_type (&type_int);
+	auto enum_type = copy_type (type);
 	enum_type->meta = ty_enum;
 	auto sym = find_tag (enum_type, tag, 0);
 	free_type (enum_type);
