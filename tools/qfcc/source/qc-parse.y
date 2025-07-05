@@ -171,7 +171,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
-%type	<spec>		enum enum_tag handle
+%type	<spec>		enum enum_tag enum_type handle
 %type	<mut_expr>	attr_list attr
 %type	<expr>		binding opt_binding
 %type	<spec>		fnbinding
@@ -1473,7 +1473,7 @@ type_ref
 			$$ = new_type_expr (spec.type);
 		}
 	| STRUCT tag				{ $$ = forward_decl_expr ($2, $1, nullptr); }
-	| enum tag					{ $$ = forward_decl_expr ($2, 'e', $1.type); }
+	| enum_tag				{ $$ = forward_decl_expr ($1.sym, 'e', $1.type); }
 	| handle tag				{ $$ = forward_decl_expr ($2, 'h', $1.type); }
 	| image_specifier			{ $$ = new_type_expr ($1.type); }
 	| sampler_specifier			{ $$ = new_type_expr ($1.type); }
@@ -1561,15 +1561,15 @@ sampler_specifier
 	;
 
 enum_specifier
-	: enum enum_tag enum_list[list]
+	: enum_tag enum_list[list]
 		{
 			$$ = type_spec ($list->type);
 			if (!$list->table)
 				symtab_addsymbol (current_symtab, $list);
 		}
-	| enum enum_tag %prec LOW
+	| enum_tag[enum] %prec LOW
 		{
-			auto tag = find_enum ($enum_tag.sym, $enum.type);
+			auto tag = find_enum ($enum.sym, $enum.type);
 			$$ = type_spec (tag->type);
 		}
 	| enum enum_list[list]
@@ -1580,15 +1580,23 @@ enum_specifier
 		}
 	;
 
+enum_type
+	: %prec LOW					{ $$ = type_spec (&type_int); }
+	| ':' typespec[type]		{ $$ = $type; }
+	;
+
 enum
-	: ENUM	%prec LOW			{ $$ = type_spec (&type_int); }
-	| ENUM ':' typename			{ $$ = $3; }
+	: ENUM enum_type[type]
+		{
+			specifier_t spec = $type;
+			$$ = spec;
+		}
 	;
 
 enum_tag
-	: tag
+	: ENUM tag enum_type[type]
 		{
-			auto spec = $<spec>0;
+			specifier_t spec = $type;
 			spec.sym = $tag;
 			$$ = spec;
 		}
