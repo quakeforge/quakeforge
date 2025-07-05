@@ -1559,24 +1559,30 @@ sampler_specifier
 			$$ = spec;
 		}
 	;
+
 enum_specifier
-	: enum enum_tag enum_list
+	: enum enum_tag enum_list[list]
 		{
-			$$ = type_spec ($3->type);
-			if (!$3->table)
-				symtab_addsymbol (current_symtab, $3);
+			$$ = type_spec ($list->type);
+			if (!$list->table)
+				symtab_addsymbol (current_symtab, $list);
 		}
 	| enum enum_tag %prec LOW
 		{
-			auto tag = find_enum ($enum_tag.sym, $1.type);
+			auto tag = find_enum ($enum_tag.sym, $enum.type);
 			$$ = type_spec (tag->type);
 		}
-	| enum enum_list
+	| enum enum_list[list]
 		{
-			$$ = type_spec ($2->type);
-			if (!$2->table)
-				symtab_addsymbol (current_symtab, $2);
+			$$ = type_spec ($list->type);
+			if (!$list->table)
+				symtab_addsymbol (current_symtab, $list);
 		}
+	;
+
+enum
+	: ENUM	%prec LOW			{ $$ = type_spec (&type_int); }
+	| ENUM ':' typename			{ $$ = $3; }
 	;
 
 enum_tag
@@ -1660,11 +1666,6 @@ struct_specifier
 				symtab_addsymbol (tab, sym);
 			}
 		}
-	;
-
-enum
-	: ENUM	%prec LOW			{ $$ = type_spec (&type_int); }
-	| ENUM ':' typename			{ $$ = $3; }
 	;
 
 handle
