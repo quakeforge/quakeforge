@@ -172,7 +172,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<spec>		storage_class save_storage
 %type	<spec>		typespec typespec_reserved typespec_nonreserved
 %type	<spec>		enum enum_tag enum_type handle
-%type	<mut_expr>	attr_list attr
+%type	<mut_expr>	attr_list attr enum_attr
 %type	<expr>		binding opt_binding
 %type	<spec>		fnbinding
 %type	<spec>		attr_declspecs_ts attr_declspecs_nots attr_declspecs
@@ -1585,18 +1585,25 @@ enum_type
 	| ':' typespec[type]		{ $$ = $type; }
 	;
 
+enum_attr
+	: %prec LOW					{ $$ = nullptr; }
+	| attr_list					{ $$ = $attr_list; }
+	;
+
 enum
-	: ENUM enum_type[type]
+	: ENUM enum_attr[attr] enum_type[type]
 		{
 			specifier_t spec = $type;
+			spec = attr_spec (spec, $attr, ctx);
 			$$ = spec;
 		}
 	;
 
 enum_tag
-	: ENUM tag enum_type[type]
+	: ENUM enum_attr[attr] tag enum_type[type]
 		{
 			specifier_t spec = $type;
+			spec = attr_spec (spec, $attr, ctx);
 			spec.sym = $tag;
 			$$ = spec;
 		}
