@@ -1624,6 +1624,7 @@ enum_init
 		{
 			auto enum_tag = $<spec>-1;
 			$$ = find_enum (enum_tag.sym, enum_tag.type);
+			$$->attributes = enum_tag.attributes;
 			$$->type = find_type ($$->type);
 			if ($$->type->symtab) {
 				error (0, "enum %s redefined", $$->name + 4);

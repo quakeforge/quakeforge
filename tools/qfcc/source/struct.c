@@ -48,6 +48,7 @@
 
 #include <QF/progs/pr_obj.h>
 
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -306,17 +307,34 @@ finish_enum (symbol_t *sym)
 	symbol_t   *enum_sym;
 	symbol_t   *name;
 	symtab_t   *enum_tab;
+	bool        namespace = false;
+
+	for (auto attr = sym->attributes; attr; attr = attr->next) {
+		if (strcmp (attr->name, "namespace") == 0) {
+			namespace = true;
+		} else {
+			warning (0, "skipping unknown enum attribute '%s'", attr->name);
+		}
+	}
 
 	auto enum_type = sym->type;
 	enum_tab = enum_type->symtab;
 
-	for (name = enum_tab->symbols; name; name = name->next) {
-		name->type = sym->type;
-
-		enum_sym = new_symbol_type (name->name, enum_type);
-		enum_sym->sy_type = sy_const;
-		enum_sym->value = name->value;
+	if (namespace) {
+		const char *name = save_string (sym->name + 4);
+		enum_sym = new_symbol (name);
+		enum_sym->sy_type = sy_namespace;
+		enum_sym->namespace = enum_tab;
 		symtab_addsymbol (enum_tab->parent, enum_sym);
+	} else {
+		for (name = enum_tab->symbols; name; name = name->next) {
+			name->type = sym->type;
+
+			enum_sym = new_symbol_type (name->name, enum_type);
+			enum_sym->sy_type = sy_const;
+			enum_sym->value = name->value;
+			symtab_addsymbol (enum_tab->parent, enum_sym);
+		}
 	}
 	if (type_encodings.a[enum_type->id]->external) {
 		unsigned id = enum_type->id;
