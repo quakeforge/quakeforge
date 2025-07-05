@@ -264,7 +264,6 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 	if (alignment > sym->type->alignment) {
 		((type_t *) sym->type)->alignment = alignment;
 	}
-	//FIXME should not be necessary
 	if (!type && type_encodings.a[sym->type->id]->external) {
 		unsigned id = sym->type->id;
 		type_encodings.a[id] = qfo_encode_type (sym->type, pr.type_data);
@@ -318,6 +317,10 @@ finish_enum (symbol_t *sym)
 		enum_sym->sy_type = sy_const;
 		enum_sym->value = name->value;
 		symtab_addsymbol (enum_tab->parent, enum_sym);
+	}
+	if (type_encodings.a[enum_type->id]->external) {
+		unsigned id = enum_type->id;
+		type_encodings.a[id] = qfo_encode_type (enum_type, pr.type_data);
 	}
 	return sym;
 }
