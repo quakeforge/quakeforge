@@ -1624,8 +1624,14 @@ enum_init
 		{
 			auto enum_tag = $<spec>-1;
 			$$ = find_enum (enum_tag.sym, enum_tag.type);
-			start_enum ($$);
-			current_symtab = $$->type->symtab;
+			$$->type = find_type ($$->type);
+			if ($$->type->symtab) {
+				error (0, "enum %s redefined", $$->name + 4);
+				current_symtab = new_symtab (current_symtab, stab_enum);
+			} else {
+				start_enum ($$);
+				current_symtab = $$->type->symtab;
+			}
 		}
 	;
 

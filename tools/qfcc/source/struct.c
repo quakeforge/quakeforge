@@ -308,7 +308,7 @@ finish_enum (symbol_t *sym)
 	symbol_t   *name;
 	symtab_t   *enum_tab;
 
-	auto enum_type = sym->type = find_type (sym->type);
+	auto enum_type = sym->type;
 	enum_tab = enum_type->symtab;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
