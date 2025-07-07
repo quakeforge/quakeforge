@@ -33,6 +33,15 @@ in_axis_t *cam_move_yaw;
 in_axis_t *cam_move_roll;
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
+
+in_axis_t *move_forward;
+in_axis_t *move_side;
+in_axis_t *move_up;
+in_axis_t *move_pitch;
+in_axis_t *move_yaw;
+in_axis_t *move_roll;
+in_button_t *move_jump;
+
 vec2 mouse_start;
 bool mouse_dragging_mmb;
 bool mouse_dragging_rmb;
@@ -185,6 +194,14 @@ Array *windows;
 	}
 }
 
+static vec4 axis_points[][2] = {
+	{{0, 0, 0, 1}, {1, 0, 0, 1}},
+	{{0, 0, 0, 1}, {0, 1, 0, 1}},
+	{{0, 0, 0, 1}, {0, 0, 1, 1}},
+};
+
+static int axis_colors[] = { 12, 10, 9 };
+
 -draw
 {
 	if (ent && anim && arm && show_armature) {
@@ -198,6 +215,11 @@ Array *windows;
 		qfa_get_pose_motors (root_anim, &M);
 		M.m = E * M.m;
 		draw_armature (camera, arm, M);
+		for (int i = 0; i < 3; i++) {
+			auto p1 = E * (point_t) axis_points[i][0] * ~E;
+			auto p2 = E * (point_t) axis_points[i][1] * ~E;
+			draw_3dline (camera, (vec4) p1, (vec4) p2, axis_colors[i]);
+		}
 	}
 
 	imui_style_t style;
@@ -250,6 +272,7 @@ Array *windows;
 	if (!ent) {
 		ent = Scene_CreateEntity (scene);
 		trans = Entity_GetTransform (ent);
+		Transform_SetLocalPosition (trans, {0.5, 0.5, 0, 1});
 	}
 	Entity_SetModel (ent, model);
 	free_armature (arm);
@@ -343,12 +366,131 @@ Array *windows;
 		name = Model_Name (model) + ":" + name;
 		qfa_set_anim_clip (anim, 0, qfa_find_clip (name));
 		qfa_set_anim_clip (root_anim, 0, qfa_find_clip ("rm|" + name));
+		qfa_set_clip_loop (anim, 0, true);
+		qfa_set_clip_loop (root_anim, 0, true);
 	}
 }
 
 -(void)itemAccepted:(int) item in:(Array *)items
 {
 	[self itemSelected:item in:items];
+}
+@end
+
+@interface Player : Object
+{
+	entity_t ent;
+	transform_t xform;
+
+	bool onground;
+	vector velocity;
+}
++player:(scene_t) scene;
+
+-think;
+@end
+
+@implementation Player
+-(void) jump: (in_button_t *) button
+{
+	if (button.state & inb_edge_down) {
+		if (onground) {
+			velocity.z += sqrt(10.0f);
+			onground = false;
+		}
+		button.state &= inb_down;
+	}
+}
+
+-initInScene:(scene_t) scene
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	ent = Scene_CreateEntity (scene);
+	auto body = Scene_CreateEntity (scene);
+	auto mask = Scene_CreateEntity (scene);
+	Entity_SetModel (body, Model_Load ("progs/Capsule.mdl"));
+	Entity_SetModel (mask, Model_Load ("progs/Cube.mdl"));
+
+	xform = Entity_GetTransform (ent);
+	auto body_xform = Entity_GetTransform (body);
+	auto mask_xform = Entity_GetTransform (mask);
+	Transform_SetParent (body_xform, xform);
+	Transform_SetParent (mask_xform, body_xform);
+	Transform_SetLocalPosition(xform, {-5, 0, 0, 1});
+	Transform_SetLocalPosition(body_xform, {0, 0, 1, 1});
+	Transform_SetLocalPosition(mask_xform, {0.5, 0, 0.5, 1});
+	Transform_SetLocalScale(mask_xform, {0.25, 0.5, 0.125, 1});
+
+	onground = true;
+	velocity = '0 0 0';
+
+	IMP imp = [self methodForSelector: @selector (jump:)];
+	IN_ButtonAddListener (move_jump, imp, self);
+
+	return self;
+}
+
+-(void)dealloc
+{
+	IMP imp = [self methodForSelector: @selector (jump)];
+	IN_ButtonRemoveListener (move_jump, imp, self);
+	[super dealloc];
+}
+
++player:(scene_t) scene
+{
+	return [[[self alloc] initInScene:scene] autorelease];
+}
+
+quaternion
+fromtorot(vector a, vector b)
+{
+	float ma = sqrt (a • a);
+	float mb = sqrt (b • b);
+	vector mb_a = mb * a;
+	vector ma_b = ma * b;
+	float den = 2 * ma * mb;
+	float mba_mab = sqrt ((mb_a + ma_b) • (mb_a + ma_b));
+	float c = mba_mab / den;
+	vector v = (a × b) / mba_mab;
+	if (mba_mab < 0.001 && a • b < 0) {
+		v = '0 0 1';
+		c = 0;
+	}
+	return quaternion(v.x, v.y, v.z, c);
+}
+
+-think
+{
+	vector dpos = {};
+	dpos.x -= IN_UpdateAxis (move_forward);
+	dpos.y -= IN_UpdateAxis (move_side);
+	dpos *= 2;
+
+	vector pos = Transform_GetLocalPosition (xform).xyz;
+	onground = pos.z <= 0 && velocity.z <= 0;
+	vector a = '0 0 0';
+	if (onground) {
+		pos.z = 0;
+		velocity.z = 0;
+		velocity.x = dpos.x;
+		velocity.y = dpos.y;
+	} else {
+		a = '0 0 -1' * 9.81f;
+	}
+	velocity += a * frametime;
+	pos += (velocity - 0.5 * a * frametime) * frametime;
+	Transform_SetLocalPosition (xform, vec4 (pos, 1));
+
+	if (dpos • dpos) {
+		vector fwd = Transform_Forward (xform).xyz;
+		quaternion drot = fromtorot (fwd, dpos);
+		quaternion rot = Transform_GetLocalRotation (xform);
+		Transform_SetLocalRotation (xform, drot * rot);
+	}
+	return self;
 }
 @end
 
@@ -613,14 +755,22 @@ setup_bindings (void)
 	IMT_SetContext (in_context);
 	setctxcbuf (in_context);
 
-	cam_move_forward = IN_CreateAxis ("move.forward", "Camera Fore/Aft");
-	cam_move_side = IN_CreateAxis ("move.side", "Camera Left/Right");
-	cam_move_up = IN_CreateAxis ("move.up", "Camera Up/Down");
-	cam_move_pitch = IN_CreateAxis ("move.pitch", "Camera Pitch");
-	cam_move_yaw = IN_CreateAxis ("move.yaw", "Camera Yaw");
-	cam_move_roll = IN_CreateAxis ("move.roll", "Camera Roll");
+	cam_move_forward = IN_CreateAxis ("cam.move.forward", "Camera Fore/Aft");
+	cam_move_side = IN_CreateAxis ("cam.move.side", "Camera Left/Right");
+	cam_move_up = IN_CreateAxis ("cam.move.up", "Camera Up/Down");
+	cam_move_pitch = IN_CreateAxis ("cam.move.pitch", "Camera Pitch");
+	cam_move_yaw = IN_CreateAxis ("cam.move.yaw", "Camera Yaw");
+	cam_move_roll = IN_CreateAxis ("cam.move.roll", "Camera Roll");
 	mouse_x = IN_CreateAxis ("mouse.x", "Mouse X");
 	mouse_y = IN_CreateAxis ("mouse.y", "Mouse Y");
+
+	move_forward = IN_CreateAxis ("move.forward", "Player Move Fore/Aft");
+	move_side = IN_CreateAxis ("move.side", "Player Move Left/Right");
+	move_up = IN_CreateAxis ("move.up", "Player Move Up/Down");
+	move_pitch = IN_CreateAxis ("move.pitch", "Player Pitch");
+	move_yaw = IN_CreateAxis ("move.yaw", "Player Yaw");
+	move_roll = IN_CreateAxis ("move.roll", "Player Roll");
+	move_jump = IN_CreateButton ("move.jump", "Player Jump");
 
 	plitem_t *config = PL_GetPropertyList (input_cfg);
 	IN_LoadConfig (config);
@@ -729,6 +879,32 @@ main (int argc, string *argv)
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
+	entity_t Capsule_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t Cube_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t Octahedron_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
+	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
+
+	printf ("Capsule: %lx\n", Capsule_ent);
+	printf ("Cube: %lx\n", Capsule_ent);
+	printf ("Octahedron: %lx\n", Octahedron_ent);
+	printf ("Plane: %lx\n", Plane_ent);
+	printf ("Tetrahedron: %lx\n", Tetrahedron_ent);
+
+	Entity_SetModel (Capsule_ent, Model_Load ("progs/Capsule.mdl"));
+	Entity_SetModel (Cube_ent, Model_Load ("progs/Cube.mdl"));
+	Entity_SetModel (Octahedron_ent, Model_Load ("progs/Octahedron.mdl"));
+	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
+	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
+
+	Transform_SetLocalPosition(Entity_GetTransform (Capsule_ent), {5, 2, 1, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (Cube_ent), {5, -2, 0.5, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
+	Transform_SetLocalPosition(Entity_GetTransform (Tetrahedron_ent), {0, 2, 0.5, 1});
+	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
+
+	id player = [[Player player:[main_window scene]] retain];
+
 	while (true) {
 		arp_end ();
 		arp_start ();
@@ -736,6 +912,7 @@ main (int argc, string *argv)
 		frametime = refresh ([main_window scene]);
 		realtime += frametime;
 
+		[player think];
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];
@@ -755,6 +932,7 @@ main (int argc, string *argv)
 			break;
 		}
 	}
+	[player release];
 	[windows release];
 	arp_end ();
 	return 0;
