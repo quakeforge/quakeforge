@@ -49,6 +49,7 @@
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/zone.h"
 
 #include "QF/input/imt.h"
 
@@ -108,6 +109,11 @@ static in_knowndevset_t known_devices = DARRAY_STATIC_INIT (8);
 static int in_binding_handler;
 static int in_keyhelp_handler;
 static int in_keyhelp_saved_handler;
+
+static int *in_keyhelp_devices;
+static in_axisinfo_t *in_keyhelp_axisinfo;
+static size_t in_keyhelp_hunk_mark;
+static size_t in_keyhelp_hunk_mark_check;
 
 static PR_RESMAP (in_devbindings_t) devbindings;
 static in_devbindings_t *devbindings_list;
@@ -285,6 +291,7 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 		return 0;
 	}
 
+	// devid and data are the same for both button and axis events
 	size_t      devid = ie_event->button.devid;
 	in_devbindings_t *db = ie_event->button.data;
 	const char *bind_name = db ? db->name : 0;
@@ -295,23 +302,21 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 	const char *name = 0;
 
 	if (ie_event->type == ie_axis) {
+		int        *ind = in_find_devid (devid);
+		if (!ind) {
+			Sys_Error ("unknown devid: %zd\n", devid);
+		}
 		int         axis = ie_event->axis.axis;
 		int         value = ie_event->axis.value;
-		in_axisinfo_t *ai;
-		if (db) {
-			ai = &db->axis_info[axis];
-		} else {
-			in_axisinfo_t axis_info;
-			IN_GetAxisInfo (devid, axis, &axis_info);
-			ai = &axis_info;
-		}
+		uint32_t    base = in_keyhelp_devices[*ind];
+		in_axisinfo_t *ai = &in_keyhelp_axisinfo[base + axis];;
+
 		if (!ai->min && !ai->max) {
 			if (abs (value) > keyhelp_axis_threshold) {
 				num = axis;
 				type = "axis";
 			}
 		} else {
-			//FIXME does not work if device has not been connected (db is null)
 			int         diff = abs (value - ai->value);
 			if (diff * 5 >= ai->max - ai->min) {
 				num = axis;
@@ -332,6 +337,13 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 	IE_Set_Focus (in_keyhelp_saved_handler);
 	Sys_Printf ("%s (%s %s) %s %d (%s)\n", bind_name, devname, id, type, num,
 				name ? name : "");
+	if (in_keyhelp_hunk_mark_check != Hunk_LowMark (nullptr)) {
+		Sys_Error ("can't free keyhelp device info");
+	}
+	Hunk_FreeToLowMark (nullptr, in_keyhelp_hunk_mark);
+	in_keyhelp_hunk_mark = in_keyhelp_hunk_mark_check = 0;
+	in_keyhelp_devices = nullptr;
+	in_keyhelp_axisinfo = nullptr;
 	return 1;
 }
 
@@ -713,6 +725,32 @@ keyhelp_f (void)
 			keyhelp_axis_threshold = threshold;
 		}
 	}
+	size_t num_dev = known_devices.size;
+	int num_axes = 0;
+	for (size_t i = 0; i < num_dev; i++) {
+		int     devid = known_devices.a[i];
+		int         count;
+		IN_AxisInfo (devid, 0, &count);
+		num_axes += count;
+	}
+	size_t size = sizeof (uint32_t[known_devices.size])
+				+ sizeof (in_axisinfo_t[num_axes]);
+	in_keyhelp_hunk_mark = Hunk_LowMark (nullptr);
+	in_keyhelp_devices = Hunk_AllocName (nullptr, size, "keyhelp axes");
+	in_keyhelp_hunk_mark_check = Hunk_LowMark (nullptr);
+	in_keyhelp_axisinfo = (in_axisinfo_t *) &in_keyhelp_devices[num_dev];
+	num_axes = 0;
+	for (size_t i = 0; i < known_devices.size; i++) {
+		int     devid = known_devices.a[i];
+		auto    axisinfo = &in_keyhelp_axisinfo[num_axes];
+		in_keyhelp_devices[i] = num_axes;
+
+		int         count;
+		IN_AxisInfo (devid, 0, &count);
+		IN_AxisInfo (devid, axisinfo, &count);
+		num_axes += count;
+	}
+
 	in_keyhelp_saved_handler = IE_Get_Focus ();
 	IE_Set_Focus (in_keyhelp_handler);
 	Sys_Printf ("Press button or move axis to identify\n");
