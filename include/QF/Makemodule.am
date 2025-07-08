@@ -2,6 +2,7 @@ include_qf = \
 	include/QF/alloc.h \
 	include/QF/animation.h \
 	include/QF/backtrace.h \
+	include/QF/base64.h \
 	include/QF/bspfile.h \
 	include/QF/cbuf.h \
 	include/QF/cdaudio.h \
