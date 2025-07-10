@@ -2974,6 +2974,7 @@ hodge_dual (const expr_t *e, bool undual)
 		return error (e, "cannot take the %s of a scalar without context",
 					  undual ? "undual" : "dual");
 	}
+	e = algebra_optimize (e);
 	auto layout = &algebra->layout;
 
 	const expr_t *a[layout->count] = {};
