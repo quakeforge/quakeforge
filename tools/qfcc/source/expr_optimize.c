@@ -751,7 +751,7 @@ optimize_core (const expr_t *expr)
 		}
 		expr = fold_constants (expr);
 		expr = edag_add_expr (expr);
-	} else {
+	} else if (expr->type == ex_expr || expr->type == ex_uexpr) {
 		auto type = get_type (expr);
 		const expr_t *pos[2] = { expr };
 		const expr_t *neg[1] = {};

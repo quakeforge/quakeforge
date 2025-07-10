@@ -527,6 +527,20 @@ is_ortho (const expr_t *expr)
 	return c[0] == 1 && c[1] == 0 && (neg == 1 || neg == 2);
 }
 
+static const expr_t *
+retype_expr (const type_t *type, const expr_t *expr)
+{
+	if (expr->type != ex_expr && expr->type != ex_uexpr) {
+		expr = cast_expr (type, expr);
+		return edag_add_expr (expr);
+	}
+	scoped_src_loc (expr);
+	auto new = new_expr ();
+	*new = *expr;
+	new->expr.type = type;
+	return edag_add_expr (new);
+}
+
 static void
 scatter_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
 {
@@ -562,7 +576,7 @@ gather_factors (const type_t *type, int op, const expr_t **factors, int count)
 		internal_error (0, "no factors to collect");
 	}
 	if (count == 1) {
-		return *factors;
+		return retype_expr (type, *factors);
 	}
 	const expr_t *a, *b;
 	if (count == 2) {
@@ -614,11 +628,17 @@ sort_factors (const type_t *type, const expr_t *e)
 static const expr_t *
 sum_expr_low (const type_t *type, int op, const expr_t *a, const expr_t *b)
 {
+	if (!a && !b) {
+		return nullptr;
+	}
 	if (!a) {
-		return op == '-' ? neg_expr (b) : b;
+		if (op == '-') {
+			b = neg_expr (b);
+		}
+		return retype_expr (type, b);
 	}
 	if (!b) {
-		return a;
+		return retype_expr (type, a);
 	}
 	if (op == '-' && a == b) {
 		return nullptr;
