@@ -620,10 +620,17 @@ print_jump (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *n
 	int         indent = level * 2 + 2;
 
 	_print_expr (dstr, e->branch.target, level, id, next);
+	if (e->branch.index) {
+		_print_expr (dstr, e->branch.index, level, id, next);
+	}
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   "jump", e->loc.line);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 			   e->branch.target);
+	if (e->branch.index) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   e->branch.index);
+	}
 }
 
 static void
