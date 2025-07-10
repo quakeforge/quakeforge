@@ -78,6 +78,9 @@ rescale (const expr_t *expr, const expr_t *target, const expr_t *remove)
 static const expr_t *
 remult (const expr_t *expr, const expr_t *remove)
 {
+	if (expr == remove) {
+		return nullptr;
+	}
 	if (!is_mult (expr)) {
 		internal_error (expr, "not a mult expression");
 	}
@@ -101,6 +104,9 @@ remult_scale (const expr_t *expr, const expr_t *remove)
 {
 	auto mult = remult (expr->expr.e2, remove);
 	auto scalee = expr->expr.e1;
+	if (!mult) {
+		return scalee;
+	}
 	auto type = get_type (expr);
 	auto new = typed_binary_expr (type, QC_SCALE, scalee, mult);
 	return edag_add_expr (new);
@@ -220,6 +226,9 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 static bool __attribute__((pure))
 mult_has_factor (const expr_t *mult, const expr_t *factor)
 {
+	if (mult == factor) {
+		return true;
+	}
 	if (!is_mult (mult)) {
 		return false;
 	}
@@ -236,6 +245,9 @@ mult_has_factor (const expr_t *mult, const expr_t *factor)
 static bool __attribute__((pure))
 has_const_factor (const expr_t *mult)
 {
+	if (is_constant (mult)) {
+		return true;
+	}
 	if (!is_mult (mult)) {
 		return false;
 	}
