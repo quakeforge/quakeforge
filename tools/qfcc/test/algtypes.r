@@ -14,6 +14,7 @@ typedef @algebra(float(4,1)) CGA;
 
 typedef @algebra(double(2,0,1)) PGA2;
 PGA2 pga2;
+PGA2.bvec point;
 
 int
 main (void)
@@ -46,7 +47,7 @@ main (void)
 		auto l2 = 3 * e1 - e2 + 10 * e0;
 		auto p = l1∧l2;
 //		pga2 = p + (1 + p)∧l1;
-		pga2 = (l1 • p)*l1;
+		point = (l1 • p)*l1;
 	}
 	printf ("%q\n", plane);
 	printf ("%g\n", pgaf1.scalar);
