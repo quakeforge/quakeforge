@@ -509,6 +509,12 @@ is_cross (const expr_t *expr)
 	return (expr && expr->type == ex_expr && (expr->expr.op == QC_CROSS));
 }
 
+bool __attribute__((pure))
+is_dot (const expr_t *expr)
+{
+	return (expr && expr->type == ex_expr && (expr->expr.op == QC_DOT));
+}
+
 static bool __attribute__((pure))
 is_ortho (const expr_t *expr)
 {
