@@ -503,6 +503,18 @@ is_cross (const expr_t *expr)
 	return (expr && expr->type == ex_expr && (expr->expr.op == QC_CROSS));
 }
 
+static bool __attribute__((pure))
+is_ortho (const expr_t *expr)
+{
+	if (!expr || expr->type != ex_swizzle
+		|| type_width (get_type (expr->swizzle.src)) != 2) {
+		return false;
+	}
+	auto c = expr->swizzle.source;
+	unsigned neg = expr->swizzle.neg;
+	return c[0] == 1 && c[1] == 0 && (neg == 1 || neg == 2);
+}
+
 static void
 scatter_factors_core (const expr_t *prod, const expr_t **factors, int *ind)
 {
@@ -589,14 +601,21 @@ sort_factors (const type_t *type, const expr_t *e)
 static const expr_t *
 sum_expr_low (const type_t *type, int op, const expr_t *a, const expr_t *b)
 {
+	if (!a && !b) {
+		return nullptr;
+	}
 	if (!a) {
+		b = cast_expr (type, b);
+		b = edag_add_expr (b);
 		return op == '-' ? neg_expr (b) : b;
 	}
 	if (!b) {
+		a = cast_expr (type, a);
+		a = edag_add_expr (a);
 		return a;
 	}
 	if (op == '-' && a == b) {
-		return 0;
+		return nullptr;
 	}
 
 	auto sum = typed_binary_expr (type, op, a, b);
@@ -956,9 +975,19 @@ reject_dot (const expr_t *a, const expr_t *b)
 			return true;
 		}
 	}
+	if (is_ortho (a)) {
+		if (b == traverse_scale (a->swizzle.src)) {
+			return true;
+		}
+	}
 	if (is_cross (b)) {
 		if (a == traverse_scale (b->expr.e1)
 			|| a == traverse_scale (b->expr.e2)) {
+			return true;
+		}
+	}
+	if (is_ortho (b)) {
+		if (a == traverse_scale (b->swizzle.src)) {
 			return true;
 		}
 	}
@@ -3130,6 +3159,7 @@ assign_extend (expr_t *block, const expr_t *dst, const expr_t *src)
 const expr_t *
 algebra_assign_expr (const expr_t *dst, const expr_t *src)
 {
+	src = algebra_optimize (src);
 	auto srcType = get_type (src);
 	auto dstType = get_type (dst);
 
