@@ -461,6 +461,12 @@ is_mult (const expr_t *expr)
 			&& (expr->expr.op == '*' || expr->expr.op == QC_HADAMARD));
 }
 
+bool
+is_quot (const expr_t *expr)
+{
+	return (expr && expr->type == ex_expr && expr->expr.op == '/');
+}
+
 int
 count_terms (const expr_t *expr)
 {
@@ -536,7 +542,8 @@ void
 scatter_factors (const expr_t *prod, const expr_t **factors)
 {
 	if (!is_mult (prod)) {
-		internal_error (prod, "scatter_factors with no product");
+		factors[0] = prod;
+		return;
 	}
 	int         ind = 0;
 	scatter_factors_core (prod, factors, &ind);
@@ -2774,8 +2781,9 @@ commutator_product (const expr_t *e1, const expr_t *e2)
 {
 	auto ab = geometric_product (e1, e2);
 	auto ba = geometric_product (e2, e1);
-	return algebra_binary_expr ('/', multivector_sum ('-', ab, ba),
-								new_int_expr (2, false));
+	auto sub = multivector_sum ('-', ab, ba);
+	sub = algebra_optimize (sub);
+	return algebra_binary_expr ('/', sub, new_int_expr (2, false));
 }
 
 static bool

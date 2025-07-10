@@ -43,16 +43,19 @@
 static const expr_t *optimize_core (const expr_t *expr);
 static const expr_t skip;
 
-static void
+static int
 clean_skips (const expr_t **expr_list)
 {
 	auto dst = expr_list;
+	int count = 0;
 	for (auto src = dst; *src; src++) {
 		if (*src != &skip) {
 			*dst++ = *src;
+			count++;
 		}
 	}
 	*dst = nullptr;
+	return count;
 }
 
 static const expr_t *
@@ -196,6 +199,9 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 
 	auto type = get_type (com);
 	auto col = gather_terms (type, com_adds, com_subs);
+	if (!col) {
+		return col;
+	}
 	if (is_neg (col)) {
 		col = neg_expr (col);
 		right = !right;
@@ -581,6 +587,52 @@ optimize_core (const expr_t *expr)
 		optimize_mult_products (adds, subs);
 
 		expr = gather_terms (type, adds, subs);
+	} else if (is_quot (expr)) {
+		auto type = get_type (expr);
+		auto num = expr->expr.e1;
+		auto den = expr->expr.e2;
+		auto num_type = get_type (num);
+		auto den_type = get_type (den);
+		int num_count = count_factors (num) + 1;
+		int den_count = count_factors (den) + 1;
+		const expr_t *num_fac[num_count + 1] = {};
+		const expr_t *den_fac[den_count + 1] = {};
+		scatter_factors (num, num_fac);
+		scatter_factors (den, den_fac);
+
+		for (auto n = num_fac; *n; n++) {
+			for (auto d = den_fac; *d; d++) {
+				if (*n == *d) {
+					*n = &skip;
+					*d = &skip;
+					break;
+				}
+			}
+		}
+		num_count = clean_skips (num_fac);
+		den_count = clean_skips (den_fac);
+
+		if (!num_count && !den_count) {
+			expr = edag_add_expr (new_int_expr (1, true));
+			return cast_expr (type, expr);
+		}
+
+		if (num_count) {
+			if (den_count) {
+				num = gather_factors (num_type, '*', num_fac, num_count);
+			} else {
+				expr = gather_factors (type, '*', num_fac, num_count);
+			}
+		} else {
+			num = edag_add_expr (new_int_expr (1, true));
+			num = cast_expr (num_type, num);
+		}
+		if (den_count) {
+			den = gather_factors (den_type, '*', den_fac, den_count);
+			expr = typed_binary_expr (type, '/', num, den);
+		}
+		expr = fold_constants (expr);
+		expr = edag_add_expr (expr);
 	}
 	return expr;
 }
