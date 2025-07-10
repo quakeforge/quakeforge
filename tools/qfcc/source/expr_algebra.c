@@ -601,17 +601,10 @@ sort_factors (const type_t *type, const expr_t *e)
 static const expr_t *
 sum_expr_low (const type_t *type, int op, const expr_t *a, const expr_t *b)
 {
-	if (!a && !b) {
-		return nullptr;
-	}
 	if (!a) {
-		b = cast_expr (type, b);
-		b = edag_add_expr (b);
 		return op == '-' ? neg_expr (b) : b;
 	}
 	if (!b) {
-		a = cast_expr (type, a);
-		a = edag_add_expr (a);
 		return a;
 	}
 	if (op == '-' && a == b) {
@@ -682,6 +675,10 @@ gather_terms (const type_t *type, const expr_t **adds, const expr_t **subs)
 		b = sum_expr_low (type, '+', b, *s);
 	}
 	auto sum = sum_expr_low (type, '-', a, b);
+	if (sum && get_type (sum) != type) {
+		sum = cast_expr (type, sum);
+		sum = edag_add_expr (sum);
+	}
 	return sum;
 }
 
