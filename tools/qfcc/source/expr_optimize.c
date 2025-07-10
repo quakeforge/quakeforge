@@ -563,6 +563,30 @@ cancel_terms (const expr_t **adds, const expr_t **subs)
 	clean_skips (subs);
 }
 
+static bool
+cmp_scalar_vector (const expr_t *scalar, const expr_t *vector)
+{
+	if (!is_constant (scalar) || !is_constant (vector)) {
+		return false;
+	}
+	auto scalar_type = get_type (scalar);
+	auto vector_type = get_type (vector);
+	int scalar_size = type_size (scalar_type);
+	int vector_size = type_size (vector_type);
+	pr_type_t scalar_val[scalar_size];
+	pr_type_t vector_val[vector_size];
+	value_store (scalar_val, scalar_type, scalar);
+	value_store (vector_val, vector_type, vector);
+	size_t size = scalar_size * sizeof (pr_type_t);
+	for (int i = 0, j = 0; i < vector_size / scalar_size;
+		 i++, j += scalar_size) {
+		if (memcmp (scalar_val, &vector_val[j], size) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static const expr_t *
 optimize_core (const expr_t *expr)
 {
@@ -606,6 +630,27 @@ optimize_core (const expr_t *expr)
 					*n = &skip;
 					*d = &skip;
 					break;
+				}
+				if (is_scale (*n)) {
+					auto n_scale = (*n)->expr.e2;
+					if (is_scale (*d) && n_scale == (*d)->expr.e2) {
+						*n = (*n)->expr.e1;
+						*d = (*d)->expr.e1;
+						break;
+					}
+					if (cmp_scalar_vector (n_scale, *d)) {
+						*n = (*n)->expr.e1;
+						*d = &skip;
+						break;
+					}
+				}
+				if (is_scale (*d)) {
+					auto d_scale = (*d)->expr.e2;
+					if (cmp_scalar_vector (d_scale, *n)) {
+						*n = &skip;
+						*d = (*d)->expr.e1;
+						break;
+					}
 				}
 			}
 		}
