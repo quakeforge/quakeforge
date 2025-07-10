@@ -82,7 +82,8 @@ cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 
 	do_conversion (dst_value, dstType, src_value, srcType, expr);
 
-	return new_value_expr (new_type_value (dstType, dst_value), false);
+	auto e = new_value_expr (new_type_value (dstType, dst_value), false);
+	return edag_add_expr (e);
 }
 
 const expr_t *
@@ -94,14 +95,14 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		return e;
 
 	if (is_nil (e)) {
-		return convert_nil (e, dstType);
+		return edag_add_expr (convert_nil (e, dstType));
 	}
 
 	srcType = get_type (e);
 
 	if (is_reference (srcType)) {
 		srcType = dereference_type (srcType);
-		e = pointer_deref (e);
+		e = edag_add_expr (pointer_deref (e));
 	}
 
 	if (type_same (dstType, srcType)) {
@@ -114,11 +115,11 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	}
 	if ((is_pointer (dstType) && is_func (srcType))
 		|| (is_func (dstType) && is_pointer (srcType))) {
-		return new_alias_expr (dstType, e);
+		return edag_add_expr (new_alias_expr (dstType, e));
 	}
 	if ((is_pointer (dstType) && is_string (srcType))
 		|| (is_string (dstType) && is_pointer (srcType))) {
-		return new_alias_expr (dstType, e);
+		return edag_add_expr (new_alias_expr (dstType, e));
 	}
 	if (is_enum (dstType) && is_boolean (srcType)) {
 		expr_t     *enum_zero, *enum_one;
@@ -129,13 +130,13 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	if ((is_handle (dstType) && is_integral (srcType))
 		|| (is_integral (dstType) && is_handle (srcType))) {
 		if (type_size (dstType) == type_size (srcType)) {
-			return new_alias_expr (dstType, e);
+			return edag_add_expr (new_alias_expr (dstType, e));
 		}
 		return error (e, "cast to handle of different size");
 	}
 	if (is_boolean (srcType) && srcType->type == dstType->type) {
 		e = new_alias_expr (dstType, e);
-		return e;
+		return edag_add_expr (e);
 	}
 	if (is_algebra (dstType) || is_algebra (srcType)) {
 		const expr_t *c;
@@ -159,14 +160,14 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		if (current_target.cast_expr) {
 			auto c = current_target.cast_expr (dstType, e);
 			if (c) {
-				return c;
+				return edag_add_expr (c);
 			}
 		}
 		return cast_error (e, srcType, dstType);
 	}
 	if (is_array (srcType)) {
 		dstType = dereference_type (dstType);
-		return address_expr (e, dstType);
+		return edag_add_expr (address_expr (e, dstType));
 	}
 	if (is_short (srcType)) {
 		e = new_int_expr (expr_short (e), false);
@@ -191,5 +192,5 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	} else {
 		c = (expr_t *) new_alias_expr (dstType, e);
 	}
-	return c;
+	return edag_add_expr (c);
 }

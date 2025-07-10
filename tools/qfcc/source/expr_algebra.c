@@ -3058,10 +3058,10 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 		if (is_algebra (srcType)) {
 			algebra = algebra_get (srcType);
 			auto alias = edag_add_expr (new_alias_expr (algebra->type, e));
-			return edag_add_expr (cast_expr (dstType, alias));
+			return cast_expr (dstType, alias);
 		} else {
 			auto type = vector_type (algebra->type, type_width (dstType));
-			auto cast = edag_add_expr (cast_expr (type, e));
+			auto cast = cast_expr (type, e);
 			cast = fold_constants (new_alias_expr (dstType, cast));
 			return edag_add_expr (cast);
 		}

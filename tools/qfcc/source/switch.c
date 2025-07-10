@@ -311,6 +311,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, const expr_t *sw_val,
 		low_label = new_label_expr ();
 	}
 
+	edag_flush ();
 	test = binary_expr (op, sw_val, tree->low);
 
 	test = assign_expr (temp, test);
