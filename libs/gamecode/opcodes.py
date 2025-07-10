@@ -91,7 +91,7 @@ load_fmt =  [
 ]
 branch_fmt = [
     "branch %sa (%Oa)",
-    "*%Ga",
+    "*%Ga[%Gb]",
     "%Ga[%sb]",
     "%Ga[%Gb]",
 ]
