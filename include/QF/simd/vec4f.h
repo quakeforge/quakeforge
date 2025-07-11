@@ -98,14 +98,14 @@ GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
  *
  * That is, [-x, -y, -z, w].
  */
-GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
-GNU89INLINE inline vec4f_t qexpf (vec4f_t q) __attribute__((const));
-GNU89INLINE inline vec4f_t loadvec3f (const float *v3) __attribute__((pure));
-GNU89INLINE inline vec4f_t loadxyzf (vec4f_t v) __attribute__((pure));
-GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
-GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
-GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
-GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
+VEC4FINLINE vec4f_t qconjf (vec4f_t q) __attribute__((const));
+VEC4FINLINE vec4f_t qexpf (vec4f_t q) __attribute__((const));
+VEC4FINLINE vec4f_t loadvec3f (const float *v3) __attribute__((pure));
+VEC4FINLINE vec4f_t loadxyzf (vec4f_t v) __attribute__((pure));
+VEC4FINLINE void storevec3f (float *v3, vec4f_t v4);
+VEC4FINLINE vec4f_t normalf (vec4f_t v) __attribute__((pure));
+VEC4FINLINE vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
+VEC4FINLINE vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
 VEC4FINLINE vec4f_t minv4f (vec4f_t a, vec4f_t b) __attribute__((const));
 VEC4FINLINE vec4f_t maxv4f (vec4f_t a, vec4f_t b) __attribute__((const));
 
@@ -116,12 +116,7 @@ VEC4FINLINE vec4f_t maxv4f (vec4f_t a, vec4f_t b) __attribute__((const));
 #define VEC4FINLINE VISIBLE
 #endif
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vabs4f (vec4f_t v)
 {
 	const uint32_t  nan = ~0u >> 1;
@@ -129,12 +124,7 @@ vabs4f (vec4f_t v)
 	return (vec4f_t) ((vec4i_t) v & abs);
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vsqrt4f (vec4f_t v)
 {
 #ifdef __aarch64__
@@ -149,12 +139,7 @@ vsqrt4f (vec4f_t v)
 #endif
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vceil4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
@@ -169,12 +154,7 @@ vceil4f (vec4f_t v)
 #endif
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vfloor4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
@@ -189,12 +169,7 @@ vfloor4f (vec4f_t v)
 #endif
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vtrunc4f (vec4f_t v)
 {
 #ifndef __SSE4_1__
@@ -209,12 +184,7 @@ vtrunc4f (vec4f_t v)
 #endif
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 crossf (vec4f_t a, vec4f_t b)
 {
 	vec4f_t c = a * (vec4f_t) {b[1], b[2], b[0], b[3]}
@@ -222,12 +192,7 @@ crossf (vec4f_t a, vec4f_t b)
 	return (vec4f_t) {c[1], c[2], c[0], c[3]};
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 dotf (vec4f_t a, vec4f_t b)
 {
 	vec4f_t c = a * b;
@@ -236,12 +201,7 @@ dotf (vec4f_t a, vec4f_t b)
 	return c;
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 qmulf (vec4f_t a, vec4f_t b)
 {
 	// results in [2*as*bs, as*b + bs*a + a x b] ([scalar, vector] notation)
@@ -253,12 +213,7 @@ qmulf (vec4f_t a, vec4f_t b)
 	return c - d;
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 qvmulf (vec4f_t q, vec4f_t v)
 {
 	float s = q[3];
@@ -276,12 +231,7 @@ qvmulf (vec4f_t q, vec4f_t v)
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 vqmulf (vec4f_t v, vec4f_t q)
 {
 	float s = q[3];
@@ -299,12 +249,7 @@ vqmulf (vec4f_t v, vec4f_t q)
 	return (s * s - qq) * v + 2 * (qv * q - s * c);
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 qrotf (vec4f_t a, vec4f_t b)
 {
 	vec4f_t ma = vsqrt4f (dotf (a, a));
@@ -317,23 +262,13 @@ qrotf (vec4f_t a, vec4f_t b)
 	return q;
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 qconjf (vec4f_t q)
 {
 	return (vec4f_t) { -q[0], -q[1], -q[2], q[3] };
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 qexpf (vec4f_t q)
 {
 	vec4f_t     th = magnitude3f (q);
@@ -348,12 +283,7 @@ qexpf (vec4f_t q)
 	return n;
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 loadvec3f (const float *v3)
 {
 	vec4f_t v4;
@@ -362,12 +292,7 @@ loadvec3f (const float *v3)
 	return v4;
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 loadxyzf (vec4f_t v)
 {
 	constexpr int32_t nan = -1;
@@ -375,12 +300,7 @@ loadxyzf (vec4f_t v)
 	return (vec4f_t) ((vec4i_t) v & xyz);
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-void
+VEC4FINLINE void
 storevec3f (float *v3, vec4f_t v4)
 {
 	v3[0] = v4[0];
@@ -388,34 +308,19 @@ storevec3f (float *v3, vec4f_t v4)
 	v3[2] = v4[2];
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 normalf (vec4f_t v)
 {
 	return v / vsqrt4f (dotf (v, v));
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 magnitudef (vec4f_t v)
 {
 	return vsqrt4f (dotf (v, v));
 }
 
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4f_t
+VEC4FINLINE vec4f_t
 magnitude3f (vec4f_t v)
 {
 	v[3] = 0;
