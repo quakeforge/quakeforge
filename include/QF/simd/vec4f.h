@@ -37,6 +37,8 @@
 
 #include "QF/simd/types.h"
 
+#define VEC4FINLINE GNU89INLINE inline
+
 GNU89INLINE inline vec4f_t vabs4f (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vsqrt4f (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vceil4f (vec4f_t v) __attribute__((const));
@@ -104,6 +106,15 @@ GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
+VEC4FINLINE vec4f_t minv4f (vec4f_t a, vec4f_t b) __attribute__((const));
+VEC4FINLINE vec4f_t maxv4f (vec4f_t a, vec4f_t b) __attribute__((const));
+
+#undef VEC4FINLINE
+#ifndef IMPLEMENT_VEC4F_Funcs
+#define VEC4FINLINE GNU89INLINE inline
+#else
+#define VEC4FINLINE VISIBLE
+#endif
 
 #ifndef IMPLEMENT_VEC4F_Funcs
 GNU89INLINE inline
@@ -409,6 +420,20 @@ magnitude3f (vec4f_t v)
 {
 	v[3] = 0;
 	return vsqrt4f (dotf (v, v));
+}
+
+VEC4FINLINE vec4f_t
+minv4f (vec4f_t a, vec4f_t b)
+{
+	vec4i_t tmin = a < b;
+	return (vec4f_t) ((tmin & (vec4i_t) a) + (~tmin & (vec4i_t) b));
+}
+
+VEC4FINLINE vec4f_t
+maxv4f (vec4f_t a, vec4f_t b)
+{
+	vec4i_t tmax = a > b;
+	return (vec4f_t) ((tmax & (vec4i_t) a) + (~tmax & (vec4i_t) b));
 }
 
 vec4f_t __attribute__((pure))
