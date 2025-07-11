@@ -134,6 +134,11 @@ typedef struct colormap_s {
 	byte        bottom;
 } colormap_t;
 
+typedef struct ent_aabb_s {
+	vec3_t      mins;
+	vec3_t      maxs;
+} ent_aabb_t;
+
 #define ENTINLINE GNU89INLINE inline
 
 entqueue_t *EntQueue_New (int num_queues);

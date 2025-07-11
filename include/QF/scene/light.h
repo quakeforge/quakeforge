@@ -34,8 +34,11 @@
 #include "QF/darray.h"
 #include "QF/qtypes.h"
 #include "QF/simd/types.h"
+#include "QF/scene/entity.h"
 
 struct mod_brush_s;
+
+typedef struct scene_s scene_t;
 
 #define NumStyles 64
 
@@ -59,10 +62,12 @@ typedef struct lightingdata_s {
 	// illuminate the leafs visible to the player
 	struct set_s *pvs;
 	struct mleaf_s *leaf;	// the last leaf used to generate the pvs
-	struct scene_s *scene;
+	scene_t *scene;
+	ent_aabb_t  casters;
+	ent_aabb_t  receivers;
 } lightingdata_t;
 
-lightingdata_t *Light_CreateLightingData (struct scene_s *scene);
+lightingdata_t *Light_CreateLightingData (scene_t *scene);
 void Light_DestroyLightingData (lightingdata_t *ldata);
 void Light_ClearLights (lightingdata_t *ldata);
 void Light_AddLight (lightingdata_t *ldata, const light_t *light,
@@ -71,5 +76,6 @@ void Light_EnableSun (lightingdata_t *ldata);
 void Light_DecayLights (lightingdata_t *ldata, float frametime,
 						double realtime);
 void Light_LinkLight (lightingdata_t *ldata, uint32_t entid);
+void Light_CacluateBounds (lightingdata_t *ldata);
 
 #endif//__QF_scene_light_h

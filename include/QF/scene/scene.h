@@ -62,6 +62,10 @@ enum scene_components {
 	scene_lightleaf,
 	scene_lightid,
 
+	// aabb for shadow casters and recievers for directional lights (CSM)
+	scene_shadow_caster,
+	scene_shadow_receiver,
+
 	//FIXME these should probably be private to the sw renderer (and in a
 	//group, which needs to be implemented), but need to sort out a good
 	//scheme for semi-dynamic components

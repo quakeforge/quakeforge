@@ -56,6 +56,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 
 #include "QF/input/event.h"
 #include "QF/math/bitop.h"
+#include "QF/scene/light.h"
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
@@ -199,6 +200,43 @@ bi_refresh (progs_t *pr, void *_res)
 		auto animpool = reg->comp_pools + c_animation;
 		auto rendpool = reg->comp_pools + c_renderer;
 		Anim_Update (con_realtime, animpool, rendpool);
+		if (scene->lights) {
+			auto reg = scene->reg;
+			auto pool = &reg->comp_pools[scene->base + scene_renderer];
+			const uint32_t c_receiver = scene->base + scene_shadow_receiver;
+			const uint32_t c_caster = scene->base + scene_shadow_caster;
+			for (uint32_t i = 0; i < pool->count; i++) {
+				auto rend = &((renderer_t *) pool->data)[i];
+				if (!rend->model) {
+					continue;
+				}
+				uint32_t ent = pool->dense[i];
+				auto xform = Entity_Transform ((entity_t) {
+						.reg = scene->reg,
+						.id = ent,
+						.base = scene->base,
+				});
+				vec4f_t pos = Transform_GetWorldPosition (xform);
+				vec4f_t scale = Transform_GetWorldScale (xform);
+				ent_aabb_t aabb = {
+					.mins = { VectorExpand (rend->model->mins) },
+					.maxs = { VectorExpand (rend->model->maxs) },
+				};
+				storevec3f (aabb.mins, loadvec3f (aabb.mins) * scale + pos);
+				storevec3f (aabb.maxs, loadvec3f (aabb.maxs) * scale + pos);
+				if (!rend->onlyshadows) {
+					Ent_SetComponent (ent, c_receiver, scene->reg, &aabb);
+				} else {
+					Ent_RemoveComponent (ent, c_receiver, scene->reg);
+				}
+				if (!rend->noshadows) {
+					Ent_SetComponent (ent, c_caster, scene->reg, &aabb);
+				} else {
+					Ent_RemoveComponent (ent, c_caster, scene->reg);
+				}
+			}
+			Light_CacluateBounds (scene->lights);
+		}
 	}
 	SCR_UpdateScreen (camera, con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;

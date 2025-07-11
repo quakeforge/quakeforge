@@ -204,6 +204,14 @@ static const component_t scene_components[scene_comp_count] = {
 		.size = sizeof (uint32_t),
 		.name = "lightid",
 	},
+	[scene_shadow_caster] = {
+		.size = sizeof (ent_aabb_t),
+		.name = "shadow_caster",
+	},
+	[scene_shadow_receiver] = {
+		.size = sizeof (ent_aabb_t),
+		.name = "shadow_receiver",
+	},
 
 	[scene_sw_matrix] = {
 		.size = sizeof (mat4f_t),

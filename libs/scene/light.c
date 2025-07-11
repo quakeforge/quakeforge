@@ -7,6 +7,7 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/set.h"
+#include "QF/scene/scene.h"
 #include "QF/scene/entity.h"
 #include "QF/scene/light.h"
 #include "QF/scene/scene.h"
@@ -222,4 +223,35 @@ Light_DecayLights (lightingdata_t *ldata, float frametime, double realtime)
 			i--;
 		}
 	}
+}
+
+static void
+calc_bounds (ecs_pool_t *pool, ent_aabb_t *out_bounds)
+{
+	auto aabb = (ent_aabb_t *) pool->data;
+	vec4f_t bounds[2] = {
+		{ INFINITY, INFINITY, INFINITY },
+		{-INFINITY,-INFINITY,-INFINITY },
+	};
+	for (uint32_t i = 0; i < pool->count; i++, aabb++) {
+		auto mins = loadvec3f (aabb->mins);
+		auto maxs = loadvec3f (aabb->maxs);
+		bounds[0] = minv4f (bounds[0], mins);
+		bounds[1] = maxv4f (bounds[1], maxs);
+	}
+	storevec3f (out_bounds->mins, bounds[0]);
+	storevec3f (out_bounds->maxs, bounds[1]);
+}
+
+void
+Light_CacluateBounds (lightingdata_t *ldata)
+{
+	qfZoneScoped (true);
+	auto scene = ldata->scene;
+	auto reg = scene->reg;
+
+	calc_bounds (&reg->comp_pools[scene->base + scene_shadow_caster],
+				 &ldata->casters);
+	calc_bounds (&reg->comp_pools[scene->base + scene_shadow_receiver],
+				 &ldata->receivers);
 }
