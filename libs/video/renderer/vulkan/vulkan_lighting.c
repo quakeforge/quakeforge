@@ -550,7 +550,7 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 		vec4f_t width = cropBB[1] - cropBB[0];
 		vec4f_t scale = (vec4f_t) {2, 2,-1,-2} / width;
 		vec4f_t offset = 0.5 * (cropBB[1] + cropBB[0]) * scale;
-		offset[2] = -cropBB[0][2] * scale[2];
+		offset[2] = cropBB[1][2] * scale[2];
 
 		mat[i][0] = (vec4f_t) {scale[0], 0, 0, 0};
 		mat[i][1] = (vec4f_t) {0, scale[1], 0, 0};
