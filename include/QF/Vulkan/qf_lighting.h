@@ -161,9 +161,6 @@ typedef struct lightingctx_s {
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;
 
-	vec4f_t world_mins;
-	vec4f_t world_maxs;
-
 	uint32_t dynamic_base;
 	uint32_t dynamic_matrix_base;
 	uint32_t dynamic_count;

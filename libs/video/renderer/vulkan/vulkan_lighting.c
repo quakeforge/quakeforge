@@ -176,12 +176,12 @@ lighting_setup_shadow (const exprval_t **params, exprval_t *result,
 	auto brush = pass->brush;
 
 	if (brush->submodels) {
-		lctx->world_mins = loadvec3f (brush->submodels[0].mins);
-		lctx->world_maxs = loadvec3f (brush->submodels[0].maxs);
-	} else {
 		// FIXME better bounds
-		lctx->world_mins = (vec4f_t) { -512, -512, -512, 0 };
-		lctx->world_maxs = (vec4f_t) {  512,  512,  512, 0 };
+		lctx->ldata->casters = (ent_aabb_t) {
+			.mins = { VectorExpand (brush->submodels[0].mins) },
+			.maxs = { VectorExpand (brush->submodels[0].maxs) },
+		};
+		lctx->ldata->receivers = lctx->ldata->casters;
 	}
 	set_t leafs = SET_STATIC_INIT (brush->modleafs, alloca);
 	set_empty (&leafs);
@@ -429,41 +429,44 @@ cube_mats (mat4f_t *mat, vec4f_t position)
 	}
 }
 
-static void
-frustum_corners (vec4f_t corners[8], float minz, float maxz,
-				  const mat4f_t invproj)
+static vec4f_t
+vec_select (vec4i_t mask, vec4f_t a, vec4f_t b)
 {
-	for (int i = 0; i < 8; i++) {
-		vec4f_t p = {
-			(i & 1) ? 1 : -1,
-			(i & 2) ? 1 : -1,
-			(i & 4) ? maxz : minz,
-			1
-		};
-		p = mvmulf (invproj, p);
-		corners[i] = p / p[3];
-	}
+	return (vec4f_t) ((mask & (vec4i_t) a) | (~mask & (vec4i_t) b));
 }
 
 static vec4f_t
-vec_select (vec4i_t c, vec4f_t a, vec4f_t b)
+box_corner (ent_aabb_t box, int corner)
 {
-	return (vec4f_t) ((c & (vec4i_t) a) | (~c & (vec4i_t) b));
+	vec4f_t b_min = loadvec3f (box.mins);
+	vec4f_t b_max = loadvec3f (box.maxs);
+	b_max[3] = 1;
+	vec4i_t mask = {
+		((corner >> 0) & 1) - 1,
+		((corner >> 1) & 1) - 1,
+		((corner >> 2) & 1) - 1,
+	};
+	return vec_select (mask, b_min, b_max);
 }
 
-static void
-transform_corners (vec4f_t *mins, vec4f_t *maxs, const vec4f_t corners[8],
-				   const mat4f_t lightview)
+static ent_aabb_t
+transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 {
-	*mins = (vec4f_t) {  INFINITY,  INFINITY,  INFINITY,  INFINITY };
-	*maxs = (vec4f_t) { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
+	vec4f_t nb[] = {
+		{ INFINITY, INFINITY, INFINITY },
+		{-INFINITY,-INFINITY,-INFINITY },
+	};
 	for (int i = 0; i < 8; i++) {
-		vec4f_t p = mvmulf (lightview, corners[i]);
-		vec4i_t tmin = p <= *mins;
-		vec4i_t tmax = p >= *maxs;
-		*mins = vec_select (tmin, p, *mins);
-		*maxs = vec_select (tmax, p, *maxs);
+		vec4f_t pos = box_corner (bounds, i);
+		pos = mvmulf (mat, pos);
+		pos /= pos[3];
+		nb[0] = minv4f (nb[0], pos);
+		nb[1] = maxv4f (nb[1], pos);
 	}
+	return (ent_aabb_t) {
+		.mins = { VectorExpand (nb[0]) },
+		.maxs = { VectorExpand (nb[1]) },
+	};
 }
 
 static void
@@ -471,9 +474,11 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 {
 	auto mctx = ctx->matrix_context;
 	auto lctx = ctx->lighting_context;
+	auto ldata = lctx->ldata;
 	mat4f_t invproj;
 	QFV_InversePerspectiveTanFar (invproj, mctx->fov_x, mctx->fov_y,
 								  r_nearclip, r_farclip);
+	//QFV_InversePerspectiveTan (invproj, mctx->fov_x, mctx->fov_y, r_nearclip);
 	mat4f_t inv_z_up;
 	mat4ftranspose (inv_z_up, qfv_z_up);
 	mmulf (invproj, inv_z_up, invproj);
@@ -484,15 +489,6 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 	// light.
 	mat4fquat (lightview, qrotf (-position, ref_direction));
 
-	// Find the world corner closest to the light in order to ensure the
-	// entire world between the focal point and the light is included in the
-	// depth range
-	vec4i_t d = position >= (vec4f_t) {0, 0, 0, 0};
-	vec4f_t lightcorner = vec_select (d, lctx->world_maxs, lctx->world_mins);
-	// assumes position is a unit vector (which it will be for directional
-	// lights loaded from quake maps)
-	float corner_dist = dotf (lightcorner-r_refdef.camera[3], position)[0];
-
 	// Pre-swizzle the light view so it's done only once (and so the
 	// frustum bounds get swizzled correctly for creating the orthographic
 	// projection matrix).
@@ -501,21 +497,47 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 	// translation based on the bounds.
 	mmulf (lightview, qfv_z_up, lightview);
 
+	auto casters = transform_bounds (lightview, ldata->casters);
+	auto receivers = transform_bounds (lightview, ldata->receivers);
+
 	vec2f_t z_range[] = {
 		{ r_nearclip / 32,   1 },
 		{ r_nearclip / 256,  r_nearclip / 32 },
 		{ r_nearclip / 2048, r_nearclip / 256 },
 		{ 0,                 r_nearclip / 2048 },
 	};
+	ent_aabb_t corners = {
+		.mins = {-1,-1, 0 },	// z filled in later
+		.maxs = { 1, 1, 0 },
+	};
 	for (int i = 0; i < num_cascade; i++) {
-		vec4f_t     corners[8];
-		vec4f_t     fmin, fmax;
-		frustum_corners (corners, z_range[i][0], z_range[i][1], invproj);
-		transform_corners (&fmin, &fmax, corners, lightview);
-		// ensure evertything between the light and the far frustum corner
-		// is in the depth range
-		fmin[2] = min(fmin[2], -corner_dist);
-		QFV_OrthographicV (mat[i], fmin, fmax);
+		corners.mins[2] = z_range[i][1];
+		corners.maxs[2] = z_range[i][0];
+		auto split = transform_bounds (invproj, corners);
+		split = transform_bounds (lightview, split);
+
+		vec4f_t cropBB[2] = {
+			maxv4f (maxv4f (loadvec3f (casters.mins),
+							loadvec3f (receivers.mins)),
+					loadvec3f (split.mins)),
+			minv4f (minv4f (loadvec3f (casters.maxs),
+							loadvec3f (receivers.maxs)),
+					loadvec3f (split.maxs)),
+		};
+		cropBB[0][2] = min (casters.mins[2], split.mins[2]);
+		cropBB[1][2] = min (receivers.maxs[2], split.maxs[2]);
+		cropBB[1][3] = 1;
+
+		vec4f_t width = cropBB[1] - cropBB[0];
+		vec4f_t scale = (vec4f_t) {2, 2,-1,-2} / width;
+		vec4f_t offset = 0.5 * (cropBB[1] + cropBB[0]) * scale;
+		offset[2] = -cropBB[0][2] * scale[2];
+
+		mat[i][0] = (vec4f_t) {scale[0], 0, 0, 0};
+		mat[i][1] = (vec4f_t) {0, scale[1], 0, 0};
+		mat[i][2] = (vec4f_t) {0, 0, scale[2], 0};
+		mat[i][3] = -offset;
+
 		mmulf (mat[i], mat[i], lightview);
 	}
 }
