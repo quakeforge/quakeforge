@@ -470,15 +470,40 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 }
 
 static void
+calculate_splits (light_split_t *s)
+{
+	if (s->splits
+		&& s->num_splits == num_cascade + 1
+		&& s->lambda == 0.98 //FIXME cvar
+		&& s->far == r_farclip
+		&& s->near == r_nearclip) {
+		return;
+	}
+	free (s->splits);
+	s->num_splits = num_cascade + 1;
+	s->splits = malloc (sizeof (float[s->num_splits]));
+	s->far = r_farclip;
+	s->near = r_nearclip;
+	s->lambda = 0.98;//FIXME
+
+	float far_near = s->far - s->near;
+	float log_far_near = log (s->far) - log (s->near);
+	for (int i = 0; i < s->num_splits; i++) {
+		float logSplit = s->near * exp (i * log_far_near / num_cascade);
+		float linSplit = s->near + i * far_near / num_cascade;
+		s->splits[i] = s->near / Blend(linSplit, logSplit, s->lambda);
+	}
+}
+
+static void
 cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 {
 	auto mctx = ctx->matrix_context;
 	auto lctx = ctx->lighting_context;
 	auto ldata = lctx->ldata;
+
 	mat4f_t invproj;
-	QFV_InversePerspectiveTanFar (invproj, mctx->fov_x, mctx->fov_y,
-								  r_nearclip, r_farclip);
-	//QFV_InversePerspectiveTan (invproj, mctx->fov_x, mctx->fov_y, r_nearclip);
+	QFV_InversePerspectiveTan (invproj, mctx->fov_x, mctx->fov_y, r_nearclip);
 	mat4f_t inv_z_up;
 	mat4ftranspose (inv_z_up, qfv_z_up);
 	mmulf (invproj, inv_z_up, invproj);
@@ -500,19 +525,13 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 	auto casters = transform_bounds (lightview, ldata->casters);
 	auto receivers = transform_bounds (lightview, ldata->receivers);
 
-	vec2f_t z_range[] = {
-		{ r_nearclip / 32,   1 },
-		{ r_nearclip / 256,  r_nearclip / 32 },
-		{ r_nearclip / 2048, r_nearclip / 256 },
-		{ 0,                 r_nearclip / 2048 },
-	};
 	ent_aabb_t corners = {
 		.mins = {-1,-1, 0 },	// z filled in later
 		.maxs = { 1, 1, 0 },
 	};
 	for (int i = 0; i < num_cascade; i++) {
-		corners.mins[2] = z_range[i][1];
-		corners.maxs[2] = z_range[i][0];
+		corners.mins[2] = lctx->split.splits[i + 0];
+		corners.maxs[2] = lctx->split.splits[i + 1];
 		auto split = transform_bounds (invproj, corners);
 		split = transform_bounds (lightview, split);
 
@@ -644,6 +663,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	if (!lctx->scene || !lctx->scene->lights) {
 		return;
 	}
+
+	calculate_splits (&lctx->split);
 
 	auto sb = &bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
 	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
@@ -1421,9 +1442,12 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
 	fog[3] = -fog[3];
 
-	//FIXME dup of z_range (sort of)
+	//FIXME hard-coded count
 	vec4f_t depths = {
-		r_nearclip / 32, r_nearclip / 256, r_nearclip / 2048, 0,
+		lctx->split.splits[1],
+		lctx->split.splits[2],
+		lctx->split.splits[3],
+		lctx->split.splits[4],
 	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,

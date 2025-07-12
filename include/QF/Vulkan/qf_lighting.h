@@ -131,6 +131,13 @@ typedef struct light_control_s {
 typedef struct light_control_set_s
 	DARRAY_TYPE (light_control_t) light_control_set_t;
 
+typedef struct light_split_s {
+	float       near;
+	float       far;
+	float       lambda;
+	int         num_splits;	// num_cascade + 1
+	float      *splits;
+} light_split_t;
 
 typedef struct lightingctx_s {
 	lightingframeset_t frames;
@@ -160,6 +167,8 @@ typedef struct lightingctx_s {
 
 	VkBuffer splat_verts;
 	VkBuffer splat_inds;
+
+	light_split_t split;
 
 	uint32_t dynamic_base;
 	uint32_t dynamic_matrix_base;
