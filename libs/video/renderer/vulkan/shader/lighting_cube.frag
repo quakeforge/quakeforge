@@ -10,12 +10,9 @@ shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 	vec3 dir = pos.xyz - lpos;
 	vec3 adir = abs(dir);
 	adir = max (adir.yzx, adir.zxy);
-	uint ind = dir.x <= -adir.x ? 5
-			 : dir.x >=  adir.x ? 4
-			 : dir.y <= -adir.y ? 0
-			 : dir.y >=  adir.y ? 1
-			 : dir.z <= -adir.z ? 3
-			 : dir.z >=  adir.z ? 2 : 0;
+	uvec3 bits = mix (uvec3 (0), uvec3 (0x20, 0x01, 0x08), dir <= -adir)
+			   | mix (uvec3 (0), uvec3 (0x10, 0x02, 0x04), dir >=  adir);
+	uint  ind  = findMSB (bits.x | bits.y | bits.z);
 	vec4 p = shadow_mats[mat_id + ind] * vec4 (pos.xyz, 1);
 	p = p / p.w;
 	float depth = p.z;
