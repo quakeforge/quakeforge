@@ -239,14 +239,14 @@ static int axis_colors[] = { 12, 10, 9 };
 			[clipsView draw];
 		}
 	}
-	float s = sin((float)(realtime - double(1ul << 32)));
-	float c = cos((float)(realtime - double(1ul << 32)));
-	Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
-	Painter_AddBox ({300, 300}, {25, 5}, 5, {1, .8, 0, 1});
-	Painter_AddLine ({300, 300}, {400, 450}, 30 * s * s, {0.8, 0.4, 0.3, 1});
-	Painter_AddBezier ({300, 300}, {400 + 150 * c, 300 + 150 * s},
-					   {300 + 100 * (c * c - s * s), 450 + 100 * 2 * c * s},
-					   {400, 450}, 10 + 10 * s, {0.85, 0.5, 0.77, 1});
+	//float s = sin((float)(realtime - double(1ul << 32)));
+	//float c = cos((float)(realtime - double(1ul << 32)));
+	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
+	//Painter_AddBox ({300, 300}, {25, 5}, 5, {1, .8, 0, 1});
+	//Painter_AddLine ({300, 300}, {400, 450}, 30 * s * s, {0.8, 0.4, 0.3, 1});
+	//Painter_AddBezier ({300, 300}, {400 + 150 * c, 300 + 150 * s},
+	//				   {300 + 100 * (c * c - s * s), 450 + 100 * 2 * c * s},
+	//				   {400, 450}, 10 + 10 * s, {0.85, 0.5, 0.77, 1});
 	return self;
 }
 
