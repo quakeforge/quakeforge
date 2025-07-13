@@ -10,12 +10,9 @@ shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 	vec3 dir = pos.xyz - lpos;
 	vec3 adir = abs(dir);
 	adir = max (adir.yzx, adir.zxy);
-	uvec3 bits = mix (uvec3 (0), uvec3 (0x20, 0x01, 0x08), dir <= -adir)
-			   | mix (uvec3 (0), uvec3 (0x10, 0x02, 0x04), dir >=  adir);
+	uvec3 bits = mix (uvec3 (0), uvec3 (0x01, 0x02, 0x04), abs(dir) >= adir);
 	uint  ind  = findMSB (bits.x | bits.y | bits.z);
-	vec4 p = shadow_mats[mat_id + ind] * vec4 (pos.xyz, 1);
-	p = p / p.w;
-	float depth = p.z;
+	float depth = shadow_mats[mat_id][3][2] / abs(dir[ind]);
 	// convert from the quake frame to the cubemap frame
 	dir = dir.yzx * vec3 (-1, 1, 1);
 	return texture (shadow_map[map_id], vec4 (dir, layer), depth);
