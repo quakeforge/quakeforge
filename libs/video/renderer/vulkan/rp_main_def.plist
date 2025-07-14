@@ -650,7 +650,7 @@ properties = {
 			fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/compose.frag;
+				module = $builtin/compose.r;
 			};
 		};
 		layout = {
@@ -992,6 +992,12 @@ descriptorSetLayouts = {
 			},
 			{
 				binding = 3;
+				descriptorType = input_attachment;
+				descriptorCount = 1;
+				stageFlags = fragment;
+			},
+			{
+				binding = 4;
 				descriptorType = input_attachment;
 				descriptorCount = 1;
 				stageFlags = fragment;
@@ -1780,9 +1786,10 @@ renderpasses = {
 				attachments = {
 					input = {
 						color = shader_read_only_optimal;
-						light = shader_read_only_optimal;
 						emission = shader_read_only_optimal;
+						normal = shader_read_only_optimal;
 						position = shader_read_only_optimal;
+						light = shader_read_only_optimal;
 					};
 					color = {
 						output = {
@@ -1790,7 +1797,7 @@ renderpasses = {
 							blend = $additive_blend;
 						};
 					};
-					preserve = (depth, normal);
+					preserve = (depth);
 				};
 				pipelines = {
 					compose = {

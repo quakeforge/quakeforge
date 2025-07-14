@@ -8,6 +8,9 @@ FogBlend (vec4 color, vec4 fog)
 	return mix (fog_color, color, fog_factor);
 }
 
+#ifdef __RUAMOKO__
+@overload
+#endif
 vec4
 FogBlend (vec4 color, vec4 fog, float dist)
 {

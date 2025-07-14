@@ -109,7 +109,7 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/lighting_plane.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/compose.r.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose_fwd.frag.spvc"
 static
@@ -183,7 +183,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "lighting_none.frag", lighting_none_frag, sizeof (lighting_none_frag) },
 	{ "lighting_plane.frag", lighting_plane_frag,
 		sizeof (lighting_plane_frag) },
-	{ "compose.frag", compose_frag, sizeof (compose_frag) },
+	{ "compose.r", compose_r, sizeof (compose_r) },
 	{ "compose_fwd.frag", compose_fwd_frag, sizeof (compose_fwd_frag) },
 	{ "mesh.r", mesh_r, sizeof (mesh_r) },
 	{ "mesh_shadow.r", mesh_shadow_r, sizeof (mesh_shadow_r) },

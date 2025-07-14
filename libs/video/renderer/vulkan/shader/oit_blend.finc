@@ -1,5 +1,9 @@
 #include "oit.h"
 
+#ifdef __RUAMOKO__
+#include "image.h"
+#endif
+
 vec4
 BlendFrags (vec4 color)
 {
