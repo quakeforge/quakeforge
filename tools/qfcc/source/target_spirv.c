@@ -2570,12 +2570,39 @@ spirv_field_attributes (attribute_t **attributes, symbol_t *sym)
 	}
 }
 
+typedef struct {
+	const char *name;
+	const char *decoration;
+} spirv_qual_t;
+
+static spirv_qual_t spirv_qualifier_map[] = {
+	{ "centroid",      "Centroid" },
+	{ "patch",         "Patch" },
+	{ "sample",        "Sample" },
+	{ "flat",          "Flat" },
+	{ "noperspective", "NoPerspective" },
+	{ "smooth",        nullptr },	// default interpolation
+};
+
+static bool
+spirv_qualifier (const char *name, const char **qual)
+{
+	for (size_t i = 0; i < countof (spirv_qualifier_map); i++) {
+		if (strcmp (name, spirv_qualifier_map[i].name) == 0) {
+			*qual = spirv_qualifier_map[i].decoration;
+			return true;
+		}
+	}
+	return false;
+}
+
 static void
 spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 {
 	symbol_t   *sym = spec->sym;
 	for (auto a = attributes; *a; ) {
 		auto attr = *a;
+		const char *qual = nullptr;
 
 		int num_params = 0;
 		if (attr->params) {
@@ -2623,6 +2650,10 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
 		} else if (strcmp (attr->name, "binding") == 0) {
 			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
+		} else if (spirv_qualifier (attr->name, &qual)) {
+			if (qual) {
+				spirv_add_attr (&sym->attributes, qual, nullptr);
+			}
 		} else if (strcmp (attr->name, "input_attachment_index") == 0) {
 			spirv_add_int_attr (&sym->attributes, "InputAttachmentIndex",
 								params[0]);
