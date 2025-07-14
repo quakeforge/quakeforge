@@ -95,11 +95,7 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/light_entid.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/light_flat.vert.spvc"
-static
 #include "libs/video/renderer/vulkan/shader/light_splat.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/light_splat.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
 static
@@ -178,9 +174,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "debug.frag", debug_frag, sizeof (debug_frag) },
 	{ "entid.frag", entid_frag, sizeof (entid_frag) },
 	{ "light_entid.vert", light_entid_vert, sizeof (light_entid_vert) },
-	{ "light_flat.vert", light_flat_vert, sizeof (light_flat_vert) },
 	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
-	{ "light_splat.frag", light_splat_frag, sizeof (light_splat_frag) },
 	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
 	{ "light_oit.frag", light_oit_frag, sizeof (light_oit_frag) },
 	{ "lighting_cascade.frag", lighting_cascade_frag,

@@ -336,12 +336,8 @@ entid_src = $(vkshaderpath)/entid.frag
 entid_c = $(vkshaderpath)/entid.frag.spvc
 light_entid_src = $(vkshaderpath)/light_entid.vert
 light_entid_c = $(vkshaderpath)/light_entid.vert.spvc
-light_flat_src = $(vkshaderpath)/light_flat.vert
-light_flat_c = $(vkshaderpath)/light_flat.vert.spvc
 light_splatv_src = $(vkshaderpath)/light_splat.vert
 light_splatv_c = $(vkshaderpath)/light_splat.vert.spvc
-light_splatf_src = $(vkshaderpath)/light_splat.frag
-light_splatf_c = $(vkshaderpath)/light_splat.frag.spvc
 light_debug_src = $(vkshaderpath)/light_debug.frag
 light_debug_c = $(vkshaderpath)/light_debug.frag.spvc
 light_oit_src = $(vkshaderpath)/light_oit.frag
@@ -445,11 +441,7 @@ $(entid_c): $(entid_src)
 
 $(light_entid_c): $(light_entid_src) $(lighting_h)
 
-$(light_flat_c): $(light_flat_src) $(lighting_h)
-
 $(light_splatv_c): $(light_splatv_src) $(lighting_h)
-
-$(light_splatf_c): $(light_splatf_src) $(lighting_h)
 
 $(light_debug_c): $(light_debug_src) $(lighting_h)
 
@@ -509,7 +501,6 @@ vkshader_src_vert = \
 	$(bsp_gbufv_src) \
 	$(bsp_shadow_src) \
 	$(light_entid_src) \
-	$(light_flat_src) \
 	$(light_splatv_src) \
 	$(mesh_src) \
 	$(mesh_shadow_src) \
@@ -536,7 +527,6 @@ vkshader_src_frag = \
 	$(bsp_turbf_src) \
 	$(debug_src) \
 	$(entid_src) \
-	$(light_splatf_src) \
 	$(light_debug_src) \
 	$(light_oit_src) \
 	$(lighting_cascadef_src) \
@@ -641,9 +631,7 @@ EXTRA_DIST += \
 	$(debug_src) \
 	$(entid_src) \
 	$(light_entid_src) \
-	$(light_flat_src) \
 	$(light_splatv_src) \
-	$(light_splatf_src) \
 	$(light_debug_src) \
 	$(light_oit_src) \
 	$(lighting_cascadef_src) \
