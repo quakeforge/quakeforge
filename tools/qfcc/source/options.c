@@ -615,7 +615,6 @@ DecodeArgs (int argc, char **argv)
 	add_cpp_undef ("-fno-extended-identifiers");
 
 	cpp_define ("__QFCC__");
-	cpp_define ("__QUAKEC__");
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -841,10 +840,6 @@ DecodeArgs (int argc, char **argv)
 		target_set_backend ("ruamoko");
 	}
 	if (!options.traditional) {
-		// avanced=2 requires the Ruamoko ISA
-		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
-		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
-		cpp_define (ruamoko);
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
 		}

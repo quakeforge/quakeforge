@@ -60,6 +60,7 @@
 #include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/diagnostic.h"
@@ -3472,7 +3473,15 @@ rua_init (rua_ctx_t *ctx)
 {
 	if (!ctx->sub_parse) {
 		block_clear ();
+
+		cpp_define ("__QUAKEC__");
+
+		// avanced=2 requires the Ruamoko ISA
+		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
+		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
+		cpp_define (ruamoko);
 	}
+
 	ctx->language->initialized = true;
 }
 
