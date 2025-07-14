@@ -596,7 +596,7 @@ properties = {
 			fragment = {
 				stage = fragment;
 				name = main;
-				module = $builtin/compose_fwd.frag;
+				module = $builtin/compose_fwd.r;
 			};
 		};
 		layout = {

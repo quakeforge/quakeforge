@@ -1,14 +1,18 @@
-#version 450
-#extension GL_GOOGLE_include_directive : enable
-#extension GL_EXT_multiview : enable
+#include "general.h"
+
+[in("ViewIndex"), flat] int gl_ViewIndex;
+[in("FragCoord")] vec4 gl_FragCoord;
 
 #define OIT_SET 1
 #include "oit_blend.finc"
 
-layout (input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput color;
+#define COLOR_ONLY
+#include "input_attach.h"
 
-layout (location = 0) out vec4 frag_color;
+[out(0)] vec4 frag_color;
 
+[shader("Fragment")]
+[capability("MultiView")]
 void
 main (void)
 {
