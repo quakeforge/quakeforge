@@ -419,7 +419,19 @@ proc_symbol (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		return new_symbol_expr (sym);
 	}
-	return error (expr, "undefined symbol `%s`", expr->symbol->name);
+	specifier_t spec = {
+		.type = type_default,
+	};
+	sym = expr->symbol;
+	auto symtab = current_symtab;
+	for (auto s = symtab; s->parent; s = s->parent) {
+		if (s->type == stab_local) {
+			symtab = s;
+			break;
+		}
+	}
+	ctx->language->parse_declaration (spec, sym, nullptr, symtab, nullptr, ctx);
+	return error (expr, "undefined symbol `%s`", sym->name);
 }
 
 bool
