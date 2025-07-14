@@ -3476,7 +3476,18 @@ rua_init (rua_ctx_t *ctx)
 	ctx->language->initialized = true;
 }
 
+language_t lang_qc = {
+	.short_circuit = true,
+	.init = rua_init,
+	.parse = qc_yyparse,
+	.finish = qc_finish,
+	.parse_declaration = rua_parse_declaration,
+	.field_attributes = rua_field_attributes,
+	.var_attributes = rua_var_attributes,
+};
+
 language_t lang_ruamoko = {
+	//.always_overload = true,
 	.short_circuit = true,
 	.init = rua_init,
 	.parse = qc_yyparse,

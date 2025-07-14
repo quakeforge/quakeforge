@@ -546,7 +546,7 @@ file_language (const char *file, const char *ext)
 		{".r",		&lang_ruamoko},
 		{".c",		&lang_ruamoko},
 		{".m",		&lang_ruamoko},
-		{".qc",		&lang_ruamoko},
+		{".qc",		&lang_qc},
 		{".comp",	&lang_glsl_comp},
 		{".vert",	&lang_glsl_vert},
 		{".tesc",	&lang_glsl_tesc},

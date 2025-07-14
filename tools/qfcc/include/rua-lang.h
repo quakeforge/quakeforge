@@ -238,6 +238,7 @@ typedef struct rua_ctx_s {
 	bool        sub_parse;
 } rua_ctx_t;
 
+extern language_t lang_qc;
 extern language_t lang_ruamoko;
 extern language_t lang_pascal;
 
