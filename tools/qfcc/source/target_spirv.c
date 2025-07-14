@@ -2623,6 +2623,9 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 			spirv_add_int_attr (&sym->attributes, "DescriptorSet", params[0]);
 		} else if (strcmp (attr->name, "binding") == 0) {
 			spirv_add_int_attr (&sym->attributes, "Binding", params[0]);
+		} else if (strcmp (attr->name, "input_attachment_index") == 0) {
+			spirv_add_int_attr (&sym->attributes, "InputAttachmentIndex",
+								params[0]);
 		} else {
 			a = &attr->next;
 			continue;
