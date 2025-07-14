@@ -529,4 +529,6 @@ target_t ruamoko_target = {
 	.vector_compare = ruamoko_vector_compare,
 	.shift_op = ruamoko_shift_op,
 	.test_expr = ruamoko_test_expr,
+
+	.short_circuit = true,
 };

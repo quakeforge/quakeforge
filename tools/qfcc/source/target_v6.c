@@ -388,6 +388,8 @@ target_t v6_target = {
 	.vector_compare = v6_vector_compare,
 	.shift_op = v6_shift_op,
 	.test_expr = v6_test_expr,
+
+	.short_circuit = true,
 };
 
 target_t v6p_target = {
@@ -404,4 +406,6 @@ target_t v6p_target = {
 	.vector_compare = v6p_vector_compare,
 	.shift_op = v6p_shift_op,
 	.test_expr = v6p_test_expr,
+
+	.short_circuit = true,
 };

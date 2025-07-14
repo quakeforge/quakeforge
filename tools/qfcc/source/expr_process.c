@@ -82,6 +82,7 @@ proc_expr (const expr_t *expr, rua_ctx_t *ctx)
 	}
 
 	if (options.code.short_circuit
+		&& current_target.short_circuit
 		&& ctx->language->short_circuit) {
 		if (expr->expr.op == QC_AND || expr->expr.op == QC_OR) {
 			auto label = new_label_expr ();
@@ -650,7 +651,13 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 	auto true_type = get_type (true_expr);
 	auto false_type = get_type (false_expr);
 	if (!type_same (true_type, false_type)) {
-		if (type_promotes (true_type, false_type)) {
+		if (!true_expr->implicit && false_expr->implicit
+			&& type_assignable (true_type, false_type)) {
+			false_expr = cast_expr (true_type, false_expr);
+		} else if (!false_expr->implicit && true_expr->implicit
+				   && type_assignable (false_type, true_type)) {
+			true_expr = cast_expr (false_type, true_expr);
+		} else if (type_promotes (true_type, false_type)) {
 			false_expr = cast_expr (true_type, false_expr);
 		} else if (type_promotes (false_type, true_type)) {
 			true_expr = cast_expr (false_type, true_expr);

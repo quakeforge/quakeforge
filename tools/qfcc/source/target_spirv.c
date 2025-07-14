@@ -3070,4 +3070,6 @@ target_t spirv_target = {
 	.init_type_ok = spirv_types_logically_match,
 	.setup_intrinsic_symtab = spirv_setup_intrinsic_symtab,
 	.function_attr = spirv_function_attr,
+
+	.short_circuit = false,
 };

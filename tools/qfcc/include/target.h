@@ -70,6 +70,8 @@ typedef struct {
 
 	bool      (*function_attr) (const attribute_t *attr, metafunc_t *func);
 
+	bool        short_circuit;
+
 	unsigned    label_id;
 } target_t;
 
