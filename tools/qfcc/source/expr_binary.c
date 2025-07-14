@@ -950,9 +950,11 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 			return new_error_expr ();
 		}
 	} else {
-		if (type_width (t1) != type_width (t2)
-			|| type_cols(t1) != type_cols(t2)) {
-			return error (e1, "operand size mismatch in binary expression");
+		if (type_width (t1) != type_width (t2)) {
+			return error (e1, "operand width mismatch in binary expression");
+		}
+		if (type_cols(t1) != type_cols(t2)) {
+			return error (e1, "operand columns mismatch in binary expression");
 		}
 	}
 
