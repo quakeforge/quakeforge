@@ -1196,6 +1196,13 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner,
 
 	pr.loc = *loc;
 
+	if (ctx->language && !ctx->language->pre_initialized) {
+		ctx->language->pre_initialized = true;
+		if (ctx->language->pre_init) {
+			ctx->language->pre_init (ctx);
+		}
+	}
+
 	if (extra->preprocessor) {
 		auto state = extra->pre_state;
 		PRE_YYSTYPE lval = { .t = *tok };
@@ -1216,8 +1223,11 @@ qc_process (rua_extra_t *extra, int token, rua_tok_t *tok, yyscan_t scanner,
 				}
 				return token ? YYPUSH_MORE : 0;
 			}
-			if (!ctx->language->initialized && ctx->language->init) {
-				ctx->language->init (ctx);
+			if (!ctx->language->initialized) {
+				ctx->language->initialized = true;
+				if (ctx->language->init) {
+					ctx->language->init (ctx);
+				}
 			}
 			QC_YYSTYPE  lval = {};
 			token = qc_token (extra, &lval, tok, scanner, ctx);

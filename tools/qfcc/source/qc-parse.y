@@ -3469,22 +3469,32 @@ qc_finish (const char *file, rua_ctx_t *ctx)
 }
 
 static void
-rua_init (rua_ctx_t *ctx)
+rua_pre_init (rua_ctx_t *ctx)
 {
 	if (!ctx->sub_parse) {
-		block_clear ();
-
 		cpp_define ("__QUAKEC__");
 
 		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
 		cpp_define (ruamoko);
-	}
 
-	ctx->language->initialized = true;
+		if (options.code.spirv) {
+			const char *vulkan = va ("VULKAN=%d", 140);
+			cpp_define (vulkan);
+		}
+	}
+}
+
+static void
+rua_init (rua_ctx_t *ctx)
+{
+	if (!ctx->sub_parse) {
+		block_clear ();
+	}
 }
 
 language_t lang_qc = {
 	.short_circuit = true,
+	.pre_init = rua_pre_init,
 	.init = rua_init,
 	.parse = qc_yyparse,
 	.finish = qc_finish,
@@ -3496,6 +3506,7 @@ language_t lang_qc = {
 language_t lang_ruamoko = {
 	//.always_overload = true,
 	.short_circuit = true,
+	.pre_init = rua_pre_init,
 	.init = rua_init,
 	.parse = qc_yyparse,
 	.finish = qc_finish,

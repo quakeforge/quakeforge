@@ -206,10 +206,12 @@ const char *rua_directive_get_key (const void *dir, void *unused) __attribute__(
 const char *rua_keyword_get_key (const void *dir, void *unused) __attribute__((pure));
 
 typedef struct language_s {
+	bool        pre_initialized;
 	bool        initialized;
 	bool        always_overload;
 	bool        short_circuit;
 	bool        default_float;	// 1.0 defaults to float instead of double
+	void      (*pre_init) (rua_ctx_t *ctx);
 	void      (*init) (rua_ctx_t *ctx);
 	int       (*parse) (FILE *in, rua_ctx_t *ctx);
 	int       (*finish) (const char *file, rua_ctx_t *ctx);

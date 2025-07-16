@@ -35,7 +35,10 @@
 # include <strings.h>
 #endif
 
+#include "QF/va.h"
+
 #include "tools/qfcc/include/attribute.h"
+#include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/iface_block.h"
@@ -1220,6 +1223,13 @@ glsl_parse_vars (const char *var_src, rua_ctx_t *ctx)
 	glsl_parse_string (var_src, ctx);
 }
 
+void
+glsl_pre_init (rua_ctx_t *ctx)
+{
+	const char *vulkan = va ("VULKAN=%d", 100);
+	cpp_define (vulkan);
+}
+
 static void
 glsl_init_common (rua_ctx_t *ctx)
 {
@@ -1229,7 +1239,6 @@ glsl_init_common (rua_ctx_t *ctx)
 
 	image_init_types ();
 
-	ctx->language->initialized = true;
 	block_clear ();
 	rua_ctx_t rua_ctx = { .language = &lang_ruamoko, .sub_parse = true };
 	qc_parse_string (glsl_general_functions, &rua_ctx);

@@ -31,6 +31,8 @@
 #ifndef __cpp_h
 #define __cpp_h
 
+#include <stdio.h>
+
 struct dstring_s;
 
 void parse_cpp_name (void);
