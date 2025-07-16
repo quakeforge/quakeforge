@@ -302,7 +302,7 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 			arguments[i] = reference_param (p->type, arguments[i]);
 		}
 		for (int i = num_params; i < arg_count; i++) {
-			// assume reverences should always be passed by value
+			// assume references should always be passed by value
 			if (is_reference (get_type (arguments[i]))) {
 				arguments[i] = pointer_deref (arguments[i]);
 			}
