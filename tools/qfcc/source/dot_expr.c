@@ -449,6 +449,31 @@ print_decl (dstring_t *dstr, const expr_t *e, int level, int id,
 }
 
 static void
+print_loop (dstring_t *dstr, const expr_t *e, int level, int id,
+			const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->loop.test, level, id, next);
+	_print_expr (dstr, e->loop.body, level, id, next);
+	_print_expr (dstr, e->loop.continue_label, level, id, next);
+	_print_expr (dstr, e->loop.continue_body, level, id, next);
+	_print_expr (dstr, e->loop.break_label, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->loop.test);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->loop.body);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->loop.continue_label);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->loop.continue_body);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"b\"];\n", indent, "", e,
+			   e->loop.break_label);
+	dasprintf (dstr, "%*se_%p [label=\"loop\\n%d\"];\n", indent, "", e,
+			   e->loc.line);
+}
+
+static void
 print_select (dstring_t *dstr, const expr_t *e, int level, int id,
 			  const expr_t *next)
 {
@@ -1007,7 +1032,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_field] = print_field,
 		[ex_array] = print_array,
 		[ex_decl] = print_decl,
-		[ex_loop] = nullptr,
+		[ex_loop] = print_loop,
 		[ex_select] = print_select,
 		[ex_intrinsic] = print_intrinsic,
 		[ex_xvalue] = print_xvalue,
