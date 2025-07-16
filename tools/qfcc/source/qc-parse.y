@@ -3476,8 +3476,6 @@ rua_init (rua_ctx_t *ctx)
 
 		cpp_define ("__QUAKEC__");
 
-		// avanced=2 requires the Ruamoko ISA
-		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
 		const char *ruamoko = va ("__RUAMOKO__=%d", options.advanced);
 		cpp_define (ruamoko);
 	}

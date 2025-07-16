@@ -840,6 +840,9 @@ DecodeArgs (int argc, char **argv)
 		target_set_backend ("ruamoko");
 	}
 	if (!options.traditional) {
+		// avanced=2 requires the Ruamoko ISA
+		options.advanced = 2 - (options.code.progsversion < PROG_VERSION);
+
 		if (!options_user_set.code.ifstring) {
 			options.code.ifstring = false;
 		}
