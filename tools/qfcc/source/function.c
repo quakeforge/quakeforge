@@ -1504,20 +1504,20 @@ build_builtin_function (specifier_t spec, const char *ext_name,
 	func->locals->space = func->parameters->space;
 }
 
-void
+symbol_t *
 build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 						  rua_ctx_t *ctx)
 {
 	auto sym = function_symbol (spec, ctx);
 	if (sym->metafunc->state_expr) {
 		error (intrinsic, "intrinsic functions cannot have a state expression");
-		return;
+		return sym;
 	}
 	if (sym->metafunc->meta_type == mf_generic) {
 		auto genfunc = sym->metafunc->genfunc;
 		if (genfunc->expr) {
 			error (intrinsic, "%s already defined", sym->name);
-			return;
+			return sym;
 		}
 		genfunc->expr = intrinsic;
 		// intrinsic functions with extra (ie, explict) arguments are similar
@@ -1526,11 +1526,12 @@ build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
 	} else {
 		if (sym->metafunc->expr || sym->metafunc->func) {
 			error (intrinsic, "%s already defined", sym->name);
-			return;
+			return sym;
 		}
 		sym->metafunc->expr = intrinsic;
 		sym->metafunc->can_inline = intrinsic->intrinsic.extra;
 	}
+	return sym;
 }
 
 void

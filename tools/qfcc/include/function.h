@@ -230,8 +230,8 @@ void build_code_function (specifier_t spec, const expr_t *state_expr,
 						  expr_t *statements, rua_ctx_t *ctx);
 void build_builtin_function (specifier_t spec, const char *ext_name,
 							 const expr_t *bi_val);
-void build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
-							   rua_ctx_t *ctx);
+symbol_t *build_intrinsic_function (specifier_t spec, const expr_t *intrinsic,
+									rua_ctx_t *ctx);
 void emit_function (function_t *f, expr_t *e);
 void clear_functions (void);
 

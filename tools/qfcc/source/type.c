@@ -1030,6 +1030,7 @@ array_type (const type_t *aux, int size)
 		new->width = aux->width;
 	}
 	new->array.count = size;
+	new->property = array_property;
 	if (aux) {
 		return find_type (append_type (new, aux));
 	}

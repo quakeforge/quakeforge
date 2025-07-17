@@ -3506,6 +3506,7 @@ language_t lang_qc = {
 language_t lang_ruamoko = {
 	//.always_overload = true,
 	.short_circuit = true,
+	.array_count = "count",
 	.pre_init = rua_pre_init,
 	.init = rua_init,
 	.parse = qc_yyparse,

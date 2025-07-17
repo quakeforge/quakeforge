@@ -46,6 +46,7 @@
 
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -152,4 +153,10 @@ array_expr (const expr_t *array, const expr_t *index)
 
 	auto e = unary_expr ('.', ptr);
 	return e;
+}
+
+const expr_t *
+array_property (const type_t *type, const attribute_t *attr, rua_ctx_t *ctx)
+{
+	return error (attr->params, "not implemented");
 }

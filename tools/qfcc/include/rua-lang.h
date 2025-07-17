@@ -211,6 +211,7 @@ typedef struct language_s {
 	bool        always_overload;
 	bool        short_circuit;
 	bool        default_float;	// 1.0 defaults to float instead of double
+	const char *array_count;
 	void      (*pre_init) (rua_ctx_t *ctx);
 	void      (*init) (rua_ctx_t *ctx);
 	int       (*parse) (FILE *in, rua_ctx_t *ctx);

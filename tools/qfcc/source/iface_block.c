@@ -36,6 +36,7 @@
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/function.h"
 #include "tools/qfcc/include/glsl-lang.h"
 #include "tools/qfcc/include/iface_block.h"
 #include "tools/qfcc/include/qfcc.h"
@@ -144,6 +145,61 @@ block_matrix_type (const type_t *type)
 	return nullptr;
 }
 
+static const expr_t *
+array_count (const type_t *block_type, rua_ctx_t *ctx)
+{
+	auto sym = new_symbol (".array_count");
+	auto offset = new_param (nullptr, &type_uint, "offset");
+	auto block = new_param (nullptr, block_type, "block");
+	block->next = offset;
+	auto param = block;
+	auto type = find_type (parse_params (&type_uint, param));
+	specifier_t spec = { .type = type, .sym = sym, .params = param };
+	sym = function_symbol (spec, ctx);
+	if (!sym->metafunc->expr) {
+		spec.sym = sym;
+		auto opcode = new_name_expr ("OpArrayLength");
+		auto intrinsic = new_intrinsic_expr (new_list_expr (opcode));
+		sym = build_intrinsic_function (spec, intrinsic, ctx);
+	}
+	return new_symbol_expr (sym);
+}
+
+static const expr_t *
+iface_block_array_property (const type_t *type, const attribute_t *attr,
+							rua_ctx_t *ctx)
+{
+	if (ctx->language->array_count
+		&& strcmp (attr->name, ctx->language->array_count) != 0) {
+		return array_property (type, attr, ctx);
+	}
+	if (type_count (type)) {
+		// fixed-size array so constant
+		return array_property (type, attr, ctx);
+	}
+	if (attr->params->type != ex_field) {
+		internal_error (attr->params, "not a block access");
+	}
+	auto member = attr->params->field.member;
+	if (member->type != ex_symbol) {
+		internal_error (attr->params, "not a symbol");
+	}
+	auto offset = new_offset_expr (member);
+	const expr_t *array_args[] = {
+		edag_add_expr (offset),
+		attr->params->field.object,
+	};
+	auto args = new_list_expr (nullptr);
+	list_gather (&args->list, array_args, 2);
+
+	auto block_type = get_type (attr->params->field.object);
+	auto expr = new_expr ();
+	expr->type = ex_functor;
+	expr->functor.func = array_count (block_type, ctx);
+	expr->functor.args = args;
+	return expr;
+}
+
 static const type_t *
 block_block_type (const type_t *type, const char *pre_tag)
 {
@@ -161,6 +217,7 @@ block_block_type (const type_t *type, const char *pre_tag)
 				.count = type->array.count,
 			},
 			.attributes = type->attributes,
+			.property = iface_block_array_property,
 		};
 		int stride = type_aligned_size (ele_type) * uint;
 		add_attribute (&new.attributes,

@@ -27,6 +27,7 @@ qfcc_SOURCES = \
 	tools/qfcc/source/emit.c \
 	tools/qfcc/source/expr.c \
 	tools/qfcc/source/expr_algebra.c \
+	tools/qfcc/source/expr_array.c \
 	tools/qfcc/source/expr_assign.c \
 	tools/qfcc/source/expr_binary.c \
 	tools/qfcc/source/expr_bool.c \

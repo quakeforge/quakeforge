@@ -34,6 +34,7 @@
 #include "QF/math/bitop.h"
 
 #include "tools/qfcc/include/algebra.h"
+#include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/expr.h"
@@ -228,6 +229,13 @@ proc_field (const expr_t *expr, rua_ctx_t *ctx)
 			return new_error_expr ();
 		}
 		member = new_symbol_expr (ivar);
+	} else if (is_array (obj_type)) {
+		if (member->type != ex_symbol) {
+			return error (member, "invalid array property access");
+		}
+		auto sym = member->symbol;
+		return obj_type->property (obj_type, new_attrfunc (sym->name, object),
+								   ctx);
 	} else {
 		return error (object, "invalid operand for .");
 	}
