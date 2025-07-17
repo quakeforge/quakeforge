@@ -51,6 +51,7 @@ EX_EXPR(temp)		///< temporary variable (::ex_temp_t)
 EX_EXPR(vector)		///< "vector" expression (::ex_vector_t)
 EX_EXPR(selector)	///< selector expression (::ex_selector_t)
 EX_EXPR(message)	///< message expression (::ex_message_t)
+EX_EXPR(functor)	///< callable object (::ex_functor_t)
 EX_EXPR(nil)		///< umm, nil, null. nuff said (0 of any type)
 EX_EXPR(value)		///< constant value (::ex_value_t)
 EX_EXPR(compound)	///< compound initializer

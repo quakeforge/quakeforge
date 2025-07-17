@@ -809,6 +809,21 @@ print_message (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 }
 
 static void
+print_functor (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->functor.func, level, id, next);
+	_print_expr (dstr, e->functor.args, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->functor.func);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+			   e->functor.args);
+	dasprintf (dstr, "%*se_%p [label=\"%s\"];\n", indent, "", e,
+			   "[functor]");
+}
+
+static void
 print_nil (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -1008,6 +1023,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_vector] = print_vector,
 		[ex_selector] = print_selector,
 		[ex_message] = print_message,
+		[ex_functor] = print_functor,
 		[ex_nil] = print_nil,
 		[ex_value] = print_value,
 		[ex_compound] = print_compound,

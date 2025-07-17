@@ -152,6 +152,11 @@ typedef struct {
 	struct keywordarg_s *message;
 } ex_message_t;
 
+typedef struct {
+	const expr_t *func;
+	const expr_t *args;
+} ex_functor_t;
+
 /**	Pointer constant expression.
 
 	Represent a pointer to an absolute address in data space.
@@ -453,6 +458,7 @@ typedef struct expr_s {
 		ex_vector_t vector;				///< vector expression list
 		ex_selector_t selector;			///< selector ref and name
 		ex_message_t message;			///< message receiver and message
+		ex_functor_t functor;			///< callable object
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params

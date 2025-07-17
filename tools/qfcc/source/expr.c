@@ -104,6 +104,8 @@ get_type (const expr_t *e)
 		case ex_process:
 			internal_error (e, "unexpected expression type: %s",
 							expr_names[e->type]);
+		case ex_functor:
+			return get_type (e->functor.func);
 		case ex_label:
 		case ex_switch:
 		case ex_caselabel:
@@ -1995,6 +1997,8 @@ has_function_call (const expr_t *e)
 			return has_function_call (e->extend.src);
 		case ex_message:
 			return true;
+		case ex_functor:
+			return has_function_call (e->functor.args);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -2944,6 +2948,8 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 				}
 			}
 			return true;
+		case ex_functor:
+			return can_inline (expr->functor.args, fsym);
 		case ex_compound:
 			for (auto ele = expr->compound.head; ele; ele = ele->next) {
 				if (!can_inline (ele->expr, fsym)) {

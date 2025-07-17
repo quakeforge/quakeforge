@@ -91,6 +91,7 @@ edag_add_expr (const expr_t *expr)
 			case ex_memset:
 			case ex_branch:
 			case ex_message:
+			case ex_functor:
 			case ex_inout:
 			case ex_return:
 			case ex_adjstk:

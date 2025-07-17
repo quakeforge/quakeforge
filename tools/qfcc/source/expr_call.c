@@ -518,10 +518,29 @@ function_expr (const expr_t *fexpr, const expr_t *args, rua_ctx_t *ctx)
 	if (fexpr->type == ex_type) {
 		return constructor_expr (fexpr, args);
 	}
-
-	fexpr = find_function (fexpr, args, ctx);
-	if (is_error (fexpr)) {
-		return fexpr;
+	if (fexpr->type == ex_functor) {
+		auto fargs = fexpr->functor.args;
+		int farg_count = fargs ? list_count (&fargs->list) : 0;
+		int arg_count = args ? list_count (&args->list) : 0;
+		if (farg_count + arg_count) {
+			const expr_t *targs[arg_count + farg_count];
+			if (args) {
+				list_scatter (&args->list, targs);
+			}
+			// args is reversed (a, b, c) -> c, b, a
+			if (fargs) {
+				list_scatter (&fargs->list, targs + arg_count);
+			}
+			auto nargs = new_list_expr (nullptr);
+			list_gather (&nargs->list, targs, arg_count + farg_count);
+			args = nargs;
+		}
+		fexpr = fexpr->functor.func;
+	} else {
+		fexpr = find_function (fexpr, args, ctx);
+		if (is_error (fexpr)) {
+			return fexpr;
+		}
 	}
 
 	auto ftype = get_type (fexpr);

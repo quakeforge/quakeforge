@@ -123,6 +123,7 @@ is_lvalue (const expr_t *expr)
 		case ex_error:
 		case ex_selector:
 		case ex_message:
+		case ex_functor:
 		case ex_return:
 		case ex_adjstk:
 		case ex_with:
