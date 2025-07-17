@@ -123,7 +123,7 @@ check_arg_types (const expr_t **arguments, const type_t **arg_types,
 			return e;
 		}
 
-		if (!type_size (t)) {
+		if (!is_reference (t) && !type_size (t)) {
 			err = error (e, "type of formal parameter %d is incomplete",
 						 i + 1);
 		}
