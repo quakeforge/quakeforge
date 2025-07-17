@@ -146,7 +146,7 @@ block_matrix_type (const type_t *type)
 }
 
 static const expr_t *
-array_count (const type_t *block_type, rua_ctx_t *ctx)
+iface_block_array_count (const type_t *block_type, rua_ctx_t *ctx)
 {
 	auto sym = new_symbol (".array_count");
 	auto offset = new_param (nullptr, &type_uint, "offset");
@@ -198,7 +198,7 @@ iface_block_array_property (const type_t *type, const attribute_t *attr,
 	auto block_type = get_type (attr->params->field.object);
 	auto expr = new_expr ();
 	expr->type = ex_functor;
-	expr->functor.func = array_count (block_type, ctx);
+	expr->functor.func = iface_block_array_count (block_type, ctx);
 	expr->functor.args = args;
 	return expr;
 }
