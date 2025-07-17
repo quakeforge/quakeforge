@@ -103,6 +103,8 @@ is_lvalue (const expr_t *expr)
 			return false;
 		case ex_assign:
 			return false;
+		case ex_offset:
+			return false;
 		case ex_uexpr:
 			if (expr->expr.op == '.') {
 				return true;

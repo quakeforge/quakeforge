@@ -179,6 +179,11 @@ edag_add_expr (const expr_t *expr)
 					return e;
 				}
 				break;
+			case ex_offset:
+				if (e->offset.member == expr->offset.member) {
+					return e;
+				}
+				break;
 			case ex_assign:
 				return expr;	// FIXME?
 			case ex_horizontal:

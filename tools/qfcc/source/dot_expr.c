@@ -603,6 +603,18 @@ print_address (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t
 }
 
 static void
+print_offset (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->offset.member, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"&\"];\n", indent, "", e,
+			   e->offset.member);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "offset", e->loc.line);
+}
+
+static void
 print_assign (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -1030,6 +1042,7 @@ _print_expr (dstring_t *dstr, const expr_t *e, int level, int id,
 		[ex_memset] = print_memset,
 		[ex_alias] = print_alias,
 		[ex_address] = print_address,
+		[ex_offset] = print_offset,
 		[ex_assign] = print_assign,
 		[ex_branch] = print_branch,
 		[ex_inout] = print_inout,

@@ -156,6 +156,9 @@ get_type (const expr_t *e)
 		case ex_address:
 			type = e->address.type;
 			break;
+		case ex_offset:
+			type = &type_uint;
+			break;
 		case ex_assign:
 			return get_type (e->assign.dst);
 		case ex_args:
@@ -1534,6 +1537,15 @@ new_address_expr (const type_t *lvtype, const expr_t *lvalue,
 }
 
 expr_t *
+new_offset_expr (const expr_t *member)
+{
+	expr_t     *offset = new_expr ();
+	offset->type = ex_offset;
+	offset->offset.member = member;
+	return offset;
+}
+
+expr_t *
 new_assign_expr (const expr_t *dst, const expr_t *src)
 {
 	expr_t     *addr = new_expr ();
@@ -1969,6 +1981,8 @@ has_function_call (const expr_t *e)
 			return has_function_call (e->alias.expr);
 		case ex_address:
 			return has_function_call (e->address.lvalue);
+		case ex_offset:
+			return has_function_call (e->offset.member);
 		case ex_assign:
 			return (has_function_call (e->assign.dst)
 					|| has_function_call (e->assign.src));
@@ -2967,6 +2981,8 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 		case ex_address:
 			return (can_inline (expr->address.lvalue, fsym)
 					&& can_inline (expr->address.offset, fsym));
+		case ex_offset:
+			return can_inline (expr->offset.member, fsym);
 		case ex_assign:
 			return (can_inline (expr->assign.dst, fsym)
 					&& can_inline (expr->assign.src, fsym));

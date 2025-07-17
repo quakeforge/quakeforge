@@ -279,6 +279,10 @@ typedef struct {
 } ex_address_t;
 
 typedef struct {
+	const expr_t *member;		///< struct member
+} ex_offset_t;
+
+typedef struct {
 	const expr_t *dst;			///< destination of assignment
 	const expr_t *src;			///< source of assignment
 } ex_assign_t;
@@ -464,6 +468,7 @@ typedef struct expr_s {
 		ex_memset_t memset;				///< memset expr params
 		ex_alias_t  alias;				///< alias expr params
 		ex_address_t address;			///< alias expr params
+		ex_offset_t offset;				///< struct member offset
 		ex_assign_t assign;				///< assignment expr params
 		ex_branch_t branch;				///< branch expr params
 		ex_inout_t inout;				///< inout arg params
@@ -1029,6 +1034,7 @@ const expr_t *new_offset_alias_expr (const type_t *type, const expr_t *expr,
 
 expr_t *new_address_expr (const type_t *lvtype, const expr_t *lvalue,
 						  const expr_t *offset);
+expr_t *new_offset_expr (const expr_t *member);
 expr_t *new_assign_expr (const expr_t *dst, const expr_t *src);
 expr_t *new_return_expr (const expr_t *ret_val);
 expr_t *new_adjstk_expr (int mode, int offset);

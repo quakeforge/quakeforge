@@ -1823,6 +1823,16 @@ spirv_address (const expr_t *e, spirvctx_t *ctx)
 }
 
 static unsigned
+spirv_offset (const expr_t *e, spirvctx_t *ctx)
+{
+	auto member = e->offset.member;
+	if (member->type != ex_symbol) {
+		internal_error (member, "not a symbol");
+	}
+	return member->symbol->id;
+}
+
+static unsigned
 spirv_assign (const expr_t *e, spirvctx_t *ctx)
 {
 	unsigned src = spirv_emit_expr (e->assign.src, ctx);
@@ -2271,6 +2281,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 		[ex_compound] = spirv_compound,
 		[ex_alias] = spirv_alias,
 		[ex_address] = spirv_address,
+		[ex_offset] = spirv_offset,
 		[ex_assign] = spirv_assign,
 		[ex_branch] = spirv_branch,
 		[ex_return] = spirv_return,
