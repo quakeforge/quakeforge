@@ -1245,6 +1245,7 @@ static spvop_t spv_ops[] = {
 	{"add",  .types1 = SPV_FLOAT, .types2 = SPV_FLOAT,
 			 .mat1 = true, .mat2 = true,
 			 .generate = spirv_generate_matrix },
+	{"mul",    SpvOpFMul,                 SPV_VEC,   SPV_VEC },
 	{"mul",    SpvOpIMul,                 SPV_INT,   SPV_INT   },
 	{"mul",    SpvOpFMul,                 SPV_FLOAT, SPV_FLOAT },
 	{"mul",    SpvOpMatrixTimesVector,    SPV_FLOAT, SPV_FLOAT,
