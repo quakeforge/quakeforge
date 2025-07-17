@@ -153,6 +153,8 @@ void IMUI_DestroyContext (imui_ctx_t *ctx);
 uint32_t IMUI_RegisterWindow (imui_ctx_t *ctx, imui_window_t *window);
 void IMUI_DeregisterWindow (imui_ctx_t *ctx, imui_window_t *window);
 imui_window_t *IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid) __attribute__((pure));
+imui_window_t *IMUI_FindWindow (imui_ctx_t *ctx, const char *name) __attribute__((pure));
+const char *IMUI_PanelId (imui_ctx_t *ctx, imui_window_t *panel);
 
 imui_state_t *IMUI_CurrentState (imui_ctx_t *ctx) __attribute__((pure));
 imui_state_t *IMUI_FindState (imui_ctx_t *ctx, const char *label);
@@ -269,6 +271,8 @@ void IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy);
 	IMUI_DeferLoop (IMUI_StartPanel (IMUI_context, panel), \
 					IMUI_EndPanel (IMUI_context))
 
+#define UI_PanelId(panel) IMUI_PanelId (IMUI_context, panel)
+
 #define UI_ExtendPanel(panel_name) \
 	IMUI_DeferLoop (IMUI_ExtendPanel (IMUI_context, panel_name), \
 					IMUI_EndPanel (IMUI_context))
@@ -287,6 +291,10 @@ void IMUI_SetViewFree (imui_ctx_t *ctx, bool fx, bool fy);
 #define UI_Window(window) \
 	IMUI_DeferLoop (IMUI_StartWindow (IMUI_context, window), \
 					IMUI_EndWindow (IMUI_context))
+
+#define UI_GetWindow(id) IMUI_GetWindow (IMUI_context, id)
+
+#define UI_FindWindow(name) IMUI_FindWindow (IMUI_context, name)
 
 #define UI_ScrollBox(name) \
 	IMUI_DeferLoop (IMUI_StartScrollBox (IMUI_context, name), \

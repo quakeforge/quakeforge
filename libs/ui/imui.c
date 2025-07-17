@@ -430,6 +430,25 @@ IMUI_GetWindow (imui_ctx_t *ctx, uint32_t wid)
 	return nullptr;
 }
 
+imui_window_t *
+IMUI_FindWindow (imui_ctx_t *ctx, const char *name)
+{
+	//FIXME use a hash table
+	for (size_t i = 1; i < ctx->registered_windows.size; i++) {
+		auto window = ctx->registered_windows.a[i];
+		if (strcmp (window->name, name) == 0) {
+			return window;
+		}
+	}
+	return nullptr;
+}
+
+const char *
+IMUI_PanelId (imui_ctx_t *ctx, imui_window_t *panel)
+{
+	return va ("###panel_%08x", panel->self);
+}
+
 void
 IMUI_SetVisible (imui_ctx_t *ctx, bool visible)
 {
@@ -1790,7 +1809,7 @@ IMUI_StartPanel (imui_ctx_t *ctx, imui_window_t *panel)
 	*Canvas_DrawGroup (ctx->csys, canvas) = draw_group;
 	auto panel_view = Canvas_GetRootView (ctx->csys, canvas);
 
-	auto panel_name = va ("###panel_%08x", panel->self);
+	auto panel_name = IMUI_PanelId (ctx, panel);
 	auto state = imui_get_state (ctx, panel_name, panel_view.id);
 	//fetch the stable string (va's result is ephemeral)
 	panel_name = state->label;
@@ -1935,7 +1954,7 @@ IMUI_StartMenu (imui_ctx_t *ctx, imui_window_t *menu, bool vertical)
 								   parent->name);
 		}
 		if (parent->is_open) {
-			UI_ExtendPanel (parent->name) {
+			UI_ExtendPanel (IMUI_PanelId (ctx, parent)) {
 				if (IMUI_MenuItem (ctx, menu->reference, false)) {
 					menu->is_open = true;
 				}
