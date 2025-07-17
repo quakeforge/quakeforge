@@ -469,7 +469,7 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 	};
 }
 
-static void
+static bool
 calculate_splits (light_split_t *s)
 {
 	if (s->splits
@@ -477,7 +477,7 @@ calculate_splits (light_split_t *s)
 		&& s->lambda == 0.98 //FIXME cvar
 		&& s->far == r_farclip
 		&& s->near == r_nearclip) {
-		return;
+		return false;
 	}
 	free (s->splits);
 	s->num_splits = NUM_CASCADE + 1;
@@ -493,10 +493,12 @@ calculate_splits (light_split_t *s)
 		float linSplit = s->near + i * far_near / NUM_CASCADE;
 		s->splits[i] = s->near / Blend(linSplit, logSplit, s->lambda);
 	}
+	return true;
 }
 
 static void
-cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
+cascade_mats (mat4f_t *mat, qfv_light_matdata_t *lmd,
+			  vec4f_t position, uint16_t size, vulkan_ctx_t *ctx)
 {
 	auto mctx = ctx->matrix_context;
 	auto lctx = ctx->lighting_context;
@@ -558,6 +560,12 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 		mat[i][3] = -offset;
 
 		mmulf (mat[i], mat[i], lightview);
+
+		float s = min (scale[0], scale[1]);
+		lmd[i] = (qfv_light_matdata_t) {
+			.cascade_distance = lctx->split.splits[i + 1],
+			.texel_size = 2 / (s * size),
+		};
 	}
 }
 
@@ -648,6 +656,8 @@ light_radius (const light_t *l)
 		 : sqrt(fabs(l->color[3]));
 }
 
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+
 static void
 lighting_update_lights (const exprval_t **params, exprval_t *result,
 						exprctx_t *ectx)
@@ -717,6 +727,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	if (queue[ST_CASCADE].count) {
 		uint32_t mat_count = queue[ST_CASCADE].count * NUM_CASCADE;
 		packet_size += sizeof (mat4f_t[mat_count]);
+		packet_size += RUP (sizeof (qfv_light_matdata_t[mat_count]), 16);
 	}
 	if (ndlight) {
 		packet_size += sizeof (mat4f_t[ndlight * 6]);
@@ -756,9 +767,12 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		packet_data += sizeof (mat4f_t[mat_count]);
 		qfv_scatter_t scatter[queue[ST_CASCADE].count];
 		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
-			auto r = &lctx->light_control.a[light_ids[ST_CASCADE][i]];
+			uint32_t id = light_ids[ST_CASCADE][i];
+			auto r = &lctx->light_control.a[id];
 			auto light = get_light (entids[ST_CASCADE][i]);
-			cascade_mats (&mats[i * NUM_CASCADE], light->position, ctx);
+			auto lmd = &lctx->light_matdata.a[r->matrix_id];
+			cascade_mats (&mats[i * NUM_CASCADE], lmd,
+						  light->position, r->size, ctx);
 			scatter[i] = (qfv_scatter_t) {
 				.srcOffset = base + sizeof (mat4f_t[i * NUM_CASCADE]),
 				.dstOffset = sizeof (mat4f_t[r->matrix_id]),
@@ -766,6 +780,24 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 			};
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
+								 queue[ST_CASCADE].count, scatter, sb, bb);
+
+		auto matdata = (qfv_light_matdata_t *) packet_data;
+		base = packet_data - packet_start;
+		packet_data += RUP (sizeof (qfv_light_matdata_t[mat_count]), 16);
+		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
+			uint32_t id = light_ids[ST_CASCADE][i];
+			auto r = &lctx->light_control.a[id];
+			size_t s = sizeof (qfv_light_matdata_t);
+			memcpy (&matdata[i * NUM_CASCADE],
+					&lctx->light_matdata.a[r->matrix_id], s * NUM_CASCADE);
+			scatter[i] = (qfv_scatter_t) {
+				.srcOffset = base + s * i * NUM_CASCADE,
+				.dstOffset = s * r->matrix_id,
+				.length = s * NUM_CASCADE,
+			};
+		}
+		QFV_PacketScatterBuffer (packet, lframe->matdata_buffer,
 								 queue[ST_CASCADE].count, scatter, sb, bb);
 	}
 
@@ -1459,7 +1491,8 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 			offsetof (light_push_constants_t, num_cascade),
 			sizeof (num_cascade), &num_cascade },
 	};
-	QFV_PushConstants (device, cmd, layout, 3, push_constants);
+	QFV_PushConstants (device, cmd, layout, countof (push_constants),
+					   push_constants);
 
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
@@ -1632,6 +1665,7 @@ lighting_shutdown (exprctx_t *ectx)
 	free (lctx->frames.a[0].id_radius);
 	free (lctx->frames.a[0].positions);
 	DARRAY_CLEAR (&lctx->light_mats);
+	DARRAY_CLEAR (&lctx->light_matdata);
 	DARRAY_CLEAR (&lctx->light_control);
 	free (lctx->map_images);
 	free (lctx->map_views);
@@ -1657,6 +1691,7 @@ lighting_startup (exprctx_t *ectx)
 			&(qfv_output_t) { .format = VK_FORMAT_D32_SFLOAT });
 
 	DARRAY_INIT (&lctx->light_mats, 16);
+	DARRAY_INIT (&lctx->light_matdata, 16);
 	DARRAY_INIT (&lctx->light_control, 16);
 
 	auto rctx = ctx->render_context;
@@ -2240,6 +2275,7 @@ create_light_matrices (lightingctx_t *lctx)
 		mat_count += r->numLayers;
 	}
 	DARRAY_RESIZE (&lctx->light_mats, mat_count);
+	DARRAY_RESIZE (&lctx->light_matdata, mat_count);
 	lctx->dynamic_matrix_base = mat_count;
 	for (uint32_t i = 0; i < dynlight_max; i++) {
 		auto r = &lctx->light_control.a[lctx->dynamic_base + i];
@@ -2252,6 +2288,7 @@ create_light_matrices (lightingctx_t *lctx)
 		uint32_t    id = get_lightid (ent);
 		auto        r = &lctx->light_control.a[id];
 		auto        lm = &lctx->light_mats.a[r->matrix_id];
+		auto        lmd = &lctx->light_matdata.a[r->matrix_id];
 		mat4f_t     view;
 		mat4f_t     proj;
 		vec4f_t     dir;
@@ -2278,6 +2315,7 @@ create_light_matrices (lightingctx_t *lctx)
 
 		switch (r->mode) {
 			case ST_NONE:
+				*lmd = (qfv_light_matdata_t) { };
 				continue;
 			case ST_CUBE:
 				QFV_PerspectiveTan (proj, 1, 1, lnearclip);
@@ -2288,6 +2326,10 @@ create_light_matrices (lightingctx_t *lctx)
 					mmulf (side_view, rotinv, view);
 					mmulf (side_view, qfv_z_up, side_view);
 					mmulf (lm[j], proj, side_view);
+					lmd[j] = (qfv_light_matdata_t) {
+						// 2 because view width is twice near distance
+						.texel_size = 2 * lnearclip / r->size,
+					};
 				}
 				break;
 			case ST_CASCADE:
@@ -2296,12 +2338,22 @@ create_light_matrices (lightingctx_t *lctx)
 				mmulf (view, qfv_z_up, view);
 				for (int j = 0; j < NUM_CASCADE; j++) {
 					mmulf (lm[j], proj, view);
+					lmd[j] = (qfv_light_matdata_t) {
+						// don't know view size at this stage
+						.texel_size = 2 / r->size,
+					};
 				}
 				break;
 			case ST_PLANE:
+				float c = -light->direction[3];
+				float fov = c / sqrt (1 - c * c);
 				QFV_PerspectiveCos (proj, -light->direction[3], lnearclip);
 				mmulf (view, qfv_z_up, view);
 				mmulf (lm[0], proj, view);
+				*lmd = (qfv_light_matdata_t) {
+					// see ST_CUBE, but scaled by fov
+					.texel_size = 2 * lnearclip / (r->size * fov),
+				};
 				break;
 		}
 	}
@@ -2310,27 +2362,44 @@ create_light_matrices (lightingctx_t *lctx)
 static void
 upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 {
-	auto packet = QFV_PacketAcquire (ctx->staging);
-	size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
-	void *mat_data = QFV_PacketExtend (packet, mat_size);
-	memcpy (mat_data, lctx->light_mats.a, mat_size);
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-	for (size_t i = 0; i < lctx->frames.size; i++) {
-		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, sb, db);
+	{
+		auto packet = QFV_PacketAcquire (ctx->staging);
+		size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
+		void *mat_data = QFV_PacketExtend (packet, mat_size);
+		memcpy (mat_data, lctx->light_mats.a, mat_size);
+		for (size_t i = 0; i < lctx->frames.size; i++) {
+			auto lframe = &lctx->frames.a[i];
+			QFV_PacketCopyBuffer (packet, lframe->shadowmat_buffer, 0, sb, db);
+		}
+		QFV_PacketSubmit (packet);
 	}
-	QFV_PacketSubmit (packet);
 
-	packet = QFV_PacketAcquire (ctx->staging);
-	size_t id_size = sizeof (uint32_t[MaxLights * 6]);
-	uint32_t *id_data = QFV_PacketExtend (packet, id_size);
-	memset (id_data, -1, id_size);
-	for (size_t i = 0; i < lctx->frames.size; i++) {
-		auto lframe = &lctx->frames.a[i];
-		QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer, 0, sb, db);
+	{
+		auto packet = QFV_PacketAcquire (ctx->staging);
+		size_t matdata_size = sizeof (mat4f_t[lctx->light_matdata.size]);
+		void *matdata_data = QFV_PacketExtend (packet, matdata_size);
+		memcpy (matdata_data, lctx->light_matdata.a, matdata_size);
+		for (size_t i = 0; i < lctx->frames.size; i++) {
+			auto lframe = &lctx->frames.a[i];
+			QFV_PacketCopyBuffer (packet, lframe->matdata_buffer, 0, sb, db);
+		}
+		QFV_PacketSubmit (packet);
 	}
-	QFV_PacketSubmit (packet);
+
+	{
+		auto packet = QFV_PacketAcquire (ctx->staging);
+		size_t id_size = sizeof (uint32_t[MaxLights * 6]);
+		uint32_t *id_data = QFV_PacketExtend (packet, id_size);
+		memset (id_data, -1, id_size);
+		for (size_t i = 0; i < lctx->frames.size; i++) {
+			auto lframe = &lctx->frames.a[i];
+			QFV_PacketCopyBuffer (packet, lframe->shadowmat_id_buffer,
+								  0, sb, db);
+		}
+		QFV_PacketSubmit (packet);
+	}
 }
 
 static void

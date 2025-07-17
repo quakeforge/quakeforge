@@ -58,7 +58,7 @@ main (void)
 
 		I *= shadow (map_id, layer, mat_id, p, n, l.position.xyz);
 
-		float       namb = l.axis.xyz • l.axis.xyz;
+		float       namb = l.axis • l.axis;
 		I *= spot_cone (unpackSnorm2x16 (l.cone), l.axis, incoming);
 		I *= diffuse (incoming, n);
 		I = mix (1, I, namb);

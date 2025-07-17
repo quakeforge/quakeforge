@@ -7,7 +7,7 @@ uint
 find_cascade (float fd, uint mat_id, @out float texel_size)
 {
 	for (uint i = 0; i < num_cascades; i++) {
-		if (fd < lightmatdata[mat_id + i].cascade_distance) {
+		if (fd > lightmatdata[mat_id + i].cascade_distance) {
 			texel_size = lightmatdata[mat_id + i].texel_size;
 			return i;;
 		}

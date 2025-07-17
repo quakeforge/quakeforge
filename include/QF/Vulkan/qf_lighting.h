@@ -71,6 +71,9 @@ typedef struct qfv_light_matdata_s {
 	float       texel_size;
 } qfv_light_matdata_t;
 
+typedef struct qfv_lightmatdataset_s
+	DARRAY_TYPE (qfv_light_matdata_t) qfv_lightmatdataset_t;
+
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
@@ -152,6 +155,7 @@ typedef struct lightingctx_s {
 	struct qfv_resource_s *light_resources;
 
 	qfv_lightmatset_t light_mats;
+	qfv_lightmatdataset_t light_matdata;
 	VkImage *map_images;
 	VkImageView *map_views;
 	VkImage  stage_images[LIGHTING_STAGES];
