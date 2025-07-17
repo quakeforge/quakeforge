@@ -707,42 +707,42 @@ render_graph = {
 				vertex_splat = {
 					stage = vertex;
 					name = main;
-					module = $builtin/light_splat.vert;
+					module = $builtin/light_splat.r;
 				};
 				vertex_entid = {
 					stage = vertex;
 					name = main;
-					module = $builtin/light_entid.vert;
+					module = $builtin/light_entid.r;
 				};
 				fragment_none = {
 					stage = fragment;
 					name = main;
-					module = $builtin/lighting_none.frag;
+					module = $builtin/lighting_none.r;
 				};
 				fragment_plane = {
 					stage = fragment;
 					name = main;
-					module = $builtin/lighting_plane.frag;
+					module = $builtin/lighting_plane.r;
 				};
 				fragment_cascade = {
 					stage = fragment;
 					name = main;
-					module = $builtin/lighting_cascade.frag;
+					module = $builtin/lighting_cascade.r;
 				};
 				fragment_cube = {
 					stage = fragment;
 					name = main;
-					module = $builtin/lighting_cube.frag;
+					module = $builtin/lighting_cube.r;
 				};
 				debug_fragment = {
 					stage = fragment;
 					name = main;
-					module = $builtin/light_debug.frag;
+					module = $builtin/light_debug.r;
 				};
 				debug_oit = {
 					stage = fragment;
 					name = main;
-					module = $builtin/light_oit.frag;
+					module = $builtin/light_oit.r;
 				};
 			};
 			vertexInput_splat = {
@@ -773,8 +773,9 @@ render_graph = {
 				pushConstants = {
 					fragment = {
 						fog = vec4;
-						CascadeDepths = vec4;
+						near_plane = float;
 						queue = uint;
+						num_cascades = uint;
 					};
 				};
 			};
@@ -1116,6 +1117,12 @@ render_graph = {
 				},
 				{
 					binding = 4;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 5;
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = vertex;
@@ -2335,7 +2342,7 @@ render_graph = {
 					base_pipeline = {
 						@inherit = $pipeline_base;
 						depthStencil = $depth_test_and_write;
-						rasterization = $cw_cull_front;
+						rasterization = $cw_cull_back;
 					};
 					pipelines = {
 						bsp:shadow = {

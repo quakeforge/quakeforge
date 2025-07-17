@@ -81,7 +81,7 @@
 
 #define shadow_quanta 128
 #define lnearclip 4
-#define num_cascade 4
+#define NUM_CASCADE 4
 #define max_views 17	// FIXME should be 32 (or really, maxMultiviewViewCount,
 						// but there are other problems there), but nvidia's
 						// drivers segfault for > 17
@@ -473,14 +473,14 @@ static void
 calculate_splits (light_split_t *s)
 {
 	if (s->splits
-		&& s->num_splits == num_cascade + 1
+		&& s->num_splits == NUM_CASCADE + 1
 		&& s->lambda == 0.98 //FIXME cvar
 		&& s->far == r_farclip
 		&& s->near == r_nearclip) {
 		return;
 	}
 	free (s->splits);
-	s->num_splits = num_cascade + 1;
+	s->num_splits = NUM_CASCADE + 1;
 	s->splits = malloc (sizeof (float[s->num_splits]));
 	s->far = r_farclip;
 	s->near = r_nearclip;
@@ -489,8 +489,8 @@ calculate_splits (light_split_t *s)
 	float far_near = s->far - s->near;
 	float log_far_near = log (s->far) - log (s->near);
 	for (int i = 0; i < s->num_splits; i++) {
-		float logSplit = s->near * exp (i * log_far_near / num_cascade);
-		float linSplit = s->near + i * far_near / num_cascade;
+		float logSplit = s->near * exp (i * log_far_near / NUM_CASCADE);
+		float linSplit = s->near + i * far_near / NUM_CASCADE;
 		s->splits[i] = s->near / Blend(linSplit, logSplit, s->lambda);
 	}
 }
@@ -529,7 +529,7 @@ cascade_mats (mat4f_t *mat, vec4f_t position, vulkan_ctx_t *ctx)
 		.mins = {-1,-1, 0 },	// z filled in later
 		.maxs = { 1, 1, 0 },
 	};
-	for (int i = 0; i < num_cascade; i++) {
+	for (int i = 0; i < NUM_CASCADE; i++) {
 		corners.mins[2] = lctx->split.splits[i + 0];
 		corners.maxs[2] = lctx->split.splits[i + 1];
 		auto split = transform_bounds (invproj, corners);
@@ -715,7 +715,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	size_t      packet_size = 0;
 	packet_size += sizeof (vec4f_t[NumStyles]);
 	if (queue[ST_CASCADE].count) {
-		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
+		uint32_t mat_count = queue[ST_CASCADE].count * NUM_CASCADE;
 		packet_size += sizeof (mat4f_t[mat_count]);
 	}
 	if (ndlight) {
@@ -750,7 +750,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 							 1, &style_scatter, sb, bb);
 
 	if (queue[ST_CASCADE].count) {
-		uint32_t mat_count = queue[ST_CASCADE].count * num_cascade;
+		uint32_t mat_count = queue[ST_CASCADE].count * NUM_CASCADE;
 		auto mats = (mat4f_t *) packet_data;
 		auto base = packet_data - packet_start;
 		packet_data += sizeof (mat4f_t[mat_count]);
@@ -758,11 +758,11 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		for (uint32_t i = 0; i < queue[ST_CASCADE].count; i++) {
 			auto r = &lctx->light_control.a[light_ids[ST_CASCADE][i]];
 			auto light = get_light (entids[ST_CASCADE][i]);
-			cascade_mats (&mats[i * num_cascade], light->position, ctx);
+			cascade_mats (&mats[i * NUM_CASCADE], light->position, ctx);
 			scatter[i] = (qfv_scatter_t) {
-				.srcOffset = base + sizeof (mat4f_t[i * num_cascade]),
+				.srcOffset = base + sizeof (mat4f_t[i * NUM_CASCADE]),
 				.dstOffset = sizeof (mat4f_t[r->matrix_id]),
-				.length = sizeof (mat4f_t[num_cascade]),
+				.length = sizeof (mat4f_t[NUM_CASCADE]),
 			};
 		}
 		QFV_PacketScatterBuffer (packet, lframe->shadowmat_buffer,
@@ -1412,8 +1412,9 @@ lighting_draw_hulls (const exprval_t **params, exprval_t *result,
 
 typedef struct {
 	vec4f_t     fog;
-	vec4f_t     CascadeDepths;
+	float       near_plane;
 	uint32_t    queue;
+	uint32_t    num_cascade;
 } light_push_constants_t;
 
 static void
@@ -1432,6 +1433,8 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	auto lframe = &lctx->frames.a[ctx->curFrame];
 	auto shadow_type = *(int *) params[0]->value;
 	auto queue = lframe->light_queue[shadow_type];
+	float near_plane = r_nearclip;
+	uint32_t num_cascade = NUM_CASCADE;
 
 	if (!queue.count) {
 		return;
@@ -1442,23 +1445,19 @@ lighting_draw_lights (const exprval_t **params, exprval_t *result,
 	fog = (vec4f_t) { 1, 1, 1, 0 } - fog;
 	fog[3] = -fog[3];
 
-	//FIXME hard-coded count
-	vec4f_t depths = {
-		lctx->split.splits[1],
-		lctx->split.splits[2],
-		lctx->split.splits[3],
-		lctx->split.splits[4],
-	};
 	qfv_push_constants_t push_constants[] = {
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (light_push_constants_t, fog),
 			sizeof (fog), &fog },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
-			offsetof (light_push_constants_t, CascadeDepths),
-			sizeof (depths), &depths },
+			offsetof (light_push_constants_t, near_plane),
+			sizeof (near_plane), &near_plane },
 		{ VK_SHADER_STAGE_FRAGMENT_BIT,
 			offsetof (light_push_constants_t, queue),
 			sizeof (queue), &queue },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			offsetof (light_push_constants_t, num_cascade),
+			sizeof (num_cascade), &num_cascade },
 	};
 	QFV_PushConstants (device, cmd, layout, 3, push_constants);
 
@@ -1687,13 +1686,15 @@ lighting_startup (exprctx_t *ectx)
 									+ sizeof (qfv_resobj_t[frames])
 									// light styles
 									+ sizeof (qfv_resobj_t[frames])
+									// light matdata
+									+ sizeof (qfv_resobj_t[frames])
 									// light entids
 									+ sizeof (qfv_resobj_t[frames]));
 	lctx->light_resources[0] = (qfv_resource_t) {
 		.name = "lights",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = 2 + 3 + 8 * frames,
+		.num_objects = 2 + 3 + 9 * frames,
 		.objects = (qfv_resobj_t *) &lctx->light_resources[1],
 	};
 	auto splat_verts = lctx->light_resources->objects;
@@ -1708,7 +1709,8 @@ lighting_startup (exprctx_t *ectx)
 	auto light_data = &light_radii[frames];
 	auto light_render = &light_data[frames];
 	auto light_styles = &light_render[frames];
-	auto light_entids = &light_styles[frames];
+	auto light_matdata = &light_styles[frames];
+	auto light_entids = &light_matdata[frames];
 	splat_verts[0] = (qfv_resobj_t) {
 		.name = "splat:vertices",
 		.type = qfv_res_buffer,
@@ -1827,6 +1829,16 @@ lighting_startup (exprctx_t *ectx)
 						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 			},
 		};
+		light_matdata[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "matdata:%zd", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				// never need more than 6 matrices per light
+				.size = sizeof (vec4f_t[MaxLights * 6]),
+				.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+						| VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			},
+		};
 		light_mats[i] = (qfv_resobj_t) {
 			.name = vac (ctx->va_ctx, "matrices:%zd", i),
 			.type = qfv_res_buffer,
@@ -1880,6 +1892,7 @@ lighting_startup (exprctx_t *ectx)
 			.light_buffer = light_data[i].buffer.buffer,
 			.render_buffer = light_render[i].buffer.buffer,
 			.style_buffer = light_styles[i].buffer.buffer,
+			.matdata_buffer = light_matdata[i].buffer.buffer,
 			.id_buffer = light_ids[i].buffer.buffer,
 			.radius_buffer = light_radii[i].buffer.buffer,
 			.entid_buffer = light_entids[i].buffer.buffer,
@@ -1907,6 +1920,8 @@ lighting_startup (exprctx_t *ectx)
 			{	.buffer = lframe->render_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
 			{	.buffer = lframe->style_buffer,
+				.offset = 0, .range = VK_WHOLE_SIZE, },
+			{	.buffer = lframe->matdata_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
 			{	.buffer = lframe->entid_buffer,
 				.offset = 0, .range = VK_WHOLE_SIZE, },
@@ -1955,8 +1970,14 @@ lighting_startup (exprctx_t *ectx)
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 				.pBufferInfo = &bufferInfo[6], },
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = lframe->lights_set,
+				.dstBinding = 5,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[7], },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 7, bufferWrite, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 8, bufferWrite, 0, 0);
 
 		dfunc->vkCreateQueryPool (device->dev, &(VkQueryPoolCreateInfo) {
 			.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
@@ -2273,7 +2294,7 @@ create_light_matrices (lightingctx_t *lctx)
 				// dependent on view fustrum and cascade level
 				mat4fidentity (proj);
 				mmulf (view, qfv_z_up, view);
-				for (int j = 0; j < num_cascade; j++) {
+				for (int j = 0; j < NUM_CASCADE; j++) {
 					mmulf (lm[j], proj, view);
 				}
 				break;
@@ -2419,7 +2440,7 @@ allocate_map (mapctx_t *mctx, int type, int (*getsize) (const light_t *light))
 	int         size = -1;
 	int         numLayers = 0;
 	int         totalLayers = 0;
-	int         layers = ((int[ST_COUNT]) { 0, 1, num_cascade, 6 })[type];
+	int         layers = ((int[ST_COUNT]) { 0, 1, NUM_CASCADE, 6 })[type];
 	int         cube = type == ST_CUBE;
 
 	for (int i = 0; i < mctx->numLights; i++) {

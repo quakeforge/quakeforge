@@ -1,12 +1,17 @@
-#version 450
-#extension GL_GOOGLE_include_directive : enable
+#define SHADOW_SAMPLER @sampler(@image(float,Cube,Array,Depth))
 #include "lighting.h"
+#include "general.h"
+#include "integer.h"
+#include "texture.h"
 
-layout (set = 3, binding = 0) uniform samplerCubeArrayShadow shadow_map[32];
+#include "normal_offset.r"
 
 float
-shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
+shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 norm, vec3 lpos)
 {
+	float texel_size = lightmatdata[mat_id].texel_size;
+	vec3 np = normal_offset (pos.xyz, norm, texel_size, 1 / pos.w);
+
 	vec3 dir = pos.xyz - lpos;
 	vec3 adir = abs(dir);
 	adir = max (adir.yzx, adir.zxy);
@@ -18,4 +23,4 @@ shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 lpos)
 	return texture (shadow_map[map_id], vec4 (dir, layer), depth);
 }
 
-#include "lighting_main.finc"
+#include "lighting_main.r"

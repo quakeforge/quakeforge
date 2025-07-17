@@ -66,6 +66,11 @@ typedef struct qfv_light_render_s {
 	uint32_t    style;
 } qfv_light_render_t;
 
+typedef struct qfv_light_matdata_s {
+	float       cascade_distance;
+	float       texel_size;
+} qfv_light_matdata_t;
+
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_ATTACH_INFOS 4
 #define LIGHTING_SHADOW_INFOS 32
@@ -99,6 +104,7 @@ typedef struct lightingframe_s {
 	VkBuffer    light_buffer;
 	VkBuffer    render_buffer;
 	VkBuffer    style_buffer;
+	VkBuffer    matdata_buffer;
 	VkBuffer    id_buffer;
 	VkBuffer    radius_buffer;
 	VkBuffer    entid_buffer;

@@ -93,21 +93,21 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/entid.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/light_entid.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/light_entid.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/light_splat.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/light_splat.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/light_debug.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/light_debug.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/light_oit.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/light_oit.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting_cascade.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/lighting_cascade.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting_cube.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/lighting_cube.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting_none.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/lighting_none.r.spvc"
 static
-#include "libs/video/renderer/vulkan/shader/lighting_plane.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/lighting_plane.r.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.r.spvc"
 static
@@ -173,16 +173,14 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "debug.frag", debug_frag, sizeof (debug_frag) },
 	{ "entid.frag", entid_frag, sizeof (entid_frag) },
-	{ "light_entid.vert", light_entid_vert, sizeof (light_entid_vert) },
-	{ "light_splat.vert", light_splat_vert, sizeof (light_splat_vert) },
-	{ "light_debug.frag", light_debug_frag, sizeof (light_debug_frag) },
-	{ "light_oit.frag", light_oit_frag, sizeof (light_oit_frag) },
-	{ "lighting_cascade.frag", lighting_cascade_frag,
-		sizeof (lighting_cascade_frag) },
-	{ "lighting_cube.frag", lighting_cube_frag, sizeof (lighting_cube_frag) },
-	{ "lighting_none.frag", lighting_none_frag, sizeof (lighting_none_frag) },
-	{ "lighting_plane.frag", lighting_plane_frag,
-		sizeof (lighting_plane_frag) },
+	{ "light_entid.r", light_entid_r, sizeof (light_entid_r) },
+	{ "light_splat.r", light_splat_r, sizeof (light_splat_r) },
+	{ "light_debug.r", light_debug_r, sizeof (light_debug_r) },
+	{ "light_oit.r", light_oit_r, sizeof (light_oit_r) },
+	{ "lighting_cascade.r", lighting_cascade_r, sizeof (lighting_cascade_r) },
+	{ "lighting_cube.r", lighting_cube_r, sizeof (lighting_cube_r) },
+	{ "lighting_none.r", lighting_none_r, sizeof (lighting_none_r) },
+	{ "lighting_plane.r", lighting_plane_r, sizeof (lighting_plane_r) },
 	{ "compose.r", compose_r, sizeof (compose_r) },
 	{ "compose_fwd.r", compose_fwd_r, sizeof (compose_fwd_r) },
 	{ "mesh.r", mesh_r, sizeof (mesh_r) },

@@ -1,28 +1,30 @@
-layout (input_attachment_index = 0, set = 2, binding = 0) uniform subpassInput color;
-layout (input_attachment_index = 1, set = 2, binding = 1) uniform subpassInput emission;
-layout (input_attachment_index = 2, set = 2, binding = 2) uniform subpassInput normal;
-layout (input_attachment_index = 3, set = 2, binding = 3) uniform subpassInput position;
+#include "general.h"
+#include "integer.h"
+#include "fppack.h"
 
-layout (location = 0) out vec4 frag_color;
+#define INPUT_ATTACH_SET 2
+#include "input_attach.h"
+
+[in("FragCoord")] vec4 gl_FragCoord;
+[out(0)] vec4 frag_color;
 
 float
-spot_cone (LightData light, vec3 incoming)
+spot_cone (vec2 cone, vec3 axis, vec3 dir)
 {
-	vec3        dir = light.direction.xyz;
-	float       cone = light.direction.w;
-	float       spotdot = dot (incoming, dir);
-	return 1 - smoothstep (cone, .995 * cone + 0.005, spotdot);
+	float adot = axis • dir;
+	return smoothstep (cone.x, mix (cone.x, 1, cone.y), adot);
 }
 
 float
 diffuse (vec3 incoming, vec3 normal)
 {
-	float       lightdot = dot (incoming, normal);
-	return clamp (lightdot, 0, 1);
+	return clamp (incoming • normal, 0, 1);
 }
 
 #include "fog.finc"
 
+[shader("Fragment")]
+[capability("MultiView")]
 void
 main (void)
 {
@@ -39,7 +41,7 @@ main (void)
 		uint        id = lightIds[i];
 		LightData   l = lights[id];
 		vec3        dir = l.position.xyz - l.position.w * p.xyz;
-		float       r2 = dot (dir, dir);
+		float       r2 = dir • dir;
 		vec4        a = l.attenuation;
 
 		if (l.position.w * a.w * a.w * r2 >= 1) {
@@ -47,17 +49,18 @@ main (void)
 		}
 		vec4        r = vec4 (r2, sqrt(r2), 1, 0);
 		vec3        incoming = dir / r.y;
-		float       I = (1 - a.w * r.y) / dot (a, r);
+		float       I = (1 - a.w * r.y) / (a • r);
 
 		uint        id_data = renderer[id].id_data;
 		uint        mat_id = bitfieldExtract (id_data, 0, 14);
 		uint        map_id = bitfieldExtract (id_data, 14, 5);
 		uint        layer = bitfieldExtract (id_data, 19, 11);
 
-		I *= shadow (map_id, layer, mat_id, p, l.position.xyz);
+		I *= shadow (map_id, layer, mat_id, p, n, l.position.xyz);
 
-		float       namb = dot(l.direction.xyz, l.direction.xyz);
-		I *= spot_cone (l, incoming) * diffuse (incoming, n);
+		float       namb = l.axis.xyz • l.axis.xyz;
+		I *= spot_cone (unpackSnorm2x16 (l.cone), l.axis, incoming);
+		I *= diffuse (incoming, n);
 		I = mix (1, I, namb);
 		vec4 col = l.color;
 		if (bitfieldExtract(id_data, 31, 1) == 0) {

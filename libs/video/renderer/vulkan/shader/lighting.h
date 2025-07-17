@@ -1,41 +1,60 @@
-struct LightData {
+#ifndef __lighting_h
+#define __lighting_h
+
+typedef struct LightData {
 	vec4        color;		// .a is intensity
 	vec4        position;	// .w = 0 -> directional, .w = 1 -> point/cone
-	vec4        direction;	// .w = -cos(cone_angle/2) (1 for omni/dir)
+	vec3        axis;
+	uint        cone;
 	vec4        attenuation;
-};
+} LightData;
 
 #define ST_NONE     0   // no shadows
 #define ST_PLANE    1   // single plane shadow map (small spotlight)
 #define ST_CASCADE  2   // cascaded shadow maps
 #define ST_CUBE     3   // cubemap (omni, large spotlight)
 
-struct LightRender {
+typedef struct LightRender {
 	uint        id_data;
 	uint        style;
-};
+} LightRender;
 
-layout (set = 0, binding = 0) readonly buffer ShadowMatrices {
+typedef struct LightMatData {
+	float cascade_distance;
+	float texel_size;
+} LightMatData;
+
+[buffer, readonly, set(0), binding(0)] @block ShadowMatrices {
 	mat4 shadow_mats[];
 };
-layout (set = 1, binding = 0) readonly buffer LightIds {
+[buffer, readonly, set(1), binding(0)] @block LightIds {
 	uint        lightIds[];
 };
-layout (set = 1, binding = 1) readonly buffer Lights {
+[buffer, readonly, set(1), binding(1)] @block Lights {
 	LightData   lights[];
 };
-layout (set = 1, binding = 2) readonly buffer Renderer {
+[buffer, readonly, set(1), binding(2)] @block Renderer {
 	LightRender renderer[];
 };
-layout (set = 1, binding = 3) readonly buffer Style {
+[buffer, readonly, set(1), binding(3)] @block Style {
 	vec4        style[];
 };
-layout (set = 1, binding = 4) readonly buffer LightEntIds {
+[buffer, readonly, set(1), binding(4)] @block LightMatDataBuffer {
+	LightMatData lightmatdata[];
+};
+[buffer, readonly, set(1), binding(5)] @block LightEntIds {
 	uint        light_entids[];
 };
 
-layout (push_constant) uniform PushConstants {
+#ifdef SHADOW_SAMPLER
+[uniform, set(3), binding(0)] SHADOW_SAMPLER shadow_map[32];
+#endif
+
+[push_constant] @block PushConstants {
 	vec4        fog;
-	vec4        CascadeDepths;
+	float       near_plane;
 	uint        queue;
+	uint        num_cascades;
 };
+
+#endif//__lighting_h
