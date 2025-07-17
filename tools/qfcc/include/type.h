@@ -36,6 +36,7 @@
 
 #include "specifier.h"
 
+typedef struct rua_ctx_s rua_ctx_t;
 typedef struct type_s type_t;
 
 typedef enum param_qual_e param_qual_t;
@@ -105,7 +106,8 @@ typedef struct type_s {
 	bool        allocated;
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
-	const expr_t *(*property) (const type_t *type, const attribute_t *attr);
+	const expr_t *(*property) (const type_t *type, const attribute_t *attr,
+							   rua_ctx_t *ctx);
 } type_t;
 
 #define EV_TYPE(type) extern type_t type_##type;

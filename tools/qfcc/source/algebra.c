@@ -343,7 +343,7 @@ is_algebra (const type_t *type)
 }
 
 static const expr_t *
-algebra_property (const type_t *type, const attribute_t *attr)
+algebra_property (const type_t *type, const attribute_t *attr, rua_ctx_t *ctx)
 {
 	type = algebra_subtype (type, attr);
 	return new_type_expr (type);

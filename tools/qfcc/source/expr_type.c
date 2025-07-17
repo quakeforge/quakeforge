@@ -224,7 +224,7 @@ evaluate_property (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 			property = new_attrfunc (property->name, params);
 			args[1] = prop;
 		}
-		auto e = type->property (type, property);
+		auto e = type->property (type, property, ctx);
 		if (e->type == ex_type) {
 			e = eval_type (e, ctx);
 		}
@@ -282,7 +282,7 @@ resolve_property (int arg_count, const expr_t **args, rua_ctx_t *ctx)
 		if (!type->property) {
 			error (args[0], "type doesn't support properties");
 		} else {
-			auto e = type->property (type, args[1]->typ.property);
+			auto e = type->property (type, args[1]->typ.property, ctx);
 			if (is_error (e)) {
 				type = nullptr;
 			} else {

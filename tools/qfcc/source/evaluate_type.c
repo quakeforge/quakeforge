@@ -98,7 +98,7 @@ tf_property_func (progs_t *pr, void *data)
 	} else {
 		property = new_attribute (name, nullptr, ctx->rua_ctx);
 	}
-	auto e = type->property (type, property);
+	auto e = type->property (type, property, ctx->rua_ctx);
 	if (is_error (e)) {
 		Sys_longjmp (ctx->jmpbuf);
 	}

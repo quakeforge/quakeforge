@@ -89,7 +89,7 @@ static const char *shadow_comp_swizzle[7][2] = {
 };
 
 static const expr_t *
-image_property (const type_t *type, const attribute_t *property)
+image_property (const type_t *type, const attribute_t *property, rua_ctx_t *ctx)
 {
 	auto image = &imageset.a[type->handle.extra];
 
@@ -164,7 +164,8 @@ sampled_shadow_swizzle (const attribute_t *property, const char *swizzle[7][2],
 }
 
 static const expr_t *
-sampled_image_property (const type_t *type, const attribute_t *property)
+sampled_image_property (const type_t *type, const attribute_t *property,
+						rua_ctx_t *ctx)
 {
 	auto image = &imageset.a[type->handle.extra];
 
@@ -209,7 +210,7 @@ sampled_image_property (const type_t *type, const attribute_t *property)
 			return new_type_expr (vector_type (&type_float, width));
 		}
 	}
-	return image_property (type, property);
+	return image_property (type, property, ctx);
 }
 
 type_t type_image = {
@@ -245,10 +246,11 @@ image_init_types (void)
 }
 
 static const expr_t *
-image_handle_property (const type_t *type, const attribute_t *attr)
+image_handle_property (const type_t *type, const attribute_t *attr,
+					   rua_ctx_t *ctx)
 {
 	type = unalias_type (type);
-	return type->handle.type->property (type, attr);
+	return type->handle.type->property (type, attr, ctx);
 }
 
 const type_t *
