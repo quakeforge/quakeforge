@@ -610,8 +610,9 @@ types_same (const type_t *a, const type_t *b)
 			switch (a->type) {
 				case ev_field:
 				case ev_ptr:
-					if (a->fldptr.type != b->fldptr.type)
-						return false;
+					return (a->fldptr.type == b->fldptr.type
+							&& a->fldptr.tag == b->fldptr.tag
+							&& a->fldptr.deref == b->fldptr.deref);
 				case ev_func:
 					if (a->func.ret_type != b->func.ret_type
 						|| a->func.num_params != b->func.num_params
@@ -624,7 +625,7 @@ types_same (const type_t *a, const type_t *b)
 						if (a->func.param_types[i]
 							!= b->func.param_types[i])
 							return false;
-					return 1;
+					return true;
 				default:		// other types don't have aux data
 					return a->width == b->width && a->columns == b->columns;
 			}
@@ -636,13 +637,13 @@ types_same (const type_t *a, const type_t *b)
 				return false;
 			if (a->meta == ty_struct)
 				return compare_protocols (a->protos, b->protos);
-			return 1;
+			return true;
 		case ty_array:
 			if (a->array.type != b->array.type
 				|| a->array.base != b->array.base
 				|| a->array.count != b->array.count)
 				return false;
-			return 1;
+			return true;
 		case ty_class:
 			if (a->class != b->class)
 				return false;
