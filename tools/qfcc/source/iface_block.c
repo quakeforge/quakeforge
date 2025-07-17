@@ -155,6 +155,8 @@ array_count (const type_t *block_type, rua_ctx_t *ctx)
 	auto param = block;
 	auto type = find_type (parse_params (&type_uint, param));
 	specifier_t spec = { .type = type, .sym = sym, .params = param };
+	auto symtab = current_symtab;
+	current_symtab = pr.symtab;//FIXME clean up current_symtab
 	sym = function_symbol (spec, ctx);
 	if (!sym->metafunc->expr) {
 		spec.sym = sym;
@@ -162,6 +164,7 @@ array_count (const type_t *block_type, rua_ctx_t *ctx)
 		auto intrinsic = new_intrinsic_expr (new_list_expr (opcode));
 		sym = build_intrinsic_function (spec, intrinsic, ctx);
 	}
+	current_symtab = symtab;
 	return new_symbol_expr (sym);
 }
 
