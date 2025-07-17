@@ -68,8 +68,43 @@
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
+static const expr_t *
+array_count (const type_t *array_type, rua_ctx_t *ctx)
+{
+	auto sym = new_symbol (".array_count");
+	auto param = new_param (nullptr, array_type, "arr");
+	auto type = find_type (parse_params (&type_uint, param));
+	specifier_t spec = {
+		.type = type,
+		.params = param,
+		.sym = sym,
+		.is_overload = true,
+	};
+	auto symtab = current_symtab;
+	current_symtab = pr.symtab;//FIXME clean up current_symtab
+	sym = function_symbol (spec, ctx);
+	spec.sym = sym;
+	array_type = dereference_type (array_type);
+	if (!sym->metafunc->expr) {
+		auto func = begin_function (spec, nullptr, current_symtab, ctx);
+		auto count_expr = new_uint_expr (type_count (array_type));
+		sym->metafunc->expr = return_expr (func, count_expr);
+		sym->metafunc->can_inline = true;
+	}
+	current_symtab = symtab;
+	return new_symbol_expr (sym);
+}
+
 const expr_t *
 array_property (const type_t *type, const attribute_t *attr, rua_ctx_t *ctx)
 {
-	return error (attr->params, "not implemented");
+	auto array = attr->params;
+	auto args = new_list_expr (edag_add_expr (array));
+
+	auto array_type = get_type (array);
+	auto expr = new_expr ();
+	expr->type = ex_functor;
+	expr->functor.func = array_count (array_type, ctx);
+	expr->functor.args = args;
+	return expr;
 }
