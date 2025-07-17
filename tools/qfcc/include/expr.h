@@ -467,7 +467,7 @@ typedef struct expr_s {
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
 		ex_alias_t  alias;				///< alias expr params
-		ex_address_t address;			///< alias expr params
+		ex_address_t address;			///< address expr params
 		ex_offset_t offset;				///< struct member offset
 		ex_assign_t assign;				///< assignment expr params
 		ex_branch_t branch;				///< branch expr params
