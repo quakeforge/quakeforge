@@ -2423,6 +2423,7 @@ unary_expr
 
 index_expr
 	: '[' expr ']'				{ $$ = $expr; }
+	| '[' OBJECT_NAME[id] ']'	{ $$ = new_symbol_expr ($id.sym); }
 	;
 
 vector_expr
