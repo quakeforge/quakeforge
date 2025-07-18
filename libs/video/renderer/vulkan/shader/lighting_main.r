@@ -70,7 +70,7 @@ main (void)
 			col = FogTransmit (col, fog, r[1]);
 		}
 #ifdef DEBUG_SHADOW
-		col = DEBUG_SHADOW(p);
+		col = DEBUG_SHADOW(p, l.position.xyz, mat_id);
 #endif
 		light += I * col.w * col.xyz;
 	}

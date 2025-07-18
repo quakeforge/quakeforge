@@ -34,7 +34,7 @@ main (void)
 	float sz = light_radius;
 	vec2 cone = unpackSnorm2x16 (l.cone);
 	float c = cone.x;
-	float sxy = sz * (c < 0 ? (sqrt (1 - c*c) / -c) : 1);
+	float sxy = sz * (c > 0 ? (sqrt (1 - c*c) / c) : 1);
 	vec3 scale = vec3 (sxy, sxy, sz);
 
 	quaternion q = from_to_rotation (vec3 (0, 0, -1), l.axis);
