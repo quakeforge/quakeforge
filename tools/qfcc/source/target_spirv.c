@@ -842,6 +842,8 @@ spirv_storage_class (unsigned storage, const type_t *type)
 	return sc;
 }
 
+static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
+
 static unsigned
 spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 {
@@ -855,20 +857,26 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 	} else {
 		DARRAY_APPEND (&ctx->module->entry_points->interface_syms, sym);
 	}
+	int count = 4;
+	uint32_t init = 0;
+	if (sym->var.init) {
+		count = 5;
+		init = spirv_emit_expr (sym->var.init, ctx);
+	}
 	auto type = sym->type;
 	unsigned tid = spirv_Type (type, ctx);
 	unsigned id = spirv_id (ctx);
-	//FIXME init value
-	auto insn = spirv_new_insn (SpvOpVariable, 4, space, ctx);
+	auto insn = spirv_new_insn (SpvOpVariable, count, space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	INSN (insn, 3) = storage;
+	if (init) {
+		INSN (insn, 4) = init;
+	}
 	spirv_Name (id, sym->name, ctx);
 	spirv_decorate_id (id, sym->attributes, ctx);
 	return id;
 }
-
-static unsigned spirv_emit_expr (const expr_t *e, spirvctx_t *ctx);
 
 static unsigned
 spirv_undef (const type_t *type, spirvctx_t *ctx)
@@ -1685,11 +1693,16 @@ spirv_compound (const expr_t *e, spirvctx_t *ctx)
 		ele_ids[ind++] = spirv_emit_expr (ele->expr, ctx);
 	}
 
+	auto space = ctx->code_space;
+	auto op = SpvOpCompositeConstruct;
+	if (is_constant (e)) {
+		space = ctx->module->globals;
+		op = SpvOpConstantComposite;
+	}
 	auto type = e->compound.type;
 	int tid = spirv_Type (type, ctx);
 	int id = spirv_id (ctx);
-	auto insn = spirv_new_insn (SpvOpCompositeConstruct, 3 + num_ele,
-								ctx->code_space, ctx);
+	auto insn = spirv_new_insn (op, 3 + num_ele, space, ctx);
 	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	for (int i = 0; i < num_ele; i++) {
@@ -2677,6 +2690,26 @@ spirv_var_attributes (specifier_t *spec, attribute_t **attributes)
 	}
 }
 
+static const expr_t *
+spirv_convert_const (symbol_t *sym, void *data)
+{
+	const expr_t *init = data;
+	auto type = dereference_type (sym->type);
+	type = tagged_reference_type (SpvStorageClassFunction, type);
+	auto tab = current_func->locals;
+	auto s = new_symbol (sym->name);
+	s->type = type;
+	s->sy_type = sy_var;
+	s->var.storage = sc_local;
+	s->var.init = init;
+	s->lvalue = sym->lvalue;
+	spirv_add_attr (&s->attributes, "NonWritable", nullptr);
+	symtab_addsymbol (tab, s);
+
+	auto r = new_symbol_expr (s);
+	return r;
+}
+
 static void
 spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 				   expr_t *block)
@@ -2705,8 +2738,7 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 			}
 		}
 	}
-	sym->type = type;
-	sym->type = tagged_reference_type (storage, sym->type);
+	sym->type = tagged_reference_type (storage, type);
 	sym->lvalue = !spec.is_const;
 	sym->sy_type = sy_var;
 	sym->var.storage = spec.storage;
@@ -2716,11 +2748,29 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	if (symtab->type == stab_param || symtab->type == stab_local) {
 		if (init) {
 			if (!block && is_constexpr (init)) {
-				printf ("!block %s\n", sym->name);
+				notice (init, "!block %s\n", sym->name);
 			} else if (block) {
 				auto r = new_symbol_expr (sym);
 				auto e = assign_expr (r, init);
 				append_expr (block, e);
+			} else {
+				error (init, "non-constant initializer");
+			}
+		}
+	} else {
+		if (init) {
+			if (is_constant (init)) {
+				if (init->type == ex_compound && !init->compound.type) {
+					auto i = new_compound_init ();
+					i->compound = init->compound;
+					i->compound.type = type;
+					init = i;
+				}
+				sym->sy_type = sy_convert;
+				sym->convert = (symconv_t) {
+					.conv = spirv_convert_const,
+					.data = (void *) init,
+				};
 			} else {
 				error (init, "non-constant initializer");
 			}

@@ -59,6 +59,7 @@ typedef struct {
 
 typedef struct var_s {
 	enum storage_class_e storage;
+	const expr_t *init;
 } var_t;
 
 typedef struct symbol_s {

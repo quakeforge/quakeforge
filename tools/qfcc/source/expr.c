@@ -990,6 +990,14 @@ is_constant (const expr_t *e)
 		|| (e->type == ex_symbol && e->symbol->sy_type == sy_def
 			&& e->symbol->def->constant))
 		return true;
+	if (e->type == ex_compound) {
+		for (auto ele = e->compound.head; ele; ele = ele->next) {
+			if (!is_constant (ele->expr)) {
+				return false;
+			}
+		}
+		return true;
+	}
 	return false;
 }
 
