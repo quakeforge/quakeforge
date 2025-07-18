@@ -2692,10 +2692,18 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	auto storage = spirv_storage_class (spec.storage, sym->type);
 	auto type = auto_type (sym->type, init);
 	auto entry_point = pr.module->entry_points;
-	if (is_array (type) && !type->array.count
-		&& storage == SpvStorageClassInput && entry_point->gl_in_length) {
-		int count = expr_integral (entry_point->gl_in_length);
-		type = array_type (type->array.type, count);
+	if (is_array (type) && !type->array.count) {
+		if (storage == SpvStorageClassInput) {
+			if (entry_point->gl_in_length) {
+				int count = expr_integral (entry_point->gl_in_length);
+				type = array_type (type->array.type, count);
+			}
+		} else {
+			if (init && init->type == ex_compound) {
+				auto ele_type = dereference_type (type);
+				type = array_type (ele_type, num_elements (init));
+			}
+		}
 	}
 	sym->type = type;
 	sym->type = tagged_reference_type (storage, sym->type);

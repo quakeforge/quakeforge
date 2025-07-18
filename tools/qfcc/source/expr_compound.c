@@ -392,3 +392,17 @@ initialized_temp_expr (const type_t *type, const expr_t *expr)
 	}
 	return block;
 }
+
+int
+num_elements (const expr_t *e)
+{
+	int         count = 0;
+	for (auto ele = e->compound.head; ele; ele = ele->next) {
+		auto des = ele->designator;
+		if (des && des->index && is_integral_val (des->index)) {
+			count = expr_integral (des->index);
+		}
+		count++;
+	}
+	return count;
+}

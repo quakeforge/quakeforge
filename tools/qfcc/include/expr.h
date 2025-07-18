@@ -657,6 +657,7 @@ void assign_elements (expr_t *local_expr, const expr_t *ptr,
 void build_element_chain (element_chain_t *element_chain, const type_t *type,
 						  const expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
+int num_elements (const expr_t *e) __attribute__((pure));
 
 /**	Create a new binary expression node.
 
