@@ -80,7 +80,7 @@
 #include "vkparse.h"
 
 #define shadow_quanta 128
-#define lnearclip 4
+#define lnearclip r_nearclip
 #define NUM_CASCADE 4
 #define max_views 17	// FIXME should be 32 (or really, maxMultiviewViewCount,
 						// but there are other problems there), but nvidia's
@@ -731,6 +731,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 	}
 	if (ndlight) {
 		packet_size += sizeof (mat4f_t[ndlight * 6]);
+		packet_size += RUP (sizeof (qfv_light_matdata_t[ndlight * 6]), 16);
 		packet_size += sizeof (light_t[ndlight]);
 		packet_size += sizeof (qfv_light_render_t[ndlight]);
 	}
@@ -834,7 +835,8 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 				// dlights are local point sources
 				.position = { VectorExpand (dynamic_lights[i]->origin), 1 },
 				// full sphere, normal light (not ambient)
-				.direction = { 0, 0, 1, 1 },
+				.axis = { 0, 0, 1},
+				.cone = { -1 * 32767, 0 },
 				.attenuation = { 0, 0, 1, 1/dynamic_lights[i]->radius },
 			};
 			uint32_t id = lctx->dynamic_base + i;
@@ -2302,8 +2304,7 @@ create_light_matrices (lightingctx_t *lctx)
 				break;
 			case ST_CASCADE:
 			case ST_PLANE:
-				dir = light->direction;
-				dir[3] = 0;
+				dir = (vec4f_t) {VectorExpand (light->axis)};
 				vec4f_t q = dir[0] == -1 ? (vec4f_t) { 0, 0, 1, 0 }
 										 : qrotf (dir, ref_direction);
 				mat4fquat (view, q);
@@ -2345,9 +2346,9 @@ create_light_matrices (lightingctx_t *lctx)
 				}
 				break;
 			case ST_PLANE:
-				float c = -light->direction[3];
+				float c = light->cone[0] / 32767.0;
 				float fov = c / sqrt (1 - c * c);
-				QFV_PerspectiveCos (proj, -light->direction[3], lnearclip);
+				QFV_PerspectiveCos (proj, c, lnearclip);
 				mmulf (view, qfv_z_up, view);
 				mmulf (lm[0], proj, view);
 				*lmd = (qfv_light_matdata_t) {
@@ -2448,11 +2449,11 @@ static int
 light_shadow_type (const light_t *light)
 {
 	if (!light->position[3]) {
-		if (!VectorIsZero (light->direction)) {
+		if (!VectorIsZero (light->axis)) {
 			return ST_CASCADE;
 		}
 	} else {
-		if (light->direction[3] > -0.5) {
+		if (light->cone[0] < 0.5) {
 			return ST_CUBE;
 		} else {
 			return ST_PLANE;
@@ -2477,7 +2478,7 @@ light_compare (const void *_li2, const void *_li1, void *_lights)
 		if (l1->position[3] == l2->position[3]) {
 			// same "type" (point/spot vs directional)
 			// sort by spot size (1 for point/directional)
-			return (l2->direction[3] > -0.5) - (l1->direction[3] > -0.5);
+			return (l2->cone[0] < 0.5 * 32767) - (l1->cone[0] < 0.5 * 32767);
 		}
 		// sort by "type" (point/spot vs directional)
 		return l2->position[3] - l1->position[3];
@@ -2605,7 +2606,7 @@ get_point_size (const light_t *light)
 static int
 get_spot_size (const light_t *light)
 {
-	float c = light->direction[3];
+	float c = light->cone[0] / 32767.0;
 	float s = sqrt (1 - c * c);
 	return abs ((int) (s * light->color[3]));
 }
@@ -3001,7 +3002,8 @@ light_light_ui (void *comp, imui_ctx_t *imui_ctx,
 	UI_Horizontal {
 		UI_Labelf ("Direction: ");
 		UI_FlexibleSpace ();
-		UI_Labelf ("%6.3f %6.3f %6.3f %6.3g", VEC4_EXP (light->direction));
+		UI_Labelf ("%6.3f %6.3f %6.3f %6.3g %6.3f", VectorExpand (light->axis),
+				   light->cone[0] / 32767.0, light->cone[1] / 32767.0);
 	}
 	UI_Horizontal {
 		UI_Labelf ("Attenuation: ");

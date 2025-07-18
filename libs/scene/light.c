@@ -108,7 +108,7 @@ link_light (lightingdata_t *ldata, const light_t *light, entity_t ent)
 		mleaf_t    *leaf = Mod_PointInLeaf (light->position, &model->brush);
 		Mod_LeafPVS_set (leaf, &model->brush, 0, pvs);
 		leafnum = leaf - model->brush.leafs;
-	} else if (DotProduct (light->direction, light->direction)) {
+	} else if (DotProduct (light->axis, light->axis)) {
 		// directional light (sun)
 		pvs = ldata->sun_pvs;
 		leafnum = 0;
@@ -171,7 +171,8 @@ Light_LinkLight (lightingdata_t *ldata, uint32_t entid)
 	light_t light = {
 		.color = dlight->color,
 		.position = dlight->origin,
-		.direction = {0, 0, 1, 1},
+		.axis = {0, 0, 1},
+		.cone = {-1.0 * 32767, 0},
 		.attenuation = {0, 0, 1, 1/dlight->radius},
 	};
 

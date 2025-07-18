@@ -52,7 +52,8 @@ typedef struct scene_s scene_t;
 typedef struct light_s {
 	vec4f_t     color;
 	vec4f_t     position;
-	vec4f_t     direction;
+	vec3_t      axis;
+	int16_t     cone[2];
 	vec4f_t     attenuation;
 } light_t;
 

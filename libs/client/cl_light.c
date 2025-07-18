@@ -27,10 +27,12 @@ dump_light (light_t *light, efrag_t *efrags)
 	}
 	Sys_MaskPrintf (SYS_lighting,
 					"[%g, %g, %g] %g, "
-					"[%g, %g, %g, %g], [%g %g %g] %g, [%g, %g, %g, %g] %d\n",
+					"[%g, %g, %g, %g], [%g %g %g] (%g, %g), "
+					"[%g, %g, %g, %g] %d\n",
 					VEC4_EXP (light->color),
 					VEC4_EXP (light->position),
-					VEC4_EXP (light->direction),
+					VectorExpand (light->axis),
+					light->cone[0] / 32767.0, light->cone[1] / 32767.0,
 					VEC4_EXP (light->attenuation),
 					leafcount);
 }
@@ -129,8 +131,7 @@ parse_sun (lightingdata_t *ldata, plitem_t *entity)
 	VectorSet (1, 1, 1, light.color);
 	light.color[3] = sunlight;
 	light.position = sun_vector (sunangle);
-	light.direction = light.position;
-	light.direction[3] = 1;
+	VectorCopy (light.position, light.axis);
 	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
 	Light_AddLight (ldata, &light, 0);
 }
@@ -160,7 +161,9 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 	Sys_Printf ("}\n");*/
 
 	// omnidirectional light (unit length xyz so not treated as ambient)
-	light->direction = (vec4f_t) { 0, 0, 1, 1 };
+	VectorSet (0, 0, 1, light->axis);
+	light->cone[0] = -1 * 32767;
+	light->cone[1] = 0;
 	// bright white
 	light->color = (vec4f_t) { 1, 1, 1, 300 };
 
@@ -182,8 +185,9 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		if ((str = PL_String (PL_ObjectForKey (entity, "angle")))) {
 			angle = atof (str);
 		}
-		dir[3] = -cos (angle * M_PI / 360); // half angle
-		light->direction = dir;
+		VectorCopy (dir, light->axis);
+		light->cone[0] = cos (angle * M_PI / 360) * 32767;// half angle
+		light->cone[1] = 0.1;	// soften the edge
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
@@ -262,7 +266,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 				0, 0, 1,
 				0,
 			};
-			light->direction = (vec4f_t) { 0, 0, 0, 1 };
+			VectorZero (light->axis);
 			break;
 		case LM_INVERSE3:
 			attenuation = (vec4f_t) {
@@ -314,7 +318,7 @@ CL_LoadLights (plitem_t *entities, scene_t *scene)
 				light_t     light = {};
 				light.color = (vec4f_t) { 1, 1, 1, atof (str) };
 				light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
-				light.direction = (vec4f_t) { 0, 0, 0, 1 };
+				VectorZero (light.axis);
 				Light_AddLight (ldata, &light, 0);
 			}
 		} else if (!strncmp (classname, "light", 5)) {

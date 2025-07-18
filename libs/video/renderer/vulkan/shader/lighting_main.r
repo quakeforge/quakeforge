@@ -12,7 +12,7 @@ float
 spot_cone (vec2 cone, vec3 axis, vec3 dir)
 {
 	float adot = axis • dir;
-	return smoothstep (cone.x, mix (cone.x, 1, cone.y), adot);
+	return smoothstep (cone.x, mix (cone.x, 1, cone.y), -adot);
 }
 
 float

@@ -680,6 +680,13 @@ bi (Light_AddLight)
 	rua_lighting_t *ldata = rua_lighting_get (res, P_ULONG (pr, 0));
 	light_t    *light = &P_PACKED (pr, light_t, 1);
 	int         style = P_INT (pr, 5);
+	union {
+		float f;
+		int16_t i[2];
+	} fi = { .i = { light->cone[0], light->cone[1] } };
+	float c = fi.f;
+	light->cone[0] = c * 32767;
+	light->cone[1] = 0.1 * 32767;
 
 	Light_AddLight (ldata->ldata, light, style);
 }

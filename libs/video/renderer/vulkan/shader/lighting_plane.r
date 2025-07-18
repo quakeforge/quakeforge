@@ -7,8 +7,9 @@
 float
 shadow (uint map_id, uint layer, uint mat_id, vec4 pos, vec3 norm, vec3 lpos)
 {
+	vec4 tp = shadow_mats[mat_id] * vec4 (pos.xyz, 1);
 	float texel_size = lightmatdata[mat_id].texel_size;
-	vec3 np = normal_offset (pos.xyz, norm, texel_size, 1 / pos.w);
+	vec3 np = normal_offset (pos.xyz, norm, texel_size, tp.w / tp.z);
 
 	vec4 p = shadow_mats[mat_id] * vec4 (np, 1);
 	p = p / p.w;
