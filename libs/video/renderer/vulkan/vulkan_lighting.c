@@ -2379,7 +2379,8 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 
 	{
 		auto packet = QFV_PacketAcquire (ctx->staging);
-		size_t matdata_size = sizeof (mat4f_t[lctx->light_matdata.size]);
+		size_t num_matdata = lctx->light_matdata.size;
+		size_t matdata_size = sizeof (qfv_light_matdata_t[num_matdata]);
 		void *matdata_data = QFV_PacketExtend (packet, matdata_size);
 		memcpy (matdata_data, lctx->light_matdata.a, matdata_size);
 		for (size_t i = 0; i < lctx->frames.size; i++) {
