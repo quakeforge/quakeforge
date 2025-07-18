@@ -24,8 +24,15 @@ genDType sign(genDType x) = GLSL(FSign);
 
 genFType mix(genFType x, genFType y, genFType a) = GLSL(FMix);
 genFType mix(genFType x, genFType y, float a) = GLSL(FMix)
-    [x, y, @construct (genFType, a)];
-genFType mix(genFType x, genFType y, genBType a) = SPV(OpSelect) [a, y, x];
+	[x, y, @construct (genFType, a)];
+genDType mix(genDType x, genDType y, genDType a) = GLSL(FMix);
+genDType mix(genDType x, genDType y, double a) = GLSL(FMix)
+	[x, y, @construct (genDType, a)];
+genFType mix(genFType x, genFType y, genBType a) = SPV(OpSelect) [a,y,x];
+genDType mix(genDType x, genDType y, genBType a) = SPV(OpSelect) [a,y,x];
+genIType mix(genIType x, genIType y, genBType a) = SPV(OpSelect) [a,y,x];
+genUType mix(genUType x, genUType y, genBType a) = SPV(OpSelect) [a,y,x];
+genBType mix(genBType x, genBType y, genBType a) = SPV(OpSelect) [a,y,x];
 
 genFType pow(genFType x, genFType y) = GLSL(Pow);
 genFType exp(genFType x) = GLSL(Exp);
