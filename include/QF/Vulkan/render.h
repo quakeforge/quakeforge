@@ -453,7 +453,7 @@ typedef struct qfv_renderframeset_s
 	DARRAY_TYPE (qfv_renderframe_t) qfv_renderframeset_t;
 typedef struct qfv_attachmentinfoset_s
 	DARRAY_TYPE (qfv_attachmentinfo_t *) qfv_attachmentinfoset_t;
-typedef struct qfv_deleteset_s
+typedef struct qfv_deletequeue_s
 	PQUEUE_TYPE (qfv_delete_t) qfv_deletequeue_t;
 
 typedef struct qfv_renderctx_s {
