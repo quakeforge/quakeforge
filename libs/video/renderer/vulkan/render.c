@@ -369,6 +369,9 @@ run_deletion_queue (vulkan_ctx_t *ctx)
 		if (del.framebuffer) {
 			dfunc->vkDestroyFramebuffer (device->dev, del.framebuffer, 0);
 		}
+		if (del.semaphore) {
+			dfunc->vkDestroySemaphore (device->dev, del.semaphore, 0);
+		}
 	}
 }
 

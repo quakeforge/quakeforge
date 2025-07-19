@@ -78,10 +78,15 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
 								  frame->fence, &imageIndex)) {
 		if (octx->framebuffers) {
-			auto dev = device->dev;
+			auto rctx = ctx->render_context;
+			uint32_t frames = rctx->frames.size;
 			for (uint32_t i = 0; i < sc->imageViews->size; i++) {
-				dfunc->vkDestroyFramebuffer (dev, octx->framebuffers[i], 0);
-				dfunc->vkDestroySemaphore (dev, octx->outputSemaphores[i], 0);
+				qfv_delete_t del = {
+					.framebuffer = octx->framebuffers[i],
+					.semaphore = octx->outputSemaphores[i],
+					.deletion_frame = ctx->frameNumber + frames,
+				};
+				PQUEUE_INSERT (&rctx->deletion_queue, del);
 			}
 		}
 		free (octx->framebuffers);

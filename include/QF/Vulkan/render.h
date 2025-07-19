@@ -445,6 +445,7 @@ typedef struct qfv_renderframe_s {
 typedef struct qfv_delete_s {
 	struct qfv_resource_s *resources;
 	VkFramebuffer framebuffer;
+	VkSemaphore semaphore;
 	uint64_t    deletion_frame;
 } qfv_delete_t;
 
