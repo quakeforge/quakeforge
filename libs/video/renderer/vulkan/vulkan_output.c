@@ -58,7 +58,6 @@
 #include "r_local.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
-#include "vkparse.h"//FIXME
 
 static void
 acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
@@ -181,10 +180,9 @@ output_select_pipeline (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto output = QFV_GetStep (params[0], ctx->render_context->job);
-	// FIXME the output render pass has only one subpass
 	auto sp = output->render->active->subpasses;
 
-	// FIXME the output render pass pipelines are in the order
+	// the output render pass pipelines are in the order
 	// output, waterwarp, fisheye, followed by any additional pipelines
 	if (scr_fisheye) {
 		sp->pipelines[0].disabled = true;
@@ -209,7 +207,6 @@ output_select_renderpass (const exprval_t **params, exprval_t *result,
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto main = QFV_GetStep (params[0], ctx->render_context->job);
-	// FIXME the main render step has only two renderpasses
 	auto render = main->render;
 
 	if (scr_fisheye) {

@@ -102,7 +102,6 @@ parse = {
 	};
 	VkPipelineViewportStateCreateInfo = {
 		//flags = auto; reserved for future use (Bits enum does not exist)
-		//FIXME redo as one array
 		viewports = {
 			type = (array, VkViewport);
 			size = viewportCount;
