@@ -1090,36 +1090,27 @@ static unsigned
 spirv_generate_wedge (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
-	auto x = edag_add_expr (new_name_expr ("x"));
-	auto y = edag_add_expr (new_name_expr ("y"));
 	auto v1 = e->expr.e1;
 	auto v2 = e->expr.e2;
-	auto v1x = new_field_expr (v1, x);
-	auto v1y = new_field_expr (v1, y);
-	auto v2x = new_field_expr (v2, x);
-	auto v2y = new_field_expr (v2, y);
-	v1x->field.type = base_type (get_type (v1));
-	v1y->field.type = base_type (get_type (v1));
-	v2x->field.type = base_type (get_type (v2));
-	v2y->field.type = base_type (get_type (v2));
-	auto w = binary_expr ('-', binary_expr ('*', v1x, v2y),
-							   binary_expr ('*', v2x, v1y));
-	return spirv_emit_expr (w, ctx);
+	auto v1x = struct_field_expr (v1, "x");
+	auto v1y = struct_field_expr (v1, "y");
+	auto v2x = struct_field_expr (v2, "x");
+	auto v2y = struct_field_expr (v2, "y");
+	auto west = binary_expr ('-', binary_expr ('*', v1x, v2y),
+								  binary_expr ('*', v2x, v1y));
+	return spirv_emit_expr (west, ctx);
 }
 
 static unsigned
 spirv_generate_qmul (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
-	auto w = edag_add_expr (new_name_expr ("w"));
 	auto q1 = e->expr.e1;
 	auto q2 = e->expr.e2;
-	auto q1s = new_field_expr (q1, w);
+	auto q1s = struct_field_expr (q1, "w");
 	auto q1v = cast_expr (&type_vector, new_swizzle_expr (q1, "xyz"));
-	auto q2s = new_field_expr (q2, w);
+	auto q2s = struct_field_expr (q2, "w");
 	auto q2v = cast_expr (&type_vector, new_swizzle_expr (q2, "xyz"));
-	q1s->field.type = &type_float;
-	q2s->field.type = &type_float;
 	auto q1sq2v = binary_expr ('*', q1s, q2v);
 	auto q2sq1v = binary_expr ('*', q2s, q1v);
 	auto qs = binary_expr ('-', binary_expr ('*', q1s, q2s),
@@ -1135,12 +1126,10 @@ static unsigned
 spirv_generate_qvmul (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
-	auto w = edag_add_expr (new_name_expr ("w"));
 	auto q = e->expr.e1;
 	auto v = e->expr.e2;
-	auto q_w = new_field_expr (q, w);
+	auto q_w = struct_field_expr (q, "w");
 	auto q_xyz = cast_expr (&type_vector, new_swizzle_expr (q, "xyz"));
-	q_w->field.type = &type_float;
 	auto two = new_int_expr (2, true);
 	auto uv = binary_expr (QC_CROSS, q_xyz, v);
 	auto uuv = binary_expr (QC_CROSS, q_xyz, uv);
@@ -1153,12 +1142,10 @@ static unsigned
 spirv_generate_vqmul (const expr_t *e, spirvctx_t *ctx)
 {
 	scoped_src_loc (e);
-	auto w = edag_add_expr (new_name_expr ("w"));
 	auto v = e->expr.e1;
 	auto q = e->expr.e2;
-	auto q_w = new_field_expr (q, w);
+	auto q_w = struct_field_expr (q, "w");
 	auto q_xyz = cast_expr (&type_vector, new_swizzle_expr (q, "xyz"));
-	q_w->field.type = &type_float;
 	auto two = new_int_expr (2, true);
 	auto uv = binary_expr (QC_CROSS, q_xyz, v);
 	auto uuv = binary_expr (QC_CROSS, q_xyz, uv);

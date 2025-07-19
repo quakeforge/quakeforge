@@ -1709,6 +1709,21 @@ get_struct_field (const type_t *t1, const expr_t *e1, const expr_t *e2)
 	return field;
 }
 
+const expr_t *
+struct_field_expr (const expr_t *obj, const char *field_name)
+{
+	auto obj_type = get_type (obj);
+	auto field = new_name_expr (field_name);
+	auto field_sym = get_struct_field (obj_type, obj, field);
+	if (!field_sym) {
+		internal_error (obj, "couldn't find member");
+	}
+	auto member = edag_add_expr (new_symbol_expr (field_sym));
+	auto expr = new_field_expr (obj, member);
+	expr->field.type = field_sym->type;
+	return edag_add_expr (expr);
+}
+
 static const expr_t *
 swizzle_expr (const expr_t *vec, const expr_t *swizzle)
 {

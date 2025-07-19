@@ -843,6 +843,7 @@ const expr_t *new_deffield_expr (int field_val, const type_t *type,
 							     struct def_s *def);
 struct symbol_s *get_struct_field (const type_t *t1, const expr_t *e1,
 								   const expr_t *e2);
+const expr_t *struct_field_expr (const expr_t *obj, const char *field);
 
 /** Create a new function constant expression node.
 
