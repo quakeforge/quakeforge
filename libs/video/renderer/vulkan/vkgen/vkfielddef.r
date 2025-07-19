@@ -105,7 +105,8 @@
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", 0/*FIXME*/, (void *) offsetof (%s, %s)},\n",
+			 "\t{ .name = \"%s\", .type = nullptr,\n"
+			 "\t  .value = (void *) offsetof (%s, %s)},\n",
 			 field_name, struct_name, value_field);
 	return self;
 }

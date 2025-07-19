@@ -80,8 +80,8 @@ write_parse_data (CustomField *self, string indent)
 -writeSymbol
 {
 	fprintf (output_file,
-			 "\t{\"%s\", 0/*FIXME*/, 0/*(void *) offsetof (%s, %s)*/},\n",
-			 field_name, struct_name, "FIXME");
+			 "\t{ .name = \"%s\", .type = nullptr, .value = nullptr },\n",
+			 field_name);
 	return self;
 }
 
