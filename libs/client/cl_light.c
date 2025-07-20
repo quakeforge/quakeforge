@@ -163,7 +163,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 	// omnidirectional light (unit length xyz so not treated as ambient)
 	VectorSet (0, 0, 1, light->axis);
 	light->cone[0] = -1 * 32767;
-	light->cone[1] = 0;
+	light->cone[1] =  0 * 32767;
 	// bright white
 	light->color = (vec4f_t) { 1, 1, 1, 300 };
 
@@ -187,7 +187,7 @@ parse_light (light_t *light, int *style, const plitem_t *entity,
 		}
 		VectorCopy (dir, light->axis);
 		light->cone[0] = cos (angle * M_PI / 360) * 32767;// half angle
-		light->cone[1] = 0.1;	// soften the edge
+		light->cone[1] = 0.5 * 32767;	// soften the edge
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
