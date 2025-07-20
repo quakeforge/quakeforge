@@ -1008,6 +1008,15 @@ scale_expr (const type_t *type, const expr_t *a, const expr_t *b)
 	if (!is_real (get_type (b))) {
 		internal_error (b, "not a real scalar type");
 	}
+	if (is_constant (b)) {
+		double s = expr_floating (b);
+		if (s == 1) {
+			return cast_expr (type, a);
+		}
+		if (s == -1) {
+			return cast_expr (type, neg_expr (a));
+		}
+	}
 
 	auto op = is_scalar (get_type (a)) ? do_mult : do_scale;
 	auto scale = distribute_product (type, a, b, op, false);
