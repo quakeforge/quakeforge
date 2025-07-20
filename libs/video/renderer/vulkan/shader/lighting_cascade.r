@@ -49,9 +49,9 @@ debug_shadow (vec4 pos, uint mat_id)
 	float fd = pos.w;
 	float texel_size = 1;
 	uint ind = find_cascade (fd, mat_id, texel_size);
-	return vec4 (ind & 1, ind & 2, ind & 4, 1);
+	return vec4 (debug[ind], 1);
 }
 
-//#define DEBUG_SHADOW(p,m) debug_shadow(p,m)
+//#define DEBUG_SHADOW(p,lp,m) debug_shadow(p,m)
 
 #include "lighting_main.r"
