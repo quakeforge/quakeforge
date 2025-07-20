@@ -163,6 +163,28 @@ op_alias_offset (operand_t *op)
 	internal_error (op->expr, "eh? how?");
 }
 
+static int
+op_aliases_op_visit (def_t *def, void *data)
+{
+	return def == (def_t *) data;
+}
+
+static bool
+op_aliases_op (operand_t *op, operand_t *tgt)
+{
+	if (op->op_type != tgt->op_type) {
+		return false;
+	}
+	if (op->op_type == op_temp) {
+		// FIXME check?
+		return false;
+	}
+	if (op->op_type == op_def) {
+		return def_visit_all (op->def, 6, op_aliases_op_visit, tgt->def);
+	}
+	return false;
+}
+
 operand_t *
 unalias_op (operand_t *op)
 {
@@ -1130,7 +1152,7 @@ dereference_dst:
 	if (op) {
 		*op = src;
 	}
-	if (src == dst) {
+	if (op_aliases_op (src, dst)) {
 		return sblock;
 	}
 
@@ -1969,9 +1991,20 @@ expr_alias (sblock_t *sblock, const expr_t *e, operand_t **op)
 	if (e->alias.offset) {
 		offset = expr_int (e->alias.offset);
 	}
-	auto type = e->alias.type;
-	sblock = statement_subexpr (sblock, e->alias.expr, &aop);
-	*op = offset_alias_operand (type, offset, aop, e);
+	auto dstType = e->alias.type;
+	auto srcType = get_type (e->alias.expr);
+	// zero-offset alias to the same sized type as the supplied destination
+	// is just a bit-cast so there's no need for a temporary variable to hold
+	// the value, it can be written directly to the destiation
+	if (!offset && op && *op
+		&& type_size (dstType) == type_size (srcType)) {
+		aop = offset_alias_operand (srcType, 0, *op, e);
+		sblock = statement_subexpr (sblock, e->alias.expr, &aop);
+		*op = aop;
+	} else {
+		sblock = statement_subexpr (sblock, e->alias.expr, &aop);
+		*op = offset_alias_operand (dstType, offset, aop, e);
+	}
 	return sblock;
 }
 
