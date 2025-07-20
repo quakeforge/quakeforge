@@ -1510,12 +1510,14 @@ new_alias_expr (const type_t *type, const expr_t *expr)
 const expr_t *
 new_offset_alias_expr (const type_t *type, const expr_t *expr, int offset)
 {
-	if (expr->type == ex_alias && expr->alias.offset) {
-		const expr_t *ofs_expr = expr->alias.offset;
-		if (!is_constant (ofs_expr)) {
-			internal_error (ofs_expr, "non-constant offset for alias expr");
+	if (expr->type == ex_alias) {
+		if (expr->alias.offset) {
+			const expr_t *ofs_expr = expr->alias.offset;
+			if (!is_constant (ofs_expr)) {
+				internal_error (ofs_expr, "non-constant offset for alias expr");
+			}
+			offset += expr_int (ofs_expr);
 		}
-		offset += expr_int (ofs_expr);
 
 		if (expr->alias.expr->type == ex_alias) {
 			internal_error (expr, "alias expr of alias expr");
