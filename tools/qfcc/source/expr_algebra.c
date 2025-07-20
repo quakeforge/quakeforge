@@ -123,9 +123,11 @@ neg_expr (const expr_t *e)
 		return cast_expr (type, e->expr.e1);
 	}
 	auto type = get_type (e);
-	if (e->type == ex_alias && !e->alias.offset && anti_com (e->alias.expr)) {
+	if (e->type == ex_alias
+		&& (!e->alias.offset || !expr_integral (e->alias.offset))
+		&& anti_com (e->alias.expr)) {
 		auto n = neg_expr (e->alias.expr);
-		n = algebra_cast_expr (type, n);
+		n = cast_expr (type, n);
 		return n;
 	}
 	expr_t *neg;
@@ -278,7 +280,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 		}
 	}
 	offset *= type_size (base_type (get_type (expr)));
-	return edag_add_expr (alias_expr (type, expr, offset));
+	return alias_expr (type, expr, offset);
 }
 
 static symtab_t *
