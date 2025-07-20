@@ -86,6 +86,10 @@ is_neg (const expr_t *e)
 static bool __attribute__((const))
 anti_com (const expr_t *e)
 {
+	if (e && e->type == ex_alias
+		&& (!e->alias.offset || !expr_integral (e->alias.offset))) {
+		e = e->alias.expr;
+	}
 	return e && e->type == ex_expr && e->expr.anticommute;
 }
 
@@ -1013,7 +1017,7 @@ scale_expr (const type_t *type, const expr_t *a, const expr_t *b)
 		if (s == 1) {
 			return cast_expr (type, a);
 		}
-		if (s == -1) {
+		if (s == -1 && anti_com (a)) {
 			return cast_expr (type, neg_expr (a));
 		}
 	}
