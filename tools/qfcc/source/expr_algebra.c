@@ -182,6 +182,23 @@ is_ext (const expr_t *e)
 	return e && e->type == ex_extend;
 }
 
+static bool __attribute__((const))
+is_zero (const expr_t *e)
+{
+	if (e->type != ex_value) {
+		return false;
+	}
+	auto type = get_type (e);
+	pr_type_t val[type_size (type)];
+	value_store (val, type, e);
+	for (int i = 0; i < type_size (type); i++) {
+		if (val[i].float_value) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static const expr_t *
 alias_expr (const type_t *type, const expr_t *e, int offset)
 {
@@ -205,6 +222,9 @@ alias_expr (const type_t *type, const expr_t *e, int offset)
 		e = unary_expr ('.', ptr);
 	} else {
 		e = new_offset_alias_expr (type, e, offset);
+	}
+	if (is_zero (e)) {
+		return nullptr;
 	}
 	if (neg) {
 		e = edag_add_expr (e);
