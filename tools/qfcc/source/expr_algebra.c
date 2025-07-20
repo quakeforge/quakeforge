@@ -133,6 +133,9 @@ neg_expr (const expr_t *e)
 	expr_t *neg;
 	if (anti_com (e)) {
 		neg = new_binary_expr (e->expr.op, e->expr.e2, e->expr.e1);
+		neg->expr.commutative = e->expr.commutative;
+		neg->expr.anticommute = e->expr.anticommute;
+		neg->expr.associative = e->expr.associative;
 	} else {
 		if (e->type == ex_alias && is_algebra (type)) {
 			int offset = 0;
