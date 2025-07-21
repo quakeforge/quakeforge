@@ -696,7 +696,10 @@ algebra_low_level_type (const type_t *type)
 	type = unalias_type (type);
 
 	if (type->type == ev_invalid) {
-		internal_error (nullptr, "unexpected algebra type");
+		//FIXME ev_invalid causes an ICE for return. which is correct?
+		//better yet, find a better way to get operand sizes and types for
+		//matching
+		return ev_void;
 	}
 	auto multivec = type->multivec;
 	if (multivec->num_components > 4
