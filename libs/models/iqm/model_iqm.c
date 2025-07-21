@@ -366,6 +366,8 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 		},
 		.crc = crc,
 	};
+	vec4f_t model_min = { INFINITY, INFINITY, INFINITY };
+	vec4f_t model_max = {-INFINITY,-INFINITY,-INFINITY };
 	for (uint32_t i = 0; i < hdr->num_meshes; i++) {
 		auto m = &iqm.meshes[i];
 		meshes[i] = (qf_mesh_t) {
@@ -378,17 +380,25 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 			.material = m->material + text_base,
 			.scale = { 1, 1, 1 },
 			.scale_origin = { 0, 0, 0 },
-			.bounds_min = { INFINITY, INFINITY, INFINITY },
-			.bounds_max = {-INFINITY,-INFINITY,-INFINITY },
 		};
+
+		vec4f_t mesh_min = { INFINITY, INFINITY, INFINITY };
+		vec4f_t mesh_max = {-INFINITY,-INFINITY,-INFINITY };
 		auto verts = (float *) (buf + iqm.vtxarr[0].offset);
 		verts += iqm.meshes[i].first_vertex * 3;
 		for (uint32_t j = 0; j < iqm.meshes[i].num_vertexes; j++) {
-			VectorCompMin (meshes[i].bounds_min, verts, meshes[i].bounds_min);
-			VectorCompMax (meshes[i].bounds_max, verts, meshes[i].bounds_max);
+			vec4f_t v = loadvec3f (verts);
+			mesh_min = minv4f (mesh_min, v);
+			mesh_max = maxv4f (mesh_max, v);
 			verts += 3;
 		}
+		storevec3f (meshes[i].bounds_min, mesh_min);
+		storevec3f (meshes[i].bounds_max, mesh_max);
+		model_min = minv4f (model_min, mesh_min);
+		model_max = maxv4f (model_max, mesh_max);
 	}
+	storevec3f (mod->mins, model_min);
+	storevec3f (mod->maxs, model_max);
 
 	convert_joints (hdr->num_joints, joints, inverse, bone_map,
 					iqm.joints, text_base);
