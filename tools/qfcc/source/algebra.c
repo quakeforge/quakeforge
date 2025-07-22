@@ -495,7 +495,10 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 			c++;
 		};
 	};
-	return make_structure (nullptr, 's', fields, nullptr);
+	const char *name = va("∧%s(%d,%d,%d):%04x", algebra->type->encoding,
+						  algebra->plus, algebra->minus, algebra->zero,
+						  group_mask);
+	return make_structure (name, 's', fields, nullptr);
 }
 
 const type_t *
