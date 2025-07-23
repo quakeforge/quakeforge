@@ -335,7 +335,15 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 	}
 	if (s->type == st_address) {
 		// always return a fresh node
-		return leaf_node (dag, op, s->expr);
+		auto label = operand_label (dag, op);
+		auto node = label->dagnode;
+		auto leaf = leaf_node (dag, op, s->expr);
+		if (node) {
+			// ensure the previously referenced node is evaluated before
+			// the node using this node
+			set_add (leaf->edges, node->number);
+		}
+		return leaf;
 	}
 	dagnode_t  *node = dag_node (op);
 	dagnode_t  *killer = 0;
