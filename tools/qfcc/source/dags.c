@@ -330,6 +330,9 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 static dagnode_t *
 dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 {
+	if (!op) {
+		return nullptr;
+	}
 	if (s->type == st_address) {
 		// always return a fresh node
 		return leaf_node (dag, op, s->expr);
