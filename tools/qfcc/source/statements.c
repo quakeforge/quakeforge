@@ -164,7 +164,13 @@ op_alias_offset (operand_t *op)
 }
 
 static int
-op_aliases_op_visit (def_t *def, void *data)
+op_aliases_op_visit_temp (tempop_t *tempop, void *data)
+{
+	return tempop == (tempop_t *)data;
+}
+
+static int
+op_aliases_op_visit_def (def_t *def, void *data)
 {
 	return def == (def_t *) data;
 }
@@ -176,11 +182,11 @@ op_aliases_op (operand_t *op, operand_t *tgt)
 		return false;
 	}
 	if (op->op_type == op_temp) {
-		// FIXME check?
-		return false;
+		return tempop_visit_all (&op->tempop, 4|2, op_aliases_op_visit_temp,
+								 &tgt->tempop);
 	}
 	if (op->op_type == op_def) {
-		return def_visit_all (op->def, 6, op_aliases_op_visit, tgt->def);
+		return def_visit_all (op->def, 4|2, op_aliases_op_visit_def, tgt->def);
 	}
 	return false;
 }
