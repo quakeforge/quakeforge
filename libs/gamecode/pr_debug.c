@@ -267,7 +267,8 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_size (pr, aux_type);
 		case ty_algebra:
-			return 1;	//FIXME wip
+			//FIXME wip
+			return type->algebra.width * pr_type_size[type->algebra.type];
 		case ty_meta_count:
 			break;
 	}
