@@ -605,6 +605,7 @@ offset_alias_operand (const type_t *type, int offset, operand_t *aop,
 	}
 	if (aop->op_type == op_temp) {
 		while (aop->tempop.alias) {
+			offset += aop->tempop.offset;
 			aop = aop->tempop.alias;
 			if (aop->op_type != op_temp)
 				internal_error (expr, "temp alias of non-temp var");
