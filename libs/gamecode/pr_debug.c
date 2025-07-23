@@ -1879,6 +1879,10 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					default:
 						goto err;
 				}
+				if (basic_type.basic.columns < 0) {
+					// -1 is used for "don't care" when searching by opcode
+					basic_type.basic.columns = 1;
+				}
 				switch (mode) {
 					case 'R':
 						optype = &res->void_type;
