@@ -136,6 +136,8 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 	expr_t     *entry = new_block_expr (0);
 	entry->loc = func->def->loc;
 
+	func->temp_num = 0;
+
 	e = new_adjstk_expr (0, 0);
 	e->loc = entry->loc;
 	append_expr (entry, e);
@@ -170,6 +172,8 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 	} else {
 		statements_count_temps (func->sblock);
 	}
+
+	func->temp_num = 0;
 	emit_statements (func->sblock);
 
 	defspace_sort_defs (func->parameters->space);

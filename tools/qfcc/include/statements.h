@@ -46,7 +46,8 @@ struct expr_s;
 
 typedef struct tempop_s {
 	struct def_s   *def;
-	int             offset;
+	int         id;
+	int         offset;
 	const struct type_s *type;
 	struct flowvar_s *flowvar;
 	struct daglabel_s *daglabel;

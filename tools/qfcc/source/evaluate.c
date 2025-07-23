@@ -259,7 +259,8 @@ evaluate_constexpr (const expr_t *e)
 	defspace_reset (&value_defspace);
 	auto saved_version = options.code.progsversion;
 	auto saved_func = current_func;
-	current_func = nullptr;
+	function_t eval_func = { .id = -1 };
+	current_func = &eval_func;
 	options.code.progsversion = PROG_VERSION;
 	sblock_t    sblock = {
 		.tail = &sblock.statements,

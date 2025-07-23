@@ -217,15 +217,15 @@ tempop_string (operand_t *tmpop)
 {
 	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->alias) {
-		return va ("<tmp %s %p:%d:%p:%d:%d>",
+		return va ("<tmp%d %s:%d<tmp%d:%d>:%d>", tempop->id,
 				   pr_type_name[tempop->type->type],
-				   tmpop, tempop->users,
-				   tempop->alias,
-				   tempop->offset,
-				   tempop->alias->tempop.users);
+				   tempop->users,
+				   tempop->alias->tempop.id,
+				   tempop->alias->tempop.users,
+				   tempop->offset);
 	}
-	return va ("<tmp %s %p:%d>", pr_type_name[tempop->type->type],
-			   tmpop, tempop->users);
+	return va ("<tmp%d %s:%d>", tempop->id, pr_type_name[tempop->type->type],
+			   tempop->users);
 }
 
 const char *
@@ -522,6 +522,7 @@ temp_operand (const type_t *type, const expr_t *expr)
 {
 	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
+	op->tempop.id = current_func->temp_num++;
 	op->tempop.type = type;
 	op->type = type;
 	op->size = type_size (type);
@@ -1665,7 +1666,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	scoped_src_loc (e);
 	debug (e, "RETURN");
 	opcode = "return";
-	if (current_func) {
+	if (current_func && current_func->id != -1) {
 		bool v6p = options.code.progsversion < PROG_VERSION;
 		auto parameters = v6p ? current_func->locals : current_func->parameters;
 		int ind = 0;
