@@ -233,10 +233,10 @@ source_path_f (void *data, const cvar_t *cvar)
 }
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
-static pr_short_t __attribute__((pure))
+static pr_uint_t __attribute__((pure))
 pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 {
-	pr_short_t  size;
+	pr_uint_t   size;
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_bool:
@@ -1612,7 +1612,7 @@ pr_debug_array_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	qfot_array_t *array = &type->array;
 
 	qfot_type_t *val_type = &G_STRUCT (pr, qfot_type_t, array->type);
-	int         val_size = pr_debug_type_size (pr, val_type);
+	pr_uint_t   val_size = pr_debug_type_size (pr, val_type);
 
 	dstring_appendstr (dstr, "{");
 	int offset = 0;
