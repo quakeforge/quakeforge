@@ -232,6 +232,34 @@ source_path_f (void *data, const cvar_t *cvar)
 	source_paths[i] = 0;
 }
 
+static etype_t __attribute__((pure))
+pr_debug_type_base (const progs_t *pr, const qfot_type_t *type)
+{
+	qfot_type_t *aux_type;
+	switch (type->meta) {
+		case ty_bool:
+		case ty_basic:
+		case ty_handle:
+		case ty_struct:
+		case ty_union:
+		case ty_enum:
+		case ty_class:
+			return type->type;
+		case ty_array:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
+			return pr_debug_type_base (pr, aux_type);
+		case ty_alias:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
+			return pr_debug_type_base (pr, aux_type);
+		case ty_algebra:
+			//FIXME wip
+			return type->algebra.type;
+		case ty_meta_count:
+			break;
+	}
+	return 0;
+}
+
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 static pr_uint_t __attribute__((pure))
 pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
@@ -1180,15 +1208,31 @@ global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 			dstring_appendstr (dstr, "(");
 		}
 		if (!type || type->type == ev_void) {
+			auto def_type = &dummy_type;
 			if (def) {
 				if (!def->type_encoding) {
-					dummy_type.type = def->type;
-					type = &dummy_type;
+					if (def->type < ev_type_count) {
+						dummy_type = *res->type_encodings[def->type];
+					} else {
+						dummy_type = res->void_type;
+					}
 				} else {
-					type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+					def_type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
 				}
 			} else {
-				type = &res->void_type;
+				dummy_type = res->void_type;
+			}
+
+			if (type && (pr_debug_type_size (pr, type)
+						 < pr_debug_type_size (pr, def_type))) {
+				etype_t base = pr_debug_type_base (pr, def_type);
+				if (base < ev_invalid) {
+					dummy_type = *type;
+					dummy_type.type = base;
+					type = &dummy_type;
+				}
+			} else {
+				type = def_type;
 			}
 		}
 		value_string (data, type, pr->pr_globals + offset);
