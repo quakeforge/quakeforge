@@ -383,6 +383,9 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 		if (node && dag->killer_node >= 0) {
 			killer = dag->nodes[dag->killer_node];
 		}
+		if (node) {
+			dagnode_set_edges (dag, node, s);
+		}
 	}
 	if (killer) {
 		// When an operand refers to a killed node, it must be
@@ -479,6 +482,27 @@ dag_find_node (def_t *def, void *_daglabel)
 }
 
 static void
+leafnode_set_edges (operand_t *op, dagnode_t *n)
+{
+	if (op->op_type == op_value
+		&& op->value->lltype == ev_ptr
+		&& op->value->pointer.def) {
+		def_visit_all (op->value->pointer.def, 1,
+					   dagnode_def_set_edges_visit, n);
+	}
+	if (op->op_type == op_def
+		&& (op->def->alias || op->def->alias_defs)) {
+		def_visit_all (op->def, 1,
+					   dagnode_def_set_edges_visit, n);
+	}
+	if (op->op_type == op_temp
+		&& (op->tempop.alias || op->tempop.alias_ops)) {
+		tempop_visit_all (&op->tempop, 1,
+						  dagnode_tempop_set_edges_visit, n);
+	}
+}
+
+static void
 dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 {
 	int         i;
@@ -490,6 +514,10 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 	}
 	if (n->type == st_flow)
 		return;
+	if (n->label->op) {
+		// leaf node
+		leafnode_set_edges (n->label->op, n);
+	}
 	for (i = 0; i < 3; i++) {
 		dagnode_t  *child = n->children[i];
 		if (child) {
@@ -499,22 +527,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 				if (node != child && node != n) {
 					set_add (node->edges, n->number);
 				}
-				if (op->op_type == op_value
-					&& op->value->lltype == ev_ptr
-					&& op->value->pointer.def) {
-					def_visit_all (op->value->pointer.def, 1,
-								   dagnode_def_set_edges_visit, n);
-				}
-				if (op->op_type == op_def
-					&& (op->def->alias || op->def->alias_defs)) {
-					def_visit_all (op->def, 1,
-								   dagnode_def_set_edges_visit, n);
-				}
-				if (op->op_type == op_temp
-					&& (op->tempop.alias || op->tempop.alias_ops)) {
-					tempop_visit_all (&op->tempop, 1,
-									  dagnode_tempop_set_edges_visit, n);
-				}
+				leafnode_set_edges (op, n);
 			}
 			if (n != child)
 				set_add (n->edges, child->number);
