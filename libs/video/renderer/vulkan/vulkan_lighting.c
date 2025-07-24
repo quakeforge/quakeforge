@@ -472,9 +472,10 @@ transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
 static bool
 calculate_splits (light_split_t *s)
 {
+	qfZoneScoped (true);
 	if (s->splits
 		&& s->num_splits == NUM_CASCADE + 1
-		&& s->lambda == 0.98 //FIXME cvar
+		&& s->lambda == 0.98f //FIXME cvar
 		&& s->far == r_farclip
 		&& s->near == r_nearclip) {
 		return false;
