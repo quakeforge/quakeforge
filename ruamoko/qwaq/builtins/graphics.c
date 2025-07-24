@@ -173,6 +173,48 @@ bi_newscene (progs_t *pr, void *_res)
 	SCR_NewScene (Scene_GetScene (pr, scene_id));
 }
 
+static vec4f_t
+vec_select (vec4i_t mask, vec4f_t a, vec4f_t b)
+{
+	return (vec4f_t) ((mask & (vec4i_t) a) | (~mask & (vec4i_t) b));
+}
+
+static vec4f_t
+box_corner (ent_aabb_t box, int corner)
+{
+	vec4f_t b_min = loadvec3f (box.mins);
+	vec4f_t b_max = loadvec3f (box.maxs);
+	b_max[3] = 1;
+	vec4i_t mask = {
+		((corner >> 0) & 1) - 1,
+		((corner >> 1) & 1) - 1,
+		((corner >> 2) & 1) - 1,
+	};
+	return vec_select (mask, b_min, b_max);
+}
+
+
+static ent_aabb_t
+transform_bounds (const mat4f_t mat, ent_aabb_t bounds)
+{
+	vec4f_t nb[] = {
+		{ INFINITY, INFINITY, INFINITY },
+		{-INFINITY,-INFINITY,-INFINITY },
+	};
+	for (int i = 0; i < 8; i++) {
+		vec4f_t pos = box_corner (bounds, i);
+		pos = mvmulf (mat, pos);
+		pos /= pos[3];
+		nb[0] = minv4f (nb[0], pos);
+		nb[1] = maxv4f (nb[1], pos);
+	}
+	return (ent_aabb_t) {
+		.mins = { VectorExpand (nb[0]) },
+		.maxs = { VectorExpand (nb[1]) },
+	};
+}
+
+
 static void
 bi_refresh (progs_t *pr, void *_res)
 {
@@ -216,14 +258,12 @@ bi_refresh (progs_t *pr, void *_res)
 						.id = ent,
 						.base = scene->base,
 				});
-				vec4f_t pos = Transform_GetWorldPosition (xform);
-				vec4f_t scale = Transform_GetWorldScale (xform);
 				ent_aabb_t aabb = {
 					.mins = { VectorExpand (rend->model->mins) },
 					.maxs = { VectorExpand (rend->model->maxs) },
 				};
-				storevec3f (aabb.mins, loadvec3f (aabb.mins) * scale + pos);
-				storevec3f (aabb.maxs, loadvec3f (aabb.maxs) * scale + pos);
+				auto mat = Transform_GetWorldMatrixPtr (xform);
+				aabb = transform_bounds (mat, aabb);
 				if (!rend->onlyshadows) {
 					Ent_SetComponent (ent, c_receiver, scene->reg, &aabb);
 				} else {
