@@ -2347,16 +2347,16 @@ pga3_wzy_wxz_wyx_xyz_geom_x_y_z_w (const expr_t **c,
 {
 	auto stype = alg->type;
 	auto vtype = vector_type (stype, 3);
-	auto wtype = vector_type (stype, 4);
 	auto geom_type = algebra_mvec_type (alg, 0x10);
 	auto va = offset_cast (vtype, a, 0);
 	auto vb = offset_cast (vtype, b, 0);
-	auto wa = offset_cast (wtype, a, 0);
-	auto wb = offset_cast (wtype, b, 0);
 	auto sa = offset_cast (stype, a, 3);
+	auto sb = offset_cast (stype, b, 3);
 	c[1] = scale_expr (algebra_mvec_type (alg, 0x02), vb, sa);
 	c[3] = cross_expr (algebra_mvec_type (alg, 0x08), va, vb);
-	c[4] = neg_expr (dot_expr (geom_type, wb, wa));
+	c[4] = neg_expr (sum_expr (geom_type,
+							   dot_expr (stype, va, vb),
+							   scale_expr (stype, sa, sb)));
 }
 
 static void
