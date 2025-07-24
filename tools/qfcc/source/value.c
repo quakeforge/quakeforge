@@ -341,7 +341,14 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 		memcpy (dst, &D_PACKED (pr_type_t, def), dstSize);
 		return;
 	}
-	ex_value_t *val = 0;
+	ex_value_t *val = nullptr;
+	int offset = 0;
+	if (src->type == ex_alias) {
+		if (src->alias.offset) {
+			offset = expr_integral (src->alias.offset);
+		}
+		src = src->alias.expr;
+	}
 	if (src->type == ex_value) {
 		val = src->value;
 	}
@@ -351,7 +358,7 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 	if (!val) {
 		internal_error (src, "unexpected constant expression type");
 	}
-	memcpy (dst, &val->raw_value, dstSize);
+	memcpy (dst, &val->raw_value + offset, dstSize);
 }
 
 const char *
