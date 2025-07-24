@@ -3117,8 +3117,10 @@ const expr_t *
 algebra_cast_expr (const type_t *dstType, const expr_t *e)
 {
 	auto srcType = get_type (e);
-	if (dstType->type == ev_invalid
-		|| srcType->type == ev_invalid) {
+	if (!(is_scalar (dstType) || is_nonscalar (dstType)
+		  || is_algebra (dstType))
+		|| !(is_scalar (srcType) || is_nonscalar (srcType)
+			 || is_algebra (srcType))) {
 		return cast_error (e, srcType, dstType);
 	}
 
