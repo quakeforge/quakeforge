@@ -827,7 +827,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		};
 		packet_data += RUP (sizeof (qfv_light_matdata_t[ndlight * 6]), 16);
 		for (int i = 0; i < ndlight * 6; i++) {
-			uint32_t id = light_ids[ST_CASCADE][i];
+			uint32_t id = light_ids[ST_CUBE][i];
 			auto r = &lctx->light_control.a[id];
 			matdata[i] = (qfv_light_matdata_t) {
 				.texel_size = 2 * lnearclip / r->size,
