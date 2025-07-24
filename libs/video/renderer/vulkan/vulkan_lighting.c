@@ -1079,7 +1079,9 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 			lctx->splat_verts,
 		};
 		VkDeviceSize offsets[] = { 0, 0, 0 };
-		dfunc->vkCmdBindVertexBuffers (cmd, 0, 3, buffers, offsets);
+		static_assert (countof(buffers) == countof(offsets));
+		dfunc->vkCmdBindVertexBuffers (cmd, 0, countof(buffers), buffers,
+									   offsets);
 		dfunc->vkCmdBindIndexBuffer (cmd, lctx->splat_inds, 0,
 									 VK_INDEX_TYPE_UINT32);
 	} else {
@@ -1095,7 +1097,7 @@ lighting_bind_descriptors (const exprval_t **params, exprval_t *result,
 			}[shadow_type],
 		};
 		dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-										layout, 0, 4, sets, 0, 0);
+										layout, 0, countof(sets), sets, 0, 0);
 	}
 }
 
