@@ -165,6 +165,12 @@ Array *windows;
 		{ 0, -0.6, -0.8, 0.9848 },
 		{ 0, 0, 1, 0 },
 	}, 0);
+	Light_AddLight (ldata, {
+		{99,99,99, 300 },
+		{15, 0,10, 1 },
+		{ 0, 0, 1,-1 },
+		{ 0, 0, 1, 0 },
+	}, 0);
 	Scene_SetLighting (scene, ldata);
 
 	entity_t camera_ent = Scene_CreateEntity (scene);
@@ -885,24 +891,29 @@ main (int argc, string *argv)
 
 	[main_window setModel:Model_Load ("progs/girl14.iqm")];
 
+	entity_t nh_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Capsule_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Cube_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Octahedron_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
 
+	printf ("Night Heron: %lx\n", nh_ent);
 	printf ("Capsule: %lx\n", Capsule_ent);
 	printf ("Cube: %lx\n", Capsule_ent);
 	printf ("Octahedron: %lx\n", Octahedron_ent);
 	printf ("Plane: %lx\n", Plane_ent);
 	printf ("Tetrahedron: %lx\n", Tetrahedron_ent);
 
+	Entity_SetModel (nh_ent, Model_Load ("night_heron.iqm"));
 	Entity_SetModel (Capsule_ent, Model_Load ("progs/Capsule.mdl"));
 	Entity_SetModel (Cube_ent, Model_Load ("progs/Cube.mdl"));
 	Entity_SetModel (Octahedron_ent, Model_Load ("progs/Octahedron.mdl"));
 	Entity_SetModel (Plane_ent, Model_Load ("progs/Plane.mdl"));
 	Entity_SetModel (Tetrahedron_ent, Model_Load ("progs/Tetrahedron.mdl"));
 
+	Transform_SetLocalPosition(Entity_GetTransform (nh_ent), {15, 0, 10, 1});
+	Transform_SetLocalRotation(Entity_GetTransform (nh_ent), {0.5, -0.5, 0.5, 0.5});
 	Transform_SetLocalPosition(Entity_GetTransform (Capsule_ent), {5, 2, 1, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Cube_ent), {5, -2, 0.5, 1});
 	Transform_SetLocalPosition(Entity_GetTransform (Octahedron_ent), {0, -2, 0.5, 1});
