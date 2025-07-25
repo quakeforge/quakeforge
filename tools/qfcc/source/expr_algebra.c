@@ -3256,6 +3256,13 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 	src = mvec_expr (src, algebra);
 	mvec_scatter (c, src, algebra);
 
+	pr_uint_t dstMask = get_group_mask (dstType, algebra);
+	pr_uint_t srcMask = get_group_mask (srcType, algebra);
+	if ((~dstMask) & srcMask) {
+		// dstType is smaller than srcType
+		return type_mismatch (dst, src, '=');
+	}
+
 	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr (0);
 	block->block.no_flush = true;
@@ -3264,7 +3271,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		if (!c[i]) {
 			continue;
 		}
-		while (sym->type != get_type (c[i])) {
+		while (sym && sym->type != get_type (c[i])) {
 			sym = sym->next;
 		}
 		int size = sym->offset - memset_base;
