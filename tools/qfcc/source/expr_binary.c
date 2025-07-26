@@ -853,19 +853,6 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 const expr_t *
 binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
-	// FIXME this is target-specific info and should not be in the
-	// expression tree
-	if (e1->type == ex_block && e1->block.is_call
-		&& has_function_call (e2) && e1->block.result) {
-		// the temp assignment needs to be inside the block so assignment
-		// code generation doesn't see it when applying right-associativity
-		expr_t    *tmp = new_temp_def_expr (get_type (e1->block.result));
-		auto ne = assign_expr (tmp, e1->block.result);
-		auto nb = new_block_expr (e1);
-		append_expr (nb, ne);
-		nb->block.result = tmp;
-		e1 = nb;
-	}
 	if (e1->type == ex_error)
 		return e1;
 
