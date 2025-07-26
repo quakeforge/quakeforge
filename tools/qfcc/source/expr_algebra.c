@@ -282,9 +282,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 	}
 	if (is_neg (expr)) {
 		auto e = expr->expr.e1;
-		if (e->type == ex_extend) {
-			return neg_expr (offset_cast (type, e, offset));
-		}
+		return neg_expr (offset_cast (type, e, offset));
 	}
 	offset *= type_size (base_type (get_type (expr)));
 	return alias_expr (type, expr, offset);
