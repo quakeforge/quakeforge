@@ -1020,6 +1020,8 @@ scale_expr (const type_t *type, const expr_t *a, const expr_t *b)
 		}
 	}
 
+	a = cast_expr (float_type (get_type (a)), a);
+
 	auto op = is_scalar (get_type (a)) ? do_mult : do_scale;
 	auto scale = distribute_product (type, a, b, op, false);
 	if (!scale) {
