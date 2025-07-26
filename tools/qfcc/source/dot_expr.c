@@ -1097,7 +1097,7 @@ dump_dot_expr (const void *_e, const char *filename)
 	dstring_t  *dstr = dstring_newstr ();
 	const expr_t *e = _e;
 
-	dasprintf (dstr, "digraph expr_%p {\n", e);
+	dasprintf (dstr, "digraph \"expr_%p\" {\n", e);
 	dasprintf (dstr, "  graph [label=\"%s\"];\n",
 			   filename ? quote_string (filename) : "");
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
