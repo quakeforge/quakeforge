@@ -850,27 +850,11 @@ check_precedence (int op, const expr_t *e1, const expr_t *e2)
 	return 0;
 }
 
-static int
-is_call (const expr_t *e)
-{
-	return e->type == ex_block && e->block.is_call;
-}
-
 const expr_t *
 binary_expr (int op, const expr_t *e1, const expr_t *e2)
 {
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
-	if (e1->type == ex_alias && is_call (e1->alias.expr)) {
-		// move the alias expression inside the block so the following check
-		// can detect the call and move the temp assignment into the block
-		auto block = (expr_t *) e1->alias.expr;
-		auto ne = new_expr ();
-		*ne = *e1;
-		ne->alias.expr = block->block.result;
-		block->block.result = ne;
-		e1 = block;
-	}
 	if (e1->type == ex_block && e1->block.is_call
 		&& has_function_call (e2) && e1->block.result) {
 		// the temp assignment needs to be inside the block so assignment
