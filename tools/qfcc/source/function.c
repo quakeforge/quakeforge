@@ -781,8 +781,17 @@ find_generic_function (genfunc_t **genfuncs, const expr_t *fexpr,
 		}
 	}
 	if (best_ind < 0) {
-		error (fexpr, "unable to find generic function matching %s",
-			   fsym->name);
+		auto pstr = dstring_newstr ();
+		for (int i = 0; i < num_params; i++) {
+			print_type_str (pstr, call_params[i].type);
+			if (i < num_params - 1) {
+				dstring_appendstr (pstr, ", ");
+			}
+		}
+		int space = pstr->str[0] == ' ';
+		error (fexpr, "unable to find generic function matching %s(%s)",
+			   fsym->name, pstr->str + space);
+		dstring_delete (pstr);
 		return nullptr;
 	}
 	for (int i = 0; i < num_funcs; i++) {
@@ -1233,7 +1242,18 @@ find_function (const expr_t *fexpr, const expr_t *params, rua_ctx_t *ctx)
 	}
 	if (best_ind < 0) {
 		free (funcs);
-		return error (fexpr, "unable to find function matching");
+		auto pstr = dstring_newstr ();
+		for (int i = 0; i < num_params; i++) {
+			print_type_str (pstr, call_params[i].type);
+			if (i < num_params - 1) {
+				dstring_appendstr (pstr, ", ");
+			}
+		}
+		int space = pstr->str[0] == ' ';
+		auto err = error (fexpr, "unable to find function matching %s(%s)",
+						  fname, pstr->str + space);
+		dstring_delete (pstr);
+		return err;
 	}
 	for (int i = 0; i < num_funcs; i++) {
 		if (i != best_ind && costs[i] == best_cost) {
