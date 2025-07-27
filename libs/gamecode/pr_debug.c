@@ -1688,6 +1688,11 @@ pr_debug_handle_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	dstring_appendstr (dstr, "<handle>");
+	if (type->handle.type == ev_long) {
+		dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+	} else {
+		dasprintf (dstr, "%d", PR_PTR (int, value));
+	}
 }
 
 VISIBLE void
