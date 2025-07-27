@@ -205,8 +205,8 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 
 	auto type = get_type (com);
 	auto col = gather_terms (type, com_adds, com_subs);
-	if (!col) {
-		return col;
+	if (!col || !(col = optimize_core (col))) {
+		return nullptr;
 	}
 	if (is_neg (col)) {
 		col = neg_expr (col);
@@ -330,7 +330,9 @@ optimize_scale (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	auto type = get_type (expr);
 	auto scale = expr->expr.e1;
 	auto col = gather_terms (type, com_adds, com_subs);
-	col = optimize_core (col);
+	if (!col || !(col = optimize_core (col))) {
+		return nullptr;
+	}
 
 	scale = typed_binary_expr (type, QC_SCALE, col, common);
 	scale = edag_add_expr (scale);
@@ -404,7 +406,7 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 
 	auto type = get_type (expr);
 	auto col = gather_terms (type, com_adds, com_subs);
-	if (!(col = optimize_core (col))) {
+	if (!col || !(col = optimize_core (col))) {
 		return nullptr;
 	}
 
