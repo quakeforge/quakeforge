@@ -757,7 +757,7 @@ Hierref_DestroyComponent (void *href, ecs_registry_t *reg)
 	hierref_t   ref = *(hierref_t *) href;
 	if (ECS_EntValid (ref.id, reg)) {
 		hierarchy_t *h = Ent_GetComponent (ref.id, ecs_hierarchy, reg);
-		h->ent[ref.index] = -1;
+		h->ent[ref.index] = nullent;
 		Hierarchy_RemoveHierarchy (h, ref.index, 1);
 		if (!h->num_objects) {
 			Hierarchy_Delete (ref.id, reg);
