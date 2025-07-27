@@ -159,6 +159,11 @@ ent_remove_component (ecs_pool_t *pool, ecs_subpool_t *subpool,
 VISIBLE void
 Ent_RemoveComponent (uint32_t ent, uint32_t comp, ecs_registry_t *registry)
 {
+	if (registry->locked) {
+		// the registry is being deleted and mass entity and component
+		// deletions are going on
+		return;
+	}
 	uint32_t    id = Ent_Index (ent);
 	ecs_pool_t *pool = &registry->comp_pools[comp];
 	ecs_subpool_t *subpool = &registry->subpools[comp];
