@@ -463,6 +463,7 @@ raise_scale (const expr_t *expr)
 		return expr;
 	}
 
+	auto type = get_type (expr);
 	const expr_t *a_mult = nullptr;
 	const expr_t *b_mult = nullptr;
 	auto a = raise_scale (expr->expr.e1);
@@ -475,7 +476,7 @@ raise_scale (const expr_t *expr)
 		b_mult = b->expr.e2;
 		b = b->expr.e1;
 	}
-	expr = binary_expr (op, a, b);
+	expr = typed_binary_expr (type, op, a, b);
 	if (a_mult || b_mult) {
 		if (op == QC_CROSS) {
 			const expr_t *mult;
@@ -484,16 +485,15 @@ raise_scale (const expr_t *expr)
 			} else {
 				mult = a_mult ? a_mult : b_mult;
 			}
-			auto type = get_type (expr);
 			expr = typed_binary_expr (type, QC_SCALE, expr, mult);
 			expr = fold_constants (expr);
 			expr = edag_add_expr (expr);
 		} else {
 			if (a_mult) {
-				expr = binary_expr ('*', expr, a_mult);
+				expr = typed_binary_expr (type, '*', expr, a_mult);
 			}
 			if (b_mult) {
-				expr = binary_expr ('*', expr, b_mult);
+				expr = typed_binary_expr (type, '*', expr, b_mult);
 			}
 		}
 	}
