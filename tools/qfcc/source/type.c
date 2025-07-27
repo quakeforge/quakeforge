@@ -1983,6 +1983,13 @@ type_same (const type_t *dst, const type_t *src)
 	return dst == src;
 }
 
+bool
+type_move_assign (const type_t *type)
+{
+	return (is_structural (type) || is_matrix (type) || type->width > 4
+			|| (is_algebra (type) && type_size (type) > 4));
+}
+
 int
 type_size (const type_t *type)
 {

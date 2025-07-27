@@ -1120,8 +1120,7 @@ expr_assign (sblock_t *sblock, const expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 		}
 	} else {
-		if (is_structural (dst_type) || is_matrix (dst_type)
-			|| dst_type->width > 4) {
+		if (type_move_assign (dst_type)) {
 			return expr_assign_copy (sblock, e, op, src);
 		}
 
