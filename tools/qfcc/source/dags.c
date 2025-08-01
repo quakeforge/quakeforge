@@ -604,6 +604,9 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 			flowvar_t  *var = flowvars[g->element];
 			dagnode_t  *gn = dag_node (var->op);
 			if (gn) {
+				if (n == gn) {
+					internal_error (n->label->expr, "seppuku");
+				}
 				gn->killed = n;
 				set_add (n->edges, gn->number);
 				set_remove (gn->edges, n->number);
@@ -641,6 +644,9 @@ dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
 	if (tempop == &l->op->tempop)
 		return 0;
 	label = tempop->daglabel;
+	if (label && label->dagnode == node) {
+		return 0;
+	}
 	if (label && label->dagnode && !label->dagnode->killed) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
@@ -659,6 +665,9 @@ dag_def_kill_aliases_visit (def_t *def, void *_l)
 	if (def == l->op->def)
 		return 0;
 	label = def->daglabel;
+	if (label && label->dagnode == node) {
+		return 0;
+	}
 	if (label && label->dagnode && !label->dagnode->killed) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
@@ -923,6 +932,9 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n, bool is_call)
 			if (op_is_constant (node->label->op)
 				|| (node->type == st_func && label_is_call (node->label))
 				|| (var && set_is_member (func->global_vars, var->number))) {
+				if (n == node) {
+					continue;
+				}
 				node->killed = n;
 			}
 		} else {
@@ -944,7 +956,10 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n, bool is_call)
 				// This is reasonable as there is no programmer access to temps.
 				continue;
 			}
-			// otherwise, kill all nodes (FIXME be smarter)
+			// otherwise, kill all nodes (FIXME be smarter) except this one
+			if (n == node) {
+				continue;
+			}
 			node->killed = n;
 		}
 	}
@@ -1100,6 +1115,10 @@ dag_create (flownode_t *flownode)
 		for (auto kill = s->kill; kill; kill = kill->next) {
 			auto l = operand_label (dag, kill);
 			if (l->dagnode && !l->dagnode->killed) {
+				if (n == l->dagnode) {
+					// don't kill self
+					continue;
+				}
 				l->dagnode->killed = n;
 			}
 		}
