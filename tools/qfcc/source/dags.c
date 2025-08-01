@@ -377,6 +377,13 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 				set_add (node->parents, n->number);
 				dagnode_set_edges (dag, n, s);
 				dagnode_set_reachable (dag, n);
+
+				auto l = operand_label (dag, op);
+				if (l->dagnode) {
+					set_remove (l->dagnode->identifiers, l->number);
+				}
+				l->expr = s->expr;
+				l->dagnode = n;
 			}
 			node = n;
 		}
@@ -495,6 +502,11 @@ dag_find_node (def_t *def, void *_daglabel)
 static void
 leafnode_set_edges (operand_t *op, dagnode_t *n)
 {
+	if (n->type == st_alias) {
+		// don't need edges on alias nodes as they're actually no-ops and
+		// *always* have a child
+		return;
+	}
 	if (op->op_type == op_value
 		&& op->value->lltype == ev_ptr
 		&& op->value->pointer.def) {
@@ -678,6 +690,47 @@ dag_kill_aliases (daglabel_t *l)
 }
 
 static int
+dag_tempop_collect_aliases_visit (tempop_t *tempop, void *_s)
+{
+	set_t *node_set = _s;
+	auto label = tempop->daglabel;
+	if (label && label->dagnode) {
+		set_add (node_set, label->dagnode->number);
+	}
+	return 0;
+}
+
+static int
+dag_def_collect_aliases_visit (def_t *def, void *_s)
+{
+	set_t *node_set = _s;
+	auto label = def->daglabel;
+	if (label && label->dagnode) {
+		set_add (node_set, label->dagnode->number);
+	}
+	return 0;
+}
+
+static void
+dag_collect_alias_nodes (daglabel_t *l, set_t *node_set)
+{
+	operand_t  *op = l->op;
+
+	if (op->op_type == op_temp) {
+		if (op->tempop.alias || op->tempop.alias_ops) {
+			tempop_visit_all (&op->tempop, 6,
+							  dag_tempop_collect_aliases_visit, node_set);
+		}
+	} else if (op->op_type == op_def) {
+		if (op->def->alias || op->def->alias_defs) {
+			def_visit_all (op->def, 6, dag_def_collect_aliases_visit, node_set);
+		}
+	} else {
+		internal_error (op->expr, "rvalue assignment?");
+	}
+}
+
+static int
 dag_tempop_live_aliases (tempop_t *tempop, void *_t)
 {
 
@@ -720,10 +773,20 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		internal_error (l->op->expr,
 						"attempt to attach non-identifer label to dagnode "
 						"identifiers");
+	auto node_set = set_new ();
 	if (l->dagnode) {
-		dagnode_t  *node = l->dagnode;
+		set_add (node_set, l->dagnode->number);
+	}
+	if (op_is_alias (l->op)) {
+		dag_collect_alias_nodes (l, node_set);
+	}
+	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
+		dagnode_t  *node = dag->nodes[iter->element];
 		set_remove (node->identifiers, l->number);
+	}
 
+	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
+		dagnode_t  *node = dag->nodes[iter->element];
 		// If the target node (n) is reachable by the label's node or its
 		// parents, then attaching the label's node to the target node would
 		// cause the label's node to be written before it used.
@@ -739,7 +802,10 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		if (is_reachable) {
 			return false;
 		}
+	}
 
+	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
+		dagnode_t  *node = dag->nodes[iter->element];
 		// this assignment to the variable must come after any previous uses,
 		// which includes itself and its parents
 		set_add (n->edges, node->number);
