@@ -59,9 +59,14 @@ print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 	set_iter_t *id_iter;
 	daglabel_t *id;
 
+	const char *label = daglabel_string (node->label);
+
+	if (node->type == st_alias) {
+		label = va ("%s:%d", label, node->offset);
+	}
+
 	dasprintf (dstr, "  \"dagnode_%p\" [%slabel=\"%s%s (%d:%d)", node,
-			   node->type != st_none ? "" : "shape=box,",
-			   daglabel_string (node->label),
+			   node->type != st_none ? "" : "shape=box,", label,
 			   node->killed ? " k" : "",
 			   node->number, node->topo);
 	for (id_iter = set_first (node->identifiers); id_iter;
