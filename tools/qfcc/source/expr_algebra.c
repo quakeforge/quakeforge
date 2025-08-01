@@ -3229,6 +3229,14 @@ assign_extend (expr_t *block, const expr_t *dst, const expr_t *src)
 	append_expr (block, edag_add_expr (new_assign_expr (dst2, ext2.src)));
 }
 
+static const expr_t *
+algebra_field_assign (const expr_t *dst, symbol_t *sym, const expr_t *val)
+{
+	auto dst_alias = new_field_expr (dst, new_symbol_expr (sym));
+	dst_alias->field.type = sym->type;
+	return new_assign_expr (dst_alias, val);
+}
+
 const expr_t *
 algebra_assign_expr (const expr_t *dst, const expr_t *src)
 {
@@ -3264,24 +3272,22 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		return type_mismatch (dst, src, '=');
 	}
 
-	auto sym = get_mvec_sym (dstType);
 	auto block = new_block_expr (0);
 	block->block.no_flush = true;
 	int  memset_base = 0;
-	for (int i = 0; i < layout->count; i++) {
-		if (!c[i]) {
-			continue;
-		}
-		while (sym && sym->type != get_type (c[i])) {
-			sym = sym->next;
+	for (auto sym = get_mvec_sym (dstType); sym; sym = sym->next) {
+		pr_uint_t mask = get_group_mask (sym->type, algebra);
+		int group = BITOP_LOG2 (mask);
+		auto val = c[group];
+		if (!val) {
+			val = new_zero_expr (sym->type);
 		}
 		int size = sym->offset - memset_base;
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_alias = new_field_expr (dst, new_symbol_expr (sym));
-		dst_alias->field.type = sym->type;
-		append_expr (block, edag_add_expr (new_assign_expr (dst_alias, c[i])));
+		auto dst_assign = algebra_field_assign (dst, sym, val);
+		append_expr (block, edag_add_expr (dst_assign));
 		memset_base = sym->offset + type_size (sym->type);
 	}
 	if (type_size (dstType) - memset_base) {
