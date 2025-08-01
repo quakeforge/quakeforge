@@ -1108,6 +1108,7 @@ do_cross (const type_t *type, const expr_t *a, const expr_t *b)
 	prod = extract_scale (&b, prod);
 
 	auto cross = typed_binary_expr (type, QC_CROSS, a, b);
+	cross = edag_add_expr (cross);
 	cross = apply_scale (type, cross, prod);
 	return cross;
 }

@@ -477,6 +477,7 @@ raise_scale (const expr_t *expr)
 		b = b->expr.e1;
 	}
 	expr = typed_binary_expr (type, op, a, b);
+	expr = edag_add_expr (expr);
 	if (a_mult || b_mult) {
 		if (op == QC_CROSS) {
 			const expr_t *mult;
@@ -495,6 +496,7 @@ raise_scale (const expr_t *expr)
 			if (b_mult) {
 				expr = typed_binary_expr (type, '*', expr, b_mult);
 			}
+			expr = edag_add_expr (expr);
 		}
 	}
 	return expr;
