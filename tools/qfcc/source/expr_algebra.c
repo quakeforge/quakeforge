@@ -3273,6 +3273,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 	}
 
 	auto block = new_block_expr (0);
+	ex_list_t assigns = {};
 	block->block.no_flush = true;
 	int  memset_base = 0;
 	for (auto sym = get_mvec_sym (dstType); sym; sym = sym->next) {
@@ -3286,10 +3287,14 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		if (size) {
 			zero_components (block, dst, memset_base, size);
 		}
-		auto dst_assign = algebra_field_assign (dst, sym, val);
-		append_expr (block, edag_add_expr (dst_assign));
+		auto tmp = new_temp_def_expr (sym->type);
+		auto tmp_assign = assign_expr (tmp, val);
+		append_expr (block, edag_add_expr (tmp_assign));
+		auto dst_assign = algebra_field_assign (dst, sym, tmp);
+		list_append (&assigns, edag_add_expr (dst_assign));
 		memset_base = sym->offset + type_size (sym->type);
 	}
+	list_append_list (&block->list, &assigns);
 	if (type_size (dstType) - memset_base) {
 		zero_components (block, dst, memset_base,
 						 type_size (dstType) - memset_base);
