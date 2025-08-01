@@ -379,9 +379,6 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 				dagnode_set_reachable (dag, n);
 
 				auto l = operand_label (dag, op);
-				if (l->dagnode) {
-					set_remove (l->dagnode->identifiers, l->number);
-				}
 				l->expr = s->expr;
 				l->dagnode = n;
 			}
