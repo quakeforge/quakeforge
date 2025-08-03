@@ -3252,7 +3252,10 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 			if (summed_extend (src)) {
 				auto block = new_block_expr (0);
 				block->block.no_flush = true;
-				assign_extend (block, dst, src);
+				auto tmp = new_temp_def_expr (dstType);
+				assign_extend (block, tmp, src);
+				auto dst_assign = new_assign_expr (dst, tmp);
+				append_expr (block, dst_assign);
 				return block;
 			}
 			return edag_add_expr (new_assign_expr (dst, src));

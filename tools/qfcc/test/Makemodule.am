@@ -11,6 +11,7 @@ test_progs_dat=\
 	tools/qfcc/test/address-cast.dat \
 	tools/qfcc/test/addrkill.dat \
 	tools/qfcc/test/algseq.dat \
+	tools/qfcc/test/algseq2.dat \
 	tools/qfcc/test/algtypes.dat \
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
@@ -193,6 +194,16 @@ tools/qfcc/test/algseq.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(algseq_dep) # am--include-marker
 r_depfiles_remade += $(algseq_dep)
+
+tools_qfcc_test_algseq2_dat_SOURCES=tools/qfcc/test/algseq2.r
+algseq2_obj=$(tools_qfcc_test_algseq2_dat_SOURCES:.r=.o)
+algseq2_dep=$(call qcautodep,$(tools_qfcc_test_algseq2_dat_SOURCES))
+tools/qfcc/test/algseq2.dat$(EXEEXT): $(algseq2_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(algseq2_obj)
+tools/qfcc/test/algseq2.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(algseq2_dep) # am--include-marker
+r_depfiles_remade += $(algseq2_dep)
 
 tools_qfcc_test_algtypes_dat_SOURCES=tools/qfcc/test/algtypes.r
 algtypes_obj=$(tools_qfcc_test_algtypes_dat_SOURCES:.r=.o)
