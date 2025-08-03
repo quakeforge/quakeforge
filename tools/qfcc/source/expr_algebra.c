@@ -782,6 +782,9 @@ merge_extends (const expr_t **adds, const expr_t **subs)
 static const expr_t *
 sum_expr (const type_t *type, const expr_t *a, const expr_t *b)
 {
+	if (!a && !b) {
+		return nullptr;
+	}
 	if (!a) {
 		return cast_expr (type, b);
 	}
