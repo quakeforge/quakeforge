@@ -220,13 +220,16 @@ temp_def (const type_t *type)
 	def_t      *temp;
 	defspace_t *space = current_func->locals->space;
 	int         size = type_size (type);
-	int         alignment = type->alignment;
+	int         alignment = type_align (type);
 
 	if (size < 1 || size > MAX_DEF_SIZE) {
 		internal_error (0, "%d invalid size for temp def", size);
 	}
 	if (alignment < 1) {
 		internal_error (0, "temp type has no alignment");
+	}
+	if (type_width (type) == 3) {
+		alignment = 2 * type_align (base_type (type));
 	}
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->temp_next;
