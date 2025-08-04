@@ -328,7 +328,7 @@ promote_scalar (const type_t *dst_type, const expr_t *scalar)
 {
 	auto scalar_type = get_type (scalar);
 	if (scalar_type != dst_type) {
-		if (!type_promotes (dst_type, scalar_type)) {
+		if (!type_promotes (dst_type, scalar_type) && !scalar->implicit) {
 			warning (scalar, "demoting %s to %s (use a cast)",
 					 get_type_string (scalar_type),
 					 get_type_string (dst_type));
