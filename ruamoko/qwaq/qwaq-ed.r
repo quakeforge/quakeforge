@@ -389,6 +389,141 @@ static int axis_colors[] = { 12, 10, 9 };
 }
 @end
 
+PGA.group_mask(0xc)
+sqrt (PGA.group_mask(0xc) x)
+{
+	return (x + x.scalar) / 2;
+}
+
+//void
+motor_t
+camera_lookat (state_t *state, point_t target, point_t up)
+{
+//sqrt( b / a ) = +- b * normalize( b + a )
+	@algebra (PGA) {
+		point_t eye_0 = e123;
+		point_t eye_fwd = e032;
+		point_t eye_up = e021;
+		auto l0 = (eye_0 ∨ eye_fwd);
+		auto p0 = (eye_0 ∨ eye_fwd ∨ eye_up);
+
+		point_t eye = state.M * eye_0 * ~state.M;
+
+		auto l = -(eye ∨ target);
+		auto p = (eye ∨ target ∨ up);
+		float f = (p • p) / (l•~l);
+		if (f < 0.005) {
+			f = f / 0.005;
+			p = f * p + (1 - f) * p0;
+		}
+		p /= sqrt (p • p);
+
+		auto T = sqrt(-eye * eye_0);
+		auto Tm = l * T * l0 * ~T;
+		Tm = normalize (Tm);
+		if (Tm.scalar < -0.5) {
+			auto Y = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
+			Tm = (~Y * l * Y) * T * l0 * ~T;
+			Tm = normalize (Tm);
+			auto R = sqrt(Tm) * T;
+			R = normalize(Y*R);
+			auto Rm = normalize (p * (R * p0 * ~R));
+			auto L = sqrt(Rm) * R;
+			L = normalize (L);
+			return L;
+		} else {
+			auto R = sqrt(Tm) * T;
+			auto Rm = normalize (p * (R * p0 * ~R));
+			if (Rm.scalar < -0.5) {
+				l /= sqrt (l • ~l);
+				auto p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
+				Rm = normalize (p * (R * p0 * ~R));
+				Rm = sqrt(Rm);
+				auto L = Rm * R;
+				L = ~l * L;
+				L = normalize(L);
+				return L;
+			} else {
+				auto L = sqrt(Rm) * R;
+				return normalize (L);
+			}
+		}
+	}
+}
+
+@interface CamTest : Object
+{
+	entity_t ent;
+	transform_t xform;
+	state_t state;
+}
++camtest:(scene_t) scene;
+-think:(point_t)tgt;
+@end
+
+@implementation CamTest
+-initInScene:(scene_t) scene
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+
+	ent = Scene_CreateEntity (scene);
+	auto main = Scene_CreateEntity (scene);
+	auto fwd = Scene_CreateEntity (scene);
+	auto up = Scene_CreateEntity (scene);
+	printf ("%08lx %08lx %08lx %08lx\n", ent, main, fwd, up);
+
+	Entity_SetModel (main, Model_Load ("progs/Octahedron.mdl"));
+	Entity_SetModel (fwd, Model_Load ("progs/Cube.mdl"));
+	Entity_SetModel (up, Model_Load ("progs/Capsule.mdl"));
+
+	xform = Entity_GetTransform (ent);
+	auto main_xform = Entity_GetTransform (main);
+	auto fwd_xform = Entity_GetTransform (fwd);
+	auto up_xform = Entity_GetTransform (up);
+	Transform_SetParent (main_xform, xform);
+	Transform_SetParent (fwd_xform, main_xform);
+	Transform_SetParent (up_xform, main_xform);
+	Transform_SetLocalPosition(xform, {0, 0, 0, 1});
+	Transform_SetLocalPosition(main_xform, {0, 0, 0, 1});
+	Transform_SetLocalPosition(fwd_xform, {0.5, 0, 0, 1});
+	Transform_SetLocalScale(fwd_xform, {0.125, 0.125, 0.125, 1});
+	Transform_SetLocalPosition(up_xform, {0, 0, 0.5, 1});
+	Transform_SetLocalScale(up_xform, {0.125, 0.125, 0.125, 1});
+
+	state = {
+		.M = make_motor ({ 1, 0, 3, 0, }, { 0, 0, 0, 1 }),
+	};
+	return self;
+}
+
+-(void)dealloc
+{
+	Scene_DestroyEntity (ent);
+	[super dealloc];
+}
+
++camtest:(scene_t) scene
+{
+	return [[[self alloc] initInScene:scene] autorelease];
+}
+
+-think:(point_t)tgt
+{
+	auto M = camera_lookat (&state, tgt, (point_t) '0 0 1 0');
+	if (M.scalar != M.scalar) {
+		obj_error (self, 1, "nan");
+	}
+	state.M = M;
+	xform = Entity_GetTransform (ent);
+	@algebra (PGA) {
+		set_transform (M, xform, "");
+	}
+	return self;
+}
+@end
+
 @interface Player : Object
 {
 	entity_t ent;
@@ -400,6 +535,7 @@ static int axis_colors[] = { 12, 10, 9 };
 +player:(scene_t) scene;
 
 -think;
+-(point_t)pos;
 @end
 
 @implementation Player
@@ -448,6 +584,7 @@ static int axis_colors[] = { 12, 10, 9 };
 {
 	IMP imp = [self methodForSelector: @selector (jump)];
 	IN_ButtonRemoveListener (move_jump, imp, self);
+	Scene_DestroyEntity (ent);
 	[super dealloc];
 }
 
@@ -503,6 +640,11 @@ fromtorot(vector a, vector b)
 		Transform_SetLocalRotation (xform, drot * rot);
 	}
 	return self;
+}
+
+-(point_t)pos
+{
+	return (point_t)Transform_GetWorldPosition (xform);
 }
 @end
 
@@ -900,7 +1042,7 @@ main (int argc, string *argv)
 
 	printf ("Night Heron: %lx\n", nh_ent);
 	printf ("Capsule: %lx\n", Capsule_ent);
-	printf ("Cube: %lx\n", Capsule_ent);
+	printf ("Cube: %lx\n", Cube_ent);
 	printf ("Octahedron: %lx\n", Octahedron_ent);
 	printf ("Plane: %lx\n", Plane_ent);
 	printf ("Tetrahedron: %lx\n", Tetrahedron_ent);
@@ -921,6 +1063,7 @@ main (int argc, string *argv)
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];
+	id camtest = [[CamTest camtest:[main_window scene]] retain];
 
 	while (true) {
 		arp_end ();
@@ -930,6 +1073,7 @@ main (int argc, string *argv)
 		realtime += frametime;
 
 		[player think];
+		[camtest think:[player pos]];
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];
