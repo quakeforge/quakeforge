@@ -430,6 +430,9 @@ camera_lookat (point_t eye, point_t target, point_t up)
 			// perpendicular to the reference forward direction, calculate
 			// the rotation to get to that, then undo the 180 degree rotation
 			auto A = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
+			if ((A • Tm).scalar < 0) {
+				A = ~A;
+			}
 			Tm = (A * l * ~A) * T * l0 * ~T;
 			Tm = normalize (Tm);
 			R = ~A * sqrt(Tm) * T;
