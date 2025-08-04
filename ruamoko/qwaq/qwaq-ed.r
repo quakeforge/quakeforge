@@ -437,6 +437,8 @@ camera_lookat (state_t *state, point_t target, point_t up)
 			if (Rm.scalar < -0.5) {
 				l /= sqrt (l • ~l);
 				auto p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
+				//FIXME removing the ()s causes the math to break (with or
+				//without -O)
 				Rm = normalize (p * (R * p0 * ~R));
 				Rm = sqrt(Rm);
 				auto L = Rm * R;
