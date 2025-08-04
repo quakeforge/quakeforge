@@ -413,6 +413,8 @@ camera_lookat (state_t *state, point_t target, point_t up)
 		auto p = (eye ∨ target ∨ up);
 		float f = (p • p) / (l•~l);
 		if (f < 0.005) {
+			// looking (nearly) parallel (or anti-parallel) to the up vector,
+			// so fall back (smoothly) to the reference plane
 			f = f / 0.005;
 			p = f * p + (1 - f) * p0;
 		}
@@ -424,6 +426,10 @@ camera_lookat (state_t *state, point_t target, point_t up)
 		Tm = normalize (Tm);
 		motor_t R;
 		if (Tm.scalar < -0.5) {
+			// looking backwards along the reference forward direction
+			// Rotate 180 around an axis in the reference plane that's
+			// perpendicular to the reference forward direction, calculate
+			// the rotation to get to that, then undo the 180 degree rotation
 			auto A = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
 			Tm = (A * l * ~A) * T * l0 * ~T;
 			Tm = normalize (Tm);
@@ -434,6 +440,9 @@ camera_lookat (state_t *state, point_t target, point_t up)
 		auto Rm = normalize (p * (R * p0 * ~R));
 		motor_t L;
 		if (Rm.scalar < -0.5) {
+			// The target plane is "almost" anti-parallel to the reference
+			// plane, so rotate it 180 around the target line, calculate the
+			// needed rotation, then undo the 180 degree rotation
 			p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
 			//FIXME removing the ()s causes the math to break (with or
 			//without -O)
