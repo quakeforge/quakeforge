@@ -293,6 +293,17 @@ int def_offset (def_t *def) __attribute__((pure));
 */
 int def_size (def_t *def) __attribute__((pure));
 
+typedef enum {
+	dol_none,		// visit all defs
+	dol_partial,	// visit only (at least) partially overlapping defs
+	dol_full,		// visit only fully overlapped (smaller or same size) defs
+	dol_exact,		// visit only matching defs (same size and offset)
+
+	dol_only_alias	// don't visit main def
+} def_overlap_t;
+
+static_assert(!(dol_only_alias & (dol_only_alias - 1)));
+
 /** Visit all defs that alias the given def, including itself.
 
 	First, the given def is visited, and then every candidate def connected
@@ -313,10 +324,7 @@ int def_size (def_t *def) __attribute__((pure));
 	function will return.
 
 	\param def		The def representing the alias cluster to visit.
-	\param overlap  If non-zero, then only defs that overlap \a def will
-					be visited. If 2, then the given def must fully overlap
-					the visited def. If bit-2 is set (overlap & 4), then the
-					main def is not visited for an alias def.
+	\param overlap  See def_overlap_t
 	\param visit	The function to call when visiting a def. The first
 					parameter is the def being visited, and the second
 					parameter is \a data passed on. If non-zero is returned,
@@ -325,10 +333,10 @@ int def_size (def_t *def) __attribute__((pure));
 	\return			The value returned by \a visit returned non-zero,
 					otherwise 0.
 */
-int def_visit_all (def_t *def, int overlap,
+int def_visit_all (def_t *def, def_overlap_t overlap,
 				   int (*visit) (def_t *, void *), void *data);
 
-int def_visit_overlaps (def_t *def, int offset, int size, int overlap,
+int def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
 						def_t *skip,
 						int (*visit) (def_t *, void *), void *data);
 

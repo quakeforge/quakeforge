@@ -703,17 +703,22 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	set_def_attributes (sym->def, spec.attributes);
 }
 
-static int
+static def_overlap_t
 def_overlap (def_t *d, int offset, int size)
 {
 	int         d_offset = d->offset;
 	int         d_size = type_size (d->type);
 
-	if (d_offset >= offset && d_offset + d_size <= offset + size)
-		return 2;	// d is fully overlapped by the range
-	if (d_offset < offset + size && offset < d_offset + d_size)
-		return 1;	// d is partially overlapped by the range range
-	return 0;
+	if (d_offset == offset && d_size == size) {
+		return dol_exact;
+	}
+	if (d_offset >= offset && d_offset + d_size <= offset + size) {
+		return dol_full;
+	}
+	if (d_offset < offset + size && offset < d_offset + d_size) {
+		return dol_partial;
+	}
+	return dol_none;
 }
 
 int
@@ -732,8 +737,8 @@ def_size (def_t *def)
 }
 
 int
-def_visit_overlaps (def_t *def, int offset, int size, int overlap, def_t *skip,
-					int (*visit) (def_t *, void *), void *data)
+def_visit_overlaps (def_t *def, int offset, int size, def_overlap_t overlap,
+					def_t *skip, int (*visit) (def_t *, void *), void *data)
 {
 	int         ret;
 
@@ -749,7 +754,7 @@ def_visit_overlaps (def_t *def, int offset, int size, int overlap, def_t *skip,
 }
 
 int
-def_visit_all (def_t *def, int overlap,
+def_visit_all (def_t *def, def_overlap_t overlap,
 			   int (*visit) (def_t *, void *), void *data)
 {
 	def_t      *start_def = def;
@@ -759,9 +764,9 @@ def_visit_all (def_t *def, int overlap,
 		return ret;
 	if (def->alias) {
 		def = def->alias;
-		if (!(overlap & 4) && (ret = visit (def, data)))
+		if (!(overlap & dol_only_alias) && (ret = visit (def, data)))
 			return ret;
-		overlap &= ~4;
+		overlap &= ~dol_only_alias;
 	} else {
 		overlap = 0;
 	}

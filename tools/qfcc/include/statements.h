@@ -32,6 +32,8 @@
 
 #include "QF/progs/pr_comp.h"
 
+#include "def.h"
+
 typedef enum {
 	op_def,
 	op_value,
@@ -162,9 +164,9 @@ operand_t *def_operand (struct def_s *def, const struct type_s *type,
 operand_t *return_operand (const struct type_s *type,
 						   const struct expr_s *expr);
 operand_t *value_operand (struct ex_value_s *value, const struct expr_s *expr);
-int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
+def_overlap_t tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
 operand_t *temp_operand (const struct type_s *type, const struct expr_s *expr);
-int tempop_visit_all (tempop_t *tempop, int overlap,
+int tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
 operand_t *offset_alias_operand (const struct type_s *type, int offset,
 								 operand_t *aop, const struct expr_s *expr);

@@ -563,7 +563,7 @@ static void
 clear_operand (operand_t *op)
 {
 	if (op && op->op_type == op_def) {
-		def_visit_all (op->def, 0, flow_def_clear_flowvars, 0);
+		def_visit_all (op->def, dol_none, flow_def_clear_flowvars, 0);
 	}
 }
 
@@ -661,7 +661,7 @@ flow_build_vars (function_t *func)
 	// count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
 		def_t      *def = param_symbol (flow_params[i].name)->def;
-		def_visit_all (def, 0, flow_def_clear_flowvars, 0);
+		def_visit_all (def, dol_none, flow_def_clear_flowvars, 0);
 		flow_params[i].op.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
@@ -793,9 +793,11 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	tmp = set_new ();
 	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->tempop, 1, flow_tempop_kill_aliases, tmp);
+		tempop_visit_all (&op->tempop, dol_partial,
+						  flow_tempop_kill_aliases, tmp);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->def, 4 | 1, flow_def_kill_aliases, tmp);
+		def_visit_all (op->def, dol_only_alias | dol_partial,
+					   flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	if (uninit) {
@@ -907,7 +909,7 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 	}
 	def_t      *def = var->op->def->alias;
 	if (def && is_array (def->type)) {
-		def_visit_all (def, 0, flowvar_def_add_use, st);
+		def_visit_all (def, dol_none, flowvar_def_add_use, st);
 	}
 }
 
@@ -932,7 +934,7 @@ flowvar_add_ambiguous (flowvar_t *var, statement_t *st)
 	}
 	def_t      *def = var->op->def;
 	if (def) {
-		def_visit_all (def, 2, flowvar_def_add_ambiguous, st);
+		def_visit_all (def, dol_full, flowvar_def_add_ambiguous, st);
 	}
 }
 
@@ -1813,17 +1815,17 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			if (!strcmp (s->opcode, "move")
 				|| !strcmp (s->opcode, "memset")) {
-				flow_add_op_var_size (def, s->opc, size, 2);
+				flow_add_op_var_size (def, s->opc, size, dol_full);
 				src_op = s->opa;
 				res_op = s->opc;
 			} else if (!strcmp (s->opcode, "movep")) {
-				flow_add_op_var_size (use, s->opc, size, 2);
+				flow_add_op_var_size (use, s->opc, size, dol_full);
 				aux_op3 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "memsetp")) {
-				flow_add_op_var_size (use, s->opc, size, 2);
+				flow_add_op_var_size (use, s->opc, size, dol_full);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				src_op = s->opa;
 				aux_op2 = s->opc;

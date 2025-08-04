@@ -507,17 +507,17 @@ leafnode_set_edges (operand_t *op, dagnode_t *n)
 	if (op->op_type == op_value
 		&& op->value->lltype == ev_ptr
 		&& op->value->pointer.def) {
-		def_visit_all (op->value->pointer.def, 1,
+		def_visit_all (op->value->pointer.def, dol_partial,
 					   dagnode_def_set_edges_visit, n);
 	}
 	if (op->op_type == op_def
 		&& (op->def->alias || op->def->alias_defs)) {
-		def_visit_all (op->def, 1,
+		def_visit_all (op->def, dol_partial,
 					   dagnode_def_set_edges_visit, n);
 	}
 	if (op->op_type == op_temp
 		&& (op->tempop.alias || op->tempop.alias_ops)) {
-		tempop_visit_all (&op->tempop, 1,
+		tempop_visit_all (&op->tempop, dol_partial,
 						  dagnode_tempop_set_edges_visit, n);
 	}
 }
@@ -620,7 +620,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 				int         param_node;
 
 				// FIXME hopefully only the one alias :P
-				param_node = def_visit_all (param_def, 0, dag_find_node,
+				param_node = def_visit_all (param_def, dol_none, dag_find_node,
 											&daglabel);
 				if (!param_node) {
 					bug (n->label->expr, ".param_%d not set for %s", i,
@@ -683,12 +683,12 @@ dag_kill_aliases (daglabel_t *l)
 
 	if (op->op_type == op_temp) {
 		if (op->tempop.alias || op->tempop.alias_ops) {
-			tempop_visit_all (&op->tempop, 1,
+			tempop_visit_all (&op->tempop, dol_partial,
 							  dag_tempop_kill_aliases_visit, l);
 		}
 	} else if (op->op_type == op_def) {
 		if (op->def->alias || op->def->alias_defs) {
-			def_visit_all (op->def, 1, dag_def_kill_aliases_visit, l);
+			def_visit_all (op->def, dol_partial, dag_def_kill_aliases_visit, l);
 		}
 	} else {
 		internal_error (op->expr, "rvalue assignment?");
@@ -724,12 +724,13 @@ dag_collect_alias_nodes (daglabel_t *l, set_t *node_set)
 
 	if (op->op_type == op_temp) {
 		if (op->tempop.alias || op->tempop.alias_ops) {
-			tempop_visit_all (&op->tempop, 6,
+			tempop_visit_all (&op->tempop, dol_only_alias | dol_full,
 							  dag_tempop_collect_aliases_visit, node_set);
 		}
 	} else if (op->op_type == op_def) {
 		if (op->def->alias || op->def->alias_defs) {
-			def_visit_all (op->def, 6, dag_def_collect_aliases_visit, node_set);
+			def_visit_all (op->def, dol_only_alias | dol_full,
+						   dag_def_collect_aliases_visit, node_set);
 		}
 	} else {
 		internal_error (op->expr, "rvalue assignment?");
@@ -760,12 +761,12 @@ dag_live_aliases(operand_t *op)
 	// FIXME it would be better to propogate the aliasing
 	if (op->op_type == op_temp
 		&& (op->tempop.alias || op->tempop.alias_ops)) {
-		tempop_visit_all (&op->tempop, 1, dag_tempop_live_aliases,
+		tempop_visit_all (&op->tempop, dol_partial, dag_tempop_live_aliases,
 						  &op->tempop);
 	}
 	if (op->op_type == op_def
 		&& (op->def->alias || op->def->alias_defs)) {
-		def_visit_all (op->def, 1, dag_def_live_aliases, op->def);
+		def_visit_all (op->def, dol_partial, dag_def_live_aliases, op->def);
 	}
 }
 
@@ -868,11 +869,12 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 		if (set_is_member (dag->flownode->global_vars, var->number))
 			continue;
 		if (l->op->op_type == op_def
-			&& def_visit_all (l->op->def, 1, dag_def_alias_live, live_vars))
+			&& def_visit_all (l->op->def, dol_partial, dag_def_alias_live,
+							  live_vars))
 			continue;
 		if (l->op->op_type == op_temp
-			&& tempop_visit_all (&l->op->tempop, 1, dag_tempop_alias_live,
-								 live_vars))
+			&& tempop_visit_all (&l->op->tempop, dol_partial,
+								 dag_tempop_alias_live, live_vars))
 			continue;
 		if (!set_is_member (live_vars, var->number))
 			set_remove (l->dagnode->identifiers, l->number);

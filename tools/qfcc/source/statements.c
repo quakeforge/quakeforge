@@ -182,11 +182,12 @@ op_aliases_op (operand_t *op, operand_t *tgt)
 		return false;
 	}
 	if (op->op_type == op_temp) {
-		return tempop_visit_all (&op->tempop, 4|2, op_aliases_op_visit_temp,
-								 &tgt->tempop);
+		return tempop_visit_all (&op->tempop, dol_only_alias | dol_full,
+								 op_aliases_op_visit_temp, &tgt->tempop);
 	}
 	if (op->op_type == op_def) {
-		return def_visit_all (op->def, 4|2, op_aliases_op_visit_def, tgt->def);
+		return def_visit_all (op->def, dol_only_alias | dol_full,
+							  op_aliases_op_visit_def, tgt->def);
 	}
 	return false;
 }
@@ -537,7 +538,7 @@ temp_operand (const type_t *type, const expr_t *expr)
 	return op;
 }
 
-int
+def_overlap_t
 tempop_overlap (tempop_t *t1, tempop_t *t2)
 {
 	int         offs1 = t1->offset;
@@ -551,15 +552,18 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	if (t2->alias) {
 		offs2 += t2->alias->tempop.offset;
 	}
+	if (offs1 == offs2 && size1 == size2) {
+		return dol_exact;
+	}
 	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
-		return 2;	// t1 fully overlaps t2
+		return dol_full;
 	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
-		return 1;	// t1 and t2 at least partially overlap
-	return 0;
+		return dol_partial;
+	return dol_none;
 }
 
 int
-tempop_visit_all (tempop_t *tempop, int overlap,
+tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 			   int (*visit) (tempop_t *, void *), void *data)
 {
 	tempop_t   *start_tempop = tempop;
@@ -574,11 +578,11 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->tempop;
-		if (!(overlap & 4) && (ret = visit (tempop, data)))
+		if (!(overlap & dol_only_alias) && (ret = visit (tempop, data)))
 			return ret;
-		overlap &= ~4;
+		overlap &= ~dol_only_alias;
 	} else {
-		overlap = 0;
+		overlap = dol_none;
 	}
 	for (top = tempop->alias_ops; top; top = top->next) {
 		if (top->op_type != op_temp) {
