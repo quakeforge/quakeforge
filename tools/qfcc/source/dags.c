@@ -696,6 +696,48 @@ dag_kill_aliases (daglabel_t *l)
 }
 
 static int
+dag_tempop_collect_alias_labels_visit (tempop_t *tempop, void *_s)
+{
+	set_t *label_set = _s;
+	auto label = tempop->daglabel;
+	if (label) {
+		set_add (label_set, label->number);
+	}
+	return 0;
+}
+
+static int
+dag_def_collect_alias_labels_visit (def_t *def, void *_s)
+{
+	set_t *label_set = _s;
+	auto label = def->daglabel;
+	if (label) {
+		set_add (label_set, label->number);
+	}
+	return 0;
+}
+
+static void
+dag_collect_alias_labels (daglabel_t *l, set_t *label_set)
+{
+	operand_t  *op = l->op;
+
+	if (op->op_type == op_temp) {
+		if (op->tempop.alias || op->tempop.alias_ops) {
+			tempop_visit_all (&op->tempop, dol_exact,
+							  dag_tempop_collect_alias_labels_visit, label_set);
+		}
+	} else if (op->op_type == op_def) {
+		if (op->def->alias || op->def->alias_defs) {
+			def_visit_all (op->def, dol_exact,
+						   dag_def_collect_alias_labels_visit, label_set);
+		}
+	} else {
+		internal_error (op->expr, "rvalue assignment?");
+	}
+}
+
+static int
 dag_tempop_collect_aliases_visit (tempop_t *tempop, void *_s)
 {
 	set_t *node_set = _s;
@@ -780,16 +822,26 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		internal_error (l->op->expr,
 						"attempt to attach non-identifer label to dagnode "
 						"identifiers");
+
+	auto label_set = set_new ();
+
+	set_add (label_set, l->number);
+	dag_collect_alias_labels (l, label_set);
+
 	auto node_set = set_new ();
-	if (l->dagnode) {
-		set_add (node_set, l->dagnode->number);
-	}
-	if (op_is_alias (l->op)) {
-		dag_collect_alias_nodes (l, node_set);
+	for (auto iter = set_first (label_set); iter; iter = set_next (iter)) {
+		auto label = dag->labels[iter->element];
+
+		if (label->dagnode) {
+			set_add (node_set, label->dagnode->number);
+		}
+		if (op_is_alias (label->op)) {
+			dag_collect_alias_nodes (label, node_set);
+		}
 	}
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
 		dagnode_t  *node = dag->nodes[iter->element];
-		set_remove (node->identifiers, l->number);
+		set_difference (node->identifiers, label_set);
 	}
 
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
@@ -822,10 +874,16 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		set_remove (n->edges, n->number);
 		dagnode_set_reachable (dag, n);
 	}
-	l->live = false;	// remove live forcing on assignment
-	l->dagnode = n;
-	set_add (n->identifiers, l->number);
-	dag_kill_aliases (l);
+	for (auto iter = set_first (label_set); iter; iter = set_next (iter)) {
+		auto label = dag->labels[iter->element];
+		label->live = false;	// remove live forcing on assignment
+		label->dagnode = n;
+	}
+	set_union (n->identifiers, label_set);
+	for (auto iter = set_first (label_set); iter; iter = set_next (iter)) {
+		auto label = dag->labels[iter->element];
+		dag_kill_aliases (label);
+	}
 	if (n->label->op) {
 		dag_live_aliases (n->label->op);
 	}
@@ -1064,6 +1122,14 @@ dag_create (flownode_t *flownode)
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 	dag->killer_node = -1;
+
+	for (s = block->statements; s; s = s->next) {
+		operand_t  *operands[FLOW_OPERANDS] = {};
+		flow_analyze_statement (s, nullptr, nullptr, nullptr, operands);
+		for (int i = 0; i < FLOW_OPERANDS; i++) {
+			operand_label (dag, operands[i]);
+		}
+	}
 
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
