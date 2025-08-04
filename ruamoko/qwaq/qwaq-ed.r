@@ -417,39 +417,32 @@ camera_lookat (state_t *state, point_t target, point_t up)
 			p = f * p + (1 - f) * p0;
 		}
 		p /= sqrt (p • p);
+		l /= sqrt (l • ~l);
 
 		auto T = sqrt(-eye * eye_0);
 		auto Tm = l * T * l0 * ~T;
 		Tm = normalize (Tm);
+		motor_t R;
 		if (Tm.scalar < -0.5) {
-			auto Y = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
-			Tm = (~Y * l * Y) * T * l0 * ~T;
+			auto A = ((⋆(p0 * e0123) ∧ ⋆(l0 * e0)) • eye) * eye;
+			Tm = (A * l * ~A) * T * l0 * ~T;
 			Tm = normalize (Tm);
-			auto R = sqrt(Tm) * T;
-			R = normalize(Y*R);
-			auto Rm = normalize (p * (R * p0 * ~R));
-			auto L = sqrt(Rm) * R;
-			L = normalize (L);
-			return L;
+			R = ~A * sqrt(Tm) * T;
 		} else {
-			auto R = sqrt(Tm) * T;
-			auto Rm = normalize (p * (R * p0 * ~R));
-			if (Rm.scalar < -0.5) {
-				l /= sqrt (l • ~l);
-				auto p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
-				//FIXME removing the ()s causes the math to break (with or
-				//without -O)
-				Rm = normalize (p * (R * p0 * ~R));
-				Rm = sqrt(Rm);
-				auto L = Rm * R;
-				L = ~l * L;
-				L = normalize(L);
-				return L;
-			} else {
-				auto L = sqrt(Rm) * R;
-				return normalize (L);
-			}
+			R = sqrt(Tm) * T;
 		}
+		auto Rm = normalize (p * (R * p0 * ~R));
+		motor_t L;
+		if (Rm.scalar < -0.5) {
+			p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
+			//FIXME removing the ()s causes the math to break (with or
+			//without -O)
+			Rm = normalize (p * (R * p0 * ~R));
+			L = ~l * sqrt(Rm) * R;
+		} else {
+			L = sqrt(Rm) * R;
+		}
+		return normalize (L);
 	}
 }
 
