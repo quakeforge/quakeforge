@@ -759,19 +759,24 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 {
 	def_t      *start_def = def;
 	int         ret;
+	bool        only_alias = overlap & dol_only_alias;
 
+	overlap &= ~dol_only_alias;
 	if ((ret = visit (def, data)))
 		return ret;
-	if (def->alias) {
-		def = def->alias;
-		if (!(overlap & dol_only_alias) && (ret = visit (def, data)))
-			return ret;
-		overlap &= ~dol_only_alias;
-	} else {
-		overlap = 0;
-	}
 	int         offset = start_def->offset;
 	int         size = start_def->type ? type_size (start_def->type) : 0;
+	if (def->alias) {
+		def = def->alias;
+		if (!only_alias && def_overlap (def, offset, size) >= overlap
+			&& (ret = visit (def, data))) {
+			return ret;
+		}
+	} else {
+		if (overlap != dol_exact) {
+			overlap = dol_none;
+		}
+	}
 	return def_visit_overlaps (def, offset, size, overlap, start_def,
 							   visit, data);
 }

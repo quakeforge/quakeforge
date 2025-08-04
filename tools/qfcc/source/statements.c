@@ -569,7 +569,9 @@ tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 	tempop_t   *start_tempop = tempop;
 	operand_t  *top;
 	int         ret;
+	bool        only_alias = overlap & dol_only_alias;
 
+	overlap &= ~dol_only_alias;
 	if ((ret = visit (tempop, data)))
 		return ret;
 	if (tempop->alias) {
@@ -578,11 +580,14 @@ tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->tempop;
-		if (!(overlap & dol_only_alias) && (ret = visit (tempop, data)))
+		if (!only_alias && tempop_overlap (tempop, start_tempop) >= overlap
+			&& (ret = visit (tempop, data))) {
 			return ret;
-		overlap &= ~dol_only_alias;
+		}
 	} else {
-		overlap = dol_none;
+		if (overlap != dol_exact) {
+			overlap = dol_none;
+		}
 	}
 	for (top = tempop->alias_ops; top; top = top->next) {
 		if (top->op_type != op_temp) {
