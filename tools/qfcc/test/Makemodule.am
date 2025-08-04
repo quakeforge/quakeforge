@@ -12,6 +12,7 @@ test_progs_dat=\
 	tools/qfcc/test/addrkill.dat \
 	tools/qfcc/test/algseq.dat \
 	tools/qfcc/test/algseq2.dat \
+	tools/qfcc/test/algseq3.dat \
 	tools/qfcc/test/algtypes.dat \
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
@@ -204,6 +205,16 @@ tools/qfcc/test/algseq2.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(algseq2_dep) # am--include-marker
 r_depfiles_remade += $(algseq2_dep)
+
+tools_qfcc_test_algseq3_dat_SOURCES=tools/qfcc/test/algseq3.r
+algseq3_obj=$(tools_qfcc_test_algseq3_dat_SOURCES:.r=.o)
+algseq3_dep=$(call qcautodep,$(tools_qfcc_test_algseq3_dat_SOURCES))
+tools/qfcc/test/algseq3.dat$(EXEEXT): $(algseq3_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(algseq3_obj)
+tools/qfcc/test/algseq3.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(algseq3_dep) # am--include-marker
+r_depfiles_remade += $(algseq3_dep)
 
 tools_qfcc_test_algtypes_dat_SOURCES=tools/qfcc/test/algtypes.r
 algtypes_obj=$(tools_qfcc_test_algtypes_dat_SOURCES:.r=.o)
