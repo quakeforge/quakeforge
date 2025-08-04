@@ -15,6 +15,7 @@
 #include "gui/listview.h"
 #include "armature.h"
 #include "pga3d.h"
+#include "playercam.h"
 
 static string render_graph_cfg =
 #embed "config/qwaq-ed-rg.plist"
@@ -397,7 +398,7 @@ sqrt (PGA.group_mask(0xc) x)
 
 //void
 motor_t
-camera_lookat (state_t *state, point_t target, point_t up)
+camera_lookat (point_t eye, point_t target, point_t up)
 {
 //sqrt( b / a ) = +- b * normalize( b + a )
 	@algebra (PGA) {
@@ -406,8 +407,6 @@ camera_lookat (state_t *state, point_t target, point_t up)
 		point_t eye_up = e021;
 		auto l0 = (eye_0 ∨ eye_fwd);
 		auto p0 = (eye_0 ∨ eye_fwd ∨ eye_up);
-
-		point_t eye = state.M * eye_0 * ~state.M;
 
 		auto l = -(eye ∨ target);
 		auto p = (eye ∨ target ∨ up);
@@ -459,10 +458,9 @@ camera_lookat (state_t *state, point_t target, point_t up)
 {
 	entity_t ent;
 	transform_t xform;
-	state_t state;
 }
 +camtest:(scene_t) scene;
--think:(point_t)tgt;
+-think:(state_t)state;
 @end
 
 @implementation CamTest
@@ -496,9 +494,6 @@ camera_lookat (state_t *state, point_t target, point_t up)
 	Transform_SetLocalPosition(up_xform, {0, 0, 0.5, 1});
 	Transform_SetLocalScale(up_xform, {0.125, 0.125, 0.125, 1});
 
-	state = {
-		.M = make_motor ({ 1, 0, 3, 0, }, { 0, 0, 0, 1 }),
-	};
 	return self;
 }
 
@@ -513,17 +508,9 @@ camera_lookat (state_t *state, point_t target, point_t up)
 	return [[[self alloc] initInScene:scene] autorelease];
 }
 
--think:(point_t)tgt
+-think:(state_t)state
 {
-	auto M = camera_lookat (&state, tgt, (point_t) '0 0 1 0');
-	if (M.scalar != M.scalar) {
-		obj_error (self, 1, "nan");
-	}
-	state.M = M;
-	xform = Entity_GetTransform (ent);
-	@algebra (PGA) {
-		set_transform (M, xform, "");
-	}
+	set_transform (state.M, xform, "");
 	return self;
 }
 @end
@@ -1067,6 +1054,7 @@ main (int argc, string *argv)
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];
+	id playercam = [[PlayerCam playercam] retain];
 	id camtest = [[CamTest camtest:[main_window scene]] retain];
 
 	while (true) {
@@ -1076,8 +1064,10 @@ main (int argc, string *argv)
 		frametime = refresh ([main_window scene]);
 		realtime += frametime;
 
+		[playercam setFocus:[player pos]];
+		[playercam think];
 		[player think];
-		[camtest think:[player pos]];
+		[camtest think:[playercam state]];
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];

@@ -78,6 +78,7 @@ qwaq_ed_dat_src= \
 	ruamoko/qwaq/gui/listview.r \
 	ruamoko/qwaq/armature.r \
 	ruamoko/qwaq/pga3d.r \
+	ruamoko/qwaq/playercam.r \
 	ruamoko/qwaq/qwaq-ed.r
 
 qwaq_input_app_dat_src= \
