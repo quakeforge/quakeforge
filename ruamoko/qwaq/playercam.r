@@ -1,3 +1,4 @@
+#include <math.h>
 #include "playercam.h"
 
 motor_t camera_lookat (point_t eye, point_t target, point_t up);
@@ -26,10 +27,12 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 -think:(float)frametime
 {
 	auto M = camera_lookat (nest, focus, up);
-	//auto delta = ~state.M * M;
-	//auto log_delta = log (delta);
-	//state.M *= exp (log_delta * 0.1);
-	state.M = M;
+	auto delta = ~state.M * M;
+	if (delta.scalar < 0) {
+		delta = -delta;
+	}
+	auto log_delta = log (delta);
+	state.M *= exp (log_delta * 0.1);
 	return self;
 }
 
