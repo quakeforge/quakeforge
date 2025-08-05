@@ -891,7 +891,12 @@ get_function (const char *name, specifier_t spec, rua_ctx_t *ctx)
 {
 	spec = spec_process (spec, ctx);
 	spec.sym->type = spec.type;
-	spec.sym->type = set_func_type_attrs (spec.sym->type, &spec.attributes);
+	if (!is_func (spec.type)) {
+		error (0, "not a function");
+		spec.sym->type = parse_params (spec.type, nullptr);
+	} else {
+		spec.sym->type = set_func_type_attrs (spec.sym->type, &spec.attributes);
+	}
 
 	auto type = unalias_type (spec.sym->type);
 	int num_params = type->func.num_params;
