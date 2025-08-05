@@ -93,11 +93,15 @@ Player_move (Player *self, float frametime)
 	vector pos = Transform_GetLocalPosition (self.xform).xyz;
 	self.onground = pos.z <= 0 && self.velocity.z <= 0;
 	vector a = '0 0 0';
+	vec2 dp = {
+		.x = dpos.x * self.yaw.x - dpos.y * self.yaw.y,
+		.y = dpos.x * self.yaw.y + dpos.y * self.yaw.x,
+	};
 	if (self.onground) {
 		pos.z = 0;
 		self.velocity.z = 0;
-		self.velocity.x = dpos.x;
-		self.velocity.y = dpos.y;
+		self.velocity.x = dp.x;
+		self.velocity.y = dp.y;
 	} else {
 		a = '0 0 -1' * 9.81f;
 	}
@@ -106,9 +110,9 @@ Player_move (Player *self, float frametime)
 	auto p = vec4 (pos, 1);
 	Transform_SetLocalPosition (self.xform, p);
 
-	if (dpos • dpos) {
+	if (dp • dp) {
 		vector fwd = Transform_Forward (self.xform).xyz;
-		quaternion drot = fromtorot (fwd, dpos);
+		quaternion drot = fromtorot (fwd, vector (dp, 0));
 		quaternion rot = Transform_GetLocalRotation (self.xform);
 		Transform_SetLocalRotation (self.xform, drot * rot);
 	}
