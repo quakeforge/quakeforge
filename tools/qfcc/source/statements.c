@@ -223,15 +223,18 @@ static const char *
 tempop_string (operand_t *tmpop)
 {
 	tempop_t   *tempop = &tmpop->tempop;
+	int width = type_width (tempop->type);
 	if (tempop->alias) {
-		return va ("<tmp%d %s:%d<tmp%d:%d>:%d>", tempop->id,
+		return va ("<tmp%d %s%s:%d<tmp%d:%d>:%d>", tempop->id,
 				   pr_type_name[tempop->type->type],
+				   width > 1 ? va ("{%d}", width) : "",
 				   tempop->users,
 				   tempop->alias->tempop.id,
 				   tempop->alias->tempop.users,
 				   tempop->offset);
 	}
-	return va ("<tmp%d %s:%d>", tempop->id, pr_type_name[tempop->type->type],
+	return va ("<tmp%d %s%s:%d>", tempop->id, pr_type_name[tempop->type->type],
+			   width > 1 ? va ("{%d}", width) : "",
 			   tempop->users);
 }
 
