@@ -24,7 +24,7 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 -think
 {
 	auto M = camera_lookat (nest, focus, (point_t) '0 0 1 0');
-	auto delta = M * ~state.M;
+	auto delta = ~state.M * M;
 	auto log_delta = log (delta);
 	state.M *= exp (log_delta * 0.1);
 	return self;
