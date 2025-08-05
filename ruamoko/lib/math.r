@@ -1,5 +1,8 @@
 #include <math.h>
 
+float (float v) floor = #0;
+float (float v) ceil = #0;
+float (float f) fabs = #0;
 float (float x) sin = #0;
 vec2 sincos (float x) = #0;
 float (float x) cos = #0;

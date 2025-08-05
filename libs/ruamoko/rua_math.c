@@ -45,6 +45,27 @@
 #include "rua_internal.h"
 
 static void
+bi_floorf (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	R_FLOAT (pr) = floorf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_ceilf (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	R_FLOAT (pr) = ceilf (P_FLOAT (pr, 0));
+}
+
+static void
+bi_fabsf (progs_t *pr, void *data)
+{
+	qfZoneScoped (true);
+	R_FLOAT (pr) = fabsf (P_FLOAT (pr, 0));
+}
+
+static void
 bi_sinf (progs_t *pr, void *data)
 {
 	qfZoneScoped (true);
@@ -410,6 +431,9 @@ bi_atanh (progs_t *pr, void *data)
 #define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
+	{"floor|f",	bi_floorf,	-1, 1, {p(float)}},
+	{"ceil|f",	bi_ceilf,	-1, 1, {p(float)}},
+	{"fabs|f",	bi_fabsf,	-1, 1, {p(float)}},
 	{"sin|f",	bi_sinf,	-1, 1, {p(float)}},
 	{"sincos|f",bi_sincosf,	-1, 1, {p(float)}},
 	{"cos|f",	bi_cosf,	-1, 1, {p(float)}},
