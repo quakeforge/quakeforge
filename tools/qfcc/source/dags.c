@@ -266,8 +266,16 @@ dagnode_deref_match (const dagnode_t *n, const dagnode_t *search)
 	int         i;
 	auto children = search->children;
 
+	if (n->vtype && search->vtype) {
+		if (type_size (n->vtype) != type_size (search->vtype)) {
+			return false;
+		}
+	} else if (n->vtype != search->vtype) {
+		return false;
+	}
+
 	for (i = 0; i < 2; i++) {
-		if (n->children[i] != children[i + 1])
+		if (n->children[i] != children[i])
 			return false;
 	}
 	return true;
@@ -282,7 +290,7 @@ dagnode_match (const dagnode_t *n, const dagnode_t *search)
 	if (n->killed)
 		return false;
 	if (!strcmp (op->opcode, "load")
-		&& n->label->opcode && !strcmp (n->label->opcode, "store"))
+		&& n->label->opcode && !strcmp (n->label->opcode, "load"))
 		return dagnode_deref_match (n, search);
 	if (n->label->opcode != op->opcode)
 		return false;
@@ -362,6 +370,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 			dagnode_t search = {
 				.type = st_alias,
 				.label = opcode_label (dag, save_string ("alias"), s->expr),
+				.vtype = op->type,
 				.children = { node },
 				.types = { op->type },
 				.offset = op_alias_offset (op),
@@ -1143,6 +1152,7 @@ dag_create (flownode_t *flownode)
 		if (s->type != st_assign && s->type != st_move) {
 			dagnode_t search = {
 				.label = op,
+				.vtype = operands[0] ? operands[0]->type : nullptr,
 				.children = { children[0], children[1], children[2] },
 			};
 			if (!(n = dagnode_search (dag, &search))) {
