@@ -43,6 +43,7 @@
 
 	pitch = '1 0';
 	yaw   = '1 0';
+	cam_dist = 3;
 
 	@algebra (PGA) {
 		chest = 1.5 * e021;
@@ -90,6 +91,15 @@ Player_move (Player *self, float frametime)
 	dpos.y -= IN_UpdateAxis (move_side);
 	dpos *= 2;
 
+	float r = self.cam_dist * self.pitch.x;
+	float v = fabs (dpos.y) * frametime;
+	if (v > r) { v = r; }
+	float s = v / (2 * r);
+	float c = sqrt (1 - s * s);
+
+	dpos.x -= fabs(dpos.y) * s;
+	dpos.y *= c;
+
 	vector pos = Transform_GetLocalPosition (self.xform).xyz;
 	self.onground = pos.z <= 0 && self.velocity.z <= 0;
 	vector a = '0 0 0';
@@ -102,6 +112,12 @@ Player_move (Player *self, float frametime)
 		self.velocity.z = 0;
 		self.velocity.x = dp.x;
 		self.velocity.y = dp.y;
+
+		auto y = self.yaw;
+		if (dpos.y < 0) {
+			s = -s;
+		}
+		self.yaw = { y.x * c - y.y * s, y.x * s + y.y * c };
 	} else {
 		a = '0 0 -1' * 9.81f;
 	}
@@ -156,7 +172,7 @@ Player_update_camera (Player *self)
 
 	Player_update_camera (self);
 	[camera setFocus:view];
-	[camera setNest:pos + chest - 3 * view];
+	[camera setNest:pos + chest - cam_dist * view];
 
 	return self;
 }

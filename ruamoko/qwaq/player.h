@@ -30,6 +30,7 @@ extern in_button_t *move_jump;
 
 	vec2 pitch;
 	vec2 yaw;
+	float cam_dist;
 
 	PlayerCam *camera;
 }
