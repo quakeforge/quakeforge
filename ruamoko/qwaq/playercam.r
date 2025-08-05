@@ -23,7 +23,7 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 	return [[[self alloc] init] autorelease];
 }
 
--think
+-think:(float)frametime
 {
 	auto M = camera_lookat (nest, focus, up);
 	auto delta = ~state.M * M;

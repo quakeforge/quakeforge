@@ -13,7 +13,7 @@
 	state_t state;
 }
 +playercam;
--think;
+-think:(float)frametime;
 -setFocus:(point_t)focus;
 -setNest:(point_t)nest;
 -(state_t)state;
