@@ -1,5 +1,6 @@
 #include <math.h>
 #include "player.h"
+#include "playercam.h"
 
 @implementation Player
 -(void) jump: (in_button_t *) button
@@ -40,6 +41,13 @@
 	IMP imp = [self methodForSelector: @selector (jump:)];
 	IN_ButtonAddListener (move_jump, imp, self);
 
+	pitch = '1 0';
+	yaw   = '1 0';
+
+	@algebra (PGA) {
+		chest = 1.5 * e021;
+	}
+
 	return self;
 }
 
@@ -74,7 +82,7 @@ fromtorot(vector a, vector b)
 	return quaternion(v.x, v.y, v.z, c);
 }
 
-void
+point_t
 Player_move (Player *self, float frametime)
 {
 	vector dpos = {};
@@ -95,7 +103,8 @@ Player_move (Player *self, float frametime)
 	}
 	self.velocity += a * frametime;
 	pos += (self.velocity - 0.5 * a * frametime) * frametime;
-	Transform_SetLocalPosition (self.xform, vec4 (pos, 1));
+	auto p = vec4 (pos, 1);
+	Transform_SetLocalPosition (self.xform, p);
 
 	if (dpos • dpos) {
 		vector fwd = Transform_Forward (self.xform).xyz;
@@ -103,16 +112,59 @@ Player_move (Player *self, float frametime)
 		quaternion rot = Transform_GetLocalRotation (self.xform);
 		Transform_SetLocalRotation (self.xform, drot * rot);
 	}
+	return (point_t)p;
+}
+
+void
+Player_freecam (Player *self, float frametime)
+{
+	vector drot = {};
+	//drot.x -= IN_UpdateAxis (move_roll);
+	drot.y -= IN_UpdateAxis (move_pitch);
+	drot.z -= IN_UpdateAxis (move_yaw);
+	drot *= 5 * frametime;
+
+	vec2 dp = {-self.pitch.y, self.pitch.x };
+	self.pitch += dp * drot.y;
+	if (self.pitch.y >  0.996194698) { self.pitch.y =  0.996194698; }
+	if (self.pitch.y < -0.996194698) { self.pitch.y = -0.996194698; }
+	if (self.pitch.x < 0.0871557427) { self.pitch.x = 0.0871557427; }
+	self.pitch /= sqrt (self.pitch • self.pitch);
+
+	vec2 dy = {-self.yaw.y, self.yaw.x };
+	self.yaw += dy * drot.z;
+	self.yaw /= sqrt (self.yaw • self.yaw);
+
+	// +pitch causes the view to tilt *down* which is correct for +Y left in
+	// a right-handed system)
+	self.view = (point_t) vec4(self.yaw * self.pitch.x, -self.pitch.y, 0);
+}
+
+void
+Player_update_camera (Player *self)
+{
 }
 
 -think:(float)frametime
 {
-	Player_move (self, frametime);
+	Player_freecam (self, frametime);
+	auto pos = Player_move (self, frametime);
+
+	Player_update_camera (self);
+	[camera setFocus:view];
+	[camera setNest:pos + chest - 3 * view];
+
 	return self;
 }
 
 -(point_t)pos
 {
-	return (point_t)Transform_GetWorldPosition (xform);
+	return (point_t)Transform_GetWorldPosition (xform) + chest;
+}
+
+-setCamera:(PlayerCam *)camera
+{
+	self.camera = camera;
+	return self;
 }
 @end

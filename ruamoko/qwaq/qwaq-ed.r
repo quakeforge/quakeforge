@@ -935,6 +935,8 @@ main (int argc, string *argv)
 
 	id player = [[Player player:[main_window scene]] retain];
 	id playercam = [[PlayerCam playercam] retain];
+	[player setCamera:playercam];
+
 	id camtest = [[CamTest camtest:[main_window scene]] retain];
 
 	while (true) {
@@ -944,21 +946,20 @@ main (int argc, string *argv)
 		frametime = refresh ([main_window scene]);
 		realtime += frametime;
 
-		[playercam setFocus:[player pos]];
-		[playercam think:frametime];
 		[player think:frametime];
-		[camtest think:frametime state:[playercam state]];
+		[playercam think:frametime];
+		//[camtest think:frametime state:[playercam state]];
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];
-		camera_first_person (&camera_state);
-		if (mouse_dragging_mmb) {
-			camera_mouse_trackball (&camera_state);
-		}
-		if (mouse_dragging_rmb) {
-			camera_mouse_first_person (&camera_state);
-		}
-		set_transform (camera_state.M, camera, "");
+		//camera_first_person (&camera_state);
+		//if (mouse_dragging_mmb) {
+		//	camera_mouse_trackball (&camera_state);
+		//}
+		//if (mouse_dragging_rmb) {
+		//	camera_mouse_first_person (&camera_state);
+		//}
+		set_transform ([playercam state].M, camera, "");
 
 		in_buttoninfo_t info[2] = {};
 		IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);

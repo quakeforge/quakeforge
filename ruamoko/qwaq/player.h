@@ -15,16 +15,27 @@ extern in_axis_t *move_yaw;
 extern in_axis_t *move_roll;
 extern in_button_t *move_jump;
 
+@class PlayerCam;
+
 @interface Player : Object
 {
 	entity_t ent;
 	transform_t xform;
 
+	point_t chest;
+	point_t view;
+
 	bool onground;
 	vector velocity;
+
+	vec2 pitch;
+	vec2 yaw;
+
+	PlayerCam *camera;
 }
 +player:(scene_t) scene;
 
+-setCamera:(PlayerCam *)camera;
 -think:(float)frametime;
 -(point_t)pos;
 @end
