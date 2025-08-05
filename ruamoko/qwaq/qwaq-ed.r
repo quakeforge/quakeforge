@@ -464,7 +464,7 @@ camera_lookat (point_t eye, point_t target, point_t up)
 	transform_t xform;
 }
 +camtest:(scene_t) scene;
-//-think:(state_t)state;
+-think:(float)frametime state:(state_t)state;
 @end
 
 @implementation CamTest
@@ -512,11 +512,11 @@ camera_lookat (point_t eye, point_t target, point_t up)
 	return [[[self alloc] initInScene:scene] autorelease];
 }
 
-//-think:(state_t)state
-//{
-//	set_transform (state.M, xform, "");
-//	return self;
-//}
+-think:(float)frametime state:(state_t)state
+{
+	set_transform (state.M, xform, "");
+	return self;
+}
 @end
 
 void
@@ -947,7 +947,7 @@ main (int argc, string *argv)
 		[playercam setFocus:[player pos]];
 		[playercam think:frametime];
 		[player think:frametime];
-		//[camtest think:[playercam state]];
+		[camtest think:frametime state:[playercam state]];
 		[main_window nextClip:frametime];
 
 		auto camera = [main_window camera];
