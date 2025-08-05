@@ -32,6 +32,7 @@ test_progs_dat=\
 	tools/qfcc/test/deadbool.dat \
 	tools/qfcc/test/dealloc-nowarn.dat \
 	tools/qfcc/test/dealloc-nowarn2.dat \
+	tools/qfcc/test/derefswiz.dat \
 	tools/qfcc/test/double.dat \
 	tools/qfcc/test/double-alias.dat \
 	tools/qfcc/test/enum.dat \
@@ -405,6 +406,16 @@ tools/qfcc/test/dealloc-nowarn2.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(dealloc_nowarn2_dep) # am--include-marker
 r_depfiles_remade += $(dealloc_nowarn2_dep)
+
+tools_qfcc_test_derefswiz_dat_SOURCES=tools/qfcc/test/derefswiz.r
+derefswiz_obj=$(tools_qfcc_test_derefswiz_dat_SOURCES:.r=.o)
+derefswiz_dep=$(call qcautodep,$(tools_qfcc_test_derefswiz_dat_SOURCES))
+tools/qfcc/test/derefswiz.dat$(EXEEXT): $(derefswiz_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(derefswiz_obj)
+tools/qfcc/test/derefswiz.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(derefswiz_dep) # am--include-marker
+r_depfiles_remade += $(derefswiz_dep)
 
 tools_qfcc_test_double_dat_SOURCES=tools/qfcc/test/double.r
 double_obj=$(tools_qfcc_test_double_dat_SOURCES:.r=.o)
