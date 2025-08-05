@@ -58,7 +58,7 @@ log (motor_t m)
 		return { .bvecp = m.bvecp };
 	}
 	auto s = sqrt (-m.bvect • m.bvect);
-	auto b = s ? atan2 (s, m.scalar) / s : 0;
+	auto b = s ? atan2 (s, m.scalar) / s : 1;
 	auto c = ⋆m.qvec * (1 - m.scalar * b) / a;
 	return {
 		.bvect = b * m.bvect,
