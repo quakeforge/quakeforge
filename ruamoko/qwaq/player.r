@@ -74,34 +74,40 @@ fromtorot(vector a, vector b)
 	return quaternion(v.x, v.y, v.z, c);
 }
 
--think:(float)frametime
+void
+Player_move (Player *self, float frametime)
 {
 	vector dpos = {};
 	dpos.x -= IN_UpdateAxis (move_forward);
 	dpos.y -= IN_UpdateAxis (move_side);
 	dpos *= 2;
 
-	vector pos = Transform_GetLocalPosition (xform).xyz;
-	onground = pos.z <= 0 && velocity.z <= 0;
+	vector pos = Transform_GetLocalPosition (self.xform).xyz;
+	self.onground = pos.z <= 0 && self.velocity.z <= 0;
 	vector a = '0 0 0';
-	if (onground) {
+	if (self.onground) {
 		pos.z = 0;
-		velocity.z = 0;
-		velocity.x = dpos.x;
-		velocity.y = dpos.y;
+		self.velocity.z = 0;
+		self.velocity.x = dpos.x;
+		self.velocity.y = dpos.y;
 	} else {
 		a = '0 0 -1' * 9.81f;
 	}
-	velocity += a * frametime;
-	pos += (velocity - 0.5 * a * frametime) * frametime;
-	Transform_SetLocalPosition (xform, vec4 (pos, 1));
+	self.velocity += a * frametime;
+	pos += (self.velocity - 0.5 * a * frametime) * frametime;
+	Transform_SetLocalPosition (self.xform, vec4 (pos, 1));
 
 	if (dpos • dpos) {
-		vector fwd = Transform_Forward (xform).xyz;
+		vector fwd = Transform_Forward (self.xform).xyz;
 		quaternion drot = fromtorot (fwd, dpos);
-		quaternion rot = Transform_GetLocalRotation (xform);
-		Transform_SetLocalRotation (xform, drot * rot);
+		quaternion rot = Transform_GetLocalRotation (self.xform);
+		Transform_SetLocalRotation (self.xform, drot * rot);
 	}
+}
+
+-think:(float)frametime
+{
+	Player_move (self, frametime);
 	return self;
 }
 
