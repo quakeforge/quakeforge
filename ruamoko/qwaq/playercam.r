@@ -9,10 +9,12 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 		return nil;
 	}
 	@algebra (PGA) {
-		focus = e032;
-		nest = e123;
+		focus = e032;	// infinity in the +X direction
+		up = e021;		// infinity in the +Z direction
+		nest = e123;	// at the origin
 	};
-	state = { .M = { .scalar = 1 } };
+	auto M = camera_lookat (nest, focus, up);
+	state = { .M = M };
 	return self;
 }
 
@@ -23,7 +25,7 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 
 -think
 {
-	auto M = camera_lookat (nest, focus, (point_t) '0 0 1 0');
+	auto M = camera_lookat (nest, focus, up);
 	auto delta = ~state.M * M;
 	auto log_delta = log (delta);
 	state.M *= exp (log_delta * 0.1);

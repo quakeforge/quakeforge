@@ -9,6 +9,7 @@
 {
 	point_t focus;
 	point_t nest;
+	point_t up;
 	state_t state;
 }
 +playercam;
