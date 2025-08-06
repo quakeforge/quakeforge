@@ -14,13 +14,20 @@ extern in_axis_t *move_pitch;
 extern in_axis_t *move_yaw;
 extern in_axis_t *move_roll;
 extern in_button_t *move_jump;
+extern in_button_t *target_lock;
+
+void add_target (entity_t tgt);
 
 @class PlayerCam;
 
 @interface Player : Object
 {
+	scene_t scene;
 	entity_t ent;
 	transform_t xform;
+
+	model_t hexhair;
+	entity_t marker;
 
 	point_t chest;
 	point_t view;
@@ -31,6 +38,7 @@ extern in_button_t *move_jump;
 	vec2 pitch;
 	vec2 yaw;
 	float cam_dist;
+	float view_dist;
 
 	PlayerCam *camera;
 }

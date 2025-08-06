@@ -2075,7 +2075,7 @@ render_graph = {
 						};
 						debug_planes = {
 							@inherit = $compose_base;
-							disabled = false;
+							disabled = true;
 
 							color = $color.lights;
 							tasks = (

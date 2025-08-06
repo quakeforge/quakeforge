@@ -2,6 +2,17 @@
 #include "player.h"
 #include "playercam.h"
 
+#define MAX_TARGETS 16
+int num_targets;
+entity_t targets[MAX_TARGETS];
+
+void add_target (entity_t tgt)
+{
+	if (num_targets < MAX_TARGETS) {
+		targets[num_targets++] = tgt;
+	}
+}
+
 @implementation Player
 -(void) jump: (in_button_t *) button
 {
@@ -14,11 +25,51 @@
 	}
 }
 
+-(void) target_lock: (in_button_t *) button
+{
+	if (button.state & inb_edge_down) {
+		button.state &= inb_down;
+		if (!marker) {
+			auto fwd = (point_t) Transform_Forward (xform);
+			auto pos = [self pos];
+			auto fwd_dir = pos ∨ fwd;
+			fwd_dir /= sqrt (fwd_dir • ~fwd_dir);
+			float best_dot = 0;
+			entity_t best_tgt = nil;
+			for (int i = 0; i < num_targets; i++) {
+				auto xf = Entity_GetTransform (targets[i]);
+				auto tgt = (point_t) Transform_GetWorldPosition (xf);
+				auto dir = pos ∨ tgt;
+				dir /= sqrt (dir • ~dir);
+				float dot = dir • fwd_dir;
+				if (dot < best_dot) {
+					best_dot = dot;
+					best_tgt = targets[i];
+				}
+			}
+			if (best_tgt) {
+				marker = Scene_CreateEntity (scene);
+				auto tx = Entity_GetTransform (best_tgt);
+				auto mx = Entity_GetTransform (marker);
+				Transform_SetParent (mx, tx);
+				Transform_SetLocalPosition (mx, {0, 0, 0.5, 1});
+				Entity_SetModel (marker, hexhair);
+			}
+		} else {
+			Scene_DestroyEntity (marker);
+			marker = nil;
+			view_dist = cam_dist;
+		}
+	}
+}
+
 -initInScene:(scene_t) scene
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
+	self.scene = scene;
+
 	ent = Scene_CreateEntity (scene);
 	auto body = Scene_CreateEntity (scene);
 	auto mask = Scene_CreateEntity (scene);
@@ -35,15 +86,20 @@
 	Transform_SetLocalPosition(mask_xform, {0.5, 0, 0.5, 1});
 	Transform_SetLocalScale(mask_xform, {0.25, 0.5, 0.125, 1});
 
+	hexhair = Model_Load ("progs/hexhair.mdl");
+
 	onground = true;
 	velocity = '0 0 0';
 
 	IMP imp = [self methodForSelector: @selector (jump:)];
 	IN_ButtonAddListener (move_jump, imp, self);
+	imp = [self methodForSelector: @selector (target_lock:)];
+	IN_ButtonAddListener (target_lock, imp, self);
 
 	pitch = '1 0';
 	yaw   = '1 0';
 	cam_dist = 3;
+	view_dist = cam_dist;
 
 	@algebra (PGA) {
 		chest = 1.5 * e021;
@@ -56,6 +112,8 @@
 {
 	IMP imp = [self methodForSelector: @selector (jump)];
 	IN_ButtonRemoveListener (move_jump, imp, self);
+	imp = [self methodForSelector: @selector (target_lock:)];
+	IN_ButtonRemoveListener (target_lock, imp, self);
 	Scene_DestroyEntity (ent);
 	[super dealloc];
 }
@@ -91,7 +149,7 @@ Player_move (Player *self, float frametime)
 	dpos.y -= IN_UpdateAxis (move_side);
 	dpos *= 2;
 
-	float r = self.cam_dist * self.pitch.x;
+	float r = self.view_dist * self.pitch.x;
 	float v = fabs (dpos.y) * frametime;
 	if (v > r) { v = r; }
 	float s = v / (2 * r);
@@ -160,17 +218,24 @@ Player_freecam (Player *self, float frametime)
 	self.view = (point_t) vec4(self.yaw * self.pitch.x, -self.pitch.y, 0);
 }
 
-void
-Player_update_camera (Player *self)
-{
-}
-
 -think:(float)frametime
 {
-	Player_freecam (self, frametime);
+	if (marker) {
+		auto mx = Entity_GetTransform (marker);
+		auto mp = (point_t) Transform_GetWorldPosition (mx);
+		auto dir = [self pos] ∨ mp;
+		view_dist = sqrt (dir • ~dir);
+		dir /= view_dist;
+		yaw = ((vec3)dir.bvect).xy;
+		pitch.x = sqrt (yaw • yaw);
+		pitch.y = -((vec3)dir.bvect).z;
+		yaw /= pitch.x;
+		self.view = (point_t) vec4(yaw * pitch.x, -pitch.y, 0);
+	} else {
+		Player_freecam (self, frametime);
+	}
 	auto pos = Player_move (self, frametime);
 
-	Player_update_camera (self);
 	[camera setFocus:view];
 	[camera setNest:pos + chest - cam_dist * view];
 

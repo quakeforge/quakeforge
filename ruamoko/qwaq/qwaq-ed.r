@@ -43,6 +43,7 @@ in_axis_t *move_pitch;
 in_axis_t *move_yaw;
 in_axis_t *move_roll;
 in_button_t *move_jump;
+in_button_t *target_lock;
 
 vec2 mouse_start;
 bool mouse_dragging_mmb;
@@ -287,6 +288,7 @@ static int axis_colors[] = { 12, 10, 9 };
 		ent = Scene_CreateEntity (scene);
 		trans = Entity_GetTransform (ent);
 		Transform_SetLocalPosition (trans, {0.5, 0.5, 0, 1});
+		add_target (ent);
 	}
 	Entity_SetModel (ent, model);
 	free_armature (arm);
@@ -796,6 +798,7 @@ setup_bindings (void)
 	move_yaw = IN_CreateAxis ("move.yaw", "Player Yaw");
 	move_roll = IN_CreateAxis ("move.roll", "Player Roll");
 	move_jump = IN_CreateButton ("move.jump", "Player Jump");
+	target_lock = IN_CreateButton ("target.lock", "Player Target Lock");
 
 	plitem_t *config = PL_GetPropertyList (input_cfg);
 	IN_LoadConfig (config);
@@ -910,6 +913,12 @@ main (int argc, string *argv)
 	entity_t Octahedron_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Plane_ent = Scene_CreateEntity ([main_window scene]);
 	entity_t Tetrahedron_ent = Scene_CreateEntity ([main_window scene]);
+
+	add_target (nh_ent);
+	add_target (Capsule_ent);
+	add_target (Cube_ent);
+	add_target (Octahedron_ent);
+	add_target (Tetrahedron_ent);
 
 	printf ("Night Heron: %lx\n", nh_ent);
 	printf ("Capsule: %lx\n", Capsule_ent);
