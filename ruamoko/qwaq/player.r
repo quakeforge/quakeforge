@@ -237,7 +237,13 @@ Player_freecam (Player *self, float frametime)
 	auto pos = Player_move (self, frametime);
 
 	[camera setFocus:view];
-	[camera setNest:pos + chest - cam_dist * view];
+	point_t nest = pos + chest - cam_dist * view;
+	if (marker) {
+		@algebra (PGA) {
+			nest += yaw.y * e032 - yaw.x * e013;
+		}
+	}
+	[camera setNest:nest];
 
 	return self;
 }
