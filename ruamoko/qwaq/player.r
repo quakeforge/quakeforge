@@ -40,7 +40,7 @@ void add_target (entity_t tgt)
 				auto xf = Entity_GetTransform (targets[i]);
 				auto tgt = (point_t) Transform_GetWorldPosition (xf);
 				auto dir = pos ∨ tgt;
-				dir /= sqrt (dir • ~dir);
+				dir /= dir • ~dir;
 				float dot = dir • fwd_dir;
 				if (dot < best_dot) {
 					best_dot = dot;
