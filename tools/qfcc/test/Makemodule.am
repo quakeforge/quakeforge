@@ -52,6 +52,7 @@ test_progs_dat=\
 	tools/qfcc/test/lost-use.dat \
 	tools/qfcc/test/methodparams.dat \
 	tools/qfcc/test/modulo.dat \
+	tools/qfcc/test/normjoin.dat \
 	tools/qfcc/test/nilparamret.dat \
 	tools/qfcc/test/overload.dat \
 	tools/qfcc/test/paramret.dat \
@@ -672,6 +673,16 @@ tools/qfcc/test/modulo.run: $(qfcc_test_run_deps)
 	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
 include $(modulo_dep) # am--include-marker
 r_depfiles_remade += $(modulo_dep)
+
+tools_qfcc_test_normjoin_dat_SOURCES=tools/qfcc/test/normjoin.r
+normjoin_obj=$(tools_qfcc_test_normjoin_dat_SOURCES:.r=.o)
+normjoin_dep=$(call qcautodep,$(tools_qfcc_test_normjoin_dat_SOURCES))
+tools/qfcc/test/normjoin.dat$(EXEEXT): $(normjoin_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(normjoin_obj)
+tools/qfcc/test/normjoin.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(normjoin_dep) # am--include-marker
+r_depfiles_remade += $(normjoin_dep)
 
 tools_qfcc_test_nilparamret_dat_SOURCES=tools/qfcc/test/nilparamret.r
 nilparamret_obj=$(tools_qfcc_test_nilparamret_dat_SOURCES:.r=.o)
