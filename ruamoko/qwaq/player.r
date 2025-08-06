@@ -30,7 +30,7 @@ void add_target (entity_t tgt)
 	if (button.state & inb_edge_down) {
 		button.state &= inb_down;
 		if (!marker) {
-			auto fwd = (point_t) Transform_Forward (xform);
+			auto fwd = view;
 			auto pos = [self pos];
 			auto fwd_dir = pos ∨ fwd;
 			fwd_dir /= sqrt (fwd_dir • ~fwd_dir);
