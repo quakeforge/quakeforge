@@ -70,6 +70,10 @@ Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight)
 	int			filledcolor = -1, inpt = 0, outpt = 0;
 	int         i;
 
+	if (skinwidth < 2 && skinheight < 2) {
+		return;
+	}
+
 	if (filledcolor == -1) {
 		filledcolor = 0;
 		// attempt to find opaque black
