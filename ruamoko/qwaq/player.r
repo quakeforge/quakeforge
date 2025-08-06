@@ -155,7 +155,11 @@ Player_move (Player *self, float frametime)
 	float s = v / (2 * r);
 	float c = sqrt (1 - s * s);
 
-	dpos.x -= fabs(dpos.y) * s;
+	if (self.marker) {
+		dpos.x += fabs(dpos.y) * s;
+	} else {
+		dpos.x -= fabs(dpos.y) * s;
+	}
 	dpos.y *= c;
 
 	vector pos = Transform_GetLocalPosition (self.xform).xyz;
