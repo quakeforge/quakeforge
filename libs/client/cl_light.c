@@ -129,9 +129,11 @@ parse_sun (lightingdata_t *ldata, plitem_t *entity)
 		return;
 	}
 	VectorSet (1, 1, 1, light.color);
+	light.cone[0] = -1 * 32767;
+	light.cone[1] =  0 * 32767;
 	light.color[3] = sunlight;
 	light.position = sun_vector (sunangle);
-	VectorCopy (light.position, light.axis);
+	VectorNegate (light.position, light.axis);
 	light.attenuation = (vec4f_t) { 0, 0, 1, 0 };
 	Light_AddLight (ldata, &light, 0);
 }
