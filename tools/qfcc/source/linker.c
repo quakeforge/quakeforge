@@ -305,8 +305,13 @@ resolve_external_def (defref_t *ext, defref_t *def)
 		def_type = WORKTYPE (def_type->alias.aux_type);
 	}
 	if (ext_type != def_type) {
-		linker_type_mismatch (REF (ext), REF (def));
-		return;
+		if (ext_type->meta != ty_array
+			|| def_type->meta != ty_array
+			|| ext_type->array.type != def_type->array.type
+			|| ext_type->array.count) {
+			linker_type_mismatch (REF (ext), REF (def));
+			return;
+		}
 	}
 	REF (ext)->offset = REF (def)->offset;
 	REF (ext)->flags = REF (def)->flags;
