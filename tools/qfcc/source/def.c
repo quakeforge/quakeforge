@@ -178,8 +178,14 @@ cover_alias_def (def_t *def, const type_t *type, int offset)
 {
 	def_t      *alias;
 
-	if (offset + type_size (type) <= 0 || offset >= type_size (def->type))
+	if (offset + type_size (type) <= 0) {
 		internal_error (0, "invalid cover offset");
+	}
+	if (!is_array (def->type) || type_size (def->type)) {
+		if (offset >= type_size (def->type)) {
+			internal_error (0, "invalid cover offset");
+		}
+	}
 	for (alias = def->alias_defs; alias; alias = alias->next) {
 		if (alias->type == type && alias->offset == offset)
 			return alias;
@@ -207,10 +213,20 @@ alias_def (def_t *def, const type_t *type, int offset)
 		};
 		internal_error (&e, "aliasing an alias def");
 	}
-	if (type_size (type) > type_size (def->type))
-		internal_error (0, "aliasing a def to a larger type");
-	if (offset < 0 || offset + type_size (type) > type_size (def->type))
-		internal_error (0, "invalid alias offset");
+	if (is_array (def->type)) {
+		if (offset < 0) {
+			internal_error (0, "invalid alias offset");
+		}
+		if (type_size (def->type)
+			&& offset + type_size (type) > type_size (def->type)) {
+			internal_error (0, "invalid alias offset");
+		}
+	} else {
+		if (type_size (type) > type_size (def->type))
+			internal_error (0, "aliasing a def to a larger type");
+		if (offset < 0 || offset + type_size (type) > type_size (def->type))
+			internal_error (0, "invalid alias offset");
+	}
 	return cover_alias_def (def, type, offset);
 }
 
