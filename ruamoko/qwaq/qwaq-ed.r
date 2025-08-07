@@ -9,6 +9,7 @@
 #include <draw.h>
 #include <scene.h>
 #include <input.h>
+#include <QF/keys.h>
 
 #include "gui/editwindow.h"
 #include "gui/filewindow.h"
@@ -58,6 +59,7 @@ void setpalette (void *palette, void *colormap) = #0;
 void newscene (scene_t scene) = #0;
 void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
+void addcbuftxt (string txt) = #0;
 
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;
@@ -768,6 +770,11 @@ event_hander (struct IE_event_s *event, void *data)
 			}
 			break;
 		default:
+			if (event.type == ie_key && event.key.code == QFK_ESCAPE
+				&& (event.key.shift & ies_control)) {
+				addcbuftxt ("toggleconsole\n");
+				return 1;
+			}
 			if (!IMUI_ProcessEvent (imui_ctx, event)) {
 				return IN_Binding_HandleEvent (event);
 			}

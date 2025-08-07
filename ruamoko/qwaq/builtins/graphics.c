@@ -133,10 +133,10 @@ bi_init_graphics (progs_t *pr, void *_res)
 	Font_Init ();
 
 	Con_Load ("client");
-	__auto_type reg = ECS_NewRegistry ("qwaq gr");
+	auto reg = ECS_NewRegistry ("qwaq gr");
 	Canvas_InitSys (&canvas_sys, reg);
 	if (con_module) {
-		__auto_type cd = con_module->data->console;
+		auto cd = con_module->data->console;
 		cd->realtime = &con_realtime;
 		cd->frametime = &con_frametime;
 		cd->quit = quit_f;
@@ -309,6 +309,12 @@ bi_setctxcbuf (progs_t *pr, void *_res)
 	IMT_SetContextCbuf (P_INT (pr, 0), qwaq_cbuf);
 }
 
+static void
+bi_addcbuftxt (progs_t *pr, void *_res)
+{
+	Cbuf_AddText (qwaq_cbuf, P_GSTRING (pr, 0));
+}
+
 #define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
 #define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
@@ -319,6 +325,7 @@ static builtin_t builtins[] = {
 	bi(setpalette,    -1, 2, p(ptr), p(ptr)),
 	bi(setevents,     -1, 2, p(func), p(ptr)),
 	bi(setctxcbuf,    -1, 1, p(int)),
+	bi(addcbuftxt,    -1, 1, p(string)),
 	{0}
 };
 
