@@ -44,6 +44,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_gizmo.h"
 #include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
@@ -124,6 +125,7 @@ vulkan_R_Init (struct plitem_s *config)
 	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Painter_Init (vulkan_ctx);
+	Vulkan_Gizmo_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Translucent_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
@@ -355,6 +357,12 @@ static void
 vulkan_Draw_Flush (void)
 {
 	Vulkan_Draw_Flush (vulkan_ctx);
+}
+
+static void
+vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color)
+{
+	Vulkan_Gizmo_AddSphere (c, r, color, vulkan_ctx);
 }
 
 static void
@@ -647,6 +655,10 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 		.SetClip           = vulkan_Draw_SetClip,
 		.ResetClip         = vulkan_Draw_ResetClip,
 		.Flush             = vulkan_Draw_Flush,
+	},
+
+	.gizmo = {
+		.AddSphere         = vulkan_Gizmo_AddSphere,
 	},
 
 	.painter = {

@@ -99,6 +99,7 @@ typedef struct vulkan_ctx_s {
 	struct spritectx_s *sprite_context;
 	struct drawctx_s *draw_context;
 	struct painterctx_s *painter_context;
+	struct gizmoctx_s *gizmo_context;
 	struct lightingctx_s *lighting_context;
 	struct composectx_s *compose_context;
 	struct outputctx_s *output_context;

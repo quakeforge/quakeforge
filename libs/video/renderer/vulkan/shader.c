@@ -125,6 +125,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/painter.r.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/gizmo.r.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
@@ -189,6 +191,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "qskin_gbuf.frag", qskin_gbuf_frag, sizeof (qskin_gbuf_frag) },
 	{ "output.frag", output_frag, sizeof (output_frag) },
 	{ "painter.r", painter_r, sizeof (painter_r) },
+	{ "gizmo.r", gizmo_r, sizeof (gizmo_r) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "fstriangle.vert", fstriangle_vert, sizeof (fstriangle_vert) },
 	{ "fstrianglest.vert", fstrianglest_vert, sizeof (fstrianglest_vert) },

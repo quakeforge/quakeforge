@@ -27,6 +27,7 @@
 #endif
 
 #include <string.h>
+#include <unistd.h>
 
 #include "QF/cvar.h"
 #include "QF/mathlib.h"

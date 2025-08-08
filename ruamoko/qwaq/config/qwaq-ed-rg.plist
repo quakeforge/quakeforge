@@ -864,6 +864,18 @@ render_graph = {
 				descriptorSets = (painter_set);
 			};
 		};
+		gizmo = {
+			shader = {
+				fragment = {
+					stage = fragment;
+					name = main;
+					module = $builtin/gizmo.r;
+				};
+			};
+			layout = {
+				descriptorSets = (matrix_set, gizmo_set);
+			};
+		};
 		slice = {
 			shader = {
 				vertex = {
@@ -959,6 +971,22 @@ render_graph = {
 			);
 		};
 		painter_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+		gizmo_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -2089,6 +2117,22 @@ render_graph = {
 							layout = $gridplane.layout;
 							depthStencil = $depth_disable;
 						};
+						gizmo = {
+							@inherit = $compose_base;
+							disabled = false;
+
+							color = $color.painter;
+							tasks = (
+								{ func = gizmo_draw; },
+							);
+
+							stages = (
+								$fstriangle.shader.vertexst,
+								$gizmo.shader.fragment,
+							);
+							layout = $gizmo.layout;
+							depthStencil = $depth_disable;
+						};
 					};
 				};
 				entid = {
@@ -2756,6 +2800,7 @@ render_graph = {
 					{ func = particle_wait_physics; },
 					{ func = lighting_update_descriptors;
 					  params = ("\"main\""); },
+					{ func = gizmo_flush; },
 				);
 			};
 		};
@@ -2826,6 +2871,7 @@ render_graph = {
 		{ func = compose_init; },
 		{ func = draw_init; },
 		{ func = painter_init; },
+		{ func = gizmo_init; },
 		{ func = particle_init; },
 		{ func = planes_init; },
 		{ func = planes_set_size; params = (1); },

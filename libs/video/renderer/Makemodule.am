@@ -241,6 +241,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
 	libs/video/renderer/vulkan/vulkan_compose.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
+	libs/video/renderer/vulkan/vulkan_gizmo.c \
 	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_lightmap.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
@@ -375,6 +376,8 @@ output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 painter_src = $(vkshaderpath)/painter.r
 painter_c = $(vkshaderpath)/painter.r.spvc
+gizmo_src = $(vkshaderpath)/gizmo.r
+gizmo_c = $(vkshaderpath)/gizmo.r.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
@@ -477,6 +480,8 @@ $(passthrough_c): $(passthrough_src)
 
 $(painter_c): $(painter_src)
 
+$(gizmo_c): $(gizmo_src)
+
 $(fstriangle_c): $(fstriangle_src)
 
 $(fstrianglest_c): $(fstrianglest_src)
@@ -513,6 +518,7 @@ vkshader_src_geom = \
 	$(particleg_src)
 
 vkshader_src_frag = \
+	$(gizmo_src) \
 	$(linef_src) \
 	$(particlef_src) \
 	$(painter_src) \

@@ -498,6 +498,17 @@ bi_Draw_SetScale (progs_t *pr, void *_res)
 	Draw_SetScale (P_INT (pr, 0));
 }
 
+bi(Gizmo_AddSphere)
+{
+	qfZoneScoped (true);
+	if (r_funcs->gizmo.AddSphere) {
+		auto c = P_var (pr, 0, vec4);
+		float r = P_FLOAT (pr, 1);
+		auto color = P_QUAT (pr, 2);
+		r_funcs->gizmo.AddSphere (c, r, color);
+	}
+}
+
 bi(Painter_AddLine)
 {
 	qfZoneScoped (true);
@@ -650,6 +661,8 @@ static builtin_t builtins[] = {
 	bi(Draw_PrintBuffer,    2, p(ptr), p(string)),
 
 	bi(Draw_SetScale,   1, p(int)),
+
+	bi(Gizmo_AddSphere,   3, p(vec3), p(float), p(vec4)),
 
 	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),
 	bi(Painter_AddCircle, 3, p(vec2), p(float), p(vec4)),

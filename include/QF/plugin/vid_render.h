@@ -117,6 +117,10 @@ typedef struct vid_draw_s {
 	void (*Flush) (void);
 } vid_draw_t;
 
+typedef struct vid_gizmo_s {
+	void (*AddSphere) (vec4f_t c, float r, const quat_t color);
+} vid_gizmo_t;
+
 typedef struct vid_painter_s {
 	void (*AddLine) (vec2f_t p1, vec2f_t p2, float r, const quat_t color);
 	void (*AddCircle) (vec2f_t c, float r, const quat_t color);
@@ -127,6 +131,7 @@ typedef struct vid_render_funcs_s {
 	void      (*init) (void);
 	void (*UpdateScreen) (SCR_Func *scr_funcs);
 	vid_draw_t  draw;
+	vid_gizmo_t gizmo;
 	vid_painter_t painter;
 
 	struct psystem_s *(*ParticleSystem) (void);
