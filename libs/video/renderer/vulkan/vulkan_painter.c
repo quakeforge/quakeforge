@@ -1,5 +1,5 @@
 /*
-	vulkan_apinter.c
+	vulkan_painter.c
 
 	2D drawing based on Guerilla's UIPainter
 
