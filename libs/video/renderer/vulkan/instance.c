@@ -121,7 +121,7 @@ static void
 debug_breakpoint (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity)
 {
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-		exit(1);
+		_exit(1);
 	}
 }
 
