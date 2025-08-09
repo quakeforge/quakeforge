@@ -47,6 +47,7 @@
 
 #include "compat.h"
 #include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/dsmanager.h"
 #include "QF/Vulkan/instance.h"
@@ -60,31 +61,41 @@
 #include "vid_vulkan.h"
 
 #define MAX_QUEUE_BUFFER (8*1024*1024)
+#define MAX_OBJECT_DATA (8*1024*1024)
 
-typedef struct giz_cmd_s {
-	uint32_t    cmd;
+typedef struct giz_count_s {
+	uint32_t    numObjects;
+	uint32_t    maxObjects;
+} giz_count_t;
+
+typedef struct giz_queue_s {
+	uint32_t    obj_id;
 	uint32_t    next;
-} giz_cmd_t;
+} giz_queue_t;
 
 typedef struct giz_sphere_s {
-	giz_cmd_t   cmd;
+	uint32_t    cmd;
 	float       c[3];
 	float       r;
 	byte        col[4];
 } giz_sphere_t;
 
 typedef struct gizmoframe_s {
-	VkImage     cmd_heads_image;
-	VkImageView cmd_heads_view;
-	VkBuffer    cmd_queue;
+	VkBuffer    counts;
+	VkBuffer    queue;
+	VkImageView queue_heads_view;
+	VkBuffer    objects;
+	VkBuffer    obj_ids;
+
+	VkImage     queue_heads_image;
 	VkDescriptorSet set;
 } gizmoframe_t;
 
 typedef struct gizmoframeset_s
 	DARRAY_TYPE (gizmoframe_t) gizmoframeset_t;
 
-typedef struct giz_queue_s
-	DARRAY_TYPE (uint32_t) giz_queue_t;
+typedef struct giz_data_s
+	DARRAY_TYPE (uint32_t) giz_data_t;
 
 typedef struct gizmoctx_s {
 	qfv_dsmanager_t *dsmanager;
@@ -92,10 +103,8 @@ typedef struct gizmoctx_s {
 	gizmoframeset_t frames;
 	uint32_t    cmd_width;
 	uint32_t    cmd_height;
-	uint32_t    max_queues;
-	uint32_t   *cmd_heads;
-	uint32_t   *cmd_tails;
-	giz_queue_t cmd_queue;
+	giz_data_t  obj_ids;
+	giz_data_t  objects;
 } gizmoctx_t;
 
 static void
@@ -134,66 +143,102 @@ gizmo_startup (exprctx_t *ectx)
 	gctx->dsmanager = QFV_Render_DSManager (ctx, "gizmo_set");
 
 	gctx->resource = malloc (sizeof (qfv_resource_t)
-							 // cmd_heads image
+							 // queue counts buffer
 							 + frames * sizeof (qfv_resobj_t)
-							 // cmd_heads view
+							 // queue buffer
+							 + sizeof (qfv_resobj_t)
+							 // queue_heads image
+							 + sizeof (qfv_resobj_t)
+							 // queue_heads view
+							 + sizeof (qfv_resobj_t)
+							 // object buffer
 							 + frames * sizeof (qfv_resobj_t)
-							 // cmd_queue buffer
+							 // obj_id buffer
 							 + frames * sizeof (qfv_resobj_t));
-	auto cmd_heads_image = (qfv_resobj_t *) &gctx->resource[1];
-	auto cmd_heads_view = &cmd_heads_image[frames];
-	auto cmd_queue = &cmd_heads_view[frames];
+	auto counts = (qfv_resobj_t *) &gctx->resource[1];
+	auto queue = &counts[frames];
+	auto queue_heads_image = &queue[1];
+	auto queue_heads_view = &queue_heads_image[1];
+	auto objects = &queue_heads_view[1];
+	auto obj_ids = &objects[frames];
 	*gctx->resource = (qfv_resource_t) {
 		.name = "gizmo",
 		.va_ctx = ctx->va_ctx,
 		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		.num_objects = frames + frames + frames,
-		.objects = cmd_heads_image,
+		.num_objects = frames + 1 + 1 + 1 + frames + frames,
+		.objects = counts,
+	};
+	queue_heads_image[0] = (qfv_resobj_t) {
+		.name = "queue_heads_image",
+		.type = qfv_res_image,
+		.image = {
+			.type = VK_IMAGE_TYPE_2D,
+			.format = VK_FORMAT_R32_UINT,
+			.extent = {
+				.width = gctx->cmd_width,
+				.height = gctx->cmd_height,
+				.depth = 1,
+			},
+			.num_mipmaps = 1,
+			.num_layers = 1,
+			.samples = VK_SAMPLE_COUNT_1_BIT,
+			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
+					| VK_IMAGE_USAGE_STORAGE_BIT,
+		},
+	};
+	queue_heads_view[0] = (qfv_resobj_t) {
+		.name = "queue_heads_view",
+		.type = qfv_res_image_view,
+		.image_view = {
+			.image = queue_heads_image - gctx->resource[0].objects,
+			.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+			.format = queue_heads_image[0].image.format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.levelCount = VK_REMAINING_MIP_LEVELS,
+				.layerCount = VK_REMAINING_ARRAY_LAYERS,
+			},
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
+		},
+	};
+	queue[0] = (qfv_resobj_t) {
+		.name = "queue",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = sizeof (giz_queue_t[MAX_QUEUE_BUFFER]),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		},
 	};
 	for (uint32_t i = 0; i < frames; i++) {
-		cmd_heads_image[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_heads_image[%d]", i),
-			.type = qfv_res_image,
-			.image = {
-				.type = VK_IMAGE_TYPE_2D,
-				.format = VK_FORMAT_R32_UINT,
-				.extent = {
-					.width = gctx->cmd_width,
-					.height = gctx->cmd_height,
-					.depth = 1,
-				},
-				.num_mipmaps = 1,
-				.num_layers = 1,
-				.samples = VK_SAMPLE_COUNT_1_BIT,
-				.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
-						| VK_IMAGE_USAGE_STORAGE_BIT,
-			},
-		};
-		cmd_heads_view[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_heads_view[%d]", i),
-			.type = qfv_res_image_view,
-			.image_view = {
-				.image = i,
-				.type = VK_IMAGE_VIEW_TYPE_2D,
-				.format = cmd_heads_image[i].image.format,
-				.subresourceRange = {
-					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.levelCount = VK_REMAINING_MIP_LEVELS,
-					.layerCount = VK_REMAINING_ARRAY_LAYERS,
-				},
-				.components = {
-					.r = VK_COMPONENT_SWIZZLE_IDENTITY,
-					.g = VK_COMPONENT_SWIZZLE_IDENTITY,
-					.b = VK_COMPONENT_SWIZZLE_IDENTITY,
-					.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-				},
-			},
-		};
-		cmd_queue[i] = (qfv_resobj_t) {
-			.name = vac (ctx->va_ctx, "cmd_queue[%d]", i),
+		counts[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "counts[%d]", i),
 			.type = qfv_res_buffer,
 			.buffer = {
-				.size = sizeof (uint32_t) * MAX_QUEUE_BUFFER,
+				.size = sizeof (giz_count_t),
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			},
+		};
+		objects[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "objects[%d]", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (uint32_t[MAX_OBJECT_DATA]),
+				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+			},
+		};
+		obj_ids[i] = (qfv_resobj_t) {
+			.name = vac (ctx->va_ctx, "obj_ids[%d]", i),
+			.type = qfv_res_buffer,
+			.buffer = {
+				.size = sizeof (uint32_t[MAX_OBJECT_DATA]),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
 						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 			},
@@ -203,34 +248,55 @@ gizmo_startup (exprctx_t *ectx)
 	for (uint32_t i = 0; i < frames; i++) {
 		auto frame = &gctx->frames.a[i];
 		*frame = (gizmoframe_t) {
-			.cmd_heads_image = cmd_heads_image[i].image.image,
-			.cmd_heads_view = cmd_heads_view[i].image_view.view,
-			.cmd_queue = cmd_queue[i].buffer.buffer,
+			.counts = counts[i].buffer.buffer,
+			.queue_heads_image = queue_heads_image[0].image.image,
+			.queue_heads_view = queue_heads_view[0].image_view.view,
+			.queue = queue[0].buffer.buffer,
+			.objects = objects[i].buffer.buffer,
+			.obj_ids = obj_ids[i].buffer.buffer,
 			.set = QFV_DSManager_AllocSet (gctx->dsmanager),
 		};
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
+							 frame->set, vac (ctx->va_ctx, "gizmo[%d]", i));
 
 		VkDescriptorImageInfo imageInfo[] = {
-			{ .imageView = frame->cmd_heads_view,
+			{ .imageView = frame->queue_heads_view,
 			  .imageLayout = VK_IMAGE_LAYOUT_GENERAL, },
 		};
 		VkDescriptorBufferInfo bufferInfo[] = {
-			{ .buffer = frame->cmd_queue, .offset = 0, .range = VK_WHOLE_SIZE },
+			{ .buffer = frame->counts, .offset = 0, .range = VK_WHOLE_SIZE },
+			{ .buffer = frame->queue, .offset = 0, .range = VK_WHOLE_SIZE },
+			{ .buffer = frame->objects, .offset = 0, .range = VK_WHOLE_SIZE },
 		};
 		VkWriteDescriptorSet write[] = {
-			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = frame->set,
 				.dstBinding = 0,
 				.descriptorCount = 1,
-				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-				.pImageInfo = &imageInfo[0], },
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[0], },
 			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 				.dstSet = frame->set,
 				.dstBinding = 1,
 				.descriptorCount = 1,
 				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-				.pBufferInfo = &bufferInfo[0], },
+				.pBufferInfo = &bufferInfo[1], },
+			{	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = frame->set,
+				.dstBinding = 2,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+				.pImageInfo = &imageInfo[0], },
+			{   .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+				.dstSet = frame->set,
+				.dstBinding = 3,
+				.descriptorCount = 1,
+				.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+				.pBufferInfo = &bufferInfo[2], },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev,
+									   countof (write), write,
+									   0, nullptr);
 	}
 
 	qfvPopDebug (ctx);
@@ -252,13 +318,9 @@ gizmo_init (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	*gctx = (gizmoctx_t) {
 		.cmd_width = 240,//FIXME
 		.cmd_height = 135,//FIXME
-		.max_queues = 32400,//FIXME
-		.cmd_queue = DARRAY_STATIC_INIT (1024),
+		.obj_ids = DARRAY_STATIC_INIT (1024),
+		.objects = DARRAY_STATIC_INIT (1024),
 	};
-
-	gctx->cmd_heads = malloc (gctx->max_queues * 2 * sizeof (uint32_t));
-	gctx->cmd_tails = &gctx->cmd_heads[gctx->max_queues];
-	memset (gctx->cmd_heads, 0xff, gctx->max_queues * 2 * sizeof (uint32_t));
 }
 
 static void
@@ -271,27 +333,96 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto packet = QFV_PacketAcquire (ctx->staging);
 	auto frame = &gctx->frames.a[ctx->curFrame];
 
-	uint32_t size = gctx->cmd_width * gctx->cmd_height * sizeof (uint32_t);
-	auto data = QFV_PacketExtend (packet, size);
-	memcpy (data, gctx->cmd_heads, size);
-	QFV_PacketCopyImage (packet, frame->cmd_heads_image,
-						 gctx->cmd_width, gctx->cmd_height,
-						 &imageBarriers[qfv_LT_Undefined_to_TransferDst],
-						 &imageBarriers[qfv_LT_TransferDst_to_General]);
+	auto sb = &bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
+	auto bb = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+
+	size_t size = sizeof (giz_count_t)
+				+ sizeof (uint32_t[gctx->objects.size])
+				+ sizeof (uint32_t[gctx->obj_ids.size]);
+	byte *packet_start = QFV_PacketExtend (packet, size);
+	byte *packet_data = packet_start;
+
+	qfv_scatter_t counts_scatter = {
+		.srcOffset = packet_data - packet_start,
+		.dstOffset = 0,
+		.length = sizeof (giz_count_t),
+	};
+	auto counts = (giz_count_t *) packet_data;
+	packet_data += sizeof (giz_count_t);
+	*counts = (giz_count_t) { .maxObjects = MAX_QUEUE_BUFFER };
+	QFV_PacketScatterBuffer (packet, frame->counts, 1, &counts_scatter, sb, bb);
+
+	if (gctx->objects.size) {
+		qfv_scatter_t objects_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = 0,
+			.length = sizeof (uint32_t[gctx->objects.size]),
+		};
+		auto objects = (uint32_t *) packet_data;
+		packet_data += sizeof (uint32_t[gctx->objects.size]);
+		memcpy (objects, gctx->objects.a,
+				sizeof (uint32_t[gctx->objects.size]));
+		QFV_PacketScatterBuffer (packet, frame->objects, 1, &objects_scatter,
+								 sb, bb);
+	}
+
+	if (gctx->obj_ids.size) {
+		qfv_scatter_t obj_ids_scatter = {
+			.srcOffset = packet_data - packet_start,
+			.dstOffset = 0,
+			.length = sizeof (uint32_t[gctx->obj_ids.size]),
+		};
+		auto obj_ids = (uint32_t *) packet_data;
+		packet_data += sizeof (uint32_t[gctx->obj_ids.size]);
+		memcpy (obj_ids, gctx->obj_ids.a,
+				sizeof (uint32_t[gctx->obj_ids.size]));
+		QFV_PacketScatterBuffer (packet, frame->obj_ids, 1, &obj_ids_scatter,
+								 sb, bb);
+	}
+
 	QFV_PacketSubmit (packet);
 
-	if (gctx->cmd_queue.size) {
-		packet = QFV_PacketAcquire (ctx->staging);
-		size = gctx->cmd_queue.size * sizeof (uint32_t);
-		data = QFV_PacketExtend (packet, size);
-		memcpy (data, gctx->cmd_queue.a, size);
-		auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
-		auto db = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
-		QFV_PacketCopyBuffer (packet, frame->cmd_queue, 0, &sb, &db);
-		QFV_PacketSubmit (packet);
-	}
-	memset (gctx->cmd_heads, 0xff, gctx->max_queues * 2 * sizeof (uint32_t));
-	gctx->cmd_queue.size = 0;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	VkCommandBufferBeginInfo beginInfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	auto image = frame->queue_heads_image;
+	auto ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = image;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+	VkClearColorValue clear_color[] = {
+		{ .int32 = {-1, -1, -1, -1} },
+	};
+	VkImageSubresourceRange ranges[] = {
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS },
+	};
+	dfunc->vkCmdClearColorImage (cmd, image,
+								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								 clear_color, 1, ranges);
+	ib = imageBarriers[qfv_LT_TransferDst_to_General];
+	ib.barrier.image = image;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+	dfunc->vkEndCommandBuffer (cmd);
+	QFV_AppendCmdBuffer (ctx, cmd);
+
+	gctx->objects.size = 0;
+	gctx->obj_ids.size = 0;
+}
+
+static void
+gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
+{
 }
 
 static void
@@ -320,6 +451,10 @@ static exprfunc_t gizmo_flush_func[] = {
 	{ .func = gizmo_flush },
 	{}
 };
+static exprfunc_t gizmo_draw_cmd_func[] = {
+	{ .func = gizmo_draw_cmd },
+	{}
+};
 static exprfunc_t gizmo_draw_func[] = {
 	{ .func = gizmo_draw },
 	{}
@@ -331,6 +466,7 @@ static exprfunc_t gizmo_init_func[] = {
 
 static exprsym_t gizmo_task_syms[] = {
 	{ "gizmo_flush", &cexpr_function, gizmo_flush_func },
+	{ "gizmo_draw_cmd", &cexpr_function, gizmo_draw_cmd_func },
 	{ "gizmo_draw", &cexpr_function, gizmo_draw_func },
 	{ "gizmo_init", &cexpr_function, gizmo_init_func },
 	{}
@@ -344,58 +480,18 @@ Vulkan_Gizmo_Init (vulkan_ctx_t *ctx)
 }
 
 static void
-gizmo_queue_cmd (int x, int y, giz_cmd_t *cmd, uint32_t size,
-				   gizmoctx_t *gctx)
-{
-	uint32_t    queue_ind = y * gctx->cmd_width + x;
-	auto head_ptr = &gctx->cmd_heads[queue_ind];
-	auto tail_ptr = &gctx->cmd_tails[queue_ind];
-	uint32_t    tail = *tail_ptr;
-	uint32_t    ind = gctx->cmd_queue.size;
-	uint32_t    count = size / sizeof (uint32_t);
-	auto queued_cmd = (giz_cmd_t *) DARRAY_OPEN_AT (&gctx->cmd_queue, ind,
-													count);
-	if (*head_ptr == ~0u) {
-		*head_ptr = ind;
-	}
-	memcpy (queued_cmd, cmd, size);
-	if (tail != ~0u) {
-		gctx->cmd_queue.a[tail] = ind;
-	}
-	*tail_ptr = &queued_cmd->next - gctx->cmd_queue.a;
-}
-
-static void
-gizmo_add_command (vec4f_t tl, vec4f_t br, giz_cmd_t *cmd, uint32_t size,
-				   vulkan_ctx_t *ctx)
+gizmo_add_object (void *obj, uint32_t size, vulkan_ctx_t *ctx)
 {
 	auto gctx = ctx->gizmo_context;
-	auto mctx = ctx->matrix_context;
-	auto proj = mctx->matrices.Projection3d;
 
-	tl[0] = (1 + tl[0] * proj[0][0] / tl[2]) * 0.5 * r_refdef.vrect.width;
-	tl[1] = (1 + tl[1] * proj[1][1] / tl[2]) * 0.5 * r_refdef.vrect.height;
-	br[0] = (1 + br[0] * proj[0][0] / tl[2]) * 0.5 * r_refdef.vrect.width;
-	br[1] = (1 + br[1] * proj[1][1] / tl[2]) * 0.5 * r_refdef.vrect.height;
-
-	int x1 = (tl[0] - 1) / 8;
-	int y1 = (tl[1] - 1) / 8;
-	int x2 = (br[0] + 1) / 8 + 1;
-	int y2 = (br[1] + 1) / 8 + 1;
-
-	if (x1 < 0) x1 = 0;
-	if (y1 < 0) y1 = 0;
-	if (x2 > (int) gctx->cmd_width) x2 = gctx->cmd_width;
-	if (y2 > (int) gctx->cmd_height) y2 = gctx->cmd_height;
-	//XXX temporary hack to do the whole screen
-	x1 = y1 = 0;
-	x2 = gctx->cmd_width;
-	y2 = gctx->cmd_height;
-	for (int y = y1; y < y2; y++) {
-		for (int x = x1; x < x2; x++) {
-			gizmo_queue_cmd (x, y, cmd, size, gctx);
-		}
+	uint32_t count = size / sizeof (uint32_t);
+	uint32_t obj_id = gctx->objects.size;
+	if (obj_id + count > MAX_OBJECT_DATA) {
+		return;
 	}
+	auto data = DARRAY_OPEN_AT (&gctx->objects, obj_id, count);
+	memcpy (data, obj, size);
+	DARRAY_APPEND (&gctx->obj_ids, obj_id);
 }
 
 void
@@ -403,13 +499,10 @@ Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 						vulkan_ctx_t *ctx)
 {
 	giz_sphere_t sphere = {
-		.cmd = {
-			.cmd = 0,
-			.next = ~0u,
-		},
+		.cmd = 0,
 		.c = { VectorExpand (c) },
 		.r = r,
 	};
 	QuatScale (color, 255, sphere.col);
-	gizmo_add_command (c - 2*r, c + 2*r, &sphere.cmd, sizeof (sphere), ctx);
+	gizmo_add_object (&sphere, sizeof (sphere), ctx);
 }

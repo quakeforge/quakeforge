@@ -866,6 +866,16 @@ render_graph = {
 		};
 		gizmo = {
 			shader = {
+				expand = {
+					stage = vertex;
+					name = main;
+					module = $builtin/expand.r;
+				};
+				queueobj = {
+					stage = fragment;
+					name = main;
+					module = $builtin/queueobj.r;
+				};
 				fragment = {
 					stage = fragment;
 					name = main;
@@ -990,12 +1000,24 @@ render_graph = {
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = storage_image;
+					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 				{
 					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_image;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 3;
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -1572,6 +1594,78 @@ render_graph = {
 				};
 			};
 		};
+		gizmo = {
+			color = "[0, 1, 0, 1]";
+			framebuffer = {
+				width = "($render_output.extent.width + 7u) / 8u";
+				height = "($render_output.extent.height + 7u) / 8u";
+				layers = 1;
+				attachments = { };
+			};
+			subpasses = {
+				gizmo_cmd = {
+					color = "[ 0.5,  0.5,  0.5, 1]";
+					attachments = { };
+
+					base_pipeline = {
+						@inherit = $pipeline_base;
+						depthStencil = $depth_disable;
+						rasterization = $cw_cull_back;
+					};
+					pipelines = {
+						gizmo_cmd = {
+							color = $color.bsp;
+							tasks = (
+								{ func = gizmo_draw_cmd; },
+							);
+
+							stages = (
+								$brush.shader.depth_vertex,
+							);
+							vertexInput = {
+								bindings = (
+									"$brush.vertexInput.bindings[0]",
+									"$brush.vertexInput.bindings[1]",
+								);
+								attributes = (
+									"$brush.vertexInput.attributes[0]",
+									"$brush.vertexInput.attributes[2]",
+								);
+							};
+							inputAssembly = $brush.inputAssembly;
+							layout = $brush.layout;
+						};
+					};
+				};
+				$external = {
+					dependencies = {
+						gizmo_cmd = {
+							src = {
+								stage = color_attachment_output;
+								access = color_attachment_write;
+							};
+							dst = {
+								stage = fragment_shader;
+								access = shader_read;
+							};
+						}
+					};
+				};
+			};
+		};
+		gizmo_cube = {
+			@inherit = $renderpasses.gizmo;
+			@next = (VkRenderPassMultiviewCreateInfo, {
+				viewMasks   = (0x3fu);
+			});
+			framebuffer = {
+				width = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				height = "(min($render_output.extent.width,$render_output.extent.height) + 7u) / 8u";
+				layers = 1;
+				attachments = {
+				};
+			};
+		};
 		deferred = {
 			color = "[0, 1, 0, 1]";
 			framebuffer = {
@@ -2103,7 +2197,7 @@ render_graph = {
 						};
 						debug_planes = {
 							@inherit = $compose_base;
-							disabled = true;
+							disabled = false;
 
 							color = $color.lights;
 							tasks = (
@@ -2766,7 +2860,7 @@ render_graph = {
 					shadow15 = $renderpasses.shadow15;
 					shadow16 = $renderpasses.shadow16;
 					shadow17 = $renderpasses.shadow17;
-	/* FIXME dynamic limit
+					/* FIXME dynamic limit
 					shadow18 = $renderpasses.shadow18;
 					shadow19 = $renderpasses.shadow19;
 					shadow20 = $renderpasses.shadow20;
@@ -2782,7 +2876,7 @@ render_graph = {
 					shadow30 = $renderpasses.shadow30;
 					shadow31 = $renderpasses.shadow31;
 					shadow32 = $renderpasses.shadow32;
-	*/
+					*/
 				};
 			};
 		};
@@ -2793,8 +2887,12 @@ render_graph = {
 				tasks = (
 					{ func = output_select_renderpass;
 					  params = ("\"main\""); },
+					{ func = output_select_renderpass;
+					  params = ("\"gizmo_cmd\""); },
 					{ func = update_framebuffer;
 					  params = ("\"main\""); },
+					{ func = update_framebuffer;
+					  params = ("\"gizmo_cmd\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
 					{ func = particle_wait_physics; },
@@ -2804,9 +2902,19 @@ render_graph = {
 				);
 			};
 		};
+		gizmo_cmd = {
+			color = "[0.4, 0.8, 0.3]";
+			dependencies = (setup_main);
+			render = {
+				renderpasses = {
+					gizmo = $renderpasses.gizmo;
+					gizmo_cube = $renderpasses.gizmo_cube;
+				};
+			};
+		};
 		main = {
 			color = "[0.3, 0.8, 0.0]";
-			dependencies = (setup_main, particles, shadow);
+			dependencies = (gizmo_cmd, particles, shadow);
 			render = {
 				renderpasses = {
 					deferred = $renderpasses.deferred;

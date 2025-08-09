@@ -376,6 +376,10 @@ output_src = $(vkshaderpath)/output.frag
 output_c = $(vkshaderpath)/output.frag.spvc
 painter_src = $(vkshaderpath)/painter.r
 painter_c = $(vkshaderpath)/painter.r.spvc
+expand_src = $(vkshaderpath)/expand.r
+expand_c = $(vkshaderpath)/expand.r.spvc
+queueobj_src = $(vkshaderpath)/queueobj.r
+queueobj_c = $(vkshaderpath)/queueobj.r.spvc
 gizmo_src = $(vkshaderpath)/gizmo.r
 gizmo_c = $(vkshaderpath)/gizmo.r.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
@@ -480,6 +484,10 @@ $(passthrough_c): $(passthrough_src)
 
 $(painter_c): $(painter_src)
 
+$(expand_c): $(expand_src)
+
+$(queueobj_c): $(queueobj_src)
+
 $(gizmo_c): $(gizmo_src)
 
 $(fstriangle_c): $(fstriangle_src)
@@ -518,6 +526,8 @@ vkshader_src_geom = \
 	$(particleg_src)
 
 vkshader_src_frag = \
+	$(expand_src) \
+	$(queueobj_src) \
 	$(gizmo_src) \
 	$(linef_src) \
 	$(particlef_src) \

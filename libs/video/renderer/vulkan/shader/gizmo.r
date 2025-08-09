@@ -9,9 +9,10 @@
 #include "matrices.h"
 ;
 
-[uniform, set(1), binding(0)] @image(uint, 2D, Storage, R32ui) cmd_heads;
-[buffer, set(1), binding(1)] @block Commands {
-    uint cmd_queue[];
+#include "queueobj.h"
+
+[buffer, set(1), binding(3)] @block Objects {
+    uint objects[];
 };
 
 [in(0)] vec2 uv;
@@ -28,14 +29,14 @@ vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
 void
 draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
-	auto c = vec3 (asfloat (cmd_queue[ind + 0]),
-				   asfloat (cmd_queue[ind + 1]),
-				   asfloat (cmd_queue[ind + 2])) - eye;
+	auto c = vec3 (asfloat (objects[ind + 0]),
+				   asfloat (objects[ind + 1]),
+				   asfloat (objects[ind + 2])) - eye;
 	if (c • v < 0) {
 		return;
 	}
-	auto r = asfloat (cmd_queue[ind + 3]);
-	auto col = asrgba (cmd_queue[ind + 4]);
+	auto r = asfloat (objects[ind + 3]);
+	auto col = asrgba (objects[ind + 4]);
 	float d = r * r - c • c + (c • v) * (c • v) / (v • v);
 	float dist = d > 0 ? sqrt (d) : 0;
 	float factor = d > 0 ? exp (-col.a * 3 * dist / r) : 0;
@@ -58,20 +59,21 @@ void main()
 	auto v = cam * vec3 (UV, 1);
 
 	// use 8x8 grid for screen grid
-	auto cmd_coord = ivec2 (gl_FragCoord.xy) / 8;
-	uint cmd_ind = imageLoad (cmd_heads, cmd_coord).r;
+	auto queue_coord = ivec3 (gl_FragCoord.xy, gl_ViewIndex * 8) / 8;
+	uint queue_ind = imageLoad (queue_heads, queue_coord).r;
 
 	auto color = vec4 (0, 0, 0, 0);
-	while (cmd_ind != ~0u) {
+	while (queue_ind != ~0u) {
 		//FIXME might be a good time to look into BDA
-		uint cmd = cmd_queue[cmd_ind + 0];
-		uint next = cmd_queue[cmd_ind + 1];
+		uint obj_id = queue[queue_ind].obj_id;
+		uint next = queue[queue_ind].next;
+		uint cmd = objects[obj_id + 0];
 		switch (cmd) {
 		case 0:
-			draw_sphere (cmd_ind + 2, v, eye, color);
+			draw_sphere (obj_id + 1, v, eye, color);
 			break;
 		}
-		cmd_ind = next;
+		queue_ind = next;
 	}
 	frag_color = color;
 }
