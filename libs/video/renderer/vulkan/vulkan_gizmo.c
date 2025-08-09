@@ -387,6 +387,10 @@ gizmo_add_command (vec4f_t tl, vec4f_t br, giz_cmd_t *cmd, uint32_t size,
 	if (y1 < 0) y1 = 0;
 	if (x2 > (int) gctx->cmd_width) x2 = gctx->cmd_width;
 	if (y2 > (int) gctx->cmd_height) y2 = gctx->cmd_height;
+	//XXX temporary hack to do the whole screen
+	x1 = y1 = 0;
+	x2 = gctx->cmd_width;
+	y2 = gctx->cmd_height;
 	for (int y = y1; y < y2; y++) {
 		for (int x = x1; x < x2; x++) {
 			gizmo_queue_cmd (x, y, cmd, size, gctx);

@@ -258,7 +258,8 @@ static int axis_colors[] = { 12, 10, 9 };
 			[clipsView draw];
 		}
 	}
-	Gizmo_AddSphere ({1, 0.5, 3}, 0.5, 2*vec4(0.8, 0.9, 0.1, 0.4));
+	Gizmo_AddSphere ({1, 0.5, 3}, 0.5, vec4(0.8, 0.9, 0.1, 0.8));
+	Gizmo_AddSphere ({1.5,-0.75, 3}, 1, vec4(0.6, 0.9, 0.5, 0.8));
 	//float s = sin((float)(realtime - double(1ul << 32)));
 	//float c = cos((float)(realtime - double(1ul << 32)));
 	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
