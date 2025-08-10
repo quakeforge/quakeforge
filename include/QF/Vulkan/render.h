@@ -42,6 +42,7 @@ typedef enum qfv_type_t {
 	qfv_float,
 	qfv_int,
 	qfv_uint,
+	qfv_vec2,
 	qfv_vec3,
 	qfv_vec4,
 	qfv_mat4,

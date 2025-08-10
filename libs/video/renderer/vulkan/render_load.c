@@ -505,6 +505,10 @@ parse_pushconstantrange (VkPushConstantRange *range,
 					size = sizeof (int32_t);
 					offset = RUP (offset, sizeof (int32_t));
 					break;
+				case qfv_vec2:
+					size = sizeof (vec2f_t);
+					offset = RUP (offset, sizeof (vec2f_t));
+					break;
 				case qfv_vec3:
 					size = sizeof (vec3_t);
 					offset = RUP (offset, sizeof (vec4f_t));
