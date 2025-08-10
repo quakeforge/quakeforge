@@ -86,6 +86,7 @@ typedef struct gizmoframe_s {
 	VkImageView queue_heads_view;
 	VkBuffer    objects;
 	VkBuffer    obj_ids;
+	uint32_t    num_obj_ids;
 
 	VkImage     queue_heads_image;
 	VkDescriptorSet set;
@@ -180,7 +181,7 @@ gizmo_startup (exprctx_t *ectx)
 				.depth = 1,
 			},
 			.num_mipmaps = 1,
-			.num_layers = 1,
+			.num_layers = 6,
 			.samples = VK_SAMPLE_COUNT_1_BIT,
 			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
 					| VK_IMAGE_USAGE_STORAGE_BIT,
@@ -240,7 +241,7 @@ gizmo_startup (exprctx_t *ectx)
 			.buffer = {
 				.size = sizeof (uint32_t[MAX_OBJECT_DATA]),
 				.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
-						| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+						| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			},
 		};
 	}
@@ -366,6 +367,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 								 sb, bb);
 	}
 
+	frame->num_obj_ids = gctx->obj_ids.size;
 	if (gctx->obj_ids.size) {
 		qfv_scatter_t obj_ids_scatter = {
 			.srcOffset = packet_data - packet_start,
@@ -423,6 +425,32 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 static void
 gizmo_draw_cmd (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 {
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto device = ctx->device;
+	auto dfunc = device->funcs;
+	auto gctx = ctx->gizmo_context;
+	auto frame = &gctx->frames.a[ctx->curFrame];
+	auto layout = taskctx->pipeline->layout;
+	auto cmd = taskctx->cmd;
+
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		frame->set,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, countof(sets), sets, 0, nullptr);
+
+	vec2f_t frag_size = { 1.0 / gctx->cmd_width, 1.0 / gctx->cmd_height };
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (vec2f_t), &frag_size },
+	};
+	QFV_PushConstants (device, cmd, layout,
+					   countof (push_constants), push_constants);
+
+	VkDeviceSize offsets[] = {0};
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &frame->obj_ids, offsets);
+	dfunc->vkCmdDraw(cmd, 72, frame->num_obj_ids, 0, 0);
 }
 
 static void
@@ -447,6 +475,39 @@ gizmo_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkCmdDraw (cmd, 3, 1, 0, 0);
 }
 
+static void
+gizmo_update_framebuffer (const exprval_t **params, exprval_t *result,
+		                  exprctx_t *ectx)
+{
+	qfZoneNamed (zone, true);
+	auto taskctx = (qfv_taskctx_t *) ectx;
+	auto ctx = taskctx->ctx;
+	auto job = ctx->render_context->job;
+	auto main_step = QFV_GetStep (params[0], job);
+	auto gizmo_step = QFV_GetStep (params[1], job);
+	auto main_render = main_step->render;
+	auto gizmo_render = gizmo_step->render;
+	auto rp = gizmo_render->active;
+
+	auto size = main_render->output.extent;
+	qfv_output_t output = (qfv_output_t) {
+		.extent = {
+			.width = (size.width + 7) / 8,
+			.height = (size.height + 7) / 8,
+		},
+	};
+	if ((output.extent.width != gizmo_render->output.extent.width
+		|| output.extent.height != gizmo_render->output.extent.height)) {
+		QFV_DestroyFramebuffer (ctx, rp);
+		QFV_UpdateViewportScissor (gizmo_render, &output);
+		gizmo_render->output.extent = output.extent;
+	}
+
+	if (!rp->beginInfo.framebuffer) {
+		QFV_CreateFramebuffer (ctx, rp, gizmo_render->output.extent);
+	}
+}
+
 static exprfunc_t gizmo_flush_func[] = {
 	{ .func = gizmo_flush },
 	{}
@@ -464,11 +525,23 @@ static exprfunc_t gizmo_init_func[] = {
 	{}
 };
 
+static exprtype_t *gizmo_update_framebuffer_params[] = {
+	    &cexpr_string,
+	    &cexpr_string,
+};
+static exprfunc_t gizmo_update_framebuffer_func[] = {
+	{ .func = gizmo_update_framebuffer, .num_params = 2,
+		gizmo_update_framebuffer_params },
+	{}
+};
+
 static exprsym_t gizmo_task_syms[] = {
 	{ "gizmo_flush", &cexpr_function, gizmo_flush_func },
 	{ "gizmo_draw_cmd", &cexpr_function, gizmo_draw_cmd_func },
 	{ "gizmo_draw", &cexpr_function, gizmo_draw_func },
 	{ "gizmo_init", &cexpr_function, gizmo_init_func },
+	{ "gizmo_update_framebuffer", &cexpr_function,
+		gizmo_update_framebuffer_func },
 	{}
 };
 

@@ -882,8 +882,23 @@ render_graph = {
 					module = $builtin/gizmo.r;
 				};
 			};
+			vertexInput = {
+				bindings = (
+					{ binding = 0; stride = "4"; inputRate = instance; },
+				);
+				attributes = (
+					// obj_id
+					{ location = 0; binding = 0; format = r32_uint; offset = 0; },
+				);
+			};
+			inputAssembly = {
+				topology = triangle_list;
+			};
 			layout = {
 				descriptorSets = (matrix_set, gizmo_set);
+				pushConstants = {
+					vertex = { frag_size = vec2; };
+				};
 			};
 		};
 		slice = {
@@ -1020,7 +1035,7 @@ render_graph = {
 					binding = 3;
 					descriptorType = storage_buffer;
 					descriptorCount = 1;
-					stageFlags = fragment;
+					stageFlags = vertex|fragment;
 				},
 			);
 		};
@@ -1620,20 +1635,12 @@ render_graph = {
 							);
 
 							stages = (
-								$brush.shader.depth_vertex,
+								$gizmo.shader.expand,
+								$gizmo.shader.queueobj,
 							);
-							vertexInput = {
-								bindings = (
-									"$brush.vertexInput.bindings[0]",
-									"$brush.vertexInput.bindings[1]",
-								);
-								attributes = (
-									"$brush.vertexInput.attributes[0]",
-									"$brush.vertexInput.attributes[2]",
-								);
-							};
-							inputAssembly = $brush.inputAssembly;
-							layout = $brush.layout;
+							vertexInput = $gizmo.vertexInput;
+							inputAssembly = $gizmo.inputAssembly;
+							layout = $gizmo.layout;
 						};
 					};
 				};
@@ -2891,8 +2898,8 @@ render_graph = {
 					  params = ("\"gizmo_cmd\""); },
 					{ func = update_framebuffer;
 					  params = ("\"main\""); },
-					{ func = update_framebuffer;
-					  params = ("\"gizmo_cmd\""); },
+					{ func = gizmo_update_framebuffer;
+					  params = ("\"gizmo_cmd\"", "\"main\""); },
 					{ func = clear_translucent;
 					  params = ("\"main\""); },
 					{ func = particle_wait_physics; },
