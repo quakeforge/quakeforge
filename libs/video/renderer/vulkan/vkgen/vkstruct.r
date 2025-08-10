@@ -157,8 +157,11 @@ write_auto_parse (Struct *self, string field, int name)
 		fprintf (output_file, "\t\t\tplitem_t   *name = "
 				 "PL_NewString (field->name);\n");
 	}
-	fprintf (output_file, "\t\t\tf->parser (f, %s, &%s, messages, context);\n",
-			 item, sprintf ("((%s *) data)->%s", [self outname], field));
+	fprintf (output_file, "\t\t\tif (!f->parser (f, %s, &%s, messages, "
+			 "context)) {\n", item, sprintf ("((%s *) data)->%s",
+			 [self outname], field));
+	fprintf (output_file, "\t\t\t\treturn 0;\n");
+	fprintf (output_file, "\t\t\t}\n");
 	if (name) {
 		fprintf (output_file, "\t\t\tPL_Release (name);\n");
 	}
