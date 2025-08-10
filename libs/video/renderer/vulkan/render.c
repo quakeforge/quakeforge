@@ -101,8 +101,8 @@ renderpass_update_viewport_sissor (qfv_renderpass_t *rp,
 	}
 }
 
-static void
-update_viewport_scissor (qfv_render_t *render, const qfv_output_t *output)
+void
+QFV_UpdateViewportScissor (qfv_render_t *render, const qfv_output_t *output)
 {
 	for (uint32_t i = 0; i < render->num_renderpasses; i++) {
 		renderpass_update_viewport_sissor (&render->renderpasses[i], output);
@@ -565,7 +565,7 @@ update_framebuffer (const exprval_t **params, exprval_t *result,
 		|| output.extent.height != render->output.extent.height)
 		&& (Sys_LongTime () - ctx->render_context->size_time) > 2*1000*1000) {
 		QFV_DestroyFramebuffer (ctx, rp);
-		update_viewport_scissor (render, &output);
+		QFV_UpdateViewportScissor (render, &output);
 		render->output.extent = output.extent;
 	}
 

@@ -504,6 +504,8 @@ void QFV_Render_AddAttachments (struct vulkan_ctx_s *ctx,
 								uint32_t num_attachments,
 		                        qfv_attachmentinfo_t **attachments);
 
+void QFV_UpdateViewportScissor (qfv_render_t *render,
+								const qfv_output_t *output);
 void QFV_DestroyFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp);
 void QFV_CreateFramebuffer (struct vulkan_ctx_s *ctx, qfv_renderpass_t *rp,
 							VkExtent2D extent);
