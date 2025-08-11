@@ -32,15 +32,49 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	auto c = vec3 (asfloat (objects[ind + 0]),
 				   asfloat (objects[ind + 1]),
 				   asfloat (objects[ind + 2])) - eye;
-	if (c • v < 0) {
-		return;
-	}
+	//if (c • v < 0) {
+	//	return;
+	//}
 	auto r = asfloat (objects[ind + 3]);
 	auto col = asrgba (objects[ind + 4]);
 	float d = r * r - c • c + (c • v) * (c • v) / (v • v);
+	//if (d < 0) {
+	//	color = col;
+	//	return;
+	//}
 	float dist = d > 0 ? sqrt (d) : 0;
 	float factor = d > 0 ? exp (-col.a * 3 * dist / r) : 0;
 	color = mix (vec4(col.rgb, 1), color, 1-factor);
+}
+
+void
+draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
+{
+	auto p1 = vec3 (asfloat (objects[ind + 0]),
+				    asfloat (objects[ind + 1]),
+				    asfloat (objects[ind + 2])) - eye;
+	auto p2 = vec3 (asfloat (objects[ind + 3]),
+				    asfloat (objects[ind + 4]),
+				    asfloat (objects[ind + 5])) - eye;
+	auto r = asfloat (objects[ind + 6]);
+	auto col = asrgba (objects[ind + 7]);
+	auto d = p2 - p1;
+	d /= sqrt (d • d);
+	auto m = -p1;
+	auto n = v / sqrt (v • v);
+//·×÷†•∗∧∨⋀⋆‖⊥△▽ඞ
+	float a = (d × n) • (d × n);
+	float b = (d × m) • (d × n);
+	float c = (d × m) • (d × m) - r * r * (d • d);
+	// a is never < 0, c < 0 means the eye is in the cylinder
+	if (a*c <= 0) {
+		color = col;
+	} else {
+		float disc = b * b - a * c;
+		float dist = disc > 0 ? sqrt (disc) : 0;
+		float factor = disc > 0 ? exp (-col.a * 3 * dist / r) : 0;
+		color = mix (vec4(col.rgb, 1), color, 1-factor);
+	}
 }
 
 [shader("Fragment")]
@@ -69,9 +103,8 @@ void main()
 		uint next = queue[queue_ind].next;
 		uint cmd = objects[obj_id + 0];
 		switch (cmd) {
-		case 0:
-			draw_sphere (obj_id + 1, v, eye, color);
-			break;
+		case 0: draw_sphere (obj_id + 1, v, eye, color); break;
+		case 1: draw_capsule (obj_id + 1, v, eye, color); break;
 		}
 		queue_ind = next;
 	}

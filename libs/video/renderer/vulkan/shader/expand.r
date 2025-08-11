@@ -38,18 +38,48 @@ const uint verts[] = {
 float asfloat (uint x) = SPV(OpBitcast);
 
 void
-transform (uint obj_id, @inout vec3 vert_pos, @inout vec3 vert_norm)
+transform_sphere (uint ind, @inout vec3 vert_pos, @inout vec3 vert_norm)
+{
+	auto c = vec3 (asfloat (objects[ind + 0]),
+				   asfloat (objects[ind + 1]),
+				   asfloat (objects[ind + 2]));
+	auto r = asfloat (objects[ind + 3]);
+	vert_pos = c + r * vert_pos;
+}
+
+void
+transform_capsule (uint ind, uint vert, @inout vec3 vert_pos,
+				   @inout vec3 vert_norm)
+{
+	auto p1 = vec3 (asfloat (objects[ind + 0]),
+					asfloat (objects[ind + 1]),
+					asfloat (objects[ind + 2]));
+	auto p2 = vec3 (asfloat (objects[ind + 3]),
+					asfloat (objects[ind + 4]),
+					asfloat (objects[ind + 5]));
+	auto r = asfloat (objects[ind + 6]);
+	auto sign = p2 < p1;
+	if (sign.z) {
+		auto t = p1;
+		p1 = p2;
+		p2 = t;
+		sign = !sign;
+	}
+	auto flip = mix (vec3(1,1,1), vec3(-1,-1,-1), sign);
+	auto p = mix (p1, p2, bool(vert & 8));
+	vert_pos = p + r * flip * vert_pos;
+	vert_norm = flip * vert_norm;
+}
+
+void
+transform (uint obj_id, uint vert, @inout vec3 vert_pos, @inout vec3 vert_norm)
 {
 	uint cmd = objects[obj_id + 0];
-	if (cmd != 0) {
-		return;
-	}
 	uint ind = obj_id + 1;
-	auto pos = vec3 (asfloat (objects[ind + 0]),
-					 asfloat (objects[ind + 1]),
-					 asfloat (objects[ind + 2]));
-	auto rad = asfloat (objects[ind + 3]);
-	vert_pos = pos + rad * vert_pos;
+	switch (cmd) {
+	case 0: transform_sphere (ind, vert_pos, vert_norm); break;
+	case 1: transform_capsule (ind, vert, vert_pos, vert_norm); break;
+	}
 }
 
 [shader("Vertex")]
@@ -62,7 +92,7 @@ main ()
 	uint vert = (verts[ind] >> (4 * nib)) & 0xf;
 	auto vert_pos = vec3 (vert & 1, (vert & 2) >> 1, (vert & 4) >> 2) * 2 - 1;
 	auto vert_norm = vert_pos;
-	transform (vert_id, vert_pos, vert_norm);
+	transform (vert_id, vert, vert_pos, vert_norm);
 	vec4 pos = Projection3d * (View[gl_ViewIndex] * vec4 (vert_pos, 1));
 	vec2 dir = (View[gl_ViewIndex] * vec4 (vert_norm, 0)).xy;
 	vec2 ofs = mix (mix(vec2(0,0), vec2(1,1), dir > vec2(0,0)),

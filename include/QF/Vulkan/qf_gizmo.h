@@ -35,6 +35,8 @@ typedef struct vulkan_ctx_s vulkan_ctx_t;
 void Vulkan_Gizmo_Init (vulkan_ctx_t *ctx);
 void Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 							 vulkan_ctx_t *ctx);
+void Vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r,
+							  const quat_t color, vulkan_ctx_t *ctx);
 
 
 #endif//__QF_Vulkan_qf_gizmo_h

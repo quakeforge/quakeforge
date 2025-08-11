@@ -80,6 +80,14 @@ typedef struct giz_sphere_s {
 	byte        col[4];
 } giz_sphere_t;
 
+typedef struct giz_capsule_s {
+	uint32_t    cmd;
+	float       p1[3];
+	float       p2[3];
+	float       r;
+	byte        col[4];
+} giz_capsule_t;
+
 typedef struct gizmoframe_s {
 	VkBuffer    counts;
 	VkBuffer    queue;
@@ -578,4 +586,18 @@ Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 	};
 	QuatScale (color, 255, sphere.col);
 	gizmo_add_object (&sphere, sizeof (sphere), ctx);
+}
+
+void
+Vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r, const quat_t color,
+						 vulkan_ctx_t *ctx)
+{
+	giz_capsule_t capsule = {
+		.cmd = 1,
+		.p1 = { VectorExpand (p1) },
+		.p2 = { VectorExpand (p2) },
+		.r = r,
+	};
+	QuatScale (color, 255, capsule.col);
+	gizmo_add_object (&capsule, sizeof (capsule), ctx);
 }

@@ -62,6 +62,7 @@ void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
 
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
+void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
 
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;
@@ -260,6 +261,14 @@ static int axis_colors[] = { 12, 10, 9 };
 	}
 	Gizmo_AddSphere ({1, 0.5, 3}, 0.5, vec4(0.8, 0.9, 0.1, 0.8));
 	Gizmo_AddSphere ({1.5,-0.75, 3}, 1, vec4(0.6, 0.9, 0.5, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1, 1.75, 5.5}, 0.25, vec4(0.9, 0.5, 0.6, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4, 1.75, 5.5}, 0.25, vec4(0.6, 0.5, 0.9, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 5.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 5.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1, 1.75, 0.5}, 0.25, vec4(0.9, 0.5, 0.6, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4, 1.75, 0.5}, 0.25, vec4(0.6, 0.5, 0.9, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 0.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
+	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 0.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
 	//float s = sin((float)(realtime - double(1ul << 32)));
 	//float c = cos((float)(realtime - double(1ul << 32)));
 	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
