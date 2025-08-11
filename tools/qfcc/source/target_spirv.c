@@ -3039,6 +3039,10 @@ spirv_test_expr (const expr_t *expr)
 static const expr_t *
 spirv_cast_expr (const type_t *dstType, const expr_t *expr)
 {
+	if (is_boolean (dstType)) {
+		return test_expr (expr);
+	}
+
 	auto src_type = get_type (expr);
 	if (!spirv_types_logically_match (dstType, src_type)) {
 		return nullptr;

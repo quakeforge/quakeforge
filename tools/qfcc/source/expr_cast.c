@@ -183,6 +183,12 @@ cast_expr (const type_t *dstType, const expr_t *e)
 			   && type_size (dstType) == type_size (srcType)) {
 		c = (expr_t *) new_alias_expr (dstType, e);
 	} else if (is_scalar (dstType) && is_scalar (srcType)) {
+		if (current_target.cast_expr) {
+			auto cast = current_target.cast_expr (dstType, e);
+			if (cast) {
+				return edag_add_expr (cast);
+			}
+		}
 		c = new_unary_expr ('C', e);
 		c->expr.type = dstType;
 	} else if (e->type == ex_uexpr && e->expr.op == '.') {
