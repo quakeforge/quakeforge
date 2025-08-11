@@ -38,6 +38,7 @@
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/rua-lang.h"
 #include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/target.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/value.h"
 
@@ -3290,7 +3291,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 			val = new_zero_expr (sym->type);
 		}
 		int size = sym->offset - memset_base;
-		if (size) {
+		if (size && current_target.zero_memory) {
 			zero_components (block, dst, memset_base, size);
 		}
 		auto tmp = new_temp_def_expr (sym->type);
@@ -3301,7 +3302,7 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		memset_base = sym->offset + type_size (sym->type);
 	}
 	list_append_list (&block->list, &assigns);
-	if (type_size (dstType) - memset_base) {
+	if (type_size (dstType) - memset_base && current_target.zero_memory) {
 		zero_components (block, dst, memset_base,
 						 type_size (dstType) - memset_base);
 	}

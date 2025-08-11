@@ -408,4 +408,5 @@ target_t v6p_target = {
 	.test_expr = v6p_test_expr,
 
 	.short_circuit = true,
+	.zero_memory = true,
 };

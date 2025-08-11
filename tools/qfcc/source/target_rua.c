@@ -535,4 +535,5 @@ target_t ruamoko_target = {
 	.test_expr = ruamoko_test_expr,
 
 	.short_circuit = true,
+	.zero_memory = true,
 };
