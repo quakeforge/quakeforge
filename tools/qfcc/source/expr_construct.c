@@ -89,7 +89,7 @@ construct_by_components (const type_t *type, const expr_t *params,
 	bool all_constant = true;
 	bool all_implicit = true;
 
-	int c = 0, p = 0;
+	int c = 0, cind = 0, p = 0;
 	int err = -1;
 	while (c < num_comp) {
 		if (p < num_param) {
@@ -103,16 +103,29 @@ construct_by_components (const type_t *type, const expr_t *params,
 				ptype = dereference_type (ptype);
 			}
 			if (!is_math (ptype) && !is_nil (pexpr)) {
-				err = c++;
+				err = cind++;
 				components[err] = error (pexpr, "invalid type for conversion");
 				continue;
 			}
 			for (int i = 0; i < type_cols (ptype) && c < num_comp; i++) {
+				if (type_rows (ptype) <= num_comp - c) {
+					auto val = pexpr;
+					if (is_matrix (ptype)) {
+						val = get_column (val, i);
+					}
+					all_implicit = all_implicit && pexpr->implicit;
+					all_constant = all_constant && is_constant (pexpr);
+					auto cast_type = vector_type (base, type_rows (ptype));
+					components[cind++] = value_cast_expr (cast_type, pexpr);
+					c += type_rows (ptype);
+					continue;
+				}
 				for (int j = 0; j < type_rows (ptype) && c < num_comp; j++) {
 					auto val = get_value (pexpr, i, j);
 					all_implicit = all_implicit && val->implicit;
 					all_constant = all_constant && is_constant (val);
-					components[c++] = cast_expr (base, val);
+					components[cind++] = value_cast_expr (base, val);
+					c++;
 				}
 			}
 		} else {
@@ -128,16 +141,16 @@ construct_by_components (const type_t *type, const expr_t *params,
 	if (p < num_param) {
 		return error (e, "too may parameters for %s", type->name);
 	}
-	if (num_comp == 1) {
+	if (cind == 1) {
 		return components[0];
 	}
 	if (all_constant) {
 		if (is_matrix (type)) {
 			return new_matrix_value (base, type_cols (type), type_rows (type),
-									 num_comp, components, all_implicit);
+									 cind, components, all_implicit);
 		} else {
 			return new_vector_value (base, type_width (type),
-									 num_comp, components, all_implicit);
+									 cind, components, all_implicit);
 		}
 	}
 
@@ -153,7 +166,7 @@ construct_by_components (const type_t *type, const expr_t *params,
 		}
 		return new_vector_list_gather (type, columns, num_cols);
 	} else {
-		return new_vector_list_gather (type, components, num_comp);
+		return new_vector_list_gather (type, components, cind);
 	}
 }
 

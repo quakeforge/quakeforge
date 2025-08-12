@@ -1152,6 +1152,7 @@ const expr_t *think_expr (struct symbol_s *think_sym, rua_ctx_t *ctx);
 bool is_lvalue (const expr_t *expr) __attribute__((pure));
 const expr_t *assign_expr (const expr_t *dst, const expr_t *src);
 const expr_t *cast_expr (const type_t *t, const expr_t *e);
+const expr_t *value_cast_expr (const type_t *t, const expr_t *e);
 const expr_t *cast_error (const expr_t *e, const type_t *t1, const type_t *t2);
 
 const char *get_op_string (int op) __attribute__((const));

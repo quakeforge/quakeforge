@@ -86,8 +86,8 @@ cast_math (const type_t *dstType, const type_t *srcType, const expr_t *expr)
 	return edag_add_expr (e);
 }
 
-const expr_t *
-cast_expr (const type_t *dstType, const expr_t *e)
+static const expr_t *
+do_cast (const type_t *dstType, const expr_t *e, bool value)
 {
 	const type_t *srcType;
 
@@ -182,7 +182,7 @@ cast_expr (const type_t *dstType, const expr_t *e)
 	} else if (is_integral (dstType) && is_integral (srcType)
 			   && type_size (dstType) == type_size (srcType)) {
 		c = (expr_t *) new_alias_expr (dstType, e);
-	} else if (is_scalar (dstType) && is_scalar (srcType)) {
+	} else if ((is_scalar (dstType) && is_scalar (srcType)) || value) {
 		if (current_target.cast_expr) {
 			auto cast = current_target.cast_expr (dstType, e);
 			if (cast) {
@@ -199,4 +199,27 @@ cast_expr (const type_t *dstType, const expr_t *e)
 		c = (expr_t *) new_alias_expr (dstType, e);
 	}
 	return edag_add_expr (c);
+}
+
+const expr_t *
+cast_expr (const type_t *dstType, const expr_t *e)
+{
+	return do_cast (dstType, e, false);
+}
+
+const expr_t *
+value_cast_expr (const type_t *dstType, const expr_t *e)
+{
+	bool value = true;
+	auto srcType = get_type (e);
+	int width = type_width (dstType);
+	// force vector and quaterion convertions to vec3/vec4 to use an alias
+	// instead of a value convertion: they're really just alias types that
+	// add extra semantics
+	if (is_float (base_type (dstType))
+		&& ((width == 3 && is_vector (srcType))
+			|| (width == 4 && is_quaternion (srcType)))) {
+		value = false;
+	}
+	return do_cast (dstType, e, value);
 }
