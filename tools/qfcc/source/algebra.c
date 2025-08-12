@@ -195,9 +195,9 @@ basis_layout_init (basis_layout_t *layout, int count, basis_group_t *groups)
 		for (int j = 0; j < g->count; j++) {
 			auto b = g->blades[j];
 			layout->mask_map[b.mask - layout->range[0]] = group_inds[count];
-			layout->group_map[group_inds[count]][0] = i;
-			layout->group_map[group_inds[count]][1] = group_inds[i]++;
-			layout->group_map[group_inds[count]][2] = group_base[i];
+			layout->group_map[group_inds[count]].num = i;
+			layout->group_map[group_inds[count]].ind = group_inds[i]++;
+			layout->group_map[group_inds[count]].base = group_base[i];
 			group_inds[count]++;
 		}
 	}
@@ -631,16 +631,16 @@ algebra_blade_value (algebra_t *alg, const char *name)
 		}
 		int sign = 1 - 2 * (swaps & 1);
 		auto g = alg->layout.group_map[alg->layout.mask_map[blade]];
-		auto group = &alg->layout.groups[g[0]];
+		auto group = &alg->layout.groups[g.num];
 		auto group_type = alg->mvec_types[group->group_mask];
 		ex_value_t *blade_val = nullptr;
 		if (is_float (alg->type)) {
 			float components[group->count] = {};
-			components[g[1]] = sign;
+			components[g.ind] = sign;
 			blade_val = new_type_value (group_type, (pr_type_t *)components);
 		} else {
 			double components[group->count] = {};
-			components[g[1]] = sign;
+			components[g.ind] = sign;
 			blade_val = new_type_value (group_type, (pr_type_t *)components);
 		}
 		return blade_val;
@@ -838,7 +838,7 @@ algebra_type_assignable (const type_t *dst, const type_t *src)
 		if (is_scalar (src)) {
 			auto algebra = dst->multivec->algebra;
 			auto layout = &algebra->layout;
-			int group = layout->group_map[layout->mask_map[0]][0];
+			int group = layout->group_map[layout->mask_map[0]].num;
 			if (dst->multivec->group_mask & (1u << group)) {
 				// the source scalar is a member of the destination
 				// multi-vector

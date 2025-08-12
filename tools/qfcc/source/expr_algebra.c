@@ -47,7 +47,7 @@ get_group (const type_t *type, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
 	if (is_scalar (type) && !is_algebra (type)) {
-		return layout->group_map[layout->mask_map[0]][0];
+		return layout->group_map[layout->mask_map[0]].num;
 	}
 	if (!is_algebra (type)) {
 		internal_error (0, "non-algebra type");
@@ -67,7 +67,7 @@ get_group_mask (const type_t *type, algebra_t *algebra)
 {
 	auto layout = &algebra->layout;
 	if (!is_algebra (type)) {
-		int group = layout->group_map[layout->mask_map[0]][0];
+		int group = layout->group_map[layout->mask_map[0]].num;
 		return 1u << group;
 	} else {
 		type = unalias_type (type);
@@ -389,7 +389,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 	if (mvec->type != ex_multivec) {
 		auto type = get_type (mvec);
 		if (!is_algebra (type)) {
-			group = layout->group_map[layout->mask_map[0]][0];
+			group = layout->group_map[layout->mask_map[0]].num;
 		} else {
 			if (type->type == ev_invalid) {
 				internal_error (mvec, "full algebra in mvec_scatter");
@@ -407,7 +407,7 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 		auto c = li->expr;
 		auto ct = get_type (c);
 		if (!is_algebra (ct)) {
-			group = layout->group_map[layout->mask_map[0]][0];
+			group = layout->group_map[layout->mask_map[0]].num;
 		} else if (ct->meta == ty_algebra && ct->type != ev_invalid) {
 			pr_uint_t mask = ct->multivec->group_mask;
 			if (mask & (mask - 1)) {
@@ -3036,7 +3036,7 @@ hodge_dual (const expr_t *e, bool undual)
 		//or reject mixed-grade groups)
 		auto blade = group->blades[0];
 		pr_uint_t d_mask = I_mask ^ blade.mask;
-		int dual_ind = layout->group_map[layout->mask_map[d_mask]][0];
+		int dual_ind = layout->group_map[layout->mask_map[d_mask]].num;
 		auto dual_group = &layout->groups[dual_ind];
 		auto dual_type = algebra_mvec_type (algebra, dual_group->group_mask);
 		auto dual = cast_expr (dual_type, a[i]);

@@ -48,11 +48,17 @@ typedef struct basis_group_s {
 	set_t      *set;
 } basis_group_t;
 
+typedef struct group_map_s {
+	int         num;			///< group number
+	int         ind;			///< index of component within group
+	int         base;			///< base of group in full multivector (n/u)
+} group_map_t;
+
 typedef struct basis_layout_s {
 	int         count;
 	pr_uvec2_t  range;
 	basis_group_t *groups;
-	pr_ivec3_t *group_map;
+	group_map_t *group_map;		///< map from component number to group
 	int        *mask_map;
 	int         blade_count;
 	set_t      *set;
