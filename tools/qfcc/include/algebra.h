@@ -40,12 +40,12 @@ typedef struct basis_blade_s {
 } basis_blade_t;
 
 typedef struct basis_group_s {
-	int         count;
+	int         count;			///< number of blades
 	pr_uint_t   group_mask;
-	pr_uvec2_t  range;
+	pr_uvec2_t  range;			///< min, max of basis blade masks
 	basis_blade_t *blades;
-	int        *map;
-	set_t      *set;
+	int        *map;			///< map from basis mask (-range[0]) to index
+	set_t      *set;			///< set of basis masks in group
 } basis_group_t;
 
 typedef struct group_map_s {
@@ -55,13 +55,13 @@ typedef struct group_map_s {
 } group_map_t;
 
 typedef struct basis_layout_s {
-	int         count;
-	pr_uvec2_t  range;
+	int         count;			///< number of groups
+	pr_uvec2_t  range;			///< min, max of basis blade masks
 	basis_group_t *groups;
 	group_map_t *group_map;		///< map from component number to group
-	int        *mask_map;
-	int         blade_count;
-	set_t      *set;
+	int        *mask_map;		///< map from basis mask to component number
+	int         blade_count;	///< number of basis blade masks
+	set_t      *set;			///< set of basis masks in layout
 } basis_layout_t;
 
 typedef struct metric_s {
