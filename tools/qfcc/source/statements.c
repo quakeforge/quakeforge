@@ -2272,6 +2272,12 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	}
 	swiz |= (e->swizzle.neg & 0xf) << 8;
 	swiz |= (e->swizzle.zero & 0xf) << 12;
+	int mask = ((1 << (2 * type_width (res_type))) - 1);
+	if (swiz == (0xe4 & mask)) {
+		// this is a simple alias of the first N components
+		auto alias = new_alias_expr (res_type, e->swizzle.src);
+		return statement_subexpr (sblock, alias, op);
+	}
 
 	s = new_statement (st_expr, opcode, e);
 	sblock = statement_subexpr (sblock, e->swizzle.src, &s->opa);
