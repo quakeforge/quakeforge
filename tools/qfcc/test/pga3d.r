@@ -430,7 +430,7 @@ test_undual (void)
 		auto a0123 = e0123;
 		#define TEST_UNDUAL(x, y) \
 			if (@undual x != y) { \
-				error ("@undual" #x " != " #y "\n"); \
+				error ("@undual(" #x ") != " #y "\n"); \
 			}
 		TEST_UNDUAL (a, e0123);
 		TEST_UNDUAL (a0, -e123);
