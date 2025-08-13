@@ -2267,6 +2267,13 @@ expr_swizzle (sblock_t *sblock, const expr_t *e, operand_t **op)
 	auto src_type = get_type (e->swizzle.src);
 	auto res_type = e->swizzle.type;
 
+	if (type_width (res_type) == 1) {
+		// this is a simple alias of a single component
+		int offset = e->swizzle.source[0] * type_size (res_type);
+		auto alias = new_offset_alias_expr (res_type, e->swizzle.src, offset);
+		return statement_subexpr (sblock, alias, op);
+	}
+
 	for (int i = 0; i < 4; i++) {
 		swiz |= (e->swizzle.source[i] & 3) << (2 * i);
 	}
