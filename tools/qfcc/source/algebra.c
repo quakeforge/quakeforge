@@ -91,42 +91,13 @@ count_minus (uint32_t minus)
 	return count_bits (minus) & 1 ? -1 : 1;
 }
 
-static const char *mvec_1d_names[] = {
-	"vec",
+static const char *mvec_names[] = {
 	"scalar",
+	"vector",
+	"bivector",
+	"trivector",
+	"quadvector",
 	nullptr
-};
-
-static const char *mvec_2d_names[] = {
-	"vec",
-	"scalar",
-	"bvec",
-	nullptr
-};
-
-static const char *mvec_3d_names[] = {
-	"vec",
-	"tvec",
-	"bvec",
-	"scalar",
-	nullptr
-};
-
-static const char *mvec_4d_names[] = {
-	"vec",
-	"bvect",	// tangential (directional) (in PGA)
-	"scalar",
-	"bvecp",	// positional (in PGA)
-	"qvec",
-	"tvec",
-	nullptr
-};
-
-static const char **mvec_names[] = {
-	[1] = mvec_1d_names,
-	[2] = mvec_2d_names,
-	[3] = mvec_3d_names,
-	[4] = mvec_4d_names,
 };
 
 static void
@@ -140,7 +111,7 @@ basis_blade_init (basis_blade_t *blade, pr_uint_t mask)
 
 static void
 basis_group_init (basis_group_t *group, int count, basis_blade_t *blades,
-				  algebra_t *a, int group_id)
+				  algebra_t *a, int group_id, const char *name)
 {
 	pr_uint_t group_mask = 1 << group_id;
 	*group = (basis_group_t) {
@@ -148,6 +119,7 @@ basis_group_init (basis_group_t *group, int count, basis_blade_t *blades,
 		.group_mask = group_mask,
 		.range = { ~0u, 0 },
 		.blades = malloc (sizeof (basis_blade_t[count])),
+		.name = name,
 		.set = set_new (),
 	};
 	memcpy (group->blades, blades, sizeof (basis_blade_t[count]));
@@ -274,12 +246,12 @@ algebra_init (algebra_t *a)
 		};
 		a->groups = malloc (sizeof (basis_group_t[6]));
 		a->mvec_types = alloc_mvec_types (6);
-		basis_group_init (&a->groups[0], 4, pga_blades +  0, a, 0);
-		basis_group_init (&a->groups[1], 3, pga_blades +  4, a, 1);
-		basis_group_init (&a->groups[2], 1, pga_blades +  7, a, 2);
-		basis_group_init (&a->groups[3], 3, pga_blades +  8, a, 3);
-		basis_group_init (&a->groups[4], 1, pga_blades + 11, a, 4);
-		basis_group_init (&a->groups[5], 4, pga_blades + 12, a, 5);
+		basis_group_init (&a->groups[0], 4, pga_blades +  0, a, 0, "vec");
+		basis_group_init (&a->groups[1], 3, pga_blades +  4, a, 1, "bvect");
+		basis_group_init (&a->groups[2], 1, pga_blades +  7, a, 2, "scalar");
+		basis_group_init (&a->groups[3], 3, pga_blades +  8, a, 3, "bvecp");
+		basis_group_init (&a->groups[4], 1, pga_blades + 11, a, 4, "qvec");
+		basis_group_init (&a->groups[5], 4, pga_blades + 12, a, 5, "tvec");
 		basis_layout_init (&a->layout, 6, a->groups);
 	} else if (p == 3 && m == 0 && z == 0) {
 		// 3d VGA (x y z square to +1):
@@ -291,10 +263,10 @@ algebra_init (algebra_t *a)
 		};
 		a->groups = malloc (sizeof (basis_group_t[4]));
 		a->mvec_types = alloc_mvec_types (4);
-		basis_group_init (&a->groups[0], 3, pga_blades +  0, a, 0);
-		basis_group_init (&a->groups[1], 1, pga_blades +  3, a, 1);
-		basis_group_init (&a->groups[2], 3, pga_blades +  4, a, 2);
-		basis_group_init (&a->groups[3], 1, pga_blades +  7, a, 3);
+		basis_group_init (&a->groups[0], 3, pga_blades +  0, a, 0, "vec");
+		basis_group_init (&a->groups[1], 1, pga_blades +  3, a, 1, "tvec");
+		basis_group_init (&a->groups[2], 3, pga_blades +  4, a, 2, "bvec");
+		basis_group_init (&a->groups[3], 1, pga_blades +  7, a, 3, "scalar");
 		basis_layout_init (&a->layout, 4, a->groups);
 	} else if (p == 2 && m == 0 && z == 1) {
 		// 2d PGA (w squares to 0, x y square to +1):
@@ -306,10 +278,10 @@ algebra_init (algebra_t *a)
 		};
 		a->groups = malloc (sizeof (basis_group_t[4]));
 		a->mvec_types = alloc_mvec_types (4);
-		basis_group_init (&a->groups[0], 3, pga_blades + 0, a, 0);
-		basis_group_init (&a->groups[1], 1, pga_blades + 3, a, 1);
-		basis_group_init (&a->groups[2], 3, pga_blades + 4, a, 2);
-		basis_group_init (&a->groups[3], 1, pga_blades + 7, a, 3);
+		basis_group_init (&a->groups[0], 3, pga_blades + 0, a, 0, "vec");
+		basis_group_init (&a->groups[1], 1, pga_blades + 3, a, 1, "tvec");
+		basis_group_init (&a->groups[2], 3, pga_blades + 4, a, 2, "bvec");
+		basis_group_init (&a->groups[3], 1, pga_blades + 7, a, 3, "scalar");
 		basis_layout_init (&a->layout, 4, a->groups);
 	} else {
 		// just use the grades as the default layout
@@ -318,7 +290,8 @@ algebra_init (algebra_t *a)
 		for (int i = 0; i < d + 1; i++) {
 			int         c = counts[i];
 			int         ind = indices[i];
-			basis_group_init (&a->groups[i], c, &blades[ind - c], a, i);
+			basis_group_init (&a->groups[i], c, &blades[ind - c], a, i,
+							  nullptr);
 		}
 		basis_layout_init (&a->layout, d + 1, a->groups);
 	}
@@ -474,19 +447,20 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 {
 	int count = count_bits (group_mask);
 
-	const char **mv_names = nullptr;
-	if (algebra->dimension < 5) {
-		mv_names = mvec_names[algebra->dimension];
-	}
 	struct_def_t fields[count + 1] = {};
 	for (int i = 0, c = 0; i < algebra->layout.count; i++) {
 		pr_uint_t   mask = 1 << i;
 		if (group_mask & mask) {
-			const char *name;
-			if (mv_names) {
-				name = mv_names[i];
-			} else {
-				name = va ("group_%d", i);
+			auto group = &algebra->layout.groups[i];
+			const char *name = group->name;
+			if (!name) {
+				// non-specialized algebras don't set the group name, and the
+				// groups are set by grade
+				if (i < 5) {
+					name = mvec_names[i];
+				} else {
+					name = va ("grade_%d", i);
+				}
 			}
 			fields[c] = (struct_def_t) {
 				.name = save_string (name),

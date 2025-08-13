@@ -44,6 +44,7 @@ typedef struct basis_group_s {
 	pr_uint_t   group_mask;
 	pr_uvec2_t  range;			///< min, max of basis blade masks
 	basis_blade_t *blades;
+	const char *name;			///< group name for symbolic access
 	int        *map;			///< map from basis mask (-range[0]) to index
 	set_t      *set;			///< set of basis masks in group
 } basis_group_t;
