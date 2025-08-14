@@ -99,6 +99,7 @@ etype_t algebra_low_level_type (const type_t *type) __attribute__((pure));
 const type_t *algebra_type (const type_t *type, const expr_t *params);
 const type_t *algebra_subtype (const type_t *type, const attribute_t *attr);
 const type_t *algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask);
+const type_t *algebra_float_type (algebra_t *algebra, pr_uint_t group_mask);
 int algebra_count_flips (const algebra_t *alg, pr_uint_t a, pr_uint_t b) __attribute__((pure));
 struct ex_value_s *algebra_blade_value (algebra_t *alg, const char *name);
 struct symtab_s *algebra_scope (const type_t *type, struct symtab_s *curscope);

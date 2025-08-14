@@ -523,6 +523,14 @@ algebra_mvec_type (algebra_t *algebra, pr_uint_t group_mask)
 	return algebra->mvec_types[group_mask];
 }
 
+const type_t *
+algebra_float_type (algebra_t *algebra, pr_uint_t group_mask)
+{
+	auto mvec_type = algebra_mvec_type (algebra, group_mask);
+	auto type = float_type (mvec_type);
+	return type;
+}
+
 static int pga_swaps_2d[8] = {
 	[0x5] = 1,	// e20
 };
