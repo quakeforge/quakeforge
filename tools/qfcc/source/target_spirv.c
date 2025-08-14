@@ -1994,7 +1994,7 @@ spirv_extend (const expr_t *e, spirvctx_t *ctx)
 	int  src_width = type_width (src_type);
 	int  res_width = type_width (res_type);
 
-	if (res_base != src_type || res_width <= src_width) {
+	if (res_base != src_base || res_width <= src_width) {
 		internal_error (e, "invalid type combination for extend");
 	}
 	unsigned sid = spirv_emit_expr (e->extend.src, ctx);
