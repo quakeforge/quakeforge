@@ -70,9 +70,8 @@ rescale (const expr_t *expr, const expr_t *target, const expr_t *remove)
 	if (!is_scale (expr)) {
 		internal_error (expr, "not a scale expression");
 	}
-	auto type = get_type (expr);
 	auto scale = expr->expr.e2;
-	return scale_expr (type, rescale (expr->expr.e1, target, remove), scale);
+	return scale_expr (rescale (expr->expr.e1, target, remove), scale);
 }
 
 static const expr_t *
@@ -84,7 +83,6 @@ remult (const expr_t *expr, const expr_t *remove)
 	if (!is_mult (expr)) {
 		internal_error (expr, "not a mult expression");
 	}
-	auto type = get_type (expr);
 	int count = count_factors (expr);
 	const expr_t *factors[count + 1] = {};
 	scatter_factors (expr, factors);
@@ -95,7 +93,7 @@ remult (const expr_t *expr, const expr_t *remove)
 		}
 	}
 	clean_skips (factors);
-	auto new = gather_factors (type, expr->expr.op, factors, count - 1);
+	auto new = gather_factors (expr->expr.op, factors, count - 1);
 	return new;
 }
 
@@ -615,7 +613,7 @@ optimize_adds (const expr_t **expr_list)
 			auto mult = cast_expr (base_type (type),
 								   new_int_expr (same, false));
 			mult = edag_add_expr (mult);
-			*scan = scale_expr (type, *scan, mult);
+			*scan = scale_expr (*scan, mult);
 		}
 	}
 	clean_skips (expr_list);
@@ -693,7 +691,6 @@ optimize_core (const expr_t *expr)
 		auto num = expr->expr.e1;
 		auto den = expr->expr.e2;
 		auto num_type = get_type (num);
-		auto den_type = get_type (den);
 		int num_count = count_factors (num) + 1;
 		int den_count = count_factors (den) + 1;
 		const expr_t *num_fac[num_count + 1] = {};
@@ -741,16 +738,16 @@ optimize_core (const expr_t *expr)
 
 		if (num_count) {
 			if (den_count) {
-				num = gather_factors (num_type, '*', num_fac, num_count);
+				num = gather_factors ('*', num_fac, num_count);
 			} else {
-				expr = gather_factors (type, '*', num_fac, num_count);
+				expr = gather_factors ('*', num_fac, num_count);
 			}
 		} else {
 			num = edag_add_expr (new_int_expr (1, true));
 			num = cast_expr (num_type, num);
 		}
 		if (den_count) {
-			den = gather_factors (den_type, '*', den_fac, den_count);
+			den = gather_factors ('*', den_fac, den_count);
 			expr = typed_binary_expr (type, '/', num, den);
 		}
 		expr = fold_constants (expr);
@@ -772,7 +769,14 @@ optimize_core (const expr_t *expr)
 const expr_t *
 algebra_optimize (const expr_t *expr)
 {
-	if (expr->type != ex_multivec) {
+	if (expr->type == ex_alias) {
+		auto alias = expr->alias;
+		alias.expr = optimize_core (alias.expr);
+		auto a = new_expr ();
+		a->type = ex_alias;
+		a->alias = alias;
+		return edag_add_expr (a);
+	} else if (expr->type != ex_multivec) {
 		return optimize_core (expr);
 	} else {
 		auto algebra = algebra_get (get_type (expr));

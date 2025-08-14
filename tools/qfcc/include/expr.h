@@ -1188,7 +1188,7 @@ bool is_neg (const expr_t *expr) __attribute__((pure));
 const expr_t *neg_expr (const expr_t *e);
 const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,
 						bool reverse);
-const expr_t *scale_expr (const type_t *type, const expr_t *a, const expr_t *b);
+const expr_t *scale_expr (const expr_t *a, const expr_t *b);
 
 const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 
@@ -1202,8 +1202,7 @@ const expr_t *gather_terms (const type_t *type,
 							const expr_t **adds, const expr_t **subs);
 int count_factors (const expr_t *expr) __attribute__((pure));
 void scatter_factors (const expr_t *prod, const expr_t **factors);
-const expr_t *gather_factors (const type_t *type, int op,
-							  const expr_t **factors, int count);
+const expr_t *gather_factors (int op, const expr_t **factors, int count);
 
 typedef struct rua_ctx_s rua_ctx_t;
 void decl_process (const expr_t *expr, rua_ctx_t *ctx);
