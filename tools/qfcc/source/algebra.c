@@ -462,8 +462,10 @@ mvec_struct (algebra_t *algebra, pr_uint_t group_mask, type_t *type)
 					name = va ("grade_%d", i);
 				}
 			}
+			name = save_string (name);
+			group->name = name;
 			fields[c] = (struct_def_t) {
-				.name = save_string (name),
+				.name = name,
 				.type = type ? type : algebra_mvec_type (algebra, mask),
 			};
 			c++;
