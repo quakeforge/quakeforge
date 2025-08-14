@@ -390,6 +390,10 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 		}
 
 		auto e = arguments[i];
+		if (is_algebra (arg_types[i])) {
+			auto algebra = algebra_get (arg_types[i]);
+			e = mvec_expr (e, algebra);
+		}
 		if (e->type == ex_compound || e->type == ex_multivec) {
 			scoped_src_loc (e);
 			e = initialized_temp_expr (arg_types[i], e);

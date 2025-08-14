@@ -10,6 +10,7 @@ fail_bins=
 test_progs_dat=\
 	tools/qfcc/test/address-cast.dat \
 	tools/qfcc/test/addrkill.dat \
+	tools/qfcc/test/algparam.dat \
 	tools/qfcc/test/algseq.dat \
 	tools/qfcc/test/algseq2.dat \
 	tools/qfcc/test/algseq3.dat \
@@ -187,6 +188,16 @@ tools/qfcc/test/addrkill.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(addrkill_dep) # am--include-marker
 r_depfiles_remade += $(addrkill_dep)
+
+tools_qfcc_test_algparam_dat_SOURCES=tools/qfcc/test/algparam.r
+algparam_obj=$(tools_qfcc_test_algparam_dat_SOURCES:.r=.o)
+algparam_dep=$(call qcautodep,$(tools_qfcc_test_algparam_dat_SOURCES))
+tools/qfcc/test/algparam.dat$(EXEEXT): $(algparam_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(algparam_obj)
+tools/qfcc/test/algparam.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(algparam_dep) # am--include-marker
+r_depfiles_remade += $(algparam_dep)
 
 tools_qfcc_test_algseq_dat_SOURCES=tools/qfcc/test/algseq.r
 algseq_obj=$(tools_qfcc_test_algseq_dat_SOURCES:.r=.o)
