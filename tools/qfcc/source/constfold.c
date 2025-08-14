@@ -919,7 +919,9 @@ fold_constants (const expr_t *e)
 			return do_op_invalid (op, e, e1, e2);
 		}
 		return do_op[t1][t2] (op, e, e1, e2);
-	} else if (e->type == ex_alias) {
+	} else if (e->type == ex_alias
+			   || e->type == ex_field
+			   || e->type == ex_swizzle) {
 		if (options.code.progsversion == PROG_VERSION) {
 			return evaluate_constexpr (e);
 		}

@@ -270,6 +270,10 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 	char swizzle_str[] = "xyzw";
 	swizzle_str[offset + type_width (type)] = 0;
 	auto swizzle = new_swizzle_expr (expr, swizzle_str + offset);
+	swizzle = fold_constants (swizzle);
+	if (is_zero (swizzle)) {
+		return nullptr;
+	}
 	return edag_add_expr (swizzle);
 }
 
@@ -310,6 +314,7 @@ promote_scalar (const type_t *dst_type, const expr_t *scalar)
 static const expr_t *
 forced_alias_expr (const type_t *type, const expr_t *e)
 {
+	e = fold_constants (e);
 	auto a = new_expr ();
 	a->type = ex_alias;
 	a->alias = (ex_alias_t) {

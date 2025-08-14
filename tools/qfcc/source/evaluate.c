@@ -250,6 +250,14 @@ evaluate_constexpr (const expr_t *e)
 		if (!is_constant (e->extend.src)) {
 			return e;
 		}
+	} else if (e->type == ex_field) {
+		if (!is_constant (e->field.object)) {
+			return e;
+		}
+	} else if (e->type == ex_swizzle) {
+		if (!is_constant (e->swizzle.src)) {
+			return e;
+		}
 	} else {
 		return e;
 	}
