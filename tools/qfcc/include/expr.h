@@ -1184,6 +1184,9 @@ bool is_sum (const expr_t *expr) __attribute__((pure));
 bool is_mult (const expr_t *expr) __attribute__((pure));
 bool is_quot (const expr_t *expr) __attribute__((pure));
 bool is_neg (const expr_t *expr) __attribute__((pure));
+bool is_anticommute (const expr_t *expr) __attribute__((pure));
+bool is_commutative (const expr_t *expr) __attribute__((pure));
+bool is_associative (const expr_t *expr) __attribute__((pure));
 
 const expr_t *neg_expr (const expr_t *e);
 const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,

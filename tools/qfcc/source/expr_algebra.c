@@ -64,14 +64,22 @@ is_neg (const expr_t *e)
 	return e->type == ex_uexpr && e->expr.op == '-';
 }
 
-static bool __attribute__((const))
-anti_com (const expr_t *e)
+bool
+is_anticommute (const expr_t *e)
 {
-	//if (e && e->type == ex_alias
-	//	&& (!e->alias.offset || !expr_integral (e->alias.offset))) {
-	//	e = e->alias.expr;
-	//}
 	return e && e->type == ex_expr && e->expr.anticommute;
+}
+
+bool
+is_commutative (const expr_t *e)
+{
+	return e && e->type == ex_expr && e->expr.commutative;
+}
+
+bool
+is_associative (const expr_t *e)
+{
+	return e && e->type == ex_expr && e->expr.associative;
 }
 
 static bool __attribute__((const))
@@ -109,12 +117,12 @@ neg_expr (const expr_t *e)
 	auto type = get_type (e);
 	if (e->type == ex_alias
 		&& (!e->alias.offset || !expr_integral (e->alias.offset))
-		&& anti_com (e->alias.expr)) {
+		&& is_anticommute (e->alias.expr)) {
 		auto n = neg_expr (e->alias.expr);
 		return n;
 	}
 	expr_t *neg;
-	if (anti_com (e)) {
+	if (is_anticommute (e)) {
 		neg = new_binary_expr (e->expr.op, e->expr.e2, e->expr.e1);
 		neg->expr.commutative = e->expr.commutative;
 		neg->expr.anticommute = e->expr.anticommute;
@@ -1025,7 +1033,7 @@ scale_expr (const expr_t *a, const expr_t *b)
 		if (s == 1) {
 			return a;
 		}
-		if (s == -1 && anti_com (a)) {
+		if (s == -1 && is_anticommute (a)) {
 			return neg_expr (a);
 		}
 	}
