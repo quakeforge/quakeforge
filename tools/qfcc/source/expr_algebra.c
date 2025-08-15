@@ -391,6 +391,10 @@ mvec_scatter (const expr_t **components, const expr_t *mvec, algebra_t *algebra)
 	auto layout = &algebra->layout;
 	int  group;
 
+	if (is_error (mvec)) {
+		return;
+	}
+
 	if (mvec->type != ex_multivec) {
 		auto type = get_type (mvec);
 		if (!is_algebra (type)) {
