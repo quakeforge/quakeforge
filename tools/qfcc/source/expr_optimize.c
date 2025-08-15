@@ -221,6 +221,191 @@ optimize_cross (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	return cross;
 }
 
+static bool
+perm_swapped (const expr_t **a, const expr_t **b)
+{
+	// try to rotate b such that a[0] == b[0]
+	// if a[0] is not in b, then b will be in its original state and the
+	// next test will fail as desired
+	for (int i = 0; i < 3; i++) {
+		if (a[0] == b[0]) {
+			break;
+		}
+		auto t = b[0];
+		b[0] = b[1];
+		b[1] = b[2];
+		b[2] = t;
+	}
+	if (a[0] == b[0] && a[1] == b[2] && a[2] == b[1]) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+perm_ordered (const expr_t **a, const expr_t **b)
+{
+	// try to rotate b such that a[0] == b[0]
+	// if a[0] is not in b, then b will be in its original state and the
+	// next test will fail as desired
+	for (int i = 0; i < 3; i++) {
+		if (a[0] == b[0]) {
+			break;
+		}
+		auto t = b[0];
+		b[0] = b[1];
+		b[1] = b[2];
+		b[2] = t;
+	}
+	if (a[0] == b[0] && a[1] == b[1] && a[2] == b[2]) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+check_dot_anticom (const expr_t *a, const expr_t *b)
+{
+	if (!is_anticommute (a) || !is_anticommute (b)) {
+		return false;
+	}
+	if (a->expr.e1 != b->expr.e2) {
+		return false;
+	}
+	if (a->expr.e2 != b->expr.e1) {
+		return false;
+	}
+	return true;
+}
+
+static const expr_t *
+optimize_dot (const expr_t *expr, const expr_t **adds, const expr_t **subs)
+{
+	auto l = expr->expr.e1;
+	auto r = expr->expr.e2;
+	int factor = 1;
+	const expr_t *a[3] = {
+		is_cross (l) ? l->expr.e1 : l,
+		is_cross (l) ? l->expr.e2 : is_cross (r) ? r->expr.e1 : nullptr,
+		is_cross (r) ? r->expr.e2 : r,
+	};
+	for (auto search = adds; *search; search++) {
+		if (*search != &skip) {
+			auto c = *search;
+			if (is_dot (c)) {
+				auto c_l = c->expr.e1;
+				auto c_r = c->expr.e2;
+				const expr_t *b[3] = {
+					is_cross (c_l) ? c_l->expr.e1 : c_l,
+					is_cross (c_l) ? c_l->expr.e2 : is_cross (c_r)
+								   ? c_r->expr.e1 : nullptr,
+					is_cross (c_r) ? c_r->expr.e2 : c_r,
+				};
+				// a.bxc + c.bxa etc
+				if (a[1] && b[1] && perm_swapped (a, b)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+				if (a[1] && b[1] && perm_ordered (a, b)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+				// check for a.boc + a.cob or boc.a + cob.a (o = anti-com op)
+				// also (axb).(cxd) + (axb).(dxc) and similar
+				if (c_l == l && check_dot_anticom (c_r, r)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+				if (c_r == l && check_dot_anticom (c_l, r)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+				if (c_l == r && check_dot_anticom (c_r, l)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+				if (c_r == r && check_dot_anticom (c_l, l)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+			}
+		}
+	}
+	for (auto search = subs; *search; search++) {
+		if (*search != &skip) {
+			auto c = *search;
+			if (is_dot (c)) {
+				auto c_l = c->expr.e1;
+				auto c_r = c->expr.e2;
+				const expr_t *b[3] = {
+					is_cross (c_l) ? c_l->expr.e1 : c_l,
+					is_cross (c_l) ? c_l->expr.e2 : is_cross (c_r)
+								   ? c_r->expr.e1 : nullptr,
+					is_cross (c_r) ? c_r->expr.e2 : c_r,
+				};
+				// a.bxc + c.bxa etc
+				if (a[1] && b[1] && perm_swapped (a, b)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+				if (a[1] && b[1] && perm_ordered (a, b)) {
+					*search = &skip;
+					factor -= 1;
+					continue;
+				}
+				// check for a.boc + a.cob or boc.a + cob.a (o = anti-com op)
+				// also (axb).(cxd) + (axb).(dxc) and similar
+				if (c_l == l && check_dot_anticom (c_r, r)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+				if (c_r == l && check_dot_anticom (c_l, r)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+				if (c_l == r && check_dot_anticom (c_r, l)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+				if (c_r == r && check_dot_anticom (c_l, l)) {
+					*search = &skip;
+					factor += 1;
+					continue;
+				}
+			}
+		}
+	}
+	if (!factor) {
+		return &skip;
+	}
+	bool neg = factor < 0;
+	if (neg) {
+		factor = -factor;
+	}
+
+	if (factor > 1) {
+		auto type = get_type (expr);
+		auto fact = cast_expr (base_type (type),
+							   new_int_expr (factor, false));
+		expr = typed_binary_expr (type, '*', expr, fact);
+		expr = edag_add_expr (expr);
+	}
+	if (neg) {
+		expr = neg_expr (expr);
+	}
+	return expr;
+}
+
 static bool __attribute__((pure))
 mult_has_factor (const expr_t *mult, const expr_t *factor)
 {
@@ -440,6 +625,28 @@ optimize_cross_products (const expr_t **adds, const expr_t **subs)
 			auto e = *scan;
 			*scan = &skip;
 			*scan = optimize_cross (e, adds, subs);
+		}
+	}
+
+	clean_skips (adds);
+	clean_skips (subs);
+}
+
+static void
+optimize_dot_products (const expr_t **adds, const expr_t **subs)
+{
+	for (auto scan = adds; *scan; scan++) {
+		if (is_dot (*scan)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_dot (e, adds, subs);
+		}
+	}
+	for (auto scan = subs; *scan; scan++) {
+		if (is_dot (*scan)) {
+			auto e = *scan;
+			*scan = &skip;
+			*scan = optimize_dot (e, subs, adds);
 		}
 	}
 
@@ -685,6 +892,7 @@ optimize_core (const expr_t *expr)
 		}
 
 		optimize_cross_products (adds, subs);
+		optimize_dot_products (adds, subs);
 		optimize_scale_products (adds, subs);
 		optimize_mult_products (adds, subs);
 
@@ -761,6 +969,7 @@ optimize_core (const expr_t *expr)
 		const expr_t *neg[1] = {};
 
 		optimize_cross_products (pos, neg);
+		optimize_dot_products (pos, neg);
 		optimize_scale_products (pos, neg);
 		optimize_mult_products (pos, neg);
 
