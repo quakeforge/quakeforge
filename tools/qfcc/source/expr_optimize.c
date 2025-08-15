@@ -665,7 +665,10 @@ cmp_scalar_vector (const expr_t *scalar, const expr_t *vector)
 static const expr_t *
 optimize_core (const expr_t *expr)
 {
-	if (is_sum (expr)) {
+	if (is_neg (expr)) {
+		auto neg = optimize_core (expr->expr.e1);
+		return neg_expr (neg);
+	} else if (is_sum (expr)) {
 		auto type = get_type (expr);
 		int count = count_terms (expr);
 		const expr_t *adds[count + 1] = {};
