@@ -892,6 +892,7 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			if (is_error (init)) {
 				return init;
 			}
+			init = algebra_optimize (init);
 			pr.loc = decl->assign.dst->loc;
 			sym = decl->assign.dst->symbol;
 		} else if (decl->type == ex_symbol) {
