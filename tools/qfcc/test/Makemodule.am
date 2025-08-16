@@ -21,6 +21,7 @@ test_progs_dat=\
 	tools/qfcc/test/arraytypedef.dat \
 	tools/qfcc/test/assignchain.dat \
 	tools/qfcc/test/anonstruct.dat \
+	tools/qfcc/test/brokenline.dat \
 	tools/qfcc/test/callbarrier.dat \
 	tools/qfcc/test/calluse.dat \
 	tools/qfcc/test/chewed-alias.dat \
@@ -298,6 +299,16 @@ tools/qfcc/test/assignchain.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(assignchain_dep) # am--include-marker
 r_depfiles_remade += $(assignchain_dep)
+
+tools_qfcc_test_brokenline_dat_SOURCES=tools/qfcc/test/brokenline.r
+brokenline_obj=$(tools_qfcc_test_brokenline_dat_SOURCES:.r=.o)
+brokenline_dep=$(call qcautodep,$(tools_qfcc_test_brokenline_dat_SOURCES))
+tools/qfcc/test/brokenline.dat$(EXEEXT): $(brokenline_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(brokenline_obj)
+tools/qfcc/test/brokenline.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(brokenline_dep) # am--include-marker
+r_depfiles_remade += $(brokenline_dep)
 
 tools_qfcc_test_callbarrier_dat_SOURCES=tools/qfcc/test/callbarrier.r
 callbarrier_obj=$(tools_qfcc_test_callbarrier_dat_SOURCES:.r=.o)
