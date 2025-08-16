@@ -1001,7 +1001,8 @@ static const expr_t *
 do_mult (const expr_t *a, const expr_t *b)
 {
 	auto type = get_type (a);
-	return typed_binary_expr (type, '*', a, b);
+	auto mult = typed_binary_expr (type, '*', a, b);
+	return edag_add_expr (mult);
 }
 
 static const expr_t *
@@ -1012,7 +1013,8 @@ do_scale (const expr_t *a, const expr_t *b)
 		b = prod;
 	}
 	auto type = get_type (a);
-	return typed_binary_expr (type, QC_SCALE, a, b);
+	auto scale = typed_binary_expr (type, QC_SCALE, a, b);
+	return edag_add_expr (scale);
 }
 
 const expr_t *
@@ -1047,6 +1049,25 @@ scale_expr (const expr_t *a, const expr_t *b)
 	}
 	scale = edag_add_expr (scale);
 	return scale;
+}
+
+static const expr_t *
+mult_expr (const expr_t *a, const expr_t *b)
+{
+	bool neg = false;
+	if (is_neg (a)) {
+		a = neg_expr (a);
+		neg = !neg;
+	}
+	if (is_neg (b)) {
+		b = neg_expr (b);
+		neg = !neg;
+	}
+	auto mult = do_mult (b, a);
+	if (neg) {
+		mult = neg_expr (mult);
+	}
+	return mult;
 }
 
 static bool __attribute__((pure))
@@ -1092,6 +1113,7 @@ do_dot (const expr_t *a, const expr_t *b)
 
 	auto type = base_type (get_type (a));
 	auto dot = typed_binary_expr (type, QC_DOT, a, b);
+	dot = edag_add_expr (dot);
 	dot = apply_scale (type, dot, prod);
 	return dot;
 }
@@ -1163,6 +1185,7 @@ do_wedge (const expr_t *a, const expr_t *b)
 
 	auto type = base_type (get_type (a));
 	auto wedge = typed_binary_expr (type, QC_WEDGE, a, b);
+	wedge = edag_add_expr (wedge);
 	wedge = apply_scale (type, wedge, prod);
 	return wedge;
 }
@@ -1232,7 +1255,7 @@ pga3_scale_wxyz (const expr_t **c,
 				 const expr_t *b, int gb,
 				 algebra_t *alg)
 {
-	c[4] = do_mult (b, a);
+	c[4] = mult_expr (b, a);
 }
 
 static void
@@ -1241,7 +1264,7 @@ pga3_wxyz_scale (const expr_t **c,
 				 const expr_t *b, int gb,
 				 algebra_t *alg)
 {
-	c[4] = do_mult (a, b);
+	c[4] = mult_expr (b, a);
 }
 
 static void
@@ -2948,7 +2971,8 @@ geometric_product (const expr_t *e1, const expr_t *e2)
 			}
 		}
 	}
-	return mvec_gather (c, algebra);
+	auto mvec = mvec_gather (c, algebra);
+	return mvec;
 }
 
 static const expr_t *
