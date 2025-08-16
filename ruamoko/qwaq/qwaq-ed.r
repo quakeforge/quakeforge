@@ -459,7 +459,10 @@ camera_lookat (point_t eye, point_t target, point_t up)
 		} else {
 			R = sqrt(Tm) * T;
 		}
-		auto Rm = normalize (p * (R * p0 * ~R));
+		//FIXME the qvec messes with the math, and scalar+bvect isn't accepted
+		//by full motors for normalize
+		motor_t pp = p * (R * p0 * ~R).vec;
+		auto Rm = normalize (pp);
 		motor_t L;
 		if (Rm.scalar < -0.5) {
 			// The target plane is "almost" anti-parallel to the reference
@@ -468,7 +471,7 @@ camera_lookat (point_t eye, point_t target, point_t up)
 			p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
 			//FIXME removing the ()s causes the math to break (with or
 			//without -O)
-			Rm = normalize (p * (R * p0 * ~R));
+			Rm = normalize (p * R * p0 * ~R);
 			L = ~l * sqrt(Rm) * R;
 		} else {
 			L = sqrt(Rm) * R;
@@ -993,6 +996,14 @@ main (int argc, string *argv)
 		//	camera_mouse_first_person (&camera_state);
 		//}
 		set_transform ([playercam state].M, camera, "");
+		//{
+		//	auto p = (vec4)[player pos];
+		//	auto c = Transform_GetWorldPosition (camera);
+		//	auto n = (vec4)[playercam getNest];
+		//	auto d = c - p;
+		//	printf ("n:%9q\n", n);
+		//	printf ("c:%9q d:%g x+y:%g\n", c, sqrt(d•d), c.x+c.y);
+		//}
 
 		in_buttoninfo_t info[2] = {};
 		IN_GetButtonInfo (key_devid, lctrl_key, &info[0]);

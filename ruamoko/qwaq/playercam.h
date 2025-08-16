@@ -16,6 +16,7 @@
 -think:(float)frametime;
 -setFocus:(point_t)focus;
 -setNest:(point_t)nest;
+-(point_t)getNest;
 -(state_t)state;
 @end
 

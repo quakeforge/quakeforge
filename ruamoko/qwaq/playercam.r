@@ -48,6 +48,11 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 	return self;
 }
 
+-(point_t)getNest
+{
+	return nest;
+}
+
 -(state_t)state
 {
 	return state;
