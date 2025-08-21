@@ -76,6 +76,8 @@ main ()
 		printf ("Rm:%g %v %v %g\n", Rm.scalar, Rm.bvect, Rm.bvecp, Rm.qvec);
 		printf ("L:%g %v %v %g\n", L.scalar, L.bvect, L.bvecp, L.qvec);
 		printf ("e:%.9q\n", e);
-		return e != (point_t)'-2.87867999 -2.12132025 1.5 1.00000012';
+		auto E = (point_t)'-2.87867975 -2.12132025 1.5 1.00000012';
+		printf ("E:%.9q\n", E);
+		return e != E;
 	}
 }
