@@ -590,7 +590,7 @@ optimize_mult (const expr_t *expr, const expr_t **adds, const expr_t **subs)
 	auto type = get_type (expr);
 	auto col = gather_terms (type, com_adds, com_subs);
 	if (!col || !(col = optimize_core (col))) {
-		return nullptr;
+		return &skip;
 	}
 
 	auto mult = typed_binary_expr (type, expr->expr.op, col, common);
