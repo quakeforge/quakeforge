@@ -826,10 +826,174 @@ optimize_adds (const expr_t **expr_list)
 	clean_skips (expr_list);
 }
 
+static bool
+check_anticom (const expr_t *a, const expr_t *b)
+{
+	if (a->expr.op == b->expr.op
+		&& a->expr.e1 == b->expr.e2
+		&& a->expr.e2 == b->expr.e1) {
+		return true;
+	}
+	return false;
+}
+
+static bool
+check_dot_pair (const expr_t *dot, const expr_t *a, const expr_t *b)
+{
+	if (dot->expr.e1 == a && dot->expr.e2 == b) {
+		return true;
+	}
+	if (dot->expr.e2 == a && dot->expr.e1 == b) {
+		return true;
+	}
+	return false;
+}
+
+// check for (a×b)×c - a•c b, replace with -b•c a
+// simpler, fewer opportunities for rounding issues (maybe), and very likely
+// to cancel with a related permutation
+static bool
+simp_lcross_sub_dot_scale (const expr_t **a, const expr_t **subs)
+{
+	if (is_cross (*a)) {
+		if (is_cross ((*a)->expr.e1)) {
+			auto aa = (*a)->expr.e1->expr.e1;
+			auto ab = (*a)->expr.e1->expr.e2;
+			auto ac = (*a)->expr.e2;
+			for (auto b = subs; *b; b++) {
+				if (b != a && is_scale (*b) && is_dot ((*b)->expr.e2)) {
+					if (check_dot_pair ((*b)->expr.e2, aa, ac)
+						&& (*b)->expr.e1 == ab) {
+						*b = scale_expr (aa, dot_expr (ab, ac));
+						*a = &skip;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+// check for (a×b)×c + b•c a, replace with a•c b
+// simpler, fewer opportunities for rounding issues (maybe), and very likely
+// to cancel with a related permutation
+static bool
+simp_lcross_add_dot_scale (const expr_t **a, const expr_t **adds)
+{
+	if (is_cross (*a)) {
+		if (is_cross ((*a)->expr.e2)) {
+			auto aa = (*a)->expr.e1->expr.e1;
+			auto ab = (*a)->expr.e1->expr.e2;
+			auto ac = (*a)->expr.e2;
+			for (auto b = adds; *b; b++) {
+				if (b != a && is_scale (*b) && is_dot ((*b)->expr.e2)) {
+					if (check_dot_pair ((*b)->expr.e2, ab, ac)
+						&& (*b)->expr.e1 == aa) {
+						*a = scale_expr (ab, dot_expr (aa, ac));
+						*b = &skip;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+// check for a×(b×c) - a•c b, replace with -a•b c
+// simpler, fewer opportunities for rounding issues (maybe), and very likely
+// to cancel with a related permutation
+static bool
+simp_rcross_sub_dot_scale (const expr_t **a, const expr_t **subs)
+{
+	if (is_cross (*a)) {
+		if (is_cross ((*a)->expr.e2)) {
+			auto aa = (*a)->expr.e1;
+			auto ab = (*a)->expr.e2->expr.e1;
+			auto ac = (*a)->expr.e2->expr.e2;
+			for (auto b = subs; *b; b++) {
+				if (b != a && is_scale (*b) && is_dot ((*b)->expr.e2)) {
+					if (check_dot_pair ((*b)->expr.e2, aa, ac)
+						&& (*b)->expr.e1 == ab) {
+						*b = scale_expr (ac, dot_expr (aa, ab));
+						*a = &skip;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+// check for a×(b×c) + a•b c, replace with a•c b
+// simpler, fewer opportunities for rounding issues (maybe), and very likely
+// to cancel with a related permutation
+static bool
+simp_rcross_add_dot_scale (const expr_t **a, const expr_t **adds)
+{
+	if (is_cross (*a)) {
+		if (is_cross ((*a)->expr.e2)) {
+			auto aa = (*a)->expr.e1;
+			auto ab = (*a)->expr.e2->expr.e1;
+			auto ac = (*a)->expr.e2->expr.e2;
+			for (auto b = adds; *b; b++) {
+				if (b != a && is_scale (*b) && is_dot ((*b)->expr.e2)) {
+					if (check_dot_pair ((*b)->expr.e2, aa, ac)
+						&& (*b)->expr.e1 == ab) {
+						*a = scale_expr (ab, dot_expr (aa, ac));
+						*b = &skip;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
 static void
 cancel_terms (const expr_t **adds, const expr_t **subs)
 {
+	bool did_something;
+	do {
+		did_something = false;
+		for (auto a = adds; *a; a++) {
+			did_something |= simp_rcross_sub_dot_scale (a, subs);
+		}
+		for (auto a = subs; *a; a++) {
+			did_something |= simp_rcross_sub_dot_scale (a, adds);
+		}
+		for (auto a = adds; *a; a++) {
+			did_something |= simp_rcross_add_dot_scale (a, adds);
+		}
+		for (auto a = subs; *a; a++) {
+			did_something |= simp_rcross_add_dot_scale (a, subs);
+		}
+		for (auto a = adds; *a; a++) {
+			did_something |= simp_lcross_sub_dot_scale (a, subs);
+		}
+		for (auto a = subs; *a; a++) {
+			did_something |= simp_lcross_sub_dot_scale (a, adds);
+		}
+		for (auto a = adds; *a; a++) {
+			did_something |= simp_lcross_add_dot_scale (a, adds);
+		}
+		for (auto a = subs; *a; a++) {
+			did_something |= simp_lcross_add_dot_scale (a, subs);
+		}
+	} while (did_something);
 	for (auto a = adds; *a; a++) {
+		if (is_anticommute (*a)) {
+			for (auto b = a + 1; *b; b++) {
+				if (is_anticommute (*b) && check_anticom (*a, *b)) {
+					*b = &skip;
+					*a = &skip;
+					break;
+				}
+			}
+		}
 		if (*a == &skip) {
 			continue;
 		}
@@ -875,6 +1039,15 @@ optimize_core (const expr_t *expr)
 	if (is_neg (expr)) {
 		auto neg = optimize_core (expr->expr.e1);
 		return neg_expr (neg);
+	} else if (expr->type == ex_extend) {
+		auto new = optimize_core (expr->extend.src);
+		if (new) {
+			auto ext = new_expr ();
+			*ext = *expr;
+			ext->extend.src = new;
+			new = ext;
+		}
+		return new;
 	} else if (is_sum (expr)) {
 		auto type = get_type (expr);
 		int count = count_terms (expr);
@@ -888,8 +1061,8 @@ optimize_core (const expr_t *expr)
 		if (expr->expr.commutative) {
 			optimize_adds (adds);
 			optimize_adds (subs);
-			cancel_terms (adds, subs);
 		}
+		cancel_terms (adds, subs);
 
 		optimize_cross_products (adds, subs);
 		optimize_dot_products (adds, subs);

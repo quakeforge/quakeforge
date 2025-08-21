@@ -282,6 +282,7 @@ assign_expr (const expr_t *dst, const expr_t *src)
 		}
 		src = new_nil_expr ();
 	}
+	src = algebra_optimize (src);
 	if (src->type == ex_compound) {
 		src = current_target.initialized_temp (dst_type, src);
 		if (is_error (src)) {

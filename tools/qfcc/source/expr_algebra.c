@@ -1118,7 +1118,7 @@ do_dot (const expr_t *a, const expr_t *b)
 	return dot;
 }
 
-static const expr_t *
+const expr_t *
 dot_expr (const expr_t *a, const expr_t *b)
 {
 	if (!a || !b) {

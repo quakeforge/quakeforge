@@ -1192,6 +1192,7 @@ const expr_t *neg_expr (const expr_t *e);
 const expr_t *ext_expr (const expr_t *src, const type_t *type, int extend,
 						bool reverse);
 const expr_t *scale_expr (const expr_t *a, const expr_t *b);
+const expr_t *dot_expr (const expr_t *a, const expr_t *b);
 
 const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 
