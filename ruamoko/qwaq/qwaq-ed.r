@@ -455,25 +455,24 @@ camera_lookat (point_t eye, point_t target, point_t up)
 			if ((A • Tm).scalar < 0) {
 				A = ~A;
 			}
-			Tm = (A * l * ~A) * T * l0 * ~T;
+			Tm = A * l * ~A * T * l0 * ~T;
 			Tm = normalize (Tm);
 			R = ~A * sqrt(Tm) * T;
 		} else {
 			R = sqrt(Tm) * T;
 		}
-		//FIXME the qvec messes with the math, and scalar+bvect isn't accepted
-		//by full motors for normalize
-		motor_t pp = p * (R * p0 * ~R).vec;
+		//FIXME scalar+bvect isn't accepted by full motors for normalize
+		motor_t pp = p * R * p0 * ~R;
 		auto Rm = normalize (pp);
+		bivector_t lg = log(R);
 		motor_t L;
 		if (Rm.scalar < -0.5) {
 			// The target plane is "almost" anti-parallel to the reference
 			// plane, so rotate it 180 around the target line, calculate the
 			// needed rotation, then undo the 180 degree rotation
-			p = (l * p * ~l).vec;//FIXME bug in qfcc (get qvec)
-			//FIXME removing the ()s causes the math to break (with or
-			//without -O)
-			Rm = normalize (p * R * p0 * ~R);
+			p = l * p * ~l;
+			pp = p * R * p0 * ~R;
+			Rm = normalize (pp);
 			L = ~l * sqrt(Rm) * R;
 		} else {
 			L = sqrt(Rm) * R;
