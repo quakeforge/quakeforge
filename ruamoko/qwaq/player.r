@@ -211,7 +211,6 @@ Player_freecam (Player *self, float frametime)
 	if (self.pitch.y >  0.996194698) { self.pitch.y =  0.996194698; }
 	if (self.pitch.y < -0.996194698) { self.pitch.y = -0.996194698; }
 	if (self.pitch.x < 0.0871557427) { self.pitch.x = 0.0871557427; }
-	self.pitch /= sqrt (self.pitch • self.pitch);
 
 	vec2 dy = {-self.yaw.y, self.yaw.x };
 	self.yaw += dy * drot.z;
