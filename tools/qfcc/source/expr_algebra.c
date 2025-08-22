@@ -908,7 +908,7 @@ distribute_product (const expr_t *a, const expr_t *b,
 	const expr_t *a_adds[a_terms + 2] = {};
 	const expr_t *a_subs[a_terms + 2] = {};
 	const expr_t *b_adds[b_terms + 2] = {};
-	const expr_t *b_subs[a_terms + 2] = {};
+	const expr_t *b_subs[b_terms + 2] = {};
 
 	if (a_terms) {
 		scatter_terms (a, a_adds, a_subs);
