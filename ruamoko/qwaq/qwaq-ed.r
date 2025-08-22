@@ -45,6 +45,8 @@ in_axis_t *move_yaw;
 in_axis_t *move_roll;
 in_axis_t *look_forward;
 in_axis_t *look_right;
+in_axis_t *look_up;
+in_button_t *shift;
 in_button_t *move_jump;
 in_button_t *target_lock;
 
@@ -822,9 +824,11 @@ setup_bindings (void)
 	move_pitch = IN_CreateAxis ("move.pitch", "Player Pitch");
 	move_yaw = IN_CreateAxis ("move.yaw", "Player Yaw");
 	move_roll = IN_CreateAxis ("move.roll", "Player Roll");
+	shift = IN_CreateButton ("shift", "Player shift");
 	move_jump = IN_CreateButton ("move.jump", "Player Jump");
 	look_forward = IN_CreateAxis ("look.forward", "Player Look Forward");
 	look_right = IN_CreateAxis ("look.right", "Player Look Right");
+	look_up = IN_CreateAxis ("look.up", "Player Look Up");
 	target_lock = IN_CreateButton ("target.lock", "Player Target Lock");
 
 	plitem_t *config = PL_GetPropertyList (input_cfg);

@@ -216,16 +216,21 @@ Player_freecam (Player *self, float frametime)
 	vec2 dy = {-self.yaw.y, self.yaw.x };
 	self.yaw += dy * drot.z;
 
-	vec2 dir = {
+	vec3 dir = {
 		-IN_UpdateAxis (look_forward),
 		-IN_UpdateAxis (look_right),
+		-IN_UpdateAxis (look_up),
 	};
-	if (dir) {
-		self.yaw = dir;
+	if (dir.xy) {
+		self.yaw = dir.xy;
 		self.pitch = {1, 0};
+	}
+	if (dir.z) {
+		self.pitch = {1, dir.z};
 	}
 
 	self.yaw /= sqrt (self.yaw • self.yaw);
+	self.pitch /= sqrt (self.pitch • self.pitch);
 
 	// +pitch causes the view to tilt *down* which is correct for +Y left in
 	// a right-handed system)
