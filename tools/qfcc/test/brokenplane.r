@@ -8,7 +8,7 @@ void printf (string str,...)=#0;
 motor_t
 broken_plane (plane_t p, plane_t p0, motor_t R)
 {
-	auto Rm = p * (R * p0 * ~R);
+	auto Rm = p * R * p0 * ~R;
 	return Rm;
 }
 
