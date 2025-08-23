@@ -263,6 +263,17 @@ static int axis_colors[] = { 12, 10, 9 };
 			[clipsView draw];
 		}
 	}
+
+	// Frog
+	Gizmo_AddSphere ({-2     , -2     , 0.5f }, 0.5f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2+0.3f, -2+0.3f, 0.1f }, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2+0.3f, -2-0.3f, 0.1f }, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2-0.3f, -2-0.3f, 0.1f }, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2-0.3f, -2+0.3f, 0.1f }, 0.1f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2     , -2+0.4f, 0.75f}, 0.2f , vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2+0.1f, -2+0.5f, 0.9f }, 0.05f, vec4(0.7, 0.9, 0.4, 0.9));
+	Gizmo_AddSphere ({-2-0.1f, -2+0.5f, 0.9f }, 0.05f, vec4(0.7, 0.9, 0.4, 0.9));
+
 	Gizmo_AddSphere ({1, 0.5, 3}, 0.5, vec4(0.8, 0.9, 0.1, 0.8));
 	Gizmo_AddSphere ({1.5,-0.75, 3}, 1, vec4(0.6, 0.9, 0.5, 0.8));
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1, 1.75, 5.5}, 0.25, vec4(0.9, 0.5, 0.6, 0.8));
