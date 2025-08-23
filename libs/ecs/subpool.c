@@ -106,10 +106,13 @@ ECS_DelSubpoolRange (ecs_registry_t *registry, uint32_t component, uint32_t id)
 	for (uint32_t i = end; i < pool->count; i++) {
 		pool->sparse[Ent_Index (pool->dense[i])] -= delta;
 	}
-	component_t dc = { .size = sizeof (uint32_t) };
-	Component_MoveElements (&dc, pool->dense, start, end, pool->count - end);
-	component_t *c = &registry->components.a[component];
-	Component_MoveElements (c, pool->data, start, end, pool->count - end);
+	uint32_t move_count = pool->count - end;
+	if (move_count) {
+		component_t dc = { .size = sizeof (uint32_t) };
+		Component_MoveElements (&dc, pool->dense, start, end, move_count);
+		component_t *c = &registry->components.a[component];
+		Component_MoveElements (c, pool->data, start, end, move_count);
+	}
 	pool->count -= delta;
 }
 
