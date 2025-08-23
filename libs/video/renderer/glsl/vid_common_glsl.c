@@ -89,9 +89,9 @@ GLSL_SetPalette (void *data, const byte *palette)
 		g = palette[i * 3 + 1];
 		b = palette[i * 3 + 2];
 #ifdef WORDS_BIGENDIAN
-		v = (255 << 0) + (r << 24) + (g << 16) + (b << 8);
+		v = (255u << 0) + (r << 24) + (g << 16) + (b << 8);
 #else
-		v = (255 << 24) + (r << 0) + (g << 8) + (b << 16);
+		v = (255u << 24) + (r << 0) + (g << 8) + (b << 16);
 #endif
 		*table++ = v;
 	}
