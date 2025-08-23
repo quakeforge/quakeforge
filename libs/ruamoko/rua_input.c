@@ -594,8 +594,12 @@ bi_input_clear (progs_t *pr, void *_res)
 		auto button = (in_button_t *) PR_GetPointer (pr, res->buttons.a[i]);
 		if (button->listeners) {
 			for (size_t j = 0; j < button->listeners->size; j++) {
-				rua_in_cookie_t *cookie = button->listeners->a[j].ldata;
-				release_cookie (pr, res, cookie);
+				auto func = button->listeners->a[j].lfunc;
+				if (func == rua_button_listener_func
+					|| func == rua_button_listener_method) {
+					rua_in_cookie_t *cookie = button->listeners->a[j].ldata;
+					release_cookie (pr, res, cookie);
+				}
 			}
 		}
 		IN_UnregisterButton (button);
@@ -606,8 +610,12 @@ bi_input_clear (progs_t *pr, void *_res)
 		auto axis = (in_axis_t *) PR_GetPointer (pr, res->axes.a[i]);
 		if (axis->listeners) {
 			for (size_t j = 0; j < axis->listeners->size; j++) {
-				rua_in_cookie_t *cookie = axis->listeners->a[j].ldata;
-				release_cookie (pr, res, cookie);
+				auto func = axis->listeners->a[j].lfunc;
+				if (func == rua_axis_listener_func
+					|| func == rua_axis_listener_method) {
+					rua_in_cookie_t *cookie = axis->listeners->a[j].ldata;
+					release_cookie (pr, res, cookie);
+				}
 			}
 		}
 		IN_UnregisterAxis (axis);
