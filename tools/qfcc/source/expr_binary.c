@@ -347,7 +347,7 @@ matrix_scalar_expr (int op, const expr_t *a, const expr_t *b)
 	}
 	auto params = new_list_expr (nullptr);
 	for (int i = 0; i < count; i++) {
-		expr_append_expr (params, binary_expr (op, a_cols[i], b_cols[i]));
+		expr_prepend_expr (params, binary_expr (op, a_cols[i], b_cols[i]));
 	}
 	return constructor_expr (new_type_expr (mat_type), params);
 }
