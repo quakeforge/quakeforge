@@ -72,6 +72,7 @@ typedef struct imt_switcher_s {
 	imt_input_t *inputs;	// one per input
 	imt_t     **imts;		// 2**(num_inputs)
 	struct in_context_s *context;
+	const char **input_names;
 } imt_switcher_t;
 
 typedef struct in_context_s {

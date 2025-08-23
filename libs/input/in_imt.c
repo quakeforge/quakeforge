@@ -454,12 +454,14 @@ IMT_CreateSwitcher (const char *switcher_name, int context, imt_t *default_imt,
 		Sys_Printf ("too many inputs %d\n", num_inputs);
 		return 0;
 	}
+	size_t names_len = 0;
 	for (int i = 0; i < num_inputs; i++) {
 		const char *input_name = input_names[i];
 		if (!input_name) {
 			input_error = 1;
 			continue;
 		}
+		names_len += strlen (input_name) + 1;
 		if (input_name[0] == '+') {
 			if (!IN_FindButton (input_name + 1)) {
 				Sys_Printf ("invalid button %s\n", input_name);
@@ -476,22 +478,34 @@ IMT_CreateSwitcher (const char *switcher_name, int context, imt_t *default_imt,
 		return 0;
 	}
 	int         num_states = 1 << num_inputs;
-	size_t      size = sizeof (imt_switcher_t)
-						+ num_inputs * sizeof (imt_input_t)
-						+ num_states * sizeof (imt_t *);
+	size_t size = sizeof (imt_switcher_t)
+				+ sizeof (imt_input_t[num_inputs])
+				+ sizeof (imt_t *[num_states])
+				+ sizeof (const char *[num_inputs])
+				+ names_len;
 	imt_switcher_t *switcher = malloc (size);
 	*ctx->switcher_tail = switcher;
 	ctx->switcher_tail = &switcher->next;
 
-	switcher->next = 0;
-	switcher->name = strdup (switcher_name);
-	switcher->num_inputs = num_inputs;
-	switcher->inputs = (imt_input_t *) (switcher + 1);
-	switcher->imts = (imt_t **) (switcher->inputs + num_inputs);
-	switcher->context = ctx;
+	auto sw_inputs = (imt_input_t *) &switcher[1];
+	auto sw_imts = (imt_t **) &sw_inputs[num_inputs];
+	auto sw_names = (const char **) &sw_imts[num_states];
+	auto names_data = (char *) &sw_names[num_inputs];
+
+	*switcher = (imt_switcher_t) {
+		.next = nullptr,
+		.name = strdup (switcher_name),
+		.num_inputs = num_inputs,
+		.inputs = sw_inputs,
+		.imts = sw_imts,
+		.context = ctx,
+		.input_names = sw_names,
+	};
 	for (int i = 0; i < num_inputs; i++) {
 		imt_input_t *input = &switcher->inputs[i];
 		const char *input_name = input_names[i];
+		switcher->input_names[i] = names_data;
+		names_data = stpcpy (names_data, input_name) + 1;
 		if (input_name[0] == '+') {
 			input->type = imti_button;
 			input->button = IN_FindButton (input_name + 1);
@@ -848,14 +862,20 @@ imt_drop_all_f (void)
 				imt_input_t *input = &switcher->inputs[i];
 				switch (input->type) {
 					case imti_button:
-						IN_ButtonRemoveListener (input->button,
-												 imt_switcher_button_update,
-												 switcher);
+						auto b = IN_FindButton (switcher->input_names[i] + 1);
+						if (b == input->button) {
+							IN_ButtonRemoveListener (input->button,
+													 imt_switcher_button_update,
+													 switcher);
+						}
 						break;
 					case imti_cvar:
-						Cvar_RemoveListener (input->cvar,
-											 imt_switcher_cvar_update,
-											 switcher);
+						auto cvar = Cvar_FindVar (switcher->input_names[i]);
+						if (cvar == input->cvar) {
+							Cvar_RemoveListener (input->cvar,
+												 imt_switcher_cvar_update,
+												 switcher);
+						}
 						break;
 				}
 			}
