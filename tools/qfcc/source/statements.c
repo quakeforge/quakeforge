@@ -1336,6 +1336,22 @@ expr_call_v6p (sblock_t *sblock, const expr_t *call, operand_t **op)
 	return sblock;
 }
 
+typedef struct aliased_arg_s {
+	operand_t **list;
+	const type_t *type;
+	const expr_t *expr;
+} aliased_arg_t;
+
+static int
+aliased_arg_visit_def (def_t *def, void *data)
+{
+	aliased_arg_t *aa = data;
+	auto op = def_operand (def, aa->type, aa->expr);
+	op->next = *aa->list;
+	*aa->list = op;
+	return 0;
+}
+
 static sblock_t *
 expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 {
@@ -1401,22 +1417,33 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 
 		// The call both uses and kills the arguments: use is obvious, but kill
 		// is because the callee has direct access to them and might modify
-		// them
-		// need two ops for the one def because there's two lists
+		// them, which inout and out params actually do (and thus define them).
+		//
+		// need multiple ops for the one def because there are multiple lists
 		if (a->type != ex_inout || a->inout.in) {
 			// out params do not use the argument
-			auto u = def_operand (def, arg_type, call);
-			u->next = use;
-			use = u;
+			def_visit_all (def, dol_none, aliased_arg_visit_def,
+						   &(aliased_arg_t) {
+								.list = &use,
+								.type = arg_type,
+								.expr = call,
+							});
 		}
-		auto k = def_operand (def, arg_type, call);
-		k->next = kill;
-		kill = k;
+		// all params kill the argumentg
+		def_visit_all (def, dol_none, aliased_arg_visit_def,
+					   &(aliased_arg_t) {
+							.list = &kill,
+							.type = arg_type,
+							.expr = call,
+						});
 		if (a->type == ex_inout) {
 			// inout and out params define the argument
-			auto d = def_operand (def, arg_type, call);
-			d->next = define;
-			define = d;
+			def_visit_all (def, dol_none, aliased_arg_visit_def,
+						   &(aliased_arg_t) {
+								.list = &define,
+								.type = arg_type,
+								.expr = call,
+							});
 		}
 	}
 	if (args_va_list) {
