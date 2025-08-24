@@ -3358,9 +3358,7 @@ find_offset (const type_t *t1, const type_t *t2)
 static bool __attribute__((const))
 summed_extend (const expr_t *e)
 {
-	if (!(e->type == ex_expr && e->expr.op == '+'
-		  && e->expr.e1->type == ex_extend
-		  && e->expr.e2->type == ex_extend)) {
+	if (!(is_sum (e) && is_ext (e->expr.e1) && is_ext (e->expr.e2))) {
 		return false;
 	}
 	auto ext1 = e->expr.e1->extend;
@@ -3376,19 +3374,33 @@ summed_extend (const expr_t *e)
 	return !(bits1 & bits2);
 }
 
-static void
-assign_extend (expr_t *block, const expr_t *dst, const expr_t *src)
+static const expr_t *
+assign_extend (const expr_t *src)
 {
+	auto type = get_type (src);
 	auto ext1 = src->expr.e1->extend;
 	auto ext2 = src->expr.e2->extend;
 	auto type1 = get_type (ext1.src);
 	auto type2 = get_type (ext2.src);
 	int offs1 = ext1.reverse ? find_offset (ext1.type, type1) : 0;
 	int offs2 = ext2.reverse ? find_offset (ext2.type, type2) : 0;
-	auto dst1 = offset_cast (type1, dst, offs1);
-	auto dst2 = offset_cast (type2, dst, offs2);
-	append_expr (block, edag_add_expr (new_assign_expr (dst1, ext1.src)));
-	append_expr (block, edag_add_expr (new_assign_expr (dst2, ext2.src)));
+	if (offs2 < offs1) {
+		ext1 = src->expr.e2->extend;
+		ext2 = src->expr.e1->extend;
+		if (src->expr.op == '-') {
+			ext1.src = neg_expr (ext1.src);
+		}
+	} else {
+		if (src->expr.op == '-') {
+			ext2.src = neg_expr (ext2.src);
+		}
+	}
+
+	auto params = new_list_expr (nullptr);
+	expr_prepend_expr (params, ext1.src);
+	expr_prepend_expr (params, ext2.src);
+	auto extend = constructor_expr (new_type_expr (type), params);
+	return edag_add_expr (extend);
 }
 
 static const expr_t *
@@ -3405,21 +3417,6 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 	src = algebra_optimize (src);
 	auto srcType = get_type (src);
 	auto dstType = get_type (dst);
-
-	if (src->type != ex_multivec) {
-		if (srcType == dstType) {
-			if (summed_extend (src)) {
-				auto block = new_block_expr (0);
-				block->block.no_flush = true;
-				auto tmp = new_temp_def_expr (dstType);
-				assign_extend (block, tmp, src);
-				auto dst_assign = new_assign_expr (dst, tmp);
-				append_expr (block, dst_assign);
-				return block;
-			}
-			return edag_add_expr (new_assign_expr (dst, src));
-		}
-	}
 
 	if (dstType->meta != ty_algebra && dstType != srcType) {
 		return 0;
@@ -3447,6 +3444,9 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 		auto val = c[group];
 		if (!val) {
 			val = new_zero_expr (float_type (sym->type));
+		}
+		if (summed_extend (val)) {
+			val = assign_extend (val);
 		}
 		int size = sym->offset - memset_base;
 		if (size && current_target.zero_memory) {
