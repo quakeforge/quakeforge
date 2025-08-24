@@ -784,11 +784,13 @@ static void
 print_vector (dstring_t *dstr, const expr_t *e, int level, int id, const expr_t *next)
 {
 	int         indent = level * 2 + 2;
+	int         ind = 0;
 
-	for (auto li = e->vector.list.head; li; li = li->next) {
+	for (auto li = e->vector.list.head; li; li = li->next, ind++) {
 		auto ele = li->expr;
 		_print_expr (dstr, ele, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, ele);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"%d\"];\n", indent, "",
+				   e, ele, ind);
 	}
 	dasprintf (dstr, "%*se_%p [label=\"vector %d\"];\n", indent, "", e,
 			   e->loc.line);
