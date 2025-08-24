@@ -214,19 +214,19 @@ ruamoko_build_code (function_t *func, const expr_t *statements)
 static int
 copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
 {
-	int         index = 0;
+	int         offset = 0;
 	for (auto li = src->vector.list.head; li; li = li->next) {
 		auto e = li->expr;
 		if (e->type == ex_vector) {
-			index += copy_elements (block, dst, e, index + base);
+			offset += copy_elements (block, dst, e, offset + base);
 		} else {
 			auto type = get_type (e);
-			auto dst_ele = new_offset_alias_expr (type, dst, index + base);
+			auto dst_ele = new_offset_alias_expr (type, dst, offset + base);
 			append_expr (block, assign_expr (dst_ele, e));
-			index += type_width (type);
+			offset += type_size (type);
 		}
 	}
-	return index;
+	return offset;
 }
 
 static const expr_t *
