@@ -1429,7 +1429,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 								.expr = call,
 							});
 		}
-		// all params kill the argumentg
+		// all params kill the argument
 		def_visit_all (def, dol_none, aliased_arg_visit_def,
 					   &(aliased_arg_t) {
 							.list = &kill,
