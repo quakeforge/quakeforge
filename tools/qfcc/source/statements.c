@@ -1385,7 +1385,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		auto arg_type = get_type (a);
 		int         size = type_size (arg_type);
 		int         alignment = arg_type->alignment;
-		if (alignment < 4) {
+		if (args_va_list || alignment < 4) {
 			alignment = 4;
 		}
 		def->offset = defspace_alloc_aligned_highwater (arg_space, size,
