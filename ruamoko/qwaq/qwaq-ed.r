@@ -475,7 +475,6 @@ camera_lookat (point_t eye, point_t target, point_t up)
 		//FIXME scalar+bvect isn't accepted by full motors for normalize
 		motor_t pp = p * R * p0 * ~R;
 		auto Rm = normalize (pp);
-		bivector_t lg = log(R);
 		motor_t L;
 		if (Rm.scalar < -0.5) {
 			// The target plane is "almost" anti-parallel to the reference
