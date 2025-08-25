@@ -396,7 +396,7 @@ build_args (const expr_t *(*arg_exprs)[2], int *arg_expr_count,
 		}
 		if (e->type == ex_compound || e->type == ex_multivec) {
 			scoped_src_loc (e);
-			e = initialized_temp_expr (arg_types[i], e);
+			e = current_target.initialized_temp (arg_types[i], e);
 		}
 		// FIXME this is target-specific info and should not be in the
 		// expression tree
@@ -606,7 +606,7 @@ return_expr (function_t *f, const expr_t *e)
 
 	if (e->type == ex_compound || e->type == ex_multivec) {
 		scoped_src_loc (e);
-		e = initialized_temp_expr (ret_type, e);
+		e = current_target.initialized_temp (ret_type, e);
 	} else {
 		e = algebra_optimize (e);
 	}

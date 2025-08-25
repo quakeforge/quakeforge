@@ -737,7 +737,7 @@ method_check_params (method_t *method, const expr_t *args)
 												 : nullptr;
 		if (e->type == ex_compound) {
 			scoped_src_loc (e);
-			e = initialized_temp_expr (arg_type, e);
+			e = current_target.initialized_temp (arg_type, e);
 		}
 		auto t = get_type (e);
 		if (!t) {
