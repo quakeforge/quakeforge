@@ -1752,6 +1752,14 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	ex_list_t list = {};
 	// convert the left-branching field/array expression chain to a list
 	while (e->type == ex_field || e->type == ex_array) {
+		const type_t *mtype;
+		if (e->type == ex_field
+			&& is_algebra (mtype = get_type (e->field.member))
+			&& mtype == get_type (e->field.object)) {
+			// This is a GA group access for getting the underlying vector
+			// type from the host group, so just bypass the access.
+			e = e->field.object;
+		}
 		for (; e->type == ex_field; e = e->field.object) {
 			list_prepend (&list, e);
 		}
@@ -1762,6 +1770,10 @@ spirv_access_chain (const expr_t *e, spirvctx_t *ctx,
 	// e is now the base object of the field/array expression chain
 	auto base_type = get_type (e);
 	unsigned base_id = spirv_emit_expr (e, ctx);
+	if (!list.head) {
+		*acc_type = *res_type;
+		return base_id;
+	}
 	int op = SpvOpCompositeExtract;
 
 	*acc_type = *res_type;
