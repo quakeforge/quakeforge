@@ -362,30 +362,43 @@ assign_elements (expr_t *local_expr, const expr_t *init,
 	set_delete (initialized);
 }
 
+static const expr_t *
+initialize_temp (const expr_t *temp, const type_t *type, const expr_t *expr)
+{
+	expr_t     *block = new_block_expr (0);
+	block->block.result = temp;
+
+	element_chain_t element_chain;
+
+	element_chain.head = 0;
+	element_chain.tail = &element_chain.head;
+	build_element_chain (&element_chain, type, expr, 0);
+	assign_elements (block, temp, &element_chain);
+	free_element_chain (&element_chain);
+	return block;
+}
+
 const expr_t *
 initialized_temp_expr (const type_t *type, const expr_t *expr)
 {
 	if (expr->type == ex_compound && expr->compound.type) {
 		type = expr->compound.type;
 	}
-	expr_t     *temp = new_temp_def_expr (type);
 
 	if (expr->type == ex_compound) {
-		expr_t     *block = new_block_expr (0);
-		block->block.result = temp;
-
-		element_chain_t element_chain;
-
-		element_chain.head = 0;
-		element_chain.tail = &element_chain.head;
-		build_element_chain (&element_chain, type, expr, 0);
-		assign_elements (block, temp, &element_chain);
-		free_element_chain (&element_chain);
-		return block;
-	} else if (expr->type == ex_multivec) {
+		expr_t     *temp = new_temp_def_expr (type);
+		return initialize_temp (temp, type, expr);
+	} else if (is_algebra (type)) {
+		if (is_reference (get_type (expr))) {
+			expr = pointer_deref (expr);
+		}
 		expr = algebra_optimize (expr);
 		expr = algebra_compound_expr (type, expr);
-		return initialized_temp_expr (type, expr);
+		if (expr->type != ex_compound) {
+			return expr;
+		}
+		expr_t     *temp = new_temp_def_expr (type);
+		return initialize_temp (temp, type, expr);
 	} else {
 		debug (expr, "unexpected expression type: %s", expr_names[expr->type]);
 		return expr;
