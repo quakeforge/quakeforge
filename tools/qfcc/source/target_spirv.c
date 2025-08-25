@@ -472,9 +472,8 @@ spirv_type_runtime_array (unsigned tid, spirvctx_t *ctx)
 }
 
 static unsigned
-spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
+spirv_emit_symtab (symtab_t *symtab, spirvctx_t *ctx)
 {
-	auto symtab = type_symtab (type);
 	int num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next) {
 		num_members++;
@@ -497,8 +496,6 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 	INSN (insn, 1) = id;
 	memcpy (&INSN (insn, 2), member_types, sizeof (member_types));
 
-	spirv_Name (id, unalias_type (type)->name + 4, ctx);
-
 	int i = 0;
 	num_members = 0;
 	for (auto s = symtab->symbols; s; s = s->next, i++) {
@@ -506,6 +503,16 @@ spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
 		spirv_MemberName (id, m, s->name, ctx);
 		spirv_member_decorate_id (id, m, s->attributes, ctx);
 	}
+	return id;
+}
+
+static unsigned
+spirv_TypeStruct (const type_t *type, spirvctx_t *ctx)
+{
+	auto symtab = type_symtab (type);
+	unsigned id = spirv_emit_symtab (symtab, ctx);
+
+	spirv_Name (id, unalias_type (type)->name + 4, ctx);
 	return id;
 }
 
@@ -662,6 +669,14 @@ spirv_Type (const type_t *type, spirvctx_t *ctx)
 		auto ctype = column_type (type);
 		unsigned cid = spirv_Type (ctype, ctx);
 		id = spirv_TypeMatrix (cid, type_cols (type), ctx);
+	} else if (is_algebra (type)) {
+		if (type_count (type) > 1) {
+			auto symtab = get_mvec_struct (type);
+			id = spirv_emit_symtab (symtab, ctx);
+		} else {
+			auto atype = vector_type (base_type (type), type_width (type));
+			id = spirv_Type (atype, ctx);
+		}
 	} else if (type_width (type) > 1) {
 		auto btype = base_type (type);
 		unsigned bid = spirv_Type (btype, ctx);
