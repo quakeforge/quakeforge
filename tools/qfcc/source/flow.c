@@ -345,8 +345,15 @@ flow_get_var (operand_t *op)
 		if (!op->def->flowvar) {
 			auto var = new_flowvar ();
 			op->def->flowvar = var;
-			if (strncmp (op->def->name, ".arg", 4) == 0
-				|| strncmp (op->def->name, ".param", 6) == 0) {
+			auto d = op->def;
+			// aliased defs have mangled names, so check the main def
+			if (d->alias) {
+				d = d->alias;
+			}
+			if (strncmp (d->name, ".arg", 4) == 0
+				|| strncmp (d->name, ".param", 6) == 0) {
+				// prevent any assignments to this var crossing a function
+				// call
 				var->kill_barred = true;
 			}
 		}
