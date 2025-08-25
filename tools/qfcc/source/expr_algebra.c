@@ -3348,11 +3348,10 @@ assign_extend (const expr_t *src)
 }
 
 const expr_t *
-algebra_assign_expr (const expr_t *dst, const expr_t *src)
+algebra_compound_expr (const type_t *dstType, const expr_t *src)
 {
 	src = algebra_optimize (src);
 	auto srcType = get_type (src);
-	auto dstType = get_type (dst);
 
 	if (dstType->meta != ty_algebra && dstType != srcType) {
 		return src;

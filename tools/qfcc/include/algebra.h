@@ -131,7 +131,7 @@ const expr_t *algebra_dual (const expr_t *e);
 const expr_t *algebra_undual (const expr_t *e);
 const expr_t *algebra_reverse (const expr_t *e);
 const expr_t *algebra_cast_expr (const type_t *dstType, const expr_t *e);
-const expr_t *algebra_assign_expr (const expr_t *dst, const expr_t *src);
+const expr_t *algebra_compound_expr (const type_t *dst, const expr_t *src);
 const expr_t *algebra_field_expr (const expr_t *mvec, const expr_t *field_name);
 const expr_t *algebra_optimize (const expr_t *e);
 

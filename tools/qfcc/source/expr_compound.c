@@ -384,7 +384,7 @@ initialized_temp_expr (const type_t *type, const expr_t *expr)
 		return block;
 	} else if (expr->type == ex_multivec) {
 		expr = algebra_optimize (expr);
-		expr = algebra_assign_expr (temp, expr);
+		expr = algebra_compound_expr (type, expr);
 		return initialized_temp_expr (type, expr);
 	} else {
 		debug (expr, "unexpected expression type: %s", expr_names[expr->type]);

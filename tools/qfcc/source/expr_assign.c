@@ -186,14 +186,14 @@ check_types_compatible (const expr_t **dst, const expr_t **src)
 
 	if (dst_type == src_type) {
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
-			*src = algebra_assign_expr (*dst, *src);
+			*src = algebra_compound_expr (dst_type, *src);
 		}
 		return nullptr;
 	}
 
 	if (type_assignable (dst_type, src_type)) {
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
-			*src = algebra_assign_expr (*dst, *src);
+			*src = algebra_compound_expr (dst_type, *src);
 			return nullptr;
 		}
 		debug (*dst, "casting %s to %s", src_type->name, dst_type->name);
