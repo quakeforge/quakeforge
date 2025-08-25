@@ -1997,6 +1997,15 @@ static unsigned
 spirv_swizzle (const expr_t *e, spirvctx_t *ctx)
 {
 	int count = type_width (e->swizzle.type);
+	if (count == 1) {
+		// spir-v doesn't accept 1-component swizzles, so convert to indexed
+		// access
+		scoped_src_loc (e);
+		auto a = new_array_expr (e->swizzle.src,
+								 new_int_expr (e->swizzle.source[0], false));
+		a->array.type = e->swizzle.type;
+		return spirv_emit_expr (a, ctx);
+	}
 	unsigned src_id = spirv_emit_expr (e->swizzle.src, ctx);
 	unsigned tid = spirv_Type (e->swizzle.type, ctx);
 	unsigned id = spirv_id (ctx);
