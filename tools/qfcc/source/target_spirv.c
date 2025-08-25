@@ -35,6 +35,7 @@
 #include "QF/hash.h"
 #include "QF/quakeio.h"
 
+#include "tools/qfcc/include/algebra.h"
 #include "tools/qfcc/include/attribute.h"
 #include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
@@ -2799,6 +2800,18 @@ spirv_create_entry_point (const char *name, const char *model_name)
 	return true;
 }
 
+static symtab_t *
+get_object_symtab (const type_t *type)
+{
+	if (is_algebra (type)) {
+		return get_mvec_struct (type);
+	}
+	if (is_struct (type) || (is_nonscalar (type) && type->symtab)) {
+		return type->symtab;
+	}
+	return nullptr;
+}
+
 static const expr_t *
 spirv_build_element_chain (element_chain_t *element_chain, const type_t *type,
 						   const expr_t *eles)
@@ -2807,8 +2820,10 @@ spirv_build_element_chain (element_chain_t *element_chain, const type_t *type,
 
 	initstate_t state = {};
 
-	if (is_struct (type) || (is_nonscalar (type) && type->symtab)) {
-		state.field = type->symtab->symbols;
+	auto symtab = get_object_symtab (type);
+
+	if (symtab) {
+		state.field = symtab->symbols;
 		// find first initializable field
 		while (state.field && skip_field (state.field)) {
 			state.field = state.field->next;

@@ -863,6 +863,25 @@ algebra_struct_type (const type_t *type)
 	return sym ? sym->type : nullptr;
 }
 
+symtab_t *
+get_mvec_struct (const type_t *type)
+{
+	symbol_t   *sym = 0;
+	if (type->type == ev_invalid) {
+		sym = type->algebra->mvec_sym;
+	} else {
+		sym = type->multivec->mvec_sym;
+	}
+	return sym ? sym->type->symtab : 0;
+}
+
+int
+algebra_type_count (const type_t *type)
+{
+	auto symtab = get_mvec_struct (type);
+	return symtab->count;
+}
+
 int
 algebra_blade_grade (basis_blade_t blade)
 {

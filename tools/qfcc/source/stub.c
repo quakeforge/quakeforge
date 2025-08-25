@@ -52,6 +52,8 @@ __attribute__((const)) bool is_algebra (const type_t *type);
 bool is_algebra (const type_t *type){return 0;}
 __attribute__((const)) type_t *algebra_base_type (const type_t *type);
 type_t *algebra_base_type (const type_t *type){return 0;}
+__attribute__((const)) int algebra_type_count (const type_t *type);
+int algebra_type_count (const type_t *type){return 0;}
 
 __attribute__((const)) pr_string_t ReuseString (const char *str) {return 0;}
 __attribute__((const)) codespace_t *codespace_new (void) {return 0;}

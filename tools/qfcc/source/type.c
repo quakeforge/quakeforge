@@ -2066,7 +2066,7 @@ type_count (const type_t *type)
 		case ty_alias:
 			return type_count (type->alias.aux_type);
 		case ty_algebra:
-			internal_error (0, "count of algebra type");
+			return algebra_type_count (type);
 		case ty_meta_count:
 			break;
 	}

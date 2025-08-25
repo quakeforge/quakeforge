@@ -251,18 +251,6 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 	return edag_add_expr (swizzle);
 }
 
-static symtab_t *
-get_mvec_struct (const type_t *type)
-{
-	symbol_t   *sym = 0;
-	if (type->type == ev_invalid) {
-		sym = type->algebra->mvec_sym;
-	} else {
-		sym = type->multivec->mvec_sym;
-	}
-	return sym ? sym->type->symtab : 0;
-}
-
 static symbol_t *
 get_mvec_sym (const type_t *type)
 {

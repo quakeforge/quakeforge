@@ -33,6 +33,7 @@
 
 typedef struct type_s type_t;
 typedef struct expr_s expr_t;
+typedef struct symtab_s symtab_t;
 
 typedef struct basis_blade_s {
 	pr_uint_t   mask;				///< bit-mask of basis vectors
@@ -120,6 +121,9 @@ int algebra_get_grade (const type_t *type) __attribute__((pure));
 int algebra_blade_grade (basis_blade_t blade) __attribute__((const));
 
 pr_uint_t get_group_mask (const type_t *type, algebra_t *algebra) __attribute__((pure));
+
+symtab_t *get_mvec_struct (const type_t *type) __attribute__((pure));
+int algebra_type_count (const type_t *type) __attribute__((pure));
 
 const expr_t *algebra_binary_expr (int op, const expr_t *e1, const expr_t *e2);
 const expr_t *algebra_negate (const expr_t *e);
