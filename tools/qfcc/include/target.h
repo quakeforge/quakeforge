@@ -61,8 +61,8 @@ typedef struct {
 	const expr_t *(*shift_op)(int op, const expr_t *e1, const expr_t *e2);
 	const expr_t *(*test_expr) (const expr_t *expr);
 	const expr_t *(*cast_expr) (const type_t *dstType, const expr_t *expr);
-	const expr_t *(*check_types_compatible) (const expr_t *dst,
-											 const expr_t *src);
+	const expr_t *(*check_types_compatible) (const expr_t **dst,
+											 const expr_t **src);
 	bool      (*type_assignable) (const type_t *dst, const type_t *src);
 	bool      (*init_type_ok) (const type_t *dst, const type_t *src);
 

@@ -3053,16 +3053,15 @@ spirv_cast_expr (const type_t *dstType, const expr_t *expr)
 }
 
 static const expr_t *
-spirv_check_types_compatible (const expr_t *dst, const expr_t *src)
+spirv_check_types_compatible (const expr_t **dst, const expr_t **src)
 {
-	auto dst_type = get_type (dst);
-	auto src_type = get_type (src);
+	auto dst_type = get_type (*dst);
+	auto src_type = get_type (*src);
 
-	if (!spirv_types_logically_match (dst_type, src_type)) {
-		return nullptr;
+	if (spirv_types_logically_match (dst_type, src_type)) {
+		*src = spirv_cast_expr (dst_type, *src);
 	}
-	auto cast = spirv_cast_expr (dst_type, src);
-	return assign_expr (dst, cast);
+	return nullptr;
 }
 
 static SpvCapability spirv_base_capabilities[] = {

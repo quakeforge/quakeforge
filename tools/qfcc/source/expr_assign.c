@@ -179,36 +179,32 @@ check_valid_lvalue (const expr_t *expr)
 }
 
 static const expr_t *
-check_types_compatible (const expr_t *dst, const expr_t *src)
+check_types_compatible (const expr_t **dst, const expr_t **src)
 {
-	auto dst_type = get_type (dst);
-	auto src_type = get_type (src);
+	auto dst_type = get_type (*dst);
+	auto src_type = get_type (*src);
 
 	if (dst_type == src_type) {
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
-			return algebra_assign_expr (dst, src);
+			*src = algebra_assign_expr (*dst, *src);
 		}
 		return nullptr;
 	}
 
 	if (type_assignable (dst_type, src_type)) {
 		if (is_algebra (dst_type) || is_algebra (src_type)) {
-			return algebra_assign_expr (dst, src);
+			*src = algebra_assign_expr (*dst, *src);
+			return nullptr;
 		}
-		debug (dst, "casting %s to %s", src_type->name, dst_type->name);
-		if (!src->implicit && !type_promotes (dst_type, src_type)) {
+		debug (*dst, "casting %s to %s", src_type->name, dst_type->name);
+		if (!(*src)->implicit && !type_promotes (dst_type, src_type)) {
 			if (is_double (src_type)) {
-				warning (dst, "assignment of %s to %s (use a cast)\n",
+				warning (*dst, "assignment of %s to %s (use a cast)\n",
 						 src_type->name, dst_type->name);
 			}
 		}
 		// the types are different but cast-compatible
-		auto new = cast_expr (dst_type, src);
-		// the cast was a no-op, so the types are compatible at the
-		// low level (very true for default type <-> enum)
-		if (new != src) {
-			return assign_expr (dst, new);
-		}
+		*src = cast_expr (dst_type, *src);
 		return nullptr;
 	}
 	if (current_target.check_types_compatible) {
@@ -219,23 +215,23 @@ check_types_compatible (const expr_t *dst, const expr_t *src)
 	}
 	// traditional qcc is a little sloppy
 	if (!options.traditional) {
-		return type_mismatch (dst, src, '=');
+		return type_mismatch (*dst, *src, '=');
 	}
 	if (is_func (dst_type) && is_func (src_type)) {
-		warning (dst, "assignment between disparate function types");
+		warning (*dst, "assignment between disparate function types");
 		return nullptr;
 	}
 	if (is_float (dst_type) && is_vector (src_type)) {
-		warning (dst, "assignment of vector to float");
-		src = field_expr (src, new_name_expr ("x"));
-		return assign_expr (dst, src);
+		warning (*dst, "assignment of vector to float");
+		*src = field_expr (*src, new_name_expr ("x"));
+		return nullptr;
 	}
 	if (is_vector (dst_type) && is_float (src_type)) {
-		warning (dst, "assignment of float to vector");
-		dst = field_expr (dst, new_name_expr ("x"));
-		return assign_expr (dst, src);
+		warning (*dst, "assignment of float to vector");
+		*dst = field_expr (*dst, new_name_expr ("x"));
+		return nullptr;
 	}
-	return type_mismatch (dst, src, '=');
+	return type_mismatch (*dst, *src, '=');
 }
 
 static int __attribute__((pure))
@@ -314,10 +310,14 @@ assign_expr (const expr_t *dst, const expr_t *src)
 	}
 
 	if (!is_nil (src)) {
-		if ((expr = check_types_compatible (dst, src))) {
-			// expr might be a valid expression, but if so,
-			// check_types_compatible will take care of everything
+		if ((expr = check_types_compatible (&dst, &src))) {
 			return expr;
+		}
+		if (src->type == ex_compound) {
+			src = current_target.initialized_temp (dst_type, src);
+			if (is_error (src)) {
+				return src;
+			}
 		}
 		if (src->type == ex_vector) {
 			return current_target.assign_vector (dst, src);

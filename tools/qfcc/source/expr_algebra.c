@@ -196,40 +196,6 @@ is_zero (const expr_t *e)
 }
 
 static const expr_t *
-alias_expr (const type_t *type, const expr_t *e, int offset)
-{
-	if (type == get_type (e)) {
-		if (offset) {
-			internal_error (e, "offset alias to same type");
-		}
-		return e;
-	}
-	e = edag_add_expr (e);
-	bool neg = false;
-	if (is_neg (e)) {
-		neg = true;
-		e = neg_expr (e);
-	}
-	if (e->type == ex_uexpr && e->expr.op == '.') {
-		auto offs = new_int_expr (offset, false);
-		auto ptr = e->expr.e1;
-		ptr = offset_pointer_expr (ptr, edag_add_expr (offs));
-		ptr = cast_expr (pointer_type (type), ptr);
-		e = unary_expr ('.', ptr);
-	} else {
-		e = new_offset_alias_expr (type, e, offset);
-	}
-	if (is_zero (e)) {
-		return nullptr;
-	}
-	if (neg) {
-		e = edag_add_expr (e);
-		e = neg_expr (e);
-	}
-	return edag_add_expr (e);
-}
-
-static const expr_t *
 offset_cast (const type_t *type, const expr_t *expr, int offset)
 {
 	if (type->meta != ty_basic) {
@@ -3339,16 +3305,6 @@ algebra_cast_expr (const type_t *dstType, const expr_t *e)
 	return mvec_gather (a, algebra);
 }
 
-static void
-zero_components (expr_t *block, const expr_t *dst, int memset_base, int memset_size)
-{
-	auto atype = array_type (&type_int, memset_size);
-	auto base = alias_expr (atype, dst, memset_base);
-	auto zero = new_int_expr (0, false);
-	auto size = new_int_expr (memset_size, false);
-	append_expr (block, new_memset_expr (base, zero, size));
-}
-
 static int __attribute__((const))
 find_offset (const type_t *t1, const type_t *t2)
 {
@@ -3403,14 +3359,6 @@ assign_extend (const expr_t *src)
 	return edag_add_expr (extend);
 }
 
-static const expr_t *
-algebra_field_assign (const expr_t *dst, symbol_t *sym, const expr_t *val)
-{
-	auto dst_alias = new_field_expr (dst, new_symbol_expr (sym));
-	dst_alias->field.type = sym->type;
-	return new_assign_expr (dst_alias, val);
-}
-
 const expr_t *
 algebra_assign_expr (const expr_t *dst, const expr_t *src)
 {
@@ -3419,52 +3367,43 @@ algebra_assign_expr (const expr_t *dst, const expr_t *src)
 	auto dstType = get_type (dst);
 
 	if (dstType->meta != ty_algebra && dstType != srcType) {
-		return 0;
+		return src;
 	}
 	auto algebra = algebra_get (dstType);
+
+	pr_uint_t dstMask = get_group_mask (dstType, algebra);
+	pr_uint_t srcMask = get_group_mask (srcType, algebra);
+	//if ((~dstMask) & srcMask) {
+	//	// dstType is smaller than srcType
+	//	return type_mismatch (dst, src, '=');
+	//}
+
+	if (!(dstMask & ~srcMask) && !(srcMask & (srcMask - 1))) {
+		return src;
+	}
+
 	auto layout = &algebra->layout;
 	const expr_t *c[layout->count] = {};
 	src = mvec_expr (src, algebra);
 	mvec_scatter (c, src, algebra);
 
-	pr_uint_t dstMask = get_group_mask (dstType, algebra);
-	pr_uint_t srcMask = get_group_mask (srcType, algebra);
-	if ((~dstMask) & srcMask) {
-		// dstType is smaller than srcType
-		return type_mismatch (dst, src, '=');
-	}
-
-	auto block = new_block_expr (0);
-	ex_list_t assigns = {};
-	block->block.no_flush = true;
-	int  memset_base = 0;
+	auto comp = new_compound_init ();
+	comp ->compound.type_expr = new_type_expr (dstType);
 	for (auto sym = get_mvec_sym (dstType); sym; sym = sym->next) {
 		pr_uint_t mask = get_group_mask (sym->type, algebra);
 		int group = BITOP_LOG2 (mask);
 		auto val = c[group];
-		if (!val) {
-			val = new_zero_expr (float_type (sym->type));
+		if (val) {
+			if (summed_extend (val)) {
+				val = assign_extend (val);
+			}
+			val = new_alias_expr (sym->type, val);
+			auto des = new_designator (sym, nullptr);
+			auto ele = new_element (val, des);
+			append_element (comp, ele);
 		}
-		if (summed_extend (val)) {
-			val = assign_extend (val);
-		}
-		int size = sym->offset - memset_base;
-		if (size && current_target.zero_memory) {
-			zero_components (block, dst, memset_base, size);
-		}
-		auto tmp = new_temp_def_expr (float_type (sym->type));
-		auto tmp_assign = assign_expr (tmp, val);
-		append_expr (block, edag_add_expr (tmp_assign));
-		auto dst_assign = algebra_field_assign (dst, sym, tmp);
-		list_append (&assigns, edag_add_expr (dst_assign));
-		memset_base = sym->offset + type_size (sym->type);
 	}
-	list_append_list (&block->list, &assigns);
-	if (type_size (dstType) - memset_base && current_target.zero_memory) {
-		zero_components (block, dst, memset_base,
-						 type_size (dstType) - memset_base);
-	}
-	return block;
+	return comp;
 }
 
 const expr_t *
