@@ -2848,104 +2848,70 @@ get_object_symtab (const type_t *type)
 	return nullptr;
 }
 
-static const expr_t *
-spirv_build_element_chain (element_chain_t *element_chain, const type_t *type,
-						   const expr_t *eles)
+static void
+spirv_convert_element_chain (element_chain_t *element_chain)
 {
-	type = unalias_type (type);
+	auto type = element_chain->type;
 
-	initstate_t state = {};
+	int num_elements = type_count (type);
+	element_t *elements[num_elements + 1] = {};
+	for (auto ele = element_chain->head; ele; ele = ele->next) {
+		if (ele->id < 0 || ele->id > num_elements) {
+			internal_error (0, "invalid element chain offset");
+		}
+		elements[ele->id] = ele;
+	}
 
+	const type_t *ele_type = nullptr;
 	auto symtab = get_object_symtab (type);
+	auto sym = symtab ? symtab->symbols : nullptr;
 
-	if (symtab) {
-		state.field = symtab->symbols;
-		// find first initializable field
-		while (state.field && skip_field (state.field)) {
-			state.field = state.field->next;
-		}
-		if (state.field) {
-			state.type = state.field->type;
-			state.offset = state.field->id;
-		}
-	} else if (is_matrix (type)) {
-		state.type = column_type (type);
-	} else if (is_nonscalar (type)) {
-		state.type = base_type (type);
-	} else if (is_array (type)) {
-		state.type = dereference_type (type);
-	} else {
-		return error (eles, "invalid initialization");
+	if (is_array (type)) {
+		ele_type = dereference_type (type);
 	}
-	if (!state.type) {
-		return error (eles, "initialization of incomplete type");
-	}
-
-	for (auto ele = eles->compound.head; ele; ele = ele->next) {
-		//FIXME designated initializers
-		if (!state.type) {
-			return new_error_expr ();
+	for (int i = 0; i < num_elements; i++) {
+		if (sym) {
+			ele_type = sym->type;
+			sym = sym->next;
 		}
-		// FIXME vectors are special (ie, check for overlaps)
-		if (state.offset >= type_count (type)) {
-			if (options.warnings.initializer) {
-				warning (eles, "excessive elements in initializer");
-			}
-			break;
-		}
-		if (ele->expr && ele->expr->type == ex_compound) {
-			const expr_t *err;
-			if ((err = spirv_build_element_chain (element_chain, state.type,
-												  ele->expr))) {
-				return err;
-			}
-		} else {
-			auto element = new_element (nullptr, nullptr);
-			auto expr = ele->expr;
-			if (expr) {
-				expr = cast_expr (state.type, expr);
-			}
-			if (is_error (expr)) {
-				return expr;
-			}
-			*element = (element_t) {
-				.type = state.type,
-				.offset = state.offset,
-				.expr = expr,
-			};
-			append_init_element (element_chain, element);
-		}
-		state.offset += type_count (state.type);
-		if (state.field) {
-			state.field = state.field->next;
-			// find next initializable field
-			while (state.field && skip_field (state.field)) {
-				state.field = state.field->next;
-			}
-			if (state.field) {
-				state.type = state.field->type;
-				state.offset = state.field->id;
-			}
+		if (!elements[i]) {
+			elements[i] = new_element (new_zero_expr (ele_type), nullptr);
 		}
 	}
-
-	return nullptr;
+	element_chain->head = nullptr;
+	element_chain->tail = &element_chain->head;
+	for (int i = 0; i < num_elements; i++) {
+		auto ele = elements[i];
+		ele->next = nullptr;
+		append_init_element (element_chain, ele);
+	}
 }
 
 static const expr_t *
 spirv_initialized_temp (const type_t *type, const expr_t *src)
 {
+	if (src->type != ex_compound && is_algebra (type)) {
+		if (is_reference (get_type (src))) {
+			src = pointer_deref (src);
+		}
+		src = algebra_optimize (src);
+		src = algebra_compound_expr (type, src);
+		if (src->type != ex_compound) {
+			return src;
+		}
+	}
+
 	if (src->compound.type) {
 		type = src->compound.type;
 	}
 
 	scoped_src_loc (src);
 	auto new = new_compound_init ();
-	const expr_t *err;
-	if ((err = spirv_build_element_chain (&new->compound, type, src))) {
-		return err;
+	if (!build_element_chain (&new->compound, type, src, 0)) {
+		return new_error_expr ();
 	}
 	new->compound.type = type;
+	spirv_convert_element_chain (&new->compound);
 	return new;
 }
 

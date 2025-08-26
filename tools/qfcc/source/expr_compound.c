@@ -146,6 +146,7 @@ static initstate_t
 get_designated_offset (const type_t *type, const designator_t *des)
 {
 	int         offset = -1;
+	int         id = -1;
 	const type_t *ele_type = nullptr;
 	symbol_t   *field = 0;
 
@@ -153,12 +154,14 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		field = designator_field (des, type);
 		if (field) {
 			offset = field->offset;
+			id = field->id;
 			ele_type = field->type;
 		}
 	} else if (is_array (type)) {
 		int         array_count = type->array.count;
 		ele_type = dereference_type (type);
 		offset = designator_index (des, type_size (ele_type), array_count);
+		id++;
 	} else if (is_nonscalar (type)) {
 		ele_type = ev_types[type->type];
 		if (type->symtab && des->field) {
@@ -172,6 +175,7 @@ get_designated_offset (const type_t *type, const designator_t *des)
 			int         vec_width = type_width (type);
 			offset = designator_index (des, type_size (ele_type), vec_width);
 		}
+		id++;
 	} else {
 		error (0, "invalid initializer");
 	}
@@ -180,7 +184,12 @@ get_designated_offset (const type_t *type, const designator_t *des)
 		ele_type = state.type;
 		offset += state.offset;
 	}
-	return (initstate_t) { .type = ele_type, .field = field, .offset = offset};
+	return (initstate_t) {
+		.type = ele_type,
+		.field = field,
+		.offset = offset,
+		.id = id,
+	};
 }
 
 bool
@@ -195,7 +204,7 @@ skip_field (symbol_t *field)
 	return false;
 }
 
-void
+bool
 build_element_chain (element_chain_t *element_chain, const type_t *type,
 					 const expr_t *eles, int base_offset)
 {
@@ -209,13 +218,13 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			if (!e->designator) {
 				error (eles, "block initializer of multi-vector type requires "
 					   "designators for all initializer elements");
-				return;
+				return false;
 			}
 		}
 		auto t = algebra_struct_type (type);
 		if (!t) {
 			error (eles, "block initializer on simple multi-vector type");
-			return;
+			return false;
 		}
 		type = t;
 	} else if (is_struct (type) || is_union (type)
@@ -237,7 +246,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 		state.type = dereference_type (type);
 	} else {
 		error (eles, "invalid initialization");
-		return;
+		return false;
 	}
 	while (ele) {
 		if (ele->designator) {
@@ -261,11 +270,13 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			element_t  *element = new_element (0, 0);
 			element->type = state.type;
 			element->offset = base_offset + state.offset;
+			element->id = state.id;
 			element->expr = ele->expr;	// null -> nil
 			append_init_element (element_chain, element);
 		}
 
 		state.offset += type_size (state.type);
+		state.id += 1;
 		if (state.field) {
 			state.field = state.field->next;
 			while (state.field && skip_field (state.field)) {
@@ -279,6 +290,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 
 		ele = ele->next;
 	}
+	return true;
 }
 
 void

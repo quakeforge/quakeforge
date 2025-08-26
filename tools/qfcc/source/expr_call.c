@@ -604,7 +604,10 @@ return_expr (function_t *f, const expr_t *e)
 		}
 	}
 
-	if (e->type == ex_compound || e->type == ex_multivec) {
+	if (e->type == ex_compound || e->type == ex_multivec
+		|| ((is_algebra (t = get_type (e))
+			 || (is_reference (t) && is_algebra (t = dereference_type (t))))
+			&& !type_same (ret_type, t))) {
 		scoped_src_loc (e);
 		e = current_target.initialized_temp (ret_type, e);
 	} else {
@@ -654,7 +657,7 @@ return_expr (function_t *f, const expr_t *e)
 			warning (e, "type mismatch for return value of %s",
 					 f->sym->name);
 	} else {
-		if (ret_type != t) {
+		if (!type_same (ret_type, t)) {
 			e = cast_expr (ret_type, e);
 			t = f->sym->type->func.ret_type;
 		}

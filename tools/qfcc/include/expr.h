@@ -95,11 +95,13 @@ typedef struct {
 	const type_t *type;
 	symbol_t   *field;
 	int         offset;
+	int         id;
 } initstate_t;
 
 typedef struct element_s {
 	struct element_s *next;		///< next in chain
 	int         offset;
+	int         id;
 	const type_t *type;
 	const expr_t *expr;			///< initializer expression
 	designator_t *designator;	///< for labeled initializers
@@ -654,7 +656,7 @@ const expr_t *initialized_temp_expr (const type_t *type,
 									 const expr_t *compound);
 void assign_elements (expr_t *local_expr, const expr_t *ptr,
 					  element_chain_t *element_chain);
-void build_element_chain (element_chain_t *element_chain, const type_t *type,
+bool build_element_chain (element_chain_t *element_chain, const type_t *type,
 						  const expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
 int num_elements (const expr_t *e) __attribute__((pure));
