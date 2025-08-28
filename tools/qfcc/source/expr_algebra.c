@@ -114,6 +114,10 @@ neg_expr (const expr_t *e)
 	if (is_neg (e)) {
 		return e->expr.e1;
 	}
+	if (is_scale (e) && is_constant (e->expr.e2)
+		&& expr_floating (e->expr.e2) == -1) {
+		return e->expr.e1;
+	}
 	auto type = get_type (e);
 	if (e->type == ex_alias
 		&& (!e->alias.offset || !expr_integral (e->alias.offset))
@@ -1005,7 +1009,7 @@ scale_expr (const expr_t *a, const expr_t *b)
 		if (s == 1) {
 			return a;
 		}
-		if (s == -1 && is_anticommute (a)) {
+		if (s == -1) {
 			return neg_expr (a);
 		}
 	}
