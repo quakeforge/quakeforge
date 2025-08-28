@@ -262,6 +262,7 @@ new_expr (void)
 	ALLOC (16384, expr_t, exprs, e);
 
 	e->loc = pr.loc;
+	e->id = pr.expr_id++;
 	return e;
 }
 

@@ -60,6 +60,8 @@ typedef struct pr_info_s {
 	dfunction_t		*functions;
 	int				num_functions;
 
+	unsigned    expr_id;
+
 	struct strpool_s *strings;			///< progs string data
 	struct codespace_s *code;			///< progs code data
 	struct defspace_s *near_data;		///< data directly addressable by

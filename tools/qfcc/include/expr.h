@@ -444,7 +444,6 @@ typedef struct expr_s {
 	rua_loc_t   loc;			///< source location of expression
 	struct operand_s *op;
 	expr_type   type;			///< the type of the result of this expression
-	int         printid;		///< avoid duplicate output when printing
 	unsigned    id;
 	bool        paren:1;		///< the expression is enclosed in ()
 	bool        implicit:1;		///< don't warn for implicit casts

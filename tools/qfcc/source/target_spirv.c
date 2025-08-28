@@ -68,6 +68,7 @@ typedef struct spirvctx_s {
 	const spirv_grammar_t *core;
 
 	struct DARRAY_TYPE (unsigned) type_ids;
+	struct DARRAY_TYPE (unsigned) expr_ids;		///< Flushed per function
 	struct DARRAY_TYPE (unsigned) label_ids;
 	struct DARRAY_TYPE (function_t *) func_queue;
 	strpool_t  *strpool;
@@ -102,6 +103,28 @@ spirv_add_type_id (const type_t *type, unsigned id, spirvctx_t *ctx)
 		}
 	}
 	ctx->type_ids.a[type->id] = id;
+}
+
+static unsigned
+spirv_expr_id (const expr_t *expr, spirvctx_t *ctx)
+{
+	if (expr->id < ctx->expr_ids.size && ctx->expr_ids.a[expr->id]) {
+		return ctx->expr_ids.a[expr->id];
+	}
+	return 0;
+}
+
+static void
+spirv_add_expr_id (const expr_t *expr, unsigned id, spirvctx_t *ctx)
+{
+	if (expr->id >= ctx->expr_ids.size) {
+		size_t base = ctx->expr_ids.size;
+		DARRAY_RESIZE (&ctx->expr_ids, expr->id + 1);
+		while (base < expr->id + 1) {
+			ctx->expr_ids.a[base++] = 0;
+		}
+	}
+	ctx->expr_ids.a[expr->id] = id;
 }
 
 static unsigned
@@ -1871,8 +1894,7 @@ spirv_assign (const expr_t *e, spirvctx_t *ctx)
 		// spir-v uses SSA, so temps cannot be assigned to directly, so instead
 		// use the temp expression as a reference for the result id of the
 		// rhs of the assignment.
-		//FIXME const cast (store elsewhere)
-		((expr_t *) e->assign.dst)->id = src;
+		spirv_add_expr_id (e, src, ctx);
 		return src;
 	}
 	if (e->assign.dst->type == ex_field || e->assign.dst->type == ex_array) {
@@ -2105,11 +2127,12 @@ spirv_incop (const expr_t *e, spirvctx_t *ctx)
 		one = cast_expr (type, one);
 	}
 	auto dst = new_expr ();
+	unsigned dst_id = dst->id;	//preserve the id over the copy
 	*dst = *e->incop.expr;
-	dst->id = 0;
+	dst->id = dst_id;
 	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
 	unsigned inc_id = spirv_emit_expr (incop, ctx);
-	unsigned src_id = incop->expr.e1->id;
+	unsigned src_id = spirv_expr_id (incop->expr.e1, ctx);
 	auto assign = assign_expr (dst, incop);
 	spirv_emit_expr (assign, ctx);
 	return e->incop.postop ? src_id : inc_id;
@@ -2344,7 +2367,7 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 						expr_names[e->type]);
 	}
 
-	if (!e->id) {
+	if (!spirv_expr_id (e, ctx)) {
 		if (options.code.debug) {
 			auto cs = ctx->code_space;
 			if (cs->size >= 4 && cs->data[cs->size - 4].value == 0x40008) {
@@ -2354,10 +2377,9 @@ spirv_emit_expr (const expr_t *e, spirvctx_t *ctx)
 			spirv_DebugLine (e, ctx);
 		}
 		unsigned id = funcs[e->type] (e, ctx);
-		//FIXME const cast (store elsewhere)
-		((expr_t *) e)->id = id;
+		spirv_add_expr_id (e, id, ctx);
 	}
-	return e->id;
+	return spirv_expr_id (e, ctx);
 }
 
 bool
@@ -2379,6 +2401,7 @@ spirv_write (struct pr_info_s *pr, const char *filename)
 		.decl_space = defspace_new (ds_backed),
 		.core = spirv_grammar ("core"),
 		.type_ids = DARRAY_STATIC_INIT (64),
+		.expr_ids = DARRAY_STATIC_INIT (64),
 		.label_ids = DARRAY_STATIC_INIT (64),
 		.func_queue = DARRAY_STATIC_INIT (16),
 		.strpool = strpool_new (),
