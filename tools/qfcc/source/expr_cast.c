@@ -176,12 +176,12 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 		e = new_int_expr (expr_ushort (e), false);
 		srcType = &type_int;
 	}
-	expr_t *c = 0;
+	const expr_t *c = nullptr;
 	if (is_constant (e) && is_math (dstType) && is_math (srcType)) {
 		return cast_math (dstType, srcType, e);
 	} else if (is_integral (dstType) && is_integral (srcType)
 			   && type_size (dstType) == type_size (srcType)) {
-		c = (expr_t *) new_alias_expr (dstType, e);
+		c = new_alias_expr (dstType, e);
 	} else if ((is_scalar (dstType) && is_scalar (srcType)) || value) {
 		if (current_target.cast_expr) {
 			auto cast = current_target.cast_expr (dstType, e);
@@ -189,14 +189,13 @@ do_cast (const type_t *dstType, const expr_t *e, bool value)
 				return edag_add_expr (cast);
 			}
 		}
-		c = new_unary_expr ('C', e);
-		c->expr.type = dstType;
+		c = typed_unary_expr (dstType, 'C', e);
 	} else if (e->type == ex_uexpr && e->expr.op == '.') {
-		c = new_expr ();
-		*c = *e;
-		c->expr.type = dstType;
+		auto n = new_expr_copy (e);
+		n->expr.type = dstType;
+		c = n;
 	} else {
-		c = (expr_t *) new_alias_expr (dstType, e);
+		c = new_alias_expr (dstType, e);
 	}
 	return edag_add_expr (c);
 }

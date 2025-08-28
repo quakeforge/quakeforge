@@ -459,8 +459,7 @@ state_expr_spec (specifier_t spec, const expr_t *state_expr, rua_ctx_t *ctx)
 	}
 	if (last && last->expr->type == ex_type
 		&& last->expr->typ.op == QC_AT_FUNCTION) {
-		auto func = new_expr ();
-		*func = *last->expr;
+		auto func = new_expr_copy (last->expr);
 		// FIXME should be actual param list?
 		func->typ.params = build_state_expr (state_expr, ctx);
 		last->expr = func;

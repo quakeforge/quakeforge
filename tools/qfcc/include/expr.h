@@ -554,8 +554,8 @@ void list_prepend (ex_list_t *dst, const expr_t *expr);
 expr_t *new_list_expr (const expr_t *first);
 expr_t *expr_append_expr (expr_t *list, const expr_t *expr);
 expr_t *expr_prepend_expr (expr_t *list, const expr_t *expr);
-expr_t *expr_append_list (expr_t *list, ex_list_t *append);
-expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
+expr_t *expr_append_list (expr_t *list, const ex_list_t *append);
+expr_t *expr_prepend_list (expr_t *list, const ex_list_t *prepend);
 
 /**	Create a new expression node.
 
@@ -565,6 +565,7 @@ expr_t *expr_prepend_list (expr_t *list, ex_list_t *prepend);
 	\return			The new expression node.
 */
 expr_t *new_expr (void);
+expr_t *new_expr_copy (const expr_t *expr);
 
 expr_t *new_error_expr (void);
 
@@ -699,7 +700,8 @@ const expr_t *paren_expr (const expr_t *e);
 	\return			The new unary expression node (::ex_expr_t) if \a e1
 					is not an error expression, otherwise \a e1.
 */
-expr_t *new_horizontal_expr (int op, const expr_t *vec, const type_t *type);
+const expr_t *new_horizontal_expr (int op, const expr_t *vec,
+								   const type_t *type);
 
 const expr_t *new_swizzle_expr (const expr_t *src, const char *swizzle);
 
@@ -1199,6 +1201,7 @@ const expr_t *traverse_scale (const expr_t *expr) __attribute__((pure));
 
 const expr_t *typed_binary_expr (const type_t *type, int op,
 								 const expr_t *e1, const expr_t *e2);
+const expr_t *typed_unary_expr (const type_t *type, int op, const expr_t *e);
 
 int count_terms (const expr_t *expr) __attribute__((pure));
 void scatter_terms (const expr_t *sum,

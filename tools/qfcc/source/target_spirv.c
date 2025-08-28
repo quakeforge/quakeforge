@@ -2126,10 +2126,7 @@ spirv_incop (const expr_t *e, spirvctx_t *ctx)
 	if (is_scalar (type)) {
 		one = cast_expr (type, one);
 	}
-	auto dst = new_expr ();
-	unsigned dst_id = dst->id;	//preserve the id over the copy
-	*dst = *e->incop.expr;
-	dst->id = dst_id;
+	auto dst = new_expr_copy (e->incop.expr);
 	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
 	unsigned inc_id = spirv_emit_expr (incop, ctx);
 	unsigned src_id = spirv_expr_id (incop->expr.e1, ctx);
@@ -2999,8 +2996,8 @@ spirv_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	int hop = op == QC_EQ ? '&' : '|';
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = bool_type (type);
-	e = new_horizontal_expr (hop, e, &type_int);
-	return e;
+	auto h = new_horizontal_expr (hop, e, &type_int);
+	return h;
 }
 
 static const expr_t *

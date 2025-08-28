@@ -1070,8 +1070,7 @@ set_func_symbol (const expr_t *fexpr, metafunc_t *f)
 							f->full_name);
 		}
 	}
-	auto nf = new_expr ();
-	*nf = *fexpr;
+	auto nf = new_expr_copy (fexpr);
 	nf->symbol = sym;
 	return nf;
 }

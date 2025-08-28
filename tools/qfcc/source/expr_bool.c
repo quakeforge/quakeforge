@@ -132,8 +132,8 @@ merge (ex_boollist_t *l1, ex_boollist_t *l2)
 		return l2;
 	m = malloc (offsetof (ex_boollist_t, e[l1->size + l2->size]));
 	m->size = l1->size + l2->size;
-	memcpy (m->e, l1->e, l1->size * sizeof (expr_t *));
-	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (expr_t *));
+	memcpy (m->e, l1->e, l1->size * sizeof (const expr_t *));
+	memcpy (m->e + l1->size, l2->e, l2->size * sizeof (const expr_t *));
 	return m;
 }
 
@@ -222,13 +222,13 @@ convert_bool (const expr_t *e, bool block)
 		&& !is_string(get_type (e->expr.e1))) {
 		e = convert_bool (e->expr.e1, false);
 		if (e->type == ex_error)
-			return (expr_t *) e;
+			return e;
 		e = unary_expr ('!', e);
 	}
 	if (e->type != ex_bool) {
 		e = test_expr (e);
 		if (e->type == ex_error)
-			return (expr_t *) e;
+			return e;
 		if (is_constant (e)) {
 			int         val;
 

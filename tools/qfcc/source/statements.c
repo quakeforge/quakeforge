@@ -1739,8 +1739,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 	}
 	if (!e->retrn.ret_val) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
-			auto n = new_expr ();
-			*n = *e;
+			auto n = new_expr_copy (e);
 			n->retrn.ret_val = new_float_expr (0, false);
 			e = n;
 		}
@@ -2138,15 +2137,11 @@ expr_cast (sblock_t *sblock, const expr_t *e, operand_t **op)
 static sblock_t *
 expr_negate (sblock_t *sblock, const expr_t *e, operand_t **op)
 {
-	expr_t     *neg;
-	expr_t     *zero;
-
-	zero = new_nil_expr ();
-	zero->loc = e->loc;
-	zero = (expr_t *) convert_nil (zero, e->expr.type);
-	neg = new_binary_expr ('-', zero, e->expr.e1);
+	scoped_src_loc (e);
+	const expr_t *zero = new_nil_expr ();
+	zero = convert_nil (zero, e->expr.type);
+	auto neg = new_binary_expr ('-', zero, e->expr.e1);
 	neg->expr.type = e->expr.type;
-	neg->loc = e->loc;
 	return statement_subexpr (sblock, neg, op);
 }
 
@@ -2178,8 +2173,8 @@ expr_not (sblock_t *sblock, const expr_t *e, operand_t **op)
 			type = vector_type (&type_int, type_width (type));
 			un = cast_expr (type, un);
 		}
-		auto zero = new_nil_expr ();
-		zero = (expr_t *) convert_nil (zero, type);
+		const expr_t *zero = new_nil_expr ();
+		zero = convert_nil (zero, type);
 
 		auto not = new_binary_expr (QC_EQ, un, zero);
 		not->expr.type = e->expr.type;
@@ -2614,11 +2609,11 @@ statement_state (sblock_t *sblock, const expr_t *e)
 }
 
 static void
-build_bool_block (expr_t *block, expr_t *e)
+build_bool_block (expr_t *block, const expr_t *e)
 {
 	switch (e->type) {
 		case ex_bool:
-			build_bool_block (block, (expr_t *) e->boolean.e);
+			build_bool_block (block, e->boolean.e);
 			return;
 		case ex_label:
 			append_expr (block, e);
@@ -2631,8 +2626,8 @@ build_bool_block (expr_t *block, expr_t *e)
 			return;
 		case ex_expr:
 			if (e->expr.op == QC_OR || e->expr.op == QC_AND) {
-				build_bool_block (block, (expr_t *) e->expr.e1);
-				build_bool_block (block, (expr_t *) e->expr.e2);
+				build_bool_block (block, e->expr.e1);
+				build_bool_block (block, e->expr.e2);
 			} else {
 				append_expr (block, e);
 			}
@@ -2642,7 +2637,7 @@ build_bool_block (expr_t *block, expr_t *e)
 		case ex_block:
 			if (!e->block.result) {
 				for (auto t = e->block.list.head; t; t = t->next) {
-					build_bool_block (block, (expr_t *) t->expr);
+					build_bool_block (block, t->expr);
 				}
 				return;
 			}
@@ -2679,7 +2674,7 @@ statement_bool (sblock_t *sblock, const expr_t *e)
 	const expr_t *l;
 	expr_t      *block = new_block_expr (0);
 
-	build_bool_block (block, (expr_t *) e);
+	build_bool_block (block, e);
 
 	int         num_expr = list_count (&block->block.list);
 	expr_t     *exprs[num_expr + 1];

@@ -369,8 +369,8 @@ ruamoko_vector_compare (int op, const expr_t *e1, const expr_t *e2)
 	int hop = op == QC_EQ ? '&' : '|';
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = bool_type (type);
-	e = new_horizontal_expr (hop, e, &type_int);
-	return e;
+	auto h = new_horizontal_expr (hop, e, &type_int);
+	return h;
 }
 
 static const expr_t *

@@ -237,8 +237,7 @@ evaluate_int (const expr_t *expr, rua_ctx_t *ctx)
 {
 	expr = expr_process (expr, ctx);
 	if (expr->type == ex_expr || expr->type == ex_uexpr) {
-		auto e = new_expr ();
-		*e = *expr;
+		auto e = new_expr_copy (expr);
 		e->expr.e1 = evaluate_int (expr->expr.e1, ctx);
 		if (expr->type == ex_expr) {
 			e->expr.e2 = evaluate_int (expr->expr.e2, ctx);

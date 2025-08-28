@@ -1989,7 +1989,7 @@ class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 static const expr_t *
 class_dereference_ivar (symbol_t *sym, void *_self)
 {
-	expr_t     *self = (expr_t *) _self;
+	auto self = (const expr_t *) _self;
 
 	return field_expr (self, new_symbol_expr (new_symbol (sym->name)));
 }

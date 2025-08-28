@@ -514,8 +514,7 @@ unary_expr (int op, const expr_t *e)
 	}
 
 	if (op == '-' && e->type == ex_expr && e->expr.anticommute) {
-		auto neg = new_expr ();
-		*neg = *e;
+		auto neg = new_expr_copy (e);
 		neg->expr.e1 = e->expr.e2;
 		neg->expr.e2 = e->expr.e1;
 		return edag_add_expr (neg);

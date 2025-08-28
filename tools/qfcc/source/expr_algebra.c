@@ -105,6 +105,14 @@ typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e
 }
 
 const expr_t *
+typed_unary_expr (const type_t *type, int op, const expr_t *e)
+{
+	auto u = new_unary_expr (op, e);
+	u->expr.type = type;
+	return u;
+}
+
+const expr_t *
 neg_expr (const expr_t *e)
 {
 	if (!e) {

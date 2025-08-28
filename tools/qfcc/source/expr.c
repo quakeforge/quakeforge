@@ -266,6 +266,16 @@ new_expr (void)
 	return e;
 }
 
+expr_t *
+new_expr_copy (const expr_t *expr)
+{
+	auto e = new_expr ();
+	unsigned id = e->id;
+	*e = *expr;
+	e->id = id;
+	return e;
+}
+
 void
 restore_src_loc (expr_t **e)
 {
@@ -362,7 +372,7 @@ expr_prepend_expr (expr_t *list, const expr_t *expr)
 }
 
 expr_t *
-expr_append_list (expr_t *list, ex_list_t *append)
+expr_append_list (expr_t *list, const ex_list_t *append)
 {
 	if (list->type != ex_list) {
 		internal_error (list, "not a list expression");
@@ -373,7 +383,7 @@ expr_append_list (expr_t *list, ex_list_t *append)
 }
 
 expr_t *
-expr_prepend_list (expr_t *list, ex_list_t *prepend)
+expr_prepend_list (expr_t *list, const ex_list_t *prepend)
 {
 	if (list->type != ex_list) {
 		internal_error (list, "not a list expression");
@@ -607,17 +617,16 @@ new_unary_expr (int op, const expr_t *e1)
 const expr_t *
 paren_expr (const expr_t *e)
 {
-	auto paren = new_expr ();
-	*paren = *e;
+	auto paren = new_expr_copy (e);
 	paren->paren = true;
 	return paren;
 }
 
-expr_t *
+const expr_t *
 new_horizontal_expr (int op, const expr_t *vec, const type_t *type)
 {
 	if (vec->type == ex_error) {
-		return (expr_t *) vec;
+		return vec;
 	}
 	auto vec_type = get_type (vec);
 	if (!(is_math (vec_type) || is_boolean (vec_type))
@@ -640,7 +649,7 @@ const expr_t *
 new_swizzle_expr (const expr_t *src, const char *swizzle)
 {
 	if (is_error (src)) {
-		return (expr_t *) src;
+		return src;
 	}
 	auto src_type = get_type (src);
 	if (is_reference (src_type)) {
@@ -1497,7 +1506,7 @@ new_alias_expr (const type_t *type, const expr_t *expr)
 	// a noop due to the offset being 0 and thus casting back to the original
 	// type
 	if (type == get_type (expr)) {
-		return (expr_t *) expr;
+		return expr;
 	}
 
 	expr_t     *alias = new_expr ();
@@ -1899,9 +1908,7 @@ convert_from_bool (const expr_t *e, const type_t *type)
 	} else {
 		return error (e, "can't convert from boolean value");
 	}
-	auto cond = new_expr ();
-	*cond = *e;
-
+	auto cond = new_expr_copy (e);
 	return conditional_expr (cond, one, zero);
 }
 
@@ -2206,7 +2213,7 @@ conditional_expr (const expr_t *cond, const expr_t *e1, const expr_t *e2)
 	if (e2->type == ex_error)
 		return e2;
 
-	expr_t *c = (expr_t *) convert_bool (cond, true);
+	auto c = convert_bool (cond, true);
 	if (c->type == ex_error)
 		return c;
 
@@ -3021,7 +3028,7 @@ can_inline (const expr_t *expr, symbol_t *fsym)
 				notice (expr, "%s", expr_names[expr->type]);
 				return false;
 			}
-			auto args = (expr_t *) expr->branch.args;
+			auto args = expr->branch.args;
 			if (!args) {
 				return true;
 			}

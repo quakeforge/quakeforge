@@ -188,7 +188,6 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 	keywordarg_t *m;
 	int         super = 0, class_msg = 0;
 	const type_t *rec_type = nullptr;
-	const type_t *return_type;
 	const type_t *method_type = dereference_type (&type_IMP);
 	method_t   *method;
 	const expr_t *send_msg;
@@ -220,18 +219,13 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 		rec_type = get_type (receiver);
 	}
 	if (!rec_type) {
-		auto err = new_expr ();
-		err->type = ex_error;
-		return err;
+		return new_error_expr ();
 	}
 
 	if (receiver->type == ex_error)
 		return receiver;
 
-	return_type = &type_id;
 	method = class_message_response (rec_type, class_msg, selector);
-	if (method)
-		return_type = method->type->func.ret_type;
 
 	scoped_src_loc (receiver);
 	expr_t     *args = new_list_expr (0);
@@ -258,6 +252,5 @@ message_expr (const expr_t *receiver, keywordarg_t *message, rua_ctx_t *ctx)
 	if (!is_function_call (call)) {
 		internal_error (call, "unexpected call expression type");
 	}
-	((expr_t *) call->block.result)->branch.ret_type = return_type;
 	return call;
 }

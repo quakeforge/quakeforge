@@ -1042,8 +1042,7 @@ optimize_core (const expr_t *expr)
 	} else if (expr->type == ex_extend) {
 		auto new = optimize_core (expr->extend.src);
 		if (new) {
-			auto ext = new_expr ();
-			*ext = *expr;
+			auto ext = new_expr_copy (expr);
 			ext->extend.src = new;
 			new = ext;
 		}

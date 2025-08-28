@@ -489,7 +489,7 @@ proc_message (const expr_t *expr, rua_ctx_t *ctx)
 	scoped_src_loc (receiver);
 	for (auto k = message; k; k = k->next) {
 		if (k->expr) {
-			k->expr = (expr_t *) expr_process (k->expr, ctx);
+			k->expr = expr_process (k->expr, ctx);
 		}
 	}
 	return message_expr (receiver, message, ctx);
@@ -560,7 +560,7 @@ proc_branch (const expr_t *expr, rua_ctx_t *ctx)
 				return target;
 			}
 		}
-		auto args = (expr_t *) expr->branch.args;
+		auto args = (expr_t *) expr->branch.args;//FIXME const-cast
 		if (expr->branch.args) {
 			args = new_list_expr (nullptr);
 			if (!proc_do_list (&args->list, &expr->branch.args->list, ctx)) {

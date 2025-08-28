@@ -332,7 +332,7 @@ method_compare (method_t *m1, method_t *m2)
 }
 
 keywordarg_t *
-new_keywordarg (const char *selector, struct expr_s *expr)
+new_keywordarg (const char *selector, const expr_t *expr)
 {
 	keywordarg_t *k = malloc (sizeof (keywordarg_t));
 
