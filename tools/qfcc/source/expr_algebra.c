@@ -236,6 +236,22 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 			return 0;
 		}
 	}
+	if (expr->type == ex_vector) {
+		int count = list_count (&expr->vector.list);
+		const expr_t *c[count + 1] = {};
+		list_scatter (&expr->vector.list, c);
+
+		int width = type_width (type);
+		int offs = offset;
+		for (int i = 0; i < count && offs >= 0; i++) {
+			int cwidth = type_width (get_type (c[i]));
+			if (!offs && cwidth == width) {
+				return c[i];
+			}
+			offs -= cwidth;
+		}
+		notice (expr, "unhandled vector extraction");
+	}
 	if (is_neg (expr)) {
 		auto e = expr->expr.e1;
 		return neg_expr (offset_cast (type, e, offset));
