@@ -395,11 +395,6 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 		}
 	}
 
-	if (node && node->number < dag->killer_node) {
-		killer = dag->nodes[dag->killer_node];
-		node = nullptr;
-	}
-
 	if (!node) {
 		// No valid node found (either first reference to the value,
 		// or the value's node was killed).
@@ -1186,9 +1181,16 @@ dag_create (flownode_t *flownode)
 				if (s->type == st_assign) {
 					n = leaf_node (dag, operands[1], s->expr);
 					dagnode_attach_label (dag, n, lx);
+				} else if (n->type == st_none) {
+					// a leafnode so just create a new node
+					auto op = n->label->op;
+					n = leaf_node (dag, op, op->expr);
+					dagnode_attach_label (dag, n, lx);
 				} else {
+					dot_dump_dag (dag, nullptr);
 					internal_error (s->expr, "unexpected failure to attach"
-									" label to node");
+									" label '%s' to node %d",
+									daglabel_string (lx), n->number);
 				}
 			}
 			if (n->type == st_none && op_is_identifier (n->label->op)) {
