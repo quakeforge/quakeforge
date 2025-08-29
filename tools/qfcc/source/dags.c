@@ -336,7 +336,7 @@ dagnode_set_reachable (dag_t *dag, dagnode_t *node)
 }
 
 static dagnode_t *
-dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
+dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 {
 	if (!op) {
 		return nullptr;
@@ -365,7 +365,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 	if (!node && op_is_alias (op)) {
 		operand_t  *uop = unalias_op (op);
 		if (uop != op) {
-			node = dag_make_child (dag, uop, s, barred);
+			node = dag_make_child (dag, uop, s);
 			dagnode_t *n;
 			dagnode_t search = {
 				.type = st_alias,
@@ -395,7 +395,7 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s, bool barred)
 		}
 	}
 
-	if (node && barred && node->number < dag->killer_node) {
+	if (node && node->number < dag->killer_node) {
 		killer = dag->nodes[dag->killer_node];
 		node = nullptr;
 	}
@@ -439,11 +439,9 @@ dag_make_children (dag_t *dag, statement_t *s,
 		//FIXME hopefully only one non-pseudo op
 		operands[0] = op;
 	}
-	auto var = flow_get_var (operands[0]);
-	bool barred = var && var->kill_barred;
 	for (i = 0; i < 3; i++) {
 		operand_t  *op = operands[i + 1];
-		children[i] = dag_make_child (dag, op, s, barred);
+		children[i] = dag_make_child (dag, op, s);
 	}
 }
 
@@ -566,7 +564,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		if (use->op_type == op_pseudo) {
 			continue;
 		}
-		auto u = dag_make_child (dag, use, s, false);
+		auto u = dag_make_child (dag, use, s);
 		u->label->live = true;
 		dag_live_aliases (use);
 		set_add (n->edges, u->number);
@@ -854,6 +852,14 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 			set_difference (node->identifiers, label_set);
 		}
 	}
+	int kill_barrier = -1;
+	if (dag->killer_node >= 0) {
+		auto var = flow_get_var (l->op);
+		if (var->kill_barred) {
+			kill_barrier = dag->killer_node;
+			set_add (node_set, dag->killer_node);
+		}
+	}
 
 	for (auto iter = set_first (node_set); iter; iter = set_next (iter)) {
 		dagnode_t  *node = dag->nodes[iter->element];
@@ -879,7 +885,11 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		// this assignment to the variable must come after any previous uses,
 		// which includes itself and its parents
 		set_add (n->edges, node->number);
-		set_union (n->edges, node->parents);
+		// don't add parents if it's a call-barrier (currently the only way
+		// for kill_barrier to valid)
+		if (node->number != kill_barrier) {
+			set_union (n->edges, node->parents);
+		}
 		// nodes never need edges to themselves, but n might be one of node's
 		// parents
 		set_remove (n->edges, n->number);
