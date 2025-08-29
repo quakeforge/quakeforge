@@ -273,7 +273,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 	swizzle_str[offset + type_width (type)] = 0;
 	auto swizzle = new_swizzle_expr (expr, swizzle_str + offset);
 	swizzle = fold_constants (swizzle);
-	if (is_zero (swizzle)) {
+	if (is_error (swizzle) || is_zero (swizzle)) {
 		return nullptr;
 	}
 	return edag_add_expr (swizzle);
