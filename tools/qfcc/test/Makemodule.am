@@ -25,6 +25,7 @@ test_progs_dat=\
 	tools/qfcc/test/brokenkill.dat \
 	tools/qfcc/test/brokenline.dat \
 	tools/qfcc/test/brokenplane.dat \
+	tools/qfcc/test/brokenplane2.dat \
 	tools/qfcc/test/callbarrier.dat \
 	tools/qfcc/test/calluse.dat \
 	tools/qfcc/test/chewed-alias.dat \
@@ -342,6 +343,16 @@ tools/qfcc/test/brokenplane.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(brokenplane_dep) # am--include-marker
 r_depfiles_remade += $(brokenplane_dep)
+
+tools_qfcc_test_brokenplane2_dat_SOURCES=tools/qfcc/test/brokenplane2.r
+brokenplane2_obj=$(tools_qfcc_test_brokenplane2_dat_SOURCES:.r=.o)
+brokenplane2_dep=$(call qcautodep,$(tools_qfcc_test_brokenplane2_dat_SOURCES))
+tools/qfcc/test/brokenplane2.dat$(EXEEXT): $(brokenplane2_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(brokenplane2_obj)
+tools/qfcc/test/brokenplane2.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(brokenplane2_dep) # am--include-marker
+r_depfiles_remade += $(brokenplane2_dep)
 
 tools_qfcc_test_callbarrier_dat_SOURCES=tools/qfcc/test/callbarrier.r
 callbarrier_obj=$(tools_qfcc_test_callbarrier_dat_SOURCES:.r=.o)
