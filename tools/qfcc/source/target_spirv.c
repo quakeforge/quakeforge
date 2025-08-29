@@ -920,10 +920,10 @@ spirv_variable (symbol_t *sym, spirvctx_t *ctx)
 static unsigned
 spirv_undef (const type_t *type, spirvctx_t *ctx)
 {
-	unsigned spirv_Type = spirv_type_id (type, ctx);
+	unsigned tid = spirv_Type (type, ctx);
 	unsigned id = spirv_id (ctx);
 	auto insn = spirv_new_insn (SpvOpUndef, 3, ctx->module->globals, ctx);
-	INSN (insn, 1) = spirv_Type;
+	INSN (insn, 1) = tid;
 	INSN (insn, 2) = id;
 	return id;
 }
@@ -1931,7 +1931,7 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 	auto ret_type = func_type->func.ret_type;
 
 	unsigned func_id = spirv_emit_expr (func, ctx);
-	unsigned ret_type_id = spirv_type_id (ret_type, ctx);
+	unsigned ret_type_id = spirv_Type (ret_type, ctx);
 
 	list_scatter_rev (&call->branch.args->list, args);
 	for (int i = 0; i < num_args; i++) {
