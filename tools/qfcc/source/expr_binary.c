@@ -452,6 +452,25 @@ dot_product_expr (int op, const expr_t *a, const expr_t *b)
 }
 
 static const expr_t *
+scalar_dot_product_expr (int op, const expr_t *a, const expr_t *b)
+{
+	auto ta = get_type (a);
+	auto tb = get_type (b);
+	if (is_integral (ta) || is_integral (tb)) {
+		if ((is_integral (ta) && !a->implicit)
+			|| (is_integral (ta) && !a->implicit)) {
+			warning (a, "integral scalars in dot product");
+		}
+		ta = float_type (ta);
+		tb = float_type (tb);
+		a = cast_expr (ta, a);
+		b = cast_expr (tb, b);
+	}
+	auto e = typed_binary_expr (ta, '*', a, b);
+	return e;
+}
+
+static const expr_t *
 boolean_op (int op, const expr_t *a, const expr_t *b)
 {
 	if (!is_boolean (get_type (a))) {
@@ -666,6 +685,8 @@ static expr_type_t cross_ops[] = {
 static expr_type_t dot_ops[] = {
 	{   .match_a = is_nonscalar, .match_b = is_nonscalar,
 			.process = dot_product_expr, },
+	{   .match_a = is_scalar, .match_b = is_scalar,
+			.promote = true, .process = scalar_dot_product_expr, },
 
 	{}
 };
