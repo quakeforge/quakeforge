@@ -722,7 +722,9 @@ declare_def (specifier_t spec, const expr_t *init, symtab_t *symtab,
 static def_overlap_t
 def_overlap (def_t *d, int offset, int size)
 {
-	int         d_offset = d->offset;
+	// offset is relative to the main def, so if d is the main def, then
+	// don't use its offset otherwise, the calculations get thrown off
+	int         d_offset = d->alias ? d->offset : 0;
 	int         d_size = type_size (d->type);
 
 	if (d_offset == offset && d_size == size) {
