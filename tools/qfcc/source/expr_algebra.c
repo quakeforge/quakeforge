@@ -245,7 +245,7 @@ offset_cast (const type_t *type, const expr_t *expr, int offset)
 
 		if ((!rev && offset >= swidth)
 			|| (rev && offset + cwidth <= dwidth - swidth)) {
-			return 0;
+			return nullptr;
 		}
 	}
 	if (expr->type == ex_vector) {
@@ -329,8 +329,14 @@ new_mvec_expr (algebra_t *algebra, pr_uint_t group_mask)
 const expr_t *
 mvec_expr (const expr_t *expr, algebra_t *algebra)
 {
-	auto mvtype = get_type (expr);
 	expr = edag_add_expr (expr);
+
+	auto mvtype = get_type (expr);
+	if (is_reference (mvtype)) {
+		mvtype = dereference_type (mvtype);
+		expr = pointer_deref (expr);
+	}
+
 	if (expr->type == ex_multivec) {
 		return expr;
 	}
@@ -3425,6 +3431,9 @@ const expr_t *
 algebra_field_expr (const expr_t *mvec, const expr_t *field_name)
 {
 	auto mvec_type = get_type (mvec);
+	if (is_reference (mvec_type)) {
+		mvec_type = dereference_type (mvec_type);
+	}
 	auto algebra = algebra_get (mvec_type);
 
 	auto field_sym = get_name (field_name);
