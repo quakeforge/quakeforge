@@ -99,8 +99,8 @@ typed_binary_expr (const type_t *type, int op, const expr_t *e1, const expr_t *e
 {
 	auto e = new_binary_expr (op, e1, e2);
 	e->expr.type = type;
-	e->expr.commutative = op_commute (op);
-	e->expr.anticommute = op_anti_com (op);
+	e->expr.commutative = is_math (type) && op_commute (op);
+	e->expr.anticommute = is_math (type) && op_anti_com (op);
 	return e;
 }
 
