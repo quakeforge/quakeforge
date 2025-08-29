@@ -606,7 +606,7 @@ center (uint v, uint len)
 {
 	if ((io.pressed | io.buttons) & 1) {
 		ivec2 c = (io.mouse_hot + scroll_pos + (X_size >> ivec2(1, 31)));
-		c /= X_size;
+		c /= (ivec2) X_size;//FIXME should the cast be necessary?
 		c = (c > ivec2(0, 0)) & c;
 		[self jumpTo:c mode:(io.pressed & 1) ^ 1];
 	}
@@ -628,7 +628,7 @@ center (uint v, uint len)
 	ivec2 len = IMUI_State_GetLen (IMUI_context, nil);
 	len.y = count * X_size.y;
 	IMUI_State_SetLen (IMUI_context, nil, len);
-	IMUI_SetViewPos (IMUI_context, { 0, -pos.y % X_size.y });
+	IMUI_SetViewPos (IMUI_context, { 0, -pos.y % (int) X_size.y });//FIXME see^
 	len = sblen;
 	size = len / X_size;
 	len.y = (len.y + X_size.y - 1) / X_size.y + 1;
