@@ -784,7 +784,7 @@ flow_def_kill_aliases (def_t *def, void *_kill)
 
 /**	Add the flowvar's spanned addresses to the kill set
  *
- *	If the flowvar refers to an alias, then the real def/tempop and any
+ *	If the flowvar refers to an alias, then the real tempop (not def) and any
  *	overlapping aliases are aslo killed.
  *
  *	However, other aliases cannot kill anything in the uninitialized set.
@@ -838,7 +838,7 @@ flow_def_add_aliases (def_t *def, void *_set)
 }
 
 static void
-flow_add_op_var (set_t *set, operand_t *op, int ol)
+flow_add_op_var (set_t *set, operand_t *op, def_overlap_t ol)
 {
 	flowvar_t  *var;
 
@@ -994,7 +994,7 @@ flow_find_ptr (set_t *access, set_t *access_ptr,
 			follow_ud_chain (ud, func, ptr, visited);
 			for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
 				flowvar_t  *var = func->vars[p->element];
-				flow_add_op_var (access, var->op, 0);
+				flow_add_op_var (access, var->op, dol_none);
 				add_access (var, st);
 			}
 		}
@@ -1718,7 +1718,7 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 			op = ptrop->value->pointer.tempop;
 		}
 		if (op) {
-			flow_add_op_var (def, op, 6);
+			flow_add_op_var (def, op, dol_only_alias | dol_full);
 		}
 	}
 	return op;
@@ -1739,19 +1739,19 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	if (use) {
 		set_empty (use);
 		for (operand_t *op = s->use; op; op = op->next) {
-			flow_add_op_var (use, op, 1);
+			flow_add_op_var (use, op, dol_partial);
 		}
 	}
 	if (def) {
 		set_empty (def);
 		for (operand_t *op = s->def; op; op = op->next) {
-			flow_add_op_var (def, op, 6);
+			flow_add_op_var (def, op, dol_only_alias | dol_full);
 		}
 	}
 	if (kill) {
 		set_empty (kill);
 		for (operand_t *op = s->kill; op; op = op->next) {
-			flow_add_op_var (kill, op, 6);
+			flow_add_op_var (kill, op, dol_only_alias | dol_full);
 		}
 	}
 	if (operands) {
@@ -1765,10 +1765,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			internal_error (s->expr, "not a statement");
 		case st_address:
 			if (s->opb) {
-				flow_add_op_var (use, s->opa, 1);
-				flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opa, dol_partial);
+				flow_add_op_var (use, s->opb, dol_partial);
 			}
-			flow_add_op_var (def, s->opc, 6);
+			flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -1776,10 +1776,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_expr:
-			flow_add_op_var (def, s->opc, 6);
-			flow_add_op_var (use, s->opa, 1);
+			flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
+			flow_add_op_var (use, s->opa, dol_partial);
 			if (s->opb)
-				flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opb, dol_partial);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -1787,8 +1787,8 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opa, 6);
-			flow_add_op_var (use, s->opc, 1);
+			flow_add_op_var (def, s->opa, dol_only_alias | dol_full);
+			flow_add_op_var (use, s->opc, dol_partial);
 			if (operands) {
 				operands[0] = s->opa;
 				operands[1] = s->opc;
@@ -1799,8 +1799,8 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_ptrmove:
 		case st_memset:
 		case st_ptrmemset:
-			flow_add_op_var (use, s->opa, 1);
-			flow_add_op_var (use, s->opb, 1);
+			flow_add_op_var (use, s->opa, dol_partial);
+			flow_add_op_var (use, s->opb, dol_partial);
 			aux_op1 = s->opb;
 			if (s->type != st_ptrassign && s->opb->op_type == op_value) {
 				if (is_short (s->opb->type)) {
@@ -1837,7 +1837,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "store")) {
-				flow_add_op_var (use, s->opc, 1);
+				flow_add_op_var (use, s->opc, dol_partial);
 				res_op = flow_analyze_pointer_operand (s->opa, def);
 				src_op = s->opc;
 				aux_op2 = s->opa;
@@ -1857,10 +1857,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_state:
-			flow_add_op_var (use, s->opa, 1);
-			flow_add_op_var (use, s->opb, 1);
+			flow_add_op_var (use, s->opa, dol_partial);
+			flow_add_op_var (use, s->opb, dol_partial);
 			if (s->opc)
-				flow_add_op_var (use, s->opc, 1);
+				flow_add_op_var (use, s->opc, dol_partial);
 			//FIXME entity members
 			if (operands) {
 				operands[1] = s->opa;
@@ -1877,15 +1877,15 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					// -1 is void
 					// FIXME size and addressing
 					if (ret_mode >= 0) {
-						flow_add_op_var (use, s->opa, 1);
+						flow_add_op_var (use, s->opa, dol_partial);
 					}
 				} else {
 					// v6/v6p
 					if (s->opa) {
-						flow_add_op_var (use, s->opa, 1);
+						flow_add_op_var (use, s->opa, dol_partial);
 					}
 					if (use) {
-						flow_add_op_var (use, &flow_params[0].op, 1);
+						flow_add_op_var (use, &flow_params[0].op, dol_partial);
 					}
 				}
 			}
@@ -1893,26 +1893,27 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				// call uses opc to specify the destination of the return value
 				// parameter usage is taken care of by the statement's use
 				// list
-				flow_add_op_var (def, s->opc, 6);
+				flow_add_op_var (def, s->opc, dol_only_alias | dol_full);
 				// don't want old argument processing
 				calln = -1;
 				if (operands && s->opc->op_type != op_value) {
 					operands[0] = s->opc;
 				}
-				flow_add_op_var (use, s->opa, 1);
+				flow_add_op_var (use, s->opa, dol_partial);
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				calln = s->opcode[4] - '0';
-				flow_add_op_var (use, s->opa, 1);
+				flow_add_op_var (use, s->opa, dol_partial);
 			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
 				calln = s->opcode[5] - '0';
-				flow_add_op_var (use, s->opa, 1);
-				flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opa, dol_partial);
+				flow_add_op_var (use, s->opb, dol_partial);
 				if (s->opc)
-					flow_add_op_var (use, s->opc, 1);
+					flow_add_op_var (use, s->opc, dol_partial);
 			}
 			if (calln >= 0) {
 				if (def) {
-					flow_add_op_var (def, &flow_params[0].op, 6);
+					flow_add_op_var (def, &flow_params[0].op,
+									 dol_only_alias | dol_full);
 				}
 				if (kill) {
 					for (i = 1; i < num_flow_params; i++) {
@@ -1934,10 +1935,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (statement_is_goto (s)) {
 				// opa is just a label
 			} else if (statement_is_jumpb (s)) {
-				flow_add_op_var (use, s->opa, 1);
-				flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opa, dol_partial);
+				flow_add_op_var (use, s->opb, dol_partial);
 			} else if (statement_is_cond (s)) {
-				flow_add_op_var (use, s->opc, 1);
+				flow_add_op_var (use, s->opc, dol_partial);
 			} else {
 				internal_error (s->expr, "unexpected flow statement: %s",
 								s->opcode);
