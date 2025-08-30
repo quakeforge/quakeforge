@@ -15,6 +15,7 @@ test_progs_dat=\
 	tools/qfcc/test/algseq2.dat \
 	tools/qfcc/test/algseq3.dat \
 	tools/qfcc/test/algtypes.dat \
+	tools/qfcc/test/alias_vec_live.dat \
 	tools/qfcc/test/alias_vec_param.dat \
 	tools/qfcc/test/alignment.dat \
 	tools/qfcc/test/arraylife.dat \
@@ -243,6 +244,16 @@ tools/qfcc/test/algtypes.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(algtypes_dep) # am--include-marker
 r_depfiles_remade += $(algtypes_dep)
+
+tools_qfcc_test_alias_vec_live_dat_SOURCES=tools/qfcc/test/alias_vec_live.r
+alias_vec_live_obj=$(tools_qfcc_test_alias_vec_live_dat_SOURCES:.r=.o)
+alias_vec_live_dep=$(call qcautodep,$(tools_qfcc_test_alias_vec_live_dat_SOURCES))
+tools/qfcc/test/alias_vec_live.dat$(EXEEXT): $(alias_vec_live_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(alias_vec_live_obj)
+tools/qfcc/test/alias_vec_live.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(alias_vec_live_dep) # am--include-marker
+r_depfiles_remade += $(alias_vec_live_dep)
 
 tools_qfcc_test_alias_vec_param_dat_SOURCES=tools/qfcc/test/alias_vec_param.r
 alias_vec_param_obj=$(tools_qfcc_test_alias_vec_param_dat_SOURCES:.r=.o)
