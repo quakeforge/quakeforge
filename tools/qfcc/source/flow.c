@@ -2082,7 +2082,7 @@ flow_find_dominators (flowgraph_t *graph)
 		changed = 0;
 		for (i = 1; i < graph->num_nodes; i++) {
 			node = graph->nodes[i];
-			set_empty (work);
+			set_assign (work, node->dom);
 			for (pred = set_first (node->predecessors); pred;
 				 pred = set_next (pred))
 				set_intersection (work, graph->nodes[pred->element]->dom);
@@ -2329,6 +2329,15 @@ flow_build_graph (function_t *func)
 	flow_find_predecessors (graph);
 	flow_find_dominators (graph);
 	flow_find_loops (graph);
+#if 0
+	for (int i = 0; i < graph->num_nodes; i++) {
+		auto node = graph->nodes[i];
+		printf ("node: %d\n", i);
+		printf ("  succ: %s\n", set_as_string (node->successors));
+		printf ("  pred: %s\n", set_as_string (node->predecessors));
+		printf ("  dom : %s\n", set_as_string (node->dom));
+	}
+#endif
 	return graph;
 }
 
