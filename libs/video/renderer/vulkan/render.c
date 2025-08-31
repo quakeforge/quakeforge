@@ -149,7 +149,8 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 	qfv_device_t *device = taskctx->ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkBeginCommandBuffer (taskctx->cmd, &sp->beginInfo);
-
+	QFV_duCmdBeginLabel (device, taskctx->cmd, sp->label.name,
+						 {VEC4_EXP (sp->label.color)});
 	{
 		qftVkScopedZone (taskctx->frame->qftVkCtx, taskctx->cmd, "subpass");
 
@@ -161,6 +162,8 @@ run_subpass (qfv_subpass_t *sp, qfv_taskctx_t *taskctx)
 			QFV_duCmdEndLabel (device, taskctx->cmd);
 		}
 	}
+
+	QFV_duCmdEndLabel (device, taskctx->cmd);
 
 	dfunc->vkEndCommandBuffer (taskctx->cmd);
 }
@@ -182,8 +185,6 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 	dfunc->vkCmdBeginRenderPass (cmd, &rp->beginInfo, rp->subpassContents);
 	for (uint32_t i = 0; i < rp->subpass_count; i++) {
 		__auto_type sp = &rp->subpasses[i];
-		QFV_duCmdBeginLabel (device, cmd, sp->label.name,
-							 {VEC4_EXP (sp->label.color)});
 		qfv_taskctx_t taskctx = {
 			.ctx = ctx,
 			.frame = frame,
@@ -196,7 +197,6 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 								  rp->label.name));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
-		QFV_duCmdEndLabel (device, cmd);
 		//FIXME comment is a bit off as exactly one buffer is always
 		//submitted
 		//
@@ -283,14 +283,16 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
 						 vac (ctx->va_ctx, "cmd:compute:%s", step->label.name));
-	QFV_duCmdBeginLabel (device, cmd, step->label.name,
-						 {VEC4_EXP (step->label.color)});
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	QFV_duCmdBeginLabel (device, cmd, step->label.name,
+						 {VEC4_EXP (step->label.color)});
+
 	for (uint32_t i = 0; i < comp->pipeline_count; i++) {
 		__auto_type pipeline = &comp->pipelines[i];
 		run_compute_pipeline (pipeline, cmd, ctx);
