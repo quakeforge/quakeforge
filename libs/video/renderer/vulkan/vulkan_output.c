@@ -69,14 +69,14 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto octx = ctx->output_context;
-	auto frame = &octx->frames.a[ctx->curFrame];
+	auto oframe = &octx->frames.a[ctx->curFrame];
 	auto sc = ctx->swapchain;
 
-	dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	//dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	dfunc->vkWaitForFences (device->dev, 1, &oframe->fence, VK_TRUE, 2000000000);
+	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	uint32_t imageIndex = 0;
-	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
-								  0/*frame->fence*/, &imageIndex)) {
+	while (!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
+								  0/*oframe->fence*/, &imageIndex)) {
 		if (octx->framebuffers) {
 			auto rctx = ctx->render_context;
 			uint32_t frames = rctx->frames.size;
@@ -97,11 +97,11 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		sc = ctx->swapchain;
 		QFV_Capture_Renew (ctx);
 
-		dfunc->vkDestroySemaphore (device->dev, frame->imageAvailableSemaphore,
+		dfunc->vkDestroySemaphore (device->dev, oframe->imageAvailableSemaphore,
 								   0);
-		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		oframe->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
-							 frame->imageAvailableSemaphore,
+							 oframe->imageAvailableSemaphore,
 							 vac (ctx->va_ctx, "sc image:%d", ctx->curFrame));
 	}
 
