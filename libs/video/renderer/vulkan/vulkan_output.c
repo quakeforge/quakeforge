@@ -73,10 +73,10 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto sc = ctx->swapchain;
 
 	dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	//dfunc->vkResetFences (device->dev, 1, &frame->fence);
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, frame->imageAvailableSemaphore,
-								  frame->fence, &imageIndex)) {
+								  0/*frame->fence*/, &imageIndex)) {
 		if (octx->framebuffers) {
 			auto rctx = ctx->render_context;
 			uint32_t frames = rctx->frames.size;
@@ -318,8 +318,8 @@ submit_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &octx->outputSemaphores[ctx->swapImageIndex],
 	};
-	dfunc->vkResetFences (device->dev, 1, &frame->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+	dfunc->vkResetFences (device->dev, 1, &oframe->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, oframe->fence);
 	DARRAY_RESIZE (&job->commands, 0);
 }
 

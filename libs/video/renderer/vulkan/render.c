@@ -596,8 +596,8 @@ submit_render (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &frame->renderDoneSemaphore,
 	};
-	//dfunc->vkResetFences (device->dev, 1, &frame->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, 0/*frame->fence*/);
+	dfunc->vkResetFences (device->dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
 	DARRAY_RESIZE (&job->commands, 0);
 }
 
