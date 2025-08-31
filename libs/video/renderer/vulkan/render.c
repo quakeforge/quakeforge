@@ -663,6 +663,8 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < rctx->frames.size; i++) {
 		auto frame = &rctx->frames.a[i];
 		frame->fence = QFV_CreateFence (device, 1);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, frame->fence,
+							 vac (ctx->va_ctx, "render:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
 								 vac (ctx->va_ctx, "render pool:%zd", i));

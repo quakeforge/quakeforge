@@ -415,6 +415,8 @@ output_startup (exprctx_t *ectx)
 							 oframe->imageAvailableSemaphore,
 							 vac (ctx->va_ctx, "sc image:%zd", i));
 		oframe->fence = QFV_CreateFence (device, 1);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, oframe->fence,
+							 vac (ctx->va_ctx, "sc acquire:%zd", i));
 	}
 
 	qfvPopDebug (ctx);

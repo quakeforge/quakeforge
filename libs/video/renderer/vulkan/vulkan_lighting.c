@@ -2045,6 +2045,8 @@ lighting_startup (exprctx_t *ectx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_QUERY_POOL, lframe->query,
 							 vac (ctx->va_ctx, "light_cull:%zd", i));
 		lframe->fence = QFV_CreateFence (device, 1);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, lframe->fence,
+							 vac (ctx->va_ctx, "light_cull:%zd", i));
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
 		auto physdev = ctx->device->physDev->dev;
