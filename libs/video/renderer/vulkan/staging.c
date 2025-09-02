@@ -259,19 +259,8 @@ acquire_space (qfv_packet_t *packet, size_t size)
 		check_invariants (stage);
 		return data;
 	}
-	// This simply should not happen because the only way an allocation can
-	// ligitimately fail is if the requested size is larger than the staging
-	// buffer, and that is handled above. Thus, this happening means something
-	// went very wrong.
-	// However, it breaks the test (which checks for null) and I'm not sure
-	// which way to go, though it may be a bug in the test.
-	//Sys_Error ("couldn't allocate %zd bytes in staging buffer:\n"
-	//		   "  size       : %zd\n"
-	//		   "  end        : %zd\n"
-	//		   "  space_start: %zd\n"
-	//		   "  space_end  : %zd\n", size,
-	//		   stage->size, stage->end,
-	//		   stage->space_start, stage->space_end);
+	// This will happen when a packet is incrementally expanded and the
+	// available space in the buffer has been exhausted
 	return 0;
 }
 
