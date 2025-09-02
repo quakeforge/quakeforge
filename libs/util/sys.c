@@ -82,6 +82,7 @@
 #include "qfalloca.h"
 
 #include "QF/alloc.h"
+#include "QF/backtrace.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -584,6 +585,15 @@ Sys_PopErrorHandler (void)
 	error_handler_freelist = eh;
 }
 
+static void __attribute__((format(PRINTF, 1, 0)))
+sys_err_printf (const char *msg, ...)
+{
+	va_list     args;
+
+	va_start (args, msg);
+	sys_err_printf_function (msg, args);
+	va_end (args);
+}
 
 VISIBLE void
 Sys_Error (const char *error, ...)
@@ -600,6 +610,11 @@ Sys_Error (const char *error, ...)
 		abort ();
 	}
 	in_sys_error = 1;
+
+	dstring_t *bt = dstring_newstr ();
+	BT_backtrace (bt, 1);
+	sys_err_printf ("%s\n", bt->str);
+	dstring_delete (bt);
 
 	va_start (args, error);
 	sys_err_printf_function (error, args);
