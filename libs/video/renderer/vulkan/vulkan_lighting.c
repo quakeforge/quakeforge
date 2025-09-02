@@ -1135,9 +1135,9 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		auto q = &lframe->light_queue[i];
 		count += q->count;
 	}
-	uint32_t light_ids[count];
-	float light_radii[count];
-	uint32_t light_leafs[count];
+	uint32_t light_ids[count + 1];
+	float light_radii[count + 1];
+	uint32_t light_leafs[count + 1];
 	uint32_t light_count = 0;
 	light_queue_t queue[ST_COUNT] = {};
 	for (int i = 0; i < ST_COUNT; i++) {
