@@ -22,6 +22,8 @@ typedef enum VkBool32 {
 		end = "_FLAG_BITS_MAX_ENUM_EXT";
 	} else if (str_mid([self name], -3) == "KHR") {
 		end = "_MAX_ENUM_KHR";
+	} else if (str_mid([self name], -3) == "EXT") {
+		end = "_MAX_ENUM_EXT";
 	} else if (str_mid([self name], 0, 4) == "qfv_") {
 		prefix = "qfv_";
 	}
@@ -47,6 +49,17 @@ typedef enum VkBool32 {
 	}
 	[self process];
 	return self;
+}
+
+-(void) initParse:(PLItem *)parse
+{
+	enum_type = str_hold ([parse string]);
+}
+
+-(void)dealloc
+{
+	str_free (enum_type);
+	[super dealloc];
 }
 
 -(string) name
@@ -96,18 +109,29 @@ skip_value(string name)
 {
 	int         strip_bit = 0;
 	int         strip_khr = 0;
+	int         strip_ext = 0;
+	int         flag_bits = 0;
+	int         expflags = 0;
 	if (str_mid([self name], -8) == "FlagBits"
 		|| str_mid([self name], -11) == "FlagBitsEXT") {
 		strip_bit = 1;
+		flag_bits = 1;
 	}
 	if (str_mid([self name], -3) == "KHR") {
 		strip_khr = 1;
+	}
+	if (str_mid([self name], -3) == "EXT") {
+		strip_ext = 1;
+	}
+	if (enum_type == "expflags") {
+		expflags = 1;
+		flag_bits = 1;
 	}
 
 	fprintf (output_file, "exprtype_t %s_type = {\n", [self name]);
 	fprintf (output_file, "\t.name = \"%s\",\n", [self name]);
 	fprintf (output_file, "\t.size = sizeof (int),\n");
-	if (strip_bit) {
+	if (flag_bits) {
 		fprintf (output_file, "\t.binops = flag_binops,\n");
 		fprintf (output_file, "\t.unops = flag_unops,\n");
 		fprintf (output_file, "\t.get_string = cexpr_flags_get_string,\n");
@@ -126,8 +150,13 @@ skip_value(string name)
 			if (skip_value (var.name)) {
 				continue;
 			}
-			fprintf (output_file, "\t%s,    // %d 0x%x\n",
-					 var.name, var.offset, var.offset);
+			if (expflags) {
+				fprintf (output_file, "\t1 << %s,    // %d 0x%x\n",
+						 var.name, var.offset, var.offset);
+			} else {
+				fprintf (output_file, "\t%s,    // %d 0x%x\n",
+						 var.name, var.offset, var.offset);
+			}
 			index++;
 		}
 		fprintf (output_file, "};\n");
@@ -151,6 +180,11 @@ skip_value(string name)
 				int khr_pos = str_str (shortname, "_KHR");
 				if (khr_pos >= 0) {
 					shortname = str_mid (shortname, 0, khr_pos);
+				}
+			} else if (strip_ext) {
+				int ext_pos = str_str (shortname, "_EXT");
+				if (ext_pos >= 0) {
+					shortname = str_mid (shortname, 0, ext_pos);
 				}
 			}
 			fprintf (output_file, "\t{\"%s\", &%s_type, %s_values + %d},\n",

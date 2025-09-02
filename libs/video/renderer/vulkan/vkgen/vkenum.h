@@ -8,6 +8,7 @@
 @interface Enum: Type
 {
 	int          prefix_length;
+	string       enum_type;
 }
 -(void) writeForward;
 -(void) writeTable;
