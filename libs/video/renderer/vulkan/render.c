@@ -61,7 +61,7 @@ QFV_GetCmdBuffer (vulkan_ctx_t *ctx, bool secondary)
 {
 	auto rctx = ctx->render_context;
 	auto rframe = &rctx->frames.a[ctx->curFrame];
-	return QFV_CmdPoolManager_CmdBuffer (&rframe->cmdpool, secondary);
+	return QFV_CmdPoolManager_CmdBuffer (rframe->active_pool, secondary);
 }
 
 void
@@ -193,8 +193,8 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.data = data,
 		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
-							 vac (ctx->va_ctx, "renderpass:%s",
-								  rp->label.name));
+							 vac (ctx->va_ctx, "renderpass:%s:%s",
+								  rp->label.name, sp->label.name));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		//FIXME comment is a bit off as exactly one buffer is always
@@ -545,7 +545,8 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
 
-	QFV_CmdPoolManager_Reset (&frame->cmdpool);
+	QFV_CmdPoolManager_Reset (&frame->render_cmdpool);
+	frame->active_pool = &frame->render_cmdpool;
 	run_collect (ctx);
 }
 
@@ -666,8 +667,11 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, frame->fence,
 							 vac (ctx->va_ctx, "render:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
-		QFV_CmdPoolManager_Init (&frame->cmdpool, device,
+		QFV_CmdPoolManager_Init (&frame->render_cmdpool, device,
 								 vac (ctx->va_ctx, "render pool:%zd", i));
+		QFV_CmdPoolManager_Init (&frame->output_cmdpool, device,
+								 vac (ctx->va_ctx, "output pool:%zd", i));
+		frame->active_pool = &frame->render_cmdpool;
 #ifdef TRACY_ENABLE
 		auto instance = ctx->instance->instance;
 		auto physdev = ctx->device->physDev->dev;
@@ -793,7 +797,8 @@ QFV_Render_Shutdown (vulkan_ctx_t *ctx)
 		auto frame = &rctx->frames.a[i];
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-		QFV_CmdPoolManager_Shutdown (&frame->cmdpool);
+		QFV_CmdPoolManager_Shutdown (&frame->render_cmdpool);
+		QFV_CmdPoolManager_Shutdown (&frame->output_cmdpool);
 		qftCVkContextDestroy (frame->qftVkCtx);
 	}
 	DARRAY_CLEAR (&rctx->frames);

@@ -69,10 +69,13 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto dfunc = device->funcs;
 	auto rctx = ctx->render_context;
 	auto octx = ctx->output_context;
+	auto rframe = &rctx->frames.a[ctx->curFrame];
 	auto oframe = &octx->frames.a[ctx->curFrame];
 	auto sc = ctx->swapchain;
 
 	dfunc->vkWaitForFences (device->dev, 1, &oframe->fence, VK_TRUE, 2000000000);
+	QFV_CmdPoolManager_Reset (&rframe->output_cmdpool);
+	rframe->active_pool = &rframe->output_cmdpool;
 	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
 	uint32_t imageIndex = 0;
 	while (!QFV_AcquireNextImage (sc, oframe->imageAvailableSemaphore,
