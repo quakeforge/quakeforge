@@ -61,7 +61,8 @@ bt_print (void *data, uintptr_t pc, const char *fname, int lineno,
 		  const char *func)
 {
 	dstring_t  *str = data;
-	dasprintf (str, "(%"PRIxPTR") %s:%s:%d", pc, func, fname, lineno);
+	const char *nl = str->size && str->str[0] ? "\n" : "";
+	dasprintf (str, "%s(%"PRIxPTR") %s:%s:%d", nl, pc, func, fname, lineno);
 	return 0;
 }
 
@@ -69,8 +70,18 @@ void
 BT_pcInfo (dstring_t *str, uintptr_t pc)
 {
 	if (bt_state) {
-		backtrace_pcinfo (bt_state, pc, bt_print, 0, str);
+		backtrace_pcinfo (bt_state, pc, bt_print, bt_error, str);
 	} else {
 		dasprintf (str, "(%"PRIxPTR")", pc);
+	}
+}
+
+void
+BT_backtrace (dstring_t *str, int skip)
+{
+	if (bt_state) {
+		backtrace_full (bt_state, skip + 1, bt_print, bt_error, str);
+	} else {
+		dasprintf (str, "***no backtrace***");
 	}
 }

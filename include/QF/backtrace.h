@@ -36,5 +36,6 @@ typedef struct dstring_s dstring_t;
 
 void BT_Init (const char *filename);
 void BT_pcInfo (dstring_t *str, uintptr_t pc);
+void BT_backtrace (dstring_t *str, int skip);
 
 #endif// __QF_backtrace_h
