@@ -44,40 +44,49 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 						 VkCommandPool cmdPool)
 {
 	size_t atom = device->physDev->p.properties.limits.nonCoherentAtomSize;
+	size_t atom_mask = atom - 1;
+	size = (size + atom_mask) & ~atom_mask;
+
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dstring_t  *str = dstring_new ();
 
-	qfv_stagebuf_t *stage = calloc (1, sizeof (qfv_stagebuf_t));
-	stage->atom_mask = atom - 1;
-	size = (size + stage->atom_mask) & ~stage->atom_mask;
-	stage->device = device;
-	stage->cmdPool = cmdPool;
-	stage->buffer = QFV_CreateBuffer (device, size,
-									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-									  //FIXME make a param
-									  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
+	auto buffer = QFV_CreateBuffer (device, size,
+									VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+									//FIXME make a param
+									| VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, buffer,
 						 dsprintf (str, "staging:buffer:%s", name));
-	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
-										   VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										   size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, stage->memory,
+	auto memory = QFV_AllocBufferMemory (device, buffer,
+										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+										 size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, memory,
 						 dsprintf (str, "staging:memory:%s", name));
-	stage->size = size;
-	stage->end = size;
+	QFV_BindBufferMemory (device, buffer, memory, 0);
 
-	dfunc->vkMapMemory (device->dev, stage->memory, 0, size, 0, &stage->data);
-	QFV_BindBufferMemory (device, stage->buffer, stage->memory, 0);
+	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t));
+	*stage = (qfv_stagebuf_t) {
+		.device = device,
+		.cmdPool = cmdPool,
+		.buffer = buffer,
+		.memory = memory,
+		.atom_mask = atom_mask,
+		.size = size,
+		.end = size,
+		.space_start = 0,
+		.space_end = size,
+	};
+	dfunc->vkMapMemory (device->dev, memory, 0, size, 0, &stage->data);
 
-	int         count = RB_buffer_size (&stage->packets);
-
-	__auto_type bufferset = QFV_AllocCommandBufferSet (count, alloca);
+	int  count = RB_buffer_size (&stage->packets);
+	auto bufferset = QFV_AllocCommandBufferSet (count, alloca);
 	QFV_AllocateCommandBuffers (device, cmdPool, 0, bufferset);
 	for (int i = 0; i < count; i++) {
-		qfv_packet_t *packet = &stage->packets.buffer[i];
-		packet->stage = stage;
-		packet->cmd = bufferset->a[i];
-		packet->fence = QFV_CreateFence (device, 1);
+		auto packet = &stage->packets.buffer[i];
+		*packet = (qfv_packet_t) {
+			.stage = stage,
+			.cmd = bufferset->a[i],
+			.fence = QFV_CreateFence (device, 1),
+		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 packet->cmd,
 							 dsprintf (str, "staging:packet:cmd:%s:%d",
@@ -86,8 +95,6 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 							 packet->fence,
 							 dsprintf (str, "staging:packet:fence:%s:%d",
 									   name, i));
-		packet->offset = 0;
-		packet->length = 0;
 	}
 	dstring_delete (str);
 	return stage;
@@ -103,8 +110,8 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	int         count = RB_buffer_size (&stage->packets);
-	__auto_type fences = QFV_AllocFenceSet (count, alloca);
-	__auto_type cmdBuf = QFV_AllocCommandBufferSet (count, alloca);
+	auto fences = QFV_AllocFenceSet (count, alloca);
+	auto cmdBuf = QFV_AllocCommandBufferSet (count, alloca);
 	for (int i = 0; i < count; i++) {
 		fences->a[i] = stage->packets.buffer[i].fence;
 		cmdBuf->a[i] = stage->packets.buffer[i].cmd;
@@ -156,87 +163,116 @@ align (size_t x, size_t a)
 }
 
 static void
-release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
+release_space (qfv_stagebuf_t *stage, qfv_packet_t *p)
 {
+	size_t offset = p->offset;
+	size_t length = p->length;
 	if (stage->space_end != offset
 		&& offset != 0
 		&& stage->space_end != stage->end) {
-		Sys_Error ("staging: out of sequence packet release");
+		Sys_Error ("staging: out of sequence packet release %ld\n"
+				   "  size       : %zd\n"
+				   "  end        : %zd\n"
+				   "  space_start: %zd\n"
+				   "  space_end  : %zd\n"
+				   "  offset     : %zd\n"
+				   "  length     : %zd\n", p - stage->packets.buffer,
+				   stage->size, stage->end,
+				   stage->space_start, stage->space_end,
+				   offset, length);
 	}
 	if (stage->space_end == stage->end) {
-		stage->space_end = 0;
 		stage->end = stage->size;
+		stage->space_end = stage->end;
+	} else {
+		stage->space_end += length;
 	}
-	stage->space_end += align (length, 16);
+	if (stage->space_start > offset) {
+		stage->space_start = offset;
+	}
+}
+
+static void
+check_invariants (qfv_stagebuf_t *stage)
+{
+	if (stage->end > stage->size) {
+		Sys_Error ("end > size: %zd > %zd", stage->end, stage->size);
+	}
+	if (stage->space_end > stage->end) {
+		Sys_Error ("space_end > end: %zd > %zd", stage->space_end, stage->end);
+	}
+	if (stage->space_end == stage->end && stage->end != stage->size) {
+		Sys_Error ("space_end == end != size: %zd == %zd != %zd",
+				   stage->space_end, stage->end, stage->size);
+	}
+	if (stage->space_start > stage->space_end) {
+		Sys_Error ("space_start > space_end: %zd > %zd",
+				   stage->space_start, stage->space_end);
+	}
 }
 
 static void *
 acquire_space (qfv_packet_t *packet, size_t size)
 {
-	qfv_stagebuf_t *stage = packet->stage;
-	qfv_device_t *device = stage->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
+	auto stage = packet->stage;
+	auto device = stage->device;
+	auto dfunc = device->funcs;
+
+	check_invariants (stage);
 
 	// clean up after any completed packets
 	while (RB_DATA_AVAILABLE (stage->packets) > 1) {
-		qfv_packet_t *p = RB_PEEK_DATA (stage->packets, 0);
+		auto p = RB_PEEK_DATA (stage->packets, 0);
 		if (dfunc->vkGetFenceStatus (device->dev, p->fence) != VK_SUCCESS) {
 			break;
 		}
-		release_space (stage, p->offset, p->length);
+		release_space (stage, p);
 		RB_RELEASE (stage->packets, 1);
 	}
+
+	check_invariants (stage);
 
 	if (size > stage->size) {
 		// utterly impossible allocation
 		return 0;
 	}
 
-	// if the staging buffer has been freed up and no data is assigned to the
-	// single existing packet, then ensure the packet starts at the beginning
-	// of the staging buffer in order to maximize the space available to it
-	// (some of the tests are redundant since if any space is assigned to a
-	// packet, the buffer cannot be fully freed up)
-	if (stage->space_end == stage->space_start
-		&& RB_DATA_AVAILABLE (stage->packets) == 1
-		&& packet->length == 0) {
-		stage->space_end = 0;
-		stage->space_start = 0;
-		packet->offset = 0;
-	}
-	if (stage->space_start >= stage->space_end) {
-		// all the space to the actual end of the buffer is free
-		if (stage->space_start + size <= stage->size) {
-			void       *data = (byte *) stage->data + stage->space_start;
-			stage->space_start += size;
-			return data;
-		}
-		// doesn't fit at the end of the buffer, try the beginning but only
-		// if the packet can be moved (no spaced has been allocated to it yet)
-		if (packet->length > 0) {
-			// can't move it
-			return 0;
-		}
-		// mark the unused end of the buffer such that it gets reclaimed
-		// properly when the preceeding packet is freed
-		stage->end = stage->space_start;
-		stage->space_start = 0;
-		packet->offset = 0;
-	}
 	while (stage->space_start + size > stage->space_end
 		   && RB_DATA_AVAILABLE (stage->packets) > 1) {
-		packet = RB_PEEK_DATA (stage->packets, 0);
-		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
-								~0ull);
-		release_space (stage, packet->offset, packet->length);
+		auto p = RB_PEEK_DATA (stage->packets, 0);
+		dfunc->vkWaitForFences (device->dev, 1, &p->fence, VK_TRUE, ~0ull);
+		release_space (stage, p);
 		RB_RELEASE (stage->packets, 1);
+		check_invariants (stage);
 	}
-	if (stage->space_start + size > stage->space_end) {
-		return 0;
+
+	if (stage->space_start + size <= stage->space_end) {
+		if (packet->length == 0) {
+			// no space has been allocated to the packet yet, so place the
+			// packet at the beginning of the space
+			packet->offset = stage->space_start;
+		}
+		packet->length += size;
+		void *data = (byte *) stage->data + stage->space_start;
+		stage->space_start += size;
+
+		check_invariants (stage);
+		return data;
 	}
-	void       *data = (byte *) stage->data + stage->space_start;
-	stage->space_start += size;
-	return data;
+	// This simply should not happen because the only way an allocation can
+	// ligitimately fail is if the requested size is larger than the staging
+	// buffer, and that is handled above. Thus, this happening means something
+	// went very wrong.
+	// However, it breaks the test (which checks for null) and I'm not sure
+	// which way to go, though it may be a bug in the test.
+	//Sys_Error ("couldn't allocate %zd bytes in staging buffer:\n"
+	//		   "  size       : %zd\n"
+	//		   "  end        : %zd\n"
+	//		   "  space_start: %zd\n"
+	//		   "  space_end  : %zd\n", size,
+	//		   stage->size, stage->end,
+	//		   stage->space_start, stage->space_end);
+	return 0;
 }
 
 qfv_packet_t *
@@ -263,7 +299,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 						(int) (end - start), stage, str->str);
 			dstring_delete (str);
 		}
-		release_space (stage, packet->offset, packet->length);
+		release_space (stage, packet);
 		RB_RELEASE (stage->packets, 1);
 	}
 	packet = RB_ACQUIRE (stage->packets, 1);
@@ -289,9 +325,6 @@ QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 {
 	qfZoneNamed (zone, true);
 	void       *data = acquire_space (packet, size);
-	if (data) {
-		packet->length += size;
-	}
 	return data;
 }
 

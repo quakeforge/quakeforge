@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/backtrace.h"
+
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -183,8 +185,10 @@ _error (int line, const char *fmt, ...)
 #define error(fmt...) _error(__LINE__, fmt)
 
 int
-main (void)
+main (int argc, char **argv)
 {
+	BT_Init (argv[0]);
+
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (&device, "", 1024, 0);
 
 	if (stage->size != 1024) {
