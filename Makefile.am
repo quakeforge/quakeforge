@@ -27,7 +27,7 @@ NOCONV_DIST= \
 BUILT_SOURCES = $(top_srcdir)/.version
 AM_CFLAGS= $(TRACY_CFLAGS) -fexceptions -include qftracy.h
 AM_CXXFLAGS= $(TRACY_CFLAGS) -include qftracy.h
-AM_CPPFLAGS= -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
+AM_CPPFLAGS= --embed-dir=$(top_builddir) -I$(top_srcdir)/include $(UNWIND_CFLAGS) $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS) $(FREETYPE_CFLAGS) $(HARFBUZZ_CFLAGS) $(VULKAN_CPPFLAGS) $(LIBCURL_CFLAGS)
 
 common_ldflags= -export-dynamic @STATIC@ @PTHREAD_LDFLAGS@
 
@@ -99,7 +99,7 @@ QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(QCSYSTEM)
 QCLINKFLAGS=--no-default-paths -Lruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
-QSPIRV=$(QCOMPILE) -Cc-array,target=spir-v
+QSPIRV=$(QCOMPILE) -Ctarget=spir-v
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 MKDIR_P = @MKDIR_P@
 
@@ -110,7 +110,7 @@ qfcc_compile=\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
 
 qfcc_spirv=\
-	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.spvc$$||'`;\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.spv$$||'`;\
 	$(QSPIRV) $(1) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
@@ -124,11 +124,11 @@ SUFFIXES=.o .r .pas
 	$(qfcc_compile)
 
 qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(basename $(basename $(1))))))
-spvcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(1))))
-spvautoc = $(addsuffix $(2).spvc,$(1))
+spvautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix $(2).Qo,$(notdir $(1))))
+spvautoc = $(addsuffix $(2).spv,$(1))
 r_depfiles_remade=
 pas_depfiles_remade=
-spvc_depfiles_remade=
+spv_depfiles_remade=
 
 V_PY = $(V_PY_@AM_V@)
 V_PY_ = $(V_PY_@AM_DEFAULT_V@)
@@ -159,23 +159,23 @@ SUFFICES += .plist .plc
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
-%.spvc: %
+%.spv: %
 	@$(mkdir_p) $(builddir)/`dirname $@`
 	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
-%.vert.spvc: %.vert
+%.vert.spv: %.vert
 	$(qfcc_spirv)
 
-%.geom.spvc: %.geom
+%.geom.spv: %.geom
 	$(qfcc_spirv)
 
-%.frag.spvc: %.frag
+%.frag.spv: %.frag
 	$(qfcc_spirv)
 
-%.comp.spvc: %.comp
+%.comp.spv: %.comp
 	$(qfcc_spirv)
 
-%.r.spvc: %.r
+%.r.spv: %.r
 	$(qfcc_spirv)
 
 sharepath = @sharepath@
@@ -196,7 +196,7 @@ include qw/Makemodule.am
 include tools/Makemodule.am
 include ruamoko/Makemodule.am
 
-DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade) $(spvc_depfiles_remade)
+DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade) $(spv_depfiles_remade)
 CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
@@ -207,13 +207,12 @@ $(pas_depfiles_remade):
 	$(MKDIR_P) $(@D)
 	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
-$(spvc_depfiles_remade):
+$(spv_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spvc: $(top_srcdir)/\1 $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spv: $(top_srcdir)/\1 $(QFCC)@' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) \
-		$(pas_depfiles_remade) $(spvc_depfiles_remade)
-	echo findme $(ruamoko_gui_libgui_a_dep)
+		$(pas_depfiles_remade) $(spv_depfiles_remade)
 
 changelog: ChangeLog
 ChangeLog: FORCE

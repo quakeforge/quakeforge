@@ -379,6 +379,22 @@ if test "x$H_C23" = "xno"; then
 	AC_MSG_ERROR(QuakeForge requires C23 to compile)
 fi
 
+AC_MSG_CHECKING([[for #embed]])
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[char array[] = {]
+		 [#embed "$srcdir/bootstrap"]
+		 [};]
+		 [int bar (void);]],
+		[[return bar() * array[0];]])],
+	[H_EMBED=yes],
+	[H_EMBED=no]
+)
+AC_MSG_RESULT([$H_EMBED])
+if test "x$H_EMBED" = "xno"; then
+	AC_MSG_ERROR([[QuakeForge requires #embed to compile]])
+fi
+
 AS="$CC"
 if test "x$SYSTYPE" = "xWIN32"; then
 	ASFLAGS="\$(DEFS) \$(CFLAGS) \$(CPPFLAGS) \$(DEFAULT_INCLUDES) \$(INCLUDES) -D_WIN32"

@@ -38,116 +38,169 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/shader.h"
 
-static
-#include "libs/video/renderer/vulkan/shader/slice.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/line.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/line.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/particle.geom.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/particle.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/partphysics.comp.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/sprite.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/sprite_depth.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/twod_depth.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/twod.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/quakebsp.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/quakebsp.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_depth.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_gbuf.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_gbuf.geom.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_shadow.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_sky.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/debug.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/entid.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/light_entid.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/light_splat.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/light_debug.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/light_oit.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/lighting_cascade.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/lighting_cube.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/lighting_none.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/lighting_plane.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/compose.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/compose_fwd.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/mesh.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/mesh_shadow.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/qskin_gbuf.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/output.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/painter.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/expand.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/queueobj.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/gizmo.r.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/fstriangle.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/fstrianglest.vert.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/gridplane.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/fisheye.frag.spvc"
-static
-#include "libs/video/renderer/vulkan/shader/waterwarp.frag.spvc"
+static const byte alignas(uint32_t) slice_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/slice.vert.spv"
+};
+static const byte alignas(uint32_t) line_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/line.vert.spv"
+};
+static const byte alignas(uint32_t) line_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/line.frag.spv"
+};
+static const byte alignas(uint32_t) particle_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/particle.vert.spv"
+};
+static const byte alignas(uint32_t) particle_geom[] = {
+#embed "libs/video/renderer/vulkan/shader/particle.geom.spv"
+};
+static const byte alignas(uint32_t) particle_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/particle.frag.spv"
+};
+static const byte alignas(uint32_t) partphysics_comp[] = {
+#embed "libs/video/renderer/vulkan/shader/partphysics.comp.spv"
+};
+static const byte alignas(uint32_t) partupdate_comp[] = {
+#embed "libs/video/renderer/vulkan/shader/partupdate.comp.spv"
+};
+static const byte alignas(uint32_t) sprite_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/sprite.frag.spv"
+};
+static const byte alignas(uint32_t) sprite_gbuf_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spv"
+};
+static const byte alignas(uint32_t) sprite_gbuf_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spv"
+};
+static const byte alignas(uint32_t) sprite_depth_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/sprite_depth.vert.spv"
+};
+static const byte alignas(uint32_t) sprite_depth_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/sprite_depth.frag.spv"
+};
+static const byte alignas(uint32_t) twod_depth_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/twod_depth.frag.spv"
+};
+static const byte alignas(uint32_t) twod_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/twod.vert.spv"
+};
+static const byte alignas(uint32_t) twod_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/twod.frag.spv"
+};
+static const byte alignas(uint32_t) quakebsp_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/quakebsp.vert.spv"
+};
+static const byte alignas(uint32_t) quakebsp_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/quakebsp.frag.spv"
+};
+static const byte alignas(uint32_t) bsp_depth_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_depth.vert.spv"
+};
+static const byte alignas(uint32_t) bsp_gbuf_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.vert.spv"
+};
+static const byte alignas(uint32_t) bsp_gbuf_geom[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.geom.spv"
+};
+static const byte alignas(uint32_t) bsp_gbuf_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spv"
+};
+static const byte alignas(uint32_t) bsp_shadow_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_shadow.vert.spv"
+};
+static const byte alignas(uint32_t) bsp_sky_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_sky.frag.spv"
+};
+static const byte alignas(uint32_t) bsp_turb_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/bsp_turb.frag.spv"
+};
+static const byte alignas(uint32_t) debug_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/debug.frag.spv"
+};
+static const byte alignas(uint32_t) entid_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/entid.frag.spv"
+};
+static const byte alignas(uint32_t) light_entid_r[] = {
+#embed "libs/video/renderer/vulkan/shader/light_entid.r.spv"
+};
+static const byte alignas(uint32_t) light_splat_r[] = {
+#embed "libs/video/renderer/vulkan/shader/light_splat.r.spv"
+};
+static const byte alignas(uint32_t) light_debug_r[] = {
+#embed "libs/video/renderer/vulkan/shader/light_debug.r.spv"
+};
+static const byte alignas(uint32_t) light_oit_r[] = {
+#embed "libs/video/renderer/vulkan/shader/light_oit.r.spv"
+};
+static const byte alignas(uint32_t) lighting_cascade_r[] = {
+#embed "libs/video/renderer/vulkan/shader/lighting_cascade.r.spv"
+};
+static const byte alignas(uint32_t) lighting_cube_r[] = {
+#embed "libs/video/renderer/vulkan/shader/lighting_cube.r.spv"
+};
+static const byte alignas(uint32_t) lighting_none_r[] = {
+#embed "libs/video/renderer/vulkan/shader/lighting_none.r.spv"
+};
+static const byte alignas(uint32_t) lighting_plane_r[] = {
+#embed "libs/video/renderer/vulkan/shader/lighting_plane.r.spv"
+};
+static const byte alignas(uint32_t) compose_r[] = {
+#embed "libs/video/renderer/vulkan/shader/compose.r.spv"
+};
+static const byte alignas(uint32_t) compose_fwd_r[] = {
+#embed "libs/video/renderer/vulkan/shader/compose_fwd.r.spv"
+};
+static const byte alignas(uint32_t) mesh_r[] = {
+#embed "libs/video/renderer/vulkan/shader/mesh.r.spv"
+};
+static const byte alignas(uint32_t) mesh_shadow_r[] = {
+#embed "libs/video/renderer/vulkan/shader/mesh_shadow.r.spv"
+};
+static const byte alignas(uint32_t) qskin_fwd_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/qskin_fwd.frag.spv"
+};
+static const byte alignas(uint32_t) qskin_gbuf_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/qskin_gbuf.frag.spv"
+};
+static const byte alignas(uint32_t) output_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/output.frag.spv"
+};
+static const byte alignas(uint32_t) painter_r[] = {
+#embed "libs/video/renderer/vulkan/shader/painter.r.spv"
+};
+static const byte alignas(uint32_t) expand_r[] = {
+#embed "libs/video/renderer/vulkan/shader/expand.r.spv"
+};
+static const byte alignas(uint32_t) queueobj_r[] = {
+#embed "libs/video/renderer/vulkan/shader/queueobj.r.spv"
+};
+static const byte alignas(uint32_t) gizmo_r[] = {
+#embed "libs/video/renderer/vulkan/shader/gizmo.r.spv"
+};
+static const byte alignas(uint32_t) passthrough_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/passthrough.vert.spv"
+};
+static const byte alignas(uint32_t) fstriangle_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/fstriangle.vert.spv"
+};
+static const byte alignas(uint32_t) fstrianglest_vert[] = {
+#embed "libs/video/renderer/vulkan/shader/fstrianglest.vert.spv"
+};
+static const byte alignas(uint32_t) gridplane_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/gridplane.frag.spv"
+};
+static const byte alignas(uint32_t) pushcolor_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/pushcolor.frag.spv"
+};
+static const byte alignas(uint32_t) fisheye_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/fisheye.frag.spv"
+};
+static const byte alignas(uint32_t) waterwarp_frag[] = {
+#embed "libs/video/renderer/vulkan/shader/waterwarp.frag.spv"
+};
 
 typedef struct shaderdata_s {
 	const char *name;
-	const uint32_t *data;
+	const byte *data;
 	size_t      size;
 } shaderdata_t;
 
@@ -256,7 +309,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 						shader_path);
 		VkShaderModuleCreateInfo createInfo = {
 			VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0,
-			0, data->size, data->data
+			0, data->size, (const uint32_t *) data->data
 		};
 
 		dfunc->vkCreateShaderModule (dev, &createInfo, 0, &shader);
