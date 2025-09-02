@@ -1544,7 +1544,7 @@ make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 	uint32_t *img = QFV_PacketExtend (packet, imgsize);
 	for (int i = 0; i < 64; i++) {
 		for (int j = 0; j < 64; j++) {
-			img[i * 64 + j] = ((j ^ i) & 1) ? 0x00ffffff : 0;
+			img[i * 64 + j] = ((j ^ i) & 1) ? 0x3f800000 : 0;
 		}
 	}
 
