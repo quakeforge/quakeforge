@@ -39,7 +39,7 @@
 
 #include "util.h"
 
-static int __attribute__((const))
+int __attribute__((const))
 count_bits (uint32_t val)
 {
 	int         bits = 0;

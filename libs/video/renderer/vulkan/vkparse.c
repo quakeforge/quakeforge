@@ -1160,6 +1160,17 @@ static cvar_t vulkan_use_validation_cvar = {
 	.flags = CVAR_NONE,
 	.value = { .type = &validation_type, .value = &vulkan_use_validation },
 };
+static cvar_t vulkan_validation_feature_cvar = {
+	.name = "vulkan_validation_feature",
+	.description =
+		"KRONOS Validation Layer feature enable options.",
+	.default_value = "0",
+	.flags = CVAR_NONE,
+	.value = {
+		.type = &VkValidationFeatureEnableEXT_type,
+		.value = &vulkan_validation_feature,
+	},
+};
 
 static void
 vulkan_frame_count_f (void *data, const cvar_t *cvar)
@@ -1192,6 +1203,7 @@ Vulkan_Init_Cvars (void)
 		validation_symtab.symbols[num_syms] = *sym;
 	}
 	Cvar_Register (&vulkan_use_validation_cvar, 0, 0);
+	Cvar_Register (&vulkan_validation_feature_cvar, 0, 0);
 	// FIXME implement fallback choices (instead of just fifo)
 	Cvar_Register (&vulkan_presentation_mode_cvar, 0, 0);
 	Cvar_Register (&vulkan_frame_count_cvar, vulkan_frame_count_f, 0);

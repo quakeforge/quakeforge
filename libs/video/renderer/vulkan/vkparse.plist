@@ -1,5 +1,6 @@
 search = (
 	VkDebugUtilsMessageSeverityFlagBitsEXT,
+	VkValidationFeatureEnableEXT,
 	VkPresentModeKHR,
 	VkSpecializationInfo,
 	VkPipelineShaderStageCreateInfo,
@@ -45,6 +46,7 @@ search = (
 	qfv_samplerinfo_t,
 );
 parse = {
+	VkValidationFeatureEnableEXT = expflags;
 	VkPhysicalDeviceLimits = readonly;
 	VkSpecializationInfo = {
 		mapEntries = {

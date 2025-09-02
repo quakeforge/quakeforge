@@ -39,6 +39,7 @@
 #include "util.h"
 
 int vulkan_use_validation;
+int vulkan_validation_feature;
 
 static uint32_t numLayers;
 static VkLayerProperties *instanceLayerProperties;
@@ -216,13 +217,14 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		.engineVersion = 0x000702ff, //FIXME version
 		.apiVersion = VK_API_VERSION_1_4,
 	};
-	VkValidationFeatureEnableEXT valfeat_enable[] = {
-//		VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-//		VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
-//		VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
-//		VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
-	};
-#define valfeat_count sizeof(valfeat_enable)/sizeof(valfeat_enable[0])
+	int valfeat_count = count_bits (vulkan_validation_feature);
+	VkValidationFeatureEnableEXT valfeat_enable[valfeat_count + 1] = {};
+	for (uint32_t feat = vulkan_validation_feature, ind = 0, bit = 0; feat;
+		 feat >>= 1, bit++) {
+		if (feat & 1) {
+			valfeat_enable[ind++] = bit;
+		}
+	}
 	VkValidationFeaturesEXT validation_features= {
 		.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT,
 		.enabledValidationFeatureCount = valfeat_count,
@@ -282,9 +284,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	ctx->instance = inst;
 	load_instance_funcs (ctx);
 
-	if (vulkan_use_validation) {
-		setup_debug_callback (inst);
-	}
+	setup_debug_callback (inst);
 
 	qfv_instfuncs_t *ifunc = inst->funcs;
 	ifunc->vkEnumeratePhysicalDevices (instance, &inst->numDevices, 0);
