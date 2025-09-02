@@ -73,7 +73,11 @@ acquire_output (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto oframe = &octx->frames.a[ctx->curFrame];
 	auto sc = ctx->swapchain;
 
-	dfunc->vkWaitForFences (device->dev, 1, &oframe->fence, VK_TRUE, 2000000000);
+	auto res = dfunc->vkWaitForFences (device->dev, 1, &oframe->fence,
+									   VK_TRUE, 2000000000);
+	if (res != VK_SUCCESS) {
+		Sys_Error ("vkWaitForFences: %d", res);
+	}
 	QFV_CmdPoolManager_Reset (&rframe->output_cmdpool);
 	rframe->active_pool = &rframe->output_cmdpool;
 	//dfunc->vkResetFences (device->dev, 1, &oframe->fence);
