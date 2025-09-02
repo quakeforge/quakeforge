@@ -371,9 +371,13 @@ AC_COMPILE_IFELSE(
 		[[bool flag = true;]
 		 [int bar (void);]],
 		[[return bar();]])],
-	[AC_MSG_RESULT(yes)],
-	[AC_MSG_ERROR(QuakeForge requires C23 to compile)]
+	[H_C23=yes],
+	[H_C23=no]
 )
+AC_MSG_RESULT([$H_C23])
+if test "x$H_C23" = "xno"; then
+	AC_MSG_ERROR(QuakeForge requires C23 to compile)
+fi
 
 AS="$CC"
 if test "x$SYSTYPE" = "xWIN32"; then
