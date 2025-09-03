@@ -68,7 +68,7 @@ fog_update (vec4f_t newfog, float time)
 
 	fog = newfog;
 	fade_time = time;
-	fade_done = r_data->realtime + time;
+	fade_done = fade_time ? r_data->realtime + time : 0;
 }
 void
 Fog_Update (float density, float red, float green, float blue, float time)
