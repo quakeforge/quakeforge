@@ -1392,6 +1392,7 @@ renderpasses = {
 				position = {
 					@inherit = $attachment_base;
 					format = $images.position.format;
+					loadOp = clear;
 					view = position;
 				};
 				light = {
@@ -1998,14 +1999,13 @@ renderpasses = {
 					@inherit = $attachment_base;
 					format = $images.cube_position.format;
 					view = cube_position;
-					clearValue = {
-						color = { int32 = ( 0, 0, 0, 0); };
-					};
+					loadOp = clear;
 				};
 				light = {
 					@inherit = $attachment_base;
 					format = $images.cube_light.format;
 					view = cube_light;
+					loadOp = clear;
 				};
 				entid = {
 					@inherit = $attachment_base;
