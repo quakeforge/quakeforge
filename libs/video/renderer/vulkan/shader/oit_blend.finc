@@ -7,7 +7,7 @@
 vec4
 BlendFrags (vec4 color)
 {
-	#define MAX_FRAGMENTS 64
+	#define MAX_FRAGMENTS 8
 	FragData    frags[MAX_FRAGMENTS];
 	int         numFrags = 0;
 	ivec3       coord = ivec3(gl_FragCoord.xy, gl_ViewIndex);
