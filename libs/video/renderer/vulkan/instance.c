@@ -247,8 +247,8 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 					+ count_strings (ctx->required_extensions) + 1;
 	if (vulkan_use_validation) {
 		nlay += count_strings (vulkanValidationLayers);
-		next += count_strings (debugExtensions);
 	}
+	next += count_strings (debugExtensions);
 	const char **lay = alloca (nlay * sizeof (const char *));
 	const char **ext = alloca (next * sizeof (const char *));
 	// ensure there are null pointers so merge_strings can act as append
@@ -259,8 +259,8 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	merge_strings (ext, extensions, ctx->required_extensions);
 	if (vulkan_use_validation) {
 		merge_strings (lay, lay, vulkanValidationLayers);
-		merge_strings (ext, ext, debugExtensions);
 	}
+	merge_strings (ext, ext, debugExtensions);
 	prune_strings (instanceLayers, lay, &nlay);
 	prune_strings (instanceExtensions, ext, &next);
 	lay[nlay] = 0;
