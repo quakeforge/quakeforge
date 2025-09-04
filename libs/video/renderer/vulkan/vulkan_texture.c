@@ -47,6 +47,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/staging.h"
 
 #include "vid_vulkan.h"
@@ -518,10 +519,11 @@ texture_shutdown (exprctx_t *ectx)
 	qfZoneScoped (true);
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
-	Vulkan_UnloadTex (ctx, ctx->default_black);
-	Vulkan_UnloadTex (ctx, ctx->default_white);
-	Vulkan_UnloadTex (ctx, ctx->default_magenta);
-	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
+	auto tctx = ctx->texture_context;
+
+	QFV_DestroyResource (ctx->device, tctx->tex_resource);
+
+	free (tctx->tex_resource);
 	free (ctx->texture_context);
 }
 
@@ -536,22 +538,57 @@ texture_startup (exprctx_t *ectx)
 
 	tctx->dsmanager = QFV_Render_DSManager (ctx, "texture_set");
 
-	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1,
-										 "default_black");
-	ctx->default_white = Vulkan_LoadTex (ctx, &default_white_tex, 1,
-										 "default_white");
-	ctx->default_magenta = Vulkan_LoadTex (ctx, &default_magenta_tex, 1,
-										   "default_magenta");
-	qfv_tex_t  *tex;
-	tex = ctx->default_magenta_array = malloc (sizeof (qfv_tex_t));
-	tex->memory = 0;
-	tex->image = 0;
-	tex->view = QFV_CreateImageView (ctx->device, ctx->default_magenta->image,
-									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-									 VK_FORMAT_R8G8B8A8_UNORM,
-									 VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_IMAGE_VIEW, tex->view,
-						 "iview:default_magenta_array");
+	size_t size = sizeof (qfv_resource_t)
+				+ sizeof (qfv_resobj_t[3])	//images
+				+ sizeof (qfv_resobj_t[6]);	//views
+	tctx->tex_resource = malloc (size);
+	auto images = (qfv_resobj_t *) &tctx->tex_resource[1];
+	auto views = (qfv_resobj_t *) &images[3];
+	*tctx->tex_resource = (qfv_resource_t) {
+		.name = "texture",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 3 + 4,
+		.objects = images,
+	};
+	QFV_ResourceInitTexImage (&images[0], "default_black", true,
+							  &default_black_tex);
+	QFV_ResourceInitTexImage (&images[1], "default_white", true,
+							  &default_white_tex);
+	QFV_ResourceInitTexImage (&images[2], "default_magenta", true,
+							  &default_magenta_tex);
+	for (int i = 0; i < 3; i++) {
+		QFV_ResourceInitImageView (&views[i + 0], i, &images[i]);
+		QFV_ResourceInitImageView (&views[i + 3], i, &images[i]);
+		views[i + 3].name = vac (ctx->va_ctx, "%s_array", images[i].name);
+		views[i + 3].image_view.type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+	}
+	QFV_CreateResource (ctx->device, tctx->tex_resource);
+	ctx->default_black[0] = views[0 + 0].image_view.view;
+	ctx->default_black[1] = views[3 + 0].image_view.view;
+	ctx->default_white[0] = views[0 + 1].image_view.view;
+	ctx->default_white[1] = views[3 + 1].image_view.view;
+	ctx->default_magenta[0] = views[0 + 2].image_view.view;
+	ctx->default_magenta[1] = views[3 + 2].image_view.view;
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	auto black_bytes = QFV_PacketExtend (packet, 0); //FIXME
+	stage_tex_data (packet, &default_black_tex, 4);
+	auto white_bytes = QFV_PacketExtend (packet, 0); //FIXME
+	stage_tex_data (packet, &default_white_tex, 4);
+	auto magenta_bytes = QFV_PacketExtend (packet, 0); //FIXME
+	stage_tex_data (packet, &default_magenta_tex, 4);
+
+	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+
+	QFV_PacketCopyImage (packet, images[0].image.image, 1, 1,
+						 QFV_PacketOffset (packet, black_bytes), &sb, &db);
+	QFV_PacketCopyImage (packet, images[1].image.image, 1, 1,
+						 QFV_PacketOffset (packet, white_bytes), &sb, &db);
+	QFV_PacketCopyImage (packet, images[2].image.image, 1, 1,
+						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
+
 	qfvPopDebug (ctx);
 }
 

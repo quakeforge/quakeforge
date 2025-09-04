@@ -12,6 +12,7 @@ typedef struct qfv_tex_s {
 
 typedef struct texturectx_s {
 	struct qfv_dsmanager_s *dsmanager;
+	struct qfv_resource_s *tex_resource;
 } texturectx_t;
 
 void Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
