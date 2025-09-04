@@ -214,14 +214,43 @@ mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 	} while (1);
 }
 
+typedef struct {
+	bool        alt;
+	int         index;
+} texanim_t;
+
+static texanim_t
+get_texanim (const texture_t *tx)
+{
+	int code = tx->name[1];
+	if (code >= 'a' && code <= 'z') {
+		// convert to uppercase, avoiding toupper (table lookup,
+		// localization issues, etc)
+		code = code - ('a' - 'A');
+	}
+	if (code >= '0' && code <= '9') {
+		return (texanim_t) {
+			.alt = false,
+			.index = code - '0',
+		};
+	} else if (code >= 'A' && code <= 'J') {
+		return (texanim_t) {
+			.alt = true,
+			.index = code - 'A',
+		};
+	} else {
+		Sys_Error ("Bad animating texture %s", tx->name);
+	}
+}
+
+
 static void
 Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 {
 	dmiptexlump_t  *m;
-	int				pixels, num, max, altmax;
+	int				pixels;
 	miptex_t	   *mt;
 	texture_t	   *tx, *tx2;
-	texture_t	   *anims[10], *altanims[10];
 	mod_brush_t    *brush = &mod->brush;
 
 	if (!bsp->texdatasize) {
@@ -231,9 +260,8 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 	m = (dmiptexlump_t *) bsp->texdata;
 
 	brush->numtextures = m->nummiptex;
-	brush->textures = Hunk_AllocName (0,
-									  m->nummiptex * sizeof (*brush->textures),
-									  mod->name);
+	size_t size = sizeof (texture_t[m->nummiptex]);
+	brush->textures = Hunk_AllocName (0, size, mod->name);
 
 	for (uint32_t i = 0; i < m->nummiptex; i++) {
 		if (m->dataofs[i] == ~0u)
@@ -283,6 +311,8 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		mod_funcs->Mod_ProcessTexture (mod, 0);
 	}
 
+	int             max[2] = {0, 0};
+	texture_t	   *anims[2][10] = {};
 	// sequence the animations
 	for (uint32_t i = 0; i < m->nummiptex; i++) {
 		tx = brush->textures[i];
@@ -292,28 +322,9 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			continue;					// already sequenced
 
 		// find the number of frames in the animation
-		memset (anims, 0, sizeof (anims));
-		memset (altanims, 0, sizeof (altanims));
-
-// convert to uppercase, avoiding toupper (table lookup,
-// localization issues, etc)
-#define QTOUPPER(x) ((x) - ('a' - 'A'))
-
-		max = tx->name[1];
-		if (max >= 'a' && max <= 'z')
-			max = QTOUPPER (max);
-		if (max >= '0' && max <= '9') {
-			max -= '0';
-			altmax = 0;
-			anims[max] = tx;
-			max++;
-		} else if (max >= 'A' && max <= 'J') {
-			altmax = max - 'A';
-			max = 0;
-			altanims[altmax] = tx;
-			altmax++;
-		} else
-			Sys_Error ("Bad animating texture %s", tx->name);
+		auto texanim = get_texanim (tx);
+		anims[texanim.alt][texanim.index] = tx;
+		max[texanim.alt] = texanim.index + 1;
 
 		for (uint32_t j = i + 1; j < m->nummiptex; j++) {
 			tx2 = brush->textures[j];
@@ -322,45 +333,27 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			if (strcmp (tx2->name + 2, tx->name + 2))
 				continue;
 
-			num = tx2->name[1];
-			if (num >= 'a' && num <= 'z')
-				num = QTOUPPER (num);
-			if (num >= '0' && num <= '9') {
-				num -= '0';
-				anims[num] = tx2;
-				if (num + 1 > max)
-					max = num + 1;
-			} else if (num >= 'A' && num <= 'J') {
-				num = num - 'A';
-				altanims[num] = tx2;
-				if (num + 1 > altmax)
-					altmax = num + 1;
-			} else
-				Sys_Error ("Bad animating texture %s", tx->name);
+			texanim = get_texanim (tx2);
+			anims[texanim.alt][texanim.index] = tx2;
+			if (texanim.index + 1 > max[texanim.alt]) {
+				max[texanim.alt] = texanim.index + 1;
+			}
 		}
 
 		// link them all together
-		for (int j = 0; j < max; j++) {
-			tx2 = anims[j];
-			if (!tx2)
-				Sys_Error ("Missing frame %i of %s", j, tx->name);
-			tx2->anim_total = max * ANIM_CYCLE;
-			tx2->anim_min = j * ANIM_CYCLE;
-			tx2->anim_max = (j + 1) * ANIM_CYCLE;
-			tx2->anim_next = anims[(j + 1) % max];
-			if (altmax)
-				tx2->alternate_anims = altanims[0];
-		}
-		for (int j = 0; j < altmax; j++) {
-			tx2 = altanims[j];
-			if (!tx2)
-				Sys_Error ("Missing frame %i of %s", j, tx->name);
-			tx2->anim_total = altmax * ANIM_CYCLE;
-			tx2->anim_min = j * ANIM_CYCLE;
-			tx2->anim_max = (j + 1) * ANIM_CYCLE;
-			tx2->anim_next = altanims[(j + 1) % altmax];
-			if (max)
-				tx2->alternate_anims = anims[0];
+		for (int k = 0; k < 2; k++) {
+			for (int j = 0; j < max[k]; j++) {
+				tx2 = anims[k][j];
+				if (!tx2)
+					Sys_Error ("Missing frame %i of %s", j, tx->name);
+				tx2->anim_total = max[k] * ANIM_CYCLE;
+				tx2->anim_min = j * ANIM_CYCLE;
+				tx2->anim_max = (j + 1) * ANIM_CYCLE;
+				tx2->anim_next = anims[k][(j + 1) % max[k]];
+				if (max[1 - k]) {
+					tx2->alternate_anims = anims[1 - k][0];
+				}
+			}
 		}
 	}
 }
