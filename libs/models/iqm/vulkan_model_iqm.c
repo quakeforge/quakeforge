@@ -146,7 +146,7 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 	auto ib = mipLevels == 1
 			? &imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly]
 			: nullptr;
-	QFV_PacketCopyImage (packet, image, tex->width, tex->height, sb, ib);
+	QFV_PacketCopyImage (packet, image, tex->width, tex->height, 0, sb, ib);
 
 	if (mipLevels != 1) {
 		QFV_GenerateMipMaps (device, packet->cmd, image, mipLevels,

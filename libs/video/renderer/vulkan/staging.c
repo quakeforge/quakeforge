@@ -423,10 +423,13 @@ QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 
 void
 QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-					 int width, int height,
+					 int width, int height, size_t offset,
 					 const qfv_imagebarrier_t *srcBarrier,
 					 const qfv_imagebarrier_t *dstBarrier)
 {
+	if (offset >= packet->length) {
+		Sys_Error ("offset outside of packet");
+	}
 	qfv_devfuncs_t *dfunc = packet->stage->device->funcs;
 	qfv_imagebarrier_t ib = *srcBarrier;
 	ib.barrier.image = dstImage;
@@ -435,7 +438,7 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0, 1, &ib.barrier);
 	VkBufferImageCopy copy_region = {
-		.bufferOffset = packet->offset,
+		.bufferOffset = packet->offset + offset,
 		.bufferRowLength = 0,
 		.bufferImageHeight = 0,
 		.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
@@ -453,4 +456,18 @@ QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
 		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 									 0, 0, 0, 0, 0, 1, &ib.barrier);
 	}
+}
+
+size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr)
+{
+	auto sub = (uintptr_t) ptr;
+	auto data = (uintptr_t) packet->stage->data;
+	if (sub < data || sub > data + packet->stage->size) {
+		Sys_Error ("ptr outside of staging buffer");
+	}
+	sub -= data;
+	if (sub < packet->offset || sub >= packet->offset + packet->length) {
+		Sys_Error ("ptr outside of packet");
+	}
+	return sub - packet->offset;
 }

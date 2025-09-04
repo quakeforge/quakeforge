@@ -52,8 +52,9 @@ void QFV_PacketScatterBuffer (qfv_packet_t *packet, VkBuffer dstBuffer,
 							  const struct qfv_bufferbarrier_s *dstBarrier);
 struct qfv_imagebarrier_s;
 void QFV_PacketCopyImage (qfv_packet_t *packet, VkImage dstImage,
-						  int width, int height,
+						  int width, int height, size_t offset,
 						  const struct qfv_imagebarrier_s *srcBarrier,
 						  const struct qfv_imagebarrier_s *dstBarrier);
+size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr);
 
 #endif//__QF_Vulkan_staging_h
