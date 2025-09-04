@@ -40,7 +40,7 @@ typedef struct vulkan_ctx_s vulkan_ctx_t;
 
 typedef struct modelctx_s {
 	vulkan_ctx_t *ctx;
-	VkDeviceMemory texture_memory;
+	struct qfv_resource_s *resource;
 } modelctx_t;
 
 typedef struct skin_s skin_t;

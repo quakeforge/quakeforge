@@ -64,6 +64,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/render.h"
+#include "QF/Vulkan/resource.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
@@ -90,11 +91,11 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	vulktex_t  *tex = tx->render;
-	if (tex->tex) {
+	if (tex->view) {
 		tex->tex_id = bctx->registered_textures.size;
 		DARRAY_APPEND (&bctx->registered_textures, tex);
-		tex->descriptor = Vulkan_CreateTextureDescriptor (ctx, tex->tex,
-														  bctx->sampler);
+		tex->descriptor = Vulkan_CreateCombinedImageSampler (ctx, tex->view,
+															 bctx->sampler);
 	}
 }
 
@@ -234,7 +235,13 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
 	clear_textures (ctx);
-	add_texture (r_notexture_mip, ctx);
+	vulktex_t notexture_vtex = {
+		.view = ctx->bsp_context->notexture,
+	};
+	texture_t notexture_tx = {
+		.render = &notexture_vtex,
+	};
+	add_texture (&notexture_tx, ctx);
 	{
 		// FIXME make worldmodel non-special. needs smarter handling of
 		// textures on sub-models but not on main model.
@@ -261,7 +268,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	int         num_tex = bctx->registered_textures.size;
 
 	texture_t **textures = alloca (num_tex * sizeof (texture_t *));
-	textures[0] = r_notexture_mip;
+	textures[0] = &notexture_tx;
 	for (int i = 0, t = 1; i < num_models; i++) {
 		model_t    *m = models[i];
 		// sub-models are done as part of the main model
@@ -1061,83 +1068,18 @@ bsp_flush (vulkan_ctx_t *ctx)
 }
 
 static void
-create_default_skys (vulkan_ctx_t *ctx)
+create_default_skys (vulkan_ctx_t *ctx, qfv_packet_t *packet, qfv_resobj_t *res)
 {
 	qfZoneScoped (true);
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	bspctx_t   *bctx = ctx->bsp_context;
-	VkImage     skybox;
-	VkImage     skysheet;
-	VkDeviceMemory memory;
-	VkImageView boxview;
-	VkImageView sheetview;
-
-	bctx->default_skybox = calloc (2, sizeof (qfv_tex_t));
-	bctx->default_skysheet = bctx->default_skybox + 1;
-
-	VkExtent3D extents = { 1, 1, 1 };
-	skybox = QFV_CreateImage (device, 1, VK_IMAGE_TYPE_2D,
-							  VK_FORMAT_B8G8R8A8_UNORM, extents, 1, 1,
-							  VK_SAMPLE_COUNT_1_BIT,
-							  VK_IMAGE_USAGE_SAMPLED_BIT
-							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skybox,
-						 "bsp:image:default_skybox");
-
-	skysheet = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-							  VK_FORMAT_B8G8R8A8_UNORM, extents, 1, 2,
-							  VK_SAMPLE_COUNT_1_BIT,
-							  VK_IMAGE_USAGE_SAMPLED_BIT
-							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skysheet,
-						 "bsp:image:default_skysheet");
-
-	VkMemoryRequirements requirements;
-	dfunc->vkGetImageMemoryRequirements (device->dev, skybox, &requirements);
-	size_t      boxsize = requirements.size;
-	dfunc->vkGetImageMemoryRequirements (device->dev, skysheet, &requirements);
-	size_t      sheetsize = requirements.size;
-
-	memory = QFV_AllocImageMemory (device, skybox,
-								   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-								   boxsize + sheetsize,
-								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
-								   | VK_IMAGE_USAGE_SAMPLED_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, memory,
-						 "bsp:memory:default_skys");
-
-	QFV_BindImageMemory (device, skybox, memory, 0);
-	QFV_BindImageMemory (device, skysheet, memory, boxsize);
-
-	boxview = QFV_CreateImageView (device, skybox, VK_IMAGE_VIEW_TYPE_CUBE,
-								   VK_FORMAT_B8G8R8A8_UNORM,
-								   VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, boxview,
-						 "bsp:iview:default_skybox");
-
-	sheetview = QFV_CreateImageView (device, skysheet,
-									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-								     VK_FORMAT_B8G8R8A8_UNORM,
-								     VK_IMAGE_ASPECT_COLOR_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, sheetview,
-						 "bsp:iview:default_skysheet");
-
-	bctx->default_skybox->image = skybox;
-	bctx->default_skybox->view = boxview;
-	bctx->default_skybox->memory = memory;
-	bctx->default_skysheet->image = skysheet;
-	bctx->default_skysheet->view = sheetview;
-
-	// temporarily commandeer the light map's staging buffer
-	qfv_packet_t *packet = QFV_PacketAcquire (bctx->light_stage);
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	VkImageMemoryBarrier barriers[2] = { ib.barrier, ib.barrier };
-	barriers[0].image = skybox;
-	barriers[1].image = skysheet;
+	barriers[0].image = res[0].image.image;
+	barriers[1].image = res[1].image.image;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 2, barriers);
@@ -1148,10 +1090,7 @@ create_default_skys (vulkan_ctx_t *ctx)
 		0, VK_REMAINING_MIP_LEVELS,
 		0, VK_REMAINING_ARRAY_LAYERS
 	};
-	dfunc->vkCmdClearColorImage (packet->cmd, skybox,
-								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								 &color, 1, &range);
-	dfunc->vkCmdClearColorImage (packet->cmd, skysheet,
+	dfunc->vkCmdClearColorImage (packet->cmd, res[0].image.image,
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 &color, 1, &range);
 
@@ -1160,34 +1099,24 @@ create_default_skys (vulkan_ctx_t *ctx)
 	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	barriers[0] = ib.barrier;
 	barriers[1] = ib.barrier;
-	barriers[0].image = skybox;
-	barriers[1].image = skysheet;
+	barriers[0].image = res[0].image.image;
+	barriers[1].image = res[1].image.image;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 2, barriers);
-	QFV_PacketSubmit (packet);
 }
 
 static void
-create_notexture (vulkan_ctx_t *ctx)
+create_notexture (vulkan_ctx_t *ctx, qfv_packet_t *packet, qfv_resobj_t *res)
 {
 	qfZoneScoped (true);
-	const char *missing = "Missing";
-	byte        data[2][64 * 64 * 4];	// 2 * 64x64 rgba (8x8 chars)
-	tex_t       tex[2] = {
-		{	.width = 64,
-			.height = 64,
-			.format = tex_rgba,
-			.loaded = true,
-			.data = data[0],
-		},
-		{	.width = 64,
-			.height = 64,
-			.format = tex_rgba,
-			.loaded = true,
-			.data = data[1],
-		},
+	int image_size = 64 * 64 * 4;	//64x64 rgba (8x8 chars)
+	byte *data_bytes = QFV_PacketExtend (packet, image_size * 2);// two layers
+	byte *data[2] = {
+		data_bytes,
+		data_bytes + image_size,
 	};
+	const char *missing = "Missing";
 
 	for (int i = 0; i < 64 * 64; i++) {
 		data[0][i * 4 + 0] = 0x20;
@@ -1230,8 +1159,82 @@ create_notexture (vulkan_ctx_t *ctx)
 		memcpy (data[1] + y * 64 * 4, data[1] + 4 * 64 * 4, 8 * 64 * 4);
 	}
 
-	bspctx_t   *bctx = ctx->bsp_context;
-	bctx->notexture.tex = Vulkan_LoadTexArray (ctx, tex, 2, 1, "notexture");
+	size_t offset = QFV_PacketOffset (packet, data_bytes);
+	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	QFV_PacketCopyImage (packet, res->image.image, 64, 64, offset, &sb, &db);
+}
+
+static void
+create_base_resources (vulkan_ctx_t *ctx)
+{
+	auto bctx = ctx->bsp_context;
+
+	static tex_t notexture_tex = {
+		.width = 64,
+		.height = 64,
+		.format = tex_rgba,
+		.loaded = true,
+	};
+	// shared by both skysheet and skybox as they have the same 2d dimensions
+	static tex_t default_sky_tex = {
+		.width = 1,
+		.height = 1,
+		.format = tex_rgba,
+		.loaded = true,
+	};
+
+	size_t size = sizeof (qfv_resource_t)
+				+ sizeof (qfv_resobj_t[3])	//images
+				+ sizeof (qfv_resobj_t[3]) 	//views
+				+ sizeof (qfv_resobj_t[1]);	//entid
+	bctx->base_resource = malloc (size);
+	auto images = (qfv_resobj_t *) &bctx->base_resource[1];
+	auto views = (qfv_resobj_t *) &images[3];
+	auto entid = (qfv_resobj_t *) &views[3];
+	*bctx->base_resource = (qfv_resource_t) {
+		.name = "bsp",
+		.va_ctx = ctx->va_ctx,
+		.memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		.num_objects = 3 + 4,
+		.objects = images,
+	};
+	QFV_ResourceInitTexImage (&images[0], "notexture", true,
+							  &notexture_tex);
+	QFV_ResourceInitTexImage (&images[1], "default_skysheet", true,
+							  &default_sky_tex);
+	QFV_ResourceInitTexImage (&images[2], "default_skybox", true,
+							  &default_sky_tex);
+	images[0].image.num_layers = 2;
+	images[1].image.num_layers = 2;
+	images[2].image.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	images[2].image.num_layers = 6;
+	QFV_ResourceInitImageView (&views[0], 0, &images[0]);
+	QFV_ResourceInitImageView (&views[1], 1, &images[1]);
+	QFV_ResourceInitImageView (&views[2], 2, &images[2]);
+
+	size_t      entid_count = Vulkan_Scene_MaxEntities (ctx);
+	*entid = (qfv_resobj_t) {
+		.name = "entid",
+		.type = qfv_res_buffer,
+		.buffer = {
+			.size = entid_count * sizeof (uint32_t),
+			.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+					| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		},
+	};
+
+	QFV_CreateResource (ctx->device, bctx->base_resource);
+
+	bctx->notexture = views[0].image_view.view;
+	bctx->default_skysheet = views[1].image_view.view;
+	bctx->default_skybox = views[2].image_view.view;
+	bctx->entid_buffer = entid->buffer.buffer;
+
+	auto packet = QFV_PacketAcquire (ctx->staging);
+	create_notexture (ctx, packet, &images[0]);
+	create_default_skys (ctx, packet, &images[1]);
+	QFV_PacketSubmit (packet);
 }
 
 static void
@@ -1466,6 +1469,11 @@ bsp_shutdown (exprctx_t *ectx)
 
 	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);
+
+	if (bctx->base_resource) {
+		QFV_DestroyResource (device, bctx->base_resource);
+	}
+
 	if (bctx->vertex_buffer) {
 		dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
 		dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
@@ -1480,17 +1488,6 @@ bsp_shutdown (exprctx_t *ectx)
 	if (bctx->skybox_tex) {
 		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
 	}
-	if (bctx->notexture.tex) {
-		Vulkan_UnloadTex (ctx, bctx->notexture.tex);
-	}
-
-	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
-	dfunc->vkDestroyImage (device->dev, bctx->default_skysheet->image, 0);
-
-	dfunc->vkDestroyImageView (device->dev, bctx->default_skybox->view, 0);
-	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
-	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
-	free (bctx->default_skybox);
 	free (bctx);
 	qfvPopDebug (ctx);
 }
@@ -1521,8 +1518,7 @@ bsp_startup (exprctx_t *ectx)
 	bctx->light_stage = QFV_CreateStagingBuffer (device, "lightmap", size,
 												 ctx->cmdpool);
 
-	create_default_skys (ctx);
-	create_notexture (ctx);
+	create_base_resources (ctx);
 
 	DARRAY_INIT (&bctx->registered_textures, 64);
 
@@ -1572,13 +1568,11 @@ bsp_startup (exprctx_t *ectx)
 											 Vulkan_LightmapImageView (ctx),
 											 bctx->sampler);
 	bctx->skybox_descriptor
-		= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
-										  bctx->sampler);
-	bctx->notexture.descriptor
-		= Vulkan_CreateTextureDescriptor (ctx, bctx->notexture.tex,
-										  bctx->sampler);
-
-	r_notexture_mip->render = &bctx->notexture;
+		= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
+											 bctx->sampler);
+	bctx->notexture_descriptor
+		= Vulkan_CreateCombinedImageSampler (ctx, bctx->notexture,
+											 bctx->sampler);
 
 	qfvPopDebug (ctx);
 }
@@ -1734,8 +1728,8 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	if (!*sky || !strcasecmp (sky, "none")) {
 		Sys_MaskPrintf (SYS_vulkan, "Skybox unloaded\n");
 		bctx->skybox_descriptor
-			= Vulkan_CreateTextureDescriptor (ctx, bctx->default_skybox,
-											  bctx->sampler);
+			= Vulkan_CreateCombinedImageSampler (ctx, bctx->default_skybox,
+												 bctx->sampler);
 		return;
 	}
 

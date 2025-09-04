@@ -128,7 +128,7 @@ typedef struct texdata_s {
  */
 ///@{
 typedef struct vulktex_s {
-	struct qfv_tex_s *tex;
+	VkImageView view;
 	VkDescriptorSet descriptor;
 	int         tex_id;
 } vulktex_t;
@@ -354,7 +354,8 @@ typedef struct bspframeset_s
 typedef struct bspctx_s {
 	struct vulkan_ctx_s *vulkan_ctx;
 
-	vulktex_t    notexture;			///< replacement for invalid textures
+	VkImageView    notexture;			///< replacement for invalid textures
+	VkDescriptorSet notexture_descriptor;
 
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
@@ -370,11 +371,11 @@ typedef struct bspctx_s {
 	regtexset_t registered_textures;///< textures for all loaded brush models
 	texdata_t   texdata;			///< texture animation data
 	int         anim_index;			///< texture animation frame (5fps)
-	struct qfv_tex_s *default_skysheet;
-	struct qfv_tex_s *skysheet_tex;	///< scrolling sky texture for current map
+	VkImageView default_skysheet;
+	VkImageView skysheet_tex;	///< scrolling sky texture for current map
 
-	struct qfv_tex_s *default_skybox;
-	struct qfv_tex_s *skybox_tex;	///< sky box texture for current map
+	VkImageView default_skybox;
+	struct qfv_tex_s *skybox_tex;		///< sky box texture for current map
 	VkDescriptorSet skybox_descriptor;
 
 	bsp_pass_t  main_pass;			///< camera view depth, gbuffer, etc
@@ -383,6 +384,7 @@ typedef struct bspctx_s {
 
 	VkSampler    sampler;
 
+	struct qfv_resource_s *base_resource;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
