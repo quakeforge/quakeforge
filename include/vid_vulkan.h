@@ -109,10 +109,9 @@ typedef struct vulkan_ctx_s {
 	uint32_t    curFrame;
 	uint64_t    frameNumber;
 
-	struct qfv_tex_s *default_black;
-	struct qfv_tex_s *default_white;
-	struct qfv_tex_s *default_magenta;
-	struct qfv_tex_s *default_magenta_array;
+	VkImageView default_black[2];	// 2d, 2d array
+	VkImageView default_white[2];	// 2d, 2d array
+	VkImageView default_magenta[2];	// 2d, 2d array
 
 	// size of window
 	int         window_width;

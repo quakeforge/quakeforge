@@ -343,7 +343,7 @@ QFV_DestroyResource (qfv_device_t *device, qfv_resource_t *resource)
 
 void
 QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
-						  int mips, const tex_t *tex)
+						  bool mips, const tex_t *tex)
 {
 	*image = (qfv_resobj_t) {
 		.name = name,
@@ -362,6 +362,42 @@ QFV_ResourceInitTexImage (qfv_resobj_t *image, const char *name,
 			.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT
 					| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 					| VK_IMAGE_USAGE_SAMPLED_BIT,
+		},
+	};
+}
+
+void
+QFV_ResourceInitImageView (qfv_resobj_t *image_view, unsigned image_ind,
+						   const qfv_resobj_t *image)
+{
+	// guess type from image type and settings
+	VkImageViewType type = (VkImageViewType) image->image.type;
+	bool cube = image->image.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+	bool array = image->image.num_layers > 1;
+	if (cube) {
+		type = array ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY :VK_IMAGE_VIEW_TYPE_CUBE;
+	} else if (array) {
+		// valid only for 1d and 2d
+		type += 4;
+	}
+	*image_view = (qfv_resobj_t) {
+		.name = image->name,
+		.type = qfv_res_image_view,
+		.image_view = {
+			.image = image_ind,
+			.type = type,
+			.format = image->image.format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.levelCount = VK_REMAINING_MIP_LEVELS,
+				.layerCount = VK_REMAINING_ARRAY_LAYERS,
+			},
+			.components = {
+				.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+				.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			},
 		},
 	};
 }
