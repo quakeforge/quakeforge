@@ -558,6 +558,12 @@ render_graph = {
 					fragment = { colors = uint; base_color = vec4; fog = vec4; };
 				};
 			};
+			depth_layout = {
+				descriptorSets = (matrix_set, texture_set, bone_set);
+				pushConstants = {
+					vertex = { Model = mat4; enabled_mask = uint; blend = float; MatrixBase = uint; };
+				};
+			};
 			shadow_layout = {
 				descriptorSets = (shadowmat_set, bone_set);
 				pushConstants = {
@@ -1799,7 +1805,7 @@ render_graph = {
 								);
 							};
 							inputAssembly = $mesh.inputAssembly;
-							layout = $mesh.layout;
+							layout = $mesh.depth_layout;
 							dynamic = {
 								dynamicState = (
 									viewport,

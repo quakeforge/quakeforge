@@ -228,7 +228,7 @@ push_mesh_constants (const mat4f_t mat, uint32_t enabled_mask, float blend,
 			offsetof (mesh_push_constants_t, fog),
 			sizeof (constants.fog), &constants.fog },
 	};
-	QFV_PushConstants (device, cmd, layout, pass ? 7 : 3, push_constants);
+	QFV_PushConstants (device, cmd, layout, pass ? 7 : 4, push_constants);
 }
 
 static void
