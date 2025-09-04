@@ -471,3 +471,17 @@ size_t QFV_PacketOffset (qfv_packet_t *packet, void *ptr)
 	}
 	return sub - packet->offset;
 }
+
+size_t QFV_PacketFullOffset (qfv_packet_t *packet, void *ptr)
+{
+	auto sub = (uintptr_t) ptr;
+	auto data = (uintptr_t) packet->stage->data;
+	if (sub < data || sub > data + packet->stage->size) {
+		Sys_Error ("ptr outside of staging buffer");
+	}
+	sub -= data;
+	if (sub < packet->offset || sub >= packet->offset + packet->length) {
+		Sys_Error ("ptr outside of packet");
+	}
+	return sub;
+}
