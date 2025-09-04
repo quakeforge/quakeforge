@@ -121,7 +121,7 @@ tex_format (const tex_t *tex, VkFormat *format, int *bpp)
 	return 0;
 }
 
-static size_t
+static byte *
 stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
 {
 	size_t      texels = tex->width * tex->height;
@@ -143,7 +143,7 @@ stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
 			memcpy (tex_data, tex->data, bpp * texels);
 		}
 	}
-	return tex_data - (byte *) packet->stage->data;
+	return tex_data;
 }
 
 qfv_tex_t *
@@ -210,8 +210,10 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 		{0, 0, 0}, {tex[0].width, tex[0].height, 1},
 	};
 	for (int i = 0; i < layers; i++) {
+		auto data = stage_tex_data (packet, &tex[i], bpp);
+		auto offset = QFV_PacketOffset (packet, data);
 		copy[i] = copy[0];
-		copy[i].bufferOffset = stage_tex_data (packet, &tex[i], bpp);
+		copy[i].bufferOffset = packet->offset + offset;
 		copy[i].imageSubresource.baseArrayLayer = i;
 	}
 
@@ -387,8 +389,10 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 		},
 	};
 	for (int i = 0; i < 6; i++) {
+		auto data = stage_tex_data (packet, tex[i], bpp);
+		auto offset = QFV_PacketOffset (packet, data);
 		copy[i] = copy[0];
-		copy[i].bufferOffset = stage_tex_data (packet, tex[i], bpp);
+		copy[i].bufferOffset = packet->offset + offset;
 		copy[i].imageSubresource.baseArrayLayer = i;
 	}
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
@@ -432,8 +436,10 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 								 0, 0, 0, 0, 0,
 								 1, &ib.barrier);
 
+	auto data = stage_tex_data (packet, src, bpp);
+	auto offset = QFV_PacketOffset (packet, data);
 	VkBufferImageCopy copy = {
-		.bufferOffset = stage_tex_data (packet, src, bpp),
+		.bufferOffset = packet->offset + offset,
 		.imageSubresource = {
 			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 			.mipLevel = mip,
@@ -572,12 +578,9 @@ texture_startup (exprctx_t *ectx)
 	ctx->default_magenta[1] = views[3 + 2].image_view.view;
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	auto black_bytes = QFV_PacketExtend (packet, 0); //FIXME
-	stage_tex_data (packet, &default_black_tex, 4);
-	auto white_bytes = QFV_PacketExtend (packet, 0); //FIXME
-	stage_tex_data (packet, &default_white_tex, 4);
-	auto magenta_bytes = QFV_PacketExtend (packet, 0); //FIXME
-	stage_tex_data (packet, &default_magenta_tex, 4);
+	auto black_bytes = stage_tex_data (packet, &default_black_tex, 4);
+	auto white_bytes = stage_tex_data (packet, &default_white_tex, 4);
+	auto magenta_bytes = stage_tex_data (packet, &default_magenta_tex, 4);
 
 	auto sb = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	auto db = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
@@ -588,6 +591,8 @@ texture_startup (exprctx_t *ectx)
 						 QFV_PacketOffset (packet, white_bytes), &sb, &db);
 	QFV_PacketCopyImage (packet, images[2].image.image, 1, 1,
 						 QFV_PacketOffset (packet, magenta_bytes), &sb, &db);
+
+	QFV_PacketSubmit (packet);
 
 	qfvPopDebug (ctx);
 }
