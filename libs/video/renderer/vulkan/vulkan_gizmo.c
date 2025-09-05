@@ -339,7 +339,7 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto gctx = ctx->gizmo_context;
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "gizmo.flush");
 	auto frame = &gctx->frames.a[ctx->curFrame];
 
 	auto sb = &bufferBarriers[qfv_BB_UniformRead_to_TransferWrite];
@@ -395,6 +395,8 @@ gizmo_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "gizmo.flush"));
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,

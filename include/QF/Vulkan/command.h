@@ -54,7 +54,8 @@ VkCommandBuffer QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager,
 
 VkCommandPool QFV_CreateCommandPool (struct qfv_device_s *device,
 									  uint32_t queueFamily,
-									  int transient, int reset);
+									  int transient, int reset,
+									  const char *name);
 /** Allocate bufferset->size command buffers
  */
 int QFV_AllocateCommandBuffers (struct qfv_device_s *device,

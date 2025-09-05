@@ -326,6 +326,8 @@ copy_maps (uint32_t start, uint32_t count, int stage_id,
 	}
 
 	auto cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "lighting.trans"));
 	dfunc->vkBeginCommandBuffer (cmd, &(VkCommandBufferBeginInfo) {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -745,7 +747,7 @@ lighting_update_lights (const exprval_t **params, exprval_t *result,
 		packet_size += sizeof (uint32_t[light_count]);
 	}
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "lighting.update");
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
 	byte *packet_data = packet_start;
 
@@ -1198,7 +1200,7 @@ lighting_rewrite_ids (lightingframe_t *lframe, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "lighting.ids");
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
 	byte *packet_data = packet_start;
 
@@ -1539,7 +1541,7 @@ make_default_map (int size, VkImage default_map, vulkan_ctx_t *ctx)
 	auto device = ctx->device;
 	auto dfunc = device->funcs;
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "lighting.defmap");
 	size_t imgsize = size * size * sizeof (uint32_t);
 	uint32_t *img = QFV_PacketExtend (packet, imgsize);
 	for (int i = 0; i < 64; i++) {
@@ -2073,7 +2075,7 @@ lighting_startup (exprctx_t *ectx)
 
 	make_default_map (64, lctx->default_map, ctx);
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "lighting.splatverts");
 	make_ico (packet);
 	make_cone (packet);
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -2081,7 +2083,7 @@ lighting_startup (exprctx_t *ectx)
 	auto dbi = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
 	QFV_PacketCopyBuffer (packet, splat_verts[0].buffer.buffer, 0, &sb, &dbv);
 	QFV_PacketSubmit (packet);
-	packet = QFV_PacketAcquire (ctx->staging);
+	packet = QFV_PacketAcquire (ctx->staging, "lighting.splatinds");
 	write_inds (packet);
 	QFV_PacketCopyBuffer (packet, splat_inds[0].buffer.buffer, 0, &sb, &dbi);
 	QFV_PacketSubmit (packet);
@@ -2389,7 +2391,7 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	auto db = &bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
 	{
-		auto packet = QFV_PacketAcquire (ctx->staging);
+		auto packet = QFV_PacketAcquire (ctx->staging, "lighting.matrices1");
 		size_t mat_size = sizeof (mat4f_t[lctx->light_mats.size]);
 		void *mat_data = QFV_PacketExtend (packet, mat_size);
 		memcpy (mat_data, lctx->light_mats.a, mat_size);
@@ -2401,7 +2403,7 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 
 	{
-		auto packet = QFV_PacketAcquire (ctx->staging);
+		auto packet = QFV_PacketAcquire (ctx->staging, "lighting.matrices2");
 		size_t num_matdata = lctx->light_matdata.size;
 		size_t matdata_size = sizeof (qfv_light_matdata_t[num_matdata]);
 		void *matdata_data = QFV_PacketExtend (packet, matdata_size);
@@ -2414,7 +2416,7 @@ upload_light_matrices (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 
 	{
-		auto packet = QFV_PacketAcquire (ctx->staging);
+		auto packet = QFV_PacketAcquire (ctx->staging, "lighting.matrices3");
 		size_t id_size = sizeof (uint32_t[MaxLights * 6]);
 		uint32_t *id_data = QFV_PacketExtend (packet, id_size);
 		memset (id_data, -1, id_size);
@@ -2435,7 +2437,7 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	auto lights = (light_t *) light_pool->data;
 	uint32_t count = light_pool->count;
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "lighting.data1");
 	auto light_data = QFV_PacketExtend (packet, sizeof (light_t[count]));
 	memcpy (light_data, lights, sizeof (light_t[count]));
 	auto sb = &bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -2446,7 +2448,7 @@ upload_light_data (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	}
 	QFV_PacketSubmit (packet);
 
-	packet = QFV_PacketAcquire (ctx->staging);
+	packet = QFV_PacketAcquire (ctx->staging, "lighting.data2");
 	uint32_t r_size = sizeof (qfv_light_render_t[count]);
 	qfv_light_render_t *render = QFV_PacketExtend (packet, r_size);
 	for (uint32_t i = 0; i < count; i++) {
@@ -2862,6 +2864,8 @@ transition_shadow_maps (lightingctx_t *lctx, vulkan_ctx_t *ctx)
 	};
 	VkCommandBuffer cmd;
 	dfunc->vkAllocateCommandBuffers (device->dev, &aInfo, &cmd);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "lighting.trans"));
 	VkCommandBufferBeginInfo bInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 		.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,

@@ -310,7 +310,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	// transparent textures want transparent black
 	memset (trans_palette + 255*4, 0, 4);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "brush.tex");
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		auto tx = brush->textures[i];
 		if (!tx) {

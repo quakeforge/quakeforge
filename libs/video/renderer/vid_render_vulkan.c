@@ -535,7 +535,7 @@ vulkan_vid_render_choose_visual (void *data)
 	vulkan_ctx->choose_visual (vulkan_ctx);
 	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
 									 vulkan_ctx->device->queue.queueFamily,
-									 0, 1);
+									 0, 1, "vulkan_ctx");
 	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %#zx\n",
 					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
 					vulkan_ctx->device->queue.queueFamily,

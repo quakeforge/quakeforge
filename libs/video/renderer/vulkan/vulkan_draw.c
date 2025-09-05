@@ -281,7 +281,7 @@ get_dyn_descriptor (descpool_t *pool, qpic_t *pic, VkBufferView buffer_view,
 static void
 generate_slice_indices (qfv_stagebuf_t *staging, qfv_resobj_t *ind_buffer)
 {
-	qfv_packet_t *packet = QFV_PacketAcquire (staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (staging, "draw.genslice");
 	uint32_t   *ind = QFV_PacketExtend (packet, ind_buffer->buffer.size);
 	for (int i = 0; i < 8; i++) {
 		ind[i] = i;
@@ -509,7 +509,7 @@ flush_vertqueue (vertqueue_t *queue, vulkan_ctx_t *ctx)
 	}
 
 	uint32_t    size = queue->count * sizeof (queue->verts[0]);
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.flush");
 	quadvert_t *verts = QFV_PacketExtend (packet, size);
 	memcpy (verts, queue->verts, size);
 	QFV_duCmdBeginLabel (ctx->device, packet->cmd, "flush_vertqueue",
@@ -782,7 +782,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 
 	QFV_CreateResource (ctx->device, &font->resource->resource);
 
-	__auto_type packet = QFV_PacketAcquire (ctx->staging);
+	__auto_type packet = QFV_PacketAcquire (ctx->staging, "draw.lmp");
 	int         count = tex.width * tex.height;
 	byte       *texels = QFV_PacketExtend (packet, 4 * count);
 	byte        palette[256 * 4];
@@ -1809,7 +1809,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 
 	QFV_CreateResource (ctx->device, &font->resource->resource);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.verts");
 	quadvert_t *verts = QFV_PacketExtend (packet, glyph_data->buffer.size);
 	for (FT_Long i = 0; i < rfont->num_glyphs; i++) {
 		vrect_t    *rect = &rfont->glyph_rects[i];
@@ -1843,7 +1843,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 	QFV_PacketCopyBuffer (packet, glyph_data->buffer.buffer, 0, &sb, &db);
 	QFV_PacketSubmit (packet);
 
-	packet = QFV_PacketAcquire (ctx->staging);
+	packet = QFV_PacketAcquire (ctx->staging, "draw.addfont.texels");
 	byte       *texels = QFV_PacketExtend (packet, tex.width * tex.height);
 	memcpy (texels, tex.data, tex.width * tex.height);
 	QFV_PacketCopyImage (packet, glyph_image->image.image,

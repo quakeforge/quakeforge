@@ -179,6 +179,8 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	}
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
+						 vac (ctx->va_ctx, "trans.clear"));
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -215,7 +217,7 @@ clear_translucent (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	dfunc->vkEndCommandBuffer (cmd);
 	QFV_AppendCmdBuffer (ctx, cmd);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "trans.clear");
 	qfv_transtate_t *state = QFV_PacketExtend (packet, 2 * sizeof (*state));
 	*state = (qfv_transtate_t) { 0, tctx->maxFragments };
 	auto sb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];

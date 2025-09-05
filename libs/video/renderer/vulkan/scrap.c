@@ -129,7 +129,7 @@ QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
 	scrap->batch_free = 0;
 	scrap->batch_count = 0;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "scrap.create");
 	// no data for the packet
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = scrap->image;
@@ -252,14 +252,14 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 	size_t      size;
 
 	if (!scrap->packet) {
-		scrap->packet = QFV_PacketAcquire (stage);
+		scrap->packet = QFV_PacketAcquire (stage, "scrap.subpic");
 	}
 	size = (subpic->width * subpic->height * scrap->bpp + 3) & ~3;
 	if (!(dest = QFV_PacketExtend (scrap->packet, size))) {
 		if (scrap->packet->length) {
 			QFV_ScrapFlush (scrap);
 
-			scrap->packet = QFV_PacketAcquire (stage);
+			scrap->packet = QFV_PacketAcquire (stage, "scrap.subpic");
 			dest = QFV_PacketExtend (scrap->packet, size);
 		}
 		if (!dest) {

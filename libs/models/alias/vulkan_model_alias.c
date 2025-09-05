@@ -154,7 +154,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "alias stage",
 													 SKIN_LAYERS * skinsize * 4,
 													 ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "alias.skin");
 	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4);
 	byte       *glow_data = QFV_PacketExtend (packet, skinsize * 4);
 	byte       *cmap_data = QFV_PacketExtend (packet, skinsize * 4);
@@ -409,7 +409,7 @@ Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 	rmesh->index_buffer = index_obj->buffer.buffer;
 
 	size_t packet_size = vert_size + uv_size + ind_size;
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "alais.mesh");
 	byte *packet_start = QFV_PacketExtend (packet, packet_size);
 	byte *packet_data = packet_start;
 

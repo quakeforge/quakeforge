@@ -134,7 +134,7 @@ iqm_transfer_texture (tex_t *tex, VkImage image, qfv_stagebuf_t *stage,
 	// FIXME correct only for rgb and rgba
 	size_t      layer_size = tex->width * tex->height * tex->format;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "iqm.tex");
 	byte       *dst = QFV_PacketExtend (packet, layer_size * 3);
 
 	memcpy (dst, tex->data, layer_size);
@@ -226,10 +226,11 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 		if (i == 1) {
 			continue;
 		}
-		vpackets[i] = QFV_PacketAcquire (stage);
+		vpackets[i] = QFV_PacketAcquire (stage, vac (ctx->va_ctx,
+													 "iqm.vdata%d", i));
 		vdata[i] = QFV_PacketExtend (vpackets[i], vsizes[i]);
 	}
-	qfv_packet_t *ipacket = QFV_PacketAcquire (stage);
+	qfv_packet_t *ipacket = QFV_PacketAcquire (stage, "iqm.idata");
 	byte *idata = QFV_PacketExtend (ipacket, index_bytes);
 
 	auto iqm_data = (byte *) iqm;

@@ -283,7 +283,7 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto taskctx = (qfv_taskctx_t *) ectx;
 	auto ctx = taskctx->ctx;
 	auto pctx = ctx->painter_context;
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "painter.flush1");
 	auto frame = &pctx->frames.a[ctx->curFrame];
 
 	uint32_t size = pctx->cmd_width * pctx->cmd_height * sizeof (uint32_t);
@@ -296,7 +296,7 @@ painter_flush (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	QFV_PacketSubmit (packet);
 
 	if (pctx->cmd_queue.size) {
-		packet = QFV_PacketAcquire (ctx->staging);
+		packet = QFV_PacketAcquire (ctx->staging, "painter.flush2");
 		size = pctx->cmd_queue.size * sizeof (uint32_t);
 		data = QFV_PacketExtend (packet, size);
 		memcpy (data, pctx->cmd_queue.a, size);

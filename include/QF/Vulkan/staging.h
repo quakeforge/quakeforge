@@ -24,6 +24,7 @@ typedef struct qfv_stagebuf_s {
 	size_t      space_start;///< beginning of available space
 	size_t      space_end;	///< end of available space
 	void       *data;
+	const char *name;
 } qfv_stagebuf_t;
 
 typedef struct qfv_scatter_s {
@@ -37,7 +38,7 @@ qfv_stagebuf_t *QFV_CreateStagingBuffer (struct qfv_device_s *device,
 										 VkCommandPool cmdPool);
 void QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage);
 void QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size);
-qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage);
+qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name);
 void *QFV_PacketExtend (qfv_packet_t *packet, size_t size);
 void QFV_PacketSubmit (qfv_packet_t *packet);
 VkResult QFV_PacketWait (qfv_packet_t *packet);

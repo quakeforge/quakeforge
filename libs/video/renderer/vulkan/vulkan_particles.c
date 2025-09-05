@@ -209,7 +209,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 	auto pframe = &pctx->frames.a[ctx->curFrame];
 	auto layout = taskctx->pipeline->layout;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage, "particles.update");
 
 	__auto_type limits = &device->physDev->p.properties.limits;
 	VkMemoryRequirements req = {

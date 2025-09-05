@@ -101,7 +101,7 @@ debug_planes_draw (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto cmd = taskctx->cmd;
 
 	float gs = pctx->grid_size;
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "planes.draw");
 	qfv_planebuf_t *planes = QFV_PacketExtend (packet, sizeof (qfv_planebuf_t));
 	vec4f_t x = {gs, 0, 0, 0};
 	vec4f_t y = {0, gs, 0, 0};
@@ -186,7 +186,7 @@ planes_startup (exprctx_t *ectx)
 	}
 	QFV_CreateResource (device, pctx->resources);
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "planes.startup");
 	qfv_planebuf_t *planes = QFV_PacketExtend (packet, sizeof (qfv_planebuf_t));
 	*planes = (qfv_planebuf_t) {
 		.num_planes = 3,

@@ -144,7 +144,7 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	mctx->dirty--;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (mctx->stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (mctx->stage, "matrices.update");
 	qfv_matrix_buffer_t *m = QFV_PacketExtend (packet, sizeof (*m));
 	*m = mctx->matrices;
 

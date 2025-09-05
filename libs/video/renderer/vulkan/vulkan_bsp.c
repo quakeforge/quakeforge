@@ -537,7 +537,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "bsp",
 													 vertex_buffer_size,
 													 ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "bsp.build");
 	bspvert_t  *vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	// holds all the polygon definitions: vertex indices + poly_count
 	// primitive restart markers. The primitive restart markers are included
@@ -1231,7 +1231,7 @@ create_base_resources (vulkan_ctx_t *ctx)
 	bctx->default_skybox = views[2].image_view.view;
 	bctx->entid_buffer = entid->buffer.buffer;
 
-	auto packet = QFV_PacketAcquire (ctx->staging);
+	auto packet = QFV_PacketAcquire (ctx->staging, "bsp.base");
 	create_notexture (ctx, packet, &images[0]);
 	create_default_skys (ctx, packet, &images[1]);
 	QFV_PacketSubmit (packet);

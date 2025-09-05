@@ -138,7 +138,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 														  "sprite:%s",
 														 sprite_ctx->mod->name),
 													 size, ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "sprit.data");
 	spritevrt_t *verts = QFV_PacketExtend (packet,
 										   numverts * sizeof (spritevrt_t));
 	int         texsize = 4 * dsprite->width * dsprite->height;

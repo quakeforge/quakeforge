@@ -201,7 +201,7 @@ Vulkan_LoadTexArray (vulkan_ctx_t *ctx, tex_t *tex, int layers, int mip,
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
 						 vac (ctx->va_ctx, "iview:%s", name));
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadarray");
 
 	VkBufferImageCopy copy[layers];
 	copy[0] = (VkBufferImageCopy) {
@@ -305,7 +305,7 @@ Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
 	int size = tex->height / 2;
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadenvmap");
 	stage_tex_data (packet, tex, bpp);
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
@@ -371,7 +371,7 @@ Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
 	int size = tex[0]->height;
 	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.loadenvsides");
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
 	ib.barrier.image = qtex->image;
@@ -428,7 +428,7 @@ Vulkan_UpdateTex (vulkan_ctx_t *ctx, qfv_tex_t *tex, tex_t *src,
 	if (!tex_format (src, &format, &bpp)) {
 		return;
 	}
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.update");
 
 	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
 	ib.barrier.image = tex->image;
@@ -577,7 +577,7 @@ texture_startup (exprctx_t *ectx)
 	ctx->default_magenta[0] = views[0 + 2].image_view.view;
 	ctx->default_magenta[1] = views[3 + 2].image_view.view;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "tex.startup");
 	auto black_bytes = stage_tex_data (packet, &default_black_tex, 4);
 	auto white_bytes = stage_tex_data (packet, &default_white_tex, 4);
 	auto magenta_bytes = stage_tex_data (packet, &default_magenta_tex, 4);

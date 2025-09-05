@@ -27,6 +27,7 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include <string.h>
 
 #include "QF/backtrace.h"
 #include "QF/dstring.h"
@@ -74,6 +75,7 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 		.end = size,
 		.space_start = 0,
 		.space_end = size,
+		.name = strdup (name),
 	};
 	dfunc->vkMapMemory (device->dev, memory, 0, size, 0, &stage->data);
 
@@ -138,6 +140,7 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
 	dfunc->vkDestroyBuffer (device->dev, stage->buffer, 0);
 	dfunc->vkFreeMemory (device->dev, stage->memory, 0);
+	free ((char *) stage->name);
 	free (stage);
 }
 
@@ -265,7 +268,7 @@ acquire_space (qfv_packet_t *packet, size_t size)
 }
 
 qfv_packet_t *
-QFV_PacketAcquire (qfv_stagebuf_t *stage)
+QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 {
 	qfZoneNamed (zone, true);
 	qfv_device_t *device = stage->device;
@@ -297,6 +300,14 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 	packet->offset = stage->space_start;
 	packet->length = 0;
 	packet->owner = __builtin_return_address (0);
+
+	int id = packet - stage->packets.buffer;
+	dstring_t  *str = dstring_newstr ();
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+						 packet->cmd,
+						 dsprintf (str, "staging:packet:cmd:%s:%d:%s",
+								   stage->name, id, name));
+	dstring_delete (str);
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
 	dfunc->vkResetCommandBuffer (packet->cmd, 0);

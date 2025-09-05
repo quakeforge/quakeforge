@@ -29,6 +29,7 @@
 #endif
 #include "QF/qtypes.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 
 qfv_cmdpoolmgr_t *
@@ -48,6 +49,8 @@ QFV_CmdPoolManager_Init (qfv_cmdpoolmgr_t *manager, qfv_device_t *device,
 		.queueFamilyIndex = device->queue.queueFamily,
 	};
 	dfunc->vkCreateCommandPool (device->dev, &poolCInfo, 0, &manager->pool);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_POOL, manager->pool,
+						 name);
 	return manager;
 }
 
@@ -121,7 +124,7 @@ QFV_CmdPoolManager_CmdBuffer (qfv_cmdpoolmgr_t *manager, bool secondary)
 
 VkCommandPool
 QFV_CreateCommandPool (qfv_device_t *device, uint32_t queueFamily,
-					   int transient, int reset)
+					   int transient, int reset, const char *name)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -139,6 +142,7 @@ QFV_CreateCommandPool (qfv_device_t *device, uint32_t queueFamily,
 	};
 	VkCommandPool pool;
 	dfunc->vkCreateCommandPool (dev, &createInfo, 0, &pool);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_POOL, pool, name);
 	return pool;
 }
 
