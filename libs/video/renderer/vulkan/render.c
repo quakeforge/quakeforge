@@ -193,8 +193,9 @@ QFV_RunRenderPassCmd (VkCommandBuffer cmd, vulkan_ctx_t *ctx,
 			.data = data,
 		};
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, taskctx.cmd,
-							 vac (ctx->va_ctx, "renderpass:%s:%s",
-								  rp->label.name, sp->label.name));
+							 vac (ctx->va_ctx, "renderpass:%s:%s:%" PRIu64,
+								  rp->label.name, sp->label.name,
+								  ctx->frameNumber));
 		run_subpass (sp, &taskctx);
 		dfunc->vkCmdExecuteCommands (cmd, 1, &taskctx.cmd);
 		//FIXME comment is a bit off as exactly one buffer is always
@@ -229,7 +230,8 @@ run_renderpass (qfv_renderpass_t *rp, vulkan_ctx_t *ctx, void *data)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 vac (ctx->va_ctx, "cmd:render:%s", rp->label.name));
+						 vac (ctx->va_ctx, "cmd:render:%s:%" PRIu64,
+							  rp->label.name, ctx->frameNumber));
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
@@ -282,7 +284,8 @@ run_compute (qfv_compute_t *comp, vulkan_ctx_t *ctx, qfv_step_t *step)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 vac (ctx->va_ctx, "cmd:compute:%s", step->label.name));
+						 vac (ctx->va_ctx, "cmd:compute:%s:%" PRIu64,
+							  step->label.name, ctx->frameNumber));
 
 	VkCommandBufferBeginInfo beginInfo = {
 		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -328,7 +331,8 @@ run_collect (vulkan_ctx_t *ctx)
 
 	VkCommandBuffer cmd = QFV_GetCmdBuffer (ctx, false);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER, cmd,
-						 vac (ctx->va_ctx, "cmd:render:%s", "tracy"));
+						 vac (ctx->va_ctx, "cmd:render:%s:%" PRIu64,
+							  "tracy", ctx->frameNumber));
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 	};
