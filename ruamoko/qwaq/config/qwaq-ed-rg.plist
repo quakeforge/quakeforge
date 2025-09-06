@@ -2116,6 +2116,7 @@ render_graph = {
 				compose = {
 					color = "[ 0.7,  0.3,  0.3, 1]";
 					dependencies = {
+						translucent = $color_dependency;
 						lighting = $color_dependency;
 					};
 					attachments = {
