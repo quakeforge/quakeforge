@@ -93,8 +93,6 @@ def active_uv(mesh):
 
 def make_skin(operator, mdl, mesh):
     uvt = active_uv(mesh)
-    mdl.skinwidth, mdl.skinheight = (4, 4)
-    skin = null_skin((mdl.skinwidth, mdl.skinheight))
 
     materials = mesh.materials
 
@@ -126,6 +124,8 @@ def make_skin(operator, mdl, mesh):
             else:
                 mdl.skins.append(skin)                              # add empty skin - no texture nodes
     else:
+        mdl.skinwidth, mdl.skinheight = (4, 4)
+        skin = null_skin((mdl.skinwidth, mdl.skinheight))
         mdl.skins.append(skin)                                      # add empty skin - no materials
 
     '''
@@ -343,6 +343,13 @@ def export_mdl(operator, context, filepath):
                                                 vertmap))
     if not mdl.skins:
         make_skin(operator, mdl, mesh)
+    if (mdl.skinwidth * mdl.skinheight) % 4:
+        operator.report({'ERROR'},
+                        ("Mesh has skin disaligning skin:"
+                         + f" {mdl.skinwidth}x{mdl.skinheight}"
+                         + f" {(mdl.skinwidth *mdl.skinheight) %4}"
+                         " must be 4."))
+        return {'CANCELLED'}
     if not mdl.frames:
         scene = context.scene
         for fno in range(scene.frame_start, scene.frame_end + 1):
