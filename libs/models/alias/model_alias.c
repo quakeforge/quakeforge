@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/crc.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -293,6 +294,17 @@ swap_triangles (mod_alias_ctx_t *alias_ctx, dtriangle_t *tris, const mdl_t *mdl)
 	return tris;
 }
 
+static void __attribute__((noreturn, format(PRINTF,2, 3)))
+alias_error (model_t *mod, const char *fmt, ...)
+{
+	auto msg = dstring_newstr ();
+	va_list     args;
+	va_start (args, fmt);
+	dvsprintf (msg, fmt, args);
+	va_end (args);
+	Sys_Error ("%s: %s", mod->path, msg->str);
+}
+
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
@@ -321,18 +333,26 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mdl_t      *mdl = buffer;
 	void       *skindata = swap_mdl (mdl);
 
-	if (mdl->version != ALIAS_VERSION_MDL)
-		Sys_Error ("%s has wrong version number (%i should be %i)",
-				   mod->name, mdl->version, ALIAS_VERSION_MDL);
-	if (mdl->numskins < 1)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", mdl->numskins);
-	if (mdl->numverts < 1)
-		Sys_Error ("model %s has no vertices", mod->name);
-	if (mdl->numtris < 1)
-		Sys_Error ("model %s has no triangles", mod->name);
-	if (mdl->numframes < 1)
-		Sys_Error ("Mod_LoadAliasModel: Invalid # of frames: %d",
-				   mdl->numframes);
+	if (mdl->version != ALIAS_VERSION_MDL) {
+		alias_error (mod, "Wrong version number (%d should be %d).",
+					 mdl->version, ALIAS_VERSION_MDL);
+	}
+	if (mdl->numskins < 1) {
+		alias_error (mod, "Invalid # of skins: %d.", mdl->numskins);
+	}
+	if ((mdl->skinwidth * mdl->skinheight) % 4) {
+		alias_error (mod, "Bad skin size: %dx%d (causes misalignment).",
+					 mdl->skinwidth, mdl->skinheight);
+	}
+	if (mdl->numverts < 1) {
+		alias_error (mod, "Has no vertices");
+	}
+	if (mdl->numtris < 1) {
+		alias_error (mod, "Has no triangles");
+	}
+	if (mdl->numframes < 1) {
+		alias_error (mod, "Invalid # of frames: %d", mdl->numframes);
+	}
 
 	alias_ctx.mdl = mdl;
 	alias_ctx.names_size = 1;	// reserve space for empty string
