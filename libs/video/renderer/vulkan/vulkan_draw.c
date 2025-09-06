@@ -1282,16 +1282,12 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 static inline descbatch_t *
 get_desc_batch (drawframe_t *frame, int descid, uint32_t ind_count)
 {
-	// ubsan complains about a non-zero offset applied to a null pointer when
-	// both size is 0 and a is null: quite right, but when a is null, size
-	// must be 0 or there will be bigger problems. When size is 0, the array
-	// gets initialized if it's not already (ie, if a is null) then the
-	// pointer is recalculated. Thus while not quite a false-positive, it's
-	// a non-issue
+	// A full-screen clip-range is pushed at the beginning of the frame, so
+	// clip_range.size is guaranteed to be > 0
 	auto cr = &frame->clip_range.a[frame->clip_range.size - 1];
 	bool force = !cr->count;
 	cr->count = 1;
-	auto batch = &frame->quad_batch.a[frame->quad_batch.size - 1];
+	auto batch = DARRAY_ENDPTR (&frame->quad_batch);
 	if (!frame->quad_batch.size || force || batch->descid != descid
 		|| ((batch->count & (0xffu << 24)) != (ind_count << 24))) {
 		DARRAY_APPEND(&frame->quad_batch, ((descbatch_t) { .descid = descid }));

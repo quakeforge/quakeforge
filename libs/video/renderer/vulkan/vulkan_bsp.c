@@ -977,18 +977,8 @@ queue_faces (bsp_pass_t *pass, QFV_BspPass pass_ind,
 				dq = QFV_bspTurb;
 			}
 
-			size_t      dq_size = pass->draw_queues[dq].size;
-			// ubsan complains about a non-zero offset applied to a null
-			// pointer when both size is 0 and a is null: quite right, but
-			// when a is null, size must be 0 or there will be bigger
-			// problems. When size is 0, the array gets initialized if it's
-			// not already (ie, if a is null) then the pointer is
-			// recalculated. Thus while not quite a false-positive, it's a
-			// non-issue
-			bsp_draw_t *draw = &pass->draw_queues[dq].a[dq_size - 1];
-			if (!pass->draw_queues[dq].size
-				|| draw->tex_id != i
-				|| draw->inst_id != is.inst_id) {
+			bsp_draw_t *draw = DARRAY_ENDPTR (&pass->draw_queues[dq]);
+			if (!draw || draw->tex_id != i || draw->inst_id != is.inst_id) {
 				bsp_instance_t *instance = &pass->instances[is.inst_id];
 				DARRAY_APPEND (&pass->draw_queues[dq], ((bsp_draw_t) {
 					.tex_id = i,
@@ -997,8 +987,7 @@ queue_faces (bsp_pass_t *pass, QFV_BspPass pass_ind,
 					.first_index = pass->index_count + base,
 					.first_instance = instance->first_instance,
 				}));
-				dq_size = pass->draw_queues[dq].size;
-				draw = &pass->draw_queues[dq].a[dq_size - 1];
+				draw = DARRAY_ENDPTR (&pass->draw_queues[dq]);
 			}
 
 			memcpy (pass->indices + pass->index_count,

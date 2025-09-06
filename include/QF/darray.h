@@ -369,6 +369,12 @@
 		DARRAY_CLOSE_AT (ar, ar->size - 1, 1);							\
 	})
 
+#define DARRAY_ENDPTR(array)											\
+	({																	\
+		auto ar = (array);												\
+		ar->size ? &ar->a[ar->size - 1] : nullptr;						\
+	})
+
 ///@}
 
 #endif//__QF_darray_h
