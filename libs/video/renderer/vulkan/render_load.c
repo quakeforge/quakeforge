@@ -555,11 +555,11 @@ find_layout (const qfv_reference_t *ref, objstate_t *s)
 	}
 	__auto_type li = &s->ptr.layouts[s->inds.num_layouts++];
 	li->name = ref->name;
-	VkDescriptorSetLayout sets[li->num_sets];
+	VkDescriptorSetLayout sets[li->num_sets + 1] = {};
 	for (uint32_t i = 0; i < li->num_sets; i++) {
 		sets[i] = find_descriptorSet (&li->sets[i], s);
 	}
-	VkPushConstantRange ranges[li->num_pushconstantranges + 1];
+	VkPushConstantRange ranges[li->num_pushconstantranges + 1] = {};
 	uint32_t    offset = 0;
 	for (uint32_t i = 0; i < li->num_pushconstantranges; i++) {
 		offset = parse_pushconstantrange (&ranges[i],
@@ -1286,26 +1286,29 @@ create_objects (vulkan_ctx_t *ctx, objcount_t *counts)
 	__auto_type rctx = ctx->render_context;
 	__auto_type jinfo = rctx->jobinfo;
 
-	VkRenderPass renderpasses[counts->num_renderpasses];
+	VkRenderPass renderpasses[counts->num_renderpasses + 1] = {};
 	VkPipeline pipelines[counts->num_graph_pipelines
-						 + counts->num_comp_pipelines];
-	VkRenderPassCreateInfo rpCreate[counts->num_renderpasses];
-	VkAttachmentDescription attach[counts->num_attachments];
-	VkClearValue clear[counts->num_attachments];
-	VkSubpassDescription subpass[counts->num_subpasses];
-	VkSubpassDependency depend[counts->num_dependencies];
-	VkAttachmentReference attachref[counts->num_attachmentrefs];
-	VkPipelineColorBlendAttachmentState cbAttach[counts->num_colorblend];
-	uint32_t    preserve[counts->num_preserve];
-	const char *rpName[counts->num_renderpasses];
+						 + counts->num_comp_pipelines + 1] = {};
+	VkRenderPassCreateInfo rpCreate[counts->num_renderpasses + 1] = {};
+	VkAttachmentDescription attach[counts->num_attachments + 1] = {};
+	VkClearValue clear[counts->num_attachments + 1] = {};
+	VkSubpassDescription subpass[counts->num_subpasses + 1] = {};
+	VkSubpassDependency depend[counts->num_dependencies + 1] = {};
+	VkAttachmentReference attachref[counts->num_attachmentrefs + 1] = {};
+	VkPipelineColorBlendAttachmentState
+		cbAttach[counts->num_colorblend + 1] = {};
+	uint32_t    preserve[counts->num_preserve + 1] = {};
+	const char *rpName[counts->num_renderpasses + 1] = {};
 	const char *plName[counts->num_graph_pipelines
-					   + counts->num_comp_pipelines];
-	VkComputePipelineCreateInfo cplCreate[counts->num_comp_pipelines];
-	VkGraphicsPipelineCreateInfo gplCreate[counts->num_graph_pipelines];
-	VkPipelineColorBlendStateCreateInfo cbState[counts->num_graph_pipelines];
+					   + counts->num_comp_pipelines + 1] = {};
+	VkComputePipelineCreateInfo cplCreate[counts->num_comp_pipelines + 1] = {};
+	VkGraphicsPipelineCreateInfo
+		gplCreate[counts->num_graph_pipelines + 1] = {};
+	VkPipelineColorBlendStateCreateInfo
+		cbState[counts->num_graph_pipelines + 1] = {};
 	qfv_layoutinfo_t layouts[counts->num_graph_pipelines
-							 + counts->num_comp_pipelines];
-	uint32_t    pl_counts[counts->num_renderpasses];
+							 + counts->num_comp_pipelines + 1] = {};
+	uint32_t    pl_counts[counts->num_renderpasses + 1] = {};
 
 	exprctx_t   ectx = { .hashctx = &ctx->script_context->hashctx };
 	__attribute__((cleanup (del_objstate))) objstate_t  s = {
