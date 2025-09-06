@@ -90,6 +90,11 @@ static cvar_t vulkan_oit_fragments_cvar = {
 	.value = { .type = &cexpr_int, .value = &vulkan_oit_fragments },
 };
 
+static const char *instance_layers[] = {
+	//"VK_LAYER_LUNARG_crash_diagnostic",
+	0,
+};
+
 static const char *instance_extensions[] = {
 	"VK_KHR_surface",
 	0,
@@ -119,7 +124,8 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 	Vulkan_Init_Cvars ();
 	R_Init_Cvars ();
 	Vulkan_Script_Init (ctx);
-	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0,
+	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff,
+										instance_layers,
 										instance_extensions);//FIXME version
 }
 
