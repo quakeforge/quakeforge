@@ -436,7 +436,7 @@ find_subpass (qfv_dependencyinfo_t *d, uint32_t spind,
 	if (strcmp (d->name, "$external") == 0) {
 		return VK_SUBPASS_EXTERNAL;
 	}
-	for (uint32_t i = 0; i < spind; i++) {
+	for (uint32_t i = 0; i <= spind; i++) {
 		__auto_type s = &subpasses[i];
 		if (strcmp (d->name, s->name) == 0) {
 			return i;
