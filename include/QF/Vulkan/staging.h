@@ -12,17 +12,24 @@ typedef struct qfv_packet_s {
 	void       *owner;
 } qfv_packet_t;
 
+typedef struct qfvs_space_s {
+	size_t      offset;
+	size_t      length;
+} qfvs_space_t;
+
+#define QFV_PACKET_COUNT 32
+
 typedef struct qfv_stagebuf_s {
 	struct qfv_device_s *device;
 	VkCommandPool cmdPool;
 	VkBuffer    buffer;
 	VkDeviceMemory memory;
-	RING_BUFFER(qfv_packet_t, 32) packets;	///< packets for controlling access
+	/// packets for controlling access
+	RING_BUFFER(qfv_packet_t, QFV_PACKET_COUNT) packets;
+	qfvs_space_t free[QFV_PACKET_COUNT + 1];
+	int         num_free;	///< number of free spaces
 	size_t      atom_mask;	///< for flush size rounding
 	size_t      size;		///< actual size of the buffer
-	size_t      end;		///< effective end of the buffer due to early wrap
-	size_t      space_start;///< beginning of available space
-	size_t      space_end;	///< end of available space
 	void       *data;
 	const char *name;
 } qfv_stagebuf_t;

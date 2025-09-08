@@ -31,6 +31,7 @@
 
 #include "QF/backtrace.h"
 #include "QF/dstring.h"
+#include "QF/fbsearch.h"
 
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -71,10 +72,9 @@ QFV_CreateStagingBuffer (qfv_device_t *device, const char *name, size_t size,
 		.buffer = buffer,
 		.memory = memory,
 		.atom_mask = atom_mask,
+		.free = { [0] = { .offset = 0, .length = size } },
+		.num_free = 1,
 		.size = size,
-		.end = size,
-		.space_start = 0,
-		.space_end = size,
 		.name = strdup (name),
 	};
 	dfunc->vkMapMemory (device->dev, memory, 0, size, 0, &stage->data);
@@ -165,61 +165,141 @@ align (size_t x, size_t a)
 	return (x + a - 1) & ~(a - 1);
 }
 
+static int
+stage_space_cmp (const void *_o, const void *_b)
+{
+	const size_t *offset = _o;
+	const qfvs_space_t *b = _b;
+	return *offset < b->offset ? -1 : *offset > b->offset ? 1 : 0;
+}
+
+static bool
+stage_space_touch (const qfvs_space_t *a, const qfvs_space_t *b)
+{
+	return a->offset + a->length == b->offset;
+}
+
 static void
 release_space (qfv_stagebuf_t *stage, qfv_packet_t *p)
 {
-	size_t offset = p->offset;
-	size_t length = p->length;
-	if (stage->space_end != offset
-		&& offset != 0
-		&& stage->space_end != stage->end) {
-		Sys_Error ("staging: out of sequence packet release %ld\n"
-				   "  size       : %zd\n"
-				   "  end        : %zd\n"
-				   "  space_start: %zd\n"
-				   "  space_end  : %zd\n"
-				   "  offset     : %zd\n"
-				   "  length     : %zd\n", p - stage->packets.buffer,
-				   stage->size, stage->end,
-				   stage->space_start, stage->space_end,
-				   offset, length);
+	if (!p->length) {
+		printf (ONG "packet never had space allocated" DFL "\n");
+		return;
 	}
-	if (stage->space_end == stage->end) {
-		stage->end = stage->size;
-		stage->space_end = stage->end;
+	qfvs_space_t space = {
+		.offset = p->offset,
+		.length = align (p->length, 16),
+	};
+	auto f = stage->free[stage->num_free - 1];
+	if (stage->num_free == 0 || f.offset + f.length < space.offset) {
+		// space being freed is beyond the last one, so simply append it
+		if (stage->num_free == QFV_PACKET_COUNT + 1) {
+			Sys_Error ("too many free spaces");
+		}
+		stage->free[stage->num_free++] = space;
+		return;
+	}
+	qfvs_space_t *fs = fbsearch (&space.offset, stage->free, stage->num_free,
+								 sizeof (*fs), stage_space_cmp);
+	if (!fs) {
+		// before first slot
+		fs = &stage->free[0];
+		if (stage_space_touch (&space, fs)) {
+			// merge the slots
+			fs->offset = space.offset;
+			fs->length += space.length;
+			return;
+		}
+		// need to insert
 	} else {
-		stage->space_end += length;
+		if (stage_space_touch (fs, &space)) {
+			// merge the slots
+			fs->length += space.length;
+			if (fs - stage->free < stage->num_free - 1
+				&& stage_space_touch (fs, fs + 1)) {
+				// merge and delete the later entry
+				fs->length += fs[1].length;
+				int count = --stage->num_free - (fs + 1 - stage->free);
+				memmove (fs + 1, fs + 2, sizeof (qfvs_space_t[count]));
+			}
+			return;
+		}
+		// need to insert
 	}
-	if (stage->space_start > offset) {
-		stage->space_start = offset;
+	// insert a new free space
+	if (stage->num_free == QFV_PACKET_COUNT + 1) {
+		Sys_Error ("too many free spaces");
 	}
+	int count = stage->num_free++ - (fs - stage->free);
+	memmove (fs + 1, fs, sizeof (qfvs_space_t[count]));
+	*fs = space;
 }
 
 static void
 check_invariants (qfv_stagebuf_t *stage)
 {
-	if (stage->end > stage->size) {
-		Sys_Error ("end > size: %zd > %zd", stage->end, stage->size);
+	if (stage->num_free < 0 || stage->num_free > (int) countof (stage->free)) {
+		Sys_Error ("bad num_free: %d/%zd}", stage->num_free,
+				   countof (stage->free));
 	}
-	if (stage->space_end > stage->end) {
-		Sys_Error ("space_end > end: %zd > %zd", stage->space_end, stage->end);
-	}
-	if (stage->space_end == stage->end && stage->end != stage->size) {
-		Sys_Error ("space_end == end != size: %zd == %zd != %zd",
-				   stage->space_end, stage->end, stage->size);
-	}
-	if (stage->space_start > stage->space_end) {
-		Sys_Error ("space_start > space_end: %zd > %zd",
-				   stage->space_start, stage->space_end);
+	for (int i = 0; i < stage->num_free; i++) {
+		auto f = stage->free[i];
+		if (f.offset > stage->size) {
+			Sys_Error ("free space outside of stage buffer");
+		}
+		if (f.offset + f.length > stage->size) {
+			Sys_Error ("free space extends behind stage buffer");
+		}
+		if (f.length == 0) {
+			Sys_Error ("free space length is zero");
+		}
+		if (f.offset != align (f.offset, 16)) {
+			Sys_Error ("free space offset misaligned");
+		}
+		if (f.length != align (f.length, 16)) {
+			Sys_Error ("free space length misaligned");
+		}
+		if (i < stage->num_free - 1) {
+			auto n = stage->free[i + 1];
+			if (f.offset >= n.offset) {
+				Sys_Error ("free space out of order");
+			}
+			if (f.offset + f.length > n.offset) {
+				Sys_Error ("free space overlap");
+			}
+			if (f.offset + f.length == n.offset) {
+				Sys_Error ("free space not merged");
+			}
+		}
 	}
 }
 
+static void
+consume_space (qfv_stagebuf_t *stage, qfvs_space_t *fs, size_t size)
+{
+	size = align (size, 16);
+	fs->offset += size;
+	fs->length -= size;
+	if (!fs->length) {
+		int count = --stage->num_free - (fs - stage->free);
+		memmove (fs, fs + 1, sizeof (qfvs_space_t[count]));
+	}
+}
 static void *
 acquire_space (qfv_packet_t *packet, size_t size)
 {
 	auto stage = packet->stage;
 	auto device = stage->device;
 	auto dfunc = device->funcs;
+
+	// anticipate being able to allocate
+	void *data = (byte *) stage->data + packet->offset + packet->length;
+
+	if (packet->length && packet->length + size <= align (packet->length, 16)) {
+		// packet hasn't grown beyond its allocation
+		packet->length += size;
+		return data;
+	}
 
 	check_invariants (stage);
 
@@ -237,41 +317,44 @@ acquire_space (qfv_packet_t *packet, size_t size)
 
 	if (size > stage->size) {
 		// utterly impossible allocation
-		return 0;
+		return nullptr;
 	}
+	if (!stage->num_free) {
+		return nullptr;
+	}
+	if (!packet->length) {
+		auto fs = &stage->free[0];
+		// find the LARGEST slot (to allow for future extensions to the packet)
+		for (int i = 0; i < stage->num_free; i++) {
+			if (stage->free[i].length > fs->length) {
+				fs = &stage->free[i];
+			}
+		}
+		if (fs->length < size) {
+			return nullptr;
+		}
+		packet->offset = fs->offset;
+		packet->length = size;
 
-	while (stage->space_start + size > stage->space_end
-		   && RB_DATA_AVAILABLE (stage->packets) > 1) {
-		auto p = RB_PEEK_DATA (stage->packets, 0);
-		dfunc->vkWaitForFences (device->dev, 1, &p->fence, VK_TRUE, ~0ull);
-		release_space (stage, p);
-		RB_RELEASE (stage->packets, 1);
+		consume_space (stage, fs, size);
 		check_invariants (stage);
+		return (byte *) stage->data + packet->offset;
 	}
-
-	if (packet->length == 0) {
-		// no space has been allocated to the packet yet, so place the
-		// packet at the beginning of the space
-		packet->offset = stage->space_start;
+	size_t end = packet->offset + align (packet->length, 16);
+	qfvs_space_t *fs = bsearch (&end, stage->free, stage->num_free,
+								sizeof (*fs), stage_space_cmp);
+	if (!fs) {
+		return nullptr;
 	}
-	// The allocation both has to fit in free space and the free space
-	// must be immediately after the packet. It not being after the packet
-	// means that packets have become interleaved which can happen with the
-	// scrap batch system (it grabs a packet and does incremental allocations,
-	// but something else can grab a packet in between allocations), but it
-	// knows to just start a new batch if that happens.
-	if (stage->space_start + size <= stage->space_end
-		&& stage->space_start == packet->offset + packet->length) {
+	if (fs->offset + fs->length >= packet->offset + packet->length + size) {
+		// enough space available
 		packet->length += size;
-		void *data = (byte *) stage->data + stage->space_start;
-		stage->space_start += size;
-
+		size_t diff = packet->offset + align (packet->length, 16) - fs->offset;
+		consume_space (stage, fs, diff);
 		check_invariants (stage);
 		return data;
 	}
-	// This will happen when a packet is incrementally expanded and the
-	// available space in the buffer has been exhausted
-	return 0;
+	return nullptr;
 }
 
 qfv_packet_t *
@@ -303,8 +386,7 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 	}
 	packet = RB_ACQUIRE (stage->packets, 1);
 
-	stage->space_start = align (stage->space_start, 16);
-	packet->offset = stage->space_start;
+	packet->offset = 0;
 	packet->length = 0;
 	packet->owner = __builtin_return_address (0);
 

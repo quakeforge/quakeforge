@@ -194,9 +194,6 @@ main (int argc, char **argv)
 	if (stage->size != 1024) {
 		error ("stage has incorrect size: %zd", stage->size);
 	}
-	if (stage->end != stage->size) {
-		error ("stage has incorrect end: %zd", stage->end);
-	}
 	if (!stage->data || stage->data != stage_memory) {
 		error ("stage memory not mapped: d:%p, m:%p",
 			   stage->data, stage_memory);
@@ -223,7 +220,7 @@ main (int argc, char **argv)
 		}
 	}
 
-	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage, "test");
 	if (!packet) {
 		error ("could not get a packet");
 	}
