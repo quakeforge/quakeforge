@@ -373,7 +373,7 @@ QFV_ResourceInitImageView (qfv_resobj_t *image_view, unsigned image_ind,
 	// guess type from image type and settings
 	VkImageViewType type = (VkImageViewType) image->image.type;
 	bool cube = image->image.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-	bool array = image->image.num_layers > 1;
+	bool array = image->image.num_layers > (cube ? 6 : 1);
 	if (cube) {
 		type = array ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY :VK_IMAGE_VIEW_TYPE_CUBE;
 	} else if (array) {
