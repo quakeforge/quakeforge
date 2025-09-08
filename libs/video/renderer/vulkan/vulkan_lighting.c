@@ -1686,9 +1686,11 @@ lighting_shutdown (exprctx_t *ectx)
 		dfunc->vkDestroyFence (device->dev, lframe->fence, 0);
 		qftCVkContextDestroy (lframe->qftVkCtx);
 	}
-	free (lctx->frames.a[0].stage_targets);
-	free (lctx->frames.a[0].id_radius);
-	free (lctx->frames.a[0].positions);
+	if (lctx->frames.a) {
+		free (lctx->frames.a[0].stage_targets);
+		free (lctx->frames.a[0].id_radius);
+		free (lctx->frames.a[0].positions);
+	}
 	DARRAY_CLEAR (&lctx->light_mats);
 	DARRAY_CLEAR (&lctx->light_matdata);
 	DARRAY_CLEAR (&lctx->light_control);
