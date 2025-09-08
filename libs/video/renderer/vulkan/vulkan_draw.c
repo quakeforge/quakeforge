@@ -463,7 +463,7 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 static void
 pic_free (drawctx_t *dctx, qpic_t *pic)
 {
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	if (pd->subpic) {
 		QFV_SubpicDelete (pd->subpic);
 	}
@@ -646,7 +646,7 @@ pic_data_rgba (const char *name, int w, int h, const byte *data,
 					 offsetof (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = w;
 	pic->height = h;
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	pd->vert_index = make_static_quad (0, 0, w, h, pic, ctx);
 	pd->slice_index = ~0;
@@ -671,7 +671,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 					 offsetof (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = w;
 	pic->height = h;
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	pd->subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	pd->vert_index = make_static_quad (0, 0, w, h, pic, ctx);
 	pd->slice_index = ~0;
@@ -755,7 +755,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 		.data = p->data,
 	};
 	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
-	__auto_type cache_image = &font->resource->glyph_image;
+	auto cache_image = &font->resource->glyph_image;
 
 	font->resource->glyph_iview = (qfv_resobj_t) {
 		.name = "image_view",
@@ -777,11 +777,11 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 			},
 		},
 	};
-	__auto_type cache_iview = &font->resource->glyph_iview;
+	auto cache_iview = &font->resource->glyph_iview;
 
 	QFV_CreateResource (ctx->device, &font->resource->resource);
 
-	__auto_type packet = QFV_PacketAcquire (ctx->staging, "draw.lmp");
+	auto packet = QFV_PacketAcquire (ctx->staging, "draw.lmp");
 	int         count = tex.width * tex.height;
 	byte       *texels = QFV_PacketExtend (packet, 4 * count);
 	byte        palette[256 * 4];
@@ -819,7 +819,7 @@ load_lmp (const char *path, vulkan_ctx_t *ctx)
 					 offsetof (qpic_t, data[sizeof (picdata_t)]));
 	pic->width = p->width;
 	pic->height = p->height;
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	pd->subpic = 0;
 	pd->vert_index = make_static_quad (0, 0, p->width, p->height, pic, ctx);
 	pd->slice_index = ~0;
@@ -952,7 +952,7 @@ load_white_pic (vulkan_ctx_t *ctx)
 	byte        white_block[4] = { 0xff, 0xff, 0xff, 0xff };
 
 	dctx->white_pic = pic_data_rgba ("white", 1, 1, white_block, ctx);
-	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	auto pd = (picdata_t *) dctx->white_pic->data;
 	pd->slice_index = make_static_slice ((vec4i_t) {0, 0, 1, 1},
 										 (vec4i_t) {0, 0, 0, 0},
 										 dctx->white_pic, ctx);
@@ -1015,7 +1015,7 @@ draw_startup (exprctx_t *ectx)
 	};
 
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type frame = &dctx->frames.a[i];
+		auto frame = &dctx->frames.a[i];
 		frame->dyn_descs = (descpool_t) { .dctx = dctx };
 	}
 	dctx->core_quad_set = QFV_DSManager_AllocSet (dctx->dsmanager);
@@ -1298,12 +1298,12 @@ static inline void
 draw_slice (float x, float y, float ox, float oy, int descid, uint32_t vertid,
 			const byte *color, drawframe_t *frame)
 {
-	__auto_type queue = &frame->quad_insts;
+	auto queue = &frame->quad_insts;
 	if (queue->count >= queue->max_count) {
 		return;
 	}
 
-	__auto_type batch = get_desc_batch (frame, descid, INDS_PER_SLICE);
+	auto batch = get_desc_batch (frame, descid, INDS_PER_SLICE);
 	batch->count++;
 
 	quadinst_t *quad = &queue->quads[queue->count++];
@@ -1319,12 +1319,12 @@ static inline void
 draw_quad (float x, float y, int descid, uint32_t vertid, const byte *color,
 		   drawframe_t *frame)
 {
-	__auto_type queue = &frame->quad_insts;
+	auto queue = &frame->quad_insts;
 	if (queue->count >= queue->max_count) {
 		return;
 	}
 
-	__auto_type batch = get_desc_batch (frame, descid, INDS_PER_QUAD);
+	auto batch = get_desc_batch (frame, descid, INDS_PER_QUAD);
 	batch->count++;
 
 	quadinst_t *quad = &queue->quads[queue->count++];
@@ -1498,7 +1498,7 @@ Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 	int         cx, cy, n;
 #define draw(px, py, pp)													\
 	do {																	\
-		__auto_type pd = (picdata_t *) pp->data;							\
+		auto pd = (picdata_t *) pp->data;							\
 		draw_quad (px, py, pd->descid, pd->vert_index, color, frame);		\
 	} while (0)
 
@@ -1556,7 +1556,7 @@ Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static byte color[4] = { 255, 255, 255, 255};
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	draw_quad (x, y, pd->descid, pd->vert_index, color, frame);
 }
 
@@ -1566,7 +1566,7 @@ Vulkan_Draw_FitPic (int x, int y, int width, int height, qpic_t *pic,
 {
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	if (pd->slice_index == ~0u) {
 		vec4i_t     rect = (vec4i_t) {0, 0, pic->width, pic->height};
 		vec4i_t     border = (vec4i_t) {0, 0, 0, 0};
@@ -1584,7 +1584,7 @@ Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	static byte color[4] = { 255, 255, 255, 255};
-	__auto_type pd = (picdata_t *) pic->data;
+	auto pd = (picdata_t *) pic->data;
 	draw_quad (x, y, pd->descid, pd->vert_index, color, frame);
 }
 
@@ -1612,7 +1612,9 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	// use pre-multiplied alpha
 	//quat_t      color = { a, a, a, a};
 	qpic_t     *cpic;
+	developer |= SYS_fs;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
+	developer &= ~SYS_fs;
 	float       s = 1.0 / ctx->twod_scale;
 	int         y = lines - vid.height * s;
 	Vulkan_Draw_FitPic (0, y, vid.width * s, vid.height * s, cpic, ctx);
@@ -1663,7 +1665,7 @@ Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
 	byte        color[4] =  {VectorExpand (vid.palette + c * 3), 255 };
-	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	auto pd = (picdata_t *) dctx->white_pic->data;
 	draw_slice (x, y, w - 1, h - 1, pd->descid, pd->slice_index, color, frame);
 }
 
@@ -1698,7 +1700,7 @@ draw_blendscreen (const byte *color, vulkan_ctx_t *ctx)
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 	float       s = 1.0 / ctx->twod_scale;
 
-	__auto_type pd = (picdata_t *) dctx->white_pic->data;
+	auto pd = (picdata_t *) dctx->white_pic->data;
 	draw_slice (0, 0, vid.width * s - 1, vid.height * s - 1,
 				pd->descid, pd->slice_index, color, frame);
 }
@@ -1753,7 +1755,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 					| VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
 		},
 	};
-	__auto_type glyph_data = &font->resource->glyph_data;
+	auto glyph_data = &font->resource->glyph_data;
 
 	font->resource->glyph_bview = (qfv_resobj_t) {
 		.name = "geom_view",
@@ -1765,7 +1767,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			.size = font->resource->glyph_data.buffer.size,
 		},
 	};
-	__auto_type glyph_bview = &font->resource->glyph_bview;
+	auto glyph_bview = &font->resource->glyph_bview;
 
 	tex_t       tex = {
 		.width = rfont->scrap.width,
@@ -1775,7 +1777,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 		.data = rfont->scrap_bitmap,
 	};
 	QFV_ResourceInitTexImage (&font->resource->glyph_image, "image", 0, &tex);
-	__auto_type glyph_image = &font->resource->glyph_image;
+	auto glyph_image = &font->resource->glyph_image;
 
 	font->resource->glyph_iview = (qfv_resobj_t) {
 		.name = "image_view",
@@ -1797,7 +1799,7 @@ Vulkan_Draw_AddFont (font_t *rfont, vulkan_ctx_t *ctx)
 			},
 		},
 	};
-	__auto_type glyph_iview = &font->resource->glyph_iview;
+	auto glyph_iview = &font->resource->glyph_iview;
 
 	QFV_CreateResource (ctx->device, &font->resource->resource);
 
