@@ -144,7 +144,7 @@ update_matrices (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 
 	mctx->dirty--;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (mctx->stage, "matrices.update");
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "matrices.update");
 	qfv_matrix_buffer_t *m = QFV_PacketExtend (packet, sizeof (*m));
 	*m = mctx->matrices;
 
@@ -166,7 +166,6 @@ matrices_shutdown (exprctx_t *ectx)
 	auto device = ctx->device;
 	auto mctx = ctx->matrix_context;
 
-	QFV_DestroyStagingBuffer (mctx->stage);
 	QFV_DestroyResource (device, mctx->resource);
 	free (mctx->resource);
 	free (mctx->frames.a);
@@ -246,10 +245,6 @@ matrices_startup (exprctx_t *ectx)
 	mat4fidentity (mctx->matrices.Projection2d);
 
 	mctx->dirty = mctx->frames.size;
-
-	mctx->stage = QFV_CreateStagingBuffer (device, "matrix",
-										frames * sizeof (qfv_matrix_buffer_t),
-										ctx->cmdpool);
 
 	qfvPopDebug (ctx);
 }

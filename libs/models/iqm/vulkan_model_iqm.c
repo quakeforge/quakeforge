@@ -175,9 +175,6 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 		buff_size = max (buff_size, extent.width * extent.height * 4);
 	}
 
-	auto stage = QFV_CreateStagingBuffer (device, "iqm stage", 4 * buff_size,
-										  ctx->cmdpool);
-
 	for (uint32_t i = 0; i < model->meshes.count; i++) {
 		uint32_t    image_ind = 2 * i;
 		auto image = &objects[image_ind].image;
@@ -198,11 +195,10 @@ vulkan_iqm_load_textures (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 			};
 			tex = &null_tex;
 		}
-		iqm_transfer_texture (tex, image->image, stage, device);
+		iqm_transfer_texture (tex, image->image, ctx->staging, device);
 		Vulkan_MeshAddSkin (ctx, &skins[i]);
 	}
 	dstring_delete (str);
-	QFV_DestroyStagingBuffer (stage);
 }
 
 static void
@@ -217,20 +213,17 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	auto iqm = iqm_ctx->hdr;
 	size_t vsizes[3] = { VectorExpand (strides) };
 	VectorScale (vsizes, iqm->num_vertexes, vsizes);
-	size_t buff_size = vsizes[0] + vsizes[2] + index_bytes + 1024;
-	auto stage = QFV_CreateStagingBuffer (device, "iqm stage", buff_size,
-										  ctx->cmdpool);
 	qfv_packet_t *vpackets[3] = {};
 	byte *vdata[3] = {};
 	for (int i = 0; i < 3; i++) {
 		if (i == 1) {
 			continue;
 		}
-		vpackets[i] = QFV_PacketAcquire (stage, vac (ctx->va_ctx,
-													 "iqm.vdata%d", i));
+		vpackets[i] = QFV_PacketAcquire (ctx->staging,
+										 vac (ctx->va_ctx, "iqm.vdata%d", i));
 		vdata[i] = QFV_PacketExtend (vpackets[i], vsizes[i]);
 	}
-	qfv_packet_t *ipacket = QFV_PacketAcquire (stage, "iqm.idata");
+	qfv_packet_t *ipacket = QFV_PacketAcquire (ctx->staging, "iqm.idata");
 	byte *idata = QFV_PacketExtend (ipacket, index_bytes);
 
 	auto iqm_data = (byte *) iqm;
@@ -271,11 +264,11 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	dfunc->vkCmdPipelineBarrier (ipacket->cmd,
 								 bb[0].srcStages, bb[0].dstStages,
 								 0, 0, 0, 1, &bb[2].barrier, 0, 0);
-	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, stage->buffer,
+	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, ctx->staging->buffer,
 							rmesh->geom_buffer, 1, &copy_region[0]);
-	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, stage->buffer,
+	dfunc->vkCmdCopyBuffer (vpackets[0]->cmd, ctx->staging->buffer,
 							rmesh->rend_buffer, 1, &copy_region[1]);
-	dfunc->vkCmdCopyBuffer (ipacket->cmd, stage->buffer,
+	dfunc->vkCmdCopyBuffer (ipacket->cmd, ctx->staging->buffer,
 							rmesh->index_buffer, 1, &copy_region[2]);
 	bb[0] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	bb[1] = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
@@ -298,7 +291,6 @@ vulkan_iqm_load_arrays (mod_iqm_ctx_t *iqm_ctx, qfv_mesh_t *rmesh,
 	QFV_PacketSubmit (vpackets[0]);
 	QFV_PacketSubmit (vpackets[2]);
 	QFV_PacketSubmit (ipacket);
-	QFV_DestroyStagingBuffer (stage);
 }
 
 static void

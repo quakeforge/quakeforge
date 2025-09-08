@@ -171,11 +171,10 @@ Vulkan_BuildLightMap (const vec4f_t *transform, const mod_brush_t *brush,
 					  msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	qfZoneScoped (true);
-	bspctx_t   *bctx = ctx->bsp_context;
 
 	surf->cached_dlight = (surf->dlightframe == r_framecount);
 
-	vec4f_t *block = QFV_SubpicBatch (surf->lightpic, bctx->light_stage);
+	vec4f_t *block = QFV_SubpicBatch (surf->lightpic, ctx->staging);
 	vulkan_build_lightmap (brush, surf, block);
 
 	// add all the dynamic lights

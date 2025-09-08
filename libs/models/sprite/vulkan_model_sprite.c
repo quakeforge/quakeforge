@@ -133,12 +133,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 						 vac (ctx->va_ctx, "view:sprite:%s",
 							  sprite_ctx->mod->name));
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
-													 vac (ctx->va_ctx,
-														  "sprite:%s",
-														 sprite_ctx->mod->name),
-													 size, ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage, "sprit.data");
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "sprit.data");
 	spritevrt_t *verts = QFV_PacketExtend (packet,
 										   numverts * sizeof (spritevrt_t));
 	int         texsize = 4 * dsprite->width * dsprite->height;
@@ -166,7 +161,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	VkBufferCopy copy_region[] = {
 		{ packet->offset, 0, numverts * sizeof (spritevrt_t) },
 	};
-	dfunc->vkCmdCopyBuffer (packet->cmd, stage->buffer,
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
 							sprite->verts, 1, &copy_region[0]);
 	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	bb.barrier.buffer = sprite->verts;
@@ -196,7 +191,6 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 						 sprite_ctx->numframes);
 
 	QFV_PacketSubmit (packet);
-	QFV_DestroyStagingBuffer (stage);
 
 	Vulkan_Sprite_DescriptorSet (ctx, sprite);
 

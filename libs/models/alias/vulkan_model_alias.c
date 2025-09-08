@@ -151,10 +151,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 						 vac (ctx->va_ctx, "iview:%s:%d:%d",
 							  mod_name, askin->skin_num, askin->group_num));
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "alias stage",
-													 SKIN_LAYERS * skinsize * 4,
-													 ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage, "alias.skin");
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "alias.skin");
 	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4);
 	byte       *glow_data = QFV_PacketExtend (packet, skinsize * 4);
 	byte       *cmap_data = QFV_PacketExtend (packet, skinsize * 4);
@@ -204,7 +201,6 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 							 mipLevels, w, h, SKIN_LAYERS);
 	}
 	QFV_PacketSubmit (packet);
-	QFV_DestroyStagingBuffer (stage);
 
 	free (tskin);
 

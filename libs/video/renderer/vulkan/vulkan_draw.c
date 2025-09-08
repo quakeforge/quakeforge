@@ -208,7 +208,6 @@ typedef struct drawctx_s {
 	VkSampler   pic_sampler;
 	VkSampler   glyph_sampler;
 	scrap_t    *scrap;
-	qfv_stagebuf_t *stage;
 	int        *crosshair_inds;
 	qpic_t     *crosshair;
 	int        *conchar_inds;
@@ -653,7 +652,7 @@ pic_data_rgba (const char *name, int w, int h, const byte *data,
 	pd->slice_index = ~0;
 	pd->descid = CORE_DESC;
 
-	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
+	picdata = QFV_SubpicBatch (pd->subpic, ctx->staging);
 	size_t size = w * h;
 	for (size_t i = 0; i < size * 4; i++) {
 		*picdata++ = *data++;
@@ -678,7 +677,7 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	pd->slice_index = ~0;
 	pd->descid = CORE_DESC;
 
-	picdata = QFV_SubpicBatch (pd->subpic, dctx->stage);
+	picdata = QFV_SubpicBatch (pd->subpic, ctx->staging);
 	size_t size = w * h;
 	for (size_t i = 0; i < size; i++) {
 		byte        pix = *data++;
@@ -889,7 +888,6 @@ draw_shutdown (exprctx_t *ectx)
 	delete_memsuper (dctx->pic_memsuper);
 	delete_memsuper (dctx->string_memsuper);
 	QFV_DestroyScrap (dctx->scrap);
-	QFV_DestroyStagingBuffer (dctx->stage);
 	free (dctx->conchar_inds);
 	free (dctx->crosshair_inds);
 	free (dctx);
@@ -994,10 +992,8 @@ draw_startup (exprctx_t *ectx)
 									 dctx, 0);
 
 	create_buffers (ctx);
-	dctx->stage = QFV_CreateStagingBuffer (device, "draw", 4 * 1024 * 1024,
-										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
-								   dctx->stage);
+								   ctx->staging);
 
 	load_conchars (ctx);
 	load_crosshairs (ctx);

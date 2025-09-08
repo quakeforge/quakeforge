@@ -69,7 +69,6 @@ typedef struct matrixctx_s {
 	matrixframeset_t frames;
 
 	struct qfv_resource_s *resource;
-	struct qfv_stagebuf_s *stage;
 } matrixctx_t;
 
 struct vulkan_ctx_s;

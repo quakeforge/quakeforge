@@ -49,7 +49,6 @@ typedef struct particlectx_s {
 	particleframeset_t frames;
 
 	struct qfv_resource_s *resources;
-	struct qfv_stagebuf_s *stage;
 
 	psystem_t  *psystem;
 } particlectx_t;

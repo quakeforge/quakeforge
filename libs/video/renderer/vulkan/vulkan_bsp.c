@@ -534,10 +534,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "bsp",
-													 vertex_buffer_size,
-													 ctx->cmdpool);
-	qfv_packet_t *packet = QFV_PacketAcquire (stage, "bsp.build");
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "bsp.build");
 	bspvert_t  *vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	// holds all the polygon definitions: vertex indices + poly_count
 	// primitive restart markers. The primitive restart markers are included
@@ -659,7 +656,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	VkBufferCopy copy_region = { packet->offset, 0, vertex_buffer_size };
-	dfunc->vkCmdCopyBuffer (packet->cmd, stage->buffer,
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
 							bctx->vertex_buffer, 1, &copy_region);
 	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	bb.barrier.buffer = bctx->vertex_buffer;
@@ -667,7 +664,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
-	QFV_DestroyStagingBuffer (stage);
 	for (size_t i = 0; i < bctx->registered_textures.size; i++) {
 		DARRAY_CLEAR (&face_sets[i]);
 	}
@@ -1456,7 +1452,6 @@ bsp_shutdown (exprctx_t *ectx)
 
 	free (bctx->frames.a);
 
-	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);
 
 	if (bctx->base_resource) {
@@ -1503,9 +1498,6 @@ bsp_startup (exprctx_t *ectx)
 
 	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
 										 tex_frgba, ctx->staging);
-	size_t      size = QFV_ScrapSize (bctx->light_scrap);
-	bctx->light_stage = QFV_CreateStagingBuffer (device, "lightmap", size,
-												 ctx->cmdpool);
 
 	create_base_resources (ctx);
 

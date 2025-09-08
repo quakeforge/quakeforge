@@ -122,9 +122,6 @@ create_buffers (vulkan_ctx_t *ctx)
 	}
 	QFV_CreateResource (device, pctx->resources);
 
-	size_t      stageSize = (pctx->resources->size / frames)*(frames + 1);
-	pctx->stage = QFV_CreateStagingBuffer (device, "particles", stageSize,
-										   ctx->cmdpool);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type pframe = &pctx->frames.a[i];
 		pframe->states = state_objs[i].buffer.buffer;
@@ -209,7 +206,7 @@ update_particles (const exprval_t **p, exprval_t *result, exprctx_t *ectx)
 	auto pframe = &pctx->frames.a[ctx->curFrame];
 	auto layout = taskctx->pipeline->layout;
 
-	qfv_packet_t *packet = QFV_PacketAcquire (pctx->stage, "particles.update");
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "particles.update");
 
 	__auto_type limits = &device->physDev->p.properties.limits;
 	VkMemoryRequirements req = {
@@ -419,7 +416,6 @@ particle_shutdown (exprctx_t *ectx)
 		dfunc->vkDestroyEvent (device->dev, pframe->physicsEvent, 0);
 	}
 
-	QFV_DestroyStagingBuffer (pctx->stage);
 	QFV_DestroyResource (device, pctx->resources);
 	free (pctx->resources);
 
