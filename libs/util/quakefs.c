@@ -1335,7 +1335,7 @@ qfs_load_gamedir (searchpath_t **searchpath, const char *dir)
 		pak = qfs_load_pakfile (pakfiles[i]);
 
 		if (!pak) {
-			Sys_Error ("Bad pakfile %s!!", pakfiles[i]);
+			Sys_Printf (ONG "Skipping bad pakfile %s" DFL "\n", pakfiles[i]);
 		} else {
 			sp = new_searchpath ();
 			sp->pack = pak;
