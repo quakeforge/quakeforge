@@ -249,12 +249,19 @@ acquire_space (qfv_packet_t *packet, size_t size)
 		check_invariants (stage);
 	}
 
-	if (stage->space_start + size <= stage->space_end) {
-		if (packet->length == 0) {
-			// no space has been allocated to the packet yet, so place the
-			// packet at the beginning of the space
-			packet->offset = stage->space_start;
-		}
+	if (packet->length == 0) {
+		// no space has been allocated to the packet yet, so place the
+		// packet at the beginning of the space
+		packet->offset = stage->space_start;
+	}
+	// The allocation both has to fit in free space and the free space
+	// must be immediately after the packet. It not being after the packet
+	// means that packets have become interleaved which can happen with the
+	// scrap batch system (it grabs a packet and does incremental allocations,
+	// but something else can grab a packet in between allocations), but it
+	// knows to just start a new batch if that happens.
+	if (stage->space_start + size <= stage->space_end
+		&& stage->space_start == packet->offset + packet->length) {
 		packet->length += size;
 		void *data = (byte *) stage->data + stage->space_start;
 		stage->space_start += size;
