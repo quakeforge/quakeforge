@@ -194,10 +194,13 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 	qfv_imagebarrier_t fnl=imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 
 	pre.barrier.image = image;
+	pre.barrier.subresourceRange.levelCount = 1;
 	pre.barrier.subresourceRange.layerCount = layers;
 	pst.barrier.image = image;
+	pst.barrier.subresourceRange.levelCount = 1;
 	pst.barrier.subresourceRange.layerCount = layers;
 	fnl.barrier.image = image;
+	fnl.barrier.subresourceRange.levelCount = 1;
 	fnl.barrier.subresourceRange.layerCount = layers;
 
 	VkImageBlit blit = {
