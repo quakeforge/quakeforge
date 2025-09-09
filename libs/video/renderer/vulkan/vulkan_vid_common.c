@@ -92,6 +92,7 @@ static cvar_t vulkan_oit_fragments_cvar = {
 
 static const char *instance_layers[] = {
 	//"VK_LAYER_LUNARG_crash_diagnostic",
+	//"VK_LAYER_LUNARG_api_dump",
 	0,
 };
 
