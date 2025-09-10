@@ -882,6 +882,12 @@ arp_end (void)
 int
 main (int argc, string *argv)
 {
+	bool early_exit = argc > 1 && strtof (argv[1], nil);
+
+	if (early_exit) {
+		realtime = -1;
+	}
+
 	arp_start ();
 
 	plitem_t *config = PL_GetPropertyList (render_graph_cfg);
@@ -993,7 +999,19 @@ main (int argc, string *argv)
 		arp_start ();
 
 		frametime = refresh ([main_window scene]);
-		realtime += frametime;
+		if (early_exit) {
+			if (realtime < 0) {
+				realtime = 0;
+			} else {
+				realtime += frametime;
+			}
+			if (realtime > 1) {
+				break;
+			}
+		} else {
+		    realtime += frametime;
+		}
+
 
 		[player think:frametime];
 		[playercam think:frametime];
