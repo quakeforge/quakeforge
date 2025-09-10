@@ -675,6 +675,9 @@ QFV_Render_Init (vulkan_ctx_t *ctx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE, frame->fence,
 							 vac (ctx->va_ctx, "render:%zd", i));
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SEMAPHORE,
+							 frame->renderDoneSemaphore,
+							 vac (ctx->va_ctx, "render done:%zd", i));
 		QFV_CmdPoolManager_Init (&frame->render_cmdpool, device,
 								 vac (ctx->va_ctx, "render pool:%zd", i));
 		QFV_CmdPoolManager_Init (&frame->output_cmdpool, device,
