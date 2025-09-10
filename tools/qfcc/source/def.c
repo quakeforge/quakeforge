@@ -603,6 +603,10 @@ initialize_def (symbol_t *sym, const expr_t *init, defspace_t *space,
 			sym->type = array_type (ele_type, num_elements (init));
 		}
 		sym->type = auto_type (sym->type, init);
+		if (is_void (sym->type)) {
+			error (0, "variable '%s' declared void", sym->name);
+			sym->type = type_default;
+		}
 		sym->def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->def->relocs);
 	}

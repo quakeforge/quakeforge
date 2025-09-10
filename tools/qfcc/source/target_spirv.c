@@ -2768,6 +2768,10 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 	spirv_var_attributes (&spec, &spec.attributes);
 	auto storage = spirv_storage_class (spec.storage, sym->type);
 	auto type = auto_type (sym->type, init);
+	if (is_void (type)) {
+		error (0, "variable '%s' declared void", sym->name);
+		type = type_default;
+	}
 	if (is_reference (type)) {
 		type = dereference_type (type);
 	}
