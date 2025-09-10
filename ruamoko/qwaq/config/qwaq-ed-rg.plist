@@ -248,6 +248,40 @@ render_graph = {
 			finalLayout = depth_stencil_read_only_optimal;
 			clearValue = { depthStencil = { depth = 0; stencil = 0; }; };
 		};
+		color_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		emission_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		normal_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		position_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		light_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+		};
+		entid_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+			storeOp = store;
+			finalLayout = transfer_src_optimal;
+			clearValue = {
+				color = { int32 = ( -1, -1, -1, -1); };
+			};
+		};
+		output_base = {
+			@inherit = $attachment_base;
+			loadOp = clear;
+			storeOp = store;
+		};
 
 		no_cull = {
 			depthClampEnable = false;
@@ -1692,49 +1726,38 @@ render_graph = {
 						view = depth;
 					};
 					color = {
-						@inherit = $attachment_base;
+						@inherit = $color_base;
 						format = $images.color.format;
-						loadOp = clear;
 						view = color;
 					};
 					emission = {
-						@inherit = $attachment_base;
+						@inherit = $emission_base;
 						format = $images.emission.format;
-						loadOp = clear;
 						view = emission;
 					};
 					normal = {
-						@inherit = $attachment_base;
+						@inherit = $normal_base;
 						format = $images.normal.format;
 						view = normal;
 					};
 					position = {
-						@inherit = $attachment_base;
+						@inherit = $position_base;
 						format = $images.position.format;
 						view = position;
 					};
 					light = {
-						@inherit = $attachment_base;
+						@inherit = $light_base;
 						format = $images.light.format;
-						loadOp = clear;
 						view = light;
 					};
 					entid = {
-						@inherit = $attachment_base;
+						@inherit = $entid_base;
 						format = $images.entid.format;
-						loadOp = clear;
-						storeOp = store;
-						finalLayout = transfer_src_optimal;
-						clearValue = {
-							color = { int32 = ( -1, -1, -1, -1); };
-						};
 						view = entid;
 					};
 					output = {
-						@inherit = $attachment_base;
+						@inherit = $output_base;
 						format = $render_output.format;
-						loadOp = clear;
-						storeOp = store;
 						finalLayout = $render_output.finalLayout;
 						view = output;
 					};
@@ -2314,51 +2337,39 @@ render_graph = {
 						view = cube_depth;
 					};
 					color = {
-						@inherit = $attachment_base;
+						@inherit = $color_base;
 						format = $images.cube_color.format;
-						loadOp = clear;
 						view = cube_color;
 					};
 					emission = {
-						@inherit = $attachment_base;
+						@inherit = $emission_base;
 						format = $images.cube_emission.format;
 						loadOp = clear;
 						view = cube_emission;
 					};
 					normal = {
-						@inherit = $attachment_base;
+						@inherit = $normal_base;
 						format = $images.cube_normal.format;
 						view = cube_normal;
 					};
 					position = {
-						@inherit = $attachment_base;
+						@inherit = $position_base;
 						format = $images.cube_position.format;
 						view = cube_position;
-						clearValue = {
-							color = { int32 = ( 0, 0, 0, 0); };
-						};
 					};
 					light = {
-						@inherit = $attachment_base;
+						@inherit = $light_base;
 						format = $images.cube_light.format;
 						view = cube_light;
 					};
 					entid = {
-						@inherit = $attachment_base;
+						@inherit = $entid_base;
 						format = $images.cube_entid.format;
-						loadOp = clear;
-						storeOp = store;
-						finalLayout = transfer_src_optimal;
-						clearValue = {
-							color = { int32 = ( -1, -1, -1, -1); };
-						};
 						view = cube_entid;
 					};
 					output = {
-						@inherit = $attachment_base;
+						@inherit = $output_base;
 						format = $render_output.format;
-						loadOp = clear;
-						storeOp = store;
 						finalLayout = $render_output.finalLayout;
 						view = cube_output;
 					};
