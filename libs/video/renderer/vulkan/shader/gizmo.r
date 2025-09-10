@@ -34,7 +34,7 @@ float asfloat (uint x) = SPV(OpBitcast);
 vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
 
 @overload point_t
-make_point (uint ind, float weight)
+make_point (const uint ind, const float weight)
 {
 	return (point_t) vec4 (asfloat (objects[ind + 0]),
 						   asfloat (objects[ind + 1]),
@@ -42,7 +42,7 @@ make_point (uint ind, float weight)
 }
 
 @overload point_t
-make_point (vec3 vec, float weight)
+make_point (const vec3 vec, const float weight)
 {
 	return (point_t) vec4 (vec, weight);
 }
@@ -80,24 +80,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	auto r = asfloat (objects[ind + 6]);
 	auto col = asrgba (objects[ind + 7]);
 
-	auto d = p2 - p1;
-	d /= sqrt (d • d);
-	auto m = -p1;
-	auto n = v / sqrt (v • v);
 //·×÷†•∗∧∨⋀⋆‖⊥△▽ඞ
-	float a = (d × n) • (d × n);
-	float b = (d × m) • (d × n);
-	float c = (d × m) • (d × m) - r * r * (d • d);
-	// a is never < 0, c < 0 means the eye is in the cylinder
-	if (a*c <= 0) {
-		color = col;
-	} else {
-		float disc = b * b - a * c;
-		float dist = disc > 0 ? sqrt (disc) : 0;
-		float factor = disc > 0 ? exp (-col.a * 3 * dist / r) : 0;
-		color = mix (vec4(col.rgb, 1), color, 1-factor);
-	}
-
 	auto line = make_point (ind + 0, 1) ∨ make_point (ind + 3, 1);
 	auto ray = make_point (eye, 1) ∨ make_point (v, 0);
 	auto M = line * ray;
@@ -105,12 +88,12 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	// not interested in the actual angle, only whether it's close enough to
 	// 0 so that the correct components for calculating distance can be chosen
 	float s2 = M.bvect • ~M.bvect / ((line • line) * (ray • ray));
-	float d2   = s2 < 1e-6 ? ⋆M.bvecp • ~⋆M.bvecp : ⋆M.qvec • ⋆M.qvec;
-	float den2 = s2 < 1e-6 ? M.scalar • M.scalar  : M.bvect • ~M.bvect;
-	if (d2 <= r * r * den2) {
-		// the ray hit the infinite cylinder of the capsule
-		color = color + vec4 (1, 0, 0, 1);
-	}
+	float d2 = s2 < 1e-6 ? ⋆M.bvecp • ~⋆M.bvecp : ⋆M.qvec • ⋆M.qvec;
+	float w2 = s2 < 1e-6 ? M.scalar • M.scalar  : M.bvect • ~M.bvect;
+	float disc = w2 * r * r - d2;
+	float dist = disc > 0 ? sqrt (disc / w2) : 0;
+	float factor = disc > 0 ? exp (-col.a * 3 * dist / r) : 0;
+	color = mix (vec4(col.rgb, 1), color, 1-factor);
 }
 
 [shader("Fragment")]
