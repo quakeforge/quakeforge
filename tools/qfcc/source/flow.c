@@ -570,7 +570,7 @@ static void
 clear_operand (operand_t *op)
 {
 	if (op && op->op_type == op_def) {
-		def_visit_all (op->def, dol_none, flow_def_clear_flowvars, 0);
+		def_visit_all (op->def, dol_all, flow_def_clear_flowvars, 0);
 	}
 }
 
@@ -668,7 +668,7 @@ flow_build_vars (function_t *func)
 	// count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
 		def_t      *def = param_symbol (flow_params[i].name)->def;
-		def_visit_all (def, dol_none, flow_def_clear_flowvars, 0);
+		def_visit_all (def, dol_all, flow_def_clear_flowvars, 0);
 		flow_params[i].op.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
@@ -916,7 +916,7 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 	}
 	def_t      *def = var->op->def->alias;
 	if (def && is_array (def->type)) {
-		def_visit_all (def, dol_none, flowvar_def_add_use, st);
+		def_visit_all (def, dol_all, flowvar_def_add_use, st);
 	}
 }
 
@@ -994,7 +994,7 @@ flow_find_ptr (set_t *access, set_t *access_ptr,
 			follow_ud_chain (ud, func, ptr, visited);
 			for (set_iter_t *p = set_first (ptr); p; p = set_next (p)) {
 				flowvar_t  *var = func->vars[p->element];
-				flow_add_op_var (access, var->op, dol_none);
+				flow_add_op_var (access, var->op, dol_all);
 				add_access (var, st);
 			}
 		}

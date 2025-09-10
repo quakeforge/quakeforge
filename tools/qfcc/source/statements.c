@@ -562,7 +562,7 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 		return dol_full;
 	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
 		return dol_partial;
-	return dol_none;
+	return dol_all;
 }
 
 int
@@ -589,7 +589,7 @@ tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 		}
 	} else {
 		if (overlap != dol_exact) {
-			overlap = dol_none;
+			overlap = dol_all;
 		}
 	}
 	for (top = tempop->alias_ops; top; top = top->next) {
@@ -1422,7 +1422,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 		// need multiple ops for the one def because there are multiple lists
 		if (a->type != ex_inout || a->inout.in) {
 			// out params do not use the argument
-			def_visit_all (def, dol_none, aliased_arg_visit_def,
+			def_visit_all (def, dol_all, aliased_arg_visit_def,
 						   &(aliased_arg_t) {
 								.list = &use,
 								.type = arg_type,
@@ -1430,7 +1430,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 							});
 		}
 		// all params kill the argument
-		def_visit_all (def, dol_none, aliased_arg_visit_def,
+		def_visit_all (def, dol_all, aliased_arg_visit_def,
 					   &(aliased_arg_t) {
 							.list = &kill,
 							.type = arg_type,
@@ -1438,7 +1438,7 @@ expr_call (sblock_t *sblock, const expr_t *call, operand_t **op)
 						});
 		if (a->type == ex_inout) {
 			// inout and out params define the argument
-			def_visit_all (def, dol_none, aliased_arg_visit_def,
+			def_visit_all (def, dol_all, aliased_arg_visit_def,
 						   &(aliased_arg_t) {
 								.list = &define,
 								.type = arg_type,

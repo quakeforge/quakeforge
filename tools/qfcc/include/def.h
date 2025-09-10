@@ -294,7 +294,7 @@ int def_offset (def_t *def) __attribute__((pure));
 int def_size (def_t *def) __attribute__((pure));
 
 typedef enum {
-	dol_none,		// visit all defs
+	dol_all,		// visit all defs
 	dol_partial,	// visit only (at least) partially overlapping defs
 	dol_full,		// visit only fully overlapped (smaller or same size) defs
 	dol_exact,		// visit only matching defs (same size and offset)

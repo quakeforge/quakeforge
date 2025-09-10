@@ -622,7 +622,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 				int         param_node;
 
 				// FIXME hopefully only the one alias :P
-				param_node = def_visit_all (param_def, dol_none, dag_find_node,
+				param_node = def_visit_all (param_def, dol_all, dag_find_node,
 											&daglabel);
 				if (!param_node) {
 					bug (n->label->expr, ".param_%d not set for %s", i,

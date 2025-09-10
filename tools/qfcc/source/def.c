@@ -742,7 +742,7 @@ def_overlap (def_t *d, int offset, int size)
 	if (d_offset < offset + size && offset < d_offset + d_size) {
 		return dol_partial;
 	}
-	return dol_none;
+	return dol_all;
 }
 
 int
@@ -798,7 +798,7 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 		}
 	} else {
 		if (overlap != dol_exact) {
-			overlap = dol_none;
+			overlap = dol_all;
 		}
 	}
 	return def_visit_overlaps (def, offset, size, overlap, start_def,
