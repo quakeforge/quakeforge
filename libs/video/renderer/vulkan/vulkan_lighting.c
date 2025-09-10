@@ -1359,7 +1359,11 @@ lighting_cull_lights (const exprval_t **params, exprval_t *result,
 	};
 	dfunc->vkResetFences (device->dev, 1, &lframe->fence);
 	dfunc->vkQueueSubmit (dev_queue->queue, 1, &submitInfo, lframe->fence);
-	dfunc->vkWaitForFences (device->dev, 1, &lframe->fence, VK_TRUE, 200000000);
+	auto res = dfunc->vkWaitForFences (device->dev, 1, &lframe->fence, VK_TRUE,
+									   2000000000);
+	if (res != VK_SUCCESS) {
+		Sys_Error ("vkWaitForFences:%zd: %d", ctx->frameNumber, res);
+	}
 
 	uint32_t    frag_counts[count];
 	VkDeviceSize size = sizeof (frag_counts);

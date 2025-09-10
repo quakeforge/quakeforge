@@ -370,8 +370,11 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage, const char *name)
 		packet = RB_PEEK_DATA (stage->packets, 0);
 		auto start = Sys_LongTime ();
 		qfMessageL ("waiting on fence");
-		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
-								~0ull);
+		auto res = dfunc->vkWaitForFences (device->dev, 1, &packet->fence,
+										   VK_TRUE, 2000000000);
+		if (res != VK_SUCCESS) {
+			Sys_Error ("vkWaitForFences: %d", res);
+		}
 		qfMessageL ("got fence");
 		auto end = Sys_LongTime ();
 		if (end - start > 500) {
@@ -451,7 +454,7 @@ QFV_PacketWait (qfv_packet_t *packet)
 	VkResult res = dfunc->vkWaitForFences (device->dev, 1, &packet->fence,
 										   VK_TRUE, ~0ull);
 	if (res != VK_SUCCESS) {
-		printf ("QFV_PacketWait: %d\n", res);
+		Sys_Error ("vkWaitForFences: %d", res);
 	}
 	return res;
 }

@@ -550,7 +550,7 @@ wait_on_fence (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 	auto res = dfunc->vkWaitForFences (dev, 1, &frame->fence,
 									   VK_TRUE, 2000000000);
 	if (res != VK_SUCCESS) {
-		Sys_Error ("vkWaitForFences: %d", res);
+		Sys_Error ("vkWaitForFences:%zd: %d", ctx->frameNumber, res);
 	}
 
 	QFV_CmdPoolManager_Reset (&frame->render_cmdpool);

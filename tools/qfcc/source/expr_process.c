@@ -890,9 +890,10 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			}
 			init = expr_process (init, ctx);
 			if (is_error (init)) {
-				return init;
+				init = new_nil_expr ();
+			} else {
+				init = algebra_optimize (init);
 			}
-			init = algebra_optimize (init);
 			pr.loc = decl->assign.dst->loc;
 			sym = decl->assign.dst->symbol;
 		} else if (decl->type == ex_symbol) {
