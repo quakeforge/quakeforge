@@ -1770,7 +1770,6 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_attachment_optimal;
 						};
-						preserve = (color, emission, normal, position, output);
 					};
 
 					base_pipeline = {
@@ -1862,7 +1861,6 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_read_only_optimal;
 						};
-						preserve = (color, emission, normal, position, output);
 					};
 					base_pipeline = {
 						@inherit = $pipeline_base;
@@ -1984,7 +1982,6 @@ render_graph = {
 						depth = {
 							depth = depth_stencil_read_only_optimal;
 						};
-						preserve = (output);
 					};
 					base_pipeline = {
 						@inherit = $pipeline_base;
@@ -2278,7 +2275,7 @@ render_graph = {
 								blend = $blend_disable;
 							};
 						};
-						preserve = (depth, normal, position, output);
+						preserve = (output);
 					};
 					pipelines = {
 						entid_lights = {
