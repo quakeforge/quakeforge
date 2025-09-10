@@ -12,7 +12,7 @@ FogBlend (vec4 color, vec4 fog)
 @overload
 #endif
 vec4
-FogBlend (vec4 color, vec4 fog, float dist)
+FogBlend (const vec4 color, const vec4 fog, const float dist)
 {
 	float       az = fog.a * dist;
 	vec4        fog_color = vec4 (fog.rgb, 1.0);
