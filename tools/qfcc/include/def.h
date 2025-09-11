@@ -294,12 +294,13 @@ int def_offset (def_t *def) __attribute__((pure));
 int def_size (def_t *def) __attribute__((pure));
 
 typedef enum {
+	dol_none,		// visit only the main def
 	dol_all,		// visit all defs
 	dol_partial,	// visit only (at least) partially overlapping defs
 	dol_full,		// visit only fully overlapped (smaller or same size) defs
 	dol_exact,		// visit only matching defs (same size and offset)
 
-	dol_only_alias	// don't visit main def
+	dol_only_alias = 8	// don't visit main def
 } def_overlap_t;
 
 static_assert(!(dol_only_alias & (dol_only_alias - 1)));

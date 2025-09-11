@@ -785,6 +785,10 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 	int         ret;
 	bool        only_alias = overlap & dol_only_alias;
 
+	if (overlap == dol_only_alias) {
+		internal_error (0, "meaningless overlap");
+	}
+
 	overlap &= ~dol_only_alias;
 	if ((ret = visit (def, data)))
 		return ret;
@@ -796,7 +800,13 @@ def_visit_all (def_t *def, def_overlap_t overlap,
 			&& (ret = visit (def, data))) {
 			return ret;
 		}
+		if (overlap == dol_none) {
+			return ret;
+		}
 	} else {
+		if (overlap == dol_none) {
+			return 0;
+		}
 		if (overlap != dol_exact) {
 			overlap = dol_all;
 		}

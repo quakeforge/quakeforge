@@ -567,12 +567,16 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 
 int
 tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
-			   int (*visit) (tempop_t *, void *), void *data)
+			      int (*visit) (tempop_t *, void *), void *data)
 {
 	tempop_t   *start_tempop = tempop;
 	operand_t  *top;
 	int         ret;
 	bool        only_alias = overlap & dol_only_alias;
+
+	if (overlap == dol_only_alias) {
+		internal_error (0, "meaningless overlap");
+	}
 
 	overlap &= ~dol_only_alias;
 	if ((ret = visit (tempop, data)))
@@ -587,7 +591,13 @@ tempop_visit_all (tempop_t *tempop, def_overlap_t overlap,
 			&& (ret = visit (tempop, data))) {
 			return ret;
 		}
+		if (overlap == dol_none) {
+			return ret;
+		}
 	} else {
+		if (overlap == dol_none) {
+			return 0;
+		}
 		if (overlap != dol_exact) {
 			overlap = dol_all;
 		}
