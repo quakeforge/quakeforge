@@ -337,8 +337,16 @@ flow_get_var (operand_t *op)
 		return 0;
 
 	if (op->op_type == op_temp) {
-		if (!op->tempop.flowvar)
+		if (!op->tempop.flowvar) {
 			op->tempop.flowvar = new_flowvar ();
+			if (op->tempop.alias) {
+				//This is for main vars that are never referenced as such,
+				//but should probably never happen for temps.
+				//FIXME var isn't counted properly and won't get into
+				//the functions's var list.
+				flow_get_var (op->tempop.alias);
+			}
+		}
 		return op->tempop.flowvar;
 	}
 	if (op->op_type == op_def) {
@@ -349,6 +357,19 @@ flow_get_var (operand_t *op)
 			// aliased defs have mangled names, so check the main def
 			if (d->alias) {
 				d = d->alias;
+				//This is for main vars that are never referenced as such.
+				//The eg, arrays that are only indexed and not referenced
+				//by a pointer, or vector variables accessed only by
+				//components and not as a whole.
+				//FIXME var isn't counted properly and won't get into
+				//the functions's var list.
+				operand_t *aop;
+				if (d->flowvar) {
+					aop = d->flowvar->op;
+				} else {
+					aop = def_operand (d, d->type, nullptr);
+				}
+				flow_get_var (aop);
 			}
 			if (strncmp (d->name, ".arg", 4) == 0
 				|| strncmp (d->name, ".param", 6) == 0) {
@@ -1301,6 +1322,47 @@ flow_record_end (statement_t *st, reaching_t *r)
 	r->num_use[st->number] = r->num_ud_chains - r->first_use[st->number];
 }
 
+typedef struct {
+	set_t      *set;
+	flowvar_t  *found;
+} phantom_t;
+
+static int
+tempop_find_phantom (tempop_t *tempop, void *data)
+{
+	phantom_t *phantom = data;
+	if (!tempop->alias) {
+		set_union (phantom->set, tempop->flowvar->define);
+		phantom->found = tempop->flowvar;
+	}
+	return 0;
+}
+
+static int
+def_find_phantom (def_t *def, void *data)
+{
+	phantom_t *phantom = data;
+	if (!def->alias) {
+		set_union (phantom->set, def->flowvar->define);
+		phantom->found = def->flowvar;
+	}
+	return 0;
+}
+
+static flowvar_t *
+find_phantom (set_t *defs, flowvar_t *var)
+{
+	auto op = var->op;
+	phantom_t ph = { .set = defs, };
+	set_empty (defs);
+	if (op->op_type == op_temp && op->tempop.alias) {
+		tempop_visit_all (&op->tempop, dol_none, tempop_find_phantom, &ph);
+	} else if (op->op_type == op_def && op->def->alias) {
+		def_visit_all (op->def, dol_none, def_find_phantom, &ph);
+	}
+	return ph.found;
+}
+
 static void
 flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				 void (*start) (statement_t *st, reaching_t *r),
@@ -1333,6 +1395,30 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 
 				if (record) {
 					record (st, vi->element, reach);
+				}
+			}
+			// look for phantom uses: partial writes to a variable (eg
+			// `vec.y = 1` "use" vec to set `vec.x` (and any other members)
+			// to their current values, thus keeping previous definitions
+			// alive while actually setting only `vec.y`.
+			// FIXME(?) While this works for what I wanted, I'm not sure that
+			// the use of the full define not getting past the write is
+			// correct. alias_vec_live.r has `len` defined on 3 and used on 6,
+			// which is as intended, but its use on 7 is "lost" (blocked by
+			// the partial define on 6). However, all tests pass and nothing
+			// appears to be broken. Hopefully this will help future me catch
+			// up quickly if this becomes a problem in the future.
+			for (set_iter_t *vi = set_first (reach->stdef); vi;
+				 vi = set_next (vi)) {
+				auto var = reach->vars[vi->element];
+				auto phantom = find_phantom (reach->tmp, var);
+				if (phantom) {
+					set_intersection (reach->tmp, reach->gen);
+					set_intersection (reach->tmp, reach->func->real_statements);
+
+					if (record) {
+						record (st, phantom->number, reach);
+					}
 				}
 			}
 
