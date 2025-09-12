@@ -1367,7 +1367,7 @@ bsp_visit_world (const exprval_t **params, exprval_t *result, exprctx_t *ectx)
 		[QFV_bspDebug] = visit_node_no_bfcull,
 	}[pass_ind]);
 
-	if (r_drawentities) {
+	if (r_drawentities && bctx->num_models) {
 		auto queue = pass->entqueue;
 		for (size_t i = 0; i < queue->ent_queues[mod_brush].size; i++) {
 			entity_t    ent = queue->ent_queues[mod_brush].a[i];
