@@ -669,7 +669,15 @@ proc_cond (const expr_t *expr, rua_ctx_t *ctx)
 		return false_expr;
 	}
 	auto true_type = get_type (true_expr);
+	if (is_reference (true_type)) {
+		true_type = dereference_type (true_type);
+		true_expr = pointer_deref (true_expr);
+	}
 	auto false_type = get_type (false_expr);
+	if (is_reference (false_type)) {
+		false_type = dereference_type (false_type);
+		false_expr = pointer_deref (false_expr);
+	}
 	if (!type_same (true_type, false_type)) {
 		if (!true_expr->implicit && false_expr->implicit
 			&& type_assignable (true_type, false_type)) {
