@@ -578,7 +578,6 @@ function_expr (const expr_t *fexpr, const expr_t *args, rua_ctx_t *ctx)
 const expr_t *
 return_expr (function_t *f, const expr_t *e)
 {
-	const type_t *t;
 	const type_t *ret_type = unalias_type (f->type->func.ret_type);
 
 	if (!e) {
@@ -604,12 +603,20 @@ return_expr (function_t *f, const expr_t *e)
 		}
 	}
 
+	const type_t *t = get_type (e);
 	if (e->type == ex_compound || e->type == ex_multivec
 		|| ((is_algebra (t = get_type (e))
 			 || (is_reference (t) && is_algebra (t = dereference_type (t))))
 			&& !type_same (ret_type, t))) {
 		scoped_src_loc (e);
-		e = current_target.initialized_temp (ret_type, e);
+		if (!t) {
+			t = ret_type;
+		} else {
+			if (is_reference (t)) {
+				t = dereference_type (t);
+			}
+		}
+		e = current_target.initialized_temp (t, e);
 	} else {
 		e = algebra_optimize (e);
 	}
