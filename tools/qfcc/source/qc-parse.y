@@ -1393,6 +1393,7 @@ storage_class
 				generic_scope = true;
 			}
 			generic_symtab->type = stab_bypass;
+			generic_symtab->space = current_symtab->space;
 			generic_symtab->parent = current_symtab;
 			current_symtab = generic_symtab;
 		}

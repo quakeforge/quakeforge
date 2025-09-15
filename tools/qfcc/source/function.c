@@ -283,7 +283,9 @@ get_gensym (const expr_t *type_expr, bool *is_reference, unsigned *tag,
 			if (params->list.head->next) {
 				auto tag_expr = params->list.head->next->expr;
 				tag_expr = expr_process (tag_expr, ctx);
-				*tag = expr_integral (tag_expr);
+				if (!is_error (tag_expr)) {
+					*tag = expr_integral (tag_expr);
+				}
 			}
 			type_expr = params->list.head->expr;
 		}

@@ -185,7 +185,7 @@ promote_type (const type_t *dst, const type_t *src)
 	return vector_type (base_type (dst), type_width (src));
 }
 
-static void
+static bool
 promote_exprs (const expr_t **e1, const expr_t **e2)
 {
 	auto t1 = get_type (*e1);
@@ -210,11 +210,13 @@ promote_exprs (const expr_t **e1, const expr_t **e2)
 	} else if (type_promotes (t2, t1)) {
 		t1 = promote_type (t2, t1);
 	} else if (base_type (t1) != base_type (t2)) {
-		internal_error (*e1, "failed to promote types %s %s",
-						get_type_string (t1), get_type_string (t2));
+		debug (*e1, "failed to promote types %s %s",
+			   get_type_string (t1), get_type_string (t2));
+		return false;
 	}
 	*e1 = cast_expr (t1, *e1);
 	*e2 = cast_expr (t2, *e2);
+	return true;
 }
 
 static const expr_t *
@@ -244,7 +246,9 @@ math_compare (int op, const expr_t *e1, const expr_t *e2)
 				 get_type_string (t2));
 	}
 	if (t1 != t2) {
-		promote_exprs (&e1, &e2);
+		if (!promote_exprs (&e1, &e2)) {
+			return new_error_expr ();
+		}
 		t1 = get_type (e1);
 		t2 = get_type (e2);
 	}
@@ -479,7 +483,9 @@ boolean_op (int op, const expr_t *a, const expr_t *b)
 	if (!is_boolean (get_type (b))) {
 		b = test_expr (b);
 	}
-	promote_exprs (&a, &b);
+	if (!promote_exprs (&a, &b)) {
+		return new_error_expr ();
+	}
 	auto type = base_type (get_type (a));
 	auto e = typed_binary_expr (type, op, a, b);
 	return e;
@@ -958,7 +964,9 @@ binary_expr (int op, const expr_t *e1, const expr_t *e2)
 			t2 = promote_type (t1, t2);
 			e2 = cast_expr (t2, e2);
 		} else {
-			promote_exprs (&e1, &e2);
+			if (!promote_exprs (&e1, &e2)) {
+				return new_error_expr ();
+			}
 			t1 = get_type (e1);
 			t2 = get_type (e2);
 		}
