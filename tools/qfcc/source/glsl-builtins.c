@@ -1235,7 +1235,8 @@ glsl_init_common (rua_ctx_t *ctx)
 {
 	glsl_sublang = *(glsl_sublang_t *) ctx->language->sublanguage;
 
-	current_target.create_entry_point ("main", glsl_sublang.model_name);
+	current_target.create_entry_point ("main", glsl_sublang.model_name,
+									   nullptr);
 
 	image_init_types ();
 

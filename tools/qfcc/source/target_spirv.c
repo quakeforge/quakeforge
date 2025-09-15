@@ -2834,7 +2834,8 @@ spirv_declare_sym (specifier_t spec, const expr_t *init, symtab_t *symtab,
 }
 
 static bool
-spirv_create_entry_point (const char *name, const char *model_name)
+spirv_create_entry_point (const char *name, const char *model_name,
+						  attribute_t *mode)
 {
 	for (auto ep = pr.module->entry_points; ep; ep = ep->next) {
 		if (strcmp (ep->name, name) == 0) {
@@ -2842,11 +2843,12 @@ spirv_create_entry_point (const char *name, const char *model_name)
 			return false;
 		}
 	}
-	attribute_t *mode = nullptr;
 	unsigned model = spirv_enum_val ("ExecutionModel", model_name);
 	if (model == SpvExecutionModelFragment) {
-		mode = new_attrfunc ("mode",
-				new_int_expr (SpvExecutionModeOriginUpperLeft, false));
+		auto m = new_attrfunc ("mode",
+					new_int_expr (SpvExecutionModeOriginUpperLeft, false));
+		m->next = mode;
+		mode = m;
 	}
 	entrypoint_t *ep = malloc (sizeof (entrypoint_t));
 	*(ep) = (entrypoint_t) {
@@ -3148,7 +3150,8 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 	}
 	const expr_t *params[count + 1] = {};
 	if (attr->params) {
-		list_scatter (&attr->params->list, params);
+		// attribute params are reversed
+		list_scatter_rev (&attr->params->list, params);
 	}
 	if (strcmp (attr->name, "shader") == 0) {
 		if (func) {
@@ -3168,7 +3171,20 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 			} else {
 				error (0, "shader attribute requires a string");
 			}
-			spirv_create_entry_point (func->name, model_name);
+			attribute_t *mode = nullptr;
+			for (int i = 1; i < count; i++) {
+				const char *mode_name = nullptr;
+				if (count >= 1 && is_string_val (params[i])) {
+					mode_name = expr_string (params[i]);
+					unsigned mid = spirv_enum_val ("ExecutionMode", mode_name);
+					auto m = new_attrfunc ("mode", new_int_expr (mid, false));
+					m->next = mode;
+					mode = m;
+				} else {
+					error (0, "capability attribute requires a string");
+				}
+			}
+			spirv_create_entry_point (func->name, model_name, mode);
 		}
 		return true;
 	} else if (strcmp (attr->name, "capability") == 0) {
@@ -3181,6 +3197,15 @@ spirv_function_attr (const attribute_t *attr, metafunc_t *func)
 		}
 		uint32_t capability = spirv_enum_val ("Capability", capability_name);
 		spirv_add_capability (pr.module, capability);
+		return true;
+	} else if (strcmp (attr->name, "extension") == 0) {
+		const char *extension_name = nullptr;
+		if (count >= 1 && is_string_val (params[0])) {
+			extension_name = expr_string (params[0]);
+		} else {
+			error (0, "capability attribute requires a string");
+		}
+		spirv_add_extension (pr.module, extension_name);
 		return true;
 	}
 	return false;

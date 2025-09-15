@@ -49,7 +49,8 @@ typedef struct {
 							  symtab_t *symtab, expr_t *block);
 	void      (*vararg_int) (const expr_t *e);
 
-	bool      (*create_entry_point) (const char *name, const char *model_name);
+	bool      (*create_entry_point) (const char *name, const char *model_name,
+									 attribute_t *mode);
 
 	const expr_t *(*initialized_temp) (const type_t *type, const expr_t *src);
 	const expr_t *(*assign_vector) (const expr_t *dst, const expr_t *src);
