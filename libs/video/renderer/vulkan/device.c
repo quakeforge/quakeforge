@@ -160,9 +160,14 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		//	//.pNext = &vertex_robust,
 		//	.presentModeFifoLatestReady = 1,
 		//};
+		VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT interlock = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT,
+			//.pNext = &fifoLatest,
+			.fragmentShaderPixelInterlock = 1,
+		};
 		VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input = {
 			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
-			//.pNext = &fifoLatest,
+			.pNext = &interlock,
 			.vertexInputDynamicState = 1,
 		};
 		VkPhysicalDeviceIndexTypeUint8Features vertex_index_8bit = {
