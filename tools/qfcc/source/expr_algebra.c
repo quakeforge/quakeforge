@@ -1503,7 +1503,7 @@ pga3_wzy_wxz_wyx_xyz_dot_wzy_wxz_wyx_xyz (const expr_t **c,
 	auto stype = alg->type;
 	auto sa = offset_cast (stype, a, 3);
 	auto sb = offset_cast (stype, b, 3);
-	c[0] = neg_expr (scale_expr (sa, sb));
+	c[2] = neg_expr (scale_expr (sa, sb));
 }
 
 static pga_func pga3_dot_funcs[6][6] = {
