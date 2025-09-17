@@ -68,6 +68,52 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	color = mix (vec4(col.rgb, 1), color, 1-factor);
 }
 
+//FIXME get generics with declarations working
+@overload
+vec2
+icept (line_t ray, line_t obj, float r)
+{
+	@algebra (PGA) {
+		auto rp = (e123 • ray * ~ray).tvec;
+		auto rv = e0 * ~ray;
+
+		float uu = ray • ~ray;
+		float vv = obj • ~obj;
+
+		auto a = (rp ∨ obj);
+		auto b = (rv ∨ obj);
+		float s = uu * uu * vv;
+		float aa = a • ~a;
+		float ab = a • ~b;
+		float bb = b • ~b;
+		float offs = sqrt (ab*ab - bb*(aa - s*r*r));
+		auto ts = vec2 (-ab - offs, -ab + offs) / (bb * sqrt (uu));
+		return ts;
+	}
+}
+@overload
+vec2
+icept (line_t ray, point_t obj, float r)
+{
+	@algebra (PGA) {
+		auto rp = (e123 • ray * ~ray).tvec;
+		auto rv = e0 * ~ray;
+
+		float uu = ray • ~ray;
+		float vv = obj • ~obj;
+
+		auto a = (rp ∨ obj);
+		auto b = (rv ∨ obj);
+		float s = uu * uu * vv;
+		float aa = a • ~a;
+		float ab = a • ~b;
+		float bb = b • ~b;
+		float offs = sqrt (ab*ab - bb*(aa - s*r*r));
+		auto ts = vec2 (-ab - offs, -ab + offs) / (bb * sqrt (uu));
+		return ts;
+	}
+}
+
 void
 draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
@@ -79,28 +125,18 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	auto P2 = make_point (ind + 3, 1);
 	auto line = P1 ∨ P2;
 	auto ray = make_point (eye, 1) ∨ make_point (v, 0);
-	float uu = ray • ~ray;
-	float vv = line • ~line;
 
 	@algebra (PGA) {
 		// find the times to the cylinder sides
-		vec2 ts;
-		auto rp = (e123 • ray * ~ray).tvec;
-		auto rv = e0 * ~ray;
-		{
-			auto a = (rp ∨ line);
-			auto b = (rv ∨ line);
-			float s = uu * uu * vv;
-			float aa = a • a;
-			float ab = a • b;
-			float bb = b • b;
-			ts[0] = (-ab - sqrt (ab*ab - bb*(aa - s*r*r))) / (bb * sqrt (uu));
-			ts[1] = (-ab + sqrt (ab*ab - bb*(aa - s*r*r))) / (bb * sqrt (uu));
-		}
+		vec2 ts = icept (ray, line, r);
 
 		// find the times to the end-cap planes (through hemisphere center)
 		vec2 te;
 		{
+			auto rp = (e123 • ray * ~ray).tvec;
+			auto rv = e0 * ~ray;
+			float uu = ray • ~ray;
+			float vv = line • ~line;
 			auto p1 = P1 • line;
 			auto p2 = P2 • line;
 			auto a = vec2(rp ∨ p1, rp ∨ p2);
@@ -119,15 +155,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// case 1
 				// ray hits both infinite cylinder sides outside the finite
 				// cylinder (near end), so just the sphere
-				auto P = swap ? P2 : P1;
-				auto a = (rp ∨ P);
-				auto b = (rv ∨ P);
-				float s = uu * uu * r * r;
-				float aa = a • ~a;
-				float ab = a • ~b;
-				float bb = b • ~b;
-				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
-				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t = icept (ray, swap ? P2 : P1, r);
 				col = vec4(1,0,0,1);
 			} else
 			if (ts[0] < te[0] && te[0] < ts[1] && ts[1] < te[1]) {
@@ -136,14 +164,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// cylinder (near end), but the far infinite cylinder side
 				// inside
 				// the finite cylinder
-				auto P = swap ? P2 : P1;
-				auto a = (rp ∨ P);
-				auto b = (rv ∨ P);
-				float s = uu * uu * r * r;
-				float aa = a • ~a;
-				float ab = a • ~b;
-				float bb = b • ~b;
-				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t = icept (ray, swap ? P2 : P1, r);
 				t[1] = ts[1];
 				col = vec4(1,1,0,1);
 			} else
@@ -151,19 +172,9 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// case 3
 				// ray hits both ends of the finite cylinder inside the
 				// infinite cylinder
-				auto a1 = (rp ∨ (swap ? P2 : P1));
-				auto b1 = (rv ∨ (swap ? P2 : P1));
-				auto a2 = (rp ∨ (swap ? P1 : P2));
-				auto b2 = (rv ∨ (swap ? P1 : P2));
-				float s = uu * uu * r * r;
-				float aa1 = a1 • ~a1;
-				float ab1 = a1 • ~b1;
-				float bb1 = b1 • ~b1;
-				float aa2 = a2 • ~a2;
-				float ab2 = a2 • ~b2;
-				float bb2 = b2 • ~b2;
-				t[0] = (-ab1 - sqrt (ab1*ab1 - bb1*(aa1 - s))) / bb1;
-				t[1] = (-ab2 - sqrt (ab2*ab2 - bb2*(aa2 - s))) / bb2;
+				auto t1 = icept (ray, swap ? P2 : P1, r);
+				auto t2 = icept (ray, swap ? P1 : P2, r);
+				t = vec2 (t1[0], t1[1]);
 				col = vec4(0,1,0,1);
 			} else
 			if (te[0] < ts[0] && ts[1] < te[1]) {
@@ -178,30 +189,15 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// ray hits near infinite cylinder side inside the finite
 				// cylinder, but the far infinite cylinder side outside
 				// the finite cylinder
-				auto P = swap ? P1 : P2;
-				auto a = (rp ∨ P);
-				auto b = (rv ∨ P);
-				float s = uu * uu * r * r;
-				float aa = a • ~a;
-				float ab = a • ~b;
-				float bb = b • ~b;
+				t = icept (ray, swap ? P1 : P2, r);
 				t[0] = ts[0];
-				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
 				col = vec4(1,1,1,1);
 			} else
 			if (te[1] < ts[0]) {
 				// case 6
 				// ray hits both infinite cylinder sides outside the finite
 				// cylinder (far end), so just the sphere
-				auto P = swap ? P1 : P2;
-				auto a = (rp ∨ P);
-				auto b = (rv ∨ P);
-				float s = uu * uu * r * r;
-				float aa = a • ~a;
-				float ab = a • ~b;
-				float bb = b • ~b;
-				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
-				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t = icept (ray, swap ? P1 : P2, r);
 				col = vec4(1,0,1,1);
 			}
 			// nan check on final points (may have missed the hemisphere ends)
