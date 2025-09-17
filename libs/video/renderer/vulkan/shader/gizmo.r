@@ -156,9 +156,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// ray hits both infinite cylinder sides outside the finite
 				// cylinder (near end), so just the sphere
 				t = icept (ray, swap ? P2 : P1, r);
-				col = vec4(1,0,0,1);
-			} else
-			if (ts[0] < te[0] && te[0] < ts[1] && ts[1] < te[1]) {
+			} else if (ts[0] < te[0] && te[0] < ts[1] && ts[1] < te[1]) {
 				// case 2
 				// ray hits near infinite cylinder side outside the finite
 				// cylinder (near end), but the far infinite cylinder side
@@ -166,39 +164,30 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				// the finite cylinder
 				t = icept (ray, swap ? P2 : P1, r);
 				t[1] = ts[1];
-				col = vec4(1,1,0,1);
-			} else
-			if (ts[0] < te[0] && te[1] < ts[1]) {
+			} else if (ts[0] < te[0] && te[1] < ts[1]) {
 				// case 3
 				// ray hits both ends of the finite cylinder inside the
 				// infinite cylinder
 				auto t1 = icept (ray, swap ? P2 : P1, r);
 				auto t2 = icept (ray, swap ? P1 : P2, r);
 				t = vec2 (t1[0], t1[1]);
-				col = vec4(0,1,0,1);
-			} else
-			if (te[0] < ts[0] && ts[1] < te[1]) {
+			} else if (te[0] < ts[0] && ts[1] < te[1]) {
 				// case 4
 				// ray hits both infinite cylinder sides inside the finite
 				// cylinder, so just the sides
 				t = ts;
-				col = vec4(0,1,1,1);
-			} else
-			if (te[0] < ts[0] && ts[0] < te[1] && te[1] < ts[1]) {
+			} else if (te[0] < ts[0] && ts[0] < te[1] && te[1] < ts[1]) {
 				// case 5
 				// ray hits near infinite cylinder side inside the finite
 				// cylinder, but the far infinite cylinder side outside
 				// the finite cylinder
 				t = icept (ray, swap ? P1 : P2, r);
 				t[0] = ts[0];
-				col = vec4(1,1,1,1);
-			} else
-			if (te[1] < ts[0]) {
+			} else if (te[1] < ts[0]) {
 				// case 6
 				// ray hits both infinite cylinder sides outside the finite
 				// cylinder (far end), so just the sphere
 				t = icept (ray, swap ? P1 : P2, r);
-				col = vec4(1,0,1,1);
 			}
 			// nan check on final points (may have missed the hemisphere ends)
 			if (t[0] <= t[1]) {
@@ -208,20 +197,6 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 			}
 		}
 	}
-
-#if 0
-	auto M = line * ray;
-	// find squared sin(th) of the angle between the line and ray
-	// not interested in the actual angle, only whether it's close enough to
-	// 0 so that the correct components for calculating distance can be chosen
-	float s2 = M.bvect • ~M.bvect / ((line • line) * (ray • ray));
-	float d2 = s2 < 1e-6 ? ⋆M.bvecp • ~⋆M.bvecp : ⋆M.qvec • ⋆M.qvec;
-	float w2 = s2 < 1e-6 ? M.scalar • M.scalar  : M.bvect • ~M.bvect;
-	float disc = w2 * r * r - d2;
-	float dist = disc > 0 ? sqrt (disc / w2) : 0;
-	float factor = disc > 0 ? exp (-col.a * 3 * dist / r) : 0;
-	color = mix (vec4(col.rgb, 1), color, 1-factor);
-#endif
 }
 
 [shader("Fragment")]
