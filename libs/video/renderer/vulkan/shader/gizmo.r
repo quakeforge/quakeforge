@@ -71,18 +71,149 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 void
 draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
-	auto p1 = vec3 (asfloat (objects[ind + 0]),
-					asfloat (objects[ind + 1]),
-					asfloat (objects[ind + 2])) - eye;
-	auto p2 = vec3 (asfloat (objects[ind + 3]),
-					asfloat (objects[ind + 4]),
-					asfloat (objects[ind + 5])) - eye;
 	auto r = asfloat (objects[ind + 6]);
 	auto col = asrgba (objects[ind + 7]);
 
 //·×÷†•∗∧∨⋀⋆‖⊥△▽ඞ
-	auto line = make_point (ind + 0, 1) ∨ make_point (ind + 3, 1);
+	auto P1 = make_point (ind + 0, 1);
+	auto P2 = make_point (ind + 3, 1);
+	auto line = P1 ∨ P2;
 	auto ray = make_point (eye, 1) ∨ make_point (v, 0);
+	float uu = ray • ~ray;
+	float vv = line • ~line;
+
+	@algebra (PGA) {
+		// find the times to the cylinder sides
+		vec2 ts;
+		auto rp = (e123 • ray * ~ray).tvec;
+		auto rv = e0 * ~ray;
+		{
+			auto a = (rp ∨ line);
+			auto b = (rv ∨ line);
+			float s = uu * uu * vv;
+			float aa = a • a;
+			float ab = a • b;
+			float bb = b • b;
+			ts[0] = (-ab - sqrt (ab*ab - bb*(aa - s*r*r))) / (bb * sqrt (uu));
+			ts[1] = (-ab + sqrt (ab*ab - bb*(aa - s*r*r))) / (bb * sqrt (uu));
+		}
+
+		// find the times to the end-cap planes (through hemisphere center)
+		vec2 te;
+		{
+			auto p1 = P1 • line;
+			auto p2 = P2 • line;
+			auto a = vec2(rp ∨ p1, rp ∨ p2);
+			auto b = vec2(rv ∨ p1, rv ∨ p2);
+			te = -a / (b * sqrt (uu));
+		}
+		// nan check on sides (if either value is nan, the comparison will fail
+		// but otherwise ts[0] is initialized to be <= ts[1])
+		if (ts[0] <= ts[1]) {
+			auto t = sqrt(vec2(-1, -1));
+			bool swap = te[0] > te[1];
+			if (swap) {
+				te = te.yx;
+			}
+			if (ts[1] < te[0]) {
+				// case 1
+				// ray hits both infinite cylinder sides outside the finite
+				// cylinder (near end), so just the sphere
+				auto P = swap ? P2 : P1;
+				auto a = (rp ∨ P);
+				auto b = (rv ∨ P);
+				float s = uu * uu * r * r;
+				float aa = a • ~a;
+				float ab = a • ~b;
+				float bb = b • ~b;
+				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				col = vec4(1,0,0,1);
+			} else
+			if (ts[0] < te[0] && te[0] < ts[1] && ts[1] < te[1]) {
+				// case 2
+				// ray hits near infinite cylinder side outside the finite
+				// cylinder (near end), but the far infinite cylinder side
+				// inside
+				// the finite cylinder
+				auto P = swap ? P2 : P1;
+				auto a = (rp ∨ P);
+				auto b = (rv ∨ P);
+				float s = uu * uu * r * r;
+				float aa = a • ~a;
+				float ab = a • ~b;
+				float bb = b • ~b;
+				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t[1] = ts[1];
+				col = vec4(1,1,0,1);
+			} else
+			if (ts[0] < te[0] && te[1] < ts[1]) {
+				// case 3
+				// ray hits both ends of the finite cylinder inside the
+				// infinite cylinder
+				auto a1 = (rp ∨ (swap ? P2 : P1));
+				auto b1 = (rv ∨ (swap ? P2 : P1));
+				auto a2 = (rp ∨ (swap ? P1 : P2));
+				auto b2 = (rv ∨ (swap ? P1 : P2));
+				float s = uu * uu * r * r;
+				float aa1 = a1 • ~a1;
+				float ab1 = a1 • ~b1;
+				float bb1 = b1 • ~b1;
+				float aa2 = a2 • ~a2;
+				float ab2 = a2 • ~b2;
+				float bb2 = b2 • ~b2;
+				t[0] = (-ab1 - sqrt (ab1*ab1 - bb1*(aa1 - s))) / bb1;
+				t[1] = (-ab2 - sqrt (ab2*ab2 - bb2*(aa2 - s))) / bb2;
+				col = vec4(0,1,0,1);
+			} else
+			if (te[0] < ts[0] && ts[1] < te[1]) {
+				// case 4
+				// ray hits both infinite cylinder sides inside the finite
+				// cylinder, so just the sides
+				t = ts;
+				col = vec4(0,1,1,1);
+			} else
+			if (te[0] < ts[0] && ts[0] < te[1] && te[1] < ts[1]) {
+				// case 5
+				// ray hits near infinite cylinder side inside the finite
+				// cylinder, but the far infinite cylinder side outside
+				// the finite cylinder
+				auto P = swap ? P1 : P2;
+				auto a = (rp ∨ P);
+				auto b = (rv ∨ P);
+				float s = uu * uu * r * r;
+				float aa = a • ~a;
+				float ab = a • ~b;
+				float bb = b • ~b;
+				t[0] = ts[0];
+				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				col = vec4(1,1,1,1);
+			} else
+			if (te[1] < ts[0]) {
+				// case 6
+				// ray hits both infinite cylinder sides outside the finite
+				// cylinder (far end), so just the sphere
+				auto P = swap ? P1 : P2;
+				auto a = (rp ∨ P);
+				auto b = (rv ∨ P);
+				float s = uu * uu * r * r;
+				float aa = a • ~a;
+				float ab = a • ~b;
+				float bb = b • ~b;
+				t[0] = (-ab - sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				t[1] = (-ab + sqrt (ab*ab - bb*(aa - s))) / (bb * sqrt (uu));
+				col = vec4(1,0,1,1);
+			}
+			// nan check on final points (may have missed the hemisphere ends)
+			if (t[0] <= t[1]) {
+				float dist = t[1] - t[0];
+				float factor = exp (-col.a * dist / r);
+				color = mix (vec4(col.rgb, 1), color, 1-factor);
+			}
+		}
+	}
+
+#if 0
 	auto M = line * ray;
 	// find squared sin(th) of the angle between the line and ray
 	// not interested in the actual angle, only whether it's close enough to
@@ -94,6 +225,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	float dist = disc > 0 ? sqrt (disc / w2) : 0;
 	float factor = disc > 0 ? exp (-col.a * 3 * dist / r) : 0;
 	color = mix (vec4(col.rgb, 1), color, 1-factor);
+#endif
 }
 
 [shader("Fragment")]
