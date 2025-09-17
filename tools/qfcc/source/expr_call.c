@@ -313,7 +313,7 @@ build_intrinsic_call (const expr_t *expr, symbol_t *fsym, const type_t *ftype,
 }
 
 static const expr_t *
-inline_return_expr (function_t *func, const expr_t *val)
+inline_return_expr (function_t *func, const expr_t *val, rua_ctx_t *ctx)
 {
 	if (!func->return_val && val) {
 		return error (val, "returning a value for a void function");
@@ -321,9 +321,10 @@ inline_return_expr (function_t *func, const expr_t *val)
 	if (func->return_val && !val) {
 		return error (val, "return from non-void function without a value");
 	}
+	auto return_val = expr_process (func->return_val, ctx);
 	auto ret = new_block_expr (nullptr);
 	if (val) {
-		append_expr (ret, assign_expr (func->return_val, val));
+		append_expr (ret, assign_expr (return_val, val));
 	}
 	if (func->return_label) {
 		append_expr (ret, goto_expr (func->return_label));

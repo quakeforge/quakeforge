@@ -158,7 +158,8 @@ typedef struct function_s {
 	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 	const expr_t       *exprs;
 
-	const expr_t     *(*return_imp) (function_t *func, const expr_t *val);
+	const expr_t     *(*return_imp) (function_t *func, const expr_t *val,
+									 rua_ctx_t *ctx);
 	const expr_t       *return_val;
 	const expr_t       *return_label;
 } function_t;

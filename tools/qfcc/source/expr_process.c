@@ -607,7 +607,7 @@ proc_return (const expr_t *expr, rua_ctx_t *ctx)
 		return ret_val;
 	}
 	if (current_func->return_imp) {
-		return current_func->return_imp (current_func, ret_val);
+		return current_func->return_imp (current_func, ret_val, ctx);
 	}
 	if (expr->retrn.at_return) {
 		return at_return_expr (current_func, ret_val);
@@ -917,7 +917,14 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			internal_error (decl, "not a symbol");
 		}
 		auto spec = decl_spec;
-		spec.sym = sym;
+		// Always create a new symbol. No harm for regular functions but
+		// required for new functions otherwise the "template" symbol will
+		// get "corrupted" (have its type set) and break the type handling
+		// below (and cause other fun if it wasn't for that).
+		spec.sym = new_symbol (sym->name);
+		*spec.sym = *sym;
+		spec.sym->table = nullptr;
+		sym = spec.sym;
 		if (!ctx->extdecl && spec.type_list) {
 			// to get here, a concrete declaration is being made
 			spec.is_generic = false;
@@ -1077,11 +1084,14 @@ expr_process (const expr_t *expr, rua_ctx_t *ctx)
 	proc = edag_add_expr (proc);
 	if (proc && proc->type == ex_process) {
 		auto func = current_func;
+		auto scope = current_symtab;
 		if (proc->process.function) {
 			current_func = proc->process.function;
+			current_symtab = current_func->locals;
 		}
 		proc = expr_process (proc->process.expr, ctx);
 		current_func = func;
+		current_symtab = scope;
 	}
 	ctx->force_lookup = force_lookup;
 	return proc;
