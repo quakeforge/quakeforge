@@ -69,9 +69,10 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 }
 
 //FIXME get generics with declarations working
-@overload
+@generic (genObj = [line_t, point_t]) {
+
 vec2
-icept (line_t ray, line_t obj, float r)
+icept (line_t ray, genObj obj, float r)
 {
 	@algebra (PGA) {
 		auto rp = (e123 • ray * ~ray).tvec;
@@ -91,28 +92,8 @@ icept (line_t ray, line_t obj, float r)
 		return ts;
 	}
 }
-@overload
-vec2
-icept (line_t ray, point_t obj, float r)
-{
-	@algebra (PGA) {
-		auto rp = (e123 • ray * ~ray).tvec;
-		auto rv = e0 * ~ray;
 
-		float uu = ray • ~ray;
-		float vv = obj • ~obj;
-
-		auto a = (rp ∨ obj);
-		auto b = (rv ∨ obj);
-		float s = uu * uu * vv;
-		float aa = a • ~a;
-		float ab = a • ~b;
-		float bb = b • ~b;
-		float offs = sqrt (ab*ab - bb*(aa - s*r*r));
-		auto ts = vec2 (-ab - offs, -ab + offs) / (bb * sqrt (uu));
-		return ts;
-	}
-}
+};
 
 void
 draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
