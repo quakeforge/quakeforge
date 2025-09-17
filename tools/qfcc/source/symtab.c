@@ -389,3 +389,11 @@ declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 	}
 	return sym;
 }
+
+symtab_t *
+create_local_scope (symtab_t *parent, void *data)
+{
+	auto scope =  new_symtab (parent, stab_local);
+	scope->space = parent->space;
+	return scope;
+}

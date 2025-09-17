@@ -232,7 +232,7 @@ int yylex (YYSTYPE *yylval, YYLTYPE *yylloc);
 %type	<expr>		intrinsic
 %type	<expr>		statement
 %type	<mut_expr>	statement_list compound_statement compound_statement_ns
-%type	<mut_expr>	new_block new_scope
+%type	<mut_expr>	new_block new_scope algebra_block algebra_scope
 %type	<expr>		else line break_label continue_label
 %type	<expr>		unary_expr cast_expr
 %type	<mut_expr>	arg_list
@@ -724,16 +724,7 @@ decl_expr (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
 {
 	auto sym = spec.sym;
 	spec.sym = nullptr;
-	auto decl = new_decl_expr (spec, current_symtab);
-	return append_decl (decl, sym, init);
-}
-
-static const expr_t *
-decl_expr_ns (specifier_t spec, const expr_t *init, rua_ctx_t *ctx)
-{
-	auto sym = spec.sym;
-	spec.sym = nullptr;
-	auto decl = new_decl_expr (spec, nullptr);
+	auto decl = new_decl_expr (spec);
 	return append_decl (decl, sym, init);
 }
 
@@ -1810,7 +1801,7 @@ component_decl
 				auto name = $spec.type->name + 4;
 				auto sym = new_symbol (va (".anonymous.%s", name));
 				sym->visibility = vis_anonymous;
-				auto decl = new_decl_expr ($spec, nullptr);
+				auto decl = new_decl_expr ($spec);
 				append_decl (decl, sym, nullptr);
 				$$ = new_list_expr (decl);
 			}
@@ -1832,8 +1823,8 @@ components
 	;
 
 component_declarator
-	: declarator[spec]				{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
-	| declarator[spec] ':' binding	{ $$ = decl_expr_ns ($spec, nullptr, ctx); }
+	: declarator[spec]				{ $$ = decl_expr ($spec, nullptr, ctx); }
+	| declarator[spec] ':' binding	{ $$ = decl_expr ($spec, nullptr, ctx); }
 	| declarator ':' expr			{ $$ = nullptr; }
 	| ':' expr						{ $$ = nullptr; }
 	| ':' binding					{ error (0, "nothing to bind here"); }
@@ -1851,11 +1842,11 @@ components_notype
 component_notype_declarator
 	: notype_declarator[spec]
 		{
-			$$ = decl_expr_ns ($spec, nullptr, ctx);
+			$$ = decl_expr ($spec, nullptr, ctx);
 		}
 	| notype_declarator[spec] ':' binding
 		{
-			$$ = decl_expr_ns ($spec, nullptr, ctx);
+			$$ = decl_expr ($spec, nullptr, ctx);
 		}
 	| notype_declarator ':' expr	{ $$ = nullptr; }
 	| ':' expr						{ $$ = nullptr; }
@@ -2075,7 +2066,7 @@ compound_init
 	;
 
 opt_cast
-	: '(' typename ')'					{ $$ = new_decl_expr ($2, nullptr); }
+	: '(' typename ')'					{ $$ = new_decl_expr ($2); }
 	| /*empty*/							{ $$ = nullptr; }
 	;
 
@@ -2148,8 +2139,9 @@ new_scope
 			auto block = new_block_expr (nullptr);
 			block->block.scope = current_symtab;
 			if (!options.traditional) {
+				block->block.create_scope = create_local_scope;
+				//FIXME this is dumb
 				block->block.scope = new_symtab (current_symtab, stab_local);
-				block->block.scope->space = current_symtab->space;
 				current_symtab = block->block.scope;
 			}
 			$$ = block;
@@ -2162,6 +2154,24 @@ end_scope
 			if (!options.traditional) {
 				current_symtab = pop_scope (current_symtab);
 			}
+		}
+	;
+
+algebra_scope
+	: new_scope[scope]
+		{
+			auto spec = $<spec>-1;
+
+			$scope->block.create_scope = algebra_scope;
+			$scope->block.data = (void *) spec.type;
+			$$ = $scope;
+		}
+	;
+
+algebra_block
+	: '{' algebra_scope statement_list '}' end_scope
+		{
+			$$ = $3;
 		}
 	;
 
@@ -2288,35 +2298,38 @@ statement
 			break_label = $break_label;
 			continue_label = $continue_label;
 		}
-	| ALGEBRA '(' TYPE_SPEC '(' expr_list ')' ')'
+	| ALGEBRA '(' TYPE_SPEC[spec] '(' expr_list[sig] ')' ')'
 		{
-			auto algebra = algebra_type ($3.type, $5);
-			current_symtab = algebra_scope (algebra, current_symtab);
+			specifier_t spec = {
+				.type = algebra_type ($spec.type, $sig),
+			};
+			$<spec>$ = spec;
 		}
-	  compound_statement
+	  algebra_block[block]
 		{
-			current_symtab = pop_scope (current_symtab);
-			$$ = $9;
+			$$ = $block;
 		}
-	| ALGEBRA '(' TYPE_SPEC ')'
+	| ALGEBRA '(' TYPE_SPEC[spec] ')'
 		{
-			auto algebra = algebra_type ($3.type, 0);
-			current_symtab = algebra_scope (algebra, current_symtab);
+			specifier_t spec = {
+				.type = algebra_type ($spec.type, nullptr),
+			};
+			$<spec>$ = spec;
 		}
-	  compound_statement
+	  algebra_block[block]
 		{
-			current_symtab = pop_scope (current_symtab);
-			$$ = $6;
+			$$ = $block;
 		}
-	| ALGEBRA '(' TYPE_NAME ')'
+	| ALGEBRA '(' TYPE_NAME[spec] ')'
 		{
-			auto algebra = $3.type;
-			current_symtab = algebra_scope (algebra, current_symtab);
+			specifier_t spec = {
+				.type = $spec.type,
+			};
+			$<spec>$ = spec;
 		}
-	  compound_statement
+	  algebra_block[block]
 		{
-			current_symtab = pop_scope (current_symtab);
-			$$ = $6;
+			$$ = $block;
 		}
 	| comma_expr ';'
 		{
@@ -2406,14 +2419,14 @@ unary_expr
 	| SIZEOF '(' typename ')'	%prec HYPERUNARY
 		{
 			auto spec = $3;
-			auto decl = new_decl_expr (spec, nullptr);
+			auto decl = new_decl_expr (spec);
 			$$ = new_unary_expr ('S', decl);
 		}
 	| COUNTOF unary_expr %prec UNARY { $$ = new_unary_expr ('#', $2); }
 	| COUNTOF '(' typename ')'	%prec HYPERUNARY
 		{
 			auto spec = $3;
-			auto decl = new_decl_expr (spec, nullptr);
+			auto decl = new_decl_expr (spec);
 			$$ = new_unary_expr ('#', decl);
 		}
 	| type_op '(' type_param_list ')'	{ $$ = type_function ($1, $3); }
@@ -2437,19 +2450,19 @@ cast_expr
 	: '(' typename ')' cast_expr
 		{
 			auto spec = $2;
-			auto decl = new_decl_expr (spec, nullptr);
+			auto decl = new_decl_expr (spec);
 			$$ = new_binary_expr ('C', decl, $4);
 		}
 	| typespec '(' arg_list[args] ')'
 		{
 			auto spec = $typespec;
-			auto decl = new_decl_expr (spec, nullptr);
+			auto decl = new_decl_expr (spec);
 			$$ = new_call_expr (decl, $args, nullptr);
 		}
 	| CONSTRUCT '(' typename ',' arg_list[args] ')'
 		{
 			auto spec = $typename;
-			auto decl = new_decl_expr (spec, nullptr);
+			auto decl = new_decl_expr (spec);
 			$$ = new_call_expr (decl, $args, nullptr);
 		}
 	| unary_expr %prec LOW

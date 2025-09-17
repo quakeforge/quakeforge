@@ -664,12 +664,12 @@ declaration
 		}
 	| type_qualifier new_identifier ';'
 		{
-			auto decl = new_decl_expr ($type_qualifier, current_symtab);
+			auto decl = new_decl_expr ($type_qualifier);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| type_qualifier new_identifier identifier_list ';'
 		{
-			auto decl = new_decl_expr ($type_qualifier, current_symtab);
+			auto decl = new_decl_expr ($type_qualifier);
 			append_decl (decl, $new_identifier, nullptr);
 			$$ = append_decl_list (decl, $identifier_list);
 		}
@@ -815,11 +815,11 @@ init_declarator_list
 single_declaration
 	: fully_specified_type
 		{
-			$$ = new_decl_expr ($fully_specified_type, current_symtab);
+			$$ = new_decl_expr ($fully_specified_type);
 		}
 	| fully_specified_type new_identifier
 		{
-			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| fully_specified_type new_identifier array_specifier
@@ -827,7 +827,7 @@ single_declaration
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
-			auto decl = new_decl_expr (spec, current_symtab);
+			auto decl = new_decl_expr (spec);
 			$$ = append_decl (decl, $new_identifier, nullptr);
 		}
 	| fully_specified_type new_identifier array_specifier '=' initializer
@@ -835,12 +835,12 @@ single_declaration
 			auto spec = $fully_specified_type;
 			spec.type = append_type ($array_specifier, spec.type);
 			spec.type = find_type (spec.type);
-			auto decl = new_decl_expr (spec, current_symtab);
+			auto decl = new_decl_expr (spec);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	| fully_specified_type new_identifier '=' initializer
 		{
-			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;
@@ -1068,13 +1068,13 @@ struct_declaration_list
 struct_declaration
 	: type_specifier[spec]
 		{
-			$<mut_expr>$ = new_decl_expr ($spec, nullptr);
+			$<mut_expr>$ = new_decl_expr ($spec);
 		}
 	  struct_declarator_list[list] ';'	{ $$ = $list; }
 	| type_qualifier[qual] type_specifier[spec]
 		{
 			auto spec = spec_merge ($qual, $spec);
-			$<mut_expr>$ = new_decl_expr (spec, nullptr);
+			$<mut_expr>$ = new_decl_expr (spec);
 		}
 	  struct_declarator_list[list] ';'	{ $$ = $list; }
 	;
@@ -1167,6 +1167,8 @@ new_scope
 	: /* empty */
 		{
 			auto block = new_block_expr (nullptr);
+			block->block.create_scope = create_local_scope;
+			//FIXME this is dumb
 			block->block.scope = new_symtab (current_symtab, stab_local);
 			current_symtab = block->block.scope;
 			$$ = block;
@@ -1229,7 +1231,7 @@ condition
 	: expression
 	| fully_specified_type new_identifier '=' initializer
 		{
-			auto decl = new_decl_expr ($fully_specified_type, current_symtab);
+			auto decl = new_decl_expr ($fully_specified_type);
 			$$ = append_decl (decl, $new_identifier, $initializer);
 		}
 	;

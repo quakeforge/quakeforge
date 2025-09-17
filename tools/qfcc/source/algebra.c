@@ -649,8 +649,9 @@ algebra_symbol (const char *name, symtab_t *symtab)
 }
 
 symtab_t *
-algebra_scope (const type_t *type, symtab_t *curscope)
+algebra_scope (symtab_t *curscope, void *data)
 {
+	const type_t *type = data;
 	auto scope = new_symtab (curscope, stab_local);
 	scope->space = curscope->space;
 

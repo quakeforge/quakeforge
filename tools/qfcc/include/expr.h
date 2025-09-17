@@ -129,8 +129,11 @@ typedef struct {
 	ex_list_t   list;
 	symtab_t   *scope;
 	const expr_t *result;		///< the result of this block if non-void
+	bool        use_scope;		///< use scope when processing
 	bool        is_call;		///< this block exprssion forms a function call
 	bool        no_flush;		///< don't flush edags
+	symtab_t *(*create_scope) (symtab_t *parent, void *data);
+	void       *data;
 	void       *return_addr;	///< who allocated this
 } ex_block_t;
 
@@ -382,7 +385,6 @@ typedef struct {
 typedef struct {
 	specifier_t spec;
 	ex_list_t   list;
-	symtab_t   *symtab;
 } ex_decl_t;
 
 typedef enum ex_vis_e {
@@ -1051,7 +1053,7 @@ expr_t *new_cond_expr (const expr_t *test, const expr_t *true_expr,
 expr_t *new_field_expr (const expr_t *object, const expr_t *member);
 expr_t *new_field_sym_expr (const expr_t *object, symbol_t *member);
 expr_t *new_array_expr (const expr_t *base, const expr_t *index);
-expr_t *new_decl_expr (specifier_t spec, symtab_t *symtab);
+expr_t *new_decl_expr (specifier_t spec);
 expr_t *new_decl (symbol_t *sym, const expr_t *init);
 expr_t *new_visibility_expr (ex_vis_t visibity);
 expr_t *append_decl (expr_t *decl, symbol_t *sym, const expr_t *init);

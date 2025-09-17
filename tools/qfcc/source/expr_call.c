@@ -343,13 +343,14 @@ build_inline_call (symbol_t *fsym, const type_t *ftype,
 	auto locals = func->locals;
 	auto call = new_block_expr (nullptr);
 	call->block.scope = locals;
+	call->block.use_scope = true;
 
 	if (!is_void (ftype->func.ret_type)) {
 		auto spec = (specifier_t) {
 			.type = ftype->func.ret_type,
 			.storage = sc_local,
 		};
-		auto decl = new_decl_expr (spec, locals);
+		auto decl = new_decl_expr (spec);
 		auto ret = new_symbol (".ret");
 		append_decl (decl, ret, nullptr);
 		append_expr (call, decl);
@@ -497,6 +498,7 @@ build_function_call (const expr_t *fexpr, const type_t *ftype,
 	} else {
 		auto call = new_block_expr (nullptr);
 		call->block.scope = current_symtab;
+		call->block.use_scope = 1;
 		call->block.is_call = 1;
 		int         num_args = 0;
 		const expr_t *arg_exprs[arg_count + 1][2];

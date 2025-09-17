@@ -294,8 +294,16 @@ proc_label (const expr_t *expr, rua_ctx_t *ctx)
 static const expr_t *
 proc_block (const expr_t *expr, rua_ctx_t *ctx)
 {
+	scoped_src_loc (expr);
+
 	auto old_scope = current_symtab;
-	current_symtab = expr->block.scope;
+	if (expr->block.create_scope) {
+		void *data = expr->block.data;
+		auto scope = expr->block.create_scope (current_symtab, data);
+		current_symtab = scope;
+	} else if (expr->block.use_scope) {
+		current_symtab = expr->block.scope;
+	}
 	int count = list_count (&expr->block.list);
 	int num_out = 0;
 	bool flush = !expr->block.no_flush;
@@ -334,10 +342,9 @@ proc_block (const expr_t *expr, rua_ctx_t *ctx)
 		}
 	}
 
-	scoped_src_loc (expr);
 	auto block = new_block_expr (nullptr);
 	list_gather (&block->block.list, out, num_out);
-	block->block.scope = expr->block.scope;
+	block->block.scope = current_symtab;
 	block->block.result = result;
 	block->block.is_call = expr->block.is_call;
 
@@ -862,9 +869,6 @@ struct_process (symtab_t *symtab, const expr_t *declaration_list,
 			}
 			auto spec = decl_spec;
 			spec.sym = sym;
-			if (declaration->decl.symtab) {
-				internal_error (declaration, "tangled symtabs");
-			}
 			declare_field (spec, symtab, ctx);
 		}
 	}
@@ -924,7 +928,7 @@ proc_decl (const expr_t *expr, rua_ctx_t *ctx)
 			spec.type = find_type (spec.type);
 			sym->type = nullptr;
 		}
-		auto symtab = expr->decl.symtab;
+		auto symtab = current_symtab;
 		ctx->language->parse_declaration (spec, sym, init, symtab, block, ctx);
 	}
 	edag_flush ();
