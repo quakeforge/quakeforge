@@ -2967,7 +2967,13 @@ static const expr_t *
 regressive_product (const expr_t *e1, const expr_t *e2)
 {
 	auto a = algebra_dual (e1);
+	if (is_error (a)) {
+		return a;
+	}
 	auto b = algebra_dual (e2);
+	if (is_error (a)) {
+		return b;
+	}
 	auto c = outer_product (a, b);
 	return algebra_undual (c);
 }
