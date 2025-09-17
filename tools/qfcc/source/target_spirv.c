@@ -1952,7 +1952,9 @@ spirv_call (const expr_t *call, spirvctx_t *ctx)
 					a = a->inout.in;
 				}
 				auto assign = assign_expr (params[i], a);
-				spirv_emit_expr (assign, ctx);
+				if (!is_error (assign)) {
+					spirv_emit_expr (assign, ctx);
+				}
 			}
 		}
 	}
@@ -2916,6 +2918,9 @@ spirv_convert_element_chain (element_chain_t *element_chain)
 static const expr_t *
 spirv_initialized_temp (const type_t *type, const expr_t *src)
 {
+	if (src->type == ex_compound && src->compound.initialized_temp) {
+		return src;
+	}
 	if (src->type != ex_compound && is_algebra (type)) {
 		if (is_reference (get_type (src))) {
 			src = pointer_deref (src);
@@ -2937,6 +2942,7 @@ spirv_initialized_temp (const type_t *type, const expr_t *src)
 		return new_error_expr ();
 	}
 	new->compound.type = type;
+	new->compound.initialized_temp = true;
 	spirv_convert_element_chain (&new->compound);
 	return new;
 }
