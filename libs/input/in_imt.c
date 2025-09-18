@@ -54,6 +54,7 @@
 #include "QF/input/binding.h"
 #include "QF/input/imt.h"
 
+#include "compat.h"
 #include "qfalloca.h"
 
 /** Describe a region of imt bindings (axis or button)

@@ -46,6 +46,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[char *(*foo)(const
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(for stpcpy in string.h)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[char *(*foo)(char * restrict, const char * restrict) = stpcpy;]])],[AC_DEFINE(HAVE_STPCPY_PROTO, 1, Define this if stpcpy is prototyped in string.h)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
+
 AC_MSG_CHECKING(for strcasestr in string.h)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[char *(*foo)(const char *, const char *) = strcasestr;]])],[AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, Define this if strcasestr is prototyped in string.h)
 	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)

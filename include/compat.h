@@ -102,6 +102,14 @@ char *strndup (const char *str, size_t len);
 # define strndup Q_strndup
 # define need_qstring_h
 #endif
+#ifdef HAVE_STPCPY
+# ifndef HAVE_STPCPY_PROTO
+char *stpcpy (char * restrict src, const char * restrict src);
+# endif
+#else
+# define stpcpy Q_stpcpy
+# define need_qstring_h
+#endif
 
 #ifdef need_qstring_h
 # include "qstring.h"

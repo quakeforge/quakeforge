@@ -13,7 +13,7 @@ AC_CHECK_FUNCS(
 	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
 	getwd ioctl mkdir _mkdir mprotect putenv qsort_r select sigaction \
 	snprintf _snprintf socket stat strcasestr strerror strerror_r strndup \
-	strnlen \
+	strnlen stpcpy \
 	strsep strstr vsnprintf _vsnprintf wait
 )
 

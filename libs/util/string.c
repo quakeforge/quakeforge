@@ -83,6 +83,13 @@ Q_strndup (const char *s, size_t n)
 	return str;
 }
 
+char *
+Q_stpcpy(char *restrict dst, const char *restrict src)
+{
+	while ((*dst++ = *src++)) continue;
+	return dst - 1;
+}
+
 #if defined(HAVE__VSNPRINTF) && !defined(HAVE_VSNPRINTF)
 size_t
 Q_snprintfz (char *dest, size_t size, const char *fmt, ...)
