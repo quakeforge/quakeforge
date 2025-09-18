@@ -26,7 +26,7 @@
 */
 
 #ifndef __net_wins_h
-#define __net_wind_h
+#define __net_wins_h
 
 #include "winquake.h"
 
