@@ -19,6 +19,8 @@
 [in("VertexIndex")] int gl_VertexIndex;
 [in("ViewIndex")] int gl_ViewIndex;
 
+#include "gizmo.h"
+
 const uint verts[] = {
 	0x023310u,
 	0x046620u,
@@ -33,9 +35,6 @@ const uint verts[] = {
 	0xaeffbau,
 	0xcdffecu,
 };
-
-#define SPV(op) @intrinsic(op)
-float asfloat (uint x) = SPV(OpBitcast);
 
 void
 transform_sphere (uint ind, @inout vec3 vert_pos, @inout vec3 vert_norm)
@@ -72,6 +71,18 @@ transform_capsule (uint ind, uint vert, @inout vec3 vert_pos,
 }
 
 void
+transform_brush (uint ind, uint vert, @inout vec3 vert_pos,
+				 @inout vec3 vert_norm)
+{
+	auto orig = ((vec4)make_point (ind + 0, 1)).xyz;
+	auto mins = ((vec4)make_point (ind + 3, 0)).xyz;
+	auto maxs = ((vec4)make_point (ind + 6, 0)).xyz;
+	bvec3 mask = vert_pos > vec3(0);
+	auto r = mix (mins, maxs, mask);
+	vert_pos = orig + r;
+}
+
+void
 transform (uint obj_id, uint vert, @inout vec3 vert_pos, @inout vec3 vert_norm)
 {
 	uint cmd = objects[obj_id + 0];
@@ -79,6 +90,7 @@ transform (uint obj_id, uint vert, @inout vec3 vert_pos, @inout vec3 vert_norm)
 	switch (cmd) {
 	case 0: transform_sphere (ind, vert_pos, vert_norm); break;
 	case 1: transform_capsule (ind, vert, vert_pos, vert_norm); break;
+	case 2: transform_brush (ind, vert, vert_pos, vert_norm); break;
 	}
 }
 

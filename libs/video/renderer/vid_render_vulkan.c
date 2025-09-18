@@ -372,6 +372,13 @@ vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r, const quat_t color)
 }
 
 static void
+vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
+					   int num_nodes, const gizmo_node_t *nodes, quat_t color)
+{
+	Vulkan_Gizmo_AddBrush (orig, bounds, num_nodes, nodes, color, vulkan_ctx);
+}
+
+static void
 vulkan_Painter_AddLine (vec2f_t p1, vec2f_t p2, float r, const quat_t color)
 {
 	Vulkan_Painter_AddLine (p1, p2, r, color, vulkan_ctx);
@@ -666,6 +673,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	.gizmo = {
 		.AddSphere         = vulkan_Gizmo_AddSphere,
 		.AddCapsule        = vulkan_Gizmo_AddCapsule,
+		.AddBrush          = vulkan_Gizmo_AddBrush,
 	},
 
 	.painter = {

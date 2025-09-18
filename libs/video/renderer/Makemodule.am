@@ -382,6 +382,7 @@ queueobj_src = $(vkshaderpath)/queueobj.r
 queueobj_c = $(vkshaderpath)/queueobj.r.spv
 gizmo_src = $(vkshaderpath)/gizmo.r
 gizmo_c = $(vkshaderpath)/gizmo.r.spv
+gizmo_h = $(vkshaderpath)/gizmo.h
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spv
 fstriangle_src = $(vkshaderpath)/fstriangle.vert
@@ -488,7 +489,7 @@ $(expand_c): $(expand_src)
 
 $(queueobj_c): $(queueobj_src)
 
-$(gizmo_c): $(gizmo_src)
+$(gizmo_c): $(gizmo_src) $(gizmo_h)
 
 $(fstriangle_c): $(fstriangle_src)
 
@@ -646,6 +647,9 @@ EXTRA_DIST += \
 	$(bsp_turbf_src) \
 	$(debug_src) \
 	$(entid_src) \
+	$(expand_src) \
+	$(gizmo_src) \
+	$(gizmo_h) \
 	$(light_entid_src) \
 	$(light_splatv_src) \
 	$(light_debug_src) \

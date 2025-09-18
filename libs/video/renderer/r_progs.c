@@ -521,6 +521,22 @@ bi(Gizmo_AddCapsule)
 	}
 }
 
+bi(Gizmo_AddBrush)
+{
+	qfZoneScoped (true);
+	if (r_funcs->gizmo.AddCapsule) {
+		auto orig = P_var (pr, 0, vec4);
+		pr_vec4_t bounds[] = {
+			P_var (pr, 1, vec4),
+			P_var (pr, 2, vec4),
+		};
+		int num_nodes = P_INT (pr, 3);
+		auto nodes = &P_STRUCT (pr, gizmo_node_t, 4);
+		auto color = P_QUAT (pr, 5);
+		r_funcs->gizmo.AddBrush (orig, bounds, num_nodes, nodes, color);
+	}
+}
+
 bi(Painter_AddLine)
 {
 	qfZoneScoped (true);
@@ -676,6 +692,8 @@ static builtin_t builtins[] = {
 
 	bi(Gizmo_AddSphere,   3, p(vec3), p(float), p(vec4)),
 	bi(Gizmo_AddCapsule,  4, p(vec3), p(vec3), p(float), p(vec4)),
+	bi(Gizmo_AddBrush,    6, p(vec3), p(vec3), p(vec3), p(int), p(ptr),
+								p(vec4)),
 
 	bi(Painter_AddLine,   4, p(vec2), p(vec2), p(float), p(vec4)),
 	bi(Painter_AddCircle, 3, p(vec2), p(float), p(vec4)),

@@ -20,32 +20,7 @@
 [in("FragCoord")] vec4 gl_FragCoord;
 [in("ViewIndex"), flat] int gl_ViewIndex;
 
-typedef @algebra(float(3,0,1)) PGA;
-typedef PGA.group_mask(0x0a) bivec_t;
-typedef PGA.group_mask(0x1e) motor_t;
-typedef PGA.tvec point_t;
-typedef PGA.vec plane_t;
-typedef bivec_t line_t;
-
-#define SPV(op) @intrinsic(op)
-#define GLSL(op) @intrinsic(OpExtInst,"GLSL.std.450",op)
-
-float asfloat (uint x) = SPV(OpBitcast);
-vec4 asrgba (uint x) = GLSL(UnpackUnorm4x8);
-
-@overload point_t
-make_point (const uint ind, const float weight)
-{
-	return (point_t) vec4 (asfloat (objects[ind + 0]),
-						   asfloat (objects[ind + 1]),
-						   asfloat (objects[ind + 2]), weight);
-}
-
-@overload point_t
-make_point (const vec3 vec, const float weight)
-{
-	return (point_t) vec4 (vec, weight);
-}
+#include "gizmo.h"
 
 void
 draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
@@ -180,6 +155,13 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	}
 }
 
+void
+draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
+{
+	auto col = asrgba (objects[ind + 9]);
+	color = col;
+}
+
 [shader("Fragment")]
 [capability("MultiView")]
 void main()
@@ -208,6 +190,7 @@ void main()
 		switch (cmd) {
 		case 0: draw_sphere (obj_id + 1, v, eye, color); break;
 		case 1: draw_capsule (obj_id + 1, v, eye, color); break;
+		case 2: draw_brush (obj_id + 1, v, eye, color); break;
 		}
 		queue_ind = next;
 	}

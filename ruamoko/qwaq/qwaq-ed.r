@@ -65,8 +65,15 @@ void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
 
+typedef struct gizmo_node_s {
+	vec4        plane;
+	int         children[2];
+} gizmo_node_t;
+
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
+void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
+					 int num_nodes, gizmo_node_t *nodes, vec4 color) = #0;
 
 void Painter_AddLine (vec2 p1, vec2 p2, float r, vec4 color) = #0;
 void Painter_AddCircle (vec2 c, float r, vec4 color) = #0;
@@ -284,6 +291,8 @@ static int axis_colors[] = { 12, 10, 9 };
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4, 1.75, 0.5}, 0.25, vec4(0.6, 0.5, 0.9, 0.8));
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 0.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 0.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
+
+	Gizmo_AddBrush ({-1, 1, 1}, {-0.5,-0.5,-0.5}, {0.5, 0.5, 0.5}, 0, nil, vec4(0xba, 0xda, 0x55, 255)/255);
 	//float s = sin((float)(realtime - double(1ul << 32)));
 	//float c = cos((float)(realtime - double(1ul << 32)));
 	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});

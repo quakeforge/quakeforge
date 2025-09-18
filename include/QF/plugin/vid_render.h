@@ -117,9 +117,13 @@ typedef struct vid_draw_s {
 	void (*Flush) (void);
 } vid_draw_t;
 
+typedef struct gizmo_node_s gizmo_node_t;
+
 typedef struct vid_gizmo_s {
 	void (*AddSphere) (vec4f_t c, float r, const quat_t color);
 	void (*AddCapsule) (vec4f_t p1, vec4f_t p2, float r, const quat_t color);
+	void (*AddBrush) (vec4f_t orig, const vec4f_t bounds[2],
+					  int num_nodes, const gizmo_node_t *nodes, quat_t color);
 } vid_gizmo_t;
 
 typedef struct vid_painter_s {

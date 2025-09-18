@@ -194,6 +194,11 @@ void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
+typedef struct gizmo_node_s {
+	vec4f_t     plane;
+	int         children[2];
+} gizmo_node_t;
+
 void Fog_Update (float density, float red, float green, float blue,
 				 float time);
 void Fog_ParseWorldspawn (struct plitem_s *worldspawn);

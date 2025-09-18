@@ -88,6 +88,15 @@ typedef struct giz_capsule_s {
 	byte        col[4];
 } giz_capsule_t;
 
+typedef struct giz_brush_s {
+	uint32_t    cmd;
+	float       orig[3];
+	float       mins[3];
+	float       maxs[3];
+	byte        col[4];
+	// variable length: num_nodes * gizmo_node_t (packed)
+} giz_brush_t;
+
 typedef struct gizmoframe_s {
 	VkBuffer    counts;
 	VkBuffer    queue;
@@ -562,19 +571,20 @@ Vulkan_Gizmo_Init (vulkan_ctx_t *ctx)
 	QFV_Render_AddTasks (ctx, gizmo_task_syms);
 }
 
-static void
-gizmo_add_object (void *obj, uint32_t size, vulkan_ctx_t *ctx)
+static void *
+gizmo_add_object (void *obj, uint32_t size, uint32_t extra, vulkan_ctx_t *ctx)
 {
 	auto gctx = ctx->gizmo_context;
 
-	uint32_t count = size / sizeof (uint32_t);
+	uint32_t count = (size + extra) / sizeof (uint32_t);
 	uint32_t obj_id = gctx->objects.size;
 	if (obj_id + count > MAX_OBJECT_DATA) {
-		return;
+		return nullptr;
 	}
 	auto data = DARRAY_OPEN_AT (&gctx->objects, obj_id, count);
 	memcpy (data, obj, size);
 	DARRAY_APPEND (&gctx->obj_ids, obj_id);
+	return data + size / sizeof (uint32_t);
 }
 
 void
@@ -587,7 +597,7 @@ Vulkan_Gizmo_AddSphere (vec4f_t c, float r, const quat_t color,
 		.r = r,
 	};
 	QuatScale (color, 255, sphere.col);
-	gizmo_add_object (&sphere, sizeof (sphere), ctx);
+	gizmo_add_object (&sphere, sizeof (sphere), 0, ctx);
 }
 
 void
@@ -601,5 +611,20 @@ Vulkan_Gizmo_AddCapsule (vec4f_t p1, vec4f_t p2, float r, const quat_t color,
 		.r = r,
 	};
 	QuatScale (color, 255, capsule.col);
-	gizmo_add_object (&capsule, sizeof (capsule), ctx);
+	gizmo_add_object (&capsule, sizeof (capsule), 0, ctx);
+}
+
+void
+Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
+					   int num_nodes, const gizmo_node_t *nodes,
+					   quat_t color, vulkan_ctx_t *ctx)
+{
+	giz_brush_t brush = {
+		.cmd = 2,
+		.orig = { VectorExpand (orig) },
+		.mins = { VectorExpand (bounds[0]) },
+		.maxs = { VectorExpand (bounds[1]) },
+	};
+	QuatScale (color, 255, brush.col);
+	gizmo_add_object (&brush, sizeof (brush), 0, ctx);
 }
