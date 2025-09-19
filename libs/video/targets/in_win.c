@@ -411,6 +411,31 @@ in_win_get_button_num (void *data, void *device, const char *button_name)
 	return num;
 }
 
+static int
+in_win_get_axis_info (void *data, void *device, int axis_num,
+		                      in_axisinfo_t *info)
+{
+	win_device_t *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return 0;
+	}
+	*info = dev->axes[axis_num];
+	return 1;
+}
+
+static int
+in_win_get_button_info (void *data, void *device, int button_num,
+		                        in_buttoninfo_t *info)
+{
+	win_device_t *dev = device;
+	if (button_num < 0 || button_num > dev->num_buttons) {
+		return 0;
+	}
+	*info = dev->buttons[button_num];
+	return 1;
+}
+
+
 static void
 in_win_shutdown (void *data)
 {
@@ -868,6 +893,10 @@ static in_driver_t in_win_driver = {
 	.get_button_name = in_win_get_button_name,
 	.get_axis_num = in_win_get_axis_num,
 	.get_button_num = in_win_get_button_num,
+
+	.get_axis_info = in_win_get_axis_info,
+	.get_button_info = in_win_get_button_info,
+
 };
 
 static void __attribute__((constructor))
