@@ -108,7 +108,6 @@ SleepUntilInput (int time)
 	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 
-HINSTANCE   global_hInstance;
 int         global_nCmdShow;
 static const char *empty_string = "";
 

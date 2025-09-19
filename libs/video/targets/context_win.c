@@ -44,6 +44,7 @@
 #include "vid_internal.h"
 #include "vid_sw.h"
 
+HINSTANCE   global_hInstance;
 HWND        win_mainwindow;
 HDC         win_maindc;
 HCURSOR     win_arrow;
