@@ -2381,8 +2381,10 @@ rua_embed_file (const char *name, rua_ctx_t *ctx)
 		case S_IFBLK:
 		case S_IFCHR:
 		case S_IFIFO:
+#ifdef S_IFLNK
 		case S_IFLNK:
 		case S_IFSOCK:
+#endif
 			if (!extra->embed_limit) {
 				error (0, "#embed of potentially unlimited file with no limit");
 				fclose (file);
