@@ -363,6 +363,9 @@ clear_items (imui_ctx_t *ctx)
 void
 IMUI_DestroyContext (imui_ctx_t *ctx)
 {
+	if (!ctx) {
+		return;
+	}
 	clear_items (ctx);
 	for (auto s = ctx->state_wrappers; s; s = s->next) {
 		free (s->state.label);

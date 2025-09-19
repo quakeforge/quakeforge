@@ -68,9 +68,11 @@ err:
 VISIBLE void
 Con_DestroyBuffer (con_buffer_t *buffer)
 {
-	free (buffer->buffer);
-	free (buffer->lines);
-	free (buffer);
+	if (buffer) {
+		free (buffer->buffer);
+		free (buffer->lines);
+		free (buffer);
+	}
 }
 
 VISIBLE void

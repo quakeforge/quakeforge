@@ -311,9 +311,11 @@ Scene_NewScene (scene_system_t *extra_systems)
 void
 Scene_DeleteScene (scene_t *scene)
 {
-	ECS_DelRegistry (scene->reg);
+	if (scene) {
+		ECS_DelRegistry (scene->reg);
 
-	free (scene);
+		free (scene);
+	}
 }
 
 entity_t
