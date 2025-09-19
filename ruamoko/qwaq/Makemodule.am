@@ -134,6 +134,25 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/audio/libQFsound.la \
 	$(top_builddir)/libs/image/libQFimage.la
 
+qwaq_win_libs= \
+	$(qwaq_cl_plugin_libs) \
+	${top_builddir}/libs/gib/libQFgib.la \
+    ${top_builddir}/libs/ruamoko/libQFruamoko_client.la \
+	$(top_builddir)/libs/ui/libQFgui.la \
+	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+	$(top_builddir)/libs/models/libQFmodels.la \
+	$(top_builddir)/libs/video/targets/libQFwin.la \
+	$(qwaq_client_libs)
+ruamoko_qwaq_qwaq_win_SOURCES= \
+	ruamoko/qwaq/builtins/editbuffer.c \
+	ruamoko/qwaq/builtins/main.c \
+	ruamoko/qwaq/builtins/qwaq-graphics.c \
+	ruamoko/qwaq/builtins/graphics.c $(tracy_src) $(tracyvk_src)
+ruamoko_qwaq_qwaq_win_LDADD= $(qwaq_win_libs) $(QWAQ_LIBS) \
+		$(PTHREAD_LDFLAGS) -lgdi32 -lcomctl32 $(NET_LIBS)
+ruamoko_qwaq_qwaq_win_LDFLAGS= $(common_ldflags)
+ruamoko_qwaq_qwaq_win_DEPENDENCIES= $(qwaq_win_libs) $(QWAQ_DEPS)
+
 qwaq_x11_libs= \
 	$(qwaq_cl_plugin_libs) \
 	${top_builddir}/libs/gib/libQFgib.la \
@@ -198,6 +217,7 @@ r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
 EXTRA_PROGRAMS += \
 	ruamoko/qwaq/qwaq-cmd \
 	ruamoko/qwaq/qwaq-curses \
+	ruamoko/qwaq/qwaq-win \
 	ruamoko/qwaq/qwaq-x11
 
 EXTRA_DIST += \

@@ -164,6 +164,7 @@ if test "x$mingw" = xyes; then
 	if test "x$ENABLE_clients_win" = xyes; then
 		QW_TARGETS="$QW_TARGETS qw-client-win\$(EXEEXT)"
 		NQ_TARGETS="$NQ_TARGETS nq-win\$(EXEEXT)"
+		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-win\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS WIN"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwin.la"
 		if test "$HAVE_VULKAN" = "yes"; then
