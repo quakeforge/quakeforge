@@ -48,10 +48,10 @@ m4_include(config.d/pthread.m4)
 WINMM=""
 case "$host_os" in
 	cygwin*)
-		WINMM="-lwinmm"
+		LIBS="-lwinmm $LIBS"
 	;;
 	mingw32*)
-		WINMM="-lwinmm"
+		LIBS="-lwinmm $LIBS"
 	;;
 	*)
 		dnl Checks for working -lm

@@ -113,7 +113,7 @@ nq_win_libs=  \
 			libs/video/targets/libQFwin.la \
 			$(nq_client_LIBS)
 nq_win_SOURCES= 	nq/source/sys_win.c $(tracy_src) $(tracyvk_src)
-nq_win_LDADD=		$(nq_win_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
+nq_win_LDADD=		$(nq_win_libs) -lgdi32 -lcomctl32 $(NET_LIBS)
 nq_win_LDFLAGS= 	$(common_ldflags)
 nq_win_DEPENDENCIES=	$(nq_win_libs)
 
