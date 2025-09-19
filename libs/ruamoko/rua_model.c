@@ -45,8 +45,8 @@
 
 typedef struct clipinfo_s {
 	pr_string_t name;
-	uint        num_frames;
-	uint        num_channels;
+	pr_uint_t   num_frames;
+	pr_uint_t   num_channels;
 	qfm_type_t  channel_type;
 } clipinfo_t;
 
