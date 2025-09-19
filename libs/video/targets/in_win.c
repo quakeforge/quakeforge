@@ -114,6 +114,52 @@ static const char *win_mouse_button_names[] = {
 	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
 };
 
+static const char *win_key_button_names[] = {
+//  0               1               2               3
+//  4               5               6               7
+//  8               9               A               B
+//  C               D               E               F
+	0,              "Escape",       "1",            "2",
+	"3",            "4",            "5",            "6",
+	"7",            "8",            "9",            "0",
+	"minus",        "equal",        "BackSpace",    "Tab",	// 0
+	"q",            "w",            "e",            "r",
+	"t",            "y",            "u",            "i",
+	"o",            "p",            "bracketleft",  "bracketright",
+	"Return",       "Control_L",    "a",            "s",	// 1
+	"d",            "f",            "g",            "h",
+	"j",            "k",            "l",            "semicolon",
+	"apostrophe",   "grave",        "Shift_L",      "backslash",
+	"z",            "x",            "c",            "v",	// 2
+	"b",            "n",            "m",            "comma",
+	"period",       "slash",        "Shift_R",      "KP_Multiply",
+	"Alt_L",        "space",        "Caps_Lock",    "F1",
+	"F2",           "F3",           "F4",           "F5",	// 3
+	"F6",           "F7",           "F8",           "F9",
+	"F10",          "Pause",        "Scroll_Lock",  "KP_7",
+	"KP_8",         "KP_9",         "KP_Subtract",  "KP_4",
+	"KP_5",         "KP_6",         "KP_Add",       "KP_1",	// 4
+	"KP_2",         "KP_3",         "KP_0",         "KP_Decimal",
+	0,              0,              0,              "F11",
+	"F12",          0,              0,              0,
+[0x11c] =
+	"KP_Enter",     "Control_R",    0,              0,
+[0x130] =
+	0,              0,              0,              0,
+	0,              "KP_Divide",    0,              "Print",
+	"Alt_R",        0,              0,              0,
+[0x140] =
+	0,              0,              0,              0,
+	0,              "Num_Lock",     0,              "Home",
+	"Up",           "Prior",        0,              "Left",
+	0,              "Right",        0,              "End",
+[0x150] =
+	"Down",         "Next",         "Insert",       "Delete",
+[0x158] =
+	0,              0,              0,              "Super_L",
+    0,              "Menu",         0,              0,
+};
+
 #define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
 static unsigned short scantokey[512] = {
@@ -150,6 +196,7 @@ static unsigned short scantokey[512] = {
 [0x130] =
 	0,				0,				0,				0,
 	0,				0,				0,				QFK_PRINT,
+	QFK_RALT,       0,              0,              0,
 [0x140] =
 	0,				0,				0,				0,
 	0,				0,				0,				QFK_HOME,
@@ -364,7 +411,9 @@ in_win_get_button_name (void *data, void *device, int button_num)
 	const char *name = 0;
 
 	if (dev == &win_keyboard_device) {
-		// FIXME
+		if ((unsigned) button_num < SIZE (win_key_button_names)) {
+			name = win_key_button_names[button_num];
+		}
 	} else if (dev == &win_mouse_device) {
 		if ((unsigned) button_num < SIZE (win_mouse_button_names)) {
 			name = win_mouse_button_names[button_num];
@@ -399,7 +448,12 @@ in_win_get_button_num (void *data, void *device, const char *button_name)
 	int         num = -1;
 
 	if (dev == &win_keyboard_device) {
-		// FIXME
+		for (size_t i = 0; i < SIZE (win_key_button_names); i++) {
+			if (strcasecmp (button_name, win_key_button_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
 	} else if (dev == &win_mouse_device) {
 		for (size_t i = 0; i < SIZE (win_mouse_button_names); i++) {
 			if (strcasecmp (button_name, win_mouse_button_names[i]) == 0) {
@@ -482,7 +536,7 @@ event_key (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (vkey) {
 		case VK_SHIFT: mask = ies_shift; break;
 		case VK_CONTROL: mask = ies_control; break;
-		case VK_MENU: mask = ies_alt; break;
+		case VK_MENU: mask = ies_alt; translated = 0; break;
 	}
 	if (pressed) {
 		win_key.shift |= mask;
@@ -896,7 +950,6 @@ static in_driver_t in_win_driver = {
 
 	.get_axis_info = in_win_get_axis_info,
 	.get_button_info = in_win_get_button_info,
-
 };
 
 static void __attribute__((constructor))
