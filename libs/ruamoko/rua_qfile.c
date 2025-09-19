@@ -33,7 +33,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
+#endif
 
 #include <stdlib.h>
 #ifdef HAVE_STRING_H
@@ -49,11 +51,15 @@
 
 #include "rua_internal.h"
 
+#ifdef _WIN32
+#define PIPE_SIZE 65536		// default size on linux
+#endif
+
 typedef struct {
 	int         pid;
-	int         stdin;	// from the child's perspective
-	int         stdout;	// from the child's perspective
-	int         stderr;	// from the child's perspective
+	int         pipein;		// from the child's perspective
+	int         pipeout;	// from the child's perspective
+	int         pipeerr;	// from the child's perspective
 } qpipe_t;
 
 typedef struct qfile_s {
@@ -205,6 +211,16 @@ bi_Qopen (progs_t *pr, void *_res)
 		Qclose (file);
 }
 
+static int
+qf_pipe (int pipefd[2])
+{
+#ifdef _WIN32
+	return _pipe (pipefd, PIPE_SIZE, _O_NOINHERIT|_O_BINARY);
+#else
+	return pipe2 (pipefd, O_CLOEXEC);
+#endif
+}
+
 static void
 bi_Qpipe (progs_t *pr, void *_res)
 {
@@ -227,17 +243,17 @@ bi_Qpipe (progs_t *pr, void *_res)
 	int pipefd_stdout[2] = {-1, -1};
 	int pipefd_stderr[2] = {-1, -1};
 	if (do_stdin) {
-		if (pipe2 (pipefd_stdin, O_CLOEXEC) == -1) {
+		if (qf_pipe (pipefd_stdin) == -1) {
 			goto pipe_error;
 		}
 	}
 	if (do_stdout) {
-		if (pipe2 (pipefd_stdout, O_CLOEXEC) == -1) {
+		if (qf_pipe (pipefd_stdout) == -1) {
 			goto pipe_error;
 		}
 	}
 	if (do_stderr) {
-		if (pipe2 (pipefd_stderr, O_CLOEXEC) == -1) {
+		if (qf_pipe (pipefd_stderr) == -1) {
 			goto pipe_error;
 		}
 	}
@@ -246,26 +262,57 @@ bi_Qpipe (progs_t *pr, void *_res)
 	*ret = (qpipe_t) {};
 	if (do_stdin) {
 		auto qf = Qdopen (pipefd_stdin[1], "wb");
-		if (!(ret->stdin = alloc_handle (res, qf))) {
+		if (!(ret->pipein = alloc_handle (res, qf))) {
 			Qclose (qf);
 			goto fd_error;
 		}
 	}
 	if (do_stdout) {
 		auto qf = Qdopen (pipefd_stdout[0], "rb");
-		if (!(ret->stdout = alloc_handle (res, qf))) {
+		if (!(ret->pipeout = alloc_handle (res, qf))) {
 			Qclose (qf);
 			goto fd_error;
 		}
 	}
 	if (do_stderr) {
 		auto qf = Qdopen (pipefd_stderr[0], "wb");
-		if (!(ret->stderr = alloc_handle (res, qf))) {
+		if (!(ret->pipeerr = alloc_handle (res, qf))) {
 			Qclose (qf);
 			goto fd_error;
 		}
 	}
 
+#ifdef _WIN32
+	int saved_fd[3] = {};
+	if (do_stdin) {
+		saved_fd[0] = dup (STDIN_FILENO);
+		dup2 (pipefd_stdin[0], STDIN_FILENO);
+		close (pipefd_stdin[0]);
+	}
+	if (do_stdout) {
+		saved_fd[1] = dup (STDOUT_FILENO);
+		dup2 (pipefd_stdout[1], STDOUT_FILENO);
+		close (pipefd_stdout[1]);
+	}
+	if (do_stderr) {
+		saved_fd[2] = dup (STDERR_FILENO);
+		dup2 (pipefd_stderr[1], STDERR_FILENO);
+		close (pipefd_stderr[1]);
+	}
+	pid_t child_pid = _spawnvp (_P_NOWAIT, argv[0], (const char **)argv);
+	if (do_stdin) {
+		dup2 (saved_fd[0], STDIN_FILENO);
+		close (saved_fd[0]);
+	}
+	if (do_stdout) {
+		dup2 (saved_fd[1], STDOUT_FILENO);
+		close (saved_fd[1]);
+	}
+	if (do_stderr) {
+		dup2 (saved_fd[2], STDERR_FILENO);
+		close (saved_fd[2]);
+	}
+#else
 	pid_t child_pid = fork ();
 	if (child_pid == -1) {
 		goto pipe_error;
@@ -283,18 +330,23 @@ bi_Qpipe (progs_t *pr, void *_res)
 		close_range (3, ~0u, CLOSE_RANGE_UNSHARE);
 		execvp (argv[0], argv);
 		exit (errno);
+	} else {
+		close (pipefd_stdin[0]);
+		close (pipefd_stdout[1]);
+		close (pipefd_stderr[1]);
 	}
+#endif
 	ret->pid = child_pid;
 	return;
 fd_error:
-	if (ret->stdin) {
-		close_handle (res, ret->stdin);
+	if (ret->pipein) {
+		close_handle (res, ret->pipein);
 	}
-	if (ret->stdout) {
-		close_handle (res, ret->stdout);
+	if (ret->pipeout) {
+		close_handle (res, ret->pipeout);
 	}
-	if (ret->stderr) {
-		close_handle (res, ret->stderr);
+	if (ret->pipeerr) {
+		close_handle (res, ret->pipeerr);
 	}
 	*ret = (qpipe_t) {};
 	return;
@@ -313,7 +365,11 @@ static void
 bi_Qwait (progs_t *pr, void *_res)
 {
 	int pid = P_INT (pr, 0);
+#ifdef _WIN32
+	_cwait (&R_INT (pr), pid, 0);
+#else
 	waitpid (pid, &R_INT (pr), 0);
+#endif
 }
 
 static qfile_t * __attribute__((pure))
