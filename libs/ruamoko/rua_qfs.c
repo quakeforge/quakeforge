@@ -272,6 +272,7 @@ bi_qfs_destroy (progs_t * pr, void *_res)
 	qfZoneScoped (true);
 	qfs_resources_t *res = _res;
 	dstring_delete (res->dstr);
+	free (res);
 }
 
 #undef bi
