@@ -25,35 +25,14 @@
 #include <io.h>
 #include <direct.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>			/* for GetFileAttributes */
 
-#include <tchar.h>
-#define SUFFIX	_T("*")
-#define	SLASH	_T("\\")
+#define SUFFIX "*"
+#define SLASH  "/"
 
-#ifndef _UNICODE
-#define _TDIR DIR
-#define _tdirent dirent
-
-#define _topendir opendir
-#define _treaddir readdir
-#define _tclosedir closedir
-#define _tseekdir seekdir
-#define _ttelldir telldir
-#define _trewinddir rewinddir
-#else
-#define _TDIR _WDIR
-#define _tdirent _wdirent
-
-#define _topendir _wopendir
-#define _treaddir _wreaddir
-#define _tclosedir _wclosedir
-#define _tseekdir _wseekdir
-#define _ttelldir _wtelldir
-#define _trewinddir _wrewinddir
-#endif
 
 /*
  * opendir
@@ -61,23 +40,23 @@
  * Returns a pointer to a DIR structure appropriately filled in to begin
  * searching a directory.
  */
-_TDIR      *
-_topendir (const _TCHAR * szPath)
+DIR *
+qf_opendir (const char *szPath)
 {
-	_TDIR      *nd;
+	DIR        *nd;
 	unsigned int rc;
-	_TCHAR      szFullPath[MAX_PATH];
+	char        szFullPath[MAX_PATH];
 
 	errno = 0;
 
 	if (!szPath) {
 		errno = EFAULT;
-		return (_TDIR *) 0;
+		return (DIR *) 0;
 	}
 
-	if (szPath[0] == _T ('\0')) {
+	if (szPath[0] == '\0') {
 		errno = ENOTDIR;
-		return (_TDIR *) 0;
+		return (DIR *) 0;
 	}
 
 	/* Attempt to determine if the given path really is a directory. */
@@ -85,41 +64,42 @@ _topendir (const _TCHAR * szPath)
 	if (rc == (unsigned int) -1) {
 		/* call GetLastError for more error info */
 		errno = ENOENT;
-		return (_TDIR *) 0;
+		return (DIR *) 0;
 	}
 	if (!(rc & FILE_ATTRIBUTE_DIRECTORY)) {
 		/* Error, entry exists but not a directory. */
 		errno = ENOTDIR;
-		return (_TDIR *) 0;
+		return (DIR *) 0;
 	}
 
 	/* Make an absolute pathname.  */
-	_tfullpath (szFullPath, szPath, MAX_PATH);
+	_fullpath (szFullPath, szPath, MAX_PATH);
 
 	/* Allocate enough space to store DIR structure and the complete
 	   directory path given. */
-	nd = (_TDIR *) malloc (sizeof (_TDIR) +
-			       (_tcslen (szFullPath) + _tcslen (SLASH) +
-				_tcslen (SUFFIX) + 1) * sizeof (_TCHAR));
+	nd = (DIR *) calloc (1, sizeof (DIR) +
+			       (strlen (szFullPath) + strlen (SLASH) +
+					strlen (SUFFIX) + 1));
 
 	if (!nd) {
 		/* Error, out of memory. */
 		errno = ENOMEM;
-		return (_TDIR *) 0;
+		return (DIR *) 0;
 	}
 
 	/* Create the search expression. */
-	_tcscpy (nd->dd_name, szFullPath);
+	strcpy (nd->dd_name, szFullPath);
 
 	/* Add on a slash if the path does not end with one. */
-	if (nd->dd_name[0] != _T ('\0') &&
-	    nd->dd_name[_tcslen (nd->dd_name) - 1] != _T ('/') &&
-	    nd->dd_name[_tcslen (nd->dd_name) - 1] != _T ('\\')) {
-		_tcscat (nd->dd_name, SLASH);
+	if (nd->dd_name[0] != '\0' &&
+	    nd->dd_name[strlen (nd->dd_name) - 1] != '/' &&
+	    nd->dd_name[strlen (nd->dd_name) - 1] != '\\') {
+		strcat (nd->dd_name, SLASH);
 	}
+	nd->dd_namlen = strlen (nd->dd_name);
 
 	/* Add on the search pattern */
-	_tcscat (nd->dd_name, SUFFIX);
+	strcat (nd->dd_name, SUFFIX);
 
 	/* Initialize handle to -1 so that a premature closedir doesn't try to
 	   call _findclose on it. */
@@ -139,32 +119,31 @@ _topendir (const _TCHAR * szPath)
 	return nd;
 }
 
-
 /*
  * readdir
  *
  * Return a pointer to a dirent structure filled with the information on the
  * next entry in the directory.
  */
-struct _tdirent *
-_treaddir (_TDIR * dirp)
+struct dirent *
+qf_readdir (DIR * dirp)
 {
 	errno = 0;
 
 	/* Check for valid DIR struct. */
 	if (!dirp) {
 		errno = EFAULT;
-		return (struct _tdirent *) 0;
+		return (struct dirent *) 0;
 	}
 
 	if (dirp->dd_stat < 0) {
 		/* We have already returned all files in the directory (or the
 		   structure has an invalid dd_stat). */
-		return (struct _tdirent *) 0;
+		return (struct dirent *) 0;
 	} else if (dirp->dd_stat == 0) {
 		/* We haven't started the search yet. */
 		/* Start the search */
-		dirp->dd_handle = _tfindfirst (dirp->dd_name, &(dirp->dd_dta));
+		dirp->dd_handle = _findfirst (dirp->dd_name, &(dirp->dd_dta));
 
 		if (dirp->dd_handle == -1) {
 			/* Whoops! Seems there are no files in that directory. */
@@ -174,7 +153,7 @@ _treaddir (_TDIR * dirp)
 		}
 	} else {
 		/* Get the next search entry. */
-		if (_tfindnext (dirp->dd_handle, &(dirp->dd_dta))) {
+		if (_findnext (dirp->dd_handle, &(dirp->dd_dta))) {
 			/* We are off the end or otherwise error. _findnext
 			   sets errno to ENOENT if no more file Undo this. */
 			DWORD       winerr = GetLastError ();
@@ -194,12 +173,28 @@ _treaddir (_TDIR * dirp)
 		/* Successfully got an entry. Everything about the file is
 		   already appropriately filled in except the length of the
 		   file name. */
-		dirp->dd_dir.d_namlen = _tcslen (dirp->dd_dta.name);
-		_tcscpy (dirp->dd_dir.d_name, dirp->dd_dta.name);
+		dirp->dd_dir.d_namlen = strlen (dirp->dd_dta.name);
+		strcpy (dirp->dd_dir.d_name, dirp->dd_dta.name);
+		// also get file type
+		char found[MAX_PATH + dirp->dd_dir.d_namlen];
+		strcpy (found, dirp->dd_name);
+		strcpy (found + dirp->dd_namlen, dirp->dd_dta.name);
+		struct stat statbuf;
+		if (stat (found, &statbuf) < 0) {
+			dirp->dd_dir.d_type = DT_UNKNOWN;
+		} else {
+			switch (statbuf.st_mode & S_IFMT) {
+			case S_IFBLK: dirp->dd_dir.d_type = DT_BLK; break;
+			case S_IFCHR: dirp->dd_dir.d_type = DT_CHR; break;
+			case S_IFIFO: dirp->dd_dir.d_type = DT_FIFO; break;
+			case S_IFDIR: dirp->dd_dir.d_type = DT_DIR; break;
+			case S_IFREG: dirp->dd_dir.d_type = DT_REG; break;
+			}
+		}
 		return &dirp->dd_dir;
 	}
 
-	return (struct _tdirent *) 0;
+	return (struct dirent *) 0;
 }
 
 
@@ -209,7 +204,7 @@ _treaddir (_TDIR * dirp)
  * Frees up resources allocated by opendir.
  */
 int
-_tclosedir (_TDIR * dirp)
+qf_closedir (DIR * dirp)
 {
 	int         rc;
 
@@ -238,7 +233,7 @@ _tclosedir (_TDIR * dirp)
  * and then reset things like an opendir.
  */
 void
-_trewinddir (_TDIR * dirp)
+qf_rewinddir (DIR * dirp)
 {
 	errno = 0;
 
@@ -262,7 +257,7 @@ _trewinddir (_TDIR * dirp)
  * seekdir to go back to an old entry. We simply return the value in stat.
  */
 long
-_ttelldir (_TDIR * dirp)
+qf_telldir (DIR * dirp)
 {
 	errno = 0;
 
@@ -283,7 +278,7 @@ _ttelldir (_TDIR * dirp)
  * any such system.
  */
 void
-_tseekdir (_TDIR * dirp, long lPos)
+qf_seekdir (DIR * dirp, long lPos)
 {
 	errno = 0;
 
@@ -305,8 +300,8 @@ _tseekdir (_TDIR * dirp, long lPos)
 		dirp->dd_stat = -1;
 	} else {
 		/* Rewind and read forward to the appropriate index. */
-		_trewinddir (dirp);
+		rewinddir (dirp);
 
-		while ((dirp->dd_stat < lPos) && _treaddir (dirp));
+		while ((dirp->dd_stat < lPos) && readdir (dirp));
 	}
 }

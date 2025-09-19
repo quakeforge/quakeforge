@@ -79,12 +79,13 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[fnmatch();]])],[BUILD_FNMATCH=no
 ])
 AM_CONDITIONAL(BUILD_FNMATCH, test "x$BUILD_FNMATCH" = "xyes")
 
-AC_MSG_CHECKING(for opendir)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern void opendir(); opendir();]])],[BUILD_DIRENT=no
-	AC_MSG_RESULT(yes)],[BUILD_DIRENT=yes
-	AC_MSG_RESULT(no)
-])
-AM_CONDITIONAL(BUILD_DIRENT, test "x$BUILD_DIRENT" = "xyes")
+#AC_MSG_CHECKING(for opendir)
+#AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern void opendir(); opendir();]])],[BUILD_DIRENT=no
+#	AC_MSG_RESULT(yes)],[BUILD_DIRENT=yes
+#	AC_MSG_RESULT(no)
+#])
+#AM_CONDITIONAL(BUILD_DIRENT, test "x$BUILD_DIRENT" = "xyes")
+AM_CONDITIONAL(BUILD_DIRENT, test "x$SYSTYPE" = "xWIN32")
 
 AC_MSG_CHECKING(for getopt_long)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern void getopt_long(); getopt_long();]])],[BUILD_GETOPT=no

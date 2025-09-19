@@ -26,11 +26,6 @@
 #ifndef _DIRENT_H_
 #define _DIRENT_H_
 
-#ifdef HAVE__MINGW_H
-/* All the headers include this file. */
-#include <_mingw.h>
-#endif
-
 #include <io.h>
 #include <stdio.h> /* for FILENAME_MAX in VC2005 (phrosty) */
 
@@ -45,8 +40,19 @@ extern      "C" {
 	      unsigned short d_reclen;	/* Always zero. */
 	      unsigned short d_namlen;	/* Length of name in d_name. */
 	      char        d_name[FILENAME_MAX];	/* File name. */
+		  unsigned char  d_type;
        };
 
+	   enum {
+		   DT_UNKNOWN = 0,
+		   DT_FIFO = 1,
+		   DT_CHR = 2,
+		   DT_DIR = 4,
+		   DT_BLK = 6,
+		   DT_REG = 8,
+		   DT_LNK = 10,
+		   DT_SOCK = 12,
+		};
 /*
  * This is an internal data structure. Good programmers will not use it
  * except as an argument to one of the functions below.
@@ -62,7 +68,7 @@ extern      "C" {
 	      struct dirent dd_dir;
 
 	      /* _findnext handle */
-	      long        dd_handle;
+	      intptr_t    dd_handle;
 
 	      /*
 	       * Status of search:
@@ -73,64 +79,23 @@ extern      "C" {
 	      int         dd_stat;
 
 	      /* given path for dir with search pattern (struct is extended) */
+		  int         dd_namlen;
 	      char        dd_name[1];
        } DIR;
 
-       DIR        *opendir (const char *);
-       struct dirent * readdir (DIR *);
-       int closedir (DIR *);
-       void rewinddir (DIR *);
-       long telldir (DIR *);
-       void seekdir (DIR *, long);
+       DIR        *qf_opendir (const char *);
+       struct dirent * qf_readdir (DIR *);
+       int qf_closedir (DIR *);
+       void qf_rewinddir (DIR *);
+       long qf_telldir (DIR *);
+       void qf_seekdir (DIR *, long);
 
-
-/* wide char versions */
-
-       struct _wdirent {
-	      long        d_ino;	/* Always zero. */
-	      unsigned short d_reclen;	/* Always zero. */
-	      unsigned short d_namlen;	/* Length of name in d_name. */
-	      wchar_t     d_name[FILENAME_MAX];	/* File name. */
-	      /* NOTE: The name in the dirent structure points to the name in
-	         the * wfinddata_t structure in the _WDIR. */
-       };
-
-/*
- * This is an internal data structure. Good programmers will not use it
- * except as an argument to one of the functions below.
- */
-       typedef struct {
-	      /* disk transfer area for this dir */
-	      struct _wfinddata_t dd_dta;
-
-	      /* dirent struct to return from dir (NOTE: this makes this thread
-	         safe as long as only one thread uses a particular DIR struct
-	         at a time) */
-	      struct _wdirent dd_dir;
-
-	      /* _findnext handle */
-	      long        dd_handle;
-
-	      /*
-	       * Status of search:
-	       *   0 = not started yet (next entry to read is first entry)
-	       *  -1 = off the end
-	       *   positive = 0 based index of next entry
-	       */
-	      int         dd_stat;
-
-	      /* given path for dir with search pattern (struct is extended) */
-	      wchar_t     dd_name[1];
-       } _WDIR;
-
-
-
-       _WDIR      *_wopendir (const wchar_t *);
-       struct _wdirent *_wreaddir (_WDIR *);
-       int _wclosedir (_WDIR *);
-       void _wrewinddir (_WDIR *);
-       long _wtelldir (_WDIR *);
-       void _wseekdir (_WDIR *, long);
+#define opendir qf_opendir
+#define readdir qf_readdir
+#define closedir qf_closedir
+#define rewinddir qf_rewinddir
+#define telldir qf_telldir
+#define seekdir qf_seekdir
 
 
 #ifdef	__cplusplus
