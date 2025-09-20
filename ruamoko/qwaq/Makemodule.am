@@ -47,6 +47,7 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/views/algebraview.r	\
 	ruamoko/qwaq/debugger/views/arrayview.r	\
 	ruamoko/qwaq/debugger/views/basicview.r	\
+	ruamoko/qwaq/debugger/views/boolview.r	\
 	ruamoko/qwaq/debugger/views/defview.r	\
 	ruamoko/qwaq/debugger/views/doubleview.r	\
 	ruamoko/qwaq/debugger/views/entityview.r	\
@@ -228,6 +229,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/algebraview.h \
 	ruamoko/qwaq/debugger/views/arrayview.h \
 	ruamoko/qwaq/debugger/views/basicview.h \
+	ruamoko/qwaq/debugger/views/boolview.h	\
 	ruamoko/qwaq/debugger/views/defview.h \
 	ruamoko/qwaq/debugger/views/doubleview.h \
 	ruamoko/qwaq/debugger/views/entityview.h \
