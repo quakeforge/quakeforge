@@ -2933,6 +2933,9 @@ countof_expr (const expr_t *expr, const type_t *type)
 	if (!type)
 		type = get_type (expr);
 	if (type) {
+		if (is_reference (type)) {
+			type = dereference_type (type);
+		}
 		expr = new_int_expr (type_count (type), false);
 	}
 	return expr;
