@@ -234,12 +234,10 @@ static vec4 axis_points[][2] = {
 static int axis_colors[] = { 12, 10, 9 };
 
 static gizmo_node_t tetra_brush[] = {
-	// Node 0 is the root node, but since the root node cannot be a child node,
-	// a child node index of 0 indicates the outside. -1 is inside
-	{ .plane = { 1,-1,-1,-0.5}, .children= {0, 1} },
-	{ .plane = {-1, 1,-1,-0.5}, .children= {0, 2} },
-	{ .plane = { 1, 1, 1,-0.5}, .children= {0, 3} },
-	{ .plane = { 1,-1,-1,-0.5}, .children= {0,-1} },
+	{ .plane = { 1,-1,-1,-0.5}, .children= {-1, 1} },
+	{ .plane = {-1, 1,-1,-0.5}, .children= {-1, 2} },
+	{ .plane = { 1, 1, 1,-0.5}, .children= {-1, 3} },
+	{ .plane = { 1,-1,-1,-0.5}, .children= {-1,-2} },
 };
 
 -draw

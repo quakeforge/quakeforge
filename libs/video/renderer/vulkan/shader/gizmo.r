@@ -155,11 +155,93 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	}
 }
 
+typedef struct {
+	point_t     backpt;
+	int         back_num;
+} trace_state_t;
+
+typedef struct {
+	plane_t     plane;
+	uint        children;	// children[0] in 0:8, children[1] in 8:16
+} trace_node_t;
+
+#define get_node(ind) (trace_node_t) { \
+	.plane = (plane_t) load_vec4 (node_base + ind * 5), \
+	.children = objects[node_base + ind * 5 + 4] \
+}
+#define get_child(n, c) bitfieldExtract ((int) n.children, (c) * 8, 8)
+#define SOLID -2
+#define EMPTY -1
+
 void
 draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
+	auto orig = load_vec3 (ind + 0);
+	auto mins = load_vec3 (ind + 3);
+	auto maxs = load_vec3 (ind + 6);
+	// bounding sphere radius for the brush (
+	float r = length (maxs - mins) / 2;
 	auto col = asrgba (objects[ind + 9]);
-	color = col;
+	uint node_base = ind + 10;
+	int sp = 0;
+	trace_state_t state_stack[16];
+	int num = 0;
+
+	@algebra(PGA) {
+		auto frontpt = make_point (eye - orig, 1);	// start at the eye
+		auto backpt = make_point (v, 0);			// point at infinity
+		auto ray = frontpt ∨ backpt;
+		auto rv = e0 * ~ray;						// doesn't change
+		bool empty = false;
+		bool solid = false;
+
+		// just give up if the stack over/under-flows
+		while (sp >= 0 && sp < countof (state_stack)) {
+			while (num < 0) {
+				if (!solid && num != SOLID) {
+					empty = true;
+				} else if (!empty && num == SOLID) {
+					solid = true;
+				} else if (empty || solid) {
+					// DONE!
+					sp = -1;
+					break;
+				}
+				// pop up the stack for a back side
+				if (sp-- <= 0) {
+					break;
+				}
+				frontpt = backpt;
+				backpt = state_stack[sp].backpt;
+				num = state_stack[sp].back_num;
+			}
+			//FIXME need a nicer way to break out of nested loops (eg, get
+			//goto working for spir-v)
+			if (sp < 0) {
+				break;
+			}
+			auto node = get_node (num);
+			// _t.x/_t.y gives actual time, _t.x*_t.y gives side
+			auto front_t = vec2(node.plane ∨ frontpt, node.plane ∨ rv);
+			auto back_t = vec2(node.plane ∨ backpt, node.plane ∨ rv);
+			int front_side = (front_t.x * front_t.y) < 0 ? 1 : 0;
+			int back_side =  (back_t.x * back_t.y)   < 0 ? 1 : 0;
+			if (front_side == back_side) {
+				num = get_child(node, front_side);
+				continue;
+			}
+
+			state_stack[sp++] = {
+				.backpt = backpt,
+				.back_num = get_child (node, front_side ^ 1),
+			};
+			backpt = node.plane ∧ ray;
+			num = get_child (node, front_side);
+		}
+		if (empty) {
+			color = col;
+		}
+	}
 }
 
 [shader("Fragment")]

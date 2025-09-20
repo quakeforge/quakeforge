@@ -38,6 +38,15 @@ load_vec3 (const uint ind)
 				 asfloat (objects[ind + 2]));
 }
 
+vec4
+load_vec4 (const uint ind)
+{
+	return vec4 (asfloat (objects[ind + 0]),
+				 asfloat (objects[ind + 1]),
+				 asfloat (objects[ind + 2]),
+				 asfloat (objects[ind + 3]));
+}
+
 @overload point_t
 make_point (const uint ind, const float weight)
 {
