@@ -658,6 +658,9 @@ proc_incop (const expr_t *expr, rua_ctx_t *ctx)
 		return error (expr, "invalid lvalue for %c%c",
 					  expr->incop.op, expr->incop.op);
 	}
+	if (is_reference (get_type (e))) {
+		e = pointer_deref (e);
+	}
 	return new_incop_expr (expr->incop.op, e, expr->incop.postop);
 }
 
