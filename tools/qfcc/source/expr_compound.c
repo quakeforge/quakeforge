@@ -275,7 +275,7 @@ build_element_chain (element_chain_t *element_chain, const type_t *type,
 			append_init_element (element_chain, element);
 		}
 
-		state.offset += type_size (state.type);
+		state.offset += type_aligned_size (state.type);
 		state.id += 1;
 		if (state.field) {
 			state.field = state.field->next;

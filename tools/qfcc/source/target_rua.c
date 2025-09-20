@@ -223,7 +223,7 @@ copy_elements (expr_t *block, const expr_t *dst, const expr_t *src, int base)
 			auto type = get_type (e);
 			auto dst_ele = new_offset_alias_expr (type, dst, offset + base);
 			append_expr (block, assign_expr (dst_ele, e));
-			offset += type_size (type);
+			offset += type_aligned_size (type);
 		}
 	}
 	return offset;
@@ -318,7 +318,7 @@ ruamoko_field_array (const expr_t *e)
 			}
 			auto ele_type = obj->array.type;
 			auto base = new_int_expr (base_ind, false);
-			auto scale = new_int_expr (type_size (ele_type), false);
+			auto scale = new_int_expr (type_aligned_size (ele_type), false);
 			auto offset = binary_expr ('*', base, scale);
 			auto index = binary_expr ('*', obj->array.index, scale);
 			offset = binary_expr ('-', index, offset);

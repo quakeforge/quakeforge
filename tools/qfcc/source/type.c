@@ -2012,7 +2012,7 @@ type_size (const type_t *type)
 				return 0;
 			return type_size (&type_int);
 		case ty_array:
-			return type->array.count * type_size (type->array.type);
+			return type->array.count * type_aligned_size (type->array.type);
 		case ty_class:
 			{
 				class_t    *class = type->class;

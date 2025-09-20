@@ -18,6 +18,7 @@ test_progs_dat=\
 	tools/qfcc/test/alias_vec_live.dat \
 	tools/qfcc/test/alias_vec_param.dat \
 	tools/qfcc/test/alignment.dat \
+	tools/qfcc/test/arrayalign.dat \
 	tools/qfcc/test/arraylife.dat \
 	tools/qfcc/test/arraylife2.dat \
 	tools/qfcc/test/arraytypedef.dat \
@@ -284,6 +285,16 @@ tools/qfcc/test/anonstruct.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(anonstruct_dep) # am--include-marker
 r_depfiles_remade += $(anonstruct_dep)
+
+tools_qfcc_test_arrayalign_dat_SOURCES=tools/qfcc/test/arrayalign.r
+arrayalign_obj=$(tools_qfcc_test_arrayalign_dat_SOURCES:.r=.o)
+arrayalign_dep=$(call qcautodep,$(tools_qfcc_test_arrayalign_dat_SOURCES))
+tools/qfcc/test/arrayalign.dat$(EXEEXT): $(arrayalign_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(arrayalign_obj)
+tools/qfcc/test/arrayalign.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(arrayalign_dep) # am--include-marker
+r_depfiles_remade += $(arrayalign_dep)
 
 tools_qfcc_test_arraylife_dat_SOURCES=tools/qfcc/test/arraylife.r
 arraylife_obj=$(tools_qfcc_test_arraylife_dat_SOURCES:.r=.o)
