@@ -571,12 +571,12 @@ Vulkan_Gizmo_Init (vulkan_ctx_t *ctx)
 	QFV_Render_AddTasks (ctx, gizmo_task_syms);
 }
 
-static void *
+static uint32_t *
 gizmo_add_object (void *obj, uint32_t size, uint32_t extra, vulkan_ctx_t *ctx)
 {
 	auto gctx = ctx->gizmo_context;
 
-	uint32_t count = (size + extra) / sizeof (uint32_t);
+	uint32_t count = (size) / sizeof (uint32_t) + extra;
 	uint32_t obj_id = gctx->objects.size;
 	if (obj_id + count > MAX_OBJECT_DATA) {
 		return nullptr;
@@ -626,5 +626,14 @@ Vulkan_Gizmo_AddBrush (vec4f_t orig, const vec4f_t bounds[2],
 		.maxs = { VectorExpand (bounds[1]) },
 	};
 	QuatScale (color, 255, brush.col);
-	gizmo_add_object (&brush, sizeof (brush), 0, ctx);
+	auto p = gizmo_add_object (&brush, sizeof (brush), 5 * num_nodes, ctx);
+	for (int i = 0; i < num_nodes; i++) {
+		for (int j = 0; j < 4; j++) {
+			*(float *)(p++) = nodes[i].plane[j];
+		}
+		uint32_t front = nodes[i].children[0] & 0xff;
+		uint32_t back = nodes[i].children[1] & 0xff;
+		uint32_t children = front | (back << 8);
+		*p++ = children;
+	}
 }

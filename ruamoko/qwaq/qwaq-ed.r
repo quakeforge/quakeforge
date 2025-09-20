@@ -233,6 +233,15 @@ static vec4 axis_points[][2] = {
 
 static int axis_colors[] = { 12, 10, 9 };
 
+static gizmo_node_t tetra_brush[] = {
+	// Node 0 is the root node, but since the root node cannot be a child node,
+	// a child node index of 0 indicates the outside. -1 is inside
+	{ .plane = { 1,-1,-1,-0.5}, .children= {0, 1} },
+	{ .plane = {-1, 1,-1,-0.5}, .children= {0, 2} },
+	{ .plane = { 1, 1, 1,-0.5}, .children= {0, 3} },
+	{ .plane = { 1,-1,-1,-0.5}, .children= {0,-1} },
+};
+
 -draw
 {
 	if (ent && anim && arm && show_armature) {
@@ -292,7 +301,9 @@ static int axis_colors[] = { 12, 10, 9 };
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, { 1,-3.25, 0.5}, 0.25, vec4(0.9, 0.5, 0.9, 0.8));
 	Gizmo_AddCapsule ({-1.5,-0.75, 3}, {-4,-3.25, 0.5}, 0.25, vec4(0.6, 0.5, 0.6, 0.8));
 
-	Gizmo_AddBrush ({-1, 1, 1}, {-0.5,-0.5,-0.5}, {0.5, 0.5, 0.5}, 0, nil, vec4(0xba, 0xda, 0x55, 255)/255);
+	Gizmo_AddBrush ({-1, 1, 1}, {-0.5,-0.5,-0.5}, {0.5, 0.5, 0.5},
+					countof (tetra_brush), tetra_brush,
+					vec4(0xba, 0xda, 0x55, 255)/255);
 	//float s = sin((float)(realtime - double(1ul << 32)));
 	//float c = cos((float)(realtime - double(1ul << 32)));
 	//Painter_AddCircle ({300 + 100 * c, 300 + 100 * s}, 20, {0.8, 0.9, 0.1, 1});
