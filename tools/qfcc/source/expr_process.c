@@ -523,8 +523,12 @@ proc_compound (const expr_t *expr, rua_ctx_t *ctx)
 		comp->compound.type = proc_decl_type (expr->compound.type_expr, ctx);
 	}
 	for (auto ele = expr->compound.head; ele; ele = ele->next) {
-		append_element (comp, new_element (expr_process (ele->expr, ctx),
-										   ele->designator));
+		auto src = expr_process (ele->expr, ctx);
+		auto type = src ? get_type (src) : nullptr;
+		if (type && is_reference (type)) {
+			src = pointer_deref (src);
+		}
+		append_element (comp, new_element (src, ele->designator));
 	}
 	return comp;
 }
