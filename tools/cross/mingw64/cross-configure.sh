@@ -16,6 +16,7 @@ export PKG_CONFIG_LIBDIR=$MINGW_USR/lib/pkgconfig
 export PKG_CONFIG_PATH=$MINGW_USR/local/lib/pkgconfig
 export PATH=$MINGW/usr/bin:$PATH
 export QCSYSPREFIX=$MINGW_USR
+export VULKAN_SDK=/opt/vulkan/1.4.321.1
 ../../configure \
 	--enable-silent-rules \
 	--host=x86_64-w64-mingw32.static \
