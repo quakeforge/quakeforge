@@ -2132,7 +2132,7 @@ spirv_incop (const expr_t *e, spirvctx_t *ctx)
 	auto incop = binary_expr (e->incop.op, e->incop.expr, one);
 	unsigned inc_id = spirv_emit_expr (incop, ctx);
 	unsigned src_id = spirv_expr_id (incop->expr.e1, ctx);
-	auto assign = assign_expr (dst, incop);
+	auto assign = new_assign_expr (dst, incop);
 	spirv_emit_expr (assign, ctx);
 	return e->incop.postop ? src_id : inc_id;
 }
