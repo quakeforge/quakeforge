@@ -245,7 +245,6 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				break;
 			}
 			auto node = get_node (num);
-			// -_t.x/_t.y gives actual time, sign(_t.x) gives side
 			float front_t = node.plane ∨ frontpt;
 			float back_t  = node.plane ∨ backpt;
 			int front_side = front_t < 0 ? 1 : 0;
