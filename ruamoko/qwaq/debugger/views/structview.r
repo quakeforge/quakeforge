@@ -26,7 +26,7 @@
 		};
 		field_views[i] = [[DefView withDef:def
 									  type:field_type
-										in:data
+										in:self.data
 									target:target] retain];
 		field_rows[i + 1] = 0;
 		if (str_mid (type.strct.fields[i].name, 0, 11) != ".anonymous.") {
