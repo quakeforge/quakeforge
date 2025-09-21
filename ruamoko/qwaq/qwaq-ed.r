@@ -240,6 +240,21 @@ static gizmo_node_t tetra_brush[] = {
 	{ .plane = {-1,-1, 1,-0.5}, .children= {-1,-2} },
 };
 
+static gizmo_node_t covered_step[] = {
+	{ .plane = {1, 0, 0, 1   }, .children = { 1, -1} },
+	{ .plane = {1, 0, 0,-1   }, .children = {-1,  2} },
+	{ .plane = {0, 1, 0, 1   }, .children = { 3, -1} },
+	{ .plane = {0, 1, 0,-1   }, .children = {-1,  4} },
+	{ .plane = {0, 0, 1, 1   }, .children = { 5, -1} },
+	{ .plane = {0, 0, 1,-1.5 }, .children = {-1,  6} },
+
+	{ .plane = {0, 0, 1, 0   }, .children = { 7, -2} },
+	{ .plane = {0, 0, 1,-0.75}, .children = { 9,  8} },
+	{ .plane = {1, 0, 0, 0   }, .children = {-2, -1} },
+	{ .plane = {1, 0, 0, 0.5 }, .children = {-1, 10} },
+	{ .plane = {0, 0, 1,-1   }, .children = {-2, -1} },
+};
+
 -draw
 {
 	if (ent && anim && arm && show_armature) {
@@ -301,6 +316,9 @@ static gizmo_node_t tetra_brush[] = {
 
 	Gizmo_AddBrush ({-1, 1, 1}, {-0.5,-0.5,-0.5}, {0.5, 0.5, 0.5},
 					countof (tetra_brush), tetra_brush,
+					vec4(0xba, 0xda, 0x55, 255)/255);
+	Gizmo_AddBrush ({-2,-2, 2}, {-1.5,-1.5,-1.5}, {1.5, 1.5, 1.5},
+					countof (covered_step), covered_step,
 					vec4(0xba, 0xda, 0x55, 255)/255);
 	//float s = sin((float)(realtime - double(1ul << 32)));
 	//float c = cos((float)(realtime - double(1ul << 32)));
