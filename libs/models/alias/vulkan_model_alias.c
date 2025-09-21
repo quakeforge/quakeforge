@@ -152,9 +152,9 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, mod_alias_skin_t *askin,
 							  mod_name, askin->skin_num, askin->group_num));
 
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging, "alias.skin");
-	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4);
-	byte       *glow_data = QFV_PacketExtend (packet, skinsize * 4);
-	byte       *cmap_data = QFV_PacketExtend (packet, skinsize * 4);
+	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4 * 3);
+	byte       *glow_data = base_data + skinsize * 4 * 1;
+	byte       *cmap_data = base_data + skinsize * 4 * 2;
 
 	Mod_CalcFullbright (tskin + skinsize, tskin, skinsize);
 	Vulkan_ExpandPalette (glow_data, tskin + skinsize, vid.palette, 1,
