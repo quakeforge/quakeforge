@@ -22,6 +22,14 @@
 
 #include "gizmo.h"
 
+vec4
+volumetric_color (const bool enable, const float depth,
+				  const vec4 base_color, const vec4 mix_color)
+{
+	float factor = enable ? exp (-mix_color.a * depth) : 0;
+	return mix (vec4(mix_color.rgb, 1), base_color, 1 - factor);
+}
+
 void
 draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 {
@@ -39,8 +47,7 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	//	return;
 	//}
 	float dist = d > 0 ? sqrt (d) : 0;
-	float factor = d > 0 ? exp (-col.a * 3 * dist / r) : 0;
-	color = mix (vec4(col.rgb, 1), color, 1-factor);
+	color = volumetric_color (d > 0, 3 * dist / r, color, col);
 }
 
 //FIXME get generics with declarations working
@@ -148,8 +155,7 @@ draw_capsule (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 			// nan check on final points (may have missed the hemisphere ends)
 			if (t[0] <= t[1]) {
 				float dist = t[1] - t[0];
-				float factor = exp (-col.a * dist / r);
-				color = mix (vec4(col.rgb, 1), color, 1-factor);
+				color = volumetric_color (true, dist / r, color, col);
 			}
 		}
 	}
