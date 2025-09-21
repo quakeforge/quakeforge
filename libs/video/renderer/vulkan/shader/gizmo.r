@@ -246,10 +246,10 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 			}
 			auto node = get_node (num);
 			// -_t.x/_t.y gives actual time, sign(_t.x) gives side
-			auto front_t = vec2(node.plane ∨ frontpt, node.plane ∨ rv);
-			auto back_t = vec2(node.plane ∨ backpt, node.plane ∨ rv);
-			int front_side = (front_t.x) < 0 ? 1 : 0;
-			int back_side =  (back_t.x)  < 0 ? 1 : 0;
+			float front_t = node.plane ∨ frontpt;
+			float back_t  = node.plane ∨ backpt;
+			int front_side = front_t < 0 ? 1 : 0;
+			int back_side  = back_t  < 0 ? 1 : 0;
 			if (front_side == back_side) {
 				num = get_child(node, front_side);
 				continue;
