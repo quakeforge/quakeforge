@@ -64,11 +64,12 @@
 	return 1 + [ptr_view rows];
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
-			return [NameView withName:qdb_get_string (target, def.name)];
+			string name = qdb_get_string (target, def.name);
+			return [NameView withName: sprintf ("%*s%s", level, "", name)];
 		}
 		return self;
 	}
@@ -78,7 +79,7 @@
 		}
 		return [NameView withName:"Invalid pointer"];
 	}
-	return [ptr_view viewAtRow:row - 1 forColumn:column];
+	return [ptr_view viewAtRow:row - 1 forColumn:column level:level + 1];
 }
 
 @end

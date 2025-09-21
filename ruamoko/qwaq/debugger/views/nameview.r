@@ -30,7 +30,7 @@
 	return self;
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	return self;
 }

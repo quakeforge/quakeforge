@@ -95,13 +95,14 @@
 	return 1 + field_rows[type.strct.num_fields];
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level
 {
 	if (row == 0) {
 		if ([column name] == "name") {
-			return [NameView withName:qdb_get_string (target, def.name)];
+			string name = qdb_get_string (target, def.name);
+			return [NameView withName: sprintf ("%*s%s", level, "", name)];
 		}
-		return self;
+		return [NameView withName: sprintf ("%*.*s", xlen, xlen, "{}")];
 	}
 
 	row -= 1;
@@ -112,7 +113,7 @@
 	if (index) {
 		DefView    *dv = field_views[index - field_rows];
 		int         r = row - *index;
-		view = [dv viewAtRow: r forColumn:column];
+		view = [dv viewAtRow: r forColumn:column level:level + 1];
 	}
 	return view;
 }

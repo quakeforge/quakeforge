@@ -20,7 +20,7 @@
 -setTarget:(qdb_target_t)target;
 -fetchData;
 -(int) rows;
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column;
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column level:(int)level;
 @end
 
 #endif//__qwaq_debugger_defview_h

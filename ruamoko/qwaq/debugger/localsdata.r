@@ -162,7 +162,7 @@ free_defs (LocalsData *self)
 	if (index) {
 		DefView    *dv = def_views[index - def_rows];
 		int         r = row - *index;
-		view = [dv viewAtRow: r forColumn:column];
+		view = [dv viewAtRow: r forColumn:column level:0];
 	}
 	return view;
 }
