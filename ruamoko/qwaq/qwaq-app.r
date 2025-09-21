@@ -95,6 +95,10 @@ arp_end (void)
 -handleEvent: (qwaq_event_t *) event
 {
 	switch (event.what) {
+		case qe_axis:
+		case qe_button:
+			event.what = qe_none;
+			break;
 		case qe_resize:
 			Extent delta;
 			delta.width = event.resize.width - screenSize.width;
