@@ -189,11 +189,12 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 
 	@algebra(PGA) {
 		auto frontpt = make_point (eye - orig, 1);	// start at the eye
-		auto backpt = make_point (v, 0);			// point at infinity
+		auto backpt =  make_point (v, 0);			// point at infinity
 		auto ray = frontpt ∨ backpt;
 		auto rv = e0 * ~ray;						// doesn't change
 		bool empty = false;
 		bool solid = false;
+		bool hit = false;
 
 		// just give up if the stack over/under-flows
 		while (sp >= 0 && sp < countof (state_stack)) {
@@ -204,6 +205,7 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 					solid = true;
 				} else if (empty || solid) {
 					// DONE!
+					hit = true;
 					sp = -1;
 					break;
 				}
@@ -221,11 +223,11 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				break;
 			}
 			auto node = get_node (num);
-			// _t.x/_t.y gives actual time, _t.x*_t.y gives side
+			// -_t.x/_t.y gives actual time, sign(_t.x) gives side
 			auto front_t = vec2(node.plane ∨ frontpt, node.plane ∨ rv);
 			auto back_t = vec2(node.plane ∨ backpt, node.plane ∨ rv);
-			int front_side = (front_t.x * front_t.y) < 0 ? 1 : 0;
-			int back_side =  (back_t.x * back_t.y)   < 0 ? 1 : 0;
+			int front_side = (front_t.x) < 0 ? 1 : 0;
+			int back_side =  (back_t.x)  < 0 ? 1 : 0;
 			if (front_side == back_side) {
 				num = get_child(node, front_side);
 				continue;
@@ -236,9 +238,12 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 				.back_num = get_child (node, front_side ^ 1),
 			};
 			backpt = node.plane ∧ ray;
+			if (((vec4)backpt).w < 0) {
+				backpt = -backpt;
+			}
 			num = get_child (node, front_side);
 		}
-		if (empty) {
+		if (hit) {
 			color = col;
 		}
 	}

@@ -237,7 +237,7 @@ static gizmo_node_t tetra_brush[] = {
 	{ .plane = { 1,-1,-1,-0.5}, .children= {-1, 1} },
 	{ .plane = {-1, 1,-1,-0.5}, .children= {-1, 2} },
 	{ .plane = { 1, 1, 1,-0.5}, .children= {-1, 3} },
-	{ .plane = { 1,-1,-1,-0.5}, .children= {-1,-2} },
+	{ .plane = {-1,-1, 1,-0.5}, .children= {-1,-2} },
 };
 
 -draw
