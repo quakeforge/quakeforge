@@ -200,20 +200,36 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 		auto rv = e0 * ~ray;						// doesn't change
 		bool empty = false;
 		bool solid = false;
-		bool hit = false;
+		auto start = frontpt;						// in case of start solid
 
 		// just give up if the stack over/under-flows
 		while (sp >= 0 && sp < countof (state_stack)) {
 			while (num < 0) {
-				if (!solid && num != SOLID) {
-					empty = true;
-				} else if (!empty && num == SOLID) {
-					solid = true;
-				} else if (empty || solid) {
-					// DONE!
-					hit = true;
-					sp = -1;
-					break;
+				if (solid) {
+					if (num != SOLID) {
+						solid = false;
+						empty = true;
+						auto d = start ∨ backpt;
+						color = volumetric_color (true, sqrt(d • ~d), color, col);
+					}
+				} else if (empty) {
+					if (num == SOLID) {
+						solid = true;
+						empty = false;
+						start = backpt;
+					}
+				} else {
+					//first leaf node
+					if (num == SOLID) {
+						solid = true;
+						// starting solid. probably shouldn't happen
+						auto d = start ∨ backpt;
+						color = volumetric_color (true, sqrt (d • ~d),
+												  color, vec4(1,0,1,1));
+					} else {
+						empty = true;
+						start = backpt;
+					}
 				}
 				// pop up the stack for a back side
 				if (sp-- <= 0) {
@@ -249,8 +265,10 @@ draw_brush (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 			}
 			num = get_child (node, front_side);
 		}
-		if (hit) {
-			color = col;
+		if (solid) {
+			//last leaf node was solid, probably shouldn't happen
+			auto d = start ∨ backpt;
+			color = volumetric_color (true, sqrt(d • ~d), color, vec4(1,0,1,1));
 		}
 	}
 }
