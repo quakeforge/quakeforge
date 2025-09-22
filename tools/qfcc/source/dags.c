@@ -426,14 +426,6 @@ dag_make_children (dag_t *dag, statement_t *s,
 	int         i;
 
 	flow_analyze_statement (s, nullptr, nullptr, nullptr, operands);
-	if (!operands[0] && s->def) {
-		auto op = s->def;
-		while (op && op->op_type == op_pseudo) {
-			op = op->next;
-		}
-		//FIXME hopefully only one non-pseudo op
-		operands[0] = op;
-	}
 	for (i = 0; i < 3; i++) {
 		operand_t  *op = operands[i + 1];
 		children[i] = dag_make_child (dag, op, s);
