@@ -1712,15 +1712,8 @@ addressing_mode (sblock_t *sblock, const expr_t *ref,
 }
 
 static sblock_t *
-statement_return (sblock_t *sblock, const expr_t *e)
+use_out_params (sblock_t *sblock, statement_t *s, const expr_t *e)
 {
-	const char *opcode;
-	statement_t *s;
-	operand_t  *use = nullptr;
-
-	scoped_src_loc (e);
-	debug (e, "RETURN");
-	opcode = "return";
 	if (current_func && current_func->id != -1) {
 		bool v6p = options.code.progsversion < PROG_VERSION;
 		auto parameters = v6p ? current_func->locals : current_func->parameters;
@@ -1738,15 +1731,27 @@ statement_return (sblock_t *sblock, const expr_t *e)
 				auto a = new_def_expr (p->def);
 				operand_t  *out = nullptr;
 				sblock = statement_subexpr (sblock, a, &out);
-				s = assign_statement (p_op, out, e);
+				auto s = assign_statement (p_op, out, e);
 				sblock_add_statement (sblock, s);
 			} else {
 				auto u = def_operand (p->def, type, e);
-				u->next = use;
-				use = u;
+				u->next = s->use;
+				s->use = u;
 			}
 		}
 	}
+	return sblock;
+}
+
+static sblock_t *
+statement_return (sblock_t *sblock, const expr_t *e)
+{
+	const char *opcode;
+	statement_t *s;
+
+	scoped_src_loc (e);
+	debug (e, "RETURN");
+	opcode = "return";
 	if (!e->retrn.ret_val) {
 		if (options.code.progsversion == PROG_ID_VERSION) {
 			auto n = new_expr_copy (e);
@@ -1755,7 +1760,7 @@ statement_return (sblock_t *sblock, const expr_t *e)
 		}
 	}
 	s = new_statement (st_func, opcode, e);
-	s->use = use;
+	use_out_params (sblock, s, e);
 	if (options.code.progsversion < PROG_VERSION) {
 		if (e->retrn.ret_val) {
 			const expr_t *ret_val = e->retrn.ret_val;
@@ -3199,6 +3204,7 @@ check_final_block (sblock_t *sblock)
 		sblock = sblock->next;
 	}
 	s = new_statement (st_func, "return", 0);
+	use_out_params (sblock, s, nullptr);
 	if (options.code.progsversion == PROG_VERSION) {
 		s->opa = short_operand (0, 0);
 		s->opb = short_operand (0, 0);
