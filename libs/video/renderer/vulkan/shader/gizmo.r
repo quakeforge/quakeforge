@@ -50,7 +50,6 @@ draw_sphere (uint ind, vec3 v, vec3 eye, @inout vec4 color)
 	color = volumetric_color (d > 0, 3 * dist / r, color, col);
 }
 
-//FIXME get generics with declarations working
 @generic (genObj = [line_t, point_t]) {
 
 vec2
