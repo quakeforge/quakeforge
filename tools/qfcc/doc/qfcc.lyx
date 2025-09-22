@@ -9,6 +9,7 @@
 % Added by lyx2lyx
 %\setlength{\parskip}{\medskipamount}
 %\setlength{\parindent}{0pt}
+\DeclareUnicodeCharacter{2228}{\(\vee\)}
 \end_preamble
 \use_default_options false
 \begin_modules
@@ -17,7 +18,7 @@ logicalmkup
 \maintain_unincluded_children no
 \language american
 \language_package default
-\inputencoding iso8859-1
+\inputencoding utf8
 \fontencoding auto
 \font_roman "times" "default"
 \font_sans "helvet" "default"
@@ -2279,6 +2280,4018 @@ Breaking Up The Program:
 
 \begin_layout Part
 Object-Oriented Programming in Ruamoko
+\end_layout
+
+\begin_layout Part
+Geometric Algebra in Ruamoko
+\end_layout
+
+\begin_layout Standard
+Ruamoko provides both types and operators for doing geometric algebra.
+\end_layout
+
+\begin_layout Quote
+A point reflection is always a composition of three planar reflections
+\end_layout
+
+\begin_layout Quote
+A planar reflection is never a composition of point reflections
+\end_layout
+
+\begin_layout Quote
+A trivector of Cl(3,0,1) is always a geometric product of three 1-vectors
+\end_layout
+
+\begin_layout Quote
+A 1-vector of Cl(3,0,1) is never a geometric product of trivectors
+\end_layout
+
+\begin_layout Quote
+Steven De Keninck (as paraphrased by Hamish Todd)
+\end_layout
+
+\begin_layout Quote
+"Quaternions are 4 dimensional" is a useless and damaging thing to say.
+ I'm not saying that it's exactly false.
+ It's about as true as saying that a 3x3 Matrix is nine-dimensional.
+\end_layout
+
+\begin_layout Quote
+Hamish Todd
+\end_layout
+
+\begin_layout Chapter
+Geometric Algebra types
+\end_layout
+
+\begin_layout Standard
+Due to the nature of geometric algebra,
+ the types are generated from a specification:
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra(
+\noun on
+type
+\noun default
+(
+\noun on
+p
+\noun default
+,
+\noun on
+q
+\noun default
+,
+\noun on
+r
+\noun default
+))
+\end_layout
+
+\end_inset
+
+.
+ 
+\noun on
+type
+\noun default
+ specifies the base type of the components and may be either 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+ 
+\noun on
+p
+\noun default
+,
+ 
+\noun on
+q
+\noun default
+,
+ and 
+\noun on
+r
+\noun default
+ specify the signature of the algebra:
+ 
+\noun on
+p
+\noun default
+ specifies the number of basis vectors that square to 
+\begin_inset Formula $+1$
+\end_inset
+
+,
+ 
+\noun on
+q
+\noun default
+ specifies the number of basis vectors that square to 
+\begin_inset Formula $-1$
+\end_inset
+
+,
+ and 
+\noun on
+r
+\noun default
+ specifies the number of basis vectors that square to 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ 
+\noun on
+p
+\noun default
+,
+ 
+\noun on
+q
+\noun default
+,
+ and 
+\noun on
+r
+\noun default
+ must be constant,
+ positive (or 0) integers and their sum determines the dimension of the working space.
+ The dimension is limited to 16 due to the exponential growth of the number of components in a multi-vector:
+ 
+\begin_inset Formula $2^{d}$
+\end_inset
+
+ where 
+\begin_inset Formula $d=p+q+r$
+\end_inset
+
+.
+ Thus a multi-vector in 16-dimensional space has 65536 components,
+ which doesn't leave room for much else in the address space reachable by QC instructions.
+\end_layout
+
+\begin_layout Standard
+Currently,
+ the following signatures are supported
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+The types for others can be generated,
+ but not any code.
+ The primary focus of development has be 3,0,1 as it is the most useful in 3d games and graphics.
+ The reason for this is code that performs well needs specialized expressions that allow for easy cancellation of terms otherwise the types can 
+\begin_inset Quotes eld
+\end_inset
+
+blow up
+\begin_inset Quotes erd
+\end_inset
+
+,
+ resulting in compilation errors in many cases,
+ and wasted calculation of numerically unstable zeros.
+ However,
+ support for general signatures is planned.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+FIXME update this when generic signatures are supported
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Description
+3,0,0 3D VGA:
+ Basic 3D vectors with all objects passing through the origin.
+ Full multi-vectors have 8 components:
+ 1 scalar,
+ 3 vector,
+ 3 bivector,
+ and 1 trivector.
+ The basis vectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+.
+ The basis bivectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+.
+ The trivector is 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+.
+ Vectors and bivectors map directly to the basic vector types when type cast:
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebras,
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebras,
+ with no changes in sign.
+ Thus the basis vectors and bivectors map directly to the
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+components,
+ in that order,
+ in the basic vector type.
+ The basis vectors 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ all square to 
+\begin_inset Formula $+1$
+\end_inset
+
+.
+ The basis bivectors
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ all square to 
+\begin_inset Formula $-1$
+\end_inset
+
+,
+ as does the basis trivector 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+2,0,1 2D PGA
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fn:PGA-agnostic"
+
+\end_inset
+
+Other than some conventions for basis vector order in higher grade elements,
+ Ruamoko imposes no actual meaning.
+ Whether you prefer plane-based or point-based PGA is up to you,
+ but this documentation assumes plane-based PGA,
+ and Ruamoko provides only basic operators.
+\end_layout
+
+\end_inset
+
+:
+ 2D geometry with algebraic representation of lines and points that can be positioned anywhere in space,
+ including at infinity.
+ Full multi-vectors have 8 components:
+ 1 scalar,
+ 3 vector,
+ 3 bivector,
+ and 1 trivector.
+ The basis vectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+.
+ The basis bivectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e20
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+.
+ The trivector is 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e012
+\end_layout
+
+\end_inset
+
+.
+ Vectors and bivectors map directly to the basic vector types when type cast:
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebras,
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebras,
+ with no changes in sign.
+ Thus the basis vectors and bivectors map directly to the
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+components,
+ in that order,
+ in the basic vector type.
+ The basis vectors 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ both square to 
+\begin_inset Formula $+1$
+\end_inset
+
+,
+ but 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+ squares to 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ Both 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e20
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+ square to 
+\begin_inset Formula $0$
+\end_inset
+
+,
+ as does the trivector 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e012
+\end_layout
+
+\end_inset
+
+,
+ but 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ squares to 
+\begin_inset Formula $-1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Description
+3,0,1 3D PGA
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footref{fn:PGA-agnostic}
+\end_layout
+
+\end_inset
+
+:
+ 3D geometry with algebraic representation of planes,
+ lines and points that can be positioned anywhere in space,
+ including at infinity.
+ Full multi-vectors have 16 components:
+ 1 scalar,
+ 4 vector,
+ 6 bivector,
+ 4 trivector,
+ and 1 quadvector.
+ The basis vectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+.
+ The basis bivectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e02
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e03
+\end_layout
+
+\end_inset
+
+.
+ The basis trivectors are 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e032
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e013
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e021
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+.
+ The basis quadvector is 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0123
+\end_layout
+
+\end_inset
+
+.
+ Vectors and triivectors map directly to the basic vector types when type cast:
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec4
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebras,
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec4
+\end_layout
+
+\end_inset
+
+ for 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebras,
+ with no changes in sign.
+ Thus the basis vectors and trivectors map directly to the
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+w
+\end_layout
+
+\end_inset
+
+ components,
+ in that order,
+ in the basic vector type.
+ The basis vectors 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ all square to 
+\begin_inset Formula $+1$
+\end_inset
+
+,
+ but 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+ squares to 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ The basis bivectors
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ all square to 
+\begin_inset Formula $-1$
+\end_inset
+
+,
+ but the basis vectors 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e02
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e03
+\end_layout
+
+\end_inset
+
+ square to 
+\begin_inset Formula $0$
+\end_inset
+
+.
+ The basis trivector 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+ squares to 
+\begin_inset Formula $-1$
+\end_inset
+
+,
+ but 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e032
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e013
+\end_layout
+
+\end_inset
+
+,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e021
+\end_layout
+
+\end_inset
+
+ square to 
+\begin_inset Formula $0$
+\end_inset
+
+,
+ as does the basis quadvector 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0123
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+You might think that basis vectors squaring to 
+\begin_inset Formula $0$
+\end_inset
+
+ makes them less useful,
+ but those vectors squaring to 
+\begin_inset Formula $0$
+\end_inset
+
+ is the magic that makes geometric algebra work for Euclidean space.
+\end_layout
+
+\begin_layout Standard
+It is both possible,
+ and recommended,
+ to use 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra(
+\noun on
+type
+\noun default
+(
+\noun on
+p
+\noun default
+,
+\noun on
+q
+\noun default
+,
+\noun on
+r
+\noun default
+))
+\end_layout
+
+\end_inset
+
+ in a 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+typedef
+\end_layout
+
+\end_inset
+
+,
+ as this documents its intended usage,
+ makes for a handy shortcut for accessing the type,
+ prevents errors due to mismatched base type or signature
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Each combination of base type and signature is a separate incompatible type.
+ The opposite is also true:
+ any two 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra(
+\noun on
+type
+\noun default
+(
+\noun on
+p
+\noun default
+,
+\noun on
+q
+\noun default
+,
+\noun on
+r
+\noun default
+))
+\end_layout
+
+\end_inset
+
+ declarations with the same base type and signature are the same type.
+\end_layout
+
+\end_inset
+
+,
+ and makes it relatively easy to change base type or signature with minimal changes
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+There are some incompatibilities in direction between 2D and 3D PGA due to the e20 (2D) and e02 (3D) bivectors (resulting in a sign flip),
+ as well as the directions of lines.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+FIXME pga object referce
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ to the rest of the code.
+\end_layout
+
+\begin_layout Section
+Geometric Algebra sub-types
+\end_layout
+
+\begin_layout Standard
+Geometric algebra brings type safety to geometry.
+ However,
+ this type safety is not obvious when using a full multi-vector,
+ and using full multi-vectors everywhere is very inefficient:
+ that's 
+\begin_inset Formula $2^{d}$
+\end_inset
+
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ components allocated for every variable and copied for every assignment.
+\end_layout
+
+\begin_layout Standard
+To this end,
+ the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra
+\end_layout
+
+\end_inset
+
+ types support sub-types via properties.
+ These properties are available on all variables declared with an @algebra type and are used to access that specific member of the variable,
+ though any sub-type that's not a member of the variable's sub-type will return 
+\begin_inset Formula $0$
+\end_inset
+
+ of the appropriate type.
+\end_layout
+
+\begin_layout Subsection
+VGA (3,0,0) and 2D PGA (2,0,1) sub-types
+\end_layout
+
+\begin_layout Standard
+Though the types can't be assigned to each other,
+ the only difference between VGA and 2D PGA is VGA's 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ becomes 2D PGA's 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+ and thus how the components behave under the dot or geometric products,
+ thus their sub-types and memory layouts are the same.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+scalar
+\end_layout
+
+\end_inset
+
+ The scalar (base type) for the algebra.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+ In a full multi-vector,
+ this is at offset 7.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec
+\end_layout
+
+\end_inset
+
+ The 1-vector for the algebra.
+ Can be cast to/from 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebra) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ (VGA) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+ (2D PGA) is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 0.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvec
+\end_layout
+
+\end_inset
+
+ The bivector for the algebra.
+ Can be cast to/from 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebra) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+ (VGA) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e20
+\end_layout
+
+\end_inset
+
+ (2D PGA) is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+ (VGA) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+ (2D PGA) is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 4.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+tvec
+\end_layout
+
+\end_inset
+
+ The pseudo-scalar for the algebra.
+ Can be cast to/from
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+ In a full multi-vector,
+ this is at offset 3.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement document
+alignment document
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\noindent
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "100line%"
+height "1pt"
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{-1
+\backslash
+parskip}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset CommandInset include
+LatexCommand verbatiminput
+filename "vga-types.r"
+literal "true"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "100line%"
+height "1pt"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "cap:VGA-types-example"
+
+\end_inset
+
+VGA types
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+3D PGA (3,0,1) sub-types
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+scalar
+\end_layout
+
+\end_inset
+
+ The scalar (base type) for the algebra.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+ In a full multi-vector,
+ this is at offset 7.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec
+\end_layout
+
+\end_inset
+
+ The 1-vector for the algebra.
+ Can be cast to/from
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec4
+\end_layout
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fn:quaternion-works-but"
+
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+ works too,
+ but is not recommended as it is conceptually the wrong type.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+FIXME pga object reference
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec4
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e2
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e3
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e0
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+w
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 0.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvect
+\end_layout
+
+\end_inset
+
+ The Euclidean bivector for the algebra.
+ The 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+t
+\end_layout
+
+\end_inset
+
+ is for tangential as it gives the direction of the line represented by the bivector.
+ Can be cast to/from 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fn:vector-works-but"
+
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vector
+\end_layout
+
+\end_inset
+
+ works too,
+ but is not recommended as it is conceptually the wrong type.
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+FIXME pga object reference
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebra) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e23
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e31
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 4.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvecp
+\end_layout
+
+\end_inset
+
+ The non-Euclidean bivector for the algebra.
+ The 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+p
+\end_layout
+
+\end_inset
+
+ is for positional as it encodes the position
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+as angular momentum with respect to the origin
+\end_layout
+
+\end_inset
+
+ of the line represented by the bivector.
+ Can be cast to/from
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec3
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footref{fn:vector-works-but}
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebra) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec3
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e01
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e02
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e03
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 8.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+tvec
+\end_layout
+
+\end_inset
+
+ The trivector for the algebra.
+ Can be cast to/from
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec4
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footref{fn:quaternion-works-but}
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ algebra) or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+dvec4
+\end_layout
+
+\end_inset
+
+ (
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+ algebra).
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e032
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+x
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e013
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+y
+\end_layout
+
+\end_inset
+
+ component,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e021
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+z
+\end_layout
+
+\end_inset
+
+ component,
+ and 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+ is the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+w
+\end_layout
+
+\end_inset
+
+ component.
+ In a full multi-vector,
+ this is at offset 12.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+qvec
+\end_layout
+
+\end_inset
+
+ The pseudo-scalar for the algebra.
+ Can be cast to/from
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+float
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+double
+\end_layout
+
+\end_inset
+
+.
+ In a full multi-vector,
+ this is at offset 11.
+\end_layout
+
+\begin_layout Section
+Geometric Algebra Group sub-types
+\end_layout
+
+\begin_layout Standard
+The type properties can be used only for single-type sub-types.
+ That is,
+ they are blades
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+In 3D PGA,
+ because it is 4-dimensional,
+ not all bivectors are blades.
+ However bvect and bvecp are blades.
+ It is the combination of the two that is not a blade,
+ but there is no direct sub-type for the general 3D PGA/4D bivector.
+\end_layout
+
+\end_inset
+
+ in the specialized algebras
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+VGA,
+ 2D PGA,
+ 3D PGA
+\end_layout
+
+\end_inset
+
+.
+ To make a special-purpose multi-vector,
+ the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+group_mask(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ sub-type property is available.
+ 
+\noun on
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+
+\noun on
+type
+\end_layout
+
+\end_inset
+
+
+\noun default
+ is a bit-mask of the sub-type's group mask.
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+group_mask(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ can be used only on the full algebra type,
+ not on any sub-type or variable.
+ However,
+ using 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+group_mask(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+,
+ any combination of sub-types can be created,
+ including the full algebra type
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Though it is easier to just use the full type directly (especially if 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+typedef
+\end_layout
+
+\end_inset
+
+ed to something handy)
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement document
+alignment document
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="7" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+mask
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+VGA
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2D PGA
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3D PGA
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x01
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+vec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x02
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+tvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+tvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvect
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x04
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+scalar
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x08
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+scalar
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+scalar
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvecp
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x10
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+qvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x20
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+tvec
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+group_mask(
+\noun on
+type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ masks and their corresponding sub-types.
+ For general algebras,
+ the group mask is 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+1<<grade
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset Note Greyedout
+status collapsed
+
+\begin_layout Plain Layout
+general algebras are not properly supported yet
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+FIXME
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Some useful masks are:
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x04|0x08
+\end_layout
+
+\end_inset
+
+ VGA and 2D PGA:
+ bvec+scalar.
+ Use to create a rotor.
+ In VGA this is equivalent to a conjugated 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+This is due to how bivectors work.
+\end_layout
+
+\end_inset
+
+,
+ and can even be cast to/from 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaterion
+\end_layout
+
+\end_inset
+
+.
+ In VGA,
+ this supports rotation around the origin,
+ but in 2D PGA it supports rotation around any point in the plane.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x02|0x04
+\end_layout
+
+\end_inset
+
+ 3D PGA:
+ bvect+scalar.
+ Just like VGA and 2D PGA,
+ this can be used to create a rotor thus equivalent to a conjugated 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+quaternion
+\end_layout
+
+\end_inset
+
+,
+ though in the case of 3D PGA,
+ it is only a partial rotor as it supports rotation around only the origin.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x02|0x04|0x08
+\end_layout
+
+\end_inset
+
+ 3D PGA:
+ bvect+scalar+bvecp.
+ This can be used to create a full rotor which supports rotation around any line in 3D space,
+ not just those through the origin.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x04|0x08
+\end_layout
+
+\end_inset
+
+ 3D PGA:
+ scalar+bvecp.
+ This can be used to create a translator,
+ supporting translation in any direction in 3D space.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x02|0x04|0x08|0x10
+\end_layout
+
+\end_inset
+
+ 3D PGA:
+ bvect+scalar+bvecp+qvec.
+ This can be used to create a full motor,
+ supporting arbitrary screw motions anywhere in 3D space.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+0x02|0x08
+\end_layout
+
+\end_inset
+
+ 3D PGA:
+ bvect+bvecp.
+ Full bivector.
+ This can be used to represent a line using Plücker coordinates
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+https://en.wikipedia.org/wiki/Pl%C3%BCcker_coordinates
+\end_layout
+
+\end_inset
+
+ with 
+\begin_inset Formula $y-x$
+\end_inset
+
+ in 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvect
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Formula $m=x\times y$
+\end_inset
+
+ in 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+bvecp
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+,
+ and is also the result of intersecting two planes.
+\end_layout
+
+\begin_layout Chapter
+Geometric Algebra Operators
+\end_layout
+
+\begin_layout Standard
+Geometric algebra adds some new operators and adds new meanings to some well-known operators.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
++
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+
+ (addition and subtraction symbols) Binary.
+ Direct sum.
+ Adding or subtracting different sub-types builds up a multi-vector.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+*
+\end_layout
+
+\end_inset
+
+ (multiplication symbol) Binary.
+ The geometric product.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+·
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+•
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@dot
+\end_layout
+
+\end_inset
+
+ Binary.
+ Dot or inner product.
+ All three symbols have the same meaning.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+×
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@cross
+\end_layout
+
+\end_inset
+
+ Binary.
+ Commutator product.
+ Both symbols have the same meaning.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+∧
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@wedge
+\end_layout
+
+\end_inset
+
+ Binary.
+ Wedge or exterior product.
+ Both symbols have the same meaning.
+ This acts as the intersection operator.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+∨
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@regressive
+\end_layout
+
+\end_inset
+
+ Binary.
+ Anti-wedge or regressive product.
+ Both symbols have the same meaning.
+ This acts as the join operator.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+
+ (negative symbol).
+ Pre-op unary.
+ Negation operator.
+ Same as scaling by 
+\begin_inset Formula $-1$
+\end_inset
+
+ (or really,
+ subtracting from 
+\begin_inset Formula $0$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+~
+\end_layout
+
+\end_inset
+
+ (bit-wise not symbol) Pre-op unary.
+ Reverse operator.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+†
+\end_layout
+
+\end_inset
+
+ Post-op unary.
+ Reverse operator.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+⋆
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@dual
+\end_layout
+
+\end_inset
+
+ Hodge
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Some contest the use of 
+\begin_inset Quotes eld
+\end_inset
+
+Hodge
+\begin_inset Quotes erd
+\end_inset
+
+,
+ especially for PGA,
+ but for non-degenerate orthonormal metrics,
+ it does appear to behave the same way.
+\end_layout
+
+\end_inset
+
+ dual operator 
+\begin_inset Formula $\star$
+\end_inset
+
+.
+ Pre-op unary.
+ Both symbols have the same meaning.
+\end_layout
+
+\begin_layout Labeling
+\labelwidthstring 00.00.0000
+@undual Inverse of the Hodge dual (ie,
+ 
+\begin_inset Formula $\star^{-1}$
+\end_inset
+
+).
+ Pre-op unary.
+ Equivalent to 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+⋆⋆⋆
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Note that 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+~(expr)†
+\end_layout
+
+\end_inset
+
+ is a no-op as the reverses will cancel each other.
+\end_layout
+
+\begin_layout Chapter
+Geometric Algebra Scopes
+\end_layout
+
+\begin_layout Standard
+Within a function,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra(
+\noun on
+algebra_type
+\noun default
+)
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra(
+\noun on
+type
+\noun default
+(
+\noun on
+p
+\noun default
+,
+\noun on
+q
+\noun default
+,
+\noun on
+r
+\noun default
+))
+\end_layout
+
+\end_inset
+
+ can be used to change a 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+{ }
+\end_layout
+
+\end_inset
+
+ compound statement (which introduces a new scope) into a geometric algebra scope.
+ In genera,
+ use of a geometric algebra scope is optional (most expressions are valid without one),
+ but they provide some important features:
+ the ability to take the dual of a scalar (which requires the scope to know the grade of the pseudo-scalar) and the 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e1
+\end_layout
+
+\end_inset
+
+,
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e12
+\end_layout
+
+\end_inset
+
+ etc basis vector symbols.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement document
+alignment document
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "100line%"
+height "1pt"
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{-1
+\backslash
+parskip}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout LyX-Code
+\begin_inset CommandInset include
+LatexCommand verbatiminput
+filename "algebra-scope.r"
+literal "true"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "100line%"
+height "1pt"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "cap:algebra_scope_example"
+
+\end_inset
+
+ Example 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+@algebra
+\end_layout
+
+\end_inset
+
+ scope.
+ Note the use of 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+e123
+\end_layout
+
+\end_inset
+
+.
+ The code calculates the intercept times for a ray passing through an infinite cylinder or a sphere with radius 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r
+\end_layout
+
+\end_inset
+
+,
+ or alternatively,
+ an swept sphere hitting a line or a point.
+ The code would work for a plane (of half-thickness 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r
+\end_layout
+
+\end_inset
+
+) too.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Part
