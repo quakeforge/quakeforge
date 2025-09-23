@@ -158,6 +158,7 @@ int op_is_temp (operand_t *op) __attribute__((pure));
 bool op_is_alias (operand_t *op) __attribute__((pure));
 int op_alias_offset (operand_t *op) __attribute__((pure));
 operand_t *unalias_op (operand_t *op) __attribute__((pure));
+operand_t *pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr);
 operand_t *nil_operand (const struct type_s *type, const struct expr_s *expr);
 operand_t *def_operand (struct def_s *def, const struct type_s *type,
 						const struct expr_s *expr);

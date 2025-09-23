@@ -705,6 +705,14 @@ flow_build_vars (function_t *func)
 		num_vars += count_operand_chain (s->def);
 		num_vars += count_operand_chain (s->kill);
 	}
+	// and any pseudo operands
+	for (auto pseudo = func->pseudo_ops; pseudo; pseudo = pseudo->next) {
+		operand_t op = {
+			.op_type = op_pseudo,
+			.pseudoop = pseudo,
+		};
+		num_vars += count_operand (&op);
+	}
 	if (!num_vars)
 		return;
 
@@ -736,6 +744,11 @@ flow_build_vars (function_t *func)
 		add_operand_chain (func, s->use);
 		add_operand_chain (func, s->def);
 		add_operand_chain (func, s->kill);
+	}
+	// and any pseudo operands
+	for (auto pseudo = func->pseudo_ops; pseudo; pseudo = pseudo->next) {
+		auto op = pseudo_operand (pseudo, nullptr);
+		add_operand (func, op);
 	}
 	// and set the use/def sets for the vars (has to be a separate pass
 	// because the alias handling reqruires the flow address to be valid
@@ -917,6 +930,17 @@ flow_add_op_var_size (set_t *set, operand_t *op, int size, int ol)
 }
 
 static int
+flowvar_tempop_add_use (tempop_t *tempop, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = tempop->flowvar;
+	if (var) {
+		set_add (var->use, st->number);
+	}
+	return 0;
+}
+
+static int
 flowvar_def_add_use (def_t *def, void *data)
 {
 	statement_t *st = data;
@@ -932,12 +956,52 @@ flowvar_add_use (flowvar_t *var, statement_t *st)
 {
 	set_add (var->use, st->number);
 
-	if (var->op->op_type != op_def) {
-		return;
+	if (var->op->op_type == op_temp) {
+		auto tempop = &var->op->tempop;
+		tempop_visit_all (tempop, dol_all, flowvar_tempop_add_use, st);
+	} else if (var->op->op_type == op_def) {
+		def_t      *def = var->op->def->alias;
+		if (def && is_array (def->type)) {
+			def_visit_all (def, dol_all, flowvar_def_add_use, st);
+		}
 	}
-	def_t      *def = var->op->def->alias;
-	if (def && is_array (def->type)) {
-		def_visit_all (def, dol_all, flowvar_def_add_use, st);
+}
+
+static int
+flowvar_tempop_add_def (tempop_t *tempop, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = tempop->flowvar;
+	if (var) {
+		set_add (var->define, st->number);
+	}
+	return 0;
+}
+
+static int
+flowvar_def_add_def (def_t *def, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = def->flowvar;
+	if (var) {
+		set_add (var->define, st->number);
+	}
+	return 0;
+}
+
+static void
+flowvar_add_def (flowvar_t *var, statement_t *st)
+{
+	set_add (var->define, st->number);
+
+	if (var->op->op_type == op_temp) {
+		auto tempop = &var->op->tempop;
+		tempop_visit_all (tempop, dol_all, flowvar_tempop_add_def, st);
+	} else if (var->op->op_type == op_def) {
+		def_t      *def = var->op->def->alias;
+		if (def && is_array (def->type)) {
+			def_visit_all (def, dol_all, flowvar_def_add_def, st);
+		}
 	}
 }
 
@@ -1552,24 +1616,37 @@ flow_build_chains (flowgraph_t *graph)
 }
 
 static bool
-flow_find_ambiguous_defs (flowgraph_t *graph)
+flow_find_ambiguous (flowgraph_t *graph)
 {
 	bool have_ambiguous = false;
-	auto stamb = set_new ();
+	auto stambuse = set_new ();
+	auto stambdef = set_new ();
 
 	for (int i = 0; i < graph->num_nodes; i++) {
 		flownode_t *node = graph->nodes[i];
 		for (auto st = node->sblock->statements; st; st = st->next) {
-			set_empty (stamb);
+			set_empty (stambuse);
+			set_empty (stambdef);
 			if (st->type == st_func && statement_is_call (st)) {
-				flow_check_params (st, nullptr, stamb, graph->func);
+				flow_check_params (st, stambuse, stambdef, graph->func);
 			} else if (st->type == st_ptrmove) {
-				flow_check_move (st, nullptr, stamb, graph->func);
+				flow_check_move (st, stambuse, stambdef, graph->func);
+				auto mem = graph->func->memory_op;
+				if (set_is_empty (stambuse)) {
+					flowvar_add_use (mem->flowvar, st);
+					flowvar_add_ambiguous (mem->flowvar, st);
+				}
+				if (set_is_empty (stambdef)) {
+					flowvar_add_def (mem->flowvar, st);
+					flowvar_add_ambiguous (mem->flowvar, st);
+				}
 			}
-			have_ambiguous |= !set_is_empty (stamb);
+			have_ambiguous |= !set_is_empty (stambuse);
+			have_ambiguous |= !set_is_empty (stambdef);
 		}
 	}
-	set_delete (stamb);
+	set_delete (stambuse);
+	set_delete (stambdef);
 
 	return have_ambiguous;
 }
@@ -2442,7 +2519,7 @@ flow_data_flow (function_t *func)
 	if (options.block_dot.reaching) {
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);
 	}
-	if (flow_find_ambiguous_defs (graph)) {
+	if (flow_find_ambiguous (graph)) {
 		flow_reaching_defs (graph);
 		if (options.block_dot.reaching) {
 			dump_dot ("reaching", graph, dump_dot_flow_reaching);

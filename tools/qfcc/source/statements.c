@@ -426,7 +426,7 @@ free_sblock (sblock_t *sblock)
 	FREE (sblocks, sblock);
 }
 
-static operand_t *
+operand_t *
 pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr)
 {
 	operand_t  *op;
@@ -3225,6 +3225,11 @@ make_statements (const expr_t *e)
 			search_for_super_dealloc (sblock);
 		}
 	}
+	pseudoop_t *memory = new_pseudoop ("memory");
+	memory->next = current_func->pseudo_ops;
+	current_func->pseudo_ops = memory;
+	current_func->memory_op = memory;
+
 	if (options.block_dot.final)
 		dump_dot ("final", sblock, dump_dot_sblock);
 
