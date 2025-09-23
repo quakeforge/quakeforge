@@ -131,7 +131,11 @@ proc_uexpr (const expr_t *expr, rua_ctx_t *ctx)
 		}
 		return countof_expr (nullptr, type);
 	}
-	return unary_expr (expr->expr.op, e1);
+	auto e = unary_expr (expr->expr.op, e1);
+	if (expr->paren) {
+		e = paren_expr (e);
+	}
+	return e;
 }
 
 static const expr_t *
