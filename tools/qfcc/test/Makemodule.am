@@ -62,6 +62,7 @@ test_progs_dat=\
 	tools/qfcc/test/lost-use.dat \
 	tools/qfcc/test/methodparams.dat \
 	tools/qfcc/test/modulo.dat \
+	tools/qfcc/test/move_def.dat \
 	tools/qfcc/test/normjoin.dat \
 	tools/qfcc/test/nilparamret.dat \
 	tools/qfcc/test/overload.dat \
@@ -783,6 +784,16 @@ tools/qfcc/test/modulo.run: $(qfcc_test_run_deps)
 	@TEST_HARNESS_OPTS=--float $(top_srcdir)/tools/qfcc/test/build-run $@
 include $(modulo_dep) # am--include-marker
 r_depfiles_remade += $(modulo_dep)
+
+tools_qfcc_test_move_def_dat_SOURCES=tools/qfcc/test/move_def.r
+move_def_obj=$(tools_qfcc_test_move_def_dat_SOURCES:.r=.o)
+move_def_dep=$(call qcautodep,$(tools_qfcc_test_move_def_dat_SOURCES))
+tools/qfcc/test/move_def.dat$(EXEEXT): $(move_def_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(move_def_obj)
+tools/qfcc/test/move_def.run: $(qfcc_test_run_deps)
+	$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(move_def_dep) # am--include-marker
+r_depfiles_remade += $(move_def_dep)
 
 tools_qfcc_test_normjoin_dat_SOURCES=tools/qfcc/test/normjoin.r
 normjoin_obj=$(tools_qfcc_test_normjoin_dat_SOURCES:.r=.o)
