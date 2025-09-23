@@ -268,46 +268,10 @@ operand_string (operand_t *op)
 	return ("??");
 }
 
-static void
-_print_operand (operand_t *op)
-{
-	switch (op->op_type) {
-		case op_def:
-			printf ("(%s) ", get_type_string (op->type));
-			printf ("%s", op->def->name);
-			break;
-		case op_value:
-			printf ("(%s) %s", get_type_string (op->type),
-					get_value_string (op->value));
-			break;
-		case op_label:
-			printf ("block %p", op->label->dest);
-			break;
-		case op_temp:
-			printf ("tmp (%s) %p", get_type_string (op->type), op);
-			if (op->tempop.def)
-				printf (" %s:%04x", op->tempop.def->name,
-						op->tempop.def->offset);
-			break;
-		case op_alias:
-			printf ("alias(%s,", get_type_string (op->type));
-			_print_operand (op->alias);
-			printf (")");
-			break;
-		case op_nil:
-			printf ("nil");
-			break;
-		case op_pseudo:
-			printf ("pseudo: %s", op->pseudoop->name);
-			break;
-	}
-}
-
 void
 print_operand (operand_t *op)
 {
-	_print_operand (op);
-	puts ("");
+	puts (operand_string (op));
 }
 
 static void
@@ -316,8 +280,7 @@ print_operand_chain (const char *name, operand_t *op)
 	if (op) {
 		printf ("    %s:", name);
 		while (op) {
-			printf (" ");
-			_print_operand (op);
+			printf (" %s", operand_string (op));
 			op = op->next;
 		}
 		printf ("\n");
@@ -329,13 +292,13 @@ print_statement (statement_t *s)
 {
 	printf ("(" GRN "%s" DFL ", " MAG, s->opcode);
 	if (s->opa)
-		_print_operand (s->opa);
+		printf ("%s", operand_string (s->opa));
 	printf (DFL ", " ONG);
 	if (s->opb)
-		_print_operand (s->opb);
+		printf ("%s", operand_string (s->opb));
 	printf (DFL ", " CYN);
 	if (s->opc)
-		_print_operand (s->opc);
+		printf ("%s", operand_string (s->opc));
 	printf (DFL ")\n");
 	print_operand_chain ("use", s->use);
 	print_operand_chain ("def", s->def);
