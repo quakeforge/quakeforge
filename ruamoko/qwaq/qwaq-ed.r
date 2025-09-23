@@ -583,7 +583,7 @@ camera_lookat (point_t eye, point_t target, point_t up)
 
 -think:(float)frametime state:(state_t)state
 {
-	set_transform (state.M, xform, "");
+	set_transform (state.M, xform);
 	return self;
 }
 @end
@@ -1062,7 +1062,7 @@ main (int argc, string *argv)
 		//if (mouse_dragging_rmb) {
 		//	camera_mouse_first_person (&camera_state);
 		//}
-		set_transform ([playercam state].M, camera, "");
+		set_transform ([playercam state].M, camera);
 		//{
 		//	auto p = (vec4)[player pos];
 		//	auto c = Transform_GetWorldPosition (camera);

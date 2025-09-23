@@ -79,30 +79,21 @@ make_motor (vec4 translation, vec4 rotation)
 	}
 }
 
-point_t
-apply_motor (motor_t m, point_t p)
-{
-	return m * p * ~m;
-}
-
 void
-set_transform (motor_t m, transform_t transform, string p)
+set_transform (motor_t m, transform_t transform)
 {
 	@algebra (PGA) {
 		vec4 scale = Transform_GetLocalScale (transform);
+		// Extract the rotation quaternion. Removes the non-Euclidean
+		// components by zeroing them, and reverses the Euclidean parts.
 		auto r = ⋆(m * e0123);
+		// Extract the translation. Right multiplication by the quaterion
+		// is the inverse of left multiplication.
 		auto t = m * ⋆(m * e0123);
 		vec4 rot = (vec4) r;
+		// Motor translations have double-cover too.
 		vec4 trans = [(vec3)t.bvecp * -2, 1];
 		Transform_SetLocalTransform (transform, scale, rot, trans);
-		if (p) {
-			printf ("set_transform:%s: %q %q\n", p, rot, trans);
-			auto m = Transform_GetLocalMatrix (transform);
-			printf ("%g %g %g %g\n", m[0][0], m[1][0], m[2][0], m[3][0]);
-			printf ("%g %g %g %g\n", m[0][1], m[1][1], m[2][1], m[3][1]);
-			printf ("%g %g %g %g\n", m[0][2], m[1][2], m[2][2], m[3][2]);
-			printf ("%g %g %g %g\n", m[0][3], m[1][3], m[2][3], m[3][3]);
-		}
 	}
 }
 

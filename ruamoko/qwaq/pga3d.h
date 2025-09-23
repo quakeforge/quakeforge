@@ -14,7 +14,7 @@ typedef PGA.vec plane_t;
 @overload motor_t exp (bivector_t b);
 @overload bivector_t log (motor_t m);
 motor_t make_motor (vec4 translation, vec4 rotation);
-void set_transform (motor_t m, transform_t transform, string p);
+void set_transform (motor_t m, transform_t transform);
 
 typedef struct {
 	motor_t     M;
