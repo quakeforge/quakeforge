@@ -1805,6 +1805,7 @@ flow_live_vars (flowgraph_t *graph)
 	// function
 	use = set_new ();
 	set_assign (use, graph->func->global_vars);
+	set_add (use, graph->func->memory_op->flowvar->number);
 	node = graph->nodes[graph->num_nodes + 1];
 	node->live_vars.in = use;
 	node->live_vars.out = set_new ();
