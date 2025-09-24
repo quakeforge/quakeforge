@@ -431,6 +431,7 @@ pseudo_operand (pseudoop_t *pseudoop, const expr_t *expr)
 {
 	operand_t  *op;
 	op = new_operand (op_pseudo, expr, __builtin_return_address (0));
+	op->type = &type_void;
 	op->pseudoop = pseudoop;
 	op->size = 1;
 	return op;

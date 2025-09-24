@@ -96,7 +96,8 @@ new_flowvar (void)
 	ALLOC (256, flowvar_t, vars, var);
 	var->use = set_new ();
 	var->define = set_new ();
-	var->ambiguous = set_new ();
+	var->amb_use = set_new ();
+	var->amb_define = set_new ();
 	var->udchains = set_new ();
 	var->duchains = set_new ();
 	return var;
@@ -1006,27 +1007,40 @@ flowvar_add_def (flowvar_t *var, statement_t *st)
 }
 
 static int
-flowvar_def_add_ambiguous (def_t *def, void *data)
+flowvar_tempop_add_amb_def (tempop_t *tempop, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = tempop->flowvar;
+	if (var) {
+		set_add (var->amb_define, st->number);
+	}
+	return 0;
+}
+
+static int
+flowvar_def_add_amb_def (def_t *def, void *data)
 {
 	statement_t *st = data;
 	flowvar_t  *var = def->flowvar;
 	if (var) {
-		set_add (var->ambiguous, st->number);
+		set_add (var->amb_define, st->number);
 	}
 	return 0;
 }
 
 static void
-flowvar_add_ambiguous (flowvar_t *var, statement_t *st)
+flowvar_add_amb_def (flowvar_t *var, statement_t *st)
 {
-	set_add (var->ambiguous, st->number);
+	set_add (var->amb_define, st->number);
 
-	if (var->op->op_type != op_def) {
-		return;
-	}
-	def_t      *def = var->op->def;
-	if (def) {
-		def_visit_all (def, dol_full, flowvar_def_add_ambiguous, st);
+	if (var->op->op_type == op_temp) {
+		auto tempop = &var->op->tempop;
+		tempop_visit_all (tempop, dol_all, flowvar_tempop_add_amb_def, st);
+	} else if (var->op->op_type == op_def) {
+		def_t      *def = var->op->def;
+		if (def) {
+			def_visit_all (def, dol_full, flowvar_def_add_amb_def, st);
+		}
 	}
 }
 
@@ -1091,9 +1105,6 @@ flow_find_ptr (set_t *access, set_t *access_ptr,
 static void
 flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 {
-	if (!func->ud_chains) {
-		return;
-	}
 	set_t      *use_ptr = set_new ();
 	set_t      *def_ptr = set_new ();
 
@@ -1115,7 +1126,7 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 	if (have_def) {
-		flow_find_ptr (def, def_ptr, st, func, flowvar_add_ambiguous);
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_amb_def);
 	}
 
 	set_delete (use_ptr);
@@ -1125,9 +1136,6 @@ flow_check_params (statement_t *st, set_t *use, set_t *def, function_t *func)
 static void
 flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 {
-	if (!func->ud_chains) {
-		return;
-	}
 	set_t      *use_ptr = set_new ();
 	set_t      *def_ptr = set_new ();
 	set_t      *ptr = set_new ();
@@ -1145,13 +1153,30 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
 	}
 	if (def) {
-		flow_find_ptr (def, def_ptr, st, func, flowvar_add_ambiguous);
+		flow_find_ptr (def, def_ptr, st, func, flowvar_add_amb_def);
 	}
 
 	set_delete (visited);
 	set_delete (use_ptr);
 	set_delete (def_ptr);
 	set_delete (ptr);
+}
+
+static void
+flow_check_load (statement_t *st, set_t *use, function_t *func)
+{
+	SET_DEFER (use_ptr);
+	SET_DEFER (ptr);
+	SET_DEFER (visited);
+
+	//FIXME addressing modes
+	flowvar_t  *var_a = flow_get_var (st->opa);
+	if (var_a) {
+		set_add (use_ptr, var_a->number);
+	}
+	if (use) {
+		flow_find_ptr (use, use_ptr, st, func, flowvar_add_use);
+	}
 }
 
 static bool
@@ -1163,27 +1188,37 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 	SET_DEFER (amb_use);
 	SET_DEFER (amb_def);
 
+	bool check_use = false;
+	bool check_def = false;
 	if (st->type == st_func && statement_is_call (st)) {
 		flow_check_params (st, amb_use, amb_def, func);
+		check_def = true;
 	} else if (st->type == st_ptrmove) {
 		flow_check_move (st, amb_use, amb_def, func);
+		check_use = true;
+		check_def = true;
+	} else if (st->type == st_expr && strcmp (st->opcode, "load") == 0) {
+		flow_check_load (st, amb_use, func);
+		check_use = true;
+	}
+	if (check_use || check_def) {
 		auto mem = func->memory_op;
-		if (set_is_empty (amb_use)) {
+		if (check_use && set_is_empty (amb_use)) {
 			flowvar_add_use (mem->flowvar, st);
-			flowvar_add_ambiguous (mem->flowvar, st);
+			flowvar_add_amb_def (mem->flowvar, st);
 			set_add (amb_use, mem->flowvar->number);
 		}
-		if (set_is_empty (amb_def)) {
+		if (check_def && set_is_empty (amb_def)) {
 			flowvar_add_def (mem->flowvar, st);
-			flowvar_add_ambiguous (mem->flowvar, st);
+			flowvar_add_amb_def (mem->flowvar, st);
 			set_add (amb_def, mem->flowvar->number);
 		}
-	}
-	if (use) {
-		set_union (use, amb_use);
-	}
-	if (def) {
-		set_union (def, amb_use);
+		if (use) {
+			set_union (use, amb_use);
+		}
+		if (def) {
+			set_union (def, amb_def);
+		}
 	}
 	return !set_is_empty (amb_use) || !set_is_empty (amb_def);
 }
@@ -1194,7 +1229,8 @@ typedef struct {
 	set_t      *stgen;
 	set_t      *stkill;
 	set_t      *stdef;
-	set_t      *stamb;
+	set_t      *stamb_use;
+	set_t      *stamb_def;
 	set_t      *uninit;
 	flowvar_t **vars;
 
@@ -1217,11 +1253,12 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 	set_empty (r->stgen);
 	set_empty (r->stkill);
 
-	if (r->func->ud_chains && r->stamb) {
-		set_empty (r->stamb);
-		flow_check_ambiguous (st, r->stuse, r->stamb, r->func);
+	if (r->func->ud_chains && r->stamb_def) {
+		set_empty (r->stamb_use);
+		set_empty (r->stamb_def);
+		flow_check_ambiguous (st, r->stuse, r->stamb_def, r->func);
 		// separate ambiguous and unambiguous defs
-		set_difference (r->stamb, r->stdef);
+		set_difference (r->stamb_def, r->stdef);
 	}
 
 	for (auto var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
@@ -1230,10 +1267,10 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 		set_remove (r->stkill, st->number);
 		set_add (r->stgen, st->number);
 	}
-	if (r->stamb && !set_is_empty (r->stamb)) {
-		for (auto vi = set_first (r->stamb); vi; vi = set_next (vi)) {
+	if (r->stamb_def && !set_is_empty (r->stamb_def)) {
+		for (auto vi = set_first (r->stamb_def); vi; vi = set_next (vi)) {
 			auto var = *r->vars[vi->element];
-			set_assign (r->tmp, var.ambiguous);
+			set_assign (r->tmp, var.amb_define);
 			set_union (r->tmp, var.define);
 			set_difference (r->tmp, r->func->real_statements);
 			var.define = r->tmp;
@@ -1263,7 +1300,8 @@ flow_reaching_defs (flowgraph_t *graph)
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
-		.stamb = set_new (),
+		.stamb_use = set_new (),
+		.stamb_def = set_new (),
 		.tmp = set_new (),
 		.vars = graph->func->vars,
 		.stuse = set_new (),
@@ -1349,7 +1387,8 @@ flow_reaching_defs (flowgraph_t *graph)
 
 	set_delete (reach.stuse);
 	set_delete (reach.tmp);
-	set_delete (reach.stamb);
+	set_delete (reach.stamb_use);
+	set_delete (reach.stamb_def);
 	set_delete (reach.stdef);
 	set_delete (reach.stgen);
 	set_delete (reach.stkill);
@@ -1469,7 +1508,7 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 		set_assign (reach->gen, node->reaching_defs.in);
 		for (auto st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, reach->stuse, reach->stdef, 0, 0);
-			set_empty (reach->stamb);
+			set_empty (reach->stamb_def);
 			flow_check_ambiguous (st, reach->stuse, nullptr, graph->func);
 
 			if (start) {
@@ -1480,7 +1519,7 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 				 vi = set_next (vi)) {
 				flowvar_t *var = reach->vars[vi->element];
 				set_assign (reach->tmp, var->define);
-				set_union (reach->tmp, var->ambiguous);
+				set_union (reach->tmp, var->amb_define);
 				set_intersection (reach->tmp, reach->gen);
 
 				if (record) {
@@ -1531,7 +1570,8 @@ flow_build_chains (flowgraph_t *graph)
 		.stgen = set_new (),
 		.stkill = set_new (),
 		.stdef = set_new (),
-		.stamb = set_new (),
+		.stamb_use = set_new (),
+		.stamb_def = set_new (),
 		.vars = graph->func->vars,
 
 		.stuse = set_new (),
@@ -1611,7 +1651,8 @@ flow_build_chains (flowgraph_t *graph)
 	set_delete (reach.gen);
 	set_delete (reach.kill);
 	set_delete (reach.stdef);
-	set_delete (reach.stamb);
+	set_delete (reach.stamb_use);
+	set_delete (reach.stamb_def);
 
 	graph->func->du_chains = malloc (sizeof (udchain_t[reach.num_ud_chains]));
 	if (reach.num_ud_chains) {
