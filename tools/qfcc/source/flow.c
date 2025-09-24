@@ -721,7 +721,7 @@ flow_build_vars (function_t *func)
 	stuse = set_new ();
 	stdef = set_new ();
 
-	// set up the pseudo address space for temp vars so accessing tmp vars
+	// set up the pseudo address space for temp vars so accessing temp vars
 	// though aliases analyses correctly
 	func->pseudo_addr = func->num_statements;
 	func->pseudo_addr += func->locals->space->size;
@@ -1157,21 +1157,35 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 static bool
 flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 {
+	if (!func->ud_chains) {
+		return false;
+	}
+	SET_DEFER (amb_use);
+	SET_DEFER (amb_def);
+
 	if (st->type == st_func && statement_is_call (st)) {
-		flow_check_params (st, use, def, func);
+		flow_check_params (st, amb_use, amb_def, func);
 	} else if (st->type == st_ptrmove) {
-		flow_check_move (st, use, def, func);
+		flow_check_move (st, amb_use, amb_def, func);
 		auto mem = func->memory_op;
-		if (use && set_is_empty (use)) {
+		if (set_is_empty (amb_use)) {
 			flowvar_add_use (mem->flowvar, st);
 			flowvar_add_ambiguous (mem->flowvar, st);
+			set_add (amb_use, mem->flowvar->number);
 		}
-		if (def && set_is_empty (def)) {
+		if (set_is_empty (amb_def)) {
 			flowvar_add_def (mem->flowvar, st);
 			flowvar_add_ambiguous (mem->flowvar, st);
+			set_add (amb_def, mem->flowvar->number);
 		}
 	}
-	return (use && !set_is_empty (use)) || (def && !set_is_empty (def));
+	if (use) {
+		set_union (use, amb_use);
+	}
+	if (def) {
+		set_union (def, amb_use);
+	}
+	return !set_is_empty (amb_use) || !set_is_empty (amb_def);
 }
 
 typedef struct {
