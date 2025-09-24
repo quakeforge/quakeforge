@@ -1007,6 +1007,44 @@ flowvar_add_def (flowvar_t *var, statement_t *st)
 }
 
 static int
+flowvar_tempop_add_amb_use (tempop_t *tempop, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = tempop->flowvar;
+	if (var) {
+		set_add (var->amb_use, st->number);
+	}
+	return 0;
+}
+
+static int
+flowvar_def_add_amb_use (def_t *def, void *data)
+{
+	statement_t *st = data;
+	flowvar_t  *var = def->flowvar;
+	if (var) {
+		set_add (var->amb_use, st->number);
+	}
+	return 0;
+}
+
+static void
+flowvar_add_amb_use (flowvar_t *var, statement_t *st)
+{
+	set_add (var->amb_use, st->number);
+
+	if (var->op->op_type == op_temp) {
+		auto tempop = &var->op->tempop;
+		tempop_visit_all (tempop, dol_all, flowvar_tempop_add_amb_use, st);
+	} else if (var->op->op_type == op_def) {
+		def_t      *def = var->op->def;
+		if (def) {
+			def_visit_all (def, dol_full, flowvar_def_add_amb_use, st);
+		}
+	}
+}
+
+static int
 flowvar_tempop_add_amb_def (tempop_t *tempop, void *data)
 {
 	statement_t *st = data;
@@ -1192,7 +1230,9 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 	bool check_def = false;
 	if (st->type == st_func && statement_is_call (st)) {
 		flow_check_params (st, amb_use, amb_def, func);
-		check_def = true;
+		// XXX currently, calls always use/define external memory, so no
+		// need to check (and breaks ambiguous kill handling in
+		// flow_statement_reaching)
 	} else if (st->type == st_ptrmove) {
 		flow_check_move (st, amb_use, amb_def, func);
 		check_use = true;
@@ -1205,7 +1245,7 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 		auto mem = func->memory_op;
 		if (check_use && set_is_empty (amb_use)) {
 			flowvar_add_use (mem->flowvar, st);
-			flowvar_add_amb_def (mem->flowvar, st);
+			flowvar_add_amb_use (mem->flowvar, st);
 			set_add (amb_use, mem->flowvar->number);
 		}
 		if (check_def && set_is_empty (amb_def)) {
@@ -1213,12 +1253,12 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 			flowvar_add_amb_def (mem->flowvar, st);
 			set_add (amb_def, mem->flowvar->number);
 		}
-		if (use) {
-			set_union (use, amb_use);
-		}
-		if (def) {
-			set_union (def, amb_def);
-		}
+	}
+	if (use) {
+		set_union (use, amb_use);
+	}
+	if (def) {
+		set_union (def, amb_def);
 	}
 	return !set_is_empty (amb_use) || !set_is_empty (amb_def);
 }
@@ -1253,12 +1293,12 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 	set_empty (r->stgen);
 	set_empty (r->stkill);
 
-	if (r->func->ud_chains && r->stamb_def) {
+	bool do_amb = r->func->ud_chains && r->stamb_def;
+
+	if (do_amb) {
 		set_empty (r->stamb_use);
 		set_empty (r->stamb_def);
-		flow_check_ambiguous (st, r->stuse, r->stamb_def, r->func);
-		// separate ambiguous and unambiguous defs
-		set_difference (r->stamb_def, r->stdef);
+		flow_check_ambiguous (st, r->stamb_use, r->stamb_def, r->func);
 	}
 
 	for (auto var_i = set_first (r->stdef); var_i; var_i = set_next (var_i)) {
@@ -1267,12 +1307,14 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 		set_remove (r->stkill, st->number);
 		set_add (r->stgen, st->number);
 	}
-	if (r->stamb_def && !set_is_empty (r->stamb_def)) {
+	if (do_amb && !set_is_empty (r->stamb_def)) {
 		for (auto vi = set_first (r->stamb_def); vi; vi = set_next (vi)) {
 			auto var = *r->vars[vi->element];
 			set_assign (r->tmp, var.amb_define);
 			set_union (r->tmp, var.define);
-			set_difference (r->tmp, r->func->real_statements);
+			if (var.number != r->func->memory_op->flowvar->number) {
+				set_difference (r->tmp, r->func->real_statements);
+			}
 			var.define = r->tmp;
 			flow_kill_aliases (r->stkill, &var, r->func->real_statements);
 			set_remove (r->stkill, st->number);
