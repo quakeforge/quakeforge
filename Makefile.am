@@ -201,15 +201,15 @@ CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r $(QFCC_DEP)@' >$@-t && $(am__mv) $@-t $@
 
 $(pas_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas $(QFCC_DEP)@' >$@-t && $(am__mv) $@-t $@
 
 $(spv_depfiles_remade):
 	$(MKDIR_P) $(@D)
-	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spv: $(top_srcdir)/\1 $(QFCC)@' >$@-t && $(am__mv) $@-t $@
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.spv: $(top_srcdir)/\1 $(QFCC_DEP)@' >$@-t && $(am__mv) $@-t $@
 
 am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) \
 		$(pas_depfiles_remade) $(spv_depfiles_remade)
