@@ -1154,6 +1154,26 @@ flow_check_move (statement_t *st, set_t *use, set_t *def, function_t *func)
 	set_delete (ptr);
 }
 
+static bool
+flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
+{
+	if (st->type == st_func && statement_is_call (st)) {
+		flow_check_params (st, use, def, func);
+	} else if (st->type == st_ptrmove) {
+		flow_check_move (st, use, def, func);
+		auto mem = func->memory_op;
+		if (use && set_is_empty (use)) {
+			flowvar_add_use (mem->flowvar, st);
+			flowvar_add_ambiguous (mem->flowvar, st);
+		}
+		if (def && set_is_empty (def)) {
+			flowvar_add_def (mem->flowvar, st);
+			flowvar_add_ambiguous (mem->flowvar, st);
+		}
+	}
+	return (use && !set_is_empty (use)) || (def && !set_is_empty (def));
+}
+
 typedef struct {
 	set_t      *gen;
 	set_t      *kill;
@@ -1185,11 +1205,7 @@ flow_statement_reaching (statement_t *st, reaching_t *r)
 
 	if (r->func->ud_chains && r->stamb) {
 		set_empty (r->stamb);
-		if (st->type == st_func && statement_is_call (st)) {
-			flow_check_params (st, r->stuse, r->stamb, r->func);
-		} else if (st->type == st_ptrmove) {
-			flow_check_move (st, r->stuse, r->stamb, r->func);
-		}
+		flow_check_ambiguous (st, r->stuse, r->stamb, r->func);
 		// separate ambiguous and unambiguous defs
 		set_difference (r->stamb, r->stdef);
 	}
@@ -1440,11 +1456,7 @@ flow_chain_core (flowgraph_t *graph, reaching_t *reach,
 		for (auto st = node->sblock->statements; st; st = st->next) {
 			flow_analyze_statement (st, reach->stuse, reach->stdef, 0, 0);
 			set_empty (reach->stamb);
-			if (st->type == st_func && statement_is_call (st)) {
-				flow_check_params (st, reach->stuse, nullptr, graph->func);
-			} else if (st->type == st_ptrmove) {
-				flow_check_move (st, reach->stuse, nullptr, graph->func);
-			}
+			flow_check_ambiguous (st, reach->stuse, nullptr, graph->func);
 
 			if (start) {
 				start (st, reach);
@@ -1619,34 +1631,19 @@ static bool
 flow_find_ambiguous (flowgraph_t *graph)
 {
 	bool have_ambiguous = false;
-	auto stambuse = set_new ();
-	auto stambdef = set_new ();
+	auto use = set_new ();
+	auto def = set_new ();
 
 	for (int i = 0; i < graph->num_nodes; i++) {
 		flownode_t *node = graph->nodes[i];
 		for (auto st = node->sblock->statements; st; st = st->next) {
-			set_empty (stambuse);
-			set_empty (stambdef);
-			if (st->type == st_func && statement_is_call (st)) {
-				flow_check_params (st, stambuse, stambdef, graph->func);
-			} else if (st->type == st_ptrmove) {
-				flow_check_move (st, stambuse, stambdef, graph->func);
-				auto mem = graph->func->memory_op;
-				if (set_is_empty (stambuse)) {
-					flowvar_add_use (mem->flowvar, st);
-					flowvar_add_ambiguous (mem->flowvar, st);
-				}
-				if (set_is_empty (stambdef)) {
-					flowvar_add_def (mem->flowvar, st);
-					flowvar_add_ambiguous (mem->flowvar, st);
-				}
-			}
-			have_ambiguous |= !set_is_empty (stambuse);
-			have_ambiguous |= !set_is_empty (stambdef);
+			set_empty (use);
+			set_empty (def);
+			have_ambiguous |= flow_check_ambiguous (st, use, def, graph->func);
 		}
 	}
-	set_delete (stambuse);
-	set_delete (stambdef);
+	set_delete (use);
+	set_delete (def);
 
 	return have_ambiguous;
 }
