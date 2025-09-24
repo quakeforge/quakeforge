@@ -1461,6 +1461,9 @@ duchain_cmp (const void *_a, const void *_b)
 {
 	const udchain_t *a = _a;
 	const udchain_t *b = _b;
+	if (a->defst == b->defst) {
+		return a->usest - b->usest;
+	}
 	return a->defst - b->defst;
 }
 
