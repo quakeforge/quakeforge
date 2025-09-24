@@ -125,6 +125,12 @@ set_delete (set_t *set)
 }
 
 void
+set_cleanup (set_t **set)
+{
+	set_delete (*set);
+}
+
+void
 set_expand (set_t *set, unsigned size)
 {
 	set_bits_t *map = set->map;

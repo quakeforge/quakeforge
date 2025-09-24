@@ -79,6 +79,9 @@ typedef uint32_t set_bits_t;
 	.map = array, \
 }
 
+#define SET_DEFER(name) \
+	__attribute__((cleanup(set_cleanup))) set_t *name = set_new ()
+
 /** Represent a set using a bitmap.
 
 	When \a inverted is zero, ones in the bitmap represent members, but when
@@ -165,6 +168,8 @@ set_t *set_new_size_r (set_pool_t *set_pool, unsigned size);
 */
 void set_delete (set_t *set);
 void set_delete_r (set_pool_t *set_pool, set_t *set);
+
+void set_cleanup (set_t **set);
 
 /** Pre-expand a set with space for the specified element
 
