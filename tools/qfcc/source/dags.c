@@ -1048,12 +1048,6 @@ dag_count_ops (operand_t *op)
 	return count;
 }
 
-static void
-dag_free_set (set_t **set)
-{
-	set_delete (*set);
-}
-
 static bool
 dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
 				   flownode_t *flownode)
@@ -1062,7 +1056,7 @@ dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
 	int end = flownode->first_statement + flownode->num_statements;
 
 	auto nvar = flow_get_var (node->label->op);
-	__attribute__((cleanup(dag_free_set))) set_t *def = set_new ();
+	SET_DEFER (def);
 	set_add_range (def, start, end - start);
 	set_intersection (def, nvar->define);
 
@@ -1073,7 +1067,7 @@ dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
 	}
 
 	auto lvar = flow_get_var (label->op);
-	__attribute__((cleanup(dag_free_set))) set_t *use = set_new ();
+	SET_DEFER (use);
 	set_add_range (use, start, end - start);
 	set_intersection (use, lvar->use);
 
