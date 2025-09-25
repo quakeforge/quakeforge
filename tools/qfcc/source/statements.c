@@ -3188,6 +3188,12 @@ dump_dot_sblock (const void *data, const char *fname)
 	print_sblock ((sblock_t *) data, fname);
 }
 
+static void
+memory_always_initialized (const expr_t *expr, pseudoop_t *op)
+{
+	// shh, there's nobody here. we're in your imagination. we can't hurt you
+}
+
 sblock_t *
 make_statements (const expr_t *e)
 {
@@ -3228,6 +3234,7 @@ make_statements (const expr_t *e)
 	}
 	pseudoop_t *memory = new_pseudoop ("memory");
 	memory->next = current_func->pseudo_ops;
+	memory->uninitialized = memory_always_initialized;
 	current_func->pseudo_ops = memory;
 	current_func->memory_op = memory;
 

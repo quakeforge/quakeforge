@@ -2130,6 +2130,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_func:
+			bool func_use_memory = false;
 			if (statement_is_return (s)) {
 				if (s->opc) {
 					// ruamoko
@@ -2149,6 +2150,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						flow_add_op_var (use, &flow_params[0].op, dol_partial);
 					}
 				}
+				func_use_memory = true;
 			}
 			if (strcmp (s->opcode, "call") == 0) {
 				// call uses opc to specify the destination of the return value
@@ -2161,15 +2163,18 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					operands[0] = s->opc;
 				}
 				flow_add_op_var (use, s->opa, dol_partial);
+				func_use_memory = true;
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				calln = s->opcode[4] - '0';
 				flow_add_op_var (use, s->opa, dol_partial);
+				func_use_memory = true;
 			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
 				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa, dol_partial);
 				flow_add_op_var (use, s->opb, dol_partial);
 				if (s->opc)
 					flow_add_op_var (use, s->opc, dol_partial);
+				func_use_memory = true;
 			}
 			if (calln >= 0) {
 				if (def) {
@@ -2190,6 +2195,12 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					operands[3] = s->opc;
 				}
 
+			}
+			if (func_use_memory && use && current_func->global_vars) {
+				// mark all globals (includes memory for pointers) as
+				// used, forcing them live
+				set_union (use, current_func->global_vars);
+				set_add (use, current_func->memory_op->flowvar->number);
 			}
 			break;
 		case st_flow:
