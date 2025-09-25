@@ -15,6 +15,8 @@
 #include "gui/filewindow.h"
 #include "gui/listview.h"
 #include "armature.h"
+#include "camera.h"
+#include "gizmo.h"
 #include "pga3d.h"
 #include "player.h"
 #include "playercam.h"
@@ -65,11 +67,6 @@ void setevents (int (func)(struct IE_event_s *, void *), void *data) = #0;
 void setctxcbuf (int ctx) = #0;
 void addcbuftxt (string txt) = #0;
 
-typedef struct gizmo_node_s {
-	vec4        plane;
-	int         children[2];
-} gizmo_node_t;
-
 void Gizmo_AddSphere (vec4 c, float r, vec4 color) = #0;
 void Gizmo_AddCapsule (vec4 p1, vec4 p2, float r, vec4 color) = #0;
 void Gizmo_AddBrush (vec4 orig, vec4 mins, vec4 maxs,
@@ -119,7 +116,8 @@ Array *windows;
 	imui_window_t *window;
 
 	scene_t scene;
-	transform_t camera;
+
+	Camera *camera;
 
 	int show_armature;
 
@@ -138,7 +136,6 @@ Array *windows;
 -setModel:(model_t) model;
 -nextClip:(float)frametime;
 -(scene_t) scene;
--(transform_t) camera;
 @end
 
 @implementation MainWindow
@@ -192,9 +189,8 @@ Array *windows;
 	}, 0);
 	Scene_SetLighting (scene, ldata);
 
-	entity_t camera_ent = Scene_CreateEntity (scene);
-	camera = Entity_GetTransform (camera_ent);
-	Scene_SetCamera (scene, camera_ent);
+	camera = [[Camera inScene:scene] retain];
+	Scene_SetCamera (scene, [camera entity]);
 	newscene (scene);
 
 	show_armature = 1;
@@ -267,11 +263,12 @@ static gizmo_node_t covered_step[] = {
 		qfm_motor_t M;
 		qfa_get_pose_motors (root_anim, &M);
 		M.m = E * M.m;
-		draw_armature (camera, arm, M);
+		auto cam = Entity_GetTransform ([camera entity]);
+		draw_armature (cam, arm, M);
 		for (int i = 0; i < 3; i++) {
 			auto p1 = E * (point_t) axis_points[i][0] * ~E;
 			auto p2 = E * (point_t) axis_points[i][1] * ~E;
-			draw_3dline (camera, (vec4) p1, (vec4) p2, axis_colors[i]);
+			draw_3dline (cam, (vec4) p1, (vec4) p2, axis_colors[i]);
 		}
 	}
 
@@ -436,10 +433,11 @@ static gizmo_node_t covered_step[] = {
 	return scene;
 }
 
--(transform_t) camera
+-(Camera *) camera
 {
-	return camera;
+   return camera;
 }
+
 
 -(void)itemSelected:(int) item in:(Array *)items
 {
@@ -1051,18 +1049,18 @@ main (int argc, string *argv)
 
 		[player think:frametime];
 		[playercam think:frametime];
-		//[camtest think:frametime state:[playercam state]];
+		[camtest think:frametime state:[playercam state]];
 		[main_window nextClip:frametime];
 
-		auto camera = [main_window camera];
-		//camera_first_person (&camera_state);
-		//if (mouse_dragging_mmb) {
-		//	camera_mouse_trackball (&camera_state);
-		//}
-		//if (mouse_dragging_rmb) {
-		//	camera_mouse_first_person (&camera_state);
-		//}
-		set_transform ([playercam state].M, camera);
+		camera_first_person (&camera_state);
+		if (mouse_dragging_mmb) {
+			camera_mouse_trackball (&camera_state);
+		}
+		if (mouse_dragging_rmb) {
+			camera_mouse_first_person (&camera_state);
+		}
+		[[main_window camera] setTransformFromMotor:camera_state.M];
+		//set_transform ([playercam state].M, camera);
 		//{
 		//	auto p = (vec4)[player pos];
 		//	auto c = Transform_GetWorldPosition (camera);

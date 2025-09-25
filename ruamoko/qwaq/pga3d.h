@@ -16,7 +16,7 @@ typedef PGA.vec plane_t;
 motor_t make_motor (vec4 translation, vec4 rotation);
 void set_transform (motor_t m, transform_t transform);
 
-typedef struct {
+typedef struct state_s {
 	motor_t     M;
 	bivector_t  B;
 } state_t;
