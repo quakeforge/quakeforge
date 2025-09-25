@@ -1083,6 +1083,75 @@ dag_check_overlap (statement_t *s, dagnode_t *node, daglabel_t *label,
 	return overlap;
 }
 
+static void
+dag_analyze_node (dag_t *dag, dagnode_t *node, statement_t *s)
+{
+	function_t *func = dag->flownode->graph->func;
+	for (int i = 0; i < s->num_def; i++) {
+		udchain_t   ud = func->du_chains[s->first_def + i];
+		flowvar_t  *var = func->vars[ud.var];
+		if (var->op->op_type == op_pseudo) {
+			if (var->op->pseudoop == func->memory_op) {
+				// The statement uses global memory to define local variables.
+				// Any such local variable needs to be killed when memory is
+				// modified.
+				for (auto v = set_first (dag->memory); v; v = set_next (v)) {
+					auto var = func->vars[v->element];
+					if (var->op->op_type == op_pseudo) {
+						// pseudo ops can't be killed (or even have a label)
+						continue;
+					}
+					auto l = operand_label (dag, var->op);
+					if (l->dagnode && !l->dagnode->killed) {
+						if (node == l->dagnode) {
+							// don't kill self
+							continue;
+						}
+						l->dagnode->killed = node;
+					}
+				}
+
+				set_empty (dag->memory);
+				break;
+			}
+		}
+	}
+
+	for (int i = 0; i < s->num_use; i++) {
+		function_t *func = dag->flownode->graph->func;
+		udchain_t   ud = func->ud_chains[s->first_use + i];
+		flowvar_t  *var = func->vars[ud.var];
+		if (var->op->op_type == op_pseudo) {
+			if (var->op->pseudoop == func->memory_op) {
+				// The statement uses memory to define vars. Record them so
+				// they can be killed by the next memory write.
+				for (int j = 0; j < s->num_def; j++) {
+					udchain_t   du = func->du_chains[s->first_def + j];
+					set_add (dag->memory, du.var);
+				}
+				break;
+			}
+		}
+	}
+
+	for (auto kill = s->kill; kill; kill = kill->next) {
+		auto l = operand_label (dag, kill);
+		if (l->dagnode && !l->dagnode->killed) {
+			if (node == l->dagnode) {
+				// don't kill self
+				continue;
+			}
+			l->dagnode->killed = node;
+		}
+	}
+	if (node->type == st_ptrassign) {
+		dag_kill_nodes (dag, node, false);
+	}
+	if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
+		dag_kill_nodes (dag, node, true);
+	}
+}
+
 dag_t *
 dag_create (flownode_t *flownode)
 {
@@ -1123,6 +1192,7 @@ dag_create (flownode_t *flownode)
 	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_aux;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
+	dag->memory = set_new ();
 	dag->killer_node = -1;
 
 	for (s = block->statements; s; s = s->next) {
@@ -1190,22 +1260,8 @@ dag_create (flownode_t *flownode)
 			}
 		}
 		s->dag_node = n->number;
-		for (auto kill = s->kill; kill; kill = kill->next) {
-			auto l = operand_label (dag, kill);
-			if (l->dagnode && !l->dagnode->killed) {
-				if (n == l->dagnode) {
-					// don't kill self
-					continue;
-				}
-				l->dagnode->killed = n;
-			}
-		}
-		if (n->type == st_ptrassign) {
-			dag_kill_nodes (dag, n, false);
-		}
-		if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
-			dag_kill_nodes (dag, n, true);
-		}
+
+		dag_analyze_node (dag, n, s);
 #if 0
 		if (options.block_dot.dags) {
 			dump_dot ("raw-dags", flownode->graph, dump_dot_flow_dags);

@@ -96,6 +96,7 @@ typedef struct dag_s {
 	int         num_labels;
 	daglabel_t **labels;		///< array of all daglabels in this dag
 	struct set_s *roots;		///< set of root nodes
+	struct set_s *memory;		///< vars killed by memory write
 	struct flownode_s *flownode;///< flow node this dag represents
 } dag_t;
 
