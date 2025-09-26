@@ -36,6 +36,8 @@ in_axis_t *cam_move_up;
 in_axis_t *cam_move_pitch;
 in_axis_t *cam_move_yaw;
 in_axis_t *cam_move_roll;
+in_button_t *cam_next;
+in_button_t *cam_prev;
 in_axis_t *mouse_x;
 in_axis_t *mouse_y;
 
@@ -55,6 +57,10 @@ in_button_t *target_lock;
 vec2 mouse_start;
 bool mouse_dragging_mmb;
 bool mouse_dragging_rmb;
+
+void camera_first_person (state_t *camera_state);
+void camera_mouse_trackball (state_t *camera_state);
+void camera_mouse_first_person (state_t *camera_state);
 
 void printf (string fmt, ...) = #0;
 
@@ -117,7 +123,11 @@ Array *windows;
 
 	scene_t scene;
 
-	Camera *camera;
+	Camera *active_camera;
+	uint active_camera_index;
+	Array  *cameras;
+
+	state_t camera_state;
 
 	int show_armature;
 
@@ -189,8 +199,23 @@ Array *windows;
 	}, 0);
 	Scene_SetLighting (scene, ldata);
 
-	camera = [[Camera inScene:scene] retain];
-	Scene_SetCamera (scene, [camera entity]);
+	cameras = [[Array array] retain];
+
+	active_camera_index = [cameras count];
+	active_camera = [[Camera inScene:scene] retain];
+	[cameras addObject:active_camera];
+
+	camera_state = {
+		.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
+	};
+
+	IMP imp;
+	imp = [self methodForSelector: @selector (nextCamera:)];
+	IN_ButtonAddListener (cam_next, imp, self);
+	imp = [self methodForSelector: @selector (prevCamera:)];
+	IN_ButtonAddListener (cam_prev, imp, self);
+
+	Scene_SetCamera (scene, [active_camera entity]);
 	newscene (scene);
 
 	show_armature = 1;
@@ -219,6 +244,63 @@ Array *windows;
 	} else {
 		[windows addObject:[EditWindow openFile:path ctx:imui_ctx]];
 	}
+}
+
+-addCamera:(Camera *) camera
+{
+	[cameras addObject:camera];
+	return self;
+}
+
+-(void) nextCamera:(in_button_t *)button
+{
+	if (button.state & inb_edge_down) {
+		button.state &= inb_down;
+
+		uint old_cam = active_camera_index;
+		if (++active_camera_index >= [cameras count]) {
+			active_camera_index = 0;
+		}
+		if (active_camera_index != old_cam) {
+			active_camera = [cameras objectAtIndex:active_camera_index];
+			Scene_SetCamera (scene, [active_camera entity]);
+		}
+	}
+}
+
+-(void) prevCamera:(in_button_t *)button
+{
+	if (button.state & inb_edge_down) {
+		button.state &= inb_down;
+
+		uint old_cam = active_camera_index;
+		if ((int) --active_camera_index < 0) {
+			active_camera_index = [cameras count] - 1;
+		}
+		if (active_camera_index < 0) {
+			[self error:"no cameras!"];
+		}
+		if (active_camera_index != old_cam) {
+			active_camera = [cameras objectAtIndex:active_camera_index];
+			Scene_SetCamera (scene, [active_camera entity]);
+		}
+	}
+}
+
+-updateCamera
+{
+	camera_first_person (&camera_state);
+	if (mouse_dragging_mmb) {
+		camera_mouse_trackball (&camera_state);
+	}
+	if (mouse_dragging_rmb) {
+		camera_mouse_first_person (&camera_state);
+	}
+	Camera *camera = [cameras objectAtIndex:0];
+	[camera setTransformFromMotor:camera_state.M];
+
+	[cameras makeObjectsPerformSelector: @selector(draw)];
+	return self;
 }
 
 static vec4 axis_points[][2] = {
@@ -263,7 +345,7 @@ static gizmo_node_t covered_step[] = {
 		qfm_motor_t M;
 		qfa_get_pose_motors (root_anim, &M);
 		M.m = E * M.m;
-		auto cam = Entity_GetTransform ([camera entity]);
+		auto cam = Entity_GetTransform ([active_camera entity]);
 		draw_armature (cam, arm, M);
 		for (int i = 0; i < 3; i++) {
 			auto p1 = E * (point_t) axis_points[i][0] * ~E;
@@ -435,7 +517,7 @@ static gizmo_node_t covered_step[] = {
 
 -(Camera *) camera
 {
-   return camera;
+   return active_camera;
 }
 
 
@@ -858,6 +940,8 @@ setup_bindings (void)
 	cam_move_pitch = IN_CreateAxis ("cam.move.pitch", "Camera Pitch");
 	cam_move_yaw = IN_CreateAxis ("cam.move.yaw", "Camera Yaw");
 	cam_move_roll = IN_CreateAxis ("cam.move.roll", "Camera Roll");
+	cam_next = IN_CreateButton ("cam.next", "Camera Next");
+	cam_prev = IN_CreateButton ("cam.prev", "Camera Prev");
 	mouse_x = IN_CreateAxis ("mouse.x", "Mouse X");
 	mouse_y = IN_CreateAxis ("mouse.y", "Mouse Y");
 
@@ -947,11 +1031,6 @@ main (int argc, string *argv)
 	int rctrl_key = IN_GetButtonNumber (key_devid, "Control_R");
 	int q_key = IN_GetButtonNumber (key_devid, "q");
 
-
-	state_t camera_state = {
-		.M = make_motor ({ -4, 0, 3, 0, }, { 0, 0.316227766, 0, 0.948683298 }),
-	};
-
 #if 0
 	uint count = clipinfo.num_frames * clipinfo.num_channels;
 	uint size = (count + 1) / 2;
@@ -1023,10 +1102,11 @@ main (int argc, string *argv)
 	Transform_SetLocalScale (Entity_GetTransform (Plane_ent), {25, 25, 25, 1});
 
 	id player = [[Player player:[main_window scene]] retain];
-	id playercam = [[PlayerCam playercam] retain];
+	id playercam = [[PlayerCam inScene:[main_window scene]] retain];
 	[player setCamera:playercam];
+	[main_window addCamera:playercam];
 
-	id camtest = [[CamTest camtest:[main_window scene]] retain];
+	//id camtest = [[CamTest camtest:[main_window scene]] retain];
 
 	while (true) {
 		arp_end ();
@@ -1049,17 +1129,10 @@ main (int argc, string *argv)
 
 		[player think:frametime];
 		[playercam think:frametime];
-		[camtest think:frametime state:[playercam state]];
+		//[camtest think:frametime state:[playercam state]];
 		[main_window nextClip:frametime];
 
-		camera_first_person (&camera_state);
-		if (mouse_dragging_mmb) {
-			camera_mouse_trackball (&camera_state);
-		}
-		if (mouse_dragging_rmb) {
-			camera_mouse_first_person (&camera_state);
-		}
-		[[main_window camera] setTransformFromMotor:camera_state.M];
+		[main_window updateCamera];
 		//set_transform ([playercam state].M, camera);
 		//{
 		//	auto p = (vec4)[player pos];

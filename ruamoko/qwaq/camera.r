@@ -45,9 +45,9 @@
 	vec4 y = mat[1];
 	vec4 z = mat[2];
 	vec4 p = mat[3];
-	Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.8));
-	Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.8));
-	Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.8));
+	Gizmo_AddCapsule (p, p + x, 0.025, vec4(1, 0, 0, 0.2));
+	Gizmo_AddCapsule (p, p + y, 0.025, vec4(0, 1, 0, 0.2));
+	Gizmo_AddCapsule (p, p + z, 0.025, vec4(0, 0, 1, 0.2));
 	return self;
 }
 

@@ -4,11 +4,13 @@
 motor_t camera_lookat (point_t eye, point_t target, point_t up);
 
 @implementation PlayerCam
--init
+
+-initInScene:(scene_t)scene
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initInScene:scene])) {
 		return nil;
 	}
+
 	@algebra (PGA) {
 		focus = e032;	// infinity in the +X direction
 		up = e021;		// infinity in the +Z direction
@@ -17,6 +19,11 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 	auto M = camera_lookat (nest, focus, up);
 	state = { .M = M };
 	return self;
+}
+
++(PlayerCam *) inScene:(scene_t)scene
+{
+	return [[[PlayerCam alloc] initInScene:scene] autorelease];
 }
 
 +playercam
@@ -33,6 +40,8 @@ motor_t camera_lookat (point_t eye, point_t target, point_t up);
 	}
 	auto log_delta = log (delta);
 	state.M *= exp (log_delta * 0.1);
+
+	[self setTransformFromMotor: state.M];
 	return self;
 }
 
