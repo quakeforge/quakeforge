@@ -209,8 +209,12 @@ promote_exprs (const expr_t **e1, const expr_t **e2)
 		t2 = promote_type (t1, t2);
 	} else if (type_promotes (t2, t1)) {
 		t1 = promote_type (t2, t1);
+	} else if (is_scalar (t2) && type_promotes (base_type (t1), t2)) {
+		t2 = promote_type (base_type (t1), t2);
+	} else if (is_scalar (t1) && type_promotes (base_type (t2), t1)) {
+		t1 = promote_type (base_type (t2), t1);
 	} else if (base_type (t1) != base_type (t2)) {
-		debug (*e1, "failed to promote types %s %s",
+		error (*e1, "failed to promote types %s %s",
 			   get_type_string (t1), get_type_string (t2));
 		return false;
 	}
