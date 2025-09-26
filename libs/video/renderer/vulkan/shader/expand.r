@@ -107,9 +107,9 @@ main ()
 	auto vert_norm = vert_pos;
 	transform (vert_id, vert, vert_pos, vert_norm);
 	vec4 pos = Projection3d * (View[gl_ViewIndex] * vec4 (vert_pos, 1));
-	vec2 dir = (View[gl_ViewIndex] * vec4 (vert_norm, 0)).xy;
+	vec2 dir = (Projection3d * (View[gl_ViewIndex] * vec4 (vert_norm, 0))).xy;
 	vec2 ofs = mix (mix(vec2(0,0), vec2(1,1), dir > vec2(0,0)),
-					vec2(-1,-1), dir < vec2(0,0));
+					vec2(-1,-1), dir < vec2(0,0)) * pos.w;
 	pos = vec4 (pos.xy + ofs * frag_size, pos.zw);
 	gl_Position = pos;
 	obj_id = vert_id;
