@@ -159,7 +159,8 @@
 - (id) objectAtIndex: (unsigned)index
 {
 	if (index >= count) // FIXME: need exceptions
-		[self error: "-objectAtIndex:withObject: index out of range"];
+		[self error: "-objectAtIndex:withObject: index out of range: "
+					 "%u >= %u", index, count];
 
 	return _objs[index];
 }
