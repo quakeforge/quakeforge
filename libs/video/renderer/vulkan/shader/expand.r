@@ -64,10 +64,11 @@ transform_capsule (uint ind, uint vert, @inout vec3 vert_pos,
 		p2 = t;
 		sign = !sign;
 	}
-	auto flip = mix (vec3(1,1,1), vec3(-1,-1,-1), sign);
+	mat2 m = mat2 (sign.x == sign.y ? vec4 (1, 0, 0, 1) : vec4 (0, 1, -1, 0))
+			* (sign.y ? -1 : 1);
 	auto p = mix (p1, p2, bool(vert & 8));
-	vert_pos = p + r * flip * vert_pos;
-	vert_norm = flip * vert_norm;
+	vert_pos = p + r * vec3 (m * vert_pos.xy, vert_pos.z);
+	vert_norm = vec3(m * vert_norm.xy, vert_norm.z);
 }
 
 void
