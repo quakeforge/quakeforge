@@ -108,15 +108,16 @@ construct_by_components (const type_t *type, const expr_t *params,
 				continue;
 			}
 			for (int i = 0; i < type_cols (ptype) && c < num_comp; i++) {
-				if (type_rows (ptype) <= num_comp - c) {
+				if (type_same (base_type (ptype), base_type (type))
+					&& type_rows (ptype) == type_rows (type)
+					&& !(c % type_rows (type))) {
 					auto val = pexpr;
 					if (is_matrix (ptype)) {
 						val = get_column (val, i);
 					}
 					all_implicit = all_implicit && pexpr->implicit;
 					all_constant = all_constant && is_constant (pexpr);
-					auto cast_type = vector_type (base, type_rows (ptype));
-					components[cind++] = value_cast_expr (cast_type, pexpr);
+					components[cind++] = val;
 					c += type_rows (ptype);
 					continue;
 				}
@@ -136,10 +137,10 @@ construct_by_components (const type_t *type, const expr_t *params,
 		return components[err];
 	}
 	if (c < num_comp) {
-		return error (e, "too few parameters for %s", type->name);
+		return error (e, "not enough data to construct %s", type->name);
 	}
 	if (p < num_param) {
-		return error (e, "too may parameters for %s", type->name);
+		return error (e, "too may arguments for %s", type->name);
 	}
 	if (cind == 1) {
 		return components[0];
