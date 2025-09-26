@@ -1226,14 +1226,17 @@ spirv_generate_matrix (const expr_t *e, spirvctx_t *ctx)
 	return id;
 }
 
-#define SPV_type(t) (1<<(t))
-#define SPV_SINT  (SPV_type(ev_int)|SPV_type(ev_long))
-#define SPV_UINT  (SPV_type(ev_uint)|SPV_type(ev_ulong))
-#define SPV_FLOAT (SPV_type(ev_float)|SPV_type(ev_double))
+#define SPV_meta(m,t)
+#define SPV_type(m,t) ((unsigned)((1<<((m)+16))|(1<<(t))))
+#define SPV_type_cmp(a,b) (((a) & (b)) == (b))
+#define SPV_BOOL  (SPV_type(ty_bool, ev_int)   |SPV_type(ty_bool, ev_long))
+#define SPV_SINT  (SPV_type(ty_basic, ev_int)  |SPV_type(ty_basic, ev_long))
+#define SPV_UINT  (SPV_type(ty_basic, ev_uint) |SPV_type(ty_basic, ev_ulong))
+#define SPV_FLOAT (SPV_type(ty_basic, ev_float)|SPV_type(ty_basic, ev_double))
 #define SPV_INT   (SPV_SINT|SPV_UINT)
-#define SPV_PTR   (SPV_type(ev_ptr))
-#define SPV_QUAT  (SPV_type(ev_quaternion))
-#define SPV_VEC   (SPV_type(ev_vector))
+#define SPV_PTR   (SPV_type(ty_basic, ev_ptr))
+#define SPV_QUAT  (SPV_type(ty_basic, ev_quaternion))
+#define SPV_VEC   (SPV_type(ty_basic, ev_vector))
 
 static extinst_t glsl_450 = {
 	.name = "GLSL.std.450"
@@ -1242,11 +1245,13 @@ static extinst_t glsl_450 = {
 static spvop_t spv_ops[] = {
 	{"load",   SpvOpLoad,                 SPV_PTR,   0         },
 
-	{"or",     SpvOpLogicalOr,            SPV_INT,   SPV_INT   },
-	{"and",    SpvOpLogicalAnd,           SPV_INT,   SPV_INT   },
+	{"or",     SpvOpLogicalOr,            SPV_BOOL,  SPV_BOOL  },
+	{"and",    SpvOpLogicalAnd,           SPV_BOOL,  SPV_BOOL  },
 
+	{"eq",     SpvOpLogicalEqual,         SPV_BOOL,  SPV_BOOL  },
 	{"eq",     SpvOpIEqual,               SPV_INT,   SPV_INT   },
 	{"eq",     SpvOpFOrdEqual,            SPV_FLOAT, SPV_FLOAT },
+	{"ne",     SpvOpLogicalNotEqual,      SPV_BOOL,  SPV_BOOL  },
 	{"ne",     SpvOpFOrdNotEqual,         SPV_FLOAT, SPV_FLOAT },
 	{"ne",     SpvOpINotEqual,            SPV_INT,   SPV_INT   },
 	{"le",     SpvOpULessThanEqual,       SPV_UINT,  SPV_UINT  },
@@ -1302,7 +1307,7 @@ static spvop_t spv_ops[] = {
 	{"bitand", SpvOpBitwiseAnd,           SPV_INT,   SPV_INT   },
 
 	{"bitnot", SpvOpNot,                  SPV_INT,   0         },
-	{"not",    SpvOpLogicalNot,           SPV_INT,   0         },
+	{"not",    SpvOpLogicalNot,           SPV_BOOL,  0         },
 
 	{"shl",    SpvOpShiftLeftLogical,     SPV_INT,   SPV_INT   },
 	{"shr",    SpvOpShiftRightLogical,    SPV_UINT,  SPV_INT   },
@@ -1336,15 +1341,17 @@ spirv_find_op (const char *op_name, const type_t *type1, const type_t *type2)
 	constexpr int num_ops = sizeof (spv_ops) / sizeof (spv_ops[0]);
 	etype_t t1 = type1->type;
 	etype_t t2 = type2 ? type2->type : ev_void;
+	ty_meta_e m1 = type1->meta;
+	ty_meta_e m2 = type2 ? type2->meta : ty_basic;
 	bool mat1 = is_matrix (type1);
 	bool mat2 = is_matrix (type2);
 
 	for (int i = 0; i < num_ops; i++) {
 		if (strcmp (spv_ops[i].op_name, op_name) == 0
-			&& spv_ops[i].types1 & SPV_type(t1)
+			&& SPV_type_cmp (spv_ops[i].types1, SPV_type(m1, t1))
 			&& ((!spv_ops[i].types2 && t2 == ev_void)
 				|| (spv_ops[i].types2
-					&& (spv_ops[i].types2 & SPV_type(t2))))
+					&& SPV_type_cmp (spv_ops[i].types2, SPV_type(m2, t2))))
 			&& spv_ops[i].mat1 == mat1 && spv_ops[i].mat2 == mat2) {
 			return &spv_ops[i];
 		}
