@@ -137,7 +137,7 @@ get_rep_float (const expr_t *e)
 	pr_type_t components[type_size (type)];
 	value_store (components, type, e);
 	float val = components[0].float_value;
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i].float_value != val) {
 			return -1;
 		}
@@ -156,7 +156,7 @@ get_rep_double (const expr_t *e)
 	value_store (c, type, e);
 	pr_double_t *components = (pr_double_t *) &c[0];
 	pr_double_t val = components[0];
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i] != val) {
 			return -1;
 		}
@@ -177,7 +177,7 @@ get_rep_int (const expr_t *e)
 	pr_type_t components[type_size (type)];
 	value_store (components, type, e);
 	pr_int_t val = components[0].value;
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i].value != val) {
 			return -1;
 		}
@@ -198,7 +198,7 @@ get_rep_uint (const expr_t *e)
 	pr_type_t components[type_size (type)];
 	value_store (components, type, e);
 	pr_uint_t val = components[0].uint_value;
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i].uint_value != val) {
 			return -1;
 		}
@@ -217,7 +217,7 @@ get_rep_long (const expr_t *e)
 	value_store (c, type, e);
 	pr_long_t *components = (pr_long_t *) &c[0];
 	pr_long_t val = components[0];
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i] != val) {
 			return -1;
 		}
@@ -236,7 +236,7 @@ get_rep_ulong (const expr_t *e)
 	value_store (c, type, e);
 	pr_ulong_t *components = (pr_ulong_t *) &c[0];
 	pr_ulong_t val = components[0];
-	for (int i = 0; i < type_size (type); i++) {
+	for (int i = 0; i < type_count (type); i++) {
 		if (components[i] != val) {
 			return -1;
 		}
