@@ -361,10 +361,9 @@ value_store (pr_type_t *dst, const type_t *dstType, const expr_t *src)
 	memcpy (dst, &val->raw_value + offset, dstSize);
 }
 
-const char *
-get_value_string (const ex_value_t *value)
+static const char *
+_get_value_string (const ex_value_t *value, const type_t *type, bool print_name)
 {
-	const type_t *type = value->type;
 	const char *str = "";
 	switch (type->type) {
 		case ev_string:
@@ -386,6 +385,9 @@ get_value_string (const ex_value_t *value)
 				case 4:
 					str = va (VEC4F_FMT, VEC4_EXP (value->vec4_val));
 					break;
+			}
+			if (!print_name) {
+				return str;
 			}
 			return va ("%s %s", type->name, str);
 		case ev_entity:
@@ -463,6 +465,9 @@ get_value_string (const ex_value_t *value)
 					str = va (VEC4D_FMT, VEC4_EXP (value->dvec4_val));
 					break;
 			}
+			if (!print_name) {
+				return str;
+			}
 			return va ("%s %s", type->name, str);
 		case ev_long:
 			switch (type_width (type)) {
@@ -508,6 +513,54 @@ get_value_string (const ex_value_t *value)
 			return "<type_count>";
 	}
 	return "invalid type";
+}
+
+const char *
+get_value_string (const ex_value_t *value)
+{
+	const type_t *type = value->type;
+	if (is_matrix (type)) {
+		expr_t mat_expr = {
+			.type = ex_value,
+			.value = (ex_value_t *) value,
+		};
+		ex_value_t index = {
+			.type = &type_int,
+			.lltype = ev_int,
+		};
+		expr_t offset = {
+			.type = ex_value,
+			.value = &index,
+		};
+		auto col_type = column_type (type);
+		expr_t col_expr = {
+			.type = ex_alias,
+			.alias = {
+				.type = col_type,
+				.expr = &mat_expr,
+				.offset = &offset,
+			},
+		};
+		const char *str = "";
+		for (int i = 0; i < type_cols (type); i++) {
+			ex_value_t col_val = {
+				.type = col_type,
+			};
+			index.int_val = i * type_size (col_type);
+			value_store (&col_val.raw_value, col_type, &col_expr);
+
+			if (i) {
+				str = va ("%s\n%s", str,
+						  _get_value_string (&col_val, col_type, false));
+			} else {
+				str = va ("%s (cols)\n%s", type->name,
+						  _get_value_string (&col_val, col_type, false));
+			}
+		}
+		return str;
+	} else {
+		return _get_value_string (value, type, true);
+	}
 }
 
 static hashtab_t *string_imm_defs;
