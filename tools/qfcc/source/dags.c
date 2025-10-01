@@ -806,6 +806,22 @@ dag_live_aliases(operand_t *op)
 	}
 }
 
+static void
+dag_collect_reachable (dag_t *dag, dagnode_t *node, set_t *reachable,
+					   set_t *visited)
+{
+	if (set_is_member (visited, node->number)) {
+		return;
+	}
+	set_add (visited, node->number);
+	set_union (reachable, node->reachable);
+	for (set_iter_t *node_iter = set_first (node->parents); node_iter;
+		 node_iter = set_next (node_iter)) {
+		dagnode_t  *p = dag->nodes[node_iter->element];
+		dag_collect_reachable (dag, p, reachable, visited);
+	}
+}
+
 static bool
 dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 {
@@ -853,15 +869,10 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 		// If the target node (n) is reachable by the label's node or its
 		// parents, then attaching the label's node to the target node would
 		// cause the label's node to be written before it used.
-		set_t      *reachable = set_new ();
-		set_assign (reachable, node->reachable);
-		for (set_iter_t *node_iter = set_first (node->parents); node_iter;
-			 node_iter = set_next (node_iter)) {
-			dagnode_t  *p = dag->nodes[node_iter->element];
-			set_union (reachable, p->reachable);
-		}
-		int         is_reachable = set_is_member (reachable, n->number);
-		set_delete (reachable);
+		SET_DEFER (reachable);
+		SET_DEFER (visited);
+		dag_collect_reachable (dag, node, reachable, visited);
+		bool is_reachable = set_is_member (reachable, n->number);
 		if (is_reachable) {
 			return false;
 		}
