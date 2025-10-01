@@ -342,9 +342,14 @@ dag_make_child (dag_t *dag, operand_t *op, statement_t *s)
 		return nullptr;
 	}
 	if (s->type == st_address) {
-		// always return a fresh node
+		// always return a leaf node when taking the address, otherwise
+		// the address of the wrong variable will be taken (double-alias fails)
 		auto label = operand_label (dag, op);
 		auto node = label->dagnode;
+		if (node && node->label == label) {
+			// it's already a leaf node, so it's usable.
+			return node;
+		}
 		auto leaf = leaf_node (dag, op, s->expr);
 		if (node) {
 			// ensure the previously referenced node is evaluated before
