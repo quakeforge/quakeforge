@@ -964,6 +964,23 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 }
 
 static void
+dag_clean_vars (dag_t *dag)
+{
+	SET_DEFER (alias_labels);
+
+	for (int i = 0; i < dag->num_nodes; i++) {
+		auto node = dag->nodes[i];
+		for (auto vi = set_first (node->identifiers); vi; vi = set_next (vi)) {
+			auto label = dag->labels[vi->element];
+			set_empty (alias_labels);
+			dag_collect_alias_labels (label, alias_labels);
+			set_remove (alias_labels, label->number);
+			set_difference (node->identifiers, alias_labels);
+		}
+	}
+}
+
+static void
 dag_sort_visit (dag_t *dag, set_t *visited, int node_index, int *topo)
 {
 	set_iter_t *node_iter;
@@ -1299,6 +1316,7 @@ dag_create (flownode_t *flownode)
 	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
 	dag->labels = labels;
 	dag_remove_dead_vars (dag, live_vars);
+	dag_clean_vars (dag);
 	dag_sort_nodes (dag);
 	set_delete (live_vars);
 	return dag;
