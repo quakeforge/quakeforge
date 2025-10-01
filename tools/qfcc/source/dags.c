@@ -1155,9 +1155,6 @@ dag_analyze_node (dag_t *dag, dagnode_t *node, statement_t *s)
 			l->dagnode->killed = node;
 		}
 	}
-	if (node->type == st_ptrassign) {
-		dag_kill_nodes (dag, node, false);
-	}
 	if (s->type == st_func && strcmp (s->opcode, "call") == 0) {
 		dag_kill_nodes (dag, node, true);
 	}

@@ -1237,6 +1237,9 @@ flow_check_ambiguous (statement_t *st, set_t *use, set_t *def, function_t *func)
 		flow_check_move (st, amb_use, amb_def, func);
 		check_use = true;
 		check_def = true;
+	} else if (st->type == st_ptrassign) {
+		flow_check_move (st, amb_use, amb_def, func);
+		check_def = true;
 	} else if (st->type == st_expr && strcmp (st->opcode, "load") == 0) {
 		flow_check_load (st, amb_use, func);
 		check_use = true;
