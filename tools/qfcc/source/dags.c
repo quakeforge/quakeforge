@@ -1242,6 +1242,16 @@ dag_create (flownode_t *flownode)
 					auto op = n->label->op;
 					n = leaf_node (dag, op, op->expr);
 					dagnode_attach_label (dag, n, lx);
+				} else if (n->type == st_expr) {
+					auto vi = set_first (n->identifiers);
+					if (!vi) {
+						internal_error (s->expr, "no identifiers on node");
+					}
+					auto var = dag->labels[vi->element];
+					set_del_iter (vi);
+					auto var_node = leaf_node (dag, var->op, s->expr);
+					set_add (var_node->edges, n->number);
+					dagnode_attach_label (dag, var_node, lx);
 				} else {
 					dot_dump_dag (dag, nullptr);
 					internal_error (s->expr, "unexpected failure to attach"
