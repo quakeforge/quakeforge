@@ -70,6 +70,7 @@ typedef struct specifier_s {
 	symtab_t   *symtab;
 	iface_block_t    *block;
 	storage_class_t storage;
+	const expr_t *bit_size;	// if null, full size, otherwise bit count
 	union {
 		struct {
 			bool        multi_type:1;

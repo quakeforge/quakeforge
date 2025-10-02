@@ -379,6 +379,14 @@ declare_field (specifier_t spec, symtab_t *symtab, rua_ctx_t *ctx)
 	sym->type = find_type (append_type (sym->type, spec.type));
 	sym->sy_type = sy_offset;
 	sym->offset = -1;
+	if (spec.bit_size) {
+		if (!is_integral_val (spec.bit_size)) {
+			error (0, "bitfield size must be a constant integer");
+		} else {
+			sym->sy_type = sy_bitfield;
+			sym->offset = expr_integral (spec.bit_size);;
+		}
+	}
 	symtab_addsymbol (symtab, sym);
 	if (!sym->table) {
 		error (0, "duplicate field `%s'", sym->name);

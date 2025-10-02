@@ -178,13 +178,70 @@ find_struct (int su, symbol_t *tag, type_t *type)
 	return sym;
 }
 
+typedef struct {
+	symbol_t   *symbol_list;
+	symbol_t  **symbol_tail;
+	symtab_t   *symtab;
+
+	const type_t *bit_type;
+	int         su;
+	int         base;
+	int         index;
+	int         offset;
+	int         alignment;
+	int         bit_offset;
+	int         bit_index;
+} struct_state_t;
+
+static void
+append_symbol (struct_state_t *state, symbol_t *s)
+{
+	*state->symbol_tail = s;
+	state->symbol_tail = &s->next;
+}
+
+static void
+struct_offset (struct_state_t *state, symbol_t *s)
+{
+	if (state->su == 's') {
+		int offset = state->offset + state->base;
+		offset = RUP (offset, s->type->alignment) - state->base;
+		s->offset = offset;
+		state->offset = offset + type_size (s->type);
+	} else {
+		int         size = type_size (s->type);
+		s->offset = 0;
+		if (size > state->symtab->size) {
+			state->symtab->size = RUP (size, s->type->alignment);
+		}
+	}
+	if (s->type->alignment > state->alignment) {
+		state->alignment = s->type->alignment;
+	}
+}
+
+static symbol_t *
+bitdata_sym (struct_state_t *state)
+{
+	auto s = new_symbol_type (va (".bits%d", state->bit_index++),
+							  state->bit_type);
+	s->sy_type = sy_offset;
+	struct_offset (state, s);
+	return s;
+}
+
+static symbol_t *
+bitfield_sym (struct_state_t *state, symbol_t *s)
+{
+	return s;
+}
+
 symbol_t *
 build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 			  int base)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
 	symbol_t   *s;
-	int         alignment = 1;
 	symbol_t   *as;
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
@@ -193,40 +250,74 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 		error (0, "%s defined as wrong kind of tag", tag->name);
 		return sym;
 	}
-	int index = 0;
-	int offset = 0;
+
+	struct_state_t state = {
+		.symbol_tail = &state.symbol_list,
+		.symtab = symtab,
+		.su = su,
+		.base = base,
+		.alignment = 1,
+	};
+
 	for (s = symtab->symbols; s; s = s->next) {
-		if (s->sy_type != sy_offset)
+		if (s->sy_type != sy_offset && s->sy_type != sy_bitfield) {
+			append_symbol (&state, s);
 			continue;
+		}
 		if (!s->type) {
 			if (su != 's' || strcmp (s->name, ".reset") != 0) {
 				internal_error (0, "invalid struct field");
 			}
-			index = 0;
-			offset = 0;
+			if (state.bit_type) {
+				append_symbol (&state, bitdata_sym (&state));
+			}
+			state.index = 0;
+			state.offset = 0;
 			continue;
 		}
 		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
 				   s->type->class->name);
 		}
-		if (su == 's') {
-			offset = RUP (offset + base, s->type->alignment) - base;
-			s->offset = offset;
-			offset += type_size (s->type);
-		} else {
-			int         size = type_size (s->type);
-			s->offset = 0;
-			if (size > symtab->size) {
-				symtab->size = RUP (size, s->type->alignment);
+		if (state.bit_type) {
+			if (s->sy_type != sy_bitfield
+				|| (s->sy_type == sy_bitfield && !s->offset)) {
+				append_symbol (&state, bitdata_sym (&state));
 			}
 		}
-		if (s->type->alignment > alignment) {
-			alignment = s->type->alignment;
+		if (s->sy_type == sy_bitfield) {
+			if (!state.bit_type
+				|| type_size (s->type) > type_size (state.bit_type)) {
+				state.bit_type = uint_type (s->type);
+			}
+			if (s->offset < 0) {
+				error (0, "bitfield widths must be zero or positive");
+				s->offset = 1;
+			}
+			if (!s->offset) {
+				// 0-width bitfields align to the next bounary, but that
+				// is handled above
+				append_symbol (&state, s);
+				continue;
+			}
+			if (s->offset > type_size (s->type) * 32) {
+				warning (0, "clamping bitfield width to type bit-width");
+				s->offset = type_size (s->type) * 32;
+			}
+			int bit_end = state.bit_offset + s->offset;
+			if (bit_end > type_size (state.bit_type) * 32) {
+				// overflowing the backing word, need a new one
+				append_symbol (&state, bitdata_sym (&state));
+				state.bit_type = uint_type (s->type);
+				bit_end = s->offset;
+			}
+			append_symbol (&state, bitfield_sym (&state, s));
+			state.bit_offset = bit_end;
+			continue;
 		}
+		struct_offset (&state, s);
 		if (s->visibility == vis_anonymous) {
 			symtab_t   *anonymous;
-			symbol_t   *t = s->next;
 			int         offset = s->offset;
 
 			if (!is_struct (s->type) && !is_union (s->type)) {
@@ -242,29 +333,34 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 					error (0, "ambiguous field `%s' in anonymous %s",
 						   as->name, su == 's' ? "struct" : "union");
 				} else {
-					s->next = copy_symbol (as);
-					s = s->next;
-					s->offset += offset;
-					s->table = symtab;
-					s->no_auto_init = true;
-					s->id = index++;
-					Hash_Add (symtab->tab, s);
+					auto am = copy_symbol (as);
+					am->offset += offset;
+					am->table = symtab;
+					am->no_auto_init = true;
+					am->id = state.index++;
+					Hash_Add (symtab->tab, am);
+					append_symbol (&state, am);
 				}
 			}
-			s->next = t;
 		} else {
-			s->id = index++;
+			s->id = state.index++;
+			append_symbol (&state, s);
 		}
 	}
-	if (su == 's') {
-		symtab->size = offset;
+	if (state.bit_type) {
+		append_symbol (&state, bitdata_sym (&state));
 	}
-	symtab->count = index;
+	symtab->symbols = state.symbol_list;
+
+	if (su == 's') {
+		symtab->size = state.offset;
+	}
+	symtab->count = state.index;
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	((type_t *) sym->type)->symtab = symtab;
-	if (alignment > sym->type->alignment) {
-		((type_t *) sym->type)->alignment = alignment;
+	if (state.alignment > sym->type->alignment) {
+		((type_t *) sym->type)->alignment = state.alignment;
 	}
 	if (!type && type_encodings.a[sym->type->id]->external) {
 		unsigned id = sym->type->id;

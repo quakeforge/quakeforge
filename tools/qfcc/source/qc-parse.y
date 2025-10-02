@@ -1826,8 +1826,10 @@ components
 component_declarator
 	: declarator[spec]				{ $$ = decl_expr ($spec, nullptr, ctx); }
 	| declarator[spec] ':' binding	{ $$ = decl_expr ($spec, nullptr, ctx); }
-	| declarator ':' expr			{ $$ = nullptr; }
-	| ':' expr						{ $$ = nullptr; }
+	| declarator[spec] ':' expr		{ $spec.bit_size = $expr;
+									  $$ = decl_expr ($spec, nullptr, ctx); }
+	| ':' expr						{ specifier_t spec = { .bit_size = $expr };
+									  $$ = decl_expr (spec, nullptr, ctx); }
 	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 
@@ -1849,8 +1851,13 @@ component_notype_declarator
 		{
 			$$ = decl_expr ($spec, nullptr, ctx);
 		}
-	| notype_declarator ':' expr	{ $$ = nullptr; }
-	| ':' expr						{ $$ = nullptr; }
+	| notype_declarator[spec] ':' expr
+		{
+			$spec.bit_size = $expr;
+			$$ = decl_expr ($spec, nullptr, ctx);
+		}
+	| ':' expr						{ specifier_t spec = { .bit_size = $expr };
+									  $$ = decl_expr (spec, nullptr, ctx); }
 	| ':' binding					{ error (0, "nothing to bind here"); }
 	;
 
