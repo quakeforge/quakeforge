@@ -2161,7 +2161,8 @@ type_symtab (const type_t *type)
 {
 	type = unalias_type (type);
 	if (is_struct (type) || is_union (type)
-		|| is_enum (type) || is_entity (type)) {
+		|| is_enum (type) || is_entity (type)
+		|| is_nonscalar (type)) {
 		return type->symtab;
 	}
 	return nullptr;
