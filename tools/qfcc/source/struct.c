@@ -150,6 +150,7 @@ start_struct (int *su, symbol_t *tag, symtab_t *parent)
 symbol_t *
 find_handle (symbol_t *tag, const type_t *type)
 {
+	type = unalias_type (type);
 	if (type != &type_int && type != &type_long) {
 		error (0, "@handle type must be int or long");
 		type = &type_int;
@@ -275,6 +276,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type,
 symbol_t *
 find_enum (symbol_t *tag, const type_t *type)
 {
+	type = unalias_type (type);
 	if (type != &type_int && type != &type_long
 		&& type != &type_uint && type != &type_ulong) {
 		error (0, "enum type must be int, uint, long, or ulong");
