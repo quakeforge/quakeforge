@@ -1589,6 +1589,7 @@ enum
 		{
 			specifier_t spec = $type;
 			spec = attr_spec (spec, $attr, ctx);
+			spec.sym = nullptr;
 			$$ = spec;
 		}
 	;
