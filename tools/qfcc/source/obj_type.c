@@ -205,7 +205,8 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 		if (type->meta != ty_enum) {
 			field_types[i] = qfo_encode_type (sym->type, space);
 		} else {
-			field_types[i] = type_encodings.a[type_default->id];
+			auto enum_type = ev_types[sym->type->type];
+			field_types[i] = type_encodings.a[enum_type->id];
 		}
 		i++;
 	}
@@ -221,6 +222,7 @@ qfo_encode_struct (const type_t *type, defspace_t *space)
 			offset = sym->offset;
 		ENC_DEF (strct->fields[i].type, field_types[i]);
 		ENC_STR (strct->fields[i].name, sym->name);
+		//FIXME need 64-bit offset for 64-bit enums
 		strct->fields[i].offset = offset;
 		i++;
 	}
