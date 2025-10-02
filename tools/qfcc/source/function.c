@@ -700,12 +700,16 @@ check_type (const type_t *type, callparm_t param, unsigned *cost, bool promote)
 	if (ret >= 0) {
 		return ret;
 	}
+	// However, it returns false when promotion can't happen
+	if (!type_assignable (type, param.type)) {
+		return false;
+	}
 	if (!promote) {
 		// want exact match
 		return false;
 	}
 	if (!type_promotes (type, param.type)) {
-		bool demotes = param.implicit && type_demotes (type, param.type);
+		bool demotes = type_demotes (type, param.type);
 		if (demotes) {
 			*cost += 1;
 			return true;

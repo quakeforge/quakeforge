@@ -1785,6 +1785,10 @@ type_assignable (const type_t *dst, const type_t *src)
 			&& (is_image (src) || is_sampled_image (src))) {
 			return image_type_assignable (dst, src);
 		}
+		if (type_cols (dst) != type_cols (src)
+			|| type_rows (dst) != type_rows (src)) {
+			return false;
+		}
 		if (is_scalar (dst) && is_scalar (src)) {
 			return true;
 		}
@@ -1892,8 +1896,8 @@ static unsigned demote_masks[ev_type_count] = {
 	// FIXME should this be a complete matrix, or just from implicit constants?
 	// currently implicit constants are assumed
 	[ev_float] = D(double) | D(int) | D(long),
-	[ev_int] = D(long),
-	[ev_uint] = D(long) | D(int),
+	[ev_int] = D(long) | D(uint),
+	[ev_uint] = D(long) | D(ulong),
 	[ev_double] = D(int),
 };
 #undef D

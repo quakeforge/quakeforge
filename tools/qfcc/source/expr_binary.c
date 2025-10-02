@@ -240,6 +240,10 @@ math_compare (int op, const expr_t *e1, const expr_t *e2)
 			t1 = promote_type (t2, t1);
 		} else if (e2->implicit && type_demotes (t1, t2)) {
 			t2 = promote_type (t1, t2);
+		} else if (e1->implicit && type_promotes (t2, t1)) {
+			t1 = promote_type (t2, t1);
+		} else if (e2->implicit && type_promotes (t1, t2)) {
+			t2 = promote_type (t1, t2);
 		}
 		e1 = cast_expr (t1, e1);
 		e2 = cast_expr (t2, e2);

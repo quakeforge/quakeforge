@@ -10,5 +10,6 @@ main()
 	} foo = {'1 2'};
 	auto ptr = &foo;
 	ptr.x[0] = 3;
-	return foo.x != '3 2';
+	//FIXME conversion of bvec always uses |
+	return foo.x != '3 2' ? 1 : 0;
 }

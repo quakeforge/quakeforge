@@ -30,6 +30,7 @@ main ()
 		auto l = -(eye ∨ target);
 		auto p = broken_plane (eye, target, l);
 		printf ("p:%q\n", p);
-		return (vec4)p != '1 0 0 5';
+		//FIXME conversion of bvec always uses |
+		return ((vec4)p != '1 0 0 5') ? 1 : 0;
 	}
 }
