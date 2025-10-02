@@ -58,6 +58,32 @@ SZ_Clear (sizebuf_t *buf)
 	buf->overflowed = false;
 }
 
+VISIBLE unsigned
+SZ_Seek (sizebuf_t *buf, int offset, int whence)
+{
+	unsigned offs;
+
+	switch (whence) {
+		case 0:
+			offs = offset;
+			break;
+		case 1:
+			offs = buf->write_offset + offset;
+			break;
+		case 2:
+			offs = buf->cursize + offset;
+			break;
+		default:
+			Sys_Error ("SZ_Seek: invalid whence: %d", whence);
+	};
+	if (offs > buf->cursize) {
+		//FIXME behave more like lseek?
+		offs = buf->cursize;
+	}
+	buf->write_offset = offs;
+	return buf->write_offset;
+}
+
 VISIBLE void *
 SZ_GetSpace (sizebuf_t *buf, unsigned length)
 {

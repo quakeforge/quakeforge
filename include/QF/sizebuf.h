@@ -48,6 +48,7 @@ typedef struct sizebuf_s
 void SZ_Alloc (sizebuf_t *buf, unsigned maxsize);
 void SZ_Free (sizebuf_t *buf);
 void SZ_Clear (sizebuf_t *buf);
+unsigned SZ_Seek (sizebuf_t *buf, int offset, int whence);
 void *SZ_GetSpace (sizebuf_t *buf, unsigned length);
 void SZ_Write (sizebuf_t *buf, const void *data, unsigned length);
 void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
