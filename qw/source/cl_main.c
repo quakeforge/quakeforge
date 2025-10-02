@@ -59,6 +59,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
 #include "QF/cdaudio.h"
@@ -2066,6 +2067,7 @@ CL_Autoexec (int phase, void *data)
 void
 Host_Init (void)
 {
+	BT_Init (com_argv[0]);
 	cl_cbuf = Cbuf_New (&id_interp);
 	cl_stbuf = Cbuf_New (&id_interp);
 

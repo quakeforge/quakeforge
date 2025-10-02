@@ -59,6 +59,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "QF/backtrace.h"
 #include "QF/cbuf.h"
 #include "QF/idparse.h"
 #include "QF/cmd.h"
@@ -905,8 +906,7 @@ SV_CheckLog (void)
 		// swap buffers and bump sequence
 		svs.logtime = realtime;
 		svs.logsequence++;
-		sz = &svs.log[svs.logsequence & 1];
-		sz->cursize = 0;
+		SZ_Clear (&svs.log[svs.logsequence & 1]);
 		SV_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
 	}
 }
@@ -2423,14 +2423,16 @@ SV_InitLocal (void)
 	// init fraglog stuff
 	svs.logsequence = 1;
 	svs.logtime = realtime;
-	svs.log[0].data = svs.log_buf[0];
-	svs.log[0].maxsize = sizeof (svs.log_buf[0]);
-	svs.log[0].cursize = 0;
-	svs.log[0].allowoverflow = true;
-	svs.log[1].data = svs.log_buf[1];
-	svs.log[1].maxsize = sizeof (svs.log_buf[1]);
-	svs.log[1].cursize = 0;
-	svs.log[1].allowoverflow = true;
+	svs.log[0] = (sizebuf_t) {
+		.data = svs.log_buf[0],
+		.maxsize = sizeof (svs.log_buf[0]),
+		.allowoverflow = true,
+	};
+	svs.log[1] = (sizebuf_t) {
+		.data = svs.log_buf[1],
+		.maxsize = sizeof (svs.log_buf[1]),
+		.allowoverflow = true,
+	};
 }
 
 /*
@@ -2656,6 +2658,7 @@ SV_Init_Memory (void)
 void
 SV_Init (void)
 {
+	BT_Init (com_argv[0]);
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 

@@ -93,10 +93,11 @@ SV_NextSignon (void)
 
 	if (sv.num_signon_buffers)
 		sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
-	sv.signon.maxsize = sizeof (sv.signon_buffers[0]);
-	sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
+	sv.signon = (sizebuf_t) {
+		.maxsize = sizeof (sv.signon_buffers[0]),
+		.data = sv.signon_buffers[sv.num_signon_buffers],
+	};
 	sv.num_signon_buffers++;
-	sv.signon.cursize = 0;
 }
 
 /*

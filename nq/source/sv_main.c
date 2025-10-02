@@ -779,11 +779,10 @@ static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];
-	sizebuf_t   msg;
-
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
+	sizebuf_t   msg = {
+		.data = buf,
+		.maxsize = sizeof (buf),
+	};
 
 	if (strcmp (client->netconnection->address, "LOCAL") != 0)
 		msg.maxsize = DATAGRAM_MTU;
@@ -853,12 +852,11 @@ SV_UpdateToReliableMessages (void)
 static void
 SV_SendNop (client_t *client)
 {
-	sizebuf_t   msg;
 	byte        buf[4];
-
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
+	sizebuf_t   msg = {
+		.data = buf,
+		.maxsize = sizeof (buf),
+	};
 
 	MSG_WriteByte (&msg, svc_nop);
 
@@ -1040,11 +1038,10 @@ static void
 SV_SendReconnect (void)
 {
 	byte        data[128];
-	sizebuf_t   msg;
-
-	msg.data = data;
-	msg.cursize = 0;
-	msg.maxsize = sizeof (data);
+	sizebuf_t   msg = {
+		.data = data,
+		.maxsize = sizeof (data),
+	};
 
 	MSG_WriteByte (&msg, svc_stufftext);
 	MSG_WriteString (&msg, "reconnect\n");
@@ -1131,17 +1128,20 @@ SV_SpawnServer (const char *server)
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 
-	sv.datagram.maxsize = sizeof (sv.datagram_buf);
-	sv.datagram.cursize = 0;
-	sv.datagram.data = sv.datagram_buf;
+	sv.datagram = (sizebuf_t) {
+		.maxsize = sizeof (sv.datagram_buf),
+		.data = sv.datagram_buf,
+	};
 
-	sv.reliable_datagram.maxsize = sizeof (sv.reliable_datagram_buf);
-	sv.reliable_datagram.cursize = 0;
-	sv.reliable_datagram.data = sv.reliable_datagram_buf;
+	sv.reliable_datagram = (sizebuf_t) {
+		.maxsize = sizeof (sv.reliable_datagram_buf),
+		.data = sv.reliable_datagram_buf,
+	};
 
-	sv.signon.maxsize = sizeof (sv.signon_buf);
-	sv.signon.cursize = 0;
-	sv.signon.data = sv.signon_buf;
+	sv.signon = (sizebuf_t) {
+		.maxsize = sizeof (sv.signon_buf),
+		.data = sv.signon_buf,
+	};
 
 	// leave slots at start for only clients
 	sv.num_edicts = svs.maxclients + 1;

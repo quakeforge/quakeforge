@@ -380,10 +380,6 @@ SVR_RemoveUser (recorder_t *r)
 	msg.data = msg_buffer[0];
 	msg.maxsize = sizeof (msg_buffer[0]);
 
-//	rec.dbuf->sz.cursize = 0;
-//	rec.dbuf->h = 0;
-//	rec.dbuf->bufsize = 0;
-
 	MSG_WriteByte (&msg, 0);
 	MSG_WriteByte (&msg, dem_all);
 	MSG_WriteLong (&msg, 0);

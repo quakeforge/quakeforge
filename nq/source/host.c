@@ -544,10 +544,8 @@ SV_DropClient (bool crash)
 void
 Host_ShutdownServer (bool crash)
 {
-	byte        message[4];
 	double      start;
 	unsigned    count, i;
-	sizebuf_t   buf;
 
 	if (!sv.active)
 		return;
@@ -581,9 +579,11 @@ Host_ShutdownServer (bool crash)
 	while (count);
 
 	// make sure all the clients know we're disconnecting
-	buf.data = message;
-	buf.maxsize = 4;
-	buf.cursize = 0;
+	byte        message[4];
+	sizebuf_t   buf = {
+		.data = message,
+		.maxsize = 4,
+	};
 	MSG_WriteByte (&buf, svc_disconnect);
 	count = NET_SendToAll (&buf, 5.0);
 	if (count)

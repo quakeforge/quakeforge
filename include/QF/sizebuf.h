@@ -42,6 +42,7 @@ typedef struct sizebuf_s
 	byte       *data;
 	unsigned    maxsize;
 	unsigned    cursize;
+	unsigned    write_offset;
 } sizebuf_t;
 
 void SZ_Alloc (sizebuf_t *buf, unsigned maxsize);

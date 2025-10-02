@@ -89,7 +89,7 @@ main (int argc, const char **argv)
 	int         res = 0;
 
 	for (size_t i = 0; i < num_tests; i++) {
-		sb.cursize = 0;
+		SZ_Clear (&sb);
 		msg.readcount = 0;
 		msg.badread = 0;
 

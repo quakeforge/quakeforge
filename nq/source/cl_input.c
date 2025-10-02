@@ -91,11 +91,10 @@ CL_SendMove (usercmd_t *cmd)
 {
 	byte        data[128];
 	int         bits;
-	sizebuf_t   buf;
-
-	buf.maxsize = 128;
-	buf.cursize = 0;
-	buf.data = data;
+	sizebuf_t   buf = {
+		.data = data,
+		.maxsize = sizeof (data),
+	};
 
 	cl.cmd = *cmd;
 

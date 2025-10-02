@@ -54,6 +54,7 @@ VISIBLE void
 SZ_Clear (sizebuf_t *buf)
 {
 	buf->cursize = 0;
+	buf->write_offset = 0;
 	buf->overflowed = false;
 }
 
@@ -62,10 +63,18 @@ SZ_GetSpace (sizebuf_t *buf, unsigned length)
 {
 	void       *data;
 
+	if (buf->write_offset > buf->cursize) {
+		Sys_Error ("SZ_GetSpace: write_offset > cursize");
+	}
+
+	unsigned space = buf->cursize - buf->write_offset;
+	length = length >= space ? length - space : 0;
+
 	if (buf->cursize + length <= buf->maxsize) {
 getspace:
-		data = buf->data + buf->cursize;
+		data = buf->data + buf->write_offset;
 		buf->cursize += length;
+		buf->write_offset = buf->cursize;
 		return data;
 	}
 
@@ -94,8 +103,8 @@ SZ_Print (sizebuf_t *buf, const char *data)
 	unsigned    len;
 
 	len = strlen (data) + 1;
-	if (buf->cursize && !buf->data[buf->cursize - 1])
-		buf->cursize--;					// write over trailing 0
+	if (buf->write_offset && !buf->data[buf->write_offset - 1])
+		buf->write_offset--;			// write over trailing 0
 
 	memcpy (SZ_GetSpace (buf, len), data, len);
 }

@@ -114,13 +114,12 @@ void
 Netchan_OutOfBand (netadr_t adr, unsigned length, byte * data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
-	sizebuf_t   send;
+	sizebuf_t   send = {
+		.data = send_buf,
+		.maxsize = sizeof (send_buf),
+	};
 
 	// write the packet header
-	send.data = send_buf;
-	send.maxsize = sizeof (send_buf);
-	send.cursize = 0;
-
 	MSG_WriteLong (&send, -1);			// -1 sequence means out of band
 	SZ_Write (&send, data, length);
 
@@ -206,11 +205,9 @@ Netchan_CanReliable (netchan_t *chan)
 void
 Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 {
-	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	int         i;
 	unsigned int w1, w2;
 	bool        send_reliable;
-	sizebuf_t   send;
 
 	// check for message overflow
 	if (chan->message.overflowed) {
@@ -230,15 +227,18 @@ Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 	if (!chan->reliable_length && chan->message.cursize) {
 		memcpy (chan->reliable_buf, chan->message_buf, chan->message.cursize);
 		chan->reliable_length = chan->message.cursize;
-		chan->message.cursize = 0;
+		SZ_Clear (&chan->message);
 		chan->reliable_sequence ^= 1;
 		send_reliable = true;
 	}
-	// write the packet header
-	send.data = send_buf;
-	send.maxsize = sizeof (send_buf);
-	send.cursize = 0;
 
+	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
+	sizebuf_t   send = {
+		.data = send_buf,
+		.maxsize = sizeof (send_buf),
+	};
+
+	// write the packet header
 	w1 = chan->outgoing_sequence | (send_reliable << 31);
 	w2 = chan->incoming_sequence | (chan->incoming_reliable_sequence << 31);
 

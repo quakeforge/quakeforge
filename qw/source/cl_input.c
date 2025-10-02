@@ -235,7 +235,6 @@ CL_SendCmd (void)
 	byte			data[128];
 	int				checksumIndex, lost, seq_hash, frame;
 	bool			dontdrop; // FIXME: needed without cl_c2sImpulseBackup?
-	sizebuf_t		buf;
 	usercmd_t	   *cmd, *oldcmd;
 
 	if (cls.demoplayback && !cls.demoplayback2)
@@ -259,9 +258,10 @@ CL_SendCmd (void)
 
 	// send this and the previous cmds in the message, so
 	// if the last packet was dropped, it can be recovered
-	buf.maxsize = 128;
-	buf.cursize = 0;
-	buf.data = data;
+	sizebuf_t		buf = {
+		.maxsize = 128,
+		.data = data,
+	};
 
 	MSG_WriteByte (&buf, clc_move);
 

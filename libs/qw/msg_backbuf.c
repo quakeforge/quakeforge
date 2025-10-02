@@ -93,7 +93,7 @@ MSG_ReliableCheckBlock (backbuf_t *rel, unsigned maxsize)
 		if (rel->backbuf.cursize > rel->backbuf.maxsize - maxsize - 1) {
 			if (rel->num_backbuf == MAX_BACK_BUFFERS) {
 				Sys_Printf ("WARNING: MAX_BACK_BUFFERS for %s\n", rel->name);
-				rel->backbuf.cursize = 0;	// don't overflow without
+				SZ_Clear (&rel->backbuf);	// don't overflow without
 											// allowoverflow set
 				msg->overflowed = true;		// this will drop the client
 				return 0;

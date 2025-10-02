@@ -617,13 +617,12 @@ static bool
 SV_SendClientDatagram (client_t *client)
 {
 	byte        buf[MAX_DATAGRAM];
-	sizebuf_t   msg;
+	sizebuf_t   msg = {
+		.data = buf,
+		.maxsize = sizeof (buf),
+		.allowoverflow = true,
+	};
 
-	msg.data = buf;
-	msg.maxsize = sizeof (buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
 
 	// add the client specific data to the datagram
 	SV_WriteClientdataToMessage (client, &msg);
